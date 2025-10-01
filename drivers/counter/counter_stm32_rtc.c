@@ -36,6 +36,44 @@
 
 LOG_MODULE_REGISTER(counter_rtc_stm32, CONFIG_COUNTER_LOG_LEVEL);
 
+#if CONFIG_STM32_HAL2
+#define STM32_RTC_HOUR_FORMAT_24HOUR		LL_RTC_HOUR_FORMAT_24HOUR
+#define STM32_RTC_HOUR_FORMAT_AMPM		LL_RTC_HOUR_FORMAT_AMPM
+#define STM32_RTC_TIME_FORMAT_AM_24H		LL_RTC_TIME_FORMAT_AM_24H
+#define STM32_RTC_GET_SECOND			LL_RTC_GET_SECOND
+#define STM32_RTC_GET_MINUTE			LL_RTC_GET_MINUTE
+#define STM32_RTC_GET_HOUR			LL_RTC_GET_HOUR
+#define STM32_RTC_GET_DAY			LL_RTC_GET_DAY
+#define STM32_RTC_GET_WEEKDAY			LL_RTC_GET_WEEKDAY
+#define STM32_RTC_GET_YEAR			LL_RTC_GET_YEAR
+#define STM32_RTC_GET_MONTH			LL_RTC_GET_MONTH
+#define STM32_RTC_EnableBypassShadowReg		LL_RTC_EnableBypassShadowReg
+#define STM32_RTC_DisableBypassShadowReg	LL_RTC_DisableBypassShadowReg
+
+/* On HAL2 this macro skips the RTC instance as the first argument,
+ * only the potential following arguments are passed.
+ */
+#define STM32_ARG(dev, ...)	__VA_ARGS__
+#else /* CONFIG_STM32_HAL2 */
+#define STM32_RTC_HOUR_FORMAT_24HOUR		LL_RTC_HOURFORMAT_24HOUR
+#define STM32_RTC_HOUR_FORMAT_AMPM		LL_RTC_HOURFORMAT_AMPM
+#define STM32_RTC_TIME_FORMAT_AM_24H		LL_RTC_TIME_FORMAT_AM_OR_24
+#define STM32_RTC_GET_SECOND			__LL_RTC_GET_SECOND
+#define STM32_RTC_GET_MINUTE			__LL_RTC_GET_MINUTE
+#define STM32_RTC_GET_HOUR			__LL_RTC_GET_HOUR
+#define STM32_RTC_GET_DAY			__LL_RTC_GET_DAY
+#define STM32_RTC_GET_WEEKDAY			__LL_RTC_GET_WEEKDAY
+#define STM32_RTC_GET_MONTH			__LL_RTC_GET_MONTH
+#define STM32_RTC_GET_YEAR			__LL_RTC_GET_YEAR
+#define STM32_RTC_EnableBypassShadowReg		LL_RTC_EnableShadowRegBypass
+#define STM32_RTC_DisableBypassShadowReg	LL_RTC_DisableShadowRegBypass
+
+/* On HAL1 this macro adds the RTC instance as the first argument,
+ * with or without a comma depending on number of arguments.
+ */
+#define STM32_ARG(dev, ...)	COND_CODE_1(IS_EMPTY(__VA_ARGS__), (dev), (dev, __VA_ARGS__))
+#endif /* CONFIG_STM32_HAL2 */
+
 #if defined(CONFIG_SOC_SERIES_STM32F1X) || defined(CONFIG_SOC_SERIES_STM32F2X) || \
 	(defined(CONFIG_SOC_SERIES_STM32L1X) && !defined(RTC_SUBSECOND_SUPPORT))
 /* subsecond counting is not supported by some STM32L1x MCUs (Cat.1) & by STM32F1x/2x SoC series */
@@ -53,6 +91,7 @@ LOG_MODULE_REGISTER(counter_rtc_stm32, CONFIG_COUNTER_LOG_LEVEL);
 	|| defined(CONFIG_SOC_SERIES_STM32G0X)
 #define RTC_EXTI_LINE	LL_EXTI_LINE_19
 #elif defined(CONFIG_SOC_SERIES_STM32F4X) \
+	|| defined(CONFIG_SOC_SERIES_STM32C5X) \
 	|| defined(CONFIG_SOC_SERIES_STM32F0X) \
 	|| defined(CONFIG_SOC_SERIES_STM32F1X) \
 	|| defined(CONFIG_SOC_SERIES_STM32F2X) \
@@ -125,68 +164,64 @@ struct rtc_stm32_data {
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 };
 
-static inline void ll_clear_alarm_flag(RTC_TypeDef *rtc)
+static inline void ll_clear_alarm_flag(void)
 {
 #if defined(CONFIG_SOC_SERIES_STM32F1X)
-	LL_RTC_ClearFlag_ALR(rtc);
+	LL_RTC_ClearFlag_ALR(STM32_ARG(RTC));
 #else
-	LL_RTC_ClearFlag_ALRA(rtc);
+	LL_RTC_ClearFlag_ALRA(STM32_ARG(RTC));
 #endif
 }
 
-static inline uint32_t ll_is_active_alarm(RTC_TypeDef *rtc)
+static inline uint32_t ll_is_active_alarm(void)
 {
 #if defined(CONFIG_SOC_SERIES_STM32F1X)
-	return LL_RTC_IsActiveFlag_ALR(rtc);
+	return LL_RTC_IsActiveFlag_ALR(STM32_ARG(RTC));
 #else
-	return LL_RTC_IsActiveFlag_ALRA(rtc);
+	return LL_RTC_IsActiveFlag_ALRA(STM32_ARG(RTC));
 #endif
 }
 
-static inline void ll_enable_interrupt_alarm(RTC_TypeDef *rtc)
+static inline void ll_enable_interrupt_alarm(void)
 {
 #if defined(CONFIG_SOC_SERIES_STM32F1X)
-	LL_RTC_EnableIT_ALR(rtc);
+	LL_RTC_EnableIT_ALR(STM32_ARG(RTC));
 #else
-	LL_RTC_EnableIT_ALRA(rtc);
+	LL_RTC_EnableIT_ALRA(STM32_ARG(RTC));
 #endif
 }
 
-static inline void ll_disable_interrupt_alarm(RTC_TypeDef *rtc)
+static inline void ll_disable_interrupt_alarm(void)
 {
 #if defined(CONFIG_SOC_SERIES_STM32F1X)
-	LL_RTC_DisableIT_ALR(rtc);
+	LL_RTC_DisableIT_ALR(STM32_ARG(RTC));
 #else
-	LL_RTC_DisableIT_ALRA(rtc);
+	LL_RTC_DisableIT_ALRA(STM32_ARG(RTC));
 #endif
 }
 
 #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
-static inline uint32_t ll_isenabled_interrupt_alarm(RTC_TypeDef *rtc)
+static inline uint32_t ll_isenabled_interrupt_alarm(void)
 {
 #if defined(CONFIG_SOC_SERIES_STM32F1X)
-	return LL_RTC_IsEnabledIT_ALR(rtc);
+	return LL_RTC_IsEnabledIT_ALR(STM32_ARG(RTC));
 #else
-	return LL_RTC_IsEnabledIT_ALRA(rtc);
+	return LL_RTC_IsEnabledIT_ALRA(STM32_ARG(RTC));
 #endif
 }
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 
-static inline void ll_enable_alarm(RTC_TypeDef *rtc)
+static inline void ll_enable_alarm(void)
 {
-#if defined(CONFIG_SOC_SERIES_STM32F1X)
-	ARG_UNUSED(rtc);
-#else
-	LL_RTC_ALMA_Enable(rtc);
+#if !defined(CONFIG_SOC_SERIES_STM32F1X)
+	LL_RTC_ALMA_Enable(STM32_ARG(RTC));
 #endif
 }
 
-static inline void ll_disable_alarm(RTC_TypeDef *rtc)
+static inline void ll_disable_alarm(void)
 {
-#if defined(CONFIG_SOC_SERIES_STM32F1X)
-	ARG_UNUSED(rtc);
-#else
-	LL_RTC_ALMA_Disable(rtc);
+#if !defined(CONFIG_SOC_SERIES_STM32F1X)
+	LL_RTC_ALMA_Disable(STM32_ARG(RTC));
 #endif
 }
 
@@ -201,21 +236,21 @@ static int rtc_stm32_enter_init_mode(void)
 {
 #if defined(CONFIG_SOC_SERIES_STM32F1X)
 	/* Wait for RTC to be ready */
-	if (!WAIT_FOR(LL_RTC_IsActiveFlag_RTOF(RTC), RTC_TIMEOUT, NULL)) {
+	if (!WAIT_FOR(LL_RTC_IsActiveFlag_RTOF(STM32_ARG(RTC)), RTC_TIMEOUT, NULL)) {
 		return -ETIMEDOUT;
 	}
 
-	LL_RTC_DisableWriteProtection(RTC);
+	LL_RTC_DisableWriteProtection(STM32_ARG(RTC));
 #else
-	LL_RTC_DisableWriteProtection(RTC);
+	LL_RTC_DisableWriteProtection(STM32_ARG(RTC));
 
 	/* Check if the Initialization mode is set */
-	if (LL_RTC_IsActiveFlag_INIT(RTC) == 0U) {
+	if (LL_RTC_IsActiveFlag_INIT(STM32_ARG(RTC)) == 0U) {
 		/* Set the Initialization mode */
-		LL_RTC_EnableInitMode(RTC);
-		if (!WAIT_FOR(LL_RTC_IsActiveFlag_INIT(RTC), RTC_TIMEOUT, NULL)) {
-			LL_RTC_DisableInitMode(RTC);
-			LL_RTC_EnableWriteProtection(RTC);
+		LL_RTC_EnableInitMode(STM32_ARG(RTC));
+		if (!WAIT_FOR(LL_RTC_IsActiveFlag_INIT(STM32_ARG(RTC)), RTC_TIMEOUT, NULL)) {
+			LL_RTC_DisableInitMode(STM32_ARG(RTC));
+			LL_RTC_EnableWriteProtection(STM32_ARG(RTC));
 			return -ETIMEDOUT;
 		}
 	}
@@ -229,16 +264,16 @@ static int rtc_stm32_exit_init_mode(void)
 	int status = 0;
 
 #if defined(CONFIG_SOC_SERIES_STM32F1X)
-	LL_RTC_EnableWriteProtection(RTC);
+	LL_RTC_EnableWriteProtection(STM32_ARG(RTC));
 
 	/* Wait for RTC to be ready */
-	if (!WAIT_FOR(LL_RTC_IsActiveFlag_RTOF(RTC), RTC_TIMEOUT, NULL)) {
+	if (!WAIT_FOR(LL_RTC_IsActiveFlag_RTOF(STM32_ARG(RTC)), RTC_TIMEOUT, NULL)) {
 		status = -ETIMEDOUT;
 	}
 #else
-	LL_RTC_DisableInitMode(RTC);
+	LL_RTC_DisableInitMode(STM32_ARG(RTC));
 
-	LL_RTC_EnableWriteProtection(RTC);
+	LL_RTC_EnableWriteProtection(STM32_ARG(RTC));
 #endif
 
 	return status;
@@ -250,9 +285,9 @@ static int rtc_stm32_wait_for_synchro(void)
 	int status = 0;
 
 	/* Clear RSF flag */
-	LL_RTC_ClearFlag_RS(RTC);
+	LL_RTC_ClearFlag_RS(STM32_ARG(RTC));
 
-	if (!WAIT_FOR(LL_RTC_IsActiveFlag_RS(RTC), RTC_TIMEOUT, NULL)) {
+	if (!WAIT_FOR(LL_RTC_IsActiveFlag_RS(STM32_ARG(RTC)), RTC_TIMEOUT, NULL)) {
 		status = -ETIMEDOUT;
 	}
 
@@ -339,12 +374,12 @@ static int rtc_stm32_configure(const struct device *dev)
 	}
 
 #if defined(CONFIG_SOC_SERIES_STM32F1X)
-	LL_RTC_SetAsynchPrescaler(RTC, cfg->async_prescaler);
+	LL_RTC_SetAsynchPrescaler(STM32_ARG(RTC, cfg->async_prescaler));
 	LL_RTC_SetOutputSource(BKP, LL_RTC_CALIB_OUTPUT_NONE);
 #else
-	LL_RTC_SetHourFormat(RTC, LL_RTC_HOURFORMAT_24HOUR);
-	LL_RTC_SetAsynchPrescaler(RTC, cfg->async_prescaler);
-	LL_RTC_SetSynchPrescaler(RTC, cfg->sync_prescaler);
+	LL_RTC_SetHourFormat(STM32_ARG(RTC, STM32_RTC_HOUR_FORMAT_24HOUR));
+	LL_RTC_SetAsynchPrescaler(STM32_ARG(RTC, cfg->async_prescaler));
+	LL_RTC_SetSynchPrescaler(STM32_ARG(RTC, cfg->sync_prescaler));
 #endif
 
 	/* Exit Initialization mode */
@@ -431,35 +466,34 @@ tick_t rtc_stm32_read(const struct device *dev)
 		/* read date, time and subseconds and relaunch if a day increment occurred
 		 * while doing so as it will result in an erroneous result otherwise
 		 */
-		rtc_date = LL_RTC_DATE_Get(RTC);
+		rtc_date = LL_RTC_DATE_Get(STM32_ARG(RTC));
 		do {
 			/* read time and subseconds and relaunch if a second increment occurred
 			 * while doing so as it will result in an erroneous result otherwise
 			 */
-			rtc_time = LL_RTC_TIME_Get(RTC);
+			rtc_time = LL_RTC_TIME_Get(STM32_ARG(RTC));
 #if CONFIG_COUNTER_RTC_STM32_SUBSECONDS
 			do {
 				/* read subseconds and relaunch if a second increment occurred
 				 * while doing so as it will result in an erroneous result otherwise
 				 */
-				rtc_subsecond = LL_RTC_TIME_GetSubSecond(RTC);
-			} while (rtc_subsecond != LL_RTC_TIME_GetSubSecond(RTC));
+				rtc_subsecond = LL_RTC_TIME_GetSubSecond(STM32_ARG(RTC));
+			} while (rtc_subsecond != LL_RTC_TIME_GetSubSecond(STM32_ARG(RTC)));
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
-		} while (rtc_time != LL_RTC_TIME_Get(RTC));
-	} while (rtc_date != LL_RTC_DATE_Get(RTC));
+		} while (rtc_time != LL_RTC_TIME_Get(STM32_ARG(RTC)));
+	} while (rtc_date != LL_RTC_DATE_Get(STM32_ARG(RTC)));
 
 	/* Convert calendar datetime to UNIX timestamp */
 	/* RTC start time: 1st, Jan, 2000 */
 	/* time_t start:   1st, Jan, 1970 */
-	now.tm_year = 100 +
-			__LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_YEAR(rtc_date));
+	now.tm_year = 100 + bcd2bin(STM32_RTC_GET_YEAR(rtc_date));
 	/* tm_mon allowed values are 0-11 */
-	now.tm_mon = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_MONTH(rtc_date)) - 1;
-	now.tm_mday = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_DAY(rtc_date));
+	now.tm_mon = bcd2bin(STM32_RTC_GET_MONTH(rtc_date)) - 1;
+	now.tm_mday = bcd2bin(STM32_RTC_GET_DAY(rtc_date));
 
-	now.tm_hour = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_HOUR(rtc_time));
-	now.tm_min = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_MINUTE(rtc_time));
-	now.tm_sec = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_SECOND(rtc_time));
+	now.tm_hour = bcd2bin(STM32_RTC_GET_HOUR(rtc_time));
+	now.tm_min = bcd2bin(STM32_RTC_GET_MINUTE(rtc_time));
+	now.tm_sec = bcd2bin(STM32_RTC_GET_SECOND(rtc_time));
 
 	ts = timeutil_timegm(&now);
 
@@ -486,7 +520,7 @@ tick_t rtc_stm32_read(const struct device *dev)
 
 	ARG_UNUSED(dev);
 
-	ticks = LL_RTC_TIME_Get(RTC);
+	ticks = LL_RTC_TIME_Get(STM32_ARG(RTC));
 
 	return ticks;
 }
@@ -578,20 +612,20 @@ static int rtc_stm32_set_alarm(const struct device *dev, uint8_t chan_id,
 	stm32_backup_domain_enable_access();
 
 #if !defined(COUNTER_NO_DATE)
-	LL_RTC_DisableWriteProtection(RTC);
+	LL_RTC_DisableWriteProtection(STM32_ARG(RTC));
 
-	ll_disable_alarm(RTC);
+	ll_disable_alarm();
 
 	/* Configure the Alarm registers */
-	LL_RTC_ALMA_DisableWeekday(RTC);
-	LL_RTC_ALMA_SetDay(RTC, __LL_RTC_CONVERT_BIN2BCD(alarm_tm.tm_mday));
-	LL_RTC_ALMA_ConfigTime(RTC, LL_RTC_TIME_FORMAT_AM_OR_24,
-				__LL_RTC_CONVERT_BIN2BCD(alarm_tm.tm_hour),
-				__LL_RTC_CONVERT_BIN2BCD(alarm_tm.tm_min),
-				__LL_RTC_CONVERT_BIN2BCD(alarm_tm.tm_sec));
-	LL_RTC_ALMA_SetMask(RTC, LL_RTC_ALMA_MASK_NONE);
+	LL_RTC_ALMA_DisableWeekday(STM32_ARG(RTC));
+	LL_RTC_ALMA_SetDay(STM32_ARG(RTC, bin2bcd(alarm_tm.tm_mday)));
+	LL_RTC_ALMA_ConfigTime(STM32_ARG(RTC, STM32_RTC_TIME_FORMAT_AM_24H,
+				bin2bcd(alarm_tm.tm_hour),
+				bin2bcd(alarm_tm.tm_min),
+				bin2bcd(alarm_tm.tm_sec)));
+	LL_RTC_ALMA_SetMask(STM32_ARG(RTC, LL_RTC_ALMA_MASK_NONE));
 
-	LL_RTC_EnableWriteProtection(RTC);
+	LL_RTC_EnableWriteProtection(STM32_ARG(RTC));
 #else
 	/* Set Initialization mode */
 	ret = rtc_stm32_enter_init_mode();
@@ -608,20 +642,20 @@ static int rtc_stm32_set_alarm(const struct device *dev, uint8_t chan_id,
 	}
 #endif
 
-	LL_RTC_DisableWriteProtection(RTC);
+	LL_RTC_DisableWriteProtection(STM32_ARG(RTC));
 #if HW_SUBSECOND_SUPPORT
 #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
 	/* Care about all bits of the subsecond register */
-	LL_RTC_ALMA_SetSubSecondMask(RTC, 0xF);
-	LL_RTC_ALMA_SetSubSecond(RTC, RTC_SYNCPRE - alarm_val_ss);
+	LL_RTC_ALMA_SetSubSecondMask(STM32_ARG(RTC, 0xF));
+	LL_RTC_ALMA_SetSubSecond(STM32_ARG(RTC, RTC_SYNCPRE - alarm_val_ss));
 #else
-	LL_RTC_ALMA_SetSubSecondMask(RTC, 0);
+	LL_RTC_ALMA_SetSubSecondMask(STM32_ARG(RTC, 0));
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 #endif /* HW_SUBSECOND_SUPPORT */
-	ll_enable_alarm(RTC);
-	ll_clear_alarm_flag(RTC);
-	ll_enable_interrupt_alarm(RTC);
-	LL_RTC_EnableWriteProtection(RTC);
+	ll_enable_alarm();
+	ll_clear_alarm_flag();
+	ll_enable_interrupt_alarm();
+	LL_RTC_EnableWriteProtection(STM32_ARG(RTC));
 
 #if defined(COUNTER_NO_DATE)
 out_disable_bkup_access:
@@ -655,11 +689,11 @@ static int rtc_stm32_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	struct rtc_stm32_data *data = dev->data;
 
 	stm32_backup_domain_enable_access();
-	LL_RTC_DisableWriteProtection(RTC);
-	ll_clear_alarm_flag(RTC);
-	ll_disable_interrupt_alarm(RTC);
-	ll_disable_alarm(RTC);
-	LL_RTC_EnableWriteProtection(RTC);
+	LL_RTC_DisableWriteProtection(STM32_ARG(RTC));
+	ll_clear_alarm_flag();
+	ll_disable_interrupt_alarm();
+	ll_disable_alarm();
+	LL_RTC_EnableWriteProtection(STM32_ARG(RTC));
 	stm32_backup_domain_disable_access();
 
 	data->callback = NULL;
@@ -670,7 +704,7 @@ static int rtc_stm32_cancel_alarm(const struct device *dev, uint8_t chan_id)
 
 static uint32_t rtc_stm32_get_pending_int(const struct device *dev)
 {
-	return ll_is_active_alarm(RTC) != 0;
+	return ll_is_active_alarm() != 0;
 }
 
 
@@ -704,18 +738,18 @@ void rtc_stm32_isr(const struct device *dev)
 
 	uint32_t now = rtc_stm32_read(dev);
 
-	if (ll_is_active_alarm(RTC) != 0
+	if (ll_is_active_alarm() != 0
 #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
-	    || (data->irq_on_late && ll_isenabled_interrupt_alarm(RTC))
+	    || (data->irq_on_late && ll_isenabled_interrupt_alarm())
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 	) {
 
 		stm32_backup_domain_enable_access();
-		LL_RTC_DisableWriteProtection(RTC);
-		ll_clear_alarm_flag(RTC);
-		ll_disable_interrupt_alarm(RTC);
-		ll_disable_alarm(RTC);
-		LL_RTC_EnableWriteProtection(RTC);
+		LL_RTC_DisableWriteProtection(STM32_ARG(RTC));
+		ll_clear_alarm_flag();
+		ll_disable_interrupt_alarm();
+		ll_disable_alarm();
+		LL_RTC_EnableWriteProtection(STM32_ARG(RTC));
 		stm32_backup_domain_disable_access();
 #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
 		data->irq_on_late = false;
@@ -730,6 +764,7 @@ void rtc_stm32_isr(const struct device *dev)
 #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
 	LL_C2_EXTI_ClearFlag_0_31(RTC_EXTI_LINE);
 #elif defined(CONFIG_SOC_SERIES_STM32C0X) \
+	|| defined(CONFIG_SOC_SERIES_STM32C5X) \
 	|| defined(CONFIG_SOC_SERIES_STM32G0X) \
 	|| defined(CONFIG_SOC_SERIES_STM32L5X) \
 	|| defined(CONFIG_SOC_SERIES_STM32H5X)
@@ -803,9 +838,9 @@ static int rtc_stm32_init(const struct device *dev)
 	}
 
 #ifdef RTC_CR_BYPSHAD
-	LL_RTC_DisableWriteProtection(RTC);
-	LL_RTC_EnableShadowRegBypass(RTC);
-	LL_RTC_EnableWriteProtection(RTC);
+	LL_RTC_DisableWriteProtection(STM32_ARG(RTC));
+	STM32_RTC_EnableBypassShadowReg(STM32_ARG(RTC));
+	LL_RTC_EnableWriteProtection(STM32_ARG(RTC));
 #endif /* RTC_CR_BYPSHAD */
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
