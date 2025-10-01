@@ -46,13 +46,13 @@ static int modem_backend_mock_transmit(void *data, const uint8_t *buf, size_t si
 	if (mock->bridge) {
 		struct modem_backend_mock *t_mock = mock->bridge;
 
-		ret = ring_buf_put(&t_mock->rx_rb, buf, size);
+		ret = ring_buffer_write(&t_mock->rx_rb, buf, size);
 		k_work_submit(&t_mock->receive_ready_work);
 		k_work_submit(&mock->transmit_idle_work);
 		return ret;
 	}
 
-	ret = ring_buf_put(&mock->tx_rb, buf, size);
+	ret = ring_buffer_write(&mock->tx_rb, buf, size);
 	if (modem_backend_mock_update(mock, buf, size)) {
 		modem_backend_mock_put(mock, mock->transaction->put,
 				       mock->transaction->put_size);
@@ -69,7 +69,7 @@ static int modem_backend_mock_receive(void *data, uint8_t *buf, size_t size)
 	struct modem_backend_mock *mock = (struct modem_backend_mock *)data;
 
 	size = (mock->limit < size) ? mock->limit : size;
-	return ring_buf_get(&mock->rx_rb, buf, size);
+	return ring_buffer_read(&mock->rx_rb, buf, size);
 }
 
 static int modem_backend_mock_close(void *data)
@@ -108,8 +108,8 @@ struct modem_pipe *modem_backend_mock_init(struct modem_backend_mock *mock,
 {
 	memset(mock, 0, sizeof(*mock));
 
-	ring_buf_init(&mock->rx_rb, config->rx_buf_size, config->rx_buf);
-	ring_buf_init(&mock->tx_rb, config->tx_buf_size, config->tx_buf);
+	ring_buffer_init(&mock->rx_rb, config->rx_buf, config->rx_buf_size);
+	ring_buffer_init(&mock->tx_rb, config->tx_buf, config->tx_buf_size);
 	k_work_init(&mock->receive_ready_work, modem_backend_mock_receive_ready_handler);
 	k_work_init(&mock->transmit_idle_work, modem_backend_mock_transmit_idle_handler);
 	mock->limit = config->limit;
@@ -124,20 +124,20 @@ struct modem_pipe *modem_backend_mock_get_pipe(struct modem_backend_mock *mock)
 
 void modem_backend_mock_reset(struct modem_backend_mock *mock)
 {
-	ring_buf_reset(&mock->rx_rb);
-	ring_buf_reset(&mock->tx_rb);
+	ring_buffer_reset(&mock->rx_rb);
+	ring_buffer_reset(&mock->tx_rb);
 	mock->transaction = NULL;
 	mock->transaction_match_cnt = 0;
 }
 
 int modem_backend_mock_get(struct modem_backend_mock *mock, uint8_t *buf, size_t size)
 {
-	return ring_buf_get(&mock->tx_rb, buf, size);
+	return ring_buffer_read(&mock->tx_rb, buf, size);
 }
 
 void modem_backend_mock_put(struct modem_backend_mock *mock, const uint8_t *buf, size_t size)
 {
-	__ASSERT(ring_buf_put(&mock->rx_rb, buf, size) == size,
+	__ASSERT(ring_buffer_write(&mock->rx_rb, buf, size) == size,
 		 "Mock buffer capacity exceeded");
 
 	k_work_submit(&mock->receive_ready_work);

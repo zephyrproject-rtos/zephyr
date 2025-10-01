@@ -44,7 +44,7 @@ K_SEM_DEFINE(receive_ready_sem, 0, 1);
 /*************************************************************************************************/
 static uint8_t backend_receive_buffer[TEST_BACKEND_RECEIVE_BUFFER_SIZE];
 static uint8_t backend_transmit_buffer[4096];
-RING_BUF_DECLARE(transmit_ring_buf, 4096);
+RING_BUFFER_DECLARE(transmit_ring_buf, 4096);
 static uint8_t receive_buffer[4096];
 
 /*************************************************************************************************/
@@ -90,12 +90,12 @@ static void prng_reset(void)
 
 static void fill_transmit_ring_buf(void)
 {
-	uint32_t space = ring_buf_space_get(&transmit_ring_buf);
+	uint32_t space = ring_buffer_space(&transmit_ring_buf);
 	uint8_t data;
 
 	for (uint32_t i = 0; i < space; i++) {
 		data = transmit_prng_random();
-		ring_buf_put(&transmit_ring_buf, &data, 1);
+		ring_buffer_write(&transmit_ring_buf, &data, 1);
 	}
 }
 
@@ -122,7 +122,7 @@ static int transmit_prng(uint32_t remaining)
 	int ret;
 
 	fill_transmit_ring_buf();
-	reserved_size = ring_buf_get_claim(&transmit_ring_buf, &reserved, UINT32_MAX);
+	reserved_size = ring_buffer_read_ptr(&transmit_ring_buf, &reserved);
 	transmit_size = MIN(transmit_size_prng_random(), reserved_size);
 	transmit_size = MIN(remaining, transmit_size);
 	ret = modem_pipe_transmit(pipe, reserved, transmit_size);
@@ -131,7 +131,7 @@ static int transmit_prng(uint32_t remaining)
 	}
 	printk("TX: %u,%u\n", transmit_size, (uint32_t)ret);
 	__ASSERT(ret <= remaining, "Impossible number of bytes sent %u", (uint32_t)ret);
-	ring_buf_get_finish(&transmit_ring_buf, ret);
+	ring_buffer_consume(&transmit_ring_buf, ret);
 	return ret;
 }
 
@@ -187,7 +187,7 @@ static void *test_modem_backend_uart_setup(void)
 static void test_modem_backend_uart_before(void *f)
 {
 	prng_reset();
-	ring_buf_reset(&transmit_ring_buf);
+	ring_buffer_reset(&transmit_ring_buf);
 	k_sem_reset(&receive_ready_sem);
 	__ASSERT_NO_MSG(modem_pipe_open(pipe, K_SECONDS(1)) == 0);
 }
