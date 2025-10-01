@@ -342,7 +342,7 @@ static int iis3dwb_init(const struct device *dev)
 
 #define IIS3DWB_SPI_RTIO_DEFINE(inst)					\
 	SPI_DT_IODEV_DEFINE(iis3dwb_iodev_##inst,			\
-		DT_DRV_INST(inst), IIS3DWB_SPI_OPERATION, 0U);		\
+		DT_DRV_INST(inst), IIS3DWB_SPI_OPERATION);		\
 	RTIO_DEFINE(iis3dwb_rtio_ctx_##inst, 8, 8);
 
 #ifdef CONFIG_IIS3DWB_TRIGGER
