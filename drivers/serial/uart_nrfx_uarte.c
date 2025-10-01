@@ -271,6 +271,7 @@ struct uarte_nrfx_data {
 #endif
 #ifdef UARTE_ANY_ASYNC
 	struct uarte_async_cb *async;
+	nrfx_timer_t timer;
 #endif
 	atomic_val_t poll_out_lock;
 	atomic_t flags;
@@ -386,7 +387,6 @@ struct uarte_nrfx_config {
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
 #ifdef UARTE_ANY_ASYNC
-	nrfx_timer_t timer;
 	uint8_t *tx_cache;
 	uint8_t *rx_flush_buf;
 #endif
@@ -795,7 +795,7 @@ static void uarte_periph_enable(const struct device *dev)
 #ifdef UARTE_ANY_ASYNC
 	if (data->async) {
 		if (HW_RX_COUNTING_ENABLED(config)) {
-			const nrfx_timer_t *timer = &config->timer;
+			nrfx_timer_t *timer = &data->timer;
 
 			nrfx_timer_enable(timer);
 
@@ -2777,8 +2777,8 @@ static int uarte_instance_deinit(const struct device *dev)
 				(.tx_cache = uarte##idx##_tx_cache,	       \
 				 .rx_flush_buf = uarte##idx##_flush_buf,))     \
 		IF_ENABLED(CONFIG_UART_##idx##_NRF_HW_ASYNC,		       \
-			(.timer = NRFX_TIMER_INSTANCE(			       \
-				CONFIG_UART_##idx##_NRF_HW_ASYNC_TIMER),))     \
+			(.timer = NRFX_TIMER_INSTANCE(NRF_TIMER_INST_GET(      \
+				CONFIG_UART_##idx##_NRF_HW_ASYNC_TIMER)),))    \
 		IF_ENABLED(INSTANCE_IS_FAST(_, /*empty*/, idx, _),	       \
 			(.clk_dev = DEVICE_DT_GET_OR_NULL(DT_CLOCKS_CTLR(UARTE(idx))), \
 			 .clk_spec = {					       \
