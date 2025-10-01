@@ -1,7 +1,7 @@
 # Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_FVP_AEMV8A
+if SOC_SERIES_FVP_AEM
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 100000000
@@ -9,8 +9,6 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config NUM_IRQS
 	default 16384 if GIC_V3_ITS
 	default 128 if !GIC_V3_ITS
-
-if SOC_FVP_BASE_REVC_2XAEMV8A
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash
@@ -21,6 +19,4 @@ config FLASH_SIZE
 config FLASH_BASE_ADDRESS
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
-endif # SOC_FVP_BASE_REVC_2XAEMV8A
-
-endif # SOC_SERIES_FVP_AEMV8A
+endif # SOC_SERIES_FVP_AEM
