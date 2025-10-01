@@ -14,9 +14,12 @@ config RM3100
 	help
 	  Enable driver for PNI RM3100 high-accuracy 3-axis magnetometer.
 
+config RM3100_HAS_TRIGGER
+	def_bool $(dt_compat_any_has_prop,$(DT_COMPAT_PNI_RM3100),int-gpios)
+
 config RM3100_STREAM
 	bool "RM3100 Streaming Mode"
-	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_PNI_RM3100),int-gpios)
+	depends on RM3100_HAS_TRIGGER
 	help
 	  Enable streaming mode for the RM3100 sensor.
 	  This mode allows for continuous data output at a specified rate.

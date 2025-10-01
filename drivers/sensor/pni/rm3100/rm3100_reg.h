@@ -12,6 +12,7 @@
 #define REG_READ_BIT BIT(7)
 
 /* RM3100 register addresses */
+#define RM3100_REG_POLL        0x00 /* Polls for a Single Measurement */
 #define RM3100_REG_CMM         0x01 /* Continuous measurement mode */
 #define RM3100_REG_CCX_MSB     0x04 /* Cycle Count X LSB */
 #define RM3100_REG_CCX_LSB     0x05 /* Cycle Count X MSB */

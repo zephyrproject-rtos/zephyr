@@ -196,13 +196,6 @@ void rm3100_stream_submit(const struct device *dev,
 	const struct rm3100_config *cfg = dev->config;
 	int err;
 
-	if ((read_config->count != 1) ||
-	    (read_config->triggers[0].trigger != SENSOR_TRIG_DATA_READY)) {
-		LOG_ERR("Only SENSOR_TRIG_DATA_READY is supported");
-		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
-		return;
-	}
-
 	/* Store context for next submission (handled within callbacks) */
 	data->stream.iodev_sqe = iodev_sqe;
 
@@ -210,7 +203,7 @@ void rm3100_stream_submit(const struct device *dev,
 	data->stream.settings.opt.drdy = read_config->triggers[0].opt;
 
 	err = gpio_pin_interrupt_configure_dt(&cfg->int_gpio,
-						GPIO_INT_LEVEL_ACTIVE);
+					      GPIO_INT_LEVEL_ACTIVE);
 	if (err) {
 		LOG_ERR("Failed to enable interrupts");
 

@@ -66,9 +66,9 @@ struct rm3100_data {
 	struct {
 		uint8_t odr;
 	} settings;
-#if defined(CONFIG_RM3100_STREAM)
+#if defined(CONFIG_RM3100_HAS_TRIGGER)
 	struct rm3100_stream stream;
-#endif /* CONFIG_RM3100_STREAM */
+#endif /* CONFIG_RM3100_HAS_TRIGGER */
 };
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_PNI_RM3100_H_ */
