@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/renesas/pinctrl-r8a779g0.h>
+
+&pfc {
+	hscif0_data_tx_default: hscif0_data_tx_default {
+		pin = <PIN_HRX0 FUNC_HRX0>;
+	};
+
+	hscif0_data_rx_default: hscif0_data_rx_default {
+		pin = <PIN_HTX0 FUNC_HTX0>;
+	};
+
+	hscif1_data_tx_default: hscif1_data_tx_default {
+		pin = <PIN_MSIOF2_SYNC FUNC_HRX1>;
+	};
+
+	hscif1_data_rx_default: hscif1_data_rx_default {
+		pin = <PIN_MSIOF2_SS1 FUNC_HTX1>;
+	};
+};
