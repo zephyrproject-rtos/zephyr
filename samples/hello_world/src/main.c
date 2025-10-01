@@ -8,7 +8,8 @@
 
 int main(void)
 {
-	printf("Hello World! %s\n", CONFIG_BOARD_TARGET);
+	printf("Hello Worl board %s\n", CONFIG_BOARD_TARGET);
+	printf("Welcome to zephyr OS\n");
 
 	return 0;
 }
