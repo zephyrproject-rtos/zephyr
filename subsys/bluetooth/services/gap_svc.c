@@ -157,7 +157,7 @@ BT_GATT_SERVICE_DEFINE(_2_gap_svc,
 #else
 			       BT_GATT_PERM_WRITE,
 #endif
-			       read_name, write_name, bt_dev.name),
+			       read_name, write_name, NULL),
 #else
 	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_DEVICE_NAME, BT_GATT_CHRC_READ,
 			       BT_GATT_PERM_READ, read_name, NULL, NULL),
