@@ -22,9 +22,9 @@ ZTEST(cpu_freq_soc, test_soc_pstates)
 {
 	int ret;
 
-	zassert_true(ARRAY_SIZE(soc_pstates_dt) > 0, "No p-states defined in devicetree");
+	zassert_true(ARRAY_SIZE(soc_pstates_dt) > 0, "No P-states defined in devicetree");
 
-	LOG_INF("%d p-states defined for %s", ARRAY_SIZE(soc_pstates_dt), CONFIG_BOARD_TARGET);
+	LOG_INF("%d P-states defined for %s", ARRAY_SIZE(soc_pstates_dt), CONFIG_BOARD_TARGET);
 
 	zassert_equal(cpu_freq_pstate_set(NULL), -EINVAL, "Expected -EINVAL for NULL pstate");
 
@@ -33,7 +33,7 @@ ZTEST(cpu_freq_soc, test_soc_pstates)
 
 		/* Set performance state using pstate driver */
 		ret = cpu_freq_pstate_set(state);
-		zassert_equal(ret, 0, "Failed to set p-state %d", i);
+		zassert_equal(ret, 0, "Failed to set P-state %d", i);
 	}
 }
 
