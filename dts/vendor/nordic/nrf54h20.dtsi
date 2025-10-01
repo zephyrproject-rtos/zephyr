@@ -31,7 +31,7 @@
 			device_type = "cpu";
 			clocks = <&cpuapp_hsfll>;
 			clock-frequency = <DT_FREQ_M(320)>;
-			cpu-power-states = <&idle_cache_disabled &s2ram>;
+			cpu-power-states = <&idle_cache_retained &idle_cache_disabled &s2ram>;
 		};
 
 		cpurad: cpu@3 {
@@ -40,7 +40,7 @@
 			device_type = "cpu";
 			clocks = <&cpurad_hsfll>;
 			clock-frequency = <DT_FREQ_M(256)>;
-			cpu-power-states = <&idle_cache_disabled>;
+			cpu-power-states = <&idle_cache_retained &idle_cache_disabled>;
 		};
 
 		cpuppr: cpu@d {
@@ -130,7 +130,13 @@
 
 		power-states {
 			// substate-id = <0>; is reserved for "idle", cache powered on
-			// substate-id = <1>; is reserved for "idle-cache-retained"
+			idle_cache_retained: idle_cache_retained {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <1>;
+				min-residency-us = <700>;
+				exit-latency-us = <5>;
+			};
 			idle_cache_disabled: idle_cache_disabled {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";

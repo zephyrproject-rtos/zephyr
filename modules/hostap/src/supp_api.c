@@ -1598,6 +1598,13 @@ int supplicant_candidate_scan(const struct device *dev, struct wifi_scan_params 
 	char *pos = cmd;
 	char *end = pos + SUPPLICANT_CANDIDATE_SCAN_CMD_BUF_SIZE;
 	int freq = 0;
+	struct wpa_supplicant *wpa_s;
+
+	wpa_s = get_wpa_s_handle(dev);
+	if (!wpa_s) {
+		wpa_printf(MSG_ERROR, "Device %s not found", dev->name);
+		return -1;
+	}
 
 	strcpy(pos, "freq=");
 	pos += 5;

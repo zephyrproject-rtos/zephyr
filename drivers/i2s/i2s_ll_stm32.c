@@ -284,6 +284,25 @@ static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 	return 0;
 }
 
+static const struct i2s_config *i2s_stm32_config_get(const struct device *dev,
+						     enum i2s_dir dir)
+{
+	struct i2s_stm32_data *const dev_data = dev->data;
+	struct stream *stream = NULL;
+
+	if (dir == I2S_DIR_RX) {
+		stream = &dev_data->rx;
+	} else if (dir == I2S_DIR_TX) {
+		stream = &dev_data->tx;
+	}
+
+	if (stream != NULL && stream->state != I2S_STATE_NOT_READY) {
+		return &stream->cfg;
+	}
+
+	return NULL;
+}
+
 static int i2s_stm32_trigger(const struct device *dev, enum i2s_dir dir,
 			     enum i2s_trigger_cmd cmd)
 {
@@ -441,6 +460,7 @@ static int i2s_stm32_write(const struct device *dev, void *mem_block,
 
 static DEVICE_API(i2s, i2s_stm32_driver_api) = {
 	.configure = i2s_stm32_configure,
+	.config_get = i2s_stm32_config_get,
 	.read = i2s_stm32_read,
 	.write = i2s_stm32_write,
 	.trigger = i2s_stm32_trigger,

@@ -2009,7 +2009,7 @@ static struct adc_stm32_data adc_stm32_data_##index = {			\
 PM_DEVICE_DT_INST_DEFINE(index, adc_stm32_pm_action);			\
 									\
 DEVICE_DT_INST_DEFINE(index,						\
-		    &adc_stm32_init, PM_DEVICE_DT_INST_GET(index),	\
+		    adc_stm32_init, PM_DEVICE_DT_INST_GET(index),	\
 		    &adc_stm32_data_##index, &adc_stm32_cfg_##index,	\
 		    POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,		\
 		    &api_stm32_driver_api);

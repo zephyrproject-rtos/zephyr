@@ -142,3 +142,8 @@ static inline bool valid_bis_syncs(uint32_t bis_sync)
 
 	return true;
 }
+
+bool bt_bap_broadcast_sink_has_ep(const struct bt_bap_ep *ep);
+bool bt_bap_broadcast_source_has_ep(const struct bt_bap_ep *ep);
+bool bt_bap_unicast_client_has_ep(const struct bt_bap_ep *ep);
+bool bt_bap_unicast_server_has_ep(const struct bt_bap_ep *ep);

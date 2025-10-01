@@ -946,10 +946,10 @@ int bt_bap_broadcast_sink_register_cb(struct bt_bap_broadcast_sink_cb *cb)
 	return 0;
 }
 
-bool bt_bap_ep_is_broadcast_snk(const struct bt_bap_ep *ep)
+bool bt_bap_broadcast_sink_has_ep(const struct bt_bap_ep *ep)
 {
 	for (int i = 0; i < ARRAY_SIZE(broadcast_sink_eps); i++) {
-		if (PART_OF_ARRAY(broadcast_sink_eps[i], ep)) {
+		if (IS_ARRAY_ELEMENT(broadcast_sink_eps[i], ep)) {
 			return true;
 		}
 	}

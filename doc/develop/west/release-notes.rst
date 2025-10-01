@@ -3,6 +3,26 @@
 West Release Notes
 ##################
 
+v1.5.0
+******
+
+Major changes:
+
+- Add support for auto-caching.
+  Pass the ``--auto-cache <directory>`` argument to ``west update``.
+
+Other changes:
+
+- Allow combining ``--name-cache`` and ``--path-cache`` for ``west update``.
+
+- Document default revision value in the manifest schema.
+
+Bug fixes:
+
+- Allow empty or missing manifest projects list.
+
+- Make ``manifest.group-filter`` list order deterministic when freezing or resolving manifest files.
+
 v1.4.0
 ******
 

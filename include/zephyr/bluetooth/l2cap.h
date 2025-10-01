@@ -139,6 +139,27 @@ extern "C" {
  */
 #define BT_L2CAP_ECRED_CHAN_MAX_PER_REQ 5
 
+/**
+ * @defgroup l2cap_cid L2CAP channel identifiers
+ * @ingroup bt_l2cap
+ * @{
+ *
+ *  @brief Standard L2CAP channel identifiers
+ */
+
+/** @brief BR signaling channel */
+#define BT_L2CAP_CID_BR_SIG             0x0001
+/** @brief Attribute Protocol channel */
+#define BT_L2CAP_CID_ATT                0x0004
+/** @brief LE signaling channel */
+#define BT_L2CAP_CID_LE_SIG             0x0005
+/** @brief Security Manager Protocol channel */
+#define BT_L2CAP_CID_SMP                0x0006
+/** @brief BR Security Manager Protocol channel */
+#define BT_L2CAP_CID_BR_SMP             0x0007
+
+/** @} */
+
 struct bt_l2cap_chan;
 
 /** @typedef bt_l2cap_chan_destroy_t
@@ -289,6 +310,68 @@ struct bt_l2cap_le_chan {
  *          the address of in question object.
  */
 #define BT_L2CAP_LE_CHAN(_ch) CONTAINER_OF(_ch, struct bt_l2cap_le_chan, chan)
+
+/** @brief Fixed L2CAP Channel structure. Should be defined using the
+ *  @ref BT_L2CAP_FIXED_CHANNEL_DEFINE macro.
+ */
+struct bt_l2cap_fixed_chan {
+	/** @brief Channel Identifier (CID)
+	 *
+	 *  @note Shall be in the range 0x0001 to 0x003F (Core 3.A.2.1 v6.0). The CIDs in this range
+	 *        are reserved by the stack, so the application needs to make sure that the CID is
+	 *        not already in use. Table 2.1 in Core 3.A.2.1 and @ref l2cap_cid shows the
+	 *        CIDs used by the stack.
+	 */
+	uint16_t cid;
+
+	/** @brief Channel accept callback
+	 *
+	 *  This callback needs to be provided by the application, and is invoked when a new
+	 *  connection has been established. If accepting the connection, the user is expected to
+	 *  allocate memory with suitable alignment for the type @ref bt_l2cap_chan for the channel,
+	 *  and update the channel reference @p chan to point to the allocated memory. The channel
+	 *  should be initialized by assigning the callbacks to the @ref bt_l2cap_chan_ops field
+	 *  as follows:
+	 *  @code
+	 *  static int accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
+	 *  {
+	 *      // Allocation of fixed_chan and definition of the ops are assumed done prior.
+	 *      *chan = &fixed_chan;
+	 *
+	 *      **chan = (struct bt_l2cap_chan){
+	 *          .ops = &ops,
+	 *      };
+	 *
+	 *      return 0;
+	 *  }
+	 *  @endcode
+	 *  The allocated context needs to be valid for the lifetime of the channel, i. e.
+	 *  freeing of the memory can be done in the @ref bt_l2cap_chan_ops.released callback.
+	 *
+	 *  @param conn The connection that has been established.
+	 *  @param chan L2CAP channel reference.
+	 *
+	 *  @return 0 to accept the channel connection, negative error code otherwise.
+	 */
+	int (*accept)(struct bt_conn *conn, struct bt_l2cap_chan **chan);
+};
+
+/**
+ *  @brief Register a fixed L2CAP channel.
+ *
+ *  Define and register a fixed L2CAP channel of type @ref bt_l2cap_fixed_chan.
+ *
+ *  @note Fixed L2CAP channels are according to the Core Specification (3.A.2.1 v6.0) reserved
+ *        for the stack, but this allows the application to define their own, for instance if there
+ *        are memory constraints and dynamic channels are not suitable. The application needs to
+ *        make sure that the CID for the fixed channel is not already in use.
+ *
+ *  @param _name Name of the fixed L2CAP channel. The channels are sorted lexicographically, and
+ *  will be initialized in the same order.
+ */
+#define BT_L2CAP_FIXED_CHANNEL_DEFINE(_name)                                                       \
+	static const STRUCT_SECTION_ITERABLE(bt_l2cap_fixed_chan,                                  \
+					     _CONCAT(bt_l2cap_fixed_chan, _name))
 
 /** L2CAP Endpoint Link Mode. Basic mode. */
 #define BT_L2CAP_BR_LINK_MODE_BASIC  0x00
@@ -910,23 +993,21 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan);
 
 /** @brief Send data to L2CAP channel
  *
- *  Send data from buffer to the channel. If credits are not available, buf will
- *  be queued and sent as and when credits are received from peer.
- *  Regarding to first input parameter, to get details see reference description
- *  to bt_l2cap_chan_connect() API above.
+ *  Send data from buffer to the channel. For dynamic channels; if credits are
+ *  not available, buf will be queued and sent as and when credits are received
+ *  from peer.
  *
  *  Network buffer fragments (ie `buf->frags`) are not supported.
  *
- *  When sending L2CAP data over an BR/EDR connection the application is sending
- *  L2CAP PDUs. The application is required to have reserved
- *  @ref BT_L2CAP_CHAN_SEND_RESERVE bytes in the buffer before sending.
- *  The application should use the BT_L2CAP_BUF_SIZE() helper to correctly
- *  size the buffers for the for the outgoing buffer pool.
+ *  When sending L2CAP data over an BR/EDR connection or a fixed L2CAP channel,
+ *  the application is sending L2CAP PDUs. The application is required to have
+ *  reserved @ref BT_L2CAP_CHAN_SEND_RESERVE bytes in the buffer before sending.
+ *  The application should use the BT_L2CAP_BUF_SIZE() helper to correctly size
+ *  the buffers for the for the outgoing buffer pool.
  *
- *  When sending L2CAP data over an LE connection the application is sending
- *  L2CAP SDUs. The application shall reserve
+ *  When sending L2CAP data over a dynamic L2CAP channel, the application is
+ *  sending L2CAP SDUs. The application shall reserve
  *  @ref BT_L2CAP_SDU_CHAN_SEND_RESERVE bytes in the buffer before sending.
- *
  *  The application can use the BT_L2CAP_SDU_BUF_SIZE() helper to correctly size
  *  the buffer to account for the reserved headroom.
  *
@@ -942,9 +1023,13 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan);
  *  @note Buffer ownership is transferred to the stack in case of success, in
  *  case of an error the caller retains the ownership of the buffer.
  *
+ *  @param chan The channel to send the data to. See @ref bt_l2cap_chan_connect
+ *              for more details.
+ *  @param buf Buffer containing the data.
+ *
  *  @return 0 in case of success or negative value in case of error.
  *  @return -EINVAL if `buf` or `chan` is NULL.
- *  @return -EINVAL if `chan` is not either BR/EDR or LE credit-based.
+ *  @return -EINVAL if `chan` is not either BR/EDR or LE based.
  *  @return -EINVAL if buffer doesn't have enough bytes reserved to fit header.
  *  @return -EINVAL if buffer's reference counter != 1
  *  @return -EMSGSIZE if `buf` is larger than `chan`'s MTU.

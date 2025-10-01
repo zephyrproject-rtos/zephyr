@@ -36,3 +36,9 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
     extra_configs:
       - CONFIG_MSPI_DW_HANDLE_FIFOS_IN_SYSTEM_WORKQUEUE=y
+  drivers.mspi.flash.mspi_nor_no_multithreading:
+    filter: dt_alias_exists("mspi0") and CONFIG_FLASH_MSPI_NOR
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+    extra_configs:
+      - CONFIG_MULTITHREADING=n

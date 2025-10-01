@@ -67,6 +67,7 @@ endfunction()
 if(CMAKE_VERBOSE_MAKEFILE)
 endif()
 
+set(protectedmem_args)
 set(periphconf_args)
 set(periphconf_elfs)
 set(merged_hex_file ${APPLICATION_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.hex)
@@ -104,6 +105,12 @@ if(CONFIG_GEN_UICR_SECURESTORAGE)
   list(APPEND securestorage_args --cpurad-its-address ${CPURAD_ITS_ADDRESS})
   list(APPEND securestorage_args --cpurad-its-size ${CPURAD_ITS_SIZE})
 endif(CONFIG_GEN_UICR_SECURESTORAGE)
+
+# Handle protected memory configuration
+if(CONFIG_GEN_UICR_PROTECTEDMEM)
+  list(APPEND protectedmem_args --protectedmem)
+  list(APPEND protectedmem_args --protectedmem-size-bytes ${CONFIG_GEN_UICR_PROTECTEDMEM_SIZE_BYTES})
+endif()
 
 if(CONFIG_GEN_UICR_GENERATE_PERIPHCONF)
   # gen_uicr.py parses all zephyr.elf files. To find these files (which
@@ -154,6 +161,7 @@ if(CONFIG_GEN_UICR_SECONDARY)
 
   list(APPEND secondary_args
     --secondary-address ${SECONDARY_ADDRESS}
+    --secondary-processor ${CONFIG_GEN_UICR_SECONDARY_PROCESSOR_VALUE}
     )
 
   if(CONFIG_GEN_UICR_SECONDARY_GENERATE_PERIPHCONF)
@@ -180,6 +188,7 @@ add_custom_command(
           --out-uicr-hex ${uicr_hex_file}
           ${periphconf_args}
           ${securestorage_args}
+          ${protectedmem_args}
           ${secondary_args}
   DEPENDS ${periphconf_elfs} ${secondary_periphconf_elfs}
   WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}

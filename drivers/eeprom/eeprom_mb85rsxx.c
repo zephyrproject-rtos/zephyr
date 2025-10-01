@@ -306,7 +306,7 @@ static DEVICE_API(eeprom, mb85rsxx_driver_api) = {
                                                                                                    \
 	static const struct eeprom_mb85rsxx_config eeprom_mb85rsxx_config_##inst = {             \
 		.spi = SPI_DT_SPEC_INST_GET(                                                       \
-			inst, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 0),         \
+			inst, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8)),            \
 		.size = DT_INST_PROP(inst, size),                                                  \
 		.readonly = DT_INST_PROP(inst, read_only),                                         \
 	};                                                                                         \

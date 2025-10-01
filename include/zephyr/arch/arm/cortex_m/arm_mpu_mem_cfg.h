@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited.
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -89,6 +90,32 @@
 #else
 #error "Unsupported sram size configuration"
 #endif
+
+/* Define Wrong value  */
+#define REGION_SIZE_UNSUPPORTED -1
+
+/* Customed Memory Region Definitions  */
+#define REGION_CUSTOMED_MEMORY_SIZE(size_kb) \
+	((size_kb) <= 16      ? REGION_16K : \
+	(size_kb) <= 32       ? REGION_32K : \
+	(size_kb) <= 64       ? REGION_64K : \
+	(size_kb) <= 128      ? REGION_128K : \
+	(size_kb) <= 256      ? REGION_256K : \
+	(size_kb) <= 512      ? REGION_512K : \
+	(size_kb) <= 1024     ? REGION_1M : \
+	(size_kb) <= 2048     ? REGION_2M : \
+	(size_kb) <= 4096     ? REGION_4M : \
+	(size_kb) <= 8192     ? REGION_8M : \
+	(size_kb) <= 16384    ? REGION_16M : \
+	(size_kb) <= 32768    ? REGION_32M : \
+	(size_kb) <= 65536    ? REGION_64M : \
+	(size_kb) <= 131072   ? REGION_128M : \
+	(size_kb) <= 262144   ? REGION_256M : \
+	(size_kb) <= 524288   ? REGION_512M : \
+	(size_kb) <= 1048576  ? REGION_1G : \
+	(size_kb) <= 2097152  ? REGION_2G : \
+	(size_kb) <= 4194304  ? REGION_4G : \
+	REGION_SIZE_UNSUPPORTED)
 
 #endif /* !ARMV8_M_BASELINE && !ARMV8_M_MAINLINE */
 

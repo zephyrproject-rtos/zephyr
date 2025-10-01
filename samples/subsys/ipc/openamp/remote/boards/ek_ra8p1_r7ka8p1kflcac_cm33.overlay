@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &sram0;
+/delete-node/ &sram1;
+
+/ {
+	chosen {
+		/*
+		 * shared memory reserved for the inter-processor communication
+		 */
+
+		zephyr,ipc_shm = &sram_shm;
+		zephyr,ipc = &ipm0;
+	};
+
+	soc {
+		ipm0: mbox-ipm {
+			compatible = "zephyr,mbox-ipm";
+			mboxes = <&mbox0 0>, <&mbox0 0>;
+			mbox-names = "rx", "tx";
+			status = "okay";
+		};
+	};
+};
+
+&sram {
+	/* Redefine sram regions for CPU0 */
+	sram0: sram@22000000 {
+		reg = <0x22000000 0xe6000>;
+	};
+
+	/* Redefine sram regions for CPU1 */
+	sram1: sram@220e6000 {
+		reg = <0x220e6000 0xe6000>;
+	};
+
+	/* Define shared memory regions for IPC */
+	sram_shm: sram@221cc000 {
+		reg = <0x221cc000 0x8000>;
+	};
+};
+
+&mbox0 {
+	interrupts = <94 1>;
+	status = "okay";
+};

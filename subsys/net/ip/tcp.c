@@ -365,12 +365,13 @@ static size_t tcp_data_len(struct net_pkt *pkt)
 	return len > 0 ? (size_t)len : 0;
 }
 
-static const char *tcp_th(struct net_pkt *pkt)
+static const char *tcp_th(struct net_pkt *pkt, uint32_t *seq_ptr, uint32_t *ack_ptr)
 {
 #define BUF_SIZE 80
 	static char buf[BUF_SIZE];
 	int len = 0;
 	struct tcphdr *th = th_get(pkt);
+	uint32_t seq, ack;
 
 	buf[0] = '\0';
 
@@ -380,12 +381,28 @@ static const char *tcp_th(struct net_pkt *pkt)
 		goto end;
 	}
 
+	seq = th_seq(th);
+
 	len += snprintk(buf + len, BUF_SIZE - len,
-			"%s Seq=%u", tcp_flags(th_flags(th)), th_seq(th));
+			"%s Seq=%u{%u}", tcp_flags(th_flags(th)),
+			ack_ptr != NULL ? (uint32_t)(seq - *ack_ptr) : 0U,
+			seq);
 
 	if (th_flags(th) & ACK) {
+		ack = th_ack(th);
+
 		len += snprintk(buf + len, BUF_SIZE - len,
-				" Ack=%u", th_ack(th));
+				" Ack=%u{%u}",
+				seq_ptr != NULL ? (uint32_t)(ack - *seq_ptr) : 0U,
+				ack);
+
+		if (seq_ptr != NULL) {
+			*seq_ptr = ack;
+		}
+	}
+
+	if (ack_ptr != NULL) {
+		*ack_ptr = seq;
 	}
 
 	len += snprintk(buf + len, BUF_SIZE - len,
@@ -1047,10 +1064,13 @@ static const char *tcp_conn_state(struct tcp *conn, struct net_pkt *pkt)
 {
 #define BUF_SIZE 160
 	static char buf[BUF_SIZE];
+	uint32_t seq = conn->isn, ack = conn->isn_peer;
 
-	snprintk(buf, BUF_SIZE, "%s [%s Seq=%u Ack=%u]", pkt ? tcp_th(pkt) : "",
-			tcp_state_to_str(conn->state, false),
-			conn->seq, conn->ack);
+	snprintk(buf, BUF_SIZE, "%s [%s Seq=%u{%u} Ack=%u{%u}]",
+		 pkt ? tcp_th(pkt, &seq, &ack) : "",
+		 tcp_state_to_str(conn->state, false),
+		 conn->seq - seq, conn->seq,
+		 conn->ack - ack, conn->ack);
 #undef BUF_SIZE
 	return buf;
 }
@@ -1523,7 +1543,7 @@ void net_tcp_reply_rst(struct net_pkt *pkt)
 		goto err;
 	}
 
-	NET_DBG("%s", tcp_th(rst));
+	NET_DBG("%s", tcp_th(rst, NULL, NULL));
 
 	tcp_send(rst);
 
@@ -2520,6 +2540,8 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 		conn->seq = tcp_init_isn(&local_addr, &context->remote);
 	}
 
+	conn->isn = conn->seq;
+
 	NET_DBG("[%p] local: %s, remote: %s", conn,
 		net_sprint_addr(local_addr.sa_family,
 				(const void *)&net_sin(&local_addr)->sin_addr),
@@ -3071,6 +3093,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 
 			/* Make sure our MSS is also sent in the ACK */
 			conn->send_options.mss_found = true;
+			conn->isn_peer = th_seq(th);
 			conn_ack(conn, th_seq(th) + 1); /* capture peer's isn */
 			tcp_out(conn, SYN | ACK);
 			conn->send_options.mss_found = false;
@@ -3183,6 +3206,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		 */
 		if (FL(&fl, &, SYN | ACK, th && th_ack(th) == conn->seq)) {
 			k_work_cancel_delayable(&conn->send_data_timer);
+			conn->isn_peer = th_seq(th);
 			conn_ack(conn, th_seq(th) + 1);
 			if (len) {
 				verdict = tcp_data_get(conn, pkt, &len);
@@ -4025,6 +4049,8 @@ int net_tcp_connect(struct net_context *context,
 	 * a TCP connection to be established
 	 */
 	conn->in_connect = !IS_ENABLED(CONFIG_NET_TEST_PROTOCOL);
+
+	conn->isn = conn->seq;
 
 	ret = tcp_start_handshake(conn);
 	if (ret < 0) {

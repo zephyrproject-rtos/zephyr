@@ -35,12 +35,12 @@ extern "C" {
  * Cache line alignment is required if region is cacheable and data cache is enabled.
  */
 #define DMM_REG_ALIGN_SIZE(node_id) \
-	(DMM_IS_REG_CACHEABLE(node_id) ? CONFIG_DCACHE_LINE_SIZE : sizeof(uint8_t))
+	(DMM_IS_REG_CACHEABLE(node_id) ? CONFIG_DCACHE_LINE_SIZE : sizeof(uint32_t))
 
 #else
 
 #define DMM_IS_REG_CACHEABLE(node_id) 0
-#define DMM_REG_ALIGN_SIZE(node_id) (sizeof(uint8_t))
+#define DMM_REG_ALIGN_SIZE(node_id) (sizeof(uint32_t))
 
 #endif /* CONFIG_DCACHE */
 
@@ -164,6 +164,22 @@ int dmm_buffer_in_prepare(void *region, void *user_buffer, size_t user_length, v
 int dmm_buffer_in_release(void *region, void *user_buffer, size_t user_length, void *buffer_in);
 
 /**
+ * @brief Get statistics.
+ *
+ * Must be enabled with CONFIG_DMM_STATS.
+ *
+ * @param[in] region DMM memory region.
+ * @param[out] start_addr Location where starting address of the memory region is set. Can be null.
+ * @param[out] curr_use Location where current use in percent is written. Can be null.
+ * @param[out] max_use Location where maximum use in percent is written. Can be null.
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL Invalid region.
+ * @retval -ENOTSUP Feature is disabled.
+ */
+int dmm_stats_get(void *region, uintptr_t *start_addr, uint32_t *curr_use, uint32_t *max_use);
+
+/**
  * @brief Initialize DMM.
  *
  * @retval 0 If succeeded.
@@ -207,6 +223,17 @@ static ALWAYS_INLINE int dmm_buffer_in_release(void *region, void *user_buffer, 
 	ARG_UNUSED(user_buffer);
 	ARG_UNUSED(user_length);
 	ARG_UNUSED(buffer_in);
+	return 0;
+}
+
+static ALWAYS_INLINE int dmm_stats_get(void *region, uintptr_t *start_addr,
+				       uint32_t *curr_use, uint32_t *max_use)
+{
+	ARG_UNUSED(region);
+	ARG_UNUSED(start_addr);
+	ARG_UNUSED(curr_use);
+	ARG_UNUSED(max_use);
+
 	return 0;
 }
 

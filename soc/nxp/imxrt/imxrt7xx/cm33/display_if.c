@@ -40,10 +40,9 @@ void __weak imxrt_pre_init_display_interface(void)
 	 * source, the frequency is 532.48 * 18 / 30 = 319.49MHz, which meets the
 	 * requirement.
 	 */
-	uint32_t mipiDsiDphyBitClkFreq_Hz =
-			DT_PROP(DT_NODELABEL(lcdif), clock_frequency) /
-			DT_PROP_OR(DT_NODELABEL(lcdif), divider, 1) /
-			DT_PROP(DT_NODELABEL(lcdif), wr_period) * 16U;
+	uint32_t mipiDsiDphyBitClkFreq_Hz = DT_PROP(DT_NODELABEL(lcdif), clock_frequency) /
+					    DT_PROP_OR(DT_NODELABEL(lcdif), divider, 1) /
+					    DT_PROP(DT_NODELABEL(lcdif), wr_period) * 16U;
 #else
 	/* The DPHY bit clock must be fast enough to send out the pixels, it should be
 	 * larger than:
@@ -54,7 +53,7 @@ void __weak imxrt_pre_init_display_interface(void)
 	uint32_t mipiDsiDphyBitClkFreq_Hz = DT_PROP(DT_NODELABEL(mipi_dsi), phy_clock);
 #endif
 	uint8_t clockDiv = (uint8_t)((uint64_t)CLOCK_GetAudioPllFreq() * 18U /
-					(uint64_t)mipiDsiDphyBitClkFreq_Hz);
+				     (uint64_t)mipiDsiDphyBitClkFreq_Hz);
 
 	CLOCK_InitAudioPfd(kCLOCK_Pfd2, clockDiv);
 

@@ -170,6 +170,20 @@ arduino_serial: &uart1 {
 	current-speed = <115200>;
 };
 
+&i2c1a_scl_p2_18 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&i2c1a_sda_p2_17 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+arduino_i2c: &i2c1 {
+	status = "okay";
+	pinctrl-0 = <&i2c1a_sda_p2_17 &i2c1a_scl_p2_18>;
+	pinctrl-names = "default";
+};
+
 &spi1a_miso_p1_28 {
 	power-source = <MAX32_VSEL_VDDIOH>;
 };

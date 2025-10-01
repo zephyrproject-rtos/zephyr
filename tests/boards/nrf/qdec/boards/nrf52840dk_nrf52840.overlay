@@ -34,14 +34,14 @@
 &pinctrl {
 	qdec_pinctrl: qdec_pinctrl {
 		group1 {
-			psels = <NRF_PSEL(QDEC_A, 1, 1)>,   /* Ardiuno D0 */
+			psels = <NRF_PSEL(QDEC_A, 1, 1)>,   /* Arduino D0 */
 				<NRF_PSEL(QDEC_B, 1, 3)>;   /* Arduino D2 */
 		};
 	};
 
 	qdec_sleep_pinctrl: qdec_sleep_pinctrl {
 		group1 {
-			psels = <NRF_PSEL(QDEC_A, 1, 1)>,   /* Ardiuno D0 */
+			psels = <NRF_PSEL(QDEC_A, 1, 1)>,   /* Arduino D0 */
 				<NRF_PSEL(QDEC_B, 1, 3)>;   /* Arduino D2 */
 			low-power-enable;
 		};

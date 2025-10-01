@@ -262,6 +262,11 @@
 		pinmux = <K3_PINMUX(0x01D0, PIN_INPUT, MUX_MODE_7)>;
 	};
 
+	P2_09_A15_i2c3_scl: P2-09-A15-i2c3-scl-pins {
+		/* (A15) UART0_CTSn.I2C3_SCL */
+		pinmux = <K3_PINMUX(0x01D0, PIN_INPUT_PULLUP, MUX_MODE_2)>;
+	};
+
 	P2_10_gpio: P2-10-gpio-pins {
 		/* (AD21) RGMII2_TD2.GPIO0_91 */
 		pinmux = <K3_PINMUX(0x0174, PIN_INPUT, MUX_MODE_7)>;
@@ -270,6 +275,11 @@
 	P2_11_B15_gpio: P2-11-B15-gpio-pins {
 		/* (B15) UART0_RTSn.GPIO1_23 */
 		pinmux = <K3_PINMUX(0x01D4, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_11_B15_i2c3_sda: P2-11-B15-i2c3-sda-pins {
+		/* (B15) UART0_RTSn.I2C3_SDA */
+		pinmux = <K3_PINMUX(0x01D4, PIN_INPUT_PULLUP, MUX_MODE_2)>;
 	};
 
 	P2_17_gpio: P2-17-gpio-pins {

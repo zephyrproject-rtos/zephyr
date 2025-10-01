@@ -104,8 +104,7 @@ static int max6675_init(const struct device *dev)
 	static const struct max6675_config max6675_config_##n = {	\
 		.spi = SPI_DT_SPEC_INST_GET(n,				\
 					    SPI_OP_MODE_MASTER |	\
-					    SPI_WORD_SET(8U),		\
-					    0U),			\
+					    SPI_WORD_SET(8U)),		\
 	};								\
 	SENSOR_DEVICE_DT_INST_DEFINE(n, &max6675_init, NULL,		\
 			      &max6675_data_##n, &max6675_config_##n,	\

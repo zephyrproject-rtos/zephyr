@@ -55,6 +55,12 @@ module = MODEM_CMUX
 module-str = modem_cmux
 source "subsys/logging/Kconfig.template.log_config"
 
+config MODEM_CMUX_LOG_FRAMES
+	bool "Log CMUX frames"
+	depends on MODEM_CMUX_LOG_LEVEL_DBG
+	help
+	  Enable logging of CMUX frames. This can produce a lot of log data.
+
 endif
 
 config MODEM_PIPE
@@ -71,6 +77,7 @@ config MODEM_PPP
 	select MODEM_PIPE
 	select RING_BUFFER
 	select CRC
+	select PM_DEVICE_RUNTIME_ASYNC if PM_DEVICE_RUNTIME
 
 if MODEM_PPP
 

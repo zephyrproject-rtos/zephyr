@@ -421,8 +421,7 @@ static DEVICE_API(sensor, icp201xx_api_funcs) = {.sample_fetch = icp201xx_sample
 		.bus.spi = SPI_DT_SPEC_INST_GET(inst,                      \
 			(SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |    \
 			SPI_TRANSFER_MSB | SPI_FULL_DUPLEX |      \
-			SPI_MODE_CPHA | SPI_MODE_CPOL),           \
-			0),                                        \
+			SPI_MODE_CPHA | SPI_MODE_CPOL)), \
 		.bus_io = &icp201xx_bus_io_spi,                            \
 		ICP201XX_CONFIG(inst)                                          \
 	}

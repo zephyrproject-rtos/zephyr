@@ -111,6 +111,7 @@ target_compile_options(test_interface INTERFACE
   $<$<COMPILE_LANGUAGE:CXX>:${EXTRA_CXXFLAGS_AS_LIST}>
   $<$<COMPILE_LANGUAGE:ASM>:${EXTRA_AFLAGS_AS_LIST}>
   -Wno-format-zero-length
+  -Wshadow
   )
 
 target_link_options(testbinary PRIVATE

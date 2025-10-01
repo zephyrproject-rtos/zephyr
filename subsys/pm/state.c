@@ -152,3 +152,20 @@ int pm_state_from_str(const char *name, enum pm_state *out)
 
 	return 0;
 }
+
+bool pm_state_in_constraints(const struct pm_state_constraints *constraints,
+			     const struct pm_state_constraint match)
+{
+	struct pm_state_constraint *constraints_list = constraints->list;
+	size_t num_constraints = constraints->count;
+	bool match_found = false;
+
+	for (int i = 0; i < num_constraints; i++) {
+		enum pm_state state = constraints_list[i].state;
+		uint8_t substate = constraints_list[i].substate_id;
+
+		match_found |= ((state == match.state) && (substate == match.substate_id));
+	}
+
+	return match_found;
+}

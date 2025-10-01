@@ -1,0 +1,43 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/mcux-lpadc.h>
+
+/ {
+	zephyr,user {
+		opamp = <&opamp0>;
+		adc-read-delay-ms = <1>;
+		io-channels = <&adc0 0>;
+	};
+};
+
+&opamp0 {
+	enable-measure-output;
+	functional-mode = "inverting";
+	non-inverting-reference = "Input1";
+	programmable-gain = "OPAMP_GAIN_1",
+			"OPAMP_GAIN_2",
+			"OPAMP_GAIN_4";
+};
+
+&adc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	voltage-ref= <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_EXTERNAL0";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		/* LPADC0 CH0A is internally connected to the operational amplifier output. */
+		zephyr,input-positive = <MCUX_LPADC_CH0A>;
+	};
+};

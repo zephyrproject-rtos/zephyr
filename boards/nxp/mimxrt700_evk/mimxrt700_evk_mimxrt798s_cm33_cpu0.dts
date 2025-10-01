@@ -336,6 +336,33 @@ zephyr_lcdif: &lcdif {};
 		jedec-id = [c2 81 3a];
 		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <2>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/*
+			 * Partition sizes must be aligned
+			 * to the flash memory sector size of 4KB.
+			 */
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x00000000 DT_SIZE_K(128)>;
+			};
+			slot0_partition: partition@20000 {
+				label = "image-0";
+				reg = <0x00020000 DT_SIZE_M(7)>;
+			};
+			slot1_partition: partition@720000 {
+				label = "image-1";
+				reg = <0x00720000 DT_SIZE_M(7)>;
+			};
+			storage_partition: partition@E20000 {
+				label = "storage";
+				reg = <0x00E20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
+			};
+		};
 	};
 };
 
@@ -386,7 +413,11 @@ p3t1755dp_ard_i2c_interface: &flexcomm8_lpi2c8 {};
 	status = "okay";
 };
 
-&mbox4 {
+&mbox1_a {
+	status = "okay";
+};
+
+&mbox4_a {
 	status = "okay";
 };
 

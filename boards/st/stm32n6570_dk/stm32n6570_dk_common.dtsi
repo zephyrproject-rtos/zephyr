@@ -41,9 +41,15 @@
 
 	psram: memory@90000000 {
 		compatible = "zephyr,memory-region";
-		reg = <0x90000000 DT_SIZE_M(32)>;
+		/*
+		 * Prevent access to the last 32bytes of the memory-mapped device
+		 * Issue described in the STM32N6xxxx errata sheet ES0620 Rev 1:
+		 * 2.4.5 Deadlock or data corruption when DQS is enabled and the
+		 * wrap request includes the last address of the memory
+		 */
+		reg = <0x90000000 (DT_SIZE_M(32) - 32)>;
 		zephyr,memory-region = "PSRAM";
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 
 	leds: leds {

@@ -903,6 +903,20 @@ struct bt_cap_handover_cb {
 	void (*unicast_to_broadcast_complete)(int err, struct bt_conn *conn,
 					      struct bt_cap_unicast_group *unicast_group,
 					      struct bt_cap_broadcast_source *broadcast_source);
+
+	/**
+	 * @brief The broadcast to unicast handover procedure has finished
+	 *
+	 * @param err 0 if success else a negative errno value.
+	 * @param conn Pointer to the connection where the error occurred or NULL if local failure.
+	 * @param broadcast_source NULL if the broadcast sourced was deleted during the procedure,
+	 *                         else pointer to the broadcast sourced provided in the parameters.
+	 * @param unicast_group Pointer to newly created unicast group, or NULL in case of an
+	 *                      error happening before it was created.
+	 */
+	void (*broadcast_to_unicast_complete)(int err, struct bt_conn *conn,
+					      struct bt_cap_broadcast_source *broadcast_source,
+					      struct bt_cap_unicast_group *unicast_group);
 };
 
 /**
@@ -947,26 +961,45 @@ int bt_cap_handover_unicast_to_broadcast(
 /** Parameters for  bt_cap_handover_broadcast_to_unicast() */
 struct bt_cap_handover_broadcast_to_unicast_param {
 	/**
+	 * @brief Parameters for stopping broadcast audio reception on acceptors
+	 *
+	 * This parameter is optional as stopping the broadcast audio should automatically stop
+	 * broadcast audio reception on the acceptors. Omitting this parameter will rely on the CAP
+	 * acceptors timing out on the BIG once it is stopped. The timeout on the CAP acceptors will
+	 * be between @ref BT_ISO_SYNC_TIMEOUT_MIN and @ref BT_ISO_SYNC_TIMEOUT_MAX.
+	 */
+	struct bt_cap_commander_broadcast_reception_stop_param *reception_stop_param;
+
+	/** @brief Broadcast ID of the @p broadcast_source
+	 *
+	 * Ignored if @p reception_stop_param is not NULL.
+	 */
+	uint32_t broadcast_id;
+
+	/** @brief Advertising set ID of the @p broadcast_source
+	 *
+	 * Ignored if @p reception_stop_param is not NULL.
+	 */
+	uint8_t adv_sid;
+
+	/** @brief Advertising type of the advertising address of @p broadcast_source
+	 *
+	 * Ignored if @p reception_stop_param is not NULL.
+	 */
+	uint8_t adv_type;
+
+	/**
 	 * @brief The source broadcast source with the streams.
 	 *
 	 * The broadcast source will be stopped and deleted.
 	 */
 	struct bt_cap_broadcast_source *broadcast_source;
 
-	/** The type of the set. */
-	enum bt_cap_set_type type;
+	/* Parameters for the unicast group to be created */
+	struct bt_cap_unicast_group_param *unicast_group_param;
 
-	/**
-	 * @brief The number of set members in @p members.
-	 *
-	 * This value shall match the number of streams in the
-	 * @p broadcast_source.
-	 *
-	 */
-	size_t count;
-
-	/** Coordinated or ad-hoc set members. */
-	union bt_cap_set_member **members;
+	/* Parameters for starting the unicast audio */
+	struct bt_cap_unicast_audio_start_param *unicast_start_param;
 };
 
 /**
@@ -978,13 +1011,11 @@ struct bt_cap_handover_broadcast_to_unicast_param {
  * @kconfig_dep{CONFIG_BT_CAP_HANDOVER}
  *
  * @param[in]  param          The parameters for the handover.
- * @param[out] unicast_group  The resulting broadcast source.
  *
  * @return 0 on success or negative error value on failure.
  */
 int bt_cap_handover_broadcast_to_unicast(
-	const struct bt_cap_handover_broadcast_to_unicast_param *param,
-	struct bt_bap_unicast_group **unicast_group);
+	const struct bt_cap_handover_broadcast_to_unicast_param *param);
 
 /** Callback structure for CAP procedures */
 struct bt_cap_commander_cb {

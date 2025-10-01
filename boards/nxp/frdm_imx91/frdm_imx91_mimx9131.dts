@@ -1,0 +1,37 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_mimx91.dtsi>
+#include "frdm_imx91-pinctrl.dtsi"
+
+/ {
+	model = "NXP FRDM-IMX91 A55";
+	compatible = "fsl,mimx91";
+
+	chosen {
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+		zephyr,sram = &dram;
+	};
+
+	dram: memory@80000000 {
+		reg = <0x80000000 DT_SIZE_M(1)>;
+	};
+
+};
+
+&lpuart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+};
+
+&tpm2 {
+	status = "okay";
+};

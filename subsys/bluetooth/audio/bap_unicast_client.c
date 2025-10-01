@@ -441,7 +441,7 @@ static struct bt_iso_chan_ops unicast_client_iso_ops = {
 	.disconnected = unicast_client_iso_disconnected,
 };
 
-bool bt_bap_ep_is_unicast_client(const struct bt_bap_ep *ep)
+bool bt_bap_unicast_client_has_ep(const struct bt_bap_ep *ep)
 {
 	for (size_t i = 0U; i < ARRAY_SIZE(uni_cli_insts); i++) {
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
@@ -2039,7 +2039,6 @@ int bt_bap_unicast_client_ep_qos(struct bt_bap_ep *ep, struct net_buf_simple *bu
 
 	req = net_buf_simple_add(buf, sizeof(*req));
 	req->ase = ep->id;
-	/* TODO: don't hardcode CIG and CIS, they should come from ISO */
 	req->cig = conn_iso->info.unicast.cig_id;
 	req->cis = conn_iso->info.unicast.cis_id;
 	sys_put_le24(qos->interval, req->interval);

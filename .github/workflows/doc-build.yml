@@ -32,7 +32,7 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
     - name: Check if Documentation related files changed
-      uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c # v46.0.5
+      uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47.0.0
       id: check-doc-files
       with:
         files: |
@@ -108,7 +108,7 @@ jobs:
         cache-dependency-path: doc/requirements.txt
 
     - name: Setup Zephyr project
-      uses: zephyrproject-rtos/action-zephyr-setup@6a744370a22e4ecb24f5dda3c7e80ff3e0a3b847 # v1.0.8
+      uses: zephyrproject-rtos/action-zephyr-setup@c125c5ebeeadbd727fa740b407f862734af1e52a # v1.0.9
       with:
         app-path: zephyr
         toolchains: 'all'
@@ -227,7 +227,7 @@ jobs:
         echo "/opt/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
 
     - name: Setup Zephyr project
-      uses: zephyrproject-rtos/action-zephyr-setup@6a744370a22e4ecb24f5dda3c7e80ff3e0a3b847 # v1.0.8
+      uses: zephyrproject-rtos/action-zephyr-setup@c125c5ebeeadbd727fa740b407f862734af1e52a # v1.0.9
       with:
         app-path: zephyr
         toolchains: 'arm-zephyr-eabi'

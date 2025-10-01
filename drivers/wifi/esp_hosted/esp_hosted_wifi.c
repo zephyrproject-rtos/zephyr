@@ -24,7 +24,7 @@ static esp_hosted_config_t esp_hosted_config = {
 	.reset_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
 	.dataready_gpio = GPIO_DT_SPEC_INST_GET(0, dataready_gpios),
 	.handshake_gpio = GPIO_DT_SPEC_INST_GET(0, handshake_gpios),
-	.spi_bus = SPI_DT_SPEC_INST_GET(0, ESP_HOSTED_SPI_CONFIG, 10U)};
+	.spi_bus = SPI_DT_SPEC_INST_GET(0, ESP_HOSTED_SPI_CONFIG)};
 
 static esp_hosted_data_t esp_hosted_data = {0};
 

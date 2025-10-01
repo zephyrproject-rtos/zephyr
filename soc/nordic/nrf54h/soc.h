@@ -36,4 +36,11 @@
 #define RAMBLOCK_RET2_BIT_DCACHE MEMCONF_POWER_RET2_MEM7_Pos
 #endif
 
+/**
+ * @brief Enable or disable the retention for cache RAM blocks.
+ *
+ * @param enable True if the retention is to be enabled, false otherwise.
+ */
+void nrf_soc_memconf_retain_set(bool enable);
+
 #endif /* SOC_ARM_NORDIC_NRF_NRF54H_SOC_H_ */

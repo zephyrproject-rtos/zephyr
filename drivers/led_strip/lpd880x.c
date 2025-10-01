@@ -146,7 +146,7 @@ static int lpd880x_strip_init(const struct device *dev)
 }
 
 static const struct lpd880x_config lpd880x_config = {
-	.bus = SPI_DT_SPEC_INST_GET(0, LPD880X_SPI_OPERATION, 0),
+	.bus = SPI_DT_SPEC_INST_GET(0, LPD880X_SPI_OPERATION),
 	.length = DT_INST_PROP(0, chain_length),
 };
 

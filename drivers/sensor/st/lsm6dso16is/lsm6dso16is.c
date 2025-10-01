@@ -880,8 +880,7 @@ static int lsm6dso16is_init(const struct device *dev)
 		STMEMSC_CTX_SPI(&lsm6dso16is_config_##inst.stmemsc_cfg),	\
 		.stmemsc_cfg = {						\
 			.spi = SPI_DT_SPEC_INST_GET(inst,			\
-					   LSM6DSO16IS_SPI_OP,			\
-					   0),					\
+					   LSM6DSO16IS_SPI_OP),			\
 		},								\
 		LSM6DSO16IS_CONFIG_COMMON(inst)					\
 	}

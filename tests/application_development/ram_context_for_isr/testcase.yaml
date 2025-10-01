@@ -19,3 +19,4 @@ tests:
       - hexiwear/mkw40z4
       - frdm_kw41z/mkw41z4
       - frdm_kl25z/mkl25z4
+      - mcx_n9xx_evk/mcxn947/cpu0/qspi

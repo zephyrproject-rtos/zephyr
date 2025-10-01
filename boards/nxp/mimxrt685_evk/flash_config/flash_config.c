@@ -16,7 +16,7 @@ const flexspi_nor_config_t flexspi_config = {
 		.cs_hold_time = 3,
 		.cs_setup_time = 3,
 		.device_mode_cfg_enable = 1,
-		.device_mode_type = device_config_cmd_type_generic,
+		.device_mode_type = DEVICE_CONFIG_CMD_TYPE_GENERIC,
 		.wait_time_cfg_commands = 1,
 		.device_mode_seq = {
 			.seq_num = 1,
@@ -26,9 +26,9 @@ const flexspi_nor_config_t flexspi_config = {
 		},
 		.device_mode_arg = 0,
 		.config_cmd_enable = 1,
-		.config_mode_type = {device_config_cmd_type_generic,
-					device_config_cmd_type_spi2xpi,
-					device_config_cmd_type_generic},
+		.config_mode_type = {DEVICE_CONFIG_CMD_TYPE_GENERIC,
+					DEVICE_CONFIG_CMD_TYPE_SPI2XPI,
+					DEVICE_CONFIG_CMD_TYPE_GENERIC},
 		.config_cmd_seqs = {
 			{
 				.seq_num = 1,
@@ -43,10 +43,10 @@ const flexspi_nor_config_t flexspi_config = {
 		},
 		.config_cmd_args = {0x2, 0x1},
 		.controller_misc_option =
-			1u << flexspi_misc_offset_safe_config_freq_enable,
+			1u << FLEXSPI_MISC_OFFSET_SAFE_CONFIG_FREQ_ENABLE,
 		.device_type = 0x1,
-		.sflash_pad_type = serial_flash_8_pads,
-		.serial_clk_freq = flexspi_serial_clk_sdr_48mhz,
+		.sflash_pad_type = SERIAL_FLASH_8_PADS,
+		.serial_clk_freq = FLEXSPI_SERIAL_CLK_SDR_48MHZ,
 		.sflash_a1_size = 0,
 		.sflash_a2_size = 0,
 		.sflash_b1_size = 0x4000000U,

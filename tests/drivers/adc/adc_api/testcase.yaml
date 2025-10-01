@@ -51,6 +51,7 @@ tests:
       - nucleo_g071rb
       - nucleo_g474re
       - nucleo_h743zi
+      - nucleo_h753zi
       - nucleo_l073rz
       - nucleo_l152re
       - nucleo_l476rg

@@ -104,7 +104,9 @@ struct flash_mspi_nor_config {
 };
 
 struct flash_mspi_nor_data {
+#if defined(CONFIG_MULTITHREADING)
 	struct k_sem acquired;
+#endif
 	struct mspi_xfer_packet packet;
 	struct mspi_xfer xfer;
 	struct jesd216_erase_type erase_types[JESD216_NUM_ERASE_TYPES];

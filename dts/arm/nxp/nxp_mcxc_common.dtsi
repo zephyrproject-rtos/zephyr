@@ -13,6 +13,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/regulator/nxp_vref.h>
 
 / {
 	aliases {
@@ -202,6 +203,7 @@
 			interrupts = <15 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
+			has-differential-mode;
 		};
 
 		i2c0: i2c@40066000 {
@@ -341,6 +343,25 @@
 			interrupts = <16 0>;
 			status = "disabled";
 			clocks = <&sim KINETIS_SIM_CMP_CLK 0 0>;
+		};
+
+		vref: vref@40074000 {
+			compatible = "nxp,vrefv1";
+			reg = <0x40074000 0x100>;
+			status = "disabled";
+			clocks = <&sim KINETIS_SIM_VREF_CLK 0 0>;
+			chop-oscillator-en;
+			current-compensation-en;
+			internal-voltage-regulator-en;
+			bandgap-startup-time-us = <3500>;
+			buffer-startup-delay-us = <100>;
+			regulator-init-microvolt = <1175500>;
+			regulator-min-microvolt = <1175500>;
+			regulator-max-microvolt = <1207000>;
+			regulator-initial-mode = <NXP_VREF_MODE_STANDBY>;
+			regulator-allowed-modes = <NXP_VREF_MODE_STANDBY
+						NXP_VREF_MODE_LOW_POWER
+						NXP_VREF_MODE_HIGH_POWER>;
 		};
 	};
 };

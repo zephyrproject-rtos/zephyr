@@ -4,6 +4,7 @@
  */
 
 #include <cmdline.h>
+#include <nsi_host_trampolines.h>
 #include <posix_native_task.h>
 #include <string.h>
 #include <zephyr/drivers/hwinfo.h>
@@ -13,6 +14,7 @@
 
 static uint32_t native_hwinfo_device_id;
 static bool native_hwinfo_device_id_set;
+static uint32_t native_hwinfo_reset_cause;
 
 ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
@@ -24,6 +26,27 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 	sys_put_be(buffer, &native_hwinfo_device_id, length);
 
 	return length;
+}
+
+int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
+{
+	*cause = native_hwinfo_reset_cause;
+
+	return 0;
+}
+
+int z_impl_hwinfo_clear_reset_cause(void)
+{
+	native_hwinfo_reset_cause = 0;
+
+	return 0;
+}
+
+int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
+{
+	*supported = RESET_POR | RESET_SOFTWARE;
+
+	return 0;
 }
 
 static void native_hwinfo_gethostid(void)
@@ -59,5 +82,30 @@ static void native_hwinfo_add_options(void)
 	native_add_command_line_opts(native_hwinfo_options);
 }
 
+static void native_hwinfo_get_reset_cause(void)
+{
+	/* If CONFIG_NATIVE_SIM_REBOOT was set, and a reboot was triggered, this
+	 * environment variable would be set. Otherwise it is not expected to
+	 * exist. Note this environment variable is not an stable API of any kind
+	 */
+	const char *cause = nsi_host_getenv("NATIVE_SIM_RESET_CAUSE");
+
+	if (!cause) {
+		/* Default to POR if not set */
+		native_hwinfo_reset_cause = RESET_POR;
+		return;
+	}
+
+	if (strcmp(cause, "SOFTWARE") == 0) {
+		native_hwinfo_reset_cause = RESET_SOFTWARE;
+	} else {
+		posix_print_warning("NATIVE_SIM_RESET_CAUSE (%s) set to an unknown reset cause, "
+				    "defaulting to POR\n",
+				    cause);
+		native_hwinfo_reset_cause = RESET_POR;
+	}
+}
+
 NATIVE_TASK(native_hwinfo_add_options, PRE_BOOT_1, 10);
 NATIVE_TASK(native_hwinfo_gethostid, PRE_BOOT_2, 10);
+NATIVE_TASK(native_hwinfo_get_reset_cause, PRE_BOOT_2, 10);

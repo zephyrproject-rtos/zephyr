@@ -1,0 +1,120 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include "mck_ra8t2-pinctrl.dtsi"
+
+/ {
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1: led1 {
+			gpios = <&ioport6 14 GPIO_ACTIVE_LOW>;
+			label = "LED1";
+		};
+
+		led2: led2 {
+			gpios = <&ioporta 15 GPIO_ACTIVE_LOW>;
+			label = "LED2";
+		};
+
+		led3: led3 {
+			gpios = <&ioporta 4 GPIO_ACTIVE_LOW>;
+			label = "LED3";
+		};
+
+		led4: led4 {
+			gpios = <&ioport9 0 GPIO_ACTIVE_LOW>;
+			label = "LED4";
+		};
+
+		led5: led5 {
+			gpios = <&ioport5 9 GPIO_ACTIVE_LOW>;
+			label = "LED5";
+		};
+
+		led6: led6 {
+			gpios = <&ioport5 10 GPIO_ACTIVE_LOW>;
+			label = "LED6";
+		};
+	};
+};
+
+&xtal {
+	clock-frequency = <DT_FREQ_M(24)>;
+	mosel = <0>;
+	#clock-cells = <0>;
+	status = "okay";
+};
+
+&subclk {
+	status = "okay";
+};
+
+&pll {
+	status = "okay";
+
+	pllp: pllp {
+		status = "okay";
+	};
+
+	pllq: pllq {
+		status = "okay";
+	};
+
+	pllr: pllr {
+		status = "okay";
+	};
+};
+
+&pll2 {
+	status = "okay";
+
+	pll2p {
+		status = "okay";
+	};
+
+	pll2q {
+		status = "okay";
+	};
+
+	pll2r {
+		status = "okay";
+	};
+};
+
+&flash {
+	flash0: flash@2000000 {
+		compatible = "soc-nv-flash";
+		reg = <0x2000000 DT_SIZE_K(1024)>;
+	};
+};
+
+&sciclk {
+	status = "okay";
+};
+
+&ioport5 {
+	status = "okay";
+};
+
+&ioport6 {
+	status = "okay";
+};
+
+&ioport9 {
+	status = "okay";
+};
+
+&ioporta {
+	status = "okay";
+};
+
+&ioportb {
+	status = "okay";
+};

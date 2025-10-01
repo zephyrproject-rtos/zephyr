@@ -15,6 +15,7 @@ config REMOTE_BOARD
 	default "mimxrt1170_evk/mimxrt1176/cm4" if $(BOARD) = "mimxrt1170_evk"
 	default "mimxrt1160_evk/mimxrt1166/cm4" if $(BOARD) = "mimxrt1160_evk"
 	default "mimxrt1180_evk/mimxrt1189/cm7" if $(BOARD) = "mimxrt1180_evk"
+	default "mimxrt700_evk/mimxrt798s/cm33_cpu1" if $(BOARD) = "mimxrt700_evk"
 	default "lpcxpresso55s69/lpc55s69/cpu1" if $(BOARD) = "lpcxpresso55s69"
 	default "frdm_mcxn947/mcxn947/cpu1" if $(BOARD) = "frdm_mcxn947"
 	default "mcx_n9xx_evk/mcxn947/cpu1" if $(BOARD) = "mcx_n9xx_evk"
@@ -27,3 +28,4 @@ config REMOTE_BOARD
 	default "esp32c6_devkitc/esp32c6/lpcore" if "$(BOARD)$(BOARD_QUALIFIERS)" = "esp32c6_devkitc/esp32c6/hpcore"
 	default "bl54l15_dvk/nrf54l15/cpuflpr" if "$(BOARD)$(BOARD_QUALIFIERS)" = "bl54l15_dvk/nrf54l15/cpuapp"
 	default "bl54l15u_dvk/nrf54l15/cpuflpr" if $(BOARD) = "bl54l15u_dvk"
+	default "ek_ra8p1/r7ka8p1kflcac/cm33" if $(BOARD) = "ek_ra8p1"

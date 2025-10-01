@@ -845,8 +845,7 @@ static DEVICE_API(sdhc, sdhc_spi_api) = {
 				(SPI_LOCK_ON | SPI_HOLD_ON_CS | SPI_WORD_SET(8) \
 				 | (DT_INST_PROP(n, spi_clock_mode_cpol) ? SPI_MODE_CPOL : 0) \
 				 | (DT_INST_PROP(n, spi_clock_mode_cpha) ? SPI_MODE_CPHA : 0) \
-				),\
-				0),						\
+				)),						\
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(n,						\

@@ -285,6 +285,16 @@ void LINKLAYER_PLAT_DisableOSContextSwitch(void)
 	 **/
 }
 
+uint32_t LINKLAYER_PLAT_GetSTCompanyID(void)
+{
+	return LL_FLASH_GetSTCompanyID();
+}
+
+uint32_t LINKLAYER_PLAT_GetUDN(void)
+{
+	return LL_FLASH_GetUDN();
+}
+
 void LINKLAYER_PLAT_EnableBackupDomainAccess(void)
 {
 	stm32_backup_domain_enable_access();

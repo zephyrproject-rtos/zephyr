@@ -15,12 +15,16 @@
 
 #include <zephyr/drivers/cellular.h>
 
-#define SAMPLE_TEST_ENDPOINT_HOSTNAME		CONFIG_SAMPLE_CELLULAR_MODEM_ENDPOINT_HOSTNAME
+#define L4_EVENT_MASK \
+	(NET_EVENT_L4_CONNECTED | NET_EVENT_L4_DISCONNECTED | NET_EVENT_DNS_SERVER_ADD)
+#define SAMPLE_TEST_ENDPOINT_HOSTNAME           CONFIG_SAMPLE_CELLULAR_MODEM_ENDPOINT_HOSTNAME
 #define SAMPLE_TEST_ENDPOINT_UDP_ECHO_PORT	(7780)
 #define SAMPLE_TEST_ENDPOINT_UDP_RECEIVE_PORT	(7781)
 #define SAMPLE_TEST_PACKET_SIZE			(1024)
 #define SAMPLE_TEST_ECHO_PACKETS		(16)
 #define SAMPLE_TEST_TRANSMIT_PACKETS		(128)
+#define L4_CONNECTED 1
+#define L4_DNS_ADDED 2
 
 const struct device *modem = DEVICE_DT_GET(DT_ALIAS(modem));
 
@@ -28,7 +32,8 @@ static uint8_t sample_test_packet[SAMPLE_TEST_PACKET_SIZE];
 static uint8_t sample_recv_buffer[SAMPLE_TEST_PACKET_SIZE];
 static bool sample_test_dns_in_progress;
 static struct dns_addrinfo sample_test_dns_addrinfo;
-
+struct net_if *ppp_iface;
+K_EVENT_DEFINE(l4_event);
 K_SEM_DEFINE(dns_query_sem, 0, 1);
 
 static uint8_t sample_prng_random(void)
@@ -406,9 +411,32 @@ int sample_transmit_packets(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint
 	return 0;
 }
 
+static void l4_event_handler(uint64_t event, struct net_if *iface, void *info, size_t info_length,
+			     void *user_data)
+{
+	if (iface != ppp_iface) {
+		return;
+	}
+
+	switch (event) {
+	case NET_EVENT_L4_CONNECTED:
+		k_event_post(&l4_event, L4_CONNECTED);
+		break;
+	case NET_EVENT_DNS_SERVER_ADD:
+		k_event_post(&l4_event, L4_DNS_ADDED);
+		break;
+	case NET_EVENT_L4_DISCONNECTED:
+		k_event_set(&l4_event, 0);
+		break;
+	default:
+		break;
+	}
+}
+
+NET_MGMT_REGISTER_EVENT_HANDLER(l4_events, L4_EVENT_MASK, l4_event_handler, NULL);
+
 int main(void)
 {
-	struct net_if *const iface = net_if_get_first_by_type(&NET_L2_GET_NAME(PPP));
 	uint16_t *port;
 	int ret;
 
@@ -419,22 +447,30 @@ int main(void)
 
 	init_sample_test_packet();
 
+	ppp_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(PPP));
+
 	printk("Powering on modem\n");
 	pm_device_action_run(modem, PM_DEVICE_ACTION_RESUME);
 
 	printk("Bring up network interface\n");
-	ret = net_if_up(iface);
+	ret = net_if_up(ppp_iface);
 	if (ret < 0) {
 		printk("Failed to bring up network interface\n");
 		return -1;
 	}
 
-	printk("Waiting for L4 connected & DNS server added\n");
-	ret = net_mgmt_event_wait_on_iface(iface, NET_EVENT_L4_CONNECTED | NET_EVENT_DNS_SERVER_ADD,
-					   NULL, NULL, NULL, K_SECONDS(120));
+	printk("Waiting for L4 connected\n");
+	ret = k_event_wait(&l4_event, L4_CONNECTED, false, K_SECONDS(120));
 
-	if (ret != 0) {
+	if (ret != L4_CONNECTED) {
 		printk("L4 was not connected in time\n");
+		return -1;
+	}
+
+	printk("Waiting for DNS server added\n");
+	ret = k_event_wait(&l4_event, L4_DNS_ADDED, false, K_SECONDS(10));
+	if (ret != L4_DNS_ADDED) {
+		printk("DNS server was not added in time\n");
 		return -1;
 	}
 
@@ -495,9 +531,8 @@ int main(void)
 	pm_device_action_run(modem, PM_DEVICE_ACTION_RESUME);
 
 	printk("Waiting for L4 connected\n");
-	ret = net_mgmt_event_wait_on_iface(iface, NET_EVENT_L4_CONNECTED, NULL, NULL, NULL,
-					   K_SECONDS(60));
-	if (ret != 0) {
+	ret = k_event_wait(&l4_event, L4_CONNECTED, false, K_SECONDS(120));
+	if (ret != L4_CONNECTED) {
 		printk("L4 was not connected in time\n");
 		return -1;
 	}
@@ -514,7 +549,7 @@ int main(void)
 		return -1;
 	}
 
-	ret = net_if_down(iface);
+	ret = net_if_down(ppp_iface);
 	if (ret < 0) {
 		printk("Failed to bring down network interface\n");
 		return -1;

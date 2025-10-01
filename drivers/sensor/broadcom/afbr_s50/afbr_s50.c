@@ -395,8 +395,7 @@ BUILD_ASSERT(CONFIG_MAIN_STACK_SIZE >= 4096,
 	SPI_DT_IODEV_DEFINE(afbr_s50_bus_##inst,						   \
 			    DT_DRV_INST(inst),							   \
 			    SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB |		   \
-			    SPI_MODE_CPOL | SPI_MODE_CPHA,					   \
-			    0U);								   \
+			    SPI_MODE_CPOL | SPI_MODE_CPHA);					   \
 												   \
 	static const struct afbr_s50_config afbr_s50_cfg_##inst = {				   \
 		.gpio = {									   \

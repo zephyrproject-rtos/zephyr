@@ -169,7 +169,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: f89d5ed56649917970067e113289fa252267fa7f
+      revision: 31fb4c34ff040f56bb11851c9091809c45777550
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -195,12 +195,12 @@ manifest:
       groups:
         - hal
     - name: hal_microchip
-      revision: db50e73b20f29ab758b3a79f173db37826434936
+      revision: ac9c1231020d29aa0285a4e63b66f465b3942eed
       path: modules/hal/microchip
       groups:
         - hal
     - name: hal_nordic
-      revision: 57d9fc59c9ea86465b5cd26f0fe2b9dcc520768b
+      revision: 979a58d0829108b57f10e90b6c3fc35ab6206e4b
       path: modules/hal/nordic
       groups:
         - hal
@@ -210,7 +210,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: bcab469190b4302bb2f78cc20768f1c719595cba
+      revision: aa3d275aa690dd364503d83ecf730da367297af9
       path: modules/hal/nxp
       groups:
         - hal
@@ -226,7 +226,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: f0b78440ba8f0b4a07cdd657031ac9ec1cc4c126
+      revision: d8ee5f18e95b9f4616a481be65e2c9ee0af1779f
       groups:
         - hal
     - name: hal_rpi_pico
@@ -240,7 +240,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: edbd418670ad8c7cad629a09df2ceee0bc23cf6d
+      revision: ae1afd84a2acb0cdca2b691047d81a61ce3f9356
       path: modules/hal/silabs
       groups:
         - hal
@@ -250,7 +250,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 2459cda20429a15d4a5eb5ca4140a0c19618f3bf
+      revision: dc7c2543a079c57a4e7dbee54ed7877880dc235b
       path: modules/hal/stm32
       groups:
         - hal
@@ -280,13 +280,13 @@ manifest:
       groups:
         - hal
     - name: hal_xtensa
-      revision: b38620c7cc61e349e192ed86a54940a5cd0636b7
+      revision: ba3f1ce6b066c3e40a8e6cad3fba0068ecfcd4ba
       path: modules/hal/xtensa
       groups:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 0798bf0faff40919bd577f1c8f75a2f9baae6299
+      revision: 61182a45fecafaa0f20e98ca7f862d26fbf65293
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3

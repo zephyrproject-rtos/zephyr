@@ -10,17 +10,6 @@ config GEN_UICR_GENERATE_PERIPHCONF
 	  When enabled, the UICR generator will populate the
 	  periphconf_partition partition.
 
-config GEN_UICR_SECONDARY
-	bool "Enable UICR.SECONDARY.ENABLE"
-
-config GEN_UICR_SECONDARY_GENERATE_PERIPHCONF
-	bool "Generate SECONDARY.PERIPHCONF hex alongside UICR"
-	default y
-	depends on GEN_UICR_SECONDARY
-	help
-	  When enabled, the UICR generator will populate the
-	  secondary_periphconf_partition partition.
-
 config GEN_UICR_SECURESTORAGE
 	bool "Enable UICR.SECURESTORAGE"
 	default y
@@ -42,6 +31,57 @@ config GEN_UICR_SECURESTORAGE
 	      without gaps
 	  - At least one subpartition must be defined
 	  - Combined subpartition sizes must equal secure_storage_partition size
+
+config GEN_UICR_PROTECTEDMEM
+	bool "Enable UICR.PROTECTEDMEM"
+	help
+	  When enabled, the UICR generator will configure the
+	  protected memory region.
+
+config GEN_UICR_PROTECTEDMEM_SIZE_BYTES
+	int "Protected memory size in bytes"
+	default 4096
+	depends on GEN_UICR_PROTECTEDMEM
+	help
+	  Size of the protected memory region in bytes.
+	  This value must be divisible by 4096 (4 kiB).
+
+config GEN_UICR_SECONDARY
+	bool "Enable UICR.SECONDARY.ENABLE"
+
+if GEN_UICR_SECONDARY
+
+config GEN_UICR_SECONDARY_GENERATE_PERIPHCONF
+	bool "Generate SECONDARY.PERIPHCONF hex alongside UICR"
+	default y
+	help
+	  When enabled, the UICR generator will populate the
+	  secondary_periphconf_partition partition.
+
+choice GEN_UICR_SECONDARY_PROCESSOR
+	prompt "Secondary processor selection"
+	default GEN_UICR_SECONDARY_PROCESSOR_APPLICATION
+	help
+	  Processor to boot for the secondary firmware.
+
+config GEN_UICR_SECONDARY_PROCESSOR_APPLICATION
+	bool "APPLICATION processor"
+	help
+	  Boot secondary firmware on the APPLICATION processor.
+
+config GEN_UICR_SECONDARY_PROCESSOR_RADIOCORE
+	bool "RADIOCORE processor"
+	help
+	  Boot secondary firmware on the RADIOCORE processor.
+
+endchoice
+
+config GEN_UICR_SECONDARY_PROCESSOR_VALUE
+	hex
+	default 0xBD2328A8 if GEN_UICR_SECONDARY_PROCESSOR_APPLICATION
+	default 0x1730C77F if GEN_UICR_SECONDARY_PROCESSOR_RADIOCORE
+
+endif # GEN_UICR_SECONDARY
 
 endmenu
 

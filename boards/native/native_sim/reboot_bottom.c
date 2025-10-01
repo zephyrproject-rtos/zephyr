@@ -13,6 +13,7 @@
 #include <nsi_tasks.h>
 #include <nsi_tracing.h>
 #include <nsi_cmdline.h>
+#include <nsi_host_trampolines.h>
 
 static const char module[] = "native_sim_reboot";
 
@@ -62,6 +63,9 @@ void maybe_reboot(void)
 	if (close_open_fds() < 0) {
 		nsi_exit(1);
 	}
+
+	/* Let's set an environment variable which the native_sim hw_info driver may check */
+	(void)nsi_host_setenv("NATIVE_SIM_RESET_CAUSE", "SOFTWARE", 1);
 
 	nsi_print_warning("%s: Restarting process.\n", module);
 

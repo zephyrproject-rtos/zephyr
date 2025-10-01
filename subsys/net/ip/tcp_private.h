@@ -317,6 +317,8 @@ struct tcp { /* TCP connection */
 	enum tcp_state state;
 	enum tcp_data_mode data_mode;
 	uint32_t seq;
+	uint32_t isn;
+	uint32_t isn_peer;
 	uint32_t ack;
 #if defined(CONFIG_NET_TCP_KEEPALIVE)
 	uint32_t keep_idle;

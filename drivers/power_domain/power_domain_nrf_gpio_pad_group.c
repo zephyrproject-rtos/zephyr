@@ -63,7 +63,7 @@ static int nrf_port_retain_driver_init(const struct device *dev)
 #define NRF_GPIO_PAD_GROUP_DEFINE(inst)								\
 	static const struct nrf_port_retain_config _CONCAT(config, inst) = {			\
 		.regs = (NRF_GPIO_Type *)DT_REG_ADDR(DT_INST_PARENT(inst)),			\
-		.retain_mask = DT_PROP_OR(inst, retain_mask, UINT32_MAX),			\
+		.retain_mask = DT_INST_PROP_OR(inst, retain_mask, UINT32_MAX),			\
 	};											\
 												\
 	PM_DEVICE_DT_INST_DEFINE(inst, nrf_port_retain_driver_pm_action);			\

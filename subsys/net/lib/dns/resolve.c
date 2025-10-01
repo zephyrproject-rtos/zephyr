@@ -295,9 +295,15 @@ static int dispatcher_cb(struct dns_socket_dispatcher *my_ctx, int sock,
 	}
 
 	ret = dns_read(ctx, dns_data, len, &dns_id, dns_cname, &query_hash);
-	if (!ret) {
-		/* We called the callback already in dns_read() if there
-		 * were no errors.
+	if ((ret == 0) || (ret == DNS_EAI_NODATA)) {
+		/* The callback is already called in dns_read() if there
+		 * were no errors indicated by a return of zero
+		 *
+		 * Also, in the case of no data records to process will
+		 * result in bypassing the callback. However, this goes
+		 * out a similar path as success to allow the request to
+		 * timeout or allow another packet to be processed that
+		 * might have records to validate.
 		 */
 		goto free_buf;
 	}
@@ -1138,12 +1144,27 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 		goto quit;
 	}
 
-	if (dns_header_qdcount(dns_msg->msg) != 1) {
+	if (dns_header_qdcount(dns_msg->msg) < 1) {
 		/* For mDNS (when dns_id == 0) the query count is 0 */
 		if (*dns_id > 0) {
 			ret = DNS_EAI_FAIL;
 			goto quit;
 		}
+	}
+
+	if (dns_header_ancount(dns_msg->msg) < 1) {
+		/* there are no useful records in this message */
+		if (*dns_id > 0) {
+			ret = DNS_EAI_FAIL;
+			goto quit;
+		}
+
+		/*
+		 * Assume another multicast responder might respond
+		 * differently.
+		 */
+		ret = DNS_EAI_NODATA;
+		goto quit;
 	}
 
 	ret = dns_unpack_response_query(dns_msg);

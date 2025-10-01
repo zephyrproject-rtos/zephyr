@@ -254,7 +254,7 @@ static const struct display_driver_api lpm_api = {
 	static const struct lpm013m126_config lpm_cfg_##inst = {		\
 		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER |		\
 					    SPI_WORD_SET(8) |			\
-					    SPI_TRANSFER_MSB, 0),		\
+					    SPI_TRANSFER_MSB),			\
 		.disp_gpio = GPIO_DT_SPEC_INST_GET(inst, disp_gpios),		\
 		.extcomin_gpio = GPIO_DT_SPEC_INST_GET(inst, extcomin_gpios),	\
 		.extcomin_freq = DT_INST_PROP(inst, extcomin_frequency),	\

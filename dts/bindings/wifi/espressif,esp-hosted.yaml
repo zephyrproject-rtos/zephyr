@@ -19,3 +19,8 @@ properties:
   handshake-gpios:
     type: phandle-array
     required: true
+
+  spi-cs-setup-delay-ns:
+    default: 10000
+  spi-cs-hold-delay-ns:
+    default: 10000

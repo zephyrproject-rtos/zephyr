@@ -225,7 +225,7 @@ static int bd8lb600fs_init(const struct device *dev)
 #define BD8LB600FS_INIT(inst)                                                                      \
 	static const struct bd8lb600fs_config bd8lb600fs_##inst##_config = {                       \
 		.bus = SPI_DT_SPEC_INST_GET(                                                       \
-			inst, SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(8), 0),            \
+			inst, SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(8)),               \
 		.gpio_reset = GPIO_DT_SPEC_GET_BY_IDX(DT_DRV_INST(inst), reset_gpios, 0),          \
 		.instance_count = DT_INST_PROP(inst, instance_count),                              \
 	};                                                                                         \

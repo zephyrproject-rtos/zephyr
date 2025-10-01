@@ -1,5 +1,7 @@
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
+
+rsource "*/Kconfig"
 
 config SOC_FAMILY_MCXW
 	select ARM
@@ -16,13 +18,3 @@ config SOC_FAMILY_MCXW
 	select SOC_EARLY_INIT_HOOK
 	select CLOCK_CONTROL
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
-
-	rsource "../../common/Kconfig.nbu"
-
-if SOC_MCXW727C
-
-config MCUX_CORE_SUFFIX
-	default "_cm33_core0" if SOC_MCXW727C_CPU0
-	default "_cm33_core1" if SOC_MCXW727C_CPU1
-
-endif # SOC_MCXW727C

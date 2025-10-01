@@ -41,7 +41,7 @@ static ALWAYS_INLINE void set_px_at_pos(uint8_t *dst_buf, uint32_t x, uint32_t y
 #ifdef CONFIG_LV_Z_COLOR_MONO_HW_INVERSION
 	*buf |= BIT(bit);
 #else
-	if (caps->current_pixel_format == PIXEL_FORMAT_MONO10) {
+	if (caps->current_pixel_format == PIXEL_FORMAT_MONO01) {
 		*buf |= BIT(bit);
 	} else {
 		*buf &= ~BIT(bit);
@@ -55,7 +55,7 @@ static void lvgl_transform_buffer(uint8_t **px_map, uint32_t width, uint32_t hei
 #ifdef CONFIG_LV_Z_COLOR_MONO_HW_INVERSION
 	uint8_t clear_color = 0x00;
 #else
-	uint8_t clear_color = caps->current_pixel_format == PIXEL_FORMAT_MONO10 ? 0x00 : 0xFF;
+	uint8_t clear_color = caps->current_pixel_format == PIXEL_FORMAT_MONO01 ? 0x00 : 0xFF;
 #endif
 
 	memset(mono_conv_buf, clear_color, mono_conv_buf_size);

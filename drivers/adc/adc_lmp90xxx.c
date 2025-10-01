@@ -1065,7 +1065,7 @@ static DEVICE_API(adc, lmp90xxx_adc_api) = {
 	}; \
 	static const struct lmp90xxx_config lmp##t##_config_##n = { \
 		.bus = SPI_DT_SPEC_GET(DT_INST_LMP90XXX(n, t), SPI_OP_MODE_MASTER | \
-			SPI_TRANSFER_MSB | SPI_WORD_SET(8), 0), \
+			SPI_TRANSFER_MSB | SPI_WORD_SET(8)), \
 		.drdyb = GPIO_DT_SPEC_GET_OR(DT_INST_LMP90XXX(n, t), drdyb_gpios, {0}), \
 		.rtd_current = LMP90XXX_UAMPS_TO_RTD_CUR_SEL( \
 			DT_PROP_OR(DT_INST_LMP90XXX(n, t), rtd_current, 0)), \
@@ -1073,7 +1073,7 @@ static DEVICE_API(adc, lmp90xxx_adc_api) = {
 		.channels = ch, \
 	}; \
 	DEVICE_DT_DEFINE(DT_INST_LMP90XXX(n, t), \
-			 &lmp90xxx_init, NULL, \
+			 lmp90xxx_init, NULL, \
 			 &lmp##t##_data_##n, \
 			 &lmp##t##_config_##n, POST_KERNEL, \
 			 CONFIG_ADC_INIT_PRIORITY, \

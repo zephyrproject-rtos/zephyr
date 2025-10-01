@@ -4,7 +4,7 @@
  *
  */
 
-#include <nxp/nxp_imx/rt/mimxrt1189cvm8b-pinctrl.dtsi>
+#include <nxp/nxp_imx/rt/mimxrt1189cvm8c-pinctrl.dtsi>
 
 &pinctrl {
 	emdio_default: emdio_default {

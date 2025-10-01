@@ -15,7 +15,7 @@ const flexspi_nor_config_t hyperflash_config = {
 		.tag                = FLEXSPI_CFG_BLK_TAG,
 		.version            = FLEXSPI_CFG_BLK_VERSION,
 		.read_sample_clk_src
-			= flexspi_read_sample_clk_external_input_from_dqs_pad,
+			= FLEXSPI_READ_SAMPLE_CLK_EXTERNAL_INPUT_FROM_DQS_PAD,
 		.cs_hold_time         = 3u,
 		.cs_setup_time        = 3u,
 		.column_address_width = 3u,
@@ -23,13 +23,13 @@ const flexspi_nor_config_t hyperflash_config = {
 		 * Safe configuration, Differential clock
 		 */
 		.controller_misc_option =
-			(1u << flexspi_misc_offset_ddr_mode_enable) |
-			(1u << flexspi_misc_offset_word_addressable_enable) |
-			(1u << flexspi_misc_offset_safe_config_freq_enable) |
-			(1u << flexspi_misc_offset_diff_clk_enable),
-		.device_type         = flexspi_device_type_serial_nor,
-		.sflash_pad_type      = serial_flash_8_pads,
-		.serial_clk_freq      = flexspi_serial_clk_133mhz,
+			(1u << FLEXSPI_MISC_OFFSET_DDR_MODE_ENABLE) |
+			(1u << FLEXSPI_MISC_OFFSET_WORD_ADDRESSABLE_ENABLE) |
+			(1u << FLEXSPI_MISC_OFFSET_SAFE_CONFIG_FREQ_ENABLE) |
+			(1u << FLEXSPI_MISC_OFFSET_DIFF_CLK_ENABLE),
+		.device_type         = FLEXSPI_DEVICE_TYPE_SERIAL_NOR,
+		.sflash_pad_type      = SERIAL_FLASH_8_PADS,
+		.serial_clk_freq      = FLEXSPI_SERIAL_CLK_133MHZ,
 		.lut_custom_seq_enable = 0x1,
 		.sflash_a1_size       = 64u * 1024u * 1024u,
 		.data_valid_time      = {15u, 0u},

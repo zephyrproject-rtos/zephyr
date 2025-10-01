@@ -1,20 +1,12 @@
 # Copyright 2023-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
+rsource "*/Kconfig.defconfig"
+
 if SOC_FAMILY_MCXW
 
 config CORTEX_M_SYSTICK
 	default n if MCUX_LPTMR_TIMER
-
-config NUM_IRQS
-	default 77 if SOC_MCXW727C
-	default 75
-
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 96000000 if CORTEX_M_SYSTICK
-
-config MCUX_FLASH_K4_API
-	default y
 
 if BT
 
@@ -63,6 +55,5 @@ config NXP_RF_IMU
 	default y
 
 endif # IEEE802154
-
 
 endif # SOC_FAMILY_MCXW

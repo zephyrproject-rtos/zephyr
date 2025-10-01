@@ -23,6 +23,7 @@
 		zephyr,flash-controller = &flash;
 		st,lptim-stdby-timer = &rtc;
 		zephyr,bt-hci = &bt_hci_wba;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	cpus {
@@ -564,6 +565,11 @@
 	bt_hci_wba: bt_hci_wba {
 		compatible = "st,hci-stm32wba";
 		status = "okay";
+	};
+
+	ieee802154: ieee802154 {
+		compatible = "st,stm32wba-ieee802154";
+		status = "disabled";
 	};
 
 	swj_port: swj_port {

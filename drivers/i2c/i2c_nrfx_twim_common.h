@@ -31,6 +31,26 @@ extern "C" {
 #define I2C_FREQUENCY(idx)      I2C_NRFX_TWIM_FREQUENCY(DT_PROP_OR(I2C(idx), clock_frequency,      \
 								   I2C_BITRATE_STANDARD))
 
+/* Macro determines PM actions interrupt safety level.
+ *
+ * Requesting/releasing TWIM device may be ISR safe, but it cannot be reliably known whether
+ * managing its power domain is. It is then assumed that if power domains are used, device is
+ * no longer ISR safe. This macro let's us check if we will be requesting/releasing
+ * power domains and determines PM device ISR safety value.
+ */
+#define I2C_PM_ISR_SAFE(idx)									\
+	COND_CODE_1(										\
+		UTIL_AND(									\
+			IS_ENABLED(CONFIG_PM_DEVICE_POWER_DOMAIN),				\
+			UTIL_AND(								\
+				DT_NODE_HAS_PROP(I2C(idx), power_domains),			\
+				DT_NODE_HAS_STATUS_OKAY(DT_PHANDLE(I2C(idx), power_domains))	\
+			)									\
+		),										\
+		(0),										\
+		(PM_DEVICE_ISR_SAFE)								\
+	)
+
 struct i2c_nrfx_twim_common_config {
 	nrfx_twim_t twim;
 	nrfx_twim_config_t twim_config;

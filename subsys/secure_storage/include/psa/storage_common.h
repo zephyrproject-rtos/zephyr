@@ -6,6 +6,7 @@
 /**
  * @defgroup psa_secure_storage PSA Secure Storage API
  * @ingroup os_services
+ * @version 1.0.4
  * @details For more information on the PSA Secure Storage API, see the
  * [PSA Certified Secure Storage API](https://arm-software.github.io/psa-api/storage/1.0/)
  * specification.

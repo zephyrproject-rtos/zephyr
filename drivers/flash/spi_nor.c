@@ -1885,7 +1885,7 @@ static DEVICE_API(flash, spi_nor_api) = {
 
 #define GENERATE_CONFIG_STRUCT(idx)								\
 	static const struct spi_nor_config spi_nor_##idx##_config = {				\
-		.spi = SPI_DT_SPEC_INST_GET(idx, SPI_WORD_SET(8), CONFIG_SPI_NOR_CS_WAIT_DELAY),\
+		.spi = SPI_DT_SPEC_INST_GET(idx, SPI_WORD_SET(8)),				\
 		.dpd_exist = DT_INST_PROP(idx, has_dpd),					\
 		.dpd_wakeup_sequence_exist = DT_INST_NODE_HAS_PROP(idx, dpd_wakeup_sequence),	\
 		.mxicy_mx25r_power_mode_exist =							\

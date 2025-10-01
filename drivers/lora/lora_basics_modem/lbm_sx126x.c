@@ -495,7 +495,7 @@ static int sx126x_init(const struct device *dev)
 	static const struct lbm_sx126x_config config_##node_id = {                                 \
 		.lbm_common.ralf = RALF_SX126X_INSTANTIATE(DEVICE_DT_GET(node_id)),                \
 		.spi = SPI_DT_SPEC_GET(                                                            \
-			node_id, SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB, 0),      \
+			node_id, SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB),         \
 		.reset = GPIO_DT_SPEC_GET(node_id, reset_gpios),                                   \
 		.busy = GPIO_DT_SPEC_GET(node_id, busy_gpios),                                     \
 		.dio1 = GPIO_DT_SPEC_GET(node_id, dio1_gpios),                                     \

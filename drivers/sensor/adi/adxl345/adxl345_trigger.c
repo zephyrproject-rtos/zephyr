@@ -34,6 +34,11 @@ static void adxl345_thread_cb(const struct device *dev)
 		drv_data->drdy_handler(dev, drv_data->drdy_trigger);
 	}
 
+	if ((drv_data->act_handler != NULL) &&
+		ADXL345_STATUS_ACTIVITY(status1)) {
+		drv_data->act_handler(dev, drv_data->act_trigger);
+	}
+
 	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
 					      GPIO_INT_EDGE_TO_ACTIVE);
 	__ASSERT(ret == 0, "Interrupt configuration failed");
@@ -112,6 +117,17 @@ int adxl345_trigger_set(const struct device *dev,
 		int_mask = ADXL345_INT_MAP_DATA_RDY_MSK |
 			   ADXL345_INT_MAP_OVERRUN_MSK |
 			   ADXL345_INT_MAP_WATERMARK_MSK;
+		break;
+	case SENSOR_TRIG_MOTION:
+		drv_data->act_handler = handler;
+		drv_data->act_trigger = trig;
+		int_mask = ADXL345_INT_MAP_ACT_MSK;
+		ret = adxl345_reg_write_byte(dev, ADXL345_ACT_INACT_CTL_REG,
+					ADXL345_ACT_AC_DC | ADXL345_ACT_X_EN |
+					ADXL345_ACT_Y_EN | ADXL345_ACT_Z_EN);
+		if (ret < 0) {
+			return ret;
+		}
 		break;
 	default:
 		LOG_ERR("Unsupported sensor trigger");

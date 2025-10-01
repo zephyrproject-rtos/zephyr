@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <time.h>
 
 #include <zephyr/sys/timeutil.h>
 #include <zephyr/sys/util.h>

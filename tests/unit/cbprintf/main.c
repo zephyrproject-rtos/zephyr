@@ -153,20 +153,20 @@ static inline void reset_out(void)
 	outbuf.idx = 0;
 }
 
-static void outbuf_null_terminate(struct out_buffer *outbuf)
+static void outbuf_null_terminate(struct out_buffer *out_buf)
 {
-	int idx = outbuf->idx - ((outbuf->idx == outbuf->size) ? 1 : 0);
+	int idx = out_buf->idx - ((out_buf->idx == out_buf->size) ? 1 : 0);
 
-	outbuf->buf[idx] = 0;
+	out_buf->buf[idx] = 0;
 }
 
 static int out(int c, void *dest)
 {
 	int rv = EOF;
-	struct out_buffer *buf = dest;
+	struct out_buffer *out_buf = dest;
 
-	if (buf->idx < buf->size) {
-		buf->buf[buf->idx++] = (char)(unsigned char)c;
+	if (out_buf->idx < out_buf->size) {
+		out_buf->buf[out_buf->idx++] = (char)(unsigned char)c;
 		rv = (int)(unsigned char)c;
 	}
 	return rv;
@@ -631,11 +631,11 @@ ZTEST(prf, test_x_length)
 
 	if (IS_ENABLED(CONFIG_CBPRINTF_FULL_INTEGRAL)
 	    && (sizeof(long long) > sizeof(int))) {
-		unsigned long long min = 0x8c7c6c5c4c3c2c1cULL;
-		unsigned long long max = 0x8d7d6d5d4d3d2d1dULL;
+		unsigned long long ull_min = 0x8c7c6c5c4c3c2c1cULL;
+		unsigned long long ull_max = 0x8d7d6d5d4d3d2d1dULL;
 
-		TEST_PRF(&rc, "%llx/%llX", (unsigned long long)min,
-			      (unsigned long long)max);
+		TEST_PRF(&rc, "%llx/%llX", (unsigned long long)ull_min,
+			      (unsigned long long)ull_max);
 		PRF_CHECK("8c7c6c5c4c3c2c1c/8D7D6D5D4D3D2D1D", rc);
 	}
 }
@@ -1156,17 +1156,17 @@ ZTEST(prf, test_cbprintf_package)
 	/* Capture the base package information for future tests. */
 	size_t len = rc;
 	/* Create a buffer aligned to max argument. */
-	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) buf[len + PKG_ALIGN_OFFSET];
+	uint8_t __aligned(CBPRINTF_PACKAGE_ALIGNMENT) out_buf[len + PKG_ALIGN_OFFSET];
 
 	/* Verify we get same length when storing. Pass buffer which may be
 	 * unaligned. Same alignment offset was used for space calculation.
 	 */
-	rc = cbprintf_package(&buf[PKG_ALIGN_OFFSET], len, PACKAGE_FLAGS, fmt, 3);
+	rc = cbprintf_package(&out_buf[PKG_ALIGN_OFFSET], len, PACKAGE_FLAGS, fmt, 3);
 	zassert_equal(rc, len);
 
 	/* Verify we get an error if can't store */
 	len -= 1;
-	rc = cbprintf_package(&buf[PKG_ALIGN_OFFSET], len, PACKAGE_FLAGS, fmt, 3);
+	rc = cbprintf_package(&out_buf[PKG_ALIGN_OFFSET], len, PACKAGE_FLAGS, fmt, 3);
 	zassert_equal(rc, -ENOSPC);
 }
 

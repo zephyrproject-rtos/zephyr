@@ -452,7 +452,7 @@ int websocket_disconnect(int ws_sock)
 	return zsock_close(ws_sock);
 }
 
-static int websocket_interal_disconnect(struct websocket_context *ctx)
+static int websocket_internal_disconnect(struct websocket_context *ctx)
 {
 	int ret;
 
@@ -480,7 +480,7 @@ static int websocket_close_vmeth(void *obj)
 	struct websocket_context *ctx = obj;
 	int ret;
 
-	ret = websocket_interal_disconnect(ctx);
+	ret = websocket_internal_disconnect(ctx);
 	if (ret < 0) {
 		/* Ignore error if we are not connected */
 		if (ret != -ENOTCONN) {
@@ -1102,6 +1102,10 @@ int websocket_recv_msg(int ws_sock, uint8_t *buf, size_t buf_len,
 			payload.buf[i] ^= mask_as_bytes[3 - m];
 			data_buf_offset++;
 		}
+	}
+
+	if (ctx->message_type == WEBSOCKET_FLAG_CLOSE) {
+		return websocket_internal_disconnect(ctx);
 	}
 
 	return payload.count;

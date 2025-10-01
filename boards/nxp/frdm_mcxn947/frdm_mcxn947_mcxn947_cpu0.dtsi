@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -214,6 +214,10 @@ zephyr_udc0: &usb1 {
 };
 
 &lpcmp0 {
+	status = "okay";
+};
+
+&opamp0 {
 	status = "okay";
 };
 

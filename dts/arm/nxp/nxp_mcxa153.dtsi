@@ -136,7 +136,7 @@
 				compatible = "soc-nv-flash";
 				reg = <0 DT_SIZE_K(128)>;
 				erase-block-size = <DT_SIZE_K(8)>;
-				write-block-size = <128>;
+				write-block-size = <16>;
 			};
 
 			uuid: uuid@1100800 {
@@ -356,7 +356,7 @@
 			#clock-cells = <1>;
 
 			reset: reset {
-				compatible = "nxp,lpc-syscon-reset";
+				compatible = "nxp,mrcc-reset";
 				#reset-cells = <1>;
 			};
 		};

@@ -87,6 +87,12 @@
 	status = "okay";
 };
 
+&main_i2c3 {
+	pinctrl-0 = <&P2_09_A15_i2c3_scl &P2_11_B15_i2c3_sda>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &main_gpio0 {
 	pinctrl-0 = <&led_pins_default>;
 	pinctrl-names = "default";

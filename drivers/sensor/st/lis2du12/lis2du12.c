@@ -440,8 +440,7 @@ static int lis2du12_init(const struct device *dev)
 		STMEMSC_CTX_SPI(&lis2du12_config_##inst.stmemsc_cfg),		\
 		.stmemsc_cfg = {						\
 			.spi = SPI_DT_SPEC_INST_GET(inst,			\
-					   LIS2DU12_SPI_OP,			\
-					   0),					\
+					   LIS2DU12_SPI_OP)			\
 		},								\
 		LIS2DU12_CONFIG_COMMON(inst)					\
 	}

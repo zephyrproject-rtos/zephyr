@@ -422,6 +422,17 @@ DT_FOREACH_STATUS_OKAY(nxp_ctimer_pwm, CTIMER_CLOCK_SETUP)
 #endif /* SOC platform */
 #endif /* DAC */
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(opamp0))
+	POWER_DisablePD(kPDRUNCFG_PD_OPAMP0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(opamp1))
+	POWER_DisablePD(kPDRUNCFG_PD_OPAMP1);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(opamp2))
+	POWER_DisablePD(kPDRUNCFG_PD_OPAMP2);
+#endif
 }
 
 /**

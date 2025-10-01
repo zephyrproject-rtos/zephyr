@@ -578,17 +578,19 @@ ZTEST_F(zms, test_zms_gc_corrupt_close_ate)
 	int err;
 
 	Z_TEST_SKIP_IFNDEF(CONFIG_FLASH_SIMULATOR_DOUBLE_WRITES);
-	close_ate.id = 0xffffffff;
+	memset(&close_ate, 0xff, sizeof(struct zms_ate));
+	close_ate.id = ZMS_HEAD_ID;
 	close_ate.offset = fixture->fs.sector_size - sizeof(struct zms_ate) * 5;
 	close_ate.len = 0;
-	close_ate.metadata = 0xffffffff;
 	close_ate.cycle_cnt = 1;
 	close_ate.crc8 = 0xff; /* Incorrect crc8 */
 
-	empty_ate.id = 0xffffffff;
-	empty_ate.offset = 0;
+	memset(&empty_ate, 0, sizeof(struct zms_ate));
+	empty_ate.id = ZMS_HEAD_ID;
 	empty_ate.len = 0xffff;
-	empty_ate.metadata = 0x4201;
+	empty_ate.metadata = FIELD_PREP(ZMS_VERSION_MASK, ZMS_DEFAULT_VERSION) |
+			     FIELD_PREP(ZMS_MAGIC_NUMBER_MASK, ZMS_MAGIC_NUMBER) |
+			     FIELD_PREP(ZMS_ATE_FORMAT_MASK, ZMS_DEFAULT_ATE_FORMAT);
 	empty_ate.cycle_cnt = 1;
 	empty_ate.crc8 =
 		crc8_ccitt(0xff, (uint8_t *)&empty_ate + SIZEOF_FIELD(struct zms_ate, crc8),
@@ -649,7 +651,7 @@ ZTEST_F(zms, test_zms_gc_corrupt_ate)
 	struct zms_ate close_ate;
 	int err;
 
-	close_ate.id = 0xffffffff;
+	close_ate.id = ZMS_HEAD_ID;
 	close_ate.offset = fixture->fs.sector_size / 2;
 	close_ate.len = 0;
 	close_ate.crc8 =
@@ -752,6 +754,8 @@ ZTEST_F(zms, test_zms_cache_init)
 
 	num = num_matching_cache_entries(ate_addr, false, &fixture->fs);
 	zassert_equal(num, 1, "invalid cache entry after restart");
+#else
+	ztest_test_skip();
 #endif
 }
 
@@ -790,6 +794,8 @@ ZTEST_F(zms, test_zms_cache_collision)
 		err = zms_read(&fixture->fs, id, &data, sizeof(data));
 		zassert_equal(-ENOENT, err, "zms_delete failed: %d", err);
 	}
+#else
+	ztest_test_skip();
 #endif
 }
 
@@ -839,6 +845,8 @@ ZTEST_F(zms, test_zms_cache_gc)
 
 	num = num_matching_cache_entries(2ULL << ADDR_SECT_SHIFT, true, &fixture->fs);
 	zassert_equal(num, 2, "invalid cache content after gc");
+#else
+	ztest_test_skip();
 #endif
 }
 
@@ -896,7 +904,8 @@ ZTEST_F(zms, test_zms_cache_hash_quality)
 	TC_PRINT("Cache occupancy: %u\n", (unsigned int)num);
 	zassert_between_inclusive(num, MIN_CACHE_OCCUPANCY, CONFIG_ZMS_LOOKUP_CACHE_SIZE,
 				  "too low cache occupancy - poor hash quality");
-
+#else
+	ztest_test_skip();
 #endif
 }
 
@@ -957,4 +966,46 @@ ZTEST_F(zms, test_zms_input_validation)
 	zassert_true(err == -EINVAL, "zms_delete call with NULL fs failure: %d", err);
 	err = zms_delete(&fixture->fs, 0);
 	zassert_true(err == -EACCES, "zms_delete call before mount fs failure: %d", err);
+}
+
+/*
+ * Test 64 bit ZMS ID support.
+ */
+ZTEST_F(zms, test_zms_id_64bit)
+{
+	int err;
+	ssize_t len;
+	uint64_t data;
+	uint64_t filling_id = 0xdeadbeefULL;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_ZMS_ID_64BIT);
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	/* Fill the first sector with writes of different IDs */
+
+	while (fixture->fs.data_wra + sizeof(data) + sizeof(struct zms_ate) <=
+	       fixture->fs.ate_wra) {
+		data = filling_id;
+		len = zms_write(&fixture->fs, (zms_id_t)filling_id, &data, sizeof(data));
+		zassert_true(len == sizeof(data), "zms_write failed: %d", len);
+
+		/* Choose the next ID so that its lower 32 bits stay invariant.
+		 * The purpose is to test that ZMS doesn't mistakenly cast the
+		 * 64 bit ID to a 32 bit one somewhere.
+		 */
+		filling_id += BIT64(32);
+	}
+
+	/* Read back the written entries and check that they're all unique */
+
+	for (uint64_t id = 0xdeadbeefULL; id < filling_id; id += BIT64(32)) {
+		len = zms_read_hist(&fixture->fs, (zms_id_t)id, &data, sizeof(data), 0);
+		zassert_true(len == sizeof(data), "zms_read_hist unexpected failure: %d", len);
+		zassert_equal(data, id, "read unexpected data: %llx instead of %llx", data, id);
+
+		len = zms_read_hist(&fixture->fs, (zms_id_t)id, &data, sizeof(data), 1);
+		zassert_true(len == -ENOENT, "zms_read_hist unexpected failure: %d", len);
+	}
 }

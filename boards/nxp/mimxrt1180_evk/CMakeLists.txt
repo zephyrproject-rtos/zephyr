@@ -1,11 +1,22 @@
 #
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
 zephyr_library()
 zephyr_library_sources(board.c)
+
+if(CONFIG_SOC_MIMXRT1189_CM33)
+zephyr_linker_sources(DTCM_SECTION cm33/dtcm.ld)
+endif()
+
+if(CONFIG_NXP_BOARD_SPECIFIC_MPU_SETTINGS)
+  if(CONFIG_SOC_MIMXRT1189_CM7)
+    zephyr_sources(cm7/mpu_regions.c)
+    zephyr_linker_sources(DTCM_SECTION cm7/dtcm.ld)
+  endif()
+endif()
 
 if(CONFIG_NXP_IMXRT_BOOT_HEADER)
   if(NOT ((DEFINED CONFIG_BOARD_MIMXRT1180_EVK_MIMXRT1189_CM33)

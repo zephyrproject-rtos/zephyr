@@ -14,11 +14,18 @@
 
 #if CONFIG_SOC_RESET_HOOK
 #include <pico/runtime_init.h>
-
+#if CONFIG_RISCV
+#include <hardware/riscv_platform_timer.h>
+#endif
 
 void soc_reset_hook(void)
 {
+#if CONFIG_RISCV
+	/* The kernel requires the mtimer to tick at the CPU frequency. */
+	riscv_timer_set_fullspeed(true);
+#else
 	runtime_init_per_core_enable_coprocessors();
+#endif
 }
 
 #endif /* CONFIG_SOC_RESET_HOOK */

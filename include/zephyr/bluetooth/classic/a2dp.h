@@ -66,7 +66,7 @@ extern "C" {
  *  @param _freq sbc codec frequency.
  *               for example: A2DP_SBC_SAMP_FREQ_44100 | A2DP_SBC_SAMP_FREQ_48000
  *  @param _ch_mode sbc codec channel mode.
- *               for example: A2DP_SBC_CH_MODE_MONO | A2DP_SBC_CH_MODE_STREO
+ *               for example: A2DP_SBC_CH_MODE_MONO | A2DP_SBC_CH_MODE_STEREO
  *  @param _blk_len sbc codec block length.
  *               for example: A2DP_SBC_BLK_LEN_16
  *  @param _subband sbc codec subband.
@@ -96,7 +96,7 @@ extern "C" {
  *  @param _freq sbc codec frequency.
  *               for example: A2DP_SBC_SAMP_FREQ_44100 | A2DP_SBC_SAMP_FREQ_48000
  *  @param _ch_mode sbc codec channel mode.
- *               for example: A2DP_SBC_CH_MODE_MONO | A2DP_SBC_CH_MODE_STREO
+ *               for example: A2DP_SBC_CH_MODE_MONO | A2DP_SBC_CH_MODE_STEREO
  *  @param _blk_len sbc codec block length.
  *               for example: A2DP_SBC_BLK_LEN_16
  *  @param _subband sbc codec subband.
@@ -127,7 +127,7 @@ extern "C" {
 	static struct bt_a2dp_codec_ie bt_a2dp_ep_cap_ie##_name = {                                \
 		.len = BT_A2DP_SBC_IE_LENGTH,                                                      \
 		.codec_ie = {A2DP_SBC_SAMP_FREQ_44100 | A2DP_SBC_SAMP_FREQ_48000 |                 \
-				     A2DP_SBC_CH_MODE_MONO | A2DP_SBC_CH_MODE_STREO |              \
+				     A2DP_SBC_CH_MODE_MONO | A2DP_SBC_CH_MODE_STEREO |             \
 				     A2DP_SBC_CH_MODE_JOINT,                                       \
 			     A2DP_SBC_BLK_LEN_16 | A2DP_SBC_SUBBAND_8 |                            \
 				     A2DP_SBC_ALLOC_MTHD_LOUDNESS,                                 \
@@ -147,7 +147,7 @@ extern "C" {
 	static struct bt_a2dp_codec_ie bt_a2dp_ep_cap_ie##_name = {                                \
 		.len = BT_A2DP_SBC_IE_LENGTH,                                                      \
 		.codec_ie = {A2DP_SBC_SAMP_FREQ_44100 | A2DP_SBC_SAMP_FREQ_48000 |                 \
-				     A2DP_SBC_CH_MODE_MONO | A2DP_SBC_CH_MODE_STREO |              \
+				     A2DP_SBC_CH_MODE_MONO | A2DP_SBC_CH_MODE_STEREO |             \
 				     A2DP_SBC_CH_MODE_JOINT,                                       \
 			     A2DP_SBC_BLK_LEN_16 | A2DP_SBC_SUBBAND_8 |                            \
 				     A2DP_SBC_ALLOC_MTHD_LOUDNESS,                                 \

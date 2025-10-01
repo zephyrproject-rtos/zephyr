@@ -1145,13 +1145,13 @@ static int adxl367_init(const struct device *dev)
 
 #define ADXL367_RTIO_DEFINE(inst, chipid)                                    \
 	SPI_DT_IODEV_DEFINE(adxl367_iodev_##inst##chipid, DT_DRV_INST(inst),     \
-						ADXL367_SPI_CFG, 0U);                        \
+						ADXL367_SPI_CFG);                        \
 	RTIO_DEFINE(adxl367_rtio_ctx_##inst##chipid, 8, 8);
 
 #define ADXL367_CONFIG_SPI(inst, chipid)					\
 	{								\
 		.bus_init = adxl367_spi_init,				\
-		.spi = SPI_DT_SPEC_INST_GET(inst, ADXL367_SPI_CFG, 0),		\
+		.spi = SPI_DT_SPEC_INST_GET(inst, ADXL367_SPI_CFG),		\
 		ADXL367_CONFIG(inst, chipid)					\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int1_gpios),	\
 		(ADXL367_CFG_IRQ(inst)), ())				\

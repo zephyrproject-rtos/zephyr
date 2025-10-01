@@ -28,6 +28,10 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 
 #include "openthread_utils.h"
 
+#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+#include <openthread/nat64.h>
+#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
+
 #if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
 #include "openthread_border_router.h"
 #endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */

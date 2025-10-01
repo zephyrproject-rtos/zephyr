@@ -16,9 +16,11 @@ tests:
     filter: CONFIG_UART_CONSOLE
     harness: keyboard
     arch_allow: arm
-    platform_allow: nucleo_h743zi
-    integration_platforms:
+    platform_allow:
       - nucleo_h743zi
+      - nucleo_h753zi
+    integration_platforms:
+      - nucleo_h753zi
     extra_args: DTC_OVERLAY_FILE="boards/nucleo_h743zi.overlay"
   drivers.uart.basic_api.poll:
     extra_args: CONF_FILE=prj_poll.conf

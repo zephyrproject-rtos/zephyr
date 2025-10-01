@@ -9,10 +9,10 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <signal.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/posix/pthread.h>
-#include <zephyr/posix/signal.h>
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/slist.h>
 

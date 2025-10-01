@@ -214,7 +214,7 @@ static DEVICE_API(entropy, entropy_maxq10xx_api) = {
 
 #define DEFINE_MAXQ10XX_ENTROPY(_num)                                                              \
 	static const struct entropy_maxq10xx_config entropy_maxq10xx_config##_num = {              \
-		.spi = SPI_DT_SPEC_GET(DT_INST_PARENT(_num), SPI_WORD_SET(8), 0),                  \
+		.spi = SPI_DT_SPEC_GET(DT_INST_PARENT(_num), SPI_WORD_SET(8)),                     \
 		.parent = DEVICE_DT_GET(DT_INST_PARENT(_num)),                                     \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(_num, NULL, NULL, NULL,                                              \

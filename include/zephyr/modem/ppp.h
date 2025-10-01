@@ -123,6 +123,10 @@ struct modem_ppp {
 #endif
 };
 
+struct modem_ppp_config {
+	const struct device *dev;
+};
+
 /**
  * @endcond
  */
@@ -172,13 +176,17 @@ int modem_ppp_init_internal(const struct device *dev);
  * network device instance, and binds the modem_ppp instance to the PPP L2
  * instance.
  *
+ * If underlying cellular device is given, the PPP interface will manage the
+ * power state of the cellular device when starting and stopping the PPP.
+ *
+ * @param _dev Cellular device instance for power management or NULL if not used
  * @param _name Name of the statically defined modem_ppp instance
  * @param _init_iface Hook for the PPP L2 network interface init function
  * @param _prio Initialization priority of the PPP L2 net iface
  * @param _mtu Max size of net_pkt data sent and received on PPP L2 net iface
  * @param _buf_size Size of partial PPP frame transmit and receive buffers
  */
-#define MODEM_PPP_DEFINE(_name, _init_iface, _prio, _mtu, _buf_size)                               \
+#define MODEM_DEV_PPP_DEFINE(_dev, _name, _init_iface, _prio, _mtu, _buf_size)                     \
 	extern const struct ppp_api modem_ppp_ppp_api;                                             \
                                                                                                    \
 	static uint8_t _CONCAT(_name, _receive_buf)[_buf_size];                                    \
@@ -190,10 +198,29 @@ int modem_ppp_init_internal(const struct device *dev);
 		.transmit_buf = _CONCAT(_name, _transmit_buf),                                     \
 		.buf_size = _buf_size,                                                             \
 	};                                                                                         \
+	static const struct modem_ppp_config _CONCAT(_name, _config) = {                           \
+		.dev = _dev,                                                                       \
+	};                                                                                         \
                                                                                                    \
-	NET_DEVICE_INIT(_CONCAT(ppp_net_dev_, _name), "modem_ppp_" # _name,                        \
-			modem_ppp_init_internal, NULL, &_name, NULL, _prio, &modem_ppp_ppp_api,    \
-			PPP_L2, NET_L2_GET_CTX_TYPE(PPP_L2), _mtu)
+	NET_DEVICE_INIT(_CONCAT(ppp_net_dev_, _name), "modem_ppp_" #_name,                         \
+			modem_ppp_init_internal, NULL, &_name, &_CONCAT(_name, _config), _prio,    \
+			&modem_ppp_ppp_api, PPP_L2, NET_L2_GET_CTX_TYPE(PPP_L2), _mtu)
+
+/**
+ * @brief Define a modem PPP module for cellular device tree instance.
+ *
+ * @see MODEM_DEV_PPP_DEFINE
+ */
+#define MODEM_DT_INST_PPP_DEFINE(inst, _name, _init_iface, _prio, _mtu, _buf_size)                 \
+	MODEM_DEV_PPP_DEFINE(DEVICE_DT_INST_GET(inst), _name, _init_iface, _prio, _mtu, _buf_size)
+
+/**
+ * @brief Define a modem PPP module without a device and bind it to a network interface.
+ *
+ * @see MODEM_DEV_PPP_DEFINE
+ */
+#define MODEM_PPP_DEFINE(_name, _init_iface, _prio, _mtu, _buf_size)                               \
+	MODEM_DEV_PPP_DEFINE(NULL, _name, _init_iface, _prio, _mtu, _buf_size)
 
 /**
  * @}

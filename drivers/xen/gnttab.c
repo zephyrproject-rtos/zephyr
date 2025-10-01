@@ -20,6 +20,7 @@
 #include <zephyr/arch/arm64/hypercall.h>
 #include <zephyr/xen/generic.h>
 #include <zephyr/xen/gnttab.h>
+#include <zephyr/xen/memory.h>
 #include <zephyr/xen/public/grant_table.h>
 #include <zephyr/xen/public/memory.h>
 #include <zephyr/xen/public/xen.h>
@@ -193,61 +194,93 @@ static void gop_eagain_retry(int cmd, struct gnttab_map_grant_ref *gref)
 	}
 }
 
-void *gnttab_get_page(void)
+void *gnttab_get_pages(unsigned int npages)
 {
 	int ret;
 	void *page_addr;
-	struct xen_remove_from_physmap rfpm;
+	unsigned int removed;
+	xen_pfn_t gfn;
 
-	page_addr = k_aligned_alloc(XEN_PAGE_SIZE, XEN_PAGE_SIZE);
-	if (!page_addr) {
-		LOG_WRN("Failed to allocate memory for gnttab page!\n");
+	if (npages == 0) {
 		return NULL;
 	}
 
-	rfpm.domid = DOMID_SELF;
-	rfpm.gpfn = xen_virt_to_gfn(page_addr);
+	page_addr = k_aligned_alloc(XEN_PAGE_SIZE, XEN_PAGE_SIZE * npages);
+	if (!page_addr) {
+		LOG_WRN("Failed to allocate memory for gnttab %u pages!", npages);
+		return NULL;
+	}
 
 	/*
 	 * GNTTABOP_map_grant_ref will simply replace the entry in the P2M
 	 * and not release any RAM that may have been associated with
 	 * page_addr, so we release this memory before mapping.
 	 */
-	ret = HYPERVISOR_memory_op(XENMEM_remove_from_physmap, &rfpm);
+	for (removed = 0; removed < npages; removed++) {
+		gfn = xen_virt_to_gfn(page_addr) + removed;
+
+		ret = xendom_remove_from_physmap(DOMID_SELF, gfn);
+		if (ret) {
+			break;
+		}
+	}
+
 	if (ret) {
-		LOG_WRN("Failed to remove gnttab page from physmap, ret = %d\n", ret);
+		LOG_WRN("xendom_remove_from_physmap failed: ret=%d, removed=%u, gfn=%llx",
+			ret, removed, (uint64_t)gfn);
+
+		if (removed > 0) {
+			ret = gnttab_put_pages(page_addr, removed);
+			if (ret) {
+				LOG_ERR("gnttab_put_pages failed ret=%d addr=%p", ret, page_addr);
+				k_panic();
+			}
+		}
+
 		return NULL;
 	}
 
 	return page_addr;
 }
 
-void gnttab_put_page(void *page_addr)
+int gnttab_put_pages(void *start_addr, unsigned int npages)
 {
-	int ret, nr_extents = 1;
+	int ret;
+	size_t i;
 	struct xen_memory_reservation reservation;
-	xen_pfn_t page = xen_virt_to_gfn(page_addr);
+	xen_pfn_t *pages;
 
-	/*
-	 * After unmapping there will be a 4Kb holes in address space
-	 * at 'page_addr' positions. To keep it contiguous and be able
-	 * to return such addresses to memory allocator we need to
-	 * populate memory on unmapped positions here.
-	 */
+	if (npages == 0) {
+		return -EINVAL;
+	}
+
+	pages = k_malloc(sizeof(*pages) * npages);
+	if (pages == NULL) {
+		LOG_WRN("Failed to allocate memory: npages=%u", npages);
+		return -ENOMEM;
+	}
+
+	for (i = 0; i < npages; i++) {
+		pages[i] = xen_virt_to_gfn(start_addr) + i;
+	}
+
 	memset(&reservation, 0, sizeof(reservation));
 	reservation.domid = DOMID_SELF;
 	reservation.extent_order = 0;
-	reservation.nr_extents = nr_extents;
-	set_xen_guest_handle(reservation.extent_start, &page);
+	reservation.nr_extents = npages;
+	set_xen_guest_handle(reservation.extent_start, pages);
 
 	ret = HYPERVISOR_memory_op(XENMEM_populate_physmap, &reservation);
-	if (ret != nr_extents) {
-		LOG_WRN("failed to populate physmap on gfn = 0x%llx, ret = %d\n",
-			page, ret);
-		return;
+	if (ret != npages) {
+		LOG_WRN("failed to populate physmap, ret = %d (npages=%u)", ret, npages);
+		k_free(pages);
+		return -EIO;
 	}
 
-	k_free(page_addr);
+	k_free(pages);
+	k_free(start_addr);
+
+	return 0;
 }
 
 int gnttab_map_refs(struct gnttab_map_grant_ref *map_ops, unsigned int count)

@@ -8,8 +8,8 @@
 #define TESTS_LIB_CLIB_SRC_TEST_THRD_H_
 
 #include <stdint.h>
+#include <time.h>
 
-#include <zephyr/posix/time.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/sys/timeutil.h>
 

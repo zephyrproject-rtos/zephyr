@@ -22,6 +22,7 @@ config SOC_MIMX94398_M33
 	select HAS_MCUX_XCACHE
 	select INIT_ARCH_HW_AT_BOOT
 	select SOC_EARLY_INIT_HOOK
+	select HAS_PM
 
 config SOC_MIMX94398_M7_0
 	select ARM
@@ -35,6 +36,7 @@ config SOC_MIMX94398_M7_0
 	select SOC_EARLY_INIT_HOOK
 	select HAS_MCUX
 	select HAS_MCUX_CACHE
+	select HAS_PM
 
 config SOC_MIMX94398_M7_1
 	select ARM
@@ -48,3 +50,12 @@ config SOC_MIMX94398_M7_1
 	select SOC_EARLY_INIT_HOOK
 	select HAS_MCUX
 	select HAS_MCUX_CACHE
+	select HAS_PM
+
+config SOC_IMX943_PM_MCORE
+	bool "i.MX943 multi-core PM shared logic"
+	default y
+	depends on PM
+	depends on SOC_MIMX94398_M33 || SOC_MIMX94398_M7_0 || SOC_MIMX94398_M7_1
+	help
+	  Common PM flow for Cortex-M cores (M33/M7) on i.MX943

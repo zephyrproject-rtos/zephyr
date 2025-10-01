@@ -81,6 +81,11 @@
 					compatible = "sifli,sf32lb-dll";
 					status = "disabled";
 				};
+
+				dll2: dll2 {
+					compatible = "sifli,sf32lb-dll";
+					status = "disabled";
+				};
 			};
 		};
 
@@ -109,6 +114,18 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			clocks = <&rcc_clk SF32LB52X_CLOCK_MPI2>;
+			status = "disabled";
+		};
+
+		dmac: dma-controller@50081000 {
+			compatible = "sifli,sf32lb-dmac";
+			reg = <0x50081000 0x1000>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_DMAC1>;
+			interrupts = <50 0>, <51 0>, <52 0>, <53 0>,
+				     <54 0>, <55 0>, <56 0>, <57 0>;
+			dma-channels = <8>;
+			dma-requests = <64>;
+			#dma-cells = <3>;
 			status = "disabled";
 		};
 
@@ -167,6 +184,22 @@
 		pmuc: syscon@500ca000 {
 			compatible = "sifli,sf32lb-pmuc", "syscon";
 			reg = <0x500ca000 0x1000>;
+		};
+
+		rtc: rtc@500cb000 {
+			compatible = "sifli,sf32lb-rtc";
+			reg = <0x500cb000 0x1000>;
+			ranges = <0x0 0x500cb000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			interrupts = <49 0>;
+			status = "disabled";
+
+			backup-registers@30 {
+				compatible = "sifli,sf32lb-rtc-backup";
+				reg = <0x30 0x28>;
+				status = "disabled";
+			};
 		};
 	};
 };

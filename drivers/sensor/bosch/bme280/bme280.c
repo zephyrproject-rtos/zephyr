@@ -439,7 +439,7 @@ static int bme280_pm_action(const struct device *dev,
 #define BME280_CONFIG_SPI(inst)				\
 	{						\
 		.bus.spi = SPI_DT_SPEC_INST_GET(	\
-			inst, BME280_SPI_OPERATION, 0),	\
+			inst, BME280_SPI_OPERATION),	\
 		.bus_io = &bme280_bus_io_spi,		\
 	}
 

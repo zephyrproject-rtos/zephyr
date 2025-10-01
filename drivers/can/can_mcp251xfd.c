@@ -1751,7 +1751,7 @@ static DEVICE_API(can, mcp251xfd_api_funcs) = {
 	};                                                                                         \
 	static const struct mcp251xfd_config mcp251xfd_config_##inst = {                           \
 		.common = CAN_DT_DRIVER_CONFIG_INST_GET(inst, 0, 8000000),                         \
-		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0),                             \
+		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8)),                                \
 		.int_gpio_dt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                             \
                                                                                                    \
 		.sof_on_clko = DT_INST_PROP(inst, sof_on_clko),                                    \

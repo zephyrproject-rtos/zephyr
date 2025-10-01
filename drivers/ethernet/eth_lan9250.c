@@ -708,7 +708,7 @@ static int lan9250_init(const struct device *dev)
 	};                                                                                         \
                                                                                                    \
 	static const struct lan9250_config lan9250_##inst##_config = {                             \
-		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0),                             \
+		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8)),                                \
 		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                               \
 		.timeout = CONFIG_ETH_LAN9250_BUF_ALLOC_TIMEOUT,                                   \
 	};                                                                                         \
