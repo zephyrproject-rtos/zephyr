@@ -69,7 +69,11 @@ MAKE_REG_HELPER(csselr_el1);
 MAKE_REG_HELPER(daif)
 MAKE_REG_HELPER(hcr_el2);
 MAKE_REG_HELPER(id_aa64pfr0_el1);
+MAKE_REG_HELPER(id_aa64pfr1_el1);
 MAKE_REG_HELPER(id_aa64mmfr0_el1);
+MAKE_REG_HELPER(id_aa64isar0_el1);
+MAKE_REG_HELPER(id_aa64isar1_el1);
+MAKE_REG_HELPER(id_aa64isar2_el1);
 MAKE_REG_HELPER(mpidr_el1);
 MAKE_REG_HELPER(par_el1);
 #if !defined(CONFIG_ARMV8_R)
@@ -197,6 +201,11 @@ static inline bool is_in_secure_state(void)
 {
 	/* We cannot read SCR_EL3 from EL2 or EL1 */
 	return !IS_ENABLED(CONFIG_ARMV8_A_NS);
+}
+
+static inline bool is_sve_implemented(void)
+{
+	return (((read_id_aa64pfr0_el1() >> ID_AA64PFR0_SVE_SHIFT) & ID_AA64PFR0_SVE_MASK) != 0U);
 }
 
 #endif /* !_ASMLANGUAGE */
