@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018 Bosch Sensortec GmbH
  * Copyright (c) 2022, Leonard Pollak
+ * Copyright (c) 2025 Nordic Semiconductors ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,45 +14,58 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/rtio/rtio.h>
 
 #define DT_DRV_COMPAT bosch_bme680
 
 #define BME680_BUS_SPI DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 #define BME680_BUS_I2C DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 
-union bme680_bus {
-#if BME680_BUS_SPI
+enum bme680_bus_type {
+	BME680_BUS_TYPE_SPI,
+	BME680_BUS_TYPE_I2C
+};
+
+struct bme680_bus {
+	struct {
+		struct rtio *ctx;
+		struct rtio_iodev *iodev;
+		enum bme680_bus_type type;
+	} rtio;
+#if CONFIG_SPI
 	struct spi_dt_spec spi;
 #endif
-#if BME680_BUS_I2C
+#if CONFIG_I2C
 	struct i2c_dt_spec i2c;
 #endif
 };
 
-typedef int (*bme680_bus_check_fn)(const union bme680_bus *bus);
-typedef int (*bme680_reg_read_fn)(const struct device *dev,
-				  uint8_t start, uint8_t *buf, int size);
-typedef int (*bme680_reg_write_fn)(const struct device *dev,
-				   uint8_t reg, uint8_t val);
+typedef int (*bme680_bus_check_fn)(const struct bme680_bus *bus);
+typedef int (*bme680_reg_read_fn)(const struct device *dev, uint8_t start, uint8_t *buf,
+				  int size);
+typedef int (*bme680_reg_write_fn)(const struct device *dev, uint8_t reg, uint8_t val);
+
+typedef int (*bme680_reg_prep_write_async_fn)(const struct device *dev, uint8_t reg,
+						  uint8_t val, struct rtio_sqe **out);
+typedef int (*bme680_reg_prep_read_async_fn)(const struct device *dev, uint8_t reg,
+						 uint8_t *buf, size_t len, struct rtio_sqe **out);
 
 struct bme680_bus_io {
 	bme680_bus_check_fn check;
 	bme680_reg_read_fn read;
 	bme680_reg_write_fn write;
+	bme680_reg_prep_write_async_fn write_async_prep;
+	bme680_reg_prep_read_async_fn read_async_prep;
 };
 
-#if BME680_BUS_SPI
 #define BME680_SPI_OPERATION (SPI_WORD_SET(8) | SPI_TRANSFER_MSB | SPI_MODE_CPOL \
 		| SPI_MODE_CPHA | SPI_OP_MODE_MASTER)
-extern const struct bme680_bus_io bme680_bus_io_spi;
-#endif
 
-#if BME680_BUS_I2C
-extern const struct bme680_bus_io bme680_bus_io_i2c;
-#endif
+extern const struct bme680_bus_io bme680_bus_rtio;
 
 struct bme680_config {
-	union bme680_bus bus;
+	struct bme680_bus bus;
 	const struct bme680_bus_io *bus_io;
 };
 
@@ -78,7 +92,7 @@ struct bme680_config {
 #define BME680_REG_UNIQUE_ID            0x83
 #define BME680_REG_COEFF1               0x8a
 #define BME680_REG_COEFF2               0xe1
-#define BME680_REG_CHIP_ID		0xd0
+#define BME680_REG_CHIP_ID				0xd0
 #define BME680_REG_SOFT_RESET           0xe0
 
 #define BME680_MSK_NEW_DATA             0x80
@@ -161,15 +175,50 @@ struct bme680_config {
 #define BME680_MODE_SLEEP               0
 #define BME680_MODE_FORCED              1
 
-#define BME680_CTRL_MEAS_VAL    (BME680_PRESS_OVER | BME680_TEMP_OVER \
-				 | BME680_MODE_FORCED)
-#define BME680_CONFIG_VAL               BME680_FILTER
-#define BME680_CTRL_GAS_1_VAL   0x10
+#define BME680_CTRL_MEAS_VAL	(BME680_PRESS_OVER | BME680_TEMP_OVER | BME680_MODE_FORCED)
+#define BME680_CONFIG_VAL		BME680_FILTER
+#define BME680_CTRL_GAS_1_VAL   0x20
+#define BME680_SOFT_RESET_VAL	0xb6
 
 #define BME680_CONCAT_BYTES(msb, lsb) (((uint16_t)msb << 8) | (uint16_t)lsb)
 
-struct bme680_data {
-	/* Compensation parameters. */
+/* Convert to Q15.16 */
+#define BME680_TEMP_CONV      100
+#define BME680_TEMP_SHIFT     16
+/* Treat UQ24.8 as Q23.8
+ * Need to divide by 1000 to convert to kPa
+ */
+#define BME680_PRESS_CONV_KPA 1000
+#define BME680_PRESS_SHIFT    23
+/* Treat UQ22.10 as Q21.10 */
+#define BME680_HUM_SHIFT      21
+/* Gas resistance is reported as integer ohms (no scaling) */
+#define BME680_GAS_RES_SHIFT  0
+
+#define BME680_DELAY_TIMEOUT 250
+
+struct bme680_compensated_data {
+	int32_t temp;
+	uint32_t press;
+	uint32_t humidity;
+	uint32_t gas_resistance;
+};
+
+struct bme680_raw_data {
+	union {
+		uint8_t buf[14];
+		struct {
+			uint32_t pressure: 24;
+			uint32_t temperature: 24;
+			uint32_t humidity: 16;
+			uint32_t padding: 24;
+			uint32_t gas: 16;
+		} __packed;
+	};
+};
+
+/* Compensation parameters. */
+struct bme680_comp_param {
 	uint16_t par_h1;
 	uint16_t par_h2;
 	int8_t par_h3;
@@ -197,24 +246,68 @@ struct bme680_data {
 	int8_t res_heat_val;
 	int8_t range_sw_err;
 	bool has_read_compensation;
-
-	/* Calculated sensor values. */
-	int32_t calc_temp;
-	uint32_t calc_press;
-	uint32_t calc_humidity;
-	uint32_t calc_gas_resistance;
-
-	/* Additional information */
-	uint8_t heatr_stab;
-
-	/* Carryover between temperature and pressure/humidity compensation. */
-	int32_t t_fine;
-
-	uint8_t chip_id;
-
-#if BME680_BUS_SPI
-	uint8_t mem_page;
-#endif
 };
+
+struct bme680_data {
+	struct bme680_comp_param comp_param;
+	struct bme680_compensated_data comp;
+	uint8_t chip_id;
+	uint8_t status;
+	uint8_t mem_page;
+};
+
+/*
+ * RTIO
+ */
+struct bme680_decoder_header {
+	uint64_t timestamp;
+	uint8_t channels : 4;
+};
+
+struct bme680_encoded_data {
+	struct bme680_decoder_header header;
+	struct bme680_comp_param comp_param;
+	struct bme680_raw_data payload;
+};
+
+void bme680_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
+
+/* inline helper functions */
+static inline int bme680_bus_check(const struct device *dev)
+{
+	const struct bme680_config *cfg = dev->config;
+
+	return cfg->bus_io->check(&cfg->bus);
+}
+
+static inline int bme680_reg_read(const struct device *dev, uint8_t start, void *buf, int size)
+{
+	const struct bme680_config *cfg = dev->config;
+
+	return cfg->bus_io->read(dev, start, buf, size);
+}
+
+static inline int bme680_reg_write(const struct device *dev, uint8_t reg, uint8_t val)
+{
+	const struct bme680_config *cfg = dev->config;
+
+	return cfg->bus_io->write(dev, reg, val);
+}
+
+static inline int bme680_prep_reg_write_async(const struct device *dev, uint8_t reg, uint8_t val,
+						  struct rtio_sqe **out)
+{
+	const struct bme680_config *cfg = dev->config;
+
+	return cfg->bus_io->write_async_prep(dev, reg, val, out);
+}
+
+static inline int bme680_prep_reg_read_async(const struct device *dev, uint8_t reg, uint8_t *buf,
+						 size_t len, struct rtio_sqe **out)
+{
+	const struct bme680_config *cfg = dev->config;
+
+	return cfg->bus_io->read_async_prep(dev, reg, buf, len, out);
+}
 
 #endif /* __ZEPHYR_DRIVERS_SENSOR_BME680_H__ */
