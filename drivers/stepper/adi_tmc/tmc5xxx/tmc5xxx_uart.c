@@ -7,13 +7,14 @@
 #include <zephyr/logging/log.h>
 
 #include "tmc51xx.h"
+#include "adi_tmc5xxx_core.h"
 #include <adi_tmc_bus.h>
 #include <adi_tmc_uart.h>
 
-#if TMC51XX_BUS_UART
-LOG_MODULE_DECLARE(tmc51xx, CONFIG_STEPPER_LOG_LEVEL);
+#if CONFIG_STEPPER_ADI_TMC_UART
+LOG_MODULE_DECLARE(tmc5xxx, CONFIG_STEPPER_LOG_LEVEL);
 
-static int tmc51xx_bus_check_uart(const union tmc_bus *bus, uint8_t comm_type)
+static int tmc5xxx_bus_check_uart(const union tmc_bus *bus, uint8_t comm_type)
 {
 	if (comm_type != TMC_COMM_UART) {
 		return -ENOTSUP;
@@ -21,10 +22,10 @@ static int tmc51xx_bus_check_uart(const union tmc_bus *bus, uint8_t comm_type)
 	return device_is_ready(bus->uart) ? 0 : -ENODEV;
 }
 
-static int tmc51xx_reg_write_uart(const struct device *dev, const uint8_t reg_addr,
+static int tmc5xxx_reg_write_uart(const struct device *dev, const uint8_t reg_addr,
 				  const uint32_t reg_val)
 {
-	const struct tmc51xx_config *config = dev->config;
+	const struct tmc5xxx_controller_config *config = dev->config;
 	int err;
 
 	/* Route to the adi_tmc_uart.h implementation */
@@ -38,10 +39,10 @@ static int tmc51xx_reg_write_uart(const struct device *dev, const uint8_t reg_ad
 	return err;
 }
 
-static int tmc51xx_reg_read_uart(const struct device *dev, const uint8_t reg_addr,
+static int tmc5xxx_reg_read_uart(const struct device *dev, const uint8_t reg_addr,
 				 uint32_t *reg_val)
 {
-	const struct tmc51xx_config *config = dev->config;
+	const struct tmc5xxx_controller_config *config = dev->config;
 	int err;
 
 	/* Route to the adi_tmc_uart.h implementation */
@@ -55,9 +56,9 @@ static int tmc51xx_reg_read_uart(const struct device *dev, const uint8_t reg_add
 	return err;
 }
 
-const struct tmc_bus_io tmc51xx_uart_bus_io = {
-	.check = tmc51xx_bus_check_uart,
-	.read = tmc51xx_reg_read_uart,
-	.write = tmc51xx_reg_write_uart,
+const struct tmc_bus_io tmc5xxx_uart_bus_io = {
+	.check = tmc5xxx_bus_check_uart,
+	.read = tmc5xxx_reg_read_uart,
+	.write = tmc5xxx_reg_write_uart,
 };
-#endif /* TMC51XX_BUS_UART */
+#endif /* CONFIG_STEPPER_ADI_TMC_UART */
