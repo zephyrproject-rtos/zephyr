@@ -63,8 +63,8 @@ static inline void feedback_target_init(void)
 static const nrfx_gpiote_t gpiote =
 	NRFX_GPIOTE_INSTANCE(FEEDBACK_GPIOTE_INSTANCE_NUMBER);
 
-static const nrfx_timer_t feedback_timer_instance =
-	NRFX_TIMER_INSTANCE(FEEDBACK_TIMER_INSTANCE_NUMBER);
+static nrfx_timer_t feedback_timer_instance =
+	NRFX_TIMER_INSTANCE(NRF_TIMER_INST_GET(FEEDBACK_TIMER_INSTANCE_NUMBER));
 
 /* See 5.12.4.2 Feedback in Universal Serial Bus Specification Revision 2.0 for
  * more information about the feedback. There is a direct implementation of the
