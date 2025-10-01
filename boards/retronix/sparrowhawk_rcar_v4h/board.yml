@@ -1,0 +1,5 @@
+board:
+  name: sparrowhawk_rcar_v4h
+  vendor: retronix
+  socs:
+  - name: r8a779g0
