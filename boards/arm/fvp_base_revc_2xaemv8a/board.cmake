@@ -43,4 +43,12 @@ if(CONFIG_BUILD_WITH_TFA)
     set(FVP_FLASH_FILE ${TFA_BINARY_DIR}/fvp/release/fip.bin)
   endif()
 
+elseif(CONFIG_PM_CPU_OPS_FVP)
+  # Configure RVBAR_EL3 for bare metal SMP when using FVP PM CPU ops driver
+  set(ARMFVP_FLAGS ${ARMFVP_FLAGS}
+    # Set RVBAR_EL3 for secondary CPUs to Zephyr image base address
+    -C cluster0.cpu1.RVBAR=${CONFIG_KERNEL_VM_BASE}
+    -C cluster0.cpu2.RVBAR=${CONFIG_KERNEL_VM_BASE}
+    -C cluster0.cpu3.RVBAR=${CONFIG_KERNEL_VM_BASE}
+    )
 endif()
