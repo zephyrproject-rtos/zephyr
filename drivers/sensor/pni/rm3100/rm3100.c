@@ -230,8 +230,7 @@ static int rm3100_init(const struct device *dev)
 	COND_CODE_1(DT_INST_ON_BUS(inst, spi),							   \
 		    (SPI_DT_IODEV_DEFINE(rm3100_bus_##inst,					   \
 					 DT_DRV_INST(inst),					   \
-					 SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB,  \
-					 0U)),							   \
+					 SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB)),\
 		    ());									   \
 												   \
 	static const struct rm3100_config rm3100_cfg_##inst = {					   \
