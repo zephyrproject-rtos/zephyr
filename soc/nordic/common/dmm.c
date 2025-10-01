@@ -135,32 +135,19 @@ static void tail_mask_set(atomic_t *tail_mask, size_t num_bits, size_t off)
 		return;
 	}
 
-	/* If bit mask exceeds a single word then tail may spill to the adjacent word. */
 	size_t idx = tail_off / 32;
+	atomic_t *t_mask = &tail_mask[idx];
 
-	tail_off = tail_off - 32 * idx;
-	if ((tail_off + tail_bits) <= 32) {
-		/* Tail mask fits in a single word. */
-		atomic_or(&tail_mask[idx], BIT_MASK(tail_bits) << tail_off);
-		return;
+	tail_off = tail_off % 32;
+	while (tail_bits > 0) {
+		uint32_t bits = MIN(32 - tail_off, tail_bits);
+		uint32_t mask = (bits == 32) ? UINT32_MAX : (BIT_MASK(bits) << tail_off);
+
+		atomic_or(t_mask, mask);
+		t_mask++;
+		tail_off = 0;
+		tail_bits -= bits;
 	}
-
-	/* Tail spilled. Remainder is set in the next word. Since number of tail_masks
-	 * match number of words in bitarray we don't need to check if we are exceeding
-	 * the array boundary.
-	 */
-	atomic_or(&tail_mask[idx], BIT_MASK(32 - tail_off) << tail_off);
-
-
-	size_t rem_tail = tail_bits - (32 - tail_off);
-	atomic_t *mask = &tail_mask[idx + 1];
-
-	while (rem_tail >= 32) {
-		atomic_or(mask, UINT32_MAX);
-		mask++;
-		rem_tail -= 32;
-	}
-	atomic_or(mask, BIT_MASK(rem_tail));
 }
 
 /* Function determines how many chunks were used for the allocated buffer. It is
@@ -175,47 +162,37 @@ static void tail_mask_set(atomic_t *tail_mask, size_t num_bits, size_t off)
  */
 static uint32_t num_bits_get(atomic_t *tail_mask, size_t off)
 {
-	uint32_t mask;
-	uint32_t num_bits;
-
-	if (HEAP_NUM_WORDS == 1) {
-		mask = (*tail_mask | BIT(off)) >> off;
-		num_bits = (~mask == 0) ? 32 : __builtin_ctz(~mask);
-		if (num_bits > 1) {
-			mask = BIT_MASK(num_bits - 1) << (off + 1);
-			atomic_and(tail_mask, ~mask);
-		}
-
-		return num_bits;
-	}
-
-	/* In multiword bit array we need to check if tail is spilling over to the next word. */
-	size_t idx = off / 32;
-	size_t w_off = off - 32 * idx;
+	uint32_t num_bits = 1;
+	size_t tail_off = off + 1;
+	size_t idx = tail_off / 32;
 	atomic_t *t_mask = &tail_mask[idx];
 
-	mask = (*t_mask | BIT(w_off)) >> w_off;
-	num_bits = (~mask == 0) ? 32 : __builtin_ctz(~mask);
-	if (num_bits == 1) {
-		return num_bits;
-	}
+	tail_off = tail_off % 32;
+	do {
+		uint32_t mask = (uint32_t)*t_mask >> tail_off;
 
-	mask = BIT_MASK(num_bits - 1) << (w_off + 1);
-	atomic_and(t_mask, ~mask);
-	if (((w_off + num_bits) == 32) && (idx < (HEAP_NUM_WORDS - 1))) {
-		size_t tmp_bits;
+		if (mask == UINT32_MAX) {
+			num_bits += 32;
+			atomic_set(t_mask, 0);
+		} else {
+			uint32_t bits = __builtin_ctz(~mask);
 
-		/* If we are at the end of the one mask we need to check the beginning of the
-		 * next one as there might be remaining part of the tail.
-		 */
-		do {
-			t_mask++;
-			tmp_bits = (*t_mask == UINT32_MAX) ? 32 : __builtin_ctz(~(*t_mask));
-			mask = (tmp_bits == 32) ? UINT32_MAX : BIT_MASK(tmp_bits);
-			atomic_and(t_mask, ~mask);
-			num_bits += tmp_bits;
-		} while ((tmp_bits == 32) && (t_mask != &tail_mask[HEAP_NUM_WORDS - 1]));
-	}
+			if (bits == 0) {
+				break;
+			}
+
+			num_bits += bits;
+			atomic_and(t_mask, ~(BIT_MASK(bits) << tail_off));
+
+			if (bits + tail_off < 32) {
+				break;
+			}
+
+			tail_off = 0;
+		}
+
+		t_mask++;
+	} while ((HEAP_NUM_WORDS > 1) && (t_mask != &tail_mask[HEAP_NUM_WORDS]));
 
 	return num_bits;
 }
