@@ -10,3 +10,4 @@ config BOARD_FVP_BASE_REVC_2XAEM
 	select SOC_FVP_V9A if BOARD_QUALIFIERS = "v9a"
 	select SOC_FVP_V9A if BOARD_QUALIFIERS = "v9a/smp"
 	select SOC_FVP_V9A if BOARD_QUALIFIERS = "v9a/smp/ns"
+	select SOC_FVP_A320 if BOARD_QUALIFIERS = "a320"
