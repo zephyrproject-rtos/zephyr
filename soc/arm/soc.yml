@@ -33,6 +33,7 @@ family:
     socs:
     - name: v8a
     - name: v9a
+    - name: a320
   - name: fvp_aemv8r
     socs:
     - name: fvp_aemv8r_aarch64
