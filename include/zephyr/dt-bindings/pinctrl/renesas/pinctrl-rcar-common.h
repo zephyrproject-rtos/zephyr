@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021-2023 IoT.bzh
+ * Copyright (c) 2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -81,6 +82,10 @@
 #define IP1SR7(shift, func) IPnSR(1, 7, shift, func)
 #define IP2SR7(shift, func) IPnSR(2, 7, shift, func)
 #define IP3SR7(shift, func) IPnSR(3, 7, shift, func)
+#define IP0SR8(shift, func) IPnSR(0, 8, shift, func)
+#define IP1SR8(shift, func) IPnSR(1, 8, shift, func)
+#define IP2SR8(shift, func) IPnSR(2, 8, shift, func)
+#define IP3SR8(shift, func) IPnSR(3, 8, shift, func)
 
 /**
  * @brief Macro to define a dummy IPSR flag for a pin
