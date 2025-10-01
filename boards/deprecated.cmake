@@ -67,3 +67,12 @@ set(esp32_devkitc_wrover/esp32/appcpu_DEPRECATED
 set(scobc_module1_DEPRECATED
     scobc_a1
 )
+set(fvp_base_revc_2xaemv8a_DEPRECATED
+    fvp_base_revc_2xaem/v8a
+)
+set(fvp_base_revc_2xaemv8a/fvp_base_revc_2xaemv8a/smp_DEPRECATED
+    fvp_base_revc_2xaem/v8a/smp
+)
+set(fvp_base_revc_2xaemv8a/fvp_base_revc_2xaemv8a/smp/ns_DEPRECATED
+    fvp_base_revc_2xaem/v8a/smp/ns
+)
