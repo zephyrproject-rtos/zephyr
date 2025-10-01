@@ -14,12 +14,6 @@
 
 / {
 	clocks {
-		uartclk: apb-pclk {
-			compatible = "fixed-clock";
-			clock-frequency = <DT_FREQ_M(24)>;
-			#clock-cells = <0>;
-		};
-
 		xo32m: xo32m {
 			compatible = "ambiq,clkctrl";
 			clock-frequency = <DT_FREQ_M(32)>;
@@ -406,39 +400,35 @@
 		};
 
 		uart0: uart@4001c000 {
-			compatible = "ambiq,pl011-uart", "arm,pl011";
+			compatible = "ambiq,uart";
 			reg = <0x4001c000 0x1000>;
 			interrupts = <15 0>;
-			interrupt-names = "UART0";
+			clk-src = <0>;
 			status = "disabled";
-			clocks = <&uartclk>;
 		};
 
 		uart1: uart@4001d000 {
-			compatible = "ambiq,pl011-uart", "arm,pl011";
+			compatible = "ambiq,uart";
 			reg = <0x4001d000 0x1000>;
 			interrupts = <16 0>;
-			interrupt-names = "UART1";
+			clk-src = <0>;
 			status = "disabled";
-			clocks = <&uartclk>;
 		};
 
 		uart2: uart@4001e000 {
-			compatible = "ambiq,pl011-uart", "arm,pl011";
+			compatible = "ambiq,uart";
 			reg = <0x4001e000 0x1000>;
 			interrupts = <17 0>;
-			interrupt-names = "UART2";
+			clk-src = <0>;
 			status = "disabled";
-			clocks = <&uartclk>;
 		};
 
 		uart3: uart@4001f000 {
-			compatible = "ambiq,pl011-uart", "arm,pl011";
+			compatible = "ambiq,uart";
 			reg = <0x4001f000 0x1000>;
 			interrupts = <18 0>;
-			interrupt-names = "UART3";
+			clk-src = <0>;
 			status = "disabled";
-			clocks = <&uartclk>;
 		};
 
 		iom0: iom@40050000 {
