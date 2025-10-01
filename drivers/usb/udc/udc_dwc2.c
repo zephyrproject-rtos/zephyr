@@ -224,18 +224,65 @@ static void dwc2_wait_for_bit(const struct device *dev,
 	}
 }
 
+#define DWC2_SUPPORTS_DMA(node, operator)					\
+	(usb_dwc2_get_ghwcfg2_otgarch(DT_PROP(node, ghwcfg2)) ==		\
+	 USB_DWC2_GHWCFG2_OTGARCH_INTERNALDMA) operator
+
+#define ALL_INSTANCES_SUPPORT_BUFFER_DMA					\
+	(DT_FOREACH_STATUS_OKAY_VARGS(DT_DRV_COMPAT, DWC2_SUPPORTS_DMA, &&) 1)
+
+#define ANY_INSTANCE_SUPPORTS_BUFFER_DMA					\
+	(DT_FOREACH_STATUS_OKAY_VARGS(DT_DRV_COMPAT, DWC2_SUPPORTS_DMA, ||) 0)
+
+#define DWC2_DRIVER_SUPPORTS_COMPLETER_MODE					\
+	(!IS_ENABLED(CONFIG_UDC_DWC2_DMA) || !ALL_INSTANCES_SUPPORT_BUFFER_DMA)
+
 static inline bool dwc2_in_completer_mode(const struct device *dev)
 {
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
 
-	return !IS_ENABLED(CONFIG_UDC_DWC2_DMA) || !priv->bufferdma;
+	if (!IS_ENABLED(CONFIG_UDC_DWC2_DMA)) {
+		/* Completer mode is the only supported mode */
+		return true;
+	}
+
+	if (ALL_INSTANCES_SUPPORT_BUFFER_DMA) {
+		/* All instances support Buffer DMA and it is compiled, which
+		 * means that compiler can optimize away Completer mode support.
+		 */
+		return false;
+	}
+
+	if (!ANY_INSTANCE_SUPPORTS_BUFFER_DMA) {
+		/* DMA Kconfig was enabled, but there is no instance that can
+		 * use it. Completer mode will be used on all instances.
+		 */
+		return true;
+	}
+
+	return !priv->bufferdma;
 }
 
 static inline bool dwc2_in_buffer_dma_mode(const struct device *dev)
 {
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
 
-	return IS_ENABLED(CONFIG_UDC_DWC2_DMA) && priv->bufferdma;
+	if (!IS_ENABLED(CONFIG_UDC_DWC2_DMA)) {
+		/* Buffer DMA support not compiled */
+		return false;
+	}
+
+	if (ALL_INSTANCES_SUPPORT_BUFFER_DMA) {
+		/* Buffer DMA is used by all instances */
+		return true;
+	}
+
+	if (!ANY_INSTANCE_SUPPORTS_BUFFER_DMA) {
+		/* Buffer DMA is not supported by any instance */
+		return false;
+	}
+
+	return priv->bufferdma;
 }
 
 /* Get DOEPCTLn or DIEPCTLn register address */
@@ -3182,7 +3229,8 @@ static void udc_dwc2_isr_handler(const struct device *dev)
 			dwc2_handle_iepint(dev);
 		}
 
-		if (int_status & USB_DWC2_GINTSTS_RXFLVL) {
+		if (DWC2_DRIVER_SUPPORTS_COMPLETER_MODE &&
+		    int_status & USB_DWC2_GINTSTS_RXFLVL) {
 			/* Handle RxFIFO Non-Empty interrupt */
 			dwc2_handle_rxflvl(dev);
 		}
