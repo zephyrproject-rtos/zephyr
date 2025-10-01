@@ -8,3 +8,8 @@ board:
     - name: smp
       variants:
       - name: ns
+  - name: v9a
+    variants:
+    - name: smp
+      variants:
+      - name: ns

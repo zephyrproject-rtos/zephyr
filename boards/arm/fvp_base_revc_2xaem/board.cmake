@@ -32,6 +32,24 @@ set(ARMFVP_FLAGS
   -C cache_state_modelled=0
   )
 
+# Add ARMv9-A specific configuration flags for all ARMv9-A variants
+if(CONFIG_ARMV9_A)
+  set(ARMFVP_FLAGS ${ARMFVP_FLAGS}
+    # Enable ARMv9.0 extension (includes all ARMv8.x features)
+    -C cluster0.has_arm_v9-0=1
+    # Enable SVE and SVE2 support (mandatory for ARMv9.0 compliance)
+    -C cluster0.has_sve=1
+    -C cluster0.sve.has_sve2=1
+    -C cluster0.sve.sve2_version=2
+    -C cluster0.sve.enable_at_reset=1
+    # Enable enhanced PAC and BTI support (ARMv9.0 features)
+    -C cluster0.enhanced_pac2_level=3
+    -C cluster0.has_enhanced_pac=1
+    )
+  # Set minimum FVP version known to work with ARMv9.0 features (SVE2, enhanced PAC/BTI)
+  set(ARMFVP_MIN_VERSION 11.29.27)
+endif()
+
 if(CONFIG_BUILD_WITH_TFA)
   set(TFA_PLAT "fvp")
 
