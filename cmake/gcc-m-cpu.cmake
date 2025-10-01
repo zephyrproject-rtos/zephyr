@@ -117,6 +117,12 @@ elseif("${ARCH}" STREQUAL "arm64")
     set(GCC_M_CPU cortex-a78)
   elseif(CONFIG_CPU_CORTEX_A510)
     set(GCC_M_CPU cortex-a510)
+  elseif(CONFIG_CPU_CORTEX_A320)
+    # Cortex-A320 was announced in February 2025 and is not yet supported in any GCC version
+    # Use cortex-a710 as fallback since both are high-performance ARMv9-A cores with similar features
+    # TODO: Update to use cortex-a320 when GCC support is added (likely in GCC 15 or 16)
+    set(GCC_M_CPU cortex-a710)
+    message(STATUS "Using cortex-a710 as fallback for cortex-a320 (not yet supported in GCC)")
   elseif(CONFIG_CPU_CORTEX_R82)
     set(GCC_M_CPU cortex-r82)
   endif()
