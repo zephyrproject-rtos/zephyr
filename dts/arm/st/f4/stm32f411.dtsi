@@ -18,6 +18,12 @@
 	soc {
 		compatible = "st,stm32f411", "st,stm32f4", "simple-bus";
 
+		rom_bootloader: rom_bootloader@1fff0000 {
+			compatible = "st,stm32-bootloader";
+			reg = <0x1fff0000 DT_SIZE_K(29)>;
+			status = "okay";
+		};
+
 		spi5: spi@40015000 {
 			compatible = "st,stm32-spi";
 			#address-cells = <1>;
