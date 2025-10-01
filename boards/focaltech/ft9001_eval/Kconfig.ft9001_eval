@@ -2,4 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_FT9001_EVAL
-  select SOC_FT9001
+	select SOC_FT9001

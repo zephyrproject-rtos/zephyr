@@ -26,18 +26,7 @@ Hardware
 Supported Features
 ******************
 
-The Zephyr `ft9001_eval` board configuration supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| CLOCK     | on-chip    | clock control                       |
-| RESET     | on-chip    | reset                               |
-| GPIO      | on-chip    | gpio                                |
-| NVIC      | on-chip    | nested vector interrupt controller  |
-| UART      | on-chip    | serial (polling and interrupt)      |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 Building and Running
 ********************
@@ -49,4 +38,3 @@ Build and flash the :zephyr:code-sample:`hello_world` sample application:
    :board: ft9001_eval
    :goals: build flash
    :compact:
-   

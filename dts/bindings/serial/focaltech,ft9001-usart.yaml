@@ -4,7 +4,7 @@
 description: |
   FocalTech FT9001 USART controller node
 
-  The FT9001 USART (Universal Synchronous/Asynchronous Receiver/Transmitter) 
+  The FT9001 USART (Universal Synchronous/Asynchronous Receiver/Transmitter)
   controller provides serial communication capabilities with support for:
   - Asynchronous UART communication
   - Configurable baud rates
@@ -27,7 +27,7 @@ properties:
     required: true
 
   resets:
-    required: false
+    required: true
 
   clocks:
     required: true

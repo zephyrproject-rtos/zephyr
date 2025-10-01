@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Clock specifiers use the packed IDs defined in
-  include/zephyr/dt-bindings/clock/focaltech_ft9001_clock.h
+  FocalTech FT9001 Clock & Power Manager (CPM) specifiers use the packed IDs
+  defined in include/zephyr/dt-bindings/clock/focaltech_ft9001_clock.h
 
 compatible: "focaltech,ft9001-cpm"
 

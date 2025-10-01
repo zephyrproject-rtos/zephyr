@@ -12,11 +12,13 @@
 			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SCICR_OFFSET, 25, 1)>, /* SCI3 TxD */
 					 <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SCICR_OFFSET, 26, 1)>; /* SCI3 RxD */
 		};
+
 		group2 {
 			/* Disable I2S */
 			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR3_OFFSET, 9, 0)>,
 					 <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR3_OFFSET, 12, 0)>;
 		};
+
 		group3 {
 			/* Disable PWMT1 */
 			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR4_OFFSET, 24, 0)>,
@@ -30,6 +32,7 @@
 			/* First level mux: SSI5 -> SPI1_SS */
 			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR5_OFFSET, 15, 0)>;
 		};
+
 		group2 {
 			/* Second level mux: SPI1_SS -> GINT40 */
 			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR2_OFFSET, 8, 1)>;
@@ -42,6 +45,7 @@
 			/* First level mux: SSI5 -> SPI1_SCK */
 			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR5_OFFSET, 14, 0)>;
 		};
+
 		group2 {
 			/* Second level mux: SPI1_SCK -> GINT41 */
 			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR2_OFFSET, 9, 1)>;
@@ -54,6 +58,7 @@
 			/* First level mux: SSI5 -> SPI1_MISO */
 			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR5_OFFSET, 13, 0)>;
 		};
+
 		group2 {
 			/* Second level mux: SPI1_MISO -> GINT42 */
 			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR2_OFFSET, 10, 1)>;
@@ -66,11 +71,10 @@
 			/* First level mux: SSI5 -> SPI1_MOSI */
 			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR5_OFFSET, 12, 0)>;
 		};
+
 		group2 {
 			/* Second level mux: SPI1_MOSI -> GINT43 */
 			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR2_OFFSET, 11, 1)>;
 		};
 	};
-	
-	status = "okay";
 };

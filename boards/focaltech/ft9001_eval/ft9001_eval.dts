@@ -13,7 +13,7 @@
 / {
 	model = "FocalTech FT9001 Evaluation Board";
 	compatible = "focaltech,ft9001-eval", "focaltech,ft9001";
-	
+
 	chosen {
 		zephyr,console = &usart2;
 		zephyr,shell-uart = &usart2;
@@ -21,6 +21,26 @@
 		zephyr,sram = &sram0;
 		zephyr,sram2 = &sramd0;
 		zephyr,flash-controller = &efm;
+		zephyr,code-partition = &app_partition;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		romcfg_partition: partition@0 {
+			label = "romcfg";
+			reg = <0x00000000 0x00001000>;
+			read-only;
+		};
+
+		app_partition: partition@1000 {
+			label = "app";
+			reg = <0x00001000 0x001FF000>;
+		};
 	};
 };
 
@@ -30,18 +50,6 @@
 	stop-bits = "1";
 	data-bits = <8>;
 	hw-flow-control;
-	status = "okay";
-};
-
-&pinctrl {
-	status = "disabled";
-};
-
-&cpm {
-	status = "okay";
-};
-
-&reset {
 	status = "okay";
 };
 

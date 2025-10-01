@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Reset controller for FocalTech FT9001 SoC.
-  Reset specifiers use the IDs defined in
+  FocalTech FT9001 Reset controller (CPM subnode).
+  Reset specifiers use the packed IDs defined in
   include/zephyr/dt-bindings/reset/focaltech_ft9001_reset.h
 
-compatible: "focaltech,ft9001-reset"
+compatible: "focaltech,ft9001-cpm-rctl"
 
-include: [reset-controller.yaml, base.yaml]
+include: [reset-controller.yaml]
 
 properties:
   "#reset-cells":

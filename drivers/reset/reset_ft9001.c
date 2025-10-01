@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT focaltech_ft9001_reset
+#define DT_DRV_COMPAT focaltech_ft9001_cpm_rctl
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
@@ -15,10 +15,9 @@
 /** Reset register offset (from encoded id) */
 #define FT9001_RESET_REG_OFFSET(id) (((id) >> FOCALTECH_RESET_SHIFT) & 0xFFFFU)
 /** Reset control bit (from encoded id) */
-#define FT9001_RESET_BIT(id) ((id) & FOCALTECH_RESET_MASK)
+#define FT9001_RESET_BIT(id)        ((id) & FOCALTECH_RESET_MASK)
 
-struct reset_ft9001_config
-{
+struct reset_ft9001_config {
 	uint32_t base;
 };
 
@@ -107,8 +106,8 @@ static const struct reset_driver_api reset_ft9001_driver_api = {
 };
 
 static const struct reset_ft9001_config ft9001_reset_config = {
-	.base = DT_REG_ADDR(DT_NODELABEL(reset)),
+	.base = DT_REG_ADDR(DT_PARENT(DT_DRV_INST(0))),
 };
 
 DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &ft9001_reset_config, PRE_KERNEL_1,
-					  CONFIG_RESET_INIT_PRIORITY, &reset_ft9001_driver_api);
+		      CONFIG_RESET_INIT_PRIORITY, &reset_ft9001_driver_api);
