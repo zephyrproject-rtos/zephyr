@@ -2,5 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_FVP_BASE_REVC_2XAEMV8A
-	select SOC_SERIES_FVP_AEMV8A
-	select SOC_FVP_BASE_REVC_2XAEMV8A
+	select SOC_V8A
