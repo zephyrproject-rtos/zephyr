@@ -28,7 +28,9 @@ void soc_early_init_hook(void)
 {
 	/* Enable ART Accelerator I-cache and prefetch */
 	LL_FLASH_EnableInstCache();
+#if defined(CONFIG_STM32_FLASH_PREFETCH)
 	LL_FLASH_EnablePrefetch();
+#endif
 
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	/* At reset, system core clock is set to 48 MHz from HSI */
