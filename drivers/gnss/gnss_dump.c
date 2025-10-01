@@ -73,6 +73,18 @@ static const char *gnss_system_to_str(enum gnss_system system)
 		return "SBAS";
 	case GNSS_SYSTEM_IMES:
 		return "IMES";
+	case GNSS_SYSTEM_GPS_L5:
+		return "GPS_L5";
+	case GNSS_SYSTEM_GALILEO_L5:
+		return "GALILEO_L5";
+	case GNSS_SYSTEM_QZSS_L5:
+		return "QZSS_L5";
+	case GNSS_SYSTEM_BEIDOU_B1C:
+		return "BEIDOU B1C";
+	case GNSS_SYSTEM_BEIDOU_B2A:
+		return "BEIDOU B2a";
+	case GNSS_SYSTEM_QZSS_L1S:
+		return "QZSS L1S";
 	}
 
 	return "unknown";
