@@ -16,6 +16,7 @@
 #include <zephyr/devicetree.h>
 
 #include "nwp.h"
+#include "nwp_fw_version.h"
 #include "sl_wifi_callback_framework.h"
 
 #include "sl_si91x_ble.h"
@@ -249,6 +250,54 @@ static void siwx91x_configure_network_stack(sl_si91x_boot_configuration_t *boot_
 	}
 }
 
+static int siwx91x_check_nwp_version(void)
+{
+	sl_wifi_firmware_version_t expected_version;
+	sl_wifi_firmware_version_t version;
+	int ret;
+
+	ret = sl_wifi_get_firmware_version(&version);
+	if (ret != SL_STATUS_OK) {
+		return -EINVAL;
+	}
+
+	sscanf(SIWX91X_NWP_FW_EXPECTED_VERSION, "%hhX.%hhd.%hhd.%hhd.%hhd.%hhd.%hd",
+	       &expected_version.rom_id,
+	       &expected_version.major,
+	       &expected_version.minor,
+	       &expected_version.security_version,
+	       &expected_version.patch_num,
+	       &expected_version.customer_id,
+	       &expected_version.build_num);
+
+	/* Ignore rom_id:
+	 * B is parsed as an hex value and we get 11 in expected_version.rom_id
+	 * We received rom_id=17 in version.rom_id, we suspect a double hex->decimal conversion
+	 */
+	if (expected_version.major != version.major) {
+		return -EINVAL;
+	}
+	if (expected_version.minor != version.minor) {
+		return -EINVAL;
+	}
+	if (expected_version.security_version != version.security_version) {
+		return -EINVAL;
+	}
+	if (expected_version.patch_num != version.patch_num) {
+		return -EINVAL;
+	}
+	if (expected_version.customer_id != version.customer_id) {
+		LOG_DBG("customer_id diverge: expected %d, actual %d", expected_version.customer_id,
+			version.customer_id);
+	}
+	if (expected_version.build_num != version.build_num) {
+		LOG_DBG("build_num diverge: expected %d, actual %d", expected_version.build_num,
+			version.build_num);
+	}
+
+	return 0;
+}
+
 int siwx91x_get_nwp_config(sl_wifi_device_configuration_t *get_config, uint8_t wifi_oper_mode,
 			   bool hidden_ssid, uint8_t max_num_sta)
 {
@@ -334,7 +383,7 @@ int siwx91x_nwp_mode_switch(uint8_t oper_mode, bool hidden_ssid, uint8_t max_num
 static int siwg917_nwp_init(void)
 {
 	sl_wifi_device_configuration_t network_config;
-	sl_status_t status;
+	int status;
 	__maybe_unused sl_wifi_performance_profile_t performance_profile = {
 		.profile = SI91X_POWER_PROFILE};
 	__maybe_unused sl_bt_performance_profile_t bt_performance_profile = {
@@ -347,6 +396,13 @@ static int siwg917_nwp_init(void)
 	status = sl_wifi_init(&network_config, NULL, sl_wifi_default_event_handler);
 	if (status != SL_STATUS_OK) {
 		return -EINVAL;
+	}
+
+	/* Check if the NWP firmware version is correct */
+	status = siwx91x_check_nwp_version();
+	if (status < 0) {
+		LOG_ERR("Unexpected NWP firmware version (expected: %s)",
+			 SIWX91X_NWP_FW_EXPECTED_VERSION);
 	}
 
 	if (IS_ENABLED(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)) {
