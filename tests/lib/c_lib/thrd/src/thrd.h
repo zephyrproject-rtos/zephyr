@@ -14,7 +14,7 @@
 #include <zephyr/sys/timeutil.h>
 
 /* arbitrary magic numbers used for testing */
-#define BIOS_FOOD     0xb105f00d
+#define BIOS_FOOD     0xb105f00dUL
 #define FORTY_TWO     42
 #define SEVENTY_THREE 73
 #define DONT_CARE     0x370ca2e5
