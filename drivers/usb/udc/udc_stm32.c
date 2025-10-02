@@ -136,6 +136,13 @@ static const int syscfg_otg_hs_phy_clk[] = {
 };
 #endif
 
+/*
+ * Hardcode EP0 max packet size (bMaxPacketSize0) to 64,
+ * which is the maximum allowed by the USB Specification
+ * and supported by all STM32 USB controllers.
+ */
+#define UDC_STM32_EP0_MAX_PACKET_SIZE	64U
+
 struct udc_stm32_data  {
 	PCD_HandleTypeDef pcd;
 	const struct device *dev;
@@ -152,7 +159,6 @@ struct udc_stm32_config {
 	uint32_t num_endpoints;
 	uint32_t pma_offset;
 	uint32_t dram_size;
-	uint16_t ep0_mps;
 	uint16_t ep_mps;
 	/* PHY selected for use by instance */
 	uint32_t selected_phy;
@@ -188,19 +194,20 @@ void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)
 {
 	struct udc_stm32_data *priv = hpcd2data(hpcd);
 	const struct device *dev = priv->dev;
-	const struct udc_stm32_config *cfg = dev->config;
 	struct udc_ep_config *ep;
 
 	/* Re-Enable control endpoints */
 	ep = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
 	if (ep && ep->stat.enabled) {
-		HAL_PCD_EP_Open(&priv->pcd, USB_CONTROL_EP_OUT, cfg->ep0_mps,
+		HAL_PCD_EP_Open(&priv->pcd, USB_CONTROL_EP_OUT,
+				UDC_STM32_EP0_MAX_PACKET_SIZE,
 				EP_TYPE_CTRL);
 	}
 
 	ep = udc_get_ep_cfg(dev, USB_CONTROL_EP_IN);
 	if (ep && ep->stat.enabled) {
-		HAL_PCD_EP_Open(&priv->pcd, USB_CONTROL_EP_IN, cfg->ep0_mps,
+		HAL_PCD_EP_Open(&priv->pcd, USB_CONTROL_EP_IN,
+				UDC_STM32_EP0_MAX_PACKET_SIZE,
 				EP_TYPE_CTRL);
 	}
 
@@ -288,7 +295,6 @@ static int udc_stm32_tx(const struct device *dev, struct udc_ep_config *epcfg,
 			struct net_buf *buf)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
-	const struct udc_stm32_config *cfg = dev->config;
 	uint8_t *data; uint32_t len;
 	HAL_StatusTypeDef status;
 
@@ -302,7 +308,7 @@ static int udc_stm32_tx(const struct device *dev, struct udc_ep_config *epcfg,
 	len = buf->len;
 
 	if (epcfg->addr == USB_CONTROL_EP_IN) {
-		len = MIN(cfg->ep0_mps, buf->len);
+		len = MIN(UDC_STM32_EP0_MAX_PACKET_SIZE, buf->len);
 	}
 
 	buf->data += len;
@@ -444,8 +450,7 @@ static void handle_msg_data_in(struct udc_stm32_data *priv, uint8_t epnum)
 	}
 
 	if (ep == USB_CONTROL_EP_IN && buf->len) {
-		const struct udc_stm32_config *cfg = dev->config;
-		uint32_t len = MIN(cfg->ep0_mps, buf->len);
+		uint32_t len = MIN(UDC_STM32_EP0_MAX_PACKET_SIZE, buf->len);
 
 		HAL_PCD_EP_Transmit(&priv->pcd, ep, buf->data, len);
 
@@ -643,9 +648,8 @@ static void udc_stm32_mem_init(const struct device *dev)
 
 	LOG_DBG("DRAM size: %ub", cfg->dram_size);
 
-	if (cfg->ep_mps % 4 || cfg->ep0_mps % 4) {
-		LOG_ERR("Not a 32-bit word multiple: ep0(%u)|ep(%u)",
-			cfg->ep0_mps, cfg->ep_mps);
+	if (cfg->ep_mps % 4) {
+		LOG_ERR("Not a 32-bit word multiple: ep(%u)", cfg->ep_mps);
 		return;
 	}
 
@@ -657,8 +661,8 @@ static void udc_stm32_mem_init(const struct device *dev)
 	priv->occupied_mem = words * 4;
 
 	/* For EP0 TX, reserve only one MPS */
-	HAL_PCDEx_SetTxFiFo(&priv->pcd, 0, cfg->ep0_mps / 4);
-	priv->occupied_mem += cfg->ep0_mps;
+	HAL_PCDEx_SetTxFiFo(&priv->pcd, 0, UDC_STM32_EP0_MAX_PACKET_SIZE / 4);
+	priv->occupied_mem += UDC_STM32_EP0_MAX_PACKET_SIZE;
 
 	/* Reset TX allocs */
 	for (unsigned int i = 1U; i < cfg->num_endpoints; i++) {
@@ -705,7 +709,6 @@ static int udc_stm32_ep_mem_config(const struct device *dev,
 static int udc_stm32_enable(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
-	const struct udc_stm32_config *cfg = dev->config;
 	HAL_StatusTypeDef status;
 	int ret;
 
@@ -720,14 +723,16 @@ static int udc_stm32_enable(const struct device *dev)
 	}
 
 	ret = udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
-				     USB_EP_TYPE_CONTROL, cfg->ep0_mps, 0);
+				     USB_EP_TYPE_CONTROL,
+				     UDC_STM32_EP0_MAX_PACKET_SIZE, 0);
 	if (ret) {
 		LOG_ERR("Failed enabling ep 0x%02x", USB_CONTROL_EP_OUT);
 		return ret;
 	}
 
 	ret |= udc_ep_enable_internal(dev, USB_CONTROL_EP_IN,
-				      USB_EP_TYPE_CONTROL, cfg->ep0_mps, 0);
+				      USB_EP_TYPE_CONTROL,
+				      UDC_STM32_EP0_MAX_PACKET_SIZE, 0);
 	if (ret) {
 		LOG_ERR("Failed enabling ep 0x%02x", USB_CONTROL_EP_IN);
 		return ret;
@@ -1068,12 +1073,10 @@ static const struct udc_api udc_stm32_api = {
 #define USB_NUM_BIDIR_ENDPOINTS	DT_INST_PROP(0, num_bidir_endpoints)
 
 #if defined(USB) || defined(USB_DRD_FS)
-#define EP0_MPS 64U
 #define EP_MPS 64U
 #define USB_BTABLE_SIZE  (8 * USB_NUM_BIDIR_ENDPOINTS)
 #define USB_RAM_SIZE	DT_INST_PROP(0, ram_size)
 #else /* USB_OTG_FS */
-#define EP0_MPS USB_OTG_MAX_EP0_SIZE
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
 #define EP_MPS USB_OTG_HS_MAX_PACKET_SIZE
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs) || DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)
@@ -1094,7 +1097,6 @@ static const struct udc_stm32_config udc0_cfg  = {
 	.num_endpoints = USB_NUM_BIDIR_ENDPOINTS,
 	.dram_size = USB_RAM_SIZE,
 	.pma_offset = USB_BTABLE_SIZE,
-	.ep0_mps = EP0_MPS,
 	.ep_mps = EP_MPS,
 	.selected_phy = UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)),
 	.selected_speed = UDC_STM32_NODE_SPEED(DT_DRV_INST(0)),
@@ -1109,7 +1111,7 @@ static void priv_pcd_prepare(const struct device *dev)
 
 	/* Default values */
 	priv->pcd.Init.dev_endpoints = cfg->num_endpoints;
-	priv->pcd.Init.ep0_mps = cfg->ep0_mps;
+	priv->pcd.Init.ep0_mps = UDC_STM32_EP0_MAX_PACKET_SIZE;
 	priv->pcd.Init.speed = cfg->selected_speed;
 
 	/* Per controller/Phy values */
@@ -1332,7 +1334,7 @@ static int udc_stm32_driver_init0(const struct device *dev)
 		ep_cfg_out[i].caps.out = 1;
 		if (i == 0) {
 			ep_cfg_out[i].caps.control = 1;
-			ep_cfg_out[i].caps.mps = cfg->ep0_mps;
+			ep_cfg_out[i].caps.mps = UDC_STM32_EP0_MAX_PACKET_SIZE;
 		} else {
 			ep_cfg_out[i].caps.bulk = 1;
 			ep_cfg_out[i].caps.interrupt = 1;
@@ -1352,7 +1354,7 @@ static int udc_stm32_driver_init0(const struct device *dev)
 		ep_cfg_in[i].caps.in = 1;
 		if (i == 0) {
 			ep_cfg_in[i].caps.control = 1;
-			ep_cfg_in[i].caps.mps = cfg->ep0_mps;
+			ep_cfg_in[i].caps.mps = UDC_STM32_EP0_MAX_PACKET_SIZE;
 		} else {
 			ep_cfg_in[i].caps.bulk = 1;
 			ep_cfg_in[i].caps.interrupt = 1;
