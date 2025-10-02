@@ -105,13 +105,32 @@ enum cellular_modem_info_type {
 	CELLULAR_MODEM_INFO_SIM_ICCID,
 };
 
+/** Cellular registration status (3GPP TS 27.007) */
 enum cellular_registration_status {
+	/** Not registered, not searching */
 	CELLULAR_REGISTRATION_NOT_REGISTERED = 0,
-	CELLULAR_REGISTRATION_REGISTERED_HOME,
-	CELLULAR_REGISTRATION_SEARCHING,
-	CELLULAR_REGISTRATION_DENIED,
-	CELLULAR_REGISTRATION_UNKNOWN,
-	CELLULAR_REGISTRATION_REGISTERED_ROAMING,
+	/** Registered, home network */
+	CELLULAR_REGISTRATION_REGISTERED_HOME = 1,
+	/** Not registered, searching for an operator */
+	CELLULAR_REGISTRATION_SEARCHING = 2,
+	/** Registration denied */
+	CELLULAR_REGISTRATION_DENIED = 3,
+	/** Unknown (e.g. out of coverage) */
+	CELLULAR_REGISTRATION_UNKNOWN = 4,
+	/** Registered, roaming */
+	CELLULAR_REGISTRATION_REGISTERED_ROAMING = 5,
+	/** Registered for "SMS only", home network */
+	CELLULAR_REGISTRATION_SMS_ONLY_HOME = 6,
+	/** Registered for "SMS only", roaming network */
+	CELLULAR_REGISTRATION_SMS_ONLY_ROAMING = 7,
+	/** Attached for emergency bearer services only */
+	CELLULAR_REGISTRATION_EMERGENCY_ONLY = 8,
+	/** Registered for "CSFB not preferred", home network */
+	CELLULAR_REGISTRATION_CSFB_NOT_PREFERRED_HOME = 9,
+	/** Registered for "CSFB not preferred", roaming network */
+	CELLULAR_REGISTRATION_CSFB_NOT_PREFERRED_ROAMING = 10,
+	/** Attached for access to "Restricted Local Operator Services" */
+	CELLULAR_REGISTRATION_RLOS = 11,
 };
 
 /** Events emitted asynchronously by a cellular driver */
