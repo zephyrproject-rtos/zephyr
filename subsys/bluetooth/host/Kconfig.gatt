@@ -267,4 +267,5 @@ config BT_GATT_AUTHORIZATION_CUSTOM
 	  with the bt_gatt_authorization_cb_register API. See the API
 	  documentation for more details.
 
+rsource 'Kconfig.gatt_gap_svc_validate'
 endmenu
