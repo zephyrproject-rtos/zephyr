@@ -201,6 +201,7 @@ eckelmann	Eckelmann AG
 edt	Emerging Display Technologies
 eeti	eGalax_eMPIA Technology Inc
 efinix	Efinix Inc
+egis	Egis Technology Inc
 einfochips	Einfochips
 elan	Elan Microelectronic Corp.
 electronut	Electronut Labs
