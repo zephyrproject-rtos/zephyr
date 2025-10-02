@@ -9,34 +9,21 @@ config DALI_PWM
 	depends on DT_HAS_ZEPHYR_DALI_PWM_ENABLED
 	select PWM
 	select PWM_CAPTURE
+	select COUNTER
 	help
 	  Enable DALI driver for generic PWM MCUs.
 
 if DALI_PWM
 
-choice
-	prompt "Thread for sending out"
-	default DALI_PWM_OWN_THREAD
-
-config DALI_PWM_GLOBAL_THREAD
-	bool "Use global thread"
-
-config DALI_PWM_OWN_THREAD
-	bool "Use own thread"
-
-endchoice
-
-config DALI_PWM_THREAD_PRIORITY
-	int "DALI send own thread priority"
-	depends on DALI_PWM_OWN_THREAD
-	default 10
+config DALI_PWM_PRIORITY
+	int "DALI workqueue priority"
+	default 5
 	help
-	  The priority of the thread used for sending DALI frames.
+	  The priority of the workqueue used for the DALI driver.
 
-config DALI_PWM_THREAD_STACK_SIZE
-	int "DALI send own thread stack size"
-	depends on DALI_PWM_OWN_THREAD
-	default 1024
+config DALI_PWM_STACK_SIZE
+	int "DALI driver workqueue thread stack size"
+	default 768
 	help
 	  The thread stack size.
 

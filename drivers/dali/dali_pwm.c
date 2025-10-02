@@ -3,6 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "syscalls/device.h"
+#include "zephyr/devicetree.h"
+#include "zephyr/kernel/thread_stack.h"
 #define DT_DRV_COMPAT zephyr_dali_pwm
 
 #include <zephyr/drivers/dali.h> /* api */
@@ -11,24 +14,27 @@
 #include <zephyr/sys/time_units.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pwm.h>
+#include <zephyr/drivers/counter.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dali_low_level, CONFIG_DALI_LOW_LEVEL_LOG_LEVEL);
 
-#include "timings.h" /* timing constants from DALI standard */
+/* timing constants from DALI standard */
+#include "timings.h"
+
+#define DALI_RX_IDLE   false
+#define DALI_RX_ACTIVE true
 
 #define DALI_RX_GREY_AREA                    (20U)
 #define DALI_TX_INTERFRAME_EXTRA             (800U)
 #define MAX_HALFBIT_TIMES_PER_BACKWARD_FRAME 18
 
-/**
- *      ...__   _   _   _   ___   _   _   _     ___     ___     ___   _     _   __________....
- * DALI      |_| |_| |_| |_|   |_| |_| |_| |___|   |___|   |___|   |_| |___| |_|
- *
- * TIMING    |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |
- * VALUE       1   1   1   1   0   0   0   0   1   0   1   0   1   0   0   1   1   STOP
- *         START |                             DATA                            | STOP
- */
+// TODO(sven) grey areas are system specific -> move to devicetree
+#define GREY_AREA_BITS_US  (20U)
+#define GREY_AREA_FRAME_US (800U)
+
+static struct k_work_q dali_pwm_work_queue;
+static K_KERNEL_STACK_DEFINE(dali_pwm_work_queue_stack, CONFIG_DALI_PWM_STACK_SIZE);
 
 enum pwm_states {
 	NONE,  /* Disable sending. */
@@ -39,33 +45,46 @@ enum pwm_states {
 	LLLLH, /* 5 half bits long, invalid sequence for corrupted bw frame */
 };
 
-enum pwm_capture_state {
-	PWM_CAPTURE_STATE_BUS_DOWN,
-	PWM_CAPTURE_STATE_IDLE,
-	PWM_CAPTURE_STATE_IN_HALFBIT,
-	PWM_CAPTURE_STATE_AT_BITEND,
-	PWM_CAPTURE_STATE_IN_CORRUPT,
-	PWM_CAPTURE_STATE_ERROR,
+enum dali_pwm_rx_state {
+	DALI_PWM_RX_IDLE,
+	DALI_PWM_RX_START_BIT_START,
+	DALI_PWM_RX_START_BIT_INSIDE,
+	DALI_PWM_RX_DATA_BIT_START,
+	DALI_PWM_RX_DATA_BIT_INSIDE,
+	DALI_PWM_RX_ERROR_IN_FRAME,
+	/** TODO(Sven): implement these additional states -- not used right now
+	 * DALI_COUNTER_RX_DESTRORY_FRAME,
+	 * DALI_COUNTER_RX_BUS_LOW,
+	 * DALI_COUNTER_RX_BUS_FAILURE,
+	 * DALI_COUNTER_RX_TRANSMIT_BACKFRAME,
+	 * DALI_COUNTER_RX_STOPBIT_BACKFRAME,
+	 */
 };
 
-/** bit times converted from ns to cycles of timer. To reduce stress on pwm interrupt. */
-struct pwm_timings_cycles {
-	uint32_t half_min;
-	uint32_t half_max;
-	uint32_t full_min;
-	uint32_t full_max;
-	uint32_t stop_time;
+enum dali_pwm_tx_state {
+	DALI_PWM_TX_IDLE,
+	DALI_PWM_TX_START,
+	DALI_PWM_TX_INSIDE,
+	DALI_PWM_TX_FINISH,
+};
+
+/** bit times converted from us to counter ticks. To reduce stress on pwm interrupt. */
+struct dali_pwm_rx_timings {
+	uint32_t half_bit_min;
+	uint32_t half_bit_max;
+	uint32_t full_bit_min;
+	uint32_t full_bit_max;
+	uint32_t stop_bit;
+	int32_t flank_shift;
+	uint32_t top;
+};
+
+struct dali_pwm_tx_timings {
+	uint32_t half_bit;
 	int32_t flank_shift;
 };
 
-enum pwm_timing_length {
-	HALF_BIT_TIME = 0,
-	START_TIME,
-	FULL_BIT_TIME,
-	ERROR_TIME,
-};
-
-struct pwm_frame {
+struct dali_pwm_frame {
 	/**
 	 * DALI frame will be split into a sequence of PWM settings and put
 	 * into this struct. each PWM setting must be send out one after another
@@ -74,14 +93,6 @@ struct pwm_frame {
 	enum pwm_states signals[DALI_MAX_BIT_PER_FRAME + 1]; /* plus startbit */
 	unsigned int signal_length; /**< How many entries are in the array */
 	unsigned int position;      /**< Where we are on sending out the entries */
-};
-
-struct pwm_capture_helper {
-	struct k_spinlock lock;
-	uint32_t data;
-	uint8_t length;
-	enum pwm_capture_state state;
-	uint32_t last_pulse; /* Needed to detect bus_down events. */
 };
 
 struct dali_pwm_tx_callback {
@@ -96,17 +107,22 @@ struct dali_pwm_rx_callback {
 
 struct dali_pwm_tx_data {
 	struct dali_pwm_tx_callback cb;
-	struct k_sem pwm_sem;
-	int32_t shift_cyc;
-	uint32_t bit_time_half_cyc;
-	struct pwm_frame pwm_frame;
+	struct dali_pwm_tx_timings ticks;
+	struct dali_pwm_frame pwm_frame;
+	enum dali_pwm_tx_state status;
 };
 
 struct dali_pwm_rx_data {
 	struct dali_pwm_rx_callback cb;
-	struct pwm_timings_cycles timings;
-	enum pwm_timing_length latest_low;
-	enum pwm_timing_length latest_high;
+	struct dali_pwm_rx_timings ticks;
+	struct k_work work;
+	struct gpio_callback gpio_cb;
+	bool last_data_bit;
+	uint8_t payload_length;
+	uint32_t data;
+	uint32_t last_edge_ticks;
+	uint32_t edge_ticks;
+	enum dali_pwm_rx_state status;
 };
 
 struct dali_pwm_data {
@@ -114,33 +130,17 @@ struct dali_pwm_data {
 	const struct device *dev;
 	struct dali_pwm_tx_data tx;
 	struct dali_pwm_rx_data rx;
-
-	/** helper for receive */
-	struct k_work_delayable frame_finish_work;
-	struct pwm_capture_helper capture;
-	/** forward frames see the settling time from the last edge on the bus. */
-	uint32_t last_edge_timestamp; // TODO(Sven) oboslet?
-	/** backward frames see the settling time from the last edge of their respective forward
-	 * frame */
-	uint32_t last_forward_frame_edge_timestamp; // TODO(Sven) oboslet?
-#if defined(CONFIG_DALI_PWM_OWN_THREAD)
-	struct k_sem tx_thread_sem;
-	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_DALI_PWM_THREAD_STACK_SIZE);
-	struct k_thread thread;
-#else
-	struct k_work_delayable send_work;
-#endif
 };
 
 struct dali_pwm_config {
 	uint32_t time;
-	struct pwm_dt_spec rx_capture_pwm;
-	struct pwm_dt_spec tx_pwm;
+	const struct device *rx_counter;
+	const struct pwm_dt_spec tx_pwm;
+	const struct gpio_dt_spec rx_pin;
+	uint8_t chan_id_stop;
 	int tx_shift_us;
 	int rx_shift_us;
 	unsigned int tx_rx_propagation_max_us;
-	unsigned int rx_finish_work_delay_us;
-	unsigned int rx_capture_work_delay_us;
 };
 
 static void dali_pwm_execute_rx_callback(const struct dali_pwm_data *data, struct dali_frame frame)
@@ -150,30 +150,184 @@ static void dali_pwm_execute_rx_callback(const struct dali_pwm_data *data, struc
 	}
 }
 
-/** this function gets called from pwm_capture to finish the frame, after idle time on bus. */
-static void dali_pwm_finish_frame(struct dali_pwm_data *data)
+static void dali_pwm_rx_reset(struct dali_pwm_data *data)
 {
-	/* TODO(anyone) make sure, that the bus is really IDLE and not in ERROR state. */
+	data->rx.status = DALI_PWM_RX_IDLE;
+	data->rx.last_data_bit = true;
+	data->rx.data = 0;
+	data->rx.payload_length = 0;
+}
 
-	if (!data->capture.length) {
-		/* guard against a race condition from delayed work and recv interrupt. */
-		/* don't alter anything, if there is no data. */
+static void dali_pwm_stopbit_alarm_callback(const struct device *counter, uint8_t chan_id,
+					    uint32_t ticks, void *user_data)
+{
+	const struct device *dev = user_data;
+	struct dali_pwm_data *data = dev->data;
+
+	k_work_submit_to_queue(&dali_pwm_work_queue, &data->rx.work);
+}
+
+static int dali_pwm_restart_stopbit_alarm(struct dali_pwm_data *data,
+					  const struct dali_pwm_config *config)
+{
+	int ret = counter_cancel_channel_alarm(config->rx_counter, config->chan_id_stop);
+
+	if (ret < 0) {
+		LOG_ERR("Error %d could not cancel stopbit alarm for %s", ret, data->dev->name);
+		return ret;
+	}
+
+	struct counter_alarm_cfg cfg = {
+		.callback = dali_pwm_stopbit_alarm_callback,
+		.ticks = data->rx.edge_ticks + data->rx.ticks.stop_bit,
+		.flags = COUNTER_ALARM_CFG_ABSOLUTE,
+		.user_data = (void *)data->dev,
+	};
+
+	if (cfg.ticks > data->rx.ticks.top) {
+		cfg.ticks -= data->rx.ticks.top;
+	}
+
+	ret = counter_set_channel_alarm(config->rx_counter, config->chan_id_stop, &cfg);
+	if (ret < 0) {
+		LOG_ERR("Error %d setting the stopbit alarm for %s to %u ticks", ret,
+			data->dev->name, cfg.ticks);
+	}
+	return ret;
+}
+
+static uint32_t dali_pwm_get_time_difference_ticks(struct dali_pwm_data *data, bool flank_direction)
+{
+	uint32_t raw_difference_ticks = data->rx.edge_ticks - data->rx.last_edge_ticks;
+	/* correct for roll-over of counter */
+	if (raw_difference_ticks > data->rx.ticks.top) {
+		raw_difference_ticks += data->rx.ticks.top;
+	}
+	/* correct for hardware transient time */
+	if (data->rx.last_data_bit != flank_direction) {
+		return raw_difference_ticks - data->rx.ticks.flank_shift;
+	}
+	return raw_difference_ticks + data->rx.ticks.flank_shift;
+}
+
+static bool dali_pwm_is_valid_halfbit(struct dali_pwm_data *data,
+				      const uint32_t time_difference_ticks)
+{
+	if ((time_difference_ticks > data->rx.ticks.half_bit_max) ||
+	    (time_difference_ticks < data->rx.ticks.half_bit_min)) {
+		return false;
+	}
+	return true;
+}
+
+static bool dali_pwm_is_valid_fullbit(struct dali_pwm_data *data,
+				      const uint32_t time_difference_ticks)
+{
+	if ((time_difference_ticks > data->rx.ticks.full_bit_max) ||
+	    (time_difference_ticks < data->rx.ticks.full_bit_min)) {
+		return false;
+	}
+	return true;
+}
+
+static void dali_pwm_set_status(struct dali_pwm_data *data, enum dali_pwm_rx_state new)
+{
+	// allow change from error only into IDLE
+	if (data->rx.status == DALI_PWM_RX_ERROR_IN_FRAME && new != DALI_PWM_RX_IDLE) {
 		return;
 	}
+	data->rx.status = new;
+}
 
-	if (data->capture.state == PWM_CAPTURE_STATE_IN_CORRUPT) {
-		struct dali_frame frame = {
-			.event_type = DALI_FRAME_CORRUPT,
-		};
-
-		dali_pwm_execute_rx_callback(data, frame);
+static void dali_pwm_add_bit_to_rx_data(struct dali_pwm_data *data)
+{
+	data->rx.data = (data->rx.data << 1U) | (data->rx.last_data_bit ? (1U) : (0U));
+	data->rx.payload_length++;
+	if (data->rx.payload_length > DALI_MAX_BIT_PER_FRAME) {
+		dali_pwm_set_status(data, DALI_PWM_RX_ERROR_IN_FRAME);
 	}
+}
 
-	if (data->capture.state != PWM_CAPTURE_STATE_ERROR) {
-		struct dali_frame frame = {
-			.data = data->capture.data,
-		};
-		switch (data->capture.length) {
+static void dali_pwm_process_start_timing(struct dali_pwm_data *data)
+{
+	const uint32_t time_difference_ticks = dali_pwm_get_time_difference_ticks(data, false);
+
+	if (!dali_pwm_is_valid_halfbit(data, time_difference_ticks)) {
+		LOG_ERR("invalid start timing %u ticks, rx-status: %d, bit: %d",
+			time_difference_ticks, data->rx.status, data->rx.payload_length);
+		dali_pwm_set_status(data, DALI_PWM_RX_ERROR_IN_FRAME);
+		return;
+	}
+	if (data->rx.status == DALI_PWM_RX_DATA_BIT_START) {
+		dali_pwm_add_bit_to_rx_data(data);
+		dali_pwm_set_status(data, DALI_PWM_RX_DATA_BIT_INSIDE);
+		return;
+	}
+	dali_pwm_set_status(data, DALI_PWM_RX_START_BIT_INSIDE);
+}
+
+static void dali_pwm_process_inside_timing(struct dali_pwm_data *data)
+{
+	const uint32_t time_difference_ticks = dali_pwm_get_time_difference_ticks(data, true);
+
+	if (dali_pwm_is_valid_halfbit(data, time_difference_ticks)) {
+		dali_pwm_set_status(data, DALI_PWM_RX_DATA_BIT_START);
+		return;
+	}
+	if (dali_pwm_is_valid_fullbit(data, time_difference_ticks)) {
+		data->rx.last_data_bit = !data->rx.last_data_bit;
+		dali_pwm_add_bit_to_rx_data(data);
+		dali_pwm_set_status(data, DALI_PWM_RX_DATA_BIT_INSIDE);
+		return;
+	}
+	LOG_ERR("invalid inside timing %u ticks, rx-status: %d, bit: %d", time_difference_ticks,
+		data->rx.status, data->rx.payload_length);
+	dali_pwm_set_status(data, DALI_PWM_RX_ERROR_IN_FRAME);
+}
+
+static void dali_pwm_process_capture_event(struct dali_pwm_data *data,
+					   const struct dali_pwm_config *config)
+{
+	dali_pwm_restart_stopbit_alarm(data, config);
+
+	switch (data->rx.status) {
+	case DALI_PWM_RX_IDLE:
+		if (gpio_pin_get(config->rx_pin.port, config->rx_pin.pin) == DALI_RX_ACTIVE) {
+			dali_pwm_set_status(data, DALI_PWM_RX_START_BIT_START);
+		}
+		break;
+	case DALI_PWM_RX_START_BIT_START:
+	case DALI_PWM_RX_DATA_BIT_START:
+		dali_pwm_process_start_timing(data);
+		break;
+	case DALI_PWM_RX_START_BIT_INSIDE:
+	case DALI_PWM_RX_DATA_BIT_INSIDE:
+		dali_pwm_process_inside_timing(data);
+		break;
+	case DALI_PWM_RX_ERROR_IN_FRAME:
+		break;
+	default:
+		__ASSERT(false, "invalid status");
+	}
+}
+
+static void dali_pwm_process_stopbit_event(const struct device *dev)
+{
+	struct dali_pwm_data *data = dev->data;
+	struct dali_frame frame = {
+		.data = data->rx.data,
+		.event_type = DALI_EVENT_NONE,
+	};
+	bool rx_cb = false;
+
+	switch (data->rx.status) {
+	case DALI_PWM_RX_START_BIT_START:
+	case DALI_PWM_RX_START_BIT_INSIDE:
+	case DALI_PWM_RX_DATA_BIT_START:
+	case DALI_PWM_RX_DATA_BIT_INSIDE:
+		LOG_INF("{%08x:%02x %08x}", k_uptime_get_32(), data->rx.payload_length,
+			data->rx.data);
+		switch (data->rx.payload_length) {
 		case DALI_FRAME_BACKWARD_LENGTH:
 			frame.event_type = DALI_FRAME_BACKWARD;
 			break;
@@ -187,210 +341,33 @@ static void dali_pwm_finish_frame(struct dali_pwm_data *data)
 			frame.event_type = DALI_FRAME_FIRMWARE;
 			break;
 		default:
-			frame.event_type = DALI_EVENT_NONE;
+			LOG_INF("invalid frame length %d bits", data->rx.payload_length);
+			frame.data = 0, frame.event_type = DALI_FRAME_CORRUPT;
 		}
-		LOG_INF("{%08x%c%02x %08x}", k_uptime_get_32(), ':', data->capture.length,
-			data->capture.data);
-		dali_pwm_execute_rx_callback(data, frame);
-	}
-	data->capture.state = PWM_CAPTURE_STATE_IDLE;
-	data->capture.data = 0;
-	data->capture.length = 0;
-}
-
-static void dali_pwm_finish_frame_work(struct k_work *_work)
-{
-	struct k_work_delayable *work = k_work_delayable_from_work(_work);
-	struct dali_pwm_data *data = CONTAINER_OF(work, struct dali_pwm_data, frame_finish_work);
-
-	k_spinlock_key_t capture_key = k_spin_lock(&data->capture.lock);
-	dali_pwm_finish_frame(data);
-	k_spin_unlock(&data->capture.lock, capture_key);
-}
-
-static enum pwm_timing_length dali_pwm_time_to_length(struct pwm_timings_cycles *timings,
-						      uint32_t time, bool level)
-{
-	/* this might fail after a timer wrap-around */
-	if ((time > timings->stop_time) && level) {
-		return START_TIME;
-	}
-	if (timings->full_min < time && time < timings->full_max) {
-		return FULL_BIT_TIME;
-	}
-	if (timings->half_min < time && time < timings->half_max) {
-		return HALF_BIT_TIME;
-	}
-	return ERROR_TIME;
-}
-
-/*
- * This function assumes, that the access to data->capture is locked.
- */
-static void dali_pwm_continuous_capture_callback_locked(uint32_t period_cycles,
-							uint32_t pulse_cycles, int status,
-							struct dali_pwm_data *data)
-{
-	if (status == -ERANGE) {
-		/* timer overflow. Nothing to worry about */
-		if (pulse_cycles != data->capture.last_pulse) {
-			LOG_ERR("Bus power is lost!");
-			data->capture.state = PWM_CAPTURE_STATE_BUS_DOWN;
-		}
-		data->capture.last_pulse = pulse_cycles;
-		return;
-	}
-	data->capture.last_pulse = pulse_cycles;
-
-	if (data->capture.state == PWM_CAPTURE_STATE_BUS_DOWN) {
-		LOG_INF("Power back up again!");
-		data->capture.state = PWM_CAPTURE_STATE_IDLE;
-		return;
-	}
-
-	/* trigger PWM send */
-	k_sem_give(&data->tx.pwm_sem);
-
-	/* (re-)trigger stop condition */
-	const struct device *dev = data->dev;
-	const struct dali_pwm_config *config = dev->config;
-	const uint32_t stopbit_timeout_us =
-		DALI_RX_BIT_TIME_STOP_US - config->rx_capture_work_delay_us;
-	k_work_reschedule(&data->frame_finish_work, Z_TIMEOUT_US(stopbit_timeout_us));
-
-	if (data->rx.timings.flank_shift < 0) {
-		if (-data->rx.timings.flank_shift >= pulse_cycles) {
-			data->capture.state = PWM_CAPTURE_STATE_ERROR;
-			return;
-		}
-	} else {
-		if (pulse_cycles + data->rx.timings.flank_shift >= period_cycles) {
-			data->capture.state = PWM_CAPTURE_STATE_ERROR;
-			return;
-		}
-	}
-	pulse_cycles += data->rx.timings.flank_shift;
-
-	enum pwm_timing_length high =
-		dali_pwm_time_to_length(&data->rx.timings, pulse_cycles, true);
-	enum pwm_timing_length low =
-		dali_pwm_time_to_length(&data->rx.timings, period_cycles - pulse_cycles, false);
-
-	data->rx.latest_high = high;
-	data->rx.latest_low = low;
-
-	if (high == START_TIME || data->capture.state == PWM_CAPTURE_STATE_IDLE) {
-		if (data->capture.length) {
-			LOG_INF("Frame finish was not called!");
-			dali_pwm_finish_frame(data);
-		}
-		if (low != HALF_BIT_TIME) {
-			LOG_DBG("No valid start condition.");
-			data->capture.state = PWM_CAPTURE_STATE_ERROR;
-			return;
-		}
-		data->capture.state = PWM_CAPTURE_STATE_IN_HALFBIT;
-		data->capture.data = 0;
-		data->capture.length = 0;
-		return;
-	}
-	if (data->capture.state == PWM_CAPTURE_STATE_ERROR ||
-	    data->capture.state == PWM_CAPTURE_STATE_IN_CORRUPT) {
-		return;
-	}
-
-	if (high == ERROR_TIME || low == ERROR_TIME) {
-		LOG_DBG("received error condition");
-		data->capture.state = PWM_CAPTURE_STATE_ERROR;
-		return;
-	}
-	if (data->capture.state == PWM_CAPTURE_STATE_IN_HALFBIT) {
-		/* .._|   */
-		/*  | 1 | */
-		if (high == HALF_BIT_TIME) {
-			/*     _  */
-			/* .._| | */
-			/*  | 1 | */
-			/* we already saved the one for the halfbit we are in */
-			if (low == HALF_BIT_TIME) {
-				/*     _    */
-				/* .._| |_| */
-				/*  | 1 | 1 */
-				data->capture.data = (data->capture.data << 1) | 1;
-				data->capture.length++;
-			} else {
-				/* must be FULL_BIT_TIME */
-				/*     _      */
-				/* .._| |___| */
-				/*  | 1 | E   */
-				data->capture.state = PWM_CAPTURE_STATE_ERROR;
-			}
-		} else {
-			/* must be FULL_BIT_TIME */
-			/*     ___  */
-			/* .._|   | */
-			/*  | 1 | 0 */
-			data->capture.data = (data->capture.data << 1);
-			data->capture.length++;
-			if (low == HALF_BIT_TIME) {
-				/*     ___    */
-				/* .._|   |_| */
-				/*  | 1 | 0 | */
-				data->capture.state = PWM_CAPTURE_STATE_AT_BITEND;
-			} else {
-				/* must be FULL_BIT_TIME */
-				/*     ___      */
-				/* .._|   |___| */
-				/*  | 1 | 0 | 1 */
-				data->capture.data = (data->capture.data << 1) | 1;
-				data->capture.length++;
-			}
-		}
-	} else if (data->capture.state == PWM_CAPTURE_STATE_AT_BITEND) {
-		/* .._| */
-		/*  X | */
-		if (high == HALF_BIT_TIME) {
-			/*     _  */
-			/* .._| | */
-			/*  X | 0 */
-			data->capture.data = (data->capture.data << 1);
-			data->capture.length++;
-			if (low == HALF_BIT_TIME) {
-				/*     _    */
-				/* .._| |_| */
-				/*  X | 0 | */
-				/* nothing to do */
-			} else {
-				/* must be FULL_BIT_TIME */
-				/*     _      */
-				/* .._| |___| */
-				/*  X | 0 | 1 */
-				data->capture.data = (data->capture.data << 1) | 1;
-				data->capture.length++;
-				data->capture.state = PWM_CAPTURE_STATE_IN_HALFBIT;
-			}
-		} else {
-			/* must be FULL_BIT_TIME */
-			/*     ___  */
-			/* .._|   | */
-			/* X  | E   */
-			data->capture.state = PWM_CAPTURE_STATE_ERROR;
-		}
-	}
-	if (data->capture.length > DALI_MAX_BIT_PER_FRAME) {
-		data->capture.state = PWM_CAPTURE_STATE_ERROR;
-	}
-}
-
-static void dali_pwm_continuous_capture_callback(const struct device *dev, uint32_t pwm,
-						 uint32_t period_cycles, uint32_t pulse_cycles,
-						 int status, void *user_data)
-{
-	struct dali_pwm_data *data = user_data;
-	/* It may not be 100% accurate, but good enough. */
-	k_spinlock_key_t capture_key = k_spin_lock(&data->capture.lock);
-	dali_pwm_continuous_capture_callback_locked(period_cycles, pulse_cycles, status, data);
-	k_spin_unlock(&data->capture.lock, capture_key);
+		rx_cb = true;
+		dali_pwm_rx_reset(data);
+		break;
+	case DALI_PWM_RX_ERROR_IN_FRAME:
+		frame.data = 0, frame.event_type = DALI_FRAME_CORRUPT;
+		rx_cb = true;
+		dali_pwm_rx_reset(data);
+		break;
+	// case BUS_FAILURE_DETECT:
+	// 	LOG_INF("bus failure");
+	// 	frame.data = 0, frame.event_type = DALI_EVENT_BUS_FAILURE;
+	// 	err = -EAGAIN;
+	// 	rx_cb = true;
+	// 	break;
+	case DALI_PWM_RX_IDLE:
+		LOG_INF("bus idle");
+		frame.data = 0, frame.event_type = DALI_EVENT_BUS_IDLE;
+		rx_cb = true;
+		dali_pwm_rx_reset(data);
+		break;
+	default:
+		__ASSERT(false, "invalid state");
+	};
+	dali_pwm_execute_rx_callback(data, frame);
 }
 
 static inline int dali_pwm_set_cycles(struct dali_pwm_data *data, const struct pwm_dt_spec *spec,
@@ -404,34 +381,83 @@ static inline int dali_pwm_set_cycles(struct dali_pwm_data *data, const struct p
 		pulse = 0;
 		break;
 	case LH:
-		period = data->tx.bit_time_half_cyc * 2;
-		pulse = data->tx.bit_time_half_cyc + data->tx.shift_cyc;
+		period = data->tx.ticks.half_bit * 2;
+		pulse = data->tx.ticks.half_bit + data->tx.ticks.flank_shift;
 		break;
 	case LHH:
-		period = data->tx.bit_time_half_cyc * 3;
-		pulse = data->tx.bit_time_half_cyc + data->tx.shift_cyc;
+		period = data->tx.ticks.half_bit * 3;
+		pulse = data->tx.ticks.half_bit + data->tx.ticks.flank_shift;
 		break;
 	case LLH:
-		period = data->tx.bit_time_half_cyc * 3;
-		pulse = data->tx.bit_time_half_cyc * 2 + data->tx.shift_cyc;
+		period = data->tx.ticks.half_bit * 3;
+		pulse = data->tx.ticks.half_bit * 2 + data->tx.ticks.flank_shift;
 		break;
 	case LLHH:
-		period = data->tx.bit_time_half_cyc * 4;
-		pulse = data->tx.bit_time_half_cyc * 2 + data->tx.shift_cyc;
+		period = data->tx.ticks.half_bit * 4;
+		pulse = data->tx.ticks.half_bit * 2 + data->tx.ticks.flank_shift;
 		break;
 	case LLLLH:
-		period = data->tx.bit_time_half_cyc * 5;
-		pulse = data->tx.bit_time_half_cyc * 4 + data->tx.shift_cyc;
+		period = data->tx.ticks.half_bit * 5;
+		pulse = data->tx.ticks.half_bit * 4 + data->tx.ticks.flank_shift;
 		break;
 	}
 
-	return pwm_set_cycles(spec->dev, spec->channel, period, pulse, spec->flags);
+	int ret = pwm_set_cycles(spec->dev, spec->channel, period, pulse, spec->flags);
+
+	if (ret < 0) {
+		LOG_ERR("Can not set new pwm cycle for device %s", data->dev->name);
+	}
+	return ret;
 }
 
-static void dali_pwm_generate_corrupt_frame(struct pwm_frame *pwm)
+static void dali_pwm_tx_next_cycle(struct dali_pwm_data *data, const struct dali_pwm_config *config)
 {
-	pwm->signal_length = 0;
-	pwm->position = 0;
+	if (data->tx.status == DALI_PWM_TX_IDLE) {
+		return;
+	}
+	if (data->tx.status == DALI_PWM_TX_START) {
+		dali_pwm_set_cycles(data, &config->tx_pwm,
+				    data->tx.pwm_frame.signals[data->tx.pwm_frame.position++]);
+		if (data->tx.pwm_frame.position >= data->tx.pwm_frame.signal_length) {
+			data->tx.status = DALI_PWM_TX_FINISH;
+		} else {
+			data->tx.status = DALI_PWM_TX_INSIDE;
+		}
+		return;
+	}
+
+	if (data->tx.pwm_frame.position <= data->tx.pwm_frame.signal_length) {
+		data->tx.status = DALI_PWM_TX_START;
+		return;
+	}
+	dali_pwm_set_cycles(data, &config->tx_pwm, NONE);
+	data->tx.status = DALI_PWM_TX_IDLE;
+}
+
+static void dali_pwm_rx_irq_handler(const struct device *port, struct gpio_callback *cb,
+				    gpio_port_pins_t pins)
+{
+	struct dali_pwm_data *data = CONTAINER_OF(cb, struct dali_pwm_data, rx.gpio_cb);
+	const struct dali_pwm_config *config = data->dev->config;
+
+	data->rx.last_edge_ticks = data->rx.edge_ticks;
+	counter_get_value(config->rx_counter, &data->rx.edge_ticks);
+	dali_pwm_tx_next_cycle(data, config);
+	dali_pwm_process_capture_event(data, config);
+}
+
+static void dali_pwm_handle_work_queue(struct k_work *item)
+{
+	struct dali_pwm_data *data = CONTAINER_OF(item, struct dali_pwm_data, rx.work);
+
+	/* for now we just handle stopbit and Rx callback here */
+	dali_pwm_process_stopbit_event(data->dev);
+}
+
+static void dali_pwm_generate_corrupt_frame(struct dali_pwm_frame *pwm)
+{
+	/* reset the frame buffer */
+	*pwm = (struct dali_pwm_frame){0};
 
 	/* Send all ones, except for the second, where we stretch the active state over
 	   the corrupt threshold */
@@ -444,7 +470,7 @@ static void dali_pwm_generate_corrupt_frame(struct pwm_frame *pwm)
  * @brief construct PWM patterns for dali frame and return them.
  *
  */
-static int dali_pwm_generate_frame(const struct dali_frame *frame, struct pwm_frame *pwm)
+static int dali_pwm_generate_frame(const struct dali_frame *frame, struct dali_pwm_frame *pwm)
 {
 	int length = 0;
 
@@ -469,12 +495,12 @@ static int dali_pwm_generate_frame(const struct dali_frame *frame, struct pwm_fr
 	}
 
 	/* reset the frame buffer */
-	*pwm = (struct pwm_frame){0};
+	*pwm = (struct dali_pwm_frame){0};
 
-	/* We iterate over the frame in full and half bits. */
+	/* we iterate over the frame in full and half bits. */
 	int shift_half_bit = 0;
 
-	/* Startbit is 1 and is added here. */
+	/* startbit is 1 and is added here. */
 	bool current_bit = true;
 	bool next_bit = !!(frame->data & (1 << (length - 1)));
 	bool next_next_bit = !!(frame->data & (1 << (length - 2)));
@@ -507,7 +533,7 @@ static int dali_pwm_generate_frame(const struct dali_frame *frame, struct pwm_fr
 		}
 	}
 
-	/* Check if there is a signal missing at the end */
+	/* check if there is a signal missing at the end */
 	if (shift_half_bit || (current_bit && next_bit && length == 0)) {
 		/* We need to add the signal for the last bit.
 		   it could either be, that we are in the middle of the 0 bit and need
@@ -520,163 +546,6 @@ static int dali_pwm_generate_frame(const struct dali_frame *frame, struct pwm_fr
 
 	return 0;
 }
-
-static inline bool dali_pwm_is_frame_time_as_expected(enum pwm_timing_length low,
-						      enum pwm_timing_length high,
-						      enum pwm_states latest,
-						      enum pwm_states second_to_latest)
-{
-	/**
-	 * pwm capture and pwm generate are offset by the period.
-	 *                                     capture high
-	 * 						  capture low
-	 * ______________                       __________            __________
-	 *               |_____________________|          |__________|          |______________-
-	 *               |        second to latest        |      latest pwm     |
-	 *
-	 *                                                            ^ current time-point
-	 */
-
-	if (low == ERROR_TIME || high == ERROR_TIME) {
-		return false;
-	}
-	if (low == HALF_BIT_TIME && (latest != LH && latest != LHH)) {
-		return false;
-	}
-	if (low == FULL_BIT_TIME && (latest != LLH && latest != LLHH)) {
-		return false;
-	}
-	if (high == HALF_BIT_TIME &&
-	    (second_to_latest != LH && second_to_latest != LLH && second_to_latest != LLLLH)) {
-		return false;
-	}
-	if (high == FULL_BIT_TIME && (second_to_latest != LHH && second_to_latest != LLHH)) {
-		return false;
-	}
-	return true;
-}
-
-static k_timeout_t dali_pwm_process_sendout(const struct device *dev)
-{
-	const struct dali_pwm_config *config = dev->config;
-	struct dali_pwm_data *data = dev->data;
-	struct pwm_frame *frame = &data->tx.pwm_frame;
-	int ret = 0;
-
-	/* start sending */
-	while (true) {
-		if (frame->position != 0 && data->capture.state == PWM_CAPTURE_STATE_ERROR) {
-			/* We had an error decoding frames we send.... this must be a collision. */
-			/* TODO(anyone) maybe send the break condition and retry sending the frame
-			 */
-			ret = pwm_set_pulse_dt(&config->tx_pwm, 0);
-			LOG_DBG("Capture Error");
-			break;
-		}
-
-		if (frame->position == 1) {
-			if (data->rx.latest_low != HALF_BIT_TIME ||
-			    data->rx.latest_high != START_TIME) {
-				LOG_DBG("We are not receiving what we are sending. position = %d",
-					frame->position);
-				pwm_set_pulse_dt(&config->tx_pwm, 0);
-				break;
-			}
-		} else if (frame->position > 1) {
-			if (!dali_pwm_is_frame_time_as_expected(
-				    data->rx.latest_low, data->rx.latest_high,
-				    frame->signals[frame->position - 1],
-				    frame->signals[frame->position - 2])) {
-				LOG_DBG("We are not receiving what we are sending. position = %d",
-					frame->position);
-				pwm_set_pulse_dt(&config->tx_pwm, 0);
-				break;
-			}
-		}
-		/* Check if everything has been send. -> disable PWM */
-		if (frame->position >= frame->signal_length) {
-			/* send everything, stop now. */
-			ret = dali_pwm_set_cycles(data, &config->tx_pwm, NONE);
-			LOG_DBG("frame is sent.");
-			break;
-		}
-
-		/* check if the pattern has changed, if not, we don't need to do anything and can
-		   just skip the reconfigure. */
-		if (frame->position == 0 ||
-		    frame->signals[frame->position] != frame->signals[frame->position - 1]) {
-			ret = dali_pwm_set_cycles(data, &config->tx_pwm,
-						  frame->signals[frame->position]);
-			if (ret < 0) {
-				LOG_DBG("failed to set pwm: %d", ret);
-				break;
-			}
-			if (frame->position == 0) {
-				/* "reset" semaphore to 0, otherwise, the loop will run twice
-				   before the first PWM setting is even in effect. */
-				k_sem_take(&data->tx.pwm_sem, K_NO_WAIT);
-				/* the semaphore is given every time the bus returns from low to
-				   high, the bus on the other hand can be pulled low by either us,
-				   or any other device. Since we don't know when the pwm will take
-				   effect, we cannot know when we are starting to send and need to
-				   reset this semaphore. This point seemed close enough with the
-				   scheduler, that it should hopefully never happen, that it gets
-				   falsely given. */
-			}
-		}
-		frame->position++;
-
-		/* wait for the flank */
-		if (k_sem_take(&data->tx.pwm_sem, Z_TIMEOUT_US(config->tx_rx_propagation_max_us)) <
-		    0) {
-			/* Timeout while waiting for semaphore.
-			   There is a bus-error going on and we need to stop sending.
-			   this is only a method of last resort and should theoretically
-			   never happen as we have an idle state on enter and the TX must
-			   result in a flank. */
-			dali_pwm_set_cycles(data, &config->tx_pwm, NONE);
-			LOG_DBG("BUS error at position %d", frame->position);
-			break;
-		}
-	}
-	k_spinlock_key_t capture_key = k_spin_lock(&data->capture.lock);
-	k_spin_unlock(&data->capture.lock, capture_key);
-	/* mark frame as send and not valid anymore. */
-	frame->signal_length = 0;
-	return K_FOREVER;
-}
-
-#if defined(CONFIG_DALI_PWM_OWN_THREAD)
-static void dali_pwm_tx_thread(void *arg1, void *unused1, void *unused2)
-{
-	k_thread_name_set(NULL, "dali_pwm_tx_thread");
-
-	ARG_UNUSED(unused1);
-	ARG_UNUSED(unused2);
-
-	const struct device *dev = (const struct device *)arg1;
-	struct dali_pwm_data *data = dev->data;
-
-	while (true) {
-		k_timeout_t timeout = dali_pwm_process_sendout(dev);
-		/* either sleep until we are ready to send the first entry, or until
-		 * there is a new entry in the list, which might be a new first entry.
-		 */
-		k_sem_take(&data->tx_thread_sem, timeout);
-	}
-}
-#else
-static void dali_pwm_tx_work_cb(struct k_work *_work)
-{
-	struct k_work_delayable *work = k_work_delayable_from_work(_work);
-	struct dali_pwm_data *data = CONTAINER_OF(work, struct dali_pwm_data, send_work);
-
-	k_timeout_t timeout = dali_pwm_process_sendout(data->dev);
-	if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-		k_work_reschedule(work, timeout);
-	}
-}
-#endif
 
 static int dali_pwm_us_to_cycles(int us, uint64_t cycles_per_sec)
 {
@@ -697,6 +566,7 @@ static int dali_pwm_receive(const struct device *dev, dali_rx_callback_t callbac
 static int dali_pwm_send(const struct device *dev, const struct dali_frame *frame,
 			 dali_tx_callback_t callback, void *user_data)
 {
+	const struct dali_pwm_config *config = dev->config;
 	struct dali_pwm_data *data = dev->data;
 	int ret = 0;
 
@@ -714,17 +584,15 @@ static int dali_pwm_send(const struct device *dev, const struct dali_frame *fram
 	case DALI_FRAME_BACKWARD:
 		data->tx.cb.function = callback;
 		data->tx.cb.user_data = user_data;
+		data->tx.status = DALI_PWM_TX_INSIDE;
 		ret = dali_pwm_generate_frame(frame, &data->tx.pwm_frame);
 		if (ret < 0) {
 			break;
 		}
-
-		/* trigger sending out */
-#if defined(CONFIG_DALI_PWM_OWN_THREAD)
-		k_sem_give(&data->tx_thread_sem);
-#else
-		k_work_reschedule(&data->send_work, K_NO_WAIT);
-#endif
+		ret = dali_pwm_set_cycles(
+			data, &config->tx_pwm,
+			data->tx.pwm_frame.signals[data->tx.pwm_frame.position++]);
+		break;
 	default:
 		ret = -EINVAL;
 	}
@@ -741,101 +609,127 @@ static void dali_pwm_abort(const struct device *dev)
 	/* we don't abort backward frames, as they are not resend. */
 }
 
-static int dali_pwm_init(const struct device *dev)
+static int dali_pwm_rx_init(const struct device *dev)
 {
 	const struct dali_pwm_config *config = dev->config;
+	struct dali_pwm_data *data = dev->data;
+	int ret;
+
+	/* configure the gpio pin */
+	if (!gpio_is_ready_dt(&config->rx_pin)) {
+		LOG_ERR("GPIO dev %s is not ready", dev->name);
+		return -ENODEV;
+	}
+
+	ret = gpio_pin_configure_dt(&config->rx_pin, GPIO_INPUT);
+	if (ret < 0) {
+		LOG_ERR("Can not configure Rx pin for device %s", dev->name);
+		return ret;
+	}
+
+	gpio_init_callback(&data->rx.gpio_cb, dali_pwm_rx_irq_handler, BIT(config->rx_pin.pin));
+	ret = gpio_add_callback(config->rx_pin.port, &data->rx.gpio_cb);
+	if (ret < 0) {
+		LOG_ERR("Can not add Rx callback for device %s", dev->name);
+		return ret;
+	}
+
+	ret = gpio_pin_interrupt_configure_dt(&config->rx_pin, GPIO_INT_EDGE_BOTH);
+	if (ret < 0) {
+		LOG_ERR("Can not configure Rx irq for device %s", dev->name);
+		return ret;
+	}
+
+	/* configure the counter */
+	if (!device_is_ready(config->rx_counter)) {
+		LOG_ERR("Counter %s for device %s is not ready", config->rx_counter->name,
+			dev->name);
+		return -ENODEV;
+	}
+
+	const uint64_t cycles = counter_get_frequency(config->rx_counter);
+	if (cycles < USEC_PER_SEC) {
+		LOG_ERR("Counter frequency too low (%" PRIu64 "Hz), need at least 1 MHz", cycles);
+		return -ENODEV;
+	}
+
+	/* convert microseconds timings into counter ticks */
+	data->rx.ticks.half_bit_min =
+		dali_pwm_us_to_cycles(DALI_RX_BIT_TIME_HALF_MIN_US - GREY_AREA_BITS_US, cycles);
+	data->rx.ticks.half_bit_max =
+		dali_pwm_us_to_cycles(DALI_RX_BIT_TIME_HALF_MAX_US + GREY_AREA_BITS_US, cycles);
+	data->rx.ticks.full_bit_min =
+		dali_pwm_us_to_cycles(DALI_RX_BIT_TIME_FULL_MIN_US - GREY_AREA_BITS_US, cycles);
+	data->rx.ticks.full_bit_max =
+		dali_pwm_us_to_cycles(DALI_RX_BIT_TIME_FULL_MAX_US + GREY_AREA_BITS_US, cycles);
+	data->rx.ticks.stop_bit =
+		dali_pwm_us_to_cycles(DALI_RX_BIT_TIME_STOP_US - GREY_AREA_BITS_US, cycles);
+	data->rx.ticks.flank_shift = dali_pwm_us_to_cycles(config->rx_shift_us, cycles);
+	data->rx.ticks.top = counter_get_top_value(config->rx_counter);
+
+	/* set up the receive work queue */
+	const struct k_work_queue_config cfg = {
+		.name = "DALI Rx work",
+		.no_yield = true,
+		.essential = false,
+	};
+	k_work_queue_start(&dali_pwm_work_queue, dali_pwm_work_queue_stack,
+			   K_KERNEL_STACK_SIZEOF(dali_pwm_work_queue_stack),
+			   CONFIG_DALI_PWM_PRIORITY, &cfg);
+	k_work_init(&data->rx.work, dali_pwm_handle_work_queue);
+
+	return counter_start(config->rx_counter);
+}
+
+static int dali_pwm_tx_init(const struct device *dev)
+{
+	const struct dali_pwm_config *config = dev->config;
+	struct dali_pwm_data *data = dev->data;
+	uint64_t cycles;
+	int ret;
+
+	/* initialize pwm peripheral */
+	if (!pwm_is_ready_dt(&config->tx_pwm)) {
+		LOG_ERR("PWM device %s is not ready", dev->name);
+		return -ENODEV;
+	}
+
+	ret = pwm_get_cycles_per_sec(config->tx_pwm.dev, config->tx_pwm.channel, &cycles);
+	if (ret < 0) {
+		LOG_ERR("PWM device %s can not get cycles", dev->name);
+		return ret;
+	}
+	if (cycles < 200000) {
+		LOG_ERR("PWM timer is not accurate enough. Need at least 200kHz. Have %" PRIu64
+			" Hz",
+			cycles);
+		return -ERANGE;
+	}
+
+	data->tx.ticks.half_bit = dali_pwm_us_to_cycles(DALI_TX_HALF_BIT_US, cycles);
+	data->tx.ticks.flank_shift = dali_pwm_us_to_cycles(config->tx_shift_us, cycles);
+
+	return 0;
+}
+
+static int dali_pwm_init(const struct device *dev)
+{
 	struct dali_pwm_data *data = dev->data;
 	int ret;
 
 	/* connect to device */
 	data->dev = dev;
 
-#if defined(CONFIG_DALI_PWM_OWN_THREAD)
-	ret = k_sem_init(&data->tx_thread_sem, 0, 1);
+	ret = dali_pwm_rx_init(dev);
 	if (ret < 0) {
-		LOG_ERR("Could not initialize send messagequeue semaphore.");
 		return ret;
 	}
 
-	k_thread_create(&data->thread, data->thread_stack, CONFIG_DALI_PWM_THREAD_STACK_SIZE,
-			dali_pwm_tx_thread, (void *)dev, NULL, NULL,
-			K_PRIO_COOP(CONFIG_DALI_PWM_THREAD_PRIORITY), 0, K_NO_WAIT);
-#else
-	k_work_init_delayable(&data->send_work, dali_pwm_tx_work_cb);
-#endif
-
-	/* initialize tx semaphore*/
-	ret = k_sem_init(&data->tx.pwm_sem, 0, 1);
+	ret = dali_pwm_tx_init(dev);
 	if (ret < 0) {
-		LOG_ERR("Could not initialize PWM semaphore.");
 		return ret;
 	}
-
-	/* initialize pwm peripheral */
-	if (!pwm_is_ready_dt(&config->tx_pwm)) {
-		LOG_ERR("PWM device %s is not ready", config->tx_pwm.dev->name);
-		return -ENODEV;
-	}
-
-	if (!pwm_is_ready_dt(&config->rx_capture_pwm)) {
-		LOG_ERR("Capture device %s is not ready", config->rx_capture_pwm.dev->name);
-		return -ENODEV;
-	}
-
-	/* calculate transmit timings */
-	uint64_t cycles_per_sec;
-
-	ret = pwm_get_cycles_per_sec(config->tx_pwm.dev, config->tx_pwm.channel, &cycles_per_sec);
-	if (ret) {
-		LOG_ERR("Could not get cycles per sec for tx channel.");
-		return ret;
-	}
-	if (cycles_per_sec < 200000) {
-		LOG_ERR("PWM timer is not accurate enough. Need at least 200kHz. Have %lldHz",
-			cycles_per_sec);
-		return -ERANGE;
-	}
-	data->tx.bit_time_half_cyc = dali_pwm_us_to_cycles(DALI_TX_HALF_BIT_US, cycles_per_sec);
-	data->tx.shift_cyc = dali_pwm_us_to_cycles(config->tx_shift_us, cycles_per_sec);
-
-	/* calculate recieve timings */
-	pwm_get_cycles_per_sec(config->rx_capture_pwm.dev, config->rx_capture_pwm.channel,
-			       &cycles_per_sec);
-	/* dali bit timings should be accurate to about 5 us => 200khz */
-	if (cycles_per_sec < 200000) {
-		LOG_ERR("Capture timer is not accurate enough. Need at least 200kHz. Have %lldHz",
-			cycles_per_sec);
-		return -ERANGE;
-	}
-	data->rx.timings.half_min = dali_pwm_us_to_cycles(
-		(DALI_RX_BIT_TIME_HALF_MIN_US - DALI_RX_GREY_AREA), cycles_per_sec);
-	data->rx.timings.half_max = dali_pwm_us_to_cycles(
-		(DALI_RX_BIT_TIME_HALF_MAX_US + DALI_RX_GREY_AREA), cycles_per_sec);
-	data->rx.timings.full_min = dali_pwm_us_to_cycles(
-		(DALI_RX_BIT_TIME_FULL_MIN_US - DALI_RX_GREY_AREA), cycles_per_sec);
-	data->rx.timings.full_max = dali_pwm_us_to_cycles(
-		(DALI_RX_BIT_TIME_FULL_MAX_US + DALI_RX_GREY_AREA), cycles_per_sec);
-	data->rx.timings.stop_time =
-		dali_pwm_us_to_cycles((DALI_RX_BIT_TIME_STOP_US - 50U), cycles_per_sec);
-	data->rx.timings.flank_shift = dali_pwm_us_to_cycles(config->rx_shift_us, cycles_per_sec);
-
-	/* configure and start capture */
-	ret = pwm_configure_capture(config->rx_capture_pwm.dev, config->rx_capture_pwm.channel,
-				    PWM_CAPTURE_MODE_CONTINUOUS | PWM_CAPTURE_TYPE_BOTH |
-					    config->rx_capture_pwm.flags,
-				    dali_pwm_continuous_capture_callback, data);
-	if (ret < 0) {
-		LOG_ERR("Could not configure capture. %s", strerror(-ret));
-		return ret;
-	}
-
-	ret = pwm_enable_capture(config->rx_capture_pwm.dev, config->rx_capture_pwm.channel);
-	if (ret < 0) {
-		LOG_ERR("Could not enable capture. %s", strerror(-ret));
-		return ret;
-	}
-
-	return 0;
+	return ret;
 }
 
 static DEVICE_API(dali, dali_pwm_driver_api) = {
@@ -845,24 +739,15 @@ static DEVICE_API(dali, dali_pwm_driver_api) = {
 };
 
 #define DALI_PWM_INIT(idx)                                                                         \
-	BUILD_ASSERT(DT_INST_PROP_OR(idx, tx_flank_shift_us, 0) < DALI_TX_HALF_BIT_US ||           \
-			     (DT_INST_PROP_OR(idx, tx_flank_shift_us, 0) ^ 0xffffffff) <           \
-				     DALI_TX_HALF_BIT_US,                                          \
-		     "Edge-shift must be lower than 416us.");                                      \
-	static struct dali_pwm_data dali_pwm_data_##idx = {                                        \
-		.capture.state = PWM_CAPTURE_STATE_IDLE,                                           \
-		.capture.data = 0,                                                                 \
-		.capture.length = 0,                                                               \
-		.frame_finish_work = Z_WORK_DELAYABLE_INITIALIZER(dali_pwm_finish_frame_work),     \
-	};                                                                                         \
+	static struct dali_pwm_data dali_pwm_data_##idx = {0};                                     \
 	static const struct dali_pwm_config dali_pwm_config_##idx = {                              \
-		.rx_capture_pwm = PWM_DT_SPEC_INST_GET_BY_IDX(idx, 1),                             \
-		.tx_pwm = PWM_DT_SPEC_INST_GET_BY_IDX(idx, 0),                                     \
+		.rx_counter = DEVICE_DT_GET(DT_INST_PHANDLE(idx, counter)),                        \
+		.chan_id_stop = DT_INST_PROP_OR(idx, chan_id_stop, 0),                             \
+		.rx_pin = GPIO_DT_SPEC_INST_GET_BY_IDX(idx, rx_gpios, 0),                          \
+		.tx_pwm = PWM_DT_SPEC_GET_BY_IDX(DT_DRV_INST(idx), 0),                             \
 		.tx_shift_us = DT_INST_PROP_OR(idx, tx_flank_shift_us, 0),                         \
 		.rx_shift_us = DT_INST_PROP_OR(idx, rx_flank_shift_us, 0),                         \
 		.tx_rx_propagation_max_us = DT_INST_PROP_OR(idx, tx_rx_propagation_max_us, 200),   \
-		.rx_finish_work_delay_us = DT_INST_PROP_OR(idx, rx_finish_work_delay_us, 800),     \
-		.rx_capture_work_delay_us = DT_INST_PROP_OR(idx, rx_capture_work_delay_us, 200),   \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(idx, dali_pwm_init, NULL, &dali_pwm_data_##idx,                      \
 			      &dali_pwm_config_##idx, POST_KERNEL,                                 \
