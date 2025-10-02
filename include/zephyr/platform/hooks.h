@@ -19,6 +19,19 @@
  * directly from application code but may be freely used within the OS.
  */
 
+#ifdef CONFIG_SOC_EARLY_RESET_HOOK
+/**
+ * @brief SoC hook executed before data RAM initialization, at the beginning
+ * of the reset vector.
+ *
+ * This hook is implemented by the SoC and can be used to perform any
+ * SoC-specific initialization. Refer to :kconfig:option:`SOC_EARLY_RESET_HOOK`
+ * and relevant architecture zephyr-rtos startup implementation for more details.
+ */
+void soc_early_reset_hook(void);
+#else
+#define soc_early_reset_hook() do { } while (0)
+#endif
 
 #ifdef CONFIG_SOC_RESET_HOOK
 /**
