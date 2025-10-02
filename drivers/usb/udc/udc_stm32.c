@@ -121,6 +121,16 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 		(PCD_SPEED_HIGH_IN_FULL),				\
 		(PCD_SPEED_HIGH))))
 
+/*
+ * Returns max packet size allowed for endpoints of 'usb_node'
+ *
+ * Hardware always supports the maximal value allowed
+ * by the USB Specification at a given operating speed:
+ * 1024 bytes in High-Speed, 1023 bytes in Full-Speed
+ */
+#define UDC_STM32_NODE_EP_MPS(node_id)					\
+	((UDC_STM32_NODE_SPEED(node_id) == PCD_SPEED_HIGH) ? 1024U : 1023U)
+
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
 #define USB_USBPHYC_CR_FSEL_24MHZ        USB_USBPHYC_CR_FSEL_1
 #endif
@@ -158,11 +168,12 @@ struct udc_stm32_data  {
 struct udc_stm32_config {
 	uint32_t num_endpoints;
 	uint32_t dram_size;
-	uint16_t ep_mps;
 	/* PHY selected for use by instance */
 	uint32_t selected_phy;
 	/* Speed selected for use by instance */
 	uint32_t selected_speed;
+	/* Maximal packet size allowed for endpoints */
+	uint16_t ep_mps;
 };
 
 enum udc_stm32_msg_type {
@@ -1070,18 +1081,7 @@ static const struct udc_api udc_stm32_api = {
  * Kconfig system.
  */
 #define USB_NUM_BIDIR_ENDPOINTS	DT_INST_PROP(0, num_bidir_endpoints)
-
-#if defined(USB) || defined(USB_DRD_FS)
-#define EP_MPS 64U
-#define USB_RAM_SIZE	DT_INST_PROP(0, ram_size)
-#else /* USB_OTG_FS */
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
-#define EP_MPS USB_OTG_HS_MAX_PACKET_SIZE
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs) || DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)
-#define EP_MPS USB_OTG_FS_MAX_PACKET_SIZE
-#endif
-#define USB_RAM_SIZE	DT_INST_PROP(0, ram_size)
-#endif /* USB */
+#define USB_RAM_SIZE		DT_INST_PROP(0, ram_size)
 
 static struct udc_stm32_data udc0_priv;
 
@@ -1093,7 +1093,7 @@ static struct udc_data udc0_data = {
 static const struct udc_stm32_config udc0_cfg  = {
 	.num_endpoints = USB_NUM_BIDIR_ENDPOINTS,
 	.dram_size = USB_RAM_SIZE,
-	.ep_mps = EP_MPS,
+	.ep_mps = UDC_STM32_NODE_EP_MPS(DT_DRV_INST(0)),
 	.selected_phy = UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)),
 	.selected_speed = UDC_STM32_NODE_SPEED(DT_DRV_INST(0)),
 };
