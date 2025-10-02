@@ -520,7 +520,7 @@ void z_riscv_pmp_stackguard_enable(struct k_thread *thread)
 
 	/* Write our m-mode MPP entries */
 	write_pmp_entries(global_pmp_end_index, thread->arch.m_mode_pmp_end_index,
-			  false /* no need to clear to the end */,
+			  true,
 			  PMP_M_MODE(thread));
 
 	if (PMP_DEBUG_DUMP) {
