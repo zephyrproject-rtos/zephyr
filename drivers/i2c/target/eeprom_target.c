@@ -50,6 +50,13 @@ unsigned int eeprom_target_get_size(const struct device *dev)
 	return data->buffer_size;
 }
 
+uint8_t *eeprom_target_get_data(const struct device *dev)
+{
+	struct i2c_eeprom_target_data *data = dev->data;
+
+	return data->buffer;
+}
+
 int eeprom_target_program(const struct device *dev, const uint8_t *eeprom_data,
 			 unsigned int length)
 {
