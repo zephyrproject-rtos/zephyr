@@ -788,6 +788,34 @@
 			status = "disabled";
 		};
 
+		usbfs: usbfs@40250000 {
+			compatible = "renesas,ra-usbfs";
+			reg = <0x40250000 0x2000>;
+			num-bidir-endpoints = <10>;
+			phys = <&usbfs_phy>;
+			phys-clock = <&uclk>;
+			status = "disabled";
+
+			udc {
+				compatible = "renesas,ra-udc";
+				status = "disabled";
+			};
+		};
+
+		usbhs: usbhs@40351000 {
+			compatible = "renesas,ra-usbhs";
+			reg = <0x40351000 0x2000>;
+			num-bidir-endpoints = <10>;
+			phys = <&usbhs_phy>;
+			phys-clock = <&uclk>, <&usb60clk>;
+			status = "disabled";
+
+			udc {
+				compatible = "renesas,ra-udc";
+				status = "disabled";
+			};
+		};
+
 		port_irq0: external-interrupt@40006000 {
 			compatible = "renesas,ra-external-interrupt";
 			reg = <0x40006000 0x1>;
@@ -1192,6 +1220,16 @@
 				status = "okay";
 			};
 		};
+	};
+
+	usbfs_phy: usbfs-phy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
+	};
+
+	usbhs_phy: usbhs-phy {
+		compatible = "renesas,ra-usbphyc";
+		#phy-cells = <0>;
 	};
 };
 
