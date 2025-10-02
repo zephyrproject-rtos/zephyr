@@ -29,16 +29,44 @@
 extern "C" {
 #endif
 
-/** Cellular access technologies */
+/** Cellular access technologies (3GPP TS 27.007 AcT) */
 enum cellular_access_technology {
+	/** Global System for Mobile communications (2G, 3GPP Rel 99) */
 	CELLULAR_ACCESS_TECHNOLOGY_GSM = 0,
-	CELLULAR_ACCESS_TECHNOLOGY_GPRS,
-	CELLULAR_ACCESS_TECHNOLOGY_UMTS,
-	CELLULAR_ACCESS_TECHNOLOGY_EDGE,
-	CELLULAR_ACCESS_TECHNOLOGY_LTE,
-	CELLULAR_ACCESS_TECHNOLOGY_LTE_CAT_M1,
-	CELLULAR_ACCESS_TECHNOLOGY_LTE_CAT_M2,
-	CELLULAR_ACCESS_TECHNOLOGY_NB_IOT,
+	/** Bandwidth & Spectrum limited variant of GSM (2G, 3GPP Rel 99) */
+	CELLULAR_ACCESS_TECHNOLOGY_GSM_COMPACT = 1,
+	/** UMTS Terrestrial Radio Access Network (3G, 3GPP Rel 99) */
+	CELLULAR_ACCESS_TECHNOLOGY_UTRAN = 2,
+	/** GSM Enhanced General Packet Radio Service (2.5G, 3GPP Rel 99) */
+	CELLULAR_ACCESS_TECHNOLOGY_GSM_EGPRS = 3,
+	/** UTRAN with High Speed Downlink Packet Access (3.5G, 3GPP Rel 5) */
+	CELLULAR_ACCESS_TECHNOLOGY_UTRAN_HSDPA = 4,
+	/** UTRAN with High Speed Uplink Packet Access (3.75G, 3GPP Rel 6) */
+	CELLULAR_ACCESS_TECHNOLOGY_UTRAN_HSUPA = 5,
+	/** UTRAN with HSDPA and HSUDP (HSPA) (3.75G, 3GPP Rel 6) */
+	CELLULAR_ACCESS_TECHNOLOGY_UTRAN_HSDPA_HSUPA = 6,
+	/** Evolved UTRAN (4G, 3GPP Rel 8) */
+	CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN = 7,
+	/** Extended Coverage GSM for IoT (2G, 3GPP Rel 13) */
+	CELLULAR_ACCESS_TECHNOLOGY_EC_GSM_IOT = 8,
+	/** EUTRAN Narrowband-IoT (4G, 3GPP Rel 13) */
+	CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN_NB_S1 = 9,
+	/** LTE/E-UTRA connected to 5G Core Network (5G, 3GPP Rel 15) */
+	CELLULAR_ACCESS_TECHNOLOGY_E_UTRA_5G_CN = 10,
+	/** New Radio with 5G Core Network (5G, 3GPP Rel 15) */
+	CELLULAR_ACCESS_TECHNOLOGY_NR_5G_CN = 11,
+	/** Next Generation RAN (5G, 3GPP Rel 15) */
+	CELLULAR_ACCESS_TECHNOLOGY_NG_RAN = 12,
+	/** LTE/E-UTRA & NR dual connectivity (5G, 3GPP Rel 15) */
+	CELLULAR_ACCESS_TECHNOLOGY_E_UTRA_NR_DUAL = 13,
+	/** Narrowband-IoT over Satellite (4G, 3GPP Rel 17) */
+	CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN_NB_S1_SAT = 14,
+	/** LTE (wideband) over Satellite (4G, 3GPP Rel 17) */
+	CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN_WB_S1_SAT = 15,
+	/** Next Generation RAN over Satellite (5G, 3GPP Rel 17) */
+	CELLULAR_ACCESS_TECHNOLOGY_NG_RAN_SAT = 16,
+	/** Unknown access technology */
+	CELLULAR_ACCESS_TECHNOLOGY_UNKNOWN = 255,
 };
 
 /** Cellular network structure */
