@@ -1,16 +1,16 @@
-.. _fvp_base_revc_2xaemv8a:
+.. _fvp_base_revc_2xaem:
 
-ARM BASE RevC AEMv8A Fixed Virtual Platforms
-############################################
+ARM BASE RevC 2xAEM Fixed Virtual Platforms
+###########################################
 
 Overview
 ********
 
 This board configuration will use ARM Fixed Virtual Platforms(FVP) to emulate
-a generic Armv8-A 64-bit hardware platform.
+a generic AEM (Architectural Envelope Model) hardware platform supporting both
+ARMv8-A and ARMv9-A architectures.
 
-This configuration provides support for a generic Armv8-A 64-bit CPU and
-these devices:
+This configuration provides support for generic AEM CPUs and these devices:
 
 * GICv3 interrupt controller
 * ARM architected (Generic) timer
@@ -37,6 +37,16 @@ The following hardware features are supported:
 +-----------------------+------------+----------------------+
 
 The kernel currently does not support other hardware features on this platform.
+
+Board Variants
+==============
+
+The following board targets are available:
+
+* ``fvp_base_revc_2xaem/v8a`` - ARMv8-A (64-bit)
+* ``fvp_base_revc_2xaem/v8a/smp`` - ARMv8-A SMP (4 cores)
+* ``fvp_base_revc_2xaem/v8a/smp/ns`` - ARMv8-A SMP Non-Secure
+* ``fvp_base_revc_2xaem/v9a`` - ARMv9-A (64-bit) [Future]
 
 Devices
 ========
@@ -77,11 +87,27 @@ ARM FVP emulated environment, for example, with the :zephyr:code-sample:`synchro
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
    :host-os: unix
-   :board: fvp_base_revc_2xaemv8a
+   :board: fvp_base_revc_2xaem/v8a
    :goals: build
 
-This will build an image with the synchronization sample app.
+This will build an image with the synchronization sample app for ARMv8-A.
 Then you can run it with ``west build -t run``.
+
+For SMP variants:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/synchronization
+   :host-os: unix
+   :board: fvp_base_revc_2xaem/v8a/smp
+   :goals: build
+
+For SMP Non-Secure variants with TF-A:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/synchronization
+   :host-os: unix
+   :board: fvp_base_revc_2xaem/v8a/smp/ns
+   :goals: build
 
 Running Zephyr at EL1NS
 ***********************
