@@ -27,14 +27,5 @@ int main(void)
 
 	printk("i2c target driver registered\n");
 
-	k_msleep(1000);
-
-	if (i2c_target_driver_unregister(eeprom) < 0) {
-		printk("Failed to unregister i2c target driver\n");
-		return 0;
-	}
-
-	printk("i2c target driver unregistered\n");
-
 	return 0;
 }
