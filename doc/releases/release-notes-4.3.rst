@@ -114,6 +114,16 @@ New APIs and options
     * :c:func:`z_arm_save_mpu_context` / :c:func:`z_arm_restore_mpu_context`
     * Existing :c:func:`z_arm_save_fp_context` and :c:func:`z_arm_save_fp_context` have also been updated
 
+  * ARM64
+
+    * The following boardtargets have been renamed:
+
+      * fvp_base_revc_2xaemv8a → fvp_base_revc_2xaem/v8a
+      * fvp_base_revc_2xaemv8a/fvp_base_revc_2xaemv8a/smp
+        → fvp_base_revc_2xaem/v8a/smp
+      * fvp_base_revc_2xaemv8a/fvp_base_revc_2xaemv8a/smp/ns
+        → fvp_base_revc_2xaem/v8a/smp/ns
+
 * Bluetooth
 
   * Audio
