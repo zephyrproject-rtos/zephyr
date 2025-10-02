@@ -7,3 +7,18 @@ config CAN_MCHP_MSS
 	help
 	  This option enables the CAN driver for Microchip's PolarFire SoC
 	  platform.
+
+if CAN_MCHP_MSS
+
+config CAN_MCHP_MSS_SWAP_ENDIANNESS
+	bool "Force little endian on transmit and receive buffers"
+	help
+	  This option sets the SWAP_ENDIAN bit of CAN_CONFIG register.
+	  By setting this bit, the values of [TX|RX]_MSGx_DATA_[LOW|HIGH] 
+	  will operate in little endian mode. For example, either field set 
+	  to 0x01020304 will result in 0x01 -> 0x02 -> 0x03 -> 0x04 being written on the bus.
+
+	  Conversely, when operating in the (default) big endian mode, the inverse
+	  sequence will be transmitted on the bus, i.e. in network order.
+
+endif # CAN_MCHP_MSS

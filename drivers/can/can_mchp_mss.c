@@ -259,6 +259,7 @@ static int mss_can_reset(const struct device *dev)
 {
 	const struct mss_can_config *cfg = dev->config;
 	uintptr_t reg_base = cfg->reg_base;
+	uint32_t can_config;
 
 #if MSS_CAN_RESET_ENABLED
 	if (cfg->reset_spec.dev != NULL) {
@@ -268,6 +269,14 @@ static int mss_can_reset(const struct device *dev)
 
 	mss_can_stop_and_disable_interrupts(reg_base);
 	BUILD_ASSERT(MSS_CAN_TX_MSG_COUNT == MSS_CAN_RX_MSG_COUNT);
+
+	can_config = sys_read32(reg_base + MSS_CAN_CONFIG);
+#if CONFIG_CAN_MCHP_MSS_SWAP_ENDIANNESS
+	can_config |= MSS_CAN_CFG_SWAP_ENDIAN;
+#else
+	can_config &= ~MSS_CAN_CFG_SWAP_ENDIAN;
+#endif
+	sys_write32(can_config, reg_base + MSS_CAN_CONFIG);
 
 	for (uintptr_t i = 0; i < MSS_CAN_TX_MSG_COUNT; ++i) {
 		/* Clear transmit buffer */
