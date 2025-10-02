@@ -562,8 +562,7 @@ static bool ll_len_validate(uint16_t tx_octets, uint16_t tx_time)
 	return true;
 }
 
-uint32_t ll_length_req_send(uint16_t handle, uint16_t tx_octets,
-			    uint16_t tx_time)
+uint8_t ll_length_req_send(uint16_t handle, uint16_t tx_octets, uint16_t tx_time)
 {
 	struct ll_conn *conn;
 
@@ -601,7 +600,7 @@ void ll_length_default_get(uint16_t *max_tx_octets, uint16_t *max_tx_time)
 	*max_tx_time = default_tx_time;
 }
 
-uint32_t ll_length_default_set(uint16_t max_tx_octets, uint16_t max_tx_time)
+uint8_t ll_length_default_set(uint16_t max_tx_octets, uint16_t max_tx_time)
 {
 	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK) &&
 	    !ll_len_validate(max_tx_octets, max_tx_time)) {
