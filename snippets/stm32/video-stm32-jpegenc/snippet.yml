@@ -1,0 +1,4 @@
+name: video-stm32-jpegenc
+append:
+  EXTRA_DTC_OVERLAY_FILE: video-stm32-jpegenc.overlay
+  EXTRA_CONF_FILE: video-stm32-jpegenc.conf
