@@ -1,0 +1,10 @@
+identifier: uno_q/stm32u585xx/ns
+name: Arduino UNO Q non secure target
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 786
+flash: 512
+vendor: arduino
