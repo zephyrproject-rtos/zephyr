@@ -46,6 +46,13 @@ void eeprom_target_set_changed_callback(const struct device *dev,
 	data->changed_handler_data = user_data;
 }
 
+size_t eeprom_target_get_size(const struct device *dev)
+{
+	struct i2c_eeprom_target_data *data = dev->data;
+
+	return data->buffer_size;
+}
+
 int eeprom_target_program(const struct device *dev, const uint8_t *eeprom_data,
 			 unsigned int length)
 {

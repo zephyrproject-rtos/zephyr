@@ -12,6 +12,8 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_I2C_TARGET_EEPROM_H_
 #define ZEPHYR_INCLUDE_DRIVERS_I2C_TARGET_EEPROM_H_
 
+#include <stddef.h>
+
 /**
  * @brief Interfaces for I2C EEPROM target devices.
  * @defgroup i2c_eeprom_target_api I2C EEPROM Target
@@ -40,6 +42,15 @@ typedef void (*eeprom_target_changed_handler_t)(const struct device *dev, void *
 void eeprom_target_set_changed_callback(const struct device *dev,
 					eeprom_target_changed_handler_t handler,
 					void *user_data);
+
+/**
+ * @brief Get size of the virtual EEPROM
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @return Size of EEPROM in bytes
+ */
+size_t eeprom_target_get_size(const struct device *dev);
 
 /**
  * @brief Program memory of the virtual EEPROM
