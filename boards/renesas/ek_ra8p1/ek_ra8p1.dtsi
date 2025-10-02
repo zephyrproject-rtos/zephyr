@@ -177,6 +177,22 @@
 	status = "okay";
 };
 
+&usbfs {
+	pinctrl-0 = <&usbfs_default>;
+	pinctrl-names = "default";
+	maximum-speed = "full-speed";
+};
+
+&usbhs {
+	pinctrl-0 = <&usbhs_default>;
+	pinctrl-names = "default";
+	maximum-speed = "high-speed";
+};
+
+&usbhs_phy {
+	phys-clock-src = "xtal";
+};
+
 &sdram {
 	pinctrl-0 = <&sdram_default>;
 	pinctrl-names = "default";
