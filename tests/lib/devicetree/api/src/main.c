@@ -3271,13 +3271,7 @@ ZTEST(devicetree_api, test_fixed_partitions)
 	/* Test DT_FIXED_PARTITION_ADDR. */
 	zassert_equal(DT_FIXED_PARTITION_ADDR(TEST_PARTITION_0), 0x20000000);
 	zassert_equal(DT_FIXED_PARTITION_ADDR(TEST_PARTITION_1), 0x200000c0);
-
-	/* DT_FIXED_PARTITION_ADDR(TEST_PARTITION_2) expands to an invalid expression.
-	 * Test this by way of string comparison.
-	 */
-	zassert_true(!strcmp(TO_STRING(DT_FIXED_PARTITION_ADDR(TEST_PARTITION_2)),
-			     "(__REG_IDX_0_VAL_ADDRESSU + 458624U)"));
-	zassert_equal(DT_REG_ADDR(TEST_PARTITION_2), 458624);
+	zassert_equal(DT_FIXED_PARTITION_ADDR(TEST_PARTITION_2), 0x33291080);
 
 	/* Test that all DT_FIXED_PARTITION_ID are defined and unique. */
 #define FIXED_PARTITION_ID_COMMA(node_id) DT_FIXED_PARTITION_ID(node_id),
