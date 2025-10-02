@@ -53,3 +53,12 @@ config SOC_SERIES_INTEL_ADSP_ACE_NUM_SPIN_RELAX_NOPS
 	help
 	  Specify the number of NOPs in Intel Audio DSP specific
 	  arch_spin_relax().
+
+config SOC_SERIES_INTEL_ADSP_ACE_NUM_SPIN_RELAX_NOPS_ADD_CPU_ID
+	bool "Add CPU ID to offset NOPs"
+	depends on SOC_SERIES_INTEL_ADSP_ACE_CUSTOM_MORE_SPIN_RELAX_NOPS
+	help
+	  Add CPU ID to the number of NOPs in arch_spin_relax().
+	  This is to add some variations to the loop for each CPU to
+	  further avoid them hitting the RCW transactions at the same
+	  time.
