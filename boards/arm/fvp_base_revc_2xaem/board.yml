@@ -1,0 +1,10 @@
+board:
+  name: fvp_base_revc_2xaem
+  full_name: BASE RevC 2xAEM (Architectural Envelope Model) Fixed Virtual Platform
+  vendor: arm
+  socs:
+  - name: v8a
+    variants:
+    - name: smp
+      variants:
+      - name: ns

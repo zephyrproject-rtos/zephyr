@@ -10,12 +10,12 @@
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
 / {
-	model = "FVP Base RevC 2xAEMv8A";
+	model = "FVP Base RevC 2xAEM ARMv8-A";
 
 	chosen {
 		/*
 		 * The SRAM node is actually located in the
-		 * DRAM region of the FVP Base RevC 2xAEMv8A.
+		 * DRAM region of the FVP Base RevC 2xAEM.
 		 */
 		zephyr,sram = &dram0;
 		zephyr,flash = &flash0;
