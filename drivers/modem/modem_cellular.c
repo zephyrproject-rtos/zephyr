@@ -450,20 +450,33 @@ void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, uint16_t
 				  void *user_data)
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
-	enum cellular_registration_status registration_status = 0;
+	enum cellular_registration_status registration_status = CELLULAR_REGISTRATION_UNKNOWN;
+	uint8_t num_args;
+	uint8_t base;
 
 	/* This receives both +C*REG? read command answers and unsolicited notifications.
 	 * Their syntax differs in that the former has one more parameter, <n>, which is first.
 	 */
 	if (argc >= 3 && argv[2][0] != '"') {
 		/* +CEREG: <n>,<stat>[,<tac>[...]] */
-		registration_status = atoi(argv[2]);
+		base = 2;
 	} else if (argc >= 2) {
 		/* +CEREG: <stat>[,<tac>[...]] */
-		registration_status = atoi(argv[1]);
+		base = 1;
 	} else {
 		return;
 	}
+	/* Long form of the various CXREG options:
+	 *   +CREG: <stat>[,<lac>,<ci>[,<AcT>]]
+	 *   +CGREG:<stat>[,<lac>,<ci>[,<AcT>,<rac>]]
+	 *   +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>]]
+	 */
+	num_args = argc - base;
+	registration_status = atoi(argv[base]);
+	if (num_args >= 4) {
+		data->access_tech = strtol(argv[base + 3], NULL, 10);
+	}
+	LOG_DBG("REG %d AcT %d", registration_status, data->access_tech);
 
 	if (strcmp(argv[0], "+CREG: ") == 0) {
 		data->registration_status_gsm = registration_status;
@@ -2278,6 +2291,8 @@ int modem_cellular_init(const struct device *dev)
 	k_pipe_init(&data->event_pipe, data->event_buf, sizeof(data->event_buf));
 
 	k_sem_init(&data->suspended_sem, 0, 1);
+
+	data->access_tech = CELLULAR_ACCESS_TECHNOLOGY_UNKNOWN;
 
 	if (modem_cellular_gpio_is_enabled(&config->wake_gpio)) {
 		gpio_pin_configure_dt(&config->wake_gpio, GPIO_OUTPUT_INACTIVE);
