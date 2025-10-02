@@ -652,20 +652,15 @@ static void udc_stm32_mem_init(const struct device *dev)
 
 	LOG_DBG("DRAM size: %ub", cfg->dram_size);
 
-	if (cfg->ep_mps % 4) {
-		LOG_ERR("Not a 32-bit word multiple: ep(%u)", cfg->ep_mps);
-		return;
-	}
-
 	/* The documentation is not clear at all about RX FiFo size requirement,
 	 * 160 has been selected through trial and error.
 	 */
-	words = MAX(160, cfg->ep_mps / 4);
+	words = MAX(160, DIV_ROUND_UP(cfg->ep_mps, 4U));
 	HAL_PCDEx_SetRxFiFo(&priv->pcd, words);
 	priv->occupied_mem = words * 4;
 
 	/* For EP0 TX, reserve only one MPS */
-	HAL_PCDEx_SetTxFiFo(&priv->pcd, 0, UDC_STM32_EP0_MAX_PACKET_SIZE / 4);
+	HAL_PCDEx_SetTxFiFo(&priv->pcd, 0, DIV_ROUND_UP(UDC_STM32_EP0_MAX_PACKET_SIZE, 4U));
 	priv->occupied_mem += UDC_STM32_EP0_MAX_PACKET_SIZE;
 
 	/* Reset TX allocs */
@@ -686,7 +681,7 @@ static int udc_stm32_ep_mem_config(const struct device *dev,
 		return 0;
 	}
 
-	words = MIN(udc_mps_ep_size(ep), cfg->ep_mps) / 4;
+	words = DIV_ROUND_UP(MIN(udc_mps_ep_size(ep), cfg->ep_mps), 4U);
 	words = (words <= 64) ? words * 2 : words;
 
 	if (!enable) {
