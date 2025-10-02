@@ -116,7 +116,6 @@ struct udc_dwc2_data {
 	/* Finished transactions (IN on bits 0-15, OUT on bits 16-31) */
 	atomic_t xfer_finished;
 	struct dwc2_reg_backup backup;
-	uint32_t ghwcfg1;
 	uint32_t max_xfersize;
 	uint32_t max_pktcnt;
 	uint32_t tx_len[16];
@@ -1084,7 +1083,7 @@ static void dwc2_backup_registers(const struct device *dev)
 	backup->daintmsk = sys_read32((mem_addr_t)&base->daintmsk);
 
 	for (uint8_t i = 0U; i < 16; i++) {
-		uint32_t epdir = usb_dwc2_get_ghwcfg1_epdir(priv->ghwcfg1, i);
+		uint32_t epdir = usb_dwc2_get_ghwcfg1_epdir(config->ghwcfg1, i);
 
 		if (epdir == USB_DWC2_GHWCFG1_EPDIR_IN || epdir == USB_DWC2_GHWCFG1_EPDIR_BDIR) {
 			backup->diepctl[i] = sys_read32((mem_addr_t)&base->in_ep[i].diepctl);
@@ -1196,7 +1195,7 @@ static void dwc2_restore_device_registers(const struct device *dev, bool rwup)
 	sys_write32(backup->daintmsk, (mem_addr_t)&base->daintmsk);
 
 	for (uint8_t i = 0U; i < 16; i++) {
-		uint32_t epdir = usb_dwc2_get_ghwcfg1_epdir(priv->ghwcfg1, i);
+		uint32_t epdir = usb_dwc2_get_ghwcfg1_epdir(config->ghwcfg1, i);
 
 		if (epdir == USB_DWC2_GHWCFG1_EPDIR_IN || epdir == USB_DWC2_GHWCFG1_EPDIR_BDIR) {
 			sys_write32(backup->dieptsiz[i], (mem_addr_t)&base->in_ep[i].dieptsiz);
@@ -1994,9 +1993,7 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	uint32_t gusbcfg;
 	uint32_t gahbcfg;
 	uint32_t gintmsk;
-	uint32_t ghwcfg2;
 	uint32_t ghwcfg3;
-	uint32_t ghwcfg4;
 	uint32_t val;
 	int ret;
 	bool hs_phy;
@@ -2010,12 +2007,22 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	gsnpsid = sys_read32((mem_addr_t)&base->gsnpsid);
 	priv->wa_essregrestored = gsnpsid < USB_DWC2_GSNPSID_REV_5_00A;
 
-	priv->ghwcfg1 = sys_read32((mem_addr_t)&base->ghwcfg1);
-	ghwcfg2 = sys_read32((mem_addr_t)&base->ghwcfg2);
 	ghwcfg3 = sys_read32((mem_addr_t)&base->ghwcfg3);
-	ghwcfg4 = sys_read32((mem_addr_t)&base->ghwcfg4);
 
-	if (!(ghwcfg4 & USB_DWC2_GHWCFG4_DEDFIFOMODE)) {
+	__ASSERT_EVAL(, val = sys_read32((mem_addr_t)&base->ghwcfg1),
+		      val == config->ghwcfg1,
+		      "DT GHWCFG1 value 0x%08x does not match hardware 0x%08x",
+		      config->ghwcfg2, val);
+	__ASSERT_EVAL(, val = sys_read32((mem_addr_t)&base->ghwcfg2),
+		      val == config->ghwcfg2,
+		      "DT GHWCFG2 value 0x%08x does not match hardware 0x%08x",
+		      config->ghwcfg2, val);
+	__ASSERT_EVAL(, val = sys_read32((mem_addr_t)&base->ghwcfg4),
+		      val == config->ghwcfg4,
+		      "DT GHWCFG4 value 0x%08x does not match hardware 0x%08x",
+		      config->ghwcfg4, val);
+
+	if (!(config->ghwcfg4 & USB_DWC2_GHWCFG4_DEDFIFOMODE)) {
 		LOG_ERR("Only dedicated TX FIFO mode is supported");
 		return -ENOTSUP;
 	}
@@ -2031,7 +2038,7 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	/* Buffer DMA is always supported in Internal DMA mode.
 	 * TODO: check and support descriptor DMA if available
 	 */
-	priv->bufferdma = (usb_dwc2_get_ghwcfg2_otgarch(ghwcfg2) ==
+	priv->bufferdma = (usb_dwc2_get_ghwcfg2_otgarch(config->ghwcfg2) ==
 			   USB_DWC2_GHWCFG2_OTGARCH_INTERNALDMA);
 
 	if (!IS_ENABLED(CONFIG_UDC_DWC2_DMA)) {
@@ -2040,13 +2047,13 @@ static int udc_dwc2_init_controller(const struct device *dev)
 		LOG_WRN("Experimental DMA enabled");
 	}
 
-	if (ghwcfg2 & USB_DWC2_GHWCFG2_DYNFIFOSIZING) {
+	if (config->ghwcfg2 & USB_DWC2_GHWCFG2_DYNFIFOSIZING) {
 		LOG_DBG("Dynamic FIFO Sizing is enabled");
 		priv->dynfifosizing = true;
 	}
 
 	if (IS_ENABLED(CONFIG_UDC_DWC2_HIBERNATION) &&
-	    ghwcfg4 & USB_DWC2_GHWCFG4_HIBERNATION) {
+	    config->ghwcfg4 & USB_DWC2_GHWCFG4_HIBERNATION) {
 		LOG_INF("Hibernation enabled");
 		priv->suspend_type = DWC2_SUSPEND_HIBERNATION;
 	} else {
@@ -2054,19 +2061,19 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	}
 
 	/* Get the number or endpoints and IN endpoints we can use later */
-	priv->numdeveps = usb_dwc2_get_ghwcfg2_numdeveps(ghwcfg2) + 1U;
-	priv->ineps = usb_dwc2_get_ghwcfg4_ineps(ghwcfg4) + 1U;
+	priv->numdeveps = usb_dwc2_get_ghwcfg2_numdeveps(config->ghwcfg2) + 1U;
+	priv->ineps = usb_dwc2_get_ghwcfg4_ineps(config->ghwcfg4) + 1U;
 	LOG_DBG("Number of endpoints (NUMDEVEPS + 1) %u", priv->numdeveps);
 	LOG_DBG("Number of IN endpoints (INEPS + 1) %u", priv->ineps);
 
 	LOG_DBG("Number of periodic IN endpoints (NUMDEVPERIOEPS) %u",
-		usb_dwc2_get_ghwcfg4_numdevperioeps(ghwcfg4));
+		usb_dwc2_get_ghwcfg4_numdevperioeps(config->ghwcfg4));
 	LOG_DBG("Number of additional control endpoints (NUMCTLEPS) %u",
-		usb_dwc2_get_ghwcfg4_numctleps(ghwcfg4));
+		usb_dwc2_get_ghwcfg4_numctleps(config->ghwcfg4));
 
 	LOG_DBG("OTG architecture (OTGARCH) %u, mode (OTGMODE) %u",
-		usb_dwc2_get_ghwcfg2_otgarch(ghwcfg2),
-		usb_dwc2_get_ghwcfg2_otgmode(ghwcfg2));
+		usb_dwc2_get_ghwcfg2_otgarch(config->ghwcfg2),
+		usb_dwc2_get_ghwcfg2_otgmode(config->ghwcfg2));
 
 	priv->dfifodepth = usb_dwc2_get_ghwcfg3_dfifodepth(ghwcfg3);
 	LOG_DBG("DFIFO depth (DFIFODEPTH) %u bytes", priv->dfifodepth * 4);
@@ -2080,9 +2087,9 @@ static int udc_dwc2_init_controller(const struct device *dev)
 		(ghwcfg3 & USB_DWC2_GHWCFG3_VNDCTLSUPT) ? "true" : "false");
 
 	LOG_DBG("PHY interface type: FSPHYTYPE %u, HSPHYTYPE %u, DATAWIDTH %u",
-		usb_dwc2_get_ghwcfg2_fsphytype(ghwcfg2),
-		usb_dwc2_get_ghwcfg2_hsphytype(ghwcfg2),
-		usb_dwc2_get_ghwcfg4_phydatawidth(ghwcfg4));
+		usb_dwc2_get_ghwcfg2_fsphytype(config->ghwcfg2),
+		usb_dwc2_get_ghwcfg2_hsphytype(config->ghwcfg2),
+		usb_dwc2_get_ghwcfg4_phydatawidth(config->ghwcfg4));
 
 	LOG_DBG("LPM mode is %s",
 		(ghwcfg3 & USB_DWC2_GHWCFG3_LPMMODE) ? "enabled" : "disabled");
@@ -2108,7 +2115,7 @@ static int udc_dwc2_init_controller(const struct device *dev)
 
 	/* Configure PHY and device speed */
 	dcfg &= ~USB_DWC2_DCFG_DEVSPD_MASK;
-	switch (usb_dwc2_get_ghwcfg2_hsphytype(ghwcfg2)) {
+	switch (usb_dwc2_get_ghwcfg2_hsphytype(config->ghwcfg2)) {
 	case USB_DWC2_GHWCFG2_HSPHYTYPE_UTMIPLUSULPI:
 		__fallthrough;
 	case USB_DWC2_GHWCFG2_HSPHYTYPE_ULPI:
@@ -2134,7 +2141,7 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	case USB_DWC2_GHWCFG2_HSPHYTYPE_NO_HS:
 		__fallthrough;
 	default:
-		if (usb_dwc2_get_ghwcfg2_fsphytype(ghwcfg2) !=
+		if (usb_dwc2_get_ghwcfg2_fsphytype(config->ghwcfg2) !=
 		    USB_DWC2_GHWCFG2_FSPHYTYPE_NO_FS) {
 			gusbcfg |= USB_DWC2_GUSBCFG_PHYSEL_USB11;
 		}
@@ -2143,7 +2150,7 @@ static int udc_dwc2_init_controller(const struct device *dev)
 		hs_phy = false;
 	}
 
-	if (usb_dwc2_get_ghwcfg4_phydatawidth(ghwcfg4)) {
+	if (usb_dwc2_get_ghwcfg4_phydatawidth(config->ghwcfg4)) {
 		gusbcfg |= USB_DWC2_GUSBCFG_PHYIF_16_BIT;
 	}
 
@@ -2160,7 +2167,7 @@ static int udc_dwc2_init_controller(const struct device *dev)
 
 	priv->outeps = 0U;
 	for (uint8_t i = 0U; i < priv->numdeveps; i++) {
-		uint32_t epdir = usb_dwc2_get_ghwcfg1_epdir(priv->ghwcfg1, i);
+		uint32_t epdir = usb_dwc2_get_ghwcfg1_epdir(config->ghwcfg1, i);
 
 		if (epdir == USB_DWC2_GHWCFG1_EPDIR_OUT ||
 		    epdir == USB_DWC2_GHWCFG1_EPDIR_BDIR) {
@@ -2513,6 +2520,7 @@ static void udc_dwc2_unlock(const struct device *dev)
 
 static void dwc2_on_bus_reset(const struct device *dev)
 {
+	const struct udc_dwc2_config *config = dev->config;
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	uint32_t doepmsk;
@@ -2520,7 +2528,7 @@ static void dwc2_on_bus_reset(const struct device *dev)
 
 	/* Set the NAK bit for all OUT endpoints */
 	for (uint8_t i = 0U; i < priv->numdeveps; i++) {
-		uint32_t epdir = usb_dwc2_get_ghwcfg1_epdir(priv->ghwcfg1, i);
+		uint32_t epdir = usb_dwc2_get_ghwcfg1_epdir(config->ghwcfg1, i);
 		mem_addr_t doepctl_reg;
 
 		LOG_DBG("ep 0x%02x EPDIR %u", i, epdir);
