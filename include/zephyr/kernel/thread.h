@@ -178,8 +178,10 @@ typedef struct _thread_stack_info _thread_stack_info_t;
 
 #if defined(CONFIG_USERSPACE)
 struct _mem_domain_info {
+#ifdef CONFIG_MEM_DOMAIN_HAS_THREAD_LIST
 	/** memory domain queue node */
-	sys_dnode_t mem_domain_q_node;
+	sys_dnode_t thread_mem_domain_node;
+#endif /* CONFIG_MEM_DOMAIN_HAS_THREAD_LIST */
 	/** memory domain of the thread */
 	struct k_mem_domain *mem_domain;
 };
