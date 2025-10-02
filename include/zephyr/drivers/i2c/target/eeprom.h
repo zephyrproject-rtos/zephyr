@@ -39,6 +39,15 @@ void eeprom_target_set_changed_callback(const struct device *dev,
 					eeprom_target_changed_handler_t handler);
 
 /**
+ * @brief Get size of the virtual EEPROM
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @retval Size of EEPROM in bytes
+ */
+unsigned int eeprom_target_get_size(const struct device *dev);
+
+/**
  * @brief Program memory of the virtual EEPROM
  *
  * @param dev Pointer to the device structure for the driver instance.
