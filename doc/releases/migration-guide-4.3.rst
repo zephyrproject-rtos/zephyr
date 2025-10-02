@@ -207,6 +207,11 @@ Other subsystems
 
 .. zephyr-keep-sorted-start re(^\w)
 
+Cellular
+========
+
+ * :c:enum:`cellular_access_technology` values have been redefined to align with 3GPP TS 27.007.
+
 Logging
 =======
 
