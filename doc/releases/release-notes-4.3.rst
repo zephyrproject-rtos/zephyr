@@ -189,6 +189,10 @@ New APIs and options
 
     * :kconfig:option:`CONFIG_HAWKBIT_REBOOT_NONE`
 
+* Modem
+
+  * :kconfig:option:`CONFIG_MODEM_DEDICATED_WORKQUEUE`
+
 * Networking
 
   * Sockets
