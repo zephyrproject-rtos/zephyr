@@ -1,6 +1,0 @@
-/*
- * Copyright (c) 2025 BayLibre SAS
- * SPDX-License-Identifier: Apache-2.0
- */
-
-#include "fvp_base_revc_2xaemv8a.dts"
