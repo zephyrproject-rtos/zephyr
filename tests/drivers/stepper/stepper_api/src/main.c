@@ -156,6 +156,33 @@ ZTEST_F(stepper, test_move_to_positive_step_count)
 		      fixture->dev->name);
 }
 
+ZTEST_F(stepper, test_move_to_negative_step_count)
+{
+	int32_t pos = -10;
+	int32_t actual_steps;
+	bool moving = false;
+	int ret;
+
+	ret = stepper_set_microstep_interval(fixture->dev, 100 * USEC_PER_SEC);
+	if (ret == -ENOSYS) {
+		ztest_test_skip();
+	}
+
+	zassert_ok(stepper_move_to(fixture->dev, pos));
+	zassert_ok(stepper_is_moving(fixture->dev, &moving));
+	zassert_true(moving, "%s reported not moving after move_to", fixture->dev->name);
+
+	POLL_AND_CHECK_SIGNAL(
+		stepper_signal, stepper_event, STEPPER_EVENT_STEPS_COMPLETED,
+		K_MSEC(-pos * (100 + CONFIG_STEPPER_TEST_TIMING_TIMEOUT_TOLERANCE_PCT)));
+
+	zassert_ok(stepper_get_actual_position(fixture->dev, &actual_steps));
+	zassert_equal(pos, actual_steps, "Position should be %d but is %d", pos, actual_steps);
+	zassert_ok(stepper_is_moving(fixture->dev, &moving));
+	zassert_false(moving, "%s reported moving even after completion of steps",
+		      fixture->dev->name);
+}
+
 ZTEST_F(stepper, test_move_by_positive_step_count)
 {
 	int32_t steps = 20;
@@ -208,6 +235,44 @@ ZTEST_F(stepper, test_move_by_negative_step_count)
 	zassert_ok(stepper_is_moving(fixture->dev, &moving));
 	zassert_false(moving, "%s reported moving even after completion of steps",
 		      fixture->dev->name);
+}
+
+ZTEST_F(stepper, test_run_positive_direction)
+{
+	uint64_t step_interval = 20000000;
+	int32_t actual_steps = 0;
+	int ret;
+
+	ret = stepper_set_microstep_interval(fixture->dev, step_interval);
+	if (ret == -ENOSYS) {
+		ztest_test_skip();
+	}
+
+	zassert_ok(stepper_run(fixture->dev, STEPPER_DIRECTION_POSITIVE));
+	k_usleep(110000);
+
+	zassert_ok(stepper_get_actual_position(fixture->dev, &actual_steps));
+	zassert_true(IN_RANGE(actual_steps, 1, 6),
+		     "Current position should be between 1 and 6 but is %d", actual_steps);
+}
+
+ZTEST_F(stepper, test_run_negative_direction)
+{
+	uint64_t step_interval = 20000000;
+	int32_t actual_steps = 0;
+	int ret;
+
+	ret = stepper_set_microstep_interval(fixture->dev, step_interval);
+	if (ret == -ENOSYS) {
+		ztest_test_skip();
+	}
+
+	zassert_ok(stepper_run(fixture->dev, STEPPER_DIRECTION_NEGATIVE));
+	k_usleep(110000);
+
+	zassert_ok(stepper_get_actual_position(fixture->dev, &actual_steps));
+	zassert_true(IN_RANGE(actual_steps, -6, -1),
+		     "Current position should be between -6 and -1 but is %d", actual_steps);
 }
 
 ZTEST_F(stepper, test_stop)
