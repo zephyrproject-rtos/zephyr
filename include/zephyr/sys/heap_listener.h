@@ -105,10 +105,10 @@ struct heap_listener {
 	enum heap_event_types event;
 
 	union {
-		heap_listener_alloc_cb_t alloc_cb;
-		heap_listener_free_cb_t free_cb;
-		heap_listener_resize_cb_t resize_cb;
-	};
+		heap_listener_alloc_cb_t alloc;
+		heap_listener_free_cb_t free;
+		heap_listener_resize_cb_t resize;
+	} cb;
 };
 
 /**
@@ -206,7 +206,7 @@ void heap_listener_notify_resize(uintptr_t heap_id, void *old_heap_end, void *ne
 	struct heap_listener name = {                                                              \
 		.heap_id = _heap_id,                                                               \
 		.event = HEAP_ALLOC,                                                               \
-		{.alloc_cb = _alloc_cb},                                                           \
+		.cb = {.alloc = _alloc_cb},                                                        \
 	}
 
 /**
@@ -230,7 +230,7 @@ void heap_listener_notify_resize(uintptr_t heap_id, void *old_heap_end, void *ne
 	struct heap_listener name = {                                                              \
 		.heap_id = _heap_id,                                                               \
 		.event = HEAP_FREE,                                                                \
-		{.free_cb = _free_cb},                                                             \
+		.cb = {.free = _free_cb},                                                          \
 	}
 
 /**
@@ -254,7 +254,7 @@ void heap_listener_notify_resize(uintptr_t heap_id, void *old_heap_end, void *ne
 	struct heap_listener name = {                                                              \
 		.heap_id = _heap_id,                                                               \
 		.event = HEAP_RESIZE,                                                              \
-		{.resize_cb = _resize_cb},                                                         \
+		.cb = {.resize = _resize_cb},                                                      \
 	}
 
 /** @} */

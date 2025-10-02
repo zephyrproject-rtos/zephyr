@@ -34,9 +34,9 @@ void heap_listener_notify_alloc(uintptr_t heap_id, void *mem, size_t bytes)
 	k_spinlock_key_t key = k_spin_lock(&heap_listener_lock);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&heap_listener_list, listener, node) {
-		if (listener->heap_id == heap_id && listener->alloc_cb != NULL &&
+		if (listener->heap_id == heap_id && listener->cb.alloc != NULL &&
 		    listener->event == HEAP_ALLOC) {
-			listener->alloc_cb(heap_id, mem, bytes);
+			listener->cb.alloc(heap_id, mem, bytes);
 		}
 	}
 
@@ -49,9 +49,9 @@ void heap_listener_notify_free(uintptr_t heap_id, void *mem, size_t bytes)
 	k_spinlock_key_t key = k_spin_lock(&heap_listener_lock);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&heap_listener_list, listener, node) {
-		if (listener->heap_id == heap_id && listener->free_cb != NULL &&
+		if (listener->heap_id == heap_id && listener->cb.free != NULL &&
 		    listener->event == HEAP_FREE) {
-			listener->free_cb(heap_id, mem, bytes);
+			listener->cb.free(heap_id, mem, bytes);
 		}
 	}
 
@@ -64,9 +64,9 @@ void heap_listener_notify_resize(uintptr_t heap_id, void *old_heap_end, void *ne
 	k_spinlock_key_t key = k_spin_lock(&heap_listener_lock);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&heap_listener_list, listener, node) {
-		if (listener->heap_id == heap_id && listener->resize_cb != NULL &&
+		if (listener->heap_id == heap_id && listener->cb.resize != NULL &&
 		    listener->event == HEAP_RESIZE) {
-			listener->resize_cb(heap_id, old_heap_end, new_heap_end);
+			listener->cb.resize(heap_id, old_heap_end, new_heap_end);
 		}
 	}
 
