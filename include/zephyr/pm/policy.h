@@ -112,7 +112,6 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks);
  *
  * @see pm_policy_state_lock_put()
  */
-
 void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id);
 
 /**
@@ -365,7 +364,6 @@ static inline void pm_policy_device_power_lock_put(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 }
-
 #endif /* CONFIG_PM_POLICY_DEVICE_CONSTRAINTS */
 
 #if defined(CONFIG_PM) || defined(CONFIG_PM_POLICY_LATENCY_STANDALONE) || defined(__DOXYGEN__)
