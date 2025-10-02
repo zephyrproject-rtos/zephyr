@@ -6,6 +6,14 @@ menuconfig MODEM_MODULES
 
 if MODEM_MODULES
 
+config MODEM_DEDICATED_WORKQUEUE
+	bool "Use a dedicated workqueue for modem operations"
+
+config MODEM_DEDICATED_WORKQUEUE_STACK_SIZE
+	int "Dedicated workqueue stack size"
+	depends on MODEM_DEDICATED_WORKQUEUE
+	default 1024
+
 config MODEM_CHAT
 	bool "Modem chat module"
 	select RING_BUFFER
