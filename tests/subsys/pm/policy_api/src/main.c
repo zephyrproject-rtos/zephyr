@@ -71,6 +71,37 @@ ZTEST(policy_api, test_pm_policy_next_state_default)
 	zassert_equal(next->state, PM_STATE_SUSPEND_TO_RAM);
 }
 
+ZTEST(policy_api, test_pm_policy_state_all_lock)
+{
+	/* initial state: PM_STATE_RUNTIME_IDLE allowed */
+	zassert_false(pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES));
+	zassert_true(pm_policy_state_is_available(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES));
+	zassert_true(pm_policy_state_any_active());
+
+	/* Locking all states. */
+	pm_policy_state_all_lock_get();
+	pm_policy_state_all_lock_get();
+
+	/* States are locked. */
+	zassert_true(pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES));
+	zassert_false(pm_policy_state_is_available(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES));
+	zassert_false(pm_policy_state_any_active());
+
+	pm_policy_state_all_lock_put();
+
+	/* States are still locked due to reference counter. */
+	zassert_true(pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES));
+	zassert_false(pm_policy_state_is_available(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES));
+	zassert_false(pm_policy_state_any_active());
+
+	pm_policy_state_all_lock_put();
+
+	/* States are available again. */
+	zassert_false(pm_policy_state_lock_is_active(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES));
+	zassert_true(pm_policy_state_is_available(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES));
+	zassert_true(pm_policy_state_any_active());
+}
+
 /**
  * @brief Test the behavior of pm_policy_next_state() when
  * states are allowed/disallowed and CONFIG_PM_POLICY_DEFAULT=y.
