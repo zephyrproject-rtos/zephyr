@@ -19,6 +19,15 @@
  * directly from application code but may be freely used within the OS.
  */
 
+/**
+ * @brief SoC  hook executed before RAM initialization, at the beginning
+ * of the reset vector.
+ *
+ * This hook is implemented by the SoC and can be used to perform any
+ * SoC-specific initialization. Its execution takes place even before
+ * the stack is initialized or RAM is accessed.
+ */
+void soc_pre_ram_hook(void);
 
 #ifdef CONFIG_SOC_RESET_HOOK
 /**
