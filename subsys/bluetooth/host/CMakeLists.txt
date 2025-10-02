@@ -49,6 +49,11 @@ if(CONFIG_BT_HCI_HOST)
       gatt.c
       )
 
+    zephyr_library_sources_ifdef(
+      CONFIG_BT_GATT_GAP_SVC_VALIDATE
+      gatt_gap_svc_validate.c
+      )
+
     if(CONFIG_BT_SMP)
       zephyr_library_sources(
         smp.c
