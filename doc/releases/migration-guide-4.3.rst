@@ -183,6 +183,8 @@ Modem
 *****
 
 * ``CONFIG_MODEM_AT_SHELL_USER_PIPE`` has been renamed to :kconfig:option:`CONFIG_MODEM_AT_USER_PIPE`.
+* ``CONFIG_MODEM_CMUX_WORK_BUFFER_SIZE`` has been updated to :kconfig:option:`CONFIG_MODEM_CMUX_WORK_BUFFER_SIZE_EXTRA`,
+  which only takes the number of extra bytes desired over the default of (:kconfig:option:`CONFIG_MODEM_CMUX_MTU` + 7).
 
 Display
 *******
