@@ -1017,6 +1017,7 @@ class NrfFun(int, enum.Enum):
     TDM_SDIN = 75
     TDM_SDOUT = 76
     TDM_MCK = 77
+    SPIM_CSN = 78
 
     # Value used to ignore the function field and only check (port, pin)
     IGNORE = -1
