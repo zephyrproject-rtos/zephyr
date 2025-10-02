@@ -267,4 +267,13 @@ config BT_GATT_AUTHORIZATION_CUSTOM
 	  with the bt_gatt_authorization_cb_register API. See the API
 	  documentation for more details.
 
+config BT_GATT_GAP_SVC_VALIDATE
+	bool "GATT GAP Service validation"
+	depends on BT_CONN
+	default y
+	help
+	  Validate if in the GATT database exactly one GAP service is present.
+	  This helps to debug any issues related to GAP service that may make
+	  the Bluetooth implementation not compatible with the standard.
+
 endmenu
