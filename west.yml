@@ -30,6 +30,10 @@ manifest:
   # Please add items below based on alphabetical order
   # zephyr-keep-sorted-start re(^\s+\- name:)
   projects:
+    - name: Arduino-Core-Zephyr
+      path: modules/lib/Arduino-Zephyr-API
+      revision: global_pin_number_api
+      url: https://github.com/soburi/gsoc-2022-arduino-core
     - name: acpica
       revision: 8d24867bc9c9d81c81eeac59391cda59333affd4
       path: modules/lib/acpica

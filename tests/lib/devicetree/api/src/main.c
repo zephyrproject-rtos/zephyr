@@ -111,6 +111,9 @@
 #define TEST_SUBPARTITION_1 DT_PATH(test, test_mtd_ffeeddcc, flash_20000000, partitions, \
 				    partition_100, partition_40)
 
+#define TEST_GPIO_CONNECTOR  DT_PATH(gpio_map_test, connector)
+#define TEST_INTERRUPT_NEXUS DT_PATH(interrupt_map_test, nexus)
+
 #define ZEPHYR_USER DT_PATH(zephyr_user)
 
 #define TA_HAS_COMPAT(compat) DT_NODE_HAS_COMPAT(TEST_ARRAYS, compat)
@@ -3830,6 +3833,89 @@ ZTEST(devicetree_api, test_interrupt_controller)
 
 	/* DT_INST_IRQ_INTC */
 	zassert_true(DT_SAME_NODE(DT_INST_IRQ_INTC(0), TEST_INTC), "");
+}
+
+#define INTERRUPT_NEXUS_CHECK_0(n, p, i, ...)                                                      \
+	zassert_equal(NUM_VA_ARGS(DT_MAP_CHILD_SPECIFIER_ARGS_BY_IDX(n, p, i)), 4);                \
+	zassert_equal(GET_ARG_N(1, DT_MAP_CHILD_SPECIFIER_ARGS_BY_IDX(n, p, i)), 0);               \
+	zassert_equal(GET_ARG_N(2, DT_MAP_CHILD_SPECIFIER_ARGS_BY_IDX(n, p, i)), 0);               \
+	zassert_equal(GET_ARG_N(3, DT_MAP_CHILD_SPECIFIER_ARGS_BY_IDX(n, p, i)), 1);               \
+	zassert_equal(GET_ARG_N(4, DT_MAP_CHILD_SPECIFIER_ARGS_BY_IDX(n, p, i)), 2);               \
+	zassert_equal(NUM_VA_ARGS(DT_MAP_PARENT_SPECIFIER_ARGS_BY_IDX(n, p, i)), 2);               \
+	zassert_equal(GET_ARG_N(1, DT_MAP_PARENT_SPECIFIER_ARGS_BY_IDX(n, p, i)), 3);              \
+	zassert_equal(GET_ARG_N(2, DT_MAP_PARENT_SPECIFIER_ARGS_BY_IDX(n, p, i)), 4);              \
+	zassert_equal(NUM_VA_ARGS(DT_MAP_PARENT_ARG_BY_IDX(n, p, i)), 1);                          \
+	zassert_str_equal(STRINGIFY(DT_MAP_PARENT_ARG_BY_IDX(n, p, i)),                            \
+				    "DT_N_S_interrupt_map_test_S_controller_0_0");
+
+#define INTERRUPT_NEXUS_CHECK_1(n, p, i, ...)                                                      \
+	zassert_equal(NUM_VA_ARGS(DT_MAP_CHILD_SPECIFIER_ARGS_BY_IDX(n, p, i)), 4);                \
+	zassert_equal(GET_ARG_N(1, DT_MAP_CHILD_SPECIFIER_ARGS_BY_IDX(n, p, i)), 0);               \
+	zassert_equal(GET_ARG_N(2, DT_MAP_CHILD_SPECIFIER_ARGS_BY_IDX(n, p, i)), 0);               \
+	zassert_equal(GET_ARG_N(3, DT_MAP_CHILD_SPECIFIER_ARGS_BY_IDX(n, p, i)), 5);               \
+	zassert_equal(GET_ARG_N(4, DT_MAP_CHILD_SPECIFIER_ARGS_BY_IDX(n, p, i)), 6);               \
+	zassert_equal(NUM_VA_ARGS(DT_MAP_PARENT_SPECIFIER_ARGS_BY_IDX(n, p, i)), 4);               \
+	zassert_equal(GET_ARG_N(1, DT_MAP_PARENT_SPECIFIER_ARGS_BY_IDX(n, p, i)), 7);              \
+	zassert_equal(GET_ARG_N(2, DT_MAP_PARENT_SPECIFIER_ARGS_BY_IDX(n, p, i)), 8);              \
+	zassert_equal(GET_ARG_N(3, DT_MAP_PARENT_SPECIFIER_ARGS_BY_IDX(n, p, i)), 9);              \
+	zassert_equal(GET_ARG_N(4, DT_MAP_PARENT_SPECIFIER_ARGS_BY_IDX(n, p, i)), 0);              \
+	zassert_equal(NUM_VA_ARGS(DT_MAP_PARENT_ARG_BY_IDX(n, p, i)), 1);                          \
+	zassert_str_equal(STRINGIFY(DT_MAP_PARENT_ARG_BY_IDX(n, p, i)),                            \
+				    "DT_N_S_interrupt_map_test_S_controller_1_1");
+
+#define INTERRUPT_NEXUS_CHECK_2(n, p, i, ...)                                                      \
+	zassert_equal(NUM_VA_ARGS(DT_MAP_CHILD_SPECIFIER_ARGS_BY_IDX(n, p, i)), 4);                \
+	zassert_equal(GET_ARG_N(1, DT_MAP_CHILD_SPECIFIER_ARGS_BY_IDX(n, p, i)), 0);               \
+	zassert_equal(GET_ARG_N(2, DT_MAP_CHILD_SPECIFIER_ARGS_BY_IDX(n, p, i)), 1);               \
+	zassert_equal(GET_ARG_N(3, DT_MAP_CHILD_SPECIFIER_ARGS_BY_IDX(n, p, i)), 9);               \
+	zassert_equal(GET_ARG_N(4, DT_MAP_CHILD_SPECIFIER_ARGS_BY_IDX(n, p, i)), 8);               \
+	zassert_equal(NUM_VA_ARGS(DT_MAP_PARENT_SPECIFIER_ARGS_BY_IDX(n, p, i)), 2);               \
+	zassert_equal(GET_ARG_N(1, DT_MAP_PARENT_SPECIFIER_ARGS_BY_IDX(n, p, i)), 7);              \
+	zassert_equal(GET_ARG_N(2, DT_MAP_PARENT_SPECIFIER_ARGS_BY_IDX(n, p, i)), 6);              \
+	zassert_equal(NUM_VA_ARGS(DT_MAP_PARENT_ARG_BY_IDX(n, p, i)), 1);                          \
+	zassert_str_equal(STRINGIFY(DT_MAP_PARENT_ARG_BY_IDX(n, p, i)),                            \
+				    "DT_N_S_interrupt_map_test_S_controller_0_0");
+
+#define INTERRUPT_NEXUS_CHECK_3(n, p, i, ...)                                                      \
+	zassert_equal(NUM_VA_ARGS(DT_MAP_CHILD_SPECIFIER_ARGS_BY_IDX(n, p, i)), 4);                \
+	zassert_equal(GET_ARG_N(1, DT_MAP_CHILD_SPECIFIER_ARGS_BY_IDX(n, p, i)), 0);               \
+	zassert_equal(GET_ARG_N(2, DT_MAP_CHILD_SPECIFIER_ARGS_BY_IDX(n, p, i)), 1);               \
+	zassert_equal(GET_ARG_N(3, DT_MAP_CHILD_SPECIFIER_ARGS_BY_IDX(n, p, i)), 5);               \
+	zassert_equal(GET_ARG_N(4, DT_MAP_CHILD_SPECIFIER_ARGS_BY_IDX(n, p, i)), 4);               \
+	zassert_equal(NUM_VA_ARGS(DT_MAP_PARENT_SPECIFIER_ARGS_BY_IDX(n, p, i)), 4);               \
+	zassert_equal(GET_ARG_N(1, DT_MAP_PARENT_SPECIFIER_ARGS_BY_IDX(n, p, i)), 3);              \
+	zassert_equal(GET_ARG_N(2, DT_MAP_PARENT_SPECIFIER_ARGS_BY_IDX(n, p, i)), 2);              \
+	zassert_equal(GET_ARG_N(3, DT_MAP_PARENT_SPECIFIER_ARGS_BY_IDX(n, p, i)), 1);              \
+	zassert_equal(GET_ARG_N(4, DT_MAP_PARENT_SPECIFIER_ARGS_BY_IDX(n, p, i)), 0);              \
+	zassert_str_equal(STRINGIFY(DT_MAP_PARENT_ARG_BY_IDX(n, p, i)),                            \
+				    "DT_N_S_interrupt_map_test_S_controller_1_1");
+
+#define INTERRUPT_NEXUS_CHECK(...)                                                                 \
+	UTIL_CAT(INTERRUPT_NEXUS_CHECK_, GET_ARG_N(3, __VA_ARGS__))(__VA_ARGS__)
+
+ZTEST(devicetree_api, test_map)
+{
+	zassert_equal(DT_PROP_LEN(TEST_GPIO_CONNECTOR, gpio_map), 2);
+	zassert_equal(DT_PHA_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map, 0, child_specifier_0), 1);
+	zassert_equal(DT_PHA_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map, 0, child_specifier_1), 2);
+	zassert_str_equal(STRINGIFY(DT_PHANDLE_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map, 0)),
+				    "DT_N_S_gpio_map_test_S_parent");
+	zassert_equal(DT_PHA_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map, 0, parent_specifier_0), 3);
+	zassert_equal(DT_PHA_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map, 1, child_specifier_0), 4);
+	zassert_equal(DT_PHA_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map, 1, child_specifier_1), 5);
+	zassert_str_equal(STRINGIFY(DT_PHANDLE_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map, 1)),
+				    "DT_N_S_gpio_map_test_S_parent");
+	zassert_equal(DT_PHA_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map, 1, parent_specifier_0), 6);
+
+	zassert_equal(DT_PROP_LEN(TEST_GPIO_CONNECTOR, gpio_map_mask), 2);
+	zassert_equal(DT_PROP_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map_mask, 0), 0xffffffff);
+	zassert_equal(DT_PROP_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map_mask, 1), 0xffffffc0);
+	zassert_equal(DT_PROP_LEN(TEST_GPIO_CONNECTOR, gpio_map_pass_thru), 2);
+	zassert_equal(DT_PROP_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map_pass_thru, 0), 0x0);
+	zassert_equal(DT_PROP_BY_IDX(TEST_GPIO_CONNECTOR, gpio_map_pass_thru, 1), 0x3f);
+
+	DT_FOREACH_PROP_ELEM_VARGS(TEST_INTERRUPT_NEXUS, interrupt_map, INTERRUPT_NEXUS_CHECK,
+				   9999);
 }
 
 ZTEST_SUITE(devicetree_api, NULL, NULL, NULL, NULL, NULL);

@@ -5,6 +5,7 @@ tests:
     # will mostly likely be the fastest.
     platform_allow:
       - native_sim
+      - native_sim/native/64
       - qemu_x86
       - qemu_x86_64
       - qemu_cortex_m3
