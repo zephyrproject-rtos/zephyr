@@ -76,9 +76,8 @@ static inline bool z_zexpect_(bool cond, const char *file, int line)
 
 #else /* CONFIG_ZTEST_ASSERT_VERBOSE != 0 */
 
-static inline __printf_like(6, 7) bool z_zassert(bool cond, const char *default_msg,
-						 const char *file, int line, const char *func,
-						 const char *msg, ...)
+static inline bool z_zassert(bool cond, const char *default_msg, const char *file, int line,
+			     const char *func, const char *msg, ...)
 {
 	if (cond == false) {
 		va_list vargs;
@@ -101,9 +100,8 @@ static inline __printf_like(6, 7) bool z_zassert(bool cond, const char *default_
 	return true;
 }
 
-static inline __printf_like(6, 7) bool z_zassume(bool cond, const char *default_msg,
-						 const char *file, int line, const char *func,
-						 const char *msg, ...)
+static inline bool z_zassume(bool cond, const char *default_msg, const char *file, int line,
+			     const char *func, const char *msg, ...)
 {
 	if (cond == false) {
 		va_list vargs;
@@ -126,9 +124,8 @@ static inline __printf_like(6, 7) bool z_zassume(bool cond, const char *default_
 	return true;
 }
 
-static inline __printf_like(6, 7) bool z_zexpect(bool cond, const char *default_msg,
-						 const char *file, int line, const char *func,
-						 const char *msg, ...)
+static inline bool z_zexpect(bool cond, const char *default_msg, const char *file, int line,
+			     const char *func, const char *msg, ...)
 {
 	if (cond == false) {
 		va_list vargs;
