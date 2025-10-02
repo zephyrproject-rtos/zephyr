@@ -134,7 +134,7 @@ __no_optimization static void trigger_fault_divide_zero(void)
 	defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || \
 	defined(CONFIG_BOARD_QEMU_CORTEX_R5) || \
 	defined(CONFIG_ARMV8_R) || defined(CONFIG_AARCH32_ARMV8_R) || \
-	defined(CONFIG_BOARD_FVP_BASE_REVC_2XAEMV8A) || \
+	defined(CONFIG_BOARD_FVP_BASE_REVC_2XAEM) || \
 	defined(CONFIG_SOC_NSIM_EM11D)
 	ztest_test_skip();
 #endif
