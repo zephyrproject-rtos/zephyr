@@ -193,6 +193,19 @@ New APIs and options
 
   * :kconfig:option:`CONFIG_MODEM_DEDICATED_WORKQUEUE`
 
+* NVMEM
+
+  * Introduced :ref:`Non-Volatile Memory (NVMEM)<nvmem>` subsystem
+
+    * :kconfig:option:`CONFIG_NVMEM`
+    * :kconfig:option:`CONFIG_NVMEM_EEPROM`
+    * :c:struct:`nvmem_cell`
+    * :c:func:`nvmem_cell_read`
+    * :c:func:`nvmem_cell_write`
+    * :c:func:`nvmem_cell_is_ready`
+    * :c:macro:`NVMEM_CELL_GET_BY_NAME` - and variants
+    * :c:macro:`NVMEM_CELL_GET_BY_IDX` - and variants
+
 * Networking
 
   * Sockets
