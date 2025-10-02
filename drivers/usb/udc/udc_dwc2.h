@@ -88,7 +88,6 @@ struct udc_dwc2_data {
 	/* Finished transactions (IN on bits 0-15, OUT on bits 16-31) */
 	atomic_t xfer_finished;
 	struct dwc2_reg_backup backup;
-	uint32_t ghwcfg1;
 	uint32_t max_xfersize;
 	uint32_t max_pktcnt;
 	uint32_t tx_len[16];
