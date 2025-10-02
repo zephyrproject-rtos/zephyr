@@ -23,8 +23,15 @@ LOG_MODULE_REGISTER(flash_img, CONFIG_IMG_MANAGER_LOG_LEVEL);
 #include <bootutil/bootutil_public.h>
 #endif
 
-#define FIXED_PARTITION_IS_RUNNING_APP_PARTITION(label) \
-	(FIXED_PARTITION_OFFSET(label) == CONFIG_FLASH_LOAD_OFFSET)
+#ifdef CONFIG_USE_DT_CODE_PARTITION
+#define FLASH_LOAD_OFFSET DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition))
+#elif defined(CONFIG_FLASH_LOAD_OFFSET)
+#define FLASH_LOAD_OFFSET CONFIG_FLASH_LOAD_OFFSET
+#endif
+
+#define FIXED_PARTITION_IS_RUNNING_APP_PARTITION(label)                                            \
+	(FIXED_PARTITION_OFFSET(label) <= FLASH_LOAD_OFFSET &&                                     \
+	 FIXED_PARTITION_OFFSET(label) + FIXED_PARTITION_SIZE(label) > FLASH_LOAD_OFFSET)
 
 #include <zephyr/devicetree.h>
 #if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) && (CONFIG_TFM_MCUBOOT_IMAGE_NUMBER == 2)
