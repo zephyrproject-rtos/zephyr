@@ -53,6 +53,34 @@ size_t eeprom_target_get_size(const struct device *dev)
 	return data->buffer_size;
 }
 
+int eeprom_target_read_data(const struct device *dev, off_t offset,
+			    void *data, size_t len)
+{
+	struct i2c_eeprom_target_data *drv_data = dev->data;
+
+	if ((offset + len) > drv_data->buffer_size) {
+		LOG_WRN("attempt to read past device boundary");
+		return -EINVAL;
+	}
+
+	memcpy(data, drv_data->buffer + offset, len);
+	return 0;
+}
+
+int eeprom_target_write_data(const struct device *dev, off_t offset,
+			     const void *data, size_t len)
+{
+	struct i2c_eeprom_target_data *drv_data = dev->data;
+
+	if ((offset + len) > drv_data->buffer_size) {
+		LOG_WRN("attempt to write past device boundary");
+		return -EINVAL;
+	}
+
+	memcpy(drv_data->buffer + offset, data, len);
+	return 0;
+}
+
 int eeprom_target_program(const struct device *dev, const uint8_t *eeprom_data,
 			 unsigned int length)
 {

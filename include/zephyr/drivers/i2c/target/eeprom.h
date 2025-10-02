@@ -13,6 +13,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_I2C_TARGET_EEPROM_H_
 
 #include <stddef.h>
+#include <sys/types.h>
 
 /**
  * @brief Interfaces for I2C EEPROM target devices.
@@ -51,6 +52,32 @@ void eeprom_target_set_changed_callback(const struct device *dev,
  * @return Size of EEPROM in bytes
  */
 size_t eeprom_target_get_size(const struct device *dev);
+
+/**
+ * @brief Read data from the virtual EEPROM
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param offset Address offset to read from.
+ * @param data Buffer to store read data.
+ * @param len Number of bytes to read.
+ *
+ * @return 0 on success, negative errno code on failure.
+ */
+int eeprom_target_read_data(const struct device *dev, off_t offset,
+			    void *data, size_t len);
+
+/**
+ * @brief Write data to the virtual EEPROM
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param offset Address offset to write data to.
+ * @param data Buffer with data to write.
+ * @param len Number of bytes to write.
+ *
+ * @return 0 on success, negative errno code on failure.
+ */
+int eeprom_target_write_data(const struct device *dev, off_t offset,
+			     const void *data, size_t len);
 
 /**
  * @brief Program memory of the virtual EEPROM
