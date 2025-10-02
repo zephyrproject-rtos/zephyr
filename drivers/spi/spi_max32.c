@@ -127,6 +127,8 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 		return -EINVAL;
 	}
 
+	k_busy_wait(1);
+
 	ret = MXC_SPI_SetDataSize(regs, SPI_WORD_SIZE_GET(config->operation));
 	if (ret) {
 		return -ENOTSUP;
@@ -153,6 +155,8 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 		return -EINVAL;
 	}
 #endif
+
+	k_busy_wait(1);
 
 	data->ctx.config = config;
 
