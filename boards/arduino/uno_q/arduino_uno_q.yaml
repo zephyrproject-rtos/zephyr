@@ -1,0 +1,10 @@
+identifier: arduino_uno_q
+name: Arduino UNO Q
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 786
+flash: 2048
+vendor: arduino
