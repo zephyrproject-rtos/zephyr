@@ -6,6 +6,17 @@
 
 zephyr_sources(soc.c)
 
+if(CONFIG_NXP_IMXRT_BOOT_HEADER)
+  if(CONFIG_BOOT_FLEXSPI_NOR)
+    zephyr_library_compile_definitions(XIP_BOOT_HEADER_ENABLE=1)
+    zephyr_library_compile_definitions(BOARD_FLASH_SIZE=CONFIG_FLASH_SIZE*1024)
+  endif()
+
+  if(CONFIG_DEVICE_CONFIGURATION_DATA)
+    zephyr_library_compile_definitions(XIP_BOOT_HEADER_DCD_ENABLE=1)
+  endif()
+endif()
+
 if(CONFIG_PM)
   zephyr_sources(power.c)
   zephyr_code_relocate(FILES power.c LOCATION ITCM_TEXT)
