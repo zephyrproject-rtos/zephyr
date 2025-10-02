@@ -74,7 +74,7 @@ static ALWAYS_INLINE void nds_l2_cache_disable(void) { }
 static ALWAYS_INLINE int nds_l2_cache_range(void *addr, size_t size, int op) { return 0; }
 static ALWAYS_INLINE int nds_l2_cache_all(int op) { return 0; }
 static ALWAYS_INLINE int nds_l2_cache_is_inclusive(void) { return 0; }
-static ALWAYS_INLINE int nds_l2_cache_init(void) { return 0; }
+static ALWAYS_INLINE int nds_l2_cache_init(uint8_t line_size) { return 0; }
 #endif /* DT_NODE_HAS_COMPAT_STATUS(DT_INST(0, andestech_l2c), andestech_l2c, okay) */
 
 static ALWAYS_INLINE int nds_cctl_range_operations(void *addr, size_t size, int line_size, int cmd)
