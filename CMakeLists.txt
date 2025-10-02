@@ -858,11 +858,17 @@ get_property(
 list(APPEND SYSCALL_INCLUDE_DIRS ${syscalls_include_list})
 
 # Walk dependencies to find all subfolders
+foreach(d IN LISTS SYSCALL_SCAN_DIRS SYSCALL_INCLUDE_DIRS)
+  list(APPEND syscalls_subfolders
+    --directory ${d}
+    )
+endforeach()
+
 execute_process(
   COMMAND
   ${PYTHON_EXECUTABLE}
   ${ZEPHYR_BASE}/scripts/build/subfolder_list.py
-  --directory        ${ZEPHYR_BASE}/include      # Walk this directory
+  ${syscalls_subfolders}                         # Walk these directories
   --out-file         ${syscalls_subdirs_txt}     # Write file with discovered folder
   --trigger-file     ${syscalls_subdirs_trigger} # Trigger file that is used for json generation
   ${syscalls_links}                              # If defined, create symlinks for dependencies
@@ -899,7 +905,7 @@ else()
     COMMAND
     ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/build/subfolder_list.py
-    --directory        ${ZEPHYR_BASE}/include      # Walk this directory
+    ${syscalls_subfolders}                         # Walk these directories
     --out-file         ${syscalls_subdirs_txt}     # Write file with discovered folder
     --trigger-file     ${syscalls_subdirs_trigger} # Trigger file that is used for json generation
     ${syscalls_links}                              # If defined, create symlinks for dependencies
