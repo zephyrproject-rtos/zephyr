@@ -4,6 +4,7 @@
 menuconfig SECURE_STORAGE
 	bool "Secure storage subsystem"
 	depends on !BUILD_WITH_TFM
+	depends on !NRF_IRONSIDE
 	select MBEDTLS_PSA_CRYPTO_STORAGE_C if MBEDTLS_PSA_CRYPTO_C
 	help
 	  The secure storage subsystem provides an implementation of the PSA Secure Storage API
