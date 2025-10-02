@@ -760,8 +760,8 @@ static int configure_domain_partitions(struct k_mem_domain *domain)
 	struct k_thread *thread;
 	int ret;
 
-	SYS_DLIST_FOR_EACH_CONTAINER(&domain->mem_domain_q, thread,
-				     mem_domain_info.mem_domain_q_node) {
+	SYS_DLIST_FOR_EACH_CONTAINER(&domain->thread_mem_domain_list, thread,
+				     mem_domain_info.thread_mem_domain_node) {
 		ret = configure_dynamic_mpu_regions(thread);
 		if (ret != 0) {
 			return ret;
