@@ -331,7 +331,7 @@ Additional tips:
 Working with patches: ``west patch``
 ************************************
 
-The ``patch`` command allows users to apply patches to Zephyr or Zephyr modules
+The ``patch`` command allows users to apply patches to Zephyr and other west projects
 in a controlled manner that makes automation and tracking easier for external applications that
 use the :ref:`T2 star topology <west-t2>`. The :ref:`patches.yml <patches-yml>` file stores
 metadata about patch files and fills-in the gaps between official Zephyr releases, so that users
@@ -364,8 +364,8 @@ workspace:
 
 In this example, the :ref:`west manifest <west-manifests>` file, ``west.yml``, would pin to a
 specific Zephyr revision (e.g. ``v4.1.0``) and apply patches against that revision of Zephyr and
-the specific revisions of other modules used in the application. However, this application needs
-two changes in order to meet requirements; one for Zephyr and another for MCUBoot.
+the specific revisions of other west projects used in the application. However, this application
+needs two changes in order to meet requirements; one for Zephyr and another for MCUBoot.
 
 .. _patches-yml:
 

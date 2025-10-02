@@ -104,7 +104,7 @@ class Patch(WestCommand):
             "-b",
             "--patch-base",
             help=f"""
-                Directory containing patch files (absolute or relative to module dir,
+                Directory containing patch files (absolute or relative to project dir,
                 default: {WEST_PATCH_BASE})""",
             metavar="DIR",
             type=Path,
@@ -113,7 +113,7 @@ class Patch(WestCommand):
             "-l",
             "--patch-yml",
             help=f"""
-                Path to patches.yml file (absolute or relative to module dir,
+                Path to patches.yml file (absolute or relative to project dir,
                 default: {WEST_PATCH_YAML})""",
             metavar="FILE",
             type=Path,
@@ -127,26 +127,26 @@ class Patch(WestCommand):
         )
         parser.add_argument(
             "-sm",
-            "--src-module",
-            dest="src_module",
-            metavar="MODULE",
+            "--src-project",
+            dest="src_project",
+            metavar="PROJECT",
             type=str,
             help="""
-                Zephyr module containing the patch definition (name, absolute path or
+                Zephyr project containing the patch definition (name, absolute path or
                 path relative to west-workspace)""",
         )
         parser.add_argument(
             "-dm",
-            "--dst-module",
+            "--dst-project",
             action="append",
-            dest="dst_modules",
-            metavar="MODULE",
+            dest="dst_project",
+            metavar="PROJECT",
             type=str,
             help="""
-                Zephyr module to run the 'patch' command for.
+                Zephyr project to run the 'patch' command for.
                 Option can be passed multiple times.
                 If this option is not given, the 'patch' command will run for Zephyr
-                and all modules.""",
+                and all projects.""",
         )
 
         subparsers = parser.add_subparsers(
@@ -227,13 +227,13 @@ class Patch(WestCommand):
             help="Github Pull Request ID",
         )
         gh_fetch_arg_parser.add_argument(
-            "-m",
-            "--module",
+            "-p",
+            "--project",
             metavar="DIR",
             action="store",
             required=True,
             type=Path,
-            help="Module path",
+            help="Project path",
         )
         gh_fetch_arg_parser.add_argument(
             "-s",
@@ -272,15 +272,15 @@ class Patch(WestCommand):
 
         topdir = Path(self.topdir)
 
-        if args.src_module is not None:
-            mod_path = self.get_module_path(args.src_module)
-            if mod_path is None:
-                self.die(f'Source module "{args.src_module}" not found')
+        if args.src_project is not None:
+            prj_path = self.get_project_path(args.src_project)
+            if prj_path is None:
+                self.die(f'Source project "{args.src_project}" not found')
             if args.patch_base is not None and args.patch_base.is_absolute():
-                self.die("patch-base must not be an absolute path in combination with src-module")
+                self.die("patch-base must not be an absolute path in combination with src-project")
             if args.patch_yml is not None and args.patch_yml.is_absolute():
-                self.die("patch-yml must not be an absolute path in combination with src-module")
-            manifest_dir = topdir / mod_path
+                self.die("patch-yml must not be an absolute path in combination with src-project")
+            manifest_dir = topdir / prj_path
         else:
             manifest_dir = topdir / manifest_path
 
@@ -299,8 +299,8 @@ class Patch(WestCommand):
         elif not args.west_workspace.is_absolute():
             args.west_workspace = topdir / args.west_workspace
 
-        if args.dst_modules is not None:
-            args.dst_modules = [self.get_module_path(m) for m in args.dst_modules]
+        if args.dst_project is not None:
+            args.dst_project = [self.get_project_path(m) for m in args.dst_project]
 
     def load_yml(self, args, allow_missing):
         if not os.path.isfile(args.patch_yml):
@@ -339,23 +339,24 @@ class Patch(WestCommand):
             "gh-fetch": self.gh_fetch,
         }
 
-        method[args.subcommand](args, yml, args.dst_modules)
+        method[args.subcommand](args, yml, args.dst_project)
 
-    def apply(self, args, yml, dst_mods=None):
+    def apply(self, args, yml, dst_prjs=None):
         patches = yml.get("patches", [])
+
         if not patches:
             return
 
         patch_count = 0
         failed_patch = None
-        patched_mods = set()
+        patched_prjs = set()
 
         for patch_info in patches:
-            mod = self.get_module_path(patch_info["module"])
-            if mod is None:
+            prj = self.get_project_path(patch_info["module"])
+            if prj is None:
                 continue
 
-            if dst_mods and mod not in dst_mods:
+            if dst_prjs and prj not in dst_prjs:
                 continue
 
             pth = patch_info["path"]
@@ -385,14 +386,14 @@ class Patch(WestCommand):
             self.dbg("OK")
             patch_count += 1
 
-            mod_path = Path(args.west_workspace) / mod
-            patched_mods.add(mod)
+            prj_path = Path(args.west_workspace) / prj
+            patched_prjs.add(prj)
 
-            self.dbg(f"patching {mod}... ", end="")
+            self.dbg(f"patching {prj}... ", end="")
             apply_cmd += patch_path
             apply_cmd_list.extend([patch_path])
             proc = subprocess.run(
-                apply_cmd_list, capture_output=True, cwd=mod_path, encoding="utf-8"
+                apply_cmd_list, capture_output=True, cwd=prj_path, encoding="utf-8"
             )
             if proc.returncode:
                 self.dbg("FAIL")
@@ -406,11 +407,11 @@ class Patch(WestCommand):
             return
 
         if args.roll_back:
-            self.clean(args, yml, patched_mods)
+            self.clean(args, yml, patched_prjs)
 
         self.die(f"failed to apply patch {failed_patch}")
 
-    def clean(self, args, yml, dst_mods=None):
+    def clean(self, args, yml, dst_prjs=None):
         clean_cmd = yml["clean-command"]
         checkout_cmd = yml["checkout-command"]
 
@@ -421,56 +422,56 @@ class Patch(WestCommand):
         clean_cmd_list = shlex.split(clean_cmd)
         checkout_cmd_list = shlex.split(checkout_cmd)
 
-        for mod in yml.get("patches", []):
-            m = self.get_module_path(mod.get("module"))
+        for prj in yml.get("patches", []):
+            m = self.get_project_path(prj.get("module"))
             if m is None:
                 continue
-            if dst_mods and m not in dst_mods:
+            if dst_prjs and m not in dst_prjs:
                 continue
-            mod_path = Path(args.west_workspace) / m
+            prj_path = Path(args.west_workspace) / m
 
             try:
                 if checkout_cmd:
                     self.dbg(f"Running '{checkout_cmd}' in {mod}.. ", end="")
                     proc = subprocess.run(
-                        checkout_cmd_list, capture_output=True, cwd=mod_path, encoding="utf-8"
+                        checkout_cmd_list, capture_output=True, cwd=prj_path, encoding="utf-8"
                     )
                     if proc.returncode:
                         self.dbg("FAIL")
-                        self.err(f"{checkout_cmd} failed for {mod}\n{proc.stderr}")
+                        self.err(f"{checkout_cmd} failed for {prj}\n{proc.stderr}")
                     else:
                         self.dbg("OK")
 
                 if clean_cmd:
                     self.dbg(f"Running '{clean_cmd}' in {mod}.. ", end="")
                     proc = subprocess.run(
-                        clean_cmd_list, capture_output=True, cwd=mod_path, encoding="utf-8"
+                        clean_cmd_list, capture_output=True, cwd=prj_path, encoding="utf-8"
                     )
                     if proc.returncode:
                         self.dbg("FAIL")
-                        self.err(f"{clean_cmd} failed for {mod}\n{proc.stderr}")
+                        self.err(f"{clean_cmd} failed for {prj}\n{proc.stderr}")
                     else:
                         self.dbg("OK")
 
             except Exception as e:
                 # If this fails for some reason, just log it and continue
-                self.err(f"failed to clean up {mod}: {e}")
+                self.err(f"failed to clean up {prj}: {e}")
 
-    def list(self, args, yml, dst_mods=None):
+    def list(self, args, yml, dst_prjs=None):
         patches = yml.get("patches", [])
         if not patches:
             return
 
         for patch_info in patches:
-            if dst_mods and self.get_module_path(patch_info["module"]) not in dst_mods:
+            if dst_prjs and self.get_project_path(patch_info["project"]) not in dst_prjs:
                 continue
             self.inf(patch_info)
 
-    def gh_fetch(self, args, yml, mods=None):
-        if mods:
+    def gh_fetch(self, args, yml, prjs=None):
+        if prjs:
             self.die(
-                "Module filters are not available for the gh-fetch subcommand, "
-                "pass a single -m/--module argument after the subcommand."
+                "project filters are not available for the gh-fetch subcommand, "
+                "pass a single -m/--project argument after the subcommand."
             )
 
         try:
@@ -493,7 +494,7 @@ class Patch(WestCommand):
                 patch_info = {
                     "path": filename,
                     "sha256sum": self.get_file_sha256sum(args.patch_base / filename),
-                    "module": str(args.module),
+                    "module": str(args.project),
                     "author": cm.commit.author.name or "Hidden",
                     "email": cm.commit.author.email or "hidden@github.com",
                     "date": cm.commit.author.date.strftime("%Y-%m-%d"),
@@ -510,7 +511,7 @@ class Patch(WestCommand):
             patch_info = {
                 "path": filename,
                 "sha256sum": self.get_file_sha256sum(args.patch_base / filename),
-                "module": str(args.module),
+                "module": str(args.project),
                 "author": pr.user.name or "Hidden",
                 "email": pr.user.email or "hidden@github.com",
                 "date": pr.created_at.strftime("%Y-%m-%d"),
@@ -538,23 +539,24 @@ class Patch(WestCommand):
 
         return digest.hexdigest()
 
-    def get_module_path(self, module_name_or_path):
-        if module_name_or_path is None:
+    def get_project_path(self, project_name_or_path):
+        if project_name_or_path is None:
             return None
 
         topdir = Path(self.topdir)
 
-        if Path(module_name_or_path).is_absolute():
-            if Path(module_name_or_path).is_dir():
-                return Path(module_name_or_path).resolve().relative_to(topdir)
+        if Path(project_name_or_path).is_absolute():
+            if Path(project_name_or_path).is_dir():
+                return Path(project_name_or_path).resolve().relative_to(topdir)
             return None
 
-        if (topdir / module_name_or_path).is_dir():
-            return Path(module_name_or_path)
+        if (topdir / project_name_or_path).is_dir():
+            return Path(project_name_or_path)
 
-        all_modules = zephyr_module.parse_modules(ZEPHYR_BASE, self.manifest)
-        for m in all_modules:
-            if m.meta['name'] == module_name_or_path:
-                return Path(m.project).relative_to(topdir)
+        all_projects = zephyr_module.west_projects(self.manifest)['projects']
+
+        for p in all_projects:
+            if p.name == project_name_or_path:
+                return Path(p.abspath).relative_to(topdir)
 
         return None
