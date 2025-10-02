@@ -48,8 +48,7 @@ enum heap_event_types {
  * @param old_heap_end Pointer to end of heap before resize
  * @param new_heap_end Pointer to end of heap after resize
  */
-typedef void (*heap_listener_resize_cb_t)(uintptr_t heap_id,
-					  void *old_heap_end,
+typedef void (*heap_listener_resize_cb_t)(uintptr_t heap_id, void *old_heap_end,
 					  void *new_heap_end);
 
 /**
@@ -68,8 +67,7 @@ typedef void (*heap_listener_resize_cb_t)(uintptr_t heap_id,
  * @param mem Pointer to the allocated memory
  * @param bytes Size of allocated memory
  */
-typedef void (*heap_listener_alloc_cb_t)(uintptr_t heap_id,
-					 void *mem, size_t bytes);
+typedef void (*heap_listener_alloc_cb_t)(uintptr_t heap_id, void *mem, size_t bytes);
 
 /**
  * @typedef heap_listener_free_cb_t
@@ -87,8 +85,7 @@ typedef void (*heap_listener_alloc_cb_t)(uintptr_t heap_id,
  * @param mem Pointer to the freed memory
  * @param bytes Size of freed memory
  */
-typedef void (*heap_listener_free_cb_t)(uintptr_t heap_id,
-					void *mem, size_t bytes);
+typedef void (*heap_listener_free_cb_t)(uintptr_t heap_id, void *mem, size_t bytes);
 
 struct heap_listener {
 	/** Singly linked list node */
@@ -205,13 +202,11 @@ void heap_listener_notify_resize(uintptr_t heap_id, void *old_heap_end, void *ne
  * @param _heap_id	Identifier of the heap to be listened
  * @param _alloc_cb	Function to be called for allocation event
  */
-#define HEAP_LISTENER_ALLOC_DEFINE(name, _heap_id, _alloc_cb) \
-	struct heap_listener name = { \
-		.heap_id = _heap_id, \
-		.event = HEAP_ALLOC, \
-		{ \
-			.alloc_cb = _alloc_cb \
-		}, \
+#define HEAP_LISTENER_ALLOC_DEFINE(name, _heap_id, _alloc_cb)                                      \
+	struct heap_listener name = {                                                              \
+		.heap_id = _heap_id,                                                               \
+		.event = HEAP_ALLOC,                                                               \
+		{.alloc_cb = _alloc_cb},                                                           \
 	}
 
 /**
@@ -231,13 +226,11 @@ void heap_listener_notify_resize(uintptr_t heap_id, void *old_heap_end, void *ne
  * @param _heap_id	Identifier of the heap to be listened
  * @param _free_cb	Function to be called for free event
  */
-#define HEAP_LISTENER_FREE_DEFINE(name, _heap_id, _free_cb) \
-	struct heap_listener name = { \
-		.heap_id = _heap_id, \
-		.event = HEAP_FREE, \
-		{ \
-			.free_cb = _free_cb \
-		}, \
+#define HEAP_LISTENER_FREE_DEFINE(name, _heap_id, _free_cb)                                        \
+	struct heap_listener name = {                                                              \
+		.heap_id = _heap_id,                                                               \
+		.event = HEAP_FREE,                                                                \
+		{.free_cb = _free_cb},                                                             \
 	}
 
 /**
@@ -257,13 +250,11 @@ void heap_listener_notify_resize(uintptr_t heap_id, void *old_heap_end, void *ne
  * @param _heap_id	Identifier of the heap to be listened
  * @param _resize_cb	Function to be called when the listened heap is resized
  */
-#define HEAP_LISTENER_RESIZE_DEFINE(name, _heap_id, _resize_cb) \
-	struct heap_listener name = { \
-		.heap_id = _heap_id, \
-		.event = HEAP_RESIZE, \
-		{ \
-			.resize_cb = _resize_cb \
-		}, \
+#define HEAP_LISTENER_RESIZE_DEFINE(name, _heap_id, _resize_cb)                                    \
+	struct heap_listener name = {                                                              \
+		.heap_id = _heap_id,                                                               \
+		.event = HEAP_RESIZE,                                                              \
+		{.resize_cb = _resize_cb},                                                         \
 	}
 
 /** @} */
