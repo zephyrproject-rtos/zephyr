@@ -110,7 +110,7 @@ static int start_stepping(const struct device *dev)
 	}
 
 	stepper_handle_timing_signal(dev);
-	return ret;
+	return 0;
 }
 
 static void update_remaining_steps(const struct device *dev)
@@ -151,8 +151,8 @@ static void position_mode_task(const struct device *dev)
 	if (config->timing_source->needs_reschedule(dev) && atomic_get(&data->step_count) != 0) {
 		(void)config->timing_source->start(dev);
 	} else if (atomic_get(&data->step_count) == 0) {
-		stepper_trigger_callback(data->dev, STEPPER_EVENT_STEPS_COMPLETED);
 		config->timing_source->stop(data->dev);
+		stepper_trigger_callback(data->dev, STEPPER_EVENT_STEPS_COMPLETED);
 	}
 }
 
