@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT issi_is31fl3194
 
 /**
  * @file
@@ -21,7 +20,7 @@
 
 #include <zephyr/dt-bindings/led/led.h>
 
-LOG_MODULE_REGISTER(is31fl3194, CONFIG_LED_LOG_LEVEL);
+LOG_MODULE_REGISTER(is31fl319x, CONFIG_LED_LOG_LEVEL);
 
 #define IS31FL3194_PROD_ID_REG		0x00
 #define IS31FL3194_CONF_REG		0x01
@@ -43,14 +42,14 @@ static const uint8_t led_channels[] = {
 	IS31FL3194_OUT3_REG
 };
 
-struct is31fl3194_config {
+struct is31fl319x_config {
 	struct i2c_dt_spec bus;
 	uint8_t num_leds;
 	const struct led_info *led_infos;
 	const uint8_t *current_limits;
 };
 
-static const struct led_info *is31fl3194_led_to_info(const struct is31fl3194_config *config,
+static const struct led_info *is31fl319x_led_to_info(const struct is31fl319x_config *config,
 						     uint32_t led)
 {
 	if (led < config->num_leds) {
@@ -60,12 +59,12 @@ static const struct led_info *is31fl3194_led_to_info(const struct is31fl3194_con
 	return NULL;
 }
 
-static int is31fl3194_get_info(const struct device *dev,
+static int is31fl319x_get_info(const struct device *dev,
 			       uint32_t led,
 			       const struct led_info **info_out)
 {
-	const struct is31fl3194_config *config = dev->config;
-	const struct led_info *info = is31fl3194_led_to_info(config, led);
+	const struct is31fl319x_config *config = dev->config;
+	const struct led_info *info = is31fl319x_led_to_info(config, led);
 
 	if (info == NULL) {
 		return -EINVAL;
@@ -75,11 +74,11 @@ static int is31fl3194_get_info(const struct device *dev,
 	return 0;
 }
 
-static int is31fl3194_set_color(const struct device *dev, uint32_t led, uint8_t num_colors,
+static int is31fl319x_set_color(const struct device *dev, uint32_t led, uint8_t num_colors,
 				const uint8_t *color)
 {
-	const struct is31fl3194_config *config = dev->config;
-	const struct led_info *info = is31fl3194_led_to_info(config, led);
+	const struct is31fl319x_config *config = dev->config;
+	const struct led_info *info = is31fl319x_led_to_info(config, led);
 	int ret;
 
 	if (info == NULL) {
@@ -108,7 +107,7 @@ static int is31fl3194_set_color(const struct device *dev, uint32_t led, uint8_t 
 			value = color[2];
 			break;
 		default:
-			/* unreachable: mapping already tested in is31fl3194_check_config */
+			/* unreachable: mapping already tested in is31fl319x_check_config */
 			return -EINVAL;
 		}
 
@@ -131,10 +130,10 @@ static int is31fl3194_set_color(const struct device *dev, uint32_t led, uint8_t 
 	return ret;
 }
 
-static int is31fl3194_set_brightness(const struct device *dev, uint32_t led, uint8_t value)
+static int is31fl319x_set_brightness(const struct device *dev, uint32_t led, uint8_t value)
 {
-	const struct is31fl3194_config *config = dev->config;
-	const struct led_info *info = is31fl3194_led_to_info(config, led);
+	const struct is31fl319x_config *config = dev->config;
+	const struct led_info *info = is31fl319x_led_to_info(config, led);
 	int ret = 0;
 
 	if (info == NULL) {
@@ -166,7 +165,7 @@ static int is31fl3194_set_brightness(const struct device *dev, uint32_t led, uin
  * Counts red, green, blue channels; returns true if color_id is valid
  * and no more than one channel maps to the same color
  */
-static bool is31fl3194_count_colors(const struct device *dev,
+static bool is31fl319x_count_colors(const struct device *dev,
 				    uint8_t color_id, uint8_t *rgb_counts)
 {
 	bool ret = false;
@@ -191,9 +190,9 @@ static bool is31fl3194_count_colors(const struct device *dev,
 	return ret;
 }
 
-static int is31fl3194_check_config(const struct device *dev)
+static int is31fl319x_check_config(const struct device *dev)
 {
-	const struct is31fl3194_config *config = dev->config;
+	const struct is31fl319x_config *config = dev->config;
 	const struct led_info *info;
 	uint8_t rgb_counts[3] = { 0 };
 	uint8_t i;
@@ -211,7 +210,7 @@ static int is31fl3194_check_config(const struct device *dev)
 		}
 
 		for (i = 0; i < 3; i++) {
-			if (!is31fl3194_count_colors(dev, info->color_mapping[i], rgb_counts)) {
+			if (!is31fl319x_count_colors(dev, info->color_mapping[i], rgb_counts)) {
 				return -EINVAL;
 			}
 
@@ -229,7 +228,7 @@ static int is31fl3194_check_config(const struct device *dev)
 				return -EINVAL;
 			}
 
-			if (!is31fl3194_count_colors(dev, info->color_mapping[0], rgb_counts)) {
+			if (!is31fl319x_count_colors(dev, info->color_mapping[0], rgb_counts)) {
 				return -EINVAL;
 			}
 		}
@@ -243,15 +242,15 @@ static int is31fl3194_check_config(const struct device *dev)
 	return 0;
 }
 
-static int is31fl3194_init(const struct device *dev)
+static int is31fl319x_init(const struct device *dev)
 {
-	const struct is31fl3194_config *config = dev->config;
+	const struct is31fl319x_config *config = dev->config;
 	const struct led_info *info = NULL;
 	int i, ret;
 	uint8_t prod_id, band;
 	uint8_t current_reg = 0;
 
-	ret = is31fl3194_check_config(dev);
+	ret = is31fl319x_check_config(dev);
 	if (ret != 0) {
 		return ret;
 	}
@@ -299,10 +298,10 @@ static int is31fl3194_init(const struct device *dev)
 	return i2c_reg_write_byte_dt(&config->bus, IS31FL3194_CONF_REG, IS31FL3194_CONF_ENABLE);
 }
 
-static DEVICE_API(led, is31fl3194_led_api) = {
-	.set_brightness = is31fl3194_set_brightness,
-	.get_info = is31fl3194_get_info,
-	.set_color = is31fl3194_set_color,
+static DEVICE_API(led, is31fl319x_led_api) = {
+	.set_brightness = is31fl319x_set_brightness,
+	.get_info = is31fl319x_get_info,
+	.set_color = is31fl319x_set_color,
 };
 
 #define COLOR_MAPPING(led_node_id)						\
@@ -319,25 +318,27 @@ static DEVICE_API(led, is31fl3194_led_api) = {
 #define LED_CURRENT(led_node_id)						\
 	DT_PROP(led_node_id, current_limit),
 
-#define IS31FL3194_DEFINE(id)							\
+#define IS31FL319X_DEVICE(n, id)						\
 										\
-	DT_INST_FOREACH_CHILD(id, COLOR_MAPPING)				\
+	DT_INST_FOREACH_CHILD(n, COLOR_MAPPING)					\
 										\
-	static const struct led_info is31fl3194_leds_##id[] =			\
-		{ DT_INST_FOREACH_CHILD(id, LED_INFO) };			\
-	static const uint8_t is31fl3194_currents_##id[] =			\
-		{ DT_INST_FOREACH_CHILD(id, LED_CURRENT) };			\
-	BUILD_ASSERT(ARRAY_SIZE(is31fl3194_leds_##id) > 0,			\
-		     "No LEDs defined for " #id);				\
+	static const struct led_info is31fl319##id##_leds_##n[] =		\
+		{ DT_INST_FOREACH_CHILD(n, LED_INFO) };				\
 										\
-	static const struct is31fl3194_config is31fl3194_config_##id = {	\
-		.bus = I2C_DT_SPEC_INST_GET(id),				\
-		.num_leds = ARRAY_SIZE(is31fl3194_leds_##id),			\
-		.led_infos = is31fl3194_leds_##id,				\
-		.current_limits = is31fl3194_currents_##id,			\
+	static const uint8_t is31fl319##id##_currents_##n[] =			\
+		{ DT_INST_FOREACH_CHILD(n, LED_CURRENT) };			\
+	BUILD_ASSERT(ARRAY_SIZE(is31fl319##id##_leds_##n) > 0,			\
+		     "No LEDs defined for " #n);				\
+										\
+	static const struct is31fl319x_config is31fl319##id##_config_##n = {	\
+		.bus = I2C_DT_SPEC_INST_GET(n),					\
+		.num_leds = ARRAY_SIZE(is31fl319##id##_leds_##n),		\
+		.led_infos = is31fl319##id##_leds_##n,				\
+		.current_limits = is31fl319##id##_currents_##n,			\
 	};									\
-	DEVICE_DT_INST_DEFINE(id, &is31fl3194_init, NULL, NULL,                 \
-			      &is31fl3194_config_##id, POST_KERNEL,             \
-			      CONFIG_LED_INIT_PRIORITY, &is31fl3194_led_api);
+	DEVICE_DT_INST_DEFINE(n, &is31fl319x_init, NULL, NULL,			\
+			      &is31fl319##id##_config_##n, POST_KERNEL,		\
+			      CONFIG_LED_INIT_PRIORITY, &is31fl319x_led_api);
 
-DT_INST_FOREACH_STATUS_OKAY(IS31FL3194_DEFINE)
+#define DT_DRV_COMPAT issi_is31fl3194
+DT_INST_FOREACH_STATUS_OKAY_VARGS(IS31FL319X_DEVICE, 4)

@@ -1,8 +1,8 @@
 sample:
-  description: Demonstration of the IS31FL3194 LED driver
-  name: is31fl3194 sample
+  description: Demonstration of the IS31FL319x LED driver
+  name: is31fl319x sample
 tests:
-  sample.drivers.led.is31fl3194:
+  sample.drivers.led.is31fl319x:
     filter: dt_compat_enabled("issi,is31fl3194")
     tags: LED
     depends_on: i2c
