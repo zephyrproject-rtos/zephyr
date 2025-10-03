@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_MISC_CORESIGHT_STMESP_H_
-#define ZEPHYR_INCLUDE_DRIVERS_MISC_CORESIGHT_STMESP_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_DEBUG_CORESIGHT_STMESP_H_
+#define ZEPHYR_INCLUDE_DRIVERS_DEBUG_CORESIGHT_STMESP_H_
 
 #include <zephyr/devicetree.h>
 
@@ -190,4 +190,4 @@ static inline int stmesp_get_port(uint32_t idx, STMESP_Type **port)
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_MISC_CORESIGHT_STMESP_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_DEBUG_CORESIGHT_STMESP_H_ */

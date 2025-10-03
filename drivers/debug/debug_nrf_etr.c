@@ -16,7 +16,7 @@
 #include <zephyr/debug/coresight/cs_trace_defmt.h>
 #include <zephyr/debug/mipi_stp_decoder.h>
 #include <zephyr/linker/devicetree_regions.h>
-#include <zephyr/drivers/misc/coresight/nrf_etr.h>
+#include <zephyr/drivers/debug/debug_nrf_etr.h>
 #include <zephyr/drivers/serial/uart_async_rx.h>
 #include <zephyr/sys/printk.h>
 #include <dmm.h>
@@ -29,15 +29,15 @@ LOG_MODULE_REGISTER(cs_etr_tbm);
 #define ETR_BUFFER_NODE DT_NODELABEL(etr_buffer)
 
 #define DROP_CHECK_PERIOD                            \
-	COND_CODE_1(CONFIG_NRF_ETR_DECODE, \
-		    (CONFIG_NRF_ETR_DECODE_DROP_PERIOD), (0))
+	COND_CODE_1(CONFIG_DEBUG_NRF_ETR_DECODE, \
+		    (CONFIG_DEBUG_NRF_ETR_DECODE_DROP_PERIOD), (0))
 
 #define MIN_DATA (2 * CORESIGHT_TRACE_FRAME_SIZE32)
 
 /* Since ETR debug is a part of logging infrastructure, logging cannot be used
  * for debugging. Printk is used (assuming CONFIG_LOG_PRINTK=n)
  */
-#define DBG(...) IF_ENABLED(CONFIG_NRF_ETR_DEBUG, (printk(__VA_ARGS__)))
+#define DBG(...) IF_ENABLED(CONFIG_DEBUG_NRF_ETR_DEBUG, (printk(__VA_ARGS__)))
 
 /** @brief Macro for dumping debug data.
  *
@@ -86,10 +86,10 @@ static const struct device *uart_dev = DEVICE_DT_GET(UART_NODE);
 static uint32_t frame_buf0[CORESIGHT_TRACE_FRAME_SIZE32] DMM_MEMORY_SECTION(UART_NODE);
 static uint32_t frame_buf1[CORESIGHT_TRACE_FRAME_SIZE32] DMM_MEMORY_SECTION(UART_NODE);
 static uint32_t frame_buf_decode[CORESIGHT_TRACE_FRAME_SIZE32];
-static uint32_t *frame_buf = IS_ENABLED(CONFIG_NRF_ETR_DECODE) ?
+static uint32_t *frame_buf = IS_ENABLED(CONFIG_DEBUG_NRF_ETR_DECODE) ?
 				frame_buf_decode : frame_buf0;
 
-K_KERNEL_STACK_DEFINE(etr_stack, CONFIG_NRF_ETR_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(etr_stack, CONFIG_DEBUG_NRF_ETR_STACK_SIZE);
 static struct k_thread etr_thread;
 
 BUILD_ASSERT((DT_REG_SIZE(ETR_BUFFER_NODE) % CONFIG_DCACHE_LINE_SIZE) == 0);
@@ -134,9 +134,10 @@ static const char *const hw_evts[] = {
 	"GD0 HS down", /* 31 Global domain high speed 0 down */
 };
 
-#ifdef CONFIG_NRF_ETR_SHELL
+#ifdef CONFIG_DEBUG_NRF_ETR_SHELL
 #define RX_BUF_SIZE \
-	(CONFIG_NRF_ETR_SHELL_ASYNC_RX_BUFFER_SIZE * CONFIG_NRF_ETR_SHELL_ASYNC_RX_BUFFER_COUNT)
+	(CONFIG_DEBUG_NRF_ETR_SHELL_ASYNC_RX_BUFFER_SIZE * \
+	CONFIG_DEBUG_NRF_ETR_SHELL_ASYNC_RX_BUFFER_COUNT)
 
 static void etr_timer_handler(struct k_timer *timer);
 K_TIMER_DEFINE(etr_timer, etr_timer_handler, NULL);
@@ -278,7 +279,7 @@ static void message_process(union log_frontend_stmesp_demux_packet packet)
  */
 static void sync_loss(void)
 {
-	if (IS_ENABLED(CONFIG_NRF_ETR_DECODE)) {
+	if (IS_ENABLED(CONFIG_DEBUG_NRF_ETR_DECODE)) {
 		mipi_stp_decoder_sync_loss();
 		log_frontend_stmesp_demux_reset();
 		oosync_cnt++;
@@ -292,7 +293,7 @@ static void sync_loss(void)
  */
 static void on_resync(void)
 {
-	if (IS_ENABLED(CONFIG_NRF_ETR_DECODE)) {
+	if (IS_ENABLED(CONFIG_DEBUG_NRF_ETR_DECODE)) {
 		in_sync = true;
 	}
 }
@@ -365,7 +366,7 @@ static void decoder_cb(enum mipi_stp_decoder_ctrl_type type,
 
 	decoder_cb_debug(type, data, ts, marked);
 
-	if (!IS_ENABLED(CONFIG_NRF_ETR_DECODE)) {
+	if (!IS_ENABLED(CONFIG_DEBUG_NRF_ETR_DECODE)) {
 		return;
 	}
 
@@ -549,7 +550,7 @@ static void dump_frame(uint8_t *buf)
 static void process(void)
 {
 	static const uint32_t *const etr_buf = (uint32_t *)(DT_REG_ADDR(ETR_BUFFER_NODE));
-	static uint32_t sync_cnt;
+	static uint32_t sync_cnt = CONFIG_DEBUG_NRF_ETR_SYNC_PERIOD;
 	uint32_t pending;
 
 	/* If function is called in panic mode then it may interrupt ongoing
@@ -562,7 +563,7 @@ static void process(void)
 	 */
 	while ((pending = pending_data()) >= MIN_DATA) {
 		/* Do not read the data that has already been read but not yet processed. */
-		if (sync_cnt || (CONFIG_NRF_ETR_SYNC_PERIOD == 0)) {
+		if (sync_cnt || (CONFIG_DEBUG_NRF_ETR_SYNC_PERIOD == 0)) {
 			sync_cnt--;
 			sys_cache_data_invd_range((void *)&etr_buf[etr_rd_idx & wsize_mask],
 						  CORESIGHT_TRACE_FRAME_SIZE);
@@ -572,11 +573,12 @@ static void process(void)
 			rd_idx_inc();
 			__sync_synchronize();
 		} else {
-			sync_cnt = CONFIG_NRF_ETR_SYNC_PERIOD;
+			sync_cnt = CONFIG_DEBUG_NRF_ETR_SYNC_PERIOD;
 			memset(frame_buf, 0xff, CORESIGHT_TRACE_FRAME_SIZE);
 		}
 
-		if (IS_ENABLED(CONFIG_NRF_ETR_DECODE) || IS_ENABLED(CONFIG_NRF_ETR_DEBUG)) {
+		if (IS_ENABLED(CONFIG_DEBUG_NRF_ETR_DECODE) ||
+		    IS_ENABLED(CONFIG_DEBUG_NRF_ETR_DEBUG)) {
 			if ((pending >= (wsize_mask - MIN_DATA)) ||
 			    (pending_data() >= (wsize_mask - MIN_DATA))) {
 				/* If before or after reading the frame it is close to full
@@ -586,7 +588,7 @@ static void process(void)
 			}
 
 			process_frame((uint8_t *)frame_buf, pending);
-			if (IS_ENABLED(CONFIG_NRF_ETR_DECODE)) {
+			if (IS_ENABLED(CONFIG_DEBUG_NRF_ETR_DECODE)) {
 				process_messages();
 			}
 		} else {
@@ -612,7 +614,7 @@ static int decoder_init(void)
 	}
 
 	once = true;
-	if (IS_ENABLED(CONFIG_NRF_ETR_DECODE)) {
+	if (IS_ENABLED(CONFIG_DEBUG_NRF_ETR_DECODE)) {
 		static const struct log_frontend_stmesp_demux_config config = {
 			.m_ids = stm_m_id,
 			.m_ids_cnt = ARRAY_SIZE(stm_m_id),
@@ -635,12 +637,12 @@ static int decoder_init(void)
 	return 0;
 }
 
-void nrf_etr_flush(void)
+void debug_nrf_etr_flush(void)
 {
 	int cnt = 4;
 
-	if (IS_ENABLED(CONFIG_NRF_ETR_DECODE) ||
-	    IS_ENABLED(CONFIG_NRF_ETR_DEBUG)) {
+	if (IS_ENABLED(CONFIG_DEBUG_NRF_ETR_DECODE) ||
+	    IS_ENABLED(CONFIG_DEBUG_NRF_ETR_DEBUG)) {
 		(void)decoder_init();
 	}
 
@@ -658,13 +660,13 @@ void nrf_etr_flush(void)
 	irq_unlock(k);
 }
 
-#ifndef CONFIG_NRF_ETR_SHELL
+#ifndef CONFIG_DEBUG_NRF_ETR_SHELL
 static void etr_thread_func(void *dummy1, void *dummy2, void *dummy3)
 {
 	uint64_t checkpoint = 0;
 
-	if (IS_ENABLED(CONFIG_NRF_ETR_DECODE) ||
-	    IS_ENABLED(CONFIG_NRF_ETR_DEBUG)) {
+	if (IS_ENABLED(CONFIG_DEBUG_NRF_ETR_DECODE) ||
+	    IS_ENABLED(CONFIG_DEBUG_NRF_ETR_DEBUG)) {
 		int err;
 
 		err = decoder_init();
@@ -688,7 +690,7 @@ static void etr_thread_func(void *dummy1, void *dummy2, void *dummy3)
 			}
 		}
 
-		k_sleep(K_MSEC(CONFIG_NRF_ETR_BACKOFF));
+		k_sleep(K_MSEC(CONFIG_DEBUG_NRF_ETR_BACKOFF));
 	}
 }
 #endif
@@ -703,7 +705,7 @@ static void uart_event_handler(const struct device *dev, struct uart_event *evt,
 	case UART_TX_DONE:
 		k_sem_give(&uart_sem);
 		break;
-#ifdef CONFIG_NRF_ETR_SHELL
+#ifdef CONFIG_DEBUG_NRF_ETR_SHELL
 	case UART_RX_RDY:
 		uart_async_rx_on_rdy(&async_rx, evt->data.rx.buf, evt->data.rx.len);
 		shell_handler(SHELL_TRANSPORT_EVT_RX_RDY, shell_context);
@@ -729,7 +731,7 @@ static void uart_event_handler(const struct device *dev, struct uart_event *evt,
 		break;
 	case UART_RX_DISABLED:
 		break;
-#endif /* CONFIG_NRF_ETR_SHELL */
+#endif /* CONFIG_DEBUG_NRF_ETR_SHELL */
 	default:
 		__ASSERT_NO_MSG(0);
 	}
@@ -743,7 +745,7 @@ static void tbm_event_handler(nrf_tbm_event_t event)
 		tbm_full = true;
 	}
 
-#ifdef CONFIG_NRF_ETR_SHELL
+#ifdef CONFIG_DEBUG_NRF_ETR_SHELL
 	k_poll_signal_raise(&etr_shell.ctx->signals[SHELL_SIGNAL_LOG_MSG], 0);
 #else
 	k_wakeup(&etr_thread);
@@ -767,14 +769,14 @@ int etr_process_init(void)
 			    nrfx_isr, nrfx_tbm_irq_handler, 0);
 	irq_enable(DT_IRQN(DT_NODELABEL(tbm)));
 
-#ifdef CONFIG_NRF_ETR_SHELL
+#ifdef CONFIG_DEBUG_NRF_ETR_SHELL
 	uint32_t level = CONFIG_LOG_MAX_LEVEL;
 	static const struct shell_backend_config_flags cfg_flags =
 		SHELL_DEFAULT_BACKEND_CONFIG_FLAGS;
 
 	shell_init(&etr_shell, NULL, cfg_flags, true, level);
-	k_timer_start(&etr_timer, K_MSEC(CONFIG_NRF_ETR_BACKOFF), K_NO_WAIT);
-	if (IS_ENABLED(CONFIG_NRF_ETR_DECODE) || IS_ENABLED(CONFIG_NRF_ETR_DEBUG)) {
+	k_timer_start(&etr_timer, K_MSEC(CONFIG_DEBUG_NRF_ETR_BACKOFF), K_NO_WAIT);
+	if (IS_ENABLED(CONFIG_DEBUG_NRF_ETR_DECODE) || IS_ENABLED(CONFIG_DEBUG_NRF_ETR_DEBUG)) {
 		err = decoder_init();
 		if (err < 0) {
 			return err;
@@ -791,14 +793,14 @@ int etr_process_init(void)
 
 SYS_INIT(etr_process_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
-#ifdef CONFIG_NRF_ETR_SHELL
+#ifdef CONFIG_DEBUG_NRF_ETR_SHELL
 
 static void etr_timer_handler(struct k_timer *timer)
 {
 	if (pending_data() >= MIN_DATA) {
 		k_poll_signal_raise(&etr_shell.ctx->signals[SHELL_SIGNAL_LOG_MSG], 0);
 	} else {
-		k_timer_start(timer, K_MSEC(CONFIG_NRF_ETR_BACKOFF), K_NO_WAIT);
+		k_timer_start(timer, K_MSEC(CONFIG_DEBUG_NRF_ETR_BACKOFF), K_NO_WAIT);
 	}
 }
 
@@ -807,7 +809,7 @@ bool z_shell_log_backend_process(const struct shell_log_backend *backend)
 	ARG_UNUSED(backend);
 
 	process();
-	k_timer_start(&etr_timer, K_MSEC(CONFIG_NRF_ETR_BACKOFF), K_NO_WAIT);
+	k_timer_start(&etr_timer, K_MSEC(CONFIG_DEBUG_NRF_ETR_BACKOFF), K_NO_WAIT);
 
 	return false;
 }
@@ -901,7 +903,7 @@ static int etr_shell_init(const struct shell_transport *transport, const void *c
 	static const struct uart_async_rx_config async_rx_config = {
 		.buffer = rx_buf,
 		.length = sizeof(rx_buf),
-		.buf_cnt = CONFIG_NRF_ETR_SHELL_ASYNC_RX_BUFFER_COUNT,
+		.buf_cnt = CONFIG_DEBUG_NRF_ETR_SHELL_ASYNC_RX_BUFFER_COUNT,
 	};
 
 	shell_context = context;
@@ -939,6 +941,6 @@ static struct shell_transport transport = {
 };
 
 static uint8_t shell_out_buffer[CONFIG_SHELL_PRINTF_BUFF_SIZE];
-Z_SHELL_DEFINE(etr_shell, CONFIG_NRF_ETR_SHELL_PROMPT, &transport, shell_out_buffer, NULL,
+Z_SHELL_DEFINE(etr_shell, CONFIG_DEBUG_NRF_ETR_SHELL_PROMPT, &transport, shell_out_buffer, NULL,
 	       SHELL_FLAG_OLF_CRLF);
-#endif /* CONFIG_NRF_ETR_SHELL */
+#endif /* CONFIG_DEBUG_NRF_ETR_SHELL */
