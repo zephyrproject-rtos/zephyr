@@ -36,6 +36,7 @@
 		sw1 = &button1;
 		watchdog0 = &wdog0;
 		dht0 = &si7021;
+		adc0 = &adc0;
 	};
 
 	leds {
