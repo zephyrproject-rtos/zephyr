@@ -6,7 +6,7 @@ zephyr_library()
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_HT16K33 ht16k33.c)
-zephyr_library_sources_ifdef(CONFIG_IS31FL3194 is31fl3194.c)
+zephyr_library_sources_ifdef(CONFIG_IS31FL319X is31fl319x.c)
 zephyr_library_sources_ifdef(CONFIG_IS31FL3216A is31fl3216a.c)
 zephyr_library_sources_ifdef(CONFIG_IS31FL3733 is31fl3733.c)
 zephyr_library_sources_ifdef(CONFIG_LEDS_GROUP_MULTICOLOR leds_group_multicolor.c)
