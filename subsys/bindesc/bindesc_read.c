@@ -57,10 +57,13 @@ static inline int get_entry(struct bindesc_handle *handle, const uint8_t *addres
 			    const struct bindesc_entry **entry)
 {
 	int retval = 0;
+#if IS_ENABLED(CONFIG_BINDESC_READ_FLASH)
 	int flash_retval;
+#endif /* IS_ENABLED(CONFIG_BINDESC_READ_FLASH) */
 
 	/* Check if reading from flash is enabled, if not, this if/else will be optimized out */
-	if (IS_ENABLED(CONFIG_BINDESC_READ_FLASH) && handle->type == BINDESC_HANDLE_TYPE_FLASH) {
+	if (handle->type == BINDESC_HANDLE_TYPE_FLASH) {
+#if IS_ENABLED(CONFIG_BINDESC_READ_FLASH)
 		flash_retval = flash_read(handle->flash_device, (size_t)address,
 					  handle->buffer, BINDESC_ENTRY_HEADER_SIZE);
 		if (flash_retval) {
@@ -72,7 +75,6 @@ static inline int get_entry(struct bindesc_handle *handle, const uint8_t *addres
 		if (((const struct bindesc_entry *)handle->buffer)->len + BINDESC_ENTRY_HEADER_SIZE
 				> sizeof(handle->buffer)) {
 			LOG_WRN("Descriptor too large to copy, skipping");
-			retval = -ENOMEM;
 		} else {
 			flash_retval = flash_read(handle->flash_device,
 					(size_t)address + BINDESC_ENTRY_HEADER_SIZE,
@@ -83,8 +85,14 @@ static inline int get_entry(struct bindesc_handle *handle, const uint8_t *addres
 				return -EIO;
 			}
 		}
+		retval = 0;
 		*entry = (const struct bindesc_entry *)handle->buffer;
+#else
+		return ENOSYS;
+#endif /* IS_ENABLED(CONFIG_BINDESC_READ_FLASH) */
+
 	} else {
+		retval = 0;
 		*entry = (const struct bindesc_entry *)address;
 	}
 
@@ -163,13 +171,10 @@ int bindesc_foreach(struct bindesc_handle *handle, bindesc_callback_t callback, 
 
 	do {
 		retval = get_entry(handle, address, &entry);
-		if (retval == -EIO) {
-			return -EIO;
+		if (retval) {
+			return retval;
 		}
 		address += WB_UP(BINDESC_ENTRY_HEADER_SIZE + entry->len);
-		if (retval) {
-			continue;
-		}
 
 		retval = callback(entry, user_data);
 		if (retval) {

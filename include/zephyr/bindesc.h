@@ -442,8 +442,10 @@ int bindesc_open_flash(struct bindesc_handle *handle, size_t offset,
  * @param callback A user defined callback to be called on each descriptor
  * @param user_data User defined data to be given to the callback
  *
- * @return If the walk was finished prematurely by the callback,
- *         return the callback's retval, zero otherwise
+ * @retval -ENOSYS if attempted to use external flash when not enabled.
+ * @retval -EIO if a flash operation failed
+ * @retval OTHER if the callback returned a non zero value, it will be returned
+ * @retval 0 On success
  */
 int bindesc_foreach(struct bindesc_handle *handle, bindesc_callback_t callback, void *user_data);
 
