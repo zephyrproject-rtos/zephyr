@@ -9,7 +9,7 @@ config NUM_IRQS
 	default 471
 
 config SHELL_BACKEND_SERIAL
-	default n if NRF_ETR_SHELL
+	default n if DEBUG_NRF_ETR_SHELL
 
 config POWER_DOMAIN
 	default y
