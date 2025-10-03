@@ -220,6 +220,7 @@ New APIs and options
    * The :kconfig:option:`PM_S2RAM_CUSTOM_MARKING` has been renamed to
      :kconfig:option:`HAS_PM_S2RAM_CUSTOM_MARKING` and refactored to be promptless. This option
      is now selected by SoCs if they need it for their "suspend-to-ram" implementations.
+   * Added devicetree property ``wakeup-signal``
 
 * Settings
 

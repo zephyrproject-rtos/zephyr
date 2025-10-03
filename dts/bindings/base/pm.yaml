@@ -16,6 +16,16 @@ properties:
       Wake up capable devices are disabled (interruptions will not wake up
       the system) by default but they can be enabled at runtime if necessary.
 
+  wakeup-signal:
+    type: int
+    description: |
+      Property to specify the wakeup signal number.
+
+      There are some SoC's where the wakeup signal can be a different signal
+      and not necessarily the interrupt number.
+
+      This property goes together with "wakeup-source" property.
+
   zephyr,pm-device-runtime-auto:
     type: boolean
     description: |
