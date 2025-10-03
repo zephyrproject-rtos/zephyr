@@ -669,6 +669,11 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
 		net_buf_unref(buf);
 		atomic_clear_bit(&data->state, CDC_ACM_TX_FIFO_BUSY);
 	}
+
+	/* Reschedule if the TX fifo still contains data. */
+	if (!ring_buf_is_empty(data->tx_fifo.rb)) {
+		cdc_acm_work_schedule(&data->tx_fifo_work, K_MSEC(1));
+	}
 }
 
 /*
