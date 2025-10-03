@@ -184,8 +184,24 @@ static void mu_isr(const struct device *dev)
 	const uint32_t flags = MU_GetStatusFlags(config->base);
 
 	for (int i_channel = 0; i_channel < MU_MAX_CHANNELS; i_channel++) {
-		const uint32_t rx_int_mask = g_rx_flag_mask[i_channel];
+		/* Handle notification interrupt for the channel first and
+		 * then handle the data ready interrupt for the channel.
+		 * Notification interrupts are more commonly used (e.g. for
+		 * ipc) and clearing the interrupt ASAP reduces the chance
+		 * the other side gets an error when pending a new interrupt
+		 * if it is sending multiple IPC messages in quick succession.
+		 */
 		const uint32_t gen_int_mask = g_gen_int_pend_mask[i_channel];
+
+		if ((flags & gen_int_mask) == gen_int_mask) {
+			MU_ClearStatusFlags(config->base, gen_int_mask);
+			if (data->cb[i_channel]) {
+				data->cb[i_channel](dev, i_channel, data->user_data[i_channel],
+						    NULL);
+			}
+		}
+
+		const uint32_t rx_int_mask = g_rx_flag_mask[i_channel];
 
 		if ((flags & rx_int_mask) == rx_int_mask) {
 			data->received_data = MU_ReceiveMsgNonBlocking(config->base, i_channel);
@@ -196,13 +212,5 @@ static void mu_isr(const struct device *dev)
 						    &msg);
 			}
 		}
-		if ((flags & gen_int_mask) == gen_int_mask) {
-			MU_ClearStatusFlags(config->base, gen_int_mask);
-			if (data->cb[i_channel]) {
-				data->cb[i_channel](dev, i_channel, data->user_data[i_channel],
-						    NULL);
-			}
-		}
-
 	}
 }
