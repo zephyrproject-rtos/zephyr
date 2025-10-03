@@ -72,6 +72,7 @@ struct gpio_siwx91x_port_data {
 /* Functions */
 static int gpio_siwx91x_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
+	sl_si91x_gpio_driver_disable_state_t disable_state = GPIO_HZ;
 	const struct gpio_siwx91x_port_config *cfg = dev->config;
 	struct gpio_siwx91x_port_data *port_data = dev->data;
 	const struct device *parent = cfg->parent;
@@ -79,7 +80,6 @@ static int gpio_siwx91x_pin_configure(const struct device *dev, gpio_pin_t pin, 
 	uint8_t cur_cfg_pin = 0;
 	sl_status_t status;
 	int i;
-	sl_si91x_gpio_driver_disable_state_t disable_state = GPIO_HZ;
 
 	if (flags & GPIO_SINGLE_ENDED) {
 		return -ENOTSUP;
@@ -456,7 +456,7 @@ static DEVICE_API(gpio, gpio_siwx91x_api) = {
 		    gpio_siwx91x_isr, DEVICE_DT_GET(node_id), 0);                                  \
 	irq_enable(DT_IRQ_BY_IDX(node_id, idx, irq));
 
-static DEVICE_API(gpio, gpio_siwx91x_common_api) = { };
+static DEVICE_API(gpio, gpio_siwx91x_common_api) = {};
 
 #define GPIO_CONTROLLER_INIT(idx)                                                                  \
 	const struct device *ports_##idx[DT_INST_CHILD_NUM(idx)];                                  \
