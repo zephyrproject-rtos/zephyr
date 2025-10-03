@@ -20,7 +20,7 @@ Building and Running
 ********************
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/modules/pmci/mctp/i2c_gpio_bus_endpoint
+   :zephyr-app: samples/subsys/pmci/mctp/i2c_gpio_bus_endpoint
    :host-os: unix
    :board: frdm_mcxn947_mcxn947_cpu0
    :goals: run
