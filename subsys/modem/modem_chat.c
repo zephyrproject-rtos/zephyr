@@ -845,6 +845,11 @@ int modem_chat_attach(struct modem_chat *chat, struct modem_pipe *pipe)
 	return 0;
 }
 
+bool modem_chat_is_running(struct modem_chat *chat)
+{
+	return atomic_test_bit(&chat->script_state, MODEM_CHAT_SCRIPT_STATE_RUNNING_BIT);
+}
+
 int modem_chat_run_script_async(struct modem_chat *chat, const struct modem_chat_script *script)
 {
 	bool script_is_running;
