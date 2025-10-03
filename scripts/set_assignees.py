@@ -125,8 +125,8 @@ def process_pr(gh, maintainer_file, number):
         log(f"Too many files changed ({len(fn)}), skipping....")
         return
 
-    # areas where assignment happens if only area is affected
-    meta_areas = ['Release Notes', 'Documentation', 'Samples']
+    # areas where assignment happens if only said areas are affected
+    meta_areas = ['Release Notes', 'Documentation', 'Samples', 'Tests']
 
     for changed_file in fn:
         num_files += 1
