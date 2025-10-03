@@ -95,6 +95,7 @@ MAKE_REG_HELPER_EL123(spsr)
 MAKE_REG_HELPER_EL123(tcr)
 MAKE_REG_HELPER_EL123(ttbr0)
 MAKE_REG_HELPER_EL123(vbar)
+MAKE_REG_HELPER_EL123(zcr)
 
 #if defined(CONFIG_ARM_MPU)
 /* Armv8-R aarch64 mpu registers */
