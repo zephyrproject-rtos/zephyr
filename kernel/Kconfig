@@ -570,6 +570,26 @@ config SCHED_THREAD_USAGE_AUTO_ENABLE
 
 endif # THREAD_RUNTIME_STATS
 
+menuconfig THREAD_RUNTIME_STACK_SAFETY
+	bool "Enable support for thread runtime stack safety checks"
+	default n
+	help
+	  Invoke the runtime stack safety hook should the unused portion of
+	  the stack has been detected to be below a minimum threshold.
+
+if THREAD_RUNTIME_STACK_SAFETY
+config THREAD_RUNTIME_STACK_SAFETY_DEFAULT_UNUSED_THRESHOLD_PCT
+	int "Runtime Stack Safety unused stack usage percentage threshold"
+	default 0
+	range 0 99
+	help
+	  This option specifies a thread's default runtime stack safety
+	  threshold as a percentage of the stack size. When the runtime stack
+	  safety routines detect that the unused stack percentage has fallen
+	  _below_ this threshold, they invoke the runtime stack safety hook.
+	  Setting this to 0 disables the check by default for all threads.
+endif
+
 endmenu
 
 rsource "Kconfig.obj_core"
