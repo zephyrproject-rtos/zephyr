@@ -20,7 +20,8 @@ Building the application
 Zephyr
 ======
 
-Build command:
+Build command for RZ/G3S-SMARC
+------------------------------
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/renesas/openamp_linux_zephyr
@@ -28,18 +29,30 @@ Build command:
    :goals: build
    :compact:
 
+Build command for RZ/V2L-SMARC
+------------------------------
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/boards/renesas/openamp_linux_zephyr
+   :board: rzv2l_smarc/r9a07g054l23gbg/cm33
+   :goals: build
+   :compact:
+
 Running the sample
-*************************
+******************
 
 Linux setup
 ===========
 
-The sample currently supports the Linux RZ/G Multi-OS Package V2.2.0. The build steps for Renesas Multi-OS Package V2.2.0 are described below.
+For RZ/G3S-SMARC
+----------------
 
-1. Follow the procedures in ''3.Multi-OS Package Setup'' of `Release Note for RZ/G Multi-OS Package V2.2.0 <https://www.renesas.com/en/document/rln/release-note-rzg-multi-os-package-v220?r=1522841>`_
+The sample currently supports the Linux RZ/G Multi-OS Package v3.0.0. The build steps for Renesas Multi-OS Package are described below.
+
+1. Follow the procedures in ''3.2 Integration of Multi-OS Package related stuff'' of `Quick Start Guide for RZ/G3S Multi-OS Package`_
    without initiating the build process.
-2. For RZ/G3S, add ``PLAT_M33_BOOT_SUPPORT=1`` by following this guide:
-   `RZ/G3S SMARC Evaluation Board Kit <https://docs.zephyrproject.org/latest/boards/renesas/rzg3s_smarc/doc/index.html#programming-and-debugging>`_
+
+2. For RZ/G3S, add ``PLAT_M33_BOOT_SUPPORT=1`` by following this guide: `RZ/G3S SMARC Evaluation Board Kit`_
 
 3. Insert the highlighted lines of code into the following file: meta-rz-features/meta-rz-multi-os/meta-rzg3s/recipes-example/rpmsg-sample/files/platform_info.c
 
@@ -63,12 +76,44 @@ The sample currently supports the Linux RZ/G Multi-OS Package V2.2.0. The build 
 
 4. Start the build.
 
-5. For deploying bootloader files, Linux kernel image, device tree and rootfs, follow the procedures in ''3.5.1 In case of configuring CA55 as Boot CPU'' of `Release Note for RZ/G Multi-OS Package V2.2.0 <https://www.renesas.com/en/document/rln/release-note-rzg-multi-os-package-v220?r=1522841>`_
+5. For deploying bootloader files, Linux kernel image, device tree and rootfs, please refer to: `SMARC EVK of RZ/G3S Linux Start-up Guide`_
+
+For RZ/V2L-SMARC
+----------------
+
+The sample currently supports the Linux RZ/V Multi-OS Package v3.1.1. The build steps for Renesas Multi-OS Package are described below.
+
+1. Follow the steps (1) and (2) from the ''Flashing'' section of `RZ/V2L SMARC Evaluation Board Kit`_
+
+2. Insert the highlighted lines of code into the following file: meta-rz-features/meta-rz-multi-os/meta-rzv2l/recipes-example/rpmsg-sample/files/platform_info.c
+
+   .. code-block:: c
+      :emphasize-lines: 5,6,7,8,9,10
+
+      if (ret) {
+      LPRINTF("failed rpmsg_init_vdev");
+      goto err;
+      }
+      /* RPMsg virtio enables callback for avail flags */
+      ret = virtqueue_enable_cb(rpmsg_vdev->rvq);
+      if (ret) {
+         LPRINTF("Failed release availability flags");
+         goto err;
+      }
+      #ifndef __linux__ /* uC3 */
+      start_ipi_task(rproc);
+      #endif
+      return rpmsg_virtio_get_rpmsg_device(rpmsg_vdev);
+
+3. Start the build.
+
+4. For deploying bootloader files, Linux kernel image, device tree and rootfs, follow the steps (4) to (8) from the ''Flashing'' section of
+`RZ/V2L SMARC Evaluation Board Kit`_
 
 Zephyr setup
 ============
 
-1. Flash the sample to the board.
+1. Flash the sample to the board by following the ''Flashing'' instructions for your board.
 
 2. Open a serial terminal (minicom, putty, etc.) and connect to the board with the following
    settings:
@@ -173,3 +218,20 @@ The following message will appear on the Zephyr console.
       I: OpenAMP[remote] Linux sample client responder started
       I: OpenAMP demo ended
       I: OpenAMP Linux sample client responder ended
+
+References
+**********
+
+.. target-notes::
+
+.. _Quick Start Guide for RZ/G3S Multi-OS Package:
+   https://www.renesas.com/en/document/qsg/quick-start-guide-rzg3s-multi-os-package
+
+.. _RZ/G3S SMARC Evaluation Board Kit:
+   https://docs.zephyrproject.org/latest/boards/renesas/rzg3s_smarc/doc/index.html#programming-and-debugging
+
+.. _SMARC EVK of RZ/G3S Linux Start-up Guide:
+   https://www.renesas.com/en/document/gde/smarc-evk-rzg3s-linux-start-guide-rev106
+
+.. _RZ/V2L SMARC Evaluation Board Kit:
+   https://docs.zephyrproject.org/latest/boards/renesas/rzv2l_smarc/doc/index.html#flashing

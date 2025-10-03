@@ -26,10 +26,24 @@
 #endif
 #define RAMABLE_REGION	RAM
 
-/* single bank configuration with 2 MB of code flash */
-#define ROM_START (DT_REG_ADDR(DT_NODELABEL(code_flash)))
+#if defined(CONFIG_ROM_END_OFFSET)
+#define ROM_END_OFFSET CONFIG_ROM_END_OFFSET
+#else
+#define ROM_END_OFFSET 0
+#endif
 
-#define ROM_SIZE  (DT_REG_SIZE(DT_NODELABEL(code_flash)))
+#if defined(CONFIG_FLASH_LOAD_OFFSET)
+#define FLASH_LOAD_OFFSET CONFIG_FLASH_LOAD_OFFSET
+#else
+#define FLASH_LOAD_OFFSET 0
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_flash), okay)
+#define ROM_START (CONFIG_FLASH_BASE_ADDRESS + FLASH_LOAD_OFFSET)
+#ifndef ROM_SIZE
+#define ROM_SIZE (DT_REG_SIZE(DT_CHOSEN(zephyr_flash)) - ROM_END_OFFSET)
+#endif
+#endif
 
 #define RAM_START (CONFIG_SRAM_BASE_ADDRESS)
 #define RAM_SIZE  (KB(CONFIG_SRAM_SIZE))
@@ -61,10 +75,22 @@ SECTIONS
 	. = ROM_START;   /* for kernel logging */
 	PLACE_SYMBOL_HERE(__rodata_region_start);
 
-	 .fvectors 0xFFFFFF80: AT(0xFFFFFF80)
+#if CONFIG_HAS_EXCEPT_VECTOR_TABLE
+	.exvectors 0xFFFFFF80: AT(0xFFFFFF80)
+	{
+		KEEP(*(.exvectors))
+	} GROUP_LINK_IN(ROMABLE_REGION)
+
+	 .fvectors 0xFFFFFFFC: AT(0xFFFFFFFC)
 	{
 		KEEP(*(.fvectors))
 	} GROUP_LINK_IN(ROMABLE_REGION)
+#else
+	.fvectors 0xFFFFFF80: AT(0xFFFFFF80)
+	{
+		KEEP(*(.fvectors))
+	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif
 
 	SECTION_PROLOGUE(_TEXT_SECTION_NAME,ROM_START,)
 	{

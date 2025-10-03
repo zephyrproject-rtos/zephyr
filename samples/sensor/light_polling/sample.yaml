@@ -15,14 +15,33 @@ tests:
       - nrf52dk/nrf52832
     harness: grove
     depends_on: adc
-  sample.sensor.light_polling.als_pt19:
+  sample.sensor.light_polling:
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "lux:"
     tags:
       - drivers
       - sensor
       - light
-    platform_allow:
-      - frdm_mcxw71/mcxw716c
     integration_platforms:
       - frdm_mcxw71/mcxw716c
-    depends_on:
-      - adc
+      - adafruit_qt_py_rp2040/rp2040
+      - adafruit_feather_canbus_rp2040/rp2040
+      - mikroe_clicker_ra4m1/r7fa4m1ab3cfm
+      - mikroe_quail/stm32f427xx
+      - adafruit_metro_rp2040/rp2040
+    platform_allow:
+      - frdm_mcxw71/mcxw716c
+      - adafruit_qt_py_rp2040/rp2040       # adafruit_tsl2591 shield
+      - adafruit_feather_canbus_rp2040/rp2040 # adafruit_veml7700 shield
+      - mikroe_clicker_ra4m1/r7fa4m1ab3cfm # mikroe_ambient_2_click shield
+      - mikroe_quail/stm32f427xx           # mikroe_illuminance_click shield
+      - adafruit_metro_rp2040/rp2040       # adafruit_ltr329 shield
+    extra_args:
+      - platform:adafruit_qt_py_rp2040/rp2040:SHIELD="adafruit_tsl2591"
+      - platform:adafruit_feather_canbus_rp2040/rp2040:SHIELD="adafruit_veml7700"
+      - platform:mikroe_clicker_ra4m1/r7fa4m1ab3cfm:SHIELD="mikroe_ambient_2_click"
+      - platform:mikroe_quail/stm32f427xx:SHIELD="mikroe_illuminance_click"
+      - platform:adafruit_metro_rp2040/rp2040:SHIELD="adafruit_ltr329"

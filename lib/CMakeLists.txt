@@ -3,7 +3,6 @@
 # FIXME: SHADOW_VARS: Remove this once we have enabled -Wshadow globally.
 add_compile_options($<TARGET_PROPERTY:compiler,warning_shadow_variables>)
 
-add_subdirectory(crc)
 add_subdirectory(libc)
 if(NOT CONFIG_NATIVE_LIBC)
 add_subdirectory(posix)
@@ -17,6 +16,5 @@ add_subdirectory(os)
 add_subdirectory(utils)
 add_subdirectory_ifdef(CONFIG_SMF smf)
 add_subdirectory_ifdef(CONFIG_MIN_HEAP min_heap)
-add_subdirectory_ifdef(CONFIG_OPENAMP              open-amp)
 add_subdirectory_ifdef(CONFIG_ACPI acpi)
 add_subdirectory(uuid)

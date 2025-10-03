@@ -32,12 +32,6 @@ LOG_MODULE_REGISTER(uart_ifx_cat1, CONFIG_UART_LOG_LEVEL);
 #define IFX_CAT1_UART_OVERSAMPLE_MAX              16UL
 #define IFX_CAT1_UART_MAX_BAUD_PERCENT_DIFFERENCE 10
 
-/** @brief Event callback data object */
-struct ifx_cat1_event_callback_data {
-	cy_israddress callback;
-	void *callback_arg;
-};
-
 /* Data structure */
 struct ifx_cat1_uart_data {
 	struct uart_config cfg;
@@ -55,8 +49,6 @@ struct ifx_cat1_uart_data {
 	bool rts_enabled;
 	cy_stc_scb_uart_context_t context;
 	cy_stc_scb_uart_config_t scb_config;
-	struct ifx_cat1_event_callback_data callback_data;
-	uint32_t irq_cause;
 	uint32_t baud_rate;
 };
 
@@ -67,8 +59,6 @@ struct ifx_cat1_uart_config {
 	struct uart_config dt_cfg;
 	uint16_t irq_num;
 	uint8_t irq_priority;
-	cy_cb_scb_uart_handle_events_t uart_handle_events_func;
-	void (*irq_config_func)(const struct device *dev);
 };
 
 typedef void (*ifx_cat1_uart_event_callback_t)(void *callback_arg);
@@ -171,17 +161,17 @@ cy_rslt_t ifx_cat1_uart_set_baud(const struct device *dev, uint32_t baudrate)
 	struct ifx_cat1_uart_data *data = dev->data;
 	const struct ifx_cat1_uart_config *const config = dev->config;
 
-	if (data->baud_rate != baudrate) {
-		data->baud_rate = baudrate;
-	}
-
-	Cy_SCB_UART_Disable(config->reg_addr, NULL);
-
 	uint8_t best_oversample = IFX_CAT1_UART_OVERSAMPLE_MIN;
 	uint8_t best_difference = 0xFF;
 	uint32_t divider;
 
 	uint32_t peri_frequency;
+
+	if (data->baud_rate != baudrate) {
+		data->baud_rate = baudrate;
+	}
+
+	Cy_SCB_UART_Disable(config->reg_addr, NULL);
 
 #if defined(COMPONENT_CAT1A)
 	peri_frequency = Cy_SysClk_ClkPeriGetFrequency();
@@ -357,17 +347,6 @@ static int ifx_cat1_uart_config_get(const struct device *dev, struct uart_config
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-/* Uart event callback for Interrupt driven mode */
-static void _uart_event_callback_irq_mode(void *arg)
-{
-	const struct device *dev = (const struct device *)arg;
-	struct ifx_cat1_uart_data *const data = dev->data;
-
-	if (data->irq_cb != NULL) {
-		data->irq_cb(dev, data->irq_cb_data);
-	}
-}
-
 /* Fill FIFO with data */
 static int ifx_cat1_uart_fifo_fill(const struct device *dev, const uint8_t *tx_data, int size)
 {
@@ -389,21 +368,52 @@ static int ifx_cat1_uart_fifo_read(const struct device *dev, uint8_t *rx_data, c
 	return (int)rx_length;
 }
 
-void ifx_cat1_uart_enable_event(const struct device *dev, uint32_t tx_event, uint32_t rx_event,
-				bool enable)
+void ifx_cat1_uart_enable_event(const struct device *dev, uint32_t event, bool enable)
 {
+	struct ifx_cat1_uart_data *const data = dev->data;
 	const struct ifx_cat1_uart_config *const config = dev->config;
 
-	irq_disable(config->irq_num);
-
-	uint32_t tx_mask = 0;
-	uint32_t rx_mask = 0;
-
-	tx_mask |= tx_event;
-	rx_mask |= rx_event;
+	uint32_t tx_mask = 0x0;
+	uint32_t rx_mask = 0x0;
 
 	uint32_t current_tx_mask = Cy_SCB_GetTxInterruptMask(config->reg_addr);
 	uint32_t current_rx_mask = Cy_SCB_GetRxInterruptMask(config->reg_addr);
+
+	irq_disable(config->irq_num);
+
+	NVIC_ClearPendingIRQ(config->irq_num);
+
+	if (event & CY_SCB_UART_TRANSMIT_EMTPY) {
+		tx_mask |= CY_SCB_UART_TX_EMPTY;
+	}
+
+	if (event & CY_SCB_UART_TRANSMIT_ERR_EVENT) {
+		/* Omit underflow condition as the interrupt perpetually triggers
+		 * Standard mode only uses OVERFLOW irq
+		 */
+		if (data->scb_config.uartMode == CY_SCB_UART_STANDARD) {
+			tx_mask |= (CY_SCB_UART_TX_OVERFLOW | CY_SCB_UART_TRANSMIT_ERR);
+		}
+		/* SMARTCARD mode uses OVERFLOW, NACK, and ARB_LOST irq's */
+		else if (data->scb_config.uartMode == CY_SCB_UART_SMARTCARD) {
+			tx_mask |= (CY_SCB_UART_TX_OVERFLOW | CY_SCB_TX_INTR_UART_NACK |
+				    CY_SCB_TX_INTR_UART_ARB_LOST | CY_SCB_UART_TRANSMIT_ERR);
+		}
+		/* LIN Mode only uses OVERFLOW, ARB_LOST irq's */
+		else {
+			tx_mask |= (CY_SCB_UART_TX_OVERFLOW | CY_SCB_TX_INTR_UART_ARB_LOST |
+				    CY_SCB_UART_TRANSMIT_ERR);
+		}
+	}
+
+	if (event & CY_SCB_UART_RECEIVE_NOT_EMTPY) {
+		rx_mask |= CY_SCB_UART_RX_NOT_EMPTY;
+	}
+
+	if (event & CY_SCB_UART_RECEIVE_ERR_EVENT) {
+		/* Omit underflow condition as the interrupt perpetually triggers. */
+		rx_mask |= CY_SCB_UART_RECEIVE_ERR;
+	}
 
 	if (enable && tx_mask) {
 		Cy_SCB_ClearTxInterrupt(config->reg_addr, tx_mask);
@@ -423,13 +433,12 @@ void ifx_cat1_uart_enable_event(const struct device *dev, uint32_t tx_event, uin
 
 static void ifx_cat1_uart_irq_tx_enable(const struct device *dev)
 {
-	ifx_cat1_uart_enable_event(dev, CY_SCB_UART_TX_EMPTY, 0, 1);
+	ifx_cat1_uart_enable_event(dev, (uint32_t)CY_SCB_UART_TRANSMIT_EMTPY, 1);
 }
 
 static void ifx_cat1_uart_irq_tx_disable(const struct device *dev)
 {
-
-	ifx_cat1_uart_enable_event(dev, CY_SCB_UART_TX_EMPTY, 0, 0);
+	ifx_cat1_uart_enable_event(dev, (uint32_t)CY_SCB_UART_TRANSMIT_EMTPY, 0);
 }
 
 /* Check if UART TX buffer can accept a new char */
@@ -453,12 +462,12 @@ static int ifx_cat1_uart_irq_tx_complete(const struct device *dev)
 
 static void ifx_cat1_uart_irq_rx_enable(const struct device *dev)
 {
-	ifx_cat1_uart_enable_event(dev, 0, CY_SCB_UART_RX_NOT_EMPTY, 1);
+	ifx_cat1_uart_enable_event(dev, (uint32_t)CY_SCB_UART_RECEIVE_NOT_EMTPY, 1);
 }
 
 static void ifx_cat1_uart_irq_rx_disable(const struct device *dev)
 {
-	ifx_cat1_uart_enable_event(dev, 0, CY_SCB_UART_RX_NOT_EMPTY, 0);
+	ifx_cat1_uart_enable_event(dev, (uint32_t)CY_SCB_UART_RECEIVE_NOT_EMTPY, 0);
 }
 
 /* Check if UART RX buffer has a received char */
@@ -479,52 +488,18 @@ static int ifx_cat1_uart_irq_rx_ready(const struct device *dev)
 
 static void ifx_cat1_uart_irq_err_enable(const struct device *dev)
 {
-	uint32_t tx_mask = 0;
-	struct ifx_cat1_uart_data *const data = dev->data;
-
-	/* Omit underflow condition as the interrupt perpetually triggers
-	 * Standard mode only uses OVERFLOW irq
-	 */
-	if (data->scb_config.uartMode == CY_SCB_UART_STANDARD) {
-		tx_mask |= (CY_SCB_UART_TX_OVERFLOW | CY_SCB_UART_TRANSMIT_ERR);
-	}
-	/* SMARTCARD mode uses OVERFLOW, NACK, and ARB_LOST irq's */
-	else if (data->scb_config.uartMode == CY_SCB_UART_SMARTCARD) {
-		tx_mask |= (CY_SCB_UART_TX_OVERFLOW | CY_SCB_TX_INTR_UART_NACK |
-			    CY_SCB_TX_INTR_UART_ARB_LOST | CY_SCB_UART_TRANSMIT_ERR);
-	}
-	/* LIN Mode only uses OVERFLOW, ARB_LOST irq's */
-	else {
-		tx_mask |= (CY_SCB_UART_TX_OVERFLOW | CY_SCB_TX_INTR_UART_ARB_LOST |
-			    CY_SCB_UART_TRANSMIT_ERR);
-	}
-
-	ifx_cat1_uart_enable_event(dev, tx_mask, CY_SCB_UART_RECEIVE_ERR, 1);
+	ifx_cat1_uart_enable_event(dev,
+				   ((uint32_t)CY_SCB_UART_TRANSMIT_ERR_EVENT |
+				    (uint32_t)CY_SCB_UART_RECEIVE_ERR_EVENT),
+				   1);
 }
 
 static void ifx_cat1_uart_irq_err_disable(const struct device *dev)
 {
-	uint32_t tx_mask = 0;
-	struct ifx_cat1_uart_data *const data = dev->data;
-
-	/* Omit underflow condition as the interrupt perpetually triggers
-	 * Standard mode only uses OVERFLOW irq
-	 */
-	if (data->scb_config.uartMode == CY_SCB_UART_STANDARD) {
-		tx_mask |= (CY_SCB_UART_TX_OVERFLOW | CY_SCB_UART_TRANSMIT_ERR);
-	}
-	/* SMARTCARD mode uses OVERFLOW, NACK, and ARB_LOST irq's */
-	else if (data->scb_config.uartMode == CY_SCB_UART_SMARTCARD) {
-		tx_mask |= (CY_SCB_UART_TX_OVERFLOW | CY_SCB_TX_INTR_UART_NACK |
-			    CY_SCB_TX_INTR_UART_ARB_LOST | CY_SCB_UART_TRANSMIT_ERR);
-	}
-	/* LIN Mode only uses OVERFLOW, ARB_LOST irq's */
-	else {
-		tx_mask |= (CY_SCB_UART_TX_OVERFLOW | CY_SCB_TX_INTR_UART_ARB_LOST |
-			    CY_SCB_UART_TRANSMIT_ERR);
-	}
-
-	ifx_cat1_uart_enable_event(dev, tx_mask, CY_SCB_UART_RECEIVE_ERR, 0);
+	ifx_cat1_uart_enable_event(dev,
+				   ((uint32_t)CY_SCB_UART_TRANSMIT_ERR_EVENT |
+				    (uint32_t)CY_SCB_UART_RECEIVE_ERR_EVENT),
+				   0);
 }
 
 static int ifx_cat1_uart_irq_is_pending(const struct device *dev)
@@ -543,31 +518,14 @@ static int ifx_cat1_uart_irq_is_pending(const struct device *dev)
 static int ifx_cat1_uart_irq_update(const struct device *dev)
 {
 	const struct ifx_cat1_uart_config *const config = dev->config;
-	int status = 1;
+	uint32_t rx_intr_pending = ((ifx_cat1_uart_irq_is_pending(dev) & CY_SCB_RX_INTR));
+	uint32_t num_in_rx_fifo = Cy_SCB_UART_GetNumInRxFifo(config->reg_addr);
 
-	if (((ifx_cat1_uart_irq_is_pending(dev) & CY_SCB_RX_INTR) != 0u) &&
-	    (Cy_SCB_UART_GetNumInRxFifo(config->reg_addr) == 0u)) {
-		status = 0;
+	if (rx_intr_pending != 0u && num_in_rx_fifo == 0u) {
+		return 0;
 	}
 
-	return status;
-}
-
-void ifx_cat1_uart_register_callback(const struct device *dev,
-				     ifx_cat1_uart_event_callback_t callback, void *callback_arg)
-{
-	struct ifx_cat1_uart_data *const data = dev->data;
-	const struct ifx_cat1_uart_config *const config = dev->config;
-
-	uint32_t savedIntrStatus = Cy_SysLib_EnterCriticalSection();
-
-	data->callback_data.callback = (cy_israddress)callback;
-	data->callback_data.callback_arg = callback_arg;
-	Cy_SysLib_ExitCriticalSection(savedIntrStatus);
-	Cy_SCB_UART_RegisterCallback(config->reg_addr, config->uart_handle_events_func,
-				     &(data->context));
-
-	data->irq_cause = 0;
+	return 1;
 }
 
 static void ifx_cat1_uart_irq_callback_set(const struct device *dev,
@@ -578,10 +536,36 @@ static void ifx_cat1_uart_irq_callback_set(const struct device *dev,
 	/* Store user callback info */
 	data->irq_cb = cb;
 	data->irq_cb_data = cb_data;
-
-	/* Register a uart general callback handler  */
-	ifx_cat1_uart_register_callback(dev, _uart_event_callback_irq_mode, (void *)dev);
 }
+
+static void ifx_cat1_uart_irq_handler(const struct device *dev)
+{
+	/*
+	 * This function clears the interrupt and makes a callback.
+	 * It does not handle events.
+	 */
+	const struct ifx_cat1_uart_config *const config = dev->config;
+	struct ifx_cat1_uart_data *const data = dev->data;
+
+	/* Clear all interrupts that could have been configured */
+	CySCB_Type *base = config->reg_addr;
+	uint32_t locRxErr = (CY_SCB_UART_RECEIVE_ERR & Cy_SCB_GetRxInterruptStatusMasked(base));
+	uint32_t locTxErr = (CY_SCB_UART_TRANSMIT_ERR & Cy_SCB_GetTxInterruptStatusMasked(base));
+	uint32_t rx_clear = locRxErr | CY_SCB_UART_RX_NOT_EMPTY;
+	uint32_t tx_clear = locTxErr | CY_SCB_UART_TX_EMPTY | CY_SCB_UART_TX_OVERFLOW |
+			    CY_SCB_TX_INTR_UART_NACK | CY_SCB_TX_INTR_UART_ARB_LOST;
+
+	Cy_SCB_ClearRxInterrupt(base, rx_clear);
+	Cy_SCB_ClearTxInterrupt(base, tx_clear);
+
+	/* Call the callback with the callback data.
+	 * This does not guarantee a separate callback per event.
+	 */
+	if (data->irq_cb != NULL) {
+		data->irq_cb(dev, data->irq_cb_data);
+	}
+}
+
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 /* Default Counter configuration structure */
@@ -614,96 +598,6 @@ static const cy_stc_scb_uart_config_t _uart_default_config = {
 	.txFifoTriggerLevel = 63UL,
 	.txFifoIntEnableMask = 0UL,
 };
-
-static void ifx_cat1_uart_cb_wrapper(const struct device *dev, uint32_t event)
-{
-	struct ifx_cat1_uart_data *const data = dev->data;
-
-	if (data->irq_cause & event) {
-		ifx_cat1_uart_event_callback_t callback =
-			(ifx_cat1_uart_event_callback_t)data->callback_data.callback;
-		callback(data->callback_data.callback_arg);
-	}
-}
-
-static void ifx_cat1_uart_irq_handler(const struct device *dev)
-{
-	struct ifx_cat1_uart_data *const data = dev->data;
-	const struct ifx_cat1_uart_config *const config = dev->config;
-
-	/* Cy_SCB_UART_Interrupt() manipulates the interrupt masks. Save a copy to work around it.
-	 */
-	uint32_t txMasked = Cy_SCB_GetTxInterruptStatusMasked(config->reg_addr);
-	uint32_t rxMasked = Cy_SCB_GetRxInterruptStatusMasked(config->reg_addr);
-
-	/* SCB high-level API interrupt handler. Must be called as high-level API is used in the HAL
-	 */
-	Cy_SCB_UART_Interrupt(config->reg_addr, &(data->context));
-
-	/* Custom handling for TX overflow (cannot occur using HAL API but can occur if user makes
-	 * custom modifications) Note: This is partially handled in Cy_SCB_UART_Interrupt() but it
-	 * only takes care of NACK and ARB_LOST errors.
-	 */
-	if (0UL != (CY_SCB_UART_TX_OVERFLOW & txMasked)) {
-		Cy_SCB_ClearTxInterrupt(config->reg_addr, CY_SCB_UART_TX_OVERFLOW);
-
-		if (data->context.cbEvents != NULL) {
-			data->context.cbEvents(CY_SCB_UART_TRANSMIT_ERR_EVENT);
-		}
-	}
-
-	/* Custom handling for TX underflow (cannot occur using HAL API but can occur if user makes
-	 * custom modifications) Note: This is partially handled in Cy_SCB_UART_Interrupt() but it
-	 * only takes care of NACK and ARB_LOST errors.
-	 */
-	if (0UL != (CY_SCB_UART_TX_UNDERFLOW & txMasked)) {
-		Cy_SCB_ClearTxInterrupt(config->reg_addr, CY_SCB_UART_TX_UNDERFLOW);
-
-		if (data->context.cbEvents != NULL) {
-			data->context.cbEvents(CY_SCB_UART_TRANSMIT_ERR_EVENT);
-		}
-	}
-
-	/* Custom handling for TX FIFO trigger.
-	 * Note: This is partially handled in Cy_SCB_UART_Interrupt()
-	 * when processing CY_SCB_TX_INTR_LEVEL. Do not clear the interrupt.
-	 */
-	if (0UL != (CY_SCB_UART_TX_TRIGGER & txMasked)) {
-		if (data->context.cbEvents != NULL) {
-			data->context.cbEvents(CY_SCB_UART_TX_TRIGGER);
-		}
-	}
-
-	/* Manually clear the tx done interrupt and re-enable the interrupt mask */
-	if (0UL != (CY_SCB_UART_TX_DONE & txMasked)) {
-		Cy_SCB_ClearTxInterrupt(config->reg_addr, CY_SCB_UART_TX_DONE);
-		Cy_SCB_SetTxInterruptMask(config->reg_addr,
-					  Cy_SCB_GetTxInterruptMask(config->reg_addr) |
-						  CY_SCB_UART_TX_DONE);
-	}
-
-	/* Custom handling for RX underflow (cannot occur using HAL API but can occur if user makes
-	 *custom modifications) Note: This is partially handled in Cy_SCB_UART_Interrupt() which
-	 * takes care of overflow, frame and parity errors.
-	 */
-	if (0UL != (CY_SCB_RX_INTR_UNDERFLOW & rxMasked)) {
-		Cy_SCB_ClearRxInterrupt(config->reg_addr, CY_SCB_RX_INTR_UNDERFLOW);
-
-		if (data->context.cbEvents != NULL) {
-			data->context.cbEvents(CY_SCB_UART_RECEIVE_ERR_EVENT);
-		}
-	}
-
-	/* Custom handling for RX FIFO trigger
-	 * Note: This is partially handled in Cy_SCB_UART_Interrupt()
-	 * when processing CY_SCB_RX_INTR_LEVEL. Do not clear the interrupt.
-	 */
-	if (0UL != (CY_SCB_UART_RX_TRIGGER & rxMasked)) {
-		if (data->context.cbEvents != NULL) {
-			data->context.cbEvents(CY_SCB_UART_RX_TRIGGER);
-		}
-	}
-}
 
 #if defined(CY_IP_MXSCB_INSTANCES)
 #define _IFX_CAT1_SCB_ARRAY_SIZE (CY_IP_MXSCB_INSTANCES)
@@ -815,7 +709,7 @@ const uint8_t _IFX_CAT1_SCB_BASE_ADDRESS_INDEX[_IFX_CAT1_SCB_ARRAY_SIZE] = {
 #endif
 };
 
-int32_t _get_hw_block_num(CySCB_Type *reg_addr)
+int32_t ifx_cat1_uart_get_hw_block_num(CySCB_Type *reg_addr)
 {
 	extern const uint8_t _IFX_CAT1_SCB_BASE_ADDRESS_INDEX[_IFX_CAT1_SCB_ARRAY_SIZE];
 	uint32_t i;
@@ -838,7 +732,7 @@ static int ifx_cat1_uart_init(const struct device *dev)
 
 	/* Dedicate SCB HW resource */
 	data->hw_resource.type = IFX_CAT1_RSC_SCB;
-	data->hw_resource.block_num = _get_hw_block_num(config->reg_addr);
+	data->hw_resource.block_num = ifx_cat1_uart_get_hw_block_num(config->reg_addr);
 
 	/* Configure dt provided device signals when available */
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
@@ -852,10 +746,6 @@ static int ifx_cat1_uart_init(const struct device *dev)
 					     &(data->context));
 
 	if (result == CY_RSLT_SUCCESS) {
-		data->callback_data.callback = NULL;
-		data->callback_data.callback_arg = NULL;
-		data->irq_cause = 0;
-
 		irq_enable(config->irq_num);
 
 		Cy_SCB_UART_Enable(config->reg_addr);
@@ -866,7 +756,7 @@ static int ifx_cat1_uart_init(const struct device *dev)
 #if (CONFIG_SOC_FAMILY_INFINEON_CAT1C && CONFIG_UART_INTERRUPT_DRIVEN)
 	/* Enable the UART interrupt */
 	enable_sys_int(config->irq_num, config->irq_priority,
-		       (void (*)(const void *))(void *)config->uart_handle_events_func, &data->obj);
+		       (void (*)(const void *))(void *)ifx_cat1_uart_irq_handler, &data->obj);
 #endif
 
 	/* Perform initial Uart configuration */
@@ -909,13 +799,30 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 	.irq_num = DT_INST_PROP_BY_IDX(n, system_interrupts, SYS_INT_NUM),                         \
 	.irq_priority = DT_INST_PROP_BY_IDX(n, system_interrupts, SYS_INT_PRI)
 #else
-#define IRQ_INFO(n) .irq_priority = DT_INST_IRQ(n, priority)
+#define IRQ_INFO(n) .irq_num = DT_INST_IRQN(n), .irq_priority = DT_INST_IRQ(n, priority)
 #endif
 
 #if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C)
 #define PERI_INFO(n) .clock_peri_group = DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), clk_dst, 1),
 #else
 #define PERI_INFO(n)
+#endif
+
+#if (CONFIG_UART_INTERRUPT_DRIVEN)
+#define INTERRUPT_DRIVEN_UART_INIT(n)                                                              \
+	void uart_handle_events_func_##n(void)                                                     \
+	{                                                                                          \
+		ifx_cat1_uart_irq_handler(DEVICE_DT_INST_GET(n));                                  \
+	}                                                                                          \
+	static void ifx_cat1_uart_irq_config_func_##n(void)                                        \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),                             \
+			    uart_handle_events_func_##n, DEVICE_DT_INST_GET(n), 0);                \
+	}
+#define CALL_UART_IRQ_CONFIG(n) ifx_cat1_uart_irq_config_func_##n();
+#else
+#define INTERRUPT_DRIVEN_UART_INIT(n)
+#define CALL_UART_IRQ_CONFIG(n)
 #endif
 
 #define UART_PERI_CLOCK_INIT(n)                                                                    \
@@ -930,18 +837,14 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 
 #define INFINEON_CAT1_UART_INIT(n)                                                                 \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-                                                                                                   \
-	void uart_handle_events_func_##n(uint32_t event)                                           \
-	{                                                                                          \
-		ifx_cat1_uart_cb_wrapper(DEVICE_DT_INST_GET(n), event);                            \
-	}                                                                                          \
-                                                                                                   \
-	static void ifx_cat1_uart_irq_config_func_##n(const struct device *dev)                    \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), ifx_cat1_uart_irq_handler,  \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-	}                                                                                          \
+	INTERRUPT_DRIVEN_UART_INIT(n)                                                              \
 	static struct ifx_cat1_uart_data ifx_cat1_uart##n##_data = {UART_PERI_CLOCK_INIT(n)};      \
+                                                                                                   \
+	static int ifx_cat1_uart_init##n(const struct device *dev)                                 \
+	{                                                                                          \
+		CALL_UART_IRQ_CONFIG(n);                                                           \
+		return ifx_cat1_uart_init(dev);                                                    \
+	}                                                                                          \
                                                                                                    \
 	static struct ifx_cat1_uart_config ifx_cat1_uart##n##_cfg = {                              \
 		.dt_cfg.baudrate = DT_INST_PROP(n, current_speed),                                 \
@@ -951,11 +854,9 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 		.dt_cfg.flow_ctrl = DT_INST_PROP(n, hw_flow_control),                              \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.reg_addr = (CySCB_Type *)DT_INST_REG_ADDR(n),                                     \
-		.irq_config_func = ifx_cat1_uart_irq_config_func_##n,                              \
-		.uart_handle_events_func = uart_handle_events_func_##n,                            \
 		IRQ_INFO(n)};                                                                      \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &ifx_cat1_uart_init, NULL, &ifx_cat1_uart##n##_data,              \
+	DEVICE_DT_INST_DEFINE(n, &ifx_cat1_uart_init##n, NULL, &ifx_cat1_uart##n##_data,           \
 			      &ifx_cat1_uart##n##_cfg, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,  \
 			      &ifx_cat1_uart_driver_api);
 

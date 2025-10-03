@@ -23,6 +23,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		user_led: led_0 {
 			gpios = <&gpioc 1 GPIO_ACTIVE_HIGH>;
 			label = "User LED";
@@ -31,6 +32,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button_0 {
 			label = "User PB";
 			gpios = <&gpioc 13 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>;
@@ -92,10 +94,12 @@
 		data-rate = <OSPI_STR_TRANSFER>;
 		writeoc = "PP_1_1_4";
 		status = "okay";
+
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
+
 			slot0_partition: partition@0 {
 				reg = <0x00000000 DT_SIZE_M(8)>; /* 64 Mbits */
 			};
@@ -108,6 +112,7 @@
 	cs-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
 	pinctrl-names = "default";
 	status = "okay";
+
 	w25q64jvssiq_spi: spi-nor-flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
@@ -118,10 +123,12 @@
 		has-dpd;
 		t-enter-dpd = <3500>;
 		t-exit-dpd = <3500>;
+
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
+
 			storage_partition: partition@0 {
 				label = "storage";
 				reg = <0x00000000 DT_SIZE_M(8)>; /* 64 Mbits */

@@ -89,11 +89,8 @@ Power
 * USB type-C (*no PD compatibility*).
 * Li-Ion battery charger.
 
-System requirements
+System Requirements
 *******************
-
-Prerequisites
-=============
 
 Espressif HAL requires WiFi and Bluetooth binary blobs in order work. Run the command
 below to retrieve those files.
@@ -106,8 +103,8 @@ below to retrieve those files.
 
    It is recommended running the command above after :file:`west update`.
 
-Building and Flashing
-*********************
+Programming and Debugging
+*************************
 
 .. zephyr:board-supported-runners::
 
@@ -118,7 +115,7 @@ Building and Flashing
    :start-after: espressif-board-variants
 
 Debugging
-*********
+=========
 
 .. include:: ../../../espressif/common/openocd-debugging.rst
    :start-after: espressif-openocd-debugging

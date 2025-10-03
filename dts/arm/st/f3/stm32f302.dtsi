@@ -22,7 +22,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40005800 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 22U)>,
+			clocks = <&rcc STM32_CLOCK(APB1, 22)>,
 				 /* I2C clock source should always be defined,
 				  * even for the default value
 				  */
@@ -38,7 +38,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40007800 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 30U)>,
+			clocks = <&rcc STM32_CLOCK(APB1, 30)>,
 				 /* I2C clock source should always be defined,
 				  * even for the default value
 				  */
@@ -53,7 +53,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003800 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 14U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
 			interrupts = <36 5>;
 			status = "disabled";
 		};
@@ -63,7 +63,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0X40003c00 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 15U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 15)>;
 			interrupts = <51 5>;
 			status = "disabled";
 		};
@@ -104,7 +104,7 @@
 		adc1: adc@50000000 {
 			compatible = "st,stm32-adc";
 			reg = <0x50000000 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB1, 28U)>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 28)>;
 			interrupts = <18 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;

@@ -141,9 +141,9 @@ static void collision_setup(void *data)
 	} while (0)
 
 
-static bool is_instant_reached(struct ll_conn *conn, uint16_t instant)
+static bool is_instant_reached(struct ll_conn *llconn, uint16_t instant)
 {
-	return ((event_counter(conn) - instant) & 0xFFFF) <= 0x7FFF;
+	return ((event_counter(llconn) - instant) & 0xFFFF) <= 0x7FFF;
 }
 
 ZTEST(collision, test_phy_update_central_loc_collision)

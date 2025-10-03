@@ -7,27 +7,55 @@ common:
   platform_key:
     - arch
     - simulation
-  integration_platforms:
-    - qemu_riscv64
   min_flash: 64
   min_ram: 32
+  # Exclude qemu_arc/qemu_arc_hs5x for now because of qemu_arc issue
+  # qemu-system-arc: /usr/src/debug/nativesdk-qemu-arc/git/target/arc/decoder-v2.c:266:
+  #   arc_find_format_v2: Assertion `mcount != 0' failed.
+  # Aborted (core dumped)
+  platform_exclude:
+    - qemu_arc/qemu_arc_hs5x
 tests:
-  portability.posix.signals: {}
+  portability.posix.signals:
+    integration_platforms:
+      - qemu_riscv64
   portability.posix.signals.minimal:
+    integration_platforms:
+      - qemu_riscv64
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y
   portability.posix.signals.newlib:
+    integration_platforms:
+      - qemu_riscv64
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
   portability.posix.signals.picolibc:
+    integration_platforms:
+      - qemu_riscv64
     tags: picolibc
     filter: CONFIG_PICOLIBC_SUPPORTED
     extra_configs:
       - CONFIG_PICOLIBC=y
   portability.posix.signals.strginal_no_desc:
+    integration_platforms:
+      - qemu_riscv64
     extra_configs:
       - CONFIG_POSIX_SIGNAL_STRING_DESC=n
   portability.posix.signals.big_nsig:
+    integration_platforms:
+      - qemu_riscv64
     extra_configs:
       - CONFIG_POSIX_RTSIG_MAX=1024
+  portability.posix.signals.native:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
+    integration_toolchains:
+      - host
+      - llvm
+    extra_configs:
+      - CONFIG_PICOLIBC=y

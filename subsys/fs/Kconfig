@@ -85,6 +85,13 @@ config FILE_SYSTEM_SHELL_BUFFER_SIZE
 	  maximum size that can be used with a read/write test. Note that this
 	  is used on the stack.
 
+config FILE_SYSTEM_SHELL_LS_SIZE
+	bool "File system shell ls command to also list size"
+	default y
+	help
+	  While listing files in the file system shell, also list the size of
+	  each file.
+
 endif # FILE_SYSTEM_SHELL
 
 config FILE_SYSTEM_MKFS
@@ -98,6 +105,23 @@ config FUSE_FS_ACCESS
 	select NATIVE_USE_NSI_ERRNO
 	help
 	  Expose file system partitions to the host system through FUSE.
+
+choice FUSE_LIBRARY_VERSION
+	prompt "Host FUSE library version"
+	depends on FUSE_FS_ACCESS
+	default FUSE_LIBRARY_V2
+
+config FUSE_LIBRARY_V2
+	bool "Use libfuse(2)"
+	help
+	  Use v2 of the host FUSE library.
+
+config FUSE_LIBRARY_V3
+	bool "Use libfuse3"
+	help
+	  Use the host fuse3 library. This may not be available in older distributions.
+
+endchoice
 
 endif # FILE_SYSTEM
 

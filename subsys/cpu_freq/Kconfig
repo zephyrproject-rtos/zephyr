@@ -1,0 +1,46 @@
+# Copyright (c) 2025 Analog Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config HAS_CPU_FREQ
+	bool
+
+menuconfig CPU_FREQ
+	bool "CPU Frequency Scaling Subsystem"
+	select EXPERIMENTAL
+	depends on !SMP
+	depends on HAS_CPU_FREQ
+	help
+	  CPU Frequency scaling subsystem
+
+if CPU_FREQ
+
+module = CPU_FREQ
+module-str = CPU Frequency Scaling
+source "subsys/logging/Kconfig.template.log_config"
+
+config CPU_FREQ_INTERVAL_MS
+	int "CPU Freq evaluation interval"
+	default 1000
+	help
+	  Controls the interval (in milliseconds) at which the CPU Frequency
+	  subsystem runs and evaluates the current policy.
+
+choice CPU_FREQ_POLICY
+	prompt "CPU Frequency Scaling Policy"
+	default CPU_FREQ_POLICY_NONE
+	help
+	  The policy algorithm to use when using the CPU freq subsystem.
+
+config CPU_FREQ_POLICY_NONE
+	bool "No selected policy"
+	help
+	  Kconfig placeholder if no policy is chosen. This Kconfig will produce a build error
+
+config CPU_FREQ_POLICY_ON_DEMAND
+	bool "On-demand Policy"
+	select CPU_LOAD_METRIC
+
+endchoice # CPU_FREQ_POLICY
+
+endif # CPU_FREQ

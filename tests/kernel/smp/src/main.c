@@ -735,10 +735,10 @@ ZTEST(smp, test_smp_ipi)
 #ifndef CONFIG_TRACE_SCHED_IPI
 	ztest_test_skip();
 #else
+	TC_PRINT("There are %u CPUs.\n", arch_num_cpus());
 
-	TC_PRINT("cpu num=%d", arch_num_cpus());
-
-	for (int i = 0; i < 3 ; i++) {
+	for (int i = 0; i < CONFIG_SMP_IPI_NUM_ITERS; i++) {
+		int retries = CONFIG_SMP_IPI_WAIT_RETRIES;
 		/* issue a sched ipi to tell other CPU to run thread */
 		sched_ipi_has_called = 0;
 		arch_sched_broadcast_ipi();
@@ -747,11 +747,20 @@ ZTEST(smp, test_smp_ipi)
 		 * systems need to wait for host scheduling to run the
 		 * other CPU's thread.
 		 */
-		k_msleep(100);
+		while (retries > 0) {
+			k_msleep(CONFIG_SMP_IPI_WAIT_MS);
+
+			/* Bail out early if test is deemed a success. */
+			if (sched_ipi_has_called > 0) {
+				break;
+			}
+
+			retries--;
+		}
 
 		/**TESTPOINT: check if enter our IPI interrupt handler */
 		zassert_true(sched_ipi_has_called != 0,
-				"did not receive IPI.(%d)",
+				"did not receive IPI.(%d,%d)", i,
 				sched_ipi_has_called);
 	}
 #endif

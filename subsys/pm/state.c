@@ -107,3 +107,65 @@ const struct pm_state_info *pm_state_get(uint8_t cpu, enum pm_state state, uint8
 
 	return NULL;
 }
+
+const char *pm_state_to_str(enum pm_state state)
+{
+	switch (state) {
+	case PM_STATE_ACTIVE:
+		return "active";
+	case PM_STATE_RUNTIME_IDLE:
+		return "runtime-idle";
+	case PM_STATE_SUSPEND_TO_IDLE:
+		return "suspend-to-idle";
+	case PM_STATE_STANDBY:
+		return "standby";
+	case PM_STATE_SUSPEND_TO_RAM:
+		return "suspend-to-ram";
+	case PM_STATE_SUSPEND_TO_DISK:
+		return "suspend-to-disk";
+	case PM_STATE_SOFT_OFF:
+		return "soft-off";
+	default:
+		return "UNKNOWN";
+	}
+}
+
+int pm_state_from_str(const char *name, enum pm_state *out)
+{
+	if (strcmp(name, "active") == 0) {
+		*out = PM_STATE_ACTIVE;
+	} else if (strcmp(name, "runtime-idle") == 0) {
+		*out = PM_STATE_RUNTIME_IDLE;
+	} else if (strcmp(name, "suspend-to-idle") == 0) {
+		*out = PM_STATE_SUSPEND_TO_IDLE;
+	} else if (strcmp(name, "standby") == 0) {
+		*out = PM_STATE_STANDBY;
+	} else if (strcmp(name, "suspend-to-ram") == 0) {
+		*out = PM_STATE_SUSPEND_TO_RAM;
+	} else if (strcmp(name, "suspend-to-disk") == 0) {
+		*out = PM_STATE_SUSPEND_TO_DISK;
+	} else if (strcmp(name, "soft-off") == 0) {
+		*out = PM_STATE_SOFT_OFF;
+	} else {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+bool pm_state_in_constraints(const struct pm_state_constraints *constraints,
+			     const struct pm_state_constraint match)
+{
+	struct pm_state_constraint *constraints_list = constraints->list;
+	size_t num_constraints = constraints->count;
+	bool match_found = false;
+
+	for (int i = 0; i < num_constraints; i++) {
+		enum pm_state state = constraints_list[i].state;
+		uint8_t substate = constraints_list[i].substate_id;
+
+		match_found |= ((state == match.state) && (substate == match.substate_id));
+	}
+
+	return match_found;
+}

@@ -18,16 +18,6 @@ struct lpspi_driver_data {
 	uint8_t lpspi_op_mode;
 };
 
-static inline uint8_t rx_fifo_cur_len(LPSPI_Type *base)
-{
-	return (base->FSR & LPSPI_FSR_RXCOUNT_MASK) >> LPSPI_FSR_RXCOUNT_SHIFT;
-}
-
-static inline uint8_t tx_fifo_cur_len(LPSPI_Type *base)
-{
-	return (base->FSR & LPSPI_FSR_TXCOUNT_MASK) >> LPSPI_FSR_TXCOUNT_SHIFT;
-}
-
 /* Reads a word from the RX fifo and handles writing it into the RX spi buf */
 static inline void lpspi_rx_word_write_bytes(const struct device *dev, size_t offset)
 {

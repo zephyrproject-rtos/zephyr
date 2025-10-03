@@ -14,8 +14,9 @@ supported:
   - dma
   - i2c
   - gpio
-  - pwm
   - memc
+  - netif:eth
+  - pwm
   - spi
   - uart
   - usb_device

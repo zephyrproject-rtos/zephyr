@@ -5,7 +5,7 @@
  */
 
 &i2c1 { /* SDA CN5.9=PB9, SCL CN5.10=PB8, ALERT CN5.1=D8=PA9 */
-/* &i2c3 { * SDA CN7.36=PC1, SCL CN7.38=PC0, ALERT CN7.34=PB0 */
+	/* &i2c3 { * SDA CN7.36=PC1, SCL CN7.38=PC0, ALERT CN7.34=PB0 */
 	sht3xd@44 {
 		compatible = "sensirion,sht3xd";
 		reg = <0x44>;

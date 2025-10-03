@@ -322,7 +322,7 @@ int img_mgmt_read_info(int image_slot, struct image_version *ver, uint8_t *hash,
 		if (tlv.it_type == 0xff && tlv.it_len == 0xffff) {
 			return IMG_MGMT_ERR_INVALID_TLV;
 		}
-		if (tlv.it_type != IMAGE_TLV_SHA256 || tlv.it_len != IMAGE_HASH_LEN) {
+		if (tlv.it_type != IMAGE_TLV_SHA || tlv.it_len != IMAGE_SHA_LEN) {
 			/* Non-hash TLV.  Skip it. */
 			data_off += sizeof(tlv) + tlv.it_len;
 			continue;
@@ -336,10 +336,10 @@ int img_mgmt_read_info(int image_slot, struct image_version *ver, uint8_t *hash,
 
 		data_off += sizeof(tlv);
 		if (hash != NULL) {
-			if (data_off + IMAGE_HASH_LEN > data_end) {
+			if (data_off + IMAGE_SHA_LEN > data_end) {
 				return IMG_MGMT_ERR_TLV_INVALID_SIZE;
 			}
-			rc = img_mgmt_read(image_slot, data_off, hash, IMAGE_HASH_LEN);
+			rc = img_mgmt_read(image_slot, data_off, hash, IMAGE_SHA_LEN);
 			if (rc != 0) {
 				return rc;
 			}
@@ -382,13 +382,13 @@ int
 img_mgmt_find_by_hash(uint8_t *find, struct image_version *ver)
 {
 	int i;
-	uint8_t hash[IMAGE_HASH_LEN];
+	uint8_t hash[IMAGE_SHA_LEN];
 
 	for (i = 0; i < SLOTS_PER_IMAGE * CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER; i++) {
 		if (img_mgmt_read_info(i, ver, hash, NULL) != 0) {
 			continue;
 		}
-		if (!memcmp(hash, find, IMAGE_HASH_LEN)) {
+		if (!memcmp(hash, find, IMAGE_SHA_LEN)) {
 			return i;
 		}
 	}
@@ -698,7 +698,7 @@ img_mgmt_upload_good_rsp(struct smp_streamer *ctxt)
 static int
 img_mgmt_upload_log(bool is_first, bool is_last, int status)
 {
-	uint8_t hash[IMAGE_HASH_LEN];
+	uint8_t hash[IMAGE_SHA_LEN];
 	const uint8_t *hashp;
 	int rc;
 

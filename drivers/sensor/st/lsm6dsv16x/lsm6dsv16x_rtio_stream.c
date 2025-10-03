@@ -251,8 +251,11 @@ void lsm6dsv16x_submit_stream(const struct device *dev, struct rtio_iodev_sqe *i
 /*
  * Called by bus driver to complete the sqe.
  */
-static void lsm6dsv16x_complete_op_cb(struct rtio *r, const struct rtio_sqe *sqe, void *arg)
+static void lsm6dsv16x_complete_op_cb(struct rtio *r, const struct rtio_sqe *sqe,
+				      int result, void *arg)
 {
+	ARG_UNUSED(result);
+
 	const struct device *dev = arg;
 #if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 	const struct lsm6dsv16x_config *config = dev->config;
@@ -273,8 +276,11 @@ static void lsm6dsv16x_complete_op_cb(struct rtio *r, const struct rtio_sqe *sqe
  * Called by bus driver to complete the LSM6DSV16X_FIFO_STATUS read op (2 bytes).
  * If FIFO threshold or FIFO full events are active it reads all FIFO entries.
  */
-static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, void *arg)
+static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe,
+				    int result, void *arg)
 {
+	ARG_UNUSED(result);
+
 	const struct device *dev = arg;
 	const struct lsm6dsv16x_config *config = dev->config;
 	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
@@ -494,8 +500,11 @@ static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, 
  * Called by bus driver to complete the LSM6DSV16X_STATUS_REG read op.
  * If drdy_xl is active it reads XL data (6 bytes) from LSM6DSV16X_OUTX_L_A reg.
  */
-static void lsm6dsv16x_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe, void *arg)
+static void lsm6dsv16x_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe,
+				      int result, void *arg)
 {
+	ARG_UNUSED(result);
+
 	const struct device *dev = arg;
 #if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 	const struct lsm6dsv16x_config *config = dev->config;

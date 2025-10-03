@@ -25,14 +25,15 @@
 	/delete-node/ is25wp128@0;
 	status = "okay";
 	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(64)>;
-	w25q512nw:w25q512nw@0 {
+
+	w25q512nw: w25q512nw@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <DT_SIZE_M(64*8)>;
 		reg = <0>;
-		spi-max-frequency = <133000000>;
+		spi-max-frequency = <DT_FREQ_M(133)>;
 		status = "okay";
 		jedec-id = [ef 60 20];
-		erase-block-size = <4096>;
+		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <1>;
 
 		partitions {
@@ -48,14 +49,17 @@
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
+
 			slot0_partition: partition@20000 {
 				label = "image-0";
 				reg = <0x00020000 DT_SIZE_M(7)>;
 			};
+
 			slot1_partition: partition@720000 {
 				label = "image-1";
 				reg = <0x00720000 DT_SIZE_M(7)>;
 			};
+
 			storage_partition: partition@E20000 {
 				label = "storage";
 				reg = <0x00E20000 (DT_SIZE_M(50) - DT_SIZE_K(128))>;
@@ -118,5 +122,4 @@ m2_hci_uart: &lpuart2 {
 		clocks = <&ccm IMX_CCM_SAI1_CLK 0x2004 4>;
 		clock-names = "mclk";
 	};
-
 };

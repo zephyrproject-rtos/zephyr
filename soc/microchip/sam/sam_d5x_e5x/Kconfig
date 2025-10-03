@@ -3,6 +3,7 @@
 
 config SOC_FAMILY_MICROCHIP_SAM_D5X_E5X
 	select ARM
+	select MICROCHIP_SAM
 	select CPU_CORTEX_M4
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_ARM_MPU

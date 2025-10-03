@@ -38,6 +38,5 @@
 		irq-gpios = <&gpio1 7 1>;
 		reset-gpios = <&gpio1 8 1>;
 		enable-gpios = <&gpio1 12 0>;
-
 	};
 };

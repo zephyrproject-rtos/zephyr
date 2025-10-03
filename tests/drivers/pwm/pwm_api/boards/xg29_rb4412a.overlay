@@ -8,7 +8,7 @@
 
 / {
 	aliases {
-		pwm-0 = &letimer0_pwm;
+		pwm-test = &letimer0_pwm;
 	};
 };
 

@@ -19,6 +19,6 @@
 
 	bh1790: bh1790@5b {
 		compatible = "rohm,bh1790";
-		reg=<0x5b>;
+		reg = <0x5b>;
 	};
 };

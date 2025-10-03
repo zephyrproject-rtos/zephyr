@@ -23,6 +23,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led: led {
 			gpios = <&gpioc 1 GPIO_ACTIVE_HIGH>;
 			label = "User LED";
@@ -74,7 +75,9 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
-&spi1_nss_pa15 { slew-rate = "very-high-speed"; };
+&spi1_nss_pa15 {
+	slew-rate = "very-high-speed";
+};
 
 &spi1 {
 	pinctrl-0 = <&spi1_nss_pa15 &spi1_sck_pb3
@@ -82,6 +85,7 @@
 	pinctrl-names = "default";
 	status = "okay";
 	cs-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
+
 	gd25q16: gd25q16c@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;

@@ -11,6 +11,7 @@
 / {
 	model = "Octavo Systems OSD32MP1-BRK";
 	compatible = "oct,osd32mp1-brk";
+
 	chosen {
 		/*
 		 * By default, Zephyr console and shell are assigned to
@@ -27,6 +28,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led_2: led_1 {
 			label = "LED2_GRN";
 			gpios = <&gpioi 9 GPIO_ACTIVE_HIGH>;
@@ -36,6 +38,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User 1";
 			gpios = <&gpioa 14 GPIO_ACTIVE_LOW>;

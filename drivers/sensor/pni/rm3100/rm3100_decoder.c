@@ -87,7 +87,7 @@ static int rm3100_decoder_get_frame_count(const uint8_t *buffer,
 					  struct sensor_chan_spec chan_spec,
 					  uint16_t *frame_count)
 {
-	struct rm3100_encoded_data *edata = (struct rm3100_encoded_data *)buffer;
+	const struct rm3100_encoded_data *edata = (const struct rm3100_encoded_data *)buffer;
 
 	if (chan_spec.chan_idx != 0) {
 		return -ENOTSUP;
@@ -150,7 +150,7 @@ static int rm3100_decoder_decode(const uint8_t *buffer,
 				 uint16_t max_count,
 				 void *data_out)
 {
-	struct rm3100_encoded_data *edata = (struct rm3100_encoded_data *)buffer;
+	const struct rm3100_encoded_data *edata = (const struct rm3100_encoded_data *)buffer;
 	uint8_t channel_request;
 
 	if (*fit != 0) {
@@ -222,7 +222,9 @@ static int rm3100_decoder_decode(const uint8_t *buffer,
 static bool rm3100_decoder_has_trigger(const uint8_t *buffer,
 					enum sensor_trigger_type trigger)
 {
-	return false;
+	const struct rm3100_encoded_data *edata = (const struct rm3100_encoded_data *)buffer;
+
+	return edata->header.events.drdy && trigger == SENSOR_TRIG_DATA_READY;
 }
 
 SENSOR_DECODER_API_DT_DEFINE() = {

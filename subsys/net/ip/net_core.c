@@ -32,6 +32,9 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #include <zephyr/net/gptp.h>
 #include <zephyr/net/websocket.h>
 #include <zephyr/net/ethernet.h>
+#if defined(CONFIG_NET_DSA) && !defined(CONFIG_NET_DSA_DEPRECATED)
+#include <zephyr/net/dsa_core.h>
+#endif
 #include <zephyr/net/capture.h>
 
 #if defined(CONFIG_NET_LLDP)
@@ -64,26 +67,11 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #include "net_stats.h"
 
 #if defined(CONFIG_NET_NATIVE)
-static inline enum net_verdict process_data(struct net_pkt *pkt,
-					    bool is_loopback)
+static inline enum net_verdict process_data(struct net_pkt *pkt)
 {
 	int ret;
-	bool locally_routed = false;
 
-	net_pkt_set_l2_processed(pkt, false);
-
-	/* Initial call will forward packets to SOCK_RAW packet sockets. */
-	ret = net_packet_socket_input(pkt, ETH_P_ALL);
-	if (ret != NET_CONTINUE) {
-		return ret;
-	}
-
-	/* If the packet is routed back to us when we have reassembled an IPv4 or IPv6 packet,
-	 * then do not pass it to L2 as the packet does not have link layer headers in it.
-	 */
-	if (net_pkt_is_ip_reassembled(pkt)) {
-		locally_routed = true;
-	}
+	net_packet_socket_input(pkt, ETH_P_ALL, SOCK_RAW);
 
 	/* If there is no data, then drop the packet. */
 	if (!pkt->frags) {
@@ -93,8 +81,9 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 		return NET_DROP;
 	}
 
-	if (!is_loopback && !locally_routed) {
+	if (!net_pkt_is_l2_processed(pkt)) {
 		ret = net_if_recv_data(net_pkt_iface(pkt), pkt);
+		net_pkt_set_l2_processed(pkt, true);
 		if (ret != NET_CONTINUE) {
 			if (ret == NET_DROP) {
 				NET_DBG("Packet %p discarded by L2", pkt);
@@ -106,21 +95,13 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 		}
 	}
 
-	net_pkt_set_l2_processed(pkt, true);
-
 	/* L2 has modified the buffer starting point, it is easier
 	 * to re-initialize the cursor rather than updating it.
 	 */
 	net_pkt_cursor_init(pkt);
 
 	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET_DGRAM)) {
-		/* Consecutive call will forward packets to SOCK_DGRAM packet sockets
-		 * (after L2 removed header).
-		 */
-		ret = net_packet_socket_input(pkt, net_pkt_ll_proto_type(pkt));
-		if (ret != NET_CONTINUE) {
-			return ret;
-		}
+		net_packet_socket_input(pkt, net_pkt_ll_proto_type(pkt), SOCK_DGRAM);
 	}
 
 	uint8_t family = net_pkt_family(pkt);
@@ -131,9 +112,9 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 		uint8_t vtc_vhl = NET_IPV6_HDR(pkt)->vtc & 0xf0;
 
 		if (IS_ENABLED(CONFIG_NET_IPV6) && vtc_vhl == 0x60) {
-			return net_ipv6_input(pkt, is_loopback);
+			return net_ipv6_input(pkt);
 		} else if (IS_ENABLED(CONFIG_NET_IPV4) && vtc_vhl == 0x40) {
-			return net_ipv4_input(pkt, is_loopback);
+			return net_ipv4_input(pkt);
 		}
 
 		NET_DBG("Unknown IP family packet (0x%x)", NET_IPV6_HDR(pkt)->vtc & 0xf0);
@@ -148,10 +129,10 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 	return NET_DROP;
 }
 
-static void processing_data(struct net_pkt *pkt, bool is_loopback)
+static void processing_data(struct net_pkt *pkt)
 {
 again:
-	switch (process_data(pkt, is_loopback)) {
+	switch (process_data(pkt)) {
 	case NET_CONTINUE:
 		if (IS_ENABLED(CONFIG_NET_L2_VIRTUAL)) {
 			/* If we have a tunneling packet, feed it back
@@ -421,7 +402,9 @@ int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 		 * to RX processing.
 		 */
 		NET_DBG("Loopback pkt %p back to us", pkt);
-		processing_data(pkt, true);
+		net_pkt_set_loopback(pkt, true);
+		net_pkt_set_l2_processed(pkt, true);
+		processing_data(pkt);
 		ret = 0;
 		goto err;
 	}
@@ -481,7 +464,6 @@ err:
 
 static void net_rx(struct net_if *iface, struct net_pkt *pkt)
 {
-	bool is_loopback = false;
 	size_t pkt_len;
 
 	pkt_len = net_pkt_get_len(pkt);
@@ -493,12 +475,13 @@ static void net_rx(struct net_if *iface, struct net_pkt *pkt)
 	if (IS_ENABLED(CONFIG_NET_LOOPBACK)) {
 #ifdef CONFIG_NET_L2_DUMMY
 		if (net_if_l2(iface) == &NET_L2_GET_NAME(DUMMY)) {
-			is_loopback = true;
+			net_pkt_set_loopback(pkt, true);
+			net_pkt_set_l2_processed(pkt, true);
 		}
 #endif
 	}
 
-	processing_data(pkt, is_loopback);
+	processing_data(pkt);
 
 	net_print_statistics();
 	net_pkt_print();

@@ -45,8 +45,8 @@ of the M5Stack Core2 board.
 +------------------+------------------------------------------------------------------------+-----------+
 | Power Switch     | Power on/off button.                                                   | supported |
 +------------------+------------------------------------------------------------------------+-----------+
-| General purpose  | Three buttons on the front face of the device accesible using the GPIO | supported |
-| buttons          | interface.                                                             |           |
+| General purpose  | Three buttons on the front face of the device accessible using the     | supported |
+| buttons          | GPIO interface.                                                        |           |
 +------------------+------------------------------------------------------------------------+-----------+
 | LCD screen       | Built-in LCD TFT display \(`LCD-ILI9342C`_, 2", 320x240 px\)           | supported |
 |                  | controlled via SPI interface                                           |           |

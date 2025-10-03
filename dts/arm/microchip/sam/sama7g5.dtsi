@@ -501,5 +501,27 @@
 			clocks = <&clk32k 1>, <&clk32k 0>, <&main_xtal>;
 			clock-names = "td_slck", "md_slck", "main_xtal";
 		};
+
+		sdmmc0: mmc@e1204000 {
+			compatible = "microchip,sama7g5-sdmmc";
+			reg = <0xe1204000 0x4000>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 80 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 80>, <&pmc PMC_TYPE_GCK 80>;
+			clock-names = "hclock", "multclk";
+			assigned-clock-rates = <200000000>;
+			status = "disabled";
+		};
+
+		sdmmc1: mmc@e1208000 {
+			compatible = "microchip,sama7g5-sdmmc";
+			reg = <0xe1208000 0x4000>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 81 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 81>, <&pmc PMC_TYPE_GCK 81>;
+			clock-names = "hclock", "multclk";
+			assigned-clock-rates = <200000000>;
+			status = "disabled";
+		};
 	};
 };

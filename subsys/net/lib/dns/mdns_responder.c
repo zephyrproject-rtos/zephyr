@@ -274,23 +274,19 @@ static void setup_dns_hdr(uint8_t *buf, uint16_t answers)
 static void add_answer(struct net_buf *query, enum dns_rr_type qtype,
 		       uint32_t ttl, uint16_t addr_len, uint8_t *addr)
 {
-	char *dot = query->data + DNS_MSG_HEADER_SIZE;
-	char *prev = NULL;
+	char *dot = query->data + DNS_MSG_HEADER_SIZE + 1;
+	char *prev = query->data + DNS_MSG_HEADER_SIZE;
 	uint16_t offset;
 
-	while ((dot = strchr(dot, '.'))) {
-		if (!prev) {
-			prev = dot++;
-			continue;
-		}
+	/* For the length of the first label. */
+	query->len += 1;
 
+	while ((dot = strchr(dot, '.')) != NULL) {
 		*prev = dot - prev - 1;
 		prev = dot++;
 	}
 
-	if (prev) {
-		*prev = strlen(prev) - 1;
-	}
+	*prev = strlen(prev + 1);
 
 	/* terminator byte (0x00) */
 	query->len += 1;
@@ -322,14 +318,15 @@ static int create_answer(int sock,
 	/* Prepare the response into the query buffer: move the name
 	 * query buffer has to get enough free space: dns_hdr + answer
 	 */
-	if ((net_buf_max_len(query) - query->len) < (DNS_MSG_HEADER_SIZE +
+	if ((net_buf_max_len(query) - query->len) < (DNS_MSG_HEADER_SIZE + 1 +
 					  DNS_QTYPE_LEN + DNS_QCLASS_LEN +
 					  DNS_TTL_LEN + DNS_RDLENGTH_LEN +
 					  addr_len)) {
 		return -ENOBUFS;
 	}
 
-	memmove(query->data + DNS_MSG_HEADER_SIZE, query->data, query->len);
+	/* +1 for the initial label length */
+	memmove(query->data + DNS_MSG_HEADER_SIZE + 1, query->data, query->len);
 
 	setup_dns_hdr(query->data, 1);
 
@@ -641,7 +638,7 @@ static int dns_read(int sock,
 		}
 
 		/* Handle only .local queries */
-		lquery = strrchr(result->data + 1, '.');
+		lquery = strrchr(result->data, '.');
 		if (!lquery || memcmp(lquery, (const void *){ ".local" }, 7)) {
 			continue;
 		}
@@ -654,9 +651,9 @@ static int dns_read(int sock,
 		 * We skip the first dot, and make sure there is dot after
 		 * matching hostname.
 		 */
-		if (!strncasecmp(hostname, result->data + 1, hostname_len) &&
-		    (result->len - 1) >= hostname_len &&
-		    &(result->data + 1)[hostname_len] == lquery) {
+		if (!strncasecmp(hostname, result->data, hostname_len) &&
+		    (result->len) >= hostname_len &&
+		    &result->data[hostname_len] == lquery) {
 			NET_DBG("%s %s %s to our hostname %s%s", "mDNS",
 				family == AF_INET ? "IPv4" : "IPv6", "query",
 				hostname, ".local");

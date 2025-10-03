@@ -4932,7 +4932,7 @@ int bt_hfp_ag_inband_ringtone(struct bt_hfp_ag *ag, bool inband)
 	}
 	hfp_ag_unlock(ag);
 
-	err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+BSIR=%d\r\n", inband ? 1 : 0);
+	err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+BSIR: %d\r\n", inband ? 1 : 0);
 	if (err) {
 		LOG_ERR("Fail to set inband ringtone err :(%d)", err);
 		return err;

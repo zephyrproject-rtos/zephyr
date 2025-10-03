@@ -38,7 +38,8 @@
 	};
 
 	sram0: memory@20000000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "SRAM0";
 	};
 
 	clocks {
@@ -264,7 +265,7 @@
 			#dma-cells = <3>;
 			dma-channels = <8>;
 			dma-generators = <1>;
-			dma-requests= <25>;
+			dma-requests = <25>;
 			status = "disabled";
 		};
 

@@ -7,6 +7,9 @@ menu "SiSDK configuration"
 config SILABS_SISDK_GPIO
 	bool "Peripheral HAL for GPIO"
 
+config SILABS_SISDK_I2C
+	bool "Peripheral HAL for I2C"
+
 config SILABS_SISDK_LETIMER
 	bool "Peripheral HAL for LETIMER"
 

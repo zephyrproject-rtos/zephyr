@@ -8,6 +8,7 @@
 #include <zephyr/dt-bindings/clock/imx_ccm.h>
 #include <zephyr/dt-bindings/rdc/imx_rdc.h>
 #include <mem.h>
+#include <freq.h>
 
 / {
 	cpus {
@@ -83,6 +84,7 @@
 			compatible = "nxp,imx-iomuxc";
 			reg = <0x30330000 DT_SIZE_K(64)>;
 			status = "okay";
+
 			pinctrl: pinctrl {
 				status = "okay";
 				compatible = "nxp,imx8mp-pinctrl";
@@ -93,9 +95,9 @@
 			compatible = "nxp,imx-gpio";
 			reg = <0x30200000 DT_SIZE_K(64)>;
 			interrupts = <64 0>, <65 0>;
-			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
-					       RDC_DOMAIN_PERM_RW)|\
-			       RDC_DOMAIN_PERM(M7_DOMAIN_ID,\
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID, \
+					       RDC_DOMAIN_PERM_RW) |
+			       RDC_DOMAIN_PERM(M7_DOMAIN_ID, \
 					       RDC_DOMAIN_PERM_RW))>;
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -106,9 +108,9 @@
 			compatible = "nxp,imx-gpio";
 			reg = <0x30210000 DT_SIZE_K(64)>;
 			interrupts = <66 0>, <67 0>;
-			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
-					       RDC_DOMAIN_PERM_RW)|\
-			       RDC_DOMAIN_PERM(M7_DOMAIN_ID,\
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID, \
+					       RDC_DOMAIN_PERM_RW) |
+			       RDC_DOMAIN_PERM(M7_DOMAIN_ID, \
 					       RDC_DOMAIN_PERM_RW))>;
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -119,9 +121,9 @@
 			compatible = "nxp,imx-gpio";
 			reg = <0x30220000 DT_SIZE_K(64)>;
 			interrupts = <68 0>, <69 0>;
-			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
-					       RDC_DOMAIN_PERM_RW)|\
-			       RDC_DOMAIN_PERM(M7_DOMAIN_ID,\
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID, \
+					       RDC_DOMAIN_PERM_RW) |
+			       RDC_DOMAIN_PERM(M7_DOMAIN_ID, \
 					       RDC_DOMAIN_PERM_RW))>;
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -132,9 +134,9 @@
 			compatible = "nxp,imx-gpio";
 			reg = <0x30230000 DT_SIZE_K(64)>;
 			interrupts = <70 0>, <71 0>;
-			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
-					       RDC_DOMAIN_PERM_RW)|\
-			       RDC_DOMAIN_PERM(M7_DOMAIN_ID,\
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID, \
+					       RDC_DOMAIN_PERM_RW) |
+			       RDC_DOMAIN_PERM(M7_DOMAIN_ID, \
 					       RDC_DOMAIN_PERM_RW))>;
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -145,9 +147,9 @@
 			compatible = "nxp,imx-gpio";
 			reg = <0x30240000 DT_SIZE_K(64)>;
 			interrupts = <72 0>, <73 0>;
-			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
-					       RDC_DOMAIN_PERM_RW)|\
-			       RDC_DOMAIN_PERM(M7_DOMAIN_ID,\
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID, \
+					       RDC_DOMAIN_PERM_RW) |
+			       RDC_DOMAIN_PERM(M7_DOMAIN_ID, \
 					       RDC_DOMAIN_PERM_RW))>;
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -177,9 +179,9 @@
 			reg = <0x30a20000 0x10000>;
 			interrupts = <35 0>;
 			clocks = <&ccm IMX_CCM_I2C1_CLK 0 0>;
-			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
-						RDC_DOMAIN_PERM_RW)|\
-					RDC_DOMAIN_PERM(M7_DOMAIN_ID,\
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID, \
+						RDC_DOMAIN_PERM_RW) |
+			       RDC_DOMAIN_PERM(M7_DOMAIN_ID, \
 						RDC_DOMAIN_PERM_RW))>;
 			status = "disabled";
 		};
@@ -191,9 +193,9 @@
 			reg = <0x30a30000 0x10000>;
 			interrupts = <36 0>;
 			clocks = <&ccm IMX_CCM_I2C2_CLK 0 0>;
-			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
-							RDC_DOMAIN_PERM_RW)|\
-					RDC_DOMAIN_PERM(M7_DOMAIN_ID,\
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID, \
+							RDC_DOMAIN_PERM_RW) |
+			       RDC_DOMAIN_PERM(M7_DOMAIN_ID, \
 							RDC_DOMAIN_PERM_RW))>;
 			status = "disabled";
 		};
@@ -205,9 +207,9 @@
 			reg = <0x30a40000 0x10000>;
 			interrupts = <37 0>;
 			clocks = <&ccm IMX_CCM_I2C3_CLK 0 0>;
-			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
-							RDC_DOMAIN_PERM_RW)|\
-					RDC_DOMAIN_PERM(M7_DOMAIN_ID,\
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID, \
+							RDC_DOMAIN_PERM_RW) |
+			       RDC_DOMAIN_PERM(M7_DOMAIN_ID, \
 							RDC_DOMAIN_PERM_RW))>;
 			status = "disabled";
 		};
@@ -219,9 +221,9 @@
 			reg = <0x30a50000 0x10000>;
 			interrupts = <38 0>;
 			clocks = <&ccm IMX_CCM_I2C4_CLK 0 0>;
-			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
-							RDC_DOMAIN_PERM_RW)|\
-					RDC_DOMAIN_PERM(M7_DOMAIN_ID,\
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID, \
+							RDC_DOMAIN_PERM_RW) |
+			       RDC_DOMAIN_PERM(M7_DOMAIN_ID, \
 							RDC_DOMAIN_PERM_RW))>;
 			status = "disabled";
 		};
@@ -233,9 +235,9 @@
 			reg = <0x30ad0000 0x10000>;
 			interrupts = <76 0>;
 			clocks = <&ccm IMX_CCM_I2C5_CLK 0 0>;
-			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
-							RDC_DOMAIN_PERM_RW)|\
-					RDC_DOMAIN_PERM(M7_DOMAIN_ID,\
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID, \
+							RDC_DOMAIN_PERM_RW) |
+			       RDC_DOMAIN_PERM(M7_DOMAIN_ID, \
 							RDC_DOMAIN_PERM_RW))>;
 			status = "disabled";
 		};
@@ -247,9 +249,9 @@
 			reg = <0x30ae0000 0x10000>;
 			interrupts = <77 0>;
 			clocks = <&ccm IMX_CCM_I2C6_CLK 0 0>;
-			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
-							RDC_DOMAIN_PERM_RW)|\
-					RDC_DOMAIN_PERM(M7_DOMAIN_ID,\
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID, \
+							RDC_DOMAIN_PERM_RW) |
+			       RDC_DOMAIN_PERM(M7_DOMAIN_ID, \
 							RDC_DOMAIN_PERM_RW))>;
 			status = "disabled";
 		};
@@ -258,9 +260,9 @@
 			compatible = "nxp,imx-mu";
 			reg = <0x30ab0000 DT_SIZE_K(64)>;
 			interrupts = <97 0>;
-			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
-					       RDC_DOMAIN_PERM_RW)|\
-			       RDC_DOMAIN_PERM(M7_DOMAIN_ID,\
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID, \
+					       RDC_DOMAIN_PERM_RW) |
+			       RDC_DOMAIN_PERM(M7_DOMAIN_ID, \
 					       RDC_DOMAIN_PERM_RW))>;
 			status = "disabled";
 		};
@@ -301,167 +303,166 @@
 	arm,num-irq-priority-bits = <4>;
 };
 
-
 /*
  * GPIO pinmux options. These options define the pinmux settings
  * for GPIO ports on the package, so that the GPIO driver can
  * select GPIO mux options during GPIO configuration.
  */
 
-&gpio1{
+&gpio1 {
 	pinmux = <&iomuxc_gpio1_io00_gpio_io_gpio1_io0>,
-		<&iomuxc_gpio1_io01_gpio_io_gpio1_io1>,
-		<&iomuxc_gpio1_io02_gpio_io_gpio1_io2>,
-		<&iomuxc_gpio1_io03_gpio_io_gpio1_io3>,
-		<&iomuxc_gpio1_io04_gpio_io_gpio1_io4>,
-		<&iomuxc_gpio1_io05_gpio_io_gpio1_io5>,
-		<&iomuxc_gpio1_io06_gpio_io_gpio1_io6>,
-		<&iomuxc_gpio1_io07_gpio_io_gpio1_io7>,
-		<&iomuxc_gpio1_io08_gpio_io_gpio1_io8>,
-		<&iomuxc_gpio1_io09_gpio_io_gpio1_io9>,
-		<&iomuxc_gpio1_io10_gpio_io_gpio1_io10>,
-		<&iomuxc_gpio1_io11_gpio_io_gpio1_io11>,
-		<&iomuxc_gpio1_io12_gpio_io_gpio1_io12>,
-		<&iomuxc_gpio1_io13_gpio_io_gpio1_io13>,
-		<&iomuxc_gpio1_io14_gpio_io_gpio1_io14>,
-		<&iomuxc_gpio1_io15_gpio_io_gpio1_io15>,
-		<&iomuxc_enet_mdc_gpio_io_gpio1_io16>,
-		<&iomuxc_enet_mdio_gpio_io_gpio1_io17>,
-		<&iomuxc_enet_td3_gpio_io_gpio1_io18>,
-		<&iomuxc_enet_td2_gpio_io_gpio1_io19>,
-		<&iomuxc_enet_td1_gpio_io_gpio1_io20>,
-		<&iomuxc_enet_td0_gpio_io_gpio1_io21>,
-		<&iomuxc_enet_tx_ctl_gpio_io_gpio1_io22>,
-		<&iomuxc_enet_txc_gpio_io_gpio1_io23>,
-		<&iomuxc_enet_rx_ctl_gpio_io_gpio1_io24>,
-		<&iomuxc_enet_rxc_gpio_io_gpio1_io25>,
-		<&iomuxc_enet_rd0_gpio_io_gpio1_io26>,
-		<&iomuxc_enet_rd1_gpio_io_gpio1_io27>,
-		<&iomuxc_enet_rd2_gpio_io_gpio1_io28>,
-		<&iomuxc_enet_rd3_gpio_io_gpio1_io29>;
+		 <&iomuxc_gpio1_io01_gpio_io_gpio1_io1>,
+		 <&iomuxc_gpio1_io02_gpio_io_gpio1_io2>,
+		 <&iomuxc_gpio1_io03_gpio_io_gpio1_io3>,
+		 <&iomuxc_gpio1_io04_gpio_io_gpio1_io4>,
+		 <&iomuxc_gpio1_io05_gpio_io_gpio1_io5>,
+		 <&iomuxc_gpio1_io06_gpio_io_gpio1_io6>,
+		 <&iomuxc_gpio1_io07_gpio_io_gpio1_io7>,
+		 <&iomuxc_gpio1_io08_gpio_io_gpio1_io8>,
+		 <&iomuxc_gpio1_io09_gpio_io_gpio1_io9>,
+		 <&iomuxc_gpio1_io10_gpio_io_gpio1_io10>,
+		 <&iomuxc_gpio1_io11_gpio_io_gpio1_io11>,
+		 <&iomuxc_gpio1_io12_gpio_io_gpio1_io12>,
+		 <&iomuxc_gpio1_io13_gpio_io_gpio1_io13>,
+		 <&iomuxc_gpio1_io14_gpio_io_gpio1_io14>,
+		 <&iomuxc_gpio1_io15_gpio_io_gpio1_io15>,
+		 <&iomuxc_enet_mdc_gpio_io_gpio1_io16>,
+		 <&iomuxc_enet_mdio_gpio_io_gpio1_io17>,
+		 <&iomuxc_enet_td3_gpio_io_gpio1_io18>,
+		 <&iomuxc_enet_td2_gpio_io_gpio1_io19>,
+		 <&iomuxc_enet_td1_gpio_io_gpio1_io20>,
+		 <&iomuxc_enet_td0_gpio_io_gpio1_io21>,
+		 <&iomuxc_enet_tx_ctl_gpio_io_gpio1_io22>,
+		 <&iomuxc_enet_txc_gpio_io_gpio1_io23>,
+		 <&iomuxc_enet_rx_ctl_gpio_io_gpio1_io24>,
+		 <&iomuxc_enet_rxc_gpio_io_gpio1_io25>,
+		 <&iomuxc_enet_rd0_gpio_io_gpio1_io26>,
+		 <&iomuxc_enet_rd1_gpio_io_gpio1_io27>,
+		 <&iomuxc_enet_rd2_gpio_io_gpio1_io28>,
+		 <&iomuxc_enet_rd3_gpio_io_gpio1_io29>;
 };
 
-&gpio2{
+&gpio2 {
 	pinmux = <&iomuxc_sd1_clk_gpio_io_gpio2_io0>,
-		<&iomuxc_sd1_cmd_gpio_io_gpio2_io1>,
-		<&iomuxc_sd1_data0_gpio_io_gpio2_io2>,
-		<&iomuxc_sd1_data1_gpio_io_gpio2_io3>,
-		<&iomuxc_sd1_data2_gpio_io_gpio2_io4>,
-		<&iomuxc_sd1_data3_gpio_io_gpio2_io5>,
-		<&iomuxc_sd1_data4_gpio_io_gpio2_io6>,
-		<&iomuxc_sd1_data5_gpio_io_gpio2_io7>,
-		<&iomuxc_sd1_data6_gpio_io_gpio2_io8>,
-		<&iomuxc_sd1_data7_gpio_io_gpio2_io9>,
-		<&iomuxc_sd1_reset_b_gpio_io_gpio2_io10>,
-		<&iomuxc_sd1_strobe_gpio_io_gpio2_io11>,
-		<&iomuxc_sd2_cd_b_gpio_io_gpio2_io12>,
-		<&iomuxc_sd2_clk_gpio_io_gpio2_io13>,
-		<&iomuxc_sd2_cmd_gpio_io_gpio2_io14>,
-		<&iomuxc_sd2_data0_gpio_io_gpio2_io15>,
-		<&iomuxc_sd2_data1_gpio_io_gpio2_io16>,
-		<&iomuxc_sd2_data2_gpio_io_gpio2_io17>,
-		<&iomuxc_sd2_data3_gpio_io_gpio2_io18>,
-		<&iomuxc_sd2_reset_b_gpio_io_gpio2_io19>,
-		<&iomuxc_sd2_wp_gpio_io_gpio2_io20>;
+		 <&iomuxc_sd1_cmd_gpio_io_gpio2_io1>,
+		 <&iomuxc_sd1_data0_gpio_io_gpio2_io2>,
+		 <&iomuxc_sd1_data1_gpio_io_gpio2_io3>,
+		 <&iomuxc_sd1_data2_gpio_io_gpio2_io4>,
+		 <&iomuxc_sd1_data3_gpio_io_gpio2_io5>,
+		 <&iomuxc_sd1_data4_gpio_io_gpio2_io6>,
+		 <&iomuxc_sd1_data5_gpio_io_gpio2_io7>,
+		 <&iomuxc_sd1_data6_gpio_io_gpio2_io8>,
+		 <&iomuxc_sd1_data7_gpio_io_gpio2_io9>,
+		 <&iomuxc_sd1_reset_b_gpio_io_gpio2_io10>,
+		 <&iomuxc_sd1_strobe_gpio_io_gpio2_io11>,
+		 <&iomuxc_sd2_cd_b_gpio_io_gpio2_io12>,
+		 <&iomuxc_sd2_clk_gpio_io_gpio2_io13>,
+		 <&iomuxc_sd2_cmd_gpio_io_gpio2_io14>,
+		 <&iomuxc_sd2_data0_gpio_io_gpio2_io15>,
+		 <&iomuxc_sd2_data1_gpio_io_gpio2_io16>,
+		 <&iomuxc_sd2_data2_gpio_io_gpio2_io17>,
+		 <&iomuxc_sd2_data3_gpio_io_gpio2_io18>,
+		 <&iomuxc_sd2_reset_b_gpio_io_gpio2_io19>,
+		 <&iomuxc_sd2_wp_gpio_io_gpio2_io20>;
 };
 
-&gpio3{
+&gpio3 {
 	pinmux = <&iomuxc_nand_ale_gpio_io_gpio3_io0>,
-		<&iomuxc_nand_ce0_b_gpio_io_gpio3_io1>,
-		<&iomuxc_nand_ce1_b_gpio_io_gpio3_io2>,
-		<&iomuxc_nand_ce2_b_gpio_io_gpio3_io3>,
-		<&iomuxc_nand_ce3_b_gpio_io_gpio3_io4>,
-		<&iomuxc_nand_cle_gpio_io_gpio3_io5>,
-		<&iomuxc_nand_data00_gpio_io_gpio3_io6>,
-		<&iomuxc_nand_data01_gpio_io_gpio3_io7>,
-		<&iomuxc_nand_data02_gpio_io_gpio3_io8>,
-		<&iomuxc_nand_data03_gpio_io_gpio3_io9>,
-		<&iomuxc_nand_data04_gpio_io_gpio3_io10>,
-		<&iomuxc_nand_data05_gpio_io_gpio3_io11>,
-		<&iomuxc_nand_data06_gpio_io_gpio3_io12>,
-		<&iomuxc_nand_data07_gpio_io_gpio3_io13>,
-		<&iomuxc_nand_dqs_gpio_io_gpio3_io14>,
-		<&iomuxc_nand_re_b_gpio_io_gpio3_io15>,
-		<&iomuxc_nand_ready_b_gpio_io_gpio3_io16>,
-		<&iomuxc_nand_we_b_gpio_io_gpio3_io17>,
-		<&iomuxc_nand_wp_b_gpio_io_gpio3_io18>,
-		<&iomuxc_sai5_rxfs_gpio_io_gpio3_io19>,
-		<&iomuxc_sai5_rxc_gpio_io_gpio3_io20>,
-		<&iomuxc_sai5_rxd0_gpio_io_gpio3_io21>,
-		<&iomuxc_sai5_rxd1_gpio_io_gpio3_io22>,
-		<&iomuxc_sai5_rxd2_gpio_io_gpio3_io23>,
-		<&iomuxc_sai5_rxd3_gpio_io_gpio3_io24>,
-		<&iomuxc_sai5_mclk_gpio_io_gpio3_io25>,
-		<&iomuxc_hdmi_ddc_scl_gpio_io_gpio3_io26>,
-		<&iomuxc_hdmi_ddc_sda_gpio_io_gpio3_io27>,
-		<&iomuxc_hdmi_cec_gpio_io_gpio3_io28>,
-		<&iomuxc_hdmi_hpd_gpio_io_gpio3_io29>;
+		 <&iomuxc_nand_ce0_b_gpio_io_gpio3_io1>,
+		 <&iomuxc_nand_ce1_b_gpio_io_gpio3_io2>,
+		 <&iomuxc_nand_ce2_b_gpio_io_gpio3_io3>,
+		 <&iomuxc_nand_ce3_b_gpio_io_gpio3_io4>,
+		 <&iomuxc_nand_cle_gpio_io_gpio3_io5>,
+		 <&iomuxc_nand_data00_gpio_io_gpio3_io6>,
+		 <&iomuxc_nand_data01_gpio_io_gpio3_io7>,
+		 <&iomuxc_nand_data02_gpio_io_gpio3_io8>,
+		 <&iomuxc_nand_data03_gpio_io_gpio3_io9>,
+		 <&iomuxc_nand_data04_gpio_io_gpio3_io10>,
+		 <&iomuxc_nand_data05_gpio_io_gpio3_io11>,
+		 <&iomuxc_nand_data06_gpio_io_gpio3_io12>,
+		 <&iomuxc_nand_data07_gpio_io_gpio3_io13>,
+		 <&iomuxc_nand_dqs_gpio_io_gpio3_io14>,
+		 <&iomuxc_nand_re_b_gpio_io_gpio3_io15>,
+		 <&iomuxc_nand_ready_b_gpio_io_gpio3_io16>,
+		 <&iomuxc_nand_we_b_gpio_io_gpio3_io17>,
+		 <&iomuxc_nand_wp_b_gpio_io_gpio3_io18>,
+		 <&iomuxc_sai5_rxfs_gpio_io_gpio3_io19>,
+		 <&iomuxc_sai5_rxc_gpio_io_gpio3_io20>,
+		 <&iomuxc_sai5_rxd0_gpio_io_gpio3_io21>,
+		 <&iomuxc_sai5_rxd1_gpio_io_gpio3_io22>,
+		 <&iomuxc_sai5_rxd2_gpio_io_gpio3_io23>,
+		 <&iomuxc_sai5_rxd3_gpio_io_gpio3_io24>,
+		 <&iomuxc_sai5_mclk_gpio_io_gpio3_io25>,
+		 <&iomuxc_hdmi_ddc_scl_gpio_io_gpio3_io26>,
+		 <&iomuxc_hdmi_ddc_sda_gpio_io_gpio3_io27>,
+		 <&iomuxc_hdmi_cec_gpio_io_gpio3_io28>,
+		 <&iomuxc_hdmi_hpd_gpio_io_gpio3_io29>;
 };
 
-&gpio4{
+&gpio4 {
 	pinmux = <&iomuxc_sai1_rxfs_gpio_io_gpio4_io0>,
-		<&iomuxc_sai1_rxc_gpio_io_gpio4_io1>,
-		<&iomuxc_sai1_rxd0_gpio_io_gpio4_io2>,
-		<&iomuxc_sai1_rxd1_gpio_io_gpio4_io3>,
-		<&iomuxc_sai1_rxd2_gpio_io_gpio4_io4>,
-		<&iomuxc_sai1_rxd3_gpio_io_gpio4_io5>,
-		<&iomuxc_sai1_rxd4_gpio_io_gpio4_io6>,
-		<&iomuxc_sai1_rxd5_gpio_io_gpio4_io7>,
-		<&iomuxc_sai1_rxd6_gpio_io_gpio4_io8>,
-		<&iomuxc_sai1_rxd7_gpio_io_gpio4_io9>,
-		<&iomuxc_sai1_txfs_gpio_io_gpio4_io10>,
-		<&iomuxc_sai1_txc_gpio_io_gpio4_io11>,
-		<&iomuxc_sai1_txd0_gpio_io_gpio4_io12>,
-		<&iomuxc_sai1_txd1_gpio_io_gpio4_io13>,
-		<&iomuxc_sai1_txd2_gpio_io_gpio4_io14>,
-		<&iomuxc_sai1_txd3_gpio_io_gpio4_io15>,
-		<&iomuxc_sai1_txd4_gpio_io_gpio4_io16>,
-		<&iomuxc_sai1_txd5_gpio_io_gpio4_io17>,
-		<&iomuxc_sai1_txd6_gpio_io_gpio4_io18>,
-		<&iomuxc_sai1_txd7_gpio_io_gpio4_io19>,
-		<&iomuxc_sai1_mclk_gpio_io_gpio4_io20>,
-		<&iomuxc_sai2_rxfs_gpio_io_gpio4_io21>,
-		<&iomuxc_sai2_rxc_gpio_io_gpio4_io22>,
-		<&iomuxc_sai2_rxd0_gpio_io_gpio4_io23>,
-		<&iomuxc_sai2_txfs_gpio_io_gpio4_io24>,
-		<&iomuxc_sai2_txc_gpio_io_gpio4_io25>,
-		<&iomuxc_sai2_txd0_gpio_io_gpio4_io26>,
-		<&iomuxc_sai2_mclk_gpio_io_gpio4_io27>,
-		<&iomuxc_sai3_rxfs_gpio_io_gpio4_io28>,
-		<&iomuxc_sai3_rxc_gpio_io_gpio4_io29>,
-		<&iomuxc_sai3_rxd_gpio_io_gpio4_io30>,
-		<&iomuxc_sai3_txfs_gpio_io_gpio4_io31>;
+		 <&iomuxc_sai1_rxc_gpio_io_gpio4_io1>,
+		 <&iomuxc_sai1_rxd0_gpio_io_gpio4_io2>,
+		 <&iomuxc_sai1_rxd1_gpio_io_gpio4_io3>,
+		 <&iomuxc_sai1_rxd2_gpio_io_gpio4_io4>,
+		 <&iomuxc_sai1_rxd3_gpio_io_gpio4_io5>,
+		 <&iomuxc_sai1_rxd4_gpio_io_gpio4_io6>,
+		 <&iomuxc_sai1_rxd5_gpio_io_gpio4_io7>,
+		 <&iomuxc_sai1_rxd6_gpio_io_gpio4_io8>,
+		 <&iomuxc_sai1_rxd7_gpio_io_gpio4_io9>,
+		 <&iomuxc_sai1_txfs_gpio_io_gpio4_io10>,
+		 <&iomuxc_sai1_txc_gpio_io_gpio4_io11>,
+		 <&iomuxc_sai1_txd0_gpio_io_gpio4_io12>,
+		 <&iomuxc_sai1_txd1_gpio_io_gpio4_io13>,
+		 <&iomuxc_sai1_txd2_gpio_io_gpio4_io14>,
+		 <&iomuxc_sai1_txd3_gpio_io_gpio4_io15>,
+		 <&iomuxc_sai1_txd4_gpio_io_gpio4_io16>,
+		 <&iomuxc_sai1_txd5_gpio_io_gpio4_io17>,
+		 <&iomuxc_sai1_txd6_gpio_io_gpio4_io18>,
+		 <&iomuxc_sai1_txd7_gpio_io_gpio4_io19>,
+		 <&iomuxc_sai1_mclk_gpio_io_gpio4_io20>,
+		 <&iomuxc_sai2_rxfs_gpio_io_gpio4_io21>,
+		 <&iomuxc_sai2_rxc_gpio_io_gpio4_io22>,
+		 <&iomuxc_sai2_rxd0_gpio_io_gpio4_io23>,
+		 <&iomuxc_sai2_txfs_gpio_io_gpio4_io24>,
+		 <&iomuxc_sai2_txc_gpio_io_gpio4_io25>,
+		 <&iomuxc_sai2_txd0_gpio_io_gpio4_io26>,
+		 <&iomuxc_sai2_mclk_gpio_io_gpio4_io27>,
+		 <&iomuxc_sai3_rxfs_gpio_io_gpio4_io28>,
+		 <&iomuxc_sai3_rxc_gpio_io_gpio4_io29>,
+		 <&iomuxc_sai3_rxd_gpio_io_gpio4_io30>,
+		 <&iomuxc_sai3_txfs_gpio_io_gpio4_io31>;
 };
 
-&gpio5{
+&gpio5 {
 	pinmux = <&iomuxc_sai3_txc_gpio_io_gpio5_io0>,
-		<&iomuxc_sai3_txd_gpio_io_gpio5_io1>,
-		<&iomuxc_sai3_mclk_gpio_io_gpio5_io2>,
-		<&iomuxc_spdif_tx_gpio_io_gpio5_io3>,
-		<&iomuxc_spdif_rx_gpio_io_gpio5_io4>,
-		<&iomuxc_spdif_ext_clk_gpio_io_gpio5_io5>,
-		<&iomuxc_ecspi1_sclk_gpio_io_gpio5_io6>,
-		<&iomuxc_ecspi1_mosi_gpio_io_gpio5_io7>,
-		<&iomuxc_ecspi1_miso_gpio_io_gpio5_io8>,
-		<&iomuxc_ecspi1_ss0_gpio_io_gpio5_io9>,
-		<&iomuxc_ecspi2_sclk_gpio_io_gpio5_io10>,
-		<&iomuxc_ecspi2_mosi_gpio_io_gpio5_io11>,
-		<&iomuxc_ecspi2_miso_gpio_io_gpio5_io12>,
-		<&iomuxc_ecspi2_ss0_gpio_io_gpio5_io13>,
-		<&iomuxc_i2c1_scl_gpio_io_gpio5_io14>,
-		<&iomuxc_i2c1_sda_gpio_io_gpio5_io15>,
-		<&iomuxc_i2c2_scl_gpio_io_gpio5_io16>,
-		<&iomuxc_i2c2_sda_gpio_io_gpio5_io17>,
-		<&iomuxc_i2c3_scl_gpio_io_gpio5_io18>,
-		<&iomuxc_i2c3_sda_gpio_io_gpio5_io19>,
-		<&iomuxc_i2c4_scl_gpio_io_gpio5_io20>,
-		<&iomuxc_i2c4_sda_gpio_io_gpio5_io21>,
-		<&iomuxc_uart1_rxd_gpio_io_gpio5_io22>,
-		<&iomuxc_uart1_txd_gpio_io_gpio5_io23>,
-		<&iomuxc_uart2_rxd_gpio_io_gpio5_io24>,
-		<&iomuxc_uart2_txd_gpio_io_gpio5_io25>,
-		<&iomuxc_uart3_rxd_gpio_io_gpio5_io26>,
-		<&iomuxc_uart3_txd_gpio_io_gpio5_io27>,
-		<&iomuxc_uart4_rxd_gpio_io_gpio5_io28>,
-		<&iomuxc_uart4_txd_gpio_io_gpio5_io29>;
+		 <&iomuxc_sai3_txd_gpio_io_gpio5_io1>,
+		 <&iomuxc_sai3_mclk_gpio_io_gpio5_io2>,
+		 <&iomuxc_spdif_tx_gpio_io_gpio5_io3>,
+		 <&iomuxc_spdif_rx_gpio_io_gpio5_io4>,
+		 <&iomuxc_spdif_ext_clk_gpio_io_gpio5_io5>,
+		 <&iomuxc_ecspi1_sclk_gpio_io_gpio5_io6>,
+		 <&iomuxc_ecspi1_mosi_gpio_io_gpio5_io7>,
+		 <&iomuxc_ecspi1_miso_gpio_io_gpio5_io8>,
+		 <&iomuxc_ecspi1_ss0_gpio_io_gpio5_io9>,
+		 <&iomuxc_ecspi2_sclk_gpio_io_gpio5_io10>,
+		 <&iomuxc_ecspi2_mosi_gpio_io_gpio5_io11>,
+		 <&iomuxc_ecspi2_miso_gpio_io_gpio5_io12>,
+		 <&iomuxc_ecspi2_ss0_gpio_io_gpio5_io13>,
+		 <&iomuxc_i2c1_scl_gpio_io_gpio5_io14>,
+		 <&iomuxc_i2c1_sda_gpio_io_gpio5_io15>,
+		 <&iomuxc_i2c2_scl_gpio_io_gpio5_io16>,
+		 <&iomuxc_i2c2_sda_gpio_io_gpio5_io17>,
+		 <&iomuxc_i2c3_scl_gpio_io_gpio5_io18>,
+		 <&iomuxc_i2c3_sda_gpio_io_gpio5_io19>,
+		 <&iomuxc_i2c4_scl_gpio_io_gpio5_io20>,
+		 <&iomuxc_i2c4_sda_gpio_io_gpio5_io21>,
+		 <&iomuxc_uart1_rxd_gpio_io_gpio5_io22>,
+		 <&iomuxc_uart1_txd_gpio_io_gpio5_io23>,
+		 <&iomuxc_uart2_rxd_gpio_io_gpio5_io24>,
+		 <&iomuxc_uart2_txd_gpio_io_gpio5_io25>,
+		 <&iomuxc_uart3_rxd_gpio_io_gpio5_io26>,
+		 <&iomuxc_uart3_txd_gpio_io_gpio5_io27>,
+		 <&iomuxc_uart4_rxd_gpio_io_gpio5_io28>,
+		 <&iomuxc_uart4_txd_gpio_io_gpio5_io29>;
 };

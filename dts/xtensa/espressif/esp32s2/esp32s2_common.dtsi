@@ -80,6 +80,7 @@
 		#clock-cells = <1>;
 		status = "okay";
 	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -335,6 +336,7 @@
 		trng0: trng@3f435110 {
 			compatible = "espressif,esp32-trng";
 			reg = <0x3f435110 0x4>;
+			clocks = <&clock ESP32_RNG_MODULE>;
 			status = "disabled";
 		};
 
@@ -423,5 +425,4 @@
 			status = "disabled";
 		};
 	};
-
 };

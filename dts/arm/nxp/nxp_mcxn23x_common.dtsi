@@ -5,6 +5,7 @@
  */
 
 #include <mem.h>
+#include <freq.h>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -40,10 +41,10 @@
 	#size-cells = <1>;
 
 	sramx: memory@4000000 {
-		compatible =  "zephyr,memory-region", "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x4000000 DT_SIZE_K(96)>;
 		zephyr,memory-region = "SRAM1";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 
 	/* mcxn23x Memory configurations:
@@ -67,6 +68,7 @@
 		compatible = "nxp,lpc-syscon";
 		reg = <0x0 0x4000>;
 		#clock-cells = <1>;
+
 		reset: reset {
 			compatible = "nxp,lpc-syscon-reset";
 			#reset-cells = <1>;
@@ -113,7 +115,7 @@
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x96000 0x1000>;
-		interrupts = <17 0>,<18 0>;
+		interrupts = <17 0>, <18 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&porta>;
@@ -123,7 +125,7 @@
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x98000 0x1000>;
-		interrupts = <19 0>,<20 0>;
+		interrupts = <19 0>, <20 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&portb>;
@@ -133,7 +135,7 @@
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x9a000 0x1000>;
-		interrupts = <21 0>,<22 0>;
+		interrupts = <21 0>, <22 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&portc>;
@@ -143,7 +145,7 @@
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x9c000 0x1000>;
-		interrupts = <23 0>,<24 0>;
+		interrupts = <23 0>, <24 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&portd>;
@@ -153,7 +155,7 @@
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x9e000 0x1000>;
-		interrupts = <25 0>,<26 0>;
+		interrupts = <25 0>, <26 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&porte>;
@@ -163,7 +165,7 @@
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x40000 0x1000>;
-		interrupts = <27 0>,<28 0>;
+		interrupts = <27 0>, <28 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&portf>;
@@ -185,6 +187,7 @@
 			clocks = <&syscon MCUX_FLEXCOMM0_CLK>;
 			status = "disabled";
 		};
+
 		flexcomm0_lpspi0: spi@92000 {
 			compatible = "nxp,lpspi";
 			reg = <0x92000 0x1000>;
@@ -195,6 +198,7 @@
 			tx-fifo-size = <8>;
 			rx-fifo-size = <8>;
 		};
+
 		flexcomm0_lpi2c0: lpi2c@92800 {
 			compatible = "nxp,lpi2c";
 			reg = <0x92800 0x1000>;
@@ -224,6 +228,7 @@
 			dma-names = "rx", "tx";
 			status = "disabled";
 		};
+
 		flexcomm1_lpspi1: spi@93000 {
 			compatible = "nxp,lpspi";
 			reg = <0x93000 0x1000>;
@@ -237,6 +242,7 @@
 			rx-fifo-size = <8>;
 			status = "disabled";
 		};
+
 		flexcomm1_lpi2c1: lpi2c@93800 {
 			compatible = "nxp,lpi2c";
 			reg = <0x93800 0x1000>;
@@ -266,6 +272,7 @@
 			dma-names = "rx", "tx";
 			status = "disabled";
 		};
+
 		flexcomm2_lpspi2: spi@94000 {
 			compatible = "nxp,lpspi";
 			reg = <0x94000 0x1000>;
@@ -279,6 +286,7 @@
 			rx-fifo-size = <8>;
 			status = "disabled";
 		};
+
 		flexcomm2_lpi2c2: lpi2c@94800 {
 			compatible = "nxp,lpi2c";
 			reg = <0x94800 0x1000>;
@@ -305,6 +313,7 @@
 			clocks = <&syscon MCUX_FLEXCOMM3_CLK>;
 			status = "disabled";
 		};
+
 		flexcomm3_lpspi3: spi@95000 {
 			compatible = "nxp,lpspi";
 			reg = <0x95000 0x1000>;
@@ -315,6 +324,7 @@
 			rx-fifo-size = <8>;
 			status = "disabled";
 		};
+
 		flexcomm3_lpi2c3: lpi2c@95800 {
 			compatible = "nxp,lpi2c";
 			reg = <0x95800 0x1000>;
@@ -344,6 +354,7 @@
 			dma-names = "rx", "tx";
 			status = "disabled";
 		};
+
 		flexcomm4_lpspi4: spi@b4000 {
 			compatible = "nxp,lpspi";
 			reg = <0xb4000 0x1000>;
@@ -357,6 +368,7 @@
 			rx-fifo-size = <8>;
 			status = "disabled";
 		};
+
 		flexcomm4_lpi2c4: lpi2c@b4800 {
 			compatible = "nxp,lpi2c";
 			reg = <0xb4800 0x1000>;
@@ -383,6 +395,7 @@
 			clocks = <&syscon MCUX_FLEXCOMM5_CLK>;
 			status = "disabled";
 		};
+
 		flexcomm5_lpspi5: spi@b5000 {
 			compatible = "nxp,lpspi";
 			reg = <0xb5000 0x1000>;
@@ -393,6 +406,7 @@
 			rx-fifo-size = <8>;
 			status = "disabled";
 		};
+
 		flexcomm5_lpi2c5: lpi2c@b5800 {
 			compatible = "nxp,lpi2c";
 			reg = <0xb5800 0x1000>;
@@ -419,6 +433,7 @@
 			clocks = <&syscon MCUX_FLEXCOMM6_CLK>;
 			status = "disabled";
 		};
+
 		flexcomm6_lpspi6: spi@b6000 {
 			compatible = "nxp,lpspi";
 			reg = <0xb6000 0x1000>;
@@ -429,6 +444,7 @@
 			rx-fifo-size = <8>;
 			status = "disabled";
 		};
+
 		flexcomm6_lpi2c6: lpi2c@b6800 {
 			compatible = "nxp,lpi2c";
 			reg = <0xb6800 0x1000>;
@@ -455,6 +471,7 @@
 			clocks = <&syscon MCUX_FLEXCOMM7_CLK>;
 			status = "disabled";
 		};
+
 		flexcomm7_lpspi7: spi@b7000 {
 			compatible = "nxp,lpspi";
 			reg = <0xb7000 0x1000>;
@@ -465,6 +482,7 @@
 			rx-fifo-size = <8>;
 			status = "disabled";
 		};
+
 		flexcomm7_lpi2c7: lpi2c@b7800 {
 			compatible = "nxp,lpi2c";
 			reg = <0xb7800 0x1000>;
@@ -484,9 +502,9 @@
 
 		reg = <0x80000 0x1000>;
 		interrupts = <1 0>, <2 0>, <3 0>, <4 0>,
-			<5 0>, <6 0>, <7 0>, <8 0>,
-			<9 0>, <10 0>, <11 0>, <12 0>,
-			<13 0>, <14 0>, <15 0>, <16 0>;
+			     <5 0>, <6 0>, <7 0>, <8 0>,
+			     <9 0>, <10 0>, <11 0>, <12 0>,
+			     <13 0>, <14 0>, <15 0>, <16 0>;
 		no-error-irq;
 		status = "disabled";
 	};
@@ -500,9 +518,9 @@
 
 		reg = <0xa0000 0x1000>;
 		interrupts = <77 0>, <78 0>, <79 0>, <80 0>,
-			<81 0>, <82 0>, <83 0>, <84 0>,
-			<85 0>, <86 0>, <87 0>, <88 0>,
-			<89 0>, <90 0>, <91 0>, <92 0>;
+			     <81 0>, <82 0>, <83 0>, <84 0>,
+			     <85 0>, <86 0>, <87 0>, <88 0>,
+			     <89 0>, <90 0>, <91 0>, <92 0>;
 		no-error-irq;
 		status = "disabled";
 	};
@@ -519,7 +537,7 @@
 		flash: flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0 DT_SIZE_M(1)>;
-			erase-block-size = <8192>;
+			erase-block-size = <DT_SIZE_K(8)>;
 			/* MCXN23x ROM Flash API supports writing of 128B pages. */
 			write-block-size = <128>;
 		};
@@ -550,6 +568,7 @@
 		reg = <0xce000 0x1000>;
 		interrupt-names = "RELOAD-ERROR", "FAULT";
 		interrupts = <112 0>, <113 0>;
+
 		flexpwm0_pwm0: pwm0 {
 			compatible = "nxp,imx-pwm";
 			index = <0>;
@@ -600,6 +619,7 @@
 		reg = <0xd0000 0x1000>;
 		interrupt-names = "RELOAD-ERROR", "FAULT";
 		interrupts = <118 0>, <119 0>;
+
 		flexpwm1_pwm0: pwm0 {
 			compatible = "nxp,imx-pwm";
 			index = <0>;
@@ -727,7 +747,7 @@
 		status = "disabled";
 		clk-divider = <1>;
 		clk-source = <0>;
-		voltage-ref= <1>;
+		voltage-ref = <1>;
 		calibration-average = <128>;
 		power-level = <0>;
 		offset-value-a = <0>;
@@ -749,7 +769,7 @@
 		status = "disabled";
 		clk-divider = <1>;
 		clk-source = <0>;
-		voltage-ref= <0>;
+		voltage-ref = <0>;
 		calibration-average = <128>;
 		power-level = <1>;
 		offset-value-a = <0>;
@@ -815,6 +835,7 @@
 		status = "disabled";
 		interrupts = <105 0>;
 		clocks = <&syscon MCUX_FLEXIO0_CLK>;
+
 		flexio0_lcd: flexio0-lcd {
 			compatible = "nxp,mipi-dbi-flexio-lcdif";
 			status = "disabled";
@@ -851,7 +872,7 @@
 		compatible = "nxp,lptmr";
 		reg = <0x4a000 0x1000>;
 		interrupts = <143 0>;
-		clock-frequency = <16000>;
+		clock-frequency = <DT_FREQ_K(16)>;
 		prescaler = <1>;
 		clk-source = <1>;
 		resolution = <32>;
@@ -861,7 +882,7 @@
 		compatible = "nxp,lptmr";
 		reg = <0x4b000 0x1000>;
 		interrupts = <144 0>;
-		clock-frequency = <16000>;
+		clock-frequency = <DT_FREQ_K(16)>;
 		prescaler = <1>;
 		clk-source = <1>;
 		resolution = <32>;
@@ -883,16 +904,19 @@
 			reg = <0>;
 			status = "disabled";
 		};
+
 		mrt0_channel1: mrt0_channel@1 {
 			compatible = "nxp,mrt-channel";
 			reg = <1>;
 			status = "disabled";
 		};
+
 		mrt0_channel2: mrt0_channel@2 {
 			compatible = "nxp,mrt-channel";
 			reg = <2>;
 			status = "disabled";
 		};
+
 		mrt0_channel3: mrt0_channel@3 {
 			compatible = "nxp,mrt-channel";
 			reg = <3>;
@@ -933,7 +957,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		#pinmux-cells = <2>;
-		reg = < 0x106000 0x1000>;
+		reg = <0x106000 0x1000>;
 		clocks = <&syscon MCUX_SAI0_CLK>;
 		pinmuxes = <&sai0 0x100 0x40000000>;
 		interrupts = <59 0>;
@@ -950,7 +974,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		#pinmux-cells = <2>;
-		reg = < 0x107000 0x1000>;
+		reg = <0x107000 0x1000>;
 		clocks = <&syscon MCUX_SAI1_CLK>;
 		pinmuxes = <&sai1 0x100 0x40000000>;
 		interrupts = <60 0>;

@@ -7,12 +7,11 @@
 #include <zephyr/dt-bindings/memory-attr/memory-attr.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
-
 / {
 	sram: sram@11000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x11000000 DT_SIZE_M(1)>;
 		zephyr,memory-region = "SRAM";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_PXN) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_PXN)>;
 	};
 };

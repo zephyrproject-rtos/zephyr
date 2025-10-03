@@ -1,0 +1,346 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/xg27/efr32mg27c140f768im40.dtsi>
+#include <dt-bindings/adc/silabs-adc.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
+#include "xg27_rb4194a-pinctrl.dtsi"
+
+/ {
+	model = "Silicon Labs xG27-RB4194A";
+	compatible = "silabs,xg27_rb4194a", "silabs,efr32mg27";
+
+	chosen {
+		zephyr,bt-hci = &bt_hci_silabs;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &usart1;
+		zephyr,display = &ls013b7dh03;
+		zephyr,flash = &flash0;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,uart-pipe = &usart1;
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		pwm-led0 = &pwm_led0;
+		spi-flash0 = &mx25r80;
+		sw0 = &button0;
+		sw1 = &button1;
+		watchdog0 = &wdog0;
+		dht0 = &si7021;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+			label = "LED 0";
+		};
+
+		led1: led_1 {
+			gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
+			label = "LED 1";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led_0 {
+			pwms = <&letimer0_pwm 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+			label = "User Push Button 0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
+			label = "User Push Button 1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	joystick {
+		compatible = "adc-keys";
+		io-channels = <&adc0 0>;
+		keyup-threshold-mv = <3300>;
+
+		select-key {
+			press-thresholds-mv = <33>;
+			zephyr,code = <INPUT_KEY_ENTER>;
+		};
+
+		left-key {
+			press-thresholds-mv = <1980>;
+			zephyr,code = <INPUT_KEY_LEFT>;
+		};
+
+		down-key {
+			press-thresholds-mv = <1650>;
+			zephyr,code = <INPUT_KEY_DOWN>;
+		};
+
+		up-key {
+			press-thresholds-mv = <2831>;
+			zephyr,code = <INPUT_KEY_UP>;
+		};
+
+		right-key {
+			press-thresholds-mv = <2533>;
+			zephyr,code = <INPUT_KEY_RIGHT>;
+		};
+	};
+
+	display_enable: sensor_enable: gpio_switch_0 {
+		compatible = "regulator-fixed";
+		enable-gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>;
+		regulator-name = "sensor_enable";
+	};
+
+	exp_header: exp-header {
+		compatible = "silabs,exp-header";
+		#gpio-cells = <2>;
+		gpio-map = <4 0 &gpioc 0 0>,
+			   <6 0 &gpioc 1 0>,
+			   <7 0 &gpiob 0 0>,
+			   <8 0 &gpioc 2 0>,
+			   <9 0 &gpiob 1 0>,
+			   <10 0 &gpioc 3 0>,
+			   <12 0 &gpioa 5 0>,
+			   <13 0 &gpioa 8 0>,
+			   <14 0 &gpioa 6 0>,
+			   <15 0 &gpiob 2 0>,
+			   <16 0 &gpiob 3 0>;
+		gpio-map-mask = <0xffffffff 0x0>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
+	};
+
+	zephyr,user {
+		io-channels = <&adc0 0>;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <76800000>;
+};
+
+&itm {
+	pinctrl-0 = <&itm_default>;
+	pinctrl-names = "default";
+	swo-ref-frequency = <DT_FREQ_K(76800)>;
+};
+
+&hfxo {
+	ctune = <120>;
+	precision = <50>;
+	status = "okay";
+};
+
+&lfxo {
+	ctune = <37>;
+	precision = <50>;
+	status = "okay";
+};
+
+&hfrcodpll {
+	clock-frequency = <DT_FREQ_K(76800)>;
+	clocks = <&hfxo>;
+	dpll-autorecover;
+	dpll-edge = "fall";
+	dpll-lock = "phase";
+	dpll-m = <1919>;
+	dpll-n = <3839>;
+};
+
+&em23grpaclk {
+	clocks = <&lfxo>;
+};
+
+&em4grpaclk {
+	clocks = <&lfxo>;
+};
+
+&rtccclk {
+	clocks = <&lfxo>;
+};
+
+&wdog0clk {
+	clocks = <&lfxo>;
+};
+
+&usart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	si7021: si7021@40 {
+		compatible = "silabs,si7006";
+		reg = <0x40>;
+		vin-supply = <&sensor_enable>;
+	};
+};
+
+&eusart0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_M(8)>;
+	pinctrl-0 = <&eusart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	cs-gpios = <&gpioa 4 GPIO_ACTIVE_LOW>, <&gpioc 6 GPIO_ACTIVE_HIGH>;
+
+	mx25r80: mx25r8035f@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		dpd-wakeup-sequence = <30000 20 35000>;
+		has-dpd;
+		jedec-id = [c2 28 14];
+		mxicy,mx25r-power-mode = "low-power";
+		size = <0x800000>;
+		spi-max-frequency = <DT_FREQ_M(33)>;
+		t-enter-dpd = <0>;
+		zephyr,pm-device-runtime-auto;
+	};
+
+	ls013b7dh03: ls0xx@1 {
+		compatible = "sharp,ls0xx";
+		reg = <1>;
+		height = <128>;
+		spi-max-frequency = <DT_FREQ_M(2)>;
+		width = <128>;
+		extcomin-gpios = <&gpiod 2 GPIO_ACTIVE_HIGH>;
+		extcomin-frequency = <60>;
+	};
+};
+
+&letimer0 {
+	status = "okay";
+
+	letimer0_pwm: pwm {
+		pinctrl-0 = <&letimer0_default>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&adc0 {
+	pinctrl-0 = <&iadc0_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	channel@0 {
+		reg = <0>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,input-positive = <IADC_INPUT_PD3>;
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
+};
+
+&gpio {
+	status = "okay";
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+
+	vcom-enable {
+		gpio-hog;
+		gpios = <4 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&wdog0 {
+	status = "okay";
+};
+
+&rtcc0 {
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+&dcdc {
+	regulator-boot-on;
+	regulator-initial-mode = <SILABS_DCDC_MODE_BUCK>;
+	status = "okay";
+};
+
+&radio {
+	pa-voltage-mv = <1800>;
+};
+
+&bt_hci_silabs {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			reg = <0x00000000 DT_SIZE_K(48)>;
+			label = "mcuboot";
+		};
+
+		slot0_partition: partition@c000 {
+			reg = <0x0000c000 DT_SIZE_K(344)>;
+			label = "image-0";
+		};
+
+		slot1_partition: partition@62000 {
+			reg = <0x00062000 DT_SIZE_K(344)>;
+			label = "image-1";
+		};
+
+		storage_partition: partition@b8000 {
+			reg = <0x000b8000 DT_SIZE_K(32)>;
+			label = "storage";
+		};
+	};
+};

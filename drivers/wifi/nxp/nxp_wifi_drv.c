@@ -579,6 +579,10 @@ static int nxp_wifi_start_ap(const struct device *dev, struct wifi_connect_req_p
 		wlan_uap_set_hidden_ssid(params->ignore_broadcast_ssid);
 	}
 
+	if (params->bandwidth == 0) {
+		params->bandwidth = WIFI_FREQ_BANDWIDTH_20MHZ;
+	}
+
 	switch (params->bandwidth) {
 	case WIFI_FREQ_BANDWIDTH_20MHZ:
 	case WIFI_FREQ_BANDWIDTH_40MHZ:
@@ -2020,13 +2024,11 @@ static int nxp_wifi_dev_init(const struct device *dev)
 
 #ifdef CONFIG_NXP_RW610
 	IRQ_CONNECT(IMU_IRQ_N, IMU_IRQ_P, WL_MCI_WAKEUP0_DriverIRQHandler, 0, 0);
-	irq_enable(IMU_IRQ_N);
 	IRQ_CONNECT(IMU_WAKEUP_IRQ_N, IMU_WAKEUP_IRQ_P, WL_MCI_WAKEUP_DONE0_DriverIRQHandler, 0, 0);
-	irq_enable(IMU_WAKEUP_IRQ_N);
 #if (DT_INST_PROP(0, wakeup_source))
-	EnableDeepSleepIRQ(IMU_IRQ_N);
-#endif
-#endif
+	NXP_ENABLE_WAKEUP_SIGNAL(IMU_IRQ_N);
+#endif /* DT_INST_PROP */
+#endif /* CONFIG_NXP_RW610 */
 
 	return 0;
 }

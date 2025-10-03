@@ -60,7 +60,7 @@ These tests are run in workstation, that is, without using real embedded HW.
 The intention being to be able to run tests much faster than real time,
 without the need for real HW, and in a deterministic/reproducible fashion.
 
-Unlike :ref:`native_sim <native_sim>`, bsim boards do not interact directly with any host
+Unlike :zephyr:board:`native_sim <native_sim>`, bsim boards do not interact directly with any host
 peripherals, and their execution is independent of the host load, or timing.
 
 These boards are also designed to be used as prototyping and development environments,
@@ -106,12 +106,12 @@ to these boards.
     an special driver that handles the EDTT communication (its RPC transport)
     and an embedded application that handles the RPC calls themselves, while
     the python test scripts provide the test logic.
-  - Using Zephyr's :ref:`native_sim <native_sim>` board: It also allows integration testing of
+  - Using Zephyr's :zephyr:board:`native_sim <native_sim>` board: It also allows integration testing of
     the embedded code, but without any specific HW. In that way, many embedded
     components which are dependent on the HW would not be suited for testing in
     that platform. Just like the bsim boards, this Zephyr target board can
     be used with or without Zephyr's ztest system and twister.
-    The :ref:`native_sim <native_sim>` board shares the :ref:`POSIX architecture<Posix arch>`,
+    The :zephyr:board:`native_sim <native_sim>` board shares the :ref:`POSIX architecture<Posix arch>`,
     and native simulator runner with the bsim boards.
 
 - Zephyr's ztest infrastructure and Zephyr's twister:
@@ -335,7 +335,7 @@ Instead the equivalent ``bs_tests`` provided hooks should be used.
 
 Note also that, for AMP targets like the :ref:`nrf5340bsim <nrf5340bsim>`, each embedded MCU has
 its own separate ``bs_tests`` built with that MCU. You can select if and what test is used
-for each MCU separatedly with the command line options.
+for each MCU separately with the command line options.
 
 Command line argument parsing
 =============================

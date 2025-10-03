@@ -5,6 +5,7 @@
  */
 
 #include <mem.h>
+#include <freq.h>
 #include "armv6-m.dtsi"
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/kinetis_pcc.h>
@@ -23,7 +24,7 @@
 
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-m0+";
-			clock-frequency = <48000000>;
+			clock-frequency = <DT_FREQ_M(48)>;
 			reg = <0>;
 			cpu-power-states = <&idle &stop &pstop1 &pstop2>;
 		};
@@ -79,13 +80,13 @@
 
 			sirc_clk: sirc_clk {
 				compatible = "fixed-clock";
-				clock-frequency = <8000000>;
+				clock-frequency = <DT_FREQ_M(8)>;
 				#clock-cells = <0>;
 			};
 
 			firc_clk: firc_clk {
 				compatible = "fixed-clock";
-				clock-frequency = <48000000>;
+				clock-frequency = <DT_FREQ_M(48)>;
 				#clock-cells = <0>;
 			};
 
@@ -188,7 +189,7 @@
 			compatible = "nxp,lptmr";
 			reg = <0x40040000 0x1000>;
 			interrupts = <29 0>;
-			clock-frequency = <128000>;
+			clock-frequency = <DT_FREQ_K(128)>;
 			prescaler = <1>;
 			clk-source = <1>;
 			resolution = <16>;
@@ -229,7 +230,7 @@
 
 			lpo: lpo128k {
 				compatible = "fixed-clock";
-				clock-frequency = <128000>;
+				clock-frequency = <DT_FREQ_K(128)>;
 				#clock-cells = <0>;
 			};
 		};
@@ -349,6 +350,42 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				nxp,kinetis-port = <&portd>;
+			};
+		};
+
+		lpit0: lpit@40037000 {
+			compatible = "nxp,lpit";
+			reg = <0x40037000 0x1000>;
+			interrupts = <22 0>;
+			clocks = <&pcc 0xdc KINETIS_PCC_SRC_SIRC_ASYNC>;
+			status = "disabled";
+			enable-run-in-doze;
+			max-load-value = <0xffffffff>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			lpit0_channel0: lpit_channel@0 {
+				compatible = "nxp,lpit-channel";
+				reg = <0>;
+				status = "disabled";
+			};
+
+			lpit0_channel1: lpit_channel@1 {
+				compatible = "nxp,lpit-channel";
+				reg = <1>;
+				status = "disabled";
+			};
+
+			lpit0_channel2: lpit_channel@2 {
+				compatible = "nxp,lpit-channel";
+				reg = <2>;
+				status = "disabled";
+			};
+
+			lpit0_channel3: lpit_channel@3 {
+				compatible = "nxp,lpit-channel";
+				reg = <3>;
+				status = "disabled";
 			};
 		};
 

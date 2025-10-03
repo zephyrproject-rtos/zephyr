@@ -1,0 +1,19 @@
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_MCXW2XX
+
+config NUM_IRQS
+	default 63
+
+DT_SYSCLK_PATH := $(dt_nodelabel_path,sysclk)
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,$(DT_SYSCLK_PATH),clock-frequency) if CORTEX_M_SYSTICK
+
+# Set to the minimal size of data which can be written.
+config FLASH_FILL_BUFFER_SIZE
+	default 512
+
+endif

@@ -1,0 +1,69 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/ipc_service/static_vrings.h>
+
+/delete-node/ &sram0;
+/delete-node/ &sram1;
+
+/ {
+	ipc {
+		ipc0: ipc0 {
+			compatible = "zephyr,ipc-openamp-static-vrings";
+			memory-region = <&sram_ipc0>;
+			mboxes = <&mbox0 0>, <&mbox0 0>;
+			mbox-names = "tx", "rx";
+			role = "host";
+			status = "okay";
+		};
+
+		ipc1: ipc1 {
+			compatible = "zephyr,ipc-openamp-static-vrings";
+			memory-region = <&sram_ipc1>;
+			mboxes = <&mbox1 0>, <&mbox1 0>;
+			mbox-names = "tx", "rx";
+			role = "host";
+			zephyr,priority = <1 PRIO_COOP>;
+			zephyr,buffer-size = <128>;
+			status = "okay";
+		};
+	};
+};
+
+&sram {
+	/* Redefine sram regions for CPU0 */
+	sram0: memory@22000000 {
+		reg = <0x22000000 0xe2000>;
+	};
+
+	/* Redefine sram regions for CPU1 */
+	sram1: memory@220e2000 {
+		reg = <0x220e2000 0xe2000>;
+	};
+
+	/* Define shared memory regions for IPC */
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		sram_ipc0: memory@221c4000 {
+			reg = <0x221c4000 0x8000>;
+		};
+
+		sram_ipc1: memory@221cc000 {
+			reg = <0x221cc000 0x8000>;
+		};
+	};
+};
+
+&mbox0 {
+	interrupts = <94 1>;
+	status = "okay";
+};
+
+&mbox1 {
+	interrupts = <95 1>;
+	status = "okay";
+};

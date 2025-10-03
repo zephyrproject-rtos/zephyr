@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #include <mem.h>
+#include <freq.h>
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/kinetis_sim.h>
@@ -71,13 +72,11 @@
 		status = "disabled";
 	};
 
-
 	/* Dummy pinctrl node, filled with pin mux options at board level */
 	pinctrl: pinctrl {
 		compatible = "nxp,port-pinctrl";
 		status = "okay";
 	};
-
 
 	soc {
 		mpu: mpu@4000d000 {
@@ -156,7 +155,7 @@
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
 				reg = <0 DT_SIZE_M(1)>;
-				erase-block-size = <4096>;
+				erase-block-size = <DT_SIZE_K(4)>;
 				write-block-size = <8>;
 			};
 		};
@@ -385,7 +384,7 @@
 			clocks = <&sim KINETIS_SIM_LPO_CLK 0 0>;
 		};
 
-		ftm0: ftm@40038000{
+		ftm0: ftm@40038000 {
 			compatible = "nxp,ftm";
 			reg = <0x40038000 0x98>;
 			interrupts = <42 0>;
@@ -394,7 +393,7 @@
 			status = "disabled";
 		};
 
-		ftm1: ftm@40039000{
+		ftm1: ftm@40039000 {
 			compatible = "nxp,ftm";
 			reg = <0x40039000 0x98>;
 			interrupts = <43 0>;
@@ -403,7 +402,7 @@
 			status = "disabled";
 		};
 
-		ftm2: ftm@4003a000{
+		ftm2: ftm@4003a000 {
 			compatible = "nxp,ftm";
 			reg = <0x4003a000 0x98>;
 			interrupts = <44 0>;
@@ -412,7 +411,7 @@
 			status = "disabled";
 		};
 
-		ftm3: ftm@400b9000{
+		ftm3: ftm@400b9000 {
 			compatible = "nxp,ftm";
 			reg = <0x400b9000 0x98>;
 			interrupts = <71 0>;
@@ -421,11 +420,11 @@
 			status = "disabled";
 		};
 
-		adc0: adc@4003b000{
+		adc0: adc@4003b000 {
 			compatible = "nxp,kinetis-adc16";
 			reg = <0x4003b000 0x70>;
 			clocks = <&sim KINETIS_SIM_SIM_SOPT7 0 0xF>,
-				<&sim KINETIS_SIM_SIM_SOPT7 7 0x80>;
+				 <&sim KINETIS_SIM_SIM_SOPT7 7 0x80>;
 			dmas = <&edma0 0 40>;
 			dma-names = "adc0";
 			clk-source = <0>;
@@ -434,11 +433,11 @@
 			#io-channel-cells = <1>;
 		};
 
-		adc1: adc@400bb000{
+		adc1: adc@400bb000 {
 			compatible = "nxp,kinetis-adc16";
 			reg = <0x400bb000 0x70>;
 			clocks = <&sim KINETIS_SIM_SIM_SOPT7 8 0xF00>,
-				<&sim KINETIS_SIM_SIM_SOPT7 15 0x8000>;
+				 <&sim KINETIS_SIM_SIM_SOPT7 15 0x8000>;
 			dmas = <&edma0 0 41>;
 			dma-names = "adc1";
 			clk-source = <0>;
@@ -478,6 +477,7 @@
 			compatible = "nxp,enet";
 			reg = <0x400c0000 0x620>;
 			clocks = <&sim KINETIS_SIM_ENET_CLK 0 0>;
+
 			enet_mac: ethernet {
 				compatible = "nxp,enet-mac";
 				interrupts = <83 0>, <84 0>, <85 0>;
@@ -487,12 +487,14 @@
 				phy-connection-type = "rmii";
 				status = "disabled";
 			};
+
 			enet_mdio: mdio {
 				compatible = "nxp,enet-mdio";
 				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
 			};
+
 			enet_ptp_clock: ptp_clock {
 				compatible = "nxp,enet-ptp-clock";
 				interrupts = <82 0>;
@@ -527,14 +529,14 @@
 			dma-requests = <64>;
 			nxp,mem2mem;
 			reg = <0x40008000 0x1000>,
-				<0x40021000 0x1000>;
+			      <0x40021000 0x1000>;
 			interrupts = <0 0>, <1 0>, <2 0>, <3 0>,
-				<4 0>, <5 0>, <6 0>, <7 0>,
-				<8 0>, <9 0>, <10 0>, <11 0>,
-				<12 0>, <13 0>, <14 0>, <15 0>,
-				<16 0>;
+				     <4 0>, <5 0>, <6 0>, <7 0>,
+				     <8 0>, <9 0>, <10 0>, <11 0>,
+				     <12 0>, <13 0>, <14 0>, <15 0>,
+				     <16 0>;
 			clocks = <&sim KINETIS_SIM_DMA_CLK 0x1040 0x00000002>,
-				<&sim KINETIS_SIM_DMAMUX_CLK 0x103C 0x00000002>;
+				 <&sim KINETIS_SIM_DMAMUX_CLK 0x103C 0x00000002>;
 			status = "disabled";
 		};
 

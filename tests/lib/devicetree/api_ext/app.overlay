@@ -13,17 +13,17 @@
 
 / {
 	test {
-		#address-cells = < 0x1 >;
-		#size-cells = < 0x1 >;
+		#address-cells = <0x1>;
+		#size-cells = <0x1>;
 
 		test_sram1: sram@20000000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
-			reg = < 0x20000000 0x1000 >;
+			reg = <0x20000000 0x1000>;
 			zephyr,memory-region = "SRAM_REGION";
 		};
 		test_sram2: sram@20001000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
-			reg = < 0x20001000 0x1000 >;
+			reg = <0x20001000 0x1000>;
 			zephyr,memory-region = "SRAM@REGION#2";
 		};
 

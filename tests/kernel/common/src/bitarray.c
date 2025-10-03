@@ -282,6 +282,39 @@ ZTEST(bitarray, test_bitarray_set_clear)
 		     "sys_bitarray_test_and_clear_bit() erroneously changed bitarray");
 }
 
+static void test_alloc_free_32(uint32_t mask, uint32_t mask_after, size_t num_bits,
+			       size_t exp_offset, int exp_ret)
+{
+	int ret;
+	size_t offset;
+
+	SYS_BITARRAY_DEFINE(ba_32, 32);
+
+	ba_32.bundles[0] = mask;
+
+	ret = sys_bitarray_alloc(&ba_32, num_bits, &offset);
+	zassert_equal(ret, exp_ret, "sys_bitarray_alloc() failed: %d", ret);
+	if (exp_ret < 0) {
+		return;
+	}
+	zassert_equal(offset, exp_offset,
+		      "sys_bitarray_alloc() offset expected %d, got %d", exp_offset, offset);
+	zassert_equal(ba_32.bundles[0], mask_after, "sys_bitarray_alloc() failed bits comparison");
+
+	ret = sys_bitarray_free(&ba_32, num_bits, offset);
+	zassert_equal(ret, 0, "sys_bitarray_free() failed: %d", ret);
+	zassert_equal(ba_32.bundles[0], mask, "sys_bitarray_alloc() failed bits comparison");
+}
+
+static void alloc_and_free_32_predefined(void)
+{
+	printk("Testing bit array alloc and free with predefined patterns using 32 bit array\n");
+
+	test_alloc_free_32(0x0F0F070F, 0x0F0FFF0F, 5, 11, 0);
+	test_alloc_free_32(0x33333333, 0xF3333333, 3, 0, -ENOSPC);
+	test_alloc_free_32(0x33333333, 0xF3333333, 2, 30, 0);
+}
+
 void alloc_and_free_predefined(void)
 {
 	int ret;
@@ -291,7 +324,7 @@ void alloc_and_free_predefined(void)
 
 	SYS_BITARRAY_DEFINE(ba_128, 128);
 
-	printk("Testing bit array alloc and free with predefined patterns\n");
+	printk("Testing bit array alloc and free with predefined patterns using 128 bit array\n");
 
 	/* Pre-populate the bits */
 	ba_128.bundles[0] = 0x0F0F070F;
@@ -360,29 +393,13 @@ void alloc_and_free_predefined(void)
 		     "sys_bitarray_alloc() failed bits comparison");
 }
 
-static inline size_t count_bits(uint32_t val)
-{
-	/* Implements Brian Kernighan’s Algorithm
-	 * to count bits.
-	 */
-
-	size_t cnt = 0;
-
-	while (val != 0) {
-		val = val & (val - 1);
-		cnt++;
-	}
-
-	return cnt;
-}
-
 size_t get_bitarray_popcnt(sys_bitarray_t *ba)
 {
 	size_t popcnt = 0;
 	unsigned int idx;
 
 	for (idx = 0; idx < ba->num_bundles; idx++) {
-		popcnt += count_bits(ba->bundles[idx]);
+		popcnt += sys_count_bits(&ba->bundles[idx], sizeof(uint32_t));
 	}
 
 	return popcnt;
@@ -514,6 +531,7 @@ ZTEST(bitarray, test_bitarray_alloc_free)
 	}
 
 	alloc_and_free_predefined();
+	alloc_and_free_32_predefined();
 
 	i = 1;
 	while (i < 65) {

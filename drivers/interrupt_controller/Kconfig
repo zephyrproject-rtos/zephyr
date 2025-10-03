@@ -30,6 +30,15 @@ config VEXRISCV_LITEX_IRQ
 	help
 	  IRQ implementation for LiteX VexRiscv
 
+config HAZARD3_INTC
+	bool "Hazard3 interrupt controller"
+	default y
+	select PICOSDK_USE_CLAIM
+	select RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
+	depends on DT_HAS_HAZARD3_HAZARD3_INTC_ENABLED
+	help
+	  IRQ implementation for Hazard3 Interrupt Controller found on the RP2350 series SoCs
+
 config LEON_IRQMP
 	bool "GRLIB IRQMP interrupt controller"
 	default y
@@ -95,6 +104,8 @@ source "drivers/interrupt_controller/Kconfig.gd32_exti"
 source "drivers/interrupt_controller/Kconfig.plic"
 
 source "drivers/interrupt_controller/Kconfig.nxp_s32"
+
+source "drivers/interrupt_controller/Kconfig.nxp_siul2"
 
 source "drivers/interrupt_controller/Kconfig.xmc4xxx"
 

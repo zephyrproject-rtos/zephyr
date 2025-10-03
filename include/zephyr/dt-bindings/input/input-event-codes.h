@@ -206,8 +206,8 @@
 #define INPUT_BTN_EAST 0x131            /**< East button */
 #define INPUT_BTN_EXTRA 0x114		/**< Extra button */
 #define INPUT_BTN_FORWARD 0x115		/**< Forward button */
-#define INPUT_BTN_GEAR_DOWN 0x150       /**< Gear Up button */
-#define INPUT_BTN_GEAR_UP 0x151         /**< Gear Down button */
+#define INPUT_BTN_GEAR_DOWN 0x150       /**< Gear Down button */
+#define INPUT_BTN_GEAR_UP 0x151         /**< Gear Up button */
 #define INPUT_BTN_LEFT 0x110            /**< Left button */
 #define INPUT_BTN_MIDDLE 0x112          /**< Middle button */
 #define INPUT_BTN_MODE 0x13c            /**< Mode button */

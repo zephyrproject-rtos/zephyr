@@ -57,11 +57,6 @@
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
-
-	wake_up_trigger: gpio-wake-up  {
-		compatible = "silabs,gecko-wake-up-trigger";
-		gpios = <&gpioa 5 GPIO_ACTIVE_LOW>;
-	};
 };
 
 &cpu0 {
@@ -172,32 +167,26 @@
 
 		/* Reserve 48 kB for the bootloader */
 		boot_partition: partition@0 {
-			reg = <0x0 0x0000c000>;
+			reg = <0x0 DT_SIZE_K(48)>;
 			label = "mcuboot";
 			read-only;
 		};
 
-		/* Reserve 464 kB for the application in slot 0 */
+		/* Reserve 728 kB for the application in slot 0 */
 		slot0_partition: partition@c000 {
-			reg = <0x0000c000 0x00074000>;
+			reg = <0x0000c000 DT_SIZE_K(728)>;
 			label = "image-0";
 		};
 
-		/* Reserve 464 kB for the application in slot 1 */
-		slot1_partition: partition@80000 {
-			reg = <0x00080000 0x00074000>;
+		/* Reserve 728 kB for the application in slot 1 */
+		slot1_partition: partition@c2000 {
+			reg = <0x000c2000 DT_SIZE_K(728)>;
 			label = "image-1";
 		};
 
-		/* Reserve 32 kB for the scratch partition */
-		scratch_partition: partition@f4000 {
-			reg = <0x000f4000 0x00008000>;
-			label = "image-scratch";
-		};
-
-		/* Set 528Kb of storage at the end of the 1024Kb of flash */
-		storage_partition: partition@fc000 {
-			reg = <0x000fc000 0x00084000>;
+		/* Set 32 kB of storage at the end of the 1536 kB of flash */
+		storage_partition: partition@178000 {
+			reg = <0x00178000 DT_SIZE_K(32)>;
 			label = "storage";
 		};
 	};

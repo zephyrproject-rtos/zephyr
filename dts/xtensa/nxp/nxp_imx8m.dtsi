@@ -126,6 +126,7 @@
 			compatible = "nxp,imx-iomuxc";
 			reg = <0x30330000 DT_SIZE_K(64)>;
 			status = "okay";
+
 			pinctrl: pinctrl {
 				status = "okay";
 				compatible = "nxp,imx8mp-pinctrl";

@@ -27,23 +27,23 @@
 /* clang-format off */
 #define MCHP_PORT_ADDR_OR_NONE(nodelabel)                              \
 	IF_ENABLED(DT_NODE_EXISTS(DT_NODELABEL(nodelabel)),            \
-		(DT_REG_ADDR(DT_NODELABEL(nodelabel))))
-/* clang-format on */
+		(DT_REG_ADDR(DT_NODELABEL(nodelabel)),))
 
 /**
- * @brief Array of port addresses for the MCHP SAMD5x_E5x series.
+ * @brief Array of port addresses for the MCHP G1 series.
  *
  * This array contains the register addresses of the ports (PORTA, PORTB, PORTC, and PORTD)
- * for the MCHP SAMD5x_E5x series microcontrollers. The addresses are obtained using the
+ * for the MCHP G1 series port peripheral. The addresses are obtained using the
  * MCHP_PORT_ADDR_OR_NONE macro, which ensures that only existing ports are included.
- * This can be updated for other devices using conditional comiplation directives
+ * This can be updated for other devices using conditional compilation directives
  */
 static const uint32_t mchp_port_addrs[] = {
-	MCHP_PORT_ADDR_OR_NONE(porta),
-	MCHP_PORT_ADDR_OR_NONE(portb),
-	MCHP_PORT_ADDR_OR_NONE(portc),
-	MCHP_PORT_ADDR_OR_NONE(portd),
+	MCHP_PORT_ADDR_OR_NONE(porta)
+	MCHP_PORT_ADDR_OR_NONE(portb)
+	MCHP_PORT_ADDR_OR_NONE(portc)
+	MCHP_PORT_ADDR_OR_NONE(portd)
 };
+/* clang-format on */
 
 /**
  * @brief Set pinmux registers using odd/even logic

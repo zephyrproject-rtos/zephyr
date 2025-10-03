@@ -16,4 +16,7 @@ config SYS_CLOCK_TICKS_PER_SEC
 config NUM_IRQS
 	default 19
 
+config BUILD_OUTPUT_BIN
+	default n
+
 endif

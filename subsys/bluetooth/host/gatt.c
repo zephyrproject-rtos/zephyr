@@ -4776,6 +4776,15 @@ static void parse_read_by_uuid(struct bt_conn *conn,
 		uint16_t handle;
 		uint16_t len;
 
+		len = MIN(rsp->len, length);
+		if (len < sizeof(struct bt_att_data)) {
+			LOG_WRN("Bad peer: ATT read-by-uuid rsp: invalid ATTR PDU len %u", len);
+			params->func(conn, BT_ATT_ERR_INVALID_PDU, params, NULL, 0);
+			return;
+		}
+
+		len -= sizeof(struct bt_att_data);
+
 		handle = sys_le16_to_cpu(data->handle);
 
 		/* Handle 0 is invalid */
@@ -4783,8 +4792,6 @@ static void parse_read_by_uuid(struct bt_conn *conn,
 			LOG_ERR("Invalid handle");
 			return;
 		}
-
-		len = rsp->len > length ? length - 2 : rsp->len - 2;
 
 		LOG_DBG("handle 0x%04x len %u value %u", handle, rsp->len, len);
 
@@ -6582,4 +6589,55 @@ void bt_gatt_req_set_mtu(struct bt_att_req *req, uint16_t mtu)
 	 * just drop it here. Feel free to add this capability to other
 	 * request types if needed.
 	 */
+}
+
+/* Descriptor of application-specific authorization callbacks that are used
+ * with the CONFIG_BT_GATT_AUTHORIZATION_CUSTOM Kconfig enabled.
+ */
+static const struct bt_gatt_authorization_cb *authorization_cb;
+
+bool bt_gatt_attr_read_authorize(struct bt_conn *conn, const struct bt_gatt_attr *attr)
+{
+	if (!IS_ENABLED(CONFIG_BT_GATT_AUTHORIZATION_CUSTOM)) {
+		return true;
+	}
+
+	if (!authorization_cb || !authorization_cb->read_authorize) {
+		return true;
+	}
+
+	return authorization_cb->read_authorize(conn, attr);
+}
+
+bool bt_gatt_attr_write_authorize(struct bt_conn *conn, const struct bt_gatt_attr *attr)
+{
+	if (!IS_ENABLED(CONFIG_BT_GATT_AUTHORIZATION_CUSTOM)) {
+		return true;
+	}
+
+	if (!authorization_cb || !authorization_cb->write_authorize) {
+		return true;
+	}
+
+	return authorization_cb->write_authorize(conn, attr);
+}
+
+int bt_gatt_authorization_cb_register(const struct bt_gatt_authorization_cb *cb)
+{
+	if (!IS_ENABLED(CONFIG_BT_GATT_AUTHORIZATION_CUSTOM)) {
+		return -ENOSYS;
+	}
+
+	if (!cb) {
+		authorization_cb = NULL;
+		return 0;
+	}
+
+	if (authorization_cb) {
+		return -EALREADY;
+	}
+
+	authorization_cb = cb;
+
+	return 0;
 }

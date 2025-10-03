@@ -7,12 +7,19 @@
 #include <nordic/nrf54h20.dtsi>
 
 cpu: &cpuapp {};
+
 systick: &cpuapp_systick {};
+
 nvic: &cpuapp_nvic {};
+
 cpuppr_vevif: &cpuppr_vevif_tx {};
+
 cpuflpr_vevif: &cpuflpr_vevif_tx {};
+
 cpusys_vevif: &cpusys_vevif_tx {};
+
 wdt010: &cpuapp_wdt010 {};
+
 wdt011: &cpuapp_wdt011 {};
 
 /delete-node/ &cpuppr;
@@ -60,15 +67,15 @@ wdt011: &cpuapp_wdt011 {};
 	interrupts = <109 NRF_DEFAULT_IRQ_PRIORITY>;
 };
 
-&fll16m  {
+&fll16m {
 	status = "okay";
 };
 
-&hsfll120  {
+&hsfll120 {
 	status = "okay";
 };
 
-&lfclk  {
+&lfclk {
 	status = "okay";
 };
 

@@ -3,33 +3,15 @@ include(${ZEPHYR_BASE}/cmake/compiler/gcc/compiler_flags.cmake)
 
 # Now, let's overwrite the flags that are different in clang.
 
-# No property flag, clang doesn't understand fortify at all
-set_compiler_property(PROPERTY security_fortify_compile_time)
-set_compiler_property(PROPERTY security_fortify_run_time)
+########################################################
+# Setting compiler properties for gcc / g++ compilers. #
+########################################################
+
+#####################################################
+# This section covers flags related to optimization #
+#####################################################
+
 set_compiler_property(PROPERTY optimization_fast -O3 -ffast-math)
-
-# No printf-return-value optimizations in clang
-set_compiler_property(PROPERTY no_printf_return_value)
-
-# No property flag, this is used by the POSIX arch based targets when building with the host libC,
-# But clang has problems compiling these with -fno-freestanding.
-check_set_compiler_property(PROPERTY hosted)
-
-# clang flags for coverage generation
-if (CONFIG_COVERAGE_NATIVE_SOURCE)
-  set_compiler_property(PROPERTY coverage -fprofile-instr-generate -fcoverage-mapping)
-else()
-  set_compiler_property(PROPERTY coverage --coverage -fno-inline)
-endif()
-
-# clang flag for colourful diagnostic messages
-set_compiler_property(PROPERTY diagnostic -fcolor-diagnostics)
-
-# clang flag to save temporary object files
-set_compiler_property(PROPERTY save_temps -save-temps)
-
-# clang doesn't handle the -T flag
-set_compiler_property(PROPERTY linker_script -Wl,-T)
 
 #######################################################
 # This section covers flags related to warning levels #
@@ -114,6 +96,49 @@ set_compiler_property(PROPERTY warning_error_coding_guideline
                       -Wconversion
                       -Woverride-init
 )
+
+###########################################################################
+# This section covers flags related to C or C++ standards / standard libs #
+###########################################################################
+
+# No printf-return-value optimizations in clang
+set_compiler_property(PROPERTY no_printf_return_value)
+
+# Clang does not support "-Wno-volatile"
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp2a "-std=c++2a" "-Wno-register")
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp20 "-std=c++20" "-Wno-register")
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b "-std=c++2b" "-Wno-register")
+
+###################################################
+# This section covers all remaining C / C++ flags #
+###################################################
+
+# clang flags for coverage generation
+if (CONFIG_COVERAGE_NATIVE_SOURCE)
+  set_compiler_property(PROPERTY coverage -fprofile-instr-generate -fcoverage-mapping)
+else()
+  set_compiler_property(PROPERTY coverage --coverage -fno-inline)
+endif()
+
+# No property flag, clang doesn't understand fortify at all
+set_compiler_property(PROPERTY security_fortify_compile_time)
+set_compiler_property(PROPERTY security_fortify_run_time)
+
+# No property flag, this is used by the POSIX arch based targets when building with the host libC,
+# But clang has problems compiling these with -fno-freestanding.
+check_set_compiler_property(PROPERTY hosted)
+
+# clang flag to save temporary object files
+set_compiler_property(PROPERTY save_temps -save-temps)
+
+# clang doesn't handle the -T flag
+set_compiler_property(PROPERTY linker_script -Wl,-T)
+
+# clang flag for colourful diagnostic messages
+set_compiler_property(PROPERTY diagnostic -fcolor-diagnostics)
+
+# clang flag to disable macro backtrace in diagnostics (can't fully disable it, so limit to 1)
+set_compiler_property(PROPERTY no_track_macro_expansion "-fmacro-backtrace-limit=1")
 
 set_compiler_property(PROPERTY no_global_merge "-mno-global-merge")
 

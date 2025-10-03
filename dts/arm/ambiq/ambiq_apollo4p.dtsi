@@ -34,6 +34,7 @@
 				swo-ref-frequency = <DT_FREQ_M(48)>;
 			};
 		};
+
 		power-states {
 			idle: idle {
 				compatible = "zephyr,power-state";
@@ -110,6 +111,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -127,6 +129,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -144,6 +147,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -161,6 +165,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -178,6 +183,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -195,6 +201,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -212,6 +219,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -229,6 +237,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -246,6 +255,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -263,6 +273,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -280,6 +291,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -297,6 +309,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -314,6 +327,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -331,6 +345,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -348,6 +363,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -365,6 +381,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -420,6 +437,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -441,6 +459,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -462,6 +481,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -483,6 +503,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -504,6 +525,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -525,6 +547,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -546,6 +569,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -567,6 +591,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -652,12 +677,10 @@
 				compatible = "ambiq,gpio";
 				gpio-map-mask = <0xffffffe0 0xffffffc0>;
 				gpio-map-pass-thru = <0x1f 0x3f>;
-				gpio-map = <
-					0x00 0x0 &gpio0_31 0x0 0x0
-					0x20 0x0 &gpio32_63 0x0 0x0
-					0x40 0x0 &gpio64_95 0x0 0x0
-					0x60 0x0 &gpio96_127 0x0 0x0
-				>;
+				gpio-map = <0x00 0x0 &gpio0_31 0x0 0x0
+					    0x20 0x0 &gpio32_63 0x0 0x0
+					    0x40 0x0 &gpio64_95 0x0 0x0
+					    0x60 0x0 &gpio96_127 0x0 0x0>;
 				reg = <0x40010000>;
 				#gpio-cells = <2>;
 				#address-cells = <1>;

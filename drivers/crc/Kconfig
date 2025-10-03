@@ -1,0 +1,100 @@
+# Copyright (c) 2024 Brill Power Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig CRC_DRIVER
+	bool "CRC device drivers"
+	help
+	  Enable support for CRC device driver.
+
+if CRC_DRIVER
+
+module = CRC_DRIVER
+module-str = CRC_DRIVER
+
+source "subsys/logging/Kconfig.template.log_config"
+
+config CRC_DRIVER_INIT_PRIORITY
+	int "CRC init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  CRC driver device initialization priority.
+
+source "drivers/crc/Kconfig.renesas_ra"
+
+config CRC_DRIVER_HAS_CRC4
+	bool
+	help
+	  CRC driver has CRC4 computation
+
+config CRC_DRIVER_HAS_CRC4_TI
+	bool
+	help
+	  CRC driver has CRC4 TI computation
+
+config CRC_DRIVER_HAS_CRC7_BE
+	bool
+	help
+	  CRC driver has CRC7 BE computation
+
+config CRC_DRIVER_HAS_CRC8
+	bool
+	help
+	  CRC driver has CRC8 computation
+
+config CRC_DRIVER_HAS_CRC8_CCITT
+	bool
+	help
+	  CRC driver has CRC8 CCITT computation
+
+config CRC_DRIVER_HAS_CRC8_ROHC
+	bool
+	help
+	  CRC driver has CRC8 ROHC computation
+
+config CRC_DRIVER_HAS_CRC16
+	bool
+	help
+	  CRC driver has CRC16 computation
+
+config CRC_DRIVER_HAS_CRC16_CCITT
+	bool
+	help
+	  CRC driver has CRC16 CCITT computation
+
+config CRC_DRIVER_HAS_CRC16_ITU_T
+	bool
+	help
+	  CRC driver has CRC16 ITU-T computation
+
+config CRC_DRIVER_HAS_CRC16_ANSI
+	bool
+	depends on CRC_DRIVER_HAS_CRC16_REFLECT
+	help
+	  CRC driver has CRC16 Ansi computation
+
+config CRC_DRIVER_HAS_CRC16_REFLECT
+	bool
+	help
+	  CRC driver has CRC16 reflect computation
+
+config CRC_DRIVER_HAS_CRC24_PGP
+	bool
+	help
+	  CRC driver has CRC24 PGP computation
+
+config CRC_DRIVER_HAS_CRC32_C
+	bool
+	help
+	  CRC driver has CRC32C computation
+
+config CRC_DRIVER_HAS_CRC32_IEEE
+	bool
+	help
+	  CRC driver has CRC32 IEEE computation
+
+config CRC_DRIVER_HAS_CRC32_K_4_2
+	bool
+	help
+	  CRC driver has CRC32K/4.2 computation
+
+endif # CRC_DEVICE

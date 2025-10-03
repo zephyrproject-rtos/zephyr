@@ -1,0 +1,30 @@
+# Copyright (c) 2025 Panasonic Industrial Devices Europe GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+# PANB611EVB configuration
+
+if BOARD_PANB611EVB_NRF54L15_CPUAPP_NS
+
+DT_NRF_MPC := $(dt_nodelabel_path,nrf_mpc)
+
+config NRF_TRUSTZONE_FLASH_REGION_SIZE
+	hex
+	default $(dt_node_int_prop_hex,$(DT_NRF_MPC),override-granularity)
+	help
+	  This defines the flash region size from the TrustZone perspective.
+	  It is used when configuring the TrustZone and when setting alignments
+	  requirements for the partitions.
+	  This abstraction allows us to configure TrustZone without depending
+	  on peripheral-specific symbols.
+
+config NRF_TRUSTZONE_RAM_REGION_SIZE
+	hex
+	default $(dt_node_int_prop_hex,$(DT_NRF_MPC),override-granularity)
+	help
+	  This defines the RAM region size from the TrustZone perspective.
+	  It is used when configuring the TrustZone and when setting alignments
+	  requirements for the partitions.
+	  This abstraction allows us to configure TrustZone without depending
+	  on peripheral specific symbols.
+
+endif # BOARD_PANB611EVB_NRF54L15_CPUAPP_NS

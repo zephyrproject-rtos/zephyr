@@ -1,6 +1,6 @@
 .. zephyr:code-sample:: edac
    :name: EDAC shell
-   :relevant-api: edac
+   :relevant-api: edac_interface
 
    Test error detection and correction (EDAC) using shell commands.
 

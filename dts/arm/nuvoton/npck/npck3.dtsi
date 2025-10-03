@@ -253,6 +253,7 @@
 			tx-plsize = <64>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+
 			espi_taf: espitaf@4000a000 {
 				compatible = "nuvoton,npcx-espi-taf";
 				reg = <0x4000a000 0x2000>,

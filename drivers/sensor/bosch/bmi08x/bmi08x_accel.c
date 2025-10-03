@@ -724,7 +724,7 @@ int bmi08x_accel_init(const struct device *dev)
 
 #define BMI08X_CONFIG_SPI(inst)                                                                    \
 	.bus.spi = SPI_DT_SPEC_INST_GET(                                                           \
-		inst, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 2),
+		inst, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8)),
 
 #define BMI08X_CONFIG_I2C(inst) .bus.i2c = I2C_DT_SPEC_INST_GET(inst),
 
@@ -744,7 +744,7 @@ int bmi08x_accel_init(const struct device *dev)
  */
 #define BMI08X_GYRO_ODR(inst)  DT_ENUM_IDX(DT_INST_PHANDLE(inst, data_sync), gyro_hz)
 #define BMI08X_ACCEL_ODR(inst) DT_INST_ENUM_IDX(inst, accel_hz)
-/* As the dts uses strings to define the definition, ints must be used for comparision */
+/* As the dts uses strings to define the definition, ints must be used for comparison */
 #define BMI08X_VERIFY_DATA_SYNC_ODR(inst)                                                          \
 	BUILD_ASSERT((BMI08X_GYRO_ODR(inst) == 3 && BMI08X_ACCEL_ODR(inst) == 5) ||                \
 			     (BMI08X_GYRO_ODR(inst) == 2 && BMI08X_ACCEL_ODR(inst) == 6) ||        \

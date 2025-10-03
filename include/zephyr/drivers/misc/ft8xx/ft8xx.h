@@ -7,6 +7,7 @@
 /**
  * @file
  * @brief FT8XX public API
+ * @ingroup ft8xx_interface
  */
 
 #ifndef ZEPHYR_DRIVERS_MISC_FT8XX_FT8XX_H_
@@ -20,8 +21,8 @@ extern "C" {
 #endif
 
 /**
- * @brief FT8xx driver public APIs
- * @defgroup ft8xx_interface FT8xx driver APIs
+ * @brief Interfaces for FTDI FT8xx graphic controller.
+ * @defgroup ft8xx_interface FTDI FT8xx
  * @ingroup misc_interfaces
  * @{
  */

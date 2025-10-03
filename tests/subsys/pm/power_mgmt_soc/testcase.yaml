@@ -14,12 +14,18 @@ tests:
       - frdm_ke17z
       - frdm_ke17z512
       - xg29_rb4412a
+      - bg29_rb4420a
       - max32690evkit/max32690/m4
       - max32655evkit/max32655/m4
       - max32655fthr/max32655/m4
       - max32657evkit/max32657
       - max32657evkit/max32657/ns
       - imx95_evk/mimx9596/m7
+      - ek_ra8m1
+      - ek_ra8d1
+      - mck_ra8t1
+      - ek_ra8p1/r7ka8p1kflcac/cm85
+      - mck_ra8t2/r7ka8t2lfecac/cm85
     tags: pm
     integration_platforms:
       - mec15xxevb_assy6853

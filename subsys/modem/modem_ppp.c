@@ -7,6 +7,7 @@
 #include <zephyr/net/ppp.h>
 #include <zephyr/sys/crc.h>
 #include <zephyr/modem/ppp.h>
+#include <zephyr/pm/device_runtime.h>
 #include <string.h>
 
 #include <zephyr/logging/log.h>
@@ -445,12 +446,24 @@ static void modem_ppp_ppp_api_init(struct net_if *iface)
 
 static int modem_ppp_ppp_api_start(const struct device *dev)
 {
-	return 0;
+	const struct modem_ppp_config *config = (const struct modem_ppp_config *)dev->config;
+
+	if (config == NULL || config->dev == NULL) {
+		return 0;
+	}
+
+	return pm_device_runtime_get(config->dev);
 }
 
 static int modem_ppp_ppp_api_stop(const struct device *dev)
 {
-	return 0;
+	const struct modem_ppp_config *config = (const struct modem_ppp_config *)dev->config;
+
+	if (config == NULL || config->dev == NULL) {
+		return 0;
+	}
+
+	return pm_device_runtime_put_async(config->dev, K_NO_WAIT);
 }
 
 static int modem_ppp_ppp_api_send(const struct device *dev, struct net_pkt *pkt)

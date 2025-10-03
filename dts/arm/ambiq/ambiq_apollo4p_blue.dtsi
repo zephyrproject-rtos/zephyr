@@ -14,11 +14,13 @@
 			clock-frequency = <DT_FREQ_M(24)>;
 			#clock-cells = <0>;
 		};
+
 		xo32m: xo32m {
 			compatible = "ambiq,clkctrl";
 			clock-frequency = <DT_FREQ_M(32)>;
 			#clock-cells = <1>;
 		};
+
 		xo32k: xo32k {
 			compatible = "ambiq,clkctrl";
 			clock-frequency = <DT_FREQ_K(32)>;
@@ -91,6 +93,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -108,6 +111,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -125,6 +129,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -142,6 +147,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -159,6 +165,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -176,6 +183,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -193,6 +201,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -210,6 +219,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -227,6 +237,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -244,6 +255,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -261,6 +273,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -278,6 +291,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -295,6 +309,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -312,6 +327,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -329,6 +345,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -346,6 +363,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -361,6 +379,7 @@
 			status = "disabled";
 			clocks = <&uartclk>;
 		};
+
 		uart1: uart@4001d000 {
 			compatible = "ambiq,pl011-uart", "arm,pl011";
 			reg = <0x4001d000 0x1000>;
@@ -400,6 +419,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -421,6 +441,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -442,6 +463,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -463,6 +485,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -476,6 +499,7 @@
 			compatible = "ambiq,iom";
 			reg = <0x40054000 0x1000>;
 			interrupts = <10 0>;
+
 			/* IOM4 works as SPI and is wired internally for BLE HCI. */
 			spi {
 				compatible = "ambiq,spi";
@@ -509,6 +533,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -530,6 +555,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -551,6 +577,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -614,12 +641,10 @@
 				compatible = "ambiq,gpio";
 				gpio-map-mask = <0xffffffe0 0xffffffc0>;
 				gpio-map-pass-thru = <0x1f 0x3f>;
-				gpio-map = <
-					0x00 0x0 &gpio0_31 0x0 0x0
-					0x20 0x0 &gpio32_63 0x0 0x0
-					0x40 0x0 &gpio64_95 0x0 0x0
-					0x60 0x0 &gpio96_127 0x0 0x0
-				>;
+				gpio-map = <0x00 0x0 &gpio0_31 0x0 0x0
+					    0x20 0x0 &gpio32_63 0x0 0x0
+					    0x40 0x0 &gpio64_95 0x0 0x0
+					    0x60 0x0 &gpio96_127 0x0 0x0>;
 				reg = <0x40010000>;
 				#gpio-cells = <2>;
 				#address-cells = <1>;
@@ -671,7 +696,6 @@
 			clock-frequency = <16>;
 			status = "disabled";
 		};
-
 	};
 };
 

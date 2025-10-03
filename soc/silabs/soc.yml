@@ -76,10 +76,24 @@ family:
           - name: mgm240pb32vna
       - name: efr32bg27
         socs:
+          - name: efr32bg27c140f768im32
           - name: efr32bg27c140f768im40
+          - name: efr32bg27c230f768im32
+          - name: efr32bg27c230f768im40
+          - name: efr32bg27c320f768gj39
+          - name: efr32bg27c320f768ij39
+      - name: efr32mg27
+        socs:
+          - name: efr32mg27c140f768im32
+          - name: efr32mg27c140f768im40
+          - name: efr32mg27c230f768im32
+          - name: efr32mg27c230f768im40
       - name: efr32zg23
         socs:
           - name: efr32zg23b020f512im48
+      - name: efr32zg28
+        socs:
+          - name: efr32zg28b322f1024im68
       - name: efr32bg29
         socs:
           - name: efr32bg29b140f1024im40
@@ -96,6 +110,11 @@ family:
       - name: efm32pg23
         socs:
           - name: efm32pg23b310f512im48
+      - name: bgm22
+        socs:
+          - name: bgm220sc22hna
+          - name: bgm220pc22hna
+          - name: bgm220pc22wga
   - name: silabs_siwx91x
     series:
       - name: siwg917

@@ -29,7 +29,6 @@
 			d-cache-line-size = <64>;
 			reg = <1>;
 		};
-
 	};
 
 	dram0: memory@0 {
@@ -37,7 +36,7 @@
 		reg = <0x0 DT_DRAM_SIZE>;
 	};
 
-	intc: ioapic@fec00000  {
+	intc: ioapic@fec00000 {
 		compatible = "intel,ioapic";
 		#address-cells = <1>;
 		#interrupt-cells = <3>;
@@ -45,7 +44,7 @@
 		interrupt-controller;
 	};
 
-	intc_loapic: loapic@fee00000  {
+	intc_loapic: loapic@fee00000 {
 		compatible = "intel,loapic";
 		reg = <0xfee00000 0x1000>;
 		interrupt-controller;
@@ -366,8 +365,8 @@
 		ethernet0: ethernet0 {
 			compatible = "intel,eth-plat";
 			interrupt-parent = <&intc>;
-			vendor-id  = <0x8086>;
-			device-id  = <0x125b>;
+			vendor-id = <0x8086>;
+			device-id = <0x125b>;
 
 			igc0: igc0 {
 				compatible = "intel,igc-mac";
@@ -431,12 +430,24 @@
 			status = "okay";
 		};
 
-		rtc: counter: rtc@70 {
-			compatible = "motorola,mc146818";
-			reg = <0x70 0x0D 0x71 0x0D>;
-			interrupts = <8 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
-			interrupt-parent = <&intc>;
-			alarms-count = <1>;
+		mfd: mfd@70 {
+			compatible = "motorola,mc146818-mfd";
+			reg = <0x70 0x01 0x71 0x01 0x72 0x01 0x73 0x01>;
+
+			rtc: counter: rtc {
+				compatible = "motorola,mc146818";
+				interrupts = <8 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
+				interrupt-parent = <&intc>;
+				alarms-count = <1>;
+
+				status = "okay";
+			};
+
+			bbram: bbram {
+				compatible = "motorola,mc146818-bbram";
+				size = <241>;
+				status = "okay";
+			};
 
 			status = "okay";
 		};

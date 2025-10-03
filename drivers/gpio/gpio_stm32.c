@@ -126,6 +126,12 @@ static int gpio_stm32_pincfg_to_flags(struct gpio_stm32_pin pin_cfg,
 		if (pin_cfg.type == LL_GPIO_OUTPUT_OPENDRAIN) {
 			flags |= GPIO_OPEN_DRAIN;
 		}
+
+		if (pin_cfg.out_state == 0) {
+			flags |= GPIO_OUTPUT_INIT_LOW;
+		} else {
+			flags |= GPIO_OUTPUT_INIT_HIGH;
+		}
 	} else if (pin_cfg.mode == LL_GPIO_MODE_INPUT) {
 		flags |= GPIO_INPUT;
 #ifdef CONFIG_SOC_SERIES_STM32F1X
@@ -140,12 +146,6 @@ static int gpio_stm32_pincfg_to_flags(struct gpio_stm32_pin pin_cfg,
 		flags |= GPIO_PULL_UP;
 	} else if (pin_cfg.pupd == LL_GPIO_PULL_DOWN) {
 		flags |= GPIO_PULL_DOWN;
-	}
-
-	if (pin_cfg.out_state != 0) {
-		flags |= GPIO_OUTPUT_HIGH;
-	} else {
-		flags |= GPIO_OUTPUT_LOW;
 	}
 
 	*out_flags = flags;

@@ -126,6 +126,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_MCUX_LPIT
 	DEVS_FOR_DT_COMPAT(nxp_lpit_channel)
 #endif
+#ifdef CONFIG_COUNTER_MCUX_FTM
+	DEVS_FOR_DT_COMPAT(nxp_ftm)
+#endif
 #ifdef CONFIG_COUNTER_RENESAS_RZ_GTM
 	DEVS_FOR_DT_COMPAT(renesas_rz_gtm_counter)
 #endif
@@ -140,6 +143,12 @@ static const struct device *const devices[] = {
 #endif
 #ifdef CONFIG_COUNTER_RA_AGT
 	DEVS_FOR_DT_COMPAT(renesas_ra_agt_counter)
+#endif
+#ifdef CONFIG_COUNTER_RENESAS_RZ_CMTW
+	DEVS_FOR_DT_COMPAT(renesas_rz_cmtw_counter)
+#endif
+#ifdef CONFIG_COUNTER_INFINEON_TCPWM
+	DEVS_FOR_DT_COMPAT(infineon_tcpwm_counter)
 #endif
 };
 
@@ -453,7 +462,6 @@ static void test_single_shot_alarm_instance(const struct device *dev, bool set_t
 		zassert_equal(-EINVAL, err,
 			      "%s: Counter should return error because ticks"
 			      " exceeded the limit set alarm", dev->name);
-		cntr_alarm_cfg.ticks = ticks - 1;
 	}
 
 	cntr_alarm_cfg.ticks = ticks;
@@ -811,6 +819,9 @@ static void test_late_alarm_instance(const struct device *dev)
 		.user_data = NULL
 	};
 
+	/* for timers with very short ticks, counter_ticks_to_us() returns 0 */
+	tick_us = MAX(tick_us, 1);
+
 	err = counter_set_guard_period(dev, guard,
 					COUNTER_GUARD_PERIOD_LATE_TO_SET);
 	zassert_equal(0, err, "%s: Unexpected error", dev->name);
@@ -861,6 +872,9 @@ static void test_late_alarm_error_instance(const struct device *dev)
 		.flags = COUNTER_ALARM_CFG_ABSOLUTE,
 		.user_data = NULL
 	};
+
+	/* for timers with very short ticks, counter_ticks_to_us() returns 0 */
+	tick_us = MAX(tick_us, 1);
 
 	err = counter_set_guard_period(dev, guard,
 					COUNTER_GUARD_PERIOD_LATE_TO_SET);
@@ -1124,6 +1138,11 @@ static bool reliable_cancel_capable(const struct device *dev)
 	}
 #endif
 #ifdef CONFIG_COUNTER_TMR_ESP32
+	if (single_channel_alarm_capable(dev)) {
+		return true;
+	}
+#endif
+#ifdef CONFIG_COUNTER_RENESAS_RZ_CMTW
 	if (single_channel_alarm_capable(dev)) {
 		return true;
 	}

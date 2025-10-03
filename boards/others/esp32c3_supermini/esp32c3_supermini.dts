@@ -32,6 +32,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button1: button_1 {
 			label = "User SW1";
 			gpios = <&gpio0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
@@ -41,12 +42,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		blue_led_0: led_0 {
 			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 			label = "Blue LED 0";
 		};
 	};
-
 };
 
 &spi2 {
@@ -55,13 +56,11 @@
 	status = "okay";
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
-
 };
 
 &usb_serial {
 	status = "okay";
 };
-
 
 &i2c0 {
 	status = "okay";

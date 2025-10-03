@@ -20,6 +20,7 @@
  */
 
 
+#ifdef CONFIG_SOC_RESET_HOOK
 /**
  * @brief SoC  hook executed at the beginning of the reset vector.
  *
@@ -27,7 +28,11 @@
  * SoC-specific initialization.
  */
 void soc_reset_hook(void);
+#else
+#define soc_reset_hook() do { } while (0)
+#endif
 
+#ifdef CONFIG_SOC_PREP_HOOK
 /**
  * @brief SoC hook executed after the reset vector.
  *
@@ -35,7 +40,11 @@ void soc_reset_hook(void);
  * SoC-specific initialization.
  */
 void soc_prep_hook(void);
+#else
+#define soc_prep_hook() do { } while (0)
+#endif
 
+#ifdef CONFIG_SOC_EARLY_INIT_HOOK
 /**
  * @brief SoC hook executed before the kernel and devices are initialized.
  *
@@ -43,7 +52,11 @@ void soc_prep_hook(void);
  * SoC-specific initialization.
  */
 void soc_early_init_hook(void);
+#else
+#define soc_early_init_hook() do { } while (0)
+#endif
 
+#ifdef CONFIG_SOC_LATE_INIT_HOOK
 /**
  * @brief SoC hook executed after the kernel and devices are initialized.
  *
@@ -51,7 +64,11 @@ void soc_early_init_hook(void);
  * SoC-specific initialization.
  */
 void soc_late_init_hook(void);
+#else
+#define soc_late_init_hook() do { } while (0)
+#endif
 
+#ifdef CONFIG_SOC_PER_CORE_INIT_HOOK
 /**
  * @brief SoC per-core initialization
  *
@@ -59,7 +76,11 @@ void soc_late_init_hook(void);
  * SoC-specific per-core initialization
  */
 void soc_per_core_init_hook(void);
+#else
+#define soc_per_core_init_hook() do { } while (0)
+#endif
 
+#ifdef CONFIG_BOARD_EARLY_INIT_HOOK
 /**
  * @brief Board hook executed before the kernel starts.
  *
@@ -68,7 +89,11 @@ void soc_per_core_init_hook(void);
  * initialization.
  */
 void board_early_init_hook(void);
+#else
+#define board_early_init_hook() do { } while (0)
+#endif
 
+#ifdef CONFIG_BOARD_LATE_INIT_HOOK
 /**
  * @brief Board hook executed after the kernel starts.
  *
@@ -77,5 +102,8 @@ void board_early_init_hook(void);
  * any board-specific initialization.
  */
 void board_late_init_hook(void);
+#else
+#define board_late_init_hook() do { } while (0)
+#endif
 
 #endif

@@ -37,6 +37,8 @@ extern "C" {
 /**
  * @brief Modem CMUX
  * @defgroup modem_cmux Modem CMUX
+ * @since 3.5
+ * @version 1.0.0
  * @ingroup modem
  * @{
  */
@@ -72,7 +74,6 @@ enum modem_cmux_receive_state {
 	MODEM_CMUX_RECEIVE_STATE_LENGTH_CONT,
 	MODEM_CMUX_RECEIVE_STATE_DATA,
 	MODEM_CMUX_RECEIVE_STATE_FCS,
-	MODEM_CMUX_RECEIVE_STATE_DROP,
 	MODEM_CMUX_RECEIVE_STATE_EOF,
 };
 

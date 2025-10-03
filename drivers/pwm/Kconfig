@@ -126,7 +126,7 @@ source "drivers/pwm/Kconfig.renesas_ra"
 
 source "drivers/pwm/Kconfig.renesas_rx_mtu"
 
-source "drivers/pwm/Kconfig.ifx_cat1"
+source "drivers/pwm/Kconfig.ifx_tcpwm"
 
 source "drivers/pwm/Kconfig.fake"
 

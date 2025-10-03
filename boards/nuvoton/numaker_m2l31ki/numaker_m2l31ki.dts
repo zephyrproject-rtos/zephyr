@@ -28,6 +28,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_0 {
 			gpios = <&gpioc 14 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
@@ -49,14 +50,17 @@
 			label = "mcuboot";
 			reg = <0x00000000 0x00008000>;
 		};
+
 		slot0_partition: partition@8000 {
 			label = "image-0";
 			reg = <0x00008000 0x00038000>;
 		};
+
 		slot1_partition: partition@40000 {
 			label = "image-1";
 			reg = <0x00040000 0x00038000>;
 		};
+
 		storage_partition: partition@78000 {
 			label = "storage";
 			reg = <0x00078000 0x00008000>;

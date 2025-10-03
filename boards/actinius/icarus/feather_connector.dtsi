@@ -34,12 +34,18 @@
 	};
 };
 
-feather_adc: &adc { };
-feather_serial: &uart0 { };
-feather_i2c: &i2c2 { };
-feather_spi: &spi3 { };
+feather_adc: &adc {};
 
-arduino_adc: &adc { };
-arduino_serial: &uart0 { };
-arduino_i2c: &i2c2 { };
-arduino_spi: &spi3 { };
+feather_serial: &uart0 {};
+
+feather_i2c: &i2c2 {};
+
+feather_spi: &spi3 {};
+
+arduino_adc: &adc {};
+
+arduino_serial: &uart0 {};
+
+arduino_i2c: &i2c2 {};
+
+arduino_spi: &spi3 {};

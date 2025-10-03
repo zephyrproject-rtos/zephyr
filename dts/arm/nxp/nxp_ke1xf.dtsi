@@ -137,13 +137,13 @@
 
 			sirc_clk: sirc_clk {
 				compatible = "fixed-clock";
-				clock-frequency = <8000000>;
+				clock-frequency = <DT_FREQ_M(8)>;
 				#clock-cells = <0>;
 			};
 
 			firc_clk: firc_clk {
 				compatible = "fixed-clock";
-				clock-frequency = <48000000>;
+				clock-frequency = <DT_FREQ_M(48)>;
 				#clock-cells = <0>;
 			};
 
@@ -251,9 +251,9 @@
 			reg = <0x4007d000 0x1000>;
 
 			lpo: lpo128k {
-			/* LPO clock */
+				/* LPO clock */
 				compatible = "fixed-clock";
-				clock-frequency = <128000>;
+				clock-frequency = <DT_FREQ_K(128)>;
 				#clock-cells = <0>;
 			};
 		};
@@ -288,7 +288,7 @@
 			compatible = "nxp,lptmr";
 			reg = <0x40040000 0x1000>;
 			interrupts = <58 0>;
-			clock-frequency = <128000>;
+			clock-frequency = <DT_FREQ_K(128)>;
 			prescaler = <1>;
 			clk-source = <1>;
 			resolution = <16>;

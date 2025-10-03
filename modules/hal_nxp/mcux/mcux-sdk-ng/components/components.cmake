@@ -6,7 +6,7 @@ if(CONFIG_WIFI_NXP)
   set(CONFIG_MCUX_COMPONENT_component.wifi_bt_module.tx_pwr_limits ON)
 endif()
 
-if(CONFIG_NXP_FW_LOADER)
+if(CONFIG_NXP_FW_LOADER AND NOT CONFIG_BUILD_WITH_TFM)
   set(CONFIG_MCUX_COMPONENT_driver.conn_fwloader ON)
   set(CONFIG_USE_component_osa_zephyr ON)
 endif()

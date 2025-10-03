@@ -97,9 +97,9 @@ tests:
   # transport. Transport does not affect flags so it does not really matter which is selected,
   # flags should affect any transport the same way.
   sample.mcumgr.smp_svr.mcuboot_flags.direct_xip_withrevert:
-    extra_args: EXTRA_CONF_FILE="overlay-serial.conf"
-    extra_configs:
-      - CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT=y
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-serial.conf"
+      - SB_CONFIG_MCUBOOT_MODE_DIRECT_XIP_WITH_REVERT=y
     platform_allow:
       - nrf52840dk/nrf52840
       - pinnacle_100_dvk

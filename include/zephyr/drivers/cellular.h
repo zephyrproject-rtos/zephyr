@@ -6,16 +6,17 @@
  */
 
 /**
- * @file drivers/cellular.h
- * @brief Public cellular network API
+ * @file
+ * @ingroup cellular_interface
+ * @brief Main header file for cellular modem driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CELLULAR_H_
 #define ZEPHYR_INCLUDE_DRIVERS_CELLULAR_H_
 
 /**
- * @brief Cellular interface
- * @defgroup cellular_interface Cellular Interface
+ * @brief Interfaces for cellular modems.
+ * @defgroup cellular_interface Cellular
  * @ingroup io_interfaces
  * @{
  */
@@ -89,6 +90,8 @@ enum cellular_registration_status {
 enum cellular_event {
 	/** One or more modem-info field changed (e.g. IMSI became available). */
 	CELLULAR_EVENT_MODEM_INFO_CHANGED = BIT(0),
+	/** Cellular network registration status changed */
+	CELLULAR_EVENT_REGISTRATION_STATUS_CHANGED = BIT(1),
 };
 
 /* Opaque bit-mask large enough for all current & future events */
@@ -97,6 +100,11 @@ typedef uint32_t cellular_event_mask_t;
 /** Payload for @ref CELLULAR_EVENT_MODEM_INFO_CHANGED. */
 struct cellular_evt_modem_info {
 	enum cellular_modem_info_type field; /**< Which field changed */
+};
+
+/** Payload for @ref CELLULAR_EVENT_REGISTRATION_STATUS_CHANGED. */
+struct cellular_evt_registration_status {
+	enum cellular_registration_status status; /**< New registration status */
 };
 
 /**

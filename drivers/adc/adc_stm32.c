@@ -1210,6 +1210,11 @@ static int adc_stm32_sampling_time_check(const struct device *dev, uint16_t acq_
 		return STM32_NB_SAMPLING_TIME - 1;
 	}
 
+	if (ADC_ACQ_TIME_UNIT(acq_time) != ADC_ACQ_TIME_TICKS) {
+		LOG_ERR("Acquisition time expected in ticks only");
+		return -EINVAL;
+	}
+
 	for (int i = 0; i < STM32_NB_SAMPLING_TIME; i++) {
 		if (acq_time == ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS,
 					     config->sampling_time_table[i])) {
@@ -2004,7 +2009,7 @@ static struct adc_stm32_data adc_stm32_data_##index = {			\
 PM_DEVICE_DT_INST_DEFINE(index, adc_stm32_pm_action);			\
 									\
 DEVICE_DT_INST_DEFINE(index,						\
-		    &adc_stm32_init, PM_DEVICE_DT_INST_GET(index),	\
+		    adc_stm32_init, PM_DEVICE_DT_INST_GET(index),	\
 		    &adc_stm32_data_##index, &adc_stm32_cfg_##index,	\
 		    POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,		\
 		    &api_stm32_driver_api);

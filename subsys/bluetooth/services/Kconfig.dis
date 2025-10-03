@@ -233,7 +233,7 @@ config BT_DIS_SYSTEM_ID_OUI
 	help
 	  The OUI is a 24-bit number issued by the IEEE Registration Authority.
 	  System ID characteristic in Device Information Service.
-	  Shall contain an Organisationally Unique Identifier (OUI) followed by a manufacturer-defined indentifier unique for the device.
+	  Shall contain an Organisationally Unique Identifier (OUI) followed by a manufacturer-defined identifier unique for the device.
 
 config BT_DIS_SYSTEM_ID_IDENTIFIER
 	hex "Manufacturer-defined unique identifier."

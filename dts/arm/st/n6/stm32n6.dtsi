@@ -39,11 +39,13 @@
 	};
 
 	axisram1: memory@34000000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "AXISRAM1";
 	};
 
 	axisram2: memory@34180400 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "AXISRAM2";
 	};
 
 	clocks {
@@ -256,7 +258,7 @@
 			axisram3: memory@34200000 {
 				compatible = "zephyr,memory-region", "mmio-sram";
 				zephyr,memory-region = "AXISRAM3";
-				zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+				zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 			};
 		};
 
@@ -271,7 +273,7 @@
 			axisram4: memory@34270000 {
 				compatible = "zephyr,memory-region", "mmio-sram";
 				zephyr,memory-region = "AXISRAM4";
-				zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+				zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 			};
 		};
 
@@ -286,7 +288,7 @@
 			axisram5: memory@342e0000 {
 				compatible = "zephyr,memory-region", "mmio-sram";
 				zephyr,memory-region = "AXISRAM5";
-				zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+				zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 			};
 		};
 
@@ -301,7 +303,7 @@
 			axisram6: memory@34350000 {
 				compatible = "zephyr,memory-region", "mmio-sram";
 				zephyr,memory-region = "AXISRAM6";
-				zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+				zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 			};
 		};
 
@@ -718,39 +720,28 @@
 				 <&rctl STM32_RESET(APB5, 6)>;
 			status = "disabled";
 
-			ports {
+			pipes {
+				compatible = "st,stm32-dcmipp-pipes";
 				#address-cells = <1>;
 				#size-cells = <0>;
 
-				port@0 {
+				pipe_dump: pipe@0 {
 					reg = <0>;
-
-					endpoint {
-						remote-endpoint-label = "";
-						bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
-					};
 				};
 
-				port@1 {
-					#address-cells = <1>;
-					#size-cells = <0>;
-
+				pipe_main: pipe@1 {
 					reg = <1>;
+				};
 
-					dcmipp_pipe_dump: endpoint@0 {
-						compatible = "st,stm32-dcmipp-pipe";
-						reg = <0>;
-					};
+				pipe_aux: pipe@2 {
+					reg = <2>;
+				};
+			};
 
-					dcmipp_pipe_main: endpoint@1 {
-						compatible = "st,stm32-dcmipp-pipe";
-						reg = <1>;
-					};
-
-					dcmipp_pipe_aux: endpoint@2 {
-						compatible = "st,stm32-dcmipp-pipe";
-						reg = <2>;
-					};
+			port {
+				endpoint {
+					remote-endpoint-label = "";
+					bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
 				};
 			};
 		};
@@ -763,7 +754,7 @@
 
 			mac: ethernet {
 				compatible = "st,stm32n6-ethernet", "st,stm32h7-ethernet",
-					"st,stm32-ethernet";
+					     "st,stm32-ethernet";
 				interrupts = <179 0>;
 				clock-names = "mac-clk-tx", "mac-clk-rx";
 				clocks = <&rcc STM32_CLOCK(AHB5, 23)>,
@@ -1231,7 +1222,7 @@
 			status = "disabled";
 		};
 
-		sai1_a: sai1@452005804 {
+		sai1_a: sai1@52005804 {
 			compatible = "st,stm32-sai";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -1272,6 +1263,14 @@
 			clocks = <&rcc STM32_CLOCK(APB2, 22)>;
 			dmas = <&gpdma1 2 94 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
 				STM32_DMA_16BITS)>;
+			status = "disabled";
+		};
+
+		npu: npu@580c0000 {
+			compatible = "st,stm32-npu";
+			reg = <0x580c0000 0x1000>;
+			clocks = <&rcc STM32_CLOCK(AHB5, 31)>;
+			resets = <&rctl STM32_RESET(AHB5, 31)>;
 			status = "disabled";
 		};
 	};

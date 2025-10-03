@@ -26,7 +26,7 @@
 &pinctrl {
 	qdec_pinctrl: qdec_pinctrl {
 		group1 {
-			psels = <NRF_PSEL(QDEC_A, 0, 4)>,   /* Ardiuno A0 */
+			psels = <NRF_PSEL(QDEC_A, 0, 4)>,   /* Arduino A0 */
 				<NRF_PSEL(QDEC_B, 0, 6)>;   /* Arduino A2 */
 		};
 	};
@@ -36,6 +36,6 @@
 	status = "okay";
 	pinctrl-0 = <&qdec_pinctrl>;
 	pinctrl-names = "default";
-	steps = < 120 >;
-	led-pre = < 500 >;
+	steps = <120>;
+	led-pre = <500>;
 };

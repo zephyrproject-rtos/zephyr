@@ -10,6 +10,14 @@ config HAS_PM
 	  This option must be selected by SoCs that provide PM hooks, that is,
 	  calls to configure low-power states.
 
+config HAS_PM_S2RAM_CUSTOM_MARKING
+	bool
+	depends on HAS_PM
+	help
+	  By default a magic word in RAM is used to mark entering suspend-to-RAM. If this
+	  option is selected, a custom implementation of functions which handle the marking
+	  must be provided.
+
 config PM
 	bool "System Power Management"
 	depends on SYS_CLOCK_EXISTS && HAS_PM
@@ -33,21 +41,17 @@ config PM_STATS
 	help
 	  Enable System Power Management Stats.
 
-config PM_S2RAM
-	bool "Suspend-to-RAM (S2RAM)"
-	depends on ARCH_HAS_SUSPEND_TO_RAM
-	help
-	  This option enables suspend-to-RAM (S2RAM).
-	  When enabled on Cortex-M, and a 'zephyr,memory-region' compatible node with nodelabel
-	  'pm_s2ram' is defined in DT, _cpu_context symbol (located in arch/arm/core/cortex_m/pm_s2ram.c)
-	  is placed in linker section given by 'zephyr,memory-region' property of aforementioned node.
+DT_POWER_STATE_COMPAT := zephyr,power-state
 
-config PM_S2RAM_CUSTOM_MARKING
-	bool "Use custom marking functions"
-	depends on PM_S2RAM
+config PM_S2RAM
+	bool
+	default y
+	depends on ARCH_HAS_SUSPEND_TO_RAM
+	depends on $(dt_compat_any_has_prop,$(DT_POWER_STATE_COMPAT),power-state-name,suspend-to-ram)
 	help
-	  By default a magic word in RAM is used to mark entering suspend-to-RAM. Enabling
-	  this option allows custom implementation of functions which handle the marking.
+	  This option enables the SoC specific implementations of suspend-to-ram (S2RAM)
+	  sleep states if PM is enabled and one or more suspend-to-ram sleep states are
+	  enabled in the devicetree.
 
 config PM_NEED_ALL_DEVICES_IDLE
 	bool "System Low Power Mode Needs All Devices Idle"
@@ -118,7 +122,6 @@ config PM_DEVICE_POWER_DOMAIN_DYNAMIC_NUM
 
 config PM_DEVICE_RUNTIME
 	bool "Runtime Device Power Management"
-	select EVENTS
 	help
 	  Enable Runtime Power Management to save power. With device runtime PM
 	  enabled, devices can be suspended or resumed based on the device
@@ -131,6 +134,7 @@ config PM_DEVICE_DRIVER_NEEDS_DEDICATED_WQ
 
 config PM_DEVICE_RUNTIME_ASYNC
 	bool "Asynchronous device runtime power management"
+	select EVENTS
 	default y
 	help
 	  Use this option to enable support for asynchronous operation
@@ -177,6 +181,15 @@ endif #PM_DEVICE_RUNTIME_USE_DEDICATED_WQ
 endchoice
 
 endif # PM_DEVICE_RUNTIME_ASYNC
+
+config PM_DEVICE_RUNTIME_DEFAULT_ENABLE
+	bool "PM device runtime enable by default"
+	help
+	  Enable PM device runtime by default for all devices when they are
+	  initialized. This option is identical to adding the devicetree
+	  property zephyr,pm-device-runtime-auto to all nodes in the
+	  devicetree.
+
 endif # PM_DEVICE_RUNTIME
 
 config PM_DEVICE_SHELL
@@ -198,5 +211,16 @@ config PM_DEVICE_SYSTEM_MANAGED
 
 
 endif # PM_DEVICE
+
+config PM_CPU_SHELL
+	bool "CPU Power Management shell"
+	depends on SHELL
+	help
+	  Enable the cpu power management shell, for triggering cpu power
+	  management events through the shell interface.
+	  The shell allows:
+	    - listing supported CPU low power states from devicetree;
+	    - checking whether states are currently available;
+	    - idling the shell thread so the system naturally enters low power;
 
 endmenu

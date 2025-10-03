@@ -233,6 +233,7 @@ nestedException:
 	KPTI_IRET
 
 SECTION_FUNC(PINNED_TEXT, _kernel_oops_handler)
+	endbr32
 	push $0 /* dummy error code */
 	push $z_x86_do_kernel_oops
 	jmp _exception_enter

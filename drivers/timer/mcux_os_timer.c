@@ -20,6 +20,7 @@
 #if !defined(CONFIG_SOC_FAMILY_MCXN) && !defined(CONFIG_SOC_FAMILY_MCXA)
 #include "fsl_power.h"
 #endif
+#include <soc.h>
 
 #define CYC_PER_TICK                                                                               \
 	((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec() /                                      \
@@ -191,7 +192,7 @@ static uint32_t mcux_lpc_ostick_compensate_system_timer(void)
 	return 0;
 }
 
-static uint32_t mcux_os_timer_set_lp_counter_timeout(void)
+static void mcux_os_timer_set_lp_counter_timeout(void)
 {
 	uint64_t timeout;
 
@@ -200,9 +201,8 @@ static uint32_t mcux_os_timer_set_lp_counter_timeout(void)
 	 * from low power modes.
 	 */
 	if (pm_state_next_get(0)->state != PM_STATE_STANDBY) {
-		return 1;
+		return;
 	}
-
 
 	if (wait_forever) {
 		timeout = UINT32_MAX;
@@ -222,7 +222,7 @@ static uint32_t mcux_os_timer_set_lp_counter_timeout(void)
 		timeout = (((timeout / CYC_PER_TICK) * CYC_PER_TICK) * CYC_PER_US);
 	}
 
-	return mcux_lpc_ostick_set_counter_timeout(timeout);
+	mcux_lpc_ostick_set_counter_timeout(timeout);
 }
 #else
 #define mcux_os_timer_set_lp_counter_timeout(...) do { } while (0)
@@ -242,7 +242,8 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(standby)) && CONFIG_PM
 	/* We intercept calls from idle with a 0 tick count when PM=y */
-	if (idle && (ticks == 0) && (mcux_os_timer_set_lp_counter_timeout() == 0)) {
+	if (idle && (ticks == 0)) {
+		mcux_os_timer_set_lp_counter_timeout();
 		/* A low power counter has been started. No need to
 		 * go further, simply return
 		 */
@@ -276,6 +277,8 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	}
 
 	OSTIMER_SetMatchValue(base, cyc + last_count - cyc_sys_compensated, NULL);
+
+	counter_remaining_ticks = 0;
 
 	k_spin_unlock(&lock, key);
 }
@@ -338,7 +341,7 @@ static int sys_clock_driver_init(void)
 #endif
 
 #if (DT_INST_PROP(0, wakeup_source))
-	EnableDeepSleepIRQ(DT_INST_IRQN(0));
+	NXP_ENABLE_WAKEUP_SIGNAL(DT_INST_IRQN(0));
 #endif
 	return 0;
 }

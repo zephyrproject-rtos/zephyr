@@ -275,12 +275,12 @@
 
 			nunchuk@a {
 				reg = <0xa>;
-				compatible= "nintendo,nunchuk";
+				compatible = "nintendo,nunchuk";
 			};
 
 			cy8cmbr3xxx@b {
 				compatible = "cypress,cy8cmbr3xxx";
-				status= "okay";
+				status = "okay";
 				reg = <0xb>;
 				int-gpios = <&test_gpio 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 				rst-gpios = <&test_gpio 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;

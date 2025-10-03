@@ -37,7 +37,7 @@
 		compatible = "gpio-leds";
 
 		green_led: led_0 {
-			gpios =  <&gpio0 25 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
 			label = "Green - LED0";
 		};
 	};
@@ -66,6 +66,7 @@
 	scl-gpios = <&gpio0 22 GPIO_OPEN_DRAIN>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+
 	ssd1306_128x64: ssd1306@3c {
 		compatible = "solomon,ssd1306fb";
 		reg = <0x3c>;
@@ -88,17 +89,18 @@
 	pinctrl-0 = <&spim3_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+
 	lora0: lora@0 {
 		compatible = "semtech,sx1276";
 		reg = <0>;
 		reset-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
 		dio-gpios =
-			/* SX1276 D0 -> GPIO26 */
-			<&gpio0 26 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
-			/* SX1276 D1 -> GPIO35 */
-			<&gpio1 3 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
-			/* SX1276 D1 -> GPIO34 */
-			<&gpio1 2 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+			    /* SX1276 D0 -> GPIO26 */
+			    <&gpio0 26 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			    /* SX1276 D1 -> GPIO35 */
+			    <&gpio1 3 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			    /* SX1276 D1 -> GPIO34 */
+			    <&gpio1 2 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
 		spi-max-frequency = <1000000>;
 		power-amplifier-output = "pa-boost";
 	};

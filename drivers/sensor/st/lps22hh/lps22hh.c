@@ -321,8 +321,7 @@ static int lps22hh_init(const struct device *dev)
 		STMEMSC_CTX_SPI(&lps22hh_config_##inst.stmemsc_cfg),    \
 		.stmemsc_cfg =  {                                       \
 			.spi = SPI_DT_SPEC_INST_GET(inst,		\
-				LPS22HH_SPI_OPERATION,			\
-				0),					\
+				LPS22HH_SPI_OPERATION)			\
 		},                                                      \
 		LPS22HH_CONFIG_COMMON(inst)                             \
 	}

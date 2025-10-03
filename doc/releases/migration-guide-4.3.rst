@@ -26,18 +26,52 @@ Build System
 Kernel
 ******
 
+* :c:func:`device_init` Earlier releases returned a positive +errno value in case
+  of device init failure due to a bug. This is now fixed to return the correct
+  negative -errno value. Applications that implemented workarounds for this
+  issue should now update their code accordingly.
+
+Base Libraries
+**************
+
+* UTF-8 utils declarations (:c:func:`utf8_trunc`, :c:func:`utf8_lcpy`) have
+  been moved from ``util.h`` to a separate
+  :zephyr_file:`include/zephyr/sys/util_utf8.h` file.
+
 Boards
 ******
+
+* b_u585i_iot02a/ns: The flash layout was changed to be in sync with the upstream TF-M 2.2.1 board
+  configurations. The new layout expands the flash partitions, moving the secondary ones to the
+  external NOR flash. This change currently prevents upgrade from older Zephyr release images to
+  Zephyr 4.3 release images. More details in the TF-M migration and release notes.
 
 * mimxrt11x0: renamed lpadc1 to lpadc2 and renamed lpadc0 to lpadc1.
 
 * NXP ``frdm_mcxa166`` is renamed to ``frdm_mcxa346``.
 * NXP ``frdm_mcxa276`` is renamed to ``frdm_mcxa266``.
 
+* Panasonic ``panb511evb`` is renamed to ``panb611evb``.
+
 Device Drivers and Devicetree
 *****************************
 
 .. zephyr-keep-sorted-start re(^\w)
+
+MFD
+===
+
+* Driver suppor for AXP2101 has been separated from the AXP192 one. As a consequence the
+  kconfig symbol ``MFD_AXP192_AXP2101`` is removed. :kconfig:option:`MFD_AXP192` is now to be
+  used for AXP192 device while :kconfig:option:`MFD_AXP2101` for the AXP2101 one.
+
+PWM
+===
+
+* :dtcompatible:`nxp,pca9685` ``invert`` property has been removed and you can now use the
+  :c:macro:`PWM_POLARITY_INVERTED` or :c:macro:`PWM_POLARITY_NORMAL` flags as specifier cells for
+  space "pwm" are now named: ``['channel', 'period', 'flags']`` (old value:
+  ``['channel', 'period']``) and ``#pwm-cells`` const value changed from 2 to 3.
 
 Phy
 ===
@@ -46,6 +80,17 @@ Phy
   CLKSEL (phy reference clock) in the SYSCFG_OTGHSPHYCR register using the new property
   clock-reference. The selection directly depends on the value on OTGHSSEL (OTG_HS PHY kernel
   clock source selection) located in the RCC_CCIPR2 register.
+
+SPI
+===
+
+* The macros :c:macro:`SPI_CS_CONTROL_INIT` :c:macro:`SPI_CS_CONTROL_INIT_INST`,
+  :c:macro:`SPI_CONFIG_DT`, :c:macro:`SPI_CONFIG_DT_INST`, :c:macro:`SPI_DT_SPEC_GET`,
+  and :c:macro:`SPI_DT_SPEC_INST_GET` have been changed so that they do not need to be
+  provided a delay parameter anymore. This is because the timing parameters of a SPI peripheral
+  chip select should now be specified in DT with the
+  ``spi-cs-setup-delay-ns`` and ``spi-cs-hold-delay-ns`` properties.
+  (:github:`87427`).
 
 Sensors
 =======
@@ -88,10 +133,16 @@ Bluetooth Audio
   :c:enumerator:`BT_AUDIO_CODEC_CFG_TARGET_LATENCY_BALANCED` and ``target_phy`` to
   :c:enumerator:`BT_AUDIO_CODEC_CFG_TARGET_PHY_2M`.
   The :c:macro:`BT_AUDIO_CODEC_CFG` macro defaults to these values.
-  (:github:`93825``)
+  (:github:`93825`)
 * Setting the BGS role for GMAP now requires also supporting and implementing the
   :kconfig:option:`CONFIG_BT_BAP_BROADCAST_ASSISTANT`.
   See the :zephyr:code-sample:`bluetooth_bap_broadcast_assistant` sample as a reference.
+* The BAP Scan Delegator will no longer automatically update the PA sync state, and
+  :c:func:`bt_bap_scan_delegator_set_pa_state` must be used to update the state. If the
+  BAP Scan Delegator is used together with the BAP Broadcast Sink, then the PA state of the
+  receive state of a  :c:struct:`bt_bap_broadcast_sink` will still be automatically updated when the
+  PA state changes. (:github:`95453`)
+
 
 .. zephyr-keep-sorted-stop
 
@@ -108,6 +159,25 @@ Ethernet
   the GPIO_ACTIVE_LOW flag when the reset is being used as active low. Previously the active-low
   nature was hard-coded into the driver. (:github:`91726`).
 
+* CRC checksum generation offloading to hardware is now explicitly disabled rather then explicitly
+  enabled in the Xilinx GEM Ethernet driver (:dtcompatible:`xlnx,gem`). By default, offloading is
+  now enabled by default to improve performance, however, offloading is always disabled for QEMU
+  targets due to the checksum generation in hardware not being emulated regardless of whether it
+  is explicitly disabled via the devicetree or not. (:github:`95435`)
+
+    * Replaced devicetree property ``rx-checksum-offload`` which enabled RX checksum offloading
+      ``disable-rx-checksum-offload`` which now actively disables it.
+    * Replaced devicetree property ``tx-checksum-offload`` which enabled TX checksum offloading
+      ``disable-tx-checksum-offload`` which now actively disables it.
+
+Power management
+****************
+
+* :kconfig:option:`CONFIG_PM_S2RAM` and :kconfig:option:`PM_S2RAM_CUSTOM_MARKING` have been
+  refactored to be automatically managed by SoCs and the devicetree. Applications shall no
+  longer enable them directly, instead, enable or disable the "suspend-to-ram" power states
+  in the devicetree.
+
 Networking
 **********
 
@@ -119,6 +189,11 @@ Networking
 .. zephyr-keep-sorted-start re(^\w)
 
 .. zephyr-keep-sorted-stop
+
+Modem
+*****
+
+* ``CONFIG_MODEM_AT_SHELL_USER_PIPE`` has been renamed to :kconfig:option:`CONFIG_MODEM_AT_USER_PIPE`.
 
 Display
 *******
@@ -151,6 +226,25 @@ Logging
   more generic script of :zephyr_file:`scripts/logging/dictionary/live_log_parser.py` should be
   used. The new script supports the same functionality (and more), but requires different command
   line arguments when invoked.
+
+RTIO
+====
+
+* Callback operations now take an additional argument corresponding to the result code of the first
+  error in the chain.
+* Callback operations are always called regardless of success/error status of previous submissions
+  in the chain.
+
+Secure storage
+==============
+
+* The size of :c:type:`psa_storage_uid_t`, used to identify storage entries, was changed from 64 to
+  30 bits.
+  This change breaks backward compatibility with previously stored entries for which authentication
+  will start failing.
+  Enable :kconfig:option:`CONFIG_SECURE_STORAGE_64_BIT_UID` if you are updating an existing
+  installation from an earlier version of Zephyr and want to keep the pre-existing entries.
+  (:github:`94171`)
 
 Shell
 =====
@@ -187,6 +281,15 @@ Silabs
 
 * The separate ``em3`` power state was removed from Series 2 SoCs. The system automatically
   transitions to EM2 or EM3 depending on hardware peripheral requests for the oscillators.
+
+LVGL
+====
+
+* The PIXEL_FORMAT_MONO10 and PIXEL_FORMAT_MONO01 formats were swapped
+  in :zephyr_file:`modules/lvgl/lvgl_display_mono.c`, which caused
+  black and white to be inverted when using LVGL with monochrome displays.
+  This issue has now been fixed. Any workarounds previously applied to achieve the expected
+  behavior should be removed, otherwise black and white will be inverted again.
 
 Architectures
 *************

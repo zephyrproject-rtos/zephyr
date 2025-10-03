@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+
 *.o
 *.a
 *.d
@@ -55,6 +58,7 @@ doc/doc.warnings
 hide-defaults-note
 venv
 .venv
+.envrc
 .DS_Store
 .clangd
 new.info
@@ -84,6 +88,7 @@ tags
 .idea
 
 # from check_compliance.py
+# zephyr-keep-sorted-start
 BinaryFiles.txt
 BoardYml.txt
 Checkpatch.txt
@@ -98,6 +103,7 @@ KconfigBasic.txt
 KconfigBasicNoModules.txt
 KconfigHWMv2.txt
 KeepSorted.txt
+LicenseAndCopyrightCheck.txt
 MaintainersFormat.txt
 ModulesMaintainers.txt
 Nits.txt
@@ -111,3 +117,4 @@ SysbuildKconfigBasicNoModules.txt
 TextEncoding.txt
 YAMLLint.txt
 ZephyrModuleFile.txt
+# zephyr-keep-sorted-stop

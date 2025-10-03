@@ -5,6 +5,7 @@ family:
     socs:
     - name: stm32c011xx
     - name: stm32c031xx
+    - name: stm32c051xx
     - name: stm32c071xx
     - name: stm32c091xx
     - name: stm32c092xx
@@ -157,6 +158,7 @@ family:
     - name: stm32l072xx
     - name: stm32l073xx
     - name: stm32l081xx
+    - name: stm32l083xx
   - name: stm32l1x
     socs:
     - name: stm32l100xb

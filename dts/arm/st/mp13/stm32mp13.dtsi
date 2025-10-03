@@ -42,8 +42,9 @@
 	soc {
 		interrupt-parent = <&gic>;
 
-		sysram: memory@2ffe0000  {
-			compatible = "mmio-sram";
+		sysram: memory@2ffe0000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			zephyr,memory-region = "SYSRAM";
 			reg = <0x2FFE0000 DT_SIZE_K(128)>;
 		};
 
@@ -148,7 +149,7 @@
 		};
 
 		exti: interrupt-controller@5000d000 {
-			compatible =  "st,stm32g0-exti","st,stm32-exti";
+			compatible = "st,stm32g0-exti", "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
 			#address-cells = <1>;
@@ -257,17 +258,18 @@
 	};
 
 	ddr_code: memory@C0000000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "DDR_CODE";
 		reg = <0xC0000000 0x10000000>;
 	};
 
 	ddr_data: memory@D0000000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "DDR_DATA";
 		reg = <0xD0000000 0x10000000>;
 	};
 
 	clocks {
-
 		clk_hse: clk-hse {
 			#clock-cells = <0>;
 			compatible = "fixed-clock";

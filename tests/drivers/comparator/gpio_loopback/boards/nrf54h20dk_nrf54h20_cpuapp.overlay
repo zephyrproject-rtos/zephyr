@@ -26,10 +26,10 @@
 
 /* Temporary workaround to reserve P1.03 for cpuapp */
 &led1 {
-	gpios = < &gpio1 0x3 0x0 >;
+	gpios = <&gpio1 0x3 0x0>;
 };
 
 /* Temporary workaround to reserve P1.02 for cpuapp */
 &led2 {
-	gpios = < &gpio1 0x2 0x0 >;
+	gpios = <&gpio1 0x2 0x0>;
 };

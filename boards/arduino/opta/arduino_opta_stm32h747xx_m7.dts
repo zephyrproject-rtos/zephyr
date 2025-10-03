@@ -98,15 +98,13 @@ zephyr_udc0: &usbotg_fs {
 
 /* Assign ethernet to M7 by default */
 &mac {
-	pinctrl-0 = <
-		&eth_ref_clk_pa1
-		&eth_crs_dv_pa7
-		&eth_rxd0_pc4
-		&eth_rxd1_pc5
-		&eth_tx_en_pg11
-		&eth_txd1_pg12
-		&eth_txd0_pg13
-	>;
+	pinctrl-0 = <&eth_ref_clk_pa1
+		     &eth_crs_dv_pa7
+		     &eth_rxd0_pc4
+		     &eth_rxd1_pc5
+		     &eth_tx_en_pg11
+		     &eth_txd1_pg12
+		     &eth_txd0_pg13>;
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
 	phy-handle = <&eth_phy>;
@@ -126,12 +124,10 @@ zephyr_udc0: &usbotg_fs {
 
 /* Assign Bluetooth to M7 by default */
 &uart4 {
-	pinctrl-0 = <
-		&uart4_tx_pb9
-		&uart4_rx_ph14
-		&uart4_cts_pb15
-		&uart4_rts_pa15
-	>;
+	pinctrl-0 = <&uart4_tx_pb9
+		     &uart4_rx_ph14
+		     &uart4_cts_pb15
+		     &uart4_rts_pa15>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
 	hw-flow-control;
@@ -152,14 +148,12 @@ zephyr_udc0: &usbotg_fs {
 
 /* Assign external flash to M7 by default */
 &quadspi {
-	pinctrl-0 = <
-		&quadspi_bk1_io0_pd11
-		&quadspi_bk1_io1_pd12
-		&quadspi_bk1_io2_pe2
-		&quadspi_bk1_io3_pd13
-		&quadspi_bk1_ncs_pg6
-		&quadspi_clk_pb2
-	>;
+	pinctrl-0 = <&quadspi_bk1_io0_pd11
+		     &quadspi_bk1_io1_pd12
+		     &quadspi_bk1_io2_pe2
+		     &quadspi_bk1_io3_pd13
+		     &quadspi_bk1_ncs_pg6
+		     &quadspi_clk_pb2>;
 	pinctrl-names = "default";
 	status = "okay";
 
@@ -169,8 +163,7 @@ zephyr_udc0: &usbotg_fs {
 		size = <DT_SIZE_M(128)>; /* 128 MBits */
 		qspi-max-frequency = <80000000>;
 		jedec-id = [01 1f 89];
-		spi-bus-width = <4>;
-		quad-enable-requirements = "NONE";
+		spi-bus-width = <2>;
 		status = "okay";
 
 		/* The following partitions are valid only if the Opta external flash
@@ -185,13 +178,13 @@ zephyr_udc0: &usbotg_fs {
 			/* WiFi firmware and TLS certificates: 1MB - 4K for MBR using LBA */
 			wlan_partition: partition@1000 {
 				label = "wlan";
-				reg=<0x001000 DT_SIZE_K(1020)>;
+				reg = <0x001000 DT_SIZE_K(1020)>;
 			};
 
 			/* Arduino OTA partition: 13MB */
 			fs_partition: partition@100000 {
 				label = "fs";
-				reg=<0x100000 DT_SIZE_M(13)>;
+				reg = <0x100000 DT_SIZE_M(13)>;
 			};
 
 			/* The final 2MB is used to keep a memory-mapped copy of the WiFi
@@ -201,7 +194,7 @@ zephyr_udc0: &usbotg_fs {
 			 */
 			wifi_partition: partition@e00000 {
 				label = "4343WA1";
-				reg=<0xE00000 DT_SIZE_M(2)>;
+				reg = <0xE00000 DT_SIZE_M(2)>;
 			};
 		};
 	};

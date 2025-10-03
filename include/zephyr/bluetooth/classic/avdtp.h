@@ -124,6 +124,14 @@ enum bt_avdtp_service_category {
 	BT_AVDTP_SERVICE_DELAY_REPORTING = 0x08,
 };
 
+/** @brief service category Recovery Capabilities type*/
+enum bt_avdtp_recovery_type {
+	/** Forbidden */
+	BT_AVDTP_RECOVERY_TYPE_FORBIDDEN = 0x00,
+	/** RFC2733 */
+	BT_ADVTP_RECOVERY_TYPE_RFC2733 = 0x01,
+};
+
 /** @brief AVDTP Stream End Point */
 struct bt_avdtp_sep {
 	/** Stream End Point information */

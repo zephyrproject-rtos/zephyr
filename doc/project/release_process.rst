@@ -167,9 +167,13 @@ Release Milestones
      - Review target milestones
      - Finalize target milestones for features in flight.
      - Release Engineering
-   * - T-4W
+   * - T-5W
      - Release Announcement
      - Release owner announces feature freeze and timeline for release.
+     - Release Manager
+   * - T-4W
+     - Release Timeline reminder
+     - Release owner sends a reminder of the feature freeze and timeline for release.
      - Release Manager
    * - T-3W
      - Feature Freeze (RC1)

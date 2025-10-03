@@ -7,6 +7,7 @@
 #include <arm/armv8-r.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	#address-cells = <1>;
@@ -27,9 +28,9 @@
 	arch_timer: timer {
 		compatible = "arm,armv8-timer";
 		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				<GIC_PPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				<GIC_PPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				<GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
 	};
 
@@ -39,7 +40,7 @@
 		gic: interrupt-controller@94000000 {
 			compatible = "arm,gic-v3", "arm,gic";
 			reg = <0x94000000 0x10000>,
-				<0x94100000 0x80000>;
+			      <0x94100000 0x80000>;
 			interrupt-controller;
 			#interrupt-cells = <4>;
 			status = "okay";
@@ -283,7 +284,7 @@
 			gpio1: gpio@100 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <8>;
 				reg = <0x0100>;
 				status = "disabled";
@@ -292,7 +293,7 @@
 			gpio2: gpio@200 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <8>;
 				reg = <0x0200>;
 				status = "disabled";
@@ -301,7 +302,7 @@
 			gpio3: gpio@300 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <8>;
 				gpio-reserved-ranges = <1 4>;
 				reg = <0x0300>;
@@ -311,7 +312,7 @@
 			gpio4: gpio@400 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <8>;
 				gpio-reserved-ranges = <2 2>;
 				reg = <0x0400>;
@@ -321,7 +322,7 @@
 			gpio5: gpio@500 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <8>;
 				reg = <0x0500>;
 				status = "disabled";
@@ -330,7 +331,7 @@
 			gpio6: gpio@600 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <8>;
 				reg = <0x0600>;
 				status = "disabled";
@@ -339,7 +340,7 @@
 			gpio7: gpio@700 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <5>;
 				reg = <0x0700>;
 				status = "disabled";
@@ -348,7 +349,7 @@
 			gpio8: gpio@800 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <8>;
 				gpio-reserved-ranges = <0 4>;
 				reg = <0x0800>;
@@ -358,7 +359,7 @@
 			gpio9: gpio@900 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <8>;
 				reg = <0x0900>;
 				status = "disabled";
@@ -367,7 +368,7 @@
 			gpio10: gpio@a00 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <5>;
 				reg = <0x0a00>;
 				status = "disabled";
@@ -376,7 +377,7 @@
 			gpio11: gpio@b00 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <0>;
 				reg = <0x0b00>;
 				status = "disabled";
@@ -385,7 +386,7 @@
 			gpio12: gpio@c00 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <5>;
 				gpio-reserved-ranges = <0 4>;
 				reg = <0x0c00>;
@@ -395,7 +396,7 @@
 			gpio13: gpio@d00 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <8>;
 				gpio-reserved-ranges = <0 2>;
 				reg = <0x0d00>;
@@ -405,7 +406,7 @@
 			gpio14: gpio@e00 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <8>;
 				reg = <0x0e00>;
 				status = "disabled";
@@ -414,7 +415,7 @@
 			gpio15: gpio@f00 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <8>;
 				reg = <0x0f00>;
 				status = "disabled";
@@ -423,7 +424,7 @@
 			gpio16: gpio@1000 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <8>;
 				gpio-reserved-ranges = <4 1>;
 				reg = <0x1000>;
@@ -433,7 +434,7 @@
 			gpio17: gpio@1100 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <8>;
 				gpio-reserved-ranges = <1 2>;
 				reg = <0x1100>;
@@ -443,7 +444,7 @@
 			gpio18: gpio@1200 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <7>;
 				reg = <0x1200>;
 				status = "disabled";
@@ -452,7 +453,7 @@
 			gpio19: gpio@1300 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <1>;
 				reg = <0x1300>;
 				status = "disabled";
@@ -461,7 +462,7 @@
 			gpio20: gpio@1400 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <5>;
 				gpio-reserved-ranges = <0 1>;
 				reg = <0x1400>;
@@ -471,7 +472,7 @@
 			gpio21: gpio@1500 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <8>;
 				gpio-reserved-ranges = <0 1>;
 				reg = <0x1500>;
@@ -481,7 +482,7 @@
 			gpio22: gpio@1600 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <4>;
 				reg = <0x1600>;
 				status = "disabled";
@@ -490,7 +491,7 @@
 			gpio23: gpio@1700 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <8>;
 				gpio-reserved-ranges = <0 7>;
 				reg = <0x1700>;
@@ -500,7 +501,7 @@
 			gpio24: gpio@1800 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
-				#gpio-cells= <2>;
+				#gpio-cells = <2>;
 				ngpios = <3>;
 				reg = <0x1800>;
 				status = "disabled";
@@ -512,9 +513,9 @@
 			reg = <0x80001000 0x400>;
 			channel = <0>;
 			interrupts = <GIC_SPI 288 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 289 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 290 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 291 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 289 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 290 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 291 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "eri", "rxi", "txi", "tei";
 			status = "disabled";
 
@@ -530,9 +531,9 @@
 			reg = <0x80001400 0x400>;
 			channel = <1>;
 			interrupts = <GIC_SPI 292 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 293 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 294 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 295 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 293 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 294 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 295 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "eri", "rxi", "txi", "tei";
 			status = "disabled";
 
@@ -548,9 +549,9 @@
 			reg = <0x80001800 0x400>;
 			channel = <2>;
 			interrupts = <GIC_SPI 296 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 297 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 298 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 299 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 297 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 298 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 299 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "eri", "rxi", "txi", "tei";
 			status = "disabled";
 
@@ -566,9 +567,9 @@
 			reg = <0x80001c00 0x400>;
 			channel = <3>;
 			interrupts = <GIC_SPI 300 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 301 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 302 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 303 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 301 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 302 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 303 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "eri", "rxi", "txi", "tei";
 			status = "disabled";
 
@@ -584,9 +585,9 @@
 			reg = <0x80002000 0x400>;
 			channel = <4>;
 			interrupts = <GIC_SPI 304 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 305 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 306 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 307 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 305 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 306 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 307 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "eri", "rxi", "txi", "tei";
 			status = "disabled";
 
@@ -602,9 +603,9 @@
 			reg = <0x81001000 0x400>;
 			channel = <5>;
 			interrupts = <GIC_SPI 435 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 436 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 437 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 438 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 436 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 437 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 438 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "eri", "rxi", "txi", "tei";
 			status = "disabled";
 
@@ -620,14 +621,14 @@
 			reg = <0x90002000 0x100>;
 			channel = <0>;
 			interrupts = <GIC_SPI 116 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 117 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 118 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 119 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 120 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 121 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 122 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 123 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 124 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 117 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 118 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 119 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 120 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 121 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 122 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 123 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 124 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "ovf", "udf", "dte";
 			prescaler = <1>;
@@ -645,14 +646,14 @@
 			reg = <0x90002100 0x100>;
 			channel = <1>;
 			interrupts = <GIC_SPI 125 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 126 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 127 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 128 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 129 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 130 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 131 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 132 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 133 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 126 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 127 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 128 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 129 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 130 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 131 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 132 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 133 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "ovf", "udf", "dte";
 			prescaler = <1>;
@@ -670,14 +671,14 @@
 			reg = <0x90002200 0x100>;
 			channel = <2>;
 			interrupts = <GIC_SPI 134 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 135 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 136 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 137 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 138 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 139 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 140 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 141 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 142 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 135 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 136 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 137 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 138 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 139 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 140 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 141 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 142 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "ovf", "udf", "dte";
 			prescaler = <1>;
@@ -695,14 +696,14 @@
 			reg = <0x90002300 0x100>;
 			channel = <3>;
 			interrupts = <GIC_SPI 143 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 144 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 145 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 146 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 147 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 148 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 149 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 150 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 151 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 144 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 145 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 146 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 147 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 148 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 149 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 150 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 151 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "ovf", "udf", "dte";
 			prescaler = <1>;
@@ -720,14 +721,14 @@
 			reg = <0x90002400 0x100>;
 			channel = <4>;
 			interrupts = <GIC_SPI 152 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 153 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 154 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 155 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 156 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 157 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 158 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 159 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 160 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 153 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 154 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 155 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 156 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 157 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 158 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 159 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 160 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "ovf", "udf", "dte";
 			prescaler = <1>;
@@ -745,14 +746,14 @@
 			reg = <0x90002500 0x100>;
 			channel = <5>;
 			interrupts = <GIC_SPI 161 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 162 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 163 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 164 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 165 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 166 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 167 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 168 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 169 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 162 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 163 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 164 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 165 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 166 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 167 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 168 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 169 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "ovf", "udf", "dte";
 			prescaler = <1>;
@@ -770,14 +771,14 @@
 			reg = <0x90002600 0x100>;
 			channel = <6>;
 			interrupts = <GIC_SPI 170 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 171 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 172 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 173 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 174 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 175 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 176 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 177 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 178 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 171 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 172 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 173 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 174 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 175 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 176 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 177 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 178 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "ovf", "udf", "dte";
 			prescaler = <1>;
@@ -795,14 +796,14 @@
 			reg = <0x80000000 0x100>;
 			channel = <7>;
 			interrupts = <GIC_SPI 179 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 180 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 181 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 182 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 183 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 184 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 185 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 186 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 187 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 180 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 181 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 182 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 183 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 184 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 185 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 186 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 187 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "ovf", "udf", "dte";
 			prescaler = <1>;
@@ -820,14 +821,14 @@
 			reg = <0x80000100 0x100>;
 			channel = <8>;
 			interrupts = <GIC_SPI 188 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 189 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 190 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 191 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 192 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 193 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 194 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 195 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 196 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 189 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 190 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 191 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 192 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 193 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 194 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 195 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 196 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "ovf", "udf", "dte";
 			prescaler = <1>;
@@ -845,14 +846,14 @@
 			reg = <0x80000200 0x100>;
 			channel = <9>;
 			interrupts = <GIC_SPI 197 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 198 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 199 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 200 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 201 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 202 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 203 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 204 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 205 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 198 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 199 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 200 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 201 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 202 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 203 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 204 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 205 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "ovf", "udf", "dte";
 			prescaler = <1>;
@@ -870,14 +871,14 @@
 			reg = <0x80000300 0x100>;
 			channel = <10>;
 			interrupts = <GIC_SPI 206 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 207 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 208 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 209 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 210 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 211 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 212 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 213 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 214 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 207 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 208 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 209 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 210 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 211 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 212 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 213 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 214 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "ovf", "udf", "dte";
 			prescaler = <1>;
@@ -895,14 +896,14 @@
 			reg = <0x80000400 0x100>;
 			channel = <11>;
 			interrupts = <GIC_SPI 215 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 216 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 217 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 218 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 219 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 220 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 221 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 222 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 223 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 216 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 217 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 218 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 219 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 220 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 221 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 222 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 223 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "ovf", "udf", "dte";
 			prescaler = <1>;
@@ -920,14 +921,14 @@
 			reg = <0x80000500 0x100>;
 			channel = <12>;
 			interrupts = <GIC_SPI 224 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 225 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 226 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 227 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 228 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 229 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 230 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 231 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 232 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 225 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 226 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 227 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 228 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 229 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 230 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 231 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 232 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "ovf", "udf", "dte";
 			prescaler = <1>;
@@ -945,14 +946,14 @@
 			reg = <0x80000600 0x100>;
 			channel = <13>;
 			interrupts = <GIC_SPI 233 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 234 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 235 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 236 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 237 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 238 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 239 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 240 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 241 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 234 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 235 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 236 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 237 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 238 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 239 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 240 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 241 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "ovf", "udf", "dte";
 			prescaler = <1>;
@@ -970,13 +971,13 @@
 			reg = <0x81000000 0x100>;
 			channel = <14>;
 			interrupts = <GIC_SPI 396 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 397 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 398 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 399 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 400 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 401 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 402 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 403 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 397 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 398 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 399 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 400 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 401 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 402 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 403 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "ovf", "udf";
 			prescaler = <1>;
@@ -994,13 +995,13 @@
 			reg = <0x81000100 0x100>;
 			channel = <15>;
 			interrupts = <GIC_SPI 404 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 405 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 406 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 407 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 408 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 409 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 410 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 411 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 405 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 406 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 407 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 408 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 409 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 410 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 411 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "ovf", "udf";
 			prescaler = <1>;
@@ -1018,13 +1019,13 @@
 			reg = <0x81000200 0x100>;
 			channel = <16>;
 			interrupts = <GIC_SPI 412 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 413 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 414 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 415 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 416 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 417 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 418 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 419 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 413 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 414 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 415 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 416 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 417 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 418 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 419 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "ovf", "udf";
 			prescaler = <1>;
@@ -1042,13 +1043,13 @@
 			reg = <0x81000300 0x100>;
 			channel = <17>;
 			interrupts = <GIC_SPI 420 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 421 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 422 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 423 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 424 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 425 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 426 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
-					<GIC_SPI 427 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+				     <GIC_SPI 421 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 422 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 423 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 424 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 425 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 426 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 427 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "ccmpa", "ccmpb", "cmpc", "cmpd", "cmpe",
 					  "cmpf", "ovf", "udf";
 			prescaler = <1>;
@@ -1057,6 +1058,89 @@
 			pwm {
 				compatible = "renesas,rz-gpt-pwm";
 				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		i2c0: i2c@80043000 {
+			compatible = "renesas,rz-iic";
+			channel = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x80043000 0x400>;
+			interrupts = <GIC_SPI 308 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 309 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 310 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 311 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "eri", "rxi", "txi", "tei";
+			status = "disabled";
+		};
+
+		i2c1: i2c@80043400 {
+			compatible = "renesas,rz-iic";
+			channel = <1>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x80043400 0x400>;
+			interrupts = <GIC_SPI 312 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 313 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 314 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 315 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "eri", "rxi", "txi", "tei";
+			status = "disabled";
+		};
+
+		i2c2: i2c@81008000 {
+			compatible = "renesas,rz-iic";
+			channel = <2>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x81008000 0x400>;
+			interrupts = <GIC_SPI 439 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 440 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 441 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 442 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "eri", "rxi", "txi", "tei";
+			status = "disabled";
+		};
+
+		cmtw0: cmtw@80041000 {
+			compatible = "renesas,rz-cmtw";
+			reg = <0x80041000 0x400>;
+			channel = <0>;
+			interrupts = <GIC_SPI 59 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 60 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 61 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 62 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 63 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "cmwi", "ic0i", "ic01", "oc0i", "oc1i";
+			prescaler = <8>;
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,rz-cmtw-counter";
+				status = "disabled";
+			};
+		};
+
+		cmtw1: cmtw@80041400 {
+			compatible = "renesas,rz-cmtw";
+			reg = <0x80041400 0x400>;
+			channel = <1>;
+			interrupts = <GIC_SPI 64 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 65 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 66 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 67 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 68 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "cmwi", "ic0i", "ic01", "oc0i", "oc1i";
+			prescaler = <8>;
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,rz-cmtw-counter";
 				status = "disabled";
 			};
 		};

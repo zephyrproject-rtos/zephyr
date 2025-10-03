@@ -27,7 +27,7 @@
 	local-mac-address = [00 00 00 01 02 00];
 	pinctrl-0 = <&eth0_default>;
 	pinctrl-names = "default";
-	clock-frequency = <300000000>;
+	clock-frequency = <DT_FREQ_M(300)>;
 	phy-handle = <&phy0>;
 	status = "okay";
 };

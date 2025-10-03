@@ -17,7 +17,7 @@
 #endif
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/drivers/timer/nxp_os_timer.h>
-
+#include <zephyr/platform/hooks.h>
 #include "fsl_power.h"
 
 #include <zephyr/logging/log.h>
@@ -228,6 +228,14 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 				NVIC_ClearPendingIRQ(DT_IRQN(DT_NODELABEL(rtc)));
 				sys_clock_idle_exit();
 				sys_clock_set_timeout(0, true);
+				/* GDET got enabled when exiting PM3, disable it
+				 * again before re-entering PM3.
+				 */
+				POWER_DisableGDetVSensors();
+
+				/* Reinitialize the board specific power rails */
+				board_early_init_hook();
+
 				if (!(POWER_EnterPowerMode(POWER_MODE3, &slp_cfg))) {
 					break;
 				}

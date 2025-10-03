@@ -115,7 +115,7 @@ ARM's TrustZone is not modelled in these boards. This means that:
 * There is no differentiation between secure and non secure execution states or bus accesses.
 * All RAM, flash and peripherals are in principle accessible from all SW. Peripherals with their
   own interconnect master ports can, in principle, access any other peripheral or RAM area.
-* There is no nrf5340bsim/nrf5340/cpuapp/ns board/build target, or posibility of mixing secure
+* There is no nrf5340bsim/nrf5340/cpuapp/ns board/build target, or possibility of mixing secure
   and non-secure images.
 * Currently there is no model of the SPU, and therefore neither flash, RAM areas or peripherals
   can be labelled as restricted for secure or non secure access.

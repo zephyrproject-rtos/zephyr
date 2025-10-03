@@ -8,7 +8,7 @@
 
 #include <zephyr/dt-bindings/ethernet/dsa_tag_proto.h>
 #ifdef CONFIG_DSA_TAG_PROTOCOL_NETC
-#include "dsa_tag_netc.h"
+#include <zephyr/net/dsa_tag_netc.h>
 #endif
 
 struct net_if *dsa_tag_recv(struct net_if *iface, struct net_pkt *pkt);

@@ -1,0 +1,22 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		opamp = <&opamp0>;
+	};
+};
+
+&opamp0 {
+	functional-mode = "differential";
+	programmable-gain = "OPAMP_GAIN_1",
+			"OPAMP_GAIN_2",
+			"OPAMP_GAIN_4",
+			"OPAMP_GAIN_8",
+			"OPAMP_GAIN_16",
+			"OPAMP_GAIN_33",
+			"OPAMP_GAIN_64";
+};

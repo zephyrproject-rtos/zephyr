@@ -63,6 +63,8 @@ zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_NRF_AUXPLL          clock_cont
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_BOUFFALOLAB_BL60X   clock_control_bl60x.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_BOUFFALOLAB_BL61X   clock_control_bl61x.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_BOUFFALOLAB_BL70X   clock_control_bl70x.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_SF32LB_HXT48        clock_control_sf32lb_hxt48.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_SF32LB_RCC          clock_control_sf32lb_rcc.c)
 
 if(CONFIG_CLOCK_CONTROL_RENESAS_RZA2M_CPG)
   zephyr_library_sources(clock_control_renesas_rza2m_cpg.c)

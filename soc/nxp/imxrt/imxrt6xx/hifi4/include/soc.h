@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
 
 #include <adsp/cache.h>
 #include <pinctrl_soc.h>
+#include <soc_common.h>
 
 #ifndef __INC_IMX_SOC_H
 #define __INC_IMX_SOC_H

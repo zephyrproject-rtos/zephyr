@@ -13,7 +13,7 @@ config LOG_TEST_CLEAR_MESSAGE_SPACE
 	default y
 	depends on ZTEST
 	help
-	  Used in testing to simplify message comparision if message contains
+	  Used in testing to simplify message comparison if message contains
 	  paddings.
 
 config LOG_USE_VLA

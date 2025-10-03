@@ -127,7 +127,7 @@ to the it8xxx2 board flash.
 
 #. Using winflash tool flash zephyr.bin into your ITE board.
    First, click ``Load`` button and select your zephyr.bin file.
-   Second, click ``run`` to flash the iamge into board.
+   Second, click ``run`` to flash the image into board.
 
     .. figure:: WinFlashTool_P3.jpg
           :align: center

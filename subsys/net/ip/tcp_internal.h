@@ -1,11 +1,25 @@
 /** @file
- @brief TCP data handler
-
- This is not to be included by the application.
+ * @brief Transmission Control Protocol (TCP)
+ *
+ * - net_tcp_get() is called by net_context_get(AF_INET, SOCK_STREAM,
+     IPPROTO_TCP, ...) and creates struct tcp for the net_context
+ * - net_tcp_listen()/net_tcp_accept() listen/accept
+ * - At the reception of SYN on the listening net_context, a new pair
+ *   of net_context/struct tcp registers a new net_conn handle
+ *   with the tcp_recv() as a callback
+ * - net_tcp_queue() queues the data for the transmission
+ * - The incoming data is delivered up through the context->recv_cb
+ * - net_tcp_put() closes the connection
+ *
+ * NOTE: The present API is provided in order to make the integration
+ *       into the ip stack and the socket layer less intrusive.
+ *
+ *       Semantically cleaner use is possible (and might be exposed),
+ *       look into the unit test tests/net/tcp for insights.
  */
 
 /*
- * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2016-2019 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -93,11 +107,12 @@ static inline void net_tcp_foreach(net_tcp_cb_t cb, void *user_data)
 #endif
 
 /**
- * @brief Initialize TCP parts of a context
+ * @brief Allocate a TCP connection for the net_context
+ *        and mutually link the net_context and TCP connection.
  *
  * @param context Network context
  *
- * @return 0 if successful, < 0 on error
+ * @return 0 on success, < 0 on error
  */
 #if defined(CONFIG_NET_NATIVE_TCP)
 int net_tcp_get(struct net_context *context);
@@ -157,14 +172,14 @@ static inline int net_tcp_connect(struct net_context *context,
  * @brief Set TCP socket into listening state
  *
  * @param context Network context
+ * @param backlog The size of the pending connections backlog.
  *
- * @return 0 if successful, -EOPNOTSUPP if the context was not for TCP,
- *         -EPROTONOSUPPORT if TCP is not supported
+ * @return 0 if successful, < 0 on error
  */
 #if defined(CONFIG_NET_NATIVE_TCP)
-int net_tcp_listen(struct net_context *context);
+int net_tcp_listen(struct net_context *context, int backlog);
 #else
-static inline int net_tcp_listen(struct net_context *context)
+static inline int net_tcp_listen(struct net_context *context, int backlog)
 {
 	ARG_UNUSED(context);
 
@@ -173,13 +188,13 @@ static inline int net_tcp_listen(struct net_context *context)
 #endif
 
 /**
- * @brief Accept TCP connection
+ * @brief Register an accept callback
  *
  * @param context Network context
- * @param cb Accept callback
- * @param user_data Accept callback user data
+ * @param cb net_tcp_accept_cb_t callback
+ * @param user_data User data passed as an argument in the callback
  *
- * @return 0 on success, < 0 on error
+ * @return 0 if successful, < 0 on error
  */
 #if defined(CONFIG_NET_NATIVE_TCP)
 int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
@@ -264,12 +279,12 @@ static inline int net_tcp_finalize(struct net_pkt *pkt, bool force_chksum)
 #endif
 
 /**
- * @brief Get pointer to TCP header in net_pkt
+ * @brief Return struct net_tcp_hdr pointer
  *
  * @param pkt Network packet
  * @param tcp_access Helper variable for accessing TCP header
  *
- * @return TCP header on success, NULL on error
+ * @return Pointer to the TCP header on success, NULL on error
  */
 #if defined(CONFIG_NET_NATIVE_TCP)
 struct net_tcp_hdr *net_tcp_input(struct net_pkt *pkt,
@@ -336,14 +351,11 @@ static inline int net_tcp_update_recv_wnd(struct net_context *context,
 #endif
 
 /**
- * @brief Queue a TCP FIN packet if needed to close the socket
+ * @brief Close and delete the TCP connection for the net_context
  *
  * @param context Network context
  *
- * @return 0 on success where a TCP FIN packet has been queued, -ENOTCONN
- *         in case the socket was not connected or listening, -EOPNOTSUPP
- *         in case it was not a TCP socket or -EPROTONOSUPPORT if TCP is not
- *         supported
+ * @return 0 on success, < 0 on error
  */
 #if defined(CONFIG_NET_NATIVE_TCP)
 int net_tcp_put(struct net_context *context);
@@ -462,6 +474,21 @@ int net_tcp_endpoint_copy(struct net_context *ctx,
 			  struct sockaddr *local,
 			  struct sockaddr *peer,
 			  socklen_t *addrlen);
+
+/**
+ * @brief Notify TCP layer that connection has been accepted by the application
+ *        layer.
+ *
+ * @param child_ctx Network context of the child connection
+ */
+#if defined(CONFIG_NET_NATIVE_TCP)
+void net_tcp_conn_accepted(struct net_context *child_ctx);
+#else
+static inline void net_tcp_conn_accepted(struct net_context *child_ctx)
+{
+	ARG_UNUSED(child_ctx);
+}
+#endif
 
 #ifdef __cplusplus
 }

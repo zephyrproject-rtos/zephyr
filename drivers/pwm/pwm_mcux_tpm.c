@@ -32,8 +32,12 @@ LOG_MODULE_REGISTER(pwm_mcux_tpm, CONFIG_PWM_LOG_LEVEL);
 #define MAX_CHANNELS ARRAY_SIZE(TPM1->CONTROLS)
 #endif
 
+#define DEV_CFG(_dev) ((const struct mcux_tpm_config *)(_dev)->config)
+#define DEV_DATA(_dev) ((struct mcux_tpm_data *)(_dev)->data)
+#define TPM_TYPE_BASE(dev, name) ((TPM_Type *)DEVICE_MMIO_NAMED_GET(dev, name))
+
 struct mcux_tpm_config {
-	TPM_Type *base;
+	DEVICE_MMIO_NAMED_ROM(base);
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	tpm_clock_source_t tpm_clock_source;
@@ -44,6 +48,7 @@ struct mcux_tpm_config {
 };
 
 struct mcux_tpm_data {
+	DEVICE_MMIO_NAMED_RAM(base);
 	uint32_t clock_freq;
 	uint32_t period_cycles;
 	tpm_chnl_pwm_signal_param_t channel[MAX_CHANNELS];
@@ -55,6 +60,7 @@ static int mcux_tpm_set_cycles(const struct device *dev, uint32_t channel,
 {
 	const struct mcux_tpm_config *config = dev->config;
 	struct mcux_tpm_data *data = dev->data;
+	TPM_Type *base = TPM_TYPE_BASE(dev, base);
 
 	if (channel >= config->channel_count) {
 		LOG_ERR("Invalid channel");
@@ -97,12 +103,12 @@ static int mcux_tpm_set_cycles(const struct device *dev, uint32_t channel,
 			return -EINVAL;
 		}
 
-		TPM_StopTimer(config->base);
+		TPM_StopTimer(base);
 
 		/* Set counter back to zero */
-		config->base->CNT = 0;
+		base->CNT = 0;
 
-		status = TPM_SetupPwm(config->base, data->channel,
+		status = TPM_SetupPwm(base, data->channel,
 				      config->channel_count, config->mode,
 				      pwm_freq, data->clock_freq);
 
@@ -110,24 +116,24 @@ static int mcux_tpm_set_cycles(const struct device *dev, uint32_t channel,
 			LOG_ERR("Could not set up pwm");
 			return -ENOTSUP;
 		}
-		TPM_StartTimer(config->base, config->tpm_clock_source);
+		TPM_StartTimer(base, config->tpm_clock_source);
 	}
 
 	if ((flags & PWM_POLARITY_INVERTED) == 0 &&
 		   data->channel[channel].level != kTPM_HighTrue) {
 		data->channel[channel].level = kTPM_HighTrue;
-		TPM_UpdateChnlEdgeLevelSelect(config->base, channel, kTPM_HighTrue);
+		TPM_UpdateChnlEdgeLevelSelect(base, channel, kTPM_HighTrue);
 	} else if ((flags & PWM_POLARITY_INVERTED) != 0 &&
 		   data->channel[channel].level != kTPM_LowTrue) {
 		data->channel[channel].level = kTPM_LowTrue;
-		TPM_UpdateChnlEdgeLevelSelect(config->base, channel, kTPM_LowTrue);
+		TPM_UpdateChnlEdgeLevelSelect(base, channel, kTPM_LowTrue);
 	}
 
 	if (pulse_cycles == period_cycles) {
 		pulse_cycles = period_cycles + 1U;
 	}
 
-	config->base->CONTROLS[channel].CnV = pulse_cycles;
+	base->CONTROLS[channel].CnV = pulse_cycles;
 
 	return 0;
 }
@@ -149,8 +155,13 @@ static int mcux_tpm_init(const struct device *dev)
 	struct mcux_tpm_data *data = dev->data;
 	tpm_chnl_pwm_signal_param_t *channel = data->channel;
 	tpm_config_t tpm_config;
+	TPM_Type *base;
 	int i;
 	int err;
+
+	DEVICE_MMIO_NAMED_MAP(dev, base, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
+
+	base = TPM_TYPE_BASE(dev, base);
 
 	if (config->channel_count > ARRAY_SIZE(data->channel)) {
 		LOG_ERR("Invalid channel count");
@@ -204,7 +215,7 @@ static int mcux_tpm_init(const struct device *dev)
 	TPM_GetDefaultConfig(&tpm_config);
 	tpm_config.prescale = config->prescale;
 
-	TPM_Init(config->base, &tpm_config);
+	TPM_Init(base, &tpm_config);
 
 	return 0;
 }
@@ -219,8 +230,7 @@ static DEVICE_API(pwm, mcux_tpm_driver_api) = {
 #define TPM_DEVICE(n) \
 	PINCTRL_DT_INST_DEFINE(n); \
 	static const struct mcux_tpm_config mcux_tpm_config_##n = { \
-		.base =	(TPM_Type *) \
-			DT_INST_REG_ADDR(n), \
+		DEVICE_MMIO_NAMED_ROM_INIT(base, DT_DRV_INST(n)), \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)), \
 		.clock_subsys = (clock_control_subsys_t) \
 			DT_INST_CLOCKS_CELL(n, name), \

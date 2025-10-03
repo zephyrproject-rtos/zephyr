@@ -35,7 +35,7 @@
 	};
 
 	dram: memory@d0000000 {
-		reg = <0xd0000000 DT_SIZE_M(1)>;
+		reg = <0xd0000000 DT_SIZE_M(10)>;
 	};
 };
 
@@ -44,4 +44,92 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&lpuart1_default>;
 	pinctrl-names = "default";
+};
+
+&emdio {
+	pinctrl-0 = <&emdio_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy0: phy@2 {
+		compatible = "ethernet-phy";
+		reg = <0xf>;
+		status = "disabled";
+	};
+
+	phy1: phy@3 {
+		compatible = "ethernet-phy";
+		reg = <0x10>;
+		status = "disabled";
+	};
+
+	phy2: phy@5 {
+		compatible = "realtek,rtl8211f";
+		reg = <0x5>;
+		status = "okay";
+	};
+
+	phy3: phy@6 {
+		compatible = "realtek,rtl8211f";
+		reg = <0x6>;
+		status = "okay";
+	};
+
+	phy4: phy@7 {
+		compatible = "realtek,rtl8211f";
+		reg = <0x7>;
+		status = "okay";
+	};
+};
+
+&enetc_psi0 {
+	pinctrl-0 = <&eth2_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy2>;
+	phy-connection-type = "rgmii";
+	status = "okay";
+};
+
+&enetc_psi1 {
+	pinctrl-0 = <&eth3_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy3>;
+	phy-connection-type = "rgmii";
+	status = "okay";
+};
+
+&enetc_psi2 {
+	pinctrl-0 = <&eth4_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy4>;
+	phy-connection-type = "rgmii";
+	status = "okay";
+};
+
+&netc_ptp_clock0 {
+	status = "okay";
+};
+
+&switch_port0 {
+	zephyr,random-mac-address;
+	pinctrl-0 = <&eth0_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy0>;
+	phy-connection-type = "mii";
+	status = "disabled";
+};
+
+&switch_port1 {
+	zephyr,random-mac-address;
+	pinctrl-0 = <&eth1_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy1>;
+	phy-connection-type = "mii";
+	status = "disabled";
+};
+
+/* Internal port */
+&switch_port3 {
+	zephyr,random-mac-address;
+	status = "disabled";
 };

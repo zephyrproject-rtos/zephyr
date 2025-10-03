@@ -45,6 +45,7 @@ config RTC_SHELL
 source "drivers/rtc/Kconfig.am1805"
 source "drivers/rtc/Kconfig.ambiq"
 source "drivers/rtc/Kconfig.bq32002"
+source "drivers/rtc/Kconfig.counter"
 source "drivers/rtc/Kconfig.ds1307"
 source "drivers/rtc/Kconfig.ds1337"
 source "drivers/rtc/Kconfig.ds3231"

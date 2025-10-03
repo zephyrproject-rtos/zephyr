@@ -1,0 +1,12 @@
+# ST Microelectronics STM32L083XX MCU
+
+# Copyright (c) 2018 Ilya Tagunov <tagunil@gmail.com>
+# Copyright (c) 2025 HARDWARIO a.s.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32L083XX
+
+config NUM_IRQS
+	default 32
+
+endif # SOC_STM32L083XX

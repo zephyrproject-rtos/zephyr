@@ -13,6 +13,8 @@ string
 	default "mimxrt1160_evk/mimxrt1166/cm4" if $(BOARD) = "mimxrt1160_evk"
 	default "mimxrt1170_evk/mimxrt1176/cm4" if $(BOARD) = "mimxrt1170_evk"
 	default "mimxrt1170_evkb/mimxrt1176/cm4" if $(BOARD) = "mimxrt1170_evkb"
+	default "mimxrt700_evk/mimxrt798s/cm33_cpu1" if $(BOARD) = "mimxrt700_evk"
 	default "frdm_mcxn947/mcxn947/cpu1" if $(BOARD) = "frdm_mcxn947"
 	default "mcx_n9xx_evk/mcxn947/cpu1" if $(BOARD) = "mcx_n9xx_evk"
 	default "mimxrt1180_evk/mimxrt1189/cm7" if $(BOARD) = "mimxrt1180_evk"
+	default "ek_ra8p1/r7ka8p1kflcac/cm33" if $(BOARD) = "ek_ra8p1"
