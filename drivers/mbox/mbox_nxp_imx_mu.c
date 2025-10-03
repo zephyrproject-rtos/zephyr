@@ -195,12 +195,14 @@ static void mu_isr(const struct device *dev)
 				data->cb[i_channel](dev, i_channel, data->user_data[i_channel],
 						    &msg);
 			}
-		} else if ((flags & gen_int_mask) == gen_int_mask) {
+		}
+		if ((flags & gen_int_mask) == gen_int_mask) {
 			MU_ClearStatusFlags(config->base, gen_int_mask);
 			if (data->cb[i_channel]) {
 				data->cb[i_channel](dev, i_channel, data->user_data[i_channel],
 						    NULL);
 			}
 		}
+
 	}
 }
