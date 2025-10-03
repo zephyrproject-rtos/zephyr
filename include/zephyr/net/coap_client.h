@@ -41,6 +41,8 @@ struct coap_client_response_data {
 	 * @ref coap_response_code for positive.
 	 */
 	int16_t result_code;
+	/** A pointer to the response CoAP packet. NULL for error result. */
+	const struct coap_packet *packet;
 	/** Payload offset from the beginning of a blockwise transfer. */
 	size_t offset;
 	/** Buffer containing the payload from the response. NULL for empty payload. */
