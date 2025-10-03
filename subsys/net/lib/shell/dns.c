@@ -38,13 +38,13 @@ static void dns_result_cb(enum dns_resolve_status status,
 		case AF_INET:
 			net_addr_ntop(AF_INET,
 				      &net_sin(&info->ai_addr)->sin_addr,
-				      str, NET_IPV4_ADDR_LEN);
+				      str, sizeof(str));
 			break;
 
 		case AF_INET6:
 			net_addr_ntop(AF_INET6,
 				      &net_sin6(&info->ai_addr)->sin6_addr,
-				      str, NET_IPV6_ADDR_LEN);
+				      str, sizeof(str));
 			break;
 
 		case AF_LOCAL:
