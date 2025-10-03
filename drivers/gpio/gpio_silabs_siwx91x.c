@@ -447,7 +447,7 @@ static DEVICE_API(gpio, gpio_siwx91x_api) = {
 		    gpio_siwx91x_isr, DEVICE_DT_GET(node_id), 0);                                  \
 	irq_enable(DT_IRQ_BY_IDX(node_id, idx, irq));
 
-static DEVICE_API(gpio, gpio_siwx91x_common_api) = { };
+static DEVICE_API(gpio, gpio_siwx91x_common_api) = {};
 
 #define GPIO_CONTROLLER_INIT(idx)                                                                  \
 	const struct device *ports_##idx[DT_INST_CHILD_NUM(idx)];                                  \
