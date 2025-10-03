@@ -82,24 +82,10 @@ const uint8_t response_kernel_release[] = STRINGIFY(BUILD_VERSION);
 const uint8_t response_kernel_version[] = KERNEL_VERSION_STRING;
 const uint8_t response_machine[] = CONFIG_ARCH;
 const uint8_t response_processor[] = PROCESSOR_NAME;
-const uint8_t response_board_revision[] = CONFIG_BOARD "@" CONFIG_BOARD_REVISION;
-const uint8_t response_board[] = CONFIG_BOARD;
+const uint8_t response_board_target[] = CONFIG_BOARD_TARGET;
 const uint8_t response_os[] = "Zephyr";
 const uint8_t response_custom_cmd[] = "Magic Output for Test";
 const uint8_t response_os_custom[] = CONFIG_CUSTOM_OS_NAME_VALUE;
-
-const uint8_t response_all_board_revision[] = "Zephyr "
-#if defined(CONFIG_BT)
-					      CONFIG_BT_DEVICE_NAME
-#elif defined(CONFIG_NET_HOSTNAME_ENABLE)
-					      CONFIG_NET_HOSTNAME
-#else
-					      "unknown"
-#endif
-					      " " STRINGIFY(BUILD_VERSION) " "
-					      KERNEL_VERSION_STRING " " CONFIG_ARCH " "
-					      PROCESSOR_NAME " " CONFIG_BOARD "@"
-					      CONFIG_BOARD_REVISION " Zephyr";
 
 const uint8_t response_all[] = "Zephyr "
 #if defined(CONFIG_BT)
@@ -110,7 +96,7 @@ const uint8_t response_all[] = "Zephyr "
 			       "unknown"
 #endif
 			       " " STRINGIFY(BUILD_VERSION) " " KERNEL_VERSION_STRING " "
-			       CONFIG_ARCH " " PROCESSOR_NAME " " CONFIG_BOARD " Zephyr";
+			       CONFIG_ARCH " " PROCESSOR_NAME " " CONFIG_BOARD_TARGET " Zephyr";
 
 const uint8_t query_kernel_name[] = "s";
 const uint8_t query_node_name[] = "n";
@@ -713,23 +699,12 @@ ZTEST(os_mgmt_info, test_info_8_platform)
 	zassert_true(ok, "Expected decode to be successful\n");
 	zassert_equal(decoded, 1, "Expected to receive 1 decoded zcbor element\n");
 
-	if (sizeof(CONFIG_BOARD_REVISION) > 1) {
-		/* Check with board revision */
-		zassert_equal((sizeof(response_board_revision) - 1), output.len,
-			      "Expected to receive %d bytes but got %d\n",
-			      (sizeof(response_board_revision) - 1), output.len);
+	zassert_equal((sizeof(response_board_target) - 1), output.len,
+		      "Expected to receive %d bytes but got %d\n",
+		      (sizeof(response_board_target) - 1), output.len);
 
-		zassert_mem_equal(response_board_revision, output.value, output.len,
-				  "Expected received data mismatch");
-	} else {
-		/* Check without board revision */
-		zassert_equal((sizeof(response_board) - 1), output.len,
-			      "Expected to receive %d bytes but got %d\n",
-			      (sizeof(response_board) - 1), output.len);
-
-		zassert_mem_equal(response_board, output.value, output.len,
-				  "Expected received data mismatch");
-	}
+	zassert_mem_equal(response_board_target, output.value, output.len,
+			  "Expected received data mismatch");
 }
 
 ZTEST(os_mgmt_info, test_info_9_os)
@@ -846,23 +821,12 @@ ZTEST(os_mgmt_info, test_info_10_all)
 	zassert_true(ok, "Expected decode to be successful\n");
 	zassert_equal(decoded, 1, "Expected to receive 1 decoded zcbor element\n");
 
-	if (sizeof(CONFIG_BOARD_REVISION) > 1) {
-		/* Check with board revision */
-		zassert_equal((sizeof(response_all_board_revision) - 1), output.len,
-			      "Expected to receive %d bytes but got %d\n",
-			      (sizeof(response_all_board_revision) - 1), output.len);
+	zassert_equal((sizeof(response_all) - 1), output.len,
+		      "Expected to receive %d bytes but got %d\n",
+		      (sizeof(response_all) - 1), output.len);
 
-		zassert_mem_equal(response_all_board_revision, output.value, output.len,
-				  "Expected received data mismatch");
-	} else {
-		/* Check without board revision */
-		zassert_equal((sizeof(response_all) - 1), output.len,
-			      "Expected to receive %d bytes but got %d\n",
-			      (sizeof(response_all) - 1), output.len);
-
-		zassert_mem_equal(response_all, output.value, output.len,
-				  "Expected received data mismatch");
-	}
+	zassert_mem_equal(response_all, output.value, output.len,
+			  "Expected received data mismatch");
 }
 
 ZTEST(os_mgmt_info, test_info_11_multi_1)
