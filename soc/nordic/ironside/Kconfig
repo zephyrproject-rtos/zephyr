@@ -49,6 +49,22 @@ config NRF_IRONSIDE_UPDATE_SERVICE
 	help
 	  Service used to update the IronSide SE firmware.
 
+config NRF_IRONSIDE_UPDATE_SERVICE_MIN_ADDRESS
+	hex
+	default 0x0e100000
+	help
+	  Minimum value of address passed to the update service.
+	  The update needs to be located within MRAM11.
+
+config NRF_IRONSIDE_UPDATE_SERVICE_MAX_ADDRESS
+	hex
+	default 0x0e1d8000
+	help
+	  Maximum value of address passed to the update service.
+	  The biggest update (USLOT) occupies 160kB, so this address is set so that a 160kB
+	  update would still be within the limit of MRAM11 (0x0e200000).
+
+
 config NRF_IRONSIDE_BOOT_REPORT
 	bool "IronSide boot report"
 	depends on $(dt_nodelabel_exists,ironside_se_boot_report)
