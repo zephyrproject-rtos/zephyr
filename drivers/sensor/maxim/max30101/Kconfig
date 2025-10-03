@@ -10,6 +10,7 @@ menuconfig MAX30101
 	default y
 	depends on DT_HAS_MAXIM_MAX30101_ENABLED
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_MAXIM_MAX30101),i2c)
+	select RTIO_WORKQ if SENSOR_ASYNC_API
 
 if MAX30101
 

@@ -1,0 +1,31 @@
+# heart rate sensor
+#
+# Copyright (c) 2025, CATIE
+#
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Heart rate sample application"
+
+DT_CHOSEN_HR := heart-rate-sensor
+
+rsource "Kconfig.max30101"
+
+config SAMPLE_FEATURES
+    bool
+    default y if $(dt_chosen_enabled,$(DT_CHOSEN_HR))
+    select MAX30101_SAMPLE_FEATURES
+
+# Sample sensor channels
+config SAMPLE_CHANNEL_IR
+    bool
+
+config SAMPLE_CHANNEL_RED
+    bool
+
+config SAMPLE_CHANNEL_GREEN
+    bool
+
+config SAMPLE_CHANNEL_DIE_TEMP
+    bool
+
+source "Kconfig.zephyr"

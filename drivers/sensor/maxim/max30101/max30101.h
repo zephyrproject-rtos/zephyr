@@ -8,6 +8,10 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
 
+#if CONFIG_SENSOR_ASYNC_API
+#include <zephyr/rtio/rtio.h>
+#endif
+
 #define MAX30101_REG_INT_STS1		0x00
 #define MAX30101_REG_INT_STS2		0x01
 #define MAX30101_REG_INT_EN1		0x02
@@ -80,6 +84,12 @@ enum max30101_callback_idx {
 #define MAX30101_SENSOR_PPG_CHANNEL_MAX SENSOR_CHAN_GREEN
 #endif
 
+#if CONFIG_SENSOR_ASYNC_API
+#define MAX30101_ASYNC_RESOLUTION 31
+#define MAX30101_LIGHT_SHIFT      0
+#define MAX30101_TEMP_FRAC_MASK   GENMASK(MAX30101_TEMP_FRAC_SHIFT - 1, 0)
+#endif /* CONFIG_SENSOR_ASYNC_API */
+
 enum max30101_mode {
 	MAX30101_MODE_HEART_RATE = 2,
 	MAX30101_MODE_SPO2 = 3,
@@ -130,14 +140,18 @@ struct max30101_config {
 #endif
 };
 
-struct max30101_data {
+struct max30101_reading {
 	uint32_t raw[MAX30101_MAX_NUM_CHANNELS];
-	uint8_t map[MAX30101_MAX_NUM_CHANNELS][MAX30101_MAX_NUM_CHANNELS];
-	uint8_t num_channels[MAX30101_MAX_NUM_CHANNELS];
-	uint8_t total_channels;
 #if CONFIG_MAX30101_DIE_TEMPERATURE
 	uint8_t die_temp[2];
 #endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
+};
+
+struct max30101_data {
+	struct max30101_reading reading;
+	uint8_t map[MAX30101_MAX_NUM_CHANNELS][MAX30101_MAX_NUM_CHANNELS];
+	uint8_t num_channels[MAX30101_MAX_NUM_CHANNELS];
+	uint8_t total_channels;
 #if CONFIG_MAX30101_TRIGGER
 	const struct device *dev;
 	struct gpio_callback gpio_cb;
@@ -153,3 +167,31 @@ int max30101_trigger_set(const struct device *dev, const struct sensor_trigger *
 
 int max30101_init_interrupts(const struct device *dev);
 #endif
+
+#if CONFIG_SENSOR_ASYNC_API
+struct max30101_decoder_header {
+	uint64_t timestamp;
+} __attribute__((__packed__));
+
+struct max30101_encoded_data {
+	const struct device *sensor;
+	struct max30101_decoder_header header;
+	struct {
+		/* Set if `red` has data (0-3 values) */
+		uint8_t has_red: 2;
+		/* Set if `ir` has data  (0-3 values) */
+		uint8_t has_ir: 2;
+		/* Set if `green` has data (0-3 values) */
+		uint8_t has_green: 2;
+		/* Set if `temp` has data */
+		uint8_t has_temp: 1;
+	} __attribute__((__packed__));
+	struct max30101_reading reading;
+};
+
+int max30101_read_sample(const struct device *dev, struct max30101_reading *reading);
+
+void max30101_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
+
+int max30101_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder);
+#endif /* CONFIG_SENSOR_ASYNC_API */

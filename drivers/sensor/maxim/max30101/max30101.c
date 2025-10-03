@@ -12,8 +12,7 @@
 
 LOG_MODULE_REGISTER(MAX30101, CONFIG_SENSOR_LOG_LEVEL);
 
-static int max30101_sample_fetch(const struct device *dev,
-				 enum sensor_channel chan)
+int max30101_read_sample(const struct device *dev, struct max30101_reading *reading)
 {
 	struct max30101_data *data = dev->data;
 	const struct max30101_config *config = dev->config;
@@ -39,7 +38,7 @@ static int max30101_sample_fetch(const struct device *dev,
 		fifo_data = (fifo_data & MAX30101_FIFO_DATA_MASK) >> config->data_shift;
 
 		/* Save the raw data */
-		data->raw[fifo_chan++] = fifo_data;
+		reading->raw[fifo_chan++] = fifo_data;
 	}
 
 #if CONFIG_MAX30101_DIE_TEMPERATURE
@@ -50,12 +49,24 @@ static int max30101_sample_fetch(const struct device *dev,
 	}
 
 	/* Save the raw data */
-	data->die_temp[0] = buffer[0];
-	data->die_temp[1] = buffer[1];
+	reading->die_temp[0] = buffer[0];
+	reading->die_temp[1] = buffer[1];
 	if (i2c_reg_write_byte_dt(&config->i2c, MAX30101_REG_TEMP_CFG, 1)) {
 		return -EIO;
 	}
 #endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
+
+	return 0;
+}
+
+static int max30101_sample_fetch(const struct device *dev, enum sensor_channel chan)
+{
+	struct max30101_data *data = dev->data;
+
+	if (max30101_read_sample(dev, &data->reading)) {
+		LOG_ERR("Could not fetch sample");
+		return -EIO;
+	}
 
 	return 0;
 }
@@ -83,8 +94,8 @@ static int max30101_channel_get(const struct device *dev,
 
 #if CONFIG_MAX30101_DIE_TEMPERATURE
 	case SENSOR_CHAN_DIE_TEMP:
-		val->val1 = data->die_temp[0];
-		val->val2 = (1000000 * data->die_temp[1]) >> MAX30101_TEMP_FRAC_SHIFT;
+		val->val1 = data->reading.die_temp[0];
+		val->val2 = (1000000 * data->reading.die_temp[1]) >> MAX30101_TEMP_FRAC_SHIFT;
 		return 0;
 #endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
 
@@ -105,7 +116,7 @@ static int max30101_channel_get(const struct device *dev,
 
 	val->val1 = 0;
 	for (fifo_chan = 0; fifo_chan < data->num_channels[led_chan]; fifo_chan++) {
-		val->val1 += data->raw[data->map[led_chan][fifo_chan]];
+		val->val1 += data->reading.raw[data->map[led_chan][fifo_chan]];
 	}
 
 	/* TODO: Scale the raw data to standard units */
@@ -120,6 +131,10 @@ static DEVICE_API(sensor, max30101_driver_api) = {
 	.channel_get = max30101_channel_get,
 #if CONFIG_MAX30101_TRIGGER
 	.trigger_set = max30101_trigger_set,
+#endif
+#ifdef CONFIG_SENSOR_ASYNC_API
+	.submit = max30101_submit,
+	.get_decoder = max30101_get_decoder,
 #endif
 };
 
