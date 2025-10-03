@@ -156,7 +156,7 @@ And then run them together with BabbleSim's 2G4 physical layer simulation:
 .. code-block:: console
 
    cd ${BSIM_OUT_PATH}/bin/
-   ./bs_nrf52_bsim_samples_bluetooth_peripheral -s=trial_sim -d=0 &
+   ./bs_nrf52_bsim_samples_bluetooth_peripheral_hr -s=trial_sim -d=0 &
    ./bs_nrf52_bsim_samples_bluetooth_central_hr -s=trial_sim -d=1 &
    ./bs_2G4_phy_v1 -s=trial_sim -D=2 -sim_length=10e6 &
 
