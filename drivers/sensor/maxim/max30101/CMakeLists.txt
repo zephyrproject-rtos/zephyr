@@ -9,3 +9,4 @@ zephyr_library()
 
 zephyr_library_sources(max30101.c)
 zephyr_library_sources_ifdef(CONFIG_MAX30101_TRIGGER max30101_trigger.c)
+zephyr_library_sources_ifdef(CONFIG_SENSOR_ASYNC_API max30101_decoder.c max30101_async.c)
