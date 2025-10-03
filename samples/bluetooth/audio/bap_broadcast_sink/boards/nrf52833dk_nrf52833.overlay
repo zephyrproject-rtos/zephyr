@@ -4,4 +4,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "../app.overlay"
+/* #include "../app.overlay" */

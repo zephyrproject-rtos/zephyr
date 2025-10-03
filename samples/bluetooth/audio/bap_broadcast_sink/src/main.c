@@ -38,6 +38,10 @@
 #include <zephyr/sys/clock.h>
 #include <zephyr/toolchain.h>
 
+#if defined(CONFIG_SOC_NRF5340_CPUAPP)
+#include <nrfx_clock.h>
+#endif /* CONFIG_SOC_NRF5340_CPUAPP */
+
 #include "lc3.h"
 #include "stream_rx.h"
 #include "usb.h"
@@ -1352,6 +1356,15 @@ static uint32_t select_bis_sync_bitfield(struct base_data *base_sg_data,
 int main(void)
 {
 	int err;
+
+#if defined(CONFIG_SOC_NRF5340_CPUAPP)
+	/* Use this to turn on 128 MHz clock for the nRF5340 cpu_app */
+	err = nrfx_clock_divider_set(NRF_CLOCK_DOMAIN_HFCLK, NRF_CLOCK_HFCLK_DIV_1);
+	if (err != 0) {
+		printk("Failed to set 128 MHz: %d\n", err);
+		return 0;
+	}
+#endif /* CONFIG_SOC_NRF5340_CPUAPP */
 
 	err = init();
 	if (err != 0) {
