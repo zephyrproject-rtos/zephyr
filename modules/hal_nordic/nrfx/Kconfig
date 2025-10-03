@@ -269,9 +269,7 @@ config NRFX_MRAMC
 config NRFX_NFCT
 	bool "NFCT driver"
 	depends on $(dt_nodelabel_exists,nfct)
-	select NRFX_TIMER4 if SOC_SERIES_NRF52X
-	select NRFX_TIMER2 if SOC_SERIES_NRF53X
-	select NRFX_TIMER24 if SOC_SERIES_NRF54LX
+	select NRFX_TIMER
 
 config NRFX_NVMC
 	bool "NVMC driver"
@@ -430,132 +428,7 @@ config NRFX_TEMP
 	depends on $(dt_nodelabel_exists,temp)
 
 config NRFX_TIMER
-	bool
-
-config NRFX_TIMER0
-	bool "TIMER0 driver instance"
-	depends on $(dt_nodelabel_exists,timer0)
-	select NRFX_TIMER
-
-config NRFX_TIMER1
-	bool "TIMER1 driver instance"
-	depends on $(dt_nodelabel_exists,timer1)
-	select NRFX_TIMER
-
-config NRFX_TIMER2
-	bool "TIMER2 driver instance"
-	depends on $(dt_nodelabel_exists,timer2)
-	select NRFX_TIMER
-
-config NRFX_TIMER3
-	bool "TIMER3 driver instance"
-	depends on $(dt_nodelabel_exists,timer3)
-	select NRFX_TIMER
-
-config NRFX_TIMER4
-	bool "TIMER4 driver instance"
-	depends on $(dt_nodelabel_exists,timer4)
-	select NRFX_TIMER
-
-config NRFX_TIMER00
-	bool "TIMER00 driver instance"
-	depends on $(dt_nodelabel_exists,timer00)
-	select NRFX_TIMER
-
-config NRFX_TIMER10
-	bool "TIMER10 driver instance"
-	depends on $(dt_nodelabel_exists,timer10)
-	select NRFX_TIMER
-
-config NRFX_TIMER20
-	bool "TIMER20 driver instance"
-	depends on $(dt_nodelabel_exists,timer20)
-	select NRFX_TIMER
-
-config NRFX_TIMER21
-	bool "TIMER21 driver instance"
-	depends on $(dt_nodelabel_exists,timer21)
-	select NRFX_TIMER
-
-config NRFX_TIMER22
-	bool "TIMER22 driver instance"
-	depends on $(dt_nodelabel_exists,timer22)
-	select NRFX_TIMER
-
-config NRFX_TIMER23
-	bool "TIMER23 driver instance"
-	depends on $(dt_nodelabel_exists,timer23)
-	select NRFX_TIMER
-
-config NRFX_TIMER24
-	bool "TIMER24 driver instance"
-	depends on $(dt_nodelabel_exists,timer24)
-	select NRFX_TIMER
-
-config NRFX_TIMER020
-	bool "TIMER020 driver instance"
-	depends on $(dt_nodelabel_exists,timer020)
-	select NRFX_TIMER
-
-config NRFX_TIMER021
-	bool "TIMER021 driver instance"
-	depends on $(dt_nodelabel_exists,timer021)
-	select NRFX_TIMER
-
-config NRFX_TIMER022
-	bool "TIMER022 driver instance"
-	depends on $(dt_nodelabel_exists,timer022)
-	select NRFX_TIMER
-
-config NRFX_TIMER120
-	bool "TIMER120 driver instance"
-	depends on $(dt_nodelabel_exists,timer120)
-	select NRFX_TIMER
-
-config NRFX_TIMER121
-	bool "TIMER121 driver instance"
-	depends on $(dt_nodelabel_exists,timer121)
-	select NRFX_TIMER
-
-config NRFX_TIMER130
-	bool "TIMER130 driver instance"
-	depends on $(dt_nodelabel_exists,timer130)
-	select NRFX_TIMER
-
-config NRFX_TIMER131
-	bool "TIMER131 driver instance"
-	depends on $(dt_nodelabel_exists,timer131)
-	select NRFX_TIMER
-
-config NRFX_TIMER132
-	bool "TIMER132 driver instance"
-	depends on $(dt_nodelabel_exists,timer132)
-	select NRFX_TIMER
-
-config NRFX_TIMER133
-	bool "TIMER133 driver instance"
-	depends on $(dt_nodelabel_exists,timer133)
-	select NRFX_TIMER
-
-config NRFX_TIMER134
-	bool "TIMER134 driver instance"
-	depends on $(dt_nodelabel_exists,timer134)
-	select NRFX_TIMER
-
-config NRFX_TIMER135
-	bool "TIMER135 driver instance"
-	depends on $(dt_nodelabel_exists,timer135)
-	select NRFX_TIMER
-
-config NRFX_TIMER136
-	bool "TIMER136 driver instance"
-	depends on $(dt_nodelabel_exists,timer136)
-	select NRFX_TIMER
-
-config NRFX_TIMER137
-	bool "TIMER137 driver instance"
-	depends on $(dt_nodelabel_exists,timer137)
-	select NRFX_TIMER
+	bool "TIMER driver"
 
 config NRFX_TWI
 	bool
