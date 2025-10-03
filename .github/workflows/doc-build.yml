@@ -59,7 +59,7 @@ jobs:
     runs-on:
       group: zephyr-runner-v2-linux-x64-4xlarge
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.28.5.20250930
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.28.6.20251003
       options: '--entrypoint /bin/bash'
     timeout-minutes: 20
     concurrency:
