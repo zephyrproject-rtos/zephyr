@@ -100,6 +100,19 @@
 
 &flexcomm2_lpi2c2 {
 	status = "okay";
+	pinctrl-0 = <&pinmux_flexcomm2_i2c>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	audio_codec: da7212@1a {
+		compatible = "dlg,da7212";
+		reg = <0x1a>;
+		clocks = <&syscon MCUX_SAI1_CLK>;
+		clock-source = "MCLK";
+		clock-names = "mclk";
+	};
 };
 
 /*
