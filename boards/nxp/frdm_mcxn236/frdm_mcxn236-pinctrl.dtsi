@@ -229,10 +229,23 @@
 				 <SAI1_TXD0_PIO2_8>,
 				 <SAI1_RX_FS_PIO1_7>,
 				 <SAI1_RX_BCLK_PIO3_18>,
+				 <SAI1_MCLK_PIO3_6>,
 				 <SAI1_RXD0_PIO2_9>;
 			drive-strength = "high";
 			slew-rate = "fast";
 			input-enable;
+		};
+	};
+
+	pinmux_flexcomm2_i2c: pinmux_flexcomm2_i2c {
+		group0 {
+			pinmux = <FC2_P0_PIO4_0>,
+				 <FC2_P1_PIO4_1>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+			bias-pull-up;
+			drive-open-drain;
 		};
 	};
 };
