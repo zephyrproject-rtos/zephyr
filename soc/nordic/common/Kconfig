@@ -21,6 +21,13 @@ config NRF_SYS_EVENT
 	bool "nRF system event support"
 	select NRFX_POWER if !NRF_PLATFORM_HALTIUM
 
+config NRF_FORCE_CONSTANT_LATENCY
+	bool "Force constant latency mode in system ON"
+	depends on NRF_SYS_EVENT
+	help
+	  Forcing constant latency mode minimises CPU wakeup latency and PPI task
+	  response time, at the cost of increased power consumption.
+
 config MRAM_LATENCY
 	bool "MRAM latency manager"
 	depends on NRFS_HAS_MRAM_SERVICE
