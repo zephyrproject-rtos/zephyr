@@ -1095,13 +1095,6 @@ static int arducam_mega_init_controls(const struct device *dev)
 	if (ret < 0) {
 		return ret;
 	}
-	ret = video_init_ctrl(
-		&ctrls->enable_sharpness, dev, VIDEO_CID_ARDUCAM_EN_SHARPNESS,
-		(struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
-	ctrls->enable_sharpness.flags |= VIDEO_CTRL_FLAG_READ_ONLY;
-	if (ret < 0) {
-		return ret;
-	}
 	ret = video_init_int_menu_ctrl(
 		&ctrls->linkfreq, dev, VIDEO_CID_LINK_FREQ, ARDUCAM_MEGA_640_480_LINK_FREQ_ID,
 		arducam_mega_link_frequency, ARRAY_SIZE(arducam_mega_link_frequency));
