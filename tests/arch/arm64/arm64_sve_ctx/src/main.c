@@ -7,6 +7,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <zephyr/arch/arm64/lib_helpers.h>
+#include <zephyr/app_memory/app_memdomain.h>
 #include <stdint.h>
 
 /* Helper function for SVE vector length */
@@ -47,7 +48,7 @@ ZTEST(arm64_sve_ctx, test_sve_basic_instructions)
 	}
 }
 
-#define STACK_SIZE 1024
+#define STACK_SIZE 4096
 #define THREAD_PRIORITY 1
 
 K_THREAD_STACK_DEFINE(thread1_stack, STACK_SIZE);
@@ -60,9 +61,10 @@ static struct k_thread thread2_data;
 static struct k_sem sync_sem;
 static struct k_sem done_sem;
 
-/* Test data for validation */
-static volatile bool thread1_sve_ok;
-static volatile bool thread2_sve_ok;
+/* User space memory partition for test results */
+K_APPMEM_PARTITION_DEFINE(sve_test_partition);
+K_APP_DMEM(sve_test_partition) static volatile bool thread1_sve_ok;
+K_APP_DMEM(sve_test_partition) static volatile bool thread2_sve_ok;
 
 /* Set unique patterns in SVE Z registers for thread identification */
 static inline void sve_set_thread_pattern(uint32_t thread_id)
@@ -121,8 +123,8 @@ static inline void sve_set_predicate_pattern(uint32_t thread_id)
 /* Verify SVE Z register patterns */
 static inline bool sve_verify_z_pattern(uint32_t thread_id)
 {
-	/* because of "static" this can be used by only one thread at a time */
-	static uint32_t actual_buffer[8 * 256/4] __aligned(8);
+	/* Use stack-allocated buffer for user threads */
+	uint32_t actual_buffer[8 * 256/4] __aligned(8);
 	uint32_t *actual_p = actual_buffer;
 	uint32_t vl = sve_get_vl();
 	uint32_t expected_base = 0x12340000 | (thread_id & 0xFFF);
@@ -283,29 +285,44 @@ static void sve_test_thread2(void *arg1, void *arg2, void *arg3)
 /*
  * Test suite setup and tests
  */
+static struct k_mem_domain sve_test_domain;
+
 static void *sve_ctx_setup(void)
 {
 	k_sem_init(&sync_sem, 0, 1);
 	k_sem_init(&done_sem, 0, 1);
+
+	/* Initialize memory domain for user threads */
+	struct k_mem_partition *parts[] = { &sve_test_partition };
+
+	k_mem_domain_init(&sve_test_domain, 1, parts);
+
 	return NULL;
 }
 
-ZTEST(arm64_sve_ctx, test_sve_context_switching)
+static void sve_ctx_before(void *fixture)
 {
-	/* Reset test results */
+	/* Reset test results and semaphores before each test */
 	thread1_sve_ok = false;
 	thread2_sve_ok = false;
+	k_sem_reset(&sync_sem);
+	k_sem_reset(&done_sem);
+}
 
-	/* Create threads that will use SVE */
+ZTEST(arm64_sve_ctx, test_sve_context_switching_privileged)
+{
+	TC_PRINT("=== Testing SVE Context Switching: Privileged vs Privileged ===\n");
+
+	/* Create privileged kernel threads that will use SVE */
 	k_thread_create(&thread1_data, thread1_stack, STACK_SIZE,
 			sve_test_thread1, NULL, NULL, NULL,
 			THREAD_PRIORITY, 0, K_NO_WAIT);
-	k_thread_name_set(&thread1_data, "sve_thread1");
+	k_thread_name_set(&thread1_data, "sve_priv_thread1");
 
 	k_thread_create(&thread2_data, thread2_stack, STACK_SIZE,
 			sve_test_thread2, NULL, NULL, NULL,
 			THREAD_PRIORITY, 0, K_NO_WAIT);
-	k_thread_name_set(&thread2_data, "sve_thread2");
+	k_thread_name_set(&thread2_data, "sve_priv_thread2");
 
 	/* Wait for both threads to complete */
 	k_sem_take(&done_sem, K_FOREVER);
@@ -315,8 +332,85 @@ ZTEST(arm64_sve_ctx, test_sve_context_switching)
 	k_thread_join(&thread2_data, K_FOREVER);
 
 	/* Verify both threads maintained their SVE context */
-	zassert_true(thread1_sve_ok, "Thread 1 SVE context was corrupted");
-	zassert_true(thread2_sve_ok, "Thread 2 SVE context was corrupted");
+	zassert_true(thread1_sve_ok, "Privileged Thread 1 SVE context was corrupted");
+	zassert_true(thread2_sve_ok, "Privileged Thread 2 SVE context was corrupted");
 }
 
-ZTEST_SUITE(arm64_sve_ctx, NULL, sve_ctx_setup, NULL, NULL, NULL);
+ZTEST(arm64_sve_ctx, test_sve_context_switching_user)
+{
+	TC_PRINT("=== Testing SVE Context Switching: User vs User ===\n");
+
+	/* Create user threads that will use SVE */
+	k_thread_create(&thread1_data, thread1_stack, STACK_SIZE,
+			sve_test_thread1, NULL, NULL, NULL,
+			THREAD_PRIORITY, K_USER, K_NO_WAIT);
+	k_thread_name_set(&thread1_data, "sve_user_thread1");
+
+	/* Grant permission to semaphores for user thread 1 */
+	k_object_access_grant(&sync_sem, &thread1_data);
+	k_object_access_grant(&done_sem, &thread1_data);
+
+	/* Add thread 1 to memory domain for accessing result variables */
+	k_mem_domain_add_thread(&sve_test_domain, &thread1_data);
+
+	k_thread_create(&thread2_data, thread2_stack, STACK_SIZE,
+			sve_test_thread2, NULL, NULL, NULL,
+			THREAD_PRIORITY, K_USER, K_NO_WAIT);
+	k_thread_name_set(&thread2_data, "sve_user_thread2");
+
+	/* Grant permission to semaphores for user thread 2 */
+	k_object_access_grant(&sync_sem, &thread2_data);
+	k_object_access_grant(&done_sem, &thread2_data);
+
+	/* Add thread 2 to memory domain for accessing result variables */
+	k_mem_domain_add_thread(&sve_test_domain, &thread2_data);
+
+	/* Wait for both threads to complete */
+	k_sem_take(&done_sem, K_FOREVER);
+
+	/* Clean up */
+	k_thread_join(&thread1_data, K_FOREVER);
+	k_thread_join(&thread2_data, K_FOREVER);
+
+	/* Verify both threads maintained their SVE context */
+	zassert_true(thread1_sve_ok, "User Thread 1 SVE context was corrupted");
+	zassert_true(thread2_sve_ok, "User Thread 2 SVE context was corrupted");
+}
+
+ZTEST(arm64_sve_ctx, test_sve_context_switching_mixed)
+{
+	TC_PRINT("=== Testing SVE Context Switching: User vs Privileged ===\n");
+
+	/* Create mixed privilege threads: thread 1 = user, thread 2 = privileged */
+	k_thread_create(&thread1_data, thread1_stack, STACK_SIZE,
+			sve_test_thread1, NULL, NULL, NULL,
+			THREAD_PRIORITY, K_USER, K_NO_WAIT);
+	k_thread_name_set(&thread1_data, "sve_user_thread1");
+
+	/* Grant permission to semaphores for user thread 1 */
+	k_object_access_grant(&sync_sem, &thread1_data);
+	k_object_access_grant(&done_sem, &thread1_data);
+
+	/* Add thread 1 to memory domain for accessing result variables */
+	k_mem_domain_add_thread(&sve_test_domain, &thread1_data);
+
+	k_thread_create(&thread2_data, thread2_stack, STACK_SIZE,
+			sve_test_thread2, NULL, NULL, NULL,
+			THREAD_PRIORITY, 0, K_NO_WAIT);
+	k_thread_name_set(&thread2_data, "sve_priv_thread2");
+
+	/* Privileged thread doesn't need special permissions */
+
+	/* Wait for both threads to complete */
+	k_sem_take(&done_sem, K_FOREVER);
+
+	/* Clean up */
+	k_thread_join(&thread1_data, K_FOREVER);
+	k_thread_join(&thread2_data, K_FOREVER);
+
+	/* Verify both threads maintained their SVE context */
+	zassert_true(thread1_sve_ok, "User Thread 1 SVE context was corrupted");
+	zassert_true(thread2_sve_ok, "Privileged Thread 2 SVE context was corrupted");
+}
+
+ZTEST_SUITE(arm64_sve_ctx, NULL, sve_ctx_setup, sve_ctx_before, NULL, NULL);
