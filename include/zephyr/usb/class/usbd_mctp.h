@@ -7,7 +7,7 @@
 
 /**
  * @file
- * @brief MCTP over USB Protocol Endpoint Deivce Class public header
+ * @brief MCTP over USB Protocol Endpoint Device Class public header
  *
  * This API is currently considered experimental.
  */

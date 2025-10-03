@@ -360,7 +360,7 @@ int usbd_mctp_send(const struct usbd_mctp_inst *const inst, const void *const da
 		.desc = &usbd_mctp_desc_##n,						\
 		.fs_desc = usbd_mctp_fs_desc_##n,					\
 		.hs_desc = usbd_mctp_hs_desc_##n,					\
-		.inst_idx = n 								\
+		.inst_idx = n								\
 	};										\
 											\
 	USBD_DEFINE_CLASS(mctp_##n, &usbd_mctp_api, &usbd_mctp_ctx_##n, NULL);
