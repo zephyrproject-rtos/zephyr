@@ -181,7 +181,7 @@ static void mu_isr(const struct device *dev)
 {
 	struct nxp_imx_mu_data *data = dev->data;
 	const struct nxp_imx_mu_config *config = dev->config;
-	const uint32_t flags = MU_GetStatusFlags(config->base);
+	uint32_t flags = MU_GetStatusFlags(config->base);
 
 	for (int i_channel = 0; i_channel < MU_MAX_CHANNELS; i_channel++) {
 		/* Handle notification interrupt for the channel first and
@@ -199,6 +199,13 @@ static void mu_isr(const struct device *dev)
 				data->cb[i_channel](dev, i_channel, data->user_data[i_channel],
 						    NULL);
 			}
+			/* Clear the interrupt just handled and break
+			 * if no more pending.
+			 */
+			flags &= ~gen_int_mask;
+			if (flags == 0) {
+				break;
+			}
 		}
 
 		const uint32_t rx_int_mask = g_rx_flag_mask[i_channel];
@@ -210,6 +217,13 @@ static void mu_isr(const struct device *dev)
 			if (data->cb[i_channel]) {
 				data->cb[i_channel](dev, i_channel, data->user_data[i_channel],
 						    &msg);
+			}
+			/* Clear the interrupt just handled and break
+			 * if no more pending.
+			 */
+			flags &= ~rx_int_mask;
+			if (flags == 0) {
+				break;
 			}
 		}
 	}
