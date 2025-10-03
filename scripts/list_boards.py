@@ -315,7 +315,21 @@ def find_v2_boards(args):
     board_files = []
     if args.board_dir:
         board_files = [d / BOARD_YML for d in args.board_dir]
-    else:
+    elif args.board:
+        # Fast path for HWMv2: boards/<vendor>/<board>/board.yml
+        for root in unique_paths(args.board_roots):
+            boards_root = root / 'boards'
+            if not boards_root.is_dir():
+                continue
+            for vendor_dir in boards_root.iterdir(): # boards/<vendor>
+                if not vendor_dir.is_dir():
+                    continue
+                board_yml = vendor_dir / args.board / BOARD_YML
+                if board_yml.is_file():
+                    board_files.append(board_yml)
+                    break
+
+    if not board_files:
         for root in unique_paths(args.board_roots):
             board_files.extend((root / 'boards').rglob(BOARD_YML))
 
