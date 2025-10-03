@@ -155,20 +155,19 @@ static DEVICE_API(mbox, nxp_imx_mu_driver_api) = {
 	.set_enabled = nxp_imx_mu_set_enabled,
 };
 
-static void handle_irq(const struct device *dev);
+static void mu_isr(const struct device *dev);
 
 #define MU_INSTANCE_DEFINE(idx)                                                                    \
 	static struct nxp_imx_mu_data nxp_imx_mu_##idx##_data;                                     \
 	const static struct nxp_imx_mu_config nxp_imx_mu_##idx##_config = {                        \
 		.base = (MU_Type *)DT_INST_REG_ADDR(idx),                                          \
 	};                                                                                         \
-	void MU_##idx##_IRQHandler(void);                                                          \
 	static int nxp_imx_mu_##idx##_init(const struct device *dev)                               \
 	{                                                                                          \
 		ARG_UNUSED(dev);                                                                   \
 		MU_Init(nxp_imx_mu_##idx##_config.base);                                           \
-		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority), MU_##idx##_IRQHandler,  \
-			    NULL, 0);                                                              \
+		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority), mu_isr,                 \
+			    DEVICE_DT_INST_GET(idx), 0);                                           \
 		irq_enable(DT_INST_IRQN(idx));                                                     \
 		return 0;                                                                          \
 	}                                                                                          \
@@ -176,20 +175,9 @@ static void handle_irq(const struct device *dev);
 			      &nxp_imx_mu_##idx##_config, PRE_KERNEL_1, CONFIG_MBOX_INIT_PRIORITY, \
 			      &nxp_imx_mu_driver_api)
 
-#define MU_IRQ_HANDLER(idx)                                                                        \
-	void MU_##idx##_IRQHandler(void)                                                           \
-	{                                                                                          \
-		const struct device *dev = DEVICE_DT_INST_GET(idx);                                \
-		handle_irq(dev);                                                                   \
-	}
+DT_INST_FOREACH_STATUS_OKAY(MU_INSTANCE_DEFINE)
 
-#define MU_INST(idx)                                                                               \
-	MU_INSTANCE_DEFINE(idx);                                                                   \
-	MU_IRQ_HANDLER(idx);
-
-DT_INST_FOREACH_STATUS_OKAY(MU_INST)
-
-static void handle_irq(const struct device *dev)
+static void mu_isr(const struct device *dev)
 {
 	struct nxp_imx_mu_data *data = dev->data;
 	const struct nxp_imx_mu_config *config = dev->config;
