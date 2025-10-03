@@ -104,4 +104,14 @@ zephyr_linker_sources_ifdef(
   SECTIONS class/usbd_dfu.ld
 )
 
+zephyr_library_sources_ifdef(
+  CONFIG_USBD_MCTP_CLASS
+  class/usbd_mctp.c
+)
+
+zephyr_linker_sources_ifdef(
+	CONFIG_USBD_MCTP_CLASS
+	SECTIONS class/usbd_mctp.ld
+)
+
 zephyr_linker_sources(DATA_SECTIONS usbd_data.ld)

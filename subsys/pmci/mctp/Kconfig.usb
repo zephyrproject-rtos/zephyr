@@ -1,0 +1,12 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if MCTP_USB
+
+config MCTP_USB_TX_TIMEOUT
+	int "MCTP USB transmit timeout (ms)"
+	default 1000
+	help
+	  Set the MCTP USB transmit timeout, in milliseconds.
+
+endif

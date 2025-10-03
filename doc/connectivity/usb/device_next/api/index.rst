@@ -13,3 +13,4 @@ USB device support APIs
    usbd_msc_device.rst
    usbd_midi2.rst
    usbd_dfu.rst
+   usbd_mctp.rst
