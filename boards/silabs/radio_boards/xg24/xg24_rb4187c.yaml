@@ -10,14 +10,15 @@ toolchain:
 supported:
   - adc
   - bluetooth
-  - gpio
-  - uart
-  - spi
-  - dma
-  - watchdog
   - comparator
+  - counter
   - dac
-testing:
-  ignore_tags:
-    - pm
+  - dma
+  - entropy
+  - flash
+  - gpio
+  - pwm
+  - spi
+  - uart
+  - watchdog
 vendor: silabs

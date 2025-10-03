@@ -7,11 +7,12 @@
 /dts-v1/;
 #include <silabs/xg24/efr32mg24b220f1536im48.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
 #include "xg24_rb4187c-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs BRD4187C (Mighty Gecko 24 Radio Board)";
+	model = "Silicon Labs EFR32xG24 2.4 GHz 20 dBm Radio Board (xG24-RB4187C, BRD4187C)";
 	compatible = "silabs,xg24_rb4187c", "silabs,efr32mg24";
 
 	chosen {
@@ -30,6 +31,8 @@
 		dht0 = &si7021;
 		led0 = &led0;
 		led1 = &led1;
+		pwm-led0 = &pwm_led0;
+		pwm-led1 = &pwm_led1;
 		sw0 = &button0;
 		sw1 = &button1;
 		watchdog0 = &wdog0;
@@ -46,6 +49,20 @@
 		led1: led_1 {
 			gpios = <&gpiob 4 GPIO_ACTIVE_HIGH>;
 			label = "LED 1";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led_0 {
+			pwms = <&timer0_pwm 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "PWM LED 0";
+		};
+
+		pwm_led1: pwm_led_1 {
+			pwms = <&timer0_pwm 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "PWM LED 1";
 		};
 	};
 
@@ -196,6 +213,16 @@
 		compatible = "silabs,si7006";
 		reg = <0x40>;
 		vin-supply = <&sensor_enable>;
+	};
+};
+
+&timer0 {
+	status = "okay";
+
+	timer0_pwm: pwm {
+		pinctrl-0 = <&timer0_default>;
+		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
