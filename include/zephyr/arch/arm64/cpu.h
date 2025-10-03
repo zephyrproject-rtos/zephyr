@@ -54,7 +54,8 @@
 #define SCTLR_I_BIT		BIT(12)
 #define SCTLR_BR_BIT		BIT(17)
 
-#define CPACR_EL1_FPEN_NOTRAP	(0x3 << 20)
+#define CPACR_EL1_FPEN		GENMASK(21, 20)
+#define CPACR_EL1_ZEN		GENMASK(17, 16)
 
 #define SCR_NS_BIT		BIT(0)
 #define SCR_IRQ_BIT		BIT(1)
@@ -138,7 +139,19 @@
 #define CPTR_TTA_BIT		BIT(20)
 #define CPTR_TCPAC_BIT		BIT(31)
 
+/* SVE-specific CPTR_EL2 bits */
+#define CPTR_EL2_TZ_BIT		BIT(8)
+#define CPTR_EL2_ZEN_SHIFT	16
+#define CPTR_EL2_ZEN_MASK	(0x3 << CPTR_EL2_ZEN_SHIFT)
+#define CPTR_EL2_ZEN_EL1_EN	BIT(16)
+#define CPTR_EL2_ZEN_EL0_EN	BIT(17)
+
 #define CPTR_EL2_RES1		BIT(13) | BIT(12) | BIT(9) | (0xff)
+
+/* SVE Control Register (ZCR) */
+#define ZCR_EL1			S3_0_C1_C2_0
+#define ZCR_EL2			S3_4_C1_C2_0
+#define ZCR_EL3			S3_6_C1_C2_0
 
 #define HCR_FMO_BIT		BIT(3)
 #define HCR_IMO_BIT		BIT(4)
