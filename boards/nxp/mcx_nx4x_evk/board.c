@@ -136,7 +136,7 @@ void board_early_init_hook(void)
 
 	CLOCK_SetupExtClocking(BOARD_XTAL0_CLK_HZ);
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai0)) || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai1))
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai0)) || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai1)) || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(micfil))
 	/* < Set up PLL1 */
 	const pll_setup_t pll1_Setup = {
 		.pllctrl = SCG_SPLLCTRL_SOURCE(1U) | SCG_SPLLCTRL_SELI(3U) |
@@ -149,7 +149,7 @@ void board_early_init_hook(void)
 	/* Configure PLL1 to the desired values */
 	CLOCK_SetPLL1Freq(&pll1_Setup);
 	/* Set PLL1 CLK0 divider to value 1 */
-	CLOCK_SetClkDiv(kCLOCK_DivPLL1Clk0, 1U);
+	CLOCK_SetClkDiv(kCLOCK_DivPLL1Clk0, 2U);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm0))
@@ -213,6 +213,7 @@ void board_early_init_hook(void)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio0))
 	CLOCK_EnableClock(kCLOCK_Gpio0);
+	CLOCK_EnableClock(kCLOCK_Port0);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
@@ -448,6 +449,15 @@ void board_early_init_hook(void)
 	CLOCK_SetClkDiv(kCLOCK_DivSai1Clk, 1u);
 	CLOCK_AttachClk(kPLL1_CLK0_to_SAI1);
 	CLOCK_EnableClock(kCLOCK_Sai1);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(micfil))
+	CLOCK_SetClkDiv(kCLOCK_DivMicfilFClk, 1U);
+	CLOCK_AttachClk(kPLL1_CLK0_to_MICFILF);
+	CLOCK_EnableClock(kCLOCK_Micfil);
+
+	PORT0->PCR[16] = 0x00001900;
+	PORT0->PCR[17] = 0x00001900;
 #endif
 
 	/* Set SystemCoreClock variable. */
