@@ -227,6 +227,15 @@ Logging
   used. The new script supports the same functionality (and more), but requires different command
   line arguments when invoked.
 
+MCUmgr
+======
+
+* The :ref:`OS mgmt<mcumgr_smp_group_0>` :ref:`mcumgr_os_application_info` command's response for
+  hardware platform has been updated to output the board target instead of the board and board
+  revision, which now includes the SoC and board variant. The old behaviour has been deprecated,
+  but can still be used by enabling
+  :kconfig:option:`CONFIG_MCUMGR_GRP_OS_INFO_HARDWARE_INFO_SHORT_HARDWARE_PLATFORM`.
+
 RTIO
 ====
 
