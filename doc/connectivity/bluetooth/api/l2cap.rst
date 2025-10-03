@@ -71,7 +71,7 @@ Creating a simple L2CAP server
 The documentation above describes the APIs but does not show a minimal flow to create a working L2CAP server.  The steps are:
 
 1. Register a server using :c:func:`bt_l2cap_server_register` and provide an ``accept`` callback.
-2. Prepare a channel instance (for example :c:type:`bt_l2cap_le_chan`) whose ``chan.ops`` points to a :c:type:`bt_l2cap_chan_ops` struct.
+2. Allocate a channel instance (for example :c:type:`bt_l2cap_le_chan` or a :c:array:`bt_l2cap_chan` array sized by ``CONFIG_BT_MAX_CONN``) whose ``chan.ops`` points to a :c:type:`bt_l2cap_chan_ops` struct. This instance is assigned to the ``*chan`` parameter of the ``accept`` callback and becomes the channel used for the connection.
 3. In the ``accept`` callback assign the channel instance to ``*chan`` to accept the incoming connection.
 4. Implement the callbacks in :c:type:`bt_l2cap_chan_ops` such as ``recv``, ``connected`` and ``disconnected`` to handle data and connection events.
 
@@ -151,6 +151,14 @@ A minimal skeleton example follows (fill in allocation and error handling as nee
         printk("L2CAP server registered\n");
         return 0;
     }
+
+A minimal skeleton example follows. See the complete sample at
+:zephyr_file:`samples/bluetooth/l2cap_server_simple`.
+
+.. literalinclude:: ../../../../samples/bluetooth/l2cap_server_simple/src/main.c
+   :language: c
+   :linenos:
+   :lines: 1-100
 
 Notes
 ~~~~~
