@@ -153,8 +153,15 @@ SECTION_FUNC(TEXT, z_arm64_sync_exc)
 
 #ifdef CONFIG_FPU_SHARING
 	cmp	x1, #0x07 /*Access to SIMD or floating-point */
-	bne	1f
-	mov	x0, sp
+	beq	fpu_sve_trap
+#ifdef CONFIG_ARM64_SVE
+	cmp	x1, #0x19 /*Trapped access to SVE functionality */
+	beq	fpu_sve_trap
+#endif
+	b	1f
+fpu_sve_trap:
+	mov	x0, sp  /* ESF pointer */
+	/* x1 already contains exception class (EC) - pass as second argument */
 	bl	z_arm64_fpu_trap
 	b	z_arm64_exit_exc_fpu_done
 1:

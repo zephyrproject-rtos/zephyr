@@ -249,6 +249,7 @@ config ARMV9_A
 	select CPU_HAS_MMU
 	select ARCH_HAS_USERSPACE if ARM_MMU
 	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT if ARM_MMU
+	imply ARM64_SVE if FPU_SHARING
 	help
 	  This option signifies the use of an ARMv9-A processor
 	  implementation.
@@ -412,5 +413,28 @@ config ARM64_BOOT_DISABLE_DCACHE
 	  from EL2, enable this option, it will clean and invalidate all data
 	  cache and then disable data cache, it will will be re-enabled after
 	  MMU is configured and enabled.
+
+config ARM64_SVE
+	bool "Scalable Vector Extension (SVE) support"
+	depends on ARMV9_A
+	help
+	  Enable support for ARM64 Scalable Vector Extension (SVE).
+	  This allows threads to use SVE/SVE2 instructions and automatically
+	  handles context switching of SVE registers (Z0-Z31, P0-P15, FFR)
+	  if CONFIG_FPU_SHARING is also set. Requires ARMv9-A architecture.
+
+config ARM64_SVE_VL_MAX
+	int "Maximum SVE vector length in bytes"
+	depends on ARM64_SVE
+	default 16
+	range 16 256
+	help
+	  Maximum supported SVE vector length in bytes. This determines
+	  the SVE context size within each thread structure. Valid values
+	  are any power of two from 16 to 256 inclusive (128 to 2048 bits).
+	  This can be smaller than the hardware supported vector length to
+	  save some per-thread memory in which case the hardware will be
+	  limited to the specified length. Having a larger value than what
+	  the hardware supports will only waste memory.
 
 endif # CPU_CORTEX_A || CPU_AARCH64_CORTEX_R
