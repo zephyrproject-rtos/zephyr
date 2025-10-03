@@ -36,6 +36,26 @@ config UDC_STM32_MAX_QMESSAGES
 	help
 	  Maximum number of messages for handling of STM32 USBD ISR events.
 
+config UDC_STM32_OTG_RXFIFO_BASELINE_SIZE
+	int "Baseline RxFIFO size (in bytes)"
+	default 600
+	depends on DT_HAS_ST_STM32_OTGFS_ENABLED \
+		|| DT_HAS_ST_STM32_OTGHS_ENABLED
+	help
+	  Baseline value for RXFIFO size computation
+
+	  The OTG_FS and OTG_HS USB controllers use a single "RxFIFO" to hold
+	  data received by all OUT endpoints. The RxFIFO's size is influenced
+	  by various parameters: the optimal value depends on the exact USB
+	  configuration that will be used, which the driver does not know by
+	  the time it has to configure the RxFIFO size.
+
+	  The total RxFIFO size will be equal to the value of this option
+	  plus a fixed overhead that the driver can derive from the hardware
+	  configuration (e.g., number of endpoints implemented).
+
+	  Refer to STM32 Reference Manuals for more details about the RxFIFO.
+
 config UDC_STM32_CLOCK_CHECK
 	bool "Runtime USB 48MHz clock check"
 	default y if !(SOC_SERIES_STM32F1X || SOC_SERIES_STM32F3X || SOC_SERIES_STM32U5X)
