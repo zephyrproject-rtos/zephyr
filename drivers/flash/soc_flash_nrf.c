@@ -15,7 +15,6 @@
 #include <zephyr/drivers/flash.h>
 #include <string.h>
 #include <nrfx_nvmc.h>
-#include <nrf_erratas.h>
 
 #include "soc_flash_nrf.h"
 

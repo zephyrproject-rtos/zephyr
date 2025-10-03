@@ -12,7 +12,6 @@
 #define NRF_USBD_COMMON_ERRATA_H__
 
 #include <nrfx.h>
-#include <nrf_erratas.h>
 
 #ifndef NRF_USBD_COMMON_ERRATA_ENABLE
 /**
