@@ -4099,7 +4099,8 @@ PMCI:
     - kehintel
   files:
     - subsys/pmci/
-    - samples/modules/pmci/
+    - samples/subsys/pmci/
+    - include/zephyr/pmci/
   labels:
     - "area: PMCI"
 

@@ -29,7 +29,7 @@ Building and Running
 
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/modules/pmci/mctp/endpoint
+   :zephyr-app: samples/subsys/pmci/mctp/endpoint
    :host-os: unix
    :board: nrf52840_nrf52840dk
    :goals: run
