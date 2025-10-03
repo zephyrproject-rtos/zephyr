@@ -11,7 +11,7 @@
 #include <ctype.h>
 #include <errno.h>
 
-#include "mbedtls/md.h"
+#include "psa/crypto.h"
 
 #if !defined(__ZEPHYR__) || defined(CONFIG_POSIX_API)
 
@@ -79,8 +79,8 @@ const char *port;
 const char *uri_path = "";
 static char response[1024];
 static char response_hash[32];
-mbedtls_md_context_t hash_ctx;
-const mbedtls_md_info_t *hash_info;
+size_t response_hash_len;
+psa_hash_operation_t hash_op = PSA_HASH_OPERATION_INIT;
 unsigned int cur_bytes;
 
 void dump_addrinfo(const struct addrinfo *ai)
@@ -256,6 +256,7 @@ bool download(struct addrinfo *ai, bool is_tls, bool *redirect)
 	struct timeval timeout = {
 		.tv_sec = 5
 	};
+	psa_status_t status;
 
 	cur_bytes = 0U;
 	*redirect = false;
@@ -313,8 +314,6 @@ bool download(struct addrinfo *ai, bool is_tls, bool *redirect)
 		goto error;
 	}
 
-	mbedtls_md_starts(&hash_ctx);
-
 	while (1) {
 		int len = recv(sock, response, sizeof(response) - 1, 0);
 
@@ -332,7 +331,11 @@ bool download(struct addrinfo *ai, bool is_tls, bool *redirect)
 			break;
 		}
 
-		mbedtls_md_update(&hash_ctx, response, len);
+		status = psa_hash_update(&hash_op, response, len);
+		if (status != PSA_SUCCESS) {
+			printf("Error: psa_hash_update() failed\n");
+			goto error;
+		}
 
 		cur_bytes += len;
 		printf("Download progress: %u Bytes; %u KiB; %u MiB\r",
@@ -344,14 +347,17 @@ bool download(struct addrinfo *ai, bool is_tls, bool *redirect)
 
 	printf("\n");
 
-	mbedtls_md_finish(&hash_ctx, response_hash);
+	status = psa_hash_finish(&hash_op, response_hash, sizeof(response_hash), response_hash_len);
+	if (status != PSA_SUCCESS) {
+		printf("Error: psa_hash_finish() failed\n");
+		goto error;
+	}
 
 	printf("Hash: ");
-	print_hex(response_hash, mbedtls_md_get_size(hash_info));
+	print_hex(response_hash, response_hash_len);
 	printf("\n");
 
-	if (memcmp(response_hash, download_hash,
-		   mbedtls_md_get_size(hash_info)) != 0) {
+	if (memcmp(response_hash, download_hash, response_hash_len) != 0) {
 		printf("HASH MISMATCH!\n");
 	}
 
@@ -372,6 +378,7 @@ int main(void)
 	bool is_tls = false;
 	unsigned int num_iterations = NUM_ITER;
 	bool redirect = false;
+	psa_status_t status;
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 	for (int i = 0; i < ARRAY_SIZE(ca_certificates); i++) {
@@ -449,14 +456,9 @@ redirect:
 
 	dump_addrinfo(res);
 
-	hash_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
-	if (!hash_info) {
-		fatal("Unable to request hash type from mbedTLS");
-	}
-
-	mbedtls_md_init(&hash_ctx);
-	if (mbedtls_md_setup(&hash_ctx, hash_info, 0) < 0) {
-		fatal("Can't setup mbedTLS hash engine");
+	status = psa_hash_setup(&hash_op, PSA_ALG_SHA_256);
+	if (status != PSA_SUCCESS) {
+		fatal("Hash operation setup failed");
 	}
 
 	const uint32_t total_iterations = num_iterations;
@@ -484,7 +486,7 @@ redirect:
 
 	printf("Finished downloading.\n");
 
-	mbedtls_md_free(&hash_ctx);
+	psa_hash_abort(&hash_op);
 	freeaddrinfo(res);
 
 	return 0;

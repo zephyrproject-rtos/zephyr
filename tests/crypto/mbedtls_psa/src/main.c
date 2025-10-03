@@ -135,4 +135,34 @@ ZTEST_USER(test_mbedtls_psa, test_sha512)
 	zassert_mem_equal(out_buf, out_buf_ref, sizeof(out_buf_ref));
 }
 
+ZTEST_USER(test_mbedtls_psa, test_hmac_sha256)
+{
+	uint8_t key[] = { 'a' };
+	psa_key_attributes_t key_attr = PSA_KEY_ATTRIBUTES_INIT;
+	psa_key_id_t key_id = PSA_KEY_ID_NULL;
+	uint8_t in_buf[] = { 'a' };
+	uint8_t out_buf[PSA_HASH_LENGTH(PSA_ALG_SHA_256)] = { 0 };
+	uint8_t out_buf_ref[PSA_HASH_LENGTH(PSA_ALG_SHA_256)] = {
+		0x3e, 0xcf, 0x53, 0x88, 0xe2, 0x20, 0xda, 0x9e,
+		0x0f, 0x91, 0x94, 0x85, 0xde, 0xb6, 0x76, 0xd8,
+		0xbe, 0xe3, 0xae, 0xc0, 0x46, 0xa7, 0x79, 0x35,
+		0x3b, 0x46, 0x34, 0x18, 0x51, 0x1e, 0xe6, 0x22
+	};
+	size_t out_len;
+	psa_status_t status;
+
+	psa_set_key_type(&key_attr, PSA_KEY_TYPE_HMAC);
+	psa_set_key_algorithm(&key_attr, PSA_ALG_HMAC(PSA_ALG_SHA_256));
+	psa_set_key_usage_flags(&key_attr, PSA_KEY_USAGE_SIGN_MESSAGE);
+
+	status = psa_import_key(&key_attr, key, sizeof(key), &key_id);
+	zassert_equal(status, PSA_SUCCESS);
+
+	status = psa_mac_compute(key_id, PSA_ALG_HMAC(PSA_ALG_SHA_256),
+				 in_buf, sizeof(in_buf),
+				 out_buf, sizeof(out_buf), &out_len);
+	zassert_equal(status, PSA_SUCCESS);
+	zassert_mem_equal(out_buf, out_buf_ref, sizeof(out_buf_ref));
+}
+
 ZTEST_SUITE(test_mbedtls_psa, NULL, NULL, NULL, NULL, NULL);

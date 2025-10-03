@@ -24,6 +24,7 @@ common:
     type: multi_line
     regex:
       - " PASS - test_generate_random.*"
+      - " PASS - test_hmac_sha256.*"
       - " PASS - test_md5.*"
       - " PASS - test_sha1.*"
       - " PASS - test_sha224.*"
