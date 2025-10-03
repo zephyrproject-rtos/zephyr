@@ -209,6 +209,10 @@ New APIs and options
 
 * Networking
 
+  * CoAP
+
+    * :c:struct:`coap_client_response_data`
+
   * Sockets
 
     * :c:func:`zsock_listen` now implements the ``backlog`` parameter support. The TCP server

@@ -184,6 +184,9 @@ Power management
 Networking
 **********
 
+* The :c:type:`coap_client_response_cb_t` signature has changed. The list of arguments
+  is passed as a :c:struct:`coap_client_response_data` pointer instead.
+
 * The HTTP server now respects the configured ``_config`` value. Check that
   you provide applicable value to :c:macro:`HTTP_SERVICE_DEFINE_EMPTY`,
   :c:macro:`HTTPS_SERVICE_DEFINE_EMPTY`, :c:macro:`HTTP_SERVICE_DEFINE` and
