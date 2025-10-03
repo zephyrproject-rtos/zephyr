@@ -659,16 +659,27 @@ static void udc_stm32_mem_init(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	const struct udc_stm32_config *cfg = dev->config;
-	int words;
+	uint32_t rxfifo_size; /* in words */
 
-	LOG_DBG("DRAM size: %ub", cfg->dram_size);
+	LOG_DBG("DRAM size: %uB", cfg->dram_size);
 
-	/* The documentation is not clear at all about RX FiFo size requirement,
-	 * 160 has been selected through trial and error.
+	/*
+	 * In addition to the user-provided baseline, RxFIFO should fit:
+	 *	- Global OUT NAK (1 word)
+	 *	- Received packet information (1 word)
+	 *	- Transfer complete status information (2 words per OUT endpoint)
+	 *
+	 * Align user-provided baseline up to 32-bit word size then
+	 * add this "fixed" overhead to obtain the final RxFIFO size.
 	 */
-	words = MAX(160, DIV_ROUND_UP(cfg->ep_mps, 4U));
-	HAL_PCDEx_SetRxFiFo(&priv->pcd, words);
-	priv->occupied_mem = words * 4;
+	rxfifo_size = DIV_ROUND_UP(CONFIG_UDC_STM32_OTG_RXFIFO_BASELINE_SIZE, 4U);
+	rxfifo_size += 2U; /* Global OUT NAK and Rx packet info */
+	rxfifo_size += 2U * cfg->num_endpoints;
+
+	LOG_DBG("RxFIFO size: %uB", rxfifo_size * 4U);
+
+	HAL_PCDEx_SetRxFiFo(&priv->pcd, rxfifo_size);
+	priv->occupied_mem = rxfifo_size * 4U;
 
 	/* For EP0 TX, reserve only one MPS */
 	HAL_PCDEx_SetTxFiFo(&priv->pcd, 0, DIV_ROUND_UP(UDC_STM32_EP0_MAX_PACKET_SIZE, 4U));
