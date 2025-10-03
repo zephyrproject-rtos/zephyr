@@ -57,7 +57,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_SCAN_SELF) || IS_ENABLED(CONFIG_SCAN_OFFLOAD),
 
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 5U /* Set the timeout relative to interval */
 #define PA_SYNC_SKIP                      5U
-#define NAME_LEN                          sizeof(CONFIG_TARGET_BROADCAST_NAME) + 1U
+#define NAME_LEN                          MAX((sizeof(CONFIG_TARGET_BROADCAST_NAME) + 1U), 128U)
 #define BROADCAST_DATA_ELEMENT_SIZE       sizeof(int16_t)
 
 static K_SEM_DEFINE(sem_broadcast_sink_stopped, 0U, 1U);
@@ -698,14 +698,56 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	k_sem_give(&sem_disconnected);
 }
 
+static void recycled(void)
+{
+	if (!IS_ENABLED(CONFIG_SCAN_OFFLOAD)) {
+		int err;
+
+		err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
+		if (err != 0) {
+			printk("Unable to restart advertising connectable: %d\n", err);
+		}
+	}
+}
+
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
+	.recycled = recycled,
 };
 
 static struct bt_pacs_cap cap = {
 	.codec_cap = &codec_cap,
 };
+
+static bool data_name_cb(struct bt_data *data, void *user_data)
+{
+	char *name = user_data;
+	uint8_t len;
+
+	switch (data->type) {
+	case BT_DATA_NAME_SHORTENED:
+	case BT_DATA_NAME_COMPLETE:
+	case BT_DATA_BROADCAST_NAME:
+		len = MIN(data->data_len, NAME_LEN - 1);
+		(void)memcpy(name, data->data, len);
+		name[len] = '\0';
+		return false;
+	default:
+		return true;
+	}
+}
+
+static const char *phy2str(uint8_t phy)
+{
+	switch (phy) {
+	case BT_GAP_LE_PHY_NONE: return "No packets";
+	case BT_GAP_LE_PHY_1M: return "LE 1M";
+	case BT_GAP_LE_PHY_2M: return "LE 2M";
+	case BT_GAP_LE_PHY_CODED: return "LE Coded";
+	default: return "Unknown";
+	}
+}
 
 static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 {
@@ -796,6 +838,35 @@ static bool data_cb(struct bt_data *data, void *user_data)
 
 static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_simple *ad)
 {
+	char le_addr[BT_ADDR_LE_STR_LEN];
+	struct net_buf_simple buf;
+	char name[NAME_LEN];
+	uint8_t data_status;
+	uint16_t data_len;
+
+	(void)memset(name, 0, sizeof(name));
+
+	data_len = ad->len;
+	net_buf_simple_clone(ad, &buf);
+	bt_data_parse(&buf, data_name_cb, name);
+
+	data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS(info->adv_props);
+
+	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	printk("[DEVICE]: %s, AD evt type %u, Tx Pwr: %i, RSSI %i "
+	       "Data status: %u, AD data len: %u Name: %s "
+	       "C:%u S:%u D:%u SR:%u E:%u Pri PHY: %s, Sec PHY: %s, "
+	       "Interval: 0x%04x (%u ms), SID: %u\n",
+	       le_addr, info->adv_type, info->tx_power, info->rssi,
+	       data_status, data_len, name,
+	       (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0,
+	       (info->adv_props & BT_GAP_ADV_PROP_SCANNABLE) != 0,
+	       (info->adv_props & BT_GAP_ADV_PROP_DIRECTED) != 0,
+	       (info->adv_props & BT_GAP_ADV_PROP_SCAN_RESPONSE) != 0,
+	       (info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0,
+	       phy2str(info->primary_phy), phy2str(info->secondary_phy),
+	       info->interval, info->interval * 5 / 4, info->sid);
+
 	if (info->interval != 0U) {
 		/* call to bt_data_parse consumes netbufs so shallow clone for verbose output */
 
@@ -1192,6 +1263,15 @@ int main(void)
 		return 0;
 	}
 
+	if (!IS_ENABLED(CONFIG_SCAN_OFFLOAD)) {
+		err = start_adv();
+		if (err != 0) {
+			printk("Unable to start advertising connectable: %d\n", err);
+
+			return 0;
+		}
+	}
+
 	while (true) {
 		uint8_t stream_count;
 		uint32_t sync_bitfield;
@@ -1267,10 +1347,26 @@ int main(void)
 			printk("Scanning for broadcast sources\n");
 		}
 
-		err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, NULL);
-		if (err != 0 && err != -EALREADY) {
-			printk("Unable to start scan for broadcast sources: %d\n", err);
-			return 0;
+		static bool scanning;
+
+		if (!scanning) {
+			struct bt_le_scan_param scan_param = {
+				.type           = BT_LE_SCAN_TYPE_ACTIVE,
+				.options        = BT_LE_SCAN_OPT_CODED,
+				.interval       = BT_GAP_SCAN_FAST_INTERVAL_MIN,
+				.window         = BT_GAP_SCAN_FAST_WINDOW,
+				.interval_coded = BT_GAP_SCAN_FAST_INTERVAL_MIN,
+				.window_coded   = BT_GAP_SCAN_FAST_WINDOW,
+			};
+
+			err = bt_le_scan_start(&scan_param, NULL);
+			if (err != 0 && err != -EALREADY) {
+				printk("Unable to start scan for broadcast sources: %d\n",
+				       err);
+				return 0;
+			}
+
+			scanning = true;
 		}
 
 		printk("Waiting for Broadcaster\n");
@@ -1280,10 +1376,14 @@ int main(void)
 			continue;
 		}
 
-		err = bt_le_scan_stop();
-		if (err != 0) {
-			printk("bt_le_scan_stop failed with %d, resetting\n", err);
-			continue;
+		if (!IS_ENABLED(CONFIG_SCAN_BACKGROUND)) {
+			err = bt_le_scan_stop();
+			if (err != 0) {
+				printk("bt_le_scan_stop failed with %d, resetting\n", err);
+				continue;
+			}
+
+			scanning = false;
 		}
 
 		printk("Attempting to PA sync to the broadcaster with id 0x%06X\n",

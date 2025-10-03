@@ -29,6 +29,12 @@ config SCAN_DELAY
 	  Time to advertise connectable for a Broadcast Assistant to connect
 	  before starting scanning for Broadcast Sources.
 
+config SCAN_BACKGROUND
+	bool "Keep background scanning"
+	depends on SCAN_SELF
+	help
+	  Keep scanning in the background.
+
 config TARGET_BROADCAST_NAME
 	string "Target Broadcast Device Name"
 	default ""
