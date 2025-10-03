@@ -28,6 +28,23 @@ ZTEST(arm64_isa_features, test_arm64_feature_detection)
 
 	TC_PRINT("SVE support: %s\n", sve ? "YES" : "NO");
 
+	if (sve) {
+#ifdef CONFIG_ARM64_SVE
+		uint32_t vl;
+
+		__asm__("rdvl %0, #1" : "=r"(vl));
+		TC_PRINT("SVE vector length: %u bytes\n", vl);
+
+		if (vl < CONFIG_ARM64_SVE_VL_MAX) {
+			TC_PRINT("Warning: CONFIG_ARM64_SVE_VL_MAX=%u while the hardware "
+				 "vector length is %u.\n", CONFIG_ARM64_SVE_VL_MAX, vl);
+			TC_PRINT("Warning: This will waste memory in struct k_thread.\n");
+		}
+#else
+		TC_PRINT("Warning: CONFIG_ARM64_SVE is not set\n");
+#endif
+	}
+
 	/* Current Exception Level */
 	TC_PRINT("Current EL: EL%llu\n", GET_EL(current_el));
 
