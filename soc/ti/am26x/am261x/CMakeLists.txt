@@ -1,3 +1,7 @@
+# Texas Instruments AM26x MCU Family
+#
+# Copyright (c) 2025 Texas Instruments Incorporated
+#
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_include_directories(.)
@@ -9,6 +13,7 @@ if( CONFIG_SOC_SERIES_AM261X_R5F )
   zephyr_include_directories(common)
 
   zephyr_sources(common/ctrl_partitions.c)
+  zephyr_sources(common/mbox_config.c)
 
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/r5/linker.ld CACHE INTERNAL "")
 endif()

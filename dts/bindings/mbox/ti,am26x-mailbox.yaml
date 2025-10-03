@@ -1,0 +1,53 @@
+# Copyright (c) 2025 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI AM26x Family Mailbox Controller
+  This driver is compatible with the IPC notify V1 from TI's MCU_PLUS_SDK.
+  The Client ID in the message is not used in this implementation. Hence,
+  the application needs to take care of such message encoding/decoding if
+  required.
+
+compatible: "ti,am26x-mailbox"
+
+include: [base.yaml, mailbox-controller.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Register space for the mailbox controller.
+      Should include two entries: MSS controller registers and mailbox SRAM.
+
+  reg-names:
+    required: true
+    type: string-array
+    description: |
+      Names corresponding to the register areas.
+      Should be "ctrl" for MSS controller registers and "mbox-ram" for mailbox SRAM.
+
+  core-id:
+    required: true
+    type: int
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    description: |
+      Identifier for the core this instance is running on.
+      The value corresponds to the core ID within the SoC.
+      For example, in AM261x:
+      0 = R5FSS0_0
+      1 = R5FSS0_1
+
+      In other AM26x family SoCs with more cores, this would map to their 
+      respective core IDs based on the SoC's core numbering scheme.
+
+  interrupts:
+    required: true
+    description: |
+      Interrupt specifier for the mailbox interrupt.
+      
+mbox-cells:
+  - channel

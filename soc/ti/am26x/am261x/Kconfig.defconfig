@@ -6,6 +6,10 @@
 
 if SOC_SERIES_AM261X
 
+config MAX_CPUS_NUM
+	int
+	default 2 if SOC_SERIES_AM261X
+
 config KERNEL_ENTRY
 	default "_vector_table" if SOC_SERIES_AM261X_R5F
 

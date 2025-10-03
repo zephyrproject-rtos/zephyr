@@ -25,7 +25,12 @@
 		zephyr,memory-region = "BTCM";
 	};
 
-	soc {
-		/delete-node/ gpio1;
+    soc {
+        /delete-node/ gpio1;
 	};
 };
+
+&mailbox0 {
+	core-id = <0>;
+};
+

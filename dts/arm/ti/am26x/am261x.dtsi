@@ -44,10 +44,21 @@
 
 	soc {
 		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "simple-bus";
 		ranges;
 
+		mailbox0: mailbox@50d00000 {
+			compatible = "ti,am26x-mailbox";
+			reg = <0x50d00000 DT_SIZE_K(98)>,     /* MSS controller registers */
+			      <0x72000000 DT_SIZE_K(16)>;     /* Mailbox SRAM */
+			reg-names = "ctrl", "mbox_ram";
+			interrupts = <0 158 0 0>;           /* Mailbox interrupt */
+			interrupt-parent = <&vim>;
+			#mbox-cells = <1>;
+			status = "disabled";
+			core-id = <0>;
+		};
+		
 		pinctrl: pinctrl@53100000 {
 			compatible = "ti,am26x-pinctrl";
 			reg = <0x53100000 0x2a0>;
@@ -258,6 +269,19 @@
 				ngpios = <16>;
 				status = "disabled";
 			};
+		};
+	};
+
+	/* Define the shared memory region */
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+		
+		/* Shared memory for RPMsg communication */
+		shared_memory: memory@72000000 {
+			reg = <0x72000000 DT_SIZE_K(16)>;
+			compatible = "zephyr,ipc-shm";
 		};
 	};
 };
