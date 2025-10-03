@@ -1,5 +1,5 @@
-.. zephyr:code-sample:: is31fl3194
-   :name: IS31FL3194 RGB LED
+.. zephyr:code-sample:: is31fl319x
+   :name: IS31FL319x RGB LED
    :relevant-api: led_interface
 
    Cycle colors on an RGB LED connected to the IS31FL3194 using the LED API.
