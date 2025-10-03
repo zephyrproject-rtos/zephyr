@@ -21,14 +21,12 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/cache.h>
 #include <soc/nrfx_coredep.h>
-#include <system_nrf54l.h>
 #include <soc.h>
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 #if (defined(NRF_APPLICATION) && !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)) || \
 	!defined(__ZEPHYR__)
 
-#include <nrf_erratas.h>
 #include <hal/nrf_oscillators.h>
 #include <hal/nrf_power.h>
 #include <hal/nrf_regulators.h>

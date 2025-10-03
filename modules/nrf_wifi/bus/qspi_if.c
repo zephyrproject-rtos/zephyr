@@ -18,7 +18,6 @@
 #include <zephyr/drivers/wifi/nrf_wifi/bus/qspi_if.h>
 
 #include <soc.h>
-#include <nrf_erratas.h>
 #include <nrfx_qspi.h>
 #include <hal/nrf_clock.h>
 #include <hal/nrf_gpio.h>

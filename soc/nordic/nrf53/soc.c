@@ -18,7 +18,7 @@
 #include <zephyr/dt-bindings/regulator/nrf5x.h>
 #include <soc/nrfx_coredep.h>
 #include <zephyr/logging/log.h>
-#include <nrf_erratas.h>
+#include <nrfx.h>
 #include <hal/nrf_power.h>
 #include <hal/nrf_ipc.h>
 #include <helpers/nrfx_gppi.h>

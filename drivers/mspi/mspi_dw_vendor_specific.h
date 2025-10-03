@@ -12,7 +12,7 @@
 
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_exmif)
 
-#include <nrf.h>
+#include <nrfx.h>
 
 static inline void vendor_specific_init(const struct device *dev)
 {
