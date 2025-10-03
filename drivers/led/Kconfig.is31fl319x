@@ -1,8 +1,8 @@
 # Copyright (c) 2024 Arduino SA
 # SPDX-License-Identifier: Apache-2.0
 
-config IS31FL3194
-	bool "IS31FL3194 LED driver"
+config IS31FL319X
+	bool "IS31FL319X LED driver"
 	default y
 	depends on DT_HAS_ISSI_IS31FL3194_ENABLED
 	select I2C
