@@ -57,7 +57,9 @@ int main(void)
 	const uint32_t *version_number;
 	struct bindesc_handle handle;
 	uint8_t buffer[0x100];
+#if IS_ENABLED(CONFIG_BINDESC_READ_FLASH)
 	const uint8_t *bytes;
+#endif /* IS_ENABLED(CONFIG_BINDESC_READ_FLASH) */
 	const char *version;
 	size_t size;
 	int retval;
@@ -112,6 +114,7 @@ int main(void)
 	bindesc_find_uint(&handle, BINDESC_ID_KERNEL_VERSION_MAJOR, &version_number);
 	printk("Zephyr version number: %u\n", *version_number);
 
+#if IS_ENABLED(CONFIG_BINDESC_READ_FLASH)
 	printk("\n####################\n");
 	printk("Reading using flash:\n");
 	printk("####################\n");
@@ -121,6 +124,7 @@ int main(void)
 	bindesc_find_bytes(&handle, 3, &bytes, &size);
 	printk("my_bytes: ");
 	dump_bytes(bytes, size);
+#endif /* IS_ENABLED(CONFIG_BINDESC_READ_FLASH) */
 
 	return 0;
 }
