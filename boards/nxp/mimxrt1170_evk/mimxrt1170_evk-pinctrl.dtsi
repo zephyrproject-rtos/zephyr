@@ -326,6 +326,19 @@
 		};
 	};
 
+	pinmux_sai3: pinmux_sai3 {
+		group0 {
+			pinmux = <&iomuxc_gpio_emc_b2_17_sai3_mclk>,
+				<&iomuxc_gpio_emc_b2_16_sai3_tx_sync>,
+				<&iomuxc_gpio_emc_b2_15_sai3_tx_bclk>,
+				<&iomuxc_gpio_emc_b2_14_sai3_tx_data>,
+				<&iomuxc_gpio_emc_b2_13_sai3_rx_data>;
+			drive-strength = "high";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
 	pinmux_sai4: pinmux_sai4 {
 		group0 {
 			pinmux = <&iomuxc_lpsr_gpio_lpsr_09_sai4_tx_data>,
