@@ -19,7 +19,8 @@
  * - no statistics collection
  */
 
-#if defined(CONFIG_SOC_FAMILY_ATMEL_SAM)
+#include <zephyr/devicetree.h>
+#if DT_HAS_COMPAT_STATUS_OKAY(atmel_sam_gmac)
 #define DT_DRV_COMPAT atmel_sam_gmac
 #else
 #define DT_DRV_COMPAT atmel_sam0_gmac
@@ -31,6 +32,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
+#include <zephyr/cache.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/sys/__assert.h>
@@ -59,12 +61,16 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/gptp.h>
 #include <zephyr/irq.h>
 
-#ifdef __DCACHE_PRESENT
+#if defined(__DCACHE_PRESENT) || defined(CONFIG_DCACHE)
 static bool dcache_enabled;
 
 static inline void dcache_is_enabled(void)
 {
+#ifdef __DCACHE_PRESENT
 	dcache_enabled = (SCB->CCR & SCB_CCR_DC_Msk);
+#else
+	dcache_enabled = true;
+#endif
 }
 static inline void dcache_invalidate(uint32_t addr, uint32_t size)
 {
@@ -76,7 +82,7 @@ static inline void dcache_invalidate(uint32_t addr, uint32_t size)
 	uint32_t start_addr = addr & (uint32_t)~(GMAC_DCACHE_ALIGNMENT - 1);
 	uint32_t size_full = size + addr - start_addr;
 
-	SCB_InvalidateDCache_by_Addr((uint32_t *)start_addr, size_full);
+	sys_cache_data_invd_range((uint32_t *)start_addr, size_full);
 }
 
 static inline void dcache_clean(uint32_t addr, uint32_t size)
@@ -89,7 +95,7 @@ static inline void dcache_clean(uint32_t addr, uint32_t size)
 	uint32_t start_addr = addr & (uint32_t)~(GMAC_DCACHE_ALIGNMENT - 1);
 	uint32_t size_full = size + addr - start_addr;
 
-	SCB_CleanDCache_by_Addr((uint32_t *)start_addr, size_full);
+	sys_cache_data_flush_range((uint32_t *)start_addr, size_full);
 }
 #else
 #define dcache_is_enabled()
@@ -101,6 +107,8 @@ static inline void dcache_clean(uint32_t addr, uint32_t size)
 #define MCK_FREQ_HZ	SOC_ATMEL_SAM0_MCK_FREQ_HZ
 #elif CONFIG_SOC_FAMILY_ATMEL_SAM
 #define MCK_FREQ_HZ	SOC_ATMEL_SAM_MCK_FREQ_HZ
+#elif defined(CONFIG_SOC_SAMA7G54)
+#define MCK_FREQ_HZ	MHZ(125)
 #else
 #error Unsupported SoC family
 #endif
@@ -1089,6 +1097,11 @@ static int gmac_init(Gmac *gmac, uint32_t gmac_ncfgr_val)
 
 		return -EINVAL;
 	}
+#ifdef GMAC_UR_REFCLK_Msk
+	if (DT_INST_ENUM_IDX(0, ref_clk_source)) {
+		gmac->GMAC_UR |= GMAC_UR_REFCLK_Msk;
+	}
+#endif
 
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 	/* Initialize PTP Clock Registers */
@@ -1718,6 +1731,7 @@ static int eth_initialize(const struct device *dev)
 	/* Enable GMAC module's clock */
 	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
 			       (clock_control_subsys_t)&cfg->clock_cfg);
+#elif defined(CONFIG_SOC_SAMA7G54)
 #else
 	/* Enable MCLK clock on GMAC */
 	MCLK->AHBMASK.reg |= MCLK_AHBMASK_GMAC;
@@ -1828,6 +1842,9 @@ static void eth0_iface_init(struct net_if *iface)
 		  GMAC_NCFGR_MTIHEN  /* Multicast Hash Enable */
 		| GMAC_NCFGR_LFERD   /* Length Field Error Frame Discard */
 		| GMAC_NCFGR_RFCS    /* Remove Frame Check Sequence */
+#ifdef CONFIG_SOC_SAMA7G54
+		| GMAC_NCFGR_DBW(1)  /* Data Bus Width. Must always be written to ‘1’ */
+#endif
 		| GMAC_NCFGR_RXCOEN  /* Receive Checksum Offload Enable */
 		| GMAC_MAX_FRAME_SIZE;
 	result = gmac_init(cfg->regs, gmac_ncfgr_val);
