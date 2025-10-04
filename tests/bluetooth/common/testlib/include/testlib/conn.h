@@ -63,6 +63,22 @@ int bt_testlib_connect(const bt_addr_le_t *peer, struct bt_conn **connp);
 int bt_testlib_disconnect(struct bt_conn **connp, uint8_t reason);
 
 /**
+ * @brief Get the `state` field of the `bt_conn_info` struct
+ *
+ * Wrapper around @ref bt_conn_get_info() that returns the
+ * @c bt_conn_info.state field.
+ *
+ * @param conn A connection object.
+ *
+ * Thread-safe.
+ *
+ * @note This function assumes the connection object is valid, and
+ *       consequently that @c bt_conn_get_info cannot fail. The implementation
+ *       asserts the pointer is non-NULL and that @c bt_conn_get_info succeeds.
+ */
+enum bt_conn_state bt_testlib_conn_state_get(struct bt_conn *conn);
+
+/**
  * @brief Wait for connected state
  *
  * Thread-safe.
@@ -138,5 +154,30 @@ struct bt_conn *bt_testlib_conn_unindex(enum bt_conn_type conn_type, uint8_t con
  * needed.
  */
 void bt_testlib_conn_wait_free(void);
+
+/**
+ * @brief Wait for encryption (or disconnection)
+ *
+ * Any number of threads can call this function; all callers
+ * wait until the connection is encrypted or disconnected.
+ *
+ * If the connection is already encrypted or disconnected, this
+ * function returns immediately.
+ *
+ * The connection is considered encrypted when bt_conn_get_security()
+ * returns a value greater than or equal to BT_SECURITY_L2.
+ *
+ * @c -ENOTCONN is returned only if the connection was not
+ * encrypted at the time of disconnection. If the connection is
+ * disconnected but has been encrypted, this function returns 0.
+ * This is so the sequence `expect(testlib_wait_for_encryption()
+ * == 0); testlib_wait_disconnected();` is race-free.
+ *
+ * Thread-safe.
+ *
+ * @retval 0 Connection was encrypted.
+ * @retval -ENOTCONN Connection disconnected before it was encrypted.
+ */
+int testlib_wait_for_encryption(struct bt_conn *conn);
 
 #endif /* ZEPHYR_TESTS_BLUETOOTH_COMMON_TESTLIB_INCLUDE_TESTLIB_CONN_H_ */
