@@ -1,0 +1,28 @@
+# DTR wrapper UART configuration options
+
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_DTR
+	bool "UART DTR wrapper driver"
+	default y
+	depends on DT_HAS_ZEPHYR_UART_DTR_ENABLED
+	depends on GPIO
+	help
+	  Enable UART DTR wrapper driver. This driver wraps an existing UART
+	  device and adds DTR (Data Terminal Ready) functionality for runtime
+	  power management. When DTR is asserted, the underlying UART is
+	  powered on. When DTR is deasserted, the UART is powered off.
+
+	  The driver acts as a child node of the UART it controls and provides
+	  full UART API compatibility while managing the parent device's power
+	  state through a GPIO-controlled DTR signal.
+
+config UART_DTR_INIT_PRIORITY
+	int "UART DTR driver init priority"
+	default 60
+	depends on UART_DTR
+	help
+	  UART DTR wrapper driver initialization priority. This should be
+	  higher than the underlying UART driver but lower than devices
+	  that depend on it. Generally set higher than CONFIG_UART_INIT_PRIORITY.
