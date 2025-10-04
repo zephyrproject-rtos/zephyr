@@ -9,6 +9,7 @@
 #define ZEPHYR_DRIVERS_USB_COMMON_USB_DWC2_HW
 
 #include <stdint.h>
+#include "usb_dwc2_reg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -80,8 +81,21 @@ struct usb_dwc2_reg {
 		volatile uint32_t dieptxf[15];
 	};
 	volatile uint32_t reserved2[176];
-	/* Host mode register 0x0400 .. 0x0670 */
-	uint32_t reserved3[256];
+	/* Host mode register 0x0400 .. 0x07FF */
+	volatile uint32_t hcfg;
+	volatile uint32_t hfir;
+	volatile uint32_t hfnum;
+	volatile uint32_t reserved_0x40c[1];
+	volatile uint32_t hptxsts;
+	volatile uint32_t haint;
+	volatile uint32_t haintmsk;
+	volatile uint32_t hflbaddr;
+	volatile uint32_t reserved_0x420_0x43c[8];
+	volatile uint32_t hprt;
+	volatile uint32_t reserved_0x0444_0x04fc[47];
+	/* Host Channel Registers 0x0500 to 0x06fc */
+	usb_dwc2_host_chan_regs_t host_chans[16];
+	volatile uint32_t reserved_0x0704_0x07fc[64];
 	/* Device mode register 0x0800 .. 0x0D00 */
 	volatile uint32_t dcfg;
 	volatile uint32_t dctl;
