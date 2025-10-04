@@ -1363,6 +1363,10 @@ void ll_rx_dequeue(void)
 #if defined(CONFIG_BT_CTLR_CONN_RSSI_EVENT)
 	case NODE_RX_TYPE_RSSI:
 #endif /* CONFIG_BT_CTLR_CONN_RSSI_EVENT */
+
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+	case NODE_RX_TYPE_CHAN_METRICS:
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR)
@@ -1563,6 +1567,10 @@ void ll_rx_mem_release(void **node_rx)
 #if defined(CONFIG_BT_CTLR_CONN_RSSI_EVENT)
 		case NODE_RX_TYPE_RSSI:
 #endif /* CONFIG_BT_CTLR_CONN_RSSI_EVENT */
+
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+		case NODE_RX_TYPE_CHAN_METRICS:
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR)

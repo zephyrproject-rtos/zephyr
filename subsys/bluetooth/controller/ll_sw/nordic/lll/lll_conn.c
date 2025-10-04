@@ -33,6 +33,7 @@
 #include "lll_df_types.h"
 #include "lll_df.h"
 #include "lll_conn.h"
+#include "lll_chan.h"
 
 #include "lll_internal.h"
 #include "lll_df_internal.h"
@@ -389,6 +390,13 @@ void lll_conn_isr_rx(void *param)
 			goto lll_conn_isr_rx_exit;
 		}
 
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+		/* Increase bad channel count for previously a CRC error */
+		if (crc_expire != 0U) {
+			lll_chan_metrics_chan_bad(lll->chan_curr);
+		}
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
+
 		/* Reset CRC expiry counter */
 		crc_expire = 0U;
 
@@ -403,7 +411,20 @@ void lll_conn_isr_rx(void *param)
 		/* CRC error countdown */
 		crc_expire--;
 		is_done = (crc_expire == 0U);
+
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+		/* Increase bad channel count for consecutive CRC error */
+		if (is_done != 0U) {
+			lll_chan_metrics_chan_bad(lll->chan_curr);
+		}
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
 	}
+
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT) && defined(CONFIG_BT_PERIPHERAL)
+	if (lll->role == BT_HCI_ROLE_PERIPHERAL) {
+		lll->periph.chan_prev = lll->periph.chan_curr;
+	}
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT && CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX) && defined(CONFIG_BT_CTLR_LE_ENC)
 		if (lll->enc_rx) {
@@ -1109,6 +1130,21 @@ static inline int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 		struct pdu_data *pdu_data_tx;
 		struct node_tx *tx;
 		memq_link_t *link;
+
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+		/* Previous event used channel is good as ack-ed by the peer */
+		if (false) {
+#if defined(CONFIG_BT_CENTRAL)
+		/* Central role and consecutive good channel reception */
+		} else if (lll->role == BT_HCI_ROLE_CENTRAL) {
+			lll_chan_metrics_chan_good(lll->chan_curr);
+#endif /* CONFIG_BT_CENTRAL */
+#if defined(CONFIG_BT_PERIPHERAL)
+		} else if (lll->role == BT_HCI_ROLE_PERIPHERAL) {
+			lll_chan_metrics_chan_good(lll->periph.chan_prev);
+#endif /* CONFIG_BT_PERIPHERAL */
+		}
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
 
 		/* Increment sequence number */
 		lll->sn++;
