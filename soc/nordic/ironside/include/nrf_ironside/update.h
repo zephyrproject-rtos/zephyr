@@ -62,6 +62,7 @@ struct ironside_update_blob {
  * @param update Pointer to update blob
  *
  * @retval 0 on a successful request (although the update itself may still fail).
+ * @retval -EFAULT if the address of the update is outside of the accepted range.
  * @retval -IRONSIDE_UPDATE_ERROR_NOT_PERMITTED if missing access to the update candidate.
  * @retval -IRONSIDE_UPDATE_ERROR_SICR_WRITE_FAILED if writing update parameters to SICR failed.
  * @retval Positive error status if reported by IronSide call (see error codes in @ref call.h).

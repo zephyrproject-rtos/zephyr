@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <nrf_ironside/update.h>
 #include <nrf_ironside/call.h>
 
@@ -10,6 +11,11 @@ int ironside_update(const struct ironside_update_blob *update)
 {
 	int err;
 	struct ironside_call_buf *const buf = ironside_call_alloc();
+
+	if ((uintptr_t)update < CONFIG_NRF_IRONSIDE_UPDATE_SERVICE_MIN_ADDRESS ||
+	    (uintptr_t)update > CONFIG_NRF_IRONSIDE_UPDATE_SERVICE_MAX_ADDRESS) {
+		return -EFAULT;
+	}
 
 	buf->id = IRONSIDE_CALL_ID_UPDATE_SERVICE_V0;
 	buf->args[IRONSIDE_UPDATE_SERVICE_UPDATE_PTR_IDX] = (uintptr_t)update;
