@@ -173,6 +173,12 @@
 	status = "okay";
 };
 
+&ic10 {
+	pll-src = <4>;
+	ic-div = <32>;
+	status = "okay";
+};
+
 &ic11 {
 	pll-src = <1>;
 	ic-div = <3>;
@@ -311,6 +317,20 @@ csi_i2c: &i2c1 {
 		pinctrl-0 = <&tim15_ch1_pc12>;
 		pinctrl-names = "default";
 	};
+};
+
+&i3c1 {
+	pinctrl-0 = <&i3c1_scl_ph9 &i3c1_sda_pc1>;
+	pinctrl-names = "default";
+
+	clocks = <&rcc STM32_CLOCK(APB1, 24)>,
+		 <&rcc STM32_SRC_IC10 I3C1_SEL(2)>;
+
+	i2c-scl-hz = <400000>;
+	i3c-scl-hz = <6000000>;
+
+	/* Due to pin conflict with i2c1, keep it disabled  */
+	/* status = "okay"; */
 };
 
 zephyr_udc0: &usbotg_hs1 {
