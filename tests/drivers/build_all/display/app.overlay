@@ -273,6 +273,25 @@
 				phase-length = <0x0>;
 				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 			};
+
+			test_mipi_dbi_ssd1357: ssd1357@16 {
+				compatible = "solomon,ssd1357";
+				mipi-max-frequency = <10000000>;
+				reg = <16>;
+				width = <128>;
+				height = <128>;
+				oscillator-freq = <0x0>;
+				display-offset = <0x0>;
+				multiplex-ratio = <0x0>;
+				phase-length = <0x0>;
+				vcomh-voltage = <0x0>;
+				current-att = <0x0>;
+				precharge-time = <0x0>;
+				start-line = <0>;
+				precharge-voltage = <0x0>;
+				remap-value = <0x0>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			};
 		};
 
 		test_mipi_dbi_xfr_16bit_write_only {
