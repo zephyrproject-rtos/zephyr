@@ -905,6 +905,10 @@ static enum ethernet_hw_caps eth_xmc4xxx_capabilities(const struct device *dev)
 	caps |= ETHERNET_HW_VLAN;
 #endif
 
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
+	caps |= ETHERNET_PROMISC_MODE;
+#endif
+
 	return caps;
 }
 
@@ -925,6 +929,20 @@ static int eth_xmc4xxx_set_config(const struct device *dev, enum ethernet_config
 		net_if_set_link_addr(dev_data->iface, dev_data->mac_addr,
 				     sizeof(dev_data->mac_addr), NET_LINK_ETHERNET);
 		return 0;
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
+	case ETHERNET_CONFIG_TYPE_PROMISC_MODE: {
+		uint32_t reg = dev_cfg->regs->MAC_FRAME_FILTER;
+
+		if (config->promisc_mode) {
+			reg |= ETH_MAC_FRAME_FILTER_PR_Msk;
+		} else {
+			reg &= ~ETH_MAC_FRAME_FILTER_PR_Msk;
+		}
+		dev_cfg->regs->MAC_FRAME_FILTER = reg;
+
+		return 0;
+	}
+#endif /* CONFIG_NET_PROMISCUOUS_MODE */
 	default:
 		break;
 	}
