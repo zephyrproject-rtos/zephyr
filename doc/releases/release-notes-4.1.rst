@@ -178,6 +178,8 @@ Deprecated APIs and options
 
 * :kconfig:option:`CONFIG_BT_BUF_ACL_RX_COUNT`
 
+* :kconfig:option:`CONFIG_BT_CTLR_SCAN_AUX_SET`
+
 * All HWMv1 board name aliases which were added as deprecated in v3.7 are now removed
   (:github:`82247`).
 
