@@ -42,7 +42,6 @@ struct bt_conn *default_conn;
 atomic_t flag_connected;
 atomic_t flag_disconnected;
 atomic_t flag_conn_updated;
-atomic_t flag_audio_received;
 volatile bt_security_t security_level;
 #if defined(CONFIG_BT_CSIP_SET_MEMBER)
 uint8_t csip_rsi[BT_CSIP_RSI_SIZE];
