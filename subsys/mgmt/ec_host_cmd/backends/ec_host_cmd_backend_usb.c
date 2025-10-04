@@ -284,7 +284,6 @@ static int ec_host_cmd_request(struct usbd_class_data *const c_data, struct net_
 		if ((bi->ep == ec_host_cmd_get_in_int_ep(c_data)) ||
 		    (bi->ep == ec_host_cmd_get_out_ep(c_data))) {
 			usbd_ep_buf_free(uds_ctx, buf);
-			usbd_ep_buf_free(uds_ctx, buf);
 		}
 
 		return 0;
