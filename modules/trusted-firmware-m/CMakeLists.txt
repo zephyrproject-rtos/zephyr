@@ -26,8 +26,10 @@ if (CONFIG_BUILD_WITH_TFM)
     endif()
   endif()
 
-  # Treat any warning as error
-  if (CONFIG_COMPILER_WARNINGS_AS_ERRORS)
+  # Treat any warning as error.
+  # Temporarily disable this check for MPS4 as compiling with TF-M generates warnings. The check
+  # will be re-enabled once the fixes land in TF-M main and are cherry-picked to Zephyr's TF-M.
+  if (CONFIG_COMPILER_WARNINGS_AS_ERRORS AND NOT CONFIG_SOC_SERIES_MPS4)
     list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_WARNINGS_ARE_ERRORS:BOOL=ON)
   endif()
 
