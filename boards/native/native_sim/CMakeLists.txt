@@ -16,6 +16,10 @@ zephyr_library_sources(
 if(CONFIG_NATIVE_SIM_REBOOT)
   zephyr_library_sources(reboot.c)
   target_sources(native_simulator INTERFACE reboot_bottom.c)
+
+  # Explicitly link with libgcc_s to work around a race condition in glibc when
+  # dynamically loading libgcc_s in multiple threads.
+  target_link_options(native_simulator INTERFACE "-lgcc_s")
 endif()
 
 zephyr_include_directories(
