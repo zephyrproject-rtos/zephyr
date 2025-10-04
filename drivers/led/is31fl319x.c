@@ -21,6 +21,23 @@
 #include <zephyr/dt-bindings/led/led.h>
 
 LOG_MODULE_REGISTER(is31fl319x, CONFIG_LED_LOG_LEVEL);
+#define REG_NOT_DEFINED 0xff
+
+struct is31f1319x_model {
+	const uint8_t prod_id_reg;
+	const uint8_t shutdown_reg;
+	const uint8_t conf_reg;
+	const uint8_t current_reg;
+	const uint8_t update_reg;
+
+	const uint8_t prod_id_val;
+	const uint8_t shutdown_reg_val;
+	const uint8_t conf_enable;
+	const uint8_t update_val;
+
+	const uint8_t led_channels[];
+};
+
 
 #define IS31FL3194_PROD_ID_REG		0x00
 #define IS31FL3194_CONF_REG		0x01
@@ -36,17 +53,30 @@ LOG_MODULE_REGISTER(is31fl319x, CONFIG_LED_LOG_LEVEL);
 
 #define IS31FL3194_CHANNEL_COUNT 3
 
-static const uint8_t led_channels[] = {
-	IS31FL3194_OUT1_REG,
-	IS31FL3194_OUT2_REG,
-	IS31FL3194_OUT3_REG
-};
+static const struct is31f1319x_model is31f13194_model = {
+	/* register indexes */
+	.prod_id_reg = IS31FL3194_PROD_ID_REG,
+	.shutdown_reg = REG_NOT_DEFINED,
+	.conf_reg = IS31FL3194_CONF_REG,
+	.current_reg = IS31FL3194_CURRENT_REG,
+	.update_reg = IS31FL3194_UPDATE_REG,
+
+	/* values for those registers */
+	.prod_id_val = IS31FL3194_PROD_ID_VAL,
+	.shutdown_reg_val = 0,
+	.conf_enable = IS31FL3194_CONF_ENABLE,
+	.update_val = IS31FL3194_UPDATE_VAL,
+
+	/* channel output registers */
+	.led_channels = {IS31FL3194_OUT1_REG, IS31FL3194_OUT2_REG, IS31FL3194_OUT3_REG}};
 
 struct is31fl319x_config {
 	struct i2c_dt_spec bus;
+	uint8_t channel_count;
 	uint8_t num_leds;
 	const struct led_info *led_infos;
 	const uint8_t *current_limits;
+	const struct is31f1319x_model *regs;
 };
 
 static const struct led_info *is31fl319x_led_to_info(const struct is31fl319x_config *config,
@@ -79,21 +109,22 @@ static int is31fl319x_set_color(const struct device *dev, uint32_t led, uint8_t 
 {
 	const struct is31fl319x_config *config = dev->config;
 	const struct led_info *info = is31fl319x_led_to_info(config, led);
+	const struct is31f1319x_model *regs = config->regs;
 	int ret;
 
 	if (info == NULL) {
 		return -ENODEV;
 	}
 
-	if (info->num_colors != 3) {
+	if (info->num_colors > config->channel_count) {
 		return -ENOTSUP;
 	}
 
-	if (num_colors != 3) {
-		return -EINVAL;
+	if (num_colors > config->channel_count) {
+		return -ENOTSUP;
 	}
 
-	for (int i = 0; i < 3; i++) {
+	for (int i = 0; i < num_colors; i++) {
 		uint8_t value;
 
 		switch (info->color_mapping[i]) {
@@ -111,7 +142,7 @@ static int is31fl319x_set_color(const struct device *dev, uint32_t led, uint8_t 
 			return -EINVAL;
 		}
 
-		ret = i2c_reg_write_byte_dt(&config->bus, led_channels[i], value);
+		ret = i2c_reg_write_byte_dt(&config->bus, regs->led_channels[i], value);
 		if (ret != 0) {
 			break;
 		}
@@ -119,8 +150,8 @@ static int is31fl319x_set_color(const struct device *dev, uint32_t led, uint8_t 
 
 	if (ret == 0) {
 		ret = i2c_reg_write_byte_dt(&config->bus,
-					    IS31FL3194_UPDATE_REG,
-					    IS31FL3194_UPDATE_VAL);
+					    regs->update_reg,
+					    regs->update_val);
 	}
 
 	if (ret != 0) {
@@ -134,6 +165,8 @@ static int is31fl319x_set_brightness(const struct device *dev, uint32_t led, uin
 {
 	const struct is31fl319x_config *config = dev->config;
 	const struct led_info *info = is31fl319x_led_to_info(config, led);
+	const struct is31f1319x_model *regs = config->regs;
+
 	int ret = 0;
 
 	if (info == NULL) {
@@ -147,11 +180,11 @@ static int is31fl319x_set_brightness(const struct device *dev, uint32_t led, uin
 	/* Rescale 0..100 to 0..255 */
 	value = value * 255 / LED_BRIGHTNESS_MAX;
 
-	ret = i2c_reg_write_byte_dt(&config->bus, led_channels[led], value);
+	ret = i2c_reg_write_byte_dt(&config->bus, regs->led_channels[led], value);
 	if (ret == 0) {
 		ret = i2c_reg_write_byte_dt(&config->bus,
-					    IS31FL3194_UPDATE_REG,
-					    IS31FL3194_UPDATE_VAL);
+					    regs->update_reg,
+					    regs->update_val);
 	}
 
 	if (ret != 0) {
@@ -246,6 +279,7 @@ static int is31fl319x_init(const struct device *dev)
 {
 	const struct is31fl319x_config *config = dev->config;
 	const struct led_info *info = NULL;
+	const struct is31f1319x_model *regs = config->regs;
 	int i, ret;
 	uint8_t prod_id, band;
 	uint8_t current_reg = 0;
@@ -260,15 +294,15 @@ static int is31fl319x_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = i2c_reg_read_byte_dt(&config->bus, IS31FL3194_PROD_ID_REG, &prod_id);
+	ret = i2c_reg_read_byte_dt(&config->bus, regs->prod_id_reg, &prod_id);
 	if (ret != 0) {
 		LOG_ERR("%s: failed to read product ID", dev->name);
 		return ret;
 	}
 
-	if (prod_id != IS31FL3194_PROD_ID_VAL) {
+	if (prod_id != regs->prod_id_val) {
 		LOG_ERR("%s: invalid product ID 0x%02x (expected 0x%02x)", dev->name, prod_id,
-			IS31FL3194_PROD_ID_VAL);
+			regs->prod_id_val);
 		return -ENODEV;
 	}
 
@@ -295,7 +329,8 @@ static int is31fl319x_init(const struct device *dev)
 	}
 
 	/* enable device */
-	return i2c_reg_write_byte_dt(&config->bus, IS31FL3194_CONF_REG, IS31FL3194_CONF_ENABLE);
+	return i2c_reg_write_byte_dt(&config->bus, regs->conf_reg,
+				     regs->conf_enable);
 }
 
 static DEVICE_API(led, is31fl319x_led_api) = {
@@ -318,7 +353,7 @@ static DEVICE_API(led, is31fl319x_led_api) = {
 #define LED_CURRENT(led_node_id)						\
 	DT_PROP(led_node_id, current_limit),
 
-#define IS31FL319X_DEVICE(n, id)						\
+#define IS31FL319X_DEVICE(n, id, nchannels, pregs)				\
 										\
 	DT_INST_FOREACH_CHILD(n, COLOR_MAPPING)					\
 										\
@@ -332,13 +367,16 @@ static DEVICE_API(led, is31fl319x_led_api) = {
 										\
 	static const struct is31fl319x_config is31fl319##id##_config_##n = {	\
 		.bus = I2C_DT_SPEC_INST_GET(n),					\
+		.channel_count = nchannels,					\
 		.num_leds = ARRAY_SIZE(is31fl319##id##_leds_##n),		\
 		.led_infos = is31fl319##id##_leds_##n,				\
 		.current_limits = is31fl319##id##_currents_##n,			\
+		.regs = pregs,							\
 	};									\
 	DEVICE_DT_INST_DEFINE(n, &is31fl319x_init, NULL, NULL,			\
 			      &is31fl319##id##_config_##n, POST_KERNEL,		\
 			      CONFIG_LED_INIT_PRIORITY, &is31fl319x_led_api);
 
 #define DT_DRV_COMPAT issi_is31fl3194
-DT_INST_FOREACH_STATUS_OKAY_VARGS(IS31FL319X_DEVICE, 4)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(IS31FL319X_DEVICE, 4, IS31FL3194_CHANNEL_COUNT,
+				  &is31f13194_model)
