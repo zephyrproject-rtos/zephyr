@@ -22,6 +22,7 @@
 			resets = <&rctl STM32_RESET(AHB2, 4U)>;
 			interrupts = <79 0>;
 			interrupt-names = "cryp";
+			gcm-ccm-supported;
 			status = "disabled";
 		};
 	};
