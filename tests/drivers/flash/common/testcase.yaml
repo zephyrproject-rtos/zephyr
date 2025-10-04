@@ -155,12 +155,12 @@ tests:
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
-  drivers.flash.common.disable_spi_nor:
-    filter: dt_compat_enabled("soc-nv-flash") and dt_compat_enabled("jedec,spi-nor")
+  drivers.flash.common.test_storage_partition:
+    filter: dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
     platform_exclude:
       - beagleconnect_freedom/cc1352p7
     extra_args:
-      - CONFIG_SPI_NOR=n
+      - CONFIG_TEST_FORCE_STORAGE_PARTITION=y
   drivers.flash.common.ra_ospi_b_nor:
     platform_allow:
       - ek_ra8m1
