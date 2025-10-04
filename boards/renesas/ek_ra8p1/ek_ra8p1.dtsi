@@ -4,6 +4,7 @@
  */
 
 #include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/arducam-ffc-40pin-connector.h>
 #include <dt-bindings/input/input-event-codes.h>
 #include "ek_ra8p1-pinctrl.dtsi"
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
@@ -53,6 +54,14 @@
 		reg = <0x68000000 DT_SIZE_M(64)>;
 		zephyr,memory-region = "SDRAM";
 		status = "okay";
+	};
+
+	arducam_ffc_40pin_connector: arducam-ffc-40pin-connector {
+		compatible = "arducam,ffc-40pin-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0x0 0x3f>;
+		gpio-map = <ARDUCAM_FFC_40PIN_RESET 0 &ioport7 9 0>;
 	};
 };
 
