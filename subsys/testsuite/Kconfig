@@ -95,6 +95,15 @@ config COVERAGE_DUMP
 
 endchoice
 
+config COVERAGE_DUMP_PATH_EXCLUDE
+	string "Exclude files matching this pattern from the coverage data"
+	default ""
+	help
+	  Filenames are matched against the pattern using the POSIX fnmatch
+	  function. Filenames are based on their path in the build folder, not the
+	  original source tree. The empty string "" disables the pattern
+	  matching.
+
 endif # COVERAGE_GCOV
 
 config FORCE_COVERAGE
