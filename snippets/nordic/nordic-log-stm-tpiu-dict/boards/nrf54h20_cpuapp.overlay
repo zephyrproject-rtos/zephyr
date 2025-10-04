@@ -3,7 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&tddconf {
+&coresight {
 	status = "okay";
-	etrsources = <(NRF_TDDCONF_SOURCE_STMMAINCORE)>;
+	mode = "stm-tpiu";
+	pinctrl-0 = <&tpiu_default>;
+	pinctrl-names = "default";
 };

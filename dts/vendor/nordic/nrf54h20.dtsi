@@ -13,7 +13,6 @@
 #include <zephyr/dt-bindings/misc/nordic-nrf-ficr-nrf54h20.h>
 #include <zephyr/dt-bindings/misc/nordic-domain-id-nrf54h20.h>
 #include <zephyr/dt-bindings/misc/nordic-owner-id-nrf54h20.h>
-#include <zephyr/dt-bindings/misc/nordic-tddconf.h>
 
 /delete-node/ &sw_pwm;
 
@@ -543,10 +542,82 @@
 				interrupts = <127 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
 
-			tddconf: tddconf@1000 {
-				compatible = "nordic,nrf-tddconf";
-				reg = <0x1000 0x10>;
+			hsfll200: clock@4000 {
+				compatible = "fixed-clock";
+				reg = <0x4000 0x1000>;
+				#clock-cells = <0>;
 				status = "disabled";
+				clock-frequency = <DT_FREQ_M(320)>;
+			};
+
+			coresight: coresight@40000 {
+				compatible = "nordic,coresight-nrf";
+				reg = <0x40000 0x11000>;
+				status = "disabled";
+				nordic,clockpin-enable = <NRF_FUN_TPIU_CLOCK>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x40000 0x11000>;
+
+				tsgen: tsgen@1000 {
+					reg = <0x1000 0x1000>;
+				};
+
+				stm: stm@2000 {
+					reg = <0x2000 0x1000>;
+				};
+
+				tpiu: tpiu@3000 {
+					reg = <0x3000 0x1000>;
+				};
+
+				etb: etb@4000 {
+					reg = <0x4000 0x1000>;
+				};
+
+				etr: etr@5000 {
+					reg = <0x5000 0x1000>;
+				};
+
+				cti210: cti@6000 {
+					reg = <0x6000 0x1000>;
+				};
+
+				cti211: cti@7000 {
+					reg = <0x7000 0x1000>;
+				};
+
+				atbreplicator210: atbreplicator@8000 {
+					reg = <0x8000 0x1000>;
+				};
+
+				atbreplicator211: atbreplicator@9000 {
+					reg = <0x9000 0x1000>;
+				};
+
+				atbreplicator212: atbreplicator@A000 {
+					reg = <0xA000 0x1000>;
+				};
+
+				atbreplicator213: atbreplicator@B000 {
+					reg = <0xB000 0x1000>;
+				};
+
+				atbfunnel210: atbfunnel@C000 {
+					reg = <0xC000 0x1000>;
+				};
+
+				atbfunnel211: atbfunnel@D000 {
+					reg = <0xD000 0x1000>;
+				};
+
+				atbfunnel212: atbfunnel@E000 {
+					reg = <0xE000 0x1000>;
+				};
+
+				atbfunnel213: atbfunnel@F000 {
+					reg = <0xF000 0x1000>;
+				};
 			};
 		};
 
