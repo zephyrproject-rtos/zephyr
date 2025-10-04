@@ -37,6 +37,7 @@ config UDC_DWC2_PTI
 
 config UDC_DWC2_STACK_SIZE
 	int "UDC DWC2 driver internal thread stack size"
+	default 1024 if SOC_SERIES_ESP32S3
 	default 512
 	help
 	  DWC2 driver internal thread stack size.
