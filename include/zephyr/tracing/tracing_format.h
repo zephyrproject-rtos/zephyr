@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup subsys_tracing_format_apis
+ * @brief Header file for tracing format API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_TRACING_TRACING_FORMAT_H
 #define ZEPHYR_INCLUDE_TRACING_TRACING_FORMAT_H
 
@@ -14,15 +20,23 @@ extern "C" {
 #endif
 
 /**
- * @brief Tracing format APIs
- * @defgroup subsys_tracing_format_apis Tracing format APIs
+ * @brief Helpers to format trace messages as strings or raw data
+ * @defgroup subsys_tracing_format_apis Tracing format
  * @ingroup subsys_tracing
  * @{
  */
 
-/** @brief A structure to represent tracing data format. */
+/**
+ * @brief A structure to represent tracing data format.
+ *
+ * This structure represents a piece of data to be emitted through the tracing subsystem.
+ * It is typically used with @ref TRACING_FORMAT_DATA and @ref TRACING_DATA to wrap raw values or
+ * memory regions in a common format that backends can consume
+ */
 typedef struct tracing_data {
+	/** Pointer to the data buffer to be traced. */
 	uint8_t *data;
+	/** Size of the data buffer to be traced. */
 	uint32_t length;
 } __packed tracing_data_t;
 
