@@ -1,0 +1,5 @@
+tests:
+  net.sntp.minimal:
+    min_ram: 16
+    tags: net
+    depends_on: netif
