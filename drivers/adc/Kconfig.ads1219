@@ -1,0 +1,26 @@
+# Copyright (c) 2025 Exceenis SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_ADS1219
+	bool "Texas instruments ADS1219 I2C"
+	default y
+	depends on DT_HAS_TI_ADS1219_ENABLED
+	select I2C
+	select ADC_CONFIGURABLE_INPUTS
+	help
+	  Enable the driver implementation for the ADS1119
+
+if ADC_ADS1219
+
+config ADC_ADS1219_ASYNC_THREAD_INIT_PRIO
+	int "ADC ADS1219 async thread priority"
+	default 0
+
+config ADC_ADS1219_ACQUISITION_THREAD_STACK_SIZE
+	int "Stack size for the ADC data acquisition thread"
+	default 400
+	help
+	  Size of the stack used for the internal data acquisition
+	  thread.
+
+endif
