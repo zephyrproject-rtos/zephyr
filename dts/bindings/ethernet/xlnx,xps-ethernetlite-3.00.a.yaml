@@ -1,0 +1,9 @@
+# Copyright (c) 2025 CISPA Helmholtz Center for Information Security
+# SPDX-License-Identifier: Apache-2.0
+
+description: Xilinx AXI Ethernet Lite subsystem (MAC and MDIO) bindings.
+
+# only "reg" property is used
+include: [base.yaml]
+
+compatible: "xlnx,xps-ethernetlite-3.00.a"
