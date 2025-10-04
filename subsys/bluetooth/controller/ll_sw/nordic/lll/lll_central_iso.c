@@ -34,6 +34,7 @@
 
 #include "lll_internal.h"
 #include "lll_tim_internal.h"
+#include "lll_prof_internal.h"
 
 #include "ll_feat.h"
 
@@ -466,6 +467,10 @@ static void isr_tx(void *param)
 	struct node_rx_pdu *node_rx;
 	uint32_t hcto;
 
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_latency_capture();
+	}
+
 	/* Call to ensure packet/event timer accumulates the elapsed time
 	 * under single timer use.
 	 */
@@ -538,7 +543,12 @@ static void isr_tx(void *param)
 	}
 
 	/* assert if radio packet ptr is not set and radio started rx */
-	LL_ASSERT(!radio_is_ready());
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u", __func__,
+			      lll_prof_latency_get());
+	} else {
+		LL_ASSERT(!radio_is_ready());
+	}
 
 	/* +/- 2us active clock jitter, +1 us PPI to timer start compensation */
 	hcto = radio_tmr_tifs_base_get() + cis_lll->tifs_us +
@@ -704,6 +714,10 @@ static void isr_rx(void *param)
 	uint8_t trx_done;
 	uint8_t crc_ok;
 	uint8_t cie;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_latency_capture();
+	}
 
 	/* Read radio status and events */
 	trx_done = radio_is_done();
@@ -975,6 +989,10 @@ isr_rx_next_subevent:
 
 	isr_prepare_subevent(param);
 
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_send();
+	}
+
 	return;
 
 isr_rx_done:
@@ -1131,6 +1149,13 @@ static void isr_prepare_subevent(void *param)
 	radio_tmr_end_capture();
 
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
+	/* PA enable is overwriting packet end used in ISR profiling, hence
+	 * back it up for later use.
+	 */
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_radio_end_backup();
+	}
+
 	radio_gpio_pa_setup();
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -1148,7 +1173,16 @@ static void isr_prepare_subevent(void *param)
 #endif /* !HAL_RADIO_GPIO_HAVE_PA_PIN */
 
 	/* assert if radio packet ptr is not set and radio started tx */
-	LL_ASSERT(!radio_is_ready());
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u", __func__,
+			      lll_prof_latency_get());
+	} else {
+		LL_ASSERT(!radio_is_ready());
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_cputime_capture();
+	}
 
 	radio_isr_set(isr_tx, param);
 
