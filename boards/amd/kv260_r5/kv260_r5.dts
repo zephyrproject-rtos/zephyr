@@ -28,6 +28,7 @@
 	aliases {
 		eeprom-0 = &eeprom0;
 		eeprom-1 = &eeprom1;
+		rtc = &rtc0;
 	};
 
 	i2c_ref_clk: i2c-ref-clk {
@@ -50,6 +51,11 @@
 
 &psgpio {
 	status = "okay";
+};
+
+&rtc0 {
+	status = "okay";
+	clock-frequency = <32767>;
 };
 
 &i2c1 {
