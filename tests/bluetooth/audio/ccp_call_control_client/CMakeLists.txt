@@ -14,4 +14,6 @@ target_include_directories(testbinary PRIVATE include)
 target_sources(testbinary
   PRIVATE
     src/main.c
+    src/test_common.c
+    src/test_procedures.c
 )
