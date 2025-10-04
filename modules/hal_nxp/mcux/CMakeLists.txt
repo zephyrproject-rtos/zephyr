@@ -107,6 +107,8 @@ zephyr_compile_definitions_ifdef(
   I2C_RETRY_TIMES=40000
   )
 
+zephyr_compile_definitions(FSL_SDK_DRIVER_QUICK_ACCESS_DISABLE)
+
 # note: if FSL_IRQSTEER_ENABLE_MASTER_INT is not
 # defined then it will automatically be defined
 # and set to 1 via fsl_irqsteer.h
