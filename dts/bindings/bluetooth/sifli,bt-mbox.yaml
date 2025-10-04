@@ -1,0 +1,16 @@
+# Mailbox Bluetooth HCI device
+
+description: Bluetooth HCI behind a mailbox IPC device (H:4)
+
+compatible: "sifli,bt-mbox"
+
+include: bt-hci.yaml
+
+properties:
+  bt-hci-name:
+    default: "mbox"
+  bt-hci-bus:
+    default: "virtual"
+        
+mbox-cells:
+  - channel    
