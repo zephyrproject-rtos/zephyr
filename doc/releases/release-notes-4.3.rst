@@ -51,6 +51,10 @@ API Changes
 ..
   Only removed, deprecated and new APIs, changes go in migration guide.
 
+* Crypto
+
+  * The input buffer in :c:struct:`hash_pkt` is now constant
+
 Removed APIs and options
 ========================
 
