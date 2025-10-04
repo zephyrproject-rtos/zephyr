@@ -61,6 +61,17 @@ Device Drivers and Devicetree
 
 .. zephyr-keep-sorted-start re(^\w)
 
+Comparator
+==========
+
+* :dtcompatible:`nordic,nrf-comp` and :dtcompatible:`nordic,nrf-lpcomp` ``psel`` and ``extrefsel``
+  properties type has been changed to integer. The value of these properties is in the range
+  of :c:macro:`NRF_COMP_AIN0` to :c:macro:`NRF_COMP_AIN_VDDH_DIV5`, where :c:macro:`NRF_COMP_AIN0`
+  to :c:macro:`NRF_COMP_AIN7` represent the external inputs AIN0 to AIN7,
+  :c:macro:`NRF_COMP_AIN_VDD_DIV2` represents internal reference VDD/2,
+  and :c:macro:`NRF_COMP_AIN_VDDH_DIV5` represents VDDH/5.
+  The old ``string`` properties type is deprecated.
+
 MFD
 ===
 
