@@ -63,3 +63,10 @@ properties:
     description: |
         PLLx DIVR division factor
         Valid range: 1 - 128
+
+  div-p:
+    type: int
+    required: true
+    description: |
+        PLLx DIVP division factor
+        Valid range: 1 - 128
