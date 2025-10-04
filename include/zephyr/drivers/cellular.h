@@ -139,6 +139,8 @@ enum cellular_event {
 	CELLULAR_EVENT_MODEM_INFO_CHANGED = BIT(0),
 	/** Cellular network registration status changed */
 	CELLULAR_EVENT_REGISTRATION_STATUS_CHANGED = BIT(1),
+	/** Result of a communications link check to the modem */
+	CELLULAR_EVENT_MODEM_COMMS_CHECK_RESULT = BIT(2),
 };
 
 /* Opaque bit-mask large enough for all current & future events */
@@ -152,6 +154,11 @@ struct cellular_evt_modem_info {
 /** Payload for @ref CELLULAR_EVENT_REGISTRATION_STATUS_CHANGED. */
 struct cellular_evt_registration_status {
 	enum cellular_registration_status status; /**< New registration status */
+};
+
+/** Payload for @ref CELLULAR_EVENT_MODEM_COMMS_CHECK_RESULT */
+struct cellular_evt_modem_comms_check_result {
+	bool success; /**< Communications to modem checked successfully */
 };
 
 /**
