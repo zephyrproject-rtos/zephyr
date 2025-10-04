@@ -26,8 +26,12 @@ extern "C" {
 /**
  * @brief Request processor set the given performance state.
  *
- * To be implemented by the SoC. This API abstracts the hardware and SoC specific calls required to
- * change the performance state of the processor.
+ * To be implemented by the SoC. This API abstracts the hardware and SoC
+ * specific calls required to change the performance state of the current CPU.
+ * The caller must ensure that the current CPU does not change. If called from
+ * an ISR or a single CPU system, this restriction is automatically met. If
+ * called from a thread on an SMP system, either interrupts or the scheduler
+ * must be disabled to ensure the current CPU does not change.
  *
  * @note It is not guaranteed that the performance state will be set immediately, or at all.
  *
