@@ -1,0 +1,11 @@
+# RISC-V cores configuration options
+
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+config XUANTIE
+	bool
+	help
+	  This option signifies the use of a CPU of the XuanTie RISC-V family
+
+rsource "xuantie/Kconfig"
