@@ -185,7 +185,7 @@ void z_arm_save_scb_context(struct scb_context *context)
 	 * Make u32 pointer using explicit cast to allow
 	 * access on all cores without compiler warnings.
 	 */
-	volatile uint32_t *shpr = (volatile uint32_t *)SCB->SHPR;
+	volatile uint32_t *shpr = SHPR_REG;
 
 	for (int i = 0; i < SHPR_SIZE_W; i++) {
 		context->shpr[i] = shpr[i];
@@ -226,7 +226,7 @@ void z_arm_restore_scb_context(const struct scb_context *context)
 	SCB->CCR = context->ccr;
 
 	/* Restore System Handler Priority Registers */
-	volatile uint32_t *shpr = (volatile uint32_t *)SCB->SHPR;
+	volatile uint32_t *shpr = SHPR_REG;
 
 	for (int i = 0; i < SHPR_SIZE_W; i++) {
 		shpr[i] = context->shpr[i];
