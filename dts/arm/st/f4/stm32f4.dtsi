@@ -343,8 +343,8 @@
 
 			qdec {
 				compatible = "st,stm32-qdec";
-				status = "disabled";
 				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
 			};
 		};
 
@@ -372,8 +372,8 @@
 
 			qdec {
 				compatible = "st,stm32-qdec";
-				status = "disabled";
 				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
 			};
 		};
 
@@ -401,8 +401,8 @@
 
 			qdec {
 				compatible = "st,stm32-qdec";
-				status = "disabled";
 				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
 			};
 		};
 
@@ -430,8 +430,8 @@
 
 			qdec {
 				compatible = "st,stm32-qdec";
-				status = "disabled";
 				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
 			};
 		};
 
@@ -459,8 +459,8 @@
 
 			qdec {
 				compatible = "st,stm32-qdec";
-				status = "disabled";
 				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
 			};
 		};
 

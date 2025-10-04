@@ -5,6 +5,7 @@
  */
 
 #include <st/f4/stm32f410.dtsi>
+#include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 
 /delete-node/ &dac1;
 /delete-node/ &rng;
@@ -126,8 +127,8 @@
 
 			qdec {
 				compatible = "st,stm32-qdec";
-				status = "disabled";
 				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
 			};
 		};
 

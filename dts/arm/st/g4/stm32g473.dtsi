@@ -5,6 +5,7 @@
  */
 
 #include <st/g4/stm32g491.dtsi>
+#include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 
 / {
 	soc {
@@ -25,6 +26,12 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
 			};
 		};
 
