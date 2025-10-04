@@ -1,0 +1,36 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Video test pattern testing"
+
+menu "Video capture configuration"
+
+config VIDEO_FRAME_HEIGHT
+	int "Height of the video frame"
+	default 0
+	help
+	  Height of the video frame. If set to 0, the default height is used.
+
+config VIDEO_FRAME_WIDTH
+	int "Width of the video frame"
+	default 0
+	help
+	  Width of the video frame. If set to 0, the default width is used.
+
+config VIDEO_PIXEL_FORMAT
+	string "Pixel format of the video frame"
+	help
+	  Pixel format of the video frame. If not set, the default pixel format is used.
+
+config LAB_THRESHOLD
+	int "CIE LAB acceptance threshold"
+	default 10
+	help
+	  Margin value to consider the color similarity to be close enough.
+	  The default is 10 to allow slight difference to be ignored, and complete swaps to
+	  always be detected. This can be raised in case the colors are all slightly off but
+	  correctly ordered.
+
+endmenu
+
+source "Kconfig.zephyr"
