@@ -2,10 +2,11 @@ common:
   tags:
     - adc
     - drivers
+  depends_on: adc
+  filter: dt_alias_exists("adc")
 
 tests:
   drivers.adc_error_cases:
-    depends_on: adc
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf54l15dk/nrf54l15/cpuapp
