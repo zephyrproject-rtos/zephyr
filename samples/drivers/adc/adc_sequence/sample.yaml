@@ -4,6 +4,7 @@ common:
   tags:
     - adc
   depends_on: adc
+  filter: dt_alias_exists("adc0")
   harness: console
   timeout: 10
   harness_config:
