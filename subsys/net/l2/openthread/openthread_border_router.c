@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(net_openthread_border_router_platform,
+		    CONFIG_OPENTHREAD_L2_BORDER_ROUTER_LOG_LEVEL);
+
 #include "openthread_border_router.h"
 #include <openthread.h>
 #include <openthread/backbone_router_ftd.h>
@@ -67,6 +71,8 @@ int openthread_start_border_router_services(struct net_if *ot_iface, struct net_
 	ail_iface_index = (uint32_t)net_if_get_by_iface(ail_iface);
 	ail_iface_ptr = ail_iface;
 
+	LOG_DBG("Starting OpenThread Border Router services");
+
 	net_if_flag_set(ot_iface, NET_IF_FORWARD_MULTICASTS);
 
 	openthread_mutex_lock();
@@ -74,25 +80,30 @@ int openthread_start_border_router_services(struct net_if *ot_iface, struct net_
 	if (otMdnsSetLocalHostName(instance,
 				   create_base_name(instance, otbr_vendor_name)) != OT_ERROR_NONE) {
 		error = -EIO;
+		LOG_ERR("Failed to set mDNS local host name");
 		goto exit;
 	}
 
 	/* Initialize platform modules first */
 	if (trel_plat_init(instance, ail_iface_ptr) != OT_ERROR_NONE) {
 		error = -EIO;
+		LOG_ERR("Failed to initialize TREL platform module");
 		goto exit;
 	}
 
 	if (infra_if_init(instance, ail_iface_ptr) != OT_ERROR_NONE) {
 		error = -EIO;
+		LOG_ERR("Failed to initialize infra if platform module");
 		goto exit;
 	}
 	if (udp_plat_init(instance, ail_iface_ptr, ot_iface) != OT_ERROR_NONE) {
 		error = -EIO;
+		LOG_ERR("Failed to initialize UDP platform module");
 		goto exit;
 	}
 	if (mdns_plat_socket_init(instance, ail_iface_index) != OT_ERROR_NONE) {
 		error = -EIO;
+		LOG_ERR("Failed to initialize mDNS socket platform module");
 		goto exit;
 	}
 	if (dhcpv6_pd_client_init(instance, ail_iface_index) != OT_ERROR_NONE) {
@@ -102,6 +113,7 @@ int openthread_start_border_router_services(struct net_if *ot_iface, struct net_
 
 	if (border_agent_init(instance) != OT_ERROR_NONE) {
 		error = -EIO;
+		LOG_ERR("Failed to initialize border agent platform module");
 		goto exit;
 	}
 #if defined(CONFIG_OPENTHREAD_DNS_UPSTREAM_QUERY)
@@ -114,14 +126,17 @@ int openthread_start_border_router_services(struct net_if *ot_iface, struct net_
 	/* Call OpenThread API */
 	if (otBorderRoutingInit(instance, ail_iface_index, true) != OT_ERROR_NONE) {
 		error = -EIO;
+		LOG_ERR("Failed to initialize OpenThread Border Routing module");
 		goto exit;
 	}
 	if (otBorderRoutingSetEnabled(instance, true) != OT_ERROR_NONE) {
 		error = -EIO;
+		LOG_ERR("Failed to enable OpenThread Border Routing module");
 		goto exit;
 	}
 	if (otPlatInfraIfStateChanged(instance, ail_iface_index, true) != OT_ERROR_NONE) {
 		error = -EIO;
+		LOG_ERR("Failed to enable infra if state changed notifier");
 		goto exit;
 	}
 
@@ -152,16 +167,20 @@ static int openthread_stop_border_router_services(struct net_if *ot_iface,
 	int error = 0;
 	otInstance *instance = openthread_get_default_instance();
 
+	LOG_DBG("Stopping OpenThread Border Router services");
+
 	openthread_mutex_lock();
 
 	if (is_border_router_started) {
 		/* Call OpenThread API */
 		if (otPlatInfraIfStateChanged(instance, ail_iface_index, false) != OT_ERROR_NONE) {
 			error = -EIO;
+			LOG_ERR("Failed to disable infra if state changed notifier");
 			goto exit;
 		}
 		if (otBorderRoutingSetEnabled(instance, false) != OT_ERROR_NONE) {
 			error = -EIO;
+			LOG_ERR("Failed to disable OpenThread Border Routing module");
 			goto exit;
 		}
 		otBackboneRouterSetEnabled(instance, false);
@@ -202,6 +221,8 @@ static void ail_connection_handler(struct net_mgmt_event_callback *cb, uint64_t 
 		return;
 	}
 
+	LOG_DBG("AIL interface connection event received");
+
 	struct openthread_context *ot_context = openthread_get_default_context();
 
 	switch (mgmt_event) {
@@ -234,6 +255,8 @@ static void ail_address_event_handler(struct net_mgmt_event_callback *cb, uint64
 		return;
 	}
 
+	LOG_DBG("AIL IPv6 address event received");
+
 	if ((mgmt_event & (NET_EVENT_IPV6_ADDR_ADD | NET_EVENT_IPV6_ADDR_DEL |
 			   NET_EVENT_IPV4_ADDR_ADD | NET_EVENT_IPV4_ADDR_DEL)) != mgmt_event) {
 		return;
@@ -250,13 +273,17 @@ static void ail_ipv4_address_event_handler(struct net_mgmt_event_callback *cb, u
 		return;
 	}
 
-	if (mgmt_event != NET_EVENT_IPV4_ADDR_ADD) {
+	LOG_DBG("AIL IPv4 address event received");
+
+	if ((mgmt_event & (NET_EVENT_IPV4_ADDR_ADD | NET_EVENT_IPV4_ADDR_DEL)) != mgmt_event) {
 		return;
 	}
 
-	struct openthread_context *ot_context = openthread_get_default_context();
+	if (mgmt_event == NET_EVENT_IPV4_ADDR_ADD) {
+		struct openthread_context *ot_context = openthread_get_default_context();
 
-	openthread_start_border_router_services(ot_context->iface, iface);
+		openthread_start_border_router_services(ot_context->iface, iface);
+	}
 
 	mdns_plat_monitor_interface(iface);
 }
@@ -266,17 +293,21 @@ static void ot_bbr_multicast_listener_handler(void *context,
 					      otBackboneRouterMulticastListenerEvent event,
 					      const otIp6Address *address)
 {
+	LOG_DBG("Handling Multicast Listener Registration event");
+
 	struct openthread_context *ot_context = context;
 	struct in6_addr mcast_prefix = {0};
 
 	memcpy(mcast_prefix.s6_addr, address->mFields.m32, sizeof(otIp6Address));
 
 	if (event == OT_BACKBONE_ROUTER_MULTICAST_LISTENER_ADDED) {
+		LOG_DBG("Multicast Listener Registration event : adding subscription");
 		net_route_mcast_add((struct net_if *)ot_context->iface, &mcast_prefix, 16);
 	} else {
 		struct net_route_entry_mcast *route_to_del = net_route_mcast_lookup(&mcast_prefix);
 
 		if (route_to_del != NULL) {
+			LOG_DBG("Multicast Listener Registration event : removing subscription");
 			net_route_mcast_del(route_to_del);
 		}
 	}
@@ -284,6 +315,8 @@ static void ot_bbr_multicast_listener_handler(void *context,
 
 void openthread_border_router_init(struct openthread_context *ot_ctx)
 {
+	LOG_DBG("Initializing Border Router callbacks");
+
 	net_mgmt_init_event_callback(&ail_net_event_connection_cb, ail_connection_handler,
 				     NET_EVENT_IF_UP | NET_EVENT_IF_DOWN);
 	net_mgmt_add_event_callback(&ail_net_event_connection_cb);
@@ -303,6 +336,8 @@ void openthread_border_router_init(struct openthread_context *ot_ctx)
 
 void openthread_border_router_post_message(struct otbr_msg_ctx *msg_context)
 {
+	LOG_DBG("Posting Border Router message to queue");
+
 	k_fifo_put(&border_router_msg_rx_fifo, msg_context);
 	openthread_notify_border_router_work();
 }
@@ -312,6 +347,8 @@ static void openthread_border_router_process(struct k_work *work)
 	struct otbr_msg_ctx *context;
 
 	(void)work;
+
+	LOG_DBG("Processing Border Router message");
 
 	do {
 		context =
@@ -361,6 +398,8 @@ static const char *create_base_name(otInstance *ot_instance, char *base_name)
 	const otExtAddress *extAddress = otLinkGetExtendedAddress(ot_instance);
 	char *replace = strstr(base_name, "#");
 
+	LOG_DBG("Creating base name for mDNS local host");
+
 	if (replace != NULL) {
 		replace++; /* skip # */
 	} else {
@@ -375,6 +414,8 @@ int openthread_border_router_allocate_message(void **msg)
 {
 	int error = 0;
 
+	LOG_DBG("Allocating Border Router message");
+
 	if (k_mem_slab_alloc(&border_router_messages_slab, msg, K_NO_WAIT) != 0) {
 		error = -EIO;
 		goto exit;
@@ -387,6 +428,8 @@ exit:
 
 void openthread_border_router_deallocate_message(void *msg)
 {
+	LOG_DBG("Deallocating Border Router message");
+
 	k_mem_slab_free(&border_router_messages_slab, msg);
 }
 

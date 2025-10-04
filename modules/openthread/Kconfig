@@ -107,6 +107,16 @@ config OPENTHREAD_PLATFORM_LOG_LEVEL
 	help
 	  Log level for OpenThread Zephyr platform.
 
+config OPENTHREAD_BORDER_ROUTER_PLATFORM_LOG_LEVEL
+	int
+	default 1 if OPENTHREAD_LOG_LEVEL_CRIT
+	default 2 if OPENTHREAD_LOG_LEVEL_WARN
+	default 3 if OPENTHREAD_LOG_LEVEL_NOTE || OPENTHREAD_LOG_LEVEL_INFO
+	default 4 if OPENTHREAD_LOG_LEVEL_DEBG
+	default 0
+	help
+	  Log level for OpenThread Zephyr Border Router platform.
+
 endmenu # "Logging"
 
 menu "Zephyr optimizations"
