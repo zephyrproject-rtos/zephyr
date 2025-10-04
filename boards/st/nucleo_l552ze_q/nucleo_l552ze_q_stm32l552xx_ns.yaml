@@ -8,6 +8,6 @@ toolchain:
 supported:
   - gpio
   - dac
-ram: 192
+ram: 128
 flash: 36
 vendor: st
