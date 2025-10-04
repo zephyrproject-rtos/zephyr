@@ -4,6 +4,7 @@
  */
 
 #include <zephyr/arch/cpu.h>
+#include <zephyr/arch/arm/mpu/arm_mpu.h>
 #include <zephyr/arch/common/pm_s2ram.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/sys/util.h>
@@ -22,31 +23,12 @@
 #define SCnSCB_CPPWR_SU10_Pos 20U                            /*!< CPPWR: SU10 Position */
 #define SCnSCB_CPPWR_SU10_Msk (1UL << SCnSCB_CPPWR_SU10_Pos) /*!< CPPWR: SU10 Mask */
 
-/* Currently dynamic regions are only used in case of userspace or stack guard and
- * stack guard is not used by default on Cortex-M33 because there is a dedicated
- * mechanism for stack overflow detection. Unless those condition change we don't
- * need to store MPU content, it can just be reinitialized on resuming.
- */
-#define MPU_USE_DYNAMIC_REGIONS IS_ENABLED(CONFIG_USERSPACE) || IS_ENABLED(CONFIG_MPU_STACK_GUARD)
-
-/* TODO: The num-mpu-regions property should be used. Needs to be added to dts bindings. */
-#define MPU_MAX_NUM_REGIONS 16
-
 typedef struct {
 	/* NVIC components stored into RAM. */
 	uint32_t ISER[NVIC_MEMBER_SIZE(ISER)];
 	uint32_t ISPR[NVIC_MEMBER_SIZE(ISPR)];
 	uint8_t IPR[NVIC_MEMBER_SIZE(IPR)];
 } _nvic_context_t;
-
-typedef struct {
-	uint32_t RNR;
-	uint32_t RBAR[MPU_MAX_NUM_REGIONS];
-	uint32_t RLAR[MPU_MAX_NUM_REGIONS];
-	uint32_t MAIR0;
-	uint32_t MAIR1;
-	uint32_t CTRL;
-} _mpu_context_t;
 
 typedef struct {
 	uint32_t ICSR;
@@ -76,8 +58,8 @@ typedef struct {
 
 struct backup {
 	_nvic_context_t nvic_context;
-#if defined(CONFIG_MPU)
-	_mpu_context_t mpu_context;
+#if defined(CONFIG_ARM_MPU)
+	struct z_mpu_context_retained mpu_context;
 #endif
 	_scb_context_t scb_context;
 #if defined(CONFIG_FPU) && !defined(CONFIG_FPU_SHARING)
@@ -86,54 +68,6 @@ struct backup {
 };
 
 static __noinit struct backup backup_data;
-
-extern void z_arm_configure_static_mpu_regions(void);
-extern int z_arm_mpu_init(void);
-
-#if defined(CONFIG_MPU)
-/* MPU registers cannot be simply copied because content of RBARx RLARx registers
- * depends on region which is selected by RNR register.
- */
-static void mpu_save(_mpu_context_t *backup)
-{
-	if (!MPU_USE_DYNAMIC_REGIONS) {
-		return;
-	}
-
-	backup->RNR = MPU->RNR;
-
-	for (uint8_t i = 0; i < MPU_MAX_NUM_REGIONS; i++) {
-		MPU->RNR = i;
-		backup->RBAR[i] = MPU->RBAR;
-		backup->RLAR[i] = MPU->RLAR;
-	}
-	backup->MAIR0 = MPU->MAIR0;
-	backup->MAIR1 = MPU->MAIR1;
-	backup->CTRL = MPU->CTRL;
-}
-
-static void mpu_restore(_mpu_context_t *backup)
-{
-	if (!MPU_USE_DYNAMIC_REGIONS) {
-		z_arm_mpu_init();
-		z_arm_configure_static_mpu_regions();
-		return;
-	}
-
-	uint32_t rnr = backup->RNR;
-
-	for (uint8_t i = 0; i < MPU_MAX_NUM_REGIONS; i++) {
-		MPU->RNR = i;
-		MPU->RBAR = backup->RBAR[i];
-		MPU->RLAR = backup->RLAR[i];
-	}
-
-	MPU->MAIR0 = backup->MAIR0;
-	MPU->MAIR1 = backup->MAIR1;
-	MPU->RNR = rnr;
-	MPU->CTRL = backup->CTRL;
-}
-#endif /* defined(CONFIG_MPU) */
 
 static void nvic_save(_nvic_context_t *backup)
 {
@@ -235,8 +169,8 @@ int soc_s2ram_suspend(pm_s2ram_system_off_fn_t system_off)
 	fpu_power_down();
 #endif
 	nvic_save(&backup_data.nvic_context);
-#if defined(CONFIG_MPU)
-	mpu_save(&backup_data.mpu_context);
+#if defined(CONFIG_ARM_MPU)
+	z_arm_save_mpu_context(&backup_data.mpu_context);
 #endif
 	ret = arch_pm_s2ram_suspend(system_off);
 	/* Cache and FPU are powered down so power up is needed even if s2ram failed. */
@@ -252,8 +186,8 @@ int soc_s2ram_suspend(pm_s2ram_system_off_fn_t system_off)
 		return ret;
 	}
 
-#if defined(CONFIG_MPU)
-	mpu_restore(&backup_data.mpu_context);
+#if defined(CONFIG_ARM_MPU)
+	z_arm_restore_mpu_context(&backup_data.mpu_context);
 #endif
 	nvic_restore(&backup_data.nvic_context);
 	scb_restore(&backup_data.scb_context);
