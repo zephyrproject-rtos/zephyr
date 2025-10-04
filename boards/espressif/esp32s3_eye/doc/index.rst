@@ -17,6 +17,9 @@ ESP32-S3-WROOM-1 module, camera, SD card slot, digital microphone, USB port, and
 and the sub board (ESP32-S3-EYE-SUB) that contains an LCD display.
 The main board and sub board are connected through pin headers.
 
+.. include:: ../../../espressif/common/soc-esp32s3-features.rst
+   :start-after: espressif-soc-esp32s3-features
+
 Supported Features
 ==================
 
@@ -121,16 +124,8 @@ Components on the ESP32-S3-EYE-SUB Sub Board
 System Requirements
 *******************
 
-Espressif HAL requires WiFi and Bluetooth binary blobs in order work. Run the command
-below to retrieve those files.
-
-.. code-block:: console
-
-   west blobs fetch hal_espressif
-
-.. note::
-
-   It is recommended running the command above after :file:`west update`.
+.. include:: ../../../espressif/common/system-requirements.rst
+   :start-after: espressif-system-requirements
 
 Programming and Debugging
 *************************
@@ -152,8 +147,8 @@ Debugging
 References
 **********
 
+.. target-notes::
+
 .. _`OpenOCD ESP32`: https://github.com/espressif/openocd-esp32/releases
-
 .. _`Espressif`: https://espressif.com
-
 .. _`ESP32-S3`: https://www.espressif.com/en/products/socs/esp32-s3
