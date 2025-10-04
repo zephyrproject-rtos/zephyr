@@ -26,6 +26,7 @@ jobs:
           toolchains: 'arm-zephyr-eabi'
           west-group-filter: -hal,-tools,-bootloader,-babblesim
           west-project-filter: -nrf_hw_models
+          enable-ccache: false
 
       - name: Run errno.py
         working-directory: zephyr
