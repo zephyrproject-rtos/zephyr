@@ -403,6 +403,8 @@
 		espi0: espi@4000a000 {
 			rx-plsize = <64>;
 			tx-plsize = <16>;
+
+			support-npcxn-v2;
 		};
 
 		rctl: reset-controller@400c3100 {
