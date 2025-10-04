@@ -104,45 +104,36 @@ static int is31fl319x_get_info(const struct device *dev,
 	return 0;
 }
 
-static int is31fl319x_set_color(const struct device *dev, uint32_t led, uint8_t num_colors,
-				const uint8_t *color)
+static uint8_t is31fl319x_map_led_to_start_channel(const struct is31fl319x_config *config,
+						   uint32_t led)
+{
+	/* It is assumed that led has been validated before calling this */
+	const struct led_info *info = config->led_infos;
+	uint8_t channel = 0;
+
+	while (led) {
+		channel += info->num_colors;
+		led--;
+		info++;
+	}
+	return channel;
+}
+
+static int is31fl319x_write_channels(const struct device *dev, uint32_t start_channel,
+				     uint32_t num_channels, const uint8_t *buf)
 {
 	const struct is31fl319x_config *config = dev->config;
-	const struct led_info *info = is31fl319x_led_to_info(config, led);
 	const struct is31f1319x_model *regs = config->regs;
 	int ret;
+	int i;
 
-	if (info == NULL) {
-		return -ENODEV;
-	}
-
-	if (info->num_colors > config->channel_count) {
+	if ((start_channel + num_channels) > config->channel_count) {
 		return -ENOTSUP;
 	}
 
-	if (num_colors > config->channel_count) {
-		return -ENOTSUP;
-	}
-
-	for (int i = 0; i < num_colors; i++) {
-		uint8_t value;
-
-		switch (info->color_mapping[i]) {
-		case LED_COLOR_ID_RED:
-			value = color[0];
-			break;
-		case LED_COLOR_ID_GREEN:
-			value = color[1];
-			break;
-		case LED_COLOR_ID_BLUE:
-			value = color[2];
-			break;
-		default:
-			/* unreachable: mapping already tested in is31fl319x_check_config */
-			return -EINVAL;
-		}
-
-		ret = i2c_reg_write_byte_dt(&config->bus, regs->led_channels[i], value);
+	for (i = 0; i < num_channels; i++) {
+		ret = i2c_reg_write_byte_dt(&config->bus, regs->led_channels[i + start_channel],
+					    buf[i]);
 		if (ret != 0) {
 			break;
 		}
@@ -161,11 +152,32 @@ static int is31fl319x_set_color(const struct device *dev, uint32_t led, uint8_t 
 	return ret;
 }
 
+static int is31fl319x_set_color(const struct device *dev, uint32_t led, uint8_t num_colors,
+				const uint8_t *color)
+{
+	const struct is31fl319x_config *config = dev->config;
+	const struct led_info *info = is31fl319x_led_to_info(config, led);
+	uint8_t channel_start;
+
+	if (info == NULL) {
+		return -ENODEV;
+	}
+
+	channel_start = is31fl319x_map_led_to_start_channel(config, led);
+
+	if (info->num_colors > config->channel_count) {
+		return -ENOTSUP;
+	}
+
+	return is31fl319x_write_channels(dev, channel_start, num_colors, color);
+}
+
 static int is31fl319x_set_brightness(const struct device *dev, uint32_t led, uint8_t value)
 {
 	const struct is31fl319x_config *config = dev->config;
 	const struct led_info *info = is31fl319x_led_to_info(config, led);
 	const struct is31f1319x_model *regs = config->regs;
+	uint8_t channel_start;
 
 	int ret = 0;
 
@@ -180,7 +192,9 @@ static int is31fl319x_set_brightness(const struct device *dev, uint32_t led, uin
 	/* Rescale 0..100 to 0..255 */
 	value = value * 255 / LED_BRIGHTNESS_MAX;
 
-	ret = i2c_reg_write_byte_dt(&config->bus, regs->led_channels[led], value);
+	channel_start = is31fl319x_map_led_to_start_channel(config, led);
+
+	ret = i2c_reg_write_byte_dt(&config->bus, regs->led_channels[channel_start], value);
 	if (ret == 0) {
 		ret = i2c_reg_write_byte_dt(&config->bus,
 					    regs->update_reg,
@@ -194,81 +208,20 @@ static int is31fl319x_set_brightness(const struct device *dev, uint32_t led, uin
 	return ret;
 }
 
-/*
- * Counts red, green, blue channels; returns true if color_id is valid
- * and no more than one channel maps to the same color
- */
-static bool is31fl319x_count_colors(const struct device *dev,
-				    uint8_t color_id, uint8_t *rgb_counts)
-{
-	bool ret = false;
-
-	switch (color_id) {
-	case LED_COLOR_ID_RED:
-		ret = (++rgb_counts[0] == 1);
-		break;
-	case LED_COLOR_ID_GREEN:
-		ret = (++rgb_counts[1] == 1);
-		break;
-	case LED_COLOR_ID_BLUE:
-		ret = (++rgb_counts[2] == 1);
-		break;
-	}
-
-	if (!ret) {
-		LOG_ERR("%s: invalid color %d (duplicate or not RGB)",
-			dev->name, color_id);
-	}
-
-	return ret;
-}
-
 static int is31fl319x_check_config(const struct device *dev)
 {
 	const struct is31fl319x_config *config = dev->config;
 	const struct led_info *info;
-	uint8_t rgb_counts[3] = { 0 };
+	uint8_t rgb_count = 0;
 	uint8_t i;
 
-	switch (config->num_leds) {
-	case 1:
-		/* check that it is a three-channel LED */
-		info = &config->led_infos[0];
+	/* verify that number of leds defined is not > number of channels */
+	for (i = 0; i < config->num_leds; i++) {
+		info = &config->led_infos[i];
+		rgb_count += info->num_colors;
+	}
 
-		if (info->num_colors != 3) {
-			LOG_ERR("%s: invalid number of colors %d "
-				"(must be 3 for RGB LED)",
-				dev->name, info->num_colors);
-			return -EINVAL;
-		}
-
-		for (i = 0; i < 3; i++) {
-			if (!is31fl319x_count_colors(dev, info->color_mapping[i], rgb_counts)) {
-				return -EINVAL;
-			}
-
-		}
-		break;
-	case 3:
-		/* check that each LED is single-color */
-		for (i = 0; i < 3; i++) {
-			info = &config->led_infos[i];
-
-			if (info->num_colors != 1) {
-				LOG_ERR("%s: invalid number of colors %d "
-					"(must be 1 when defining multiple LEDs)",
-					dev->name, info->num_colors);
-				return -EINVAL;
-			}
-
-			if (!is31fl319x_count_colors(dev, info->color_mapping[0], rgb_counts)) {
-				return -EINVAL;
-			}
-		}
-		break;
-	default:
-		LOG_ERR("%s: invalid number of LEDs %d (must be 1 or 3)",
-			dev->name, config->num_leds);
+	if (rgb_count > config->channel_count) {
 		return -EINVAL;
 	}
 
@@ -280,9 +233,13 @@ static int is31fl319x_init(const struct device *dev)
 	const struct is31fl319x_config *config = dev->config;
 	const struct led_info *info = NULL;
 	const struct is31f1319x_model *regs = config->regs;
-	int i, ret;
-	uint8_t prod_id, band;
+	int ret;
+	uint8_t prod_id;
+	uint8_t band;
+	uint8_t channel;
 	uint8_t current_reg = 0;
+	int i;
+	int j;
 
 	ret = is31fl319x_check_config(dev);
 	if (ret != 0) {
@@ -307,27 +264,24 @@ static int is31fl319x_init(const struct device *dev)
 	}
 
 	/* calc current limit register value */
-	info = &config->led_infos[0];
-	if (info->num_colors == IS31FL3194_CHANNEL_COUNT) {
-		/* one RGB LED: set all channels to the same current limit */
-		band = (config->current_limits[0] / 10) - 1;
-		for (i = 0; i < IS31FL3194_CHANNEL_COUNT; i++) {
-			current_reg |= band << (2 * i);
-		}
-	} else {
-		/* single-channel LEDs: independent limits */
+	if (regs->current_reg != REG_NOT_DEFINED) {
+		channel = 0;
 		for (i = 0; i < config->num_leds; i++) {
+			info = &config->led_infos[i];
 			band = (config->current_limits[i] / 10) - 1;
-			current_reg |= band << (2 * i);
+
+			for (j = 0; j < info->num_colors; j++) {
+				current_reg |= band << (2 * channel);
+				channel++;
+			}
+		}
+
+		ret = i2c_reg_write_byte_dt(&config->bus, regs->current_reg, current_reg);
+		if (ret != 0) {
+			LOG_ERR("%s: failed to set current limit", dev->name);
+			return ret;
 		}
 	}
-
-	ret = i2c_reg_write_byte_dt(&config->bus, IS31FL3194_CURRENT_REG, current_reg);
-	if (ret != 0) {
-		LOG_ERR("%s: failed to set current limit", dev->name);
-		return ret;
-	}
-
 	/* enable device */
 	return i2c_reg_write_byte_dt(&config->bus, regs->conf_reg,
 				     regs->conf_enable);
@@ -337,6 +291,7 @@ static DEVICE_API(led, is31fl319x_led_api) = {
 	.set_brightness = is31fl319x_set_brightness,
 	.get_info = is31fl319x_get_info,
 	.set_color = is31fl319x_set_color,
+	.write_channels = is31fl319x_write_channels,
 };
 
 #define COLOR_MAPPING(led_node_id)						\
