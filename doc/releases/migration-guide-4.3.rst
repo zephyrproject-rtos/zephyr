@@ -189,6 +189,11 @@ Networking
   :c:macro:`HTTPS_SERVICE_DEFINE_EMPTY`, :c:macro:`HTTP_SERVICE_DEFINE` and
   :c:macro:`HTTPS_SERVICE_DEFINE`.
 
+* The size of socket address length type :c:type:`socklen_t` has changed. It is now defined to
+  be always 32 bit ``uint32_t`` in order to be aligned with Linux. Previously it was defined as
+  ``size_t`` which meant that the size could be either 32 bit or 64 bit depending on system
+  configuration.
+
 .. zephyr-keep-sorted-start re(^\w)
 
 .. zephyr-keep-sorted-stop

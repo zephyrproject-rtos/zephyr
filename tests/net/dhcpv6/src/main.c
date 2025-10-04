@@ -413,13 +413,13 @@ static void verify_dhcpv6_oro_sol_max_rt(struct net_if *iface,
 	net_pkt_cursor_backup(pkt, &backup);
 
 	ret = dhcpv6_find_option(pkt, DHCPV6_OPTION_CODE_ORO, &length);
-	zassert_ok(ret, 0, "ORO option not found");
+	zassert_ok(ret, "ORO option not found");
 	zassert_true(length >= sizeof(uint16_t) && length % sizeof(uint16_t) == 0,
 		     "Invalid ORO length");
 
 	while (length >= sizeof(uint16_t)) {
 		ret = net_pkt_read_be16(pkt, &oro);
-		zassert_ok(ret, 0, "ORO read error");
+		zassert_ok(ret, "ORO read error");
 		length -= sizeof(uint16_t);
 
 		if (oro == DHCPV6_OPTION_CODE_SOL_MAX_RT) {

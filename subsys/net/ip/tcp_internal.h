@@ -386,11 +386,11 @@ void net_tcp_init(void);
 #if defined(CONFIG_NET_NATIVE_TCP)
 int net_tcp_set_option(struct net_context *context,
 		       enum tcp_conn_option option,
-		       const void *value, size_t len);
+		       const void *value, uint32_t len);
 #else
 static inline int net_tcp_set_option(struct net_context *context,
 				     enum tcp_conn_option option,
-				     const void *value, size_t len)
+				     const void *value, uint32_t len)
 {
 	ARG_UNUSED(context);
 	ARG_UNUSED(option);
@@ -412,11 +412,11 @@ static inline int net_tcp_set_option(struct net_context *context,
 #if defined(CONFIG_NET_NATIVE_TCP)
 int net_tcp_get_option(struct net_context *context,
 		       enum tcp_conn_option option,
-		       void *value, size_t *len);
+		       void *value, uint32_t *len);
 #else
 static inline int net_tcp_get_option(struct net_context *context,
 				     enum tcp_conn_option option,
-				     void *value, size_t *len)
+				     void *value, uint32_t *len)
 {
 	ARG_UNUSED(context);
 	ARG_UNUSED(option);

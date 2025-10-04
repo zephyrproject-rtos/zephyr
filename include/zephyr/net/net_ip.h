@@ -169,7 +169,7 @@ typedef unsigned short int sa_family_t;
 
 /** Length of a socket address */
 #ifndef __socklen_t_defined
-typedef size_t socklen_t;
+typedef uint32_t socklen_t;
 #define __socklen_t_defined
 #endif
 
