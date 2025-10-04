@@ -19,6 +19,8 @@
 #define SCMI_SHMEM_CHAN_STATUS_BUSY_BIT BIT(0)
 #define SCMI_SHMEM_CHAN_FLAG_IRQ_BIT BIT(0)
 
+#define SCMI_SHMEM_CHAN_MSG_HDR_OFFSET	0x18
+
 struct scmi_shmem_layout {
 	volatile uint32_t res0;
 	volatile uint32_t chan_status;
@@ -93,4 +95,25 @@ int scmi_shmem_vendor_write_message(struct scmi_shmem_layout *layout);
  */
 int scmi_shmem_vendor_read_message(const struct scmi_shmem_layout *layout);
 
+/**
+ * @brief Read a message header from a SHMEM area
+ *
+ * @param shmem pointer to shmem device
+ * @param msg message to write the data into
+ *
+ * @retval 0 if successful
+ * @retval negative errno if failure
+ */
+
+int scmi_shmem_read_hdr(const struct device *shmem, struct scmi_message *msg);
+/**
+ * @brief Clear a SHMEM area channel status
+ *
+ * @param dev pointer to shmem device
+ * @param a2p true if A2P direction, false otherwise
+ *
+ * @retval 0 if successful
+ * @retval negative errno if failure
+ */
+int scmi_shmem_clear_channel_status(const struct device *dev, bool a2p);
 #endif /* _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_SHMEM_H_ */
