@@ -321,7 +321,9 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define I3C_BUS_I2C_FM_TLOW_MIN_NS  1300
 #define I3C_BUS_I2C_FMP_TLOW_MIN_NS 500
 #define I3C_BUS_THIGH_MAX_NS        41
+#define I3C_BUS_TCAS_PS             38400
 #define I3C_PERIOD_NS               1000000000ULL
+#define I3C_PERIOD_PS               I3C_PERIOD_NS * 1000ULL
 
 #define I3C_BUS_MAX_I3C_SCL_RATE     12900000
 #define I3C_BUS_TYP_I3C_SCL_RATE     12500000
@@ -1408,13 +1410,33 @@ static int i3c_dw_irq(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_I3C_CONTROLLER
+/**
+ * @brief Return true if any i2c device only supports fast mode
+ *
+ * @param dev_list Pointer to device list
+ *
+ * @retval true if any i2c device only supports fast mode
+ * @retval false if all devices support fast mode plus
+ */
+static bool i3c_any_i2c_fast_mode(const struct i3c_dev_list *dev_list)
+{
+	for (int i = 0; i < dev_list->num_i2c; i++) {
+		if (I3C_LVR_I2C_MODE(dev_list->i2c[i].lvr) == I3C_LVR_I2C_FM_MODE) {
+			return true;
+		}
+	}
+	return false;
+}
+#endif
+
 static int dw_i3c_init_scl_timing(const struct device *dev, struct i3c_config_controller *ctrl_cfg)
 {
 	const struct dw_i3c_config *config = dev->config;
 	uint32_t core_rate, scl_timing;
 #ifdef CONFIG_I3C_CONTROLLER
 	struct dw_i3c_data *data = dev->data;
-	uint32_t hcnt, lcnt;
+	uint32_t hcnt, lcnt, fmlcnt, fmplcnt, free_cnt;
 #endif /* CONFIG_I3C_CONTROLLER */
 
 	if (clock_control_get_rate(config->clock, config->clock_subsys, &core_rate) != 0) {
@@ -1441,9 +1463,6 @@ static int dw_i3c_init_scl_timing(const struct device *dev, struct i3c_config_co
 	scl_timing = SCL_I3C_TIMING_HCNT(hcnt) | SCL_I3C_TIMING_LCNT(lcnt);
 	sys_write32(scl_timing, config->regs + SCL_I3C_OD_TIMING);
 
-	/* Set bus free timing to match tlow setting for OD clk config. */
-	sys_write32(BUS_I3C_MST_FREE(lcnt), config->regs + BUS_FREE_TIMING);
-
 	/* I3C_PP */
 	hcnt = DIV_ROUND_UP(I3C_BUS_THIGH_MAX_NS * (uint64_t)core_rate, I3C_PERIOD_NS) - 1;
 	hcnt = CLAMP(hcnt, SCL_I3C_TIMING_CNT_MIN, SCL_I3C_TIMING_CNT_MAX);
@@ -1466,20 +1485,34 @@ static int dw_i3c_init_scl_timing(const struct device *dev, struct i3c_config_co
 	sys_write32(scl_timing, config->regs + SCL_EXT_LCNT_TIMING);
 
 	/* I2C FM+ */
-	lcnt = DIV_ROUND_UP(I3C_BUS_I2C_FMP_TLOW_MIN_NS * (uint64_t)core_rate, I3C_PERIOD_NS);
-	hcnt = DIV_ROUND_UP(core_rate, I3C_BUS_I2C_FM_PLUS_SCL_RATE) - lcnt;
-	scl_timing = SCL_I2C_FMP_TIMING_HCNT(hcnt) | SCL_I2C_FMP_TIMING_LCNT(lcnt);
+	fmplcnt = DIV_ROUND_UP(I3C_BUS_I2C_FMP_TLOW_MIN_NS * (uint64_t)core_rate, I3C_PERIOD_NS);
+	hcnt = DIV_ROUND_UP(core_rate, I3C_BUS_I2C_FM_PLUS_SCL_RATE) - fmplcnt;
+	scl_timing = SCL_I2C_FMP_TIMING_HCNT(hcnt) | SCL_I2C_FMP_TIMING_LCNT(fmplcnt);
 	sys_write32(scl_timing, config->regs + SCL_I2C_FMP_TIMING);
 
 	/* I2C FM */
-	lcnt = DIV_ROUND_UP(I3C_BUS_I2C_FM_TLOW_MIN_NS * (uint64_t)core_rate, I3C_PERIOD_NS);
-	hcnt = DIV_ROUND_UP(core_rate, I3C_BUS_I2C_FM_SCL_RATE) - lcnt;
-	scl_timing = SCL_I2C_FM_TIMING_HCNT(hcnt) | SCL_I2C_FM_TIMING_LCNT(lcnt);
+	fmlcnt = DIV_ROUND_UP(I3C_BUS_I2C_FM_TLOW_MIN_NS * (uint64_t)core_rate, I3C_PERIOD_NS);
+	hcnt = DIV_ROUND_UP(core_rate, I3C_BUS_I2C_FM_SCL_RATE) - fmlcnt;
+	scl_timing = SCL_I2C_FM_TIMING_HCNT(hcnt) | SCL_I2C_FM_TIMING_LCNT(fmlcnt);
 	sys_write32(scl_timing, config->regs + SCL_I2C_FM_TIMING);
 
 	if (data->mode != I3C_BUS_MODE_PURE) {
-		sys_write32(BUS_I3C_MST_FREE(lcnt), config->regs + BUS_FREE_TIMING);
+		/*
+		 * Mixed bus: Set bus free timing to match tLOW of I2C timing. If any i2c devices
+		 * only support fast mode, then it to the tLOW of that, otherwise set to the tLOW
+		 * of fast mode plus.
+		 */
+		sys_write32(BUS_I3C_MST_FREE(i3c_any_i2c_fast_mode(&config->common.dev_list)
+						     ? fmlcnt
+						     : fmplcnt),
+			    config->regs + BUS_FREE_TIMING);
 		sys_write32(sys_read32(config->regs + DEVICE_CTRL) | DEV_CTRL_I2C_SLAVE_PRESENT,
+			    config->regs + DEVICE_CTRL);
+	} else {
+		/* Pure bus: Set bus free timing to t_cas of 38.4ns */
+		free_cnt = DIV_ROUND_UP(I3C_BUS_TCAS_PS * (uint64_t)core_rate, I3C_PERIOD_PS);
+		sys_write32(BUS_I3C_MST_FREE(free_cnt), config->regs + BUS_FREE_TIMING);
+		sys_write32(sys_read32(config->regs + DEVICE_CTRL) & ~DEV_CTRL_I2C_SLAVE_PRESENT,
 			    config->regs + DEVICE_CTRL);
 	}
 #endif /* CONFIG_I3C_CONTROLLER */
