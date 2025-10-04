@@ -21,3 +21,7 @@ properties:
   reset-gpios:
     type: phandle-array
     description: RESETn pin
+  erase-block-size:
+    type: int
+    description: |
+      The minimum erasable block size of the device, in bytes.
