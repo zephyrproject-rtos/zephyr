@@ -14,3 +14,9 @@ properties:
   clocks:
     type: phandle-array
     required: true
+
+  mul:
+    type: int
+    required: true
+    description: PLL Clock Multiplier
+    const: 2

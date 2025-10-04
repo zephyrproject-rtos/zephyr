@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Fiona Behrens
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH CH32 High Speed Internal Clock
+
+compatible: "wch,ch32-hsi-clock"
+
+include: [fixed-clock.yaml]
+
+properties:
+  "#clock-cells":
+    const: 0
