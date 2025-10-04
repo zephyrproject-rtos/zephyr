@@ -235,6 +235,7 @@ jobs:
       with:
         app-path: zephyr
         toolchains: 'arm-zephyr-eabi'
+        enable-ccache: false
 
     - name: install-pip-pkgs
       working-directory: zephyr
