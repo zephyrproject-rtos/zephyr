@@ -1,0 +1,15 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config STRESS_TEST_REPS
+	int "Number of loops in the stress test"
+	# For the simulated devices, which are run by default in CI, we set it to less to not spend too
+	# much CI time
+	default 500 if SOC_SERIES_BSIM_NRFXX
+	default 10000
+	help
+	  For how many loops will the stress test run. The higher this number the longer the
+	  test and therefore the higher likelihood an unlikely race/event will be triggered.
+
+# Include Zephyr's Kconfig
+source "Kconfig"
