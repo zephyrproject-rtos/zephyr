@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2022 Wolter HV <wolterhv@gmx.de>
  * Copyright (c) 2023 Benjamin Björnsson <benjamin.bjornsson@gmail.com>
+ * Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,4 +33,8 @@
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <12>;
 	};
+};
+
+&spi3 {
+	status = "disabled";
 };
