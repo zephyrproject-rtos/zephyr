@@ -12,4 +12,4 @@ target_include_directories(app PRIVATE
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
 
-zephyr_linker_sources(SECTIONS custom-sections.ld)
+zephyr_linker_sources(TEXT_SECTIONS custom-sections.ld)
