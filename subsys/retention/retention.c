@@ -63,7 +63,9 @@ static inline void retention_lock_take(const struct device *dev)
 #ifdef CONFIG_RETENTION_MUTEXES
 	struct retention_data *data = dev->data;
 
-	k_mutex_lock(&data->lock, K_FOREVER);
+	if (!k_is_pre_kernel()) {
+		k_mutex_lock(&data->lock, K_FOREVER);
+	}
 #else
 	ARG_UNUSED(dev);
 #endif
@@ -74,7 +76,9 @@ static inline void retention_lock_release(const struct device *dev)
 #ifdef CONFIG_RETENTION_MUTEXES
 	struct retention_data *data = dev->data;
 
-	k_mutex_unlock(&data->lock);
+	if (!k_is_pre_kernel()) {
+		k_mutex_unlock(&data->lock);
+	}
 #else
 	ARG_UNUSED(dev);
 #endif
