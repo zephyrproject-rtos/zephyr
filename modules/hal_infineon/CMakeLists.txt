@@ -39,6 +39,10 @@ if (CONFIG_SOC_FAMILY_INFINEON_CAT1 AND NOT CONFIG_SOC_FAMILY_PSOC6_LEGACY)
 
 endif()
 
+if(CONFIG_SOC_SERIES_PSC3)
+  add_subdirectory(zephyr-ifx-cycfg)
+endif()
+
 ## Add Wi-Fi assets for AIROC devices
 if (CONFIG_WIFI_AIROC)
   add_subdirectory(wifi-host-driver)
