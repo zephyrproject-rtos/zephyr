@@ -26,19 +26,32 @@
  */
 
 /**
- * @brief Set the video device that a UVC instance will use.
+ * @brief Set the video device that a UVC instance will use for control requests.
  *
- * It will query its supported controls, formats and frame rates, and use this information to
- * generate USB descriptors sent to the host.
- *
- * At runtime, it will forward all USB controls from the host to this device.
+ * It will query its supported video controls and frame intervals and use this information to
+ * generate the USB descriptors presented to the host. At runtime, it will forward all USB controls
+ * from the host to this device.
  *
  * @note This function must be called before @ref usbd_enable.
  *
  * @param uvc_dev The UVC device
- * @param video_dev The video device that this UVC instance controls
+ * @param video_dev The video device that this UVC instance send controls requests to
  */
 void uvc_set_video_dev(const struct device *uvc_dev, const struct device *video_dev);
+
+/**
+ * @brief Set the video format capabilities that a UVC instance will present to the host.
+ *
+ * This information will be used to generate USB descriptors.
+ * The particular format selected by the host can be queried with @ref video_get_format.
+ *
+ * @note This function must be called before @ref usbd_enable and before @ref uvc_set_video_dev.
+ *
+ * @param uvc_dev The UVC device to configure
+ * @param fmt The video format to add to this UVC instance
+ * @return 0 on success, negative value on error
+ */
+int uvc_add_format(const struct device *const uvc_dev, const struct video_format *const fmt);
 
 /**
  * @}
