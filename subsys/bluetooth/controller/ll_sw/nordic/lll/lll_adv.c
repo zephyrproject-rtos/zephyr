@@ -1345,6 +1345,10 @@ static void isr_done(void *param)
 
 		pdu = chan_prepare(lll);
 
+		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+			lll_prof_cputime_capture();
+		}
+
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN) || defined(CONFIG_BT_CTLR_ADV_EXT)
 		start_us = radio_tmr_start_now(1);
 
@@ -1363,6 +1367,13 @@ static void isr_done(void *param)
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
+		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+			/* PA/LNA enable is overwriting packet end used in ISR
+			 * profiling, hence back it up for later use.
+			 */
+			lll_prof_radio_end_backup();
+		}
+
 		radio_gpio_pa_setup();
 		radio_gpio_pa_lna_enable(start_us +
 					 radio_tx_ready_delay_get(0, 0) -
@@ -1381,6 +1392,10 @@ static void isr_done(void *param)
 	}
 
 	radio_filter_disable();
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_cputime_capture();
+	}
 
 #if defined(CONFIG_BT_PERIPHERAL)
 	if (!lll->is_hdcd)
@@ -1426,6 +1441,19 @@ static void isr_done(void *param)
 #endif /* CONFIG_BT_CTLR_ADV_EXT || CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	lll_isr_cleanup(param);
+}
+
+static void isr_tx_done(void *param)
+{
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_latency_capture();
+	}
+
+	isr_done(param);
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_send();
+	}
 }
 
 static void isr_abort(void *param)
@@ -1508,7 +1536,7 @@ static struct pdu_adv *chan_prepare(struct lll_adv *lll)
 		radio_tmr_tifs_set(EVENT_IFS_US);
 		radio_switch_complete_and_rx(0);
 	} else {
-		radio_isr_set(isr_done, lll);
+		radio_isr_set(isr_tx_done, lll);
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER) &&
 		    IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT)) {
