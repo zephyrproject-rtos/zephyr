@@ -73,12 +73,14 @@ static inline bool usbd_ep_bm_is_set(const uint32_t *const ep_bm, const uint8_t 
  *
  * @param[in] dev    Pointer to UDC device
  * @param[in] ed     Pointer to endpoint descriptor
+ * @param[in] m_mps  Maximum possible wMaxPacketSize within interface settings
  * @param[in] ep_bm  Pointer to endpoint bitmap
  *
  * @return 0 on success, other values on fail.
  */
 int usbd_ep_enable(const struct device *dev,
 		   const struct usb_ep_descriptor *const ed,
+		   const uint16_t m_mps,
 		   uint32_t *const ep_bm);
 
 /**

@@ -17,6 +17,7 @@
 #include "usbd_desc.h"
 #include "usbd_config.h"
 #include "usbd_init.h"
+#include "usbd_interface.h"
 #include "usbd_ch9.h"
 #include "usbd_class.h"
 #include "usbd_class_api.h"
@@ -204,19 +205,34 @@ static void usbd_thread(void *p1, void *p2, void *p3)
 
 int usbd_device_init_core(struct usbd_context *const uds_ctx)
 {
+	struct udc_init_args init_args = {
+		.event_cb = usbd_event_carrier,
+		.event_ctx = uds_ctx,
+	};
 	int ret;
-
-	ret = udc_init(uds_ctx->dev, usbd_event_carrier, uds_ctx);
-	if (ret != 0) {
-		LOG_ERR("Failed to init device driver");
-		return ret;
-	}
 
 	usbd_set_config_value(uds_ctx, 0);
 
 	ret = usbd_init_configurations(uds_ctx);
 	if (ret != 0) {
 		udc_shutdown(uds_ctx->dev);
+		return ret;
+	}
+
+	if (IS_ENABLED(CONFIG_USBD_UDC_MEMORY_USAGE)) {
+		init_args.rx_m_tpl = 0;
+		init_args.rx_size = 0;
+		init_args.tx_size = 0;
+
+		usbd_interfaces_memory_usage(uds_ctx, &init_args.rx_size,
+					     &init_args.tx_size, &init_args.rx_m_tpl);
+		LOG_INF("Required UDC FIFO size RX %u TX %u MAX RX TPL %u",
+			init_args.rx_size, init_args.tx_size, init_args.rx_m_tpl);
+	}
+
+	ret = udc_init(uds_ctx->dev, &init_args);
+	if (ret != 0) {
+		LOG_ERR("Failed to init device driver");
 		return ret;
 	}
 
