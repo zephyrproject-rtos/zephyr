@@ -1,6 +1,11 @@
-board:
-  name: rp2040_plus
-  full_name: RP2040-Plus
-  vendor: waveshare
-  socs:
-  - name: rp2040
+boards:
+  - name: rp2040_plus
+    full_name: RP2040-Plus
+    vendor: waveshare
+    socs:
+      - name: rp2040
+  - name: rp2040_plus_16mb
+    full_name: RP2040-Plus-16MB
+    vendor: waveshare
+    socs:
+      - name: rp2040
