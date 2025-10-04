@@ -1,0 +1,7 @@
+# Copyright (c) 2022 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+config RESET_AT32
+	bool "AT32 Reset Controller Driver"
+	default y
+	depends on DT_HAS_AT_AT32_RCTL_ENABLED
