@@ -72,24 +72,6 @@ config SPI_NRFX_SPIS
 	select NRFX_SPIS136 if HAS_HW_NRF_SPIS136
 	select NRFX_SPIS137 if HAS_HW_NRF_SPIS137
 
-config SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
-	depends on SOC_NRF52832
-	select NRFX_PPI
-	bool "Allow enabling the SPIM driver despite PAN 58"
-	help
-	  Allow enabling the nRF SPI Master with EasyDMA, despite
-	  Product Anomaly Notice 58 (SPIM: An additional byte is
-	  clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1).
-	  Without this override, the SPI Master is only available
-	  without EasyDMA. Note that the 'SPIM' and 'SPIS' drivers
-	  use EasyDMA, while the 'SPI' driver does not.
-	  When used in conjunction with nRF SPIM Devicetree property
-	  'anomaly-58-workaround' a workaround can be enabled per SPIM
-	  instance.  If you are certain that transactions with
-	  RXD.MAXCNT == 1 and TXD.MAXCNT <= 1 will NOT be executed
-	  then nRF52832 PPI and GPIOTE resources can be saved by not
-	  enabling 'anomaly-58-workaround' via the Devicetree.
-
 config SPI_NRFX_RAM_BUFFER_SIZE
 	int "Size of RAM buffers for SPIM peripherals"
 	default 8
