@@ -106,6 +106,13 @@ static uint32_t mcux_lptmr_get_top_value(const struct device *dev)
 	return (config->base->CMR & LPTMR_CMR_COMPARE_MASK) + 1U;
 }
 
+static uint32_t mcux_lptmr_get_freq(const struct device *dev)
+{
+	const struct mcux_lptmr_config *config = dev->config;
+
+	return config->info.freq;
+}
+
 static void mcux_lptmr_isr(const struct device *dev)
 {
 	const struct mcux_lptmr_config *config = dev->config;
@@ -153,6 +160,7 @@ static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 	.set_top_value = mcux_lptmr_set_top_value,
 	.get_pending_int = mcux_lptmr_get_pending_int,
 	.get_top_value = mcux_lptmr_get_top_value,
+	.get_freq = mcux_lptmr_get_freq,
 };
 
 #define COUNTER_MCUX_LPTMR_DEVICE_INIT(n)					\
