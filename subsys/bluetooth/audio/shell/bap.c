@@ -61,24 +61,24 @@
 
 #if defined(CONFIG_BT_BAP_UNICAST)
 
-struct shell_stream unicast_streams[CONFIG_BT_MAX_CONN *
-				    MAX(UNICAST_SERVER_STREAM_COUNT, UNICAST_CLIENT_STREAM_COUNT)];
+struct shell_stream unicast_streams[CONFIG_BT_MAX_CONN * MAX(UNICAST_SERVER_STREAM_COUNT,
+							     UNICAST_CLIENT_STREAM_COUNT)] = {0};
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
-struct unicast_group default_unicast_group;
+struct unicast_group default_unicast_group = {0};
 static struct bt_bap_unicast_client_cb unicast_client_cbs;
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
-struct bt_bap_ep *snks[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
+struct bt_bap_ep *snks[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT] = {0};
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
-struct bt_bap_ep *srcs[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
+struct bt_bap_ep *srcs[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT] = {0};
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 #endif /* CONFIG_BT_BAP_UNICAST */
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
-struct shell_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
-struct broadcast_source default_source;
+struct shell_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT] = {0};
+struct broadcast_source default_source = {0};
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 #if defined(CONFIG_BT_BAP_BROADCAST_SINK)
 static struct shell_stream broadcast_sink_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
@@ -2384,8 +2384,11 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info, struct 
 
 	bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
 
-	bt_shell_print("Found broadcaster with ID 0x%06X (%s) and addr %s and sid 0x%02X ",
-		       sr_info.broadcast_id, sr_info.broadcast_name, addr_str, info->sid);
+	bt_shell_print("Found broadcaster with ID 0x%06X (%s) and addr %s and sid 0x%02X (scanning "
+		       "for 0x%06X (%s))",
+		       sr_info.broadcast_id, sr_info.broadcast_name, addr_str, info->sid,
+		       auto_scan.broadcast_info.broadcast_id,
+		       auto_scan.broadcast_info.broadcast_name);
 
 	if ((auto_scan.broadcast_info.broadcast_id == BT_BAP_INVALID_BROADCAST_ID) &&
 	    (strlen(auto_scan.broadcast_info.broadcast_name) == 0U)) {
@@ -2399,10 +2402,12 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info, struct 
 		   is_substring(auto_scan.broadcast_info.broadcast_name, sr_info.broadcast_name)) {
 		auto_scan.broadcast_info.broadcast_id = sr_info.broadcast_id;
 		identified_broadcast = true;
-
-		bt_shell_print("Found matched broadcast name '%s' with address %s",
-			       sr_info.broadcast_name, addr_str);
+	} else {
+		/* no op */
+		return;
 	}
+
+	bt_shell_print("Found matched broadcast with address %s", addr_str);
 
 	if (identified_broadcast && (auto_scan.broadcast_sink != NULL) &&
 	    (auto_scan.broadcast_sink->pa_sync == NULL)) {
