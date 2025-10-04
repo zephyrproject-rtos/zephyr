@@ -2,12 +2,23 @@
    :name: IS31FL319x RGB LED
    :relevant-api: led_interface
 
-   Cycle colors on an RGB LED connected to the IS31FL3194 using the LED API.
+   Cycle colors on an RGB LED connected to the IS31FL3194 or IS31FL3197
+   using the LED API.
 
 Overview
 ********
 
-This sample cycles several colors on an RGB LED forever using the LED API.
+This sample first looks through the color table to map which channels
+map to Red, Green and Blue.
+
+It then shows the mapping, but setting one color on and fading it
+off. First Red, then Green and finally Blue.
+
+It then forever cycles through several colors on an RGB LED. It uses a
+helper function, that maps the RGB colors into the correct order
+for the actual hardware LED, as some hardware LEDs will be defined in
+RGB order whereas others may be in another order such as BGR.
+Once mapped it calls off to the led library to display the color.
 
 Building and Running
 ********************
@@ -18,8 +29,15 @@ any board where the devicetree has an I2C device node with compatible
 controller node also being enabled.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/led/is31fl3194
+   :zephyr-app: samples/drivers/led/is31fl319x
    :board: arduino_nicla_sense_me
+   :goals: build flash
+   :compact:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/led/is31fl319x
+   :board: arduino_giga_r1//m7
+   :shield: arduino_giga_display_shield
    :goals: build flash
    :compact:
 

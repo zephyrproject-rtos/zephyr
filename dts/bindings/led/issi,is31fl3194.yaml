@@ -4,11 +4,9 @@
 description: |
   IS31FL3194 3-channel LED driver with programmable pattern sequencing
 
-  This driver supports single-channel and RGB LEDs. For single channel LEDs,
+  Supports single-channel and RGB LEDs. For single channel LEDs,
   the led_set_brightness() API can be used to set the brightness of each LED.
-  For RGB LEDs, the led_set_color() API can be used to set the red, green and
-  blue components; the driver takes care of routing to the outputs described
-  by the color-mapping property.
+  For RGB LEDs.
 
   The LED_SHELL application can be used for testing.
 
