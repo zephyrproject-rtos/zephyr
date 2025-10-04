@@ -13,6 +13,7 @@
 #include <mem.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <freq.h>
+#include <zephyr/dt-bindings/gpio/realtek-gpio.h>
 
 / {
 	cpus {
@@ -167,6 +168,7 @@
 
 		espi0: espi0@400b1000 {
 			compatible = "realtek,rts5912-espi";
+			cs-gpios = <RTS5912_GPIO004 0>;
 			status = "disabled";
 
 			reg = <0x400b1000 0x200		/* espi target */
