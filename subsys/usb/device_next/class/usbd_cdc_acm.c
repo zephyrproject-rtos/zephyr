@@ -49,7 +49,7 @@ LOG_MODULE_REGISTER(usbd_cdc_acm, CONFIG_USBD_CDC_ACM_LOG_LEVEL);
 #define CDC_ACM_TX_FIFO_BUSY		5
 
 struct cdc_acm_uart_fifo {
-	struct ring_buf *rb;
+	struct ring_buffer *rb;
 	bool irq;
 	bool altered;
 };
@@ -309,7 +309,7 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 		size_t done;
 
 		LOG_HEXDUMP_INF(buf->data, buf->len, "");
-		done = ring_buf_put(data->rx_fifo.rb, buf->data, buf->len);
+		done = ring_buffer_write(data->rx_fifo.rb, buf->data, buf->len);
 		if (done && data->cb) {
 			cdc_acm_work_submit(&data->irq_cb_work);
 		}
@@ -326,7 +326,7 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 
 		atomic_clear_bit(&data->state, CDC_ACM_TX_FIFO_BUSY);
 
-		if (!ring_buf_is_empty(data->tx_fifo.rb)) {
+		if (!ring_buffer_empty(data->tx_fifo.rb)) {
 			/* Queue pending TX data on IN endpoint */
 			cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
 		}
@@ -361,7 +361,7 @@ static void usbd_cdc_acm_enable(struct usbd_class_data *const c_data)
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED)) {
-		if (ring_buf_space_get(data->tx_fifo.rb)) {
+		if (ring_buffer_space(data->tx_fifo.rb)) {
 			/* Raise TX ready interrupt */
 			cdc_acm_work_submit(&data->irq_cb_work);
 		} else {
@@ -658,7 +658,7 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
 		return;
 	}
 
-	len = ring_buf_get(data->tx_fifo.rb, buf->data, buf->size);
+	len = ring_buffer_read(data->tx_fifo.rb, buf->data, buf->size);
 	net_buf_add(buf, len);
 
 	data->zlp_needed = len != 0 && len % cdc_acm_get_bulk_mps(c_data) == 0;
@@ -697,7 +697,7 @@ static void cdc_acm_rx_fifo_handler(struct k_work *work)
 		return;
 	}
 
-	if (ring_buf_space_get(data->rx_fifo.rb) < cdc_acm_get_bulk_mps(c_data)) {
+	if (ring_buffer_space(data->rx_fifo.rb) < cdc_acm_get_bulk_mps(c_data)) {
 		LOG_INF("RX buffer to small, throttle");
 		return;
 	}
@@ -729,7 +729,7 @@ static void cdc_acm_irq_tx_enable(const struct device *dev)
 
 	atomic_set_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED);
 
-	if (ring_buf_space_get(data->tx_fifo.rb)) {
+	if (ring_buffer_space(data->tx_fifo.rb)) {
 		LOG_INF("tx_en: trigger irq_cb_work");
 		cdc_acm_work_submit(&data->irq_cb_work);
 	}
@@ -749,7 +749,7 @@ static void cdc_acm_irq_rx_enable(const struct device *dev)
 	atomic_set_bit(&data->state, CDC_ACM_IRQ_RX_ENABLED);
 
 	/* Permit buffer to be drained regardless of USB state */
-	if (!ring_buf_is_empty(data->rx_fifo.rb)) {
+	if (!ring_buffer_empty(data->rx_fifo.rb)) {
 		LOG_INF("rx_en: trigger irq_cb_work");
 		cdc_acm_work_submit(&data->irq_cb_work);
 	}
@@ -782,14 +782,14 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 	}
 
 	key = k_spin_lock(&data->lock);
-	done = ring_buf_put(data->tx_fifo.rb, tx_data, len);
+	done = ring_buffer_write(data->tx_fifo.rb, tx_data, len);
 	k_spin_unlock(&data->lock, key);
 	if (done) {
 		data->tx_fifo.altered = true;
 	}
 
 	LOG_INF("UART dev %p, len %d, remaining space %u",
-		dev, len, ring_buf_space_get(data->tx_fifo.rb));
+		dev, len, ring_buffer_space(data->tx_fifo.rb));
 
 	return done;
 }
@@ -802,7 +802,7 @@ static int cdc_acm_fifo_read(const struct device *dev,
 	uint32_t len;
 
 	LOG_INF("UART dev %p size %d length %u",
-		dev, size, ring_buf_size_get(data->rx_fifo.rb));
+		dev, size, ring_buffer_size(data->rx_fifo.rb));
 
 	if (!check_wq_ctx(dev)) {
 		LOG_WRN("Invoked by inappropriate context");
@@ -810,7 +810,7 @@ static int cdc_acm_fifo_read(const struct device *dev,
 		return 0;
 	}
 
-	len = ring_buf_get(data->rx_fifo.rb, rx_data, size);
+	len = ring_buffer_read(data->rx_fifo.rb, rx_data, size);
 	if (len) {
 		data->rx_fifo.altered = true;
 	}
@@ -824,7 +824,7 @@ static int cdc_acm_irq_tx_ready(const struct device *dev)
 
 	if (check_wq_ctx(dev)) {
 		if (data->tx_fifo.irq) {
-			return ring_buf_space_get(data->tx_fifo.rb);
+			return ring_buffer_space(data->tx_fifo.rb);
 		}
 	} else {
 		LOG_WRN("Invoked by inappropriate context");
@@ -878,14 +878,14 @@ static int cdc_acm_irq_update(const struct device *dev)
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_RX_ENABLED) &&
-	    !ring_buf_is_empty(data->rx_fifo.rb)) {
+	    !ring_buffer_empty(data->rx_fifo.rb)) {
 		data->rx_fifo.irq = true;
 	} else {
 		data->rx_fifo.irq = false;
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED) &&
-	    ring_buf_space_get(data->tx_fifo.rb)) {
+	    ring_buffer_space(data->tx_fifo.rb)) {
 		data->tx_fifo.irq = true;
 	} else {
 		data->tx_fifo.irq = false;
@@ -947,13 +947,13 @@ static void cdc_acm_irq_cb_handler(struct k_work *work)
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_RX_ENABLED) &&
-	    !ring_buf_is_empty(data->rx_fifo.rb)) {
+	    !ring_buffer_empty(data->rx_fifo.rb)) {
 		LOG_DBG("rx irq pending, submit irq_cb_work");
 		cdc_acm_work_submit(&data->irq_cb_work);
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED) &&
-	    ring_buf_space_get(data->tx_fifo.rb)) {
+	    ring_buffer_space(data->tx_fifo.rb)) {
 		LOG_DBG("tx irq pending, submit irq_cb_work");
 		cdc_acm_work_submit(&data->irq_cb_work);
 	}
@@ -975,11 +975,11 @@ static int cdc_acm_poll_in(const struct device *dev, unsigned char *const c)
 	uint32_t len;
 	int ret = -1;
 
-	if (ring_buf_is_empty(data->rx_fifo.rb)) {
+	if (ring_buffer_empty(data->rx_fifo.rb)) {
 		return ret;
 	}
 
-	len = ring_buf_get(data->rx_fifo.rb, c, 1);
+	len = ring_buffer_read(data->rx_fifo.rb, c, 1);
 	if (len) {
 		cdc_acm_work_submit(&data->rx_fifo_work);
 		ret = 0;
@@ -996,7 +996,7 @@ static void cdc_acm_poll_out(const struct device *dev, const unsigned char c)
 
 	while (true) {
 		key = k_spin_lock(&data->lock);
-		wrote = ring_buf_put(data->tx_fifo.rb, &c, 1);
+		wrote = ring_buffer_write(data->tx_fifo.rb, &c, 1);
 		k_spin_unlock(&data->lock, key);
 
 		if (wrote == 1) {
@@ -1119,8 +1119,8 @@ static int usbd_cdc_acm_preinit(const struct device *dev)
 {
 	struct cdc_acm_uart_data *const data = dev->data;
 
-	ring_buf_reset(data->tx_fifo.rb);
-	ring_buf_reset(data->rx_fifo.rb);
+	ring_buffer_reset(data->tx_fifo.rb);
+	ring_buffer_reset(data->rx_fifo.rb);
 
 	k_work_init_delayable(&data->tx_fifo_work, cdc_acm_tx_fifo_handler);
 	k_work_init(&data->rx_fifo_work, cdc_acm_rx_fifo_handler);
@@ -1350,8 +1350,8 @@ const static struct usb_desc_header *cdc_acm_hs_desc_##n[] = {			\
 				USBD_DUT_STRING_INTERFACE);			\
 	))									\
 										\
-	RING_BUF_DECLARE(cdc_acm_rb_rx_##n, DT_INST_PROP(n, rx_fifo_size));	\
-	RING_BUF_DECLARE(cdc_acm_rb_tx_##n, DT_INST_PROP(n, tx_fifo_size));	\
+	RING_BUFFER_DECLARE(cdc_acm_rb_rx_##n, DT_INST_PROP(n, rx_fifo_size));	\
+	RING_BUFFER_DECLARE(cdc_acm_rb_tx_##n, DT_INST_PROP(n, tx_fifo_size));	\
 										\
 	static const struct cdc_acm_uart_config uart_config_##n = {		\
 		.c_data = &cdc_acm_##n,						\

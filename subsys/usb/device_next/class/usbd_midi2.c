@@ -151,7 +151,7 @@ struct usbd_midi_data {
 	struct k_work rx_work;
 	struct k_work tx_work;
 	uint8_t tx_queue_buf[MIDI_QUEUE_SIZE];
-	struct ring_buf tx_queue;
+	struct ring_buffer tx_queue;
 	uint8_t altsetting;
 	struct usbd_midi_ops ops;
 };
@@ -201,7 +201,7 @@ static int usbd_midi_class_request(struct usbd_class_data *const class_data,
 		k_work_submit(&data->rx_work);
 	} else {
 		LOG_HEXDUMP_DBG(buf->data, buf->len, "Tx DATA complete");
-		if (ring_buf_size_get(&data->tx_queue)) {
+		if (ring_buffer_size(&data->tx_queue)) {
 			k_work_submit(&data->tx_work);
 		}
 	}
@@ -440,7 +440,7 @@ static void usbd_midi_tx_work(struct k_work *work)
 		return;
 	}
 
-	net_buf_add(buf, ring_buf_get(&data->tx_queue, buf->data, buf->size));
+	net_buf_add(buf, ring_buffer_read(&data->tx_queue, buf->data, buf->size));
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "MIDI2 - Tx DATA");
 
 	ret = usbd_ep_enqueue(data->class_data, buf);
@@ -455,7 +455,7 @@ static int usbd_midi_preinit(const struct device *dev)
 	struct usbd_midi_data *data = dev->data;
 
 	LOG_DBG("Init device %s", dev->name);
-	ring_buf_init(&data->tx_queue, MIDI_QUEUE_SIZE, data->tx_queue_buf);
+	ring_buffer_init(&data->tx_queue, data->tx_queue_buf, MIDI_QUEUE_SIZE);
 	k_work_init(&data->rx_work, usbd_midi_rx_work);
 	k_work_init(&data->tx_work, usbd_midi_tx_work);
 
@@ -475,14 +475,14 @@ int usbd_midi_send(const struct device *dev, const struct midi_ump ump)
 		return -EIO;
 	}
 
-	if (buflen > ring_buf_space_get(&data->tx_queue)) {
+	if (buflen > ring_buffer_space(&data->tx_queue)) {
 		LOG_WRN("Not enough space in tx queue");
 		return -ENOBUFS;
 	}
 
 	for (size_t i = 0; i < words; i++) {
 		word = sys_cpu_to_le32(ump.data[i]);
-		ring_buf_put(&data->tx_queue, (const uint8_t *)&word, 4);
+		ring_buffer_write(&data->tx_queue, (const uint8_t *)&word, 4);
 	}
 	k_work_submit(&data->tx_work);
 

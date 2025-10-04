@@ -41,7 +41,6 @@ config USE_USB_AUDIO_INPUT
 	depends on ENABLE_LC3
 	select USB_DEVICE_STACK_NEXT
 	select USBD_AUDIO2_CLASS
-	select RING_BUFFER
 
 config BROADCAST_CODE
 	string "The broadcast code (if any) to use for encrypted broadcast"

@@ -84,7 +84,7 @@ static uint32_t get_timeout(bool idle, bool use_rand)
 	if (use_rand) {
 		sys_rand_get(&rand_val, sizeof(rand_val));
 	} else {
-		len = ring_buf_get(&rnd_rbuf,
+		len = ring_buffer_read(&rnd_rbuf,
 				   (uint8_t *)&rand_val,
 				   sizeof(rand_val));
 		if (len < sizeof(rand_val)) {
@@ -198,7 +198,7 @@ static int busy_sim_init(const struct device *dev)
 
 	if (config->entropy) {
 		k_work_init(&sim_work, rng_pool_work_handler);
-		ring_buf_init(&rnd_rbuf, BUFFER_SIZE, rnd_buf);
+		ring_buffer_init(&rnd_rbuf, rnd_buf, BUFFER_SIZE);
 	}
 
 	data->us_tick = freq / 1000000;

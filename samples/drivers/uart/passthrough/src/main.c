@@ -16,7 +16,7 @@ struct patch_info {
 	const uint8_t * const name;
 
 	const struct device *rx_dev;
-	struct ring_buf *rx_ring_buf;
+	struct ring_buffer *rx_ring_buf;
 	bool rx_error;
 	bool rx_overflow;
 
@@ -28,7 +28,7 @@ struct patch_info {
 
 #define RING_BUF_SIZE 64
 
-RING_BUF_DECLARE(rb_console, RING_BUF_SIZE);
+RING_BUFFER_DECLARE(rb_console, RING_BUF_SIZE);
 struct patch_info patch_c2o = {
 	.name = "c2o",
 
@@ -40,7 +40,7 @@ struct patch_info patch_c2o = {
 	.tx_dev = DEV_OTHER,
 };
 
-RING_BUF_DECLARE(rb_other, RING_BUF_SIZE);
+RING_BUFFER_DECLARE(rb_other, RING_BUF_SIZE);
 struct patch_info patch_o2c = {
 	.name = "o2c",
 
@@ -68,7 +68,7 @@ static void uart_cb(const struct device *dev, void *ctx)
 			break;
 		}
 
-		len = ring_buf_put_claim(patch->rx_ring_buf, &buf, RING_BUF_SIZE);
+		len = ring_buffer_write_ptr(patch->rx_ring_buf, &buf);
 		if (len == 0) {
 			/* no space for Rx, disable the IRQ */
 			uart_irq_rx_disable(patch->rx_dev);
@@ -84,12 +84,7 @@ static void uart_cb(const struct device *dev, void *ctx)
 			break;
 		}
 		len = ret;
-
-		ret = ring_buf_put_finish(patch->rx_ring_buf, len);
-		if (ret != 0) {
-			patch->rx_error = true;
-			break;
-		}
+		ring_buffer_commit(patch->rx_ring_buf, len);
 	}
 }
 
@@ -109,7 +104,7 @@ static void passthrough(struct patch_info *patch)
 		patch->rx_overflow = false;
 	}
 
-	len = ring_buf_get_claim(patch->rx_ring_buf, &buf, RING_BUF_SIZE);
+	len = ring_buffer_read_ptr(patch->rx_ring_buf, &buf);
 	if (len == 0) {
 		goto done;
 	}
@@ -120,10 +115,7 @@ static void passthrough(struct patch_info *patch)
 	}
 	len = ret;
 
-	ret = ring_buf_get_finish(patch->rx_ring_buf, len);
-	if (ret < 0) {
-		goto error;
-	}
+	ring_buffer_consume(patch->rx_ring_buf, len);
 
 done:
 	uart_irq_rx_enable(patch->rx_dev);

@@ -24,8 +24,8 @@ struct modem_backend_mock_transaction {
 struct modem_backend_mock {
 	struct modem_pipe pipe;
 
-	struct ring_buf rx_rb;
-	struct ring_buf tx_rb;
+	struct ring_buffer rx_rb;
+	struct ring_buffer tx_rb;
 
 	struct k_work receive_ready_work;
 	struct k_work transmit_idle_work;

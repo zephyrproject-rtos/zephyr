@@ -49,8 +49,8 @@ struct shell_uart_common {
 
 struct shell_uart_int_driven {
 	struct shell_uart_common common;
-	struct ring_buf tx_ringbuf;
-	struct ring_buf rx_ringbuf;
+	struct ring_buffer tx_ringbuf;
+	struct ring_buffer rx_ringbuf;
 	uint8_t tx_buf[CONFIG_SHELL_BACKEND_SERIAL_TX_RING_BUFFER_SIZE];
 	uint8_t rx_buf[CONFIG_SHELL_BACKEND_SERIAL_RX_RING_BUFFER_SIZE];
 	struct k_timer dtr_timer;
@@ -68,7 +68,7 @@ struct shell_uart_async {
 
 struct shell_uart_polling {
 	struct shell_uart_common common;
-	struct ring_buf rx_ringbuf;
+	struct ring_buffer rx_ringbuf;
 	uint8_t rx_buf[CONFIG_SHELL_BACKEND_SERIAL_RX_RING_BUFFER_SIZE];
 	struct k_timer rx_timer;
 };

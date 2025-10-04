@@ -11,7 +11,6 @@ config USB_CDC_ACM
 	depends on DT_HAS_ZEPHYR_CDC_ACM_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
-	select RING_BUFFER
 	select UART_INTERRUPT_DRIVEN
 	help
 	  USB CDC ACM class support.

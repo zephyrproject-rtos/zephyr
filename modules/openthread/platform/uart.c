@@ -28,14 +28,14 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "platform-zephyr.h"
 
 struct openthread_uart {
-	struct ring_buf *rx_ringbuf;
+	struct ring_buffer *rx_ringbuf;
 	const struct device *dev;
 	atomic_t tx_busy;
 	atomic_t tx_finished;
 };
 
 #define OT_UART_DEFINE(_name, _ringbuf_size) \
-	RING_BUF_DECLARE(_name##_rx_ringbuf, _ringbuf_size); \
+	RING_BUFFER_DECLARE(_name##_rx_ringbuf, _ringbuf_size); \
 	static struct openthread_uart _name = { \
 		.rx_ringbuf = &_name##_rx_ringbuf, \
 	}
@@ -56,19 +56,14 @@ static void uart_rx_handle(const struct device *dev)
 	bool new_data = false;
 
 	do {
-		len = ring_buf_put_claim(
-			ot_uart.rx_ringbuf, &data,
-			ot_uart.rx_ringbuf->size);
+		len = ring_buffer_write_ptr(ot_uart.rx_ringbuf, &data);
 		if (len > 0) {
 			rd_len = uart_fifo_read(dev, data, len);
 			if (rd_len > 0) {
 				new_data = true;
 			}
 
-			int err = ring_buf_put_finish(
-				ot_uart.rx_ringbuf, rd_len);
-			(void)err;
-			__ASSERT_NO_MSG(err == 0);
+			ring_buffer_commit(ot_uart.rx_ringbuf, rd_len);
 		} else {
 			uint8_t dummy;
 
@@ -133,18 +128,9 @@ void platformUartProcess(otInstance *aInstance)
 	const uint8_t *data;
 
 	/* Process UART RX */
-	while ((len = ring_buf_get_claim(
-			ot_uart.rx_ringbuf,
-			(uint8_t **)&data,
-			ot_uart.rx_ringbuf->size)) > 0) {
-		int err;
-
+	while ((len = ring_buffer_write_ptr(ot_uart.rx_ringbuf, (uint8_t **)&data)) > 0) {
 		otPlatUartReceived(data, len);
-		err = ring_buf_get_finish(
-				ot_uart.rx_ringbuf,
-				len);
-		(void)err;
-		__ASSERT_NO_MSG(err == 0);
+		ring_buffer_consume(ot_uart.rx_ringbuf, len);
 	}
 
 	/* Process UART TX */
