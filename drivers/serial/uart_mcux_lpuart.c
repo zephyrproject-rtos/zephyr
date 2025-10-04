@@ -1515,7 +1515,7 @@ static DEVICE_API(uart, mcux_lpuart_driver_api) = {
 static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {     \
 	.base = (LPUART_Type *) DT_INST_REG_ADDR(n),                          \
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                   \
-	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
+	.clock_subsys = CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks),	\
 	.baud_rate = DT_INST_PROP(n, current_speed),                          \
 	.flow_ctrl = FLOW_CONTROL(n),                                         \
 	.parity = DT_INST_ENUM_IDX(n, parity),                                \
@@ -1534,6 +1534,7 @@ static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {     \
 									\
 	static struct mcux_lpuart_data mcux_lpuart_##n##_data;		\
 									\
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);			\
 	PINCTRL_DT_INST_DEFINE(n);					\
 	MCUX_LPUART_IRQ_DEFINE(n)					\
 									\

@@ -320,6 +320,7 @@ static DEVICE_API(pwm, pwm_nxp_flexio_driver_api) = {
 
 #define PWM_NXP_FLEXIO_PWM_INIT(n)								\
 	PINCTRL_DT_INST_DEFINE(n);								\
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);						\
 	FLEXIO_PWM_PULSE_GEN_CONFIG(n)								\
 	FLEXIO_PWM_TIMER_INDEX_INIT(n)								\
 	FLEXIO_PWM_CHILD_CONFIG(n)								\
@@ -328,7 +329,7 @@ static DEVICE_API(pwm, pwm_nxp_flexio_driver_api) = {
 		.flexio_base = (FLEXIO_Type *)DT_REG_ADDR(DT_INST_PARENT(n)),			\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),					\
 		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(n))),			\
-		.clock_subsys = (clock_control_subsys_t)DT_CLOCKS_CELL(DT_INST_PARENT(n), name),\
+		.clock_subsys = CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks),			\
 		.child = &mcux_flexio_pwm_child_##n,						\
 		FLEXIO_PWM_PULSE_GEN_GET_CONFIG(n)						\
 	};											\

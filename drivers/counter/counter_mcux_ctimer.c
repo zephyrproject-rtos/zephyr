@@ -318,6 +318,7 @@ static DEVICE_API(counter, mcux_ctimer_driver_api) = {
 
 #define COUNTER_LPC_CTIMER_DEVICE(id)                                                              \
 	static void mcux_lpc_ctimer_irq_config_##id(const struct device *dev);                     \
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(id, clocks);                                             \
 	static struct mcux_lpc_ctimer_config mcux_lpc_ctimer_config_##id = { \
 		.info = {						\
 			.max_top_value = UINT32_MAX,			\
@@ -326,8 +327,7 @@ static DEVICE_API(counter, mcux_ctimer_driver_api) = {
 		},\
 		.base = (CTIMER_Type *)DT_INST_REG_ADDR(id),		\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),	\
-		.clock_subsys =				\
-		(clock_control_subsys_t)(DT_INST_CLOCKS_CELL(id, name)),\
+		.clock_subsys = CLOCK_CONTROL_DT_SPEC_INST_GET(id, clocks),\
 		.mode = DT_INST_PROP(id, mode),						\
 		.input = DT_INST_PROP(id, input),					\
 		.prescale = DT_INST_PROP(id, prescale),				\
