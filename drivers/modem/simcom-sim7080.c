@@ -135,7 +135,8 @@ static int offload_connect(void *obj, const struct sockaddr *addr, socklen_t add
 	uint16_t dst_port = 0;
 	char *protocol;
 	struct modem_cmd cmd[] = { MODEM_CMD("+CAOPEN: ", on_cmd_caopen, 2U, ",") };
-	char buf[sizeof("AT+CAOPEN: #,#,#####,#xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx#,####")];
+	char buf[sizeof("AT+CAOPEN: #,#,#####,"
+			"#xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxx.xxx.xxx.xxx#,####")];
 	char ip_str[NET_IPV6_ADDR_LEN];
 	int ret;
 

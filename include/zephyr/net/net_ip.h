@@ -479,7 +479,7 @@ extern const struct in6_addr in6addr_loopback;
 /** @cond INTERNAL_HIDDEN */
 
 /* These are for internal usage of the stack */
-#define NET_IPV6_ADDR_LEN sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx")
+#define NET_IPV6_ADDR_LEN sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxx.xxx.xxx.xxx")
 #define NET_IPV4_ADDR_LEN sizeof("xxx.xxx.xxx.xxx")
 
 /** @endcond */
