@@ -939,7 +939,7 @@ static int transceive(const struct device *dev,
 
 	ret = spi_stm32_configure(dev, config, tx_bufs != NULL);
 	if (ret) {
-		goto end;
+		return ret;
 	}
 
 	/* Set buffers info */
@@ -1156,7 +1156,8 @@ static int transceive_dma(const struct device *dev,
 
 	ret = spi_stm32_configure(dev, config, tx_bufs != NULL);
 	if (ret) {
-		goto end;
+		spi_stm32_pm_policy_state_lock_put(dev);
+		return ret;
 	}
 
 	uint32_t transfer_dir = LL_SPI_GetTransferDirection(spi);
