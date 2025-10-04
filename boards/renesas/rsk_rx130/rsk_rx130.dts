@@ -52,6 +52,7 @@
 		led0 = &led1;
 		led1 = &led3;
 		sw0 = &sw1;
+		watchdog0 = &iwdt;
 	};
 };
 
@@ -69,6 +70,10 @@
 &pll {
 	div = <2>;
 	mul = <RX_PLL_MUL_8>;
+	status = "okay";
+};
+
+&iwdtlsclk {
 	status = "okay";
 };
 
@@ -143,5 +148,11 @@
 &adc {
 	pinctrl-0 = <&adc_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&iwdt {
+	window-start = <0x3000>;
+	window-end = <0x0300>;
 	status = "okay";
 };
