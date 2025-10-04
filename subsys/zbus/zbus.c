@@ -122,6 +122,26 @@ const struct zbus_channel *zbus_chan_from_id(uint32_t channel_id)
 
 #endif /* CONFIG_ZBUS_CHANNEL_ID */
 
+#if defined(CONFIG_ZBUS_CHANNEL_NAME)
+
+const struct zbus_channel *zbus_chan_from_name(const char *name)
+{
+	if (!name) {
+		return NULL;
+	}
+
+	STRUCT_SECTION_FOREACH(zbus_channel, chan) {
+		if (strcmp(chan->name, name) == 0) {
+			/* Found matching channel */
+			return chan;
+		}
+	}
+	/* No matching channel exists */
+	return NULL;
+}
+
+#endif /* CONFIG_ZBUS_CHANNEL_NAME */
+
 static inline int _zbus_notify_observer(const struct zbus_channel *chan,
 					const struct zbus_observer *obs, k_timepoint_t end_time,
 					struct net_buf *buf)
@@ -383,6 +403,18 @@ int zbus_chan_pub(const struct zbus_channel *chan, const void *msg, k_timeout_t 
 	_ZBUS_ASSERT(k_is_in_isr() ? K_TIMEOUT_EQ(timeout, K_NO_WAIT) : true,
 		     "inside an ISR, the timeout must be K_NO_WAIT");
 
+#if defined(CONFIG_ZBUS_MULTIDOMAIN)
+
+	/* Normal publish to a shadow channel is not allowed from application logic. */
+	if (chan->is_shadow_channel) {
+		LOG_ERR("Channel is defined as shadow. Cannot publish to shadow channel %s from "
+			"application logic, only from ZBUS proxy agent",
+			_ZBUS_CHAN_NAME(chan));
+		return -EPERM;
+	}
+
+#endif /* CONFIG_ZBUS_MULTIDOMAIN */
+
 	if (k_is_in_isr()) {
 		timeout = K_NO_WAIT;
 	}
@@ -413,6 +445,57 @@ int zbus_chan_pub(const struct zbus_channel *chan, const void *msg, k_timeout_t 
 
 	return err;
 }
+
+#if defined(CONFIG_ZBUS_MULTIDOMAIN)
+
+int zbus_chan_pub_shadow(const struct zbus_channel *chan, const void *msg, k_timeout_t timeout)
+{
+	int err;
+
+	_ZBUS_ASSERT(chan != NULL, "chan is required");
+	_ZBUS_ASSERT(msg != NULL, "msg is required");
+	_ZBUS_ASSERT(k_is_in_isr() ? K_TIMEOUT_EQ(timeout, K_NO_WAIT) : true,
+		     "inside an ISR, the timeout must be K_NO_WAIT");
+
+	if (!chan->is_shadow_channel) {
+		/* Shadow publish to a non-shadow channel is not allowed */
+		LOG_ERR("Channel is not defined as shadow. Cannot publish to non-shadow channel %s",
+			_ZBUS_CHAN_NAME(chan));
+		return -EPERM;
+	}
+
+	if (k_is_in_isr()) {
+		timeout = K_NO_WAIT;
+	}
+
+	k_timepoint_t end_time = sys_timepoint_calc(timeout);
+
+	if (chan->validator != NULL && !chan->validator(msg, chan->message_size)) {
+		return -ENOMSG;
+	}
+
+	int context_priority = ZBUS_MIN_THREAD_PRIORITY;
+
+	err = chan_lock(chan, timeout, &context_priority);
+	if (err) {
+		return err;
+	}
+
+#if defined(CONFIG_ZBUS_CHANNEL_PUBLISH_STATS)
+	chan->data->publish_timestamp = k_uptime_ticks();
+	chan->data->publish_count += 1;
+#endif
+
+	memcpy(chan->message, msg, chan->message_size);
+
+	err = _zbus_vded_exec(chan, end_time);
+
+	chan_unlock(chan, context_priority);
+
+	return err;
+}
+
+#endif /* CONFIG_ZBUS_MULTIDOMAIN */
 
 int zbus_chan_read(const struct zbus_channel *chan, void *msg, k_timeout_t timeout)
 {
