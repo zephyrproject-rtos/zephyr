@@ -26,12 +26,14 @@
 		mspi-io-mode = "MSPI_IO_MODE_QUAD";
 		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
 		mspi-hardware-ce-num = <0>;
+		mspi-ce-polarity = "MSPI_CE_ACTIVE_HIGH";
 		read-command = <0x0B>;
 		write-command = <0x02>;
 		command-length = "INSTR_1_BYTE";
 		address-length = "ADDR_4_BYTE";
 		rx-dummy = <8>;
 		tx-dummy = <0>;
+		memory-boundary = <0>;
 	};
 
 	flash_dummy1: flash_dummy1@1 {
@@ -43,6 +45,11 @@
 		mspi-io-mode = "MSPI_IO_MODE_OCTAL";
 		mspi-data-rate = "MSPI_DATA_RATE_DUAL";
 		mspi-hardware-ce-num = <1>;
+		mspi-ce-polarity = "MSPI_CE_ACTIVE_LOW";
+		mspi-ce-max-active = <10>;
+		mspi-ce-setup = <2>;
+		mspi-ce-hold = <2>;
+		mspi-ce-min-inactive = <2>;
 		mspi-dqs-enable;
 		read-command = <0x20>;
 		write-command = <0xAA>;
@@ -51,6 +58,6 @@
 		rx-dummy = <6>;
 		tx-dummy = <5>;
 		xip-config = <1 0 0 0>;
-		ce-break-config = <1024 4>;
+		memory-boundary = <1024>;
 	};
 };

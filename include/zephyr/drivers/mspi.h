@@ -6,8 +6,9 @@
 
 /**
  * @file
- * @ingroup mspi_interface
- * @brief Main header file for MSPI (Multi-Master Serial Peripheral Interface) driver API.
+ * @brief Public APIs for MSPI driver
+ * @since 3.7
+ * @version 0.2.0
  */
 
 #ifndef ZEPHYR_INCLUDE_MSPI_H_
@@ -110,6 +111,14 @@ enum mspi_endian {
 };
 
 /**
+ * @brief MSPI CE modes
+ */
+enum mspi_ce_mode {
+	MSPI_CE_MODE_GPIO           = 0,
+	MSPI_CE_MODE_HARDWARE       = 1,
+};
+
+/**
  * @brief MSPI chip enable polarity
  */
 enum mspi_ce_polarity {
@@ -172,23 +181,22 @@ enum mspi_xfer_direction {
  */
 enum mspi_dev_cfg_mask {
 	MSPI_DEVICE_CONFIG_NONE         = 0,
-	MSPI_DEVICE_CONFIG_CE_NUM       = BIT(0),
+	MSPI_DEVICE_CONFIG_CE           = BIT(0),
 	MSPI_DEVICE_CONFIG_FREQUENCY    = BIT(1),
 	MSPI_DEVICE_CONFIG_IO_MODE      = BIT(2),
 	MSPI_DEVICE_CONFIG_DATA_RATE    = BIT(3),
 	MSPI_DEVICE_CONFIG_CPP          = BIT(4),
 	MSPI_DEVICE_CONFIG_ENDIAN       = BIT(5),
-	MSPI_DEVICE_CONFIG_CE_POL       = BIT(6),
-	MSPI_DEVICE_CONFIG_DQS          = BIT(7),
-	MSPI_DEVICE_CONFIG_RX_DUMMY     = BIT(8),
-	MSPI_DEVICE_CONFIG_TX_DUMMY     = BIT(9),
-	MSPI_DEVICE_CONFIG_READ_CMD     = BIT(10),
-	MSPI_DEVICE_CONFIG_WRITE_CMD    = BIT(11),
-	MSPI_DEVICE_CONFIG_CMD_LEN      = BIT(12),
-	MSPI_DEVICE_CONFIG_ADDR_LEN     = BIT(13),
-	MSPI_DEVICE_CONFIG_MEM_BOUND    = BIT(14),
-	MSPI_DEVICE_CONFIG_BREAK_TIME   = BIT(15),
-	MSPI_DEVICE_CONFIG_ALL          = BIT_MASK(16),
+	MSPI_DEVICE_CONFIG_DQS          = BIT(6),
+	MSPI_DEVICE_CONFIG_RX_DUMMY     = BIT(7),
+	MSPI_DEVICE_CONFIG_TX_DUMMY     = BIT(8),
+	MSPI_DEVICE_CONFIG_READ_CMD     = BIT(9),
+	MSPI_DEVICE_CONFIG_WRITE_CMD    = BIT(10),
+	MSPI_DEVICE_CONFIG_CMD_LEN      = BIT(11),
+	MSPI_DEVICE_CONFIG_ADDR_LEN     = BIT(12),
+	MSPI_DEVICE_CONFIG_MEM_BOUND    = BIT(13),
+	MSPI_DEVICE_CONFIG_CE_TIMING    = BIT(14),
+	MSPI_DEVICE_CONFIG_ALL          = BIT_MASK(15),
 };
 
 /**
@@ -270,12 +278,56 @@ struct mspi_dt_spec {
 	struct mspi_cfg         config;
 };
 
+struct mspi_ce {
+	union {
+		/**
+		 * @brief GPIO devicetree specification of CE GPIO.
+		 * The device pointer can be set to NULL to fully inhibit CE control if
+		 * necessary. The GPIO flags GPIO_ACTIVE_LOW/GPIO_ACTIVE_HIGH should be
+		 * the same as in MSPI configuration.
+		 */
+		struct gpio_dt_spec             gpio;
+		/** @brief Hardware CE information */
+		struct {
+			/** @brief Configure CE0 or CE1 or more */
+			uint8_t                 ce_num;
+			/** @brief Configure chip enable polarity */
+			enum mspi_ce_polarity   ce_polarity;
+		};
+	};
+	/** @brief To keep track of which form the above struct is valid */
+	enum mspi_ce_mode       ce_mode;
+};
+
+struct mspi_ce_timing {
+	/**
+	 * @brief The maximum CE active time in micro seconds.
+	 * This can be used to auto break CE (previously was time_to_break).
+	 */
+	uint16_t                t_ce_max_act;
+	/**
+	 * @brief The minimum CE active time before the first CLK active edge.
+	 * Specified in nanoseconds.
+	 */
+	uint16_t                t_ce_setup;
+	/**
+	 * @brief The minimum CE active time after the last CLK active edge.
+	 * Specified in nanoseconds.
+	 */
+	uint16_t                t_ce_hold;
+	/**
+	 * @brief The minimum CE inactive time between transfers.
+	 * Specified in nanoseconds.
+	 */
+	uint16_t                t_ce_min_inact;
+};
+
 /**
  * @brief MSPI controller device specific configuration
  */
 struct mspi_dev_cfg {
-	/** @brief Configure CE0 or CE1 or more */
-	uint8_t                 ce_num;
+	/** @brief Configure CE runtime control */
+	struct mspi_ce          ce;
 	/** @brief Configure frequency */
 	uint32_t                freq;
 	/** @brief Configure I/O mode */
@@ -286,8 +338,6 @@ struct mspi_dev_cfg {
 	enum mspi_cpp_mode      cpp;
 	/** @brief Configure transfer endian */
 	enum mspi_endian        endian;
-	/** @brief Configure chip enable polarity */
-	enum mspi_ce_polarity   ce_polarity;
 	/** @brief Configure DQS mode */
 	bool                    dqs_enable;
 	/** @brief Configure number of clock cycles between
@@ -306,10 +356,13 @@ struct mspi_dev_cfg {
 	uint8_t                 cmd_length;
 	/** @brief Configure address length     */
 	uint8_t                 addr_length;
-	/** @brief Configure memory boundary    */
+	/**
+	 * @brief Configure the memory boundary
+	 * This can be used to auto break CE.
+	 */
 	uint32_t                mem_boundary;
-	/** @brief Configure the time to break up a transfer into 2 */
-	uint32_t                time_to_break;
+	/** @brief Configure the CE timing      */
+	struct mspi_ce_timing   ce_timing;
 };
 
 /**
@@ -351,29 +404,6 @@ struct mspi_scramble_cfg {
  */
 
 /**
- * @brief MSPI Chip Select control structure
- *
- * This can be used to control a CE line via a GPIO line, instead of
- * using the controller inner CE logic.
- *
- */
-struct mspi_ce_control {
-	/**
-	 * @brief GPIO devicetree specification of CE GPIO.
-	 * The device pointer can be set to NULL to fully inhibit CE control if
-	 * necessary. The GPIO flags GPIO_ACTIVE_LOW/GPIO_ACTIVE_HIGH should be
-	 * the same as in MSPI configuration.
-	 */
-	struct gpio_dt_spec         gpio;
-	/**
-	 * @brief Delay to wait.
-	 * In microseconds before starting the
-	 * transmission and before releasing the CE line.
-	 */
-	uint32_t                    delay;
-};
-
-/**
  * @brief MSPI peripheral xfer packet format
  */
 struct mspi_xfer_packet {
@@ -411,8 +441,6 @@ struct mspi_xfer {
 	uint8_t                     addr_length;
 	/** @brief  Hold CE active after xfer    */
 	bool                        hold_ce;
-	/** @brief  Software CE control          */
-	struct mspi_ce_control      ce_sw_ctrl;
 	/** @brief  MSPI transfer priority       */
 	enum mspi_xfer_priority     priority;
 	/** @brief  Transfer packets             */
