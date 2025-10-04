@@ -3259,4 +3259,16 @@ int bt_ascs_unregister(void)
 	return err;
 }
 
+struct bt_conn *bt_ascs_ep_get_conn(const struct bt_bap_ep *ep)
+{
+	struct bt_ascs_ase *ase = CONTAINER_OF(ep, struct bt_ascs_ase, ep);
+
+	__ASSERT_NO_MSG(bt_ascs_has_ep(ep));
+
+	if (ase->conn == NULL) {
+		return NULL;
+	}
+
+	return bt_conn_ref(ase->conn);
+}
 #endif /* BT_BAP_UNICAST_SERVER */
