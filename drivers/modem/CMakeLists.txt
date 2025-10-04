@@ -31,9 +31,7 @@ if (CONFIG_MODEM_HL7800)
   zephyr_library_sources(hl7800.c)
 endif()
 
-if (CONFIG_MODEM_SIM7080)
-	zephyr_library_sources(simcom-sim7080.c)
-endif()
+add_subdirectory(simcom)
 
 zephyr_library_sources_ifdef(CONFIG_MODEM_CELLULAR modem_cellular.c)
 zephyr_library_sources_ifdef(CONFIG_MODEM_AT_USER_PIPE modem_at_user_pipe.c)
