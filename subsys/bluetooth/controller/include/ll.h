@@ -267,10 +267,10 @@ uint8_t ll_tx_pwr_lvl_set(uint8_t handle_type, uint16_t handle,
 uint8_t ll_apto_get(uint16_t handle, uint16_t *const apto);
 uint8_t ll_apto_set(uint16_t handle, uint16_t apto);
 
-uint32_t ll_length_req_send(uint16_t handle, uint16_t tx_octets, uint16_t tx_time);
+uint8_t ll_length_req_send(uint16_t handle, uint16_t tx_octets, uint16_t tx_time);
 void ll_length_default_get(uint16_t *const max_tx_octets,
 			   uint16_t *const max_tx_time);
-uint32_t ll_length_default_set(uint16_t max_tx_octets, uint16_t max_tx_time);
+uint8_t ll_length_default_set(uint16_t max_tx_octets, uint16_t max_tx_time);
 void ll_length_max_get(uint16_t *const max_tx_octets,
 		       uint16_t *const max_tx_time,
 		       uint16_t *const max_rx_octets,
