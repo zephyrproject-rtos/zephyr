@@ -52,7 +52,7 @@ NSI_INLINE int nce_sem_rewait(sem_t *semaphore)
 {
 	int ret;
 
-	while ((ret = sem_wait(semaphore)) == EINTR) {
+	while (((ret = sem_wait(semaphore)) == -1) && (errno == EINTR)) {
 		/* Restart wait if we were interrupted */
 	}
 	return ret;
