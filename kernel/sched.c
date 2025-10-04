@@ -77,6 +77,7 @@ static ALWAYS_INLINE void *curr_cpu_runq(void)
 static ALWAYS_INLINE void runq_add(struct k_thread *thread)
 {
 	__ASSERT_NO_MSG(!z_is_idle_thread_object(thread));
+	__ASSERT_NO_MSG(!is_thread_dummy(thread));
 
 	_priq_run_add(thread_runq(thread), thread);
 }
@@ -84,6 +85,7 @@ static ALWAYS_INLINE void runq_add(struct k_thread *thread)
 static ALWAYS_INLINE void runq_remove(struct k_thread *thread)
 {
 	__ASSERT_NO_MSG(!z_is_idle_thread_object(thread));
+	__ASSERT_NO_MSG(!is_thread_dummy(thread));
 
 	_priq_run_remove(thread_runq(thread), thread);
 }
@@ -755,6 +757,9 @@ void z_reschedule_irqlock(uint32_t key)
 
 void k_sched_lock(void)
 {
+	LOG_DBG("scheduler locked (%p:%d)",
+		_current, _current->base.sched_locked);
+
 	K_SPINLOCK(&_sched_spinlock) {
 		SYS_PORT_TRACING_FUNC(k_thread, sched_lock);
 
