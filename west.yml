@@ -235,7 +235,7 @@ manifest:
       groups:
         - hal
     - name: hal_sifli
-      revision: 7be421088b6fa2910917f3f8b656ded01e21b4e8
+      revision: f457f7bea184d5ee4ec4ca45bffe49dd5e72ab1a
       path: modules/hal/sifli
       groups:
         - hal
