@@ -21,3 +21,26 @@ config GPIO_INTEL_CHECK_PERMS
 	  the driver allows manipulating the pin.
 
 	  Say y if unsure.
+
+config GPIO_INTEL_INT_EN_OFFSET
+	hex "Offset to Interrupt Enable register from Interrupt Status register"
+	default 0x20
+	depends on GPIO_INTEL && \
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_INTEL_GPIO),acpi-hid)
+	help
+	  This option enables to add proper offset to access
+	  GPIO_INT_EN register from GPIO_INT_STAT register,
+	  as it is observed that the offset varies from
+	  platform to platform.
+
+config GPIO_INTEL_INT_STAT_OFFSET
+	hex "Offset to Interrupt Status register from General Purpose Events Status"
+	default 0x40
+	depends on GPIO_INTEL && \
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_INTEL_GPIO),acpi-hid)
+	help
+	  This option enables to add proper offset to access
+	  GPIO_INT_STAT register from General Purpose Events status
+	  Register, as it is observed that the offset varies from
+	  Platform to platform. GP_EVENT_STAT register is fetched
+	  from ACPI GPIO table.
