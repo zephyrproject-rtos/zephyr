@@ -1,6 +1,9 @@
 # Copyright 2023 NXP
 # SPDX-License-Identifier: Apache-2.0
 
+IRQSTEER_COMPAT := $(DT_COMPAT_NXP_IRQSTEER_INTC)
+REV_PROP := nxp,version
+
 config NXP_IRQSTEER
 	bool "IRQ_STEER interrupt controller for NXP chips"
 	default y
@@ -11,3 +14,10 @@ config NXP_IRQSTEER
 		multiple interrupts from peripheral to one or
 		more CPU interrupt lines. This is used for CPUs
 		such as XTENSA DSPs.
+
+config INTC_MCUX_IRQSTEER_V1
+	bool "MCUX IRQSTEER v1 driver"
+	default y
+	depends on $(dt_compat_any_has_prop,$(IRQSTEER_COMPAT),$(REV_PROP),1) && NXP_IRQSTEER
+	help
+	  IRQSTEER version 1 driver(drivers/irqsteer_1 in mcuxsdk) for MCUX series SoCs.

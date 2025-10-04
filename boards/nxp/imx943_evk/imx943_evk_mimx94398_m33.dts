@@ -137,3 +137,7 @@
 	zephyr,random-mac-address;
 	status = "disabled";
 };
+
+&edma4 {
+	status = "okay";
+};
