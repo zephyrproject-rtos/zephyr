@@ -681,8 +681,12 @@ struct bt_a2dp_stream_ops {
 	/**
 	 * @brief Stream release callback
 	 *
+	 * The release procedure (bt_a2dp_stream_release, release_req, release_rsp and
+	 * disconnect l2cap media channel), the abort procedure (bt_a2dp_stream_abort, abort_req,
+	 * abort_rsp and disconnect l2cap media channel) and the error procedure (for example,
+	 * the l2cap channel disconnected unexpectedly) will cause the stream to be released.
 	 * The callback is called whenever an Audio Stream has been released.
-	 * After released, the stream becomes invalid.
+	 * After released, the stream becomes invalid to control.
 	 *
 	 * @param stream Stream object that has been released.
 	 */
@@ -703,15 +707,6 @@ struct bt_a2dp_stream_ops {
 	 * @param stream Stream object that has been suspended.
 	 */
 	void (*suspended)(struct bt_a2dp_stream *stream);
-	/**
-	 * @brief Stream abort callback
-	 *
-	 * The callback is called whenever an Audio Stream has been aborted.
-	 * After aborted, the stream becomes invalid.
-	 *
-	 * @param stream Stream object that has been aborted.
-	 */
-	void (*aborted)(struct bt_a2dp_stream *stream);
 #if defined(CONFIG_BT_A2DP_SINK)
 	/** @brief the media streaming data, only for sink
 	 *
