@@ -54,6 +54,7 @@ tests:
       - esp32c3_devkitm
       - esp32c6_devkitc/esp32c6/hpcore
       - esp8684_devkitm
+      - sam_e54_xpro
     integration_platforms:
       - frdm_k64f
       - nrf52840dk/nrf52840
