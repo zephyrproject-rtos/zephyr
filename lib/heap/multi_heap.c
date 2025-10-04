@@ -75,8 +75,11 @@ const struct sys_multi_heap_rec *sys_multi_heap_get_heap(const struct sys_multi_
 
 	/* Now i stores the index of the heap after our target (even
 	 * if it's invalid and our target is the last!)
-	 * FIXME: return -ENOENT when a proper heap is not found
 	 */
+	if (i == 0) {
+		return NULL;
+	}
+
 	return &mheap->heaps[i-1];
 }
 
