@@ -16,6 +16,7 @@
 #define SIGNO_WORD_BIT(_signo) (_signo & BIT_MASK(LOG2(BITS_PER_LONG)))
 
 #define SIGSET_NLONGS (sizeof(sigset_t) / sizeof(unsigned long))
+BUILD_ASSERT(SIGSET_NLONGS > 0, "sigset_t has no storage");
 
 ZTEST(posix_signals, test_sigemptyset)
 {
@@ -83,6 +84,11 @@ ZTEST(posix_signals, test_sigaddset)
 		zassert_equal(_set[i], _target[i],
 			      "set.sig[%d of %d] has content: %lx, expected %lx", i,
 			      SIGSET_NLONGS - 1, _set[i], _target[i]);
+	}
+
+	if (SIGRTMIN >= SIGSET_NLONGS * BITS_PER_LONG) {
+		/* Some libc's use a sigset_t that is too small for real-time signals */
+		return;
 	}
 
 	signo = SIGRTMIN; /* >=32, will be in the second sig set for 32bit */
