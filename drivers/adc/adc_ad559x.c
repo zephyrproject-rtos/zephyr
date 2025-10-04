@@ -222,8 +222,12 @@ static int adc_ad559x_read_async(const struct device *dev, const struct adc_sequ
 {
 	struct adc_ad559x_data *data = dev->data;
 	int ret;
-
-	adc_context_lock(&data->ctx, async ? true : false, async);
+	/*
+	 * Check if either async or callback is set for asynchronous operation
+	 */
+	bool asynchronous = (async != NULL) ||
+		(sequence->options && sequence->options->callback);
+	adc_context_lock(&data->ctx, asynchronous, async);
 	ret = adc_ad559x_start_read(dev, sequence);
 	adc_context_release(&data->ctx, ret);
 
