@@ -81,7 +81,7 @@ hardware). Flashing using the ROM bootloader requires a special activation
 pattern, which can be triggered by using the BOOT0 pin.
 
 When using the STM32CubeProgrammer runner, an external STLink
-debug probe is required to connect over SWD. 
+debug probe is required to connect over SWD.
 
 Flashing
 ========
