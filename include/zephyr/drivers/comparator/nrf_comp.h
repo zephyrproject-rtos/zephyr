@@ -13,6 +13,9 @@
 extern "C" {
 #endif
 
+/** @brief Symbol specifying internal inputs offset. */
+#define COMP_NRF_COMP_INTERNAL_OFFSET 128
+
 /** Positive input selection */
 enum comp_nrf_comp_psel {
 	/** AIN0 external input */
@@ -32,7 +35,7 @@ enum comp_nrf_comp_psel {
 	/** AIN7 external input */
 	COMP_NRF_COMP_PSEL_AIN7,
 	/** VDD / 2 */
-	COMP_NRF_COMP_PSEL_VDD_DIV2,
+	COMP_NRF_COMP_PSEL_VDD_DIV2 = COMP_NRF_COMP_INTERNAL_OFFSET,
 	/** VDDH / 5 */
 	COMP_NRF_COMP_PSEL_VDDH_DIV5,
 };
