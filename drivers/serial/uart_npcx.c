@@ -34,6 +34,12 @@ struct uart_npcx_config {
 	const struct npcx_wui uart_rx_wui;
 	/* pinmux configuration */
 	const struct pinctrl_dev_config *pcfg;
+	uint8_t data_bits;
+#ifndef CONFIG_UART_NPCX_FIFO_EX
+	/* Only NPCXn variant supports Tx/Rx invert */
+	bool tx_invert;
+	bool rx_invert;
+#endif
 #ifdef CONFIG_UART_ASYNC_API
 	struct npcx_clk_cfg mdma_clk_cfg;
 	struct mdma_reg *mdma_reg_base;
@@ -98,6 +104,24 @@ struct uart_npcx_data {
 #endif
 };
 
+/*
+ * Defines a mapping between a supported high speed baud rate and source clock combination to
+ * the corresponding UPSR and UBAUD register values.
+ */
+struct uart_hs_baudrate_cfg {
+	uint32_t baud_rate;
+	uint32_t src_clk;
+	uint8_t  UPSR;
+	uint8_t  UBAUD;
+};
+
+static const struct uart_hs_baudrate_cfg baudrate_mapping_table[] = {
+	{2250000, MHZ(90), 0x20, 0x0},    {2500000, MHZ(40), 0x08, 0x0},
+	{2812500, MHZ(90), 0x08, 0x1},    {MHZ(3), MHZ(48), 0x08, 0x0},
+	{MHZ(3.125), MHZ(50), 0x08, 0x0}, {3333333, MHZ(80), 0x10, 0x0},
+	{MHZ(4), MHZ(96), 0x10, 0x0},     {4166667, MHZ(100), 0x10, 0x0},
+};
+
 #ifdef CONFIG_PM
 static void uart_npcx_pm_policy_state_lock_get(struct uart_npcx_data *data,
 					       enum uart_pm_policy_state_flag flag)
@@ -117,47 +141,72 @@ static void uart_npcx_pm_policy_state_lock_put(struct uart_npcx_data *data,
 #endif
 
 /* UART local functions */
-static int uart_set_npcx_baud_rate(struct uart_reg *const inst, int baud_rate, int src_clk)
+
+/* Configure registers for baudrate 115200 */
+static int uart_set_standard_baud_rate(struct uart_reg *const inst, int src_clk)
 {
-	/*
-	 * Support two baud rate setting so far:
-	 *   -  115200
-	 *   - 3000000
-	 */
-	if (baud_rate == 115200) {
-		if (src_clk == MHZ(15)) {
-			inst->UPSR = 0x38;
-			inst->UBAUD = 0x01;
-		} else if (src_clk == MHZ(20)) {
-			inst->UPSR = 0x08;
-			inst->UBAUD = 0x0a;
-		} else if (src_clk == MHZ(25)) {
-			inst->UPSR = 0x10;
-			inst->UBAUD = 0x08;
-		} else if (src_clk == MHZ(30)) {
-			inst->UPSR = 0x10;
-			inst->UBAUD = 0x0a;
-		} else if (src_clk == MHZ(48)) {
-			inst->UPSR = 0x08;
-			inst->UBAUD = 0x19;
-		} else if (src_clk == MHZ(50)) {
-			inst->UPSR = 0x08;
-			inst->UBAUD = 0x1a;
-		} else {
-			return -EINVAL;
-		}
-	} else if (baud_rate == MHZ(3)) {
-		if (src_clk == MHZ(48)) {
-			inst->UPSR = 0x08;
-			inst->UBAUD = 0x0;
-		} else {
-			return -EINVAL;
-		}
+	if (src_clk == MHZ(15)) {
+		inst->UPSR = 0x38;
+		inst->UBAUD = 0x01;
+	} else if (src_clk == MHZ(20)) {
+		inst->UPSR = 0x08;
+		inst->UBAUD = 0x0a;
+	} else if (src_clk == MHZ(25)) {
+		inst->UPSR = 0x10;
+		inst->UBAUD = 0x08;
+	} else if (src_clk == MHZ(30)) {
+		inst->UPSR = 0x10;
+		inst->UBAUD = 0x0a;
+	} else if (src_clk == MHZ(40)) {
+		inst->UPSR = 0x08;
+		inst->UBAUD = 0x15;
+	} else if (src_clk == MHZ(48)) {
+		inst->UPSR = 0x08;
+		inst->UBAUD = 0x19;
+	} else if (src_clk == MHZ(50)) {
+		inst->UPSR = 0x08;
+		inst->UBAUD = 0x1a;
+	} else if (src_clk == MHZ(80)) {
+		inst->UPSR = 0x10;
+		inst->UBAUD = 0x1c;
+	} else if (src_clk == MHZ(90)) {
+		inst->UPSR = 0x08;
+		inst->UBAUD = 0x30;
+	} else if (src_clk == MHZ(96)) {
+		inst->UPSR = 0x08;
+		inst->UBAUD = 0x33;
+	} else if (src_clk == MHZ(100)) {
+		inst->UPSR = 0x08;
+		inst->UBAUD = 0x35;
 	} else {
 		return -EINVAL;
 	}
 
 	return 0;
+}
+
+static int uart_set_high_speed_baud_rate(struct uart_reg *const inst, int baud_rate, int src_clk)
+{
+	for (uint8_t i = 0; i < ARRAY_SIZE(baudrate_mapping_table); i++) {
+		if (baudrate_mapping_table[i].baud_rate == baud_rate &&
+		    baudrate_mapping_table[i].src_clk == src_clk) {
+			inst->UPSR = baudrate_mapping_table[i].UPSR;
+			inst->UBAUD = baudrate_mapping_table[i].UBAUD;
+
+			return 0;
+		}
+	}
+
+	return -EINVAL;
+}
+
+static int uart_set_npcx_baud_rate(struct uart_reg *const inst, int baud_rate, int src_clk)
+{
+	if (baud_rate == 115200) {
+		return uart_set_standard_baud_rate(inst, src_clk);
+	}
+
+	return uart_set_high_speed_baud_rate(inst, baud_rate, src_clk);
 }
 
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
@@ -1117,10 +1166,33 @@ static int uart_npcx_init(const struct device *dev)
 	}
 
 	/*
-	 * 8-N-1, FIFO enabled.  Must be done after setting
+	 * 7/8 bits mode, no parity bit, and 1 Stop bit, FIFO enabled. Must be done after setting
 	 * the divisor for the new divisor to take effect.
 	 */
 	inst->UFRS = 0x00;
+	if (config->data_bits == UART_CFG_DATA_BITS_8) {
+		SET_FIELD(inst->UFRS, NPCX_UFRS_CHAR_FIELD, NPCX_UFRS_CHAR_DATA_BIT_8);
+	} else if (config->data_bits == UART_CFG_DATA_BITS_7) {
+		SET_FIELD(inst->UFRS, NPCX_UFRS_CHAR_FIELD, NPCX_UFRS_CHAR_DATA_BIT_7);
+	} else {
+		LOG_ERR("Unsupported data bits %d", config->data_bits);
+		return -ENOTSUP;
+	}
+
+#ifndef CONFIG_UART_NPCX_FIFO_EX
+	/* Configure signal polarity based on DTS properties */
+	uint8_t ucntl_val = 0;
+
+	if (config->tx_invert) {
+		LOG_INF("Inverting TX signal for %s", dev->name);
+		ucntl_val |= BIT(NPCX_UCNTL_CR_SOUT_INV);
+	}
+	if (config->rx_invert) {
+		LOG_INF("Inverting RX signal for %s", dev->name);
+		ucntl_val |= BIT(NPCX_UCNTL_CR_SIN_INV);
+	}
+	inst->UCNTL = ucntl_val;
+#endif
 
 	/* Initialize UART FIFO if mode is interrupt driven */
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
@@ -1206,6 +1278,11 @@ static int uart_npcx_init(const struct device *dev)
 		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(i),                                                \
 		.uart_rx_wui = NPCX_DT_WUI_ITEM_BY_NAME(i, uart_rx),                               \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(i),                                         \
+		.data_bits = DT_INST_ENUM_IDX(i, data_bits),                                       \
+		IF_DISABLED(CONFIG_UART_NPCX_FIFO_EX, (                                            \
+			.tx_invert = DT_INST_PROP(i, tx_invert),                                   \
+			.rx_invert = DT_INST_PROP(i, rx_invert),                                   \
+		))                                                                                 \
 		NPCX_UART_IRQ_CONFIG_FUNC_INIT(i)                                                  \
 	                                                                                           \
 		IF_ENABLED(CONFIG_UART_ASYNC_API, (                                                \
@@ -1220,7 +1297,7 @@ static int uart_npcx_init(const struct device *dev)
 	                                                                                           \
 	DEVICE_DT_INST_DEFINE(i, uart_npcx_init, NULL, &uart_npcx_data_##i, &uart_npcx_cfg_##i,    \
 			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, &uart_npcx_driver_api);   \
-												   \
+	                                                                                           \
 	NPCX_UART_IRQ_CONFIG_FUNC(i)
 
 DT_INST_FOREACH_STATUS_OKAY(NPCX_UART_INIT)

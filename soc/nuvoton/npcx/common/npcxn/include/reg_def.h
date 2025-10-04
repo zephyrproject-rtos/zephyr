@@ -328,6 +328,9 @@ struct uart_reg {
 	volatile uint8_t reserved11;
 	/* 0x026: FIFO Mode Receive Control */
 	volatile uint8_t UFRCTL;
+	volatile uint8_t reserved12[5];
+	/* 0x02C: Common Mode Operation Control */
+	volatile uint8_t UCNTL;
 };
 
 /* UART register fields */
@@ -352,6 +355,9 @@ struct uart_reg {
 #define NPCX_UMDSL_ETD       4
 #define NPCX_UMDSL_ERD       5
 
+#define NPCX_UFRS_CHAR_DATA_BIT_8 0
+#define NPCX_UFRS_CHAR_DATA_BIT_7 1
+
 #define NPCX_UFTSTS_TEMPTY_LVL       FIELD(0, 5)
 #define NPCX_UFTSTS_TEMPTY_LVL_STS   5
 #define NPCX_UFTSTS_TFIFO_EMPTY_STS  6
@@ -367,6 +373,8 @@ struct uart_reg {
 #define NPCX_UFRCTL_RFULL_LVL_EN     5
 #define NPCX_UFRCTL_RNEMPTY_EN       6
 #define NPCX_UFRCTL_ERR_EN           7
+#define NPCX_UCNTL_CR_SIN_INV        0
+#define NPCX_UCNTL_CR_SOUT_INV       1
 
 /* Macro functions for MIWU multi-registers */
 #define NPCX_WKEDG(base, group)  (*(volatile uint8_t *)(base + NPCX_WKEDG_OFFSET(group)))
