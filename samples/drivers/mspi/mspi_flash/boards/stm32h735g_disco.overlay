@@ -1,0 +1,42 @@
+/ {
+    aliases {
+        flash0 = &mx25lm51245;
+    };
+
+    soc{
+        octospi1: spi@52005000 {
+            compatible = "st,stm32-ospi-controller";
+            reg = <0x52005000 0x1000>, <0x90000000 DT_SIZE_M(256)>;
+            pinctrl-names = "default";
+            status = "okay";
+
+            mx25lm51245: ospi-nor-flash@0 {
+                compatible = "jedec,mspi-nor";
+                reg = <0>;
+                size = <DT_SIZE_M(512)>; /* 512 Mbits */
+
+                status = "okay";
+
+                mspi-max-frequency = <DT_FREQ_M(50)>;
+                mspi-io-mode = "MSPI_IO_MODE_OCTAL";
+                mspi-data-rate = "MSPI_DATA_RATE_SINGLE"; /* as first step */
+                mspi-hardware-ce-num = <0>;
+                read-command = <0xEC13>;                /* ReaD 4Bytes */
+                write-command = <0x12ED>; /* WRite 4Bytes */
+                rx-dummy = <20>;
+                command-length ="INSTR_2_BYTE";
+                
+                partitions {
+                    compatible = "fixed-partitions";
+                    #address-cells = <1>;
+                    #size-cells = <1>;
+
+                    partition@0 {
+                        label = "nor";
+                        reg = <0x00000000 DT_SIZE_M(4)>;
+                    };
+                };
+            };
+        };
+    };
+};
