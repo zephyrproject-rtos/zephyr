@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&ctsu {
+	status = "okay";
+};
+
+&onboard_slider {
+	zephyr,code = <1>;
+};
+
+&onboard_button_1 {
+	zephyr,code = <10>;
+};
+
+&onboard_button_2 {
+	zephyr,code = <11>;
+};
+
+/ {
+	leds {
+		testled0: testled0 {
+			gpios = <&ioportd 3 GPIO_ACTIVE_LOW>;
+			label = "LED0";
+		};
+
+		testled1: testled1 {
+			gpios = <&ioportd 4 GPIO_ACTIVE_LOW>;
+			label = "LED1";
+		};
+
+		testled2: testled2 {
+			gpios = <&ioporte 6 GPIO_ACTIVE_LOW>;
+			label = "LED2";
+		};
+
+		testled3: testled3 {
+			gpios = <&ioporte 7 GPIO_ACTIVE_LOW>;
+			label = "LED3";
+		};
+	};
+};
