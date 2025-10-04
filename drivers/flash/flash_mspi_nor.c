@@ -1257,8 +1257,6 @@ static DEVICE_API(flash, drv_api) = {
 	.dqs_enable = false,						\
 }
 
-#define FLASH_QUIRKS(inst) FLASH_MSPI_QUIRKS_GET(DT_DRV_INST(inst))
-
 #define IO_MODE_FLAGS(io_mode) \
 	.multi_io_cmd = (io_mode == MSPI_IO_MODE_DUAL || \
 			 io_mode == MSPI_IO_MODE_QUAD || \
