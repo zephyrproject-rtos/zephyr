@@ -11,6 +11,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/pwm/renesas_rz_pwm.h>
 #include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/clock/renesas_rza_clock.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
@@ -39,8 +40,215 @@
 		interrupt-parent = <&gic>;
 	};
 
+	osc: osc {
+		compatible = "fixed-clock";
+		clock-frequency = <DT_FREQ_M(24)>;
+		#clock-cells = <0>;
+	};
+
 	soc {
 		interrupt-parent = <&gic>;
+
+		cpg: clock-controller@11010000 {
+			compatible = "renesas,rz-cpg";
+			reg = <0x11010000 DT_SIZE_K(64)>;
+			clocks = <&osc>;
+			#clock-cells = <1>;
+			status = "okay";
+
+			pll1: pll1 {
+				compatible = "renesas,rz-cpg-pll";
+				clock-frequency = <DT_FREQ_M(1000)>;
+				#clock-cells = <1>;
+			};
+
+			pll2_1600: pll2-1600 {
+				compatible = "renesas,rz-cpg-pll";
+				clock-frequency = <DT_FREQ_M(1600)>;
+				#clock-cells = <1>;
+			};
+
+			pll2_533: pll2-533 {
+				compatible = "renesas,rz-cpg-pll";
+				clock-frequency = <DT_FREQ_M(533)>;
+				#clock-cells = <1>;
+			};
+
+			pll3_1600: pll3-1600 {
+				compatible = "renesas,rz-cpg-pll";
+				clock-frequency = <DT_FREQ_M(1600)>;
+				#clock-cells = <1>;
+			};
+
+			pll3_533: pll3-533 {
+				compatible = "renesas,rz-cpg-pll";
+				clock-frequency = <DT_FREQ_M(533)>;
+				#clock-cells = <1>;
+			};
+
+			pll3_400: pll3-400 {
+				compatible = "renesas,rz-cpg-pll";
+				clock-frequency = <DT_FREQ_M(400)>;
+				#clock-cells = <1>;
+			};
+
+			pll4: pll4 {
+				compatible = "renesas,rz-cpg-pll";
+				clock-frequency = <DT_FREQ_M(1600)>;
+				#clock-cells = <1>;
+			};
+
+			pll5_1500: pll5-1500 {
+				compatible = "renesas,rz-cpg-pll";
+				clock-frequency = <DT_FREQ_M(1500)>;
+				#clock-cells = <1>;
+			};
+
+			pll5_500: pll5-500 {
+				compatible = "renesas,rz-cpg-pll";
+				clock-frequency = <DT_FREQ_M(500)>;
+				#clock-cells = <1>;
+			};
+
+			pll6: pll6 {
+				compatible = "renesas,rz-cpg-pll";
+				clock-frequency = <DT_FREQ_M(500)>;
+				#clock-cells = <1>;
+			};
+
+			iclk: iclk {
+				compatible = "renesas,rz-cpg-clock";
+				clocks = <&pll1 1>;
+				div = <1>;
+				#clock-cells = <0>;
+			};
+
+			sd0clk: sd0clk {
+				compatible = "renesas,rz-cpg-clock";
+				clocks = <&pll2_533 2>;
+				div = <1>;
+				#clock-cells = <0>;
+			};
+
+			sd1clk: sd1clk {
+				compatible = "renesas,rz-cpg-clock";
+				clocks = <&pll2_1600 4>;
+				div = <1>;
+				#clock-cells = <0>;
+			};
+
+			p0clk: p0clk {
+				compatible = "renesas,rz-cpg-clock";
+				clocks = <&pll2_1600 16>;
+				div = <1>;
+				#clock-cells = <0>;
+			};
+
+			tsuclk: tsuclk {
+				compatible = "renesas,rz-cpg-clock";
+				clocks = <&pll2_1600 20>;
+				div = <1>;
+				#clock-cells = <0>;
+			};
+
+			atclk: atclk {
+				compatible = "renesas,rz-cpg-clock";
+				clocks = <&pll3_1600 4>;
+				div = <1>;
+				#clock-cells = <0>;
+			};
+
+			i2clk: i2clk {
+				compatible = "renesas,rz-cpg-clock";
+				clocks = <&pll3_1600 8>;
+				div = <1>;
+				#clock-cells = <0>;
+			};
+
+			p1clk: p1clk {
+				compatible = "renesas,rz-cpg-clock";
+				clocks = <&pll3_1600 8>;
+				div = <1>;
+				#clock-cells = <0>;
+			};
+
+			m0clk: m0clk {
+				compatible = "renesas,rz-cpg-clock";
+				clocks = <&pll3_1600 8>;
+				div = <1>;
+				#clock-cells = <0>;
+			};
+
+			ztclk: ztclk {
+				compatible = "renesas,rz-cpg-clock";
+				clocks = <&pll3_1600 16>;
+				div = <1>;
+				#clock-cells = <0>;
+			};
+
+			p2clk: p2clk {
+				compatible = "renesas,rz-cpg-clock";
+				clocks = <&pll3_1600 16>;
+				div = <1>;
+				#clock-cells = <0>;
+			};
+
+			spi0clk: spi0clk {
+				compatible = "renesas,rz-cpg-clock";
+				clocks = <&pll3_533 2>;
+				div = <2>;
+				#clock-cells = <0>;
+			};
+
+			spi1clk: spi1clk {
+				compatible = "renesas,rz-cpg-clock";
+				clocks = <&pll3_533 4>;
+				div = <2>;
+				#clock-cells = <0>;
+			};
+
+			m2clk: m2clk {
+				compatible = "renesas,rz-cpg-clock";
+				clocks = <&pll3_533 2>;
+				div = <1>;
+				#clock-cells = <0>;
+			};
+
+			oc0clk: oc0clk {
+				compatible = "renesas,rz-cpg-clock";
+				clocks = <&pll3_400 2>;
+				div = <1>;
+				#clock-cells = <0>;
+			};
+
+			oc1clk: oc1clk {
+				compatible = "renesas,rz-cpg-clock";
+				clocks = <&pll3_400 4>;
+				div = <1>;
+				#clock-cells = <0>;
+			};
+
+			s0clk: s0clk {
+				compatible = "renesas,rz-cpg-clock";
+				clocks = <&pll4 2>;
+				div = <1>;
+				#clock-cells = <0>;
+			};
+
+			m3clk: m3clk {
+				compatible = "renesas,rz-cpg-clock";
+				clocks = <&pll5_1500 1>;
+				div = <2>;
+				#clock-cells = <0>;
+			};
+
+			hpclk: hpclk {
+				compatible = "renesas,rz-cpg-clock";
+				clocks = <&pll6 2>;
+				div = <1>;
+				#clock-cells = <0>;
+			};
+		};
 
 		gic: interrupt-controller@11900000 {
 			compatible = "arm,gic-v3", "arm,gic";
