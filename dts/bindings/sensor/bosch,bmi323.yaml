@@ -1,9 +1,7 @@
 # Copyright (c) 2023 Trackunit Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-compatible: "bosch,bmi323"
-
-include: ["spi-device.yaml", "sensor-device.yaml"]
+description: BMI323 motion tracking device
 
 properties:
   int-gpios:
