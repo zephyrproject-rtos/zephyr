@@ -66,16 +66,15 @@ The following is an example of a very simple response handling function:
 
 .. code-block:: c
 
-    void response_cb(int16_t code, size_t offset, const uint8_t *payload, size_t len,
-                     bool last_block, void *user_data)
+    void response_cb(const struct coap_client_response_data *data, void *user_data)
     {
-        if (code >= 0) {
-	        LOG_INF("CoAP response from server %d", code);
-                if (last_block) {
+        if (data->result_code >= 0) {
+	        LOG_INF("CoAP response from server %d", data->result_code);
+                if (data->last_block) {
                         LOG_INF("Last packet received");
                 }
         } else {
-                LOG_ERR("Error in sending request %d", code);
+                LOG_ERR("Error in sending request %d", data->result_code);
         }
     }
 
