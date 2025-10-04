@@ -20,6 +20,35 @@ config POSIX_DEVICE_IO
 
 if POSIX_DEVICE_IO
 
+config POSIX_DEVICE_IO_STDIO_CONSOLE
+	bool "read() and write() to/from stdio use console subsystem"
+	default y
+	depends on CONSOLE_SUBSYS
+	depends on !(CONSOLE_GETCHAR || CONSOLE_GETLINE)
+	help
+	  Enable to use UART console whenever read() or write() is called
+	  on stdin, stdout or stderr.
+
+if POSIX_DEVICE_IO_STDIO_CONSOLE
+
+config POSIX_DEVICE_IO_STDIN_BUFSIZE
+	int "read() buffer size for stdin"
+	default 16
+	help
+	  Size of internal buffer for read()-ing from stdin. Setting both this and
+	  POSIX_DEVICE_IO_STDOUT_BUFSIZE to 0 will replace interrupt-driven operation
+	  with busy-polling and stop poll(), select() and others from working with stdio.
+
+config POSIX_DEVICE_IO_STDOUT_BUFSIZE
+	int "write() buffer size for stdout"
+	default 16
+	help
+	  Size of internal buffer for write()-ing to stdout. Setting both this and
+	  POSIX_DEVICE_IO_STDIN_BUFSIZE to 0 will replace interrupt-driven operation
+	  with busy-polling and stop poll(), select() and others from working with stdio.
+
+endif # POSIX_DEVICE_IO_STDIO_CONSOLE
+
 # These options are intended to be used for compatibility with external POSIX
 # implementations such as those in Newlib or Picolibc.
 
