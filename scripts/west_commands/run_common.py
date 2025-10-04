@@ -142,8 +142,10 @@ def add_parser_common(command, parser_adder=None, parser=None):
                        help=argparse.SUPPRESS)
     group.add_argument('-r', '--runner',
                        help='override default runner from --build-dir')
-    group.add_argument('--skip-rebuild', action='store_true',
+    group.add_argument('-s', '--skip-rebuild', "--no-rebuild", action='store_true',
                        help='do not refresh cmake dependencies first')
+    group.add_argument('--force-rebuild', '--rebuild', action='store_true',
+                       help='force a refresh of the cmake dependencies before running')
     group.add_argument('--domain', action='append',
                        help='execute runner only for given domain')
 
@@ -244,8 +246,7 @@ def do_run_common(command, user_args, user_runner_args, domain_file=None):
             )
 
     build_dir = get_build_dir(user_args)
-    if not user_args.skip_rebuild:
-        rebuild(command, build_dir, user_args)
+    rebuild(command, build_dir, user_args)
 
     domains = get_domains_to_process(build_dir, user_args, domain_file)
 
@@ -568,6 +569,28 @@ def load_cmake_cache(build_dir, args):
         log.die(f'no CMake cache found (expected one at {cache_file})')
 
 def rebuild(command, build_dir, args):
+    rebuild_config = config.get(command.name, 'rebuild', fallback='true').lower()
+
+    # Truth table ->
+    # config rebuild | manual option | rebuild?
+    # ==========================================
+    #      X         |     skip      | skip
+    #      X         |     force     | rebuild
+    # true (default) |    [none]     | rebuild
+    # false          |    [none]     | skip
+    #============================================
+    # Therefore, only two cases in which we skip:
+
+    # user manually specified skip rebuild, so we skip
+    if args.skip_rebuild:
+        return
+
+    # config says to skip, and user did not manually override, so skip
+    if rebuild_config == 'false' and not args.force_rebuild:
+        return
+
+    # any other case, we do rebuild
+
     _banner(f'west {command.name}: rebuilding')
     try:
         zcmake.run_build(build_dir)
@@ -723,7 +746,7 @@ def dump_context(command, args, unknown_args):
         get_all_domain = True
 
     # Re-build unless asked not to, to make sure the output is up to date.
-    if build_dir and not args.skip_rebuild:
+    if build_dir:
         rebuild(command, build_dir, args)
 
     domains = get_domains_to_process(build_dir, args, None, get_all_domain)
