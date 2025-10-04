@@ -517,6 +517,11 @@ static int sys_clock_driver_init(void)
 		system_timeout_set_relative(CYC_PER_TICK);
 	}
 
+	return 0;
+}
+
+static int grtc_post_init(void)
+{
 #if defined(CONFIG_CLOCK_CONTROL_NRF)
 	static const enum nrf_lfclk_start_mode mode =
 		IS_ENABLED(CONFIG_SYSTEM_CLOCK_NO_WAIT)
@@ -590,5 +595,6 @@ int nrf_grtc_timer_clock_driver_init(void)
 	return sys_clock_driver_init();
 }
 #else
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(sys_clock_driver_init, EARLY, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT(grtc_post_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
 #endif
