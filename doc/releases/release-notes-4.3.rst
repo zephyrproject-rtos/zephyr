@@ -58,6 +58,11 @@ Removed APIs and options
   PSA Crypto API is now the recommended cryptographic library for Zephyr.
 * The legacy pipe object API was removed. Use the new pipe API instead.
 
+* Video
+
+  * :c:func:`video_init_menu_ctrl`
+  * :c:func:`video_init_int_menu_ctrl`
+
 Deprecated APIs and options
 ===========================
 
