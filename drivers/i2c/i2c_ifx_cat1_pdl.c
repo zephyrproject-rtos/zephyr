@@ -101,7 +101,7 @@ static cy_stc_scb_i2c_config_t _i2c_default_config = {
 typedef void (*ifx_cat1_i2c_event_callback_t)(void *callback_arg, uint32_t event);
 
 en_clk_dst_t _ifx_cat1_scb_get_clock_index(uint32_t block_num);
-int32_t _get_hw_block_num(CySCB_Type *reg_addr);
+int32_t ifx_cat1_uart_get_hw_block_num(CySCB_Type *reg_addr);
 
 cy_rslt_t _i2c_abort_async(const struct device *dev)
 {
@@ -262,7 +262,7 @@ uint32_t _i2c_set_peri_divider(const struct device *dev, uint32_t freq, bool is_
 	struct ifx_cat1_i2c_data *data = dev->data;
 	const struct ifx_cat1_i2c_config *const config = dev->config;
 	CySCB_Type *base = config->base;
-	uint32_t block_num = _get_hw_block_num(config->base);
+	uint32_t block_num = ifx_cat1_uart_get_hw_block_num(config->base);
 	uint32_t data_rate = 0;
 	uint32_t peri_freq = 0;
 	cy_rslt_t status;
