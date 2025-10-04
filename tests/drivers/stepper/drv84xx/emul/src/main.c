@@ -19,6 +19,8 @@ struct drv84xx_emul_fixture {
 
 struct gpio_dt_spec en_pin = GPIO_DT_SPEC_GET_OR(DT_NODELABEL(drv84xx), en_gpios, {0});
 struct gpio_dt_spec slp_pin = GPIO_DT_SPEC_GET_OR(DT_NODELABEL(drv84xx), sleep_gpios, {0});
+struct gpio_dt_spec m0_pin = GPIO_DT_SPEC_GET_OR(DT_NODELABEL(drv84xx), m0_gpios, {0});
+struct gpio_dt_spec m1_pin = GPIO_DT_SPEC_GET_OR(DT_NODELABEL(drv84xx), m1_gpios, {0});
 
 static void *drv84xx_emul_setup(void)
 {
@@ -75,6 +77,28 @@ ZTEST_F(drv84xx_emul, test_enable_off_gpio_pins)
 		value = !gpio_emul_output_get(slp_pin.port, slp_pin.pin);
 		zassert_equal(value, 1, "Sleep pin should be set");
 	}
+}
+
+ZTEST_F(drv84xx_emul, test_micro_step_res_set)
+{
+	enum stepper_micro_step_resolution res;
+	int value = 0;
+
+	zassert_ok(stepper_set_micro_step_res(fixture->dev, 4));
+
+	if (m0_pin.port == NULL || m1_pin.port == NULL) {
+		ztest_test_skip();
+	}
+
+	value = gpio_emul_output_get(m0_pin.port, m0_pin.pin);
+	zassert_equal(value, 0, "M0 pin should be 0");
+
+	value = gpio_emul_output_get(m1_pin.port, m1_pin.pin);
+	zassert_equal(value, 1, "M1 pin should be 1");
+
+	zassert_ok(stepper_get_micro_step_res(fixture->dev, &res));
+	zassert_equal(res, 4, "Micro step resolution not set correctly, should be %d but is %d", 4,
+		      res);
 }
 
 ZTEST_SUITE(drv84xx_emul, NULL, drv84xx_emul_setup, drv84xx_emul_before, drv84xx_emul_after, NULL);

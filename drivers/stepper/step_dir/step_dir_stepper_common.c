@@ -110,7 +110,7 @@ static int start_stepping(const struct device *dev)
 	}
 
 	stepper_handle_timing_signal(dev);
-	return ret;
+	return 0;
 }
 
 static void update_remaining_steps(const struct device *dev)
@@ -151,8 +151,8 @@ static void position_mode_task(const struct device *dev)
 	if (config->timing_source->needs_reschedule(dev) && atomic_get(&data->step_count) != 0) {
 		(void)config->timing_source->start(dev);
 	} else if (atomic_get(&data->step_count) == 0) {
-		stepper_trigger_callback(data->dev, STEPPER_EVENT_STEPS_COMPLETED);
 		config->timing_source->stop(data->dev);
+		stepper_trigger_callback(data->dev, STEPPER_EVENT_STEPS_COMPLETED);
 	}
 }
 
@@ -346,6 +346,11 @@ int step_dir_stepper_common_run(const struct device *dev, const enum stepper_dir
 {
 	struct step_dir_stepper_common_data *data = dev->data;
 	int ret;
+
+	if (data->microstep_interval_ns == 0) {
+		LOG_ERR("Step interval not set or invalid step interval set");
+		return -EINVAL;
+	}
 
 	K_SPINLOCK(&data->lock) {
 		data->run_mode = STEPPER_RUN_MODE_VELOCITY;
