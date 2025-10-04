@@ -16,6 +16,15 @@
 		compatible = "aesc,elemrv-n-soc", "simple-bus";
 		ranges;
 
+		gpio0: gpio@f0000000 {
+			compatible = "aesc,gpio";
+			reg = <0xf0000000 0x1000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <12>;
+			status = "disabled";
+		};
+
 		uart0: uart0@f0006000 {
 			compatible = "aesc,uart";
 			reg = <0xf0006000 0x1000>;
