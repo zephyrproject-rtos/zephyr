@@ -8,6 +8,7 @@
 #include <st/h7rs/stm32h7s7X8.dtsi>
 #include <st/h7/stm32h7s7l8hxh-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include "zephyr/dt-bindings/display/panel.h"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -19,6 +20,7 @@
 		zephyr,shell-uart = &uart4;
 		zephyr,flash = &flash0;
 		zephyr,sram = &sram0;
+		zephyr,display = &ltdc;
 	};
 
 	psram: memory@90000000 {
@@ -103,6 +105,14 @@
 	div-r = <2>;
 	div-s = <2>;
 	div-t = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&pll3 {
+	div-m = <12>;
+	mul-n = <25>;
+	div-r = <2>;
 	clocks = <&clk_hse>;
 	status = "okay";
 };
@@ -304,3 +314,40 @@ usb2: &usbotg_fs {
 };
 
 zephyr_udc0: &usb2 {};
+
+&ltdc {
+	pinctrl-0 = <&ltdc_r0_pf9 &ltdc_r1_pf10 &ltdc_r2_pf0 &ltdc_r3_pb4
+		     &ltdc_r4_pb3 &ltdc_r5_pa15 &ltdc_r6_pg1 &ltdc_r7_pg0
+		     &ltdc_g0_pf7 &ltdc_g1_pf15 &ltdc_g2_pa1 &ltdc_g3_pa0
+		     &ltdc_g4_pb13 &ltdc_g5_pb12 &ltdc_g6_pb11 &ltdc_g7_pb15
+		     &ltdc_b0_pf11 &ltdc_b1_pg14 &ltdc_b2_pa12 &ltdc_b3_pa11
+		     &ltdc_b4_pa10 &ltdc_b5_pa9 &ltdc_b6_pa8 &ltdc_b7_pa6
+		     &ltdc_de_pb14 &ltdc_clk_pg13 &ltdc_hsync_pg2 &ltdc_vsync_pe11>;
+	pinctrl-names = "default";
+	disp-on-gpios = <&gpioe 15 GPIO_ACTIVE_HIGH>;
+	bl-ctrl-gpios = <&gpiog 15 GPIO_ACTIVE_HIGH>;
+
+	status = "okay";
+
+	width = <800>;
+	height = <480>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		de-active = <0>;
+		pixelclk-active = <0>;
+		hsync-active = <0>;
+		vsync-active = <0>;
+		hsync-len = <4>;
+		vsync-len = <4>;
+		hback-porch = <8>;
+		vback-porch = <8>;
+		hfront-porch = <8>;
+		vfront-porch = <8>;
+	};
+
+	def-back-color-red = <0xFF>;
+	def-back-color-green = <0xFF>;
+	def-back-color-blue = <0xFF>;
+};
