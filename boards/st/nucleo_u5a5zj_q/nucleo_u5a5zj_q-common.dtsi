@@ -171,10 +171,6 @@
 	status = "okay";
 };
 
-&rng {
-	status = "okay";
-};
-
 &fdcan1 {
 	clocks = <&rcc STM32_CLOCK(APB1_2, 9)>,
 		 <&rcc STM32_SRC_PLL1_Q FDCAN1_SEL(1)>;
@@ -195,4 +191,18 @@
 
 &vbat4 {
 	status = "okay";
+};
+
+&gpdma1 {
+	status = "okay";
+};
+
+zephyr_udc0: &usbotg_hs {
+	pinctrl-0 = <&usb_otg_hs_dm_pa11 &usb_otg_hs_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&otghs_phy {
+	clock-reference = "SYSCFG_OTG_HS_PHY_CLK_16MHz";
 };
