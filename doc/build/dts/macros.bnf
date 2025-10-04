@@ -55,6 +55,14 @@ node-macro =/ %s"DT_N" path-id %s"_RANGES_IDX_" DIGIT
 node-macro =/ %s"DT_N" path-id %s"_RANGES_IDX_" DIGIT
               %s"_VAL_CHILD_BUS_FLAGS_EXISTS"
 node-macro =/ %s"DT_N" path-id %s"_FOREACH_RANGE"
+; The map specific properties.
+node-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_MAP_IDX_" DIGIT
+node-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_MAP_IDX_" DIGIT %s"_CHILD_SPECIFIER_POS"
+node-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_MAP_IDX_" DIGIT %s"_CHILD_SPECIFIER_LEN"
+node-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_MAP_IDX_" DIGIT %s"_PARENT_POS"
+node-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_MAP_IDX_" DIGIT %s"_PARENT_LEN"
+node-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_MAP_IDX_" DIGIT %s"_PARENT_SPECIFIER_POS"
+node-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_MAP_IDX_" DIGIT %s"_PARENT_SPECIFIER_LEN"
 ; Subnodes of the fixed-partitions compatible get macros which contain
 ; a unique ordinal value for each partition
 node-macro =/ %s"DT_N" path-id %s"_PARTITION_ID" DIGIT
