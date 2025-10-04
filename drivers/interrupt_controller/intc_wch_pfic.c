@@ -34,10 +34,6 @@ int arch_irq_is_enabled(unsigned int irq)
 
 static int pfic_init(void)
 {
-	/* `wfi` is called with interrupts disabled. Configure the PFIC to wake up on any event,
-	 * including any interrupt.
-	 */
-	PFIC->SCTLR = SEVONPEND | WFITOWFE;
 	return 0;
 }
 
