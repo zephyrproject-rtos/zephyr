@@ -1,10 +1,13 @@
 sample:
   name: ADC devicetree driver sample
+common:
+  tags:
+    - adc
+  depends_on: adc
+  filter: dt_node_has_prop("/zephyr,user","io-channels")
+
 tests:
   sample.drivers.adc.adc_dt:
-    tags:
-      - adc
-    depends_on: adc
     platform_allow:
       - nucleo_l073rz
       - nucleo_h753zi
