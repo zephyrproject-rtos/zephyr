@@ -21,6 +21,8 @@ supported:
   - uart
   - usb_device
   - usbd
+  - netif:eth
+  - video
 variants:
   stm32n6570_dk/stm32n657xx:
     twister: false

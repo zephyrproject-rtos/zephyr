@@ -79,6 +79,12 @@ struct video_format {
 	 * the next row (>=width).
 	 */
 	uint32_t pitch;
+	/**
+	 * @brief size of buffer data.
+	 *
+	 * This is the maximum size in bytes required for buffer data.
+	 */
+	uint32_t sizeimage;
 };
 
 /**
@@ -1767,6 +1773,16 @@ int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t l
  * Both JPEG (single frame) and Motion-JPEG (MJPEG, multiple JPEG frames concatenated)
  */
 #define VIDEO_PIX_FMT_JPEG VIDEO_FOURCC('J', 'P', 'E', 'G')
+
+/**
+ * H264 with start code
+ */
+#define VIDEO_PIX_FMT_H264 VIDEO_FOURCC('H', '2', '6', '4')
+
+/**
+ * H264 without start code
+ */
+#define VIDEO_PIX_FMT_H264_NO_SC VIDEO_FOURCC('A', 'V', 'C', '1')
 
 /**
  * @}

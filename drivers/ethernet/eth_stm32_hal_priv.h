@@ -49,7 +49,7 @@ extern const struct device *eth_stm32_phy_dev;
 #define ETH_MII_MODE	ETH_MEDIA_INTERFACE_MII
 #define ETH_RMII_MODE	ETH_MEDIA_INTERFACE_RMII
 
-#define ETH_STM32_AUTO_NEGOTIATION_ENABLE                                                          \
+#define ETH_STM32_AUTO_NEGOTIATION_ENABLE					\
 	UTIL_NOT(DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, phy_handle), fixed_link))
 
 #else /* CONFIG_ETH_STM32_HAL_API_V2 */
