@@ -882,6 +882,26 @@ There are following limitations:
 
 * Logging does not support string format specifier with width (e.g., ``%.*s`` or ``%8s``). That
   is because format string content is not used to build a log message, only argument types.
+* If deferred logging is used and log messages are prefixed with the thread name
+  (Kconfig option ``CONFIG_LOG_THREAD_ID_PREFIX=y`` and ``CONFIG_THREAD_NAME=y``), it is assumed that the
+  the corresponding :c:struct:`k_thread` structure is still valid when the log message is
+  formatted. This can be an issue when that structure is allocated dynamically, using
+  :c:func:`malloc` for instance. In this case, if the thread logs some messages and then gets
+  stopped and its ``struct k_thread`` is freed, the log system might still try to access that
+  structure when handling the message later. This creates an use-after-free scenario.
+  To avoid this, a solution consists of calling :c:func:`log_flush` before freeing the structure.
+
+.. code-block:: c
+
+   struct k_thread *thread = malloc(sizeof(*thread)); // struct allocated dynamically
+   k_thread_create(thread, ...);
+   k_thread_name_set(thread, "foobar2025");
+
+   // Thread calls LOG_*(...)
+
+   k_thread_join(thread, K_FOREVER);
+   log_flush();  // flush log bufferis before freeing the struct k_thread
+   free(thread); // avoid a potential use-after-free scenario if deferred logging is used
 
 Benchmark
 *********
