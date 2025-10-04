@@ -143,6 +143,10 @@ enum {
 	BT_HFP_HF_FLAG_CLCC_PENDING,  /* HFP HF CLCC is pending */
 	BT_HFP_HF_FLAG_VRE_ACTIVATE,  /* VRE is activated */
 	BT_HFP_HF_FLAG_BINP,          /* +BINP result code is received */
+	BT_HFP_HF_FLAG_INITIATING,    /* HF is in initiating state */
+	BT_HFP_HF_FLAG_QUERY_CALLS,   /* Require to query list of current calls */
+	BT_HFP_HF_FLAG_USR_CLCC_CMD,  /* User-initiated AT+CLCC command */
+	BT_HFP_HF_FLAG_USR_CLCC_PND,  /* User-initiated AT+CLCC command is pending */
 	/* Total number of flags - must be at the end of the enum */
 	BT_HFP_HF_NUM_FLAGS,
 };
