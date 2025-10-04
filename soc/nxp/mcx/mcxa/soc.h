@@ -19,6 +19,8 @@
 extern "C" {
 #endif
 
+void enable_ecc(uint32_t mask);
+
 #ifdef __cplusplus
 }
 #endif
