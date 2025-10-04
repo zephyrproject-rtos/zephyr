@@ -30,14 +30,16 @@
 		clk_lsi: clk-lsi {
 			#clock-cells = <0>;
 			compatible = "fixed-clock";
-			clock-frequency = <DT_FREQ_K(32)>;
+			clock-frequency = <DT_FREQ_K(40)>;
 			status = "disabled";
 		};
 
 		pll: pll {
 			#clock-cells = <0>;
-			compatible = "wch,ch32v20x_30x-pll-clock";
+			compatible = "wch,ch32fv2x_v3x-pll-clock",
+				     "wch,ch32fv203_v303-pll-clock";
 			mul = <15>;
+			div = <1>;
 			status = "disabled";
 		};
 	};
@@ -149,8 +151,9 @@
 		};
 
 		rcc: rcc@40021000 {
-			compatible = "wch,rcc";
+			compatible = "wch,ch32fv2x_v3x-rcc";
 			reg = <0x40021000 16>;
+			hb-prescaler = <1>;
 			#clock-cells = <1>;
 		};
 	};
