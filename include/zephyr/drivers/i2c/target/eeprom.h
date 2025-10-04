@@ -22,6 +22,41 @@
  */
 
 /**
+ * @typedef eeprom_target_changed_handler_t
+ * @brief Define the application callback handler function signature
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ */
+typedef void (*eeprom_target_changed_handler_t)(const struct device *dev);
+
+/**
+ * @brief Set the EEPROM changed callback handler
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param handler Handler to call on EEPROM changes
+ */
+void eeprom_target_set_changed_callback(const struct device *dev,
+					eeprom_target_changed_handler_t handler);
+
+/**
+ * @brief Get size of the virtual EEPROM
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @retval Size of EEPROM in bytes
+ */
+unsigned int eeprom_target_get_size(const struct device *dev);
+
+/**
+ * @brief Get a pointer to the data of the virtual EEPROM
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @retval Pointer to EEPROM data
+ */
+uint8_t *eeprom_target_get_data(const struct device *dev);
+
+/**
  * @brief Program memory of the virtual EEPROM
  *
  * @param dev Pointer to the device structure for the driver instance.
