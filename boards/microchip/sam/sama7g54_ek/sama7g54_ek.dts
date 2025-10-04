@@ -217,3 +217,7 @@
 		status = "okay";
 	};
 };
+
+&tc0_ch0 {
+	status = "okay";
+};

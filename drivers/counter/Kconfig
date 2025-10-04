@@ -30,6 +30,8 @@ source "drivers/counter/Kconfig.ambiq"
 
 source "drivers/counter/Kconfig.gecko"
 
+source "drivers/counter/Kconfig.mchp_sam_tc"
+
 source "drivers/counter/Kconfig.tmr_cmsdk_apb"
 
 source "drivers/counter/Kconfig.dtmr_cmsdk_apb"
