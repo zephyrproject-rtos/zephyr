@@ -131,3 +131,5 @@ endif()
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_AST10X0 clock_control_ast10x0.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_MAX32 clock_control_max32.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_WCH_RCC clock_control_wch_rcc.c)
+
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_RTS5817 clock_control_rts5817.c)
