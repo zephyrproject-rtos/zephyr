@@ -3994,65 +3994,6 @@ int bt_conn_le_create_synced(const struct bt_le_ext_adv *adv,
 	*ret_conn = conn;
 	return 0;
 }
-
-#if !defined(CONFIG_BT_FILTER_ACCEPT_LIST)
-int bt_le_set_auto_conn(const bt_addr_le_t *addr,
-			const struct bt_le_conn_param *param)
-{
-	struct bt_conn *conn;
-
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
-		return -EAGAIN;
-	}
-
-	if (param && !bt_le_conn_params_valid(param)) {
-		return -EINVAL;
-	}
-
-	if (!bt_id_scan_random_addr_check()) {
-		return -EINVAL;
-	}
-
-	/* Only default identity is supported */
-	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, addr);
-	if (!conn) {
-		conn = bt_conn_add_le(BT_ID_DEFAULT, addr);
-		if (!conn) {
-			return -ENOMEM;
-		}
-	}
-
-	if (param) {
-		bt_conn_set_param_le(conn, param);
-
-		if (!atomic_test_and_set_bit(conn->flags,
-					     BT_CONN_AUTO_CONNECT)) {
-			bt_conn_ref(conn);
-		}
-	} else {
-		if (atomic_test_and_clear_bit(conn->flags,
-					      BT_CONN_AUTO_CONNECT)) {
-			bt_conn_unref(conn);
-			if (conn->state == BT_CONN_SCAN_BEFORE_INITIATING) {
-				bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
-			}
-		}
-	}
-
-	int err = 0;
-	if (conn->state == BT_CONN_DISCONNECTED &&
-	    atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
-		if (param) {
-			bt_conn_set_state(conn, BT_CONN_SCAN_BEFORE_INITIATING);
-			err = bt_le_scan_user_add(BT_LE_SCAN_USER_CONN);
-		}
-	}
-
-	bt_conn_unref(conn);
-
-	return err;
-}
-#endif /* !defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
 #endif /* CONFIG_BT_CENTRAL */
 
 int bt_conn_le_conn_update(struct bt_conn *conn,
