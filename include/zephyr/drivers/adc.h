@@ -1155,11 +1155,16 @@ typedef int (*adc_raw_to_x_fn)(int32_t ref_mv, enum adc_gain gain, uint8_t resol
 static inline int adc_raw_to_millivolts(int32_t ref_mv, enum adc_gain gain, uint8_t resolution,
 					int32_t *valp)
 {
-	int32_t adc_mv = *valp * ref_mv;
-	int ret = adc_gain_invert(gain, &adc_mv);
+	int64_t adc_mv = (int64_t)*valp * (int64_t)ref_mv;
+	int ret = adc_gain_invert_64(gain, &adc_mv);
 
 	if (ret == 0) {
-		*valp = (adc_mv >> resolution);
+		adc_mv = adc_mv >> resolution;
+		if (adc_mv > INT32_MAX || adc_mv < INT32_MIN) {
+			__ASSERT_MSG_INFO("conversion result is out of range");
+		}
+
+		*valp = (int32_t)adc_mv;
 	}
 
 	return ret;
