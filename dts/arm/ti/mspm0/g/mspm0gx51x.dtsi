@@ -1,4 +1,10 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Copyright (c) 2025 Texas Instruments
+ * Copyright (c) 2025 Linumiz
+ * Copyright (c) 2025 Bang & Olufsen
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <ti/mspm0/g/mspm0g.dtsi>
 
@@ -8,6 +14,7 @@
 			compatible = "ti,mspm0-gpio";
 			reg = <0x400a4000 0x2000>;
 			interrupts = <1 0>;
+			ti,int-group-iidx = <6>;
 			status = "disabled";
 			gpio-controller;
 			#gpio-cells = <2>;
