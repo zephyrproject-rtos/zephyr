@@ -3,8 +3,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-menu "Miscellaneous POSIX-related options"
-
 config EVENTFD
 	bool "Support for eventfd"
 	select ZVFS
@@ -13,5 +11,3 @@ config EVENTFD
 	  Enable support for event file descriptors, eventfd. An eventfd can
 	  be used as an event wait/notify mechanism together with POSIX calls
 	  like read, write and poll.
-
-endmenu
