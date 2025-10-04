@@ -57,6 +57,10 @@ typedef void (*modem_cmux_callback)(struct modem_cmux *cmux, enum modem_cmux_eve
  * @cond INTERNAL_HIDDEN
  */
 
+/* Total size of the CMUX work buffers */
+#define MODEM_CMUX_WORK_BUFFER_SIZE (CONFIG_MODEM_CMUX_MTU + 7 + \
+				     CONFIG_MODEM_CMUX_WORK_BUFFER_SIZE_EXTRA)
+
 enum modem_cmux_state {
 	MODEM_CMUX_STATE_DISCONNECTED = 0,
 	MODEM_CMUX_STATE_CONNECTING,
@@ -152,7 +156,7 @@ struct modem_cmux {
 	uint16_t receive_buf_size;
 	uint16_t receive_buf_len;
 
-	uint8_t work_buf[CONFIG_MODEM_CMUX_WORK_BUFFER_SIZE];
+	uint8_t work_buf[MODEM_CMUX_WORK_BUFFER_SIZE];
 
 	/* Transmit buffer */
 	struct ring_buf transmit_rb;
