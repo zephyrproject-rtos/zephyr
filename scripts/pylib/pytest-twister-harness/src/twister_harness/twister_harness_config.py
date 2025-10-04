@@ -26,6 +26,8 @@ class DeviceConfig:
     baud: int = 115200
     runner: str = ''
     runner_params: list[str] = field(default_factory=list, repr=False)
+    rtt_runner: str = ''
+    use_rtt: bool = False
     id: str = ''
     product: str = ''
     serial_pty: str = ''
@@ -68,6 +70,10 @@ class TwisterHarnessConfig:
         runner_params: list[str] = []
         if config.option.runner_params:
             runner_params = [w.strip() for w in config.option.runner_params]
+        if config.option.device_rtt:
+            flash_before = True
+        else:
+            flash_before = bool(config.option.flash_before)
         device_from_cli = DeviceConfig(
             type=config.option.device_type,
             build_dir=_cast_to_path(config.option.build_dir),
@@ -78,10 +84,12 @@ class TwisterHarnessConfig:
             baud=config.option.device_serial_baud,
             runner=config.option.runner,
             runner_params=runner_params,
+            rtt_runner=config.option.rtt_runner,
+            use_rtt=config.option.device_rtt,
             id=config.option.device_id,
             product=config.option.device_product,
             serial_pty=config.option.device_serial_pty,
-            flash_before=bool(config.option.flash_before),
+            flash_before=flash_before,
             west_flash_extra_args=west_flash_extra_args,
             flash_command=flash_command,
             pre_script=_cast_to_path(config.option.pre_script),
