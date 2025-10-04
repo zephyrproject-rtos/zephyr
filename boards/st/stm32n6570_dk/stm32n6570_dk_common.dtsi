@@ -86,6 +86,22 @@
 	};
 };
 
+&gpioc {
+	csi_gpio0_hog: csi-gpio0-hog {
+		gpio-hog;
+		gpios = <8 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
+	};
+};
+
+&gpiod {
+	csi_gpio1_hog: csi-gpio1-hog {
+		gpio-hog;
+		gpios = <2 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
+	};
+};
+
 &i2c2 {
 	status = "okay";
 	clocks = <&rcc STM32_CLOCK(APB1, 22)>,
