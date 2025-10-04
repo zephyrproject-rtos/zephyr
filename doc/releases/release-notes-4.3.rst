@@ -146,6 +146,10 @@ New APIs and options
 
     * :kconfig:option:`CONFIG_CPU_FREQ`
 
+* Cellular
+
+  * :c:enumerator:`CELLULAR_EVENT_MODEM_COMMS_CHECK_RESULT`
+
 * Crypto
 
   * :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_BUILTIN_KEYS`
