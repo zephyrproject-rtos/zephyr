@@ -196,13 +196,79 @@ int bt_br_set_discoverable(bool enable, bool limited);
  * Allows make local controller to be connectable. It means the controller
  * start listen to devices requests on PAGE SCAN channel. If disabled also
  * resets discoverability if was set.
+*
+* @param enable Value allowing/disallowing controller to be connectable.
+*
+* @return Negative if fail set to requested state or requested state has been
+*         already set. Zero if done successfully.
+*/
+nt bt_br_set_connectable(bool enable);
+/**
+ * @brief Set controller page scan activity.
  *
- * @param enable Value allowing/disallowing controller to be connectable.
+ * Page Scan is only performed when Page_Scan is enabled.
+ *
+ * @param interval Page scan interval in 0.625 ms units
+ *        Range: 0x0012 to 0x1000; only even values are valid.
+ * @param window Page scan window in 0.625 ms units
+ *        Range: 0x0011 to 0x1000.
  *
  * @return Negative if fail set to requested state or requested state has been
  *         already set. Zero if done successfully.
  */
-int bt_br_set_connectable(bool enable);
+int bt_br_write_page_scan_activity(uint16_t interval, uint16_t window);
+
+/**
+ * @brief Set controller inquiry scan activity.
+ *
+ * Inquiry Scan is only performed when Inquiry_Scan is enabled.
+ *
+ * @param interval Inquiry scan interval in 0.625 ms units
+ *        Range: 0x0012 to 0x1000; only even values are valid.
+ * @param window Inquiry scan window in 0.625 ms units
+ *        Range: 0x0011 to 0x1000.
+ *
+ * @return Negative if fail set to requested state or requested state has been
+ *         already set. Zero if done successfully.
+ */
+int bt_br_write_inquiry_scan_activity(uint16_t interval, uint16_t window);
+
+/**
+ * @brief Set the inquiry Scan Type configuration parameter of the local
+ *        BR/EDR Controller.
+ *
+ * @param type Inquiry scan type.
+ * 		   0x00: Standard scan (default)
+ * 		   0x01: Interlaced scan
+ *
+ * @return Negative if fail set to requested state or requested state has been
+ *         already set. Zero if done successfully.
+ */
+int bt_br_write_inquiry_scan_type(uint8_t type);
+
+/**
+ * @brief Set the page Scan Type configuration parameter of the local
+ *        BR/EDR Controller.
+ *
+ * @param type Page scan type.
+ *        0x00: Standard scan (default)
+ *        0x01: Interlaced scan
+ *
+ * @return Negative if fail set to requested state or requested state has been
+ *         already set. Zero if done successfully.
+ */
+int bt_br_write_page_scan_type(uint8_t type);
+
+/**
+ * @brief Set the Class of Device configuration parameter of the local
+ *        BR/EDR Controller.
+ *
+ * @param local_cod Class of Device value.
+ *
+ * @return Negative if fail set to requested state or requested state has been
+ *         already set. Zero if done successfully.
+ */
+int bt_br_set_class_of_device(uint32_t local_cod);
 
 /** @brief Check if a Bluetooth classic device address is bonded.
  *
