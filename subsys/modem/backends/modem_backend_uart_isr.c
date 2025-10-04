@@ -5,6 +5,7 @@
  */
 
 #include "modem_backend_uart_isr.h"
+#include "../modem_workqueue.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(modem_backend_uart_isr, CONFIG_MODEM_MODULES_LOG_LEVEL);
@@ -54,11 +55,11 @@ static void modem_backend_uart_isr_irq_handler_receive_ready(struct modem_backen
 		 * It temporarily disables the UART RX IRQ when swapping buffers
 		 * which can cause byte loss at higher baud rates.
 		 */
-		k_work_schedule(&backend->receive_ready_work,
-			K_MSEC(CONFIG_MODEM_BACKEND_UART_ISR_RECEIVE_IDLE_TIMEOUT_MS));
+		modem_work_schedule(&backend->receive_ready_work,
+				    K_MSEC(CONFIG_MODEM_BACKEND_UART_ISR_RECEIVE_IDLE_TIMEOUT_MS));
 	} else {
 		/* The buffer is getting full. Run the work item immediately to free up space. */
-		k_work_reschedule(&backend->receive_ready_work, K_NO_WAIT);
+		modem_work_reschedule(&backend->receive_ready_work, K_NO_WAIT);
 	}
 }
 
@@ -70,7 +71,7 @@ static void modem_backend_uart_isr_irq_handler_transmit_ready(struct modem_backe
 
 	if (ring_buf_is_empty(&backend->isr.transmit_rb) == true) {
 		uart_irq_tx_disable(backend->uart);
-		k_work_submit(&backend->transmit_idle_work);
+		modem_work_submit(&backend->transmit_idle_work);
 		return;
 	}
 
