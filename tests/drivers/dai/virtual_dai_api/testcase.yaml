@@ -1,0 +1,7 @@
+common:
+  tags:
+    - dai
+    - drivers
+tests:
+  drivers.dai.virtual_dai_api:
+    depends_on: dai
