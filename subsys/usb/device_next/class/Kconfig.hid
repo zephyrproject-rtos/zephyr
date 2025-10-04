@@ -30,6 +30,11 @@ config USBD_HID_INIT_PRIORITY
 	help
 	  HID device initialization priority
 
+config USBD_HID_SET_POLLING_PERIOD
+	bool "Allow to set polling period at runtime"
+	help
+	  Allow to set input or output report polling period at runtime.
+
 module = USBD_HID
 module-str = usbd hid
 source "subsys/logging/Kconfig.template.log_config"
