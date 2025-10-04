@@ -126,6 +126,10 @@ New APIs and options
 
     * :kconfig:option:`CONFIG_CPU_FREQ`
 
+* Cellular
+
+  * :c:enumerator:`CELLULAR_EVENT_PERIODIC_SCRIPT_RESULT`
+
 * Display
 
   * :c:enumerator:`PIXEL_FORMAT_AL_88`
