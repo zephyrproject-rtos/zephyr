@@ -1029,31 +1029,31 @@ void sys_trace_k_poll_api_poll_exit(struct k_poll_event *events, int ret)
 		);
 }
 
-void sys_trace_k_poll_api_signal_init(struct k_poll_signal *signal)
+void sys_trace_k_poll_api_signal_init(struct k_poll_signal *sig)
 {
 	ctf_top_poll_signal_init(
-		(uint32_t)(uintptr_t)signal
+		(uint32_t)(uintptr_t)sig
 		);
 }
 
-void sys_trace_k_poll_api_signal_reset(struct k_poll_signal *signal)
+void sys_trace_k_poll_api_signal_reset(struct k_poll_signal *sig)
 {
 	ctf_top_poll_signal_reset(
-		(uint32_t)(uintptr_t)signal
+		(uint32_t)(uintptr_t)sig
 		);
 }
 
-void sys_trace_k_poll_api_signal_check(struct k_poll_signal *signal)
+void sys_trace_k_poll_api_signal_check(struct k_poll_signal *sig)
 {
 	ctf_top_poll_signal_check(
-		(uint32_t)(uintptr_t)signal
+		(uint32_t)(uintptr_t)sig
 		);
 }
 
-void sys_trace_k_poll_api_signal_raise(struct k_poll_signal *signal, int ret)
+void sys_trace_k_poll_api_signal_raise(struct k_poll_signal *sig, int ret)
 {
 	ctf_top_poll_signal_raise(
-		(uint32_t)(uintptr_t)signal,
+		(uint32_t)(uintptr_t)sig,
 		(int32_t)ret
 		);
 }
