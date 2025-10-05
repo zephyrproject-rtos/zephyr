@@ -14,7 +14,7 @@
 
 #include_next <time.h>
 
-#include <zephyr/posix/posix_time.h>
+#include <posix_time.h>
 #include <zephyr/toolchain.h>
 
 #ifdef __cplusplus

@@ -11,9 +11,9 @@
 #include <signal.h>
 
 #include <zephyr/kernel.h>
-#include <zephyr/posix/fcntl.h>
-#include <zephyr/posix/sys/stat.h>
-#include <zephyr/posix/posix_types.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <posix_types.h>
 
 #ifdef __cplusplus
 extern "C" {

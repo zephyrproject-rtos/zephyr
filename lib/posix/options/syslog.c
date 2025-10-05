@@ -8,7 +8,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #undef LOG_ERR
-#include <zephyr/posix/syslog.h>
+#include <syslog.h>
 #include <zephyr/sys/printk.h>
 
 static struct k_spinlock syslog_lock;

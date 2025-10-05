@@ -6,9 +6,9 @@
 
 #undef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200809L
-#include <zephyr/posix/pthread.h>
-#include <zephyr/posix/sys/sysconf.h>
-#include <zephyr/posix/unistd.h>
+#include <pthread.h>
+#include <sys/sysconf.h>
+#include <unistd.h>
 
 #ifdef CONFIG_POSIX_SYSCONF_IMPL_FULL
 

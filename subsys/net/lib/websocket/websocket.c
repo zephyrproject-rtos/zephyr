@@ -23,8 +23,8 @@ LOG_MODULE_REGISTER(net_websocket, CONFIG_NET_WEBSOCKET_LOG_LEVEL);
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_ip.h>
 #if defined(CONFIG_POSIX_API)
-#include <zephyr/posix/unistd.h>
-#include <zephyr/posix/sys/socket.h>
+#include <unistd.h>
+#include <sys/socket.h>
 #else
 #include <zephyr/net/socket.h>
 #endif

@@ -9,7 +9,7 @@
 #ifdef CONFIG_POSIX_API
 #include <arpa/inet.h>
 #else
-#include <zephyr/posix/arpa/inet.h>
+#include <arpa/inet.h>
 #endif
 
 /**

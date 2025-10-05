@@ -9,7 +9,7 @@
 #ifdef CONFIG_POSIX_API
 #include <mqueue.h>
 #else
-#include <zephyr/posix/mqueue.h>
+#include <mqueue.h>
 #endif
 
 /**

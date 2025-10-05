@@ -15,8 +15,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/posix/pthread.h>
-#include <zephyr/posix/unistd.h>
+#include <pthread.h>
+#include <unistd.h>
 #include <zephyr/sys/sem.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>

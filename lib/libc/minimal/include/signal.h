@@ -38,6 +38,6 @@ int raise(int sig);
 }
 #endif
 
-#include <zephyr/posix/posix_signal.h>
+#include <posix_signal.h>
 
 #endif /* ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_SIGNAL_H_ */

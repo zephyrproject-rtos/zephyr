@@ -9,7 +9,7 @@
 #ifdef CONFIG_POSIX_API
 #include <semaphore.h>
 #else
-#include <zephyr/posix/semaphore.h>
+#include <semaphore.h>
 #endif
 
 /**

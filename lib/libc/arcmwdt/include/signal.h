@@ -38,6 +38,6 @@ int raise(int sig);
 }
 #endif
 
-#include <zephyr/posix/posix_signal.h>
+#include <posix_signal.h>
 
 #endif /* LIB_LIBC_ARCMWDT_INCLUDE_SIGNAL_H_ */

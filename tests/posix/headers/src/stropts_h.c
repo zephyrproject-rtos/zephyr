@@ -7,7 +7,7 @@
 #ifdef CONFIG_POSIX_API
 #include <stropts.h>
 #else
-#include <zephyr/posix/stropts.h>
+#include <stropts.h>
 #endif
 
 /**

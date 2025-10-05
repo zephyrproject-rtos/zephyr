@@ -9,7 +9,7 @@
 #ifdef CONFIG_POSIX_API
 #include <sys/ioctl.h>
 #else
-#include <zephyr/posix/sys/ioctl.h>
+#include <sys/ioctl.h>
 #endif
 
 /**

@@ -9,7 +9,7 @@
 #ifdef CONFIG_POSIX_API
 #include <netinet/tcp.h>
 #else
-#include <zephyr/posix/netinet/tcp.h>
+#include <netinet/tcp.h>
 #endif
 
 /**

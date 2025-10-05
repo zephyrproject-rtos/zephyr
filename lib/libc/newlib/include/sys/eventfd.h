@@ -1,0 +1,14 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_LIB_LIBC_PICOLIBC_INCLUDE_SYS_EVENTFD_H_
+#define ZEPHYR_LIB_LIBC_PICOLIBC_INCLUDE_SYS_EVENTFD_H_
+
+#if defined(CONFIG_EVENTFD)
+#include <zephyr/posix/sys/eventfd.h>
+#endif
+
+#endif /* ZEPHYR_LIB_LIBC_PICOLIBC_INCLUDE_SYS_EVENTFD_H_ */

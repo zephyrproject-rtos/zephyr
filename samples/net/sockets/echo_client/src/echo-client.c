@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(net_echo_client_sample, LOG_LEVEL_DBG);
 #include <errno.h>
 #include <stdio.h>
 
-#include <zephyr/posix/sys/eventfd.h>
+#include <sys/eventfd.h>
 
 #include <zephyr/misc/lorem_ipsum.h>
 #include <zephyr/net/socket.h>

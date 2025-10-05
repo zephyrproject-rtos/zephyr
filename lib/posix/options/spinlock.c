@@ -8,7 +8,7 @@
 
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
-#include <zephyr/posix/pthread.h>
+#include <pthread.h>
 #include <zephyr/sys/bitarray.h>
 
 union _spinlock_storage {

@@ -9,7 +9,7 @@
 #ifdef CONFIG_POSIX_API
 #include <netdb.h>
 #else
-#include <zephyr/posix/netdb.h>
+#include <netdb.h>
 #endif
 
 /**

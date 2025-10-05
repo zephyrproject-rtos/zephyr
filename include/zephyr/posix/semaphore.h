@@ -8,7 +8,7 @@
 
 #include <time.h>
 
-#include <zephyr/posix/posix_types.h>
+#include <posix_types.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -11,7 +11,7 @@ LOG_MODULE_REGISTER(ptp_clock, CONFIG_PTP_LOG_LEVEL);
 #include <stdlib.h>
 #include <string.h>
 
-#include <zephyr/posix/sys/eventfd.h>
+#include <sys/eventfd.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/ptp_clock.h>

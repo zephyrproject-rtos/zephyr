@@ -9,7 +9,7 @@
 #ifdef CONFIG_POSIX_API
 #include <sys/eventfd.h>
 #else
-#include <zephyr/posix/sys/eventfd.h>
+#include <sys/eventfd.h>
 #endif
 
 /**
