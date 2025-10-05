@@ -8,7 +8,6 @@
 
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/kernel.h>
-#include <zephyr/posix/unistd.h>
 
 #define ENTROPY_NODE DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_entropy))
 

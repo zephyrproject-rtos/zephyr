@@ -1,7 +1,7 @@
 if(CONFIG_LIBLC3)
 zephyr_library_named(liblc3)
 zephyr_library_compile_options(
-	-O3 -std=c11 -ffast-math -Wno-array-bounds -Wall -Wextra -Wdouble-promotion -Wvla -pedantic
+	-O3 -std=c11 -ffast-math -Wno-array-bounds -Wall -Wextra -Wdouble-promotion -Wvla
 )
 
 # LC3plus and LC3plusHR support is enabled by default in liblc3.
