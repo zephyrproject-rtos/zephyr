@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/posix/arpa/inet.h>
-#include <zephyr/posix/netinet/in.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
 
 #include <zephyr/ztest.h>
 

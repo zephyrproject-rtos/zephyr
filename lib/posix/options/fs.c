@@ -12,12 +12,12 @@
 #include <errno.h>
 #include <zephyr/kernel.h>
 #include <limits.h>
-#include <zephyr/posix/unistd.h>
-#include <zephyr/posix/dirent.h>
+#include <unistd.h>
+#include <dirent.h>
 #include <string.h>
 #include <zephyr/sys/fdtable.h>
-#include <zephyr/posix/sys/stat.h>
-#include <zephyr/posix/fcntl.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <zephyr/fs/fs.h>
 
 int zvfs_fstat(int fd, struct stat *buf);
