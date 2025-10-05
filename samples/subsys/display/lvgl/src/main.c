@@ -144,7 +144,28 @@ int main(void)
 	lv_timer_handler();
 	display_blanking_off(display_dev);
 
+#ifdef CONFIG_ROTATE_DISPLAY_ON_RESET_COUNTER
+	lv_style_t hello_world_label_style;
+	lv_style_init(&hello_world_label_style);
+	lv_obj_add_style(hello_world_label, &hello_world_label_style, LV_PART_MAIN);
+	uint32_t resets = 0;
+#endif /* CONFIG_ROTATE_DISPLAY_ON_RESET_COUNTER */
+
 	while (1) {
+#ifdef CONFIG_ROTATE_DISPLAY_ON_RESET_COUNTER
+		if (count == 0U) {
+			if (resets > 0U) {
+				lv_display_t *display = lv_display_get_default();
+				lv_disp_set_rotation(display,
+						     (lv_display_get_rotation(display) + 1) % 4);
+				lv_style_set_max_width(
+					&hello_world_label_style,
+					lv_display_get_horizontal_resolution(display));
+			}
+			++resets;
+		}
+#endif /* CONFIG_ROTATE_DISPLAY_ON_RESET_COUNTER */
+
 		if ((count % 100) == 0U) {
 			sprintf(count_str, "%d", count/100U);
 			lv_label_set_text(count_label, count_str);
