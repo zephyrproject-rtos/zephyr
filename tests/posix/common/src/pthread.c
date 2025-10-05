@@ -22,10 +22,22 @@
 #define PTHREAD_CANCEL_INVALID -1
 #define SCHED_INVALID          -1
 #define PRIO_INVALID           -1
-#define PTHREAD_INVALID        -1
+#define PTHREAD_INVALID        ((pthread_t)(-1))
+
+/* TODO: move tests that use non-portable calls to an "np" testsuite */
+int pthread_setname_np(pthread_t thread, const char *name);
+int pthread_getname_np(pthread_t thread, char *name, size_t len);
+int pthread_tryjoin_np(pthread_t thread, void **retval);
+int pthread_timedjoin_np(pthread_t thread, void **retval, const struct timespec *abstime);
 
 static void *thread_top_exec(void *p1);
 static void *thread_top_term(void *p1);
+
+struct pthread_attr {
+	void *stack;
+	uint32_t details[2];
+};
+BUILD_ASSERT(sizeof(pthread_attr_t) >= sizeof(struct pthread_attr));
 
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t cvar0 = PTHREAD_COND_INITIALIZER;
@@ -59,12 +71,16 @@ static int barrier_return[N_THR_E];
 static void *thread_top_exec(void *p1)
 {
 	int i, j, id = (int)POINTER_TO_INT(p1);
+
+#if defined(_POSIX_THREAD_PRIORITY_SCHEDULING)
 	int policy;
 	struct sched_param schedparam;
 
 	pthread_getschedparam(pthread_self(), &policy, &schedparam);
 	printk("Thread %d starting with scheduling policy %d & priority %d\n", id, policy,
 	       schedparam.sched_priority);
+#endif
+
 	/* Try a double-lock here to exercise the failing case of
 	 * trylock.  We don't support RECURSIVE locks, so this is
 	 * guaranteed to fail.
@@ -189,13 +205,17 @@ static int barrier_test_done(void)
 static void *thread_top_term(void *p1)
 {
 	pthread_t self;
-	int policy, ret;
+	int ret;
 	int id = POINTER_TO_INT(p1);
-	struct sched_param param, getschedparam;
-
-	param.sched_priority = N_THR_T - id;
 
 	self = pthread_self();
+
+#if defined(_POSIX_THREAD_PRIORITY_SCHEDULING)
+	int policy;
+	struct sched_param param = {
+		.sched_priority = N_THR_T - id,
+	};
+	struct sched_param getschedparam;
 
 	/* Change priority of thread */
 	zassert_false(pthread_setschedparam(self, SCHED_RR, &param),
@@ -205,6 +225,7 @@ static void *thread_top_term(void *p1)
 		      "Unable to get thread priority!");
 
 	printk("Thread %d starting with a priority of %d\n", id, getschedparam.sched_priority);
+#endif
 
 	if (id % 2) {
 		ret = pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
@@ -533,6 +554,7 @@ ZTEST(pthread, test_pthread_testcancel)
 	zassert_false(testcancel_failed);
 }
 
+#if defined(_POSIX_THREAD_PRIORITY_SCHEDULING)
 static void *test_pthread_setschedprio_fn(void *arg)
 {
 	int policy;
@@ -558,6 +580,7 @@ ZTEST(pthread, test_pthread_setschedprio)
 	zassert_ok(pthread_create(&th, NULL, test_pthread_setschedprio_fn, NULL));
 	zassert_ok(pthread_join(th, NULL));
 }
+#endif
 
 static void before(void *arg)
 {

@@ -6,7 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/net/socket.h>
-#include <zephyr/posix/fcntl.h>
+#include <fcntl.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/fdtable.h>
