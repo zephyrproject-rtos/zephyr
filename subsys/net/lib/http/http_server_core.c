@@ -6,6 +6,8 @@
  */
 
 #include <errno.h>
+#define __GNU_SOURCE
+#include <fnmatch.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,7 +23,6 @@
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
 #include <sys/eventfd.h>
-#include <fnmatch.h>
 #include <zephyr/sys/util_macro.h>
 
 LOG_MODULE_REGISTER(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);

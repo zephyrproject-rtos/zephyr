@@ -132,6 +132,7 @@ struct sigevent {
 
 /* SIGRTMIN and SIGRTMAX defined above */
 
+/* slightly out of order w.r.t. the specification */
 #if !defined(_SIGINFO_T_DECLARED) && !defined(__siginfo_t_defined)
 typedef struct {
 	void *si_addr;
@@ -197,6 +198,17 @@ typedef struct {
 #define __mcontext_defined
 #endif
 
+/* slightly out of order w.r.t. the specification */
+#if !defined(_STACK_T_DECLARED) && !defined(__stack_t_defined)
+typedef struct {
+	void *ss_sp;
+	size_t ss_size;
+	int ss_flags;
+} stack_t;
+#define _STACK_T_DECLARED
+#define __stack_t_defined
+#endif
+
 #if !defined(_UCONTEXT_T_DECLARED) && !defined(__ucontext_t_defined)
 typedef struct {
 	struct ucontext *uc_link;
@@ -206,16 +218,6 @@ typedef struct {
 } ucontext_t;
 #define _UCONTEXT_T_DECLARED
 #define __ucontext_defined
-#endif
-
-#if !defined(_STACK_T_DECLARED) && !defined(__stack_t_defined)
-typedef struct {
-	void *ss_sp;
-	size_t ss_size;
-	int ss_flags;
-} stack_t;
-#define _STACK_T_DECLARED
-#define __stack_t_defined
 #endif
 
 #endif /* defined(_POSIX_REALTIME_SIGNALS) || defined(__DOXYGEN__) */

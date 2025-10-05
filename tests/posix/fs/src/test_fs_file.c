@@ -6,6 +6,7 @@
 
 #include <string.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include "test_fs.h"
 

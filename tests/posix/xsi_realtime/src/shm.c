@@ -4,11 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <fcntl.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/net/socket.h>
-#include <fcntl.h>
 #include <zephyr/sys/fdtable.h>
 
 #include <zephyr/ztest.h>
@@ -35,8 +36,6 @@
 
 /* we need to have at least 2 shared memory objects */
 BUILD_ASSERT(N >= 2, "ZVFS_OPEN_SIZE must be > 4");
-
-#define S_TYPEISSHM(st) (((st)->st_mode & ZVFS_MODE_IFMT) == ZVFS_MODE_IFSHM)
 
 ZTEST(xsi_realtime, test_shm_open)
 {

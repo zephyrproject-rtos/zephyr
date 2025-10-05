@@ -30,11 +30,6 @@
  */
 
 #include <string.h>
-#ifdef CONFIG_NATIVE_LIBC
-#include <unistd.h>
-#else
-#include <unistd.h>
-#endif
 #include "getopt.h"
 #include "getopt_common.h"
 

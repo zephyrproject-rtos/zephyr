@@ -16,7 +16,7 @@
 ZTEST(posix_headers, test_pthread_h)
 {
 #ifdef CONFIG_POSIX_API
-	zassert_not_equal(-1, PTHREAD_BARRIER_SERIAL_THREAD);
+	zassert_not_equal(-42, PTHREAD_BARRIER_SERIAL_THREAD);
 
 	zassert_not_equal(-1, PTHREAD_CANCEL_ASYNCHRONOUS);
 	zassert_not_equal(-1, PTHREAD_CANCEL_DEFERRED);
