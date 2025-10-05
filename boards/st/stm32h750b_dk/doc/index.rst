@@ -72,16 +72,10 @@ Programming and Debugging
 STM32H750B Discovery kit includes an ST-LINK-V3E embedded debug tool interface.
 This probe allows flashing and debugging the board using various tools.
 
-See :ref:`build_an_application` for more information about application builds.
-
-
-Flashing
-========
-
 The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
 so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 
-Alternatively, OpenOCD or JLink can also be used to flash the board using
+Alternatively, OpenOCD or JLink can also be used to write app to the SoC Flash using
 the ``--runner`` (or ``-r``) option:
 
 .. code-block:: console
@@ -89,8 +83,15 @@ the ``--runner`` (or ``-r``) option:
    $ west flash --runner openocd
    $ west flash --runner jlink
 
-Flashing an application to STM32H750B_DK
-----------------------------------------
+Application in SoC Flash
+========================
+
+Here is an example for how to build and flash the :zephyr:code-sample:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: stm32h750b_dk
+   :goals: build flash
 
 Connect the STM32H750B-DK to your host computer using the ST-LINK
 USB port, then run a serial host program to connect with the board. For example:
@@ -99,23 +100,18 @@ USB port, then run a serial host program to connect with the board. For example:
 
    $ minicom -b 115200 -D /dev/ttyACM0
 
-You can then build and flash applications in the usual way.
-Here is an example for the :zephyr:code-sample:`hello_world` application.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: stm32h750b_dk
-   :goals: build flash
-
 You should see the following message in the serial host program:
 
 .. code-block:: console
 
    $ Hello World! stm32h750b_dk
 
+If the application size is too big to fit in SoC Flash,
+Zephyr :ref:`Code and Data Relocation <code_data_relocation>` can be used to relocate
+the non-critical and big parts of the application to external Flash.
 
 Debugging
-=========
+---------
 
 You can debug an application in the usual way.  Here is an example for the
 :zephyr:code-sample:`hello_world` application.
@@ -124,6 +120,96 @@ You can debug an application in the usual way.  Here is an example for the
    :zephyr-app: samples/hello_world
    :board: stm32h750b_dk
    :goals: debug
+
+Application in External Flash
+=============================
+
+Because of the limited amount of SoC Flash (128KB), you may want to store the application
+in external QSPI Flash instead, and run it from there. In that case, the MCUboot bootloader
+is needed to chainload the application. A dedicate board variant, ``ext_flash_app``, was created
+for this usecase.
+
+:ref:`sysbuild` makes it possible to build and flash all necessary images needed to run a user application
+from external Flash.
+
+The following example shows how to build :zephyr:code-sample:`hello_world` with Sysbuild enabled:
+
+.. zephyr-app-commands::
+   :tool: west
+   :zephyr-app: samples/hello_world
+   :board: stm32h750b_dk/stm32h750xx/ext_flash_app
+   :goals: build
+   :west-args: --sysbuild
+
+By default, Sysbuild creates MCUboot and user application images.
+
+Build directory structure created by Sysbuild is different from traditional
+Zephyr build. Output is structured by the domain subdirectories:
+
+.. code-block::
+
+  build/
+  ├── hello_world
+  |    └── zephyr
+  │       ├── zephyr.elf
+  │       ├── zephyr.hex
+  │       ├── zephyr.bin
+  │       ├── zephyr.signed.bin
+  │       └── zephyr.signed.hex
+  ├── mcuboot
+  │    └── zephyr
+  │       ├── zephyr.elf
+  │       ├── zephyr.hex
+  │       └── zephyr.bin
+  └── domains.yaml
+
+.. note::
+
+   With ``--sysbuild`` option, MCUboot will be re-built every time the pristine build is used,
+   but only needs to be flashed once if none of the MCUboot configs are changed.
+
+For more information about the system build please read the :ref:`sysbuild` documentation.
+
+Both MCUboot and user application images can be flashed by running:
+
+.. code-block:: console
+
+   $ west flash
+
+You should see the following message in the serial host program:
+
+.. code-block:: console
+
+   *** Booting MCUboot v2.2.0-154-g2a84c8cd0e2f ***
+   *** Using Zephyr OS build v4.2.0-5042-g68260fc1030f ***
+   I: Starting Direct-XIP bootloader
+   I: Primary slot: version=0.0.0+0
+   I: Image 0 Secondary slot: Image not found
+   I: Image 0 loaded from the primary slot
+   I: Bootloader chainload address offset: 0x0
+   I: Image version: v0.0.0
+   I: Jumping to the image slot
+   *** Booting Zephyr OS build v4.2.0-5042-g68260fc1030f ***
+   Hello World! stm32h750b_dk/stm32h750xx/ext_flash_app
+
+To only flash the user application in the subsequent builds, Use:
+
+.. code-block:: console
+
+   $ west flash --domain hello_world
+
+With the default board configuration, it can be used as is with MCUboot Direct-XiP mode,
+which means the bootloader can run an app image directly from either the primary or the
+secondary slot in external Flash.
+At boot time, MCUboot first looks for images in the 1st and 2nd slots, and then inspects the
+version numbers in the image headers. It selects the image with the highest version
+number and then checks its validity.
+If the image is invalid, MCUboot erases its memory slot and starts to validate the other image.
+After a successful validation of the selected image, MCUboot chain-loads it.
+
+To get more information about the different MCUboot operating modes and how they are related
+to Flash memory partition, refer to `MCUboot design`_. Also, to learn more about how to secure
+the app images stored in external Flash, refer to `MCUboot Encryption`_.
 
 
 .. _STM32H750B-DK website:
@@ -140,3 +226,9 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32CubeProgrammer:
    https://www.st.com/en/development-tools/stm32cubeprog.html
+
+.. _MCUboot design:
+   https://docs.mcuboot.com/design.html
+
+.. _MCUboot Encryption:
+   https://docs.mcuboot.com/encrypted_images.html
