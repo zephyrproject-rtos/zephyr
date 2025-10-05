@@ -20,8 +20,8 @@
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/socket_service.h>
-#include <zephyr/posix/arpa/inet.h>
-#include <zephyr/posix/unistd.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 #include <zephyr/sys/util.h>
 
 static struct zsock_pollfd sockfd_udp[CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_MAX_UDP_SERVICES];

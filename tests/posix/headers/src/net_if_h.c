@@ -6,11 +6,7 @@
 
 #include "_common.h"
 
-#ifdef CONFIG_POSIX_API
 #include <net/if.h>
-#else
-#include <zephyr/posix/net/if.h>
-#endif
 
 /**
  * @brief existence test for `<net/if.h>`

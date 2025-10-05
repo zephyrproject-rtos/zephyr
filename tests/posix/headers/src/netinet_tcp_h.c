@@ -6,11 +6,7 @@
 
 #include "_common.h"
 
-#ifdef CONFIG_POSIX_API
 #include <netinet/tcp.h>
-#else
-#include <zephyr/posix/netinet/tcp.h>
-#endif
 
 /**
  * @brief existence test for `<netinet/tcp.h>`

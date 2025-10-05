@@ -13,7 +13,7 @@
 #include <string>
 #include <thrift/concurrency/Mutex.h>
 
-#include <zephyr/posix/sys/socket.h>
+#include <sys/socket.h>
 
 namespace apache
 {

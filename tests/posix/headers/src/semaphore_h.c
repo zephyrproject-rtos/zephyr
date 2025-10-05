@@ -6,11 +6,7 @@
 
 #include "_common.h"
 
-#ifdef CONFIG_POSIX_API
 #include <semaphore.h>
-#else
-#include <zephyr/posix/semaphore.h>
-#endif
 
 /**
  * @brief existence test for `<semaphore.h>`

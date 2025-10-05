@@ -7,7 +7,7 @@
 #include <errno.h>
 #include <signal.h>
 
-#include <zephyr/posix/aio.h>
+#include <aio.h>
 
 int aio_cancel(int fildes, struct aiocb *aiocbp)
 {

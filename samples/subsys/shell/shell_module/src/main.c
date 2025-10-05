@@ -15,7 +15,7 @@
 #ifdef CONFIG_ARCH_POSIX
 #include <unistd.h>
 #else
-#include <zephyr/posix/unistd.h>
+#include <unistd.h>
 #endif
 
 LOG_MODULE_REGISTER(app);

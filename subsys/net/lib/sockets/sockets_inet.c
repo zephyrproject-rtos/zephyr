@@ -19,7 +19,7 @@ LOG_MODULE_DECLARE(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/tracing/tracing.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/socket_types.h>
-#include <zephyr/posix/fcntl.h>
+#include <fcntl.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/iterable_sections.h>

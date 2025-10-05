@@ -8,10 +8,10 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include <zephyr/posix/fcntl.h>
-#include <zephyr/posix/poll.h>
-#include <zephyr/posix/unistd.h>
-#include <zephyr/posix/sys/select.h>
+#include <fcntl.h>
+#include <poll.h>
+#include <unistd.h>
+#include <sys/select.h>
 
 /* prototypes for external, not-yet-public, functions in fdtable.c or fs.c */
 int zvfs_close(int fd);

@@ -6,11 +6,7 @@
 
 #include "_common.h"
 
-#ifdef CONFIG_POSIX_API
 #include <sys/ioctl.h>
-#else
-#include <zephyr/posix/sys/ioctl.h>
-#endif
 
 /**
  * @brief existence test for `<sys/ioctl.h>`
