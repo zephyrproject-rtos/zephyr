@@ -4,8 +4,9 @@
 config IS31FL319X
 	bool "IS31FL319x LED driver"
 	default y
-	depends on DT_HAS_ISSI_IS31FL3194_ENABLED
+	depends on DT_HAS_ISSI_IS31FL3194_ENABLED || DT_HAS_ISSI_IS31FL3197_ENABLED
 	select I2C
 	help
 	  Enable LED driver for Lumissil Microsystems (a division of ISSI)
 	  IS31FL3194. This chip supports one RGB LED or 3 independent LEDs.
+	  IS31FL3197. This chip supports 4 LEDs.
