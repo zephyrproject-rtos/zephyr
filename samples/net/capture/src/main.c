@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(net_capture_sample, LOG_LEVEL_DBG);
 #define ARPHRD_CAN 280
 #define ARPHRD_PPP 512
 #else
-#include <zephyr/posix/net/if_arp.h>
+#include <net/if_arp.h>
 #endif
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>

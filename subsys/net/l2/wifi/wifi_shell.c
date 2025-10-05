@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 #include <zephyr/net/net_event.h>
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/wifi_utils.h>
-#include <zephyr/posix/unistd.h>
+#include <unistd.h>
 #include <zephyr/sys/slist.h>
 
 #include "net_shell_private.h"

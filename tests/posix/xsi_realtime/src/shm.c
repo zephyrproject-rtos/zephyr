@@ -8,7 +8,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/net/socket.h>
-#include <zephyr/posix/fcntl.h>
+#include <fcntl.h>
 #include <zephyr/sys/fdtable.h>
 
 #include <zephyr/ztest.h>

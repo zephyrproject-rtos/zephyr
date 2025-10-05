@@ -6,11 +6,7 @@
 
 #include "_common.h"
 
-#ifdef CONFIG_POSIX_API
 #include <pthread.h>
-#else
-#include <zephyr/posix/pthread.h>
-#endif
 
 /**
  * @brief existence test for `<pthread.h>`

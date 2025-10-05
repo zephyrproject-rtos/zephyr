@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <time.h>
 
-#include <zephyr/posix/pthread.h>
+#include <pthread.h>
 
 #define SIGNO_WORD_IDX(_signo) (_signo / BITS_PER_LONG)
 #define SIGNO_WORD_BIT(_signo) (_signo & BIT_MASK(LOG2(BITS_PER_LONG)))

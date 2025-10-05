@@ -6,11 +6,7 @@
 
 #include "_common.h"
 
-#ifdef CONFIG_POSIX_API
 #include <poll.h>
-#else
-#include <zephyr/posix/poll.h>
-#endif
 
 /**
  * @brief existence test for `<poll.h>`

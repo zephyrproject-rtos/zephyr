@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_DIRENT_H_
 #define ZEPHYR_INCLUDE_POSIX_DIRENT_H_
 
-#include <zephyr/posix/sys/dirent.h>
+#include <sys/dirent.h>
 #include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
