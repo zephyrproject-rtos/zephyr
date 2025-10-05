@@ -6,6 +6,10 @@
  */
 
 #include <errno.h>
+/* required for FNM_LEADING_DIR */
+#define _GNU_SOURCE
+#include <fnmatch.h>
+#undef _GNU_SOURCE
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,8 +24,7 @@
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
-#include <zephyr/posix/sys/eventfd.h>
-#include <zephyr/posix/fnmatch.h>
+#include <sys/eventfd.h>
 #include <zephyr/sys/util_macro.h>
 
 LOG_MODULE_REGISTER(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);

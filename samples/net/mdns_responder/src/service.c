@@ -7,7 +7,7 @@
 #include <errno.h>
 #include <zephyr/net/dns_sd.h>
 #include <zephyr/net/socket.h>
-#include <zephyr/posix/netinet/in.h>
+#include <netinet/in.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
