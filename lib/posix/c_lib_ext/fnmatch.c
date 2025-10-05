@@ -48,6 +48,18 @@
 
 #define EOS '\0'
 
+#ifndef FNM_NORES
+#define FNM_NORES 3
+#endif
+
+#ifndef FNM_LEADING_DIR
+#define FNM_LEADING_DIR 0x08
+#endif
+
+#ifndef FNM_CASEFOLD
+#define FNM_CASEFOLD 0x10
+#endif
+
 static inline int foldcase(int ch, int flags)
 {
 

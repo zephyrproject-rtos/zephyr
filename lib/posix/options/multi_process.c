@@ -13,6 +13,7 @@
 #include <zephyr/sys/clock.h>
 #include <zephyr/sys/time_units.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 pid_t getpid(void)
 {

@@ -122,6 +122,9 @@
 #define POSIX_REC_XFER_ALIGN     (4)
 #define SYMLINK_MAX              _POSIX_SYMLINK_MAX
 
+/* Other invariant values */
+#define GETENTROPY_MAX (256)
+
 /* clang-format on */
 
 #endif
