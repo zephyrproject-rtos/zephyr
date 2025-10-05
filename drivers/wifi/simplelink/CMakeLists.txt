@@ -9,5 +9,7 @@ if(CONFIG_WIFI_SIMPLELINK)
     simplelink_support.c
     simplelink.c
     )
+  # TI's driver portability layer relies on POSIX for multi-threading and timers
+  zephyr_library_compile_definitions(_POSIX_C_SOURCE=200809L)
 endif()
 zephyr_library_sources_ifdef(CONFIG_NET_SOCKETS_OFFLOAD simplelink_sockets.c)

@@ -8,9 +8,10 @@
 #define ZEPHYR_LIB_POSIX_POSIX_PTHREAD_SCHED_H_
 
 #include <errno.h>
+#include <sched.h>
 #include <stdbool.h>
 
-#include <zephyr/posix/sched.h>
+#include <zephyr/sys/util.h>
 
 static inline bool valid_posix_policy(int policy)
 {

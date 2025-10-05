@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/posix/unistd.h>
+#include <unistd.h>
 
 /* prototypes for external, not-yet-public, functions in fdtable.c */
 int zvfs_fsync(int fd);
