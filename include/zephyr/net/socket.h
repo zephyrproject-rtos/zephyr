@@ -1280,19 +1280,19 @@ struct socket_op_vtable {
  */
 #if defined(CONFIG_POSIX_API)
 #if !defined(ZEPHYR_INCLUDE_POSIX_ARPA_INET_H_)
-#include <zephyr/posix/arpa/inet.h>
+#include <arpa/inet.h>
 #endif
 #if !defined(ZEPHYR_INCLUDE_POSIX_NETDB_H_)
-#include <zephyr/posix/netdb.h>
+#include <netdb.h>
 #endif
 #if !defined(ZEPHYR_INCLUDE_POSIX_UNISTD_H_)
-#include <zephyr/posix/unistd.h>
+#include <unistd.h>
 #endif
 #if !defined(ZEPHYR_INCLUDE_POSIX_POLL_H_)
-#include <zephyr/posix/poll.h>
+#include <poll.h>
 #endif
 #if !defined(ZEPHYR_INCLUDE_POSIX_SYS_SOCKET_H_)
-#include <zephyr/posix/sys/socket.h>
+#include <sys/socket.h>
 #endif
 #endif /* CONFIG_POSIX_API */
 
