@@ -8,36 +8,40 @@
 Overview
 ********
 
-This sample first looks through the color table to map which channels
-map to Red, Green and Blue.
+This sample looks through the info for each LED that is defined on
+the device, and prints out information about it including
+which colors are defined. It will output each of these colors and
+fade them down to off.
 
-It then shows the mapping, but setting one color on and fading it
-off. First Red, then Green and finally Blue.
+After all of the LED indexes have been enumerated, it will then
+fade all of the defined LEDs by using the led_write_channels API.
 
-It then forever cycles through several colors on an RGB LED. It uses a
-helper function, that maps the RGB colors into the correct order
+The sample will then check to see if this device contains an LED
+with a Red, Green and a Blue color defined. If so it will
+fade these colors, in the order Red, Green and Blue, and then it
+will cylcle through and display several different colors.
+
+It uses a helper function, that maps the RGB colors into the correct order
 for the actual hardware LED, as some hardware LEDs will be defined in
 RGB order whereas others may be in another order such as BGR.
 Once mapped it calls off to the led library to display the color.
+
+For those LEDs with only one color defined, it will use the
+led_set brightness API and cycle up to 100% and back down to
+zero percent.  It will do this fade in and out, the number of
+times that matches the index of this LED within the device.
 
 Building and Running
 ********************
 
 This sample can be built and executed on an Arduino Nicla Sense ME, or on
 any board where the devicetree has an I2C device node with compatible
-:dtcompatible:`issi,is31fl3194` enabled, along with the relevant bus
-controller node also being enabled.
+:dtcompatible:`issi,is31fl3194` or :dtcompatible:`issi,is31fl3197` with the
+relevant bus controller node also being enabled.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/led/is31fl319x
    :board: arduino_nicla_sense_me
-   :goals: build flash
-   :compact:
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/drivers/led/is31fl319x
-   :board: arduino_giga_r1//m7
-   :shield: arduino_giga_display_shield
    :goals: build flash
    :compact:
 
