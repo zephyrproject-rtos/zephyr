@@ -43,6 +43,11 @@ typedef _TIME_T_ time_t;
 typedef _SUSECONDS_T_ suseconds_t;
 #endif
 
+#if !defined(__clock_t_defined)
+#define __clock_t_defined
+typedef _CLOCK_T_ clock_t;
+#endif
+
 /*
  * Conversion between civil time and UNIX time.  The companion
  * mktime() is not provided here since it

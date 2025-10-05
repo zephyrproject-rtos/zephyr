@@ -8,6 +8,7 @@
 #include <pthread.h>
 #include <stdio.h>
 
+#include <zephyr/kernel.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 

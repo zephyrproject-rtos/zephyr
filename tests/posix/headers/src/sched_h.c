@@ -22,18 +22,20 @@ ZTEST(posix_headers, test_sched_h)
 	/* zassert_not_equal(-1, SCHED_SPORADIC); */ /* not implemented */
 	/* zassert_not_equal(-1, SCHED_OTHER); */ /* not implemented */
 
-	if (IS_ENABLED(CONFIG_POSIX_API)) {
-		zassert_not_null(sched_get_priority_max);
-		zassert_not_null(sched_get_priority_min);
+#ifdef CONFIG_POSIX_PRIORITY_SCHEDULING
+	zassert_not_null(sched_get_priority_max);
+	zassert_not_null(sched_get_priority_min);
 
-		zassert_not_null(sched_getparam);
-		zassert_not_null(sched_getscheduler);
+	zassert_not_null(sched_getparam);
+	zassert_not_null(sched_getscheduler);
 
-		zassert_not_null(sched_rr_get_interval);
+	zassert_not_null(sched_rr_get_interval);
 
-		zassert_not_null(sched_setparam);
-		zassert_not_null(sched_setscheduler);
+	zassert_not_null(sched_setparam);
+	zassert_not_null(sched_setscheduler);
+#endif
 
-		zassert_not_null(sched_yield);
-	}
+#ifdef CONFIG_POSIX_THREADS
+	zassert_not_null(sched_yield);
+#endif
 }

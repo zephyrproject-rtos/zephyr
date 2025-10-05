@@ -7,21 +7,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/logging/log.h>
-LOG_MODULE_DECLARE(net_echo_server_sample, LOG_LEVEL_DBG);
-
-#include <zephyr/kernel.h>
-#include <errno.h>
-#include <stdio.h>
-
-#include <zephyr/net/socket.h>
-#include <zephyr/net/tls_credentials.h>
-
 #include "common.h"
 #include "certificate.h"
 
+#include <errno.h>
+#include <stdio.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net/tls_credentials.h>
+
 static void process_udp4(void);
 static void process_udp6(void);
+
+LOG_MODULE_DECLARE(net_echo_server_sample, LOG_LEVEL_DBG);
 
 K_THREAD_DEFINE(udp4_thread_id, STACK_SIZE,
 		process_udp4, NULL, NULL, NULL,

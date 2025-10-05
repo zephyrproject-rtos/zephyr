@@ -173,7 +173,9 @@ static int fs_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		current = fs_tell(&ptr->file);
 		if (current >= 0) {
 			buf->st_size = current;
+#if defined(_XOPEN_SOURCE)
 			buf->st_mode = ptr->is_dir ? S_IFDIR : S_IFREG;
+#endif
 		}
 
 		rc = fs_seek(&ptr->file, offset, FS_SEEK_SET);
@@ -427,22 +429,28 @@ int stat(const char *path, struct stat *buf)
 
 	switch (stat_file.type) {
 	case FS_DIR_ENTRY_FILE:
+#if defined(_XOPEN_SOURCE)
 		buf->st_mode = S_IFREG;
+#endif
 		break;
 	case FS_DIR_ENTRY_DIR:
+#if defined(_XOPEN_SOURCE)
 		buf->st_mode = S_IFDIR;
+#endif
 		break;
 	default:
 		errno = EIO;
 		return -1;
 	}
 	buf->st_size = stat_file.size;
+#if defined(_XOPEN_SOURCE)
 	buf->st_blksize = stat_vfs.f_bsize;
 	/*
 	 * This is a best effort guess, as this information is not provided
 	 * by the fs_stat function.
 	 */
 	buf->st_blocks = (stat_file.size + stat_vfs.f_bsize - 1) / stat_vfs.f_bsize;
+#endif
 
 	return 0;
 }

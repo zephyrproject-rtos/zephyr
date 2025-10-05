@@ -73,17 +73,11 @@ static inline long long llabs(long long __n)
 }
 
 char *getenv(const char *name);
-#if _POSIX_C_SOURCE >= 200112L
-int setenv(const char *name, const char *val, int overwrite);
-int unsetenv(const char *name);
-#endif
-
-#ifdef _BSD_SOURCE
-int getenv_r(const char *name, char *buf, size_t len);
-#endif
 
 #ifdef __cplusplus
 }
 #endif
+
+#include <zephyr/posix/posix_stdlib.h>
 
 #endif  /* ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STDLIB_H_ */

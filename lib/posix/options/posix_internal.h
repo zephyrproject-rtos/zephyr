@@ -80,6 +80,11 @@ struct posix_condattr {
 #endif
 };
 
+struct pthread_once {
+	bool flag;
+};
+BUILD_ASSERT(sizeof(pthread_once_t) >= sizeof(struct pthread_once));
+
 struct posix_cond {
 	struct k_condvar condvar;
 	struct posix_condattr attr;
