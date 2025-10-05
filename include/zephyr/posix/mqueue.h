@@ -10,11 +10,6 @@
 #include <time.h>
 #include <signal.h>
 
-#include <zephyr/kernel.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <posix_types.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif

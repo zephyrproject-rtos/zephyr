@@ -5,11 +5,12 @@
  */
 
 #include <unistd.h>
+
 #include <zephyr/ztest.h>
 
 ZTEST(posix_c_lib_ext, test_getentropy_too_large)
 {
-	uint8_t buf[256 + 1] = {0};
+	uint8_t buf[GETENTROPY_MAX + 1] = {0};
 	int ret;
 
 	ret = getentropy(buf, sizeof(buf));
@@ -28,7 +29,7 @@ ZTEST(posix_c_lib_ext, test_getentropy_null_buffer)
 
 ZTEST(posix_c_lib_ext, test_getentropy_max_size)
 {
-	uint8_t buf[256] = {0};
+	uint8_t buf[GETENTROPY_MAX] = {0};
 	int ret;
 
 	ret = getentropy(buf, sizeof(buf));

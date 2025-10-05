@@ -4,10 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <errno.h>
-#include <signal.h>
-
 #include <aio.h>
+#include <errno.h>
 
 int aio_cancel(int fildes, struct aiocb *aiocbp)
 {

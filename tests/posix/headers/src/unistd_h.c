@@ -20,6 +20,7 @@ ZTEST(posix_headers, test_unistd_h)
 	/* zassert_not_equal(-1, W_OK); */ /* not implemented */
 	/* zassert_not_equal(-1, X_OK); */ /* not implemented */
 
+#if defined(POSIX_SINGLE_PROCESS)
 	zassert_not_equal(INT_MIN, _CS_PATH);
 	zassert_not_equal(INT_MIN, _CS_POSIX_V7_ILP32_OFF32_CFLAGS);
 	zassert_not_equal(INT_MIN, _CS_POSIX_V7_ILP32_OFF32_LDFLAGS);
@@ -37,6 +38,7 @@ ZTEST(posix_headers, test_unistd_h)
 	zassert_not_equal(INT_MIN, _CS_POSIX_V7_THREADS_LDFLAGS);
 	zassert_not_equal(INT_MIN, _CS_POSIX_V7_WIDTH_RESTRICTED_ENVS);
 	zassert_not_equal(INT_MIN, _CS_V7_ENV);
+#endif
 
 	/* zassert_not_equal(-1, F_LOCK); */ /* not implemented */
 	/* zassert_not_equal(-1, F_TEST); */ /* not implemented */
@@ -195,7 +197,9 @@ ZTEST(posix_headers, test_unistd_h)
 	/* zassert_equal(STDIN_FILENO, 0); */ /* not implemented */
 	/* zassert_equal(STDOUT_FILENO, 1); */ /* not implemented */
 
+#if !defined(_POSIX_C_SOURCE)
 	zassert_not_equal(INT_MIN, _POSIX_VDISABLE);
+#endif
 
 /*
  * FIXME: this should really use IS_ENABLED()
