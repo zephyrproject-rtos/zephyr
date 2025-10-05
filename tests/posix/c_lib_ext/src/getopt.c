@@ -13,7 +13,7 @@
 #include <string.h>
 
 #include <zephyr/kernel.h>
-#include <zephyr/posix/unistd.h>
+#include <unistd.h>
 #include <zephyr/ztest.h>
 
 ZTEST(posix_c_lib_ext, test_getopt_basic)

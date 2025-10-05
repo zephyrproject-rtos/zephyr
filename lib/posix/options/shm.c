@@ -7,15 +7,18 @@
 #undef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200809L
 
-#include <string.h>
+#include <fcntl.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
+#include <string.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include <kernel_arch_interface.h>
 #include <zephyr/kernel.h>
 #include <zephyr/kernel/mm.h>
-#include <zephyr/posix/fcntl.h>
-#include <zephyr/posix/sys/mman.h>
-#include <zephyr/posix/unistd.h>
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/sys/hash_function.h>

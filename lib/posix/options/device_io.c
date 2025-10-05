@@ -8,10 +8,10 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include <zephyr/posix/fcntl.h>
-#include <zephyr/posix/poll.h>
-#include <zephyr/posix/unistd.h>
-#include <zephyr/posix/sys/select.h>
+#include <fcntl.h>
+#include <poll.h>
+#include <unistd.h>
+#include <sys/select.h>
 
 /* prototypes for external, not-yet-public, functions in fdtable.c or fs.c */
 FILE *zvfs_fdopen(int fd, const char *mode);
@@ -24,22 +24,26 @@ static struct fd_op_vtable posix_op_vtable = {
 	.ioctl = zvfs_ioctl_vmeth,
 };
 
+#undef FD_CLR
 void FD_CLR(int fd, struct zvfs_fd_set *fdset)
 {
-	return ZVFS_FD_CLR(fd, fdset);
+	ZVFS_FD_CLR(fd, fdset);
 }
 
+#undef FD_ISSET
 int FD_ISSET(int fd, struct zvfs_fd_set *fdset)
 {
 	return ZVFS_FD_ISSET(fd, fdset);
 }
 
+#undef FD_SET
 void FD_SET(int fd, struct zvfs_fd_set *fdset)
 {
 	ZVFS_FD_SET(fd, fdset);
 }
 
-void FD_ZERO(fd_set *fdset)
+#undef FD_ZERO
+void FD_ZERO(struct zvfs_fd_set *fdset)
 {
 	ZVFS_FD_ZERO(fdset);
 }
@@ -123,12 +127,13 @@ ssize_t pread(int fd, void *buf, size_t count, off_t offset)
 }
 
 int pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
-	    const struct timespec *timeout, const void *sigmask)
+	    const struct timespec *timeout, const sigset_t *sigmask)
 {
-	return zvfs_select(nfds, readfds, writefds, exceptfds, timeout, sigmask);
+	return zvfs_select(nfds, (struct zvfs_fd_set *)readfds, (struct zvfs_fd_set *)writefds,
+			   (struct zvfs_fd_set *)exceptfds, timeout, sigmask);
 }
 
-ssize_t pwrite(int fd, void *buf, size_t count, off_t offset)
+ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset)
 {
 	size_t off = (size_t)offset;
 
@@ -154,8 +159,8 @@ int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struc
 		.tv_sec = (timeout == NULL) ? 0 : timeout->tv_sec,
 		.tv_nsec = (long)((timeout == NULL) ? 0 : timeout->tv_usec * NSEC_PER_USEC)};
 
-	return zvfs_select(nfds, readfds, writefds, exceptfds, (timeout == NULL) ? NULL : &to,
-			   NULL);
+	return zvfs_select(nfds, (struct zvfs_fd_set *)readfds, (struct zvfs_fd_set *)writefds,
+			   (struct zvfs_fd_set *)exceptfds, &to, NULL);
 }
 
 ssize_t write(int fd, const void *buf, size_t sz)

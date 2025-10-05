@@ -15,6 +15,8 @@
 extern "C" {
 #endif
 
+#if defined(CONFIG_MINIMAL_LIBC)
+
 enum {
 	_SC_ADVISORY_INFO,
 	_SC_ASYNCHRONOUS_IO,
@@ -228,7 +230,8 @@ enum {
 #define __z_posix_sysconf_SC_TRACE_SYS_MAX                _POSIX_TRACE_SYS_MAX
 #define __z_posix_sysconf_SC_TRACE_USER_EVENT_MAX         _POSIX_TRACE_USER_EVENT_MAX
 #define __z_posix_sysconf_SC_TYPED_MEMORY_OBJECTS         (-1L)
-#define __z_posix_sysconf_SC_VERSION                      _POSIX_VERSION
+#define __z_posix_sysconf_SC_VERSION                                                         \
+	COND_CODE_1(CONFIG_POSIX_SYSTEM_INTERFACES, (_POSIX_VERSION), (0))
 #define __z_posix_sysconf_SC_V6_ILP32_OFF32               (-1L)
 #define __z_posix_sysconf_SC_V6_ILP32_OFFBIG              (-1L)
 #define __z_posix_sysconf_SC_V6_LP64_OFF64                (-1L)
@@ -265,14 +268,17 @@ enum {
 	COND_CODE_1(_POSIX2_VERSION > 0, (_POSIX2_VERSION), (-1))
 #define __z_posix_sysconf_SC_XOPEN_CRYPT                  (-1L)
 #define __z_posix_sysconf_SC_XOPEN_ENH_I18N               (-1L)
-#define __z_posix_sysconf_SC_XOPEN_REALTIME               (-1L)
+#define __z_posix_sysconf_SC_XOPEN_REALTIME \
+	COND_CODE_1(CONFIG_XSI_REALTIME, (_XOPEN_VERSION), (-1))
 #define __z_posix_sysconf_SC_XOPEN_REALTIME_THREADS       (-1L)
 #define __z_posix_sysconf_SC_XOPEN_SHM                    (-1L)
 #define __z_posix_sysconf_SC_XOPEN_STREAMS                                                         \
-	COND_CODE_1(CONFIG_XOPEN_STREAMS, (_XOPEN_STREAMS), (-1))
-#define __z_posix_sysconf_SC_XOPEN_UNIX                   (-1L)
+	COND_CODE_1(CONFIG_XSI_STREAMS, (_XOPEN_STREAMS), (-1))
+#define __z_posix_sysconf_SC_XOPEN_UNIX \
+	COND_CODE_1(CONFIG_XSI, (_XOPEN_UNIX), (-1))
 #define __z_posix_sysconf_SC_XOPEN_UUCP                   (-1L)
-#define __z_posix_sysconf_SC_XOPEN_VERSION                _XOPEN_VERSION
+#define __z_posix_sysconf_SC_XOPEN_VERSION                                                         \
+	COND_CODE_1(CONFIG_XSI, (_XOPEN_VERSION), (0))
 #define __z_posix_sysconf_SC_CLK_TCK                      (100L)
 #define __z_posix_sysconf_SC_GETGR_R_SIZE_MAX             (0L)
 #define __z_posix_sysconf_SC_GETPW_R_SIZE_MAX             (0L)
@@ -318,6 +324,8 @@ enum {
 #endif
 
 /* clang-format on */
+
+#endif
 
 #ifdef __cplusplus
 }

@@ -11,8 +11,13 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/posix/pthread.h>
+#include <pthread.h>
 #include <zephyr/sys/bitarray.h>
+
+struct pthread_condattr {
+	clockid_t clock;
+};
+BUILD_ASSERT(sizeof(pthread_condattr_t) >= sizeof(struct pthread_condattr));
 
 LOG_MODULE_REGISTER(pthread_cond, CONFIG_PTHREAD_COND_LOG_LEVEL);
 

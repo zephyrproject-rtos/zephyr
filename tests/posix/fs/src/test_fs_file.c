@@ -6,7 +6,8 @@
 
 #include <string.h>
 #include <fcntl.h>
-#include <zephyr/posix/unistd.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include "test_fs.h"
 
 const char test_str[] = "hello world!";

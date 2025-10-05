@@ -9,6 +9,24 @@
 
 #include_next <time.h>
 
+#if defined(_POSIX_C_SOURCE)
+/*
+ * POSIX requires time.h to define pid_t and clockid_t
+ * https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/time.h.html
+ */
+#if !defined(_PID_T_DECLARED)
+typedef long pid_t;
+#define _PID_T_DECLARED
+#endif
+
+#if !defined(_CLOCKID_T_DECLARED)
+typedef int clockid_t;
+#define _CLOCKID_T_DECLARED
+#endif
+#endif
+
+#define _TIMESPEC_DECLARED
+
 #include <zephyr/posix/posix_time.h>
 
 #ifdef __cplusplus
