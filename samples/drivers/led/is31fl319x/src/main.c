@@ -31,18 +31,86 @@ static const struct color_data color_sequence[] = {
 };
 
 /*
- * A build error on this line means your board is unsupported.
+ * A build error on these lines means your board is unsupported.
  */
-const struct device *led_dev = DEVICE_DT_GET_ANY(issi_is31fl3194);
+const struct device *led4_dev = DEVICE_DT_GET_ANY(issi_is31fl3194);
+const struct device *led7_dev = DEVICE_DT_GET_ANY(issi_is31fl3197);
 
 uint8_t rgb_mapping[3] = {0, 0, 0}; /* R G B */
 
 /*
- * Forward references
+ * Generate RGB color mapping
  */
-extern bool generate_rgb_color_mapping(const struct device *dev,  uint32_t led);
-extern bool output_rgb_color(const struct device *dev,  uint32_t led, const uint8_t *colors);
-extern void fade_one_channel(const struct device *dev,  uint8_t rgb_color_index, const char *name);
+bool generate_rgb_color_mapping(const struct device *dev, uint32_t led)
+{
+	const struct led_info *info;
+
+	/* Find the Red, Green, and blue color indexes */
+	if (led_get_info(dev, led, &info) < 0) {
+		printk("Failed to retrieve LED info\n");
+		return false;
+	}
+	/* Generate color mapping table for this device */
+	for (uint8_t i = 0; i < info->num_colors; i++) {
+		switch (info->color_mapping[i]) {
+		case LED_COLOR_ID_RED:
+			rgb_mapping[0] = i;
+			break;
+		case LED_COLOR_ID_GREEN:
+			rgb_mapping[1] = i;
+			break;
+		case LED_COLOR_ID_BLUE:
+			rgb_mapping[2] = i;
+			break;
+		default:
+			printk("Unknown color: %x found in index %d\n", info->color_mapping[i], i);
+			/* Ignore */
+			break;
+		}
+	}
+
+	printk("Color indexes: R:%u G:%u B:%u\n", rgb_mapping[0],
+		rgb_mapping[1], rgb_mapping[2]);
+	return true;
+}
+
+/*
+ * Set one color (R or G or B) to all on and then fade it down to off
+ */
+void fade_one_channel(const struct device *dev, uint8_t rgb_color_index, const char *name)
+{
+	uint8_t colors[3] = {0, 0, 0};
+	int color = 0xff;
+
+	/* Make sure all of the leds are off */
+	if (led_set_color(dev, 0, 3, colors) < 0) {
+		return;
+	}
+
+	printk("Test fading %s\n", name);
+	for (;;) {
+		led_set_channel(dev, rgb_mapping[rgb_color_index], color);
+		if (color == 0) {
+			break;
+		}
+		k_msleep(SLEEP_TIME_MS);
+		color >>= 2;
+	}
+}
+
+/*
+ * Map the RGB color to the mapping order and output to the LED.
+ */
+bool output_rgb_color(const struct device *dev, uint32_t led, const uint8_t *colors)
+{
+	uint8_t mapped_colors[3];
+
+	for (uint8_t i = 0; i < 3; i++) {
+		mapped_colors[rgb_mapping[i]] = colors[i];
+	}
+
+	return led_set_color(dev, led, 3, mapped_colors) >= 0;
+}
 
 /*
  * Main
@@ -51,7 +119,20 @@ int main(void)
 {
 	int i = 0;
 
+	const struct device *led_dev = led4_dev;
+
+	if (led_dev == NULL) {
+		led_dev = led7_dev;
+	}
+
+	if (!led_dev) {
+		printk("No device with compatible issi,is31fl3194");
+		printk(" or issi,is31fl3197 found\n");
+		return 0;
+	}
+
 	if (!device_is_ready(led_dev)) {
+		printk("LED device %s not ready\n", led_dev->name);
 		return 0;
 	}
 
@@ -78,79 +159,4 @@ int main(void)
 	}
 
 	return 0;
-}
-
-/*
- * Generate RGB color mapping
- */
-bool generate_rgb_color_mapping(const struct device *dev,  uint32_t led)
-{
-	const struct led_info *info;
-	int i;
-
-	/* Find the Red, Green, and blue color indexes */
-	if (led_get_info(dev, led, &info) < 0) {
-		printk("Failed to retrieve LED info\n");
-		return false;
-	}
-	/* Generate color mapping table for this device */
-	for (i = 0; i < info->num_colors; i++) {
-		switch (info->color_mapping[i]) {
-		case LED_COLOR_ID_RED:
-			rgb_mapping[0] = i;
-			break;
-		case LED_COLOR_ID_GREEN:
-			rgb_mapping[1] = i;
-			break;
-		case LED_COLOR_ID_BLUE:
-			rgb_mapping[2] = i;
-			break;
-		default:
-			printk("Unknown color: %x found in index %d\n", info->color_mapping[i], i);
-			/* Ignore */
-			break;
-		}
-	}
-
-	printk("Color indexes: R:%u G:%u B:%u\n", rgb_mapping[0],
-		rgb_mapping[1], rgb_mapping[2]);
-	return true;
-}
-
-/*
- * Set one color (R or G or B) to all on and then fade it down to off
- */
-void fade_one_channel(const struct device *dev,  uint8_t rgb_color_index, const char *name)
-{
-	uint8_t colors[3] = {0, 0, 0};
-	int color = 0xff;
-
-	/* Make sure all of the leds are off */
-	if (led_set_color(dev, 0, 3, colors) < 0) {
-		return;
-	}
-
-	printk("Test fading %s\n", name);
-	for (;;) {
-		led_set_channel(dev, rgb_mapping[rgb_color_index], color);
-		if (color == 0) {
-			break;
-		}
-		k_msleep(SLEEP_TIME_MS);
-		color >>= 2;
-	}
-}
-
-/*
- * Map the RGB color to the mapping order and output to the LED.
- */
-bool output_rgb_color(const struct device *dev,  uint32_t led, const uint8_t *colors)
-{
-	uint8_t mapped_colors[3];
-
-	for (uint8_t i = 0; i < 3; i++) {
-		mapped_colors[rgb_mapping[i]] = colors[i];
-	}
-
-	return led_set_color(dev, led, 3, mapped_colors) >= 0;
 }
