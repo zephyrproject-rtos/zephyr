@@ -31,9 +31,10 @@ static const struct color_data color_sequence[] = {
 };
 
 /*
- * A build error on this line means your board is unsupported.
+ * A build error on these lines means your board is unsupported.
  */
-const struct device *led_dev = DEVICE_DT_GET_ANY(issi_is31fl3194);
+const struct device *led4_dev = DEVICE_DT_GET_ANY(issi_is31fl3194);
+const struct device *led7_dev = DEVICE_DT_GET_ANY(issi_is31fl3197);
 
 uint8_t rgb_mapping[3] = {0, 0, 0}; /* R G B */
 
@@ -51,7 +52,14 @@ int main(void)
 {
 	int i = 0;
 
+	const struct device *led_dev = led4_dev;
+
+	if (led_dev == NULL) {
+		led_dev = led7_dev;
+	}
+
 	if (!device_is_ready(led_dev)) {
+		printk("No devices were found");
 		return 0;
 	}
 
@@ -86,7 +94,6 @@ int main(void)
 bool generate_rgb_color_mapping(const struct device *dev,  uint32_t led)
 {
 	const struct led_info *info;
-	int i;
 
 	/* Find the Red, Green, and blue color indexes */
 	if (led_get_info(dev, led, &info) < 0) {
@@ -94,7 +101,7 @@ bool generate_rgb_color_mapping(const struct device *dev,  uint32_t led)
 		return false;
 	}
 	/* Generate color mapping table for this device */
-	for (i = 0; i < info->num_colors; i++) {
+	for (uint8_t i = 0; i < info->num_colors; i++) {
 		switch (info->color_mapping[i]) {
 		case LED_COLOR_ID_RED:
 			rgb_mapping[0] = i;
