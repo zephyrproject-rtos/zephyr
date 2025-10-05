@@ -6,11 +6,7 @@
 
 #include "_common.h"
 
-#ifdef CONFIG_POSIX_API
 #include <sys/socket.h>
-#else
-#include <zephyr/posix/sys/socket.h>
-#endif
 
 /**
  * @brief existence test for `<sys/socket.h>`

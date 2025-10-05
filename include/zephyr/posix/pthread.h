@@ -12,8 +12,8 @@
 #include <time.h>
 
 #include <zephyr/kernel.h>
-#include <zephyr/posix/unistd.h>
-#include <zephyr/posix/sched.h>
+#include <unistd.h>
+#include <sched.h>
 
 #ifdef __cplusplus
 extern "C" {

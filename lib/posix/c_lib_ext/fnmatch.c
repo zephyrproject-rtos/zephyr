@@ -43,7 +43,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include <zephyr/posix/fnmatch.h>
+#include <fnmatch.h>
 #include <zephyr/toolchain.h>
 
 #define EOS '\0'

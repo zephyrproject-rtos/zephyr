@@ -6,11 +6,7 @@
 
 #include "_common.h"
 
-#ifdef CONFIG_POSIX_API
 #include <unistd.h>
-#else
-#include <zephyr/posix/unistd.h>
-#endif
 
 /**
  * @brief existence test for `<unistd.h>`

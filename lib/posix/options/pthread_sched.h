@@ -10,7 +10,7 @@
 #include <errno.h>
 #include <stdbool.h>
 
-#include <zephyr/posix/sched.h>
+#include <sched.h>
 
 static inline bool valid_posix_policy(int policy)
 {

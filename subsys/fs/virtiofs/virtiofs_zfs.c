@@ -8,7 +8,7 @@
 #include <zephyr/fs/fs.h>
 #include <zephyr/fs/fs_sys.h>
 #include <zephyr/fs/virtiofs.h>
-#include <zephyr/posix/fcntl.h>
+#include <fcntl.h>
 #include "../fs_impl.h"
 #include <string.h>
 #include "virtiofs.h"

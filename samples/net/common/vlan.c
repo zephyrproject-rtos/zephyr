@@ -10,7 +10,7 @@ LOG_MODULE_DECLARE(net_samples_common, LOG_LEVEL_DBG);
 
 #include <stdlib.h>
 #include <zephyr/kernel.h>
-#include <zephyr/posix/arpa/inet.h>
+#include <arpa/inet.h>
 #include <zephyr/net/ethernet.h>
 
 /* User data for the interface callback */

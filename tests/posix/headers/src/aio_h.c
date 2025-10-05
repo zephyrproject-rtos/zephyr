@@ -9,7 +9,7 @@
 #ifdef CONFIG_POSIX_API
 #include <aio.h>
 #else
-#include <zephyr/posix/aio.h>
+#include <aio.h>
 #endif
 
 ZTEST(posix_headers, test_aio_h)

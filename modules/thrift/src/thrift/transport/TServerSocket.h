@@ -15,10 +15,10 @@
 
 #include <sys/types.h>
 #ifdef HAVE_SYS_SOCKET_H
-#include <zephyr/posix/sys/socket.h>
+#include <sys/socket.h>
 #endif
 #ifdef HAVE_NETDB_H
-#include <zephyr/posix/netdb.h>
+#include <netdb.h>
 #endif
 
 namespace apache
