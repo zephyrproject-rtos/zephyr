@@ -21,6 +21,9 @@
 
 LOG_MODULE_REGISTER(timer_test);
 
+/* Note: usleep() was declared obsolescent as of POSIX.1-2001 and removed from POSIX.1-2008 */
+int usleep(useconds_t usec);
+
 static int exp_count;
 static timer_t timerid = -1;
 

@@ -98,3 +98,9 @@ int sched_rr_get_interval(pid_t pid, struct timespec *interval)
 
 	return -1;
 }
+
+int sched_yield(void)
+{
+	k_yield();
+	return 0;
+}

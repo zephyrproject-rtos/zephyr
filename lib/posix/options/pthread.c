@@ -944,10 +944,20 @@ int pthread_attr_init(pthread_attr_t *_attr)
 
 	BUILD_ASSERT(DYNAMIC_STACK_SIZE <= PTHREAD_STACK_MAX);
 
-	*attr = (struct posix_thread_attr){0};
-	attr->guardsize = CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_DEFAULT;
-	attr->contentionscope = PTHREAD_SCOPE_SYSTEM;
-	attr->inheritsched = PTHREAD_INHERIT_SCHED;
+	*attr = (struct posix_thread_attr){
+		.guardsize = CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_DEFAULT,
+		.contentionscope = PTHREAD_SCOPE_SYSTEM,
+		.inheritsched = PTHREAD_INHERIT_SCHED,
+		.detachstate = PTHREAD_CREATE_JOINABLE,
+		.cancelstate = PTHREAD_CANCEL_ENABLE,
+		.canceltype = PTHREAD_CANCEL_DEFERRED,
+		.priority = DEFAULT_PTHREAD_PRIORITY,
+		.schedpolicy = DEFAULT_PTHREAD_POLICY,
+		.stack = NULL,
+		.stacksize = 0,
+		.initialized = false,
+		.caller_destroys = true,
+	};
 
 	if (DYNAMIC_STACK_SIZE > 0) {
 		attr->stack = k_thread_stack_alloc(DYNAMIC_STACK_SIZE + attr->guardsize,

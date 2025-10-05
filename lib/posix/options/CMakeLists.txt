@@ -30,9 +30,15 @@ zephyr_library()
 if (NOT CONFIG_TC_PROVIDES_POSIX_ASYNCHRONOUS_IO)
   zephyr_library_sources_ifdef(CONFIG_POSIX_ASYNCHRONOUS_IO aio.c)
 endif()
+if (CONFIG_POSIX_ASYNCHRONOUS_IO)
+  zephyr_compile_definitions(-D_POSIX_ASYNCHRONOUS_IO=${POSIX_VERSION})
+endif()
 
 if (NOT CONFIG_TC_PROVIDES_POSIX_BARRIERS)
   zephyr_library_sources_ifdef(CONFIG_POSIX_BARRIERS barrier.c)
+endif()
+if (CONFIG_POSIX_BARRIERS)
+  zephyr_compile_definitions(-D_POSIX_BARRIERS=${POSIX_VERSION})
 endif()
 
 if (NOT CONFIG_TC_PROVIDES_POSIX_CLOCK_SELECTION)
@@ -93,6 +99,14 @@ endif()
 if (NOT CONFIG_TC_PROVIDES_POSIX_SIGNALS)
   zephyr_library_sources_ifdef(CONFIG_POSIX_SIGNALS signal.c ${STRSIGNAL_TABLE_H})
 endif()
+if (CONFIG_POSIX_SIGNALS)
+  zephyr_compile_definitions(-D_POSIX_SIGNALS=${POSIX_VERSION})
+  # FIXME: Until we have a Kconfig for POSIX_REALTIME_SIGNALS, define _POSIX_REALTIME_SIGNALS
+  # with _POSIX_SIGNALS.
+  # For more information on the Advanced Realtime Option Group, please see
+  # https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap02.html
+  zephyr_compile_definitions(-D_POSIX_REALTIME_SIGNALS=${POSIX_VERSION})
+endif()
 
 if (NOT CONFIG_TC_PROVIDES_POSIX_SINGLE_PROCESS)
   zephyr_library_sources_ifdef(CONFIG_POSIX_SINGLE_PROCESS
@@ -107,6 +121,9 @@ endif()
 if (NOT CONFIG_TC_PROVIDES_POSIX_SPIN_LOCKS)
   zephyr_library_sources_ifdef(CONFIG_POSIX_SPIN_LOCKS spinlock.c)
 endif()
+if (CONFIG_POSIX_SPIN_LOCKS)
+  zephyr_compile_definitions(-D_POSIX_SPIN_LOCKS=${POSIX_VERSION})
+endif()
 
 if (NOT CONFIG_TC_PROVIDES_POSIX_TIMERS)
   zephyr_library_sources_ifdef(CONFIG_POSIX_TIMERS
@@ -117,6 +134,7 @@ if (NOT CONFIG_TC_PROVIDES_POSIX_TIMERS)
 endif()
 if (CONFIG_POSIX_TIMERS)
   zephyr_compile_definitions(-D_POSIX_TIMERS=${POSIX_VERSION})
+  zephyr_compile_definitions(-D_POSIX_TIMEOUTS=${POSIX_VERSION})
   # FIXME: Until we have a Kconfig for XSI_ADVANCED_REALTIME, define _POSIX_CPUTIME and
   # _POSIX_MONOTONIC_CLOCK with _POSIX_TIMERS.
   # For more information on the Advanced Realtime Option Group, please see
@@ -128,9 +146,15 @@ endif()
 if (NOT CONFIG_TC_PROVIDES_POSIX_RW_LOCKS)
   zephyr_library_sources_ifdef(CONFIG_POSIX_RW_LOCKS rwlock.c)
 endif()
+if (CONFIG_POSIX_RW_LOCKS)
+  zephyr_compile_definitions(-D_POSIX_READER_WRITER_LOCKS=${POSIX_VERSION})
+endif()
 
 if (NOT CONFIG_TC_PROVIDES_POSIX_SEMAPHORES)
   zephyr_library_sources_ifdef(CONFIG_POSIX_SEMAPHORES semaphore.c)
+endif()
+if (CONFIG_POSIX_SEMAPHORES)
+  zephyr_compile_definitions(-D_POSIX_SEMAPHORES=${POSIX_VERSION})
 endif()
 
 if (NOT CONFIG_TC_PROVIDES_POSIX_THREADS)
@@ -147,6 +171,9 @@ if (NOT CONFIG_TC_PROVIDES_POSIX_THREADS)
 endif()
 if (CONFIG_POSIX_THREADS)
   zephyr_compile_definitions(-D_POSIX_THREADS=${POSIX_VERSION})
+  zephyr_compile_definitions(-D_POSIX_THREAD_PROCESS_SHARED=${POSIX_VERSION})
+  zephyr_compile_definitions(-D_POSIX_PRIORITY_SCHEDULING=${POSIX_VERSION})
+  zephyr_compile_definitions(-D_POSIX_THREAD_PRIORITY_SCHEDULING=${POSIX_VERSION})
 endif()
 
 if(NOT CONFIG_TC_PROVIDES_XSI_REALTIME)

@@ -4,23 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_LIB_LIBC_PICOLIBC_INCLUDE_PTHREAD_H_
-#define ZEPHYR_LIB_LIBC_PICOLIBC_INCLUDE_PTHREAD_H_
+#ifndef ZEPHYR_LIB_LIBC_NEWLIB_INCLUDE_PTHREAD_H_
+#define ZEPHYR_LIB_LIBC_NEWLIB_INCLUDE_PTHREAD_H_
 
 #if defined(_POSIX_THREADS)
-/* not mentioned in the standard, but required with Picolibc & Newlib for pthread_mutexattr_t */
-#define _UNIX98_THREAD_MUTEX_ATTRIBUTES
+#undef __dead2
+#define __dead2
 
-#undef  __dead2
-#define  __dead2
-
-/* workaround until https://github.com/picolibc/picolibc/pull/1096 is fixed */
-#include <sys/types.h> /* for clock_t */
-#include <sys/_pthreadtypes.h>
 #include_next <pthread.h>
 
 #undef PTHREAD_ONCE_INIT
-#define PTHREAD_ONCE_INIT {0}
+#define PTHREAD_ONCE_INIT                                                                          \
+	{                                                                                          \
+		0                                                                                  \
+	}
 
 /* The minimum allowable stack size */
 #define PTHREAD_STACK_MIN K_KERNEL_STACK_LEN(0)
@@ -42,4 +39,4 @@ void __z_pthread_cleanup_pop(int execute);
 
 #endif
 
-#endif /* ZEPHYR_LIB_LIBC_PICOLIBC_INCLUDE_PTHREAD_H_ */
+#endif /* ZEPHYR_LIB_LIBC_NEWLIB_INCLUDE_PTHREAD_H_ */

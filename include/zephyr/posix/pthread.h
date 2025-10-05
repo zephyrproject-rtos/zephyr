@@ -168,7 +168,7 @@ int pthread_condattr_setclock(pthread_condattr_t *att, clockid_t clock_id);
 #define PTHREAD_MUTEX_NORMAL        0
 #define PTHREAD_MUTEX_RECURSIVE     1
 #define PTHREAD_MUTEX_ERRORCHECK    2
-#define PTHREAD_MUTEX_DEFAULT       PTHREAD_MUTEX_NORMAL
+#define PTHREAD_MUTEX_DEFAULT       3
 
 /*
  *  Mutex attributes - protocol
@@ -283,8 +283,8 @@ int pthread_mutexattr_destroy(pthread_mutexattr_t *attr);
 /*
  *  Barrier attributes - type
  */
-#define PTHREAD_PROCESS_PRIVATE		0
-#define PTHREAD_PROCESS_PUBLIC		1
+#define PTHREAD_PROCESS_PRIVATE 0
+#define PTHREAD_PROCESS_SHARED  1
 
 /**
  * @brief POSIX threading compatibility API

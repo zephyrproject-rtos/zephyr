@@ -8,13 +8,20 @@
 
 #include <time.h>
 
-#include <posix_types.h>
+#include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #define SEM_FAILED ((sem_t *) 0)
+
+#if !(defined(_SEM_T_DECLARED) || defined(__sem_t_defined)) || defined(__DOXYGEN__)
+struct k_sem;
+typedef struct k_sem sem_t;
+#define _SEM_T_DECLARED
+#define __sem_t_defined
+#endif
 
 int sem_destroy(sem_t *semaphore);
 int sem_getvalue(sem_t *ZRESTRICT semaphore, int *ZRESTRICT value);

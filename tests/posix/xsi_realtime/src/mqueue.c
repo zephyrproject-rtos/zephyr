@@ -16,6 +16,9 @@
 #define MESSAGE_SIZE     16
 #define MESG_COUNT_PERMQ 4
 
+/* Note: usleep() was declared obsolescent as of POSIX.1-2001 and removed from POSIX.1-2008 */
+int usleep(useconds_t usec);
+
 static char queue[16] = "server";
 
 static char send_data[MESSAGE_SIZE] = "timed data send";

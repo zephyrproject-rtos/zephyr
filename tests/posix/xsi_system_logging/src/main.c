@@ -13,6 +13,9 @@
 /* avoid clashing with Zephyr's LOG_ERR() */
 #define _LOG_ERR 3
 
+/* Note: usleep() was declared obsolescent as of POSIX.1-2001 and removed from POSIX.1-2008 */
+int usleep(useconds_t usec);
+
 ZTEST(xsi_system_logging, test_syslog)
 {
 	int prios[N_PRIOS] = {

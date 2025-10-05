@@ -97,17 +97,26 @@ typedef struct {
 
 #if defined(_POSIX_REALTIME_SIGNALS) || defined(__DOXYGEN__)
 
-union sigval; /* forward declaration (to preserve spec order) */
+/* slightly out of order w.r.t. the specification */
+#if !defined(_SIGVAL_DECLARED) && !defined(__sigval_defined)
+union sigval {
+	int sival_int;
+	void *sival_ptr;
+};
+#define _SIGVAL_DECLARED
+#define __sigval_defined
+#endif
 
 #if !defined(_SIGEVENT_DECLARED) && !defined(__sigevent_defined)
-typedef struct {
+struct sigevent {
 #if defined(_POSIX_THREADS) || defined(__DOXYGEN__)
-	pthread_attr_t *sigev_thread_attr;
-#endif
+	pthread_attr_t *sigev_notify_attributes;
+	void (*sigev_notify_function)(union sigval value);
 	union sigval sigev_value;
+#endif
 	int sigev_notify;
 	int sigev_signo;
-} sigevent_t;
+};
 #define _SIGEVENT_DECLARED
 #define __sigevent_defined
 #endif
@@ -120,16 +129,28 @@ typedef struct {
 
 #endif /* defined(_POSIX_REALTIME_SIGNALS) || defined(__DOXYGEN__) */
 
-#if !defined(_SIGVAL_DECLARED) && !defined(__sigval_defined)
-union sigval {
-	int sival_int;
-	void *sival_ptr;
-};
-#define _SIGVAL_DECLARED
-#define __sigval_defined
-#endif
-
 /* SIGRTMIN and SIGRTMAX defined above */
+
+/* slightly out of order w.r.t. the specification */
+#if !defined(_SIGINFO_T_DECLARED) && !defined(__siginfo_t_defined)
+typedef struct {
+	void *si_addr;
+#if defined(_XOPEN_STREAMS) || defined(__DOXYGEN__)
+	long si_band;
+#endif
+	union sigval si_value;
+	pid_t si_pid;
+	uid_t si_uid;
+	int si_signo;
+	int si_code;
+#if defined(_XOPEN_SOURCE) || defined(__DOXYGEN__)
+	int si_errno;
+#endif
+	int si_status;
+} siginfo_t;
+#define _SIGINFO_T_DECLARED
+#define __siginfo_t_defined
+#endif
 
 #if defined(_POSIX_REALTIME_SIGNALS) || defined(__DOXYGEN__)
 
@@ -176,6 +197,17 @@ typedef struct {
 #define __mcontext_defined
 #endif
 
+/* slightly out of order w.r.t. the specification */
+#if !defined(_STACK_T_DECLARED) && !defined(__stack_t_defined)
+typedef struct {
+	void *ss_sp;
+	size_t ss_size;
+	int ss_flags;
+} stack_t;
+#define _STACK_T_DECLARED
+#define __stack_t_defined
+#endif
+
 #if !defined(_UCONTEXT_T_DECLARED) && !defined(__ucontext_t_defined)
 typedef struct {
 	struct ucontext *uc_link;
@@ -187,37 +219,7 @@ typedef struct {
 #define __ucontext_defined
 #endif
 
-#if !defined(_STACK_T_DECLARED) && !defined(__stack_t_defined)
-typedef struct {
-	void *ss_sp;
-	size_t ss_size;
-	int ss_flags;
-} stack_t;
-#define _STACK_T_DECLARED
-#define __stack_t_defined
-#endif
-
 #endif /* defined(_POSIX_REALTIME_SIGNALS) || defined(__DOXYGEN__) */
-
-#if !defined(_SIGINFO_T_DECLARED) && !defined(__siginfo_t_defined)
-typedef struct {
-	void *si_addr;
-#if defined(_XOPEN_STREAMS) || defined(__DOXYGEN__)
-	long si_band;
-#endif
-	union sigval si_value;
-	pid_t si_pid;
-	uid_t si_uid;
-	int si_signo;
-	int si_code;
-#if defined(_XOPEN_SOURCE) || defined(__DOXYGEN__)
-	int si_errno;
-#endif
-	int si_status;
-} siginfo_t;
-#define _SIGINFO_T_DECLARED
-#define __siginfo_t_defined
-#endif
 
 /* Siginfo codes are defined below */
 
