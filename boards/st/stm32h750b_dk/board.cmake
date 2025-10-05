@@ -1,7 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 # keep first
-if(CONFIG_STM32_MEMMAP)
+if(CONFIG_STM32_MEMMAP OR CONFIG_BOOTLOADER_MCUBOOT)
 board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
 board_runner_args(stm32cubeprogrammer "--extload=MT25TL01G_STM32H750B-DISCO.stldr")
 else()

@@ -1,0 +1,69 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "stm32h750b_dk-common.dtsi"
+
+/ {
+	model = "STMicroelectronics STM32H750B DISCOVERY KIT";
+	compatible = "st,stm32h750b-dk";
+
+	chosen {
+		zephyr,flash = &mt25ql512ab1;
+		zephyr,flash-controller = &mt25ql512ab1;
+		zephyr,code-partition = &slot0_partition;
+	};
+};
+
+&flash0 {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Flash has 128KB sector size */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(128)>;
+		};
+	};
+};
+
+&quadspi {
+	status = "okay";
+
+	mt25ql512ab1: qspi-nor-flash-1@0 {
+		status = "okay";
+
+		/* 128MB total in dual-flash mode */
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			slot0_partition: partition@0 {
+				label = "image-0";
+				reg = <0x00000000 DT_SIZE_M(60)>; /* 60MB */
+			};
+
+			slot1_partition: partition@200000 {
+				label = "image-1";
+				reg = <0x00200000 DT_SIZE_M(60)>;
+			};
+
+			storage_partition: partition@400000 {
+				label = "storage";
+				reg = <0x00400000 DT_SIZE_M(8)>;
+			};
+		};
+	};
+
+	mt25ql512ab2: qspi-nor-flash-2@0 {
+		status = "okay";
+	};
+};
