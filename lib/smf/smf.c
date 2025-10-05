@@ -36,19 +36,17 @@ static bool share_parent(const struct smf_state *test_state, const struct smf_st
 static const struct smf_state *get_child_of(const struct smf_state *states,
 					    const struct smf_state *parent)
 {
-	const struct smf_state *tmp = states;
+	const struct smf_state *state = states;
 
-	while (true) {
-		if (tmp->parent == parent) {
-			return tmp;
+	while (state != NULL) {
+		if (state->parent == parent) {
+			return state;
 		}
 
-		if (tmp->parent == NULL) {
-			return NULL;
-		}
-
-		tmp = tmp->parent;
+		state = state->parent;
 	}
+
+	return NULL;
 }
 
 static const struct smf_state *get_last_of(const struct smf_state *states)
