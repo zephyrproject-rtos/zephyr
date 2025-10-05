@@ -170,7 +170,7 @@ ZTEST(tracing_api, test_tracing_sys_api)
 	sys_trace_k_condvar_signal_enter(&condvar);
 	sys_trace_k_condvar_signal_blocking(&condvar);
 	sys_trace_k_condvar_signal_exit(&condvar, ret);
-	sys_trace_k_condvar_wait_enter(&condvar,timeout);
+	sys_trace_k_condvar_wait_enter(&condvar, timeout);
 	sys_trace_k_condvar_wait_exit(&condvar, timeout, ret);
 	/* sem api */
 	sys_trace_k_sem_init(&sem, ret);
