@@ -9,7 +9,7 @@
 
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
-#include <zephyr/posix/pthread.h>
+#include <pthread.h>
 #include <zephyr/sys/bitarray.h>
 
 struct posix_barrier {
@@ -17,6 +17,10 @@ struct posix_barrier {
 	struct k_condvar cond;
 	uint32_t max;
 	uint32_t count;
+};
+
+struct posix_barrierattr {
+	uint32_t pshared;
 };
 
 __pinned_bss
@@ -166,29 +170,40 @@ int pthread_barrier_destroy(pthread_barrier_t *b)
 int pthread_barrierattr_init(pthread_barrierattr_t *attr)
 {
 	__ASSERT_NO_MSG(attr != NULL);
+	struct posix_barrierattr *_attr = (struct posix_barrierattr *)attr;
 
-	attr->pshared = PTHREAD_PROCESS_PRIVATE;
+#if defined(_POSIX_THREAD_PROCESS_SHARED)
+	_attr->pshared = PTHREAD_PROCESS_PRIVATE;
+#endif
 
 	return 0;
 }
 
+#if defined(_POSIX_THREAD_PROCESS_SHARED)
 int pthread_barrierattr_setpshared(pthread_barrierattr_t *attr, int pshared)
 {
-	if (pshared != PTHREAD_PROCESS_PRIVATE && pshared != PTHREAD_PROCESS_PUBLIC) {
+	__ASSERT_NO_MSG(attr != NULL);
+	struct posix_barrierattr *_attr = (struct posix_barrierattr *)attr;
+
+	if (pshared != PTHREAD_PROCESS_PRIVATE && pshared != PTHREAD_PROCESS_SHARED) {
 		return -EINVAL;
 	}
 
-	attr->pshared = pshared;
+	_attr->pshared = pshared;
 	return 0;
 }
 
 int pthread_barrierattr_getpshared(const pthread_barrierattr_t *restrict attr,
 				   int *restrict pshared)
 {
-	*pshared = attr->pshared;
+	__ASSERT_NO_MSG(attr != NULL);
+	const struct posix_barrierattr *_attr = (const struct posix_barrierattr *)attr;
+
+	*pshared = _attr->pshared;
 
 	return 0;
 }
+#endif
 
 int pthread_barrierattr_destroy(pthread_barrierattr_t *attr)
 {

@@ -12,10 +12,10 @@ LOG_MODULE_REGISTER(net_echo_server_svc_sample, LOG_LEVEL_DBG);
 #include <errno.h>
 
 #include <zephyr/kernel.h>
-#include <zephyr/posix/unistd.h>
-#include <zephyr/posix/poll.h>
-#include <zephyr/posix/arpa/inet.h>
-#include <zephyr/posix/sys/socket.h>
+#include <unistd.h>
+#include <poll.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
 #include <zephyr/net/socket_service.h>
 
 #define MY_PORT 4242
