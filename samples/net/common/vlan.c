@@ -5,13 +5,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define _GNU_SOURCE /* needed for pthread_getname_np() */
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_samples_common, LOG_LEVEL_DBG);
 
+#include <pthread.h>
 #include <stdlib.h>
 #include <zephyr/kernel.h>
-#include <zephyr/posix/arpa/inet.h>
 #include <zephyr/net/ethernet.h>
+#if defined(CONFIG_NATIVE_LIBC) || defined(CONFIG_PICOLIBC)
+/* Under native_sim, <arpa/inet.h> and <zephyr/net/ethernet.h> have conflicting redefinitions */
+typedef uint32_t socklen_t;
+const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
+#else
+#include <arpa/inet.h>
+#endif
 
 /* User data for the interface callback */
 struct ud {

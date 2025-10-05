@@ -10,13 +10,19 @@ zephyr_library_sources(
   locks.c
   stdio.c
   )
-zephyr_include_directories(include)
+if(CONFIG_POSIX_BASE_DEFINITIONS OR CONFIG_EVENTFD)
+  zephyr_include_directories(include)
+endif()
 
 zephyr_library_compile_options($<TARGET_PROPERTY:compiler,prohibit_lto>)
 
 # define __LINUX_ERRNO_EXTENSIONS__ so we get errno defines like -ESHUTDOWN
 # used by the network stack
 zephyr_compile_definitions(__LINUX_ERRNO_EXTENSIONS__)
+
+if(CONFIG_POSIX_THREADS)
+  zephyr_compile_definitions(_UNIX98_THREAD_MUTEX_ATTRIBUTES)
+endif()
 
 if(NOT CONFIG_PICOLIBC_USE_MODULE)
 

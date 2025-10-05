@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(nsos_sockets);
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/offloaded_netdev.h>
 #include <zephyr/net/socket_offload.h>
-#include <zephyr/posix/fcntl.h>
+#include <fcntl.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/sys/dlist.h>
 

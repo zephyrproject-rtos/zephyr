@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define _GNU_SOURCE /* needed for pthread_getname_np() */
+
 #include "posix_internal.h"
 
 #include <pthread.h>

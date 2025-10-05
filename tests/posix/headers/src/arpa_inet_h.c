@@ -6,11 +6,7 @@
 
 #include "_common.h"
 
-#ifdef CONFIG_POSIX_API
 #include <arpa/inet.h>
-#else
-#include <zephyr/posix/arpa/inet.h>
-#endif
 
 /**
  * @brief existence test for `<arpa/inet.h>`
