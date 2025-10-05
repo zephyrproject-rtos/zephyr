@@ -6,8 +6,8 @@
 
 #include <stdint.h>
 
-#include <zephyr/posix/arpa/inet.h>
-#include <zephyr/posix/netinet/in.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 

@@ -11,9 +11,9 @@
 #include <stdio.h>
 
 #include <zephyr/net/socket.h>
-#include <zephyr/posix/poll.h>
-#include <zephyr/posix/sys/eventfd.h>
-#include <zephyr/posix/unistd.h>
+#include <poll.h>
+#include <sys/eventfd.h>
+#include <unistd.h>
 #include <zephyr/ztest.h>
 
 #define TESTVAL 10

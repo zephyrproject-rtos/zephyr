@@ -6,6 +6,7 @@
  */
 
 #include <errno.h>
+#include <fnmatch.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,9 +21,8 @@
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
-#include <zephyr/zvfs/eventfd.h>
-#include <zephyr/posix/fnmatch.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/zvfs/eventfd.h>
 
 LOG_MODULE_REGISTER(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 
@@ -42,6 +42,18 @@ LOG_MODULE_REGISTER(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 #define HTTP_SERVER_MAX_SERVICES CONFIG_HTTP_SERVER_NUM_SERVICES
 #define HTTP_SERVER_MAX_CLIENTS  CONFIG_HTTP_SERVER_MAX_CLIENTS
 #define HTTP_SERVER_SOCK_COUNT (1 + HTTP_SERVER_MAX_SERVICES + HTTP_SERVER_MAX_CLIENTS)
+
+#ifndef FNM_LEADING_DIR
+/*
+ * FNM_LEADING_DIR normally requires #define <underscore>GNU_SOURCE.
+ * Declare it locally to avoid checkpatch errors of the form below.
+ *
+ * API_DEFINE: do not specify non-standard feature test macros for embedded code
+ * File:subsys/net/lib/http/http_server_core.c
+ * Line:9
+ */
+#define FNM_LEADING_DIR 0x08
+#endif
 
 struct http_server_ctx {
 	int listen_fds; /* max value of 1 + MAX_SERVICES */

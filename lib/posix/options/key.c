@@ -8,7 +8,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/posix/pthread.h>
+#include <pthread.h>
 #include <zephyr/sys/bitarray.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/sem.h>

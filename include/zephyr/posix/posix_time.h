@@ -51,9 +51,7 @@ typedef int pid_t;
 #define __pid_t_defined
 #endif
 
-#if defined(_POSIX_REALTIME_SIGNALS)
 struct sigevent;
-#endif
 
 /* struct tm must be defined in the libc time.h */
 

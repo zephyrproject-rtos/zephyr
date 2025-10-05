@@ -8,7 +8,7 @@
 #include <threads.h>
 
 #include <zephyr/kernel.h>
-#include <zephyr/posix/pthread.h>
+#include <pthread.h>
 
 void call_once(once_flag *flag, void (*func)(void))
 {
