@@ -129,6 +129,8 @@ New APIs and options
 * Cellular
 
   * :c:enumerator:`CELLULAR_EVENT_PERIODIC_SCRIPT_RESULT`
+  * :c:enumerator:`CELLULAR_EVENT_MODEM_SUSPENDED`
+  * :kconfig:option:`CONFIG_MODEM_CELLULAR_SUSPEND_ASYNC`
 
 * Display
 

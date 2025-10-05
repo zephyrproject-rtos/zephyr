@@ -78,6 +78,15 @@ config MODEM_CELLULAR_RESET_POWER_ON_DELAY_MS
 	int "Delay between de-asserting the reset pin and pulsing the power pin"
 	default 500
 
+config MODEM_CELLULAR_SUSPEND_ASYNC
+	bool "Suspend the modem asynchronously instead of blocking"
+	help
+	  Suspending a cellular modem can be a long running process, and blocking
+	  the context that triggers the suspension can be undesirable. Enabling
+	  this option lets the `PM_DEVICE_ACTION_SUSPEND` handler return
+	  immediately, with notification of the suspension provided through the
+	  `CELLULAR_EVENT_MODEM_SUSPENDED` event.
+
 if DT_HAS_U_BLOX_LARA_R6_ENABLED
 
 choice MODEM_CELLULAR_RAT

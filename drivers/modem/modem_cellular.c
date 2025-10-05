@@ -160,7 +160,11 @@ struct modem_cellular_data {
 	struct k_work_delayable timeout_work;
 
 	/* Power management */
+#ifdef CONFIG_MODEM_CELLULAR_SUSPEND_ASYNC
+	bool suspending;
+#else
 	struct k_sem suspended_sem;
+#endif /* CONFIG_MODEM_CELLULAR_SUSPEND_ASYNC */
 
 	/* Event dispatcher */
 	struct k_work event_dispatch_work;
@@ -773,7 +777,12 @@ static int modem_cellular_on_idle_state_enter(struct modem_cellular_data *data)
 	modem_ppp_release(data->ppp);
 	modem_cmux_release(&data->cmux);
 	modem_pipe_close_async(data->uart_pipe);
+#ifdef CONFIG_MODEM_CELLULAR_SUSPEND_ASYNC
+	data->suspending = false;
+#else
 	k_sem_give(&data->suspended_sem);
+#endif /* CONFIG_MODEM_CELLULAR_SUSPEND_ASYNC */
+	modem_cellular_emit_event(data, CELLULAR_EVENT_MODEM_SUSPENDED, NULL);
 	return 0;
 }
 
@@ -808,7 +817,11 @@ static void modem_cellular_idle_event_handler(struct modem_cellular_data *data,
 		break;
 
 	case MODEM_CELLULAR_EVENT_SUSPEND:
+#ifdef CONFIG_MODEM_CELLULAR_SUSPEND_ASYNC
+		data->suspending = false;
+#else
 		k_sem_give(&data->suspended_sem);
+#endif /* CONFIG_MODEM_CELLULAR_SUSPEND_ASYNC */
 		break;
 
 	default:
@@ -821,7 +834,9 @@ static int modem_cellular_on_idle_state_leave(struct modem_cellular_data *data)
 	const struct modem_cellular_config *config =
 		(const struct modem_cellular_config *)data->dev->config;
 
+#ifndef CONFIG_MODEM_CELLULAR_SUSPEND_ASYNC
 	k_sem_take(&data->suspended_sem, K_NO_WAIT);
+#endif /* CONFIG_MODEM_CELLULAR_SUSPEND_ASYNC */
 
 	if (modem_cellular_gpio_is_enabled(&config->reset_gpio)) {
 		gpio_pin_set_dt(&config->reset_gpio, 0);
@@ -2122,13 +2137,24 @@ static int modem_cellular_pm_action(const struct device *dev, enum pm_device_act
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
+#ifdef CONFIG_MODEM_CELLULAR_SUSPEND_ASYNC
+		if (data->suspending) {
+			/* Suspend operation in progress */
+			return -EBUSY;
+		}
+#endif /* CONFIG_MODEM_CELLULAR_SUSPEND_ASYNC */
 		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_RESUME);
 		ret = 0;
 		break;
 
 	case PM_DEVICE_ACTION_SUSPEND:
 		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_SUSPEND);
+#ifdef CONFIG_MODEM_CELLULAR_SUSPEND_ASYNC
+		data->suspending = true;
+		ret = 0;
+#else
 		ret = k_sem_take(&data->suspended_sem, K_SECONDS(30));
+#endif /* CONFIG_MODEM_CELLULAR_SUSPEND_ASYNC */
 		break;
 
 	default:
@@ -2188,7 +2214,9 @@ static int modem_cellular_init(const struct device *dev)
 	k_work_init(&data->event_dispatch_work, modem_cellular_event_dispatch_handler);
 	ring_buf_init(&data->event_rb, sizeof(data->event_buf), data->event_buf);
 
+#ifndef CONFIG_MODEM_CELLULAR_SUSPEND_ASYNC
 	k_sem_init(&data->suspended_sem, 0, 1);
+#endif /* CONFIG_MODEM_CELLULAR_SUSPEND_ASYNC */
 
 	if (modem_cellular_gpio_is_enabled(&config->wake_gpio)) {
 		gpio_pin_configure_dt(&config->wake_gpio, GPIO_OUTPUT_INACTIVE);
