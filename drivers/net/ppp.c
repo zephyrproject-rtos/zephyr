@@ -26,6 +26,7 @@ LOG_MODULE_REGISTER(net_ppp, LOG_LEVEL);
 #include <zephyr/net_buf.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/if_arp.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/sys/ring_buffer.h>
 #include <zephyr/sys/crc.h>

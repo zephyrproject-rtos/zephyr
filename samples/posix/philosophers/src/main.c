@@ -36,6 +36,16 @@ LOG_MODULE_REGISTER(posix_philosophers, LOG_LEVEL_INF);
 static pthread_mutex_t forks[NUM_PHIL];
 static pthread_t threads[NUM_PHIL];
 
+/*
+ * pthread_setname_np() normally requires #define <underscore>GNU_SOURCE.
+ * Declare it locally to avoid checkpatch errors of the form below.
+ *
+ * API_DEFINE: do not specify non-standard feature test macros for embedded code
+ * File:samples/posix/philosophers/src/main.c
+ * Line:8
+ */
+int pthread_setname_np(pthread_t thread, const char *name);
+
 static inline void fork_init(fork_t frk)
 {
 	int ret;

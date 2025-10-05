@@ -8,7 +8,7 @@
 #include <stdarg.h>
 
 #include <zephyr/kernel.h>
-#include <zephyr/posix/stropts.h>
+#include <stropts.h>
 
 int putmsg(int fildes, const struct strbuf *ctlptr, const struct strbuf *dataptr, int flags)
 {
