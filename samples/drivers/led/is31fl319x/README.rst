@@ -34,14 +34,22 @@ times that matches the index of this LED within the device.
 Building and Running
 ********************
 
-This sample can be built and executed on an Arduino Nicla Sense ME, or on
+This sample can be built and executed on an Arduino Nicla Sense ME, or
+Arduino Giga with an Arduino Giga Display shield, or on
 any board where the devicetree has an I2C device node with compatible
-:dtcompatible:`issi,is31fl3194` or :dtcompatible:`issi,is31fl3197` with the
-relevant bus controller node also being enabled.
+:dtcompatible:`issi,is31fl3194` or :dtcompatible:`issi,is31fl3197`
+with the relevant bus controller node also being enabled.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/led/is31fl319x
    :board: arduino_nicla_sense_me
+   :goals: build flash
+   :compact:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/led/is31fl319x
+   :board: arduino_giga_r1//m7
+   :shield: arduino_giga_display_shield
    :goals: build flash
    :compact:
 

@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/dt-bindings/display/panel.h>
+#include <zephyr/dt-bindings/led/led.h>
 
 / {
 	aliases {
@@ -87,5 +88,17 @@
 		alt-addr = <0x14>;
 		reset-gpios = <&gpioi 2 GPIO_ACTIVE_LOW>;
 		irq-gpios = <&gpioi 1 GPIO_ACTIVE_HIGH>;
+	};
+
+	is31fl3197@50 {
+		compatible = "issi,is31fl3197";
+		reg = <0x50>;
+
+		led_rgb {
+			label = "RGB LED";
+			color-mapping = <LED_COLOR_ID_RED>,
+					<LED_COLOR_ID_GREEN>,
+					<LED_COLOR_ID_BLUE>;
+		};
 	};
 };
