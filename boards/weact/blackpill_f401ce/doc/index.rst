@@ -146,5 +146,3 @@ References
 
 .. _STM32F401x reference manual:
    https://www.st.com/resource/en/reference_manual/dm00096844.pdf
-
-.. _stm32cubeprogrammer_runner:
