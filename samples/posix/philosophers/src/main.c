@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
@@ -47,7 +48,7 @@ static inline void fork_init(fork_t frk)
 	}
 }
 
-static inline fork_t fork(size_t idx)
+static inline fork_t philosopher_fork(size_t idx)
 {
 	return &forks[idx];
 }
@@ -148,11 +149,11 @@ static void *philosopher(void *arg)
 
 	/* Djkstra's solution: always pick up the lowest numbered fork first */
 	if (is_last_philosopher(my_id)) {
-		my_fork1 = fork(0);
-		my_fork2 = fork(my_id);
+		my_fork1 = philosopher_fork(0);
+		my_fork2 = philosopher_fork(my_id);
 	} else {
-		my_fork1 = fork(my_id);
-		my_fork2 = fork(my_id + 1);
+		my_fork1 = philosopher_fork(my_id);
+		my_fork2 = philosopher_fork(my_id + 1);
 	}
 
 	while (1) {
@@ -204,7 +205,7 @@ static void init_objects(void)
 {
 	ARRAY_FOR_EACH(forks, i) {
 		LOG_DBG("Initializing fork %zu", i);
-		fork_init(fork(i));
+		fork_init(philosopher_fork(i));
 	}
 }
 

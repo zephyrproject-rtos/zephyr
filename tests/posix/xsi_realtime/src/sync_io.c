@@ -8,7 +8,7 @@
 #include <fcntl.h>
 #include <ff.h>
 #include <zephyr/fs/fs.h>
-#include <zephyr/posix/unistd.h>
+#include <unistd.h>
 #include <zephyr/ztest.h>
 
 static const char test_str[] = "Hello World!";

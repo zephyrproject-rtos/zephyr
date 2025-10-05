@@ -8,8 +8,8 @@
 
 #include <stddef.h>
 
-#include <zephyr/posix/netinet/in.h>
-#include <zephyr/posix/sys/socket.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
 
 #include <zephyr/net/socket.h>
 

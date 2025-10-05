@@ -6,11 +6,7 @@
 
 #include "_common.h"
 
-#ifdef CONFIG_POSIX_API
 #include <mqueue.h>
-#else
-#include <zephyr/posix/mqueue.h>
-#endif
 
 /**
  * @brief existence test for `<mqueue.h>`
