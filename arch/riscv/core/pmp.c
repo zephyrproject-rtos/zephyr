@@ -104,6 +104,38 @@ static void print_pmp_entries(unsigned int pmp_start, unsigned int pmp_end,
 	}
 }
 
+/**
+ * @brief Reads the PMP configuration CSRs (pmpcfgX) based on architecture and slot count.
+ *
+ * This helper function abstracts the logic required to read the correct CSRs
+ * (pmpcfg0, pmpcfg1, pmpcfg2, pmpcfg3) depending on whether the system is
+ * 32-bit or 64-bit and the total number of PMP slots configured.
+ *
+ * @param pmp_cfg Pointer to the array where the CSR contents will be stored.
+ * @param pmp_cfg_size The size of the pmp_cfg array, measured in unsigned long entries.
+ */
+static inline void z_riscv_pmp_read_config(unsigned long *pmp_cfg, size_t pmp_cfg_size)
+{
+	__ASSERT(pmp_cfg_size == (size_t)(CONFIG_PMP_SLOTS / PMPCFG_STRIDE),
+		 "Invalid PMP config array size");
+
+#ifdef CONFIG_64BIT
+	/* RV64: pmpcfg0 holds entries 0-7; pmpcfg2 holds entries 8-15. */
+	pmp_cfg[0] = csr_read(pmpcfg0);
+#if CONFIG_PMP_SLOTS > 8
+	pmp_cfg[1] = csr_read(pmpcfg2);
+#endif
+#else
+	/* RV32: Each pmpcfg register holds 4 entries. */
+	pmp_cfg[0] = csr_read(pmpcfg0);
+	pmp_cfg[1] = csr_read(pmpcfg1);
+#if CONFIG_PMP_SLOTS > 8
+	pmp_cfg[2] = csr_read(pmpcfg2);
+	pmp_cfg[3] = csr_read(pmpcfg3);
+#endif
+#endif
+}
+
 static void dump_pmp_regs(const char *banner)
 {
 	unsigned long pmp_addr[CONFIG_PMP_SLOTS];
@@ -118,20 +150,7 @@ static void dump_pmp_regs(const char *banner)
 
 #undef PMPADDR_READ
 
-#ifdef CONFIG_64BIT
-	pmp_cfg[0] = csr_read(pmpcfg0);
-#if CONFIG_PMP_SLOTS > 8
-	pmp_cfg[1] = csr_read(pmpcfg2);
-#endif
-#else
-	pmp_cfg[0] = csr_read(pmpcfg0);
-	pmp_cfg[1] = csr_read(pmpcfg1);
-#if CONFIG_PMP_SLOTS > 8
-	pmp_cfg[2] = csr_read(pmpcfg2);
-	pmp_cfg[3] = csr_read(pmpcfg3);
-#endif
-#endif
-
+	z_riscv_pmp_read_config(pmp_cfg, (size_t)(CONFIG_PMP_SLOTS / PMPCFG_STRIDE));
 	print_pmp_entries(0, CONFIG_PMP_SLOTS, pmp_addr, pmp_cfg, banner);
 }
 
