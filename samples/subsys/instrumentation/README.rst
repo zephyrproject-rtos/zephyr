@@ -40,7 +40,7 @@ Alternatively you can run this using QEMU:
 
 After the sample is flashed to the target (or QEMU is running), it must be possible to
 collect and visualize traces and profiling info using the instrumentation CLI
-tool, :zephyr_file:`scripts/zaru.py`.
+tool, :zephyr_file:`scripts/instrumentation/zaru.py`.
 
 .. note::
    Please note, that this subsystem uses the ``retained_mem`` driver, hence it's necessary
@@ -48,10 +48,10 @@ tool, :zephyr_file:`scripts/zaru.py`.
    :zephyr_file:`./samples/subsys/instrumentation/boards/mps2_an385.overlay` for an example.
 
 Connect the board's UART port to the host device and
-run the :zephyr_file:`scripts/zaru.py` script on the host.
+run the :zephyr_file:`scripts/instrumentation/zaru.py` script on the host.
 
 Source the :zephyr_file:`zephyr-env.sh` file to set the ``ZEPHYR_BASE`` variable and get
-:zephyr_file:`scripts/zaru.py` in your PATH:
+:zephyr_file:`scripts/instrumentation/zaru.py` in your PATH:
 
 .. code-block:: console
 
