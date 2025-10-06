@@ -201,6 +201,21 @@ config XTENSA_MMU
 
 if XTENSA_MMU
 
+config XTENSA_MMU_USE_DEFAULT_MAPPINGS
+	bool "Use architecture default MMU mappings"
+	default y
+	help
+	  If enabled, the MMU will be initialized with a few default
+	  MMU mappings covering text, data, BSS, rodata, etc. which
+	  should provide a reasonable default. See mmu_zephyr_ranges[]
+	  for details.
+
+	  If disabled, the SoC must provide all the necessary mappings
+	  via xtensa_soc_mmu_ranges[]. This allows SoC to have more
+	  fine control over the mappings.
+
+	  If unsure, just say Y.
+
 choice
 	prompt "PageTable virtual address"
 	default XTENSA_MMU_PTEVADDR_20000000
