@@ -1,5 +1,5 @@
 # Enable MPU
-CONFIG_ARM_MPU=y
+CONFIG_ARM_MPU=n
 
 # Serial Drivers
 CONFIG_SERIAL=y
