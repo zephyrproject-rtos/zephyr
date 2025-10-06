@@ -935,12 +935,23 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 
 	/* Check if this was a response to last blockwise send */
 	if (internal_req->send_blk_ctx.total_size > 0) {
+		int block1_option;
+
 		blockwise_transfer = true;
 		internal_req->offset = internal_req->send_blk_ctx.current;
 		if (internal_req->send_blk_ctx.total_size == internal_req->send_blk_ctx.current) {
 			last_block = true;
 		} else {
 			last_block = false;
+		}
+
+		block1_option = coap_get_option_int(response, COAP_OPTION_BLOCK1);
+		if (block1_option > 0) {
+			int block_size = GET_BLOCK_SIZE(block1_option);
+
+			if (block_size < internal_req->send_blk_ctx.block_size) {
+				internal_req->send_blk_ctx.block_size = block_size;
+			}
 		}
 	}
 
