@@ -121,10 +121,15 @@ config MAIN_STACK_SIZE
 config IDLE_STACK_SIZE
 	default 4096
 
+config PRIVILEGED_STACK_SIZE
+	default 4096 if FPU_SHARING
+	default 2048
+
 config ISR_STACK_SIZE
 	default 4096
 
 config TEST_EXTRA_STACK_SIZE
+	default 4096 if FPU_SHARING
 	default 2048
 
 config SYSTEM_WORKQUEUE_STACK_SIZE
