@@ -682,6 +682,46 @@ class KconfigCheck(ComplianceTest):
     # Kconfig symbol prefix/namespace.
     CONFIG_ = "CONFIG_"
 
+    # If modules should be excluded from checks.
+    EXCLUDE_MODULES = False
+
+    # This block list contains a list of upstream Zephyr modules that should not be checked
+    # DO NOT MERGE CHANGES TO THIS WITHOUT BUILD SYSTEM AND CODE OWNER APPROVAL!
+    external_module_name_block_list = [
+        'canopennode',
+        'chre',
+        'cmsis',
+        'cmsis-dsp',
+        'cmsis-nn',
+        'cmsis_6',
+        'edtt',
+        'fatfs',
+        'hal_st',
+        'hal_tdk',
+        'hal_wurthelektronik',
+        'liblc3',
+        'libmetal',
+        'littlefs',
+        'loramac-node',
+        'lvgl',
+        'lz4',
+        'mipi-sys-t',
+        'nanopb',
+        'net-tools',
+        'nrf_hw_models',
+        'open-amp',
+        'percepio',
+        'picolibc',
+        'segger',
+        'tf-m-tests',
+        'tinycrypt',
+        'uoscore-uedhoc',
+        'zscilib',
+    ]
+
+    # Holds a list or directories/files which should not be checked
+    blocked_module_dirs = []
+
     def run(self):
         kconf = self.parse_kconfig()
 
@@ -723,14 +763,23 @@ class KconfigCheck(ComplianceTest):
         modules_dir = ZEPHYR_BASE / 'modules'
         modules = [name for name in os.listdir(modules_dir) if modules_dir / name / 'Kconfig']
 
-        nrf_modules_dir = ZEPHYR_BASE / Path('../nrf/modules')
+        nrf_modules_dir = (Path(ZEPHYR_BASE) / '..' / 'nrf' / 'modules').resolve()
         nrf_modules = []
+
+        for module in modules:
+            if module in self.external_module_name_block_list:
+                self.blocked_module_dirs.append(modules_dir / module / 'Kconfig')
+
         if os.path.exists(nrf_modules_dir):
             nrf_modules = [
                 name
                 for name in os.listdir(nrf_modules_dir)
                 if os.path.exists(os.path.join(nrf_modules_dir, name, 'Kconfig'))
             ]
+
+            for module in nrf_modules:
+                if module in self.external_module_name_block_list:
+                    self.blocked_module_dirs.append(nrf_modules_dir / module / 'Kconfig')
 
         with open(modules_file) as fp_module_file:
             content = fp_module_file.read()
@@ -756,6 +805,7 @@ class KconfigCheck(ComplianceTest):
                         modules_dir / module / 'Kconfig',
                     )
                 )
+
             # Add NRF as static entry as workaround for ext Kconfig root support
             fp_module_file.write(
                 "ZEPHYR_NRF_KCONFIG = {}\n".format(
@@ -1320,9 +1370,33 @@ Options must not be defined in defconfig files.
         # Checks that boolean's prompt does not start with "Enable...".
 
         for node in kconf.node_iter():
-            # skip Kconfig nodes not in-tree (will present an absolute path)
+            skip_node = False
+
+            # skip Kconfig nodes not in-tree when set to (will present an absolute path)
             if os.path.isabs(node.filename):
-                continue
+                if self.EXCLUDE_MODULES is True:
+                    continue
+
+                normalised_file_name = Path(node.filename).resolve()
+
+                for module_name in self.external_module_name_block_list:
+                    # Workaround for being unable to use full_match() due to python version
+                    if '/modules/' in str(normalised_file_name) and (
+                        '/' + module_name + '/'
+                    ) in str(normalised_file_name):
+                        skip_node = True
+                        break
+
+                if skip_node:
+                    continue
+
+                for blocked_dir in self.blocked_module_dirs:
+                    if normalised_file_name.match(blocked_dir, case_sensitive=True):
+                        skip_node = True
+                        break
+
+                if skip_node:
+                    continue
 
             # 'kconfiglib' is global
             # pylint: disable=undefined-variable
@@ -1775,6 +1849,7 @@ class KconfigBasicNoModulesCheck(KconfigBasicCheck):
     name = "KconfigBasicNoModules"
     path_hint = "<zephyr-base>"
     EMPTY_FILE_CONTENTS = "# Empty\n"
+    EXCLUDE_MODULES = True
 
     def get_modules(self, module_dirs_file, modules_file, sysbuild_modules_file, settings_file):
         with open(module_dirs_file, 'w') as fp_module_file:
@@ -1870,6 +1945,7 @@ class SysbuildKconfigBasicNoModulesCheck(SysbuildKconfigCheck, KconfigBasicNoMod
 
     name = "SysbuildKconfigBasicNoModules"
     path_hint = "<zephyr-base>"
+    EXCLUDE_MODULES = True
 
 
 class Nits(ComplianceTest):
