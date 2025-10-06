@@ -851,6 +851,69 @@ static void RISAF_Config(void)
 }
 #endif
 
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
+static int eth_init_api_v2(const struct device *dev)
+{
+	HAL_StatusTypeDef hal_ret = HAL_OK;
+	struct eth_stm32_hal_dev_data *dev_data = dev->data;
+	ETH_HandleTypeDef *heth = &dev_data->heth;
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
+	for (int ch = 0; ch < ETH_DMA_CH_CNT; ch++) {
+		heth->Init.TxDesc[ch] = dma_tx_desc_tab[ch];
+		heth->Init.RxDesc[ch] = dma_rx_desc_tab[ch];
+	}
+#else
+	heth->Init.TxDesc = dma_tx_desc_tab;
+	heth->Init.RxDesc = dma_rx_desc_tab;
+#endif
+	heth->Init.RxBuffLen = ETH_STM32_RX_BUF_SIZE;
+
+	hal_ret = HAL_ETH_Init(heth);
+	if (hal_ret == HAL_TIMEOUT) {
+		/* HAL Init time out. This could be linked to
+		 * a recoverable error. Log the issue and continue
+		 * driver initialization.
+		 */
+		LOG_ERR("HAL_ETH_Init Timed out");
+	} else if (hal_ret != HAL_OK) {
+		LOG_ERR("HAL_ETH_Init failed: %d", hal_ret);
+		return -EINVAL;
+	}
+
+#if defined(CONFIG_PTP_CLOCK_STM32_HAL)
+	/* Enable timestamping of RX packets. We enable all packets to be
+	 * timestamped to cover both IEEE 1588 and gPTP.
+	 */
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
+	heth->Instance->MACTSCR |= ETH_MACTSCR_TSENALL;
+#else
+	heth->Instance->PTPTSCR |= ETH_PTPTSCR_TSSARFE;
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
+#endif /* CONFIG_PTP_CLOCK_STM32_HAL */
+
+	/* Initialize semaphores */
+	k_mutex_init(&dev_data->tx_mutex);
+	k_sem_init(&dev_data->rx_int_sem, 0, K_SEM_MAX_LIMIT);
+	k_sem_init(&dev_data->tx_int_sem, 0, K_SEM_MAX_LIMIT);
+
+	/* Tx config init: */
+	memset(&tx_config, 0, sizeof(ETH_TxPacketConfig));
+	tx_config.Attributes = ETH_TX_PACKETS_FEATURES_CSUM | ETH_TX_PACKETS_FEATURES_CRCPAD;
+	tx_config.ChecksumCtrl = IS_ENABLED(CONFIG_ETH_STM32_HW_CHECKSUM)
+					 ? ETH_CHECKSUM_IPHDR_PAYLOAD_INSERT_PHDR_CALC
+					 : ETH_CHECKSUM_DISABLE;
+	tx_config.CRCPadCtrl = ETH_CRC_PAD_INSERT;
+
+	/* prepare tx buffer header */
+	for (uint16_t i = 0; i < ETH_TXBUFNB; ++i) {
+		dma_tx_buffer_header[i].tx_buff.buffer = dma_tx_buffer[i];
+	}
+
+	return 0;
+}
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
+
 static int eth_initialize(const struct device *dev)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
@@ -930,7 +993,13 @@ static int eth_initialize(const struct device *dev)
 	HAL_ETH_DMARxDescListInit(heth, dma_rx_desc_tab,
 		&dma_rx_buffer[0][0], ETH_RXBUFNB);
 
-#endif /* !CONFIG_ETH_STM32_HAL_API_V1 */
+#elif defined(CONFIG_ETH_STM32_HAL_API_V2)
+	ret = eth_init_api_v2(dev);
+
+	if (ret != 0) {
+		return ret;
+	}
+#endif /* CONFIG_ETH_STM32_HAL_API_V1 */
 
 	LOG_DBG("MAC %02x:%02x:%02x:%02x:%02x:%02x",
 		dev_data->mac_addr[0], dev_data->mac_addr[1],
@@ -987,68 +1056,6 @@ static void eth_stm32_mcast_filter(const struct device *dev, const struct ethern
 }
 
 #endif /* CONFIG_ETH_STM32_MULTICAST_FILTER */
-
-#if defined(CONFIG_ETH_STM32_HAL_API_V2)
-static int eth_init_api_v2(const struct device *dev)
-{
-	HAL_StatusTypeDef hal_ret = HAL_OK;
-	struct eth_stm32_hal_dev_data *dev_data = dev->data;
-	ETH_HandleTypeDef *heth = &dev_data->heth;
-
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
-	for (int ch = 0; ch < ETH_DMA_CH_CNT; ch++) {
-		heth->Init.TxDesc[ch] = dma_tx_desc_tab[ch];
-		heth->Init.RxDesc[ch] = dma_rx_desc_tab[ch];
-	}
-#else
-	heth->Init.TxDesc = dma_tx_desc_tab;
-	heth->Init.RxDesc = dma_rx_desc_tab;
-#endif
-	heth->Init.RxBuffLen = ETH_STM32_RX_BUF_SIZE;
-
-	hal_ret = HAL_ETH_Init(heth);
-	if (hal_ret == HAL_TIMEOUT) {
-		/* HAL Init time out. This could be linked to */
-		/* a recoverable error. Log the issue and continue */
-		/* driver initialisation */
-		LOG_ERR("HAL_ETH_Init Timed out");
-	} else if (hal_ret != HAL_OK) {
-		LOG_ERR("HAL_ETH_Init failed: %d", hal_ret);
-		return -EINVAL;
-	}
-
-#if defined(CONFIG_PTP_CLOCK_STM32_HAL)
-	/* Enable timestamping of RX packets. We enable all packets to be
-	 * timestamped to cover both IEEE 1588 and gPTP.
-	 */
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
-	heth->Instance->MACTSCR |= ETH_MACTSCR_TSENALL;
-#else
-	heth->Instance->PTPTSCR |= ETH_PTPTSCR_TSSARFE;
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
-#endif /* CONFIG_PTP_CLOCK_STM32_HAL */
-
-	/* Initialize semaphores */
-	k_mutex_init(&dev_data->tx_mutex);
-	k_sem_init(&dev_data->rx_int_sem, 0, K_SEM_MAX_LIMIT);
-	k_sem_init(&dev_data->tx_int_sem, 0, K_SEM_MAX_LIMIT);
-
-	/* Tx config init: */
-	memset(&tx_config, 0, sizeof(ETH_TxPacketConfig));
-	tx_config.Attributes = ETH_TX_PACKETS_FEATURES_CSUM |
-				ETH_TX_PACKETS_FEATURES_CRCPAD;
-	tx_config.ChecksumCtrl = IS_ENABLED(CONFIG_ETH_STM32_HW_CHECKSUM) ?
-			ETH_CHECKSUM_IPHDR_PAYLOAD_INSERT_PHDR_CALC : ETH_CHECKSUM_DISABLE;
-	tx_config.CRCPadCtrl = ETH_CRC_PAD_INSERT;
-
-	/* prepare tx buffer header */
-	for (uint16_t i = 0; i < ETH_TXBUFNB; ++i) {
-		dma_tx_buffer_header[i].tx_buff.buffer = dma_tx_buffer[i];
-	}
-
-	return 0;
-}
-#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 static void set_mac_config(const struct device *dev, struct phy_link_state *state)
 {
@@ -1169,14 +1176,6 @@ static void eth_iface_init(struct net_if *iface)
 #endif
 
 	ethernet_init(iface);
-
-#if defined(CONFIG_ETH_STM32_HAL_API_V2)
-	/* This function requires the Ethernet interface to be
-	 * properly initialized. In auto-negotiation mode, it reads the speed
-	 * and duplex settings to configure the driver accordingly.
-	 */
-	eth_init_api_v2(dev);
-#endif
 
 	setup_mac_filter(heth);
 
