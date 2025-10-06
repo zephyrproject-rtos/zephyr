@@ -78,6 +78,13 @@ Comparator
   and :c:macro:`NRF_COMP_AIN_VDDH_DIV5` represents VDDH/5.
   The old ``string`` properties type is deprecated.
 
+DMA
+===
+
+* DMA no longer implements user mode syscalls as part of its API. The syscalls were determined to be
+  too broadly defined in access and impossible to implement the syscall parameter verification step
+  in another.
+
 MFD
 ===
 
