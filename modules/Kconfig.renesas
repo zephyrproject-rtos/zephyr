@@ -99,6 +99,13 @@ config HAS_RENESAS_RA_RSIP_E51A
 	help
 	  Includes RSIP-E51A implementation for SCE driver
 
+config HAS_RENESAS_RA_RSIP_E50D
+	bool
+	default y
+	depends on DT_HAS_RENESAS_RA_RSIP_E50D_TRNG_ENABLED
+	help
+	  Includes RSIP-E50D implementation for SCE driver
+
 config HAS_RENESAS_RA_SCE9
 	bool
 	default y

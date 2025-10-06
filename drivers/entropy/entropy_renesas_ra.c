@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,6 +48,7 @@ static int entropy_renesas_ra_init(const struct device *dev)
 			 CONFIG_ENTROPY_INIT_PRIORITY, &entropy_renesas_ra_api)
 
 DT_FOREACH_STATUS_OKAY(renesas_ra_rsip_e51a_trng, RENESAS_RA_ENTROPY_INIT)
+DT_FOREACH_STATUS_OKAY(renesas_ra_rsip_e50d_trng, RENESAS_RA_ENTROPY_INIT)
 DT_FOREACH_STATUS_OKAY(renesas_ra_sce5_rng, RENESAS_RA_ENTROPY_INIT)
 DT_FOREACH_STATUS_OKAY(renesas_ra_sce7_rng, RENESAS_RA_ENTROPY_INIT)
 DT_FOREACH_STATUS_OKAY(renesas_ra_sce9_rng, RENESAS_RA_ENTROPY_INIT)

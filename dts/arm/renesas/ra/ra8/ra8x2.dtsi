@@ -103,6 +103,11 @@
 			status = "okay";
 		};
 
+		trng: trng {
+			compatible = "renesas,ra-rsip-e50d-trng";
+			status = "disabled";
+		};
+
 		ioport0: gpio@40400000 {
 			compatible = "renesas,ra-gpio-ioport";
 			reg = <0x40400000 0x20>;
