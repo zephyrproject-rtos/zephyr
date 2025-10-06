@@ -1,0 +1,29 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA External MDIO controller
+
+compatible: "renesas,ra-mdio-rmac"
+
+include: [mdio-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  channel:
+    type: int
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  phy-connection-type:
+    type: string
+    description: |
+      Specifies the interface connection type between ethernet MAC and PHY.
+    enum:
+      - "mii"
+      - "rmii"
+      - "gmii"
+      - "rgmii"
