@@ -57,6 +57,14 @@ static ALWAYS_INLINE void sys_clear_bits(mem_addr_t addr, unsigned int mask)
 }
 
 static ALWAYS_INLINE
+	void sys_modify_bits(mem_addr_t addr, unsigned int clear_mask, unsigned int set_mask)
+{
+	uint32_t temp = *(volatile uint32_t *)addr;
+
+	*(volatile uint32_t *)addr = (temp & ~clear_mask) | set_mask;
+}
+
+static ALWAYS_INLINE
 	void sys_bitfield_set_bit(mem_addr_t addr, unsigned int bit)
 {
 	/* Doing memory offsets in terms of 32-bit values to prevent

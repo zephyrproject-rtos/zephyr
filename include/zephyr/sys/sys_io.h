@@ -266,6 +266,19 @@ typedef uintptr_t mem_addr_t;
  */
 
 /**
+ * @fn static inline void sys_modify_bits(mem_addr_t addr, unsigned int clear_mask,
+ *                                        unsigned int set_mask)
+ * @brief Modify the bits from addr to the values defined by @p clear_mask and @p set_mask
+ *
+ * This functions modifies the designated bits from addr by clearing mask before setting value.
+ * It is equivalent to calling sys_clear_bits then sys_set_bits, but addr is modified only once.
+ *
+ * @param addr the memory address from where to look for the bits
+ * @param clear_mask the bit mask of a 32 bits data to clear
+ * @param set_mask the bit mask of a 32 bits data to set
+ */
+
+/**
  * @fn static inline void sys_clear_bit(mem_addr_t addr, unsigned int bit)
  * @brief Clear the designated bit from addr to 0
  *
