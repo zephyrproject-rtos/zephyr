@@ -509,7 +509,7 @@ static int configure_gpio(struct modbus_context *ctx)
 	struct modbus_serial_config *cfg = ctx->cfg;
 
 	if (cfg->de != NULL) {
-		if (!device_is_ready(cfg->de->port)) {
+		if (!gpio_is_ready_dt(cfg->de)) {
 			return -ENODEV;
 		}
 
@@ -520,7 +520,7 @@ static int configure_gpio(struct modbus_context *ctx)
 
 
 	if (cfg->re != NULL) {
-		if (!device_is_ready(cfg->re->port)) {
+		if (!gpio_is_ready_dt(cfg->re)) {
 			return -ENODEV;
 		}
 
