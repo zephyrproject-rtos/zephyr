@@ -17,19 +17,6 @@
 #include <stdio.h>
 #endif /* CONFIG_CBPRINTF_LIBC_SUBSTS */
 
-/* Determine if _Generic is supported using macro from toolchain.h.
- *
- * @note Z_C_GENERIC is also set for C++ where functionality is implemented
- * using overloading and templates.
- */
-#ifndef Z_C_GENERIC
-#if defined(__cplusplus) || TOOLCHAIN_HAS_C_GENERIC
-#define Z_C_GENERIC 1
-#else
-#define Z_C_GENERIC 0
-#endif
-#endif
-
 #ifdef __xtensa__
 #define Z_PKG_HDR_EXT_XTENSA_ALIGNMENT 8
 #ifdef CONFIG_CBPRINTF_PACKAGE_HEADER_STORE_CREATION_FLAGS
@@ -120,7 +107,6 @@ BUILD_ASSERT(sizeof(struct cbprintf_package_hdr_ext) % Z_PKG_HDR_EXT_XTENSA_ALIG
  * @endcond
  */
 
-/* Z_C_GENERIC is used there */
 #include <zephyr/sys/cbprintf_internal.h>
 
 #ifdef __cplusplus
