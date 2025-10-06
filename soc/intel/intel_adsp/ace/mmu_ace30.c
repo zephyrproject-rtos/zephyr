@@ -26,9 +26,45 @@ extern char __imr_data_end[];
 extern char __coldrodata_start[];
 extern char _shared_heap_start[];
 extern char _shared_heap_end[];
+extern char _heap_end[];
+extern char _heap_start[];
 
 
 const struct xtensa_mmu_range xtensa_soc_mmu_ranges[] = {
+	{
+		.start = (uint32_t)_image_ram_start,
+		.end   = (uint32_t)_image_ram_end,
+#ifdef CONFIG_XTENSA_RPO_CACHE
+		.attrs = XTENSA_MMU_PERM_W,
+#else
+		.attrs = XTENSA_MMU_PERM_W | XTENSA_MMU_CACHED_WB,
+#endif
+		.name = "data",
+	},
+#if K_HEAP_MEM_POOL_SIZE > 0
+	{
+		.start = (uint32_t)_heap_start,
+		.end   = (uint32_t)_heap_end,
+#ifdef CONFIG_XTENSA_RPO_CACHE
+		.attrs = XTENSA_MMU_PERM_W,
+#else
+		.attrs = XTENSA_MMU_PERM_W | XTENSA_MMU_CACHED_WB,
+#endif
+		.name = "heap",
+	},
+#endif
+	{
+		.start = (uint32_t)__text_region_start,
+		.end   = (uint32_t)__text_region_end,
+		.attrs = XTENSA_MMU_PERM_X | XTENSA_MMU_CACHED_WB | XTENSA_MMU_MAP_SHARED,
+		.name = "text",
+	},
+	{
+		.start = (uint32_t)__rodata_region_start,
+		.end   = (uint32_t)__rodata_region_end,
+		.attrs = XTENSA_MMU_CACHED_WB | XTENSA_MMU_MAP_SHARED,
+		.name = "rodata",
+	},
 	{
 		.start = (uint32_t)__common_ram_region_start,
 		.end   = (uint32_t)__common_ram_region_end,
