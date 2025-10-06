@@ -184,6 +184,11 @@ config USE_RA_FSP_ACMPHS
 	help
 	  Enable RA FSP ACMPHS driver
 
+config USE_RA_FSP_LVD
+	bool
+	help
+	  Enable RA FSP LVD driver
+
 config USE_RA_FSP_WDT
 	bool
 	help
