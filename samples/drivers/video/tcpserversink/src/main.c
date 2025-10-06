@@ -87,7 +87,7 @@ int main(void)
 		return 0;
 	}
 
-	printk("Video device detected, format: %s %ux%u\n",
+	LOG_INF("Video device detected, format: %s %ux%u",
 		VIDEO_FOURCC_TO_STR(fmt.pixelformat), fmt.width, fmt.height);
 
 	if (caps.min_line_count != LINE_COUNT_HEIGHT) {
@@ -107,15 +107,15 @@ int main(void)
 
 	/* Connection loop */
 	do {
-		printk("TCP: Waiting for client...\n");
+		LOG_INF("TCP: Waiting for client...");
 
 		client = accept(sock, (struct sockaddr *)&client_addr, &client_addr_len);
 		if (client < 0) {
-			printk("Failed to accept: %d\n", errno);
+			LOG_ERR("Failed to accept: %d", errno);
 			return 0;
 		}
 
-		printk("TCP: Accepted connection\n");
+		LOG_INF("TCP: Accepted connection");
 
 		/* Enqueue Buffers */
 		for (i = 0; i < ARRAY_SIZE(buffers); i++) {
@@ -128,7 +128,7 @@ int main(void)
 			return 0;
 		}
 
-		printk("Stream started\n");
+		LOG_INF("Stream started");
 
 		/* Capture loop */
 		i = 0;
@@ -140,13 +140,13 @@ int main(void)
 				return 0;
 			}
 
-			printk("\rSending frame %d\n", i++);
+			LOG_INF("Sending frame %d", i++);
 
 			/* Send video buffer to TCP client */
 			ret = sendall(client, vbuf->buffer, vbuf->bytesused);
 			if (ret && ret != -EAGAIN) {
 				/* client disconnected */
-				printk("\nTCP: Client disconnected %d\n", ret);
+				LOG_ERR("TCP: Client disconnected %d", ret);
 				close(client);
 			}
 
