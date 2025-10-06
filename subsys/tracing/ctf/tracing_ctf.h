@@ -448,6 +448,7 @@ void sys_trace_k_timer_status_sync_exit(struct k_timer *timer, uint32_t result);
 
 void sys_trace_k_event_init(struct k_event *event);
 
+void sys_trace_set_state_ctf(bool state);
 
 #define sys_port_trace_socket_init(sock, family, type, proto)	\
 	sys_trace_socket_init(sock, family, type, proto)
@@ -700,6 +701,8 @@ void sys_trace_gpio_fire_callback(const struct device *port, struct gpio_callbac
 #define sys_port_trace_gpio_fire_callbacks_enter(list, port, pins)                                 \
 	sys_trace_gpio_fire_callbacks_enter(list, port, pins)
 #define sys_port_trace_gpio_fire_callback(port, cb) sys_trace_gpio_fire_callback(port, cb)
+
+#define sys_trace_set_state(state) sys_trace_set_state_ctf(state)
 
 #ifdef __cplusplus
 }
