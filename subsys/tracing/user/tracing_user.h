@@ -31,6 +31,7 @@ void sys_trace_isr_exit_user(void);
 void sys_trace_idle_user(void);
 void sys_trace_sys_init_enter_user(const struct init_entry *entry, int level);
 void sys_trace_sys_init_exit_user(const struct init_entry *entry, int level, int result);
+void sys_trace_set_state_user(bool state);
 
 void sys_trace_thread_create(struct k_thread *thread);
 void sys_trace_thread_abort(struct k_thread *thread);
@@ -59,6 +60,7 @@ void sys_trace_timer_expiry_enter(struct k_timer *timer);
 void sys_trace_timer_expiry_exit(struct k_timer *timer);
 void sys_trace_timer_stop_fn_expiry_enter(struct k_timer *timer);
 void sys_trace_timer_stop_fn_expiry_exit(struct k_timer *timer);
+void _sys_trace_set_state(bool state);
 
 struct rtio;
 struct rtio_sqe;
@@ -585,6 +587,8 @@ void sys_trace_rtio_chain_next_exit(const struct rtio *r, const struct rtio_iode
 
 #define sys_port_trace_rtio_chain_next_exit(rtio, iodev_sqe)                                       \
 	sys_trace_rtio_chain_next_exit(rtio, iodev_sqe)
+
+#define sys_trace_set_state(state) _sys_trace_set_state(state)
 
 #ifdef __cplusplus
 }
