@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Renesas Electronics Corporation
+# Copyright (c) 2024-2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 config MDIO_RENESAS_RA
@@ -9,3 +9,11 @@ config MDIO_RENESAS_RA
 	select USE_RA_FSP_ETHER_PHY
 	help
 	  Enable RENESAS MDIO support.
+
+config MDIO_RENESAS_RA_RMAC
+	bool "RENESAS MDIO RMAC controller driver"
+	default y
+	depends on DT_HAS_RENESAS_RA_MDIO_RMAC_ENABLED
+	select PINCTRL
+	help
+	  Enable RENESAS MDIO RMAC support.
