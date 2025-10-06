@@ -28,6 +28,8 @@
  */
 #define CTF_INTERNAL_FIELD_SIZE(x) + sizeof(x)
 
+bool ctf_trace_is_enabled(void);
+
 /*
  * Append a field to current event-packet.
  */
@@ -42,11 +44,13 @@
  */
 #define CTF_GATHER_FIELDS(...)                                                                     \
 	{                                                                                          \
-		uint8_t epacket[0 MAP(CTF_INTERNAL_FIELD_SIZE, ##__VA_ARGS__)];                    \
-		uint8_t *epacket_cursor = &epacket[0];                                             \
+		if (ctf_trace_is_enabled()) {                                                      \
+			uint8_t epacket[0 MAP(CTF_INTERNAL_FIELD_SIZE, ##__VA_ARGS__)];            \
+			uint8_t *epacket_cursor = &epacket[0];                                     \
                                                                                                    \
-		MAP(CTF_INTERNAL_FIELD_APPEND, ##__VA_ARGS__)                                      \
-		tracing_format_raw_data(epacket, sizeof(epacket));                                 \
+			MAP(CTF_INTERNAL_FIELD_APPEND, ##__VA_ARGS__)                              \
+			tracing_format_raw_data(epacket, sizeof(epacket));                         \
+		}                                                                                  \
 	}
 
 #ifdef CONFIG_TRACING_CTF_TIMESTAMP

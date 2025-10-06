@@ -88,6 +88,7 @@ void __weak sys_trace_timer_expiry_enter_user(struct k_timer *timer) {}
 void __weak sys_trace_timer_expiry_exit_user(struct k_timer *timer) {}
 void __weak sys_trace_timer_stop_fn_expiry_enter_user(struct k_timer *timer) {}
 void __weak sys_trace_timer_stop_fn_expiry_exit_user(struct k_timer *timer) {}
+void __weak sys_trace_set_state_user(bool state) {}
 
 void __weak sys_trace_rtio_submit_enter_user(const struct rtio *r, uint32_t wait_count)
 {
@@ -525,4 +526,9 @@ void sys_trace_timer_stop_fn_expiry_enter(struct k_timer *timer)
 void sys_trace_timer_stop_fn_expiry_exit(struct k_timer *timer)
 {
 	sys_trace_timer_stop_fn_expiry_exit_user(timer);
+}
+
+void _sys_trace_set_state(bool state)
+{
+	sys_trace_set_state_user(state);
 }
