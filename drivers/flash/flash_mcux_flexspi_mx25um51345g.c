@@ -162,7 +162,7 @@ static const uint32_t flash_flexspi_nor_lut[][4] = {
 
 	[ERASE_CHIP] = {
 		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DDR,		kFLEXSPI_8PAD, 0x60,
-				kFLEXSPI_Command_SDR,		kFLEXSPI_8PAD, 0x9F),
+				kFLEXSPI_Command_DDR,		kFLEXSPI_8PAD, 0x9F),
 	},
 
 	[READ] = {
