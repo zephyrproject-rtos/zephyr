@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Beechwoods Software, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_AIROC
+	bool "Infineon AIROC GPIO driver"
+	default y
+	depends on DT_HAS_INFINEON_AIROC_GPIO_ENABLED
+	depends on NETWORKING
+	depends on WIFI
+	depends on CYW43439
+	help
+	  Enable support for Infineon AIROC GPIO controllers.
