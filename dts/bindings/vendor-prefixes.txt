@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 The Linux Foundation
+# SPDX-License-Identifier: Apache-2.0
+#
 # Device tree binding vendor prefix registry. Keep this list in
 # alphabetical order.
 #
@@ -423,6 +426,7 @@ mapleboard	Mapleboard.org
 marvell	Marvell Technology Group Ltd.
 maxbotix	MaxBotix Inc.
 maxim	Maxim Integrated Products
+maxlinear	Maxlinear, Inc.
 mbvl	Mobiveil Inc.
 mcube	mCube
 meas	Measurement Specialties

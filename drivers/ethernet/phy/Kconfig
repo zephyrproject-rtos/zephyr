@@ -134,6 +134,16 @@ config PHY_QUALCOMM_AR8031
 	help
 	  Enable Qualcomm Atheros AR8031 Ethernet PHY Driver
 
+config PHY_MAXLINEAR_GPY111
+	bool "Maxlinear GPY111 PHY Driver"
+	default y
+	depends on DT_HAS_MAXLINEAR_GPY111_ENABLED
+	select MDIO
+	select GPIO if ($(dt_compat_any_has_prop,$(DT_COMPAT_MAXLINEAR_GPY111),reset-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_MAXLINEAR_GPY111),int-gpios))
+	help
+	  Enable Maxlinear GPY111 Ethernet PHY Driver
+
 config PHY_AUTONEG_TIMEOUT_MS
 	int "Auto-negotiation timeout value in milliseconds"
 	default 4000
