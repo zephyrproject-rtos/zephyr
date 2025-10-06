@@ -19,6 +19,7 @@
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(bmp581, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -405,11 +406,16 @@ static int bmp581_sample_fetch(const struct device *dev, enum sensor_channel cha
 
 	ret = bmp581_reg_read_rtio(&conf->bus, BMP5_REG_TEMP_DATA_XLSB, data, 6);
 	if (ret == BMP5_OK) {
-		/* convert raw sensor data to sensor_value. Shift the decimal part by 1 decimal
-		 * place to compensate for the conversion in sensor_value_to_double()
+		/* convert raw sensor data to sensor_value.
+		 * BMP581 temperature data is 24-bit signed with LSB = 1/65536 °C
 		 */
-		drv->last_sample.temperature.val1 = data[2];
-		drv->last_sample.temperature.val2 = (data[1] << 8 | data[0]) * 10;
+		uint32_t raw_temp = ((uint32_t)data[2] << 16) | ((uint16_t)data[1] << 8) | data[0];
+		int32_t raw_temp_signed = sign_extend(raw_temp, 23);
+
+		/* Convert raw temperature: LSB = 1/65536 °C, val2 in millionths */
+		drv->last_sample.temperature.val1 = raw_temp_signed / 65536;
+		drv->last_sample.temperature.val2 =
+			((int64_t)(raw_temp_signed % 65536) * 1000000) / 65536;
 
 		if (drv->osr_odr_press_config.press_en == BMP5_ENABLE) {
 			/* convert raw sensor data to sensor_value. Shift the decimal part by
@@ -417,7 +423,8 @@ static int bmp581_sample_fetch(const struct device *dev, enum sensor_channel cha
 			 * sensor_value_to_double()
 			 */
 			uint32_t raw_pressure = (uint32_t)((uint32_t)(data[5] << 16) |
-							   (uint16_t)(data[4] << 8) | data[3]) >> 6;
+							   (uint16_t)(data[4] << 8) | data[3]) >>
+						6;
 			drv->last_sample.pressure.val1 = raw_pressure / 1000;
 			drv->last_sample.pressure.val2 = (raw_pressure % 1000) * 1000;
 		} else {
@@ -603,8 +610,8 @@ static int bmp581_init(const struct device *dev)
 
 #ifdef CONFIG_SENSOR_ASYNC_API
 
-static void bmp581_complete_result(struct rtio *ctx, const struct rtio_sqe *sqe,
-				   int result, void *arg)
+static void bmp581_complete_result(struct rtio *ctx, const struct rtio_sqe *sqe, int result,
+				   void *arg)
 {
 	ARG_UNUSED(result);
 
@@ -655,9 +662,8 @@ static void bmp581_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 
 	struct rtio_sqe *read_sqe;
 
-	err = bmp581_prep_reg_read_rtio_async(&conf->bus, BMP5_REG_TEMP_DATA_XLSB,
-					      edata->payload, sizeof(edata->payload),
-					      &read_sqe);
+	err = bmp581_prep_reg_read_rtio_async(&conf->bus, BMP5_REG_TEMP_DATA_XLSB, edata->payload,
+					      sizeof(edata->payload), &read_sqe);
 	if (err < 0) {
 		LOG_ERR("Failed to prepare async read operation");
 		rtio_iodev_sqe_err(iodev_sqe, err);
@@ -674,10 +680,7 @@ static void bmp581_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 		return;
 	}
 
-	rtio_sqe_prep_callback_no_cqe(complete_sqe,
-				      bmp581_complete_result,
-				      iodev_sqe,
-				      (void *)dev);
+	rtio_sqe_prep_callback_no_cqe(complete_sqe, bmp581_complete_result, iodev_sqe, (void *)dev);
 
 	rtio_submit(conf->bus.rtio.ctx, 0);
 }
@@ -713,34 +716,37 @@ static DEVICE_API(sensor, bmp581_driver_api) = {
 	BUILD_ASSERT(COND_CODE_1(DT_INST_NODE_HAS_PROP(i, fifo_watermark),                         \
 				 (DT_INST_PROP(i, fifo_watermark) > 0 &&                           \
 				  DT_INST_PROP(i, fifo_watermark) < 16),                           \
-				 (true)),                                                          \
-		     "fifo-watermark must be between 1 and 15. Please set it in "                  \
-		     "the device-tree node properties");                                           \
+				 (true)),     \
+			      "fifo-watermark must be between 1 and 15. Please set it in "         \
+			      "the device-tree node properties");                                  \
                                                                                                    \
 	RTIO_DEFINE(bmp581_rtio_ctx_##i, 16, 16);                                                  \
 	I2C_DT_IODEV_DEFINE(bmp581_bus_##i, DT_DRV_INST(i));                                       \
                                                                                                    \
 	static struct bmp581_data bmp581_data_##i = {                                              \
-		.osr_odr_press_config = {                                                          \
-			.press_en = 1,                                                             \
-			.odr = DT_INST_PROP(i, odr),                                               \
-			.osr_t = DT_INST_PROP(i, temp_osr),                                        \
-			.osr_p = DT_INST_PROP(i, press_osr),                                       \
-			.iir_t = DT_INST_PROP(i, temp_iir),                                        \
-			.iir_p = DT_INST_PROP(i, press_iir),                                       \
-			.power_mode = DT_INST_PROP(i, power_mode),                                 \
-		},                                                                                 \
-		.stream = {                                                                        \
-			.fifo_thres = DT_INST_PROP_OR(i, fifo_watermark, 0),                       \
-		},                                                                                 \
+		.osr_odr_press_config =                                                            \
+			{                                                                          \
+				.press_en = 1,                                                     \
+				.odr = DT_INST_PROP(i, odr),                                       \
+				.osr_t = DT_INST_PROP(i, temp_osr),                                \
+				.osr_p = DT_INST_PROP(i, press_osr),                               \
+				.iir_t = DT_INST_PROP(i, temp_iir),                                \
+				.iir_p = DT_INST_PROP(i, press_iir),                               \
+				.power_mode = DT_INST_PROP(i, power_mode),                         \
+			},                                                                         \
+		.stream =                                                                          \
+			{                                                                          \
+				.fifo_thres = DT_INST_PROP_OR(i, fifo_watermark, 0),               \
+			},                                                                         \
 	};                                                                                         \
                                                                                                    \
 	static const struct bmp581_config bmp581_config_##i = {                                    \
-		.bus.rtio = {                                                                      \
-			.ctx = &bmp581_rtio_ctx_##i,                                               \
-			.iodev = &bmp581_bus_##i,                                                  \
-			.type = BMP581_BUS_TYPE_I2C,                                               \
-		},                                                                                 \
+		.bus.rtio =                                                                        \
+			{                                                                          \
+				.ctx = &bmp581_rtio_ctx_##i,                                       \
+				.iodev = &bmp581_bus_##i,                                          \
+				.type = BMP581_BUS_TYPE_I2C,                                       \
+			},                                                                         \
 		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(i, int_gpios, {0}),                           \
 	};                                                                                         \
                                                                                                    \
