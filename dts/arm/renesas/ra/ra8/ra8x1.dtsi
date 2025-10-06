@@ -929,6 +929,20 @@
 			};
 		};
 
+		lvd1: lvd1@4001e0e0 {
+			compatible = "renesas,ra-lvd";
+			reg = <0x4001e0e0 0x2>;
+			channel = <1>;
+			status = "disabled";
+		};
+
+		lvd2: lvd@4001e0e2 {
+			compatible = "renesas,ra-lvd";
+			reg = <0x4001e0e2 0x02>;
+			channel = <2>;
+			status = "disabled";
+		};
+
 		i2s0: ssie@4025d000 {
 			compatible = "renesas,ra-i2s-ssie";
 			#address-cells = <1>;
