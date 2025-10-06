@@ -29,12 +29,17 @@ config SOC_EARLY_RESET_HOOK
 	  Additional constraints may be imposed on the hook by the architecture.
 
 config SOC_RESET_HOOK
-	bool "Run early SoC reset hook"
+	bool "Run SoC-specific reset hook"
 	help
-	  Run an early SoC reset hook.
+	  Run a SoC-specific hook in the reset/startup code (__start).
 
-	  A custom hook soc_reset_hook() is executed at the beginning of the
-	  startup code (__start). soc_reset_hook() must be implemented by the SoC.
+	  A custom hook soc_reset_hook() will be executed near the beginning
+	  of the architecture-specific startup code, after hardware has been
+	  configured (as required by CONFIG_INIT_ARCH_HW_AT_BOOT), a stack
+	  pointer has been loaded and the architecture's own resume logic
+	  has executed (if CONFIG_PM_S2RAM is enabled). Because this hook
+	  runs after the resume logic, it is not called when the system
+	  resumes from a suspend-to-RAM power state.
 
 config SOC_PREP_HOOK
 	bool "Run early SoC preparation hook"
