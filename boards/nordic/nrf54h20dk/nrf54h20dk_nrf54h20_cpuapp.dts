@@ -42,6 +42,8 @@
 		sw3 = &button3;
 		ipc-to-cpusys = &cpuapp_cpusys_ipc;
 		watchdog0 = &wdt010;
+		mcuboot-button0 = &button0;
+		mcuboot-led0 = &led0;
 	};
 
 	buttons {
