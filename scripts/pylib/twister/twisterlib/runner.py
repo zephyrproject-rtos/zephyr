@@ -1285,6 +1285,8 @@ class ProjectBuilder(FilterBuilder):
 
 
     def cleanup_artifacts(self, additional_keep: list[str] = None):
+        if self.options.runtime_artifact_cleanup == 'none':
+            return
         if additional_keep is None:
             additional_keep = []
         logger.debug(f"Cleaning up {self.instance.build_dir}")

@@ -572,11 +572,12 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
                         help="Specify a file where to save logs.")
 
     parser.add_argument(
-        "-M", "--runtime-artifact-cleanup", choices=['pass', 'all'],
+        "-M", "--runtime-artifact-cleanup", choices=['pass', 'all', 'none'],
         default=None, const='pass', nargs='?',
         help="""Cleanup test artifacts. The default behavior is 'pass'
         which only removes artifacts of passing tests. If you wish to
-        remove all artificats including those of failed tests, use 'all'.""")
+        remove all artificats including those of failed tests, use 'all'.
+        To remove no artifacts, use `none`.""")
 
     parser.add_argument(
         "--keep-artifacts", action="append", default=[],
