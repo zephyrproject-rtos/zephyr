@@ -345,6 +345,52 @@ static unsigned long global_pmp_last_addr;
 /* End of global PMP entry range */
 static unsigned int global_pmp_end_index;
 
+void riscv_pmp_clear_all(void)
+{
+	/*
+	 * Ensure we are in M-mode and that memory accesses use M-mode privileges
+	 * (MPRV=0). We also set MPP to M-mode to establish a predictable prior privilege level.
+	 */
+	csr_clear(mstatus, MSTATUS_MPRV);
+	csr_set(mstatus, MSTATUS_MPP);
+
+	unsigned long pmp_cfg[CONFIG_PMP_SLOTS / PMPCFG_STRIDE];
+
+#ifdef CONFIG_64BIT
+	pmp_cfg[0] = csr_read(pmpcfg0);
+#if CONFIG_PMP_SLOTS > 8
+	pmp_cfg[1] = csr_read(pmpcfg2);
+#endif
+#else
+	pmp_cfg[0] = csr_read(pmpcfg0);
+	pmp_cfg[1] = csr_read(pmpcfg1);
+#if CONFIG_PMP_SLOTS > 8
+	pmp_cfg[2] = csr_read(pmpcfg2);
+	pmp_cfg[3] = csr_read(pmpcfg3);
+#endif
+#endif
+
+	uint8_t *pmp_n_cfg = (uint8_t *)pmp_cfg;
+
+	for (int index = 0; index < CONFIG_PMP_SLOTS; ++index) {
+			pmp_n_cfg[index] = 0x0;
+	}
+
+#ifdef CONFIG_64BIT
+	csr_write(pmpcfg0, pmp_cfg[0]);
+#if CONFIG_PMP_SLOTS > 8
+	csr_write(pmpcfg2, pmp_cfg[1]);
+#endif
+#else
+	csr_write(pmpcfg0, pmp_cfg[0]);
+	csr_write(pmpcfg1, pmp_cfg[1]);
+#if CONFIG_PMP_SLOTS > 8
+	csr_write(pmpcfg2, pmp_cfg[2]);
+	csr_write(pmpcfg3, pmp_cfg[3]);
+#endif
+#endif
+}
+
 /**
  * @Brief Initialize the PMP with global entries on each CPU
  */
