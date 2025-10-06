@@ -278,6 +278,24 @@ static void l2cap_chan_del(struct bt_l2cap_chan *chan)
 	 * `l2cap_chan_destroy()` as it is not called for fixed channels.
 	 */
 	while ((buf = k_fifo_get(&le_chan->tx_queue, K_NO_WAIT))) {
+		bt_conn_tx_cb_t cb = closure_cb(buf->user_data);
+
+		if (cb == NULL) {
+			void *user_data = closure_data(buf->user_data);
+
+			/* During channel deletion, clean up any PDUs queued by
+			 * bt_l2cap_send_pdu(). The L2CAP channel tx_queue stores PDUs until
+			 * they are sent to the Controller. When bt_l2cap_send_pdu() succeeds,
+			 * the stack must eventually invoke the callback, even if transmission
+			 * fails before reaching the Controller.
+			 *
+			 * We use -ESHUTDOWN which is consistent with process_unack_tx(), which
+			 * handles PDUs that are already submitted to the controller but not yet
+			 * acknowledged.
+			 */
+			cb(chan->conn, user_data, -ESHUTDOWN);
+		}
+
 		net_buf_unref(buf);
 	}
 
