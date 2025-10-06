@@ -416,6 +416,7 @@ mapleboard	Mapleboard.org
 marvell	Marvell Technology Group Ltd.
 maxbotix	MaxBotix Inc.
 maxim	Maxim Integrated Products
+maxlinear	Maxlinear, Inc.
 mbvl	Mobiveil Inc.
 mcube	mCube
 meas	Measurement Specialties

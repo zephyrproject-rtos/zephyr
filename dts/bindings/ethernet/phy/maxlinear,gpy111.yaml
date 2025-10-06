@@ -1,0 +1,74 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Maxlinear GPY111 Ethernet PHY device
+
+compatible: "maxlinear,gpy111"
+
+include:
+  - name: ethernet-phy-common.yaml
+  - name: ethernet-phy-reset-gpios.yaml
+
+on-bus: mdio
+
+properties:
+  no-reset:
+    type: boolean
+    description: Do not reset the PHY during initialization
+
+  fixed-link:
+    type: string
+    description: This link is fixed and does not require PHY configuration
+    enum:
+      - "10BASE-T Half-Duplex"
+      - "10BASE-T Full-Duplex"
+      - "100BASE-T Half-Duplex"
+      - "100BASE-T Full-Duplex"
+      - "1000BASE-T Half-Duplex"
+      - "1000BASE-T Full-Duplex"
+
+  default-speeds:
+    default: ["10BASE Half-Duplex", "10BASE Full-Duplex", "100BASE Half-Duplex",
+              "100BASE Full-Duplex", "1000BASE Half-Duplex", "1000BASE Full-Duplex"]
+
+  maxlinear,interface-type:
+    type: string
+    required: true
+    description: Which type of phy connection the phy is set up for
+    enum:
+      - "rgmii"
+      - "gmii"
+
+  maxlinear,rx-internal-delay:
+    type: string
+    enum:
+      - "rx_skew_0n0"
+      - "rx_skew_0n5"
+      - "rx_skew_1n0"
+      - "rx_skew_1n5"
+      - "rx_skew_2n0"
+      - "rx_skew_2n5"
+      - "rx_skew_3n0"
+      - "rx_skew_3n5"
+    description: |
+      RGMII Receive PHY Clock Delay defined in nano seconds.
+      When undefined, use default reset values which depend on soft pin-strappings.
+
+  maxlinear,tx-internal-delay:
+    type: string
+    enum:
+      - "tx_skew_0n0"
+      - "tx_skew_0n5"
+      - "tx_skew_1n0"
+      - "tx_skew_1n5"
+      - "tx_skew_2n0"
+      - "tx_skew_2n5"
+      - "tx_skew_3n0"
+      - "tx_skew_3n5"
+    description: |
+      RGMII Transmit PHY Clock Delay defined in nano seconds.
+      When undefined, use default reset values which depend on soft pin-strappings.
+
+  int-gpios:
+    type: phandle-array
+    description: GPIO for interrupt signal indicating PHY state change.
