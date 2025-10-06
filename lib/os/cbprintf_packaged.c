@@ -17,12 +17,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(cbprintf_package, CONFIG_CBPRINTF_PACKAGE_LOG_LEVEL);
 
-#if defined(CONFIG_CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS) && \
-	!Z_C_GENERIC
-#error "CONFIG_CBPRINTF_PACKAGE_SUPPORT_TAGGED_ARGUMENTS " \
-	"requires toolchain to support _Generic!"
-#endif
-
 /**
  * @brief Check if address is in read only section.
  *
