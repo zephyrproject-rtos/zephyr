@@ -1703,6 +1703,7 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 	struct net_linkaddr *cached_lladdr;
 	struct net_pkt *pending;
 	struct net_nbr *nbr;
+	bool point_to_point = net_if_flag_is_set(net_pkt_iface(pkt), NET_IF_POINTOPOINT);
 
 	net_ipv6_nbr_lock();
 
@@ -1733,7 +1734,10 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 	if (nbr->idx == NET_NBR_LLADDR_UNKNOWN) {
 		struct net_linkaddr nbr_lladdr;
 
-		if (!tllao_offset) {
+		/* RFC 7066, ch 2.2:
+		 * for point-to-point interfaces the target link layer address is not required.
+		 */
+		if (!tllao_offset && !point_to_point) {
 			NET_DBG("No target link layer address.");
 			goto err;
 		}
@@ -1765,7 +1769,7 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 
 	/* Update the cached address if we do not yet known it */
 	if (net_ipv6_nbr_data(nbr)->state == NET_IPV6_NBR_STATE_INCOMPLETE) {
-		if (!tllao_offset) {
+		if (!tllao_offset && !point_to_point) {
 			goto err;
 		}
 
