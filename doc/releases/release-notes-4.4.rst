@@ -83,6 +83,12 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w)
 
+* Architectures
+
+  * Xtensa
+
+    * :kconfig:option:`CONFIG_XTENSA_MMU_USE_DEFAULT_MAPPINGS`
+
 * Audio
 
   * :c:macro:`PDM_DT_IO_CFG_GET`
