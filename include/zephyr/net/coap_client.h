@@ -69,6 +69,37 @@ typedef void (*coap_client_response_cb_t)(const struct coap_client_response_data
 					  void *user_data);
 
 /**
+ * @typedef coap_client_payload_cb_t
+ * @brief Callback for providing a payload for the CoAP request.
+ *
+ * An optional callback for providing a payload for CoAP client requests. If set in
+ * @ref coap_client_request, the CoAP client library will call this callback when
+ * preparing a PUT/POST request (note that this is also true for retransmissions).
+ *
+ * When called, the library provides the application with the current payload offset
+ * for the transfer and the payload block size. In return, the application sets the
+ * payload pointer, payload size and information whether more data blocks are expected.
+ * Setting the @p last_block parameter to false on the initial callback call triggers
+ * a block transfer upload. The library will keep calling the callback until the
+ * @p last_block parameter is set to false.
+ *
+ * @note If block transfer is used, the application is expected to provide full blocks of
+ * payload. Only the final block (i.e. when @p last_block is set to true) can be shorter
+ * than the requested block size.
+ *
+ * @param offset Payload offset from the beginning of a blockwise transfer.
+ * @param payload A pointer for the buffer containing the payload block.
+ * @param len Requested (maximum) block size on input. The actual payload length on output.
+ * @param last_block A pointer to the flag indicating whether more payload blocks are expected.
+ * @param user_data User provided context.
+ *
+ * @return Zero on success, a negative error code to abort upload.
+ */
+typedef int (*coap_client_payload_cb_t)(size_t offset, const uint8_t **payload,
+					size_t *len, bool *last_block,
+					void *user_data);
+
+/**
  * @brief Representation of a CoAP client request.
  */
 struct coap_client_request {
@@ -78,6 +109,7 @@ struct coap_client_request {
 	enum coap_content_format fmt;             /**< Content format to be used */
 	const uint8_t *payload;                   /**< User allocated buffer for send request */
 	size_t len;                               /**< Length of the payload */
+	coap_client_payload_cb_t payload_cb;      /**< Optional payload callback */
 	coap_client_response_cb_t cb;             /**< Callback when response received */
 	const struct coap_client_option *options; /**< Extra options to be added to request */
 	uint8_t num_options;                      /**< Number of extra options */
