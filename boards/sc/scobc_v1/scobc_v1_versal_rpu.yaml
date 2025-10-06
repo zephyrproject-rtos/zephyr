@@ -1,0 +1,8 @@
+identifier: scobc_v1
+name: SC-OC Module V1 Versal AI Edge RPU
+arch: arm
+toolchain:
+  - zephyr
+vendor: sc
+supported:
+  - uart
