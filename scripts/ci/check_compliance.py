@@ -503,6 +503,9 @@ class KconfigCheck(ComplianceTest):
     # Kconfig symbol prefix/namespace.
     CONFIG_ = "CONFIG_"
 
+    # If modules should be excluded from checks.
+    EXCLUDE_MODULES = False
+
     def run(self):
         kconf = self.parse_kconfig()
 
@@ -1020,8 +1023,8 @@ Options must not be defined in defconfig files.
         # Checks that boolean's prompt does not start with "Enable...".
 
         for node in kconf.node_iter():
-            # skip Kconfig nodes not in-tree (will present an absolute path)
-            if os.path.isabs(node.filename):
+            # skip Kconfig nodes not in-tree when set to (will present an absolute path)
+            if os.path.isabs(node.filename) and self.EXCLUDE_MODULES is True:
                 continue
 
             # 'kconfiglib' is global
@@ -1376,6 +1379,7 @@ class KconfigBasicNoModulesCheck(KconfigBasicCheck):
     name = "KconfigBasicNoModules"
     path_hint = "<zephyr-base>"
     EMPTY_FILE_CONTENTS = "# Empty\n"
+    EXCLUDE_MODULES = True
 
     def get_modules(self, module_dirs_file, modules_file, sysbuild_modules_file, settings_file):
         with open(module_dirs_file, 'w') as fp_module_file:
@@ -1442,6 +1446,7 @@ class SysbuildKconfigBasicNoModulesCheck(SysbuildKconfigCheck, KconfigBasicNoMod
     """
     name = "SysbuildKconfigBasicNoModules"
     path_hint = "<zephyr-base>"
+    EXCLUDE_MODULES = True
 
 
 class Nits(ComplianceTest):
