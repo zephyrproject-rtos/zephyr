@@ -2893,6 +2893,19 @@ Input:
     - drivers.input
     - input
 
+Instrumentation Subsystem:
+  status: maintained
+  maintainers:
+    - fkokosinski
+    - tgorochowik
+  files:
+    - include/zephyr/instrumentation/
+    - samples/subsys/instrumentation/
+    - scripts/instrumentation/
+    - subsys/instrumentation/
+  labels:
+    - "area: Instrumentation"
+
 Intel Platforms (Agilex):
   status: maintained
   maintainers:
