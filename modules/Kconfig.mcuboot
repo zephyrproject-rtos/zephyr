@@ -431,10 +431,11 @@ config MCUBOOT_BOOTUTIL_LIB_FOR_DIRECT_XIP
 endif
 
 DT_CHOSEN_ZEPHYR_FLASH := zephyr,flash
+DT_CHOSEN_ZEPHYR_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_ZEPHYR_FLASH))
 
 config MCUBOOT_BOOT_MAX_ALIGN
 	int "Override programmable flash block alignment"
-	default $(dt_node_int_prop_int,$(DT_CHOSEN_ZEPHYR_FLASH),write-block-size)
+	default $(dt_node_int_prop_int,$(DT_CHOSEN_ZEPHYR_FLASH_NODE),write-block-size)
 	help
 	  Allow to override the programmable flash block alignment size.
 	  By default it's set to the maximum of the write block size of
