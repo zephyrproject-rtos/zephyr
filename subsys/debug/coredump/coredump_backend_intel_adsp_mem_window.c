@@ -20,12 +20,27 @@ LOG_MODULE_REGISTER(coredump, CONFIG_DEBUG_COREDUMP_LOG_LEVEL);
 static int error;
 static uint32_t mem_wptr;
 
+#ifdef CONFIG_INTEL_ADSP_DEBUG_SLOT_MANAGER
+static void *coredump_slot_addr;
+#endif
+
 static void coredump_mem_window_backend_start(void)
 {
 	/* Reset error & mem write ptr */
 	error = 0;
 	mem_wptr = 0;
+#ifdef CONFIG_INTEL_ADSP_DEBUG_SLOT_MANAGER
+	struct adsp_dw_desc slot_desc = { .type = ADSP_DW_SLOT_TELEMETRY, };
+
+	/* Forcibly take debug slot 1 */
+	coredump_slot_addr = adsp_dw_seize_slot(1, &slot_desc, NULL);
+	if (!coredump_slot_addr) {
+		/* Try to get the first slot if slot 1 is not available as fallback */
+		coredump_slot_addr = adsp_dw_seize_slot(0, &slot_desc, NULL);
+	}
+#else
 	ADSP_DW->descs[1].type = ADSP_DW_SLOT_TELEMETRY;
+#endif
 
 	while (LOG_PROCESS()) {
 		;
@@ -46,10 +61,20 @@ static void coredump_mem_window_backend_end(void)
 
 static void coredump_mem_window_backend_buffer_output(uint8_t *buf, size_t buflen)
 {
-	uint32_t *mem_window_separator = (uint32_t *)(ADSP_DW->slots[1]);
-	uint8_t *mem_window_sink = (uint8_t *)(ADSP_DW->slots[1]) + 4 + mem_wptr;
 	uint8_t *coredump_data = buf;
 	size_t data_left;
+#ifdef CONFIG_INTEL_ADSP_DEBUG_SLOT_MANAGER
+	uint32_t *mem_window_separator = (uint32_t *)coredump_slot_addr;
+	uint8_t *mem_window_sink = (uint8_t *)coredump_slot_addr + 4 + mem_wptr;
+
+	if (!coredump_slot_addr) {
+		return;
+	}
+#else
+	uint32_t *mem_window_separator = (uint32_t *)(ADSP_DW->slots[1]);
+	uint8_t *mem_window_sink = (uint8_t *)(ADSP_DW->slots[1]) + 4 + mem_wptr;
+#endif
+
 	/* Default place for telemetry dump is in memory window. Each data is easily find using
 	 * separator. For telemetry that separator is 0x0DEC0DEB.
 	 */

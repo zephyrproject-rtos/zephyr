@@ -77,6 +77,15 @@ config MEMORY_WIN_3_SIZE
 
 	  This window is used for trace.
 
+config INTEL_ADSP_DEBUG_SLOT_MANAGER
+	bool "Debug slot manager"
+	help
+	  If selected the debug slot allocation can be only done via
+	  the manager API, direct debug window access and tampering is
+	  forbidden.
+	  The API use allows dynamic slot allocation instead of static
+	  and error prone slot usage.
+
 config ADSP_CLOCK
 	bool
 	help
