@@ -301,6 +301,8 @@
 		prescaler = <1>;
 		resolution = <32>;
 		status = "disabled";
+		wakeup-source;
+		wakeup-signal = <0>;
 	};
 
 	lptmr1: timer@2e000 {

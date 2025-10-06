@@ -122,6 +122,10 @@ static int sys_clock_driver_init(void)
 	LPTMR_SetTimerPeriod(LPTMR_BASE, CYCLES_PER_TICK);
 	LPTMR_StartTimer(LPTMR_BASE);
 
+#if (DT_INST_PROP(0, wakeup_source))
+	/* Use wakeup-signal property if specified, else use the irq number */
+	NXP_ENABLE_WAKEUP_SIGNAL(DT_INST_PROP_OR(0, wakeup_signal, DT_INST_IRQN(0)));
+#endif
 	return 0;
 }
 
