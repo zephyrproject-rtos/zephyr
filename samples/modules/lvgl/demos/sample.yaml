@@ -79,7 +79,9 @@ tests:
     tags:
       - shield
   sample.modules.lvgl.demos.rtklcdpar1s00001be:
-    platform_allow: ek_ra8p1/r7ka8p1kflcac/cm85
+    platform_allow:
+      - ek_ra8p1/r7ka8p1kflcac/cm85
+      - ek_ra8d2/r7ka8d2kflcac/cm85
     harness: console
     harness_config:
       fixture: fixture_display
