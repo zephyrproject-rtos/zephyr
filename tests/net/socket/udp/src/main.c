@@ -2492,7 +2492,7 @@ static void check_ipv6_address_preferences(struct net_if *iface,
 					   const struct in6_addr *dest)
 {
 	const struct in6_addr *selected;
-	size_t optlen;
+	socklen_t optlen;
 	int optval;
 	int sock;
 	int ret;
@@ -2573,8 +2573,8 @@ ZTEST(net_socket_udp, test_38_ipv6_multicast_ifindex)
 	struct net_if_mcast_addr *ifmaddr;
 	struct net_if_addr *ifaddr;
 	int server_sock;
-	size_t addrlen;
-	size_t optlen;
+	socklen_t addrlen;
+	socklen_t optlen;
 	int ifindex;
 	int optval;
 	int sock;
@@ -2718,8 +2718,8 @@ ZTEST(net_socket_udp, test_39_ipv4_multicast_ifindex)
 	struct ip_mreq mreq;
 	struct net_if *iface;
 	int server_sock;
-	size_t addrlen;
-	size_t optlen;
+	socklen_t addrlen;
+	socklen_t optlen;
 	int ifindex;
 	int sock;
 	int ret;
@@ -2964,8 +2964,8 @@ static void check_port_range(struct sockaddr *my_addr,
 {
 	sa_family_t family = AF_UNSPEC;
 	uint32_t optval;
-	size_t addr_len;
-	size_t optlen;
+	socklen_t addr_len;
+	socklen_t optlen;
 	int sock;
 	int ret, err;
 
