@@ -1,0 +1,16 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi0 {
+	status = "okay";
+	dut_spi_dt: test-spi-dev@0 {
+		compatible = "vnd,spi-device";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+	};
+};
+
+dut_spis: &spi1 {
+	status = "okay";
+};

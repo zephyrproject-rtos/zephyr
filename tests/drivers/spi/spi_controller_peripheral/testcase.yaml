@@ -17,6 +17,7 @@ common:
     - nrf54lm20dk/nrf54lm20a/cpuapp
     - nrf54lm20dk/nrf54lm20b/cpuapp
     - nrf7120dk/nrf7120/cpuapp
+    - lp_em_cc35x1
     - ophelia4ev/nrf54l15/cpuapp
 
 tests:
@@ -92,6 +93,7 @@ tests:
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - nrf54lm20dk/nrf54lm20b/cpuapp
       - nrf7120dk/nrf7120/cpuapp
+      - lp_em_cc35x1
       - ophelia4ev/nrf54l15/cpuapp
 
   drivers.spi.spis_fast:
@@ -109,6 +111,7 @@ tests:
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - nrf54lm20dk/nrf54lm20b/cpuapp
       - nrf7120dk/nrf7120/cpuapp
+      - lp_em_cc35x1
       - ophelia4ev/nrf54l15/cpuapp
 
   drivers.spi.pm_runtime:
