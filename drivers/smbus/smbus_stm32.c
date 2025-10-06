@@ -447,6 +447,66 @@ static int smbus_stm32_block_read(const struct device *dev, uint16_t periph_addr
 	return 0;
 }
 
+int smbus_stm32_block_pcall(const struct device *dev, uint16_t addr, uint8_t cmd,
+			    uint8_t send_count, uint8_t *send_buf, uint8_t *recv_count,
+			    uint8_t *recv_buf)
+{
+	const struct smbus_stm32_config *config = dev->config;
+
+	uint8_t received_pec;
+
+	struct i2c_msg messages[] = {
+		{
+			.buf = &cmd,
+			.len = sizeof(cmd),
+			.flags = I2C_MSG_WRITE,
+		},
+		{
+			.buf = &send_count,
+			.len = sizeof(send_count),
+			.flags = I2C_MSG_WRITE,
+		},
+		{
+			.buf = send_buf,
+			.len = send_count,
+			.flags = I2C_MSG_WRITE,
+		},
+		{
+			.buf = NULL, /* will point to next message's len field */
+			.len = 1,
+			.flags = I2C_MSG_READ | I2C_MSG_RESTART,
+		},
+		{
+			.buf = recv_buf,
+			.len = 0, /* written by previous message! */
+			.flags = I2C_MSG_READ,
+		},
+		{
+			.buf = &received_pec,
+			.len = 1,
+			.flags = I2C_MSG_READ,
+		},
+	};
+
+	/* Count is read in msg 3 and stored in the len of msg 4.
+	 * This works because the STM I2C driver processes each message serially.
+	 * The addressing math assumes little-endian.
+	 */
+	messages[3].buf = (uint8_t *)&messages[4].len;
+
+	uint8_t num_msgs = prepare_read_pec(dev, messages, ARRAY_SIZE(messages));
+
+	int res = i2c_transfer(config->i2c_dev, messages, num_msgs, addr);
+
+	*recv_count = messages[4].len;
+
+	if (res != 0) {
+		return res;
+	}
+
+	return check_read_pec(dev, addr, messages, ARRAY_SIZE(messages));
+}
+
 static DEVICE_API(smbus, smbus_stm32_api) = {
 	.configure = smbus_stm32_configure,
 	.get_config = smbus_stm32_get_config,
@@ -467,7 +527,7 @@ static DEVICE_API(smbus, smbus_stm32_api) = {
 	.smbus_smbalert_set_cb = NULL,
 	.smbus_smbalert_remove_cb = NULL,
 #endif /* CONFIG_SMBUS_STM32_SMBALERT */
-	.smbus_block_pcall = NULL,
+	.smbus_block_pcall = smbus_stm32_block_pcall,
 	.smbus_host_notify_set_cb = NULL,
 	.smbus_host_notify_remove_cb = NULL,
 };
