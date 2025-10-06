@@ -231,14 +231,15 @@ static sys_slist_t xtensa_domain_list;
 static void dup_l2_table_if_needed(uint32_t *l1_table, uint32_t l1_pos);
 #endif /* CONFIG_USERSPACE */
 
+#ifdef CONFIG_XTENSA_MMU_USE_DEFAULT_MAPPINGS
 extern char _heap_end[];
 extern char _heap_start[];
+
 /*
  * Static definition of all code & data memory regions of the
  * current Zephyr image. This information must be available &
  * processed upon MMU initialization.
  */
-
 static const struct xtensa_mmu_range mmu_zephyr_ranges[] = {
 	/*
 	 * Mark the zephyr execution regions (data, bss, noinit, etc.)
@@ -283,6 +284,7 @@ static const struct xtensa_mmu_range mmu_zephyr_ranges[] = {
 		.name = "rodata",
 	},
 };
+#endif /* CONFIG_XTENSA_MMU_USE_DEFAULT_MAPPINGS */
 
 static inline uint32_t restore_pte(uint32_t pte);
 static ALWAYS_INLINE void l2_page_tables_counter_inc(uint32_t *l2_table);
@@ -439,11 +441,13 @@ static void xtensa_init_page_tables(void)
 	init_page_table(xtensa_kernel_ptables, L1_PAGE_TABLE_NUM_ENTRIES, PTE_L1_ILLEGAL);
 	atomic_set_bit(l1_page_tables_track, 0);
 
+#ifdef CONFIG_XTENSA_MMU_USE_DEFAULT_MAPPINGS
 	for (entry = 0; entry < ARRAY_SIZE(mmu_zephyr_ranges); entry++) {
 		const struct xtensa_mmu_range *range = &mmu_zephyr_ranges[entry];
 
 		map_memory(range->start, range->end, range->attrs, OPTION_SAVE_ATTRS);
 	}
+#endif /* CONFIG_XTENSA_MMU_USE_DEFAULT_MAPPINGS */
 
 	for (entry = 0; entry < xtensa_soc_mmu_ranges_num; entry++) {
 		const struct xtensa_mmu_range *range = &xtensa_soc_mmu_ranges[entry];
