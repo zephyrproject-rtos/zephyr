@@ -33,8 +33,7 @@ config WS2812_STRIP_UART
 	default y
 	depends on DT_HAS_WORLDSEMI_WS2812_UART_ENABLED
 	select SERIAL if $(dt_compat_on_bus,$(DT_COMPAT_WORLDSEMI_WS2812_UART),uart)
-	select UART_ASYNC_API
-	select SERIAL_SUPPORT_ASYNC
+	imply UART_ASYNC_API
 	help
 	  Enable driver for WS2812 (and compatible) LED strips using UART.
 	  This method requires a high-speed UART and carefully crafted
