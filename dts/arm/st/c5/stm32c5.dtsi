@@ -567,6 +567,18 @@
 			status = "disabled";
 		};
 	};
+
+	die_temp: dietemp {
+		compatible = "st,stm32-temp-cal";
+		nvmem-cells = <&ts_cal1_otp>, <&ts_cal2_otp>;
+		nvmem-cell-names = "TS_CAL1", "TS_CAL2";
+		ts-cal1-temp = <30>;
+		ts-cal2-temp = <140>;
+		ts-cal-vrefanalog = <3300>;
+		ts-cal-resolution = <12>;
+		io-channels = <&adc1 12>;
+		status = "disabled";
+	};
 };
 
 &nvic {
