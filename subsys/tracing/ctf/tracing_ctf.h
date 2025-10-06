@@ -558,17 +558,17 @@ void sys_trace_socket_connect_exit(int sock, int ret);
 void sys_trace_socket_listen_enter(int sock, int backlog);
 void sys_trace_socket_listen_exit(int sock, int ret);
 void sys_trace_socket_accept_enter(int sock);
-void sys_trace_socket_accept_exit(int sock, const struct sockaddr *addr, const size_t *addrlen,
+void sys_trace_socket_accept_exit(int sock, const struct sockaddr *addr, const uint32_t *addrlen,
 				  int ret);
 void sys_trace_socket_sendto_enter(int sock, int len, int flags, const struct sockaddr *dest_addr,
-				   size_t addrlen);
+				   uint32_t addrlen);
 void sys_trace_socket_sendto_exit(int sock, int ret);
 void sys_trace_socket_sendmsg_enter(int sock, const struct msghdr *msg, int flags);
 void sys_trace_socket_sendmsg_exit(int sock, int ret);
 void sys_trace_socket_recvfrom_enter(int sock, int max_len, int flags, struct sockaddr *addr,
-				     size_t *addrlen);
+				     uint32_t *addrlen);
 void sys_trace_socket_recvfrom_exit(int sock, const struct sockaddr *src_addr,
-				    const size_t *addrlen, int ret);
+				    const uint32_t *addrlen, int ret);
 void sys_trace_socket_recvmsg_enter(int sock, const struct msghdr *msg, int flags);
 void sys_trace_socket_recvmsg_exit(int sock, const struct msghdr *msg, int ret);
 void sys_trace_socket_fcntl_enter(int sock, int cmd, int flags);
@@ -584,11 +584,11 @@ void sys_trace_socket_setsockopt_enter(int sock, int level, int optname, const v
 				       size_t optlen);
 void sys_trace_socket_setsockopt_exit(int sock, int ret);
 void sys_trace_socket_getpeername_enter(int sock);
-void sys_trace_socket_getpeername_exit(int sock,  struct sockaddr *addr, const size_t *addrlen,
+void sys_trace_socket_getpeername_exit(int sock, struct sockaddr *addr, const uint32_t *addrlen,
 				       int ret);
 void sys_trace_socket_getsockname_enter(int sock);
-void sys_trace_socket_getsockname_exit(int sock, const struct sockaddr *addr, const size_t *addrlen,
-				       int ret);
+void sys_trace_socket_getsockname_exit(int sock, const struct sockaddr *addr,
+				       const uint32_t *addrlen, int ret);
 void sys_trace_socket_socketpair_enter(int family, int type, int proto, int *sv);
 void sys_trace_socket_socketpair_exit(int sock_A, int sock_B, int ret);
 
