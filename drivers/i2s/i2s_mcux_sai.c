@@ -614,11 +614,7 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 
 		config.fifo.fifoWatermark = (uint32_t)FSL_FEATURE_SAI_FIFO_COUNTn(base) - 1;
 #if defined(FSL_FEATURE_SAI_HAS_FIFO_COMBINE_MODE) && FSL_FEATURE_SAI_HAS_FIFO_COMBINE_MODE
-		/*
-		 * TX FIFO combine on write. The value below has correct value and wrong name
-		 * because RX and TX definitions are different but MCUX uses the same for both.
-		 */
-		config.fifo.fifoCombine = kSAI_FifoCombineModeEnabledOnRead;
+		config.fifo.fifoCombine = kSAI_FifoCombineModeEnabledOnWrite;
 #endif
 		/* set bit clock divider */
 		SAI_TxSetConfig(base, &config);
@@ -639,7 +635,7 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 		/* For RX, DMA reads from FIFO whenever data present */
 		config.fifo.fifoWatermark = 0;
 #if defined(FSL_FEATURE_SAI_HAS_FIFO_COMBINE_MODE) && FSL_FEATURE_SAI_HAS_FIFO_COMBINE_MODE
-		config.fifo.fifoCombine = kSAI_FifoCombineModeEnabledOnRead;
+		config.fifo.fifoCombine = kSAI_RXFifoCombineModeEnabledOnRead;
 #endif
 
 		memcpy(&dev_data->rx.cfg, i2s_cfg, sizeof(struct i2s_config));
