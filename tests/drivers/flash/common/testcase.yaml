@@ -59,9 +59,13 @@ tests:
       - nrf54l15dk/nrf54l05/cpuapp
       - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
-      - nrf54h20dk/nrf54h20/cpuapp
     harness_config:
       fixture: external_flash
+  drivers.flash.common.no_explicit_erase.nrf54h:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    harness_config:
+      fixture: gpio_loopback
   drivers.flash.common.nrf54lm20a:
     platform_allow:
       - nrf54lm20dk/nrf54lm20a/cpuapp
@@ -193,3 +197,5 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE=boards/mx25uw63_low_freq.overlay
+    harness_config:
+      fixture: gpio_loopback
