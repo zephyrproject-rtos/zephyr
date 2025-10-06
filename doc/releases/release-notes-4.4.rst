@@ -78,6 +78,12 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w)
 
+* Architectures
+
+  * Xtensa
+
+    * :kconfig:option:`CONFIG_XTENSA_MMU_USE_DEFAULT_MAPPINGS`
+
 * Bluetooth
 
   * Host
