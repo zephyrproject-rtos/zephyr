@@ -9,3 +9,12 @@ config COMPARATOR_RENESAS_RA
 	select PINCTRL
 	help
 	  Enable Renesas RA ACMPHS Driver.
+
+config COMPARATOR_RENESAS_RA_LVD
+	bool "Renesas RA LVD"
+	default y
+	depends on DT_HAS_RENESAS_RA_LVD_ENABLED
+	select USE_RA_FSP_LVD
+	select RUNTIME_NMI
+	help
+	  Enable Renesas RA LVD Driver.
