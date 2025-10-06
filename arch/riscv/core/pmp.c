@@ -413,6 +413,19 @@ static unsigned long global_pmp_last_addr;
 /* End of global PMP entry range */
 static unsigned int global_pmp_end_index;
 
+void z_riscv_pmp_clear_all(void)
+{
+	/*
+	 * Ensure we are in M-mode and that memory accesses use M-mode privileges
+	 * (MPRV=0). We also set MPP to M-mode to establish a predictable prior privilege level.
+	 */
+	csr_clear(mstatus, MSTATUS_MPRV);
+	csr_set(mstatus, MSTATUS_MPP);
+
+	extern void z_riscv_clear_all_pmp_entries(void);
+	z_riscv_clear_all_pmp_entries();
+}
+
 /**
  * @Brief Initialize the PMP with global entries on each CPU
  */
