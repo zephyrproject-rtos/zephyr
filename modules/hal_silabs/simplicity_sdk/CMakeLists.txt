@@ -61,7 +61,7 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
   )
 
   # sl_protocol_crypto
-  zephyr_library_sources_ifdef(CONFIG_BT_SILABS_EFR32
+  zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_PROTOCOL_CRYPTO
     ${SECURITY_DIR}/sl_component/sl_protocol_crypto/src/sli_radioaes_management.c
     ${SECURITY_DIR}/sl_component/sl_protocol_crypto/src/sli_protocol_crypto_radioaes.c
     ${SECURITY_DIR}/sl_component/sli_crypto/src/sl_crypto_s2.c
