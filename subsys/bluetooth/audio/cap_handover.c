@@ -261,8 +261,6 @@ void bt_cap_handover_unicast_to_broadcast_reception_start(void)
 	err = cap_commander_broadcast_reception_start(&param);
 	if (err != 0) {
 		LOG_DBG("Failed to start reception start: %d", err);
-		active_proc->err = err;
-		active_proc->failed_conn = NULL;
 
 		bt_cap_handover_complete();
 	}
