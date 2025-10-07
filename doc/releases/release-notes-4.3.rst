@@ -212,6 +212,7 @@ New APIs and options
   * CoAP
 
     * :c:struct:`coap_client_response_data`
+    * :c:member:`coap_client_request.payload_cb`
 
   * Sockets
 
