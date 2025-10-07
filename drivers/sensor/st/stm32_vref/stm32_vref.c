@@ -20,6 +20,12 @@
 
 LOG_MODULE_REGISTER(stm32_vref, CONFIG_SENSOR_LOG_LEVEL);
 
+#ifdef CONFIG_STM32_HAL2
+#define STM32_ADC_COMMON_INSTANCE	ADC_COMMON_INSTANCE
+#else /* CONFIG_STM32_HAL2 */
+#define STM32_ADC_COMMON_INSTANCE	__LL_ADC_COMMON_INSTANCE
+#endif /* CONFIG_STM32_HAL2 */
+
 /* Resolution used to perform the Vref measurement */
 #define MEAS_RES	(12U)
 
@@ -53,9 +59,9 @@ struct stm32_vref_config {
 
 static void stm32_vref_enable_vrefsensor_channel(ADC_TypeDef *adc)
 {
-	const uint32_t path = LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc));
+	const uint32_t path = LL_ADC_GetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc));
 
-	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc),
+	LL_ADC_SetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc),
 					path | LL_ADC_PATH_INTERNAL_VREFINT);
 
 #ifdef LL_ADC_DELAY_VREFINT_STAB_US
@@ -65,9 +71,9 @@ static void stm32_vref_enable_vrefsensor_channel(ADC_TypeDef *adc)
 
 __maybe_unused static void stm32_vref_disable_vrefsensor_channel(ADC_TypeDef *adc)
 {
-	const uint32_t path = LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc));
+	const uint32_t path = LL_ADC_GetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc));
 
-	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc),
+	LL_ADC_SetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc),
 					path & ~LL_ADC_PATH_INTERNAL_VREFINT);
 }
 
@@ -102,7 +108,6 @@ static int stm32_vref_sample_fetch(const struct device *dev, enum sensor_channel
 
 #ifndef CONFIG_STM32_VREF_INJECTED
 	stm32_vref_disable_vrefsensor_channel(cfg->adc_base);
-
 
 unlock:
 #endif /* CONFIG_STM32_VREF_INJECTED */
