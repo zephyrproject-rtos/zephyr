@@ -79,6 +79,14 @@ MFD
   kconfig symbol ``MFD_AXP192_AXP2101`` is removed. :kconfig:option:`MFD_AXP192` is now to be
   used for AXP192 device while :kconfig:option:`MFD_AXP2101` for the AXP2101 one.
 
+MISC
+====
+
+* The nrf_etr driver has been migrated to drivers/debug. As a consequence the related Kconfig
+  symbol was renamed from ``NRF_ETR`` to :kconfig:option:`DEBUG_NRF_ETR`, along with the rest of
+  the ``NRF_ETR`` symbols. Also the driver needs to be explicitly enabled via
+  :kconfig:option:`DEBUG_DRIVER` as it is no longer built by default.
+
 PWM
 ===
 
