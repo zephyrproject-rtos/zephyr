@@ -8,6 +8,9 @@
 #include <zephyr/acpi/acpi.h>
 #include "soc.h"
 #include "soc_gpio.h"
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(soc_gpio, CONFIG_SOC_LOG_LEVEL);
 
 #define GET_GPIO_BASE_NUM ("\\_SB.GINF")
 
@@ -72,7 +75,7 @@ int soc_acpi_gpio_resource_get(int bank_idx, char *hid, char *uid, struct gpio_a
 
 	acpi_child = acpi_device_get(hid, uid);
 	if (!acpi_child) {
-		printk("acpi_device_get failed\n");
+		LOG_ERR("acpi_device_get failed");
 		return -EIO;
 	}
 
@@ -80,7 +83,7 @@ int soc_acpi_gpio_resource_get(int bank_idx, char *hid, char *uid, struct gpio_a
 	mmio_res.reg_base = reg_base;
 	ret = acpi_device_mmio_get(acpi_child, &mmio_res);
 	if (ret) {
-		printk("acpi_device_mmio_get failed\n");
+		LOG_ERR("acpi_device_mmio_get failed");
 		return ret;
 	}
 
@@ -88,7 +91,7 @@ int soc_acpi_gpio_resource_get(int bank_idx, char *hid, char *uid, struct gpio_a
 	irq_res.irqs = irqs;
 	ret = acpi_device_irq_get(acpi_child, &irq_res);
 	if (ret) {
-		printk("acpi_device_irq_get failed\n");
+		LOG_ERR("acpi_device_irq_get failed");
 		return ret;
 	}
 
@@ -105,7 +108,7 @@ int soc_acpi_gpio_resource_get(int bank_idx, char *hid, char *uid, struct gpio_a
 		for (int i = 0; i < num_fields; i++) {
 			ret = gpio_info_acpi_get(uid_int, bank_idx, i, &field_val[i], ginf);
 			if (ret) {
-				printk("gpio_info_acpi_get failed\n");
+				LOG_ERR("gpio_info_acpi_get failed");
 				return ret;
 			}
 		}
@@ -139,7 +142,7 @@ int soc_acpi_gpio_resource_get(int bank_idx, char *hid, char *uid, struct gpio_a
 			res->base_num = field_val[6];
 		}
 	} else {
-		printk("ACPI_RES_TYPE_MEM failed\n");
+		LOG_ERR("ACPI_RES_TYPE_MEM failed");
 		return -ENODEV;
 	}
 
