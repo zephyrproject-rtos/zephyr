@@ -132,6 +132,12 @@
 				reg = <0x8>;
 				reset-gpios = <&test_gpio 0 0>;
 			};
+
+			test_i2c_ov5642: ov5642@9 {
+				compatible = "ovti,ov5642";
+				reg = <0x9>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
 		};
 
 		test_video_emul_rx: video_emul_rx@10003000 {
