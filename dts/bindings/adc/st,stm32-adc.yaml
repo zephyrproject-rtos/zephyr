@@ -117,5 +117,35 @@ properties:
       - "OVERSAMPLER_MINIMAL": Oversampler with 8 possible oversampling values (2, 4, 8, ..., 256)
       - "OVERSAMPLER_EXTENDED": Oversampler with 1024 possible oversampling values (1..1024)
 
+  st,adc-internal-regulator:
+    type: string
+    required: true
+    enum:
+      - "none"
+      - "startup-sw-delay"
+      - "startup-hw-status"
+    description: |
+      Presence and type of ADC internal regulator if any.
+      - "none": No internal regulator.
+      - "startup-sw-delay": Internal regulator is present and its startup time is checked with a
+        software delay.
+      - "startup-hw-status": Internal regulator is present and its startup time is checked with a
+        status flag in a register.
+
+  st,adc-has-deep-powerdown:
+    type: boolean
+    description: |
+      If present, it indicates that the ADC instance has a deep power down feature.
+
+  st,adc-has-channel-preselection:
+    type: boolean
+    description: |
+      If present, it indicates that the ADC instance has a channel preselection register.
+
+  st,adc-has-differential-support:
+    type: boolean
+    description: |
+      If present, it indicates that the ADC instance supports differential channel inputs.
+
 io-channel-cells:
   - input
