@@ -12,46 +12,42 @@
 
 LOG_MODULE_REGISTER(MAX30101, CONFIG_SENSOR_LOG_LEVEL);
 
+#if CONFIG_MAX30101_DIE_TEMPERATURE
+int max30101_start_temperature_measurement(const struct device *dev)
+{
+	const struct max30101_config *config = dev->config;
+
+	if (i2c_reg_write_byte_dt(&config->i2c, MAX30101_REG_TEMP_CFG, 1)) {
+		LOG_ERR("Could not start die temperature acquisition");
+		return -EIO;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
+
 int max30101_read_sample(const struct device *dev, struct max30101_reading *reading)
 {
 	struct max30101_data *data = dev->data;
 	const struct max30101_config *config = dev->config;
-	uint8_t buffer[MAX30101_MAX_BYTES_PER_SAMPLE];
-	uint32_t fifo_data;
-	int fifo_chan;
 	int num_bytes;
-	int i;
 
 	/* Read all the active channels for one sample */
 	num_bytes = data->total_channels * MAX30101_BYTES_PER_CHANNEL;
-	if (i2c_burst_read_dt(&config->i2c, MAX30101_REG_FIFO_DATA, buffer,
+	if (i2c_burst_read_dt(&config->i2c, MAX30101_REG_FIFO_DATA, reading->raw,
 			      num_bytes)) {
 		LOG_ERR("Could not fetch sample");
 		return -EIO;
 	}
 
-	fifo_chan = 0;
-	for (i = 0; i < num_bytes; i += 3) {
-		/* Each channel is 18-bits */
-		fifo_data = (buffer[i] << 16) | (buffer[i + 1] << 8) |
-			    (buffer[i + 2]);
-		fifo_data = (fifo_data & MAX30101_FIFO_DATA_MASK) >> config->data_shift;
-
-		/* Save the raw data */
-		reading->raw[fifo_chan++] = fifo_data;
-	}
-
 #if CONFIG_MAX30101_DIE_TEMPERATURE
 	/* Read the die temperature */
-	if (i2c_burst_read_dt(&config->i2c, MAX30101_REG_TINT, buffer, 2)) {
+	if (i2c_burst_read_dt(&config->i2c, MAX30101_REG_TINT, reading->die_temp, 2)) {
 		LOG_ERR("Could not fetch die temperature");
 		return -EIO;
 	}
 
-	/* Save the raw data */
-	reading->die_temp[0] = buffer[0];
-	reading->die_temp[1] = buffer[1];
-	if (i2c_reg_write_byte_dt(&config->i2c, MAX30101_REG_TEMP_CFG, 1)) {
+	if (max30101_start_temperature_measurement(dev)) {
 		return -EIO;
 	}
 #endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
@@ -75,6 +71,7 @@ static int max30101_channel_get(const struct device *dev,
 				enum sensor_channel chan,
 				struct sensor_value *val)
 {
+	const struct max30101_config *config = dev->config;
 	struct max30101_data *data = dev->data;
 	enum max30101_led_channel led_chan;
 	int fifo_chan;
@@ -116,7 +113,11 @@ static int max30101_channel_get(const struct device *dev,
 
 	val->val1 = 0;
 	for (fifo_chan = 0; fifo_chan < data->num_channels[led_chan]; fifo_chan++) {
-		val->val1 += data->reading.raw[data->map[led_chan][fifo_chan]];
+		uint8_t index = MAX30101_BYTES_PER_CHANNEL * data->map[led_chan][fifo_chan];
+		uint32_t raw = (data->reading.raw[index] << 16) | (data->reading.raw[index + 1] << 8) |
+			    (data->reading.raw[index + 2]);
+		raw = (raw & MAX30101_FIFO_DATA_MASK) >> config->data_shift;
+		val->val1 += raw;
 	}
 
 	/* TODO: Scale the raw data to standard units */
@@ -193,7 +194,7 @@ static int max30101_configure(const struct device *dev)
 	}
 
 #if CONFIG_MAX30101_DIE_TEMPERATURE
-	if (i2c_reg_write_byte_dt(&config->i2c, MAX30101_REG_TEMP_CFG, 1)) {
+	if (max30101_start_temperature_measurement(dev)) {
 		return -EIO;
 	}
 #endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
@@ -286,8 +287,17 @@ static int max30101_init(const struct device *dev)
 		)) \
 	)
 
+#if CONFIG_MAX30101_STREAM
+#define MAX30101_RTIO_DEFINE(n) \
+	I2C_DT_IODEV_DEFINE(max30101_iodev_##n, DT_DRV_INST(n)); \
+	RTIO_DEFINE(max30101_rtio_##n, 8, 8);
+#else
+#define MAX30101_RTIO_DEFINE(n)
+#endif /* CONFIG_MAX30101_STREAM */
+
 #define MAX30101_INIT(n)                                                                           \
 	MAX30101_CHECK(n);                                                                         \
+	MAX30101_RTIO_DEFINE(n); \
 	static const struct max30101_config max30101_config_##n = {                                \
 		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
 		.fifo = (DT_INST_ENUM_IDX(n, smp_ave) << MAX30101_FIFO_CFG_SMP_AVE_SHIFT) |        \
@@ -308,6 +318,14 @@ static int max30101_init(const struct device *dev)
 		.map = {{3, 3, 3}, {3, 3, 3}, {3, 3, 3}},                                          \
 		.num_channels = {0, 0, 0},                                                         \
 		.total_channels = 0,                                                               \
+		IF_ENABLED(CONFIG_MAX30101_STREAM, ( \
+			.rtio_ctx = &max30101_rtio_##n, \
+			.iodev = &max30101_iodev_##n, \
+			.bus_type = RTIO_BUS_I2C, \
+			IF_ENABLED(CONFIG_MAX30101_DIE_TEMPERATURE, ( \
+				.temp_available = false, \
+			)) \
+		)) \
 	};                                                                                         \
 	SENSOR_DEVICE_DT_INST_DEFINE(n, max30101_init, NULL, &max30101_data_##n,                   \
 				     &max30101_config_##n, POST_KERNEL,                            \

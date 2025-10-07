@@ -68,6 +68,7 @@ static int max30101_decoder_decode(const uint8_t *buffer, struct sensor_chan_spe
 {
 	const struct max30101_encoded_data *edata = (const struct max30101_encoded_data *)buffer;
 	const struct device *dev = edata->sensor;
+	const struct max30101_config *config = dev->config;
 	struct max30101_data *data = dev->data;
 
 	if (*fit != 0) {
@@ -126,17 +127,51 @@ static int max30101_decoder_decode(const uint8_t *buffer, struct sensor_chan_spe
 		return -EINVAL;
 	}
 
-	out->readings[0].value = edata->reading.raw[data->map[led_chan][chan_spec.chan_idx]];
+	uint8_t index = MAX30101_BYTES_PER_CHANNEL * data->map[led_chan][chan_spec.chan_idx];
+	out->readings[0].value = (edata->reading.raw[index] << 16) | (edata->reading.raw[index + 1] << 8) | (edata->reading.raw[index + 2]);
+	out->readings[0].value = (out->readings[0].value & MAX30101_FIFO_DATA_MASK) >> config->data_shift;
 	out->shift = MAX30101_ASYNC_RESOLUTION - MAX30101_LIGHT_SHIFT;
 	*fit = 1;
 
 	return 1;
 }
 
+#if CONFIG_MAX30101_STREAM
+static bool max30101_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger)
+{
+	struct max30101_encoded_data *edata = (struct max30101_encoded_data *)buffer;
+	bool has_trigger = false;
+
+	switch (trigger)
+	{
+	case SENSOR_TRIG_DATA_READY:
+		has_trigger = edata->has_data_rdy;
+		edata->has_data_rdy = 0;
+		break;
+	case SENSOR_TRIG_FIFO_WATERMARK:
+		has_trigger = edata->has_watermark;
+		edata->has_watermark = 0;
+		break;
+	case SENSOR_TRIG_OVERFLOW:
+		has_trigger = edata->has_overflow;
+		edata->has_overflow = 0;
+		break;
+	default:
+		LOG_ERR("Unsupported trigger type %d", trigger);
+		return false;
+	}
+
+	return has_trigger;
+}
+#endif
+
 SENSOR_DECODER_API_DT_DEFINE() = {
 	.get_frame_count = max30101_decoder_get_frame_count,
 	.get_size_info = max30101_decoder_get_size_info,
 	.decode = max30101_decoder_decode,
+#if CONFIG_MAX30101_STREAM
+	.has_trigger = max30101_decoder_has_trigger,
+#endif /* CONFIG_MAX30101_STREAM */
 };
 
 int max30101_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder)
