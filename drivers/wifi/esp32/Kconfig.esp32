@@ -51,7 +51,7 @@ config NET_MGMT_EVENT_STACK_SIZE
 
 config ESP32_WIFI_STA_AUTO_DHCPV4
 	bool "Automatically starts DHCP4 negotiation"
-	depends on NET_DHCPV4
+	default y if NET_DHCPV4
 	depends on NET_IPV4
 	help
 	  WiFi driver will automatically initiate DHCPV4 negotiation when connected.
