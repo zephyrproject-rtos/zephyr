@@ -579,6 +579,15 @@
 		io-channels = <&adc1 12>;
 		status = "disabled";
 	};
+
+	vref: vref {
+		compatible = "st,stm32-vref";
+		nvmem-cells = <&vrefint_otp>;
+		vrefint-cal-mv = <3300>;
+		vrefint-cal-resolution = <12>;
+		io-channels = <&adc1 13>;
+		status = "disabled";
+	};
 };
 
 &nvic {
