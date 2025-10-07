@@ -119,6 +119,11 @@ LOG_MODULE_REGISTER(adc_stm32);
 					   st_adc_internal_regulator,\
 					   value) 0)
 
+#define ANY_ADC_HAS_DEEP_POWERDOWN \
+	(DT_INST_FOREACH_STATUS_OKAY_VARGS(IS_EQ_PROP_OR, \
+					   st_adc_has_deep_powerdown,\
+					   0, 1) 0)
+
 #define ANY_CHILD_NODE_IS_DIFFERENTIAL(inst) \
 	(DT_INST_FOREACH_CHILD_VARGS(inst, IS_EQ_NODE_PROP_OR, \
 				     zephyr_differential, \
@@ -211,6 +216,7 @@ struct adc_stm32_cfg {
 	int8_t sequencer_type;
 	int8_t oversampler_type;
 	int8_t internal_regulator;
+	bool has_deep_powerdown		:1;
 	int8_t res_table_size;
 	const uint32_t res_table[];
 };
@@ -1654,22 +1660,10 @@ static int adc_stm32_init(const struct device *dev)
 	}
 #endif
 
-#if defined(CONFIG_SOC_SERIES_STM32L4X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X) || \
-	defined(CONFIG_SOC_SERIES_STM32H5X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7RSX) || \
-	defined(CONFIG_SOC_SERIES_STM32N6X) || \
-	defined(CONFIG_SOC_SERIES_STM32U3X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
-	/*
-	 * L4, WB, G4, H5, H7 and U5 series STM32 needs to be awaken from deep sleep
-	 * mode, and restore its calibration parameters if there are some
-	 * previously stored calibration parameters.
-	 */
-	LL_ADC_DisableDeepPowerDown(adc);
+#if ANY_ADC_HAS_DEEP_POWERDOWN
+	if (config->has_deep_powerdown) {
+		LL_ADC_DisableDeepPowerDown(adc);
+	}
 #endif
 
 #if ANY_ADC_INTERNAL_REGULATOR_TYPE_IS(INTERNAL_REGULATOR_STARTUP_SW_DELAY) || \
@@ -1734,22 +1728,10 @@ static int adc_stm32_suspend_setup(const struct device *dev)
 	}
 #endif /* INTERNAL_REGULATOR_STARTUP_SW_DELAY || INTERNAL_REGULATOR_STARTUP_HW_STATUS */
 
-#if defined(CONFIG_SOC_SERIES_STM32L4X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X) || \
-	defined(CONFIG_SOC_SERIES_STM32H5X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7RSX) || \
-	defined(CONFIG_SOC_SERIES_STM32N6X) || \
-	defined(CONFIG_SOC_SERIES_STM32U3X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
-	/*
-	 * L4, WB, G4, H5, H7 and U5 series STM32 needs to be put into
-	 * deep sleep mode.
-	 */
-
-	LL_ADC_EnableDeepPowerDown(adc);
+#if ANY_ADC_HAS_DEEP_POWERDOWN
+	if (config->has_deep_powerdown) {
+		LL_ADC_EnableDeepPowerDown(adc);
+	}
 #endif
 
 	adc_stm32_disable_analog_supply();
@@ -1998,6 +1980,7 @@ static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 	.oversampler_type = DT_INST_STRING_UPPER_TOKEN(index, st_adc_oversampler),	\
 	.internal_regulator = CONCAT(INTERNAL_REGULATOR_,					\
 		DT_INST_STRING_UPPER_TOKEN(index, st_adc_internal_regulator)),			\
+	.has_deep_powerdown = DT_INST_PROP(index, st_adc_has_deep_powerdown),	\
 	.sampling_time_table = DT_INST_PROP(index, sampling_times),	\
 	.num_sampling_time_common_channels =				\
 		DT_INST_PROP_OR(index, num_sampling_time_common_channels, 0),\
