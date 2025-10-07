@@ -23,7 +23,7 @@ config UUID_V5
 	select EXPERIMENTAL
 	depends on UUID
 	depends on MBEDTLS
-	depends on MBEDTLS_MD
+	depends on MBEDTLS_MD_C
 	depends on MBEDTLS_SHA1
 	# When TF-M is enabled, Mbed TLS's MD module (which is used to generate
 	# v5 UUIDs) will dispacth hash operations to TF-M. Unfortunately TF-M
