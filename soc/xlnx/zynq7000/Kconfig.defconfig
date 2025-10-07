@@ -23,4 +23,11 @@ config FLASH_BASE_ADDRESS
 config SOC_RESET_HOOK
 	default y
 
+if I2C_CADENCE
+
+config I2C_CADENCE_BROKEN_HOLD_BIT
+	default y if $(dt_nodelabel_enabled,i2c0) || $(dt_nodelabel_enabled,i2c1)
+
+endif # I2C_CADENCE
+
 endif # SOC_FAMILY_XILINX_ZYNQ7000
