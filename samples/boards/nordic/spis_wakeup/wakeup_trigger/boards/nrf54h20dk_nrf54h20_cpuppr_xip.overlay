@@ -4,7 +4,3 @@
  */
 
 #include "nrf54h20dk_nrf54h20_common.dtsi"
-
-&spi131 {
-	memory-regions = <&cpurad_dma_region>;
-};
