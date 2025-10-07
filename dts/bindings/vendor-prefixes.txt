@@ -208,6 +208,7 @@ eeti	eGalax_eMPIA Technology Inc
 efinix	Efinix Inc
 egis	Egis Technology Inc
 einfochips	Einfochips
+eink	E Ink Corporation
 elan	Elan Microelectronic Corp.
 electronut	Electronut Labs
 element14	Element14 (A Premier Farnell Company)
