@@ -1,7 +1,7 @@
 /*
  * Non-standard CVA6 cache management operations.
  *
- * Copyright(c) 2024, CISPA Helmholtz Center for Information Security
+ * Copyright (c) 2024, CISPA Helmholtz Center for Information Security
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stddef.h>

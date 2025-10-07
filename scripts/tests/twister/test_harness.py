@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright(c) 2023 Google LLC
+# Copyright (c) 2023 Google LLC
 # SPDX-License-Identifier: Apache-2.0
 
 """
