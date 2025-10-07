@@ -43,3 +43,17 @@ config MBEDTLS_SHA512
 	help
 	  Legacy crypto support is going to be removed starting from the next
 	  Mbed TLS release. Please switch to PSA API.
+
+config MBEDTLS_HASH_ALL_ENABLED
+	bool "All available MAC methods"
+	select MBEDTLS_MD5
+	select MBEDTLS_SHA1
+	select MBEDTLS_SHA224
+	select MBEDTLS_SHA256
+	select MBEDTLS_SHA384
+	select MBEDTLS_SHA512
+	select MBEDTLS_POLY1305
+	help
+	  Enables all legacy hash crypto support which is going to be removed
+	  staring from the next Mbed TLS release. Please switch to
+	  PSA_WANT_ALG_HASH_ALL instead.

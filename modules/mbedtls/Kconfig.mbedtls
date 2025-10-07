@@ -330,16 +330,6 @@ config MBEDTLS_CMAC
 
 comment "Supported hash algorithms"
 
-config MBEDTLS_HASH_ALL_ENABLED
-	bool "All available MAC methods"
-	select MBEDTLS_MD5
-	select MBEDTLS_SHA1
-	select MBEDTLS_SHA224
-	select MBEDTLS_SHA256
-	select MBEDTLS_SHA384
-	select MBEDTLS_SHA512
-	select MBEDTLS_POLY1305
-
 config MBEDTLS_SHA256_SMALLER
 	bool "Smaller SHA-256 implementation"
 	depends on MBEDTLS_SHA256 || PSA_WANT_ALG_SHA_256
