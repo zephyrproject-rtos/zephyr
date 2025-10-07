@@ -425,7 +425,6 @@
 			reg = <0x50040000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 13)>;
 			interrupts = <18 0>;
-			status = "disabled";
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
 				       STM32_ADC_RES(10, 0x01)
@@ -434,6 +433,10 @@
 			sampling-times = <3 7 13 25 48 93 248 641>;
 			st,adc-sequencer = "FULLY_CONFIGURABLE";
 			st,adc-oversampler = "OVERSAMPLER_MINIMAL";
+			st,adc-internal-regulator = "startup-sw-delay";
+			st,adc-has-differential-support;
+			st,adc-has-deep-powerdown;
+			status = "disabled";
 		};
 
 		iwdg: watchdog@40003000 {
