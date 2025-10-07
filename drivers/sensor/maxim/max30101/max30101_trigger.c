@@ -10,7 +10,7 @@
 
 LOG_MODULE_REGISTER(MAX30101_TRIGGER, CONFIG_SENSOR_LOG_LEVEL);
 
-#if CONFIG_MAX30101_TRIGGER_OWN_THREAD
+#if CONFIG_MAX30101_TRIGGER_OWN_THREAD && !CONFIG_MAX30101_STREAM
 K_THREAD_STACK_DEFINE(max30101_workqueue_stack, CONFIG_MAX30101_THREAD_SIZE);
 static struct k_work_q max30101_workqueue;
 
@@ -36,14 +36,19 @@ static void max30101_gpio_callback_handler(const struct device *p_port, struct g
 
 	struct max30101_data *data = CONTAINER_OF(p_cb, struct max30101_data, gpio_cb);
 
+#if CONFIG_MAX30101_STREAM
+	max30101_stream_irq_handler(data->dev);
+#else
 	/* Using work queue to exit isr context */
 #if CONFIG_MAX30101_TRIGGER_OWN_THREAD
 	k_work_submit_to_queue(&max30101_workqueue, &data->cb_work);
 #else
 	k_work_submit(&data->cb_work);
 #endif /* CONFIG_MAX30101_TRIGGER_OWN_THREAD */
+#endif /* CONFIG_MAX30101_STREAM */
 }
 
+#if !CONFIG_MAX30101_STREAM
 static void max30101_work_cb(struct k_work *p_work)
 {
 	struct max30101_data *data = CONTAINER_OF(p_work, struct max30101_data, cb_work);
@@ -86,11 +91,38 @@ static void max30101_work_cb(struct k_work *p_work)
 	}
 #endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
 }
+#endif /* !CONFIG_MAX30101_STREAM */
+
+int max30101_config_interruption(const struct device *dev, uint8_t reg, uint8_t mask, uint8_t enable)
+{
+	const struct max30101_config *config = dev->config;
+
+	if ((reg < MAX30101_REG_INT_EN1) || (reg > MAX30101_REG_INT_EN2)) {
+		LOG_ERR("Invalid interrupt configuration register");
+		return -EINVAL;
+	}
+
+	/* Write the Interrupt enable register */
+	LOG_DBG("Writing Interrupt enable register: [0x%02X][0x%02X][0x%02X]", reg, mask, enable);
+	if (i2c_reg_update_byte_dt(&config->i2c, reg, mask, enable)) {
+		LOG_ERR("Could not set interrupt enable register");
+		return -EIO;
+	}
+
+	/* CLEAR CORRESPONDING INTERRUPT STATUS */
+	uint8_t int_status;
+
+	if (i2c_reg_read_byte_dt(&config->i2c, reg - 2, &int_status)) {
+		LOG_ERR("Could not get interrupt STATUS register");
+		return -EIO;
+	}
+
+	return 0;
+}
 
 int max30101_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			 sensor_trigger_handler_t handler)
 {
-	const struct max30101_config *config = dev->config;
 	struct max30101_data *data = dev->data;
 	uint8_t mask, index, enable = 0x00;
 
@@ -146,33 +178,20 @@ int max30101_trigger_set(const struct device *dev, const struct sensor_trigger *
 		enable = 0xFF;
 	}
 
-	/* Write the Interrupt enable register */
-	LOG_DBG("Writing Interrupt enable register: [0x%02X][0x%02X]", mask, enable);
-	if (i2c_reg_update_byte_dt(&config->i2c, MAX30101_REG_INT_EN1, mask, enable)) {
-		LOG_ERR("Could not set interrupt enable register");
+	if (max30101_config_interruption(dev, MAX30101_REG_INT_EN1, mask, enable)) {
 		return -EIO;
 	}
 
 #if CONFIG_MAX30101_DIE_TEMPERATURE
-	if (i2c_reg_update_byte_dt(&config->i2c, MAX30101_REG_INT_EN2, mask, enable)) {
-		LOG_ERR("Could not set interrupt enable register");
+	if (max30101_config_interruption(dev, MAX30101_REG_INT_EN2, mask, enable)) {
 		return -EIO;
 	}
 
 	/* Start die temperature acquisition */
-	if (i2c_reg_write_byte_dt(&config->i2c, MAX30101_REG_TEMP_CFG, 1)) {
-		LOG_ERR("Could not start die temperature acquisition");
+	if (max30101_start_temperature_measurement(dev)) {
 		return -EIO;
 	}
 #endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
-
-	/* CLEAR ALL INTERRUPT STATUS */
-	uint8_t int_status;
-
-	if (i2c_reg_read_byte_dt(&config->i2c, MAX30101_REG_INT_STS1, &int_status)) {
-		LOG_ERR("Could not get interrupt STATUS register");
-		return -EIO;
-	}
 
 	if (!!enable) {
 		data->trigger_handler[index] = handler;
@@ -212,9 +231,15 @@ int max30101_init_interrupts(const struct device *dev)
 	LOG_DBG("GPIO callback configured");
 
 	data->dev = dev;
+
+#if CONFIG_MAX30101_STREAM
+	LOG_DBG("MAX30101_STREAM initialized");
+	return 0;
+#else
 	memset(&(data->trigger_handler[0]), 0, sizeof(data->trigger_handler));
 	memset(&(data->trigger[0]), 0, sizeof(data->trigger));
 	k_work_init(&data->cb_work, max30101_work_cb);
 
 	return 0;
+#endif /* !CONFIG_MAX30101_STREAM */
 }

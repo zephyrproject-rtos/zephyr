@@ -10,6 +10,9 @@
 
 #if CONFIG_SENSOR_ASYNC_API
 #include <zephyr/rtio/rtio.h>
+#if CONFIG_MAX30101_STREAM
+#include <zephyr/rtio/regmap.h>
+#endif /* CONFIG_MAX30101_STREAM */
 #endif
 
 #define MAX30101_REG_INT_STS1		0x00
@@ -97,6 +100,7 @@ enum max30101_mode {
 };
 
 static const uint8_t max30101_mode_convert[3] = {7, 2, 3};
+static const uint8_t max30101_sample_bytes[4] = {0, 3, 6, 9};
 
 enum max30101_slot {
 	MAX30101_SLOT_DISABLED = 0,
@@ -141,11 +145,22 @@ struct max30101_config {
 };
 
 struct max30101_reading {
-	uint32_t raw[MAX30101_MAX_NUM_CHANNELS];
+	uint8_t raw[MAX30101_BYTES_PER_CHANNEL * MAX30101_MAX_NUM_CHANNELS];
 #if CONFIG_MAX30101_DIE_TEMPERATURE
 	uint8_t die_temp[2];
 #endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
 };
+
+#if CONFIG_MAX30101_STREAM
+	struct __attribute__((packed)) max30101_stream_config {
+		/* Set if `drdy` interrupt must be watched triggered */
+		uint8_t irq_data_rdy: 1;
+		/* Set if `watermark` interrupt must be watched triggered */
+		uint8_t irq_watermark: 1;
+		/* Set if `overflow` interrupt must be watched triggered */
+		uint8_t irq_overflow: 1;
+	};
+#endif /* CONFIG_MAX30101_STREAM */
 
 struct max30101_data {
 	struct max30101_reading reading;
@@ -158,10 +173,27 @@ struct max30101_data {
 	sensor_trigger_handler_t trigger_handler[MAX30101_SUPPORTED_INTERRUPTS];
 	const struct sensor_trigger *trigger[MAX30101_SUPPORTED_INTERRUPTS];
 	struct k_work cb_work;
+#if CONFIG_MAX30101_STREAM
+	struct rtio *rtio_ctx;
+	struct rtio_iodev *iodev;
+	rtio_bus_type bus_type;
+	struct rtio_iodev_sqe *streaming_sqe;
+
+	uint64_t timestamp;
+	struct max30101_stream_config stream_cfg;
+#if CONFIG_MAX30101_DIE_TEMPERATURE
+	bool temp_available;
+	uint8_t status[2];
+#else
+	uint8_t status[1];
+#endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
+#endif /* CONFIG_MAX30101_STREAM */
 #endif
 };
 
 #ifdef CONFIG_MAX30101_TRIGGER
+int max30101_start_temperature_measurement(const struct device *dev);
+
 int max30101_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			 sensor_trigger_handler_t handler);
 
@@ -185,6 +217,14 @@ struct max30101_encoded_data {
 		uint8_t has_green: 2;
 		/* Set if `temp` has data */
 		uint8_t has_temp: 1;
+#if CONFIG_MAX30101_STREAM
+		/* Set if `drdy` interrupt has triggered */
+		uint8_t has_data_rdy: 1;
+		/* Set if `watermark` interrupt has triggered */
+		uint8_t has_watermark: 1;
+		/* Set if `overflow` interrupt has triggered */
+		uint8_t has_overflow: 1;
+#endif /* CONFIG_MAX30101_STREAM */
 	} __attribute__((__packed__));
 	struct max30101_reading reading;
 };
@@ -194,4 +234,14 @@ int max30101_read_sample(const struct device *dev, struct max30101_reading *read
 void max30101_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
 
 int max30101_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder);
+
+#if CONFIG_MAX30101_STREAM
+int max30101_config_interruption(const struct device *dev, uint8_t reg, uint8_t mask, uint8_t enable);
+
+uint8_t max30101_encode_channels(const struct max30101_data *data, struct max30101_encoded_data *edata, const struct sensor_chan_spec *channels, size_t num_channels);
+
+void max30101_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
+
+void max30101_stream_irq_handler(const struct device *dev);
+#endif /* CONFIG_MAX30101_STREAM */
 #endif /* CONFIG_SENSOR_ASYNC_API */

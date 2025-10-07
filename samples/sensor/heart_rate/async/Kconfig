@@ -28,4 +28,53 @@ config SAMPLE_CHANNEL_GREEN
 config SAMPLE_CHANNEL_DIE_TEMP
     bool
 
+# Sample sensor triggers
+config SAMPLE_TRIG_DRDY_NOP
+    bool
+
+config SAMPLE_TRIG_DRDY_DROP
+    bool
+
+config SAMPLE_TRIG_DRDY_INCLUDE
+    bool
+
+config SAMPLE_TRIGGER_DRDY
+    bool
+    default y if SAMPLE_TRIG_DRDY_NOP || SAMPLE_TRIG_DRDY_DROP || SAMPLE_TRIG_DRDY_INCLUDE
+
+config SAMPLE_TRIG_FIFO_WATTERMARK_NOP
+    bool
+
+config SAMPLE_TRIG_FIFO_WATTERMARK_DROP
+    bool
+
+config SAMPLE_TRIG_FIFO_WATTERMARK_INCLUDE
+    bool
+
+config SAMPLE_TRIGGER_FIFO_WATTERMARK
+    bool
+    default y if SAMPLE_TRIG_FIFO_WATTERMARK_NOP || SAMPLE_TRIG_FIFO_WATTERMARK_DROP || SAMPLE_TRIG_FIFO_WATTERMARK_INCLUDE
+    depends on SAMPLE_BURST_READ
+
+config SAMPLE_TRIG_OVERFLOW_NOP
+    bool
+
+config SAMPLE_TRIG_OVERFLOW_DROP
+    bool
+
+config SAMPLE_TRIG_OVERFLOW_INCLUDE
+    bool
+
+config SAMPLE_TRIGGER_OVERFLOW
+    bool
+    default y if SAMPLE_TRIG_OVERFLOW_NOP || SAMPLE_TRIG_OVERFLOW_DROP || SAMPLE_TRIG_OVERFLOW_INCLUDE
+
+# Sample stream
+config SAMPLE_STREAM_ENABLE
+    bool "Enable asynchronous sensor stream API"
+
+config SAMPLE_STREAM
+    bool
+    depends on SAMPLE_STREAM_ENABLE
+
 source "Kconfig.zephyr"

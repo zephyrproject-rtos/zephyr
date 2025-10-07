@@ -12,7 +12,7 @@
 
 LOG_MODULE_REGISTER(MAX30101_ASYNC, CONFIG_SENSOR_LOG_LEVEL);
 
-void max30101_encode_channels(const struct max30101_data *data, struct max30101_encoded_data *edata, enum sensor_channel *channels, size_t num_channels)
+uint8_t max30101_encode_channels(const struct max30101_data *data, struct max30101_encoded_data *edata, const struct sensor_chan_spec *channels, size_t num_channels)
 {
 	/* Check if the requested channels are supported */
 	for (size_t i = 0; i < num_channels; i++) {
@@ -44,6 +44,8 @@ void max30101_encode_channels(const struct max30101_data *data, struct max30101_
 			break;
 		}
 	}
+
+	return edata->has_red + edata->has_ir + edata->has_green;
 }
 
 void max30101_submit_sync(struct rtio_iodev_sqe *iodev_sqe)
@@ -99,6 +101,19 @@ void max30101_submit_sync(struct rtio_iodev_sqe *iodev_sqe)
 
 void max30101_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
+	const struct sensor_read_config *cfg =
+			(const struct sensor_read_config *) iodev_sqe->sqe.iodev->data;
+
+	if (cfg->is_streaming) {
+#if CONFIG_MAX30101_STREAM
+		max30101_submit_stream(dev, iodev_sqe);
+		return;
+#else
+		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
+		return;
+#endif
+	}
+
 	struct rtio_work_req *req = rtio_work_req_alloc();
 
 	if (req == NULL) {
