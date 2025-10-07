@@ -58,26 +58,24 @@ static unsigned int port;
 static char socket_path[UNIX_ADDR_BUFF_SIZE];
 static bool arg_found;
 
-static bool is_hci_event_discardable(const uint8_t *evt_data)
+static bool is_hci_event_discardable(const struct bt_hci_evt_hdr *evt)
 {
-	uint8_t evt_type = evt_data[0];
-
-	switch (evt_type) {
+	switch (evt->evt) {
 #if defined(CONFIG_BT_CLASSIC)
 	case BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI:
 	case BT_HCI_EVT_EXTENDED_INQUIRY_RESULT:
 		return true;
 #endif
 	case BT_HCI_EVT_LE_META_EVENT: {
-		uint8_t subevt_type = evt_data[sizeof(struct bt_hci_evt_hdr)];
+		const struct bt_hci_evt_le_meta_event *meta_evt = (const void *)evt->data;
 
-		switch (subevt_type) {
+		switch (meta_evt->subevent) {
 		case BT_HCI_EVT_LE_ADVERTISING_REPORT:
 			return true;
 #if defined(CONFIG_BT_EXT_ADV)
 		case BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT: {
 			const struct bt_hci_evt_le_ext_advertising_report *ext_adv =
-				(void *)&evt_data[3];
+				(const void *)meta_evt->data;
 
 			return (ext_adv->num_reports == 1) &&
 			       ((ext_adv->adv_info[0].evt_type & BT_HCI_LE_ADV_EVT_TYPE_LEGACY) !=
@@ -93,28 +91,67 @@ static bool is_hci_event_discardable(const uint8_t *evt_data)
 	}
 }
 
+static struct net_buf *get_rx_evt(const uint8_t *data)
+{
+	const struct bt_hci_evt_hdr *evt = (const void *)data;
+	const bool discardable = is_hci_event_discardable(evt);
+	const k_timeout_t timeout = discardable ? K_NO_WAIT : K_SECONDS(1);
+	struct net_buf *buf;
+
+	do {
+		buf = bt_buf_get_evt(evt->evt, discardable, timeout);
+		if (buf == NULL) {
+			if (discardable) {
+				LOG_DBG_RATELIMIT("Discardable buffer pool full, ignoring event");
+				return buf;
+			}
+			LOG_WRN("Couldn't allocate a buffer after waiting 1 second.");
+		}
+	} while (!buf);
+
+	return buf;
+}
+
+static struct net_buf *get_rx_acl(const uint8_t *data)
+{
+	struct net_buf *buf;
+
+	buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_NO_WAIT);
+	if (buf == NULL) {
+		LOG_ERR("No available ACL buffers!");
+	}
+
+	return buf;
+}
+
+static struct net_buf *get_rx_iso(const uint8_t *data)
+{
+	struct net_buf *buf;
+
+	buf = bt_buf_get_rx(BT_BUF_ISO_IN, K_NO_WAIT);
+	if (buf == NULL) {
+		LOG_ERR_RATELIMIT("No available ISO buffers!");
+	}
+
+	return buf;
+}
+
 static struct net_buf *get_rx(const uint8_t *buf)
 {
-	bool discardable = false;
-	k_timeout_t timeout = K_FOREVER;
+	uint8_t hci_h4_type = buf[0];
 
-	switch (buf[0]) {
+	switch (hci_h4_type) {
 	case BT_HCI_H4_EVT:
-		if (is_hci_event_discardable(buf)) {
-			discardable = true;
-			timeout = K_NO_WAIT;
-		}
-
-		return bt_buf_get_evt(buf[1], discardable, timeout);
+		return get_rx_evt(&buf[1]);
 	case BT_HCI_H4_ACL:
-		return bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
+		return get_rx_acl(&buf[1]);
 	case BT_HCI_H4_ISO:
 		if (IS_ENABLED(CONFIG_BT_ISO)) {
-			return bt_buf_get_rx(BT_BUF_ISO_IN, K_FOREVER);
+			return get_rx_iso(&buf[1]);
 		}
 		__fallthrough;
 	default:
-		LOG_ERR("Unknown packet type: %u", buf[0]);
+		LOG_ERR("Unknown packet type: %u", hci_h4_type);
 	}
 
 	return NULL;
@@ -281,7 +318,6 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			frame_start += decoded_len;
 
 			if (!buf) {
-				LOG_DBG("Discard adv report due to insufficient buf");
 				continue;
 			}
 
