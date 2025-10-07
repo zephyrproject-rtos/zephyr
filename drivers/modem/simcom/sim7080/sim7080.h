@@ -45,7 +45,7 @@
 #define MDM_MAX_AUTOBAUD 5
 #define MDM_MAX_CEREG_WAITS 40
 #define MDM_MAX_CGATT_WAITS 40
-#define MDM_BOOT_TRIES 4
+#define MDM_BOOT_TRIES 2
 #define MDM_GNSS_PARSER_MAX_LEN 128
 #define MDM_APN CONFIG_MODEM_SIMCOM_SIM7080_APN
 #define MDM_LTE_BANDS CONFIG_MODEM_SIMCOM_SIM7080_LTE_BANDS
@@ -61,13 +61,6 @@
 #define MDM_IMSI_LENGTH 16
 #define MDM_ICCID_LENGTH 32
 
-enum sim7080_state {
-	SIM7080_STATE_INIT = 0,
-	SIM7080_STATE_NETWORKING,
-	SIM7080_STATE_GNSS,
-	SIM7080_STATE_OFF,
-};
-
 /* Possible states of the ftp connection. */
 enum sim7080_ftp_connection_state {
 	/* Not connected yet. */
@@ -78,6 +71,13 @@ enum sim7080_ftp_connection_state {
 	SIM7080_FTP_CONNECTION_STATE_FINISHED,
 	/* Something went wrong. */
 	SIM7080_FTP_CONNECTION_STATE_ERROR,
+};
+
+enum sim7080_status_flags {
+	SIM7080_STATUS_FLAG_POWER_ON = 0x01,
+	SIM7080_STATUS_FLAG_CPIN_READY = 0x02,
+	SIM7080_STATUS_FLAG_ATTACHED = 0x04,
+	SIM7080_STATUS_FLAG_PDP_ACTIVE = 0x08,
 };
 
 /*
@@ -129,26 +129,20 @@ struct sim7080_data {
 	 */
 	int current_sock_fd;
 	int current_sock_written;
+	size_t tx_space_avail;
+	uint8_t socket_open_rc;
 	/*
 	 * Network registration of the modem.
 	 */
 	uint8_t mdm_registration;
-	/*
-	 * Whether gprs is attached or detached.
-	 */
-	uint8_t mdm_cgatt;
-	/*
-	 * If the sim card is ready or not.
-	 */
-	bool cpin_ready;
-	/*
-	 * Flag if the PDP context is active.
-	 */
-	bool pdp_active;
+	/* Modem status flags */
+	uint32_t status_flags;
 	/* SMS buffer structure provided by read. */
 	struct sim7080_sms_buffer *sms_buffer;
 	/* Position in the sms buffer. */
 	uint8_t sms_buffer_pos;
+	/* Status of the last http operation */
+	uint16_t http_status;
 	/* Ftp related variables. */
 	struct {
 		/* User buffer for ftp data. */
@@ -165,6 +159,9 @@ struct sim7080_data {
 	struct k_sem sem_tx_ready;
 	struct k_sem sem_dns;
 	struct k_sem sem_ftp;
+	struct k_sem sem_http;
+	struct k_sem boot_sem;
+	struct k_sem pdp_sem;
 };
 
 /*
@@ -176,5 +173,31 @@ struct socket_read_data {
 	struct sockaddr *recv_addr;
 	uint16_t recv_read_len;
 };
+
+/*
+ * Driver internals
+ */
+extern struct sim7080_data mdata;
+extern struct modem_context mctx;
+extern const struct socket_op_vtable offload_socket_fd_op_vtable;
+extern const struct socket_dns_offload offload_dns_ops;
+extern struct k_work_q modem_workq;
+
+extern void sim7080_rssi_query_work(struct k_work *work);
+
+enum sim7080_state sim7080_get_state(void);
+
+void sim7080_change_state(enum sim7080_state state);
+
+int sim7080_pdp_activate(void);
+int sim7080_pdp_deactivate(void);
+
+int sim7080_offload_socket(int family, int type, int proto);
+
+void sim7080_handle_sock_data_indication(int fd);
+
+void sim7080_handle_sock_state(int fd, uint8_t state);
+
+int sim7080_utils_parse_time(uint8_t *date, uint8_t *time_str, struct tm *t);
 
 #endif /* SIMCOM_SIM7080_H */
