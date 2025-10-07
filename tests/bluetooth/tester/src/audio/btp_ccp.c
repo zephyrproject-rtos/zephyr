@@ -918,7 +918,8 @@ static uint8_t tbs_originate(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 	uri[cp->uri_len] = '\0';
 
 	err = bt_tbs_originate(cp->index, uri, &call_index);
-	if (err) {
+	/* TODO should we extend BTP to return call ID? */
+	if (err < 0) {
 		return BTP_STATUS_FAILED;
 	}
 
