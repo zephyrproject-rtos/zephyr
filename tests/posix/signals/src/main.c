@@ -74,7 +74,7 @@ ZTEST(posix_signals, test_sigaddset)
 	for (int i = 0; i < SIGSET_NLONGS; i++) {
 		zassert_equal(_set[i], _target[i],
 			      "set.sig[%d of %d] has content: %lx, expected %lx", i,
-			      SIGSET_NLONGS - 1, _set[i], _target[i]);
+			      (int)(SIGSET_NLONGS - 1), _set[i], _target[i]);
 	}
 
 	signo = SIGSYS;
@@ -83,7 +83,7 @@ ZTEST(posix_signals, test_sigaddset)
 	for (int i = 0; i < SIGSET_NLONGS; i++) {
 		zassert_equal(_set[i], _target[i],
 			      "set.sig[%d of %d] has content: %lx, expected %lx", i,
-			      SIGSET_NLONGS - 1, _set[i], _target[i]);
+			      (int)(SIGSET_NLONGS - 1), _set[i], _target[i]);
 	}
 
 	/* TODO: move rt signal tests to realtime_signals testsuite */
@@ -108,7 +108,7 @@ ZTEST(posix_signals, test_sigaddset)
 		for (int i = 0; i < SIGSET_NLONGS; i++) {
 			zassert_equal(_set[i], _target[i],
 				      "set.sig[%d of %d] has content: %lx, expected %lx", i,
-				      SIGSET_NLONGS - 1, _set[i], _target[i]);
+				      (int)(SIGSET_NLONGS - 1), _set[i], _target[i]);
 		}
 	}
 }
@@ -144,7 +144,7 @@ ZTEST(posix_signals, test_sigdelset)
 	for (int i = 0; i < SIGSET_NLONGS; i++) {
 		zassert_equal(_set[i], _target[i],
 			      "set.sig[%d of %d] has content: %lx, expected %lx", i,
-			      SIGSET_NLONGS - 1, _set[i], _target[i]);
+			      (int)(SIGSET_NLONGS - 1), _set[i], _target[i]);
 	}
 
 	signo = SIGSYS;
@@ -153,7 +153,7 @@ ZTEST(posix_signals, test_sigdelset)
 	for (int i = 0; i < SIGSET_NLONGS; i++) {
 		zassert_equal(_set[i], _target[i],
 			      "set.sig[%d of %d] has content: %lx, expected %lx", i,
-			      SIGSET_NLONGS - 1, _set[i], _target[i]);
+			      (int)(SIGSET_NLONGS - 1), _set[i], _target[i]);
 	}
 
 	/* TODO: move rt signal tests to realtime_signals testsuite */
@@ -178,7 +178,7 @@ ZTEST(posix_signals, test_sigdelset)
 		for (int i = 0; i < SIGSET_NLONGS; i++) {
 			zassert_equal(_set[i], _target[i],
 				      "set.sig[%d of %d] has content: %lx, expected %lx", i,
-				      SIGSET_NLONGS - 1, _set[i], _target[i]);
+				      (int)(SIGSET_NLONGS - 1), _set[i], _target[i]);
 		}
 	}
 }
