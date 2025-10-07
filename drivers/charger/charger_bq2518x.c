@@ -53,14 +53,14 @@ enum bq2518x_device_id {
 #define BQ2518X_VBAT_MSK                        GENMASK(6, 0)
 #define BQ2518X_ICHG_CHG_DIS                    BIT(7)
 #define BQ2518X_ICHG_MSK                        GENMASK(6, 0)
+#define BQ2518X_IC_CTRL_WDOG_DISABLE            (BIT(0) | BIT(1))
+#define BQ2518X_IC_CTRL_SAFETY_6_HOUR           BIT(2)
 #define BQ2518X_IC_CTRL_VRCH_100                0x00
 #define BQ2518X_IC_CTRL_VRCH_200                BIT(5)
-#define BQ2518X_IC_CTRL_VRCH_MSK                BIT(5)
-#define BQ2518X_VLOWV_SEL_2_8                   BIT(6)
-#define BQ2518X_VLOWV_SEL_3_0                   0x00
-#define BQ2518X_VLOWV_SEL_MSK                   BIT(6)
-#define BQ2518X_WATCHDOG_SEL_1_MSK              GENMASK(1, 0)
-#define BQ2518X_WATCHDOG_DISABLE                0x03
+#define BQ2518X_IC_CTRL_VLOWV_SEL_2_8           BIT(6)
+#define BQ2518X_IC_CTRL_VLOWV_SEL_3_0           0x00
+#define BQ2518X_IC_CTRL_TS_AUTO_EN              BIT(7)
+#define BQ2518X_SYS_REG_CTRL_OFFSET             5
 #define BQ2518X_DEVICE_ID_MSK                   GENMASK(3, 0)
 #define BQ2518X_DEVICE_ID                       0x00
 #define BQ2518X_SHIP_RST_EN_RST_SHIP_MSK        GENMASK(6, 5)
@@ -79,9 +79,9 @@ struct bq2518x_config {
 	struct i2c_dt_spec i2c;
 	uint32_t initial_current_microamp;
 	uint32_t max_voltage_microvolt;
-	uint32_t recharge_voltage_microvolt;
-	uint32_t precharge_threshold_voltage_microvolt;
 	enum bq2518x_device_id device_id;
+	uint8_t reg_ic_ctrl;
+	uint8_t reg_sys_regulation;
 };
 
 /*
@@ -343,9 +343,18 @@ static int bq2518x_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	/* Disable the watchdog */
-	ret = i2c_reg_update_byte_dt(&cfg->i2c, BQ2518X_IC_CTRL, BQ2518X_WATCHDOG_SEL_1_MSK,
-				     BQ2518X_WATCHDOG_DISABLE);
+	/* Setup register IC_CTRL.
+	 * Values from devicetree + device defaults
+	 */
+	val = BQ2518X_IC_CTRL_WDOG_DISABLE | BQ2518X_IC_CTRL_SAFETY_6_HOUR |
+	      BQ2518X_IC_CTRL_TS_AUTO_EN | cfg->reg_ic_ctrl;
+	ret = i2c_reg_write_byte_dt(&cfg->i2c, BQ2518X_IC_CTRL, val);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Setup VSYS regulation */
+	ret = i2c_reg_write_byte_dt(&cfg->i2c, BQ2518X_SYS_REG, cfg->reg_sys_regulation);
 	if (ret < 0) {
 		return ret;
 	}
@@ -353,32 +362,6 @@ static int bq2518x_init(const struct device *dev)
 	ret = bq2518x_set_charge_voltage(dev, cfg->max_voltage_microvolt);
 	if (ret < 0) {
 		LOG_ERR("Could not set the target voltage. (rc: %d)", ret);
-		return ret;
-	}
-
-	if (cfg->recharge_voltage_microvolt > 0) {
-		if ((cfg->max_voltage_microvolt - cfg->recharge_voltage_microvolt) > 100000) {
-			val = BQ2518X_IC_CTRL_VRCH_200;
-		} else {
-			val = BQ2518X_IC_CTRL_VRCH_100;
-		}
-
-		ret = i2c_reg_update_byte_dt(&cfg->i2c, BQ2518X_IC_CTRL, BQ2518X_IC_CTRL_VRCH_MSK,
-					     val);
-		if (ret < 0) {
-			return ret;
-		}
-	}
-
-	/* Precharge threshold voltage */
-	if (cfg->precharge_threshold_voltage_microvolt <= 2800000) {
-		val = BQ2518X_VLOWV_SEL_2_8;
-	} else {
-		val = BQ2518X_VLOWV_SEL_3_0;
-	}
-
-	ret = i2c_reg_update_byte_dt(&cfg->i2c, BQ2518X_IC_CTRL, BQ2518X_VLOWV_SEL_MSK, val);
-	if (ret < 0) {
 		return ret;
 	}
 
@@ -399,11 +382,16 @@ static int bq2518x_init(const struct device *dev)
 			DT_INST_PROP(inst, constant_charge_current_max_microamp),                  \
 		.max_voltage_microvolt =                                                           \
 			DT_INST_PROP(inst, constant_charge_voltage_max_microvolt),                 \
-		.recharge_voltage_microvolt =                                                      \
-			DT_INST_PROP_OR(inst, re_charge_voltage_microvolt, 0),                     \
-		.precharge_threshold_voltage_microvolt =                                           \
-			DT_INST_PROP(inst, precharge_voltage_threshold_microvolt),                 \
 		.device_id = _device_id##_DEVICE_ID,                                               \
+		.reg_ic_ctrl =                                                                     \
+			(DT_INST_PROP(inst, re_charge_threshold_millivolt) == 100                  \
+				 ? BQ2518X_IC_CTRL_VRCH_100                                        \
+				 : BQ2518X_IC_CTRL_VRCH_200) |                                     \
+			(DT_INST_PROP(inst, precharge_voltage_threshold_microvolt) == 2800000      \
+				 ? BQ2518X_IC_CTRL_VLOWV_SEL_2_8                                   \
+				 : BQ2518X_IC_CTRL_VLOWV_SEL_3_0),                                 \
+		.reg_sys_regulation = DT_INST_ENUM_IDX(inst, vsys_target_regulation)               \
+				      << BQ2518X_SYS_REG_CTRL_OFFSET,                              \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, bq2518x_init, NULL, NULL, &_device_id##_config_##inst,         \
