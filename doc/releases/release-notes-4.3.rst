@@ -59,6 +59,7 @@ Removed APIs and options
 * The legacy pipe object API was removed. Use the new pipe API instead.
 * ``bt_le_set_auto_conn``
 * ``CONFIG_BT_BUF_ACL_RX_COUNT``
+* ``ok`` enum value has now been removed completely from ``base.yaml`` binding ``status`` property in devicetree.
 
 Deprecated APIs and options
 ===========================
