@@ -196,6 +196,22 @@
 		reg = <0xa5000 0x1000>;
 		status = "okay";
 	};
+
+	lcdif2: lcdif2@480000 {
+		compatible = "display-controller";
+		reg = <0x480000 0x1f8>,
+			<0x417000 0x330>;
+		interrupts = <56 0>, <58 1>;
+		interrupt-names = "LCDIF-INT", "MIPI-INT";
+		status = "disabled";
+
+		lcdif_target: lcdif_target {
+			compatible = "display-controller";
+			status = "disabled";
+		};
+	};
+
+
 };
 
 &systick {

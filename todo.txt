@@ -1,0 +1,268 @@
+/*****************************/
+@NOTE(Emilio): The following presuambly does not need to be copied over
+	since we can see this in the Hello World example,
+	thus we can assume these implementations are
+	already supported in Zephyr
+    BOARD_ConfigMPU();
+    BOARD_InitPins();
+    BOARD_BootClockRUN();
+    BOARD_InitDebugConsole();
+
+	Thus, what we actually need to look at in terms of code init is these
+	functions.
+
+    BOARD_InitAHBSC();
+    BOARD_InitPsRamPins_Xspi2();
+    BOARD_Init16bitsPsRam(XSPI2);
+    BOARD_InitMipiPanelPins();
+    BOARD_InitMipiTouchPanelPins();
+
+@IMPORTANT @TODO(Emilio): I2C is going to be needed for the Touch pins to 
+	work.
+@SPEED(Emilio): Until we have the actual display working we will not
+	worry about I2C.
+    BOARD_MIPIPanelTouch_I2C_Init();
+
+/*****************************/
+@TODO(Emilio): The following are the pins needed for PsRam XSpi2
+@SPEED @INCOMPLETE(Emilio): At the moment we are combining all of the pinctrl
+	in one pinctrl node. We need to split this into seperate components
+	based on peripheral. psRam XSPI; LCDIF; MIPI; GPIO; FLEXCOMM;
+    RESET_ClearPeripheralReset(kIOPCTL2_RST_SHIFT_RSTn);
+
+	//@NOTE(Emilio): 0x41
+	const uint32_t psram_config = (
+                                        IOPCTL_PIO_FUNC1 |
+                                        /* Disable pull-up / pull-down function */
+                                        IOPCTL_PIO_PUPD_DI |
+                                        /* Enable pull-down function */
+                                        IOPCTL_PIO_PULLDOWN_EN |
+                                        /* Disable input buffer function */
+                                        IOPCTL_PIO_INBUF_EN |
+                                        /* Normal mode */
+                                        IOPCTL_PIO_SLEW_RATE_NORMAL |
+                                        /* Normal drive */
+                                        IOPCTL_PIO_DRIVE_100OHM |
+                                        /* Analog mux is disabled */
+                                        IOPCTL_PIO_ANAMUX_DI |
+                                        /* Pseudo Output Drain is disabled */
+                                        IOPCTL_PIO_PSEDRAIN_DI |
+                                        /* Input function is not inverted */
+                                        IOPCTL_PIO_INV_DI);
+
+    IOPCTL_PinMuxSet(4U, 0U, psram_config);
+    IOPCTL_PinMuxSet(4U, 1U, psram_config);
+    IOPCTL_PinMuxSet(4U, 2U, psram_config);
+    IOPCTL_PinMuxSet(4U, 3U, psram_config);
+    IOPCTL_PinMuxSet(4U, 4U, psram_config);
+    IOPCTL_PinMuxSet(4U, 5U, psram_config);
+    IOPCTL_PinMuxSet(4U, 6U, psram_config);
+    IOPCTL_PinMuxSet(4U, 7U, psram_config);
+    IOPCTL_PinMuxSet(4U, 8U, psram_config);
+    IOPCTL_PinMuxSet(4U, 9U, psram_config);
+    IOPCTL_PinMuxSet(4U, 10U, psram_config);
+    IOPCTL_PinMuxSet(4U, 11U, psram_config);
+    IOPCTL_PinMuxSet(4U, 12U, psram_config);
+    IOPCTL_PinMuxSet(4U, 13U, psram_config);
+    IOPCTL_PinMuxSet(4U, 14U, psram_config);
+    IOPCTL_PinMuxSet(4U, 15U, psram_config);
+    IOPCTL_PinMuxSet(4U, 16U, psram_config);
+    IOPCTL_PinMuxSet(4U, 17U, psram_config);
+    IOPCTL_PinMuxSet(4U, 18U, psram_config);
+    IOPCTL_PinMuxSet(4U, 19U, psram_config);
+    IOPCTL_PinMuxSet(4U, 20U, psram_config);
+
+
+/*****************************/
+@TODO(Emilio): In order to program the custom LUT inside the PSRam code we
+	should look into
+@IMPORTANT @TODO(Emilio): According to above, you might need to enable
+	XSPI2 which is the third instance of xspi
+
+	C:\NXP\mcuxsdk-core\mcuxpresso-sdk\mcusdk\examples\_boards\mimxrt700evk\board.c:495 func -> BOARD_Init16bitsPsRam
+
+/*****************************/
+@TODO(Emilio): The following is the pins doing the IO to the display.
+	They are GPIO pins
+
+    //@NOTE(Emilio): 0x0
+    const uint32_t display_config_0 = (/* Pin is configured as GPIO1_IO10 */
+                                         IOPCTL_PIO_FUNC0 |
+                                         /* Disable pull-up / pull-down function */
+                                         IOPCTL_PIO_PUPD_DI |
+                                         /* Enable pull-down function */
+                                         IOPCTL_PIO_PULLDOWN_EN |
+                                         /* Disable input buffer function */
+                                         IOPCTL_PIO_INBUF_DI |
+                                         /* Normal mode */
+                                         IOPCTL_PIO_SLEW_RATE_NORMAL |
+                                         /* Normal drive */
+                                         IOPCTL_PIO_FULLDRIVE_DI |
+                                         /* Analog mux is disabled */
+                                         IOPCTL_PIO_ANAMUX_DI |
+                                         /* Pseudo Output Drain is disabled */
+                                         IOPCTL_PIO_PSEDRAIN_DI |
+                                         /* Input function is not inverted */
+                                         IOPCTL_PIO_INV_DI);
+    /* PORT1 PIN10 (coords: T2) is configured as GPIO1_IO10 */
+    IOPCTL_PinMuxSet(1U, 10U, display_config_0);
+    IOPCTL_PinMuxSet(1U, 14U, port1_pin14_config);
+    IOPCTL_PinMuxSet(3U, 4U, port3_pin4_config);
+
+    //@NOTE(Emilio): 0x40
+    const uint32_t display_config_1 = (/* Pin is configured as GPIO3_IO5 */
+                                        IOPCTL_PIO_FUNC0 |
+                                        /* Disable pull-up / pull-down function */
+                                        IOPCTL_PIO_PUPD_DI |
+                                        /* Enable pull-down function */
+                                        IOPCTL_PIO_PULLDOWN_EN |
+                                        /* Enable input buffer function */
+                                        IOPCTL_PIO_INBUF_EN |
+                                        /* Normal mode */
+                                        IOPCTL_PIO_SLEW_RATE_NORMAL |
+                                        /* Normal drive */
+                                        IOPCTL_PIO_FULLDRIVE_DI |
+                                        /* Analog mux is disabled */
+                                        IOPCTL_PIO_ANAMUX_DI |
+                                        /* Pseudo Output Drain is disabled */
+                                        IOPCTL_PIO_PSEDRAIN_DI |
+                                        /* Input function is not inverted */
+                                        IOPCTL_PIO_INV_DI);
+    IOPCTL_PinMuxSet(3U, 5U, display_config_1);
+
+
+//@COMPLETE
+@NOTE(Emilio): At the bottom do not forget to enable the clock during start
+	up code.
+    CLOCK_EnableClock(kCLOCK_Gpio1);
+    CLOCK_EnableClock(kCLOCK_Gpio3);
+    RESET_PeripheralReset(kGPIO1_RST_SHIFT_RSTn);
+    RESET_PeripheralReset(kGPIO3_RST_SHIFT_RSTn);
+
+
+/*****************************/
+@TODO(Emilio): The following is what will be needed to enable the touch pins
+	seems to be a combo of flexcomm pins and GPIO pins.
+
+    //@NOTE(Emilio): 0x475
+    const uint32_t port0_pin6_config = (/* Pin is configured as LP_FLEXCOMM8_P0 */
+                                        IOPCTL_PIO_FUNC5 |
+                                        /* Enable pull-up / pull-down function */
+                                        IOPCTL_PIO_PUPD_EN |
+                                        /* Enable pull-up function */
+                                        IOPCTL_PIO_PULLUP_EN |
+                                        /* Enables input buffer function */
+                                        IOPCTL_PIO_INBUF_EN |
+                                        /* Normal mode */
+                                        IOPCTL_PIO_SLEW_RATE_NORMAL |
+                                        /* Normal drive */
+                                        IOPCTL_PIO_FULLDRIVE_DI |
+                                        /* Analog mux is disabled */
+                                        IOPCTL_PIO_ANAMUX_DI |
+                                        /* Pseudo Output Drain is enabled */
+                                        IOPCTL_PIO_PSEDRAIN_EN |
+                                        /* Input function is not inverted */
+                                        IOPCTL_PIO_INV_DI);
+    /* PORT0 PIN6 (coords: J5) is configured as LP_FLEXCOMM8_P0 */
+    IOPCTL_PinMuxSet(0U, 6U, port0_pin6_config);
+
+    //@NOTE(Emilio): 0x455
+    const uint32_t port0_pin7_config = (/* Pin is configured as LP_FLEXCOMM8_P1 */
+                                        IOPCTL_PIO_FUNC5 |
+                                        /* Enable pull-up / pull-down function */
+                                        IOPCTL_PIO_PUPD_EN |
+                                        /* Enable pull-down function */
+                                        IOPCTL_PIO_PULLDOWN_EN |
+                                        /* Enables input buffer function */
+                                        IOPCTL_PIO_INBUF_EN |
+                                        /* Normal mode */
+                                        IOPCTL_PIO_SLEW_RATE_NORMAL |
+                                        /* Normal drive */
+                                        IOPCTL_PIO_FULLDRIVE_DI |
+                                        /* Analog mux is disabled */
+                                        IOPCTL_PIO_ANAMUX_DI |
+                                        /* Pseudo Output Drain is enabled */
+                                        IOPCTL_PIO_PSEDRAIN_EN |
+                                        /* Input function is not inverted */
+                                        IOPCTL_PIO_INV_DI);
+    /* PORT0 PIN7 (coords: K5) is configured as LP_FLEXCOMM8_P1 */
+    IOPCTL_PinMuxSet(0U, 7U, port0_pin7_config);
+
+    //@NOTE(Emilio): 0x70
+    const uint32_t port1_pin13_config = (/* Pin is configured as GPIO. */
+                                        IOPCTL_PIO_FUNC0 |
+                                        /* Enable pull-up / pull-down function */
+                                        IOPCTL_PIO_PUPD_EN |
+                                        /* Enable pull-up function */
+                                        IOPCTL_PIO_PULLUP_EN |
+                                        /* Enables input buffer function */
+                                        IOPCTL_PIO_INBUF_EN |
+                                        /* Normal mode */
+                                        IOPCTL_PIO_SLEW_RATE_NORMAL |
+                                        /* Normal drive */
+                                        IOPCTL_PIO_FULLDRIVE_DI |
+                                        /* Analog mux is disabled */
+                                        IOPCTL_PIO_ANAMUX_DI |
+                                        /* Pseudo Output Drain is disabled */
+                                        IOPCTL_PIO_PSEDRAIN_DI |
+                                        /* Input function is not inverted */
+                                        IOPCTL_PIO_INV_DI);
+    /* PORT0 PIN7 (coords: K5) is configured as GPIO. */
+    IOPCTL_PinMuxSet(1U, 13U, port1_pin13_config);
+
+    //@NOTE(Emilio): 0x30
+    const uint32_t port3_pin8_config = (/* Pin is configured as GPIO. */
+                                        IOPCTL_PIO_FUNC0 |
+                                        /* Enable pull-up / pull-down function */
+                                        IOPCTL_PIO_PUPD_EN |
+                                        /* Enable pull-down function */
+                                        IOPCTL_PIO_PULLUP_EN |
+                                        /* Enables input buffer function */
+                                        IOPCTL_PIO_INBUF_DI |
+                                        /* Normal mode */
+                                        IOPCTL_PIO_SLEW_RATE_NORMAL |
+                                        /* Normal drive */
+                                        IOPCTL_PIO_FULLDRIVE_DI |
+                                        /* Analog mux is disabled */
+                                        IOPCTL_PIO_ANAMUX_DI |
+                                        /* Pseudo Output Drain is disabled */
+                                        IOPCTL_PIO_PSEDRAIN_DI |
+                                        /* Input function is not inverted */
+                                        IOPCTL_PIO_INV_DI);
+    /* PORT0 PIN7 (coords: K5) is configured as GPIO. */
+    IOPCTL_PinMuxSet(3U, 8U, port3_pin8_config);
+}
+
+/*****************************/
+@IMPORTANT @NOTE(Emilio): We are currently skipping lv_init, since we think
+	it is mostly init for middleware code and nothing to deal with 
+	the actual display, may need to look at this again.
+
+
+/*****************************/
+/* Put frame buffer in PSRAM */
+#define DEMO_BUFFER0_ADDR 0x60000000U
+#define DEMO_BUFFER1_ADDR 0x60200000U
+#define DEMO_PANEL_WIDTH  800U // 480
+#define DEMO_PANEL_HEIGHT 480U // 466
+#define DEMO_BUFFER_BYTE_PER_PIXEL 2
+//@NOTE(Emilio): According to doc, square because of circular screen
+#define DEMO_FB_WIDTH  (DEMO_PANEL_WIDTH) // 466
+#define DEMO_FB_HEIGHT (DEMO_PANEL_HEIGHT) // 466
+// 960
+#define DEMO_BUFFER_STRIDE_BYTE DEMO_FB_WIDTH * DEMO_BUFFER_BYTE_PER_PIXEL 
+// 447360
+#define DEMO_FB_SIZE (DEMO_BUFFER_STRIDE_BYTE * DEMO_FB_HEIGHT)
+
+
+/*****************************/
+@TODO(Emilio): See if initially we need vglite support, since it
+	is GPU acceleration...I think, see if we need to enable
+	VGLITE support before enabling the display support.
+
+
+/*****************************/
+@IMPORTANT @NOTE(Emilio): It seems that majority of the display init support
+	is located in examples\_boards\mimxrt700evk\display_support.c
+	in func BOARD_PrepareDisplayController()
+
