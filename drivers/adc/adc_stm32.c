@@ -124,6 +124,11 @@ LOG_MODULE_REGISTER(adc_stm32);
 					   st_adc_has_deep_powerdown,\
 					   0, 1) 0)
 
+#define ANY_ADC_HAS_CHANNEL_PRESELECTION \
+	(DT_INST_FOREACH_STATUS_OKAY_VARGS(IS_EQ_PROP_OR, \
+					   st_adc_has_channel_preselection,\
+					   0, 1) 0)
+
 #define ANY_CHILD_NODE_IS_DIFFERENTIAL(inst) \
 	(DT_INST_FOREACH_CHILD_VARGS(inst, IS_EQ_NODE_PROP_OR, \
 				     zephyr_differential, \
@@ -217,6 +222,7 @@ struct adc_stm32_cfg {
 	int8_t oversampler_type;
 	int8_t internal_regulator;
 	bool has_deep_powerdown		:1;
+	bool has_channel_preselection	:1;
 	int8_t res_table_size;
 	const uint32_t res_table[];
 };
@@ -936,16 +942,16 @@ static int set_sequencer(const struct device *dev)
 
 #if ANY_ADC_SEQUENCER_TYPE_IS(FULLY_CONFIGURABLE)
 		if (config->sequencer_type == FULLY_CONFIGURABLE) {
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || \
-	defined(CONFIG_SOC_SERIES_STM32N6X) || \
-	defined(CONFIG_SOC_SERIES_STM32U3X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X)
-			/*
-			 * Each channel in the sequence must be previously enabled in PCSEL.
-			 * This register controls the analog switch integrated in the IO level.
-			 */
-			LL_ADC_SetChannelPreselection(adc, channel);
-#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32U5X */
+#if ANY_ADC_HAS_CHANNEL_PRESELECTION
+			if (config->has_channel_preselection) {
+				/*
+				 * Each channel in the sequence must be previously enabled in PCSEL.
+				 * This register controls the analog switch integrated in the IO
+				 * level.
+				 */
+				LL_ADC_SetChannelPreselection(adc, channel);
+			}
+#endif /* ANY_ADC_HAS_CHANNEL_PRESELECTION */
 			LL_ADC_REG_SetSequencerRanks(adc, table_rank[channel_index], channel);
 			LL_ADC_REG_SetSequencerLength(adc, table_seq_len[channel_index]);
 		}
@@ -1168,10 +1174,12 @@ static void adc_context_on_complete(struct adc_context *ctx, int status)
 	data->acq_time_index[0] = -1;
 	data->acq_time_index[1] = -1;
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32U5X)
-	/* Reset channel preselection register */
-	LL_ADC_SetChannelPreselection(adc, 0);
-#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32U5X */
+#if ANY_ADC_HAS_CHANNEL_PRESELECTION
+	if (config->has_channel_preselection) {
+		/* Reset channel preselection register */
+		LL_ADC_SetChannelPreselection(adc, 0);
+	}
+#endif /* ANY_ADC_HAS_CHANNEL_PRESELECTION */
 }
 
 static int adc_stm32_read(const struct device *dev,
@@ -1980,7 +1988,8 @@ static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 	.oversampler_type = DT_INST_STRING_UPPER_TOKEN(index, st_adc_oversampler),	\
 	.internal_regulator = CONCAT(INTERNAL_REGULATOR_,					\
 		DT_INST_STRING_UPPER_TOKEN(index, st_adc_internal_regulator)),			\
-	.has_deep_powerdown = DT_INST_PROP(index, st_adc_has_deep_powerdown),	\
+	.has_deep_powerdown = DT_INST_PROP(index, st_adc_has_deep_powerdown),			\
+	.has_channel_preselection = DT_INST_PROP(index, st_adc_has_channel_preselection),	\
 	.sampling_time_table = DT_INST_PROP(index, sampling_times),	\
 	.num_sampling_time_common_channels =				\
 		DT_INST_PROP_OR(index, num_sampling_time_common_channels, 0),\
