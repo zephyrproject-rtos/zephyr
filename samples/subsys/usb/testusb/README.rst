@@ -25,7 +25,8 @@ To run USB tests:
 
       $ sudo modprobe usbtest vendor=0x2fe3 product=0x0009
 
-   The ``usbtest`` module should claim the device:
+   By checking the kernel diagnostic messages, you should see that the ``usbtest``
+   module has claimed the device:
 
    .. code-block:: console
 
@@ -39,6 +40,18 @@ To run USB tests:
       [21746.306153] usbtest 9-1:1.0: Generic USB device
       [21746.306156] usbtest 9-1:1.0: full-speed {control} tests
 
+   .. note::
+     The kernel diagnostic messages can be displayed using a command such as
+     ``journalctl -k -n 20`` or ``dmesg`` (these commands may need to be
+     executed as root - e.g., ``sudo dmesg``).
+
+   The first line of the diagnostic messages above contains two important
+   pieces of information that will be needed later on:
+
+     * The USB bus number: ``9`` in ``usb 9-1: [...]``
+
+     * The device under testing (DUT)'s USB device number: ``16`` in ``USB device number 16``
+
 #. Use the ``testusb`` tool in ``linux/tools/usb`` inside Linux kernel source directory
    to start the tests.
 
@@ -49,16 +62,44 @@ To run USB tests:
       /dev/bus/usb/009/016 test 9,    4.994475 secs
       /dev/bus/usb/009/016 test 10,   11.990054 secs
 
-#. To run all the tests the Zephyr's VID / PID should be inserted to USB
-   driver id table. The method for loading the ``usbtest`` driver for our
-   device is described here: https://lwn.net/Articles/160944/.
+   .. note::
+      In this command, replace ``009`` and ``016`` with the USB bus number and
+      DUT's device number, respectively, as found in the debugging messages on
+      your host. Do not forget to pad with zeros.
 
-   Since we use the "Gadget Zero" interface we specify reference device
-   ``0525:a4a0``.
+#. The Linux ``usbtest`` driver does not support this Zephyr sample's VID/PID
+   so we cannot run all the tests by default. To run all the tests, we can use
+   the feature described in the `"Dynamic USB device IDs" LWN.net article`_ to
+   write one of the supported VID/PID pair to the ``new_id`` sysfs attribute
+   of our device. Since the sample implements an interface similar to the
+   "Gadget Zero" interface, we specify reference device ``0525:a4a0``.
 
    .. code-block:: console
 
       $ sudo sh -c "echo 0x2fe3 0x0009 0 0x0525 0xa4a0 > /sys/bus/usb/drivers/usbtest/new_id"
+
+   .. note::
+      This step can be performed right after loading the ``usbtest`` module instead.
+      Otherwise, you may have to disconnect and reconnect the DUT in order for the
+      Gadget Zero interface to become enabled.
+
+      Once this step has been performed, the kernel diagnostic messages upon connecting
+      the DUT should be similar to the following:
+
+      .. code-block::
+
+         [100458.667241] usb 3-5.3.1: new full-speed USB device number 38 using xhci_hcd
+         [100458.761743] usb 3-5.3.1: New USB device found, idVendor=2fe3, idProduct=0009, bcdDevice= 4.02
+         [100458.761750] usb 3-5.3.1: New USB device strings: Mfr=1, Product=2, SerialNumber=3
+         [100458.761753] usb 3-5.3.1: Product: Zephyr testusb sample
+         [100458.761755] usb 3-5.3.1: Manufacturer: Zephyr Project
+         [100458.761757] usb 3-5.3.1: SerialNumber: 2034354E32365007003C001C
+         [100458.773785] usbtest 3-5.3.1:1.0: Linux gadget zero
+         [100458.773791] usbtest 3-5.3.1:1.0: full-speed {control in/out bulk-in bulk-out} tests (+alt)
+         [100458.773858] usbtest 3-5.3.1:1.1: Linux gadget zero
+         [100458.773859] usbtest 3-5.3.1:1.1: full-speed {control in/out int-in int-out} tests (+alt)
+         [100458.773914] usbtest 3-5.3.1:1.2: Linux gadget zero
+         [100458.773916] usbtest 3-5.3.1:1.2: full-speed {control in/out iso-in iso-out} tests (+alt)
 
 #. Use the ``testusb`` tool in ``linux/tools/usb`` inside Linux kernel source directory
    to start the tests.
@@ -90,3 +131,6 @@ To run USB tests:
       /dev/bus/usb/009/017 test 27,   56.911052 secs
       /dev/bus/usb/009/017 test 28,   34.163089 secs
       /dev/bus/usb/009/017 test 29,    3.983999 secs
+
+.. _"Dynamic USB device IDs" LWN.net article:
+   https://lwn.net/Articles/160944/
