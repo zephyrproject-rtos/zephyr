@@ -140,6 +140,9 @@ kconfig_to_ot_option(CONFIG_OPENTHREAD_VERHOEFF_CHECKSUM OT_VERHOEFF_CHECKSUM "V
 kconfig_to_ot_option(CONFIG_OPENTHREAD_WAKEUP_COORDINATOR OT_WAKEUP_COORDINATOR "Enable Wake-up Coordinator role")
 kconfig_to_ot_option(CONFIG_OPENTHREAD_WAKEUP_END_DEVICE OT_WAKEUP_END_DEVICE "Enable Wake-up End Device role")
 kconfig_to_ot_option_value(CONFIG_OPENTHREAD_RCP_RESTORATION_MAX_COUNT OT_RCP_RESTORATION_MAX_COUNT "Set the maximum number of RCP restoration attempts")
+kconfig_to_ot_option_value(CONFIG_OPENTHREAD_NET_DIAG_VENDOR_NAME OT_VENDOR_NAME "Set vendor name for network diagnostics")
+kconfig_to_ot_option_value(CONFIG_OPENTHREAD_NET_DIAG_VENDOR_MODEL OT_VENDOR_MODEL "Set vendor model for network diagnostics")
+kconfig_to_ot_option_value(CONFIG_OPENTHREAD_NET_DIAG_VENDOR_SW_VERSION OT_VENDOR_SW_VERSION "Set software version for network diagnostics")
 
 if(CONFIG_OPENTHREAD_COPROCESSOR_VENDOR_HOOK_SOURCE)
   set(OT_NCP_VENDOR_HOOK_SOURCE ${CONFIG_OPENTHREAD_COPROCESSOR_VENDOR_HOOK_SOURCE} CACHE STRING "NCP vendor hook source file name" FORCE)
