@@ -48,6 +48,8 @@ bq25186@3 {
 	reg = <0x3>;
 	constant-charge-current-max-microamp = <500000>;
 	constant-charge-voltage-max-microvolt = <4200000>;
+	re-charge-threshold-millivolt = <200>;
+	vsys-target-regulation = "Vin Passthrough";
 };
 
 bq25188@4 {
@@ -55,6 +57,7 @@ bq25188@4 {
 	reg = <0x4>;
 	constant-charge-current-max-microamp = <500000>;
 	constant-charge-voltage-max-microvolt = <4200000>;
+	vsys-target-regulation = "Battery Tracking";
 };
 
 sbs-charger@5 {
