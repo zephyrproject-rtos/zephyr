@@ -265,7 +265,6 @@
 			clocks = <&rcc STM32_CLOCK(APB2, 9)>,
 				 <&rcc STM32_SRC_HSI NO_SEL>;
 			interrupts = <18 0>;
-			status = "disabled";
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
 				       STM32_ADC_RES(10, 0x01)
@@ -275,6 +274,8 @@
 			st,adc-clock-source = "ASYNC";
 			st,adc-sequencer = "FULLY_CONFIGURABLE";
 			st,adc-oversampler = "OVERSAMPLER_NONE";
+			st,adc-internal-regulator = "none";
+			status = "disabled";
 		};
 
 		dac1: dac@40007400 {

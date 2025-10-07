@@ -914,7 +914,6 @@
 			reg = <0x40022000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 5)>;
 			interrupts = <18 0>;
-			status = "disabled";
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(16, 0x00)
 				       STM32_ADC_RES(14, 0x05)
@@ -924,6 +923,11 @@
 			sampling-times = <2 3 9 17 33 65 388 811>;
 			st,adc-sequencer = "FULLY_CONFIGURABLE";
 			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
+			st,adc-internal-regulator = "startup-hw-status";
+			st,adc-has-deep-powerdown;
+			st,adc-has-channel-preselection;
+			st,adc-has-differential-support;
+			status = "disabled";
 		};
 
 		adc2: adc@40022100 {
@@ -931,7 +935,6 @@
 			reg = <0x40022100 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 5)>;
 			interrupts = <18 0>;
-			status = "disabled";
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(16, 0x00)
 				       STM32_ADC_RES(14, 0x05)
@@ -941,6 +944,11 @@
 			sampling-times = <2 3 9 17 33 65 388 811>;
 			st,adc-sequencer = "FULLY_CONFIGURABLE";
 			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
+			st,adc-internal-regulator = "startup-hw-status";
+			st,adc-has-deep-powerdown;
+			st,adc-has-channel-preselection;
+			st,adc-has-differential-support;
+			status = "disabled";
 		};
 
 		/* dual mode: adc1 and adc2 coupled */
@@ -949,7 +957,6 @@
 			reg = <0x40022300 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 5)>;
 			interrupts = <18 0>;
-			status = "disabled";
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(16, 0x00)
 				       STM32_ADC_RES(14, 0x05)
@@ -959,6 +966,11 @@
 			sampling-times = <2 3 9 17 33 65 388 811>;
 			st,adc-sequencer = "FULLY_CONFIGURABLE";
 			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
+			st,adc-internal-regulator = "startup-hw-status";
+			st,adc-has-deep-powerdown;
+			st,adc-has-channel-preselection;
+			st,adc-has-differential-support;
+			status = "disabled";
 		};
 
 		adc3: adc@58026000 {
@@ -966,7 +978,6 @@
 			reg = <0x58026000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB4, 24)>;
 			interrupts = <127 0>;
-			status = "disabled";
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(16, 0x00)
 				       STM32_ADC_RES(14, 0x05)
@@ -976,6 +987,11 @@
 			sampling-times = <2 3 9 17 33 65 388 811>;
 			st,adc-sequencer = "FULLY_CONFIGURABLE";
 			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
+			st,adc-internal-regulator = "startup-hw-status";
+			st,adc-has-deep-powerdown;
+			st,adc-has-channel-preselection;
+			st,adc-has-differential-support;
+			status = "disabled";
 		};
 
 		dac1: dac@40007400 {

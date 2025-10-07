@@ -812,7 +812,6 @@
 			reg = <0x40012000 0x50>;
 			clocks = <&rcc STM32_CLOCK(APB2, 8)>;
 			interrupts = <18 0>;
-			status = "disabled";
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
 				       STM32_ADC_RES(10, 0x01)
@@ -822,6 +821,8 @@
 			st,adc-clock-source = "SYNC";
 			st,adc-sequencer = "FULLY_CONFIGURABLE";
 			st,adc-oversampler = "OVERSAMPLER_NONE";
+			st,adc-internal-regulator = "none";
+			status = "disabled";
 		};
 
 		adc2: adc@40012100 {
@@ -829,7 +830,6 @@
 			reg = <0x40012100 0x50>;
 			clocks = <&rcc STM32_CLOCK(APB2, 9)>;
 			interrupts = <18 0>;
-			status = "disabled";
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
 				       STM32_ADC_RES(10, 0x01)
@@ -839,6 +839,8 @@
 			st,adc-clock-source = "SYNC";
 			st,adc-sequencer = "FULLY_CONFIGURABLE";
 			st,adc-oversampler = "OVERSAMPLER_NONE";
+			st,adc-internal-regulator = "none";
+			status = "disabled";
 		};
 
 		adc3: adc@40012200 {
@@ -846,7 +848,6 @@
 			reg = <0x40012200 0x50>;
 			clocks = <&rcc STM32_CLOCK(APB2, 10)>;
 			interrupts = <18 0>;
-			status = "disabled";
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
 				       STM32_ADC_RES(10, 0x01)
@@ -856,6 +857,8 @@
 			st,adc-clock-source = "SYNC";
 			st,adc-sequencer = "FULLY_CONFIGURABLE";
 			st,adc-oversampler = "OVERSAMPLER_NONE";
+			st,adc-internal-regulator = "none";
+			status = "disabled";
 		};
 
 		dac1: dac@40007400 {

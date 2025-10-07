@@ -253,6 +253,9 @@
 			sampling-times = <2 3 7 12 24 47 247 1500>;
 			st,adc-sequencer = "FULLY_CONFIGURABLE";
 			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
+			st,adc-internal-regulator = "startup-hw-status";
+			st,adc-has-deep-powerdown;
+			st,adc-has-channel-preselection;
 			status = "disabled";
 		};
 
@@ -269,6 +272,9 @@
 			sampling-times = <2 3 7 12 24 47 247 1500>;
 			st,adc-sequencer = "FULLY_CONFIGURABLE";
 			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
+			st,adc-internal-regulator = "startup-hw-status";
+			st,adc-has-deep-powerdown;
+			st,adc-has-channel-preselection;
 			status = "disabled";
 		};
 

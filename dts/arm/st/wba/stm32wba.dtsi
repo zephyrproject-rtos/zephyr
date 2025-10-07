@@ -494,7 +494,6 @@
 			clocks = <&rcc STM32_CLOCK(AHB4, 5)>,
 				 <&rcc STM32_SRC_HCLK1 ADC_SEL(0)>;
 			interrupts = <65 0>;
-			status = "disabled";
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
 				       STM32_ADC_RES(10, 0x01)
@@ -505,6 +504,8 @@
 			st,adc-clock-source = "ASYNC";
 			st,adc-sequencer = "NOT_FULLY_CONFIGURABLE";
 			st,adc-oversampler = "OVERSAMPLER_MINIMAL";
+			st,adc-internal-regulator = "startup-hw-status";
+			status = "disabled";
 		};
 
 		lptim1: timers@46004400 {

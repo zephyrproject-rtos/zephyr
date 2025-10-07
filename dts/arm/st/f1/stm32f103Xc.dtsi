@@ -134,8 +134,13 @@
 			clocks = <&rcc STM32_CLOCK(APB2, 10)>;
 			/* Shares vector with ADC1 */
 			interrupts = <18 0>;
-			status = "disabled";
 			#io-channel-cells = <1>;
+			resolutions = <STM32F1_ADC_RES(12)>;
+			sampling-times = <2 8 14 29 42 56 72 240>;
+			st,adc-sequencer = "FULLY_CONFIGURABLE";
+			st,adc-oversampler = "OVERSAMPLER_NONE";
+			st,adc-internal-regulator = "none";
+			status = "disabled";
 		};
 
 		adc3: adc@40013c00 {
@@ -143,8 +148,13 @@
 			reg = <0x40013c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 15)>;
 			interrupts = <47 0>;
-			status = "disabled";
 			#io-channel-cells = <1>;
+			resolutions = <STM32F1_ADC_RES(12)>;
+			sampling-times = <2 8 14 29 42 56 72 240>;
+			st,adc-sequencer = "FULLY_CONFIGURABLE";
+			st,adc-oversampler = "OVERSAMPLER_NONE";
+			st,adc-internal-regulator = "none";
+			status = "disabled";
 		};
 
 		timers8: timers@40013400 {

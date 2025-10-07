@@ -87,7 +87,6 @@
 			reg = <0x50000000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 28)>;
 			interrupts = <18 0>;
-			status = "disabled";
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
 				       STM32_ADC_RES(10, 0x01)
@@ -96,6 +95,9 @@
 			sampling-times = <2 3 5 8 20 62 182 602>;
 			st,adc-sequencer = "FULLY_CONFIGURABLE";
 			st,adc-oversampler = "OVERSAMPLER_NONE";
+			st,adc-internal-regulator = "startup-sw-delay";
+			st,adc-has-differential-support;
+			status = "disabled";
 		};
 
 		rtc@40002800 {
