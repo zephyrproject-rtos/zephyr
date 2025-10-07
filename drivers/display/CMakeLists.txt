@@ -8,6 +8,7 @@ if(CONFIG_SDL_DISPLAY)
 endif()
 
 # zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_AC057TC1	display_ac057tc1.c)
 zephyr_library_sources_ifdef(CONFIG_CO5300 display_co5300.c)
 zephyr_library_sources_ifdef(CONFIG_DISPLAY_MCUX_DCNANO_LCDIF display_mcux_dcnano_lcdif.c)
 zephyr_library_sources_ifdef(CONFIG_DISPLAY_MCUX_ELCDIF display_mcux_elcdif.c)
