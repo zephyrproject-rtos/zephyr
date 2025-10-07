@@ -352,7 +352,7 @@ __weak void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Lpi2c0506, &rootCfg);
 #endif
 
-#if defined(CONFIG_SPI_NXP_LPSPI)
+#if defined(CONFIG_SPI_NXP_LPSPI) || defined(CONFIG_SPI_MCUX_LPSPI)
 
 #if	(DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi1), okay) \
 	|| DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi2), okay))
@@ -378,7 +378,7 @@ __weak void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Lpspi0506, &rootCfg);
 #endif
 
-#endif /* CONFIG_SPI_NXP_LPSPI */
+#endif /* CONFIG_SPI_NXP_LPSPI || CONFIG_SPI_MCUX_LPSPI */
 
 #if defined(CONFIG_COUNTER_MCUX_GPT)
 

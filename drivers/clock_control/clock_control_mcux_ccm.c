@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(clock_control);
 static sc_ipc_t ipc_handle;
 #endif
 
-#ifdef CONFIG_SPI_NXP_LPSPI
+#if defined(CONFIG_SPI_NXP_LPSPI) || defined(CONFIG_SPI_MCUX_LPSPI)
 static const clock_name_t lpspi_clocks[] = {
 	kCLOCK_Usb1PllPfd1Clk,
 	kCLOCK_Usb1PllPfd0Clk,
@@ -270,7 +270,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		break;
 #endif
 
-#ifdef CONFIG_SPI_NXP_LPSPI
+#if defined(CONFIG_SPI_NXP_LPSPI) || defined(CONFIG_SPI_MCUX_LPSPI)
 	case IMX_CCM_LPSPI_CLK:
 	{
 		uint32_t lpspi_mux = CLOCK_GetMux(kCLOCK_LpspiMux);
