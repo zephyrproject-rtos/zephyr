@@ -94,6 +94,11 @@ LOG_MODULE_REGISTER(adc_stm32);
 #define OVERSAMPLER_MINIMAL	1
 #define OVERSAMPLER_EXTENDED	2
 
+/* Internal regulator type */
+#define INTERNAL_REGULATOR_NONE			0
+#define INTERNAL_REGULATOR_STARTUP_SW_DELAY	1
+#define INTERNAL_REGULATOR_STARTUP_HW_STATUS	2
+
 #define ANY_NUM_COMMON_SAMPLING_TIME_CHANNELS_IS(value) \
 	(DT_INST_FOREACH_STATUS_OKAY_VARGS(IS_EQ_PROP_OR, \
 					   num_sampling_time_common_channels,\
@@ -107,6 +112,11 @@ LOG_MODULE_REGISTER(adc_stm32);
 #define ANY_ADC_OVERSAMPLER_TYPE_IS(value) \
 	(DT_INST_FOREACH_STATUS_OKAY_VARGS(IS_EQ_STRING_PROP, \
 					   st_adc_oversampler,\
+					   value) 0)
+
+#define ANY_ADC_INTERNAL_REGULATOR_TYPE_IS(value) \
+	(DT_INST_FOREACH_STATUS_OKAY_VARGS(IS_EQ_STRING_PROP, \
+					   st_adc_internal_regulator,\
 					   value) 0)
 
 #define ANY_CHILD_NODE_IS_DIFFERENTIAL(inst) \
@@ -200,6 +210,7 @@ struct adc_stm32_cfg {
 	int8_t num_sampling_time_common_channels;
 	int8_t sequencer_type;
 	int8_t oversampler_type;
+	int8_t internal_regulator;
 	int8_t res_table_size;
 	const uint32_t res_table[];
 };
@@ -1661,36 +1672,32 @@ static int adc_stm32_init(const struct device *dev)
 	LL_ADC_DisableDeepPowerDown(adc);
 #endif
 
+#if ANY_ADC_INTERNAL_REGULATOR_TYPE_IS(INTERNAL_REGULATOR_STARTUP_SW_DELAY) || \
+	ANY_ADC_INTERNAL_REGULATOR_TYPE_IS(INTERNAL_REGULATOR_STARTUP_HW_STATUS)
 	/*
 	 * Many ADC modules need some time to be stabilized before performing
 	 * any enable or calibration actions.
 	 */
-#if !defined(CONFIG_SOC_SERIES_STM32F0X) && \
-	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && \
-	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc) && \
-	!defined(CONFIG_SOC_SERIES_STM32N6X)
-	LL_ADC_EnableInternalRegulator(adc);
+	if (config->internal_regulator != INTERNAL_REGULATOR_NONE) {
+		LL_ADC_EnableInternalRegulator(adc);
+	}
+
 	/* Wait for Internal regulator stabilisation
-	 * Some series have a dedicated status bit, others relie on a delay
+	 * Some series have a dedicated status bit, others rely on a delay
 	 */
-#if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(STM32H72X_ADC)
-	/* ADC3 on H72x/H73x doesn't have the LDORDY status bit */
-	if (adc == ADC3) {
+#if ANY_ADC_INTERNAL_REGULATOR_TYPE_IS(INTERNAL_REGULATOR_STARTUP_SW_DELAY)
+	if (config->internal_regulator == INTERNAL_REGULATOR_STARTUP_SW_DELAY) {
 		k_busy_wait(LL_ADC_DELAY_INTERNAL_REGUL_STAB_US);
-	} else {
+	}
+#endif /* ANY_ADC_INTERNAL_REGULATOR_TYPE_IS(INTERNAL_REGULATOR_STARTUP_SW_DELAY) */
+#if ANY_ADC_INTERNAL_REGULATOR_TYPE_IS(INTERNAL_REGULATOR_STARTUP_HW_STATUS)
+	if (config->internal_regulator == INTERNAL_REGULATOR_STARTUP_HW_STATUS) {
 		while (LL_ADC_IsActiveFlag_LDORDY(adc) == 0) {
 		}
 	}
-#elif defined(CONFIG_SOC_SERIES_STM32H7X) || \
-	defined(CONFIG_SOC_SERIES_STM32U3X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBAX)
-	while (LL_ADC_IsActiveFlag_LDORDY(adc) == 0) {
-	}
-#else
-	k_busy_wait(LL_ADC_DELAY_INTERNAL_REGUL_STAB_US);
-#endif
-#endif
+#endif /* ANY_ADC_INTERNAL_REGULATOR_TYPE_IS(INTERNAL_REGULATOR_STARTUP_HW_STATUS) */
+
+#endif /* INTERNAL_REGULATOR_STARTUP_SW_DELAY || INTERNAL_REGULATOR_STARTUP_HW_STATUS */
 
 	if (config->irq_cfg_func) {
 		config->irq_cfg_func();
@@ -1717,15 +1724,15 @@ static int adc_stm32_suspend_setup(const struct device *dev)
 	/* Disable ADC */
 	adc_stm32_disable(adc);
 
-#if !defined(CONFIG_SOC_SERIES_STM32F0X) && \
-	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && \
-	!DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc) && \
-	!defined(CONFIG_SOC_SERIES_STM32N6X)
-	/* Disable ADC internal voltage regulator */
-	LL_ADC_DisableInternalRegulator(adc);
-	while (LL_ADC_IsInternalRegulatorEnabled(adc) == 1U) {
+#if ANY_ADC_INTERNAL_REGULATOR_TYPE_IS(INTERNAL_REGULATOR_STARTUP_SW_DELAY) || \
+	ANY_ADC_INTERNAL_REGULATOR_TYPE_IS(INTERNAL_REGULATOR_STARTUP_HW_STATUS)
+	if (config->internal_regulator != INTERNAL_REGULATOR_NONE) {
+		/* Disable ADC internal voltage regulator */
+		LL_ADC_DisableInternalRegulator(adc);
+		while (LL_ADC_IsInternalRegulatorEnabled(adc) == 1U) {
+		}
 	}
-#endif
+#endif /* INTERNAL_REGULATOR_STARTUP_SW_DELAY || INTERNAL_REGULATOR_STARTUP_HW_STATUS */
 
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32L5X) || \
@@ -1989,6 +1996,8 @@ static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 	.differential_channels_used = (ANY_CHILD_NODE_IS_DIFFERENTIAL(index) > 0), \
 	.sequencer_type = DT_INST_STRING_UPPER_TOKEN(index, st_adc_sequencer),	\
 	.oversampler_type = DT_INST_STRING_UPPER_TOKEN(index, st_adc_oversampler),	\
+	.internal_regulator = CONCAT(INTERNAL_REGULATOR_,					\
+		DT_INST_STRING_UPPER_TOKEN(index, st_adc_internal_regulator)),			\
 	.sampling_time_table = DT_INST_PROP(index, sampling_times),	\
 	.num_sampling_time_common_channels =				\
 		DT_INST_PROP_OR(index, num_sampling_time_common_channels, 0),\
