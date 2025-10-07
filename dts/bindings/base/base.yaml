@@ -16,7 +16,6 @@ properties:
 
       For details, see "2.3.4 status" in Devicetree Specification v0.4.
     enum:
-      - "ok" # Deprecated form
       - "okay"
       - "disabled"
       - "reserved"

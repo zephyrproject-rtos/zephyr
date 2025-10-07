@@ -93,7 +93,7 @@
 		reg = <0x34000 0x1000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		status = "ok";
+		status = "okay";
 
 		flash0: flash@0 {
 			compatible = "soc-nv-flash";
