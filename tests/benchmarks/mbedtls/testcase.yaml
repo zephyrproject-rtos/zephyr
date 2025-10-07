@@ -1,5 +1,10 @@
 common:
-  harness: crypto
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Benchmark completed"
+  timeout: 10
   tags: crypto
 tests:
   benchmark.crypto.mbedtls:
