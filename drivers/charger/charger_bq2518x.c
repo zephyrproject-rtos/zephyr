@@ -4,9 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * BQ25180 Datasheet: https://www.ti.com/lit/gpn/bq25180
+ * BQ25186 Datasheet: https://www.ti.com/lit/gpn/bq25186
+ * BQ25187 Datasheet: https://www.ti.com/lit/gpn/bq25188
+ *
+ * Notable Differences:
+ *    BQ25180 CHARGE_CTRL0: VINDPM lowest value is 4.2V,
+ *                          compared to VBAT + 300 mV for
+ *                          other two.
  */
-
-#define DT_DRV_COMPAT ti_bq25180
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/charger.h>
@@ -17,14 +22,27 @@
 
 LOG_MODULE_REGISTER(bq2518x, CONFIG_CHARGER_LOG_LEVEL);
 
-#define BQ2518X_STAT0 0x00
-#define BQ2518X_STAT1 0x01
-#define BQ2518X_FLAG0 0x02
-#define BQ2518X_VBAT_CTRL 0x03
-#define BQ2518X_ICHG_CTRL 0x04
-#define BQ2518X_IC_CTRL 0x07
-#define BQ2518X_SHIP_RST 0x09
-#define BQ2518X_MASK_ID 0x0c
+enum bq2518x_reg {
+	BQ2518X_STAT0 = 0x00,
+	BQ2518X_STAT1 = 0x01,
+	BQ2518X_FLAG0 = 0x02,
+	BQ2518X_VBAT_CTRL = 0x03,
+	BQ2518X_ICHG_CTRL = 0x04,
+	BQ2518X_CHARGE_CTRL0 = 0x05,
+	BQ2518X_CHARGE_CTRL1 = 0x06,
+	BQ2518X_IC_CTRL = 0x07,
+	BQ2518X_TMR_ILIM = 0x08,
+	BQ2518X_SHIP_RST = 0x09,
+	BQ2518X_SYS_REG = 0x0A,
+	BQ2518X_TS_CONTROL = 0x0B,
+	BQ2518X_MASK_ID = 0x0c,
+};
+
+enum bq2518x_device_id {
+	BQ25180_DEVICE_ID = 0x00,
+	BQ25186_DEVICE_ID = 0x01,
+	BQ25188_DEVICE_ID = 0x04,
+};
 
 #define BQ2518X_STAT0_CHG_STAT_MASK             GENMASK(6, 5)
 #define BQ2518X_STAT0_CHG_STAT_NOT_CHARGING     0x00
@@ -63,6 +81,7 @@ struct bq2518x_config {
 	uint32_t max_voltage_microvolt;
 	uint32_t recharge_voltage_microvolt;
 	uint32_t precharge_threshold_voltage_microvolt;
+	enum bq2518x_device_id device_id;
 };
 
 /*
@@ -319,7 +338,7 @@ static int bq2518x_init(const struct device *dev)
 	}
 
 	val &= BQ2518X_DEVICE_ID_MSK;
-	if (val != BQ2518X_DEVICE_ID) {
+	if (val != cfg->device_id) {
 		LOG_ERR("Invalid device id: %02x", val);
 		return -EINVAL;
 	}
@@ -373,8 +392,8 @@ static int bq2518x_init(const struct device *dev)
 	return 0;
 }
 
-#define CHARGER_BQ2518X_INIT(inst)                                                                 \
-	static const struct bq2518x_config bq2518x_config_##inst = {                               \
+#define CHARGER_BQ2518X_INIT(inst, _device_id)                                                     \
+	static const struct bq2518x_config _device_id##_config_##inst = {                          \
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.initial_current_microamp =                                                        \
 			DT_INST_PROP(inst, constant_charge_current_max_microamp),                  \
@@ -384,9 +403,20 @@ static int bq2518x_init(const struct device *dev)
 			DT_INST_PROP_OR(inst, re_charge_voltage_microvolt, 0),                     \
 		.precharge_threshold_voltage_microvolt =                                           \
 			DT_INST_PROP(inst, precharge_voltage_threshold_microvolt),                 \
+		.device_id = _device_id##_DEVICE_ID,                                               \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, bq2518x_init, NULL, NULL, &bq2518x_config_##inst, POST_KERNEL, \
-			      CONFIG_CHARGER_INIT_PRIORITY, &bq2518x_api);
+	DEVICE_DT_INST_DEFINE(inst, bq2518x_init, NULL, NULL, &_device_id##_config_##inst,         \
+			      POST_KERNEL, CONFIG_CHARGER_INIT_PRIORITY, &bq2518x_api);
 
-DT_INST_FOREACH_STATUS_OKAY(CHARGER_BQ2518X_INIT)
+#define DT_DRV_COMPAT ti_bq25180
+DT_INST_FOREACH_STATUS_OKAY_VARGS(CHARGER_BQ2518X_INIT, BQ25180)
+#undef DT_DRV_COMPAT
+
+#define DT_DRV_COMPAT ti_bq25186
+DT_INST_FOREACH_STATUS_OKAY_VARGS(CHARGER_BQ2518X_INIT, BQ25186)
+#undef DT_DRV_COMPAT
+
+#define DT_DRV_COMPAT ti_bq25188
+DT_INST_FOREACH_STATUS_OKAY_VARGS(CHARGER_BQ2518X_INIT, BQ25188)
+#undef DT_DRV_COMPAT
