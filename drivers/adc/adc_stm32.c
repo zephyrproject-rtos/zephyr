@@ -939,10 +939,7 @@ static int set_sequencer(const struct device *dev)
 	if (config->sequencer_type == NOT_FULLY_CONFIGURABLE) {
 		LL_ADC_REG_SetSequencerChannels(adc, channels_mask);
 
-#if !defined(CONFIG_SOC_SERIES_STM32F0X) && \
-	!defined(CONFIG_SOC_SERIES_STM32L0X) && \
-	!defined(CONFIG_SOC_SERIES_STM32U5X) && \
-	!defined(CONFIG_SOC_SERIES_STM32WBAX)
+#ifdef LL_ADC_FLAG_CCRDY
 		/*
 		 * After modifying sequencer it is mandatory to wait for the
 		 * assertion of CCRDY flag
@@ -950,7 +947,7 @@ static int set_sequencer(const struct device *dev)
 		while (LL_ADC_IsActiveFlag_CCRDY(adc) == 0) {
 		}
 		LL_ADC_ClearFlag_CCRDY(adc);
-#endif /* !CONFIG_SOC_SERIES_STM32F0X && !L0X && !U5X && !WBAX */
+#endif /* LL_ADC_FLAG_CCRDY */
 	}
 #endif /* ANY_ADC_SEQUENCER_TYPE_IS(NOT_FULLY_CONFIGURABLE) */
 
