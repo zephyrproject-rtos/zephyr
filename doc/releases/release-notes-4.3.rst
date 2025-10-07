@@ -60,6 +60,11 @@ Removed APIs and options
 * ``bt_le_set_auto_conn``
 * ``CONFIG_BT_BUF_ACL_RX_COUNT``
 
+* Video
+
+  * :c:func:`video_init_menu_ctrl`
+  * :c:func:`video_init_int_menu_ctrl`
+
 Deprecated APIs and options
 ===========================
 
