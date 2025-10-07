@@ -22,6 +22,9 @@
 #ifdef CONFIG_SHELL_BACKEND_RPMSG
 #include <zephyr/shell/shell_rpmsg.h>
 #endif
+#ifdef CONFIG_LOG_BACKEND_RPMSG
+#include <zephyr/logging/log_backend_rpmsg.h>
+#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(openamp_rsc_table);
@@ -352,6 +355,9 @@ void rpmsg_mng_task(void *arg1, void *arg2, void *arg3)
 
 #ifdef CONFIG_SHELL_BACKEND_RPMSG
 	(void)shell_backend_rpmsg_init_transport(rpdev);
+#endif
+#ifdef CONFIG_LOG_BACKEND_RPMSG
+	(void)log_backend_rpmsg_init_transport(rpdev);
 #endif
 
 	/* start the rpmsg clients */
