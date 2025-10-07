@@ -437,7 +437,6 @@
 			reg = <0x50022000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 5)>;
 			interrupts = <46 0>;
-			status = "disabled";
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
 				       STM32_ADC_RES(10, 0x01)
@@ -446,6 +445,10 @@
 			sampling-times = <2 3 7 12 14 47 247 1500>;
 			st,adc-sequencer = "FULLY_CONFIGURABLE";
 			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
+			st,adc-internal-regulator = "none";
+			st,adc-has-deep-powerdown;
+			st,adc-has-channel-preselection;
+			status = "disabled";
 		};
 
 		adc2: adc@50022100 {
@@ -453,7 +456,6 @@
 			reg = <0x50022100 0x300>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 5)>;
 			interrupts = <46 0>;
-			status = "disabled";
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
 				       STM32_ADC_RES(10, 0x01)
@@ -462,6 +464,7 @@
 			sampling-times = <2 3 7 12 14 47 247 1500>;
 			st,adc-sequencer = "FULLY_CONFIGURABLE";
 			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
+			status = "disabled";
 		};
 
 		fdcan1: can@5000a000 {

@@ -459,7 +459,6 @@
 			reg = <0x40012400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1_2, 20)>;
 			interrupts = <12 0>;
-			status = "disabled";
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
 				       STM32_ADC_RES(10, 0x01)
@@ -469,6 +468,8 @@
 			num-sampling-time-common-channels = <2>;
 			st,adc-sequencer = "NOT_FULLY_CONFIGURABLE";
 			st,adc-oversampler = "OVERSAMPLER_MINIMAL";
+			st,adc-internal-regulator = "startup-sw-delay";
+			status = "disabled";
 		};
 
 		dma1: dma@40020000 {
