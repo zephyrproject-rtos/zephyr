@@ -1,0 +1,9 @@
+# Copyright Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config USB_BC12_NRF_USBHS
+	bool "Nordic USBHS PD Charging-Type Detector"
+	default y
+	depends on DT_HAS_NORDIC_NRF_USBHS_BC12_ENABLED
+	help
+	  Nordic portable device mode USB Charging-Type Detector.
