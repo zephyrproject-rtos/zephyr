@@ -5,11 +5,12 @@
 
 #include "nrf54h20dk_nrf54h20_common.dtsi"
 
-/* LED1 will be used by the cpurad core. */
-/ {
-	aliases {
-		/delete-property/ led1;
-	};
+&spi131 {
+	status = "reserved";
+	interrupt-parent = <&cpuppr_clic>;
 };
 
-/delete-node/ &led1;
+&uart135 {
+	status = "reserved";
+	interrupt-parent = <&cpuppr_clic>;
+};
