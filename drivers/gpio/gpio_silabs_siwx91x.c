@@ -73,10 +73,10 @@ struct gpio_siwx91x_port_data {
 static int gpio_siwx91x_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	sl_si91x_gpio_driver_disable_state_t disable_state = GPIO_HZ;
-	const struct gpio_siwx91x_port_config *cfg = dev->config;
+	const struct gpio_siwx91x_port_config *port_cfg = dev->config;
 	struct gpio_siwx91x_port_data *port_data = dev->data;
-	const struct device *parent = cfg->parent;
-	const struct gpio_siwx91x_common_config *pcfg = parent->config;
+	const struct device *parent = port_cfg->parent;
+	const struct gpio_siwx91x_common_config *cfg = parent->config;
 	uint8_t cur_cfg_pin = 0;
 	sl_status_t status;
 	int i;
@@ -85,11 +85,12 @@ static int gpio_siwx91x_pin_configure(const struct device *dev, gpio_pin_t pin, 
 		return -ENOTSUP;
 	}
 
-	uint8_t pad = cfg->pads[pin];
+	uint8_t pad = port_cfg->pads[pin];
 
 	if (pad == 0) {
 		/* Enable MCU pad */
-		status = sl_si91x_gpio_driver_enable_host_pad_selection((cfg->hal_port << 4) | pin);
+		status = sl_si91x_gpio_driver_enable_host_pad_selection((port_cfg->hal_port << 4) |
+									pin);
 		if (status != SL_STATUS_OK) {
 			return -ENODEV;
 		}
@@ -106,36 +107,36 @@ static int gpio_siwx91x_pin_configure(const struct device *dev, gpio_pin_t pin, 
 	} else if (flags & GPIO_PULL_DOWN) {
 		disable_state = GPIO_PULLDOWN;
 	}
-	if (cfg->ulp) {
+	if (port_cfg->ulp) {
 		sl_si91x_gpio_select_ulp_pad_driver_disable_state(pin, disable_state);
 	} else {
-		sl_si91x_gpio_select_pad_driver_disable_state((cfg->port << 4) | pin,
+		sl_si91x_gpio_select_pad_driver_disable_state((port_cfg->port << 4) | pin,
 							      disable_state);
 	}
 
 	if (flags & GPIO_INPUT) {
-		if (cfg->ulp) {
+		if (port_cfg->ulp) {
 			sl_si91x_gpio_driver_enable_ulp_pad_receiver(pin);
 		} else {
-			sl_si91x_gpio_driver_enable_pad_receiver((cfg->port << 4) | pin);
+			sl_si91x_gpio_driver_enable_pad_receiver((port_cfg->port << 4) | pin);
 		}
 	} else {
-		if (cfg->ulp) {
+		if (port_cfg->ulp) {
 			sl_si91x_gpio_driver_disable_ulp_pad_receiver(pin);
 		} else {
-			sl_si91x_gpio_driver_disable_pad_receiver((cfg->port << 4) | pin);
+			sl_si91x_gpio_driver_disable_pad_receiver((port_cfg->port << 4) | pin);
 		}
 	}
 
-	pcfg->reg->PIN_CONFIG[(cfg->port << 4) + pin].GPIO_CONFIG_REG_b.MODE = 0;
+	cfg->reg->PIN_CONFIG[(port_cfg->port << 4) + pin].GPIO_CONFIG_REG_b.MODE = 0;
 
 	if (flags & GPIO_OUTPUT_INIT_HIGH) {
-		sl_gpio_set_pin_output(cfg->hal_port, pin);
+		sl_gpio_set_pin_output(port_cfg->hal_port, pin);
 	} else if (flags & GPIO_OUTPUT_INIT_LOW) {
-		sl_gpio_clear_pin_output(cfg->hal_port, pin);
+		sl_gpio_clear_pin_output(port_cfg->hal_port, pin);
 	}
 
-	sl_si91x_gpio_set_pin_direction(cfg->hal_port, pin, (flags & GPIO_OUTPUT) ? 0 : 1);
+	sl_si91x_gpio_set_pin_direction(port_cfg->hal_port, pin, (flags & GPIO_OUTPUT) ? 0 : 1);
 
 	for (i = 0; i < port_data->pin_cnt; i++) {
 		if (port_data->pin_config_info[i].pin == pin) {
@@ -208,9 +209,9 @@ static int gpio_siwx91x_pm_action(const struct device *dev, enum pm_device_actio
 
 static int gpio_siwx91x_port_get(const struct device *port, gpio_port_value_t *value)
 {
-	const struct gpio_siwx91x_port_config *cfg = port->config;
+	const struct gpio_siwx91x_port_config *port_cfg = port->config;
 
-	*value = sl_gpio_get_port_input(cfg->hal_port);
+	*value = sl_gpio_get_port_input(port_cfg->hal_port);
 
 	return 0;
 }
@@ -218,40 +219,40 @@ static int gpio_siwx91x_port_get(const struct device *port, gpio_port_value_t *v
 static int gpio_siwx91x_port_set_masked(const struct device *port, gpio_port_pins_t mask,
 					gpio_port_value_t value)
 {
-	const struct gpio_siwx91x_port_config *cfg = port->config;
-	const struct device *parent = cfg->parent;
-	const struct gpio_siwx91x_common_config *pcfg = parent->config;
+	const struct gpio_siwx91x_port_config *port_cfg = port->config;
+	const struct device *parent = port_cfg->parent;
+	const struct gpio_siwx91x_common_config *cfg = parent->config;
 
 	/* Cannot use HAL function sl_gpio_set_port_output_value(), as it doesn't clear bits. */
-	pcfg->reg->PORT_CONFIG[cfg->port].PORT_LOAD_REG =
-		(pcfg->reg->PORT_CONFIG[cfg->port].PORT_LOAD_REG & ~mask) | (value & mask);
+	cfg->reg->PORT_CONFIG[port_cfg->port].PORT_LOAD_REG =
+		(cfg->reg->PORT_CONFIG[port_cfg->port].PORT_LOAD_REG & ~mask) | (value & mask);
 
 	return 0;
 }
 
 static int gpio_siwx91x_port_set_bits(const struct device *port, gpio_port_pins_t pins)
 {
-	const struct gpio_siwx91x_port_config *cfg = port->config;
+	const struct gpio_siwx91x_port_config *port_cfg = port->config;
 
-	sl_gpio_set_port_output(cfg->hal_port, pins);
+	sl_gpio_set_port_output(port_cfg->hal_port, pins);
 
 	return 0;
 }
 
 static int gpio_siwx91x_port_clear_bits(const struct device *port, gpio_port_pins_t pins)
 {
-	const struct gpio_siwx91x_port_config *cfg = port->config;
+	const struct gpio_siwx91x_port_config *port_cfg = port->config;
 
-	sl_gpio_clear_port_output(cfg->hal_port, pins);
+	sl_gpio_clear_port_output(port_cfg->hal_port, pins);
 
 	return 0;
 }
 
 static int gpio_siwx91x_port_toggle_bits(const struct device *port, gpio_port_pins_t pins)
 {
-	const struct gpio_siwx91x_port_config *cfg = port->config;
+	const struct gpio_siwx91x_port_config *port_cfg = port->config;
 
-	sl_gpio_toggle_port_output(cfg->hal_port, pins);
+	sl_gpio_toggle_port_output(port_cfg->hal_port, pins);
 
 	return 0;
 }
@@ -268,7 +269,7 @@ static bool receiver_enabled(bool ulp, sl_gpio_port_t port, int pin)
 int gpio_siwx91x_port_get_direction(const struct device *port, gpio_port_pins_t map,
 				    gpio_port_pins_t *inputs, gpio_port_pins_t *outputs)
 {
-	const struct gpio_siwx91x_port_config *cfg = port->config;
+	const struct gpio_siwx91x_port_config *port_cfg = port->config;
 
 	if (inputs != NULL) {
 		*inputs = 0;
@@ -278,12 +279,12 @@ int gpio_siwx91x_port_get_direction(const struct device *port, gpio_port_pins_t 
 	}
 	for (int i = 0; i < MAX_PIN_COUNT; i++) {
 		if ((map & BIT(i))) {
-			if (sl_si91x_gpio_get_pin_direction(cfg->hal_port, i) == 0) {
+			if (sl_si91x_gpio_get_pin_direction(port_cfg->hal_port, i) == 0) {
 				if (outputs != NULL) {
 					*outputs |= BIT(i);
 				}
 			}
-			if (receiver_enabled(cfg->ulp, cfg->port, i)) {
+			if (receiver_enabled(port_cfg->ulp, port_cfg->port, i)) {
 				if (inputs != NULL) {
 					*inputs |= BIT(i);
 				}
@@ -296,33 +297,33 @@ int gpio_siwx91x_port_get_direction(const struct device *port, gpio_port_pins_t 
 static int gpio_siwx91x_manage_callback(const struct device *port, struct gpio_callback *callback,
 					bool set)
 {
-	struct gpio_siwx91x_port_data *data = port->data;
+	struct gpio_siwx91x_port_data *port_data = port->data;
 
-	return gpio_manage_callback(&data->callbacks, callback, set);
+	return gpio_manage_callback(&port_data->callbacks, callback, set);
 }
 
 static int gpio_siwx91x_interrupt_configure(const struct device *port, gpio_pin_t pin,
 					    enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
-	const struct gpio_siwx91x_port_config *cfg = port->config;
-	const struct device *parent = cfg->parent;
-	const struct gpio_siwx91x_common_config *pcfg = parent->config;
+	const struct gpio_siwx91x_port_config *port_cfg = port->config;
+	const struct device *parent = port_cfg->parent;
+	const struct gpio_siwx91x_common_config *cfg = parent->config;
 	struct gpio_siwx91x_common_data *data = parent->data;
 	sl_si91x_gpio_interrupt_config_flag_t flags = 0;
 
 	if (mode & GPIO_INT_DISABLE) {
 		ARRAY_FOR_EACH(data->interrupts, i) {
-			if (data->interrupts[i].port == cfg->port &&
+			if (data->interrupts[i].port == port_cfg->port &&
 			    data->interrupts[i].pin == pin) {
 				data->interrupts[i].port = INVALID_PORT;
-				if (cfg->ulp) {
+				if (port_cfg->ulp) {
 					sl_si91x_gpio_configure_ulp_pin_interrupt(i, flags, pin);
 				} else {
-					sl_gpio_configure_interrupt(cfg->port, pin, i, flags);
+					sl_gpio_configure_interrupt(port_cfg->port, pin, i, flags);
 				}
 				/* Configure function doesn't mask interrupts when disabling */
-				pcfg->reg->INTR[i].GPIO_INTR_CTRL_b.MASK = 1;
-				if (cfg->ulp) {
+				cfg->reg->INTR[i].GPIO_INTR_CTRL_b.MASK = 1;
+				if (port_cfg->ulp) {
 					sl_si91x_gpio_clear_ulp_interrupt(i);
 				} else {
 					sl_gpio_clear_interrupts(i);
@@ -349,14 +350,15 @@ static int gpio_siwx91x_interrupt_configure(const struct device *port, gpio_pin_
 
 	ARRAY_FOR_EACH(data->interrupts, i) {
 		if (data->interrupts[i].port == INVALID_PORT ||
-		    (data->interrupts[i].port == cfg->port && data->interrupts[i].pin == pin)) {
-			data->interrupts[i].port = cfg->port;
+		    (data->interrupts[i].port == port_cfg->port &&
+		     data->interrupts[i].pin == pin)) {
+			data->interrupts[i].port = port_cfg->port;
 			data->interrupts[i].pin = pin;
 
-			if (cfg->ulp) {
+			if (port_cfg->ulp) {
 				sl_si91x_gpio_configure_ulp_pin_interrupt(i, flags, pin);
 			} else {
-				sl_gpio_configure_interrupt(cfg->port, pin, i, flags);
+				sl_gpio_configure_interrupt(port_cfg->port, pin, i, flags);
 			}
 			return 0;
 		}
@@ -381,34 +383,35 @@ static inline int gpio_siwx91x_init_port(const struct device *port)
 
 static void gpio_siwx91x_isr(const struct device *parent)
 {
-	const struct gpio_siwx91x_common_config *pcfg = parent->config;
+	const struct gpio_siwx91x_common_config *cfg = parent->config;
 	struct gpio_siwx91x_common_data *common = parent->data;
 	const struct device *port;
-	struct gpio_siwx91x_port_data *data;
+	struct gpio_siwx91x_port_data *port_data;
 
 	ARRAY_FOR_EACH(common->interrupts, i) {
 		sl_gpio_port_t port_no = common->interrupts[i].port;
-		uint32_t pending = pcfg->reg->INTR[i].GPIO_INTR_STATUS_b.INTERRUPT_STATUS;
+		uint32_t pending = cfg->reg->INTR[i].GPIO_INTR_STATUS_b.INTERRUPT_STATUS;
 
 		if (pending && port_no != INVALID_PORT) {
 			/* Clear interrupt */
-			pcfg->reg->INTR[i].GPIO_INTR_STATUS_b.INTERRUPT_STATUS = 1;
+			cfg->reg->INTR[i].GPIO_INTR_STATUS_b.INTERRUPT_STATUS = 1;
 			port = common->ports[port_no];
-			data = port->data;
-			gpio_fire_callbacks(&data->callbacks, port, BIT(common->interrupts[i].pin));
+			port_data = port->data;
+			gpio_fire_callbacks(&port_data->callbacks, port,
+					    BIT(common->interrupts[i].pin));
 		}
 	}
 }
 
 static uint32_t gpio_siwx91x_get_pending_int(const struct device *port)
 {
-	const struct gpio_siwx91x_port_config *cfg = port->config;
-	const struct device *parent = cfg->parent;
-	const struct gpio_siwx91x_common_config *pcfg = parent->config;
+	const struct gpio_siwx91x_port_config *port_cfg = port->config;
+	const struct device *parent = port_cfg->parent;
+	const struct gpio_siwx91x_common_config *cfg = parent->config;
 	uint32_t status = 0;
 
-	ARRAY_FOR_EACH(pcfg->reg->INTR, i) {
-		if (pcfg->reg->INTR[i].GPIO_INTR_STATUS_b.INTERRUPT_STATUS) {
+	ARRAY_FOR_EACH(cfg->reg->INTR, i) {
+		if (cfg->reg->INTR[i].GPIO_INTR_STATUS_b.INTERRUPT_STATUS) {
 			status |= BIT(i);
 		}
 	}
