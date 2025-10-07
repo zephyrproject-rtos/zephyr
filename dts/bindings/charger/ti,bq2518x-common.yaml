@@ -22,7 +22,9 @@ properties:
 
   precharge-voltage-threshold-microvolt:
     type: int
+    enum:
+      - 2800000
+      - 3000000
     default: 3000000
     description: |
       Threshold at which voltage to switch to constant current charge.
-      Must be either 3.0V or 2.8V
