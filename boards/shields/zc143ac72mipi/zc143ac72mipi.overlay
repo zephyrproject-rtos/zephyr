@@ -1,0 +1,32 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h> */
+
+/ {
+	chosen {
+		zephyr,display = &zc143ac72mipi;
+	};
+};
+
+&lcdif_target {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	zc143ac72mipi: zc143ac72mipi@0 {
+		compatible = "display,zc143ac72mipi";
+		reg = <0>;
+		status = "okay";
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};

@@ -1,0 +1,20 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_ZC143AC72MIPI
+if LVGL
+
+# Enable double buffering
+# config LV_Z_DOUBLE_VDB
+#	default y
+
+# config LV_Z_BITS_PER_PIXEL
+#	default 16
+
+endif # LVGL
+
+if INPUT
+# config ---
+endif # INPUT
+
+endif # SHIELD_ZC143AC72MIPI

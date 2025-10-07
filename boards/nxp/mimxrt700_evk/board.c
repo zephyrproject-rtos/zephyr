@@ -544,6 +544,48 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_Acmp0);
 	RESET_ClearPeripheralReset(kACMP0_RST_SHIFT_RSTn);
 #endif
+
+//@HARDCODE @INCOMPLETE(Emilio): Force hardcode for testing
+#if 1
+//@NOTE(Emilio): BOARD_InitMipiDsiClock
+    POWER_DisablePD(kPDRUNCFG_PPD_MIPIDSI);
+    POWER_DisablePD(kPDRUNCFG_APD_MIPIDSI);
+    POWER_DisablePD(kPDRUNCFG_PD_VDD2_MIPI);
+    POWER_ApplyPD();
+
+    /* Use PLL PFD1 as clock source, 396m. */
+    CLOCK_AttachClk(kMAIN_PLL_PFD1_to_MIPI_DPHYESC_CLK);
+    /* RxClkEsc min 60MHz, TxClkEsc 12 to 20MHz. */
+    /* RxClkEsc = 396MHz / 6 = 66MHz. */
+    CLOCK_SetClkDiv(kCLOCK_DivDphyEscRxClk, 6);
+    /* TxClkEsc = 396MHz / 6 / 4 = 16.5MHz. */
+    CLOCK_SetClkDiv(kCLOCK_DivDphyEscTxClk, 4);
+
+    CLOCK_InitAudioPfd(kCLOCK_Pfd2, 30);
+
+    CLOCK_AttachClk(kAUDIO_PLL_PFD2_to_MIPI_DSI_HOST_PHY);
+
+    CLOCK_SetClkDiv(kCLOCK_DivDphyClk, 1);
+
+
+//@NOTE(Emilio): BOARD_InitLcdifPowerReset
+    POWER_DisablePD(kPDRUNCFG_SHUT_MEDIA_MAINCLK);
+    POWER_DisablePD(kPDRUNCFG_APD_LCDIF);
+    POWER_DisablePD(kPDRUNCFG_PPD_LCDIF);
+    POWER_ApplyPD();
+
+    CLOCK_EnableClock(kCLOCK_Lcdif);
+    RESET_ClearPeripheralReset(kLCDIF_RST_SHIFT_RSTn);
+
+
+//@NOTE(Emilio): Clock code in BOARD_InitLcdif
+    CLOCK_InitMainPfd(kCLOCK_Pfd2, 17);
+    CLOCK_SetClkDiv(kCLOCK_DivMediaMainClk, 2U);
+    CLOCK_AttachClk(kMAIN_PLL_PFD2_to_MEDIA_MAIN);
+
+
+#endif
+
 }
 
 static void GlikeyWriteEnable(GLIKEY_Type *base, uint8_t idx)

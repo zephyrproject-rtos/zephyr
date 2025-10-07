@@ -34,7 +34,7 @@
 		zephyr,sram = &sram0;
 		zephyr,console = &flexcomm0_lpuart0;
 		zephyr,shell-uart = &flexcomm0_lpuart0;
-		zephyr,display = &lcdif;
+//		zephyr,display = &lcdif;
 	};
 
 	leds {
@@ -269,9 +269,9 @@
 
 nxp_mipi_i2c: &flexcomm8_lpi2c8 {};
 
-zephyr_mipi_dsi: &mipi_dsi {};
+//zephyr_mipi_dsi: &mipi_dsi {};
 
-zephyr_lcdif: &lcdif {};
+//zephyr_lcdif: &lcdif {};
 
 &gpio0 {
 	status = "okay";
@@ -422,5 +422,9 @@ p3t1755dp_ard_i2c_interface: &flexcomm8_lpi2c8 {};
 };
 
 &pca9422 {
+	status = "okay";
+};
+
+&lcdif2 {
 	status = "okay";
 };

@@ -1078,6 +1078,7 @@
 		#pwm-cells = <3>;
 	};
 
+	/*
 	lcdif: lcd-controller@480000 {
 		compatible = "nxp,mipi-dbi-dcnano-lcdif";
 		reg = <0x480000 0x1000>;
@@ -1098,6 +1099,7 @@
 		ulps-control;
 		status = "disabled";
 	};
+	*/
 
 	acmp: comparator@20b000 {
 		compatible = "nxp,kinetis-acmp";
