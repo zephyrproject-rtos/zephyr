@@ -109,6 +109,9 @@ if (CONFIG_GEN_ISR_TABLES)
   add_dependencies(isr_tables zephyr_generated_headers)
   target_link_libraries(isr_tables zephyr_interface)
   zephyr_library_link_libraries(isr_tables)
+
+  zephyr_link_libraries($<TARGET_PROPERTY:linker,undefined>_sw_isr_table)
+  zephyr_link_libraries($<TARGET_PROPERTY:linker,undefined>_irq_vector_table)
 endif()
 
 if(CONFIG_COVERAGE)
