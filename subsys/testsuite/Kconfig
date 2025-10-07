@@ -95,9 +95,18 @@ config COVERAGE_DUMP
 
 endchoice
 
+config HAVE_COVERAGE_DUMP_PATH_EXCLUDE
+	bool
+	default y
+	depends on COVERAGE_DUMP_PATH_EXCLUDE != ""
+	help
+	  Helper symbol that is true when COVERAGE_DUMP_PATH_EXCLUDE is a
+	  non-empty string
+
 config COVERAGE_DUMP_PATH_EXCLUDE
 	string "Exclude files matching this pattern from the coverage data"
 	default ""
+	depends on !MINIMAL_LIBC
 	help
 	  Filenames are matched against the pattern using the POSIX fnmatch
 	  function. Filenames are based on their path in the build folder, not the
