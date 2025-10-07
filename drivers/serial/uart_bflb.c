@@ -426,6 +426,25 @@ static int uart_bflb_init(const struct device *dev)
 	return rc;
 }
 
+static int uart_bflb_deinit(const struct device *dev)
+{
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	const struct bflb_config *cfg = dev->config;
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
+	uart_bflb_enabled(dev, 0);
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	/* disable all irqs */
+	sys_write32(0x0, cfg->base_reg + UART_INT_EN_OFFSET);
+	/* clear all IRQS */
+	sys_write32(0xFF, cfg->base_reg + UART_INT_CLEAR_OFFSET);
+	/* mask all IRQs */
+	sys_write32(0xFFFFFFFFU, cfg->base_reg + UART_INT_MASK_OFFSET);
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
+	return 0;
+}
+
 static int uart_bflb_poll_in(const struct device *dev, unsigned char *c)
 {
 	const struct bflb_config *cfg = dev->config;
@@ -561,7 +580,8 @@ static DEVICE_API(uart, uart_bflb_driver_api) = {
 		.rx_fifo_threshold = 0,						\
 		BFLB_UART_IRQ_HANDLER_FUNC(instance)				\
 	};									\
-	DEVICE_DT_INST_DEFINE(instance, &uart_bflb_init,			\
+	DEVICE_DT_INST_DEINIT_DEFINE(instance, &uart_bflb_init,			\
+			      &uart_bflb_deinit,				\
 			      PM_DEVICE_DT_INST_GET(instance),			\
 			      &uart##instance##_bflb_data,			\
 			      &uart##instance##_bflb_config, PRE_KERNEL_1,	\
