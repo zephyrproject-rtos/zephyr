@@ -851,7 +851,46 @@ static void RISAF_Config(void)
 }
 #endif
 
-#if defined(CONFIG_ETH_STM32_HAL_API_V2)
+#if defined(CONFIG_ETH_STM32_HAL_API_V1)
+static int eth_init_api_v1(const struct device *dev)
+{
+	HAL_StatusTypeDef hal_ret = HAL_OK;
+	struct eth_stm32_hal_dev_data *dev_data = dev->data;
+	ETH_HandleTypeDef *heth = &dev_data->heth;
+
+	if (!ETH_STM32_AUTO_NEGOTIATION_ENABLE) {
+		struct phy_link_state state;
+
+		phy_get_link_state(eth_stm32_phy_dev, &state);
+
+		heth->Init.DuplexMode = PHY_LINK_IS_FULL_DUPLEX(state.speed) ? ETH_MODE_FULLDUPLEX
+									     : ETH_MODE_HALFDUPLEX;
+		heth->Init.Speed =
+			PHY_LINK_IS_SPEED_100M(state.speed) ? ETH_SPEED_100M : ETH_SPEED_10M;
+	}
+
+	hal_ret = HAL_ETH_Init(heth);
+	if (hal_ret == HAL_TIMEOUT) {
+		/* HAL Init time out. This could be linked to
+		 * a recoverable error. Log the issue and continue
+		 * driver initialization.
+		 */
+		LOG_WRN("HAL_ETH_Init timed out (cable not connected?)");
+	} else if (hal_ret != HAL_OK) {
+		LOG_ERR("HAL_ETH_Init failed: %d", hal_ret);
+		return -EINVAL;
+	}
+
+	/* Initialize semaphores */
+	k_mutex_init(&dev_data->tx_mutex);
+	k_sem_init(&dev_data->rx_int_sem, 0, K_SEM_MAX_LIMIT);
+
+	HAL_ETH_DMATxDescListInit(heth, dma_tx_desc_tab, &dma_tx_buffer[0][0], ETH_TXBUFNB);
+	HAL_ETH_DMARxDescListInit(heth, dma_rx_desc_tab, &dma_rx_buffer[0][0], ETH_RXBUFNB);
+
+	return 0;
+}
+#elif defined(CONFIG_ETH_STM32_HAL_API_V2)
 static int eth_init_api_v2(const struct device *dev)
 {
 	HAL_StatusTypeDef hal_ret = HAL_OK;
@@ -960,46 +999,16 @@ static int eth_initialize(const struct device *dev)
 	heth->Init.MACAddr = dev_data->mac_addr;
 
 #if defined(CONFIG_ETH_STM32_HAL_API_V1)
-	HAL_StatusTypeDef hal_ret = HAL_OK;
-
-	if (!ETH_STM32_AUTO_NEGOTIATION_ENABLE) {
-		struct phy_link_state state;
-
-		phy_get_link_state(eth_stm32_phy_dev, &state);
-
-		heth->Init.DuplexMode = PHY_LINK_IS_FULL_DUPLEX(state.speed) ? ETH_MODE_FULLDUPLEX
-									     : ETH_MODE_HALFDUPLEX;
-		heth->Init.Speed =
-			PHY_LINK_IS_SPEED_100M(state.speed) ? ETH_SPEED_100M : ETH_SPEED_10M;
-	}
-
-	hal_ret = HAL_ETH_Init(heth);
-	if (hal_ret == HAL_TIMEOUT) {
-		/* HAL Init time out. This could be linked to */
-		/* a recoverable error. Log the issue and continue */
-		/* driver initialisation */
-		LOG_WRN("HAL_ETH_Init timed out (cable not connected?)");
-	} else if (hal_ret != HAL_OK) {
-		LOG_ERR("HAL_ETH_Init failed: %d", hal_ret);
-		return -EINVAL;
-	}
-
-	/* Initialize semaphores */
-	k_mutex_init(&dev_data->tx_mutex);
-	k_sem_init(&dev_data->rx_int_sem, 0, K_SEM_MAX_LIMIT);
-
-	HAL_ETH_DMATxDescListInit(heth, dma_tx_desc_tab,
-		&dma_tx_buffer[0][0], ETH_TXBUFNB);
-	HAL_ETH_DMARxDescListInit(heth, dma_rx_desc_tab,
-		&dma_rx_buffer[0][0], ETH_RXBUFNB);
-
+	ret = eth_init_api_v1(dev);
 #elif defined(CONFIG_ETH_STM32_HAL_API_V2)
 	ret = eth_init_api_v2(dev);
+#else
+	ret = 0;
+#endif /* CONFIG_ETH_STM32_HAL_API_V1 */
 
 	if (ret != 0) {
 		return ret;
 	}
-#endif /* CONFIG_ETH_STM32_HAL_API_V1 */
 
 	LOG_DBG("MAC %02x:%02x:%02x:%02x:%02x:%02x",
 		dev_data->mac_addr[0], dev_data->mac_addr[1],
