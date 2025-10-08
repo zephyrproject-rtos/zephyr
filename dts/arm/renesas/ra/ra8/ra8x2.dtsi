@@ -1338,6 +1338,12 @@
 			status = "disabled";
 		};
 
+		drw: drw@40444000 {
+			compatible = "renesas,ra-drw";
+			reg = <0x40444000 0xd4>;
+			status = "disabled";
+		};
+
 		option_setting_ofs_conf_sec: option-setting-ofs-conf-sec@2c9f040 {
 			reg = <0x02c9f040 0x3c0>;
 			#address-cells = <1>;

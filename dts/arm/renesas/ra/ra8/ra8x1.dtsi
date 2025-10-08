@@ -1062,6 +1062,12 @@
 			status = "disabled";
 		};
 
+		drw: drw@40344000 {
+			compatible = "renesas,ra-drw";
+			reg = <0x40344000 0xd4>;
+			status = "disabled";
+		};
+
 		option_setting_ofs0: option-setting-ofs0@300a100 {
 			compatible = "zephyr,memory-region";
 			zephyr,memory-region = "OFS_OFS0_MEMORY";
