@@ -17,6 +17,43 @@ properties:
     description: |
       Selects opamp functional mode.
 
+      The op-amp operates with feedback, which is the most common configuration:
+
+      a) inverting Mode
+
+      - Input signal applied to inverting (-) terminal
+      - Non-inverting (+) terminal connected to ground
+      - Feedback resistor connects output to inverting input
+      - Output is 180° out of phase with input
+      - Gain = -Rf/Rin, where Rf is the feedback resistor and Rin is the input resistor
+
+      b) non_inverting Mode
+
+      - Input signal applied to non-inverting (+) terminal
+      - Inverting (-) terminal connected to feedback network
+      - Output is in phase with input
+      - Gain = 1 + (Rf/Rin), where Rf is the feedback resistor and Rin is the input resistor
+      Higher input impedance than inverting mode
+
+      c) follower Mode (voltage follower or buffer)
+
+      - Special case of non-inverting amplifier
+      - Unity gain (gain = 1)
+      - Direct feedback from output to inverting input
+      - Very high input impedance, very low output impedance
+      - Used for impedance matching
+
+      d) differential Mode
+
+      - Signals applied to both inputs
+      - Amplifies the difference between two input signals
+      - Common-mode signals are rejected
+      - Used in instrumentation and noise rejection
+
+      e) standalone Mode
+
+      - The opamp mode is defined by external circuitry
+
   programmable-gain:
     type: string-array
     enum:

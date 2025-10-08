@@ -24,6 +24,28 @@ uint8_t size = ARRAY_SIZE(gain);
 uint8_t size;
 #endif
 
+const char* opamp_gain2str[] = {
+	[OPAMP_GAIN_1_7]  = "1/7",
+	[OPAMP_GAIN_1_3]  = "1/3",
+	[OPAMP_GAIN_1]    = "1",
+	[OPAMP_GAIN_5_3]  = "5/3",
+	[OPAMP_GAIN_2]    = "2",
+	[OPAMP_GAIN_11_5] = "11/5",
+	[OPAMP_GAIN_3]    = "3",
+	[OPAMP_GAIN_4]    = "4",
+	[OPAMP_GAIN_13_3] = "13/3",
+	[OPAMP_GAIN_7]    = "7",
+	[OPAMP_GAIN_8]    = "8",
+	[OPAMP_GAIN_15]   = "15",
+	[OPAMP_GAIN_16]   = "16",
+	[OPAMP_GAIN_31]   = "31",
+	[OPAMP_GAIN_32]   = "32",
+	[OPAMP_GAIN_33]   = "33",
+	[OPAMP_GAIN_63]   = "63",
+	[OPAMP_GAIN_64]   = "64",
+	[OPAMP_GAIN_64 + 1] = "default",
+};
+
 static int device_initialize(const struct adc_dt_spec *adc_channel,
 			const struct device *opamp_dev,
 			struct adc_sequence *seq)
@@ -105,16 +127,21 @@ int main(void)
 		return 0;
 	}
 
+
+	uint16_t gain_value = 0;
 	do {
 #if OPAMP_SUPPORT_PROGRAMMABLE_GAIN
 		/* For OPAMPs which support programmable gain, retrieve the gain array. */
-		ret = opamp_set_gain(opamp_dev, gain[size - 1]);
+		gain_value = gain[size - 1];
+		ret = opamp_set_gain(opamp_dev, (enum opamp_gain)gain_value);
 		if (ret < 0) {
 			printf("OPAMP gain set failed with code (%d)\n", ret);
 			return 0;
 		}
 
 		size--;
+#else
+		gain_value = OPAMP_GAIN_64 + 1; /* Default gain */
 #endif
 		ret = read_opamp_output(&adc_channel, &sequence, &sample_buffer);
 		if (ret < 0) {
@@ -122,7 +149,8 @@ int main(void)
 			return 0;
 		}
 
-		printf("OPAMP output is: %d(mv)\n", sample_buffer);
+		printf("OPAMP output (@gain: %s) is: %d(mv)\n",
+			opamp_gain2str[gain_value], sample_buffer);
 	} while (size);
 
 	return 0;

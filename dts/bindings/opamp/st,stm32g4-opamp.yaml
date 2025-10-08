@@ -1,0 +1,99 @@
+# Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+title: ST Micro STM32G4 OPAMP (Operational Amplifier) device tree bindings.
+
+description: |
+  This binding describes ...
+
+  standalone mode:
+    VOUT can be redirected internally to an ADC channel by choosing an ADC channel with io-channels property.
+    In this case, the I/O pin on which is mapped the OPAMPx_VOUT is free and can be used for another purpose.
+    In standalone mode, VOUT pin is disconnected from the OPAMP output and the gain cannot be set by an
+    external resistors (in this case OPAMP can be used only as comparator).
+
+include:
+  - st,stm32-opamp.yaml
+
+compatible: st,stm32g4-opamp
+
+properties:
+  st,power-mode:
+    type: string
+    description: |
+      OPAMP power mode has impact on slew-rate. This property is optional.
+    enum:
+      - NORMAL
+      - HIGHSPEED
+    default: NORMAL
+
+  st,lock-enable:
+    type: boolean
+    description: |
+      Lock the OPAMP configuration after it has been configured by the driver.
+      Resetting the lock mode can only be done by a system reset.
+      If not set, the OPAMP configuration will be unlocked by default.
+      The lock property is used to prevent accidental changes to the OPAMP
+      configuration after it has been set.
+      NOTE: This property is optional. Please refer to the reference manual of
+            the specific STM32 series for details.
+
+  st,self-calibration:
+    type: boolean
+    description: |
+      Enable self-calibration mode.
+      If not set, the self-calibration mode will be disabled by default.
+      The self-calibration mode is used to calibrate the OPAMP for optimal
+      performance.
+      This step will be executed at OPAMP initialization.
+
+  vinm:
+    required: true
+    type: string-array
+    description: |
+      Input inverting selection.
+      There are up two possible inverting inputs supported.
+      Each entry enum corresponds to specific pin or internal connection.
+      Please refer to RM0440 Rev 8, Table 201. pp. 775/2138 for more details.
+      NOTE: In case st,inputs-mux-mode is not DISABLE, secondary pair of inputs
+            must be provided too.
+      NOTE: NONE means OPAMP inverting input not externally connected
+            (intended for OPAMP in mode follower or PGA with positive gain without bias)
+    enum:
+      - NONE
+      - VINM0
+      - VINM1
+
+  vinp:
+    required: true
+    type: string-array
+    description: |
+      Input inverting selection.
+      Each entry enum corresponds to specific pin or internal connection.
+      Please refer to RM0440 Rev 8, Table 201. pp. 775/2138 for more details.
+      NOTE: In case st,inputs-mux-mode is not DISABLE, secondary pair of inputs
+            must be provided too.
+    enum:
+      - VINP0
+      - VINP1
+      - VINP2
+      - VINP3
+      - DAC
+
+  st,inputs-mux-mode:
+    type: string
+    description: |
+      Timer controlled multiplexer mode.
+      The selection of the OPAMP inverting and non inverting inputs can be done automatically. In
+      this case, the switch from one input to another is done automatically. This automatic switch
+      is triggered by the TIM1 CC6 or TIM8 CC6 or TIM20 CC6 output arriving on the OPAMP
+      input multiplexers.
+      This is useful for dual motor control with a need to measure the currents on the 3 phases
+      simultaneously on a first motor and then on the second motor.
+      Please refer to RM0440 Rev 8, 25.3.8 Timer controlled Multiplexer mode, pp. 784/2138
+    enum:
+      - DISABLE
+      - TIM1_CH6
+      - TIM8_CH6
+      - TIM20_CH6
+    default: DISABLE

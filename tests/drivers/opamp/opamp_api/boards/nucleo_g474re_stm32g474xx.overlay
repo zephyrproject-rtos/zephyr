@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * IMPORTANT: D33 (PB0) shall be connected to D27 (PB2) by a jumper wire
+ */
+
+/ {
+	zephyr,user {
+		opamp = <&opamp2>;
+	};
+};
+
+&adc2 {
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@3 {
+		reg = <3>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
+};
+
+&opamp2 {
+	// /* vinm */
+	// pinctrl-0 = <&opamp2_vinm_pa5>; /* vinm0 */
+	// pinctrl-1 = <&opamp2_vinm_pc5>; /* vinm1 */
+	// /* vinp */
+	// pinctrl-2 = <&opamp2_vinp_pa7>; /* vinp0 */
+	// pinctrl-3 = <&opamp2_vinp_pb14>; /* vinp1 */
+	// pinctrl-4 = <&opamp2_vinp_pb0>; /* vinp2 */
+	// pinctrl-5 = <&opamp2_vinp_pd14>; /* vinp3 */
+	// /* vout */
+	// pinctrl-6 = <&opamp2_vout_pa6>;
+	// pinctrl-names = "vinm0", "vinm1",
+	// 		"vinp0", "vinp1", "vinp2", "vinp3",
+	// 		"vout";
+
+	/* PB14 shall be connected to GND */
+	pinctrl-0 = <&opamp2_vinm_pa5 &opamp2_vinm_pc5
+		     &opamp2_vinp_pb14 &opamp2_vinp_pa7
+		     &opamp2_vout_pa6>;
+	pinctrl-names = "default";
+	functional-mode = "non_inverting";
+	vinm = "VINM0", "VINM1";
+	vinp = "VINP0", "VINP1";
+	io-channels = <&adc2 3>;
+	st,self-calibration;
+	status = "okay";
+};
