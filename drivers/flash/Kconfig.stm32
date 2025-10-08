@@ -99,8 +99,7 @@ config USE_MICROCHIP_QSPI_FLASH_WITH_STM32
 	bool "Include patch for Microchip qspi flash when running with stm32"
 	depends on DT_HAS_ST_STM32_QSPI_NOR_ENABLED
 	help
-	  Set to use Microchip qspi flash memories which supports
-	  the Global Block Protection Unlock instruction (ULBPR - 98H),
-	  and write with SPI_NOR_CMD_PP_1_1_4 on 4 lines
+	  Set to use Microchip QSPI flash memories which use the PP_1_1_4 opcode
+	  (32H) for the PP_1_4_4 operation (usually 38H).
 
 endif # SOC_FLASH_STM32

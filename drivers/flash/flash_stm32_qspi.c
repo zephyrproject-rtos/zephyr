@@ -282,15 +282,14 @@ static inline int qspi_prepare_quad_program(const struct device *dev,
 
 	cmd->Instruction = dev_data->qspi_write_cmd;
 #if defined(CONFIG_USE_MICROCHIP_QSPI_FLASH_WITH_STM32)
-	/* Microchip qspi-NOR flash, does not follow the standard rules */
-	if (cmd->Instruction == SPI_NOR_CMD_PP_1_1_4) {
-		cmd->AddressMode = QSPI_ADDRESS_4_LINES;
+	/* Microchip QSPI-NOR flash uses the PP_1_1_4 opcode for the PP_1_4_4 operation */
+	if (cmd->Instruction == SPI_NOR_CMD_PP_1_4_4) {
+		cmd->Instruction = SPI_NOR_CMD_PP_1_1_4;
 	}
-#else
-	cmd->AddressMode = ((cmd->Instruction == SPI_NOR_CMD_PP_1_1_4)
+#endif /* CONFIG_USE_MICROCHIP_QSPI_FLASH_WITH_STM32 */
+	cmd->AddressMode = ((dev_data->qspi_write_cmd == SPI_NOR_CMD_PP_1_1_4)
 				? QSPI_ADDRESS_1_LINE
 				: QSPI_ADDRESS_4_LINES);
-#endif /* CONFIG_USE_MICROCHIP_QSPI_FLASH_WITH_STM32 */
 	cmd->DataMode = QSPI_DATA_4_LINES;
 	cmd->DummyCycles = 0;
 
