@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <zephyr/toolchain/common.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/barrier.h>
 #include <zephyr/sys/util_macro.h>
 
 /**
@@ -136,13 +137,19 @@ struct spsc {
  * @private
  * @brief Load the current "in" index from the spsc as an unsigned long
  */
-#define z_spsc_in(spsc) (unsigned long)atomic_get(&(spsc)->_spsc.in)
+#define z_spsc_in(spsc) ({ \
+	IF_ENABLED(CONFIG_SMP, (barrier_dmem_fence_full();)) \
+	(unsigned long)atomic_get(&(spsc)->_spsc.in); \
+})
 
 /**
  * @private
  * @brief Load the current "out" index from the spsc as an unsigned long
  */
-#define z_spsc_out(spsc) (unsigned long)atomic_get(&(spsc)->_spsc.out)
+#define z_spsc_out(spsc) ({ \
+	IF_ENABLED(CONFIG_SMP, (barrier_dmem_fence_full();)) \
+	(unsigned long)atomic_get(&(spsc)->_spsc.out); \
+})
 
 /**
  * @brief Initialize/reset a spsc such that its empty
