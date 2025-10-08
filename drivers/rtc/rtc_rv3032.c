@@ -415,6 +415,7 @@ static int rv3032_configure_clkout(const struct device *dev, uint32_t freq)
 	uint8_t clkout1_reg = 0;
 	uint8_t clkout2_reg = 0;
 	uint8_t pmu_reg = 0;
+	uint16_t hfd;
 	int err;
 
 	if (freq == 0) {
@@ -457,7 +458,7 @@ static int rv3032_configure_clkout(const struct device *dev, uint32_t freq)
 						 RV3032_EEPROM_CLKOUT2_FD_32768HZ);
 			break;
 		default:
-			uint16_t hfd = (freq / RV3032_CLKOUT_FREQ_HF_STEP) - 1;
+			hfd = (freq / RV3032_CLKOUT_FREQ_HF_STEP) - 1;
 
 			clkout1_reg = FIELD_GET(RV3032_EEPROM_CLKOUT1_HFD_LOW, hfd); /* HFD[7:0] */
 			clkout2_reg =
