@@ -243,6 +243,7 @@ class Robot(Harness):
                     f"Robot test failure: {handler.sourcedir} for {self.instance.platform.name}"
                 )
                 self.instance.status = TwisterStatus.FAIL
+                self.instance.reason = f"Exited with {renode_test_proc.returncode}"
                 self.instance.testcases[0].status = TwisterStatus.FAIL
 
             if out:
