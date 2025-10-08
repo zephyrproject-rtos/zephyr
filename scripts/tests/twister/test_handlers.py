@@ -8,35 +8,33 @@ Tests for handlers.py classes' methods
 """
 
 import itertools
-from unittest import mock
 import os
-import pytest
 import signal
 import subprocess
 import sys
-
 from contextlib import nullcontext
 from importlib import reload
-from serial import SerialException
 from subprocess import CalledProcessError, TimeoutExpired
 from types import SimpleNamespace
+from unittest import mock
+
+import pytest
+from serial import SerialException
 
 import twisterlib.harness
-
-ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
-
 from twisterlib.error import TwisterException
-from twisterlib.statuses import TwisterStatus
 from twisterlib.handlers import (
-    Handler,
     BinaryHandler,
     DeviceHandler,
+    Handler,
     QEMUHandler,
-    SimulationHandler
+    SimulationHandler,
 )
-from twisterlib.hardwaremap import (
-    DUT
-)
+from twisterlib.hardwaremap import DUT
+from twisterlib.statuses import TwisterStatus
+
+from . import ZEPHYR_BASE
+
 
 @pytest.fixture
 def mocked_instance(tmp_path):

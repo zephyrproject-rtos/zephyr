@@ -7,34 +7,27 @@ Tests for runner.py classes
 """
 
 import errno
-from unittest import mock
 import os
 import pathlib
-import pytest
 import re
 import subprocess
 import sys
-import yaml
-
 from collections import deque
 from contextlib import nullcontext
-from elftools.elf.sections import SymbolTableSection
 from typing import List
+from unittest import mock
 
-ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
+import pytest
+import yaml
+from elftools.elf.sections import SymbolTableSection
 
-from twisterlib.statuses import TwisterStatus
 from twisterlib.error import BuildError
 from twisterlib.harness import Pytest
+from twisterlib.runner import CMake, ExecutionCounter, FilterBuilder, ProjectBuilder, TwisterRunner
+from twisterlib.statuses import TwisterStatus
 
-from twisterlib.runner import (
-    CMake,
-    ExecutionCounter,
-    FilterBuilder,
-    ProjectBuilder,
-    TwisterRunner
-)
+from . import ZEPHYR_BASE
+
 
 @pytest.fixture
 def mocked_instance(tmp_path):

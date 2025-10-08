@@ -721,23 +721,14 @@
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
 ]
-"./scripts/tests/twister/conftest.py" = [
-    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
-"./scripts/tests/twister/pytest_integration/test_harness_pytest.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
 "./scripts/tests/twister/test_cmakecache.py" = [
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister/test_config_parser.py" = [
     "B017",     # https://docs.astral.sh/ruff/rules/assert-raises-exception
     "B033",     # https://docs.astral.sh/ruff/rules/duplicate-value
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM117",   # https://docs.astral.sh/ruff/rules/multiple-with-statements
     "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
@@ -745,23 +736,16 @@
     "B011",     # https://docs.astral.sh/ruff/rules/assert-false
 ]
 "./scripts/tests/twister/test_environment.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM117",   # https://docs.astral.sh/ruff/rules/multiple-with-statements
     "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
-"./scripts/tests/twister/test_errors.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
 "./scripts/tests/twister/test_handlers.py" = [
     "B011",     # https://docs.astral.sh/ruff/rules/assert-false
-    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP012",    # https://docs.astral.sh/ruff/rules/unnecessary-encode-utf8
     "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister/test_hardwaremap.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
@@ -769,71 +753,53 @@
     "B017",     # https://docs.astral.sh/ruff/rules/assert-raises-exception
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "E713",     # https://docs.astral.sh/ruff/rules/not-in-test
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister/test_jobserver.py" = [
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister/test_log_helper.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister/test_platform.py" = [
     "B011",     # https://docs.astral.sh/ruff/rules/assert-false
-    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister/test_quarantine.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister/test_runner.py" = [
-    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
 ]
 "./scripts/tests/twister/test_scl.py" = [
-    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM117",   # https://docs.astral.sh/ruff/rules/multiple-with-statements
     "UP025",    # https://docs.astral.sh/ruff/rules/unicode-kind-prefix
     "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister/test_testinstance.py" = [
-    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister/test_testplan.py" = [
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
     "E101",     # https://docs.astral.sh/ruff/rules/mixed-spaces-and-tabs
-    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM118",   # https://docs.astral.sh/ruff/rules/in-dict-keys
     "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
     "W191",     # https://docs.astral.sh/ruff/rules/tab-indentation
 ]
 "./scripts/tests/twister/test_testsuite.py" = [
     "B011",     # https://docs.astral.sh/ruff/rules/assert-false
-    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister/test_twister.py" = [
-    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP026",    # https://docs.astral.sh/ruff/rules/deprecated-mock-import
 ]
 "./scripts/tests/twister_blackbox/conftest.py" = [
