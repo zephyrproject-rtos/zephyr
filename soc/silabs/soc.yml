@@ -69,11 +69,24 @@ family:
           - name: efr32mg24b020f1536im40
       - name: bgm24
         socs:
+          - name: bgm240pa22vna
+          - name: bgm240pa32vna
+          - name: bgm240pa32vnn
+          - name: bgm240pb22vna
+          - name: bgm240pb32vna
+          - name: bgm240pb32vnn
           - name: bgm240sa22vna
+          - name: bgm240sb22vna
       - name: mgm24
         socs:
-          - name: mgm240sd22vna
+          - name: mgm240pa22vna
+          - name: mgm240pa32vna
+          - name: mgm240pa32vnn
+          - name: mgm240pb22vna
           - name: mgm240pb32vna
+          - name: mgm240pb32vnn
+          - name: mgm240sa22vna
+          - name: mgm240sd22vna
       - name: efr32bg27
         socs:
           - name: efr32bg27c140f768im32
