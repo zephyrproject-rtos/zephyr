@@ -226,7 +226,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 53738694cc40f7a7a53c4940209889f1eee556ea
+      revision: pull/154/head
       groups:
         - hal
     - name: hal_rpi_pico
@@ -313,7 +313,7 @@ manifest:
       revision: fb00b383072518c918e2258b0916c996f2d4eebe
       path: modules/lib/loramac-node
     - name: lvgl
-      revision: b03edc8e6282a963cd312cd0b409eb5ce263ea75
+      revision: pull/67/head
       path: modules/lib/gui/lvgl
     - name: mbedtls
       revision: 85440ef5fffa95d0e9971e9163719189cf34d979
