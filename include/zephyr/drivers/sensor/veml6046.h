@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/drivers/sensor/veml60xx-common.h>
+
 /**
  * @file
- * @brief Header file for extended sensor API of VEML6046 sensor
+ * @brief Header file for extended sensor API of VEML6046 sensor.
  * @ingroup veml6046_interface
  */
 
@@ -25,25 +27,6 @@ extern "C" {
 #endif
 
 /**
- * @brief VEML6046 integration time options for light measurements.
- *
- * Possible values for @ref SENSOR_ATTR_VEML6046_IT custom attribute.
- */
-enum veml6046_it {
-	VEML6046_IT_3_125, /**< 3.125 ms */
-	VEML6046_IT_6_25,  /**< 6.25 ms */
-	VEML6046_IT_12_5,  /**< 12.5 ms */
-	VEML6046_IT_25,    /**< 25 ms */
-	VEML6046_IT_50,    /**< 50 ms */
-	VEML6046_IT_100,   /**< 100 ms */
-	VEML6046_IT_200,   /**< 200 ms */
-	VEML6046_IT_400,   /**< 400 ms */
-	/** @cond INTERNAL_HIDDEN */
-	VEML6046_IT_COUNT,
-	/** @endcond */
-};
-
-/**
  * @brief VEML6046 size options for light measurements.
  *
  * Possible values for @ref SENSOR_ATTR_VEML6046_PDD custom attribute.
@@ -54,33 +37,6 @@ enum veml6046_pdd {
 	/** @cond INTERNAL_HIDDEN */
 	VEML6046_PDD_COUNT = 2,
 	/** @endcond */
-};
-
-/**
- * @brief VEML6046 gain options for light measurements.
- *
- * Possible values for @ref SENSOR_ATTR_VEML6046_GAIN custom attribute.
- */
-enum veml6046_gain {
-	VEML6046_GAIN_1 = 0x00,    /**< 1x gain */
-	VEML6046_GAIN_2 = 0x01,    /**< 2x gain */
-	VEML6046_GAIN_0_66 = 0x02, /**< 0.66x gain */
-	VEML6046_GAIN_0_5 = 0x03,  /**< 0.5x gain */
-	/** @cond INTERNAL_HIDDEN */
-	VEML6046_GAIN_COUNT = 4,
-	/** @endcond */
-};
-
-/**
- * @brief VEML6046 interrupt persistence protect number options.
- *
- * Possible values for @ref SENSOR_ATTR_VEML6046_PERS custom attribute.
- */
-enum veml6046_pers {
-	VEML6046_PERS_1 = 0x00, /**< 1 measurement */
-	VEML6046_PERS_2 = 0x01, /**< 2 measurements */
-	VEML6046_PERS_4 = 0x02, /**< 4 measurements */
-	VEML6046_PERS_8 = 0x03, /**< 8 measurements */
 };
 
 /**
