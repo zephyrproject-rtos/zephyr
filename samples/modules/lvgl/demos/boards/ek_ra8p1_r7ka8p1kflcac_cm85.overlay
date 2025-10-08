@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flash0 {
+	reg = <0x2000000 0x100000>;
+};
+
+&flash1 {
+	status = "disabled";
+};
