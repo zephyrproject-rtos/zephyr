@@ -34,6 +34,7 @@
 #include <zephyr/logging/log_core.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -62,7 +63,8 @@ static struct bt_cap_unicast_group *unicast_group;
 static struct bt_le_ext_adv *ext_adv;
 static uint32_t broadcast_id;
 
-uint64_t total_tx_iso_packet_count; /* This value is exposed to test code */
+uint64_t total_unicast_tx_iso_packet_count;   /* This value is exposed to test code */
+uint64_t total_broadcast_tx_iso_packet_count; /* This value is exposed to test code */
 
 /* Store the parameters globally so we can reuse the parameters when switching between unicast and
  * broadcast
@@ -172,11 +174,17 @@ static void stream_sent_cb(struct bt_bap_stream *stream)
 
 	/* Triggered every time we have sent an HCI data packet to the controller */
 
-	if ((total_tx_iso_packet_count % 100U) == 0U) {
-		LOG_INF("Sent %llu HCI ISO data packets", total_tx_iso_packet_count);
-	}
+	if (stream->conn != NULL) { /* only unicast streams have an ACL connection reference */
+		LOG_INF_RATELIMIT("Sent %llu unicast HCI ISO data packets",
+				  total_unicast_tx_iso_packet_count);
 
-	total_tx_iso_packet_count++;
+		total_unicast_tx_iso_packet_count++;
+	} else {
+		LOG_INF_RATELIMIT("Sent %llu broadcast HCI ISO data packets",
+				  total_broadcast_tx_iso_packet_count);
+
+		total_broadcast_tx_iso_packet_count++;
+	}
 }
 
 static void
@@ -1244,7 +1252,8 @@ static int reset_cap_handover(void)
 	 */
 	k_sem_give(&sem_broadcast_stopped);
 
-	total_tx_iso_packet_count = 0U;
+	total_unicast_tx_iso_packet_count = 0U;
+	total_broadcast_tx_iso_packet_count = 0U;
 
 	return 0;
 }

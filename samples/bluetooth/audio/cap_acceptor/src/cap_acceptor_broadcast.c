@@ -132,7 +132,8 @@ static void broadcast_stream_recv_cb(struct bt_bap_stream *bap_stream,
 	 */
 
 	if ((total_broadcast_rx_iso_packet_count % 100U) == 0U) {
-		LOG_INF("Received %llu HCI ISO data packets", total_broadcast_rx_iso_packet_count);
+		LOG_INF("Received %llu broadcast HCI ISO data packets",
+			total_broadcast_rx_iso_packet_count);
 	}
 
 	total_broadcast_rx_iso_packet_count++;

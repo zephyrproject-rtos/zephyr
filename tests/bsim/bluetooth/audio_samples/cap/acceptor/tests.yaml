@@ -26,3 +26,10 @@ tests:
   bluetooth.audio_samples.bsim.cap.acceptor.unicast:
     harness_config:
       bsim_exe_name: tests_bsim_bluetooth_audio_samples_cap_acceptor_unicast_prj_conf
+
+  bluetooth.audio_samples.bsim.cap.acceptor.handover:
+    extra_configs:
+      - CONFIG_SAMPLE_BROADCAST=y
+      # Unicast enabled by default
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_audio_samples_cap_acceptor_handover_prj_conf

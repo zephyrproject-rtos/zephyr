@@ -31,3 +31,14 @@ tests:
         path: initiator
       - application: bluetooth.audio_samples.bsim.cap.acceptor.unicast
         path: acceptor
+
+  bluetooth.audio_samples.bsim.cap.handover:
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - tests_scripts/cap_handover.sh
+    required_applications:
+      - application: bluetooth.audio_samples.bsim.cap.handover.build
+        path: handover
+      - application: bluetooth.audio_samples.bsim.cap.acceptor.handover
+        path: acceptor

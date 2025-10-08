@@ -355,7 +355,8 @@ static void unicast_stream_recv_cb(struct bt_bap_stream *bap_stream,
 	 */
 
 	if ((total_unicast_rx_iso_packet_count % 100U) == 0U) {
-		LOG_INF("Received %llu HCI ISO data packets", total_unicast_rx_iso_packet_count);
+		LOG_INF("Received %llu unicast HCI ISO data packets",
+			total_unicast_rx_iso_packet_count);
 	}
 
 	total_unicast_rx_iso_packet_count++;
