@@ -7,25 +7,20 @@ Tests for scl.py functions
 """
 
 import logging
-from unittest import mock
-import os
-import pytest
 import sys
-
-ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
-
-import scl
-
 from contextlib import nullcontext
 from importlib import reload
+from unittest import mock
+
+import pytest
 from pykwalify.errors import SchemaError
 from yaml.scanner import ScannerError
 
+import scl
 
 TESTDATA_1 = [
-    (False),
-    (True),
+    (False,),
+    (True,),
 ]
 
 @pytest.mark.parametrize(

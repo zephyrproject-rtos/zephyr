@@ -6,24 +6,21 @@
 '''
 This test file contains testsuites for testsuite.py module of twister
 '''
-import sys
 import os
-from unittest import mock
-import pytest
-
+import sys
 from contextlib import nullcontext
 from pathlib import Path
+from unittest import mock
 
-ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
+import pytest
 
-from twisterlib.statuses import TwisterStatus
-from twisterlib.testplan import TestPlan, TestConfiguration, change_skip_to_error_if_integration
-from twisterlib.testinstance import TestInstance
-from twisterlib.testsuite import TestSuite
+from twisterlib.error import TwisterRuntimeError
 from twisterlib.platform import Platform
 from twisterlib.quarantine import Quarantine
-from twisterlib.error import TwisterRuntimeError
+from twisterlib.statuses import TwisterStatus
+from twisterlib.testinstance import TestInstance
+from twisterlib.testplan import TestConfiguration, TestPlan, change_skip_to_error_if_integration
+from twisterlib.testsuite import TestSuite
 
 
 def test_testplan_add_testsuites_short(class_testplan):

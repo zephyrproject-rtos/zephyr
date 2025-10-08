@@ -6,23 +6,25 @@
 '''Common fixtures for use in testing the twister tool.'''
 import logging
 import os
-import sys
+
 import pytest
 
+from twisterlib.environment import TwisterEnv, add_parse_arguments, parse_arguments
+from twisterlib.testinstance import TestInstance
+from twisterlib.testplan import TestConfiguration, TestPlan
+
+from . import ZEPHYR_BASE
+
 pytest_plugins = ["pytester"]
+
 logging.getLogger("twister").setLevel(logging.DEBUG)  # requires for testing twister
 
-ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts"))
-from twisterlib.testplan import TestPlan, TestConfiguration
-from twisterlib.testinstance import TestInstance
-from twisterlib.environment import TwisterEnv, add_parse_arguments, parse_arguments
 
 def new_get_toolchain(*args, **kwargs):
     return 'zephyr'
 
 TestPlan.get_toolchain = new_get_toolchain
+
 
 @pytest.fixture(name='test_data')
 def _test_data():
@@ -30,14 +32,17 @@ def _test_data():
     data = ZEPHYR_BASE + "/scripts/tests/twister/test_data/"
     return data
 
+
 @pytest.fixture(name='zephyr_base')
 def zephyr_base_directory():
     return ZEPHYR_BASE
+
 
 @pytest.fixture(name='testsuites_dir')
 def testsuites_directory():
     """ Pytest fixture to load the test data directory"""
     return ZEPHYR_BASE + "/scripts/tests/twister/test_data/testsuites"
+
 
 @pytest.fixture(name='class_env')
 def tesenv_obj(test_data, testsuites_dir, tmpdir_factory):
@@ -63,6 +68,7 @@ def testplan_obj(class_env):
     plan.options.outdir = env.outdir
     return plan
 
+
 @pytest.fixture(name='all_testsuites_dict')
 def testsuites_dict(class_testplan):
     """ Pytest fixture to call add_testcase function of
@@ -71,6 +77,7 @@ def testsuites_dict(class_testplan):
     class_testplan.TESTSUITE_FILENAME = 'test_data.yaml'
     class_testplan.add_testsuites()
     return class_testplan.testsuites
+
 
 @pytest.fixture(name='platforms_list')
 def all_platforms_list(test_data, class_testplan):
@@ -81,6 +88,7 @@ def all_platforms_list(test_data, class_testplan):
     plan.test_config = TestConfiguration(config_file=class_testplan.env.test_config)
     plan.add_configurations()
     return plan.platforms
+
 
 @pytest.fixture
 def instances_fixture(class_testplan, platforms_list, all_testsuites_dict):

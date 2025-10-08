@@ -7,23 +7,19 @@
 Tests for testinstance class
 """
 
-from contextlib import nullcontext
 import os
-import sys
-import pytest
+from contextlib import nullcontext
 from unittest import mock
 
-ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
-
-from pylib.twister.twisterlib.platform import Simulator
-from twisterlib.statuses import TwisterStatus
-from twisterlib.testinstance import TestInstance
-from twisterlib.error import BuildError
-from twisterlib.runner import TwisterRunner
-from twisterlib.handlers import QEMUHandler
+import pytest
 from expr_parser import reserved
 
+from twisterlib.error import BuildError
+from twisterlib.handlers import QEMUHandler
+from twisterlib.platform import Simulator
+from twisterlib.runner import TwisterRunner
+from twisterlib.statuses import TwisterStatus
+from twisterlib.testinstance import TestInstance
 
 TESTDATA_PART_1 = [
     (False, False, "console", None, "qemu", False, [], (False, True)),
