@@ -9,3 +9,13 @@ boards:
     vendor: silabs
     socs:
       - name: efr32mg24b220f1536im48
+  - name: xgm240_rb4316a
+    full_name: xGM240P 10 dBm Module Radio Board (xGM240-RB4316A)
+    vendor: silabs
+    socs:
+      - name: mgm240pb22vna
+  - name: xgm240_rb4317a
+    full_name: xGM240P 20 dBm Module Radio Board (xGM240-RB4317A)
+    vendor: silabs
+    socs:
+      - name: mgm240pb32vna
