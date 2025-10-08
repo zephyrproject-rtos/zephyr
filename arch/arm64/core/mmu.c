@@ -778,15 +778,30 @@ static void remove_map(struct arm_mmu_ptables *ptables, const char *name,
 
 static void invalidate_tlb_all(void)
 {
+#ifdef CONFIG_SMP
+	/* Use IS variant to broadcast to all CPUs in Inner Shareable domain */
+	__asm__ volatile (
+	"dsb ishst; tlbi vmalle1is; dsb ish; isb"
+	: : : "memory");
+#else
 	__asm__ volatile (
 	"dsb ishst; tlbi vmalle1; dsb ish; isb"
 	: : : "memory");
+#endif
 }
 
 static inline void invalidate_tlb_page(uintptr_t virt)
 {
-	/* to be refined */
-	invalidate_tlb_all();
+#ifdef CONFIG_SMP
+	/* Use IS variant to broadcast to all CPUs in Inner Shareable domain */
+	__asm__ volatile (
+	"dsb ishst; tlbi vae1is, %0; dsb ish; isb"
+	: : "r" (virt >> PAGE_SIZE_SHIFT) : "memory");
+#else
+	__asm__ volatile (
+	"dsb ishst; tlbi vae1, %0; dsb ish; isb"
+	: : "r" (virt >> PAGE_SIZE_SHIFT) : "memory");
+#endif
 }
 
 /* zephyr execution regions with appropriate attributes */
