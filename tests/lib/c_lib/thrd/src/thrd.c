@@ -79,7 +79,8 @@ ZTEST(libc_thrd, test_thrd_create_join)
 
 	zassert_equal(thrd_success, thrd_create(&thr, fun, &param));
 	zassert_equal(thrd_success, thrd_join(thr, &res));
-	zassert_equal(BIOS_FOOD, param, "expected: %d actual: %d", BIOS_FOOD, param);
+	zassert_equal(BIOS_FOOD, param, "expected: %u actual: %llu", BIOS_FOOD,
+		     (unsigned long long)param);
 	zassert_equal(FORTY_TWO, res);
 }
 
