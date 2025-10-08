@@ -31,7 +31,7 @@ The following is an example of a CoAP client initialization and request sending:
 
     req.method = COAP_METHOD_GET;
     req.confirmable = true;
-    req.path = "test";
+    strcpy(req.path, "test");
     req.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN;
     req.cb = response_cb;
     req.payload = NULL;
@@ -88,18 +88,14 @@ RFC7959 Figure 3: Block-Wise GET with Early Negotiation).
     static struct coap_client;
     struct coap_client_request req = { 0 };
 
-    /* static, since options must remain valid throughout the whole execution of the request */
-    static struct coap_client_option block2_option;
-
     coap_client_init(&client, NULL);
-    block2_option = coap_client_option_initial_block2();
 
     req.method = COAP_METHOD_GET;
     req.confirmable = true;
-    req.path = "test";
+    strcpy(req.path, "test");
     req.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN;
     req.cb = response_cb;
-    req.options = &block2_option;
+    req.options[0] = coap_client_option_initial_block2();
     req.num_options = 1;
     req.payload = NULL;
     req.len = 0;
@@ -144,7 +140,7 @@ The callback can then be registered for the PUT/POST request instead of a payloa
 
     req.method = COAP_METHOD_PUT;
     req.confirmable = true;
-    req.path = "lorem-ipsum";
+    strcpy(req.path, "lorem-ipsum");
     req.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN;
     req.cb = response_cb;
     req.payload_cb = lore_ipsum_cb,

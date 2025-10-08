@@ -100,23 +100,6 @@ typedef int (*coap_client_payload_cb_t)(size_t offset, const uint8_t **payload,
 					void *user_data);
 
 /**
- * @brief Representation of a CoAP client request.
- */
-struct coap_client_request {
-	enum coap_method method;                  /**< Method of the request */
-	bool confirmable;                         /**< CoAP Confirmable/Non-confirmable message */
-	const char *path;                         /**< Path of the requested resource */
-	enum coap_content_format fmt;             /**< Content format to be used */
-	const uint8_t *payload;                   /**< User allocated buffer for send request */
-	size_t len;                               /**< Length of the payload */
-	coap_client_payload_cb_t payload_cb;      /**< Optional payload callback */
-	coap_client_response_cb_t cb;             /**< Callback when response received */
-	const struct coap_client_option *options; /**< Extra options to be added to request */
-	uint8_t num_options;                      /**< Number of extra options */
-	void *user_data;                          /**< User provided context */
-};
-
-/**
  * @brief Representation of extra options for the CoAP client request
  */
 struct coap_client_option {
@@ -133,6 +116,29 @@ struct coap_client_option {
 	/** Buffer for the length */
 	uint8_t value[12];
 #endif
+};
+
+/** @cond INTERNAL_HIDDEN */
+#define MAX_PATH_SIZE (CONFIG_COAP_CLIENT_MAX_PATH_LENGTH + 1)
+#define MAX_EXTRA_OPTIONS CONFIG_COAP_CLIENT_MAX_EXTRA_OPTIONS
+/** @endcond */
+
+/**
+ * @brief Representation of a CoAP client request.
+ */
+struct coap_client_request {
+	enum coap_method method;                  /**< Method of the request */
+	bool confirmable;                         /**< CoAP Confirmable/Non-confirmable message */
+	char path[MAX_PATH_SIZE];                 /**< Path of the requested resource */
+	enum coap_content_format fmt;             /**< Content format to be used */
+	const uint8_t *payload;                   /**< User allocated buffer for send request */
+	size_t len;                               /**< Length of the payload */
+	coap_client_payload_cb_t payload_cb;      /**< Optional payload callback */
+	coap_client_response_cb_t cb;             /**< Callback when response received */
+	struct coap_client_option
+		options[MAX_EXTRA_OPTIONS];       /**< Extra options to be added to request */
+	uint8_t num_options;                      /**< Number of extra options */
+	void *user_data;                          /**< User provided context */
 };
 
 /** @cond INTERNAL_HIDDEN */
