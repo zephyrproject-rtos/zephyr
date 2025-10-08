@@ -65,9 +65,13 @@
 	interrupt-names = "line";
 	pinctrl-0 = <&glcdc_default>;
 	pinctrl-names = "default";
-	output-pin-hsync = "TCON_PIN_1";
-	output-pin-vsync = "TCON_PIN_0";
+	output-pin-hsync = "TCON_PIN_NONE";
+	output-pin-vsync = "TCON_PIN_NONE";
 	output-pin-de = "TCON_PIN_2";
+	output-clock-divisor = <4>;
+	def-back-color-red = <0>;
+	def-back-color-green = <0>;
+	def-back-color-blue = <0>;
 };
 
 &iic1 {
