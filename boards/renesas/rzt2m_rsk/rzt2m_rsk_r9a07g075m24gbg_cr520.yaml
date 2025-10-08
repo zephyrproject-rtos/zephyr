@@ -16,5 +16,6 @@ supported:
   - adc
   - i2c
   - counter
+  - spi
   - watchdog
 vendor: renesas
