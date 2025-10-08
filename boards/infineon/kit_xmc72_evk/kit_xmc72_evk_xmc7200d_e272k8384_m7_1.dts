@@ -20,8 +20,8 @@
 	};
 
 	chosen {
-		zephyr,sram = &cm7_1_code;
-		zephyr,flash = &cm7_1_data;
+		zephyr,sram = &sram_m7_1;
+		zephyr,flash = &flash_m7_1;
 		zephyr,dtcm = &dtcm;
 		zephyr,itcm = &itcm;
 		zephyr,console = &uart3;
