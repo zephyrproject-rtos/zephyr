@@ -603,12 +603,11 @@ static inline void __arch_mem_map(void *va, uintptr_t pa, uint32_t new_attrs, bo
 		attrs = new_attrs;
 	}
 
-	ret = l2_page_table_map(xtensa_kernel_ptables, (void *)vaddr, paddr,
-				attrs, is_user);
+	ret = l2_page_table_map(xtensa_kernel_ptables, vaddr, paddr, attrs, is_user);
 	__ASSERT(ret, "Cannot map virtual address (%p)", va);
 
 	if (IS_ENABLED(CONFIG_XTENSA_MMU_DOUBLE_MAP) && ret) {
-		ret = l2_page_table_map(xtensa_kernel_ptables, (void *)vaddr_uc, paddr_uc,
+		ret = l2_page_table_map(xtensa_kernel_ptables, vaddr_uc, paddr_uc,
 					attrs_uc, is_user);
 		__ASSERT(ret, "Cannot map virtual address (%p)", vaddr_uc);
 	}
@@ -625,14 +624,12 @@ static inline void __arch_mem_map(void *va, uintptr_t pa, uint32_t new_attrs, bo
 		SYS_SLIST_FOR_EACH_NODE(&xtensa_domain_list, node) {
 			domain = CONTAINER_OF(node, struct arch_mem_domain, node);
 
-			ret = l2_page_table_map(domain->ptables, (void *)vaddr, paddr,
-						attrs, is_user);
+			ret = l2_page_table_map(domain->ptables, vaddr, paddr, attrs, is_user);
 			__ASSERT(ret, "Cannot map virtual address (%p) for domain %p",
 				 vaddr, domain);
 
 			if (IS_ENABLED(CONFIG_XTENSA_MMU_DOUBLE_MAP) && ret) {
-				ret = l2_page_table_map(domain->ptables,
-							(void *)vaddr_uc, paddr_uc,
+				ret = l2_page_table_map(domain->ptables, vaddr_uc, paddr_uc,
 							attrs_uc, is_user);
 				__ASSERT(ret, "Cannot map virtual address (%p) for domain %p",
 					 vaddr_uc, domain);
@@ -798,10 +795,10 @@ static inline void __arch_mem_unmap(void *va)
 		vaddr = va;
 	}
 
-	l2_page_table_unmap(xtensa_kernel_ptables, (void *)vaddr);
+	l2_page_table_unmap(xtensa_kernel_ptables, vaddr);
 
 	if (IS_ENABLED(CONFIG_XTENSA_MMU_DOUBLE_MAP)) {
-		(void)l2_page_table_unmap(xtensa_kernel_ptables, (void *)vaddr_uc);
+		(void)l2_page_table_unmap(xtensa_kernel_ptables, vaddr_uc);
 	}
 
 #ifdef CONFIG_USERSPACE
@@ -813,10 +810,12 @@ static inline void __arch_mem_unmap(void *va)
 	SYS_SLIST_FOR_EACH_NODE(&xtensa_domain_list, node) {
 		domain = CONTAINER_OF(node, struct arch_mem_domain, node);
 
-		(void)l2_page_table_unmap(domain->ptables, (void *)vaddr);
+		uint32_t *ptables = domain->ptables;
+
+		(void)l2_page_table_unmap(ptables, vaddr);
 
 		if (IS_ENABLED(CONFIG_XTENSA_MMU_DOUBLE_MAP)) {
-			(void)l2_page_table_unmap(domain->ptables, (void *)vaddr_uc);
+			(void)l2_page_table_unmap(ptables, vaddr_uc);
 		}
 	}
 	k_spin_unlock(&z_mem_domain_lock, key);
