@@ -308,6 +308,12 @@
 			clocks = <&pclka MSTPC 16>;
 			status = "disabled";
 		};
+
+		drw: drw@40344000 {
+			compatible = "renesas,ra-drw";
+			reg = <0x40344000 0xD4>;
+			status = "disabled";
+		};
 	};
 
 	usbhs_phy: usbhs-phy {
