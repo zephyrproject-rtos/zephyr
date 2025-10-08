@@ -387,6 +387,8 @@ config ARM64_PA_BITS
 
 config MAX_XLAT_TABLES
 	int "Maximum numbers of translation tables"
+	default 32 if USERSPACE && TEST && SMP
+	default 24 if USERSPACE && TEST
 	default 20 if USERSPACE && (ARM64_VA_BITS >= 40)
 	default 16 if USERSPACE
 	default 12 if (ARM64_VA_BITS >= 40)
