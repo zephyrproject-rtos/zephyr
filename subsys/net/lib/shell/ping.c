@@ -231,7 +231,7 @@ static int parse_arg(size_t *i, size_t argc, char *argv[])
 static void ping_cleanup(struct ping_context *ctx)
 {
 	(void)net_icmp_cleanup_ctx(&ctx->icmp);
-	shell_set_bypass(ctx->sh, NULL);
+	shell_set_bypass(ctx->sh, NULL, NULL);
 }
 
 static void ping_done(struct ping_context *ctx)
@@ -286,9 +286,10 @@ static void ping_work(struct k_work *work)
 
 #define ASCII_CTRL_C 0x03
 
-static void ping_bypass(const struct shell *sh, uint8_t *data, size_t len)
+static void ping_bypass(const struct shell *sh, uint8_t *data, size_t len, void *user_data)
 {
 	ARG_UNUSED(sh);
+	ARG_UNUSED(user_data);
 
 	for (size_t i = 0; i < len; i++) {
 		if (data[i] == ASCII_CTRL_C) {
@@ -481,7 +482,7 @@ static int cmd_net_ping(const struct shell *sh, size_t argc, char *argv[])
 
 	PR("PING %s\n", host);
 
-	shell_set_bypass(sh, ping_bypass);
+	shell_set_bypass(sh, ping_bypass, NULL);
 	k_work_reschedule(&ping_ctx.work, K_NO_WAIT);
 
 	return 0;

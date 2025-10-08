@@ -164,16 +164,18 @@ static int set_bypass(const struct shell *sh, shell_bypass_cb_t bypass)
 		in_use = true;
 	}
 
-	shell_set_bypass(sh, bypass);
+	shell_set_bypass(sh, bypass, NULL);
 
 	return 0;
 }
 
-static void bypass_cb(const struct shell *sh, uint8_t *recv, size_t len)
+static void bypass_cb(const struct shell *sh, uint8_t *recv, size_t len, void *user_data)
 {
 	bool escape = false;
 	static uint8_t tail;
 	uint8_t byte;
+
+	ARG_UNUSED(user_data);
 
 	for (size_t i = 0; i < len; i++) {
 		if (tail == CHAR_CAN && recv[i] == CHAR_DC1) {
