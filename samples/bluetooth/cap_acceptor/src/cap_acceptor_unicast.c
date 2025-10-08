@@ -1,7 +1,7 @@
 /** @file
  *  @brief Bluetooth Common Audio Profile (CAP) Acceptor unicast.
  *
- *  Copyright (c) 2021-2024 Nordic Semiconductor ASA
+ *  Copyright (c) 2021-2025 Nordic Semiconductor ASA
  *  Copyright (c) 2023 NXP
  *
  *  SPDX-License-Identifier: Apache-2.0
@@ -296,7 +296,6 @@ static void unicast_stream_enabled_cb(struct bt_bap_stream *bap_stream)
 static void unicast_stream_started_cb(struct bt_bap_stream *bap_stream)
 {
 	LOG_INF("Started bap_stream %p", bap_stream);
-	total_unicast_rx_iso_packet_count = 0U;
 }
 
 static void unicast_stream_metadata_updated_cb(struct bt_bap_stream *bap_stream)
@@ -438,7 +437,10 @@ int init_cap_acceptor_unicast(struct peer_config *peer)
 	}
 
 	bt_cap_stream_ops_register(&peer->source_stream, &unicast_stream_ops);
-	bt_cap_stream_ops_register(&peer->sink_stream, &unicast_stream_ops);
+
+	ARRAY_FOR_EACH_PTR(peer->sink_streams, stream) {
+		bt_cap_stream_ops_register(stream, &unicast_stream_ops);
+	}
 
 	if (IS_ENABLED(CONFIG_BT_ASCS_ASE_SRC)) {
 		static bool thread_started;
@@ -458,6 +460,9 @@ int init_cap_acceptor_unicast(struct peer_config *peer)
 
 	k_sem_init(&peer->source_stream_sem, 0, 1);
 	k_sem_init(&peer->sink_stream_sem, 0, 1);
+
+	total_unicast_rx_iso_packet_count = 0U;
+	total_unicast_tx_iso_packet_count = 0U;
 
 	return 0;
 }
