@@ -3637,6 +3637,8 @@ Native_sim and POSIX arch:
   status: maintained
   maintainers:
     - aescolar
+  collaborators:
+    - tpambor
   files:
     - arch/posix/
     - boards/native/common/
