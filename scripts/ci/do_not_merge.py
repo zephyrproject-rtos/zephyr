@@ -79,7 +79,7 @@ def main(argv):
     for label in pr.get_labels():
         print(f"label: {label.name}")
 
-        if label.name in DNM_LABELS:
+        if label.name in DNM_LABELS or label.name.startswith("block:"):
             print(f"Pull request is labeled as \"{label.name}\".")
             fail = True
 
