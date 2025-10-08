@@ -325,8 +325,8 @@ static int dsi_mcux_tx_color(const struct device *dev, uint8_t channel,
 		.txData = msg->tx_buf,
 		.rxDataSize = (uint16_t)msg->rx_len,
 		.rxData = msg->rx_buf,
-		.sendDscCmd = true,
-		.dscCmd = msg->cmd,
+		.sendDcsCmd = true,
+		.dcsCmd = msg->cmd,
 		.txDataType = kDSI_TxDataDcsLongWr,
 		/* default to high speed unless told to use low power */
 		.flags = (msg->flags & MIPI_DSI_MSG_USE_LPM) ? 0 : kDSI_TransferUseHighSpeed,
@@ -680,18 +680,18 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 		LOG_ERR("DCS Read not yet implemented or used");
 		return -ENOTSUP;
 	case MIPI_DSI_DCS_SHORT_WRITE:
-		dsi_xfer.sendDscCmd = true;
-		dsi_xfer.dscCmd = msg->cmd;
+		dsi_xfer.sendDcsCmd = true;
+		dsi_xfer.dcsCmd = msg->cmd;
 		dsi_xfer.txDataType = kDSI_TxDataDcsShortWrNoParam;
 		break;
 	case MIPI_DSI_DCS_SHORT_WRITE_PARAM:
-		dsi_xfer.sendDscCmd = true;
-		dsi_xfer.dscCmd = msg->cmd;
+		dsi_xfer.sendDcsCmd = true;
+		dsi_xfer.dcsCmd = msg->cmd;
 		dsi_xfer.txDataType = kDSI_TxDataDcsShortWrOneParam;
 		break;
 	case MIPI_DSI_DCS_LONG_WRITE:
-		dsi_xfer.sendDscCmd = true;
-		dsi_xfer.dscCmd = msg->cmd;
+		dsi_xfer.sendDcsCmd = true;
+		dsi_xfer.dcsCmd = msg->cmd;
 		dsi_xfer.txDataType = kDSI_TxDataDcsLongWr;
 #ifndef CONFIG_MIPI_DSI_MCUX_NXP_DCNANO_LCDIF
 		int ret;
