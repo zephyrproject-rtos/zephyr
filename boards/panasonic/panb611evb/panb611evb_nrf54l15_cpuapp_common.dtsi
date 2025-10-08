@@ -91,6 +91,10 @@
 	status = "okay";
 };
 
+&xo {
+	status = "okay";
+};
+
 &spi00 {
 	status = "okay";
 	cs-gpios = <&gpio2 5 GPIO_ACTIVE_LOW>;
