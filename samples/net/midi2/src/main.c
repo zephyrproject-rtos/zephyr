@@ -76,11 +76,8 @@ static const struct ump_endpoint_dt_spec ump_ep_dt =
 static inline void handle_ump_stream(struct netmidi2_session *session,
 				     const struct midi_ump ump)
 {
-	const struct ump_stream_responder_cfg responder_cfg = {
-		.dev = session,
-		.send = (void (*)(void *, const struct midi_ump)) netmidi2_send,
-		.ep_spec = &ump_ep_dt,
-	};
+	const struct ump_stream_responder_cfg responder_cfg =
+		UMP_STREAM_RESPONDER(session, netmidi2_send, &ump_ep_dt);
 	ump_stream_respond(&responder_cfg, ump);
 }
 

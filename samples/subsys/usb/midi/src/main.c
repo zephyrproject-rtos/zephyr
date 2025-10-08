@@ -45,11 +45,8 @@ INPUT_CALLBACK_DEFINE(NULL, key_press, NULL);
 static const struct ump_endpoint_dt_spec ump_ep_dt =
 	UMP_ENDPOINT_DT_SPEC_GET(USB_MIDI_DT_NODE);
 
-const struct ump_stream_responder_cfg responder_cfg = {
-	.dev = midi,
-	.send = (void (*)(void *, const struct midi_ump)) usbd_midi_send,
-	.ep_spec = &ump_ep_dt,
-};
+const struct ump_stream_responder_cfg responder_cfg =
+	UMP_STREAM_RESPONDER(midi, usbd_midi_send, &ump_ep_dt);
 
 static void on_midi_packet(const struct device *dev, const struct midi_ump ump)
 {

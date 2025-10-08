@@ -56,13 +56,31 @@ struct ump_endpoint_dt_spec {
 };
 
 /**
+ * @brief      A function to send a UMP
+ */
+typedef void (*ump_send_func)(const void *, const struct midi_ump);
+
+/**
+ * @brief      Initialize a configuration for the UMP Stream responder
+ * @param      _dev      The device to send reply packets
+ * @param      _send     The send function
+ * @param      _ep_spec  The UMP endpoint specification
+ */
+#define UMP_STREAM_RESPONDER(_dev, _send, _ep_spec)				\
+	{									\
+		.dev = _dev,							\
+		.send = (ump_send_func) _send,	\
+		.ep_spec = _ep_spec,						\
+	}
+
+/**
  * @brief      Configuration for the UMP Stream responder
  */
 struct ump_stream_responder_cfg {
 	/** The device to send reply packets */
-	void *dev;
+	const void *dev;
 	/** The function to call to send a reply packet */
-	void (*send)(void *dev, const struct midi_ump ump);
+	ump_send_func send;
 	/** The UMP endpoint specification */
 	const struct ump_endpoint_dt_spec *ep_spec;
 };
