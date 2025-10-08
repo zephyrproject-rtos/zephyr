@@ -292,6 +292,27 @@
 				remap-value = <0x0>;
 				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 			};
+
+			test_gooddisplay_epaper_gdew029i6fd: uc8151d@17 {
+				compatible = "ultrachip,uc8151d";
+				reg = <17>;
+				mipi-max-frequency = <4000000>;
+				status = "okay";
+				width = <128>;
+				height = <296>;
+				busy-gpios = <&test_gpio 0 0>;
+
+				full {
+					/* Override CDI / VCOM for full refresh */
+					cdi = <0x17>;
+					vdcs = <0x08>;
+				};
+
+				partial {
+					/* Exercise CDI override path for partial refresh */
+					cdi = <0x17>;
+				};
+			};
 		};
 
 		test_mipi_dbi_xfr_16bit_write_only {
