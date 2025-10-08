@@ -101,7 +101,7 @@ static uint8_t asid_count = 3;
 /*
  * List with all active and initialized memory domains.
  */
-static sys_slist_t xtensa_domain_list;
+sys_slist_t xtensa_domain_list;
 #endif /* CONFIG_USERSPACE */
 
 extern char _heap_end[];
