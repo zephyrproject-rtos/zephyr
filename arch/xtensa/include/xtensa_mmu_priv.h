@@ -31,6 +31,9 @@
 /** Mask for attributes in PTE */
 #define XTENSA_MMU_PTE_ATTR_MASK		0x0000000FU
 
+/** Number of bits to shift for attributes in PTE */
+#define XTENSA_MMU_PTE_ATTR_SHIFT		0U
+
 /** Mask for cache mode in PTE */
 #define XTENSA_MMU_PTE_ATTR_CACHED_MASK		0x0000000CU
 
@@ -90,19 +93,21 @@
 	(((paddr) & XTENSA_MMU_PTE_PPN_MASK) | \
 	 (((ring) << XTENSA_MMU_PTE_RING_SHIFT) & XTENSA_MMU_PTE_RING_MASK) | \
 	 (((sw) << XTENSA_MMU_PTE_SW_SHIFT) & XTENSA_MMU_PTE_SW_MASK) | \
-	 ((attr) & XTENSA_MMU_PTE_ATTR_MASK))
+	 (((attr) << XTENSA_MMU_PTE_ATTR_SHIFT) & XTENSA_MMU_PTE_ATTR_MASK))
 
 /** Get the attributes from a PTE */
 #define XTENSA_MMU_PTE_ATTR_GET(pte) \
-	((pte) & XTENSA_MMU_PTE_ATTR_MASK)
+	(((pte) & XTENSA_MMU_PTE_ATTR_MASK) >> XTENSA_MMU_PTE_ATTR_SHIFT)
 
 /** Set the attributes in a PTE */
 #define XTENSA_MMU_PTE_ATTR_SET(pte, attr) \
-	(((pte) & ~XTENSA_MMU_PTE_ATTR_MASK) | (attr & XTENSA_MMU_PTE_ATTR_MASK))
+	(((pte) & ~XTENSA_MMU_PTE_ATTR_MASK) | \
+	 (((attr) << XTENSA_MMU_PTE_ATTR_SHIFT) & XTENSA_MMU_PTE_ATTR_MASK))
 
 /** Set the SW field in a PTE */
 #define XTENSA_MMU_PTE_SW_SET(pte, sw) \
-	(((pte) & ~XTENSA_MMU_PTE_SW_MASK) | (sw << XTENSA_MMU_PTE_SW_SHIFT))
+	(((pte) & ~XTENSA_MMU_PTE_SW_MASK) | \
+	 (((sw) << XTENSA_MMU_PTE_SW_SHIFT) & XTENSA_MMU_PTE_SW_MASK))
 
 /** Get the SW field from a PTE */
 #define XTENSA_MMU_PTE_SW_GET(pte) \
@@ -124,7 +129,7 @@
 /** Set the ring in a PTE */
 #define XTENSA_MMU_PTE_RING_SET(pte, ring) \
 	(((pte) & ~XTENSA_MMU_PTE_RING_MASK) | \
-	((ring) << XTENSA_MMU_PTE_RING_SHIFT))
+	 (((ring) << XTENSA_MMU_PTE_RING_SHIFT) & XTENSA_MMU_PTE_RING_MASK))
 
 /** Get the ring from a PTE */
 #define XTENSA_MMU_PTE_RING_GET(pte) \
