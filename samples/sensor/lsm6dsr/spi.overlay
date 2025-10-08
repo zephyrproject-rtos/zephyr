@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2025 Helbling Technik AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi1 {
+	cs-gpios = <&gpio1 4 GPIO_ACTIVE_LOW>;
+	lsm6dsr: lsm6dsr@0 {
+		compatible = "st,lsm6dsr";
+		reg = <0>;
+		irq-gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
+		spi-max-frequency = <4000000>;
+	};
+};
