@@ -184,7 +184,7 @@ class Binding:
       are multiple levels of 'child-binding' descriptions in the binding.
     """
 
-    def __init__(self, path: Optional[str], fname2path: dict[str, str],
+    def __init__(self, path: str | None, fname2path: dict[str, str],
                  raw: Any = None, require_compatible: bool = True,
                  require_description: bool = True, require_title: bool = False):
         """
@@ -221,7 +221,7 @@ class Binding:
           Either way, "title:" must be a string if it is present in
           the binding.
         """
-        self.path: Optional[str] = path
+        self.path: str | None = path
         self._fname2path: dict[str, str] = fname2path
 
         if raw is None:
@@ -242,7 +242,7 @@ class Binding:
             if not isinstance(raw["child-binding"], dict):
                 _err(f"malformed 'child-binding:' in {self.path}, "
                      "expected a binding (dictionary with keys/values)")
-            self.child_binding: Optional[Binding] = Binding(
+            self.child_binding: Binding | None = Binding(
                 path, fname2path,
                 raw=raw["child-binding"],
                 require_compatible=False,
@@ -271,22 +271,22 @@ class Binding:
         return f"<Binding {basename}" + compat + ">"
 
     @property
-    def title(self) -> Optional[str]:
+    def title(self) -> str | None:
         "See the class docstring"
         return self.raw.get('title')
 
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         "See the class docstring"
         return self.raw.get('description')
 
     @property
-    def compatible(self) -> Optional[str]:
+    def compatible(self) -> str | None:
         "See the class docstring"
         return self.raw.get('compatible')
 
     @property
-    def bus(self) -> Union[None, str, list[str]]:
+    def bus(self) -> None | str | list[str]:
         "See the class docstring"
         return self.raw.get('bus')
 
@@ -299,11 +299,11 @@ class Binding:
             return []
 
     @property
-    def on_bus(self) -> Optional[str]:
+    def on_bus(self) -> str | None:
         "See the class docstring"
         return self.raw.get('on-bus')
 
-    def _merge_includes(self, raw: dict, binding_path: Optional[str]) -> dict:
+    def _merge_includes(self, raw: dict, binding_path: str | None) -> dict:
         # Constructor helper. Merges included files in
         # 'raw["include"]' into 'raw' using 'self._include_paths' as a
         # source of include files, removing the "include" key while
@@ -579,7 +579,7 @@ class PropertySpec:
         return f"<PropertySpec {self.name} type '{self.type}'>"
 
     @property
-    def path(self) -> Optional[str]:
+    def path(self) -> str | None:
         "See the class docstring"
         return self.binding.path
 
@@ -589,12 +589,12 @@ class PropertySpec:
         return self._raw["type"]
 
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         "See the class docstring"
         return self._raw.get("description")
 
     @property
-    def enum(self) -> Optional[list]:
+    def enum(self) -> list | None:
         "See the class docstring"
         return self._raw.get("enum")
 
@@ -629,12 +629,12 @@ class PropertySpec:
         return self._enum_upper_tokenizable
 
     @property
-    def const(self) -> Union[None, int, list[int], str, list[str]]:
+    def const(self) -> None | int | list[int] | str | list[str]:
         "See the class docstring"
         return self._raw.get("const")
 
     @property
-    def default(self) -> Union[None, int, list[int], str, list[str]]:
+    def default(self) -> None | int | list[int] | str | list[str]:
         "See the class docstring"
         return self._raw.get("default")
 
@@ -649,7 +649,7 @@ class PropertySpec:
         return self._raw.get("deprecated", False)
 
     @property
-    def specifier_space(self) -> Optional[str]:
+    def specifier_space(self) -> str | None:
         "See the class docstring"
         return self._raw.get("specifier-space")
 
@@ -730,7 +730,7 @@ class Property:
         return self.spec.name
 
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         "See the class docstring"
         return self.spec.description.strip() if self.spec.description else None
 
@@ -749,7 +749,7 @@ class Property:
         return ret
 
     @property
-    def enum_indices(self) -> Optional[list[int]]:
+    def enum_indices(self) -> list[int] | None:
         "See the class docstring"
         enum = self.spec.enum
         val = self.val if isinstance(self.val, list) else [self.val]
@@ -779,9 +779,9 @@ class Register:
     """
 
     node: 'Node'
-    name: Optional[str]
-    addr: Optional[int]
-    size: Optional[int]
+    name: str | None
+    addr: int | None
+    size: int | None
 
 
 @dataclass
@@ -818,11 +818,11 @@ class Range:
     """
     node: 'Node'
     child_bus_cells: int
-    child_bus_addr: Optional[int]
+    child_bus_addr: int | None
     parent_bus_cells: int
-    parent_bus_addr: Optional[int]
+    parent_bus_addr: int | None
     length_cells: int
-    length: Optional[int]
+    length: int | None
 
 
 @dataclass
@@ -860,8 +860,8 @@ class ControllerAndData:
     node: 'Node'
     controller: 'Node'
     data: dict
-    name: Optional[str]
-    basename: Optional[str]
+    name: str | None
+    basename: str | None
 
 
 @dataclass
@@ -890,7 +890,7 @@ class PinCtrl:
     """
 
     node: 'Node'
-    name: Optional[str]
+    name: str | None
     conf_nodes: list['Node']
 
     @property
@@ -1068,7 +1068,7 @@ class Node:
 
         # Private, don't touch outside the class:
         self._node: dtlib_Node = dt_node
-        self._binding: Optional[Binding] = None
+        self._binding: Binding | None = None
 
         # Public, some of which are initialized properly later:
         self.edt: EDT = edt
@@ -1102,7 +1102,7 @@ class Node:
         return self._node.lineno
 
     @property
-    def unit_addr(self) -> Optional[int]:
+    def unit_addr(self) -> int | None:
         "See the class docstring"
 
         # TODO: Return a plain string here later, like dtlib.Node.unit_addr?
@@ -1119,14 +1119,14 @@ class Node:
         return _translate(addr, self._node)
 
     @property
-    def title(self) -> Optional[str]:
+    def title(self) -> str | None:
         "See the class docstring."
         if self._binding:
             return self._binding.title
         return None
 
     @property
-    def description(self) -> Optional[str]:
+    def description(self) -> str | None:
         "See the class docstring."
         if self._binding:
             return self._binding.description
@@ -1138,7 +1138,7 @@ class Node:
         return self._node.path
 
     @property
-    def label(self) -> Optional[str]:
+    def label(self) -> str | None:
         "See the class docstring"
         if "label" in self._node.props:
             return self._node.props["label"].to_string()
@@ -1210,14 +1210,14 @@ class Node:
         return "read-only" in self._node.props
 
     @property
-    def matching_compat(self) -> Optional[str]:
+    def matching_compat(self) -> str | None:
         "See the class docstring"
         if self._binding:
             return self._binding.compatible
         return None
 
     @property
-    def binding_path(self) -> Optional[str]:
+    def binding_path(self) -> str | None:
         "See the class docstring"
         if self._binding:
             return self._binding.path
@@ -1264,7 +1264,7 @@ class Node:
         return controller
 
     @property
-    def spi_cs_gpio(self) -> Optional[ControllerAndData]:
+    def spi_cs_gpio(self) -> ControllerAndData | None:
         "See the class docstring"
 
         if not ("spi" in self.on_buses
@@ -1433,7 +1433,7 @@ class Node:
         self.compats = []
         self._binding = Binding(None, {}, raw=raw, require_compatible=False)
 
-    def _binding_from_parent(self) -> Optional[Binding]:
+    def _binding_from_parent(self) -> Binding | None:
         # Returns the binding from 'child-binding:' in the parent node's
         # binding.
 
@@ -1818,8 +1818,8 @@ class Node:
     def _standard_phandle_val_list(
             self,
             prop: dtlib_Property,
-            specifier_space: Optional[str]
-    ) -> list[Optional[ControllerAndData]]:
+            specifier_space: str | None
+    ) -> list[ControllerAndData | None]:
         # Parses a property like
         #
         #     <prop.name> = <phandle cell phandle cell ...>;
@@ -1869,7 +1869,7 @@ class Node:
                 # if there is no specifier space in _check_prop_by_type().
                 specifier_space = prop.name[:-1]
 
-        res: list[Optional[ControllerAndData]] = []
+        res: list[ControllerAndData | None] = []
 
         for item in _phandle_val_list(prop, specifier_space):
             if item is None:
@@ -1991,14 +1991,14 @@ class EDT:
     """
 
     def __init__(self,
-                 dts: Optional[str],
+                 dts: str | None,
                  bindings_dirs: list[str],
-                 workspace_dir: Optional[str] = None,
+                 workspace_dir: str | None = None,
                  warn_reg_unit_address_mismatch: bool = True,
                  default_prop_types: bool = True,
                  support_fixed_partitions_on_any_bus: bool = True,
-                 infer_binding_for_paths: Optional[Iterable[str]] = None,
-                 vendor_prefixes: Optional[dict[str, str]] = None,
+                 infer_binding_for_paths: Iterable[str] | None = None,
+                 vendor_prefixes: dict[str, str] | None = None,
                  werror: bool = False):
         """EDT constructor.
 
@@ -2071,7 +2071,7 @@ class EDT:
         self._werror: bool = bool(werror)
 
         # Other internal state
-        self._compat2binding: dict[tuple[str, Optional[str]], Binding] = {}
+        self._compat2binding: dict[tuple[str, str | None], Binding] = {}
         self._graph: Graph = Graph()
         self._binding_paths: list[str] = _binding_paths(self.bindings_dirs)
         self._binding_fname2path: dict[str, str] = {
@@ -2129,7 +2129,7 @@ class EDT:
 
         return ret
 
-    def chosen_node(self, name: str) -> Optional[Node]:
+    def chosen_node(self, name: str) -> Node | None:
         """
         Returns the Node pointed at by the property named 'name' in /chosen, or
         None if the property is missing
@@ -2299,9 +2299,9 @@ class EDT:
                 binding = binding.child_binding
 
     def _binding(self,
-                 raw: Optional[dict],
+                 raw: dict | None,
                  binding_path: str,
-                 dt_compats: set[str]) -> Optional[Binding]:
+                 dt_compats: set[str]) -> Binding | None:
         # Convert a 'raw' binding from YAML to a Binding object and return it.
         #
         # Error out if the raw data looks like an invalid binding.
@@ -2552,11 +2552,11 @@ def _binding_inc_error(msg):
     raise yaml.constructor.ConstructorError(None, None, "error: " + msg)
 
 
-def _check_include_dict(name: Optional[str],
-                        allowlist: Optional[list[str]],
-                        blocklist: Optional[list[str]],
-                        child_filter: Optional[dict],
-                        binding_path: Optional[str]) -> None:
+def _check_include_dict(name: str | None,
+                        allowlist: list[str] | None,
+                        blocklist: list[str] | None,
+                        child_filter: dict | None,
+                        binding_path: str | None) -> None:
     # Check that an 'include:' named 'name' with property-allowlist
     # 'allowlist', property-blocklist 'blocklist', and
     # child-binding filter 'child_filter' has valid structure.
@@ -2572,11 +2572,11 @@ def _check_include_dict(name: Optional[str],
 
     while child_filter is not None:
         child_copy = deepcopy(child_filter)
-        child_allowlist: Optional[list[str]] = (
+        child_allowlist: list[str] | None = (
             child_copy.pop('property-allowlist', None))
-        child_blocklist: Optional[list[str]] = (
+        child_blocklist: list[str] | None = (
             child_copy.pop('property-blocklist', None))
-        next_child_filter: Optional[dict] = (
+        next_child_filter: dict | None = (
             child_copy.pop('child-binding', None))
 
         if child_copy:
@@ -2594,10 +2594,10 @@ def _check_include_dict(name: Optional[str],
 
 
 def _filter_properties(raw: dict,
-                       allowlist: Optional[list[str]],
-                       blocklist: Optional[list[str]],
-                       child_filter: Optional[dict],
-                       binding_path: Optional[str]) -> None:
+                       allowlist: list[str] | None,
+                       blocklist: list[str] | None,
+                       child_filter: dict | None,
+                       binding_path: str | None) -> None:
     # Destructively modifies 'raw["properties"]' and
     # 'raw["child-binding"]', if they exist, according to
     # 'allowlist', 'blocklist', and 'child_filter'.
@@ -2615,10 +2615,10 @@ def _filter_properties(raw: dict,
         child_binding = child_binding.get('child-binding')
 
 
-def _filter_properties_helper(props: Optional[dict],
-                              allowlist: Optional[list[str]],
-                              blocklist: Optional[list[str]],
-                              binding_path: Optional[str]) -> None:
+def _filter_properties_helper(props: dict | None,
+                              allowlist: list[str] | None,
+                              blocklist: list[str] | None,
+                              binding_path: str | None) -> None:
     if props is None or (allowlist is None and blocklist is None):
         return
 
@@ -2638,8 +2638,8 @@ def _filter_properties_helper(props: Optional[dict],
         del props[prop]
 
 
-def _check_prop_filter(name: str, value: Optional[list[str]],
-                       binding_path: Optional[str]) -> None:
+def _check_prop_filter(name: str, value: list[str] | None,
+                       binding_path: str | None) -> None:
     # Ensure an include: ... property-allowlist or property-blocklist
     # is a list.
 
@@ -2652,8 +2652,8 @@ def _check_prop_filter(name: str, value: Optional[list[str]],
 
 def _merge_props(to_dict: dict,
                  from_dict: dict,
-                 parent: Optional[str],
-                 binding_path: Optional[str],
+                 parent: str | None,
+                 binding_path: str | None,
                  check_required: bool = False):
     # Recursively merges 'from_dict' into 'to_dict', to implement 'include:'.
     #
@@ -2733,7 +2733,7 @@ def _binding_include(loader, node):
 
 def _check_prop_by_type(prop_name: str,
                         options: dict,
-                        binding_path: Optional[str]) -> None:
+                        binding_path: str | None) -> None:
     # Binding._check_properties() helper. Checks 'type:', 'default:',
     # 'const:' and # 'specifier-space:' for the property named 'prop_name'
 
@@ -2900,7 +2900,7 @@ def _interrupt_parent(start_node: dtlib_Node) -> dtlib_Node:
     # the parents of 'node'. As of writing, this behavior isn't specified in
     # the DT spec., but seems to match what some .dts files except.
 
-    node: Optional[dtlib_Node] = start_node
+    node: dtlib_Node | None = start_node
 
     while node:
         if "interrupt-parent" in node.props:
@@ -3147,7 +3147,7 @@ def _raw_unit_addr(node: dtlib_Node, parent: dtlib_Node) -> bytes:
     # _map_interrupt() helper. Returns the unit address (derived from 'reg' and
     # #address-cells) as a raw 'bytes'
 
-    iparent: Optional[dtlib_Node] = parent
+    iparent: dtlib_Node | None = parent
     iparent_addr_len = _address_cells_self(iparent)
     parent_addr_len = _address_cells(node)
 
@@ -3210,7 +3210,7 @@ def _not(b: bytes) -> bytes:
 def _phandle_val_list(
         prop: dtlib_Property,
         n_cells_name: str
-) -> list[Optional[tuple[dtlib_Node, bytes]]]:
+) -> list[tuple[dtlib_Node, bytes] | None]:
     # Parses a '<phandle> <value> <phandle> <value> ...' value. The number of
     # cells that make up each <value> is derived from the node pointed at by
     # the preceding <phandle>.
@@ -3228,7 +3228,7 @@ def _phandle_val_list(
 
     full_n_cells_name = f"#{n_cells_name}-cells"
 
-    res: list[Optional[tuple[dtlib_Node, bytes]]] = []
+    res: list[tuple[dtlib_Node, bytes] | None] = []
 
     raw = prop.value
     while raw:
@@ -3258,7 +3258,7 @@ def _phandle_val_list(
     return res
 
 
-def _address_cells_self(node: Optional[dtlib_Node]) -> Optional[int]:
+def _address_cells_self(node: dtlib_Node | None) -> int | None:
     # Returns the #address-cells setting for 'node', giving the number of <u32>
     # cells used to encode the address in the 'reg' property
 
@@ -3385,12 +3385,12 @@ _DEFAULT_PROP_TYPES: dict[str, str] = {
     "interrupt-controller": "boolean",
 }
 
-_STATUS_ENUM: list[str] = "ok okay disabled reserved fail fail-sss".split()
+_STATUS_ENUM: list[str] = ["ok", "okay", "disabled", "reserved", "fail", "fail-sss"]
 
 def _raw_default_property_for(
         name: str
-) -> dict[str, Union[str, bool, list[str]]]:
-    ret: dict[str, Union[str, bool, list[str]]] = {
+) -> dict[str, str | bool | list[str]]:
+    ret: dict[str, str | bool | list[str]] = {
         'type': _DEFAULT_PROP_TYPES[name],
         'required': False,
     }

@@ -430,7 +430,6 @@
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
 ]
 "./scripts/dts/python-devicetree/src/devicetree/dtlib.py" = [
-    "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation-union
 ]
 "./scripts/dts/python-devicetree/src/devicetree/edtlib.py" = [
     "SIM905",   # https://docs.astral.sh/ruff/rules/split-static-string
