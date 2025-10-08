@@ -276,6 +276,10 @@ New APIs and options
 
   * :c:macro:`__deprecated_version`
 
+* Video
+
+  * :c:member:`video_format.size` field
+
 .. zephyr-keep-sorted-stop
 
 New Boards
