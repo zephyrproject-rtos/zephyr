@@ -252,7 +252,6 @@ static int mipid02_get_caps(const struct device *dev, struct video_caps *caps)
 	}
 
 	caps->format_caps = drv_data->caps;
-	caps->min_vbuf_count = 1;
 
 	return 0;
 }
