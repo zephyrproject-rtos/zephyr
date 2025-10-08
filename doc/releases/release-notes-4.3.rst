@@ -272,6 +272,10 @@ New APIs and options
 
   * :kconfig:option:`CONFIG_TASK_WDT_DUMMY`
 
+* Toolchain
+
+  * :c:macro:`__deprecated_version`
+
 .. zephyr-keep-sorted-stop
 
 New Boards
