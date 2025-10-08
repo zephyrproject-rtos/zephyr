@@ -74,7 +74,7 @@ typedef void (*coap_client_response_cb_t)(const struct coap_client_response_data
  *
  * An optional callback for providing a payload for CoAP client requests. If set in
  * @ref coap_client_request, the CoAP client library will call this callback when
- * preparing a PUT/POST request (note that this is also true for retransmissions).
+ * preparing a PUT/POST request.
  *
  * When called, the library provides the application with the current payload offset
  * for the transfer and the payload block size. In return, the application sets the
@@ -155,6 +155,7 @@ struct coap_client_internal_request {
 	struct coap_client_request coap_request;
 	struct coap_packet request;
 	uint8_t request_tag[COAP_TOKEN_MAX_LEN];
+	uint8_t send_buf[MAX_COAP_MSG_LEN];
 
 	/* For GETs with observe option set */
 	bool is_observe;
@@ -166,7 +167,6 @@ struct coap_client {
 	struct sockaddr address;
 	socklen_t socklen;
 	struct k_mutex lock;
-	uint8_t send_buf[MAX_COAP_MSG_LEN];
 	uint8_t recv_buf[MAX_COAP_MSG_LEN];
 	struct coap_client_internal_request requests[CONFIG_COAP_CLIENT_MAX_REQUESTS];
 	struct coap_option echo_option;
@@ -193,6 +193,10 @@ int coap_client_init(struct coap_client *client, const char *info);
  * otherwise the address should be set as NULL.
  * Once the callback is called with last block set as true, socket can be closed or
  * used for another query.
+ *
+ * @note If block transfer is used, the @p payload pointer provided in @p req parameter has to
+ * remain valid throughout the transaction (i.e. until the last block or an error is reported).
+ * The library will need to access the payload pointer when sending consecutive payload blocks.
  *
  * @param client Client instance.
  * @param sock Open socket file descriptor.

@@ -206,7 +206,7 @@ static int coap_client_init_request(struct coap_client *client,
 	int i;
 	bool block2 = false;
 
-	memset(client->send_buf, 0, sizeof(client->send_buf));
+	memset(internal_req->send_buf, 0, sizeof(internal_req->send_buf));
 
 	if (!reconstruct) {
 		uint8_t *token = coap_next_token();
@@ -216,7 +216,7 @@ static int coap_client_init_request(struct coap_client *client,
 		memcpy(internal_req->request_token, token, internal_req->request_tkl);
 	}
 
-	ret = coap_packet_init(&internal_req->request, client->send_buf, MAX_COAP_MSG_LEN,
+	ret = coap_packet_init(&internal_req->request, internal_req->send_buf, MAX_COAP_MSG_LEN,
 			       1, req->confirmable ? COAP_TYPE_CON : COAP_TYPE_NON_CON,
 			       COAP_TOKEN_MAX_LEN, internal_req->request_token, req->method,
 			       internal_req->last_id);
@@ -569,17 +569,6 @@ static int resend_request(struct coap_client *client,
 	    coap_pending_cycle(&internal_req->pending)) {
 		LOG_ERR("Timeout, retrying send");
 
-		/* Reset send block context as it was updated in previous init from packet */
-		if (internal_req->send_blk_ctx.total_size > 0) {
-			internal_req->send_blk_ctx.current = internal_req->offset;
-		}
-		ret = coap_client_init_request(client, &internal_req->coap_request,
-					       internal_req, true);
-		if (ret < 0) {
-			LOG_ERR("Error re-creating CoAP request %d", ret);
-			return ret;
-		}
-
 		ret = send_request(client->fd, internal_req->request.data,
 					internal_req->request.offset, 0, &client->address,
 					client->socklen);
@@ -759,8 +748,9 @@ static int send_ack(struct coap_client *client, const struct coap_packet *req,
 {
 	int ret;
 	struct coap_packet ack;
+	uint8_t ack_buf[COAP_FIXED_HEADER_SIZE + COAP_TOKEN_MAX_LEN];
 
-	ret = coap_ack_init(&ack, req, client->send_buf, MAX_COAP_MSG_LEN, response_code);
+	ret = coap_ack_init(&ack, req, ack_buf, sizeof(ack_buf), response_code);
 	if (ret < 0) {
 		LOG_ERR("Failed to initialize CoAP ACK-message");
 		return ret;
@@ -779,8 +769,9 @@ static int send_rst(struct coap_client *client, const struct coap_packet *req)
 {
 	int ret;
 	struct coap_packet rst;
+	uint8_t rst_buf[COAP_FIXED_HEADER_SIZE + COAP_TOKEN_MAX_LEN];
 
-	ret = coap_rst_init(&rst, req, client->send_buf, MAX_COAP_MSG_LEN);
+	ret = coap_rst_init(&rst, req, rst_buf, sizeof(rst_buf));
 	if (ret < 0) {
 		LOG_ERR("Failed to initialize CoAP RST-message");
 		return ret;
