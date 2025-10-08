@@ -91,7 +91,7 @@ struct icm45686_triggers {
 		const struct device *dev;
 		struct k_mutex lock;
 		struct {
-			struct sensor_trigger trigger;
+			const struct sensor_trigger *trigger;
 			sensor_trigger_handler_t handler;
 		} entry;
 #if defined(CONFIG_ICM45686_TRIGGER_OWN_THREAD)

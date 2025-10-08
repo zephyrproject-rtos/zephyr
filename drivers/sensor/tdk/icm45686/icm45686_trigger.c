@@ -43,7 +43,7 @@ static void icm45686_thread_cb(const struct device *dev)
 	(void)k_mutex_lock(&data->triggers.lock, K_FOREVER);
 
 	if (data->triggers.entry.handler) {
-		data->triggers.entry.handler(dev, &data->triggers.entry.trigger);
+		data->triggers.entry.handler(dev, data->triggers.entry.trigger);
 	}
 
 	(void)k_mutex_unlock(&data->triggers.lock);
@@ -113,7 +113,7 @@ int icm45686_trigger_set(const struct device *dev,
 
 	switch (trig->type) {
 	case SENSOR_TRIG_DATA_READY:
-		data->triggers.entry.trigger = *trig;
+		data->triggers.entry.trigger = trig;
 		data->triggers.entry.handler = handler;
 
 		if (handler) {
