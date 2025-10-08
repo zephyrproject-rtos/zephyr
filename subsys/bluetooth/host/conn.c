@@ -1051,7 +1051,7 @@ void bt_conn_tx_processor(void)
 	LOG_DBG("processing conn %p", conn);
 
 	if (conn->state != BT_CONN_CONNECTED) {
-		LOG_WRN("conn %p: not connected", conn);
+		LOG_DBG("conn %p: not connected: state %d", conn, conn->state);
 		goto raise_and_exit;
 	}
 
