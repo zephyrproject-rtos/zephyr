@@ -316,6 +316,13 @@
 			reg = <0x52000000 0x1000000>;
 			ranges = <0x0 0x52000000 0x1000000>;
 
+			cpuapp_mvdma: mvdma@3000 {
+				compatible = "nordic,nrf-mvdma";
+				reg = <0x3000 0x1000>;
+				status = "okay";
+				interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
 			cpuapp_hsfll: clock@d000 {
 				compatible = "nordic,nrf-iron-hsfll-local";
 				#clock-cells = <0>;
@@ -371,6 +378,13 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x53000000 0x1000000>;
+
+			cpurad_mvdma: mvdma@3000 {
+				compatible = "nordic,nrf-mvdma";
+				reg = <0x3000 0x1000>;
+				status = "okay";
+				interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
 
 			cpurad_hsfll: clock@d000 {
 				compatible = "nordic,nrf-hsfll-local";

@@ -22,6 +22,7 @@
 #include <soc/nrfx_coredep.h>
 #include <soc_lrcconf.h>
 #include <dmm.h>
+#include <mvdma.h>
 #include <uicr/uicr.h>
 
 #if defined(CONFIG_SOC_NRF54H20_CPURAD_ENABLE)
@@ -160,6 +161,11 @@ void soc_early_init_hook(void)
 
 	err = dmm_init();
 	__ASSERT_NO_MSG(err == 0);
+
+	if (IS_ENABLED(CONFIG_MVDMA)) {
+		err = mvdma_init();
+		__ASSERT_NO_MSG(err == 0);
+	}
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ccm030))
 	/* DMASEC is set to non-secure by default, which prevents CCM from
