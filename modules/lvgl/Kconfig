@@ -198,6 +198,10 @@ config LV_DRAW_DMA2D_HAL_INCLUDE
 	  Must be defined to include path of CMSIS header of target processor
 	  e.g. "stm32f769xx.h" or "stm32f429xx.h"
 
+config LV_USE_DRAW_DAVE2D
+	bool
+	imply RENESAS_DRW
+
 config LV_Z_USE_OSAL
 	bool "Use OSAL enabling parallel rendering"
 	depends on DYNAMIC_THREAD
