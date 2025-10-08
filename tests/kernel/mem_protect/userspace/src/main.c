@@ -672,7 +672,7 @@ K_PIPE_DEFINE(kpipe, PIPE_LEN, BYTES_TO_READ_WRITE);
 ZTEST_USER(userspace, test_write_kobject_user_pipe)
 {
 	/*
-	 * Attempt to use system call from k_pipe_get to write over
+	 * Attempt to use system call from k_pipe_read to write over
 	 * a kernel object.
 	 */
 	set_fault(K_ERR_KERNEL_OOPS);
@@ -691,7 +691,7 @@ ZTEST_USER(userspace, test_write_kobject_user_pipe)
 ZTEST_USER(userspace, test_read_kobject_user_pipe)
 {
 	/*
-	 * Attempt to use system call from k_pipe_put to read a
+	 * Attempt to use system call from k_pipe_write to read a
 	 * kernel object.
 	 */
 	set_fault(K_ERR_KERNEL_OOPS);
