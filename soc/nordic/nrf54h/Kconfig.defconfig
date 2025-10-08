@@ -40,6 +40,13 @@ if PM
 config PM_DEVICE
 	default y
 
+if LOG
+
+config LOG_PROCESS_THREAD_STACK_SIZE
+	default 1536
+
+endif # LOG
+
 endif # PM
 
 if PM_DEVICE

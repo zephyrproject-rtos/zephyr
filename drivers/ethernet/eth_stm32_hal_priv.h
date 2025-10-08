@@ -44,18 +44,6 @@ extern const struct device *eth_stm32_phy_dev;
 #define __eth_stm32_buf  __aligned(4)
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
-#define STM32_ETH_PHY_MODE(inst) \
-	((DT_INST_ENUM_HAS_VALUE(inst, phy_connection_type, rgmii) ? ETH_RGMII_MODE : \
-	 (DT_INST_ENUM_HAS_VALUE(inst, phy_connection_type, gmii) ? ETH_GMII_MODE : \
-	 (DT_INST_ENUM_HAS_VALUE(inst, phy_connection_type, mii) ? ETH_MII_MODE : \
-		 ETH_RMII_MODE))))
-#else
-#define STM32_ETH_PHY_MODE(inst) \
-	(DT_INST_ENUM_HAS_VALUE(inst, phy_connection_type, mii) ? \
-		ETH_MII_MODE : ETH_RMII_MODE)
-#endif
-
 #if defined(CONFIG_ETH_STM32_HAL_API_V1)
 
 #define ETH_MII_MODE	ETH_MEDIA_INTERFACE_MII
@@ -77,23 +65,37 @@ struct eth_stm32_tx_context {
 
 #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
+
+#define ETH_GMII_MODE	HAL_ETH_GMII_MODE
+#define ETH_RGMII_MODE	HAL_ETH_RGMII_MODE
+
+#define STM32_ETH_PHY_MODE(inst) \
+	((DT_INST_ENUM_HAS_VALUE(inst, phy_connection_type, rgmii) ? ETH_RGMII_MODE : \
+	 (DT_INST_ENUM_HAS_VALUE(inst, phy_connection_type, gmii) ? ETH_GMII_MODE : \
+	 (DT_INST_ENUM_HAS_VALUE(inst, phy_connection_type, mii) ? ETH_MII_MODE : \
+								ETH_RMII_MODE))))
+#else
+#define STM32_ETH_PHY_MODE(inst) \
+	(DT_INST_ENUM_HAS_VALUE(inst, phy_connection_type, mii) ? \
+		ETH_MII_MODE : ETH_RMII_MODE)
+#endif
+
 /* Definition of the Ethernet driver buffers size and count */
 #define ETH_STM32_RX_BUF_SIZE	ETH_MAX_PACKET_SIZE /* buffer size for receive */
 #define ETH_STM32_TX_BUF_SIZE	ETH_MAX_PACKET_SIZE /* buffer size for transmit */
 
 BUILD_ASSERT(ETH_STM32_RX_BUF_SIZE % 4 == 0, "Rx buffer size must be a multiple of 4");
 
-extern uint8_t dma_rx_buffer[ETH_RXBUFNB][ETH_STM32_RX_BUF_SIZE] __eth_stm32_buf;
-extern uint8_t dma_tx_buffer[ETH_TXBUFNB][ETH_STM32_TX_BUF_SIZE] __eth_stm32_buf;
+extern uint8_t dma_rx_buffer[ETH_RXBUFNB][ETH_STM32_RX_BUF_SIZE];
+extern uint8_t dma_tx_buffer[ETH_TXBUFNB][ETH_STM32_TX_BUF_SIZE];
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
-extern ETH_DMADescTypeDef dma_rx_desc_tab[ETH_DMA_RX_CH_CNT][ETH_RXBUFNB]
-								ALIGN_32BYTES(__eth_stm32_desc);
-extern ETH_DMADescTypeDef dma_tx_desc_tab[ETH_DMA_TX_CH_CNT][ETH_TXBUFNB]
-								ALIGN_32BYTES(__eth_stm32_desc);
+extern ETH_DMADescTypeDef dma_rx_desc_tab[ETH_DMA_RX_CH_CNT][ETH_RXBUFNB];
+extern ETH_DMADescTypeDef dma_tx_desc_tab[ETH_DMA_TX_CH_CNT][ETH_TXBUFNB];
 #else
-extern ETH_DMADescTypeDef dma_rx_desc_tab[ETH_RXBUFNB] __eth_stm32_desc;
-extern ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB] __eth_stm32_desc;
+extern ETH_DMADescTypeDef dma_rx_desc_tab[ETH_RXBUFNB];
+extern ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB];
 #endif
 
 /* Device constant configuration parameters */

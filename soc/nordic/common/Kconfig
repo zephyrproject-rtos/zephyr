@@ -21,6 +21,15 @@ config NRF_SYS_EVENT
 	bool "nRF system event support"
 	select NRFX_POWER if !NRF_PLATFORM_HALTIUM
 
+config SOC_NRF_FORCE_CONSTLAT
+	bool "Force constant latency mode in system ON"
+	depends on NRF_SYS_EVENT && !RISCV
+	help
+	  In constant latency mode the CPU wakeup latency and the PPI task response
+	  will be constant and kept at a minimum. This is secured by forcing a set
+	  of base resources on while in sleep. The advantage of having a constant
+	  and predictable latency will be at the cost of having increased power consumption.
+
 config MRAM_LATENCY
 	bool "MRAM latency manager"
 	depends on NRFS_HAS_MRAM_SERVICE

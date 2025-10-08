@@ -38,6 +38,10 @@
 	status = "okay";
 };
 
+&prortcclk {
+	clocks = <&lfxo>;
+};
+
 &radio {
 	pa-voltage-mv = <1800>;
 };

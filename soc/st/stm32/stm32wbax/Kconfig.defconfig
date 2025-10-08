@@ -20,9 +20,6 @@ endchoice
 config STM32_LPTIM_TIMER
 	default y if PM
 
-config STM32_FLASH_PREFETCH
-	default y
-
 config BT_STM32WBA
 	select DYNAMIC_INTERRUPTS
 	select DYNAMIC_DIRECT_INTERRUPTS

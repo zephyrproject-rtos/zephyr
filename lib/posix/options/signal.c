@@ -29,7 +29,8 @@ static inline bool signo_is_rt(int signo)
 
 static inline bool signo_fits(int signo)
 {
-	return ((signo > 0) && (signo <= SIGSET_NLONGS * BITS_PER_LONG));
+	/* technically, 0 is not a valid signal number, but it still fits */
+	return ((signo >= 0) && (signo < SIGSET_NLONGS * BITS_PER_LONG));
 }
 
 #undef sigemptyset

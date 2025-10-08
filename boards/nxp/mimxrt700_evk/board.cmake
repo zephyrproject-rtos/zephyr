@@ -17,5 +17,5 @@ elseif(CONFIG_SOC_MIMXRT798S_HIFI4)
   board_runner_args(jlink "--device=MIMXRT798S_HiFi4")
 endif()
 
-include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/linkserver.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)

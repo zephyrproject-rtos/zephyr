@@ -102,27 +102,6 @@ config BT_BUF_ACL_RX_COUNT_EXTRA
 	  connection and uses one Rx buffer across all connections to receive a
 	  fragment from the Controller.
 
-config BT_BUF_ACL_RX_COUNT
-	int "[DEPRECATED] Number of incoming ACL data buffers"
-	default 0
-	range 0 256
-	help
-	  Number or incoming ACL data buffers sent from the Controller to the
-	  Host.
-	  In a combined Host and Controller build the buffers are shared and
-	  therefore Controller to Host flow control is not needed.
-
-	  In a Host only build with Controller to Host flow control enabled
-	  the Host will inform the Controller about the maximum number of
-	  buffers by setting this value in the Host Buffer Size command.
-
-	  When Controller to Host flow control is not enabled the Controller
-	  can assume that the Host has infinite amount of buffers.
-
-	  For both configurations, there is an additional requirement that is
-	  enforced by a build-time check: BT_BUF_ACL_RX_COUNT needs to be at
-	  least one greater than BT_MAX_CONN.
-
 config BT_BUF_EVT_RX_SIZE
 	int "Maximum supported HCI Event buffer length"
 	default $(UINT8_MAX) if (BT_EXT_ADV && BT_OBSERVER) || BT_PER_ADV_SYNC || BT_DF_CONNECTION_CTE_RX || BT_CLASSIC || BT_CHANNEL_SOUNDING || BT_LE_EXTENDED_FEAT_SET

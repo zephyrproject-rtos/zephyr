@@ -730,6 +730,12 @@ static int i2s_stm32_initialize(const struct device *dev)
 		return -EIO;
 	}
 
+#if defined(SPI_CFG2_IOSWP)
+	if (cfg->ioswp) {
+		LL_SPI_EnableIOSwap(cfg->i2s);
+	}
+#endif
+
 	/* Configure dt provided device signals when available */
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
@@ -970,7 +976,8 @@ static const struct i2s_stm32_cfg i2s_stm32_config_##index = {		\
 	.pclk_len = DT_INST_NUM_CLOCKS(index),				\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
 	.irq_config = i2s_stm32_irq_config_func_##index,		\
-	.master_clk_sel = DT_INST_PROP(index, mck_enabled)		\
+	.master_clk_sel = DT_INST_PROP(index, mck_enabled),		\
+	.ioswp = DT_INST_PROP(index, ioswp),				\
 };									\
 									\
 K_MSGQ_DEFINE(rx_##index##_queue, sizeof(struct queue_item), CONFIG_I2S_STM32_RX_BLOCK_COUNT, 4);\

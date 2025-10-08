@@ -3355,6 +3355,8 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 	sink_pd = group->sink_pd;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, _node) {
+		const struct bt_bap_ep *paired_ep;
+
 		if (stream->conn != conn) {
 			/* Channel not part of this ACL, skip */
 			continue;
@@ -3363,6 +3365,17 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 		ep = stream->ep;
 		if (ep == NULL) {
 			LOG_DBG("stream->ep is NULL");
+			return -EINVAL;
+		}
+
+		paired_ep = bt_bap_iso_get_paired_ep(ep);
+		if (paired_ep != NULL && paired_ep->stream != NULL &&
+		    paired_ep->stream->conn != NULL && paired_ep->stream->conn != stream->conn) {
+			LOG_DBG("Misconfigured group %p: Stream %p has endpoint %p for conn %p "
+				"paired with endpoint %p for conn %p",
+				group, stream, ep, stream->conn, paired_ep,
+				paired_ep->stream->conn);
+
 			return -EINVAL;
 		}
 
@@ -3452,14 +3465,6 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 		}
 
 		op->num_ases++;
-
-		if (stream->ep->iso == NULL) {
-			struct bt_bap_iso *bap_iso =
-				CONTAINER_OF(stream->iso, struct bt_bap_iso, chan);
-
-			/* Not yet bound with the bap_iso */
-			bt_bap_iso_bind_ep(bap_iso, stream->ep);
-		}
 
 		err = bt_bap_unicast_client_ep_qos(stream->ep, buf, stream->qos);
 		if (err != 0) {

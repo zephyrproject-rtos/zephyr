@@ -16,4 +16,5 @@ supported:
   - i2s
   - i3c
   - crc
+  - adc
 vendor: renesas

@@ -267,18 +267,18 @@ static int virtio_pci_init_virtqueues(
 		return -EINVAL;
 	}
 
-	data->virtqueues = k_malloc(queue_count * sizeof(struct virtq));
+	data->virtqueues = k_malloc(num_queues * sizeof(struct virtq));
 	if (!data->virtqueues) {
 		LOG_ERR("failed to allocate virtqueue array");
 		return -ENOMEM;
 	}
-	data->virtqueue_count = queue_count;
+	data->virtqueue_count = num_queues;
 
 	int ret = 0;
 	int created_queues = 0;
 	int activated_queues = 0;
 
-	for (int i = 0; i < queue_count; i++) {
+	for (int i = 0; i < num_queues; i++) {
 		data->common_cfg->queue_select = sys_cpu_to_le16(i);
 		barrier_dmem_fence_full();
 

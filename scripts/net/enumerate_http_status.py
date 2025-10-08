@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright(c) 2022 Meta
+# Copyright (c) 2022 Meta
 # SPDX-License-Identifier: Apache-2.0
 
 """Format HTTP Status codes for use in a C header

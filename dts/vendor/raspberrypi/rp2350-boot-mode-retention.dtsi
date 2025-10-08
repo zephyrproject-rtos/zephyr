@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2025 Peter Johanson
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Be sure we don't overlap the reserved byte for storing the boot-mode
+ */
+&sram0 {
+	reg = <0x20000004 ((DT_SIZE_K(520)) - 4)>;
+};
+
+/ {
+	chosen {
+		zephyr,boot-mode = &boot_mode;
+	};
+
+	/*
+	 * Placed at the start, to avoid anything clobbering our RAM
+	 */
+	sram@20000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x20000000 0x4>;
+		zephyr,memory-region = "RetainedMem";
+		status = "okay";
+
+		retainedmem {
+			compatible = "zephyr,retained-ram";
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_mode: retention@0 {
+				compatible = "zephyr,retention";
+				status = "okay";
+				reg = <0x0 0x1>;
+			};
+		};
+	};
+};

@@ -31,6 +31,7 @@ if(CONFIG_SOC_LPC11U66
     OR CONFIG_SOC_MKW40Z4
     OR CONFIG_SOC_MKW41Z4
     OR CONFIG_SOC_MIMX9131
+    OR CONFIG_SOC_MIMX9111
     )
 
     set (CONFIG_SOC_SDKNG_UNSUPPORTED ON)
@@ -105,6 +106,8 @@ zephyr_compile_definitions_ifdef(
   CONFIG_I2C_NXP_II2C
   I2C_RETRY_TIMES=40000
   )
+
+zephyr_compile_definitions(FSL_SDK_DRIVER_QUICK_ACCESS_DISABLE)
 
 # note: if FSL_IRQSTEER_ENABLE_MASTER_INT is not
 # defined then it will automatically be defined

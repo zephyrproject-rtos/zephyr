@@ -49,6 +49,7 @@ jobs:
       with:
         app-path: zephyr
         toolchains: all
+        enable-ccache: false
 
     - name: Run Pytest For Twister Black Box Tests
       if: ${{ runner.os == 'Linux' }}

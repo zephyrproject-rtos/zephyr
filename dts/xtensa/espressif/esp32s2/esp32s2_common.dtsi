@@ -142,11 +142,11 @@
 
 		rtc_timer: rtc_timer@3f408004 {
 			reg = <0x3f408004 0xC>;
-			compatible = "espressif,esp32-rtc_timer";
+			compatible = "espressif,esp32-rtc-timer";
 			clocks = <&clock ESP32_MODULE_MAX>;
 			interrupts = <RTC_CORE_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
-			status = "okay";
+			status = "disabled";
 		};
 
 		flash: flash-controller@3f402000 {
@@ -400,6 +400,7 @@
 			compatible = "espressif,esp32-adc";
 			reg = <0x3f440018 100>;
 			clocks = <&clock ESP32_PERIPH_SARADC_MODULE>;
+			interrupt-parent = <&intc>;
 			unit = <1>;
 			channel-count = <10>;
 			#io-channel-cells = <1>;

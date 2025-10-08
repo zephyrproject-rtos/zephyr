@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_mimx91.dtsi>
+#include <nxp/nxp_mimx9131.dtsi>
 #include "frdm_imx91-pinctrl.dtsi"
 
 / {

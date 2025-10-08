@@ -341,9 +341,13 @@ static int stm32_sdmmc_dma_deinit(struct stm32_sdmmc_priv *priv)
 /* Forward declarations */
 static int stm32_sdmmc_pwr_on(struct stm32_sdmmc_priv *priv);
 static void stm32_sdmmc_pwr_off(struct stm32_sdmmc_priv *priv);
+
+#if !defined(CONFIG_SDMMC_STM32_EMMC)
 static int stm32_sdmmc_card_detect_init(struct stm32_sdmmc_priv *priv);
-static bool stm32_sdmmc_card_present(struct stm32_sdmmc_priv *priv);
 static int stm32_sdmmc_card_detect_uninit(struct stm32_sdmmc_priv *priv);
+#endif /* !CONFIG_SDMMC_STM32_EMMC */
+
+static bool stm32_sdmmc_card_present(struct stm32_sdmmc_priv *priv);
 
 static int stm32_sdmmc_access_init(struct disk_info *disk)
 {
@@ -417,7 +421,9 @@ static int stm32_sdmmc_access_init(struct disk_info *disk)
 	priv->status = DISK_STATUS_OK;
 	return 0;
 error:
+#if !defined(CONFIG_SDMMC_STM32_EMMC)
 	stm32_sdmmc_card_detect_uninit(priv);
+#endif /* !CONFIG_SDMMC_STM32_EMMC */
 	stm32_sdmmc_pwr_off(priv);
 	return err;
 }

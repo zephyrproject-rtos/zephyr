@@ -1,0 +1,80 @@
+# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+# Copyright (c) 2025 STMicroelectronics.
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "TCP camera streaming sample application"
+
+menu "Video capture configuration"
+
+config VIDEO_SOURCE_CROP_LEFT
+	int "Crop area left value"
+	default 0
+	help
+	   Left value of the crop area within the video source.
+
+config VIDEO_SOURCE_CROP_TOP
+	int "Crop area top value"
+	default 0
+	help
+	   Top value of the crop area within the video source.
+
+config VIDEO_SOURCE_CROP_WIDTH
+	int "Crop area width value"
+	default 0
+	help
+	   Width value of the crop area within the video source.
+	   If set to 0, the crop is not applied.
+
+config VIDEO_SOURCE_CROP_HEIGHT
+	int "Crop area height value"
+	default 0
+	help
+	   Height value of the crop area within the video source.
+	   If set to 0, the crop is not applied.
+
+config VIDEO_FRAME_HEIGHT
+	int "Height of the video frame"
+	default 0
+	help
+	  Height of the video frame. If set to 0, the default height is used.
+
+config VIDEO_FRAME_WIDTH
+	int "Width of the video frame"
+	default 0
+	help
+	  Width of the video frame. If set to 0, the default width is used.
+
+config VIDEO_PIXEL_FORMAT
+	string "Pixel format of the video frame"
+	help
+	  Pixel format of the video frame. If not set, the default pixel format is used.
+
+config VIDEO_CAPTURE_N_BUFFERING
+	int "Capture N-buffering"
+	default 2
+	help
+	  Framerate versus memory usage tradeoff.
+	  "2" allows to capture while sending data (optimal framerate).
+	  "1" allows to reduce memory usage but capture framerate is lower.
+	  If not set defaults to "2".
+
+config VIDEO_CTRL_HFLIP
+	bool "Mirror the video frame horizontally"
+	help
+	  If set, mirror the video frame horizontally
+
+config VIDEO_CTRL_VFLIP
+	bool "Mirror the video frame vertically"
+	help
+	  If set, mirror the video frame vertically
+
+config VIDEO_ENCODED_PIXEL_FORMAT
+	string "Pixel format of the encoded frame"
+	default VIDEO_PIX_FMT_H264
+	help
+	  Compression format used by the video encoder if enabled.
+	  If not set defaults to H264 video bitstream with startcodes.
+
+endmenu
+
+source "Kconfig.zephyr"

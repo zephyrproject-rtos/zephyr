@@ -36,6 +36,7 @@
 		led0 = &led_r;
 		led1 = &led_g;
 		sw0 = &btn_1;
+		watchdog0 = &wdog4;
 	};
 
 	leds {
@@ -244,4 +245,8 @@
 		disk-name = "SD";
 		status = "disabled";
 	};
+};
+
+&wdog4 {
+	status = "okay";
 };

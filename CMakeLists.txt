@@ -578,6 +578,24 @@ zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,no_p
 zephyr_link_libraries_ifndef(CONFIG_NATIVE_LIBRARY
                              $<TARGET_PROPERTY:linker,no_position_independent>)
 
+if(CONFIG_INSTRUMENTATION)
+  # @Intent: Enable function instrumentation injection at compile time
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,func_instrumentation>>)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,func_instrumentation>>)
+
+  # @Intent: Enable function blocklist for the instrumentation subsystem
+  if(CONFIG_INSTRUMENTATION_EXCLUDE_FUNCTION_LIST)
+    zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,func_instrumentation_exclude_function_list>>)
+    zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,func_instrumentation_exclude_function_list>>)
+  endif()
+
+  # @Intent: Enable file blocklist for the instrumentation subsystem
+  if(CONFIG_INSTRUMENTATION_EXCLUDE_FILE_LIST)
+    zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,func_instrumentation_exclude_file_list>>)
+    zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,func_instrumentation_exclude_file_list>>)
+  endif()
+endif()
+
 # Allow the user to inject options when calling cmake, e.g.
 # 'cmake -DEXTRA_CFLAGS="-Werror -Wno-deprecated-declarations" ..'
 include(cmake/extra_flags.cmake)

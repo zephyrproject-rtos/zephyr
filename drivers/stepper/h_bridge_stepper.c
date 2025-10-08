@@ -268,6 +268,11 @@ static int h_bridge_stepper_run(const struct device *dev, const enum stepper_dir
 {
 	struct h_bridge_stepper_data *data = dev->data;
 
+	if (data->delay_in_ns == 0) {
+		LOG_ERR("Step interval not set or invalid step interval set");
+		return -EINVAL;
+	}
+
 	K_SPINLOCK(&data->lock) {
 		data->run_mode = STEPPER_RUN_MODE_VELOCITY;
 		data->direction = direction;

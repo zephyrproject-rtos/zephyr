@@ -118,7 +118,7 @@
 #endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 
 /* Datasheet maximum frequency definitions */
-#if defined(CONFIG_SOC_STM32H743XX) ||\
+#if defined(CONFIG_SOC_STM32H742XX) || defined(CONFIG_SOC_STM32H743XX) ||\
 	defined(CONFIG_SOC_STM32H745XX_M7) || defined(CONFIG_SOC_STM32H745XX_M4) ||\
 	defined(CONFIG_SOC_STM32H747XX_M7) || defined(CONFIG_SOC_STM32H747XX_M4) ||\
 	defined(CONFIG_SOC_STM32H750XX) ||\

@@ -1597,7 +1597,7 @@ static int stm32_dcmipp_enable_clock(const struct device *dev)
 		return err;
 	}
 
-	err = clock_control_on(cc_node, (clock_control_subsys_t *)&config->dcmipp_pclken);
+	err = clock_control_on(cc_node, (clock_control_subsys_t)&config->dcmipp_pclken);
 	if (err < 0) {
 		LOG_ERR("Failed to enable DCMIPP clock. Error %d", err);
 		return err;
@@ -1605,7 +1605,7 @@ static int stm32_dcmipp_enable_clock(const struct device *dev)
 
 #if defined(STM32_DCMIPP_HAS_CSI)
 	/* Turn on CSI peripheral clock */
-	err = clock_control_on(cc_node, (clock_control_subsys_t *)&config->csi_pclken);
+	err = clock_control_on(cc_node, (clock_control_subsys_t)&config->csi_pclken);
 	if (err < 0) {
 		LOG_ERR("Failed to enable CSI clock. Error %d", err);
 		return err;

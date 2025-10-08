@@ -38,6 +38,9 @@ Base Libraries
   been moved from ``util.h`` to a separate
   :zephyr_file:`include/zephyr/sys/util_utf8.h` file.
 
+* ``Z_MIN``, ``Z_MAX`` and ``Z_CLAMP`` macros have been renamed to
+  :c:macro:`min` :c:macro:`max` and :c:macro:`clamp`.
+
 Boards
 ******
 
@@ -58,12 +61,31 @@ Device Drivers and Devicetree
 
 .. zephyr-keep-sorted-start re(^\w)
 
+Comparator
+==========
+
+* :dtcompatible:`nordic,nrf-comp` and :dtcompatible:`nordic,nrf-lpcomp` ``psel`` and ``extrefsel``
+  properties type has been changed to integer. The value of these properties is in the range
+  of :c:macro:`NRF_COMP_AIN0` to :c:macro:`NRF_COMP_AIN_VDDH_DIV5`, where :c:macro:`NRF_COMP_AIN0`
+  to :c:macro:`NRF_COMP_AIN7` represent the external inputs AIN0 to AIN7,
+  :c:macro:`NRF_COMP_AIN_VDD_DIV2` represents internal reference VDD/2,
+  and :c:macro:`NRF_COMP_AIN_VDDH_DIV5` represents VDDH/5.
+  The old ``string`` properties type is deprecated.
+
 MFD
 ===
 
 * Driver suppor for AXP2101 has been separated from the AXP192 one. As a consequence the
   kconfig symbol ``MFD_AXP192_AXP2101`` is removed. :kconfig:option:`MFD_AXP192` is now to be
   used for AXP192 device while :kconfig:option:`MFD_AXP2101` for the AXP2101 one.
+
+MISC
+====
+
+* The nrf_etr driver has been migrated to drivers/debug. As a consequence the related Kconfig
+  symbol was renamed from ``NRF_ETR`` to :kconfig:option:`DEBUG_NRF_ETR`, along with the rest of
+  the ``NRF_ETR`` symbols. Also the driver needs to be explicitly enabled via
+  :kconfig:option:`DEBUG_DRIVER` as it is no longer built by default.
 
 PWM
 ===
@@ -181,10 +203,18 @@ Power management
 Networking
 **********
 
+* The :c:type:`coap_client_response_cb_t` signature has changed. The list of arguments
+  is passed as a :c:struct:`coap_client_response_data` pointer instead.
+
 * The HTTP server now respects the configured ``_config`` value. Check that
   you provide applicable value to :c:macro:`HTTP_SERVICE_DEFINE_EMPTY`,
   :c:macro:`HTTPS_SERVICE_DEFINE_EMPTY`, :c:macro:`HTTP_SERVICE_DEFINE` and
   :c:macro:`HTTPS_SERVICE_DEFINE`.
+
+* The size of socket address length type :c:type:`socklen_t` has changed. It is now defined to
+  be always 32 bit ``uint32_t`` in order to be aligned with Linux. Previously it was defined as
+  ``size_t`` which meant that the size could be either 32 bit or 64 bit depending on system
+  configuration.
 
 .. zephyr-keep-sorted-start re(^\w)
 
@@ -194,6 +224,8 @@ Modem
 *****
 
 * ``CONFIG_MODEM_AT_SHELL_USER_PIPE`` has been renamed to :kconfig:option:`CONFIG_MODEM_AT_USER_PIPE`.
+* ``CONFIG_MODEM_CMUX_WORK_BUFFER_SIZE`` has been updated to :kconfig:option:`CONFIG_MODEM_CMUX_WORK_BUFFER_SIZE_EXTRA`,
+  which only takes the number of extra bytes desired over the default of (:kconfig:option:`CONFIG_MODEM_CMUX_MTU` + 7).
 
 Display
 *******
@@ -218,6 +250,12 @@ Other subsystems
 
 .. zephyr-keep-sorted-start re(^\w)
 
+Cellular
+========
+
+ * :c:enum:`cellular_access_technology` values have been redefined to align with 3GPP TS 27.007.
+ * :c:enum:`cellular_registration_status` values have been extended to align with 3GPP TS 27.007.
+
 Logging
 =======
 
@@ -226,6 +264,15 @@ Logging
   more generic script of :zephyr_file:`scripts/logging/dictionary/live_log_parser.py` should be
   used. The new script supports the same functionality (and more), but requires different command
   line arguments when invoked.
+
+MCUmgr
+======
+
+* The :ref:`OS mgmt<mcumgr_smp_group_0>` :ref:`mcumgr_os_application_info` command's response for
+  hardware platform has been updated to output the board target instead of the board and board
+  revision, which now includes the SoC and board variant. The old behaviour has been deprecated,
+  but can still be used by enabling
+  :kconfig:option:`CONFIG_MCUMGR_GRP_OS_INFO_HARDWARE_INFO_SHORT_HARDWARE_PLATFORM`.
 
 RTIO
 ====

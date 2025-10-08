@@ -379,6 +379,7 @@
 		/* FIU0 configuration in npcx9 series */
 		qspi_fiu0: quadspi@40020000 {
 			clocks = <&pcc NPCX_CLOCK_BUS_FIU NPCX_PWDWN_CTL1 2>;
+			support-npcxn-v1;
 		};
 
 		sha0: sha@13c {

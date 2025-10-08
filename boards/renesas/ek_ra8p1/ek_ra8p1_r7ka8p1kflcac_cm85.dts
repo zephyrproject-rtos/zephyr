@@ -6,6 +6,7 @@
 /dts-v1/;
 
 #include <renesas/ra/ra8/r7ka8p1kflcac_cm85.dtsi>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 #include "ek_ra8p1.dtsi"
 
 / {
@@ -105,6 +106,36 @@
 	};
 };
 
+&pwm12 {
+	pinctrl-0 = <&pwm12_default>;
+	interrupts = <20 1>, <21 1>;
+	interrupt-names = "gtioca", "overflow";
+	pinctrl-names = "default";
+
+	cam_clock: pwmclock {
+		compatible = "pwm-clock";
+		status = "disabled";
+		#clock-cells = <1>;
+		pwms = <&pwm12 0 PWM_KHZ(12000) PWM_POLARITY_NORMAL>;
+	};
+};
+
+&ceu {
+	pinctrl-0 = <&ceu_default>;
+	pinctrl-names = "default";
+	interrupts = <22 1>;
+	interrupt-names = "ceui";
+	clocks = <&pclka MSTPC 16>, <&cam_clock 0>;
+	clock-names = "pclk", "cam-xclk";
+	burst-transfer = <256>;
+};
+
 zephyr_lcdif: &lcdif {};
 
 pmod_sd_shield: &sdhc0 {};
+
+arducam_ffc_40pin_i2c: &iic1 {};
+
+arducam_ffc_40pin_dvp_interface: &ceu {};
+
+arducam_ffc_40pin_dvp_xclk: &cam_clock {};

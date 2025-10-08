@@ -1419,7 +1419,7 @@ enum net_context_option {
  */
 int net_context_set_option(struct net_context *context,
 			   enum net_context_option option,
-			   const void *value, size_t len);
+			   const void *value, uint32_t len);
 
 /**
  * @brief Get connection option value for this context.
@@ -1433,7 +1433,7 @@ int net_context_set_option(struct net_context *context,
  */
 int net_context_get_option(struct net_context *context,
 			   enum net_context_option option,
-			   void *value, size_t *len);
+			   void *value, uint32_t *len);
 
 /**
  * @typedef net_context_cb_t

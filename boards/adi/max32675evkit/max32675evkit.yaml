@@ -15,5 +15,6 @@ supported:
   - spi
   - pwm
   - flash
+  - watchdog
 ram: 64
 flash: 384

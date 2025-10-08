@@ -20,7 +20,7 @@ SB_CONFIG_APP_CPUPPR_RUN = None
 SB_CONFIG_APP_CPUFLPR_RUN = None
 
 # See definition of stm_m_id[] and stm_m_name[] in
-# https://github.com/zephyrproject-rtos/zephyr/blob/main/drivers/misc/coresight/nrf_etr.c
+# https://github.com/zephyrproject-rtos/zephyr/blob/main/drivers/debug/debug_nrf_etr.c
 STM_M_ID = {
     "sec": 33,
     "app": 34,

@@ -138,4 +138,15 @@
 			low-power-enable;
 		};
 	};
+
+	/omit-if-no-ref/ tpiu_default: tpiu_default {
+		group1 {
+			psels = <NRF_PSEL(TPIU_CLOCK, 7, 3)>,
+				<NRF_PSEL(TPIU_DATA0, 7, 4)>,
+				<NRF_PSEL(TPIU_DATA1, 7, 5)>,
+				<NRF_PSEL(TPIU_DATA2, 7, 6)>,
+				<NRF_PSEL(TPIU_DATA3, 7, 7)>;
+			nordic,drive-mode = <NRF_DRIVE_H0H1>;
+		};
+	};
 };

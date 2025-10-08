@@ -292,7 +292,7 @@ static ssize_t send_socket_data(void *obj,
 {
 	int ret;
 	char send_buf[sizeof("AT+USO**=###,"
-			     "!####.####.####.####.####.####.####.####!,"
+			     "!####:####:####:####:####:####:xxx.xxx.xxx.xxx!,"
 			     "#####,#########\r\n")];
 	uint16_t dst_port = 0U;
 	struct modem_socket *sock = (struct modem_socket *)obj;
@@ -1530,7 +1530,8 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 {
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	int ret;
-	char buf[sizeof("AT+USOCO=###,!####.####.####.####.####.####.####.####!,#####,#\r")];
+	char buf[sizeof("AT+USOCO=###,"
+			"!####:####:####:####:####:####:xxx.xxx.xxx.xxx!,#####,#\r")];
 	uint16_t dst_port = 0U;
 	char ip_str[NET_IPV6_ADDR_LEN];
 

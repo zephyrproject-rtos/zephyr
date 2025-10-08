@@ -34,9 +34,11 @@ struct tach_rts5912_data {
 	uint16_t count;
 };
 
-#define COUNT_100KHZ_SEC  100000U
-#define SEC_TO_MINUTE     60U
-#define PIN_STUCK_TIMEOUT (100U * USEC_PER_MSEC)
+#define COUNT_100KHZ_SEC         100000U
+#define SEC_TO_MINUTE            60U
+/* Reduced PIN_STUCK checks from 100 to 25 to reduce disruption of the cpu sleep */
+#define PIN_STUCK_TIMEOUT        (50U * USEC_PER_MSEC)
+#define PIN_STUCK_CHECK_INTERVAL (2)
 
 int tach_rts5912_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
@@ -50,7 +52,8 @@ int tach_rts5912_sample_fetch(const struct device *dev, enum sensor_channel chan
 
 	tach->status = TACHO_STS_CNTRDY;
 
-	if (WAIT_FOR(tach->status & TACHO_STS_CNTRDY, PIN_STUCK_TIMEOUT, k_msleep(1))) {
+	if (WAIT_FOR(tach->status & TACHO_STS_CNTRDY, PIN_STUCK_TIMEOUT,
+		     k_msleep(PIN_STUCK_CHECK_INTERVAL))) {
 		/* See whether internal counter is already latched */
 		if (tach->status & TACHO_STS_CNTRDY) {
 			tach->status = TACHO_STS_CNTRDY;

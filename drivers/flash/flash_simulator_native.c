@@ -50,7 +50,7 @@ int flash_mock_init_native(bool flash_in_ram, uint8_t **mock_flash, unsigned int
 			return -1;
 		}
 	} else {
-		*flash_fd = open(flash_file_path, O_RDWR | O_CREAT, (mode_t)0600);
+		*flash_fd = open(flash_file_path, O_RDWR | O_CREAT | O_CLOEXEC, (mode_t)0600);
 		if (*flash_fd == -1) {
 			nsi_print_warning("Failed to open flash device file "
 					"%s: %s\n",

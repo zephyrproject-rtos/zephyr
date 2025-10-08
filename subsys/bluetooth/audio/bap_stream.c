@@ -642,11 +642,30 @@ int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, str
 		return -EBADMSG;
 	}
 
+	if (ep->stream != NULL) {
+		LOG_DBG("Endpoint %p already configured for stream %p", ep, stream);
+
+		return -EINVAL;
+	}
+	__ASSERT(ep->iso == NULL, "endpoint %p already bound to iso %p", ep, ep->iso);
+
 	bt_bap_stream_attach(conn, stream, ep, codec_cfg);
+
+	/* If a stream has been added to a group at this point, then it has a reference to a CIS.
+	 * and we can bind the ep to the CIS
+	 */
+	if (stream->iso != NULL) {
+		struct bt_bap_iso *bap_iso = CONTAINER_OF(stream->iso, struct bt_bap_iso, chan);
+
+		/* Not yet bound with the bap_iso */
+		bt_bap_iso_bind_ep(bap_iso, ep);
+	}
 
 	err = bt_bap_unicast_client_config(stream, codec_cfg);
 	if (err != 0) {
 		LOG_DBG("Failed to configure stream: %d", err);
+
+		bt_bap_stream_reset(stream);
 		return err;
 	}
 

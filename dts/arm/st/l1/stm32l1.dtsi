@@ -17,6 +17,7 @@
 #include <zephyr/dt-bindings/adc/stm32f4_adc.h>
 #include <zephyr/dt-bindings/reset/stm32l1_reset.h>
 #include <zephyr/dt-bindings/power/stm32_pwr.h>
+#include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 #include <freq.h>
 
 / {
@@ -321,6 +322,12 @@
 				compatible = "st,stm32-counter";
 				status = "disabled";
 			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
 		};
 
 		timers3: timers@40000400 {
@@ -344,6 +351,12 @@
 				compatible = "st,stm32-counter";
 				status = "disabled";
 			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
 		};
 
 		timers4: timers@40000800 {
@@ -365,6 +378,12 @@
 
 			counter {
 				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
 				status = "disabled";
 			};
 		};

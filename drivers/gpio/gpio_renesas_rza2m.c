@@ -368,14 +368,13 @@ static int gpio_rza2m_pin_get_config(const struct device *port_dev, gpio_pin_t p
 		*flags |= GPIO_INPUT;
 	} else if ((reg16 >> (pin * 2)) == RZA2M_PDR_OUTPUT) {
 		*flags |= GPIO_OUTPUT;
-	}
-
-	/* Get pin initial value */
-	reg8 = sys_read8(RZA2M_PODR(int_dev, port));
-	if (reg8 & BIT(pin)) {
-		*flags |= GPIO_OUTPUT_INIT_HIGH;
-	} else {
-		*flags |= GPIO_OUTPUT_INIT_LOW;
+		/* Get pin initial value */
+		reg8 = sys_read8(RZA2M_PODR(int_dev, port));
+		if (reg8 & BIT(pin)) {
+			*flags |= GPIO_OUTPUT_INIT_HIGH;
+		} else {
+			*flags |= GPIO_OUTPUT_INIT_LOW;
+		}
 	}
 
 	/* Get pin drive strength */

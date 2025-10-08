@@ -132,6 +132,18 @@ config LOG_IMMEDIATE_CLEAN_OUTPUT
 	  this option is causing interrupts locking for significant amount of
 	  time (up to multiple milliseconds).
 
+config LOG_BACKEND_SHOW_TIMESTAMP
+	bool "Timestamps in the backend"
+	default y
+	help
+	  When enabled, selected backend prints timestamps with log.
+
+config LOG_BACKEND_SHOW_LEVEL
+	bool "Levels in the backend"
+	default y
+	help
+	  When enabled, selected backend prints levels with log.
+
 config LOG_BACKEND_SHOW_COLOR
 	bool "Colors in the backend"
 	default y if LOG_BACKEND_UART || LOG_BACKEND_NATIVE_POSIX || LOG_BACKEND_RTT \
@@ -172,7 +184,7 @@ config LOG_BACKEND_SUPPORTS_FORMAT_TIMESTAMP
 config LOG_BACKEND_FORMAT_TIMESTAMP
 	bool "Timestamp formatting in the backend"
 	depends on LOG_BACKEND_SUPPORTS_FORMAT_TIMESTAMP
-	default y
+	default y if LOG_BACKEND_SHOW_TIMESTAMP
 	help
 	  When enabled timestamp is formatted.
 

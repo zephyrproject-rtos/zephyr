@@ -897,6 +897,17 @@
 				STM32_DMA_16BITS)>;
 			status = "disabled";
 		};
+
+		ltdc: ltdc@50001000 {
+			compatible = "st,stm32-ltdc";
+			reg = <0x50001000 0x400>;
+			interrupts = <96 0>, <97 0>;
+			interrupt-names = "ltdc", "ltdc_er";
+			clocks = <&rcc STM32_CLOCK(APB5, 1)>,
+				 <&rcc STM32_SRC_PLL3_R NO_SEL>;
+			resets = <&rctl STM32_RESET(APB5, 1)>;
+			status = "disabled";
+		};
 	};
 
 	otgfs_phy: otgfs_phy {

@@ -55,8 +55,19 @@ config SWJ_ANALOG_PRIORITY
 	  This priority must be greater than GPIO_INIT_PRIORITY and lower than
 	  UART_INIT_PRIORITY.
 
+config HAS_STM32_FLASH_PREFETCH
+	bool
+	help
+	  Hidden symbol selected by SoCs which support flash prefetch.
+
 config STM32_FLASH_PREFETCH
 	bool "Flash prefetch buffer"
+	default y
+	depends on HAS_STM32_FLASH_PREFETCH
+	help
+	  Enable flash prefetch. For power efficiency, it is recommended to
+	  be enabled when flash is accessed through a cache memory. Flash
+	  prefetch also improves performances a bit.
 
 config STM32_WKUP_PINS
 	bool "STM32 PWR Wake-up Pins"

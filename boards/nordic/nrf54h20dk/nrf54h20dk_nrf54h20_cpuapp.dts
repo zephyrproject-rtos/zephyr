@@ -18,7 +18,7 @@
 
 	chosen {
 		zephyr,console = &uart136;
-		zephyr,code-partition = &slot0_partition;
+		zephyr,code-partition = &cpuapp_slot0_partition;
 		zephyr,flash = &mram1x;
 		zephyr,sram = &cpuapp_data;
 		zephyr,shell-uart = &uart136;
@@ -187,6 +187,8 @@ boot_partition: &cpuapp_boot_partition {
 slot0_partition: &cpuapp_slot0_partition {
 	label = "image-0";
 };
+
+secondary_app_partition: &cpuapp_slot1_partition {};
 
 slot1_partition: &cpuapp_slot1_partition {
 	label = "image-1";

@@ -1,6 +1,7 @@
 /* ST Microelectronics LIS2DU12 3-axis accelerometer sensor driver
  *
  * Copyright (c) 2023 STMicroelectronics
+ * Copyright (c) 2025 8tronix GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -32,6 +33,9 @@
 /* Accel sensor sensitivity grain is 61 ug/LSB */
 #define GAIN_UNIT_XL	(61LL)
 
+/* Wake-up duration raw grain is ODR_times (sample periods) */
+#define LIS2DU12_WAKUP_DUR_SAMPLES_MAX 15
+
 #define SENSOR_G_DOUBLE	(SENSOR_G / 1000000.0)
 
 struct lis2du12_config {
@@ -52,6 +56,7 @@ struct lis2du12_config {
 	const struct gpio_dt_spec int1_gpio;
 	const struct gpio_dt_spec int2_gpio;
 	uint8_t drdy_pin;
+	uint8_t delta_pin;
 	bool trig_enabled;
 #endif /* CONFIG_LIS2DU12_TRIGGER */
 };
@@ -66,16 +71,17 @@ union samples {
 struct lis2du12_data {
 	const struct device *dev;
 	int16_t acc[3];
-	uint32_t acc_gain;
-	uint16_t accel_freq;
-	uint8_t accel_fs;
+	uint32_t acc_gain; /* in ug/LSB */
+	uint8_t accel_fs; /* in g */
 
 #ifdef CONFIG_LIS2DU12_TRIGGER
-	struct gpio_dt_spec *drdy_gpio;
+	atomic_t trig_flags;
 
-	struct gpio_callback gpio_cb;
+	struct gpio_callback gpio_cb[2];
 	sensor_trigger_handler_t handler_drdy_acc;
 	const struct sensor_trigger *trig_drdy_acc;
+	sensor_trigger_handler_t handler_delta_xyz_acc;
+	const struct sensor_trigger *trig_delta_xyz_acc;
 
 #if defined(CONFIG_LIS2DU12_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_LIS2DU12_THREAD_STACK_SIZE);
@@ -93,6 +99,10 @@ int lis2du12_trigger_set(const struct device *dev,
 			sensor_trigger_handler_t handler);
 
 int lis2du12_init_interrupt(const struct device *dev);
+
+int lis2du12_accel_set_wake_th(const struct device *dev, const struct sensor_value *val);
+
+int lis2du12_accel_set_wake_dur(const struct device *dev, const struct sensor_value *val);
 #endif
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_LIS2DU12_LIS2DU12_H_ */

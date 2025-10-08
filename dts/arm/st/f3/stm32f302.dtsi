@@ -84,6 +84,12 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
 		};
 
 		timers15: timers@40014000 {

@@ -28,7 +28,7 @@ struct dyn_cb_data {
 };
 
 static K_THREAD_STACK_ARRAY_DEFINE(dynamic_stack, CONFIG_DYNAMIC_THREAD_POOL_SIZE,
-				   CONFIG_DYNAMIC_THREAD_STACK_SIZE);
+				   K_THREAD_STACK_LEN(CONFIG_DYNAMIC_THREAD_STACK_SIZE));
 SYS_BITARRAY_DEFINE_STATIC(dynamic_ba, BA_SIZE);
 
 static k_thread_stack_t *z_thread_stack_alloc_pool(size_t size, int flags)
@@ -36,11 +36,10 @@ static k_thread_stack_t *z_thread_stack_alloc_pool(size_t size, int flags)
 	int rv;
 	size_t offset;
 	k_thread_stack_t *stack;
-	const size_t max_size = ((flags & K_USER) != 0) ? K_THREAD_STACK_SIZEOF(dynamic_stack[0]) :
-							  K_KERNEL_STACK_SIZEOF(dynamic_stack[0]);
 
-	if (size > max_size) {
-		LOG_DBG("stack size %zu is > pool stack size %zu", size, max_size);
+	if (size > CONFIG_DYNAMIC_THREAD_STACK_SIZE) {
+		LOG_DBG("stack size %zu is > pool stack size %zu", size,
+			(size_t)CONFIG_DYNAMIC_THREAD_STACK_SIZE);
 		return NULL;
 	}
 

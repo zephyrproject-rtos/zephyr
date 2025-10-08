@@ -41,6 +41,9 @@ LOG_MODULE_DECLARE(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 BUILD_ASSERT(IPPROTO_IP == 0, "Wildcard IPPROTO_IP must equal 0.");
 #endif
 
+BUILD_ASSERT(sizeof(socklen_t) == sizeof(uint32_t),
+	     "socklen_t must be 32-bit wide");
+
 const struct socket_op_vtable sock_fd_op_vtable;
 
 static void zsock_received_cb(struct net_context *ctx,
@@ -1710,7 +1713,7 @@ static int ipv4_multicast_if(struct net_context *ctx, const void *optval,
 
 	if (do_get) {
 		struct net_if_addr *ifaddr;
-		size_t len = sizeof(ifindex);
+		uint32_t len = sizeof(ifindex);
 
 		if (optval == NULL || (optlen != sizeof(struct in_addr))) {
 			errno = EINVAL;

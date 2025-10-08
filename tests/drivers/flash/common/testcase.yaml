@@ -20,6 +20,15 @@ tests:
       - DTC_OVERLAY_FILE=boards/apard32690_max32690_m4_spixf_nor.overlay
     integration_platforms:
       - apard32690/max32690/m4
+  drivers.flash.common.max32_flash1:
+    platform_allow:
+      - apard32690/max32690/m4
+      - max32690evkit/max32690/m4
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/max32690_flash1_storage_partition.overlay
+    integration_platforms:
+      - apard32690/max32690/m4
+      - max32690evkit/max32690/m4
   drivers.flash.common.nrf_qspi_nor.size_in_bytes:
     platform_allow: nrf52840dk/nrf52840
     extra_args:
@@ -59,9 +68,13 @@ tests:
       - nrf54l15dk/nrf54l05/cpuapp
       - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
-      - nrf54h20dk/nrf54h20/cpuapp
     harness_config:
       fixture: external_flash
+  drivers.flash.common.no_explicit_erase.nrf54h:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    harness_config:
+      fixture: gpio_loopback
   drivers.flash.common.nrf54lm20a:
     platform_allow:
       - nrf54lm20dk/nrf54lm20a/cpuapp
@@ -155,12 +168,12 @@ tests:
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
-  drivers.flash.common.disable_spi_nor:
-    filter: dt_compat_enabled("soc-nv-flash") and dt_compat_enabled("jedec,spi-nor")
+  drivers.flash.common.test_storage_partition:
+    filter: dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
     platform_exclude:
       - beagleconnect_freedom/cc1352p7
     extra_args:
-      - CONFIG_SPI_NOR=n
+      - CONFIG_TEST_FORCE_STORAGE_PARTITION=y
   drivers.flash.common.ra_ospi_b_nor:
     platform_allow:
       - ek_ra8m1
@@ -193,3 +206,5 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE=boards/mx25uw63_low_freq.overlay
+    harness_config:
+      fixture: gpio_loopback

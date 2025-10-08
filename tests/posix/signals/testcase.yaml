@@ -9,6 +9,12 @@ common:
     - simulation
   min_flash: 64
   min_ram: 32
+  # Exclude qemu_arc/qemu_arc_hs5x for now because of qemu_arc issue
+  # qemu-system-arc: /usr/src/debug/nativesdk-qemu-arc/git/target/arc/decoder-v2.c:266:
+  #   arc_find_format_v2: Assertion `mcount != 0' failed.
+  # Aborted (core dumped)
+  platform_exclude:
+    - qemu_arc/qemu_arc_hs5x
 tests:
   portability.posix.signals:
     integration_platforms:

@@ -192,7 +192,7 @@
 			clocks = <&clock ESP32_MODULE_MAX>;
 			interrupts = <RTC_CORE_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
-			status = "okay";
+			status = "disabled";
 		};
 
 		flash: flash-controller@3ff42000 {
@@ -516,6 +516,7 @@
 			compatible = "espressif,esp32-adc";
 			reg = <0x3ff48800 10>;
 			clocks = <&clock ESP32_SARADC_MODULE>;
+			interrupt-parent = <&intc>;
 			unit = <1>;
 			channel-count = <8>;
 			#io-channel-cells = <1>;

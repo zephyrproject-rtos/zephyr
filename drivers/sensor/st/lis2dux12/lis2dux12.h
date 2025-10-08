@@ -15,6 +15,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/gpio.h>
 #include <stmemsc.h>
+#include <zephyr/rtio/regmap.h>
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_lis2dux12)
 #include "lis2dux12_reg.h"
@@ -142,7 +143,7 @@ struct lis2dux12_data {
 	struct trigger_config trig_cfg;
 	uint8_t accel_batch_odr : 3;
 	uint8_t ts_batch_odr : 2;
-	uint8_t bus_type : 1; /* I2C is 0, SPI is 1 */
+	rtio_bus_type bus_type;
 	uint8_t reserved : 2;
  #endif
 
@@ -169,9 +170,9 @@ struct lis2dux12_data {
 #define BUS_I2C 0
 #define BUS_SPI 1
 
-static inline uint8_t lis2dux12_bus_reg(struct lis2dux12_data *data, uint8_t x)
+static inline uint8_t lis2dux12_bus_reg(rtio_bus_type bus, uint8_t addr)
 {
-	return (data->bus_type == BUS_SPI) ? x | 0x80 : x;
+	return (rtio_is_spi(bus)) ? addr | 0x80 : addr;
 }
 
 #define LIS2DUX12_FIFO_ITEM_LEN 7

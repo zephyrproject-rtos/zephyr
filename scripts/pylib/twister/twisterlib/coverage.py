@@ -415,6 +415,8 @@ class Gcovr(CoverageTool):
                "-e", "tests/*"]
         if self.version >= "7.0":
             cmd += ["--gcov-object-directory", outdir]
+        if self.version >= "8.0":
+            cmd += ["--gcov-ignore-parse-errors=suspicious_hits.warn_once_per_file"]
         cmd += excludes + self.options + ["--json", "-o", coverage_file, outdir]
         cmd_str = " ".join(cmd)
         logger.debug(f"Running: {cmd_str}")

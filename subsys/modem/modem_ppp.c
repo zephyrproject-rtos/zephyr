@@ -10,6 +10,8 @@
 #include <zephyr/pm/device_runtime.h>
 #include <string.h>
 
+#include "modem_workqueue.h"
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(modem_ppp, CONFIG_MODEM_MODULES_LOG_LEVEL);
 
@@ -341,12 +343,12 @@ static void modem_ppp_pipe_callback(struct modem_pipe *pipe, enum modem_pipe_eve
 
 	switch (event) {
 	case MODEM_PIPE_EVENT_RECEIVE_READY:
-		k_work_submit(&ppp->process_work);
+		modem_work_submit(&ppp->process_work);
 		break;
 
 	case MODEM_PIPE_EVENT_OPENED:
 	case MODEM_PIPE_EVENT_TRANSMIT_IDLE:
-		k_work_submit(&ppp->send_work);
+		modem_work_submit(&ppp->send_work);
 		break;
 
 	default:
@@ -425,7 +427,7 @@ static void modem_ppp_process_handler(struct k_work *item)
 		modem_ppp_process_received_byte(ppp, ppp->receive_buf[i]);
 	}
 
-	k_work_submit(&ppp->process_work);
+	modem_work_submit(&ppp->process_work);
 }
 
 static void modem_ppp_ppp_api_init(struct net_if *iface)
@@ -488,7 +490,7 @@ static int modem_ppp_ppp_api_send(const struct device *dev, struct net_pkt *pkt)
 
 	net_pkt_ref(pkt);
 	k_fifo_put(&ppp->tx_pkt_fifo, pkt);
-	k_work_submit(&ppp->send_work);
+	modem_work_submit(&ppp->send_work);
 	return 0;
 }
 

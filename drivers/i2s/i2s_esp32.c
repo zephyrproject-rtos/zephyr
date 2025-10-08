@@ -28,6 +28,11 @@
 #error "DMA peripheral is not enabled!"
 #endif /* SOC_GDMA_SUPPORTED */
 
+#if defined(CONFIG_SOC_SERIES_ESP32) && defined(CONFIG_ADC_ESP32_DMA) &&                           \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2s0))
+#error "i2s0 must be disabled if ADC_ESP32_DMA is enabled for ESP32"
+#endif
+
 LOG_MODULE_REGISTER(i2s_esp32, CONFIG_I2S_LOG_LEVEL);
 
 #define I2S_ESP32_CLK_SRC             I2S_CLK_SRC_DEFAULT

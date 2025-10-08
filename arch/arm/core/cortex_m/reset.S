@@ -35,6 +35,10 @@ GTEXT(z_arm_init_arch_hw_at_boot)
 #if defined(CONFIG_PM_S2RAM)
 GTEXT(arch_pm_s2ram_resume)
 #endif
+#if defined(CONFIG_SOC_EARLY_RESET_HOOK)
+GTEXT(soc_early_reset_hook)
+#endif
+
 
 /*
  * PACBTI Mask for CONTROL register:
@@ -100,6 +104,10 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
 #endif /* CONFIG_INIT_ARCH_HW_AT_BOOT */
 
+#if defined(CONFIG_SOC_EARLY_RESET_HOOK)
+    /* Call custom code that executes before any stack is set up or RAM memory is accessed */
+    bl soc_early_reset_hook
+#endif
 #if defined(CONFIG_PM_S2RAM)
     /*
      * Temporarily set MSP to interrupt stack so that arch_pm_s2ram_resume can

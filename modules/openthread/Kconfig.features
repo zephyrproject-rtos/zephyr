@@ -236,6 +236,9 @@ config OPENTHREAD_LOG_LEVEL_DYNAMIC
 config OPENTHREAD_MAC_FILTER
 	bool "MAC filter support"
 
+config OPENTHREAD_MAC_BEACON_PAYLOAD_PARSING
+	bool "MAC beacon payload parsing support"
+
 config OPENTHREAD_MULTICAST_DNS
 	bool "Multicast DNS (mDNS)"
 
@@ -264,6 +267,11 @@ config OPENTHREAD_MULTIPAN_RCP
 
 config OPENTHREAD_MULTIPLE_INSTANCE
 	bool "OpenThread multiple instances"
+
+config OPENTHREAD_MULTIPLE_INSTANCE_NUM
+	int "OpenThread number of instances"
+	depends on OPENTHREAD_MULTIPLE_INSTANCE
+	default 3
 
 config OPENTHREAD_NAT64_BORDER_ROUTING
 	bool "Border routing NAT64 support"

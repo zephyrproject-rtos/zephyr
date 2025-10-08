@@ -79,6 +79,8 @@
 	pinctrl-names = "default";
 	status = "okay";
 
+	#address-cells = <1>;
+	#size-cells = <0>;
 	cs-gpios = <&gpioc 3 GPIO_ACTIVE_LOW>;
 
 	mx25r80: mx25r8035f@0 {

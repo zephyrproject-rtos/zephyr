@@ -133,4 +133,19 @@
 #define MCO_PRE_DIV_14 14
 #define MCO_PRE_DIV_15 15
 
+/* MCO1 clock output */
+#define MCO1_SEL_HSI		0
+#define MCO1_SEL_LSE		1
+#define MCO1_SEL_HSE		2
+#define MCO1_SEL_PLL1QCLK	3
+#define MCO1_SEL_HSI48		4
+
+/* MCO2 clock output */
+#define MCO2_SEL_SYSCLK		0
+#define MCO2_SEL_PLL2PCLK	1
+#define MCO2_SEL_HSE		2
+#define MCO2_SEL_PLL1PCLK	3
+#define MCO2_SEL_CSI		4
+#define MCO2_SEL_LSI		5
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32H7_CLOCK_H_ */

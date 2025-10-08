@@ -1,0 +1,37 @@
+# Copyright (c) 2025 Titouan Christophe
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Networking MIDI2 sample application"
+
+choice NET_SAMPLE_MIDI2_AUTH_TYPE
+	prompt "UMP Endpoint authentication method"
+	default NET_SAMPLE_MIDI2_AUTH_NONE
+
+config NET_SAMPLE_MIDI2_AUTH_NONE
+	bool "No authentication"
+
+config NET_SAMPLE_MIDI2_AUTH_SHARED_SECRET
+	bool "Authentication with shared secret"
+	select NETMIDI2_HOST_AUTH
+
+config NET_SAMPLE_MIDI2_AUTH_USER_PASSWORD
+	bool "Authentication with username+password"
+	select NETMIDI2_HOST_AUTH
+
+endchoice
+
+config NET_SAMPLE_MIDI2_SHARED_SECRET
+	string "Shared secret"
+	depends on NET_SAMPLE_MIDI2_AUTH_SHARED_SECRET
+
+config NET_SAMPLE_MIDI2_USERNAME
+	string "Username"
+	depends on NET_SAMPLE_MIDI2_AUTH_USER_PASSWORD
+
+config NET_SAMPLE_MIDI2_PASSWORD
+	string "Password"
+	depends on NET_SAMPLE_MIDI2_AUTH_USER_PASSWORD
+
+endmenu
+
+source "Kconfig.zephyr"

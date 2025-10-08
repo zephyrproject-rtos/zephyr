@@ -45,6 +45,7 @@ zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_RENESAS_RA_CGC      clock_cont
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_RENESAS_RX_ROOT     clock_control_renesas_rx_root_cgc.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_RENESAS_RX_PLL      clock_control_renesas_rx_pll_cgc.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_RENESAS_RX_PCLK     clock_control_renesas_rx_pclk_cgc.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_RENESAS_RZ_CGC      clock_control_renesas_rz_cgc.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_RENESAS_RZ_CPG      clock_control_renesas_rz_cpg.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_AMBIQ               clock_control_ambiq.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_PWM                 clock_control_pwm.c)

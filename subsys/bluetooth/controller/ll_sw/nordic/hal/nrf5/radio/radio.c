@@ -10,6 +10,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <soc.h>
 
+#include <nrf_sys_event.h>
 #include <nrfx_gpiote.h>
 
 #include "util/mem.h"
@@ -221,7 +222,11 @@ void radio_reset(void)
 			    RADIO_TIMING_RU_Msk;
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
+#if defined(CONFIG_NRF_SYS_EVENT)
+	(void)nrf_sys_event_request_global_constlat();
+#else /* !CONFIG_NRF_SYS_EVENT */
 	NRF_POWER->TASKS_CONSTLAT = 1U;
+#endif /* !CONFIG_NRF_SYS_EVENT */
 #endif /* CONFIG_SOC_COMPATIBLE_NRF54LX */
 
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN) || defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
@@ -1788,7 +1793,11 @@ void radio_tmr_stop(void)
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 #if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#if defined(CONFIG_NRF_SYS_EVENT)
+	(void)nrf_sys_event_release_global_constlat();
+#else /* !CONFIG_NRF_SYS_EVENT */
 	NRF_POWER->TASKS_LOWPWR = 1U;
+#endif /* !CONFIG_NRF_SYS_EVENT */
 #endif /* CONFIG_SOC_COMPATIBLE_NRF54LX */
 }
 

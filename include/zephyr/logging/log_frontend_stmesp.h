@@ -9,7 +9,7 @@
 #include <errno.h>
 #include <zephyr/types.h>
 #ifdef CONFIG_LOG_FRONTEND_STMESP
-#include <zephyr/drivers/misc/coresight/stmesp.h>
+#include <zephyr/drivers/debug/stmesp.h>
 #endif
 
 #ifdef __cplusplus

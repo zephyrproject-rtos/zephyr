@@ -234,6 +234,13 @@ if (CONFIG_NET_MGMT)
   zephyr_iterable_section(NAME net_mgmt_event_static_handler KVMA RAM_REGION GROUP RODATA_REGION)
 endif()
 
+if(CONFIG_NET_SOCKETS_SERVICE)
+  zephyr_iterable_section(NAME net_socket_service_desc
+                          KVMA RAM_REGION GROUP RODATA_REGION
+                          SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN}
+  )
+endif()
+
 if(CONFIG_INPUT)
   zephyr_iterable_section(NAME input_callback KVMA RAM_REGION GROUP RODATA_REGION)
 endif()

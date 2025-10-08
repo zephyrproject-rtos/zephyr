@@ -134,6 +134,17 @@ included. The ``smp_svr`` sample comes in different flavours.
          :gen-args: -DEXTRA_CONF_FILE="overlay-udp.conf"
          :compact:
 
+      To build UDP sample with 802154 Subg networking:
+
+      .. zephyr-app-commands::
+         :tool: west
+         :zephyr-app: samples/subsys/mgmt/mcumgr/smp_svr
+         :board: beagleconnect_freedom
+         :goals: build
+         :west-args: --sysbuild
+         :gen-args: -DEXTRA_CONF_FILE="overlay-udp.conf;802154-subg.conf"
+         :compact:
+
 Flashing the sample image
 *************************
 

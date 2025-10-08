@@ -31,6 +31,12 @@ LOG_MODULE_REGISTER(virtiofs, CONFIG_VIRTIOFS_LOG_LEVEL);
 #define REQUEST_QUEUE 2
 #endif
 
+/*
+ * Currently we are using only one request queue, so we don't have to initialize queues
+ * after that one
+ */
+#define QUEUE_COUNT (REQUEST_QUEUE + 1)
+
 
 struct virtio_fs_config {
 	char tag[36];
@@ -132,7 +138,7 @@ int virtiofs_init(const struct device *dev, struct fuse_init_out *response)
 		return ret;
 	}
 
-	ret = virtio_init_virtqueues(dev, REQUEST_QUEUE, virtiofs_queue_enum_cb, NULL);
+	ret = virtio_init_virtqueues(dev, QUEUE_COUNT, virtiofs_queue_enum_cb, NULL);
 	if (ret != 0) {
 		LOG_ERR("failed to initialize fs virtqueues");
 		return ret;

@@ -62,12 +62,36 @@
 		};
 	};
 
+	pwm12_default: pwm12_default {
+		group1 {
+			/* GTIOC12A */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 5, 1)>;
+			drive-strength = "medium";
+		};
+	};
+
 	iic1_default: iic1_default {
 		group1 {
 			/* SCL1 SDA1*/
 			psels = <RA_PSEL(RA_PSEL_I2C, 5, 12)>,
 				<RA_PSEL(RA_PSEL_I2C, 5, 11)>;
 			drive-strength = "medium";
+		};
+	};
+
+	ceu_default: ceu_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_CEU, 4, 0)>, /* VIO_D0 */
+				<RA_PSEL(RA_PSEL_CEU, 9, 2)>, /* VIO_D1 */
+				<RA_PSEL(RA_PSEL_CEU, 4, 5)>, /* VIO_D2 */
+				<RA_PSEL(RA_PSEL_CEU, 4, 6)>, /* VIO_D3 */
+				<RA_PSEL(RA_PSEL_CEU, 7, 0)>, /* VIO_D4 */
+				<RA_PSEL(RA_PSEL_CEU, 7, 1)>, /* VIO_D5 */
+				<RA_PSEL(RA_PSEL_CEU, 7, 2)>, /* VIO_D6 */
+				<RA_PSEL(RA_PSEL_CEU, 7, 3)>, /* VIO_D7 */
+				<RA_PSEL(RA_PSEL_CEU, 11, 4)>, /* VIO_CLK */
+				<RA_PSEL(RA_PSEL_CEU, 11, 3)>, /* VIO_HD */
+				<RA_PSEL(RA_PSEL_CEU, 11, 2)>; /* VIO_VD */
 		};
 	};
 

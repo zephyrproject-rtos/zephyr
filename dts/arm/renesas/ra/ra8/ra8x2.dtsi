@@ -1046,6 +1046,14 @@
 			status = "disabled";
 		};
 
+		ceu: ceu@40348000 {
+			compatible = "renesas,ra-ceu";
+			reg = <0x40348000 0x8000>;
+			clocks = <&pclka MSTPC 16>;
+			clock-names = "pclk";
+			status = "disabled";
+		};
+
 		option_setting_ofs_conf_sec: option-setting-ofs-conf-sec@2c9f040 {
 			reg = <0x02c9f040 0x3c0>;
 			#address-cells = <1>;

@@ -726,7 +726,7 @@ static int set_tcp_keep_cnt(struct tcp *conn, const void *value, size_t len)
 	return 0;
 }
 
-static int get_tcp_keep_alive(struct tcp *conn, void *value, size_t *len)
+static int get_tcp_keep_alive(struct tcp *conn, void *value, uint32_t *len)
 {
 	if (conn == NULL || value == NULL || len == NULL ||
 	    *len != sizeof(int)) {
@@ -738,7 +738,7 @@ static int get_tcp_keep_alive(struct tcp *conn, void *value, size_t *len)
 	return 0;
 }
 
-static int get_tcp_keep_idle(struct tcp *conn, void *value, size_t *len)
+static int get_tcp_keep_idle(struct tcp *conn, void *value, uint32_t *len)
 {
 	if (conn == NULL || value == NULL || len == NULL ||
 	    *len != sizeof(int)) {
@@ -750,7 +750,7 @@ static int get_tcp_keep_idle(struct tcp *conn, void *value, size_t *len)
 	return 0;
 }
 
-static int get_tcp_keep_intvl(struct tcp *conn, void *value, size_t *len)
+static int get_tcp_keep_intvl(struct tcp *conn, void *value, uint32_t *len)
 {
 	if (conn == NULL || value == NULL || len == NULL ||
 	    *len != sizeof(int)) {
@@ -762,7 +762,7 @@ static int get_tcp_keep_intvl(struct tcp *conn, void *value, size_t *len)
 	return 0;
 }
 
-static int get_tcp_keep_cnt(struct tcp *conn, void *value, size_t *len)
+static int get_tcp_keep_cnt(struct tcp *conn, void *value, uint32_t *len)
 {
 	if (conn == NULL || value == NULL || len == NULL ||
 	    *len != sizeof(int)) {
@@ -1394,7 +1394,7 @@ static int ip_header_add(struct tcp *conn, struct net_pkt *pkt)
 	return -EINVAL;
 }
 
-static int set_tcp_nodelay(struct tcp *conn, const void *value, size_t len)
+static int set_tcp_nodelay(struct tcp *conn, const void *value, uint32_t len)
 {
 	int no_delay_int;
 
@@ -1413,7 +1413,7 @@ static int set_tcp_nodelay(struct tcp *conn, const void *value, size_t len)
 	return 0;
 }
 
-static int get_tcp_nodelay(struct tcp *conn, void *value, size_t *len)
+static int get_tcp_nodelay(struct tcp *conn, void *value, uint32_t *len)
 {
 	int no_delay_int = (int)conn->tcp_nodelay;
 
@@ -4643,7 +4643,7 @@ uint16_t net_tcp_get_mtu(struct sockaddr *dst)
 
 int net_tcp_set_option(struct net_context *context,
 		       enum tcp_conn_option option,
-		       const void *value, size_t len)
+		       const void *value, uint32_t len)
 {
 	int ret = 0;
 
@@ -4680,7 +4680,7 @@ int net_tcp_set_option(struct net_context *context,
 
 int net_tcp_get_option(struct net_context *context,
 		       enum tcp_conn_option option,
-		       void *value, size_t *len)
+		       void *value, uint32_t *len)
 {
 	int ret = 0;
 

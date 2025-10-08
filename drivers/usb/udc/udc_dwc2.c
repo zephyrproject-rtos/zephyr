@@ -1589,9 +1589,11 @@ static int dwc2_unset_dedicated_fifo(const struct device *dev,
 	*diepctl &= ~USB_DWC2_DEPCTL_TXFNUM_MASK;
 
 	if (priv->dynfifosizing) {
-		if (priv->txf_set & ~BIT_MASK(ep_idx)) {
-			LOG_WRN("Some of the FIFOs higher than %u are set, %lx",
-				ep_idx, priv->txf_set & ~BIT_MASK(ep_idx));
+		uint16_t higher_mask = ~BIT_MASK(ep_idx + 1);
+
+		if (priv->txf_set & higher_mask) {
+			LOG_WRN("Some of the FIFOs higher than %u are set, %x",
+				ep_idx, priv->txf_set & higher_mask);
 			return 0;
 		}
 

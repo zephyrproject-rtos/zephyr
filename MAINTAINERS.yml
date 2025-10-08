@@ -457,6 +457,7 @@ Bluetooth Classic:
     - MarkWangChinese
     - gzh-terry
     - makeshi
+    - chengkai15
   files:
     - doc/connectivity/bluetooth/shell/classic/a2dp.rst
     - subsys/bluetooth/common/
@@ -1221,6 +1222,7 @@ Documentation Infrastructure:
     - lyakh
     - lgirdwood
     - kv2019i
+    - TomasBarakNXP
   files:
     - drivers/audio/
     - include/zephyr/audio/
@@ -1786,6 +1788,8 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - anangl
+  collaborators:
+    - TomasBarakNXP
   files:
     - doc/hardware/peripherals/audio/i2s.rst
     - drivers/i2s/
@@ -2035,6 +2039,26 @@ Documentation Infrastructure:
     - "area: Modem Drivers"
   tests:
     - drivers.modem
+
+"Drivers: Opamp":
+  status: maintained
+  maintainers:
+    - ZhaoxiangJin
+  collaborators:
+    - KozhinovAlexander
+  files:
+    - dts/bindings/opamp/
+    - drivers/opamp/
+    - include/zephyr/drivers/opamp.h
+    - include/zephyr/dt-bindings/opamp/
+    - samples/drivers/opamp/
+    - tests/drivers/build_all/opamp/
+    - tests/drivers/opamp/
+    - doc/hardware/peripherals/opamp.rst
+  labels:
+    - "area: Opamp"
+  tests:
+    - drivers.opamp
 
 "Drivers: PCI":
   status: maintained
@@ -2872,6 +2896,19 @@ Input:
     - drivers.input
     - input
 
+Instrumentation Subsystem:
+  status: maintained
+  maintainers:
+    - fkokosinski
+    - tgorochowik
+  files:
+    - include/zephyr/instrumentation/
+    - samples/subsys/instrumentation/
+    - scripts/instrumentation/
+    - subsys/instrumentation/
+  labels:
+    - "area: Instrumentation"
+
 Intel Platforms (Agilex):
   status: maintained
   maintainers:
@@ -3364,6 +3401,24 @@ NEORV32 platform:
   tests:
     - boards.neorv32
 
+NVMEM:
+  status: maintained
+  maintainers:
+    - pdgendt
+  collaborators:
+    - henrikbrixandersen
+  files:
+    - doc/services/nvmem/
+    - dts/bindings/nvmem/
+    - include/zephyr/devicetree/nvmem.h
+    - include/zephyr/nvmem.h
+    - subsys/nvmem/
+    - tests/subsys/nvmem/
+  labels:
+    - "area: NVMEM"
+  tests:
+    - nvmem
+
 NXP Platform Drivers:
   status: maintained
   maintainers:
@@ -3552,6 +3607,7 @@ NXP Platforms (Xtensa):
     - dbaluta
   collaborators:
     - iuliana-prodan
+    - TomasBarakNXP
   files:
     - soc/nxp/imx/*/adsp/
     - soc/nxp/imxrt/*/f1/
@@ -4312,6 +4368,7 @@ Renesas RZ Platforms:
     - binhnguyen2434
   collaborators:
     - nhutnguyenkc
+    - tiennguyenzg
   files:
     - boards/renesas/rz*/
     - drivers/*/*rzt2m*

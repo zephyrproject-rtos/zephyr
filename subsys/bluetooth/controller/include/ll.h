@@ -1,63 +1,39 @@
 /*
- * Copyright (c) 2016-2021 Nordic Semiconductor ASA
+ * Copyright (c) 2016-2025 Nordic Semiconductor ASA
  * Copyright (c) 2016 Vinayak Kariappa Chettimada
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if defined(CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING)
+#define LL_ADV_HANDLE_MAPPING
+#else /* !CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING */
+#define LL_ADV_HANDLE_MAPPING static __attribute__((always_inline)) inline
+#endif /* !CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING */
+
+/* Initialization and Reset Interfaces */
 int ll_init(struct k_sem *sem_rx);
 int ll_deinit(void);
 void ll_reset(void);
 
+/* Features Interfaces */
 uint8_t ll_set_host_feature(uint8_t bit_number, uint8_t bit_value);
 uint64_t ll_feat_get(void);
 
+/* Device Address Interfaces */
 uint8_t ll_addr_set(uint8_t addr_type, uint8_t const *const p_bdaddr);
 uint8_t *ll_addr_get(uint8_t addr_type);
 uint8_t *ll_addr_read(uint8_t addr_type, uint8_t *const bdaddr);
 
-#if defined(CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING)
-uint8_t ll_adv_set_by_hci_handle_get(uint8_t hci_handle, uint8_t *handle);
-uint8_t ll_adv_set_by_hci_handle_get_or_new(uint8_t hci_handle,
-					    uint8_t *handle);
-uint8_t ll_adv_set_hci_handle_get(uint8_t handle);
-uint8_t ll_adv_iso_by_hci_handle_get(uint8_t hci_handle, uint8_t *handle);
-uint8_t ll_adv_iso_by_hci_handle_new(uint8_t hci_handle, uint8_t *handle);
-#else
-static inline uint8_t ll_adv_set_by_hci_handle_get(uint8_t hci_handle,
-						   uint8_t *handle)
-{
-	*handle = hci_handle;
-	return 0;
-}
+/* Advertising Handles Interfaces */
+LL_ADV_HANDLE_MAPPING uint8_t ll_adv_set_by_hci_handle_get(uint8_t hci_handle, uint8_t *handle);
+LL_ADV_HANDLE_MAPPING uint8_t ll_adv_set_by_hci_handle_get_or_new(uint8_t hci_handle,
+								  uint8_t *handle);
+LL_ADV_HANDLE_MAPPING uint8_t ll_adv_set_hci_handle_get(uint8_t handle);
+LL_ADV_HANDLE_MAPPING uint8_t ll_adv_iso_by_hci_handle_get(uint8_t hci_handle, uint8_t *handle);
+LL_ADV_HANDLE_MAPPING uint8_t ll_adv_iso_by_hci_handle_new(uint8_t hci_handle, uint8_t *handle);
 
-static inline uint8_t ll_adv_set_by_hci_handle_get_or_new(uint8_t hci_handle,
-							  uint8_t *handle)
-{
-	*handle = hci_handle;
-	return 0;
-}
-
-static inline uint8_t ll_adv_set_hci_handle_get(uint8_t handle)
-{
-	return handle;
-}
-
-static inline uint8_t ll_adv_iso_by_hci_handle_get(uint8_t hci_handle,
-						   uint8_t *handle)
-{
-	*handle = hci_handle;
-	return 0;
-}
-
-static inline uint8_t ll_adv_iso_by_hci_handle_new(uint8_t hci_handle,
-						   uint8_t *handle)
-{
-	*handle = hci_handle;
-	return 0;
-}
-#endif
-
+/* Advertising State Interfaces */
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 uint8_t ll_adv_params_set(uint8_t handle, uint16_t evt_prop, uint32_t interval,
 		       uint8_t adv_type, uint8_t own_addr_type,
@@ -78,6 +54,7 @@ uint8_t ll_adv_data_set(uint8_t len, uint8_t const *const p_data);
 uint8_t ll_adv_scan_rsp_set(uint8_t len, uint8_t const *const p_data);
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
+/* Extended Advertising State Interfaces */
 uint8_t ll_adv_aux_random_addr_set(uint8_t handle, uint8_t const *const addr);
 uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 			       uint8_t len, uint8_t const *const data);
@@ -87,12 +64,15 @@ uint16_t ll_adv_aux_max_data_length_get(void);
 uint8_t ll_adv_aux_set_count_get(void);
 uint8_t ll_adv_aux_set_remove(uint8_t handle);
 uint8_t ll_adv_aux_set_clear(void);
+
+/* Periodic Advertising State Interfaces */
 uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval,
 			      uint16_t flags);
 uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 				uint8_t const *const data);
 uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable);
 
+/* Advertising Enable  and Disable Interfaces */
 #if defined(CONFIG_BT_CTLR_ADV_EXT) || defined(CONFIG_BT_HCI_MESH_EXT)
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 uint8_t ll_adv_enable(uint8_t handle, uint8_t enable,
@@ -108,6 +88,7 @@ uint8_t ll_adv_enable(uint8_t enable);
 
 uint8_t ll_adv_disable_all(void);
 
+/* Broadcast ISO State Interfaces */
 uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 		      uint32_t sdu_interval, uint16_t max_sdu,
 		      uint16_t max_latency, uint8_t rtn, uint8_t phy,
@@ -121,6 +102,7 @@ uint8_t ll_big_test_create(uint8_t big_handle, uint8_t adv_handle,
 			   uint8_t pto, uint8_t encryption, uint8_t *bcode);
 uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason);
 
+/* Scanning State Interfaces */
 uint8_t ll_scan_params_set(uint8_t type, uint16_t interval, uint16_t window,
 		uint8_t own_addr_type, uint8_t filter_policy);
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
@@ -129,24 +111,30 @@ uint8_t ll_scan_enable(uint8_t enable, uint16_t duration, uint16_t period);
 uint8_t ll_scan_enable(uint8_t enable);
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
+/* Periodic Advertising Sync State Interfaces */
 uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 		       uint8_t *adv_addr, uint16_t skip,
 		       uint16_t sync_timeout, uint8_t sync_cte_type);
 uint8_t ll_sync_create_cancel(void **rx);
 uint8_t ll_sync_terminate(uint16_t handle);
 uint8_t ll_sync_recv_enable(uint16_t handle, uint8_t enable);
+
+/* Periodic Advertising Sync Transfer Interfaces */
 uint8_t ll_sync_transfer(uint16_t conn_handle, uint16_t service_data, uint16_t sync_handle);
 uint8_t ll_adv_sync_set_info_transfer(uint16_t conn_handle, uint16_t service_data,
 				      uint8_t adv_handle);
 uint8_t ll_past_param(uint16_t conn_handle, uint8_t mode, uint16_t skip, uint16_t timeout,
 		      uint8_t cte_type);
 uint8_t ll_default_past_param(uint8_t mode, uint16_t skip, uint16_t timeout, uint8_t cte_type);
+
+/* Broadcast ISO Sync Receiver State Interfaces */
 uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 			   uint8_t encryption, uint8_t *bcode, uint8_t mse,
 			   uint16_t sync_timeout, uint8_t num_bis,
 			   uint8_t *bis);
 uint8_t ll_big_sync_terminate(uint8_t big_handle, void **rx);
 
+/* Connected ISO State Interfaces */
 uint8_t ll_cig_parameters_open(uint8_t cig_id,
 			       uint32_t c_interval, uint32_t p_interval,
 			       uint8_t sca, uint8_t packing, uint8_t framing,
@@ -172,6 +160,15 @@ uint8_t ll_cis_parameters_test_set(uint8_t cis_id, uint8_t nse,
 				   uint16_t c_pdu, uint16_t p_pdu,
 				   uint8_t c_phy, uint8_t p_phy,
 				   uint8_t c_bn, uint8_t p_bn);
+uint8_t ll_cig_remove(uint8_t cig_id);
+uint8_t ll_cis_create_check(uint16_t cis_handle, uint16_t acl_handle);
+void ll_cis_create(uint16_t cis_handle, uint16_t acl_handle);
+uint8_t ll_cis_accept(uint16_t handle);
+uint8_t ll_cis_reject(uint16_t handle, uint8_t reason);
+uint8_t ll_conn_iso_accept_timeout_get(uint16_t *timeout);
+uint8_t ll_conn_iso_accept_timeout_set(uint16_t timeout);
+
+/* ISO SDU data Interfaces */
 /* Must be implemented by vendor if vendor-specific data path is supported */
 uint8_t ll_configure_data_path(uint8_t data_path_dir,
 			       uint8_t data_path_id,
@@ -200,24 +197,19 @@ uint8_t ll_iso_read_test_counters(uint16_t handle, uint32_t *received_cnt,
 				  uint32_t *missed_cnt,
 				  uint32_t *failed_cnt);
 
-uint8_t ll_cig_remove(uint8_t cig_id);
-
-uint8_t ll_cis_create_check(uint16_t cis_handle, uint16_t acl_handle);
-void ll_cis_create(uint16_t cis_handle, uint16_t acl_handle);
-
-uint8_t ll_cis_accept(uint16_t handle);
-uint8_t ll_cis_reject(uint16_t handle, uint8_t reason);
-
+/* Filter Accept List Interfaces */
 uint8_t ll_fal_size_get(void);
 uint8_t ll_fal_clear(void);
 uint8_t ll_fal_add(bt_addr_le_t *addr);
 uint8_t ll_fal_remove(bt_addr_le_t *addr);
 
+/* Privacy Accept List Interfaces */
 uint8_t ll_pal_size_get(void);
 uint8_t ll_pal_clear(void);
 uint8_t ll_pal_add(const bt_addr_le_t *const addr, const uint8_t sid);
 uint8_t ll_pal_remove(const bt_addr_le_t *const addr, const uint8_t sid);
 
+/* Private Resolvable Address Resolution Interfaces */
 void ll_rl_id_addr_get(uint8_t rl_idx, uint8_t *id_addr_type, uint8_t *id_addr);
 uint8_t ll_rl_size_get(void);
 uint8_t ll_rl_clear(void);
@@ -231,6 +223,7 @@ uint8_t ll_rl_enable(uint8_t enable);
 void  ll_rl_timeout_set(uint16_t timeout);
 uint8_t ll_priv_mode_set(bt_addr_le_t *id_addr, uint8_t mode);
 
+/* Connection State Interfaces */
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 			  uint8_t filter_policy, uint8_t peer_addr_type,
@@ -267,10 +260,10 @@ uint8_t ll_tx_pwr_lvl_set(uint8_t handle_type, uint16_t handle,
 uint8_t ll_apto_get(uint16_t handle, uint16_t *const apto);
 uint8_t ll_apto_set(uint16_t handle, uint16_t apto);
 
-uint32_t ll_length_req_send(uint16_t handle, uint16_t tx_octets, uint16_t tx_time);
+uint8_t ll_length_req_send(uint16_t handle, uint16_t tx_octets, uint16_t tx_time);
 void ll_length_default_get(uint16_t *const max_tx_octets,
 			   uint16_t *const max_tx_time);
-uint32_t ll_length_default_set(uint16_t max_tx_octets, uint16_t max_tx_time);
+uint8_t ll_length_default_set(uint16_t max_tx_octets, uint16_t max_tx_time);
 void ll_length_max_get(uint16_t *const max_tx_octets,
 		       uint16_t *const max_tx_time,
 		       uint16_t *const max_rx_octets,
@@ -283,7 +276,7 @@ uint8_t ll_phy_req_send(uint16_t handle, uint8_t tx, uint8_t flags, uint8_t rx);
 uint8_t ll_set_min_used_chans(uint16_t handle, uint8_t const phys,
 		     uint8_t const min_used_chans);
 
-/* Direction Finding */
+/* Direction Finding Interfaces */
 /* Sets CTE transmission parameters for periodic advertising */
 uint8_t ll_df_set_cl_cte_tx_params(uint8_t adv_handle, uint8_t cte_len,
 				   uint8_t cte_type, uint8_t cte_count,
@@ -316,12 +309,21 @@ void ll_df_read_ant_inf(uint8_t *switch_sample_rates,
 			uint8_t *max_switch_pattern_len,
 			uint8_t *max_cte_len);
 
-/* Downstream - Data */
+/* Path Loss Monitoring Interfaces */
+uint8_t ll_conn_set_path_loss_parameters(uint16_t handle,
+					 uint8_t  high_threshold,
+					 uint8_t  high_hysteresis,
+					 uint8_t  low_threshold,
+					 uint8_t  low_hysteresis,
+					 uint16_t min_time_spent);
+uint8_t ll_conn_set_path_loss_reporting(uint16_t handle, uint8_t enable);
+
+/* Downstream - ACL Data */
 void *ll_tx_mem_acquire(void);
 void ll_tx_mem_release(void *node_tx);
 int ll_tx_mem_enqueue(uint16_t handle, void *node_tx);
 
-/* Upstream - Num. Completes, Events and Data */
+/* Upstream - Num. Completes, Events, ACL and ISO Data */
 uint8_t ll_rx_get(void **node_rx, uint16_t *handle);
 void ll_rx_dequeue(void);
 void ll_rx_mem_release(void **node_rx);
@@ -333,9 +335,6 @@ void ll_iso_tx_mem_release(void *tx);
 int ll_iso_tx_mem_enqueue(uint16_t handle, void *tx, void *link);
 void ll_iso_link_tx_release(void *link);
 
-uint8_t ll_conn_iso_accept_timeout_get(uint16_t *timeout);
-uint8_t ll_conn_iso_accept_timeout_set(uint16_t timeout);
-
 /* External co-operation */
 void ll_timeslice_ticker_id_get(uint8_t * const instance_index,
 				uint8_t * const ticker_id);
@@ -344,11 +343,35 @@ void ll_coex_ticker_id_get(uint8_t * const instance_index,
 void ll_radio_state_abort(void);
 uint32_t ll_radio_state_is_idle(void);
 
-uint8_t ll_conn_set_path_loss_parameters(uint16_t handle,
-					 uint8_t  high_threshold,
-					 uint8_t  high_hysteresis,
-					 uint8_t  low_threshold,
-					 uint8_t  low_hysteresis,
-					 uint16_t min_time_spent);
+/* Static inline functions */
+#if !defined(CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING)
+LL_ADV_HANDLE_MAPPING uint8_t ll_adv_set_by_hci_handle_get(uint8_t hci_handle, uint8_t *handle)
+{
+	*handle = hci_handle;
+	return 0U;
+}
 
-uint8_t ll_conn_set_path_loss_reporting(uint16_t handle, uint8_t enable);
+LL_ADV_HANDLE_MAPPING uint8_t ll_adv_set_by_hci_handle_get_or_new(uint8_t hci_handle,
+								  uint8_t *handle)
+{
+	*handle = hci_handle;
+	return 0U;
+}
+
+LL_ADV_HANDLE_MAPPING uint8_t ll_adv_set_hci_handle_get(uint8_t handle)
+{
+	return handle;
+}
+
+LL_ADV_HANDLE_MAPPING uint8_t ll_adv_iso_by_hci_handle_get(uint8_t hci_handle, uint8_t *handle)
+{
+	*handle = hci_handle;
+	return 0U;
+}
+
+LL_ADV_HANDLE_MAPPING uint8_t ll_adv_iso_by_hci_handle_new(uint8_t hci_handle, uint8_t *handle)
+{
+	*handle = hci_handle;
+	return 0U;
+}
+#endif /* !CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING */

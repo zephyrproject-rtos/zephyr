@@ -30,12 +30,25 @@
 
 /* System clock frequency */
 extern uint32_t SystemCoreClock;
+extern void nxp_nbu_init(void);
 
 #define CTIMER_CLOCK_SOURCE(node_id) \
 	TO_CTIMER_CLOCK_SOURCE(DT_CLOCKS_CELL(node_id, name), DT_PROP(node_id, clk_source))
 #define TO_CTIMER_CLOCK_SOURCE(inst, val) TO_CLOCK_ATTACH_ID(inst, val)
 #define TO_CLOCK_ATTACH_ID(inst, val) MUX_A(CM_CTIMERCLKSEL##inst, val)
 #define CTIMER_CLOCK_SETUP(node_id) CLOCK_AttachClk(CTIMER_CLOCK_SOURCE(node_id));
+/** 32KHz oscillator load in cap setting */
+#define OSC_CAP_IN_SETTING 5
+/** 32KHz oscillator load out cap setting */
+#define OSC_CAP_OUT_SETTING 5
+
+static void configure_32k_osc(void)
+{
+	/* Configure 32KHz xtal caps for use with RDM */
+	POWER_XTAL32K_ConfigureCaps(OSC_CAP_IN_SETTING, OSC_CAP_OUT_SETTING);
+	POWER_PeripheralPowerOn(kPOWERCFG_XTAL32K);
+	CLOCK_Select32kOscClkSrc(kCLOCK_Osc32kClockSrc_XTAL);
+}
 
 /**
  *
@@ -77,6 +90,8 @@ __weak void clock_init(void)
 
 	DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 	DT_FOREACH_STATUS_OKAY(nxp_ctimer_pwm, CTIMER_CLOCK_SETUP)
+
+	configure_32k_osc();
 }
 
 #ifdef CONFIG_SOC_RESET_HOOK
@@ -106,5 +121,9 @@ void soc_early_init_hook(void)
 #ifdef CONFIG_GPIO_MCUX_LPC
 	/* Turn on PINT device*/
 	PINT_Init(PINT);
+#endif
+
+#ifdef CONFIG_BT
+	nxp_nbu_init();
 #endif
 }

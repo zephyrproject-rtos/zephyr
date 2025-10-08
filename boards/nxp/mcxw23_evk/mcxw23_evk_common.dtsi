@@ -16,6 +16,7 @@
 		zephyr,uart-mcumgr = &flexcomm0;
 		zephyr,console = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
+		zephyr,uart-pipe = &flexcomm0;
 		zephyr,flash-controller = &iap;
 	};
 

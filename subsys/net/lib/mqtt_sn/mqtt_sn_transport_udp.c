@@ -213,12 +213,14 @@ static ssize_t tp_udp_recvfrom(struct mqtt_sn_client *client, void *buffer, size
 	struct mqtt_sn_transport_udp *udp = UDP_TRANSPORT(client->transport);
 	int rc;
 	struct sockaddr *srcaddr = src_addr;
+	socklen_t addrlen_local;
 
-	rc = zsock_recvfrom(udp->sock, buffer, length, 0, src_addr, addrlen);
+	rc = zsock_recvfrom(udp->sock, buffer, length, 0, src_addr, &addrlen_local);
 	LOG_DBG("recv %d", rc);
 	if (rc < 0) {
 		return -errno;
 	}
+	*addrlen = addrlen_local;
 
 	LOG_HEXDUMP_DBG(buffer, rc, "recv");
 

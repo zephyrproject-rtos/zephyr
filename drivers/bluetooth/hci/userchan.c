@@ -360,8 +360,28 @@ static int uc_open(const struct device *dev, bt_hci_recv_t recv)
 	return 0;
 }
 
+static int uc_close(const struct device *dev)
+{
+	struct uc_data *uc = dev->data;
+	int rc;
+
+	if (uc->fd < 0) {
+		return -ENETDOWN;
+	}
+
+	rc = nsi_host_close(uc->fd);
+	if (rc < 0) {
+		return -nsi_errno_from_mid(-rc);
+	}
+
+	uc->fd = -1;
+
+	return 0;
+}
+
 static DEVICE_API(bt_hci, uc_drv_api) = {
 	.open = uc_open,
+	.close = uc_close,
 	.send = uc_send,
 };
 

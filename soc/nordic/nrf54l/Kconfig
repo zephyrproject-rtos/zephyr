@@ -76,14 +76,6 @@ config SOC_NRF54LX_SKIP_GLITCHDETECTOR_DISABLE
 	  With this option, the glitch detector is not disabled during system initialization.
 	  The CPU runs with the default state of glitch detector.
 
-config SOC_NRF_FORCE_CONSTLAT
-	bool "Force constant-latency mode"
-	help
-	  In constant latency mode the CPU wakeup latency and the PPI task response
-	  will be constant and kept at a minimum. This is secured by forcing a set
-	  of base resources on while in sleep. The advantage of having a constant
-	  and predictable latency will be at the cost of having increased power consumption.
-
 config SOC_NRF54L_ANOMALY_56_WORKAROUND
 	bool "Apply workaround 56 for nRF54L SoCs"
 	default y

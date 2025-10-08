@@ -21,6 +21,7 @@
 #include <zephyr/dt-bindings/memory-controller/stm32-fmc-sdram.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 #include <freq.h>
 
 / {
@@ -570,6 +571,12 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
 		};
 
 		timers2: timers@40000000 {
@@ -591,6 +598,12 @@
 
 			counter {
 				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
 				status = "disabled";
 			};
 		};
@@ -616,6 +629,12 @@
 				compatible = "st,stm32-counter";
 				status = "disabled";
 			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
 		};
 
 		timers4: timers@40000800 {
@@ -639,6 +658,12 @@
 				compatible = "st,stm32-counter";
 				status = "disabled";
 			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
 		};
 
 		timers5: timers@40000c00 {
@@ -660,6 +685,12 @@
 
 			counter {
 				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
 				status = "disabled";
 			};
 		};
@@ -713,6 +744,12 @@
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
 			};
 		};
 
@@ -1136,6 +1173,24 @@
 				 <&rcc STM32_SRC_PLL2_P SAI1_SEL(1)>;
 			dmas = <&dma1 3 88 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
 				STM32_DMA_16BITS) 0>;
+			status = "disabled";
+		};
+
+		comp1_ch1: comparator@5800380c {
+			compatible = "st,stm32h7-comp", "st,stm32-comp";
+			reg = <0x5800380c 0x200>;
+			interrupts = <137 0>;
+			st,exti-line = <20>;
+			clocks = <&rcc STM32_CLOCK(APB4, 14)>;
+			status = "disabled";
+		};
+
+		comp1_ch2: comparator@58003810 {
+			compatible = "st,stm32h7-comp", "st,stm32-comp";
+			reg = <0x58003810 0x200>;
+			interrupts = <137 0>;
+			st,exti-line = <20>;
+			clocks = <&rcc STM32_CLOCK(APB4, 14)>;
 			status = "disabled";
 		};
 	};

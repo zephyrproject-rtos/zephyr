@@ -1,0 +1,6 @@
+board:
+  name: imx91_qsb
+  full_name: i.MX91 QSB
+  vendor: nxp
+  socs:
+  - name: mimx9111

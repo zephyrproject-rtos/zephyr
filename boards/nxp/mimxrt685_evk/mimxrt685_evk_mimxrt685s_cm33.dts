@@ -265,7 +265,7 @@ i2s1: &flexcomm3 {
 		/* MX25UM51245G is 64MB, 512MBit flash part */
 		size = <DT_SIZE_M(64 * 8)>;
 		reg = <2>;
-		spi-max-frequency = <DT_FREQ_M(200)>;
+		spi-max-frequency = <DT_FREQ_M(120)>;
 		status = "okay";
 		jedec-id = [c2 81 3a];
 		erase-block-size = <DT_SIZE_K(4)>;

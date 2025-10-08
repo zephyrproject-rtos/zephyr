@@ -11,6 +11,11 @@ int ironside_update(const struct ironside_update_blob *update)
 	int err;
 	struct ironside_call_buf *const buf = ironside_call_alloc();
 
+	if ((uintptr_t)update < IRONSIDE_UPDATE_MIN_ADDRESS ||
+	    (uintptr_t)update > IRONSIDE_UPDATE_MAX_ADDRESS) {
+		return -IRONSIDE_UPDATE_ERROR_INVALID_ADDRESS;
+	}
+
 	buf->id = IRONSIDE_CALL_ID_UPDATE_SERVICE_V0;
 	buf->args[IRONSIDE_UPDATE_SERVICE_UPDATE_PTR_IDX] = (uintptr_t)update;
 

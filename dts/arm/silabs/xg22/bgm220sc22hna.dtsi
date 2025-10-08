@@ -6,18 +6,32 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <silabs/xg22/efr32bg22.dtsi>
 #include <mem.h>
+#include <silabs/xg22/bgm22.dtsi>
 
 / {
 	soc {
-		compatible = "silabs,bgm220sc22hna", "silabs,efr32bg22", "silabs,xg22",
-			     "silabs,efr32", "simple-bus";
+		compatible = "silabs,bgm220sc22hna", "silabs,bgm22", "silabs,xg22", "silabs,efr32",
+			     "simple-bus";
 	};
 };
 
 &flash0 {
-	reg = <0x0 DT_SIZE_K(512)>;
+	reg = <0x00000000 DT_SIZE_K(512)>;
+};
+
+&hfxo {
+	ctune = <140>;
+	precision = <50>;
+	status = "okay";
+};
+
+&lfrco {
+	precision-mode;
+};
+
+&radio {
+	pa-voltage-mv = <1800>;
 };
 
 &sram0 {

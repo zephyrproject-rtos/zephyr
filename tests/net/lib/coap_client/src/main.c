@@ -27,8 +27,7 @@ DEFINE_FFF_GLOBALS;
 #define VALID_MESSAGE_ID BIT(31)
 #define TOKEN_OFFSET          4
 
-void coap_callback(int16_t code, size_t offset, const uint8_t *payload, size_t len, bool last_block,
-		   void *user_data);
+void coap_callback(const struct coap_client_response_data *data, void *user_data);
 
 static int16_t last_response_code;
 static const char test_path[] = "test";
@@ -451,11 +450,10 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_observe(int sock, void *buf, si
 	return ret;
 }
 
-void coap_callback(int16_t code, size_t offset, const uint8_t *payload, size_t len, bool last_block,
-		   void *user_data)
+void coap_callback(const struct coap_client_response_data *data, void *user_data)
 {
-	LOG_INF("CoAP response callback, %d", code);
-	last_response_code = code;
+	LOG_INF("CoAP response callback, %d", data->result_code);
+	last_response_code = data->result_code;
 	if (user_data) {
 		k_sem_give((struct k_sem *) user_data);
 	}

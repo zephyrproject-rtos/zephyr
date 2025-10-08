@@ -339,6 +339,7 @@ zephyr_library_sources_ifdef(CONFIG_ENTROPY_GECKO_SE
 zephyr_library_sources(
   src/sl_interrupt_manager_shim.c
   src/sl_memory_manager_shim.c
+  src/sl_memory_manager_pool_shim.c
 )
 
 zephyr_library_sources_ifdef(

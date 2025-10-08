@@ -87,7 +87,13 @@ Supported Features
 
 .. note::
 
-   - Other hardware features are currently not supported by the port.
+   - For using the Camera Expansion Port (J35) in DVP interface, please set switch SW4 as following configuration:
+
+     +-------------+-------------+----------------+---------------+-----------+------------+-------------+-------------+
+     | SW4-1 PMOD1 | SW4-2 PMOD1 | SW4-3 Octo-SPI | SW4-4 Arduino | SW4-5 I3C | SW4-6 MIPI | SW4-7 USBFS | SW4-8 USBHS |
+     +-------------+-------------+----------------+---------------+-----------+------------+-------------+-------------+
+     |     OFF     |     OFF     |      OFF       |     OFF       |     OFF   |     ON     |     OFF     |    OFF      |
+     +-------------+-------------+----------------+---------------+-----------+------------+-------------+-------------+
 
 Dual Core Operation
 *******************

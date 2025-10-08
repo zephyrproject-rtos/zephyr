@@ -18,6 +18,7 @@
 		led0 = &led_r;
 		led1 = &led_g;
 		sw0 = &btn_1;
+		watchdog0 = &wdog4;
 	};
 
 	chosen {
@@ -142,5 +143,9 @@
 	pinctrl-0 = <&flexcan2_default>;
 	pinctrl-names = "default";
 	phys = <&can_phy0>;
+	status = "okay";
+};
+
+&wdog4 {
 	status = "okay";
 };

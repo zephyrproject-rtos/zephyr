@@ -11,7 +11,9 @@
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/drivers/gpio.h>
 
-#if defined(CONFIG_NORDIC_QSPI_NOR)
+#if defined(CONFIG_TEST_FORCE_STORAGE_PARTITION)
+#define TEST_AREA	storage_partition
+#elif defined(CONFIG_NORDIC_QSPI_NOR)
 #define TEST_AREA_DEV_NODE	DT_INST(0, nordic_qspi_nor)
 #elif defined(SOC_SERIES_STM32N6X)
 #define TEST_AREA_DEV_NODE	DT_INST(0, st_stm32_xspi_nor)
@@ -345,8 +347,8 @@ ZTEST(flash_driver, test_supply_gpios_control)
 }
 
 struct test_cb_data_type {
-	uint32_t page_counter; /* used to count how many pages was iterated */
-	uint32_t exit_page;    /* terminate iteration when this page is reached */
+	size_t page_counter; /* used to count how many pages was iterated */
+	size_t exit_page;    /* terminate iteration when this page is reached */
 };
 
 static bool flash_callback(const struct flash_pages_info *info, void *data)
@@ -405,7 +407,7 @@ ZTEST(flash_driver, test_flash_page_layout)
 	zassert_equal(page_info_off.index, page_info_idx.index);
 
 	page_count = flash_get_page_count(flash_dev);
-	TC_PRINT("page_count=%d\n", (int)page_count);
+	TC_PRINT("page_count=%zu\n", page_count);
 	zassert_true(page_count > 0, "flash_get_page_count returned %d", rc);
 	zassert_true(page_count >= page_info_off.index);
 
@@ -413,7 +415,7 @@ ZTEST(flash_driver, test_flash_page_layout)
 	test_cb_data.exit_page = page_count + 1;
 	flash_page_foreach(flash_dev, flash_callback, &test_cb_data);
 	zassert_true(page_count == test_cb_data.page_counter,
-		     "page_count = %d not equal to pages counted with cb = %d", page_count,
+		     "page_count = %zu not equal to pages counted with cb = %zu", page_count,
 		     test_cb_data.page_counter);
 
 	/* Test that callback can cancell iteration */
@@ -421,7 +423,7 @@ ZTEST(flash_driver, test_flash_page_layout)
 	test_cb_data.exit_page = page_count >> 1;
 	flash_page_foreach(flash_dev, flash_callback, &test_cb_data);
 	zassert_true(test_cb_data.exit_page == test_cb_data.page_counter,
-		     "%d pages were iterated while it shall stop on page %d",
+		     "%zu pages were iterated while it shall stop on page %zu",
 		     test_cb_data.page_counter, test_cb_data.exit_page);
 }
 

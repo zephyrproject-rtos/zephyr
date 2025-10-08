@@ -100,7 +100,7 @@ struct mfd_axp192_config {
 
 #define AXP192_GPIO5_OUTPUT_MASK  0x04U
 #define AXP192_GPIO5_OUTPUT_VAL   0x04U
-#define AXP192_GPIO5_OUTPUT_SHIFT 3U
+#define AXP192_GPIO5_OUTPUT_SHIFT 2U
 
 struct mfd_axp192_data {
 	const struct device *gpio_mask_used[AXP192_GPIO_MAX_NUM];

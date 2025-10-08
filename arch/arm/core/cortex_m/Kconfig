@@ -379,7 +379,7 @@ config SW_VECTOR_RELAY_CLIENT
 	  initialization.
 
 config CORTEX_M_DWT
-	bool "Data Watchpoint and Trace (DWT)"
+	bool "Data Watchpoint and Trace (DWT)" if !TIMING_FUNCTIONS
 	depends on CPU_CORTEX_M_HAS_DWT
 	default y if TIMING_FUNCTIONS
 	help

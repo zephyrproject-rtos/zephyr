@@ -180,7 +180,7 @@ static int stm32_dcmi_enable_clock(const struct device *dev)
 	}
 
 	/* Turn on DCMI peripheral clock */
-	return clock_control_on(dcmi_clock, (clock_control_subsys_t *)&config->pclken);
+	return clock_control_on(dcmi_clock, (clock_control_subsys_t)&config->pclken);
 }
 
 static int video_stm32_dcmi_set_fmt(const struct device *dev, struct video_format *fmt)

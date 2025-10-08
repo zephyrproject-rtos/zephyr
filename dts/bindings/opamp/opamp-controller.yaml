@@ -13,6 +13,7 @@ properties:
       - "inverting"
       - "non_inverting"
       - "follower"
+      - "standalone"
     description: |
       Selects opamp functional mode.
 

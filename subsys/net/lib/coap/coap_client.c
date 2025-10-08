@@ -459,9 +459,14 @@ out:
 
 static void report_callback_error(struct coap_client_internal_request *internal_req, int error_code)
 {
-	if (internal_req->coap_request.cb) {
+	if (internal_req->coap_request.cb != NULL) {
 		if (!atomic_set(&internal_req->in_callback, 1)) {
-			internal_req->coap_request.cb(error_code, 0, NULL, 0, true,
+			const struct coap_client_response_data resp_data = {
+				.result_code = error_code,
+				.last_block = true,
+			};
+
+			internal_req->coap_request.cb(&resp_data,
 						      internal_req->coap_request.user_data);
 			atomic_clear(&internal_req->in_callback);
 		} else {
@@ -947,10 +952,18 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 	}
 
 	/* Call user callback */
-	if (internal_req->coap_request.cb) {
+	if (internal_req->coap_request.cb != NULL) {
 		if (!atomic_set(&internal_req->in_callback, 1)) {
-			internal_req->coap_request.cb(response_code, internal_req->offset, payload,
-						      payload_len, last_block,
+			const struct coap_client_response_data resp_data = {
+				.result_code = response_code,
+				.packet = response,
+				.offset = internal_req->offset,
+				.payload = payload,
+				.payload_len = payload_len,
+				.last_block = last_block,
+			};
+
+			internal_req->coap_request.cb(&resp_data,
 						      internal_req->coap_request.user_data);
 			atomic_clear(&internal_req->in_callback);
 		}

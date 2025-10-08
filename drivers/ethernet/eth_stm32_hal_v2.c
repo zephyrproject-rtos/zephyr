@@ -19,11 +19,6 @@
 
 LOG_MODULE_DECLARE(eth_stm32_hal, CONFIG_ETHERNET_LOG_LEVEL);
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
-#define ETH_GMII_MODE	HAL_ETH_GMII_MODE
-#define ETH_RGMII_MODE	HAL_ETH_RGMII_MODE
-#endif
-
 #define ETH_DMA_TX_TIMEOUT_MS	20U  /* transmit timeout in milliseconds */
 
 struct eth_stm32_rx_buffer_header {

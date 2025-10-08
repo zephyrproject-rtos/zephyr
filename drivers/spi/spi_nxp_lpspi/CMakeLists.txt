@@ -2,4 +2,5 @@
 
 zephyr_library_sources_ifdef(CONFIG_SPI_NXP_LPSPI spi_nxp_lpspi_common.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_NXP_LPSPI_CPU spi_nxp_lpspi.c)
+zephyr_library_sources_ifdef(CONFIG_SPI_NXP_LPSPI_CPU_RTIO spi_nxp_lpspi_rtio.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_NXP_LPSPI_DMA spi_nxp_lpspi_dma.c)
