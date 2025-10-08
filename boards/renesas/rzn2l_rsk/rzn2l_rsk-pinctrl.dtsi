@@ -48,4 +48,13 @@
 				 <RZN_PINMUX(PORT_05, 3, 9)>; /* SDA */
 		};
 	};
+
+	/omit-if-no-ref/ spi2_pins: spi2 {
+		spi2-pinmux {
+			pinmux = <RZN_PINMUX(PORT_18, 4, 3)>, /* CK2 */
+				 <RZN_PINMUX(PORT_18, 5, 3)>, /* MOSI2 */
+				 <RZN_PINMUX(PORT_18, 6, 5)>, /* MISO2 */
+				 <RZN_PINMUX(PORT_21, 1, 6)>; /* SSL20 */
+		};
+	};
 };
