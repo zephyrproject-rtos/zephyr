@@ -21,7 +21,7 @@ import textwrap
 import traceback
 
 from dataclasses import dataclass
-from west import log
+from west.commands import Verbosity
 from build_helpers import find_build_dir, is_zephyr_build, load_domains, \
     FIND_BUILD_DIR_DESCRIPTION
 from west.commands import CommandError
@@ -49,18 +49,8 @@ IGNORED_RUN_ONCE_PRIORITY = -1
 SOC_FILE_RUN_ONCE_DEFAULT_PRIORITY = 0
 BOARD_FILE_RUN_ONCE_DEFAULT_PRIORITY = 10
 
-if log.VERBOSE >= log.VERBOSE_NORMAL:
-    # Using level 1 allows sub-DEBUG levels of verbosity. The
-    # west.log module decides whether or not to actually print the
-    # message.
-    #
-    # https://docs.python.org/3.7/library/logging.html#logging-levels.
-    LOG_LEVEL = 1
-else:
-    LOG_LEVEL = logging.INFO
-
-def _banner(msg):
-    log.inf('-- ' + msg, colorize=True)
+def _banner(command, msg):
+    command.inf('-- ' + msg)
 
 class WestLogFormatter(logging.Formatter):
 
@@ -69,26 +59,32 @@ class WestLogFormatter(logging.Formatter):
 
 class WestLogHandler(logging.Handler):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, command, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.command = command
         self.setFormatter(WestLogFormatter())
-        self.setLevel(LOG_LEVEL)
+
+        # Set level based on command verbosity
+        if hasattr(command, 'verbosity') and command.verbosity >= Verbosity.DBG:
+            self.setLevel(1)  # Allow verbose logging
+        else:
+            self.setLevel(logging.INFO)  # Normal logging only
 
     def emit(self, record):
         fmt = self.format(record)
         lvl = record.levelno
         if lvl > logging.CRITICAL:
-            log.die(fmt)
+            self.command.die(fmt)
         elif lvl >= logging.ERROR:
-            log.err(fmt)
+            self.command.err(fmt)
         elif lvl >= logging.WARNING:
-            log.wrn(fmt)
+            self.command.wrn(fmt)
         elif lvl >= logging.INFO:
-            _banner(fmt)
+            _banner(self.command, fmt)
         elif lvl >= logging.DEBUG:
-            log.dbg(fmt)
+            self.command.dbg(fmt)
         else:
-            log.dbg(fmt, level=log.VERBOSE_EXTREME)
+            self.command.dbg(fmt, level=self.command.VERBOSE_EXTREME)
 
 @dataclass
 class UsedFlashCommand:
@@ -190,11 +186,11 @@ def is_sysbuild(build_dir):
     domains_yaml_path = path.join(build_dir, "domains.yaml")
     return path.exists(domains_yaml_path)
 
-def get_domains_to_process(build_dir, args, domain_file, get_all_domain=False):
+def get_domains_to_process(command, build_dir, args, domain_file, get_all_domain=False):
     try:
         domains = load_domains(build_dir)
     except Exception as e:
-        log.die(f"Failed to load domains: {e}")
+        command.die(f"Failed to load domains: {e}")
 
     if domain_file is None:
         if getattr(args, "domain", None) is None and get_all_domain:
@@ -248,14 +244,14 @@ def do_run_common(command, user_args, user_runner_args, domain_file=None):
                 module_name, Path(module.project) / runner["file"]
             )
 
-    build_dir = get_build_dir(user_args)
+    build_dir = get_build_dir(command, user_args)
     rebuild(command, build_dir, user_args)
 
-    domains = get_domains_to_process(build_dir, user_args, domain_file)
+    domains = get_domains_to_process(command, build_dir, user_args, domain_file)
 
     if len(domains) > 1:
         if len(user_runner_args) > 0:
-            log.wrn("Specifying runner options for multiple domains is experimental.\n"
+            command.wrn("Specifying runner options for multiple domains is experimental.\n"
                     "If problems are experienced, please specify a single domain "
                     "using '--domain <domain>'")
 
@@ -264,11 +260,11 @@ def do_run_common(command, user_args, user_runner_args, domain_file=None):
         board_names = set()
         for d in domains:
             if d.build_dir is None:
-                build_dir = get_build_dir(user_args)
+                build_dir = get_build_dir(command, user_args)
             else:
                 build_dir = d.build_dir
 
-            cache = load_cmake_cache(build_dir, user_args)
+            cache = load_cmake_cache(command, build_dir, user_args)
             build_conf = BuildConfiguration(build_dir)
             board = build_conf.get('CONFIG_BOARD_TARGET')
             board_names.add(board)
@@ -303,7 +299,7 @@ def do_run_common(command, user_args, user_runner_args, domain_file=None):
                         check.priority = BOARD_FILE_RUN_ONCE_DEFAULT_PRIORITY if check.board is True else SOC_FILE_RUN_ONCE_DEFAULT_PRIORITY
 
                     if check.priority == highest_priority:
-                        log.die("Duplicate flash run once configuration found with equal priorities")
+                        command.die("Duplicate flash run once configuration found with equal priorities")
 
                     elif check.priority > highest_priority:
                         highest_priority = check.priority
@@ -359,8 +355,8 @@ def do_run_common_image(command, user_args, user_runner_args, used_cmds,
     global re
     command_name = command.name
     if build_dir is None:
-        build_dir = get_build_dir(user_args)
-    cache = load_cmake_cache(build_dir, user_args)
+        build_dir = get_build_dir(command, user_args)
+    cache = load_cmake_cache(command, build_dir, user_args)
     build_conf = BuildConfiguration(build_dir)
     board = build_conf.get('CONFIG_BOARD_TARGET')
 
@@ -368,8 +364,8 @@ def do_run_common_image(command, user_args, user_runner_args, used_cmds,
         board_image_count[board].flashed += 1
 
     # Load runners.yaml.
-    yaml_path = runners_yaml_path(build_dir, board)
-    runners_yaml = load_runners_yaml(yaml_path)
+    yaml_path = runners_yaml_path(command, build_dir, board)
+    runners_yaml = load_runners_yaml(command, yaml_path)
 
     # Get a concrete ZephyrBinaryRunner subclass to use based on
     # runners.yaml and command line arguments.
@@ -379,10 +375,15 @@ def do_run_common_image(command, user_args, user_runner_args, used_cmds,
 
     # Set up runner logging to delegate to west.log commands.
     logger = logging.getLogger('runners')
-    logger.setLevel(LOG_LEVEL)
+    # Set level based on command verbosity
+    if hasattr(command, 'verbosity') and command.verbosity >= Verbosity.DBG:
+        logger.setLevel(1)  # Allow verbose logging
+    else:
+        logger.setLevel(logging.INFO)  # Normal logging only
+
     if not logger.hasHandlers():
         # Only add a runners log handler if none has been added already.
-        logger.addHandler(WestLogHandler())
+        logger.addHandler(WestLogHandler(command))
 
     # If the user passed -- to force the parent argument parser to stop
     # parsing, it will show up here, and needs to be filtered out.
@@ -503,7 +504,7 @@ def do_run_common_image(command, user_args, user_runner_args, used_cmds,
     runner_cls.add_parser(parser)
     args, unknown = parser.parse_known_args(args=final_argv)
     if unknown:
-        log.die(f'runner {runner_name} received unknown arguments: {unknown}')
+        command.die(f'runner {runner_name} received unknown arguments: {unknown}')
 
     # Propagate useful args from previous domain invocations
     if prev_runner is not None:
@@ -519,7 +520,7 @@ def do_run_common_image(command, user_args, user_runner_args, used_cmds,
     # Create the RunnerConfig from runners.yaml and any command line
     # overrides.
     runner_config = get_runner_config(build_dir, yaml_path, runners_yaml, args)
-    log.dbg(f'runner_config: {runner_config}', level=log.VERBOSE_VERY)
+    command.dbg(f'runner_config: {runner_config}', level=Verbosity.DBG_MORE)
 
     # Use that RunnerConfig to create the ZephyrBinaryRunner instance
     # and call its run().
@@ -527,30 +528,30 @@ def do_run_common_image(command, user_args, user_runner_args, used_cmds,
         runner = runner_cls.create(runner_config, args)
         runner.run(command_name)
     except ValueError as ve:
-        log.err(str(ve), fatal=True)
-        dump_traceback()
+        command.err(str(ve), fatal=True)
+        dump_traceback(command)
         raise CommandError(1)
     except MissingProgram as e:
-        log.die('required program', e.filename,
+        command.die('required program', e.filename,
                 'not found; install it or add its location to PATH')
     except RuntimeError as re:
         if not user_args.verbose:
-            log.die(re)
+            command.die(re)
         else:
-            log.err('verbose mode enabled, dumping stack:', fatal=True)
+            command.err('verbose mode enabled, dumping stack:', fatal=True)
             raise
     return runner
 
-def get_build_dir(args, die_if_none=True):
+def get_build_dir(command, args, die_if_none=True):
     # Get the build directory for the given argument list and environment.
     if args.build_dir:
         return args.build_dir
 
     guess = config.get('build', 'guess-dir', fallback='never')
     guess = guess == 'runners'
-    dir = find_build_dir(None, guess)
+    dir = find_build_dir(command, None, guess)
 
-    if dir and is_zephyr_build(dir):
+    if dir and is_zephyr_build(command, dir):
         return dir
     elif die_if_none:
         msg = '--build-dir was not given, '
@@ -560,23 +561,23 @@ def get_build_dir(args, die_if_none=True):
             msg = msg + ('{} is not a build directory and the default build '
                          'directory cannot be determined. Check your '
                          'build.dir-fmt configuration option')
-        log.die(msg.format(getcwd(), dir))
+        command.die(msg.format(getcwd(), dir))
     else:
         return None
 
-def load_cmake_cache(build_dir, args):
+def load_cmake_cache(command, build_dir, args):
     cache_file = path.join(build_dir, args.cmake_cache or zcmake.DEFAULT_CACHE)
     try:
         return zcmake.CMakeCache(cache_file)
     except FileNotFoundError:
-        log.die(f'no CMake cache found (expected one at {cache_file})')
+        command.die(f'no CMake cache found (expected one at {cache_file})')
 
 def skip_rebuild(command, args):
     if args.rebuild is not None:
         return not args.rebuild
 
     if args.skip_rebuild:
-        log.wrn("--skip-rebuild is deprecated. Please use --no-rebuild instead")
+        command.wrn("--skip-rebuild is deprecated. Please use --no-rebuild instead")
         return True
 
     rebuild_config = config.getboolean(command.name, 'rebuild', fallback=None)
@@ -590,34 +591,34 @@ def rebuild(command, build_dir, args):
     if skip_rebuild(command, args):
         return
 
-    _banner(f'west {command.name}: rebuilding')
+    _banner(command, f'west {command.name}: rebuilding')
     try:
-        zcmake.run_build(build_dir)
+        zcmake.run_build(command, build_dir)
     except CalledProcessError:
         if args.build_dir:
-            log.die(f're-build in {args.build_dir} failed')
+            command.die(f're-build in {args.build_dir} failed')
         else:
-            log.die(f're-build in {build_dir} failed (no --build-dir given)')
+            command.die(f're-build in {build_dir} failed (no --build-dir given)')
 
-def runners_yaml_path(build_dir, board):
+def runners_yaml_path(command, build_dir, board):
     ret = Path(build_dir) / 'zephyr' / 'runners.yaml'
     if not ret.is_file():
-        log.die(f'no runners.yaml found in {build_dir}/zephyr. '
+        command.die(f'no runners.yaml found in {build_dir}/zephyr. '
         f"Either board {board} doesn't support west flash/debug/simulate,"
         ' or a pristine build is needed.')
     return ret
 
-def load_runners_yaml(path):
+def load_runners_yaml(command, path):
     # Load runners.yaml and convert to Python object.
 
     try:
         with open(path, 'r') as f:
             content = yaml.safe_load(f.read())
     except FileNotFoundError:
-        log.die(f'runners.yaml file not found: {path}')
+        command.die(f'runners.yaml file not found: {path}')
 
     if not content.get('runners'):
-        log.wrn(f'no pre-configured runners in {path}; '
+        command.wrn(f'no pre-configured runners in {path}; '
                 "this probably won't work")
 
     return content
@@ -629,10 +630,10 @@ def use_runner_cls(command, board, args, runners_yaml, cache):
 
     runner = args.runner or runners_yaml.get(command.runner_key)
     if runner is None:
-        log.die(f'no {command.name} runner available for board {board}. '
+        command.die(f'no {command.name} runner available for board {board}. '
                 "Check the board's documentation for instructions.")
 
-    _banner(f'west {command.name}: using runner {runner}')
+    _banner(command, f'west {command.name}: using runner {runner}')
 
     available = runners_yaml.get('runners', [])
     if runner not in available:
@@ -640,16 +641,16 @@ def use_runner_cls(command, board, args, runners_yaml, cache):
             board_cmake = Path(cache['BOARD_DIR']) / 'board.cmake'
         else:
             board_cmake = 'board.cmake'
-        log.err(f'board {board} does not support runner {runner}',
+        command.err(f'board {board} does not support runner {runner}',
                 fatal=True)
-        log.inf(f'To fix, configure this runner in {board_cmake} and rebuild.')
+        command.inf(f'To fix, configure this runner in {board_cmake} and rebuild.')
         sys.exit(1)
     try:
         runner_cls = get_runner_cls(runner)
     except ValueError as e:
-        log.die(e)
+        command.die(e)
     if command.name not in runner_cls.capabilities().commands:
-        log.die(f'runner {runner} does not support command {command.name}')
+        command.die(f'runner {runner} does not support command {command.name}')
 
     return runner_cls
 
@@ -720,24 +721,24 @@ def get_runner_config(build_dir, yaml_path, runners_yaml, args=None):
                         config('openocd_search', []),
                         config('rtt_address'))
 
-def dump_traceback():
+def dump_traceback(command):
     # Save the current exception to a file and return its path.
     fd, name = tempfile.mkstemp(prefix='west-exc-', suffix='.txt')
     close(fd)        # traceback has no use for the fd
     with open(name, 'w') as f:
         traceback.print_exc(file=f)
-    log.inf("An exception trace has been saved in", name)
+    command.inf("An exception trace has been saved in", name)
 
 #
 # west {command} --context
 #
 
 def dump_context(command, args, unknown_args):
-    build_dir = get_build_dir(args, die_if_none=False)
+    build_dir = get_build_dir(command, args, die_if_none=False)
     get_all_domain = False
 
     if build_dir is None:
-        log.wrn('no --build-dir given or found; output will be limited')
+        command.wrn('no --build-dir given or found; output will be limited')
         dump_context_no_config(command, None)
         return
 
@@ -748,12 +749,12 @@ def dump_context(command, args, unknown_args):
     if build_dir:
         rebuild(command, build_dir, args)
 
-    domains = get_domains_to_process(build_dir, args, None, get_all_domain)
+    domains = get_domains_to_process(command, build_dir, args, None, get_all_domain)
 
     if len(domains) > 1 and not getattr(args, "domain", None):
-        log.inf("Multiple domains available:")
+        command.inf("Multiple domains available:")
         for i, domain in enumerate(domains, 1):
-            log.inf(f"{INDENT}{i}. {domain.name} (build_dir: {domain.build_dir})")
+            command.inf(f"{INDENT}{i}. {domain.name} (build_dir: {domain.build_dir})")
 
         while True:
             try:
@@ -762,41 +763,41 @@ def dump_context(command, args, unknown_args):
                 if 1 <= choice <= len(domains):
                     domains = [domains[choice-1]]
                     break
-                log.wrn(f"Please enter a number between 1 and {len(domains)}")
+                command.wrn(f"Please enter a number between 1 and {len(domains)}")
             except ValueError:
-                log.wrn("Please enter a valid number")
+                command.wrn("Please enter a valid number")
             except EOFError:
-                log.die("Input cancelled, exiting")
+                command.die("Input cancelled, exiting")
 
     selected_build_dir = domains[0].build_dir
 
     if not path.exists(selected_build_dir):
-        log.die(f"Build directory does not exist: {selected_build_dir}")
+        command.die(f"Build directory does not exist: {selected_build_dir}")
 
     build_conf = BuildConfiguration(selected_build_dir)
 
     board = build_conf.get('CONFIG_BOARD_TARGET')
     if not board:
-        log.die("CONFIG_BOARD_TARGET not found in build configuration.")
+        command.die("CONFIG_BOARD_TARGET not found in build configuration.")
 
-    yaml_path = runners_yaml_path(selected_build_dir, board)
+    yaml_path = runners_yaml_path(command, selected_build_dir, board)
     if not path.exists(yaml_path):
-        log.die(f"runners.yaml not found in: {yaml_path}")
+        command.die(f"runners.yaml not found in: {yaml_path}")
 
-    runners_yaml = load_runners_yaml(yaml_path)
+    runners_yaml = load_runners_yaml(command, yaml_path)
 
     # Dump runner info
-    log.inf(f'build configuration:', colorize=True)
-    log.inf(f'{INDENT}build directory: {build_dir}')
-    log.inf(f'{INDENT}board: {board}')
-    log.inf(f'{INDENT}runners.yaml: {yaml_path}')
+    command.inf(f'build configuration:', colorize=True)
+    command.inf(f'{INDENT}build directory: {build_dir}')
+    command.inf(f'{INDENT}board: {board}')
+    command.inf(f'{INDENT}runners.yaml: {yaml_path}')
     if args.runner:
         try:
             cls = get_runner_cls(args.runner)
             dump_runner_context(command, cls, runners_yaml)
         except ValueError:
             available_runners = ", ".join(cls.name() for cls in ZephyrBinaryRunner.get_runners())
-            log.die(f"Invalid runner name {args.runner}; choices: {available_runners}")
+            command.die(f"Invalid runner name {args.runner}; choices: {available_runners}")
     else:
         dump_all_runner_context(command, runners_yaml, board, selected_build_dir)
 
@@ -804,35 +805,35 @@ def dump_context_no_config(command, cls):
     if not cls:
         all_cls = {cls.name(): cls for cls in ZephyrBinaryRunner.get_runners()
                    if command.name in cls.capabilities().commands}
-        log.inf('all Zephyr runners which support {}:'.format(command.name),
+        command.inf('all Zephyr runners which support {}:'.format(command.name),
                 colorize=True)
-        dump_wrapped_lines(', '.join(all_cls.keys()), INDENT)
-        log.inf()
-        log.inf('Note: use -r RUNNER to limit information to one runner.')
+        dump_wrapped_lines(command, ', '.join(all_cls.keys()), INDENT)
+        command.inf()
+        command.inf('Note: use -r RUNNER to limit information to one runner.')
     else:
         # This does the right thing with a None argument.
         dump_runner_context(command, cls, None)
 
 def dump_runner_context(command, cls, runners_yaml, indent=''):
-    dump_runner_caps(cls, indent)
-    dump_runner_option_help(cls, indent)
+    dump_runner_caps(command, cls, indent)
+    dump_runner_option_help(command, cls, indent)
 
     if runners_yaml is None:
         return
 
     if cls.name() in runners_yaml['runners']:
-        dump_runner_args(cls.name(), runners_yaml, indent)
+        dump_runner_args(command, cls.name(), runners_yaml, indent)
     else:
-        log.wrn(f'support for runner {cls.name()} is not configured '
+        command.wrn(f'support for runner {cls.name()} is not configured '
                 f'in this build directory')
 
-def dump_runner_caps(cls, indent=''):
+def dump_runner_caps(command, cls, indent=''):
     # Print RunnerCaps for the given runner class.
 
-    log.inf(f'{indent}{cls.name()} capabilities:', colorize=True)
-    log.inf(f'{indent}{INDENT}{cls.capabilities()}')
+    command.inf(f'{indent}{cls.name()} capabilities:', colorize=True)
+    command.inf(f'{indent}{INDENT}{cls.capabilities()}')
 
-def dump_runner_option_help(cls, indent=''):
+def dump_runner_option_help(command, cls, indent=''):
     # Print help text for class-specific command line options for the
     # given runner class.
 
@@ -854,18 +855,18 @@ def dump_runner_option_help(cls, indent=''):
     # Get the runner help, with the "REMOVE ME" string gone
     runner_help = f'\n{indent}'.join(formatter.format_help().splitlines()[1:])
 
-    log.inf(f'{indent}{cls.name()} options:', colorize=True)
-    log.inf(indent + runner_help)
+    command.inf(f'{indent}{cls.name()} options:', colorize=True)
+    command.inf(indent + runner_help)
 
-def dump_runner_args(group, runners_yaml, indent=''):
+def dump_runner_args(command, group, runners_yaml, indent=''):
     msg = f'{indent}{group} arguments from runners.yaml:'
     args = runners_yaml['args'][group]
     if args:
-        log.inf(msg, colorize=True)
+        command.inf(msg, colorize=True)
         for arg in args:
-            log.inf(f'{indent}{INDENT}{arg}')
+            command.inf(f'{indent}{INDENT}{arg}')
     else:
-        log.inf(f'{msg} (none)', colorize=True)
+        command.inf(f'{msg} (none)', colorize=True)
 
 def dump_all_runner_context(command, runners_yaml, board, build_dir):
     all_cls = {cls.name(): cls for cls in ZephyrBinaryRunner.get_runners() if
@@ -873,37 +874,37 @@ def dump_all_runner_context(command, runners_yaml, board, build_dir):
     available = runners_yaml['runners']
     available_cls = {r: all_cls[r] for r in available if r in all_cls}
     default_runner = runners_yaml[command.runner_key]
-    yaml_path = runners_yaml_path(build_dir, board)
-    runners_yaml = load_runners_yaml(yaml_path)
+    yaml_path = runners_yaml_path(command, build_dir, board)
+    runners_yaml = load_runners_yaml(command, yaml_path)
 
-    log.inf(f'zephyr runners which support "west {command.name}":',
+    command.inf(f'zephyr runners which support "west {command.name}":',
             colorize=True)
-    dump_wrapped_lines(', '.join(all_cls.keys()), INDENT)
-    log.inf()
-    dump_wrapped_lines('Note: not all may work with this board and build '
+    dump_wrapped_lines(command, ', '.join(all_cls.keys()), INDENT)
+    command.inf()
+    dump_wrapped_lines(command, 'Note: not all may work with this board and build '
                        'directory. Available runners are listed below.',
                        INDENT)
 
-    log.inf(f'available runners in runners.yaml:',
+    command.inf(f'available runners in runners.yaml:',
             colorize=True)
-    dump_wrapped_lines(', '.join(available), INDENT)
-    log.inf(f'default runner in runners.yaml:', colorize=True)
-    log.inf(INDENT + default_runner)
-    log.inf('common runner configuration:', colorize=True)
+    dump_wrapped_lines(command, ', '.join(available), INDENT)
+    command.inf(f'default runner in runners.yaml:', colorize=True)
+    command.inf(INDENT + default_runner)
+    command.inf('common runner configuration:', colorize=True)
     runner_config = get_runner_config(build_dir, yaml_path, runners_yaml)
     for field, value in zip(runner_config._fields, runner_config):
-        log.inf(f'{INDENT}- {field}: {value}')
-    log.inf('runner-specific context:', colorize=True)
+        command.inf(f'{INDENT}- {field}: {value}')
+    command.inf('runner-specific context:', colorize=True)
     for cls in available_cls.values():
         dump_runner_context(command, cls, runners_yaml, INDENT)
 
     if len(available) > 1:
-        log.inf()
-        log.inf('Note: use -r RUNNER to limit information to one runner.')
+        command.inf()
+        command.inf('Note: use -r RUNNER to limit information to one runner.')
 
-def dump_wrapped_lines(text, indent):
+def dump_wrapped_lines(command, text, indent):
     for line in textwrap.wrap(text, initial_indent=indent,
                               subsequent_indent=indent,
                               break_on_hyphens=False,
                               break_long_words=False):
-        log.inf(line)
+        command.inf(line)

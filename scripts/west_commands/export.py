@@ -51,7 +51,7 @@ class ZephyrExport(WestCommand):
         # CMake status messages and instead only prints the important
         # information.
 
-        lines = run_cmake(['-P', str(path / 'zephyr_export.cmake')],
+        lines = run_cmake(self, ['-P', str(path / 'zephyr_export.cmake')],
                           capture_output=True)
         msg = [line for line in lines if not line.startswith('-- ')]
         self.inf('\n'.join(msg))

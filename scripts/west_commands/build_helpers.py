@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 
 import zcmake
-from west import log
+from west.commands import Verbosity
 from west.configuration import config
 from west.util import escapes_directory
 
@@ -37,7 +37,7 @@ build.dir-fmt configuration variable is set. The current directory is
 checked after that. If either is a Zephyr build directory, it is used.
 '''
 
-def _resolve_build_dir(fmt, guess, cwd, **kwargs):
+def _resolve_build_dir(cmd, fmt, guess, cwd, **kwargs):
     # Remove any None values, we do not want 'None' as a string
     kwargs = {k: v for k, v in kwargs.items() if v is not None}
     # Check if source_dir is below cwd first
@@ -78,11 +78,11 @@ def _resolve_build_dir(fmt, guess, cwd, **kwargs):
                 if len(dirs) != 1:
                     return None
                 curr = dirs[0]
-                if is_zephyr_build(str(curr)):
+                if is_zephyr_build(cmd, str(curr)):
                     return str(curr)
     return str(b)
 
-def find_build_dir(dir, guess=False, **kwargs):
+def find_build_dir(cmd, dir, guess=False, **kwargs):
     '''Heuristic for finding a build directory.
     If `dir` is specified, this directory is returned as the build directory.
     Otherwise, the default build directory is determined according to the
@@ -99,20 +99,20 @@ def find_build_dir(dir, guess=False, **kwargs):
     cwd = os.getcwd()
     dir_fmt = config.get('build', 'dir-fmt', fallback=None)
     if dir_fmt:
-        log.dbg(f'config dir-fmt: {dir_fmt}', level=log.VERBOSE_EXTREME)
-        dir_fmt = _resolve_build_dir(dir_fmt, guess, cwd, **kwargs)
-    if not build_dir and is_zephyr_build(dir_fmt):
+        cmd.dbg(f'config dir-fmt: {dir_fmt}', level=Verbosity.DBG_EXTREME)
+        dir_fmt = _resolve_build_dir(cmd, dir_fmt, guess, cwd, **kwargs)
+    if not build_dir and is_zephyr_build(cmd, dir_fmt):
         build_dir = dir_fmt
-    if not build_dir and is_zephyr_build(cwd):
+    if not build_dir and is_zephyr_build(cmd, cwd):
         build_dir = cwd
     if not build_dir and dir_fmt:
         build_dir = dir_fmt
     if not build_dir:
         build_dir = DEFAULT_BUILD_DIR
-    log.dbg(f'build dir: {build_dir}', level=log.VERBOSE_EXTREME)
+    cmd.dbg(f'build dir: {build_dir}', level=Verbosity.DBG_EXTREME)
     return os.path.abspath(build_dir)
 
-def is_zephyr_build(path):
+def is_zephyr_build(cmd, path):
     '''Return true if and only if `path` appears to be a valid Zephyr
     build directory.
 
@@ -135,12 +135,12 @@ def is_zephyr_build(path):
         cache = {}
 
     if 'ZEPHYR_BASE' in cache or 'ZEPHYR_TOOLCHAIN_VARIANT' in cache:
-        log.dbg(f'{path} is a zephyr build directory',
-                level=log.VERBOSE_EXTREME)
+        cmd.dbg(f'{path} is a zephyr build directory',
+                level=Verbosity.DBG_EXTREME)
         return True
 
-    log.dbg(f'{path} is NOT a valid zephyr build directory',
-            level=log.VERBOSE_EXTREME)
+    cmd.dbg(f'{path} is NOT a valid zephyr build directory',
+            level=Verbosity.DBG_EXTREME)
     return False
 
 

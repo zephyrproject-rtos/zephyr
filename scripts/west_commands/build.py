@@ -213,7 +213,7 @@ class Build(Forceable):
 
         self.dbg(f'pristine: {pristine} auto_pristine: {self.auto_pristine}',
                 level=Verbosity.DBG_MORE)
-        if is_zephyr_build(self.build_dir):
+        if is_zephyr_build(self, self.build_dir):
             if pristine == 'always':
                 self._run_pristine()
                 self.run_cmake = True
@@ -482,7 +482,7 @@ class Build(Forceable):
         # The CMake Cache has not been loaded yet, so this is safe
 
         context = self._get_dir_fmt_context()
-        build_dir = find_build_dir(self.args.build_dir, **context)
+        build_dir = find_build_dir(self, self.args.build_dir, **context)
         if not build_dir:
             self.die('Unable to determine a default build folder. Check '
                     'your build.dir-fmt configuration option')
@@ -531,7 +531,7 @@ class Build(Forceable):
 
         srcrel = os.path.relpath(self.source_dir)
         self.check_force(
-            not is_zephyr_build(self.source_dir),
+            not is_zephyr_build(self, self.source_dir),
             f'it looks like {srcrel} is a build directory: '
             f'did you mean --build-dir {srcrel} instead?')
         self.check_force(
@@ -681,11 +681,11 @@ class Build(Forceable):
                             f'-G{config_get("generator", DEFAULT_CMAKE_GENERATOR)}']
         if cmake_opts:
             final_cmake_args.extend(cmake_opts)
-        run_cmake(final_cmake_args, dry_run=self.args.dry_run, env=cmake_env)
+        run_cmake(self, final_cmake_args, dry_run=self.args.dry_run, env=cmake_env)
 
     def _run_pristine(self):
         self._banner(f'making build dir {self.build_dir} pristine')
-        if not is_zephyr_build(self.build_dir):
+        if not is_zephyr_build(self, self.build_dir):
             self.die('Refusing to run pristine on a folder that is not a '
                      'Zephyr build system')
 
@@ -697,7 +697,7 @@ class Build(Forceable):
         cmake_args = [f'-DBINARY_DIR={app_bin_dir}',
                       f'-DSOURCE_DIR={app_src_dir}',
                       '-P', cache['ZEPHYR_BASE'] + '/cmake/pristine.cmake']
-        run_cmake(cmake_args, cwd=self.build_dir, dry_run=self.args.dry_run)
+        run_cmake(self, cmake_args, cwd=self.build_dir, dry_run=self.args.dry_run)
 
     def _run_build(self, target, domain):
         if target:
@@ -726,7 +726,7 @@ class Build(Forceable):
                 build_dir_list.append(d.build_dir)
 
         for b in build_dir_list:
-            run_build(b, extra_args=extra_args,
+            run_build(self, b, extra_args=extra_args,
                       dry_run=self.args.dry_run)
 
     def _append_verbose_args(self, extra_args, add_dashes):
