@@ -4368,6 +4368,7 @@ Renesas RZ Platforms:
     - binhnguyen2434
   collaborators:
     - nhutnguyenkc
+    - tiennguyenzg
   files:
     - boards/renesas/rz*/
     - drivers/*/*rzt2m*
