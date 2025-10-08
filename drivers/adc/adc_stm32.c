@@ -129,6 +129,11 @@ LOG_MODULE_REGISTER(adc_stm32);
 					   st_adc_has_channel_preselection,\
 					   0, 1) 0)
 
+#define ANY_ADC_HAS_DIFFERENTIAL_SUPPORT \
+	(DT_INST_FOREACH_STATUS_OKAY_VARGS(IS_EQ_PROP_OR, \
+					   st_adc_has_differential_support,\
+					   0, 1) 0)
+
 #define ANY_CHILD_NODE_IS_DIFFERENTIAL(inst) \
 	(DT_INST_FOREACH_CHILD_VARGS(inst, IS_EQ_NODE_PROP_OR, \
 				     zephyr_differential, \
@@ -215,7 +220,6 @@ struct adc_stm32_cfg {
 	size_t pclk_len;
 	uint32_t clk_prescaler;
 	const struct pinctrl_dev_config *pcfg;
-	bool differential_channels_used;
 	const uint16_t sampling_time_table[STM32_NB_SAMPLING_TIME];
 	int8_t num_sampling_time_common_channels;
 	int8_t sequencer_type;
@@ -223,6 +227,8 @@ struct adc_stm32_cfg {
 	int8_t internal_regulator;
 	bool has_deep_powerdown		:1;
 	bool has_channel_preselection	:1;
+	bool has_differential_support	:1;
+	bool differential_channels_used	:1;
 	int8_t res_table_size;
 	const uint32_t res_table[];
 };
@@ -1334,21 +1340,7 @@ static int adc_stm32_sampling_time_setup(const struct device *dev, uint8_t id,
 	return 0;
 }
 
-#if defined(STM32F3XX_ADC) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X) || \
-	defined(CONFIG_SOC_SERIES_STM32H5X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7RSX) || \
-	defined(CONFIG_SOC_SERIES_STM32L4X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X) || \
-	defined(CONFIG_SOC_SERIES_STM32U5X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBX)
-#define DIFFERENTIAL_MODE_SUPPORTED 1
-#else
-#define DIFFERENTIAL_MODE_SUPPORTED 0
-#endif
-
-#if DIFFERENTIAL_MODE_SUPPORTED
+#if ANY_ADC_HAS_DIFFERENTIAL_SUPPORT
 static void set_channel_differential_mode(ADC_TypeDef *adc, uint8_t channel_id, bool differential)
 {
 	const uint32_t mode = differential ? LL_ADC_DIFFERENTIAL_ENDED : LL_ADC_SINGLE_ENDED;
@@ -1371,18 +1363,19 @@ static void set_channel_differential_mode(ADC_TypeDef *adc, uint8_t channel_id, 
 static int adc_stm32_channel_setup(const struct device *dev,
 				   const struct adc_channel_cfg *channel_cfg)
 {
-#if defined(CONFIG_SOC_SERIES_STM32H5X) || DIFFERENTIAL_MODE_SUPPORTED
 	const struct adc_stm32_cfg *config = (const struct adc_stm32_cfg *)dev->config;
+#if defined(CONFIG_SOC_SERIES_STM32H5X) || ANY_ADC_HAS_DIFFERENTIAL_SUPPORT
 	ADC_TypeDef *adc = config->base;
 #endif
 
-#if !DIFFERENTIAL_MODE_SUPPORTED
-	if (channel_cfg->differential) {
-		LOG_ERR("Differential channels not supported on this SOC series");
-		return -EINVAL;
+	if (!config->has_differential_support) {
+		if (channel_cfg->differential) {
+			LOG_ERR("Differential channels not supported on this ADC");
+			return -EINVAL;
+		}
 	}
-#else
-	if (channel_cfg->differential && !config->differential_channels_used) {
+#if ANY_ADC_HAS_DIFFERENTIAL_SUPPORT
+	else if (channel_cfg->differential && !config->differential_channels_used) {
 		/* At least one channel must be set to differential mode in the devicetree
 		 * to cause a differential calibration to be performed during init.
 		 */
@@ -1990,6 +1983,7 @@ static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 		DT_INST_STRING_UPPER_TOKEN(index, st_adc_internal_regulator)),			\
 	.has_deep_powerdown = DT_INST_PROP(index, st_adc_has_deep_powerdown),			\
 	.has_channel_preselection = DT_INST_PROP(index, st_adc_has_channel_preselection),	\
+	.has_differential_support = DT_INST_PROP(index, st_adc_has_differential_support),	\
 	.sampling_time_table = DT_INST_PROP(index, sampling_times),	\
 	.num_sampling_time_common_channels =				\
 		DT_INST_PROP_OR(index, num_sampling_time_common_channels, 0),\
