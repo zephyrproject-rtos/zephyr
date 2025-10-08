@@ -561,8 +561,7 @@ static inline void __arch_mem_map(void *vaddr, uintptr_t paddr, uint32_t attrs, 
 {
 	bool ret;
 
-	ret = l2_page_table_map(xtensa_kernel_ptables, (void *)vaddr, paddr,
-				attrs, is_user);
+	ret = l2_page_table_map(xtensa_kernel_ptables, vaddr, paddr, attrs, is_user);
 	__ASSERT(ret, "Cannot map virtual address (%p)", vaddr);
 
 #ifndef CONFIG_USERSPACE
@@ -577,8 +576,7 @@ static inline void __arch_mem_map(void *vaddr, uintptr_t paddr, uint32_t attrs, 
 		SYS_SLIST_FOR_EACH_NODE(&xtensa_domain_list, node) {
 			domain = CONTAINER_OF(node, struct arch_mem_domain, node);
 
-			ret = l2_page_table_map(domain->ptables, (void *)vaddr, paddr,
-						attrs, is_user);
+			ret = l2_page_table_map(domain->ptables, vaddr, paddr, attrs, is_user);
 			__ASSERT(ret, "Cannot map virtual address (%p) for domain %p",
 				 vaddr, domain);
 
@@ -730,7 +728,7 @@ end:
 
 static inline void __arch_mem_unmap(void *vaddr)
 {
-	l2_page_table_unmap(xtensa_kernel_ptables, (void *)vaddr);
+	l2_page_table_unmap(xtensa_kernel_ptables, vaddr);
 
 #ifdef CONFIG_USERSPACE
 	sys_snode_t *node;
@@ -741,7 +739,7 @@ static inline void __arch_mem_unmap(void *vaddr)
 	SYS_SLIST_FOR_EACH_NODE(&xtensa_domain_list, node) {
 		domain = CONTAINER_OF(node, struct arch_mem_domain, node);
 
-		(void)l2_page_table_unmap(domain->ptables, (void *)vaddr);
+		(void)l2_page_table_unmap(domain->ptables, vaddr);
 	}
 	k_spin_unlock(&z_mem_domain_lock, key);
 #endif /* CONFIG_USERSPACE */
