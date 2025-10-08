@@ -347,6 +347,11 @@ config USE_RZ_FSP_CMTW
 	help
 	  Enable RZ FSP CMTW driver
 
+config USE_RZ_FSP_SPI
+	bool
+	help
+	  Enable RZ FSP SPI driver
+
 config USE_RZ_FSP_WDT
 	bool
 	help
