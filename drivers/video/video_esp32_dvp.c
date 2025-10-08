@@ -248,9 +248,6 @@ static int video_esp32_get_caps(const struct device *dev, struct video_caps *cap
 	/* Two buffers are needed to perform transfers */
 	caps->min_vbuf_count = 2;
 
-	/* ESP32 produces full frames */
-	caps->min_line_count = caps->max_line_count = LINE_COUNT_HEIGHT;
-
 	/* Forward the message to the source device */
 	return video_get_caps(config->source_dev, caps);
 }
@@ -268,7 +265,10 @@ static int video_esp32_get_fmt(const struct device *dev, struct video_format *fm
 		return ret;
 	}
 
-	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
+	ret = video_estimate_fmt_size(fmt);
+	if (ret < 0) {
+		return ret;
+	}
 
 	return 0;
 }
@@ -284,7 +284,10 @@ static int video_esp32_set_fmt(const struct device *dev, struct video_format *fm
 		return ret;
 	}
 
-	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
+	ret = video_estimate_fmt_size(fmt);
+	if (ret < 0) {
+		return ret;
+	}
 
 	data->video_format = *fmt;
 

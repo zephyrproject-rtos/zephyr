@@ -806,7 +806,6 @@ static int stm32_venc_get_caps(const struct device *dev, struct video_caps *caps
 	}
 
 	/* VENC produces full frames */
-	caps->min_line_count = caps->max_line_count = LINE_COUNT_HEIGHT;
 	caps->min_vbuf_count = 1;
 
 	return 0;

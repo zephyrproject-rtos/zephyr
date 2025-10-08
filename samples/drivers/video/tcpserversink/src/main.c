@@ -211,7 +211,6 @@ int main(void)
 		.type = VIDEO_BUF_TYPE_OUTPUT,
 	};
 #endif
-	size_t bsize;
 	int i = 0;
 #if CONFIG_VIDEO_FRAME_HEIGHT || CONFIG_VIDEO_FRAME_WIDTH
 	int err;
@@ -278,11 +277,6 @@ int main(void)
 
 	LOG_INF("Video device detected, format: %s %ux%u",
 		VIDEO_FOURCC_TO_STR(fmt.pixelformat), fmt.width, fmt.height);
-
-	if (caps.min_line_count != LINE_COUNT_HEIGHT) {
-		LOG_ERR("Partial framebuffers not supported by this sample");
-		return 0;
-	}
 
 	/* Set the crop setting if necessary */
 #if CONFIG_VIDEO_SOURCE_CROP_WIDTH && CONFIG_VIDEO_SOURCE_CROP_HEIGHT
@@ -392,20 +386,13 @@ int main(void)
 		tp_set_ret = video_set_ctrl(video_dev, &ctrl);
 	}
 
-	/* Size to allocate for each buffer */
-	if (caps.min_line_count == LINE_COUNT_HEIGHT) {
-		bsize = fmt.pitch * fmt.height;
-	} else {
-		bsize = fmt.pitch * caps.min_line_count;
-	}
-
 	/* Alloc Buffers */
 	for (i = 0; i < ARRAY_SIZE(buffers); i++) {
 		/*
 		 * For some hardwares, such as the PxP used on i.MX RT1170 to do image rotation,
 		 * buffer alignment is needed in order to achieve the best performance
 		 */
-		buffers[i] = video_buffer_aligned_alloc(bsize, CONFIG_VIDEO_BUFFER_POOL_ALIGN,
+		buffers[i] = video_buffer_aligned_alloc(fmt.size, CONFIG_VIDEO_BUFFER_POOL_ALIGN,
 							K_FOREVER);
 		if (buffers[i] == NULL) {
 			LOG_ERR("Unable to alloc video buffer");
