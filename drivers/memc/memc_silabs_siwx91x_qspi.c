@@ -112,11 +112,5 @@ struct sl_psram_info_type_t PSRAM_Device = {
 	.spi_config.spi_config_1.d3d2_data         = 0x03,
 	.spi_config.spi_config_5.d7_d4_data        = 0x0f,
 };
-/* PSRAMSecureSegments is directly referenced by sl_si91x_psram_init() */
-struct PSRAMSecureSegmentType PSRAMSecureSegments[MAX_SEC_SEGMENTS] = {
-	[0].segmentEnable = 1,
-	[0].lowerBoundary = 0x00000,
-	[0].higherBoundary = 0x0ffff,
-};
 DEVICE_DT_INST_DEFINE(0, siwx91x_memc_init, NULL, NULL, &siwx91x_memc_config,
 		      PRE_KERNEL_1, CONFIG_MEMC_INIT_PRIORITY, NULL);
