@@ -124,8 +124,6 @@ static inline void video_pix_fmt_convert(struct video_format *fmt, bool isGetFmt
 		fmt->pixelformat = isGetFmt ? VIDEO_PIX_FMT_XYUV32 : VIDEO_PIX_FMT_YUYV;
 		break;
 	}
-
-	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
 }
 #endif
 
@@ -168,6 +166,7 @@ static int video_mcux_csi_set_fmt(const struct device *dev, struct video_format 
 	}
 
 	fmt->pitch = data->csi_config.linePitch_Bytes;
+	fmt->size = fmt->pitch * fmt->height;
 
 	return 0;
 }
@@ -181,7 +180,7 @@ static int video_mcux_csi_get_fmt(const struct device *dev, struct video_format 
 		video_pix_fmt_convert(fmt, true);
 #endif
 
-		return 0;
+		return video_estimate_fmt_size(fmt);
 	}
 
 	return -EIO;
@@ -323,8 +322,6 @@ static int video_mcux_csi_get_caps(const struct device *dev, struct video_caps *
 
 	/* NXP MCUX CSI request at least 2 buffer before starting */
 	caps->min_vbuf_count = 2;
-	/* CSI only operates on buffers of full frame size */
-	caps->min_line_count = caps->max_line_count = LINE_COUNT_HEIGHT;
 
 	/* no source dev */
 	return err;

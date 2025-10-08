@@ -105,7 +105,6 @@ int main(void)
 	};
 #endif
 	unsigned int frame = 0;
-	size_t bsize;
 	int i = 0;
 	int err;
 
@@ -276,16 +275,9 @@ int main(void)
 	}
 #endif
 
-	/* Size to allocate for each buffer */
-	if (caps.min_line_count == LINE_COUNT_HEIGHT) {
-		bsize = fmt.pitch * fmt.height;
-	} else {
-		bsize = fmt.pitch * caps.min_line_count;
-	}
-
 	/* Alloc video buffers and enqueue for capture */
 	if (caps.min_vbuf_count > CONFIG_VIDEO_BUFFER_POOL_NUM_MAX ||
-	    bsize > CONFIG_VIDEO_BUFFER_POOL_SZ_MAX) {
+	    fmt.size > CONFIG_VIDEO_BUFFER_POOL_SZ_MAX) {
 		LOG_ERR("Not enough buffers or memory to start streaming");
 		return 0;
 	}
@@ -295,7 +287,7 @@ int main(void)
 		 * For some hardwares, such as the PxP used on i.MX RT1170 to do image rotation,
 		 * buffer alignment is needed in order to achieve the best performance
 		 */
-		vbuf = video_buffer_aligned_alloc(bsize, CONFIG_VIDEO_BUFFER_POOL_ALIGN,
+		vbuf = video_buffer_aligned_alloc(fmt.size, CONFIG_VIDEO_BUFFER_POOL_ALIGN,
 							K_FOREVER);
 		if (vbuf == NULL) {
 			LOG_ERR("Unable to alloc video buffer");

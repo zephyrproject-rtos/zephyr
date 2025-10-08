@@ -499,8 +499,6 @@ static int video_shell_print_caps(const struct shell *sh, const struct device *d
 	int ret;
 
 	shell_print(sh, "min vbuf count: %u", caps->min_vbuf_count);
-	shell_print(sh, "min line count: %u", caps->min_line_count);
-	shell_print(sh, "max line count: %u", caps->max_line_count);
 
 	for (size_t i = 0; caps->format_caps[i].pixelformat != 0; i++) {
 		ret = video_shell_print_format_cap(sh, dev, caps->type, &caps->format_caps[i], i);

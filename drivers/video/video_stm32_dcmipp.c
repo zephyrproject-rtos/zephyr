@@ -545,6 +545,9 @@ static inline void stm32_dcmipp_compute_fmt_pitch(uint32_t pipe_id, struct video
 		fmt->pitch = ROUND_UP(fmt->pitch, 16);
 	}
 #endif
+
+	/* Update the corresponding fmt->size */
+	fmt->size = fmt->pitch * fmt->height;
 }
 
 static int stm32_dcmipp_set_fmt(const struct device *dev, struct video_format *fmt)
@@ -1370,8 +1373,6 @@ static int stm32_dcmipp_get_caps(const struct device *dev, struct video_caps *ca
 	ret = video_get_caps(config->source_dev, caps);
 
 	caps->min_vbuf_count = 1;
-	caps->min_line_count = LINE_COUNT_HEIGHT;
-	caps->max_line_count = LINE_COUNT_HEIGHT;
 
 	return ret;
 }
