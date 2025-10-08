@@ -20,9 +20,15 @@
 
 /* Common configuration structure for TMC51xx */
 struct tmc51xx_config {
+	/* Common config base */
 	union tmc_bus bus;
 	const struct tmc_bus_io *bus_io;
 	uint8_t comm_type;
+	/* UART-specific field */
+#if TMC51XX_BUS_UART
+	uint8_t uart_addr;
+#endif
+	/* Series-specific configuration */
 	const uint32_t gconf;
 	const uint32_t clock_frequency;
 	const uint16_t default_micro_step_res;
@@ -35,7 +41,6 @@ struct tmc51xx_config {
 #endif
 #if TMC51XX_BUS_UART
 	const struct gpio_dt_spec sw_sel_gpio;
-	uint8_t uart_addr;
 #endif
 #if TMC51XX_BUS_SPI
 	struct gpio_dt_spec diag0_gpio;
@@ -51,15 +56,5 @@ struct tmc51xx_data {
 	stepper_event_callback_t callback;
 	void *event_cb_user_data;
 };
-
-#if TMC51XX_BUS_SPI
-/* SPI bus I/O operations for TMC51xx devices */
-extern const struct tmc_bus_io tmc51xx_spi_bus_io;
-#endif
-
-#if TMC51XX_BUS_UART
-/* UART bus I/O operations for TMC51xx devices */
-extern const struct tmc_bus_io tmc51xx_uart_bus_io;
-#endif
 
 #endif /* ZEPHYR_DRIVERS_STEPPER_ADI_TMC51XX_H */

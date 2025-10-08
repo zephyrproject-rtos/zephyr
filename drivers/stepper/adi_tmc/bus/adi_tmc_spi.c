@@ -3,15 +3,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
 #include <adi_tmc_spi.h>
+#include "../adi_tmc_reg.h"
 
 #define BUFFER_SIZE 5U
 
-int tmc_spi_read_register(const struct spi_dt_spec *bus, const uint8_t read_address_mask,
-			  const uint8_t register_address, uint32_t *data)
+/* TMC SPI protocol constants */
+#define ADI_TMC_SPI_WRITE_BIT    0x80U  /* MSB=1 for write access */
+#define ADI_TMC_SPI_ADDRESS_MASK 0x7FU  /* 7-bit address field mask */
+
+int tmc_spi_read_register(const struct spi_dt_spec *bus, uint8_t register_address, uint32_t *data)
 {
-	uint8_t tx_buffer[BUFFER_SIZE] = {read_address_mask & register_address, 0U, 0U, 0U, 0U};
+	uint8_t tx_buffer[BUFFER_SIZE] = {ADI_TMC_SPI_ADDRESS_MASK & register_address, 0U, 0U, 0U, 0U};
 	uint8_t rx_buffer[BUFFER_SIZE];
 	int status;
 
@@ -45,19 +49,18 @@ int tmc_spi_read_register(const struct spi_dt_spec *bus, const uint8_t read_addr
 		return status;
 	}
 
-	*data = ((uint32_t)rx_buffer[1] << 24) + ((uint32_t)rx_buffer[2] << 16) +
-		((uint32_t)rx_buffer[3] << 8) + (uint32_t)rx_buffer[4];
+	*data = sys_get_be32(&rx_buffer[1]);
 
 	return status;
 }
 
-int tmc_spi_write_register(const struct spi_dt_spec *bus, const uint8_t write_bit,
-			   const uint8_t register_address, const uint32_t data)
+int tmc_spi_write_register(const struct spi_dt_spec *bus, uint8_t register_address, uint32_t data)
 {
-	uint8_t tx_buffer[BUFFER_SIZE] = {write_bit | register_address, data >> 24, data >> 16,
-					  data >> 8, data};
+	uint8_t tx_buffer[BUFFER_SIZE];
 	uint8_t rx_buffer[BUFFER_SIZE];
-	int status;
+
+	tx_buffer[0] = ADI_TMC_SPI_WRITE_BIT | (register_address & ADI_TMC_SPI_ADDRESS_MASK);
+	sys_put_be32(data, &tx_buffer[1]);
 
 	const struct spi_buf spi_buffer_tx = {
 		.buf = &tx_buffer,
@@ -77,10 +80,5 @@ int tmc_spi_write_register(const struct spi_dt_spec *bus, const uint8_t write_bi
 		.count = 1U,
 	};
 
-	status = spi_transceive_dt(bus, &spi_buffer_array_tx, &spi_buffer_array_rx);
-	if (status < 0) {
-		return status;
-	}
-
-	return status;
+	return spi_transceive_dt(bus, &spi_buffer_array_tx, &spi_buffer_array_rx);
 }

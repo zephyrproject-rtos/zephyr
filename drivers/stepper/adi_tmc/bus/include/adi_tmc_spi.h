@@ -30,27 +30,23 @@ extern "C" {
  * @brief Read a register from the TMC module using the SPI Bus.
  *
  * @param bus SPI DT information of the bus.
- * @param read_address_mask Address Mask for read operation.
- * @param register_address Register.
+ * @param register_address Register address to read.
  * @param data Pointer to read value.
  *
  * @return a value from spi_transceive().
  */
-int tmc_spi_read_register(const struct spi_dt_spec *bus, const uint8_t read_address_mask,
-			  const uint8_t register_address, uint32_t *data);
+int tmc_spi_read_register(const struct spi_dt_spec *bus, uint8_t register_address, uint32_t *data);
 
 /**
  * @brief Write into a register in the TMC module using the SPI Bus.
  *
  * @param bus SPI DT information of the bus.
- * @param write_bit Write bit for write operation.
- * @param register_address Register.
+ * @param register_address Register address to write.
  * @param data Value to be written in the register.
  *
  * @return a value from spi_transceive().
  */
-int tmc_spi_write_register(const struct spi_dt_spec *bus, const uint8_t write_bit,
-			   const uint8_t register_address, const uint32_t data);
+int tmc_spi_write_register(const struct spi_dt_spec *bus, uint8_t register_address, uint32_t data);
 
 /**
  * @}

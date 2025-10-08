@@ -56,4 +56,24 @@ struct tmc_bus_io {
 	tmc_reg_write_fn write; /* Function to write to a register */
 };
 
+/**
+ * @brief Common configuration base for all TMC series drivers.
+ * All series-specific config structures MUST have these fields at the beginning.
+ * This allows generic bus adapters to access bus information regardless of series.
+ */
+struct tmc_common_config {
+	union tmc_bus bus;
+	const struct tmc_bus_io *bus_io;
+	uint8_t comm_type;
+};
+
+/* Generic bus I/O operations - work for all TMC series */
+#ifdef CONFIG_STEPPER_ADI_TMC_SPI
+extern const struct tmc_bus_io tmc_spi_bus_io;
+#endif
+
+#ifdef CONFIG_STEPPER_ADI_TMC_UART
+extern const struct tmc_bus_io tmc_uart_bus_io;
+#endif
+
 #endif /* ZEPHYR_DRIVERS_STEPPER_ADI_TMC_BUS_H_ */

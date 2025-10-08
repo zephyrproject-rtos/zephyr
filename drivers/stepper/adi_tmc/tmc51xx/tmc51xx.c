@@ -819,13 +819,13 @@ static DEVICE_API(stepper, tmc51xx_api) = {
 	.bus.spi = SPI_DT_SPEC_INST_GET(inst,                                                      \
 					(SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_MODE_CPOL |   \
 					 SPI_MODE_CPHA | SPI_WORD_SET(8))),                        \
-	.bus_io = &tmc51xx_spi_bus_io,                                                             \
+	.bus_io = &tmc_spi_bus_io,                                                                 \
 	.diag0_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, diag0_gpios, {0})
 
 /* Initializes a struct tmc51xx_config for an instance on a UART bus. */
 #define TMC51XX_CONFIG_UART(inst)                                                                  \
 	.comm_type = TMC_COMM_UART, .bus.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                  \
-	.bus_io = &tmc51xx_uart_bus_io, .uart_addr = DT_INST_PROP_OR(inst, uart_device_addr, 1U),  \
+	.bus_io = &tmc_uart_bus_io, .uart_addr = DT_INST_PROP_OR(inst, uart_device_addr, 1U),      \
 	.sw_sel_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, sw_sel_gpios, {0})
 
 /* Device initialization macros */

@@ -11,7 +11,7 @@
 #include <zephyr/drivers/stepper.h>
 #include <zephyr/drivers/stepper/stepper_trinamic.h>
 
-#include <adi_tmc_spi.h>
+#include <adi_tmc_bus.h>
 #include "adi_tmc5xxx_common.h"
 
 #include <zephyr/logging/log.h>
@@ -22,8 +22,12 @@ struct tmc50xx_data {
 };
 
 struct tmc50xx_config {
+	/* Common config base - MUST be first for generic bus adapters */
+	union tmc_bus bus;
+	const struct tmc_bus_io *bus_io;
+	uint8_t comm_type;
+	/* Series-specific configuration */
 	const uint32_t gconf;
-	struct spi_dt_spec spi;
 	const uint32_t clock_frequency;
 };
 
@@ -53,16 +57,22 @@ struct tmc50xx_stepper_config {
 
 static int read_actual_position(const struct tmc50xx_stepper_config *config, int32_t *position);
 
+static inline int tmc50xx_bus_check(const struct device *dev)
+{
+	const struct tmc50xx_config *config = dev->config;
+
+	return config->bus_io->check(&config->bus, config->comm_type);
+}
+
 static int tmc50xx_write(const struct device *dev, const uint8_t reg_addr, const uint32_t reg_val)
 {
 	const struct tmc50xx_config *config = dev->config;
 	struct tmc50xx_data *data = dev->data;
-	const struct spi_dt_spec bus = config->spi;
 	int err;
 
 	k_sem_take(&data->sem, K_FOREVER);
 
-	err = tmc_spi_write_register(&bus, TMC5XXX_WRITE_BIT, reg_addr, reg_val);
+	err = config->bus_io->write(dev, reg_addr, reg_val);
 
 	k_sem_give(&data->sem);
 
@@ -77,12 +87,11 @@ static int tmc50xx_read(const struct device *dev, const uint8_t reg_addr, uint32
 {
 	const struct tmc50xx_config *config = dev->config;
 	struct tmc50xx_data *data = dev->data;
-	const struct spi_dt_spec bus = config->spi;
 	int err;
 
 	k_sem_take(&data->sem, K_FOREVER);
 
-	err = tmc_spi_read_register(&bus, TMC5XXX_ADDRESS_MASK, reg_addr, reg_val);
+	err = config->bus_io->read(dev, reg_addr, reg_val);
 
 	k_sem_give(&data->sem);
 
@@ -635,9 +644,10 @@ static int tmc50xx_init(const struct device *dev)
 
 	k_sem_init(&data->sem, 1, 1);
 
-	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("SPI bus is not ready");
-		return -ENODEV;
+	err = tmc50xx_bus_check(dev);
+	if (err < 0) {
+		LOG_ERR("Bus not ready for '%s'", dev->name);
+		return err;
 	}
 
 	/* Init non motor-index specific registers here. */
@@ -761,13 +771,15 @@ static DEVICE_API(stepper, tmc50xx_stepper_api) = {
 		     "clock frequency must be non-zero positive value");			\
 	static struct tmc50xx_data tmc50xx_data_##inst;						\
 	static const struct tmc50xx_config tmc50xx_config_##inst = {				\
+		.comm_type = TMC_COMM_SPI,							\
+		.bus.spi = SPI_DT_SPEC_INST_GET(inst, (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |	\
+					SPI_MODE_CPOL | SPI_MODE_CPHA |	SPI_WORD_SET(8))),	\
+		.bus_io = &tmc_spi_bus_io,							\
 		.gconf = (									\
 		(DT_INST_PROP(inst, poscmp_enable) << TMC50XX_GCONF_POSCMP_ENABLE_SHIFT) |	\
 		(DT_INST_PROP(inst, test_mode) << TMC50XX_GCONF_TEST_MODE_SHIFT) |		\
 		DT_INST_FOREACH_CHILD(inst, TMC50XX_SHAFT_CONFIG)				\
 		(DT_INST_PROP(inst, lock_gconf) << TMC50XX_LOCK_GCONF_SHIFT)),			\
-		.spi = SPI_DT_SPEC_INST_GET(inst, (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |	\
-					SPI_MODE_CPOL | SPI_MODE_CPHA |	SPI_WORD_SET(8))),	\
 		.clock_frequency = DT_INST_PROP(inst, clock_frequency),};			\
 	DT_INST_FOREACH_CHILD(inst, TMC50XX_STEPPER_CONFIG_DEFINE);				\
 	DT_INST_FOREACH_CHILD(inst, TMC50XX_STEPPER_DATA_DEFINE);				\

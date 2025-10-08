@@ -3,5 +3,9 @@
 
 zephyr_library_include_directories(include)
 
+# Generic bus adapter
+zephyr_library_sources(adi_tmc_bus.c)
+
+# Low-level bus implementations
 zephyr_library_sources_ifdef(CONFIG_STEPPER_ADI_TMC_SPI adi_tmc_spi.c)
 zephyr_library_sources_ifdef(CONFIG_STEPPER_ADI_TMC_UART adi_tmc_uart.c)
