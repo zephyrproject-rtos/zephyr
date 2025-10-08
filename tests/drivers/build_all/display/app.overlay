@@ -359,6 +359,18 @@
 				panel-settings = <0x29>;
 				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 			};
+
+			test_mipi_dbi_st7567: st7567@20 {
+				compatible = "sitronix,st7567";
+				mipi-max-frequency = <1000000>;
+				reg = <20>;
+				width = <128>;
+				height = <64>;
+				column-offset = <0>;
+				line-offset = <0>;
+				regulation-ratio = <7>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			};
 		};
 
 		test_mipi_dbi_xfr_16bit_write_only {
