@@ -1,0 +1,13 @@
+# Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig OPAMP_STM32_OPAMP
+	bool "ST STM32 OPAMP"
+	default y
+	depends on DT_HAS_ST_STM32_OPAMP_ENABLED
+	select PINCTRL
+	select OPAMP_STM32G4X_OPAMP if SOC_SERIES_STM32G4X
+
+config OPAMP_STM32G4X_OPAMP
+	bool "ST STM32G4 OPAMP"
+	default n

@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * IMPORTANT: D33 (PB0) shall be connected to D27 (PB2) by a jumper wire
+ */
+
+/ {
+	zephyr,user {
+		opamp = <&opamp2>;
+	};
+};
+
+&opamp2 {
+	pinctrl-0 = <
+		&opamp2_vinm_pa5 &opamp2_vinm_pc5
+		&opamp2_vinp_pb14 &opamp2_vinp_pa7
+		&opamp2_vout_pa6
+		>;
+	pinctrl-names = "default";
+	functional-mode = "non_inverting";
+	vinm = "VINM0", "VINM1";
+	vinp = "VINP0", "VINP1";
+	vout = "NONE";
+	status = "okay";
+};

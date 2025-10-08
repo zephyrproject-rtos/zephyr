@@ -1,4 +1,5 @@
 # Copyright 2025 NXP
+# Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
 common:
@@ -16,3 +17,10 @@ tests:
     platform_allow:
       - frdm_mcxa366
       - frdm_mcxa346
+  drivers.build_all.opamp.stm32_opamp.opamp1:
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/stm32_opamp/opamp1.dts"
+    platform_allow:
+      - nucleo_h745zi_q/stm32h7xx/cpuapp
+    integration_platforms:
+      - nucleo_h745zi_q/stm32h7xx/cpuapp
