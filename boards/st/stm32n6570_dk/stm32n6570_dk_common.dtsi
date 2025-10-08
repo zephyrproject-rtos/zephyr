@@ -97,7 +97,7 @@
 	gt911: gt911@5d {
 		compatible = "goodix,gt911";
 		reg = <0x5d>;
-		reset-gpios = <&gpioe 4 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpioe 1 GPIO_ACTIVE_LOW>;
 		irq-gpios = <&gpioq 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 	};
 };
