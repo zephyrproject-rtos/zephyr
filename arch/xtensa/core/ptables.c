@@ -226,7 +226,7 @@ static uint8_t asid_count = 3;
 /*
  * List with all active and initialized memory domains.
  */
-static sys_slist_t xtensa_domain_list;
+sys_slist_t xtensa_domain_list;
 
 static void dup_l2_table_if_needed(uint32_t *l1_table, uint32_t l1_pos);
 #endif /* CONFIG_USERSPACE */
