@@ -8,7 +8,6 @@ config DALI_PWM
 	default y
 	depends on DT_HAS_ZEPHYR_DALI_PWM_ENABLED
 	select PWM
-	select PWM_CAPTURE
 	select COUNTER
 	help
 	  Enable DALI driver for generic PWM MCUs.
