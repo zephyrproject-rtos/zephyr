@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L /* Required for strnlen() */
+
 #include <string.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
@@ -416,8 +419,10 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 {
 	int ret;
 	struct coap_client_internal_request *internal_req;
+	size_t pathlen = strnlen(req->path, MAX_PATH_SIZE);
 
-	if (client == NULL || sock < 0 || req == NULL || req->path == NULL) {
+	if (client == NULL || sock < 0 || req == NULL || pathlen == 0 ||
+	    pathlen == MAX_PATH_SIZE || req->num_options > MAX_EXTRA_OPTIONS) {
 		return -EINVAL;
 	}
 
@@ -1138,7 +1143,7 @@ static bool requests_match(struct coap_client_request *a, struct coap_client_req
 	if (a->method && b->method && a->method != b->method) {
 		return false;
 	}
-	if (a->path && b->path && strcmp(a->path, b->path) != 0) {
+	if (a->path[0] != '\0' && b->path[0] != '\0' && strcmp(a->path, b->path) != 0) {
 		return false;
 	}
 	if (a->cb && b->cb && a->cb != b->cb) {

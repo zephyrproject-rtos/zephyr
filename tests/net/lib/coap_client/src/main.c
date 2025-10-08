@@ -26,11 +26,11 @@ DEFINE_FFF_GLOBALS;
 #define COAP_SEPARATE_TIMEOUT (6000 * 2) /* Needs a safety marging, tests run faster than -rt */
 #define VALID_MESSAGE_ID BIT(31)
 #define TOKEN_OFFSET          4
+#define TEST_PATH "test"
 
 void coap_callback(const struct coap_client_response_data *data, void *user_data);
 
 static int16_t last_response_code;
-static const char test_path[] = "test";
 
 static uint32_t messages_needing_response[2];
 static uint8_t last_token[2][COAP_TOKEN_MAX_LEN];
@@ -48,7 +48,7 @@ static const char long_payload[] = LOREM_IPSUM_SHORT;
 static struct coap_client_request short_request = {
 	.method = COAP_METHOD_GET,
 	.confirmable = true,
-	.path = test_path,
+	.path = TEST_PATH,
 	.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
 	.cb = coap_callback,
 	.payload = short_payload,
@@ -58,7 +58,7 @@ static struct coap_client_request short_request = {
 static struct coap_client_request long_request = {
 	.method = COAP_METHOD_GET,
 	.confirmable = true,
-	.path = test_path,
+	.path = TEST_PATH,
 	.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
 	.cb = coap_callback,
 	.payload = long_payload,
@@ -586,7 +586,7 @@ ZTEST(coap_client, test_get_no_path)
 {
 	struct coap_client_request req = short_request;
 
-	req.path = NULL;
+	req.path[0] = '\0';
 	zassert_equal(coap_client_req(&client, 0, &dst_address, &req, NULL), -EINVAL, "");
 }
 
@@ -780,20 +780,19 @@ ZTEST(coap_client, test_duplicate_response)
 
 ZTEST(coap_client, test_observe)
 {
-	struct coap_client_option options = {
-		.code = COAP_OPTION_OBSERVE,
-		.value[0] = 0,
-		.len = 1,
-	};
 	struct coap_client_request req = {
 		.method = COAP_METHOD_GET,
 		.confirmable = true,
-		.path = test_path,
+		.path = TEST_PATH,
 		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
 		.cb = coap_callback,
 		.payload = short_payload,
 		.len = strlen(short_payload),
-		.options = &options,
+		.options = { {
+			.code = COAP_OPTION_OBSERVE,
+			.value[0] = 0,
+			.len = 1,
+		} },
 		.num_options = 1,
 		.user_data = &sem1,
 	};
@@ -858,7 +857,7 @@ ZTEST(coap_client, test_cancel_match)
 
 	req1.user_data = &sem1;
 	req2.user_data = &sem2;
-	req2.path = "another";
+	strcpy(req2.path, "another");
 
 	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_no_reply;
 
@@ -869,7 +868,7 @@ ZTEST(coap_client, test_cancel_match)
 
 	/* match only one */
 	coap_client_cancel_request(&client, &(struct coap_client_request) {
-		.path = test_path
+		.path = TEST_PATH
 	});
 	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
 	zassert_not_ok(k_sem_take(&sem2, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
@@ -879,7 +878,7 @@ ZTEST(coap_client, test_cancel_match)
 
 	/* should not match */
 	coap_client_cancel_request(&client, &(struct coap_client_request) {
-		.path = test_path,
+		.path = TEST_PATH,
 		.user_data = &sem2,
 	});
 	zassert_not_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
@@ -907,7 +906,7 @@ ZTEST(coap_client, test_non_confirmable)
 	struct coap_client_request req = {
 		.method = COAP_METHOD_GET,
 		.confirmable = false,
-		.path = test_path,
+		.path = TEST_PATH,
 		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
 		.cb = coap_callback,
 		.payload = short_payload,
