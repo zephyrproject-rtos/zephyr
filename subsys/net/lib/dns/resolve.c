@@ -464,9 +464,9 @@ static bool is_server_name_found(struct dns_resolve_context *ctx,
 	return false;
 }
 
-static bool is_server_addr_found(struct dns_resolve_context *ctx,
-				 const struct sockaddr *addr,
-				 int if_index)
+static int idx_of_server_addr(struct dns_resolve_context *ctx,
+			      const struct sockaddr *addr,
+			      int if_index)
 {
 	ARRAY_FOR_EACH(ctx->servers, i) {
 		if (ctx->servers[i].dns_server.sa_family == addr->sa_family &&
@@ -478,11 +478,11 @@ static bool is_server_addr_found(struct dns_resolve_context *ctx,
 				continue;
 			}
 
-			return true;
+			return i;
 		}
 	}
 
-	return false;
+	return -1;
 }
 
 static int get_free_slot(struct dns_resolve_context *ctx)
@@ -670,11 +670,11 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 
 	for (i = 0; servers_sa != NULL && idx < SERVER_COUNT && servers_sa[i] != NULL; i++) {
 		char iface_str[IFNAMSIZ] = { 0 };
-		bool found;
+		int found_idx;
 
-		found = is_server_addr_found(ctx, servers_sa[i],
-					     interfaces == NULL ? 0 : interfaces[i]);
-		if (found) {
+		found_idx = idx_of_server_addr(ctx, servers_sa[i],
+					       interfaces == NULL ? 0 : interfaces[i]);
+		if (found_idx != -1) {
 			NET_DBG("Server %s already exists",
 				net_sprint_addr(ctx->servers[i].dns_server.sa_family,
 						&net_sin(&ctx->servers[i].dns_server)->sin_addr));
@@ -2510,6 +2510,38 @@ int dns_resolve_remove_source(struct dns_resolve_context *ctx, int if_index,
 			      enum dns_server_source source)
 {
 	return dns_resolve_remove_and_check_source(ctx, if_index, true, source);
+}
+
+int dns_resolve_remove_server_addresses(struct dns_resolve_context *ctx,
+					const struct sockaddr *servers_sa[],
+					int interfaces[])
+{
+	int ret = -ENOENT;
+	int i = 0;
+	int server_idx = -1;
+
+	if (ctx == NULL || servers_sa == NULL) {
+		return -ENOENT;
+	}
+
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+
+	do {
+		server_idx = idx_of_server_addr(ctx, servers_sa[i],
+						interfaces == NULL ? 0 : interfaces[i]);
+		if (server_idx != -1) {
+			ctx->servers[server_idx].if_index = 0;
+
+			k_mutex_unlock(&ctx->lock);
+			ret = dns_server_close(ctx, server_idx);
+			k_mutex_lock(&ctx->lock, K_FOREVER);
+		}
+		i++;
+	} while (servers_sa[i] != NULL);
+
+	k_mutex_unlock(&ctx->lock);
+
+	return ret;
 }
 
 struct dns_resolve_context *dns_resolve_get_default(void)
