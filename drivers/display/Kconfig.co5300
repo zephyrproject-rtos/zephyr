@@ -2,12 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-menuconfig DISPLAY_ZC143AC72MIPI
+config CO5300
 	bool "MCUX ---"
 	default y
+	select MIPI_DSI
+	depends on DT_HAS_CHIPONE_CO5300_ENABLED
 	help
 	  ---
 
 
-if DISPLAY_ZC143AC72MIPI
-endif # DISPLAY_ZC143AC72MIPI
+if CO5300
+endif # CO5300

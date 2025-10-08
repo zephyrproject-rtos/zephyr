@@ -4,22 +4,66 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h> */
-
 / {
 	chosen {
-		zephyr,display = &zc143ac72mipi;
+		zephyr,display = &co5300_zc143ac72mipi;
+/*		zephyr,touch = &ft3267_g1120b0mipi;*/
 	};
+
+	/*
+	en_mipi_display_g1120b0mipi: enable-mipi-display {
+		compatible = "regulator-fixed";
+		regulator-name = "en_mipi_display";
+		enable-gpios = <&nxp_mipi_connector 32 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+	*/
+
+	/*
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&ft3267_g1120b0mipi>;
+		display = <&rm67162_g1120b0mipi>;
+		invert-y;
+	};
+	*/
 };
 
-&lcdif_target {
+/*
+&nxp_mipi_i2c {
 	status = "okay";
-	#address-cells = <1>;
-	#size-cells = <0>;
-	zc143ac72mipi: zc143ac72mipi@0 {
-		compatible = "display,zc143ac72mipi";
-		reg = <0>;
+
+	ft3267_g1120b0mipi: ft3267@38 {
+		/*
+		 * Note- the actual controller present on this IC is a FT3267,
+		 * but the FT35336 driver in Zephyr supports this IC.
+		 */
+		 /*
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		int-gpios = <&nxp_mipi_connector 29 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&nxp_mipi_connector 28 GPIO_ACTIVE_LOW>;
+	};
+};
+*/
+
+&zephyr_mipi_dsi {
+	status = "okay";
+	autoinsert-eotp;
+	phy-clock = <316800000>;
+
+	co5300_zc143ac72mipi: co5300@0 {
 		status = "okay";
+		compatible = "chipone,co5300";
+		reg = <0x0>;
+		reset-gpios = <&nxp_mipi_connector 21 GPIO_ACTIVE_HIGH>;
+		backlight-gpios = <&nxp_mipi_connector 0 GPIO_ACTIVE_HIGH>;
+		tear-effect-gpios = <&nxp_mipi_connector 22 GPIO_ACTIVE_HIGH>;
+		power-gpios = <&nxp_mipi_connector 32 GPIO_ACTIVE_HIGH>;
+		data-lanes = <1>;
+		width = <466>;
+		height = <466>;
+		pixel-format = <MIPI_DSI_PIXFMT_RGB565>;
 	};
 };
 
