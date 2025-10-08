@@ -85,9 +85,9 @@ static void read_with_attr(const struct device *dev, int it, int pdd, int gain)
 
 static void read_with_all_attr(const struct device *dev)
 {
-	for (int it = VEML6046_IT_3_125; it <= VEML6046_IT_400; it++) {
+	for (int it = VEML60XX_IT_3_125; it <= VEML60XX_IT_400; it++) {
 		for (int pdd = VEML6046_SIZE_2_2; pdd <= VEML6046_SIZE_1_2; pdd++) {
-			for (int gain = VEML6046_GAIN_1; gain <= VEML6046_GAIN_0_5; gain++) {
+			for (int gain = VEML60XX_GAIN_1; gain <= VEML60XX_GAIN_0_5; gain++) {
 				read_with_attr(dev, it, pdd, gain);
 			}
 		}
