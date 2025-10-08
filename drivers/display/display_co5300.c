@@ -6,29 +6,44 @@
 
 //@IMPORTANT @INCOMPLETE(Emilio): None of the function are checking for errors at the moment!
 
-#define DT_DRV_COMPAT display_zc143ac72mipi
+#define DT_DRV_COMPAT chipone_co5300
 
 #include <zephyr/logging/log.h>
-//LOG_MODULE_REGISTER(zc143ac72mipi, CONFIG_DISPLAY_LOG_LEVEL);
+//LOG_MODULE_REGISTER(co5300, CONFIG_DISPLAY_LOG_LEVEL);
 
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/display.h>
+#include <zephyr/drivers/mipi_dsi/mipi_dsi_mcux_2l.h>
+#include <zephyr/drivers/mipi_dsi.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys/utils.h>
 
 #include <fsl_lcdif.h>
 #include <fsl_mipi_dsi.h>
 
-//#include "zc143ac72mipi_regs.h"
+/******TEMP CODE********/
+#include <stdint.h>
+typedef uint8_t u8;
+typedef uint16_t u16;
+typedef uint32_t u32;
 
+typedef int8_t s8;
+typedef int16_t s16;
+typedef int32_t s32;
+typedef int32_t b32;
+/******END OF TEMP CODE********/
+
+//#include "co5300_regs.h"
+
+/******OLD CODE********/
 static struct display_cmds {
 	uint8_t *cmd_code;
 	uint8_t size;
 };
 
-struct zc143ac72mipi_config {
+#if 0
+struct co5300_config {
 	LCDIF_Type *lcdif_base;
 	MIPI_DSI_HOST_Type *mipi_base;
 	enum display_pixel_format initial_pixel_format;
@@ -37,18 +52,51 @@ struct zc143ac72mipi_config {
 	const struct gpio_dt_spec mipi_te_gpio;
 };
 
-struct zc143ac72mipi_data {
+struct co5300_data {
 	int Placeholder;
 };
+#endif
 
+/******END OF OLD CODE********/
+
+
+static struct co5300_config {
+	const struct device *mipi_dsi;
+	const struct gpio_dt_spec reset_gpio;
+	const struct gpio_dt_spec backlight_gpio;
+	const struct gpio_dt_spec tear_effect_gpio;
+	const struct gpio_dt_spec power_gpio;
+	uint16_t panel_width;
+	uint16_t panel_height;
+	uint16_t channel;
+	uint16_t num_of_lanes;
+};
+
+static struct co5300_data {
+	enum display_pixel_format pixel_format;
+	uint8_t bytes_per_pixel;
+	struct gpio_callback te_gpio_cb;
+	struct k_sem te_sem;
+};
+
+const struct display_cmds lcm_init_settings[] = {
+	{{0xFE, 0x20}, 2}, {{0xF4, 0x5A}, 2},
+	{{0xF5, 0x59}, 2}, {{0xFE, 0x40}, 2},
+	{{0x96, 0x00}, 2}, {{0xC9, 0x00}, 2},
+	{{0xFE, 0x00}, 2}, {{0x35, 0x00}, 2},
+	{{0x53, 0x20}, 2}, {{0x51, 0xFF}, 2},
+	{{0x63, 0xFF}, 2}, {{0x2A, 0x00, 0x06, 0x01, 0xD7}, 5},
+	{{0x2B, 0x00, 0x00, 0x01, 0xD1}, 5}
+};
 
 //@IMPORTANT(Emilio): We may need to be more particular on how to choose the txDataType, there seems
 //			to be many definitions.
-static int zc143ac72mipi_write_cmd_codes(const struct device *dev,
+static int co5300_write_cmd_codes(const struct device *dev,
 					const struct display_cmds *cmds)
 {
-	const struct zc143ac72mipi_config *config = dev->config;
-	MIPI_DSI_HOST_Type *mipi_base = config->mipi_base;
+#if 0
+	const struct co5300_config *config = dev->config;
+	MIPI_DSI_HOST_Type *mipi_base = config->mipi_dsi;
 	dsi_transfer_t transfer_config = {};
 
 	for (int iter = 0; iter < ARRAY_SIZE(cmds); iter++)
@@ -82,27 +130,44 @@ static int zc143ac72mipi_write_cmd_codes(const struct device *dev,
 		transfer_config.txSize = cmds[iter]->size;
 		DSI_TransferBlocking(mipi_base, &transfer_config);
 	}
+#endif
 }
 
-static int zc143ac72mipi_blanking_on(const struct device *dev)
+static int co5300_blanking_on(const struct device *dev)
 {
 
 }
 
-static int zc143ac72mipi_blanking_off(const struct device *dev)
+static int co5300_blanking_off(const struct device *dev)
 {
 
 }
 
-static int zc143ac72mipi_write(const struct device *dev,
+static int co5300_write(const struct device *dev,
 		const uint16_t x, const uint16_t y,
 		const struct display_buffer_descriptor *desc,
 		const void *buf)
 {
-	const struct zc143ac72mipi_config *config = dev->config;
-	LCDIF_Type *lcdif_base = config->lcdif_base;
-	MIPI_DSI_HOST_Type *mipi_base = config->mipi_base;
-	enum display_pixel_format pixel_format = config->initial_pixel_format;
+
+	const struct co5300_config *config = dev->config;
+	struct co5300_data *data = dev->data;
+	struct device *mipi_base = config->mipi_dsi;
+	enum display_pixel_format pixel_format = data->pixel_format;
+
+	struct mipi_dsi_device mdev = {0};
+	int ret;
+	uint32_t i;
+	uint8_t cmd, param;
+
+	/* Attach to MIPI DSI host */
+	mdev.data_lanes = config->num_of_lanes;
+	mdev.pixfmt = data->pixel_format;
+
+	ret = mipi_dsi_attach(config->mipi_dsi, config->channel, &mdev);
+	if (ret < 0) {
+		//LOG_ERR("Could not attach to MIPI-DSI host");
+		return ret;
+	}
 
 
 #if 0
@@ -192,34 +257,34 @@ static int zc143ac72mipi_write(const struct device *dev,
 
 }
 
-static int zc143ac72mipi_read(const struct device *dev,
+static int co5300_read(const struct device *dev,
 		const uint16_t x, const uint16_t y,
 		const struct display_buffer_descriptor *desc, void *buf)
 {
 
 }
 
-static int zc143ac72mipi_clear(const struct device *dev)
+static int co5300_clear(const struct device *dev)
 {
 
 }
 
-static void *zc143ac72mipi_get_framebuffer(const struct device *dev)
+static void *co5300_get_framebuffer(const struct device *dev)
 {
 
 }
 
-static int zc143ac72mipi_set_brightness(const struct device *dev, uint8_t)
+static int co5300_set_brightness(const struct device *dev, uint8_t)
 {
 
 }
 
-static int zc143ac72mipi_set_contrast(const struct device *dev, uint8_t contrast)
+static int co5300_set_contrast(const struct device *dev, uint8_t contrast)
 {
 
 }
 
-static void zc143ac72mipi_get_capabilities(const struct device *dev,
+static void co5300_get_capabilities(const struct device *dev,
 		struct display_capabilities *capabilities)
 {
 	capabilities->x_resolution = 256;
@@ -232,7 +297,7 @@ static void zc143ac72mipi_get_capabilities(const struct device *dev,
 //	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
-static int zc143ac72mipi_set_pixel_format(const struct device *dev,
+static int co5300_set_pixel_format(const struct device *dev,
 		const enum display_pixel_format pixel_format)
 {
 	//@NOTE(Emilio): The following is how you set the pixel format for the MIPI_DSI
@@ -244,15 +309,17 @@ static int zc143ac72mipi_set_pixel_format(const struct device *dev,
 
 }
 
-static int zc143ac72mipi_set_orientation(const struct device *dev,
+static int co5300_set_orientation(const struct device *dev,
 		const enum display_orientation orientation)
 {
 
 }
 
-static int zc143ac72mipi_init(const struct device *dev)
+static int co5300_init(const struct device *dev)
 {
-	const struct zc143ac72mipi_config *config = dev->config;
+/******OLD CODE********/
+#if 0
+	const struct co5300_config *config = dev->config;
 	LCDIF_Type *lcdif_base = config->lcdif_base;
 	MIPI_DSI_HOST_Type *mipi_base = config->mipi_base;
 	enum display_pixel_format pixel_format = config->initial_pixel_format;
@@ -362,16 +429,7 @@ static int zc143ac72mipi_init(const struct device *dev)
 	//@NOTE(Emilio): Set LCM Init Settings
 
 	//@HARDCODE(Emilio): Comes straight from components/video/display/c05300/fsl_co5300.c
-	const display_cmds lcm_init_settings[] = {
-		{{0xFE, 0x20}, 2}, {{0xF4, 0x5A}, 2},
-		{{0xF5, 0x59}, 2}, {{0xFE, 0x40}, 2},
-		{{0x96, 0x00}, 2}, {{0xC9, 0x00}, 2},
-		{{0xFE, 0x00}, 2}, {{0x35, 0x00}, 2},
-		{{0x53, 0x20}, 2}, {{0x51, 0xFF}, 2},
-		{{0x63, 0xFF}, 2}, {{0x2A, 0x00, 0x06, 0x01, 0xD7}, 5},
-		{{0x2B, 0x00, 0x00, 0x01, 0xD1}, 5}
-	};
-	zc143ac72mipi_write_cmd_codes(dev, lcm_init_settings);
+	co5300_write_cmd_codes(dev, lcm_init_settings);
 
 
 	display_cmds pixel_setting_cmd = {{0x36, 0x0}, 2};
@@ -379,7 +437,7 @@ static int zc143ac72mipi_init(const struct device *dev)
 	{
 		pixel_setting_cmd.cmd_code[1] = 0x8;
 	}
-	zc143ac72mipi_write_cmd_codes(dev, pixel_setting_cmd);
+	co5300_write_cmd_codes(dev, pixel_setting_cmd);
 
 
 
@@ -394,7 +452,7 @@ static int zc143ac72mipi_init(const struct device *dev)
 		dbi_pixel_format |= 2;
 	}
 	display_cmds pixel_foramt_cmd = {{0x3A, pixel_format_cmd}, 2};
-	zc143ac72mipi_write_cmd_codes(dev, pixel_setting_cmd);
+	co5300_write_cmd_codes(dev, pixel_setting_cmd);
 
 
 	//@TODO(Emilio): Again, unsure why we attempt a sleep in SDK.
@@ -405,7 +463,7 @@ static int zc143ac72mipi_init(const struct device *dev)
 	// Entering sleep CMD is 0x10
 	// Exiting  sleep CMD is 0x11
 	display_cmds exit_sleep_cmd = {{0x11}, 1};
-	zc143ac72mipi_write_cmd_codes(dev, exit_sleep_cmd);
+	co5300_write_cmd_codes(dev, exit_sleep_cmd);
 
 	//@TODO(Emilio): Again, unsure why we attempt a sleep in SDK.
 //	co5300_DelayMs(150);
@@ -413,7 +471,7 @@ static int zc143ac72mipi_init(const struct device *dev)
 
 	//@NOTE(Emilio): Turn on Display.
 	display_cmds exit_sleep_cmd = {{0x29}, 1};
-	zc143ac72mipi_write_cmd_codes(dev, exit_sleep_cmd);
+	co5300_write_cmd_codes(dev, exit_sleep_cmd);
 
 
 	//@NOTE(Emilio): SDK Setups a callback at this point for FrameDoneCallback
@@ -579,32 +637,163 @@ static int zc143ac72mipi_init(const struct device *dev)
 
 	//@NOTE(Emilio): Finally done!
 	return 0;
+#endif
+/******END OF OLD CODE********/
+	struct co5300_config *config = dev->config;
+	struct co5300_data *data = dev->data;
+	u32 iter;
+	u32 Result = 1;
+	enum display_pixel_format zephyr_pixel_format;
+	const struct mipi_device *mipi_device = config->mipi_dsi;
+
+#if 0
+	//@TODO(Emilio): Coming from display_rm67162 unsure if
+	//	api requires this dual attachment paradigm.
+	ret = mipi_dsi_attach(config->mipi_dsi, config->channel, &mdev);
+	if (ret < 0) {
+		LOG_ERR("Could not attach to MIPI-DSI host");
+		return ret;
+	}
+#endif
+	if (config->power_gpio.port != NULL) {
+		int ret = gpio_pin_configure_dt(&config->power_gpio, GPIO_OUTPUT_INACTIVE);
+		if (ret < 0) {
+		//	LOG_ERR("Could not configure power GPIO (%d)", ret);
+			return ret;
+		}
+
+		//@NOTE(Emilio): Power On Sequence
+		ret = gpio_pin_set_dt(&config->power_gpio, 1);
+		if (ret < 0) {
+		//	LOG_ERR("Could not pull power high (%d)", ret);
+			return ret;
+		}
+
+		k_sleep(K_MSEC(100));
+
+		if (config->reset_gpio.port != NULL) {
+			ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE);
+			if (ret < 0) {
+		//		LOG_ERR("Could not configure reset GPIO (%d)", ret);
+				return ret;
+			}
+
+			ret = gpio_pin_set_dt(&config->reset_gpio, 0);
+			if (ret < 0) {
+		//		LOG_ERR("Could not pull reset low (%d)", ret);
+				return ret;
+			}
+
+			k_sleep(K_MSEC(1));
+			gpio_pin_set_dt(&config->reset_gpio, 1);
+			if (ret < 0) {
+		//		LOG_ERR("Could not pull reset high (%d)", ret);
+				return ret;
+			}
+			k_sleep(K_MSEC(150));
+		}
+	}
+
+	int cmd = 0;
+	int param = 0;
+	/* Set the LCM init settings. */
+	for (int i = 0; i < ARRAY_SIZE(lcm_init_settings); i++) {
+		//@TODO(Emilio): rename and make correct cmds
+		cmd = lcm_init_settings[i].cmd_code;
+		param = lcm_init_settings[i].size;
+		int ret = mipi_dsi_dcs_write(config->mipi_dsi, config->channel,
+					cmd, &param, 1);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	/* Set pixel format */
+	if (data->pixel_format == MIPI_DSI_PIXFMT_RGB888) {
+		param = MIPI_DCS_PIXEL_FORMAT_24BIT;
+		data->bytes_per_pixel = 3;
+	} else if (data->pixel_format == MIPI_DSI_PIXFMT_RGB565) {
+		param = MIPI_DCS_PIXEL_FORMAT_16BIT;
+		data->bytes_per_pixel = 2;
+	} else {
+		/* Unsupported pixel format */
+//		LOG_ERR("Pixel format not supported");
+		return -ENOTSUP;
+	}
+	int ret = mipi_dsi_dcs_write(config->mipi_dsi, config->channel,
+				MIPI_DCS_SET_PIXEL_FORMAT, &param, 1);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Delay 50 ms before exiting sleep mode */
+	k_sleep(K_MSEC(50));
+	ret = mipi_dsi_dcs_write(config->mipi_dsi, config->channel,
+				MIPI_DCS_EXIT_SLEEP_MODE, NULL, 0);
+	if (ret < 0) {
+		return ret;
+	}
+	/*
+	 * We must wait 5 ms after exiting sleep mode before sending additional
+	 * commands. If we intend to enter sleep mode, we must delay
+	 * 120 ms before sending that command. To be safe, delay 150ms
+	 */
+	k_sleep(K_MSEC(150));
 }
 
-static DEVICE_API(display, zc143ac72mipi_driver_api) = {
-	.blanking_on = zc143ac72mipi_blanking_on,
-	.blanking_off = zc143ac72mipi_blanking_off,
-	.write = zc143ac72mipi_write,
-	.read = zc143ac72mipi_read,
-	.clear = zc143ac72mipi_clear,
-	.get_framebuffer = zc143ac72mipi_get_framebuffer,
-	.set_brightness = zc143ac72mipi_set_brightness,
-	.set_contrast = zc143ac72mipi_set_contrast,
-	.get_capabilities = zc143ac72mipi_get_capabilities,
-	.set_pixel_format = zc143ac72mipi_set_pixel_format,
-	.set_orientation = zc143ac72mipi_set_orientation,
+static DEVICE_API(display, co5300_api) = {
+	.blanking_on = co5300_blanking_on,
+	.blanking_off = co5300_blanking_off,
+	.write = co5300_write,
+	.read = co5300_read,
+	.clear = co5300_clear,
+	.get_framebuffer = co5300_get_framebuffer,
+	.set_brightness = co5300_set_brightness,
+	.set_contrast = co5300_set_contrast,
+	.get_capabilities = co5300_get_capabilities,
+	.set_pixel_format = co5300_set_pixel_format,
+	.set_orientation = co5300_set_orientation,
 };
 
-#define ZC143AC72MIPI_DEVICE_INIT(node_id)								\
-	static struct zc143ac72mipi_data data##node_id;							\
-	static const struct zc143ac72mipi_config config##node_id = {					\
-		.lcdif_base = (LCDIF_Type*)DT_REG_ADDR_BY_IDX(DT_INST_GPARENT(node_id), 0),		\
-		.mipi_base = (MIPI_DSI_HOST_Type*)DT_REG_ADDR_BY_IDX(DT_INST_GPARENT(node_id), 1),	\
-		.reset_gpio = GPIO_DT_SPEC_INST_GET(n, reset_gpios),					\
-		.power_gpio = GPIO_DT_SPEC_INST_GET(n, power_gpios),					\
+/******OLD CODE********/
+#if 0
+#define CO5300_DEVICE_INIT(node_id)									\
+	static struct co5300_data co5300_data##node_id;							\
+	static const struct co5300_config co5300_config##node_id = {					\
+		.mipi_dsi = DEVICE_DT_GET(DT_INST_BUS(node_id)),					\
+		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(node_id, reset_gpios, {0}),			\
+		.bl_gpio = GPIO_DT_SPEC_INST_GET_OR(node_id, bl_gpios, {0}),				\
+		.te_gpio = GPIO_DT_SPEC_INST_GET_OR(node_id, te_gpios, {0}),				\
 	};												\
 													\
-	DEVICE_DT_INST_DEFINE(node_id, zc143ac72mipi_init, NULL, &data##node_id, &config##node_id,	\
-			 POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY, &zc143ac72mipi_driver_api);
+	DEVICE_DT_INST_DEFINE(node_id, co5300_init, NULL,						\
+			&co5300_data##node_id, &co5300_config##node_id,					\
+			POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY, &co5300_driver_api);
+#endif
+/******END OF OLD CODE********/
 
-DT_INST_FOREACH_STATUS_OKAY(ZC143AC72MIPI_DEVICE_INIT)
+
+#define CO5300_DEVICE_INIT(node_id)								\
+	static const struct co5300_config co5300_config_##node_id = {				\
+		.mipi_dsi = DEVICE_DT_GET(DT_INST_BUS(node_id)),					\
+		.num_of_lanes = DT_INST_PROP_BY_IDX(node_id, data_lanes, 0),				\
+		.channel = DT_INST_REG_ADDR(node_id),						\
+		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(node_id, reset_gpios, {0}),			\
+		.backlight_gpio = GPIO_DT_SPEC_INST_GET_OR(node_id, backlight_gpios, {0}),				\
+		.tear_effect_gpio = GPIO_DT_SPEC_INST_GET_OR(node_id, tear_effect_gpios, {0}),				\
+		.panel_width = DT_INST_PROP(node_id, width),						\
+		.panel_height = DT_INST_PROP(node_id, height),					\
+	};											\
+	static struct co5300_data co5300_data_##node_id = {						\
+	};											\
+	DEVICE_DT_INST_DEFINE(node_id,								\
+			    &co5300_init,							\
+			    0,								\
+			    &co5300_data_##node_id,							\
+			    &co5300_config_##node_id,						\
+			    POST_KERNEL,							\
+			    CONFIG_APPLICATION_INIT_PRIORITY,					\
+			    &co5300_api);
+
+
+DT_INST_FOREACH_STATUS_OKAY(CO5300_DEVICE_INIT)
