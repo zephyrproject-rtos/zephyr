@@ -612,7 +612,7 @@ static DEVICE_API(uart, uart_bflb_driver_api) = {
 		.base_reg = DT_INST_REG_ADDR(instance),				\
 										\
 		.bit_order = UART_MSB_FIRST,					\
-		.tx_fifo_threshold = 8,						\
+		.tx_fifo_threshold = 16,					\
 		.rx_fifo_threshold = 0,						\
 		BFLB_UART_IRQ_HANDLER_FUNC(instance)				\
 	};									\
