@@ -162,7 +162,7 @@
 		   <&ioport1 4 GPIO_ACTIVE_LOW>;
 
 	esp_hosted@1 {
-		status = "ok";
+		status = "okay";
 		compatible = "espressif,esp-hosted";
 		reg = <0x1>;
 		spi-max-frequency = <DT_FREQ_M(5)>;
