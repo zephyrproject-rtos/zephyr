@@ -589,10 +589,10 @@ static int adxl345_init(const struct device *dev)
 		     "Streaming requires fifo-watermark property. Please set it in the"		   \
 		     "device-tree node properties");						   \
 	BUILD_ASSERT(COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, fifo_watermark),			   \
-				 ((DT_INST_PROP(inst, fifo_watermark) > 0) &&			   \
+				 ((DT_INST_PROP(inst, fifo_watermark) > 1) &&			   \
 				  (DT_INST_PROP(inst, fifo_watermark) < 32)),			   \
 				 (true)),							   \
-		     "fifo-watermark must be between 1 and 32. Please set it in "		   \
+		     "fifo-watermark must be between 2 and 32. Please set it in "		   \
 		     "the device-tree node properties");					   \
 												   \
 	IF_ENABLED(CONFIG_ADXL345_STREAM, (ADXL345_RTIO_DEFINE(inst)));				   \
