@@ -5,8 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "soc_v5.h"
-
 #include <zephyr/toolchain.h>
 
 /* exports */
@@ -29,22 +27,6 @@ SECTION_FUNC(init, entry)
 	.word 0 /* unused */
 
 header_end:
-
-#ifdef CONFIG_ICACHE
-	/* Enable I cache with HW prefetcher. */
-	li t0, (1 << 9) | (1 << 0)
-	csrs NDS_MCACHE_CTL, t0
-#endif
-
-#ifdef CONFIG_DCACHE
-	/* Enable D cache with HW prefetcher */
-	li t0, (1 << 10) | (1 << 1)
-	csrs NDS_MCACHE_CTL, t0
-#endif
-
-	/* Enable misaligned access and non-blocking load */
-	li t0, (1 << 8) | (1 << 6)
-	csrs NDS_MMISC_CTL, t0
 
 	j __start
 
