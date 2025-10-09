@@ -42,5 +42,3 @@ if(CONFIG_GEN_SW_ISR_TABLE)
     zephyr_linker_sources(RODATA swi_tables.ld)
   endif()
 endif()
-
-add_subdirectory_ifdef(CONFIG_XUANTIE xuantie)
