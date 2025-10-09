@@ -17,6 +17,19 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config NXP_MONOLITHIC_NBU
 	default y if (BT || IEEE802154)
 
+if MBEDTLS_PSA_CRYPTO_C
+
+config MCUX_ELS_PKC
+	default y
+
+config MCUX_PSA_CRYPTO_DRIVER_ELS_PKC
+	default y
+
+config MCUX_PSA_CRYPTO_DRIVER_ELS_PKC_THREAD
+	default y
+
+endif # MBEDTLS_PSA_CRYPTO_C
+
 if BT
 
 config HCI_NXP_ENABLE_AUTO_SLEEP
@@ -49,15 +62,6 @@ config SHELL_STACK_SIZE
 endif # SHELL
 
 if MBEDTLS_PSA_CRYPTO_C
-
-config MCUX_ELS_PKC
-	default y
-
-config MCUX_PSA_CRYPTO_DRIVER_ELS_PKC
-	default y
-
-config MCUX_PSA_CRYPTO_DRIVER_ELS_PKC_THREAD
-	default y
 
 config MBEDTLS_USER_CONFIG_ENABLE
 	default y
