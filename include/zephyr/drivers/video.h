@@ -989,6 +989,22 @@ void video_closest_frmival(const struct device *dev, struct video_frmival_enum *
 int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t lane_nb);
 
 /**
+ * @brief Estimate the size and pitch in bytes of a @ref video_format
+ *
+ * This helper should only be used by drivers that support the whole image frame.
+ *
+ * For uncompressed formats, it gives the actual size and pitch of the
+ * whole raw image without any padding.
+ *
+ * For compressed formats, it gives a rough estimate size of a complete
+ * compressed frame.
+ *
+ * @param fmt Pointer to the video format structure
+ * @return 0 on success, otherwise a negative errno code
+ */
+int video_estimate_fmt_size(struct video_format *fmt);
+
+/**
  * @defgroup video_pixel_formats Video pixel formats
  * The '|' characters separate the pixels or logical blocks, and spaces separate the bytes.
  * The uppercase letter represents the most significant bit.
