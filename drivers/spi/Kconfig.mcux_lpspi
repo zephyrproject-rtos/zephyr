@@ -5,7 +5,8 @@
 
 config SPI_MCUX_LPSPI
 	bool "MCUX LPSPI driver"
-	default y
+	default n
+	depends on !SPI_NXP_LPSPI
 	depends on DT_HAS_NXP_LPSPI_ENABLED
 	depends on CLOCK_CONTROL
 	select PINCTRL
