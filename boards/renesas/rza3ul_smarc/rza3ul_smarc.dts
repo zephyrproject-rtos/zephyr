@@ -81,6 +81,12 @@
 	status = "okay";
 };
 
+&spi0 {
+	pinctrl-0 = <&spi0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &wdt0 {
 	status = "okay";
 };
