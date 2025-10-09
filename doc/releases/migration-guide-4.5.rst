@@ -34,6 +34,10 @@ Build System
   can get a recent version from the `Kitware APT repository <https://apt.kitware.com/>`_ or with
   ``pip install cmake``.
 
+* Support for C standard versions older than C17 has been removed after having
+  been deprecated. The Kconfig options ``CONFIG_STD_C11``, ``CONFIG_STD_C99`` and ``CONFIG_STD_C90``
+  have been removed. Use C17 or higher when compiling Zephyr.
+
 * :kconfig:option:`CONFIG_LEGACY_GENERATED_INCLUDE_PATH` has been deprecated, and disabled by
   default, includes must now be prefixed with ``zephyr/`` for zephyr files.
 
