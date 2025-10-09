@@ -190,18 +190,21 @@ void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)
 	const struct device *dev = priv->dev;
 	const struct udc_stm32_config *cfg = dev->config;
 	struct udc_ep_config *ep;
+	HAL_StatusTypeDef __maybe_unused hal_ret;
 
 	/* Re-Enable control endpoints */
 	ep = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
 	if (ep && ep->stat.enabled) {
-		HAL_PCD_EP_Open(&priv->pcd, USB_CONTROL_EP_OUT, cfg->ep0_mps,
-				EP_TYPE_CTRL);
+		hal_ret = HAL_PCD_EP_Open(&priv->pcd, USB_CONTROL_EP_OUT, cfg->ep0_mps,
+					  EP_TYPE_CTRL);
+		__ASSERT_NO_MSG(hal_ret == HAL_OK);
 	}
 
 	ep = udc_get_ep_cfg(dev, USB_CONTROL_EP_IN);
 	if (ep && ep->stat.enabled) {
-		HAL_PCD_EP_Open(&priv->pcd, USB_CONTROL_EP_IN, cfg->ep0_mps,
-				EP_TYPE_CTRL);
+		hal_ret = HAL_PCD_EP_Open(&priv->pcd, USB_CONTROL_EP_IN, cfg->ep0_mps,
+					  EP_TYPE_CTRL);
+		__ASSERT_NO_MSG(hal_ret == HAL_OK);
 	}
 
 	udc_set_suspended(dev, false);
@@ -271,7 +274,9 @@ static int usbd_ctrl_feed_dout(const struct device *dev, const size_t length)
 
 	k_fifo_put(&cfg->fifo, buf);
 
-	HAL_PCD_EP_Receive(&priv->pcd, cfg->addr, buf->data, buf->size);
+	if (HAL_PCD_EP_Receive(&priv->pcd, cfg->addr, buf->data, buf->size) != HAL_OK) {
+		return -EIO;
+	}
 
 	return 0;
 }
@@ -280,8 +285,10 @@ static void udc_stm32_flush_tx_fifo(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	struct udc_ep_config *cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
+	HAL_StatusTypeDef __maybe_unused hal_ret;
 
 	HAL_PCD_EP_Receive(&priv->pcd, cfg->addr, NULL, 0);
+	__ASSERT_NO_MSG(hal_ret == HAL_OK);
 }
 
 static int udc_stm32_tx(const struct device *dev, struct udc_ep_config *epcfg,
@@ -432,6 +439,7 @@ static void handle_msg_data_in(struct udc_stm32_data *priv, uint8_t epnum)
 	struct udc_ep_config *epcfg;
 	uint8_t ep = epnum | USB_EP_DIR_IN;
 	struct net_buf *buf;
+	HAL_StatusTypeDef hal_ret;
 
 	LOG_DBG("DataIn ep 0x%02x",  ep);
 
@@ -447,7 +455,12 @@ static void handle_msg_data_in(struct udc_stm32_data *priv, uint8_t epnum)
 		const struct udc_stm32_config *cfg = dev->config;
 		uint32_t len = MIN(cfg->ep0_mps, buf->len);
 
-		HAL_PCD_EP_Transmit(&priv->pcd, ep, buf->data, len);
+		hal_ret = HAL_PCD_EP_Transmit(&priv->pcd, ep, buf->data, len);
+		if (hal_ret != HAL_OK) {
+			LOG_ERR("HAL_PCD_EP_Transmit failed: %d", hal_ret);
+			__ASSERT_NO_MSG(0);
+			return;
+		}
 
 		buf->len -= len;
 		buf->data += len;
@@ -457,7 +470,11 @@ static void handle_msg_data_in(struct udc_stm32_data *priv, uint8_t epnum)
 
 	if (udc_ep_buf_has_zlp(buf)) {
 		udc_ep_buf_clear_zlp(buf);
-		HAL_PCD_EP_Transmit(&priv->pcd, ep, buf->data, 0);
+		hal_ret = HAL_PCD_EP_Transmit(&priv->pcd, ep, buf->data, 0);
+		if (hal_ret != HAL_OK) {
+			LOG_ERR("HAL_PCD_EP_Transmit failed: %d", hal_ret);
+			__ASSERT_NO_MSG(0);
+		}
 
 		return;
 	}
@@ -497,6 +514,7 @@ static void handle_msg_setup(struct udc_stm32_data *priv)
 {
 	struct usb_setup_packet *setup = (void *)priv->pcd.Setup;
 	const struct device *dev = priv->dev;
+	HAL_StatusTypeDef hal_ret;
 	struct net_buf *buf;
 	int err;
 
@@ -518,7 +536,11 @@ static void handle_msg_setup(struct udc_stm32_data *priv)
 
 	if ((setup->bmRequestType == 0) && (setup->bRequest == USB_SREQ_SET_ADDRESS)) {
 		/* HAL requires we set the address before submitting status */
-		HAL_PCD_SetAddress(&priv->pcd, setup->wValue);
+		hal_ret = HAL_PCD_SetAddress(&priv->pcd, setup->wValue);
+		if (hal_ret != HAL_OK) {
+			LOG_ERR("HAL_PCD_SetAddress() fialed: %d", hal_ret);
+			__ASSERT_NO_MSG(0);
+		}
 	}
 
 	if (udc_ctrl_stage_is_data_out(dev)) {
@@ -592,18 +614,22 @@ int udc_stm32_init(const struct device *dev)
 		return -EIO;
 	}
 
-	HAL_PCD_Stop(&priv->pcd);
+	if (HAL_PCD_Stop(&priv->pcd) != HAL_OK) {
+		return -EIO;
+	}
 
 	return 0;
 }
 
 #if defined(USB) || defined(USB_DRD_FS)
-static inline void udc_stm32_mem_init(const struct device *dev)
+static int udc_stm32_mem_init(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	const struct udc_stm32_config *cfg = dev->config;
 
 	priv->occupied_mem = cfg->pma_offset;
+
+	return 0;
 }
 
 static int udc_stm32_ep_mem_config(const struct device *dev,
@@ -627,15 +653,16 @@ static int udc_stm32_ep_mem_config(const struct device *dev,
 	}
 
 	/* Configure PMA offset for the endpoint */
-	HAL_PCDEx_PMAConfig(&priv->pcd, ep->addr, PCD_SNG_BUF,
-			    priv->occupied_mem);
+	if (HAL_PCDEx_PMAConfig(&priv->pcd, ep->addr, PCD_SNG_BUF, priv->occupied_mem) != HAL_OK) {
+		return -EIO;
+	}
 
 	priv->occupied_mem += size;
 
 	return 0;
 }
 #else
-static void udc_stm32_mem_init(const struct device *dev)
+static int udc_stm32_mem_init(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	const struct udc_stm32_config *cfg = dev->config;
@@ -646,24 +673,32 @@ static void udc_stm32_mem_init(const struct device *dev)
 	if (cfg->ep_mps % 4 || cfg->ep0_mps % 4) {
 		LOG_ERR("Not a 32-bit word multiple: ep0(%u)|ep(%u)",
 			cfg->ep0_mps, cfg->ep_mps);
-		return;
+		return -EINVAL;
 	}
 
 	/* The documentation is not clear at all about RX FiFo size requirement,
 	 * 160 has been selected through trial and error.
 	 */
 	words = MAX(160, cfg->ep_mps / 4);
-	HAL_PCDEx_SetRxFiFo(&priv->pcd, words);
+	if (HAL_PCDEx_SetRxFiFo(&priv->pcd, words) != HAL_OK) {
+		return -EIO;
+	}
 	priv->occupied_mem = words * 4;
 
 	/* For EP0 TX, reserve only one MPS */
-	HAL_PCDEx_SetTxFiFo(&priv->pcd, 0, cfg->ep0_mps / 4);
+	if (HAL_PCDEx_SetTxFiFo(&priv->pcd, 0, cfg->ep0_mps / 4) != HAL_OK) {
+		return -EIO;
+	}
 	priv->occupied_mem += cfg->ep0_mps;
 
 	/* Reset TX allocs */
 	for (unsigned int i = 1U; i < cfg->num_endpoints; i++) {
-		HAL_PCDEx_SetTxFiFo(&priv->pcd, i, 0);
+		if (HAL_PCDEx_SetTxFiFo(&priv->pcd, i, 0) != HAL_OK) {
+			return -EIO;
+		}
 	}
+
+	return 0;
 }
 
 static int udc_stm32_ep_mem_config(const struct device *dev,
@@ -685,7 +720,9 @@ static int udc_stm32_ep_mem_config(const struct device *dev,
 		if (priv->occupied_mem >= (words * 4)) {
 			priv->occupied_mem -= (words * 4);
 		}
-		HAL_PCDEx_SetTxFiFo(&priv->pcd, USB_EP_GET_IDX(ep->addr), 0);
+		if (HAL_PCDEx_SetTxFiFo(&priv->pcd, USB_EP_GET_IDX(ep->addr), 0) != HAL_OK) {
+			return -EIO;
+		}
 		return 0;
 	}
 
@@ -694,7 +731,9 @@ static int udc_stm32_ep_mem_config(const struct device *dev,
 		return -ENOMEM;
 	}
 
-	HAL_PCDEx_SetTxFiFo(&priv->pcd, USB_EP_GET_IDX(ep->addr), words);
+	if (HAL_PCDEx_SetTxFiFo(&priv->pcd, USB_EP_GET_IDX(ep->addr), words) != HAL_OK) {
+		return -EIO;
+	}
 
 	priv->occupied_mem += words * 4;
 
@@ -711,7 +750,10 @@ static int udc_stm32_enable(const struct device *dev)
 
 	LOG_DBG("Enable UDC");
 
-	udc_stm32_mem_init(dev);
+	ret = udc_stm32_mem_init(dev);
+	if (ret != 0) {
+		return ret;
+	}
 
 	status = HAL_PCD_Start(&priv->pcd);
 	if (status != HAL_OK) {
