@@ -316,9 +316,12 @@ static int openthread_l2_init(struct net_if *iface)
 	ot_l2_context->iface = iface;
 
 	if (!IS_ENABLED(CONFIG_OPENTHREAD_COPROCESSOR)) {
-		net_mgmt_init_event_callback(&ip6_addr_cb, ipv6_addr_event_handler,
-					     NET_EVENT_IPV6_ADDR_ADD | NET_EVENT_IPV6_MADDR_ADD);
-		net_mgmt_add_event_callback(&ip6_addr_cb);
+		if (!IS_ENABLED(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)) {
+			net_mgmt_init_event_callback(&ip6_addr_cb, ipv6_addr_event_handler,
+						     NET_EVENT_IPV6_ADDR_ADD |
+						     NET_EVENT_IPV6_MADDR_ADD);
+			net_mgmt_add_event_callback(&ip6_addr_cb);
+		}
 		net_if_dormant_on(iface);
 
 		openthread_set_receive_cb(ot_receive_handler, (void *)ot_l2_context);

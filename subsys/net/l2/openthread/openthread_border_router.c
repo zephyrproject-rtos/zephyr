@@ -25,6 +25,7 @@
 #include <ipv6.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/openthread.h>
+#include <zephyr/sys/util.h>
 
 #include <inttypes.h>
 #include <stdarg.h>
@@ -38,6 +39,7 @@ static struct net_mgmt_event_callback ail_net_event_ipv4_addr_add_cb;
 #endif /* CONFIG_NET_IPV4 */
 static uint32_t ail_iface_index;
 static struct net_if *ail_iface_ptr;
+static struct net_if *ot_iface_ptr;
 static bool is_border_router_started;
 char otbr_vendor_name[] = OTBR_VENDOR_NAME;
 char otbr_base_service_instance_name[] = OTBR_BASE_SERVICE_INSTANCE_NAME;
@@ -53,6 +55,7 @@ K_MEM_SLAB_DEFINE_STATIC(border_router_messages_slab, sizeof(struct otbr_msg_ctx
 		  CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_MSG_POOL_NUM, sizeof(void *));
 
 static const char *create_base_name(otInstance *ot_instance, char *base_name);
+static void openthread_border_router_add_route_to_multicast_groups(void);
 
 #if defined(CONFIG_NET_IPV4)
 static void openthread_border_router_check_for_dhcpv4_addr(struct net_if *iface,
@@ -66,8 +69,12 @@ int openthread_start_border_router_services(struct net_if *ot_iface, struct net_
 	otInstance *instance = openthread_get_default_instance();
 	ail_iface_index = (uint32_t)net_if_get_by_iface(ail_iface);
 	ail_iface_ptr = ail_iface;
+	ot_iface_ptr = ot_iface;
 
 	net_if_flag_set(ot_iface, NET_IF_FORWARD_MULTICASTS);
+	net_if_flag_set(ail_iface, NET_IF_FORWARD_MULTICASTS);
+
+	openthread_border_router_add_route_to_multicast_groups();
 
 	openthread_mutex_lock();
 
@@ -266,18 +273,42 @@ static void ot_bbr_multicast_listener_handler(void *context,
 					      otBackboneRouterMulticastListenerEvent event,
 					      const otIp6Address *address)
 {
-	struct openthread_context *ot_context = context;
-	struct in6_addr mcast_prefix = {0};
+	struct openthread_context *ot_context = (struct openthread_context *)context;
+	struct in6_addr recv_addr = {0};
+	struct net_if_mcast_addr *mcast_addr = NULL;
+	struct net_route_entry_mcast *entry = NULL;
 
-	memcpy(mcast_prefix.s6_addr, address->mFields.m32, sizeof(otIp6Address));
+	memcpy(recv_addr.s6_addr, address->mFields.m32, sizeof(otIp6Address));
 
 	if (event == OT_BACKBONE_ROUTER_MULTICAST_LISTENER_ADDED) {
-		net_route_mcast_add((struct net_if *)ot_context->iface, &mcast_prefix, 16);
+		entry = net_route_mcast_lookup(&recv_addr);
+		if (entry == NULL) {
+			entry = net_route_mcast_add(ot_context->iface, &recv_addr,
+						    NUM_BITS(struct in6_addr));
+		}
+		if (entry != NULL) {
+			/*
+			 * No need to perform mcast_lookup explicitly as it's already done in
+			 * net_if_ipv6_maddr_add call. If it's found, NULL will be returned
+			 * and maddr_join will not be performed.
+			 */
+			mcast_addr = net_if_ipv6_maddr_add(ot_context->iface,
+							   (const struct in6_addr *)&recv_addr);
+			if (mcast_addr != NULL) {
+				net_if_ipv6_maddr_join(ot_context->iface, mcast_addr);
+			}
+		}
 	} else {
-		struct net_route_entry_mcast *route_to_del = net_route_mcast_lookup(&mcast_prefix);
+		struct net_route_entry_mcast *route_to_del = net_route_mcast_lookup(&recv_addr);
+		struct net_if_mcast_addr *addr_to_del;
 
+		addr_to_del = net_if_ipv6_maddr_lookup(&recv_addr, &(ot_context->iface));
 		if (route_to_del != NULL) {
 			net_route_mcast_del(route_to_del);
+		}
+
+		if (addr_to_del != NULL && net_if_ipv6_maddr_is_joined(addr_to_del)) {
+			net_if_ipv6_maddr_leave(ot_context->iface, addr_to_del);
 		}
 	}
 }
@@ -479,6 +510,18 @@ static bool openthread_border_router_check_unicast_packet_forwarding_policy(stru
 		return false;
 	}
 
+	/*
+	 * This is the case when a packet from OpenThread stack is sent via UDP platform.
+	 * Packet will be eventually returned to OpenThread interface, but it won't have
+	 * orig_iface set, an indication that the packet was not forwarded from another interface.
+	 * In this case, this function should not check and let the packet be handled by
+	 * 15.4 layer.
+	 */
+
+	if (net_pkt_orig_iface(pkt) != ail_iface_ptr && net_pkt_iface(pkt) == ot_iface_ptr) {
+		return true;
+	}
+
 	/* An IPv6 packet with a link-local source address or a link-local destination address
 	 * is never forwarded.
 	 */
@@ -535,4 +578,30 @@ bool openthread_border_router_check_packet_forwarding_rules(struct net_pkt *pkt)
 	}
 
 	return true;
+}
+
+static void openthread_border_router_add_route_to_multicast_groups(void)
+{
+	static uint8_t mcast_group_idx[] = {
+		0x04, /** Admin-Local scope multicast address */
+		0x05, /** Site-Local scope multicast address */
+		0x08, /** Organization-Local scope multicast address */
+		0x0e, /** Global scope multicast address */
+	};
+	struct in6_addr addr = {0};
+	struct net_if_mcast_addr *mcast_addr = NULL;
+	struct net_route_entry_mcast *entry = NULL;
+
+	ARRAY_FOR_EACH(mcast_group_idx, i) {
+
+		net_ipv6_addr_create(&addr, (0xff << 8) | mcast_group_idx[i], 0, 0, 0, 0, 0, 0, 1);
+		entry = net_route_mcast_add(ail_iface_ptr, &addr, NUM_BITS(struct in6_addr));
+		if (entry != NULL) {
+			mcast_addr = net_if_ipv6_maddr_add(ail_iface_ptr,
+							   (const struct in6_addr *)&addr);
+			if (mcast_addr != NULL) {
+				net_if_ipv6_maddr_join(ail_iface_ptr, mcast_addr);
+			}
+		}
+	}
 }
