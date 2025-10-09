@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/renesas_rzv_clock.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/dma/renesas_rz_dma.h>
 
 / {
 	compatible = "renesas,r9a07g054";
@@ -641,6 +642,26 @@
 			};
 		};
 
+		dma0: dma@41800000 { /* Secure DMA */
+			compatible = "renesas,rz-dma";
+			reg = <0x41800000 0x800>, <0x41810000 0x20>;
+			reg-names = "reg_main", "ext";
+			interrupts = <108 1>, <109 1>, <110 1>, <111 1>,
+				     <112 1>, <113 1>, <114 1>, <115 1>,
+				     <116 1>, <117 1>, <118 1>, <119 1>,
+				     <120 1>, <121 1>, <122 1>, <123 1>,
+				     <124 1>; /* DMAERR1 */
+			interrupt-names = "ch0", "ch1", "ch2", "ch3",
+					  "ch4", "ch5", "ch6", "ch7",
+					  "ch8", "ch9", "ch10", "ch11",
+					  "ch12", "ch13", "ch14", "ch15",
+					  "err1";
+			dma-channels = <16>;
+			#dma-cells = <2>;
+			dma-buf-addr-alignment = <4>;
+			status = "disabled";
+		};
+
 		scif0: serial@4004b800 {
 			compatible = "renesas,rz-scif-uart";
 			channel = <0>;
@@ -1015,6 +1036,39 @@
 			interrupts = <79 2>;
 			interrupt-names = "mhuns";
 			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		spi0: spi@4004ac00 {
+			compatible = "renesas,rz-rspi";
+			reg = <0x4004ac00 DT_SIZE_K(1)>;
+			interrupts = <413 1>, <414 1>, <415 1>;
+			interrupt-names = "rx", "tx", "error";
+			channel = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi1: spi@4004b000 {
+			compatible = "renesas,rz-rspi";
+			reg = <0x4004b000 DT_SIZE_K(1)>;
+			interrupts = <416 1>, <417 1>, <418 1>;
+			interrupt-names = "rx", "tx", "error";
+			channel = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi2: spi@4004b400 {
+			compatible = "renesas,rz-rspi";
+			reg = <0x4004b400 DT_SIZE_K(1)>;
+			interrupts = <419 1>, <420 1>, <421 1>;
+			interrupt-names = "rx", "tx", "error";
+			channel = <2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 
