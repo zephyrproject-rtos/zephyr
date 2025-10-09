@@ -192,11 +192,10 @@
 		};
 
 		lfclk: lfclk {
-			compatible = "nordic,nrf-lfclk";
-			status = "disabled";
+			compatible = "nordic,nrfs-lfclk";
+            status = "disabled";
 			#clock-cells = <0>;
 			clock-frequency = <32768>;
-			status = "okay";
 			lfrc-accuracy-ppm = <500>;
 			lflprc-accuracy-ppm = <1000>;
 			lfrc-startup-time-us = <200>; /* To be measured */

@@ -128,7 +128,7 @@ static const struct test_clk_context global_hsfll_test_clk_contexts[] = {
 };
 #endif
 
-#if defined(CONFIG_CLOCK_CONTROL_NRF_LFCLK)
+#if defined(CONFIG_CLOCK_CONTROL_NRFS_LFCLK)
 const struct nrf_clock_spec test_clk_specs_lfclk[] = {
 	{
 		.frequency = 32768,
@@ -351,7 +351,7 @@ ZTEST(nrf2_clock_control, test_global_hsfll_control)
 }
 #endif
 
-#if defined(CONFIG_CLOCK_CONTROL_NRF_LFCLK)
+#if defined(CONFIG_CLOCK_CONTROL_NRFS_LFCLK)
 ZTEST(nrf2_clock_control, test_lfclk_control)
 {
 	TC_PRINT("LFCLK test\n");

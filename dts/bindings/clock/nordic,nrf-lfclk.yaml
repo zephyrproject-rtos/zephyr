@@ -27,7 +27,7 @@ description: |
             clock-names = "hfxo", "lfxo";
     };
 
-compatible: "nordic,nrf-lfclk"
+compatible: "nordic,nrfs-lfclk"
 
 include: fixed-clock.yaml
 
