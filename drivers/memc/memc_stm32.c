@@ -77,10 +77,10 @@ static int memc_stm32_init(const struct device *dev)
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_fmc)
 #if (DT_ENUM_IDX(DT_DRV_INST(0), st_mem_swap) == 1)
 	/* sdram-sram */
-	MODIFY_REG(FMC_Bank1_R->BTCR[0], FMC_BCR1_BMAP, FMC_BCR1_BMAP_0);
+	sys_modify_bits((mem_addr_t)&FMC_Bank1_R->BTCR[0], FMC_BCR1_BMAP, FMC_BCR1_BMAP_0);
 #elif (DT_ENUM_IDX(DT_DRV_INST(0), st_mem_swap) == 2)
 	/* sdramb2 */
-	MODIFY_REG(FMC_Bank1_R->BTCR[0], FMC_BCR1_BMAP, FMC_BCR1_BMAP_1);
+	sys_modify_bits((mem_addr_t)&FMC_Bank1_R->BTCR[0], FMC_BCR1_BMAP, FMC_BCR1_BMAP_1);
 #endif
 #endif
 

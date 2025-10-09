@@ -148,7 +148,7 @@ void soc_early_init_hook(void)
 	 * Applicable only to RevY (REV_ID 0x1003)
 	 */
 	if (LL_DBGMCU_GetRevisionID() == 0x1003) {
-		MODIFY_REG(GPV->AXI_TARG7_FN_MOD, 0x1, 0x1);
+		sys_modify_bits((mem_addr_t)&GPV->AXI_TARG7_FN_MOD, 0x1, 0x1);
 	}
 }
 

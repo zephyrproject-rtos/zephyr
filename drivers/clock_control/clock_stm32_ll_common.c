@@ -813,11 +813,11 @@ static void set_up_plls(void)
 #if defined(STM32_PLL_ENABLED)
 
 #if defined(STM32_SRC_PLL_P) && STM32_PLL_P_ENABLED
-	MODIFY_REG(RCC->PLLCFGR, RCC_PLLCFGR_PLLP, pllp(STM32_PLL_P_DIVISOR));
+	sys_modify_bits((mem_addr_t)&RCC->PLLCFGR, RCC_PLLCFGR_PLLP, pllp(STM32_PLL_P_DIVISOR));
 	RCC_PLLP_ENABLE();
 #endif
 #if defined(STM32_SRC_PLL_Q) && STM32_PLL_Q_ENABLED
-	MODIFY_REG(RCC->PLLCFGR, RCC_PLLCFGR_PLLQ, pllq(STM32_PLL_Q_DIVISOR));
+	sys_modify_bits((mem_addr_t)&RCC->PLLCFGR, RCC_PLLCFGR_PLLQ, pllq(STM32_PLL_Q_DIVISOR));
 	RCC_PLLQ_ENABLE();
 #endif
 
