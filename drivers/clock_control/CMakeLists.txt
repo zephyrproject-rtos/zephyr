@@ -61,6 +61,7 @@ zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_NRF_IRON_HSFLL_LOCAL clock_con
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_NRF_LFCLK           clock_control_nrf_lfclk.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_NRF_AUXPLL          clock_control_nrf_auxpll.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_NRF_HFCLK           clock_control_nrf_hfclk.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_NRF_XO              clock_control_nrf_xo.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_NRF_COMMON          clock_control_nrf_common.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_BOUFFALOLAB_BL60X   clock_control_bl60x.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_BOUFFALOLAB_BL61X   clock_control_bl61x.c)
