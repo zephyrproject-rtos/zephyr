@@ -32,6 +32,20 @@
 #define LSM6DSR_REG_WHO_AM_I 0x0F
 #define LSM6DSR_VAL_WHO_AM_I 0x6B
 
+#define LSM6DSR_REG_INT1_CTRL            0x0D
+#define LSM6DSR_MASK_INT1_CTRL_FULL      BIT(5)
+#define LSM6DSR_SHIFT_INT1_CTRL_FULL     5
+#define LSM6DSR_MASK_INT1_CTRL_FIFO_OVR  BIT(4)
+#define LSM6DSR_SHIFT_INT1_CTRL_FIFO_OVR 4
+#define LSM6DSR_MASK_INT1_FTH            BIT(3)
+#define LSM6DSR_SHIFT_INT1_FTH           3
+#define LSM6DSR_MASK_INT1_CTRL_BOOT      BIT(2)
+#define LSM6DSR_SHIFT_INT1_CTRL_BOOT     2
+#define LSM6DSR_MASK_INT1_CTRL_DRDY_G    BIT(1)
+#define LSM6DSR_SHIFT_INT1_CTRL_DRDY_G   1
+#define LSM6DSR_MASK_INT1_CTRL_DRDY_XL   BIT(0)
+#define LSM6DSR_SHIFT_INT1_CTRL_DRDY_XL  0
+
 #define LSM6DSR_REG_CTRL1_XL          0x10
 #define LSM6DSR_MASK_CTRL1_XL_ODR_XL  (BIT(7) | BIT(6) | BIT(5) | BIT(4))
 #define LSM6DSR_SHIFT_CTRL1_XL_ODR_XL 4
@@ -148,6 +162,9 @@ union lsm6dsr_bus_cfg {
 struct lsm6dsr_config {
 	int (*bus_init)(const struct device *dev);
 	const union lsm6dsr_bus_cfg bus_cfg;
+#ifdef CONFIG_LSM6DSR_TRIGGER
+	struct gpio_dt_spec int_gpio;
+#endif
 };
 
 struct lsm6dsr_data;
@@ -171,9 +188,33 @@ struct lsm6dsr_data {
 	const struct lsm6dsr_transfer_function *hw_tf;
 	uint16_t accel_freq;
 	uint16_t gyro_freq;
+
+#ifdef CONFIG_LSM6DSR_TRIGGER
+	const struct device *dev;
+	struct gpio_callback gpio_cb;
+
+	const struct sensor_trigger *data_ready_trigger;
+	sensor_trigger_handler_t data_ready_handler;
+
+#if defined(CONFIG_LSM6DSR_TRIGGER_OWN_THREAD)
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_LSM6DSR_THREAD_STACK_SIZE);
+	struct k_thread thread;
+	struct k_sem gpio_sem;
+#elif defined(CONFIG_LSM6DSR_TRIGGER_GLOBAL_THREAD)
+	struct k_work work;
+#endif
+
+#endif /* CONFIG_LSM6DSR_TRIGGER */
 };
 
 int lsm6dsr_spi_init(const struct device *dev);
 int lsm6dsr_i2c_init(const struct device *dev);
+
+#ifdef CONFIG_LSM6DSR_TRIGGER
+int lsm6dsr_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
+			sensor_trigger_handler_t handler);
+
+int lsm6dsr_init_interrupt(const struct device *dev);
+#endif
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_LSM6DSR_LSM6DSR_H_ */

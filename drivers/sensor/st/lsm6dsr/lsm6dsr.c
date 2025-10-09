@@ -482,6 +482,9 @@ static int lsm6dsr_channel_get(const struct device *dev, enum sensor_channel cha
 
 static DEVICE_API(sensor, lsm6dsr_driver_api) = {
 	.attr_set = lsm6dsr_attr_set,
+#if CONFIG_LSM6DSR_TRIGGER
+	.trigger_set = lsm6dsr_trigger_set,
+#endif
 	.sample_fetch = lsm6dsr_sample_fetch,
 	.channel_get = lsm6dsr_channel_get,
 };
@@ -589,6 +592,14 @@ static int lsm6dsr_init(const struct device *dev)
 		return ret;
 	}
 
+#ifdef CONFIG_LSM6DSR_TRIGGER
+	ret = lsm6dsr_init_interrupt(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to initialize interrupt.");
+		return ret;
+	}
+#endif
+
 	return 0;
 }
 
@@ -609,13 +620,19 @@ static int lsm6dsr_init(const struct device *dev)
 /*
  * Instantiation macros used when a device is on a SPI bus.
  */
+
+#ifdef CONFIG_LSM6DSR_TRIGGER
+#define LSM6DSR_CFG_IRQ(inst) .int_gpio = GPIO_DT_SPEC_INST_GET(inst, irq_gpios),
+#else
+#define LSM6DSR_CFG_IRQ(inst)
+#endif /* CONFIG_LSM6DSR_TRIGGER */
+
 #define LSM6DSR_CONFIG_SPI(inst)                                                                   \
-	{                                                                                          \
-		.bus_init = lsm6dsr_spi_init,                                                      \
-		.bus_cfg.spi = SPI_DT_SPEC_INST_GET(                                               \
-			inst,                                                                      \
-			SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA, 0),  \
-	}
+	{.bus_init = lsm6dsr_spi_init,                                                             \
+	 .bus_cfg.spi = SPI_DT_SPEC_INST_GET(                                                      \
+		 inst, SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA, 0),   \
+	 COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),		\
+		(LSM6DSR_CFG_IRQ(inst)), ()) }
 
 #define LSM6DSR_DEFINE_SPI(inst)                                                                   \
 	static struct lsm6dsr_data lsm6dsr_data_##inst;                                            \
@@ -627,10 +644,10 @@ static int lsm6dsr_init(const struct device *dev)
  */
 
 #define LSM6DSR_CONFIG_I2C(inst)                                                                   \
-	{                                                                                          \
-		.bus_init = lsm6dsr_i2c_init,                                                      \
-		.bus_cfg.i2c = I2C_DT_SPEC_INST_GET(inst),                                         \
-	}
+	{.bus_init = lsm6dsr_i2c_init,                                                             \
+	 .bus_cfg.i2c = I2C_DT_SPEC_INST_GET(inst),                                                \
+	 COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
+		(LSM6DSR_CFG_IRQ(inst)), ()) }
 
 #define LSM6DSR_DEFINE_I2C(inst)                                                                   \
 	static struct lsm6dsr_data lsm6dsr_data_##inst;                                            \
