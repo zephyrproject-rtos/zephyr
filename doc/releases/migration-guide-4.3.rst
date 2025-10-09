@@ -251,6 +251,12 @@ PTP Clock
   ratio adjusting based on nominal frequency. Drivers implementing :c:func:`ptp_clock_rate_adjust`
   should be adjusted to account for the new behavior.
 
+Video
+*****
+
+* The ``min_line_count`` and ``max_line_count`` fields have been removed from :c:struct:`video_caps`.
+  Application should base on the new :c:member:`video_format.size` to allocate buffers.
+
 Other subsystems
 ****************
 
