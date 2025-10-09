@@ -248,10 +248,20 @@ const char *bt_att_err_to_str(uint8_t att_err)
 }
 #endif /* CONFIG_BT_ATT_ERR_TO_STR */
 
-static void att_tx_destroy(struct net_buf *buf)
+static void att_tx_destroy_work_handler(struct k_work *work);
+static K_WORK_DEFINE(att_tx_destroy_work, att_tx_destroy_work_handler);
+static sys_slist_t tx_destroy_queue = SYS_SLIST_STATIC_INIT(&tx_destroy_queue);
+
+static void att_tx_destroy_work_handler(struct k_work *work)
 {
+	struct net_buf *buf = net_buf_slist_get(&tx_destroy_queue);
 	struct bt_att_tx_meta_data *p_meta = att_get_tx_meta_data(buf);
 	struct bt_att_tx_meta_data meta;
+
+	if (buf == NULL) {
+		/* Spurious wakeup */
+		return;
+	}
 
 	LOG_DBG("%p", buf);
 
@@ -278,6 +288,45 @@ static void att_tx_destroy(struct net_buf *buf)
 	if (meta.opcode != 0) {
 		att_on_sent_cb(&meta);
 	}
+
+	if (!sys_slist_is_empty(&tx_destroy_queue)) {
+		int err;
+
+		err = k_work_submit_to_queue(NULL, work);
+		if (err < 0) {
+			LOG_ERR("Failed to re-submit %s: %d", __func__, err);
+			k_oops();
+		}
+	}
+}
+
+static void att_tx_destroy(struct net_buf *buf)
+{
+	int err;
+
+	/* We need to invoke att_on_sent_cb, which may block. We
+	 * don't want to block in a net buf destroy callback, so we
+	 * defer to a sensible workqueue.
+	 *
+	 * bt_workq cannot be used because it currently forms a
+	 * deadlock with att_pool: bt_workq -> bt_att_recv ->
+	 * send_err_rsp waits for att pool.
+	 *
+	 * We use the system work queue to preserve earlier
+	 * behavior. The tx_processor used to run on the system work
+	 * queue, and it could end up here: tx_processor ->
+	 * bt_hci_send -> net_buf_unref.
+	 *
+	 * A possible alternative is tx_notify_workqueue_get() since
+	 * this workqueue is processing similar "completion" events.
+	 */
+	net_buf_slist_put(&tx_destroy_queue, buf);
+	err = k_work_submit(&att_tx_destroy_work);
+	if (err < 0) {
+		LOG_ERR("Failed to submit att_tx_destroy_work: %d", err);
+		k_oops();
+	}
+	/* Continues in att_tx_destroy_work_handler() */
 }
 
 NET_BUF_POOL_DEFINE(att_pool, CONFIG_BT_ATT_TX_COUNT,
