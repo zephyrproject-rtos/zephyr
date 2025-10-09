@@ -449,9 +449,11 @@ error:
 
 static int stm32_sdmmc_access_deinit(struct stm32_sdmmc_priv *priv)
 {
-	int err = 0;
+	HAL_StatusTypeDef hal_ret;
 
 #if STM32_SDMMC_USE_DMA
+	int err;
+
 	err = stm32_sdmmc_dma_deinit(priv);
 	if (err) {
 		LOG_ERR("DMA deinit failed");
@@ -460,14 +462,14 @@ static int stm32_sdmmc_access_deinit(struct stm32_sdmmc_priv *priv)
 #endif
 
 #if defined(CONFIG_SDMMC_STM32_EMMC)
-	err = HAL_MMC_DeInit(&priv->hsd);
+	hal_ret = HAL_MMC_DeInit(&priv->hsd);
 #else
-	err = HAL_SD_DeInit(&priv->hsd);
+	hal_ret = HAL_SD_DeInit(&priv->hsd);
 	stm32_sdmmc_clock_disable(priv);
 #endif
-	if (err != HAL_OK) {
+	if (hal_ret != HAL_OK) {
 		LOG_ERR("failed to deinit stm32_sdmmc (ErrorCode 0x%X)", priv->hsd.ErrorCode);
-		return err;
+		return -EIO;
 	}
 
 #if !defined(CONFIG_SDMMC_STM32_EMMC)
