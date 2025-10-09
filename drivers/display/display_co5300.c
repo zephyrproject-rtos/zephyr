@@ -36,31 +36,12 @@ typedef int32_t b32;
 
 //#include "co5300_regs.h"
 
-/******OLD CODE********/
-static struct display_cmds {
+struct display_cmds {
 	uint8_t *cmd_code;
 	uint8_t size;
 };
 
-#if 0
 struct co5300_config {
-	LCDIF_Type *lcdif_base;
-	MIPI_DSI_HOST_Type *mipi_base;
-	enum display_pixel_format initial_pixel_format;
-	const struct gpio_dt_spec reset_gpio;
-	const struct gpio_dt_spec power_gpio;
-	const struct gpio_dt_spec mipi_te_gpio;
-};
-
-struct co5300_data {
-	int Placeholder;
-};
-#endif
-
-/******END OF OLD CODE********/
-
-
-static struct co5300_config {
 	const struct device *mipi_dsi;
 	const struct gpio_dt_spec reset_gpio;
 	const struct gpio_dt_spec backlight_gpio;
@@ -72,14 +53,17 @@ static struct co5300_config {
 	uint16_t num_of_lanes;
 };
 
-static struct co5300_data {
+struct co5300_data {
 	enum display_pixel_format pixel_format;
 	uint8_t bytes_per_pixel;
 	struct gpio_callback te_gpio_cb;
 	struct k_sem te_sem;
 };
 
-u8* lcm_init_cmds = 0xFE20F45AF559FE409600C900FE003500532051FF63FF2A000601D72B000001D1;
+u8 lcm_init_cmds[] = {0xFE, 0x20, 0xF4, 0x5A, 0xF5, 0x59, 0xFE, 0x40, 0x96,
+		0x00, 0xC9, 0x00, 0xFE, 0x00, 0x35, 0x00, 0x53, 0x20, 0x51,
+		0xFF, 0x63, 0xFF, 0x2A, 0x00, 0x06, 0x01, 0xD7,
+		0x2B, 0x00, 0x00, 0x01, 0xD1};
 #define LCM_INIT_CMD_BYTE_COUNT 32
 
 
@@ -113,24 +97,25 @@ static int co5300_write(const struct device *dev,
 
 	const struct co5300_config *config = dev->config;
 	struct co5300_data *data = dev->data;
-	struct device *mipi_base = config->mipi_dsi;
-	enum display_pixel_format pixel_format = data->pixel_format;
+//	const struct device *mipi_base = config->mipi_dsi;
+//	enum display_pixel_format pixel_format = data->pixel_format;
 
 	struct mipi_dsi_device mdev = {0};
-	int ret;
-	uint32_t i;
-	uint8_t cmd, param;
+	int ret = 0;
 
 	/* Attach to MIPI DSI host */
 	mdev.data_lanes = config->num_of_lanes;
 	mdev.pixfmt = data->pixel_format;
 
+	/*
 	ret = mipi_dsi_attach(config->mipi_dsi, config->channel, &mdev);
+	*/
 	if (ret < 0) {
 		//LOG_ERR("Could not attach to MIPI-DSI host");
 		return ret;
 	}
 
+	return 0;
 
 #if 0
 	uint8_t cmd                   = (uint8_t)command;
@@ -223,27 +208,27 @@ static int co5300_read(const struct device *dev,
 		const uint16_t x, const uint16_t y,
 		const struct display_buffer_descriptor *desc, void *buf)
 {
-
+	return 0;
 }
 
 static int co5300_clear(const struct device *dev)
 {
-
+	return 0;
 }
 
 static void *co5300_get_framebuffer(const struct device *dev)
 {
-
+	return 0;
 }
 
 static int co5300_set_brightness(const struct device *dev, uint8_t)
 {
-
+	return 0;
 }
 
 static int co5300_set_contrast(const struct device *dev, uint8_t contrast)
 {
-
+	return 0;
 }
 
 static void co5300_get_capabilities(const struct device *dev,
@@ -263,14 +248,16 @@ static void co5300_get_capabilities(const struct device *dev,
 #endif
 
 	const struct co5300_config *config = dev->config;
-	const struct co5300_data *data = dev->data;
+//	const struct co5300_data *data = dev->data;
 
 	memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = config->panel_width;
 	capabilities->y_resolution = config->panel_height;
 	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_565 |
 						PIXEL_FORMAT_RGB_888;
-	switch (data->pixel_format) {
+//	switch (data->pixel_format) {
+	//@INCOMPLETE @HARDCODE(Emilio): Fix this later.
+	switch (MIPI_DSI_PIXFMT_RGB565) {
 	case MIPI_DSI_PIXFMT_RGB565:
 		capabilities->current_pixel_format = PIXEL_FORMAT_RGB_565;
 		break;
@@ -289,7 +276,7 @@ static void co5300_get_capabilities(const struct device *dev,
 static int co5300_set_pixel_format(const struct device *dev,
 		const enum display_pixel_format pixel_format)
 {
-	const struct co5300_config *config = dev->config;
+//	const struct co5300_config *config = dev->config;
 	struct co5300_data *data = dev->data;
 	uint8_t param;
 
@@ -308,8 +295,11 @@ static int co5300_set_pixel_format(const struct device *dev,
 		/* Other display formats not implemented */
 		return -ENOTSUP;
 	}
+	/*
 	return mipi_dsi_dcs_write(config->mipi_dsi, config->channel,
 				MIPI_DCS_SET_PIXEL_FORMAT, &param, 1);
+				*/
+	return 0;
 
 }
 
@@ -325,12 +315,12 @@ static int co5300_set_orientation(const struct device *dev,
 
 static int co5300_init(const struct device *dev)
 {
-	struct co5300_config *config = dev->config;
+	const struct co5300_config *config = dev->config;
 	struct co5300_data *data = dev->data;
-	u32 iter;
-	u32 Result = 1;
-	enum display_pixel_format zephyr_pixel_format;
-	const struct mipi_device *mipi_device = config->mipi_dsi;
+//	u32 iter;
+//	u32 Result = 1;
+//	enum display_pixel_format zephyr_pixel_format;
+//	const struct mipi_device *mipi_device = config->mipi_dsi;
 
 #if 0
 	//@TODO(Emilio): Coming from display_co5300 unsure if
@@ -386,8 +376,14 @@ static int co5300_init(const struct device *dev)
 	lcm_init_settings.size = LCM_INIT_CMD_BYTE_COUNT;
 	/* Set the LCM init settings. */
 	//for (int i = 0; i < ARRAY_SIZE(lcm_init_settings); i++) {
-	for (int i = 0; i < 10; i++) {
+	u8* curr_cmd = lcm_init_settings.cmd_code;
+	for (int i = 0; i < lcm_init_settings.size;) {
 		//@TODO(Emilio): rename and make correct cmds
+		u8 cmd_code = *curr_cmd++;
+		i++;
+		u8 param = *curr_cmd++;
+		i++;
+		param++; cmd_code++;
 		/*
 		int ret = mipi_dsi_dcs_write(config->mipi_dsi, config->channel,
 					cmd, &param, 1);
@@ -410,16 +406,21 @@ static int co5300_init(const struct device *dev)
 //		LOG_ERR("Pixel format not supported");
 		return -ENOTSUP;
 	}
+	/*
 	ret = mipi_dsi_dcs_write(config->mipi_dsi, config->channel,
 				MIPI_DCS_SET_PIXEL_FORMAT, &param, 1);
+				*/
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Delay 50 ms before exiting sleep mode */
 	k_sleep(K_MSEC(50));
+
+	/*
 	ret = mipi_dsi_dcs_write(config->mipi_dsi, config->channel,
 				MIPI_DCS_EXIT_SLEEP_MODE, NULL, 0);
+				*/
 	if (ret < 0) {
 		return ret;
 	}
@@ -429,6 +430,8 @@ static int co5300_init(const struct device *dev)
 	 * 120 ms before sending that command. To be safe, delay 150ms
 	 */
 	k_sleep(K_MSEC(150));
+
+	return 0;
 }
 
 static DEVICE_API(display, co5300_api) = {
