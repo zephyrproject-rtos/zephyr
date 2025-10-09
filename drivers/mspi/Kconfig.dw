@@ -14,6 +14,7 @@ if MSPI_DW
 
 config MSPI_DW_HANDLE_FIFOS_IN_SYSTEM_WORKQUEUE
 	bool "Handle FIFO in system workqueue"
+	depends on MULTITHREADING
 	help
 	  When the driver does not use DMA for transferring data to/from the
 	  SSI FIFOs, handling of those may take a significant amount of time.
