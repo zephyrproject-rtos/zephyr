@@ -142,9 +142,6 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpspi1>;
 	pinctrl-names = "default";
-	pcs-sck-delay = <5>;
-	sck-pcs-delay = <5>;
-	transfer-delay = <125>;
 
 	mx25r6435fm2il0: flash@0 {
 		compatible = "jedec,spi-nor";
@@ -163,6 +160,9 @@
 		mxicy,mx25r-power-mode = "low-power";
 		/* 8 MHz for low power mode */
 		spi-max-frequency = <DT_FREQ_M(8)>;
+		spi-cs-setup-delay-ns = <5>;
+		spi-cs-hold-delay-ns = <5>;
+		spi-interframe-delay-ns = <125>;
 	};
 };
 
