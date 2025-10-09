@@ -1,0 +1,4 @@
+# Copyright (c) 2025, Helbling Technik AG
+# SPDX-License-Identifier: Apache-2.0
+
+include: sensor-device.yaml

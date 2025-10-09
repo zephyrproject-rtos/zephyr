@@ -1,0 +1,89 @@
+# LSM6DSR accelerometer and gyroscope sensor configuration
+# options
+
+# Copyright (c) 2025 Helbling Technik AG
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LSM6DSR
+	bool "LSM6DSR I2C/SPI accelerometer and gyroscope Chip"
+	default y
+	depends on DT_HAS_ST_LSM6DSR_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSR),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSR),spi)
+	help
+	  Enable driver for LSM6DSR accelerometer and gyroscope
+	  sensor.
+
+if LSM6DSR
+
+menu "Attributes"
+
+config LSM6DSR_GYRO_FS
+	int "Gyroscope full-scale range"
+	default 0
+	help
+	  Specify the default gyroscope full-scale range.
+	  An X value for the config represents a range of +/- X degree per
+	  second. Valid values are:
+	  0:  Full Scale selected at runtime
+	  125:   +/- 125dps
+	  250:   +/- 250dps
+	  500:   +/- 500dps
+	  1000:  +/- 1000dps
+	  2000:  +/- 2000dps
+	  4000:  +/- 4000dps
+
+config LSM6DSR_GYRO_ODR
+	int "Gyroscope Output data rate frequency"
+	range 0 10
+	default 0
+	help
+	  Specify the default accelerometer output data rate expressed in
+	  samples per second (Hz).
+	  0: ODR selected at runtime
+	  1: 12.5Hz
+	  2: 26Hz
+	  3: 52Hz
+	  4: 104Hz
+	  5: 208Hz
+	  6: 416Hz
+	  7: 833Hz
+	  8: 1660Hz
+	  9: 3330Hz
+	  10: 6660Hz
+
+config LSM6DSR_ACCEL_FS
+	int "Accelerometer full-scale range"
+	default 0
+	help
+	  Specify the default accelerometer full-scale range.
+	  An X value for the config represents a range of +/- X G. Valid values
+	  are:
+	  0:  Full Scale selected at runtime
+	  2:  +/- 2g
+	  4:  +/- 4g
+	  8:  +/- 8g
+	  16: +/- 16g
+
+config LSM6DSR_ACCEL_ODR
+	int "Accelerometer Output data rate frequency"
+	range 0 11
+	default 0
+	help
+	  Specify the default accelerometer output data rate expressed in
+	  samples per second (Hz).
+	  0: ODR selected at runtime
+	  1: 12.5Hz
+	  2: 26Hz
+	  3: 52Hz
+	  4: 104Hz
+	  5: 208Hz
+	  6: 416Hz
+	  7: 833Hz
+	  8: 1666Hz
+	  9: 3332Hz
+	  10: 6664Hz
+	  11: 1.6Hz
+endmenu
+
+endif # LSM6DSR
