@@ -300,7 +300,9 @@ static int stm32_sdmmc_dma_init(struct stm32_sdmmc_priv *priv)
 		return err;
 	}
 	__HAL_LINKDMA(&priv->hsd, hdmatx, priv->dma_tx_handle);
-	HAL_DMA_Init(&priv->dma_tx_handle);
+	if (HAL_DMA_Init(&priv->dma_tx_handle) != HAL_OK) {
+		return -EIO;
+	}
 
 	err = stm32_sdmmc_configure_dma(&priv->dma_rx_handle, &priv->dma_rx);
 	if (err) {
@@ -308,7 +310,9 @@ static int stm32_sdmmc_dma_init(struct stm32_sdmmc_priv *priv)
 		return err;
 	}
 	__HAL_LINKDMA(&priv->hsd, hdmarx, priv->dma_rx_handle);
-	HAL_DMA_Init(&priv->dma_rx_handle);
+	if (HAL_DMA_Init(&priv->dma_rx_handle) != HAL_OK) {
+		return -EIO;
+	}
 #endif /* STM32_SDMMC_USE_DMA_SHARED */
 
 	return err;
@@ -332,14 +336,17 @@ static int stm32_sdmmc_dma_deinit(struct stm32_sdmmc_priv *priv)
 #else
 	struct sdmmc_dma_stream *dma_tx = &priv->dma_tx;
 	struct sdmmc_dma_stream *dma_rx = &priv->dma_rx;
+	HAL_StatusTypeDef __maybe_unused hal_ret;
 
 	ret = dma_stop(dma_tx->dev, dma_tx->channel);
 	__ASSERT(ret == 0, "TX DMA channel index corrupted");
-	HAL_DMA_DeInit(&priv->dma_tx_handle);
+	hal_ret = HAL_DMA_DeInit(&priv->dma_tx_handle);
+	__ASSERT_NO_MSG(hal_ret == HAL_OK);
 
 	ret = dma_stop(dma_rx->dev, dma_rx->channel);
 	__ASSERT(ret == 0, "RX DMA channel index corrupted");
-	HAL_DMA_DeInit(&priv->dma_rx_handle);
+	hal_ret = HAL_DMA_DeInit(&priv->dma_rx_handle);
+	__ASSERT_NO_MSG(hal_ret == HAL_OK);
 #endif
 	return 0;
 }
@@ -556,7 +563,10 @@ static int stm32_sdmmc_access_read(struct disk_info *disk, uint8_t *data_buf,
 	k_sem_take(&priv->sync, K_FOREVER);
 
 #if STM32_SDMMC_USE_DMA_SHARED
-	HAL_DMA_DeInit(&priv->dma_txrx_handle);
+	if (HAL_DMA_DeInit(&priv->dma_txrx_handle) != HAL_OK) {
+		err = -EIO;
+		goto end;
+	}
 #endif
 
 	if (priv->status != DISK_STATUS_OK) {
@@ -632,7 +642,11 @@ static int stm32_sdmmc_access_write(struct disk_info *disk,
 	k_sem_take(&priv->sync, K_FOREVER);
 
 #if STM32_SDMMC_USE_DMA_SHARED
-	HAL_DMA_DeInit(&priv->dma_txrx_handle);
+	if (HAL_DMA_DeInit(&priv->dma_txrx_handle) != HAL_OK) {
+		LOG_ERR("DMA deinit error");
+		err  = -EIO;
+		goto end;
+	}
 #endif
 
 	if (priv->status != DISK_STATUS_OK) {
