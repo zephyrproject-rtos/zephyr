@@ -1,7 +1,3 @@
-:orphan:
-
-.. rt1xxx-lpclink2-probes
-
 A debug probe is used for both flashing and debugging the board. This board has
 an :ref:`lpc-link2-onboard-debug-probe`. The default firmware present on this
 probe is the :ref:`lpclink2-daplink-onboard-debug-probe`.

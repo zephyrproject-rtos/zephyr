@@ -483,8 +483,7 @@ should see the following message in the terminal:
    ***** Booting Zephyr OS v3.4.0-xxxx-xxxxxxxxxxxxx *****
    Hello World! vmu_rt1170
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _VMU RT1170 Schematics:
    https://github.com/CogniPilot/NXP-VMU_RT117x-HW
