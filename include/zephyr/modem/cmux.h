@@ -99,7 +99,7 @@ struct modem_cmux_dlci {
 	struct modem_cmux *cmux;
 
 	/* Receive buffer */
-	struct ring_buf receive_rb;
+	struct ring_buffer receive_rb;
 	struct k_mutex receive_rb_lock;
 
 	/* Work */
@@ -159,7 +159,7 @@ struct modem_cmux {
 	uint8_t work_buf[MODEM_CMUX_WORK_BUFFER_SIZE];
 
 	/* Transmit buffer */
-	struct ring_buf transmit_rb;
+	struct ring_buffer transmit_rb;
 	struct k_mutex transmit_rb_lock;
 
 	/* Received frame */

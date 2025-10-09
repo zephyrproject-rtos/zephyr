@@ -24,12 +24,12 @@ static void modem_backend_uart_isr_flush(struct modem_backend_uart *backend)
 static void modem_backend_uart_isr_irq_handler_receive_ready(struct modem_backend_uart *backend)
 {
 	uint32_t size;
-	struct ring_buf *receive_rb;
+	struct ring_buffer *receive_rb;
 	uint8_t *buffer;
 	int ret;
 
 	receive_rb = &backend->isr.receive_rdb[backend->isr.receive_rdb_used];
-	size = ring_buf_put_claim(receive_rb, &buffer, UINT32_MAX);
+	size = ring_buffer_write_ptr(receive_rb, &buffer);
 	if (size == 0) {
 		/* This can be caused by
 		 * - a too long CONFIG_MODEM_BACKEND_UART_ISR_RECEIVE_IDLE_TIMEOUT_MS
@@ -37,19 +37,17 @@ static void modem_backend_uart_isr_irq_handler_receive_ready(struct modem_backen
 		 * relatively to the (too high) baud rate and amount of incoming data.
 		 */
 		LOG_WRN("Receive buffer overrun");
-		ring_buf_put_finish(receive_rb, 0);
-		ring_buf_reset(receive_rb);
-		size = ring_buf_put_claim(receive_rb, &buffer, UINT32_MAX);
+		ring_buffer_reset(receive_rb);
+		size = ring_buffer_write_ptr(receive_rb, &buffer);
 	}
 
 	ret = uart_fifo_read(backend->uart, buffer, size);
 	if (ret <= 0) {
-		ring_buf_put_finish(receive_rb, 0);
 		return;
 	}
-	ring_buf_put_finish(receive_rb, (uint32_t)ret);
+	ring_buffer_commit(receive_rb, (uint32_t)ret);
 
-	if (ring_buf_space_get(receive_rb) > ring_buf_capacity_get(receive_rb) / 20) {
+	if (ring_buffer_space(receive_rb) > ring_buffer_capacity(receive_rb) / 20) {
 		/*
 		 * Avoid having the receiver call modem_pipe_receive() too often (e.g. every byte).
 		 * It temporarily disables the UART RX IRQ when swapping buffers
@@ -69,18 +67,16 @@ static void modem_backend_uart_isr_irq_handler_transmit_ready(struct modem_backe
 	uint8_t *buffer;
 	int ret;
 
-	if (ring_buf_is_empty(&backend->isr.transmit_rb) == true) {
+	if (ring_buffer_empty(&backend->isr.transmit_rb) == true) {
 		uart_irq_tx_disable(backend->uart);
 		modem_work_submit(&backend->transmit_idle_work);
 		return;
 	}
 
-	size = ring_buf_get_claim(&backend->isr.transmit_rb, &buffer, UINT32_MAX);
+	size = ring_buffer_read_ptr(&backend->isr.transmit_rb, &buffer);
 	ret = uart_fifo_fill(backend->uart, buffer, size);
-	if (ret < 0) {
-		ring_buf_get_finish(&backend->isr.transmit_rb, 0);
-	} else {
-		ring_buf_get_finish(&backend->isr.transmit_rb, (uint32_t)ret);
+	if (ret > 0) {
+		ring_buffer_consume(&backend->isr.transmit_rb, (uint32_t)ret);
 
 		/* Update transmit buf capacity tracker */
 		atomic_sub(&backend->isr.transmit_buf_len, (uint32_t)ret);
@@ -108,9 +104,9 @@ static int modem_backend_uart_isr_open(void *data)
 {
 	struct modem_backend_uart *backend = (struct modem_backend_uart *)data;
 
-	ring_buf_reset(&backend->isr.receive_rdb[0]);
-	ring_buf_reset(&backend->isr.receive_rdb[1]);
-	ring_buf_reset(&backend->isr.transmit_rb);
+	ring_buffer_reset(&backend->isr.receive_rdb[0]);
+	ring_buffer_reset(&backend->isr.receive_rdb[1]);
+	ring_buffer_reset(&backend->isr.transmit_rb);
 	atomic_set(&backend->isr.transmit_buf_len, 0);
 	modem_backend_uart_isr_flush(backend);
 	uart_irq_rx_enable(backend->uart);
@@ -127,19 +123,19 @@ static uint32_t get_transmit_buf_length(struct modem_backend_uart *backend)
 #if CONFIG_MODEM_STATS
 static uint32_t get_receive_buf_length(struct modem_backend_uart *backend)
 {
-	return ring_buf_size_get(&backend->isr.receive_rdb[0]) +
-	       ring_buf_size_get(&backend->isr.receive_rdb[1]);
+	return ring_buffer_size(&backend->isr.receive_rdb[0]) +
+	       ring_buffer_size(&backend->isr.receive_rdb[1]);
 }
 
 static uint32_t get_receive_buf_size(struct modem_backend_uart *backend)
 {
-	return ring_buf_capacity_get(&backend->isr.receive_rdb[0]) +
-	       ring_buf_capacity_get(&backend->isr.receive_rdb[1]);
+	return ring_buffer_capacity(&backend->isr.receive_rdb[0]) +
+	       ring_buffer_capacity(&backend->isr.receive_rdb[1]);
 }
 
 static uint32_t get_transmit_buf_size(struct modem_backend_uart *backend)
 {
-	return ring_buf_capacity_get(&backend->isr.transmit_rb);
+	return ring_buffer_capacity(&backend->isr.transmit_rb);
 }
 
 static void advertise_transmit_buf_stats(struct modem_backend_uart *backend)
@@ -176,7 +172,7 @@ static int modem_backend_uart_isr_transmit(void *data, const uint8_t *buf, size_
 	}
 
 	uart_irq_tx_disable(backend->uart);
-	written = ring_buf_put(&backend->isr.transmit_rb, buf, size);
+	written = ring_buffer_write(&backend->isr.transmit_rb, buf, size);
 	uart_irq_tx_enable(backend->uart);
 
 	/* Update transmit buf capacity tracker */
@@ -204,9 +200,9 @@ static int modem_backend_uart_isr_receive(void *data, uint8_t *buf, size_t size)
 	receive_rdb_unused = (backend->isr.receive_rdb_used == 1) ? 0 : 1;
 
 	/* Read data from unused ring double buffer first */
-	read_bytes += ring_buf_get(&backend->isr.receive_rdb[receive_rdb_unused], buf, size);
+	read_bytes += ring_buffer_read(&backend->isr.receive_rdb[receive_rdb_unused], buf, size);
 
-	if (ring_buf_is_empty(&backend->isr.receive_rdb[receive_rdb_unused]) == false) {
+	if (ring_buffer_empty(&backend->isr.receive_rdb[receive_rdb_unused]) == false) {
 		return (int)read_bytes;
 	}
 
@@ -218,7 +214,7 @@ static int modem_backend_uart_isr_receive(void *data, uint8_t *buf, size_t size)
 	/* Read data from previously used buffer */
 	receive_rdb_unused = (backend->isr.receive_rdb_used == 1) ? 0 : 1;
 
-	read_bytes += ring_buf_get(&backend->isr.receive_rdb[receive_rdb_unused],
+	read_bytes += ring_buffer_read(&backend->isr.receive_rdb[receive_rdb_unused],
 				   &buf[read_bytes], (size - read_bytes));
 
 	return (int)read_bytes;
@@ -268,14 +264,14 @@ void modem_backend_uart_isr_init(struct modem_backend_uart *backend,
 
 	receive_double_buf_size = config->receive_buf_size / 2;
 
-	ring_buf_init(&backend->isr.receive_rdb[0], receive_double_buf_size,
-		      &config->receive_buf[0]);
+	ring_buffer_init(&backend->isr.receive_rdb[0],
+		      &config->receive_buf[0], receive_double_buf_size);
 
-	ring_buf_init(&backend->isr.receive_rdb[1], receive_double_buf_size,
-		      &config->receive_buf[receive_double_buf_size]);
+	ring_buffer_init(&backend->isr.receive_rdb[1],
+		      &config->receive_buf[receive_double_buf_size], receive_double_buf_size);
 
-	ring_buf_init(&backend->isr.transmit_rb, config->transmit_buf_size,
-		      config->transmit_buf);
+	ring_buffer_init(&backend->isr.transmit_rb,
+		      config->transmit_buf, config->transmit_buf_size);
 
 	atomic_set(&backend->isr.transmit_buf_len, 0);
 	uart_irq_rx_disable(backend->uart);

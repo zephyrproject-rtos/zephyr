@@ -26,12 +26,12 @@ static inline bool pipe_resetting(struct k_pipe *pipe)
 
 static inline bool pipe_full(struct k_pipe *pipe)
 {
-	return ring_buf_space_get(&pipe->buf) == 0;
+	return ring_buffer_space(&pipe->buf) == 0;
 }
 
 static inline bool pipe_empty(struct k_pipe *pipe)
 {
-	return ring_buf_is_empty(&pipe->buf);
+	return ring_buffer_empty(&pipe->buf);
 }
 
 static int wait_for(_wait_q_t *waitq, struct k_pipe *pipe, k_spinlock_key_t *key,
@@ -66,7 +66,7 @@ static int wait_for(_wait_q_t *waitq, struct k_pipe *pipe, k_spinlock_key_t *key
 
 void z_impl_k_pipe_init(struct k_pipe *pipe, uint8_t *buffer, size_t buffer_size)
 {
-	ring_buf_init(&pipe->buf, buffer_size, buffer);
+	ring_buffer_init(&pipe->buf, buffer, buffer_size);
 	pipe->flags = PIPE_FLAG_OPEN;
 	pipe->waiting = 0;
 
@@ -193,7 +193,7 @@ int z_impl_k_pipe_write(struct k_pipe *pipe, const uint8_t *data, size_t len, k_
 							 K_POLL_STATE_PIPE_DATA_AVAILABLE);
 #endif /* CONFIG_POLL */
 
-		written += ring_buf_put(&pipe->buf, &data[written], len - written);
+		written += ring_buffer_write(&pipe->buf, &data[written], len - written);
 		if (likely(written == len)) {
 			rc = written;
 			break;
@@ -238,7 +238,7 @@ int z_impl_k_pipe_read(struct k_pipe *pipe, uint8_t *data, size_t len, k_timeout
 			need_resched = z_sched_wake_all(&pipe->space, 0, NULL);
 		}
 
-		buf.used += ring_buf_get(&pipe->buf, &data[buf.used], len - buf.used);
+		buf.used += ring_buffer_read(&pipe->buf, &data[buf.used], len - buf.used);
 		if (likely(buf.used == len)) {
 			rc = buf.used;
 			break;
@@ -274,7 +274,7 @@ void z_impl_k_pipe_reset(struct k_pipe *pipe)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, reset, pipe);
 	K_SPINLOCK(&pipe->lock) {
-		ring_buf_reset(&pipe->buf);
+		ring_buffer_reset(&pipe->buf);
 		if (likely(pipe->waiting != 0)) {
 			pipe->flags |= PIPE_FLAG_RESET;
 			z_sched_wake_all(&pipe->data, 0, NULL);

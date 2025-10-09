@@ -22,7 +22,7 @@ const struct device *const uart_dev = DEVICE_DT_GET_ONE(zephyr_cdc_acm_uart);
 #define RING_BUF_SIZE 1024
 uint8_t ring_buffer[RING_BUF_SIZE];
 
-struct ring_buf ringbuf;
+struct ring_buffer ringbuf;
 
 static bool rx_throttled;
 
@@ -105,7 +105,7 @@ static void interrupt_handler(const struct device *dev, void *user_data)
 		if (!rx_throttled && uart_irq_rx_ready(dev)) {
 			int recv_len, rb_len;
 			uint8_t buffer[64];
-			size_t len = MIN(ring_buf_space_get(&ringbuf),
+			size_t len = MIN(ring_buffer_space(&ringbuf),
 					 sizeof(buffer));
 
 			if (len == 0) {
@@ -121,7 +121,7 @@ static void interrupt_handler(const struct device *dev, void *user_data)
 				recv_len = 0;
 			};
 
-			rb_len = ring_buf_put(&ringbuf, buffer, recv_len);
+			rb_len = ring_buffer_write(&ringbuf, buffer, recv_len);
 			if (rb_len < recv_len) {
 				LOG_ERR("Drop %u bytes", recv_len - rb_len);
 			}
@@ -136,7 +136,7 @@ static void interrupt_handler(const struct device *dev, void *user_data)
 			uint8_t buffer[64];
 			int rb_len, send_len;
 
-			rb_len = ring_buf_get(&ringbuf, buffer, sizeof(buffer));
+			rb_len = ring_buffer_read(&ringbuf, buffer, sizeof(buffer));
 			if (!rb_len) {
 				LOG_DBG("Ring buffer empty, disable TX IRQ");
 				uart_irq_tx_disable(dev);
@@ -173,7 +173,7 @@ int main(void)
 		return 0;
 	}
 
-	ring_buf_init(&ringbuf, sizeof(ring_buffer), ring_buffer);
+	ring_buffer_init(&ringbuf, ring_buffer, sizeof(ring_buffer));
 
 	LOG_INF("Wait for DTR");
 	k_sem_take(&dtr_sem, K_FOREVER);

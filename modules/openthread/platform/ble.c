@@ -57,7 +57,7 @@ static uint8_t ot_plat_ble_msg_buf[PLAT_BLE_MSG_DATA_MAX];
 
 static K_SEM_DEFINE(ot_plat_ble_init_semaphore, 0, 1);
 static K_SEM_DEFINE(ot_plat_ble_event_semaphore, 0, K_SEM_MAX_LIMIT);
-RING_BUF_DECLARE(ot_plat_ble_ring_buf, CONFIG_OPENTHREAD_BLE_TCAT_RING_BUF_SIZE);
+RING_BUFFER_DECLARE(ot_plat_ble_ring_buf, CONFIG_OPENTHREAD_BLE_TCAT_RING_BUF_SIZE);
 static K_THREAD_DEFINE(ot_plat_ble_tid, CONFIG_OPENTHREAD_BLE_TCAT_THREAD_STACK_SIZE,
 		       ot_plat_ble_thread, NULL, NULL, NULL, 5, 0, PLAT_BLE_THREAD_DEALY);
 
@@ -126,11 +126,11 @@ static bool ot_plat_ble_queue_msg(const uint8_t *aData, uint16_t aLen, int8_t aR
 
 	len = sizeof(aLen) + sizeof(aRssi) + ((aLen <= PLAT_BLE_MSG_DATA_MAX) ? aLen : 0);
 
-	if (ring_buf_space_get(&ot_plat_ble_ring_buf) >= len) {
-		ring_buf_put(&ot_plat_ble_ring_buf, (uint8_t *)&aLen, sizeof(aLen));
-		ring_buf_put(&ot_plat_ble_ring_buf, &aRssi, sizeof(aRssi));
+	if (ring_buffer_space(&ot_plat_ble_ring_buf) >= len) {
+		ring_buffer_write(&ot_plat_ble_ring_buf, (uint8_t *)&aLen, sizeof(aLen));
+		ring_buffer_write(&ot_plat_ble_ring_buf, &aRssi, sizeof(aRssi));
 		if (aLen <= PLAT_BLE_MSG_DATA_MAX) {
-			ring_buf_put(&ot_plat_ble_ring_buf, aData, aLen);
+			ring_buffer_write(&ot_plat_ble_ring_buf, aData, aLen);
 		}
 		k_sem_give(&ot_plat_ble_event_semaphore);
 	} else {
@@ -156,10 +156,10 @@ static void ot_plat_ble_thread(void *unused1, void *unused2, void *unused3)
 
 	while (1) {
 		k_sem_take(&ot_plat_ble_event_semaphore, K_FOREVER);
-		ring_buf_get(&ot_plat_ble_ring_buf, (uint8_t *)&len, sizeof(len));
-		ring_buf_get(&ot_plat_ble_ring_buf, &rssi, sizeof(rssi));
+		ring_buffer_read(&ot_plat_ble_ring_buf, (uint8_t *)&len, sizeof(len));
+		ring_buffer_read(&ot_plat_ble_ring_buf, &rssi, sizeof(rssi));
 		if (len <= PLAT_BLE_MSG_DATA_MAX) {
-			ring_buf_get(&ot_plat_ble_ring_buf, ot_plat_ble_msg_buf, len);
+			ring_buffer_read(&ot_plat_ble_ring_buf, ot_plat_ble_msg_buf, len);
 		}
 
 		openthread_mutex_lock();

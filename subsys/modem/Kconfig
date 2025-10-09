@@ -23,7 +23,6 @@ endif # MODEM_DEDICATED_WORKQUEUE
 
 config MODEM_CHAT
 	bool "Modem chat module"
-	select RING_BUFFER
 	select MODEM_PIPE
 
 if MODEM_CHAT
@@ -37,7 +36,6 @@ endif
 config MODEM_CMUX
 	bool "Modem CMUX module"
 	select MODEM_PIPE
-	select RING_BUFFER
 	select EVENTS
 	select CRC
 
@@ -88,7 +86,6 @@ config MODEM_PPP
 	bool "Modem PPP module"
 	depends on NET_L2_PPP
 	select MODEM_PIPE
-	select RING_BUFFER
 	select CRC
 	select PM_DEVICE_RUNTIME_ASYNC if PM_DEVICE_RUNTIME
 
@@ -116,7 +113,6 @@ config MODEM_STATS_BUFFER_NAME_SIZE
 
 config MODEM_UBX
 	bool "Modem U-BLOX module"
-	select RING_BUFFER
 	select MODEM_PIPE
 	help
 	  Enable Modem U-BLOX module.

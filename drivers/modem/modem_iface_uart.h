@@ -24,7 +24,7 @@ struct modem_iface_uart_data {
 	bool hw_flow_control;
 
 	/* ring buffer */
-	struct ring_buf rx_rb;
+	struct ring_buffer rx_rb;
 
 	/* rx semaphore */
 	struct k_sem rx_sem;
