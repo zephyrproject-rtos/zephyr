@@ -904,11 +904,13 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Disable unused clocks that are enabled (e.g. by bootloader or as wakeup source).
 	 * These will not be enabled, unless the MCU uses them for PM wakeup purposes.
 	 */
-	if (!IS_ENABLED(STM32_MSIS_ENABLED) && (READ_BIT(RCC->CR, RCC_CR_MSISON) != 0U)) {
+	if (!IS_ENABLED(STM32_MSIS_ENABLED) &&
+	    (sys_test_bits((mem_addr_t)&RCC->CR, RCC_CR_MSISON) != 0U)) {
 		LL_RCC_MSIS_Disable();
 	}
 
-	if (!IS_ENABLED(STM32_HSI_ENABLED) && (READ_BIT(RCC->CR, RCC_CR_HSION) != 0U)) {
+	if (!IS_ENABLED(STM32_HSI_ENABLED) &&
+	    (sys_test_bits((mem_addr_t)&RCC->CR, RCC_CR_HSION) != 0U)) {
 		LL_RCC_HSI_Disable();
 	}
 #endif

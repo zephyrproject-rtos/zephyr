@@ -1069,8 +1069,8 @@ static int rtc_stm32_get_calibration(const struct device *dev, int32_t *calibrat
 
 	uint32_t calr = sys_read32((mem_addr_t) &RTC->CALR);
 
-	bool calp_enabled = READ_BIT(calr, RTC_CALR_CALP);
-	uint32_t calm = READ_BIT(calr, RTC_CALR_CALM);
+	bool calp_enabled = sys_test_bits((mem_addr_t)&calr, RTC_CALR_CALP);
+	uint32_t calm = sys_test_bits((mem_addr_t)&calr, RTC_CALR_CALM);
 
 	int32_t nb_pulses = -((int32_t) calm);
 

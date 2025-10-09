@@ -586,7 +586,8 @@ static bool stm32_qspi_is_memory_mapped(const struct device *dev)
 {
 	struct flash_stm32_qspi_data *dev_data = dev->data;
 
-	return READ_BIT(dev_data->hqspi.Instance->CCR, QUADSPI_CCR_FMODE) == QUADSPI_CCR_FMODE;
+	return sys_test_bits((mem_addr_t)&dev_data->hqspi.Instance->CCR,
+			     QUADSPI_CCR_FMODE) == QUADSPI_CCR_FMODE;
 }
 
 static int stm32_qspi_abort(const struct device *dev)

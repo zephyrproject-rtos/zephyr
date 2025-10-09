@@ -82,9 +82,10 @@ ZTEST(stm32_syclck_config, test_hse_css)
 {
 	/* there is no function to read CSS status, so read directly from the register */
 #if STM32_HSE_CSS
-	zassert_true(READ_BIT(RCC->CR, RCC_CR_CSSHSEON), "HSE CSS is not enabled");
+	zassert_true(sys_test_bits((mem_addr_t)&RCC->CR, RCC_CR_CSSHSEON), "HSE CSS is not enabled");
 #else
-	zassert_false(READ_BIT(RCC->CR, RCC_CR_CSSHSEON), "HSE CSS unexpectedly enabled");
+	zassert_false(sys_test_bits((mem_addr_t)&RCC->CR, RCC_CR_CSSHSEON),
+		      "HSE CSS unexpectedly enabled");
 #endif /* STM32_HSE_CSS */
 
 }

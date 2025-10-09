@@ -74,7 +74,7 @@ static inline size_t get_flash_size_in_bytes(void)
 	 * minus one.
 	 */
 	const uint32_t words_in_flash =
-		READ_BIT(FLASH->SIZE, FLASH_FLASH_SIZE_FLASH_SIZE) + 1;
+		sys_test_bits((mem_addr_t)&FLASH->SIZE, FLASH_FLASH_SIZE_FLASH_SIZE) + 1;
 
 	return words_in_flash * WORD_SIZE;
 }
