@@ -123,3 +123,9 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&spi2 {
+	pinctrl-0 = <&spi2_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
