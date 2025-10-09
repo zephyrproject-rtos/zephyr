@@ -47,26 +47,6 @@ struct uart_hc32_config {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-#ifdef CONFIG_UART_ASYNC_API
-struct hc32_dma_cfg {
-	const struct device *dma_dev;
-	uint32_t dma_channel;
-	struct dma_config dma_cfg;
-	uint16_t src_addr_increment;
-	uint16_t dst_addr_increment;
-	struct dma_block_config blk_cfg;
-	size_t buffer_length;
-	size_t offset;
-	const uint8_t *tx_buffer;
-	uint8_t *rx_buffer;
-	volatile size_t counter;
-	int32_t timeout;
-	struct k_work_delayable timeout_work;
-	bool enabled;
-	struct dma_hc32_config_user_data user_cfg;
-};
-#endif
-
 struct hc32_usart_cb_data {
 	/** Callback function */
 	uart_irq_callback_user_data_t user_cb;
@@ -88,8 +68,6 @@ struct uart_hc32_data {
 	const struct device *uart_dev;
 	uart_callback_t async_cb;
 	void *async_user_data;
-	struct hc32_dma_cfg dma_tx;
-	struct hc32_dma_cfg dma_rx;
 	uint8_t *rx_next_buffer;
 	size_t rx_next_buffer_len;
 #endif
