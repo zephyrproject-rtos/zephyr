@@ -65,8 +65,10 @@ void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
 	struct video_stm32_dcmi_data *dev_data =
 			CONTAINER_OF(hdcmi, struct video_stm32_dcmi_data, hdcmi);
 	struct video_buffer *vbuf;
+	HAL_StatusTypeDef __maybe_unused hal_ret;
 
-	HAL_DCMI_Suspend(hdcmi);
+	hal_ret = HAL_DCMI_Suspend(hdcmi);
+	__ASSERT_NO_MSG(hal_ret == HAL_OK);
 
 	vbuf = k_fifo_get(&dev_data->fifo_in, K_NO_WAIT);
 
@@ -81,7 +83,8 @@ void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
 	k_fifo_put(&dev_data->fifo_out, vbuf);
 
 resume:
-	HAL_DCMI_Resume(hdcmi);
+	hal_ret = HAL_DCMI_Resume(hdcmi);
+	__ASSERT_NO_MSG(hal_ret == HAL_OK);
 }
 
 static void stm32_dcmi_isr(const struct device *dev)

@@ -1202,12 +1202,18 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 		if (ret < 0) {
 			LOG_ERR("Failed to start the source");
 			if (config->bus_type == VIDEO_BUS_TYPE_PARALLEL) {
-				HAL_DCMIPP_PIPE_Stop(&dcmipp->hdcmipp, pipe->id);
+				if (HAL_DCMIPP_PIPE_Stop(&dcmipp->hdcmipp, pipe->id) != HAL_OK) {
+					ret = -EIO;
+					goto out;
+				}
 			}
 #if defined(STM32_DCMIPP_HAS_CSI)
 			else if (config->bus_type == VIDEO_BUS_TYPE_CSI2_DPHY) {
-				HAL_DCMIPP_CSI_PIPE_Stop(&dcmipp->hdcmipp, pipe->id,
-							 DCMIPP_VIRTUAL_CHANNEL0);
+				if (HAL_DCMIPP_CSI_PIPE_Stop(&dcmipp->hdcmipp, pipe->id,
+							     DCMIPP_VIRTUAL_CHANNEL0) != HAL_OK) {
+					ret = -EIO;
+					goto out;
+				}
 			}
 #endif
 			else {
