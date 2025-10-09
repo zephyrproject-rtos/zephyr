@@ -273,7 +273,7 @@ static int stm32_clock_control_init(const struct device *dev)
 	while (LL_RCC_PLL1_IsReady() != 1) {
 	}
 
-	SET_BIT(RCC->PLL1CR, RCC_PLL1CR_DIVPEN);
+	sys_set_bits((mem_addr_t)&RCC->PLL1CR, RCC_PLL1CR_DIVPEN);
 	while (READ_BIT(RCC->PLL1CR, RCC_PLL1CR_DIVPEN) != RCC_PLL1CR_DIVPEN) {
 	};
 

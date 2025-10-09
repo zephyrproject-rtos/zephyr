@@ -1323,13 +1323,16 @@ static int stm32_dcmipp_enqueue(const struct device *dev, struct video_buffer *v
 		pipe->next = vbuf;
 		stm32_dcmipp_set_next_buffer_addr(pipe);
 		if (pipe->id == DCMIPP_PIPE0) {
-			SET_BIT(dcmipp->hdcmipp.Instance->P0FCTCR, DCMIPP_P0FCTCR_CPTREQ);
+			sys_set_bits((mem_addr_t)&dcmipp->hdcmipp.Instance->P0FCTCR,
+				     DCMIPP_P0FCTCR_CPTREQ);
 		}
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 		else if (pipe->id == DCMIPP_PIPE1) {
-			SET_BIT(dcmipp->hdcmipp.Instance->P1FCTCR, DCMIPP_P1FCTCR_CPTREQ);
+			sys_set_bits((mem_addr_t)&dcmipp->hdcmipp.Instance->P1FCTCR,
+				     DCMIPP_P1FCTCR_CPTREQ);
 		} else if (pipe->id == DCMIPP_PIPE2) {
-			SET_BIT(dcmipp->hdcmipp.Instance->P2FCTCR, DCMIPP_P2FCTCR_CPTREQ);
+			sys_set_bits((mem_addr_t)&dcmipp->hdcmipp.Instance->P2FCTCR,
+				     DCMIPP_P2FCTCR_CPTREQ);
 		}
 #endif
 		pipe->state = STM32_DCMIPP_RUNNING;

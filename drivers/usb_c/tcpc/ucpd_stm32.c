@@ -385,7 +385,7 @@ static void dead_battery(const struct device *dev, bool en)
 	if (en) {
 		CLEAR_BIT(PWR->CR3, PWR_CR3_UCPD_DBDIS);
 	} else {
-		SET_BIT(PWR->CR3, PWR_CR3_UCPD_DBDIS);
+		sys_set_bits((mem_addr_t)&PWR->CR3, PWR_CR3_UCPD_DBDIS);
 	}
 #endif
 	data->dead_battery_active = en;
