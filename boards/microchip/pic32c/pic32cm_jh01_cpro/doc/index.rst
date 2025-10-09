@@ -42,16 +42,48 @@ Programming & Debugging
 
 .. zephyr:board-supported-runners::
 
-Flash Using J-Link
-==================
+Setting Up the Debug Interface
+==============================
 
-To flash the board using the J-Link debugger, follow the steps below:
+PyOCD Setup
+===========
+
+1. Install Device Pack
+
+   Add support for the PIC32CM family devices using the following command:
+
+   .. code-block:: console
+
+      pyocd pack install pic32cm
+
+2. Verify Device Support
+
+   Confirm that the target is recognized:
+
+   .. code-block:: console
+
+      pyocd list --targets
+
+   You should see an entry similar to:
+
+   .. code-block:: text
+
+      pic32cm5164jh01100        Microchip                PIC32CM5164JH01100           PIC32CM-JH   pack
+
+
+3. Connect the Board
+
+   Connect the DEBUG USB port on the board to your host machine to **power up the board**.
+
+
+J-Link Setup
+============
 
 1. Install J-Link Software
 
-   - Download and install the `J-Link software`_ tools from Segger.
-   - Make sure the installed J-Link executables (e.g., ``JLink``, ``JLinkGDBServer``)
-     are available in your system's PATH.
+   Download and install the `J-Link software`_ tools from Segger.
+   Make sure the installed J-Link executables (e.g., ``JLink``, ``JLinkGDBServer``)
+   are available in your system's PATH.
 
 2. Connect the Board
 
@@ -59,7 +91,11 @@ To flash the board using the J-Link debugger, follow the steps below:
    - Connect the other end of the J32 Debug Probe to your **host machine (PC)** via USB.
    - Connect the DEBUG USB port on the board to your host machine to **power up the board**.
 
-3. Build the Application
+
+Building and Flashing the Application
+=====================================
+
+1. Build the Application
 
    You can build a sample Zephyr application, such as **Blinky**, using the ``west`` tool.
    Run the following commands from your Zephyr workspace:
@@ -70,7 +106,7 @@ To flash the board using the J-Link debugger, follow the steps below:
 
    This will build the Blinky application for the ``pic32cm_jh01_cpro`` board.
 
-4. Flash the Device
+2. Flash the Device
 
    Once the build completes, flash the firmware using:
 
@@ -78,9 +114,23 @@ To flash the board using the J-Link debugger, follow the steps below:
 
       west flash
 
-   This uses the default ``jlink`` runner to flash the application to the board.
+   By default, this command uses the PyOCD runner to program the device.
 
-5. Observe the Result
+   If both J-Link and PyOCD debuggers are connected, you can explicitly select the desired runner as shown below:
+
+   .. code-block:: console
+
+      west flash --runner jlink
+
+   or
+
+   .. code-block:: console
+
+      west flash --runner pyocd
+
+   This ensures the application is flashed using the respective connected interface.
+
+3. Observe the Result
 
    After flashing, **LED0** on the board should start **blinking**, indicating that the
    application is running successfully.
