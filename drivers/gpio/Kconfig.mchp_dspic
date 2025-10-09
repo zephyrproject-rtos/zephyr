@@ -1,5 +1,9 @@
+# Copyright (c) 2025, Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
 #Enable GPIO driver for dsPIC33A
 config GPIO_DSPIC
 	bool "dsPIC33A GPIO driver"
+	default y
 	help
 	  Enable support for the dsPIC33A GPIO driver.

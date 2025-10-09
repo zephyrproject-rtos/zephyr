@@ -24,7 +24,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+#if defined(CONFIG_BOARD_DSPIC33A_CURIOSITY_P33AK512MPS512)
+#define IFS_COUNT 12
+#elif defined(CONFIG_BOARD_DSPIC33A_CURIOSITY_P33AK128MC106)
+#define IFS_COUNT 9
+#endif
 extern uint32_t vector_start;
 
 /* dsPIC33A interrupt functionality initialization */
@@ -34,15 +38,8 @@ static ALWAYS_INLINE void z_dspic_interrupt_init(void)
 	 * clear all the interrupts, set the interrupt flag status
 	 * registers to zero.
 	 */
-	IFS0 = 0x0;
-	IFS1 = 0x0;
-	IFS2 = 0x0;
-	IFS3 = 0x0;
-	IFS4 = 0x0;
-	IFS5 = 0x0;
-	IFS6 = 0x0;
-	IFS7 = 0x0;
-	IFS8 = 0x0;
+	volatile uint32_t *int_enable_reg = (uint32_t *)DT_PROP(DT_NODELABEL(intc0), if_offset);
+	(void)memset((void *)int_enable_reg, 0, (unsigned long)IFS_COUNT * sizeof(int));
 	/* enable nested interrupts */
 	INTCON1bits.NSTDIS = 0;
 	/* enable global interrupts */
@@ -82,8 +79,7 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 
 static ALWAYS_INLINE void arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
 {
-	(void)thread;
-	(void)value;
+	thread->arch.swap_return_value = value;
 }
 
 int arch_swap(unsigned int key);

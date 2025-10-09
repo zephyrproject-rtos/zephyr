@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2025, Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #define DT_DRV_COMPAT microchip_dspic_gpio
 
 #include <zephyr/drivers/gpio.h>
@@ -10,8 +15,13 @@
 #define LAT_OFFSET    ((uintptr_t)0x04u)
 #define PORT_OFFSET   ((uintptr_t)0x00u)
 #define CNSTAT_OFFSET ((uintptr_t)0x0Cu)
+/* For pins config need this mask to identify how many
+ *pins are available for the port
+ */
+#define PIN_CNT_MASK  0xFFFFFFFF
 
 struct gpio_dspic_cfg {
+	struct gpio_driver_config common;
 	uintptr_t base;
 };
 
@@ -118,9 +128,17 @@ static const struct gpio_driver_api gpio_dspic_api = {
 	.port_set_masked_raw = dspic_set_masked_raw,
 };
 
+/* In the below config port_pin_mask is now hardcoded as 0xFFFFFFFF which
+ * actually require the helper macros to get the correct mask based on the
+ * no of pins supported for a specific port in dspic.
+ */
 /* Create instances from DT */
 #define GPIO_DSPIC_INIT(inst)                                                                      \
 	static const struct gpio_dspic_cfg gpio_dspic_cfg_##inst = {                               \
+		.common =                                                                          \
+			{                                                                          \
+				.port_pin_mask = PIN_CNT_MASK,                                     \
+			},                                                                         \
 		.base = DT_INST_REG_ADDR(inst),                                                    \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, &gpio_dspic_cfg_##inst, POST_KERNEL,         \

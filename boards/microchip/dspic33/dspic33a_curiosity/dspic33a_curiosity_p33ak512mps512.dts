@@ -14,8 +14,10 @@
 	chosen {
 		zephyr,flash = &flash0;
 		zephyr,sram = &sram0;
-		zephyr,serial = &uart1;
-		zephyr,console = &uart1;
+		zephyr,serial = &uart0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		uart,passthrough = &uart1;
 	};
 
 	leds {
@@ -56,7 +58,9 @@
 	};
 
 	aliases {
-		uart-0 = &uart1;
+		uart-0 = &uart0;
+		uart-1 = &uart1;
+		uart-2 = &uart2;
 		led0 = &led0;
 		led1 = &led1;
 		led2 = &led2;
@@ -79,6 +83,14 @@
 	status = "okay";
 };
 
+&uart0 {
+	status = "okay";
+};
+
 &uart1 {
+	status = "okay";
+};
+
+&uart2 {
 	status = "okay";
 };

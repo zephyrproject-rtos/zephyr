@@ -16,8 +16,11 @@ config FLASH_BASE_ADDRESS
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
 config MAIN_STACK_SIZE
-	default 128
+	default 512
 
+config NUM_IRQS
+	default 279	
+	
 config IDLE_STACK_SIZE
 	default 512
 
@@ -26,6 +29,10 @@ config MINIMAL_LIBC_SUPPORTED
 	default n
 
 config NEWLIB_LIBC_SUPPORTED
+	bool
+	default n
+
+config SPIN_VALIDATE
 	bool
 	default n
 

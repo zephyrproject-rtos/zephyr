@@ -2,19 +2,18 @@
  * Copyright (c) 2025, Microchip Technology Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <zephyr/devicetree.h>
+#include <offsets.h>
+#define OFFSET DT_PROP(DT_NODELABEL(intc0), if_offset)
+
+#if defined(CONFIG_BOARD_DSPIC33A_CURIOSITY_P33AK512MPS512)
+#define RAM_END 0x00013FFC
+#elif defined(CONFIG_BOARD_DSPIC33A_CURIOSITY_P33AK128MC106)
+#define RAM_END 0x00007FFC
+#endif
 
 
-
-.LC0:
-    .long	_IFS0
-    .long	_IFS1
-    .long	_IFS2
-    .long	_IFS3
-    .long	_IFS4
-    .long	_IFS5
-    .long	_IFS6
-    .long	_IFS7
-    .long	_IFS8
+.equ IF_OFFSET, OFFSET
 
     .section .text,code
     .section .isr.text._COMMONInterrupt,keep,code,keep
@@ -38,6 +37,9 @@ __COMMONInterrupt:
 
 
     call	w1
+    mov.w _INTTREGbits,w0
+    and.l #(0x1ff&0xFFFF),w0
+    sub.l w0,#9,w0
     call	_arch_dspic_irq_clear
 
 
@@ -53,15 +55,12 @@ __COMMONInterrupt:
     bra	z,.L2
     cp0.b _z_sys_post_kernel
     bra	z,.L2
-    mov.bz _INTCON1bits+1,w0
-    bfext.l	#7,#1,w0,w0
-    mov.l w0,[w14]
-    bclr.b _INTCON1+1,#7
-    mov.l [w14],w0
     mov.l [--w15], w8
     ulnk
     CTXTSWP #0x0
     mov.l w0, [w15++]
+    mov.l #RAM_END, w0
+    mov.l w0, SPLIM
     mov.l sr, w0
     and #0xe0, w0
     bra nz, 1f
@@ -105,10 +104,10 @@ __COMMONInterrupt:
     lnk #0x4
 
     mov.l #__kernel, w0
-    mov.l #0x8, w1
+    mov.l #___cpu_t_current_OFFSET, w1
     add w0, w1, w1
     mov.l [w1], w2
-    mov.l #0x28, w1
+    mov.l #___thread_t_callee_saved_OFFSET, w1
     add w2, w1, w1
 
     mov.l w8, [w1++]
@@ -158,8 +157,6 @@ __COMMONInterrupt:
     mov.l [w2], [w1++]
     mov.l #XBREV, w2
     mov.l [w2], [w1++]
-    clr A
-    clr B
     slac.l A, [W1++]
     sac.l A, [W1++]
     suac.l A, [W1++]
@@ -174,15 +171,15 @@ __COMMONInterrupt:
     mov.sl	#__kernel+20,w0
     mov.l	[w0],w0
     mov.sl	#__kernel,w1
-    mov.l	w0,[w1+8]
-    mov.l	[w0+300],w0
+    mov.l	w0,[w1 + ___cpu_t_current_OFFSET]
+    mov.l	[w0 + ___thread_t_tls_OFFSET],w0
     rcall	__set_tls
 
     mov.l #__kernel, w0
-    mov.l #0x8, w1
+    mov.l #___cpu_t_current_OFFSET, w1
     add w0, w1, w1
     mov.l [w1], w2
-    mov.l #0x28, w1
+    mov.l #___thread_t_callee_saved_OFFSET, w1
     add w2, w1, w1
 
     mov.l [w1++], w8
@@ -234,12 +231,12 @@ __COMMONInterrupt:
     mov.l [w1++], [w2]
     clr A
     clr B
-    slac.l A, [W1++]
-    sac.l A, [W1++]
-    suac.l A, [W1++]
-    slac.l B, [W1++]
-    sac.l B, [W1++]
-    suac.l B, [W1++]
+    llac.l [w1++], A
+    lac.l [w1++], A
+    luac.l [w1++], A
+    llac.l [w1++], B
+    lac.l [w1++], B
+    luac.l [w1++], B
     mov.l [w1++], w15
     mov.l [w1++], w14
     mov.l #SPLIM, w2
@@ -286,10 +283,24 @@ __COMMONInterrupt:
     mov.l [w0], w0
     lnk #0x4
     1:
+    mov.l w2, [w15++]
+    mov.l w1, [w15++]
+    mov.l w0, [w15++]
+    mov.sl #__kernel, w0
+    mov.l [w0 + ___cpu_t_current_OFFSET], w1
+    mov.l #___thread_t_arch_OFFSET, w2
+    add.l w2, w1, w1
+    mov.l [w1 + ___thread_arch_t_swapped_from_thread_OFFSET], w0
+    mov.l #0, w2
+    cp.l  w2, w0
+    mov.l [--w15], w0
+    bra  z, 1f
+    mov.l [w1 + ___thread_arch_t_swap_return_value_OFFSET], w0
+    mov.l w2, [w1 + ___thread_arch_t_swapped_from_thread_OFFSET]
+    1:
+    mov.l [--w15], w1
+    mov.l [--w15], w2
     nop
-    cp.l w0,#0
-    bra	z,.L1
-    bset.b _INTCON1+1,#7
     retfie
 
 
@@ -307,23 +318,14 @@ __COMMONInterrupt:
     .type _arch_dspic_irq_clear,@function
 _arch_dspic_irq_clear:
 
-    lnk	#36
-    mov.w _INTTREGbits,w0
-    mov.sl #.LC0,w1
-    repeat #9-1
-    mov.l [w1++],[w14++]
-    sub.l #36,w14
-    sub.l #36,w1
-    and.l #(0x1ff&0xFFFF),w0
-    sub.l w0,#9,w0
-    lsr.l w0,#5,w1
-    sl.l w1,#2,w1
-    add.l w1,w14,w1
-    mov.l [w1],w2
-    and.l w0,#(0x1f&0x7F),w0
-    movs.l #0x1,w1
-    sl.l w1,w0,w0
-    com.l w0,w0
-    and.l w0,[w2],[w2]
-    ulnk
-    return
+	lnk	#0
+	lsr.l	w0,#5,w1
+	sl.l	w1,#2,w1
+	add.l	#IF_OFFSET,w1
+	and.l	w0,#(0x1f&0x7F),w2
+	movs.l	#0x1,w0
+	sl.l	w0,w2,w0
+	com.l	w0,w0
+	and.l	w0,[w1],[w1]
+	ulnk	
+	return

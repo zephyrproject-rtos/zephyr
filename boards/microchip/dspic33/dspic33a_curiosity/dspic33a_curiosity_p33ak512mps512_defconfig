@@ -6,6 +6,7 @@ CONFIG_LOG_MODE_MINIMAL=y
 CONFIG_PRINTK=y
 CONFIG_CONSOLE=y
 CONFIG_STDOUT_CONSOLE=n
+CONFIG_UART_INTERRUPT_DRIVEN=y
 
 # For LOG_MODE_MINIMAL using UART
 CONFIG_UART_CONSOLE=y
@@ -21,13 +22,13 @@ CONFIG_SERIAL=y
 # CONFIG_SERIAL=y
 
 # Enables support for GPIO drivers on the target platform.
-# CONFIG_GPIO=y
+CONFIG_GPIO=y
 
 # Defines the system hardware clock frequency as 8 MHz.
 CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=8000000
 
 # Configures the system tick rate to 1000 ticks per second (1 ms tick interval).
-CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+CONFIG_SYS_CLOCK_TICKS_PER_SEC=10000
 
 # Specifies a single-core configuration for the SoC.
 CONFIG_MP_MAX_NUM_CPUS=1
@@ -36,3 +37,5 @@ CONFIG_MP_MAX_NUM_CPUS=1
 # because of an extra prepended underscore on symbols generated,
 # For this reason keeping it disabled
 CONFIG_CHECK_INIT_PRIORITIES=n
+
+CONFIG_HW_STACK_PROTECTION=y

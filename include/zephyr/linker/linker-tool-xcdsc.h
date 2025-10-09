@@ -16,7 +16,11 @@
 #include <zephyr/kernel/mm.h>
 
 OUTPUT_FORMAT("elf32-pic30")
+#if defined(CONFIG_BOARD_DSPIC33A_CURIOSITY_P33AK128MC106)
 OUTPUT_ARCH("33AK128MC106")
+#elif defined(CONFIG_BOARD_DSPIC33A_CURIOSITY_P33AK512MPS512)
+OUTPUT_ARCH("33AK512MPS512")
+#endif
 
 /*
  * The GROUP_START() and GROUP_END() macros are used to define a group

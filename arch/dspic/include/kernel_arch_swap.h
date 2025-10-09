@@ -29,6 +29,13 @@ extern "C" {
 
 #include "kswap.h"
 
+#if defined(CONFIG_BOARD_DSPIC33A_CURIOSITY_P33AK512MPS512)
+#define RAM_END "0x00013FFC"
+#elif defined(CONFIG_BOARD_DSPIC33A_CURIOSITY_P33AK128MC106)
+#define RAM_END "0x00007FFC"
+#endif
+
+
 #define NUM_TEMP_REGS 3
 extern int swap_working_set[NUM_TEMP_REGS];
 
@@ -38,6 +45,8 @@ static inline __attribute__((always_inline)) void z_dspic_save_context(void)
 	__asm__ volatile(
 		/*Check if in interrupt context*/
 		"mov.l w0, [w15++]\n\t"
+		"mov.l #"RAM_END", w0\n\t"
+		"mov.l w0, SPLIM\n\t"
 		"mov.l sr, w0\n\t"
 		"and #0xe0, w0\n\t"
 		"bra nz, 1f\n\t"
@@ -88,15 +97,12 @@ static inline __attribute__((always_inline)) void z_dspic_save_context(void)
 	/*in isr lnk is done after esf push*/
 
 	/* Get the current thread callee_saved context
-	 * TODO:
-	 * Need to change constant 0x8, 0x28 with offset symbols
-	 * ___cpu_t_current_OFFSET, ___thread_t_callee_saved_OFFSET
 	 */
 	__asm__ volatile("mov.l #__kernel, w0\n\t"
-			 "mov.l #0x8, w1\n\t"
+			 "mov.l #___cpu_t_current_OFFSET, w1\n\t"
 			 "add w0, w1, w1\n\t"
 			 "mov.l [w1], w2\n\t"
-			 "mov.l #0x28, w1\n\t"
+			 "mov.l #___thread_t_callee_saved_OFFSET, w1\n\t"
 			 "add w2, w1, w1\n\t");
 
 	/*Save all callee saved registers*/
@@ -150,8 +156,6 @@ static inline __attribute__((always_inline)) void z_dspic_save_context(void)
 			 "mov.l #XBREV, w2\n\t"
 			 "mov.l [w2], [w1++]\n\t"
 
-			 "clr A\n\t"
-			 "clr B\n\t"
 			 "slac.l A, [W1++]\n\t"
 			 "sac.l A, [W1++]\n\t"
 			 "suac.l A, [W1++]\n\t"
@@ -168,15 +172,12 @@ static inline __attribute__((always_inline)) void z_dspic_save_context(void)
 static inline __attribute__((always_inline)) void z_dspic_restore_context(void)
 {
 	/* Get the current thread callee_saved context
-	 * TODO:
-	 * Need to change constant 0x8, 0x28 with offset symbols
-	 * ___cpu_t_current_OFFSET, ___thread_t_callee_saved_OFFSET
 	 */
 	__asm__ volatile("mov.l #__kernel, w0\n\t"
-			 "mov.l #0x8, w1\n\t"
+			 "mov.l #___cpu_t_current_OFFSET, w1\n\t"
 			 "add w0, w1, w1\n\t"
 			 "mov.l [w1], w2\n\t"
-			 "mov.l #0x28, w1\n\t"
+			 "mov.l #___thread_t_callee_saved_OFFSET, w1\n\t"
 			 "add w2, w1, w1\n\t");
 
 	/*Restore all registers*/
@@ -232,12 +233,12 @@ static inline __attribute__((always_inline)) void z_dspic_restore_context(void)
 
 			 "clr A\n\t"
 			 "clr B\n\t"
-			 "slac.l A, [W1++]\n\t"
-			 "sac.l A, [W1++]\n\t"
-			 "suac.l A, [W1++]\n\t"
-			 "slac.l B, [W1++]\n\t"
-			 "sac.l B, [W1++]\n\t"
-			 "suac.l B, [W1++]\n\t"
+			 "llac.l [w1++], A\n\t"
+			 "lac.l  [w1++], A\n\t"
+			 "luac.l [w1++], A\n\t"
+			 "llac.l [w1++], B\n\t"
+			 "lac.l  [w1++], B\n\t"
+			 "luac.l [w1++], B\n\t"
 
 			 "mov.l [w1++], w15\n\t"
 			 "mov.l [w1++], w14\n\t"

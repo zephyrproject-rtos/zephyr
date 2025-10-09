@@ -4,9 +4,9 @@
  */
 
 #include <zephyr/kernel.h>
+#include <kernel_arch_func.h>
 #include <string.h>
 
-#define RAM_END 0x00007FFC
 #define DSPIC_STATUS_DEFAULT 0
 
 void z_thread_entry(k_thread_entry_t thread, void *arg1, void *arg2, void *arg3);
@@ -23,7 +23,13 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *sta
 	/* Setting all register to zero*/
 	(void)memset(init_frame, 0, sizeof(struct arch_esf));
 
-	/* Setup initial stack frame*/
+	/* Setup initial stack frame
+	 * During the initial thread entry the w0 serves the function of thread
+	 * entry function pointer, but the general usage of w0 as per the C ABI
+	 * is to pass back the return data. Here set return value as entry pointer
+	 * value
+	 */
+	arch_thread_return_value_set(thread, (unsigned int)entry);
 	init_frame->W0 = (uint32_t)entry;
 	init_frame->W1 = (uint32_t)(void *)p1;
 	init_frame->W2 = (uint32_t)(void *)p2;
@@ -51,11 +57,13 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *sta
 	 */
 	thread->callee_saved.stack = (uint32_t)(void *)init_frame + (sizeof(struct arch_esf));
 	thread->callee_saved.frame = (uint32_t)thread->callee_saved.stack;
-	/*TODO: Need to handle splim properly*/
-	thread->callee_saved.splim = RAM_END;
+	thread->callee_saved.splim = (uint32_t)(thread->stack_info.start + thread->stack_info.size);
+	/*Set the initial key for irq unlock*/
+	thread->arch.cpu_level = 1;
 }
 
 int arch_coprocessors_disable(struct k_thread *thread)
 {
+	(void)thread;
 	return -ENOTSUP;
 }

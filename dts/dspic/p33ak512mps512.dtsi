@@ -3,9 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "zephyr/dt-bindings/pinctrl/mchp-p33ak512mps512-pinctrl.h"
+
 / {
 	model = "Microchip dsPIC33A Curiosity Platform Development Board";
-	compatible = "microchip,p33ak128mc106";
+	compatible = "microchip,p33ak512mps512";
 
 	cpus {
 		#address-cells = <1>;
@@ -34,7 +36,7 @@
 	};
 
 	soc: soc {
-		compatible = "microchip,p33ak128mc106-soc";
+		compatible = "microchip,p33ak512mps512-soc";
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -53,6 +55,8 @@
 		intc0: interrupt-controller@0 {
 			compatible = "microchip,dspic33-intc";
 			reg = <0x0 0x1>;
+			ie-offset = <0xC0>;
+			if-offset = <0x90>;
 			interrupt-controller;
 			#address-cells = <0>;
 			#interrupt-cells = <2>;
@@ -69,76 +73,140 @@
 			status = "okay";
 		};
 
-		uart1: uart@1700 {
+		uart0: uart@1700 {
 			compatible = "microchip,dspic33-uart";
-			reg = <0x1700 0x28>;
+			reg = <0x1700 0x40>;
+			interrupts = <98 1>, <99 1>, <100 1>;
+			interrupt-names = "rx", "tx", "err";
+			interrupt-parent = <&intc0>;
 			clock-frequency = <4000000>;
 			current-speed = <115200>;
+			pinctrl-0 = <&uart0_tx_default &uart0_rx_default>;
+			pinctrl-names = "default";
 			status = "okay";
 		};
 
-		gpioa: gpio@200 {
-			compatible = "microchip,dspic-gpio";
-			reg = <0x200 0x20>;
-			gpio-controller;
-			#gpio-cells = <2>;
+		uart1: uart@1740 {
+			compatible = "microchip,dspic33-uart";
+			reg = <0x1740 0x40>;
+			interrupts = <102 1>, <103 1>, <104 1>;
+			interrupt-names = "rx", "tx", "err";
+			interrupt-parent = <&intc0>;
+			clock-frequency = <4000000>;
+			current-speed = <115200>;
+			pinctrl-0 = <&uart1_tx_default &uart1_rx_default>;
+			pinctrl-names = "default";
 			status = "okay";
 		};
 
-		gpiob: gpio@214 {
-			compatible = "microchip,dspic-gpio";
-			reg = <0x214 0x20>;
-			gpio-controller;
-			#gpio-cells = <2>;
+		uart2: uart@1780 {
+			compatible = "microchip,dspic33-uart";
+			reg = <0x1780 0x40>;
+			interrupts = <106 1>, <107 1>, <108 1>;
+			interrupt-names = "rx", "tx", "err";
+			interrupt-parent = <&intc0>;
+			clock-frequency = <4000000>;
+			current-speed = <115200>;
+			pinctrl-0 = <&uart2_tx_default &uart2_rx_default>;
+			pinctrl-names = "default";
 			status = "okay";
 		};
 
-		gpioc: gpio@228 {
-			compatible = "microchip,dspic-gpio";
-			reg = <0x228 0x20>;
-			gpio-controller;
-			#gpio-cells = <2>;
+		pinctrl: pin-controller@200 {
+			compatible = "microchip,dspic33-pinctrl";
+			reg = <0x0200 0x37D0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 			status = "okay";
-		};
+		
 
-		gpiod: gpio@23C {
+			gpioa: gpio@200 {
 			compatible = "microchip,dspic-gpio";
-			reg = <0x23C 0x20>;
+			reg = <0x200 0x14>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "okay";
-		};
+			};
 
-		gpioe: gpio@250 {
-			compatible = "microchip,dspic-gpio";
-			reg = <0x250 0x20>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			status = "okay";
-		};
+			gpiob: gpio@214 {
+				compatible = "microchip,dspic-gpio";
+				reg = <0x214 0x14>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "okay";
+			};
 
-		gpiof: gpio@264 {
-			compatible = "microchip,dspic-gpio";
-			reg = <0x264 0x20>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			status = "okay";
-		};
+			gpioc: gpio@228 {
+				compatible = "microchip,dspic-gpio";
+				reg = <0x228 0x14>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "okay";
+			};
 
-		gpiog: gpio@278 {
-			compatible = "microchip,dspic-gpio";
-			reg = <0x278 0x20>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			status = "okay";
-		};
+			gpiod: gpio@23C {
+				compatible = "microchip,dspic-gpio";
+				reg = <0x23C 0x14>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "okay";
+			};
 
-		gpioh: gpio@28C {
-			compatible = "microchip,dspic-gpio";
-			reg = <0x28C 0x20>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			status = "okay";
+			gpioe: gpio@250 {
+				compatible = "microchip,dspic-gpio";
+				reg = <0x250 0x14>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "okay";
+			};
+
+			gpiof: gpio@264 {
+				compatible = "microchip,dspic-gpio";
+				reg = <0x264 0x14>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "okay";
+			};
+
+			gpiog: gpio@278 {
+				compatible = "microchip,dspic-gpio";
+				reg = <0x278 0x14>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "okay";
+			};
+
+			gpioh: gpio@28C {
+				compatible = "microchip,dspic-gpio";
+				reg = <0x28C 0x14>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "okay";
+			};
+
+			uart0_tx_default: uart0_tx_default {
+				pinmux = <DSPIC33_PINMUX(PORT_H, 0, U1TX)>;
+			};
+
+			uart0_rx_default: uart0_rx_default {
+				pinmux = <DSPIC33_PINMUX(PORT_D, 10, U1RX)>;
+			};
+
+			uart1_tx_default: uart1_tx_default {
+				pinmux = <DSPIC33_PINMUX(PORT_B, 1, U2TX)>;
+			};
+
+			uart1_rx_default: uart1_rx_default {
+				pinmux = <DSPIC33_PINMUX(PORT_B, 4, U2RX)>;
+			};
+
+			uart2_tx_default: uart2_tx_default {
+				pinmux = <DSPIC33_PINMUX(PORT_B, 6, U3TX)>;
+			};
+
+			uart2_rx_default: uart2_rx_default {
+				pinmux = <DSPIC33_PINMUX(PORT_B, 1, U3RX)>;
+			};
 		};
 	};
 };

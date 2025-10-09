@@ -94,6 +94,9 @@ struct _thread_arch {
 
 	/* return value of z_swap */
 	uint32_t swap_return_value;
+
+	/* flag to test whether to load return value*/
+	uint32_t swapped_from_thread;
 };
 typedef struct _thread_arch _thread_arch_t;
 
