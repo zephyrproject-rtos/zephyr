@@ -4,17 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/dts-v1/;
-#include <silabs/xg22/efr32mg22e224f512im40.dtsi>
+#include <dt-bindings/adc/silabs-adc.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
-#include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
-#include "xg22_ek2710a-pinctrl.dtsi"
+#include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
+#include "xg22_explorer_kit-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs BRD2710A (xG22 Explorer Kit)";
-	compatible = "silabs,xg22_ek2710a", "silabs,efr32mg22";
-
 	chosen {
 		zephyr,bt-hci = &bt_hci_silabs;
 		zephyr,code-partition = &slot0_partition;
@@ -36,12 +32,40 @@
 		mcuboot-button0 = &button0;
 	};
 
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpioc 7 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
 	leds {
 		compatible = "gpio-leds";
 
 		led0: led_0 {
 			gpios = <&gpioa 4 GPIO_ACTIVE_HIGH>;
 		};
+	};
+
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0>;
+		gpio-map-pass-thru = <0 GPIO_DT_FLAGS_MASK>;
+		gpio-map = <0 0 &gpiob 0 0>,  /* AN   */
+			   <1 0 &gpioc 6 0>,  /* RST  */
+			   <2 0 &gpioc 3 0>,  /* CS   */
+			   <3 0 &gpioc 2 0>,  /* SCK  */
+			   <4 0 &gpioc 1 0>,  /* MISO */
+			   <5 0 &gpioc 0 0>,  /* MOSI */
+			   <6 0 &gpiob 4 0>,  /* PWM  */
+			   <7 0 &gpiob 3 0>,  /* INT  */
+			   <8 0 &gpiob 2 0>,  /* RX   */
+			   <9 0 &gpiob 1 0>,  /* TX   */
+			   <10 0 &gpiod 2 0>, /* SCL  */
+			   <11 0 &gpiod 3 0>; /* SDA  */
 	};
 
 	pwmleds {
@@ -52,13 +76,17 @@
 		};
 	};
 
-	buttons {
-		compatible = "gpio-keys";
+	qwiic_connector: stemma-qt-connector {
+		compatible = "stemma-qt-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0>;
+		gpio-map-pass-thru = <0 GPIO_DT_FLAGS_MASK>;
+		gpio-map = <0 0 &gpiod 2 0>, /* SCL */
+			   <1 0 &gpiod 3 0>; /* SDA */
+	};
 
-		button0: button_0 {
-			gpios = <&gpioc 7 GPIO_ACTIVE_LOW>;
-			zephyr,code = <INPUT_KEY_0>;
-		};
+	mikrobus_adc: zephyr,user {
+		io-channels = <&adc0 0>;
 	};
 };
 
@@ -67,6 +95,17 @@
 
 	timer0_pwm: pwm {
 		pinctrl-0 = <&timer0_default>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+
+&timer1 {
+	status = "okay";
+
+	zephyr_pwm: timer1_pwm: pwm {
+		pinctrl-0 = <&timer1_default>;
 		pinctrl-names = "default";
 		status = "okay";
 	};
@@ -82,15 +121,9 @@
 	swo-ref-frequency = <DT_FREQ_K(76800)>;
 };
 
-&hfxo {
-	ctune = <121>;
-	precision = <50>;
-	status = "okay";
-};
-
-&lfxo {
-	ctune = <42>;
-	precision = <50>;
+&dcdc {
+	regulator-boot-on;
+	regulator-initial-mode = <SILABS_DCDC_MODE_BUCK>;
 	status = "okay";
 };
 
@@ -104,20 +137,16 @@
 	dpll-n = <3839>;
 };
 
-&em23grpaclk {
-	clocks = <&lfxo>;
+&euart0 {
+	pinctrl-0 = <&euart0_default>;
+	pinctrl-names = "default";
+	status = "disabled";
 };
 
-&em4grpaclk {
-	clocks = <&lfxo>;
-};
-
-&rtccclk {
-	clocks = <&lfxo>;
-};
-
-&wdog0clk {
-	clocks = <&lfxo>;
+&usart0 {
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
+	status = "disabled";
 };
 
 &usart1 {
@@ -129,7 +158,7 @@
 &i2c0 {
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
-	status = "okay";
+	status = "disabled";
 };
 
 &wdog0 {
@@ -161,16 +190,24 @@
 };
 
 &adc0 {
+	pinctrl-0 = <&iadc0_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
 	status = "okay";
+
+	channel@0 {
+		reg = <0>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,input-positive = <IADC_INPUT_PB0>;
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
 };
 
 &trng {
-	status = "okay";
-};
-
-&dcdc {
-	regulator-boot-on;
-	regulator-initial-mode = <SILABS_DCDC_MODE_BUCK>;
 	status = "okay";
 };
 
@@ -207,10 +244,16 @@
 	};
 };
 
-&radio {
-	pa-voltage-mv = <1800>;
-};
-
 &bt_hci_silabs {
 	status = "okay";
 };
+
+mikrobus_i2c: &i2c0 {};
+
+mikrobus_spi: &usart0 {};
+
+mikrobus_uart: &euart0 {};
+
+zephyr_i2c: &i2c0 {};
+
+zephyr_spi: &usart0 {};

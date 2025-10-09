@@ -49,9 +49,6 @@ means Pin number 2 on PORTA, as used in the board's datasheets and manuals.
 | PA6   | USART1_RX   | UART Console VCOM_RX US0_RX         |
 +-------+-------------+-------------------------------------+
 
-The default configuration can be found in
-:zephyr_file:`boards/silabs/dev_kits/xg22_ek2710a/xg22_ek2710a_defconfig`
-
 System Clock
 ============
 

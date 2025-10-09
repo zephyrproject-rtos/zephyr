@@ -1,0 +1,11 @@
+boards:
+  - name: bgm220_ek4314a
+    full_name: BGM220 Explorer Kit (BGM220-EK4314A)
+    vendor: silabs
+    socs:
+      - name: bgm220pc22hna
+  - name: xg22_ek2710a
+    full_name: EFR32xG22E Explorer Kit (xG22-EK2710A)
+    vendor: silabs
+    socs:
+      - name: efr32mg22e224f512im40
