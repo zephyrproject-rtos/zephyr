@@ -1,23 +1,16 @@
 # Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_XG22_EK2710A
+if BOARD_BGM220_EK4314A || BOARD_XG22_EK2710A
 
 config LOG_BACKEND_SWO_FREQ_HZ
 	default 875000
 	depends on LOG_BACKEND_SWO
 
-if SOC_GECKO_USE_RAIL
-
 config FPU
-	default y
-
-endif # SOC_GECKO_USE_RAIL
+	default y if SOC_GECKO_USE_RAIL || BT
 
 if BT
-
-config FPU
-	default y
 
 config MAIN_STACK_SIZE
 	default 3072 if PM
@@ -25,4 +18,4 @@ config MAIN_STACK_SIZE
 
 endif # BT
 
-endif # BOARD_XG22_EK2710A
+endif
