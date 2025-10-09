@@ -114,20 +114,20 @@
 /* Level 1 contains page table entries
  * necessary to map the page table itself.
  */
-#define XTENSA_L1_PAGE_TABLE_ENTRIES 1024U
+#define L1_PAGE_TABLE_NUM_ENTRIES 1024U
 
 /* Size of level 1 page table.
  */
-#define XTENSA_L1_PAGE_TABLE_SIZE (XTENSA_L1_PAGE_TABLE_ENTRIES * sizeof(uint32_t))
+#define L1_PAGE_TABLE_SIZE (L1_PAGE_TABLE_NUM_ENTRIES * sizeof(uint32_t))
 
 /* Level 2 contains page table entries
  * necessary to map the page table itself.
  */
-#define XTENSA_L2_PAGE_TABLE_ENTRIES 1024U
+#define L2_PAGE_TABLE_NUM_ENTRIES 1024U
 
 /* Size of level 2 page table.
  */
-#define XTENSA_L2_PAGE_TABLE_SIZE (XTENSA_L2_PAGE_TABLE_ENTRIES * sizeof(uint32_t))
+#define L2_PAGE_TABLE_SIZE (L2_PAGE_TABLE_NUM_ENTRIES * sizeof(uint32_t))
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -142,9 +142,8 @@ BUILD_ASSERT(CONFIG_MMU_PAGE_SIZE == 0x1000,
  * Each memory domain contains its own l1 page table. The kernel l1 page table is
  * located at the index 0.
  */
-static uint32_t l1_page_tables[CONFIG_XTENSA_MMU_NUM_L1_TABLES][XTENSA_L1_PAGE_TABLE_ENTRIES]
-				__aligned(KB(4));
-
+static uint32_t l1_page_tables[CONFIG_XTENSA_MMU_NUM_L1_TABLES][L1_PAGE_TABLE_NUM_ENTRIES]
+		__aligned(KB(4));
 
 /*
  * That is an alias for the page tables set used by the kernel.
@@ -155,8 +154,8 @@ uint32_t *xtensa_kernel_ptables = (uint32_t *)l1_page_tables[0];
  * Each table in the level 2 maps a 4Mb memory range. It consists of 1024 entries each one
  * covering a 4Kb page.
  */
-static uint32_t l2_page_tables[CONFIG_XTENSA_MMU_NUM_L2_TABLES][XTENSA_L2_PAGE_TABLE_ENTRIES]
-				__aligned(KB(4));
+static uint32_t l2_page_tables[CONFIG_XTENSA_MMU_NUM_L2_TABLES][L2_PAGE_TABLE_NUM_ENTRIES]
+		__aligned(KB(4));
 
 /*
  * This additional variable tracks which l1 tables are in use. This is kept separated from
@@ -317,7 +316,7 @@ static void map_memory_range(const uint32_t start, const uint32_t end,
 			__ASSERT(l2_table != NULL,
 				 "There is no l2 page table available to map 0x%08x\n", page);
 
-			init_page_table(l2_table, XTENSA_L2_PAGE_TABLE_ENTRIES, PTE_L2_ILLEGAL);
+			init_page_table(l2_table, L2_PAGE_TABLE_NUM_ENTRIES, PTE_L2_ILLEGAL);
 
 			xtensa_kernel_ptables[l1_pos] =
 				PTE((uint32_t)l2_table, RING_KERNEL, XTENSA_MMU_PAGE_TABLE_ATTR);
@@ -364,7 +363,7 @@ static void xtensa_init_page_tables(void)
 	}
 	already_inited = true;
 
-	init_page_table(xtensa_kernel_ptables, XTENSA_L1_PAGE_TABLE_ENTRIES, PTE_L1_ILLEGAL);
+	init_page_table(xtensa_kernel_ptables, L1_PAGE_TABLE_NUM_ENTRIES, PTE_L1_ILLEGAL);
 	atomic_set_bit(l1_page_tables_track, 0);
 
 	for (entry = 0; entry < ARRAY_SIZE(mmu_zephyr_ranges); entry++) {
@@ -469,7 +468,7 @@ static bool l2_page_table_map(uint32_t *l1_table, void *vaddr, uintptr_t phys,
 			return false;
 		}
 
-		init_page_table(l2_table, XTENSA_L2_PAGE_TABLE_ENTRIES, PTE_L2_ILLEGAL);
+		init_page_table(l2_table, L2_PAGE_TABLE_NUM_ENTRIES, PTE_L2_ILLEGAL);
 
 		l1_table[l1_pos] = PTE((uint32_t)l2_table, RING_KERNEL, XTENSA_MMU_PAGE_TABLE_ATTR);
 
@@ -645,7 +644,7 @@ static bool l2_page_table_unmap(uint32_t *l1_table, void *vaddr)
 
 	sys_cache_data_flush_range((void *)&l2_table[l2_pos], sizeof(l2_table[0]));
 
-	for (l2_pos = 0; l2_pos < XTENSA_L2_PAGE_TABLE_ENTRIES; l2_pos++) {
+	for (l2_pos = 0; l2_pos < L2_PAGE_TABLE_NUM_ENTRIES; l2_pos++) {
 		if (!is_pte_illegal(l2_table[l2_pos])) {
 			/* If any PTE is mapped (== not illegal), we need to
 			 * keep this L2 table.
@@ -660,7 +659,7 @@ static bool l2_page_table_unmap(uint32_t *l1_table, void *vaddr)
 	l1_table[l1_pos] = PTE_L1_ILLEGAL;
 	sys_cache_data_flush_range((void *)&l1_table[l1_pos], sizeof(l1_table[0]));
 
-	table_trk_pos = (l2_table - (uint32_t *)l2_page_tables) / (XTENSA_L2_PAGE_TABLE_ENTRIES);
+	table_trk_pos = (l2_table - (uint32_t *)l2_page_tables) / (L2_PAGE_TABLE_NUM_ENTRIES);
 	atomic_clear_bit(l2_page_tables_track, table_trk_pos);
 
 end:
@@ -875,7 +874,7 @@ static uint32_t *dup_table(void)
 		return NULL;
 	}
 
-	for (i = 0; i < XTENSA_L1_PAGE_TABLE_ENTRIES; i++) {
+	for (i = 0; i < L1_PAGE_TABLE_NUM_ENTRIES; i++) {
 		uint32_t *l2_table, *src_l2_table;
 
 		if (is_pte_illegal(xtensa_kernel_ptables[i]) ||
@@ -890,7 +889,7 @@ static uint32_t *dup_table(void)
 			goto err;
 		}
 
-		for (j = 0; j < XTENSA_L2_PAGE_TABLE_ENTRIES; j++) {
+		for (j = 0; j < L2_PAGE_TABLE_NUM_ENTRIES; j++) {
 			l2_table[j] = restore_pte(src_l2_table[j]);
 		}
 
@@ -899,10 +898,10 @@ static uint32_t *dup_table(void)
 		 */
 		l1_table[i] = PTE((uint32_t)l2_table, RING_KERNEL, XTENSA_MMU_PAGE_TABLE_ATTR);
 
-		sys_cache_data_flush_range((void *)l2_table, XTENSA_L2_PAGE_TABLE_SIZE);
+		sys_cache_data_flush_range((void *)l2_table, L2_PAGE_TABLE_SIZE);
 	}
 
-	sys_cache_data_flush_range((void *)l1_table, XTENSA_L1_PAGE_TABLE_SIZE);
+	sys_cache_data_flush_range((void *)l1_table, L1_PAGE_TABLE_SIZE);
 
 	return l1_table;
 
