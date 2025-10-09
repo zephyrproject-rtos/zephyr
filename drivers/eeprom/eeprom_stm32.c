@@ -70,14 +70,20 @@ static int eeprom_stm32_write(const struct device *dev, off_t offset,
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	HAL_FLASHEx_DATAEEPROM_Unlock();
+	ret = HAL_FLASHEx_DATAEEPROM_Unlock();
+	if (ret != HAL_OK) {
+		return -EIO;
+	}
 
 	while (len) {
 		ret = HAL_FLASHEx_DATAEEPROM_Program(FLASH_TYPEPROGRAMDATA_BYTE,
 						     config->addr + offset, *pbuf);
 		if (ret != HAL_OK) {
 			LOG_ERR("failed to write to EEPROM (err %d)", ret);
-			HAL_FLASHEx_DATAEEPROM_Lock();
+			ret = HAL_FLASHEx_DATAEEPROM_Lock();
+			if (ret != HAL_OK) {
+				LOG_ERR("failed to lock to EEPROM (err %d)", ret);
+			}
 			k_mutex_unlock(&lock);
 			return -EIO;
 		}
