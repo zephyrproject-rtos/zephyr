@@ -198,6 +198,10 @@ extern "C" {
 	sys_trace_k_timer_status_sync_blocking(timer, timeout)
 #define sys_port_trace_k_timer_status_sync_exit(timer, result)                                     \
 	sys_trace_k_timer_status_sync_exit(timer, result)
+#define sys_port_trace_k_timer_expiry_enter(timer)
+#define sys_port_trace_k_timer_expiry_exit(timer)
+#define sys_port_trace_k_timer_stop_fn_expiry_enter(timer)
+#define sys_port_trace_k_timer_stop_fn_expiry_exit(timer)
 
 #define sys_port_trace_k_condvar_init(condvar, ret)    sys_trace_k_condvar_init(condvar, ret)
 #define sys_port_trace_k_condvar_signal_enter(condvar) sys_trace_k_condvar_signal_enter(condvar)
