@@ -216,10 +216,14 @@ int eth_stm32_hal_init(const struct device *dev)
 	k_mutex_init(&dev_data->tx_mutex);
 	k_sem_init(&dev_data->rx_int_sem, 0, K_SEM_MAX_LIMIT);
 
-	HAL_ETH_DMATxDescListInit(heth, dma_tx_desc_tab,
-		&dma_tx_buffer[0][0], ETH_TXBUFNB);
-	HAL_ETH_DMARxDescListInit(heth, dma_rx_desc_tab,
-		&dma_rx_buffer[0][0], ETH_RXBUFNB);
+	if (HAL_ETH_DMATxDescListInit(heth, dma_tx_desc_tab,
+				      &dma_tx_buffer[0][0], ETH_TXBUFNB) != HAL_OK) {
+		return -EIO;
+	}
+	if (HAL_ETH_DMARxDescListInit(heth, dma_rx_desc_tab,
+				      &dma_rx_buffer[0][0], ETH_RXBUFNB) != HAL_OK) {
+		return -EIO;
+	}
 
 	return 0;
 }
