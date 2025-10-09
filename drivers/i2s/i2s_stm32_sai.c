@@ -283,7 +283,7 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 	}
 
 	hdma->Instance = STM32_DMA_GET_INSTANCE(stream->reg, stream->dma_channel);
-#if defined(CONFIG_SOC_SERIES_STM32F4X)
+#if defined(CONFIG_SOC_SERIES_STM32F4X) || defined(CONFIG_SOC_SERIES_STM32F7X)
 	hdma->Init.Channel = dma_cfg.dma_slot * DMA_CHANNEL_1;
 #else
 	hdma->Init.Request = dma_cfg.dma_slot;
@@ -292,7 +292,7 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32L4X) ||                  \
 	defined(CONFIG_SOC_SERIES_STM32G4X) || defined(CONFIG_SOC_SERIES_STM32L5X) ||              \
-	defined(CONFIG_SOC_SERIES_STM32F4X)
+	defined(CONFIG_SOC_SERIES_STM32F4X) || defined(CONFIG_SOC_SERIES_STM32F7X)
 
 	hdma->Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
 	hdma->Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
@@ -310,7 +310,8 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 	hdma->Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
 #endif
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32F4X)
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32F4X) ||                  \
+	defined(CONFIG_SOC_SERIES_STM32F7X)
 	hdma->Init.FIFOMode = DMA_FIFOMODE_DISABLE;
 #endif
 
@@ -319,7 +320,7 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 
 #if !defined(CONFIG_SOC_SERIES_STM32H7X) && !defined(CONFIG_SOC_SERIES_STM32L4X) &&                \
 	!defined(CONFIG_SOC_SERIES_STM32G4X) && !defined(CONFIG_SOC_SERIES_STM32L5X) &&            \
-	!defined(CONFIG_SOC_SERIES_STM32F4X)
+	!defined(CONFIG_SOC_SERIES_STM32F4X) && !defined(CONFIG_SOC_SERIES_STM32F7X)
 		hdma->Init.SrcInc = DMA_SINC_INCREMENTED;
 		hdma->Init.DestInc = DMA_DINC_FIXED;
 #endif
@@ -330,7 +331,7 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 
 #if !defined(CONFIG_SOC_SERIES_STM32H7X) && !defined(CONFIG_SOC_SERIES_STM32L4X) &&                \
 	!defined(CONFIG_SOC_SERIES_STM32G4X) && !defined(CONFIG_SOC_SERIES_STM32L5X) &&            \
-	!defined(CONFIG_SOC_SERIES_STM32F4X)
+	!defined(CONFIG_SOC_SERIES_STM32F4X) && !defined(CONFIG_SOC_SERIES_STM32F7X)
 		hdma->Init.SrcInc = DMA_SINC_FIXED;
 		hdma->Init.DestInc = DMA_DINC_INCREMENTED;
 #endif
@@ -351,7 +352,7 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 	}
 #elif !defined(CONFIG_SOC_SERIES_STM32H7X) && !defined(CONFIG_SOC_SERIES_STM32L4X) &&              \
 	!defined(CONFIG_SOC_SERIES_STM32G4X) && !defined(CONFIG_SOC_SERIES_STM32L5X) &&            \
-	!defined(CONFIG_SOC_SERIES_STM32F4X)
+	!defined(CONFIG_SOC_SERIES_STM32F4X) && !defined(CONFIG_SOC_SERIES_STM32F7X)
 	if (HAL_DMA_ConfigChannelAttributes(&dev_data->hdma, DMA_CHANNEL_NPRIV) != HAL_OK) {
 		LOG_ERR("HAL_DMA_ConfigChannelAttributes: <Failed>");
 		return -EIO;
@@ -466,8 +467,9 @@ static int i2s_stm32_sai_configure(const struct device *dev, enum i2s_dir dir,
 		return -EINVAL;
 	}
 
-	/* Control of MCLK output from SAI configuration is not possible on STM32L4xx MCUs */
-#if !defined(CONFIG_SOC_SERIES_STM32L4X) && !defined(CONFIG_SOC_SERIES_STM32F4X)
+	/* Control of MCLK output from SAI configuration is not possible on STM32L4/F4/F7xx MCUs */
+#if !defined(CONFIG_SOC_SERIES_STM32L4X) && !defined(CONFIG_SOC_SERIES_STM32F4X) &&                \
+	!defined(CONFIG_SOC_SERIES_STM32F7X)
 	if (cfg->mclk_enable && stream->master) {
 		hsai->Init.MckOutput = SAI_MCK_OUTPUT_ENABLE;
 	} else {
@@ -481,7 +483,9 @@ static int i2s_stm32_sai_configure(const struct device *dev, enum i2s_dir dir,
 		hsai->Init.NoDivider = SAI_MASTERDIVIDER_ENABLE;
 
 		/* MckOverSampling is not supported by all STM32L4xx MCUs */
-#if !defined(CONFIG_SOC_SERIES_STM32L4X) && !defined(CONFIG_SOC_SERIES_STM32F4X)
+		/* MckOverSampling is not supported by STM32F4/F7xx MCUs */
+#if !defined(CONFIG_SOC_SERIES_STM32L4X) && !defined(CONFIG_SOC_SERIES_STM32F4X) &&                \
+	!defined(CONFIG_SOC_SERIES_STM32F7X)
 		if (cfg->mclk_div == (enum mclk_divider)MCLK_DIV_256) {
 			hsai->Init.MckOverSampling = SAI_MCK_OVERSAMPLING_DISABLE;
 		} else {
