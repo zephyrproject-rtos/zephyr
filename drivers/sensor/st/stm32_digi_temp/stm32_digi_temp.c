@@ -85,7 +85,7 @@ static int stm32_digi_temp_sample_fetch(const struct device *dev, enum sensor_ch
 	k_sem_take(&data->sem_isr, K_FOREVER);
 
 	/* Read value */
-	data->raw = READ_REG(dts->DR);
+	data->raw = sys_read32((mem_addr_t)&dts->DR);
 
 	k_mutex_unlock(&data->mutex);
 
