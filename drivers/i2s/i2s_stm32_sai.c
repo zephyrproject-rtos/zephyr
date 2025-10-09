@@ -407,7 +407,6 @@ static int i2s_stm32_sai_initialize(const struct device *dev)
 static void dma_callback(const struct device *dma_dev, void *arg, uint32_t channel, int status)
 {
 	DMA_HandleTypeDef *hdma = arg;
-
 	ARG_UNUSED(dma_dev);
 
 	if (status < 0) {
