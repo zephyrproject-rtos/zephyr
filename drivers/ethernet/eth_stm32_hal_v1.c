@@ -233,6 +233,7 @@ void eth_stm32_set_mac_config(const struct device *dev, struct phy_link_state *s
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
 	HAL_StatusTypeDef hal_ret = HAL_OK;
+
 	heth->Init.DuplexMode =
 		PHY_LINK_IS_FULL_DUPLEX(state->speed) ? ETH_MODE_FULLDUPLEX : ETH_MODE_HALFDUPLEX;
 
