@@ -8,6 +8,7 @@ common:
   tags: introduction
   integration_platforms:
     - native_sim
+    - mini_stm32h7b0
   harness: console
   harness_config:
     type: one_line
