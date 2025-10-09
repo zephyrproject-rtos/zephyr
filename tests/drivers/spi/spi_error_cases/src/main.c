@@ -221,6 +221,31 @@ ZTEST(spi_error_cases, test_spis_tx_buf_not_in_ram)
 	zassert_equal(slave_rv, -ENOTSUP, "Got %d instead", slave_rv);
 }
 
+ZTEST(spi_error_cases, test_no_configure_in_each_transceive)
+{
+	int rv;
+	struct spi_dt_spec spim_valid = spim;
+	struct spi_dt_spec spim_invalid = spim;
+
+	/* configure device during first transceive with valid config */
+	rv = spi_transceive_dt(&spim_valid, tdata.stx_set, tdata.srx_set);
+	zassert_equal(rv, 0, "Got %d instead", rv);
+
+	/* change valid config frequency to invalid value */
+	spim_valid.config.frequency = 124999;
+
+	/* make sure device is not reconfigured because conf structure pointer is the same
+	 * thus do not report error because of invalid frequency setting
+	 */
+	rv = spi_transceive_dt(&spim_valid, tdata.stx_set, tdata.srx_set);
+	zassert_equal(rv, 0, "Got %d instead", rv);
+
+	/* use different config structure - force reconfiguration and thus report error */
+	spim_invalid.config.frequency = 124999;
+	rv = spi_transceive_dt(&spim_invalid, tdata.stx_set, tdata.srx_set);
+	zassert_equal(rv, -EINVAL, "Got %d instead", rv);
+}
+
 static void before(void *not_used)
 {
 	ARG_UNUSED(not_used);
