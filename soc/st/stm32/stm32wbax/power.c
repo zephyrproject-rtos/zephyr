@@ -29,7 +29,7 @@
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 
-#define HSE_ON (READ_BIT(RCC->CR, RCC_CR_HSEON) == RCC_CR_HSEON)
+#define HSE_ON (sys_test_bits((mem_addr_t)&RCC->CR, RCC_CR_HSEON) == RCC_CR_HSEON)
 
 static uint32_t ram_waitstates_backup;
 static uint32_t flash_latency_backup;
@@ -161,7 +161,7 @@ static void set_mode_stop_enter(uint8_t substate_id)
 			while (__HAL_FLASH_GET_LATENCY() != FLASH_LATENCY_1) {
 			}
 		}
-		ram_waitstates_backup = READ_BIT(RAMCFG_SRAM1->CR, RAMCFG_CR_WSC);
+		ram_waitstates_backup = sys_test_bits((mem_addr_t)&RAMCFG_SRAM1->CR, RAMCFG_CR_WSC);
 		sys_modify_bits((mem_addr_t)&RAMCFG_SRAM1->CR, RAMCFG_CR_WSC, RAMCFG_WAITSTATE_1);
 		sys_modify_bits((mem_addr_t)&RAMCFG_SRAM2->CR, RAMCFG_CR_WSC, RAMCFG_WAITSTATE_1);
 	}
