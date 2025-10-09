@@ -11,6 +11,7 @@ supported:
   - pwm
   - adc
   - i2c
+  - spi
   - counter
   - mbox
 vendor: renesas
