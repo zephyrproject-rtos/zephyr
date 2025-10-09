@@ -1,6 +1,9 @@
 common:
   tags:
     - psa.secure_storage
+  platform_exclude:
+    - nrf54h20dk/nrf54h20/cpuapp
+    - nrf54h20dk/nrf54h20/cpurad
 tests:
   secure_storage.psa.crypto.secure_storage:
     filter: CONFIG_SECURE_STORAGE and not CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_NONE
