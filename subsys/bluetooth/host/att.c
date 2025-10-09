@@ -248,8 +248,13 @@ const char *bt_att_err_to_str(uint8_t att_err)
 }
 #endif /* CONFIG_BT_ATT_ERR_TO_STR */
 
-static void att_tx_destroy(struct net_buf *buf)
+static void att_tx_destroy_work_handler(struct k_work *work);
+static K_WORK_DEFINE(att_tx_destroy_work, att_tx_destroy_work_handler);
+static sys_slist_t tx_destroy_queue;
+
+static void att_tx_destroy_work_handler(struct k_work *work)
 {
+	struct net_buf *buf = net_buf_slist_get(&tx_destroy_queue);
 	struct bt_att_tx_meta_data *p_meta = att_get_tx_meta_data(buf);
 	struct bt_att_tx_meta_data meta;
 
@@ -278,6 +283,16 @@ static void att_tx_destroy(struct net_buf *buf)
 	if (meta.opcode != 0) {
 		att_on_sent_cb(&meta);
 	}
+
+	if (!sys_slist_is_empty(&tx_destroy_queue)) {
+		k_work_submit(&att_tx_destroy_work);
+	}
+}
+
+static void att_tx_destroy(struct net_buf *buf)
+{
+	net_buf_slist_put(&tx_destroy_queue, buf);
+	k_work_submit(&att_tx_destroy_work);
 }
 
 NET_BUF_POOL_DEFINE(att_pool, CONFIG_BT_ATT_TX_COUNT,
