@@ -17,6 +17,86 @@
 #include <kernel_arch_func.h>
 #include <mmu.h>
 
+/** Mask for attributes in PTE */
+#define PTE_ATTR_MASK 0x0000000FU
+
+/** Number of bits to shift for attributes in PTE */
+#define PTE_ATTR_SHIFT 0U
+
+/** Mask for cache mode in PTE */
+#define PTE_ATTR_CACHED_MASK 0x0000000CU
+
+/** Mask for ring in PTE */
+#define PTE_RING_MASK 0x00000030U
+
+/** Number of bits to shift for ring in PTE */
+#define PTE_RING_SHIFT 4U
+
+/** Number of bits to shift for backup attributes in PTE SW field. */
+#define PTE_BCKUP_ATTR_SHIFT (PTE_ATTR_SHIFT + 6U)
+
+/** Mask for backup attributes in PTE SW field. */
+#define PTE_BCKUP_ATTR_MASK (PTE_ATTR_MASK << 6U)
+
+/** Number of bits to shift for backup ring value in PTE SW field. */
+#define PTE_BCKUP_RING_SHIFT (PTE_RING_SHIFT + 6U)
+
+/** Mask for backup ring value in PTE SW field. */
+#define PTE_BCKUP_RING_MASK (PTE_RING_MASK << 6U)
+
+/** Construct a page table entry (PTE) with specified backup attributes and ring. */
+#define PTE_WITH_BCKUP(paddr, ring, attr, bckup_ring, bckup_attr)                                  \
+	(((paddr) & XTENSA_MMU_PTE_PPN_MASK) |                                                     \
+	 (((bckup_ring) << PTE_BCKUP_RING_SHIFT) & PTE_BCKUP_RING_MASK) |                          \
+	 (((bckup_attr) << PTE_BCKUP_ATTR_SHIFT) & PTE_BCKUP_ATTR_MASK) |                          \
+	 (((ring) << PTE_RING_SHIFT) & PTE_RING_MASK) |                                            \
+	 (((attr) << PTE_ATTR_SHIFT) & PTE_ATTR_MASK))
+
+/** Construct a page table entry (PTE) */
+#define PTE(paddr, ring, attr) PTE_WITH_BCKUP(paddr, ring, attr, RING_KERNEL, PTE_ATTR_ILLEGAL)
+
+/** Get the attributes from a PTE */
+#define PTE_ATTR_GET(pte) (((pte) & PTE_ATTR_MASK) >> PTE_ATTR_SHIFT)
+
+/** Set the attributes in a PTE */
+#define PTE_ATTR_SET(pte, attr)                                                                    \
+	(((pte) & ~PTE_ATTR_MASK) | (((attr) << PTE_ATTR_SHIFT) & PTE_ATTR_MASK))
+
+/** Get the backed up attributes from the PTE SW field. */
+#define PTE_BCKUP_ATTR_GET(pte) (((pte) & PTE_BCKUP_ATTR_MASK) >> PTE_BCKUP_ATTR_SHIFT)
+
+/** Get the backed up ring value from the PTE SW field. */
+#define PTE_BCKUP_RING_GET(pte) (((pte) & PTE_BCKUP_RING_MASK) >> PTE_BCKUP_RING_SHIFT)
+
+/** Set the ring in a PTE */
+#define PTE_RING_SET(pte, ring)                                                                    \
+	(((pte) & ~PTE_RING_MASK) | (((ring) << PTE_RING_SHIFT) & PTE_RING_MASK))
+
+/** Get the ring from a PTE */
+#define PTE_RING_GET(pte) (((pte) & PTE_RING_MASK) >> PTE_RING_SHIFT)
+
+/** Get the ASID from the RASID register corresponding to the ring in a PTE */
+#define PTE_ASID_GET(pte, rasid)                                                                   \
+	(((rasid) >> ((((pte) & PTE_RING_MASK) >> PTE_RING_SHIFT) * 8)) & 0xFF)
+
+/** Attribute indicating PTE is illegal. */
+#define PTE_ATTR_ILLEGAL (BIT(3) | BIT(2))
+
+/** Illegal PTE entry for Level 1 page tables */
+#define PTE_L1_ILLEGAL PTE(0, RING_KERNEL, PTE_ATTR_ILLEGAL)
+
+/** Illegal PTE entry for Level 2 page tables */
+#define PTE_L2_ILLEGAL PTE(0, RING_KERNEL, PTE_ATTR_ILLEGAL)
+
+/** Ring number in PTE for kernel specific ASID */
+#define RING_KERNEL 0
+
+/** Ring number in PTE for user specific ASID */
+#define RING_USER 2
+
+/** Ring number in PTE for shared ASID */
+#define RING_SHARED 3
+
 /* Skip TLB IPI when updating page tables.
  * This allows us to send IPI only after the last
  * changes of a series.
@@ -175,7 +255,7 @@ static inline uint32_t restore_pte(uint32_t pte);
  */
 static inline bool is_pte_illegal(uint32_t pte)
 {
-	uint32_t attr = pte & XTENSA_MMU_PTE_ATTR_MASK;
+	uint32_t attr = pte & PTE_ATTR_MASK;
 
 	/*
 	 * The ISA manual states only 12 and 14 are illegal values.
@@ -221,14 +301,13 @@ static void map_memory_range(const uint32_t start, const uint32_t end,
 	bool shared = !!(attrs & XTENSA_MMU_MAP_SHARED);
 	bool do_save_attrs = (options & OPTION_SAVE_ATTRS) == OPTION_SAVE_ATTRS;
 
-	uint32_t ring = shared ? XTENSA_MMU_SHARED_RING : XTENSA_MMU_KERNEL_RING;
-	uint32_t bckup_attrs = do_save_attrs ? attrs : XTENSA_MMU_PTE_ATTR_ILLEGAL;
-	uint32_t bckup_ring = do_save_attrs ? ring : XTENSA_MMU_KERNEL_RING;
+	uint32_t ring = shared ? RING_SHARED : RING_KERNEL;
+	uint32_t bckup_attrs = do_save_attrs ? attrs : PTE_ATTR_ILLEGAL;
+	uint32_t bckup_ring = do_save_attrs ? ring : RING_KERNEL;
 
 	for (page = start; page < end; page += CONFIG_MMU_PAGE_SIZE) {
 		uint32_t *l2_table;
-		uint32_t pte = XTENSA_MMU_PTE_WITH_BCKUP(page, ring, attrs,
-							 bckup_ring, bckup_attrs);
+		uint32_t pte = PTE_WITH_BCKUP(page, ring, attrs, bckup_ring, bckup_attrs);
 		uint32_t l2_pos = XTENSA_MMU_L2_POS(page);
 		uint32_t l1_pos = XTENSA_MMU_L1_POS(page);
 
@@ -238,12 +317,10 @@ static void map_memory_range(const uint32_t start, const uint32_t end,
 			__ASSERT(l2_table != NULL,
 				 "There is no l2 page table available to map 0x%08x\n", page);
 
-			init_page_table(l2_table, XTENSA_L2_PAGE_TABLE_ENTRIES,
-					XTENSA_MMU_PTE_L2_ILLEGAL);
+			init_page_table(l2_table, XTENSA_L2_PAGE_TABLE_ENTRIES, PTE_L2_ILLEGAL);
 
 			xtensa_kernel_ptables[l1_pos] =
-				XTENSA_MMU_PTE((uint32_t)l2_table, XTENSA_MMU_KERNEL_RING,
-					       XTENSA_MMU_PAGE_TABLE_ATTR);
+				PTE((uint32_t)l2_table, RING_KERNEL, XTENSA_MMU_PAGE_TABLE_ATTR);
 		}
 
 		l2_table = (uint32_t *)(xtensa_kernel_ptables[l1_pos] & XTENSA_MMU_PTE_PPN_MASK);
@@ -255,7 +332,7 @@ static void map_memory(const uint32_t start, const uint32_t end,
 		       const uint32_t attrs, const uint32_t options)
 {
 #ifdef CONFIG_XTENSA_MMU_DOUBLE_MAP
-	uint32_t uc_attrs = attrs & ~XTENSA_MMU_PTE_ATTR_CACHED_MASK;
+	uint32_t uc_attrs = attrs & ~PTE_ATTR_CACHED_MASK;
 	uint32_t c_attrs = attrs | XTENSA_MMU_CACHED_WB;
 
 	if (sys_cache_is_ptr_uncached((void *)start)) {
@@ -287,8 +364,7 @@ static void xtensa_init_page_tables(void)
 	}
 	already_inited = true;
 
-	init_page_table(xtensa_kernel_ptables, XTENSA_L1_PAGE_TABLE_ENTRIES,
-			XTENSA_MMU_PTE_L1_ILLEGAL);
+	init_page_table(xtensa_kernel_ptables, XTENSA_L1_PAGE_TABLE_ENTRIES, PTE_L1_ILLEGAL);
 	atomic_set_bit(l1_page_tables_track, 0);
 
 	for (entry = 0; entry < ARRAY_SIZE(mmu_zephyr_ranges); entry++) {
@@ -393,18 +469,15 @@ static bool l2_page_table_map(uint32_t *l1_table, void *vaddr, uintptr_t phys,
 			return false;
 		}
 
-		init_page_table(l2_table, XTENSA_L2_PAGE_TABLE_ENTRIES, XTENSA_MMU_PTE_L2_ILLEGAL);
+		init_page_table(l2_table, XTENSA_L2_PAGE_TABLE_ENTRIES, PTE_L2_ILLEGAL);
 
-		l1_table[l1_pos] = XTENSA_MMU_PTE((uint32_t)l2_table, XTENSA_MMU_KERNEL_RING,
-						  XTENSA_MMU_PAGE_TABLE_ATTR);
+		l1_table[l1_pos] = PTE((uint32_t)l2_table, RING_KERNEL, XTENSA_MMU_PAGE_TABLE_ATTR);
 
 		sys_cache_data_flush_range((void *)&l1_table[l1_pos], sizeof(l1_table[0]));
 	}
 
 	l2_table = (uint32_t *)(l1_table[l1_pos] & XTENSA_MMU_PTE_PPN_MASK);
-	l2_table[l2_pos] = XTENSA_MMU_PTE(phys, is_user ? XTENSA_MMU_USER_RING :
-							  XTENSA_MMU_KERNEL_RING,
-					  attrs);
+	l2_table[l2_pos] = PTE(phys, is_user ? RING_USER : RING_KERNEL, attrs);
 
 	sys_cache_data_flush_range((void *)&l2_table[l2_pos], sizeof(l2_table[0]));
 	xtensa_tlb_autorefill_invalidate();
@@ -436,7 +509,7 @@ static inline void __arch_mem_map(void *va, uintptr_t pa, uint32_t new_attrs, bo
 			paddr_uc = pa;
 		}
 
-		attrs_uc = (new_attrs & ~XTENSA_MMU_PTE_ATTR_CACHED_MASK);
+		attrs_uc = (new_attrs & ~PTE_ATTR_CACHED_MASK);
 		attrs = attrs_uc | XTENSA_MMU_CACHED_WB;
 	} else {
 		vaddr = va;
@@ -584,7 +657,7 @@ static bool l2_page_table_unmap(uint32_t *l1_table, void *vaddr)
 	/* All L2 PTE are illegal (== nothing mapped), we can safely remove
 	 * the L2 table mapping in L1 table and return the L2 table to the pool.
 	 */
-	l1_table[l1_pos] = XTENSA_MMU_PTE_L1_ILLEGAL;
+	l1_table[l1_pos] = PTE_L1_ILLEGAL;
 	sys_cache_data_flush_range((void *)&l1_table[l1_pos], sizeof(l1_table[0]));
 
 	table_trk_pos = (l2_table - (uint32_t *)l2_page_tables) / (XTENSA_L2_PAGE_TABLE_ENTRIES);
@@ -759,12 +832,12 @@ static inline uint32_t restore_pte(uint32_t pte)
 {
 	uint32_t restored_pte;
 
-	uint32_t bckup_attr = XTENSA_MMU_PTE_BCKUP_ATTR_GET(pte);
-	uint32_t bckup_ring = XTENSA_MMU_PTE_BCKUP_RING_GET(pte);
+	uint32_t bckup_attr = PTE_BCKUP_ATTR_GET(pte);
+	uint32_t bckup_ring = PTE_BCKUP_RING_GET(pte);
 
 	restored_pte = pte;
-	restored_pte = XTENSA_MMU_PTE_ATTR_SET(restored_pte, bckup_attr);
-	restored_pte = XTENSA_MMU_PTE_RING_SET(restored_pte, bckup_ring);
+	restored_pte = PTE_ATTR_SET(restored_pte, bckup_attr);
+	restored_pte = PTE_RING_SET(restored_pte, bckup_ring);
 
 	return restored_pte;
 }
@@ -807,7 +880,7 @@ static uint32_t *dup_table(void)
 
 		if (is_pte_illegal(xtensa_kernel_ptables[i]) ||
 			(i == XTENSA_MMU_L1_POS(XTENSA_MMU_PTEVADDR))) {
-			l1_table[i] = XTENSA_MMU_PTE_L1_ILLEGAL;
+			l1_table[i] = PTE_L1_ILLEGAL;
 			continue;
 		}
 
@@ -824,8 +897,7 @@ static uint32_t *dup_table(void)
 		/* The page table is using kernel ASID because we don't
 		 * user thread manipulate it.
 		 */
-		l1_table[i] = XTENSA_MMU_PTE((uint32_t)l2_table, XTENSA_MMU_KERNEL_RING,
-					      XTENSA_MMU_PAGE_TABLE_ATTR);
+		l1_table[i] = PTE((uint32_t)l2_table, RING_KERNEL, XTENSA_MMU_PAGE_TABLE_ATTR);
 
 		sys_cache_data_flush_range((void *)l2_table, XTENSA_L2_PAGE_TABLE_SIZE);
 	}
@@ -905,15 +977,15 @@ static void region_map_update(uint32_t *l1_table, uintptr_t start,
 		pte = l2_table[l2_pos];
 
 		if ((option & OPTION_RESTORE_ATTRS) == OPTION_RESTORE_ATTRS) {
-			new_attrs = XTENSA_MMU_PTE_BCKUP_ATTR_GET(pte);
-			new_ring = XTENSA_MMU_PTE_BCKUP_RING_GET(pte);
+			new_attrs = PTE_BCKUP_ATTR_GET(pte);
+			new_ring = PTE_BCKUP_RING_GET(pte);
 		} else {
 			new_attrs = flags;
 			new_ring = ring;
 		}
 
-		pte = XTENSA_MMU_PTE_RING_SET(pte, new_ring);
-		pte = XTENSA_MMU_PTE_ATTR_SET(pte, new_attrs);
+		pte = PTE_RING_SET(pte, new_ring);
+		pte = PTE_ATTR_SET(pte, new_attrs);
 
 		l2_table[l2_pos] = pte;
 
@@ -942,7 +1014,7 @@ static void update_region(uint32_t *ptables, uintptr_t start, size_t size,
 		va_uc = start;
 	}
 
-	new_flags_uc = (flags & ~XTENSA_MMU_PTE_ATTR_CACHED_MASK);
+	new_flags_uc = (flags & ~PTE_ATTR_CACHED_MASK);
 	new_flags = new_flags_uc | XTENSA_MMU_CACHED_WB;
 
 	region_map_update(ptables, va, size, ring, new_flags, option);
@@ -963,8 +1035,7 @@ static void update_region(uint32_t *ptables, uintptr_t start, size_t size,
 
 static inline void reset_region(uint32_t *ptables, uintptr_t start, size_t size, uint32_t option)
 {
-	update_region(ptables, start, size,
-		      XTENSA_MMU_KERNEL_RING, XTENSA_MMU_PERM_W,
+	update_region(ptables, start, size, RING_KERNEL, XTENSA_MMU_PERM_W,
 		      option | OPTION_RESTORE_ATTRS);
 }
 
@@ -976,7 +1047,7 @@ void xtensa_user_stack_perms(struct k_thread *thread)
 
 	update_region(thread_page_tables_get(thread),
 		      thread->stack_info.start, thread->stack_info.size,
-		      XTENSA_MMU_USER_RING, XTENSA_MMU_PERM_W | XTENSA_MMU_CACHED_WB, 0);
+		      RING_USER, XTENSA_MMU_PERM_W | XTENSA_MMU_CACHED_WB, 0);
 }
 
 int arch_mem_domain_max_partitions_get(void)
@@ -999,8 +1070,7 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain,
 				uint32_t partition_id)
 {
 	struct k_mem_partition *partition = &domain->partitions[partition_id];
-	uint32_t ring = K_MEM_PARTITION_IS_USER(partition->attr) ? XTENSA_MMU_USER_RING :
-			XTENSA_MMU_KERNEL_RING;
+	uint32_t ring = K_MEM_PARTITION_IS_USER(partition->attr) ? RING_USER : RING_KERNEL;
 
 	update_region(domain->arch.ptables, partition->start,
 		      partition->size, ring, partition->attr, 0);
@@ -1027,7 +1097,7 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 		 */
 		update_region(thread_page_tables_get(thread),
 			      thread->stack_info.start, thread->stack_info.size,
-			      XTENSA_MMU_USER_RING,
+			      RING_USER,
 			      XTENSA_MMU_PERM_W | XTENSA_MMU_CACHED_WB,
 			      OPTION_NO_TLB_IPI);
 		/* and reset thread's stack permission in
@@ -1113,7 +1183,7 @@ static bool page_validate(uint32_t *ptables, uint32_t page, uint8_t ring, bool w
 	asid_ring = 0;
 	rasid = xtensa_rasid_get();
 	for (uint32_t i = 0; i < 4; i++) {
-		if (XTENSA_MMU_PTE_ASID_GET(pte, rasid) == XTENSA_MMU_RASID_ASID_GET(rasid, i)) {
+		if (PTE_ASID_GET(pte, rasid) == XTENSA_MMU_RASID_ASID_GET(rasid, i)) {
 			asid_ring = i;
 			break;
 		}
@@ -1124,7 +1194,7 @@ static bool page_validate(uint32_t *ptables, uint32_t page, uint8_t ring, bool w
 	}
 
 	if (write) {
-		return (XTENSA_MMU_PTE_ATTR_GET((pte)) & XTENSA_MMU_PERM_W) != 0;
+		return (PTE_ATTR_GET((pte)) & XTENSA_MMU_PERM_W) != 0;
 	}
 
 	return true;
@@ -1155,12 +1225,12 @@ static int mem_buffer_validate(const void *addr, size_t size, int write, int rin
 
 bool xtensa_mem_kernel_has_access(const void *addr, size_t size, int write)
 {
-	return mem_buffer_validate(addr, size, write, XTENSA_MMU_KERNEL_RING) == 0;
+	return mem_buffer_validate(addr, size, write, RING_KERNEL) == 0;
 }
 
 int arch_buffer_validate(const void *addr, size_t size, int write)
 {
-	return mem_buffer_validate(addr, size, write, XTENSA_MMU_USER_RING);
+	return mem_buffer_validate(addr, size, write, RING_USER);
 }
 
 void xtensa_exc_dtlb_multihit_handle(void)
@@ -1180,7 +1250,7 @@ bool xtensa_exc_load_store_ring_error_check(void *bsa_p)
 
 	ring = (bsa->ps & XCHAL_PS_RING_MASK) >> XCHAL_PS_RING_SHIFT;
 
-	if (ring != XTENSA_MMU_USER_RING) {
+	if (ring != RING_USER) {
 		return true;
 	}
 
