@@ -390,6 +390,10 @@ manifest:
     - name: zcbor
       revision: 9b07780aca6fb21f82a241ba386ad9b379809337
       path: modules/lib/zcbor
+    - name: gpu-vglite
+      url: https://github.com/nxp-mcuxpresso/gpu-vglite.git
+      revision: main
+      path: modules/gpu-vglite
   # zephyr-keep-sorted-stop
 
   self:
