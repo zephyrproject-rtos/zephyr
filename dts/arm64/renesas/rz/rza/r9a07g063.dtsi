@@ -855,6 +855,44 @@
 			status = "disabled";
 		};
 
+		spi0: spi@1004ac00 {
+			compatible = "renesas,rz-rspi";
+			reg = <0x1004ac00 DT_SIZE_K(1)>;
+			interrupts = <GIC_SPI 413 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 414 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 415 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "rx", "tx", "error";
+			channel = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi1: spi@1004b000 {
+			compatible = "renesas,rz-rspi";
+			reg = <0x1004b000 DT_SIZE_K(1)>;
+			interrupts = <GIC_SPI 416 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 417 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 418 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "rx", "tx", "error";
+			channel = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi2: spi@1004b400 {
+			compatible = "renesas,rz-rspi";
+			reg = <0x1004b400 DT_SIZE_K(1)>;
+			interrupts = <GIC_SPI 419 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 420 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 421 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "rx", "tx", "error";
+			channel = <2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
 		gtm0: gtm@12801000 {
 			compatible = "renesas,rz-gtm";
 			reg = <0x12801000 0x400>;
