@@ -650,11 +650,19 @@ static int stm32wba_802154_driver_init(const struct device *dev)
 	k_fifo_init(&stm32wba_802154_data.rx_fifo);
 	k_sem_init(&stm32wba_802154_data.tx_wait, 0, 1);
 	k_sem_init(&stm32wba_802154_data.cca_wait, 0, 1);
-
+#if defined(CONFIG_NET_L2_OPENTHREAD)
+	stm32wba_802154_ral_set_config_lib_params(1, 0);
+#else
+	stm32wba_802154_ral_set_config_lib_params(0, 1);
+#endif
 	stm32wba_802154_ral_init();
 	stm32wba_802154_ral_promiscuous_set(false);
-
+#if !defined(CONFIG_NET_L2_CUSTOM_IEEE802154_STM32WBA) && !defined(CONFIG_NET_L2_OPENTHREAD)
 	stm32wba_802154_data.rx_on_when_idle = true;
+#else
+	stm32wba_802154_data.rx_on_when_idle = false;
+#endif
+	stm32wba_802154_ral_set_continuous_reception(stm32wba_802154_data.rx_on_when_idle);
 
 	k_thread_create(&stm32wba_802154_data.rx_thread, stm32wba_802154_data.rx_stack,
 			CONFIG_IEEE802154_STM32WBA_RX_STACK_SIZE,
@@ -849,6 +857,11 @@ static int stm32wba_802154_configure(const struct device *dev,
 	case IEEE802154_CONFIG_EVENT_HANDLER:
 		LOG_DBG("Setting EVENT_HANDLER");
 		stm32wba_802154_data.event_handler = config->event_handler;
+		break;
+
+	case IEEE802154_CONFIG_RX_ON_WHEN_IDLE:
+		stm32wba_802154_data.rx_on_when_idle = config->rx_on_when_idle;
+		stm32wba_802154_ral_set_continuous_reception(config->rx_on_when_idle);
 		break;
 
 	default:
