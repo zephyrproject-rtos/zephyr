@@ -51,6 +51,10 @@
 	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
 };
 
+&vregusb {
+	status = "okay";
+};
+
 &grtc {
 	owned-channels = <0 1 2 3 4 5 6 7 8 9 10 11>;
 	/* Channels 7-11 reserved for Zero Latency IRQs, 3-4 for FLPR */
