@@ -301,6 +301,19 @@ typedef uintptr_t mem_addr_t;
  */
 
 /**
+ * @fn static inline unsigned int sys_test_bits(mem_addr_t addr, unsigned int mask)
+ * @brief Applies the mask to the value at addr
+ *
+ * This functions takes the designated mask and applies it to the valued at addr
+ * It will return the masked value.
+ *
+ * @param addr the memory address from where to apply the mask
+ * @param mask the designated mask to test
+ *
+ * @return The masked value from address
+ */
+
+/**
  * @fn static inline int sys_test_and_set_bit(mem_addr_t addr, unsigned int bit)
  * @brief Test the bit and set it
  *
