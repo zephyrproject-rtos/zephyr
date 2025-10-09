@@ -33,7 +33,7 @@
 #define CONFIG_LOG_BACKEND_RTT_RETRY_CNT 10
 #endif
 
-#if defined(CONFIG_LOG_BACKEND_RTT_OUTPUT_DICTIONARY)
+#if defined(CONFIG_LOG_BACKEND_RTT_OUTPUT_DICTIONARY_HEX)
 static const uint8_t LOG_HEX_SEP[10] = "##ZLOGV1##";
 #endif
 
@@ -262,7 +262,7 @@ static const log_output_func_t logging_func =
 
 static int data_out(uint8_t *data, size_t length, void *ctx)
 {
-#if defined(CONFIG_LOG_BACKEND_RTT_OUTPUT_DICTIONARY)
+#if defined(CONFIG_LOG_BACKEND_RTT_OUTPUT_DICTIONARY_HEX)
 	for (size_t i = 0; i < length; i++) {
 		char c[2];
 		uint8_t x[2];
@@ -297,7 +297,7 @@ static void log_backend_rtt_init(struct log_backend const *const backend)
 		log_backend_rtt_cfg();
 	}
 
-#if defined(CONFIG_LOG_BACKEND_RTT_OUTPUT_DICTIONARY)
+#if defined(CONFIG_LOG_BACKEND_RTT_OUTPUT_DICTIONARY_HEX)
 	logging_func((uint8_t *)LOG_HEX_SEP, sizeof(LOG_HEX_SEP), NULL);
 #endif
 
