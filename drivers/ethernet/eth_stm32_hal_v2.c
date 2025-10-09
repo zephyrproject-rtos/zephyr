@@ -257,7 +257,7 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 		}
 
 		/* Check for DMA errors */
-		if (HAL_ETH_GetDMAError(heth)) {
+		if (HAL_ETH_GetDMAError(heth) != 0U) {
 			LOG_ERR("%s: ETH DMA error: dmaerror:%x",
 				__func__,
 				HAL_ETH_GetDMAError(heth));
@@ -266,7 +266,7 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 		}
 
 		/* Check for MAC errors */
-		if (HAL_ETH_GetMACError(heth)) {
+		if (HAL_ETH_GetMACError(heth) != 0U) {
 			LOG_ERR("%s: ETH MAC error: macerror:%x",
 				__func__,
 				HAL_ETH_GetMACError(heth));
