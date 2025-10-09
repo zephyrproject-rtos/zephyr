@@ -390,7 +390,9 @@ static int stm32_xspi_wait_auto_polling(const struct device *dev,
 
 	if (k_sem_take(&dev_data->sync, K_MSEC(timeout_ms)) != 0) {
 		LOG_ERR("XSPI AutoPoll wait failed");
-		HAL_XSPI_Abort(&dev_data->hxspi);
+		if (HAL_XSPI_Abort(&dev_data->hxspi) != HAL_OK) {
+			LOG_ERR("XSPI abort failed");
+		}
 		k_sem_reset(&dev_data->sync);
 		return -EIO;
 	}
