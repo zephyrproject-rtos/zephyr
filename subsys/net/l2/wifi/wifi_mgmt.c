@@ -1450,6 +1450,36 @@ static int wifi_set_bss_max_idle_period(uint64_t mgmt_request, struct net_if *if
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_BSS_MAX_IDLE_PERIOD,
 				  wifi_set_bss_max_idle_period);
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+static int wifi_p2p(uint64_t mgmt_request, struct net_if *iface,
+		    void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_p2p_params *params = data;
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->p2p == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!data || len != sizeof(*params)) {
+		return -EINVAL;
+	}
+
+	return wifi_mgmt_api->p2p(dev, params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_P2P, wifi_p2p);
+
+void wifi_mgmt_raise_p2p_device_found_event(struct net_if *iface,
+					     struct wifi_p2p_device_info *device_info)
+{
+	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_P2P_DEVICE_FOUND,
+					iface, device_info,
+					sizeof(*device_info));
+}
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
+
 #ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS
 void wifi_mgmt_raise_raw_scan_result_event(struct net_if *iface,
 					   struct wifi_raw_scan_result *raw_scan_result)
