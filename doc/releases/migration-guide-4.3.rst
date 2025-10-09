@@ -209,9 +209,6 @@ Power management
 Networking
 **********
 
-* The :c:type:`coap_client_response_cb_t` signature has changed. The list of arguments
-  is passed as a :c:struct:`coap_client_response_data` pointer instead.
-
 * The HTTP server now respects the configured ``_config`` value. Check that
   you provide applicable value to :c:macro:`HTTP_SERVICE_DEFINE_EMPTY`,
   :c:macro:`HTTPS_SERVICE_DEFINE_EMPTY`, :c:macro:`HTTP_SERVICE_DEFINE` and
@@ -223,6 +220,21 @@ Networking
   configuration.
 
 .. zephyr-keep-sorted-start re(^\w)
+
+CoAP
+====
+
+* The :c:type:`coap_client_response_cb_t` signature has changed. The list of arguments
+  is passed as a :c:struct:`coap_client_response_data` pointer instead.
+
+* The :c:struct:`coap_client_request` has changed to improve the library's resilience against
+  misconfiguration (i.e. using transient pointers within the struct):
+
+  * The :c:member:`coap_client_request.path` is now a ``char`` array instead of a pointer.
+    The array size is configurable with :kconfig:option:`CONFIG_COAP_CLIENT_MAX_PATH_LENGTH`.
+  * The :c:member:`coap_client_request.options` is now a :c:struct:`coap_client_option` array
+    instead of a pointer. The array size is configurable with
+    :kconfig:option:`CONFIG_COAP_CLIENT_MAX_EXTRA_OPTIONS`.
 
 .. zephyr-keep-sorted-stop
 
