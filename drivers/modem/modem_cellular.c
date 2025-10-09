@@ -168,8 +168,7 @@ struct modem_cellular_data {
 	/* Event dispatcher */
 	struct k_work event_dispatch_work;
 	uint8_t event_buf[8];
-	struct ring_buf event_rb;
-	struct k_mutex event_rb_lock;
+	struct k_pipe event_pipe;
 
 	struct k_mutex api_lock;
 	struct modem_cellular_event_cb cb;
@@ -727,26 +726,18 @@ static void modem_cellular_event_dispatch_handler(struct k_work *item)
 	struct modem_cellular_data *data =
 		CONTAINER_OF(item, struct modem_cellular_data, event_dispatch_work);
 
-	uint8_t events[sizeof(data->event_buf)];
-	uint8_t events_cnt;
+	enum modem_cellular_event event;
+	const size_t len = sizeof(event);
 
-	k_mutex_lock(&data->event_rb_lock, K_FOREVER);
-
-	events_cnt = (uint8_t)ring_buf_get(&data->event_rb, events, sizeof(data->event_buf));
-
-	k_mutex_unlock(&data->event_rb_lock);
-
-	for (uint8_t i = 0; i < events_cnt; i++) {
-		modem_cellular_event_handler(data, (enum modem_cellular_event)events[i]);
+	while (k_pipe_read(&data->event_pipe, (uint8_t *)&event, len, K_NO_WAIT) == len) {
+		modem_cellular_event_handler(data, (enum modem_cellular_event)event);
 	}
 }
 
 static void modem_cellular_delegate_event(struct modem_cellular_data *data,
 					  enum modem_cellular_event evt)
 {
-	k_mutex_lock(&data->event_rb_lock, K_FOREVER);
-	ring_buf_put(&data->event_rb, (uint8_t *)&evt, 1);
-	k_mutex_unlock(&data->event_rb_lock);
+	k_pipe_write(&data->event_pipe, (const uint8_t *)&evt, sizeof(evt), K_NO_WAIT);
 	k_work_submit(&data->event_dispatch_work);
 }
 
@@ -2209,7 +2200,7 @@ static int modem_cellular_init(const struct device *dev)
 	k_mutex_init(&data->api_lock);
 	k_work_init_delayable(&data->timeout_work, modem_cellular_timeout_handler);
 	k_work_init(&data->event_dispatch_work, modem_cellular_event_dispatch_handler);
-	ring_buf_init(&data->event_rb, sizeof(data->event_buf), data->event_buf);
+	k_pipe_init(&data->event_pipe, data->event_buf, sizeof(data->event_buf));
 
 	k_sem_init(&data->suspended_sem, 0, 1);
 
