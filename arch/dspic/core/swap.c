@@ -19,9 +19,12 @@ int arch_swap(unsigned int key)
 	z_thread_mark_switched_out();
 #endif
 
+	register int result __asm__("w0");
 	/* store off key and return value */
 	_current->arch.cpu_level = key;
 	_current->arch.swap_return_value = -EAGAIN;
+	_current->arch.swapped_from_thread = 1;
+	result = _current->arch.swap_return_value;
 
 	/*Check if swap is needed*/
 	if (_kernel.ready_q.cache != _current) {
@@ -39,8 +42,17 @@ int arch_swap(unsigned int key)
 	 *       Make sure the return value is not being intrepreted
 	 *       wrongly
 	 */
-	irq_unlock(key);
-	register int result __asm__("w0");
+	__asm__ volatile(
+			"mov.l w1, [w15++]\n\t"
+			"mov.l w2, [w15++]\n\t"
+	);
+	_current->arch.swapped_from_thread = 0;
+	result = _current->arch.swap_return_value;
+	irq_unlock(_current->arch.cpu_level);
+	__asm__ volatile(
+			"mov.l [--w15], w2\n\t"
+			"mov.l [--w15], w1\n\t"
+	);
 	return result;
 
 	/* Context switch is performed here. Returning implies the

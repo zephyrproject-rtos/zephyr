@@ -14,9 +14,6 @@ config GEN_ISR_TABLES
 config DYNAMIC_INTERRUPTS
 	default n
 
-config NUM_IRQS
-	default 279
-
 config GEN_IRQ_START_VECTOR
 	default 0
 
@@ -27,4 +24,14 @@ config DSPIC33_IRQ_OFFLOAD_IRQ
 	  Select the interrupt number used by irq_offload().
 	  This must be a valid, software-triggerable interrupt on the dsPIC33.
 
+config DSPIC_STACK_PROTECTION
+	bool
+	default y if HW_STACK_PROTECTION
+	select THREAD_STACK_INFO
+	help
+	  Enable stack overflow detection
+	  Will cause a fatal exception on stack overflow
+
+config TEST_EXTRA_STACK_SIZE
+	default 512
 endmenu

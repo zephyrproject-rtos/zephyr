@@ -56,6 +56,8 @@
 		intc0: interrupt-controller@70 {
 			compatible = "microchip,dspic33-intc";
 			reg = <0x70 0x1>;
+			ie-offset = <0xB4>;
+			if-offset = <0x90>;
 			interrupt-controller;
 			#address-cells = <0>;
 			#interrupt-cells = <2>;
@@ -80,7 +82,7 @@
 			interrupt-parent = <&intc0>;
 			clock-frequency = <4000000>;
 			current-speed = <115200>;
-			pinctrl-0 = <&uart1_tx_default &uart1_rx_default>;
+			pinctrl-0 = <&uart0_tx_default &uart0_rx_default>;
 			pinctrl-names = "default";
 			status = "okay";
 		};
@@ -93,7 +95,7 @@
 			interrupt-parent = <&intc0>;
 			clock-frequency = <4000000>;
 			current-speed = <115200>;
-			pinctrl-0 = <&uart2_tx_default &uart2_rx_default>;
+			pinctrl-0 = <&uart1_tx_default &uart1_rx_default>;
 			pinctrl-names = "default";
 			status = "okay";
 		};
@@ -106,7 +108,7 @@
 			interrupt-parent = <&intc0>;
 			clock-frequency = <4000000>;
 			current-speed = <115200>;
-			pinctrl-0 = <&uart3_tx_default &uart3_rx_default>;
+			pinctrl-0 = <&uart2_tx_default &uart2_rx_default>;
 			pinctrl-names = "default";
 			status = "okay";
 		};
@@ -150,27 +152,27 @@
 				status = "okay";
 			};
 
+			uart0_tx_default: uart0_tx_default {
+				pinmux = <DSPIC33_PINMUX(PORT_D, 9, U1TX)>;
+			};
+
+			uart0_rx_default: uart0_rx_default {
+				pinmux = <DSPIC33_PINMUX(PORT_D, 10, U1RX)>;
+			};
+
 			uart1_tx_default: uart1_tx_default {
-				pinmux = <DSPIC33_PINMUX(PORT_B, 6, U1TX)>;
-			};
-
-			uart1_rx_default: uart1_rx_default {
-				pinmux = <DSPIC33_PINMUX(PORT_B, 7, U1RX)>;
-			};
-
-			uart2_tx_default: uart2_tx_default {
 				pinmux = <DSPIC33_PINMUX(PORT_B, 3, U2TX)>;
 			};
 
-			uart2_rx_default: uart2_rx_default {
+			uart1_rx_default: uart1_rx_default {
 				pinmux = <DSPIC33_PINMUX(PORT_B, 4, U2RX)>;
 			};
 
-			uart3_tx_default: uart3_tx_default {
+			uart2_tx_default: uart2_tx_default {
 				pinmux = <DSPIC33_PINMUX(PORT_B, 0, U3TX)>;
 			};
 
-			uart3_rx_default: uart3_rx_default {
+			uart2_rx_default: uart2_rx_default {
 				pinmux = <DSPIC33_PINMUX(PORT_B, 1, U3RX)>;
 			};
 		};
