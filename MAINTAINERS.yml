@@ -3353,6 +3353,7 @@ Microchip SAM Platforms:
   maintainers:
     - nandojve
   collaborators:
+    - ArunMCHP
     - pdgendt
     - stephanosio
   files:
