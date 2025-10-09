@@ -54,46 +54,30 @@
 /** Number of bits to shift for ring in PTE */
 #define XTENSA_MMU_PTE_RING_SHIFT		4U
 
-/** Number of bits to shift for SW reserved ared in PTE */
-#define XTENSA_MMU_PTE_SW_SHIFT			6U
+/** Number of bits to shift for backup attributes in PTE SW field. */
+#define XTENSA_MMU_PTE_BCKUP_ATTR_SHIFT		(XTENSA_MMU_PTE_ATTR_SHIFT + 6U)
 
-/** Mask for SW bits in PTE */
-#define XTENSA_MMU_PTE_SW_MASK			0x00000FC0U
+/** Mask for backup attributes in PTE SW field. */
+#define XTENSA_MMU_PTE_BCKUP_ATTR_MASK		(XTENSA_MMU_PTE_ATTR_MASK << 6U)
 
-/**
- * Number of bits to shift for backup attributes in PTE SW field.
- *
- * This is relative to the SW field, not the PTE entry.
- */
-#define XTENSA_MMU_PTE_SW_ATTR_SHIFT		0U
+/** Number of bits to shift for backup ring value in PTE SW field. */
+#define XTENSA_MMU_PTE_BCKUP_RING_SHIFT		(XTENSA_MMU_PTE_RING_SHIFT + 6U)
 
-/**
- * Mask for backup attributes in PTE SW field.
- *
- * This is relative to the SW field, not the PTE entry.
- */
-#define XTENSA_MMU_PTE_SW_ATTR_MASK		0x0000000FU
+/** Mask for backup ring value in PTE SW field. */
+#define XTENSA_MMU_PTE_BCKUP_RING_MASK		(XTENSA_MMU_PTE_RING_MASK << 6U)
 
-/**
- * Number of bits to shift for backup ring value in PTE SW field.
- *
- * This is relative to the SW field, not the PTE entry.
- */
-#define XTENSA_MMU_PTE_SW_RING_SHIFT		4U
-
-/**
- * Mask for backup ring value in PTE SW field.
- *
- * This is relative to the SW field, not the PTE entry.
- */
-#define XTENSA_MMU_PTE_SW_RING_MASK		0x00000030U
+/** Construct a page table entry (PTE) with specified backup attributes and ring. */
+#define XTENSA_MMU_PTE_WITH_BCKUP(paddr, ring, attr, bckup_ring, bckup_attr) \
+	(((paddr) & XTENSA_MMU_PTE_PPN_MASK) | \
+	 (((bckup_ring) << XTENSA_MMU_PTE_BCKUP_RING_SHIFT) & XTENSA_MMU_PTE_BCKUP_RING_MASK) | \
+	 (((bckup_attr) << XTENSA_MMU_PTE_BCKUP_ATTR_SHIFT) & XTENSA_MMU_PTE_BCKUP_ATTR_MASK) | \
+	 (((ring) << XTENSA_MMU_PTE_RING_SHIFT) & XTENSA_MMU_PTE_RING_MASK) | \
+	 (((attr) << XTENSA_MMU_PTE_ATTR_SHIFT) & XTENSA_MMU_PTE_ATTR_MASK))
 
 /** Construct a page table entry (PTE) */
-#define XTENSA_MMU_PTE(paddr, ring, sw, attr) \
-	(((paddr) & XTENSA_MMU_PTE_PPN_MASK) | \
-	 (((ring) << XTENSA_MMU_PTE_RING_SHIFT) & XTENSA_MMU_PTE_RING_MASK) | \
-	 (((sw) << XTENSA_MMU_PTE_SW_SHIFT) & XTENSA_MMU_PTE_SW_MASK) | \
-	 (((attr) << XTENSA_MMU_PTE_ATTR_SHIFT) & XTENSA_MMU_PTE_ATTR_MASK))
+#define XTENSA_MMU_PTE(paddr, ring, attr) \
+	XTENSA_MMU_PTE_WITH_BCKUP(paddr, ring, attr, \
+				  XTENSA_MMU_KERNEL_RING, XTENSA_MMU_PTE_ATTR_ILLEGAL)
 
 /** Get the attributes from a PTE */
 #define XTENSA_MMU_PTE_ATTR_GET(pte) \
@@ -104,27 +88,13 @@
 	(((pte) & ~XTENSA_MMU_PTE_ATTR_MASK) | \
 	 (((attr) << XTENSA_MMU_PTE_ATTR_SHIFT) & XTENSA_MMU_PTE_ATTR_MASK))
 
-/** Set the SW field in a PTE */
-#define XTENSA_MMU_PTE_SW_SET(pte, sw) \
-	(((pte) & ~XTENSA_MMU_PTE_SW_MASK) | \
-	 (((sw) << XTENSA_MMU_PTE_SW_SHIFT) & XTENSA_MMU_PTE_SW_MASK))
-
-/** Get the SW field from a PTE */
-#define XTENSA_MMU_PTE_SW_GET(pte) \
-	(((pte) & XTENSA_MMU_PTE_SW_MASK) >> XTENSA_MMU_PTE_SW_SHIFT)
-
-/** Construct a PTE SW field to be used for backing up PTE ring and attributes. */
-#define XTENSA_MMU_PTE_SW(ring, attr) \
-	((((ring) << XTENSA_MMU_PTE_SW_RING_SHIFT) & XTENSA_MMU_PTE_SW_RING_MASK) | \
-	 (((attr) << XTENSA_MMU_PTE_SW_ATTR_SHIFT) & XTENSA_MMU_PTE_SW_ATTR_MASK))
-
 /** Get the backed up attributes from the PTE SW field. */
-#define XTENSA_MMU_PTE_SW_ATTR_GET(sw) \
-	(((sw) & XTENSA_MMU_PTE_SW_ATTR_MASK) >> XTENSA_MMU_PTE_SW_ATTR_SHIFT)
+#define XTENSA_MMU_PTE_BCKUP_ATTR_GET(pte) \
+	(((pte) & XTENSA_MMU_PTE_BCKUP_ATTR_MASK) >> XTENSA_MMU_PTE_BCKUP_ATTR_SHIFT)
 
 /** Get the backed up ring value from the PTE SW field. */
-#define XTENSA_MMU_PTE_SW_RING_GET(sw) \
-	(((sw) & XTENSA_MMU_PTE_SW_RING_MASK) >> XTENSA_MMU_PTE_SW_RING_SHIFT)
+#define XTENSA_MMU_PTE_BCKUP_RING_GET(pte) \
+	(((pte) & XTENSA_MMU_PTE_BCKUP_RING_MASK) >> XTENSA_MMU_PTE_BCKUP_RING_SHIFT)
 
 /** Set the ring in a PTE */
 #define XTENSA_MMU_PTE_RING_SET(pte, ring) \
@@ -191,14 +161,12 @@
 #define XTENSA_MMU_PTE_ATTR_ILLEGAL		(BIT(3) | BIT(2))
 
 /** Illegal PTE entry for Level 1 page tables */
-#define XTENSA_MMU_PTE_L1_ILLEGAL		XTENSA_MMU_PTE_ATTR_ILLEGAL
+#define XTENSA_MMU_PTE_L1_ILLEGAL \
+	XTENSA_MMU_PTE(0, XTENSA_MMU_KERNEL_RING, XTENSA_MMU_PTE_ATTR_ILLEGAL)
 
 /** Illegal PTE entry for Level 2 page tables */
 #define XTENSA_MMU_PTE_L2_ILLEGAL \
-	XTENSA_MMU_PTE(0, XTENSA_MMU_KERNEL_RING, \
-		       XTENSA_MMU_PTE_SW(XTENSA_MMU_KERNEL_RING, \
-					 XTENSA_MMU_PTE_ATTR_ILLEGAL), \
-		       XTENSA_MMU_PTE_ATTR_ILLEGAL)
+	XTENSA_MMU_PTE(0, XTENSA_MMU_KERNEL_RING, XTENSA_MMU_PTE_ATTR_ILLEGAL)
 
 /**
  * PITLB HIT bit.
