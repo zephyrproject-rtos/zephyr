@@ -407,7 +407,7 @@ static int gpio_stm32_port_set_bits_raw(const struct device *dev,
 	 * On F1 series, using LL API requires a costly pin mask translation.
 	 * Skip it and use CMSIS API directly. Valid also on other series.
 	 */
-	WRITE_REG(gpio->BSRR, pins);
+	sys_write32(pins, (mem_addr_t)&gpio->BSRR);
 
 	return 0;
 }
@@ -423,7 +423,7 @@ static int gpio_stm32_port_clear_bits_raw(const struct device *dev,
 	 * On F1 series, using LL API requires a costly pin mask translation.
 	 * Skip it and use CMSIS API directly.
 	 */
-	WRITE_REG(gpio->BRR, pins);
+	sys_write32(pins, (mem_addr_t)&gpio->BRR);
 #else
 	/* On other series, LL abstraction is needed  */
 	LL_GPIO_ResetOutputPin(gpio, pins);
@@ -443,7 +443,7 @@ static int gpio_stm32_port_toggle_bits(const struct device *dev,
 	 * Skip it and use CMSIS API directly. Valid also on other series.
 	 */
 	z_stm32_hsem_lock(CFG_HW_GPIO_SEMID, HSEM_LOCK_DEFAULT_RETRY);
-	WRITE_REG(gpio->ODR, READ_REG(gpio->ODR) ^ pins);
+	sys_write32(sys_read32((mem_addr_t)&gpio->ODR) ^ pins, (mem_addr_t)&gpio->ODR);
 	z_stm32_hsem_unlock(CFG_HW_GPIO_SEMID);
 
 	return 0;
