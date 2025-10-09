@@ -4,6 +4,11 @@ boards:
     vendor: silabs
     socs:
       - name: bgm220pc22hna
+  - name: bg22_ek4108a
+    full_name: EFR32BG22 Explorer Kit (BG22-EK4108A)
+    vendor: silabs
+    socs:
+      - name: efr32bg22c224f512im40
   - name: xg22_ek2710a
     full_name: EFR32xG22E Explorer Kit (xG22-EK2710A)
     vendor: silabs
