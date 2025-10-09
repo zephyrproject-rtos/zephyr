@@ -372,8 +372,10 @@ static int memc_stm32_ospi_psram_init(const struct device *dev)
 	ll_dlyb_cfg.PhaseSel /= 4;
 	ll_dlyb_cfg_test = ll_dlyb_cfg;
 
-	HAL_OSPI_DLYB_SetConfig(hospi, &ll_dlyb_cfg);
-	HAL_OSPI_DLYB_GetConfig(hospi, &ll_dlyb_cfg);
+	if ((HAL_OSPI_DLYB_SetConfig(hospi, &ll_dlyb_cfg) != HAL_OK) ||
+	    (HAL_OSPI_DLYB_GetConfig(hospi, &ll_dlyb_cfg) != HAL_OK)) {
+		return -EIO;
+	}
 
 	if ((ll_dlyb_cfg.PhaseSel != ll_dlyb_cfg_test.PhaseSel) ||
 	    (ll_dlyb_cfg.Units != ll_dlyb_cfg_test.Units)) {
