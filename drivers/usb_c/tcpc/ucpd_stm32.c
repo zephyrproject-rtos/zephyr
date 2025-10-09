@@ -383,7 +383,7 @@ static void dead_battery(const struct device *dev, bool en)
 	update_stm32g0x_cc_line(config->ucpd_port);
 #else
 	if (en) {
-		CLEAR_BIT(PWR->CR3, PWR_CR3_UCPD_DBDIS);
+		sys_clear_bits((mem_addr_t)&PWR->CR3, PWR_CR3_UCPD_DBDIS);
 	} else {
 		sys_set_bits((mem_addr_t)&PWR->CR3, PWR_CR3_UCPD_DBDIS);
 	}
