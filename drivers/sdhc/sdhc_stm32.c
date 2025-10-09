@@ -517,7 +517,8 @@ static int sdhc_stm32_set_io(const struct device *dev, struct sdhc_io *ios)
 			bus_width_reg_value = SDMMC_BUS_WIDE_1B;
 		}
 
-		MODIFY_REG(config->hsd->Instance->CLKCR, SDMMC_CLKCR_WIDBUS, bus_width_reg_value);
+		sys_modify_bits((mem_addr_t)&config->hsd->Instance->CLKCR, SDMMC_CLKCR_WIDBUS,
+				bus_width_reg_value);
 		host_io->bus_width = ios->bus_width;
 	}
 

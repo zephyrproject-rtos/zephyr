@@ -491,7 +491,8 @@ static int qspi_read_sfdp(const struct device *dev, off_t addr, void *data,
 	 * flash mode is disabled during the reading to obtain the SFDP from a single flash memory
 	 * only.
 	 */
-	MODIFY_REG(dev_data->hqspi.Instance->CR, QUADSPI_CR_DFM, QSPI_DUALFLASH_DISABLE);
+	sys_modify_bits((mem_addr_t)&dev_data->hqspi.Instance->CR, QUADSPI_CR_DFM,
+			QSPI_DUALFLASH_DISABLE);
 	LOG_DBG("Dual flash mode disabled while reading SFDP");
 #endif /* STM32_QSPI_DOUBLE_FLASH */
 
@@ -527,7 +528,8 @@ static int qspi_read_sfdp(const struct device *dev, off_t addr, void *data,
 end:
 #if STM32_QSPI_DOUBLE_FLASH
 	/* Re-enable the dual flash mode */
-	MODIFY_REG(dev_data->hqspi.Instance->CR, QUADSPI_CR_DFM, QSPI_DUALFLASH_ENABLE);
+	sys_modify_bits((mem_addr_t)&dev_data->hqspi.Instance->CR, QUADSPI_CR_DFM,
+			QSPI_DUALFLASH_ENABLE);
 #endif /* dual_flash */
 
 	return ret;

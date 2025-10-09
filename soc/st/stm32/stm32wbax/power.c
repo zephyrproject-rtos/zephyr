@@ -162,8 +162,8 @@ static void set_mode_stop_enter(uint8_t substate_id)
 			}
 		}
 		ram_waitstates_backup = READ_BIT(RAMCFG_SRAM1->CR, RAMCFG_CR_WSC);
-		MODIFY_REG(RAMCFG_SRAM1->CR, RAMCFG_CR_WSC, RAMCFG_WAITSTATE_1);
-		MODIFY_REG(RAMCFG_SRAM2->CR, RAMCFG_CR_WSC, RAMCFG_WAITSTATE_1);
+		sys_modify_bits((mem_addr_t)&RAMCFG_SRAM1->CR, RAMCFG_CR_WSC, RAMCFG_WAITSTATE_1);
+		sys_modify_bits((mem_addr_t)&RAMCFG_SRAM2->CR, RAMCFG_CR_WSC, RAMCFG_WAITSTATE_1);
 	}
 	switch (substate_id) {
 	case 1:
@@ -191,8 +191,10 @@ static void set_mode_stop_exit(uint8_t substate_id)
 			__HAL_FLASH_SET_LATENCY(flash_latency_backup);
 			while (__HAL_FLASH_GET_LATENCY() != flash_latency_backup) {
 			}
-			MODIFY_REG(RAMCFG_SRAM1->CR, RAMCFG_CR_WSC, ram_waitstates_backup);
-			MODIFY_REG(RAMCFG_SRAM2->CR, RAMCFG_CR_WSC, ram_waitstates_backup);
+			sys_modify_bits((mem_addr_t)&RAMCFG_SRAM1->CR, RAMCFG_CR_WSC,
+					ram_waitstates_backup);
+			sys_modify_bits((mem_addr_t)&RAMCFG_SRAM2->CR, RAMCFG_CR_WSC,
+					ram_waitstates_backup);
 		}
 	}
 

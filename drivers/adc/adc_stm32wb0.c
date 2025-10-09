@@ -304,7 +304,8 @@ static inline void ll_adc_set_conversion_channel(ADC_TypeDef *ADCx,
 	const uint32_t reg = (Conversion & 8) ? 1 : 0;
 	const uint32_t shift = 4 * (Conversion & 7);
 
-	MODIFY_REG((&ADCx->SEQ_1)[reg], ADC_SEQ_1_SEQ0 << shift, Channel << shift);
+	sys_modify_bits((mem_addr_t)&(&ADCx->SEQ_1)[reg], ADC_SEQ_1_SEQ0 << shift,
+			Channel << shift);
 }
 
 /**
@@ -379,7 +380,8 @@ static inline void ll_adc_set_calib_point_for_any(ADC_TypeDef *ADCx, uint32_t Ty
 
 	const uint32_t shift = (group_shift + type_shift);
 
-	MODIFY_REG(ADCx->COMP_SEL, (ADC_COMP_SEL_OFFSET_GAIN0 << shift), (Point << shift));
+	sys_modify_bits((mem_addr_t)&ADCx->COMP_SEL, ADC_COMP_SEL_OFFSET_GAIN0 << shift,
+			Point << shift);
 }
 
 static void adc_acquire_pm_locks(void)
