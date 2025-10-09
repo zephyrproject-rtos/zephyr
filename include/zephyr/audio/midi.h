@@ -101,7 +101,7 @@ struct midi_ump {
  * @param[in]  ump    Universal MIDI Packet
  */
 #define UMP_GROUP(ump) \
-	(((ump).data[0] >> 24) & BIT_MASK(4))
+	(((ump).data[0] >> 24) & 0x0f)
 
 /**
  * @brief      Status byte of a MIDI channel voice or system message
@@ -109,7 +109,7 @@ struct midi_ump {
  * @see midi_ump_sys
  */
 #define UMP_MIDI_STATUS(ump) \
-	(((ump).data[0] >> 16) & BIT_MASK(8))
+	(((ump).data[0] >> 16) & 0xff)
 /**
  * @brief      Command of a MIDI channel voice message
  * @param[in]  ump    Universal MIDI Packet (containing a MIDI event)
@@ -122,19 +122,19 @@ struct midi_ump {
  * @param[in]  ump    Universal MIDI Packet (containing a MIDI event)
  */
 #define UMP_MIDI_CHANNEL(ump) \
-	(UMP_MIDI_STATUS(ump) & BIT_MASK(4))
+	(UMP_MIDI_STATUS(ump) & 0x0f)
 /**
  * @brief      First parameter of a MIDI1 channel voice or system message
  * @param[in]  ump     Universal MIDI Packet (containing a MIDI1 message)
  */
 #define UMP_MIDI1_P1(ump) \
-	(((ump).data[0] >> 8) & BIT_MASK(7))
+	(((ump).data[0] >> 8) & 0x7f)
 /**
  * @brief      Second parameter of a MIDI1 channel voice or system message
  * @param[in]  ump     Universal MIDI Packet (containing a MIDI1 message)
  */
 #define UMP_MIDI1_P2(ump) \
-	((ump).data[0] & BIT_MASK(7))
+	((ump).data[0] & 0x7f)
 
 /**
  * @brief      Initialize a UMP with a MIDI1 channel voice message
