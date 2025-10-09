@@ -541,7 +541,7 @@ static void adc_stm32_calibration_start(const struct device *dev, bool single_en
 			__DMB();
 			sys_modify_bits((mem_addr_t)&adc->CALFACT2, 0xFFFFFF00UL, 0x03021100UL);
 			__DMB();
-			SET_BIT(adc->CALFACT, ADC_CALFACT_LATCH_COEF);
+			sys_set_bits((mem_addr_t)&adc->CALFACT, ADC_CALFACT_LATCH_COEF);
 			adc_stm32_disable(adc);
 		}
 	}
