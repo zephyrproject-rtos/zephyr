@@ -336,6 +336,11 @@ typedef enum {
 	CTF_EVENT_EVENT_WAIT_BLOCKING = 0xFE,
 	CTF_EVENT_EVENT_WAIT_EXIT = 0xFF,
 
+	CTF_EVENT_TIMER_EXPIRY_ENTER = 0x100,
+	CTF_EVENT_TIMER_EXPIRY_EXIT = 0x101,
+	CTF_EVENT_TIMER_STOP_FN_EXPIRY_ENTER = 0x102,
+	CTF_EVENT_TIMER_STOP_FN_EXPIRY_EXIT = 0x103,
+
 } ctf_event_t;
 
 typedef struct {
@@ -1114,6 +1119,26 @@ static inline void ctf_top_timer_status_sync_blocking(uint32_t timer, uint32_t t
 static inline void ctf_top_timer_status_sync_exit(uint32_t timer, uint32_t result)
 {
 	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_TIMER_STATUS_SYNC_EXIT), timer, result);
+}
+
+static inline void ctf_top_timer_expiry_enter(uint32_t timer)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_TIMER_EXPIRY_ENTER), timer);
+}
+
+static inline void ctf_top_timer_expiry_exit(uint32_t timer)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_TIMER_EXPIRY_EXIT), timer);
+}
+
+static inline void ctf_top_timer_stop_fn_expiry_enter(uint32_t timer)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_TIMER_STOP_FN_EXPIRY_ENTER), timer);
+}
+
+static inline void ctf_top_timer_stop_fn_expiry_exit(uint32_t timer)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_TIMER_STOP_FN_EXPIRY_EXIT), timer);
 }
 
 /* Network socket */
