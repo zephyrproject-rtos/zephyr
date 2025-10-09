@@ -35,7 +35,7 @@ static void i2c_stm32_generate_start_condition(I2C_TypeDef *i2c)
 
 	if (cr1 & I2C_CR1_STOP) {
 		LOG_DBG("%s: START while STOP active!", __func__);
-		LL_I2C_WriteReg(i2c, CR1, cr1 & ~I2C_CR1_STOP);
+		sys_write32(cr1 & ~I2C_CR1_STOP, (mem_addr_t)&i2c->CR1);
 	}
 
 	LL_I2C_GenerateStartCondition(i2c);
@@ -102,17 +102,17 @@ static void i2c_stm32_reset(const struct device *dev)
 	LL_I2C_DisableReset(i2c);
 
 	/* restore all important registers after reset */
-	LL_I2C_WriteReg(i2c, CR1, cr1);
-	LL_I2C_WriteReg(i2c, CR2, cr2);
+	sys_write32(cr1, (mem_addr_t)&i2c->CR1);
+	sys_write32(cr2, (mem_addr_t)&i2c->CR2);
 
 	/* bit 14 of OAR1 must always be 1 */
 	oar1 |= (1 << 14);
-	LL_I2C_WriteReg(i2c, OAR1, oar1);
-	LL_I2C_WriteReg(i2c, OAR2, oar2);
-	LL_I2C_WriteReg(i2c, CCR, ccr);
-	LL_I2C_WriteReg(i2c, TRISE, trise);
+	sys_write32(oar1, (mem_addr_t)&i2c->OAR1);
+	sys_write32(oar2, (mem_addr_t)&i2c->OAR2);
+	sys_write32(ccr, (mem_addr_t)&i2c->CCR);
+	sys_write32(trise, (mem_addr_t)&i2c->TRISE);
 #if defined(I2C_FLTR_ANOFF) && defined(I2C_FLTR_DNF)
-	LL_I2C_WriteReg(i2c, FLTR, fltr);
+	sys_write32(fltr, (mem_addr_t)&i2c->FLTR);
 #endif
 }
 

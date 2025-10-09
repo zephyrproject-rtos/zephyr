@@ -57,7 +57,7 @@ static void i2c_stm32_generate_start_condition(I2C_TypeDef *i2c)
 
 	if ((cr1 & I2C_CR1_STOP) != 0) {
 		LOG_DBG("%s: START while STOP active!", __func__);
-		LL_I2C_WriteReg(i2c, CR1, cr1 & ~I2C_CR1_STOP);
+		sys_write32(cr1 & ~I2C_CR1_STOP, (mem_addr_t)&i2c->CR1);
 	}
 
 	LL_I2C_GenerateStartCondition(i2c);
