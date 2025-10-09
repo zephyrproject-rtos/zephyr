@@ -344,8 +344,7 @@ DFU jumper to boot the on board debugger to ISP mode.
   * Debugger choice jumper: JP5
   * DFU mode jumper: JP3
 
-.. include:: ../../common/rt1xxx-lpclink2-debug.rst
-   :start-after: rt1xxx-lpclink2-probes
+.. include:: ../../common/rt1xxx-lpclink2-debug.rst.inc
 
 See `Using J-Link with MIMXRT1060-EVK or MIMXRT1064-EVK`_ or `Using J-Link with
 MIMXRT1060-EVKB`_ for more details.
@@ -490,8 +489,7 @@ If the west flash or debug commands fail, and the command hangs while executing
 runners.jlink, confirm the J-Link debug probe is configured, powered, and
 connected to the EVK properly.
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _MIMXRT1060-EVK Website:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/i-mx-rt1060-evaluation-kit:MIMXRT1060-EVKB

@@ -118,5 +118,4 @@ display the following console output:
     thread_a: Hello World from cpu 0 on frdm_imx91!
     thread_b: Hello World from cpu 0 on frdm_imx91!
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc

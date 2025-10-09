@@ -302,8 +302,7 @@ Configuring a Debug Probe (Schematic A/A1)
 For the RT1050 Schematic Rev A, J32/J33 are the SWD isolation jumpers, SW4 is
 the reset button, and J21 is the 20 pin JTAG/SWD header.
 
-.. include:: ../../common/opensda-debug.rst
-   :start-after: nxp-opensda-probes
+.. include:: ../../common/opensda-debug.rst.inc
 
 
 Configuring a Debug Probe (Schematic B/B1)
@@ -312,8 +311,7 @@ Configuring a Debug Probe (Schematic B/B1)
 For the RT1050 Schematic Rev B, J47/J48 are the SWD isolation jumpers, J42 is
 the DFU mode jumper, and J21 is the 20 pin JTAG/SWD header.
 
-.. include:: ../../common/rt1xxx-lpclink2-debug.rst
-   :start-after: rt1xxx-lpclink2-probes
+.. include:: ../../common/rt1xxx-lpclink2-debug.rst.inc
 
 Configuring a Console
 =====================
@@ -414,8 +412,7 @@ For more details, please see the following `NXP i.MXRT1050 A0 to A1 Migration Gu
 
 Current Zephyr build supports the new MIMXRT1050-EVKB
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _MIMXRT1050-EVK Website:
    https://www.nxp.com/products/microcontrollers-and-processors/arm-based-processors-and-mcus/i.mx-applications-processors/i.mx-rt-series/i.mx-rt1050-evaluation-kit:MIMXRT1050-EVK

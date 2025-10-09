@@ -1,7 +1,3 @@
-:orphan:
-
-.. segger-ecc-systemview
-
 Using Segger SystemView and RTT
 -------------------------------
 
