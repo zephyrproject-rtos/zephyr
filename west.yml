@@ -185,7 +185,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: f78b8f8202db0115dc41aedda6f77dee8985254f
+      revision: 3ef39bda93a67cf2ef735f1679aee5a103f92275
       path: modules/hal/infineon
       groups:
         - hal
