@@ -57,7 +57,7 @@ static int eeprom_stm32_write(const struct device *dev, off_t offset,
 {
 	const struct eeprom_stm32_config *config = dev->config;
 	const uint8_t *pbuf = buf;
-	HAL_StatusTypeDef ret = HAL_OK;
+	HAL_StatusTypeDef hal_ret;
 
 	if (!len) {
 		return 0;
@@ -73,14 +73,13 @@ static int eeprom_stm32_write(const struct device *dev, off_t offset,
 	HAL_FLASHEx_DATAEEPROM_Unlock();
 
 	while (len) {
-		ret = HAL_FLASHEx_DATAEEPROM_Program(
-						FLASH_TYPEPROGRAMDATA_BYTE,
-						config->addr + offset, *pbuf);
-		if (ret) {
-			LOG_ERR("failed to write to EEPROM (err %d)", ret);
+		hal_ret = HAL_FLASHEx_DATAEEPROM_Program(FLASH_TYPEPROGRAMDATA_BYTE,
+							 config->addr + offset, *pbuf);
+		if (hal_ret != HAL_OK) {
+			LOG_ERR("failed to write to EEPROM (err %d)", hal_ret);
 			HAL_FLASHEx_DATAEEPROM_Lock();
 			k_mutex_unlock(&lock);
-			return ret;
+			return -EIO;
 		}
 
 		pbuf++;
@@ -88,14 +87,16 @@ static int eeprom_stm32_write(const struct device *dev, off_t offset,
 		len--;
 	}
 
-	ret = HAL_FLASHEx_DATAEEPROM_Lock();
-	if (ret) {
-		LOG_ERR("failed to lock EEPROM (err %d)", ret);
-	}
+	hal_ret = HAL_FLASHEx_DATAEEPROM_Lock();
 
 	k_mutex_unlock(&lock);
 
-	return ret;
+	if (hal_ret != HAL_OK) {
+		LOG_ERR("failed to lock EEPROM");
+		return -EIO;
+	}
+
+	return 0;
 }
 
 static size_t eeprom_stm32_size(const struct device *dev)
