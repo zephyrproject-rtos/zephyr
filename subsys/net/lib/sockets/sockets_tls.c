@@ -1796,13 +1796,16 @@ static int tls_opt_dtls_peer_connection_id_value_get(struct tls_context *context
 #if defined(CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID)
 	int enabled = false;
 	int ret;
+	size_t optlen_local;
 
 	if (!context->is_initialized) {
 		return -ENOTCONN;
 	}
 
-	ret = mbedtls_ssl_get_peer_cid(&context->ssl, &enabled, optval, optlen);
-	if (!enabled) {
+	ret = mbedtls_ssl_get_peer_cid(&context->ssl, &enabled, optval, &optlen_local);
+	if (enabled) {
+		*optlen = optlen_local;
+	} else {
 		*optlen = 0;
 	}
 	return ret;
