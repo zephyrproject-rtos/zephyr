@@ -12,6 +12,7 @@ supported:
   - adc
   - i2c
   - counter
+  - spi
 testing:
   ignore_tags:
     - bluetooth
