@@ -1417,3 +1417,9 @@ test_i2c_ina7xx: ina7xx@bc {
 	tct = <5>;
 	avg = <3>;
 };
+
+test_i2c_hdc302x: hdc302x@bd {
+	compatible = "ti,hdc302x";
+	reg = <0xbd>;
+	int-gpios = <&test_gpio 0 0>;
+};
