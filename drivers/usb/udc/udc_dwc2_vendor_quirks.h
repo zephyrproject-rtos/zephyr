@@ -332,8 +332,7 @@ DT_INST_FOREACH_STATUS_OKAY(QUIRK_NRF_USBHS_DEFINE)
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
-
-#define NRF_DEFAULT_IRQ_PRIORITY 1
+#include <zephyr/drivers/regulator.h>
 
 /*
  * On USBHS, we cannot access the DWC2 register until VBUS is detected and
@@ -345,42 +344,46 @@ DT_INST_FOREACH_STATUS_OKAY(QUIRK_NRF_USBHS_DEFINE)
 static K_EVENT_DEFINE(usbhs_events);
 #define USBHS_VBUS_READY	BIT(0)
 
+const static struct device *const vregusb_dev =
+	DEVICE_DT_GET(DT_PHANDLE(DT_INST_PARENT(0), regulator));
 static struct onoff_manager *pclk24m_mgr;
 static struct onoff_client pclk24m_cli;
 
-static void vregusb_isr(const void *arg)
+static void vregusb_event_cb(const struct device *dev,
+			     const struct regulator_event *const evt,
+			     const void *const user_data)
 {
-	const struct device *dev = arg;
+	ARG_UNUSED(dev);
+	const struct device *const udc_dev = user_data;
 
-	if (NRF_VREGUSB->EVENTS_VBUSDETECTED) {
-		NRF_VREGUSB->EVENTS_VBUSDETECTED = 0;
+	if (evt->type == REGULATOR_VOLTAGE_DETECTED) {
 		k_event_post(&usbhs_events, USBHS_VBUS_READY);
-		udc_submit_event(dev, UDC_EVT_VBUS_READY, 0);
+		udc_submit_event(udc_dev, UDC_EVT_VBUS_READY, 0);
 	}
 
-	if (NRF_VREGUSB->EVENTS_VBUSREMOVED) {
-		NRF_VREGUSB->EVENTS_VBUSREMOVED = 0;
+	if (evt->type == REGULATOR_VOLTAGE_REMOVED) {
 		k_event_set_masked(&usbhs_events, 0, USBHS_VBUS_READY);
-		udc_submit_event(dev, UDC_EVT_VBUS_REMOVED, 0);
+		udc_submit_event(udc_dev, UDC_EVT_VBUS_REMOVED, 0);
 	}
 }
 
 static inline int usbhs_init_vreg_and_clock(const struct device *dev)
 {
-	IRQ_CONNECT(VREGUSB_IRQn, NRF_DEFAULT_IRQ_PRIORITY,
-		    vregusb_isr, DEVICE_DT_INST_GET(0), 0);
+	LOG_MODULE_DECLARE(udc_dwc2, CONFIG_UDC_DRIVER_LOG_LEVEL);
+	int err;
 
-	NRF_VREGUSB->INTEN = VREGUSB_INTEN_VBUSDETECTED_Msk |
-			     VREGUSB_INTEN_VBUSREMOVED_Msk;
-	NRF_VREGUSB->TASKS_START = 1;
-
-	/* TODO: Determine conditions when VBUSDETECTED is not generated */
-	if (sys_read32((mem_addr_t)NRF_VREGUSB + 0x400) & BIT(2)) {
-		k_event_post(&usbhs_events, USBHS_VBUS_READY);
-		udc_submit_event(dev, UDC_EVT_VBUS_READY, 0);
+	err = regulator_set_callback(vregusb_dev, vregusb_event_cb, dev);
+	if (err) {
+		LOG_ERR("Failed to set regulator callback");
+		return err;
 	}
 
-	irq_enable(VREGUSB_IRQn);
+	err = regulator_enable(vregusb_dev);
+	if (err) {
+		LOG_ERR("Failed to enable regulator");
+		return err;
+	}
+
 	pclk24m_mgr = z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF24M);
 
 	return 0;
@@ -463,10 +466,9 @@ static inline int usbhs_disable_core(const struct device *dev)
 
 static inline int usbhs_disable_vreg(const struct device *dev)
 {
-	NRF_VREGUSB->INTEN = 0;
-	NRF_VREGUSB->TASKS_STOP = 1;
+	ARG_UNUSED(dev);
 
-	return 0;
+	return regulator_disable(vregusb_dev);
 }
 
 static inline int usbhs_init_caps(const struct device *dev)
