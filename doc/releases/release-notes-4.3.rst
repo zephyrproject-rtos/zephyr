@@ -279,6 +279,7 @@ New APIs and options
 * Video
 
   * :c:member:`video_format.size` field
+  * :c:func:`video_estimate_fmt_size`
 
 .. zephyr-keep-sorted-stop
 
