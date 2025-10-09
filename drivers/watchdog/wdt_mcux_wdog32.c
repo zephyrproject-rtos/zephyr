@@ -50,10 +50,25 @@ static inline WDOG_Type *get_base_address(const struct device *dev)
 	return (WDOG_Type *)DEVICE_MMIO_NAMED_GET(dev, reg);
 }
 
+/* When system is boot up, WDOG32 is disabled. app must wait for at least 2.5
+ * periods of wdog32 clock to reconfigure wodg32. So Delay a while to wait for
+ * the previous configuration taking effect.
+ */
+#define WDOG32_CONFIG_WAIT(clock_hz, divider)                                                      \
+	do {                                                                                       \
+		uint64_t _num = 5ULL * 1000ULL * (uint64_t)divider;                                \
+		uint64_t _den = 2UL * (uint64_t)clock_hz;                                          \
+		uint32_t ms = (uint32_t)((_num + _den - 1ULL) / _den);                             \
+		k_msleep(ms ? ms : 1u);                                                            \
+	} while (0)
+
 static int mcux_wdog32_setup(const struct device *dev, uint8_t options)
 {
+	const struct mcux_wdog32_config *config = dev->config;
 	struct mcux_wdog32_data *data = dev->data;
 	WDOG_Type *base = get_base_address(dev);
+	uint32_t clock_freq;
+	int divider;
 
 	if (!data->timeout_valid) {
 		LOG_ERR("No valid timeouts installed");
@@ -64,6 +79,20 @@ static int mcux_wdog32_setup(const struct device *dev, uint8_t options)
 
 	data->wdog_config.workMode.enableDebug = (options & WDT_OPT_PAUSE_HALTED_BY_DBG) == 0U;
 
+#if DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency)
+	clock_freq = config->clock_frequency;
+#else  /* !DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency) */
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_freq)) {
+		return -EINVAL;
+	}
+#endif /* !DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency) */
+	divider = config->clk_divider == kWDOG32_ClockPrescalerDivide1 ? 1U : 256U;
+	WDOG32_CONFIG_WAIT(clock_freq, divider);
 	WDOG32_Init(base, &data->wdog_config);
 	LOG_DBG("Setup the watchdog");
 
