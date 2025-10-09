@@ -18,6 +18,9 @@
 #include <fsl_dcdc.h>
 #include <fsl_ele_base_api.h>
 #include <fsl_trdc.h>
+#if defined(CONFIG_PSA_CRYPTO_DRIVER_ELE_S4xx)
+#include <fsl_cache.h>
+#endif
 #if defined(CONFIG_WDT_MCUX_RTWDOG)
 #include <fsl_soc_src.h>
 #endif
@@ -849,6 +852,13 @@ void soc_early_init_hook(void)
 
 	/* Enable data cache */
 	sys_cache_data_enable();
+
+	/**
+	 * Temporary disable cache as we need write-trough mode to operate ELE
+	 */
+#if defined(CONFIG_PSA_CRYPTO_DRIVER_ELE_S4xx)
+	XCACHE_DisableCache(XCACHE_PC);
+#endif /* CONFIG_PSA_CRYPTO_DRIVER_ELE_S4XX */
 
 	__ISB();
 	__DSB();
