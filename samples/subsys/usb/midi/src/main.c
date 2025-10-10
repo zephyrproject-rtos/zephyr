@@ -55,7 +55,7 @@ static void on_midi_packet(const struct device *dev, const struct midi_ump ump)
 	switch (UMP_MT(ump)) {
 	case UMP_MT_MIDI1_CHANNEL_VOICE:
 		/* Only send MIDI1 channel voice messages back to the host */
-		LOG_INF("Send back MIDI1 message %02lX %02lX %02lX",
+		LOG_INF("Send back MIDI1 message %02X %02X %02X",
 			UMP_MIDI_STATUS(ump), UMP_MIDI1_P1(ump), UMP_MIDI1_P2(ump));
 		usbd_midi_send(dev, ump);
 		break;
