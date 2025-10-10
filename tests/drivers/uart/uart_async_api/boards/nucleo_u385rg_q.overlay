@@ -5,8 +5,8 @@
  */
 
 dut: &lpuart1 {
-	dmas = <&gpdma1 0 35 STM32_DMA_PERIPH_TX
-		&gpdma1 1 34 STM32_DMA_PERIPH_RX>;
+	dmas = <&gpdma1 0 35 STM32_DMA_PERIPH_TX>,
+	       <&gpdma1 1 34 STM32_DMA_PERIPH_RX>;
 	dma-names = "tx", "rx";
 };
 
