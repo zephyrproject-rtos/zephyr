@@ -95,6 +95,9 @@ if (NOT CONFIG_TC_PROVIDES_POSIX_MULTI_PROCESS)
     multi_process.c
   )
 endif()
+if (CONFIG_POSIX_MULTI_PROCESS)
+  zephyr_compile_definitions(-D_POSIX_MULTI_PROCESS=${POSIX_VERSION})
+endif()
 
 if (NOT CONFIG_TC_PROVIDES_POSIX_NETWORKING)
   zephyr_library_sources_ifdef(CONFIG_POSIX_NETWORKING net.c)
