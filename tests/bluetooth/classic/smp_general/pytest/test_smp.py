@@ -24,10 +24,6 @@ from bumble.device import (
     with_connection_from_address,
 )
 from bumble.hci import (
-    HCI_DISPLAY_ONLY_IO_CAPABILITY,
-    HCI_DISPLAY_YES_NO_IO_CAPABILITY,
-    HCI_KEYBOARD_ONLY_IO_CAPABILITY,
-    HCI_NO_INPUT_NO_OUTPUT_IO_CAPABILITY,
     HCI_REMOTE_USER_TERMINATED_CONNECTION_ERROR,
     Address,
     HCI_User_Confirmation_Request_Negative_Reply_Command,
@@ -267,29 +263,29 @@ class SmpDevice(Device):
 
         # See Bluetooth spec @ Vol 3, Part C 5.2.2.6
         methods = {
-            HCI_DISPLAY_ONLY_IO_CAPABILITY: {
-                HCI_DISPLAY_ONLY_IO_CAPABILITY: display_auto_confirm,
-                HCI_DISPLAY_YES_NO_IO_CAPABILITY: display_confirm,
-                HCI_KEYBOARD_ONLY_IO_CAPABILITY: na,
-                HCI_NO_INPUT_NO_OUTPUT_IO_CAPABILITY: auto_confirm,
+            SMP_DISPLAY_ONLY_IO_CAPABILITY: {
+                SMP_DISPLAY_ONLY_IO_CAPABILITY: display_auto_confirm,
+                SMP_DISPLAY_YES_NO_IO_CAPABILITY: display_confirm,
+                SMP_KEYBOARD_ONLY_IO_CAPABILITY: na,
+                SMP_NO_INPUT_NO_OUTPUT_IO_CAPABILITY: auto_confirm,
             },
-            HCI_DISPLAY_YES_NO_IO_CAPABILITY: {
-                HCI_DISPLAY_ONLY_IO_CAPABILITY: display_auto_confirm,
-                HCI_DISPLAY_YES_NO_IO_CAPABILITY: display_confirm,
-                HCI_KEYBOARD_ONLY_IO_CAPABILITY: na,
-                HCI_NO_INPUT_NO_OUTPUT_IO_CAPABILITY: auto_confirm,
+            SMP_DISPLAY_YES_NO_IO_CAPABILITY: {
+                SMP_DISPLAY_ONLY_IO_CAPABILITY: display_auto_confirm,
+                SMP_DISPLAY_YES_NO_IO_CAPABILITY: display_confirm,
+                SMP_KEYBOARD_ONLY_IO_CAPABILITY: na,
+                SMP_NO_INPUT_NO_OUTPUT_IO_CAPABILITY: auto_confirm,
             },
-            HCI_KEYBOARD_ONLY_IO_CAPABILITY: {
-                HCI_DISPLAY_ONLY_IO_CAPABILITY: na,
-                HCI_DISPLAY_YES_NO_IO_CAPABILITY: auto_confirm,
-                HCI_KEYBOARD_ONLY_IO_CAPABILITY: na,
-                HCI_NO_INPUT_NO_OUTPUT_IO_CAPABILITY: auto_confirm,
+            SMP_KEYBOARD_ONLY_IO_CAPABILITY: {
+                SMP_DISPLAY_ONLY_IO_CAPABILITY: na,
+                SMP_DISPLAY_YES_NO_IO_CAPABILITY: auto_confirm,
+                SMP_KEYBOARD_ONLY_IO_CAPABILITY: na,
+                SMP_NO_INPUT_NO_OUTPUT_IO_CAPABILITY: auto_confirm,
             },
-            HCI_NO_INPUT_NO_OUTPUT_IO_CAPABILITY: {
-                HCI_DISPLAY_ONLY_IO_CAPABILITY: confirm,
-                HCI_DISPLAY_YES_NO_IO_CAPABILITY: confirm,
-                HCI_KEYBOARD_ONLY_IO_CAPABILITY: auto_confirm,
-                HCI_NO_INPUT_NO_OUTPUT_IO_CAPABILITY: auto_confirm,
+            SMP_NO_INPUT_NO_OUTPUT_IO_CAPABILITY: {
+                SMP_DISPLAY_ONLY_IO_CAPABILITY: confirm,
+                SMP_DISPLAY_YES_NO_IO_CAPABILITY: confirm,
+                SMP_KEYBOARD_ONLY_IO_CAPABILITY: auto_confirm,
+                SMP_NO_INPUT_NO_OUTPUT_IO_CAPABILITY: auto_confirm,
             },
         }
 
