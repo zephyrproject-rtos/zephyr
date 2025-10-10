@@ -12,6 +12,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/kernel.h>
 #include <zephyr/cache.h>
+#include <zephyr/sys/byteorder.h>
+
 
 LOG_MODULE_REGISTER(sdhc_litex, CONFIG_SDHC_LOG_LEVEL);
 
@@ -52,6 +54,7 @@ struct sdhc_litex_data {
 	struct k_sem dma_done_sem;
 	sdhc_interrupt_cb_t sdio_cb;
 	void *sdio_cb_user_data;
+	bool cmd23_not_supported;
 };
 
 /* SDHC configuration. */
@@ -159,8 +162,7 @@ static int sdhc_litex_wait_for_dma(const struct device *dev, struct sdhc_command
 	struct sdhc_litex_data *dev_data = dev->data;
 	uint8_t data_event;
 
-	if (IS_ENABLED(CONFIG_SDHC_LITEX_LITESDCARD_NO_CMD23_SET_BLOCK_COUNT) &&
-	    (data->blocks > 1)) {
+	if (dev_data->cmd23_not_supported && (data->blocks > 1)) {
 		uint8_t response_len = SDCARD_CTRL_RESP_CRC;
 
 		response_len |= (*transfer == SDCARD_CTRL_DATA_TRANSFER_READ)
@@ -171,14 +173,7 @@ static int sdhc_litex_wait_for_dma(const struct device *dev, struct sdhc_command
 				   data->blocks, NULL, response_len);
 	}
 
-	switch (*transfer) {
-	case SDCARD_CTRL_DATA_TRANSFER_READ:
-	case SDCARD_CTRL_DATA_TRANSFER_WRITE:
-		k_sem_take(&dev_data->dma_done_sem, K_FOREVER);
-		break;
-	default:
-		return 0; /* No DMA for other commands */
-	}
+	k_sem_take(&dev_data->dma_done_sem, K_FOREVER);
 
 	data_event = litex_read8(dev_config->core_data_event_addr);
 
@@ -243,15 +238,13 @@ static void sdhc_litex_do_dma(const struct device *dev, struct sdhc_command *cmd
 {
 	const struct sdhc_litex_config *dev_config = dev->config;
 	struct sdhc_litex_data *dev_data = dev->data;
-	uint32_t response[4] = {0};
 
 	LOG_DBG("Setting up DMA for command: opcode=%d, arg=0x%08x, blocks=%d, block_size=%d",
 		cmd->opcode, cmd->arg, data->blocks, data->block_size);
 
-	if (!IS_ENABLED(CONFIG_SDHC_LITEX_LITESDCARD_NO_CMD23_SET_BLOCK_COUNT) &&
-	    (data->blocks > 1)) {
+	if (!dev_data->cmd23_not_supported && (data->blocks > 1)) {
 		litex_mmc_send_cmd(dev, SD_SET_BLOCK_COUNT, SDCARD_CTRL_DATA_TRANSFER_NONE,
-				   data->blocks, response,
+				   data->blocks, NULL,
 				   SDCARD_CTRL_RESP_SHORT | SDCARD_CTRL_RESP_CRC);
 	}
 
@@ -264,6 +257,16 @@ static void sdhc_litex_do_dma(const struct device *dev, struct sdhc_command *cmd
 		litex_write8(0, dev_config->block2mem_dma_enable_addr);
 		litex_write8(1, dev_config->block2mem_dma_enable_addr);
 	}
+}
+
+static inline void sdhc_litex_check_cmd23_support(const struct device *dev, struct sdhc_data *data)
+{
+	struct sdhc_litex_data *dev_data = dev->data;
+	uint32_t *scr = data->data;
+
+	dev_data->cmd23_not_supported = (sys_be32_to_cpu(scr[0]) & BIT(1)) == 0U;
+
+	LOG_INF("CMD23 is%s supported", dev_data->cmd23_not_supported ? " not" : "");
 }
 
 static int sdhc_litex_request(const struct device *dev, struct sdhc_command *cmd,
@@ -330,6 +333,10 @@ static int sdhc_litex_request(const struct device *dev, struct sdhc_command *cmd
 
 		ret = sdhc_litex_wait_for_dma(dev, cmd, data, &transfer);
 		if (ret == 0) {
+			if ((cmd->opcode == SD_APP_SEND_SCR) &&
+			    (cmd->response[0] & SD_R1_APP_CMD)) {
+				sdhc_litex_check_cmd23_support(dev, data);
+			}
 			break;
 		}
 
