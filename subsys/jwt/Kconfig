@@ -19,6 +19,7 @@ choice
 config JWT_SIGN_RSA_LEGACY
 	bool "Use RSA signature (RS-256). Use Mbed TLS as crypto library."
 	depends on CSPRNG_AVAILABLE
+	select DEPRECATED
 	select MBEDTLS
 	select MBEDTLS_MD
 	select MBEDTLS_RSA_C
