@@ -12,6 +12,9 @@ if AUDIO
 #
 # Audio Codec options
 #
+
+source "drivers/audio/Kconfig.sf32lb"
+
 menuconfig AUDIO_CODEC
 	bool "Audio Codec Drivers"
 	help

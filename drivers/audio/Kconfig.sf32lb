@@ -1,0 +1,11 @@
+# Copyright (c) 2025 SiFli Technologies(Nanjing) Co., Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_CODEC_SF32LB
+	bool "sf32lb codec driver support"
+	default y
+
+#	depends on HAL_AUDCODEC_MODULE_ENABLED
+#    depends on PINCTRL
+#	help
+#	  Enable on chip codec support on the selected board
