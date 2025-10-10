@@ -14,6 +14,8 @@ rsource "Kconfig.gap_svc"
 
 rsource "Kconfig.cts"
 
+rsource "Kconfig.ets"
+
 rsource "Kconfig.hrs"
 
 rsource "Kconfig.tps"
