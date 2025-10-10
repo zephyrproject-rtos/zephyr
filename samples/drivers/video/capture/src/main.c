@@ -296,7 +296,7 @@ int main(void)
 		 * buffer alignment is needed in order to achieve the best performance
 		 */
 		vbuf = video_buffer_aligned_alloc(bsize, CONFIG_VIDEO_BUFFER_POOL_ALIGN,
-							K_FOREVER);
+						  K_NO_WAIT);
 		if (vbuf == NULL) {
 			LOG_ERR("Unable to alloc video buffer");
 			return 0;
