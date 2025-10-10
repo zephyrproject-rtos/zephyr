@@ -190,6 +190,13 @@ Bluetooth HCI
 * The deprecated ``ipm`` value was removed from ``bt-hci-bus`` devicetree property.
   ``ipc`` should be used instead.
 
+Bluetooth Mesh
+==============
+
+* Kconfigs ``CONFIG_BT_MESH_USES_MBEDTLS_PSA`` and ``CONFIG_BT_MESH_USES_TFM_PSA`` have
+  been removed. The selection of the PSA Crypto provider is now automatically controlled
+  by Kconfig :kconfig:option:`CONFIG_PSA_CRYPTO`.
+
 Ethernet
 ========
 
