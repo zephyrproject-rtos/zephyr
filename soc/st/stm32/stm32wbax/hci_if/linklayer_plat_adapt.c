@@ -38,7 +38,6 @@ static uint32_t primask_bit;
 /* Radio SW low ISR global variable */
 volatile uint8_t radio_sw_low_isr_is_running_high_prio;
 
-
 void LINKLAYER_PLAT_DelayUs(uint32_t delay)
 {
 	k_busy_wait(delay);
@@ -96,8 +95,15 @@ void radio_low_prio_isr(void)
 }
 
 
-void link_layer_register_isr(void)
+void link_layer_register_isr(bool force)
 {
+	static bool is_isr_registered;
+
+	if (!force && is_isr_registered) {
+		return;
+	}
+	is_isr_registered = true;
+
 	ARM_IRQ_DIRECT_DYNAMIC_CONNECT(RADIO_INTR_NUM, 0, 0, reschedule);
 
 	/* Ensure the IRQ is disabled before enabling it at run time */
