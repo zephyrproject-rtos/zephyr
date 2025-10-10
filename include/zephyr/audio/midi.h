@@ -101,7 +101,7 @@ struct midi_ump {
  * @param[in]  ump    Universal MIDI Packet
  */
 #define UMP_GROUP(ump) \
-	(((ump).data[0] >> 24) & BIT_MASK(4))
+	(((ump).data[0] >> 24) & 0xF)
 
 /**
  * @brief      Status byte of a MIDI channel voice or system message
@@ -109,7 +109,7 @@ struct midi_ump {
  * @see midi_ump_sys
  */
 #define UMP_MIDI_STATUS(ump) \
-	(((ump).data[0] >> 16) & BIT_MASK(8))
+	(((ump).data[0] >> 16) & 0xFF)
 /**
  * @brief      Command of a MIDI channel voice message
  * @param[in]  ump    Universal MIDI Packet (containing a MIDI event)
@@ -122,19 +122,19 @@ struct midi_ump {
  * @param[in]  ump    Universal MIDI Packet (containing a MIDI event)
  */
 #define UMP_MIDI_CHANNEL(ump) \
-	(UMP_MIDI_STATUS(ump) & BIT_MASK(4))
+	(UMP_MIDI_STATUS(ump) & 0xF)
 /**
  * @brief      First parameter of a MIDI1 channel voice or system message
  * @param[in]  ump     Universal MIDI Packet (containing a MIDI1 message)
  */
 #define UMP_MIDI1_P1(ump) \
-	(((ump).data[0] >> 8) & BIT_MASK(7))
+	(((ump).data[0] >> 8) & 0x7F)
 /**
  * @brief      Second parameter of a MIDI1 channel voice or system message
  * @param[in]  ump     Universal MIDI Packet (containing a MIDI1 message)
  */
 #define UMP_MIDI1_P2(ump) \
-	((ump).data[0] & BIT_MASK(7))
+	((ump).data[0] & 0x7F)
 
 /**
  * @brief      Initialize a UMP with a MIDI1 channel voice message
@@ -226,7 +226,7 @@ struct midi_ump {
  * @see midi_ump_stream_format
  */
 #define UMP_STREAM_FORMAT(ump) \
-	(((ump).data[0] >> 26) & BIT_MASK(2))
+	(((ump).data[0] >> 26) & 0x03)
 
 /**
  * @defgroup midi_ump_stream_format UMP Stream format
@@ -256,7 +256,7 @@ struct midi_ump {
  * @see midi_ump_stream_status
  */
 #define UMP_STREAM_STATUS(ump) \
-	(((ump).data[0] >> 16) & BIT_MASK(10))
+	(((ump).data[0] >> 16) & 0x3FF)
 
 /**
  * @defgroup midi_ump_stream_status UMP Stream status
@@ -296,7 +296,7 @@ struct midi_ump {
  * @see midi_ump_ep_disc
  */
 #define UMP_STREAM_EP_DISCOVERY_FILTER(ump) \
-	((ump).data[1] & BIT_MASK(8))
+	((ump).data[1] & 0xFF)
 
 /**
  * @defgroup midi_ump_ep_disc UMP Stream endpoint discovery message filter bits
@@ -327,7 +327,7 @@ struct midi_ump {
  * @see midi_ump_fb_disc
  */
 #define UMP_STREAM_FB_DISCOVERY_FILTER(ump) \
-	((ump).data[0] & BIT_MASK(8))
+	((ump).data[0] & 0xFF)
 
 /**
  * @brief      Block number requested in a Function Block Discovery message
@@ -335,7 +335,7 @@ struct midi_ump {
  * @see ump112: 7.1.7 Function Block Discovery Message
  */
 #define UMP_STREAM_FB_DISCOVERY_NUM(ump) \
-	(((ump).data[0] >> 8) & BIT_MASK(8))
+	(((ump).data[0] >> 8) & 0xFF)
 
 /**
  * @defgroup midi_ump_fb_disc UMP Stream Function Block discovery message filter bits
