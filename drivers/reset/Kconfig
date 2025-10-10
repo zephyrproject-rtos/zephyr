@@ -29,6 +29,7 @@ comment "Reset Controller Drivers"
 
 # zephyr-keep-sorted-start
 rsource "Kconfig.aspeed"
+rsource "Kconfig.at32"
 rsource "Kconfig.focaltech"
 rsource "Kconfig.gd32"
 rsource "Kconfig.intel_socfpga"
