@@ -1722,10 +1722,7 @@ static int adc_stm32_suspend_setup(const struct device *dev)
 #if ANY_ADC_INTERNAL_REGULATOR_TYPE_IS(INTERNAL_REGULATOR_STARTUP_SW_DELAY) || \
 	ANY_ADC_INTERNAL_REGULATOR_TYPE_IS(INTERNAL_REGULATOR_STARTUP_HW_STATUS)
 	if (config->internal_regulator != INTERNAL_REGULATOR_NONE) {
-		/* Disable ADC internal voltage regulator */
 		LL_ADC_DisableInternalRegulator(adc);
-		while (LL_ADC_IsInternalRegulatorEnabled(adc) == 1U) {
-		}
 	}
 #endif /* INTERNAL_REGULATOR_STARTUP_SW_DELAY || INTERNAL_REGULATOR_STARTUP_HW_STATUS */
 
