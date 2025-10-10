@@ -1388,7 +1388,7 @@ static struct bt_le_per_adv_sync_cb per_adv_sync_cb = {
 };
 #endif /* CONFIG_BT_PER_ADV_SYNC */
 
-static void bt_ready(int err)
+static void bt_ready(uint8_t dev_id, int err)
 {
 	if (err) {
 		bt_shell_error("Bluetooth init failed (err %d)", err);
@@ -1427,8 +1427,16 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 	bool sync = false;
+	uint8_t dev_id = 0U;
 
-	for (size_t argn = 1; argn < argc; argn++) {
+	if (argc < 2) {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	dev_id = strtoul(argv[1], NULL, 10);
+
+	for (size_t argn = 2; argn < argc; argn++) {
 		const char *arg = argv[argn];
 
 		if (!strcmp(arg, "no-settings-load")) {
@@ -1442,12 +1450,13 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (sync) {
-		err = bt_enable(NULL);
-		bt_ready(err);
+		err = bt_enable_mc(dev_id, NULL);
+		bt_ready(dev_id, err);
 	} else {
-		err = bt_enable(bt_ready);
+		err = bt_enable_mc(dev_id, bt_ready);
 		if (err) {
-			shell_error(sh, "Bluetooth init failed (err %d)", err);
+			shell_error(sh, "Bluetooth: %d init failed (err %d)", dev_id,
+				    err);
 		}
 	}
 
@@ -1514,7 +1523,7 @@ static int cmd_hci_cmd(const struct shell *sh, size_t argc, char *argv[])
 		net_buf_add_mem(buf, hex_data, len);
 	}
 
-	err = bt_hci_cmd_send_sync(BT_OP(ogf, ocf), buf, &rsp);
+	err = bt_hci_cmd_send_sync(NULL, BT_OP(ogf, ocf), buf, &rsp);
 	if (err) {
 		shell_error(sh, "HCI command failed (err %d)", err);
 		return err;

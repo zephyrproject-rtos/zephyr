@@ -132,6 +132,13 @@ config BT_DRIVER_RX_HIGH_PRIO
 	int
 	default 6
 
+config BT_NUM_CTLRS
+	int "Number of Bluetooth controllers"
+	range 1 8
+	default 1
+	help
+	  Number of Bluetooth controllers supported.
+
 config BT_CONN_TX_NOTIFY_WQ
 	bool "Use a separate workqueue for connection TX notify processing [EXPERIMENTAL]"
 	depends on BT_CONN_TX

@@ -100,10 +100,10 @@ enum __deprecated bt_hci_bus { /* Use macro BT_DT_HCI_BUS_GET() instead */
 
 #define BT_DT_HCI_BUS_INST_GET(inst) BT_DT_HCI_BUS_GET(DT_DRV_INST(inst))
 
-typedef int (*bt_hci_recv_t)(const struct device *dev, struct net_buf *buf);
+typedef int (*bt_hci_recv_t)(const struct device *dev, struct net_buf *buf, void *user_data);
 
 __subsystem struct bt_hci_driver_api {
-	int (*open)(const struct device *dev, bt_hci_recv_t recv);
+	int (*open)(const struct device *dev, bt_hci_recv_t recv, void *user_data);
 	int (*close)(const struct device *dev);
 	int (*send)(const struct device *dev, struct net_buf *buf);
 #if defined(CONFIG_BT_HCI_SETUP)
@@ -126,11 +126,11 @@ __subsystem struct bt_hci_driver_api {
  *
  * @return 0 on success or negative POSIX error number on failure.
  */
-static inline int bt_hci_open(const struct device *dev, bt_hci_recv_t recv)
+static inline int bt_hci_open(const struct device *dev, bt_hci_recv_t recv, void *user_data)
 {
 	const struct bt_hci_driver_api *api = (const struct bt_hci_driver_api *)dev->api;
 
-	return api->open(dev, recv);
+	return api->open(dev, recv, user_data);
 }
 
 /**
