@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(net_ipv6_pe, CONFIG_NET_IPV6_PE_LOG_LEVEL);
 #include <zephyr/kernel.h>
 #include <zephyr/random/random.h>
 
-#include <mbedtls/md.h>
+#include <psa/crypto.h>
 
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_pkt.h>
@@ -223,10 +223,12 @@ static int gen_temporary_iid(struct net_if *iface,
 			     uint8_t *temporary_iid,
 			     size_t temporary_iid_len)
 {
-	const mbedtls_md_info_t *md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
-	mbedtls_md_context_t ctx;
+	psa_key_id_t key_id;
+	psa_key_attributes_t key_attr = PSA_KEY_ATTRIBUTES_INIT;
+	psa_mac_operation_t mac_op = PSA_MAC_OPERATION_INIT;
+	psa_status_t status;
 	uint8_t digest[32];
-	int ret;
+	size_t digest_len;
 	static bool once;
 	static uint8_t secret_key[16]; /* Min 128 bits, RFC 8981 ch 3.3.2 */
 	struct {
@@ -255,37 +257,40 @@ static int gen_temporary_iid(struct net_if *iface,
 		once = true;
 	}
 
-	mbedtls_md_init(&ctx);
-	ret = mbedtls_md_setup(&ctx, md_info, true);
-	if (ret != 0) {
-		NET_DBG("Cannot %s hmac (%d)", "setup", ret);
+	psa_set_key_type(&key_attr, PSA_KEY_TYPE_HMAC);
+	psa_set_key_algorithm(&key_attr, PSA_ALG_HMAC(PSA_ALG_SHA_256));
+	psa_set_key_usage_flags(&key_attr, PSA_KEY_USAGE_SIGN_MESSAGE);
+	status = psa_import_key(&key_attr, secret_key, sizeof(secret_key), &key_id);
+	if (status != PSA_SUCCESS) {
+		NET_DBG("Cannot %s hmac (%d)", "import key", status);
 		goto err;
 	}
 
-	ret = mbedtls_md_hmac_starts(&ctx, secret_key, sizeof(secret_key));
-	if (ret != 0) {
-		NET_DBG("Cannot %s hmac (%d)", "start", ret);
+	status = psa_mac_sign_setup(&mac_op, key_id, PSA_ALG_HMAC(PSA_ALG_SHA_256));
+	if (status != PSA_SUCCESS) {
+		NET_DBG("Cannot %s hmac (%d)", "setup", status);
 		goto err;
 	}
 
-	ret = mbedtls_md_hmac_update(&ctx, (uint8_t *)&buf, sizeof(buf));
-	if (ret != 0) {
-		NET_DBG("Cannot %s hmac (%d)", "update", ret);
+	status = psa_mac_update(&mac_op, (uint8_t *)&buf, sizeof(buf));
+	if (status != PSA_SUCCESS) {
+		NET_DBG("Cannot %s hmac (%d)", "update", status);
 		goto err;
 	}
 
-	ret = mbedtls_md_hmac_finish(&ctx, digest);
-	if (ret != 0) {
-		NET_DBG("Cannot %s hmac (%d)", "finish", ret);
+	status = psa_mac_sign_finish(&mac_op, digest, sizeof(digest), &digest_len);
+	if (status != PSA_SUCCESS) {
+		NET_DBG("Cannot %s hmac (%d)", "finish", status);
 		goto err;
 	}
 
 	memcpy(temporary_iid, digest, MIN(sizeof(digest), temporary_iid_len));
 
 err:
-	mbedtls_md_free(&ctx);
+	psa_mac_abort(&mac_op);
+	psa_destroy_key(key_id);
 
-	return ret;
+	return (status == PSA_SUCCESS) ? 0 : -EIO;
 }
 
 void net_ipv6_pe_start(struct net_if *iface, const struct in6_addr *prefix,
