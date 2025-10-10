@@ -124,7 +124,7 @@ int configure_encoder(void)
 		return -1;
 	}
 
-	buffer = video_buffer_aligned_alloc(size, CONFIG_VIDEO_BUFFER_POOL_ALIGN, K_FOREVER);
+	buffer = video_buffer_aligned_alloc(size, CONFIG_VIDEO_BUFFER_POOL_ALIGN, K_NO_WAIT);
 	if (buffer == NULL) {
 		LOG_ERR("Unable to alloc compressed video buffer size=%d", size);
 		return -1;
@@ -393,7 +393,7 @@ int main(void)
 		 * buffer alignment is needed in order to achieve the best performance
 		 */
 		buffers[i] = video_buffer_aligned_alloc(fmt.size, CONFIG_VIDEO_BUFFER_POOL_ALIGN,
-							K_FOREVER);
+							K_NO_WAIT);
 		if (buffers[i] == NULL) {
 			LOG_ERR("Unable to alloc video buffer");
 			return 0;
