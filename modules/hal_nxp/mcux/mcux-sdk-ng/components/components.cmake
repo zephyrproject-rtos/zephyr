@@ -6,6 +6,11 @@ if(CONFIG_WIFI_NXP)
   set(CONFIG_MCUX_COMPONENT_component.wifi_bt_module.tx_pwr_limits ON)
 endif()
 
+if(CONFIG_NXP_WIFI_FW_DEBUG)
+  set(CONFIG_MCUX_COMPONENT_component.mflash_offchip ON)
+  set(CONFIG_MCUX_COMPONENT_driver.flexspi ON)
+endif()
+
 if(CONFIG_NXP_FW_LOADER AND NOT CONFIG_BUILD_WITH_TFM)
   set(CONFIG_MCUX_COMPONENT_driver.conn_fwloader ON)
   set(CONFIG_USE_component_osa_zephyr ON)
@@ -81,6 +86,12 @@ add_subdirectory(${MCUX_SDK_NG_DIR}/components/imu_adapter
 
 if(${MCUX_DEVICE} MATCHES "RW61")
   add_subdirectory(${MCUX_SDK_NG_DIR}/components/flash/mflash/rdrw612bga
+    ${CMAKE_CURRENT_BINARY_DIR}/flash/mflash
+    )
+endif()
+
+if(${MCUX_DEVICE} MATCHES "MIMXRT1062")
+  add_subdirectory(${MCUX_SDK_NG_DIR}/components/flash/mflash/evkcmimxrt1060
     ${CMAKE_CURRENT_BINARY_DIR}/flash/mflash
     )
 endif()
