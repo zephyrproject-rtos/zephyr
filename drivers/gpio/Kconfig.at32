@@ -1,0 +1,11 @@
+# AT32 GPIO configuration
+
+# Copyright (c) 2016 Open-RnD Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_AT32
+	bool "GPIO Driver for AT32 family of MCUs"
+	default y
+	depends on DT_HAS_ARTERY_AT32_GPIO_ENABLED
+	help
+	  Enable GPIO driver for AT32 line of MCUs
