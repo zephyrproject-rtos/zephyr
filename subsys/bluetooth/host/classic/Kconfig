@@ -445,6 +445,7 @@ config BT_AVDTP
 config BT_A2DP
 	bool "Bluetooth A2DP Profile [EXPERIMENTAL]"
 	select BT_AVDTP
+	imply LIBSBC
 	select EXPERIMENTAL
 	help
 	  This option enables the A2DP profile
