@@ -1,0 +1,14 @@
+sample:
+  description: Test concurrent mode Ble HeartRate - IEEE802.15.4 echo client
+  name: Ble Heart Rate - Socket Echo Client
+tests:
+  sample.boards.stm32.ble_802154.ble_hr_802154_echo_client:
+    harness:
+      - bluetooth
+      - net
+    extra_args: EXTRA_CONF_FILE="overlay-802154.conf"
+    platform_allow: nucleo_wba65ri
+    tags:
+      - bluetooth
+      - net
+      - socket
