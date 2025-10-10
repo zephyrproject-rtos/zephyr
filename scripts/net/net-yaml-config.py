@@ -196,18 +196,37 @@ if not bool(data):
 
 # If user has supplied an argument, treat it as a schema file
 if bool(data) and len(sys.argv[1:]) > 0:
-    # If pykwalify is installed, then validate the yaml
+    # If jsonschema is installed, then validate the yaml
     try:
-        import pykwalify.core
+        import jsonschema
 
         def yaml_validate(data, schema):
             if not schema:
                 return
-            c = pykwalify.core.Core(source_data=data, schema_files=[schema])
-            c.validate(raise_exception=True)
+
+            try:
+                from yaml import CSafeLoader as SafeLoader
+            except ImportError:
+                from yaml import SafeLoader
+
+            with open(schema) as f:
+                net_schema = yaml.load(f.read(), Loader=SafeLoader)
+
+            validator_class = jsonschema.validators.validator_for(net_schema)
+            validator_class.check_schema(net_schema)
+            validator = validator_class(net_schema)
+
+            errors = sorted(validator.iter_errors(data), key=lambda e: e.path)
+            if errors:
+                # Build a readable message with each error and its path
+                lines = []
+                for e in errors:
+                    path = ".".join(map(str, list(e.path))) or "<root>"
+                    lines.append(f"{path}: {e.message}")
+                raise jsonschema.ValidationError("\n".join(lines))
 
     except ImportError as e:
-        sys.stderr.write("can't import pykwalify; won't validate YAML (%s)", e)
+        sys.stderr.write("can't import jsonschema; won't validate YAML (%s)", e)
 
         def yaml_validate(data, schema):
             pass
@@ -267,7 +286,7 @@ def walk_list(lst, indent):
         elif isinstance(v, dict):
             walk_dict(v, "\t" + indent)
         elif isinstance(v, str):
-            print(indent + "\t" + "\"" + v + "\",")
+            print(indent + "\t" + ".value = \"" + v + "\",")
         elif isinstance(v, bool):
             print(indent + "\t" + str(v).lower() + ",")
         elif isinstance(v, int):
@@ -310,22 +329,28 @@ changed = ""
 
 def walk_dict_schema(level, top_level_name, cdict, key_upper, map, indent):
     global changed
+    str_val = ""
+
     for key, value in map.items():
         if key == "type":
-            if value == "str":
-                output(indent, "const char *" + key_upper + ";")
+            # Use value instead of items to avoid changing too many places in C code
+            if key_upper == "items":
+                key_upper = "value"
+
+            if value == "string":
+                str_val = "const char *" + key_upper + ";"
                 changed += indent + "bool " + "__" + key_upper + "_changed : 1;" + "\n"
-            elif value == "bool":
+            elif value == "boolean":
                 output(indent, "bool " + key_upper + ";")
                 changed += indent + "bool " + "__" + key_upper + "_changed : 1;" + "\n"
-            elif value == "int":
+            elif value == "integer":
                 output(indent, "int " + key_upper + ";")
                 changed += indent + "bool " + "__" + key_upper + "_changed : 1;" + "\n"
-            elif value == "seq":
+            elif value == "array":
                 print(changed, end="")
                 changed = ""
                 output(indent, "struct " + top_level_name + "_" + key_upper + " {")
-            elif value == "map":
+            elif value == "object":
                 print(changed, end="")
                 changed = ""
                 if key_upper != "value":
@@ -333,12 +358,38 @@ def walk_dict_schema(level, top_level_name, cdict, key_upper, map, indent):
                         output(indent, "struct " + key_upper + " {")
                     else:
                         output(indent, "struct " + top_level_name + "_" + key_upper + " {")
-            elif value == "any" and key_upper == "bind_to":
-                output(indent, "int bind_to;")
-                changed += indent + "bool " + "__bind_to_changed : 1;" + "\n"
             continue
-        elif key == "mapping":
+
+        if key == "bind_to":
+            output(indent + "\t", "int bind_to;")
+            changed += indent + "\t" + "bool " + "__bind_to_changed : 1;" + "\n"
+            continue
+
+        if key == "maxLength":
+            output(indent, "char " + key_upper + "[" + str(value) + "];")
+            str_val = ""
+            continue
+
+        # Print the string as a pointer if it is set without maxLength
+        if len(str_val) > 0:
+            output(indent, str_val)
+            str_val = ""
+            continue
+
+        if isinstance(value, dict):
             walk_dict_schema(level + 1, top_level_name, cdict, key, value, "\t" + indent)
+        elif isinstance(value, list):
+            walk_list_schema(level + 1, top_level_name, cdict, key, value, "\t" + indent)
+
+        if key == "items":
+            print(changed, end="")
+            changed = ""
+            if key_upper in combined_data:
+                output(indent, "} " + key_upper + "[" + str(combined_data[key_upper]) + "];")
+            else:
+                output(indent, "} " + key_upper + "[1];")
+
+        elif key == "properties":
             print(changed, end="")
             changed = ""
             if key_upper != "value":
@@ -348,19 +399,10 @@ def walk_dict_schema(level, top_level_name, cdict, key_upper, map, indent):
                     output(indent, "};")
                 else:
                     output(indent, "} " + key_upper + ";")
-            continue
-        elif key == "sequence":
-            walk_list_schema(level + 1, top_level_name, cdict, "value", value, "\t" + indent)
-            print(changed, end="")
-            changed = ""
-            if key_upper in combined_data:
-                output(indent, "} " + key_upper + "[" + str(combined_data[key_upper]) + "];")
-            else:
-                output(indent, "} " + key_upper + "[1];")
-            continue
 
-        if isinstance(value, dict):
-            walk_dict_schema(level + 1, top_level_name, cdict, key, value, indent)
+    # Print the string as a pointer if it is set without maxLength
+    if len(str_val) > 0:
+        output(indent, str_val)
 
 
 def walk_list_schema(level, top_level_name, cdict, key, lst, indent):
@@ -385,6 +427,8 @@ for key, value in data.items():
 # Create C struct definition. Prefix some of the generated C struct fields with
 # by the name of the struct to make them unambiguous.
 for key, value in schema.items():
+    if key in ('$id', '$schema', 'title', 'description'):
+        print("/* " + key + ": " + str(value) + " */")
     if isinstance(value, dict):
         walk_dict_schema(0, list(data.keys())[0], schema_data, key, value, "")
 
