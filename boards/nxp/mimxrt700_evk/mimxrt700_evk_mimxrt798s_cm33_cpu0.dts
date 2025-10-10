@@ -358,10 +358,6 @@ zephyr_lcdif: &lcdif {};
 				label = "image-1";
 				reg = <0x00720000 DT_SIZE_M(7)>;
 			};
-			storage_partition: partition@E20000 {
-				label = "storage";
-				reg = <0x00E20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
-			};
 		};
 	};
 };
