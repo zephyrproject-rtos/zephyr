@@ -159,6 +159,12 @@ struct modem_cmux {
 	enum modem_cmux_state state;
 	bool flow_control_on : 1;
 	bool initiator : 1;
+	/** Enable runtime power management */
+	bool enable_runtime_power_management;
+	/** Close pipe on power save */
+	bool close_pipe_on_power_save;
+	/** Idle timeout for power save */
+	k_timeout_t idle_timeout;
 
 	/* Work lock */
 	bool attached : 1;
@@ -188,10 +194,12 @@ struct modem_cmux {
 	struct k_work_delayable transmit_work;
 	struct k_work_delayable connect_work;
 	struct k_work_delayable disconnect_work;
+	struct k_work_delayable runtime_pm_work;
 
 	/* Synchronize actions */
 	struct k_event event;
 	k_timepoint_t t3_timepoint;
+	k_timepoint_t idle_timepoint;
 
 	/* Statistics */
 #if CONFIG_MODEM_STATS
@@ -220,6 +228,12 @@ struct modem_cmux_config {
 	uint8_t *transmit_buf;
 	/** Size of transmit buffer in bytes [149, ...] */
 	uint16_t transmit_buf_size;
+	/** Enable runtime power management */
+	bool enable_runtime_power_management;
+	/** Close pipe on power save */
+	bool close_pipe_on_power_save;
+	/** Idle timeout for power save */
+	k_timeout_t idle_timeout;
 };
 
 /**

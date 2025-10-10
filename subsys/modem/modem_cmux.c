@@ -10,6 +10,8 @@ LOG_MODULE_REGISTER(modem_cmux, CONFIG_MODEM_CMUX_LOG_LEVEL);
 #include <zephyr/kernel.h>
 #include <zephyr/sys/crc.h>
 #include <zephyr/modem/cmux.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
 #include <string.h>
 
@@ -100,6 +102,7 @@ struct modem_cmux_msc_addr {
 static struct modem_cmux_dlci *modem_cmux_find_dlci(struct modem_cmux *cmux, uint8_t dlci_address);
 static void modem_cmux_dlci_notify_transmit_idle(struct modem_cmux *cmux);
 static void modem_cmux_tx_bypass(struct modem_cmux *cmux, const uint8_t *data, size_t len);
+static void runtime_pm_keepalive(struct modem_cmux *cmux);
 
 static void set_state(struct modem_cmux *cmux, enum modem_cmux_state state)
 {
@@ -497,10 +500,17 @@ static void modem_cmux_bus_callback(struct modem_pipe *pipe, enum modem_pipe_eve
 		modem_work_schedule(&cmux->receive_work, K_NO_WAIT);
 		break;
 
-	case MODEM_PIPE_EVENT_TRANSMIT_IDLE:
+	case MODEM_PIPE_EVENT_OPENED:
+		cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_SOF;
 		modem_work_schedule(&cmux->transmit_work, K_NO_WAIT);
 		break;
-
+	case MODEM_PIPE_EVENT_TRANSMIT_IDLE:
+		/* If we keep UART open in power-save, we should avoid waking up on RX idle */
+		if (!cmux->close_pipe_on_power_save && is_powersaving(cmux)) {
+			break;
+		}
+		modem_work_schedule(&cmux->transmit_work, K_NO_WAIT);
+		break;
 	default:
 		break;
 	}
@@ -885,6 +895,10 @@ static void modem_cmux_on_psc_response(struct modem_cmux *cmux)
 	k_mutex_lock(&cmux->transmit_rb_lock, K_FOREVER);
 	set_state(cmux, MODEM_CMUX_STATE_POWERSAVE);
 	k_mutex_unlock(&cmux->transmit_rb_lock);
+
+	if (cmux->close_pipe_on_power_save) {
+		modem_pipe_close_async(cmux->pipe);
+	}
 }
 
 static void modem_cmux_on_control_frame_uih(struct modem_cmux *cmux)
@@ -1442,6 +1456,8 @@ static void modem_cmux_receive_handler(struct k_work *item)
 	struct modem_cmux *cmux = CONTAINER_OF(dwork, struct modem_cmux, receive_work);
 	int ret;
 
+	runtime_pm_keepalive(cmux);
+
 	/* Receive data from pipe */
 	while ((ret = modem_pipe_receive(cmux->pipe, cmux->work_buf, sizeof(cmux->work_buf))) > 0) {
 		/* Process received data */
@@ -1467,6 +1483,46 @@ static void modem_cmux_dlci_notify_transmit_idle(struct modem_cmux *cmux)
 	}
 }
 
+static void modem_cmux_runtime_pm_handler(struct k_work *item)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
+	struct modem_cmux *cmux = CONTAINER_OF(dwork, struct modem_cmux, runtime_pm_work);
+
+	if (!cmux->enable_runtime_power_management) {
+		return;
+	}
+
+	bool expired = sys_timepoint_expired(cmux->idle_timepoint);
+
+	if (!expired) {
+		return;
+	}
+
+	if (is_connected(cmux) && expired) {
+		LOG_DBG("Idle timeout, entering power saving mode");
+		set_state(cmux, MODEM_CMUX_STATE_ENTER_POWERSAVE);
+		modem_cmux_send_psc(cmux);
+		k_work_reschedule(&cmux->runtime_pm_work, MODEM_CMUX_T3_TIMEOUT);
+		return;
+	}
+	if (cmux->state == MODEM_CMUX_STATE_ENTER_POWERSAVE) {
+		LOG_WRN("PSC timeout, not entering power saving mode");
+		set_state(cmux, MODEM_CMUX_STATE_CONNECTED);
+		runtime_pm_keepalive(cmux);
+		return;
+	}
+}
+
+static void runtime_pm_keepalive(struct modem_cmux *cmux)
+{
+	if (cmux == NULL || !cmux->enable_runtime_power_management) {
+		return;
+	}
+
+	cmux->idle_timepoint = sys_timepoint_calc(cmux->idle_timeout);
+	k_work_reschedule(&cmux->runtime_pm_work, cmux->idle_timeout);
+}
+
 /** Transmit bytes bypassing the CMUX buffers.
  * Causes modem_cmux_transmit_handler() to be rescheduled as a result of TRANSMIT_IDLE event.
  */
@@ -1488,6 +1544,17 @@ static bool powersave_wait_wakeup(struct modem_cmux *cmux)
 	if (is_powersaving(cmux)) {
 		LOG_DBG("Power saving mode, wake up first");
 		set_state(cmux, MODEM_CMUX_STATE_WAKEUP);
+
+		if (cmux->close_pipe_on_power_save) {
+			ret = modem_pipe_open(cmux->pipe, K_FOREVER);
+			if (ret < 0) {
+				LOG_ERR("Failed to open pipe for wake up (%d)", ret);
+				set_state(cmux, MODEM_CMUX_STATE_DISCONNECTED);
+				modem_cmux_raise_event(cmux, MODEM_CMUX_EVENT_DISCONNECTED);
+				return true;
+			}
+		}
+
 		cmux->t3_timepoint = sys_timepoint_calc(MODEM_CMUX_T3_TIMEOUT);
 		modem_cmux_tx_bypass(cmux, wakeup_pattern, sizeof(wakeup_pattern));
 		return true;
@@ -1527,16 +1594,20 @@ static void modem_cmux_transmit_handler(struct k_work *item)
 	modem_cmux_advertise_transmit_buf_stats(cmux);
 #endif
 
+	if (!is_transitioning_to_powersave(cmux)) {
+		runtime_pm_keepalive(cmux);
+	}
+
 	while (true) {
 		transmit_rb_empty = ring_buf_is_empty(&cmux->transmit_rb);
-
-		if (transmit_rb_empty) {
-			break;
-		}
 
 		if (powersave_wait_wakeup(cmux)) {
 			k_mutex_unlock(&cmux->transmit_rb_lock);
 			return;
+		}
+
+		if (transmit_rb_empty) {
+			break;
 		}
 
 		reserved_size = ring_buf_get_claim(&cmux->transmit_rb, &reserved, UINT32_MAX);
@@ -1563,6 +1634,9 @@ static void modem_cmux_transmit_handler(struct k_work *item)
 		if (cmux->state == MODEM_CMUX_STATE_CONFIRM_POWERSAVE) {
 			set_state(cmux, MODEM_CMUX_STATE_POWERSAVE);
 			LOG_DBG("Entered power saving mode");
+			if (cmux->close_pipe_on_power_save) {
+				modem_pipe_close_async(cmux->pipe);
+			}
 		}
 		modem_cmux_dlci_notify_transmit_idle(cmux);
 	}
@@ -1697,6 +1771,13 @@ static int modem_cmux_dlci_pipe_api_transmit(void *data, const uint8_t *buf, siz
 	struct modem_cmux_dlci *dlci = (struct modem_cmux_dlci *)data;
 	struct modem_cmux *cmux = dlci->cmux;
 	int ret = 0;
+
+	if (size == 0 || buf == NULL) {
+		/* Allow empty transmit request to wake up CMUX */
+		runtime_pm_keepalive(cmux);
+		k_work_reschedule(&cmux->transmit_work, K_NO_WAIT);
+		return 0;
+	}
 
 	if (dlci->flow_control) {
 		return 0;
@@ -1865,6 +1946,10 @@ void modem_cmux_init(struct modem_cmux *cmux, const struct modem_cmux_config *co
 	cmux->receive_buf = config->receive_buf;
 	cmux->receive_buf_size = config->receive_buf_size;
 	cmux->t3_timepoint = sys_timepoint_calc(K_NO_WAIT);
+	cmux->enable_runtime_power_management = config->enable_runtime_power_management;
+	cmux->close_pipe_on_power_save = config->close_pipe_on_power_save;
+	cmux->idle_timeout =
+		cmux->enable_runtime_power_management ? config->idle_timeout : K_FOREVER;
 	sys_slist_init(&cmux->dlcis);
 	ring_buf_init(&cmux->transmit_rb, config->transmit_buf_size, config->transmit_buf);
 	k_mutex_init(&cmux->transmit_rb_lock);
@@ -1872,6 +1957,7 @@ void modem_cmux_init(struct modem_cmux *cmux, const struct modem_cmux_config *co
 	k_work_init_delayable(&cmux->transmit_work, modem_cmux_transmit_handler);
 	k_work_init_delayable(&cmux->connect_work, modem_cmux_connect_handler);
 	k_work_init_delayable(&cmux->disconnect_work, modem_cmux_disconnect_handler);
+	k_work_init_delayable(&cmux->runtime_pm_work, modem_cmux_runtime_pm_handler);
 	k_event_init(&cmux->event);
 	set_state(cmux, MODEM_CMUX_STATE_DISCONNECTED);
 
