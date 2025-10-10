@@ -872,7 +872,6 @@ void bap_thread(void *p1, void *p2, void *p3)
 				state = BAP_STATE_PA_SYNC;
 				break;  
 			}
-			pa_sync_create();
 
 			printk("NEXT STATE: BAP_STATE_PA_SYNC\n");
             state = BAP_STATE_PA_SYNC;
