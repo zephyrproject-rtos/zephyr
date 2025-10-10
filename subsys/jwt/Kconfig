@@ -17,8 +17,9 @@ choice
 	  Select which algorithm to use for signing JWT tokens.
 
 config JWT_SIGN_RSA_LEGACY
-	bool "Use RSA signature (RS-256). Use Mbed TLS as crypto library."
+	bool "Use RSA signature (RS-256). Use Mbed TLS as crypto library [DEPRECATED]"
 	depends on CSPRNG_AVAILABLE
+	select DEPRECATED
 	select MBEDTLS
 	select MBEDTLS_MD
 	select MBEDTLS_RSA_C
