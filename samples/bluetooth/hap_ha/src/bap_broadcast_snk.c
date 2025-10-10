@@ -18,6 +18,8 @@
 #include "bap_unicast_sr.h"
 
 #define SEM_TIMEOUT                 K_SECONDS(60)
+#define BROADCAST_ASSISTANT_TIMEOUT K_SECONDS(120)
+#define ADV_TIMEOUT 				K_FOREVER
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 10 /* Set the timeout relative to interval */
 #define PA_SYNC_SKIP                10
 
@@ -47,6 +49,7 @@ static struct bt_le_per_adv_sync *pa_sync;
 static uint32_t broadcaster_broadcast_id;
 static volatile bool big_synced;
 static volatile bool base_received;
+static struct bt_bap_stream *bap_streams_p[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 
 
 /**
@@ -735,6 +738,228 @@ static uint8_t get_stream_count(uint32_t bitfield)
 	return count;
 }
 
+static int bap_sink_reset(void)
+
+{
+	int err;
+	req_recv_state = NULL;
+	big_synced = false;
+	base_received = false;
+
+	(void)memset(&base_recv_data, 0, sizeof(base_recv_data));
+	(void)memset(&requested_bis_sync, 0, sizeof(requested_bis_sync));
+	(void)memset(sink_broadcast_code, 0, sizeof(sink_broadcast_code));
+	(void)memset(&broadcaster_info, 0, sizeof(broadcaster_info));
+	(void)memset(&broadcaster_addr, 0, sizeof(broadcaster_addr));
+
+	broadcaster_broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
+
+	if (broadcast_sink != NULL) {
+		err = bt_bap_broadcast_sink_delete(broadcast_sink);
+		if (err) {
+			printk("Deleting broadcast sink failed (err %d)\n", err);
+			return err;
+		}
+		broadcast_sink = NULL;
+	}
+ 
+	if (pa_sync != NULL) {
+		bt_le_per_adv_sync_delete(pa_sync);
+		if (err) {
+			printk("Deleting PA sync failed (err %d)\n", err);
+			return err;
+		}
+		pa_sync = NULL;
+	}
+ 
+	k_sem_reset(&sem_broadcaster_found);
+	k_sem_reset(&sem_pa_synced);
+	k_sem_reset(&sem_base_received);
+	k_sem_reset(&sem_syncable);
+	k_sem_reset(&sem_pa_sync_lost);
+	k_sem_reset(&sem_broadcast_code_received);
+	k_sem_reset(&sem_bis_sync_requested);
+	k_sem_reset(&sem_stream_connected);
+	k_sem_reset(&sem_stream_started);
+	k_sem_reset(&sem_broadcast_sink_stopped);
+	return 0;
+
+}
+ 
+
+
+void bap_thread(void *p1, void *p2, void *p3)
+{
+	printk("BAP_thread started\n");
+    enum {
+        BAP_STATE_RESET,
+        BAP_STATE_WAIT_BA,
+        BAP_STATE_PA_SYNC,
+        BAP_STATE_CREATE_SINK,
+        BAP_STATE_WAIT_BASE,
+        BAP_STATE_WAIT_SYNCABLE,
+        BAP_STATE_WAIT_CODE,
+        BAP_STATE_WAIT_BIS_REQ,
+        BAP_STATE_SYNC_BIS,
+        BAP_STATE_WAIT_STREAM,
+        BAP_STATE_WAIT_DISCONNECT,
+        BAP_STATE_WAIT_STOP
+    } state = BAP_STATE_RESET;
+ 
+    int err;
+    uint8_t stream_count;
+    uint32_t sync_bitfield;
+ 
+    while (true) { 
+        switch (state) {
+        case BAP_STATE_RESET:
+ 
+			err = bap_sink_reset();
+            if (err) {
+                printk("BAP Sink RESET STATE: Reset failed (%d)\n", err);
+                k_sleep(K_SECONDS(1));
+                continue;
+            }
+            state = BAP_STATE_WAIT_BA;
+            break;
+ 
+ 
+        case BAP_STATE_WAIT_BA:
+
+			if (!bap_unicast_sr_has_connection()) {
+				if (k_sem_take(&sem_connected, ADV_TIMEOUT) != 0) {
+					printk("No Broadcast Assistant found \n"); 
+					state = BAP_STATE_WAIT_BA; 
+					break;
+				}
+			}
+
+			k_sem_reset(&sem_pa_request);
+			k_sem_reset(&sem_past_request);
+			k_sem_reset(&sem_disconnected);
+
+			printk("Waiting for PA sync request\n");
+			err = k_sem_take(&sem_pa_request,
+						BROADCAST_ASSISTANT_TIMEOUT);
+			if (err != 0) {
+				printk("sem_pa_request timed out, resetting\n");
+				state = BAP_STATE_RESET;
+				break;
+			}
+
+			if (k_sem_take(&sem_past_request, K_NO_WAIT) == 0) {
+				state = BAP_STATE_PA_SYNC;
+				break;  
+			}
+
+			printk("NEXT STATE: BAP_STATE_PA_SYNC\n");
+            state = BAP_STATE_PA_SYNC;
+            break;
+ 
+        case BAP_STATE_PA_SYNC:
+            if (k_sem_take(&sem_pa_synced, SEM_TIMEOUT) != 0) {
+                printk("sem_pa_synced timed out, resetting\n");
+                state = BAP_STATE_RESET;
+                break;
+            }
+            state = BAP_STATE_CREATE_SINK;
+            break;
+ 
+        case BAP_STATE_CREATE_SINK:
+            err = bt_bap_broadcast_sink_create(pa_sync, broadcaster_broadcast_id, &broadcast_sink);
+            if (err != 0) {
+                printk("Failed to create broadcast sink: %d\n", err);
+                state = BAP_STATE_RESET;
+                break;
+            }
+            printk("Broadcast Sink created, waiting for BASE\n");
+            state = BAP_STATE_WAIT_BASE;
+            break;
+ 
+        case BAP_STATE_WAIT_BASE:
+            if (k_sem_take(&sem_base_received, SEM_TIMEOUT) != 0) {
+                printk("sem_base_received timed out, resetting\n");
+                state = BAP_STATE_RESET;
+                break;
+            }
+            printk("BASE received, waiting for syncable\n");
+            state = BAP_STATE_WAIT_SYNCABLE;
+            break;
+ 
+        case BAP_STATE_WAIT_SYNCABLE:
+            if (k_sem_take(&sem_syncable, SEM_TIMEOUT) != 0) {
+                printk("sem_syncable timed out, resetting\n");
+                state = BAP_STATE_RESET;
+                break;
+            }
+            state = BAP_STATE_WAIT_CODE;
+            break;
+ 
+        case BAP_STATE_WAIT_CODE:
+            if (k_sem_take(&sem_broadcast_code_received, SEM_TIMEOUT) != 0) {
+                printk("sem_broadcast_code_received timed out, resetting\n");
+                state = BAP_STATE_RESET;
+                break;
+            }
+            state = BAP_STATE_WAIT_BIS_REQ;
+            break;
+ 
+        case BAP_STATE_WAIT_BIS_REQ:
+            if (k_sem_take(&sem_bis_sync_requested, SEM_TIMEOUT) != 0) {
+                printk("sem_bis_sync_requested timed out, resetting\n");
+                state = BAP_STATE_RESET;
+                break;
+            }
+            sync_bitfield = select_bis_sync_bitfield(&base_recv_data, requested_bis_sync);
+            if (sync_bitfield == 0U) {
+                printk("No valid BIS sync found, resetting\n");
+                state = BAP_STATE_RESET;
+                break;
+            }
+            stream_count = get_stream_count(sync_bitfield);
+            printk("Syncing to broadcast with bitfield: 0x%08x, stream_count = %u\n", sync_bitfield, stream_count);
+            state = BAP_STATE_SYNC_BIS;
+            break;
+ 
+        case BAP_STATE_SYNC_BIS:
+            err = bt_bap_broadcast_sink_sync(broadcast_sink, sync_bitfield, bap_streams_p, sink_broadcast_code);
+            if (err != 0) {
+                printk("Unable to sync to broadcast source: %d\n", err);
+                state = BAP_STATE_RESET;
+                break;
+            }
+            printk("Waiting for stream(s) started\n");
+            state = BAP_STATE_WAIT_STREAM;
+            break;
+ 
+        case BAP_STATE_WAIT_STREAM:
+            if (k_sem_take(&sem_big_synced, SEM_TIMEOUT) != 0) {
+                printk("sem_big_synced timed out, resetting\n");
+                state = BAP_STATE_RESET;
+                break;
+            }
+            state = BAP_STATE_WAIT_DISCONNECT;
+            break;
+ 
+        case BAP_STATE_WAIT_DISCONNECT:
+            k_sem_take(&sem_pa_sync_lost, K_FOREVER);
+            state = BAP_STATE_WAIT_STOP;
+            break;
+ 
+        case BAP_STATE_WAIT_STOP:
+            if (k_sem_take(&sem_broadcast_sink_stopped, SEM_TIMEOUT) != 0) {
+                printk("sem_broadcast_sink_stopped timed out, resetting\n");
+                state = BAP_STATE_RESET;
+                break;
+            }
+            printk("BAP Sink: Broadcast session ended\n");
+            state = BAP_STATE_RESET;
+            break;
+        }
+ 
+        k_sleep(K_MSEC(10));
+    }
+}
 
 int init_bap_sink(void)
 {
