@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: kit_t2g_b_h_evk/cyt4bfbche/m7_0
+name: T2G Body High Evaluation Kit (M7_0)
+type: mcu
+arch: arm
+ram: 1024
+flash: 8192
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - uart
+vendor: infineon
