@@ -95,11 +95,11 @@ static void shm_obj_remove(struct shm_obj *shm)
 	k_free(shm);
 }
 
-static int shm_fstat(struct shm_obj *shm, struct stat *st)
+static int shm_fstat(struct shm_obj *shm, struct zvfs_stat *st)
 {
-	*st = (struct stat){0};
-	st->st_mode = ZVFS_MODE_IFSHM;
-	st->st_size = shm->size;
+	*st = (struct zvfs_stat){0};
+	st->mode = ZVFS_MODE_IFSHM;
+	st->size = shm->size;
 
 	return 0;
 }
@@ -272,7 +272,7 @@ static int shm_ioctl(void *obj, unsigned int request, va_list args)
 	case ZFD_IOCTL_SET_LOCK:
 		break;
 	case ZFD_IOCTL_STAT: {
-		struct stat *st = va_arg(args, struct stat *);
+		struct zvfs_stat *st = va_arg(args, struct zvfs_stat *);
 
 		return shm_fstat(shm, st);
 	} break;
