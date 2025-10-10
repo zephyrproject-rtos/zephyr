@@ -1,0 +1,11 @@
+# Copyright (c) 2025 SiFli Technologies(Nanjing) Co., Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_CODEC_SF32LB
+	bool "sf32lb codec driver support"
+	select USE_SIFLI_HAL
+	select USE_SIFLI_HAL_DMA
+	select USE_SIFLI_HAL_AUDCODEC
+	default y
+	depends on SOC_SERIES_SF32LB52X
+
