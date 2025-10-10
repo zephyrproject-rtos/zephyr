@@ -79,7 +79,7 @@ uint32_t osEventFlagsClear(osEventFlagsId_t ef_id, uint32_t flags)
 	}
 
 	rv = k_event_test(&events->z_event, 0xFFFFFFFF);
-	k_event_clear(&events->z_event, flags);
+	k_event_clear(&events->z_event, flags & rv);
 
 	return rv;
 }
