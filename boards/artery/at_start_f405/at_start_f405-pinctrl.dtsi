@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2025, Maxjta
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/at32f405r(c-g-m)xx-pinctrl.h>
+
+&pinctrl {
+	usart1_default: usart1_default {
+		group1 {
+			pinmux = <USART1_TX_PA9>, <USART1_RX_PA10>;
+		};
+	};
+};
