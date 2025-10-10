@@ -17,6 +17,8 @@
 #include <zephyr/modem/backend/uart.h>
 #include <zephyr/net/ppp.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/atomic.h>
 
 #include <zephyr/logging/log.h>
@@ -193,6 +195,9 @@ struct modem_cellular_config {
 	uint16_t startup_time_ms;
 	uint16_t shutdown_time_ms;
 	bool autostarts;
+	bool cmux_enable_runtime_power_save;
+	bool cmux_close_pipe_on_power_save;
+	k_timeout_t cmux_idle_timeout;
 	const struct modem_chat_script *init_chat_script;
 	const struct modem_chat_script *dial_chat_script;
 	const struct modem_chat_script *periodic_chat_script;
@@ -2203,7 +2208,6 @@ static int modem_cellular_init(const struct device *dev)
 
 	k_mutex_init(&data->api_lock);
 	k_work_init_delayable(&data->timeout_work, modem_cellular_timeout_handler);
-
 	k_work_init(&data->event_dispatch_work, modem_cellular_event_dispatch_handler);
 	ring_buf_init(&data->event_rb, sizeof(data->event_buf), data->event_buf);
 
@@ -2250,6 +2254,9 @@ static int modem_cellular_init(const struct device *dev)
 			.receive_buf_size = ARRAY_SIZE(data->cmux_receive_buf),
 			.transmit_buf = data->cmux_transmit_buf,
 			.transmit_buf_size = ARRAY_SIZE(data->cmux_transmit_buf),
+			.enable_runtime_power_management = config->cmux_enable_runtime_power_save,
+			.close_pipe_on_power_save = config->cmux_close_pipe_on_power_save,
+			.idle_timeout = config->cmux_idle_timeout,
 		};
 
 		modem_cmux_init(&data->cmux, &cmux_config);
@@ -2982,11 +2989,8 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 
 /* Helper to define modem instance */
 #define MODEM_CELLULAR_DEFINE_INSTANCE(inst, power_ms, reset_ms, startup_ms, shutdown_ms, start,   \
-				       set_baudrate_script,                                        \
-				       init_script,                                                \
-				       dial_script,                                                \
-				       periodic_script,                                            \
-				       shutdown_script)                                            \
+				       set_baudrate_script, init_script, dial_script,              \
+				       periodic_script, shutdown_script)                           \
 	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
@@ -2995,14 +2999,19 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 		.dtr_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_dtr_gpios, {}),                     \
 		.power_pulse_duration_ms = (power_ms),                                             \
 		.reset_pulse_duration_ms = (reset_ms),                                             \
-		.startup_time_ms  = (startup_ms),                                                  \
+		.startup_time_ms = (startup_ms),                                                   \
 		.shutdown_time_ms = (shutdown_ms),                                                 \
 		.autostarts = DT_INST_PROP_OR(inst, autostarts, (start)),                          \
-		.set_baudrate_chat_script    = (set_baudrate_script),                              \
-		.init_chat_script            = (init_script),                                      \
-		.dial_chat_script            = (dial_script),                                      \
+		.cmux_enable_runtime_power_save =                                                  \
+			DT_INST_PROP_OR(inst, cmux_enable_runtime_power_save, 0),                  \
+		.cmux_close_pipe_on_power_save =                                                   \
+			DT_INST_PROP_OR(inst, cmux_close_pipe_on_power_save, 0),                   \
+		.cmux_idle_timeout = K_MSEC(DT_INST_PROP_OR(inst, cmux_idle_timeout_ms, 0)),       \
+		.set_baudrate_chat_script = (set_baudrate_script),                                 \
+		.init_chat_script = (init_script),                                                 \
+		.dial_chat_script = (dial_script),                                                 \
 		.periodic_chat_script = (periodic_script),                                         \
-		.shutdown_chat_script  = (shutdown_script),                                        \
+		.shutdown_chat_script = (shutdown_script),                                         \
 		.user_pipes = MODEM_CELLULAR_GET_USER_PIPES(inst),                                 \
 		.user_pipes_size = ARRAY_SIZE(MODEM_CELLULAR_GET_USER_PIPES(inst)),                \
 	};                                                                                         \
