@@ -124,6 +124,9 @@ static struct k_work_q bt_workq;
 static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_BT_RX_STACK_SIZE);
 #endif /* CONFIG_BT_RECV_WORKQ_BT */
 
+struct k_work_q *const bt_workq_chosen =
+	COND_CODE_1(CONFIG_BT_RECV_WORKQ_BT, (&bt_workq), (&k_sys_work_q));
+
 static void init_work(struct k_work *work);
 
 struct bt_dev bt_dev = {
@@ -4350,13 +4353,11 @@ static void hci_event_prio(struct net_buf *buf)
 
 static void rx_queue_put(struct net_buf *buf)
 {
+	int err;
+
 	net_buf_slist_put(&bt_dev.rx_queue, buf);
 
-#if defined(CONFIG_BT_RECV_WORKQ_SYS)
-	const int err = k_work_submit(&rx_work);
-#elif defined(CONFIG_BT_RECV_WORKQ_BT)
-	const int err = k_work_submit_to_queue(&bt_workq, &rx_work);
-#endif /* CONFIG_BT_RECV_WORKQ_SYS */
+	err = k_work_submit_to_queue(bt_workq_chosen, &rx_work);
 	if (err < 0) {
 		LOG_ERR("Could not submit rx_work: %d", err);
 	}
