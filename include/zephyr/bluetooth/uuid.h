@@ -644,6 +644,15 @@ struct bt_uuid_128 {
 #define BT_UUID_PAMS \
 	BT_UUID_DECLARE_16(BT_UUID_PAMS_VAL)
 /**
+ *  @brief Elapsed Time Service UUID value
+ */
+#define BT_UUID_ETS_VAL 0x183f
+/**
+ *  @brief Elapsed Time Service
+ */
+#define BT_UUID_ETS \
+	BT_UUID_DECLARE_16(BT_UUID_ETS_VAL)
+/**
  *  @brief Audio Input Control Service UUID value
  */
 #define BT_UUID_AICS_VAL 0x1843
@@ -5081,6 +5090,15 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_BAS_BATTERY_ENERGY_STATUS \
 	BT_UUID_DECLARE_16(BT_UUID_BAS_BATTERY_ENERGY_STATUS_VAL)
+/**
+ *  @brief ETS Characteristic Current Elapsed Time UUID Value
+ */
+#define BT_UUID_ETS_CURRENT_ELAPSED_TIME_VAL 0x2bf2
+/**
+ *  @brief ETS Characteristic Current Elapsed Time
+ */
+#define BT_UUID_ETS_CURRENT_ELAPSED_TIME \
+	BT_UUID_DECLARE_16(BT_UUID_ETS_CURRENT_ELAPSED_TIME_VAL)
 /**
  *  @brief GATT Characteristic LE GATT Security Levels UUID Value
  */
