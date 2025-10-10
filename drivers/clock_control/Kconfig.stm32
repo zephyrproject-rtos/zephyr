@@ -22,9 +22,12 @@ menuconfig CLOCK_CONTROL_STM32_CUBE
 
 if CLOCK_CONTROL_STM32_CUBE
 
+TMP_HSE := $(dt_nodelabel_path, clk_hse)
+
 config CLOCK_STM32_HSE_CLOCK
 	int "HSE clock value" if !$(dt_nodelabel_enabled,clk_hse)
-	default $(dt_nodelabel_int_prop,clk_hse,clock-frequency)
+#######	default $(dt_nodelabel_int_prop,clk_hse,clock-frequency)
+	default $(dt_node_int_prop_int,$(TMP_HSE),clock-frequency)
 	help
 	  Frequency of external high-speed clock (HSE).
 
