@@ -508,7 +508,7 @@ static DEVICE_API(display, ssd1363_driver_api) = {
 	static const struct ssd1363_config config##node_id = {                                     \
 		.mipi_dev = DEVICE_DT_GET(DT_PARENT(node_id)),                                     \
 		.dbi_config = MIPI_DBI_CONFIG_DT(                                                  \
-			node_id, SSD1363_WORD_SIZE(node_id) | SPI_OP_MODE_MASTER, 0),              \
+			node_id, SSD1363_WORD_SIZE(node_id) | SPI_OP_MODE_MASTER),                 \
 		.height = DT_PROP(node_id, height),                                                \
 		.width = DT_PROP(node_id, width),                                                  \
 		.oscillator_freq = DT_PROP(node_id, oscillator_freq),                              \

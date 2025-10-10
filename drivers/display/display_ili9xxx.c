@@ -542,8 +542,7 @@ static const struct ili9xxx_quirks ili9488_quirks = {
 			.config = MIPI_DBI_SPI_CONFIG_DT(                      \
 						INST_DT_ILI9XXX(n, t),         \
 						SPI_OP_MODE_MASTER |           \
-						SPI_WORD_SET(8),               \
-						0),                            \
+						SPI_WORD_SET(8)),              \
 		},                                                             \
 		.pixel_format = DT_PROP(INST_DT_ILI9XXX(n, t), pixel_format),  \
 		.rotation = DT_PROP(INST_DT_ILI9XXX(n, t), rotation),          \
