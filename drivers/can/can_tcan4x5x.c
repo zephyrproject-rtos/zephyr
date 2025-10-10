@@ -665,13 +665,21 @@ static int tcan4x5x_init_normal_mode(const struct device *dev)
 #ifdef CONFIG_PM_DEVICE
 static int tcan4x5x_pm_control(const struct device *dev, enum pm_device_action action)
 {
+	struct can_mcan_data *mcan_data = dev->data;
 	int err = 0;
 	uint32_t reg;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
-		/* Stop if started */
-		(void)can_mcan_stop(dev);
+		if (mcan_data->common.started) {
+			LOG_DBG("Cannot suspend while device is started");
+			return -EBUSY;
+		}
+
+		if (can_mcan_rx_filters_exist(dev)) {
+			LOG_DBG("Cannot suspend while RX filters are configured");
+			return -EBUSY;
+		}
 		/*
 		 * Enter sleep mode.
 		 * NOTE: All RX filters are cleared when entering sleep mode.

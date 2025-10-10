@@ -1242,6 +1242,33 @@ void can_mcan_set_state_change_callback(const struct device *dev,
 	data->common.state_change_cb_user_data = user_data;
 }
 
+bool can_mcan_rx_filters_exist(const struct device *dev)
+{
+	const struct can_mcan_config *config = dev->config;
+	const struct can_mcan_callbacks *cbs = config->callbacks;
+	struct can_mcan_data *data = dev->data;
+	int i;
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	for (i = 0; i < cbs->num_std; i++) {
+		if (cbs->std[i].function != NULL) {
+			k_mutex_unlock(&data->lock);
+			return true;
+		}
+	}
+
+	for (i = 0; i < cbs->num_ext; i++) {
+		if (cbs->ext[i].function != NULL) {
+			k_mutex_unlock(&data->lock);
+			return true;
+		}
+	}
+
+	k_mutex_unlock(&data->lock);
+	return false;
+}
+
 /* helper function allowing mcan drivers without access to private mcan
  * definitions to set CCCR_CCE, which might be needed to disable write
  * protection for some registers.
