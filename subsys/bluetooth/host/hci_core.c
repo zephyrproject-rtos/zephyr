@@ -471,14 +471,34 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 		return err;
 	}
 
-	/* TODO: disallow sending sync commands from syswq altogether */
+	if (k_current_get() == &bt_taskq_chosen->thread) {
+		struct net_buf *cmd;
 
-	/* Since the commands are now processed in the syswq, we cannot suspend
-	 * and wait. We have to send the command from the current context.
-	 */
-	if (k_current_get() == &k_sys_work_q.thread) {
-		/* drain the command queue until we get to send the command of interest. */
-		struct net_buf *cmd = NULL;
+		/* We are on the same thread where commands are processed and would
+		 * deadlock.
+		 *
+		 * We will immediately process commands until our command is processed
+		 * and we can return.
+		 *
+		 * This code path exists to resolve deadlocks when
+		 * CONFIG_BT_TASKQ_SYSTEM_WORKQUEUE is enabled.  This does not always
+		 * work, especially if CONFIG_BT_RECV_WORKQ_SYS is also enabled.
+		 *
+		 * Another downside is that there has to be enough stack space left in
+		 * the current thread to do so or we will overflow.
+		 */
+
+		if (IS_ENABLED(CONFIG_BT_TASKQ_DEDICATED)) {
+			/* Dedicated bt_taskq should not invoke bt_hci_cmd_send_sync() or other
+			 * blocking commands.
+			 *
+			 * If you see this warning, please send us a stack trace.
+			 */
+			LOG_WRN_ONCE("bt_workq missuse");
+			if (IS_ENABLED(CONFIG_TEST)) {
+				k_panic();
+			}
+		}
 
 		do {
 			cmd = k_fifo_peek_head(&bt_dev.cmd_tx_queue);
