@@ -146,7 +146,7 @@ static void stream_stopped_cb(struct bt_bap_stream *bap_stream, uint8_t reason)
 static void stream_recv_cb(struct bt_bap_stream *bap_stream, const struct bt_iso_recv_info *info,
 			   struct net_buf *buf)
 {
-	printk("%s\n", __func__);
+	stream_rx_recv(bap_stream, info, buf);
 }
 
 static struct bt_bap_stream_ops stream_ops = {
@@ -429,7 +429,7 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 {
 
 	struct bt_conn_info info;
-
+	printk("ENTER\n");
 	bt_conn_get_info(conn, &info);
 	printk("PA sync from conn id: %d\n", info.id);
 
@@ -721,6 +721,7 @@ static uint8_t get_stream_count(uint32_t bitfield)
 	return count;
 }
 
+#if !defined(CONFIG_TARGET_BROADCAST_CHANNEL)
 static uint32_t keep_n_least_significant_ones(uint32_t bitfield, uint8_t n)
 {
 	uint32_t result = 0U;
@@ -734,6 +735,20 @@ static uint32_t keep_n_least_significant_ones(uint32_t bitfield, uint8_t n)
 
 	return result;
 }
+#endif
+
+static uint8_t get_stream_count(uint32_t bitfield)
+{
+	uint8_t count = 0U;
+
+	for (uint8_t i = 0U; i < BT_ISO_MAX_GROUP_ISO_COUNT; i++) {
+		if ((bitfield & BIT(i)) != 0) {
+			count++;
+		}
+	}
+
+	return count;
+}
 
 static uint32_t select_bis_sync_bitfield(struct base_data *base_sg_data,
 					 uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS])
@@ -741,6 +756,54 @@ static uint32_t select_bis_sync_bitfield(struct base_data *base_sg_data,
 {
 	uint32_t result = 0U;
 
+#if defined(CONFIG_TARGET_BROADCAST_CHANNEL)
+	for (int i = 0; i < CONFIG_BT_BAP_BASS_MAX_SUBGROUPS; i++) {
+		enum bt_audio_location combine_alloc = BT_AUDIO_LOCATION_MONO_AUDIO;
+		uint32_t combine_bis_sync = 0U;
+
+		if (bis_sync_req[i] == 0) {
+			continue;
+		}
+		/* BIS sync requested in this subgroup. Look for allocation match.
+		 * BIS index 0 is not a valid index, so start from 1.
+		 */
+		for (int idx = 1; idx <= BT_ISO_BIS_INDEX_MAX; idx++) {
+			const struct bis_audio_allocation *bis_alloc =
+				&base_sg_data->subgroup_bis[i].audio_allocation[idx];
+
+			if (!base_sg_data->subgroup_bis[i].audio_allocation[idx].valid) {
+				/* BIS not present or channel allocation not valid for this BIS */
+				continue;
+			}
+			if ((bis_sync_req[i] & BT_ISO_BIS_INDEX_BIT(idx)) == 0) {
+				/* No request to sync to this BIS */
+				continue;
+			}
+			if (bis_alloc->value == CONFIG_TARGET_BROADCAST_CHANNEL) {
+				/* Exact match */
+				result = BT_ISO_BIS_INDEX_BIT(idx);
+				break;
+			} else if ((bis_alloc->value & CONFIG_TARGET_BROADCAST_CHANNEL) != 0) {
+				combine_alloc |= bis_alloc->value;
+				combine_bis_sync |= BT_ISO_BIS_INDEX_BIT(idx);
+				if (combine_alloc == CONFIG_TARGET_BROADCAST_CHANNEL) {
+					/* Combined match */
+					result = combine_bis_sync;
+					break;
+				}
+				/* Partial match */
+				printk("Channel allocation match, partial %d\n", combine_alloc);
+			} else {
+				 /* No action required */
+			}
+		}
+
+		if (result != 0U) {
+			printk("Channel allocation match, result = 0x%08x\n", result);
+			break;
+		}
+	}
+#else  /* !CONFIG_TARGET_BROADCAST_CHANNEL */
 	bool bis_sync_req_no_pref = false;
 
 	for (uint8_t i = 0; i < CONFIG_BT_BAP_BASS_MAX_SUBGROUPS; i++) {
@@ -760,6 +823,7 @@ static uint32_t select_bis_sync_bitfield(struct base_data *base_sg_data,
 		result = keep_n_least_significant_ones(result,
 						       CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT);
 	}
+#endif /* CONFIG_TARGET_BROADCAST_CHANNEL */
 
 	return result;
 }
@@ -888,8 +952,10 @@ void bap_thread(void *p1, void *p2, void *p3)
 
             break;
  
-        case BAP_STATE_PA_SYNC:
-            if (k_sem_take(&sem_pa_synced, SEM_TIMEOUT) != 0) {
+        case BROADCAST_SNK_STATE_PA_SYNC:
+			printk("BROADCAST_SNK_STATE_PA_SYNC\n");
+			err = k_sem_take(&sem_pa_synced, SEM_TIMEOUT);
+            if (err != 0) {
                 printk("sem_pa_synced timed out, resetting\n");
                 state = BAP_STATE_RESET;
                 break;
@@ -897,7 +963,8 @@ void bap_thread(void *p1, void *p2, void *p3)
             state = BAP_STATE_CREATE_SINK;
             break;
  
-        case BAP_STATE_CREATE_SINK:
+        case BROADCAST_SNK_STATE_CREATE_SINK:
+			printk("BROADCAST_SNK_STATE_CREATE_SINK\n");
             err = bt_bap_broadcast_sink_create(pa_sync, broadcaster_broadcast_id, &broadcast_sink);
             if (err != 0) {
                 printk("Failed to create broadcast sink: %d\n", err);
