@@ -27,7 +27,7 @@
 			reg = <0x40015000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 20)>,
 				 <&rcc STM32_SRC_TIMPCLK2 NO_SEL>;
-			resets = <&rctl STM32_RESET(APB2, 20U)>;
+			resets = <&rctl STM32_RESET(APB2, 20)>;
 			interrupts = <77 0>, <78 0>, <79 0>, <80 0>;
 			interrupt-names = "brk", "up", "trgcom", "cc";
 			st,prescaler = <0>;
@@ -84,7 +84,7 @@
 			compatible = "st,stm32-uart";
 			reg = <0x40005000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 20)>;
-			resets = <&rctl STM32_RESET(APB1L, 20U)>;
+			resets = <&rctl STM32_RESET(APB1L, 20)>;
 			interrupts = <53 0>;
 			status = "disabled";
 		};
