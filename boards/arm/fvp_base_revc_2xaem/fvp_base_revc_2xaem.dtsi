@@ -166,7 +166,7 @@
 
 		dram0: memory@88000000 {
 			compatible = "mmio-dram";
-			reg = <0x88000000 DT_SIZE_K(2048)>;
+			reg = <0x88000000 DT_SIZE_M(128)>;
 		};
 	};
 };
