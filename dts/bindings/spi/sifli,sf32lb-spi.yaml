@@ -1,0 +1,56 @@
+# Copyright (c) 2025, Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  SiFLI SPI controller for SF32LB family of MCUs.
+
+  This SPI controller supports both master and slave modes with configurable
+  clock polarity, clock phase, data size (8-bit or 16-bit), and baud rate.
+
+compatible: "sifli,sf32lb-spi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Register base address for the SPI controller.
+
+  clocks:
+    required: true
+    description: |
+      Clock source for the SPI controller.
+
+  interrupts:
+    required: true
+    description: |
+      Interrupt number for the SPI controller.
+
+#  interrupt-names:
+#    required: true
+#    items:
+#      - const: global
+#    description: |
+#      Interrupt name for the SPI controller.
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  clock-frequency:
+    description: |
+      Clock frequency the SPI peripheral is being driven at, in Hz.
+      This is used to calculate the baud rate prescaler.
+
+#  overrun-character:
+#    description: |
+#      The overrun character (ORC) is used when all bytes from the TX buffer
+#      are sent, but the transfer continues due to RX.
+#
+#  cs-gpios:
+#    description: |
+#      An array of chip select GPIOs to use. Each element in the array
+#      specifies a GPIO. The index in the array corresponds to the child
+#      node that the CS gpio controls.
