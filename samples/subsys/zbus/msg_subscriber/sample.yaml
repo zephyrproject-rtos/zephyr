@@ -274,6 +274,7 @@ tests:
     integration_platforms:
       - qemu_x86
   sample.zbus.msg_subscriber_dynamic_isolated_too_small:
+    filter: not CONFIG_SMP
     harness: console
     extra_configs:
       - CONFIG_ZBUS_LOG_LEVEL_DBG=y
@@ -385,6 +386,7 @@ tests:
     integration_platforms:
       - qemu_x86
   sample.zbus.msg_subscriber_static_isolated_too_small:
+    filter: not CONFIG_SMP
     harness: console
     extra_configs:
       - CONFIG_ZBUS_LOG_LEVEL_DBG=y
