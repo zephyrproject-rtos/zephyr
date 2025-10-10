@@ -11,6 +11,12 @@ common:
     - qemu_riscv64
   min_flash: 64
   min_ram: 32
+  # FVP SMP has unresolved issues
+  platform_exclude:
+    - fvp_base_revc_2xaem/v8a/smp
+    - fvp_base_revc_2xaem/v8a/smp/ns
+    - fvp_base_revc_2xaem/v9a/smp
+    - fvp_base_revc_2xaem/v9a/smp/ns
 tests:
   portability.posix.xsi_streams: {}
   portability.posix.xsi_streams.minimal:

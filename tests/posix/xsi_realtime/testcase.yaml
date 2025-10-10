@@ -18,6 +18,11 @@ common:
     - qemu_xtensa/dc233c
     - native_sim
     - native_sim/native/64
+    # FVP SMP has unresolved issues
+    - fvp_base_revc_2xaem/v8a/smp
+    - fvp_base_revc_2xaem/v8a/smp/ns
+    - fvp_base_revc_2xaem/v9a/smp
+    - fvp_base_revc_2xaem/v9a/smp/ns
 tests:
   portability.posix.xsi_realtime: {}
   portability.posix.xsi_realtime.minimal:

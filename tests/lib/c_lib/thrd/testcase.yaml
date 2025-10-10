@@ -9,6 +9,12 @@ common:
   platform_key:
     - arch
     - simulation
+  # FVP SMP has unresolved issues
+  platform_exclude:
+    - fvp_base_revc_2xaem/v8a/smp
+    - fvp_base_revc_2xaem/v8a/smp/ns
+    - fvp_base_revc_2xaem/v9a/smp
+    - fvp_base_revc_2xaem/v9a/smp/ns
 tests:
   libraries.libc.c11_threads.minimal:
     tags: minimal_libc
