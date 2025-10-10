@@ -28,7 +28,7 @@
 			compatible = "st,stm32-uart";
 			reg = <0x40004c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 19)>;
-			resets = <&rctl STM32_RESET(APB1, 19U)>;
+			resets = <&rctl STM32_RESET(APB1, 19)>;
 			interrupts = <52 0>;
 			status = "disabled";
 		};
@@ -37,7 +37,7 @@
 			compatible = "st,stm32-uart";
 			reg = <0x40005000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 20)>;
-			resets = <&rctl STM32_RESET(APB1, 20U)>;
+			resets = <&rctl STM32_RESET(APB1, 20)>;
 			interrupts = <53 0>;
 			status = "disabled";
 		};
@@ -47,7 +47,7 @@
 			reg = <0x40000c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 3)>,
 				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
-			resets = <&rctl STM32_RESET(APB1, 3U)>;
+			resets = <&rctl STM32_RESET(APB1, 3)>;
 			interrupts = <50 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -71,7 +71,7 @@
 			reg = <0x40001000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 4)>,
 				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
-			resets = <&rctl STM32_RESET(APB1, 4U)>;
+			resets = <&rctl STM32_RESET(APB1, 4)>;
 			interrupts = <54 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -83,7 +83,7 @@
 			reg = <0x40001400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 5)>,
 				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
-			resets = <&rctl STM32_RESET(APB1, 5U)>;
+			resets = <&rctl STM32_RESET(APB1, 5)>;
 			interrupts = <55 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -161,7 +161,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40013400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 13)>;
-			resets = <&rctl STM32_RESET(APB2, 13U)>;
+			resets = <&rctl STM32_RESET(APB2, 13)>;
 			interrupts = <43 0>, <44 0>, <45 0>, <46 0>;
 			interrupt-names = "brk", "up", "trgcom", "cc";
 			st,prescaler = <0>;
