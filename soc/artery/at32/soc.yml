@@ -1,0 +1,7 @@
+family:
+- name: at32
+  series:
+  - name: at32f402_405
+    socs:
+    - name: at32f405
+    - name: at32f402
