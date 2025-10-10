@@ -9,16 +9,24 @@ import os
 import sys
 import time
 from collections import defaultdict
+from pathlib import Path
 
+import yaml
 from github import Auth, Github, GithubException
 from github.GithubException import UnknownObjectException
 from west.manifest import Manifest, ManifestProject
 
 TOP_DIR = os.path.join(os.path.dirname(__file__))
-sys.path.insert(0, os.path.join(TOP_DIR, "scripts"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from get_maintainer import Maintainers  # noqa: E402
 
-zephyr_base = os.getenv('ZEPHYR_BASE', os.path.join(TOP_DIR, '..'))
+ZEPHYR_BASE = os.environ.get('ZEPHYR_BASE')
+if ZEPHYR_BASE:
+    ZEPHYR_BASE = Path(ZEPHYR_BASE)
+else:
+    ZEPHYR_BASE = Path(__file__).resolve().parents[2]
+    # Propagate this decision to child processes.
+    os.environ['ZEPHYR_BASE'] = str(ZEPHYR_BASE)
 
 
 def log(s):
@@ -71,10 +79,22 @@ def parse_args():
         help="Updated manifest file to compare against current west.yml",
     )
 
+    parser.add_argument(
+        "--updated-maintainer-file",
+        default=None,
+        help="Updated maintainer file to compare against current MAINTAINERS.yml",
+    )
+
     parser.add_argument("-v", "--verbose", action="count", default=0, help="Verbose Output")
 
     args = parser.parse_args()
 
+def load_areas(filename: str):
+    with open(filename) as f:
+        doc = yaml.safe_load(f)
+    return {
+        k: v for k, v in doc.items() if isinstance(v, dict) and ("files" in v or "files-regex" in v)
+    }
 
 def process_manifest(old_manifest_file):
     log("Processing manifest changes")
@@ -104,6 +124,93 @@ def process_manifest(old_manifest_file):
     log(f'manifest areas: {areas}')
     return areas
 
+def set_or_empty(d, key):
+    return set(d.get(key, []) or [])
+
+def compare_areas(old, new, repo_fullname=None, token=None):
+    old_areas = set(old.keys())
+    new_areas = set(new.keys())
+
+    changed_areas = set()
+    added_areas = new_areas - old_areas
+    removed_areas = old_areas - new_areas
+    common_areas = old_areas & new_areas
+
+    print("=== Areas Added ===")
+    for area in sorted(added_areas):
+        print(f"+ {area}")
+
+    print("\n=== Areas Removed ===")
+    for area in sorted(removed_areas):
+        print(f"- {area}")
+
+    print("\n=== Area Changes ===")
+    for area in sorted(common_areas):
+        changes = []
+        old_entry = old[area]
+        new_entry = new[area]
+
+        # Compare maintainers
+        old_maint = set_or_empty(old_entry, "maintainers")
+        new_maint = set_or_empty(new_entry, "maintainers")
+        added_maint = new_maint - old_maint
+        removed_maint = old_maint - new_maint
+        if added_maint:
+            changes.append(f"  Maintainers added: {', '.join(sorted(added_maint))}")
+        if removed_maint:
+            changes.append(f"  Maintainers removed: {', '.join(sorted(removed_maint))}")
+
+        # Compare collaborators
+        old_collab = set_or_empty(old_entry, "collaborators")
+        new_collab = set_or_empty(new_entry, "collaborators")
+        added_collab = new_collab - old_collab
+        removed_collab = old_collab - new_collab
+        if added_collab:
+            changes.append(f"  Collaborators added: {', '.join(sorted(added_collab))}")
+        if removed_collab:
+            changes.append(f"  Collaborators removed: {', '.join(sorted(removed_collab))}")
+
+        # Compare status
+        old_status = old_entry.get("status")
+        new_status = new_entry.get("status")
+        if old_status != new_status:
+            changes.append(f"  Status changed: {old_status} -> {new_status}")
+
+        # Compare labels
+        old_labels = set_or_empty(old_entry, "labels")
+        new_labels = set_or_empty(new_entry, "labels")
+        added_labels = new_labels - old_labels
+        removed_labels = old_labels - new_labels
+        if added_labels:
+            changes.append(f"  Labels added: {', '.join(sorted(added_labels))}")
+        if removed_labels:
+            changes.append(f"  Labels removed: {', '.join(sorted(removed_labels))}")
+
+        # Compare files
+        old_files = set_or_empty(old_entry, "files")
+        new_files = set_or_empty(new_entry, "files")
+        added_files = new_files - old_files
+        removed_files = old_files - new_files
+        if added_files:
+            changes.append(f"  Files added: {', '.join(sorted(added_files))}")
+        if removed_files:
+            changes.append(f"  Files removed: {', '.join(sorted(removed_files))}")
+
+        # Compare files-regex
+        old_regex = set_or_empty(old_entry, "files-regex")
+        new_regex = set_or_empty(new_entry, "files-regex")
+        added_regex = new_regex - old_regex
+        removed_regex = old_regex - new_regex
+        if added_regex:
+            changes.append(f"  files-regex added: {', '.join(sorted(added_regex))}")
+        if removed_regex:
+            changes.append(f"  files-regex removed: {', '.join(sorted(removed_regex))}")
+
+        if changes:
+            changed_areas.add(area)
+            print(f"area changed: {area}")
+
+    return added_areas | removed_areas | changed_areas
 
 def process_pr(gh, maintainer_file, number):
     gh_repo = gh.get_repo(f"{args.org}/{args.repo}")
@@ -128,6 +235,7 @@ def process_pr(gh, maintainer_file, number):
     # areas where assignment happens if only said areas are affected
     meta_areas = ['Release Notes', 'Documentation', 'Samples', 'Tests']
 
+    additional_reviews = set()
     for changed_file in fn:
         num_files += 1
         log(f"file: {changed_file.filename}")
@@ -142,6 +250,22 @@ def process_pr(gh, maintainer_file, number):
                 area_match = maintainer_file.name2areas(_area)
                 if area_match:
                     areas.extend(area_match)
+        elif changed_file.filename in ['MAINTAINERS.yml']:
+            areas = maintainer_file.path2areas(changed_file.filename)
+            if args.updated_maintainer_file:
+                log(
+                    "No updated maintainer file, cannot process MAINTAINERS.yml changes, skipping..."
+                )
+
+                old_areas = load_areas(args.updated_maintainer_file)
+                new_areas = load_areas('MAINTAINERS.yml')
+                changed_areas = compare_areas(old_areas, new_areas)
+                for _area in changed_areas:
+                    area_match = maintainer_file.name2areas(_area)
+                    if area_match:
+                        # get list of maintainers for changed area
+                        additional_reviews.update(maintainer_file.areas[_area].maintainers)
+                log(f"MAINTAINERS.yml changed, adding reviewrs: {additional_reviews}")
         else:
             areas = maintainer_file.path2areas(changed_file.filename)
 
@@ -183,6 +307,8 @@ def process_pr(gh, maintainer_file, number):
         collab += maintainer_file.areas[area.name].maintainers
         collab += maintainer_file.areas[area.name].collaborators
     collab = list(dict.fromkeys(collab))
+    # add more reviewers based on maintainer file changes.
+    collab += list(additional_reviews)
     log(f"collab: {collab}")
 
     _all_maintainers = dict(

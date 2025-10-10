@@ -63,7 +63,7 @@ jobs:
         FLAGS+=" -r ${{ github.event.repository.name }}"
         FLAGS+=" -M MAINTAINERS.yml"
         if [ "${{ github.event_name }}" = "pull_request_target" ]; then
-          FLAGS+=" -P ${{ github.event.pull_request.number }} --updated-manifest pr_west.yml"
+          FLAGS+=" -P ${{ github.event.pull_request.number }} --updated-manifest pr_west.yml --updated-mantainer-file pr_MAINTAINERS.yml"
         elif [ "${{ github.event_name }}" = "issues" ]; then
           FLAGS+=" -I ${{ github.event.issue.number }}"
         elif [ "${{ github.event_name }}" = "schedule" ]; then
