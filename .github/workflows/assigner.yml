@@ -38,12 +38,13 @@ jobs:
       with:
         python-version: 3.12
 
-    - name: Fetch west.yml from pull request
+    - name: Fetch west.yml/Maintainer.yml from pull request
       if: >
         github.event_name == 'pull_request_target'
       run: |
         git fetch origin pull/${{ github.event.pull_request.number }}/merge
         git show FETCH_HEAD:west.yml > pr_west.yml
+        git show FETCH_HEAD:MAINTAINERS.yml > pr_MAINTAINERS.yml
 
     - name: west setup
       if: >
@@ -72,3 +73,12 @@ jobs:
           exit 1
         fi
         python3 scripts/set_assignees.py $FLAGS
+
+    - name: Check maintainer file changes
+      if: >
+        github.event_name == 'pull_request_target'
+      env:
+        GITHUB_TOKEN: ${{ secrets.ZB_PR_ASSIGNER_GITHUB_TOKEN }}
+      run: |
+        python  ./scripts/ci/check_maintainer_changes.py  \
+          --repo zephyrproject-rtos/zephyr MAINTAINERS.yml pr_MAINTAINERS.yml
