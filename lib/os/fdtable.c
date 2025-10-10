@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018 Linaro Limited
  * Copyright (c) 2024 Tenstorrent AI ULC
+ * Copyright (c) 2025 Antmicro
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,8 +24,9 @@
 #include <zephyr/sys/speculation.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/fs/fs.h>
 
-struct stat;
+K_MEM_SLAB_DEFINE(file_desc_slab, sizeof(struct fs_file_t), ZVFS_OPEN_SIZE, 4);
 
 struct fd_entry {
 	void *obj;
@@ -72,6 +74,46 @@ static struct fd_entry fdtable[ZVFS_OPEN_SIZE] = {
 	{0},
 #endif
 };
+
+int zvfs_open(const char *name, int flags, struct fd_op_vtable *vtable)
+{
+	int rc, fd;
+	struct fs_file_t *ptr = NULL;
+
+	fd = zvfs_reserve_fd();
+	if (fd < 0) {
+		return -1;
+	}
+
+	rc = k_mem_slab_alloc(&file_desc_slab, (void **)&ptr, K_NO_WAIT);
+	if (rc < 0) {
+		rc = -EMFILE;
+		goto out_err;
+	}
+
+	fs_file_t_init(ptr);
+
+	rc = fs_open(ptr, name, flags);
+	if (rc < 0) {
+		goto out_err;
+	}
+
+	zvfs_finalize_fd(fd, ptr, vtable);
+
+	goto out;
+
+out_err:
+	if (ptr != NULL) {
+		k_mem_slab_free(&file_desc_slab, ptr);
+	}
+
+	zvfs_free_fd(fd);
+	errno = -rc;
+	return -1;
+
+out:
+	return fd;
+}
 
 static K_MUTEX_DEFINE(fdtable_lock);
 
@@ -432,7 +474,7 @@ int zvfs_fileno(FILE *file)
 	return (struct fd_entry *)file - fdtable;
 }
 
-int zvfs_fstat(int fd, struct stat *buf)
+int zvfs_fstat(int fd, struct zvfs_stat *buf)
 {
 	if (_check_fd(fd) < 0) {
 		return -1;
@@ -535,6 +577,27 @@ int zvfs_ioctl(int fd, unsigned long request, va_list args)
 	return fdtable[fd].vtable->ioctl(fdtable[fd].obj, request, args);
 }
 
+int zvfs_unlink(const char *path)
+{
+	int res = fs_unlink(path);
+
+	if (res < 0) {
+		errno = -res;
+		return -1;
+	}
+	return 0;
+}
+
+int zvfs_rename(const char *old, const char *newp)
+{
+	int res = fs_rename(old, newp);
+
+	if (res < 0) {
+		errno = -res;
+		return -1;
+	}
+	return 0;
+}
 
 #if defined(CONFIG_POSIX_DEVICE_IO)
 /*
