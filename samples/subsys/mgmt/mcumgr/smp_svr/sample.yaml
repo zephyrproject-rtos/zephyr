@@ -38,7 +38,7 @@ tests:
     integration_platforms:
       - frdm_k64f
   sample.mcumgr.smp_svr.udp.802154.subg:
-    extra_args: EXTRA_CONF_FILE="overlay-udp.conf;802154-subg.conf"
+    extra_args: EXTRA_CONF_FILE="udp.conf;802154-subg.conf"
     platform_allow: beagleconnect_freedom
   sample.mcumgr.smp_svr.cdc:
     extra_args:
