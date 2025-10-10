@@ -308,7 +308,7 @@
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40013800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 14)>;
-			resets = <&rctl STM32_RESET(APB2, 14U)>;
+			resets = <&rctl STM32_RESET(APB2, 14)>;
 			interrupts = <46 0>;
 			status = "disabled";
 		};
@@ -317,7 +317,7 @@
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40004400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 17)>;
-			resets = <&rctl STM32_RESET(APB1L, 17U)>;
+			resets = <&rctl STM32_RESET(APB1L, 17)>;
 			interrupts = <47 0>;
 			status = "disabled";
 		};
@@ -326,7 +326,7 @@
 			compatible = "st,stm32-lpuart", "st,stm32-uart";
 			reg = <0x46002400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB7, 6)>;
-			resets = <&rctl STM32_RESET(APB7, 6U)>;
+			resets = <&rctl STM32_RESET(APB7, 6)>;
 			interrupts = <48 0>;
 			status = "disabled";
 		};
@@ -380,7 +380,7 @@
 			reg = <0x40012c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 11)>,
 				 <&rcc STM32_SRC_TIMPCLK2 NO_SEL>;
-			resets = <&rctl STM32_RESET(APB2, 11U)>;
+			resets = <&rctl STM32_RESET(APB2, 11)>;
 			interrupts = <37 0>, <38 0>, <39 0>, <40 0>;
 			interrupt-names = "brk", "up", "trgcom", "cc";
 			st,prescaler = <0>;
@@ -403,7 +403,7 @@
 			reg = <0x40000000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 0)>,
 				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
-			resets = <&rctl STM32_RESET(APB1L, 0U)>;
+			resets = <&rctl STM32_RESET(APB1L, 0)>;
 			interrupts = <41 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -426,7 +426,7 @@
 			reg = <0x40000400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 1)>,
 				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
-			resets = <&rctl STM32_RESET(APB1L, 1U)>;
+			resets = <&rctl STM32_RESET(APB1L, 1)>;
 			interrupts = <42 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -449,7 +449,7 @@
 			reg = <0x40014400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 17)>,
 				 <&rcc STM32_SRC_TIMPCLK2 NO_SEL>;
-			resets = <&rctl STM32_RESET(APB2, 17U)>;
+			resets = <&rctl STM32_RESET(APB2, 17)>;
 			interrupts = <51 0>;
 			interrupt-names = "global";
 			status = "disabled";
@@ -471,7 +471,7 @@
 			reg = <0x40014800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 18)>,
 				 <&rcc STM32_SRC_TIMPCLK2 NO_SEL>;
-			resets = <&rctl STM32_RESET(APB2, 18U)>;
+			resets = <&rctl STM32_RESET(APB2, 18)>;
 			interrupts = <52 0>;
 			interrupt-names = "global";
 			status = "disabled";
