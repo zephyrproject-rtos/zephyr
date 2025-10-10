@@ -136,3 +136,9 @@
 &wdt {
 	status = "okay";
 };
+
+&spi1 {
+	status = "okay";
+       pinctrl-0 = <&spi1_default>;
+       pinctrl-names = "default";
+};

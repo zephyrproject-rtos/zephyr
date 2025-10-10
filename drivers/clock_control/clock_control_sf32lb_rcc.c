@@ -20,6 +20,8 @@
 
 #define PMUC_HXT_CR1 offsetof(PMUC_TypeDef, HXT_CR1)
 
+#define HPSYS_RCC_ENR1   offsetof(HPSYS_RCC_TypeDef, ENR1)
+#define HPSYS_RCC_ENR2   offsetof(HPSYS_RCC_TypeDef, ENR2)
 #define HPSYS_RCC_CSR    offsetof(HPSYS_RCC_TypeDef, CSR)
 #define HPSYS_RCC_CFGR   offsetof(HPSYS_RCC_TypeDef, CFGR)
 #define HPSYS_RCC_DLL1CR offsetof(HPSYS_RCC_TypeDef, DLL1CR)
@@ -170,6 +172,9 @@ static int clock_control_sf32lb_rcc_init(const struct device *dev)
 	       FIELD_PREP(HPSYS_RCC_CFGR_PDIV1_Msk, config->pdiv1) |
 	       FIELD_PREP(HPSYS_RCC_CFGR_PDIV2_Msk, config->pdiv2);
 	sys_write32(val, config->base + HPSYS_RCC_CFGR);
+
+	//sys_write32(0, config->base + HPSYS_RCC_ENR1);
+	//sys_write32(0, config->base + HPSYS_RCC_ENR2);
 
 	return 0;
 }
