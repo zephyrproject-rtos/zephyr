@@ -9,6 +9,9 @@
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/clock_control/sf32lb.h>
 #include <zephyr/drivers/pinctrl.h>
+#ifdef CONFIG_SPI_SF32LB_DMA
+#include <zephyr/drivers/dma/sf32lb.h>
+#endif
 #include <zephyr/logging/log.h>
 
 #include <register.h>
@@ -30,6 +33,20 @@ LOG_MODULE_REGISTER(spi_sf32lb, CONFIG_SPI_LOG_LEVEL);
 
 #define SPI_MAX_BUSY_WAIT_US 1000U
 
+#ifdef CONFIG_SPI_SF32LB_DMA
+/* DMA status flags */
+#define SPI_SF32LB_DMA_TX_DONE_FLAG (BIT(0))
+#define SPI_SF32LB_DMA_RX_DONE_FLAG (BIT(1))
+#define SPI_SF32LB_DMA_ERROR_FLAG   (BIT(2))
+#endif
+
+#ifdef CONFIG_SPI_SF32LB_DMA
+struct dma_stream {
+	struct dma_config dma_cfg;
+	struct dma_block_config dma_blk_cfg;
+};
+#endif
+
 struct spi_sf32lb_config {
 	uintptr_t base;
 	struct sf32lb_clock_dt_spec clock;
@@ -37,10 +54,20 @@ struct spi_sf32lb_config {
 #ifdef CONFIG_SPI_ASYNC
 	void (*irq_config_func)(void);
 #endif
+#ifdef CONFIG_SPI_SF32LB_DMA
+	struct sf32lb_dma_dt_spec tx_dma;
+	struct sf32lb_dma_dt_spec rx_dma;
+#endif
 };
 
 struct spi_sf32lb_data {
 	struct spi_context ctx;
+#ifdef CONFIG_SPI_SF32LB_DMA
+	struct dma_stream dma_rx;
+	struct dma_stream dma_tx;
+	struct k_sem status_sem;
+	uint32_t dma_status_flags;
+#endif
 };
 
 static bool spi_sf32lb_transfer_ongoing(struct spi_sf32lb_data *data)
@@ -194,6 +221,229 @@ static int spi_sf32lb_configure(const struct device *dev, const struct spi_confi
 	return ret;
 }
 
+#ifdef CONFIG_SPI_SF32LB_DMA
+static void spi_sf32lb_dma_done(const struct device *dev, void *arg, uint32_t channel, int status)
+{
+	const struct device *spi_dev = arg;
+	const struct spi_sf32lb_config *cfg = spi_dev->config;
+	struct spi_sf32lb_data *data = spi_dev->data;
+
+	if (status < 0) {
+		LOG_ERR("DMA callback error with channel %d, status %d", channel, status);
+		data->dma_status_flags |= SPI_SF32LB_DMA_ERROR_FLAG;
+	} else {
+		if (channel == cfg->tx_dma.channel) {
+			data->dma_status_flags |= SPI_SF32LB_DMA_TX_DONE_FLAG;
+			sf32lb_dma_stop_dt(&cfg->tx_dma);
+		} else if (channel == cfg->rx_dma.channel) {
+			data->dma_status_flags |= SPI_SF32LB_DMA_RX_DONE_FLAG;
+			sf32lb_dma_stop_dt(&cfg->rx_dma);
+		} else {
+			LOG_ERR("Unknown DMA channel %d", channel);
+			return;
+		}
+	}
+
+	/* Check if all DMA transfers are completed */
+	if ((data->dma_status_flags &
+	     (SPI_SF32LB_DMA_TX_DONE_FLAG | SPI_SF32LB_DMA_RX_DONE_FLAG)) ==
+	    (SPI_SF32LB_DMA_TX_DONE_FLAG | SPI_SF32LB_DMA_RX_DONE_FLAG)) {
+		k_sem_give(&data->status_sem);
+	}
+}
+
+static int wait_dma_rx_tx_done(const struct device *dev)
+{
+	struct spi_sf32lb_data *data = dev->data;
+	int ret;
+
+	/* Wait for DMA transfer completion with timeout */
+	ret = k_sem_take(&data->status_sem, K_MSEC(SPI_MAX_BUSY_WAIT_US));
+	if (ret < 0) {
+		LOG_ERR("DMA transfer timed out");
+		return -ETIMEDOUT;
+	}
+
+	/* Check DMA transfer status */
+	if (data->dma_status_flags & SPI_SF32LB_DMA_ERROR_FLAG) {
+		LOG_ERR("DMA transfer error");
+		ret = -EIO;
+	}
+
+	/* Reset DMA status flags for next transfer */
+	data->dma_status_flags = 0;
+
+	return ret;
+}
+
+static int spi_sf32lb_dma_tx_load(const struct device *dev, const uint8_t *tx_buf, size_t len)
+{
+	const struct spi_sf32lb_config *cfg = dev->config;
+	struct spi_sf32lb_data *data = dev->data;
+	struct dma_config *tx_dma_cfg = &data->dma_tx.dma_cfg;
+	struct dma_block_config *tx_dma_blk = &data->dma_tx.dma_blk_cfg;
+	int ret;
+
+	sf32lb_dma_config_init_dt(&cfg->tx_dma, tx_dma_cfg);
+
+	tx_dma_cfg->channel_direction = MEMORY_TO_PERIPHERAL;
+	tx_dma_cfg->block_count = 1U;
+	tx_dma_cfg->complete_callback_en = true;
+	tx_dma_cfg->dma_callback = spi_sf32lb_dma_done;
+	tx_dma_cfg->user_data = dev;
+
+	tx_dma_cfg->head_block = tx_dma_blk;
+
+	tx_dma_blk->source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+	tx_dma_blk->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+	tx_dma_blk->block_size = len;
+	tx_dma_blk->source_address = (uint32_t)tx_buf;
+	tx_dma_blk->dest_address = (uint32_t)(cfg->base + SPI_DATA);
+
+	ret = sf32lb_dma_config_dt(&cfg->tx_dma, tx_dma_cfg);
+	if (ret < 0) {
+		LOG_ERR("Error configuring TX DMA (%d)", ret);
+		return ret;
+	}
+
+	ret = sf32lb_dma_start_dt(&cfg->tx_dma);
+	if (ret < 0) {
+		LOG_ERR("Error starting TX DMA (%d)", ret);
+		return ret;
+	}
+
+	return ret;
+}
+
+static int spi_sf32lb_dma_rx_load(const struct device *dev, uint8_t *rx_buf, size_t len)
+{
+	const struct spi_sf32lb_config *cfg = dev->config;
+	struct spi_sf32lb_data *data = dev->data;
+	struct dma_config *rx_dma_cfg = &data->dma_rx.dma_cfg;
+	struct dma_block_config *rx_dma_blk = &data->dma_rx.dma_blk_cfg;
+	int ret;
+
+	sf32lb_dma_config_init_dt(&cfg->rx_dma, rx_dma_cfg);
+
+	rx_dma_cfg->channel_direction = PERIPHERAL_TO_MEMORY;
+	rx_dma_cfg->block_count = 1U;
+	rx_dma_cfg->complete_callback_en = true;
+	rx_dma_cfg->dma_callback = spi_sf32lb_dma_done;
+	rx_dma_cfg->user_data = dev;
+
+	rx_dma_cfg->head_block = rx_dma_blk;
+
+	rx_dma_blk->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+	rx_dma_blk->dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+	rx_dma_blk->block_size = len;
+	rx_dma_blk->source_address = (uint32_t)(cfg->base + SPI_DATA);
+	rx_dma_blk->dest_address = (uint32_t)rx_buf;
+
+	ret = sf32lb_dma_config_dt(&cfg->rx_dma, rx_dma_cfg);
+	if (ret < 0) {
+		LOG_ERR("Error configuring RX DMA (%d)", ret);
+		return ret;
+	}
+
+	ret = sf32lb_dma_start_dt(&cfg->rx_dma);
+	if (ret < 0) {
+		LOG_ERR("Error starting RX DMA (%d)", ret);
+		return ret;
+	}
+
+	return ret;
+}
+
+static int spi_sf32lb_transceive_dma_chunk(const struct device *dev, size_t len)
+{
+	struct spi_sf32lb_data *data = dev->data;
+	int ret;
+
+	ret = spi_sf32lb_dma_tx_load(dev, data->ctx.tx_buf, len);
+	if (ret < 0) {
+		LOG_ERR("Error loading TX DMA (%d)", ret);
+		return ret;
+	}
+
+	ret = spi_sf32lb_dma_rx_load(dev, data->ctx.rx_buf, len);
+	if (ret < 0) {
+		LOG_ERR("Error loading RX DMA (%d)", ret);
+		return ret;
+	}
+
+	return ret;
+}
+
+static int spi_sf32lb_transceive_dma(const struct device *dev, const struct spi_config *config,
+				     const struct spi_buf_set *tx_bufs,
+				     const struct spi_buf_set *rx_bufs)
+{
+	const struct spi_sf32lb_config *cfg = dev->config;
+	struct spi_sf32lb_data *data = dev->data;
+	struct dma_config *rx_dma_cfg = &data->dma_rx.dma_cfg;
+	struct dma_config *tx_dma_cfg = &data->dma_tx.dma_cfg;
+	uint8_t dfs;
+	uint32_t fifo_ctrl;
+	size_t chunk_len;
+	int ret;
+
+	dfs = SPI_WORD_SIZE_GET(config->operation) >> 3;
+
+	rx_dma_cfg->source_data_size = dfs;
+	rx_dma_cfg->dest_data_size = dfs;
+	tx_dma_cfg->source_data_size = dfs;
+	tx_dma_cfg->dest_data_size = dfs;
+
+	spi_context_lock(&data->ctx, false, NULL, NULL, config);
+
+	spi_sf32lb_configure(dev, config);
+
+	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, dfs);
+
+	sys_clear_bits(cfg->base + SPI_INTE, SPI_INTE_TIE | SPI_INTE_RIE | SPI_INTE_EBCEI |
+						     SPI_INTE_TINTE | SPI_INTE_PINTE);
+
+	if (sys_test_bit(cfg->base + SPI_TOP_CTRL, SPI_TOP_CTRL_SSE_Pos)) {
+		sys_clear_bit(cfg->base + SPI_TOP_CTRL, SPI_TOP_CTRL_SSE_Pos);
+	}
+
+	fifo_ctrl = sys_read32(cfg->base + SPI_FIFO_CTRL);
+	fifo_ctrl |= (SPI_FIFO_CTRL_RSRE | SPI_FIFO_CTRL_TSRE);
+	sys_write32(fifo_ctrl, cfg->base + SPI_FIFO_CTRL);
+
+	if (!sys_test_bit(cfg->base + SPI_TOP_CTRL, SPI_TOP_CTRL_SSE_Pos)) {
+		sys_set_bit(cfg->base + SPI_TOP_CTRL, SPI_TOP_CTRL_SSE_Pos);
+	}
+
+	spi_context_cs_control(&data->ctx, true);
+
+	while (data->ctx.rx_len > 0 || data->ctx.tx_len > 0) {
+		chunk_len = spi_context_max_continuous_chunk(&data->ctx);
+
+		/* Reset DMA status flags for new transfer */
+		data->dma_status_flags = 0;
+
+		ret = spi_sf32lb_transceive_dma_chunk(dev, chunk_len);
+		if (ret < 0) {
+			break;
+		}
+
+		ret = wait_dma_rx_tx_done(dev);
+		if (ret != 0) {
+			break;
+		}
+
+		spi_context_update_tx(&data->ctx, dfs, chunk_len);
+		spi_context_update_rx(&data->ctx, dfs, chunk_len);
+	}
+
+	spi_context_cs_control(&data->ctx, false);
+
+	spi_context_release(&data->ctx, ret);
+
+	return ret;
+}
+#else
 static void spi_sf32lb_flush_rx_fifo(const struct device *dev)
 {
 	const struct spi_sf32lb_config *cfg = dev->config;
@@ -219,7 +469,7 @@ static int spi_sf32lb_wait_not_busy(const struct device *dev)
 	const struct spi_sf32lb_config *cfg = dev->config;
 
 	if (!WAIT_FOR(!sys_test_bit(cfg->base + SPI_STATUS, SPI_STATUS_BSY_Pos),
-		SPI_MAX_BUSY_WAIT_US, NULL)) {
+		      SPI_MAX_BUSY_WAIT_US, NULL)) {
 		return -ETIMEDOUT;
 	}
 
@@ -276,7 +526,7 @@ static int spi_sf32lb_shift_rx(const struct device *dev)
 	uint16_t rx_frame = 0;
 
 	if (!spi_context_tx_buf_on(ctx) &&
-		sys_test_bit(cfg->base + SPI_STATUS, SPI_STATUS_TNF_Pos)) {
+	    sys_test_bit(cfg->base + SPI_STATUS, SPI_STATUS_TNF_Pos)) {
 		if (SPI_WORD_SIZE_GET(ctx->config->operation) == 8) {
 			sys_write8(0U, cfg->base + SPI_DATA);
 		} else if (SPI_WORD_SIZE_GET(ctx->config->operation) == 16) {
@@ -352,18 +602,14 @@ static int spi_sf32lb_frame_exchange(const struct device *dev)
 	return ret;
 }
 
-static int spi_sf32lb_transceive(const struct device *dev, const struct spi_config *config,
-				 const struct spi_buf_set *tx_bufs,
-				 const struct spi_buf_set *rx_bufs)
+static int spi_sf32lb_transceive_poll(const struct device *dev, const struct spi_config *config,
+				      const struct spi_buf_set *tx_bufs,
+				      const struct spi_buf_set *rx_bufs)
 {
 	const struct spi_sf32lb_config *cfg = dev->config;
 	struct spi_sf32lb_data *data = dev->data;
 	uint8_t dfs;
 	int ret;
-
-	if (tx_bufs == NULL && rx_bufs == NULL) {
-		return 0;
-	}
 
 	spi_context_lock(&data->ctx, false, NULL, NULL, config);
 
@@ -403,6 +649,22 @@ static int spi_sf32lb_transceive(const struct device *dev, const struct spi_conf
 	spi_context_release(&data->ctx, ret);
 
 	return ret;
+}
+#endif /* CONFIG_SPI_SF32LB_DMA */
+
+static int spi_sf32lb_transceive(const struct device *dev, const struct spi_config *config,
+				 const struct spi_buf_set *tx_bufs,
+				 const struct spi_buf_set *rx_bufs)
+{
+	if (tx_bufs == NULL && rx_bufs == NULL) {
+		return 0;
+	}
+
+#ifdef CONFIG_SPI_SF32LB_DMA
+	return spi_sf32lb_transceive_dma(dev, config, tx_bufs, rx_bufs);
+#else
+	return spi_sf32lb_transceive_poll(dev, config, tx_bufs, rx_bufs);
+#endif
 }
 
 #ifdef CONFIG_SPI_ASYNC
@@ -480,6 +742,20 @@ static int spi_sf32lb_init(const struct device *dev)
 	struct spi_sf32lb_data *data = dev->data;
 	int err;
 
+#ifdef CONFIG_SPI_SF32LB_DMA
+	if (!sf32lb_dma_is_ready_dt(&cfg->tx_dma)) {
+		LOG_ERR("TX DMA device not ready");
+		return -ENODEV;
+	}
+
+	if (!sf32lb_dma_is_ready_dt(&cfg->rx_dma)) {
+		LOG_ERR("RX DMA device not ready");
+		return -ENODEV;
+	}
+
+	k_sem_init(&data->status_sem, 0, 1);
+#endif
+
 	if (!sf32lb_clock_is_ready_dt(&cfg->clock)) {
 		LOG_ERR("Clock control device not ready");
 		return -ENODEV;
@@ -525,6 +801,9 @@ static int spi_sf32lb_init(const struct device *dev)
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		IF_ENABLED(CONFIG_SPI_ASYNC,                                                       \
 			(.irq_config_func = spi_sf32lb_irq_config_func_##n,))                      \
+		IF_ENABLED(CONFIG_SPI_SF32LB_DMA,                                                  \
+			(.tx_dma = SF32LB_DMA_DT_INST_SPEC_GET_BY_NAME(n, tx),                     \
+			.rx_dma = SF32LB_DMA_DT_INST_SPEC_GET_BY_NAME(n, rx),))                    \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, spi_sf32lb_init, NULL, &spi_sf32lb_data_##n,                      \
 			      &spi_sf32lb_config_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,       \
