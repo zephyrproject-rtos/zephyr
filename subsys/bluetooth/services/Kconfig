@@ -10,6 +10,8 @@ rsource "Kconfig.dis"
 
 rsource "Kconfig.cts"
 
+rsource "Kconfig.ets"
+
 rsource "Kconfig.hrs"
 
 rsource "Kconfig.tps"
