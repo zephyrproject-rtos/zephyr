@@ -48,21 +48,21 @@ int adxl345_set_gpios_en(const struct device *dev, bool en)
 static void adxl345_thread_cb(const struct device *dev)
 {
 	struct adxl345_dev_data *drv_data = dev->data;
-	uint8_t status1;
+	uint8_t status;
 	int ret;
 
 	/* Clear the status */
-	if (adxl345_get_status(dev, &status1) < 0) {
+	if (adxl345_get_status(dev, &status) < 0) {
 		return;
 	}
 
 	if ((drv_data->drdy_handler != NULL) &&
-		ADXL345_STATUS_DATA_RDY(status1)) {
+		ADXL345_STATUS_DATA_RDY(status)) {
 		drv_data->drdy_handler(dev, drv_data->drdy_trigger);
 	}
 
 	if ((drv_data->act_handler != NULL) &&
-		ADXL345_STATUS_ACTIVITY(status1)) {
+		ADXL345_STATUS_ACTIVITY(status)) {
 		drv_data->act_handler(dev, drv_data->act_trigger);
 	}
 
