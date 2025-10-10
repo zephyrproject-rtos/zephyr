@@ -361,6 +361,7 @@ static int stm32_sdmmc_access_init(struct disk_info *disk)
 {
 	const struct device *dev = disk->dev;
 	struct stm32_sdmmc_priv *priv = dev->data;
+	HAL_StatusTypeDef hal_ret;
 	int err;
 
 	err = stm32_sdmmc_pwr_on(priv);
@@ -412,11 +413,11 @@ static int stm32_sdmmc_access_init(struct disk_info *disk)
 	}
 
 #ifdef CONFIG_SDMMC_STM32_EMMC
-	err = HAL_MMC_Init(&priv->hsd);
+	hal_ret = HAL_MMC_Init(&priv->hsd);
 #else
-	err = HAL_SD_Init(&priv->hsd);
+	hal_ret = HAL_SD_Init(&priv->hsd);
 #endif
-	if (err != HAL_OK) {
+	if (hal_ret != HAL_OK) {
 		LOG_ERR("failed to init stm32_sdmmc (ErrorCode 0x%X)", priv->hsd.ErrorCode);
 		err = -EIO;
 		goto error;
@@ -424,8 +425,8 @@ static int stm32_sdmmc_access_init(struct disk_info *disk)
 
 	if (SDMMC_BUS_WIDTH != SDMMC_BUS_WIDE_1B) {
 		priv->hsd.Init.BusWide = SDMMC_BUS_WIDTH;
-		err = HAL_SD_ConfigWideBusOperation(&priv->hsd, priv->hsd.Init.BusWide);
-		if (err != HAL_OK) {
+		hal_ret = HAL_SD_ConfigWideBusOperation(&priv->hsd, priv->hsd.Init.BusWide);
+		if (hal_ret != HAL_OK) {
 			LOG_ERR("failed to configure wide bus operation (ErrorCode 0x%X)",
 				priv->hsd.ErrorCode);
 			err = -EIO;
@@ -501,23 +502,32 @@ static int stm32_sdmmc_is_card_in_transfer(HandleTypeDef *hsd)
 static int stm32_sdmmc_read_blocks(HandleTypeDef *hsd, uint8_t *data_buf,
 				   uint32_t start_sector, uint32_t num_sector)
 {
+	HAL_StatusTypeDef hal_ret;
+
 #if STM32_SDMMC_USE_DMA || IS_ENABLED(DT_PROP(DT_DRV_INST(0), idma))
 
 #ifdef CONFIG_SDMMC_STM32_EMMC
-	return HAL_MMC_ReadBlocks_DMA(hsd, data_buf, start_sector, num_sector);
+	hal_ret = HAL_MMC_ReadBlocks_DMA(hsd, data_buf, start_sector, num_sector);
 #else
-	return HAL_SD_ReadBlocks_DMA(hsd, data_buf, start_sector, num_sector);
+	hal_ret = HAL_SD_ReadBlocks_DMA(hsd, data_buf, start_sector, num_sector);
 #endif
 
-#else
+#else /* STM32_SDMMC_USE_DMA || IS_ENABLED(DT_PROP(DT_DRV_INST(0), idma)) */
 
 #ifdef CONFIG_SDMMC_STM32_EMMC
-	return HAL_MMC_ReadBlocks_IT(hsd, data_buf, start_sector, num_sector);
+	hal_ret = HAL_MMC_ReadBlocks_IT(hsd, data_buf, start_sector, num_sector);
 #else
-	return HAL_SD_ReadBlocks_IT(hsd, data_buf, start_sector, num_sector);
+	hal_ret = HAL_SD_ReadBlocks_IT(hsd, data_buf, start_sector, num_sector);
 #endif
 
-#endif
+#endif /* STM32_SDMMC_USE_DMA || IS_ENABLED(DT_PROP(DT_DRV_INST(0), idma)) */
+
+	if (hal_ret != HAL_OK) {
+		LOG_ERR("sd read block failed %d", hal_ret);
+		return -EIO;
+	}
+
+	return 0;
 }
 
 static int stm32_sdmmc_access_read(struct disk_info *disk, uint8_t *data_buf,
@@ -539,9 +549,7 @@ static int stm32_sdmmc_access_read(struct disk_info *disk, uint8_t *data_buf,
 #endif
 
 	err = stm32_sdmmc_read_blocks(&priv->hsd, data_buf, start_sector, num_sector);
-	if (err != HAL_OK) {
-		LOG_ERR("sd read block failed %d", err);
-		err = -EIO;
+	if (err != 0) {
 		goto end;
 	}
 
@@ -569,23 +577,32 @@ static int stm32_sdmmc_write_blocks(HandleTypeDef *hsd,
 				    uint8_t *data_buf,
 				    uint32_t start_sector, uint32_t num_sector)
 {
+	HAL_StatusTypeDef hal_ret;
+
 #if STM32_SDMMC_USE_DMA || IS_ENABLED(DT_PROP(DT_DRV_INST(0), idma))
 
 #ifdef CONFIG_SDMMC_STM32_EMMC
-	return HAL_MMC_WriteBlocks_DMA(hsd, data_buf, start_sector, num_sector);
+	hal_ret = HAL_MMC_WriteBlocks_DMA(hsd, data_buf, start_sector, num_sector);
 #else
-	return HAL_SD_WriteBlocks_DMA(hsd, data_buf, start_sector, num_sector);
+	hal_ret = HAL_SD_WriteBlocks_DMA(hsd, data_buf, start_sector, num_sector);
 #endif
 
-#else
+#else /* STM32_SDMMC_USE_DMA || IS_ENABLED(DT_PROP(DT_DRV_INST(0), idma)) */
 
 #ifdef CONFIG_SDMMC_STM32_EMMC
-	return HAL_MMC_WriteBlocks_IT(hsd, data_buf, start_sector, num_sector);
+	hal_ret = HAL_MMC_WriteBlocks_IT(hsd, data_buf, start_sector, num_sector);
 #else
-	return HAL_SD_WriteBlocks_IT(hsd, data_buf, start_sector, num_sector);
+	hal_ret = HAL_SD_WriteBlocks_IT(hsd, data_buf, start_sector, num_sector);
 #endif
 
-#endif
+#endif /* STM32_SDMMC_USE_DMA || IS_ENABLED(DT_PROP(DT_DRV_INST(0), idma)) */
+
+	if (hal_ret != HAL_OK) {
+		LOG_ERR("sd write block failed %d", hal_ret);
+		return -EIO;
+	}
+
+	return 0;
 }
 
 static int stm32_sdmmc_access_write(struct disk_info *disk,
@@ -608,9 +625,7 @@ static int stm32_sdmmc_access_write(struct disk_info *disk,
 #endif
 
 	err = stm32_sdmmc_write_blocks(&priv->hsd, (uint8_t *)data_buf, start_sector, num_sector);
-	if (err != HAL_OK) {
-		LOG_ERR("sd write block failed %d", err);
-		err = -EIO;
+	if (err != 0) {
 		goto end;
 	}
 
@@ -637,9 +652,9 @@ end:
 static int stm32_sdmmc_get_card_info(HandleTypeDef *hsd, CardInfoTypeDef *info)
 {
 #ifdef CONFIG_SDMMC_STM32_EMMC
-	return HAL_MMC_GetCardInfo(hsd, info);
+	return (HAL_MMC_GetCardInfo(hsd, info) == HAL_OK) ? 0 : -EIO;
 #else
-	return HAL_SD_GetCardInfo(hsd, info);
+	return (HAL_SD_GetCardInfo(hsd, info) == HAL_OK) ? 0 : -EIO;
 #endif
 }
 
@@ -654,15 +669,15 @@ static int stm32_sdmmc_access_ioctl(struct disk_info *disk, uint8_t cmd,
 	switch (cmd) {
 	case DISK_IOCTL_GET_SECTOR_COUNT:
 		err = stm32_sdmmc_get_card_info(&priv->hsd, &info);
-		if (err != HAL_OK) {
-			return -EIO;
+		if (err != 0) {
+			return err;
 		}
 		*(uint32_t *)buff = info.LogBlockNbr;
 		break;
 	case DISK_IOCTL_GET_SECTOR_SIZE:
 		err = stm32_sdmmc_get_card_info(&priv->hsd, &info);
-		if (err != HAL_OK) {
-			return -EIO;
+		if (err != 0) {
+			return err;
 		}
 		*(uint32_t *)buff = info.LogBlockSize;
 		break;
