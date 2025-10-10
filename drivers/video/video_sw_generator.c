@@ -32,6 +32,7 @@ LOG_MODULE_REGISTER(video_sw_generator, CONFIG_VIDEO_LOG_LEVEL);
 
 struct sw_ctrls {
 	struct video_ctrl hflip;
+	struct video_ctrl test_pattern;
 };
 
 struct video_sw_generator_data {
@@ -454,6 +455,13 @@ static DEVICE_API(video, video_sw_generator_driver_api) = {
 static int video_sw_generator_init_controls(const struct device *dev)
 {
 	struct video_sw_generator_data *data = dev->data;
+	int ret;
+
+	ret = video_init_ctrl(&data->ctrls.test_pattern, dev, VIDEO_CID_TEST_PATTERN,
+			      (struct video_ctrl_range){.min = 1, .max = 1, .step = 1, .def = 1});
+	if (ret < 0) {
+		return ret;
+	}
 
 	return video_init_ctrl(&data->ctrls.hflip, dev, VIDEO_CID_HFLIP,
 			       (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
