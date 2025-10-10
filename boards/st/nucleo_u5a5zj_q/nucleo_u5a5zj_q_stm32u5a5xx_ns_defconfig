@@ -1,0 +1,31 @@
+#
+# Copyright (c) 2025 Leica Geosystems AG
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# enable uart driver
+CONFIG_SERIAL=y
+
+# enable GPIO
+CONFIG_GPIO=y
+
+# console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable HW stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# TF-M
+CONFIG_ARM_TRUSTZONE_M=y
+CONFIG_RUNTIME_NMI=y
+CONFIG_TRUSTED_EXECUTION_NONSECURE=y
+
+# Keys - These are for development purposes only and should be changed.
+CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE="RSA-3072"
+CONFIG_TFM_KEY_FILE_S="${BOARD_DIR}/tfm/keys/rsa-3072-private-s.pem"
+CONFIG_TFM_KEY_FILE_NS="${BOARD_DIR}/tfm/keys/rsa-3072-private-ns.pem"
