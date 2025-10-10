@@ -13,7 +13,7 @@ description: |
     usart1: serial@xxx {
         ...
         /* Cell contains information about RCU register offset and bit */
-        resets = <&rctl STM32_RESET(ABP2, 4U)>;
+        resets = <&rctl STM32_RESET(ABP2, 4)>;
         ...
     };
 
