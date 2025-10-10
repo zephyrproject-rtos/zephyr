@@ -898,6 +898,11 @@ config WLAN_CALDATA_2ANT_LO_ISO
 	help
 	  This option is used to select 2ANT Low Isolation Caldata.
 
+config WLAN_CALDATA_2ANT_HI_ISO_41DB
+	bool "Select 41DB 2ANT HIGH ISOLATION"
+	help
+	  This option is used to select 2ANT High Isolation Caldata of 41db.
+
 endif # NXP_IW61X
 
 config NXP_WIFI_FW_VDLLV2
