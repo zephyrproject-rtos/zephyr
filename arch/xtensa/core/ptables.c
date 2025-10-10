@@ -44,6 +44,18 @@
 /** Mask for backup ring value in PTE SW field. */
 #define PTE_BCKUP_RING_MASK (PTE_RING_MASK << 6U)
 
+/** Combined attributes and ring mask in PTE. */
+#define PTE_PERM_MASK (PTE_ATTR_MASK | PTE_RING_MASK)
+
+/** Number of bits to shift for combined attributes and ring in PTE. */
+#define PTE_PERM_SHIFT 0U
+
+/** Combined backup attributes and backup ring mask in PTE. */
+#define PTE_BCKUP_PERM_MASK (PTE_BCKUP_ATTR_MASK | PTE_BCKUP_RING_MASK)
+
+/** Number of bits to shift for combined backup attributes and backup ring mask in PTE. */
+#define PTE_BCKUP_PERM_SHIFT 6U
+
 /** Construct a page table entry (PTE) with specified backup attributes and ring. */
 #define PTE_WITH_BCKUP(paddr, ring, attr, bckup_ring, bckup_attr)                                  \
 	(((paddr) & XTENSA_MMU_PTE_PPN_MASK) |                                                     \
@@ -74,6 +86,12 @@
 
 /** Get the ring from a PTE */
 #define PTE_RING_GET(pte) (((pte) & PTE_RING_MASK) >> PTE_RING_SHIFT)
+
+/** Get the permissions from a PTE */
+#define PTE_PERM_GET(pte) (((pte) & PTE_PERM_MASK) >> PTE_PERM_SHIFT)
+
+/** Get the backup permissions from a PTE */
+#define PTE_BCKUP_PERM_GET(pte) (((pte) & PTE_BCKUP_PERM_MASK) >> PTE_BCKUP_PERM_SHIFT)
 
 /** Get the ASID from the RASID register corresponding to the ring in a PTE */
 #define PTE_ASID_GET(pte, rasid)                                                                   \
@@ -173,7 +191,7 @@ static ATOMIC_DEFINE(l1_page_tables_track, CONFIG_XTENSA_MMU_NUM_L1_TABLES);
  * This additional variable tracks which l2 tables are in use. This is kept separated from
  * the tables to keep alignment easier.
  */
-static ATOMIC_DEFINE(l2_page_tables_track, CONFIG_XTENSA_MMU_NUM_L2_TABLES);
+static volatile uint8_t l2_page_tables_counter[CONFIG_XTENSA_MMU_NUM_L2_TABLES];
 
 /*
  * Protects xtensa_domain_list and serializes access to page tables.
@@ -194,6 +212,8 @@ static uint8_t asid_count = 3;
  * List with all active and initialized memory domains.
  */
 static sys_slist_t xtensa_domain_list;
+
+static void dup_l2_table_if_needed(uint32_t *l1_table, uint32_t l1_pos);
 #endif /* CONFIG_USERSPACE */
 
 extern char _heap_end[];
@@ -250,6 +270,8 @@ static const struct xtensa_mmu_range mmu_zephyr_ranges[] = {
 };
 
 static inline uint32_t restore_pte(uint32_t pte);
+static ALWAYS_INLINE void l2_page_tables_counter_inc(uint32_t *l2_table);
+static ALWAYS_INLINE void l2_page_tables_counter_dec(uint32_t *l2_table);
 
 /**
  * @brief Check if the page table entry is illegal.
@@ -284,12 +306,28 @@ static void init_page_table(uint32_t *ptable, size_t num_entries, uint32_t val)
 	}
 }
 
+/**
+ * @brief Find the L2 table counter array index from L2 table pointer.
+ *
+ * @param[in] l2_table Pointer to L2 table.
+ *
+ * @note This does not check if the incoming L2 table pointer is a valid
+ *       L2 table.
+ *
+ * @return Index to the L2 table counter array.
+ */
+static inline int l2_table_to_counter_pos(uint32_t *l2_table)
+{
+	return (l2_table - (uint32_t *)l2_page_tables) / (L2_PAGE_TABLE_NUM_ENTRIES);
+}
+
 static inline uint32_t *alloc_l2_table(void)
 {
 	uint16_t idx;
 
 	for (idx = 0; idx < CONFIG_XTENSA_MMU_NUM_L2_TABLES; idx++) {
-		if (!atomic_test_and_set_bit(l2_page_tables_track, idx)) {
+		if (l2_page_tables_counter[idx] == 0) {
+			l2_page_tables_counter[idx] = 1;
 			return (uint32_t *)&l2_page_tables[idx];
 		}
 	}
@@ -484,6 +522,11 @@ static bool l2_page_table_map(uint32_t *l1_table, void *vaddr, uintptr_t phys,
 			sys_cache_data_flush_range((void *)&l1_table[l1_pos], sizeof(l1_table[0]));
 		}
 	}
+#ifdef CONFIG_USERSPACE
+	else {
+		dup_l2_table_if_needed(l1_table, l1_pos);
+	}
+#endif
 
 	l2_table = (uint32_t *)(l1_table[l1_pos] & XTENSA_MMU_PTE_PPN_MASK);
 	l2_table[l2_pos] = PTE(phys, is_user ? RING_USER : RING_KERNEL, attrs);
@@ -563,6 +606,12 @@ static inline void __arch_mem_map(void *va, uintptr_t pa, uint32_t new_attrs, bo
 				__ASSERT(ret, "Cannot map virtual address (%p) for domain %p",
 					 vaddr_uc, domain);
 			}
+
+			/* We may have made a copy of L2 table containing VECBASE.
+			 * So we need to re-calculate the static TLBs so the correct ones
+			 * will be placed in the TLB cache when swapping page tables.
+			 */
+			xtensa_mmu_compute_domain_regs(domain);
 		}
 		k_spin_unlock(&z_mem_domain_lock, key);
 	}
@@ -642,7 +691,6 @@ static void l2_page_table_unmap(uint32_t *l1_table, void *vaddr)
 	uint32_t l1_pos = XTENSA_MMU_L1_POS((uint32_t)vaddr);
 	uint32_t l2_pos = XTENSA_MMU_L2_POS((uint32_t)vaddr);
 	uint32_t *l2_table;
-	uint32_t table_trk_pos;
 	bool exec = false;
 
 	if (IS_ENABLED(PAGE_TABLE_IS_CACHED)) {
@@ -655,6 +703,10 @@ static void l2_page_table_unmap(uint32_t *l1_table, void *vaddr)
 		 */
 		return;
 	}
+
+#ifdef CONFIG_USERSPACE
+	dup_l2_table_if_needed(l1_table, l1_pos);
+#endif
 
 	l2_table = (uint32_t *)(l1_table[l1_pos] & XTENSA_MMU_PTE_PPN_MASK);
 
@@ -689,8 +741,7 @@ static void l2_page_table_unmap(uint32_t *l1_table, void *vaddr)
 		sys_cache_data_flush_range((void *)&l1_table[l1_pos], sizeof(l1_table[0]));
 	}
 
-	table_trk_pos = (l2_table - (uint32_t *)l2_page_tables) / (L2_PAGE_TABLE_NUM_ENTRIES);
-	atomic_clear_bit(l2_page_tables_track, table_trk_pos);
+	l2_page_tables_counter_dec(l2_table);
 
 end:
 	/* Need to invalidate TLB associated with the unmapped address. */
@@ -877,6 +928,36 @@ static inline uint32_t restore_pte(uint32_t pte)
 	return restored_pte;
 }
 
+/**
+ * @brief Test if the L2 table is inside the L2 page table array.
+ *
+ * @param[in] l2_table Pointer to L2 table.
+ *
+ * @return True if within array, false otherwise.
+ */
+static bool is_l2_table_inside_array(uint32_t *l2_table)
+{
+	uintptr_t l2_table_begin = (uintptr_t)l2_page_tables;
+	uintptr_t l2_table_end = l2_table_begin + sizeof(l2_page_tables);
+	uintptr_t addr = (uintptr_t)l2_table;
+
+	return (addr >= l2_table_begin) && (addr < l2_table_end);
+}
+
+static ALWAYS_INLINE void l2_page_tables_counter_inc(uint32_t *l2_table)
+{
+	if (is_l2_table_inside_array(l2_table)) {
+		l2_page_tables_counter[l2_table_to_counter_pos(l2_table)]++;
+	}
+}
+
+static ALWAYS_INLINE void l2_page_tables_counter_dec(uint32_t *l2_table)
+{
+	if (is_l2_table_inside_array(l2_table)) {
+		l2_page_tables_counter[l2_table_to_counter_pos(l2_table)]--;
+	}
+}
+
 #ifdef CONFIG_USERSPACE
 
 static inline uint32_t *thread_page_tables_get(const struct k_thread *thread)
@@ -901,41 +982,99 @@ static inline uint32_t *alloc_l1_table(void)
 	return NULL;
 }
 
-static uint32_t *dup_table(void)
+/**
+ * Given page table position, calculate the corresponding virtual address.
+ *
+ * @param l1_pos Position in L1 page table.
+ * @param l2_pos Position in L2 page table.
+ * @return Virtual address.
+ */
+static ALWAYS_INLINE uint32_t vaddr_from_pt_pos(uint32_t l1_pos, uint32_t l2_pos)
 {
-	uint16_t i, j;
+	return (l1_pos << 22U) | (l2_pos << 12U);
+}
+
+static uint32_t *dup_l2_table(uint32_t *src_l2_table)
+{
+	uint32_t *l2_table;
+
+	l2_table = alloc_l2_table();
+	if (l2_table == NULL) {
+		return NULL;
+	}
+
+	for (int j = 0; j < L2_PAGE_TABLE_NUM_ENTRIES; j++) {
+		uint32_t bckup_attr = PTE_BCKUP_ATTR_GET(src_l2_table[j]);
+
+		if (bckup_attr != PTE_ATTR_ILLEGAL) {
+			l2_table[j] = restore_pte(src_l2_table[j]);
+		} else {
+			l2_table[j] = PTE_L2_ILLEGAL;
+		}
+	}
+
+	return l2_table;
+}
+
+static uint32_t *dup_l1_table(void)
+{
 	uint32_t *l1_table = alloc_l1_table();
 
 	if (!l1_table) {
 		return NULL;
 	}
 
-	for (i = 0; i < L1_PAGE_TABLE_NUM_ENTRIES; i++) {
-		uint32_t *l2_table, *src_l2_table;
+	for (uint32_t l1_pos = 0; l1_pos < L1_PAGE_TABLE_NUM_ENTRIES; l1_pos++) {
+		if (is_pte_illegal(xtensa_kernel_ptables[l1_pos]) ||
+			(l1_pos == XTENSA_MMU_L1_POS(XTENSA_MMU_PTEVADDR))) {
+			l1_table[l1_pos] = PTE_L1_ILLEGAL;
+		} else {
+			uint32_t *l2_table, *src_l2_table;
+			bool l2_need_dup = false;
 
-		if (is_pte_illegal(xtensa_kernel_ptables[i]) ||
-			(i == XTENSA_MMU_L1_POS(XTENSA_MMU_PTEVADDR))) {
-			l1_table[i] = PTE_L1_ILLEGAL;
-			continue;
-		}
+			src_l2_table = (uint32_t *)(xtensa_kernel_ptables[l1_pos] &
+						    XTENSA_MMU_PTE_PPN_MASK);
 
-		src_l2_table = (uint32_t *)(xtensa_kernel_ptables[i] & XTENSA_MMU_PTE_PPN_MASK);
-		l2_table = alloc_l2_table();
-		if (l2_table == NULL) {
-			goto err;
-		}
+			/* Need to check if the L2 table has been modified between boot and
+			 * this function call. We do not want to inherit any changes in
+			 * between (e.g. arch_mem_map done to kernel page tables).
+			 * If no modifications have been done, we can re-use this L2 table.
+			 * Otherwise, we need to duplicate it.
+			 */
+			for (uint32_t l2_pos = 0; l2_pos < L2_PAGE_TABLE_NUM_ENTRIES; l2_pos++) {
+				uint32_t vaddr;
+				uint32_t perm = PTE_PERM_GET(src_l2_table[l2_pos]);
+				uint32_t bckup_perm = PTE_BCKUP_PERM_GET(src_l2_table[l2_pos]);
 
-		for (j = 0; j < L2_PAGE_TABLE_NUM_ENTRIES; j++) {
-			l2_table[j] = restore_pte(src_l2_table[j]);
-		}
+				/* Current and backup permissions do not match. Must duplicate. */
+				if (perm != bckup_perm) {
+					l2_need_dup = true;
+					break;
+				}
 
-		/* The page table is using kernel ASID because we don't
-		 * user thread manipulate it.
-		 */
-		l1_table[i] = PTE((uint32_t)l2_table, RING_KERNEL, XTENSA_MMU_PAGE_TABLE_ATTR);
+				/* At boot, everything are identity mapped. So if physical and
+				 * virtual addresses do not match in the PTE, we need to
+				 * duplicate the L2 table.
+				 */
+				vaddr = vaddr_from_pt_pos(l1_pos, l2_pos);
+				if ((src_l2_table[l2_pos] & XTENSA_MMU_PTE_PPN_MASK) != vaddr) {
+					l2_need_dup = true;
+					break;
+				}
+			}
 
-		if (IS_ENABLED(PAGE_TABLE_IS_CACHED)) {
-			sys_cache_data_flush_range((void *)l2_table, L2_PAGE_TABLE_SIZE);
+			if (l2_need_dup) {
+				l2_table = dup_l2_table(src_l2_table);
+			} else {
+				l2_table = src_l2_table;
+				l2_page_tables_counter_inc(src_l2_table);
+			}
+
+			/* The page table is using kernel ASID because we don't want
+			 * user threads to manipulate it.
+			 */
+			l1_table[l1_pos] =
+				PTE((uint32_t)l2_table, RING_KERNEL, XTENSA_MMU_PAGE_TABLE_ATTR);
 		}
 	}
 
@@ -944,10 +1083,29 @@ static uint32_t *dup_table(void)
 	}
 
 	return l1_table;
+}
 
-err:
-	/* TODO: Cleanup failed allocation*/
-	return NULL;
+static void dup_l2_table_if_needed(uint32_t *l1_table, uint32_t l1_pos)
+{
+	uint32_t *l2_table, *src_l2_table;
+
+	src_l2_table = (uint32_t *)(l1_table[l1_pos] & XTENSA_MMU_PTE_PPN_MASK);
+
+	if (l2_page_tables_counter[l2_table_to_counter_pos(src_l2_table)] == 1) {
+		/* Only one user of L2 table, no need to duplicate. */
+		return;
+	}
+
+	l2_table = dup_l2_table(src_l2_table);
+
+	/* The page table is using kernel ASID because we don't
+	 * user thread manipulate it.
+	 */
+	l1_table[l1_pos] = PTE((uint32_t)l2_table, RING_KERNEL, XTENSA_MMU_PAGE_TABLE_ATTR);
+
+	l2_page_tables_counter_dec(src_l2_table);
+
+	sys_cache_data_flush_range((void *)l2_table, L2_PAGE_TABLE_SIZE);
 }
 
 int arch_mem_domain_init(struct k_mem_domain *domain)
@@ -975,7 +1133,7 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 	}
 
 
-	ptables = dup_table();
+	ptables = dup_l1_table();
 
 	if (ptables == NULL) {
 		ret = -ENOMEM;
@@ -1011,6 +1169,10 @@ static void region_map_update(uint32_t *l1_table, uintptr_t start,
 			/* Make sure we grab a fresh copy of L1 page table */
 			sys_cache_data_invd_range((void *)&l1_table[l1_pos], sizeof(l1_table[0]));
 		}
+
+#ifdef CONFIG_USERSPACE
+		dup_l2_table_if_needed(l1_table, l1_pos);
+#endif
 
 		l2_table = (uint32_t *)(l1_table[l1_pos] & XTENSA_MMU_PTE_PPN_MASK);
 
@@ -1120,8 +1282,15 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain,
 	struct k_mem_partition *partition = &domain->partitions[partition_id];
 	uint32_t ring = K_MEM_PARTITION_IS_USER(partition->attr) ? RING_USER : RING_KERNEL;
 
-	update_region(domain->arch.ptables, partition->start,
-		      partition->size, ring, partition->attr, 0);
+	update_region(domain->arch.ptables, partition->start, partition->size, ring,
+		      partition->attr, 0);
+
+	/* We may have made a copy of L2 table containing VECBASE.
+	 * So we need to re-calculate the static TLBs so the correct ones
+	 * will be placed in the TLB cache when swapping page tables.
+	 */
+	xtensa_mmu_compute_domain_regs(&domain->arch);
+
 	return 0;
 }
 
