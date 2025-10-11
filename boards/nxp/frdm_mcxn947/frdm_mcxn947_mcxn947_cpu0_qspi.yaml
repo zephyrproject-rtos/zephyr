@@ -15,6 +15,10 @@ toolchain:
   - gnuarmemb
 supported:
   - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_serial
+  - arduino_spi
   - can
   - counter
   - dac
