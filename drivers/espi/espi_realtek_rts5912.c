@@ -471,8 +471,11 @@ static void promt0_ibf_isr(const struct device *dev)
 				 .evt_details = ESPI_PERIPHERAL_EC_HOST_CMD,
 				 .evt_data = ESPI_PERIPHERAL_NODATA};
 
-	promt0_reg->STS |= ACPI_STS_STS0;
-	evt.evt_data = (uint8_t)promt0_reg->IB;
+	if (promt0_reg->STS & ACPI_STS_IBF) {
+		promt0_reg->STS |= ACPI_STS_STS0;
+		evt.evt_data = (uint8_t)promt0_reg->IB;
+	}
+
 	espi_send_callbacks(&data->callbacks, dev, evt);
 }
 
