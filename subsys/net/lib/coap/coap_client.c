@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L /* Required for strnlen() */
+
 #include <string.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
@@ -203,7 +206,7 @@ static int coap_client_init_request(struct coap_client *client,
 	int i;
 	bool block2 = false;
 
-	memset(client->send_buf, 0, sizeof(client->send_buf));
+	memset(internal_req->send_buf, 0, sizeof(internal_req->send_buf));
 
 	if (!reconstruct) {
 		uint8_t *token = coap_next_token();
@@ -213,7 +216,7 @@ static int coap_client_init_request(struct coap_client *client,
 		memcpy(internal_req->request_token, token, internal_req->request_tkl);
 	}
 
-	ret = coap_packet_init(&internal_req->request, client->send_buf, MAX_COAP_MSG_LEN,
+	ret = coap_packet_init(&internal_req->request, internal_req->send_buf, MAX_COAP_MSG_LEN,
 			       1, req->confirmable ? COAP_TYPE_CON : COAP_TYPE_NON_CON,
 			       COAP_TOKEN_MAX_LEN, internal_req->request_token, req->method,
 			       internal_req->last_id);
@@ -416,8 +419,10 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 {
 	int ret;
 	struct coap_client_internal_request *internal_req;
+	size_t pathlen = strnlen(req->path, MAX_PATH_SIZE);
 
-	if (client == NULL || sock < 0 || req == NULL || req->path == NULL) {
+	if (client == NULL || sock < 0 || req == NULL || pathlen == 0 ||
+	    pathlen == MAX_PATH_SIZE || req->num_options > MAX_EXTRA_OPTIONS) {
 		return -EINVAL;
 	}
 
@@ -563,17 +568,6 @@ static int resend_request(struct coap_client *client,
 	    internal_req->pending.timeout != 0 &&
 	    coap_pending_cycle(&internal_req->pending)) {
 		LOG_ERR("Timeout, retrying send");
-
-		/* Reset send block context as it was updated in previous init from packet */
-		if (internal_req->send_blk_ctx.total_size > 0) {
-			internal_req->send_blk_ctx.current = internal_req->offset;
-		}
-		ret = coap_client_init_request(client, &internal_req->coap_request,
-					       internal_req, true);
-		if (ret < 0) {
-			LOG_ERR("Error re-creating CoAP request %d", ret);
-			return ret;
-		}
 
 		ret = send_request(client->fd, internal_req->request.data,
 					internal_req->request.offset, 0, &client->address,
@@ -754,8 +748,9 @@ static int send_ack(struct coap_client *client, const struct coap_packet *req,
 {
 	int ret;
 	struct coap_packet ack;
+	uint8_t ack_buf[COAP_FIXED_HEADER_SIZE + COAP_TOKEN_MAX_LEN];
 
-	ret = coap_ack_init(&ack, req, client->send_buf, MAX_COAP_MSG_LEN, response_code);
+	ret = coap_ack_init(&ack, req, ack_buf, sizeof(ack_buf), response_code);
 	if (ret < 0) {
 		LOG_ERR("Failed to initialize CoAP ACK-message");
 		return ret;
@@ -774,8 +769,9 @@ static int send_rst(struct coap_client *client, const struct coap_packet *req)
 {
 	int ret;
 	struct coap_packet rst;
+	uint8_t rst_buf[COAP_FIXED_HEADER_SIZE + COAP_TOKEN_MAX_LEN];
 
-	ret = coap_rst_init(&rst, req, client->send_buf, MAX_COAP_MSG_LEN);
+	ret = coap_rst_init(&rst, req, rst_buf, sizeof(rst_buf));
 	if (ret < 0) {
 		LOG_ERR("Failed to initialize CoAP RST-message");
 		return ret;
@@ -1138,7 +1134,7 @@ static bool requests_match(struct coap_client_request *a, struct coap_client_req
 	if (a->method && b->method && a->method != b->method) {
 		return false;
 	}
-	if (a->path && b->path && strcmp(a->path, b->path) != 0) {
+	if (a->path[0] != '\0' && b->path[0] != '\0' && strcmp(a->path, b->path) != 0) {
 		return false;
 	}
 	if (a->cb && b->cb && a->cb != b->cb) {

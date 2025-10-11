@@ -203,6 +203,7 @@ enum coap_response_code {
 #define COAP_CODE_EMPTY (0)
 
 #define COAP_TOKEN_MAX_LEN 8UL
+#define COAP_FIXED_HEADER_SIZE 4UL
 
 /** @endcond */
 
