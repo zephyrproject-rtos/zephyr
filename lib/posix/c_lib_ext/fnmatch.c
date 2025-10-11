@@ -72,8 +72,9 @@ enum fnm_char_class {
 
 static bool fnm_cc_is_valid(const char *pattern, size_t psize, enum fnm_char_class *cc)
 {
-	if (psize < 4 || *pattern != ':')
+	if (psize < 4 || *pattern != ':') {
 		return false;
+	}
 
 	pattern++;  /* skip ':' */
 	psize--;
@@ -187,7 +188,6 @@ static inline int fnm_cc_match(int c, enum fnm_char_class cc)
 	return 0;
 }
 
-
 static inline int foldcase(int ch, int flags)
 {
 
@@ -207,13 +207,15 @@ static bool match_posix_class(const char **pattern, int test)
 	const char *p = *pattern;
 	size_t remaining = strlen(p);
 
-	if (!fnm_cc_is_valid(p, remaining, &cc))
+	if (!fnm_cc_is_valid(p, remaining, &cc)) {
 		return false;
+	}
 
 	/* move pattern pointer past ":]" */
 	const char *end = strstr(p, ":]");
-	if (end)
+	if (end) {
 		*pattern = end + 2;
+	}
 
 	return fnm_cc_match(test, cc);
 }
@@ -262,9 +264,14 @@ static const char *rangematch(const char *pattern, int test, int flags)
 				ok = true;
 				continue;
 			} else {
-				// skip over class if unrecognized
-				while (*pattern && !(*pattern == ':' && *(pattern+1) == ']')) pattern++;
-				if (*pattern) pattern += 2;
+				/* skip over class if unrecognized */
+				while (*pattern && !(*pattern == ':' && *(pattern + 1) == ']')) {
+					pattern++;
+				}
+
+				if (*pattern) {
+					pattern += 2;
+				}
 				continue;
 			}
 		}
