@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Core Devices LLC
 # SPDX-License-Identifier: Apache-2.0
 
-description: SiFli SF32LB RTC
+description: SiFli SF32LB RTC controller
 
 compatible: "sifli,sf32lb-rtc"
 
