@@ -43,9 +43,8 @@ enum {
 
 /* bt_dev flags: the flags defined here represent BT controller state */
 enum {
-	BT_DEV_ENABLE,
-	BT_DEV_DISABLE,
-	BT_DEV_READY,
+	BT_DEV_OPEN,        /* HCI transport is open */
+	BT_DEV_READY,       /* Host stack has completed init */
 	BT_DEV_PRESET_ID,
 	BT_DEV_HAS_PUB_KEY,
 
@@ -94,9 +93,8 @@ enum {
 };
 
 /* Flags which should not be cleared upon HCI_Reset */
-#define BT_DEV_PERSISTENT_FLAGS (BIT(BT_DEV_ENABLE) | \
-				 BIT(BT_DEV_PRESET_ID) | \
-				 BIT(BT_DEV_DISABLE))
+#define BT_DEV_PERSISTENT_FLAGS (BIT(BT_DEV_OPEN) | \
+				 BIT(BT_DEV_PRESET_ID))
 
 #if defined(CONFIG_BT_EXT_ADV_LEGACY_SUPPORT)
 /* Check the feature bit for extended or legacy advertising commands */
