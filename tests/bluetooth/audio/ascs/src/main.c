@@ -202,8 +202,10 @@ ZTEST_F(ascs_test_suite, test_release_ase_on_callback_unregister)
 	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
 
 	/* Expected to notify the upper layers */
-	expect_bt_bap_unicast_server_cb_release_called_once(stream);
-	expect_bt_bap_stream_ops_released_called_once(stream);
+	struct bt_bap_stream *streams[1] = { stream };
+
+	expect_bt_bap_unicast_server_cb_release_called(1, streams);
+	expect_bt_bap_stream_ops_released_called(1, streams);
 
 	/* Expected to notify the client */
 	expect_bt_gatt_notify_cb_called_once(conn, ase->uuid, ase, EMPTY, sizeof(*hdr));
@@ -283,7 +285,9 @@ ZTEST_F(ascs_test_suite, test_release_ase_on_acl_disconnection)
 	mock_bt_conn_disconnected(conn, BT_HCI_ERR_CONN_TIMEOUT);
 
 	/* Expected to notify the upper layers */
-	expect_bt_bap_stream_ops_released_called_once(stream);
+	struct bt_bap_stream *streams[1] = { stream };
+
+	expect_bt_bap_stream_ops_released_called(1, streams);
 
 	/* Mock CIS disconnection */
 	mock_bt_iso_disconnected(chan, BT_HCI_ERR_CONN_TIMEOUT);
@@ -343,7 +347,7 @@ ZTEST_F(ascs_test_suite, test_release_ase_pair_on_acl_disconnection)
 	/* Expected to notify the upper layers */
 	const struct bt_bap_stream *streams[2] = { &snk_stream, &src_stream };
 
-	expect_bt_bap_stream_ops_released_called(streams, 2);
+	expect_bt_bap_stream_ops_released_called(2, streams);
 
 	/* Mock CIS disconnection */
 	mock_bt_iso_disconnected(chan, BT_HCI_ERR_CONN_TIMEOUT);
@@ -372,7 +376,9 @@ ZTEST_F(ascs_test_suite, test_recv_in_streaming_state)
 	chan->ops->recv(chan, &info, &buf);
 
 	/* Verification */
-	expect_bt_bap_stream_ops_recv_called_once(stream, &info, &buf);
+	struct bt_bap_stream *streams[1] = { stream };
+
+	expect_bt_bap_stream_ops_recv_called(1, streams, &info, &buf);
 }
 
 ZTEST_F(ascs_test_suite, test_recv_in_enabling_state)
@@ -435,10 +441,12 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_streaming_state)
 	mock_bt_iso_disconnected(chan, BT_HCI_ERR_CONN_TIMEOUT);
 
 	/* Expected to notify the upper layers */
-	expect_bt_bap_stream_ops_qos_set_called_once(stream);
-	expect_bt_bap_stream_ops_disabled_called_once(stream);
+	struct bt_bap_stream *streams[1] = { stream };
+
+	expect_bt_bap_stream_ops_qos_set_called(1, streams);
+	expect_bt_bap_stream_ops_disabled_called(1, streams);
 	expect_bt_bap_stream_ops_released_not_called();
-	expect_bt_bap_stream_ops_disconnected_called_once(stream);
+	expect_bt_bap_stream_ops_disconnected_called(1, streams);
 }
 
 static void test_cis_link_loss_in_disabling_state(struct ascs_test_suite_fixture *fixture,
@@ -471,7 +479,9 @@ static void test_cis_link_loss_in_disabling_state(struct ascs_test_suite_fixture
 
 	test_ase_control_client_disable(conn, ase_id);
 
-	expect_bt_bap_stream_ops_disabled_called_once(stream);
+	struct bt_bap_stream *streams[1] = { stream };
+
+	expect_bt_bap_stream_ops_disabled_called(1, streams);
 
 	test_mocks_reset();
 
@@ -479,10 +489,10 @@ static void test_cis_link_loss_in_disabling_state(struct ascs_test_suite_fixture
 	mock_bt_iso_disconnected(chan, BT_HCI_ERR_CONN_TIMEOUT);
 
 	/* Expected to notify the upper layers */
-	expect_bt_bap_stream_ops_qos_set_called_once(stream);
+	expect_bt_bap_stream_ops_qos_set_called(1, streams);
 	expect_bt_bap_stream_ops_disabled_not_called();
 	expect_bt_bap_stream_ops_released_not_called();
-	expect_bt_bap_stream_ops_disconnected_called_once(stream);
+	expect_bt_bap_stream_ops_disconnected_called(1, streams);
 }
 
 ZTEST_F(ascs_test_suite, test_cis_link_loss_in_disabling_state_v1)
@@ -527,16 +537,18 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_enabling_state)
 	mock_bt_iso_disconnected(chan, BT_HCI_ERR_CONN_TIMEOUT);
 
 	/* Expected no change in ASE state */
+	struct bt_bap_stream *streams[1] = { stream };
+
 	expect_bt_bap_stream_ops_qos_set_not_called();
 	expect_bt_bap_stream_ops_released_not_called();
-	expect_bt_bap_stream_ops_disconnected_called_once(stream);
+	expect_bt_bap_stream_ops_disconnected_called(1, streams);
 
 	err = bt_bap_stream_disable(stream);
 	zassert_equal(0, err, "Failed to disable stream: err %d", err);
 
 	if (IS_ENABLED(CONFIG_BT_ASCS_ASE_SNK)) {
-		expect_bt_bap_stream_ops_qos_set_called_once(stream);
-		expect_bt_bap_stream_ops_disabled_called_once(stream);
+		expect_bt_bap_stream_ops_qos_set_called(1, streams);
+		expect_bt_bap_stream_ops_disabled_called(1, streams);
 	} else {
 		/* Server-initiated disable operation that shall not cause transition to QoS */
 		expect_bt_bap_stream_ops_qos_set_not_called();
@@ -551,6 +563,7 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_enabling_state_client_retries)
 	struct bt_iso_chan *chan;
 	uint8_t ase_id;
 	int err;
+	struct bt_bap_stream *streams[2] = { stream, stream };
 
 	if (IS_ENABLED(CONFIG_BT_ASCS_ASE_SNK)) {
 		ase = fixture->ase_snk.attr;
@@ -568,7 +581,7 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_enabling_state_client_retries)
 	test_preamble_state_enabling(conn, ase_id, stream);
 	err = mock_bt_iso_accept(conn, 0x01, 0x01, &chan);
 	zassert_equal(0, err, "Failed to connect iso: err %d", err);
-	expect_bt_bap_stream_ops_connected_called_once(stream);
+	expect_bt_bap_stream_ops_connected_called(1, streams);
 
 	/* Mock CIS disconnection */
 	mock_bt_iso_disconnected(chan, BT_HCI_ERR_CONN_FAIL_TO_ESTAB);
@@ -576,7 +589,7 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_enabling_state_client_retries)
 	/* Expected to not notify the upper layers */
 	expect_bt_bap_stream_ops_qos_set_not_called();
 	expect_bt_bap_stream_ops_released_not_called();
-	expect_bt_bap_stream_ops_disconnected_called_once(stream);
+	expect_bt_bap_stream_ops_disconnected_called(1, streams);
 
 	/* Client retries to establish CIS */
 	err = mock_bt_iso_accept(conn, 0x01, 0x01, &chan);
@@ -588,7 +601,7 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_enabling_state_client_retries)
 		zassert_equal(0, err, "bt_bap_stream_start err %d", err);
 	}
 
-	expect_bt_bap_stream_ops_connected_called_twice(stream);
+	expect_bt_bap_stream_ops_connected_called(2, streams);
 	expect_bt_bap_stream_ops_started_called_once(stream);
 }
 
@@ -620,6 +633,7 @@ ZTEST_F(ascs_test_suite, test_ase_state_notification_retry)
 	struct bt_conn_info info;
 	uint8_t ase_id;
 	int err;
+	struct bt_bap_stream *streams[1] = { stream };
 
 	if (IS_ENABLED(CONFIG_BT_ASCS_ASE_SNK)) {
 		ase = fixture->ase_snk.attr;
@@ -669,5 +683,5 @@ ZTEST_F(ascs_test_suite, test_ase_state_notification_retry)
 	/* Wait for ASE state notification retry */
 	k_sleep(K_MSEC(BT_CONN_INTERVAL_TO_MS(info.le.interval)));
 
-	expect_bt_bap_stream_ops_configured_called_once(stream, EMPTY);
+	expect_bt_bap_stream_ops_configured_called(1, streams, EMPTY);
 }
