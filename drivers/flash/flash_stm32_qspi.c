@@ -1602,7 +1602,9 @@ static int flash_stm32_qspi_init(const struct device *dev)
 
 	/* Initialize DMA HAL */
 	__HAL_LINKDMA(&dev_data->hqspi, hdma, hdma);
-	HAL_DMA_Init(&hdma);
+	if (HAL_DMA_Init(&hdma) != HAL_OK) {
+		return -EIO;
+	}
 
 #endif /* STM32_QSPI_USE_DMA */
 
@@ -1649,7 +1651,9 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	dev_data->hqspi.Init.FlashID = QSPI_FLASH_ID_1;
 #endif /* STM32_QSPI_DOUBLE_FLASH */
 
-	HAL_QSPI_Init(&dev_data->hqspi);
+	if (HAL_QSPI_Init(&dev_data->hqspi) != HAL_OK) {
+		return -EIO;
+	}
 
 #if DT_NODE_HAS_PROP(DT_NODELABEL(quadspi), flash_id) && \
 	defined(QUADSPI_CR_FSEL)
@@ -1659,8 +1663,10 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	 */
 	uint8_t qspi_flash_id = DT_PROP(DT_NODELABEL(quadspi), flash_id);
 
-	HAL_QSPI_SetFlashID(&dev_data->hqspi,
-			    (qspi_flash_id - 1) << QUADSPI_CR_FSEL_Pos);
+	if (HAL_QSPI_SetFlashID(&dev_data->hqspi,
+				(qspi_flash_id - 1) << QUADSPI_CR_FSEL_Pos) != HAL_OK) {
+		return -EIO;
+	}
 #endif
 	/* Initialize semaphores */
 	k_sem_init(&dev_data->sem, 1, 1);
