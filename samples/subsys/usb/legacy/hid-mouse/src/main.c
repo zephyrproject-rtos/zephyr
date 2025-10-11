@@ -21,7 +21,6 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
 static const struct gpio_dt_spec led0 = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
 static const uint8_t hid_report_desc[] = HID_MOUSE_REPORT_DESC(2);
-static enum usb_dc_status_code usb_status;
 
 #define MOUSE_BTN_LEFT		0
 #define MOUSE_BTN_RIGHT		1
@@ -36,16 +35,29 @@ enum mouse_report_idx {
 
 K_MSGQ_DEFINE(mouse_msgq, MOUSE_REPORT_COUNT, 2, 1);
 static K_SEM_DEFINE(ep_write_sem, 0, 1);
+static atomic_t suspended;
 
 static inline void status_cb(enum usb_dc_status_code status, const uint8_t *param)
 {
-	usb_status = status;
+	switch (status) {
+	case USB_DC_RESET:
+		atomic_clear(&suspended);
+		break;
+	case USB_DC_SUSPEND:
+		atomic_set(&suspended, 1);
+		break;
+	case USB_DC_RESUME:
+		atomic_clear(&suspended);
+		break;
+	default:
+		break;
+	}
 }
 
 static ALWAYS_INLINE void rwup_if_suspended(void)
 {
 	if (IS_ENABLED(CONFIG_USB_DEVICE_REMOTE_WAKEUP)) {
-		if (usb_status == USB_DC_SUSPEND) {
+		if (atomic_get(&suspended)) {
 			usb_wakeup_request();
 			return;
 		}
@@ -60,11 +72,9 @@ static void input_cb(struct input_event *evt, void *user_data)
 
 	switch (evt->code) {
 	case INPUT_KEY_0:
-		rwup_if_suspended();
 		WRITE_BIT(tmp[MOUSE_BTN_REPORT_IDX], MOUSE_BTN_LEFT, evt->value);
 		break;
 	case INPUT_KEY_1:
-		rwup_if_suspended();
 		WRITE_BIT(tmp[MOUSE_BTN_REPORT_IDX], MOUSE_BTN_RIGHT, evt->value);
 		break;
 	case INPUT_KEY_2:
@@ -85,6 +95,7 @@ static void input_cb(struct input_event *evt, void *user_data)
 		return;
 	}
 
+	rwup_if_suspended();
 	if (k_msgq_put(&mouse_msgq, tmp, K_NO_WAIT) != 0) {
 		LOG_ERR("Failed to put new input event");
 	}
@@ -144,6 +155,19 @@ int main(void)
 		uint8_t __aligned(sizeof(void *)) report[MOUSE_REPORT_COUNT];
 
 		k_msgq_get(&mouse_msgq, &report, K_FOREVER);
+
+		if (IS_ENABLED(CONFIG_USB_DEVICE_REMOTE_WAKEUP)) {
+			while (atomic_get(&suspended)) {
+				k_msleep(10);
+			}
+
+			/*
+			 * The host can still suspend a device between resume
+			 * event and report transfers happening, but it is
+			 * very unlikely that host's autosuspend delay would be
+			 * that short.
+			 */
+		}
 
 		ret = hid_int_ep_write(hid_dev, report, MOUSE_REPORT_COUNT, NULL);
 		if (ret) {
