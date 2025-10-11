@@ -40,6 +40,18 @@ struct usb_dwc2_out_ep {
 	volatile uint32_t doepdmab;
 };
 
+/* HOST channer register block */
+struct usb_dwc2_host_chan {
+	volatile uint32_t hcchar;
+	volatile uint32_t hcsplt;
+	volatile uint32_t hcint;
+	volatile uint32_t hcintmsk;
+	volatile uint32_t hctsiz;
+	volatile uint32_t hcdma;
+	volatile uint32_t reserved_0x18[1];
+	volatile uint32_t hcdmab;
+};
+
 /* DWC2 register map
  * TODO: This should probably be split into global, host, and device register
  * blocks
@@ -80,8 +92,20 @@ struct usb_dwc2_reg {
 		volatile uint32_t dieptxf[15];
 	};
 	volatile uint32_t reserved2[176];
-	/* Host mode register 0x0400 .. 0x0670 */
-	uint32_t reserved3[256];
+	/* Host mode register 0x0400 .. 0x07FF */
+	volatile uint32_t hcfg;
+	volatile uint32_t hfir;
+	volatile uint32_t hfnum;
+	volatile uint32_t reserved_0x40c[1];
+	volatile uint32_t hptxsts;
+	volatile uint32_t haint;
+	volatile uint32_t haintmsk;
+	volatile uint32_t hflbaddr;
+	volatile uint32_t reserved_0x420_0x43c[8];
+	volatile uint32_t hprt;
+	volatile uint32_t reserved_0x0444_0x04fc[47];
+	struct usb_dwc2_host_chan host_chan_regs[16];
+	volatile uint32_t reserved_0x0704_0x07fc[64];
 	/* Device mode register 0x0800 .. 0x0D00 */
 	volatile uint32_t dcfg;
 	volatile uint32_t dctl;
@@ -191,6 +215,17 @@ USB_DWC2_GET_FIELD_DEFINE(gahbcfg_hbstlen, GAHBCFG_HBSTLEN)
 #define USB_DWC2_GUSBCFG_FORCEDEVMODE		BIT(USB_DWC2_GUSBCFG_FORCEDEVMODE_POS)
 #define USB_DWC2_GUSBCFG_FORCEHSTMODE_POS	29UL
 #define USB_DWC2_GUSBCFG_FORCEHSTMODE		BIT(USB_DWC2_GUSBCFG_FORCEHSTMODE_POS)
+#define USB_DWC2_GUSBCFG_ULPIEVBUSD_POS		20UL
+#define USB_DWC2_GUSBCFG_ULPIEVBUSD			BIT(USB_DWC2_GUSBCFG_ULPIEVBUSD_POS)
+#define USB_DWC2_GUSBCFG_ULPIEVBUSI_POS		21UL
+#define USB_DWC2_GUSBCFG_ULPIEVBUSI			BIT(USB_DWC2_GUSBCFG_ULPIEVBUSI_POS)
+#define USB_DWC2_GUSBCFG_ULPICLK_SUSM_POS	19UL
+#define USB_DWC2_GUSBCFG_ULPICLK_SUSM		BIT(USB_DWC2_GUSBCFG_ULPICLK_SUSM_POS)
+#define USB_DWC2_GUSBCFG_ULPIFSLS_POS		17UL
+#define USB_DWC2_GUSBCFG_ULPIFSLS			BIT(USB_DWC2_GUSBCFG_ULPIFSLS_POS)
+#define USB_DWC2_GUSBCFG_DDR_SEL_POS		7UL
+#define USB_DWC2_GUSBCFG_DDR_SINGLE			0UL
+#define USB_DWC2_GUSBCFG_DDR_DOUBLE			BIT(USB_DWC2_GUSBCFG_DDR_SEL_POS)
 #define USB_DWC2_GUSBCFG_PHYSEL_POS		6UL
 #define USB_DWC2_GUSBCFG_PHYSEL_USB11		BIT(USB_DWC2_GUSBCFG_PHYSEL_POS)
 #define USB_DWC2_GUSBCFG_PHYSEL_USB20		0UL
@@ -662,6 +697,163 @@ USB_DWC2_GET_FIELD_DEFINE(dieptxf_inepntxfdep, DIEPTXF_INEPNTXFDEP)
 USB_DWC2_GET_FIELD_DEFINE(dieptxf_inepntxfstaddr, DIEPTXF_INEPNTXFSTADDR)
 USB_DWC2_SET_FIELD_DEFINE(dieptxf_inepntxfdep, DIEPTXF_INEPNTXFDEP)
 USB_DWC2_SET_FIELD_DEFINE(dieptxf_inepntxfstaddr, DIEPTXF_INEPNTXFSTADDR)
+
+/* Periodic transmit FIFO size register (host mode) */
+#define USB_DWC2_HPTXFSIZ			0x0100UL
+#define USB_DWC2_HPTXFSIZ_PTXFSIZE_POS	16UL
+#define USB_DWC2_HPTXFSIZ_PTXFSIZE_MASK	(0xFFFFUL << USB_DWC2_HPTXFSIZ_PTXFSIZE_POS)
+#define USB_DWC2_HPTXFSIZ_PTXFSTADDR_POS	0UL
+#define USB_DWC2_HPTXFSIZ_PTXFSTADDR_MASK	(0xFFFFUL << USB_DWC2_HPTXFSIZ_PTXFSTADDR_POS)
+
+
+/* Host Configuration Register */
+#define USB_DWC2_HCFG				0x0400UL
+#define USB_DWC2_HCFG_MODECHTIMEN_POS		31UL
+#define USB_DWC2_HCFG_MODECHTIMEN		BIT(USB_DWC2_HCFG_MODECHTIMEN_POS)
+#define USB_DWC2_HCFG_PERSCHEDENA_POS		26UL
+#define USB_DWC2_HCFG_PERSCHEDENA		BIT(USB_DWC2_HCFG_PERSCHEDENA_POS)
+#define USB_DWC2_HCFG_FRLISTEN_POS		24UL
+#define USB_DWC2_HCFG_FRLISTEN_MASK		(0x3UL << USB_DWC2_HCFG_FRLISTEN_POS)
+#define USB_DWC2_HCFG_DESCDMA_POS		23UL
+#define USB_DWC2_HCFG_DESCDMA			BIT(USB_DWC2_HCFG_DESCDMA_POS)
+#define USB_DWC2_HCFG_DIS_TX_IPGAP_DLY_CHECK_POS	16UL
+#define USB_DWC2_HCFG_DIS_TX_IPGAP_DLY_CHECK	BIT(USB_DWC2_HCFG_DIS_TX_IPGAP_DLY_CHECK_POS)
+#define USB_DWC2_HCFG_RESVALID_POS		8UL
+#define USB_DWC2_HCFG_RESVALID_MASK		(0xFFUL << USB_DWC2_HCFG_RESVALID_POS)
+#define USB_DWC2_HCFG_ENA32KHZS_POS		7UL
+#define USB_DWC2_HCFG_ENA32KHZS			BIT(USB_DWC2_HCFG_ENA32KHZS_POS)
+#define USB_DWC2_HCFG_FSLSSUPP_POS		2UL
+#define USB_DWC2_HCFG_FSLSSUPP			BIT(USB_DWC2_HCFG_FSLSSUPP_POS)
+#define USB_DWC2_HCFG_FSLSPCLKSEL_POS		0UL
+#define USB_DWC2_HCFG_FSLSPCLKSEL_MASK		(0x3UL << USB_DWC2_HCFG_FSLSPCLKSEL_POS)
+
+USB_DWC2_SET_FIELD_DEFINE(hcfg_frlisten,		HCFG_FRLISTEN)
+USB_DWC2_SET_FIELD_DEFINE(hcfg_resvalid,		HCFG_RESVALID)
+USB_DWC2_SET_FIELD_DEFINE(hcfg_fslspclksel,		HCFG_FSLSPCLKSEL)
+USB_DWC2_GET_FIELD_DEFINE(hcfg_frlisten,		HCFG_FRLISTEN)
+USB_DWC2_GET_FIELD_DEFINE(hcfg_resvalid,		HCFG_RESVALID)
+USB_DWC2_GET_FIELD_DEFINE(hcfg_fslspclksel,		HCFG_FSLSPCLKSEL)
+
+/* Host Frame Interval Register */
+#define USB_DWC2_HFIR					0x0404UL
+
+#define USB_DWC2_HFIR_HFIRRLDCTRL_POS	16UL
+#define USB_DWC2_HFIR_HFIRRLDCTRL		BIT(USB_DWC2_HFIR_HFIRRLDCTRL_POS)
+#define USB_DWC2_HFIR_FRINT_POS			0UL
+#define USB_DWC2_HFIR_FRINT_MASK		(0xFFFFUL << USB_DWC2_HFIR_FRINT_POS)
+
+USB_DWC2_SET_FIELD_DEFINE(hfir_frint, HFIR_FRINT)
+USB_DWC2_GET_FIELD_DEFINE(hfir_frint, HFIR_FRINT)
+
+/* Host All Channels Interrupt Register */
+#define USB_DWC2_HAINT                   0x0414UL
+#define USB_DWC2_HAINT_HAINT_POS         0UL
+#define USB_DWC2_HAINT_HAINT_MASK        0xFFFFUL  /* Bits [15:0], 1 bit per host channel */
+
+USB_DWC2_GET_FIELD_DEFINE(haint_haint, HAINT_HAINT)
+
+/* Host Port Control and Status Register */
+#define USB_DWC2_HPRT                         0x0440UL
+#define USB_DWC2_HPRT_PRTSPD_POS              17UL
+#define USB_DWC2_HPRT_PRTSPD_MASK             (0x3UL << USB_DWC2_HPRT_PRTSPD_POS)
+#define USB_DWC2_HPRT_PRTTSTCTL_POS           13UL
+#define USB_DWC2_HPRT_PRTTSTCTL_MASK          (0xFUL << USB_DWC2_HPRT_PRTTSTCTL_POS)
+#define USB_DWC2_HPRT_PRTLNSTS_POS            10UL
+#define USB_DWC2_HPRT_PRTLNSTS_MASK           (0x3UL << USB_DWC2_HPRT_PRTLNSTS_POS)
+#define USB_DWC2_HPRT_PRTENA                  BIT(2)
+#define USB_DWC2_HPRT_PRTENCHNG               BIT(3)
+#define USB_DWC2_HPRT_PRTOVRCURRACT           BIT(4)
+#define USB_DWC2_HPRT_PRTOVRCURRCHNG          BIT(5)
+#define USB_DWC2_HPRT_PRTRES                  BIT(6)
+#define USB_DWC2_HPRT_PRTSUSP                 BIT(7)
+#define USB_DWC2_HPRT_PRTRST                  BIT(8)
+#define USB_DWC2_HPRT_PRTCONNDET              BIT(1)
+#define USB_DWC2_HPRT_PRTCONNSTS              BIT(0)
+#define USB_DWC2_HPRT_PRTPWR                  BIT(12)
+#define USB_DWC2_HPRT_PRTSPD_HIGH             0
+#define USB_DWC2_HPRT_PRTSPD_FULL             1
+#define USB_DWC2_HPRT_PRTSPD_LOW              2
+
+USB_DWC2_SET_FIELD_DEFINE(hprt_prtspd,    HPRT_PRTSPD)
+USB_DWC2_SET_FIELD_DEFINE(hprt_prttstctl, HPRT_PRTTSTCTL)
+USB_DWC2_SET_FIELD_DEFINE(hprt_prtlnsts,  HPRT_PRTLNSTS)
+USB_DWC2_GET_FIELD_DEFINE(hprt_prtspd,    HPRT_PRTSPD)
+USB_DWC2_GET_FIELD_DEFINE(hprt_prttstctl, HPRT_PRTTSTCTL)
+USB_DWC2_GET_FIELD_DEFINE(hprt_prtlnsts,  HPRT_PRTLNSTS)
+
+/* Host Channel Characteristics Register (HCCHAR0) */
+#define USB_DWC2_HCCHAR0                    0x0500UL
+
+/* Bitfield Masks */
+#define USB_DWC2_HCCHAR0_CHENA               BIT(31)
+#define USB_DWC2_HCCHAR0_CHDIS               BIT(30)
+#define USB_DWC2_HCCHAR0_ODDFRM              BIT(29)
+#define USB_DWC2_HCCHAR0_DEVADDR_POS         22UL
+#define USB_DWC2_HCCHAR0_DEVADDR_MASK        (0x7FUL << USB_DWC2_HCCHAR0_DEVADDR_POS)
+#define USB_DWC2_HCCHAR0_EC_POS              20UL
+#define USB_DWC2_HCCHAR0_EC_MASK             (0x3UL << USB_DWC2_HCCHAR0_EC_POS)
+#define USB_DWC2_HCCHAR0_EPTYPE_POS         18UL
+#define USB_DWC2_HCCHAR0_EPTYPE_MASK        (0x3UL << USB_DWC2_HCCHAR0_EPTYPE_POS)
+#define USB_DWC2_HCCHAR0_LSPDDEV             BIT(17)
+#define USB_DWC2_HCCHAR0_EPDIR               BIT(15)
+#define USB_DWC2_HCCHAR0_EPNUM_POS           11UL
+#define USB_DWC2_HCCHAR0_EPNUM_MASK          (0xFUL << USB_DWC2_HCCHAR0_EPNUM_POS)
+#define USB_DWC2_HCCHAR0_MPS_POS             0UL
+#define USB_DWC2_HCCHAR0_MPS_MASK            (0x7FFUL << USB_DWC2_HCCHAR0_MPS_POS)
+
+USB_DWC2_SET_FIELD_DEFINE(hcchar0_devaddr,  HCCHAR0_DEVADDR)
+USB_DWC2_SET_FIELD_DEFINE(hcchar0_ec,       HCCHAR0_EC)
+USB_DWC2_SET_FIELD_DEFINE(hcchar0_eptype,   HCCHAR0_EPTYPE)
+USB_DWC2_SET_FIELD_DEFINE(hcchar0_epnum,    HCCHAR0_EPNUM)
+USB_DWC2_SET_FIELD_DEFINE(hcchar0_mps,      HCCHAR0_MPS)
+USB_DWC2_GET_FIELD_DEFINE(hcchar0_devaddr,  HCCHAR0_DEVADDR)
+USB_DWC2_GET_FIELD_DEFINE(hcchar0_ec,       HCCHAR0_EC)
+USB_DWC2_GET_FIELD_DEFINE(hcchar0_eptype,   HCCHAR0_EPTYPE)
+USB_DWC2_GET_FIELD_DEFINE(hcchar0_epnum,    HCCHAR0_EPNUM)
+USB_DWC2_GET_FIELD_DEFINE(hcchar0_mps,      HCCHAR0_MPS)
+
+/*
+ * Host Channel Interrupt Mask Registers (HCINTMSK)
+ * Offset: 0x050C + (0x20 * i), i = 0 .. (OTG_NUM_HOST_CHAN - 1)
+ */
+#define USB_DWC2_HCINT0                0x0508UL
+#define USB_DWC2_HCINTMSK0             0x050CUL
+#define USB_DWC2_HCINT_XFERCOMPL       BIT(0)
+#define USB_DWC2_HCINT_CHHLTD          BIT(1)
+#define USB_DWC2_HCINT_AHBERR          BIT(2)
+#define USB_DWC2_HCINT_STALL           BIT(3)
+#define USB_DWC2_HCINT_NAK             BIT(4)
+#define USB_DWC2_HCINT_ACK             BIT(5)
+#define USB_DWC2_HCINT_NYET            BIT(6)
+#define USB_DWC2_HCINT_XACTERR         BIT(7)
+#define USB_DWC2_HCINT_BBLERR          BIT(8)
+#define USB_DWC2_HCINT_FRMOVRUN        BIT(9)
+#define USB_DWC2_HCINT_DTGERR          BIT(10)
+#define USB_DWC2_HCINT_BNA             BIT(11)
+#define USB_DWC2_HCINT_DESC_LST_ROLL   BIT(13)
+
+/* Host Channel Transfer Size Register */
+#define USB_DWC2_HCTSIZ0      0x0510UL
+#define USB_DWC2_HCTSIZ_XFERSIZE_POS     0UL
+#define USB_DWC2_HCTSIZ_XFERSIZE_MASK    (0x7FFFFUL << USB_DWC2_HCTSIZ_XFERSIZE_POS)
+#define USB_DWC2_HCTSIZ_PKTCNT_POS       19UL
+#define USB_DWC2_HCTSIZ_PKTCNT_MASK      (0x3FFUL << USB_DWC2_HCTSIZ_PKTCNT_POS)
+#define USB_DWC2_HCTSIZ_PID_POS          29UL
+#define USB_DWC2_HCTSIZ_PID_MASK         (0x3UL << USB_DWC2_HCTSIZ_PID_POS)
+#define USB_DWC2_HCTSIZ_DOPNG            BIT(31)
+
+USB_DWC2_SET_FIELD_DEFINE(hctsiz_xfersize, HCTSIZ_XFERSIZE)
+USB_DWC2_SET_FIELD_DEFINE(hctsiz_pktcnt,   HCTSIZ_PKTCNT)
+USB_DWC2_SET_FIELD_DEFINE(hctsiz_pid,      HCTSIZ_PID)
+USB_DWC2_GET_FIELD_DEFINE(hctsiz_xfersize, HCTSIZ_XFERSIZE)
+USB_DWC2_GET_FIELD_DEFINE(hctsiz_pktcnt,   HCTSIZ_PKTCNT)
+USB_DWC2_GET_FIELD_DEFINE(hctsiz_pid,      HCTSIZ_PID)
+
+/* Host Channel DMA Address Register */
+#define USB_DWC2_HCDMA0      0x0514UL
+
+/* Host Channel DMA Buffer Address Register */
+#define USB_DWC2_HCDMAB0      0x051CUL
 
 /* Device configuration registers */
 #define USB_DWC2_DCFG				0x0800UL
