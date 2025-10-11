@@ -11,6 +11,7 @@ supported:
   - shell
   - i2c
   - spi
+  - dma
 testing:
   ignore_tags:
     - cmsis_rtos_v2
