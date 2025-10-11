@@ -118,3 +118,32 @@ choice FLASH_LOG_LEVEL_CHOICE
 endchoice
 
 endif # DT_HAS_NXP_IMX_FLEXSPI_ENABLED
+
+# MCUX C40 internal flash API shim (S32K3x)
+config FLASH_MCUX_C40_API
+	def_bool y
+	depends on SOC_SERIES_S32K3
+	depends on DT_HAS_NXP_S32K3X_C40_FLASH_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
+	select FLASH_HAS_PAGE_LAYOUT
+	# C40 uses controller commands, not CPU stores to flash
+	# so we are not relaxing MPU for ROM writes.
+	# Relocate driver/HAL when XIP so erase/program run from SRAM:
+	imply CODE_DATA_RELOCATION if XIP
+	imply CODE_DATA_RELOCATION_SRAM if XIP
+	help
+	  Enable the MCUX C40 internal flash API shim used on NXP S32K3x
+	  (e.g. S32K344). Provides Zephyr flash driver glue for &flash0 using
+	  the MCUX C40 HAL. Needed for FLASH_MAP/MCUboot on internal flash
+
+# NXP MCUX C40 internal flash: optional protection pass at init
+config FLASH_MCUX_C40_APPLY_PROTECTION
+	bool "Apply default protection windows (IVT/MCUboot) at init"
+	depends on FLASH_MCUX_C40_API
+	default y if XIP
+	help
+	  When enabled, the driver locks/unlocks protection for well-known
+	  regions derived from devicetree (e.g. ivt_header, ivt_pad, mcuboot)
+	  during driver init. Useful on XIP systems to keep IVT/bootloader
+	  areas read-only. Disable if your bootloader/policy manages this.
