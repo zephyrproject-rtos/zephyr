@@ -159,11 +159,23 @@
 /* KPP */
 #define IMX_CCM_KPP_CLK                0x2400UL
 
+/* USB */
+#define IMX_CCM_USB_CLK                0x2500UL
+#define IMX_CCM_USB_PHY_CLK            0x2600UL
+
 /* QTMR */
 #define IMX_CCM_QTMR_CLK               0x6000UL
 #define IMX_CCM_QTMR1_CLK              0x6000UL
 #define IMX_CCM_QTMR2_CLK              0x6001UL
 #define IMX_CCM_QTMR3_CLK              0x6002UL
 #define IMX_CCM_QTMR4_CLK              0x6003UL
+
+/* MEDIA */
+#define IMX_CCM_MEDIA_AXI_CLK          0x3000UL
+#define IMX_CCM_MEDIA_APB_CLK          0x3100UL
+#define IMX_CCM_MEDIA_DISP_PIX_CLK     0x3200UL
+#define IMX_CCM_MEDIA_LDB_CLK          0x3300UL
+#define IMX_CCM_MIPI_PHY_CFG_CLK       0x3400UL
+#define IMX_CCM_CAM_PIX_CLK            0x3500UL
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_IMX_CCM_REV2_H_ */
