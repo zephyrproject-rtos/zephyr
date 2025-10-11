@@ -145,7 +145,6 @@ __weak void clock_init(void)
 
 	/* Init OSC RC 400M */
 	CLOCK_OSC_EnableOscRc400M();
-	CLOCK_OSC_GateOscRc400M(false);
 
 #if CONFIG_CPU_CORTEX_M7
 	/* Switch both core to OscRC400M first */
