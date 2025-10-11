@@ -60,6 +60,16 @@ enum status_thread_state {
 static struct wifi_enterprise_creds_params enterprise_creds;
 #endif
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+#define P2P_CMD_BUF_SIZE 256
+#define P2P_RESP_BUF_SIZE 256
+#define P2P_ADDR_SIZE 32
+#define P2P_CMD_SIZE 64
+#define P2P_PEER_INFO_SIZE 512
+#define P2P_RESP_MAX_SIZE 8192
+#define P2P_RESP_SAFE_SIZE 7900
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
+
 K_MUTEX_DEFINE(wpa_supplicant_mutex);
 
 extern struct k_work_q *get_workq(void);
@@ -2502,3 +2512,166 @@ out:
 	k_mutex_unlock(&wpa_supplicant_mutex);
 	return ret;
 }
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+int supplicant_p2p(const struct device *dev, struct wifi_p2p_params *params)
+{
+	struct wpa_supplicant *wpa_s =  get_wpa_s_handle(dev);
+	char cmd_buf[P2P_CMD_BUF_SIZE];
+	char resp_buf[P2P_RESP_BUF_SIZE];
+	int ret = -1;
+	const char *discovery_type_str = "";
+
+	if (!wpa_s || !wpa_s->ctrl_conn) {
+		wpa_printf(MSG_ERROR, "wpa_supplicant control interface not initialized");
+		return -ENOTSUP;
+	}
+
+	switch (params->oper) {
+	case WIFI_P2P_FIND:
+		switch (params->discovery_type) {
+		case WIFI_P2P_FIND_ONLY_SOCIAL:
+			discovery_type_str = "type=social";
+			break;
+		case WIFI_P2P_FIND_PROGRESSIVE:
+			discovery_type_str = "type=progressive";
+			break;
+		case WIFI_P2P_FIND_START_WITH_FULL:
+		default:
+			discovery_type_str = "";
+			break;
+		}
+
+		if (params->timeout > 0) {
+			if (strlen(discovery_type_str) > 0) {
+				snprintf(cmd_buf, sizeof(cmd_buf), "P2P_FIND %u %s",
+					 params->timeout, discovery_type_str);
+			} else {
+				snprintf(cmd_buf, sizeof(cmd_buf), "P2P_FIND %u",
+					 params->timeout);
+			}
+		} else {
+			if (strlen(discovery_type_str) > 0) {
+				snprintf(cmd_buf, sizeof(cmd_buf), "P2P_FIND %s",
+					 discovery_type_str);
+			} else {
+				snprintf(cmd_buf, sizeof(cmd_buf), "P2P_FIND");
+			}
+		}
+
+		wpa_printf(MSG_DEBUG, "wpa_cli %s", cmd_buf);
+
+		ret = zephyr_wpa_cli_cmd_resp_noprint(wpa_s->ctrl_conn, cmd_buf, resp_buf);
+
+		if (ret < 0) {
+			wpa_printf(MSG_ERROR, "P2P_FIND command failed: %d", ret);
+			return -EIO;
+		}
+
+		ret = 0;
+		break;
+
+	case WIFI_P2P_PEERS: {
+		char addr[P2P_ADDR_SIZE];
+		char cmd[P2P_CMD_SIZE];
+		char peer_info[P2P_PEER_INFO_SIZE];
+		char *pos;
+		size_t len;
+		size_t resp_len;
+		bool first_peer = true;
+
+		if (!params->resp) {
+			wpa_printf(MSG_ERROR, "Response buffer not provided");
+			return -EINVAL;
+		}
+
+		params->resp[0] = '\0';
+		os_strlcpy(cmd_buf, "P2P_PEER FIRST", sizeof(cmd_buf));
+
+		while (1) {
+			wpa_printf(MSG_DEBUG, "wpa_cli %s", cmd_buf);
+			ret = zephyr_wpa_cli_cmd_resp_noprint(wpa_s->ctrl_conn,
+							       cmd_buf, resp_buf);
+
+			if (ret < 0 || resp_buf[0] == '\0' ||
+			    os_strncmp(resp_buf, "FAIL", 4) == 0) {
+				if (first_peer) {
+					wpa_printf(MSG_DEBUG, "No P2P peers found");
+				}
+				break;
+			}
+
+			len = 0;
+			pos = resp_buf;
+			while (*pos != '\0' && *pos != '\n' && len < sizeof(addr) - 1) {
+				addr[len++] = *pos++;
+			}
+			addr[len] = '\0';
+
+			if (os_strncmp(addr, "00:00:00:00:00:00", 17) != 0) {
+				os_snprintf(cmd, sizeof(cmd), "P2P_PEER %s", addr);
+				ret = zephyr_wpa_cli_cmd_resp_noprint(wpa_s->ctrl_conn,
+								       cmd, peer_info);
+
+				if (ret >= 0 && (!params->discovered_only ||
+				    os_strstr(peer_info, "[PROBE_REQ_ONLY]") == NULL)) {
+					resp_len = os_strlen(params->resp);
+					if (resp_len < P2P_RESP_SAFE_SIZE) {
+						os_snprintf(params->resp + resp_len,
+							    P2P_RESP_MAX_SIZE - resp_len,
+							    "%s\n%s\n---\n", addr, peer_info);
+					}
+				}
+			}
+
+			os_snprintf(cmd_buf, sizeof(cmd_buf), "P2P_PEER NEXT-%s", addr);
+			first_peer = false;
+		}
+
+		ret = 0;
+		break;
+	}
+
+	case WIFI_P2P_PEER: {
+		char addr_str[18];
+
+		if (!params->resp) {
+			wpa_printf(MSG_ERROR, "Response buffer not provided");
+			return -EINVAL;
+		}
+
+		snprintf(addr_str, sizeof(addr_str), "%02x:%02x:%02x:%02x:%02x:%02x",
+			 params->peer_addr[0], params->peer_addr[1], params->peer_addr[2],
+			 params->peer_addr[3], params->peer_addr[4], params->peer_addr[5]);
+
+		snprintf(cmd_buf, sizeof(cmd_buf), "P2P_PEER %s", addr_str);
+		wpa_printf(MSG_DEBUG, "wpa_cli %s", cmd_buf);
+
+		ret = zephyr_wpa_cli_cmd_resp_noprint(wpa_s->ctrl_conn, cmd_buf, resp_buf);
+
+		if (ret < 0) {
+			wpa_printf(MSG_ERROR, "P2P_PEER command failed: %d", ret);
+			return -EIO;
+		}
+
+		if (os_strncmp(resp_buf, "FAIL", 4) == 0) {
+			wpa_printf(MSG_ERROR, "Peer %s not found", addr_str);
+			return -ENODEV;
+		}
+
+		/* Store peer information in response buffer for shell to format */
+		os_strlcpy(params->resp, resp_buf, P2P_RESP_MAX_SIZE);
+
+		ret = 0;
+		break;
+	}
+
+	default:
+		wpa_printf(MSG_ERROR, "Unknown P2P operation: %d", params->oper);
+		ret = -EINVAL;
+		break;
+	}
+
+	return ret;
+}
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */

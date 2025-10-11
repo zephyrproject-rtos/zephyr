@@ -98,6 +98,9 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 	.enterprise_creds = supplicant_add_enterprise_creds,
 #endif
 	.config_params = supplicant_config_params,
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+	.p2p = supplicant_p2p,
+#endif
 };
 
 DEFINE_WIFI_NM_INSTANCE(wifi_supplicant, &mgmt_ops);

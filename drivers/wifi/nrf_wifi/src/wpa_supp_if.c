@@ -545,16 +545,16 @@ int nrf_wifi_wpa_supp_scan2(void *if_priv, struct wpa_driver_scan_params *params
 		scan_info->scan_params.num_scan_channels = indx;
 	}
 
-	if (params->filter_ssids) {
-		scan_info->scan_params.num_scan_ssids = params->num_filter_ssids;
+	if (params->num_ssids) {
+		scan_info->scan_params.num_scan_ssids = params->num_ssids;
 
-		for (indx = 0; indx < params->num_filter_ssids; indx++) {
+		for (indx = 0; indx < params->num_ssids; indx++) {
 			memcpy(scan_info->scan_params.scan_ssids[indx].nrf_wifi_ssid,
-			       params->filter_ssids[indx].ssid,
-			       params->filter_ssids[indx].ssid_len);
+			       params->ssids[indx].ssid,
+			       params->ssids[indx].ssid_len);
 
 			scan_info->scan_params.scan_ssids[indx].nrf_wifi_ssid_len =
-				params->filter_ssids[indx].ssid_len;
+				params->ssids[indx].ssid_len;
 		}
 	}
 
@@ -1797,6 +1797,9 @@ int nrf_wifi_supp_get_capa(void *if_priv, struct wpa_driver_capa *capa)
 	capa->rrm_flags |= WPA_DRIVER_FLAGS_SUPPORT_BEACON_REPORT;
 	if (IS_ENABLED(CONFIG_NRF70_AP_MODE)) {
 		capa->flags |= WPA_DRIVER_FLAGS_AP;
+	}
+	if (IS_ENABLED(CONFIG_NRF70_P2P_MODE)) {
+		capa->flags |= WPA_DRIVER_FLAGS_P2P_CAPABLE;
 	}
 
 	capa->enc |= WPA_DRIVER_CAPA_ENC_WEP40 |
