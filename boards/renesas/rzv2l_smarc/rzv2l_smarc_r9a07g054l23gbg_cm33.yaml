@@ -13,4 +13,5 @@ supported:
   - i2c
   - counter
   - mbox
+  - spi
 vendor: renesas
