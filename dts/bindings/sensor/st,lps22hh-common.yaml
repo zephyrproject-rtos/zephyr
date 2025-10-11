@@ -31,6 +31,7 @@ properties:
     default: 0
     description: |
         Specify the default output data rate expressed in samples per second (Hz).
+        This value is ignored in favor of one-shot mode unless trigger mode is enabled.
         The default is the power-on reset value.
 
         - 0  # LPS22HH_DT_ODR_POWER_DOWN

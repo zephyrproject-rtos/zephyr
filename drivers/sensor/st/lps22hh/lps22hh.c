@@ -21,6 +21,8 @@
 
 LOG_MODULE_REGISTER(LPS22HH, CONFIG_SENSOR_LOG_LEVEL);
 
+#ifdef CONFIG_LPS22HH_TRIGGER
+
 static inline int lps22hh_set_odr_raw(const struct device *dev, uint8_t odr)
 {
 	const struct lps22hh_config *const cfg = dev->config;
@@ -28,6 +30,33 @@ static inline int lps22hh_set_odr_raw(const struct device *dev, uint8_t odr)
 
 	return lps22hh_data_rate_set(ctx, odr);
 }
+
+static const uint16_t lps22hh_map[] = {0, 1, 10, 25, 50, 75, 100, 200};
+
+static int lps22hh_odr_set(const struct device *dev, uint16_t freq)
+{
+	int odr;
+
+	for (odr = 0; odr < ARRAY_SIZE(lps22hh_map); odr++) {
+		if (freq == lps22hh_map[odr]) {
+			break;
+		}
+	}
+
+	if (odr == ARRAY_SIZE(lps22hh_map)) {
+		LOG_DBG("bad frequency");
+		return -EINVAL;
+	}
+
+	if (lps22hh_set_odr_raw(dev, odr) < 0) {
+		LOG_DBG("failed to set sampling rate");
+		return -EIO;
+	}
+
+	return 0;
+}
+
+#endif /* CONFIG_LPS22HH_TRIGGER */
 
 static int lps22hh_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
@@ -39,6 +68,37 @@ static int lps22hh_sample_fetch(const struct device *dev, enum sensor_channel ch
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_PRESS ||
 			chan == SENSOR_CHAN_AMBIENT_TEMP);
+
+#ifndef CONFIG_LPS22HH_TRIGGER
+	lps22hh_status_t status;
+	bool data_ready;
+
+	/* One-shot mode, trigger the measurement */
+	if (lps22hh_data_rate_set(ctx, LPS22HH_ONE_SHOOT) < 0) {
+		LOG_DBG("Failed to trigger sample");
+		return -EIO;
+	}
+	/* Wait until data is sampled.
+	 * The datasheet doesn't specify how long a measurement cycle takes, but since 200Hz ODR
+	 * is possible, it should be less than 5ms. Measured duration on one device is sub 3ms.
+	 */
+	for (int i = 0; i < 10; i++) {
+		if (lps22hh_status_reg_get(ctx, &status) < 0) {
+			LOG_DBG("Failed to read status");
+			return -EIO;
+		}
+		data_ready = status.t_da && status.p_da;
+		if (data_ready) {
+			/* New data ready */
+			break;
+		}
+		k_sleep(K_MSEC(1));
+	}
+	if (!data_ready) {
+		LOG_DBG("One shot sampling failed");
+		return -EAGAIN;
+	}
+#endif /* !CONFIG_LPS22HH_TRIGGER */
 
 	switch (chan) {
 	case SENSOR_CHAN_PRESS:
@@ -117,31 +177,6 @@ static int lps22hh_channel_get(const struct device *dev, enum sensor_channel cha
 	return 0;
 }
 
-static const uint16_t lps22hh_map[] = {0, 1, 10, 25, 50, 75, 100, 200};
-
-static int lps22hh_odr_set(const struct device *dev, uint16_t freq)
-{
-	int odr;
-
-	for (odr = 0; odr < ARRAY_SIZE(lps22hh_map); odr++) {
-		if (freq == lps22hh_map[odr]) {
-			break;
-		}
-	}
-
-	if (odr == ARRAY_SIZE(lps22hh_map)) {
-		LOG_DBG("bad frequency");
-		return -EINVAL;
-	}
-
-	if (lps22hh_set_odr_raw(dev, odr) < 0) {
-		LOG_DBG("failed to set sampling rate");
-		return -EIO;
-	}
-
-	return 0;
-}
-
 static int lps22hh_attr_set(const struct device *dev, enum sensor_channel chan,
 			    enum sensor_attribute attr, const struct sensor_value *val)
 {
@@ -151,8 +186,10 @@ static int lps22hh_attr_set(const struct device *dev, enum sensor_channel chan,
 	}
 
 	switch (attr) {
+#ifdef CONFIG_LPS22HH_TRIGGER
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		return lps22hh_odr_set(dev, val->val1);
+#endif /* CONFIG_LPS22HH_TRIGGER */
 	default:
 		LOG_DBG("operation not supported.");
 		return -ENOTSUP;
@@ -211,6 +248,7 @@ static int lps22hh_init_chip(const struct device *dev)
 	}
 #endif
 
+#ifdef CONFIG_LPS22HH_TRIGGER
 	/* set sensor default odr */
 	LOG_DBG("%s: odr: %d", dev->name, cfg->odr);
 	ret = lps22hh_set_odr_raw(dev, cfg->odr);
@@ -218,6 +256,14 @@ static int lps22hh_init_chip(const struct device *dev)
 		LOG_ERR("%s: Failed to set odr %d", dev->name, cfg->odr);
 		return ret;
 	}
+#else
+	/* No trigger mode, we will use the one-shot mode in fetch */
+	ret = lps22hh_data_rate_set(ctx, LPS22HH_POWER_DOWN);
+	if (ret < 0) {
+		LOG_ERR("%s: Failed to set one-shot", dev->name);
+		return ret;
+	}
+#endif /* CONFIG_LPS22HH_TRIGGER */
 
 	if (lps22hh_block_data_update_set(ctx, PROPERTY_ENABLE) < 0) {
 		LOG_ERR("%s: Failed to set BDU", dev->name);
@@ -229,7 +275,7 @@ static int lps22hh_init_chip(const struct device *dev)
 
 static int lps22hh_pm_action(const struct device *dev, enum pm_device_action action)
 {
-	const struct lps22hh_config *cfg = dev->config;
+	__maybe_unused const struct lps22hh_config *cfg = dev->config;
 	int ret = 0;
 
 	switch (action) {
@@ -242,18 +288,22 @@ static int lps22hh_pm_action(const struct device *dev, enum pm_device_action act
 		break;
 
 	case PM_DEVICE_ACTION_RESUME:
+#ifdef CONFIG_LPS22HH_TRIGGER
 		ret = lps22hh_set_odr_raw(dev, cfg->odr);
 		if (ret != 0) {
 			LOG_ERR("%s: Failed to set odr %d", dev->name, cfg->odr);
 		}
+#endif /* CONFIG_LPS22HH_TRIGGER */
 		break;
 
 	case PM_DEVICE_ACTION_SUSPEND:
+#ifdef CONFIG_LPS22HH_TRIGGER
 		/* set odr to 0 for power-down mode */
 		ret = lps22hh_set_odr_raw(dev, 0);
 		if (ret != 0) {
 			LOG_ERR("%s: Failed to reset odr", dev->name);
 		}
+#endif /* CONFIG_LPS22HH_TRIGGER */
 		break;
 
 	case PM_DEVICE_ACTION_TURN_OFF:
