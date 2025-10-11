@@ -35,6 +35,15 @@
 				channel = <3>;
 				status = "disabled";
 			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <3>;
+				overrun-character = <0x00>;
+				status = "disabled";
+			};
 		};
 
 		sci4: sci4@40118400 {
@@ -46,6 +55,15 @@
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <4>;
+				status = "disabled";
+			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <4>;
+				overrun-character = <0x00>;
 				status = "disabled";
 			};
 		};
