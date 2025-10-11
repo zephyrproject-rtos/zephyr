@@ -36,7 +36,8 @@ static void pm_state_before(void)
 	};
 
 	/* IRQs enabled at NVIC level become GPC wake sources */
-	for (uint32_t idx = 0; idx < nvic_iser_nb; idx++) {
+	for (uint32_t idx = 0; idx <
+			MIN(GPC_CPU_CTRL_CMC_IRQ_WAKEUP_MASK_COUNT, nvic_iser_nb); idx++) {
 		wake_mask[idx] = ~(NVIC->ISER[idx]);
 	}
 
