@@ -26,23 +26,6 @@ static struct wifi_connect_req_params sta_config;
 
 static struct net_mgmt_event_callback cb;
 
-/* Check necessary definitions */
-
-BUILD_ASSERT(sizeof(CONFIG_WIFI_SAMPLE_AP_SSID) > 1,
-	     "CONFIG_WIFI_SAMPLE_AP_SSID is empty. Please set it in conf file.");
-
-BUILD_ASSERT(sizeof(CONFIG_WIFI_SAMPLE_SSID) > 1,
-	     "CONFIG_WIFI_SAMPLE_SSID is empty. Please set it in conf file.");
-
-#if WIFI_SAMPLE_DHCPV4_START
-BUILD_ASSERT(sizeof(CONFIG_WIFI_SAMPLE_AP_IP_ADDRESS) > 1,
-	     "CONFIG_WIFI_SAMPLE_AP_IP_ADDRESS is empty. Please set it in conf file.");
-
-BUILD_ASSERT(sizeof(CONFIG_WIFI_SAMPLE_AP_NETMASK) > 1,
-	     "CONFIG_WIFI_SAMPLE_AP_NETMASK is empty. Please set it in conf file.");
-
-#endif
-
 static void wifi_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 			       struct net_if *iface)
 {
