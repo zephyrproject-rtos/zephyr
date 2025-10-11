@@ -1877,16 +1877,16 @@ static int npcx_i3c_ibi_enable(const struct device *dev, struct i3c_device_desc 
 		idx = 0;
 	}
 
-	data->ibi.addr[idx] = target->dynamic_addr;
-	data->ibi.num_addr += 1U;
-
-	npcx_i3c_ibi_rules_setup(data, inst);
-
 	/* Enable target IBI event by ENEC command */
 	i3c_events.events = I3C_CCC_EVT_INTR;
 	ret = i3c_ccc_do_events_set(target, true, &i3c_events);
 	if (ret != 0) {
 		LOG_ERR("Error sending IBI ENEC for 0x%02x (%d)", target->dynamic_addr, ret);
+	} else {
+		data->ibi.addr[idx] = target->dynamic_addr;
+		data->ibi.num_addr += 1U;
+
+		npcx_i3c_ibi_rules_setup(data, inst);
 	}
 
 out_ibi_enable:
