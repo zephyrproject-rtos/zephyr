@@ -224,7 +224,10 @@ config NET_IPV6_IID_EUI_64
 config NET_IPV6_IID_STABLE
 	bool "Generate stable IID [EXPERIMENTAL]"
 	select MBEDTLS
-	select MBEDTLS_MD
+	select MBEDTLS_PSA_CRYPTO_C
+	select PSA_WANT_KEY_TYPE_HMAC
+	select PSA_WANT_ALG_HMAC
+	select PSA_WANT_ALG_SHA_256
 	select EXPERIMENTAL
 	depends on !NET_6LO
 	help
@@ -246,7 +249,10 @@ endchoice
 config NET_IPV6_PE
 	bool "Privacy extension (RFC 8981) support [EXPERIMENTAL]"
 	select MBEDTLS
-	select MBEDTLS_MD
+	select MBEDTLS_PSA_CRYPTO_C
+	select PSA_WANT_KEY_TYPE_HMAC
+	select PSA_WANT_ALG_HMAC
+	select PSA_WANT_ALG_SHA_256
 	select EXPERIMENTAL
 	select NET_MGMT
 	select NET_MGMT_EVENT
