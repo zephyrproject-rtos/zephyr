@@ -204,6 +204,8 @@ if tags.has("publish"):  # pylint: disable=undefined-variable  # noqa: F821
 docs_title = "Docs / {}".format(version if is_release else "Latest")
 html_context = {
     "show_license": True,
+    "project": project,
+    "pdf": "zephyr",
     "docs_title": docs_title,
     "is_release": is_release,
     "current_version": version,
