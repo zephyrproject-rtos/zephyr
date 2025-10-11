@@ -172,6 +172,14 @@
 		};
 	};
 
+	aw88298: aw88298@36 {
+		compatible = "awinic,aw88298";
+		reg = <0x36>;
+		reset-gpios = <&aw9523b_gpio 2 GPIO_ACTIVE_LOW>;
+		int-gpios = <&aw9523b_gpio 11 GPIO_ACTIVE_LOW>;
+		status = "disabled";
+	};
+
 	bm8563_rtc: bm8563@51 {
 		compatible = "nxp,pcf8563";
 		reg = <0x51>;
@@ -199,6 +207,11 @@
 		int-gpios = <&aw9523b_gpio 10 GPIO_ACTIVE_LOW>;
 		reset-gpios = <&aw9523b_gpio 0 GPIO_ACTIVE_LOW>;
 	};
+};
+
+&i2s1 {
+	pinctrl-0 = <&i2s1_default>;
+	pinctrl-names = "default";
 };
 
 &i2c1 {

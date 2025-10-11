@@ -83,4 +83,20 @@
 				 <TWAI_RX_GPIO6>;
 		};
 	};
+
+	i2s1_default: i2s1_default {
+		group1 {
+			pinmux = <I2S1_O_BCK_GPIO34>,
+				 <I2S1_O_WS_GPIO33>;
+		};
+
+		group2 {
+			pinmux = <I2S1_O_SD_GPIO13>;
+		};
+
+		group3 {
+			pinmux = <I2S1_I_SD_GPIO14>;
+			bias-disable;
+		};
+	};
 };
