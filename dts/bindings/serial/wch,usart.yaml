@@ -2,7 +2,7 @@ description: WCH CH32V00x UART
 
 compatible: "wch,usart"
 
-include: [uart-controller.yaml, pinctrl-device.yaml]
+include: [uart-controller.yaml, pinctrl-device.yaml, reset-device.yaml]
 
 properties:
   reg:
