@@ -525,6 +525,23 @@ config RISCV_NO_MTVAL_ON_FP_TRAP
 	  to contain the faulting FP instruction, requiring alternative methods
 	  to handle FP exceptions.
 
+# Workaround for not being able to have commas in macro arguments.
+DT_CHOSEN_Z_FLASH := zephyr,flash
+DT_COMPAT_JEDEC_SPI_NOR := jedec,spi-nor
+DT_COMPAT_LITEX_SPI_LITESPI := litex,spi-litespi
+DT_CHOSEN_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH))
+DT_CHOSEN_FLASH_PARENT := $(dt_node_parent,$(DT_CHOSEN_FLASH_NODE))
+
+config FLASH_SIZE
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K) if (XIP && $(dt_chosen_has_compat,$(DT_CHOSEN_Z_FLASH),soc-nv-flash))
+	default $(dt_node_reg_size_int,$(DT_CHOSEN_FLASH_PARENT),9,K) if (XIP && $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_COMPAT_LITEX_SPI_LITESPI)))
+	default $(dt_node_reg_size_int,$(DT_CHOSEN_FLASH_PARENT),1,K) if (XIP && $(dt_chosen_has_compat,$(DT_CHOSEN_Z_FLASH),$(DT_COMPAT_JEDEC_SPI_NOR)))
+
+config FLASH_BASE_ADDRESS
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH)) if (XIP && $(dt_chosen_has_compat,$(DT_CHOSEN_Z_FLASH),soc-nv-flash))
+	default $(dt_node_reg_addr_hex,$(DT_CHOSEN_FLASH_PARENT),9) if (XIP && $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_COMPAT_LITEX_SPI_LITESPI)))
+	default $(dt_node_reg_addr_hex,$(DT_CHOSEN_FLASH_PARENT),1) if (XIP && $(dt_chosen_has_compat,$(DT_CHOSEN_Z_FLASH),$(DT_COMPAT_JEDEC_SPI_NOR)))
+
 rsource "Kconfig.isa"
 rsource "core/Kconfig"
 
