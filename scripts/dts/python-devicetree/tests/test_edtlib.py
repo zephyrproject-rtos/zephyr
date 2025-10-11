@@ -130,6 +130,67 @@ def test_interrupts():
         edtlib.ControllerAndData(node=node, controller=edt.get_node('/interrupt-map-bitops-test/controller'), data={'one': 3, 'two': 2}, name=None, basename=None)
     ]
 
+
+def test_maps():
+    '''Tests for the maps property.'''
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
+
+    nexus = edt.get_node("/interrupt-map-test/nexus")
+    controller_0 = edt.get_node("/interrupt-map-test/controller-0")
+    controller_1 = edt.get_node("/interrupt-map-test/controller-1")
+    controller_2 = edt.get_node("/interrupt-map-test/controller-2")
+
+    assert len(nexus.maps) == 6
+
+    assert nexus.maps[0] == edtlib.MapEntry(
+        node=nexus,
+        parent=controller_0,
+        child_specifiers=[0, 0, 0, 0],
+        parent_specifiers=[0, 0],
+        basename="interrupt",
+    )
+
+    assert nexus.maps[1] == edtlib.MapEntry(
+        node=nexus,
+        parent=controller_1,
+        child_specifiers=[0, 0, 0, 1],
+        parent_specifiers=[0, 0, 0, 1],
+        basename="interrupt",
+    )
+
+    assert nexus.maps[2] == edtlib.MapEntry(
+        node=nexus,
+        parent=controller_2,
+        child_specifiers=[0, 0, 0, 2],
+        parent_specifiers=[0, 0, 0, 0, 0, 2],
+        basename="interrupt",
+    )
+
+    assert nexus.maps[3] == edtlib.MapEntry(
+        node=nexus,
+        parent=controller_0,
+        child_specifiers=[0, 1, 0, 0],
+        parent_specifiers=[0, 3],
+        basename="interrupt",
+    )
+
+    assert nexus.maps[4] == edtlib.MapEntry(
+        node=nexus,
+        parent=controller_1,
+        child_specifiers=[0, 1, 0, 1],
+        parent_specifiers=[0, 0, 0, 4],
+        basename="interrupt",
+    )
+
+    assert nexus.maps[5] == edtlib.MapEntry(
+        node=nexus,
+        parent=controller_2,
+        child_specifiers=[0, 1, 0, 2],
+        parent_specifiers=[0, 0, 0, 0, 0, 5],
+        basename="interrupt",
+    )
+
 def test_ranges():
     '''Tests for the ranges property'''
     with from_here():

@@ -898,6 +898,39 @@ class PinCtrl:
         "See the class docstring"
         return str_as_token(self.name) if self.name is not None else None
 
+@dataclass
+class MapEntry:
+    """
+    Represents a single entry parsed from a ``*-map`` property. For example,
+    the value '<0 0 &gpio0 14 0>' from 'gpio-map = <0 0 &gpio0 14 0>, <1 0 &gpio0 0 0>;'
+    becomes one ``MapEntry`` instance.
+
+    These attributes are available on ``MapEntry`` objects:
+
+    node:
+      The Node instance whose property contains the map entry.
+
+    child_specifiers:
+      A list of integers read from the child side of the map entry.
+      These are the specifier cells that precede the parent phandle.
+
+    parent:
+      The parent Node instance.
+
+    parent_specifiers:
+      A list of integers describing the parent side of the mapping.
+      These values correspond to the ``*-cells`` definition in the
+      parent's binding.
+
+    basename:
+      The base name of the ``*-map`` property, which also describes the
+      specifier space for the mapping.
+    """
+    node: 'Node'
+    child_specifiers: list[int]
+    parent: 'Node'
+    parent_specifiers: list[int]
+    basename: str
 
 class Node:
     """
@@ -1044,6 +1077,14 @@ class Node:
       A list of ControllerAndData objects for the GPIOs hogged by the node. The
       list is empty if the node does not hog any GPIOs. Only relevant for GPIO hog
       nodes.
+
+    maps:
+      A list of ControllerAndData objects for each entry in a *-map property on
+      the node, such as 'interrupt-map'. Each ControllerAndData describes a
+      mapping from a child specifier to a parent controller, with 'basename' set
+      to the specifier name (e.g. 'interrupt') and 'data' containing the
+      parsed child and parent specifier cells.
+      The list is empty if the node has no *-map properties.
 
     is_pci_device:
       True if the node is a PCI device.
@@ -1314,6 +1355,77 @@ class Node:
                 node=self, controller=controller,
                 data=self._named_cells(controller, item, "gpio"),
                 name=None, basename="gpio"))
+
+        return res
+
+    @property
+    def maps(self) -> list[MapEntry]:
+        "See the class docstring"
+
+        res: list[MapEntry] = []
+
+        def count_cells_num(node: dtlib_Node, specifier: str) -> int:
+            """
+            Calculate the number of cells in the node.
+            When calculating the number of interrupt cells,
+            add up the values of the address cells.
+            """
+
+            num = node.props[f"#{specifier}-cells"].to_num()
+
+            if specifier == "interrupt":
+                parent_props = None
+                if node.parent:
+                    parent_props = node.parent.props
+
+                if "#address-cells" in node.props:
+                    num = num + node.props["#address-cells"].to_num()
+                elif parent_props and "#address-cells" in parent_props:
+                    num = num + parent_props["#address-cells"].to_num()
+                else:
+                    _err("Neither the node nor its parent has `#address-cells` property")
+
+            return num
+
+        for prop in [v for k, v in self._node.props.items() if k.endswith("-map")]:
+            specifier_space = prop.name[:-4]  # Strip '-map'
+            raw = prop.value
+            while raw:
+                if len(raw) < 4:
+                    # Not enough room for phandle
+                    _err("bad value for " + repr(prop))
+
+                child_specifier_num = count_cells_num(prop.node, specifier_space)
+
+                child_specifiers = to_nums(raw[: 4 * child_specifier_num])
+                raw = raw[4 * child_specifier_num :]
+                phandle = to_num(raw[:4])
+                raw = raw[4:]
+
+                parent_node = prop.node.dt.phandle2node.get(phandle)
+                if parent_node is None:
+                    _err(f"parent node cannot be found from phandle:{phandle}")
+
+                parent: Node = self.edt._node2enode[parent_node]
+                if parent is None:
+                    _err("parent cannot be found from: " + repr(parent_node))
+
+                parent_specifier_num = count_cells_num(parent_node, specifier_space)
+                parent_specifiers = to_nums(raw[: 4 * parent_specifier_num])
+                raw = raw[4 * parent_specifier_num :]
+
+                res.append(
+                    MapEntry(
+                        node=self,
+                        child_specifiers=child_specifiers,
+                        parent=parent,
+                        parent_specifiers=parent_specifiers,
+                        basename=specifier_space,
+                    )
+                )
+
+            if len(raw) != 0:
+                _err(f"unexpected prop.value remainings: {raw}")
 
         return res
 
