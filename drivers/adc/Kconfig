@@ -178,4 +178,6 @@ source "drivers/adc/Kconfig.ti_am335x"
 
 source "drivers/adc/Kconfig.ch32v00x"
 
+source "drivers/adc/Kconfig.ads1118"
+
 endif # ADC
