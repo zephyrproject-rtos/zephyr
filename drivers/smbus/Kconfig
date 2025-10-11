@@ -5,6 +5,7 @@
 
 menuconfig SMBUS
 	bool "System Management Bus (SMBus) drivers"
+	imply CRC
 	help
 	  Enable SMBus Driver Configuration
 
