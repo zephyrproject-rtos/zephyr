@@ -28,8 +28,7 @@ static const struct pthread_mutexattr def_attr = {
 	.type = PTHREAD_MUTEX_DEFAULT,
 };
 
-__pinned_bss
-static struct k_mutex posix_mutex_pool[CONFIG_MAX_PTHREAD_MUTEX_COUNT];
+static __pinned_bss struct k_mutex posix_mutex_pool[CONFIG_MAX_PTHREAD_MUTEX_COUNT];
 
 static uint8_t posix_mutex_type[CONFIG_MAX_PTHREAD_MUTEX_COUNT];
 SYS_BITARRAY_DEFINE_STATIC(posix_mutex_bitarray, CONFIG_MAX_PTHREAD_MUTEX_COUNT);
@@ -40,7 +39,7 @@ SYS_BITARRAY_DEFINE_STATIC(posix_mutex_bitarray, CONFIG_MAX_PTHREAD_MUTEX_COUNT)
  * the theoretical pthread_mutex_t range is [0,2147483647].
  */
 BUILD_ASSERT(CONFIG_MAX_PTHREAD_MUTEX_COUNT < PTHREAD_OBJ_MASK_INIT,
-	"CONFIG_MAX_PTHREAD_MUTEX_COUNT is too high");
+	     "CONFIG_MAX_PTHREAD_MUTEX_COUNT is too high");
 
 static inline size_t posix_mutex_to_offset(struct k_mutex *m)
 {
@@ -208,8 +207,7 @@ int pthread_mutex_trylock(pthread_mutex_t *m)
  *
  * See IEEE 1003.1
  */
-int pthread_mutex_timedlock(pthread_mutex_t *m,
-			    const struct timespec *abstime)
+int pthread_mutex_timedlock(pthread_mutex_t *m, const struct timespec *abstime)
 {
 	if ((abstime == NULL) || !timespec_is_valid(abstime)) {
 		LOG_DBG("%s is invalid", "abstime");
@@ -248,7 +246,6 @@ int pthread_mutex_init(pthread_mutex_t *mu, const pthread_mutexattr_t *_attr)
 
 	return 0;
 }
-
 
 /**
  * @brief Lock POSIX mutex with blocking call.
@@ -310,45 +307,6 @@ int pthread_mutex_destroy(pthread_mutex_t *mu)
 	LOG_DBG("Destroyed mutex %p", m);
 
 	return 0;
-}
-
-/**
- * @brief Read protocol attribute for mutex.
- *
- * See IEEE 1003.1
- */
-int pthread_mutexattr_getprotocol(const pthread_mutexattr_t *attr,
-				  int *protocol)
-{
-	if ((attr == NULL) || (protocol == NULL)) {
-		return EINVAL;
-	}
-
-	*protocol = PTHREAD_PRIO_NONE;
-	return 0;
-}
-
-/**
- * @brief Set protocol attribute for mutex.
- *
- * See IEEE 1003.1
- */
-int pthread_mutexattr_setprotocol(pthread_mutexattr_t *attr, int protocol)
-{
-	if (attr == NULL) {
-		return EINVAL;
-	}
-
-	switch (protocol) {
-	case PTHREAD_PRIO_NONE:
-		return 0;
-	case PTHREAD_PRIO_INHERIT:
-		return ENOTSUP;
-	case PTHREAD_PRIO_PROTECT:
-		return ENOTSUP;
-	default:
-		return EINVAL;
-	}
 }
 
 int pthread_mutexattr_init(pthread_mutexattr_t *attr)
@@ -420,44 +378,7 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
 	}
 }
 
-#ifdef CONFIG_POSIX_THREAD_PRIO_PROTECT
-int pthread_mutex_getprioceiling(const pthread_mutex_t *mutex, int *prioceiling)
-{
-	ARG_UNUSED(mutex);
-	ARG_UNUSED(prioceiling);
-
-	return ENOSYS;
-}
-
-int pthread_mutex_setprioceiling(pthread_mutex_t *mutex, int prioceiling, int *old_ceiling)
-{
-	ARG_UNUSED(mutex);
-	ARG_UNUSED(prioceiling);
-	ARG_UNUSED(old_ceiling);
-
-	return ENOSYS;
-}
-
-int pthread_mutexattr_getprioceiling(const pthread_mutexattr_t *attr, int *prioceiling)
-{
-	ARG_UNUSED(attr);
-	ARG_UNUSED(prioceiling);
-
-	return ENOSYS;
-}
-
-int pthread_mutexattr_setprioceiling(pthread_mutexattr_t *attr, int prioceiling)
-{
-	ARG_UNUSED(attr);
-	ARG_UNUSED(prioceiling);
-
-	return ENOSYS;
-}
-
-#endif /* CONFIG_POSIX_THREAD_PRIO_PROTECT */
-
-__boot_func
-static int pthread_mutex_pool_init(void)
+__boot_func static int pthread_mutex_pool_init(void)
 {
 	int err;
 	size_t i;
