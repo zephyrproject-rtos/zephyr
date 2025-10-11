@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_SF32LB
+	bool "SF32LB Watchdog (WDT) Driver"
+	default y
+	help
+	  Enable WDT driver for SF32LB series MCUs.
