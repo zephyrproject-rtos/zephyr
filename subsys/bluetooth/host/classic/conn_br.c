@@ -11,6 +11,7 @@
 #include <zephyr/kernel.h>
 #include <string.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
@@ -154,6 +155,10 @@ void bt_br_acl_recv(struct bt_conn *conn, struct net_buf *buf, bool complete)
 		net_buf_simple_save(&buf->b, &state);
 
 		hdr = (void *)buf->data;
+		if (sys_le16_to_cpu(hdr->len) > (UINT16_MAX - sizeof(*hdr))) {
+			LOG_ERR("L2CAP PDU length overflow");
+			break;
+		}
 		acl_total_len = sys_le16_to_cpu(hdr->len) + sizeof(*hdr);
 		if (buf->len > acl_total_len) {
 			LOG_DBG("Multiple L2CAP packet (%u > %u)", buf->len, acl_total_len);
