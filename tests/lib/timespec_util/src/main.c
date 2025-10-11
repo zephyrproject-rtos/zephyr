@@ -120,8 +120,8 @@ ZTEST(timeutil_api, test_timespec_is_valid)
 		bool valid = timespec_is_valid(&tspec->invalid_ts);
 
 		zexpect_equal(valid, tspec->expect_valid,
-			      "%d: timespec_is_valid({%ld, %ld}) = %s, expected true", i,
-			      tspec->valid_ts.tv_sec, tspec->valid_ts.tv_nsec,
+			      "%zu: timespec_is_valid({%lld, %lld}) = %s, expected true", i,
+			      (long long)tspec->valid_ts.tv_sec, (long long)tspec->valid_ts.tv_nsec,
 			      tspec->expect_valid ? "false" : "true");
 	}
 }
@@ -139,7 +139,7 @@ ZTEST(timeutil_api, test_timespec_normalize)
 
 		overflow = !timespec_normalize(&norm);
 		zexpect_not_equal(tspec->expect_valid || tspec->correctable, overflow,
-				  "%d: timespec_normalize({%lld, %lld}) %s, unexpectedly", i,
+				  "%zu: timespec_normalize({%lld, %lld}) %s, unexpectedly", i,
 				  (long long)tspec->invalid_ts.tv_sec,
 				  (long long)tspec->invalid_ts.tv_nsec,
 				  tspec->correctable ? "failed" : "succeeded");
@@ -148,7 +148,7 @@ ZTEST(timeutil_api, test_timespec_normalize)
 			different = !timespec_equal(&tspec->invalid_ts, &norm);
 			corrected = timespec_equal(&tspec->valid_ts, &norm);
 			zexpect_true(different && corrected,
-				     "%d: {%lld, %lld} is not properly corrected:"
+				     "%zu: {%lld, %lld} is not properly corrected:"
 				     "{%lld, %lld} != {%lld, %lld}", i,
 				     (long long)tspec->invalid_ts.tv_sec,
 				     (long long)tspec->invalid_ts.tv_nsec,
@@ -191,15 +191,17 @@ ZTEST(timeutil_api, test_timespec_add)
 		overflow = !timespec_add(&actual, &tspec->b);
 
 		zexpect_equal(overflow, tspec->expect,
-			      "%d: timespec_add({%ld, %ld}, {%ld, %ld}) %s, unexpectedly", i,
-			      tspec->a.tv_sec, tspec->a.tv_nsec, tspec->b.tv_sec, tspec->b.tv_nsec,
+			      "%zu: timespec_add({%lld, %lld}, {%lld, %lld}) %s, unexpectedly", i,
+			      (long long)tspec->a.tv_sec, (long long)tspec->a.tv_nsec,
+			      (long long)tspec->b.tv_sec, (long long)tspec->b.tv_nsec,
 			      tspec->expect ? "succeeded" : "failed");
 
 		if (!tspec->expect) {
-			zexpect_equal(timespec_equal(&actual, &tspec->result), true,
-				      "%d: {%ld, %ld} and {%ld, %ld} are unexpectedly different", i,
-				      actual.tv_sec, actual.tv_nsec, tspec->result.tv_sec,
-				      tspec->result.tv_nsec);
+			zexpect_equal(
+				timespec_equal(&actual, &tspec->result), true,
+				"%zu: {%lld, %lld} and {%lld, %lld} are unexpectedly different", i,
+				(long long)actual.tv_sec, (long long)actual.tv_nsec,
+				(long long)tspec->result.tv_sec, (long long)tspec->result.tv_nsec);
 		}
 	}
 }
@@ -228,15 +230,16 @@ ZTEST(timeutil_api, test_timespec_negate)
 
 		overflow = !timespec_negate(&actual);
 		zexpect_equal(overflow, tspec->expect_failure,
-			      "%d: timespec_negate({%ld, %ld}) %s, unexpectedly", i,
-			      tspec->ts.tv_sec, tspec->ts.tv_nsec,
+			      "%zu: timespec_negate({%lld, %lld}) %s, unexpectedly", i,
+			      (long long)tspec->ts.tv_sec, (long long)tspec->ts.tv_nsec,
 			      tspec->expect_failure ? "did not overflow" : "overflowed");
 
 		if (!tspec->expect_failure) {
-			zexpect_true(timespec_equal(&actual, &tspec->result),
-				     "%d: {%ld, %ld} and {%ld, %ld} are unexpectedly different", i,
-				     actual.tv_sec, actual.tv_nsec, tspec->result.tv_sec,
-				     tspec->result.tv_nsec);
+			zexpect_true(
+				timespec_equal(&actual, &tspec->result),
+				"%zu: {%lld, %lld} and {%lld, %lld} are unexpectedly different", i,
+				(long long)actual.tv_sec, (long long)actual.tv_nsec,
+				(long long)tspec->result.tv_sec, (long long)tspec->result.tv_nsec);
 		}
 	}
 }
@@ -450,9 +453,9 @@ ZTEST(timeutil_api, test_timespec_from_timeout)
 
 		timespec_from_timeout(tspec->timeout, &actual);
 		zexpect_true(timespec_equal(&actual, &tspec->tspec),
-			     "%d: {%ld, %ld} and {%ld, %ld} are unexpectedly different", i,
-			     actual.tv_sec, actual.tv_nsec, tspec->tspec.tv_sec,
-			     tspec->tspec.tv_nsec);
+			     "%zu: {%lld, %lld} and {%lld, %lld} are unexpectedly different", i,
+			     (long long)actual.tv_sec, (long long)actual.tv_nsec,
+			     (long long)tspec->tspec.tv_sec, (long long)tspec->tspec.tv_nsec);
 	}
 }
 
@@ -486,7 +489,7 @@ ZTEST(timeutil_api, test_timespec_to_timeout)
 					 (long long)tspec->tspec.tv_nsec);
 			}
 			zexpect_equal(actual.ticks, tspec->timeout.ticks,
-				      "%d: {%" PRId64 "} and {%" PRId64
+				      "%zu: {%" PRId64 "} and {%" PRId64
 				      "} are unexpectedly different",
 				      i, (int64_t)actual.ticks, (int64_t)tspec->timeout.ticks);
 		} else if (tspec->saturation < 0) {
@@ -499,7 +502,7 @@ ZTEST(timeutil_api, test_timespec_to_timeout)
 				 (long long)SYS_TIMESPEC_MIN.tv_sec,
 				 (long long)SYS_TIMESPEC_MIN.tv_nsec);
 			zexpect_equal(actual.ticks, K_TICK_MIN,
-				      "%d: {%" PRId64 "} and {%" PRId64
+				      "%zu: {%" PRId64 "} and {%" PRId64
 				      "} are unexpectedly different",
 				      i, (int64_t)actual.ticks, (int64_t)K_TICK_MIN);
 		} else if (tspec->saturation > 0) {
@@ -512,7 +515,7 @@ ZTEST(timeutil_api, test_timespec_to_timeout)
 				 (long long)SYS_TIMESPEC_MAX.tv_sec,
 				 (long long)SYS_TIMESPEC_MAX.tv_nsec);
 			zexpect_equal(actual.ticks, K_TICK_MAX,
-				      "%d: {%" PRId64 "} and {%" PRId64
+				      "%zu: {%" PRId64 "} and {%" PRId64
 				      "} are unexpectedly different",
 				      i, (int64_t)actual.ticks, (int64_t)K_TICK_MAX);
 		}
@@ -520,9 +523,9 @@ ZTEST(timeutil_api, test_timespec_to_timeout)
 		timespec_from_timeout(tspec->timeout, &tick_ts);
 		timespec_add(&tick_ts, &rem);
 		zexpect_true(timespec_equal(&tick_ts, &tspec->tspec),
-			     "%d: {%ld, %ld} and {%ld, %ld} are unexpectedly different", i,
-			     tick_ts.tv_sec, tick_ts.tv_nsec, tspec->tspec.tv_sec,
-			     tspec->tspec.tv_nsec);
+			     "%zu: {%lld, %lld} and {%lld, %lld} are unexpectedly different", i,
+			     (long long)tick_ts.tv_sec, (long long)tick_ts.tv_nsec,
+			     (long long)tspec->tspec.tv_sec, (long long)tspec->tspec.tv_nsec);
 	}
 
 #if defined(CONFIG_TIMEOUT_64BIT) && (CONFIG_SYS_CLOCK_TICKS_PER_SEC == 100)
