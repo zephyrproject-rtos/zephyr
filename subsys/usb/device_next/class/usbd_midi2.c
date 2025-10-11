@@ -469,7 +469,7 @@ int usbd_midi_send(const struct device *dev, const struct midi_ump ump)
 	size_t buflen = 4 * words;
 	uint32_t word;
 
-	LOG_DBG("Send MT=%X group=%X", UMP_MT(ump), UMP_GROUP(ump));
+	LOG_DBG("Send MT=%X group=%lX", UMP_MT(ump), UMP_GROUP(ump));
 	if (data->altsetting != MIDI2_ALTERNATE) {
 		LOG_WRN("MIDI2.0 is not enabled");
 		return -EIO;
