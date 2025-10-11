@@ -157,7 +157,7 @@ int net_rx_priority2tc(enum net_priority prio)
 #define BASE_PRIO_TX (CONFIG_NET_TC_TX_COUNT - 1)
 #endif
 
-#define PRIO_TX(i, _) (BASE_PRIO_TX - i)
+#define PRIO_TX(i, _) (BASE_PRIO_TX - 2 * i)
 
 #if defined(CONFIG_NET_TC_THREAD_PRIO_CUSTOM)
 #define BASE_PRIO_RX CONFIG_NET_TC_RX_THREAD_BASE_PRIO
@@ -167,7 +167,7 @@ int net_rx_priority2tc(enum net_priority prio)
 #define BASE_PRIO_RX (CONFIG_NET_TC_RX_COUNT - 1)
 #endif
 
-#define PRIO_RX(i, _) (BASE_PRIO_RX - i)
+#define PRIO_RX(i, _) (BASE_PRIO_RX - 2 * i)
 
 #if NET_TC_TX_COUNT > 0
 /* Convert traffic class to thread priority */
@@ -234,6 +234,21 @@ static uint8_t rx_tc2thread(uint8_t tc)
 	return thread_priorities[tc];
 }
 #endif
+
+bool net_tc_rx_is_current_thread(uint8_t tc)
+{
+	uint8_t thread_priority;
+	int priority;
+	int desired_priority;
+
+	thread_priority = rx_tc2thread(tc);
+	desired_priority = IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE) ?
+		K_PRIO_COOP(thread_priority) :
+		K_PRIO_PREEMPT(thread_priority);
+	priority = k_thread_priority_get(k_current_get());
+
+	return priority == desired_priority;
+}
 
 #if defined(CONFIG_NET_STATISTICS)
 /* Fixup the traffic class statistics so that "net stats" shell command will

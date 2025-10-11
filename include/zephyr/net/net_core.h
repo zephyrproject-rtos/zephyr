@@ -22,6 +22,7 @@
 
 #include <zephyr/net/net_timeout.h>
 #include <zephyr/net/net_linkaddr.h>
+#include <zephyr/net/net_ip.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -219,6 +220,27 @@ struct net_l3_register {
 		.handler = _handler,					\
 		.name = STRINGIFY(_name),				\
 		.l2 = _l2_type,						\
+	};
+
+/**
+ * @brief TODO
+ */
+struct net_dyn_prio {
+	const char * const name;
+	enum net_priority prio;
+	/** Protocol type */
+	uint16_t ptype;
+};
+
+
+#define NET_DYN_PRIO_GET_NAME(filter_name, ptype) __net_dyn_prio_##filter_name##_##ptype
+
+#define NET_DYN_PRIO_FILTER(_name, _ptype, _prio)		\
+	static const STRUCT_SECTION_ITERABLE(net_dyn_prio,		\
+				    NET_DYN_PRIO_GET_NAME(_name, _ptype)) = { \
+		.ptype = _ptype,					\
+		.prio = _prio,					\
+		.name = STRINGIFY(_name),				\
 	};
 
 /* @endcond */
