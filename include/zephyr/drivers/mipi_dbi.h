@@ -26,7 +26,7 @@
  * @brief Interfaces for MIPI-DBI (Display Bus Interface).
  * @defgroup mipi_dbi_interface MIPI-DBI
  * @since 3.6
- * @version 0.8.0
+ * @version 0.9.0
  * @ingroup display_interface
  * @{
  */
@@ -49,10 +49,8 @@ extern "C" {
  * @param node_id Devicetree node identifier for the MIPI DBI device whose
  *                struct spi_config to create an initializer for
  * @param operation_ the desired operation field in the struct spi_config
- * @param delay_ the desired delay field in the struct spi_config's
- *               spi_cs_control, if there is one
  */
-#define MIPI_DBI_SPI_CONFIG_DT(node_id, operation_, delay_)		\
+#define MIPI_DBI_SPI_CONFIG_DT(node_id, operation_)			\
 	{								\
 		.frequency = DT_PROP(node_id, mipi_max_frequency),	\
 		.operation = (operation_) |				\
@@ -61,14 +59,7 @@ extern "C" {
 			COND_CODE_1(DT_PROP(node_id, mipi_cpha), SPI_MODE_CPHA, (0)) |	\
 			COND_CODE_1(DT_PROP(node_id, mipi_hold_cs), SPI_HOLD_ON_CS, (0)),	\
 		.slave = DT_REG_ADDR(node_id),				\
-		.cs = {							\
-			.gpio = GPIO_DT_SPEC_GET_BY_IDX_OR(DT_PHANDLE(DT_PARENT(node_id), \
-							   spi_dev), cs_gpios, \
-							   DT_REG_ADDR_RAW(node_id), \
-							   {}),		\
-			.delay = (delay_),				\
-			.cs_is_gpio = true,				\
-		},							\
+		.cs = SPI_CS_CONTROL_INIT(node_id),			\
 	}
 
 /**
@@ -78,11 +69,9 @@ extern "C" {
  * instance. It is equivalent to MIPI_DBI_SPI_CONFIG_DT(DT_DRV_INST(inst))
  * @param inst Instance number to initialize configuration from
  * @param operation_ the desired operation field in the struct spi_config
- * @param delay_ the desired delay field in the struct spi_config's
- *               spi_cs_control, if there is one
  */
-#define MIPI_DBI_SPI_CONFIG_DT_INST(inst, operation_, delay_)		\
-	MIPI_DBI_SPI_CONFIG_DT(DT_DRV_INST(inst), operation_, delay_)
+#define MIPI_DBI_SPI_CONFIG_DT_INST(inst, operation_)			\
+	MIPI_DBI_SPI_CONFIG_DT(DT_DRV_INST(inst), operation_)
 
 /**
  * @brief Initialize a MIPI DBI configuration from devicetree
@@ -93,26 +82,22 @@ extern "C" {
  * @param node_id Devicetree node identifier for the MIPI DBI device to
  *                initialize
  * @param operation_ the desired operation field in the struct spi_config
- * @param delay_ the desired delay field in the struct spi_config's
- *               spi_cs_control, if there is one
  */
-#define MIPI_DBI_CONFIG_DT(node_id, operation_, delay_)			\
+#define MIPI_DBI_CONFIG_DT(node_id, operation_)				\
 	{								\
 		.mode = DT_STRING_UPPER_TOKEN(node_id, mipi_mode),	\
-		.config = MIPI_DBI_SPI_CONFIG_DT(node_id, operation_, delay_), \
+		.config = MIPI_DBI_SPI_CONFIG_DT(node_id, operation_),	\
 	}
 
 /**
  * @brief Initialize a MIPI DBI configuration from device instance
  *
- * Equivalent to MIPI_DBI_CONFIG_DT(DT_DRV_INST(inst), operation_, delay_)
+ * Equivalent to MIPI_DBI_CONFIG_DT(DT_DRV_INST(inst), operation_)
  * @param inst Instance of the device to initialize a MIPI DBI configuration for
  * @param operation_ the desired operation field in the struct spi_config
- * @param delay_ the desired delay field in the struct spi_config's
- *               spi_cs_control, if there is one
  */
-#define MIPI_DBI_CONFIG_DT_INST(inst, operation_, delay_)		\
-	MIPI_DBI_CONFIG_DT(DT_DRV_INST(inst), operation_, delay_)
+#define MIPI_DBI_CONFIG_DT_INST(inst, operation_)			\
+	MIPI_DBI_CONFIG_DT(DT_DRV_INST(inst), operation_)
 
 /**
  * @brief Get the MIPI DBI TE mode from devicetree

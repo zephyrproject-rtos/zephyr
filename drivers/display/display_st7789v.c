@@ -478,7 +478,7 @@ static DEVICE_API(display, st7789v_api) = {
 		.mipi_dbi = DEVICE_DT_GET(DT_INST_PARENT(inst)),                        \
 		.dbi_config = MIPI_DBI_CONFIG_DT_INST(inst,                             \
 						      ST7789V_WORD_SIZE(inst) |         \
-						      SPI_OP_MODE_MASTER, 0),           \
+						      SPI_OP_MODE_MASTER),              \
 		.vcom = DT_INST_PROP(inst, vcom),					\
 		.gctrl = DT_INST_PROP(inst, gctrl),					\
 		.vdv_vrh_enable = (DT_INST_NODE_HAS_PROP(inst, vrhs)			\
