@@ -1,0 +1,178 @@
+# Security Insights 2.1 file https://github.com/ossf/security-insights
+# Schema: https://github.com/ossf/security-insights/blob/main/spec/schema.cue
+header:
+  schema-version: 2.1.0
+  last-updated: '2025-08-08'
+  last-reviewed: '2025-03-01'
+  url: https://github.com/zephyrproject-rtos/zephyr
+  comment: |
+    This file contains the security insights for the primary repo of the
+    Zephyr Project only. The scope might be extended to additional reposities
+    in the future.
+
+project:
+  name: Zephyr
+  homepage: https://www.zephyrproject.org/
+  roadmap: https://github.com/zephyrproject-rtos/zephyr/wiki/Release-Management
+  funding: https://www.zephyrproject.org/join/
+  administrators:
+    - name: Anas Nasif
+      affiliation: Intel Corporation
+      email: anas.nasif@intel.com
+      primary: true
+    - name: Carles Cuffi
+      affiliation: Nordic Semiconductor ASA
+      email: carles.cufi@nordicsemi.no
+      primary: false
+    - name: Stephanos Ioannidis
+      affiliation: Centrinix
+      email: root@stephanos.io
+      primary: false
+  steward:
+    uri: https://www.zephyrproject.org
+    comment: |
+      Zephyr OS is a RTOS for multiple hardware architectures maintained by volunteers under
+      the oversight of the Zephyr Project.
+  documentation:
+    code-of-conduct: https://github.com/zephyrproject-rtos/zephyr/blob/main/CODE_OF_CONDUCT.md
+    detailed-guide: https://docs.zephyrproject.org/latest/index.html
+    quickstart-guide: https://docs.zephyrproject.org/latest/develop/getting_started/index.html
+    release-process: https://docs.zephyrproject.org/latest/project/release_process.html
+    support-policy: https://docs.zephyrproject.org/latest/releases/index.html
+  repositories:
+    - name: Zephyr
+      url: https://github.com/zephyrproject-rtos/zephyr
+      comment: |
+        Primary Git Repository for the Zephyr Project.
+  vulnerability-reporting:
+    reports-accepted: true
+    bug-bounty-available: false
+    contact:
+      name: Zephyr Project Security Incident Response Team
+      email: vulnerabilities@zephyrproject.org
+      primary: true
+    security-policy: https://github.com/zephyrproject-rtos/zephyr/security/policy
+    comment: |
+      More information can be found on the Security Vulnerability Reporting
+      page:
+      https://docs.zephyrproject.org/latest/security/reporting.html
+      Vulnerabilities can also be reported on the Zephyr Project security
+      advisory GitHub page on https://github.com/zephyrproject-rtos/zephyr/security
+
+repository:
+  url: https://github.com/zephyrproject-rtos/zephyr
+  status: active
+  accepts-change-request: true
+  accepts-automated-change-request: true
+  bug-fixes-only: false
+  no-third-party-packages: false
+  core-team:
+    - name: Anas Nasif
+      affiliation: Intel Corporation
+      email: anas.nasif@intel.com
+      primary: true
+    - name: Adding more before marking ready
+      affiliation: todo Corporation
+      email: a.todo@example.com
+      primary: false
+  license:
+    url: https://docs.zephyrproject.org/latest/LICENSING.html
+    expression: Apache-2.0 AND MIT AND BSD-2-Clause AND BSD-3-Clause AND SHL-0.51 AND CC0-1.0 AND ISC AND GPL-2.0-only
+  documentation:
+    contributing-guide: https://docs.zephyrproject.org/latest/contribute/index.html
+    review-policy: https://docs.zephyrproject.org/latest/contribute/reviewer_expectations.html#reviewer-expectations
+    security-policy: https://github.com/zephyrproject-rtos/zephyr/security/policy
+    governance: https://docs.zephyrproject.org/latest/project/index.html
+  security:
+    assessments:
+      self:
+        comment: |
+          Self assessment has not yet been completed.
+    tools:
+      - name: SonarQube Cloud
+        type: SAST
+        comment: |
+          The Tool is run regularily on main, as well as for each pull request.
+          The Quality gate is Zephyr Project, and most of the Quality Profiles have been
+          customized to fit the projects needs.
+          More information about the configuration can be found at:
+          https://sonarcloud.io/project/information?id=zephyrproject-rtos_zephyr.
+
+          Scan results of each pr request are available at
+          https://sonarcloud.io/summary/new_code?id=zephyrproject-rtos_zephyr&pullRequest={PR-NUMBER}
+          A link to these artifacts is, also added to each PR.
+          Violations of rules are currently not blocking pull requests.
+        rulesets:
+          - "C: Zephyr"
+          - "Python: Sonar way"
+        integration:
+          adhoc: true
+          ci: true
+          release: false
+        results:
+          adhoc:
+            name: Regular SonarQube Clould run on main
+            location: https://github.com/zephyrproject-rtos/zephyr/security/code-scanning?query=is%3Aopen%20branch%3Amain%20tool%3ASonarCloud
+            predicate-uri: https://docs.oasis-open.org/sarif/sarif/v2.1.0/cs01/schemas/sarif-schema-2.1.0.json
+            comment: |
+              The analysis is run regularily on the main branch.
+              The latest results for the main branch are also available at:
+              https://sonarcloud.io/summary/overall?id=zephyrproject-rtos_zephyr&branch=main
+      - name: CodeQL
+        type: SAST
+        version: v2.22.3
+        comment: |
+          Tool is run regularily on the main branch, collab, and release branches,
+          as well as pull requests targeting these.
+          It checks python code, github actions, and the javascript files in the doc folder.
+        rulesets:
+          - default
+        integration:
+          adhoc: true
+          ci: true
+          release: false
+        results:
+          adhoc:
+            name: Scheduled CodeQL analysis.
+            predicate-uri: https://docs.oasis-open.org/sarif/sarif/v2.1.0/cs01/schemas/sarif-schema-2.1.0.json
+            location: https://github.com/zephyrproject-rtos/zephyr/security/code-scanning?query=is%3Aopen%20branch%3Amain%20tool%3ACodeQL
+            comment: |
+              The results of the scheduled codeQL SAST scan are available in the Code Scanning tab of the Security Insights page and as an artifact on the scheduled job.
+          ci:
+            name: CI CodeQL Results
+            predicate-uri: https://docs.oasis-open.org/sarif/sarif/v2.1.0/cs01/schemas/sarif-schema-2.1.0.json
+            location: https://github.com/zephyrproject-rtos/zephyr/security/code-scanning?query=is%3Aopen%20branch%3Amain%20tool%3ACodeQL
+            comment: |
+              The results of the CI CodeQL scans are available available as artifacts on the job.
+              Violations of rules are currently not blocking pull requests.
+      - name: Covertiy
+        type: SAST
+        rulesets:
+          - default
+        comment: |
+          The tool is regularly run by a maintainer.
+          With an account and project autorization, artifacts are accessible at:
+          https://scan.coverity.com/projects/zephyr.
+          Additionally, issues are opened on GitHub with the "Coverity" label.
+          https://github.com/zephyrproject-rtos/zephyr/issues?q=is%3Aissue%20state%3Aopen%20coverity%20label%3ACoverity
+        integration:
+          adhoc: true
+          ci: false
+          release: false
+      - name: Dependabot
+        type: SCA
+        version: "2"
+        rulesets:
+          - built-in
+        integration:
+          adhoc: true
+          ci: false
+          release: false
+        results:
+          adhoc:
+            name: Scheduled SCA Scan Results
+            predicate-uri: https://docs.github.com/en/graphql/reference/objects#repositoryvulnerabilityalert
+            location: https://github.com/zephyrproject-rtos/zephyr/security/dependabot
+            comment: |
+              The scan is running for all github-actions, and python packages in the doc directory.
+              The results of the scheduled SCA scan are available in the Dependabot tab of the Security Insights page.
