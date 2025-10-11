@@ -6,7 +6,7 @@
  */
 
 #define LOG_MODULE_NAME eth_slip_tap
-#define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
+#define LOG_LEVEL       CONFIG_ETHERNET_LOG_LEVEL
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
@@ -22,7 +22,7 @@ static enum ethernet_hw_caps eth_capabilities(const struct device *dev)
 
 	return ETHERNET_HW_VLAN
 #if defined(CONFIG_NET_LLDP)
-		| ETHERNET_LLDP
+	       | ETHERNET_LLDP
 #endif
 		;
 }
@@ -34,7 +34,7 @@ static const struct ethernet_api slip_if_api = {
 	.send = slip_send,
 };
 
-#define _SLIP_L2_LAYER ETHERNET_L2
+#define _SLIP_L2_LAYER    ETHERNET_L2
 #define _SLIP_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
 
 ETH_NET_DEVICE_INIT(slip, CONFIG_SLIP_DRV_NAME,
