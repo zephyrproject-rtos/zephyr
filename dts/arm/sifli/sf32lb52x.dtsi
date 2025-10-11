@@ -171,6 +171,22 @@
 			};
 		};
 
+		usart2: serial@50085000 {
+			compatible = "sifli,sf32lb-usart";
+			reg = <0x50085000 0x400>;
+			interrupts = <74 0>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_USART2>;
+			status = "disabled";
+		};
+
+		usart3: serial@50086000 {
+			compatible = "sifli,sf32lb-usart";
+			reg = <0x50086000 0x400>;
+			interrupts = <95 0>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_USART3>;
+			status = "disabled";
+		};
+
 		cfg: syscon@5000b000 {
 			compatible = "sifli,sf32lb-cfg", "syscon";
 			reg = <0x5000b000 0x1000>;
