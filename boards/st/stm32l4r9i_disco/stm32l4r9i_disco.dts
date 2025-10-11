@@ -90,6 +90,24 @@
 			   <27 0 &gpioc 6 0>;  /* DCMI_D0 */
 	};
 
+	dsi_lcd_qsh_030: connector_dsi_lcd {
+		compatible = "st,dsi-lcd-qsh-030";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <4 0 &mfx 9 0>,	/* TOUCH_INT */
+			   <22 0 &gpioh 14 0>,  /* SPI_CS */
+			   <24 0 &gpiob 13 0>,  /* SPI2_SCK */
+			   <26 0 &gpiob 15 0>,  /* SPI2_MOSI */
+			   <28 0 &gpiob 14 0>,  /* SPI_DCX */
+			   <40 0 &gpiog 13 0>,	/* I2C1_SDA */
+			   <43 0 &gpioa 8 0>,	/* DSI_SWIRE */
+			   <44 0 &gpiob 6 0>,	/* I2C1_SCL */
+			   <49 0 &gpiof 11 0>,	/* DSI_TE */
+			   <53 0 &gpiob 1 0>,	/* LCD_BL_CTRL */
+			   <57 0 &mfx 10 0>;	/* DSI/TOUCH RESET */
+	};
+
 	aliases {
 		led0 = &green_led;
 		led1 = &orange_led;
@@ -345,3 +363,7 @@ st_cam_dvp: &dcmi {
 
 	pinctrl-names = "default";
 };
+
+/* alias used by display shields */
+zephyr_mipi_dsi: &mipi_dsi {};
+zephyr_lcd_controller: &ltdc {};
