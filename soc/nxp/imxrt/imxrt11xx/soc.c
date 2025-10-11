@@ -445,7 +445,7 @@ __weak void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Enet_Timer1, &rootCfg);
 #endif
 
-#ifdef CONFIG_SPI_NXP_LPSPI
+#if defined(CONFIG_SPI_NXP_LPSPI) || defined(CONFIG_SPI_MCUX_LPSPI)
 	/* Configure input clock to be able to reach the datasheet specified band rate. */
 	rootCfg.mux = kCLOCK_LPSPI1_ClockRoot_MuxOscRc400M;
 	rootCfg.div = 1;
