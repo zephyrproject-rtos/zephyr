@@ -62,12 +62,10 @@ extern "C" {
 			COND_CODE_1(DT_PROP(node_id, mipi_hold_cs), SPI_HOLD_ON_CS, (0)),	\
 		.slave = DT_REG_ADDR(node_id),				\
 		.cs = {							\
-			.gpio = GPIO_DT_SPEC_GET_BY_IDX_OR(DT_PHANDLE(DT_PARENT(node_id), \
-							   spi_dev), cs_gpios, \
-							   DT_REG_ADDR_RAW(node_id), \
-							   {}),		\
-			.delay = (delay_),				\
-			.cs_is_gpio = true,				\
+			COND_CODE_1(DT_SPI_DEV_HAS_CS_GPIOS(node_id),	\
+			(SPI_CS_CONTROL_INIT_GPIO(node_id, _delay)),	\
+			(SPI_CS_CONTROL_INIT_NATIVE(node_id)))		\
+			.cs_is_gpio = DT_SPI_DEV_HAS_CS_GPIOS(node_id),	\
 		},							\
 	}
 
