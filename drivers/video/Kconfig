@@ -100,4 +100,6 @@ source "drivers/video/Kconfig.stm32_dcmipp"
 
 source "drivers/video/Kconfig.renesas_ra_ceu"
 
+source "drivers/video/Kconfig.ov5642"
+
 endif # VIDEO
