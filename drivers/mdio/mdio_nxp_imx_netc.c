@@ -96,6 +96,7 @@ static DEVICE_API(mdio, nxp_imx_netc_mdio_api) = {
 };
 
 #define NXP_IMX_NETC_MDIO_INSTANCE_DEFINE(n)                                                       \
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);                                              \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	static struct nxp_imx_netc_mdio_data nxp_imx_netc_mdio##n##_data;                          \
 	static const struct nxp_imx_netc_mdio_config nxp_imx_netc_mdio##n##_cfg = {                \
@@ -103,7 +104,7 @@ static DEVICE_API(mdio, nxp_imx_netc_mdio_api) = {
 		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(pfconfig, DT_DRV_INST(n)),                      \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
+		.clock_subsys = CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks),                         \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, &nxp_imx_netc_mdio_initialize, NULL,                              \
 			      &nxp_imx_netc_mdio##n##_data, &nxp_imx_netc_mdio##n##_cfg,           \

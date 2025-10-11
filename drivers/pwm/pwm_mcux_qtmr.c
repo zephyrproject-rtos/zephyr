@@ -156,6 +156,7 @@ static DEVICE_API(pwm, pwm_mcux_qtmr_driver_api) = {
 
 #define PWM_MCUX_QTMR_DEVICE_INIT(n)                                                          \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);                                              \
 	static struct pwm_mcux_qtmr_data pwm_mcux_qtmr_data_##n;                                   \
                                                                                                    \
 	static const struct pwm_mcux_qtmr_config pwm_mcux_qtmr_config_##n = {                      \
@@ -163,7 +164,7 @@ static DEVICE_API(pwm, pwm_mcux_qtmr_driver_api) = {
 		.prescaler = DT_INST_PROP(n, prescaler),                                           \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
+		.clock_subsys = CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks),                         \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, mcux_qtmr_pwm_init, NULL, &pwm_mcux_qtmr_data_##n,                \

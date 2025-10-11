@@ -397,7 +397,7 @@ static DEVICE_API(uart, uart_mcux_driver_api) = {
 static const struct uart_mcux_config uart_mcux_##n##_config = {		\
 	.base = (UART_Type *)DT_INST_REG_ADDR(n),			\
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
-	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
+	.clock_subsys = CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks),	\
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	IRQ_FUNC_INIT							\
 }
@@ -436,6 +436,7 @@ static const struct uart_mcux_config uart_mcux_##n##_config = {		\
 
 #define UART_MCUX_INIT(n)						\
 	PINCTRL_DT_INST_DEFINE(n);					\
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);			\
 									\
 	static struct uart_mcux_data uart_mcux_##n##_data = {		\
 		.uart_cfg = {						\

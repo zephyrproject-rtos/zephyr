@@ -442,6 +442,7 @@ static int memc_flexspi_pm_action(const struct device *dev, enum pm_device_actio
 
 #define MEMC_FLEXSPI(n)							\
 	PINCTRL_DT_INST_DEFINE(n);					\
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);			\
 	static uint16_t  buf_cfg_##n[] =				\
 		DT_INST_PROP_OR(n, rx_buffer_config, {0});		\
 									\
@@ -464,8 +465,7 @@ static int memc_flexspi_pm_action(const struct device *dev, enum pm_device_actio
 			sizeof(struct memc_flexspi_buf_cfg),		\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),     \
-		.clock_subsys = (clock_control_subsys_t)                \
-			DT_INST_CLOCKS_CELL(n, name),                   \
+		.clock_subsys = CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks), \
 	};								\
 									\
 	PM_DEVICE_DT_INST_DEFINE(n, memc_flexspi_pm_action);		\
