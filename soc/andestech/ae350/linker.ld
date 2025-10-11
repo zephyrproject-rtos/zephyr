@@ -183,22 +183,21 @@ SECTIONS
 #include <zephyr/linker/cplusplus-rom.ld>
 	__rodata_region_end = .;
 
-	/* For non-XIP system, __rom_region_end symbol should be set to
-	 * the end of common ROMABLE_REGIONs (text and rodata) instead of
-	 * the linker script end, so it wouldn't mistakenly contain
-	 * RAMABLE_REGION in it.
-	 */
 #ifndef CONFIG_XIP
-#ifdef CONFIG_RISCV_PMP
+	/*
+	 * Include a padding section here to make sure that the LMA address
+	 * of the sections in the RAMABLE_REGION are aligned with those
+	 * section's VMA alignment requirements.
+	 */
 	SECTION_PROLOGUE(rom_mpu_padding,,)
 	{
 		MPU_ALIGN(__rodata_region_end - __rom_region_start);
 	} GROUP_LINK_IN(ROMABLE_REGION)
-#endif /* CONFIG_RISCV_PMP */
-
+#else
+	MPU_ALIGN(__rodata_region_end - __rom_region_start);
+#endif
 	__rom_region_end = .;
 	__rom_region_size = __rom_region_end - __rom_region_start;
-#endif /* CONFIG_XIP */
     GROUP_END(ROMABLE_REGION)
 
     GROUP_START(RAMABLE_REGION)
@@ -426,28 +425,9 @@ SECTION_PROLOGUE(.last_section,,)
   KEEP(*(.last_section))
 } GROUP_LINK_IN(ROMABLE_REGION)
 
-/* Because ROMABLE_REGION != RAMABLE_REGION in XIP-system, it is valid
- * to set __rom_region_end symbol at the end of linker script and
- * doesn't mistakenly contain the RAMABLE_REGION in it.
- */
-#ifndef CONFIG_RISCV_PMP
-__rom_region_end = LOADADDR(.last_section) + SIZEOF(.last_section);
-#else
-/* Padding __rom_region_end to matches the requirement of the MPU region.
- * __rom_region_size is used to configure the MPU region, but the actual rom
- * region data usage is ends at .last_section.
- */
-SECTION_PROLOGUE(rom_mpu_padding,(NOLOAD),)
-{
-	MPU_ALIGN(__rom_region_size);
-} GROUP_LINK_IN(ROMABLE_REGION)
-__rom_region_end = LOADADDR(rom_mpu_padding) + SIZEOF(rom_mpu_padding);
-#endif /* !CONFIG_RISCV_PMP */
-
-/* To provide the rom region size as a const expression,
- * calculate this value here.
- */
-__rom_region_size = __rom_region_end - __rom_region_start;
+/* To provide the image size as a const expression,
+ * calculate this value here. */
+_flash_used = LOADADDR(.last_section) + SIZEOF(.last_section) - __rom_region_start;
 #endif
 
 }
