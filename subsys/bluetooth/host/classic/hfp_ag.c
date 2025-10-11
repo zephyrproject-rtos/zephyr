@@ -1667,8 +1667,9 @@ static int bt_hfp_ag_cmer_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 			return 0;
 		}
 
-		err = hfp_ag_next_step(ag, bt_hfp_ag_slc_connected, NULL);
-		return err;
+		/* SLC connected event needs to be notified. */
+		atomic_set_bit(ag->flags, BT_HFP_AG_SLC_CONNECTED);
+		return 0;
 	} else if (number == 0) {
 		atomic_clear_bit(ag->flags, BT_HFP_AG_CMER_ENABLE);
 	} else {
@@ -2046,7 +2047,15 @@ static int bt_hfp_ag_chld_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 #else
 		response = "+CHLD:(0,1,2,3,4)";
 #endif /* CONFIG_BT_HFP_AG_ECC */
-		err = hfp_ag_send_data(ag, bt_hfp_ag_slc_connected, NULL, "\r\n%s\r\n", response);
+		if (BOTH_SUPT_FEAT(ag, BT_HFP_HF_FEATURE_HF_IND, BT_HFP_AG_FEATURE_HF_IND)) {
+			/* Notify the SLC connected after the procedure of HF Indicators is done */
+			LOG_DBG("Waiting for AT+BIND?");
+		} else {
+			/* SLC connected event needs to be notified. */
+			atomic_set_bit(ag->flags, BT_HFP_AG_SLC_CONNECTED);
+		}
+
+		err = hfp_ag_send_data(ag, NULL, NULL, "\r\n%s\r\n", response);
 		return err;
 	}
 
@@ -2115,6 +2124,9 @@ static int bt_hfp_ag_bind_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 				break;
 			}
 		}
+
+		/* SLC connected event needs to be notified. */
+		atomic_set_bit(ag->flags, BT_HFP_AG_SLC_CONNECTED);
 		return 0;
 	}
 
@@ -3525,7 +3537,12 @@ static void hfp_ag_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 		cme_err = bt_hfp_ag_get_cme_err(err);
 		err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+CME ERROR:%d\r\n", (uint32_t)cme_err);
 	} else {
-		err = hfp_ag_send_data(ag, NULL, NULL, "\r\n%s\r\n", (err == 0) ? "OK" : "ERROR");
+		bt_hfp_ag_tx_cb_t cb;
+
+		cb = atomic_test_and_clear_bit(ag->flags, BT_HFP_AG_SLC_CONNECTED)
+			     ? bt_hfp_ag_slc_connected
+			     : NULL;
+		err = hfp_ag_send_data(ag, cb, NULL, "\r\n%s\r\n", (err == 0) ? "OK" : "ERROR");
 	}
 
 	if (err != 0) {
