@@ -12,6 +12,28 @@
 	status = "okay";
 };
 
+/*
+ * In case the clk48 is selecting the STM32_SRC_PLL_Q with
+ * clocks = <&rcc STM32_SRC_PLL_Q CK48M_SEL(0)>;
+ * one possible PLL config to give 48MHz on the pll_q output is as follows :
+ &pll {
+	div-m = <4>;
+	mul-n = <192>;
+	div-p = <4>;
+	div-q = <8>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(96)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <2>;
+	apb2-prescaler = <1>;
+};
+*/
+
 &plli2s {
 	div-m = <4>;
 	mul-n = <96>;
