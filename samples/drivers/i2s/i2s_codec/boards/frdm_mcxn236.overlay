@@ -1,0 +1,20 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Note: The DA7212 codec is not populated on this board by default.
+ * Refer to the board MCX_N5XX_EVK to use this sample with the same codec.
+ */
+
+/ {
+	aliases {
+		i2s-codec-tx = &sai1;
+		i2s-tx = &sai1;
+	};
+};
+
+&sai1 {
+	mclk-output;
+};
