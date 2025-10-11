@@ -1,0 +1,99 @@
+#
+# Copyright (c) 2025 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "ZBus multidomain support"
+
+config ZBUS_MULTIDOMAIN_MESSAGE_SIZE
+	int "ZBus multidomain message size"
+	default 256
+	help
+	  Configures the size of messages used in ZBus multidomain communication.
+	  This setting affects the maximum size of messages that can be sent between domains.
+
+config ZBUS_MULTIDOMAIN_CHANNEL_NAME_SIZE
+	int "ZBus multidomain channel name size"
+	default 32
+	help
+	  Configures the maximum size of channel names used in ZBus multidomain communication.
+	  This setting affects how long channel names can be when communicating between domains.
+
+config ZBUS_MULTIDOMAIN_PROXY_STACK_SIZE
+	int "ZBus multidomain proxy stack size"
+	default 1024
+	help
+	  Configures the stack size (in bytes) for the ZBus multidomain proxy agent thread.
+	  This setting affects the memory allocation for the proxy agent's operations.
+
+config ZBUS_MULTIDOMAIN_PROXY_PRIORITY
+	int "ZBus multidomain proxy thread priority"
+	default 7
+	help
+	  Configures the priority of the ZBus multidomain proxy agent thread.
+	  This setting affects the scheduling of the proxy agent in relation to other threads.
+
+config ZBUS_MULTIDOMAIN_SENT_MSG_POOL_SIZE
+	int "ZBus multidomain sent message history size"
+	default 4
+	help
+	  Configures the number of sent messages to keep simultaneously in the history pool for
+	  tracking acknowledgments and retransmissions in the ZBus multidomain. If more messages
+	  than this number are sent without acknowledgment, the new messages will be dropped.
+
+config ZBUS_MULTIDOMAIN_SENT_MSG_ACK_TIMEOUT
+	int "ZBus multidomain sent message initial acknowledgment timeout (ms)"
+	default 10
+	help
+	  Configures the initial timeout (in milliseconds) to wait for an acknowledgment
+	  of a sent message in the ZBus multidomain proxy agent. If an acknowledgment is
+	  not received within this time, the message may be retransmitted with a exponential backoff
+
+config ZBUS_MULTIDOMAIN_SENT_MSG_ACK_TIMEOUT_MAX
+	int "ZBus multidomain sent message acknowledgment timeout maximum (ms)"
+	default 1000
+	help
+	  Configures the maximum timeout (in milliseconds) for waiting for an acknowledgment
+	  of a sent message in the ZBus multidomain proxy agent. This setting limits the exponential
+	  backoff for retransmissions to prevent excessively long wait times.
+
+config ZBUS_MULTIDOMAIN_MAX_TRANSMIT_ATTEMPTS
+	int "ZBus multidomain maximum transmit attempts"
+	default 10
+	help
+	  Configures the maximum number of attempts to transmit a message in the ZBus multidomain
+	  proxy agent. If an acknowledgment is not received after this many attempts, the message
+	  will be dropped. Setting this to 1 means no retransmissions will be attempted.
+
+config ZBUS_MULTIDOMAIN_UART
+	bool "ZBus multidomain UART backend"
+	depends on UART_ASYNC_API
+	help
+	  Enables the ZBus multidomain UART backend, allowing for ZBus between domains over UART.
+	  This feature is useful for systems that require inter-domain communication via UART.
+
+if ZBUS_MULTIDOMAIN_UART
+
+config ZBUS_MULTIDOMAIN_UART_BUF_COUNT
+	int "ZBus multidomain UART buffer count"
+	default 2
+	range 2 128
+	help
+	  Configures the number of buffers used for the ZBus multidomain UART backend.
+	  A minimum of 2 buffers is required for proper operation.
+
+endif # ZBUS_MULTIDOMAIN_UART
+
+config ZBUS_MULTIDOMAIN_IPC
+	bool "ZBus multidomain IPC backend"
+	depends on IPC_SERVICE
+	help
+	  Enables the ZBus multidomain IPC backend, allowing communication between domains over IPC.
+	  This feature is useful for systems that require inter-domain communication via IPC.
+
+module = ZBUS_MULTIDOMAIN
+module-str = zbus_multidomain
+source "subsys/logging/Kconfig.template.log_config"
+
+endmenu # ZBus multidomain support
