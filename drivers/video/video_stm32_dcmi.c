@@ -521,7 +521,7 @@ static int video_stm32_dcmi_init(const struct device *dev)
 #define STM32_DCMI_INIT(inst)									\
 	static void video_stm32_dcmi_irq_config_func_##inst(const struct device *dev)		\
 	{											\
-		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),			\
+		irq_connect_dynamic(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),		\
 			stm32_dcmi_isr, DEVICE_DT_INST_GET(inst), 0);				\
 		irq_enable(DT_INST_IRQN(inst));							\
 	}											\
