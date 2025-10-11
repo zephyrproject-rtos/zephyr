@@ -19,7 +19,7 @@ description: |
 
 compatible: "st,stm32-qspi-nor"
 
-include: ["flash-controller.yaml", "jedec,jesd216.yaml"]
+include: ["flash-controller.yaml", "jedec,jesd216.yaml", "soc-nv-flash.yaml"]
 
 on-bus: qspi
 

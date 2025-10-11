@@ -14,4 +14,11 @@ config MEMC
 
 endif # DISPLAY
 
+if MCUBOOT
+
+config STM32_MEMMAP
+	default y
+
+endif # MCUBOOT
+
 endif # BOARD_STM32H750B_DK
