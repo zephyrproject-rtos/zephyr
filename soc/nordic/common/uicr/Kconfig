@@ -18,3 +18,10 @@ config NRF_PERIPHCONF_GENERATE_ENTRIES
 	help
 	  Generate a C file containing PERIPHCONF entries based on the
 	  device configuration in the devicetree.
+
+config IS_IRONSIDE_SE_SECONDARY_IMAGE
+	bool "Ironside SE secondary image indicator (informative only, do not change)"
+	help
+	  This Kconfig is set by sysbuild to indicate that this image is a
+	  secondary firmware for Ironside SE. This is used by the UICR generation
+	  system to determine which PERIPHCONF partition to use.
