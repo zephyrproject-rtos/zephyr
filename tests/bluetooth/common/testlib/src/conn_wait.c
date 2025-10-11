@@ -43,7 +43,7 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.recycled = on_conn_recycled,
 };
 
-static enum bt_conn_state bt_conn_state(struct bt_conn *conn)
+enum bt_conn_state bt_testlib_conn_state_get(struct bt_conn *conn)
 {
 	int err;
 	struct bt_conn_info info;
@@ -59,7 +59,7 @@ int bt_testlib_wait_connected(struct bt_conn *conn)
 {
 	__ASSERT_NO_MSG(conn != NULL);
 	k_mutex_lock(&conn_wait_mutex, K_FOREVER);
-	while (bt_conn_state(conn) != BT_CONN_STATE_CONNECTED) {
+	while (bt_testlib_conn_state_get(conn) != BT_CONN_STATE_CONNECTED) {
 		k_condvar_wait(&something_changed, &conn_wait_mutex, K_FOREVER);
 	}
 	k_mutex_unlock(&conn_wait_mutex);
@@ -70,7 +70,7 @@ int bt_testlib_wait_disconnected(struct bt_conn *conn)
 {
 	__ASSERT_NO_MSG(conn != NULL);
 	k_mutex_lock(&conn_wait_mutex, K_FOREVER);
-	while (bt_conn_state(conn) != BT_CONN_STATE_DISCONNECTED) {
+	while (bt_testlib_conn_state_get(conn) != BT_CONN_STATE_DISCONNECTED) {
 		k_condvar_wait(&something_changed, &conn_wait_mutex, K_FOREVER);
 	}
 	k_mutex_unlock(&conn_wait_mutex);
