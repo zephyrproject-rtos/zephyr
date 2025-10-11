@@ -284,6 +284,8 @@ Sensor
   replaced by ``pcr-scr`` (int type) to use encoded PCR register index and bit position macros.
   GIRQ configuration is now handled via the ``microchip,dmec-ecia-girq`` binding include
   (:github:`104808`).
+* :dtcompatible:`st,lps22hh` now ignores the ``odr`` property in favor of the one-shot sampling mode
+  unless :kconfig:option:`CONFIG_LPS22HH_TRIGGER` is enabled to make use of periodic sampling.
 
 Serial
 ======
