@@ -161,7 +161,7 @@ display the following console output:
     *** Booting Zephyr OS build v3.7.0-848-gb4d99b124c6d ***
     Hello World! phyboard_nash/mimx9352/m33
 
-Starting the M7-Core from U-Boot and Linux
+Starting the M33-Core from U-Boot and Linux
 ==========================================
 
 Loading binaries and starting the M33-Core is supported from Linux via
