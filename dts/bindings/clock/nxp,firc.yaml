@@ -1,0 +1,18 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Fast internal RC oscillator
+
+compatible: "nxp,firc"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  firc-div:
+    required: true
+    type: string
+    description: FIRC_DIV_SEL
+    enum: ["NULL", "DivBy2", "DivBy16", "UnDiv"]
