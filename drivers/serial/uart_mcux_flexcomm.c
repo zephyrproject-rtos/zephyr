@@ -661,7 +661,7 @@ static int mcux_flexcomm_uart_rx_enable(const struct device *dev, uint8_t *buf,
 	data->rx_data.xfer_len = len;
 	data->rx_data.active_block.dest_address = (uint32_t)data->rx_data.xfer_buf;
 	data->rx_data.active_block.source_address = (uint32_t) &config->base->FIFORD;
-	data->tx_data.active_block.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+	data->rx_data.active_block.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 	data->rx_data.active_block.block_size = data->rx_data.xfer_len;
 
 	ret = dma_config(config->rx_dma.dev, config->rx_dma.channel,
