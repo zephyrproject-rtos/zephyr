@@ -30,6 +30,9 @@ instances.
   devicetree. This could include configuration such as the RX IRQ line's
   priority and the UART baud rate. These may be modifiable at runtime, but
   their boot-time configuration is described in devicetree.
+* From the application code, both UART are interchangeable and using one or the
+  other has no impact, it is only a matter of board design. It is pure
+  **hardware configuration** and should be done with devicetree.
 * Whether or not to include **software support** for UART in the build is
   controlled via Kconfig. Applications which do not need to use the UARTs can
   remove the driver source code from the build using Kconfig, even though the
@@ -42,6 +45,9 @@ supporting both the Bluetooth Low Energy and 802.15.4 wireless technologies.
   what driver or drivers it's compatible with, etc.
 * **Boot-time configuration** for the radio, such as TX power in dBm, should
   also be specified using devicetree.
+* On the application, using one or the other protocol will not get the same code
+  into play, but the same hardware will be used. This is relevant to **software
+  configuration**.
 * Kconfig should determine which **software features** should be built for the
   radio, such as selecting a BLE or 802.15.4 protocol stack.
 
