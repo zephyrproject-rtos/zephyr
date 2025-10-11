@@ -92,6 +92,7 @@ struct stm32_dcmipp_pipe_data {
 struct stm32_dcmipp_data {
 	const struct device *dev;
 	DCMIPP_HandleTypeDef hdcmipp;
+	struct k_mutex lock;
 
 	/* FIXME - there should be a mutex to protect enabled_pipe */
 	unsigned int enabled_pipe;
@@ -101,6 +102,7 @@ struct stm32_dcmipp_data {
 	/* Store the ISP decimation block ratio */
 	int32_t isp_dec_hratio;
 	int32_t isp_dec_vratio;
+	bool isp_initialized;
 #endif
 
 	struct stm32_dcmipp_pipe_data *pipe[STM32_DCMIPP_MAX_PIPE_NB];
@@ -648,8 +650,7 @@ static int stm32_dcmipp_get_fmt(const struct device *dev, struct video_format *f
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
 	const struct stm32_dcmipp_config *config = dev->config;
-	static atomic_t isp_init_once;
-	int ret;
+	int ret = 0;
 
 	/* Initialize the external ISP handling stack */
 	/*
@@ -661,8 +662,8 @@ static int stm32_dcmipp_get_fmt(const struct device *dev, struct video_format *f
 	 * Would need an ops that get called when both side of an endpoint get
 	 * initiialized
 	 */
-	if (atomic_cas(&isp_init_once, 0, 1) &&
-	    (pipe->id == DCMIPP_PIPE1 || pipe->id == DCMIPP_PIPE2)) {
+	k_mutex_lock(&dcmipp->lock, K_FOREVER);
+	if (!dcmipp->isp_initialized && (pipe->id == DCMIPP_PIPE1 || pipe->id == DCMIPP_PIPE2)) {
 		/*
 		 * It is necessary to perform a dummy configuration here otherwise any
 		 * ISP related configuration done by the stm32_dcmipp_isp_init will
@@ -671,21 +672,24 @@ static int stm32_dcmipp_get_fmt(const struct device *dev, struct video_format *f
 		ret = stm32_dcmipp_conf_parallel(dcmipp->dev, &stm32_dcmipp_input_fmt_desc[0]);
 		if (ret < 0) {
 			LOG_ERR("Failed to perform dummy parallel configuration");
-			return ret;
+			goto out;
 		}
 
 		ret = stm32_dcmipp_isp_init(&dcmipp->hdcmipp, config->source_dev);
 		if (ret < 0) {
 			LOG_ERR("Failed to initialize the ISP");
-			return ret;
+			goto out;
 		}
 		stm32_dcmipp_get_isp_decimation(dcmipp);
+		dcmipp->isp_initialized = true;
 	}
+out:
+	k_mutex_unlock(&dcmipp->lock);
 #endif
 
 	*fmt = pipe->fmt;
 
-	return 0;
+	return ret;
 }
 
 static int stm32_dcmipp_set_crop(struct stm32_dcmipp_pipe_data *pipe)
@@ -1181,11 +1185,17 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 		}
 	}
 
-	/* Initialize the external ISP handling stack */
-	ret = stm32_dcmipp_isp_init(&dcmipp->hdcmipp, config->source_dev);
-	if (ret < 0) {
-		goto out;
+	k_mutex_lock(&dcmipp->lock, K_FOREVER);
+	if (!dcmipp->isp_initialized) {
+		/* Initialize the external ISP handling stack */
+		ret = stm32_dcmipp_isp_init(&dcmipp->hdcmipp, config->source_dev);
+		if (ret < 0) {
+			k_mutex_unlock(&dcmipp->lock);
+			goto out;
+		}
+		dcmipp->isp_initialized = true;
 	}
+	k_mutex_unlock(&dcmipp->lock);
 #endif
 
 	/* Enable the DCMIPP Pipeline */
@@ -1632,7 +1642,9 @@ static int stm32_dcmipp_init(const struct device *dev)
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 	dcmipp->isp_dec_hratio = 1;
 	dcmipp->isp_dec_vratio = 1;
+	dcmipp->isp_initialized = false;
 #endif
+	k_mutex_init(&dcmipp->lock);
 
 	/* Configure DT provided pins */
 	if (cfg->bus_type == VIDEO_BUS_TYPE_PARALLEL) {
