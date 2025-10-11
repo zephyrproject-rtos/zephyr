@@ -164,7 +164,7 @@
 	dqs-support;
 
 	aps51216ba: aps_z8@0 {
-		compatible = "ambiq,mspi-device", "mspi-aps-z8";
+		compatible = "mspi-aps-z8", "ambiq,mspi-device";
 		size = <DT_SIZE_M(512)>;
 		reg = <0>;
 		status = "disabled";
@@ -203,7 +203,7 @@
 	dqs-support;
 
 	is25wx064: is25wx064@0 {
-		compatible = "ambiq,mspi-device", "mspi-is25xX0xx";
+		compatible = "mspi-is25xX0xx", "ambiq,mspi-device";
 		size = <DT_SIZE_M(64)>;
 		reg = <0>;
 		status = "disabled";
