@@ -58,10 +58,20 @@ static inline int foldcase(int ch, int flags)
 	return ch;
 }
 
+static int check_fnm_period(const char* string, const int flags)
+{
+	return *string == '.' && (flags & FNM_PERIOD);
+}
+
+static int check_for_pathname(const char letter, const int flags)
+{
+	return letter == '/' && (flags & FNM_PATHNAME);
+}
+
 #define FOLDCASE(ch, flags) foldcase((unsigned char)(ch), (flags))
 
 static bool match_posix_class(const char **pattern, int test) {
-    static const struct {
+    const struct {
         const char *name;
         int (*func)(int);
     } classes[] = {
@@ -118,7 +128,7 @@ static const char *rangematch(const char *pattern, int test, int flags)
 	     c = FOLDCASE(*pattern++, flags)) {
 		need = false;
 
-		if (c == '/' && (flags & FNM_PATHNAME)) {
+		if (check_for_pathname(c, flags)) {
 			return (void *)-1;
 		}
 
@@ -195,13 +205,13 @@ static int fnmatchx(const char *pattern, const char *string, int flags, size_t r
 				return FNM_NOMATCH;
 			}
 
-			if (*string == '/' && (flags & FNM_PATHNAME)) {
+			if (check_for_pathname(*string, flags)) {
 				return FNM_NOMATCH;
 			}
 
-			if (*string == '.' && (flags & FNM_PERIOD) &&
+			if (check_fnm_period(string, flags) &&
 			    (string == stringstart ||
-			     ((flags & FNM_PATHNAME) && *(string - 1) == '/'))) {
+			     check_for_pathname(*(string - 1), flags))) {
 				return FNM_NOMATCH;
 			}
 
@@ -214,23 +224,22 @@ static int fnmatchx(const char *pattern, const char *string, int flags, size_t r
 				c = FOLDCASE(*++pattern, flags);
 			}
 
-			if (*string == '.' && (flags & FNM_PERIOD) &&
+			if (check_fnm_period(string, flags) &&
 			    (string == stringstart ||
-			     ((flags & FNM_PATHNAME) && *(string - 1) == '/'))) {
+			     check_for_pathname(*(string - 1), flags))) {
 				return FNM_NOMATCH;
 			}
 
 			/* Optimize for pattern with * at end or before /. */
 			if (c == EOS) {
-				if (flags & FNM_PATHNAME) {
-					return (flags & FNM_LEADING_DIR) ||
-							       strchr(string, '/') == NULL
-						       ? 0
-						       : FNM_NOMATCH;
-				} else {
+				if(!(flags & FNM_PATHNAME)) {
 					return 0;
 				}
-			} else if (c == '/' && flags & FNM_PATHNAME) {
+				return (flags & FNM_LEADING_DIR) ||
+								strchr(string, '/') == NULL
+							? 0
+							: FNM_NOMATCH;
+			} else if (check_for_pathname(c, flags)) {
 				string = strchr(string, '/');
 				if (string == NULL) {
 					return FNM_NOMATCH;
@@ -252,7 +261,7 @@ static int fnmatchx(const char *pattern, const char *string, int flags, size_t r
 					return e;
 				}
 
-				if (test == '/' && flags & FNM_PATHNAME) {
+				if (check_for_pathname(test, flags)) {
 					break;
 				}
 
@@ -265,13 +274,13 @@ static int fnmatchx(const char *pattern, const char *string, int flags, size_t r
 				return FNM_NOMATCH;
 			}
 
-			if (*string == '/' && flags & FNM_PATHNAME) {
+			if (check_for_pathname(*string, flags)) {
 				return FNM_NOMATCH;
 			}
 
-			if (*string == '.' && (flags & FNM_PERIOD) &&
+			if (check_fnm_period(string, flags) &&
 			    (string == stringstart ||
-			     ((flags & FNM_PATHNAME) && *(string - 1) == '/'))) {
+			     check_for_pathname(*(string - 1), flags))) {
 				return FNM_NOMATCH;
 			}
 
