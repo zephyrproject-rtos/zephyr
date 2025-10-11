@@ -57,6 +57,8 @@ source "drivers/dac/Kconfig.esp32"
 
 source "drivers/dac/Kconfig.ad56xx"
 
+source "drivers/dac/Kconfig.ad56x1"
+
 source "drivers/dac/Kconfig.ad559x"
 
 source "drivers/dac/Kconfig.ad569x"
