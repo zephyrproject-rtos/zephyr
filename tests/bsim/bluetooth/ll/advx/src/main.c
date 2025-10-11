@@ -29,7 +29,11 @@
 #define EVT_PROP_TXP    BIT(6)
 #define ADV_INTERVAL    0x20   /* 20 ms advertising interval */
 #define ADV_WAIT_MS     10     /* 10 ms wait loop */
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+#define OWN_ADDR_TYPE   BT_HCI_OWN_ADDR_RPA_OR_RANDOM
+#else /* !CONFIG_BT_CTLR_PRIVACY */
 #define OWN_ADDR_TYPE   BT_HCI_OWN_ADDR_RANDOM
+#endif /* !CONFIG_BT_CTLR_PRIVACY */
 #define PEER_ADDR_TYPE  BT_HCI_OWN_ADDR_RANDOM
 #define PEER_ADDR       peer_addr
 #define ADV_CHAN_MAP    0x07
@@ -675,28 +679,32 @@ static void test_advx_main(void)
 
 	k_sleep(K_MSEC(1000));
 
-	printk("Add to resolving list...");
-	bt_addr_le_t peer_id_addr = {
-		.type = BT_ADDR_LE_RANDOM,
-		.a = {
-			.val = {0xc6, 0xc7, 0xc8, 0xc9, 0xc1, 0xcb}
+	if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY)) {
+		printk("Add to resolving list...");
+		bt_addr_le_t peer_id_addr = {
+			.type = BT_ADDR_LE_RANDOM,
+			.a = {
+				.val = {0xc6, 0xc7, 0xc8, 0xc9, 0xc1, 0xcb}
+			}
+		};
+		uint8_t pirk[16] = {0xAB, 0xBA, 0xAB, 0xBA, 0xAB, 0xBA, 0xAB, 0xBA,
+				    0xAB, 0xBA, 0xAB, 0xBA, 0xAB, 0xBA, 0xAB, 0xBA};
+		uint8_t lirk[16] = {0x12, 0x21, 0x12, 0x21, 0x12, 0x21, 0x12, 0x21,
+				    0x12, 0x21, 0x12, 0x21, 0x12, 0x21, 0x12, 0x21};
+
+		err = ll_rl_add(&peer_id_addr, pirk, lirk);
+		if (err) {
+			goto exit;
 		}
-	};
-	uint8_t pirk[16] = {0x00, };
-	uint8_t lirk[16] = {0x01, };
+		printk("success.\n");
 
-	err = ll_rl_add(&peer_id_addr, pirk, lirk);
-	if (err) {
-		goto exit;
+		printk("Enable resolving list...");
+		err = ll_rl_enable(BT_HCI_ADDR_RES_ENABLE);
+		if (err) {
+			goto exit;
+		}
+		printk("success.\n");
 	}
-	printk("success.\n");
-
-	printk("Enable resolving list...");
-	err = ll_rl_enable(BT_HCI_ADDR_RES_ENABLE);
-	if (err) {
-		goto exit;
-	}
-	printk("success.\n");
 
 	printk("Enabling extended...");
 	err = ll_adv_enable(handle, 1, 0, 0);
@@ -1716,28 +1724,46 @@ static void test_scanx_main(void)
 	}
 	printk("done.\n");
 
-	printk("Add to resolving list...");
 	bt_addr_le_t peer_id_addr = {
 		.type = BT_ADDR_LE_RANDOM,
 		.a = {
 			.val = {0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5}
 		}
 	};
-	uint8_t pirk[16] = {0x01, };
-	uint8_t lirk[16] = {0x00, };
 
-	err = ll_rl_add(&peer_id_addr, pirk, lirk);
-	if (err) {
-		goto exit;
-	}
-	printk("success.\n");
+	if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY)) {
+		printk("Add to resolving list...");
+		bt_addr_le_t some_id_addr = {
+			.type = BT_ADDR_LE_RANDOM,
+			.a = {
+				.val = {0x78, 0x87, 0x78, 0x87, 0x78, 0x87}
+			}
+		};
+		uint8_t pirk[16] = {0x12, 0x21, 0x12, 0x21, 0x12, 0x21, 0x12, 0x21,
+				    0x12, 0x21, 0x12, 0x21, 0x12, 0x21, 0x12, 0x21};
+		uint8_t lirk[16] = {0xCD, 0xDC, 0xCD, 0xDC, 0xCD, 0xDC, 0xCD, 0xDC,
+				    0xCD, 0xDC, 0xCD, 0xDC, 0xCD, 0xDC, 0xCD, 0xDC};
 
-	printk("Enable resolving list...");
-	err = ll_rl_enable(BT_HCI_ADDR_RES_ENABLE);
-	if (err) {
-		goto exit;
+		/* some_id_addr with swapped peer IRK and local IRK */
+		err = ll_rl_add(&some_id_addr, lirk, pirk);
+		if (err) {
+			goto exit;
+		}
+
+		/* peer_id_addr with correct peer IRK and local IRK */
+		err = ll_rl_add(&peer_id_addr, pirk, lirk);
+		if (err) {
+			goto exit;
+		}
+		printk("success.\n");
+
+		printk("Enable resolving list...");
+		err = ll_rl_enable(BT_HCI_ADDR_RES_ENABLE);
+		if (err) {
+			goto exit;
+		}
+		printk("success.\n");
 	}
-	printk("success.\n");
 
 	printk("Add device to periodic advertising list...");
 	err = bt_le_per_adv_list_add(&peer_id_addr, per_sid);
