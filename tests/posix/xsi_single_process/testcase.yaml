@@ -11,6 +11,12 @@ common:
   integration_platforms:
     - qemu_cortex_m0
   min_ram: 16
+  # FVP SMP has unresolved issues
+  platform_exclude:
+    - fvp_base_revc_2xaem/v8a/smp
+    - fvp_base_revc_2xaem/v8a/smp/ns
+    - fvp_base_revc_2xaem/v9a/smp
+    - fvp_base_revc_2xaem/v9a/smp/ns
 tests:
   portability.xsi.single_process:
     extra_configs:

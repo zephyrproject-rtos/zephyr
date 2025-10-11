@@ -14,6 +14,12 @@ common:
   integration_platforms:
     - qemu_x86
     - qemu_riscv64
+  # FVP SMP has unresolved issues
+  platform_exclude:
+    - fvp_base_revc_2xaem/v8a/smp
+    - fvp_base_revc_2xaem/v8a/smp/ns
+    - fvp_base_revc_2xaem/v9a/smp
+    - fvp_base_revc_2xaem/v9a/smp/ns
 tests:
   portability.posix.fs: {}
   portability.posix.fs.minimal:

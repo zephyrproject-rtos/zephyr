@@ -7,6 +7,12 @@ common:
     - arch
     - simulation
   filter: not CONFIG_NATIVE_LIBC
+  # FVP SMP has unresolved issues
+  platform_exclude:
+    - fvp_base_revc_2xaem/v8a/smp
+    - fvp_base_revc_2xaem/v8a/smp/ns
+    - fvp_base_revc_2xaem/v9a/smp
+    - fvp_base_revc_2xaem/v9a/smp/ns
 tests:
   portability.posix.common: {}
   portability.posix.common.minimal:

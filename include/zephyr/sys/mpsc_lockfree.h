@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/barrier.h>
 #include <zephyr/kernel.h>
 
 #ifdef __cplusplus
@@ -54,7 +55,7 @@ extern "C" {
 
 typedef atomic_ptr_t mpsc_ptr_t;
 
-#define mpsc_ptr_get(ptr)          atomic_ptr_get(&(ptr))
+#define mpsc_ptr_get(ptr)          ({ barrier_dmem_fence_full(); atomic_ptr_get(&(ptr)); })
 #define mpsc_ptr_set(ptr, val)     atomic_ptr_set(&(ptr), val)
 #define mpsc_ptr_set_get(ptr, val) atomic_ptr_set(&(ptr), val)
 

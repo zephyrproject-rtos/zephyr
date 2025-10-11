@@ -15,6 +15,11 @@ common:
   # Aborted (core dumped)
   platform_exclude:
     - qemu_arc/qemu_arc_hs5x
+    # FVP SMP has unresolved issues
+    - fvp_base_revc_2xaem/v8a/smp
+    - fvp_base_revc_2xaem/v8a/smp/ns
+    - fvp_base_revc_2xaem/v9a/smp
+    - fvp_base_revc_2xaem/v9a/smp/ns
 tests:
   portability.posix.signals:
     integration_platforms:
