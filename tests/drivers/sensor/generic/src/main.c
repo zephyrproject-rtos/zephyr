@@ -393,6 +393,12 @@ ZTEST(sensor_api, test_sensor_unit_conversion)
 			"the result does not match");
 	zassert_equal(sensor_value_to_micro(&data), 5432109876543LL,
 			"the result does not match");
+	/* Test UID helpers (round-trip) */
+	sensor_value_from_uid(&data, 0x0123456789ABCDEFULL);
+	zassert_equal(sensor_value_to_uid(&data), 0x0123456789ABCDEFULL,
+			"the result does not match");
+	zassert_equal(data.val1, 0x01234567, "the data does not match");
+	zassert_equal(data.val2, (int32_t)0x89ABCDEF, "the data does not match");
 }
 
 ZTEST_SUITE(sensor_api, NULL, NULL, ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);
