@@ -11,6 +11,7 @@ supported:
   - adc
   - can
   - counter
+  - dma
   - flash
   - flexio
   - gpio
