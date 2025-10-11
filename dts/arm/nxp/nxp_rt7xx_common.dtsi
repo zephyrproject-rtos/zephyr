@@ -188,13 +188,47 @@
 	iocon1: pinctrl@64000 {
 		compatible = "nxp,lpc-iocon";
 		reg = <0x64000 0x1000>;
+		ranges = <0x0 0x64000 0x200>;
 		status = "okay";
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		port8: pinctrl@0 {
+			reg = <0x0 0x80>;
+		};
+
+		port9: pinctrl@80 {
+			reg = <0x80 0x80>;
+		};
+
+		port10: pinctrl@100 {
+			reg = <0x100 0x80>;
+		};
 	};
 
 	iocon2: pinctrl@a5000 {
 		compatible = "nxp,lpc-iocon";
 		reg = <0xa5000 0x1000>;
+		ranges = <0x0 0xa5000 0x200>;
 		status = "okay";
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		port4: pinctrl@0 {
+			reg = <0x0 0x80>;
+		};
+
+		port5: pinctrl@80 {
+			reg = <0x80 0x80>;
+		};
+
+		port6: pinctrl@100 {
+			reg = <0x100 0x80>;
+		};
+
+		port7: pinctrl@180 {
+			reg = <0x180 0x80>;
+		};
 	};
 };
 
