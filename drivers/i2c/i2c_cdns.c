@@ -899,6 +899,10 @@ static void cdns_i2c_mrecv(struct cdns_i2c_data *i2c_bus, uint16_t msg_addr)
 	uint32_t isr_status;
 	bool hold_clear = false;
 	uint32_t addr;
+#if defined(CONFIG_I2C_CADENCE_BROKEN_HOLD_BIT)
+	unsigned int key;
+	bool irq_save = false;
+#endif /* CONFIG_I2C_CADENCE_BROKEN_HOLD_BIT */
 
 	/* Initialize the receive buffer and count */
 	i2c_bus->p_recv_buf = i2c_bus->p_msg->buf;
@@ -933,6 +937,9 @@ static void cdns_i2c_mrecv(struct cdns_i2c_data *i2c_bus, uint16_t msg_addr)
 	if ((i2c_bus->bus_hold_flag == 0U) && (i2c_bus->recv_count <= i2c_bus->fifo_depth)) {
 		if ((ctrl_reg & CDNS_I2C_CR_HOLD) != 0U) {
 			hold_clear = true;
+#if defined(CONFIG_I2C_CADENCE_BROKEN_HOLD_BIT)
+			irq_save = true;
+#endif /* CONFIG_I2C_CADENCE_BROKEN_HOLD_BIT */
 		}
 	}
 
@@ -945,11 +952,30 @@ static void cdns_i2c_mrecv(struct cdns_i2c_data *i2c_bus, uint16_t msg_addr)
 		ctrl_reg &= ~CDNS_I2C_CR_HOLD;
 		ctrl_reg &= ~CDNS_I2C_CR_CLR_FIFO;
 
+#if defined(CONFIG_I2C_CADENCE_BROKEN_HOLD_BIT)
+		/*
+		 * In case of Xilinx Zynq SOC, clear the HOLD bit before transfer size
+		 * register reaches '0'. This is an IP bug which causes transfer size
+		 * register overflow to 0xFF. To satisfy this timing requirement,
+		 * disable the interrupts on current processor core between register
+		 * writes to slave address register and control register.
+		 */
+		if (irq_save) {
+			key = irq_lock();
+		}
+#endif /* CONFIG_I2C_CADENCE_BROKEN_HOLD_BIT */
+
 		/* Write the address and control register values */
 		cdns_i2c_writereg(i2c_bus, addr, CDNS_I2C_ADDR_OFFSET);
 		cdns_i2c_writereg(i2c_bus, ctrl_reg, CDNS_I2C_CR_OFFSET);
 		/* Read back to ensure write completion */
 		(void)cdns_i2c_readreg(i2c_bus, CDNS_I2C_CR_OFFSET);
+
+#if defined(CONFIG_I2C_CADENCE_BROKEN_HOLD_BIT)
+		if (irq_save) {
+			irq_unlock(key);
+		}
+#endif /* CONFIG_I2C_CADENCE_BROKEN_HOLD_BIT */
 	} else {
 		/* Directly write the address if no need to clear the hold bit */
 		cdns_i2c_writereg(i2c_bus, addr, CDNS_I2C_ADDR_OFFSET);
@@ -1173,8 +1199,25 @@ static int32_t cdns_i2c_master_handle_repeated_start(struct cdns_i2c_data *i2c_b
 						     struct i2c_msg *msgs, uint8_t num_msgs)
 {
 	uint32_t reg;
+
+#if defined(CONFIG_I2C_CADENCE_BROKEN_HOLD_BIT)
+	/*
+	 * This controller does not give completion interrupt after a
+	 * master receive message if HOLD bit is set (repeated start),
+	 * resulting in SW timeout. Hence, if a receive message is
+	 * followed by any other message, an error is returned
+	 * indicating that this sequence is not supported.
+	 */
+	for (uint8_t count = 0; count < num_msgs - 1; count++) {
+		if (msgs[count].flags & I2C_MSG_READ) {
+			LOG_ERR("Can't do repeated start after a receive message");
+			return -EOPNOTSUPP;
+		}
+	}
+#else
 	(void)msgs;
 	(void)num_msgs;
+#endif
 
 	/* Set the hold flag and register */
 	i2c_bus->bus_hold_flag = 1;

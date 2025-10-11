@@ -9,3 +9,15 @@ config I2C_CADENCE
 	select EVENTS
 	help
 	  Enable Cadence I2C driver.
+
+if I2C_CADENCE
+
+config I2C_CADENCE_BROKEN_HOLD_BIT
+	bool "Workaround for errata condition found on the Zynq-7000"
+	default n
+	help
+	  Disallows message transfers with a repeated start condition following a read operation. Also
+	  disables interrupts between the address register write and control register write during
+	  message reception, to prevent transfer size register rollover.
+
+endif # I2C_CADENCE
