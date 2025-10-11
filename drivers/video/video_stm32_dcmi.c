@@ -55,9 +55,31 @@ struct video_stm32_dcmi_config {
 	const struct stream dma;
 };
 
+static void stm32_dcmi_process_dma_error(DCMI_HandleTypeDef *hdcmi)
+{
+	struct video_stm32_dcmi_data *dev_data =
+		CONTAINER_OF(hdcmi, struct video_stm32_dcmi_data, hdcmi);
+
+	LOG_DBG("Restart DMA after Error!");
+
+	/* Lets try to recover by stopping and restart */
+	if (HAL_DCMI_Stop(&dev_data->hdcmi) != HAL_OK) {
+		LOG_WRN("HAL_DCMI_Stop FAILED!");
+		return;
+	}
+
+	if (HAL_DCMI_Start_DMA(&dev_data->hdcmi,
+			       DCMI_MODE_CONTINUOUS,
+			       (uint32_t)dev_data->vbuf->buffer,
+			       dev_data->vbuf->size / 4) != HAL_OK) {
+		LOG_WRN("Continuous: HAL_DCMI_Start_DMA FAILED!");
+		return;
+	}
+}
+
 void HAL_DCMI_ErrorCallback(DCMI_HandleTypeDef *hdcmi)
 {
-	LOG_WRN("%s", __func__);
+	stm32_dcmi_process_dma_error(hdcmi);
 }
 
 void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
@@ -96,17 +118,10 @@ static void dcmi_dma_callback(const struct device *dev, void *arg, uint32_t chan
 	DMA_HandleTypeDef *hdma = arg;
 
 	ARG_UNUSED(dev);
-
-	if (status < 0) {
-		LOG_ERR("DMA callback error with channel %d.", channel);
-	}
+	ARG_UNUSED(channel);
+	ARG_UNUSED(status);
 
 	HAL_DMA_IRQHandler(hdma);
-}
-
-void HAL_DMA_ErrorCallback(DMA_HandleTypeDef *hdma)
-{
-	LOG_WRN("%s", __func__);
 }
 
 static int stm32_dma_init(const struct device *dev)
