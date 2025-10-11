@@ -50,7 +50,26 @@
 extern "C" {
 #endif
 
-int fnmatch(const char *, const char *, int);
+/**
+ * Function used to check if the given pattern is in the string, using the given flags
+ * 
+ * @param pattern pattern that is matched against the string
+ * @param string string that is checked for the pattern
+ * @param flags used to signal special matching conditions
+ *        FNM_NOESCAPE	0x01 Disable backslash escaping.
+ *        FNM_PATHNAME	0x02 Slash must be matched by slash.
+ *        FNM_PERIOD	0x04 Period must be matched by period.
+ *        FNM_CASEFOLD	0x08 Pattern is matched case-insensitive
+ *        FNM_LEADING_DIR 0x10 Ignore /<tail> after Imatch.
+ * 
+ * 
+ * @return int
+ * @retval 0 pattern found in string
+ * @retval FNM_NOMATCH pattern not found in string
+ * @retval FNM_NORES recursion limit reached
+ * @retval FNM_NOSYS function not implemented
+ */
+int fnmatch(const char *pattern, const char *string, int flags);
 
 #ifdef __cplusplus
 }

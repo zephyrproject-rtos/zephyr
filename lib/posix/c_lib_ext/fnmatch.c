@@ -58,11 +58,29 @@ static inline int foldcase(int ch, int flags)
 	return ch;
 }
 
+/**
+ * @brief Function to check for FNM_PERIOD condition
+ * 
+ * @param string string whose first character is checked if it is a period
+ * @param flags passed flags to check for FNM_PERIOD
+ * @return int 
+ * @retval 1 if first character is period and FNM_PERIOD flag is set
+ * @retval 0 otherwise
+ */
 static int check_fnm_period(const char* string, const int flags)
 {
 	return *string == '.' && (flags & FNM_PERIOD);
 }
 
+/**
+ * @brief Function to check for FNM_PATHNAME condition
+ * 
+ * @param letter letter to be checked if it is a '/'
+ * @param flags flags passed to check for FNM_PATHNAME
+ * @return int 
+ * @retval 1 if letter is '/' and FNM_PATHNAME flag is set
+ * @retval 0 otherwise
+ */
 static int check_for_pathname(const char letter, const int flags)
 {
 	return letter == '/' && (flags & FNM_PATHNAME);
@@ -70,6 +88,14 @@ static int check_for_pathname(const char letter, const int flags)
 
 #define FOLDCASE(ch, flags) foldcase((unsigned char)(ch), (flags))
 
+/**
+ * @brief Function to match POSIX character classes
+ * 
+ * @param pattern start of the pattern, should point to the character after '['
+ * @param test next character in the string to be tested against the class
+ * @return true 
+ * @return false 
+ */
 static bool match_posix_class(const char **pattern, int test) {
     const struct {
         const char *name;
