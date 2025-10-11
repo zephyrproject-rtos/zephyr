@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: 2025 SiFli Technologies(Nanjing) Co., Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_SF32LB
+	bool "RTC driver for SF32LB family of MCUs"
+	default y
+	depends on DT_HAS_SIFLI_SF32LB_RTC_ENABLED
+	select USE_SIFLI_HAL
+	select USE_SIFLI_HAL_RTC
+	help
+	  Enable RTC driver for SF32LB series of MCUs
