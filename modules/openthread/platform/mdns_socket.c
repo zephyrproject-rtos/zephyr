@@ -20,6 +20,9 @@
 #include <zephyr/net/socket_service.h>
 #include <openthread/nat64.h>
 #include "sockets_internal.h"
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(net_otPlat_mdns_socket, CONFIG_OPENTHREAD_BORDER_ROUTER_PLATFORM_LOG_LEVEL);
 
 #define MULTICAST_PORT 5353
 #if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_IPV6)
@@ -53,6 +56,8 @@ otError mdns_plat_socket_init(otInstance *ot_instance, uint32_t ail_iface_idx)
 {
 	ot_instance_ptr = ot_instance;
 	ail_iface_index = ail_iface_idx;
+
+	LOG_DBG("%s : finished with code %d", __func__, OT_ERROR_NONE);
 
 	return OT_ERROR_NONE;
 }
@@ -107,7 +112,7 @@ static otError mdns_socket_init_v6(uint32_t ail_iface_idx)
 
 	struct sockaddr_in6 addr = {.sin6_family = AF_INET6,
 				    .sin6_port = htons(MULTICAST_PORT),
-				    .sin6_addr = {{{0}}},
+				    .sin6_addr = IN6ADDR_ANY_INIT,
 				    .sin6_scope_id = 0};
 
 	mdns_sock_v6 = zsock_socket(AF_INET6, SOCK_DGRAM | SOCK_NONBLOCK, IPPROTO_UDP);
@@ -154,6 +159,7 @@ static otError mdns_socket_init_v6(uint32_t ail_iface_idx)
 		     error = OT_ERROR_FAILED);
 
 exit:
+	LOG_DBG("%s : finished with code %d", __func__, error);
 	return error;
 }
 
@@ -169,7 +175,7 @@ static otError mdns_socket_init_v4(uint32_t ail_iface_idx)
 
 	struct sockaddr_in addr = {.sin_family = AF_INET,
 				   .sin_port = htons(MULTICAST_PORT),
-				   .sin_addr = {{{0}}}};
+				   .sin_addr = INADDR_ANY_INIT};
 
 	mdns_sock_v4 = zsock_socket(AF_INET, SOCK_DGRAM | SOCK_NONBLOCK, IPPROTO_UDP);
 	VerifyOrExit(mdns_sock_v4 >= 0, error = OT_ERROR_FAILED);
@@ -212,6 +218,8 @@ static otError mdns_socket_init_v4(uint32_t ail_iface_idx)
 		     error = OT_ERROR_FAILED);
 
 exit:
+	LOG_DBG("%s : finished with code %d", __func__, error);
+
 	return error;
 }
 #endif /* CONFIG_NET_IPV4 */
@@ -234,6 +242,7 @@ static otError mdns_socket_deinit(void)
 	mdns_sock_v4 = -1;
 #endif /* CONFIG_NET_IPV4 */
 exit:
+	LOG_DBG("%s : finished with code %d", __func__, error);
 	return error;
 }
 
@@ -339,7 +348,7 @@ static void mdns_receive_handler(struct net_socket_service_event *evt)
 		addrlen = sizeof(addr_v4);
 		len = zsock_recvfrom(mdns_sock_v4, req->buffer, sizeof(req->buffer), 0,
 			       (struct sockaddr *)&addr_v4, &addrlen);
-		VerifyOrExit(len > 0);
+		VerifyOrExit(len > 0, openthread_border_router_deallocate_message((void *)req));
 		otIp4ToIp4MappedIp6Address((otIp4Address *)&addr_v4.sin_addr.s_addr,
 					   &req->addr_info.mAddress);
 		req->addr_info.mPort = ntohs(addr_v4.sin_port);
@@ -348,7 +357,7 @@ static void mdns_receive_handler(struct net_socket_service_event *evt)
 		addrlen = sizeof(addr_v6);
 		len = zsock_recvfrom(mdns_sock_v6, req->buffer, sizeof(req->buffer), 0,
 			       (struct sockaddr *)&addr_v6, &addrlen);
-		VerifyOrExit(len > 0);
+		VerifyOrExit(len > 0, openthread_border_router_deallocate_message((void *)req));
 		memcpy(&req->addr_info.mAddress, &addr_v6.sin6_addr,
 		       sizeof(req->addr_info.mAddress));
 		req->addr_info.mPort = ntohs(addr_v6.sin6_port);
@@ -388,6 +397,8 @@ void mdns_plat_monitor_interface(struct net_if *ail_iface)
 	struct net_if_ipv6 *ipv6 = NULL;
 	otIp6Address ip6_addr = {0};
 	struct net_if_addr *unicast = NULL;
+
+	LOG_DBG("%s : Monitoring address changed on iface %d", __func__, ail_iface_index);
 
 	otPlatMdnsHandleHostAddressRemoveAll(ot_instance_ptr, ail_iface_index);
 
