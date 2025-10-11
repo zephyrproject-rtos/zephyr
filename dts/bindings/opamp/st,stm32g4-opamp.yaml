@@ -57,8 +57,6 @@ properties:
       - NONE
       - VINM0
       - VINM1
-      - VOUT
-      - PGA
 
   vinp:
     required: true

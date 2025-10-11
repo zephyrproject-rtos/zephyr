@@ -30,17 +30,19 @@ LOG_MODULE_REGISTER(stm32g4_opamp, CONFIG_OPAMP_LOG_LEVEL);
 #endif /* !LL_OPAMP_INTERNAL_OUTPUT_ENABLED */
 
 typedef enum {
+	OPAMP_INM_SECONDARY_DISABLED = -1,
 	OPAMP_INM_NONE = LL_OPAMP_INPUT_INVERT_CONNECT_NO,
 	OPAMP_INM_VINM0 = LL_OPAMP_INPUT_INVERT_IO0,
 	OPAMP_INM_VINM1 = LL_OPAMP_INPUT_INVERT_IO1,
 } opamp_vinm_t;
 
 typedef enum {
+	OPAMP_INP_SECONDARY_DISABLED = -1,
 	OPAMP_INP_VINP0 = LL_OPAMP_INPUT_NONINVERT_IO0,
 	OPAMP_INP_VINP1 = LL_OPAMP_INPUT_NONINVERT_IO1,
 	OPAMP_INP_VINP2 = LL_OPAMP_INPUT_NONINVERT_IO2,
 	OPAMP_INP_VINP3 = LL_OPAMP_INPUT_NONINVERT_IO3,
-	OPAMP_INP_DAC = LL_OPAMP_INPUT_NONINVERT_DAC
+	OPAMP_INP_DAC = LL_OPAMP_INPUT_NONINVERT_DAC,
 } opamp_vinp_t;
 
 typedef enum {
@@ -53,8 +55,8 @@ struct stm32_opamp_config {
 	OPAMP_TypeDef *opamp;
 	uint8_t functional_mode;
 	uint32_t power_mode;
-	opamp_vinm_t vinm;
-	opamp_vinp_t vinp;
+	opamp_vinm_t vinm[2]; /* Primary and secondary entries */
+	opamp_vinp_t vinp[2]; /* Primary and secondary entries */
 	opamp_vout_t vout;
 	bool lock_enable;
 	bool self_calibration;
@@ -89,6 +91,10 @@ static int stm32_opamp_pm_callback(const struct device *dev, enum pm_device_acti
 		LL_OPAMP_Enable(opamp);
 		if(cfg->lock_enable) {
 			LL_OPAMP_Lock(opamp);
+		}
+
+		if(cfg->lock_enable && cfg->inputs_mux_mode != LL_OPAMP_INPUT_MUX_DISABLE) {
+			LL_OPAMP_LockTimerMux(opamp);
 		}
 	}
 
@@ -145,6 +151,11 @@ static int stm32_opamp_set_gain(const struct device *dev, enum opamp_gain gain)
 	OPAMP_TypeDef *opamp = cfg->opamp;
 	uint32_t stm32_ll_gain = UINT32_MAX;
 
+	/* In opamp-controler.yaml there are no negative gains present, but
+	 * inverting and non-inverting modes instead. Therefore OPAMP_GAIN_1
+	 * corresponds to -1 gain in inverting mode, and +2 gain in non-inverting
+	 * mode and gain assignment below shall be correct.
+	 */
 	if (gain == OPAMP_GAIN_2 || gain == OPAMP_GAIN_1) {
 		stm32_ll_gain = LL_OPAMP_PGA_GAIN_2_OR_MINUS_1;
 	} else if (gain == OPAMP_GAIN_4 || gain == OPAMP_GAIN_3) {
@@ -247,11 +258,17 @@ static int stm32_opamp_init(const struct device *dev)
 	LL_OPAMP_SetPowerMode(opamp, cfg->power_mode);
 
 	/// TODO: Configure vinm / vinp in accordance with dts
-	LL_OPAMP_SetInputInverting(opamp, cfg->vinm);
-	// LL_OPAMP_SetInputInvertingSecondary(opamp, cfg->input_inverting_secondary);
+	LL_OPAMP_SetInputInverting(opamp, cfg->vinm[0]);
+	if (cfg->vinm[1] != OPAMP_INM_SECONDARY_DISABLED) {
+		LL_OPAMP_SetInputInvertingSecondary(opamp, cfg->vinm[1]);
+	}
+	LOG_INF("cfg->vinm[1] == OPAMP_INM_SECONDARY_DISABLED: %d", cfg->vinm[1] == OPAMP_INM_SECONDARY_DISABLED);
+	LOG_INF("cfg->vinm[1] == OPAMP_INM_VINM1: %d", cfg->vinm[1] == OPAMP_INM_VINM1);
 
-	LL_OPAMP_SetInputNonInverting(opamp, cfg->vinp);
-	// LL_OPAMP_SetInputNonInvertingSecondary(opamp, cfg->input_non_inverting_secondary);
+	LL_OPAMP_SetInputNonInverting(opamp, cfg->vinp[0]);
+	if (cfg->vinp[1] != OPAMP_INP_SECONDARY_DISABLED) {
+		LL_OPAMP_SetInputNonInvertingSecondary(opamp, cfg->vinp[1]);
+	}
 
 	/// TODO: Internal output shall be enabled only if OPAMP is connected to ADC
 	// LL_OPAMP_SetInternalOutput(opamp, LL_OPAMP_INTERNAL_OUTPUT_DISABLED);
@@ -272,11 +289,17 @@ static int stm32_opamp_init(const struct device *dev)
 #define STM32_OPAMP_DT_SELF_CALIB(inst)	\
 	DT_INST_PROP_OR(inst, st_self_calibration, false)
 
-#define STM32_OPAMP_DT_VINM(inst, idx)	\
-  CONCAT(OPAMP_INM_, DT_INST_STRING_TOKEN_BY_IDX(inst, vinm, idx))
+#define STM32_OPAMP_DT_VINM_PRIMARY(inst)	\
+  CONCAT(OPAMP_INM_, DT_INST_STRING_TOKEN_BY_IDX(inst, vinm, 0))
 
-#define STM32_OPAMP_DT_VINP(inst, idx)	\
-  CONCAT(OPAMP_INP_, DT_INST_STRING_TOKEN_BY_IDX(inst, vinp, idx))
+#define STM32_OPAMP_DT_VINM_SECONDARY(inst)	\
+  CONCAT(OPAMP_INM_, DT_INST_STRING_TOKEN_BY_IDX(inst, vinm, 1))
+
+#define STM32_OPAMP_DT_VINP_PRIMARY(inst)	\
+  CONCAT(OPAMP_INP_, DT_INST_STRING_TOKEN_BY_IDX(inst, vinp, 0))
+
+#define STM32_OPAMP_DT_VINP_SECONDARY(inst)	\
+  CONCAT(OPAMP_INP_, DT_INST_STRING_TOKEN_BY_IDX(inst, vinp, 1))
 
 static DEVICE_API(opamp, opamp_api) = {
 	.set_gain = stm32_opamp_set_gain,
@@ -284,14 +307,18 @@ static DEVICE_API(opamp, opamp_api) = {
 
 #define STM32_OPAMP_DEVICE(inst)						\
 	PINCTRL_DT_INST_DEFINE(inst);						\
+										\
 	static const struct stm32_pclken stm32_pclken_##inst[] =		\
-		STM32_DT_INST_CLOCKS(inst);					\
+						STM32_DT_INST_CLOCKS(inst);	\
+										\
 	static const struct stm32_opamp_config stm32_opamp_config_##inst = {	\
 		.opamp = (OPAMP_TypeDef *)DT_INST_REG_ADDR(inst),		\
 		.functional_mode = DT_INST_ENUM_IDX(inst, functional_mode),	\
 		.power_mode = STM32_OPAMP_DT_POWER_MODE(inst),			\
-		.vinp = STM32_OPAMP_DT_VINP(inst, 0),				\
-		.vinm = STM32_OPAMP_DT_VINM(inst, 0),				\
+		.vinp[0] = STM32_OPAMP_DT_VINP_PRIMARY(inst), 			\
+		.vinp[1] = STM32_OPAMP_DT_VINP_SECONDARY(inst),			\
+		.vinm[0] = STM32_OPAMP_DT_VINM_PRIMARY(inst), 			\
+		.vinm[1] = STM32_OPAMP_DT_VINM_SECONDARY(inst),			\
 		.vout = 0,							\
 		.lock_enable = STM32_OPAMP_DT_LOCK_ENABLE(inst),		\
 		.self_calibration = STM32_OPAMP_DT_SELF_CALIB(inst),		\
