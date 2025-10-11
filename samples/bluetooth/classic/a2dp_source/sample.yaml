@@ -1,0 +1,11 @@
+sample:
+  name: Bluetooth A2DP Source
+tests:
+  sample.bluetooth.a2dp.source:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+    tags: bluetooth
+    integration_platforms:
+      - qemu_cortex_m3

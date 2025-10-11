@@ -11,6 +11,14 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_A2DP_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_A2DP_H_
 
+/**
+ * @file
+ * @brief Advanced Audio Distribution Profile (A2DP)
+ * @defgroup bt_a2dp Advanced Audio Distribution Profile (A2DP)
+ * @ingroup bluetooth
+ * @{
+ */
+
 #include <stdint.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
@@ -871,5 +879,9 @@ struct net_buf *bt_a2dp_stream_create_pdu(struct net_buf_pool *pool, k_timeout_t
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_A2DP_H_ */
