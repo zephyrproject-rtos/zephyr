@@ -486,6 +486,18 @@ do_fault:
 
 #if defined(CONFIG_IRQ_OFFLOAD)
 do_irq_offload:
+
+#if defined(CONFIG_PMP_STACK_GUARD) && defined(CONFIG_MULTITHREADING)
+	/*
+	 * Re-activate Physical Memory Protection (PMP) for M-mode.
+	 * This ensures the stack guard remains active while running the offloaded IRQ.
+	 */
+	li t1, MSTATUS_MPP
+	csrc mstatus, t1
+	li t1, MSTATUS_MPRV
+	csrs mstatus, t1
+#endif /* CONFIG_PMP_STACK_GUARD && CONFIG_MULTITHREADING */
+
 	/*
 	 * Retrieve provided routine and argument from the stack.
 	 * Routine pointer is in saved a0, argument in saved a1
