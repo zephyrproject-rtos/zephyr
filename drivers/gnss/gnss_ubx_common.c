@@ -136,8 +136,8 @@ void gnss_ubx_common_satellite_callback(struct modem_ubx *ubx, const struct ubx_
 			.elevation = ubx_sat->sat[i].elevation,
 			.azimuth = ubx_sat->sat[i].azimuth,
 			.system = gnss_system,
-			.is_tracked = (ubx_sat->sat[i].flags & UBX_NAV_SAT_FLAGS_SV_USED),
-			.is_corrected = (ubx_sat->sat[i].flags & UBX_NAV_SAT_FLAGS_RTCM_CORR_USED)
+			.is_tracked = !!(ubx_sat->sat[i].flags & UBX_NAV_SAT_FLAGS_SV_USED),
+			.is_corrected = !!(ubx_sat->sat[i].flags & UBX_NAV_SAT_FLAGS_RTCM_CORR_USED)
 		};
 
 		data->satellites.data[i] = sat;

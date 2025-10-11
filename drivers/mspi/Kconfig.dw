@@ -8,8 +8,18 @@ config MSPI_DW
 	depends on DT_HAS_SNPS_DESIGNWARE_SSI_ENABLED
 	select PINCTRL if $(dt_compat_any_has_prop,$(DT_COMPAT_SNPS_DESIGNWARE_SSI),pinctrl-0)
 	imply MSPI_XIP
+	imply MSPI_TIMING
 
 if MSPI_DW
+
+config MSPI_DW_HANDLE_FIFOS_IN_SYSTEM_WORKQUEUE
+	bool "Handle FIFO in system workqueue"
+	help
+	  When the driver does not use DMA for transferring data to/from the
+	  SSI FIFOs, handling of those may take a significant amount of time.
+	  It may be destructive for some applications if that time is spent
+	  in the interrupt context. This option allows offloading the job to
+	  the system workqueue.
 
 config MSPI_DW_TXD_DIV
 	int "Designware SSI TX Drive edge divisor"

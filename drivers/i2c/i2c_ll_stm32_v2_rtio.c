@@ -209,15 +209,16 @@ int i2c_stm32_target_register(const struct device *dev,
 		return ret;
 	}
 
-#if defined(CONFIG_PM_DEVICE_RUNTIME)
+	/* Mark device as active */
+	(void)pm_device_runtime_get(dev);
+
+#if !defined(CONFIG_SOC_SERIES_STM32F7X)
 	if (pm_device_wakeup_is_capable(dev)) {
-		/* Mark device as active */
-		(void)pm_device_runtime_get(dev);
 		/* Enable wake-up from stop */
 		LOG_DBG("i2c: enabling wakeup from stop");
 		LL_I2C_EnableWakeUpFromStop(cfg->i2c);
 	}
-#endif /* defined(CONFIG_PM_DEVICE_RUNTIME) */
+#endif /* !CONFIG_SOC_SERIES_STM32F7X */
 
 	LL_I2C_Enable(i2c);
 
@@ -298,15 +299,16 @@ int i2c_stm32_target_unregister(const struct device *dev,
 
 	LL_I2C_Disable(i2c);
 
-#if defined(CONFIG_PM_DEVICE_RUNTIME)
+#if !defined(CONFIG_SOC_SERIES_STM32F7X)
 	if (pm_device_wakeup_is_capable(dev)) {
 		/* Disable wake-up from STOP */
 		LOG_DBG("i2c: disabling wakeup from stop");
 		LL_I2C_DisableWakeUpFromStop(i2c);
-		/* Release the device */
-		(void)pm_device_runtime_put(dev);
 	}
-#endif /* defined(CONFIG_PM_DEVICE_RUNTIME) */
+#endif /* !CONFIG_SOC_SERIES_STM32F7X */
+
+	/* Release the device */
+	(void)pm_device_runtime_put(dev);
 
 	data->slave_attached = false;
 

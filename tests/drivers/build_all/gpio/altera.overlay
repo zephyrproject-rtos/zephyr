@@ -13,25 +13,24 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			test_intc: interrupt-controller {
-			compatible = "riscv,cpu-intc";
-			#address-cells = < 0x0 >;
-			#interrupt-cells = < 0x1 >;
-			interrupt-controller;
-			phandle = < 0x1 >;
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0x0>;
+				#interrupt-cells = <0x1>;
+				interrupt-controller;
+				phandle = <0x1>;
 			};
 
 			test_gpio0: gpio@30070 {
-				interrupt-parent = < &test_intc >;
+				interrupt-parent = <&test_intc>;
 				compatible = "altr,pio-1.0";
-				reg = < 0x30070 0x10 >;
+				reg = <0x30070 0x10>;
 				gpio-controller;
-				#gpio-cells = < 0x2 >;
+				#gpio-cells = <0x2>;
 				status = "okay";
-				ngpios = < 16 >;
+				ngpios = <16>;
 				#direction = "input";
 				interrupts = <28>;
 			};
 		};
 	};
-
 };

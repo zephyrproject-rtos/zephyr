@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/cache.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
@@ -40,9 +41,15 @@ int main(void)
 	printk("Current value in backup SRAM (%p): %d\n", &backup.value, backup.value);
 
 	backup.value++;
-#if __DCACHE_PRESENT
-	SCB_CleanDCache_by_Addr(&backup, sizeof(backup));
-#endif
+
+#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
+	int err = sys_cache_data_flush_range(&backup, sizeof(backup));
+
+	if (err != 0) {
+		printk("Failed to flush the data cache (err: %d)\n", err);
+		return 0;
+	}
+#endif /* defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE) */
 
 	printk("Next reported value should be: %d\n", backup.value);
 	printk("Keep VBAT power source and reset the board now!\n");

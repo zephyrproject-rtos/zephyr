@@ -30,7 +30,7 @@
 		};
 	};
 
-	adc0_default: adc0_default{
+	adc0_default: adc0_default {
 		group1 {
 			pinmux = <ADCSE5_P14>, <ADCSE6_P13>;
 			drive-strength = "0.1";
@@ -406,7 +406,7 @@
 		};
 	};
 
-	pwm2_default: pwm2_default{
+	pwm2_default: pwm2_default {
 		group1 {
 			pinmux = <CT165_P165>;
 			drive-open-drain;
@@ -422,32 +422,37 @@
 				 <SDIF0_DAT5_P157>,
 				 <SDIF0_DAT6_P158>,
 				 <SDIF0_DAT7_P159>;
-				 drive-strength = "1.0";
+			drive-strength = "1.0";
 		};
+
 		group1 {
 			pinmux = <SDIF0_DAT0_P84>,
 				 <SDIF0_DAT2_P86>,
 				 <SDIF0_CMD_P160>,
 				 <SDIF0_CLKOUT_P88>;
-				 drive-strength = "1.0";
-				 bias-pull-up;
-				 ambiq,pull-up-ohms = <12000>;
+			drive-strength = "1.0";
+			bias-pull-up;
+			ambiq,pull-up-ohms = <12000>;
 		};
+
 		group2 {
 			pinmux = <GPIO_P161>;
-				 ambiq,sdif-cdwp = <1>;
+			ambiq,sdif-cdwp = <1>;
 		};
+
 		group3 {
 			pinmux = <GPIO_P175>;
-				 ambiq,sdif-cdwp = <2>;
+			ambiq,sdif-cdwp = <2>;
 		};
+
 		group4 {
 			pinmux = <GPIO_P161>;
-				 ambiq,sdif-cdwp = <3>;
+			ambiq,sdif-cdwp = <3>;
 		};
+
 		group5 {
 			pinmux = <GPIO_P175>;
-				 ambiq,sdif-cdwp = <4>;
+			ambiq,sdif-cdwp = <4>;
 		};
 	};
 
@@ -459,32 +464,37 @@
 				 <SDIF1_DAT5_P131>,
 				 <SDIF1_DAT6_P132>,
 				 <SDIF1_DAT7_P133>;
-				 drive-strength = "1.0";
+			drive-strength = "1.0";
 		};
+
 		group1 {
 			pinmux = <SDIF1_DAT0_P125>,
 				 <SDIF1_DAT2_P127>,
 				 <SDIF1_CMD_P134>,
 				 <SDIF1_CLKOUT_P129>;
-				 drive-strength = "1.0";
-				 bias-pull-up;
-				 ambiq,pull-up-ohms = <12000>;
+			drive-strength = "1.0";
+			bias-pull-up;
+			ambiq,pull-up-ohms = <12000>;
 		};
+
 		group2 {
 			pinmux = <GPIO_P161>;
-				 ambiq,sdif-cdwp = <1>;
+			ambiq,sdif-cdwp = <1>;
 		};
+
 		group3 {
 			pinmux = <GPIO_P175>;
-				 ambiq,sdif-cdwp = <2>;
+			ambiq,sdif-cdwp = <2>;
 		};
+
 		group4 {
 			pinmux = <GPIO_P161>;
-				 ambiq,sdif-cdwp = <3>;
+			ambiq,sdif-cdwp = <3>;
 		};
+
 		group5 {
 			pinmux = <GPIO_P175>;
-				 ambiq,sdif-cdwp = <4>;
+			ambiq,sdif-cdwp = <4>;
 		};
 	};
 };

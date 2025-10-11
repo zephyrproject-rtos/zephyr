@@ -1,0 +1,6 @@
+board:
+  name: esp32h2_devkitm
+  full_name: ESP32-H2-DevKitM
+  vendor: espressif
+  socs:
+  - name: esp32h2

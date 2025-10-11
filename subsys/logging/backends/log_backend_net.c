@@ -46,10 +46,10 @@ static struct log_backend_net_ctx {
 static int line_out(uint8_t *data, size_t length, void *output_ctx)
 {
 	struct log_backend_net_ctx *ctx = (struct log_backend_net_ctx *)output_ctx;
-	int ret = -ENOMEM;
 	struct msghdr msg = { 0 };
 	struct iovec io_vector[2];
 	int pos = 0;
+	int ret;
 
 	if (ctx == NULL) {
 		return length;
@@ -91,27 +91,18 @@ LOG_OUTPUT_DEFINE(log_output_net, line_out, output_buf, sizeof(output_buf));
 
 static int do_net_init(struct log_backend_net_ctx *ctx)
 {
-	struct sockaddr *local_addr = NULL;
-	struct sockaddr_in6 local_addr6 = {0};
-	struct sockaddr_in local_addr4 = {0};
-	socklen_t server_addr_len;
+	socklen_t server_addr_len = 0;
 	int ret, proto = IPPROTO_UDP, type = SOCK_DGRAM;
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && server_addr.sa_family == AF_INET) {
-		local_addr = (struct sockaddr *)&local_addr4;
 		server_addr_len = sizeof(struct sockaddr_in);
-		local_addr4.sin_family = AF_INET;
-		local_addr4.sin_port = 0U;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && server_addr.sa_family == AF_INET6) {
-		local_addr = (struct sockaddr *)&local_addr6;
 		server_addr_len = sizeof(struct sockaddr_in6);
-		local_addr6.sin6_family = AF_INET6;
-		local_addr6.sin6_port = 0U;
 	}
 
-	if (local_addr == NULL) {
+	if (server_addr_len == 0) {
 		DBG("Server address unknown\n");
 		return -EINVAL;
 	}
@@ -132,56 +123,22 @@ static int do_net_init(struct log_backend_net_ctx *ctx)
 
 	if (IS_ENABLED(CONFIG_NET_HOSTNAME_ENABLE)) {
 		(void)strncpy(dev_hostname, net_hostname_get(), MAX_HOSTNAME_LEN);
-
-	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
-		   server_addr.sa_family == AF_INET6) {
-		const struct in6_addr *src;
-
-		src = net_if_ipv6_select_src_addr(
-			NULL, &net_sin6(&server_addr)->sin6_addr);
-		if (src) {
-			net_addr_ntop(AF_INET6, src, dev_hostname,
-				      MAX_HOSTNAME_LEN);
-
-			net_ipaddr_copy(&local_addr6.sin6_addr, src);
-		} else {
-			goto unknown;
-		}
-
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
-		   server_addr.sa_family == AF_INET) {
-		const struct in_addr *src;
-
-		src = net_if_ipv4_select_src_addr(
-				  NULL, &net_sin(&server_addr)->sin_addr);
-
-		if (src) {
-			net_addr_ntop(AF_INET, src, dev_hostname,
-				      MAX_HOSTNAME_LEN);
-
-			net_ipaddr_copy(&local_addr4.sin_addr, src);
-		} else {
-			goto unknown;
-		}
-
-	} else {
-	unknown:
-		DBG("Cannot setup local socket\n");
-		ret = -EINVAL;
-		goto err;
-	}
-
-	ret = zsock_bind(ctx->sock, local_addr, server_addr_len);
-	if (ret < 0) {
-		ret = -errno;
-		DBG("Cannot bind socket (%d)\n", ret);
-		goto err;
 	}
 
 	ret = zsock_connect(ctx->sock, &server_addr, server_addr_len);
 	if (ret < 0) {
 		ret = -errno;
 		DBG("Cannot connect socket (%d)\n", ret);
+		goto err;
+	}
+
+	/* Close the reading side of the TCP or UDP socket just in case so that we will
+	 * not run out of RX buffers because we do not read anything.
+	 */
+	ret = zsock_shutdown(ctx->sock, ZSOCK_SHUT_RD);
+	if (ret < 0) {
+		ret = -errno;
+		DBG("Cannot shutdown reading side of the socket (%d)\n", ret);
 		goto err;
 	}
 
@@ -295,7 +252,7 @@ bool log_backend_net_set_ip(const struct sockaddr *addr)
 }
 
 #if defined(CONFIG_NET_HOSTNAME_ENABLE)
-void log_backend_net_hostname_set(char *hostname, size_t len)
+void log_backend_net_hostname_set(const char *hostname, size_t len)
 {
 	(void)strncpy(dev_hostname, hostname, MIN(len, MAX_HOSTNAME_LEN));
 	log_output_hostname_set(&log_output_net, dev_hostname);

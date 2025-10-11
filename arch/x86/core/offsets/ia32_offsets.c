@@ -48,6 +48,18 @@ GEN_OFFSET_SYM(_thread_arch_t, ptables);
 
 GEN_OFFSET_SYM(_thread_arch_t, preempFloatReg);
 
+#ifdef CONFIG_HW_SHADOW_STACK
+GEN_OFFSET_SYM(_thread_arch_t, shstk_addr);
+GEN_OFFSET_SYM(_thread_arch_t, shstk_size);
+GEN_OFFSET_SYM(_thread_arch_t, shstk_base);
+
+GEN_OFFSET_SYM(_kernel_t, cpus);
+GEN_OFFSET_SYM(_cpu_t, arch);
+GEN_OFFSET_SYM(_cpu_arch_t, shstk_addr);
+GEN_OFFSET_SYM(_cpu_arch_t, shstk_size);
+GEN_OFFSET_SYM(_cpu_arch_t, shstk_base);
+#endif
+
 /**
  * size of the struct k_thread structure sans save area for floating
  * point regs

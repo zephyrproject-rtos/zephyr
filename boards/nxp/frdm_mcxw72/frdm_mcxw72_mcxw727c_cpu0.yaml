@@ -18,3 +18,6 @@ supported:
   - pwm
   - spi
   - uart
+  - watchdog
+  - netif:openthread
+vendor: nxp

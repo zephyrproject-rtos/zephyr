@@ -1,0 +1,15 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_mcxw236_ns.dtsi>
+#include "mcxw23_evk_common.dtsi"
+
+/ {
+	model = "NXP MCXW23-EVK board";
+	compatible = "nxp,mcxw236", "nxp,mcx";
+};

@@ -5,15 +5,16 @@
 
 /**
  * @file
- * Public APIs for pin control drivers
+ * @brief Main header file for pin control driver API.
+ * @ingroup pinctrl_interface
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_PINCTRL_H_
 #define ZEPHYR_INCLUDE_DRIVERS_PINCTRL_H_
 
 /**
- * @brief Pin Controller Interface
- * @defgroup pinctrl_interface Pin Controller Interface
+ * @brief Interfaces for pin controllers.
+ * @defgroup pinctrl_interface Pin Control
  * @since 3.0
  * @version 0.1.0
  * @ingroup io_interfaces
@@ -78,7 +79,7 @@ struct pinctrl_dev_config {
 
 /** @cond INTERNAL_HIDDEN */
 
-#if !defined(CONFIG_PM) && !defined(CONFIG_PM_DEVICE)
+#if !defined(CONFIG_PINCTRL_KEEP_SLEEP_STATE)
 /** Out of power management configurations, ignore "sleep" state. */
 #define PINCTRL_SKIP_SLEEP 1
 #endif

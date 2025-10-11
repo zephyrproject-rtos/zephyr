@@ -1,0 +1,21 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2025 Linumiz GmbH
+ * Author: Sri Surya  <srisurya@linumiz.com>
+ */
+
+#include <dt-bindings/pinctrl/ambiq-apollo2-pinctrl.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0TX_P22>;
+		};
+
+		group2 {
+			pinmux = <UART0RX_P23>;
+			input-enable;
+		};
+	};
+};

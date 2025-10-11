@@ -31,9 +31,9 @@
 	lpspi0_default: lpspi0_default {
 		group0 {
 			pinmux = <LPSPI0_SCK_PTB2>,
-				<LPSPI0_SIN_PTB3>,
-				<LPSPI0_SOUT_PTB4>,
-				<LPSPI0_PCS0_PTB5>;
+				 <LPSPI0_SIN_PTB3>,
+				 <LPSPI0_SOUT_PTB4>,
+				 <LPSPI0_PCS0_PTB5>;
 			drive-strength = "low";
 		};
 	};
@@ -41,8 +41,8 @@
 	ftm0_default: ftm0_default {
 		group0 {
 			pinmux = <FTM0_CH0_PTD15>,
-				<FTM0_CH1_PTD16>,
-				<FTM0_CH2_PTD0>;
+				 <FTM0_CH1_PTD16>,
+				 <FTM0_CH2_PTD0>;
 			drive-strength = "low";
 		};
 	};

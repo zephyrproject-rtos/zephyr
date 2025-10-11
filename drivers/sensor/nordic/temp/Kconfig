@@ -28,11 +28,11 @@ config TEMP_NRFS
 	  Enable driver for nRF temperature sensor accessed through the nRF
 	  Services (nrfs) layer.
 
-if TEMP_NRFS
+if TEMP_NRFS && NRFS_TEMP_SERVICE_SUBSCRIPTION_ENABLED
 
 module = TEMP_NRFS
 thread_priority = 10
 thread_stack_size = 1024
 source "drivers/sensor/Kconfig.trigger_template"
 
-endif # TEMP_NRFS
+endif

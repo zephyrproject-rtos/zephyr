@@ -15,6 +15,7 @@ tests:
       - b_u585i_iot02a
       - nrf5340dk/nrf5340/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpuppr
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - nucleo_f401re

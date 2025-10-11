@@ -102,27 +102,6 @@ config BT_BUF_ACL_RX_COUNT_EXTRA
 	  connection and uses one Rx buffer across all connections to receive a
 	  fragment from the Controller.
 
-config BT_BUF_ACL_RX_COUNT
-	int "[DEPRECATED] Number of incoming ACL data buffers"
-	default 0
-	range 0 256
-	help
-	  Number or incoming ACL data buffers sent from the Controller to the
-	  Host.
-	  In a combined Host and Controller build the buffers are shared and
-	  therefore Controller to Host flow control is not needed.
-
-	  In a Host only build with Controller to Host flow control enabled
-	  the Host will inform the Controller about the maximum number of
-	  buffers by setting this value in the Host Buffer Size command.
-
-	  When Controller to Host flow control is not enabled the Controller
-	  can assume that the Host has infinite amount of buffers.
-
-	  For both configurations, there is an additional requirement that is
-	  enforced by a build-time check: BT_BUF_ACL_RX_COUNT needs to be at
-	  least one greater than BT_MAX_CONN.
-
 config BT_BUF_EVT_RX_SIZE
 	int "Maximum supported HCI Event buffer length"
 	default $(UINT8_MAX) if (BT_EXT_ADV && BT_OBSERVER) || BT_PER_ADV_SYNC || BT_DF_CONNECTION_CTE_RX || BT_CLASSIC || BT_CHANNEL_SOUNDING || BT_LE_EXTENDED_FEAT_SET
@@ -147,36 +126,6 @@ config BT_BUF_EVT_RX_COUNT
 	help
 	  Number of buffers available for incoming HCI events from the
 	  Controller.
-
-config BT_BUF_EVT_DISCARDABLE_SIZE
-	int "Maximum supported discardable HCI Event buffer length"
-	range 43 $(UINT8_MAX) if !BT_EXT_ADV
-	range 58 $(UINT8_MAX) if BT_EXT_ADV
-	# LE Extended Advertising Report event
-	default $(UINT8_MAX) if BT_CLASSIC
-	# Le Advertising Report event
-	default 43 if !BT_EXT_ADV
-	default 58 if BT_EXT_ADV
-	help
-	  Maximum support discardable HCI event size of buffers in the separate
-	  discardable event buffer pool. This value does not include the
-	  HCI Event header.
-	  The minimum size is set based on the Advertising Report. Setting
-	  the buffer size different than BT_BUF_EVT_RX_SIZE can save memory.
-
-config BT_BUF_EVT_DISCARDABLE_COUNT
-	int "Number of discardable HCI Event buffers"
-	range 1 $(UINT8_MAX)
-	default 20 if BT_MESH
-	default 3
-	depends on !BT_HCI_RAW
-	help
-	  Number of buffers in a separate buffer pool for events which
-	  the HCI driver considers discardable. Examples of such events
-	  could be e.g. Advertising Reports. The benefit of having such
-	  a pool is that the if there is a heavy inflow of such events
-	  it will not cause the allocation for other critical events to
-	  block and may even eliminate deadlocks in some cases.
 
 config BT_BUF_CMD_TX_SIZE
 	int "Maximum support HCI Command buffer length"

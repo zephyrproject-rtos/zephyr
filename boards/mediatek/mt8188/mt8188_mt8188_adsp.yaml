@@ -1,0 +1,11 @@
+identifier: mt8188/mt8188/adsp
+name: Mediatek mt8188 Audio DSP
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+testing:
+  only_tags:
+    - kernel
+    - sof
+vendor: mediatek

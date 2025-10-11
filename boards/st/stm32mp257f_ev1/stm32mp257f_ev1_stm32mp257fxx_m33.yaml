@@ -9,6 +9,8 @@ supported:
   - LED
   - gpio
   - shell
+  - i2c
+  - spi
 testing:
   ignore_tags:
     - cmsis_rtos_v2

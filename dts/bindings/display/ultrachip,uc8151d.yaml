@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Cactus Engineering S.L
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  UltraChip UC8151D EPD controller with native 160x296 monochrome (1bpp)
+  display support.
+
+compatible: "ultrachip,uc8151d"
+
+include: ultrachip,uc81xx-common.yaml

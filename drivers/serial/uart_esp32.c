@@ -33,6 +33,10 @@
 #include <esp32c6/rom/ets_sys.h>
 #include <esp32c6/rom/gpio.h>
 #include <zephyr/dt-bindings/clock/esp32c6_clock.h>
+#elif defined(CONFIG_SOC_SERIES_ESP32H2)
+#include <esp32h2/rom/ets_sys.h>
+#include <esp32h2/rom/gpio.h>
+#include <zephyr/dt-bindings/clock/esp32h2_clock.h>
 #endif
 #ifdef CONFIG_UART_ASYNC_API
 #include <zephyr/drivers/dma.h>

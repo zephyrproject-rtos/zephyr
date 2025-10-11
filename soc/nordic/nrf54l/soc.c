@@ -29,7 +29,6 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 	!defined(__ZEPHYR__)
 
 #include <nrf_erratas.h>
-#include <hal/nrf_glitchdet.h>
 #include <hal/nrf_oscillators.h>
 #include <hal/nrf_power.h>
 #include <hal/nrf_regulators.h>
@@ -138,10 +137,6 @@ static inline void power_and_clock_configuration(void)
 #elif DT_ENUM_HAS_VALUE(HFXO_NODE, load_capacitors, external)
 	nrf_oscillators_hfxo_cap_set(NRF_OSCILLATORS, false, 0);
 #endif
-
-	if (IS_ENABLED(CONFIG_SOC_NRF_FORCE_CONSTLAT)) {
-		nrf_power_task_trigger(NRF_POWER, NRF_POWER_TASK_CONSTLAT);
-	}
 
 #if (DT_PROP(DT_NODELABEL(vregmain), regulator_initial_mode) == NRF5X_REG_MODE_DCDC)
 	nrf_regulators_vreg_enable_set(NRF_REGULATORS, NRF_REGULATORS_VREG_MAIN, true);

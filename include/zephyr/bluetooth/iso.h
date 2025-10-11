@@ -75,21 +75,21 @@ extern "C" {
 #define BT_ISO_DATA_PATH_VS_ID_MIN  0x01
 /** The maximum value for vendor specific data path ID */
 #define BT_ISO_DATA_PATH_VS_ID_MAX  0xFE
-/** Minimum controller delay in microseconds (0 s) */
+/** Minimum controller delay in microseconds (0 us) */
 #define BT_ISO_CONTROLLER_DELAY_MIN 0x000000
-/** Maximum controller delay in microseconds (4 s) */
+/** Maximum controller delay in microseconds (4,000,000 us) */
 #define BT_ISO_CONTROLLER_DELAY_MAX 0x3D0900
-/** Minimum interval value in microseconds */
+/** Minimum interval value in microseconds (255 us) */
 #define BT_ISO_SDU_INTERVAL_MIN     0x0000FFU
-/** Maximum interval value in microseconds */
+/** Maximum interval value in microseconds (1,048,575 us) */
 #define BT_ISO_SDU_INTERVAL_MAX     0x0FFFFFU
-/** Minimum ISO interval (N * 1.25 ms) */
+/** Minimum ISO interval in units of 1.25 ms (5 ms) */
 #define BT_ISO_ISO_INTERVAL_MIN     0x0004U
-/** Maximum ISO interval (N * 1.25 ms) */
+/** Maximum ISO interval in units of 1.25 ms (4,000 ms) */
 #define BT_ISO_ISO_INTERVAL_MAX     0x0C80U
-/** Minimum latency value in milliseconds */
+/** Minimum latency value in milliseconds (5 ms) */
 #define BT_ISO_LATENCY_MIN          0x0005
-/** Maximum latency value in milliseconds */
+/** Maximum latency value in milliseconds (4,000 ms)*/
 #define BT_ISO_LATENCY_MAX          0x0FA0
 /** Packets will be sent sequentially between the channels in the group */
 #define BT_ISO_PACKING_SEQUENTIAL   0x00
@@ -99,62 +99,73 @@ extern "C" {
 #define BT_ISO_FRAMING_UNFRAMED     0x00
 /** Packets are always framed */
 #define BT_ISO_FRAMING_FRAMED       0x01
-/** Maximum number of isochronous channels in a single group */
+/** Maximum number of isochronous channels in a single group (31) */
 #define BT_ISO_MAX_GROUP_ISO_COUNT  0x1F
-/** Minimum SDU size */
+/** Minimum SDU size (1 octet) */
 #define BT_ISO_MIN_SDU              0x0001
-/** Maximum SDU size */
+/** Maximum SDU size (4095 octets) */
 #define BT_ISO_MAX_SDU              0x0FFF
-/** Minimum PDU size */
+/** Minimum PDU size (0 octet) */
 #define BT_ISO_CONNECTED_PDU_MIN    0x0000U
-/** Minimum PDU size */
+/** Minimum PDU size (1 octet) */
 #define BT_ISO_BROADCAST_PDU_MIN    0x0001U
-/** Maximum PDU size */
+/** Maximum PDU size (251 octets) */
 #define BT_ISO_PDU_MAX              0x00FBU
-/** Minimum burst number */
+/** Minimum burst number (1) */
 #define BT_ISO_BN_MIN               0x01U
-/** Maximum burst number */
+/** Maximum burst number (15) */
 #define BT_ISO_BN_MAX               0x0FU
-/** Minimum flush timeout */
+/** Minimum flush timeout in multiples of ISO interval (1) */
 #define BT_ISO_FT_MIN               0x01U
-/** Maximum flush timeout */
+/** Maximum flush timeout in multiples of ISO interval (255) */
 #define BT_ISO_FT_MAX               0xFFU
-/** Minimum number of subevents */
+/** Minimum number of subevents (1) */
 #define BT_ISO_NSE_MIN              0x01U
-/** Maximum number of subevents */
+/** Maximum number of subevents (31) */
 #define BT_ISO_NSE_MAX              0x1FU
-/** Minimum BIG sync timeout value (N * 10 ms) */
+/** Minimum BIG sync timeout value in units of 10 ms (100 ms) */
 #define BT_ISO_SYNC_TIMEOUT_MIN     0x000A
-/** Maximum BIG sync timeout value (N * 10 ms) */
+/** Maximum BIG sync timeout value in units of 10 ms (163,840 ms) */
 #define BT_ISO_SYNC_TIMEOUT_MAX     0x4000
 /** Controller controlled maximum subevent count value */
 #define BT_ISO_SYNC_MSE_ANY         0x00
-/** Minimum BIG sync maximum subevent count value */
+/** Minimum BIG sync maximum subevent count value (1) */
 #define BT_ISO_SYNC_MSE_MIN         0x01
-/** Maximum BIG sync maximum subevent count value */
+/** Maximum BIG sync maximum subevent count value (31) */
 #define BT_ISO_SYNC_MSE_MAX         0x1F
-/** Maximum connected ISO retransmission value */
+/** Minimum connected ISO retransmission value (0) */
+#define BT_ISO_CONNECTED_RTN_MIN    0x00
+/** Maximum connected ISO retransmission value (255) */
 #define BT_ISO_CONNECTED_RTN_MAX    0xFF
-/** Maximum broadcast ISO retransmission value */
+/** Minimum broadcast ISO retransmission value (0) */
+#define BT_ISO_BROADCAST_RTN_MIN    0x00
+/** Maximum broadcast ISO retransmission value (30) */
 #define BT_ISO_BROADCAST_RTN_MAX    0x1E
-/** Broadcast code size */
-#define BT_ISO_BROADCAST_CODE_SIZE  16
-/** Lowest BIS index */
+/** Broadcast code size (16 octets) */
+#define BT_ISO_BROADCAST_CODE_SIZE  0x10
+/** Lowest BIS index (1) */
 #define BT_ISO_BIS_INDEX_MIN        0x01
-/** Highest BIS index */
+/** Highest BIS index (31) */
 #define BT_ISO_BIS_INDEX_MAX        0x1F
-/** Minimum Immediate Repetition Count */
+/** Minimum Immediate Repetition Count (1) */
 #define BT_ISO_IRC_MIN              0x01U
-/** Maximum Immediate Repetition Count */
+/** Maximum Immediate Repetition Count (15) */
 #define BT_ISO_IRC_MAX              0x0FU
-/** Minimum pre-transmission offset */
+/** Minimum pre-transmission offset (0) */
 #define BT_ISO_PTO_MIN              0x00U
-/** Maximum pre-transmission offset */
+/** Maximum pre-transmission offset (15) */
 #define BT_ISO_PTO_MAX              0x0FU
 /** No subinterval */
-#define BT_ISO_SUBINTERVAL_NONE         0x00000000U
+#define BT_ISO_SUBINTERVAL_NONE     0x00000000U
 /** Unknown subinterval */
-#define BT_ISO_SUBINTERVAL_UNKNOWN      0xFFFFFFFFU
+#define BT_ISO_SUBINTERVAL_UNKNOWN  0xFFFFFFFFU
+/** Minimum subinterval in microseconds (400 us) */
+#define BT_ISO_SUBINTERVAL_MIN      0x00000190U
+/** @brief Maximum subinterval in microseconds (3,999,999 us)
+ *
+ * This maximum depends on the ISO interval, as the subinterval shall be less than the ISO interval
+ */
+#define BT_ISO_SUBINTERVAL_MAX      0x00009C3FU
 
 /**
  * @brief Check if ISO BIS bitfield is valid (BT_ISO_BIS_INDEX_BIT(1)|..|BT_ISO_BIS_INDEX_BIT(31))
@@ -1081,6 +1092,12 @@ struct bt_iso_unicast_tx_info {
 
 /** @brief ISO Unicast Info Structure */
 struct bt_iso_unicast_info {
+	/** Connected Isochronous Group ID */
+	uint8_t cig_id;
+
+	/** Connected Isochronous Stream ID */
+	uint8_t cis_id;
+
 	/** The maximum time in us for all PDUs of all CIS in a CIG event */
 	uint32_t cig_sync_delay;
 
@@ -1104,6 +1121,12 @@ struct bt_iso_unicast_info {
 
 /** @brief ISO Broadcaster Info Structure */
 struct bt_iso_broadcaster_info {
+	/** Broadcast Isochronous Group Handle */
+	uint8_t big_handle;
+
+	/** Broadcast Isochronous Stream number */
+	uint8_t bis_number;
+
 	/** The maximum time in us for all PDUs of all BIS in a BIG event */
 	uint32_t sync_delay;
 
@@ -1128,6 +1151,12 @@ struct bt_iso_broadcaster_info {
 
 /** @brief ISO Synchronized Receiver Info Structure */
 struct bt_iso_sync_receiver_info {
+	/** Broadcast Isochronous Group handle */
+	uint8_t big_handle;
+
+	/** Broadcast Isochronous Stream number */
+	uint8_t bis_number;
+
 	/** The transport latency in us */
 	uint32_t latency;
 
@@ -1283,6 +1312,9 @@ int bt_iso_big_create(struct bt_le_ext_adv *padv, struct bt_iso_big_create_param
 
 /**
  * @brief Terminates a BIG as a broadcaster or receiver
+ *
+ * This function cannot be called while in @ref bt_iso_big_cb.started, @ref bt_iso_big_cb.stopped,
+ * @ref bt_iso_chan_ops.connected or @ref bt_iso_chan_ops.disconnected callbacks.
  *
  * @param big    Pointer to the BIG structure.
  *

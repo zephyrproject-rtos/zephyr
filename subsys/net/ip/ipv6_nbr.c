@@ -2587,13 +2587,22 @@ static inline bool handle_ra_rdnss(struct net_pkt *pkt, uint8_t len)
 		return false;
 	}
 
-	/* TODO: Handle lifetime. */
 	ctx = dns_resolve_get_default();
-	ret = dns_resolve_reconfigure_with_interfaces(ctx, NULL, dns_servers,
-						      interfaces,
-						      DNS_SOURCE_IPV6_RA);
+	if (rdnss->lifetime > 0) {
+		ret = dns_resolve_reconfigure_with_interfaces(ctx, NULL, dns_servers,
+							      interfaces,
+							      DNS_SOURCE_IPV6_RA);
+	} else {
+		dns.sin6_port = htons(53);
+		ret = dns_resolve_remove_server_addresses(ctx, dns_servers, interfaces);
+	}
+
 	if (ret < 0) {
-		NET_DBG("Failed to set RDNSS resolve address: %d", ret);
+		if (rdnss->lifetime > 0) {
+			NET_DBG("Failed to set RDNSS resolve address: %d", ret);
+		} else {
+			NET_DBG("Failed to remove RDNSS resolve address: %d", ret);
+		}
 	}
 
 	return true;

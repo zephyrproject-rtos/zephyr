@@ -10,7 +10,7 @@ dut: &usic2ch0 {
 	input-src = "DX0G";
 	interrupts = <96 1 97 1>;
 	interrupt-names = "tx", "rx";
-	dmas = <&dma1 1 0 XMC4XXX_SET_CONFIG(10,6)>, <&dma1 2 0 XMC4XXX_SET_CONFIG(11,6)>;
+	dmas = <&dma1 1 0 XMC4XXX_SET_CONFIG(10, 6)>, <&dma1 2 0 XMC4XXX_SET_CONFIG(11, 6)>;
 	dma-names = "tx", "rx";
 	fifo-start-offset = <0>;
 	fifo-tx-size = <0>;

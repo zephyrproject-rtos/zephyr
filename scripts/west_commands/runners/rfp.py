@@ -12,7 +12,7 @@ from pathlib import Path
 
 from runners.core import RunnerCaps, ZephyrBinaryRunner
 
-if platform.system() == 'Darwin' or 'Windows':
+if platform.system() in {'Darwin', 'Windows'}:
     DEFAULT_RFP_PORT = None
 else:
     DEFAULT_RFP_PORT = '/dev/ttyACM0'
@@ -46,6 +46,7 @@ class RfpBinaryRunner(ZephyrBinaryRunner):
         port=DEFAULT_RFP_PORT,
         tool=None,
         interface=None,
+        rpd_file=None,
         speed=None,
     ):
         super().__init__(cfg)
@@ -57,6 +58,7 @@ class RfpBinaryRunner(ZephyrBinaryRunner):
         self.tool = tool
         self.interface = interface
         self.device = device
+        self.rpd_file = rpd_file
         self.speed = speed
 
     @classmethod
@@ -88,6 +90,10 @@ class RfpBinaryRunner(ZephyrBinaryRunner):
             '--interface',
             help='selects the communications interface (uart, swd)',
         )
+        parser.add_argument(
+            '--rpd-file',
+            help='path to renesas partition data zephyr.rpd',
+        )
         parser.add_argument('--device', help='Specify the device type to pass to rfp-cli')
         parser.add_argument('--verify', action='store_true', help='if given, verify after flash')
         parser.add_argument('--speed', help='Specify the serial port speed')
@@ -101,6 +107,7 @@ class RfpBinaryRunner(ZephyrBinaryRunner):
             port=args.port,
             tool=args.tool,
             interface=args.interface,
+            rpd_file=args.rpd_file,
             erase=args.erase,
             speed=args.speed,
             verify=args.verify,
@@ -126,6 +133,9 @@ class RfpBinaryRunner(ZephyrBinaryRunner):
 
     def do_run(self, command, **kwargs):
         if command == 'flash':
+            if self.rpd_file is not None:
+                self.do_partition(**kwargs)
+
             self.do_flash(**kwargs)
         else:
             self.logger.error("Unsuppported command")
@@ -164,4 +174,22 @@ class RfpBinaryRunner(ZephyrBinaryRunner):
         device = ['-device', self.device]
 
         cmd = self.rfp_cmd + connection + device + load_image
+        self.check_call(cmd)
+
+    def do_partition(self):
+        self.require(self.rfp_cmd[0])
+
+        rpd_path = self.rpd_file
+
+        self.logger.info(f'Partition file: {rpd_path}')
+
+        device = ['-device', self.device]
+
+        connection = ['-tool', self.tool]
+
+        flash_option = ['-fo']
+        flash_option += ['boundary-file', rpd_path]
+        flash_option += ['-p']
+
+        cmd = self.rfp_cmd + device + connection + flash_option
         self.check_call(cmd)

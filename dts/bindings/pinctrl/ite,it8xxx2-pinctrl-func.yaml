@@ -29,6 +29,12 @@ properties:
   func4-en-mask:
     type: array
 
+  func5-gcr:
+    type: array
+
+  func5-en-mask:
+    type: array
+
   volt-sel:
     type: array
 

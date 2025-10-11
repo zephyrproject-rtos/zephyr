@@ -1106,7 +1106,11 @@ DT_FOREACH_STATUS_OKAY(renesas_ra_canfd_global, CAN_RENESAS_RA_GLOBAL_DEFINE)
 			EVENT_CAN_TX(DT_INST_PROP(index, channel));                                \
 		R_ICU->IELSR_b[DT_INST_IRQ_BY_NAME(index, err, irq)].IELS =                        \
 			EVENT_CAN_CHERR(DT_INST_PROP(index, channel));                             \
-	                                                                                           \
+                                                                                                   \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_CAN_COMFRX(DT_INST_PROP(index, channel)));  \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_CAN_TX(DT_INST_PROP(index, channel)));      \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_CAN_CHERR(DT_INST_PROP(index, channel)));   \
+                                                                                                   \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, rx, irq),                                   \
 			    DT_INST_IRQ_BY_NAME(index, rx, priority), canfd_common_fifo_rx_isr,    \
 			    NULL, 0);                                                              \

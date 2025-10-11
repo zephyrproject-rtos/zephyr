@@ -8,6 +8,7 @@
 
 #include <nxp/nxp_ke17z512.dtsi>
 #include "frdm_ke17z512-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
@@ -39,14 +40,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_0 {
 			gpios = <&gpiod 10 GPIO_ACTIVE_LOW>;
 			label = "Red LED";
 		};
+
 		green_led: led_1 {
 			gpios = <&gpiod 5 GPIO_ACTIVE_LOW>;
 			label = "Green LED";
 		};
+
 		blue_led: led_2 {
 			gpios = <&gpiod 12 GPIO_ACTIVE_LOW>;
 			label = "Blue LED";
@@ -55,14 +59,17 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		red_pwm_led: led_pwm_0 {
 			pwms = <&ftm2 0 PWM_HZ(20) PWM_POLARITY_INVERTED>;
 			label = "RED RGB PWM LED";
 		};
+
 		green_pwm_led: led_pwm_1 {
 			pwms = <&ftm2 3 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "GREEN RGB PWM LED";
 		};
+
 		blue_pwm_led: led_pwm_2 {
 			pwms = <&ftm2 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "BLUE RGB PWM LED";
@@ -71,11 +78,13 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_2: button_0 {
 			label = "User SW2";
 			gpios = <&gpioe 14 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_button_3: button_1 {
 			label = "User SW3";
 			gpios = <&gpiod 3 GPIO_ACTIVE_LOW>;
@@ -88,28 +97,28 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <0 0 &gpioc 0 0>,	/* A0 */
-			   <1 0 &gpioc 1 0>,	/* A1 */
-			   <2 0 &gpiob 4 0>,	/* A2 */
-			   <3 0 &gpioe 3 0>,	/* A3 */
-			   <4 0 &gpioc 16 0>,	/* A4 */
-			   <5 0 &gpioc 17 0>,	/* A5 */
-			   <6 0 &gpioc 6 0>,	/* D0 */
-			   <7 0 &gpioc 7 0>,	/* D1 */
-			   <8 0 &gpiob 9 0>,	/* D2 */
-			   <9 0 &gpioe 4 0>,	/* D3 */
-			   <10 0 &gpioc 14 0>,	/* D4 */
-			   <11 0 &gpioa 15 0>,	/* D5 */
-			   <12 0 &gpioa 17 0>,	/* D6 */
-			   <13 0 &gpioa 14 0>,	/* D7 */
-			   <14 0 &gpioa 9 0>,	/* D8 */
-			   <15 0 &gpiob 11 0>,	/* D9 */
-			   <16 0 &gpioe 6 0>,	/* D10 */
-			   <17 0 &gpioe 2 0>,	/* D11 */
-			   <18 0 &gpioe 1 0>,	/* D12 */
-			   <19 0 &gpioe 0 0>,	/* D13 */
-			   <20 0 &gpioa 2 0>,	/* D14 */
-			   <21 0 &gpioa 3 0>;	/* D15 */
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &gpioc 0 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &gpioc 1 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &gpiob 4 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &gpioe 3 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &gpioc 16 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &gpioc 17 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &gpioc 6 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &gpioc 7 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &gpiob 9 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &gpioe 4 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &gpioc 14 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &gpioa 15 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &gpioa 17 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &gpioa 14 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &gpioa 9 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &gpiob 11 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &gpioe 6 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &gpioe 2 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &gpioe 1 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &gpioe 0 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &gpioa 2 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &gpioa 3 0>;
 	};
 };
 
@@ -182,7 +191,6 @@
 };
 
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -197,14 +205,17 @@
 			reg = <0x00000000 DT_SIZE_K(64)>;
 			read-only;
 		};
+
 		slot0_partition: partition@10000 {
 			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(204)>;
 		};
+
 		slot1_partition: partition@43000 {
 			label = "image-1";
 			reg = <0x00043000 DT_SIZE_K(204)>;
 		};
+
 		storage_partition: partition@76000 {
 			label = "storage";
 			reg = <0x00076000 DT_SIZE_K(40)>;

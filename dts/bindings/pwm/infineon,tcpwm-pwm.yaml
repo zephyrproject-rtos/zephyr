@@ -1,0 +1,39 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon TCPWM PWM
+
+compatible: "infineon,tcpwm-pwm"
+
+include: [pwm-controller.yaml, pinctrl-device.yaml, "infineon,system-interrupts.yaml"]
+
+properties:
+  "#pwm-cells":
+    const: 3
+    description: |
+      Number of items to expect in a PWM
+      - channel of the timer used for PWM (not used)
+      - period to set in ns
+      - flags: standard flags like PWM_POLARITY_NORMAL
+
+  pinctrl-0:
+    description: |
+      PORT pin configuration for the PWM signal.
+      We expect that the phandles will reference pinctrl nodes. These
+      nodes will have a nodelabel that matches the Infineon SoC Pinctrl
+      defines and have following
+      format: p<port>_<pin>_<peripheral inst>_<signal>.
+
+      Examples:
+        pinctrl-0 = <&p1_1_pwm0_0>;
+    required: true
+
+  pinctrl-names:
+    required: true
+
+pwm-cells:
+  - channel
+  - period
+  - flags

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 NXP
+ * Copyright (c) 2021, 2025 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -157,7 +157,7 @@ static const struct linear_range buck2_ranges[] = {
 };
 
 static const struct linear_range ldo1_ranges[] = {
-	LINEAR_RANGE_INIT(1700000, 25000U, 0x0U, 0x9U),
+	LINEAR_RANGE_INIT(1700000, 25000U, 0x0U, 0x8U),
 	LINEAR_RANGE_INIT(1900000, 0U, 0x9U, 0xFU),
 };
 

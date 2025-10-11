@@ -12,6 +12,8 @@
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/memory-controller/renesas,ra-sdram.h>
 #include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/gpio/dvp-20pin-connector.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 #include "ek_ra8d1-pinctrl.dtsi"
 
 / {
@@ -26,18 +28,22 @@
 		zephyr,entropy = &trng;
 		zephyr,flash-controller = &flash1;
 		zephyr,canbus = &canfd0;
+		zephyr,crc = &crc;
 	};
 
 	leds {
 		compatible = "gpio-leds";
+
 		led1: led1 {
 			gpios = <&ioport6 0 GPIO_ACTIVE_HIGH>;
 			label = "LED1";
 		};
+
 		led2: led2 {
 			gpios = <&ioport4 14 GPIO_ACTIVE_HIGH>;
 			label = "LED2";
 		};
+
 		led3: led3 {
 			gpios = <&ioport1 7 GPIO_ACTIVE_HIGH>;
 			label = "LED3";
@@ -49,31 +55,33 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<0 0 &ioport0 4 0>,	/* AN  */
-				<1 0 &ioport5 7 0>,	/* RST */
-				<2 0 &ioport4 13 0>,	/* CS   */
-				<3 0 &ioport4 12 0>,	/* SCK  */
-				<4 0 &ioport4 10 0>,	/* MISO */
-				<5 0 &ioport4 11 0>,	/* MOSI */
-							/* +3.3V */
-							/* GND */
-				<6 0 &ioport9 7 0>,	/* PWM  */
-				<7 0 &ioport0 10 0>,	/* INT  */
-				<8 0 &ioport4 8 0>,	/* RX   */
-				<9 0 &ioport4 9 0>,	/* TX   */
-				<10 0 &ioport4 0 0>,	/* SCL  */
-				<11 0 &ioport4 1 0>;	/* SDA  */
-							/* +5V */
-							/* GND */
+		gpio-map = <0 0 &ioport0 4 0>,	/* AN  */
+			   <1 0 &ioport5 7 0>,	/* RST */
+			   <2 0 &ioport4 13 0>,	/* CS   */
+			   <3 0 &ioport4 12 0>,	/* SCK  */
+			   <4 0 &ioport4 10 0>,	/* MISO */
+			   <5 0 &ioport4 11 0>,	/* MOSI */
+			   /* +3.3V */
+			   /* GND */
+			   <6 0 &ioport9 7 0>,	/* PWM  */
+			   <7 0 &ioport0 10 0>,	/* INT  */
+			   <8 0 &ioport4 8 0>,	/* RX   */
+			   <9 0 &ioport4 9 0>,	/* TX   */
+			   <10 0 &ioport4 0 0>,	/* SCL  */
+			   <11 0 &ioport4 1 0>;	/* SDA  */
+		/* +5V */
+		/* GND */
 	};
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: s1 {
 			gpios = <&ioport0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 1";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		button1: s2 {
 			gpios = <&ioport0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 2";
@@ -94,11 +102,11 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<14 0 &ioport5 11 0>,	/* IIC_SDA */
-				<15 0 &ioport4 4 0>,	/* DISP_BLEN */
-				<16 0 &ioport5 12 0>,	/* IIC_SCL */
-				<17 0 &ioport5 10 0>,	/* DISP_INT */
-				<18 0 &ioporta 1 0>;	/* DISP_RST */
+		gpio-map = <14 0 &ioport5 11 0>,	/* IIC_SDA */
+			   <15 0 &ioport4 4 0>,	/* DISP_BLEN */
+			   <16 0 &ioport5 12 0>,	/* IIC_SCL */
+			   <17 0 &ioport5 10 0>,	/* DISP_INT */
+			   <18 0 &ioporta 1 0>;	/* DISP_RST */
 	};
 
 	ek_ra8d1_parallel_graphics_expansion: parallel-graphics-expansion {
@@ -111,6 +119,15 @@
 			   <3 0 &ioport5 10 0>, /* DISP_INT */
 			   <4 0 &ioport5 12 0>, /* IIC_SCL */
 			   <6 0 &ioporta 1 0>;  /* DISP_RST */
+	};
+
+	dvp_20pin_connector: dvp-20pin-connector {
+		compatible = "arducam,dvp-20pin-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0x0 0x3f>;
+		gpio-map = <DVP_20PIN_PEN 0 &ioport7 4 0>,
+			   <DVP_20PIN_PDN 0 &ioport7 5 0>;
 	};
 
 	aliases {
@@ -140,6 +157,7 @@
 
 &pll {
 	status = "okay";
+
 	pllp {
 		status = "okay";
 	};
@@ -244,6 +262,7 @@
 	pinctrl-0 = <&sci9_default>;
 	pinctrl-names = "default";
 	status = "okay";
+
 	uart9: uart {
 		current-speed = <115200>;
 		status = "okay";
@@ -305,6 +324,21 @@
 	};
 };
 
+&pwm3 {
+	pinctrl-0 = <&pwm3_default>;
+	pinctrl-names = "default";
+	interrupts = <51 12>, <52 12>;
+	interrupt-names = "gtioca", "overflow";
+
+	cam_clock: pwmclock {
+		compatible = "pwm-clock";
+		status = "disabled";
+		#clock-cells = <1>;
+		clock-frequency = <24000000>;
+		pwms = <&pwm3 0 PWM_KHZ(24000) PWM_POLARITY_NORMAL>;
+	};
+};
+
 &pwm7 {
 	pinctrl-0 = <&pwm7_default>;
 	interrupts = <40 1>, <41 1>;
@@ -315,6 +349,7 @@
 
 &canfd_global {
 	status = "okay";
+
 	canfd0 {
 		pinctrl-0 = <&canfd0_default>;
 		pinctrl-names = "default";
@@ -354,6 +389,7 @@
 	pinctrl-names = "default";
 	maximum-speed = "high-speed";
 	status = "okay";
+
 	zephyr_udc0: udc {
 		status = "okay";
 	};
@@ -396,16 +432,27 @@
 	edian-mode = "little-endian";
 	continuous-access;
 	bus-width = "16-bit";
+
 	bank@0 {
 		reg = <0>;
 		renesas,ra-sdram-timing = <SDRAM_TRAS_6CYCLES
-		SDRAM_TRCD_3CYCLES
-		SDRAM_TRP_3CYCLES
-		SDRAM_TWR_2CYCLES
-		SDRAM_TCL_3CYCLES
-		937
-		SDRAM_TREFW_8CYCLES>;
+					   SDRAM_TRCD_3CYCLES
+					   SDRAM_TRP_3CYCLES
+					   SDRAM_TWR_2CYCLES
+					   SDRAM_TCL_3CYCLES
+					   937
+					   SDRAM_TREFW_8CYCLES>;
 	};
+};
+
+&ceu {
+	pinctrl-0 = <&ceu_default>;
+	pinctrl-names = "default";
+	interrupts = <53 12>;
+	interrupt-names = "ceui";
+	clocks = <&pclka MSTPC 16>, <&cam_clock 0>;
+	clock-names = "pclk", "cam-xclk";
+	burst-transfer = <256>;
 };
 
 zephyr_lcdif: &lcdif {};
@@ -415,6 +462,10 @@ zephyr_mipi_dsi: &mipi_dsi {};
 renesas_mipi_i2c: &iic1 {};
 
 pmod_sd_shield: &sdhc1 {};
+
+dvp_20pin_i2c: &iic1 {};
+
+dvp_20pin_interface: &ceu {};
 
 &usbfs {
 	pinctrl-0 = <&usbfs_default>;
@@ -457,7 +508,6 @@ pmod_sd_shield: &sdhc1 {};
 		status = "okay";
 
 		pages_layout: pages_layout {
-
 			pages_layout_4k: pages_layout_4k {
 				pages-count = <32>;
 				pages-size = <DT_SIZE_K(4)>;
@@ -487,5 +537,10 @@ pmod_sd_shield: &sdhc1 {};
 	};
 };
 
+&crc {
+	status = "okay";
+};
+
 mikrobus_serial: &uart3 {};
+
 mikrobus_spi: &spi1 {};

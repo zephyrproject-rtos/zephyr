@@ -16,7 +16,7 @@
 		sleep-gpios = <&gpio2 0 GPIO_ACTIVE_LOW>; /* D2 */
 		en-gpios = <&gpio2 1 0>; /* 5 */
 		m0-gpios = <&gpio3 0 0>;
-		m1-gpios = <&gpio3 1 0>;
+		m1-gpios = <&gpio4 1 0>;
 		counter = <&counter0>;
 
 		#address-cells = <1>;
@@ -39,6 +39,13 @@
 	};
 
 	gpio3: gpio3 {
+		compatible = "zephyr,gpio-emul";
+		#gpio-cells = <0x2>;
+		status = "okay";
+		gpio-controller;
+	};
+
+	gpio4: gpio4 {
 		compatible = "zephyr,gpio-emul";
 		#gpio-cells = <0x2>;
 		status = "okay";

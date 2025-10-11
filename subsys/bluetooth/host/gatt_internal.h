@@ -43,8 +43,6 @@ void bt_gatt_disconnected(struct bt_conn *conn);
 
 bool bt_gatt_change_aware(struct bt_conn *conn, bool req);
 
-int bt_gatt_store_ccc(uint8_t id, const bt_addr_le_t *addr);
-
 int bt_gatt_clear(uint8_t id, const bt_addr_le_t *addr);
 
 #if defined(CONFIG_BT_GATT_CLIENT)
@@ -70,3 +68,6 @@ struct bt_gatt_attr;
 /* Check attribute permission */
 uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			uint16_t mask);
+
+bool bt_gatt_attr_read_authorize(struct bt_conn *conn, const struct bt_gatt_attr *attr);
+bool bt_gatt_attr_write_authorize(struct bt_conn *conn, const struct bt_gatt_attr *attr);

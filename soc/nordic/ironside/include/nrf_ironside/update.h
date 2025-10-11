@@ -18,10 +18,26 @@
 #define IRONSIDE_UPDATE_ERROR_NOT_PERMITTED     (1)
 /** Failed to write the update metadata to SICR. */
 #define IRONSIDE_UPDATE_ERROR_SICR_WRITE_FAILED (2)
+/** Update candidate is placed outside of valid range */
+#define IRONSIDE_UPDATE_ERROR_INVALID_ADDRESS (3)
 
 /**
  * @}
  */
+
+/** Size of the update blob */
+#ifdef CONFIG_SOC_SERIES_NRF54HX
+#define IRONSIDE_UPDATE_BLOB_SIZE (160 * 1024)
+#elif CONFIG_SOC_SERIES_NRF92X
+#define IRONSIDE_UPDATE_BLOB_SIZE (160 * 1024)
+#else
+#error "Missing update blob size"
+#endif
+
+/** Min address used for storing the update candidate */
+#define IRONSIDE_UPDATE_MIN_ADDRESS (0x0e100000)
+/** Max address used for storing the update candidate */
+#define IRONSIDE_UPDATE_MAX_ADDRESS (0x0e200000 - IRONSIDE_UPDATE_BLOB_SIZE)
 
 /** Length of the update manifest in bytes */
 #define IRONSIDE_UPDATE_MANIFEST_LENGTH  (256)
@@ -40,7 +56,7 @@
 /* Index of the update blob pointer within the service buffer. */
 #define IRONSIDE_UPDATE_SERVICE_UPDATE_PTR_IDX (0)
 /* Index of the return code within the service buffer. */
-#define IRONSIDE_UPDATE_SERVICE_RETCODE_IDX (0)
+#define IRONSIDE_UPDATE_SERVICE_RETCODE_IDX    (0)
 
 /**
  * @brief IronSide update blob.
@@ -61,10 +77,12 @@ struct ironside_update_blob {
  *
  * @param update Pointer to update blob
  *
+ * @retval 0 on a successful request (although the update itself may still fail).
+ * @retval -IRONSIDE_UPDATE_ERROR_INVALID_ADDRESS if the address of the update is outside of the
+ *          accepted range.
  * @retval -IRONSIDE_UPDATE_ERROR_NOT_PERMITTED if missing access to the update candidate.
  * @retval -IRONSIDE_UPDATE_ERROR_SICR_WRITE_FAILED if writing update parameters to SICR failed.
- * @returns Positive non-0 error status if reported by IronSide call.
- * @returns 0 on a successful request (although the update itself may still fail).
+ * @retval Positive error status if reported by IronSide call (see error codes in @ref call.h).
  *
  */
 int ironside_update(const struct ironside_update_blob *update);

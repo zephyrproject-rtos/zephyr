@@ -14,5 +14,6 @@ supported:
   - timer
   - spi
   - i2c
+  - adc
 ram: 48
 flash: 512

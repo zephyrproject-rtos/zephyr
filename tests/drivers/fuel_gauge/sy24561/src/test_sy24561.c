@@ -63,6 +63,10 @@ ZTEST_USER_F(sy24561, test_get_props__returns_ok)
 	union fuel_gauge_prop_val props[ARRAY_SIZE(prop_types)];
 
 	zassert_ok(fuel_gauge_get_props(fixture->dev, prop_types, props, ARRAY_SIZE(props)));
+	zassert_equal(props[0].voltage, 3199000);
+	zassert_equal(props[1].relative_state_of_charge, 74);
+	zassert_equal(props[2].fg_status, 0);
+	zassert_equal(props[3].current_direction, 0);
 }
 
 ZTEST_USER_F(sy24561, test_out_of_range_temperature_are_cropped)

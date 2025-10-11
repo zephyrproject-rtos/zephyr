@@ -36,10 +36,6 @@ if(NOT "${ARCH}" STREQUAL "posix")
     include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_riscv.cmake)
   endif()
 
-  if(DEFINED CMAKE_C_COMPILER_TARGET)
-    set(clang_target_flag "--target=${CMAKE_C_COMPILER_TARGET}")
-  endif()
-
   foreach(file_name include/stddef.h)
     execute_process(
       COMMAND ${CMAKE_C_COMPILER} --print-file-name=${file_name}

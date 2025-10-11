@@ -14,6 +14,9 @@
 #include <zephyr/drivers/interrupt_controller/loapic.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/kernel/mm.h>
+#ifdef CONFIG_HW_SHADOW_STACK
+#include <x86_shstk.h>
+#endif
 
 /*
  * Definitions/macros for enabling paging
@@ -373,6 +376,71 @@ z_x86_switch:
 	movq $X86_KERNEL_CS, _thread_offset_to_cs(%rsi)
 	movq $X86_KERNEL_DS, _thread_offset_to_ss(%rsi)
 #endif
+
+#ifdef CONFIG_HW_SHADOW_STACK
+	cmpq $0, _thread_offset_to_shstk_addr(%rsi)
+	jz __sh_stk_verify
+
+	movq %gs:(__x86_tss64_t_exception_shstk_addr_OFFSET), %rax
+	testq $1, (%rax)
+	jnz __switching_from_exception
+
+	/* Create the shadow stack restore token by hand, as using
+	 * saveprevssp is cumbersome when some threads don't use shadow
+	 * stack. Note that as we return using iretq, we also need to add
+	 * current CS and LIP (return pointer) to the shadow stack. It should
+	 * currently be pointing to return pointer.
+	 */
+	rdsspq %rcx
+	movq (%rcx), %r10 /* LIP */
+
+	/* Save CS, overwriting current top of stack */
+	movq $X86_KERNEL_CS, %r9
+	wrssq %r9, (%rcx)
+
+	/* Save LIP */
+	wrssq %r10, -8(%rcx)
+
+	/* Save SSP */
+	movq %rcx, %r11
+	addq $8, %r11 /* SSP has to point to before previous entry. */
+	wrssq %r11, -16(%rcx)
+
+	/* Create and "push" new token */
+	movq %rcx, %r11
+	subq $16, %r11
+	orq $1, %r11
+	wrssq %r11, -24(%rcx)
+
+	/* Finally, save SSP on thread struct */
+	subq $24, %rcx
+	movq %rcx, _thread_offset_to_shstk_addr(%rsi)
+	jmp __sh_stk_out
+
+__switching_from_exception:
+	/* We are switching from an exception, IOW, aborting current thread.
+	 * The exception shadow stack needs to be marked as not busy so that it
+	 * can be used again in case of a new exception.
+	 */
+	clrssbsy (%rax)
+	jmp __sh_stk_out
+
+__sh_stk_verify:
+#ifdef CONFIG_X86_CET_VERIFY_KERNEL_SHADOW_STACK
+	/* Outgoing thread doesn't have a SSP, so shadow stack is disabled for
+	 *  it. Let's just check if shadow stack is enabled now, which would
+	 *  imply something is tampering with the pointer.
+	 */
+	movl $X86_S_CET_MSR, %ecx
+	rdmsr
+	testl $X86_S_CET_MSR_SHSTK_EN, %eax
+	jz __sh_stk_out
+	movq %rsi, %rdi
+	call z_x86_cet_shadow_stack_panic
+#endif
+__sh_stk_out:
+#endif
+
 	/* Store the handle (i.e. our thread struct address) into the
 	 * switch handle field, this is a synchronization signal that
 	 * must occur after the last data from the old context is
@@ -407,6 +475,29 @@ __resume:
 	shrq $32, %rdx
 	wrmsr
 #endif
+
+#ifdef CONFIG_HW_SHADOW_STACK
+	movq _thread_offset_to_shstk_addr(%rdi), %r10
+	testq %r10, %r10
+	jz __sh_stk_disable
+
+	movl $X86_S_CET_MSR, %ecx
+	rdmsr
+	orl $X86_S_CET_MSR_SHSTK_EN, %eax
+	wrmsr
+	rstorssp (%r10)
+	movq $1, %r10
+	incsspq %r10 /* Ignore previous ssp token */
+	jmp __sh_stk_done
+__sh_stk_disable:
+	movl $X86_S_CET_MSR, %ecx
+	rdmsr
+	andl $~X86_S_CET_MSR_SHSTK_EN, %eax
+	andl $~X86_S_CET_MSR_WR_SHSTK, %eax
+	wrmsr
+__sh_stk_done:
+#endif
+
 #if (!defined(CONFIG_X86_KPTI) && defined(CONFIG_USERSPACE)) \
 		|| defined(CONFIG_INSTRUMENT_THREAD_SWITCHING)
 	pushq %rdi	/* Caller-saved, stash it */
@@ -448,7 +539,6 @@ __resume:
 	 */
 	movq $0xB9, _thread_offset_to_rip(%rdi)
 #endif
-
 
 	movq _thread_offset_to_rbx(%rdi), %rbx
 	movq _thread_offset_to_rbp(%rdi), %rbp
@@ -498,17 +588,17 @@ __resume:
 
 #ifdef CONFIG_X86_KPTI
 #define EXCEPT_CODE(nr, ist)						\
-	vector_ ## nr: pushq %gs:__x86_tss64_t_ist ## ist ## _OFFSET;	\
+	vector_ ## nr: endbr64; pushq %gs:__x86_tss64_t_ist ## ist ## _OFFSET;	\
 	pushq $nr;							\
 	jmp except
 #define EXCEPT(nr, ist)							\
-	vector_ ## nr: pushq $0;					\
+	vector_ ## nr: endbr64; pushq $0;					\
 	pushq %gs:__x86_tss64_t_ist ## ist ## _OFFSET;			\
 	pushq $nr; \
 	jmp except
 #else
-#define EXCEPT_CODE(nr) vector_ ## nr: pushq $nr; jmp except
-#define EXCEPT(nr)	vector_ ## nr: pushq $0; pushq $nr; jmp except
+#define EXCEPT_CODE(nr) vector_ ## nr: endbr64; pushq $nr; jmp except
+#define EXCEPT(nr)	vector_ ## nr: endbr64; pushq $0; pushq $nr; jmp except
 #endif
 
 /*
@@ -646,7 +736,7 @@ EXCEPT      ( 4, 7); EXCEPT      ( 5, 7); EXCEPT       (6, 7); EXCEPT      ( 7, 
 EXCEPT_CODE ( 8, 7); EXCEPT      ( 9, 7); EXCEPT_CODE (10, 7); EXCEPT_CODE (11, 7)
 EXCEPT_CODE (12, 7); EXCEPT_CODE (13, 7); EXCEPT_CODE (14, 7); EXCEPT      (15, 7)
 EXCEPT      (16, 7); EXCEPT_CODE (17, 7); EXCEPT      (18, 7); EXCEPT      (19, 7)
-EXCEPT      (20, 7); EXCEPT      (21, 7); EXCEPT      (22, 7); EXCEPT      (23, 7)
+EXCEPT      (20, 7); EXCEPT_CODE (21, 7); EXCEPT      (22, 7); EXCEPT      (23, 7)
 EXCEPT      (24, 7); EXCEPT      (25, 7); EXCEPT      (26, 7); EXCEPT      (27, 7)
 EXCEPT      (28, 7); EXCEPT      (29, 7); EXCEPT      (30, 7); EXCEPT      (31, 7)
 
@@ -660,7 +750,7 @@ EXCEPT      ( 4); EXCEPT      ( 5); EXCEPT      ( 6); EXCEPT      ( 7)
 EXCEPT_CODE ( 8); EXCEPT      ( 9); EXCEPT_CODE (10); EXCEPT_CODE (11)
 EXCEPT_CODE (12); EXCEPT_CODE (13); EXCEPT_CODE (14); EXCEPT      (15)
 EXCEPT      (16); EXCEPT_CODE (17); EXCEPT      (18); EXCEPT      (19)
-EXCEPT      (20); EXCEPT      (21); EXCEPT      (22); EXCEPT      (23)
+EXCEPT      (20); EXCEPT_CODE (21); EXCEPT      (22); EXCEPT      (23)
 EXCEPT      (24); EXCEPT      (25); EXCEPT      (26); EXCEPT      (27)
 EXCEPT      (28); EXCEPT      (29); EXCEPT      (30); EXCEPT      (31)
 
@@ -733,6 +823,12 @@ irq:
 
 	incl ___cpu_t_nested_OFFSET(%rsi)
 	subq $CONFIG_ISR_SUBSTACK_SIZE, %gs:__x86_tss64_t_ist1_OFFSET
+#ifdef CONFIG_HW_SHADOW_STACK
+	pushq %rsi
+	movq %gs:(__x86_tss64_t_shstk_addr_OFFSET), %rsi
+	subq $X86_CET_IRQ_SHADOW_SUBSTACK_SIZE, (%rsi)
+	popq %rsi
+#endif
 	cmpl $CONFIG_ISR_DEPTH, ___cpu_t_nested_OFFSET(%rsi)
 	jz 1f
 	sti
@@ -801,6 +897,67 @@ irq_enter_unnested: /* Not nested: dump state to thread struct for __resume */
 	movq %rax, _thread_offset_to_ss(%rsi)
 #endif
 
+#ifdef CONFIG_HW_SHADOW_STACK
+	cmpq $0, _thread_offset_to_shstk_addr(%rsi)
+	jz __sh_stk_verify_irq
+
+	/* We are on a interrupt shadow stack, which contains the three
+	 * entries needed to iretq. However, we may return to other
+	 * thread, not the one interrupted. So we need to place these
+	 * entries on the interrupted thread shadow stack, so it can be
+	 * restored later.
+	 */
+
+	rdsspq %rax
+
+	/* Load entries from current shadow stack */
+	movq (%rax), %r10 /* SSP */
+	movq 8(%rax), %r11 /* LIP */
+	movq 16(%rax), %r9 /* CS */
+
+	movq %r10, %rax /* rax now points to old shadow stack */
+
+	/* Save CS */
+	wrssq %r9, -8(%rax)
+
+	/* Save LIP */
+	wrssq %r11, -16(%rax)
+
+	/* Save SSP */
+	wrssq %r10, -24(%rax)
+
+	/* Create and "push" new token */
+	movq %rax, %r10
+	subq $24, %r10
+	orq $1, %r10
+	wrssq %r10, -32(%rax)
+
+	/* Finally, save SSP on thread struct */
+	subq $32, %rax
+	movq %rax, _thread_offset_to_shstk_addr(%rsi)
+
+	jmp __sh_stk_out_irq
+
+__sh_stk_verify_irq:
+#ifdef CONFIG_X86_CET_VERIFY_KERNEL_SHADOW_STACK
+	/* Outgoing thread doesn't have a SSP, so shadow stack is disabled for
+	 * it. Let's just check if shadow stack is enabled now, which would
+	 * imply something is tampering with the pointer.
+	 */
+
+	pushq %rcx
+	movl $X86_S_CET_MSR, %ecx
+	rdmsr
+	popq %rcx
+	testl $X86_S_CET_MSR_SHSTK_EN, %eax
+	jz __sh_stk_out_irq
+	movq %rsi, %rdi
+	call z_x86_cet_shadow_stack_panic
+#endif
+
+__sh_stk_out_irq:
+#endif
+
 irq_dispatch:
 #ifdef CONFIG_SCHED_THREAD_USAGE
 	pushq %rcx
@@ -825,6 +982,10 @@ irq_dispatch:
 
 	cli
 	addq $CONFIG_ISR_SUBSTACK_SIZE, %gs:__x86_tss64_t_ist1_OFFSET
+#ifdef CONFIG_HW_SHADOW_STACK
+	movq %gs:(__x86_tss64_t_shstk_addr_OFFSET), %rax
+	addq $X86_CET_IRQ_SHADOW_SUBSTACK_SIZE, (%rax)
+#endif
 	decl ___cpu_t_nested_OFFSET(%rsi)
 	jnz irq_exit_nested
 
@@ -833,6 +994,23 @@ irq_dispatch:
 	movq ___cpu_t_current_OFFSET(%rsi), %rdi
 	call z_get_next_switch_handle
 	movq %rax, %rdi
+
+#ifdef CONFIG_HW_SHADOW_STACK
+	/* __resume will change to next thread shadow stack (if any), so
+	 * we need to mark IRQ shadow stack as free (not busy).
+	 */
+	movl $X86_S_CET_MSR, %ecx
+	rdmsr
+	testl $X86_S_CET_MSR_SHSTK_EN, %eax
+	jz 1f
+
+	movq $3, %rax /* Discard SSP, LIP and CS from shadow stack */
+	incsspq %rax
+	rdsspq %rax
+	clrssbsy (%rax) /* Free shadow stack */
+1:
+#endif
+
 	jmp __resume
 
 irq_exit_nested:
@@ -849,7 +1027,46 @@ irq_exit_nested:
 	popq %rax
 	iretq
 
-#define IRQ(nr) vector_ ## nr: pushq $(nr - IV_IRQS); jmp irq
+#ifdef CONFIG_HW_SHADOW_STACK_ALLOW_REUSE
+	/*
+	 * C function prototype:
+	 *
+	 * void arch_shadow_stack_reset(k_thread *thread);
+	 */
+.globl arch_shadow_stack_reset
+arch_shadow_stack_reset:
+	movq _thread_offset_to_shstk_base(%rdi), %rcx
+	movq _thread_offset_to_shstk_size(%rdi), %rdx
+
+	/* Set "shstk[-2]", CS */
+	subq $16, %rdx
+	addq %rdx, %rcx
+	movq $X86_KERNEL_CS, %rsi
+	wrssq %rsi, (%rcx)
+
+	/* Set "shstk[-3]", z_thread_entry */
+	movq $z_thread_entry, %rsi
+	wrssq %rsi, -8(%rcx)
+
+	/* Set "shstk[-4]", ssp, "&shstk[-1]" */
+	movq %rcx, %rsi
+	addq $8, %rsi
+	wrssq %rsi, -16(%rcx)
+
+	/* Set "shstk[-5]", token, "&shstk[-4] | 1" */
+	movq %rcx, %rsi
+	subq $16, %rsi
+	orq $1, %rsi
+	wrssq %rsi, -24(%rcx)
+
+	/* Set thread->shstk_addr to point to the token on the stack */
+	subq $24, %rcx
+	movq %rcx, _thread_offset_to_shstk_addr(%rdi)
+
+	ret
+#endif
+
+#define IRQ(nr) vector_ ## nr: endbr64; pushq $(nr - IV_IRQS); jmp irq
 
 IRQ( 33); IRQ( 34); IRQ( 35); IRQ( 36); IRQ( 37); IRQ( 38); IRQ( 39)
 IRQ( 40); IRQ( 41); IRQ( 42); IRQ( 43); IRQ( 44); IRQ( 45); IRQ( 46); IRQ( 47)

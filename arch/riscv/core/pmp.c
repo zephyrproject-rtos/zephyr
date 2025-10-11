@@ -539,8 +539,8 @@ void z_riscv_pmp_stackguard_enable(struct k_thread *thread)
 void z_riscv_pmp_stackguard_disable(void)
 {
 
-	unsigned long pmp_addr[PMP_M_MODE_SLOTS];
-	unsigned long pmp_cfg[PMP_M_MODE_SLOTS / sizeof(unsigned long)];
+	unsigned long pmp_addr[CONFIG_PMP_SLOTS];
+	unsigned long pmp_cfg[CONFIG_PMP_SLOTS / sizeof(unsigned long)];
 	unsigned int index = global_pmp_end_index;
 
 	/* Retrieve the pmpaddr value matching the last global PMP slot. */

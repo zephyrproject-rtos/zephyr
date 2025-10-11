@@ -27,6 +27,7 @@
 
 	leds: leds {
 		compatible = "gpio-leds";
+
 		yellow_led: led_0 {
 			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 			label = "User LED1";
@@ -38,6 +39,11 @@
 		watchdog0 = &wdt0;
 	};
 
+	rf_switch: rf_switch {
+		compatible = "seeed,xiao-gpio-rf-switch";
+		enable-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+		select-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+	};
 };
 
 &trng0 {

@@ -87,6 +87,10 @@ struct bt_cap_unicast_group {
 	struct bt_bap_unicast_group *bap_unicast_group;
 };
 
+struct bt_cap_broadcast_source {
+	struct bt_bap_broadcast_source *bap_broadcast;
+};
+
 struct bt_cap_initiator_proc_param {
 	struct bt_cap_stream *stream;
 	union {
@@ -190,8 +194,6 @@ struct bt_cap_handover_proc_param {
 			/* Set type */
 			enum bt_cap_set_type type;
 
-			/* The SID of the ext_adv */
-			uint8_t sid;
 			/* The PA interval of the ext_adv */
 			uint16_t pa_interval;
 			/* The broadcast ID the broadcast source will use */
@@ -200,8 +202,43 @@ struct bt_cap_handover_proc_param {
 			struct bt_cap_commander_broadcast_reception_start_member_param
 				reception_start_member_params[CONFIG_BT_MAX_CONN];
 		} unicast_to_broadcast;
-		/* TODO: Add unicast broadcast_to_unicast params */
+		struct {
+			/* The existing broadcast source */
+			struct bt_cap_broadcast_source *broadcast_source;
+
+			/* The resulting unicast group */
+			struct bt_cap_unicast_group *unicast_group;
+
+			/* Broadcast ID of broadcast_source*/
+			uint32_t broadcast_id;
+
+			/* Advertising SID of broadcast_source*/
+			uint8_t adv_sid;
+
+			/* Advertising type of broadcast_source*/
+			uint8_t adv_type;
+
+			/* States used to determine when the broadcast source can be deleted */
+			bool broadcast_stopped;
+			bool reception_stopped;
+
+			/* Array of connection objects that we are waiting for a receive state with
+			 * a BIG sync lost event
+			 */
+			struct bt_conn *pending_recv_state_conns[MIN(
+				CONFIG_BT_MAX_CONN,
+				CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT)];
+
+			/* Unicast group create param from caller */
+			struct bt_cap_unicast_group_param *unicast_group_param;
+
+			/* Unicast start param from caller */
+			struct bt_cap_unicast_audio_start_param *unicast_start_param;
+		} broadcast_to_unicast;
 	};
+
+	/* Flag to determine which of the two structs above to use */
+	bool is_unicast_to_broadcast;
 };
 #endif /* CONFIG_BT_CAP_HANDOVER */
 
@@ -278,17 +315,35 @@ int bt_cap_common_discover(struct bt_conn *conn, bt_cap_common_discover_func_t f
 
 bool bt_cap_initiator_broadcast_audio_start_valid_param(
 	const struct bt_cap_initiator_broadcast_create_param *param);
+bool bt_cap_initiator_valid_unicast_audio_start_param(
+	const struct bt_cap_unicast_audio_start_param *param);
+bool bt_cap_initiator_valid_unicast_group_param(const struct bt_cap_unicast_group_param *param);
+bool bt_cap_initiator_stream_is_in_state(const struct bt_bap_stream *bap_stream,
+					 enum bt_bap_ep_state state);
 bool bt_cap_initiator_valid_unicast_audio_stop_param(
 	const struct bt_cap_unicast_audio_stop_param *param);
+int cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start_param *param);
 int cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_param *param);
+enum bt_bap_ep_state bt_cap_initiator_stream_get_state(const struct bt_bap_stream *bap_stream);
 
 int cap_commander_broadcast_reception_start(
 	const struct bt_cap_commander_broadcast_reception_start_param *param);
+int cap_commander_broadcast_reception_start(
+	const struct bt_cap_commander_broadcast_reception_start_param *param);
+int cap_commander_broadcast_reception_stop(
+	const struct bt_cap_commander_broadcast_reception_stop_param *param);
+bool bt_cap_commander_valid_broadcast_reception_stop_param(
+	const struct bt_cap_commander_broadcast_reception_stop_param *param);
+void cap_commander_register_broadcast_assistant_callbacks(void);
 
-void bt_cap_handover_proc_complete(void);
-bool bt_cap_handover_is_handover_broadcast_source(
-	const struct bt_cap_broadcast_source *cap_broadcast_source);
+void bt_cap_handover_complete(void);
 void bt_cap_handover_unicast_to_broadcast_setup_broadcast(void);
 void bt_cap_handover_unicast_to_broadcast_reception_start(void);
-void bt_cap_handover_unicast_audio_stopped(void);
+void bt_cap_handover_unicast_proc_complete(void);
 void bt_cap_handover_broadcast_source_stopped(uint8_t reason);
+void bt_cap_handover_broadcast_audio_stopped(void);
+void bt_cap_handover_receive_state_updated(const struct bt_conn *conn,
+					   const struct bt_bap_scan_delegator_recv_state *state);
+bool bt_cap_handover_is_handover_broadcast_source(
+	const struct bt_cap_broadcast_source *cap_broadcast_source);
+int bt_cap_handover_broadcast_reception_stopped(void);

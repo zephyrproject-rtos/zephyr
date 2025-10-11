@@ -33,6 +33,7 @@ struct dma_mcux_lpc_config {
 	uint32_t otrig_base_address;
 	uint32_t itrig_base_address;
 	uint8_t num_of_channels;
+	uint8_t num_of_allocated_channels;
 	uint8_t num_of_otrigs;
 	void (*irq_config_func)(const struct device *dev);
 };
@@ -516,7 +517,8 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 	}
 
 	if ((config->channel_direction == MEMORY_TO_PERIPHERAL) ||
-	    (config->channel_direction == PERIPHERAL_TO_MEMORY)) {
+	    (config->channel_direction == PERIPHERAL_TO_MEMORY) ||
+	    (config->channel_direction == LPC_DMA_SPI_MCUX_FLEXCOMM_TX)) {
 		is_periph = true;
 	} else {
 		is_periph = false;
@@ -528,6 +530,12 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 
 	/* If needed, allocate a slot to store dma channel data */
 	if (dma_data->channel_index[channel] == -1) {
+		/* Not enough items in channel data array */
+		if (dma_data->num_channels_used >= dev_config->num_of_allocated_channels) {
+			LOG_ERR("No free DMA channels available");
+			return -ENOMEM;
+		}
+
 		dma_data->channel_index[channel] = dma_data->num_channels_used;
 		dma_data->num_channels_used++;
 		/* Get the slot number that has the dma channel data */
@@ -1015,6 +1023,7 @@ static DEVICE_API(dma, dma_mcux_lpc_api) = {
 static const struct dma_mcux_lpc_config dma_##n##_config = {		\
 	.base = (DMA_Type *)DT_INST_REG_ADDR(n),			\
 	.num_of_channels = DT_INST_PROP(n, dma_channels),		\
+	.num_of_allocated_channels = DMA_MCUX_LPC_NUM_USED_CHANNELS(n),	\
 	.num_of_otrigs = DT_INST_PROP_OR(n, nxp_dma_num_of_otrigs, 0),			\
 	.otrig_base_address = DT_INST_PROP_OR(n, nxp_dma_otrig_base_address, 0x0),	\
 	.itrig_base_address = DT_INST_PROP_OR(n, nxp_dma_itrig_base_address, 0x0),	\

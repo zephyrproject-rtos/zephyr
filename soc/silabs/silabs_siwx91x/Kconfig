@@ -62,4 +62,22 @@ config SIWX91X_ENCRYPT
 	  The key used is the value of CONFIG_SIWX91X_MIC_KEY. This value is
 	  passed as-is to the command "commander rps convert".
 
+config SIWX91X_FIRMWARE_UPGRADE
+	bool "Support for firmware upgrade"
+	select WISECONNECT_NETWORK_STACK
+	help
+	  The firmware upgrade process for SiWx91x devices involves coordinated
+	  communication with both the Network Co-Processor (NCP) and the ROM
+	  bootloader. The NCP is responsible for writing the firmware image to
+	  flash memory, while the ROM bootloader handles the A/B upgrade logic
+	  to ensure reliable firmware switching.
+	  This option provides the necessary APIs to perform these upgrade tasks
+	  and is agnostic to the underlying transport protocol. It does not handle
+	  firmware retrieval directly; instead, the application layer is responsible
+	  for acquiring the firmware image (e.g., via an HTTP client or other means)
+	  and invoking the appropriate APIs to initiate and complete the upgrade
+	  process.
+	  For more information, visit:
+	  https://docs.silabs.com/wiseconnect/latest/wiseconnect-api-reference-guide-si91x-driver/si91-x-firmware-update-from-host-functions#sl-si91x-fwup-load
+
 endif # SOC_FAMILY_SILABS_SIWX91X

@@ -193,20 +193,6 @@ class Build(Forceable):
         # Store legacy -s option locally
         source_dir = self.args.source_dir
         self._parse_remainder(remainder)
-        # Parse testcase.yaml or sample.yaml files for additional options.
-        if self.args.test_item:
-            # we get path + testitem
-            item = os.path.basename(self.args.test_item)
-            if self.args.source_dir:
-                test_path = self.args.source_dir
-            else:
-                test_path = os.path.dirname(self.args.test_item)
-            if test_path and os.path.exists(test_path):
-                self.args.source_dir = test_path
-                if not self._parse_test_item(item):
-                    self.die("No test metadata found")
-            else:
-                self.die("test item path does not exist")
 
         if source_dir:
             if self.args.source_dir:
@@ -264,6 +250,22 @@ class Build(Forceable):
                 self.wrn(f'Failed to create info file: {build_info_file},', e)
 
         board, origin = self._find_board()
+
+        # Parse testcase.yaml or sample.yaml files for additional options.
+        if self.args.test_item:
+            # we get path + testitem
+            item = os.path.basename(self.args.test_item)
+            if self.args.source_dir:
+                test_path = self.args.source_dir
+            else:
+                test_path = os.path.dirname(self.args.test_item)
+            if test_path and os.path.exists(test_path):
+                self.args.source_dir = test_path
+                if not self._parse_test_item(item, board):
+                    self.die("No test metadata found")
+            else:
+                self.die("test item path does not exist")
+
         self._run_cmake(board, origin, self.args.cmake_opts)
         if args.cmake_only:
             return
@@ -311,7 +313,24 @@ class Build(Forceable):
         except IndexError:
             pass
 
-    def _parse_test_item(self, test_item):
+    def _parse_extra_entry(self, arg, board):
+        equals = arg.find('=')
+        colon = arg.rfind(':', 0, equals)
+        if colon != -1:
+            elem = arg.split(':')
+            if elem[0] != 'platform':
+                # conditional configs other than platform
+                # (xxx:yyy:CONFIG_FOO=bar) are not supported by 'west build'
+                self.wrn(f'"west build" does not support conditional config "{arg}". Add '
+                         f'"-D{arg[colon+1:]}" to the supplied CMake arguments if desired.')
+                return None
+            elif elem[1] not in board:
+                return None
+            return elem[2]
+        else:
+            return arg
+
+    def _parse_test_item(self, test_item, board):
         found_test_metadata = False
         for yp in ['sample.yaml', 'testcase.yaml']:
             yf = os.path.join(self.args.source_dir, yp)
@@ -359,24 +378,23 @@ class Build(Forceable):
                     if data == 'extra_configs':
                         args = []
                         for arg in arg_list:
-                            equals = arg.find('=')
-                            colon = arg.rfind(':', 0, equals)
-                            if colon != -1:
-                                # conditional configs (xxx:yyy:CONFIG_FOO=bar)
-                                # are not supported by 'west build'
-                                self.wrn('"west build" does not support '
-                                         f'conditional config "{arg}". Add "-D{arg[colon+1:]}" '
-                                         'to the supplied CMake arguments if '
-                                         'desired.')
-                                continue
-                            args.append("-D{}".format(arg.replace('"', '\"')))
+                            entry = self._parse_extra_entry(arg, board)
+                            if entry is not None:
+                                args.append("-D{}".format(entry.replace('"', '\"')))
                     elif data == 'extra_args':
                         # Retain quotes around config options
                         config_options = [arg for arg in arg_list if arg.startswith("CONFIG_")]
-                        non_config_options = [
+                        non_config_option_candidates = [
                             arg for arg in arg_list if not arg.startswith("CONFIG_")
                         ]
                         args = ["-D{}".format(a.replace('"', '\"')) for a in config_options]
+
+                        non_config_options = []
+                        for arg in non_config_option_candidates:
+                            entry = self._parse_extra_entry(arg, board)
+                            if entry is not None:
+                                non_config_options.append(entry)
+
                         args.extend([
                             "-D{}".format(arg.replace('"', '')) for arg in non_config_options
                         ])
@@ -571,7 +589,7 @@ class Build(Forceable):
         self.check_force(
             not boards_mismatched or self.auto_pristine,
             f'Build directory {self.build_dir} targets board {cached_board}, '
-            'but board {self.args.board} was specified. '
+            f'but board {self.args.board} was specified. '
             '(Clean the directory, use --pristine, or use --build-dir to '
             'specify a different one.)')
 
@@ -600,6 +618,8 @@ class Build(Forceable):
         if not self.run_cmake:
             return
 
+        cmake_env = None
+
         self._banner('generating a build system')
 
         if board is not None and origin != 'CMakeCache.txt':
@@ -626,8 +646,9 @@ class Build(Forceable):
 
         config_sysbuild = config_getboolean('sysbuild', False)
         if self.args.sysbuild or (config_sysbuild and not self.args.no_sysbuild):
-            cmake_opts.extend([f'-S{SYSBUILD_PROJ_DIR}',
-                               f'-DAPP_DIR:PATH={self.source_dir}'])
+            cmake_opts.extend([f'-S{SYSBUILD_PROJ_DIR}'])
+            cmake_env = os.environ.copy()
+            cmake_env["APP_DIR"] = str(self.source_dir)
         else:
             # self.args.no_sysbuild == True or config sysbuild False
             cmake_opts.extend([f'-S{self.source_dir}'])
@@ -643,7 +664,7 @@ class Build(Forceable):
                             f'-G{config_get("generator", DEFAULT_CMAKE_GENERATOR)}']
         if cmake_opts:
             final_cmake_args.extend(cmake_opts)
-        run_cmake(final_cmake_args, dry_run=self.args.dry_run)
+        run_cmake(final_cmake_args, dry_run=self.args.dry_run, env=cmake_env)
 
     def _run_pristine(self):
         self._banner(f'making build dir {self.build_dir} pristine')

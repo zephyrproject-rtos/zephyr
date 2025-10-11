@@ -449,6 +449,9 @@ macro(zephyr_library_get_current_dir_lib_name base lib_name)
   # Replace : with __ (C:/zephyrproject => C____zephyrproject)
   string(REGEX REPLACE ":" "__" name ${name})
 
+  # Replace ~ with - (driver~serial => driver-serial)
+  string(REGEX REPLACE "~" "-" name ${name})
+
   set(${lib_name} ${name})
 endmacro()
 
@@ -1316,6 +1319,7 @@ function(zephyr_linker_sources location)
   set(rom_sections_path  "${snippet_base}/snippets-rom-sections.ld")
   set(ram_sections_path  "${snippet_base}/snippets-ram-sections.ld")
   set(data_sections_path "${snippet_base}/snippets-data-sections.ld")
+  set(text_sections_path "${snippet_base}/snippets-text-sections.ld")
   set(rom_start_path     "${snippet_base}/snippets-rom-start.ld")
   set(noinit_path        "${snippet_base}/snippets-noinit.ld")
   set(rwdata_path        "${snippet_base}/snippets-rwdata.ld")
@@ -1336,6 +1340,7 @@ function(zephyr_linker_sources location)
     file(WRITE ${rom_sections_path} "")
     file(WRITE ${ram_sections_path} "")
     file(WRITE ${data_sections_path} "")
+    file(WRITE ${text_sections_path} "")
     file(WRITE ${rom_start_path} "")
     file(WRITE ${noinit_path} "")
     file(WRITE ${rwdata_path} "")
@@ -1359,6 +1364,8 @@ function(zephyr_linker_sources location)
     set(snippet_path "${ram_sections_path}")
   elseif("${location}" STREQUAL "DATA_SECTIONS")
     set(snippet_path "${data_sections_path}")
+  elseif("${location}" STREQUAL "TEXT_SECTIONS")
+    set(snippet_path "${text_sections_path}")
   elseif("${location}" STREQUAL "ROM_START")
     set(snippet_path "${rom_start_path}")
   elseif("${location}" STREQUAL "NOINIT")
@@ -4702,6 +4709,7 @@ function(zephyr_dt_import)
   zephyr_check_arguments_required_all(${CMAKE_CURRENT_FUNCTION} arg ${req_single_args})
 
   set(gen_dts_cmake_script ${ZEPHYR_BASE}/scripts/dts/gen_dts_cmake.py)
+  set(gen_dts_cmake_temp ${arg_EDT_PICKLE_FILE}.cmake.new)
   set(gen_dts_cmake_output ${arg_EDT_PICKLE_FILE}.cmake)
 
   if((${arg_EDT_PICKLE_FILE} IS_NEWER_THAN ${gen_dts_cmake_output}) OR
@@ -4710,11 +4718,13 @@ function(zephyr_dt_import)
     execute_process(
       COMMAND ${PYTHON_EXECUTABLE} ${gen_dts_cmake_script}
       --edt-pickle ${arg_EDT_PICKLE_FILE}
-      --cmake-out ${gen_dts_cmake_output}
+      --cmake-out ${gen_dts_cmake_temp}
       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
       RESULT_VARIABLE ret
       COMMAND_ERROR_IS_FATAL ANY
     )
+
+    zephyr_file_copy(${gen_dts_cmake_temp} ${gen_dts_cmake_output} ONLY_IF_DIFFERENT)
   endif()
   set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${gen_dts_cmake_script})
 

@@ -94,6 +94,7 @@ FLAG_P = bit(0)
 FLAG_RW = bit(1)
 FLAG_US = bit(2)
 FLAG_CD = bit(4)
+FLAG_D = bit(6)
 FLAG_SZ = bit(7)
 FLAG_G = bit(8)
 FLAG_XD = bit(63)
@@ -162,6 +163,9 @@ def dump_flags(flags):
 
     if flags & FLAG_CD:
         ret += "CD "
+
+    if flags & FLAG_D:
+        ret += "D "
 
     return ret.strip()
 
@@ -320,7 +324,7 @@ class Pt(MMUTable):
     addr_mask = 0xFFFFF000
     type_code = 'I'
     num_entries = 1024
-    supported_flags = (FLAG_P | FLAG_RW | FLAG_US | FLAG_G | FLAG_CD |
+    supported_flags = (FLAG_P | FLAG_RW | FLAG_US | FLAG_G | FLAG_CD | FLAG_D |
                        FLAG_IGNORED0 | FLAG_IGNORED1)
 
 class PtXd(Pt):
@@ -329,7 +333,7 @@ class PtXd(Pt):
     type_code = 'Q'
     num_entries = 512
     supported_flags = (FLAG_P | FLAG_RW | FLAG_US | FLAG_G | FLAG_XD | FLAG_CD |
-                       FLAG_IGNORED0 | FLAG_IGNORED1 | FLAG_IGNORED2)
+                       FLAG_D | FLAG_IGNORED0 | FLAG_IGNORED1 | FLAG_IGNORED2)
 
 
 class PtableSet():
@@ -908,6 +912,9 @@ def main():
 
             pt.set_region_perms("_locore", FLAG_P | flag_user)
             pt.set_region_perms("_lorodata", FLAG_P | ENTRY_XD | flag_user)
+
+        if isdef("CONFIG_HW_SHADOW_STACK"):
+            pt.set_region_perms("__x86shadowstack", FLAG_P | FLAG_D | ENTRY_XD)
 
     written_size = pt.write_output(args.output)
     debug("Written %d bytes to %s" % (written_size, args.output))

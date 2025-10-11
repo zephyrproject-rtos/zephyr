@@ -468,9 +468,9 @@ static int spi_stm32_shift_frames(const struct spi_stm32_config *cfg,
 	return spi_stm32_get_err(cfg->spi);
 }
 
-static void spi_stm32_cs_control(const struct device *dev, bool on)
+static void spi_stm32_cs_control(const struct device *dev, bool on __maybe_unused)
 {
-	struct spi_stm32_data *data = dev->data;
+	__maybe_unused struct spi_stm32_data *data = dev->data;
 
 	spi_context_cs_control(&data->ctx, on);
 
@@ -691,6 +691,12 @@ static int spi_stm32_configure(const struct device *dev,
 
 	LL_SPI_Disable(spi);
 	LL_SPI_SetBaudRatePrescaler(spi, scaler[br - 1]);
+
+#if defined(SPI_CFG2_IOSWP)
+	if (cfg->ioswp) {
+		LL_SPI_EnableIOSwap(cfg->spi);
+	}
+#endif
 
 	if (SPI_MODE_GET(config->operation) & SPI_MODE_CPOL) {
 		LL_SPI_SetClockPolarity(spi, LL_SPI_POLARITY_HIGH);
@@ -1595,6 +1601,7 @@ static const struct spi_stm32_config spi_stm32_cfg_##id = {		\
 	.pclk_len = DT_INST_NUM_CLOCKS(id),				\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),			\
 	.fifo_enabled = SPI_FIFO_ENABLED(id),				\
+	.ioswp = DT_INST_PROP(id, ioswp),				\
 	STM32_SPI_IRQ_HANDLER_FUNC(id)					\
 	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz),	\
 		(.use_subghzspi_nss =					\

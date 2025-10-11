@@ -14,53 +14,50 @@
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
 		gpio-map =
-			/* pin map */			/* sdp-120 */
-			<32 0 &gpiof 7 0>,		/* SPI_D2 */
-			<33 0 &gpiod 13 0>,		/* SPI_D3 */
-			<34 0 &gpioc 11 0>,		/* SERIAL_INT */
-			<36 0 &gpioc 6 0>,		/* SPI_SEL_B_N */
-			<37 0 &gpioc 7 0>,		/* SPI_SEL_C_N */
-			<38 0 &gpiof 6 0>,		/* SPI_SEL1/SPI_SS_N */
+			   /* pin map */			/* sdp-120 */
+			   <32 0 &gpiof 7 0>,		/* SPI_D2 */
+			   <33 0 &gpiod 13 0>,		/* SPI_D3 */
+			   <34 0 &gpioc 11 0>,		/* SERIAL_INT */
+			   <36 0 &gpioc 6 0>,		/* SPI_SEL_B_N */
+			   <37 0 &gpioc 7 0>,		/* SPI_SEL_C_N */
+			   <38 0 &gpiof 6 0>,		/* SPI_SEL1/SPI_SS_N */
+			   <42 0 &gpioj 0 0>,		/* GPIO0 */
+			   <43 0 &gpioj 3 0>,		/* GPIO2 */
+			   <44 0 &gpioj 5 0>,		/* GPIO4 */
+			   <46 0 &gpioj 13 0>,		/* GPIO6 */
 
-			<42 0 &gpioj 0 0>,		/* GPIO0 */
-			<43 0 &gpioj 3 0>,		/* GPIO2 */
-			<44 0 &gpioj 5 0>,		/* GPIO4 */
-			<46 0 &gpioj 13 0>,		/* GPIO6 */
+			   /* TIMER A */
+			   <47 0 &gpiob 14 0>,		/* TMR_A */
+			   <58 0 &gpiod 6 0>,		/* UART2_RX */
+			   <61 0 &gpiod 5 0>,		/* UART2_TX */
 
-			/* TIMER A */
-			<47 0 &gpiob 14 0>,		/* TMR_A */
+			   /* TIMER D */
+			   <71 0 &gpioc 8 0>,		/* TMR_D */
 
-			<58 0 &gpiod 6 0>,		/* UART2_RX */
-			<61 0 &gpiod 5 0>,		/* UART2_TX */
+			   /* TIMER B */
+			   <72 0 &gpioe 6 0>,		/* TMR_B */
+			   <73 0 &gpioj 14 0>,		/* GPIO7 */
+			   <75 0 &gpioj 12 0>,		/* GPIO5 */
+			   <76 0 &gpioj 4 0>,		/* GPIO3 */
+			   <77 0 &gpioj 1 0>,		/* GPIO1 */
 
-			/* TIMER D */
-			<71 0 &gpioc 8 0>,		/* TMR_D */
+			   /* I2C3 */
+			   <78 0 &gpioh 7 0>,		/* SCL_0 */
+			   <79 0 &gpioc 9 0>,		/* SDA_0 */
 
-			/* TIMER B */
-			<72 0 &gpioe 6 0>,		/* TMR_B */
+			   /* SPI5 */
+			   <81 0 &gpioh 6 0>,		/* SPI_CLK  - spi5_sck_ph6 */
+			   <82 0 &gpiof 8 0>,		/* SPI_MISO - spi5_miso_pf8 */
+			   <83 0 &gpiof 9 0>,		/* SPI_MOSI - spi5_mosi_pf9 */
+			   <84 0 &gpiob 6 0>,		/* SPI_SEL_A_N - could be PB6 or PB9 */
 
-			<73 0 &gpioj 14 0>,		/* GPIO7 */
-			<75 0 &gpioj 12 0>,		/* GPIO5 */
-			<76 0 &gpioj 4 0>,		/* GPIO3 */
-			<77 0 &gpioj 1 0>,		/* GPIO1 */
-
-			/* I2C3 */
-			<78 0 &gpioh 7 0>,		/* SCL_0 */
-			<79 0 &gpioc 9 0>,		/* SDA_0 */
-
-			/* SPI5 */
-			<81 0 &gpioh 6 0>,		/* SPI_CLK  - spi5_sck_ph6 */
-			<82 0 &gpiof 8 0>,		/* SPI_MISO - spi5_miso_pf8 */
-			<83 0 &gpiof 9 0>,		/* SPI_MOSI - spi5_mosi_pf9 */
-			<84 0 &gpiob 6 0>,		/* SPI_SEL_A_N - could be PB6 or PB9 */
-
-			/* SPORT - no driver yet */
-			<86 0 &gpiog 13 0>,		/* SPORT_TSCLK */
-			<87 0 &gpiog 14 0>,		/* SPORT_DT0 */
-			<88 0 &gpioa 8 0>,		/* SPORT_TFS */
-			<89 0 &gpioe 4 0>,		/* SPORT_RFS */
-			<90 0 &gpioe 5 0>,		/* SPORT_DR0 */
-			<91 0 &gpioe 2 0>;		/* SPORT_RSCLK */
+			   /* SPORT - no driver yet */
+			   <86 0 &gpiog 13 0>,		/* SPORT_TSCLK */
+			   <87 0 &gpiog 14 0>,		/* SPORT_DT0 */
+			   <88 0 &gpioa 8 0>,		/* SPORT_TFS */
+			   <89 0 &gpioe 4 0>,		/* SPORT_RFS */
+			   <90 0 &gpioe 5 0>,		/* SPORT_DR0 */
+			   <91 0 &gpioe 2 0>;		/* SPORT_RSCLK */
 	};
 
 	pmod_spi {
@@ -68,14 +65,14 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<0 0 &sdp_k1_120_hdr SDP_120_SPI_SEL_A_N 0>,	// IO1
-				<1 0 &sdp_k1_120_hdr SDP_120_SPI_MISO 0>,	// IO2
-				<2 0 &sdp_k1_120_hdr SDP_120_SPI_MOSI 0>,	// IO3
-				<3 0 &sdp_k1_120_hdr SDP_120_SPI_CLK 0>,	// IO4
-				<4 0 &sdp_k1_120_hdr SDP_120_SERIAL_INT 0>,	// IO5
-				<5 0 &sdp_k1_120_hdr SDP_120_GPIO5 0>,		// IO6
-				<6 0 &sdp_k1_120_hdr SDP_120_GPIO6 0>,		// IO7
-				<7 0 &sdp_k1_120_hdr SDP_120_GPIO7 0>;		// IO8
+		gpio-map = <0 0 &sdp_k1_120_hdr SDP_120_SPI_SEL_A_N 0>,	// IO1
+			   <1 0 &sdp_k1_120_hdr SDP_120_SPI_MISO 0>,	// IO2
+			   <2 0 &sdp_k1_120_hdr SDP_120_SPI_MOSI 0>,	// IO3
+			   <3 0 &sdp_k1_120_hdr SDP_120_SPI_CLK 0>,	// IO4
+			   <4 0 &sdp_k1_120_hdr SDP_120_SERIAL_INT 0>,	// IO5
+			   <5 0 &sdp_k1_120_hdr SDP_120_GPIO5 0>,		// IO6
+			   <6 0 &sdp_k1_120_hdr SDP_120_GPIO6 0>,		// IO7
+			   <7 0 &sdp_k1_120_hdr SDP_120_GPIO7 0>;		// IO8
 		status = "disabled";
 	};
 
@@ -84,17 +81,16 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<0 0 &sdp_k1_120_hdr SDP_120_GPIO0 0>,		// IO1
-				<1 0 &sdp_k1_120_hdr SDP_120_UART_TX 0>,	// IO2
-				<2 0 &sdp_k1_120_hdr SDP_120_UART_RX 0>,	// IO3
-				<3 0 &sdp_k1_120_hdr SDP_120_GPIO3 0>,		// IO4
-				<4 0 &sdp_k1_120_hdr SDP_120_SERIAL_INT 0>,	// IO5
-				<5 0 &sdp_k1_120_hdr SDP_120_GPIO5 0>,		// IO6
-				<6 0 &sdp_k1_120_hdr SDP_120_GPIO6 0>,		// IO7
-				<7 0 &sdp_k1_120_hdr SDP_120_GPIO7 0>;		// IO8
+		gpio-map = <0 0 &sdp_k1_120_hdr SDP_120_GPIO0 0>,		// IO1
+			   <1 0 &sdp_k1_120_hdr SDP_120_UART_TX 0>,	// IO2
+			   <2 0 &sdp_k1_120_hdr SDP_120_UART_RX 0>,	// IO3
+			   <3 0 &sdp_k1_120_hdr SDP_120_GPIO3 0>,		// IO4
+			   <4 0 &sdp_k1_120_hdr SDP_120_SERIAL_INT 0>,	// IO5
+			   <5 0 &sdp_k1_120_hdr SDP_120_GPIO5 0>,		// IO6
+			   <6 0 &sdp_k1_120_hdr SDP_120_GPIO6 0>,		// IO7
+			   <7 0 &sdp_k1_120_hdr SDP_120_GPIO7 0>;		// IO8
 		status = "disabled";
 	};
-
 };
 
 /*
@@ -113,6 +109,6 @@ sdp_spi: &spi5 {
 	status = "okay";
 };
 
-sdp_i2c: &i2c3 { };
+sdp_i2c: &i2c3 {};
 
-sdp_serial: &usart2{ };
+sdp_serial: &usart2 {};

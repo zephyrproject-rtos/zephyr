@@ -28,7 +28,6 @@ properties:
   clk-divider:
     type: int
     description: Watchdog clock divider
-    required: true
 
   input-trigger-en:
     type: boolean

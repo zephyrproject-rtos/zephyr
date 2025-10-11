@@ -17,7 +17,7 @@
 			#size-cells = <0>;
 			reg = <0x50000000 0x1000>;
 			clock-names = "dsiclk", "refclk", "pixelclk";
-			clocks = <&rcc STM32_CLOCK(APB3, 4U)>,
+			clocks = <&rcc STM32_CLOCK(APB3, 4)>,
 				 <&rcc STM32_SRC_HSE NO_SEL>,
 				 <&rcc STM32_SRC_PLL3_R NO_SEL>;
 			resets = <&rctl STM32_RESET(APB3, 4U)>;

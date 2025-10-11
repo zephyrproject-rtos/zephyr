@@ -3,25 +3,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <st/h5/stm32h5.dtsi>
+
+#include <st/h5/stm32h523.dtsi>
 
 / {
 	soc {
 		compatible = "st,stm32h533", "st,stm32h5", "simple-bus";
-
-		gpiof: gpio@42021400 {
-			compatible = "st,stm32-gpio";
-			gpio-controller;
-			#gpio-cells = <2>;
-			reg = <0x42021400 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB2, 7U)>;
-		};
-
-		fmc: memory-controller@47000400 {
-			compatible = "st,stm32-fmc";
-			reg = <0x47000400 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB4, 16U)>;
-			status = "disabled";
-		};
 	};
 };

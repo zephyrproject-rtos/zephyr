@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_RTK0EG0019B01002BJ
+	def_bool $(shields_list_contains,rtk0eg0019b01002bj)

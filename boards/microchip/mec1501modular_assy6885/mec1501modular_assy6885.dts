@@ -44,7 +44,7 @@
 	status = "okay";
 	pinctrl-0 = <&adc04_gpio204 &adc05_gpio205
 		     &adc06_gpio206 &adc07_gpio207
-		     &vref2_adc_gpio067 >;
+		     &vref2_adc_gpio067>;
 	pinctrl-names = "default";
 };
 
@@ -53,7 +53,7 @@
 	port-sel = <0>;
 	sda-gpios = <MCHP_GPIO_DECODE_003 0>;
 	scl-gpios = <MCHP_GPIO_DECODE_004 0>;
-	pinctrl-0 = < &i2c00_scl_gpio004 &i2c00_sda_gpio003 >;
+	pinctrl-0 = <&i2c00_scl_gpio004 &i2c00_sda_gpio003>;
 	pinctrl-names = "default";
 };
 
@@ -62,7 +62,7 @@
 	port-sel = <1>;
 	sda-gpios = <MCHP_GPIO_DECODE_130 0>;
 	scl-gpios = <MCHP_GPIO_DECODE_131 0>;
-	pinctrl-0 = < &i2c01_scl_gpio131 &i2c01_sda_gpio130 >;
+	pinctrl-0 = <&i2c01_scl_gpio131 &i2c01_sda_gpio130>;
 	pinctrl-names = "default";
 };
 
@@ -71,10 +71,10 @@
 	io-girq = <19>;
 	vw-girqs = <24 25>;
 	pc-girq = <15>;
-	pinctrl-0 = < &espi_reset_n_gpio061 &espi_cs_n_gpio066
-		  &espi_alert_n_gpio063 &espi_clk_gpio065
-		  &espi_io0_gpio070 &espi_io1_gpio071
-		  &espi_io2_gpio072 &espi_io3_gpio073 >;
+	pinctrl-0 = <&espi_reset_n_gpio061 &espi_cs_n_gpio066
+		     &espi_alert_n_gpio063 &espi_clk_gpio065
+		     &espi_io0_gpio070 &espi_io1_gpio071
+		     &espi_io2_gpio072 &espi_io3_gpio073>;
 	pinctrl-names = "default";
 };
 
@@ -101,20 +101,20 @@
 &kbd0 {
 	status = "okay";
 
-	pinctrl-0 = < &kso00_gpio040 &kso01_gpio045 &kso02_gpio046 &kso12_gpio125
-		      &kso13_gpio126 &kso03_gpio047 &kso04_gpio107 &kso05_gpio112
-		      &kso06_gpio113 &kso14_gpio152 &kso15_gpio151 &kso07_gpio120
-		      &kso08_gpio121 &kso09_gpio122 &kso10_gpio123 &kso11_gpio124
-		      &ksi0_gpio017  &ksi1_gpio020  &ksi2_gpio021  &ksi3_gpio026
-		      &ksi4_gpio027  &ksi5_gpio030  &ksi6_gpio031  &ksi7_gpio032 >;
-	pinctrl-1 = < &kso00_gpio040_sleep &kso01_gpio045_sleep &kso02_gpio046_sleep
-		      &kso12_gpio125_sleep &kso13_gpio126_sleep &kso03_gpio047_sleep
-		      &kso04_gpio107_sleep &kso05_gpio112_sleep &kso06_gpio113_sleep
-		      &kso14_gpio152_sleep &kso15_gpio151_sleep &kso07_gpio120_sleep
-		      &kso08_gpio121_sleep &kso09_gpio122_sleep &kso10_gpio123_sleep
-		      &kso11_gpio124_sleep &ksi0_gpio017_sleep  &ksi1_gpio020_sleep
-		      &ksi2_gpio021_sleep  &ksi3_gpio026_sleep  &ksi4_gpio027_sleep
-		      &ksi5_gpio030_sleep  &ksi6_gpio031_sleep  &ksi7_gpio032_sleep >;
+	pinctrl-0 = <&kso00_gpio040 &kso01_gpio045 &kso02_gpio046 &kso12_gpio125
+		     &kso13_gpio126 &kso03_gpio047 &kso04_gpio107 &kso05_gpio112
+		     &kso06_gpio113 &kso14_gpio152 &kso15_gpio151 &kso07_gpio120
+		     &kso08_gpio121 &kso09_gpio122 &kso10_gpio123 &kso11_gpio124
+		     &ksi0_gpio017 &ksi1_gpio020 &ksi2_gpio021 &ksi3_gpio026
+		     &ksi4_gpio027 &ksi5_gpio030 &ksi6_gpio031 &ksi7_gpio032>;
+	pinctrl-1 = <&kso00_gpio040_sleep &kso01_gpio045_sleep &kso02_gpio046_sleep
+		     &kso12_gpio125_sleep &kso13_gpio126_sleep &kso03_gpio047_sleep
+		     &kso04_gpio107_sleep &kso05_gpio112_sleep &kso06_gpio113_sleep
+		     &kso14_gpio152_sleep &kso15_gpio151_sleep &kso07_gpio120_sleep
+		     &kso08_gpio121_sleep &kso09_gpio122_sleep &kso10_gpio123_sleep
+		     &kso11_gpio124_sleep &ksi0_gpio017_sleep &ksi1_gpio020_sleep
+		     &ksi2_gpio021_sleep &ksi3_gpio026_sleep &ksi4_gpio027_sleep
+		     &ksi5_gpio030_sleep &ksi6_gpio031_sleep &ksi7_gpio032_sleep>;
 	pinctrl-names = "default", "sleep";
 	row-size = <8>;
 	col-size = <16>;

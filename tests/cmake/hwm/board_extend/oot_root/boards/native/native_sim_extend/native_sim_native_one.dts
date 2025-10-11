@@ -213,6 +213,5 @@
 		stack-size = <4096>;
 	};
 
-	added-by-native-one {
-	};
+	added-by-native-one {};
 };

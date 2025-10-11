@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2019 Nordic Semicondutor ASA
+# Copyright (c) 2019 Nordic Semiconductor ASA
 
 mainmenu "Timer Starvation Test"
 

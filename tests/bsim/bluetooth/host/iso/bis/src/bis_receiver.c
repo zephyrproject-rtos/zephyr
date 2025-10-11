@@ -146,6 +146,11 @@ static void iso_connected(struct bt_iso_chan *chan)
 		    "Invalid BN 0x%02x", info.sync_receiver.bn);
 	TEST_ASSERT(IN_RANGE(info.sync_receiver.irc, BT_ISO_IRC_MIN, BT_ISO_IRC_MAX),
 		    "Invalid IRC 0x%02x", info.sync_receiver.irc);
+	TEST_ASSERT(info.sync_receiver.big_handle != 0xFF /* invalid BIG handle */,
+		    "Invalid BIG handle 0x%02x", info.sync_receiver.big_handle);
+	TEST_ASSERT(
+		IN_RANGE(info.sync_receiver.bis_number, BT_ISO_BIS_INDEX_MIN, BT_ISO_BIS_INDEX_MAX),
+		"Invalid BIS number 0x%02x", info.sync_receiver.bis_number);
 
 	SET_FLAG(flag_iso_connected);
 

@@ -45,6 +45,7 @@ if ZVFS_POLL
 config ZVFS_POLL_MAX
 	int "Max number of supported zvfs_poll() entries"
 	default NET_SOCKETS_POLL_MAX if NET_SOCKETS_POLL_MAX > 0
+	default 8 if NRF70_ENABLE_DUAL_VIF
 	default 6 if WIFI_NM_WPA_SUPPLICANT
 	default 4 if SHELL_BACKEND_TELNET
 	default 3

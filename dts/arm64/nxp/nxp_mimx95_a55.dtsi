@@ -57,7 +57,6 @@
 			compatible = "arm,cortex-a55";
 			reg = <0x500>;
 		};
-
 	};
 
 	arch_timer: timer {
@@ -286,7 +285,7 @@
 		compatible = "nxp,imx-rgpio";
 		reg = <0x43810000 DT_SIZE_K(64)>;
 		interrupts = <GIC_SPI 49 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				<GIC_SPI 50 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			     <GIC_SPI 50 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0", "irq_1";
 		interrupt-parent = <&gic>;
 		gpio-controller;
@@ -299,7 +298,7 @@
 		compatible = "nxp,imx-rgpio";
 		reg = <0x43820000 DT_SIZE_K(64)>;
 		interrupts = <GIC_SPI 51 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				<GIC_SPI 52 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			     <GIC_SPI 52 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0", "irq_1";
 		interrupt-parent = <&gic>;
 		gpio-controller;
@@ -312,7 +311,7 @@
 		compatible = "nxp,imx-rgpio";
 		reg = <0x43840000 DT_SIZE_K(64)>;
 		interrupts = <GIC_SPI 53 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				<GIC_SPI 54 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			     <GIC_SPI 54 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0", "irq_1";
 		interrupt-parent = <&gic>;
 		gpio-controller;
@@ -325,7 +324,7 @@
 		compatible = "nxp,imx-rgpio";
 		reg = <0x43850000 DT_SIZE_K(64)>;
 		interrupts = <GIC_SPI 55 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				<GIC_SPI 56 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			     <GIC_SPI 56 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0", "irq_1";
 		interrupt-parent = <&gic>;
 		gpio-controller;
@@ -351,7 +350,6 @@
 		clocks = <&scmi_clk IMX95_CLK_LPUART1>;
 		status = "disabled";
 	};
-
 
 	lpuart2: serial@44390000 {
 		compatible = "nxp,imx-lpuart", "nxp,lpuart";
@@ -476,7 +474,7 @@
 		compatible = "nxp,imx-rgpio";
 		reg = <0x47400000 DT_SIZE_K(64)>;
 		interrupts = <GIC_SPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				<GIC_SPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			     <GIC_SPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0", "irq_1";
 		interrupt-parent = <&gic>;
 		gpio-controller;
@@ -488,8 +486,8 @@
 	netc_blk_ctrl: netc-blk-ctrl@4cde0000 {
 		compatible = "nxp,imx-netc-blk-ctrl";
 		reg = <0x4cde0000 0x10000>,
-			  <0x4cdf0000 0x10000>,
-			  <0x4c810000 0x18>;
+		      <0x4cdf0000 0x10000>,
+		      <0x4c810000 0x18>;
 		reg-names = "ierb", "prb", "netcmix";
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -538,7 +536,7 @@
 			emdio: mdio@4cb00000 {
 				compatible = "nxp,imx-netc-emdio";
 				reg = <0x4cce0000 0x2000>,
-					<0x4cb00000 0x100000>;
+				      <0x4cb00000 0x100000>;
 				reg-names = "basic", "pfconfig";
 				clocks = <&scmi_clk IMX95_CLK_ENET>;
 				#address-cells = <1>;

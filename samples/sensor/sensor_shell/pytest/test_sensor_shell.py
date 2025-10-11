@@ -41,7 +41,7 @@ def test_sensor_shell_attr_get(shell: Shell):
     assert any(['sensor@0(channel=co2, attr=sampling_frequency)' in line for line in lines]), 'expected response not found'
 
     shell.wait_for_prompt()
-    lines = shell.exec_command('sensor attr_get sensor@1 54 3')
+    lines = shell.exec_command('sensor attr_get sensor@1 55 3')
     assert any(['sensor@1(channel=gauge_state_of_health, attr=slope_th)' in line for line in lines]), 'expected response not found'
 
     logger.info('response is valid')
@@ -56,7 +56,7 @@ def test_sensor_shell_attr_set(shell: Shell):
     assert any([expected_line in line for line in lines]), 'expected response not found'
 
     shell.wait_for_prompt()
-    lines = shell.exec_command('sensor attr_set sensor@1 54 3 1')
+    lines = shell.exec_command('sensor attr_set sensor@1 55 3 1')
     expected_line = 'sensor@1 channel=gauge_state_of_health, attr=slope_th set to value=1'
     assert any([expected_line in line for line in lines]), 'expected response not found'
 

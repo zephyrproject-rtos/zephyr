@@ -21,6 +21,10 @@
 extern "C" {
 #endif
 
+#if defined(DT_DRV_COMPAT) && !DT_ANY_INST_HAS_PROP_STATUS_OKAY(cs_gpios)
+#define DT_SPI_CTX_HAS_NO_CS_GPIOS 1
+#endif
+
 enum spi_ctx_runtime_op_mode {
 	SPI_CTX_RUNTIME_OP_MODE_MASTER = BIT(0),
 	SPI_CTX_RUNTIME_OP_MODE_SLAVE  = BIT(1),
@@ -31,8 +35,10 @@ struct spi_context {
 #ifdef CONFIG_MULTITHREADING
 	const struct spi_config *owner;
 #endif
+#ifndef DT_SPI_CTX_HAS_NO_CS_GPIOS
 	const struct gpio_dt_spec *cs_gpios;
 	size_t num_cs_gpios;
+#endif /* !DT_SPI_CTX_HAS_NO_CS_GPIOS */
 
 #ifdef CONFIG_MULTITHREADING
 	struct k_sem lock;
@@ -71,6 +77,7 @@ struct spi_context {
 #define SPI_CONTEXT_INIT_SYNC(_data, _ctx_name)				\
 	._ctx_name.sync = Z_SEM_INITIALIZER(_data._ctx_name.sync, 0, 1)
 
+#ifndef DT_SPI_CTX_HAS_NO_CS_GPIOS
 #define SPI_CONTEXT_CS_GPIO_SPEC_ELEM(_node_id, _prop, _idx)		\
 	GPIO_DT_SPEC_GET_BY_IDX(_node_id, _prop, _idx),
 
@@ -84,6 +91,9 @@ struct spi_context {
 			    (SPI_CONTEXT_CS_GPIOS_FOREACH_ELEM(_node_id)), ({0}))	\
 	},										\
 	._ctx_name.num_cs_gpios = DT_PROP_LEN_OR(_node_id, cs_gpios, 0),
+#else /* DT_SPI_CTX_HAS_NO_CS_GPIOS */
+#define SPI_CONTEXT_CS_GPIOS_INITIALIZE(...)
+#endif /* DT_SPI_CTX_HAS_NO_CS_GPIOS */
 
 /*
  * Checks if a spi config is the same as the one stored in the spi_context
@@ -292,6 +302,13 @@ static inline void spi_context_complete(struct spi_context *ctx,
 #endif /* CONFIG_SPI_ASYNC */
 }
 
+#ifdef DT_SPI_CTX_HAS_NO_CS_GPIOS
+#define spi_context_cs_configure_all(...) 0
+#define spi_context_cs_get_all(...) 0
+#define spi_context_cs_put_all(...) 0
+#define _spi_context_cs_control(...) (void) 0
+#define spi_context_cs_control(...) (void) 0
+#else /* DT_SPI_CTX_HAS_NO_CS_GPIOS */
 /*
  * This function initializes all the chip select GPIOs associated with a spi controller.
  * The context first must be initialized using the SPI_CONTEXT_CS_GPIOS_INITIALIZE macro.
@@ -391,12 +408,13 @@ static inline void spi_context_cs_control(struct spi_context *ctx, bool on)
 {
 	_spi_context_cs_control(ctx, on, false);
 }
+#endif /* DT_SPI_CTX_HAS_NO_CS_GPIOS */
 
 /* Forcefully releases the spi context and removes the owner, allowing taking the lock
  * with spi_context_lock without the previous owner releasing the lock.
  * This is usually used to aid in implementation of the spi_release driver API.
  */
-static inline void spi_context_unlock_unconditionally(struct spi_context *ctx)
+static inline void spi_context_unlock_unconditionally(struct spi_context *ctx __maybe_unused)
 {
 	/* Forcing CS to go to inactive status */
 	_spi_context_cs_control(ctx, false, true);

@@ -1,4 +1,4 @@
 numpy>=2.2.3
-protobuf>=5.27.2
+protobuf>=5.29.5
 grpcio-tools>=1.66.0
 logic2-automation>=1.0.7

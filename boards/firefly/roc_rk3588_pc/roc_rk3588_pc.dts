@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2025 Syswonder
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <arm64/rockchip/rk3588.dtsi>
+#include <common/mem.h>
+
+/ {
+	model = "Firefly ROC-RK3588-PC";
+	compatible = "rockchip,rk3588";
+
+	chosen {
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+		zephyr,sram = &dram;
+	};
+
+	dram: memory@50000000 {
+		compatible = "mmio-sram";
+		device_type = "memory";
+		reg = <0x50000000 DT_SIZE_M(1)>;
+	};
+};
+
+&uart2 {
+	status = "okay";
+	current-speed = <1500000>;
+};
+
+&uart3 {
+	status = "disabled";
+	current-speed = <115200>;
+};

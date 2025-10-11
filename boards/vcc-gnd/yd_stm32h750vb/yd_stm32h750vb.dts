@@ -1,5 +1,5 @@
 /*
- * Copyright(c) 2024 John Sanpe <sanpeqf@gmail.com>
+ * Copyright (c) 2024 John Sanpe <sanpeqf@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,20 +30,24 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_1 {
 			gpios = <&gpioa 13 GPIO_ACTIVE_HIGH>;
 			label = "LED1";
 			status = "disabled";
 		};
+
 		green_led: led_2 {
 			gpios = <&gpioa 14 GPIO_ACTIVE_HIGH>;
 			label = "LED2";
 			status = "disabled";
 		};
+
 		yellow_led: led_3 {
 			gpios = <&gpioa 15 GPIO_ACTIVE_HIGH>;
 			label = "LED3";
 		};
+
 		blue_led: led_4 {
 			gpios = <&gpiob 4 GPIO_ACTIVE_HIGH>;
 			label = "LED4";
@@ -52,6 +56,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			gpios = <&gpiob 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_0>;
@@ -119,6 +124,7 @@
 		reg = <0>;
 		size = <DT_SIZE_M(128)>; /* 128 Mbits */
 		qspi-max-frequency = <80000000>;
+		cs-high-time = <4>; /* >= 50 ns */
 		spi-bus-width = <4>;
 		status = "okay";
 

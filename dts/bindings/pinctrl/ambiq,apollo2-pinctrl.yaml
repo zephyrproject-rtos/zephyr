@@ -1,0 +1,79 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2025 Linumiz GmbH
+# Author: Sri Surya  <srisurya@linumiz.com>
+
+description: |
+  The Ambiq Apollo2 pin controller is responsible for controlling pin
+  function selection and pin properties such as routing UART0 TX to a
+  specific pin and enabling pull-ups.
+
+  This node uses the 'pinctrl' node label, so you can modify it like:
+
+  &pinctrl {
+    /* modifications here */
+  };
+
+  Example usage in a board or overlay:
+
+  #include <dt-bindings/pinctrl/ambiq-apollo2-pinctrl.h>
+
+  &pinctrl {
+    uart0_default: uart0_default {
+      group1 {
+        pinmux = <UART0TX_P15>;
+      };
+      group2 {
+        pinmux = <UART0RX_P14>;
+        input-enable;
+      };
+    };
+  };
+
+  Each pin group sets common configuration for pins in that group.
+
+compatible: "ambiq,apollo2-pinctrl"
+
+include: base.yaml
+
+child-binding:
+  description: |
+    Definitions for a pinctrl state on Apollo2.
+  child-binding:
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - input-enable
+          - bias-pull-up
+          - drive-open-drain
+
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+          An array of pins using the same group properties. Each element is
+          an encoded integer representing pin number and function.
+
+      drive-strength:
+        type: int
+        enum:
+          - 2
+          - 4
+          - 8
+          - 12
+        default: 2
+        description: |
+          Drive strength for the pin in mA.
+
+      ambiq,pull-up-ohms:
+        type: int
+        enum:
+          - 1500
+          - 6000
+          - 12000
+          - 24000
+        default: 1500
+        description: |
+          Pull-up resistance value in ohms.

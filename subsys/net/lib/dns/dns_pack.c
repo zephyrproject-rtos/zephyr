@@ -170,6 +170,14 @@ int dns_unpack_answer(struct dns_msg_t *dns_msg, int dname_ptr, uint32_t *ttl,
 		set_dns_msg_response(dns_msg, DNS_RESPONSE_DATA, pos, len);
 		return 0;
 
+	case DNS_RR_TYPE_TXT:
+		set_dns_msg_response(dns_msg, DNS_RESPONSE_TXT, pos, len);
+		return 0;
+
+	case DNS_RR_TYPE_SRV:
+		set_dns_msg_response(dns_msg, DNS_RESPONSE_SRV, pos, len);
+		return 0;
+
 	case DNS_RR_TYPE_CNAME:
 		set_dns_msg_response(dns_msg, DNS_RESPONSE_CNAME_NO_IP,
 				     pos, len);
@@ -187,8 +195,6 @@ int dns_unpack_response_header(struct dns_msg_t *msg, int src_id)
 {
 	uint8_t *dns_header;
 	uint16_t size;
-	int qdcount;
-	int ancount;
 	int rc;
 
 	dns_header = msg->msg;
@@ -221,16 +227,6 @@ int dns_unpack_response_header(struct dns_msg_t *msg, int src_id)
 	default:
 		return rc;
 
-	}
-
-	qdcount = dns_unpack_header_qdcount(dns_header);
-	ancount = dns_unpack_header_ancount(dns_header);
-
-	/* For mDNS (when src_id == 0) the query count is 0 so accept
-	 * the packet in that case.
-	 */
-	if ((qdcount < 1 && src_id > 0) || ancount < 1) {
-		return -EINVAL;
 	}
 
 	return 0;
@@ -545,7 +541,10 @@ int dns_unpack_name(const uint8_t *msg, int maxlen, const uint8_t *src,
 
 			loop_check += label_len + 1;
 
-			net_buf_add_u8(buf, '.');
+			/* separate labels by periods */
+			if (buf->len > 0) {
+				net_buf_add_u8(buf, '.');
+			}
 			net_buf_add_mem(buf, curr_src, label_len);
 
 			curr_src += label_len;

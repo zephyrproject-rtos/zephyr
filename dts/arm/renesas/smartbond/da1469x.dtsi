@@ -58,6 +58,7 @@
 				#clock-cells = <0>;
 				status = "okay";
 			};
+
 			xtal32k: xtal32k {
 				compatible = "renesas,smartbond-lp-osc";
 				clock-frequency = <32768>;
@@ -65,24 +66,28 @@
 				#clock-cells = <0>;
 				status = "disabled";
 			};
+
 			rcx: rcx {
 				compatible = "renesas,smartbond-lp-osc";
 				clock-frequency = <DT_FREQ_K(15)>;
 				#clock-cells = <0>;
 				status = "okay";
 			};
+
 			rc32m: rc32m {
 				compatible = "fixed-clock";
 				clock-frequency = <DT_FREQ_M(32)>;
 				#clock-cells = <0>;
 				status = "okay";
 			};
+
 			xtal32m: xtal32m {
 				compatible = "fixed-clock";
 				clock-frequency = <DT_FREQ_M(32)>;
 				#clock-cells = <0>;
 				status = "disabled";
 			};
+
 			pll: pll {
 				compatible = "fixed-clock";
 				clock-frequency = <DT_FREQ_M(96)>;
@@ -90,18 +95,21 @@
 				status = "disabled";
 			};
 		};
+
 		divn_clk: divn_clk {
 			compatible = "fixed-clock";
 			clock-frequency = <DT_FREQ_M(32)>;
 			#clock-cells = <0>;
 			status = "okay";
 		};
+
 		sys_clk: sys_clk {
 			compatible = "renesas,smartbond-sys-clk";
 			status = "okay";
 			clock-src = <&rc32m>;
 			status = "okay";
 		};
+
 		lp_clk: lp_clk {
 			compatible = "renesas,smartbond-lp-clk";
 			clock-src = <&rcx>;
@@ -110,6 +118,7 @@
 
 		regulators {
 			compatible = "renesas,smartbond-regulator";
+
 			vdd: VDD {
 				regulator-init-microvolt = <900000>;
 				regulator-boot-on;
@@ -117,32 +126,38 @@
 				renesas,regulator-dcdc-vbat-high;
 				renesas,regulator-dcdc-vbat-low;
 			};
+
 			vdd_clamp: VDD_CLAMP {
 				regulator-boot-on;
 				regulator-always-on;
 				regulator-init-microvolt = <706000>;
 			};
+
 			vdd_sleep: VDD_SLEEP {
 				regulator-boot-on;
 				regulator-init-microvolt = <750000>;
 			};
+
 			v14: V14 {
 				regulator-init-microvolt = <1400000>;
 				regulator-boot-on;
 				renesas,regulator-dcdc-vbat-high;
 				renesas,regulator-dcdc-vbat-low;
 			};
+
 			v18: V18 {
 				regulator-init-microvolt = <1800000>;
 				regulator-boot-on;
 				renesas,regulator-dcdc-vbat-high;
 			};
+
 			v18p: V18P {
 				regulator-init-microvolt = <1800000>;
 				regulator-boot-on;
 				renesas,regulator-sleep-ldo;
 				renesas,regulator-dcdc-vbat-high;
 			};
+
 			v30: V30 {
 				regulator-init-microvolt = <3000000>;
 				regulator-boot-on;
@@ -204,9 +219,9 @@
 				port = <0>;
 				ngpios = <32>;
 				reg = <0x50020a00 20
-					   0x50020a18 128
-					   0x50000070 12
-					   0x50000114 36>;
+				       0x50020a18 128
+				       0x50000070 12
+				       0x50000114 36>;
 				reg-names = "data", "mode", "latch", "wkup";
 				interrupts = <38 0>;
 			};
@@ -218,9 +233,9 @@
 				port = <1>;
 				ngpios = <23>;
 				reg = <0x50020a04 20
-					   0x50020a98 92
-					   0x5000007c 12
-					   0x50000118 36>;
+				       0x50020a98 92
+				       0x5000007c 12
+				       0x50000118 36>;
 				reg-names = "data", "mode", "latch", "wkup";
 				interrupts = <39 0>;
 			};
@@ -255,7 +270,7 @@
 			clock-src = <&divn_clk>;
 			interrupts = <17 0>;
 			prescaler = <32>;
-			status = "disabled";
+			status = "reserved";
 		};
 
 		timer3: timer@50040a00 {
@@ -379,11 +394,12 @@
 			interrupts = <11 0>;
 			status = "disabled";
 		};
+
 		usbd: usb@50040000 {
 			compatible = "renesas,smartbond-usbd";
 			reg = <0x50040000 0x1B0>;
 			dmas = <&dma 0 DMA_SMARTBOND_TRIG_MUX_USB>,
-				<&dma 1 DMA_SMARTBOND_TRIG_MUX_USB>;
+			       <&dma 1 DMA_SMARTBOND_TRIG_MUX_USB>;
 			dma-names = "rx", "tx";
 			dma-min-transfer-size = <65>;
 			fifo-read-threshold = <4>;

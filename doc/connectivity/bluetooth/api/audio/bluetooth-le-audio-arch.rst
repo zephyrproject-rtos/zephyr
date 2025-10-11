@@ -778,10 +778,10 @@ Bluetooth Audio Stack.
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  | - Sample Application  |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Commander                     |         |                  | - WIP                 | - Feature complete                               |
-   |        |                               |         |                  |                       | - Shell Module                                   |
-   |        |                               |         |                  |                       | - BSIM test                                      |
-   |        |                               |         |                  |                       | - Sample Application                             |
+   |        | Commander                     |         |                  | - Feature complete    | - Shell Module                                   |
+   |        |                               |         |                  | - BSIM test           | - Sample Application                             |
+   |        |                               |         |                  |                       |                                                  |
+   |        |                               |         |                  |                       |                                                  |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
    | HAP    | Hearing Aid                   | 1.0.0   | 3.1              | - Feature complete    |                                                  |
    |        |                               |         |                  | - Shell Module        |                                                  |
@@ -843,22 +843,22 @@ Bluetooth Audio Stack.
    |        |                               |         |                  |                       | - BSIM test                                      |
    |        |                               |         |                  |                       | - Sample Application                             |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   | GMAP   | Unicast Game Gateway          | 1.0.0   | 3.5              | - Feature complete    | - Sample Application                             |
+   | GMAP   | Unicast Game Gateway          | 1.0.1   | 3.5              | - Feature complete    | - Sample Application                             |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  |                       |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Unicast Game Terminal         | 1.0.0   | 3.5              | - Feature complete    | - Sample Application                             |
+   |        | Unicast Game Terminal         | 1.0.1   | 3.5              | - Feature complete    | - Sample Application                             |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  |                       |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Broadcast Game Sender         | 1.0.0   | 3.5              | - Feature complete    | - Sample Application                             |
+   |        | Broadcast Game Sender         | 1.0.1   | 3.5              | - Feature complete    | - Sample Application                             |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  |                       |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Broadcast Game Receiver       | 1.0.0   | 3.5              | - Feature complete    | - Sample Application                             |
+   |        | Broadcast Game Receiver       | 1.0.1   | 3.5              | - Feature complete    | - Sample Application                             |
    |        |                               |         |                  | - Shell Module        |                                                  |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        |                               |         |                  |                       |                                                  |

@@ -8,9 +8,9 @@
 
 /* Reserved GPIO pins */
 &gpio0 {
-	gpio-reserved-ranges =	<6 5>, // embeddef psram
-				<11 1>,	// flash CS
-				<20 1>, <24 1>, <28 4>; // NC
+	gpio-reserved-ranges = <6 5>, // embeddef psram
+			       <11 1>,	// flash CS
+			       <20 1>, <24 1>, <28 4>; // NC
 };
 
 /* 2MB psram */

@@ -1,0 +1,97 @@
+# Copyright 2021 The Chromium OS Authors
+# Copyright 2024 NXP
+# Copyright 2025 Nova Dynamics LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config INA2XX
+	bool "INA2XX Current and Power Monitor"
+	default y
+	depends on DT_HAS_TI_INA226_ENABLED || DT_HAS_TI_INA228_ENABLED || DT_HAS_TI_INA230_ENABLED || DT_HAS_TI_INA236_ENABLED || DT_HAS_TI_INA237_ENABLED
+	select I2C
+	help
+	  Enable driver for INA2XX Current and Power Monitor.
+
+if INA2XX
+
+config INA2XX_HAS_CHANNEL_BUS_VOLTAGE
+	bool
+
+config INA2XX_HAS_CHANNEL_SHUNT_VOLTAGE
+	bool
+
+config INA2XX_HAS_CHANNEL_CURRENT
+	bool
+
+config INA2XX_HAS_CHANNEL_POWER
+	bool
+
+config INA2XX_HAS_CHANNEL_DIE_TEMP
+	bool
+
+config INA2XX_HAS_CHANNEL_ENERGY
+	bool
+
+config INA2XX_HAS_CHANNEL_CHARGE
+	bool
+
+config INA226
+	bool "INA226 Current/Power Monitor"
+	default y
+	depends on DT_HAS_TI_INA226_ENABLED
+	select INA2XX_HAS_CHANNEL_BUS_VOLTAGE
+	select INA2XX_HAS_CHANNEL_CURRENT
+	select INA2XX_HAS_CHANNEL_POWER
+	help
+	  Enable driver for INA226 Bidirectional Current/Power Monitor.
+
+config INA230
+	bool "INA230"
+	default y
+	depends on DT_HAS_TI_INA230_ENABLED || DT_HAS_TI_INA236_ENABLED
+	select INA2XX_HAS_CHANNEL_BUS_VOLTAGE
+	select INA2XX_HAS_CHANNEL_CURRENT
+	select INA2XX_HAS_CHANNEL_POWER
+	help
+	  Enable driver for INA230/INA231/INA236.
+
+config INA230_TRIGGER
+	bool "INA230 trigger mode"
+	depends on INA230
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_TI_INA230),alert-gpios) || $(dt_compat_any_has_prop,$(DT_COMPAT_TI_INA236),alert-gpios)
+	help
+	  Set to enable trigger mode using gpio interrupt, where
+	  interrupts are configured to line ALERT PIN.
+
+config INA236
+	bool "INA236"
+	default y
+	depends on DT_HAS_TI_INA236_ENABLED
+	select INA230
+	help
+	  Enable driver for INA236.
+
+config INA237
+	bool "INA237"
+	default y
+	depends on DT_HAS_TI_INA237_ENABLED || DT_HAS_TI_INA228_ENABLED
+	select INA2XX_HAS_CHANNEL_BUS_VOLTAGE
+	select INA2XX_HAS_CHANNEL_SHUNT_VOLTAGE
+	select INA2XX_HAS_CHANNEL_CURRENT
+	select INA2XX_HAS_CHANNEL_POWER
+	select INA2XX_HAS_CHANNEL_DIE_TEMP
+	help
+	  Enable driver for INA237/INA228.
+
+config INA228
+	bool "INA228"
+	default y
+	depends on DT_HAS_TI_INA228_ENABLED
+	select INA237
+	select INA2XX_HAS_CHANNEL_ENERGY
+	select INA2XX_HAS_CHANNEL_CHARGE
+	help
+	  Enable driver for the INA228.
+
+endif # INA2XX

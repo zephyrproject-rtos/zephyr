@@ -37,6 +37,10 @@
 #define MSPM0_PLL_ENABLED 1
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(hfxt), okay)
+#define MSPM0_HFCLK_ENABLED 1
+#endif
+
 #define DT_MCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(mclk))
 #define DT_LFCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(lfclk))
 #define DT_HSCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(hsclk))
@@ -167,12 +171,13 @@ static int clock_mspm0_init(const struct device *dev)
 			(DL_SYSCTL_SYSPLLConfig *)&clock_mspm0_cfg_syspll);
 #endif
 
+#if MSPM0_HFCLK_ENABLED
 #if DT_SAME_NODE(DT_HFCLK_CLOCKS_CTRL, DT_NODELABEL(hfxt))
 	uint32_t hf_range;
 	uint32_t hfxt_freq = DT_PROP(DT_NODELABEL(hfxt),
 				     clock_frequency)  / MHZ(1);
 	uint32_t xtal_startup_delay = DT_PROP_OR(DT_NODELABEL(hfxt),
-					 ti_xtal_startup_delay_us, 0);
+						 ti_xtal_startup_delay_us, 0);
 
 	if (hfxt_freq >= 4 &&
 	    hfxt_freq <= 8) {
@@ -192,10 +197,11 @@ static int clock_mspm0_init(const struct device *dev)
 
 	/* startup time in 64us resolution */
 	DL_SYSCTL_setHFCLKSourceHFXTParams(hf_range,
-				mspm0_hfclk_cfg.xtal_startup_delay / 64,
-				true);
+					   xtal_startup_delay / 64,
+					   true);
 #else
 	DL_SYSCTL_setHFCLKSourceHFCLKIN();
+#endif
 #endif
 
 #if MSPM0_LFCLK_ENABLED

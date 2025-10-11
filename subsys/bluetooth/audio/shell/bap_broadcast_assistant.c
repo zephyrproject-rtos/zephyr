@@ -30,6 +30,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/sys/util_utf8.h>
 #include <zephyr/types.h>
 
 #include "common/bt_shell_private.h"

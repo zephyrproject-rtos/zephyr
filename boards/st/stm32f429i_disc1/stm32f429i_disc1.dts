@@ -122,6 +122,15 @@
 	status = "okay";
 };
 
+&pllsai {
+	div-m = <8>;
+	mul-n = <192>;
+	div-r = <4>;
+	div-divr = <8>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
 &rcc {
 	clocks = <&pll>;
 	clock-frequency = <DT_FREQ_M(168)>;
@@ -138,7 +147,7 @@
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
@@ -254,7 +263,7 @@
 		vsync-active = <0>;
 		hsync-len = <10>;
 		vsync-len = <2>;
-		hback-porch= <20>;
+		hback-porch = <20>;
 		vback-porch = <2>;
 		hfront-porch = <10>;
 		vfront-porch = <4>;

@@ -2,6 +2,7 @@ common:
   tags: cpu_load
   arch_allow:
     - arm
+    - arm64
     - riscv
   filter: CONFIG_CPU_LOAD
 tests:

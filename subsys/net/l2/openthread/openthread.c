@@ -28,6 +28,10 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 
 #include "openthread_utils.h"
 
+#if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
+#include <openthread/nat64.h>
+#endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
+
 #if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
 #include "openthread_border_router.h"
 #endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */
@@ -179,6 +183,14 @@ static void ot_receive_handler(otMessage *message, void *context)
 		}
 	}
 
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
+	if (!openthread_border_router_check_packet_forwarding_rules(pkt)) {
+		NET_DBG("Not injecting packet to Zephyr net stack "
+			"Packet not compliant with forwarding rules!");
+		goto out;
+	}
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */
+
 	NET_DBG("Injecting %s packet to Zephyr net stack",
 		PKT_IS_IPv4(pkt) ? "translated IPv4" : "Ip6");
 
@@ -271,6 +283,13 @@ int openthread_send(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 	net_capture_pkt(iface, pkt);
+
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
+	if (!openthread_border_router_check_packet_forwarding_rules(pkt)) {
+		net_pkt_unref(pkt);
+		return len;
+	}
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */
 
 	if (notify_new_tx_frame(pkt) != 0) {
 		net_pkt_unref(pkt);

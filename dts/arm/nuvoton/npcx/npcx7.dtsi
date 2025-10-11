@@ -43,39 +43,39 @@
 
 	def-io-conf-list {
 		pinmux = <&alt0_gpio_no_spip
-			   &alt0_gpio_no_fpip
-			   &alt1_no_pwrgd
-			   &alta_no_peci_en
-			   &altd_npsl_in1_sl
-			   &altd_npsl_in2_sl
-			   &altd_psl_in3_sl
-			   &altd_psl_in4_sl
-			   &alt7_no_ksi0_sl
-			   &alt7_no_ksi1_sl
-			   &alt7_no_ksi2_sl
-			   &alt7_no_ksi3_sl
-			   &alt7_no_ksi4_sl
-			   &alt7_no_ksi5_sl
-			   &alt7_no_ksi6_sl
-			   &alt7_no_ksi7_sl
-			   &alt8_no_kso00_sl
-			   &alt8_no_kso01_sl
-			   &alt8_no_kso02_sl
-			   &alt8_no_kso03_sl
-			   &alt8_no_kso04_sl
-			   &alt8_no_kso05_sl
-			   &alt8_no_kso06_sl
-			   &alt8_no_kso07_sl
-			   &alt9_no_kso08_sl
-			   &alt9_no_kso09_sl
-			   &alt9_no_kso10_sl
-			   &alt9_no_kso11_sl
-			   &alt9_no_kso12_sl
-			   &alt9_no_kso13_sl
-			   &alt9_no_kso14_sl
-			   &alt9_no_kso15_sl
-			   &alta_no_kso16_sl
-			   &alta_no_kso17_sl>;
+			  &alt0_gpio_no_fpip
+			  &alt1_no_pwrgd
+			  &alta_no_peci_en
+			  &altd_npsl_in1_sl
+			  &altd_npsl_in2_sl
+			  &altd_psl_in3_sl
+			  &altd_psl_in4_sl
+			  &alt7_no_ksi0_sl
+			  &alt7_no_ksi1_sl
+			  &alt7_no_ksi2_sl
+			  &alt7_no_ksi3_sl
+			  &alt7_no_ksi4_sl
+			  &alt7_no_ksi5_sl
+			  &alt7_no_ksi6_sl
+			  &alt7_no_ksi7_sl
+			  &alt8_no_kso00_sl
+			  &alt8_no_kso01_sl
+			  &alt8_no_kso02_sl
+			  &alt8_no_kso03_sl
+			  &alt8_no_kso04_sl
+			  &alt8_no_kso05_sl
+			  &alt8_no_kso06_sl
+			  &alt8_no_kso07_sl
+			  &alt9_no_kso08_sl
+			  &alt9_no_kso09_sl
+			  &alt9_no_kso10_sl
+			  &alt9_no_kso11_sl
+			  &alt9_no_kso12_sl
+			  &alt9_no_kso13_sl
+			  &alt9_no_kso14_sl
+			  &alt9_no_kso15_sl
+			  &alta_no_kso16_sl
+			  &alta_no_kso17_sl>;
 	};
 
 	soc {
@@ -96,14 +96,14 @@
 			reg-names = "evt_itim", "sys_itim";
 			clocks = <&pcc NPCX_CLOCK_BUS_LFCLK NPCX_PWDWN_CTL4 3
 				  &pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL7 5>;
-			interrupts = <46 1>; /* Event timer interrupt */
+			interrupts = <46 2>; /* Event timer interrupt */
 			clock-frequency = <15000000>; /* Set for SYS_CLOCK_HW_CYCLES_PER_SEC */
 		};
 
 		uart1: serial@400c4000 {
 			compatible = "nuvoton,npcx-uart";
 			reg = <0x400C4000 0x2000>;
-			interrupts = <33 3>;
+			interrupts = <33 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL1 4>;
 			uart-rx = <&wui_cr_sin1>;
 			status = "disabled";
@@ -112,7 +112,7 @@
 		uart2: serial@400c6000 {
 			compatible = "nuvoton,npcx-uart";
 			reg = <0x400C6000 0x2000>;
-			interrupts = <32 3>;
+			interrupts = <32 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL7 6>;
 			uart-rx = <&wui_cr_sin2>;
 			status = "disabled";
@@ -268,7 +268,7 @@
 		i2c_ctrl0: i2c@40009000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x40009000 0x1000>;
-			interrupts = <13 3>;
+			interrupts = <13 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 0>;
 			smb-wui = <&wui_smb0_2>;
 			status = "disabled";
@@ -277,7 +277,7 @@
 		i2c_ctrl1: i2c@4000b000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x4000b000 0x1000>;
-			interrupts = <14 3>;
+			interrupts = <14 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 1>;
 			smb-wui = <&wui_smb1_3>;
 			status = "disabled";
@@ -286,7 +286,7 @@
 		i2c_ctrl2: i2c@400c0000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x400c0000 0x1000>;
-			interrupts = <36 3>;
+			interrupts = <36 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL3 2>;
 			smb-wui = <&wui_smb0_2>;
 			status = "disabled";
@@ -295,7 +295,7 @@
 		i2c_ctrl3: i2c@400c2000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x400c2000 0x1000>;
-			interrupts = <37 3>;
+			interrupts = <37 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL3 3>;
 			smb-wui = <&wui_smb1_3>;
 			status = "disabled";
@@ -304,7 +304,7 @@
 		i2c_ctrl4: i2c@40008000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x40008000 0x1000>;
-			interrupts = <19 3>;
+			interrupts = <19 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 4>;
 			smb-wui = <&wui_smb4>;
 			status = "disabled";
@@ -313,7 +313,7 @@
 		i2c_ctrl5: i2c@40017000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x40017000 0x1000>;
-			interrupts = <20 3>;
+			interrupts = <20 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL7 0>;
 			smb-wui = <&wui_smb5>;
 			status = "disabled";
@@ -322,7 +322,7 @@
 		i2c_ctrl6: i2c@40018000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x40018000 0x1000>;
-			interrupts = <16 3>;
+			interrupts = <16 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL7 1>;
 			smb-wui = <&wui_smb6>;
 			status = "disabled";
@@ -331,7 +331,7 @@
 		i2c_ctrl7: i2c@40019000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x40019000 0x1000>;
-			interrupts = <8 3>;
+			interrupts = <8 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL7 2>;
 			smb-wui = <&wui_smb7>;
 			status = "disabled";
@@ -356,12 +356,14 @@
 			status = "disabled";
 			buffer-rx-size = <128>;
 			buffer-tx-size = <128>;
-			shi-cs-wui =<&wui_io53>;
+			shi-cs-wui = <&wui_io53>;
 		};
 
 		espi0: espi@4000a000 {
 			rx-plsize = <64>;
 			tx-plsize = <16>;
+
+			support-npcxn-v1;
 		};
 
 		rctl: reset-controller@400c3100 {

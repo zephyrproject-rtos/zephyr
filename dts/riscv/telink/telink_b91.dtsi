@@ -19,11 +19,13 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+
 		cpu0: cpu@0 {
 			reg = <0>;
 			clock-frequency = <24000000>;
-			compatible ="telink,b91", "riscv";
+			compatible = "telink,b91", "riscv";
 			riscv,isa = "rv32imac_zicsr_zifencei";
+
 			hlic: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
@@ -218,11 +220,11 @@
 		pinctrl: pinctrl@80140330 {
 			compatible = "telink,b91-pinctrl";
 			reg = <0x80140330 0x28
-				   0x80140306 0x28
-				   0x0000000e 0x0C>;
+			       0x80140306 0x28
+			       0x0000000e 0x0C>;
 			reg-names = "pin_mux",
-						"gpio_en",
-						"pull_up_en";
+				    "gpio_en",
+				    "pull_up_en";
 			status = "okay";
 		};
 	};

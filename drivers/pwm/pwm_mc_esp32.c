@@ -252,9 +252,7 @@ static int mcpwm_esp32_set_cycles(const struct device *dev, uint32_t channel_idx
 		return ret;
 	}
 
-	double duty_cycle = (double)pulse_cycles * 100 / (double)period_cycles;
-
-	channel->duty = (uint32_t)duty_cycle;
+	channel->duty = DIV_ROUND_CLOSEST((uint64_t)pulse_cycles * 100ULL, period_cycles);
 
 	channel->inverted = (flags & PWM_POLARITY_INVERTED);
 

@@ -21,7 +21,7 @@
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
 
-	dmas =  <&dma0 11>, <&dma0 10>;
+	dmas = <&dma0 11>, <&dma0 10>;
 	dma-names = "tx", "rx";
 
 	slow@0 {

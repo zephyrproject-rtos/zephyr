@@ -25,6 +25,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led {
 			gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
 			label = "White LED";
@@ -43,6 +44,7 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "PRG Button";
@@ -95,17 +97,18 @@
 	pinctrl-0 = <&spim3_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+
 	lora0: lora@0 {
 		compatible = "semtech,sx1276";
 		reg = <0>;
 		reset-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		dio-gpios =
-			/* SX1276 D0 -> GPIO26 */
-			<&gpio0 26 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
-			/* SX1276 D1 -> GPIO35 */
-			<&gpio1 3 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
-			/* SX1276 D1 -> GPIO34 */
-			<&gpio1 2 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+			    /* SX1276 D0 -> GPIO26 */
+			    <&gpio0 26 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			    /* SX1276 D1 -> GPIO35 */
+			    <&gpio1 3 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			    /* SX1276 D1 -> GPIO34 */
+			    <&gpio1 2 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
 		spi-max-frequency = <1000000>;
 		power-amplifier-output = "pa-boost";
 	};

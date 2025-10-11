@@ -11,3 +11,4 @@ Connectivity
    networking/index.rst
    lora_lorawan/index.rst
    usb/index.rst
+   modbus/index.rst

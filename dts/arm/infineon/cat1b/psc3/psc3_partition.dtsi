@@ -31,11 +31,11 @@
 		#size-cells = <1>;
 
 		slot0_partition: partition@12000000 {
-			reg = <0x12000000 DT_SIZE_K(63)>;
+			reg = <0x12000000 DT_SIZE_K(128)>;
 		};
 
 		slot0_ns_partition: partition@2010000 {
-			reg = <0x02010000 0x30000>;
+			reg = <0x02010000 DT_SIZE_K(128)>;
 		};
 	};
 };

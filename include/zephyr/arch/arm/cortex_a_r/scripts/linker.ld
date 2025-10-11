@@ -153,6 +153,9 @@ SECTIONS
 
         *(.text)
         *(".text.*")
+
+#include <snippets-text-sections.ld>
+
         *(.gnu.linkonce.t.*)
 
         /*
@@ -240,6 +243,7 @@ SECTIONS
     __rom_region_end = .;
     MPU_ALIGN(__rodata_region_end - __rom_region_start);
     _image_rom_end_order = (LOG2CEIL(__rom_region_end) - 1) << 1;
+    __rom_region_mpu_size_bits = (LOG2CEIL(__rodata_region_end - __rom_region_start) - 1) << 1;
 
     GROUP_END(ROMABLE_REGION)
 

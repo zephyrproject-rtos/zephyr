@@ -28,8 +28,11 @@
 /* #define STM32_SRC_HSI48	TDB */
 /** Bus clock */
 #define STM32_SRC_PCLK		(STM32_SRC_HSI + 1)
+#define STM32_SRC_TIMPCLK1	(STM32_SRC_PCLK + 1)
+#define STM32_SRC_TIMPCLK2	(STM32_SRC_TIMPCLK1 + 1)
+#define STM32_SRC_TIMPLLCLK	(STM32_SRC_TIMPCLK2 + 1)
 /** PLL clock */
-#define STM32_SRC_PLLCLK	(STM32_SRC_PCLK + 1)
+#define STM32_SRC_PLLCLK	(STM32_SRC_TIMPLLCLK + 1)
 
 /** @brief RCC_CFGRx register offset */
 #define CFGR_REG		0x04

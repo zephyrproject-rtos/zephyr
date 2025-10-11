@@ -43,6 +43,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
@@ -175,7 +176,7 @@
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };

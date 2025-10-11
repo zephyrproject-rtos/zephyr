@@ -596,7 +596,7 @@ static void igmp_send_query(bool is_imgpv3)
 	pkt = prepare_igmp_query(net_iface, is_imgpv3);
 	zassert_not_null(pkt, "IGMPv2 query packet prep failed");
 
-	zassert_equal(net_ipv4_input(pkt, false), NET_OK, "Failed to send");
+	zassert_equal(net_ipv4_input(pkt), NET_OK, "Failed to send");
 
 	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Timeout while waiting query event");
 

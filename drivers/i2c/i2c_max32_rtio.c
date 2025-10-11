@@ -429,11 +429,11 @@ static const struct i2c_driver_api max32_driver_api = {
 		.perclk.bit = DT_INST_CLOCKS_CELL(_num, bit),                                      \
 		.bitrate = DT_INST_PROP(_num, clock_frequency),                                    \
 		I2C_MAX32_CONFIG_IRQ_FUNC(_num)};                                              \
-		I2C_RTIO_DEFINE(_i2c##n##_max32_rtio,				\
-		DT_INST_PROP_OR(n, sq_size, CONFIG_I2C_RTIO_SQ_SIZE),	\
-		DT_INST_PROP_OR(n, cq_size, CONFIG_I2C_RTIO_CQ_SIZE));	\
+		I2C_RTIO_DEFINE(_i2c##_num##_max32_rtio,			\
+		DT_INST_PROP_OR(_num, sq_size, CONFIG_I2C_RTIO_SQ_SIZE),	\
+		DT_INST_PROP_OR(_num, cq_size, CONFIG_I2C_RTIO_CQ_SIZE));	\
 	static struct max32_i2c_data max32_i2c_data_##_num = {                                     \
-		.ctx = &CONCAT(_i2c, n, _max32_rtio),			\
+		.ctx = &CONCAT(_i2c, _num, _max32_rtio),		\
 	};								\
 	I2C_DEVICE_DT_INST_DEFINE(_num, i2c_max32_init, NULL, &max32_i2c_data_##_num,              \
 				  &max32_i2c_dev_cfg_##_num, PRE_KERNEL_2,                         \

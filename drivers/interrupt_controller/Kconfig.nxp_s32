@@ -1,35 +1,5 @@
-# Configuration for NXP S32 external interrupt controller
-
-# Copyright 2022-2024 NXP
+# Copyright 2022-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
-
-config NXP_S32_EIRQ
-	bool "External interrupt controller driver for NXP S32 MCUs"
-	default y
-	depends on DT_HAS_NXP_S32_SIUL2_EIRQ_ENABLED
-	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
-	select PINCTRL
-	help
-	  External interrupt controller driver for NXP S32 MCUs
-
-if NXP_S32_EIRQ
-
-config NXP_S32_EIRQ_EXT_INTERRUPTS_MAX
-	int
-	default 8 if SOC_SERIES_S32ZE
-	default 32 if SOC_SERIES_S32K3
-	help
-	  Number of SIUL2 external interrupts per controller. This is a SoC
-	  integration option.
-
-config NXP_S32_EIRQ_EXT_INTERRUPTS_GROUP
-	int
-	default 8
-	help
-	  Number of SIUL2 external interrupts grouped into a single core
-	  interrupt line. This is a SoC integration option.
-
-endif # NXP_S32_EIRQ
 
 config NXP_S32_WKPU
 	bool "Wake-up Unit interrupt controller driver for NXP S32 MCUs"

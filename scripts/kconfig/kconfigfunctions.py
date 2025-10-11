@@ -547,13 +547,7 @@ def dt_nodelabel_int_prop(kconf, _, label, prop):
     except edtlib.EDTError:
         return "0"
 
-    if not node or node.props[prop].type != "int":
-        return "0"
-
-    if not node.props[prop].val:
-        return "0"
-
-    return str(node.props[prop].val)
+    return str(_node_int_prop(node, prop))
 
 def dt_chosen_bool_prop(kconf, _, chosen, prop):
     """

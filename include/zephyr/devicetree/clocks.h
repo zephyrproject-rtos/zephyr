@@ -19,6 +19,7 @@ extern "C" {
 /**
  * @defgroup devicetree-clocks Devicetree Clocks API
  * @ingroup devicetree
+ * @ingroup clock_control_interface
  * @{
  */
 

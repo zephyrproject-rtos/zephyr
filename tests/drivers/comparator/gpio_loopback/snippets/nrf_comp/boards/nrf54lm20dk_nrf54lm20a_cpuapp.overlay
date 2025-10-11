@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/comparator/nrf-comp.h>
+
 &comp {
 	main-mode = "SE";
-	psel = "AIN1"; /* P1.31 */
+	psel = <NRF_COMP_AIN1>; /* P1.31 */
 	refsel = "INT_1V2";
 	sp-mode = "HIGH";
 	th-up = <63>;

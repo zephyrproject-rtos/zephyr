@@ -7,6 +7,6 @@ config PHY_TJA11XX
 	bool "TJA11XX PHY driver"
 	default y
 	depends on DT_HAS_NXP_TJA11XX_ENABLED
-	depends on MDIO
+	select MDIO
 	help
 	  Enable TJA11xx PHY driver.

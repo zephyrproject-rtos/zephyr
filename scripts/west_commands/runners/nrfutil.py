@@ -18,14 +18,13 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
 
     def __init__(self, cfg, family, softreset, pinreset, dev_id, erase=False,
                  erase_mode=None, ext_erase_mode=None, reset=True, tool_opt=None,
-                 force=False, recover=False, suit_starter=False,
+                 force=False, recover=False,
                  ext_mem_config_file=None):
 
         super().__init__(cfg, family, softreset, pinreset, dev_id, erase,
                          erase_mode, ext_erase_mode, reset, tool_opt, force,
                          recover)
 
-        self.suit_starter = suit_starter
         self.ext_mem_config_file = ext_mem_config_file
 
         self._ops = []
@@ -56,15 +55,11 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
                                    ext_erase_mode=args.ext_erase_mode,
                                    reset=args.reset, tool_opt=args.tool_opt,
                                    force=args.force, recover=args.recover,
-                                   suit_starter=args.suit_manifest_starter,
                                    ext_mem_config_file=args.ext_mem_config_file)
 
     @classmethod
     def do_add_parser(cls, parser):
         super().do_add_parser(parser)
-        parser.add_argument('--suit-manifest-starter', required=False,
-                            action='store_true',
-                            help='Use the SUIT manifest starter file')
         parser.add_argument('--ext-mem-config-file', required=False,
                             dest='ext_mem_config_file',
                             help='path to an JSON file with external memory configuration')

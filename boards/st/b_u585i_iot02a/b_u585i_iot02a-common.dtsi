@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2021 Linaro Limited
  * Copyright (c) 2024 STMicroelectronics
+ * Copyright (c) 2025 ZAL Zentrum für Angewandte Luftfahrtforschung GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +10,7 @@
 #include <st/u5/stm32u585aiixq-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 / {
 	leds {
@@ -35,13 +37,19 @@
 		};
 	};
 
-
 	aliases {
 		watchdog0 = &iwdg;
 		die-temp0 = &die_temp;
 		volt-sensor0 = &vref1;
 		volt-sensor1 = &vbat4;
 		eeprom-0 = &eeprom0;
+	};
+
+	psram: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_M(8)>;
+		zephyr,memory-region = "PSRAM";
+		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_RAM))>;
 	};
 };
 
@@ -78,7 +86,7 @@
 };
 
 stm32_lp_tick_source: &lptim1 {
-	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000800>,
+	clocks = <&rcc STM32_CLOCK(APB3, 11)>,
 		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
 	status = "okay";
 };
@@ -126,6 +134,28 @@ stm32_lp_tick_source: &lptim1 {
 	};
 };
 
+&octospi1 {
+	pinctrl-0 = <&octospim_p1_clk_pb10 &octospim_p1_ncs_pb11
+		     &octospim_p1_io0_pf8 &octospim_p1_io1_pf9
+		     &octospim_p1_io2_pf7 &octospim_p1_io3_pf6
+		     &octospim_p1_io4_ph2 &octospim_p1_io5_pi0
+		     &octospim_p1_io6_pc3 &octospim_p1_io7_pd7
+		     &octospim_p1_dqs_pe3>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	memc: aps6408l: memory@0 {
+		compatible = "st,stm32-ospi-psram";
+		reg = <0>;
+		size = <DT_SIZE_M(64)>; /* 64 Mbits */
+		max-frequency = <DT_FREQ_M(133)>;
+		fixed-latency;
+		burst-length = <3>;
+		st,csbound = <10>;
+		status = "okay";
+	};
+};
+
 &octospi2 {
 	pinctrl-0 = <&octospim_p2_clk_pf4 &octospim_p2_ncs_pi5
 		     &octospim_p2_io0_pf0 &octospim_p2_io1_pf1
@@ -146,16 +176,6 @@ stm32_lp_tick_source: &lptim1 {
 		data-rate = <OSPI_DTR_TRANSFER>;
 		four-byte-opcodes;
 		status = "okay";
-
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			partition@0 {
-				reg = <0x00000000 DT_SIZE_M(64)>;
-			};
-		};
 	};
 };
 
@@ -173,7 +193,7 @@ stm32_lp_tick_source: &lptim1 {
 	clock-frequency = <I2C_BITRATE_FAST>;
 
 	veml6030@10 {
-		compatible ="vishay,veml7700";
+		compatible = "vishay,veml7700";
 		reg = <0x10>;
 		status = "okay";
 	};
@@ -181,22 +201,22 @@ stm32_lp_tick_source: &lptim1 {
 	iis2mdc@1e {
 		compatible = "st,iis2mdc";
 		reg = <0x1e>;
-		drdy-gpios =  <&gpiod 10 GPIO_ACTIVE_HIGH>;
+		drdy-gpios = <&gpiod 10 GPIO_ACTIVE_HIGH>;
 	};
 
 	ism330dhcx@6b {
 		compatible = "st,ism330dhcx";
 		reg = <0x6b>;
-		drdy-gpios =  <&gpioe 11 GPIO_ACTIVE_HIGH>;
+		drdy-gpios = <&gpioe 11 GPIO_ACTIVE_HIGH>;
 	};
 
 	lps22hh@5d {
 		compatible = "st,lps22hh";
 		reg = <0x5d>;
-		drdy-gpios =  <&gpiog 2 GPIO_ACTIVE_HIGH>;
+		drdy-gpios = <&gpiog 2 GPIO_ACTIVE_HIGH>;
 	};
 
-	eeprom0:eeprom@56 {
+	eeprom0: eeprom@56 {
 		compatible = "atmel,at24";
 		reg = <0x56>;
 		status = "okay";
@@ -253,7 +273,7 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00200000>,
+	clocks = <&rcc STM32_CLOCK(APB3, 21)>,
 		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };

@@ -22,6 +22,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led_1: led_0 {
 			gpios = <&gpioa 15 GPIO_ACTIVE_HIGH>;
 			label = "User LED1";
@@ -30,6 +31,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button_0 {
 			label = "SW2";
 			gpios = <&gpioa 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -46,7 +48,7 @@
 };
 
 stm32_lp_tick_source: &lptim1 {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 31)>,
 		 <&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
 	status = "okay";
 };
@@ -102,7 +104,7 @@ uext_i2c: &i2c1 {
 	iis2mdc@1e {
 		compatible = "st,iis2mdc";
 		reg = <0x1e>;
-		drdy-gpios =  <&gpioa 8 GPIO_ACTIVE_HIGH>;
+		drdy-gpios = <&gpioa 8 GPIO_ACTIVE_HIGH>;
 	};
 };
 
@@ -114,7 +116,7 @@ uext_spi: &spi1 {
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>,
+	clocks = <&rcc STM32_CLOCK(APB1, 10)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
@@ -142,14 +144,17 @@ uext_spi: &spi1 {
 			reg = <0x00000000 DT_SIZE_K(32)>;
 			read-only;
 		};
+
 		slot0_partition: partition@8000 {
 			label = "image-0";
 			reg = <0x00008000 DT_SIZE_K(108)>;
 		};
+
 		slot1_partition: partition@23000 {
 			label = "image-1";
 			reg = <0x00023000 DT_SIZE_K(108)>;
 		};
+
 		storage_partition: partition@3e000 {
 			label = "storage";
 			reg = <0x0003e000 DT_SIZE_K(8)>;

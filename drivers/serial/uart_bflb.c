@@ -33,13 +33,7 @@
 
 struct bflb_config {
 	const struct pinctrl_dev_config *pincfg;
-	uint32_t baudrate;
-	uint8_t direction;
-	uint8_t data_bits;
-	uint8_t stop_bits;
-	uint8_t parity;
 	uint8_t bit_order;
-	uint8_t flow_ctrl;
 	uint8_t tx_fifo_threshold;
 	uint8_t rx_fifo_threshold;
 	uint32_t base_reg;
@@ -49,6 +43,7 @@ struct bflb_config {
 };
 
 struct bflb_data {
+	struct uart_config uart_cfg;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t user_cb;
 	void *user_data;
@@ -79,7 +74,7 @@ static uint32_t uart_bflb_get_clock(void)
 	uint32_t uclk;
 	const struct device *clock_ctrl =  DEVICE_DT_GET_ANY(bflb_clock_controller);
 
-#if defined(CONFIG_SOC_SERIES_BL60X)
+#if defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X)
 	uart_divider = sys_read32(GLB_BASE + GLB_CLK_CFG2_OFFSET);
 	uart_divider = (uart_divider & GLB_UART_CLK_DIV_MSK) >> GLB_UART_CLK_DIV_POS;
 	clock_control_get_rate(clock_ctrl, (void *)BFLB_CLKID_CLK_ROOT, &uclk);
@@ -294,12 +289,13 @@ static void uart_bflb_isr(const struct device *dev)
 static int uart_bflb_configure(const struct device *dev)
 {
 	const struct bflb_config *cfg = dev->config;
+	struct bflb_data *const data = dev->data;
 	uint32_t tx_cfg = 0;
 	uint32_t rx_cfg = 0;
 	uint32_t divider = 0;
 	uint32_t tmp = 0;
 
-	divider = (uart_bflb_get_clock() * 10 / cfg->baudrate + 5) / 10;
+	divider = (uart_bflb_get_clock() * 10 / data->uart_cfg.baudrate + 5) / 10;
 	if (divider >= 0xFFFF) {
 		divider = 0xFFFF - 1;
 	}
@@ -314,7 +310,7 @@ static int uart_bflb_configure(const struct device *dev)
 	tx_cfg = sys_read32(cfg->base_reg + UART_UTX_CONFIG_OFFSET);
 	rx_cfg = sys_read32(cfg->base_reg + UART_URX_CONFIG_OFFSET);
 
-	switch (cfg->parity) {
+	switch (data->uart_cfg.parity) {
 	case UART_PARITY_NONE:
 		tx_cfg &= ~UART_CR_UTX_PRT_EN;
 		rx_cfg &= ~UART_CR_URX_PRT_EN;
@@ -337,16 +333,16 @@ static int uart_bflb_configure(const struct device *dev)
 
 	/* Configure data bits */
 	tx_cfg &= ~UART_CR_UTX_BIT_CNT_D_MASK;
-	tx_cfg |= (cfg->data_bits + 4) << UART_CR_UTX_BIT_CNT_D_SHIFT;
+	tx_cfg |= (data->uart_cfg.data_bits + 4) << UART_CR_UTX_BIT_CNT_D_SHIFT;
 	rx_cfg &= ~UART_CR_URX_BIT_CNT_D_MASK;
-	rx_cfg |= (cfg->data_bits + 4) << UART_CR_URX_BIT_CNT_D_SHIFT;
+	rx_cfg |= (data->uart_cfg.data_bits + 4) << UART_CR_URX_BIT_CNT_D_SHIFT;
 
 	/* Configure tx stop bits */
 	tx_cfg &= ~UART_CR_UTX_BIT_CNT_P_MASK;
-	tx_cfg |= cfg->stop_bits << UART_CR_UTX_BIT_CNT_P_SHIFT;
+	tx_cfg |= data->uart_cfg.stop_bits << UART_CR_UTX_BIT_CNT_P_SHIFT;
 
 	/* Configure tx cts flow control function */
-	if (cfg->flow_ctrl & UART_FLOWCTRL_CTS) {
+	if (data->uart_cfg.flow_ctrl & UART_FLOWCTRL_CTS) {
 		tx_cfg |= UART_CR_UTX_CTS_EN;
 	} else {
 		tx_cfg &= ~UART_CR_UTX_CTS_EN;
@@ -401,6 +397,38 @@ static int uart_bflb_configure(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+
+static int uart_bflb_runtime_configure(const struct device *dev,
+				const struct uart_config *cfg)
+{
+	struct bflb_data *data = dev->data;
+	int ret;
+
+	data->uart_cfg = *cfg;
+
+	ret = uart_bflb_configure(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	uart_bflb_enabled(dev, 1);
+
+	return 0;
+}
+
+static int uart_bflb_runtime_config_get(const struct device *dev,
+				struct uart_config *cfg)
+{
+	struct bflb_data *data = dev->data;
+
+	*cfg = data->uart_cfg;
+
+	return 0;
+}
+
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
+
 static int uart_bflb_init(const struct device *dev)
 {
 	const struct bflb_config *cfg = dev->config;
@@ -424,6 +452,25 @@ static int uart_bflb_init(const struct device *dev)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 	uart_bflb_enabled(dev, 1);
 	return rc;
+}
+
+static int uart_bflb_deinit(const struct device *dev)
+{
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	const struct bflb_config *cfg = dev->config;
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
+	uart_bflb_enabled(dev, 0);
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	/* disable all irqs */
+	sys_write32(0x0, cfg->base_reg + UART_INT_EN_OFFSET);
+	/* clear all IRQS */
+	sys_write32(0xFF, cfg->base_reg + UART_INT_CLEAR_OFFSET);
+	/* mask all IRQs */
+	sys_write32(0xFFFFFFFFU, cfg->base_reg + UART_INT_MASK_OFFSET);
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
+	return 0;
 }
 
 static int uart_bflb_poll_in(const struct device *dev, unsigned char *c)
@@ -500,6 +547,10 @@ static int uart_bflb_pm_control(const struct device *dev,
 static DEVICE_API(uart, uart_bflb_driver_api) = {
 	.poll_in = uart_bflb_poll_in,
 	.poll_out = uart_bflb_poll_out,
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	.configure = uart_bflb_runtime_configure,
+	.config_get = uart_bflb_runtime_config_get,
+#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.err_check = uart_bflb_err_check,
 	.fifo_fill = uart_bflb_fifo_fill,
@@ -545,23 +596,28 @@ static DEVICE_API(uart, uart_bflb_driver_api) = {
 	PINCTRL_DT_INST_DEFINE(instance);					\
 	PM_DEVICE_DT_INST_DEFINE(instance, uart_bflb_pm_control);		\
 	BFLB_UART_IRQ_HANDLER_DECL(instance)					\
-	static struct bflb_data uart##instance##_bflb_data;			\
+	static struct bflb_data uart##instance##_bflb_data = {			\
+		.uart_cfg = {							\
+			.baudrate = DT_INST_PROP(instance, current_speed),	\
+			.parity = UART_CFG_PARITY_NONE,				\
+			.stop_bits = UART_CFG_STOP_BITS_1,			\
+			.data_bits = UART_CFG_DATA_BITS_8,			\
+			.flow_ctrl = DT_INST_PROP(instance, hw_flow_control)	\
+						? UART_CFG_FLOW_CTRL_RTS_CTS	\
+						: UART_CFG_FLOW_CTRL_NONE,	\
+		},								\
+	};									\
 	static const struct bflb_config uart##instance##_bflb_config = {	\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(instance),		\
 		.base_reg = DT_INST_REG_ADDR(instance),				\
 										\
-		.baudrate = DT_INST_PROP(instance, current_speed),		\
-		.data_bits = UART_DATA_BITS_8,					\
-		.stop_bits = UART_STOP_BITS_1,					\
-		.parity = UART_PARITY_NONE,					\
 		.bit_order = UART_MSB_FIRST,					\
-		.flow_ctrl = UART_FLOWCTRL_NONE,				\
-		/* overflow interrupt threshold, size is 32 bytes*/		\
-		.tx_fifo_threshold = 8,						\
+		.tx_fifo_threshold = 16,					\
 		.rx_fifo_threshold = 0,						\
 		BFLB_UART_IRQ_HANDLER_FUNC(instance)				\
 	};									\
-	DEVICE_DT_INST_DEFINE(instance, &uart_bflb_init,			\
+	DEVICE_DT_INST_DEINIT_DEFINE(instance, &uart_bflb_init,			\
+			      &uart_bflb_deinit,				\
 			      PM_DEVICE_DT_INST_GET(instance),			\
 			      &uart##instance##_bflb_data,			\
 			      &uart##instance##_bflb_config, PRE_KERNEL_1,	\

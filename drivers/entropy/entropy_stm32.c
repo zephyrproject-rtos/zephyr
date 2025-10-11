@@ -84,7 +84,7 @@ BUILD_ASSERT((CONFIG_ENTROPY_STM32_THR_POOL_SIZE &
  *  at least 32 MHz. See also: §6.2.2 "Peripheral clock details".
  */
 BUILD_ASSERT(!IS_ENABLED(CONFIG_SOC_STM32WB09XX) ||
-		CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= (32 * 1000 * 1000),
+		STM32_HCLK_FREQUENCY >= (32 * 1000 * 1000),
 	"STM32WB09: TRNG requires system clock frequency >= 32MHz");
 
 struct entropy_stm32_rng_dev_cfg {
@@ -205,7 +205,7 @@ static void configure_rng(void)
 #if DT_INST_NODE_HAS_PROP(0, nist_config)
 	/*
 	 * Configure the RNG_CR in compliance with the NIST SP800.
-	 * The nist-config is direclty copied from the DTS.
+	 * The nist-config is directly copied from the DTS.
 	 * The RNG clock must be 48MHz else the clock DIV is not adpated.
 	 * The RNG_CR_CONDRST is set to 1 at the same time the RNG_CR is written
 	 */

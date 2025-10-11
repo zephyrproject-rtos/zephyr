@@ -63,8 +63,6 @@ struct z_riscv_fp_context {
 };
 typedef struct z_riscv_fp_context z_riscv_fp_context_t;
 
-#define PMP_M_MODE_SLOTS 8	/* 8 is plenty enough for m-mode */
-
 struct _thread_arch {
 #ifdef CONFIG_FPU_SHARING
 	struct z_riscv_fp_context saved_fp_context;
@@ -81,8 +79,8 @@ struct _thread_arch {
 #endif
 #ifdef CONFIG_PMP_STACK_GUARD
 	unsigned int m_mode_pmp_end_index;
-	unsigned long m_mode_pmpaddr_regs[PMP_M_MODE_SLOTS];
-	unsigned long m_mode_pmpcfg_regs[PMP_M_MODE_SLOTS / sizeof(unsigned long)];
+	unsigned long m_mode_pmpaddr_regs[CONFIG_PMP_SLOTS];
+	unsigned long m_mode_pmpcfg_regs[CONFIG_PMP_SLOTS / sizeof(unsigned long)];
 #endif
 };
 

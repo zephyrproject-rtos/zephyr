@@ -1,5 +1,5 @@
 /*
- * Copyright 2021,2024 NXP
+ * Copyright 2021,2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -121,6 +121,7 @@
 /* ADC */
 #define IMX_CCM_LPADC1_CLK             0x1500UL
 #define IMX_CCM_LPADC2_CLK             0x1501UL
+#define IMX_CCM_SAR_ADC1_CLK           0x1500UL
 
 /* TPM */
 #define IMX_CCM_TPM_CLK                0x1600UL
@@ -154,6 +155,9 @@
 #define IMX_CCM_LPIT1_CLK 0x2300UL
 #define IMX_CCM_LPIT2_CLK 0x2301UL
 #define IMX_CCM_LPIT3_CLK 0x2302UL
+
+/* KPP */
+#define IMX_CCM_KPP_CLK                0x2400UL
 
 /* QTMR */
 #define IMX_CCM_QTMR_CLK               0x6000UL

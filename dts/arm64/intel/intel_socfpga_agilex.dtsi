@@ -13,7 +13,7 @@
 / {
 	cpus {
 		#address-cells = <1>;
-		#size-cells= <0>;
+		#size-cells = <0>;
 
 		cpu0: cpu@0 {
 			device_type = "cpu";
@@ -89,7 +89,7 @@
 		reg-names = "qspi_reg", "qspi_data";
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 4 IRQ_TYPE_LEVEL
-			     IRQ_DEFAULT_PRIORITY>;
+			      IRQ_DEFAULT_PRIORITY>;
 		clock-frequency = <50000000>;
 		status = "disabled";
 	};
@@ -115,7 +115,7 @@
 		status = "disabled";
 	};
 
-	sip_smc: smc{
+	sip_smc: smc {
 		compatible = "intel,socfpga-agilex-sip-smc";
 		method = "smc";
 		status = "disabled";
@@ -126,9 +126,9 @@
 		compatible = "snps,dw-timers";
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 113 IRQ_TYPE_LEVEL
-				IRQ_DEFAULT_PRIORITY>;
+			      IRQ_DEFAULT_PRIORITY>;
 		reg = <0xffc03000 0x100>;
-		clock-frequency = < 100000000 >;
+		clock-frequency = <100000000>;
 		status = "disabled";
 	};
 
@@ -136,9 +136,9 @@
 		compatible = "snps,dw-timers";
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 114 IRQ_TYPE_LEVEL
-				IRQ_DEFAULT_PRIORITY>;
+			      IRQ_DEFAULT_PRIORITY>;
 		reg = <0xffc03100 0x100>;
-		clock-frequency = < 100000000 >;
+		clock-frequency = <100000000>;
 		status = "disabled";
 	};
 
@@ -146,9 +146,9 @@
 		compatible = "snps,dw-timers";
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 115 IRQ_TYPE_LEVEL
-				IRQ_DEFAULT_PRIORITY>;
+			      IRQ_DEFAULT_PRIORITY>;
 		reg = <0xffd00000 0x100>;
-		clock-frequency = < 100000000 >;
+		clock-frequency = <100000000>;
 		status = "disabled";
 	};
 
@@ -156,9 +156,9 @@
 		compatible = "snps,dw-timers";
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 116 IRQ_TYPE_LEVEL
-				IRQ_DEFAULT_PRIORITY>;
+			      IRQ_DEFAULT_PRIORITY>;
 		reg = <0xffd00100 0x100>;
-		clock-frequency = < 100000000 >;
+		clock-frequency = <100000000>;
 	};
 
 	watchdog0: watchdog@ffd00200 {

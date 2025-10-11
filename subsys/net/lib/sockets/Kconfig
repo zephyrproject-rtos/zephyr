@@ -69,6 +69,13 @@ config NET_SOCKETS_DNS_BACKOFF_INTERVAL
 	     If no reply is received, a 3rd query is done after 15 sec (5 + 5 * 2),
 	     and the timeout is set to 2 sec so that the total timeout is 17 seconds.
 
+config HEAP_MEM_POOL_ADD_SIZE_GETADDRINFO
+	# Defaults to heap memory needed for a single getaddrinfo() call in
+	# a default configuration on 64-bit platform
+	int
+	default 280
+	depends on DNS_RESOLVER
+
 config NET_SOCKET_MAX_SEND_WAIT
 	int "Max time in milliseconds waiting for a send command"
 	default 10000
@@ -236,12 +243,12 @@ config NET_SOCKETS_TLS_MAX_APP_PROTOCOLS
 	  By default, no supported application layer protocol is set.
 
 config NET_SOCKETS_TLS_MAX_CLIENT_SESSION_COUNT
-	  int "Maximum number of stored client TLS/DTLS sessions"
-	  default 1
-	  depends on NET_SOCKETS_SOCKOPT_TLS
-	  help
-	    This variable specifies maximum number of stored TLS/DTLS sessions,
-	    used for TLS/DTLS session resumption.
+	int "Maximum number of stored client TLS/DTLS sessions"
+	default 1
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  This variable specifies maximum number of stored TLS/DTLS sessions,
+	  used for TLS/DTLS session resumption.
 
 config NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK
 	bool "TLS certificate verification callback support"

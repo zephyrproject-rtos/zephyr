@@ -14,7 +14,7 @@
 
 #include "jwt.h"
 
-#if defined(CONFIG_JWT_SIGN_RSA_PSA) || defined(JWT_SIGN_RSA_LEGACY)
+#if defined(CONFIG_JWT_SIGN_RSA_PSA) || defined(CONFIG_JWT_SIGN_RSA_LEGACY)
 #define JWT_SIGNATURE_LEN 256
 #else /* CONFIG_JWT_SIGN_ECDSA_PSA */
 #define JWT_SIGNATURE_LEN 64

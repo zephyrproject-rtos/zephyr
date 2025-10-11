@@ -28,10 +28,10 @@
 #define CYC_PER_TICK (sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 #define MAX_TICKS    ((k_ticks_t)(COUNTER_MAX / CYC_PER_TICK) - 1)
 #define MAX_CYCLES   (MAX_TICKS * CYC_PER_TICK)
-#if defined(CONFIG_SOC_SERIES_APOLLO3X) || defined(CONFIG_SOC_SERIES_APOLLO5X)
-#define MIN_DELAY 1
+#if defined(AM_HAL_STIMER_MIN_DELTA)
+#define MIN_DELAY AM_HAL_STIMER_MIN_DELTA
 #else
-#define MIN_DELAY 4
+#define MIN_DELAY 1
 #endif
 
 #if defined(CONFIG_SOC_SERIES_APOLLO5X)

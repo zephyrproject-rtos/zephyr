@@ -435,8 +435,11 @@ static bool img_mgmt_state_encode_slot(struct smp_streamer *ctxt, uint32_t slot,
 	zcbor_state_t *zse = ctxt->writer->zs;
 	uint32_t flags;
 	char vers_str[IMG_MGMT_VER_MAX_STR_LEN];
-	uint8_t hash[IMAGE_HASH_LEN]; /* SHA256 hash */
-	struct zcbor_string zhash = { .value = hash, .len = IMAGE_HASH_LEN };
+	uint8_t hash[IMAGE_SHA_LEN];
+	struct zcbor_string zhash = {
+		.value = hash,
+		.len = IMAGE_SHA_LEN,
+	};
 	struct image_version ver;
 	bool ok;
 	int rc = img_mgmt_read_info(slot, &ver, hash, &flags);
@@ -677,6 +680,17 @@ int img_mgmt_set_next_boot_slot(int slot, bool confirm)
 	}
 #endif
 
+	/* The rules above apply only to the inactive image.
+	 * To effectively prevent confirming something that might not have been
+	 * verified to actually be bootable, a new policy was introduced,
+	 * that applies to both active and inactive images.
+	 */
+#ifndef CONFIG_MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_SLOT
+	if (confirm && slot != active_slot) {
+		return IMG_MGMT_ERR_IMAGE_CONFIRMATION_DENIED;
+	}
+#endif
+
 	/* Setting test to active slot is not allowed. */
 	if (!confirm && slot == active_slot) {
 		return IMG_MGMT_ERR_IMAGE_SETTING_TEST_TO_ACTIVE_DENIED;
@@ -725,8 +739,9 @@ int img_mgmt_set_next_boot_slot(int slot, bool confirm)
 #else
 int img_mgmt_set_next_boot_slot(int slot, bool confirm)
 {
+	int image = img_mgmt_slot_to_image(slot);
+	int active_slot = img_mgmt_active_slot(image);
 	int active_image = img_mgmt_active_image();
-	int active_slot = img_mgmt_active_slot(active_image);
 
 	LOG_DBG("(%d, %s)", slot, confirm ? "confirm" : "test");
 	LOG_DBG("aimg = %d, aslot = %d, slot = %d",
@@ -735,6 +750,12 @@ int img_mgmt_set_next_boot_slot(int slot, bool confirm)
 	if (slot == active_slot && !confirm) {
 		return IMG_MGMT_ERR_IMAGE_SETTING_TEST_TO_ACTIVE_DENIED;
 	}
+
+#ifndef CONFIG_MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_SLOT
+	if (slot != active_slot && confirm) {
+		return IMG_MGMT_ERR_IMAGE_CONFIRMATION_DENIED;
+	}
+#endif
 
 	return img_mgmt_set_next_boot_slot_common(slot, active_slot, confirm);
 }
@@ -780,14 +801,14 @@ img_mgmt_state_write(struct smp_streamer *ctxt)
 					     IMG_MGMT_ERR_INVALID_HASH);
 			goto end;
 		}
-	} else if (zhash.len != IMAGE_HASH_LEN) {
+	} else if (zhash.len != IMAGE_SHA_LEN) {
 		/* The img_mgmt_find_by_hash does exact length compare
 		 * so just fail here.
 		 */
 		ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_IMAGE, IMG_MGMT_ERR_INVALID_HASH);
 		goto end;
 	} else {
-		uint8_t hash[IMAGE_HASH_LEN];
+		uint8_t hash[IMAGE_SHA_LEN];
 
 		memcpy(hash, zhash.value, zhash.len);
 

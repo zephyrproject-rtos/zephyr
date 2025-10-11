@@ -33,7 +33,7 @@ struct ina230_fixture {
  */
 ZTEST(ina230_0, test_default_config)
 {
-	const struct ina230_config *config;
+	const struct ina2xx_config *config;
 	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(ina230_default_test));
 
 	zassert_not_null(dev);
@@ -216,7 +216,6 @@ static void test_power(struct ina230_fixture *fixture)
 		.mock = EMUL_DT_GET(DT_DRV_INST(inst)),                                            \
 		.current_lsb_uA = DT_INST_PROP(inst, current_lsb_microamps),                       \
 		.rshunt_uOhms = DT_INST_PROP(inst, rshunt_micro_ohms),                             \
-		.config = DT_INST_PROP(inst, config),                                              \
 		.dev_type = INA23##v,                                                              \
 	}
 

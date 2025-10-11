@@ -107,7 +107,9 @@ static int gpio_gecko_configure(const struct device *dev,
 	if (flags & GPIO_OUTPUT) {
 		/* Following modes enable both output and input */
 		if (flags & GPIO_SINGLE_ENDED) {
-			if (flags & GPIO_LINE_OPEN_DRAIN) {
+			if ((flags & GPIO_LINE_OPEN_DRAIN) && (flags & GPIO_PULL_UP)) {
+				mode = gpioModeWiredAndPullUp;
+			} else if (flags & GPIO_LINE_OPEN_DRAIN) {
 				mode = gpioModeWiredAnd;
 			} else {
 				mode = gpioModeWiredOr;

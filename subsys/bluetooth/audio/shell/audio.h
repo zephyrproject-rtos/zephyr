@@ -48,8 +48,6 @@ size_t cap_acceptor_ad_data_add(struct bt_data data[], size_t data_size, bool di
 size_t bap_scan_delegator_ad_data_add(struct bt_data data[], size_t data_size);
 size_t gmap_ad_data_add(struct bt_data data[], size_t data_size);
 size_t pbp_ad_data_add(struct bt_data data[], size_t data_size);
-size_t cap_initiator_ad_data_add(struct bt_data *data_array, const size_t data_array_size,
-				 const bool discoverable, const bool connectable);
 size_t cap_initiator_pa_data_add(struct bt_data *data_array, const size_t data_array_size);
 
 #if defined(CONFIG_BT_AUDIO)
@@ -117,13 +115,13 @@ struct shell_stream {
 			size_t lc3_sdu_cnt;
 			lc3_encoder_mem_48k_t lc3_encoder_mem;
 			lc3_encoder_t lc3_encoder;
-#if defined(CONFIG_USB_DEVICE_AUDIO)
+#if defined(CONFIG_USBD_AUDIO2_CLASS)
 			/* Indicates where to read left USB data in the ring buffer */
 			size_t left_read_idx;
 			/* Indicates where to read right USB data in the ring buffer */
 			size_t right_read_idx;
 			size_t right_ring_buf_fail_cnt;
-#endif /* CONFIG_USB_DEVICE_AUDIO */
+#endif /* CONFIG_USBD_AUDIO2_CLASS */
 #endif /* CONFIG_LIBLC3 */
 		} tx;
 #endif /* CONFIG_BT_AUDIO_TX */
@@ -163,6 +161,7 @@ void bap_usb_clear_frames_to_usb(void);
 uint16_t get_next_seq_num(struct bt_bap_stream *bap_stream);
 struct shell_stream *shell_stream_from_bap_stream(struct bt_bap_stream *bap_stream);
 struct bt_bap_stream *bap_stream_from_shell_stream(struct shell_stream *sh_stream);
+struct bt_cap_stream *cap_stream_from_shell_stream(struct shell_stream *sh_stream);
 bool bap_usb_can_get_full_sdu(struct shell_stream *sh_stream);
 void bap_usb_get_frame(struct shell_stream *sh_stream, enum bt_audio_location chan_alloc,
 		       int16_t buffer[]);
@@ -176,6 +175,7 @@ struct broadcast_source {
 	};
 	struct bt_audio_codec_cfg codec_cfg;
 	struct bt_bap_qos_cfg qos;
+	uint32_t broadcast_id;
 };
 
 struct broadcast_sink {
@@ -186,6 +186,14 @@ struct broadcast_sink {
 	uint32_t broadcast_id;
 	size_t stream_cnt;
 	bool syncable;
+};
+
+struct unicast_group {
+	bool is_cap;
+	union {
+		struct bt_bap_unicast_group *bap_group;
+		struct bt_cap_unicast_group *cap_group;
+	};
 };
 
 #define BAP_UNICAST_AC_MAX_CONN   2U
@@ -211,7 +219,7 @@ extern struct shell_stream unicast_streams[CONFIG_BT_MAX_CONN * MAX(UNICAST_SERV
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 
-struct bap_unicast_ac_param {
+struct cap_unicast_ac_param {
 	char *name;
 	size_t conn_cnt;
 	size_t snk_cnt[BAP_UNICAST_AC_MAX_CONN];
@@ -220,17 +228,13 @@ struct bap_unicast_ac_param {
 	size_t src_chan_cnt;
 };
 
-extern struct bt_bap_unicast_group *default_unicast_group;
+extern struct unicast_group default_unicast_group;
 extern struct bt_bap_ep *snks[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
 extern struct bt_bap_ep *srcs[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
 extern struct named_lc3_preset default_sink_preset;
 extern struct named_lc3_preset default_source_preset;
 
-int bap_ac_create_unicast_group(const struct bap_unicast_ac_param *param,
-				struct shell_stream *snk_uni_streams[], size_t snk_cnt,
-				struct shell_stream *src_uni_streams[], size_t src_cnt);
-
-int cap_ac_unicast(const struct shell *sh, const struct bap_unicast_ac_param *param);
+int cap_ac_unicast(const struct shell *sh, const struct cap_unicast_ac_param *param);
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 #endif /* CONFIG_BT_BAP_UNICAST */
 

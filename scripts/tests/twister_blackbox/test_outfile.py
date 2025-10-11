@@ -16,11 +16,11 @@ import sys
 import tarfile
 
 # pylint: disable=no-name-in-module
-from conftest import ZEPHYR_BASE, TEST_DATA, sample_filename_mock, testsuite_filename_mock
+from conftest import ZEPHYR_BASE, TEST_DATA, sample_filename_mock, suite_filename_mock
 from twisterlib.testplan import TestPlan
 
 
-@mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
+@mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
 @mock.patch.object(TestPlan, 'SAMPLE_FILENAME', sample_filename_mock)
 class TestOutfile:
     @classmethod
@@ -207,7 +207,7 @@ class TestOutfile:
         path = os.path.join(TEST_DATA, 'samples', 'hello_world')
         package_name = 'PACKAGE'
         package_path = os.path.join(out_path, package_name)
-        args = ['-i', '--outdir', out_path, '-T', path] + \
+        args = ['--detailed-test-id','-i', '--outdir', out_path, '-T', path] + \
                ['--package-artifacts', package_path] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms
@@ -242,7 +242,7 @@ class TestOutfile:
         for file_name in file_names:
             shutil.move(os.path.join(out_path, os.path.basename(out_path), file_name), out_path)
 
-        args = ['-i', '--outdir', out_path, '-T', path] + \
+        args = ['--detailed-test-id', '-i', '--outdir', out_path, '-T', path] + \
                ['--test-only'] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms

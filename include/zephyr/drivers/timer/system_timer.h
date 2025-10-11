@@ -22,6 +22,9 @@
 extern "C" {
 #endif
 
+#define SYS_CLOCK_MAX_WAIT (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) \
+			    ? K_TICKS_FOREVER : INT_MAX)
+
 /**
  * @brief System Clock APIs
  * @defgroup clock_apis System Clock APIs

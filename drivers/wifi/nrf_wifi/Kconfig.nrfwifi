@@ -108,6 +108,15 @@ config NRF70_AP_MODE
 	depends on WIFI_NM_WPA_SUPPLICANT_AP
 	default y if WIFI_USAGE_MODE_AP || WIFI_USAGE_MODE_STA_AP
 
+config NRF70_ENABLE_DUAL_VIF
+	bool "Dual virtual Wi-Fi interfaces"
+	default y if WIFI_NM_MAX_MANAGED_INTERFACES = 2
+	depends on (WIFI_NRF7002 || WIFI_NRF7001) && NET_L2_ETHERNET
+	help
+	  Enable support for two virtual Wi-Fi interfaces (VIFs).
+	  When enabled, the driver can operate two VIFs simultaneously,
+	  allowing use cases such as one interface in AP mode and another in STA mode.
+
 config NRF70_P2P_MODE
 	bool "P2P support in driver"
 
@@ -934,4 +943,14 @@ config NRF_WIFI_DYNAMIC_ED
 	help
 	  This option enables support for proprietary algorithm to
 	  enhance performance in high-traffic channels.
+
+config NRF_WIFI_TWT_SETUP_TIMEOUT_MS
+	int "TWT setup timeout (ms)"
+	range 100 10000
+	default 250
+	help
+	  Timeout duration (in milliseconds) for the TWT setup procedure.
+	  The STA will transmit a TWT setup request every 100 milliseconds,
+	  continuing until this timeout value is reached. If no response is
+	  received before the timeout expires, the TWT setup is considered failed.
 endif # WIFI_NRF70

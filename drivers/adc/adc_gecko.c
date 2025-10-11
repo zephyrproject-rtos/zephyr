@@ -307,7 +307,7 @@ static DEVICE_API(adc, api_gecko_adc_driver_api) = {
 		irq_enable(DT_INST_IRQN(n));	\
 	}; \
 	DEVICE_DT_INST_DEFINE(n,					 \
-			      &adc_gecko_init, NULL,			 \
+			      adc_gecko_init, NULL,			 \
 			      &adc_gecko_data_##n, &adc_gecko_config_##n,\
 			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,	 \
 			      &api_gecko_adc_driver_api);

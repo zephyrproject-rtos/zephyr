@@ -1025,6 +1025,13 @@ int nvs_mount(struct nvs_fs *fs)
 		return -EINVAL;
 	}
 
+	/* check that sector size is not greater than max */
+	if (fs->sector_size > NVS_MAX_SECTOR_SIZE) {
+		LOG_ERR("Sector size %u too large, maximum is %zu",
+			fs->sector_size, NVS_MAX_SECTOR_SIZE);
+		return -EINVAL;
+	}
+
 	/* check that sector size is a multiple of pagesize */
 	rc = flash_get_page_info_by_offs(fs->flash_device, fs->offset, &info);
 	if (rc) {

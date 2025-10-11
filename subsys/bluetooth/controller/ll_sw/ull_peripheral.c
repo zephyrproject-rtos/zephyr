@@ -580,6 +580,9 @@ void ull_periph_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	ref = ull_ref_inc(&conn->ull);
 	LL_ASSERT(ref);
 
+	/* Increment event counter */
+	conn->event_counter += (lazy + 1U);
+
 	/* Append timing parameters */
 	p.ticks_at_expire = ticks_at_expire;
 	p.remainder = remainder;

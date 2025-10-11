@@ -54,7 +54,7 @@
 	pinctrl-names = "default", "sleep";
 };
 
-arduino_serial: &uart0{};
+arduino_serial: &uart0 {};
 
 arduino_i2c: &i2c0 {
 	compatible = "nordic,nrf-twim";

@@ -236,6 +236,12 @@ struct _thread_arch {
 #endif /* CONFIG_LAZY_FPU_SHARING */
 
 	tPreempFloatReg preempFloatReg; /* volatile float register storage */
+
+#ifdef CONFIG_HW_SHADOW_STACK
+	long *shstk_addr;
+	long *shstk_base;
+	size_t shstk_size;
+#endif
 };
 
 typedef struct _thread_arch _thread_arch_t;

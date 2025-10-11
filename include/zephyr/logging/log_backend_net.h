@@ -4,8 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the network log backend API
+ * @ingroup log_backend_net
+ */
+
 #ifndef ZEPHYR_LOG_BACKEND_NET_H_
 #define ZEPHYR_LOG_BACKEND_NET_H_
+
+/**
+ * @brief Network log backend API
+ * @defgroup log_backend_net Network log backend API
+ * @ingroup log_backend
+ * @{
+ */
 
 #include <stdbool.h>
 #include <zephyr/net/net_ip.h>
@@ -52,7 +65,7 @@ bool log_backend_net_set_ip(const struct sockaddr *addr);
  * @param len Length of the hostname array.
  */
 #if defined(CONFIG_NET_HOSTNAME_ENABLE)
-void log_backend_net_hostname_set(char *hostname, size_t len);
+void log_backend_net_hostname_set(const char *hostname, size_t len);
 #else
 static inline void log_backend_net_hostname_set(const char *hostname, size_t len)
 {
@@ -80,5 +93,7 @@ void log_backend_net_start(void);
 #ifdef __cplusplus
 }
 #endif
+
+/** @} */
 
 #endif /* ZEPHYR_LOG_BACKEND_NET_H_ */

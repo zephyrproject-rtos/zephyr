@@ -1,0 +1,6 @@
+board:
+  name: bgm220_ek4314a
+  full_name: BGM220 Explorer Kit (BGM220-EK4314A)
+  vendor: silabs
+  socs:
+    - name: bgm220pc22hna

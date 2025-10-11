@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2025 Ayush Singh, BeagleBoard.org Foundation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/mspm0/l/mspm0l1105.dtsi>
+
+/ {
+	model = "BeagleBoard.org PocketBeagle 2";
+	compatible = "beagle,pocketbeagle_2_mspm0l1105";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&flash0 {
+	status = "okay";
+};
+
+&pinctrl {
+	status = "okay";
+};

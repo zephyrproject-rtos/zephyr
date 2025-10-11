@@ -24,10 +24,10 @@ LOG_MODULE_DECLARE(wifi_nrf_bus, CONFIG_WIFI_NRF70_BUSLIB_LOG_LEVEL);
 static struct qspi_config *spim_config;
 
 static const struct spi_dt_spec spi_spec =
-SPI_DT_SPEC_GET(NRF7002_NODE, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0);
+SPI_DT_SPEC_GET(NRF7002_NODE, SPI_WORD_SET(8) | SPI_TRANSFER_MSB);
 
 static struct spi_dt_spec spi_spec_8mhz =
-SPI_DT_SPEC_GET(NRF7002_NODE, SPI_WORD_SET(8) | SPI_TRANSFER_MSB, 0);
+SPI_DT_SPEC_GET(NRF7002_NODE, SPI_WORD_SET(8) | SPI_TRANSFER_MSB);
 
 static int spim_xfer_tx(unsigned int addr, void *data, unsigned int len)
 {

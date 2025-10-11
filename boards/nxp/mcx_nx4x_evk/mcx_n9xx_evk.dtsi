@@ -1,0 +1,19 @@
+/*
+ * Copyright 2024-2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/nxp_mcxn94x.dtsi>
+#include "mcx_nx4x_evk.dtsi"
+#include "mcx_n9xx_evk-pinctrl.dtsi"
+
+&flexpwm1_pwm0 {
+	pinctrl-0 = <&pinmux_flexpwm1_pwm0>;
+	pinctrl-names = "default";
+};
+
+&lpcmp2 {
+	pinctrl-0 = <&pinmux_lpcmp2>;
+	pinctrl-names = "default";
+};

@@ -49,14 +49,14 @@
 
 &pmod_sd_shield {
 	interrupt-names = "accs", "card", "dma-req";
-	interrupts = <60 12>, <61 12>, <62 12>;
+	interrupts = <84 12>, <85 12>, <86 12>;
 	pinctrl-0 = <&pmod_sd_default>;
 };
 
 &sci9 {
 	pinctrl-0 = <&sci9_default>;
 	pinctrl-names = "default";
-	interrupts = <63 1>, <64 1>, <65 1>, <66 1>;
+	interrupts = <87 1>, <88 1>, <89 1>, <90 1>;
 	interrupt-names = "rxi", "txi", "tei", "eri";
 	status = "okay";
 

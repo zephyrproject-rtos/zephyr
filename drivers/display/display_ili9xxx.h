@@ -24,6 +24,7 @@
 #define ILI9XXX_RAMWR 0x2c
 #define ILI9XXX_RGBSET 0x2d
 #define ILI9XXX_RAMRD 0x2e
+#define ILI9XXX_TEON 0x35
 #define ILI9XXX_MADCTL 0x36
 #define ILI9XXX_PIXSET 0x3A
 #define ILI9XXX_RAMRD_CONT 0x3e
@@ -74,6 +75,7 @@ struct ili9xxx_config {
 	uint16_t x_resolution;
 	uint16_t y_resolution;
 	bool inversion;
+	uint8_t te_mode;
 	const void *regs;
 	int (*regs_init_fn)(const struct device *dev);
 };

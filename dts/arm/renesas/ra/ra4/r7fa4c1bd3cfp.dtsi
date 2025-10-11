@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/clock/ra_clock.h>
+#include <arm/renesas/ra/ra4/r7fa4c1bx.dtsi>
+
+/ {
+	soc {
+		flash: flash-controller@407e0000 {
+			compatible = "renesas,ra-flash-hp-controller";
+			reg = <0x407e0000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			interrupts = <49 1>, <50 1>;
+			interrupt-names = "frdyi", "fiferr";
+			flash-hardware-version = <4>;
+			#erase-block-cells = <2>;
+
+			flash0: flash@0 {
+				compatible = "renesas,ra-nv-code-flash";
+				reg = <0x0 DT_SIZE_K(512)>;
+				write-block-size = <8>;
+				erase-block-size = <2048>;
+				erase-blocks = <&flash 256 2048>;
+				programming-enable;
+			};
+
+			flash1: flash@8000000 {
+				compatible = "renesas,ra-nv-data-flash";
+				reg = <0x8000000 DT_SIZE_K(8)>;
+				write-block-size = <1>;
+				erase-block-size = <256>;
+				programming-enable;
+			};
+		};
+	};
+};

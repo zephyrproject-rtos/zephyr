@@ -41,9 +41,9 @@ config MQTT_SN_LIB_MAX_ADDR_SIZE
 	default 21
 	range 1 $(UINT8_MAX)
 	help
-		The MQTT_SN library stores addresses internally and thus
-		needs to know how long your addresses are. Set this to the maximum
-		length in bytes of the address data structure for your implemented transport.
+	  The MQTT_SN library stores addresses internally and thus
+	  needs to know how long your addresses are. Set this to the maximum
+	  length in bytes of the address data structure for your implemented transport.
 
 config MQTT_SN_LIB_BROADCAST_RADIUS
 	int "Radius for broadcast messages"

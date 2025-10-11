@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,6 +31,35 @@
 		/* Winbond W957A8MFYA5K */
 		device_type = "memory";
 		reg = <0x14000000 DT_SIZE_M(8)>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+		/*
+		 * Currently, HyperRAM on this board must be accessed under XIP mode,
+		 * so that the ROM bootloader  can initialize it by reading the XMCD configuration.
+		 * These XMCD configurations are stored in the default settings file
+		 * `xip/evkmimxrt1180_flexspi_nor_config.c`. (If modifications are needed,
+		 * please refer to the examples and the "System Boot" chapter in the
+		 * RT1180 Reference Manual.)
+		 * The CM33 core of the MIMXRT1180_EVK runs in XIP mode and uses the
+		 * HyperRAM space as the RAM region by default. Therefore, the status of the
+		 * full hyperram0 memory node is set to "okay" for cm33 core.
+		 * At this point, the CM7 core can also access the HyperRAM.
+		 * However, since the entire HyperRAM region is occupied in the CM33's DTS,
+		 * users can allocate the HyperRAM reasonably so that both cores (CM33 and CM7)
+		 * can use HyperRAM as their RAM region.
+		 *
+		 * If not configured by the ROM bootloader, the user must ensure the hyperram0
+		 * device is enabled in the DTS, otherwise, the user must set 'status = "disabled".
+		 * Note: mpu_region.c uses the status property from the DTS to configure the
+		 * corresponding MPU settings.
+		 */
+		status = "okay";
+	};
+
+	qspi_flash: memory@38000000 {
+		device_type = "memory";
+		reg = <0x38000000 DT_SIZE_M(16)>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
+		status = "okay";
 	};
 };
 
@@ -40,6 +69,10 @@
 };
 
 &lpadc1 {
+	status = "okay";
+};
+
+&dac {
 	status = "okay";
 };
 
@@ -87,7 +120,7 @@ zephyr_udc0: &usb1 {
 	tx-cal-45-dm-ohms = <6>;
 };
 
-zephyr_udc1: &usb2{
+zephyr_udc1: &usb2 {
 	status = "okay";
 	phy-handle = <&usbphy2>;
 };
@@ -97,4 +130,20 @@ zephyr_udc1: &usb2{
 	tx-d-cal = <7>;
 	tx-cal-45-dp-ohms = <6>;
 	tx-cal-45-dm-ohms = <6>;
+};
+
+&kpp {
+	status = "okay";
+};
+
+temp_sensor: &tmpsns {
+	status = "okay";
+};
+
+&sai1 {
+	status = "okay";
+};
+
+&flexspi {
+	status = "okay";
 };

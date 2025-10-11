@@ -56,7 +56,7 @@ config COVERAGE_NATIVE_GCOV
 config COVERAGE_NATIVE_SOURCE
 	bool "Host compiler source based code coverage"
 	depends on NATIVE_BUILD
-	depends on "${ZEPHYR_TOOLCHAIN_VARIANT}" = "llvm"
+	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "llvm"
 	help
 	  Build natively with the compiler source based coverage options.
 	  Today this is only supported with LLVM
@@ -72,6 +72,8 @@ config COVERAGE_GCOV
 
 endchoice
 
+if COVERAGE_GCOV
+
 config COVERAGE_GCOV_HEAP_SIZE
 	int "Size of heap allocated for gcov coverage data dump"
 	depends on COVERAGE_GCOV
@@ -82,11 +84,27 @@ config COVERAGE_GCOV_HEAP_SIZE
 	  data to be dumped over serial. If the value is 0, no buffer will be used,
 	  data will be dumped directly over serial.
 
+choice COVERAGE_DUMP_METHOD
+	prompt "Method to dump coverage data"
+	default COVERAGE_DUMP
+
 config COVERAGE_DUMP
-	bool "Dump coverage data on exit"
-	depends on COVERAGE_GCOV
+	bool "Dump coverage data to console on exit"
 	help
 	  Dump collected coverage information to console on exit.
+
+endchoice
+
+config COVERAGE_DUMP_PATH_EXCLUDE
+	string "Exclude files matching this pattern from the coverage data"
+	default ""
+	help
+	  Filenames are matched against the pattern using the POSIX fnmatch
+	  function. Filenames are based on their path in the build folder, not the
+	  original source tree. The empty string "" disables the pattern
+	  matching.
+
+endif # COVERAGE_GCOV
 
 config FORCE_COVERAGE
 	bool "Force coverage"

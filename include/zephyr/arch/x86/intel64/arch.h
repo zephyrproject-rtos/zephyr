@@ -15,6 +15,8 @@
 #define ZEPHYR_INCLUDE_ARCH_X86_INTEL64_ARCH_H_
 
 #include <zephyr/arch/exception.h>
+#include <zephyr/kernel_structs.h>
+#include <zephyr/arch/x86/intel64/exception.h>
 #include <zephyr/arch/x86/intel64/thread.h>
 #include <zephyr/arch/x86/thread_stack.h>
 #if defined(CONFIG_PCIE) && !defined(_ASMLANGUAGE)
@@ -66,7 +68,8 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 		"movq %[reason], %%rax\n\t" \
 		"int $32\n\t" \
 		: \
-		: [reason] "i" (reason_p)); \
+		: [reason] "i" (reason_p) \
+		: "memory"); \
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */ \
 } while (false)
 

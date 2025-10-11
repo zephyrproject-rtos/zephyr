@@ -106,12 +106,28 @@ int jesd216_bfp_read_support(const struct jesd216_param_header *php,
 			rv = extract_instr(dw7 >> 16, res);
 		}
 		break;
-	/* Not clear how to detect these; they are identified only by
-	 * enable/disable sequences.
+	/* The only information for these in basic flash parameters is in DWORD20. This contains
+	 * maximum operation speed of these modes with and without data strobe. Unsupported
+	 * configurations have the value 0xF. So, to see if it is unsupported, we can see if both
+	 * the speed fields are set to 0xF.
 	 */
 	case JESD216_MODE_44D4D:
+		if ((php->len_dw >= 20) &&
+		    (((sys_le32_to_cpu(bfp->dw10[10]) >> 8) & 0xFF) != 0xFF)) {
+			rv = 0;
+		}
+		break;
 	case JESD216_MODE_888:
+		if ((php->len_dw >= 20) &&
+		    (((sys_le32_to_cpu(bfp->dw10[10]) >> 16) & 0xFF) != 0xFF)) {
+			rv = 0;
+		}
+		break;
 	case JESD216_MODE_8D8D8D:
+		if ((php->len_dw >= 20) &&
+		    (((sys_le32_to_cpu(bfp->dw10[10]) >> 24) & 0xFF) != 0xFF)) {
+			rv = 0;
+		}
 		break;
 	default:
 		rv = -EINVAL;

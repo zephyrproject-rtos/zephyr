@@ -8,3 +8,10 @@ config MEMC_MAX32_HPB
 	select PINCTRL
 	help
 	  Enable ADI MAX32 HyperBus controller.
+
+	  If you want to rely on the linker to place symbols in this memory
+	  (using`zephyr_code_relocate() or Z_GENERIC_SECTION()), you have to
+	  ensure this driver in initialized before KERNEL_INIT_PRIORITY_OBJECTS
+	  (=30). In addition, this driver depends on a clock, so you have to
+	  ensure the clock will be started before this driver as well (see
+	  CLOCK_CONTROL_INIT_PRIORITY)

@@ -1,0 +1,6 @@
+board:
+  name: adafruit_feather_adalogger_rp2040
+  full_name: Feather RP2040 Adalogger
+  vendor: adafruit
+  socs:
+  - name: rp2040

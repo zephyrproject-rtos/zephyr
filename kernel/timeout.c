@@ -22,9 +22,6 @@ static sys_dlist_t timeout_list = SYS_DLIST_STATIC_INIT(&timeout_list);
  */
 static struct k_spinlock timeout_lock;
 
-#define MAX_WAIT (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) \
-		  ? K_TICKS_FOREVER : INT_MAX)
-
 /* Ticks left to process in the currently-executing sys_clock_announce() */
 static int announce_remaining;
 
@@ -91,7 +88,7 @@ static int32_t next_timeout(int32_t ticks_elapsed)
 
 	if ((to == NULL) ||
 	    ((int64_t)(to->dticks - ticks_elapsed) > (int64_t)INT_MAX)) {
-		ret = MAX_WAIT;
+		ret = SYS_CLOCK_MAX_WAIT;
 	} else {
 		ret = MAX(0, to->dticks - ticks_elapsed);
 	}

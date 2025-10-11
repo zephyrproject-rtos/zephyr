@@ -172,7 +172,7 @@ static bool process_step_data(struct bt_le_cs_subevent_step *step, void *user_da
 {
 	struct processing_context *context = (struct processing_context *)user_data;
 
-	if (step->mode == BT_CONN_LE_CS_MAIN_MODE_2) {
+	if (step->mode == BT_HCI_OP_LE_CS_MAIN_MODE_2) {
 		struct bt_hci_le_cs_step_data_mode_2 *step_data =
 			(struct bt_hci_le_cs_step_data_mode_2 *)step->data;
 

@@ -4,15 +4,25 @@ common:
     - drivers
   depends_on:
     - adc
+  filter: dt_node_has_prop("/zephyr,user","io-channels")
+
 tests:
   drivers.adc.accuracy.dac_source:
     depends_on:
       - dac
+    extra_configs:
+      - CONFIG_DAC_SOURCE_TEST=y
+    # Test scenario is filtered if Kconfig dependencies are not satisfied
+    filter: CONFIG_DAC_SOURCE_TEST
     harness_config:
       fixture: dac_adc_loopback
     platform_allow:
       - frdm_k64f
   drivers.adc.accuracy.ref_volt:
+    extra_configs:
+      - CONFIG_REFERENCE_VOLTAGE_TEST=y
+    # Test scenario is filtered if Kconfig dependencies are not satisfied
+    filter: CONFIG_REFERENCE_VOLTAGE_TEST
     harness_config:
       fixture: adc_ref_volt
     platform_allow:
@@ -39,10 +49,14 @@ tests:
       - ek_ra4m2
       - ek_ra4m3
       - ek_ra4w1
+      - sltb010a
+      - xg23_rb4210a
       - xg24_dk2601b
       - xg24_rb4187c
       - xg27_dk2602a
       - xg29_rb4412a
+      - bg29_rb4420a
+      - slwrb4180a
     integration_platforms:
       - frdm_kl25z
       - nrf54l15dk/nrf54l15/cpuapp

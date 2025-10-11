@@ -24,5 +24,4 @@
 	chosen {
 		zephyr,sram = &dccm0;
 	};
-
 };

@@ -4,7 +4,6 @@
  */
 
 #include <zephyr/kernel.h>
-#include <ksched.h>
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <offsets_short.h>

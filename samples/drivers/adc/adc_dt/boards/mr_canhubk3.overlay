@@ -41,9 +41,7 @@
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <14>;
 	};
-
 };
-
 
 &adc2 {
 	group-channel = "precision";

@@ -48,8 +48,13 @@ static int siwx91x_bt_send(const struct device *dev, struct net_buf *buf)
 			sc = -EIO;
 		}
 	}
+
+	if (sc != 0) {
+		return sc;
+	}
+
 	net_buf_unref(buf);
-	return sc;
+	return 0;
 }
 
 static void siwx91x_bt_resp_rcvd(uint16_t status, rsi_ble_event_rcp_rcvd_info_t *resp_buf)

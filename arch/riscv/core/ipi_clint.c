@@ -4,10 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ipi.h>
-#include <ksched.h>
-
 #include <zephyr/kernel.h>
+#include <kernel_arch_interface.h>
+#include <ipi.h>
 
 #define CLINT_NODE DT_NODELABEL(clint)
 #if !DT_NODE_EXISTS(CLINT_NODE)

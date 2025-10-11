@@ -803,12 +803,11 @@ bool bt_id_adv_random_addr_check(const struct bt_le_adv_param *param)
 		 * Explicitly stop it here.
 		 */
 
-		if (!(param->options & _BT_LE_ADV_OPT_CONNECTABLE) &&
-		     (param->options & BT_LE_ADV_OPT_USE_IDENTITY)) {
+		if (!(param->options & BT_LE_ADV_OPT_CONN) &&
+		    (param->options & BT_LE_ADV_OPT_USE_IDENTITY)) {
 			/* Attempt to set non-connectable NRPA */
 			return false;
-		} else if (bt_dev.id_addr[param->id].type ==
-			   BT_ADDR_LE_RANDOM &&
+		} else if (bt_dev.id_addr[param->id].type == BT_ADDR_LE_RANDOM &&
 			   param->id != BT_ID_DEFAULT) {
 			/* Attempt to set connectable, or non-connectable with
 			 * identity different than scanner.
@@ -953,7 +952,7 @@ struct bt_id_conflict {
  * must refuse bonds that conflict in the resolve list. Notably, this prevents
  * multiple local identities to bond with the same remote identity.
  */
-void find_rl_conflict(struct bt_keys *resident, void *user_data)
+static void find_rl_conflict(struct bt_keys *resident, void *user_data)
 {
 	struct bt_id_conflict *conflict = user_data;
 	bool addr_conflict;
@@ -1936,7 +1935,7 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 		return 0;
 	}
 
-	if (options & _BT_LE_ADV_OPT_CONNECTABLE) {
+	if (options & BT_LE_ADV_OPT_CONN) {
 		if (dir_adv && (options & BT_LE_ADV_OPT_DIR_ADDR_RPA) &&
 		    !BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
 			return -ENOTSUP;

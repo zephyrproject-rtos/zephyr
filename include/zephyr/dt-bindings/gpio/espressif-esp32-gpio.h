@@ -14,8 +14,8 @@
  * ESP32 SoCs.
  *
  * The interface supports two different drive strengths:
- * `DFLT` - The lowest drive strength supported by the HW
- * `ALT` - The highest drive strength supported by the HW
+ * `DFLT` - The highest drive strength supported by the HW
+ * `ALT` - The lowest drive strength supported by the HW
  *
  * @{
  */

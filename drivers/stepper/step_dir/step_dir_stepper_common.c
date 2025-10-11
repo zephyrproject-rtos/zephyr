@@ -8,35 +8,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(step_dir_stepper, CONFIG_STEPPER_LOG_LEVEL);
 
-static inline int step_dir_stepper_perform_step(const struct device *dev)
-{
-	const struct step_dir_stepper_common_config *config = dev->config;
-	struct step_dir_stepper_common_data *data = dev->data;
-	int ret;
-
-	ret = gpio_pin_toggle_dt(&config->step_pin);
-	if (ret < 0) {
-		LOG_ERR("Failed to toggle step pin: %d", ret);
-		return ret;
-	}
-
-	if (!config->dual_edge) {
-		ret = gpio_pin_toggle_dt(&config->step_pin);
-		if (ret < 0) {
-			LOG_ERR("Failed to toggle step pin: %d", ret);
-			return ret;
-		}
-	}
-
-	if (data->direction == STEPPER_DIRECTION_POSITIVE) {
-		data->actual_position++;
-	} else {
-		data->actual_position--;
-	}
-
-	return 0;
-}
-
 static inline int update_dir_pin(const struct device *dev)
 {
 	const struct step_dir_stepper_common_config *config = dev->config;
@@ -118,17 +89,42 @@ static void stepper_work_event_handler(struct k_work *work)
 }
 #endif /* CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS */
 
-static void update_remaining_steps(struct step_dir_stepper_common_data *data)
+static int start_stepping(const struct device *dev)
 {
-	const struct step_dir_stepper_common_config *config = data->dev->config;
+	const struct step_dir_stepper_common_config *config = dev->config;
+	struct step_dir_stepper_common_data *data = dev->data;
+	int ret;
 
-	if (data->step_count > 0) {
-		data->step_count--;
-	} else if (data->step_count < 0) {
-		data->step_count++;
-	} else {
-		stepper_trigger_callback(data->dev, STEPPER_EVENT_STEPS_COMPLETED);
-		config->timing_source->stop(data->dev);
+	ret = config->timing_source->update(dev, config->dual_edge
+							 ? data->microstep_interval_ns
+							 : data->microstep_interval_ns / 2);
+	if (ret < 0) {
+		LOG_ERR("Failed to update timing source: %d", ret);
+		return ret;
+	}
+
+	ret = config->timing_source->start(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to start timing source: %d", ret);
+		return ret;
+	}
+
+	stepper_handle_timing_signal(dev);
+	return 0;
+}
+
+static void update_remaining_steps(const struct device *dev)
+{
+	const struct step_dir_stepper_common_config *config = dev->config;
+	struct step_dir_stepper_common_data *data = dev->data;
+
+	if (data->step_high && !config->dual_edge) {
+		return;
+	}
+	if (atomic_get(&data->step_count) > 0) {
+		atomic_dec(&data->step_count);
+	} else if (atomic_get(&data->step_count) < 0) {
+		atomic_inc(&data->step_count);
 	}
 }
 
@@ -136,9 +132,9 @@ static void update_direction_from_step_count(const struct device *dev)
 {
 	struct step_dir_stepper_common_data *data = dev->data;
 
-	if (data->step_count > 0) {
+	if (atomic_get(&data->step_count) > 0) {
 		data->direction = STEPPER_DIRECTION_POSITIVE;
-	} else if (data->step_count < 0) {
+	} else if (atomic_get(&data->step_count) < 0) {
 		data->direction = STEPPER_DIRECTION_NEGATIVE;
 	} else {
 		LOG_ERR("Step count is zero");
@@ -150,22 +146,19 @@ static void position_mode_task(const struct device *dev)
 	struct step_dir_stepper_common_data *data = dev->data;
 	const struct step_dir_stepper_common_config *config = dev->config;
 
-	if (data->step_count) {
-		(void)step_dir_stepper_perform_step(dev);
-	}
+	update_remaining_steps(dev);
 
-	if (config->timing_source->needs_reschedule(dev) && data->step_count != 0) {
+	if (config->timing_source->needs_reschedule(dev) && atomic_get(&data->step_count) != 0) {
 		(void)config->timing_source->start(dev);
+	} else if (atomic_get(&data->step_count) == 0) {
+		config->timing_source->stop(data->dev);
+		stepper_trigger_callback(data->dev, STEPPER_EVENT_STEPS_COMPLETED);
 	}
-
-	update_remaining_steps(dev->data);
 }
 
 static void velocity_mode_task(const struct device *dev)
 {
 	const struct step_dir_stepper_common_config *config = dev->config;
-
-	(void)step_dir_stepper_perform_step(dev);
 
 	if (config->timing_source->needs_reschedule(dev)) {
 		(void)config->timing_source->start(dev);
@@ -174,20 +167,36 @@ static void velocity_mode_task(const struct device *dev)
 
 void stepper_handle_timing_signal(const struct device *dev)
 {
+	const struct step_dir_stepper_common_config *config = dev->config;
 	struct step_dir_stepper_common_data *data = dev->data;
+	int ret;
 
-	K_SPINLOCK(&data->lock) {
-		switch (data->run_mode) {
-		case STEPPER_RUN_MODE_POSITION:
-			position_mode_task(dev);
-			break;
-		case STEPPER_RUN_MODE_VELOCITY:
-			velocity_mode_task(dev);
-			break;
-		default:
-			LOG_WRN("Unsupported run mode: %d", data->run_mode);
-			break;
+	atomic_val_t step_pin_status = atomic_xor(&data->step_high, 1) ^ 1;
+
+	ret = gpio_pin_set_dt(&config->step_pin, atomic_get(&step_pin_status));
+	if (ret < 0) {
+		LOG_ERR("Failed to set step pin: %d", ret);
+		return;
+	}
+
+	if (!atomic_get(&step_pin_status) || config->dual_edge) {
+		if (data->direction == STEPPER_DIRECTION_POSITIVE) {
+			atomic_inc(&data->actual_position);
+		} else {
+			atomic_dec(&data->actual_position);
 		}
+	}
+
+	switch (data->run_mode) {
+	case STEPPER_RUN_MODE_POSITION:
+		position_mode_task(dev);
+		break;
+	case STEPPER_RUN_MODE_VELOCITY:
+		velocity_mode_task(dev);
+		break;
+	default:
+		LOG_WRN("Unsupported run mode: %d", data->run_mode);
+		break;
 	}
 }
 
@@ -228,7 +237,6 @@ int step_dir_stepper_common_init(const struct device *dev)
 		    CONFIG_STEPPER_STEP_DIR_EVENT_QUEUE_LEN);
 	k_work_init(&data->event_callback_work, stepper_work_event_handler);
 #endif /* CONFIG_STEPPER_STEP_DIR_GENERATE_ISR_SAFE_EVENTS */
-
 	return 0;
 }
 
@@ -243,23 +251,29 @@ int step_dir_stepper_common_move_by(const struct device *dev, const int32_t micr
 		return -EINVAL;
 	}
 
+	if (micro_steps == 0) {
+		stepper_trigger_callback(data->dev, STEPPER_EVENT_STEPS_COMPLETED);
+		config->timing_source->stop(dev);
+		return 0;
+	}
+
 	K_SPINLOCK(&data->lock) {
 		data->run_mode = STEPPER_RUN_MODE_POSITION;
-		data->step_count = micro_steps;
+		atomic_set(&data->step_count, micro_steps);
 		update_direction_from_step_count(dev);
 		ret = update_dir_pin(dev);
 		if (ret < 0) {
 			K_SPINLOCK_BREAK;
 		}
-		config->timing_source->update(dev, data->microstep_interval_ns);
-		config->timing_source->start(dev);
+
+		ret = start_stepping(dev);
 	}
 
 	return ret;
 }
 
 int step_dir_stepper_common_set_microstep_interval(const struct device *dev,
-					      const uint64_t microstep_interval_ns)
+						   const uint64_t microstep_interval_ns)
 {
 	struct step_dir_stepper_common_data *data = dev->data;
 	const struct step_dir_stepper_common_config *config = dev->config;
@@ -269,9 +283,21 @@ int step_dir_stepper_common_set_microstep_interval(const struct device *dev,
 		return -EINVAL;
 	}
 
+	if (config->dual_edge && (microstep_interval_ns < config->step_width_ns)) {
+		LOG_ERR("Step interval too small for configured step width");
+		return -EINVAL;
+	}
+
+	if (microstep_interval_ns < 2 * config->step_width_ns) {
+		LOG_ERR("Step interval too small for configured step width");
+		return -EINVAL;
+	}
+
 	K_SPINLOCK(&data->lock) {
 		data->microstep_interval_ns = microstep_interval_ns;
-		config->timing_source->update(dev, microstep_interval_ns);
+		config->timing_source->update(dev, config->dual_edge
+							   ? data->microstep_interval_ns
+							   : data->microstep_interval_ns / 2);
 	}
 
 	return 0;
@@ -292,9 +318,7 @@ int step_dir_stepper_common_get_actual_position(const struct device *dev, int32_
 {
 	struct step_dir_stepper_common_data *data = dev->data;
 
-	K_SPINLOCK(&data->lock) {
-		*value = data->actual_position;
-	}
+	*value = atomic_get(&data->actual_position);
 
 	return 0;
 }
@@ -305,9 +329,7 @@ int step_dir_stepper_common_move_to(const struct device *dev, const int32_t valu
 	int32_t steps_to_move;
 
 	/* Calculate the relative movement required */
-	K_SPINLOCK(&data->lock) {
-		steps_to_move = value - data->actual_position;
-	}
+	steps_to_move = value - atomic_get(&data->actual_position);
 
 	return step_dir_stepper_common_move_by(dev, steps_to_move);
 }
@@ -323,8 +345,12 @@ int step_dir_stepper_common_is_moving(const struct device *dev, bool *is_moving)
 int step_dir_stepper_common_run(const struct device *dev, const enum stepper_direction direction)
 {
 	struct step_dir_stepper_common_data *data = dev->data;
-	const struct step_dir_stepper_common_config *config = dev->config;
 	int ret;
+
+	if (data->microstep_interval_ns == 0) {
+		LOG_ERR("Step interval not set or invalid step interval set");
+		return -EINVAL;
+	}
 
 	K_SPINLOCK(&data->lock) {
 		data->run_mode = STEPPER_RUN_MODE_VELOCITY;
@@ -333,8 +359,8 @@ int step_dir_stepper_common_run(const struct device *dev, const enum stepper_dir
 		if (ret < 0) {
 			K_SPINLOCK_BREAK;
 		}
-		config->timing_source->update(dev, data->microstep_interval_ns);
-		config->timing_source->start(dev);
+
+		ret = start_stepping(dev);
 	}
 
 	return ret;
@@ -343,6 +369,7 @@ int step_dir_stepper_common_run(const struct device *dev, const enum stepper_dir
 int step_dir_stepper_common_stop(const struct device *dev)
 {
 	const struct step_dir_stepper_common_config *config = dev->config;
+	struct step_dir_stepper_common_data *data = dev->data;
 	int ret;
 
 	ret = config->timing_source->stop(dev);
@@ -351,7 +378,18 @@ int step_dir_stepper_common_stop(const struct device *dev)
 		return ret;
 	}
 
+	if (!config->dual_edge && atomic_cas(&data->step_high, 1, 0)) {
+		gpio_pin_set_dt(&config->step_pin, 0);
+		/* If we are in the high state, we need to account for that step */
+		if (data->direction == STEPPER_DIRECTION_POSITIVE) {
+			atomic_inc(&data->actual_position);
+		} else {
+			atomic_dec(&data->actual_position);
+		}
+	}
+
 	stepper_trigger_callback(dev, STEPPER_EVENT_STOPPED);
+
 	return 0;
 }
 

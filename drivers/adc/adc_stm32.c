@@ -498,7 +498,7 @@ static void adc_stm32_calibration_start(const struct device *dev, bool single_en
 	const struct adc_stm32_cfg *config =
 		(const struct adc_stm32_cfg *)dev->config;
 	ADC_TypeDef *adc = config->base;
-#ifdef LL_ADC_SINGLE_ENDED
+#if defined(LL_ADC_SINGLE_ENDED) && defined(LL_ADC_DIFFERENTIAL_ENDED)
 	uint32_t calib_type = single_ended ? LL_ADC_SINGLE_ENDED : LL_ADC_DIFFERENTIAL_ENDED;
 #else
 	ARG_UNUSED(single_ended);
@@ -1208,6 +1208,11 @@ static int adc_stm32_sampling_time_check(const struct device *dev, uint16_t acq_
 
 	if (acq_time == ADC_ACQ_TIME_MAX) {
 		return STM32_NB_SAMPLING_TIME - 1;
+	}
+
+	if (ADC_ACQ_TIME_UNIT(acq_time) != ADC_ACQ_TIME_TICKS) {
+		LOG_ERR("Acquisition time expected in ticks only");
+		return -EINVAL;
 	}
 
 	for (int i = 0; i < STM32_NB_SAMPLING_TIME; i++) {
@@ -2004,7 +2009,7 @@ static struct adc_stm32_data adc_stm32_data_##index = {			\
 PM_DEVICE_DT_INST_DEFINE(index, adc_stm32_pm_action);			\
 									\
 DEVICE_DT_INST_DEFINE(index,						\
-		    &adc_stm32_init, PM_DEVICE_DT_INST_GET(index),	\
+		    adc_stm32_init, PM_DEVICE_DT_INST_GET(index),	\
 		    &adc_stm32_data_##index, &adc_stm32_cfg_##index,	\
 		    POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,		\
 		    &api_stm32_driver_api);

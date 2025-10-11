@@ -63,7 +63,7 @@ Decorators
     - this is an example of ``pytest`` 's test parametrization.
       Read up on it `here <https://docs.pytest.org/en/7.1.x/example/parametrize.html#different-options-for-test-ids>`__.
       TESTDATAs are most often declared as class fields.
-* ``@mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)``
+* ``@mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)``
     - this decorator allows us to use only tests defined in the ``test_data`` and
       ignore the Zephyr testcases in the ``tests`` directory. **Note that all ``test_data``
       tests use** ``test_data.yaml`` **as a filename, not** ``testcase.yaml`` **!**

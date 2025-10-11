@@ -66,6 +66,6 @@ config CC13X2_CC26X2_XOSC_CAPARRAY_DELTA
 	range 0 0xFF
 	default 0xD5
 	help
-	  Enable a specific cap array tunning delta.
+	  Enable a specific cap array tuning delta.
 
 endmenu

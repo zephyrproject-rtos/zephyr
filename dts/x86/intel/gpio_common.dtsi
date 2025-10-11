@@ -145,6 +145,15 @@
 			status = "disabled";
 		};
 
+		gpio_v: gpio_v {
+			compatible = "intel,gpio";
+			interrupt-parent = <&intc>;
+			interrupts = <ACPI_IRQ_DETECT ACPI_IRQ_FLAG_DETECT 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
 		vgpio: vgpio {
 			compatible = "intel,gpio";
 			interrupt-parent = <&intc>;

@@ -23,6 +23,7 @@
  * @brief UART Emulation Interface
  * @defgroup uart_emul_interface UART Emulation Interface
  * @ingroup io_emulators
+ * @ingroup uart_interface
  * @{
  */
 

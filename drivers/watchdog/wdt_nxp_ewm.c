@@ -163,9 +163,11 @@ static int nxp_ewm_init(const struct device *dev)
 	}
 #endif /* DT_INST_NODE_HAS_PROP(0, clk_sel) */
 
+#if DT_INST_NODE_HAS_PROP(0, clk_divider)
 	if (config->clk_divider >= 0 && config->clk_divider <= 0xFF) {
 		base->CLKPRESCALER = EWM_CLKPRESCALER_CLK_DIV(config->clk_divider);
 	}
+#endif /* DT_INST_NODE_HAS_PROP(0, clk_divider) */
 	config->irq_config_func(dev);
 
 	return 0;
@@ -193,7 +195,7 @@ static DEVICE_API(wdt, nxp_ewm_api) = {
 		.is_input_active_high =					\
 			DT_INST_PROP(n, input_trigger_active_high),	\
 		EWM_CONFIG_CLK_SEL_INIT(n)	\
-		.clk_divider = DT_INST_PROP(n, clk_divider),		\
+		.clk_divider = DT_INST_PROP_OR(n, clk_divider, 0),	\
 	};								\
 									\
 	static struct nxp_ewm_data nxp_ewm_data_##n;			\

@@ -11,3 +11,10 @@ tests:
       - sensortile_box          # lis2mdl
       - stm32f411e_disco        # lsm303agr_magn
       - stm32f3_disco           # lsm303dlhc_magn
+  sample.sensor.magn_polling.shields:
+    platform_allow:
+      - adafruit_qt_py_rp2040/rp2040       # adafruit_lis2mdl shield
+      - mikroe_clicker_ra4m1/r7fa4m1ab3cfm # mikroe_3d_hall_3_click shield
+    extra_args:
+      - platform:adafruit_qt_py_rp2040/rp2040:SHIELD="adafruit_lis2mdl"
+      - platform:mikroe_clicker_ra4m1/r7fa4m1ab3cfm:SHIELD="mikroe_3d_hall_3_click"

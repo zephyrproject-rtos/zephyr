@@ -18,3 +18,6 @@
 		zephyr,code-partition = &slot0_ns_partition;
 	};
 };
+
+/* Include default memory partition configuration file */
+#include <nordic/nrf5340_cpuapp_ns_partition.dtsi>

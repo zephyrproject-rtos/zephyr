@@ -5,32 +5,26 @@ if(CONFIG_NRF_PERIPHCONF_SECTION)
   zephyr_linker_sources(SECTIONS uicr.ld)
 endif()
 
-if(CONFIG_NRF_HALTIUM_GENERATE_UICR)
-  if(CONFIG_NRF_PERIPHCONF_SECTION)
-    set(in_periphconf_elf_arg
-      --in-periphconf-elf $<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
-    )
-  endif()
-
-  if(CONFIG_NRF_HALTIUM_UICR_PERIPHCONF)
-    set(periphconf_hex_file ${PROJECT_BINARY_DIR}/periphconf.hex)
-    set(out_periphconf_hex_arg
-      --out-periphconf-hex ${periphconf_hex_file}
-    )
-    list(APPEND optional_byproducts ${periphconf_hex_file})
-  endif()
-
-  set(uicr_hex_file ${PROJECT_BINARY_DIR}/uicr.hex)
-  set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-    COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${ZEPHYR_BASE}/scripts/dts/python-devicetree/src
-    ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/gen_uicr.py
-    --in-config ${DOTCONFIG}
-    --in-edt-pickle ${EDT_PICKLE}
-    ${in_periphconf_elf_arg}
-    ${out_periphconf_hex_arg}
-    --out-uicr-hex ${uicr_hex_file}
+if(CONFIG_NRF_PERIPHCONF_GENERATE_ENTRIES)
+  set(periphconf_entries_c_file ${PROJECT_BINARY_DIR}/periphconf_entries_generated.c)
+  execute_process(
+    COMMAND
+      ${CMAKE_COMMAND} -E env ZEPHYR_BASE=${ZEPHYR_BASE}
+      ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/gen_periphconf_entries.py
+      --soc ${CONFIG_SOC}
+      --in-edt-pickle ${EDT_PICKLE}
+      --out-periphconf-source ${periphconf_entries_c_file}
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    COMMAND_ERROR_IS_FATAL ANY
   )
-  set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts
-    ${uicr_hex_file} ${optional_byproducts}
+  zephyr_sources(${periphconf_entries_c_file})
+  message(STATUS "Generated ${periphconf_entries_c_file} from ${EDT_PICKLE}")
+endif()
+
+if(CONFIG_NRF_PERIPHCONF_SECTION AND NOT SYSBUILD)
+  message(WARNING "CONFIG_NRF_PERIPHCONF_SECTION is enabled, but Sysbuild is not being used. "
+                  "The global peripheral configuration will not be applied unless artifacts "
+                  "are generated manually/externally. To enable automatic generation, build with "
+                  "Sysbuild and ensure that SB_CONFIG_NRF_HALTIUM_GENERATE_UICR=y."
   )
 endif()

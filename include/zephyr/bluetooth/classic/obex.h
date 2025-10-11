@@ -207,9 +207,38 @@ enum __packed bt_obex_header_id {
 	BT_OBEX_HEADER_ID_SRM_PARAM = 0x98,
 };
 
+/** The OBEX packet header length for PUT and GET request and response. */
+#define BT_OBEX_HDR_LEN 3
+
+/** The max PDU data length of OBEX pachet. */
+#define BT_OBEX_PDU_LEN(mopl) ((mopl) - BT_OBEX_HDR_LEN)
+
+/** The header length of the OBEX header body/end body. */
+#define BT_OBEX_HDR_LEN_OF_HEADER_BODY 3
+
+/** The max remaining length of the buffer if the adding header is body/end body.
+ *
+ *  It is used to calculate the max sending length when adding the header body data.
+ *  @code{.c}
+ *  uint16_t len = BT_OBEX_PDU_LEN(mopl);
+ *
+ *  len = MIN(len - buf->len, net_buf_tailroom(buf));
+ *  if (len > BT_OBEX_HDR_LEN_OF_HEADER_BODY) {
+ *          len = BT_OBEX_DATA_LEN_OF_HEADER_BODY(len);
+ *          Calling bt_obex_add_header_body() or bt_obex_add_header_end_body()
+ *          ...
+ *  }
+ *  @endcode
+ *
+ *  @param len The max remaining length.
+ */
+#define BT_OBEX_DATA_LEN_OF_HEADER_BODY(len) ((len) - BT_OBEX_HDR_LEN_OF_HEADER_BODY)
+
 #define BT_OBEX_SEND_BUF_RESERVE 7
 
 struct bt_obex;
+struct bt_obex_server;
+struct bt_obex_client;
 
 /** @brief OBEX server operations structure.
  *
@@ -221,76 +250,77 @@ struct bt_obex_server_ops {
 	 *  If this callback is provided it will be called whenever the OBEX connect request
 	 *  is received.
 	 *
-	 *  @param obex The OBEX object.
+	 *  @param server The OBEX server object.
 	 *  @param version OBEX version number.
 	 *  @param mopl Maximum OBEX packet length.
 	 *  @param buf Sequence of headers.
 	 */
-	void (*connect)(struct bt_obex *obex, uint8_t version, uint16_t mopl, struct net_buf *buf);
+	void (*connect)(struct bt_obex_server *server, uint8_t version, uint16_t mopl,
+			struct net_buf *buf);
 
 	/** @brief OBEX disconnect request callback
 	 *
 	 *  If this callback is provided it will be called whenever the OBEX disconnect request
 	 *  is received.
 	 *
-	 *  @param obex The OBEX object.
+	 *  @param server The OBEX server object.
 	 *  @param buf Sequence of headers.
 	 */
-	void (*disconnect)(struct bt_obex *obex, struct net_buf *buf);
+	void (*disconnect)(struct bt_obex_server *server, struct net_buf *buf);
 
 	/** @brief OBEX put request callback
 	 *
 	 *  If this callback is provided it will be called whenever the OBEX put request is
 	 *  received.
 	 *
-	 *  @param obex The OBEX object.
+	 *  @param server The OBEX server object.
 	 *  @param final If the final bit is set.
 	 *  @param buf Sequence of headers.
 	 */
-	void (*put)(struct bt_obex *obex, bool final, struct net_buf *buf);
+	void (*put)(struct bt_obex_server *server, bool final, struct net_buf *buf);
 
 	/** @brief OBEX get request callback
 	 *
 	 *  If this callback is provided it will be called whenever the OBEX get request is
 	 *  received.
 	 *
-	 *  @param obex The OBEX object.
+	 *  @param server The OBEX server object.
 	 *  @param final If the final bit is set.
 	 *  @param buf Sequence of headers.
 	 */
-	void (*get)(struct bt_obex *obex, bool final, struct net_buf *buf);
+	void (*get)(struct bt_obex_server *server, bool final, struct net_buf *buf);
 
 	/** @brief OBEX abort request callback
 	 *
 	 *  If this callback is provided it will be called whenever the OBEX abort request is
 	 *  received.
 	 *
-	 *  @param obex The OBEX object.
+	 *  @param server The OBEX server object.
 	 *  @param buf Optional headers.
 	 */
-	void (*abort)(struct bt_obex *obex, struct net_buf *buf);
+	void (*abort)(struct bt_obex_server *server, struct net_buf *buf);
 
 	/** @brief OBEX SetPath request callback
 	 *
 	 *  If this callback is provided it will be called whenever the OBEX SetPath request is
 	 *  received.
 	 *
-	 *  @param obex The OBEX object.
+	 *  @param server The OBEX server object.
 	 *  @param flags The flags.
 	 *  @param buf Optional headers.
 	 */
-	void (*setpath)(struct bt_obex *obex, uint8_t flags, struct net_buf *buf);
+	void (*setpath)(struct bt_obex_server *server, uint8_t flags, struct net_buf *buf);
 
 	/** @brief OBEX action request callback
 	 *
 	 *  If this callback is provided it will be called whenever the OBEX action request is
 	 *  received.
 	 *
-	 *  @param obex The OBEX object.
+	 *  @param server The OBEX server object.
 	 *  @param final If the final bit is set.
 	 *  @param buf Sequence of headers (Including action identifier header if it exists).
 	 */
-	void (*action)(struct bt_obex *obex, bool final, struct net_buf *buf);
+	void (*action)(struct bt_obex_server *server, bool final, struct net_buf *buf);
 };
 
 /** @brief OBEX client operations structure.
@@ -303,80 +333,80 @@ struct bt_obex_client_ops {
 	 *  If this callback is provided it will be called whenever the OBEX connect response
 	 *  is received.
 	 *
-	 *  @param obex The OBEX object.
+	 *  @param client The OBEX client object.
 	 *  @param rsp_code Response code.
 	 *  @param version OBEX version number.
 	 *  @param mopl Maximum OBEX packet length.
 	 *  @param buf Sequence of headers.
 	 */
-	void (*connect)(struct bt_obex *obex, uint8_t rsp_code, uint8_t version, uint16_t mopl,
-			struct net_buf *buf);
+	void (*connect)(struct bt_obex_client *client, uint8_t rsp_code, uint8_t version,
+			uint16_t mopl, struct net_buf *buf);
 
 	/** @brief OBEX disconnect response callback
 	 *
 	 *  If this callback is provided it will be called whenever the OBEX disconnect response
 	 *  is received.
 	 *
-	 *  @param obex The OBEX object.
+	 *  @param client The OBEX client object.
 	 *  @param rsp_code Response code.
 	 *  @param buf Sequence of headers.
 	 */
-	void (*disconnect)(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf);
+	void (*disconnect)(struct bt_obex_client *client, uint8_t rsp_code, struct net_buf *buf);
 
 	/** @brief OBEX put response callback
 	 *
 	 *  If this callback is provided it will be called whenever the OBEX put response is
 	 *  received.
 	 *
-	 *  @param obex The OBEX object.
+	 *  @param client The OBEX client object.
 	 *  @param rsp_code Response code.
 	 *  @param buf Optional response headers.
 	 */
-	void (*put)(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf);
+	void (*put)(struct bt_obex_client *client, uint8_t rsp_code, struct net_buf *buf);
 
 	/** @brief OBEX get response callback
 	 *
 	 *  If this callback is provided it will be called whenever the OBEX get response is
 	 *  received.
 	 *
-	 *  @param obex The OBEX object.
+	 *  @param client The OBEX client object.
 	 *  @param rsp_code Response code.
 	 *  @param buf Optional response headers.
 	 */
-	void (*get)(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf);
+	void (*get)(struct bt_obex_client *client, uint8_t rsp_code, struct net_buf *buf);
 
 	/** @brief OBEX abort response callback
 	 *
 	 *  If this callback is provided it will be called whenever the OBEX abort response is
 	 *  received.
 	 *
-	 *  @param obex The OBEX object.
+	 *  @param client The OBEX client object.
 	 *  @param rsp_code Response code.
 	 *  @param buf Optional response headers.
 	 */
-	void (*abort)(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf);
+	void (*abort)(struct bt_obex_client *client, uint8_t rsp_code, struct net_buf *buf);
 
 	/** @brief OBEX SetPath response callback
 	 *
 	 *  If this callback is provided it will be called whenever the OBEX SetPath response is
 	 *  received.
 	 *
-	 *  @param obex The OBEX object.
+	 *  @param client The OBEX client object.
 	 *  @param rsp_code Response code.
 	 *  @param buf Optional response headers.
 	 */
-	void (*setpath)(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf);
+	void (*setpath)(struct bt_obex_client *client, uint8_t rsp_code, struct net_buf *buf);
 
 	/** @brief OBEX action response callback
 	 *
 	 *  If this callback is provided it will be called whenever the OBEX action response is
 	 *  received.
 	 *
-	 *  @param obex The OBEX object.
+	 *  @param client The OBEX client object.
 	 *  @param rsp_code Response code.
 	 *  @param buf Optional response headers.
 	 */
-	void (*action)(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf);
+	void (*action)(struct bt_obex_client *client, uint8_t rsp_code, struct net_buf *buf);
 };
 
 /** @brief OBEX transport operations structure.
@@ -447,38 +477,83 @@ enum __packed bt_obex_state {
 	BT_OBEX_DISCONNECTING,
 };
 
-/** @brief OBEX structure. */
-struct bt_obex {
+/* bt_obex flags */
+enum {
+	BT_OBEX_HAS_TARGET, /* Has target_header */
+};
+
+union bt_obex_uuid {
+	struct bt_uuid uuid;
+	struct bt_uuid_16 u16;
+	struct bt_uuid_32 u32;
+	struct bt_uuid_128 u128;
+};
+
+/** @brief OBEX server structure. */
+struct bt_obex_server {
+	/** @brief OBEX Object */
+	struct bt_obex *obex;
+
+	/** @brief UUID of the service */
+	const struct bt_uuid_128 *uuid;
+
 	/** @brief OBEX Server operations
 	 *
 	 *  If it is a obex sever, the upper layer should pass the operations of server to
-	 *  `server_ops` when providing the OBEX structure.
+	 *  `server_ops` when providing the OBEX server structure.
 	 */
-	const struct bt_obex_server_ops *server_ops;
-
-	/** @brief OBEX Client operations
-	 *
-	 *  If it is a obex client, the upper layer should pass the operations of client to
-	 *  `client_ops` when providing the OBEX structure.
-	 */
-	const struct bt_obex_client_ops *client_ops;
+	const struct bt_obex_server_ops *ops;
 
 	struct {
-		/** @brief MTU of OBEX transport */
-		uint16_t mtu;
 		/** @brief The Maximum OBEX Packet Length (MOPL) */
 		uint16_t mopl;
 	} rx;
 
 	struct {
-		/** @brief MTU of OBEX transport */
-		uint16_t mtu;
 		/** @brief The Maximum OBEX Packet Length (MOPL) */
 		uint16_t mopl;
 	} tx;
 
-	/** @internal OBEX transport operations */
-	const struct bt_obex_transport_ops *_transport_ops;
+	/** @internal Saves the current state, @ref bt_obex_state */
+	atomic_t _state;
+
+	/** @internal OBEX opcode */
+	atomic_t _opcode;
+
+	/** @internal OBEX flags */
+	atomic_t _flags;
+
+	/** @internal Target of service */
+	union bt_obex_uuid _target;
+
+	/** @internal OBEX connection identifier */
+	uint32_t _conn_id;
+
+	/** @internal sys snode */
+	sys_snode_t _node;
+};
+
+/** @brief OBEX client structure. */
+struct bt_obex_client {
+	/** @brief OBEX Object */
+	struct bt_obex *obex;
+
+	/** @brief OBEX Client operations
+	 *
+	 *  If it is a obex client, the upper layer should pass the operations of client to
+	 *  `client_ops` when providing the OBEX client structure.
+	 */
+	const struct bt_obex_client_ops *ops;
+
+	struct {
+		/** @brief The Maximum OBEX Packet Length (MOPL) */
+		uint16_t mopl;
+	} rx;
+
+	struct {
+		/** @brief The Maximum OBEX Packet Length (MOPL) */
+		uint16_t mopl;
+	} tx;
 
 	/** @internal Saves the current state, @ref bt_obex_state */
 	atomic_t _state;
@@ -488,7 +563,77 @@ struct bt_obex {
 
 	/** @internal OBEX previous opcode */
 	atomic_t _pre_opcode;
+
+	/** @internal OBEX flags */
+	atomic_t _flags;
+
+	/** @internal target of the conn req */
+	union bt_obex_uuid _target;
+
+	/** @internal OBEX connection identifier */
+	uint32_t _conn_id;
+
+	/** @internal sys snode */
+	sys_snode_t _node;
 };
+
+/** @brief OBEX structure. */
+struct bt_obex {
+	struct {
+		/** @brief MTU of OBEX transport */
+		uint16_t mtu;
+	} rx;
+
+	struct {
+		/** @brief MTU of OBEX transport */
+		uint16_t mtu;
+	} tx;
+
+	/** @internal OBEX transport operations */
+	const struct bt_obex_transport_ops *_transport_ops;
+
+	/** @internal OBEX executing client */
+	atomic_ptr_t _active_client;
+
+	/** @internal OBEX executing client */
+	atomic_ptr_t _active_server;
+
+	/** @internal OBEX clients */
+	sys_slist_t _clients;
+
+	/** @internal OBEX servers */
+	sys_slist_t _servers;
+};
+
+/** @brief OBEX server register
+ *
+ *  Register a OBEX server with the specific UUID.
+ *
+ *  The OBEX object of the server should be set before calling the function.
+ *  If the UUID is NULL, any connection request will be accepted. Or, the space of the UUID should
+ *  be retained.
+ *  Before calling the API, @ref bt_obex_server::ops should be initialized with valid
+ *  address of type @ref bt_obex_server_ops object. And the @ref bt_obex_server::obex should be
+ *  initialized with the valid OBEX object of type @ref bt_obex.
+ *
+ *  @param server The OBEX server object.
+ *  @param uuid The UUID of the service.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_obex_server_register(struct bt_obex_server *server, const struct bt_uuid_128 *uuid);
+
+/** @brief OBEX server unregister
+ *
+ *  Unregister a registered OBEX server.
+ *
+ *  The server should be disconnected when calling the function.
+ *
+ *  @param server The OBEX server object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_obex_server_unregister(struct bt_obex_server *server);
 
 /** @brief OBEX connect request
  *
@@ -498,17 +643,21 @@ struct bt_obex {
  *  stored in thrid parameter `buf`. All headers are packed by calling function
  *  bt_obex_add_header_*. Such as header `Authenticate Challenge` is packed by calling
  *  @ref bt_obex_add_header_auth_challenge.
+ *  The OBEX object of the client should be set before calling the function.
+ *  Before calling the API, @ref bt_obex_client::ops should be initialized with valid
+ *  address of type @ref bt_obex_client_ops object. And the @ref bt_obex_client::obex should be
+ *  initialized with the valid OBEX object of type @ref bt_obex.
  *
  *  @note Buffer ownership is transferred to the stack in case of success, in case of an error
  *  the caller retains the ownership of the buffer.
  *
- *  @param obex OBEX object.
+ *  @param client OBEX client object.
  *  @param mopl Maximum OBEX packet length.
  *  @param buf Sequence of headers to be sent out.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_obex_connect(struct bt_obex *obex, uint16_t mopl, struct net_buf *buf);
+int bt_obex_connect(struct bt_obex_client *client, uint16_t mopl, struct net_buf *buf);
 
 /** @brief OBEX connect response
  *
@@ -525,14 +674,15 @@ int bt_obex_connect(struct bt_obex *obex, uint16_t mopl, struct net_buf *buf);
  *  @note Buffer ownership is transferred to the stack in case of success, in case of an error
  *  the caller retains the ownership of the buffer.
  *
- *  @param obex OBEX object.
+ *  @param server OBEX server object.
  *  @param rsp_code Response code.
  *  @param mopl Maximum OBEX packet length.
  *  @param buf Sequence of headers to be sent out.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_obex_connect_rsp(struct bt_obex *obex, uint8_t rsp_code, uint16_t mopl, struct net_buf *buf);
+int bt_obex_connect_rsp(struct bt_obex_server *server, uint8_t rsp_code, uint16_t mopl,
+			struct net_buf *buf);
 
 /** @brief OBEX disconnect request
  *
@@ -547,12 +697,12 @@ int bt_obex_connect_rsp(struct bt_obex *obex, uint8_t rsp_code, uint16_t mopl, s
  *  @note Buffer ownership is transferred to the stack in case of success, in case of an error
  *  the caller retains the ownership of the buffer.
  *
- *  @param obex OBEX object.
+ *  @param client OBEX client object.
  *  @param buf Sequence of headers to be sent out.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_obex_disconnect(struct bt_obex *obex, struct net_buf *buf);
+int bt_obex_disconnect(struct bt_obex_client *client, struct net_buf *buf);
 
 /** @brief OBEX disconnect response
  *
@@ -569,13 +719,13 @@ int bt_obex_disconnect(struct bt_obex *obex, struct net_buf *buf);
  *  @note Buffer ownership is transferred to the stack in case of success, in case of an error
  *  the caller retains the ownership of the buffer.
  *
- *  @param obex OBEX object.
+ *  @param server OBEX server object.
  *  @param rsp_code Response code.
  *  @param buf Sequence of headers to be sent out.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_obex_disconnect_rsp(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf);
+int bt_obex_disconnect_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct net_buf *buf);
 
 /** @brief OBEX put request
  *
@@ -595,13 +745,13 @@ int bt_obex_disconnect_rsp(struct bt_obex *obex, uint8_t rsp_code, struct net_bu
  *  @note Buffer ownership is transferred to the stack in case of success, in case of an error
  *  the caller retains the ownership of the buffer.
  *
- *  @param obex OBEX object.
+ *  @param client OBEX client object.
  *  @param final The final bit of opcode.
  *  @param buf Sequence of headers to be sent out.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_obex_put(struct bt_obex *obex, bool final, struct net_buf *buf);
+int bt_obex_put(struct bt_obex_client *client, bool final, struct net_buf *buf);
 
 /** @brief OBEX put response
  *
@@ -618,13 +768,13 @@ int bt_obex_put(struct bt_obex *obex, bool final, struct net_buf *buf);
  *  @note Buffer ownership is transferred to the stack in case of success, in case of an error
  *  the caller retains the ownership of the buffer.
  *
- *  @param obex OBEX object.
+ *  @param server OBEX server object.
  *  @param rsp_code Response code.
  *  @param buf Sequence of headers to be sent out.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_obex_put_rsp(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf);
+int bt_obex_put_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct net_buf *buf);
 
 /** @brief OBEX get request
  *
@@ -641,13 +791,13 @@ int bt_obex_put_rsp(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf)
  *  @note Buffer ownership is transferred to the stack in case of success, in case of an error
  *  the caller retains the ownership of the buffer.
  *
- *  @param obex OBEX object.
+ *  @param client OBEX client object.
  *  @param final The final bit of opcode.
  *  @param buf Sequence of headers to be sent out.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_obex_get(struct bt_obex *obex, bool final, struct net_buf *buf);
+int bt_obex_get(struct bt_obex_client *client, bool final, struct net_buf *buf);
 
 /** @brief OBEX get response
  *
@@ -677,13 +827,13 @@ int bt_obex_get(struct bt_obex *obex, bool final, struct net_buf *buf);
  *  @note Buffer ownership is transferred to the stack in case of success, in case of an error
  *  the caller retains the ownership of the buffer.
  *
- *  @param obex OBEX object.
+ *  @param server OBEX server object.
  *  @param rsp_code Response code.
  *  @param buf Sequence of headers to be sent out.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_obex_get_rsp(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf);
+int bt_obex_get_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct net_buf *buf);
 
 /** @brief OBEX abort request
  *
@@ -699,12 +849,12 @@ int bt_obex_get_rsp(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf)
  *  @note Buffer ownership is transferred to the stack in case of success, in case of an error
  *  the caller retains the ownership of the buffer.
  *
- *  @param obex OBEX object.
+ *  @param client OBEX client object.
  *  @param buf Sequence of headers to be sent out.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_obex_abort(struct bt_obex *obex, struct net_buf *buf);
+int bt_obex_abort(struct bt_obex_client *client, struct net_buf *buf);
 
 /** @brief OBEX abort response
  *
@@ -721,13 +871,13 @@ int bt_obex_abort(struct bt_obex *obex, struct net_buf *buf);
  *  @note Buffer ownership is transferred to the stack in case of success, in case of an error
  *  the caller retains the ownership of the buffer.
  *
- *  @param obex OBEX object.
+ *  @param server OBEX server object.
  *  @param rsp_code Response code.
  *  @param buf Sequence of headers to be sent out.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_obex_abort_rsp(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf);
+int bt_obex_abort_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct net_buf *buf);
 
 /** @brief OBEX setpath request
  *
@@ -754,13 +904,13 @@ int bt_obex_abort_rsp(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *bu
  *  @note Buffer ownership is transferred to the stack in case of success, in case of an error
  *  the caller retains the ownership of the buffer.
  *
- *  @param obex OBEX object.
+ *  @param client OBEX client object.
  *  @param flags Flags for setpath request.
  *  @param buf Sequence of headers to be sent out.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_obex_setpath(struct bt_obex *obex, uint8_t flags, struct net_buf *buf);
+int bt_obex_setpath(struct bt_obex_client *client, uint8_t flags, struct net_buf *buf);
 
 /** @brief OBEX setpath response
  *
@@ -780,13 +930,13 @@ int bt_obex_setpath(struct bt_obex *obex, uint8_t flags, struct net_buf *buf);
  *  @note Buffer ownership is transferred to the stack in case of success, in case of an error
  *  the caller retains the ownership of the buffer.
  *
- *  @param obex OBEX object.
+ *  @param server OBEX server object.
  *  @param rsp_code Response code.
  *  @param buf Sequence of headers to be sent out.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_obex_setpath_rsp(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf);
+int bt_obex_setpath_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct net_buf *buf);
 
 /** @brief OBEX Actions. */
 enum __packed bt_obex_action_id {
@@ -831,13 +981,13 @@ enum __packed bt_obex_action_id {
  *  @note Buffer ownership is transferred to the stack in case of success, in case of an error
  *  the caller retains the ownership of the buffer.
  *
- *  @param obex OBEX object.
+ *  @param client OBEX client object.
  *  @param final The final bit of opcode.
  *  @param buf Sequence of headers to be sent out.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_obex_action(struct bt_obex *obex, bool final, struct net_buf *buf);
+int bt_obex_action(struct bt_obex_client *client, bool final, struct net_buf *buf);
 
 /** @brief OBEX action response
  *
@@ -886,13 +1036,13 @@ int bt_obex_action(struct bt_obex *obex, bool final, struct net_buf *buf);
  *  @note Buffer ownership is transferred to the stack in case of success, in case of an error
  *  the caller retains the ownership of the buffer.
  *
- *  @param obex OBEX object.
+ *  @param server OBEX server object.
  *  @param rsp_code Response code.
  *  @param buf Sequence of headers to be sent out.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_obex_action_rsp(struct bt_obex *obex, uint8_t rsp_code, struct net_buf *buf);
+int bt_obex_action_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct net_buf *buf);
 
 /** @brief Add Header: number of objects (used by Connect)
  *
@@ -1510,6 +1660,16 @@ int bt_obex_get_header_srm(struct net_buf *buf, uint8_t *srm);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_obex_get_header_srm_param(struct net_buf *buf, uint8_t *srm_param);
+
+/** @brief Make the UUID with specific data and len
+ *
+ *  @param uuid OBEX uuid.
+ *  @param data UUID data.
+ *  @param len UUID data length.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_obex_make_uuid(union bt_obex_uuid *uuid, const uint8_t *data, uint16_t len);
 
 #ifdef __cplusplus
 }

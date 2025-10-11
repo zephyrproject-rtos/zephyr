@@ -532,7 +532,7 @@ static DEVICE_API(display, ssd1306_driver_api) = {
 
 #define SSD1306_CONFIG_SPI(node_id)                                                                \
 	.bus = {.spi = SPI_DT_SPEC_GET(                                                            \
-			node_id, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 0)},     \
+			node_id, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8))},        \
 	.bus_ready = ssd1306_bus_ready_spi,                                                        \
 	.write_bus = ssd1306_write_bus_spi,                                                        \
 	.bus_name = ssd1306_bus_name_spi,                                                          \

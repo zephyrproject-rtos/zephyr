@@ -12,24 +12,30 @@ extern "C" {
 #endif
 
 /**
- * @brief MCUmgr settings_mgmt callback API
- * @defgroup mcumgr_callback_api_settings_mgmt MCUmgr settings_mgmt callback API
+ * @brief MCUmgr Settings Management Callbacks API
+ * @defgroup mcumgr_callback_api_settings_mgmt Settings Management Callbacks
+ * @ingroup mcumgr_settings_mgmt
  * @ingroup mcumgr_callback_api
  * @{
  */
 
+/**
+ * @name Settings access types
+ * @{
+ */
 enum settings_mgmt_access_types {
-	SETTINGS_ACCESS_READ,
-	SETTINGS_ACCESS_WRITE,
-	SETTINGS_ACCESS_DELETE,
-	SETTINGS_ACCESS_COMMIT,
-	SETTINGS_ACCESS_LOAD,
-	SETTINGS_ACCESS_SAVE,
+	SETTINGS_ACCESS_READ,   /**< Setting is being read */
+	SETTINGS_ACCESS_WRITE,  /**< Setting is being written */
+	SETTINGS_ACCESS_DELETE, /**< Setting is being deleted */
+	SETTINGS_ACCESS_COMMIT, /**< Setting is being committed */
+	SETTINGS_ACCESS_LOAD,   /**< Setting is being loaded */
+	SETTINGS_ACCESS_SAVE,   /**< Setting is being saved */
 };
+/** @} */
 
 /**
- * Structure provided in the #MGMT_EVT_OP_SETTINGS_MGMT_ACCESS notification callback: This
- * callback function is used to notify the application about a pending setting
+ * Structure provided in the #MGMT_EVT_OP_SETTINGS_MGMT_ACCESS notification callback.
+ * This callback function is used to notify the application about a pending setting
  * read/write/delete/load/save/commit request and to authorise or deny it. Access will be allowed
  * so long as no handlers return an error, if one returns an error then access will be denied.
  */
@@ -38,8 +44,8 @@ struct settings_mgmt_access {
 	enum settings_mgmt_access_types access;
 
 	/**
-	 * Key name for accesses (only set for SETTINGS_ACCESS_READ, SETTINGS_ACCESS_WRITE and
-	 * SETTINGS_ACCESS_DELETE). Note that this can be changed by handlers to redirect settings
+	 * Key name for accesses (only set for #SETTINGS_ACCESS_READ, #SETTINGS_ACCESS_WRITE and
+	 * #SETTINGS_ACCESS_DELETE). Note that this can be changed by handlers to redirect settings
 	 * access if needed (as long as it does not exceed the maximum setting string size) if
 	 * CONFIG_MCUMGR_GRP_SETTINGS_BUFFER_TYPE_STACK is selected, of maximum size
 	 * CONFIG_MCUMGR_GRP_SETTINGS_NAME_LEN.

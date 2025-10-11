@@ -8,10 +8,11 @@
 #include <ksched.h>
 #include <ipi.h>
 
+static struct k_spinlock ipi_lock;
+
 #ifdef CONFIG_TRACE_SCHED_IPI
 extern void z_trace_sched_ipi(void);
 #endif
-
 
 void flag_ipi(uint32_t ipi_mask)
 {
@@ -75,6 +76,7 @@ void signal_pending_ipi(void)
 	 * pending_ipi, the IPI will be sent the next time through
 	 * this code.
 	 */
+
 #if defined(CONFIG_SCHED_IPI_SUPPORTED)
 	if (arch_num_cpus() > 1) {
 		uint32_t  cpu_bitmap;
@@ -90,6 +92,92 @@ void signal_pending_ipi(void)
 	}
 #endif /* CONFIG_SCHED_IPI_SUPPORTED */
 }
+
+#ifdef CONFIG_SCHED_IPI_SUPPORTED
+static struct k_ipi_work *first_ipi_work(sys_dlist_t *list)
+{
+	sys_dnode_t *work = sys_dlist_peek_head(list);
+	unsigned int cpu_id = _current_cpu->id;
+
+	return (work == NULL) ? NULL
+			      : CONTAINER_OF(work, struct k_ipi_work, node[cpu_id]);
+}
+
+int k_ipi_work_add(struct k_ipi_work *work, uint32_t cpu_bitmask,
+		   k_ipi_func_t func)
+{
+	__ASSERT(work != NULL, "");
+	__ASSERT(func != NULL, "");
+
+	k_spinlock_key_t key = k_spin_lock(&ipi_lock);
+
+	/* Verify the IPI work item is not currently in use */
+
+	if (k_event_wait_all(&work->event, work->bitmask,
+			     false, K_NO_WAIT) != work->bitmask) {
+		k_spin_unlock(&ipi_lock, key);
+		return -EBUSY;
+	}
+
+	/*
+	 * Add the IPI work item to the list(s)--but not for the current
+	 * CPU as the architecture may not support sending an IPI to itself.
+	 */
+
+	unsigned int cpu_id = _current_cpu->id;
+
+	cpu_bitmask &= (IPI_ALL_CPUS_MASK & ~BIT(cpu_id));
+
+	k_event_clear(&work->event, IPI_ALL_CPUS_MASK);
+	work->func = func;
+	work->bitmask = cpu_bitmask;
+
+	for (unsigned int id = 0; id < arch_num_cpus(); id++) {
+		if ((cpu_bitmask & BIT(id)) != 0) {
+			sys_dlist_append(&_kernel.cpus[id].ipi_workq, &work->node[id]);
+		}
+	}
+
+	flag_ipi(cpu_bitmask);
+
+	k_spin_unlock(&ipi_lock, key);
+
+	return 0;
+}
+
+int k_ipi_work_wait(struct k_ipi_work *work, k_timeout_t timeout)
+{
+	uint32_t rv = k_event_wait_all(&work->event, work->bitmask,
+				       false, timeout);
+
+	return (rv == 0) ? -EAGAIN : 0;
+}
+
+void k_ipi_work_signal(void)
+{
+	signal_pending_ipi();
+}
+
+static void ipi_work_process(sys_dlist_t *list)
+{
+	unsigned int cpu_id = _current_cpu->id;
+
+	k_spinlock_key_t key = k_spin_lock(&ipi_lock);
+
+	for (struct k_ipi_work *work = first_ipi_work(list);
+	     work != NULL; work = first_ipi_work(list)) {
+		sys_dlist_remove(&work->node[cpu_id]);
+		k_spin_unlock(&ipi_lock, key);
+
+		work->func(work);
+
+		key = k_spin_lock(&ipi_lock);
+		k_event_post(&work->event, BIT(cpu_id));
+	}
+
+	k_spin_unlock(&ipi_lock, key);
+}
+#endif /* CONFIG_SCHED_IPI_SUPPORTED */
 
 void z_sched_ipi(void)
 {
@@ -108,5 +196,9 @@ void z_sched_ipi(void)
 
 #ifdef CONFIG_ARCH_IPI_LAZY_COPROCESSORS_SAVE
 	arch_ipi_lazy_coprocessors_save();
+#endif
+
+#ifdef CONFIG_SCHED_IPI_SUPPORTED
+	ipi_work_process(&_kernel.cpus[_current_cpu->id].ipi_workq);
 #endif
 }

@@ -18,6 +18,9 @@ tests:
       - siwx917_rb4338a
       - siwx917_rb4342a
       - siwx917_dk2605a
+      - adp_xc7k/ae350
+      - adp_xc7k/ae350/clic
+      - bg29_rb4420a
     filter: dt_alias_exists("dma0")
     integration_platforms:
       - intel_adsp/cavs25

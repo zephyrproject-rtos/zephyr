@@ -154,6 +154,35 @@ static int fs_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 	struct posix_fs_desc *ptr = obj;
 
 	switch (request) {
+	case ZFD_IOCTL_STAT: {
+		struct stat *buf = va_arg(args, struct stat *);
+		long offset = fs_tell(&ptr->file);
+		long current;
+
+		if (offset < 0) {
+			return offset;
+		}
+
+		memset(buf, 0, sizeof(struct stat));
+
+		rc = fs_seek(&ptr->file, 0, FS_SEEK_END);
+		if (rc < 0) {
+			return rc;
+		}
+
+		current = fs_tell(&ptr->file);
+		if (current >= 0) {
+			buf->st_size = current;
+			buf->st_mode = ptr->is_dir ? S_IFDIR : S_IFREG;
+		}
+
+		rc = fs_seek(&ptr->file, offset, FS_SEEK_SET);
+
+		if (current < 0) {
+			rc = current;
+		}
+		break;
+	}
 	case ZFD_IOCTL_FSYNC: {
 		rc = fs_sync(&ptr->file);
 		break;

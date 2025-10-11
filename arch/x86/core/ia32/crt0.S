@@ -22,6 +22,7 @@
 #include <zephyr/arch/x86/multiboot.h>
 #include <x86_mmu.h>
 #include <zephyr/kernel/mm.h>
+#include <zephyr/arch/common/xip.h>
 
 	/* exports (private APIs) */
 
@@ -29,8 +30,8 @@
 
 	/* externs */
 	GTEXT(z_prep_c)
-	GTEXT(z_bss_zero)
-	GTEXT(z_data_copy)
+	GTEXT(arch_bss_zero)
+	GTEXT(arch_data_copy)
 
 	GDATA(_idt_base_address)
 	GDATA(z_interrupt_stacks)
@@ -225,11 +226,11 @@ __csSet:
 	 * This is a must is CONFIG_GDT_DYNAMIC is enabled,
 	 * as _gdt needs to be in RAM.
 	 */
-	call	z_data_copy
+	call	arch_data_copy
 #endif
 
 	/* Note that installing page tables must be done after
-	 * z_data_copy() as the page tables are being copied into
+	 * arch_data_copy() as the page tables are being copied into
 	 * RAM there.
 	 */
 	install_page_tables
@@ -264,10 +265,10 @@ __csSet:
 #endif
 	/* Clear BSS */
 #ifdef CONFIG_LINKER_USE_BOOT_SECTION
-	call	z_bss_zero_boot
+	call	arch_bss_zero_boot
 #endif
 #ifdef CONFIG_LINKER_USE_PINNED_SECTION
-	call	z_bss_zero_pinned
+	call	arch_bss_zero_pinned
 #endif
 #ifdef CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
 	/* Don't clear BSS if the section is not present
@@ -275,7 +276,17 @@ __csSet:
 	 * faults. Zeroing BSS will be done later once the
 	 * paging mechanism has been initialized.
 	 */
-	call	z_bss_zero
+	call	arch_bss_zero
+#endif
+
+#ifdef CONFIG_X86_CET
+	call z_x86_cet_enable
+#ifdef CONFIG_X86_CET_IBT
+	call z_x86_ibt_enable
+#endif
+#ifdef CONFIG_HW_SHADOW_STACK
+	call z_x86_set_irq_shadow_stack
+#endif
 #endif
 
 	/* load 32-bit operand size IDT */

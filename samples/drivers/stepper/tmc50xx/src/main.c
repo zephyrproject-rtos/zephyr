@@ -9,6 +9,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/stepper/stepper_trinamic.h>
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(stepper_tmc50xx, CONFIG_STEPPER_LOG_LEVEL);
+
 const struct device *stepper = DEVICE_DT_GET(DT_ALIAS(stepper));
 
 int32_t ping_pong_target_position = CONFIG_STEPS_PER_REV * CONFIG_PING_PONG_N_REV *
@@ -29,12 +32,12 @@ void stepper_callback(const struct device *dev, const enum stepper_event event, 
 
 int main(void)
 {
-	printf("Starting tmc50xx stepper sample\n");
+	LOG_INF("Starting tmc50xx stepper sample");
 	if (!device_is_ready(stepper)) {
-		printf("Device %s is not ready\n", stepper->name);
+		LOG_ERR("Device %s is not ready", stepper->name);
 		return -ENODEV;
 	}
-	printf("stepper is %p, name is %s\n", stepper, stepper->name);
+	LOG_DBG("stepper is %p, name is %s", stepper, stepper->name);
 
 	stepper_set_event_callback(stepper, stepper_callback, NULL);
 	stepper_enable(stepper);

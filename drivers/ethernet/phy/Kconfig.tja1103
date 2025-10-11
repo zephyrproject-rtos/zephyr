@@ -7,7 +7,7 @@ menuconfig PHY_TJA1103
 	bool "TJA1103 PHY driver"
 	default y
 	depends on DT_HAS_NXP_TJA1103_ENABLED
-	depends on MDIO
+	select MDIO
 	help
 	  Enable TJA1103 PHY driver.
 

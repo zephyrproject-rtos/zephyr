@@ -47,19 +47,29 @@ static inline void pm_state_notify(bool entering_state)
 {
 	struct pm_notifier *notifier;
 	k_spinlock_key_t pm_notifier_key;
-	void (*callback)(enum pm_state state);
+	union {
+		void (*without_substate)(enum pm_state state);
+		void (*with_substate)(enum pm_state state, uint8_t substate_id);
+	} callback;
 
 	pm_notifier_key = k_spin_lock(&pm_notifier_lock);
 	SYS_SLIST_FOR_EACH_CONTAINER(&pm_notifiers, notifier, _node) {
 		if (entering_state) {
-			callback = notifier->state_entry;
+			/* should be equivalent to also setting the "with substate" */
+			callback.without_substate = notifier->state_entry;
 		} else {
-			callback = notifier->state_exit;
+			/* should be equivalent to also setting the "with substate" */
+			callback.without_substate = notifier->state_exit;
 		}
 
-		if (callback) {
-			callback(z_cpus_pm_state[CPU_ID]->state);
-		}
+		if (callback.with_substate && notifier->report_substate) {
+			callback.with_substate(z_cpus_pm_state[CPU_ID]->state,
+					       z_cpus_pm_state[CPU_ID]->substate_id);
+		} else if (callback.without_substate) {
+			callback.without_substate(z_cpus_pm_state[CPU_ID]->state);
+		} else {
+			/* intentionally empty */
+		};
 	}
 	k_spin_unlock(&pm_notifier_lock, pm_notifier_key);
 }
@@ -230,7 +240,8 @@ bool pm_system_suspend(int32_t kernel_ticks)
 
 	if (IS_ENABLED(CONFIG_PM_STATS)) {
 		pm_stats_stop();
-		pm_stats_update(z_cpus_pm_state[id]->state);
+		pm_stats_update(z_cpus_pm_state[id] ?
+				z_cpus_pm_state[id]->state : PM_STATE_ACTIVE);
 	}
 
 	pm_system_resume();

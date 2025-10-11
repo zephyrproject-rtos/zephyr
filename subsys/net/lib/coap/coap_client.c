@@ -231,7 +231,7 @@ static int coap_client_init_request(struct coap_client *client,
 	}
 
 	/* Add content format option only if there is a payload */
-	if (req->payload) {
+	if (req->payload != NULL || req->payload_cb != NULL) {
 		ret = coap_append_option_int(&internal_req->request,
 					     COAP_OPTION_CONTENT_FORMAT, req->fmt);
 
@@ -272,14 +272,94 @@ static int coap_client_init_request(struct coap_client *client,
 		}
 	}
 
-	if (req->payload) {
+	if (req->payload != NULL || req->payload_cb != NULL) {
+		const uint8_t *payload = NULL;
+		bool block_transfer = false;
 		uint16_t payload_len;
-		uint16_t offset;
+
+		/* Block transfer already in progress */
+		if (internal_req->send_blk_ctx.total_size > 0) {
+			block_transfer = true;
+		}
+
+		if (req->payload_cb != NULL) {
+			size_t offset = 0;
+			size_t block_size = internal_req->send_blk_ctx.total_size > 0 ?
+				coap_block_size_to_bytes(internal_req->send_blk_ctx.block_size) :
+				CONFIG_COAP_CLIENT_BLOCK_SIZE;
+			size_t len = block_size;
+			bool last_block;
+
+			if (block_transfer) {
+				offset = internal_req->send_blk_ctx.current;
+			}
+
+			ret = req->payload_cb(offset, &payload, &len, &last_block,
+					      req->user_data);
+			if (ret < 0) {
+				LOG_ERR("Payload callback reported error, %d", ret);
+				goto out;
+			}
+
+			if (len > block_size || (len < block_size && !last_block)) {
+				LOG_ERR("Invalid payload size");
+				ret = -EINVAL;
+				goto out;
+			}
+
+			if (payload == NULL) {
+				LOG_ERR("No payload provided");
+				ret = -EINVAL;
+				goto out;
+			}
+
+			payload_len = len;
+
+			if (block_transfer && last_block) {
+				/* If block transfer was used and it's a final
+				 * block, adjust the total size value.
+				 */
+				internal_req->send_blk_ctx.total_size =
+					internal_req->send_blk_ctx.current + len;
+			}
+
+			if (!last_block) {
+				/* Expecting more blocks, enable block transfer.
+				 * Total length is yet unknown at this point,
+				 * so use SIZE_MAX for now.
+				 */
+				block_transfer = true;
+				req->len = SIZE_MAX;
+			}
+		} else {
+			payload = req->payload;
+			payload_len = req->len;
+
+			if (block_transfer) {
+				/* Block transfer already in progress, adjust
+				 * payload pointer and length.
+				 */
+				uint16_t block_in_bytes = coap_block_size_to_bytes(
+						internal_req->send_blk_ctx.block_size);
+
+				payload_len = internal_req->send_blk_ctx.total_size -
+					internal_req->send_blk_ctx.current;
+				if (payload_len > block_in_bytes) {
+					payload_len = block_in_bytes;
+				}
+
+				payload = req->payload + internal_req->send_blk_ctx.current;
+			} else if (req->len > CONFIG_COAP_CLIENT_MESSAGE_SIZE) {
+				/* Otherwise, if payload won't fit, initialize
+				 * block transfer.
+				 */
+				block_transfer = true;
+				payload_len = CONFIG_COAP_CLIENT_BLOCK_SIZE;
+			}
+		}
 
 		/* Blockwise send ongoing, add block1 */
-		if (internal_req->send_blk_ctx.total_size > 0 ||
-		   (req->len > CONFIG_COAP_CLIENT_MESSAGE_SIZE)) {
-
+		if (block_transfer) {
 			if (internal_req->send_blk_ctx.total_size == 0) {
 				coap_block_transfer_init(&internal_req->send_blk_ctx,
 							 coap_client_default_block_size(),
@@ -289,6 +369,7 @@ static int coap_client_init_request(struct coap_client *client,
 
 				memcpy(internal_req->request_tag, tag, COAP_TOKEN_MAX_LEN);
 			}
+
 			ret = coap_append_block1_option(&internal_req->request,
 							&internal_req->send_blk_ctx);
 
@@ -314,22 +395,7 @@ static int coap_client_init_request(struct coap_client *client,
 			goto out;
 		}
 
-		if (internal_req->send_blk_ctx.total_size > 0) {
-			uint16_t block_in_bytes =
-				coap_block_size_to_bytes(internal_req->send_blk_ctx.block_size);
-
-			payload_len = internal_req->send_blk_ctx.total_size -
-				      internal_req->send_blk_ctx.current;
-			if (payload_len > block_in_bytes) {
-				payload_len = block_in_bytes;
-			}
-			offset = internal_req->send_blk_ctx.current;
-		} else {
-			payload_len = req->len;
-			offset = 0;
-		}
-
-		ret = coap_packet_append_payload(&internal_req->request, req->payload + offset,
+		ret = coap_packet_append_payload(&internal_req->request, payload,
 						 payload_len);
 
 		if (ret < 0) {
@@ -459,9 +525,14 @@ out:
 
 static void report_callback_error(struct coap_client_internal_request *internal_req, int error_code)
 {
-	if (internal_req->coap_request.cb) {
+	if (internal_req->coap_request.cb != NULL) {
 		if (!atomic_set(&internal_req->in_callback, 1)) {
-			internal_req->coap_request.cb(error_code, 0, NULL, 0, true,
+			const struct coap_client_response_data resp_data = {
+				.result_code = error_code,
+				.last_block = true,
+			};
+
+			internal_req->coap_request.cb(&resp_data,
 						      internal_req->coap_request.user_data);
 			atomic_clear(&internal_req->in_callback);
 		} else {
@@ -930,12 +1001,23 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 
 	/* Check if this was a response to last blockwise send */
 	if (internal_req->send_blk_ctx.total_size > 0) {
+		int block1_option;
+
 		blockwise_transfer = true;
 		internal_req->offset = internal_req->send_blk_ctx.current;
 		if (internal_req->send_blk_ctx.total_size == internal_req->send_blk_ctx.current) {
 			last_block = true;
 		} else {
 			last_block = false;
+		}
+
+		block1_option = coap_get_option_int(response, COAP_OPTION_BLOCK1);
+		if (block1_option > 0) {
+			int block_size = GET_BLOCK_SIZE(block1_option);
+
+			if (block_size < internal_req->send_blk_ctx.block_size) {
+				internal_req->send_blk_ctx.block_size = block_size;
+			}
 		}
 	}
 
@@ -947,10 +1029,18 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 	}
 
 	/* Call user callback */
-	if (internal_req->coap_request.cb) {
+	if (internal_req->coap_request.cb != NULL) {
 		if (!atomic_set(&internal_req->in_callback, 1)) {
-			internal_req->coap_request.cb(response_code, internal_req->offset, payload,
-						      payload_len, last_block,
+			const struct coap_client_response_data resp_data = {
+				.result_code = response_code,
+				.packet = response,
+				.offset = internal_req->offset,
+				.payload = payload,
+				.payload_len = payload_len,
+				.last_block = last_block,
+			};
+
+			internal_req->coap_request.cb(&resp_data,
 						      internal_req->coap_request.user_data);
 			atomic_clear(&internal_req->in_callback);
 		}

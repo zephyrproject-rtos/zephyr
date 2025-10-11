@@ -35,11 +35,6 @@
 		};
 	};
 
-	wake_up_trigger: gpio-wake-up  {
-		compatible = "silabs,gecko-wake-up-trigger";
-		gpios = <&gpioa 5 GPIO_ACTIVE_LOW>;
-	};
-
 	/* GPIOs that power up different sensors */
 	sw_sensor_enable: gpio_switch_0 {
 		compatible = "regulator-fixed";
@@ -61,6 +56,26 @@
 		startup-delay-us = <100000>;
 	};
 
+	exp_header: exp-header {
+		compatible = "silabs,exp-header";
+		#gpio-cells = <2>;
+		gpio-map = <3 0 &gpioa 8 0>,
+			   <4 0 &gpioc 0 0>,
+			   <5 0 &gpioa 7 0>,
+			   <6 0 &gpioc 1 0>,
+			   <7 0 &gpiob 0 0>,
+			   <8 0 &gpioc 2 0>,
+			   <9 0 &gpiob 1 0>,
+			   <10 0 &gpiob 2 0>,
+			   <11 0 &gpioa 4 0>,
+			   <12 0 &gpioa 5 0>,
+			   <13 0 &gpiob 3 0>,
+			   <14 0 &gpioa 6 0>,
+			   <15 0 &gpiod 3 0>,
+			   <16 0 &gpiod 2 0>;
+		gpio-map-mask = <0xffffffff 0x0>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
+	};
 };
 
 &cpu0 {
@@ -73,27 +88,23 @@
 	swo-ref-frequency = <DT_FREQ_K(76800)>;
 };
 
-&pstate_em3 {
-	status = "disabled";
-};
-
 &usart0 {
 	status = "okay";
 	pinctrl-0 = <&usart0_default>;
 	pinctrl-names = "default";
 
+	#address-cells = <1>;
+	#size-cells = <0>;
 	cs-gpios = <&gpioc 3 GPIO_ACTIVE_LOW>;
 
 	mx25r80: mx25r8035f@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		jedec-id = [c2 28 14];
-		sfdp-bfp = [
-			 e5 20 f1 ff  ff ff 7f 00  44 eb 08 6b  08 3b 04 bb
-			 ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 0f 52
-			 10 d8 00 ff  23 72 f5 00  82 ed 04 b7  44 83 38 44
-			 30 b0 30 b0  f7 c4 d5 5c  00 be 29 ff  f0 d0 ff ff
-		];
+		sfdp-bfp = [e5 20 f1 ff ff ff 7f 00 44 eb 08 6b 08 3b 04 bb
+			    ee ff ff ff ff ff 00 ff ff ff 00 ff 0c 20 0f 52
+			    10 d8 00 ff 23 72 f5 00 82 ed 04 b7 44 83 38 44
+			    30 b0 30 b0 f7 c4 d5 5c 00 be 29 ff f0 d0 ff ff];
 		size = <0x800000>;
 		spi-max-frequency = <80000000>;
 	};

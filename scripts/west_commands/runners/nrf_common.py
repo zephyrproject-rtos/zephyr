@@ -7,7 +7,6 @@
 
 import abc
 import contextlib
-import functools
 import os
 import shlex
 import subprocess
@@ -16,10 +15,7 @@ from collections import deque
 from pathlib import Path
 from re import escape, fullmatch
 
-from zephyr_ext_common import ZEPHYR_BASE
-
 sys.path.append(os.fspath(Path(__file__).parent.parent.parent))
-import zephyr_module
 
 from runners.core import RunnerCaps, ZephyrBinaryRunner
 
@@ -52,29 +48,6 @@ UICR_RANGES = {
     },
 }
 
-# Relative to the root of the hal_nordic module
-SUIT_STARTER_PATH = Path('zephyr/blobs/suit/bin/suit_manifest_starter.hex')
-
-@functools.cache
-def _get_suit_starter():
-    path = None
-    modules = zephyr_module.parse_modules(ZEPHYR_BASE)
-    for m in modules:
-        if 'hal_nordic' in m.meta.get('name'):
-            path = Path(m.project)
-            break
-
-    if not path:
-        raise RuntimeError("hal_nordic project missing in the manifest")
-
-    suit_starter = path / SUIT_STARTER_PATH
-    if not suit_starter.exists():
-        raise RuntimeError("Unable to find suit manifest starter file, "
-                           "please make sure to run \'west blobs fetch "
-                           "hal_nordic\'")
-
-    return str(suit_starter.resolve())
-
 class NrfBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end base class for nrf tools.'''
 
@@ -94,9 +67,6 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         self.reset = bool(reset)
         self.force = force
         self.recover = bool(recover)
-
-        # Only applicable for nrfutil
-        self.suit_starter = False
 
         self.tool_opt = []
         if tool_opt is not None:
@@ -384,75 +354,6 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                     self.exec_op('erase', core='Application', kind='all')
                     self.exec_op('erase', core='Network', kind='all')
 
-            # Manage SUIT artifacts.
-            # This logic should be executed only once per build.
-            # Use sysbuild board qualifiers to select the context,
-            # with which the artifacts will be programmed.
-            if self.build_conf.get('CONFIG_BOARD_QUALIFIERS') == self.sysbuild_conf.get(
-                'SB_CONFIG_BOARD_QUALIFIERS'
-            ):
-                mpi_hex_dir = Path(os.path.join(self.cfg.build_dir, 'zephyr'))
-
-                # Handle Manifest Provisioning Information
-                if self.sysbuild_conf.getboolean('SB_CONFIG_SUIT_MPI_GENERATE'):
-                    app_mpi_hex_file = os.fspath(
-                        mpi_hex_dir / self.sysbuild_conf.get('SB_CONFIG_SUIT_MPI_APP_AREA_PATH'))
-                    rad_mpi_hex_file = os.fspath(
-                        mpi_hex_dir / self.sysbuild_conf.get('SB_CONFIG_SUIT_MPI_RAD_AREA_PATH')
-                    )
-                    if os.path.exists(app_mpi_hex_file):
-                        self.op_program(
-                            app_mpi_hex_file,
-                            'ERASE_NONE',
-                            None,
-                            defer=True,
-                            core='Application',
-                        )
-                    if os.path.exists(rad_mpi_hex_file):
-                        self.op_program(
-                            rad_mpi_hex_file,
-                            'ERASE_NONE',
-                            None,
-                            defer=True,
-                            core='Network',
-                        )
-
-                # Handle SUIT root manifest if application manifests are not used.
-                # If an application firmware is built, the root envelope is merged
-                # with other application manifests as well as the output HEX file.
-                if core != 'Application' and self.sysbuild_conf.get('SB_CONFIG_SUIT_ENVELOPE'):
-                    app_root_envelope_hex_file = os.fspath(
-                        mpi_hex_dir / 'suit_installed_envelopes_application_merged.hex'
-                    )
-                    if os.path.exists(app_root_envelope_hex_file):
-                        self.op_program(
-                            app_root_envelope_hex_file,
-                            'ERASE_NONE',
-                            None,
-                            defer=True,
-                            core='Application',
-                        )
-
-            if self.build_conf.getboolean("CONFIG_NRF_HALTIUM_GENERATE_UICR"):
-                zephyr_build_dir = Path(self.cfg.build_dir) / 'zephyr'
-
-                self.op_program(
-                    str(zephyr_build_dir / 'uicr.hex'),
-                    'ERASE_NONE',
-                    None,
-                    defer=True,
-                    core='Application',
-                )
-
-                if self.build_conf.getboolean("CONFIG_NRF_HALTIUM_UICR_PERIPHCONF"):
-                    self.op_program(
-                        str(zephyr_build_dir / 'periphconf.hex'),
-                        'ERASE_NONE',
-                        None,
-                        defer=True,
-                        core='Application',
-                    )
-
             if not self.erase and regtool_generated_uicr:
                 self.exec_op('erase', core=core, kind='uicr')
         else:
@@ -518,18 +419,6 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
     def do_require(self):
         ''' Ensure the tool is installed '''
 
-    def _check_suit_starter(self, op):
-        op = op['operation']
-        if op['type'] not in ('erase', 'recover', 'program'):
-            return None
-        if op['type'] == 'program' and op['options']['chip_erase_mode'] != "ERASE_UICR":
-            return None
-
-        file = _get_suit_starter()
-        self.logger.debug(f'suit starter: {file}')
-
-        return file
-
     def op_program(self, hex_file, erase, ext_mem_erase, defer=False, core=None):
         args = self._op_program(hex_file, erase, ext_mem_erase)
         self.exec_op('program', defer, core, **args)
@@ -556,12 +445,6 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
             return op
 
         _op = _exec_op(op, defer, core, **kwargs)
-        # Check if the suit manifest starter needs programming
-        if self.suit_starter and self.family == 'nrf54h':
-            file = self._check_suit_starter(_op)
-            if file:
-                args = self._op_program(file, 'ERASE_NONE', None)
-                _exec_op('program', defer, core, **args)
 
     @abc.abstractmethod
     def do_exec_op(self, op, force=False):

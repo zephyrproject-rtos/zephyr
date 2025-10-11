@@ -49,7 +49,11 @@ __unused
 uint32_t get_pllsrc_frequency(void)
 {
 	if (IS_ENABLED(STM32_PLL_SRC_HSI)) {
+#if defined(CONFIG_SOC_SERIES_STM32L0X)
+		return STM32_HSI_FREQ / STM32_HSI_DIVISOR;
+#else
 		return STM32_HSI_FREQ;
+#endif
 	} else if (IS_ENABLED(STM32_PLL_SRC_HSE)) {
 		return STM32_HSE_FREQ;
 	}

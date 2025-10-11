@@ -50,15 +50,15 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<0  0 &gpio9 29 0>,	/* Pin 1, LEDK */
-				<21 0 &gpio9 1  0>,	/* Pin 21, RESET */
-				<22 0 &gpio9 4  0>,	/* Pin 22, LPTE */
-				<26 0 &gpio6 4  0>,	/* Pin 26, CTP_I2C SDA */
-				<27 0 &gpio6 5  0>,	/* Pin 27, CTP_I2C SCL */
-				<28 0 &gpio9 0  0>,	/* Pin 28, CTP_RST */
-				<29 0 &gpio2 31 0>,	/* Pin 29, CTP_INT */
-				<32 0 &gpio11 16 0>,	/* Pin 32, PWR_EN */
-				<34 0 &gpio9 29 0>;	/* Pin 34, BL_PWM */
+		gpio-map = <0 0 &gpio9 29 0>,	/* Pin 1, LEDK */
+			   <21 0 &gpio9 1 0>,	/* Pin 21, RESET */
+			   <22 0 &gpio9 4 0>,	/* Pin 22, LPTE */
+			   <26 0 &gpio6 4 0>,	/* Pin 26, CTP_I2C SDA */
+			   <27 0 &gpio6 5 0>,	/* Pin 27, CTP_I2C SCL */
+			   <28 0 &gpio9 0 0>,	/* Pin 28, CTP_RST */
+			   <29 0 &gpio2 31 0>,	/* Pin 29, CTP_INT */
+			   <32 0 &gpio11 16 0>,	/* Pin 32, PWR_EN */
+			   <34 0 &gpio9 29 0>;	/* Pin 34, BL_PWM */
 	};
 
 	/*
@@ -72,8 +72,8 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<9 0 &gpio11 15 0>,	/* Pin 9, RESETB */
-				<17 0 &gpio9 25  0>;	/* Pin 17, PWDN */
+		gpio-map = <9 0 &gpio11 15 0>,	/* Pin 9, RESETB */
+			   <17 0 &gpio9 25 0>;	/* Pin 17, PWDN */
 	};
 
 	zephyr,user {
@@ -90,7 +90,7 @@
 zephyr_lcdif: &lcdif {};
 
 zephyr_mipi_dsi: &mipi_dsi {
-	dphy-ref-frequency = <24000000>;
+	dphy-ref-frequency = <DT_FREQ_M(24)>;
 };
 
 &lpuart1 {
@@ -100,6 +100,7 @@ zephyr_mipi_dsi: &mipi_dsi {
 
 &flexcan3 {
 	status = "okay";
+
 	can-transceiver {
 		max-bitrate = <5000000>;
 	};
@@ -126,6 +127,7 @@ nxp_mipi_i2c: &lpi2c5 {
 	status = "okay";
 	detect-dat3;
 	pwr-gpios = <&gpio10 2 GPIO_ACTIVE_LOW>;
+
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
 		disk-name = "SD";
@@ -152,7 +154,6 @@ nxp_mipi_i2c: &lpi2c5 {
 &wdog1 {
 	status = "okay";
 };
-
 
 &sai1 {
 	status = "okay";

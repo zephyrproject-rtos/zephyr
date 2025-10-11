@@ -25,4 +25,7 @@ config MCR20A_IS_PART_OF_KW2XD_SIP
 	default y
 	depends on IEEE802154_MCR20A
 
+config WDT_DISABLE_AT_BOOT
+	default y
+
 endif # BOARD_USB_KW24D512

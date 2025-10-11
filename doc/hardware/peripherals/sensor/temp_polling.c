@@ -10,14 +10,13 @@
 
 const struct device *const temp0 = DEVICE_DT_GET(DT_ALIAS(temp0));
 
-SENSOR_DT_READ_IODEV(temp_iodev, DT_ALIAS(temp0), {TEMP_CHANNEL});
+SENSOR_DT_READ_IODEV(temp_iodev, DT_ALIAS(temp0), TEMP_CHANNEL);
 RTIO_DEFINE(temp_ctx, 1, 1);
 
 int main(void)
 {
 	int rc;
 	uint8_t buf[8];
-	uint32_t temp_frame_iter = 0;
 	struct sensor_q31_data temp_data = {0};
 	struct sensor_decode_context temp_decoder = SENSOR_DECODE_CONTEXT_INIT(
 		SENSOR_DECODER_DT_GET(DT_ALIAS(temp0)), buf, SENSOR_CHAN_AMBIENT_TEMP, 0);

@@ -1,0 +1,93 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/ra/ra8/r7ka8t2lfecac_cm85.dtsi>
+#include "mck_ra8t2.dtsi"
+
+/ {
+	model = "Renesas MCK-RA8T2";
+	compatible = "renesas,ra8t2", "renesas,ra8";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart9;
+		zephyr,shell-uart = &uart9;
+	};
+
+	aliases {
+		led0 = &led1;
+		sdhc0 = &sdhc0;
+	};
+};
+
+&sci9 {
+	pinctrl-0 = <&sci9_default>;
+	pinctrl-names = "default";
+	interrupts = <0 1>, <1 1>, <2 1>, <3 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+
+	uart9: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&sci4 {
+	pinctrl-0 = <&sci4_default>;
+	pinctrl-names = "default";
+	interrupts = <4 1>, <5 1>, <6 1>, <7 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+
+	uart4: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&spi0 {
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	interrupts = <8 1>, <9 1>, <10 1>, <11 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+};
+
+&ulpt0 {
+	interrupts = <12 1>;
+	interrupt-names = "ulpti";
+	status = "okay";
+
+	timer {
+		status = "okay";
+	};
+};
+
+&ulpt1 {
+	status = "okay";
+
+	timer {
+		status = "okay";
+	};
+};
+
+&sdhc0 {
+	pinctrl-0 = <&sdhc0_default>;
+	pinctrl-names = "default";
+	enable-gpios = <&ioportb 6 GPIO_ACTIVE_HIGH>;
+	interrupt-names = "accs", "card", "dma-req";
+	interrupts = <13 1>, <14 1>, <15 1>;
+	status = "okay";
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
+};

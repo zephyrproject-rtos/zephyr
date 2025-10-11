@@ -8,3 +8,8 @@
 #include <arm/renesas/ra/ra8/r7ka8p1kflcac.dtsi>
 
 /delete-node/ &cpu0;
+
+/delete-node/ &option_setting_ofs_conf_sec;
+/delete-node/ &option_setting_ofs_otp_sec;
+
+/delete-node/ &canfd_global;

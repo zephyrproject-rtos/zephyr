@@ -364,7 +364,7 @@ endif # BT_VOCS_CLIENT
 if BT_PBP
 module = BT_PBP
 module-str = "Public Broadcast Profile"
-source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+source "$(ZEPHYR_BASE)/subsys/logging/Kconfig.template.log_config"
 endif # BT_PBP
 
 endmenu # Audio
@@ -549,7 +549,7 @@ endif # BT_IAS_CLIENT
 if BT_IAS
 module = BT_IAS
 module-str = IAS
-source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+source "$(ZEPHYR_BASE)/subsys/logging/Kconfig.template.log_config"
 endif # BT_IAS
 
 # OTS (subsys/bluetooth/services/ots/Kconfig)
@@ -563,7 +563,7 @@ endif # BT_OTS_CLIENT
 if BT_OTS
 module = BT_OTS
 module-str = BT_OTS
-source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+source "$(ZEPHYR_BASE)/subsys/logging/Kconfig.template.log_config"
 endif # BT_OTS
 
 endmenu # Services

@@ -1,0 +1,214 @@
+/*
+ * Copyright (c) 2025 Chiho Sin
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nordic/nrf52840_qiaa.dtsi>
+#include <nordic/nrf52840_partition_uf2_sdv7.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/lora/sx126x.h>
+#include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+#include "quill_nrf52840_mesh-pinctrl.dtsi"
+#include "fobe_quill_connector.dtsi"
+
+/ {
+	chosen {
+		zephyr,ieee802154 = &ieee802154;
+		zephyr,display = &st7789v_tft;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			label = "Blue LED";
+			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
+		};
+
+		led1: led_1 {
+			label = "Backlight LED";
+			gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+	};
+
+	disp_pwr: disp_pwr {
+		compatible = "power-domain-gpio";
+		#power-domain-cells = <0>;
+		enable-gpios = <&gpio0 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		startup-delay-us = <5000>;
+	};
+
+	peri_reg: peri_reg {
+		compatible = "power-domain-gpio";
+		#power-domain-cells = <0>;
+		enable-gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
+		startup-delay-us = <5000>;
+	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&spi3>;
+		dc-gpios = <&gpio0 6 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+		reset-gpios = <&gpio0 26 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "okay";
+
+		st7789v_tft: st7789v_tft@0 {
+			compatible = "sitronix,st7789v";
+			power-domains = <&disp_pwr>;
+			status = "okay";
+			reg = <0>;
+			mipi-max-frequency = <DT_FREQ_M(2)>;
+			width = <135>;
+			height = <240>;
+			x-offset = <52>;
+			y-offset = <40>;
+			vcom = <0x3F>;
+			gctrl = <0x05>;
+			vrhs = <0x0F>;
+			vdvs = <0x20>;
+			mdac = <0x00>;
+			gamma = <0x01>;
+			colmod = <0x05>;
+			lcm = <0x2C>;
+			porch-param = [05 05 00 33 33];
+			cmd2en-param = [5A 69 02 00];
+			pwctrl1-param = [A4 A1];
+			pvgam-param = [D0 05 09 09 08 14 28 33 3F 07 13 14 28 30];
+			nvgam-param = [D0 05 09 09 08 03 24 32 32 3B 14 13 28 2F];
+			ram-param = [00 F0];
+			rgb-param = [40 02 14];
+			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpio1 10 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "USR Button";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&adc 3>;
+		output-ohms = <1000000>;
+		full-ohms = <(1000000 + 1500000)>;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		pwm-led0 = &pwm_led0;
+		mcuboot-led0 = &led0;
+		backlight = &led1;
+		lora0 = &lora0;
+		sw0 = &button0;
+		watchdog0 = &wdt0;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&spi2 {
+	status = "okay";
+	pinctrl-0 = <&spi2_default>;
+	pinctrl-1 = <&spi2_sleep>;
+	pinctrl-names = "default", "sleep";
+	cs-gpios = <&gpio1 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+
+	lora0: lora@0 {
+		compatible = "semtech,sx1262";
+		label = "sx1262";
+		reg = <0>;
+		reset-gpios = <&gpio1 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		busy-gpios = <&gpio1 4 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+		rx-enable-gpios = <&gpio0 25 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+		dio1-gpios = <&gpio1 2 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+		dio2-tx-enable;
+		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_1V8>;
+		tcxo-power-startup-delay-ms = <2>;
+		spi-max-frequency = <DT_FREQ_M(2)>;
+	};
+};
+
+&spi3 {
+	status = "okay";
+	pinctrl-0 = <&spi3_default>;
+	pinctrl-1 = <&spi3_sleep>;
+	pinctrl-names = "default", "sleep";
+	cs-gpios = <&gpio0 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+};
+
+&reg0 {
+	status = "okay";
+};
+
+&reg1 {
+	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+};
+
+&adc {
+	status = "okay";
+};
+
+&uicr {
+	gpio-as-nreset;
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+zephyr_udc0: &usbd {
+	status = "okay";
+};
+
+#include <../boards/common/usb/cdc_acm_serial.dtsi>

@@ -8,6 +8,19 @@ config SOC_SERIES_RP2350
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 	select SOC_RESET_HOOK
 
+config SOC_RP2350A_HAZARD3
+	select HAS_FLASH_LOAD_OFFSET
+	select INCLUDE_RESET_VECTOR
+	select RISCV
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZBA
+	select RISCV_ISA_EXT_ZBS
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+
 config SOC_RP2350A_M33
 	select ARM
 	select ARM_TRUSTZONE_M
@@ -17,6 +30,20 @@ config SOC_RP2350A_M33
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_ARM_SAU
 	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+
+config SOC_RP2350B_HAZARD3
+	select HAS_FLASH_LOAD_OFFSET
+	select INCLUDE_RESET_VECTOR
+	select RISCV
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZBA
+	select RISCV_ISA_EXT_ZBS
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
 
 config SOC_RP2350B_M33
 	select ARM
@@ -27,13 +54,12 @@ config SOC_RP2350B_M33
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_ARM_SAU
 	select CPU_HAS_FPU
+	select ARMV8_M_DSP
 
 config RP2_REQUIRES_IMAGE_DEFINITION_BLOCK
 	bool
 	default y
-	# Currently the IDF only supports using the Cortex-M33 cores. Enforce
-	# this at build configuration time.
-	depends on SOC_SERIES_RP2350 && CPU_CORTEX_M33
+	depends on SOC_SERIES_RP2350
 	help
 	  Include an Image Definition Block (IMAGE_DEF) to enable the bootroom in
 	  RP23XX devices to consider this a valid image in flash.

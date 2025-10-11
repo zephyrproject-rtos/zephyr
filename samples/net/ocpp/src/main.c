@@ -5,6 +5,7 @@
  */
 
 #include <stdio.h>
+#include <time.h>
 
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_core.h>
@@ -12,7 +13,6 @@
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/sntp.h>
 #include <zephyr/net/ocpp.h>
-#include <zephyr/posix/time.h>
 #include <zephyr/random/random.h>
 #include <zephyr/zbus/zbus.h>
 
@@ -339,7 +339,7 @@ int main(void)
 		k_sleep(K_SECONDS(1));
 	}
 
-	/* User could trigger remote start/stop transcation from CS server */
+	/* User could trigger remote start/stop transaction from CS server */
 	k_sleep(K_SECONDS(1200));
 
 	return 0;

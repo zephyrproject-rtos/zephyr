@@ -34,12 +34,12 @@ choice SPIRAM_MODE
 	prompt "Mode (QUAD/OCT) of SPI RAM chip in use"
 	default SPIRAM_MODE_QUAD
 
-	config SPIRAM_MODE_QUAD
-		bool "Quad Mode PSRAM"
+config SPIRAM_MODE_QUAD
+	bool "Quad Mode PSRAM"
 
-	config SPIRAM_MODE_OCT
-		bool "Octal Mode PSRAM"
-		depends on SOC_SERIES_ESP32S3
+config SPIRAM_MODE_OCT
+	bool "Octal Mode PSRAM"
+	depends on SOC_SERIES_ESP32S3
 
 endchoice # SPIRAM_MODE
 
@@ -117,7 +117,6 @@ config SPIRAM_CS_IO
 config SPIRAM_FETCH_INSTRUCTIONS
 	bool "Move Instructions in Flash to PSRAM"
 	depends on SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
-	default n
 	help
 	  If enabled, instructions in flash will be moved into PSRAM on startup.
 	  If SPIRAM_RODATA is also enabled, code that requires execution during an SPI1 Flash operation
@@ -127,7 +126,6 @@ config SPIRAM_FETCH_INSTRUCTIONS
 config SPIRAM_RODATA
 	bool "Move Read-Only Data in Flash to PSRAM"
 	depends on SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
-	default n
 	help
 	  If enabled, rodata in flash will be moved into PSRAM on startup.
 	  If SPIRAM_FETCH_INSTRUCTIONS is also enabled, code that requires execution during an SPI1 Flash operation
@@ -136,7 +134,6 @@ config SPIRAM_RODATA
 
 config SPIRAM_ECC_ENABLE
 	bool "Allow enabling SPI RAM ECC"
-	default n
 	depends on SPIRAM_MODE_OCT && SOC_SERIES_ESP32S3
 	help
 	  Enable MSPI Error-Correcting Code function when accessing SPIRAM.
@@ -202,7 +199,6 @@ endmenu # PSRAM clock and cs IO for ESP32-PICO
 config SPIRAM_CUSTOM_SPIWP_SD3_PIN
 	bool "Use custom SPI PSRAM WP(SD3) Pin when flash pins set in eFuse (read help)"
 	depends on ESPTOOLPY_FLASHMODE_DIO || ESPTOOLPY_FLASHMODE_DOUT
-	default n
 	help
 	  This setting is only used if the SPI flash pins have been overridden by setting the eFuses
 	  SPI_PAD_CONFIG_xxx, and the SPI flash mode is DIO or DOUT.

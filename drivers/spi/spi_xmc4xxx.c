@@ -598,7 +598,10 @@ static int spi_xmc4xxx_init(const struct device *dev)
 	}
 
 	XMC_SPI_CH_SetInputSource(config->spi, XMC_SPI_CH_INPUT_DIN0, config->miso_src);
-	spi_context_cs_configure_all(&data->ctx);
+	ret = spi_context_cs_configure_all(&data->ctx);
+	if (ret < 0) {
+		return ret;
+	}
 
 	return 0;
 }

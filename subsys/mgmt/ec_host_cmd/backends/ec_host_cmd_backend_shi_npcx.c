@@ -26,7 +26,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1, "Invalid number of NPC
 BUILD_ASSERT(!(DT_HAS_COMPAT_STATUS_OKAY(nuvoton_npcx_shi) &&
 	       DT_HAS_COMPAT_STATUS_OKAY(nuvoton_npcx_shi_enhanced)));
 
-LOG_MODULE_REGISTER(host_cmd_shi_npcx, CONFIG_EC_HC_LOG_LEVEL);
+LOG_MODULE_REGISTER(host_cmd_shi_npcx, LOG_LEVEL_ERR);
 
 /* Driver convenience defines */
 #define HAL_INSTANCE(dev) (struct shi_reg *)(((const struct shi_npcx_config *)(dev)->config)->base)
@@ -343,14 +343,14 @@ static void shi_npcx_bad_received_data(const struct device *dev)
 	shi_npcx_fill_out_status(inst, EC_SHI_RX_BAD_DATA);
 	data->state = SHI_STATE_BAD_RECEIVED_DATA;
 
-	LOG_ERR("SHI bad data recv");
-	LOG_DBG("BAD-");
+	/* SHI receive bad data */
+	LOG_WRN("SHIBD");
 	LOG_HEXDUMP_DBG(data->in_msg, data->rx_ctx->len, "in_msg=");
-
-	/* Reset shi's state machine for error recovery */
-	shi_npcx_reset_prepare(dev);
-
-	LOG_DBG("END");
+	/*
+	 * When unexpected data is received, continuously send the code EC_SHI_RX_BAD_DATA (0xFB)
+	 * to the host on the output line. The SHI state machine is reset when the CS pin is
+	 * de-asserted.
+	 */
 }
 
 /*
@@ -549,7 +549,8 @@ static void shi_npcx_log_unexpected_state(const struct device *dev, char *isr_na
 	struct shi_npcx_data *data = dev->data;
 
 	if (data->state != data->last_error_state) {
-		LOG_ERR("Unexpected state %d in %s ISR", data->state, isr_name);
+		/* SHI bad state in ISR */
+		LOG_WRN("SHIBS %d in %s", data->state, isr_name);
 	}
 
 	data->last_error_state = data->state;
@@ -573,7 +574,7 @@ static void shi_npcx_handle_cs_assert(const struct device *dev)
 	/* Chip select is low = asserted */
 	if (data->state != SHI_STATE_READY_TO_RECV) {
 		/* State machine should be reset in EVSTAT_EOR ISR */
-		LOG_ERR("Unexpected state %d in CS ISR", data->state);
+		LOG_WRN("SHIBS %d-CSAST", data->state);
 		return;
 	}
 
@@ -621,7 +622,7 @@ static void shi_npcx_handle_cs_deassert(const struct device *dev)
 
 	/* Error state for checking*/
 	if (data->state != SHI_STATE_SENDING) {
-		shi_npcx_log_unexpected_state(dev, "CS DE-AST");
+		shi_npcx_log_unexpected_state(dev, "CS DEAST");
 	}
 
 	/* reset SHI and prepare to next transaction again */
@@ -1088,7 +1089,7 @@ static int shi_npcx_backend_send(const struct ec_host_cmd_backend *backend)
 		shi_npcx_reset_prepare(hc_shi->dev);
 		LOG_DBG("END\n");
 	} else {
-		LOG_ERR("Unexpected state %d in response handler", data->state);
+		LOG_WRN("SHIBS %d-RES", data->state);
 	}
 
 	if (!IS_ENABLED(CONFIG_EC_HOST_CMD_BACKEND_SHI_NPCX_ENHANCED_BUF_MODE)) {

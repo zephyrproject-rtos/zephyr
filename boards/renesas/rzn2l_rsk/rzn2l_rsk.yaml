@@ -9,4 +9,6 @@ supported:
   - gpio
   - pwm
   - adc
+  - i2c
+  - counter
 vendor: renesas

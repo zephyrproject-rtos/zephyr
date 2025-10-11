@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,14 +31,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led_r: led_r {
 			label = "LED_R";
 			gpios = <&gpio2 13 GPIO_ACTIVE_HIGH>;
 		};
+
 		led_g: led_g {
 			label = "LED_G";
 			gpios = <&gpio2 4 GPIO_ACTIVE_HIGH>;
 		};
+
 		led_b: led_b {
 			label = "LED_B";
 			gpios = <&gpio2 12 GPIO_ACTIVE_HIGH>;
@@ -48,13 +51,13 @@
 	keys {
 		compatible = "gpio-keys";
 
-		btn_1: btn_1{
+		btn_1: btn_1 {
 			label = "BTN1";
 			gpios = <&gpio2 23 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
 
-		btn_2: btn_2{
+		btn_2: btn_2 {
 			label = "BTN2";
 			gpios = <&gpio2 24 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_1>;
@@ -67,6 +70,10 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&uart2_default>;
 	pinctrl-names = "default";
+};
+
+&sar_adc1 {
+	status = "okay";
 };
 
 &gpio1 {

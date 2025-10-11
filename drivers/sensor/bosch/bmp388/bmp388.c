@@ -537,7 +537,7 @@ static int bmp388_init(const struct device *dev)
 
 /* Initializes a struct bmp388_config for an instance on a SPI bus. */
 #define BMP388_CONFIG_SPI(inst)				\
-	.bus.spi = SPI_DT_SPEC_INST_GET(inst, BMP388_SPI_OPERATION, 0),	\
+	.bus.spi = SPI_DT_SPEC_INST_GET(inst, BMP388_SPI_OPERATION),	\
 	.bus_io = &bmp388_bus_io_spi,
 
 /* Initializes a struct bmp388_config for an instance on an I2C bus. */

@@ -742,20 +742,6 @@ config EVENTS
 	  Note that setting this option slightly increases the size of the
 	  thread structure.
 
-config PIPES
-	bool "Pipe objects"
-	select DEPRECATED
-	help
-	  This option enables kernel pipes. A pipe is a kernel object that
-	  allows a thread to send a byte stream to another thread. Pipes can
-	  be used to synchronously transfer chunks of data in whole or in part.
-
-	  Note that setting this option slightly increases the size of the
-	  thread structure.
-	  This Kconfig is deprecated and will be removed, by disabling this
-	  kconfig another implementation of k_pipe will be available when
-	  CONFIG_MULTITHREADING is enabled.
-
 config KERNEL_MEM_POOL
 	bool "Use Kernel Memory Pool"
 	default y
@@ -894,16 +880,6 @@ config BUSYWAIT_CPU_LOOPS_PER_USEC
 	  system timer support. If accuracy is very important then
 	  implementing arch_busy_wait() should be considered.
 
-config XIP
-	bool "Execute in place"
-	help
-	  This option allows the kernel to operate with its text and read-only
-	  sections residing in ROM (or similar read-only memory). Not all boards
-	  support this option so it must be used with care; you must also
-	  supply a linker command file when building your image. Enabling this
-	  option increases both the code and data footprint of the image.
-
-
 menu "Security Options"
 
 config REQUIRES_STACK_CANARIES
@@ -957,7 +933,7 @@ config STACK_CANARIES_ALL
 config STACK_CANARIES_EXPLICIT
 	bool "Explicit protection"
 	depends on ENTROPY_GENERATOR || TEST_RANDOM_GENERATOR
-	depends on "${ZEPHYR_TOOLCHAIN_VARIANT}" = "zephyr"
+	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr"
 	select NEED_LIBC_MEM_PARTITION if !STACK_CANARIES_TLS
 	select REQUIRES_STACK_CANARIES
 	help
@@ -1029,6 +1005,57 @@ config BOUNDS_CHECK_BYPASS_MITIGATION
 	  mitigations after bounds checking any array index parameters passed
 	  in from untrusted sources (user mode threads). When disabled, these
 	  macros do nothing.
+
+config HW_SHADOW_STACK
+	bool "Use hardware shadow stack mechanism to provide stack protection [EXPERIMENTAL]"
+	depends on ARCH_HAS_HW_SHADOW_STACK
+	select EXPERIMENTAL
+	help
+	  This option enables the use of hardware shadow stack to provide
+	  stack protection. When enabled, threads that provide a shadow stack
+	  will use the hardware shadow stack to store the return address of
+	  function calls. This will help to protect against return-oriented
+	  programming (ROP) attacks.
+
+	  Currently, not all threads created by the kernel will have a shadow
+	  stack. Indeed, threads need to manually attach a shadow stack to
+	  use this feature. See the documentation for more information.
+
+config HW_SHADOW_STACK_PERCENTAGE_SIZE
+	int "Percentage of the stack size used to define shadow stack size"
+	depends on HW_SHADOW_STACK
+	default 30
+	range 0 100
+	help
+	  This option specifies the percentage of the stack to be used for
+	  shadow stack. The value is a percentage of the total stack size.
+	  The default value is 30%, which means that the shadow stack size
+	  will be 30% of the stack size, in *addition* to the stack size.
+	  used for shadow stack. Note that this size is constrained by the
+	  HW_SHADOW_STACK_MIN_SIZE config option.
+
+config HW_SHADOW_STACK_MIN_SIZE
+	int "Minimum size of the hardware shadow stack"
+	depends on HW_SHADOW_STACK
+	default 256
+	help
+	  This option specifies the minimum size of the hardware shadow stack,
+	  in bytes, so that threads that use minimal stack size can still
+	  have a sensible shadow stack size. The default value is 256 bytes,
+	  which means that the shadow stack size will be at least 256 bytes,
+	  even if the percentage defined via HW_SHADOW_STACK_PERCENTAGE_SIZE
+	  would define a smaller size.
+
+config HW_SHADOW_STACK_ALLOW_REUSE
+	bool "Allow reuse of the shadow stack"
+	depends on HW_SHADOW_STACK
+	default y if ZTEST
+	help
+	  This option allows the reuse of the shadow stack. This is meant to
+	  accommodate thread reuse, when the same thread is created again,
+	  such as done by the test suite. It is not meant to be used to share
+	  the shadow stack between threads.
+
 endmenu
 
 rsource "Kconfig.mem_domain"
@@ -1082,20 +1109,20 @@ config STATIC_INIT_GNU
 	  will emit an error if constructors are needed and this option has been
 	  disabled.
 
-config BOOTARGS
+menuconfig BOOTARGS
 	bool "Support bootargs"
 	help
 	  Enables bootargs support and passing them to main().
 
+if BOOTARGS
 config DYNAMIC_BOOTARGS
 	bool "Support dynamic bootargs"
-	depends on BOOTARGS
 	help
 	  Enables dynamic bootargs support.
 
 config BOOTARGS_STRING
 	string "static bootargs string"
-	depends on BOOTARGS && !DYNAMIC_BOOTARGS
+	depends on !DYNAMIC_BOOTARGS
 	help
 	  Static bootargs string. It includes argv[0], so if its expected that it
 	  contains executable name it should be put at the beginning of this string.
@@ -1103,9 +1130,10 @@ config BOOTARGS_STRING
 config BOOTARGS_ARGS_BUFFER_SIZE
 	int "Size of buffer containing main arguments in bytes"
 	default 1024
-	depends on BOOTARGS
 	help
 	  Configures size of buffer containing all arguments passed to main.
+
+endif # BOOTARGS
 
 endmenu
 

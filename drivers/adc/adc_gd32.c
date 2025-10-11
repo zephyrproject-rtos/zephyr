@@ -499,7 +499,7 @@ static void adc_gd32_global_irq_cfg(void)
 		ADC_CLOCK_SOURCE(n)								\
 	};											\
 	DEVICE_DT_INST_DEFINE(n,								\
-			      &adc_gd32_init, NULL,						\
+			      adc_gd32_init, NULL,						\
 			      &adc_gd32_data_##n, &adc_gd32_config_##n,				\
 			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,				\
 			      &adc_gd32_driver_api);						\

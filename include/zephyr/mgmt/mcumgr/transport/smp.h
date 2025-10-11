@@ -15,9 +15,9 @@ extern "C" {
 #endif
 
 /**
- * @brief MCUmgr transport SMP API
- * @defgroup mcumgr_transport_smp MCUmgr transport SMP API
- * @ingroup mcumgr
+ * @brief MCUmgr SMP transport API
+ * @defgroup mcumgr_transport_smp SMP transport
+ * @ingroup mcumgr_transport
  * @{
  */
 

@@ -61,18 +61,20 @@ static void configure_pin_props(uint32_t pin_mux, uint8_t gpio_idx)
 	/* Set slew rate */
 	set = IOMUX_PAD_GET_SLEW(pin_mux) << ((gpio_idx & 0xF) << 1);
 	*slew_reg = (*slew_reg & ~mask) | set;
-
-	/* Set sleep force enable bit */
-	mask = (0x1 << (gpio_idx & 0x1F));
-	/* Check if we should force the pin to output in sleep mode */
-	if (IOMUX_PAD_GET_SLEEP_FORCE(pin_mux) == NO_FORCE_OUTPUT) {
-		/* Does not force output during sleep */
-		*sleep_force_en = (*sleep_force_en & ~mask);
-	} else {
-		/* Enable forcing output during sleep */
-		*sleep_force_en = (*sleep_force_en | mask);
-		set = (IOMUX_PAD_GET_SLEEP_FORCE_VAL(pin_mux) << (gpio_idx & 0x1F));
-		*sleep_force_val = (*sleep_force_val & ~mask) | set;
+	/* Sleep force configuration should be skipped for GPIO 22-27 */
+	if (gpio_idx < 22 || gpio_idx > 27) {
+		/* Set sleep force enable bit */
+		mask = (0x1 << (gpio_idx & 0x1F));
+		/* Check if we should force the pin to output in sleep mode */
+		if (IOMUX_PAD_GET_SLEEP_FORCE(pin_mux) == NO_FORCE_OUTPUT) {
+			/* Does not force output during sleep */
+			*sleep_force_en = (*sleep_force_en & ~mask);
+		} else {
+			/* Enable forcing output during sleep */
+			*sleep_force_en = (*sleep_force_en | mask);
+			set = (IOMUX_PAD_GET_SLEEP_FORCE_VAL(pin_mux) << (gpio_idx & 0x1F));
+			*sleep_force_val = (*sleep_force_val & ~mask) | set;
+		}
 	}
 }
 

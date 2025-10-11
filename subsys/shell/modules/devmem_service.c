@@ -164,25 +164,38 @@ static int set_bypass(const struct shell *sh, shell_bypass_cb_t bypass)
 		in_use = true;
 	}
 
-	shell_set_bypass(sh, bypass);
+	shell_set_bypass(sh, bypass, NULL);
 
 	return 0;
 }
 
-static void bypass_cb(const struct shell *sh, uint8_t *recv, size_t len)
+static void bypass_cb(const struct shell *sh, uint8_t *recv, size_t len, void *user_data)
 {
 	bool escape = false;
 	static uint8_t tail;
 	uint8_t byte;
 
-	if (tail == CHAR_CAN && recv[0] == CHAR_DC1) {
-		escape = true;
-	} else {
-		for (int i = 0; i < (len - 1); i++) {
-			if (recv[i] == CHAR_CAN && recv[i + 1] == CHAR_DC1) {
-				escape = true;
-				break;
-			}
+	ARG_UNUSED(user_data);
+
+	for (size_t i = 0; i < len; i++) {
+		if (tail == CHAR_CAN && recv[i] == CHAR_DC1) {
+			escape = true;
+			tail = 0;
+			break;
+		}
+		tail = recv[i];
+
+		if (is_ascii(recv[i])) {
+			chunk[chunk_element] = recv[i];
+			chunk_element++;
+		}
+
+		if (chunk_element == 2) {
+			byte = (uint8_t)strtoul(chunk, NULL, 16);
+			*bytes = byte;
+			bytes++;
+			sum++;
+			chunk_element = 0;
 		}
 	}
 
@@ -205,21 +218,6 @@ static void bypass_cb(const struct shell *sh, uint8_t *recv, size_t len)
 			}
 		}
 		return;
-	}
-
-	tail = recv[len - 1];
-
-	if (is_ascii(*recv)) {
-		chunk[chunk_element] = *recv;
-		chunk_element++;
-	}
-
-	if (chunk_element == 2) {
-		byte = (uint8_t)strtoul(chunk, NULL, 16);
-		*bytes = byte;
-		bytes++;
-		sum++;
-		chunk_element = 0;
 	}
 }
 

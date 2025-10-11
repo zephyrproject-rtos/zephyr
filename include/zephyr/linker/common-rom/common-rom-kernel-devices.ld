@@ -100,4 +100,9 @@
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif /* !CONFIG_DEVICE_DEPS_DYNAMIC */
 
+#ifdef CONFIG_HW_SHADOW_STACK
+	ITERABLE_SECTION_ROM(_stack_to_hw_shadow_stack, Z_LINK_ITERABLE_SUBALIGN)
+	ITERABLE_SECTION_ROM(_stack_to_hw_shadow_stack_arr, Z_LINK_ITERABLE_SUBALIGN)
+#endif
+
 #include <device-api-sections.ld>

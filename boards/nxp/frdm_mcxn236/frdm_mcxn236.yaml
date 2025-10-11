@@ -21,6 +21,7 @@ supported:
   - flash
   - gpio
   - i2c
+  - i2s
   - i3c
   - pwm
   - regulator

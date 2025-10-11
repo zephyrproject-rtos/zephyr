@@ -1,3 +1,0 @@
-name: wifi-enterprise
-append:
-  EXTRA_CONF_FILE: wifi-enterprise.conf

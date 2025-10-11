@@ -1,7 +1,7 @@
 Trusted Firmware-M Overview
 ###########################
 
-`Trusted Firmware-M (TF-M) <https://tf-m-user-guide.trustedfirmware.org/>`__
+`Trusted Firmware-M (TF-M) <https://tf-m.docs.trustedfirmware.org/en/latest/>`__
 is a reference implementation of the Platform Security Architecture (PSA)
 `IoT Security Framework <https://www.psacertified.org/what-is-psa-certified/>`__.
 It defines and implements an architecture and a set of software components
@@ -210,7 +210,7 @@ As of TF-M 1.8.0, the following secure services are generally available (althoug
 A template also exists for creating your own custom services.
 
 For full details on these services, and their exposed APIs, please consult the
-`TF-M Documentation <https://tf-m-user-guide.trustedfirmware.org/>`__.
+`TF-M Documentation <https://tf-m.docs.trustedfirmware.org/en/latest/>`__.
 
 Key Management and Derivation
 -----------------------------

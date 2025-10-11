@@ -1,0 +1,88 @@
+# Copyright (c) 2025, STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  PLLSAI node binding for STM32L4 device
+
+  It describes the PLLSAI1 and PLLSAI2 (for supporting devices) PLL.
+
+  These PLL could take one of clk_hse, clk_hsi or clk_msi as input clock, with
+  an input frequency from 4 to 16 MHz. PLLSAIM factor is used to set the input
+  clock in this acceptable range.
+
+  The PLL can have up to 3 output clocks and for each output clock, the
+  frequency can be computed with the following formulae:
+
+    f(PLLSAI_P) = f(VCO clock) / PLLSAIP
+    f(PLLSAI_Q) = f(VCO clock) / PLLSAIQ
+    f(PLLSAI_R) = f(VCO clock) / PLLSAIR
+
+      with f(VCO clock) = f(PLL clock input) × (PLLSAIN / PLLSAIM)
+
+  The VCO input frequency must be between 2.66 to 8 MHz and its output frequency
+  must be between 64 and 344 MHz.
+
+
+compatible: "st,stm32l4-pllsai-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 0
+
+  clocks:
+    required: true
+
+  div-m:
+    type: int
+    required: true
+    description: |
+        Division factor for PLLSAI input clock. On series prior to L4+,
+        the division factor M is shared between PLL, PLLSAI1 and PLLSAI2
+        hence same value should be used for those PLLs when used together.
+        Valid range in L4+ series is 1 - 16.
+
+  mul-n:
+    type: int
+    required: true
+    description: |
+        Multiplication factor for VCO. Valid range is 8 - 127 for L4+
+        series and 8 - 86 for other series.
+
+  div-p:
+    type: int
+    description: |
+        Division factor for PLLSAI_P. Valid values are 2 - 31 for all
+        series except L47/48 for which valid values are 7 or 17
+
+  div-q:
+    type: int
+    description: |
+        Division factor for PLLSAI_Q
+    enum:
+      - 2
+      - 4
+      - 6
+      - 8
+
+  div-r:
+    type: int
+    description: |
+        Division factor for PLLSAI_R
+    enum:
+      - 2
+      - 4
+      - 6
+      - 8
+
+  div-divr:
+    type: int
+    description: |
+        Division factor after PLLSAI_R for the LTDC pixel clock. Only available
+        on L4+ series.
+    enum:
+      - 2
+      - 4
+      - 8
+      - 16

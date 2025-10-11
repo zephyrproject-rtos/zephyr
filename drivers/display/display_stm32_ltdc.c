@@ -18,6 +18,7 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/reset.h>
+#include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/cache.h>
@@ -396,32 +397,6 @@ static int stm32_ltdc_init(const struct device *dev)
 		}
 	}
 
-#if defined(CONFIG_SOC_SERIES_STM32F4X)
-	LL_RCC_PLLSAI_Disable();
-	LL_RCC_PLLSAI_ConfigDomain_LTDC(LL_RCC_PLLSOURCE_HSE,
-					LL_RCC_PLLSAIM_DIV_8,
-					192,
-					LL_RCC_PLLSAIR_DIV_4,
-					LL_RCC_PLLSAIDIVR_DIV_8);
-
-	LL_RCC_PLLSAI_Enable();
-	while (LL_RCC_PLLSAI_IsReady() != 1) {
-	}
-#endif
-
-#if defined(CONFIG_SOC_SERIES_STM32F7X)
-	LL_RCC_PLLSAI_Disable();
-	LL_RCC_PLLSAI_ConfigDomain_LTDC(LL_RCC_PLLSOURCE_HSE,
-					LL_RCC_PLLM_DIV_25,
-					384,
-					LL_RCC_PLLSAIR_DIV_5,
-					LL_RCC_PLLSAIDIVR_DIV_8);
-
-	LL_RCC_PLLSAI_Enable();
-	while (LL_RCC_PLLSAI_IsReady() != 1) {
-	}
-#endif
-
 	/* reset LTDC peripheral */
 	(void)reset_line_toggle_dt(&config->reset);
 
@@ -555,19 +530,8 @@ static DEVICE_API(display, stm32_ltdc_display_api) = {
 };
 
 #if DT_INST_NODE_HAS_PROP(0, ext_sdram)
-
-#if DT_SAME_NODE(DT_INST_PHANDLE(0, ext_sdram), DT_NODELABEL(sdram1))
-#define FRAME_BUFFER_SECTION __stm32_sdram1_section
-#elif DT_SAME_NODE(DT_INST_PHANDLE(0, ext_sdram), DT_NODELABEL(sdram2))
-#define FRAME_BUFFER_SECTION __stm32_sdram2_section
-#elif DT_SAME_NODE(DT_INST_PHANDLE(0, ext_sdram), DT_NODELABEL(psram))
-#define FRAME_BUFFER_SECTION __stm32_psram_section
-#else
-#error "LTDC ext-sdram property in device tree does not reference SDRAM1 or SDRAM2 node or PSRAM "\
-	"node"
-#define FRAME_BUFFER_SECTION
-#endif /* DT_SAME_NODE(DT_INST_PHANDLE(0, ext_sdram), DT_NODELABEL(sdram1)) */
-
+#define FRAME_BUFFER_SECTION	\
+	Z_GENERIC_SECTION(LINKER_DT_NODE_REGION_NAME(DT_INST_PHANDLE(0, ext_sdram)))
 #else
 #define FRAME_BUFFER_SECTION
 #endif /* DT_INST_NODE_HAS_PROP(0, ext_sdram) */

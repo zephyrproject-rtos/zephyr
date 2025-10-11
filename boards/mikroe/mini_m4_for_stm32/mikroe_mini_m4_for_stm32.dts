@@ -22,10 +22,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		orange_led_1: led_1 {
 			gpios = <&gpioc 12 GPIO_ACTIVE_HIGH>;
 			label = "DATA LD1";
 		};
+
 		red_led_2: led_2 {
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
 			label = "STAT LD2";
@@ -105,7 +107,7 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };

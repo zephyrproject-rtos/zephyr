@@ -15,9 +15,6 @@
 	compatible = "arduino,giga-r1";
 
 	chosen {
-		zephyr,console = &usart1;
-		zephyr,shell-uart = &usart1;
-		zephyr,uart-mcumgr = &usart1;
 		zephyr,bt-hci = &bt_hci_uart;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
@@ -30,7 +27,7 @@
 		device_type = "memory";
 		reg = <0xc0000000 DT_SIZE_M(8)>;
 		zephyr,memory-region = "SDRAM1";
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 
 	aliases {
@@ -143,7 +140,7 @@
 	status = "okay";
 	pinctrl-0 = <&fdcan2_tx_pb13 &fdcan2_rx_pb5>;
 	pinctrl-names = "default";
-	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
+	clocks = <&rcc STM32_CLOCK(APB1_2, 8)>,
 		 <&rcc STM32_SRC_PLL1_Q FDCAN_SEL(1)>;
 };
 
@@ -173,30 +170,16 @@
 	pinctrl-names = "default";
 	status = "okay";
 
-	n25q128a1: qspi-nor-flash@0 {
+	qspi_flash: n25q128a1: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
 		reg = <0>;
-		size = <DT_SIZE_M(128)>; /* 128 Mbits */
+		size = <DT_SIZE_M(128)>; /* 128 Mbits (16 MB) */
 		qspi-max-frequency = <72000000>;
+		cs-high-time = <4>; /* >= 50 ns */
 		status = "okay";
-
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			slot1_partition: partition@0 {
-				label = "image-1";
-				reg = <0x00000000 DT_SIZE_M(1)>;
-			};
-
-			storage_partition: partition@100000 {
-				label = "storage";
-				reg = <0x00100000 DT_SIZE_M(15)>;
-			};
-		};
 	};
 };
+#include <arduino/partitions_qspi_h7.dtsi>
 
 &rng {
 	status = "okay";
@@ -213,12 +196,10 @@
 	pinctrl-0 = <&fmc_nbl0_pe0 &fmc_nbl1_pe1
 		     &fmc_sdclk_pg8 &fmc_sdnwe_ph5 &fmc_sdcke0_ph2
 		     &fmc_sdne0_ph3 &fmc_sdnras_pf11 &fmc_sdncas_pg15
-
 		     &fmc_a0_pf0 &fmc_a1_pf1 &fmc_a2_pf2 &fmc_a3_pf3 &fmc_a4_pf4
 		     &fmc_a5_pf5 &fmc_a6_pf12 &fmc_a7_pf13 &fmc_a8_pf14
 		     &fmc_a9_pf15 &fmc_a10_pg0 &fmc_a11_pg1 &fmc_a12_pg2
 		     &fmc_a14_pg4 &fmc_a15_pg5
-
 		     &fmc_d0_pd14 &fmc_d1_pd15 &fmc_d2_pd0 &fmc_d3_pd1
 		     &fmc_d4_pe7 &fmc_d5_pe8 &fmc_d6_pe9 &fmc_d7_pe10
 		     &fmc_d8_pe11 &fmc_d9_pe12 &fmc_d10_pe13 &fmc_d11_pe14
@@ -253,6 +234,8 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
 	pinctrl-names = "default";
 };
+
+#include <../boards/common/usb/cdc_acm_serial.dtsi>
 
 /* alias used by display shields */
 zephyr_mipi_dsi: &mipi_dsi {};

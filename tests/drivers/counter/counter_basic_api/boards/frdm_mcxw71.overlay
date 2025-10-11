@@ -7,3 +7,19 @@
 &lptmr1 {
 	status = "okay";
 };
+
+&lpit0 {
+	status = "okay";
+};
+
+&lpit1_channel0 {
+	status = "okay";
+};
+
+&lpit1_channel1 {
+	status = "okay";
+};
+
+&lpit1_channel3 {
+	status = "okay";
+};

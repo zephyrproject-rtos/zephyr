@@ -1194,7 +1194,7 @@ int bmi160_pm(const struct device *dev, enum pm_device_action action)
 #define BMI160_DEFINE_SPI(inst)						   \
 	static struct bmi160_data bmi160_data_##inst;			   \
 	static const struct bmi160_cfg bmi160_cfg_##inst = {		   \
-		.bus.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8), 0), \
+		.bus.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8)),	   \
 		.bus_io = &bmi160_bus_io_spi,				   \
 		BMI160_TRIGGER_CFG(inst)				   \
 	};								   \

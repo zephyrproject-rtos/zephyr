@@ -1,0 +1,18 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 Neural-ART accelerator
+
+compatible: "st,stm32-npu"
+
+include: [reset-device.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  resets:
+    required: true

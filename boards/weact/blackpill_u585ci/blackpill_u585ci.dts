@@ -130,7 +130,7 @@
 };
 
 &fdcan1 {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000200>,
+	clocks = <&rcc STM32_CLOCK(APB1_2, 9)>,
 		 <&rcc STM32_SRC_PLL1_Q FDCAN1_SEL(1)>;
 	pinctrl-0 = <&fdcan1_rx_pb8 &fdcan1_tx_pb9>;
 	pinctrl-names = "default";
@@ -209,7 +209,7 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00200000>,
+	clocks = <&rcc STM32_CLOCK(APB3, 21)>,
 		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };
@@ -227,7 +227,7 @@ zephyr_udc0: &usbotg_fs {
 };
 
 stm32_lp_tick_source: &lptim1 {
-	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000800>,
+	clocks = <&rcc STM32_CLOCK(APB3, 11)>,
 		 <&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
 	status = "okay";
 };

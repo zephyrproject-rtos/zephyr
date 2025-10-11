@@ -42,6 +42,9 @@ struct qspi_nor_data {
 	volatile bool ready;
 #endif /* CONFIG_MULTITHREADING */
 	uint32_t xip_users;
+#if NRF53_ERRATA_159_ENABLE_WORKAROUND
+	nrf_clock_hfclk_div_t prev_hclk_div;
+#endif
 };
 
 struct qspi_nor_config {
@@ -55,6 +58,12 @@ struct qspi_nor_config {
 
 	const struct pinctrl_dev_config *pcfg;
 };
+
+#ifdef CONFIG_NORDIC_QSPI_NOR_ACTIVE_DWELL_MS
+#define ACTIVE_DWELL_MS CONFIG_NORDIC_QSPI_NOR_ACTIVE_DWELL_MS
+#else
+#define ACTIVE_DWELL_MS 0
+#endif
 
 /* Status register bits */
 #define QSPI_SECTOR_SIZE SPI_NOR_SECTOR_SIZE
@@ -273,9 +282,18 @@ static inline void qspi_unlock(const struct device *dev)
 #endif
 }
 
-static inline void qspi_clock_div_change(void)
+static inline void qspi_clock_div_change(const struct device *dev)
 {
 #ifdef CONFIG_SOC_SERIES_NRF53X
+#if NRF53_ERRATA_159_ENABLE_WORKAROUND
+	struct qspi_nor_data *dev_data = dev->data;
+
+	if (nrf53_errata_159()) {
+		/* Save current hfclk configuration */
+		dev_data->prev_hclk_div = nrf_clock_hfclk_div_get(NRF_CLOCK);
+		nrf_clock_hfclk_div_set(NRF_CLOCK, NRF_CLOCK_HFCLK_DIV_2);
+	}
+#endif
 	/* Make sure the base clock divider is changed accordingly
 	 * before a QSPI transfer is performed.
 	 */
@@ -284,13 +302,21 @@ static inline void qspi_clock_div_change(void)
 #endif
 }
 
-static inline void qspi_clock_div_restore(void)
+static inline void qspi_clock_div_restore(const struct device *dev)
 {
 #ifdef CONFIG_SOC_SERIES_NRF53X
 	/* Restore the default base clock divider to reduce power
 	 * consumption when the QSPI peripheral is idle.
 	 */
 	nrf_clock_hfclk192m_div_set(NRF_CLOCK, NRF_CLOCK_HFCLK_DIV_4);
+#if NRF53_ERRATA_159_ENABLE_WORKAROUND
+	struct qspi_nor_data *dev_data = dev->data;
+
+	if (nrf53_errata_159()) {
+		/* Restore previous hfclk configuration */
+		nrf_clock_hfclk_div_set(NRF_CLOCK, dev_data->prev_hclk_div);
+	}
+#endif
 #endif
 }
 
@@ -314,7 +340,7 @@ static void qspi_acquire(const struct device *dev)
 	qspi_lock(dev);
 
 	if (dev_data->xip_users == 0) {
-		qspi_clock_div_change();
+		qspi_clock_div_change(dev);
 
 		pm_device_busy_set(dev);
 	}
@@ -332,7 +358,7 @@ static void qspi_release(const struct device *dev)
 #endif
 
 	if (dev_data->xip_users == 0) {
-		qspi_clock_div_restore();
+		qspi_clock_div_restore(dev);
 
 		if (deactivate) {
 			(void) nrfx_qspi_deactivate();
@@ -343,7 +369,7 @@ static void qspi_release(const struct device *dev)
 
 	qspi_unlock(dev);
 
-	rc = pm_device_runtime_put(dev);
+	rc = pm_device_runtime_put_async(dev, K_MSEC(ACTIVE_DWELL_MS));
 	if (rc < 0) {
 		LOG_ERR("pm_device_runtime_put failed: %d", rc);
 	}
@@ -1115,11 +1141,11 @@ static int qspi_nor_init(const struct device *dev)
 	IRQ_CONNECT(DT_IRQN(QSPI_NODE), DT_IRQ(QSPI_NODE, priority),
 		    nrfx_isr, nrfx_qspi_irq_handler, 0);
 
-	qspi_clock_div_change();
+	qspi_clock_div_change(dev);
 
 	rc = qspi_init(dev);
 
-	qspi_clock_div_restore();
+	qspi_clock_div_restore(dev);
 
 	if (!IS_ENABLED(CONFIG_NORDIC_QSPI_NOR_XIP) && nrfx_qspi_init_check()) {
 		(void)nrfx_qspi_deactivate();
@@ -1322,7 +1348,7 @@ static int qspi_nor_pm_action(const struct device *dev,
 	}
 
 	qspi_lock(dev);
-	qspi_clock_div_change();
+	qspi_clock_div_change(dev);
 
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
@@ -1337,7 +1363,7 @@ static int qspi_nor_pm_action(const struct device *dev,
 		rc = -ENOTSUP;
 	}
 
-	qspi_clock_div_restore();
+	qspi_clock_div_restore(dev);
 	qspi_unlock(dev);
 
 	return rc;

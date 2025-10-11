@@ -949,6 +949,7 @@ static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)
 	case JSON_TOK_OBJ_ARRAY:
 		return sizeof(struct json_obj_token);
 	case JSON_TOK_STRING:
+	case JSON_TOK_ENCODED_OBJ:
 		return sizeof(char *);
 	case JSON_TOK_INT:
 	case JSON_TOK_UINT:

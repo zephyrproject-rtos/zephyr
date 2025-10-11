@@ -6,6 +6,7 @@
 /**
  * @defgroup psa_secure_storage PSA Secure Storage API
  * @ingroup os_services
+ * @version 1.0.4
  * @details For more information on the PSA Secure Storage API, see the
  * [PSA Certified Secure Storage API](https://arm-software.github.io/psa-api/storage/1.0/)
  * specification.
@@ -20,7 +21,11 @@
 #include <stddef.h>
 
 /** UID type for identifying entries. */
+#ifdef CONFIG_SECURE_STORAGE_64_BIT_UID
 typedef uint64_t psa_storage_uid_t;
+#else
+typedef uint32_t psa_storage_uid_t;
+#endif
 
 /** Flags used when creating an entry. */
 typedef uint32_t psa_storage_create_flags_t;

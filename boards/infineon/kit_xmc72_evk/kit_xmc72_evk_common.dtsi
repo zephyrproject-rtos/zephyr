@@ -60,7 +60,7 @@ uart3: &scb3 {
 
 	/* UART pins */
 	pinctrl-0 = <&p13_1_scb3_uart_tx &p13_0_scb3_uart_rx
-			&p13_2_scb3_uart_rts &p13_3_scb3_uart_cts>;
+		     &p13_2_scb3_uart_rts &p13_3_scb3_uart_cts>;
 	pinctrl-names = "default";
 };
 

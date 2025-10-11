@@ -5,7 +5,7 @@
 /* console UART */
 &usart3 {
 	dmas = <&dmamux1 2 46 STM32_DMA_PERIPH_TX>,
-		<&dmamux1 3 45 STM32_DMA_PERIPH_RX>;
+	       <&dmamux1 3 45 STM32_DMA_PERIPH_RX>;
 	dma-names = "tx", "rx";
 	status = "okay";
 };

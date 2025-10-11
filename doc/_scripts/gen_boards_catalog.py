@@ -87,12 +87,20 @@ def guess_file_from_patterns(directory, patterns, name, extensions):
 
 
 def guess_image(board_or_shield):
-    img_exts = ("jpg", "jpeg", "webp", "png")
+    img_exts = ("webp", "png", "jpg", "jpeg")
+
+    name_parts = board_or_shield.name.split('_')
+    prefix_matches = []
+    for i in range(len(name_parts) - 1, 0, -1):
+        partial_name = '_'.join(name_parts[:i])
+        prefix_matches.append(f"**/{partial_name}.{{ext}}")
+
     patterns = (
-        "**/{name}.{ext}",
+        *prefix_matches,
         "**/*{name}*.{ext}",
         "**/*.{ext}",
     )
+
     img_file = guess_file_from_patterns(
         board_or_shield.dir, patterns, board_or_shield.name, img_exts
     )
@@ -302,8 +310,9 @@ def get_catalog(generate_hw_features=False, hw_features_vendor_filter=None):
                     if node.matching_compat is None:
                         continue
 
-                    # skip "zephyr,xxx" compatibles
-                    if node.matching_compat.startswith("zephyr,"):
+                    # skip "zephyr,xxx" compatibles (unless board is native_sim, since in this
+                    # case the "zephyr,"-prefixed peripherals are legitimate)
+                    if node.matching_compat.startswith("zephyr,") and board.name != "native_sim":
                         continue
 
                     description = DeviceTreeUtils.get_cached_description(node)
@@ -360,14 +369,14 @@ def get_catalog(generate_hw_features=False, hw_features_vendor_filter=None):
         # Grab all the twister files for this board and use them to figure out all the archs it
         # supports.
         board_archs = set()
-        pattern = f"{board.name}*.yaml"
-        for twister_file in board.dir.glob(pattern):
-            try:
-                with open(twister_file) as f:
-                    board_data = yaml.safe_load(f)
-                    board_archs.add(board_data.get("arch"))
-            except Exception as e:
-                logger.error(f"Error parsing twister file {twister_file}: {e}")
+        for pattern in (f"{board.name}*.yaml", "twister.yaml"):
+            for twister_file in board.dir.glob(pattern):
+                try:
+                    with open(twister_file) as f:
+                        board_data = yaml.safe_load(f)
+                        board_archs.add(board_data.get("arch"))
+                except Exception as e:
+                    logger.error(f"Error parsing twister file {twister_file}: {e}")
 
         if doc_page and doc_page.is_relative_to(ZEPHYR_BASE):
             doc_page_path = doc_page.relative_to(ZEPHYR_BASE).as_posix()

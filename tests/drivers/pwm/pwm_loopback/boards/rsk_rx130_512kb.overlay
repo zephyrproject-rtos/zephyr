@@ -10,8 +10,8 @@
 / {
 	pwm_loopback_0 {
 		compatible = "test-pwm-loopback";
-		pwms =<&pwm4 RX_MTIOCxA 0 PWM_POLARITY_NORMAL>,
-		 <&pwm1 RX_MTIOCxA 0 PWM_POLARITY_NORMAL>;
+		pwms = <&pwm4 RX_MTIOCxA 0 PWM_POLARITY_NORMAL>,
+		       <&pwm1 RX_MTIOCxA 0 PWM_POLARITY_NORMAL>;
 	};
 };
 
@@ -32,7 +32,6 @@
 		prescaler = <RX_MTU_PWM_SOURCE_DIV_16>;
 	};
 };
-
 
 &pclkb {
 	div = <4>;

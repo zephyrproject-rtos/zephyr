@@ -15,23 +15,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mipi_dbi_spi, CONFIG_MIPI_DBI_LOG_LEVEL);
 
-struct mipi_dbi_spi_config {
-	/* SPI hardware used to send data */
-	const struct device *spi_dev;
-	/* Command/Data gpio */
-	const struct gpio_dt_spec cmd_data;
-	/* Reset GPIO */
-	const struct gpio_dt_spec reset;
-	/* Minimum transfer bits */
-	const uint8_t xfr_min_bits;
-};
-
-struct mipi_dbi_spi_data {
-	struct k_mutex lock;
-	/* Used for 3 wire mode */
-	uint16_t spi_byte;
-};
-
 /* Expands to 1 if the node does not have the `write-only` property */
 #define MIPI_DBI_SPI_WRITE_ONLY_ABSENT(n) (!DT_INST_PROP(n, write_only)) |
 
@@ -41,6 +24,16 @@ struct mipi_dbi_spi_data {
  */
 #define MIPI_DBI_SPI_READ_REQUIRED DT_INST_FOREACH_STATUS_OKAY(MIPI_DBI_SPI_WRITE_ONLY_ABSENT) 0
 uint32_t var = MIPI_DBI_SPI_READ_REQUIRED;
+
+/* Expands to 1 if the node configures a gpio in the `te-gpios` property */
+#define MIPI_DBI_SPI_TE_GPIOS_PRESENT(n) DT_INST_NODE_HAS_PROP(n, te_gpios) |
+
+/* This macro will evaluate to 1 if any of the nodes with zephyr,mipi-dbi-spi
+ * has a `te-gpios` property. The intention here is to allow the entire
+ * configure_te and mipi_dbi_spi_te_cb functions to be optimized out when it
+ * is not needed.
+ */
+#define MIPI_DBI_SPI_TE_REQUIRED DT_INST_FOREACH_STATUS_OKAY(MIPI_DBI_SPI_TE_GPIOS_PRESENT) 0
 
 /* Expands to 1 if the node does reflect the enum in `xfr-min-bits` property */
 #define MIPI_DBI_SPI_XFR_8BITS(n) (DT_INST_STRING_UPPER_TOKEN(n, xfr_min_bits) \
@@ -63,6 +56,53 @@ uint32_t var = MIPI_DBI_SPI_READ_REQUIRED;
  * Index starts from 0 so that BIT(8) means 9th bit.
  */
 #define MIPI_DBI_DC_BIT BIT(8)
+
+struct mipi_dbi_spi_config {
+	/* SPI hardware used to send data */
+	const struct device *spi_dev;
+	/* Command/Data gpio */
+	const struct gpio_dt_spec cmd_data;
+	/* Tearing Effect GPIO */
+	const struct gpio_dt_spec tearing_effect;
+	/* Reset GPIO */
+	const struct gpio_dt_spec reset;
+	/* Minimum transfer bits */
+	const uint8_t xfr_min_bits;
+};
+
+struct mipi_dbi_spi_data {
+	struct k_mutex lock;
+#if MIPI_DBI_SPI_TE_REQUIRED
+	struct k_sem te_signal;
+	k_timeout_t te_delay;
+	atomic_t in_active_area;
+	struct gpio_callback te_cb_data;
+#endif
+	/* Used for 3 wire mode */
+	uint16_t spi_byte;
+};
+
+#if MIPI_DBI_SPI_TE_REQUIRED
+
+static void mipi_dbi_spi_te_cb(const struct device *dev,
+				struct gpio_callback *cb,
+				uint32_t pins)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(pins);
+
+	struct mipi_dbi_spi_data *data = CONTAINER_OF(cb,
+				struct mipi_dbi_spi_data, te_cb_data);
+
+	/* Open frame window */
+	if (!atomic_cas(&data->in_active_area, 0, 1)) {
+		return;
+	}
+
+	k_sem_give(&data->te_signal);
+}
+
+#endif /* MIPI_DBI_SPI_TE_REQUIRED */
 
 static inline int
 mipi_dbi_spi_write_helper_3wire(const struct device *dev,
@@ -323,8 +363,32 @@ static int mipi_dbi_spi_write_display(const struct device *dev,
 {
 	ARG_UNUSED(pixfmt);
 
-	return mipi_dbi_spi_write_helper(dev, dbi_config, false, 0x0,
-					 framebuf, desc->buf_size);
+	int ret = 0;
+
+#if MIPI_DBI_SPI_TE_REQUIRED
+	struct mipi_dbi_spi_data *data = dev->data;
+
+	/* Wait for TE signal, otherwise transferring can begin */
+	if (!atomic_get(&data->in_active_area)) {
+		ret = k_sem_take(&data->te_signal, K_FOREVER);
+		if (ret < 0) {
+			return ret;
+		}
+		k_sleep(data->te_delay);
+	}
+#endif
+
+	ret = mipi_dbi_spi_write_helper(dev, dbi_config, false, 0x0,
+					framebuf, desc->buf_size);
+
+#if MIPI_DBI_SPI_TE_REQUIRED
+	/* End of frame reset */
+	if (!desc->frame_incomplete) {
+		atomic_set(&data->in_active_area, 0);
+	}
+#endif
+
+	return ret;
 }
 
 #if MIPI_DBI_SPI_READ_REQUIRED
@@ -507,6 +571,66 @@ static int mipi_dbi_spi_release(const struct device *dev,
 	return spi_release(config->spi_dev, &dbi_config->config);
 }
 
+#if MIPI_DBI_SPI_TE_REQUIRED
+
+static int mipi_dbi_spi_configure_te(const struct device *dev,
+					uint8_t edge,
+					k_timeout_t delay_us)
+{
+	const struct mipi_dbi_spi_config *config = dev->config;
+	struct mipi_dbi_spi_data *data = dev->data;
+	int ret = 0;
+
+	if (edge == MIPI_DBI_TE_NO_EDGE) {
+		/* No configuration */
+		return 0;
+	}
+
+	if (!mipi_dbi_has_pin(&config->tearing_effect)) {
+		return -ENOTSUP;
+	}
+
+	if (!gpio_is_ready_dt(&config->tearing_effect)) {
+		return -ENODEV;
+	}
+
+	ret = gpio_pin_configure_dt(&config->tearing_effect, GPIO_INPUT);
+	if (ret < 0) {
+		LOG_ERR("Could not configure Tearing Effect GPIO (%d)", ret);
+		return ret;
+	}
+
+	if (edge == MIPI_DBI_TE_RISING_EDGE) {
+		ret = gpio_pin_interrupt_configure_dt(&config->tearing_effect,
+							GPIO_INT_EDGE_RISING);
+	} else if (edge == MIPI_DBI_TE_FALLING_EDGE) {
+		ret = gpio_pin_interrupt_configure_dt(&config->tearing_effect,
+							GPIO_INT_EDGE_FALLING);
+	}
+	if (ret < 0) {
+		LOG_ERR("Could not configure Tearing Effect GPIO EXT interrupt (%d)", ret);
+		return ret;
+	}
+
+	gpio_init_callback(&data->te_cb_data, mipi_dbi_spi_te_cb,
+			BIT(config->tearing_effect.pin));
+
+	ret = gpio_add_callback(config->tearing_effect.port,
+				&data->te_cb_data);
+	if (ret < 0) {
+		LOG_ERR("Could not add Tearing Effect GPIO callback (%d)", ret);
+		return ret;
+	}
+
+	data->te_delay = delay_us;
+	atomic_set(&data->in_active_area, 0);
+	k_sem_init(&data->te_signal, 0, 1);
+
+	return ret;
+}
+
+#endif /* MIPI_DBI_SPI_TE_REQUIRED */
+
 static int mipi_dbi_spi_init(const struct device *dev)
 {
 	const struct mipi_dbi_spi_config *config = dev->config;
@@ -553,6 +677,9 @@ static DEVICE_API(mipi_dbi, mipi_dbi_spi_driver_api) = {
 #if MIPI_DBI_SPI_READ_REQUIRED
 	.command_read = mipi_dbi_spi_command_read,
 #endif
+#if MIPI_DBI_SPI_TE_REQUIRED
+	.configure_te = mipi_dbi_spi_configure_te,
+#endif
 };
 
 #define MIPI_DBI_SPI_INIT(n)							\
@@ -561,6 +688,7 @@ static DEVICE_API(mipi_dbi, mipi_dbi_spi_driver_api) = {
 		    .spi_dev = DEVICE_DT_GET(					\
 				    DT_INST_PHANDLE(n, spi_dev)),		\
 		    .cmd_data = GPIO_DT_SPEC_INST_GET_OR(n, dc_gpios, {}),	\
+		    .tearing_effect = GPIO_DT_SPEC_INST_GET_OR(n, te_gpios, {}),  \
 		    .reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {}),	\
 		    .xfr_min_bits = DT_INST_STRING_UPPER_TOKEN(n, xfr_min_bits) \
 	};									\

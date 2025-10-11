@@ -4,15 +4,15 @@
 #include <mem.h>
 
 /dts-v1/;
-/ {
 
+/ {
 	#address-cells = <1>;
 	#size-cells = <1>;
 
 	sram0: memory@4e100000 {
-		 device_type = "memory";
-		 compatible = "mmio-sram";
-		 reg = <0x4e100000 DT_SIZE_K(512)>;
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x4e100000 DT_SIZE_K(512)>;
 	};
 
 	dram0: memory@60000000 {
@@ -30,6 +30,13 @@
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
+
+		cpuclk: cpuclk@10000000 {
+			compatible = "mediatek,mt818x_cpuclk";
+			reg = <0x10000000 334>;
+			pll-ctrl-reg = <0x1000c42c>;
+			freqs-mhz = <26 400 800>;
+		};
 
 		core_intc: core_intc@0 {
 			compatible = "cdns,xtensa-core-intc";
@@ -74,8 +81,13 @@
 			interrupt-parent = <&intc2>;
 			interrupts = <2 0 0>;
 		};
+
+/* Generated code for AFE devices */
+#include "afe-mt8188.dts"
+
 	}; /* soc */
 
-	chosen { };
-	aliases { };
+	chosen {};
+
+	aliases {};
 };

@@ -108,21 +108,21 @@
 	uart0_default: uart0_default {
 		group1 {
 			pinmux = <PA9A_UART0_RXD>,
-				<PA10A_UART0_TXD>;
+				 <PA10A_UART0_TXD>;
 		};
 	};
 
 	uart1_default: uart1_default {
 		group1 {
 			pinmux = <PA5C_UART1_RXD>,
-				<PA6C_UART1_TXD>;
+				 <PA6C_UART1_TXD>;
 		};
 	};
 
 	uart2_default: uart2_default {
 		group1 {
 			pinmux = <PD25C_UART2_RXD>,
-				<PD26C_UART2_TXD>;
+				 <PD26C_UART2_TXD>;
 		};
 	};
 
@@ -132,6 +132,7 @@
 				 <PD30A_UART3_TXD>;
 		};
 	};
+
 	uart4_default: uart4_default {
 		group1 {
 			pinmux = <PD19C_UART4_TXD>,
@@ -152,6 +153,7 @@
 				 <PB3C_USART0_RTS>;
 			bias-pull-up;
 		};
+
 		group2 {
 			pinmux = <PB1C_USART0_TXD>,
 				 <PB2C_USART0_CTS>,
@@ -172,6 +174,7 @@
 				 <PA24A_USART1_RTS>;
 			bias-pull-up;
 		};
+
 		group2 {
 			pinmux = <PB4D_USART1_TXD>,
 				 <PA25A_USART1_CTS>;
@@ -191,6 +194,7 @@
 				 <PD18B_USART2_RTS>;
 			bias-pull-up;
 		};
+
 		group2 {
 			pinmux = <PD16B_USART2_TXD>,
 				 <PD19B_USART2_CTS>,

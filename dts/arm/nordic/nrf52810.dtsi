@@ -180,6 +180,7 @@
 			#io-channel-cells = <1>;
 			zephyr,pm-device-runtime-auto;
 		};
+
 		timer0: timer@40008000 {
 			compatible = "nordic,nrf-timer";
 			status = "disabled";
@@ -344,7 +345,6 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
-
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";

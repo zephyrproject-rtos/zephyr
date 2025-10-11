@@ -22,6 +22,7 @@ extern "C" {
 /**
  * @brief Emulated GPIO backend API
  * @defgroup gpio_emul Emulated GPIO
+ * @ingroup io_emulators
  * @ingroup gpio_interface
  * @{
  *
@@ -73,6 +74,23 @@ static inline int gpio_emul_input_set(const struct device *port, gpio_pin_t pin,
 }
 
 /**
+ * @brief Modify the value of one emulated GPIO input pin from a @p gpio_dt_spec
+ *
+ * This is equivalent to:
+ *
+ *     gpio_emul_input_set(spec->port, spec->pin, value);
+ *
+ * @param spec The emulated GPIO specification from devicetree
+ * @param value New values to assign to the pin
+ *
+ * @return a value from gpio_emul_input_set()
+ */
+static inline int gpio_emul_input_set_dt(const struct gpio_dt_spec *spec, int value)
+{
+	return gpio_emul_input_set(spec->port, spec->pin, value);
+}
+
+/**
  * @brief Read the value of one or more emulated GPIO output @p pins
  *
  * @param port The emulated GPIO port
@@ -108,6 +126,22 @@ static inline int gpio_emul_output_get(const struct device *port, gpio_pin_t pin
 }
 
 /**
+ * @brief Read the value of one emulated GPIO output pin from a @p gpio_dt_spec
+ *
+ * This is equivalent to:
+ *
+ *     gpio_emul_output_get(spec->port, spec->pin);
+ *
+ * @param spec The emulated GPIO specification from devicetree
+ *
+ * @return a value from gpio_emul_output_get()
+ */
+static inline int gpio_emul_output_get_dt(const struct gpio_dt_spec *spec)
+{
+	return gpio_emul_output_get(spec->port, spec->pin);
+}
+
+/**
  * @brief Get @p flags for a given emulated GPIO @p pin
  *
  * For more information on available flags, see @ref gpio_interface.
@@ -120,6 +154,25 @@ static inline int gpio_emul_output_get(const struct device *port, gpio_pin_t pin
  * @return -EINVAL if an invalid argument is provided
  */
 int gpio_emul_flags_get(const struct device *port, gpio_pin_t pin, gpio_flags_t *flags);
+
+/**
+ * @brief Get @p flags for a given emulated GPIO pin from a @p gpio_dt_spec
+ *
+ * This is equivalent to:
+ *
+ *     gpio_emul_flags_get(spec->port, spec->pin, flags);
+ *
+ * For more information on available flags, see @ref gpio_interface.
+ *
+ * @param spec The emulated GPIO specification from devicetree
+ * @param flags a pointer to where the flags for the pin will be stored
+ *
+ * @return a value from gpio_emul_flags_get()
+ */
+static inline int gpio_emul_flags_get_dt(const struct gpio_dt_spec *spec, gpio_flags_t *flags)
+{
+	return gpio_emul_flags_get(spec->port, spec->pin, flags);
+}
 
 /**
  * @}

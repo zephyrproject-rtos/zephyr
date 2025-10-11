@@ -21,6 +21,14 @@ config I2S_NRFX_TX_BLOCK_COUNT
 	int "TX queue length"
 	default 4
 
+config I2S_NRFX_ALLOW_MCK_BYPASS
+	bool "Allow MCK bypass if a ratio exists"
+	depends on SOC_SERIES_NRF53X
+	help
+	  Search for a supported ratio directly from MCK and LRCK
+	  and enable bypass if a ratio exists. If not, fallback to
+	  the standard MCK selection mechanism.
+
 endif # I2S_NRFX
 
 menuconfig I2S_NRF_TDM

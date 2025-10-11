@@ -57,7 +57,7 @@ SECTION_FUNC(TEXT, __sparc_trap_reset)
 	 nop
 #endif
 
-	call	z_bss_zero
+	call	arch_bss_zero
 	 nop
 
 	call    z_prep_c

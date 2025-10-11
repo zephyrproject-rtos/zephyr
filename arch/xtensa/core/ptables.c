@@ -847,11 +847,9 @@ err:
 	return ret;
 }
 
-static int region_map_update(uint32_t *ptables, uintptr_t start,
+static void region_map_update(uint32_t *ptables, uintptr_t start,
 			      size_t size, uint32_t ring, uint32_t flags)
 {
-	int ret = 0;
-
 	for (size_t offset = 0; offset < size; offset += CONFIG_MMU_PAGE_SIZE) {
 		uint32_t *l2_table, pte;
 		uint32_t page = start + offset;
@@ -873,15 +871,11 @@ static int region_map_update(uint32_t *ptables, uintptr_t start,
 
 		xtensa_dtlb_vaddr_invalidate((void *)page);
 	}
-
-	return ret;
 }
 
-static inline int update_region(uint32_t *ptables, uintptr_t start,
-				size_t size, uint32_t ring, uint32_t flags,
-				uint32_t option)
+static void update_region(uint32_t *ptables, uintptr_t start, size_t size,
+			  uint32_t ring, uint32_t flags, uint32_t option)
 {
-	int ret;
 	k_spinlock_key_t key;
 
 	key = k_spin_lock(&xtensa_mmu_lock);
@@ -901,13 +895,10 @@ static inline int update_region(uint32_t *ptables, uintptr_t start,
 	new_flags_uc = (flags & ~XTENSA_MMU_PTE_ATTR_CACHED_MASK);
 	new_flags = new_flags_uc | XTENSA_MMU_CACHED_WB;
 
-	ret = region_map_update(ptables, va, size, ring, new_flags);
-
-	if (ret == 0) {
-		ret = region_map_update(ptables, va_uc, size, ring, new_flags_uc);
-	}
+	region_map_update(ptables, va, size, ring, new_flags);
+	region_map_update(ptables, va_uc, size, ring, new_flags_uc);
 #else
-	ret = region_map_update(ptables, start, size, ring, flags);
+	region_map_update(ptables, start, size, ring, flags);
 #endif /* CONFIG_XTENSA_MMU_DOUBLE_MAP */
 
 #if CONFIG_MP_MAX_NUM_CPUS > 1
@@ -918,14 +909,12 @@ static inline int update_region(uint32_t *ptables, uintptr_t start,
 
 	sys_cache_data_flush_and_invd_all();
 	k_spin_unlock(&xtensa_mmu_lock, key);
-
-	return ret;
 }
 
-static inline int reset_region(uint32_t *ptables, uintptr_t start, size_t size, uint32_t option)
+static inline void reset_region(uint32_t *ptables, uintptr_t start, size_t size, uint32_t option)
 {
-	return update_region(ptables, start, size,
-			     XTENSA_MMU_KERNEL_RING, XTENSA_MMU_PERM_W, option);
+	update_region(ptables, start, size,
+		      XTENSA_MMU_KERNEL_RING, XTENSA_MMU_PERM_W, option);
 }
 
 void xtensa_user_stack_perms(struct k_thread *thread)
@@ -950,8 +939,9 @@ int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 	struct k_mem_partition *partition = &domain->partitions[partition_id];
 
 	/* Reset the partition's region back to defaults */
-	return reset_region(domain->arch.ptables, partition->start,
-			    partition->size, 0);
+	reset_region(domain->arch.ptables, partition->start, partition->size, 0);
+
+	return 0;
 }
 
 int arch_mem_domain_partition_add(struct k_mem_domain *domain,
@@ -961,14 +951,14 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain,
 	uint32_t ring = K_MEM_PARTITION_IS_USER(partition->attr) ? XTENSA_MMU_USER_RING :
 			XTENSA_MMU_KERNEL_RING;
 
-	return update_region(domain->arch.ptables, partition->start,
-			     partition->size, ring, partition->attr, 0);
+	update_region(domain->arch.ptables, partition->start,
+		      partition->size, ring, partition->attr, 0);
+	return 0;
 }
 
 /* These APIs don't need to do anything */
 int arch_mem_domain_thread_add(struct k_thread *thread)
 {
-	int ret = 0;
 	bool is_user, is_migration;
 	uint32_t *old_ptables;
 	struct k_mem_domain *domain;
@@ -992,9 +982,7 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 		/* and reset thread's stack permission in
 		 * the old page tables.
 		 */
-		ret = reset_region(old_ptables,
-			thread->stack_info.start,
-			thread->stack_info.size, 0);
+		reset_region(old_ptables, thread->stack_info.start, thread->stack_info.size, 0);
 	}
 
 	/* Need to switch to new page tables if this is
@@ -1018,7 +1006,7 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 	}
 #endif
 
-	return ret;
+	return 0;
 }
 
 int arch_mem_domain_thread_remove(struct k_thread *thread)
@@ -1046,9 +1034,11 @@ int arch_mem_domain_thread_remove(struct k_thread *thread)
 	 * adding it back to another. So there is no need to send TLB IPI
 	 * at this point.
 	 */
-	return reset_region(domain->arch.ptables,
-			    thread->stack_info.start,
-			    thread->stack_info.size, OPTION_NO_TLB_IPI);
+	reset_region(domain->arch.ptables,
+		     thread->stack_info.start,
+		     thread->stack_info.size, OPTION_NO_TLB_IPI);
+
+	return 0;
 }
 
 static bool page_validate(uint32_t *ptables, uint32_t page, uint8_t ring, bool write)

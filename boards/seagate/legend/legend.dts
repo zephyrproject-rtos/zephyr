@@ -26,23 +26,25 @@
 
 	board_id: brd-id {
 		compatible = "gpio-keys";
+
 		brd_id0: brd_id_0 {
 			label = "BRD_ID_0";
 			gpios = <&gpioc 13 0>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		brd_id1: brd_id_1 {
 			label = "BRD_ID_1";
 			gpios = <&gpioc 14 0>;
 			zephyr,code = <INPUT_KEY_1>;
 		};
+
 		brd_id2: brd_id_2 {
 			label = "BRD_ID_2";
 			gpios = <&gpioc 15 0>;
 			zephyr,code = <INPUT_KEY_2>;
 		};
 	};
-
 };
 
 &usart1 {
@@ -107,6 +109,7 @@
 		 * Lifetime   : 100K erase/program cycles on each sector/block
 		 */
 		jedec-id = [85 40 12];
+
 		/*
 		 * Alternate flash source
 		 *
@@ -137,6 +140,7 @@
 				label = "product-info";
 				reg = <0x00000000 DT_SIZE_K(4)>;
 			};
+
 			led_das: partition@1000 {
 				label = "led-das";
 				reg = <0x00001000 DT_SIZE_K(60)>;

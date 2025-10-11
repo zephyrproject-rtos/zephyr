@@ -33,6 +33,8 @@ tests:
     timeout: 200
 
   sample.tfm.regression_sfn:
+    platform_allow:
+      - max32657evkit/max32657/ns
     extra_args:
       - CONFIG_TFM_SFN=y
       - CONFIG_TFM_ISOLATION_LEVEL=1

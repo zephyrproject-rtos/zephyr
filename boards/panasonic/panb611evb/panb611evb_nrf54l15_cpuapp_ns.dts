@@ -1,0 +1,71 @@
+/*
+ * Copyright (c) 2025 Panasonic Industrial Devices Europe GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#define USE_NON_SECURE_ADDRESS_MAP 1
+
+#include <nordic/nrf54l15_cpuapp.dtsi>
+#include "panb611evb_nrf54l15_cpuapp_common.dtsi"
+
+/ {
+	model = "Panasonic PAN B611 EVB nRF54L15 Application MCU";
+	compatible = "panasonic-industrial-devices-europe-gmbh,panb611evb-cpuapp";
+
+	chosen {
+		zephyr,code-partition = &slot0_ns_partition;
+		zephyr,sram = &sram0_ns;
+		zephyr,entropy = &psa_rng;
+	};
+
+	/delete-node/ rng;
+
+	psa_rng: psa-rng {
+		status = "okay";
+	};
+};
+
+/ {
+	/*
+	 * Default SRAM planning when building for nRF54L15 with ARM TrustZone-M support
+	 * - Lowest 80 kB SRAM allocated to Secure image (sram0_s).
+	 * - Upper 80 kB SRAM allocated to Non-Secure image (sram0_ns).
+	 *
+	 * nRF54L15 has 256 kB of volatile memory (SRAM) but the last 96kB are reserved for
+	 * the FLPR MCU.
+	 * This static layout needs to be the same with the upstream TF-M layout in the
+	 * header flash_layout.h of the relevant platform. Any updates in the layout
+	 * needs to happen both in the flash_layout.h and in this file at the same time.
+	 */
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		sram0_s: image_s@20000000 {
+			/* Secure image memory */
+			reg = <0x20000000 DT_SIZE_K(80)>;
+		};
+
+		sram0_ns: image_ns@20014000 {
+			/* Non-Secure image memory */
+			reg = <0x20014000 DT_SIZE_K(80)>;
+		};
+	};
+};
+
+&uart20 {
+	/* Disable so that TF-M can use this UART */
+	status = "disabled";
+
+	current-speed = <115200>;
+	pinctrl-0 = <&uart20_default>;
+	pinctrl-1 = <&uart20_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+/* Include default memory partition configuration file */
+#include <nordic/nrf54l15_ns_partition.dtsi>

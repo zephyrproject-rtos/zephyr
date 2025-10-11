@@ -7,7 +7,6 @@
 
 #include <st/u5/stm32u5_usbotg_fs.dtsi>
 #include <zephyr/dt-bindings/memory-controller/stm32-fmc-nor-psram.h>
-#include <st/u5/stm32u5_crypt.dtsi>
 
 / {
 	sram0: memory@20000000 {

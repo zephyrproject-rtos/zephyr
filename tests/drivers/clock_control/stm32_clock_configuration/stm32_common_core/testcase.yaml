@@ -133,11 +133,16 @@ tests:
       - nucleo_l073rz
     integration_platforms:
       - nucleo_l152re
-  drivers.clock.stm32_clock_configuration.common_core.l0_l1.sysclksrc_pll_32_hsi_16:
+  drivers.clock.stm32_clock_configuration.common_core.l0.sysclksrc_pll_32_hsi_16:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/l0_pll_32_hsi_16.overlay"
+    platform_allow:
+      - nucleo_l073rz
+    integration_platforms:
+      - nucleo_l073rz
+  drivers.clock.stm32_clock_configuration.common_core.l1.sysclksrc_pll_32_hsi_16:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_32_hsi_16.overlay"
     platform_allow:
       - nucleo_l152re
-      - nucleo_l073rz
     integration_platforms:
       - nucleo_l152re
   drivers.clock.stm32_clock_configuration.common_core.l0_l1.sysclksrc_msi_range6:

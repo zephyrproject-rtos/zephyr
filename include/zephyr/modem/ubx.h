@@ -23,6 +23,8 @@ extern "C" {
 /**
  * @brief Modem Ubx
  * @defgroup modem_ubx Modem Ubx
+ * @since 3.7
+ * @version 1.0.0
  * @ingroup modem
  * @{
  */

@@ -101,20 +101,37 @@ this contributing and review process for imported components.
 
 .. _copyrights:
 
-Copyrights Notices
-******************
+Copyright and License Notices
+=============================
 
-The Zephyr Project follows the `Community Best Practice`_ for Copyright Notices from the Linux
-Foundation.
+Zephyr follows SPDX/REUSE-style file headers. Add a machine-readable copyright notice and a license
+identifier at the top of each file so tooling can detect them (for example
+:ref:`west spdx <west-spdx>`, which uses the `REUSE tool`_).
 
-We recommend using the following copyright notice:
+The Zephyr Project follows the `Community Best Practice`_ for copyright notices from the Linux
+Foundation, therefore we recommend using the following copyright notice:
 
-.. code-block:: C
+.. code-block:: none
 
-    Copyright The Zephyr Project Contributors
+   SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+
+Include the license identifier alongside it:
+
+.. code-block:: none
+
+   SPDX-License-Identifier: Apache-2.0
+
+Practical guidance:
+
+- Place both lines at the very top of the file using the file's native comment syntax.
+- If you authored substantial, original content, you *may* add an additional line for yourself or
+  your organization.
 
 .. _Community Best Practice:
    https://www.linuxfoundation.org/blog/copyright-notices-in-open-source-software-projects/
+
+.. _REUSE tool:
+   https://github.com/fsfe/reuse-tool
 
 .. _DCO:
 
@@ -358,6 +375,19 @@ If in doubt, it's advisable to explore existing Pull Requests within the Zephyr
 repository. Use the search filters and labels to locate PRs related to changes
 similar to the ones you are proposing.
 
+.. note::
+   GitHub's default code UI uses 4-character tabs. However, Zephyr follows the
+   `Linux kernel coding style`_, which uses 8-character tabs.
+
+   To ensure your view of the code is consistent with other developers, please
+   go to your `user preferences on GitHub`_ and change the tab width to 8 spaces.
+
+.. _Linux kernel coding style:
+   https://kernel.org/doc/html/latest/process/coding-style.html#indentation
+
+.. _user preferences on GitHub:
+   https://github.com/settings/appearance
+
 .. _commit-guidelines:
 
 Commit Message Guidelines
@@ -577,7 +607,7 @@ before opening a new Pull Request:
 
 .. code-block:: bash
 
-   ./scripts/ci/check_compliance.py -c upstream/main..
+   ./scripts/ci/check_compliance.py -c <commit range>
 
 .. note::
    On Windows if the .pl extension has not yet been associated with an

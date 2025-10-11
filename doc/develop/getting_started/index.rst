@@ -84,7 +84,7 @@ The current minimum required version for the main dependencies are:
          .. note::
 
             Due to the unavailability of ``gcc-multilib`` and ``g++-multilib`` on AArch64
-            (ARM64) systems, you may need to remove them from the list of packages to install.
+            (ARM64) systems, you may need to omit them from the list of packages to install.
 
       #. Verify the versions of the main dependencies installed on your system by entering:
 
@@ -260,8 +260,7 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
 
             west zephyr-export
 
-      #. The Zephyr west extension command, ``west packages`` can be used to install Python
-         dependencies.
+      #. Install Python dependencies using ``west packages``.
 
          .. code-block:: bash
 
@@ -312,8 +311,7 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
 
             west zephyr-export
 
-      #. The Zephyr west extension command, ``west packages`` can be used to install Python
-         dependencies.
+      #. Install Python dependencies using ``west packages``.
 
          .. code-block:: bash
 
@@ -380,8 +378,7 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
 
             west zephyr-export
 
-      #. The Zephyr west extension command, ``west packages`` can be used to install Python
-         dependencies.
+      #. Install Python dependencies using ``west packages``.
 
          .. code-block:: bat
 
