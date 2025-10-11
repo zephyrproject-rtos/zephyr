@@ -3,7 +3,7 @@
 
 config NRF_HALTIUM_GENERATE_UICR
 	bool "Generate UICR file"
-	depends on SOC_SERIES_NRF54HX
+	depends on SOC_SERIES_NRF54HX || SOC_SERIES_NRF92X
 	default y
 	help
 	  Generate UICR HEX file.
