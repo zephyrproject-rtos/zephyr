@@ -15,8 +15,8 @@ if(CONFIG_NXP_RW6XX_BOOT_HEADER)
       "the RD_RW612_BGA, but targeting a custom board. You may need to "
      "update your flash configuration block data")
   endif()
-  zephyr_compile_definitions(BOOT_HEADER_ENABLE=1)
-  zephyr_compile_definitions(BOARD_FLASH_SIZE=CONFIG_FLASH_SIZE*1024)
+  zephyr_library_compile_definitions(BOOT_HEADER_ENABLE=1)
+  zephyr_library_compile_definitions(BOARD_FLASH_SIZE=CONFIG_FLASH_SIZE*1024)
   zephyr_library_sources(MX25U51245GZ4I00_FCB.c)
 endif()
 
@@ -32,5 +32,5 @@ if (CONFIG_WIFI_NXP)
       tx_pwr_limits
   )
 
-  zephyr_compile_definitions(WIFI_BT_TX_PWR_LIMITS_OVERRIDE="wlan_txpwrlimit_cfg_WW_rw610.h")
+  zephyr_library_compile_definitions(WIFI_BT_TX_PWR_LIMITS_OVERRIDE="wlan_txpwrlimit_cfg_WW_rw610.h")
 endif()
