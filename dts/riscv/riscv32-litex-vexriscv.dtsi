@@ -132,6 +132,76 @@
 			};
 		};
 
+		sdhc0: sdhc@400b6000 {
+			compatible = "litex,litesdcard-sdhc";
+			interrupt-parent = <&intc0>;
+			reg = <0xf0001800 0x4>,
+				<0xf0001804 0x4>,
+				<0xf0001808 0x4>,
+				<0xf000180c 0x4>,
+				<0xf0001810 0x4>,
+				<0xf0001814 0x4>,
+				<0xf0001818 0x4>,
+				<0xf000181c 0x4>,
+				<0xf0001820 0x10>,
+				<0xf0001830 0x4>,
+				<0xf0001834 0x4>,
+				<0xf0001838 0x4>,
+				<0xf000183c 0x4>,
+				<0xf0001840 0x8>,
+				<0xf0001848 0x4>,
+				<0xf000184c 0x4>,
+				<0xf0001850 0x4>,
+				<0xf0001854 0x4>,
+				<0xf0001858 0x4>,
+				<0xf000185c 0x8>,
+				<0xf0001864 0x4>,
+				<0xf0001868 0x4>,
+				<0xf000186c 0x4>,
+				<0xf0001870 0x4>,
+				<0xf0001874 0x4>,
+				<0xf0001878 0x4>,
+				<0xf000187c 0x4>,
+				<0xf0001880 0x4>;
+			reg-names = "phy_card_detect",
+				"phy_clocker_divider",
+				"phy_init_initialize",
+				"phy_dataw_status",
+				"phy_settings",
+				"core_cmd_argument",
+				"core_cmd_command",
+				"core_cmd_send",
+				"core_cmd_response",
+				"core_cmd_event",
+				"core_data_event",
+				"core_block_length",
+				"core_block_count",
+				"block2mem_dma_base",
+				"block2mem_dma_length",
+				"block2mem_dma_enable",
+				"block2mem_dma_done",
+				"block2mem_dma_loop",
+				"block2mem_dma_offset",
+				"mem2block_dma_base",
+				"mem2block_dma_length",
+				"mem2block_dma_enable",
+				"mem2block_dma_done",
+				"mem2block_dma_loop",
+				"mem2block_dma_offset",
+				"ev_status",
+				"ev_pending",
+				"ev_enable";
+			interrupts = <2 0>;
+			// status = "disabled";
+			status = "okay";
+			mmc {
+				compatible = "zephyr,sdmmc-disk";
+				// status = "disabled";
+				status = "okay";
+				disk-name = "SD";
+			};
+		};
+
 		timer0: timer@e0002800 {
 			compatible = "litex,timer0";
 			interrupt-parent = <&intc0>;

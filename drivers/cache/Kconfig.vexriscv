@@ -1,0 +1,8 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config CACHE_VEXRISCV
+	bool "VexRiscv cache driver"
+	select CACHE_HAS_DRIVER
+	help
+	  Enable support for the VexRiscv cache driver.
