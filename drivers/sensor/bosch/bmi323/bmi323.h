@@ -10,6 +10,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 
+#define IMU_BOSCH_BMI323_REG_CHIP_ID    (0x00)
+
 #define IMU_BOSCH_BMI323_REG_ACC_DATA_X (0x03)
 #define IMU_BOSCH_BMI323_REG_ACC_DATA_Y (0x04)
 #define IMU_BOSCH_BMI323_REG_ACC_DATA_Z (0x05)
