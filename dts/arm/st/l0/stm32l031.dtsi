@@ -14,7 +14,7 @@
 			compatible = "st,stm32-timers";
 			reg = <0x40011400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 5)>;
-			resets = <&rctl STM32_RESET(APB2, 5U)>;
+			resets = <&rctl STM32_RESET(APB2, 5)>;
 			interrupts = <22 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
