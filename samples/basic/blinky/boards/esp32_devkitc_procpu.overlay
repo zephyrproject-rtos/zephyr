@@ -1,0 +1,21 @@
+/* Below configuration has been tested for ESP32 Devkit V1 */
+
+/
+{
+	aliases
+	{
+		led0 = &gpio2;
+	};
+
+	leds
+	{
+		compatible = "gpio-leds";
+
+gpio2:
+		led_0
+		{
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+			label = "On-board LED";
+		};
+	};
+};
