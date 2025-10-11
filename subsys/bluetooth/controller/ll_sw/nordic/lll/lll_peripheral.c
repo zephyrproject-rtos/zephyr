@@ -211,6 +211,10 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	lll_chan_set(data_chan_use);
 
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+	lll->periph.chan_curr = data_chan_use;
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
+
 	radio_isr_set(lll_conn_isr_rx, lll);
 
 	radio_tmr_tifs_set(lll->tifs_tx_us);
