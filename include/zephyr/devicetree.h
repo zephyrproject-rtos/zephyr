@@ -4419,6 +4419,17 @@
 	DT_STRING_TOKEN_BY_IDX(DT_DRV_INST(inst), prop, idx)
 
 /**
+ * @brief Get an element out of string-array property as a token.
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property name
+ * @param idx the index to get
+ * @return the element in @p prop at index @p idx as a token
+ */
+#define DT_INST_STRING_TOKEN_BY_IDX_OR(inst, prop, idx, default_value)	\
+  COND_CODE_1(DT_INST_PROP_HAS_IDX(inst, prop, idx),	\
+	(DT_INST_STRING_TOKEN_BY_IDX(inst, prop, idx)),	(default_value))
+
+/**
  * @brief Like DT_INST_STRING_TOKEN_BY_IDX(), but uppercased.
  * @param inst instance number
  * @param prop lowercase-and-underscores property name
