@@ -606,6 +606,63 @@ int pm_device_runtime_usage(const struct device *dev)
 	return dev->pm_base->usage;
 }
 
+void pm_device_runtime_reference_init(struct pm_device_runtime_reference *ref)
+{
+	ref->active = false;
+}
+
+int pm_device_runtime_request(const struct device *dev,
+			      struct pm_device_runtime_reference *ref)
+{
+	int ret;
+
+	if (ref->active) {
+		ret = 0;
+	} else {
+		ret = pm_device_runtime_get(dev);
+		if (ret == 0) {
+			ref->active = true;
+		}
+	}
+
+	return ret;
+}
+
+int pm_device_runtime_release(const struct device *dev,
+			      struct pm_device_runtime_reference *ref)
+{
+	int ret;
+
+	if (!ref->active) {
+		ret = 0;
+	} else {
+		ret = pm_device_runtime_put(dev);
+		if (ret == 0) {
+			ref->active = false;
+		}
+	}
+
+	return ret;
+}
+
+int pm_device_runtime_release_async(const struct device *dev,
+				    struct pm_device_runtime_reference *ref,
+				    k_timeout_t timeout)
+{
+	int ret;
+
+	if (!ref->active) {
+		ret = 0;
+	} else {
+		ret = pm_device_runtime_put_async(dev, timeout);
+		if (ret == 0) {
+			ref->active = false;
+		}
+	}
+
+	return ret;
+}
+
 #ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
 #ifdef CONFIG_PM_DEVICE_RUNTIME_USE_DEDICATED_WQ
 
