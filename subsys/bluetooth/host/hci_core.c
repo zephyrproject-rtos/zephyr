@@ -48,6 +48,7 @@
 
 #include "addr_internal.h"
 #include "adv.h"
+#include "bt_taskq.h"
 #include "common/hci_common_internal.h"
 #include "common/bt_str.h"
 #include "common/rpa.h"
@@ -123,6 +124,9 @@ static K_WORK_DEFINE(rx_work, rx_work_handler);
 static struct k_work_q bt_workq;
 static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_BT_RX_STACK_SIZE);
 #endif /* CONFIG_BT_RECV_WORKQ_BT */
+
+struct k_work_q *const bt_workq_chosen =
+	COND_CODE_1(CONFIG_BT_RECV_WORKQ_BT, (&bt_workq), (&k_sys_work_q));
 
 static void init_work(struct k_work *work);
 
@@ -475,7 +479,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 	/* Since the commands are now processed in the syswq, we cannot suspend
 	 * and wait. We have to send the command from the current context.
 	 */
-	if (k_current_get() == &k_sys_work_q.thread) {
+	if (!IS_ENABLED(CONFIG_BT_TASKQ_DEDICATED) && k_current_get() == &k_sys_work_q.thread) {
 		/* drain the command queue until we get to send the command of interest. */
 		struct net_buf *cmd = NULL;
 
@@ -4338,13 +4342,11 @@ static void hci_event_prio(struct net_buf *buf)
 
 static void rx_queue_put(struct net_buf *buf)
 {
+	int err;
+
 	net_buf_slist_put(&bt_dev.rx_queue, buf);
 
-#if defined(CONFIG_BT_RECV_WORKQ_SYS)
-	const int err = k_work_submit(&rx_work);
-#elif defined(CONFIG_BT_RECV_WORKQ_BT)
-	const int err = k_work_submit_to_queue(&bt_workq, &rx_work);
-#endif /* CONFIG_BT_RECV_WORKQ_SYS */
+	err = k_work_submit_to_queue(bt_workq_chosen, &rx_work);
 	if (err < 0) {
 		LOG_ERR("Could not submit rx_work: %d", err);
 	}
@@ -5024,5 +5026,5 @@ static K_WORK_DEFINE(tx_work, tx_processor);
 void bt_tx_irq_raise(void)
 {
 	LOG_DBG("kick TX");
-	k_work_submit(&tx_work);
+	k_work_submit_to_queue(bt_taskq_chosen, &tx_work);
 }

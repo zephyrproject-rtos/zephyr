@@ -438,6 +438,7 @@ struct bt_dev {
 #endif
 };
 
+extern struct k_work_q *const bt_workq_chosen;
 extern struct bt_dev bt_dev;
 extern const struct bt_conn_auth_cb *bt_auth;
 extern sys_slist_t bt_auth_info_cbs;
