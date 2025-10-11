@@ -40,6 +40,12 @@ QSPI
   Sample shifting is configurable now and disabled by default.
   (:github:`98999`).
 
+Sensors
+=======
+
+* :dtcompatible:`st,lps22hh` now ignores the ``odr`` property in favor of the one-shot sampling mode
+  unless :kconfig:option:`CONFIG_LPS22HH_TRIGGER` is enabled to make use of periodic sampling.
+
 Bluetooth
 *********
 
