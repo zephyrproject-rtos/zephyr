@@ -62,16 +62,13 @@
 			reg = <0x20400000 DT_SIZE_K(320)>;
 		};
 
-		/*
-		 * Last 48Kb is reserved by Secure BAF, application core cannot access it.
-		 *
-		 * Do not assign the compatible for this now, when Flash API is implemented,
-		 * need to check if "soc-nv-flash" can be used or a new binding need to be
-		 * created, based on it.
-		 */
-		flash0: flash@400000 {
-			reg = <0x00400000 DT_SIZE_K(4048)>;
-			status = "disabled";
+		/* Last 48Kb is reserved by Secure BAF, application core cannot access it. */
+                flash0: flash@400000 {
+                        compatible = "nxp,s32k3x-c40-flash";
+                        reg = <0x00400000 DT_SIZE_K(4048)>;
+	                erase-block-size = <0x2000>;           /* Min erase size is 8 KiB */
+                        write-block-size = <8>;                /* Minimum programmable unit */
+                        status = "disabled";
 		};
 
 		clock: clock-controller@402c8000 {
