@@ -23,6 +23,7 @@ For specific Bluetooth functionality see also the following shell documentation
    shell/audio/tmap.rst
    shell/audio/pbp.rst
    shell/classic/a2dp.rst
+   shell/classic/hfp.rst
    shell/classic/l2cap.rst
    shell/host/gap.rst
    shell/host/gatt.rst
