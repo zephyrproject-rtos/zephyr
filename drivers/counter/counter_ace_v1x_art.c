@@ -103,7 +103,7 @@ int counter_ace_v1x_art_get_value(const struct device *dev, uint64_t *value)
 }
 
 static DEVICE_API(counter, ace_v1x_art_counter_apis) = {
-	.get_value_64 = counter_ace_v1x_art_get_value
+	.get_value = counter_ace_v1x_art_get_value
 };
 
 DEVICE_DT_DEFINE(DT_NODELABEL(ace_art_counter), NULL, NULL, NULL, NULL,
