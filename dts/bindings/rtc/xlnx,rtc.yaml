@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Advanced Micro Devices, Inc. (AMD)
+# SPDX-License-Identifier: Apache-2.0
+
+description: Xilinx RTC controller
+
+compatible: "xlnx,zynqmp-rtc"
+
+include: ["rtc.yaml", "rtc-device.yaml"]
+
+properties:
+  reg:
+    required: true
