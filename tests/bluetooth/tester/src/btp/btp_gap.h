@@ -393,6 +393,37 @@ struct btp_gap_set_rpa_timeout_cmd {
 	uint16_t rpa_timeout;
 } __packed;
 
+#define BTP_GAP_EAD_SET_KEY_MATERIAL_KEY_SIZE 16
+#define BTP_GAP_EAD_SET_KEY_MATERIAL_IV_SIZE  8
+#define BTP_GAP_EAD_MAX_DATA_LEN              255
+#define BTP_GAP_EAD_SET_KEY_MATERIAL          0x31
+struct btp_gap_ead_set_key_material_cmd {
+	uint8_t session_key[BTP_GAP_EAD_SET_KEY_MATERIAL_KEY_SIZE];
+	uint8_t initialization_vector[BTP_GAP_EAD_SET_KEY_MATERIAL_IV_SIZE];
+} __packed;
+
+#define BTP_GAP_EAD_ENCRYPT_ADV_DATA 0x32
+struct btp_gap_ead_encrypt_adv_data_cmd {
+	uint8_t adv_data_len;
+	uint8_t adv_data[];
+} __packed;
+
+struct btp_gap_ead_encrypt_adv_data_rp {
+	uint8_t encrypted_data_len;
+	uint8_t encrypted_data[];
+} __packed;
+
+#define BTP_GAP_EAD_DECRYPT_ADV_DATA 0x33
+struct btp_gap_ead_decrypt_adv_data_cmd {
+	uint8_t encrypted_data_len;
+	uint8_t encrypted_data[];
+} __packed;
+
+struct btp_gap_decrypt_ead_adv_data_rp {
+	uint8_t decrypted_data_len;
+	uint8_t decrypted_data[];
+} __packed;
+
 /* events */
 #define BTP_GAP_EV_NEW_SETTINGS			0x80
 struct btp_gap_new_settings_ev {

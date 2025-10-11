@@ -20,6 +20,7 @@
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/ead.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/util.h>
@@ -2831,6 +2832,85 @@ static uint8_t bis_broadcast(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 }
 #endif /* defined(CONFIG_BT_ISO_BROADCASTER) */
 
+#if defined(CONFIG_BT_EAD)
+static struct ead_key_materials_s {
+	uint8_t session_key[BTP_GAP_EAD_SET_KEY_MATERIAL_KEY_SIZE];
+	uint8_t initialization_vector[BTP_GAP_EAD_SET_KEY_MATERIAL_IV_SIZE];
+} ead_key_materials;
+
+/*
+ * This command to be used by both central and peripheral.
+ * central side should get key material by reading them from the peripheral
+ * gatt database. Obviously key materials can be shared OOB as well.
+ */
+static uint8_t ead_set_key_material(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_gap_ead_set_key_material_cmd *cp = cmd;
+
+	(void)memcpy(ead_key_materials.session_key, cp->session_key,
+		     sizeof(ead_key_materials.session_key));
+	(void)memcpy(ead_key_materials.initialization_vector, cp->initialization_vector,
+		     sizeof(ead_key_materials.initialization_vector));
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t ead_encrypt_data(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_gap_ead_encrypt_adv_data_cmd *cp = cmd;
+	struct btp_gap_ead_encrypt_adv_data_rp *rp = rsp;
+	int err;
+	size_t encrypted_size;
+
+	if ((cmd_len < sizeof(*cp)) || (cmd_len != sizeof(*cp) + cp->adv_data_len)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	encrypted_size = BT_EAD_ENCRYPTED_PAYLOAD_SIZE(cp->adv_data_len);
+	if (encrypted_size > BTP_GAP_EAD_MAX_DATA_LEN) {
+		LOG_ERR("Plain text data length exceeds max supported");
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_ead_encrypt(ead_key_materials.session_key, ead_key_materials.initialization_vector,
+			     cp->adv_data, cp->adv_data_len, rp->encrypted_data);
+
+	if (err < 0) {
+		LOG_ERR("Failed to encrypt data: %d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	rp->encrypted_data_len = encrypted_size;
+	*rsp_len = sizeof(*rp) + rp->encrypted_data_len;
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t ead_decrypt_data(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_gap_ead_decrypt_adv_data_cmd *cp = cmd;
+	struct btp_gap_decrypt_ead_adv_data_rp *rp = rsp;
+	int err;
+
+	if ((cmd_len < sizeof(*cp)) || (cmd_len != sizeof(*cp) + cp->encrypted_data_len)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_ead_decrypt(ead_key_materials.session_key, ead_key_materials.initialization_vector,
+			     cp->encrypted_data, cp->encrypted_data_len, rp->decrypted_data);
+
+	if (err < 0) {
+		LOG_ERR("Failed to decrypt data: %d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	rp->decrypted_data_len = BT_EAD_DECRYPTED_PAYLOAD_SIZE(cp->encrypted_data_len);
+	*rsp_len = sizeof(*rp) + rp->decrypted_data_len;
+
+	return BTP_STATUS_SUCCESS;
+}
+#endif /* defined(CONFIG_BT_EAD) */
+
 static const struct btp_handler handlers[] = {
 	{
 		.opcode = BTP_GAP_READ_SUPPORTED_COMMANDS,
@@ -3045,6 +3125,23 @@ static const struct btp_handler handlers[] = {
 		.func = bis_broadcast,
 	},
 #endif /* defined(CONFIG_BT_ISO_BROADCASTER) */
+#if defined(CONFIG_BT_EAD)
+	{
+		.opcode = BTP_GAP_EAD_SET_KEY_MATERIAL,
+		.expect_len = sizeof(struct btp_gap_ead_set_key_material_cmd),
+		.func = ead_set_key_material,
+	},
+	{
+		.opcode = BTP_GAP_EAD_ENCRYPT_ADV_DATA,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = ead_encrypt_data,
+	},
+	{
+		.opcode = BTP_GAP_EAD_DECRYPT_ADV_DATA,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = ead_decrypt_data,
+	},
+#endif /* defined(CONFIG_BT_EAD) */
 };
 
 uint8_t tester_init_gap(void)
