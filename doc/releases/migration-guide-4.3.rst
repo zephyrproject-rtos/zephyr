@@ -276,6 +276,12 @@ Cellular
  * :c:enum:`cellular_access_technology` values have been redefined to align with 3GPP TS 27.007.
  * :c:enum:`cellular_registration_status` values have been extended to align with 3GPP TS 27.007.
 
+JWT
+===
+
+* With the long term goal to transition all crypto support toward PSA API,
+  :kconfig:option:`CONFIG_JWT_SIGN_RSA_LEGACY` is deprecated.
+
 Logging
 =======
 
