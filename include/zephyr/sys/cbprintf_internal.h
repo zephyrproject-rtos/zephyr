@@ -534,7 +534,6 @@ extern "C" {
  * @retval 1 if string must be packaged at runtime.
  * @retval 0 if string can be statically packaged.
  */
-#if Z_C_GENERIC
 #define Z_CBPRINTF_MUST_RUNTIME_PACKAGE(flags, ...) ({\
 	int _rv; \
 	if ((flags) & CBPRINTF_PACKAGE_ADD_RW_STR_POS) { \
@@ -544,9 +543,6 @@ extern "C" {
 	} \
 	_rv; \
 })
-#else
-#define Z_CBPRINTF_MUST_RUNTIME_PACKAGE(flags, ...) 1
-#endif
 
 /** @brief Get storage size for given argument.
  *
@@ -864,23 +860,10 @@ do { \
 	} \
 } while (false)
 
-#if Z_C_GENERIC
 #define Z_CBPRINTF_STATIC_PACKAGE(packaged, inlen, outlen, align_offset, flags, \
 				  ... /* fmt, ... */) \
 	Z_CBPRINTF_STATIC_PACKAGE_GENERIC(packaged, inlen, outlen, \
 					  align_offset, flags, __VA_ARGS__)
-#else
-#define Z_CBPRINTF_STATIC_PACKAGE(packaged, inlen, outlen, align_offset, flags, \
-				  ... /* fmt, ... */) \
-do { \
-	/* Small trick needed to avoid warning on always true */ \
-	if (((uintptr_t)packaged + 1) != 1) { \
-		outlen = cbprintf_package(packaged, inlen, flags, __VA_ARGS__); \
-	} else { \
-		outlen = cbprintf_package(NULL, align_offset, flags, __VA_ARGS__); \
-	} \
-} while (false)
-#endif /* Z_C_GENERIC */
 
 #ifdef __cplusplus
 }

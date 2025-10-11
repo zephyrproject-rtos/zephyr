@@ -869,8 +869,6 @@ The are following recommendations:
 
 * Enable :kconfig:option:`CONFIG_LOG_SPEED` to slightly speed up deferred logging at the
   cost of slight increase in memory footprint.
-* Compiler with C11 ``_Generic`` keyword support is recommended. Logging
-  performance is significantly degraded without it. See :ref:`cbprintf_packaging`.
 * It is recommended to cast pointer to ``const char *`` when it is used with ``%s``
   format specifier and it points to a constant string.
 * It is recommended to cast pointer to ``char *`` when it is used with ``%s``

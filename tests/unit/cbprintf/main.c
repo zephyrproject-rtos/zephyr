@@ -35,9 +35,6 @@
 #else
 #define USE_PACKAGED 0
 #endif
-#if (VIA_TWISTER & 0x800) != 0
-#define AVOID_C_GENERIC 1
-#endif
 #if (VIA_TWISTER & 0x1000) != 0
 #define PKG_ALIGN_OFFSET sizeof(void *)
 #endif
@@ -61,10 +58,6 @@
 #define ENABLED_USE_PACKAGED true
 #else
 #define ENABLED_USE_PACKAGED false
-#endif
-
-#if AVOID_C_GENERIC
-#define Z_C_GENERIC 0
 #endif
 
 #ifndef PACKAGE_FLAGS
@@ -1181,11 +1174,6 @@ ZTEST(prf, test_cbprintf_package_rw_string_indexes)
 		return;
 	}
 
-	if (!Z_C_GENERIC) {
-		/* runtime packaging will not detect ro strings. */
-		return;
-	}
-
 	int len0, len1;
 	static const char *test_str = "test %d %s";
 	static const char *test_str1 = "lorem ipsum";
@@ -1249,10 +1237,6 @@ ZTEST(prf, test_cbprintf_fsc_package)
 		return;
 	}
 
-	if (!Z_C_GENERIC) {
-		/* runtime packaging will not detect ro strings. */
-		return;
-	}
 
 	char test_str[] = "test %d %s";
 	const char *test_str1 = "lorem ipsum";
@@ -1449,8 +1433,7 @@ static void *cbprintf_setup(void)
 		TC_PRINT(" NANO\n");
 	}
 	if (ENABLED_USE_PACKAGED) {
-		TC_PRINT(" PACKAGED %s C11 _Generic\n",
-				Z_C_GENERIC ? "with" : "without");
+		TC_PRINT(" PACKAGED\n");
 	} else {
 		TC_PRINT(" VA_LIST\n");
 	}
