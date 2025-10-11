@@ -82,7 +82,8 @@ struct iv_val {
 
 static struct {
 	uint32_t src : 15, /* MSb of source is always 0 */
-	      seq : 17;
+		 seq : 17;
+	const struct bt_mesh_net_cred *cred;
 } msg_cache[CONFIG_BT_MESH_MSG_CACHE_SIZE];
 static uint16_t msg_cache_next;
 
@@ -145,20 +146,22 @@ static bool check_dup(struct net_buf_simple *data)
 	return false;
 }
 
-static bool msg_cache_match(struct net_buf_simple *pdu)
+static bool msg_cache_match(struct net_buf_simple *pdu, const struct bt_mesh_net_cred *cred)
 {
 	uint16_t i;
 
 	for (i = msg_cache_next; i > 0U;) {
 		if (msg_cache[--i].src == SRC(pdu->data) &&
-		    msg_cache[i].seq == (SEQ(pdu->data) & BIT_MASK(17))) {
+		    msg_cache[i].seq == (SEQ(pdu->data) & BIT_MASK(17)) &&
+		    msg_cache[i].cred == cred) {
 			return true;
 		}
 	}
 
 	for (i = ARRAY_SIZE(msg_cache); i > msg_cache_next;) {
 		if (msg_cache[--i].src == SRC(pdu->data) &&
-		    msg_cache[i].seq == (SEQ(pdu->data) & BIT_MASK(17))) {
+		    msg_cache[i].seq == (SEQ(pdu->data) & BIT_MASK(17)) &&
+		    msg_cache[i].cred == cred) {
 			return true;
 		}
 	}
@@ -171,6 +174,7 @@ static void msg_cache_add(struct bt_mesh_net_rx *rx)
 	msg_cache_next %= ARRAY_SIZE(msg_cache);
 	msg_cache[msg_cache_next].src = rx->ctx.addr;
 	msg_cache[msg_cache_next].seq = rx->seq;
+	msg_cache[msg_cache_next].cred = rx->cred;
 	msg_cache_next++;
 }
 
@@ -402,6 +406,7 @@ static void bt_mesh_net_local(struct k_work *work)
 	while ((node = sys_slist_get(&bt_mesh.local_queue))) {
 		struct loopback_buf *buf = CONTAINER_OF(node, struct loopback_buf, node);
 		struct bt_mesh_net_rx rx = {
+			.cred = NULL,
 			.ctx = {
 				.net_idx = buf->sub->net_idx,
 				/* Initialize AppIdx to a sane value */
@@ -653,15 +658,20 @@ static bool net_decrypt(struct bt_mesh_net_rx *rx, struct net_buf_simple *in,
 		return false;
 	}
 
-	if (rx->net_if == BT_MESH_NET_IF_ADV && msg_cache_match(out)) {
+	if (rx->net_if == BT_MESH_NET_IF_ADV && msg_cache_match(out, cred)) {
 		LOG_DBG("Duplicate found in Network Message Cache");
 		return false;
 	}
 
 	LOG_DBG("src 0x%04x", rx->ctx.addr);
 
-	return bt_mesh_net_decrypt(&cred->enc, out, BT_MESH_NET_IVI_RX(rx),
-				   proxy) == 0;
+	int err = bt_mesh_net_decrypt(&cred->enc, out, BT_MESH_NET_IVI_RX(rx), proxy);
+
+	if (!err) {
+		rx->cred = cred;
+	}
+
+	return err == 0;
 }
 
 /* Relaying from advertising to the advertising bearer should only happen
@@ -865,7 +875,7 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
 		      enum bt_mesh_net_if net_if)
 {
 	NET_BUF_SIMPLE_DEFINE(buf, BT_MESH_NET_MAX_PDU_LEN);
-	struct bt_mesh_net_rx rx = { .ctx.recv_rssi = rssi };
+	struct bt_mesh_net_rx rx = { .cred = NULL, .ctx.recv_rssi = rssi };
 	struct net_buf_simple_state state;
 	int err;
 
