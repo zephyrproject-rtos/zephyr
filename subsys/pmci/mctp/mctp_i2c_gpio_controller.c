@@ -21,8 +21,10 @@ LOG_MODULE_REGISTER(mctp_i2c_gpio_controller, CONFIG_MCTP_LOG_LEVEL);
 static void mctp_start_rx(struct mctp_binding_i2c_gpio_controller *b,
 			  bool chained_rx);
 
-static void rx_completion(struct rtio *r, const struct rtio_sqe *sqe, void *arg0)
+static void rx_completion(struct rtio *r, const struct rtio_sqe *sqe, int result, void *arg0)
 {
+	ARG_UNUSED(result);
+
 	struct mctp_binding_i2c_gpio_controller *b = arg0;
 	struct rtio_cqe *cqe;
 
@@ -48,8 +50,10 @@ static void rx_completion(struct rtio *r, const struct rtio_sqe *sqe, void *arg0
 }
 
 
-static void rx_len_completion(struct rtio *r, const struct rtio_sqe *sqe, void *arg0)
+static void rx_len_completion(struct rtio *r, const struct rtio_sqe *sqe, int result, void *arg0)
 {
+	ARG_UNUSED(result);
+
 	const uint8_t mctp_tx_msg_addr = MCTP_I2C_GPIO_TX_MSG_ADDR;
 
 	struct mctp_binding_i2c_gpio_controller *b = arg0;
