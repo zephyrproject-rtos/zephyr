@@ -293,7 +293,7 @@ static int stm32_opamp_init(const struct device *dev)
   CONCAT(OPAMP_INM_, DT_INST_STRING_TOKEN_BY_IDX(inst, vinm, 0))
 
 #define STM32_OPAMP_DT_VINM_SECONDARY(inst)	\
-  CONCAT(OPAMP_INM_, DT_INST_STRING_TOKEN_BY_IDX(inst, vinm, 1))
+  CONCAT(OPAMP_INM_, DT_INST_STRING_TOKEN_BY_IDX_OR(inst, vinm, 1, SECONDARY_DISABLED))
 
 #define STM32_OPAMP_DT_VINP_PRIMARY(inst)	\
   CONCAT(OPAMP_INP_, DT_INST_STRING_TOKEN_BY_IDX(inst, vinp, 0))
