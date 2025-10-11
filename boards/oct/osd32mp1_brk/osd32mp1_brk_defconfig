@@ -1,3 +1,7 @@
+# HSE is controlled by Cortex-A but its
+# frequency must be provided to the HAL
+CONFIG_CLOCK_STM32_HSE_CLOCK=24000000
+
 # Enable GPIO
 CONFIG_GPIO=y
 
