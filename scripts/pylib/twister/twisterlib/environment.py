@@ -23,7 +23,6 @@ from pathlib import Path
 import zephyr_module
 from twisterlib.constants import SUPPORTED_SIMS
 from twisterlib.coverage import supported_coverage_formats
-from twisterlib.error import TwisterRuntimeError
 from twisterlib.log_helper import log_command
 
 logger = logging.getLogger('twister')
@@ -1192,11 +1191,8 @@ class TwisterEnv:
         toolchain_script = Path(ZEPHYR_BASE) / Path('cmake/verify-toolchain.cmake')
         result = self.run_cmake_script([toolchain_script, "FORMAT=json"])
 
-        try:
-            if result['returncode']:
-                raise TwisterRuntimeError(f"E: {result['returnmsg']}")
-        except Exception as e:
-            print(str(e))
+        if result['returncode'] != 0:
+            print(f"E: {result['returnmsg']}")
             sys.exit(2)
         self.toolchain = json.loads(result['stdout'])['ZEPHYR_TOOLCHAIN_VARIANT']
         logger.info(f"Using '{self.toolchain}' toolchain.")
