@@ -72,6 +72,7 @@ union uvc_fmt_desc {
 	struct uvc_format_descriptor fmt;
 	struct uvc_format_uncomp_descriptor fmt_uncomp;
 	struct uvc_format_mjpeg_descriptor fmt_mjpeg;
+	struct uvc_format_frame_based_descriptor fmt_frame_based;
 	struct uvc_frame_descriptor frm;
 	struct uvc_frame_continuous_descriptor frm_cont;
 	struct uvc_frame_discrete_descriptor frm_disc;
@@ -398,7 +399,8 @@ static void uvc_get_vs_fmtfrm_desc(const struct device *dev,
 			i, desc->bDescriptorSubtype, desc->bFormatIndex, desc);
 
 		if ((desc->bDescriptorSubtype == UVC_VS_FORMAT_UNCOMPRESSED ||
-		     desc->bDescriptorSubtype == UVC_VS_FORMAT_MJPEG) &&
+		     desc->bDescriptorSubtype == UVC_VS_FORMAT_MJPEG ||
+		     desc->bDescriptorSubtype == UVC_VS_FORMAT_FRAME_BASED) &&
 		     desc->bFormatIndex == data->format_id) {
 			*format_desc = desc;
 			break;
@@ -413,7 +415,8 @@ static void uvc_get_vs_fmtfrm_desc(const struct device *dev,
 			i, desc->bDescriptorSubtype, desc->bFrameIndex, desc);
 
 		if (desc->bDescriptorSubtype != UVC_VS_FRAME_UNCOMPRESSED &&
-		    desc->bDescriptorSubtype != UVC_VS_FRAME_MJPEG) {
+		    desc->bDescriptorSubtype != UVC_VS_FRAME_MJPEG &&
+		    desc->bDescriptorSubtype != UVC_VS_FRAME_FRAME_BASED) {
 			break;
 		}
 
@@ -461,7 +464,8 @@ static int uvc_get_vs_probe_format_index(const struct device *dev, struct uvc_pr
 		struct uvc_format_descriptor *desc = &cfg->desc->if1_fmts[i].fmt;
 
 		max += desc->bDescriptorSubtype == UVC_VS_FORMAT_UNCOMPRESSED ||
-		       desc->bDescriptorSubtype == UVC_VS_FORMAT_MJPEG;
+		       desc->bDescriptorSubtype == UVC_VS_FORMAT_MJPEG ||
+		       desc->bDescriptorSubtype == UVC_VS_FORMAT_FRAME_BASED;
 	}
 
 	switch (request) {
@@ -496,8 +500,9 @@ static int uvc_get_vs_probe_frame_index(const struct device *dev, struct uvc_pro
 		struct uvc_format_descriptor *desc = &cfg->desc->if1_fmts[i].fmt;
 
 		if ((desc->bDescriptorSubtype == UVC_VS_FORMAT_UNCOMPRESSED ||
-		     desc->bDescriptorSubtype == UVC_VS_FORMAT_MJPEG) &&
-		    desc->bFormatIndex == data->format_id) {
+		     desc->bDescriptorSubtype == UVC_VS_FORMAT_MJPEG ||
+		     desc->bDescriptorSubtype == UVC_VS_FORMAT_FRAME_BASED) &&
+		     desc->bFormatIndex == data->format_id) {
 			break;
 		}
 	}
@@ -507,7 +512,8 @@ static int uvc_get_vs_probe_frame_index(const struct device *dev, struct uvc_pro
 		struct uvc_frame_discrete_descriptor *desc = &cfg->desc->if1_fmts[i].frm_disc;
 
 		if (desc->bDescriptorSubtype != UVC_VS_FRAME_UNCOMPRESSED &&
-		    desc->bDescriptorSubtype != UVC_VS_FRAME_MJPEG) {
+		    desc->bDescriptorSubtype != UVC_VS_FRAME_MJPEG &&
+		    desc->bDescriptorSubtype != UVC_VS_FRAME_FRAME_BASED) {
 			break;
 		}
 		max++;
@@ -549,6 +555,12 @@ static int uvc_get_vs_probe_frame_interval(const struct device *dev, struct uvc_
 	if (frame_desc->bDescriptorSubtype == UVC_VS_FRAME_UNCOMPRESSED ||
 	    frame_desc->bDescriptorSubtype == UVC_VS_FRAME_MJPEG) {
 		struct uvc_frame_discrete_descriptor *desc = (void *)frame_desc;
+
+		min = desc->dwFrameInterval[0];
+		max_id = desc->bFrameIntervalType - 1;
+		max = desc->dwFrameInterval[max_id];
+	} else if (frame_desc->bDescriptorSubtype == UVC_VS_FRAME_FRAME_BASED) {
+		struct uvc_frame_based_discrete_descriptor *desc = (void *)frame_desc;
 
 		min = desc->dwFrameInterval[0];
 		max_id = desc->bFrameIntervalType - 1;
@@ -626,14 +638,22 @@ static int uvc_get_vs_format_from_desc(const struct device *dev, struct video_fo
 
 		LOG_DBG("Found descriptor for format %u, frame %u, MJPEG",
 			format_desc->bFormatIndex, frame_desc->bFrameIndex);
-	} else {
-		struct uvc_format_uncomp_descriptor *format_uncomp_desc = (void *)format_desc;
+	} else if (format_desc->bDescriptorSubtype == UVC_VS_FORMAT_FRAME_BASED) {
+		struct uvc_format_frame_based_descriptor *desc = (void *)format_desc;
 
-		fmt->pixelformat = uvc_guid_to_fourcc(format_uncomp_desc->guidFormat);
+		fmt->pixelformat = uvc_guid_to_fourcc(desc->guidFormat);
+
+		LOG_DBG("Found descriptor for format %u, frame %u, pixfmt %s",
+			desc->bFormatIndex, frame_desc->bFrameIndex,
+			VIDEO_FOURCC_TO_STR(fmt->pixelformat));
+	} else {
+		struct uvc_format_uncomp_descriptor *desc = (void *)format_desc;
+
+		fmt->pixelformat = uvc_guid_to_fourcc(desc->guidFormat);
 
 		LOG_DBG("Found descriptor for format %u, frame %u, GUID '%.4s', pixfmt %04x",
-			format_uncomp_desc->bFormatIndex, frame_desc->bFrameIndex,
-			format_uncomp_desc->guidFormat, fmt->pixelformat);
+			desc->bFormatIndex, frame_desc->bFrameIndex,
+			desc->guidFormat, fmt->pixelformat);
 	}
 
 	/* Fill the format according to what the host selected */
@@ -1421,6 +1441,27 @@ static int uvc_add_vs_format_desc(const struct device *dev,
 		cfg->desc->if1_hdr.bNumFormats++;
 		cfg->desc->if1_hdr.wTotalLength += desc->bLength;
 		*format_desc = (struct uvc_format_descriptor *)desc;
+	} else if (fourcc == VIDEO_PIX_FMT_H264) {
+		struct uvc_format_frame_based_descriptor *desc;
+
+		LOG_INF("Adding format descriptor #%u for H264",
+			cfg->desc->if1_hdr.bNumFormats + 1);
+
+		desc = &uvc_new_fmt_desc(dev)->fmt_frame_based;
+		if (desc == NULL) {
+			return -ENOMEM;
+		}
+
+		desc->bDescriptorType = USB_DESC_CS_INTERFACE;
+		desc->bFormatIndex = cfg->desc->if1_hdr.bNumFormats + 1;
+		desc->bLength = sizeof(*desc);
+		desc->bDescriptorSubtype = UVC_VS_FORMAT_FRAME_BASED;
+		uvc_fourcc_to_guid(desc->guidFormat, fourcc);
+		desc->bDefaultFrameIndex = 1;
+		desc->bVariableSize = 1;
+		cfg->desc->if1_hdr.bNumFormats++;
+		cfg->desc->if1_hdr.wTotalLength += desc->bLength;
+		*format_desc = (struct uvc_format_descriptor *)desc;
 	} else {
 		struct uvc_format_uncomp_descriptor *desc;
 
@@ -1504,6 +1545,19 @@ static int uvc_add_vs_frame_interval(struct uvc_frame_descriptor *const desc,
 			sys_cpu_to_le32(video_frmival_nsec(frmival) / 100);
 		frame_desc->bFrameIntervalType++;
 		frame_desc->bLength += sizeof(uint32_t);
+	} else if (desc->bDescriptorSubtype == UVC_VS_FRAME_FRAME_BASED) {
+		struct uvc_frame_based_discrete_descriptor *frame_desc = (void *)desc;
+
+		if (frame_desc->bFrameIntervalType >= CONFIG_USBD_VIDEO_MAX_FRMIVAL) {
+			LOG_WRN("Out of descriptors, raise CONFIG_USBD_VIDEO_MAX_FRMIVAL above %u",
+				CONFIG_USBD_VIDEO_MAX_FRMIVAL);
+			return -ENOMEM;
+		}
+
+		frame_desc->dwFrameInterval[frame_desc->bFrameIntervalType] =
+			sys_cpu_to_le32(video_frmival_nsec(frmival) / 100);
+		frame_desc->bFrameIntervalType++;
+		frame_desc->bLength += sizeof(uint32_t);
 	} else {
 		LOG_DBG("Invalid frame type");
 		return -EINVAL;
@@ -1541,8 +1595,13 @@ static int uvc_add_vs_frame_desc(const struct device *dev,
 	desc->bFrameIndex = format_desc->bNumFrameDescriptors + 1;
 	desc->wWidth = sys_cpu_to_le16(fmt->width);
 	desc->wHeight = sys_cpu_to_le16(fmt->height);
-	desc->bDescriptorSubtype = (format_desc->bDescriptorSubtype == UVC_VS_FORMAT_UNCOMPRESSED)
-		? UVC_VS_FRAME_UNCOMPRESSED : UVC_VS_FRAME_MJPEG;
+	if (format_desc->bDescriptorSubtype == UVC_VS_FORMAT_UNCOMPRESSED) {
+		desc->bDescriptorSubtype = UVC_VS_FRAME_UNCOMPRESSED;
+	} else if (format_desc->bDescriptorSubtype == UVC_VS_FORMAT_MJPEG) {
+		desc->bDescriptorSubtype = UVC_VS_FRAME_MJPEG;
+	} else if (format_desc->bDescriptorSubtype == UVC_VS_FORMAT_FRAME_BASED) {
+		desc->bDescriptorSubtype = UVC_VS_FRAME_FRAME_BASED;
+	}
 	desc->dwMinBitRate = sys_cpu_to_le32(UINT32_MAX);
 	desc->dwMaxBitRate = sys_cpu_to_le32(0);
 
@@ -1596,7 +1655,25 @@ static int uvc_add_vs_frame_desc(const struct device *dev,
 
 		/* UVC requires the frame intervals to be sorted, but not Zephyr */
 		qsort(frame_desc->dwFrameInterval, frame_desc->bFrameIntervalType,
-		      sizeof(*frame_discrete_desc->dwFrameInterval), uvc_compare_frmival_desc);
+		      sizeof(*frame_desc->dwFrameInterval), uvc_compare_frmival_desc);
+
+		frame_desc->dwDefaultFrameInterval = frame_desc->dwFrameInterval[0];
+	} else if (desc->bDescriptorSubtype == UVC_VS_FRAME_FRAME_BASED) {
+		struct uvc_frame_based_discrete_descriptor *frame_desc = (void *)desc;
+
+		/* If no frame intrval supported, default to 30 FPS */
+		if (frame_desc->bFrameIntervalType == 0) {
+			struct video_frmival frmival = {.numerator = 1, .denominator = 30};
+
+			ret = uvc_add_vs_frame_interval(desc, &frmival, fmt);
+			if (ret != 0) {
+				return ret;
+			}
+		}
+
+		/* UVC requires the frame intervals to be sorted, but not Zephyr */
+		qsort(frame_desc->dwFrameInterval, frame_desc->bFrameIntervalType,
+		      sizeof(*frame_desc->dwFrameInterval), uvc_compare_frmival_desc);
 
 		frame_desc->dwDefaultFrameInterval = frame_desc->dwFrameInterval[0];
 	} else {
