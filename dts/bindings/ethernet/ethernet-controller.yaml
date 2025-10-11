@@ -3,7 +3,9 @@
 
 # Common fields for Ethernet devices
 
-include: base.yaml
+include:
+  - name: base.yaml
+  - name: nvmem-consumer.yaml
 
 properties:
   local-mac-address:
