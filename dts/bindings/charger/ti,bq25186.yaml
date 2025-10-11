@@ -1,0 +1,19 @@
+# Copyright 2025 Embeint Pty Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  BQ25186 I2C Controlled, 1-Cell, 1-A Linear Battery Charger with Power Path,
+  Ship Mode, Shutdown Mode and Battery Tracking VINDPM.
+
+  The device has a single node for the charger. For example:
+
+  bq25186@6a {
+    compatible = "ti,bq25186";
+    reg = <0x6a>;
+
+    constant-charge-current-max-microamp = <500000>;
+  };
+
+compatible: "ti,bq25186"
+
+include: ti,bq2518x-common.yaml
