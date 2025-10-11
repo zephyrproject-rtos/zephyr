@@ -67,6 +67,7 @@ TaskState 0xBF 1=dummy, 2=Waiting, 4=New, 8=Terminated, 16=Suspended, 32=Termina
 62  k_msgq_cleanup             msgq=%I  | Returns %ErrCodePosix
 63  k_msgq_peek                msgq=%I, data=%p | Returns %ErrCodeMsg
 64  k_msgq_purge               msgq=%I
+134 k_msgq_put_front           msgq=%I, data=%p, Timeout=%TimeOut | Returns %ErrCodeMsg
 
 65  k_mbox_init                mbox=%I
 66  k_mbox_put                 mbox=%I, tx_msg=%p, Timeout=%TimeOut | Returns %ErrCodeMsg
@@ -169,3 +170,7 @@ TaskState 0xBF 1=dummy, 2=Waiting, 4=New, 8=Terminated, 16=Suspended, 32=Termina
 162 syscall                      name=%s
 
 163 named_event                   name=%s arg0=%u arg1=%u
+
+164 k_event_init                 event=%I
+165 k_event_post                 event=%I, events=%u, events_mask=%u
+166 k_event_wait                 event=%I, events=%u, options=%u, Timeout=%TimeOut
