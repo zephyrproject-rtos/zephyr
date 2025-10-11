@@ -1417,3 +1417,8 @@ test_i2c_ina7xx: ina7xx@bc {
 	tct = <5>;
 	avg = <3>;
 };
+
+test_i2c_veml6046: veml6046@bd {
+	compatible = "vishay,veml6046";
+	reg = <0xbd>;
+};

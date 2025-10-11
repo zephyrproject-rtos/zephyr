@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/drivers/sensor/veml60xx-common.h>
+
 /**
  * @file
  * @brief Header file for extended sensor API of VEML6031 sensor
@@ -25,25 +27,6 @@ extern "C" {
 #endif
 
 /**
- * @brief VEML6031 integration time options for ambient light measurements.
- *
- * Possible values for @ref SENSOR_ATTR_VEML6031_IT custom attribute.
- */
-enum veml6031_it {
-	VEML6031_IT_3_125, /**< 3.125 ms */
-	VEML6031_IT_6_25,  /**< 6.25 ms */
-	VEML6031_IT_12_5,  /**< 12.5 ms */
-	VEML6031_IT_25,    /**< 25 ms */
-	VEML6031_IT_50,    /**< 50 ms */
-	VEML6031_IT_100,   /**< 100 ms */
-	VEML6031_IT_200,   /**< 200 ms */
-	VEML6031_IT_400,   /**< 400 ms */
-	/** @cond INTERNAL_HIDDEN */
-	VEML6031_IT_COUNT,
-	/** @endcond */
-};
-
-/**
  * @brief VEML6031 size options for ambient light measurements.
  *
  * Possible values for @ref SENSOR_ATTR_VEML6031_DIV4 custom attribute.
@@ -54,31 +37,6 @@ enum veml6031_div4 {
 	/** @cond INTERNAL_HIDDEN */
 	VEML6031_DIV4_COUNT = 2,
 	/** @endcond */
-};
-
-/**
- * @brief VEML6031 gain options for ambient light measurements.
- */
-enum veml6031_gain {
-	VEML6031_GAIN_1 = 0x00,    /**< 1x gain */
-	VEML6031_GAIN_2 = 0x01,    /**< 2x gain */
-	VEML6031_GAIN_0_66 = 0x02, /**< 0.66x gain */
-	VEML6031_GAIN_0_5 = 0x03,  /**< 0.5x gain */
-	/** @cond INTERNAL_HIDDEN */
-	VEML6031_GAIN_COUNT = 4,
-	/** @endcond */
-};
-
-/**
- * @brief VEML6031 ALS interrupt persistence protect number options.
- *
- * Possible values for @ref SENSOR_ATTR_VEML6031_PERS custom attribute.
- */
-enum veml6031_pers {
-	VEML6031_PERS_1 = 0x00, /**< 1 measurement */
-	VEML6031_PERS_2 = 0x01, /**< 2 measurements */
-	VEML6031_PERS_4 = 0x02, /**< 4 measurements */
-	VEML6031_PERS_8 = 0x03, /**< 8 measurements */
 };
 
 /**
