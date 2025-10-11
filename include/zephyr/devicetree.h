@@ -4419,10 +4419,11 @@
 	DT_STRING_TOKEN_BY_IDX(DT_DRV_INST(inst), prop, idx)
 
 /**
- * @brief Get an element out of string-array property as a token.
+ * @brief Like DT_INST_STRING_TOKEN_BY_IDX(), but with a fallback to default_value
  * @param inst instance number
  * @param prop lowercase-and-underscores property name
  * @param idx the index to get
+ * @param default_value a fallback value to expand to
  * @return the element in @p prop at index @p idx as a token
  */
 #define DT_INST_STRING_TOKEN_BY_IDX_OR(inst, prop, idx, default_value)	\
