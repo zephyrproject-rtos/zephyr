@@ -169,7 +169,8 @@ tests:
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
   drivers.flash.common.test_storage_partition:
-    filter: dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
+    filter: CONFIG_FLASH_HAS_DRIVER_ENABLED
+      and dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
     platform_exclude:
       - beagleconnect_freedom/cc1352p7
     extra_args:
