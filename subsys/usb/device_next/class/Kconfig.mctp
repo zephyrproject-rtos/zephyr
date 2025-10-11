@@ -1,0 +1,19 @@
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config USBD_MCTP_CLASS
+	bool "USB MCTP implementation"
+	default y
+	help
+	  USB device MCTP class implementation.
+
+if USBD_MCTP_CLASS
+
+module = USBD_MCTP
+module-str = usbd mctp
+default-count = 1
+source "subsys/logging/Kconfig.template.log_config"
+
+rsource "Kconfig.template.instances_count"
+endif
