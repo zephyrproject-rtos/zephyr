@@ -1681,26 +1681,85 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 /* Group Connected BT_CONN only in this */
 #if defined(CONFIG_BT_CONN)
 
-/* We don't want the application to get a PHY update callback upon connection
- * establishment on 2M PHY. Therefore we must prevent issuing LE Set PHY
- * in this scenario.
- *
- * It is ifdef'd because the struct fields don't exist in some configs.
- */
-static bool uses_symmetric_2mbit_phy(struct bt_conn *conn)
-{
-#if defined(CONFIG_BT_USER_PHY_UPDATE)
-	if (IS_ENABLED(CONFIG_BT_EXT_ADV)) {
-		if (conn->le.phy.tx_phy == BT_HCI_LE_PHY_2M &&
-		    conn->le.phy.rx_phy == BT_HCI_LE_PHY_2M) {
-			return true;
-		}
-	}
+#if defined(CONFIG_BT_AUTO_PHY_PERIPHERAL_1M)
+#define AUTO_PHY_PERIPHERAL                  BT_HCI_LE_PHY_1M
+#define AUTO_PHY_PERIPHERAL_PREF             BT_HCI_LE_PHY_PREFER_1M
+#define AUTO_PHY_PERIPHERAL_SUPPORTED(_feat) (true)
+#elif defined(CONFIG_BT_AUTO_PHY_PERIPHERAL_2M)
+#define AUTO_PHY_PERIPHERAL                  BT_HCI_LE_PHY_2M
+#define AUTO_PHY_PERIPHERAL_PREF             BT_HCI_LE_PHY_PREFER_2M
+#define AUTO_PHY_PERIPHERAL_SUPPORTED(feat)  BT_FEAT_LE_PHY_2M(feat)
+#elif defined(CONFIG_BT_AUTO_PHY_PERIPHERAL_CODED)
+#define AUTO_PHY_PERIPHERAL                  BT_HCI_LE_PHY_CODED
+#define AUTO_PHY_PERIPHERAL_PREF             BT_HCI_LE_PHY_PREFER_CODED
+#define AUTO_PHY_PERIPHERAL_SUPPORTED(feat)  BT_FEAT_LE_PHY_CODED(feat)
 #else
-	ARG_UNUSED(conn);
+/* Dummy values when there's no preference */
+#define AUTO_PHY_PERIPHERAL                  (0)
+#define AUTO_PHY_PERIPHERAL_PREF             (0)
+#define AUTO_PHY_PERIPHERAL_SUPPORTED(_feat) (false)
 #endif
 
-	return false;
+#if defined(CONFIG_BT_AUTO_PHY_CENTRAL_1M)
+#define AUTO_PHY_CENTRAL                  BT_HCI_LE_PHY_1M
+#define AUTO_PHY_CENTRAL_PREF             BT_HCI_LE_PHY_PREFER_1M
+#define AUTO_PHY_CENTRAL_SUPPORTED(_feat) (true)
+#elif defined(CONFIG_BT_AUTO_PHY_CENTRAL_2M)
+#define AUTO_PHY_CENTRAL                  BT_HCI_LE_PHY_2M
+#define AUTO_PHY_CENTRAL_PREF             BT_HCI_LE_PHY_PREFER_2M
+#define AUTO_PHY_CENTRAL_SUPPORTED(feat)  BT_FEAT_LE_PHY_2M(feat)
+#elif defined(CONFIG_BT_AUTO_PHY_CENTRAL_CODED)
+#define AUTO_PHY_CENTRAL                  BT_HCI_LE_PHY_CODED
+#define AUTO_PHY_CENTRAL_PREF             BT_HCI_LE_PHY_PREFER_CODED
+#define AUTO_PHY_CENTRAL_SUPPORTED(feat)  BT_FEAT_LE_PHY_CODED(feat)
+#else
+/* Dummy values when there's no preference */
+#define AUTO_PHY_CENTRAL                  (0)
+#define AUTO_PHY_CENTRAL_PREF             (0)
+#define AUTO_PHY_CENTRAL_SUPPORTED(_feat) (false)
+#endif
+
+static int do_phy_update(struct bt_conn *conn)
+{
+	uint8_t phy, pref;
+	bool supported;
+
+	switch (conn->role) {
+#if !defined(CONFIG_BT_AUTO_PHY_CENTRAL_NONE)
+	case BT_HCI_ROLE_CENTRAL:
+		phy = AUTO_PHY_CENTRAL;
+		pref = AUTO_PHY_CENTRAL_PREF;
+		supported = AUTO_PHY_CENTRAL_SUPPORTED(bt_dev.le.features);
+		break;
+#endif
+#if !defined(CONFIG_BT_AUTO_PHY_PERIPHERAL_NONE)
+	case BT_HCI_ROLE_PERIPHERAL:
+		phy = AUTO_PHY_PERIPHERAL;
+		pref = AUTO_PHY_PERIPHERAL_PREF;
+		supported = AUTO_PHY_PERIPHERAL_SUPPORTED(bt_dev.le.features);
+		break;
+#endif
+	default:
+		return 0;
+	}
+
+	if (!supported) {
+		LOG_WRN("PHY 0x%02x not supported", phy);
+		return 0;
+	}
+
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+	if (IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+		/* If the current PHYs are already the preferred PHYs, no need to issue
+		 * a PHY update procedure.
+		 */
+		if (conn->le.phy.tx_phy == phy && conn->le.phy.rx_phy == phy) {
+			return 0;
+		}
+	}
+#endif
+
+	return bt_le_set_phy(conn, 0U, pref, pref, BT_HCI_LE_PHY_CODED_ANY);
 }
 
 static bool can_initiate_feature_exchange(struct bt_conn *conn)
@@ -1767,13 +1826,14 @@ static void perform_auto_initiated_procedures(struct bt_conn *conn, void *unused
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) && BT_FEAT_LE_PHY_2M(bt_dev.le.features) &&
-	    !uses_symmetric_2mbit_phy(conn)) {
-		err = bt_le_set_phy(conn, 0U, BT_HCI_LE_PHY_PREFER_2M, BT_HCI_LE_PHY_PREFER_2M,
-				    BT_HCI_LE_PHY_CODED_ANY);
+	if (IS_ENABLED(CONFIG_BT_PHY_UPDATE) &&
+	    (!IS_ENABLED(CONFIG_BT_AUTO_PHY_CENTRAL_NONE) ||
+	     !IS_ENABLED(CONFIG_BT_AUTO_PHY_PERIPHERAL_NONE))) {
+		err = do_phy_update(conn);
 		if (err) {
 			LOG_ERR("Failed LE Set PHY (%d)", err);
 		}
+
 		if (conn->state != BT_CONN_CONNECTED) {
 			return;
 		}
