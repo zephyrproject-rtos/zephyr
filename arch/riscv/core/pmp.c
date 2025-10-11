@@ -31,6 +31,8 @@
 #include <pmp.h>
 #include <zephyr/arch/arch_interface.h>
 #include <zephyr/arch/riscv/csr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-riscv.h>
+#include <zephyr/mem_mgmt/mem_attr.h>
 
 #define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -55,6 +57,11 @@ LOG_MODULE_REGISTER(mpu);
 #define PMP_ADDR_NAPOT(addr, size)	PMP_ADDR(addr | NAPOT_RANGE(size))
 
 #define PMP_NONE 0
+
+#define DT_MEM_RISCV_TO_PMP_PERM(dt_attr) (		\
+	(((dt_attr) & DT_MEM_RISCV_TYPE_IO_R) ? PMP_R : 0) |	\
+	(((dt_attr) & DT_MEM_RISCV_TYPE_IO_W) ? PMP_W : 0) |	\
+	(((dt_attr) & DT_MEM_RISCV_TYPE_IO_X) ? PMP_X : 0))
 
 static void print_pmp_entries(unsigned int pmp_start, unsigned int pmp_end,
 			      unsigned long *pmp_addr, unsigned long *pmp_cfg,
@@ -204,7 +211,7 @@ static bool set_pmp_entry(unsigned int *index_p, uint8_t perm,
 	return ok;
 }
 
-#ifdef CONFIG_PMP_STACK_GUARD
+#if defined(CONFIG_PMP_STACK_GUARD) || defined(CONFIG_MEM_ATTR)
 static inline bool set_pmp_mprv_catchall(unsigned int *index_p,
 					 unsigned long *pmp_addr, unsigned long *pmp_cfg,
 					 unsigned int index_limit)
@@ -354,6 +361,19 @@ void z_riscv_pmp_init(void)
 	unsigned long pmp_cfg[CONFIG_PMP_SLOTS / PMPCFG_STRIDE];
 	unsigned int index = 0;
 
+#ifdef CONFIG_MEM_ATTR
+	const struct mem_attr_region_t *region;
+	size_t num_regions;
+
+	num_regions = mem_attr_get_regions(&region);
+
+	for (size_t idx = 0; idx < num_regions; ++idx) {
+		set_pmp_entry(&index, DT_MEM_RISCV_TO_PMP_PERM(region[idx].dt_attr),
+			      (uintptr_t)(region[idx].dt_addr), (size_t)(region[idx].dt_size),
+			      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+	}
+#endif
+
 	/* The read-only area is always there for every mode */
 	set_pmp_entry(&index, PMP_R | PMP_X | PMP_L,
 		      (uintptr_t)__rom_region_start,
@@ -449,7 +469,8 @@ void z_riscv_pmp_init(void)
 /**
  * @Brief Initialize the per-thread PMP register copy with global values.
  */
-#if (defined(CONFIG_PMP_STACK_GUARD) && defined(CONFIG_MULTITHREADING)) || defined(CONFIG_USERSPACE)
+#if (defined(CONFIG_PMP_STACK_GUARD) && defined(CONFIG_MULTITHREADING)) || \
+	defined(CONFIG_USERSPACE) || defined(CONFIG_MEM_ATTR)
 static inline unsigned int z_riscv_pmp_thread_init(unsigned long *pmp_addr,
 						   unsigned long *pmp_cfg,
 						   unsigned int index_limit)
@@ -565,6 +586,57 @@ void z_riscv_pmp_stackguard_disable(void)
 }
 
 #endif /* CONFIG_PMP_STACK_GUARD */
+
+#if defined(CONFIG_MEM_ATTR)
+/**
+ * @brief Prepare the memory attribute PMP entry handling.
+ *
+ * This is called once during new thread creation.
+ */
+void z_riscv_pmp_mem_attr_prepare(struct k_thread *thread)
+{
+	unsigned int index = z_riscv_pmp_thread_init(PMP_M_MODE(thread));
+
+	/*
+	 * This early, the kernel init code uses the mem attr pmp entry and we want to
+	 * safeguard it as soon as possible. But we need a temporary default
+	 * "catch all" PMP entry for MPRV to work.
+	 */
+	set_pmp_mprv_catchall(&index, PMP_M_MODE(thread));
+
+	/* remember how many entries we use */
+	thread->arch.m_mode_pmp_end_index = index;
+}
+/**
+ * @brief Prepare M-mode for memory attribute PMP entry handling.
+ *
+ * Configures the Machine Status Register (mstatus) by clearing MPP and setting MPRV to control
+ * the memory privilege context for PMP access or configuration.
+ */
+void z_riscv_pmp_mem_attr_enable(struct k_thread *thread)
+{
+	LOG_DBG("pmp_mem_attr_enable for thread %p", thread);
+
+	/*
+	 * Disable (non-locked) PMP entries for m-mode while we update them.
+	 * While at it, also clear MSTATUS_MPP as it must be cleared for
+	 * MSTATUS_MPRV to be effective later.
+	 */
+	csr_clear(mstatus, MSTATUS_MPRV | MSTATUS_MPP);
+
+	/* Write our m-mode MPP entries */
+	write_pmp_entries(global_pmp_end_index, thread->arch.m_mode_pmp_end_index,
+			  true,
+			  PMP_M_MODE(thread));
+
+	if (PMP_DEBUG_DUMP) {
+		dump_pmp_regs("m-mode register dump");
+	}
+
+	/* Activate our non-locked PMP entries in m-mode */
+	csr_set(mstatus, MSTATUS_MPRV);
+}
+#endif /* CONFIG_MEM_ATTR */
 
 #ifdef CONFIG_USERSPACE
 
