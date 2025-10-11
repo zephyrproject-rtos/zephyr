@@ -242,7 +242,7 @@ void smf_set_initial(struct smf_ctx *const ctx, const struct smf_state *init_sta
 	 * The final target will be the deepest leaf state that
 	 * the target contains. Set that as the real target.
 	 */
-	while (init_state->initial) {
+	while (init_state->initial != NULL) {
 		init_state = init_state->initial;
 	}
 #endif
@@ -351,7 +351,7 @@ void smf_set_state(struct smf_ctx *const ctx, const struct smf_state *new_state)
 	 * The final target will be the deepest leaf state that
 	 * the target contains. Set that as the real target.
 	 */
-	while (new_state->initial) {
+	while (new_state->initial != NULL) {
 		new_state = new_state->initial;
 	}
 #endif
