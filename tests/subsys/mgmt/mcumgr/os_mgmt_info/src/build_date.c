@@ -124,7 +124,7 @@ ZTEST(os_mgmt_info_build_date, test_info_build_date_1_build_date)
 	zassert_equal(decoded, 1, "Expected to receive 1 decoded zcbor element\n");
 
 	zassert_equal(strlen(test_date_time), output.len,
-		      "Expected to receive %d bytes but got %d\n",
+		      "Expected to receive %zu bytes but got %zu\n",
 		      strlen(test_date_time), output.len);
 
 	/* Check left and right sides of date which should match */
@@ -201,7 +201,7 @@ ZTEST(os_mgmt_info_build_date, test_info_build_date_2_all)
 
 	zassert_equal((strlen(test_date_time) + strlen(response_all_left) +
 		       strlen(response_all_right)), output.len,
-		      "Expected to receive %d bytes but got %d\n",
+		      "Expected to receive %zu bytes but got %zu\n",
 		      (strlen(test_date_time) + strlen(response_all_left) +
 		       strlen(response_all_right)), output.len);
 
