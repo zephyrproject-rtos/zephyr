@@ -24,6 +24,14 @@ zephyr_include_directories(
 target_sources(app PRIVATE
   src/bsim_btp.c
   src/test_main.c
+  src/audio/bap_broadcast_sink.c
+  src/audio/bap_broadcast_source.c
+  src/audio/bap_central.c
+  src/audio/bap_peripheral.c
+  src/audio/cap_broadcast_sink.c
+  src/audio/cap_broadcast_source.c
+  src/audio/cap_central.c
+  src/audio/cap_peripheral.c
   src/audio/ccp_central.c
   src/audio/ccp_peripheral.c
   src/audio/csip_central.c
