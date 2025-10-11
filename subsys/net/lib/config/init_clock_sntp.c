@@ -23,7 +23,9 @@ BUILD_ASSERT(
 	(sizeof(CONFIG_NET_CONFIG_SNTP_INIT_SERVER) != 1),
 	"SNTP server has to be configured, unless DHCPv4 is used to set it");
 
-static int sntp_init_helper(struct sntp_time *tm)
+static int sntp_init_helper(struct sntp_time *tm,
+			    const char *server,
+			    int timeout)
 {
 #ifdef CONFIG_NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION
 	struct net_if *iface = net_if_get_default();
@@ -34,7 +36,7 @@ static int sntp_init_helper(struct sntp_time *tm)
 		sntp_addr.sin_family = AF_INET;
 		sntp_addr.sin_addr.s_addr = iface->config.dhcpv4.ntp_addr.s_addr;
 		return sntp_simple_addr((struct sockaddr *)&sntp_addr, sizeof(sntp_addr),
-					CONFIG_NET_CONFIG_SNTP_INIT_TIMEOUT, tm);
+					timeout, tm);
 	}
 	if (sizeof(CONFIG_NET_CONFIG_SNTP_INIT_SERVER) == 1) {
 		/* Empty address, skip using SNTP via Kconfig defaults */
@@ -42,34 +44,38 @@ static int sntp_init_helper(struct sntp_time *tm)
 	}
 	LOG_INF("SNTP address not set by DHCPv4, using Kconfig defaults");
 #endif /* NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION */
-	return sntp_simple(CONFIG_NET_CONFIG_SNTP_INIT_SERVER,
-			   CONFIG_NET_CONFIG_SNTP_INIT_TIMEOUT, tm);
+
+	return sntp_simple(server, timeout, tm);
 }
 
-int net_init_clock_via_sntp(void)
+int net_init_clock_via_sntp(struct net_if *iface,
+			    const char *server,
+			    int timeout)
 {
 	struct sntp_time ts;
 	struct timespec tspec;
-	int res = sntp_init_helper(&ts);
+	int ret;
 
-	if (res < 0) {
-		LOG_ERR("Cannot set time using SNTP: %d", res);
+	ret = sntp_init_helper(&ts, server, timeout);
+	if (ret < 0) {
+		LOG_ERR("Cannot set time using SNTP (%d)", ret);
 		goto end;
 	}
 
 	tspec.tv_sec = ts.seconds;
 	tspec.tv_nsec = ((uint64_t)ts.fraction * (1000 * 1000 * 1000)) >> 32;
-	res = sys_clock_settime(SYS_CLOCK_REALTIME, &tspec);
+
+	ret = sys_clock_settime(SYS_CLOCK_REALTIME, &tspec);
 	LOG_DBG("Time synced using SNTP");
 
 end:
 #ifdef CONFIG_NET_CONFIG_SNTP_INIT_RESYNC
 	k_work_reschedule(
 		&sntp_resync_work_handle,
-		(res < 0) ? K_SECONDS(CONFIG_NET_CONFIG_SNTP_INIT_RESYNC_ON_FAILURE_INTERVAL)
+		(ret < 0) ? K_SECONDS(CONFIG_NET_CONFIG_SNTP_INIT_RESYNC_ON_FAILURE_INTERVAL)
 			  : K_SECONDS(CONFIG_NET_CONFIG_SNTP_INIT_RESYNC_INTERVAL));
 #endif
-	return res;
+	return ret;
 }
 
 #ifdef CONFIG_NET_CONFIG_SNTP_INIT_RESYNC

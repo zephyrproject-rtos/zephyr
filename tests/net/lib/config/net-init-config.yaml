@@ -1,0 +1,151 @@
+# This is a network configuration data that is used to validate that the
+# configuration can be applied automatically when the device boots.
+#
+# In this test, we have multiple devices and network interface. The test
+# enables the network config library, it reads the configuration when the
+# device boots, and then the test checks that the configuration is applied
+# correctly to the network stack.
+#
+# Some of the network interfaces are dummy ones and some Ethernet ones.
+# The Ethernet devices are needed to validate the VLAN configuration.
+# The virtual interface is used to verity that it can be bound to some
+# other network interface.
+#
+net_init_config:
+  network_interfaces:
+    # First Ethernet interface in the system. We change its name in the
+    # testing process.
+    - &main-interface
+      name: eth0
+      set_name: test-eth0
+      set_default: true
+      ipv6:
+        status: true
+        ipv6_addresses:
+          - 2001:db8:110::1
+        ipv6_multicast_addresses:
+          - ff05::114
+          - ff15::115
+        prefixes:
+          - address: "2001:db8::"
+            len: 64
+            lifetime: 1024
+        hop_limit: 48
+        multicast_hop_limit: 2
+        dhcpv6:
+          status: true
+          do_request_address: true
+          do_request_prefix: false
+      ipv4:
+        status: true
+        ipv4_addresses:
+          - 192.0.2.10/24
+        ipv4_multicast_addresses:
+          - 234.0.0.10
+        gateway: 192.0.2.1
+        time_to_live: 128
+        multicast_time_to_live: 3
+        dhcpv4_enabled: true
+        ipv4_autoconf_enabled: true
+
+    # For this interface we do not know its name, but we know what device
+    # it is bound to.
+    - &device-interface
+      device_name: eth_2
+      set_name: test-eth1
+      flags:
+        - NET_IF_NO_AUTO_START
+        - NET_IF_PROMISC
+      ipv4:
+        status: true
+        ipv4_addresses:
+          - 192.0.2.22/24
+        gateway: 192.0.2.2
+        time_to_live: 10
+        multicast_time_to_live: 1
+        dhcpv4_enabled: false
+        dhcpv4_server:
+          status: true
+          base_address: 192.0.2.32
+
+    # This virtual interface bound to the first one
+    - name: virt0
+      bind_to: *main-interface
+      flags:
+        - NET_IF_IPV6_NO_MLD
+        - NET_IF_NO_AUTO_START
+        - ^NET_IF_PROMISC
+      ipv6:
+        status: true
+        ipv6_addresses:
+          - 2001:db8:111::2
+      ipv4:
+        status: false
+
+    # This VLAN interface that attaches to second Ethernet interface
+    - &vlan-interface
+      set_name: vlan0
+      bind_to: *device-interface
+      vlan:
+        status: true
+        tag: 2432
+      ipv4:
+        status: true
+        dhcpv4_enabled: true
+
+    # This 2nd VLAN interface is attached to one of the Ethernet interfaces
+    - set_name: vlan1
+      bind_to: *main-interface
+      vlan:
+        status: true
+        tag: 1234
+      ipv4:
+        status: true
+        dhcpv4_enabled: true
+
+    # This virtual interface bound to the VLAN interface
+    - name: virt1
+      set_name: virt-over-vlan
+      bind_to: *vlan-interface
+      ipv6:
+        status: true
+        ipv6_addresses:
+          - 2001:db8:abcd::11
+
+    # This interface IPv4 configuration is set to disabled
+    # in which case its IPv4 configuration is skipped
+    - name: dummy0
+      ipv6:
+        status: true
+      ipv4:
+        status: false
+        ipv4_addresses:
+          - 192.2.0.2
+        gateway: 192.2.0.1
+        time_to_live: 10
+        multicast_time_to_live: 2
+
+    # This interface IPv4 and IPv6 configuration are both disabled.
+    # Basically the interface is non functional for IP connectivity.
+    - name: dummy1
+      ipv6:
+        status: false
+      ipv4:
+        status: false
+
+  ieee_802_15_4:
+    status: true
+    pan_id: 0xabcd
+    channel: 26
+    tx_power: 1
+    security_key: [0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7, 0xc8, 0xc9,
+                   0xca, 0xcb, 0xcc, 0xcd, 0xce, 0xcf]
+    security_key_mode: 0
+    security_level: 1
+    ack_required: true
+    bind_to: *device-interface
+
+  sntp:
+    server: sntp.foo.bar
+    timeout: 30
+    bind_to: *vlan-interface

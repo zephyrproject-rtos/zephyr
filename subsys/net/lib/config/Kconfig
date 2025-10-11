@@ -13,6 +13,7 @@ menuconfig NET_CONFIG_SETTINGS
 	bool "Set network settings for applications"
 	select NET_MGMT
 	select NET_MGMT_EVENT
+	select SETTINGS
 	help
 	  Allow IP addresses to be set in config file for
 	  networking client/server sample applications, or
@@ -21,6 +22,12 @@ menuconfig NET_CONFIG_SETTINGS
 	  provisioning but quick sampling/testing.
 
 if NET_CONFIG_SETTINGS
+
+config NET_CONFIG_SETTINGS_SHELL_ACCESS
+	bool "Enable config shell to update configuration options"
+	help
+	  If this is set, then user is able to use "net config" shell to
+	  update the default options. This requires settings db.
 
 config NET_CONFIG_AUTO_INIT
 	bool "Init networking support automatically during device startup"
