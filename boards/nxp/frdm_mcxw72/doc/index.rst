@@ -191,11 +191,9 @@ The NBU files can be found in : ``<zephyr workspace>/modules/hal/nxp/zephyr/blob
 Troubleshooting
 ===============
 
-.. include:: ../../common/segger-ecc-systemview.rst
-   :start-after: segger-ecc-systemview
+.. include:: ../../common/segger-ecc-systemview.rst.inc
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 References
 **********

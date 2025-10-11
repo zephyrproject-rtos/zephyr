@@ -260,8 +260,7 @@ should see the following message in the terminal:
    ***** Booting Zephyr OS build zephyr-v2.0.0-1859-g292afe8533c0 *****
    Hello World! imx8mm_evk
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _NXP website:
    https://www.nxp.com/design/development-boards/i.mx-evaluation-and-development-boards/evaluation-kit-for-thebr-i.mx-8m-mini-applications-processor:8MMINILPD4-EVK

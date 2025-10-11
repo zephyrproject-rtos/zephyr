@@ -1,7 +1,3 @@
-:orphan:
-
-.. nxp-board-footer
-
 Support Resources for Zephyr
 ============================
 - `NXP Zephyr Downstream Software Development Kit`_

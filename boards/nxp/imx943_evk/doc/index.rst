@@ -201,8 +201,7 @@ Then the following log could be found on UART1 console:
     *** Booting Zephyr OS build v4.1.0-3650-gdb71736adb68 ***
     Hello World! imx943_evk/mimx94398/a55
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 Programming and Debugging (M33 in NETC MIX, M7_0 in M7MIX0, M7_1 in M7MIX1)
 ***************************************************************************

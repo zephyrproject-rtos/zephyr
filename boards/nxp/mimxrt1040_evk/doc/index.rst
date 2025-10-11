@@ -192,8 +192,7 @@ Configuring a Debug Probe
 For the RT1040, J9/J10 are the SWD isolation jumpers, J12 is the DFU
 mode jumper, and J2 is the 20 pin JTAG/SWD header.
 
-.. include:: ../../common/rt1xxx-lpclink2-debug.rst
-   :start-after: rt1xxx-lpclink2-probes
+.. include:: ../../common/rt1xxx-lpclink2-debug.rst.inc
 
 Configuring a Console
 =====================
@@ -320,8 +319,7 @@ the M.2 WiFi module is interfering with the debug signals
 To resolve this, you may remove the M.2 WiFi module from the board when
 flashing or debugging it, or remove jumper J80.
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _MIMXRT1040-EVK Website:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/i-mx-rt1040-evaluation-kit:MIMXRT1040-EVK

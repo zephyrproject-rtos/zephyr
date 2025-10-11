@@ -1,7 +1,3 @@
-:orphan:
-
-.. nxp-opensda-probes
-
 A debug probe is used for both flashing and debugging the board. This board has
 an :ref:`opensda-onboard-debug-probe`. The default firmware present on this
 probe is the :ref:`opensda-daplink-onboard-debug-probe`.

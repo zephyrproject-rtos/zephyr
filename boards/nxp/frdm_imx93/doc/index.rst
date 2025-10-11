@@ -160,5 +160,4 @@ kernel reboot command in shell command line:
 
     uart:~$ kernel reboot cold
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
