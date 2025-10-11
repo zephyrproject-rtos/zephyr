@@ -115,15 +115,15 @@ static bool match_posix_class(const char **pattern, int test) {
     };
 
     const char *p = *pattern;
-    if (*p != ':' ) return false;
+    if (*p != ':' ) {
+		return false;
+	}
     p++;
     for (size_t i = 0; i < sizeof(classes)/sizeof(classes[0]); i++) {
         size_t len = strlen(classes[i].name);
-        if (strncmp(p, classes[i].name, len) == 0 && p[len] == ':') {
-            if (p[len+1] == ']') {
-                *pattern = p + len + 2;  // move past ":]"
+        if (strncmp(p, classes[i].name, len) == 0 && p[len] == ':' && p[len+1] == ']') {
+                *pattern = p + len + 2;  /* move past ":]" */
                 return classes[i].func(test);
-            }
         }
     }
     return false;
@@ -173,9 +173,15 @@ static const char *rangematch(const char *pattern, int test, int flags)
 				ok = true;
 				continue;
 			} else {
-				// skip over class if unrecognized
-				while (*pattern && !(*pattern == ':' && *(pattern+1) == ']')) pattern++;
-				if (*pattern) pattern += 2;
+				/* skip over class if unrecognized */
+				while (*pattern && !(*pattern == ':' && *(pattern+1) == ']')) {
+					pattern++;
+				}
+
+				if (*pattern) 
+				{
+					pattern += 2;
+				}
 				continue;
 			}
 		}
