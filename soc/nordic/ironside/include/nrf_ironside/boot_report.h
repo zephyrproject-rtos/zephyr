@@ -116,6 +116,8 @@
 #define IRONSIDE_BOOT_REPORT_LOCAL_DOMAIN_CONTEXT_SIZE (16UL)
 /** Length of the random data buffer in bytes. */
 #define IRONSIDE_BOOT_REPORT_RANDOM_DATA_SIZE (32UL)
+/** Length of the uuid buffer in bytes. */
+#define IRONSIDE_BOOT_REPORT_UUID_SIZE (16UL)
 
 /** @brief Initialization/boot status description contained in the boot report. */
 struct ironside_boot_report_init_status {
@@ -207,8 +209,10 @@ struct ironside_boot_report {
 	struct ironside_boot_report_init_context init_context;
 	/** CSPRNG data */
 	uint8_t random_data[IRONSIDE_BOOT_REPORT_RANDOM_DATA_SIZE];
+	/** Device Info data : 128-bit Universally Unique IDentifier (UUID) */
+	uint8_t device_info_uuid[IRONSIDE_BOOT_REPORT_UUID_SIZE];
 	/** Reserved for Future Use */
-	uint32_t rfu2[64];
+	uint32_t rfu2[60];
 };
 
 /**
