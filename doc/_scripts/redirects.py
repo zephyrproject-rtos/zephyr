@@ -292,7 +292,7 @@ REDIRECTS = (
     ('samples/boards/stm32/steval_stwinbx1/sensors/README', 'samples/boards/st/steval_stwinbx1/sensors/README'),
     ('samples/drivers/adc/README', 'samples/drivers/adc/adc_dt/README'),
     ('samples/drivers/led_apa102/README', 'samples/drivers/led_strip/README'),
-    ('samples/drivers/led_is31fl3194/README', 'samples/drivers/led/is31fl3194/README'),
+    ('samples/drivers/led_is31fl319x/README', 'samples/drivers/led/is31fl319x/README'),
     ('samples/drivers/led_is31fl3216a/README', 'samples/drivers/led/is31fl3216a/README'),
     ('samples/drivers/led_is31fl3733/README', 'samples/drivers/led/is31fl3733/README'),
     ('samples/drivers/led_lp3943/README', 'samples/drivers/led/lp3943/README'),
