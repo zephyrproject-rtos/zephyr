@@ -1,0 +1,14 @@
+# Copyright 2024-2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP XSPI Flash
+
+compatible: "nxp,xspi-nor"
+
+include: ["nxp,xspi-device.yaml", soc-nv-flash.yaml, "jedec,jesd216.yaml"]
+
+properties:
+  erase-size:
+    type: int
+    default: 4096
+    description: Erase sector size in bytes.

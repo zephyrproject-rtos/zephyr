@@ -83,8 +83,9 @@
 	};
 
 	sram1: memory@20200000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x20200000 DT_SIZE_K(2048)>;
+		zephyr,memory-region = "SRAM1";
 	};
 
 	sram3: memory@205C0000 {
