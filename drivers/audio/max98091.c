@@ -11,6 +11,7 @@
 #include <zephyr/device.h>
 #include <zephyr/logging/log.h>
 #include "max98091.h"
+#include <assert.h>
 
 LOG_MODULE_REGISTER(maxim_max98091);
 
@@ -32,7 +33,9 @@ static void max98091_read_reg(const struct device *dev, uint8_t reg, uint8_t *va
 {
 	const struct max98091_config *const dev_cfg = dev->config;
 
-	i2c_reg_read_byte_dt(&dev_cfg->i2c, reg, val);
+	// i2c_reg_read_byte_dt returns a non-zero integer on error
+	int res = i2c_reg_read_byte_dt(&dev_cfg->i2c, reg, val);
+	assert(res == 0);
 }
 
 static void max98091_update_reg(const struct device *dev, uint8_t reg, uint8_t mask, uint8_t val)
@@ -153,7 +156,7 @@ static void max98091_set_system_clock(const struct device *dev, uint32_t mclk_fr
 }
 
 static int max98091_set_volume_or_mute(const struct device *dev, audio_channel_t channel, int value,
-				      bool is_volume)
+				       bool is_volume)
 {
 	uint8_t hp_mask = is_volume ? M98091_HPVOLL_MASK : M98091_HPLM_MASK;
 	uint8_t spk_mask = is_volume ? M98091_SPVOLL_MASK : M98091_SPLM_MASK;
@@ -316,11 +319,11 @@ static int max98091_init(const struct device *dev)
 	return -EINVAL;
 }
 
-#define MAX98091_INIT(inst)								\
-	static const struct max98091_config max98091_config_##inst = {			\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
-		.mclk_freq = DT_INST_PROP(inst, mclk_frequency)};			\
-	DEVICE_DT_INST_DEFINE(inst, max98091_init, NULL, NULL, &max98091_config_##inst, \
+#define MAX98091_INIT(inst)                                                                        \
+	static const struct max98091_config max98091_config_##inst = {                             \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
+		.mclk_freq = DT_INST_PROP(inst, mclk_frequency)};                                  \
+	DEVICE_DT_INST_DEFINE(inst, max98091_init, NULL, NULL, &max98091_config_##inst,            \
 			      POST_KERNEL, CONFIG_AUDIO_CODEC_INIT_PRIORITY, &max98091_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX98091_INIT)
