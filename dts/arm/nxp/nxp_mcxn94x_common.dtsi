@@ -6,6 +6,12 @@
 
 #include "nxp_mcxnx4x_common.dtsi"
 
+/ {
+	chosen {
+		zephyr,entropy = &trng;
+	};
+};
+
 &peripheral {
 	dac1: dac@112000 {
 		compatible = "nxp,lpdac";
@@ -107,5 +113,15 @@
 		clocks = <&syscon MCUX_FLEXCAN1_CLK>;
 		clk-source = <0>;
 		status = "disabled";
+	};
+
+	crypto@54000 {
+		compatible = "nxp,els";
+		reg = <0x54000 0x200>;
+		clocks = <&syscon MCUX_ELS_CLK>;
+
+		trng: rng {
+			compatible = "nxp,els-trng";
+		};
 	};
 };
