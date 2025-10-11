@@ -13,8 +13,6 @@
  */
 ZTEST(posix_c_lib_ext, test_fnmatch)
 {
-	/* Note: commented out lines indicate known problems to be addressed in #55186 */
-
 	zassert_ok(fnmatch("*.c", "foo.c", 0));
 	zassert_ok(fnmatch("*.c", ".c", 0));
 	zassert_equal(fnmatch("*.a", "foo.c", 0), FNM_NOMATCH);
@@ -73,7 +71,7 @@ ZTEST(posix_c_lib_ext, test_fnmatch)
 	zassert_equal(fnmatch("*/*", "a/.b", FNM_PATHNAME | FNM_PERIOD), FNM_NOMATCH);
 	zassert_ok(fnmatch("*?*/*", "a/.b", FNM_PERIOD));
 	zassert_ok(fnmatch("*[.]/b", "a./b", FNM_PATHNAME | FNM_PERIOD));
-	/* zassert_ok(fnmatch("*[[:alpha:]]/""*[[:alnum:]]", "a/b", FNM_PATHNAME)); */
+	zassert_ok(fnmatch("*[[:alpha:]]/""*[[:alnum:]]", "a/b", FNM_PATHNAME));
 	zassert_not_equal(fnmatch("*[![:digit:]]*/[![:d-d]", "a/b", FNM_PATHNAME), 0);
 	zassert_not_equal(fnmatch("*[![:digit:]]*/[[:d-d]", "a/[", FNM_PATHNAME), 0);
 	zassert_not_equal(fnmatch("*[![:digit:]]*/[![:d-d]", "a/[", FNM_PATHNAME), 0);
