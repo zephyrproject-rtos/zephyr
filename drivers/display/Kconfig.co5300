@@ -1,0 +1,15 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+
+config CO5300
+	bool "MCUX ---"
+	default y
+	select MIPI_DSI
+	depends on DT_HAS_CHIPONE_CO5300_ENABLED
+	help
+	  ---
+
+
+if CO5300
+endif # CO5300

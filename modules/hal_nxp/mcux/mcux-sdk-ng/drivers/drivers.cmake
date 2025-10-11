@@ -141,6 +141,7 @@ set_variable_ifdef(CONFIG_INPUT_MCUX_KPP        CONFIG_MCUX_COMPONENT_driver.kpp
 set_variable_ifdef(CONFIG_DMA_NXP_EDMA          CONFIG_MCUX_COMPONENT_driver.edma_soc_rev2)
 set_variable_ifdef(CONFIG_COUNTER_MCUX_SNVS_SRTC    CONFIG_MCUX_COMPONENT_driver.snvs_lp)
 set_variable_ifdef(CONFIG_DISPLAY_MCUX_DCNANO_LCDIF CONFIG_MCUX_COMPONENT_driver.lcdif)
+set_variable_ifdef(CONFIG_DISPLAY_CO5300            CONFIG_MCUX_COMPONENT_driver.lcdif)
 set_variable_ifdef(CONFIG_MIPI_DBI_NXP_DCNANO_LCDIF CONFIG_MCUX_COMPONENT_driver.lcdif)
 set_variable_ifdef(CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF CONFIG_MCUX_COMPONENT_driver.flexio_mculcd)
 set_variable_ifdef(CONFIG_VIDEO_MCUX_MIPI_CSI2RX    CONFIG_MCUX_COMPONENT_driver.mipi_csi2rx)

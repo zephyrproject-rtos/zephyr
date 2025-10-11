@@ -1,0 +1,6 @@
+shields:
+  - name: zc143ac72mipi
+    full_name: --- ZC143AC72 MIPI LCD Module
+    vendor: ---
+    supported_features:
+      - display
