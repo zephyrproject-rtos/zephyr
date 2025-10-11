@@ -57,7 +57,8 @@ static bool app_is_supported_format(uint32_t pixfmt)
 {
 	return pixfmt == VIDEO_PIX_FMT_JPEG ||
 	       pixfmt == VIDEO_PIX_FMT_YUYV ||
-	       pixfmt == VIDEO_PIX_FMT_NV12;
+	       pixfmt == VIDEO_PIX_FMT_NV12 ||
+	       pixfmt == VIDEO_PIX_FMT_H264;
 }
 
 static bool app_has_supported_format(void)
