@@ -20,7 +20,7 @@
  * When building for Zephyr, use Zephyr specific fcntl definitions.
  */
 #ifdef __ZEPHYR__
-#include <zephyr/posix/fcntl.h>
+#include <fcntl.h>
 #else
 #include <fcntl.h>
 #endif

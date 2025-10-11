@@ -7,7 +7,7 @@
 #include "pthread_sched.h"
 
 #include <zephyr/kernel.h>
-#include <zephyr/posix/sched.h>
+#include <sched.h>
 
 /**
  * @brief Get minimum priority value for a given policy
@@ -97,4 +97,10 @@ int sched_rr_get_interval(pid_t pid, struct timespec *interval)
 	errno = ENOSYS;
 
 	return -1;
+}
+
+int sched_yield(void)
+{
+	k_yield();
+	return 0;
 }

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/posix/unistd.h>
+#include <unistd.h>
 #include <zephyr/ztest.h>
 
 ZTEST(posix_c_lib_ext, test_getentropy_too_large)

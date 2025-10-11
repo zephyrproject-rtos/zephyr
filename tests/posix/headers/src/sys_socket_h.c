@@ -9,7 +9,7 @@
 #ifdef CONFIG_POSIX_API
 #include <sys/socket.h>
 #else
-#include <zephyr/posix/sys/socket.h>
+#include <sys/socket.h>
 #endif
 
 /**

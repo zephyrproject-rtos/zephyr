@@ -33,7 +33,7 @@
 #ifdef CONFIG_NATIVE_LIBC
 #include <unistd.h>
 #else
-#include <zephyr/posix/unistd.h>
+#include <unistd.h>
 #endif
 #include "getopt.h"
 #include "getopt_common.h"
@@ -41,9 +41,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(getopt);
 
-#define	BADCH	((int)'?')
-#define	BADARG	((int)':')
-#define	EMSG	""
+#define BADCH  ((int)'?')
+#define BADARG ((int)':')
+#define EMSG   ""
 
 void getopt_init(void)
 {
@@ -61,7 +61,7 @@ void getopt_init(void)
 
 #if CONFIG_GETOPT_LONG
 	state->nonopt_start = -1; /* first non option argument (for permute) */
-	state->nonopt_end = -1; /* first option after non options (for permute) */
+	state->nonopt_end = -1;   /* first option after non options (for permute) */
 #endif
 
 	opterr = 1;
@@ -151,8 +151,7 @@ int getopt(int nargc, char *const nargv[], const char *ostr)
 				return BADARG;
 			}
 			if (state->opterr) {
-				LOG_DBG("option requires an argument -- %c",
-					state->optopt);
+				LOG_DBG("option requires an argument -- %c", state->optopt);
 			}
 			z_getopt_global_state_update(state);
 			return BADCH;
@@ -161,5 +160,5 @@ int getopt(int nargc, char *const nargv[], const char *ostr)
 		++state->optind;
 	}
 	z_getopt_global_state_update(state);
-	return state->optopt;	/* return option letter */
+	return state->optopt; /* return option letter */
 }

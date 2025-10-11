@@ -13,6 +13,9 @@
 #define N_THR 3
 BUILD_ASSERT(N_THR <= CONFIG_DYNAMIC_THREAD_POOL_SIZE, "Insufficient number of dynamic threads");
 
+/* Note: usleep() was declared obsolescent as of POSIX.1-2001 and removed from POSIX.1-2008 */
+int usleep(useconds_t usec);
+
 LOG_MODULE_REGISTER(posix_rwlock_test);
 
 static pthread_rwlock_t rwlock;

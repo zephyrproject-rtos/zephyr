@@ -9,7 +9,7 @@
 #ifdef CONFIG_POSIX_API
 #include <sched.h>
 #else
-#include <zephyr/posix/sched.h>
+#include <sched.h>
 #endif
 
 /**

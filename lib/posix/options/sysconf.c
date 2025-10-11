@@ -4,11 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#undef _POSIX_C_SOURCE
-#define _POSIX_C_SOURCE 200809L
-#include <zephyr/posix/pthread.h>
+#include <errno.h>
+
 #include <zephyr/posix/sys/sysconf.h>
-#include <zephyr/posix/unistd.h>
 
 #ifdef CONFIG_POSIX_SYSCONF_IMPL_FULL
 

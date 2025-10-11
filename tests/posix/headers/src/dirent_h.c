@@ -9,7 +9,7 @@
 #ifdef CONFIG_POSIX_API
 #include <dirent.h>
 #else
-#include <zephyr/posix/dirent.h>
+#include <dirent.h>
 #endif
 
 /**

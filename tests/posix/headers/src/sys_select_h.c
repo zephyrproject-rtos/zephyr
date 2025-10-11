@@ -9,7 +9,7 @@
 #ifdef CONFIG_POSIX_API
 #include <sys/select.h>
 #else
-#include <zephyr/posix/sys/select.h>
+#include <sys/select.h>
 #endif
 
 /**

@@ -9,7 +9,7 @@
 #ifdef CONFIG_POSIX_API
 #include <pthread.h>
 #else
-#include <zephyr/posix/pthread.h>
+#include <pthread.h>
 #endif
 
 /**

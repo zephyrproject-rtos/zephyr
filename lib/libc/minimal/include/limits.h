@@ -82,7 +82,7 @@ extern "C" {
 
 #if defined(_POSIX_C_SOURCE) || defined(__DOXYGEN__)
 
-#include <zephyr/posix/posix_limits.h>
+#include <posix_limits.h>
 
 #else
 

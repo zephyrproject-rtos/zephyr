@@ -9,7 +9,7 @@
 #ifdef CONFIG_POSIX_API
 #include <unistd.h>
 #else
-#include <zephyr/posix/unistd.h>
+#include <unistd.h>
 #endif
 
 /**

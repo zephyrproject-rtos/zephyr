@@ -9,7 +9,7 @@
 #ifdef CONFIG_POSIX_API
 #include <poll.h>
 #else
-#include <zephyr/posix/poll.h>
+#include <poll.h>
 #endif
 
 /**

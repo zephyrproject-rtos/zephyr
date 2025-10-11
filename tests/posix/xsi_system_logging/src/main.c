@@ -4,14 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/posix/syslog.h>
+#include <syslog.h>
 #undef LOG_ERR
-#include <zephyr/posix/unistd.h>
+#include <unistd.h>
 #include <zephyr/ztest.h>
 
 #define N_PRIOS  8
 /* avoid clashing with Zephyr's LOG_ERR() */
 #define _LOG_ERR 3
+
+/* Note: usleep() was declared obsolescent as of POSIX.1-2001 and removed from POSIX.1-2008 */
+int usleep(useconds_t usec);
 
 ZTEST(xsi_system_logging, test_syslog)
 {

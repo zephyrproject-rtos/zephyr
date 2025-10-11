@@ -4,7 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/posix/unistd.h>
+#include <unistd.h>
+
+#include <zephyr/toolchain.h>
+
+#if !defined(_PID_T_DECLARED) && !defined(__pid_t_defined)
+typedef int pid_t;
+#define _PID_T_DECLARED
+#define __pid_t_defined
+#endif
 
 pid_t getpid(void)
 {

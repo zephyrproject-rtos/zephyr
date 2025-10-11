@@ -12,8 +12,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/kernel/mm.h>
 #include <zephyr/sys/fdtable.h>
-#include <zephyr/posix/sys/mman.h>
-#include <zephyr/posix/unistd.h>
+#include <sys/mman.h>
+#include <unistd.h>
 
 #define _page_size COND_CODE_1(CONFIG_MMU, (CONFIG_MMU_PAGE_SIZE), (CONFIG_POSIX_PAGE_SIZE))
 

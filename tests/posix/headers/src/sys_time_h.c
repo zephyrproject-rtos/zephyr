@@ -9,7 +9,7 @@
 #ifdef CONFIG_POSIX_API
 #include <sys/time.h>
 #else
-#include <zephyr/posix/sys/time.h>
+#include <sys/time.h>
 #endif
 
 /**

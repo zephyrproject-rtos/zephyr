@@ -8,7 +8,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_capture_sample, LOG_LEVEL_DBG);
 
-#include <zephyr/posix/net/if_arp.h>
+#include <net/if_arp.h>
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/net/capture.h>

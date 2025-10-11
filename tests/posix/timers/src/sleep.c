@@ -8,6 +8,9 @@
 
 #include <zephyr/ztest.h>
 
+/* Note: usleep() was declared obsolescent as of POSIX.1-2001 and removed from POSIX.1-2008 */
+int usleep(useconds_t usec);
+
 struct waker_work {
 	k_tid_t tid;
 	struct k_work_delayable dwork;
