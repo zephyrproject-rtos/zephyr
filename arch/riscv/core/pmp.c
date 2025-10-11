@@ -391,9 +391,6 @@ void z_riscv_pmp_init(void)
 	 */
 	set_pmp_mprv_catchall(&index, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 
-	 /* Write those entries to PMP regs. */
-	write_pmp_entries(0, index, true, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
-
 	/* Activate our non-locked PMP entries for m-mode */
 	csr_set(mstatus, MSTATUS_MPRV);
 
@@ -410,14 +407,11 @@ void z_riscv_pmp_init(void)
 		      (uintptr_t)z_main_stack,
 		      Z_RISCV_STACK_GUARD_SIZE,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
-
-	/* Write those entries to PMP regs. */
-	write_pmp_entries(0, index, true, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 #endif /* CONFIG_MULTITHREADING */
-#else
+#endif /* CONFIG_PMP_STACK_GUARD */
+
 	 /* Write those entries to PMP regs. */
 	write_pmp_entries(0, index, true, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
-#endif
 
 #ifdef CONFIG_SMP
 #ifdef CONFIG_PMP_STACK_GUARD
