@@ -1,0 +1,15 @@
+# Copyright (C) 2024-2025, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: HC32 Clock Control
+
+compatible: "xhsc,hc32-clock-control"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+
+  clock-conf:
+    type: array
+    description: |
+        clock control configuration

@@ -1,0 +1,7 @@
+# Copyright (C) 2024-2025, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_HC32
+	bool "HC32 Clock Control"
+	default y
+	depends on DT_HAS_XHSC_HC32_CLOCK_CONTROL_ENABLED
