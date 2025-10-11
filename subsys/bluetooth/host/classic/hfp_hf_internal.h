@@ -197,6 +197,8 @@ struct bt_hfp_hf {
 	uint32_t hf_features;
 	uint32_t ag_features;
 	uint8_t hf_codec_ids;
+	uint8_t active_codec_id;
+	uint8_t neg_codec_id;
 	uint8_t vgm;
 	uint8_t vgs;
 	int8_t ind_table[HF_MAX_AG_INDICATORS];
