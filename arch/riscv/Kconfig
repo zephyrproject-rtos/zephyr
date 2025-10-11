@@ -526,6 +526,7 @@ config RISCV_NO_MTVAL_ON_FP_TRAP
 	  to handle FP exceptions.
 
 rsource "Kconfig.isa"
-rsource "core/Kconfig"
+
+rsource "custom/Kconfig"
 
 endmenu

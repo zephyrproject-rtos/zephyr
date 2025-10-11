@@ -4,13 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "soc_v5.h"
-
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/arch/riscv/csr.h>
 #include <zephyr/drivers/cache.h>
 #include <zephyr/logging/log.h>
+#include <andes_csr.h>
 
 LOG_MODULE_REGISTER(cache_andes, CONFIG_CACHE_LOG_LEVEL);
 

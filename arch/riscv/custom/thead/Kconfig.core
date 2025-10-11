@@ -1,0 +1,20 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+config CPU_XUANTIE_E907
+	bool
+	select GEN_IRQ_VECTOR_TABLE
+	select INCLUDE_RESET_VECTOR
+	select RISCV_HAS_CLIC
+	select RISCV_MACHINE_TIMER
+	select RISCV_PRIVILEGED
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	select RISCV_VECTORED_MODE
+	select CPU_HAS_ICACHE
+	select CPU_HAS_DCACHE
+	select CPU_HAS_THEAD_CMO
