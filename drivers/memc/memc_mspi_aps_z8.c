@@ -553,13 +553,12 @@ static int memc_mspi_aps_z8_init(const struct device *psram)
 
 #define MSPI_DEVICE_CONFIG_OCTAL(n)                                                               \
 	{                                                                                         \
-		.ce_num             = DT_INST_PROP(n, mspi_hardware_ce_num),                      \
+		.ce                 = MSPI_DEVICE_CE_DT_INST(n),                                  \
 		.freq               = 24000000,                                                   \
 		.io_mode            = MSPI_IO_MODE_OCTAL,                                         \
 		.data_rate          = MSPI_DATA_RATE_S_D_D,                                       \
 		.cpp                = MSPI_CPP_MODE_0,                                            \
 		.endian             = MSPI_XFER_LITTLE_ENDIAN,                                    \
-		.ce_polarity        = MSPI_CE_ACTIVE_LOW,                                         \
 		.dqs_enable         = DT_INST_PROP(n, mspi_dqs_enable),                           \
 		.rx_dummy           = MEMC_MSPI_APS_Z8_RX_DUMMY_DEFAULT,                          \
 		.tx_dummy           = MEMC_MSPI_APS_Z8_TX_DUMMY_DEFAULT,                          \
@@ -568,7 +567,7 @@ static int memc_mspi_aps_z8_init(const struct device *psram)
 		.cmd_length         = MEMC_MSPI_APS_Z8_CMD_LENGTH_DEFAULT,                        \
 		.addr_length        = MEMC_MSPI_APS_Z8_ADDR_LENGTH_DEFAULT,                       \
 		.mem_boundary       = 1024,                                                       \
-		.time_to_break      = 4,                                                          \
+		.ce_timing          = MSPI_DEVICE_CE_TIMING_DT_INST(n),                           \
 	}
 #define MSPI_TIMING_CONFIG(n)                                                                     \
 	COND_CODE_1(CONFIG_SOC_FAMILY_AMBIQ,                                                      \
