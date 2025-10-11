@@ -432,6 +432,30 @@ config PMP_STACK_GUARD_MIN_SIZE
 	  wiggle room to accommodate the eventual overflow exception
 	  stack usage.
 
+config ROM_REGION_START
+	string "Start address or linker symbol of the ROM region"
+	depends on RISCV_PMP
+	default "__rom_region_start"
+	help
+	  The linker symbol or hexadecimal address that defines the start of the
+	  ROM region.
+	  This configuration is used to calculate the physical memory
+	  protection (PMP) region entry. The value is resolved at compile time.
+	  To override the linker's default, set this to a hexadecimal string,
+	  such as "0x80000000".
+
+config ROM_REGION_SIZE
+	string "Size or linker symbol of the ROM region"
+	depends on RISCV_PMP
+	default "__rom_region_size"
+	help
+	  The linker symbol or hexadecimal size that defines the overall byte
+	  length of the ROM region.
+	  This configuration is used to calculate the physical memory
+	  protection (PMP) region size. The value is resolved at compile time.
+	  To manually override the linker's default size, set this to a
+	  hexadecimal string, such as "0x100000".
+
 # Implement the null pointer detection using the Physical Memory Protection
 # (PMP) Unit.
 config NULL_POINTER_EXCEPTION_DETECTION_PMP
