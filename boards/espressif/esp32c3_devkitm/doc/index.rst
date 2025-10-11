@@ -10,34 +10,8 @@ For more information, check `ESP32-C3-DevKitM`_.
 Hardware
 ********
 
-ESP32-C3 is a single-core Wi-Fi and Bluetooth 5 (LE) microcontroller SoC,
-based on the open-source RISC-V architecture. It strikes the right balance of power,
-I/O capabilities and security, thus offering the optimal cost-effective
-solution for connected devices.
-The availability of Wi-Fi and Bluetooth 5 (LE) connectivity not only makes the device configuration easy,
-but it also facilitates a variety of use-cases based on dual connectivity.
-
-The features include the following:
-
-- 32-bit core RISC-V microcontroller with a maximum clock speed of 160 MHz
-- 400 KB of internal RAM
-- 802.11b/g/n/e/i
-- A Bluetooth LE subsystem that supports features of Bluetooth 5 and Bluetooth Mesh
-- Various peripherals:
-
-  - 12-bit ADC with up to 6 channels
-  - TWAI compatible with CAN bus 2.0
-  - Temperature sensor
-  - 3x SPI
-  - 1x I2S
-  - 1x I2C
-  - 2x UART
-  - LED PWM with up to 6 channels
-
-- Cryptographic hardware acceleration (RNG, ECC, RSA, SHA-2, AES)
-
-For more information, check the datasheet at `ESP32-C3 Datasheet`_ or the technical reference
-manual at `ESP32-C3 Technical Reference Manual`_.
+.. include:: ../../../espressif/common/soc-esp32c3-features.rst
+   :start-after: espressif-soc-esp32c3-features
 
 Supported Features
 ==================
@@ -47,16 +21,8 @@ Supported Features
 System Requirements
 *******************
 
-Espressif HAL requires WiFi and Bluetooth binary blobs in order work. Run the command
-below to retrieve those files.
-
-.. code-block:: console
-
-   west blobs fetch hal_espressif
-
-.. note::
-
-   It is recommended running the command above after :file:`west update`.
+.. include:: ../../../espressif/common/system-requirements.rst
+   :start-after: espressif-system-requirements
 
 Programming and Debugging
 *************************
@@ -81,6 +47,3 @@ References
 .. target-notes::
 
 .. _`ESP32-C3-DevKitM`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/hw-reference/esp32c3/user-guide-devkitm-1.html
-.. _`ESP32-C3 Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf
-.. _`ESP32-C3 Technical Reference Manual`: https://espressif.com/sites/default/files/documentation/esp32-c3_technical_reference_manual_en.pdf
-.. _`OpenOCD ESP32`: https://github.com/espressif/openocd-esp32/releases
