@@ -54,7 +54,7 @@ static void stm32_digi_temp_isr(const struct device *dev)
 	DTS_TypeDef *dts = cfg->base;
 
 	/* Clear interrupt */
-	SET_BIT(dts->ICIFR, DTS_ICIFR_TS1_CITEF);
+	sys_set_bits((mem_addr_t)&dts->ICIFR, DTS_ICIFR_TS1_CITEF);
 
 	/* Give semaphore */
 	k_sem_give(&data->sem_isr);
@@ -73,19 +73,19 @@ static int stm32_digi_temp_sample_fetch(const struct device *dev, enum sensor_ch
 	k_mutex_lock(&data->mutex, K_FOREVER);
 
 	/* Wait for the sensor to be ready (~40µS delay after enabling it) */
-	while (READ_BIT(dts->SR, DTS_SR_TS1_RDY) == 0) {
+	while (sys_test_bits((mem_addr_t)&dts->SR, DTS_SR_TS1_RDY) == 0) {
 		k_yield();
 	}
 
 	/* Trigger a measurement */
-	SET_BIT(dts->CFGR1, DTS_CFGR1_TS1_START);
-	CLEAR_BIT(dts->CFGR1, DTS_CFGR1_TS1_START);
+	sys_set_bits((mem_addr_t)&dts->CFGR1, DTS_CFGR1_TS1_START);
+	sys_clear_bits((mem_addr_t)&dts->CFGR1, DTS_CFGR1_TS1_START);
 
 	/* Wait for interrupt */
 	k_sem_take(&data->sem_isr, K_FOREVER);
 
 	/* Read value */
-	data->raw = READ_REG(dts->DR);
+	data->raw = sys_read32((mem_addr_t)&dts->DR);
 
 	k_mutex_unlock(&data->mutex);
 
@@ -141,10 +141,10 @@ static void stm32_digi_temp_enable(const struct device *dev)
 	DTS_TypeDef *dts = cfg->base;
 
 	/* Enable the sensor */
-	SET_BIT(dts->CFGR1, DTS_CFGR1_TS1_EN);
+	sys_set_bits((mem_addr_t)&dts->CFGR1, DTS_CFGR1_TS1_EN);
 
 	/* Enable interrupt */
-	SET_BIT(dts->ITENR, DTS_ITENR_TS1_ITEEN);
+	sys_set_bits((mem_addr_t)&dts->ITENR, DTS_ITENR_TS1_ITEEN);
 }
 
 #ifdef CONFIG_PM_DEVICE
@@ -154,10 +154,10 @@ static void stm32_digi_temp_disable(const struct device *dev)
 	DTS_TypeDef *dts = cfg->base;
 
 	/* Disable interrupt */
-	CLEAR_BIT(dts->ITENR, DTS_ITENR_TS1_ITEEN);
+	sys_clear_bits((mem_addr_t)&dts->ITENR, DTS_ITENR_TS1_ITEEN);
 
 	/* Disable the sensor */
-	CLEAR_BIT(dts->CFGR1, DTS_CFGR1_TS1_EN);
+	sys_clear_bits((mem_addr_t)&dts->CFGR1, DTS_CFGR1_TS1_EN);
 }
 #endif
 

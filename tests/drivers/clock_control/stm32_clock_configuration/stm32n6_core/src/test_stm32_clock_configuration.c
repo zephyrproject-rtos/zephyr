@@ -106,7 +106,7 @@ ZTEST(stm32n6_clock_core_config, test_pll_src)
 ZTEST(stm32n6_clock_core_config, test_hse_css)
 {
 	/* there is no function to read CSS status, so read directly from the SoC register */
-	bool css_enabled = (READ_BIT(RCC->HSECFGR, RCC_HSECFGR_HSECSSON) == 1U);
+	bool css_enabled = (sys_test_bits((mem_addr_t)&RCC->HSECFGR, RCC_HSECFGR_HSECSSON) == 1U);
 
 	if (IS_ENABLED(STM32_HSE_CSS)) {
 		zassert_true(css_enabled, "HSE CSS is not enabled");
@@ -120,7 +120,7 @@ ZTEST(stm32n6_clock_core_config, test_hse_css)
 ZTEST(stm32n6_clock_core_config, test_lse_css)
 {
 	/* there is no function to read CSS status, so read directly from the SoC register */
-	bool css_enabled = (READ_BIT(RCC->LSECFGR, RCC_LSECFGR_LSECSSON) == 1U);
+	bool css_enabled = (sys_test_bits((mem_addr_t)&RCC->LSECFGR, RCC_LSECFGR_LSECSSON) == 1U);
 
 	if (IS_ENABLED(STM32_LSE_CSS)) {
 		zassert_true(css_enabled, "LSE CSS is not enabled");

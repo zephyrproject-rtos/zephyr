@@ -270,46 +270,46 @@ static int rtc_stm32_deinit(void)
 	}
 
 #if defined(CONFIG_SOC_SERIES_STM32F1X)
-	WRITE_REG(RTC->CNTL, 0U);
-	WRITE_REG(RTC->CNTH, 0U);
-	WRITE_REG(RTC->PRLH, 0U);
-	WRITE_REG(RTC->PRLL, 0x8000U);
-	WRITE_REG(RTC->CRH, 0U);
-	WRITE_REG(RTC->CRL, 0x20U);
+	sys_write32(0U, (mem_addr_t)&RTC->CNTL);
+	sys_write32(0U, (mem_addr_t)&RTC->CNTH);
+	sys_write32(0U, (mem_addr_t)&RTC->PRLH);
+	sys_write32(0x8000U, (mem_addr_t)&RTC->PRLL);
+	sys_write32(0U, (mem_addr_t)&RTC->CRH);
+	sys_write32(0x20U, (mem_addr_t)&RTC->CRL);
 #else /* CONFIG_SOC_SERIES_STM32F1X */
-	WRITE_REG(RTC->CR, 0U);
-	WRITE_REG(RTC->TR, 0U);
+	sys_write32(0U, (mem_addr_t)&RTC->CR);
+	sys_write32(0U, (mem_addr_t)&RTC->TR);
 #ifdef RTC_WUTR_WUT
-	WRITE_REG(RTC->WUTR, RTC_WUTR_WUT);
+	sys_write32(RTC_WUTR_WUT, (mem_addr_t)&RTC->WUTR);
 #endif /* RTC_WUTR_WUT */
-	WRITE_REG(RTC->DR, RTC_DR_WDU_0 | RTC_DR_MU_0 | RTC_DR_DU_0);
-	WRITE_REG(RTC->PRER, RTC_PRER_PREDIV_A | 0xFFU);
-	WRITE_REG(RTC->ALRMAR, 0U);
+	sys_write32(RTC_DR_WDU_0 | RTC_DR_MU_0 | RTC_DR_DU_0, (mem_addr_t)&RTC->DR);
+	sys_write32(RTC_PRER_PREDIV_A | 0xFFU, (mem_addr_t)&RTC->PRER);
+	sys_write32(0U, (mem_addr_t)&RTC->ALRMAR);
 #ifdef RTC_CR_ALRBE
-	WRITE_REG(RTC->ALRMBR, 0U);
+	sys_write32(0U, (mem_addr_t)&RTC->ALRMBR);
 #endif /* RTC_CR_ALRBE */
 
 #if HW_SUBSECOND_SUPPORT
-	WRITE_REG(RTC->CALR, 0U);
-	WRITE_REG(RTC->SHIFTR, 0U);
-	WRITE_REG(RTC->ALRMASSR, 0U);
+	sys_write32(0U, (mem_addr_t)&RTC->CALR);
+	sys_write32(0U, (mem_addr_t)&RTC->SHIFTR);
+	sys_write32(0U, (mem_addr_t)&RTC->ALRMASSR);
 #ifdef RTC_CR_ALRBE
-	WRITE_REG(RTC->ALRMBSSR, 0U);
+	sys_write32(0U, (mem_addr_t)&RTC->ALRMBSSR);
 #endif /* RTC_CR_ALRBE */
 #endif /* HW_SUBSECOND_SUPPORT */
 
 #if defined(RTC_PRIVCFGR_PRIV)
-	WRITE_REG(RTC->PRIVCFGR, 0U);
+	sys_write32(0U, (mem_addr_t)&RTC->PRIVCFGR);
 #endif /* RTC_PRIVCFGR_PRIV */
 #if defined(__ARM_FEATURE_CMSE) && (__ARM_FEATURE_CMSE == 3U)
-	WRITE_REG(RTC->SECCFGR,  0U);
+	sys_write32(0U, (mem_addr_t)&RTC->SECCFGR);
 #endif /* (__ARM_FEATURE_CMSE) && (__ARM_FEATURE_CMSE == 3U) */
 
 	/* Reset I(C)SR register and exit initialization mode */
 #ifdef RTC_ICSR_INIT
-	WRITE_REG(RTC->ICSR, 0U);
+	sys_write32(0U, (mem_addr_t)&RTC->ICSR);
 #else
-	WRITE_REG(RTC->ISR, 0U);
+	sys_write32(0U, (mem_addr_t)&RTC->ISR);
 #endif
 
 #endif /* CONFIG_SOC_SERIES_STM32F1X */

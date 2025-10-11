@@ -75,12 +75,12 @@
 #endif
 
 #if defined(RCC_PLLCFGR_PLLPEN)
-#define RCC_PLLP_ENABLE() SET_BIT(RCC->PLLCFGR, RCC_PLLCFGR_PLLPEN)
+#define RCC_PLLP_ENABLE() sys_set_bits((mem_addr_t)&RCC->PLLCFGR, RCC_PLLCFGR_PLLPEN)
 #else
 #define RCC_PLLP_ENABLE()
 #endif /* RCC_PLLCFGR_PLLPEN */
 #if defined(RCC_PLLCFGR_PLLQEN)
-#define RCC_PLLQ_ENABLE() SET_BIT(RCC->PLLCFGR, RCC_PLLCFGR_PLLQEN)
+#define RCC_PLLQ_ENABLE() sys_set_bits((mem_addr_t)&RCC->PLLCFGR, RCC_PLLCFGR_PLLQEN)
 #else
 #define RCC_PLLQ_ENABLE()
 #endif /* RCC_PLLCFGR_PLLQEN */
@@ -813,11 +813,11 @@ static void set_up_plls(void)
 #if defined(STM32_PLL_ENABLED)
 
 #if defined(STM32_SRC_PLL_P) && STM32_PLL_P_ENABLED
-	MODIFY_REG(RCC->PLLCFGR, RCC_PLLCFGR_PLLP, pllp(STM32_PLL_P_DIVISOR));
+	sys_modify_bits((mem_addr_t)&RCC->PLLCFGR, RCC_PLLCFGR_PLLP, pllp(STM32_PLL_P_DIVISOR));
 	RCC_PLLP_ENABLE();
 #endif
 #if defined(STM32_SRC_PLL_Q) && STM32_PLL_Q_ENABLED
-	MODIFY_REG(RCC->PLLCFGR, RCC_PLLCFGR_PLLQ, pllq(STM32_PLL_Q_DIVISOR));
+	sys_modify_bits((mem_addr_t)&RCC->PLLCFGR, RCC_PLLCFGR_PLLQ, pllq(STM32_PLL_Q_DIVISOR));
 	RCC_PLLQ_ENABLE();
 #endif
 
