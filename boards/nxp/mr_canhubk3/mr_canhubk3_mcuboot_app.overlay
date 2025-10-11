@@ -1,0 +1,8 @@
+/ {
+	chosen {
+		/* App links to primary slot when booted by MCUboot */
+		zephyr,code-partition = &slot0_partition;
+		/* Ensure we are using internal flash as the main flash */
+		zephyr,flash = &flash0;
+	};
+};

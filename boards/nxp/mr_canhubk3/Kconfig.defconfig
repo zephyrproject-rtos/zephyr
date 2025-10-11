@@ -33,4 +33,14 @@ config MDIO
 
 endif # NETWORKING
 
+if BOOTLOADER_MCUBOOT
+
+# S32K3 places the vector table at +0x400
+# This makes the bootloader and the sign tool compatible with that.
+config ROM_START_OFFSET
+    hex
+    default 0x400
+
+endif
+
 endif # BOARD_MR_CANHUBK3
