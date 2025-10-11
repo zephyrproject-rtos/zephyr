@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Espressif Systems (Shanghai) CO LTD
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config RETAINED_MEM_ESP32_RTCRAM
+	bool "ESP32 RTCRAM retention driver"
+	default y
+	depends on DT_HAS_ZEPHYR_RETAINED_RAM_ENABLED && RETAINED_MEM_ZEPHYR_RAM && POWEROFF
+	depends on HAS_ESPRESSIF_RAM_CTRL
+	help
+	  Enable driver for ESP32 RTCRAM retention
