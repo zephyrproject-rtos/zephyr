@@ -24,7 +24,25 @@ static enum ethernet_hw_caps eth_capabilities(const struct device *dev)
 #if defined(CONFIG_NET_LLDP)
 	       | ETHERNET_LLDP
 #endif
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
+	       | ETHERNET_PROMISC_MODE
+#endif
 		;
+}
+
+static int eth_slip_tap_set_config(const struct device *dev, enum ethernet_config_type type,
+				   const struct ethernet_config *config)
+{
+	switch (type) {
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
+	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
+		return 0;
+#endif /* CONFIG_NET_PROMISCUOUS_MODE */
+	default:
+		break;
+	}
+
+	return -ENOTSUP;
 }
 
 static const struct ethernet_api slip_if_api = {
@@ -32,6 +50,7 @@ static const struct ethernet_api slip_if_api = {
 
 	.get_capabilities = eth_capabilities,
 	.send = slip_send,
+	.set_config = eth_slip_tap_set_config,
 };
 
 #define _SLIP_L2_LAYER    ETHERNET_L2
