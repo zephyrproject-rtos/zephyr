@@ -555,13 +555,27 @@ static int video_stm32_dcmi_init(const struct device *dev)
 
 #define SOURCE_DEV(n) DEVICE_DT_GET(DT_NODE_REMOTE_DEVICE(DT_INST_ENDPOINT_BY_ID(n, 0, 0)))
 
-#define STM32_DCMI_INIT(inst)									\
+#ifdef CONFIG_DYNAMIC_INTERRUPTS
+#define IRQ_CONFIG_FUNC(inst)									\
+	static void video_stm32_dcmi_irq_config_func_##inst(const struct device *dev)		\
+	{											\
+		irq_connect_dynamic(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),		\
+			(void (*)(const void *))stm32_dcmi_isr, DEVICE_DT_INST_GET(inst), 0);	\
+		irq_enable(DT_INST_IRQN(inst));							\
+	}
+
+#else
+#define IRQ_CONFIG_FUNC(inst)									\
 	static void video_stm32_dcmi_irq_config_func_##inst(const struct device *dev)		\
 	{											\
 		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),			\
 			stm32_dcmi_isr, DEVICE_DT_INST_GET(inst), 0);				\
 		irq_enable(DT_INST_IRQN(inst));							\
-	}											\
+	}
+#endif
+
+#define STM32_DCMI_INIT(inst)									\
+	IRQ_CONFIG_FUNC(inst)									\
 												\
 	static struct video_stm32_dcmi_data video_stm32_dcmi_data_##inst = {			\
 		.hdcmi = {									\
