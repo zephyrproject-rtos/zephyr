@@ -1,8 +1,13 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Copyright (c) 2025 Ambiq Micro Inc. <www.ambiq.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <arm/armv7-m.dtsi>
 #include <mem.h>
 #include <freq.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
@@ -35,6 +40,7 @@
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
+			cpu-power-states = <&idle &suspend_to_ram>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -42,6 +48,34 @@
 				compatible = "arm,armv7m-itm";
 				reg = <0xe0000000 0x1000>;
 				swo-ref-frequency = <DT_FREQ_M(48)>;
+			};
+		};
+
+		power-states {
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				/*
+				 * As Apollo4 datasheet, run_to_sleep and sleep_to_run
+				 * transition time are both lower than 1us, but
+				 * considering the software overhead we set a
+				 * bigger value.
+				 */
+				min-residency-us = <100>;
+				exit-latency-us = <5>;
+			};
+
+			suspend_to_ram: suspend_to_ram {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				/*
+				 * As Apollo4 datasheet, run_to_deepsleep transition
+				 * time is lower than 1us and deepsleep_to_run
+				 * transition time is about 25us, but considering
+				 * the software overhead, we set a bigger value.
+				 */
+				min-residency-us = <2000>;
+				exit-latency-us = <125>;
 			};
 		};
 	};
@@ -585,6 +619,17 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+		};
+
+		adc0: adc@40038000 {
+			compatible = "ambiq,adc";
+			reg = <0x40038000 0x400>;
+			interrupts = <19 0>;
+			interrupt-names = "ADC";
+			channel-count = <10>;
+			internal-vref-mv = <1190>;
+			status = "disabled";
+			#io-channel-cells = <1>;
 		};
 
 		mspi0: spi@40060000 {
