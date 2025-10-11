@@ -27,6 +27,7 @@ SECTIONS
 
 SECTION_PROLOGUE(rom_start,,)
 {
+	__rom_region_start = ABSOLUTE(.);
 	/* Located in generated directory. This file is populated by the
 	 * zephyr_linker_sources() Cmake function.
 	 */
@@ -46,6 +47,9 @@ SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
 	 */
 	#include <snippets-rodata.ld>
 } GROUP_LINK_IN(ROMABLE_REGION)
+
+__rom_region_end  = .;
+__rom_region_size = __rom_region_end - __rom_region_start;
 
 SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 {
