@@ -39,6 +39,7 @@ add_subdirectory(wsen)
 # zephyr-keep-sorted-stop
 
 add_subdirectory_ifdef(CONFIG_A01NYUB a01nyub)
+add_subdirectory_ifdef(CONFIG_ALS31300 als31300)
 add_subdirectory_ifdef(CONFIG_AMD_SB_TSI amd_sb_tsi)
 add_subdirectory_ifdef(CONFIG_AMG88XX amg88xx)
 add_subdirectory_ifdef(CONFIG_APDS9253 apds9253)
