@@ -1689,4 +1689,13 @@ int can_mcan_get_state(const struct device *dev, enum can_state *state,
 void can_mcan_set_state_change_callback(const struct device *dev,
 					can_state_change_callback_t callback, void *user_data);
 
+/**
+ * @brief Check if any RX filters exist
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @return true If RX filters exist
+ * @return false If no RX filters exist
+ */
+bool can_mcan_rx_filters_exist(const struct device *dev);
+
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CAN_CAN_MCAN_H_ */
