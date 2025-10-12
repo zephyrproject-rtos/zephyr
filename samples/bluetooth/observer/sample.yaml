@@ -1,9 +1,11 @@
 sample:
-  name: observer
+  name: Bluetooth Observer
+common:
+  harness: bluetooth
+  tags:
+    - bluetooth
 tests:
   sample.bluetooth.observer:
-    harness: bluetooth
-    tags: bluetooth
     platform_allow:
       - qemu_cortex_m3
       - qemu_x86
@@ -13,8 +15,6 @@ tests:
       - qemu_cortex_m3
       - nrf52840dk/nrf52840
   sample.bluetooth.observer.extended:
-    harness: bluetooth
-    tags: bluetooth
     extra_args:
       - CONF_FILE="prj_extended.conf"
     platform_allow:
@@ -23,8 +23,6 @@ tests:
     integration_platforms:
       - qemu_cortex_m3
   sample.bluetooth.observer.extended.bt_ll_sw_split:
-    harness: bluetooth
-    tags: bluetooth
     extra_args:
       - CONF_FILE="prj_extended.conf"
       - EXTRA_CONF_FILE="overlay-bt_ll_sw_split.conf"
@@ -33,8 +31,6 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
   sample.bluetooth.observer.extended.bbc_microbit.bt_ll_sw_split:
-    harness: bluetooth
-    tags: bluetooth
     extra_args:
       - CONF_FILE="prj_extended.conf"
       - EXTRA_CONF_FILE="debug.conf;overlay_bbc_microbit-bt_ll_sw_split.conf"
