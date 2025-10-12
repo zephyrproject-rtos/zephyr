@@ -1551,3 +1551,9 @@ static int posix_thread_pool_init(void)
 	return 0;
 }
 SYS_INIT(posix_thread_pool_init, PRE_KERNEL_1, 0);
+
+int sched_yield(void)
+{
+	k_yield();
+	return 0;
+}
