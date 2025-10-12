@@ -42,6 +42,15 @@ config MEMC_STM32_XSPI_PSRAM
 	help
 	  Enable STM32 XSPI Memory Controller.
 
+config MEMC_STM32_XSPI_PSRAM_APS6404
+	bool "STM32 XSPI PSRAM APS6404"
+	default y
+	depends on DT_HAS_ST_STM32_XSPI_PSRAM_APS6404_ENABLED
+	select USE_STM32_HAL_XSPI
+	select PINCTRL
+	help
+	  Enable STM32 XSPI Memory Controller.
+
 config MEMC_STM32_OSPI_PSRAM
 	bool "STM32 OSPI PSRAM"
 	default y

@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2025 Mario Paja
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	psram: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_M(8)>;
+		zephyr,memory-region = "PSRAM";
+		zephyr,memory-attr = <DT_MEM_ARM_MPU_RAM>;
+	};
+};
+
+&xspi1 {
+	pinctrl-0 = <&xspim_p1_clk_po4 &xspim_p1_ncs1_po0
+		     &xspim_p1_io0_pp0 &xspim_p1_io1_pp1
+		     &xspim_p1_io2_pp2 &xspim_p1_io3_pp3>;
+
+	pinctrl-names = "default";
+	status = "okay";
+
+	memc: aps6404l: memory@0 {
+		status = "okay";
+		compatible = "st,stm32-xspi-psram-aps6404";
+		reg = <0>;
+		size = <DT_SIZE_M(64)>;
+		max-frequency = <DT_FREQ_M(80)>;
+		qspi-enable;
+		st,csbound = <4>;
+	};
+};
+
+&sram0 {
+	status = "disabled";
+};
+
+&sram1 {
+	status = "disabled";
+};
+
+&sram2 {
+	status = "disabled";
+};

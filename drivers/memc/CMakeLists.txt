@@ -36,3 +36,4 @@ zephyr_library_sources_ifdef(CONFIG_MEMC_STM32_SDRAM             memc_stm32_sdra
 
 zephyr_library_sources_ifdef(CONFIG_MEMC_STM32_XSPI_PSRAM        memc_stm32_xspi_psram.c)
 zephyr_library_sources_ifdef(CONFIG_MEMC_STM32_OSPI_PSRAM        memc_stm32_ospi_psram.c)
+zephyr_library_sources_ifdef(CONFIG_MEMC_STM32_XSPI_PSRAM_APS6404        memc_stm32_xspi_psram_aps6404.c)
