@@ -7,8 +7,6 @@ zephyr_sources_ifdef(CONFIG_INSTRUMENTATION
   transport/uart.c
 )
 
-zephyr_sources_ifdef(CONFIG_INSTRUMENTATION_MODE_CALLGRAPH ringbuffer/ringbuffer.c)
-
 if(CONFIG_INSTRUMENTATION)
   if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
     zephyr_sources(handlers/instr_handlers_gcc.c)

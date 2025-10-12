@@ -9,7 +9,6 @@
 #include <string.h>
 
 #include <zephyr/instrumentation/instrumentation.h>
-#include <instr_buffer.h>
 #include <instr_timestamp.h>
 
 #include <zephyr/device.h>
@@ -18,6 +17,7 @@
 #include <zephyr/kernel_structs.h>
 #include <zephyr/retention/retention.h>
 #include <zephyr/sys/reboot.h>
+#include <zephyr/sys/ring_buffer.h>
 
 #include <kernel_internal.h>
 #include <ksched.h>
@@ -86,6 +86,9 @@ extern int INSTR_STOPPER_FUNCTION(void);
 static void *k_trigger_callee = INSTR_TRIGGER_FUNCTION;
 static void *k_stopper_callee = INSTR_STOPPER_FUNCTION;
 
+#ifdef CONFIG_INSTRUMENTATION_MODE_CALLGRAPH
+RING_BUFFER_DEFINE(trace_buffer, CONFIG_INSTRUMENTATION_MODE_CALLGRAPH_TRACE_BUFFER_SIZE);
+#endif
 /* Current (live) trigger and stopper addresses */
 static void *trigger_callee;
 static void *stopper_callee;
@@ -131,11 +134,6 @@ int instr_init(void)
 		retention_write(instrumentation_triggers, sizeof(trigger_callee),
 				(const uint8_t *)&stopper_callee, sizeof(stopper_callee));
 	}
-
-#if defined(CONFIG_INSTRUMENTATION_MODE_CALLGRAPH)
-	/* Initialize ring buffer */
-	instr_buffer_init();
-#endif
 
 	/* Init and start counters for timestamping */
 	instr_timestamp_init();
@@ -276,31 +274,22 @@ __no_instrumentation__
 void instr_dump_buffer_uart(void)
 {
 #if defined(CONFIG_INSTRUMENTATION_MODE_CALLGRAPH)
-	static const struct device *const uart_dev =
-	DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
-
 	uint8_t *transferring_buf;
-	uint32_t transferring_length, instr_buffer_max_length;
+	size_t transferring_length;
+	static const struct device *const uart_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 	/* Make sure instrumentation is disabled. */
 	instr_disable();
 
 	/* Initiator mark */
 	printk("-*-#");
-
-	instr_buffer_max_length = instr_buffer_capacity_get();
-
-	while (!instr_buffer_is_empty()) {
-		transferring_length =
-			instr_buffer_get_claim(
-					&transferring_buf,
-					instr_buffer_max_length);
-
-		for (uint32_t i = 0; i < transferring_length; i++) {
+	while (!ring_buffer_empty(&trace_buffer)) {
+		transferring_length = ring_buffer_read_ptr(&trace_buffer, &transferring_buf);
+		for (size_t i = 0; i < transferring_length; i++) {
 			uart_poll_out(uart_dev, transferring_buf[i]);
 		}
 
-		instr_buffer_get_finish(transferring_length);
+		ring_buffer_consume(&trace_buffer, transferring_length);
 	}
 
 	/* Terminator mark */
@@ -490,30 +479,12 @@ static void set_up_record(struct instr_record *record, enum instr_event_types ty
 
 static bool instr_record_data_put(struct instr_record *record)
 {
-	uint32_t total_size = 0U;
-
-	uint8_t *data = (uint8_t *) record, *buf;
-	uint32_t length = sizeof(struct instr_record), claimed_size;
-
 	/* If record won't fit, free enough space in the buffer */
-	if (instr_buffer_space_get() < sizeof(struct instr_record)) {
-		instr_buffer_get(NULL, sizeof(struct instr_record));
+	if (ring_buffer_space(&trace_buffer) < sizeof(struct instr_record)) {
+		ring_buffer_consume(&trace_buffer, sizeof(struct instr_record));
 	}
 
-	do {
-		claimed_size = instr_buffer_put_claim(&buf, length);
-		memcpy(buf, data, claimed_size);
-		total_size += claimed_size;
-		length -= claimed_size;
-		data += claimed_size;
-	} while (length && claimed_size);
-
-	if (length && claimed_size == 0) {
-		instr_buffer_put_finish(0);
-		return false;
-	}
-
-	instr_buffer_put_finish(total_size);
+	ring_buffer_write(&trace_buffer, (uint8_t *)record, sizeof(struct instr_record));
 	return true;
 }
 
@@ -569,7 +540,7 @@ void instr_event_handler(enum instr_event_types type, void *callee, void *caller
 		struct instr_record record;
 
 		if (!IS_ENABLED(CONFIG_INSTRUMENTATION_MODE_CALLGRAPH_BUFFER_OVERWRITE) &&
-				instr_buffer_space_get() < sizeof(struct instr_record)) {
+			ring_buffer_space(&trace_buffer) < sizeof(struct instr_record)) {
 			_instr_tracing_disabled = 1;
 			return;
 		}
