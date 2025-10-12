@@ -116,25 +116,18 @@ zephyr_i2c: &i2c1 {
 
 &pio0 {
 	status = "okay";
-};
 
-&pio1 {
-	status = "okay";
-
-	/*
-	 * Need to put this on PIO1 as having this on PIO0 causes the GPIO hog to
-	 * not work.
-	 */
 	pio-ws2812 {
 		compatible = "worldsemi,ws2812-rpi_pico-pio";
 		status = "okay";
-		pinctrl-0 = <&ws2812_pio1_default>;
+		pinctrl-0 = <&ws2812_pio0_default>;
 		pinctrl-names = "default";
 		bit-waveform = <3>, <3>, <4>;
 
+		/* RGB LED (Neopixel) */
 		ws2812: ws2812 {
 			status = "okay";
-			gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
 			chain-length = <1>;
 			color-mapping = <LED_COLOR_ID_GREEN
 					 LED_COLOR_ID_RED
