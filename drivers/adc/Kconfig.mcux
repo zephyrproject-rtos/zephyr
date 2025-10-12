@@ -121,6 +121,11 @@ config LPADC_CHANNEL_COUNT
 	  15 ADC channels. This value corresponds to how many of the CMD
 	  registers can be configured within the ADC.
 
+config LPADC_ENABLE_DMA
+	bool "LPADC DMA support"
+	select DMA
+	help
+	  Use DMA in the LPADC driver.
 
 endif # ADC_MCUX_LPADC
 
