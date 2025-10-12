@@ -96,5 +96,6 @@ config STM32H7_DUAL_CORE
 config STM32H7_BOOT_M4_AT_INIT
 	bool "Boot M4 core during M7 init independent of option byte BCM4."
 	default y
+	depends on STM32H7_DUAL_CORE
 
 endif # SOC_SERIES_STM32H7X
