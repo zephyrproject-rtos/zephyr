@@ -650,6 +650,7 @@ Enable this option group with :kconfig:option:`CONFIG_POSIX_THREADS`.
     pthread_setspecific(),yes
     pthread_sigmask(),yes
     pthread_testcancel(),yes
+    sched_yield(),yes
 
 .. _posix_option_group_posix_threads_ext:
 
@@ -910,7 +911,6 @@ Enable this option with :kconfig:option:`CONFIG_POSIX_PRIORITY_SCHEDULING`.
     sched_rr_get_interval(),yes :ref:`†<posix_undefined_behaviour>`
     sched_setparam(),yes :ref:`†<posix_undefined_behaviour>`
     sched_setscheduler(),yes :ref:`†<posix_undefined_behaviour>`
-    sched_yield(),yes
 
 .. _posix_option_raw_sockets:
 
