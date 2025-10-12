@@ -1,17 +1,17 @@
 sample:
   name: Bluetooth Multiple Extended Advertising Broadcaster
+common:
+  harness: bluetooth
+  tags:
+    - bluetooth
 tests:
   sample.bluetooth.broadcaster_multiple:
-    harness: bluetooth
-    tags: bluetooth
     platform_allow:
       - qemu_cortex_m3
       - qemu_x86
     integration_platforms:
       - qemu_cortex_m3
   sample.bluetooth.broadcaster_multiple.bt_ll_sw_split:
-    harness: bluetooth
-    tags: bluetooth
     extra_args:
       - EXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf
     platform_allow:
