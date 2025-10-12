@@ -266,7 +266,7 @@ csi_i2c: &i2c1 {
 		     &sdmmc2_ck_pc2 &sdmmc2_cmd_pc3>;
 	pinctrl-names = "default";
 	bus-width = <4>;
-	cd-gpios = <&gpion 12 GPIO_ACTIVE_HIGH>;
+	cd-gpios = <&gpion 12 GPIO_ACTIVE_LOW>;
 	pwr-gpios = <&gpioq 7 GPIO_ACTIVE_HIGH>;
 	disk-name = "SD";
 };
