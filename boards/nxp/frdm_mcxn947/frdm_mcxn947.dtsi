@@ -61,6 +61,25 @@
 		};
 	};
 
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = /* ANA_4/ADC1_A0      AN */
+			   <1 0 &gpio1 3 0>,  /* RST */
+			   <2 0 &gpio3 23 0>, /* CS */
+			   <3 0 &gpio3 21 0>, /* SCK */
+			   <4 0 &gpio3 22 0>, /* MISO */
+			   <5 0 &gpio3 20 0>, /* MOSI */
+			   <6 0 &gpio3 19 0>, /* PWM */
+			   <7 0 &gpio5 7 0>,  /* INT */
+			   <8 0 &gpio1 16 0>, /* GPIO, Not a RX */
+			   <9 0 &gpio1 17 0>, /* GPIO, Not a TX */
+			   <10 0 &gpio1 1 0>, /* SCL */
+			   <11 0 &gpio1 0 0>; /* SDA */
+	};
+
 	arduino_header: arduino-connector {
 		compatible = "arduino-header-r3";
 		#gpio-cells = <2>;
@@ -118,6 +137,13 @@
 
 arduino_spi: &flexcomm1_lpspi1 {};
 
+&flexcomm6_lpspi6 {
+	pinctrl-0 = <&pinmux_flexcomm6_lpspi>;
+	pinctrl-names = "default";
+};
+
+mikrobus_spi: &flexcomm6_lpspi6 {};
+
 nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 	pinctrl-0 = <&pinmux_flexcomm2_lpi2c>;
 	pinctrl-names = "default";
@@ -125,6 +151,14 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 };
 
 arduino_i2c: &flexcomm2_lpi2c2 {};
+
+&flexcomm3_lpi2c3 {
+	pinctrl-0 = <&pinmux_flexcomm3_lpi2c>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+mikrobus_i2c: &flexcomm3_lpi2c3 {};
 
 &flexcomm2_lpuart2 {
 	current-speed = <115200>;
