@@ -755,6 +755,8 @@
 		#io-channel-cells = <1>;
 		clocks = <&syscon MCUX_LPADC1_CLK>;
 		nxp,references = <&vref 1800>;
+		dmas = <&edma0 0 21>;
+		dma-names = "fifoa";
 	};
 
 	temp0: temp0 {
@@ -776,6 +778,8 @@
 		offset-value-b = <0>;
 		#io-channel-cells = <1>;
 		clocks = <&syscon MCUX_LPADC2_CLK>;
+		dmas = <&edma0 1 23>;
+		dma-names = "fifoa";
 	};
 
 	usb1: usbd@10b000 {
