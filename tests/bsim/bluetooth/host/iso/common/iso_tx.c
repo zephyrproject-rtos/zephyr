@@ -174,15 +174,13 @@ int iso_tx_unregister(struct bt_iso_chan *iso_chan)
 		}
 
 		if (tx_stream->iso_chan == iso_chan) {
-
-			tx_stream->iso_chan = NULL;
-
 			while (atomic_get(&tx_stream->enqueued) != 0) {
 				k_sleep(K_MSEC(100));
 			}
 
 			LOG_INF("Unregistered %p for TX", iso_chan);
 
+			tx_stream->iso_chan = NULL;
 			err = 0;
 		}
 
