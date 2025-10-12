@@ -16,6 +16,7 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/atomic_types.h>
 #include <zephyr/sys/clock.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
@@ -31,16 +32,16 @@
 #define EXPECTED_TX_CNT 100U
 
 extern enum bst_result_t bst_result;
-static struct bt_iso_chan iso_chans[CONFIG_BT_ISO_MAX_CHAN];
-static struct bt_iso_chan *default_chan = &iso_chans[0];
+static struct iso_test_chan {
+	struct bt_iso_chan iso_chan;
+	atomic_t flag_iso_connected;
+	uint8_t disconnect_reason;
+} test_chans[CONFIG_BT_ISO_MAX_CHAN];
 static struct bt_iso_cig *cig;
 static uint32_t latency_ms = 10U; /* 10ms */
 static uint32_t interval_us = 10U * USEC_PER_MSEC; /* 10 ms */
-static uint8_t disconnect_reason;
 
 BUILD_ASSERT(CONFIG_BT_ISO_MAX_CHAN > 1, "CONFIG_BT_ISO_MAX_CHAN shall be at least 2");
-
-DEFINE_FLAG_STATIC(flag_iso_connected);
 
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)
@@ -65,6 +66,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 
 static void iso_connected(struct bt_iso_chan *chan)
 {
+	struct iso_test_chan *test_chan = CONTAINER_OF(chan, struct iso_test_chan, iso_chan);
 	const struct bt_iso_chan_path hci_path = {
 		.pid = BT_ISO_DATA_PATH_HCI,
 		.format = BT_HCI_CODING_FORMAT_TRANSPARENT,
@@ -76,30 +78,28 @@ static void iso_connected(struct bt_iso_chan *chan)
 	err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR, &hci_path);
 	TEST_ASSERT(err == 0, "Failed to set ISO data path: %d", err);
 
-	if (chan == default_chan) {
-		/* Register for TX to start sending */
-		err = iso_tx_register(chan);
-		TEST_ASSERT(err == 0, "Failed to register chan for TX: %d", err);
+	/* Register for TX to start sending */
+	err = iso_tx_register(chan);
+	TEST_ASSERT(err == 0, "Failed to register chan for TX: %d", err);
 
-		SET_FLAG(flag_iso_connected);
-	}
+	SET_FLAG(test_chan->flag_iso_connected);
 }
 
 static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
+	struct iso_test_chan *test_chan = CONTAINER_OF(chan, struct iso_test_chan, iso_chan);
 	int err;
 
 	printk("ISO Channel %p disconnected (reason 0x%02x)\n", chan, reason);
 
-	if (chan == default_chan) {
-		err = iso_tx_unregister(chan);
-		TEST_ASSERT(err == 0, "Failed to unregister chan for TX: %d", err);
+	err = iso_tx_unregister(chan);
+	TEST_ASSERT(err == 0, "Failed to unregister chan for TX: %d", err);
 
-		disconnect_reason = reason;
+	test_chan->disconnect_reason = reason;
 
-		UNSET_FLAG(flag_iso_connected);
-	}
+	UNSET_FLAG(test_chan->flag_iso_connected);
 
+	printk("Removing data path\n");
 	err = bt_iso_remove_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
 	TEST_ASSERT(err == 0, "Failed to remove ISO data path: %d", err);
 }
@@ -129,11 +129,11 @@ static void init(void)
 		return;
 	}
 
-	for (size_t i = 0U; i < ARRAY_SIZE(iso_chans); i++) {
-		iso_chans[i].ops = &iso_ops;
-		iso_chans[i].qos = &iso_qos;
+	ARRAY_FOR_EACH_PTR(test_chans, test_chan) {
+		test_chan->iso_chan.ops = &iso_ops;
+		test_chan->iso_chan.qos = &iso_qos;
 #if defined(CONFIG_BT_SMP)
-		iso_chans[i].required_sec_level = BT_SECURITY_L2;
+		test_chan->iso_chan.required_sec_level = BT_SECURITY_L2;
 #endif /* CONFIG_BT_SMP */
 	}
 
@@ -142,7 +142,12 @@ static void init(void)
 
 static void set_cig_defaults(struct bt_iso_cig_param *param)
 {
-	param->cis_channels = &default_chan;
+	/* By default we only configure a single CIS so that we can reconfigure the CIG with
+	 * additional CIS
+	 */
+	static struct bt_iso_chan *chan = &test_chans[0].iso_chan;
+
+	param->cis_channels = &chan;
 	param->num_cis = 1U;
 	param->sca = BT_GAP_SCA_UNKNOWN;
 	param->packing = BT_ISO_PACKING_SEQUENTIAL;
@@ -151,17 +156,16 @@ static void set_cig_defaults(struct bt_iso_cig_param *param)
 	param->p_to_c_latency = latency_ms;   /* ms */
 	param->c_to_p_interval = interval_us; /* us */
 	param->p_to_c_interval = interval_us; /* us */
-
 }
 
 static void create_cig(size_t iso_channels)
 {
-	struct bt_iso_chan *channels[ARRAY_SIZE(iso_chans)];
+	struct bt_iso_chan *channels[ARRAY_SIZE(test_chans)];
 	struct bt_iso_cig_param param;
 	int err;
 
 	for (size_t i = 0U; i < iso_channels; i++) {
-		channels[i] = &iso_chans[i];
+		channels[i] = &test_chans[i].iso_chan;
 	}
 
 	set_cig_defaults(&param);
@@ -240,18 +244,18 @@ static int reconfigure_cig_latency(struct bt_iso_cig_param *param)
 
 static void reconfigure_cig(void)
 {
-	struct bt_iso_chan *channels[2];
+	struct bt_iso_chan *channels[ARRAY_SIZE(test_chans)];
 	struct bt_iso_cig_param param;
 	int err;
 
 	for (size_t i = 0U; i < ARRAY_SIZE(channels); i++) {
-		channels[i] = &iso_chans[i];
+		channels[i] = &test_chans[i].iso_chan;
 	}
 
 	set_cig_defaults(&param);
 
-	/* Test modifying existing CIS */
-	default_chan->qos->tx->rtn++;
+	/* Test modifying existing CIS - All CIS share the same QoS*/
+	test_chans[0].iso_chan.qos->tx->rtn++;
 
 	err = bt_iso_cig_reconfigure(cig, &param);
 	if (err != 0) {
@@ -272,9 +276,10 @@ static void reconfigure_cig(void)
 		return;
 	}
 
-	/* Add CIS to the CIG and restore all other parameters */
+	/* Add the last CIS to the CIG and restore all other parameters */
 	set_cig_defaults(&param);
 	param.cis_channels = &channels[1];
+	param.num_cis = ARRAY_SIZE(channels) - 1;
 
 	err = bt_iso_cig_reconfigure(cig, &param);
 	if (err != 0) {
@@ -301,39 +306,55 @@ static void connect_acl(void)
 
 static void connect_cis(void)
 {
-	const struct bt_iso_connect_param connect_param = {
-		.acl = default_conn,
-		.iso_chan = default_chan,
-	};
+	struct bt_iso_connect_param connect_params[ARRAY_SIZE(test_chans)];
 	int err;
 
-	err = bt_iso_chan_connect(&connect_param, 1);
-	if (err) {
+	ARRAY_FOR_EACH(connect_params, i) {
+		connect_params[i].acl = default_conn;
+		connect_params[i].iso_chan = &test_chans[i].iso_chan;
+	}
+
+	err = bt_iso_chan_connect(connect_params, ARRAY_SIZE(connect_params));
+	if (err != 0) {
 		TEST_FAIL("Failed to connect ISO (%d)", err);
 
 		return;
 	}
 
-	WAIT_FOR_FLAG(flag_iso_connected);
+	ARRAY_FOR_EACH_PTR(test_chans, test_chan) {
+		WAIT_FOR_FLAG(test_chan->flag_iso_connected);
+	}
 }
 
 static void disconnect_cis(void)
 {
-	int err;
+	printk("Disconnecting CIS)\n");
 
-	err = bt_iso_chan_disconnect(default_chan);
-	if (err) {
-		TEST_FAIL("Failed to disconnect ISO (err %d)", err);
+	ARRAY_FOR_EACH_PTR(test_chans, test_chan) {
+		int err;
 
-		return;
+		if (!IS_FLAG_SET(test_chan->flag_iso_connected)) {
+			continue;
+		}
+
+		err = bt_iso_chan_disconnect(&test_chan->iso_chan);
+		if (err != 0) {
+			TEST_FAIL("Failed to disconnect ISO (err %d)", err);
+
+			return;
+		}
+
+		WAIT_FOR_FLAG_UNSET(test_chan->flag_iso_connected);
 	}
-
-	WAIT_FOR_FLAG_UNSET(flag_iso_connected);
 }
 
 static void disconnect_acl(void)
 {
 	int err;
+
+	if (!IS_FLAG_SET(flag_connected)) {
+		return;
+	}
 
 	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	if (err) {
@@ -385,23 +406,28 @@ static void reset_bluetooth(void)
 
 static void wait_tx_complete(void)
 {
-	size_t tx_cnt;
 
-	do {
-		tx_cnt = iso_tx_get_sent_cnt(default_chan);
-		k_sleep(K_USEC(interval_us));
+	ARRAY_FOR_EACH_PTR(test_chans, test_chan) {
+		size_t tx_cnt;
 
-		if (!IS_FLAG_SET(flag_iso_connected)) {
-			/* We don't expect all TX to be complete in the test where the peripheral
-			 * actively disconnects
-			 */
-			if (disconnect_reason != BT_HCI_ERR_REMOTE_USER_TERM_CONN) {
-				TEST_FAIL("Did not sent expected amount before disconnection");
+		do {
+			tx_cnt = iso_tx_get_sent_cnt(&test_chan->iso_chan);
+			k_sleep(K_USEC(interval_us));
+
+			if (!IS_FLAG_SET(test_chan->flag_iso_connected)) {
+				/* We don't expect all TX to be complete in the test where the
+				 * peripheral actively disconnects
+				 */
+				if (test_chan->disconnect_reason !=
+				    BT_HCI_ERR_REMOTE_USER_TERM_CONN) {
+					TEST_FAIL("Did not sent expected amount before "
+						  "disconnection");
+				}
+
+				break;
 			}
-
-			return;
-		}
-	} while (tx_cnt < EXPECTED_TX_CNT);
+		} while (tx_cnt < EXPECTED_TX_CNT);
+	}
 }
 
 static void test_main(void)
@@ -412,12 +438,8 @@ static void test_main(void)
 	connect_acl();
 	connect_cis();
 	wait_tx_complete();
-	if (IS_FLAG_SET(flag_iso_connected)) {
-		disconnect_cis();
-	}
-	if (IS_FLAG_SET(flag_connected)) {
-		disconnect_acl();
-	}
+	disconnect_cis();
+	disconnect_acl();
 	terminate_cig();
 
 	TEST_PASS("Test passed");
@@ -428,7 +450,7 @@ static void test_main_disable(void)
 	init();
 
 	/* Setup and connect before disabling */
-	create_cig(ARRAY_SIZE(iso_chans));
+	create_cig(ARRAY_SIZE(test_chans));
 	connect_acl();
 	connect_cis();
 
@@ -436,16 +458,12 @@ static void test_main_disable(void)
 	reset_bluetooth();
 
 	/* Set everything up again to see if everything still works as expected */
-	create_cig(ARRAY_SIZE(iso_chans));
+	create_cig(ARRAY_SIZE(test_chans));
 	connect_acl();
 	connect_cis();
 	wait_tx_complete();
-	if (IS_FLAG_SET(flag_iso_connected)) {
-		disconnect_cis();
-	}
-	if (IS_FLAG_SET(flag_connected)) {
-		disconnect_acl();
-	}
+	disconnect_cis();
+	disconnect_acl();
 	terminate_cig();
 
 	TEST_PASS("Disable test passed");
