@@ -32,6 +32,17 @@ config GEN_UICR_SECURESTORAGE
 	  - At least one subpartition must be defined
 	  - Combined subpartition sizes must equal secure_storage_partition size
 
+config GEN_UICR_LOCK
+	bool "Enable UICR.LOCK"
+	help
+	  When enabled, locks the entire contents of the NVR0 page located in
+	  MRAM10. This includes all values in both the UICR and the BICR (Board
+	  Information Configuration Registers). Once locked, the UICR can only
+	  be modified by performing an ERASEALL operation.
+
+	  This should be enabled only in production devices to prevent
+	  unauthorized modification.
+
 config GEN_UICR_PROTECTEDMEM
 	bool "Enable UICR.PROTECTEDMEM"
 	help
