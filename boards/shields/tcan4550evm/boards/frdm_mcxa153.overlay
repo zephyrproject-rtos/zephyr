@@ -1,0 +1,17 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Navimatix GmbH
+ * SPDX-FileCopyrightText: Copyright (c) 2025 TiaC Systems
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * FRDM-MCXA153, based on the Low Power SPI driver "nxp,lpspi"
+ * should by used with hardware controlled CS pins, due to reset
+ * issues. Moreover, the second CS1 is used on this board at the
+ * Arduino connector. This means that the CAN controller node
+ * must be completely rebuilt with the reg index 1.
+ */
+
+#include "hw_ctrl_cs.dtsi"
+#include "can_at_cs1.dtsi"
