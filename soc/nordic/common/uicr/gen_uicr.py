@@ -25,6 +25,8 @@ PERIPHCONF_SECTION = "uicr_periphconf_entry"
 # Common values for representing enabled/disabled in the UICR format.
 ENABLED_VALUE = 0xFFFF_FFFF
 DISABLED_VALUE = 0xBD23_28A8
+PROTECTED_VALUE = ENABLED_VALUE  # UICR_PROTECTED = UICR_ENABLED per uicr_defs.h
+UNPROTECTED_VALUE = DISABLED_VALUE  # Unprotected uses the default erased value
 
 KB_4 = 4096
 
@@ -441,6 +443,21 @@ def main() -> None:
         help="Enable UICR.ERASEPROTECT to block ERASEALL operations",
     )
     parser.add_argument(
+        "--approtect-application-protected",
+        action="store_true",
+        help="Protect application domain access port (disable debug access)",
+    )
+    parser.add_argument(
+        "--approtect-radiocore-protected",
+        action="store_true",
+        help="Protect radio core access port (disable debug access)",
+    )
+    parser.add_argument(
+        "--approtect-coresight-protected",
+        action="store_true",
+        help="Protect CoreSight access port (disable debug access)",
+    )
+    parser.add_argument(
         "--protectedmem",
         action="store_true",
         help="Enable protected memory region in UICR",
@@ -613,6 +630,15 @@ def main() -> None:
         # Handle ERASEPROTECT configuration
         if args.eraseprotect:
             uicr.ERASEPROTECT = ENABLED_VALUE
+        # Handle APPROTECT configuration
+        if args.approtect_application_protected:
+            uicr.APPROTECT.APPLICATION = PROTECTED_VALUE
+
+        if args.approtect_radiocore_protected:
+            uicr.APPROTECT.RADIOCORE = PROTECTED_VALUE
+
+        if args.approtect_coresight_protected:
+            uicr.APPROTECT.CORESIGHT = PROTECTED_VALUE
         # Handle protected memory configuration
         if args.protectedmem:
             if args.protectedmem_size_bytes % KB_4 != 0:
