@@ -143,6 +143,13 @@ struct sim7080_data {
 	uint8_t sms_buffer_pos;
 	/* Status of the last http operation */
 	uint16_t http_status;
+	/* DNS related variables */
+	struct {
+		/* Number of DNS retries */
+		uint8_t recount;
+		/* Timeout in milliseconds */
+		uint16_t timeout;
+	} dns;
 	/* Ftp related variables. */
 	struct {
 		/* User buffer for ftp data. */

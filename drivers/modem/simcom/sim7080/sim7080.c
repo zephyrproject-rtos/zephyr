@@ -832,6 +832,9 @@ static int modem_init(const struct device *dev)
 	mdata.current_sock_fd = -1;
 	mdata.current_sock_written = 0;
 
+	mdata.dns.recount = CONFIG_MODEM_SIMCOM_SIM7080_DNS_DEFAULT_RECOUNT;
+	mdata.dns.timeout = CONFIG_MODEM_SIMCOM_SIM7080_DNS_DEFAULT_TIMEOUT;
+
 	mdata.ftp.read_buffer = NULL;
 	mdata.ftp.nread = 0;
 	mdata.ftp.state = SIM7080_FTP_CONNECTION_STATE_INITIAL;

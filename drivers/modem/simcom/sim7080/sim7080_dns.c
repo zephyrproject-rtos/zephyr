@@ -115,7 +115,13 @@ static int offload_getaddrinfo(const char *node, const char *service,
 		return DNS_EAI_NONAME;
 	}
 
-	snprintk(sendbuf, sizeof(sendbuf), "AT+CDNSGIP=\"%s\",10,20000", node);
+	ret = snprintk(sendbuf, sizeof(sendbuf), "AT+CDNSGIP=\"%s\",%u,%u", node,
+				mdata.dns.recount, mdata.dns.timeout);
+	if (ret < 0) {
+		LOG_ERR("Formatting dns query failed");
+		return ret;
+	}
+
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmd, ARRAY_SIZE(cmd), sendbuf,
 				 &mdata.sem_dns, MDM_DNS_TIMEOUT);
 	if (ret < 0) {
@@ -142,3 +148,26 @@ const struct socket_dns_offload offload_dns_ops = {
 	.getaddrinfo = offload_getaddrinfo,
 	.freeaddrinfo = offload_freeaddrinfo,
 };
+
+int mdm_sim7080_dns_set_lookup_params(uint8_t recount, uint16_t timeout)
+{
+	if (recount > SIM7080_DNS_MAX_RECOUNT || timeout > SIM7080_DNS_MAX_TIMEOUT_MS) {
+		return -EINVAL;
+	}
+
+	mdata.dns.recount = recount;
+	mdata.dns.timeout = timeout;
+
+	return 0;
+}
+
+void mdm_sim7080_dns_get_lookup_params(uint8_t *recount, uint16_t *timeout)
+{
+	if (recount) {
+		*recount = mdata.dns.recount;
+	}
+
+	if (timeout) {
+		*timeout = mdata.dns.timeout;
+	}
+}
