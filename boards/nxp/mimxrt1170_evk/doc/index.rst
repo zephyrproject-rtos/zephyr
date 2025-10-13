@@ -388,6 +388,11 @@ should see the following message in the terminal:
    ***** Booting Zephyr OS v3.4.0-xxxx-xxxxxxxxxxxxx *****
    Hello World! mimxrt1170_evk
 
+.. note::
+   If you want to run any bluetooth sample on the mimxrt1170_evk@B device (build using
+   ``-DBOARD=mimxrt1170_evk@B/mimxrt1176/cm7``), the extended Bluetooth module needs to be
+   installed on the M.2 interface.
+
 ENET1G Driver
 =============
 
