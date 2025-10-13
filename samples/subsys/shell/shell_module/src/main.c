@@ -255,7 +255,7 @@ static int set_bypass(const struct shell *sh, shell_bypass_cb_t bypass)
 		in_use = true;
 	}
 
-	shell_set_bypass(sh, bypass, NULL);
+	shell_set_bypass(sh, bypass);
 
 	return 0;
 }
@@ -263,12 +263,10 @@ static int set_bypass(const struct shell *sh, shell_bypass_cb_t bypass)
 #define CHAR_1 0x18
 #define CHAR_2 0x11
 
-static void bypass_cb(const struct shell *sh, uint8_t *data, size_t len, void *user_data)
+static void bypass_cb(const struct shell *sh, uint8_t *data, size_t len)
 {
 	static uint8_t tail;
 	bool escape = false;
-
-	ARG_UNUSED(user_data);
 
 	/* Check if escape criteria is met. */
 	if (tail == CHAR_1 && data[0] == CHAR_2) {
