@@ -587,12 +587,32 @@ void configure_board_dep_params(struct nrf_wifi_board_params *board_params)
 }
 #endif /* CONFIG_NRF71_ON_IPC */
 
+static enum op_band get_nrf_wifi_op_band(void)
+{
+	if (IS_ENABLED(CONFIG_NRF_WIFI_2G_BAND)) {
+		return BAND_24G;
+	}
+#ifdef CONFIG_NRF71_ON_IPC
+	if (IS_ENABLED(CONFIG_NRF_WIFI_5G_BAND)) {
+		return BAND_5G;
+	}
+
+	if (IS_ENABLED(CONFIG_NRF_WIFI_6G_BAND)) {
+		return BAND_6G;
+	}
+	if (IS_ENABLED(CONFIG_NRF_WIFI_DUAL_BAND)) {
+		return BAND_DUAL;
+	}
+#endif /* CONFIG_NRF71_ON_IPC */
+	return BAND_ALL;
+}
+
 enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv_priv_zep)
 {
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 	void *rpu_ctx = NULL;
-	enum op_band op_band = CONFIG_NRF_WIFI_OP_BAND;
+	enum op_band op_band = get_nrf_wifi_op_band();
 #ifdef CONFIG_NRF_WIFI_LOW_POWER
 	int sleep_type = -1;
 
