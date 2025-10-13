@@ -68,6 +68,10 @@ Boards
   external NOR flash. This change currently prevents upgrade from older Zephyr release images to
   Zephyr 4.3 release images. More details in the TF-M migration and release notes.
 
+* nucleo_h753zi: the flash layout was updated and firmware upgrade may fail due to layout
+  incompatibility with the previous layout. The new layout includes storage partition enlarged to
+  2 sectors, scratch partition removed and all flash partitions reordered for better structure.
+
 * mimxrt11x0: renamed lpadc1 to lpadc2 and renamed lpadc0 to lpadc1.
 
 * NXP ``frdm_mcxa166`` is renamed to ``frdm_mcxa346``.
