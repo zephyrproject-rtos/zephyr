@@ -32,23 +32,15 @@ static void *drv84xx_emul_setup(void)
 	return &fixture;
 }
 
-static void drv84xx_emul_before(void *f)
-{
-	struct drv84xx_emul_fixture *fixture = f;
-	(void)stepper_set_reference_position(fixture->dev, 0);
-	(void)stepper_set_micro_step_res(fixture->dev, 1);
-}
-
-static void drv84xx_emul_after(void *f)
-{
-	struct drv84xx_emul_fixture *fixture = f;
-	(void)stepper_disable(fixture->dev);
-}
-
-ZTEST_F(drv84xx_emul, test_enable_on_gpio_pins)
+ZTEST_F(drv84xx_emul, test_enable_gpio_pins)
 {
 	int value = 0;
-	(void)stepper_enable(fixture->dev);
+	int err;
+
+	err = stepper_enable(fixture->dev);
+	if (err == -ENOTSUP) {
+		ztest_test_skip();
+	}
 	/* As sleep and enable pins are optional, check if they exist*/
 	if (en_pin.port != NULL) {
 		value = gpio_emul_output_get(en_pin.port, en_pin.pin);
@@ -58,17 +50,10 @@ ZTEST_F(drv84xx_emul, test_enable_on_gpio_pins)
 		value = !gpio_emul_output_get(slp_pin.port, slp_pin.pin);
 		zassert_equal(value, 0, "Sleep pin should not be set");
 	}
-}
 
-ZTEST_F(drv84xx_emul, test_enable_off_gpio_pins)
-{
-	int value = 0;
-	/* Enable first to ensure that disable works correctly and the check is not against values
-	 * from initialisation or from previous tests
-	 */
-	(void)stepper_enable(fixture->dev);
-	(void)stepper_disable(fixture->dev);
-	/* As sleep and enable pins are optional, check if they exist*/
+	/* As enable is supported, disable must also be supported */
+	zassert_ok(stepper_disable(fixture->dev));
+
 	if (en_pin.port != NULL) {
 		value = gpio_emul_output_get(en_pin.port, en_pin.pin);
 		zassert_equal(value, 0, "Enable pin should not be set");
@@ -101,4 +86,4 @@ ZTEST_F(drv84xx_emul, test_micro_step_res_set)
 		      res);
 }
 
-ZTEST_SUITE(drv84xx_emul, NULL, drv84xx_emul_setup, drv84xx_emul_before, drv84xx_emul_after, NULL);
+ZTEST_SUITE(drv84xx_emul, NULL, drv84xx_emul_setup, NULL, NULL, NULL);
