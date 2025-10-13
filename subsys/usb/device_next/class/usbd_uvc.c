@@ -577,7 +577,7 @@ static int uvc_get_vs_probe_max_size(const struct device *dev, struct uvc_probe 
 {
 	struct uvc_data *data = dev->data;
 	struct video_format *fmt = &data->video_fmt;
-	uint32_t max_frame_size = MAX(fmt->pitch, fmt->width) * fmt->height;
+	uint32_t max_frame_size = fmt->size;
 	uint32_t max_payload_size = max_frame_size + UVC_MAX_HEADER_LENGTH;
 
 	switch (request) {
@@ -633,9 +633,8 @@ static int uvc_get_vs_format_from_desc(const struct device *dev, struct video_fo
 	/* Fill the format according to what the host selected */
 	fmt->width = frame_desc->wWidth;
 	fmt->height = frame_desc->wHeight;
-	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
 
-	return 0;
+	return video_estimate_fmt_size(fmt);
 }
 
 static int uvc_get_vs_probe_struct(const struct device *dev, struct uvc_probe *const probe,
@@ -1480,8 +1479,7 @@ static void uvc_set_vs_bitrate_range(struct uvc_frame_discrete_descriptor *const
 	uint32_t bitrate_max = sys_le32_to_cpu(desc->dwMaxBitRate);
 	uint32_t bitrate;
 
-	/* Multiplication/division in this order to avoid overflow */
-	bitrate = MAX(fmt->pitch, fmt->width) * frmival_nsec / (NSEC_PER_SEC / 100) * fmt->height;
+	bitrate = (uint64_t)fmt->size * frmival_nsec / (NSEC_PER_SEC / 100);
 
 	/* Extend the min/max value to include the bitrate of this format */
 	bitrate_min = MIN(bitrate_min, bitrate);
@@ -1533,7 +1531,6 @@ static int uvc_add_vs_frame_desc(const struct device *dev,
 	struct video_format fmt = {.pixelformat = cap->pixelformat,
 				   .width = w, .height = h, .pitch = p};
 	struct video_frmival_enum fie = {.format = &fmt};
-	uint32_t max_size = MAX(p, w) * h;
 	int ret;
 
 	__ASSERT_NO_MSG(data->video_dev != NULL);
@@ -1552,7 +1549,7 @@ static int uvc_add_vs_frame_desc(const struct device *dev,
 	desc->bFrameIndex = format_desc->bNumFrameDescriptors + 1;
 	desc->wWidth = sys_cpu_to_le16(w);
 	desc->wHeight = sys_cpu_to_le16(h);
-	desc->dwMaxVideoFrameBufferSize = sys_cpu_to_le32(max_size);
+	desc->dwMaxVideoFrameBufferSize = sys_cpu_to_le32(fmt.size);
 	desc->bDescriptorSubtype = (format_desc->bDescriptorSubtype == UVC_VS_FORMAT_UNCOMPRESSED)
 		? UVC_VS_FRAME_UNCOMPRESSED : UVC_VS_FRAME_MJPEG;
 	desc->dwMinBitRate = sys_cpu_to_le32(UINT32_MAX);
