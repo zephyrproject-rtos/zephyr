@@ -28,8 +28,8 @@ extern "C" {
 
 #define I2C(idx)                DT_NODELABEL(i2c##idx)
 #define I2C_HAS_PROP(idx, prop) DT_NODE_HAS_PROP(I2C(idx), prop)
-#define I2C_FREQUENCY(idx)      I2C_NRFX_TWIM_FREQUENCY(DT_PROP_OR(I2C(idx), clock_frequency,      \
-								   I2C_BITRATE_STANDARD))
+#define I2C_FREQUENCY(node)                                                                        \
+	I2C_NRFX_TWIM_FREQUENCY(DT_PROP_OR(node, clock_frequency, I2C_BITRATE_STANDARD))
 
 /* Macro determines PM actions interrupt safety level.
  *
@@ -43,8 +43,9 @@ extern "C" {
 		UTIL_AND(									\
 			IS_ENABLED(CONFIG_PM_DEVICE_POWER_DOMAIN),				\
 			UTIL_AND(								\
-				DT_NODE_HAS_PROP(I2C(idx), power_domains),			\
-				DT_NODE_HAS_STATUS_OKAY(DT_PHANDLE(I2C(idx), power_domains))	\
+				DT_NODE_HAS_PROP(DT_DRV_INST(idx), power_domains),		\
+				DT_NODE_HAS_STATUS_OKAY(DT_PHANDLE(DT_DRV_INST(idx),		\
+								   power_domains))		\
 			)									\
 		),										\
 		(0),										\
@@ -52,14 +53,14 @@ extern "C" {
 	)
 
 struct i2c_nrfx_twim_common_config {
-	nrfx_twim_t twim;
 	nrfx_twim_config_t twim_config;
-	nrfx_twim_evt_handler_t event_handler;
+	nrfx_twim_event_handler_t event_handler;
 	uint16_t msg_buf_size;
-	void (*irq_connect)(void);
+	void (*pre_init)(void);
 	const struct pinctrl_dev_config *pcfg;
 	uint8_t *msg_buf;
 	uint16_t max_transfer_size;
+	nrfx_twim_t *twim;
 };
 
 int i2c_nrfx_twim_common_init(const struct device *dev);
