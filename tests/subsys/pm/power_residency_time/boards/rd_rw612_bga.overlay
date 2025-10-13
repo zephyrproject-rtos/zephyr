@@ -1,0 +1,17 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+stop0: &standby {
+	status = "okay";
+};
+
+stop1: &standby {
+	status = "okay";
+};
+
+stop2: &standby {
+	status = "okay";
+};
