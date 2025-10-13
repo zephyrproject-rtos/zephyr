@@ -217,6 +217,7 @@ config SOC_IT8XXX2_SERIAL_IN_RAM
 	bool "Place serial handling code in RAM"
 	select SOC_IT8XXX2_USE_ILM
 	select SOC_IT8XXX2_LIBRARY_TO_RAM
+	depends on !LTO
 	help
 	  Place serial handling (Include uart_ns16550.c and uart_ite_it8xxx2.c) code
 	  in ILM. This can improve performance.
@@ -225,6 +226,7 @@ config SOC_IT8XXX2_KERNEL_IN_RAM
 	bool "Place kernel handling code in RAM"
 	select SOC_IT8XXX2_USE_ILM
 	select SOC_IT8XXX2_LIBRARY_TO_RAM
+	depends on !LTO
 	help
 	  Place kernel handling code in ILM. This can significantly improve performance.
 
@@ -232,6 +234,7 @@ config SOC_IT8XXX2_ZEPHYR_IN_RAM
 	bool "Place zephyr handling code in RAM"
 	select SOC_IT8XXX2_USE_ILM
 	select SOC_IT8XXX2_LIBRARY_TO_RAM
+	depends on !LTO
 	help
 	  Place zephyr handling code in ILM. This can significantly improve performance.
 
