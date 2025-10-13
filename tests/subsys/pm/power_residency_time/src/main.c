@@ -31,6 +31,9 @@ int main(void)
 		k_usleep(stop2_min_residency_time - DIFF_RESIDENCY_TIME_STATE_2);
 		printk("\nSleep time = min_residency_time of state 2\n");
 		k_usleep(stop2_min_residency_time);
+#ifdef CONFIG_ENABLE_PM_MEASURE
+		k_msleep(CONFIG_PM_STATE_SUSTAIN_DURATION * 1000);
+#endif
 		printk("\nWakeup.\n");
 
 		/**
