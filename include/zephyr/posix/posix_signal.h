@@ -43,11 +43,8 @@ typedef int uid_t;
 #define __uid_t_defined
 #endif
 
-#if !defined(_TIME_T_DECLARED) && !defined(__time_t_defined)
-typedef long time_t;
-#define _TIME_T_DECLARED
-#define __time_t_defined
-#endif
+/* time_t must be defined by the libc time.h */
+#include <time.h>
 
 #if !defined(_TIMESPEC_DECLARED) && !defined(__timespec_defined)
 struct timespec {
