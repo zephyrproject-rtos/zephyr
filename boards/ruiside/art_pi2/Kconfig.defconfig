@@ -1,0 +1,12 @@
+# ART-Pi2 board configuration
+#
+# Copyright (c) 2025 Shan Pen <bricle031@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if DISK_DRIVER_SDMMC
+
+config SDMMC_STM32_CLOCK_CHECK
+	default n
+
+endif # DISK_DRIVER_SDMMC
