@@ -20,7 +20,7 @@ int i2c_nrfx_twim_recover_bus(const struct device *dev)
 	enum pm_device_state state;
 	uint32_t scl_pin;
 	uint32_t sda_pin;
-	nrfx_err_t err;
+	int err;
 
 	scl_pin = nrf_twim_scl_pin_get(config->twim->p_twim);
 	sda_pin = nrf_twim_sda_pin_get(config->twim->p_twim);
@@ -39,7 +39,7 @@ int i2c_nrfx_twim_recover_bus(const struct device *dev)
 		nrfx_twim_enable(config->twim);
 	}
 
-	return (err == NRFX_SUCCESS ? 0 : -EBUSY);
+	return err;
 }
 
 int i2c_nrfx_twim_configure(const struct device *dev, uint32_t i2c_config)
@@ -80,8 +80,6 @@ int i2c_nrfx_twim_msg_transfer(const struct device *dev, uint8_t flags, uint8_t 
 		.p_primary_buf = buf,
 		.primary_length = buf_len,
 	};
-	nrfx_err_t res;
-	int ret = 0;
 
 	if (buf_len > config->max_transfer_size) {
 		LOG_ERR("Trying to transfer more than the maximum size "
@@ -90,16 +88,8 @@ int i2c_nrfx_twim_msg_transfer(const struct device *dev, uint8_t flags, uint8_t 
 		return -ENOSPC;
 	}
 
-	res = nrfx_twim_xfer(config->twim, &cur_xfer,
-			     (flags & I2C_MSG_STOP) ? 0 : NRFX_TWIM_FLAG_TX_NO_STOP);
-	if (res != NRFX_SUCCESS) {
-		if (res == NRFX_ERROR_BUSY) {
-			ret = -EBUSY;
-		} else {
-			ret = -EIO;
-		}
-	}
-	return ret;
+	return nrfx_twim_xfer(config->twim, &cur_xfer,
+			      (flags & I2C_MSG_STOP) ? 0 : NRFX_TWIM_FLAG_TX_NO_STOP);
 }
 
 void twim_nrfx_pm_resume(const struct device *dev)
@@ -142,8 +132,8 @@ int i2c_nrfx_twim_common_init(const struct device *dev)
 
 	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
 
-	if (nrfx_twim_init(config->twim, &config->twim_config, config->event_handler,
-			   (void *)dev) != NRFX_SUCCESS) {
+	if (nrfx_twim_init(config->twim, &config->twim_config, config->event_handler, (void *)dev) <
+	    0) {
 		LOG_ERR("Failed to initialize device: %s", dev->name);
 		return -EIO;
 	}
