@@ -18,11 +18,15 @@ set(QEMU_FLAGS_${ARCH}
   -m 2g
 )
 
+# Add SMP support if configured
+if(CONFIG_SMP AND CONFIG_MP_MAX_NUM_CPUS GREATER 1)
+  list(APPEND QEMU_SMP_FLAGS -smp cpus=${CONFIG_MP_MAX_NUM_CPUS},maxcpus=20)
+endif()
+
 # Set TF-A platform for ARM Trusted Firmware builds
 if(CONFIG_BUILD_WITH_TFA)
   set(TFA_PLAT "versal_net")
-  # Add Versal NET specific TF-A build parameters
-  set(TFA_EXTRA_ARGS "TFA_NO_PM=1;PRELOADED_BL33_BASE=0x0")
+  set(TFA_EXTRA_ARGS "RESET_TO_BL31=1;PRELOADED_BL33_BASE=0x0;TFA_NO_PM=1;VERSAL_NET_ATF_MEM_BASE=0xf000000;VERSAL_NET_ATF_MEM_SIZE=0x50000")
   if(CONFIG_TFA_MAKE_BUILD_TYPE_DEBUG)
     set(BUILD_FOLDER "debug")
   else()
