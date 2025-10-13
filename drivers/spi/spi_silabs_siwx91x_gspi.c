@@ -36,6 +36,7 @@ LOG_MODULE_REGISTER(spi_siwx91x_gspi, CONFIG_SPI_LOG_LEVEL);
 /* Structure for DMA configuration */
 struct gspi_siwx91x_dma_channel {
 	const struct device *dma_dev;
+	uint8_t dma_slot;
 	int chan_nb;
 #ifdef CONFIG_SPI_SILABS_SIWX91X_GSPI_DMA
 	struct dma_block_config dma_descriptors[CONFIG_SPI_SILABS_SIWX91X_GSPI_DMA_MAX_BLOCKS];
@@ -227,6 +228,7 @@ static int gspi_siwx91x_dma_config(const struct device *dev,
 		.dest_burst_length = dfs,
 		.block_count = block_count,
 		.head_block = channel->dma_descriptors,
+		.dma_slot = channel->dma_slot,
 		.dma_callback = !is_tx ? &gspi_siwx91x_dma_rx_callback : NULL,
 		.user_data = (void *)dev,
 	};
@@ -670,6 +672,7 @@ static DEVICE_API(spi, gspi_siwx91x_driver_api) = {
 	.dma_##dir = {                                                                             \
 		.chan_nb = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),                         \
 		.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(index, dir)),                   \
+		.dma_slot = DT_DMAS_CELL_BY_NAME_OR(DT_DRV_INST(index), dir, slot, 0xFF),          \
 	},
 
 #define SPI_SILABS_SIWX91X_GSPI_DMA_CHANNEL(index, dir)                                            \
