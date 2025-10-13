@@ -46,6 +46,9 @@ typedef int uid_t;
 /* time_t must be defined by the libc time.h */
 #include <time.h>
 
+#if __STDC_VERSION__ >= 201112L
+/* struct timespec must be defined in the libc time.h */
+#else
 #if !defined(_TIMESPEC_DECLARED) && !defined(__timespec_defined)
 struct timespec {
 	time_t tv_sec;
@@ -53,6 +56,7 @@ struct timespec {
 };
 #define _TIMESPEC_DECLARED
 #define __timespec_defined
+#endif
 #endif
 
 /* sig_atomic_t must be defined by the libc signal.h */
