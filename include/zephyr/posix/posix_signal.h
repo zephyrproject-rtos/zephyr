@@ -111,7 +111,8 @@ union sigval {
 #if !defined(_SIGEVENT_DECLARED) && !defined(__sigevent_defined)
 struct sigevent {
 #if defined(_POSIX_THREADS) || defined(__DOXYGEN__)
-	pthread_attr_t *sigev_thread_attr;
+	pthread_attr_t *sigev_notify_attributes;
+	void (*sigev_notify_function)(union sigval value);
 #endif
 	union sigval sigev_value;
 	int sigev_notify;
