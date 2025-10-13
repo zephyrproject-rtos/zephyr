@@ -685,7 +685,7 @@ static void prov_confirm(const uint8_t *data)
 static void prov_failed(const uint8_t *data)
 {
 	LOG_WRN("Error: 0x%02x", data[0]);
-	reset_state();
+	prov_link_close(PROV_BEARER_LINK_STATUS_FAIL);
 }
 
 static void local_input_complete(void)
