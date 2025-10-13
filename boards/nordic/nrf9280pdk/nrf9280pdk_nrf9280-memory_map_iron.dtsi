@@ -16,16 +16,19 @@
 
 / {
 	reserved-memory {
-		cpuapp_cpusys_ipc_shm: memory@2f88f600 {
-			reg = <0x2f88f600 0x80>;
+		/* Workaround for a data cache related issue with SoC1.1, use secure addresses
+		 * for cpuapp_cpusys_ipc_shm, cpusys_cpuapp_ipc_shm and cpusec_cpuapp_ipc_shm.
+		 */
+		cpuapp_cpusys_ipc_shm: memory@3f88f600 {
+			reg = <0x3f88f600 0x80>;
 		};
 
-		cpusys_cpuapp_ipc_shm: memory@2f88f680 {
-			reg = <0x2f88f680 0x80>;
+		cpusys_cpuapp_ipc_shm: memory@3f88f680 {
+			reg = <0x3f88f680 0x80>;
 		};
 
-		cpusec_cpuapp_ipc_shm: memory@2f88fb80 {
-			reg = <0x2f88fb80 0x80>;
+		cpusec_cpuapp_ipc_shm: memory@3f88fb80 {
+			reg = <0x3f88fb80 0x80>;
 		};
 
 		cpuapp_ironside_se_event_report: memory@2f88fc00 {
