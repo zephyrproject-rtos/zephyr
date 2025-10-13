@@ -45,13 +45,29 @@
 #define APLIC_MSIADDRCFGH_BAPPN_MASK 0xFFF /* Upper address bits */
 
 /* sourcecfg bits */
-#define APLIC_SOURCECFG_D_BIT    10
-#define APLIC_SM_INACTIVE        0x0
-#define APLIC_SM_DETACHED        0x1
-#define APLIC_SM_EDGE_RISE       0x4
-#define APLIC_SM_EDGE_FALL       0x5
-#define APLIC_SM_LEVEL_HIGH      0x6
-#define APLIC_SM_LEVEL_LOW       0x7
+#define APLIC_SOURCECFG_D_BIT   10
+#define APLIC_SOURCECFG_SM_MASK 0x7 /* Source mode field mask (bits 2:0) */
+#define APLIC_SM_INACTIVE       0x0
+#define APLIC_SM_DETACHED       0x1
+#define APLIC_SM_EDGE_RISE      0x4
+#define APLIC_SM_EDGE_FALL      0x5
+#define APLIC_SM_LEVEL_HIGH     0x6
+#define APLIC_SM_LEVEL_LOW      0x7
+
+/* TARGET register fields (for MSI routing) - ARC-V APLIC format */
+#define APLIC_TARGET_HART_SHIFT 18      /* Hart index starts at bit 18 */
+#define APLIC_TARGET_HART_MASK  0x3FFF  /* 14-bit hart index (bits 31:18) */
+#define APLIC_TARGET_MSI_DEL    BIT(11) /* MSI delivery mode: 0=DMSI, 1=MMSI */
+#define APLIC_TARGET_EIID_MASK  0x7FF   /* 11-bit EIID (bits 10:0) */
+
+/* GENMSI register fields (for software-triggered MSI) - ARC-V APLIC TRM Table 6-37 */
+#define APLIC_GENMSI_HART_SHIFT    18      /* Hart index starts at bit 18 */
+#define APLIC_GENMSI_HART_MASK     0x3FFF  /* 14-bit hart index (bits 31:18) */
+#define APLIC_GENMSI_CONTEXT_SHIFT 13      /* Context/Guest field (bits 17:13) */
+#define APLIC_GENMSI_CONTEXT_MASK  0x1F    /* 5-bit context field (for DMSI) */
+#define APLIC_GENMSI_BUSY          BIT(12) /* Busy bit (read-only status) */
+#define APLIC_GENMSI_MMSI_MODE     BIT(11) /* MSI delivery: 0=DMSI, 1=MMSI */
+#define APLIC_GENMSI_EIID_MASK     0x7FF   /* 11-bit EIID (bits 10:0) */
 
 static inline uint32_t aplic_sourcecfg_off(unsigned int src)
 {
