@@ -502,6 +502,18 @@ int mqtt_sn_predefine_topic(struct mqtt_sn_client *client, uint16_t topic_id,
 			    struct mqtt_sn_data *topic_name);
 
 /**
+ * @brief Define a short topic.
+ *
+ * Can be called before mqtt_sn_connect, because short topics are never cleared.
+ *
+ * @param[in] client The MQTT-SN client to define the topic on.
+ * @param[in] topic_name The name of the topic. Must be exactly 2 bytes long.
+ *
+ * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ */
+int mqtt_sn_define_short_topic(struct mqtt_sn_client *client, struct mqtt_sn_data *topic_name);
+
+/**
  * @brief Send a will topic update to the server.
  *
  * Call this to send the will topic stored in client->will_topic to the server.

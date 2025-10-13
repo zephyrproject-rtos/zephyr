@@ -14,6 +14,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/random/random.h>
 #include <zephyr/net/mqtt_sn.h>
+#include <zephyr/sys/byteorder.h>
 LOG_MODULE_REGISTER(net_mqtt_sn, CONFIG_MQTT_SN_LOG_LEVEL);
 
 #define MQTT_SN_NET_BUFS (CONFIG_MQTT_SN_LIB_MAX_PUBLISH)
@@ -1942,7 +1943,32 @@ int mqtt_sn_predefine_topic(struct mqtt_sn_client *client, uint16_t topic_id,
 	sys_slist_append(&client->topic, &topic->next);
 
 	return 0;
+}
 
+int mqtt_sn_define_short_topic(struct mqtt_sn_client *client, struct mqtt_sn_data *topic_name)
+{
+	struct mqtt_sn_topic *topic;
+
+	if (client == NULL || topic_name == NULL || topic_name->size != 2) {
+		return -EINVAL;
+	}
+
+	topic = mqtt_sn_topic_find_by_name(client, topic_name);
+	if (topic != NULL) {
+		return -EALREADY;
+	}
+
+	topic = mqtt_sn_topic_create(client, topic_name);
+	if (topic == NULL) {
+		return -ENOMEM;
+	}
+
+	topic->state = MQTT_SN_TOPIC_STATE_REGISTERED;
+	topic->topic_id = sys_get_be16(topic_name->data);
+	topic->type = MQTT_SN_TOPIC_TYPE_SHORT;
+	sys_slist_append(&client->topic, &topic->next);
+
+	return 0;
 }
 
 static int attempt_will_update(struct mqtt_sn_client *client, struct mqtt_sn_will_update *state)
