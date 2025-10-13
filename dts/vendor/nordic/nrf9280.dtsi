@@ -385,6 +385,7 @@
 				reg-names = "wrapper", "core";
 				interrupts = <149 NRF_DEFAULT_IRQ_PRIORITY>;
 				clock-frequency = <DT_FREQ_M(400)>;
+				packet-data-limit = <65536>;
 				fifo-depth = <32>;
 				status = "disabled";
 			};
