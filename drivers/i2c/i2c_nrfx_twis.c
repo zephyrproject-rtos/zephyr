@@ -116,7 +116,7 @@ static void shim_nrf_twis_handle_read_req(const struct device *dev)
 	nrfx_twis_t *twis = &dev_data->twis;
 	uint8_t *buf;
 	uint32_t buf_size;
-	nrfx_err_t err;
+	int err;
 
 	if (callbacks->buf_read_requested(target_config, &buf, &buf_size)) {
 		LOG_ERR("no buffer provided");
@@ -131,7 +131,7 @@ static void shim_nrf_twis_handle_read_req(const struct device *dev)
 	memcpy(dev_config->buf, buf, buf_size);
 
 	err = nrfx_twis_tx_prepare(twis, dev_config->buf, buf_size);
-	if (err != NRFX_SUCCESS) {
+	if (err < 0) {
 		LOG_ERR("tx prepare failed");
 		return;
 	}
@@ -142,10 +142,10 @@ static void shim_nrf_twis_handle_write_req(const struct device *dev)
 	struct shim_nrf_twis_data *dev_data = dev->data;
 	const struct shim_nrf_twis_config *dev_config = dev->config;
 	nrfx_twis_t *twis = &dev_data->twis;
-	nrfx_err_t err;
+	int err;
 
 	err = nrfx_twis_rx_prepare(twis, dev_config->buf, SHIM_NRF_TWIS_BUF_SIZE);
-	if (err != NRFX_SUCCESS) {
+	if (err < 0) {
 		LOG_ERR("rx prepare failed");
 		return;
 	}
@@ -209,7 +209,7 @@ static int shim_nrf_twis_target_register(const struct device *dev,
 {
 	struct shim_nrf_twis_data *dev_data = dev->data;
 	nrfx_twis_t *twis = &dev_data->twis;
-	nrfx_err_t err;
+	int err;
 	const nrfx_twis_config_t config = {
 		.addr = {
 			target_config->address,
@@ -226,7 +226,7 @@ static int shim_nrf_twis_target_register(const struct device *dev,
 	shim_nrf_twis_disable(dev);
 
 	err = nrfx_twis_reconfigure(twis, &config);
-	if (err != NRFX_SUCCESS) {
+	if (err < 0) {
 		return -ENODEV;
 	}
 
@@ -262,7 +262,7 @@ static int shim_nrf_twis_init(const struct device *dev)
 {
 	struct shim_nrf_twis_data *dev_data = dev->data;
 	const struct shim_nrf_twis_config *dev_config = dev->config;
-	nrfx_err_t err;
+	int err;
 	const nrfx_twis_config_t config = {
 		.skip_gpio_cfg = true,
 		.skip_psel_cfg = true,
@@ -270,7 +270,7 @@ static int shim_nrf_twis_init(const struct device *dev)
 
 	dev_config->pre_init();
 	err = nrfx_twis_init(&dev_data->twis, &config, dev_config->event_handler);
-	if (err != NRFX_SUCCESS) {
+	if (err < 0) {
 		return -ENODEV;
 	}
 
