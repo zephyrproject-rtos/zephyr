@@ -23,12 +23,12 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config CRYPTO_MBEDTLS_SHIM
 	bool "Mbed TLS shim driver [EXPERIMENTAL]"
-	select MBEDTLS
+	select PSA_CRYPTO
 	select MBEDTLS_ENABLE_HEAP
-	select MBEDTLS_SHA224
-	select MBEDTLS_SHA256
-	select MBEDTLS_SHA384
-	select MBEDTLS_SHA512
+	imply PSA_WANT_ALG_SHA_224
+	imply PSA_WANT_ALG_SHA_256
+	imply PSA_WANT_ALG_SHA_384
+	imply PSA_WANT_ALG_SHA_512
 	select MBEDTLS_CIPHER_AES_ENABLED
 	select EXPERIMENTAL
 	help

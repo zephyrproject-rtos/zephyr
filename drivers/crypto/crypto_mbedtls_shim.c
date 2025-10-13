@@ -27,8 +27,7 @@
 #endif
 #include <mbedtls/aes.h>
 
-#include <mbedtls/sha256.h>
-#include <mbedtls/sha512.h>
+#include <psa/crypto.h>
 
 #define MBEDTLS_SUPPORT (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | \
 		      CAP_NO_IV_PREFIX)
@@ -44,13 +43,12 @@ struct mbedtls_shim_session {
 		mbedtls_gcm_context gcm_ctx;
 #endif
 		mbedtls_aes_context aes_ctx;
-		mbedtls_sha256_context sha256_ctx;
-		mbedtls_sha512_context sha512_ctx;
+		psa_hash_operation_t hash_op;
 	};
 	bool in_use;
 	union {
 		enum cipher_mode mode;
-		enum hash_algo algo;
+		psa_algorithm_t psa_alg;
 	};
 };
 
@@ -469,25 +467,23 @@ static int mbedtls_cipher_session_free(const struct device *dev, struct cipher_c
 	return 0;
 }
 
-static int mbedtls_sha256_compute(struct hash_ctx *ctx, struct hash_pkt *pkt,
-			       bool finish)
+static int mbedtls_hash_compute(struct hash_ctx *ctx, struct hash_pkt *pkt, bool finish)
 {
-	int ret;
-	mbedtls_sha256_context *sha256_ctx = MBEDTLS_GET_CTX(ctx, sha256);
-
+	struct mbedtls_shim_session *session = ctx->drv_sessn_state;
+	size_t hash_out_len;
+	psa_status_t status;
 
 	if (!ctx->started) {
-		ret = mbedtls_sha256_starts(sha256_ctx,
-					    MBEDTLS_GET_ALGO(ctx) == CRYPTO_HASH_ALGO_SHA224);
-		if (ret != 0) {
-			LOG_ERR("Could not compute the hash");
-			return -EINVAL;
+		status = psa_hash_setup(&session->hash_op, session->psa_alg);
+		if (status != PSA_SUCCESS) {
+			LOG_ERR("PSA hash operation setup failed");
+			return -EIO;
 		}
 		ctx->started = true;
 	}
 
-	ret = mbedtls_sha256_update(sha256_ctx, pkt->in_buf, pkt->in_len);
-	if (ret != 0) {
+	status = psa_hash_update(&session->hash_op, pkt->in_buf, pkt->in_len);
+	if (status != PSA_SUCCESS) {
 		LOG_ERR("Could not update the hash");
 		ctx->started = false;
 		return -EINVAL;
@@ -495,43 +491,13 @@ static int mbedtls_sha256_compute(struct hash_ctx *ctx, struct hash_pkt *pkt,
 
 	if (finish) {
 		ctx->started = false;
-		ret = mbedtls_sha256_finish(sha256_ctx, pkt->out_buf);
-		if (ret != 0) {
-			LOG_ERR("Could not compute the hash");
-			return -EINVAL;
-		}
-	}
-
-	return 0;
-}
-
-static int mbedtls_sha512_compute(struct hash_ctx *ctx, struct hash_pkt *pkt,
-			       bool finish)
-{
-	int ret;
-	mbedtls_sha512_context *sha512_ctx = MBEDTLS_GET_CTX(ctx, sha512);
-
-	if (!ctx->started) {
-		ret = mbedtls_sha512_starts(sha512_ctx,
-					    MBEDTLS_GET_ALGO(ctx) == CRYPTO_HASH_ALGO_SHA384);
-		if (ret != 0) {
-			LOG_ERR("Could not compute the hash");
-			return -EINVAL;
-		}
-		ctx->started = true;
-	}
-
-	ret = mbedtls_sha512_update(sha512_ctx, pkt->in_buf, pkt->in_len);
-	if (ret != 0) {
-		LOG_ERR("Could not update the hash");
-		ctx->started = false;
-		return -EINVAL;
-	}
-
-	if (finish) {
-		ctx->started = false;
-		ret = mbedtls_sha512_finish(sha512_ctx, pkt->out_buf);
-		if (ret != 0) {
+		/* "strct hash_pkt" has no information about the size of the
+		 * output buffer, so we assume that it's at least large enough
+		 * to contain the hashing result, but this is not safe.
+		 */
+		status = psa_hash_finish(&session->hash_op, pkt->out_buf,
+					 PSA_HASH_LENGTH(session->psa_alg), &hash_out_len);
+		if (status != PSA_SUCCESS) {
 			LOG_ERR("Could not compute the hash");
 			return -EINVAL;
 		}
@@ -544,18 +510,11 @@ static int mbedtls_hash_session_setup(const struct device *dev,
 				   struct hash_ctx *ctx,
 				   enum hash_algo algo)
 {
+	struct mbedtls_shim_session *session;
 	int ctx_idx;
 
 	if (ctx->flags & ~(MBEDTLS_SUPPORT)) {
 		LOG_ERR("Unsupported flag");
-		return -ENOTSUP;
-	}
-
-	if ((algo != CRYPTO_HASH_ALGO_SHA224) &&
-	    (algo != CRYPTO_HASH_ALGO_SHA256) &&
-	    (algo != CRYPTO_HASH_ALGO_SHA384) &&
-	    (algo != CRYPTO_HASH_ALGO_SHA512)) {
-		LOG_ERR("Unsupported algo: %d", algo);
 		return -ENOTSUP;
 	}
 
@@ -565,22 +524,39 @@ static int mbedtls_hash_session_setup(const struct device *dev,
 		return -ENOSPC;
 	}
 
-	mbedtls_sessions[ctx_idx].algo = algo;
-	ctx->drv_sessn_state = &mbedtls_sessions[ctx_idx];
-	ctx->started = false;
-
-	if ((algo == CRYPTO_HASH_ALGO_SHA224) ||
-	    (algo == CRYPTO_HASH_ALGO_SHA256)) {
-		mbedtls_sha256_context *sha256_ctx =
-			&mbedtls_sessions[ctx_idx].sha256_ctx;
-		mbedtls_sha256_init(sha256_ctx);
-		ctx->hash_hndlr = mbedtls_sha256_compute;
-	} else {
-		mbedtls_sha512_context *sha512_ctx =
-			&mbedtls_sessions[ctx_idx].sha512_ctx;
-		mbedtls_sha512_init(sha512_ctx);
-		ctx->hash_hndlr = mbedtls_sha512_compute;
+	session = &mbedtls_sessions[ctx_idx];
+	session->hash_op = psa_hash_operation_init();
+	switch (algo) {
+#if CONFIG_PSA_WANT_ALG_SHA_224
+	case CRYPTO_HASH_ALGO_SHA224:
+		session->psa_alg = PSA_ALG_SHA_224;
+		break;
+#endif
+#if CONFIG_PSA_WANT_ALG_SHA_256
+	case CRYPTO_HASH_ALGO_SHA256:
+		session->psa_alg = PSA_ALG_SHA_256;
+		break;
+#endif
+#if CONFIG_PSA_WANT_ALG_SHA_384
+	case CRYPTO_HASH_ALGO_SHA384:
+		session->psa_alg = PSA_ALG_SHA_384;
+		break;
+#endif
+#if CONFIG_PSA_WANT_ALG_SHA_512
+	case CRYPTO_HASH_ALGO_SHA512:
+		session->psa_alg = PSA_ALG_SHA_512;
+		break;
+#endif
+	default:
+		LOG_ERR("Unsupported algo: %d", algo);
+		return -EINVAL;
 	}
+
+	session->in_use = true;
+
+	ctx->hash_hndlr = mbedtls_hash_compute;
+	ctx->drv_sessn_state = session;
+	ctx->started = false;
 
 	return 0;
 }
@@ -590,10 +566,9 @@ static int mbedtls_hash_session_free(const struct device *dev, struct hash_ctx *
 	struct mbedtls_shim_session *mbedtls_session =
 		(struct mbedtls_shim_session *)ctx->drv_sessn_state;
 
-	if (mbedtls_session->algo == CRYPTO_HASH_ALGO_SHA256) {
-		mbedtls_sha256_free(&mbedtls_session->sha256_ctx);
-	} else {
-		mbedtls_sha512_free(&mbedtls_session->sha512_ctx);
+	if (psa_hash_abort(&mbedtls_session->hash_op) != PSA_SUCCESS) {
+		LOG_ERR("PSA hash abort failed");
+		return -EIO;
 	}
 	k_mutex_lock(&mbedtls_sessions_lock, K_FOREVER);
 	mbedtls_session->in_use = false;
@@ -601,7 +576,6 @@ static int mbedtls_hash_session_free(const struct device *dev, struct hash_ctx *
 
 	return 0;
 }
-
 
 static int mbedtls_query_caps(const struct device *dev)
 {
