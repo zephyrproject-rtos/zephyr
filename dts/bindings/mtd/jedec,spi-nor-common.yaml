@@ -103,6 +103,18 @@ properties:
 
       Only supported on Macronix MX25R Ultra Low Power series.
 
+  winbond,w25q-output-driver-strength:
+    type: string
+    enum:
+      - "100%"
+      - "75%"
+      - "50%"
+      - "25%"
+    description:
+      Select to configure the output driver strength for read operations.
+
+      Only supported on Winbond W25Q series.
+
   use-4b-addr-opcodes:
     type: boolean
     description: |
