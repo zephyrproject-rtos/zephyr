@@ -101,14 +101,14 @@ typedef struct {
 union sigval; /* forward declaration (to preserve spec order) */
 
 #if !defined(_SIGEVENT_DECLARED) && !defined(__sigevent_defined)
-typedef struct {
+struct sigevent {
 #if defined(_POSIX_THREADS) || defined(__DOXYGEN__)
 	pthread_attr_t *sigev_thread_attr;
 #endif
 	union sigval sigev_value;
 	int sigev_notify;
 	int sigev_signo;
-} sigevent_t;
+};
 #define _SIGEVENT_DECLARED
 #define __sigevent_defined
 #endif
