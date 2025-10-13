@@ -62,6 +62,15 @@ static int counter_mspm0_get_value(const struct device *dev, uint32_t *ticks)
 	return 0;
 }
 
+static int counter_mspm0_reset(const struct device *dev)
+{
+	const struct counter_mspm0_config *config = dev->config;
+
+	DL_Timer_setLoadValue(config->base, 0);
+
+	return 0;
+}
+
 static int counter_mspm0_set_top_value(const struct device *dev,
 				       const struct counter_top_cfg *cfg)
 {
@@ -228,6 +237,7 @@ static DEVICE_API(counter, mspm0_counter_api) = {
 	.start = counter_mspm0_start,
 	.stop = counter_mspm0_stop,
 	.get_value = counter_mspm0_get_value,
+	.reset = counter_mspm0_reset,
 	.set_top_value = counter_mspm0_set_top_value,
 	.get_pending_int = counter_mspm0_get_pending_int,
 	.get_top_value = counter_mspm0_get_top_value,
