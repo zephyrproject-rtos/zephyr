@@ -674,7 +674,6 @@ static DEVICE_API(spi, gspi_siwx91x_driver_api) = {
 		.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(index, dir)),                   \
 		.dma_slot = DT_DMAS_CELL_BY_NAME_OR(DT_DRV_INST(index), dir, slot, 0xFF),          \
 	},
-
 #define SPI_SILABS_SIWX91X_GSPI_DMA_CHANNEL(index, dir)                                            \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(index, dmas),                                            \
 		    (SPI_SILABS_SIWX91X_GSPI_DMA_CHANNEL_INIT(index, dir)), ())
@@ -688,9 +687,9 @@ static DEVICE_API(spi, gspi_siwx91x_driver_api) = {
 		SPI_CONTEXT_INIT_LOCK(gspi_data_##inst, ctx),                                      \
 		SPI_CONTEXT_INIT_SYNC(gspi_data_##inst, ctx),                                      \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx)                            \
-			SPI_SILABS_SIWX91X_GSPI_DMA_CHANNEL(inst, rx)                              \
-				SPI_SILABS_SIWX91X_GSPI_DMA_CHANNEL(inst, tx)                      \
-		};                                                                                 \
+		SPI_SILABS_SIWX91X_GSPI_DMA_CHANNEL(inst, rx)                                      \
+		SPI_SILABS_SIWX91X_GSPI_DMA_CHANNEL(inst, tx)                                      \
+	};                                                                                         \
 	static const struct gspi_siwx91x_config gspi_config_##inst = {                             \
 		.reg = (GSPI0_Type *)DT_INST_REG_ADDR(inst),                                       \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                             \
