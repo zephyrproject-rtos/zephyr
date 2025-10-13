@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(co5300, CONFIG_DISPLAY_LOG_LEVEL);
 #include <fsl_lcdif.h>
 #include <fsl_mipi_dsi.h>
 
+/* display command structure passed to mipi to control the display */
 struct display_cmds {
 	uint8_t *cmd_code;
 	uint8_t size;
@@ -499,11 +500,16 @@ static int co5300_init(const struct device *dev)
 	const struct co5300_config *config = dev->config;
 	struct co5300_data *data = dev->data;
 	struct mipi_dsi_device mdev = {0};
+	struct display_cmds lcm_init_settings = {0};
+	uint8_t* ptr_to_curr_cmd = 0;
+	uint8_t* ptr_to_last_cmd = 0;
+	uint8_t cmd_params = 0;
+	uint8_t cmd_param_size = 0;
+	uint8_t curr_cmd = 0;
 
 	/* Attach to MIPI DSI host */
 	mdev.data_lanes = config->num_of_lanes;
 	mdev.pixfmt = data->pixel_format;
-
 	int ret = mipi_dsi_attach(config->mipi_dsi, config->channel, &mdev);
 	if (ret < 0) {
 		LOG_ERR("Could not attach to MIPI-DSI host");
@@ -550,36 +556,30 @@ static int co5300_init(const struct device *dev)
 	}
 
 	/* Set the LCM init settings. */
-	struct display_cmds lcm_init_settings = {};
 	lcm_init_settings.cmd_code = lcm_init_cmds;
 	lcm_init_settings.size = ARRAY_SIZE(lcm_init_cmds);
-	uint8_t* curr_cmd = lcm_init_settings.cmd_code;
-
-	while (curr_cmd != (lcm_init_settings.cmd_code + lcm_init_settings.size)) {
-		if (curr_cmd > (lcm_init_settings.cmd_code + lcm_init_settings.size)) {
-			LOG_ERR("Logical error when sending mipi command code.");
-			return -EILSEQ;
-		}
-
-		uint32_t cmd_code = (uint32_t)*curr_cmd++;
-		uint32_t param_size = *curr_cmd++;
-		uint32_t param = *curr_cmd;
-		curr_cmd += param_size;
+	ptr_to_curr_cmd = lcm_init_settings.cmd_code;
+	ptr_to_last_cmd = lcm_init_settings.cmd_code + lcm_init_settings.size;
+	while (ptr_to_curr_cmd < ptr_to_last_cmd) {
+		/* Walk through the display_cmds array, incrementing the ptr by the param size */
+		curr_cmd = *ptr_to_curr_cmd++;
+		cmd_param_size = *ptr_to_curr_cmd++;
+		cmd_params = *ptr_to_curr_cmd;
+		ptr_to_curr_cmd += cmd_param_size;
 
 		ret = mipi_dsi_dcs_write(config->mipi_dsi, config->channel,
-				cmd_code, &param, param_size);
+				curr_cmd, &cmd_params, cmd_param_size);
 		if (ret < 0) {
 			return ret;
 		}
 	}
 
 	/* Set pixel format */
-	int param = 0;
 	if (data->pixel_format == MIPI_DSI_PIXFMT_RGB888) {
-		param = MIPI_DCS_PIXEL_FORMAT_24BIT;
+		cmd_params = (uint8_t)MIPI_DCS_PIXEL_FORMAT_24BIT;
 		data->bytes_per_pixel = 3;
 	} else if (data->pixel_format == MIPI_DSI_PIXFMT_RGB565) {
-		param = MIPI_DCS_PIXEL_FORMAT_16BIT;
+		cmd_params = (uint8_t)MIPI_DCS_PIXEL_FORMAT_16BIT;
 		data->bytes_per_pixel = 2;
 	} else {
 		/* Unsupported pixel format */
@@ -587,8 +587,7 @@ static int co5300_init(const struct device *dev)
 		return -ENOTSUP;
 	}
 	ret = mipi_dsi_dcs_write(config->mipi_dsi, config->channel,
-				MIPI_DCS_SET_PIXEL_FORMAT, &param, 1);
-
+				MIPI_DCS_SET_PIXEL_FORMAT, &cmd_params, 1);
 	if (ret < 0) {
 		return ret;
 	}
@@ -601,8 +600,7 @@ static int co5300_init(const struct device *dev)
 		return ret;
 	}
 
-
-	/* Commands after the monitor is directed to go to sleep should be delayed 150ms */
+	/* After the monitor is directed to go to sleep, commands should be delayed 150ms */
 	k_sleep(K_MSEC(150));
 
 	/* Setup backlight */
@@ -614,7 +612,7 @@ static int co5300_init(const struct device *dev)
 		}
 	}
 
-	/* Setup tear effect pin */
+	/* Setup tear effect pin and callback */
 	if (config->tear_effect_gpio.port != NULL) {
 		ret = gpio_pin_configure_dt(&config->tear_effect_gpio, GPIO_INPUT);
 		if (ret < 0) {
@@ -629,7 +627,6 @@ static int co5300_init(const struct device *dev)
 			return ret;
 		}
 
-		/* Init and install GPIO callback */
 		gpio_init_callback(&data->tear_effect_gpio_cb, co5300_tear_effect_isr_handler,
 				BIT(config->tear_effect_gpio.pin));
 		ret = gpio_add_callback(config->tear_effect_gpio.port, &data->tear_effect_gpio_cb);
