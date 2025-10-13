@@ -4,3 +4,5 @@ board:
   vendor: amd
   socs:
   - name: amd_versalnet_apu
+    variants:
+    - name: smp
