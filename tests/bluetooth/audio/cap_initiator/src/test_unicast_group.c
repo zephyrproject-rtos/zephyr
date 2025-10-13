@@ -126,6 +126,9 @@ static ZTEST_F(cap_initiator_test_unicast_group, test_initiator_unicast_group_cr
 
 	err = bt_cap_unicast_group_create(fixture->group_param, &fixture->unicast_group);
 	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	err = bt_cap_unicast_group_delete(fixture->unicast_group);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
 }
 
 static ZTEST_F(cap_initiator_test_unicast_group,
@@ -185,6 +188,9 @@ static ZTEST_F(cap_initiator_test_unicast_group, test_initiator_unicast_group_re
 
 	err = bt_cap_unicast_group_reconfig(fixture->unicast_group, fixture->group_param);
 	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	err = bt_cap_unicast_group_delete(fixture->unicast_group);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
 }
 
 static ZTEST_F(cap_initiator_test_unicast_group,
@@ -213,7 +219,7 @@ static ZTEST_F(cap_initiator_test_unicast_group,
 
 static ZTEST_F(cap_initiator_test_unicast_group, test_initiator_unicast_group_add_streams)
 {
-	struct bt_cap_stream stream = {};
+	struct bt_cap_stream stream = {0};
 	struct bt_cap_unicast_group_stream_param stream_param = {
 		.stream = &stream,
 		.qos_cfg = fixture->qos_cfg,
@@ -228,12 +234,15 @@ static ZTEST_F(cap_initiator_test_unicast_group, test_initiator_unicast_group_ad
 
 	err = bt_cap_unicast_group_add_streams(fixture->unicast_group, &pair_param, 1);
 	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	err = bt_cap_unicast_group_delete(fixture->unicast_group);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
 }
 
 static ZTEST_F(cap_initiator_test_unicast_group,
 	       test_initiator_unicast_group_add_streams_inval_null_group)
 {
-	struct bt_cap_stream stream = {};
+	struct bt_cap_stream stream = {0};
 	struct bt_cap_unicast_group_stream_param stream_param = {
 		.stream = &stream,
 		.qos_cfg = fixture->qos_cfg,
@@ -265,7 +274,7 @@ static ZTEST_F(cap_initiator_test_unicast_group,
 static ZTEST_F(cap_initiator_test_unicast_group,
 	       test_initiator_unicast_group_add_streams_inval_0_param)
 {
-	struct bt_cap_stream stream = {};
+	struct bt_cap_stream stream = {0};
 	struct bt_cap_unicast_group_stream_param stream_param = {
 		.stream = &stream,
 		.qos_cfg = fixture->qos_cfg,
