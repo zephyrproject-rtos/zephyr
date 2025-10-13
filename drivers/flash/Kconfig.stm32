@@ -97,7 +97,7 @@ config FLASH_STM32_OPTION_BYTES
 
 config USE_MICROCHIP_QSPI_FLASH_WITH_STM32
 	bool "Include patch for Microchip qspi flash when running with stm32"
-	depends on DT_HAS_ST_STM32_QSPI_NOR_ENABLED
+	depends on FLASH_STM32_QSPI || FLASH_STM32_OSPI || FLASH_STM32_XSPI
 	help
 	  Set to use Microchip QSPI flash memories which use the PP_1_1_4 opcode
 	  (32H) for the PP_1_4_4 operation (usually 38H).

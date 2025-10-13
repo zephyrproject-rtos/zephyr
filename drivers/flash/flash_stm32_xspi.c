@@ -1380,6 +1380,10 @@ static int flash_stm32_xspi_write(const struct device *dev, off_t addr,
 		case SPI_NOR_CMD_PP_1_4_4_4B:
 			__fallthrough;
 		case SPI_NOR_CMD_PP_1_4_4: {
+#if defined(CONFIG_USE_MICROCHIP_QSPI_FLASH_WITH_STM32)
+			/* Microchip QSPI flash uses PP_1_1_4 opcode for the PP_1_4_4 operation */
+			cmd_pp.Instruction = SPI_NOR_CMD_PP_1_1_4;
+#endif /* CONFIG_USE_MICROCHIP_QSPI_FLASH_WITH_STM32 */
 			cmd_pp.InstructionMode = HAL_XSPI_INSTRUCTION_1_LINE;
 			cmd_pp.AddressMode = HAL_XSPI_ADDRESS_4_LINES;
 			cmd_pp.DataMode = HAL_XSPI_DATA_4_LINES;
