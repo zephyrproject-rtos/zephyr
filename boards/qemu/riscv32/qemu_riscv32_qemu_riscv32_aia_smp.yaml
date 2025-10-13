@@ -1,5 +1,8 @@
-identifier: qemu_riscv32/qemu_riscv32/smp
-name: QEMU Emulation for RISC-V 32-bit SMP
+# Copyright (c) 2025 Synopsys, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: qemu_riscv32/qemu_riscv32_aia/smp
+name: QEMU Emulation for RISC-V 32-bit (AIA) SMP
 type: qemu
 simulation:
   - name: qemu
