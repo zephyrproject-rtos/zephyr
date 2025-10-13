@@ -143,27 +143,3 @@ wdt011: &cpurad_wdt011 {};
 &gdpwr_slow_main {
 	status = "okay";
 };
-
-&gpio_pad_group0 {
-	status = "okay";
-};
-
-&gpio_pad_group1 {
-	status = "okay";
-};
-
-&gpio_pad_group2 {
-	status = "okay";
-};
-
-&gpio_pad_group6 {
-	status = "okay";
-};
-
-&gpio_pad_group7 {
-	status = "okay";
-};
-
-&gpio_pad_group9 {
-	status = "okay";
-};
