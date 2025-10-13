@@ -191,6 +191,17 @@ example, ``CPU_SLEEP_MODE_SET``.
 	This driver is NXP-specific. As such, it may only be used on NXP
 	system that uses SCMI for cpu domain management operations.
 
+NXP - BBNSM management
+***************************
+
+This protocol is intended provide access to the battery-backed module.
+This contains persistent storage (GPR), an RTC, and the ON/OFF button,
+for example, ``scmi_bbm_button_notify``.
+
+.. note::
+	This driver is NXP-specific. As such, it may only be used on NXP
+	system that uses SCMI for bbnsm domain management operations.
+
 Enabling the SCMI support
 *************************
 
