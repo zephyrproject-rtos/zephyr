@@ -18,6 +18,11 @@
 #define CSR_SETEIPNUM_M 0xFC0 /* Write EIID to set pending bit */
 #define CSR_CLREIPNUM_M 0xFC1 /* Write EIID to clear pending bit */
 
+/* MTOPEI register field masks */
+#define MTOPEI_EIID_MASK  0x7FF /* Bits [10:0]: External Interrupt ID (0-2047) */
+#define MTOPEI_PRIO_SHIFT 16    /* Bits [23:16]: Priority level */
+#define MTOPEI_PRIO_MASK  (0xFF << MTOPEI_PRIO_SHIFT)
+
 /* IMSIC indirect CSR addresses (per privilege file) */
 #define ICSR_EIDELIVERY 0x70
 #define ICSR_EITHRESH   0x72
@@ -89,10 +94,12 @@ void riscv_imsic_complete(uint32_t eiid);
  * this code. To enable an EIID on a specific hart, this function MUST
  * be called from that hart (e.g., using k_thread_cpu_mask_enable).
  *
+ * Following PLIC pattern: no parameter validation at API level.
+ * Invalid EIIDs are caught in the ISR if they fire.
+ *
  * @param eiid External Interrupt ID to enable (0-2047)
- * @return 0 on success, negative errno on failure
  */
-int riscv_imsic_enable_eiid(uint32_t eiid);
+void riscv_imsic_enable_eiid(uint32_t eiid);
 
 /**
  * @brief Disable an EIID in the CURRENT CPU's IMSIC
@@ -101,10 +108,12 @@ int riscv_imsic_enable_eiid(uint32_t eiid);
  * this code. To disable an EIID on a specific hart, this function MUST
  * be called from that hart.
  *
+ * Following PLIC pattern: no parameter validation at API level.
+ * Invalid EIIDs are caught in the ISR if they fire.
+ *
  * @param eiid External Interrupt ID to disable (0-2047)
- * @return 0 on success, negative errno on failure
  */
-int riscv_imsic_disable_eiid(uint32_t eiid);
+void riscv_imsic_disable_eiid(uint32_t eiid);
 
 /**
  * @brief Check if an EIID is enabled in the CURRENT CPU's IMSIC
