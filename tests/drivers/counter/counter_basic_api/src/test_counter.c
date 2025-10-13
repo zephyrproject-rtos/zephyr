@@ -198,6 +198,8 @@ static const struct device *const devices[] = {
 #endif
 #ifdef CONFIG_COUNTER_BEE_TIMER
 	DEVS_FOR_DT_COMPAT(realtek_bee_counter_timer)
+#ifdef CONFIG_COUNTER_MSPM0_TIMER
+	DEVS_FOR_DT_COMPAT(ti_mspm0_timer_counter)
 #endif
 };
 
@@ -345,7 +347,7 @@ static void test_set_top_value_with_alarm_instance(const struct device *dev)
 	struct counter_top_cfg top_cfg = {
 		.callback = top_handler,
 		.user_data = exp_user_data,
-		.flags = 0
+		.flags = 0,
 	};
 
 	k_sem_reset(&top_cnt_sem);
@@ -1298,6 +1300,8 @@ static void *counter_setup(void)
 			     "Device %s is not ready", devices[i]->name);
 		k_object_access_grant(devices[i], k_current_get());
 	}
+
+	zassert_true((i != 0), "No devices?");
 
 	return NULL;
 }
