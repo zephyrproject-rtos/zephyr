@@ -29,11 +29,12 @@ int nxp_enet_qos_init(const struct device *dev)
 
 #define NXP_ENET_QOS_INIT(n)								\
 	PINCTRL_DT_INST_DEFINE(n);							\
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);					\
 											\
 	static const struct nxp_enet_qos_config enet_qos_##n##_config = {		\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),			\
-		.clock_subsys = (void *)DT_INST_CLOCKS_CELL_BY_IDX(n, 0, name),		\
+		.clock_subsys = CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks),		\
 		.base = (enet_qos_t *)DT_INST_REG_ADDR(n),				\
 	};										\
 											\

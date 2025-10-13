@@ -380,6 +380,8 @@ static void lpc11u6x_uart0_isr_config(const struct device *dev);
 
 PINCTRL_DT_DEFINE(DT_NODELABEL(uart0));
 
+CLOCK_CONTROL_DT_SPEC_DEFINE(DT_NODELABEL(uart0), clocks);
+
 BUILD_ASSERT(DT_PROP(DT_NODELABEL(uart0), rx_invert) == 0,
 	     "rx-invert not supported for UART0");
 BUILD_ASSERT(DT_PROP(DT_NODELABEL(uart0), tx_invert) == 0,
@@ -390,7 +392,7 @@ static const struct lpc11u6x_uart0_config uart0_config = {
 	DT_REG_ADDR(DT_NODELABEL(uart0)),
 	.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_NODELABEL(uart0))),
 	.pincfg = PINCTRL_DT_DEV_CONFIG_GET(DT_NODELABEL(uart0)),
-	.clkid = DT_PHA_BY_IDX(DT_NODELABEL(uart0), clocks, 0, clkid),
+	.clkid = CLOCK_CONTROL_DT_SPEC_GET(DT_NODELABEL(uart0), clocks),
 	.baudrate = DT_PROP(DT_NODELABEL(uart0), current_speed),
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = lpc11u6x_uart0_isr_config,
@@ -855,13 +857,14 @@ static DEVICE_API(uart, uartx_api) = {
 
 
 #define LPC11U6X_UARTX_INIT(idx)                                              \
+CLOCK_CONTROL_DT_SPEC_DEFINE(DT_NODELABEL(uart##idx), clocks);                \
 PINCTRL_DT_DEFINE(DT_NODELABEL(uart##idx));                                   \
 									      \
 static const struct lpc11u6x_uartx_config uart_cfg_##idx = {	              \
 	.base = (struct lpc11u6x_uartx_regs *)                                \
 	DT_REG_ADDR(DT_NODELABEL(uart##idx)),			              \
 	.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_NODELABEL(uart##idx))),  \
-	.clkid = DT_PHA_BY_IDX(DT_NODELABEL(uart##idx), clocks, 0, clkid),    \
+	.clkid = CLOCK_CONTROL_DT_SPEC_GET(DT_NODELABEL(uart##idx), clocks),  \
 	.pincfg = PINCTRL_DT_DEV_CONFIG_GET(DT_NODELABEL(uart##idx)),         \
 	.baudrate = DT_PROP(DT_NODELABEL(uart##idx), current_speed),	      \
 	.rx_invert = DT_PROP(DT_NODELABEL(uart##idx), rx_invert),	      \

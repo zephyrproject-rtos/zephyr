@@ -170,6 +170,7 @@ static DEVICE_API(counter, mcux_ftm_driver_api) = {
 #define COUNTER_MCUX_FTM_DEVICE_INIT(n)                                                            \
 	static struct mcux_ftm_data mcux_ftm_data_##n;                                             \
 	static void mcux_ftm_irq_config_##n(const struct device *dev);                             \
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);                                              \
                                                                                                    \
 	static const struct mcux_ftm_config mcux_ftm_config_##n = {                                \
 		.info =                                                                            \
@@ -179,7 +180,7 @@ static DEVICE_API(counter, mcux_ftm_driver_api) = {
 			},                                                                         \
 		.base = (FTM_Type *)DT_INST_REG_ADDR(n),                                           \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
+		.clock_subsys = CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks),                         \
 		.ftm_clock_source = (ftm_clock_source_t)(DT_INST_ENUM_IDX(n, clock_source) + 1U),  \
 		.prescale = TO_FTM_PRESCALE_DIVIDE(DT_INST_PROP(n, prescaler)),                    \
 		.irq_config_func = mcux_ftm_irq_config_##n,                                        \

@@ -271,12 +271,13 @@ static DEVICE_API(counter, mcux_tpm_driver_api) = {
 #define TPM_DEVICE_INIT_MCUX(n)							\
 	static struct mcux_tpm_data mcux_tpm_data_ ## n;			\
 	static void mcux_tpm_irq_config_ ## n(void);				\
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);				\
 										\
 	static const struct mcux_tpm_config mcux_tpm_config_ ## n = {		\
 		DEVICE_MMIO_NAMED_ROM_INIT(tpm_mmio, DT_DRV_INST(n)),		\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
 		.clock_subsys =							\
-			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
+			CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks),		\
 		.tpm_clock_source = kTPM_SystemClock,				\
 		.prescale = TO_TPM_PRESCALE_DIVIDE(DT_INST_PROP(n, prescaler)),	\
 		.info = {							\

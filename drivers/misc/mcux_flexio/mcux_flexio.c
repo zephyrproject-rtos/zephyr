@@ -222,6 +222,8 @@ int nxp_flexio_child_attach(const struct device *dev,
 	static void mcux_flexio_irq_enable_func_##n(void);		\
 	static void mcux_flexio_irq_disable_func_##n(void);		\
 									\
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);			\
+									\
 	static nxp_flexio_map_child_t					\
 		nxp_flexio_map_shifter_child_##n[MCUX_FLEXIO_SHIFTER_COUNT_MAX(n)] = {0}; \
 	static nxp_flexio_map_child_t					\
@@ -237,8 +239,7 @@ int nxp_flexio_child_attach(const struct device *dev,
 	static const struct mcux_flexio_config mcux_flexio_config_##n = { \
 		.base = (FLEXIO_Type *)DT_INST_REG_ADDR(n),		\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
-		.clock_subsys =						\
-		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
+		.clock_subsys = CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks), \
 		.irq_config_func = mcux_flexio_irq_config_func_##n,	\
 		.irq_enable_func = mcux_flexio_irq_enable_func_##n,	\
 		.irq_disable_func = mcux_flexio_irq_disable_func_##n,	\

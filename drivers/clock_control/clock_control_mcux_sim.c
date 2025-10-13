@@ -15,6 +15,42 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control);
 
+struct kinetis_sim_spec {
+	uint32_t name;
+	uint32_t offset;
+	uint32_t bits;
+};
+
+static int kinetis_sim_get_spec(clock_control_subsys_t subsys, struct kinetis_sim_spec *spec)
+{
+	struct clock_control_dt_spec *dt_spec = subsys;
+
+	if (dt_spec->len != 3) {
+		return -EINVAL;
+	}
+
+	spec->name = dt_spec->cells[0];
+	spec->offset = dt_spec->cells[1];
+	spec->bits = dt_spec->cells[2];
+
+	return 0;
+}
+
+static int kinetis_sim_get_key(clock_control_subsys_t subsys, uint32_t *key)
+{
+	struct kinetis_sim_spec spec;
+	int ret;
+
+	ret = kinetis_sim_get_spec(subsys, &spec);
+	if (ret) {
+		return ret;
+	}
+
+	*key = CLK_GATE_DEFINE(spec.offset, spec.bits);
+
+	return 0;
+}
+
 static int mcux_sim_on(const struct device *dev,
 		       clock_control_subsys_t sub_system)
 {

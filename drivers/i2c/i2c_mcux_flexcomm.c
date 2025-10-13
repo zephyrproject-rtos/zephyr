@@ -671,12 +671,12 @@ static DEVICE_API(i2c, mcux_flexcomm_driver_api) = {
 
 #define I2C_MCUX_FLEXCOMM_DEVICE(id)					\
 	PINCTRL_DT_INST_DEFINE(id);					\
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(id, clocks);			\
 	static void mcux_flexcomm_config_func_##id(const struct device *dev); \
 	static const struct mcux_flexcomm_config mcux_flexcomm_config_##id = {	\
 		.base = (I2C_Type *) DT_INST_REG_ADDR(id),		\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),	\
-		.clock_subsys =				\
-		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),\
+		.clock_subsys = CLOCK_CONTROL_DT_SPEC_INST_GET(id, clocks), \
 		.irq_config_func = mcux_flexcomm_config_func_##id,	\
 		.bitrate = DT_INST_PROP(id, clock_frequency),		\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),		\

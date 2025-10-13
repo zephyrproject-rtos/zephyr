@@ -946,12 +946,13 @@ static DEVICE_API(spi, spi_mcux_driver_api) = {
 #define SPI_MCUX_FLEXCOMM_DEVICE(id)					\
 	SPI_MCUX_FLEXCOMM_IRQ_HANDLER_DECL(id);			\
 	PINCTRL_DT_INST_DEFINE(id);					\
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(id, clocks);			\
 	static const struct spi_mcux_config spi_mcux_config_##id = {	\
 		.base =							\
 		(SPI_Type *)DT_INST_REG_ADDR(id),			\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),	\
 		.clock_subsys =					\
-		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),\
+		CLOCK_CONTROL_DT_SPEC_INST_GET(id, clocks),		\
 		SPI_MCUX_FLEXCOMM_IRQ_HANDLER_FUNC(id)			\
 		.pre_delay = DT_INST_PROP_OR(id, pre_delay, 0),		\
 		.post_delay = DT_INST_PROP_OR(id, post_delay, 0),		\

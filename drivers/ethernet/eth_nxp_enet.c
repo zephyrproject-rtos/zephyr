@@ -936,6 +936,8 @@ BUILD_ASSERT(NXP_ENET_PHY_MODE(DT_DRV_INST(n)) != NXP_ENET_RGMII_MODE ||		\
 											\
 		NXP_ENET_FRAMEINFO_ARRAY(n)						\
 											\
+		CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);				\
+											\
 		static void nxp_enet_##n##_irq_config_func(void)			\
 		{									\
 			DT_INST_FOREACH_PROP_ELEM(n, interrupt_names,			\
@@ -965,8 +967,8 @@ BUILD_ASSERT(NXP_ENET_PHY_MODE(DT_DRV_INST(n)) != NXP_ENET_RGMII_MODE ||		\
 		const struct nxp_enet_mac_config nxp_enet_##n##_config = {		\
 			.irq_config_func = nxp_enet_##n##_irq_config_func,		\
 			.module_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),			\
-			.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(n))),	\
-			.clock_subsys = (void *)DT_CLOCKS_CELL_BY_IDX(			\
+			.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_DRV_INST(n))),	\
+			.clock_subsys = CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks),	\
 						DT_INST_PARENT(n), 0, name),		\
 			.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 			.buffer_config = {{						\

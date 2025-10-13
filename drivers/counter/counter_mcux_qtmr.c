@@ -302,13 +302,14 @@ static DEVICE_API(counter, mcux_qtmr_driver_api) = {
 };
 
 #define TMR_DEVICE_INIT_MCUX(n)									\
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);						\
 	static struct mcux_qtmr_data mcux_qtmr_data_ ## n;					\
 												\
 	static const struct mcux_qtmr_config mcux_qtmr_config_ ## n = {				\
 		.base = (void *)DT_REG_ADDR(DT_INST_PARENT(n)),					\
 		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(n))),			\
 		.clock_subsys =									\
-			(clock_control_subsys_t)DT_CLOCKS_CELL(DT_INST_PARENT(n), name),	\
+			CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks),				\
 		.info = {									\
 			.max_top_value = UINT16_MAX,						\
 			.freq = DT_INST_PROP_OR(n, freq, 0),					\

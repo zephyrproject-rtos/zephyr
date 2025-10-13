@@ -338,6 +338,9 @@ DEVICE_API(counter, nxp_mrt_api) = {
 	/* Initialize all the data structs for active channels */		\
 	DT_INST_FOREACH_CHILD_STATUS_OKAY(n, NXP_MRT_CHANNEL_DATA_INIT)		\
 										\
+	/* Define clock control subsystem */					\
+	CLOCK_CONTROL_DT_SPEC_INST_DEFINE(n, clocks);				\
+										\
 	/* Create an array of const pointers to the data structs */		\
 	static struct nxp_mrt_channel_data *const nxp_mrt_##n##_channel_datas	\
 			[DT_INST_PROP(n, num_channels)] = {			\
@@ -367,8 +370,7 @@ DEVICE_API(counter, nxp_mrt_api) = {
 		},								\
 		.base = (MRT_Type *)DT_INST_REG_ADDR(n),			\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
-		.clock_subsys = (clock_control_subsys_t)			\
-				DT_INST_CLOCKS_CELL(n, name),			\
+		.clock_subsys = CLOCK_CONTROL_DT_SPEC_INST_GET(n, clocks),	\
 		.irq_config_func = nxp_mrt_##n##_irq_config_func,		\
 		.data = nxp_mrt_##n##_channel_datas,				\
 		.channels = nxp_mrt_##n##_channels,				\

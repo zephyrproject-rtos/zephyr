@@ -31,6 +31,7 @@
 #include <zephyr/device.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/slist.h>
+#include <zephyr/sys/util_internal.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,6 +52,28 @@ enum clock_control_status {
 	CLOCK_CONTROL_STATUS_UNKNOWN
 };
 
+/** @cond INTERNAL_HIDDEN */
+
+/* This is a useful way to encode opaque data, this is private structure not part of API */
+struct clock_control_dt_spec {
+	uint32_t *cells; /* the cells in the DT phandle specifier */
+	size_t len; /* the number of cells in the DT phandle specifier */
+};
+
+#define ZPRIV_CLOCK_CONTROL_DT_DEFINE(node_id, prop, idx)					\
+	static uint32_t _CONCAT_6(zpriv_clock_control_cells_, node_id, _, prop, _, idx) = {	\
+		DT_FOREACH_PHA_CELL_BY_IDX_SEP(node_id, prop, idx, DT_PHA_BY_IDX, (,))		\
+	};											\
+	static struct clock_control_dt_spec							\
+		_CONCAT_6(zpriv_clock_control_, node_id, _, prop, _, idx) = {			\
+			.cells =								\
+			  &(_CONCAT_6(zpriv_clock_control_cells_, node_id, _, prop, _, idx)),	\
+			.len = DT_PHA_NUM_CELLS_BY_IDX(node_id, prop, idx),			\
+	} /* intentionally require semicolon */
+
+/** @endcond */
+
+
 /**
  * clock_control_subsys_t is a type to identify a clock controller sub-system.
  * Such data pointed is opaque and relevant only to the clock controller
@@ -65,6 +88,170 @@ typedef void *clock_control_subsys_t;
  * instance being used.
  */
 typedef void *clock_control_subsys_rate_t;
+
+
+/**
+ * @brief Static initializer for a @p clock_control_subsys_t from devicetree
+ *
+ * This returns a static initializer for a @p clock_control_subsys_t value given a devicetree node
+ * identifier, a property specifying a clock controller and an index into that property.
+ *
+ * @param node_id devicetree node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param idx logical index into "prop"
+ */
+#define CLOCK_CONTROL_DT_SPEC_DEFINE_BY_IDX(node_id, prop, idx)	\
+	ZPRIV_CLOCK_CONTROL_DT_DEFINE(node_id, prop, idx)
+
+/**
+ * @brief Static initializer for a @p clock_control_subsys_t from devicetree
+ *
+ * This returns a static initializer for a @p clock_control_subsys_t value given a devicetree node
+ * identifier, a property specifying a clock controller and a name of a specifier in that property.
+ * Property must have clock-names.
+ *
+ * @param node_id devicetree node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param name lowercase-and-underscores name of a specifier in "prop"
+ */
+#define CLOCK_CONTROL_DT_SPEC_DEFINE_BY_NAME(node_id, prop, name) \
+	ZPRIV_CLOCK_CONTROL_DT_DEFINE(node_id, prop, DT_PHA_ELEM_IDX_BY_NAME(node_id, prop, name))
+
+/**
+ * @brief Static initializer for a @p clock_control_subsys_t from devicetree
+ *
+ * This returns a static initializer for a @p clock_control_subsys_t value given a devicetree node
+ * identifier and a property specifying a clock controller.
+ *
+ * This is equivalent to <tt>CLOCK_CONTROL_DT_SPEC_DEFINE_BY_IDX(node_id, prop, 0)</tt>.
+ *
+ * @param node_id devicetree node identifier
+ * @param prop lowercase-and-underscores property name
+ */
+#define CLOCK_CONTROL_DT_SPEC_DEFINE(node_id, prop) \
+	ZPRIV_CLOCK_CONTROL_DT_DEFINE(node_id, prop, 0)
+
+/**
+ * @brief Static initializer for a @p clock_control_subsys_t from devicetree instance
+ *
+ * This is equivalent to
+ * <tt>CLOCK_CONTROL_DT_SPEC_DEFINE_BY_IDX(DT_DRV_INST(inst), prop, idx)</tt>.
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param prop lowercase-and-underscores property name
+ * @param idx logical index into "prop"
+ */
+#define CLOCK_CONTROL_DT_SPEC_INST_DEFINE_BY_IDX(inst, prop, idx) \
+	CLOCK_CONTROL_DT_SPEC_DEFINE_BY_IDX(DT_DRV_INST(inst), prop, idx)
+
+/**
+ * @brief Static initializer for a @p clock_control_subsys_t from devicetree instance
+ *
+ * This is equivalent to
+ * <tt>CLOCK_CONTROL_DT_SPEC_DEFINE_BY_NAME(DT_DRV_INST(inst), prop, name)</tt>.
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param prop lowercase-and-underscores property name
+ * @param name lowercase-and-underscores name of a specifier in "prop"
+ */
+#define CLOCK_CONTROL_DT_SPEC_INST_DEFINE_BY_NAME(inst, prop, name) \
+	CLOCK_CONTROL_DT_SPEC_DEFINE_BY_NAME(DT_DRV_INST(inst), prop, name)
+
+/**
+ * @brief Static initializer for a @p clock_control_subsys_t from devicetree instance
+ *
+ * This is equivalent to
+ * <tt>CLOCK_CONTROL_DT_SPEC_DEFINE(DT_DRV_INST(inst), prop)</tt>.
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param prop lowercase-and-underscores property name
+ */
+#define CLOCK_CONTROL_DT_SPEC_INST_DEFINE(inst, prop) \
+	CLOCK_CONTROL_DT_SPEC_DEFINE(DT_DRV_INST(inst), prop)
+
+/**
+ * @brief Get a @p clock_control_subsys_t for a devicetree node
+ *
+ * This returns a @p clock_control_subsys_t for the clock controller phandle at
+ * index "idx".
+ *
+ * @param node_id devicetree node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param idx logical index into "prop"
+ * @return clock_control_subsys_t with the given information
+ */
+#define CLOCK_CONTROL_DT_SPEC_GET_BY_IDX(node_id, prop, idx) 		\
+	(clock_control_subsys_t) &(_CONCAT_6(zpriv_clock_control_, node_id, _, prop, _, idx))
+
+/**
+ * @brief Get a @p clock_control_subsys_t for a devicetree node
+ *
+ * This returns a @p clock_control_subsys_t for the clock controller phandle at
+ * the element named "name". Property must have clock-names.
+ *
+ * @param node_id devicetree node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param name lowercase-and-underscores name of a specifier in "prop"
+ * @return clock_control_subsys_t with the given information
+ */
+#define CLOCK_CONTROL_DT_SPEC_GET_BY_NAME(node_id, prop, name)					\
+	CLOCK_CONTROL_DT_SPEC_GET_BY_IDX(node_id, prop,						\
+					 DT_PHA_ELEM_IDX_BY_NAME(node_id, prop, name))
+
+/**
+ * @brief Get a @p clock_control_subsys_t for a devicetree node
+ *
+ * This returns a @p clock_control_subsys_t for the clock controller phandle at
+ * index 0.
+ *
+ * @param node_id devicetree node identifier
+ * @param prop lowercase-and-underscores property name
+ * @return clock_control_subsys_t with the given information
+ */
+#define CLOCK_CONTROL_DT_SPEC_GET(node_id, prop) \
+	CLOCK_CONTROL_DT_SPEC_GET_BY_IDX(node_id, prop, 0)
+
+/**
+ * @brief Get a @p clock_control_subsys_t for a devicetree instance
+ *
+ * This is equivalent to
+ * <tt>CLOCK_CONTROL_DT_SPEC_GET_BY_IDX(DT_DRV_INST(inst), prop, idx)</tt>.
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param prop lowercase-and-underscores property name
+ * @param idx logical index into "prop"
+ * @return clock_control_subsys_t with the given information
+ */
+#define CLOCK_CONTROL_DT_SPEC_INST_GET_BY_IDX(inst, prop, idx) \
+	CLOCK_CONTROL_DT_SPEC_GET_BY_IDX(DT_DRV_INST(inst), prop, idx)
+
+/**
+ * @brief Get a @p clock_control_subsys_t for a devicetree instance
+ *
+ * This is equivalent to
+ * <tt>CLOCK_CONTROL_DT_SPEC_GET_BY_NAME(DT_DRV_INST(inst), prop, name)</tt>.
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param prop lowercase-and-underscores property name
+ * @param name lowercase-and-underscores name of a specifier in "prop"
+ * @return clock_control_subsys_t with the given information
+ */
+#define CLOCK_CONTROL_DT_SPEC_INST_GET_BY_NAME(inst, prop, name) \
+	CLOCK_CONTROL_DT_SPEC_GET_BY_NAME(DT_DRV_INST(inst), prop, name)
+
+/**
+ * @brief Get a @p clock_control_subsys_t for a devicetree instance
+ *
+ * This is equivalent to
+ * <tt>CLOCK_CONTROL_DT_SPEC_GET(DT_DRV_INST(inst), prop)</tt>.
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param prop lowercase-and-underscores property name
+ * @return clock_control_subsys_t with the given information
+ */
+#define CLOCK_CONTROL_DT_SPEC_INST_GET(inst, prop) \
+	CLOCK_CONTROL_DT_SPEC_GET(DT_DRV_INST(inst), prop)
+
 
 /** @brief Callback called on clock started.
  *
