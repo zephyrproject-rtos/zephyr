@@ -300,63 +300,6 @@ config HAS_HW_NRF_TWI0
 config HAS_HW_NRF_TWI1
 	def_bool $(dt_nodelabel_enabled_with_compat,i2c1,$(DT_COMPAT_NORDIC_NRF_TWI))
 
-config HAS_HW_NRF_TWIM0
-	def_bool $(dt_nodelabel_enabled_with_compat,i2c0,$(DT_COMPAT_NORDIC_NRF_TWIM))
-
-config HAS_HW_NRF_TWIM1
-	def_bool $(dt_nodelabel_enabled_with_compat,i2c1,$(DT_COMPAT_NORDIC_NRF_TWIM))
-
-config HAS_HW_NRF_TWIM2
-	def_bool $(dt_nodelabel_enabled_with_compat,i2c2,$(DT_COMPAT_NORDIC_NRF_TWIM))
-
-config HAS_HW_NRF_TWIM3
-	def_bool $(dt_nodelabel_enabled_with_compat,i2c3,$(DT_COMPAT_NORDIC_NRF_TWIM))
-
-config HAS_HW_NRF_TWIM20
-	def_bool $(dt_nodelabel_enabled_with_compat,i2c20,$(DT_COMPAT_NORDIC_NRF_TWIM))
-
-config HAS_HW_NRF_TWIM21
-	def_bool $(dt_nodelabel_enabled_with_compat,i2c21,$(DT_COMPAT_NORDIC_NRF_TWIM))
-
-config HAS_HW_NRF_TWIM22
-	def_bool $(dt_nodelabel_enabled_with_compat,i2c22,$(DT_COMPAT_NORDIC_NRF_TWIM))
-
-config HAS_HW_NRF_TWIM23
-	def_bool $(dt_nodelabel_enabled_with_compat,i2c23,$(DT_COMPAT_NORDIC_NRF_TWIM))
-
-config HAS_HW_NRF_TWIM24
-	def_bool $(dt_nodelabel_enabled_with_compat,i2c24,$(DT_COMPAT_NORDIC_NRF_TWIM))
-
-config HAS_HW_NRF_TWIM30
-	def_bool $(dt_nodelabel_enabled_with_compat,i2c30,$(DT_COMPAT_NORDIC_NRF_TWIM))
-
-config HAS_HW_NRF_TWIM120
-	def_bool $(dt_nodelabel_enabled_with_compat,i2c120,$(DT_COMPAT_NORDIC_NRF_TWIM))
-
-config HAS_HW_NRF_TWIM130
-	def_bool $(dt_nodelabel_enabled_with_compat,i2c130,$(DT_COMPAT_NORDIC_NRF_TWIM))
-
-config HAS_HW_NRF_TWIM131
-	def_bool $(dt_nodelabel_enabled_with_compat,i2c131,$(DT_COMPAT_NORDIC_NRF_TWIM))
-
-config HAS_HW_NRF_TWIM132
-	def_bool $(dt_nodelabel_enabled_with_compat,i2c132,$(DT_COMPAT_NORDIC_NRF_TWIM))
-
-config HAS_HW_NRF_TWIM133
-	def_bool $(dt_nodelabel_enabled_with_compat,i2c133,$(DT_COMPAT_NORDIC_NRF_TWIM))
-
-config HAS_HW_NRF_TWIM134
-	def_bool $(dt_nodelabel_enabled_with_compat,i2c134,$(DT_COMPAT_NORDIC_NRF_TWIM))
-
-config HAS_HW_NRF_TWIM135
-	def_bool $(dt_nodelabel_enabled_with_compat,i2c135,$(DT_COMPAT_NORDIC_NRF_TWIM))
-
-config HAS_HW_NRF_TWIM136
-	def_bool $(dt_nodelabel_enabled_with_compat,i2c136,$(DT_COMPAT_NORDIC_NRF_TWIM))
-
-config HAS_HW_NRF_TWIM137
-	def_bool $(dt_nodelabel_enabled_with_compat,i2c137,$(DT_COMPAT_NORDIC_NRF_TWIM))
-
 config HAS_HW_NRF_TWIS0
 	def_bool $(dt_nodelabel_enabled_with_compat,i2c0,$(DT_COMPAT_NORDIC_NRF_TWIS))
 
