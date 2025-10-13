@@ -487,10 +487,10 @@ int mqtt_sn_get_topic_name(struct mqtt_sn_client *client, uint16_t id,
 /**
  * @brief Predefine topic.
  *
- * Has to be called after mqtt_sn_connect, if a clear session is started. Otherwise, the clearing
- * will also remove all predefined topics. Additionally, it has to be called before calling
- * mqtt_sn_input for the first time after the connect, to prevent race conditions where incoming
- * publications use predefined topics which were not defined, yet.
+ * Can be called before mqtt_sn_connect, because predefined topics are never cleared. If you call it
+ * afterwards, it has to be called before calling mqtt_sn_input for the first time after the
+ * connect, to prevent race conditions where incoming publications use predefined topics which were
+ * not defined, yet.
  *
  * @param[in] client The MQTT-SN client to define the topic on.
  * @param[in] topic_id Topic identifier.

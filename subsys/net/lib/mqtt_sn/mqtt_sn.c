@@ -331,6 +331,12 @@ static void mqtt_sn_topic_destroy_all(struct mqtt_sn_client *client)
 			mqtt_sn_publish_destroy(client, pub);
 		}
 
+		/* Keep these around since they are valid without a connection */
+		if (topic->type == MQTT_SN_TOPIC_TYPE_PREDEF ||
+		    topic->type == MQTT_SN_TOPIC_TYPE_SHORT) {
+			continue;
+		}
+
 		k_mem_slab_free(&topics, (void *)topic);
 	}
 }
