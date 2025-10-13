@@ -47,7 +47,7 @@ struct gspi_siwx91x_config {
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	const struct pinctrl_dev_config *pcfg;
-	uint8_t mosi_overrun;
+	uint8_t mosi_overrun __aligned(4);
 };
 
 struct gspi_siwx91x_data {
@@ -58,7 +58,7 @@ struct gspi_siwx91x_data {
 
 #ifdef CONFIG_SPI_SILABS_SIWX91X_GSPI_DMA
 /* Placeholder buffer for unused RX data */
-static volatile uint8_t empty_buffer;
+static volatile uint8_t empty_buffer __aligned(4);
 #endif
 
 static bool spi_siwx91x_is_dma_enabled_instance(const struct device *dev)
