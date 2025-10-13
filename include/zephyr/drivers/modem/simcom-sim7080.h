@@ -1,4 +1,6 @@
-/*
+/** @file
+ * @brief Simcom SIM7080 modem public API header file.
+ *
  * Copyright (C) 2021 metraTec GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -16,18 +18,23 @@
 extern "C" {
 #endif
 
+/** Maximum Length of GNSS UTC data */
 #define SIM7080_GNSS_DATA_UTC_LEN 20
+/** Maximum SMS length */
 #define SIM7080_SMS_MAX_LEN 160
+/** Maximum UE system information band size */
 #define SIM7080_UE_SYS_INFO_BAND_SIZE 32
 
+/** Sim7080 modem state */
 enum sim7080_state {
-	SIM7080_STATE_INIT = 0,
-	SIM7080_STATE_IDLE,
-	SIM7080_STATE_NETWORKING,
-	SIM7080_STATE_GNSS,
-	SIM7080_STATE_OFF,
+	SIM7080_STATE_INIT = 0, /**< Initial modem state */
+	SIM7080_STATE_IDLE, /**< Modem idle */
+	SIM7080_STATE_NETWORKING, /**< Network active */
+	SIM7080_STATE_GNSS, /**< GNSS active */
+	SIM7080_STATE_OFF, /**< Modem off */
 };
 
+/** Sim7080 gnss data structure */
 struct sim7080_gnss_data {
 	/**
 	 * Whether gnss is powered or not.
@@ -67,54 +74,47 @@ struct sim7080_gnss_data {
 	uint16_t kmh;
 };
 
-/**
- * Possible sms states in memory.
- */
+/** Possible sms states in memory. */
 enum sim7080_sms_stat {
-	SIM7080_SMS_STAT_REC_UNREAD = 0,
-	SIM7080_SMS_STAT_REC_READ,
-	SIM7080_SMS_STAT_STO_UNSENT,
-	SIM7080_SMS_STAT_STO_SENT,
-	SIM7080_SMS_STAT_ALL,
+	SIM7080_SMS_STAT_REC_UNREAD = 0, /**< Message unread */
+	SIM7080_SMS_STAT_REC_READ, /**< Message read*/
+	SIM7080_SMS_STAT_STO_UNSENT, /**< Message stored unsent */
+	SIM7080_SMS_STAT_STO_SENT, /**< Message stored sent */
+	SIM7080_SMS_STAT_ALL, /**< Status count */
 };
 
-/**
- * Possible ftp return codes.
- */
+/** Possible ftp return codes. */
 enum sim7080_ftp_rc {
-	/* Operation finished correctly. */
-	SIM7080_FTP_RC_OK = 0,
-	/* Session finished. */
-	SIM7080_FTP_RC_FINISHED,
-	/* An error occurred. */
-	SIM7080_FTP_RC_ERROR,
+	SIM7080_FTP_RC_OK = 0, /**< Operation finished correctly. */
+	SIM7080_FTP_RC_FINISHED, /**< Session finished. */
+	SIM7080_FTP_RC_ERROR, /**< An error occurred. */
 };
 
 /**
  * Buffer structure for sms.
  */
 struct sim7080_sms {
-	/* First octet of the sms. */
+	/** First octet of the sms. */
 	uint8_t first_octet;
-	/* Message protocol identifier. */
+	/** Message protocol identifier. */
 	uint8_t tp_pid;
-	/* Status of the sms in memory. */
+	/** Status of the sms in memory. */
 	enum sim7080_sms_stat stat;
-	/* Index of the sms in memory. */
+	/** Index of the sms in memory. */
 	uint16_t index;
-	/* Time the sms was received. */
+	/** Time the sms was received. */
 	struct {
-		uint8_t year;
-		uint8_t month;
-		uint8_t day;
-		uint8_t hour;
-		uint8_t minute;
-		uint8_t second;
-		uint8_t timezone;
+		uint8_t year; /**< Current Year */
+		uint8_t month; /**< Month of the year */
+		uint8_t day; /**< Day of the month */
+		uint8_t hour; /**< Hour of the day */
+		uint8_t minute; /**< Minute */
+		uint8_t second; /**< Second */
+		uint8_t timezone; /**< Current timezone */
 	} time;
-	/* Buffered sms. */
+	/** Buffered sms. */
 	char data[SIM7080_SMS_MAX_LEN + 1];
-	/* Length of the sms in buffer. */
+	/** Length of the sms in buffer. */
 	uint8_t data_len;
 };
 
@@ -122,90 +122,101 @@ struct sim7080_sms {
  * Buffer structure for sms reads.
  */
 struct sim7080_sms_buffer {
-	/* sms structures to read to. */
+	/** sms structures to read to. */
 	struct sim7080_sms *sms;
-	/* Number of sms structures. */
+	/** Number of sms structures. */
 	uint8_t nsms;
 };
 
+/** UE system mode */
 enum sim7080_ue_sys_mode {
-	SIM7080_UE_SYS_MODE_NO_SERVICE,
-	SIM7080_UE_SYS_MODE_GSM,
-	SIM7080_UE_SYS_MODE_LTE_CAT_M1,
-	SIM7080_UE_SYS_MODE_LTE_NB_IOT,
+	SIM7080_UE_SYS_MODE_NO_SERVICE, /**< No service */
+	SIM7080_UE_SYS_MODE_GSM, /**< GSM */
+	SIM7080_UE_SYS_MODE_LTE_CAT_M1, /**< LTE CAT M1 */
+	SIM7080_UE_SYS_MODE_LTE_NB_IOT, /**< LTE NB IOT */
 };
 
+/** UE operating mode */
 enum sim7080_ue_op_mode {
-	SIM7080_UE_OP_MODE_ONLINE,
-	SIM7080_UE_OP_MODE_OFFLINE,
-	SIM7080_UE_OP_MODE_FACTORY_TEST_MODE,
-	SIM7080_UE_OP_MODE_RESET,
-	SIM7080_UE_OP_MODE_LOW_POWER_MODE,
+	SIM7080_UE_OP_MODE_ONLINE, /**< Online */
+	SIM7080_UE_OP_MODE_OFFLINE, /**< Offline */
+	SIM7080_UE_OP_MODE_FACTORY_TEST_MODE, /**< Factory test mode */
+	SIM7080_UE_OP_MODE_RESET, /**< Reset */
+	SIM7080_UE_OP_MODE_LOW_POWER_MODE, /**< Low power mode */
 };
 
+/**
+ * Sim7080 ue system information structure for gsm.
+ */
 struct sim7080_ue_sys_info_gsm {
-	/* Mobile country code */
+	/** Mobile country code */
 	uint16_t mcc;
-	/* Mobile network code */
+	/** Mobile network code */
 	uint16_t mcn;
-	/* Location area code */
+	/** Location area code */
 	uint16_t lac;
-	/* Cell ID */
+	/** Cell ID */
 	uint16_t cid;
-	/* Absolute radio frequency channel number */
+	/** Absolute radio frequency channel number */
 	uint8_t arfcn[SIM7080_UE_SYS_INFO_BAND_SIZE + 1];
-	/* RX level in dBm */
+	/** RX level in dBm */
 	int16_t rx_lvl;
-	/* Track LO adjust */
+	/** Track LO adjust */
 	int16_t track_lo_adjust;
-	/* C1 coefficient */
+	/** C1 coefficient */
 	uint16_t c1;
-	/* C2 coefficient */
+	/** C2 coefficient */
 	uint16_t c2;
 };
 
+/**
+ * Sim7080 ue system information structure for LTE.
+ */
 struct sim7080_ue_sys_info_lte {
-	/* Mobile country code */
+	/** Mobile country code */
 	uint16_t mcc;
-	/* Mobile network code */
+	/** Mobile network code */
 	uint16_t mcn;
-	/* Tracing area code */
+	/** Tracing area code */
 	uint16_t tac;
-	/* Serving Cell ID */
+	/** Serving Cell ID */
 	uint32_t sci;
-	/* Physical Cell ID */
+	/** Physical Cell ID */
 	uint16_t pci;
-	/* Frequency band */
+	/** Frequency band */
 	uint8_t band[SIM7080_UE_SYS_INFO_BAND_SIZE + 1];
-	/* E-UTRA absolute radio frequency channel number */
+	/** E-UTRA absolute radio frequency channel number */
 	uint16_t earfcn;
-	/* Downlink bandwidth in MHz */
+	/** Downlink bandwidth in MHz */
 	uint16_t dlbw;
-	/* Uplink bandwidth in MHz */
+	/** Uplink bandwidth in MHz */
 	uint16_t ulbw;
-	/* Reference signal received quality in dB */
+	/** Reference signal received quality in dB */
 	int16_t rsrq;
-	/* Reference signal received power in dBm */
+	/** Reference signal received power in dBm */
 	int16_t rsrp;
-	/* Received signal strength indicator in dBm */
+	/** Received signal strength indicator in dBm */
 	int16_t rssi;
-	/* Reference signal signal to noise ratio in dB */
+	/** Reference signal signal to noise ratio in dB */
 	int16_t rssnr;
-	/* Signal to interference plus noise ratio in dB */
+	/** Signal to interference plus noise ratio in dB */
 	int16_t sinr;
 };
 
+/**
+ * Sim7080 ue system information structure.
+ */
 struct sim7080_ue_sys_info {
-	/* Refer to sim7080_ue_sys_mode */
+	/** Refer to sim7080_ue_sys_mode */
 	enum sim7080_ue_sys_mode sys_mode;
-	/* Refer to sim7080_ue_op_mode */
+	/** Refer to sim7080_ue_op_mode */
 	enum sim7080_ue_op_mode op_mode;
 	union {
-		/* Only set if sys_mode is GSM */
+		/** Only set if sys_mode is GSM */
 		struct sim7080_ue_sys_info_gsm gsm;
-		/* Only set if sys mode is LTE CAT-M1/NB-IOT */
+		/** Only set if sys mode is LTE CAT-M1/NB-IOT */
 		struct sim7080_ue_sys_info_lte lte;
-	} cell;
+	} cell; /**< Cell information */
 };
 
 /**
