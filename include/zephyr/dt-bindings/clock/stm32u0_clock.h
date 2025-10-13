@@ -35,6 +35,7 @@
 #define STM32_SRC_PLL_P		(STM32_SRC_PCLK + 1)
 #define STM32_SRC_PLL_Q		(STM32_SRC_PLL_P + 1)
 #define STM32_SRC_PLL_R		(STM32_SRC_PLL_Q + 1)
+#define STM32_SRC_CK48		(STM32_SRC_PLL_R + 1)
 
 /** @brief RCC_CCIPR register offset */
 #define CCIPR_REG		0x88
