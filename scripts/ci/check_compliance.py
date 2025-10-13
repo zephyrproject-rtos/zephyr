@@ -1265,6 +1265,7 @@ flagged.
         "FOO_LOG_LEVEL",
         "FOO_SETTING_1",
         "FOO_SETTING_2",
+        "GEN_UICR_ERASEPROTECT",
         "GEN_UICR_GENERATE_PERIPHCONF", # Used in specialized build tool, not part of main Kconfig
         "GEN_UICR_LOCK",
         "GEN_UICR_PROTECTEDMEM",
