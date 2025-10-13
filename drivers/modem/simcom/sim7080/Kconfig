@@ -57,6 +57,20 @@ config MODEM_SIMCOM_SIM7080_BAUDRATE
 		the modem is configured to use autobaud. The driver will then
 		configure the modem to use a fixed baudrate for faster startups.
 
+config MODEM_SIMCOM_SIM7080_DNS_DEFAULT_RECOUNT
+	int "Retry count for a DNS query"
+	range 0 10
+	default 10
+	help
+		The number of retries for a DNS lookup
+
+config MODEM_SIMCOM_SIM7080_DNS_DEFAULT_TIMEOUT
+	int "Timeout for a DNS query"
+	range 0 60000
+	default 20000
+	help
+		The timeout for DNS queries in milliseconds
+
 choice MODEM_SIMCOM_SIM7080_RAT
 	bool "Radio Access Technology Mode"
 	default MODEM_SIMCOM_SIM7080_RAT_NB1

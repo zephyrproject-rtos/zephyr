@@ -24,6 +24,10 @@ extern "C" {
 #define SIM7080_SMS_MAX_LEN 160
 /** Maximum UE system information band size */
 #define SIM7080_UE_SYS_INFO_BAND_SIZE 32
+/** Maximum number of DNS retries */
+#define SIM7080_DNS_MAX_RECOUNT 10
+/** Maximum timeout for DNS queries in milliseconds */
+#define SIM7080_DNS_MAX_TIMEOUT_MS 60000
 
 /** Sim7080 modem state */
 enum sim7080_state {
@@ -422,6 +426,25 @@ int mdm_sim7080_get_ue_sys_info(struct sim7080_ue_sys_info *info);
  * @note Time is set by network. It may take some time for it to get valid.
  */
 int mdm_sim7080_get_local_time(struct tm *t);
+
+/**
+ * Set the dns query lookup parameters.
+ *
+ * @param recount Number of retries per query.
+ *				  Maximum @c SIM7080_DNS_MAX_RECOUNT
+ * @param timeout Timeout for a dns query in milliseconds.
+ *				  Maximum @c SIM7080_DNS_MAX_TIMEOUT_MS
+ * @return 0 on success. Otherwise a negative error is returned.
+ */
+int mdm_sim7080_dns_set_lookup_params(uint8_t recount, uint16_t timeout);
+
+/**
+ * Get the dns query lookup parameters.
+ *
+ * @param recount [out] Number of retries per query.
+ * @param timeout [out] Timeout for a dns query in milliseconds.
+ */
+void mdm_sim7080_dns_get_lookup_params(uint8_t *recount, uint16_t *timeout);
 
 #ifdef __cplusplus
 }
