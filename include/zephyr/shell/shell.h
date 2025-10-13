@@ -789,8 +789,7 @@ typedef void (*shell_uninit_cb_t)(const struct shell *sh, int res);
  */
 typedef void (*shell_bypass_cb_t)(const struct shell *sh,
 				  uint8_t *data,
-				  size_t len,
-				  void *user_data);
+				  size_t len);
 
 struct shell_transport;
 
@@ -990,9 +989,6 @@ struct shell_ctx {
 
 	/** When bypass is set, all incoming data is passed to the callback. */
 	shell_bypass_cb_t bypass;
-
-	/** When bypass is set, this user data pointer is passed to the callback. */
-	void *bypass_user_data;
 
 	/*!< Logging level for a backend. */
 	uint32_t log_level;
@@ -1368,9 +1364,8 @@ int shell_set_root_cmd(const char *cmd);
  *
  * @param[in] sh	Pointer to the shell instance.
  * @param[in] bypass	Bypass callback or null to disable.
- * @param[in] user_data	Bypass callback user data.
  */
-void shell_set_bypass(const struct shell *sh, shell_bypass_cb_t bypass, void *user_data);
+void shell_set_bypass(const struct shell *sh, shell_bypass_cb_t bypass);
 
 /** @brief Get shell readiness to execute commands.
  *

@@ -74,13 +74,11 @@ static bool can_device_check(const struct device *dev)
 }
 
 #ifdef CONFIG_CAN_SHELL_SCRIPTING_FRIENDLY
-static void can_shell_dummy_bypass_cb(const struct shell *sh, uint8_t *data, size_t len,
-				      void *user_data)
+static void can_shell_dummy_bypass_cb(const struct shell *sh, uint8_t *data, size_t len)
 {
 	ARG_UNUSED(sh);
 	ARG_UNUSED(data);
 	ARG_UNUSED(len);
-	ARG_UNUSED(user_data);
 }
 #endif /* CONFIG_CAN_SHELL_SCRIPTING_FRIENDLY */
 
@@ -92,7 +90,7 @@ static void can_shell_print_frame(const struct shell *sh, const struct device *d
 
 #ifdef CONFIG_CAN_SHELL_SCRIPTING_FRIENDLY
 	/* Bypass the shell to avoid breaking up the line containing the frame */
-	shell_set_bypass(sh, can_shell_dummy_bypass_cb, NULL);
+	shell_set_bypass(sh, can_shell_dummy_bypass_cb);
 #endif /* CONFIG_CAN_SHELL_SCRIPTING_FRIENDLY */
 
 #ifdef CONFIG_CAN_RX_TIMESTAMP
@@ -134,7 +132,7 @@ static void can_shell_print_frame(const struct shell *sh, const struct device *d
 	shell_fprintf_normal(sh, "\n");
 
 #ifdef CONFIG_CAN_SHELL_SCRIPTING_FRIENDLY
-	shell_set_bypass(sh, NULL, NULL);
+	shell_set_bypass(sh, NULL);
 #endif /* CONFIG_CAN_SHELL_SCRIPTING_FRIENDLY */
 }
 

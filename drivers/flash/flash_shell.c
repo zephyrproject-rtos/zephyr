@@ -587,18 +587,16 @@ static int set_bypass(const struct shell *sh, shell_bypass_cb_t bypass)
 		shell_print(sh, "Loading...");
 	}
 
-	shell_set_bypass(sh, bypass, NULL);
+	shell_set_bypass(sh, bypass);
 
 	return 0;
 }
 
-static void bypass_cb(const struct shell *sh, uint8_t *recv, size_t len, void *user_data)
+static void bypass_cb(const struct shell *sh, uint8_t *recv, size_t len)
 {
 	uint32_t left_to_read = flash_load_total - flash_load_written - flash_load_boff;
 	uint32_t to_copy = MIN(len, left_to_read);
 	uint32_t copied = 0;
-
-	ARG_UNUSED(user_data);
 
 	while (copied < to_copy) {
 
