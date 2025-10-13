@@ -4,10 +4,14 @@
 
 config STEPPER_ADI_TMC50XX
 	bool "Activate trinamic tmc50xx stepper driver"
-	depends on DT_HAS_ADI_TMC50XX_ENABLED && STEPPER_ADI_TMC
+	depends on DT_HAS_ADI_TMC50XX_ENABLED
 	select STEPPER_ADI_TMC_SPI
 	default y
+
+if STEPPER_ADI_TMC50XX
 
 module = TMC50XX
 module-str = tmc50xx
 rsource "Kconfig.tmc_rampgen_template"
+
+endif # STEPPER_ADI_TMC51XX
