@@ -186,6 +186,13 @@ int enabled_clock(uint32_t src_clk)
 		}
 		break;
 #endif /* STM32_SRC_MSI */
+#if defined(STM32_SRC_CK48)
+	case STM32_SRC_CK48:
+		if (!IS_ENABLED(STM32_CK48_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif /* STM32_SRC_CK48 */
 #if defined(STM32_SRC_PLLCLK)
 	case STM32_SRC_PLLCLK:
 		if (!IS_ENABLED(STM32_PLL_ENABLED)) {
