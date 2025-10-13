@@ -108,7 +108,7 @@ extern "C" {
  * @param _port a pointer to the port number that this service will use
  */
 #define DNS_SD_REGISTER_SERVICE(_id, _instance, _service, _proto,	\
-				_domain, _text, _port)			\
+				_domain, _text, _port, _alias, _iface)			\
 	static const STRUCT_SECTION_ITERABLE(dns_sd_rec, _id) = {	\
 		.instance = _instance,					\
 		.service = _service,					\
@@ -117,6 +117,8 @@ extern "C" {
 		.text = (const char *)_text,				\
 		.text_size = sizeof(_text) - 1,				\
 		.port = _port,						\
+        .alias = _alias,                    \
+		.iface = _iface,						\
 	}
 
 /**
@@ -225,6 +227,10 @@ struct dns_sd_rec {
 	size_t text_size;
 	/** A pointer to the port number used by the service */
 	const uint16_t *port;
+	/** <alias> for a hostname */
+	const char *alias;
+	/** <iface> for this record */
+	const char *iface;
 };
 
 /** @cond INTERNAL_HIDDEN */

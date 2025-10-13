@@ -32,6 +32,8 @@ LOG_MODULE_REGISTER(net_mdns_responder, CONFIG_MDNS_RESPONDER_LOG_LEVEL);
 #include <zephyr/net/socket_service.h>
 #include <zephyr/net/igmp.h>
 
+#include <zephyr/posix/net/if.h>
+
 #include "dns_sd.h"
 #include "dns_pack.h"
 #include "ipv6.h"
@@ -503,6 +505,12 @@ static void send_sd_response(int sock,
 		}
 	}
 
+    char ifname[IF_NAMESIZE] = {};
+    if ( 0 >= net_if_get_name(iface, ifname, sizeof(ifname)))
+    {
+        NET_ERR("net_if_get_name(...) failed");
+    }
+
 	ret = dns_sd_query_extract(result->data, result->len, &filter, label, size, &n);
 	if (ret < 0) {
 		NET_DBG("unable to extract query (%d)", ret);
@@ -541,10 +549,17 @@ static void send_sd_response(int sock,
 
 		/* Checks validity and then compare */
 		if (dns_sd_rec_match(record, &filter)) {
-			NET_INFO("matched query: %s.%s.%s.%s port: %u",
+			NET_INFO("matched query: %s.%s.%s.%s port: %u via %s for %s on %s",
 				record->instance, record->service,
 				record->proto, record->domain,
-				ntohs(*(record->port)));
+				ntohs(*(record->port)),
+                ifname,
+                record->alias, record->iface);
+                
+            if (0 != strcmp(ifname, record->iface)) {
+                NET_DBG("skipped on this interface");
+                continue;
+            }
 
 			/* Construct the response */
 			if (service_type_enum) {
@@ -583,7 +598,8 @@ static int dns_read(int sock,
 		    struct net_buf *dns_data,
 		    size_t len,
 		    struct sockaddr *src_addr,
-		    size_t addrlen)
+		    size_t addrlen,
+		    unsigned int ifindex)
 {
 	/* Helper struct to track the dns msg received from the server */
 	const char *hostname = net_hostname_get();
@@ -594,6 +610,12 @@ static int dns_read(int sock,
 	int data_len;
 	int queries;
 	int ret;
+    char ifname[IF_NAMESIZE] = {};
+
+    if (NULL == if_indextoname(ifindex, ifname))
+    {
+        NET_ERR("if_indextoname(%i,...) failed", ifindex);
+    }
 
 	data_len = MIN(len, MDNS_RESOLVER_BUF_SIZE);
 
@@ -616,15 +638,13 @@ static int dns_read(int sock,
 
 	queries = ret;
 
-	NET_DBG("Received %d %s from %s:%u", queries,
+	NET_DBG("Received %d %s from %s on interface '%s'", queries,
 		queries > 1 ? "queries" : "query",
 		net_sprint_addr(family,
 				family == AF_INET ?
 				(const void *)&net_sin(src_addr)->sin_addr :
 				(const void *)&net_sin6(src_addr)->sin6_addr),
-				ntohs(family == AF_INET ?
-				net_sin(src_addr)->sin_port :
-				net_sin6(src_addr)->sin6_port));
+				ifname);
 
 	do {
 		enum dns_rr_type qtype;
@@ -664,6 +684,26 @@ static int dns_read(int sock,
 		} else if (IS_ENABLED(CONFIG_MDNS_RESPONDER_DNS_SD)
 			&& qtype == DNS_RR_TYPE_PTR) {
 			send_sd_response(sock, family, src_addr, addrlen, result);
+		} else {
+			/* if no answer has been sent yet, iterate over the registered services,
+			 * which might have responded with an alias
+			 */
+			int dns_sd_rec_count = 0;
+			const struct dns_sd_rec *record;
+			DNS_SD_COUNT(&dns_sd_rec_count);
+			for (int i = 0; i<dns_sd_rec_count; ++i) {
+				DNS_SD_GET(i, &record);
+				if (record->alias) {
+					int alias_len = strlen(record->alias);
+					if (!strncasecmp(record->alias, result->data + 1, alias_len)) {
+						NET_DBG("%s %s %s to our alias %s%s", "mDNS",
+							family == AF_INET ? "IPv4" : "IPv6", "query",
+							record->alias, ".local");
+						send_response(sock, family, src_addr, addrlen,
+								  result, qtype);
+					}
+				}
+			}
 		}
 
 	} while (--queries);

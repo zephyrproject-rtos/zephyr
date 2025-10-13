@@ -575,6 +575,12 @@ int add_srv_record(const struct dns_sd_rec *inst, uint32_t ttl,
 	uint16_t offset = buf_offset;
 	const char *hostname = net_hostname_get();
 
+    if (inst->alias) {
+		NET_DBG("used alias '%s' i.s.o. hostname '%s'",
+			inst->alias, hostname);
+        hostname = inst->alias;
+    }
+
 	if ((DNS_SD_PTR_MASK & instance_offset) != 0) {
 		NET_DBG("offset %u too big for message compression",
 			instance_offset);
