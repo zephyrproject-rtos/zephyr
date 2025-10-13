@@ -184,4 +184,16 @@ int scmi_send_message(struct scmi_protocol *proto,
 		      struct scmi_message *msg, struct scmi_message *reply,
 		      bool use_polling);
 
+/**
+ * @brief Read an SCMI message
+ *
+ * Blocking function used to read an SCMI message over a given channel
+ *
+ * @param proto pointer to SCMI protocol
+ * @param msg pointer to SCMI message to read
+ *
+ * @retval 0 if successful
+ * @retval negative errno if failure
+ */
+int scmi_read_message(struct scmi_protocol *proto, struct scmi_message *msg);
 #endif /* _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_PROTOCOL_H_ */
