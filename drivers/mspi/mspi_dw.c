@@ -114,6 +114,7 @@ struct mspi_dw_config {
 	uint8_t rx_fifo_threshold;
 	DECLARE_REG_ACCESS();
 	bool sw_multi_periph;
+	enum mspi_op_mode op_mode;
 };
 
 /* Register access helpers. */
@@ -1748,6 +1749,7 @@ static int dev_pm_action_cb(const struct device *dev,
 
 static int dev_init(const struct device *dev)
 {
+	struct mspi_dw_data *dev_data = dev->data;
 	const struct mspi_dw_config *dev_config = dev->config;
 	const struct gpio_dt_spec *ce_gpio;
 	int rc;
@@ -1756,11 +1758,12 @@ static int dev_init(const struct device *dev)
 
 	vendor_specific_init(dev);
 
+	dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_SSI_IS_MST_BIT,
+				       dev_config->op_mode == MSPI_OP_MODE_CONTROLLER);
+
 	dev_config->irq_config();
 
 #if defined(CONFIG_MULTITHREADING)
-	struct mspi_dw_data *dev_data = dev->data;
-
 	dev_data->dev = dev;
 	k_sem_init(&dev_data->finished, 0, 1);
 	k_sem_init(&dev_data->cfg_lock, 1, 1);
@@ -1885,6 +1888,7 @@ static DEVICE_API(mspi, drv_api) = {
 		DEFINE_REG_ACCESS(inst)					\
 		.sw_multi_periph =					\
 			DT_INST_PROP(inst, software_multiperipheral),	\
+		.op_mode = DT_INST_STRING_TOKEN(inst, op_mode),		\
 	};								\
 	DEVICE_DT_INST_DEFINE(inst,					\
 		dev_init, PM_DEVICE_DT_INST_GET(inst),			\
