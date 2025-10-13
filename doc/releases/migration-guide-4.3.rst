@@ -323,9 +323,6 @@ Shell
   compatibility.
   (:github:`92677`).
 
-* The :c:func:`shell_set_bypass` now requires a user data pointer to be passed. And accordingly the
-  :c:type:`shell_bypass_cb_t` now has a user data argument.
-
 .. zephyr-keep-sorted-stop
 
 Modules
