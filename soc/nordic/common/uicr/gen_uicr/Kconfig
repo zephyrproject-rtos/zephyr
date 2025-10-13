@@ -43,6 +43,18 @@ config GEN_UICR_LOCK
 	  This should be enabled only in production devices to prevent
 	  unauthorized modification.
 
+config GEN_UICR_ERASEPROTECT
+	bool "Enable UICR.ERASEPROTECT"
+	depends on ! GEN_UICR_LOCK
+	help
+	  When enabled, ERASEALL operations are blocked.
+
+	  This option is mutually exclusive with UICR.LOCK in Kconfig to prevent
+	  accidental configuration where both are enabled simultaneously. If both
+	  were enabled, the UICR would become impossible to modify in any way.
+	  Note that gen_uicr.py can be used directly to create a configuration
+	  with both enabled if needed.
+
 config GEN_UICR_PROTECTEDMEM
 	bool "Enable UICR.PROTECTEDMEM"
 	help
