@@ -22,17 +22,6 @@
 
 LOG_MODULE_REGISTER(pwm_nrfx, CONFIG_PWM_LOG_LEVEL);
 
-#if NRF_ERRATA_STATIC_CHECK(52, 109)
-#define ANOMALY_109_EGU_IRQ_CONNECT(idx) _EGU_IRQ_CONNECT(idx)
-#define _EGU_IRQ_CONNECT(idx) \
-	extern void nrfx_egu_##idx##_irq_handler(void); \
-	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(egu##idx)), \
-		    DT_IRQ(DT_NODELABEL(egu##idx), priority), \
-		    nrfx_isr, nrfx_egu_##idx##_irq_handler, 0)
-#else
-#define ANOMALY_109_EGU_IRQ_CONNECT(idx)
-#endif
-
 #define PWM_NRFX_IS_FAST(inst) NRF_DT_IS_FAST(DT_DRV_INST(inst))
 
 #if NRF_DT_INST_ANY_IS_FAST
@@ -78,6 +67,42 @@ struct pwm_nrfx_data {
 	bool     clock_requested;
 #endif
 };
+
+#if NRF_ERRATA_STATIC_CHECK(52, 109)
+/* Forward-declare pwm_nrfx_<inst>_data structs to be able to access nrfx_pwm_t needed for the
+ * workaround.
+ */
+#define _PWM_DATA_STRUCT_NAME_GET(inst) pwm_nrfx_##inst##_data
+#define _PWM_DATA_STRUCT_DECLARE(inst) static struct pwm_nrfx_data _PWM_DATA_STRUCT_NAME_GET(inst);
+DT_INST_FOREACH_STATUS_OKAY(_PWM_DATA_STRUCT_DECLARE);
+
+/* Create an array of pointers to all active PWM instances to loop over them in an EGU interrupt
+ * handler.
+ */
+#define _PWM_DATA_STRUCT_PWM_PTR_COMMA_GET(inst) &_PWM_DATA_STRUCT_NAME_GET(inst).pwm,
+static nrfx_pwm_t *pwm_instances[] = {
+	DT_INST_FOREACH_STATUS_OKAY(_PWM_DATA_STRUCT_PWM_PTR_COMMA_GET)
+};
+
+/* Define an interrupt handler for the EGU instance used by the workaround which calls
+ * nrfx_pwm_nrf52_anomaly_109_handler for all active PWM instances.
+ */
+void anomaly_109_egu_handler(void)
+{
+	for (int i = 0; i < ARRAY_SIZE(pwm_instances); i++) {
+		nrfx_pwm_nrf52_anomaly_109_handler(pwm_instances[i]);
+	}
+}
+
+#define ANOMALY_109_EGU_IRQ_CONNECT(idx) _EGU_IRQ_CONNECT(idx)
+#define _EGU_IRQ_CONNECT(idx)				       \
+	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(egu##idx)),	       \
+		    DT_IRQ(DT_NODELABEL(egu##idx), priority),  \
+		    anomaly_109_egu_handler, 0, 0)
+#else
+#define ANOMALY_109_EGU_IRQ_CONNECT(idx)
+#endif
+
 /* Ensure the pwm_needed bit mask can accommodate all available channels. */
 #if (NRF_PWM_CHANNEL_COUNT > 8)
 #error "Current implementation supports maximum 8 channels."
@@ -102,9 +127,9 @@ static uint16_t *seq_values_ptr_get(const struct device *dev)
 	return (uint16_t *)config->seq.values.p_raw;
 }
 
-static void pwm_handler(nrfx_pwm_event_type_t event_type, void *p_context)
+static void pwm_handler(nrfx_pwm_event_t event, void *p_context)
 {
-	ARG_UNUSED(event_type);
+	ARG_UNUSED(event);
 	ARG_UNUSED(p_context);
 }
 
