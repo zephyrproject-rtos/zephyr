@@ -110,7 +110,10 @@ struct uart_stm32_data {
 	bool pm_policy_state_on;
 	bool rx_woken;
 #endif
+	/* SW DE timer - present when SW DE support may be needed */
+#if !defined(USART_CR3_DEM) || defined(USART_CR3_DEM)
 	struct k_timer rs485_timer;
+#endif
 
 };
 
