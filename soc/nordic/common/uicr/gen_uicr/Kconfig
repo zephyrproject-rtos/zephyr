@@ -207,8 +207,22 @@ config GEN_UICR_SECONDARY_TRIGGER_RADIOCORELOCKUP
 	help
 	  Boot secondary firmware when Radio core CPU lockup causes a reset.
 
-
 endif # GEN_UICR_SECONDARY_TRIGGER
+
+config GEN_UICR_SECONDARY_PROTECTEDMEM
+	bool "Enable UICR.SECONDARY.PROTECTEDMEM"
+	depends on GEN_UICR_SECONDARY
+	help
+	  When enabled, the UICR generator will configure the
+	  protected memory region for the secondary firmware.
+
+config GEN_UICR_SECONDARY_PROTECTEDMEM_SIZE_BYTES
+	int "Secondary protected memory size in bytes"
+	default 4096
+	depends on GEN_UICR_SECONDARY_PROTECTEDMEM
+	help
+	  Size of the secondary protected memory region in bytes.
+	  This value must be divisible by 4096 (4 kiB).
 
 endif # GEN_UICR_SECONDARY
 

@@ -502,6 +502,12 @@ def main() -> None:
         ),
     )
     parser.add_argument(
+        "--secondary-protectedmem-size",
+        default=None,
+        type=lambda s: int(s, 0),
+        help="Size in bytes of the secondary protected memory region (decimal or 0x-prefixed hex)",
+    )
+    parser.add_argument(
         "--secondary-periphconf-address",
         default=None,
         type=lambda s: int(s, 0),
@@ -647,6 +653,15 @@ def main() -> None:
                 uicr.SECONDARY.TRIGGER.ENABLE = ENABLED_VALUE
                 uicr.SECONDARY.TRIGGER.RESETREAS = args.secondary_trigger_resetreas
 
+            # Handle secondary PROTECTEDMEM configuration
+            if args.secondary_protectedmem_size:
+                uicr.SECONDARY.PROTECTEDMEM.ENABLE = ENABLED_VALUE
+                if args.secondary_protectedmem_size % 4096 != 0:
+                    raise ScriptError(
+                        f"args.secondary_protectedmem_size was {args.secondary_protectedmem_size}, "
+                        f"but must be divisible by 4096"
+                    )
+                uicr.SECONDARY.PROTECTEDMEM.SIZE4KB = args.secondary_protectedmem_size // 4096
             # Handle secondary periphconf if provided
             if args.out_secondary_periphconf_hex:
                 secondary_periphconf_combined = extract_and_combine_periphconfs(
