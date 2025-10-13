@@ -45,7 +45,6 @@ struct ifx_tcpwm_counter_data {
 	struct counter_top_cfg top_value_cfg_counter;
 	uint32_t guard_period;
 	struct ifx_cat1_clock clock;
-	uint8_t clock_peri_group;
 };
 
 static const cy_stc_tcpwm_counter_config_t counter_default_config = {
@@ -138,24 +137,7 @@ static int ifx_tcpwm_counter_init(const struct device *dev)
 	cy_rslt_t rslt;
 	struct ifx_tcpwm_counter_data *const data = dev->data;
 	const struct ifx_tcpwm_counter_config *config = dev->config;
-	uint32_t clk_connection;
 	cy_stc_tcpwm_counter_config_t counter_config = counter_default_config;
-
-	/* Calculate clock connection based on TCPWM index */
-	if (config->resolution_32_bits) {
-		clk_connection = PCLK_TCPWM0_CLOCK_COUNTER_EN0 + config->index;
-	} else {
-		clk_connection = PCLK_TCPWM0_CLOCK_COUNTER_EN256 + config->index;
-	}
-	/* Configure PWM clock */
-	Cy_SysClk_PeriPclkDisableDivider((en_clk_dst_t)clk_connection, config->divider_type,
-					 config->divider_sel);
-	Cy_SysClk_PeriPclkSetDivider((en_clk_dst_t)clk_connection, config->divider_type,
-				     config->divider_sel, config->divider_val);
-	Cy_SysClk_PeriPclkEnableDivider((en_clk_dst_t)clk_connection, config->divider_type,
-					config->divider_sel);
-
-	Cy_SysClk_PeriPclkAssignDivider(clk_connection, config->divider_type, config->divider_sel);
 
 	/* Initialize counter structure */
 	data->alarm_irq_flag = false;
@@ -210,6 +192,24 @@ static int ifx_tcpwm_counter_stop(const struct device *dev)
 	IFX_TCPWM_Counter_Disable(config->reg_base);
 
 	return 0;
+}
+
+static uint32_t ifx_tcpwm_counter_get_freq(const struct device *dev)
+{
+	struct ifx_tcpwm_counter_data *const data = dev->data;
+	const struct ifx_tcpwm_counter_config *config = dev->config;
+	en_clk_dst_t clk_connection;
+
+	/* Determine tcpwm block number based on its resolution */
+	uint32_t tcpwm_block = config->resolution_32_bits ? 0 : 1;
+
+	/* Calculate clock connection based on TCPWM index */
+	clk_connection = ifx_cat1_tcpwm_get_clock_index(tcpwm_block, config->index);
+
+	uint32_t frequency = ifx_cat1_utils_peri_pclk_get_frequency(clk_connection,
+								    &data->clock);
+
+	return frequency;
 }
 
 static int ifx_tcpwm_counter_get_value(const struct device *dev, uint32_t *ticks)
@@ -432,6 +432,7 @@ static int ifx_tcpwm_counter_set_guard_period(const struct device *dev, uint32_t
 static DEVICE_API(counter, counter_api) = {
 	.start = ifx_tcpwm_counter_start,
 	.stop = ifx_tcpwm_counter_stop,
+	.get_freq = ifx_tcpwm_counter_get_freq,
 	.get_value = ifx_tcpwm_counter_get_value,
 	.set_alarm = ifx_tcpwm_counter_set_alarm,
 	.cancel_alarm = ifx_tcpwm_counter_cancel_alarm,
@@ -447,32 +448,50 @@ static DEVICE_API(counter, counter_api) = {
 		    (DT_GET_CYHAL_GPIO_FROM_DT_GPIOS(DT_INST(inst, DT_DRV_COMPAT), gpios_prop)),   \
 		    (default))
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+#define COUNTER_PERI_CLOCK_INSTANCE(n) DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 0),
+#else
+#define COUNTER_PERI_CLOCK_INSTANCE(n)
+#endif
+
+#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+#define COUNTER_PERI_CLOCK_INIT(n)                                                                 \
+	.clock =                                                                                   \
+		{                                                                                  \
+			.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(                                 \
+				DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 0),         \
+				DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),         \
+				DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                     \
+			.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                    \
+		}
+#else
+#define COUNTER_PERI_CLOCK_INIT(n)                                                                 \
+	.clock =                                                                                   \
+		{                                                                                  \
+			.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(                                 \
+				DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),         \
+				DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                     \
+			.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                    \
+		}
+#endif
+
 /* Counter driver init macros */
 #define INFINEON_TCPWM_COUNTER_INIT(n)                                                             \
                                                                                                    \
-	static void ifx_cat1_spi_irq_enable_func_##n(const struct device *dev)                     \
+	static void ifx_counter_irq_enable_func_##n(const struct device *dev)                      \
 	{                                                                                          \
 		IRQ_CONNECT(DT_IRQN(DT_INST_PARENT(n)), DT_IRQ(DT_INST_PARENT(n), priority),       \
 			    counter_isr_handler, DEVICE_DT_INST_GET(n), 0);                        \
 		irq_enable(DT_IRQN(DT_INST_PARENT(n)));                                            \
 	}                                                                                          \
                                                                                                    \
-	static struct ifx_tcpwm_counter_data ifx_tcpwm_counter##n##_data = {                       \
-		.clock =                                                                           \
-			{                                                                          \
-				.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(                         \
-					DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), clk_dst, 1),    \
-					DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),             \
-				.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, div_num),            \
-			},                                                                         \
-		.clock_peri_group = DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), clk_dst, 1),        \
-	};                                                                                         \
+	static struct ifx_tcpwm_counter_data ifx_tcpwm_counter##n##_data =                         \
+		{COUNTER_PERI_CLOCK_INIT(n)};                                                      \
                                                                                                    \
 	static const struct ifx_tcpwm_counter_config ifx_tcpwm_counter##n##_config = {             \
 		.counter_info = {.max_top_value = (DT_PROP(DT_INST_PARENT(n), resolution) == 32)   \
 							  ? UINT32_MAX                             \
 							  : UINT16_MAX,                            \
-				 .freq = DT_INST_PROP(n, clock_frequency),                         \
 				 .flags = COUNTER_CONFIG_INFO_COUNT_UP,                            \
 				 .channels = 1},                                                   \
 		.reg_base = (TCPWM_GRP_CNT_Type *)DT_REG_ADDR(DT_INST_PARENT(n)),                  \
@@ -482,10 +501,7 @@ static DEVICE_API(counter, counter_api) = {
 		.irq_num = DT_IRQN(DT_INST_PARENT(n)),                                             \
 		.resolution_32_bits =                                                              \
 			(DT_PROP(DT_INST_PARENT(n), resolution) == 32) ? true : false,             \
-		.divider_type = DT_PROP(DT_INST_PARENT(n), divider_type),                          \
-		.divider_sel = DT_PROP(DT_INST_PARENT(n), divider_sel),                            \
-		.divider_val = DT_PROP(DT_INST_PARENT(n), divider_val),                            \
-		.irq_enable_func = ifx_cat1_spi_irq_enable_func_##n,                               \
+		.irq_enable_func = ifx_counter_irq_enable_func_##n,                                \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, ifx_tcpwm_counter_init, NULL, &ifx_tcpwm_counter##n##_data,       \
