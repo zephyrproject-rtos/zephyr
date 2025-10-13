@@ -562,8 +562,8 @@ static void mqtt_sn_do_publish(struct mqtt_sn_client *client, struct mqtt_sn_pub
 		return;
 	}
 
-	if (client->state != MQTT_SN_CLIENT_ACTIVE) {
-		LOG_ERR("Cannot subscribe: not connected");
+	if (pub->qos != MQTT_SN_QOS_M1 && client->state != MQTT_SN_CLIENT_ACTIVE) {
+		LOG_ERR("Cannot publish: not connected");
 		return;
 	}
 
@@ -773,7 +773,7 @@ static int process_will_message_update(struct mqtt_sn_client *client, int64_t *n
 }
 
 /**
- * @brief Process all publish tasks in the queue.
+ * @brief Process all publish tasks in the queue, except ones with QOS=-1.
  *
  * @param client
  * @param next_cycle will be set to the time when the next action is required
@@ -789,6 +789,10 @@ static int process_pubs(struct mqtt_sn_client *client, int64_t *next_cycle)
 	bool dup; /* dup flag if message is resent */
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&client->publish, pub, pubs, next) {
+		if (pub->qos == MQTT_SN_QOS_M1) {
+			continue;
+		}
+
 		LOG_HEXDUMP_DBG(pub->topic->name, pub->topic->namelen,
 				"Processing publish for topic");
 		LOG_HEXDUMP_DBG(pub->pubdata, pub->datalen, "Processing publish data");
@@ -839,6 +843,29 @@ static int process_pubs(struct mqtt_sn_client *client, int64_t *next_cycle)
 	LOG_DBG("next_cycle: %lld", *next_cycle);
 
 	return 0;
+}
+
+/**
+ * @brief Process all QOS=-1 publish tasks in the queue.
+ *
+ * @param client
+ */
+static void process_pubs_qos_m1(struct mqtt_sn_client *client)
+{
+	struct mqtt_sn_publish *pub, *pubs;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&client->publish, pub, pubs, next) {
+		if (pub->qos != MQTT_SN_QOS_M1) {
+			continue;
+		}
+
+		LOG_HEXDUMP_DBG(pub->topic->name, pub->topic->namelen,
+				"Processing publish for topic");
+		LOG_HEXDUMP_DBG(pub->pubdata, pub->datalen, "Processing publish data");
+
+		mqtt_sn_do_publish(client, pub, false);
+		mqtt_sn_publish_destroy(client, pub);
+	}
 }
 
 /**
@@ -1125,6 +1152,8 @@ static void process_work(struct k_work *wrk)
 		return;
 	}
 
+	process_pubs_qos_m1(client);
+
 	if (client->state == MQTT_SN_CLIENT_ACTIVE) {
 		err = process_will_topic_update(client, &next_cycle);
 		if (err) {
@@ -1380,6 +1409,43 @@ int mqtt_sn_unsubscribe(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 	return 0;
 }
 
+static int mqtt_sn_publish_m1(struct mqtt_sn_client *client, struct mqtt_sn_data *topic_name,
+			      bool retain, struct mqtt_sn_data *data)
+{
+	struct mqtt_sn_publish *pub;
+	struct mqtt_sn_topic *topic;
+	int err;
+
+	topic = mqtt_sn_topic_find_by_name(client, topic_name);
+	if (!topic) {
+		LOG_ERR("Topic not found");
+		return -EINVAL;
+	}
+	if (topic->type != MQTT_SN_TOPIC_TYPE_PREDEF && topic->type != MQTT_SN_TOPIC_TYPE_SHORT) {
+		LOG_ERR("Topic must be predefined or short");
+		return -EINVAL;
+	}
+
+	pub = mqtt_sn_publish_create(client, data);
+	if (!pub) {
+		k_work_reschedule(&client->process_work, K_NO_WAIT);
+		return -ENOMEM;
+	}
+
+	pub->qos = MQTT_SN_QOS_M1;
+	pub->retain = retain;
+	pub->topic = topic;
+
+	sys_slist_append(&client->publish, &pub->next);
+
+	err = k_work_reschedule(&client->process_work, K_NO_WAIT);
+	if (err < 0) {
+		return err;
+	}
+
+	return 0;
+}
+
 int mqtt_sn_publish(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 		    struct mqtt_sn_data *topic_name, bool retain, struct mqtt_sn_data *data)
 {
@@ -1392,8 +1458,7 @@ int mqtt_sn_publish(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 	}
 
 	if (qos == MQTT_SN_QOS_M1) {
-		LOG_ERR("QoS -1 not supported");
-		return -ENOTSUP;
+		return mqtt_sn_publish_m1(client, topic_name, retain, data);
 	}
 
 	if (client->state != MQTT_SN_CLIENT_ACTIVE) {
