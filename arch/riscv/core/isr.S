@@ -376,7 +376,7 @@ no_fp:	/* increment _current->arch.exception_depth */
 	and t0, t0, t1
 	bnez t0, 1f
 	lr a0, ___cpu_t_current_OFFSET(s0)
-	call z_riscv_pmp_stackguard_enable
+	call z_riscv_pmp_kernelmode_enable
 1:
 #endif /* CONFIG_PMP_STACK_GUARD */
 
@@ -524,7 +524,7 @@ is_user_syscall:
 	 * PMP for kernel mode stack guard.
 	 */
 	lr a0, ___cpu_t_current_OFFSET(s0)
-	call z_riscv_pmp_stackguard_enable
+	call z_riscv_pmp_kernelmode_enable
 #endif
 
 	/* It is safe to re-enable IRQs now */
@@ -599,7 +599,7 @@ is_interrupt:
 	and t0, t0, t1
 	bnez t0, 1f
 	lr a0, ___cpu_t_current_OFFSET(s0)
-	call z_riscv_pmp_stackguard_enable
+	call z_riscv_pmp_kernelmode_enable
 	j 2f
 #endif /* CONFIG_USERSPACE */
 1:	/* Re-activate PMP for m-mode */

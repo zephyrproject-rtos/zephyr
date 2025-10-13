@@ -64,7 +64,7 @@ SECTION_FUNC(TEXT, z_riscv_switch)
 #if defined(CONFIG_PMP_STACK_GUARD)
 	/* Stack guard has priority over user space for PMP usage. */
 	mv s0, a0
-	call z_riscv_pmp_stackguard_enable
+	call z_riscv_pmp_kernelmode_enable
 	mv a0, s0
 #elif defined(CONFIG_USERSPACE)
 	/*
