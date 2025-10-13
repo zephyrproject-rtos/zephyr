@@ -188,6 +188,34 @@ if(CONFIG_GEN_UICR_SECONDARY)
     list(APPEND secondary_args --secondary-wdtstart-crv ${CONFIG_GEN_UICR_SECONDARY_WDTSTART_CRV})
   endif()
 
+  # Handle secondary TRIGGER configuration
+  if(CONFIG_GEN_UICR_SECONDARY_TRIGGER)
+    list(APPEND secondary_args --secondary-trigger)
+
+    # Compute RESETREAS bitmask from individual trigger configs
+    set(resetreas_value 0)
+    if(CONFIG_GEN_UICR_SECONDARY_TRIGGER_APPLICATIONWDT0)
+      math(EXPR resetreas_value "${resetreas_value} + 0x001")
+    endif()
+    if(CONFIG_GEN_UICR_SECONDARY_TRIGGER_APPLICATIONWDT1)
+      math(EXPR resetreas_value "${resetreas_value} + 0x002")
+    endif()
+    if(CONFIG_GEN_UICR_SECONDARY_TRIGGER_APPLICATIONLOCKUP)
+      math(EXPR resetreas_value "${resetreas_value} + 0x008")
+    endif()
+    if(CONFIG_GEN_UICR_SECONDARY_TRIGGER_RADIOCOREWDT0)
+      math(EXPR resetreas_value "${resetreas_value} + 0x020")
+    endif()
+    if(CONFIG_GEN_UICR_SECONDARY_TRIGGER_RADIOCOREWDT1)
+      math(EXPR resetreas_value "${resetreas_value} + 0x040")
+    endif()
+    if(CONFIG_GEN_UICR_SECONDARY_TRIGGER_RADIOCORELOCKUP)
+      math(EXPR resetreas_value "${resetreas_value} + 0x100")
+    endif()
+
+    list(APPEND secondary_args --secondary-trigger-resetreas ${resetreas_value})
+  endif()
+
   if(CONFIG_GEN_UICR_SECONDARY_GENERATE_PERIPHCONF)
     # Compute SECONDARY_PERIPHCONF absolute address and size from this image's devicetree
     compute_partition_address_and_size("secondary_periphconf_partition" SECONDARY_PERIPHCONF_ADDRESS SECONDARY_PERIPHCONF_SIZE)
