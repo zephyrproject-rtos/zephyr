@@ -4306,6 +4306,11 @@ Realtek EC Platforms:
   status: maintained
   maintainers:
     - JasonLin-RealTek
+  collaborators:
+    - elmo9999
+    - benson0715
+    - JhanBoChao-Realtek
+    - Titan-Realtek
   files:
     - boards/realtek/
     - drivers/*/*rts5912*
