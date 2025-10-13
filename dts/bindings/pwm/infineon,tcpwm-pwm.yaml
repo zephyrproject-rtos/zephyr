@@ -7,7 +7,7 @@ description: Infineon TCPWM PWM
 
 compatible: "infineon,tcpwm-pwm"
 
-include: [pwm-controller.yaml, pinctrl-device.yaml, "infineon,system-interrupts.yaml"]
+include: [base.yaml, pwm-controller.yaml, pinctrl-device.yaml, "infineon,system-interrupts.yaml"]
 
 properties:
   "#pwm-cells":
