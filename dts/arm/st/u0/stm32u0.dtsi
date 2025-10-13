@@ -104,6 +104,13 @@
 			compatible = "st,stm32u0-pll-clock";
 			status = "disabled";
 		};
+
+		clk48: clk48 {
+			#clock-cells = <0>;
+			compatible = "st,stm32-clock-mux";
+			clocks = <&rcc STM32_SRC_MSI CLK48_SEL(1)>;
+			status = "disabled";
+		};
 	};
 
 	soc {
@@ -390,7 +397,8 @@
 		rng: rng@40025000 {
 			compatible = "st,stm32-rng";
 			reg = <0x40025000 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB1, 18)>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 18)>,
+				 <&rcc STM32_SRC_CK48 NO_SEL>;
 			interrupts = <31 0>;
 			status = "disabled";
 		};
