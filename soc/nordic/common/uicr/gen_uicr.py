@@ -431,6 +431,11 @@ def main() -> None:
         help="Size in bytes of cpurad_its_partition (decimal or 0x-prefixed hex)",
     )
     parser.add_argument(
+        "--lock",
+        action="store_true",
+        help="Enable UICR.LOCK to prevent modifications without ERASEALL",
+    )
+    parser.add_argument(
         "--protectedmem",
         action="store_true",
         help="Enable protected memory region in UICR",
@@ -597,6 +602,9 @@ def main() -> None:
             uicr.SECURESTORAGE.ITS.APPLICATIONSIZE1KB = args.cpuapp_its_size // 1024
             uicr.SECURESTORAGE.ITS.RADIOCORESIZE1KB = args.cpurad_its_size // 1024
 
+        # Handle LOCK configuration
+        if args.lock:
+            uicr.LOCK = ENABLED_VALUE
         # Handle protected memory configuration
         if args.protectedmem:
             if args.protectedmem_size_bytes % KB_4 != 0:

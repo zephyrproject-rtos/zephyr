@@ -1266,6 +1266,7 @@ flagged.
         "FOO_SETTING_1",
         "FOO_SETTING_2",
         "GEN_UICR_GENERATE_PERIPHCONF", # Used in specialized build tool, not part of main Kconfig
+        "GEN_UICR_LOCK",
         "GEN_UICR_PROTECTEDMEM",
         "GEN_UICR_PROTECTEDMEM_SIZE_BYTES",
         "GEN_UICR_SECONDARY",
