@@ -77,6 +77,7 @@ endif()
 
 set(lock_args)
 set(eraseprotect_args)
+set(approtect_args)
 set(protectedmem_args)
 set(periphconf_args)
 set(wdtstart_args)
@@ -125,6 +126,19 @@ endif()
 # Handle ERASEPROTECT configuration
 if(CONFIG_GEN_UICR_ERASEPROTECT)
   list(APPEND eraseprotect_args --eraseprotect)
+endif()
+
+# Handle APPROTECT configuration
+if(CONFIG_GEN_UICR_APPROTECT_APPLICATION_PROTECTED)
+  list(APPEND approtect_args --approtect-application-protected)
+endif()
+
+if(CONFIG_GEN_UICR_APPROTECT_RADIOCORE_PROTECTED)
+  list(APPEND approtect_args --approtect-radiocore-protected)
+endif()
+
+if(CONFIG_GEN_UICR_APPROTECT_CORESIGHT_PROTECTED)
+  list(APPEND approtect_args --approtect-coresight-protected)
 endif()
 
 # Handle protected memory configuration
@@ -257,6 +271,7 @@ add_custom_command(
           --out-uicr-hex ${uicr_hex_file}
           ${lock_args}
           ${eraseprotect_args}
+          ${approtect_args}
           ${wdtstart_args}
           ${periphconf_args}
           ${securestorage_args}

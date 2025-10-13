@@ -55,6 +55,30 @@ config GEN_UICR_ERASEPROTECT
 	  Note that gen_uicr.py can be used directly to create a configuration
 	  with both enabled if needed.
 
+menu "UICR.APPROTECT - Access Port Protection"
+
+config GEN_UICR_APPROTECT_APPLICATION_PROTECTED
+	bool "Protect application domain access port"
+	help
+	  When enabled, disables debug access to the application domain processor,
+	  preventing debugger connection to application memory, registers, and debug
+	  features. When disabled, full debug access is enabled.
+
+config GEN_UICR_APPROTECT_RADIOCORE_PROTECTED
+	bool "Protect radio core access port"
+	help
+	  When enabled, disables debug access to the radio core processor,
+	  preventing debugger connection to radio core memory, registers, and debug
+	  features. When disabled, full debug access is enabled.
+
+config GEN_UICR_APPROTECT_CORESIGHT_PROTECTED
+	bool "Disable CoreSight subsystem"
+	help
+	  When enabled will disable the coresight subsystem, preventing
+	  system level trace features.
+
+endmenu
+
 config GEN_UICR_PROTECTEDMEM
 	bool "Enable UICR.PROTECTEDMEM"
 	help
