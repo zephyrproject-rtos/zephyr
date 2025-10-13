@@ -192,7 +192,7 @@ static int gspi_siwx91x_config(const struct device *dev, const struct spi_config
 }
 
 #ifdef CONFIG_SPI_SILABS_SIWX91X_GSPI_DMA
-static void gspi_siwx91x_dma_rx_callback(const struct device *dev, void *user_data,
+static void gspi_siwx91x_dma_tx_callback(const struct device *dev, void *user_data,
 					 uint32_t channel, int status)
 {
 	const struct device *spi_dev = (const struct device *)user_data;
@@ -230,7 +230,7 @@ static int gspi_siwx91x_dma_config(const struct device *dev,
 		.block_count = block_count,
 		.head_block = channel->dma_descriptors,
 		.dma_slot = channel->dma_slot,
-		.dma_callback = !is_tx ? &gspi_siwx91x_dma_rx_callback : NULL,
+		.dma_callback = is_tx ? &gspi_siwx91x_dma_tx_callback : NULL,
 		.user_data = (void *)dev,
 	};
 
@@ -411,7 +411,8 @@ static int gspi_siwx91x_transceive_dma(const struct device *dev, const struct sp
 		return -EINVAL;
 	}
 
-	/* Reset the Rx and Tx FIFO register */
+	cfg->reg->GSPI_FIFO_THRLD_b.RFIFO_RESET = 1;
+	cfg->reg->GSPI_FIFO_THRLD_b.WFIFO_RESET = 1;
 	cfg->reg->GSPI_FIFO_THRLD = 0;
 
 	ret = gspi_siwx91x_prepare_dma_transaction(dev, padded_transaction_size);
