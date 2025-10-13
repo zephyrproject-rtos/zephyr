@@ -1836,6 +1836,22 @@ bool shell_ready(const struct shell *sh)
 	return state_get(sh) ==	SHELL_STATE_ACTIVE;
 }
 
+#if defined(CONFIG_SHELL_USER_DATA)
+void shell_user_data_set(const struct shell *sh, void *user_data)
+{
+	__ASSERT_NO_MSG(sh != NULL);
+
+	sh->ctx->user_data = user_data;
+}
+
+void *shell_user_data_get(const struct shell *sh)
+{
+	__ASSERT_NO_MSG(sh != NULL);
+
+	return sh->ctx->user_data;
+}
+#endif
+
 static int cmd_help(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);

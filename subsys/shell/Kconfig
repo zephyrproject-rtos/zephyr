@@ -336,6 +336,12 @@ config SHELL_TX_TIMEOUT_MS
 	  When using the shell log backend, the timeout should be longer to avoid
 	  timeouts due to log processing. A value of 0 means no timeout.
 
+config SHELL_USER_DATA
+	bool "Shell user data support"
+	help
+	  This will add an extra field to the struct shell_ctx that will allow a user
+	  to get/set an opaque user_data pointer.
+
 source "subsys/shell/modules/Kconfig"
 
 endif # SHELL

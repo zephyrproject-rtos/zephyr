@@ -1024,6 +1024,11 @@ struct shell_ctx {
 	struct k_sem lock_sem;
 	k_tid_t tid;
 	int ret_val;
+
+#if defined(CONFIG_SHELL_USER_DATA) || defined(__DOXYGEN__)
+	/** Free field for user data */
+	void *user_data;
+#endif
 };
 
 extern const struct log_backend_api log_backend_shell_api;
@@ -1464,6 +1469,29 @@ int shell_mode_delete_set(const struct shell *sh, bool val);
  * @retval return value of previous command
  */
 int shell_get_return_value(const struct shell *sh);
+
+#if defined(CONFIG_SHELL_USER_DATA) || defined(__DOXYGEN__)
+
+/** @brief Set user data.
+ *
+ * @kconfig_dep{CONFIG_SHELL_USER_DATA}
+ *
+ * @param[in] sh	Pointer to the shell instance.
+ * @param[in] user_data	Opaque pointer for custom user data.
+ */
+void shell_user_data_set(const struct shell *sh, void *user_data);
+
+/** @brief Get user data.
+ *
+ * @kconfig_dep{CONFIG_SHELL_USER_DATA}
+ *
+ * @param[in] sh	Pointer to the shell instance.
+ *
+ * @return opaque pointer to custom user data.
+ */
+void *shell_user_data_get(const struct shell *sh);
+
+#endif
 
 /**
  * @}
