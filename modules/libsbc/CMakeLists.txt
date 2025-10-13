@@ -1,7 +1,10 @@
 if(CONFIG_LIBSBC_ENCODER OR CONFIG_LIBSBC_DECODER)
 
 zephyr_library_named(libsbc)
-zephyr_library_compile_options(-O3 -std=c11 -ffast-math -Wno-array-bounds)
+# -Wno-stringop-overflow was added as otherwise gcc 13.3 produces multiple warnings in this library
+# Newer version of gcc do not produce them, and this code is taken from Android where it was
+# validated. So these warnings are presumed to be false positives.
+zephyr_library_compile_options(-O3 -std=c11 -ffast-math -Wno-stringop-overflow)
 
 zephyr_library_compile_definitions(SBC_FOR_EMBEDDED_LINUX)
 zephyr_library_compile_definitions(SBC_NO_PCM_CPY_OPTION)
