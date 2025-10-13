@@ -14,6 +14,10 @@
 
 #include <zephyr/drivers/interrupt_controller/riscv_clic.h>
 #include <zephyr/drivers/interrupt_controller/riscv_plic.h>
+#include <zephyr/drivers/interrupt_controller/riscv_aia.h>
+
+/* RISC-V architectural constant: local interrupts 0-15, external interrupts start at 16 */
+#define RISCV_IRQ_EXT_OFFSET 16
 
 #if defined(CONFIG_RISCV_HAS_CLIC)
 
@@ -59,6 +63,17 @@ void arch_irq_enable(unsigned int irq)
 		riscv_plic_irq_enable(irq);
 		return;
 	}
+#elif defined(CONFIG_RISCV_HAS_AIA)
+	/*
+	 * AIA uses raw EIID values, not multi-level encoding.
+	 * IRQs < RISCV_IRQ_EXT_OFFSET are local interrupts (enabled via mie CSR),
+	 * IRQs >= RISCV_IRQ_EXT_OFFSET are external interrupts (handled by AIA).
+	 */
+	if (irq >= RISCV_IRQ_EXT_OFFSET) {
+		riscv_aia_irq_enable(irq);
+		return;
+	}
+	/* Fall through to enable local interrupts in mie CSR */
 #endif
 
 	/*
@@ -79,6 +94,13 @@ void arch_irq_disable(unsigned int irq)
 		riscv_plic_irq_disable(irq);
 		return;
 	}
+#elif defined(CONFIG_RISCV_HAS_AIA)
+	/* AIA: IRQs >= RISCV_IRQ_EXT_OFFSET are external, handled by AIA driver */
+	if (irq >= RISCV_IRQ_EXT_OFFSET) {
+		riscv_aia_irq_disable(irq);
+		return;
+	}
+	/* Fall through for local interrupts */
 #endif
 
 	/*
@@ -98,6 +120,12 @@ int arch_irq_is_enabled(unsigned int irq)
 	if (level == 2) {
 		return riscv_plic_irq_is_enabled(irq);
 	}
+#elif defined(CONFIG_RISCV_HAS_AIA)
+	/* AIA: IRQs >= RISCV_IRQ_EXT_OFFSET are external, handled by AIA driver */
+	if (irq >= RISCV_IRQ_EXT_OFFSET) {
+		return riscv_aia_irq_is_enabled(irq);
+	}
+	/* Fall through for local interrupts */
 #endif
 
 	mie = csr_read(mie);
@@ -114,7 +142,21 @@ void z_riscv_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flag
 		riscv_plic_set_priority(irq, prio);
 	}
 }
+#elif defined(CONFIG_RISCV_HAS_AIA)
+void z_riscv_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
+{
+	ARG_UNUSED(flags);
+
+	/* Local interrupts (< RISCV_IRQ_EXT_OFFSET) don't have configurable priority */
+	if (irq < RISCV_IRQ_EXT_OFFSET) {
+		return;
+	}
+
+	/* AIA priority is handled via IMSIC EITHRESHOLD or EIID ordering */
+	riscv_aia_set_priority(irq, prio);
+}
 #endif /* CONFIG_RISCV_HAS_PLIC */
+
 #endif /* CONFIG_RISCV_HAS_CLIC */
 
 #if defined(CONFIG_RISCV_SOC_INTERRUPT_INIT)
