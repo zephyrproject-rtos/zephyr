@@ -39,26 +39,25 @@ LOG_MODULE_REGISTER(mpu);
 #define PMP_DEBUG_DUMP 0
 
 #ifdef CONFIG_64BIT
-# define PR_ADDR "0x%016lx"
+#define PR_ADDR "0x%016lx"
 #else
-# define PR_ADDR "0x%08lx"
+#define PR_ADDR "0x%08lx"
 #endif
 
-#define PMP_TOR_SUPPORTED	!IS_ENABLED(CONFIG_PMP_NO_TOR)
-#define PMP_NA4_SUPPORTED	!IS_ENABLED(CONFIG_PMP_NO_NA4)
-#define PMP_NAPOT_SUPPORTED	!IS_ENABLED(CONFIG_PMP_NO_NAPOT)
+#define PMP_TOR_SUPPORTED   !IS_ENABLED(CONFIG_PMP_NO_TOR)
+#define PMP_NA4_SUPPORTED   !IS_ENABLED(CONFIG_PMP_NO_NA4)
+#define PMP_NAPOT_SUPPORTED !IS_ENABLED(CONFIG_PMP_NO_NAPOT)
 
 #define PMPCFG_STRIDE sizeof(unsigned long)
 
-#define PMP_ADDR(addr)			((addr) >> 2)
-#define NAPOT_RANGE(size)		(((size) - 1) >> 1)
-#define PMP_ADDR_NAPOT(addr, size)	PMP_ADDR(addr | NAPOT_RANGE(size))
+#define PMP_ADDR(addr)             ((addr) >> 2)
+#define NAPOT_RANGE(size)          (((size) - 1) >> 1)
+#define PMP_ADDR_NAPOT(addr, size) PMP_ADDR(addr | NAPOT_RANGE(size))
 
 #define PMP_NONE 0
 
-static void print_pmp_entries(unsigned int pmp_start, unsigned int pmp_end,
-			      unsigned long *pmp_addr, unsigned long *pmp_cfg,
-			      const char *banner)
+static void print_pmp_entries(unsigned int pmp_start, unsigned int pmp_end, unsigned long *pmp_addr,
+			      unsigned long *pmp_cfg, const char *banner)
 {
 	uint8_t *pmp_n_cfg = (uint8_t *)pmp_cfg;
 	unsigned int index;
@@ -79,7 +78,7 @@ static void print_pmp_entries(unsigned int pmp_start, unsigned int pmp_end,
 		case PMP_NAPOT:
 			tmp = (pmp_addr[index] << 2) | 0x3;
 			start = tmp & (tmp + 1);
-			end   = tmp | (tmp + 1);
+			end = tmp | (tmp + 1);
 			break;
 		default:
 			start = 0;
@@ -88,14 +87,11 @@ static void print_pmp_entries(unsigned int pmp_start, unsigned int pmp_end,
 		}
 
 		if (end == 0) {
-			LOG_DBG("%3d: "PR_ADDR" 0x%02x", index,
-				pmp_addr[index],
+			LOG_DBG("%3d: " PR_ADDR " 0x%02x", index, pmp_addr[index],
 				pmp_n_cfg[index]);
 		} else {
-			LOG_DBG("%3d: "PR_ADDR" 0x%02x --> "
-				PR_ADDR"-"PR_ADDR" %c%c%c%s",
-				index, pmp_addr[index], pmp_n_cfg[index],
-				start, end,
+			LOG_DBG("%3d: " PR_ADDR " 0x%02x --> " PR_ADDR "-" PR_ADDR " %c%c%c%s",
+				index, pmp_addr[index], pmp_n_cfg[index], start, end,
 				(pmp_n_cfg[index] & PMP_R) ? 'R' : '-',
 				(pmp_n_cfg[index] & PMP_W) ? 'W' : '-',
 				(pmp_n_cfg[index] & PMP_X) ? 'X' : '-',
@@ -136,6 +132,40 @@ static inline void z_riscv_pmp_read_config(unsigned long *pmp_cfg, size_t pmp_cf
 #endif
 }
 
+/**
+ * @brief Writes the PMP configuration CSRs (pmpcfgX) based on architecture and slot count.
+ *
+ * This helper function abstracts the logic required to write the correct Control and Status
+ * Registers (CSRs)—pmpcfg0, pmpcfg1, etc.—by accounting for whether the system is 32-bit or 64-bit
+ * and the total number of PMP slots configured. It handles the different register packing schemes
+ * between RV32 and RV64.
+ *
+ * @param pmp_cfg Pointer to the array containing the PMP configuration values to be written to the
+ * CSRs.
+ * @param pmp_cfg_size The size of the pmp_cfg array, measured in unsigned long entries.
+ */
+static inline void z_riscv_pmp_write_config(unsigned long *pmp_cfg, size_t pmp_cfg_size)
+{
+	__ASSERT(pmp_cfg_size == (size_t)(CONFIG_PMP_SLOTS / PMPCFG_STRIDE),
+		 "Invalid PMP config array size");
+
+#ifdef CONFIG_64BIT
+	/* RV64: pmpcfg0 holds entries 0-7; pmpcfg2 holds entries 8-15. */
+	csr_write(pmpcfg0, pmp_cfg[0]);
+#if CONFIG_PMP_SLOTS > 8
+	csr_write(pmpcfg2, pmp_cfg[1]);
+#endif
+#else
+	/* RV32: Each pmpcfg register holds 4 entries. */
+	csr_write(pmpcfg0, pmp_cfg[0]);
+	csr_write(pmpcfg1, pmp_cfg[1]);
+#if CONFIG_PMP_SLOTS > 8
+	csr_write(pmpcfg2, pmp_cfg[2]);
+	csr_write(pmpcfg3, pmp_cfg[3]);
+#endif
+#endif
+}
+
 static void dump_pmp_regs(const char *banner)
 {
 	unsigned long pmp_addr[CONFIG_PMP_SLOTS];
@@ -143,9 +173,11 @@ static void dump_pmp_regs(const char *banner)
 
 #define PMPADDR_READ(x) pmp_addr[x] = csr_read(pmpaddr##x)
 
-	FOR_EACH(PMPADDR_READ, (;), 0, 1, 2, 3, 4, 5, 6, 7);
+	FOR_EACH(PMPADDR_READ, (;), 0, 1, 2, 3, 4, 5, 6, 7)
+		;
 #if CONFIG_PMP_SLOTS > 8
-	FOR_EACH(PMPADDR_READ, (;), 8, 9, 10, 11, 12, 13, 14, 15);
+	FOR_EACH(PMPADDR_READ, (;), 8, 9, 10, 11, 12, 13, 14, 15)
+		;
 #endif
 
 #undef PMPADDR_READ
@@ -171,10 +203,8 @@ static void dump_pmp_regs(const char *banner)
  * @param index_limit Index value representing the size of the provided arrays.
  * @return true on success, false when out of free PMP slots.
  */
-static bool set_pmp_entry(unsigned int *index_p, uint8_t perm,
-			  uintptr_t start, size_t size,
-			  unsigned long *pmp_addr, unsigned long *pmp_cfg,
-			  unsigned int index_limit)
+static bool set_pmp_entry(unsigned int *index_p, uint8_t perm, uintptr_t start, size_t size,
+			  unsigned long *pmp_addr, unsigned long *pmp_cfg, unsigned int index_limit)
 {
 	uint8_t *pmp_n_cfg = (uint8_t *)pmp_cfg;
 	unsigned int index = *index_p;
@@ -186,9 +216,8 @@ static bool set_pmp_entry(unsigned int *index_p, uint8_t perm,
 	if (index >= index_limit) {
 		LOG_ERR("out of PMP slots");
 		ok = false;
-	} else if (PMP_TOR_SUPPORTED &&
-		   ((index == 0 && start == 0) ||
-		    (index != 0 && pmp_addr[index - 1] == PMP_ADDR(start)))) {
+	} else if (PMP_TOR_SUPPORTED && ((index == 0 && start == 0) ||
+					 (index != 0 && pmp_addr[index - 1] == PMP_ADDR(start)))) {
 		/* We can use TOR using only one additional slot */
 		pmp_addr[index] = PMP_ADDR(start + size);
 		pmp_n_cfg[index] = perm | PMP_TOR;
@@ -197,8 +226,7 @@ static bool set_pmp_entry(unsigned int *index_p, uint8_t perm,
 		pmp_addr[index] = PMP_ADDR(start);
 		pmp_n_cfg[index] = perm | PMP_NA4;
 		index += 1;
-	} else if (PMP_NAPOT_SUPPORTED &&
-		   ((size  & (size - 1)) == 0) /* power of 2 */ &&
+	} else if (PMP_NAPOT_SUPPORTED && ((size & (size - 1)) == 0) /* power of 2 */ &&
 		   ((start & (size - 1)) == 0) /* naturally aligned */ &&
 		   (PMP_NA4_SUPPORTED || (size != 4))) {
 		pmp_addr[index] = PMP_ADDR_NAPOT(start, size);
@@ -224,17 +252,16 @@ static bool set_pmp_entry(unsigned int *index_p, uint8_t perm,
 }
 
 #ifdef CONFIG_PMP_STACK_GUARD
-static inline bool set_pmp_mprv_catchall(unsigned int *index_p,
-					 unsigned long *pmp_addr, unsigned long *pmp_cfg,
-					 unsigned int index_limit)
+static inline bool set_pmp_mprv_catchall(unsigned int *index_p, unsigned long *pmp_addr,
+					 unsigned long *pmp_cfg, unsigned int index_limit)
 {
 	/*
 	 * We'll be using MPRV. Make a fallback entry with everything
 	 * accessible as if no PMP entries were matched which is otherwise
 	 * the default behavior for m-mode without MPRV.
 	 */
-	bool ok = set_pmp_entry(index_p, PMP_R | PMP_W | PMP_X,
-				0, 0, pmp_addr, pmp_cfg, index_limit);
+	bool ok =
+		set_pmp_entry(index_p, PMP_R | PMP_W | PMP_X, 0, 0, pmp_addr, pmp_cfg, index_limit);
 
 #ifdef CONFIG_QEMU_TARGET
 	if (ok) {
@@ -269,8 +296,7 @@ static inline bool set_pmp_mprv_catchall(unsigned int *index_p,
  * @param pmp_cfg Array of pmpcfg values (starting at entry 0).
  */
 extern void z_riscv_write_pmp_entries(unsigned int start, unsigned int end,
-				      bool clear_trailing_entries,
-				      const unsigned long *pmp_addr,
+				      bool clear_trailing_entries, const unsigned long *pmp_addr,
 				      const unsigned long *pmp_cfg);
 
 /**
@@ -285,13 +311,11 @@ extern void z_riscv_write_pmp_entries(unsigned int start, unsigned int end,
  * @param pmp_cfg Array of pmpcfg values (starting at entry 0).
  * @param index_limit Index value representing the size of the provided arrays.
  */
-static void write_pmp_entries(unsigned int start, unsigned int end,
-			      bool clear_trailing_entries,
+static void write_pmp_entries(unsigned int start, unsigned int end, bool clear_trailing_entries,
 			      unsigned long *pmp_addr, unsigned long *pmp_cfg,
 			      unsigned int index_limit)
 {
-	__ASSERT(start < end && end <= index_limit &&
-		 index_limit <= CONFIG_PMP_SLOTS,
+	__ASSERT(start < end && end <= index_limit && index_limit <= CONFIG_PMP_SLOTS,
 		 "bad PMP range (start=%u end=%u)", start, end);
 
 	/* Be extra paranoid in case assertions are disabled */
@@ -325,33 +349,31 @@ static void write_pmp_entries(unsigned int start, unsigned int end,
 	 * The QEMU fix is here with more details about this bug:
 	 * https://lists.gnu.org/archive/html/qemu-devel/2022-06/msg02800.html
 	 */
-	static const unsigned long pmp_zero[CONFIG_PMP_SLOTS] = { 0, };
+	static const unsigned long pmp_zero[CONFIG_PMP_SLOTS] = {
+		0,
+	};
 
-	z_riscv_write_pmp_entries(start, CONFIG_PMP_SLOTS, false,
-				  pmp_zero, pmp_zero);
+	z_riscv_write_pmp_entries(start, CONFIG_PMP_SLOTS, false, pmp_zero, pmp_zero);
 #endif
 
-	z_riscv_write_pmp_entries(start, end, clear_trailing_entries,
-				  pmp_addr, pmp_cfg);
+	z_riscv_write_pmp_entries(start, end, clear_trailing_entries, pmp_addr, pmp_cfg);
 }
 
 /**
  * @brief Abstract the last 3 arguments to set_pmp_entry() and
  *        write_pmp_entries( for m-mode.
  */
-#define PMP_M_MODE(thread) \
-	thread->arch.m_mode_pmpaddr_regs, \
-	thread->arch.m_mode_pmpcfg_regs, \
-	ARRAY_SIZE(thread->arch.m_mode_pmpaddr_regs)
+#define PMP_M_MODE(thread)                                                                         \
+	thread->arch.m_mode_pmpaddr_regs, thread->arch.m_mode_pmpcfg_regs,                         \
+		ARRAY_SIZE(thread->arch.m_mode_pmpaddr_regs)
 
 /**
  * @brief Abstract the last 3 arguments to set_pmp_entry() and
  *        write_pmp_entries( for u-mode.
  */
-#define PMP_U_MODE(thread) \
-	thread->arch.u_mode_pmpaddr_regs, \
-	thread->arch.u_mode_pmpcfg_regs, \
-	ARRAY_SIZE(thread->arch.u_mode_pmpaddr_regs)
+#define PMP_U_MODE(thread)                                                                         \
+	thread->arch.u_mode_pmpaddr_regs, thread->arch.u_mode_pmpcfg_regs,                         \
+		ARRAY_SIZE(thread->arch.u_mode_pmpaddr_regs)
 
 /*
  * Stores the initial values of the pmpcfg CSRs, covering all global
@@ -376,19 +398,15 @@ void z_riscv_pmp_init(void)
 	unsigned int index = 0;
 
 	/* The read-only area is always there for every mode */
-	set_pmp_entry(&index, PMP_R | PMP_X | PMP_L,
-		      (uintptr_t)__rom_region_start,
-		      (size_t)__rom_region_size,
-		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+	set_pmp_entry(&index, PMP_R | PMP_X | PMP_L, (uintptr_t)__rom_region_start,
+		      (size_t)__rom_region_size, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 
 #ifdef CONFIG_NULL_POINTER_EXCEPTION_DETECTION_PMP
 	/*
 	 * Use a PMP slot to make region (starting at address 0x0) inaccessible
 	 * for detecting null pointer dereferencing.
 	 */
-	set_pmp_entry(&index, PMP_NONE | PMP_L,
-		      0,
-		      CONFIG_NULL_POINTER_EXCEPTION_REGION_SIZE,
+	set_pmp_entry(&index, PMP_NONE | PMP_L, 0, CONFIG_NULL_POINTER_EXCEPTION_REGION_SIZE,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 #endif
 
@@ -399,10 +417,8 @@ void z_riscv_pmp_init(void)
 	 * addresses inaccessible. This will never change so we do it here
 	 * and lock it too.
 	 */
-	set_pmp_entry(&index, PMP_NONE | PMP_L,
-		      (uintptr_t)z_interrupt_stacks[_current_cpu->id],
-		      Z_RISCV_STACK_GUARD_SIZE,
-		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+	set_pmp_entry(&index, PMP_NONE | PMP_L, (uintptr_t)z_interrupt_stacks[_current_cpu->id],
+		      Z_RISCV_STACK_GUARD_SIZE, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 
 	/*
 	 * This early, the kernel init code uses the IRQ stack and we want to
@@ -412,7 +428,7 @@ void z_riscv_pmp_init(void)
 	 */
 	set_pmp_mprv_catchall(&index, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 
-	 /* Write those entries to PMP regs. */
+	/* Write those entries to PMP regs. */
 	write_pmp_entries(0, index, true, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 
 	/* Activate our non-locked PMP entries for m-mode */
@@ -422,21 +438,17 @@ void z_riscv_pmp_init(void)
 	index--;
 #else
 	/* Without multithreading setup stack guards for IRQ and main stacks */
-	set_pmp_entry(&index, PMP_NONE | PMP_L,
-		      (uintptr_t)z_interrupt_stacks,
-		      Z_RISCV_STACK_GUARD_SIZE,
-		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+	set_pmp_entry(&index, PMP_NONE | PMP_L, (uintptr_t)z_interrupt_stacks,
+		      Z_RISCV_STACK_GUARD_SIZE, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 
-	set_pmp_entry(&index, PMP_NONE | PMP_L,
-		      (uintptr_t)z_main_stack,
-		      Z_RISCV_STACK_GUARD_SIZE,
+	set_pmp_entry(&index, PMP_NONE | PMP_L, (uintptr_t)z_main_stack, Z_RISCV_STACK_GUARD_SIZE,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 
 	/* Write those entries to PMP regs. */
 	write_pmp_entries(0, index, true, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 #endif /* CONFIG_MULTITHREADING */
 #else
-	 /* Write those entries to PMP regs. */
+	/* Write those entries to PMP regs. */
 	write_pmp_entries(0, index, true, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 #endif
 
@@ -472,8 +484,7 @@ void z_riscv_pmp_init(void)
  * @Brief Initialize the per-thread PMP register copy with global values.
  */
 #if (defined(CONFIG_PMP_STACK_GUARD) && defined(CONFIG_MULTITHREADING)) || defined(CONFIG_USERSPACE)
-static inline unsigned int z_riscv_pmp_thread_init(unsigned long *pmp_addr,
-						   unsigned long *pmp_cfg,
+static inline unsigned int z_riscv_pmp_thread_init(unsigned long *pmp_addr, unsigned long *pmp_cfg,
 						   unsigned int index_limit)
 {
 	ARG_UNUSED(index_limit);
@@ -515,9 +526,7 @@ void z_riscv_pmp_stackguard_prepare(struct k_thread *thread)
 		stack_bottom = thread->stack_info.start - K_THREAD_STACK_RESERVED;
 	}
 #endif
-	set_pmp_entry(&index, PMP_NONE,
-		      stack_bottom, Z_RISCV_STACK_GUARD_SIZE,
-		      PMP_M_MODE(thread));
+	set_pmp_entry(&index, PMP_NONE, stack_bottom, Z_RISCV_STACK_GUARD_SIZE, PMP_M_MODE(thread));
 	set_pmp_mprv_catchall(&index, PMP_M_MODE(thread));
 
 	/* remember how many entries we use */
@@ -542,8 +551,7 @@ void z_riscv_pmp_stackguard_enable(struct k_thread *thread)
 
 	/* Write our m-mode MPP entries */
 	write_pmp_entries(global_pmp_end_index, thread->arch.m_mode_pmp_end_index,
-			  false /* no need to clear to the end */,
-			  PMP_M_MODE(thread));
+			  false /* no need to clear to the end */, PMP_M_MODE(thread));
 
 	if (PMP_DEBUG_DUMP) {
 		dump_pmp_regs("m-mode register dump");
@@ -578,8 +586,8 @@ void z_riscv_pmp_stackguard_disable(void)
 	set_pmp_mprv_catchall(&index, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 
 	/* Write "catch all" entry and clear unlocked entries to PMP regs. */
-	write_pmp_entries(global_pmp_end_index, index,
-			  true, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+	write_pmp_entries(global_pmp_end_index, index, true, pmp_addr, pmp_cfg,
+			  ARRAY_SIZE(pmp_addr));
 
 	if (PMP_DEBUG_DUMP) {
 		dump_pmp_regs("catch all register dump");
@@ -613,8 +621,7 @@ void z_riscv_pmp_usermode_prepare(struct k_thread *thread)
 	LOG_DBG("pmp_usermode_prepare for thread %p", thread);
 
 	/* Map the usermode stack */
-	set_pmp_entry(&index, PMP_R | PMP_W,
-		      thread->stack_info.start, thread->stack_info.size,
+	set_pmp_entry(&index, PMP_R | PMP_W, thread->stack_info.start, thread->stack_info.size,
 		      PMP_U_MODE(thread));
 
 	thread->arch.u_mode_pmp_domain_offset = index;
@@ -625,8 +632,7 @@ void z_riscv_pmp_usermode_prepare(struct k_thread *thread)
 /**
  * @brief Convert partition information into PMP entries
  */
-static void resync_pmp_domain(struct k_thread *thread,
-			      struct k_mem_domain *domain)
+static void resync_pmp_domain(struct k_thread *thread, struct k_mem_domain *domain)
 {
 	unsigned int index = thread->arch.u_mode_pmp_domain_offset;
 	int p_idx, remaining_partitions;
@@ -652,10 +658,9 @@ static void resync_pmp_domain(struct k_thread *thread,
 			continue;
 		}
 
-		ok = set_pmp_entry(&index, part->attr.pmp_attr,
-				   part->start, part->size, PMP_U_MODE(thread));
-		__ASSERT(ok,
-			 "no PMP slot left for %d remaining partitions in domain %p",
+		ok = set_pmp_entry(&index, part->attr.pmp_attr, part->start, part->size,
+				   PMP_U_MODE(thread));
+		__ASSERT(ok, "no PMP slot left for %d remaining partitions in domain %p",
 			 remaining_partitions + 1, domain);
 	}
 
@@ -696,8 +701,7 @@ void z_riscv_pmp_usermode_enable(struct k_thread *thread)
 
 	/* Write our u-mode MPP entries */
 	write_pmp_entries(global_pmp_end_index, thread->arch.u_mode_pmp_end_index,
-			  true /* must clear to the end */,
-			  PMP_U_MODE(thread));
+			  true /* must clear to the end */, PMP_U_MODE(thread));
 
 	if (PMP_DEBUG_DUMP) {
 		dump_pmp_regs("u-mode register dump");
@@ -716,8 +720,7 @@ int arch_mem_domain_max_partitions_get(void)
 	 * 1 slot if CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT=y,
 	 * most likely 2 slots otherwise.
 	 */
-	available_pmp_slots -=
-		IS_ENABLED(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT) ? 1 : 2;
+	available_pmp_slots -= IS_ENABLED(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT) ? 1 : 2;
 
 	/*
 	 * Each partition may require either 1 or 2 PMP slots depending
@@ -740,8 +743,7 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 	return 0;
 }
 
-int arch_mem_domain_partition_add(struct k_mem_domain *domain,
-				  uint32_t partition_id)
+int arch_mem_domain_partition_add(struct k_mem_domain *domain, uint32_t partition_id)
 {
 	ARG_UNUSED(partition_id);
 
@@ -750,8 +752,7 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain,
 	return 0;
 }
 
-int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
-				     uint32_t partition_id)
+int arch_mem_domain_partition_remove(struct k_mem_domain *domain, uint32_t partition_id)
 {
 	ARG_UNUSED(partition_id);
 
@@ -774,8 +775,8 @@ int arch_mem_domain_thread_remove(struct k_thread *thread)
 	return 0;
 }
 
-#define IS_WITHIN(inner_start, inner_size, outer_start, outer_size) \
-	((inner_start) >= (outer_start) && (inner_size) <= (outer_size) && \
+#define IS_WITHIN(inner_start, inner_size, outer_start, outer_size)                                \
+	((inner_start) >= (outer_start) && (inner_size) <= (outer_size) &&                         \
 	 ((inner_start) - (outer_start)) <= ((outer_size) - (inner_size)))
 
 int arch_buffer_validate(const void *addr, size_t size, int write)
@@ -784,8 +785,7 @@ int arch_buffer_validate(const void *addr, size_t size, int write)
 	int ret = -1;
 
 	/* Check if this is on the stack */
-	if (IS_WITHIN(start, size,
-		      _current->stack_info.start, _current->stack_info.size)) {
+	if (IS_WITHIN(start, size, _current->stack_info.start, _current->stack_info.size)) {
 		return 0;
 	}
 
