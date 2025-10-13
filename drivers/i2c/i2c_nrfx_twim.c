@@ -32,7 +32,7 @@ struct i2c_nrfx_twim_data {
 	nrfx_twim_t twim;
 	struct k_sem transfer_sync;
 	struct k_sem completion_sync;
-	volatile nrfx_err_t res;
+	volatile int res;
 };
 
 int i2c_nrfx_twim_exclusive_access_acquire(const struct device *dev, k_timeout_t timeout)
@@ -163,7 +163,7 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 			break;
 		}
 
-		if (dev_data->res != NRFX_SUCCESS) {
+		if (dev_data->res < 0) {
 			ret = -EIO;
 			break;
 		}
@@ -199,16 +199,16 @@ static void event_handler(nrfx_twim_event_t const *p_event, void *p_context)
 
 	switch (p_event->type) {
 	case NRFX_TWIM_EVT_DONE:
-		dev_data->res = NRFX_SUCCESS;
+		dev_data->res = 0;
 		break;
 	case NRFX_TWIM_EVT_ADDRESS_NACK:
-		dev_data->res = NRFX_ERROR_DRV_TWI_ERR_ANACK;
+		dev_data->res = -EFAULT;
 		break;
 	case NRFX_TWIM_EVT_DATA_NACK:
-		dev_data->res = NRFX_ERROR_DRV_TWI_ERR_DNACK;
+		dev_data->res = -EAGAIN;
 		break;
 	default:
-		dev_data->res = NRFX_ERROR_INTERNAL;
+		dev_data->res = -EIO;
 		break;
 	}
 
