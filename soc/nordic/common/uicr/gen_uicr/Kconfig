@@ -168,6 +168,48 @@ config GEN_UICR_SECONDARY_PROCESSOR_VALUE
 	default 0xBD2328A8 if GEN_UICR_SECONDARY_PROCESSOR_APPLICATION
 	default 0x1730C77F if GEN_UICR_SECONDARY_PROCESSOR_RADIOCORE
 
+config GEN_UICR_SECONDARY_TRIGGER
+	bool "Enable UICR.SECONDARY.TRIGGER"
+	help
+	  When enabled, configures automatic triggers that cause IronSide SE
+	  to boot the secondary firmware instead of the primary firmware based
+	  on specific reset reasons.
+
+if GEN_UICR_SECONDARY_TRIGGER
+
+config GEN_UICR_SECONDARY_TRIGGER_APPLICATIONWDT0
+	bool "Trigger on Application domain watchdog 0 reset"
+	help
+	  Boot secondary firmware when Application domain watchdog 0 causes a reset.
+
+config GEN_UICR_SECONDARY_TRIGGER_APPLICATIONWDT1
+	bool "Trigger on Application domain watchdog 1 reset"
+	help
+	  Boot secondary firmware when Application domain watchdog 1 causes a reset.
+
+config GEN_UICR_SECONDARY_TRIGGER_APPLICATIONLOCKUP
+	bool "Trigger on Application domain CPU lockup reset"
+	help
+	  Boot secondary firmware when Application domain CPU lockup causes a reset.
+
+config GEN_UICR_SECONDARY_TRIGGER_RADIOCOREWDT0
+	bool "Trigger on Radio core watchdog 0 reset"
+	help
+	  Boot secondary firmware when Radio core watchdog 0 causes a reset.
+
+config GEN_UICR_SECONDARY_TRIGGER_RADIOCOREWDT1
+	bool "Trigger on Radio core watchdog 1 reset"
+	help
+	  Boot secondary firmware when Radio core watchdog 1 causes a reset.
+
+config GEN_UICR_SECONDARY_TRIGGER_RADIOCORELOCKUP
+	bool "Trigger on Radio core CPU lockup reset"
+	help
+	  Boot secondary firmware when Radio core CPU lockup causes a reset.
+
+
+endif # GEN_UICR_SECONDARY_TRIGGER
+
 endif # GEN_UICR_SECONDARY
 
 endmenu

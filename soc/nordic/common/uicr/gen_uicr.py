@@ -488,6 +488,20 @@ def main() -> None:
         help="Processor to boot for the secondary firmware ",
     )
     parser.add_argument(
+        "--secondary-trigger",
+        action="store_true",
+        help="Enable UICR.SECONDARY.TRIGGER for automatic secondary firmware boot on reset events",
+    )
+    parser.add_argument(
+        "--secondary-trigger-resetreas",
+        default=0,
+        type=lambda s: int(s, 0),
+        help=(
+            "Bitmask of reset reasons that trigger secondary firmware boot "
+            "(decimal or 0x-prefixed hex)"
+        ),
+    )
+    parser.add_argument(
         "--secondary-periphconf-address",
         default=None,
         type=lambda s: int(s, 0),
@@ -627,6 +641,11 @@ def main() -> None:
             uicr.SECONDARY.ENABLE = ENABLED_VALUE
             uicr.SECONDARY.ADDRESS = args.secondary_address
             uicr.SECONDARY.PROCESSOR = args.secondary_processor
+
+            # Handle secondary TRIGGER configuration
+            if args.secondary_trigger:
+                uicr.SECONDARY.TRIGGER.ENABLE = ENABLED_VALUE
+                uicr.SECONDARY.TRIGGER.RESETREAS = args.secondary_trigger_resetreas
 
             # Handle secondary periphconf if provided
             if args.out_secondary_periphconf_hex:
