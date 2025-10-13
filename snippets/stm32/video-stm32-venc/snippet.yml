@@ -1,4 +1,0 @@
-name: video-stm32-venc
-append:
-  EXTRA_DTC_OVERLAY_FILE: video-stm32-venc.overlay
-  EXTRA_CONF_FILE: video-stm32-venc.conf
