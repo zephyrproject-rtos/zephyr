@@ -538,6 +538,9 @@ void bt_conn_notify_path_loss_threshold_report(struct bt_conn *conn,
 
 void bt_conn_notify_subrate_change(struct bt_conn *conn, struct bt_conn_le_subrate_changed params);
 
+void bt_conn_notify_conn_rate_change(struct bt_conn *conn, uint8_t status,
+				     const struct bt_conn_le_conn_rate_changed *params);
+
 void bt_conn_notify_read_all_remote_feat_complete(struct bt_conn *conn,
 					struct bt_conn_le_read_all_remote_feat_complete *params);
 
