@@ -1241,7 +1241,7 @@ static int dispatcher_cb(struct dns_socket_dispatcher *ctx, int sock,
 {
 	int ret;
 
-	ret = dns_read(sock, dns_data, len, addr, addrlen);
+	ret = dns_read(sock, dns_data, len, addr, addrlen, ctx->ifindex);
 	if (ret < 0 && ret != -EINVAL && ret != -ENOENT) {
 		NET_DBG("%s read failed (%d)", "mDNS", ret);
 	}
