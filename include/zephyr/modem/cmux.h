@@ -54,6 +54,30 @@ typedef void (*modem_cmux_callback)(struct modem_cmux *cmux, enum modem_cmux_eve
 				    void *user_data);
 
 /**
+ * @brief Contains CMUX instance configuration data
+ */
+struct modem_cmux_config {
+	/** Invoked when event occurs */
+	modem_cmux_callback callback;
+	/** Free to use pointer passed to event handler when invoked */
+	void *user_data;
+	/** Receive buffer */
+	uint8_t *receive_buf;
+	/** Size of receive buffer in bytes [127, ...] */
+	uint16_t receive_buf_size;
+	/** Transmit buffer */
+	uint8_t *transmit_buf;
+	/** Size of transmit buffer in bytes [149, ...] */
+	uint16_t transmit_buf_size;
+	/** Enable runtime power management */
+	bool enable_runtime_power_management;
+	/** Close pipe on power save */
+	bool close_pipe_on_power_save;
+	/** Idle timeout for power save */
+	k_timeout_t idle_timeout;
+};
+
+/**
  * @cond INTERNAL_HIDDEN
  */
 
@@ -148,10 +172,6 @@ struct modem_cmux {
 	/* Bus pipe */
 	struct modem_pipe *pipe;
 
-	/* Event handler */
-	modem_cmux_callback callback;
-	void *user_data;
-
 	/* DLCI channel contexts */
 	sys_slist_t dlcis;
 
@@ -159,12 +179,6 @@ struct modem_cmux {
 	enum modem_cmux_state state;
 	bool flow_control_on : 1;
 	bool initiator : 1;
-	/** Enable runtime power management */
-	bool enable_runtime_power_management;
-	/** Close pipe on power save */
-	bool close_pipe_on_power_save;
-	/** Idle timeout for power save */
-	k_timeout_t idle_timeout;
 
 	/* Work lock */
 	bool attached : 1;
@@ -172,10 +186,6 @@ struct modem_cmux {
 
 	/* Receive state*/
 	enum modem_cmux_receive_state receive_state;
-
-	/* Receive buffer */
-	uint8_t *receive_buf;
-	uint16_t receive_buf_size;
 	uint16_t receive_buf_len;
 
 	uint8_t work_buf[MODEM_CMUX_WORK_BUFFER_SIZE];
@@ -206,35 +216,12 @@ struct modem_cmux {
 	struct modem_stats_buffer receive_buf_stats;
 	struct modem_stats_buffer transmit_buf_stats;
 #endif
+	struct modem_cmux_config config;
 };
 
 /**
  * @endcond
  */
-
-/**
- * @brief Contains CMUX instance configuration data
- */
-struct modem_cmux_config {
-	/** Invoked when event occurs */
-	modem_cmux_callback callback;
-	/** Free to use pointer passed to event handler when invoked */
-	void *user_data;
-	/** Receive buffer */
-	uint8_t *receive_buf;
-	/** Size of receive buffer in bytes [127, ...] */
-	uint16_t receive_buf_size;
-	/** Transmit buffer */
-	uint8_t *transmit_buf;
-	/** Size of transmit buffer in bytes [149, ...] */
-	uint16_t transmit_buf_size;
-	/** Enable runtime power management */
-	bool enable_runtime_power_management;
-	/** Close pipe on power save */
-	bool close_pipe_on_power_save;
-	/** Idle timeout for power save */
-	k_timeout_t idle_timeout;
-};
 
 /**
  * @brief Initialize CMUX instance
