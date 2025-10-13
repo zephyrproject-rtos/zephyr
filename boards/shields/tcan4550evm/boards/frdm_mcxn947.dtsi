@@ -1,0 +1,14 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Navimatix GmbH
+ * SPDX-FileCopyrightText: Copyright (c) 2025 TiaC Systems
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * FRDM-MCXN947, based on the Low Power SPI driver "nxp,lpspi"
+ * should by used with hardware controlled CS pins, among other
+ * things, due to the extremely accelerated DMA transfers.
+ */
+
+#include "hw_ctrl_cs.dtsi"
