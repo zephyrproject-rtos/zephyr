@@ -58,6 +58,12 @@ config VIDEO_I2C_RETRY_NUM
 	  The default is to not retry. Board configuration files or user project can then
 	  use the number of retries that matches their situation.
 
+config VIDEO_ENCODER_H264
+	bool "H264 video encoder support"
+
+config VIDEO_ENCODER_JPEG
+	bool "JPEG video encoder support"
+
 source "drivers/video/Kconfig.esp32_dvp"
 
 source "drivers/video/Kconfig.mcux_csi"
