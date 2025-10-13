@@ -20,4 +20,5 @@ supported:
   - dma
   - i2c
   - spi
+  - flash
 vendor: bflb
