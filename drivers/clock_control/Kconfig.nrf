@@ -344,6 +344,12 @@ config CLOCK_CONTROL_NRF_LFCLK
     select CLOCK_CONTROL_NRF_COMMON
 	default y
 
+config CLOCK_CONTROL_NRF_HFCLK192M
+	bool "NRF HFCLK192M driver support"
+	depends on DT_HAS_NORDIC_NRF_CLOCK_HFCLK192M_ENABLED
+	select CLOCK_CONTROL_NRF_COMMON
+	default y
+
 config CLOCK_CONTROL_NRF_AUXPLL
 	bool "nRF Auxiliary PLL driver"
 	default y
