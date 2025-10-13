@@ -415,6 +415,20 @@ static int video_stm32_dcmi_get_frmival(const struct device *dev, struct video_f
 	return 0;
 }
 
+static int video_stm32_dcmi_set_selection(const struct device *dev, struct video_selection *sel)
+{
+	const struct video_stm32_dcmi_config *config = dev->config;
+
+	return video_set_selection(config->sensor_dev, sel);
+}
+
+static int video_stm32_dcmi_get_selection(const struct device *dev, struct video_selection *sel)
+{
+	const struct video_stm32_dcmi_config *config = dev->config;
+
+	return video_get_selection(config->sensor_dev, sel);
+}
+
 static DEVICE_API(video, video_stm32_dcmi_driver_api) = {
 	.set_format = video_stm32_dcmi_set_fmt,
 	.get_format = video_stm32_dcmi_get_fmt,
@@ -425,6 +439,8 @@ static DEVICE_API(video, video_stm32_dcmi_driver_api) = {
 	.enum_frmival = video_stm32_dcmi_enum_frmival,
 	.set_frmival = video_stm32_dcmi_set_frmival,
 	.get_frmival = video_stm32_dcmi_get_frmival,
+	.set_selection = video_stm32_dcmi_set_selection,
+	.get_selection = video_stm32_dcmi_get_selection,
 };
 
 static void video_stm32_dcmi_irq_config_func(const struct device *dev)
