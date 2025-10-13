@@ -400,7 +400,7 @@ static uint32_t modem_cmux_get_receive_buf_length(struct modem_cmux *cmux)
 
 static uint32_t modem_cmux_get_receive_buf_size(struct modem_cmux *cmux)
 {
-	return cmux->receive_buf_size;
+	return cmux->config.receive_buf_size;
 }
 
 static uint32_t modem_cmux_get_transmit_buf_length(struct modem_cmux *cmux)
@@ -483,11 +483,11 @@ static void modem_cmux_log_received_command(const struct modem_cmux_command *com
 
 static void modem_cmux_raise_event(struct modem_cmux *cmux, enum modem_cmux_event event)
 {
-	if (cmux->callback == NULL) {
+	if (cmux->config.callback == NULL) {
 		return;
 	}
 
-	cmux->callback(cmux, event, cmux->user_data);
+	cmux->config.callback(cmux, event, cmux->config.user_data);
 }
 
 static void modem_cmux_bus_callback(struct modem_pipe *pipe, enum modem_pipe_event event,
@@ -506,7 +506,7 @@ static void modem_cmux_bus_callback(struct modem_pipe *pipe, enum modem_pipe_eve
 		break;
 	case MODEM_PIPE_EVENT_TRANSMIT_IDLE:
 		/* If we keep UART open in power-save, we should avoid waking up on RX idle */
-		if (!cmux->close_pipe_on_power_save && is_powersaving(cmux)) {
+		if (!cmux->config.close_pipe_on_power_save && is_powersaving(cmux)) {
 			break;
 		}
 		modem_work_schedule(&cmux->transmit_work, K_NO_WAIT);
@@ -896,7 +896,7 @@ static void modem_cmux_on_psc_response(struct modem_cmux *cmux)
 	set_state(cmux, MODEM_CMUX_STATE_POWERSAVE);
 	k_mutex_unlock(&cmux->transmit_rb_lock);
 
-	if (cmux->close_pipe_on_power_save) {
+	if (cmux->config.close_pipe_on_power_save) {
 		modem_pipe_close_async(cmux->pipe);
 	}
 }
@@ -1249,8 +1249,8 @@ static void modem_cmux_drop_frame(struct modem_cmux *cmux)
 #if defined(CONFIG_MODEM_CMUX_LOG_LEVEL_DBG)
 	struct modem_cmux_frame *frame = &cmux->frame;
 
-	frame->data = cmux->receive_buf;
-	modem_cmux_log_frame(frame, "dropped", MIN(frame->data_len, cmux->receive_buf_size));
+	frame->data = cmux->config.receive_buf;
+	modem_cmux_log_frame(frame, "dropped", MIN(frame->data_len, cmux->config.receive_buf_size));
 #endif
 }
 
@@ -1374,9 +1374,9 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 			break;
 		}
 
-		if (cmux->frame.data_len > cmux->receive_buf_size) {
+		if (cmux->frame.data_len > cmux->config.receive_buf_size) {
 			LOG_ERR("Indicated frame data length %u exceeds receive buffer size %u",
-				cmux->frame.data_len, cmux->receive_buf_size);
+				cmux->frame.data_len, cmux->config.receive_buf_size);
 
 			modem_cmux_drop_frame(cmux);
 			break;
@@ -1388,8 +1388,8 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 
 	case MODEM_CMUX_RECEIVE_STATE_DATA:
 		/* Copy byte to data */
-		if (cmux->receive_buf_len < cmux->receive_buf_size) {
-			cmux->receive_buf[cmux->receive_buf_len] = byte;
+		if (cmux->receive_buf_len < cmux->config.receive_buf_size) {
+			cmux->config.receive_buf[cmux->receive_buf_len] = byte;
 		}
 		cmux->receive_buf_len++;
 
@@ -1402,9 +1402,9 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 		break;
 
 	case MODEM_CMUX_RECEIVE_STATE_FCS:
-		if (cmux->receive_buf_len > cmux->receive_buf_size) {
-			LOG_WRN("Receive buffer overrun (%u > %u)",
-				cmux->receive_buf_len, cmux->receive_buf_size);
+		if (cmux->receive_buf_len > cmux->config.receive_buf_size) {
+			LOG_WRN("Receive buffer overrun (%u > %u)", cmux->receive_buf_len,
+				cmux->config.receive_buf_size);
 			modem_cmux_drop_frame(cmux);
 			break;
 		}
@@ -1438,7 +1438,7 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 		}
 
 		/* Process frame */
-		cmux->frame.data = cmux->receive_buf;
+		cmux->frame.data = cmux->config.receive_buf;
 		modem_cmux_on_frame(cmux);
 
 		/* Await start of next frame */
@@ -1488,7 +1488,7 @@ static void modem_cmux_runtime_pm_handler(struct k_work *item)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
 	struct modem_cmux *cmux = CONTAINER_OF(dwork, struct modem_cmux, runtime_pm_work);
 
-	if (!cmux->enable_runtime_power_management) {
+	if (!cmux->config.enable_runtime_power_management) {
 		return;
 	}
 
@@ -1515,12 +1515,12 @@ static void modem_cmux_runtime_pm_handler(struct k_work *item)
 
 static void runtime_pm_keepalive(struct modem_cmux *cmux)
 {
-	if (cmux == NULL || !cmux->enable_runtime_power_management) {
+	if (cmux == NULL || !cmux->config.enable_runtime_power_management) {
 		return;
 	}
 
-	cmux->idle_timepoint = sys_timepoint_calc(cmux->idle_timeout);
-	k_work_reschedule(&cmux->runtime_pm_work, cmux->idle_timeout);
+	cmux->idle_timepoint = sys_timepoint_calc(cmux->config.idle_timeout);
+	k_work_reschedule(&cmux->runtime_pm_work, cmux->config.idle_timeout);
 }
 
 /** Transmit bytes bypassing the CMUX buffers.
@@ -1545,7 +1545,7 @@ static bool powersave_wait_wakeup(struct modem_cmux *cmux)
 		LOG_DBG("Power saving mode, wake up first");
 		set_state(cmux, MODEM_CMUX_STATE_WAKEUP);
 
-		if (cmux->close_pipe_on_power_save) {
+		if (cmux->config.close_pipe_on_power_save) {
 			ret = modem_pipe_open(cmux->pipe, K_FOREVER);
 			if (ret < 0) {
 				LOG_ERR("Failed to open pipe for wake up (%d)", ret);
@@ -1634,7 +1634,7 @@ static void modem_cmux_transmit_handler(struct k_work *item)
 		if (cmux->state == MODEM_CMUX_STATE_CONFIRM_POWERSAVE) {
 			set_state(cmux, MODEM_CMUX_STATE_POWERSAVE);
 			LOG_DBG("Entered power saving mode");
-			if (cmux->close_pipe_on_power_save) {
+			if (cmux->config.close_pipe_on_power_save) {
 				modem_pipe_close_async(cmux->pipe);
 			}
 		}
@@ -1940,18 +1940,13 @@ void modem_cmux_init(struct modem_cmux *cmux, const struct modem_cmux_config *co
 	__ASSERT_NO_MSG(config->transmit_buf != NULL);
 	__ASSERT_NO_MSG(config->transmit_buf_size >= MODEM_CMUX_DATA_FRAME_SIZE_MAX);
 
-	memset(cmux, 0x00, sizeof(*cmux));
-	cmux->callback = config->callback;
-	cmux->user_data = config->user_data;
-	cmux->receive_buf = config->receive_buf;
-	cmux->receive_buf_size = config->receive_buf_size;
-	cmux->t3_timepoint = sys_timepoint_calc(K_NO_WAIT);
-	cmux->enable_runtime_power_management = config->enable_runtime_power_management;
-	cmux->close_pipe_on_power_save = config->close_pipe_on_power_save;
-	cmux->idle_timeout =
-		cmux->enable_runtime_power_management ? config->idle_timeout : K_FOREVER;
+	*cmux = (struct modem_cmux){
+		.t3_timepoint = sys_timepoint_calc(K_NO_WAIT),
+		.config = *config,
+	};
 	sys_slist_init(&cmux->dlcis);
-	ring_buf_init(&cmux->transmit_rb, config->transmit_buf_size, config->transmit_buf);
+	ring_buf_init(&cmux->transmit_rb, cmux->config.transmit_buf_size,
+		      cmux->config.transmit_buf);
 	k_mutex_init(&cmux->transmit_rb_lock);
 	k_work_init_delayable(&cmux->receive_work, modem_cmux_receive_handler);
 	k_work_init_delayable(&cmux->transmit_work, modem_cmux_transmit_handler);
