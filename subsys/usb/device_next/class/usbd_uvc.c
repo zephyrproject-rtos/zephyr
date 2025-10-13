@@ -1374,7 +1374,7 @@ static int uvc_assign_desc(const struct device *dev, void *const desc,
 
 	return 0;
 err:
-	LOG_ERR("Out of descriptor pointers, raise CONFIG_USBD_VIDEO_MAX_FORMATS above %u",
+	LOG_WRN("Out of descriptors, raise CONFIG_USBD_VIDEO_MAX_FORMATS above %u",
 		CONFIG_USBD_VIDEO_MAX_FORMATS);
 	return -ENOMEM;
 }
@@ -1506,8 +1506,9 @@ static int uvc_add_vs_frame_interval(struct uvc_frame_discrete_descriptor *const
 	int i = desc->bFrameIntervalType;
 
 	if (i >= CONFIG_USBD_VIDEO_MAX_FRMIVAL) {
-		LOG_WRN("Out of frame interval fields");
-		return -ENOSPC;
+		LOG_WRN("Out of descriptors, raise CONFIG_USBD_VIDEO_MAX_FRMIVAL above %u",
+			CONFIG_USBD_VIDEO_MAX_FRMIVAL);
+		return -ENOMEM;
 	}
 
 	desc->dwFrameInterval[i] = sys_cpu_to_le32(video_frmival_nsec(frmival) / 100);
@@ -1533,6 +1534,7 @@ static int uvc_add_vs_frame_desc(const struct device *dev,
 				   .width = w, .height = h, .pitch = p};
 	struct video_frmival_enum fie = {.format = &fmt};
 	uint32_t max_size = MAX(p, w) * h;
+	int ret;
 
 	__ASSERT_NO_MSG(data->video_dev != NULL);
 	__ASSERT_NO_MSG(format_desc != NULL);
@@ -1561,12 +1563,26 @@ static int uvc_add_vs_frame_desc(const struct device *dev,
 		switch (fie.type) {
 		case VIDEO_FRMIVAL_TYPE_DISCRETE:
 			LOG_DBG("Adding discrete frame interval %u", fie.index);
-			uvc_add_vs_frame_interval(desc, &fie.discrete, &fmt);
+
+			ret = uvc_add_vs_frame_interval(desc, &fie.discrete, &fmt);
+			if (ret != 0) {
+				return ret;
+			}
+
 			break;
 		case VIDEO_FRMIVAL_TYPE_STEPWISE:
 			LOG_DBG("Adding stepwise frame interval %u", fie.index);
-			uvc_add_vs_frame_interval(desc, &fie.stepwise.min, &fmt);
-			uvc_add_vs_frame_interval(desc, &fie.stepwise.max, &fmt);
+
+			ret = uvc_add_vs_frame_interval(desc, &fie.stepwise.min, &fmt);
+			if (ret != 0) {
+				return ret;
+			}
+
+			ret = uvc_add_vs_frame_interval(desc, &fie.stepwise.max, &fmt);
+			if (ret != 0) {
+				return ret;
+			}
+
 			break;
 		default:
 			CODE_UNREACHABLE;
@@ -1578,7 +1594,10 @@ static int uvc_add_vs_frame_desc(const struct device *dev,
 	if (desc->bFrameIntervalType == 0) {
 		struct video_frmival frmival = {.numerator = 1, .denominator = 30};
 
-		uvc_add_vs_frame_interval(desc, &frmival, &fmt);
+		ret = uvc_add_vs_frame_interval(desc, &frmival, &fmt);
+		if (ret != 0) {
+			return ret;
+		}
 	}
 
 	/* UVC requires the frame intervals to be sorted, but not Zephyr */
@@ -1671,7 +1690,11 @@ static int uvc_init(struct usbd_class_data *const c_data)
 		if (prev_pixfmt != cap->pixelformat) {
 			if (prev_pixfmt != 0) {
 				cfg->desc->if1_hdr.wTotalLength += cfg->desc->if1_color.bLength;
-				uvc_assign_desc(dev, &cfg->desc->if1_color, true, true);
+
+				ret = uvc_assign_desc(dev, &cfg->desc->if1_color, true, true);
+				if (ret != 0) {
+					return ret;
+				}
 			}
 
 			ret = uvc_add_vs_format_desc(dev, &format_desc, cap);
@@ -1696,9 +1719,21 @@ static int uvc_init(struct usbd_class_data *const c_data)
 	}
 
 	cfg->desc->if1_hdr.wTotalLength += cfg->desc->if1_color.bLength;
-	uvc_assign_desc(dev, &cfg->desc->if1_color, true, true);
-	uvc_assign_desc(dev, &cfg->desc->if1_ep_fs, true, false);
-	uvc_assign_desc(dev, &cfg->desc->if1_ep_hs, false, true);
+
+	ret = uvc_assign_desc(dev, &cfg->desc->if1_color, true, true);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = uvc_assign_desc(dev, &cfg->desc->if1_ep_fs, true, false);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = uvc_assign_desc(dev, &cfg->desc->if1_ep_hs, false, true);
+	if (ret != 0) {
+		return ret;
+	}
 
 	cfg->desc->if1_hdr.wTotalLength = sys_cpu_to_le16(cfg->desc->if1_hdr.wTotalLength);
 
