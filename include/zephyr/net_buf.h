@@ -95,10 +95,10 @@ struct net_buf_simple {
 	 *
 	 * To determine the max length, use net_buf_simple_max_len(), not #size!
 	 */
-	uint16_t len;
+	uint32_t len;
 
 	/** Amount of data that net_buf_simple#__buf can store. */
-	uint16_t size;
+	uint32_t size;
 
 	/** Start of the data storage. Not to be accessed directly
 	 *  (the data pointer should be used instead).
@@ -938,7 +938,7 @@ size_t net_buf_simple_tailroom(const struct net_buf_simple *buf);
  *
  * @return Number of bytes usable behind the net_buf_simple::data pointer.
  */
-uint16_t net_buf_simple_max_len(const struct net_buf_simple *buf);
+size_t net_buf_simple_max_len(const struct net_buf_simple *buf);
 
 /**
  * @brief Parsing state of a buffer.
@@ -949,9 +949,9 @@ uint16_t net_buf_simple_max_len(const struct net_buf_simple *buf);
  */
 struct net_buf_simple_state {
 	/** Offset of the data pointer from the beginning of the storage */
-	uint16_t offset;
+	uint32_t offset;
 	/** Length of data */
-	uint16_t len;
+	uint32_t len;
 };
 
 /**
@@ -965,7 +965,7 @@ struct net_buf_simple_state {
 static inline void net_buf_simple_save(const struct net_buf_simple *buf,
 				       struct net_buf_simple_state *state)
 {
-	state->offset = (uint16_t)net_buf_simple_headroom(buf);
+	state->offset = (uint32_t)net_buf_simple_headroom(buf);
 	state->len = buf->len;
 }
 
@@ -1032,10 +1032,10 @@ struct net_buf {
 			uint8_t *data;
 
 			/** Length of the data behind the data pointer. */
-			uint16_t len;
+			uint32_t len;
 
 			/** Amount of data that this buffer can store. */
-			uint16_t size;
+			uint32_t size;
 
 			/** Start of the data storage. Not to be accessed
 			 *  directly (the data pointer should be used
@@ -1097,7 +1097,7 @@ struct net_buf_pool {
 	atomic_t avail_count;
 
 	/** Total size of the pool. */
-	const uint16_t pool_size;
+	const uint32_t pool_size;
 
 	/** Maximum count of used buffers. */
 	uint16_t max_used;
@@ -2523,7 +2523,7 @@ static inline size_t net_buf_headroom(const struct net_buf *buf)
  *
  * @return Number of bytes usable behind the net_buf::data pointer.
  */
-static inline uint16_t net_buf_max_len(const struct net_buf *buf)
+static inline size_t net_buf_max_len(const struct net_buf *buf)
 {
 	return net_buf_simple_max_len(&buf->b);
 }
