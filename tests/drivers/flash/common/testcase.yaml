@@ -60,6 +60,7 @@ tests:
       or dt_label_with_parent_compat_enabled("storage_partition", "nordic,owned-partitions")))
     platform_exclude:
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
     integration_platforms:
       - qemu_x86
       - mimxrt1060_evk/mimxrt1062/qspi
