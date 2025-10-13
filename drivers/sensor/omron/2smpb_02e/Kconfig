@@ -6,5 +6,6 @@ config 2SMPB_02E
 	default y
 	depends on DT_HAS_OMRON_2SMPB_02E_ENABLED
 	select I2C
+	select FPU if CPU_HAS_FPU
 	help
 	  Enable driver for OMRON O2SMPB_02E digital barometric pressure sensor.
