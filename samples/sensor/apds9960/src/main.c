@@ -7,6 +7,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/sensor/apds9960.h>
 #include <zephyr/device.h>
 #include <stdio.h>
 #include <zephyr/sys/printk.h>
@@ -24,10 +25,18 @@ static void trigger_handler(const struct device *dev,
 }
 #endif
 
+char states[5][6] = {
+	"NONE",
+	"UP",
+	"DOWN",
+	"LEFT",
+	"RIGHT",
+};
+
 int main(void)
 {
 	const struct device *dev;
-	struct sensor_value intensity, pdata;
+	struct sensor_value intensity, pdata, gesture;
 
 	printk("APDS9960 sample application\n");
 	dev = DEVICE_DT_GET_ONE(avago_apds9960);
@@ -72,9 +81,10 @@ int main(void)
 
 		sensor_channel_get(dev, SENSOR_CHAN_LIGHT, &intensity);
 		sensor_channel_get(dev, SENSOR_CHAN_PROX, &pdata);
+		sensor_channel_get(dev, SENSOR_CHAN_APDS9960_GESTURE, &gesture);
 
-		printk("ambient light intensity %d, proximity %d\n",
-		       intensity.val1, pdata.val1);
+		printk("ambient light intensity %d, proximity %d, gesture %s\n",
+		       intensity.val1, pdata.val1, states[gesture.val1]);
 
 #ifdef CONFIG_PM_DEVICE
 		pm_device_action_run(dev, PM_DEVICE_ACTION_SUSPEND);
