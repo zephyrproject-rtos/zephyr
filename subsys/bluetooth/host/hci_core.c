@@ -4650,6 +4650,10 @@ int bt_disable(void)
 	bt_periodic_sync_disable();
 #endif /* CONFIG_BT_PER_ADV_SYNC */
 
+	if (IS_ENABLED(CONFIG_BT_ISO)) {
+		bt_iso_reset();
+	}
+
 #if defined(CONFIG_BT_CONN)
 	if (IS_ENABLED(CONFIG_BT_SMP)) {
 		bt_pub_key_hci_disrupted();
@@ -4703,10 +4707,6 @@ int bt_disable(void)
 
 	/* If random address was set up - clear it */
 	bt_addr_le_copy(&bt_dev.random_addr, BT_ADDR_LE_ANY);
-
-	if (IS_ENABLED(CONFIG_BT_ISO)) {
-		bt_iso_reset();
-	}
 
 	bt_monitor_send(BT_MONITOR_CLOSE_INDEX, NULL, 0);
 
