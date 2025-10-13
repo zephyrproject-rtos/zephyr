@@ -216,6 +216,11 @@ if(CONFIG_GEN_UICR_SECONDARY)
     list(APPEND secondary_args --secondary-trigger-resetreas ${resetreas_value})
   endif()
 
+  # Handle secondary PROTECTEDMEM configuration
+  if(CONFIG_GEN_UICR_SECONDARY_PROTECTEDMEM)
+    list(APPEND secondary_args --secondary-protectedmem-size ${CONFIG_GEN_UICR_SECONDARY_PROTECTEDMEM_SIZE_BYTES})
+  endif()
+
   if(CONFIG_GEN_UICR_SECONDARY_GENERATE_PERIPHCONF)
     # Compute SECONDARY_PERIPHCONF absolute address and size from this image's devicetree
     compute_partition_address_and_size("secondary_periphconf_partition" SECONDARY_PERIPHCONF_ADDRESS SECONDARY_PERIPHCONF_SIZE)
