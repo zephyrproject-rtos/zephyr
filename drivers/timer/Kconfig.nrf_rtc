@@ -11,6 +11,7 @@ config NRF_RTC_TIMER
 	select TICKLESS_CAPABLE
 	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
 	select NRFX_PPI if SOC_NRF52832
+	default y if SYS_CLOCK_EXISTS
 	help
 	  This module implements a kernel device driver for the nRF Real Time
 	  Counter NRF_RTC1 and provides the standard "system clock driver"
