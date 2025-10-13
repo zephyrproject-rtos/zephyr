@@ -24,10 +24,9 @@ struct imsic_cfg {
 	uint32_t nr_irqs; /* Effective IRQ limit for bounds checking */
 };
 
-/*
- * No runtime data struct needed - IMSIC driver is stateless.
- * All interrupt configuration is handled through CSR operations.
- */
+struct imsic_data {
+	/* empty for MVP */
+};
 
 /* Forward declaration */
 static void imsic_mext_isr(const void *arg);
@@ -39,7 +38,6 @@ static int imsic_init(const struct device *dev)
 	/* MINIMAL: Only write EIDELIVERY and EITHRESHOLD */
 	/* Enable delivery in MMSI mode (bits [30:29] = 10 = 0x40000000) */
 	uint32_t eidelivery_value = EIDELIVERY_ENABLE | EIDELIVERY_MODE_MMSI;
-
 	LOG_INF("Setting EIDELIVERY=0x%08x (ENABLE=0x%x, MODE_MMSI=0x%x)", eidelivery_value,
 		(unsigned int)EIDELIVERY_ENABLE, (unsigned int)EIDELIVERY_MODE_MMSI);
 	write_imsic_csr(ICSR_EIDELIVERY, eidelivery_value);
@@ -47,8 +45,13 @@ static int imsic_init(const struct device *dev)
 	/* Set EITHRESHOLD to 0 to allow all interrupts (no priority filtering) */
 	write_imsic_csr(ICSR_EITHRESH, 0);
 
+	/* Read back to verify */
+	uint32_t readback = read_imsic_csr(ICSR_EIDELIVERY);
+	uint32_t thresh_readback = read_imsic_csr(ICSR_EITHRESH);
+
 	LOG_INF("IMSIC init hart=%u num_ids=%u nr_irqs=%u", cfg->hart_id, cfg->num_ids,
 		cfg->nr_irqs);
+	LOG_INF("  EIDELIVERY=0x%08x EITHRESHOLD=0x%08x", readback, thresh_readback);
 
 	return 0;
 }
@@ -57,9 +60,7 @@ static int imsic_init(const struct device *dev)
 uint32_t riscv_imsic_claim(void)
 {
 	uint32_t topei;
-
 	__asm__ volatile("csrrw %0, " STRINGIFY(CSR_MTOPEI) ", x0" : "=r"(topei));
-
 	return topei & MTOPEI_EIID_MASK; /* Extract EIID from mtopei */
 }
 
@@ -80,15 +81,16 @@ void riscv_imsic_enable_eiid(uint32_t eiid)
 
 	/* CSR writes execute on current hart and route to that hart's IMSIC */
 	uint32_t cur = read_imsic_csr(icsr_addr);
-
-	LOG_INF("IMSIC enable EIID %u on CPU %u: EIE[%u] before=0x%08x", eiid, arch_proc_id(),
-		reg_index, cur);
-
+	uint32_t cpu_id = arch_proc_id();
+	LOG_INF("IMSIC enable EIID %u on CPU %u: EIE[%u] before=0x%08x", eiid, cpu_id, reg_index,
+		cur);
 	cur |= BIT(bit);
 	write_imsic_csr(icsr_addr, cur);
 
-	LOG_INF("IMSIC enable EIID %u on CPU %u: EIE[%u] after write (bit %u)", eiid,
-		arch_proc_id(), reg_index, bit);
+	/* Read back to verify */
+	uint32_t verify = read_imsic_csr(icsr_addr);
+	LOG_INF("IMSIC enable EIID %u on CPU %u: EIE[%u] after=0x%08x (bit %u)", eiid, cpu_id,
+		reg_index, verify, bit);
 }
 
 /* Disable an EIID in IMSIC EIE - operates on CURRENT CPU's IMSIC via CSRs */
@@ -97,8 +99,8 @@ void riscv_imsic_disable_eiid(uint32_t eiid)
 	uint32_t reg_index = eiid / 32U;
 	uint32_t bit = eiid % 32U;
 	uint32_t icsr_addr = ICSR_EIE0 + reg_index;
-	uint32_t cur = read_imsic_csr(icsr_addr);
 
+	uint32_t cur = read_imsic_csr(icsr_addr);
 	cur &= ~BIT(bit);
 	write_imsic_csr(icsr_addr, cur);
 
@@ -111,8 +113,8 @@ int riscv_imsic_is_enabled(uint32_t eiid)
 	uint32_t reg_index = eiid / 32U;
 	uint32_t bit = eiid % 32U;
 	uint32_t icsr_addr = ICSR_EIE0 + reg_index;
-	uint32_t cur = read_imsic_csr(icsr_addr);
 
+	uint32_t cur = read_imsic_csr(icsr_addr);
 	return !!(cur & BIT(bit));
 }
 
@@ -120,11 +122,9 @@ int riscv_imsic_is_enabled(uint32_t eiid)
 uint32_t riscv_imsic_get_pending(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-
 	/* Return pending bits for first 64 IDs as a quick probe (EIP0|EIP1<<32) */
 	uint32_t p0 = read_imsic_csr(ICSR_EIP0);
 	uint32_t p1 = read_imsic_csr(ICSR_EIP1);
-
 	return p0 | (p1 ? 0x80000000U : 0U); /* signal >32 pending via MSB */
 }
 
@@ -161,13 +161,14 @@ IMSIC_IRQ_CONFIG_FUNC_DEFINE_SECONDARY(4)
 #endif
 
 #define IMSIC_INIT(inst)                                                                           \
+	static struct imsic_data imsic_data_##inst;                                                \
 	static const struct imsic_cfg imsic_cfg_##inst = {                                         \
 		.reg_base = DT_INST_REG_ADDR(inst),                                                \
 		.num_ids = DT_INST_PROP(inst, riscv_num_ids),                                      \
 		.hart_id = DT_INST_PROP(inst, riscv_hart_id),                                      \
 		.nr_irqs = MIN(DT_INST_PROP(inst, riscv_num_ids), CONFIG_NUM_IRQS),                \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, imsic_init, NULL, NULL, &imsic_cfg_##inst,                     \
+	DEVICE_DT_INST_DEFINE(inst, imsic_init, NULL, &imsic_data_##inst, &imsic_cfg_##inst,       \
 			      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(IMSIC_INIT)
@@ -215,7 +216,7 @@ const struct device *riscv_imsic_get_dev(void)
 /* Redundant Zephyr integration functions removed - now handled by unified AIA driver */
 
 /* MEXT interrupt handler: claim EIID from IMSIC and dispatch to registered ISR */
-static void imsic_mext_isr(const void *arg)
+void imsic_mext_isr(const void *arg)
 {
 	const struct device *dev = arg;
 	const struct imsic_cfg *cfg = dev->config;
@@ -224,7 +225,6 @@ static void imsic_mext_isr(const void *arg)
 
 	while (1) {
 		uint32_t eiid = riscv_imsic_claim();
-
 		if (eiid == 0U) {
 			break; /* No more pending interrupts */
 		}
@@ -268,7 +268,6 @@ void z_riscv_imsic_secondary_init(void)
 	/* EIDELIVERY[0] = 1: Enable delivery */
 	/* EIDELIVERY[30:29] = 10: MMSI mode (0x40000000) */
 	uint32_t eidelivery_value = EIDELIVERY_ENABLE | EIDELIVERY_MODE_MMSI;
-
 	write_imsic_csr(ICSR_EIDELIVERY, eidelivery_value);
 
 	/* Set EITHRESHOLD to 0 to allow all interrupt priorities */
@@ -277,6 +276,17 @@ void z_riscv_imsic_secondary_init(void)
 	/* Enable MEXT interrupt on this CPU */
 	irq_enable(RISCV_IRQ_MEXT);
 
-	LOG_INF("CPU %u IMSIC initialized", cpu_id);
+	/* Read back to verify initialization */
+	uint32_t eidelivery_readback = read_imsic_csr(ICSR_EIDELIVERY);
+	uint32_t eithresh_readback = read_imsic_csr(ICSR_EITHRESH);
+
+	LOG_INF("CPU %u IMSIC initialized: EIDELIVERY=0x%08x EITHRESH=0x%08x", cpu_id,
+		eidelivery_readback, eithresh_readback);
+
+	/* Sanity check: verify EIDELIVERY enable bit is set */
+	if (!(eidelivery_readback & EIDELIVERY_ENABLE)) {
+		LOG_ERR("CPU %u IMSIC EIDELIVERY enable bit not set! Got 0x%08x", cpu_id,
+			eidelivery_readback);
+	}
 }
 #endif /* CONFIG_SMP */
