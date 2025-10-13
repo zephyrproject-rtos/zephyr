@@ -2425,11 +2425,6 @@ static int uhc_dwc2_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = uhc_dwc2_init_controller(dev);
-	if (ret) {
-		return ret;
-	}
-
 	/* Allocate memory for the channel objects */
 	priv->channels.hdls = k_malloc(priv->const_cfg.numchannels * sizeof(uhc_dwc2_channel_t*));
 	if (priv->channels.hdls == NULL) {
@@ -2463,6 +2458,11 @@ static int uhc_dwc2_enable(const struct device *dev)
 	ret = uhc_dwc2_power_on(dev);
 	if (ret) {
 		LOG_ERR("Failed to power on port: %d", ret);
+		return ret;
+	}
+
+	ret = uhc_dwc2_init_controller(dev);
+	if (ret) {
 		return ret;
 	}
 
