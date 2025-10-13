@@ -327,6 +327,14 @@ static void test_pipe_notify_receive_ready(void)
 		      "Unexpected state %u", (uint32_t)atomic_get(&test_state));
 }
 
+static void test_pipe_receive_closed(void)
+{
+	/* Try to receive from a closed pipe - should return 0 */
+	zassert_equal(modem_pipe_receive(test_pipe, test_buffer, test_buffer_size), 0,
+		      "Reading from closed pipe should return 0");
+	zassert_false(test_backend.receive_called, "receive should not be called on closed pipe");
+}
+
 ZTEST(modem_pipe, test_async_open_close)
 {
 	test_pipe_open();
@@ -395,6 +403,17 @@ ZTEST(modem_pipe, test_attach)
 	test_pipe_receive();
 	test_reset();
 	test_pipe_attach_receive_not_ready_transmit_idle();
+}
+
+ZTEST(modem_pipe, test_receive_closed)
+{
+	test_pipe_open();
+	test_reset();
+	test_pipe_async_transmit();
+	test_reset();
+	test_pipe_close();
+	/* Test reading from a closed pipe should return 0 */
+	test_pipe_receive_closed();
 }
 
 ZTEST_SUITE(modem_pipe, NULL, modem_backend_fake_setup, modem_backend_fake_before,
