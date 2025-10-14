@@ -5,8 +5,10 @@ source "share/sysbuild/Kconfig"
 
 config NET_CORE_BOARD
 	string
-	default "nrf5340dk/nrf5340/cpunet" if "$(BOARD)" = "nrf5340dk"
-	default "nrf5340_audio_dk/nrf5340/cpunet" if "$(BOARD)" = "nrf5340_audio_dk"
+	default "$(BOARD)/nrf5340/cpunet" if $(BOARD) = "nrf5340dk"
+	default "$(BOARD)/nrf5340/cpunet" if $(BOARD) = "nrf5340_audio_dk"
+	default "$(BOARD)/nrf5340/cpunet" if $(BOARD) = "nrf5340bsim"
+	default "$(BOARD)/nrf54h20/cpurad" if $(BOARD) = "nrf54h20dk"
 	default "nrf5340bsim/nrf5340/cpunet" if $(BOARD_TARGET_STRING) = "NRF5340BSIM_NRF5340_CPUAPP"
 
 config NET_CORE_IMAGE_HCI_IPC
