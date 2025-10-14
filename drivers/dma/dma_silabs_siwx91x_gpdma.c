@@ -144,7 +144,7 @@ static int siwx91x_gpdma_desc_config(struct siwx19x_gpdma_data *data,
 				     const struct dma_config *config,
 				     const RSI_GPDMA_DESC_T *xfer_cfg, uint32_t channel)
 {
-	uint16_t max_xfer_size = GPDMA_DESC_MAX_TRANSFER_SIZE - config->source_data_size;
+	int operation_width = config->source_data_size * config->source_burst_length;
 	const struct dma_block_config *block_addr = config->head_block;
 	RSI_GPDMA_DESC_T *cur_desc = NULL;
 	RSI_GPDMA_DESC_T *prev_desc = NULL;
@@ -152,8 +152,14 @@ static int siwx91x_gpdma_desc_config(struct siwx19x_gpdma_data *data,
 	int ret;
 
 	for (int i = 0; i < config->block_count; i++) {
-		if (block_addr->block_size > max_xfer_size) {
-			LOG_ERR("Maximum xfer size should be <= %d", max_xfer_size);
+		if (!IS_ALIGNED(block_addr->source_address, config->source_burst_length) ||
+		    !IS_ALIGNED(block_addr->dest_address, config->dest_burst_length) ||
+		    !IS_ALIGNED(block_addr->block_size, operation_width)) {
+			LOG_ERR("Buffer not aligned");
+			goto free_desc;
+		}
+		if (block_addr->block_size >= GPDMA_DESC_MAX_TRANSFER_SIZE) {
+			LOG_ERR("Buffer too large (%d bytes)", block_addr->block_size);
 			goto free_desc;
 		}
 
