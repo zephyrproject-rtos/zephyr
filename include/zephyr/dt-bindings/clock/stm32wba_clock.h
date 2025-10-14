@@ -70,6 +70,7 @@
 #define TIMIC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 31, CCIPR1_REG)
 /** CCIPR2 devices */
 #define RNG_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 12, CCIPR2_REG)
+#define OTGHS_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 28, CCIPR2_REG)
 /** CCIPR3 devices */
 #define LPUART1_SEL(val)	STM32_DT_CLOCK_SELECT((val), 3, 0, CCIPR3_REG)
 #define SPI3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 3, CCIPR3_REG)
