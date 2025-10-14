@@ -60,6 +60,8 @@ Removed APIs and options
 * ``bt_le_set_auto_conn``
 * ``CONFIG_BT_BUF_ACL_RX_COUNT``
 * ``ok`` enum value has now been removed completely from ``base.yaml`` binding ``status`` property in devicetree.
+* STM32 LPTIM clock source selection through Kconfig was removed. Device Tree must now be used instead.
+  Affected Kconfig symbols: ``CONFIG_STM32_LPTIM_CLOCK_LSI`` / ``CONFIG_STM32_LPTIM_CLOCK_LSI``
 
 Deprecated APIs and options
 ===========================
