@@ -40,10 +40,10 @@
 #define FNM_NOSYS   2 /* Function not implemented. */
 #define FNM_NORES   3 /* Out of resources */
 
-#define FNM_NOESCAPE	0x01 /* Disable backslash escaping. */
-#define FNM_PATHNAME	0x02 /* Slash must be matched by slash. */
-#define FNM_PERIOD	0x04 /* Period must be matched by period. */
-#define FNM_CASEFOLD	0x08 /* Pattern is matched case-insensitive */
+#define FNM_NOESCAPE    0x01 /* Disable backslash escaping. */
+#define FNM_PATHNAME    0x02 /* Slash must be matched by slash. */
+#define FNM_PERIOD      0x04 /* Period must be matched by period. */
+#define FNM_CASEFOLD    0x08 /* Pattern is matched case-insensitive */
 #define FNM_LEADING_DIR 0x10 /* Ignore /<tail> after Imatch. */
 
 #ifdef __cplusplus
@@ -52,7 +52,7 @@ extern "C" {
 
 /**
  * Function used to check if the given pattern is in the string, using the given flags
- * 
+ *
  * @param pattern pattern that is matched against the string
  * @param string string that is checked for the pattern
  * @param flags used to signal special matching conditions
@@ -61,8 +61,8 @@ extern "C" {
  *        FNM_PERIOD	0x04 Period must be matched by period.
  *        FNM_CASEFOLD	0x08 Pattern is matched case-insensitive
  *        FNM_LEADING_DIR 0x10 Ignore /<tail> after Imatch.
- * 
- * 
+ *
+ *
  * @return int
  * @retval 0 pattern found in string
  * @retval FNM_NOMATCH pattern not found in string
