@@ -184,7 +184,7 @@ In order to test backup SRAM you may want to disconnect VBAT from VDD. You can
 do it by removing ``SB13`` jumper on the back side of the board.
 
 FDCAN
-=====
+-----
 
 The Nucleo H7S3L8 board does not have any onboard CAN transceiver. In order to
 use the FDCAN bus on this board, an external CAN bus transceiver must be
