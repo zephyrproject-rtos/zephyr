@@ -19,7 +19,6 @@ properties:
 
   riscv,isa:
     description: RISC-V instruction set architecture
-    required: true
     type: string
 
   riscv,isa-base:
