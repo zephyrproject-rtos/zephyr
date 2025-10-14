@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config RESET_SF32LB
+	bool "SF32LB Reset Controller"
+	default y
+	depends on DT_HAS_SIFLI_SF32LB_RCC_RCTL_ENABLED
+	help
+	  Enable support for SF32LB Reset Controller.
