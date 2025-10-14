@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon CAT1 SPI
+
+compatible: "infineon,cat1-spi-pdl"
+
+include: infineon,cat1-spi.yaml
