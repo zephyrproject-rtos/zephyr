@@ -21,12 +21,6 @@
 #include CONFIG_MBEDTLS_CFG_FILE
 #endif /* CONFIG_MBEDTLS_CFG_FILE */
 
-#include <mbedtls/ccm.h>
-#ifdef CONFIG_MBEDTLS_CIPHER_GCM_ENABLED
-#include <mbedtls/gcm.h>
-#endif
-#include <mbedtls/aes.h>
-
 #include <psa/crypto.h>
 
 #define MBEDTLS_SUPPORT (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | \
@@ -38,18 +32,12 @@ LOG_MODULE_REGISTER(mbedtls);
 
 struct mbedtls_shim_session {
 	union {
-		mbedtls_ccm_context ccm_ctx;
-#ifdef CONFIG_MBEDTLS_CIPHER_GCM_ENABLED
-		mbedtls_gcm_context gcm_ctx;
-#endif
-		mbedtls_aes_context aes_ctx;
+		psa_key_id_t key_id;
 		psa_hash_operation_t hash_op;
 	};
 	bool in_use;
-	union {
-		enum cipher_mode mode;
-		psa_algorithm_t psa_alg;
-	};
+	enum cipher_op cipher_op;
+	psa_algorithm_t psa_alg;
 };
 
 #define CRYPTO_MAX_SESSION CONFIG_CRYPTO_MBEDTLS_SHIM_MAX_SESSION
@@ -63,12 +51,6 @@ static K_MUTEX_DEFINE(mbedtls_sessions_lock);
 #else
 #error "You need to define MBEDTLS_MEMORY_BUFFER_ALLOC_C"
 #endif /* MBEDTLS_MEMORY_BUFFER_ALLOC_C */
-
-#define MBEDTLS_GET_CTX(c, m) \
-	(&((struct mbedtls_shim_session *)c->drv_sessn_state)->mbedtls_ ## m)
-
-#define MBEDTLS_GET_ALGO(c) \
-	(((struct mbedtls_shim_session *)c->drv_sessn_state)->algo)
 
 static int mbedtls_get_unused_session_index(void)
 {
@@ -88,12 +70,14 @@ static int mbedtls_get_unused_session_index(void)
 	return -1;
 }
 
-int mbedtls_ecb_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
+#if CONFIG_PSA_WANT_KEY_TYPE_AES
+#if CONFIG_PSA_WANT_ALG_ECB_NO_PADDING
+static int mbedtls_ecb(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 {
-	int ret;
-	mbedtls_aes_context *ecb_ctx = MBEDTLS_GET_CTX(ctx, aes);
+	struct mbedtls_shim_session *session = ctx->drv_sessn_state;
+	psa_status_t status;
 
-	/* For security reasons, ECB mode should not be used to encrypt
+	/* For security reasons, ECB mode should not be used to encrypt/decrypt
 	 * more than one block. Use CBC mode instead.
 	 */
 	if (pkt->in_len > 16) {
@@ -101,227 +85,183 @@ int mbedtls_ecb_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 		return -EINVAL;
 	}
 
-	ret = mbedtls_aes_crypt_ecb(ecb_ctx, MBEDTLS_AES_ENCRYPT,
-				    pkt->in_buf, pkt->out_buf);
-	if (ret) {
-		LOG_ERR("Could not encrypt (%d)", ret);
-		return -EINVAL;
-	}
-
-	pkt->out_len = 16;
-
-	return 0;
-}
-
-int mbedtls_ecb_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
-{
-	int ret;
-	mbedtls_aes_context *ecb_ctx = MBEDTLS_GET_CTX(ctx, aes);
-
-	/* For security reasons, ECB mode should not be used to decrypt
-	 * more than one block. Use CBC mode instead.
-	 */
-	if (pkt->in_len > 16) {
-		LOG_ERR("Cannot decrypt more than 1 block");
-		return -EINVAL;
-	}
-
-	ret = mbedtls_aes_crypt_ecb(ecb_ctx, MBEDTLS_AES_DECRYPT,
-				    pkt->in_buf, pkt->out_buf);
-	if (ret) {
-		LOG_ERR("Could not decrypt (%d)", ret);
-		return -EINVAL;
-	}
-
-	pkt->out_len = 16;
-
-	return 0;
-}
-
-int mbedtls_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv)
-{
-	int ret, iv_bytes;
-	uint8_t *p_iv, iv_loc[16];
-	mbedtls_aes_context *cbc_ctx = MBEDTLS_GET_CTX(ctx, aes);
-
-	if ((ctx->flags & CAP_NO_IV_PREFIX) == 0U) {
-		/* Prefix IV to ciphertext, which is default behavior of Zephyr
-		 * crypto API, unless CAP_NO_IV_PREFIX is requested.
-		 */
-		iv_bytes = 16;
-		memcpy(pkt->out_buf, iv, 16);
-		p_iv = iv;
+	if (session->cipher_op == CRYPTO_CIPHER_OP_ENCRYPT) {
+		status = psa_cipher_encrypt(session->key_id, session->psa_alg,
+					    pkt->in_buf, pkt->in_len,
+					    pkt->out_buf, pkt->out_buf_max,
+					    (size_t *) &pkt->out_len);
 	} else {
-		iv_bytes = 0;
-		memcpy(iv_loc, iv, 16);
-		p_iv = iv_loc;
+		status = psa_cipher_decrypt(session->key_id, session->psa_alg,
+					    pkt->in_buf, pkt->in_len,
+					    pkt->out_buf, pkt->out_buf_max,
+					    (size_t *) &pkt->out_len);
 	}
 
-	ret = mbedtls_aes_crypt_cbc(cbc_ctx, MBEDTLS_AES_ENCRYPT, pkt->in_len,
-				    p_iv, pkt->in_buf, pkt->out_buf + iv_bytes);
-	if (ret) {
-		LOG_ERR("Could not encrypt (%d)", ret);
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("psa_cipher_[en|de]crypt() failed (%d)", status);
 		return -EINVAL;
 	}
 
-	pkt->out_len = pkt->in_len + iv_bytes;
-
 	return 0;
 }
+#endif /* CONFIG_PSA_WANT_ALG_ECB_NO_PADDING */
 
-int mbedtls_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv)
+#if CONFIG_PSA_WANT_ALG_CBC_NO_PADDING
+int mbedtls_cbc(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv)
 {
-	int ret, iv_bytes;
-	uint8_t *p_iv, iv_loc[16];
-	mbedtls_aes_context *cbc_ctx = MBEDTLS_GET_CTX(ctx, aes);
+	struct mbedtls_shim_session *session = ctx->drv_sessn_state;
+	psa_cipher_operation_t psa_op = PSA_CIPHER_OPERATION_INIT;
+	int iv_bytes = 0;
+	uint8_t *in_buf_ptr = pkt->in_buf;
+	size_t in_buf_size = pkt->in_len;
+	uint8_t *out_buf_ptr = pkt->out_buf;
+	size_t out_buf_size = pkt->out_buf_max;
+	size_t out_len;
+	psa_status_t status;
+
+	if (session->cipher_op == CRYPTO_CIPHER_OP_ENCRYPT) {
+		status = psa_cipher_encrypt_setup(&psa_op, session->key_id, PSA_ALG_CBC_NO_PADDING);
+	} else {
+		status = psa_cipher_decrypt_setup(&psa_op, session->key_id, PSA_ALG_CBC_NO_PADDING);
+	}
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("psa_cipher_[en|de]crypt_setup() failed (%d)", status);
+		return -EINVAL;
+	}
 
 	if ((ctx->flags & CAP_NO_IV_PREFIX) == 0U) {
 		iv_bytes = 16;
-		p_iv = iv;
+		if (session->cipher_op == CRYPTO_CIPHER_OP_ENCRYPT) {
+			/* Prefix IV to ciphertext, which is default behavior of Zephyr
+			 * crypto API, unless CAP_NO_IV_PREFIX is requested.
+			 */
+			memcpy(pkt->out_buf, iv, iv_bytes);
+			out_buf_ptr += iv_bytes;
+			out_buf_size -= iv_bytes;
+		} else {
+			in_buf_ptr += iv_bytes;
+			in_buf_size -= iv_bytes;
+		}
+	}
+
+	status = psa_cipher_set_iv(&psa_op, iv, 16);
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("psa_cipher_set_iv() failed (%d)", status);
+		return -EINVAL;
+	}
+
+	status = psa_cipher_update(&psa_op, in_buf_ptr, in_buf_size,
+				   out_buf_ptr, out_buf_size, &out_len);
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("psa_cipher_update() failed (%d)", status);
+		return -EINVAL;
+	}
+	out_buf_ptr += out_len;
+	out_buf_size -= out_len;
+	pkt->out_len = out_len;
+
+	status = psa_cipher_finish(&psa_op, out_buf_ptr, out_buf_size, &out_len);
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("psa_cipher_finish() failed (%d)", status);
+		return -EINVAL;
+	}
+
+	pkt->out_len += out_len;
+
+	return 0;
+}
+#endif /* CONFIG_PSA_WANT_ALG_CBC_NO_PADDING */
+
+#if CONFIG_PSA_WANT_ALG_CCM || CONFIG_PSA_WANT_ALG_GCM
+static int mbedtls_aead(struct cipher_ctx *ctx, struct cipher_aead_pkt *apkt, uint8_t *nonce)
+{
+	struct mbedtls_shim_session *session = ctx->drv_sessn_state;
+	psa_aead_operation_t psa_op = PSA_AEAD_OPERATION_INIT;
+	psa_algorithm_t psa_alg;
+	psa_status_t status;
+	uint8_t *out_buf_ptr = apkt->pkt->out_buf;
+	size_t out_buf_size = apkt->pkt->out_buf_max;
+	size_t out_len, tag_size, tag_len, nonce_len;
+
+	if (session->psa_alg == PSA_ALG_GCM) {
+		tag_size = ctx->mode_params.gcm_info.tag_len;
+		nonce_len = ctx->mode_params.gcm_info.nonce_len;
+		psa_alg = PSA_ALG_GCM;
 	} else {
-		iv_bytes = 0;
-		memcpy(iv_loc, iv, 16);
-		p_iv = iv_loc;
+		tag_size = ctx->mode_params.ccm_info.tag_len;
+		nonce_len = ctx->mode_params.ccm_info.nonce_len;
+		psa_alg = PSA_ALG_AEAD_WITH_SHORTENED_TAG(PSA_ALG_CCM, tag_size);
 	}
 
-	ret = mbedtls_aes_crypt_cbc(cbc_ctx, MBEDTLS_AES_DECRYPT, pkt->in_len,
-				    p_iv, pkt->in_buf + iv_bytes, pkt->out_buf);
-	if (ret) {
-		LOG_ERR("Could not decrypt (%d)", ret);
-		return -EINVAL;
+	if (session->cipher_op == CRYPTO_CIPHER_OP_ENCRYPT) {
+		status = psa_aead_encrypt_setup(&psa_op, session->key_id, psa_alg);
+	} else {
+		status = psa_aead_decrypt_setup(&psa_op, session->key_id, psa_alg);
+	}
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("psa_aead_[en|de]crypt_setup() failed (%d)", status);
+		return -EIO;
 	}
 
-	pkt->out_len = pkt->in_len - iv_bytes;
-
-	return 0;
-}
-
-static int mbedtls_ccm_encrypt_auth(struct cipher_ctx *ctx,
-				 struct cipher_aead_pkt *apkt,
-				 uint8_t *nonce)
-{
-	mbedtls_ccm_context *mbedtls_ctx = MBEDTLS_GET_CTX(ctx, ccm);
-	int ret;
-
-	ret = mbedtls_ccm_encrypt_and_tag(mbedtls_ctx, apkt->pkt->in_len, nonce,
-					  ctx->mode_params.ccm_info.nonce_len,
-					  apkt->ad, apkt->ad_len,
-					  apkt->pkt->in_buf,
-					  apkt->pkt->out_buf, apkt->tag,
-					  ctx->mode_params.ccm_info.tag_len);
-	if (ret) {
-		LOG_ERR("Could not encrypt/auth (%d)", ret);
-
-		/*ToDo: try to return relevant code depending on ret? */
-		return -EINVAL;
+	status = psa_aead_set_nonce(&psa_op, nonce, nonce_len);
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("psa_aead_set_nonce() failed (%d)", status);
+		return -EIO;
 	}
 
-	/* This is equivalent to what the TinyCrypt shim does in
-	 * do_ccm_encrypt_mac().
-	 */
-	apkt->pkt->out_len = apkt->pkt->in_len;
-	apkt->pkt->out_len += ctx->mode_params.ccm_info.tag_len;
+	status = psa_aead_set_lengths(&psa_op, apkt->ad_len, apkt->pkt->in_len);
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("psa_aead_set_lengths() failed (%d)", status);
+		return -EIO;
+	}
 
-	return 0;
-}
+	status = psa_aead_update_ad(&psa_op, apkt->ad, apkt->ad_len);
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("psa_aead_update_ad() failed (%d)", status);
+		return -EIO;
+	}
 
-static int mbedtls_ccm_decrypt_auth(struct cipher_ctx *ctx,
-				 struct cipher_aead_pkt *apkt,
-				 uint8_t *nonce)
-{
-	mbedtls_ccm_context *mbedtls_ctx = MBEDTLS_GET_CTX(ctx, ccm);
-	int ret;
+	apkt->pkt->out_len = 0;
 
-	ret = mbedtls_ccm_auth_decrypt(mbedtls_ctx, apkt->pkt->in_len, nonce,
-				       ctx->mode_params.ccm_info.nonce_len,
-				       apkt->ad, apkt->ad_len,
-				       apkt->pkt->in_buf,
-				       apkt->pkt->out_buf, apkt->tag,
-				       ctx->mode_params.ccm_info.tag_len);
-	if (ret) {
-		if (ret == MBEDTLS_ERR_CCM_AUTH_FAILED) {
-			LOG_ERR("Message authentication failed");
-			return -EFAULT;
-		}
+	status = psa_aead_update(&psa_op, apkt->pkt->in_buf, apkt->pkt->in_len,
+				 out_buf_ptr, out_buf_size, &out_len);
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("psa_aead_update() failed (%d)", status);
+		return -EIO;
+	}
 
-		LOG_ERR("Could not decrypt/auth (%d)", ret);
+	out_buf_ptr += out_len;
+	out_buf_size -= out_len;
+	apkt->pkt->out_len += out_len;
 
-		/*ToDo: try to return relevant code depending on ret? */
-		return -EINVAL;
+	if (session->cipher_op == CRYPTO_CIPHER_OP_ENCRYPT) {
+		status = psa_aead_finish(&psa_op, out_buf_ptr, out_buf_size, &out_len,
+					 apkt->tag, tag_size, &tag_len);
+		apkt->pkt->out_len += out_len + tag_len;
+	} else {
+		status = psa_aead_verify(&psa_op, out_buf_ptr, out_buf_size, &out_len,
+					 apkt->tag, tag_size);
+		apkt->pkt->out_len += out_len;
+	}
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("psa_aead_[finish|verify]() failed (%d)", status);
+		return -EIO;
 	}
 
 	return 0;
 }
-
-#ifdef CONFIG_MBEDTLS_CIPHER_GCM_ENABLED
-static int mbedtls_gcm_encrypt_auth(struct cipher_ctx *ctx,
-				 struct cipher_aead_pkt *apkt,
-				 uint8_t *nonce)
-{
-	mbedtls_gcm_context *mbedtls_ctx = MBEDTLS_GET_CTX(ctx, gcm);
-	int ret;
-
-	ret = mbedtls_gcm_crypt_and_tag(mbedtls_ctx, MBEDTLS_GCM_ENCRYPT,
-					  apkt->pkt->in_len, nonce,
-					  ctx->mode_params.gcm_info.nonce_len,
-					  apkt->ad, apkt->ad_len,
-					  apkt->pkt->in_buf,
-					  apkt->pkt->out_buf,
-					  ctx->mode_params.gcm_info.tag_len,
-					  apkt->tag);
-	if (ret) {
-		LOG_ERR("Could not encrypt/auth (%d)", ret);
-
-		return -EINVAL;
-	}
-
-	/* This is equivalent to what is done in mbedtls_ccm_encrypt_auth(). */
-	apkt->pkt->out_len = apkt->pkt->in_len;
-	apkt->pkt->out_len += ctx->mode_params.gcm_info.tag_len;
-
-	return 0;
-}
-
-static int mbedtls_gcm_decrypt_auth(struct cipher_ctx *ctx,
-				 struct cipher_aead_pkt *apkt,
-				 uint8_t *nonce)
-{
-	mbedtls_gcm_context *mbedtls_ctx = MBEDTLS_GET_CTX(ctx, gcm);
-	int ret;
-
-	ret = mbedtls_gcm_auth_decrypt(mbedtls_ctx, apkt->pkt->in_len, nonce,
-				       ctx->mode_params.gcm_info.nonce_len,
-				       apkt->ad, apkt->ad_len,
-				       apkt->tag,
-				       ctx->mode_params.gcm_info.tag_len,
-				       apkt->pkt->in_buf,
-				       apkt->pkt->out_buf);
-	if (ret) {
-		if (ret == MBEDTLS_ERR_GCM_AUTH_FAILED) {
-			LOG_ERR("Message authentication failed");
-			return -EFAULT;
-		}
-
-		LOG_ERR("Could not decrypt/auth (%d)", ret);
-		return -EINVAL;
-	}
-
-	return 0;
-}
-#endif /* CONFIG_MBEDTLS_CIPHER_GCM_ENABLED */
+#endif /* CONFIG_PSA_WANT_ALG_CCM || CONFIG_PSA_WANT_ALG_GCM */
+#endif /* CONFIG_PSA_WANT_KEY_TYPE_AES */
 
 static int mbedtls_cipher_session_setup(const struct device *dev,
-			      struct cipher_ctx *ctx,
-			      enum cipher_algo algo, enum cipher_mode mode,
-			      enum cipher_op op_type)
+					struct cipher_ctx *ctx,
+					enum cipher_algo algo, enum cipher_mode mode,
+					enum cipher_op op_type)
 {
-	mbedtls_aes_context *aes_ctx;
-	mbedtls_ccm_context *ccm_ctx;
-#ifdef CONFIG_MBEDTLS_CIPHER_GCM_ENABLED
-	mbedtls_gcm_context *gcm_ctx;
-#endif
+	psa_key_attributes_t key_attr = PSA_KEY_ATTRIBUTES_INIT;
+	psa_status_t status;
+	struct mbedtls_shim_session *session;
 	int ctx_idx;
-	int ret = 0;
 
 	if (ctx->flags & ~(MBEDTLS_SUPPORT)) {
 		LOG_ERR("Unsupported flag");
@@ -331,16 +271,6 @@ static int mbedtls_cipher_session_setup(const struct device *dev,
 	if (algo != CRYPTO_CIPHER_ALGO_AES) {
 		LOG_ERR("Unsupported algo");
 		return -EINVAL;
-	}
-
-	if (mode != CRYPTO_CIPHER_MODE_CCM &&
-	    mode != CRYPTO_CIPHER_MODE_CBC &&
-#ifdef CONFIG_MBEDTLS_CIPHER_GCM_ENABLED
-	    mode != CRYPTO_CIPHER_MODE_GCM &&
-#endif
-	    mode != CRYPTO_CIPHER_MODE_ECB) {
-		LOG_ERR("Unsupported mode");
-		return -ENOTSUP;
 	}
 
 	if (ctx->keylen != 16U) {
@@ -354,114 +284,70 @@ static int mbedtls_cipher_session_setup(const struct device *dev,
 		return -ENOSPC;
 	}
 
-	mbedtls_sessions[ctx_idx].mode = mode;
-	ctx->drv_sessn_state = &mbedtls_sessions[ctx_idx];
+	session = &mbedtls_sessions[ctx_idx];
 
 	switch (mode) {
+#if CONFIG_PSA_WANT_KEY_TYPE_AES
+#if CONFIG_PSA_WANT_ALG_ECB_NO_PADDING
 	case CRYPTO_CIPHER_MODE_ECB:
-		aes_ctx = &mbedtls_sessions[ctx_idx].aes_ctx;
-		mbedtls_aes_init(aes_ctx);
-		if (op_type == CRYPTO_CIPHER_OP_ENCRYPT) {
-			ret = mbedtls_aes_setkey_enc(aes_ctx,
-					ctx->key.bit_stream, ctx->keylen * 8U);
-			ctx->ops.block_crypt_hndlr = mbedtls_ecb_encrypt;
-		} else {
-			ret = mbedtls_aes_setkey_dec(aes_ctx,
-					ctx->key.bit_stream, ctx->keylen * 8U);
-			ctx->ops.block_crypt_hndlr = mbedtls_ecb_decrypt;
-		}
-		if (ret) {
-			LOG_ERR("AES_ECB: failed at setkey (%d)", ret);
-			mbedtls_aes_free(aes_ctx);
-			ret = -EINVAL;
-		}
+		session->psa_alg = PSA_ALG_ECB_NO_PADDING;
+		ctx->ops.block_crypt_hndlr = mbedtls_ecb;
 		break;
+#endif /* CONFIG_PSA_WANT_ALG_ECB_NO_PADDING */
+#if CONFIG_PSA_WANT_ALG_CBC_NO_PADDING
 	case CRYPTO_CIPHER_MODE_CBC:
-		aes_ctx = &mbedtls_sessions[ctx_idx].aes_ctx;
-		mbedtls_aes_init(aes_ctx);
-		if (op_type == CRYPTO_CIPHER_OP_ENCRYPT) {
-			ret = mbedtls_aes_setkey_enc(aes_ctx,
-					ctx->key.bit_stream, ctx->keylen * 8U);
-			ctx->ops.cbc_crypt_hndlr = mbedtls_cbc_encrypt;
-		} else {
-			ret = mbedtls_aes_setkey_dec(aes_ctx,
-					ctx->key.bit_stream, ctx->keylen * 8U);
-			ctx->ops.cbc_crypt_hndlr = mbedtls_cbc_decrypt;
-		}
-		if (ret) {
-			LOG_ERR("AES_CBC: failed at setkey (%d)", ret);
-			mbedtls_aes_init(aes_ctx);
-			ret = -EINVAL;
-		}
+		session->psa_alg = PSA_ALG_CBC_NO_PADDING;
+		ctx->ops.cbc_crypt_hndlr = mbedtls_cbc;
 		break;
+#endif /* CONFIG_PSA_WANT_ALG_CBC_NO_PADDING */
+#if CONFIG_PSA_WANT_ALG_CCM
 	case CRYPTO_CIPHER_MODE_CCM:
-		ccm_ctx = &mbedtls_sessions[ctx_idx].ccm_ctx;
-		mbedtls_ccm_init(ccm_ctx);
-		ret = mbedtls_ccm_setkey(ccm_ctx, MBEDTLS_CIPHER_ID_AES,
-					 ctx->key.bit_stream, ctx->keylen * 8U);
-		if (ret) {
-			LOG_ERR("AES_CCM: failed at setkey (%d)", ret);
-			mbedtls_ccm_free(ccm_ctx);
-			ret = -EINVAL;
-			break;
-		}
-		if (op_type == CRYPTO_CIPHER_OP_ENCRYPT) {
-			ctx->ops.ccm_crypt_hndlr = mbedtls_ccm_encrypt_auth;
-		} else {
-			ctx->ops.ccm_crypt_hndlr = mbedtls_ccm_decrypt_auth;
-		}
+		session->psa_alg = PSA_ALG_AEAD_WITH_AT_LEAST_THIS_LENGTH_TAG(PSA_ALG_CCM, 8);
+		ctx->ops.ccm_crypt_hndlr = mbedtls_aead;
 		break;
-#ifdef CONFIG_MBEDTLS_CIPHER_GCM_ENABLED
+#endif /* CONFIG_PSA_WANT_ALG_CCM */
+#if CONFIG_PSA_WANT_ALG_GCM
 	case CRYPTO_CIPHER_MODE_GCM:
-		gcm_ctx = &mbedtls_sessions[ctx_idx].gcm_ctx;
-		mbedtls_gcm_init(gcm_ctx);
-		ret = mbedtls_gcm_setkey(gcm_ctx, MBEDTLS_CIPHER_ID_AES,
-					 ctx->key.bit_stream, ctx->keylen * 8U);
-		if (ret) {
-			LOG_ERR("AES_GCM: failed at setkey (%d)", ret);
-			mbedtls_gcm_free(gcm_ctx);
-			ret = -EINVAL;
-			break;
-		}
-		if (op_type == CRYPTO_CIPHER_OP_ENCRYPT) {
-			ctx->ops.gcm_crypt_hndlr = mbedtls_gcm_encrypt_auth;
-		} else {
-			ctx->ops.gcm_crypt_hndlr = mbedtls_gcm_decrypt_auth;
-		}
+		session->psa_alg = PSA_ALG_GCM;
+		ctx->ops.gcm_crypt_hndlr = mbedtls_aead;
 		break;
-#endif /* CONFIG_MBEDTLS_CIPHER_GCM_ENABLED */
+#endif /* CONFIG_PSA_WANT_ALG_GCM */
+#endif /* CONFIG_PSA_WANT_KEY_TYPE_AES*/
 	default:
-		LOG_ERR("Unhandled mode");
-		ret = -EINVAL;
+		LOG_ERR("Unsupported mode");
+		session->in_use = false;
+		return -ENOTSUP;
 	}
 
-	/* Centralized cleanup of the session slot if an error occurred
-	 *  during configuration (ret != 0).
-	 */
-	if (ret != 0) {
-		k_mutex_lock(&mbedtls_sessions_lock, K_FOREVER);
-		mbedtls_sessions[ctx_idx].in_use = false;
-		k_mutex_unlock(&mbedtls_sessions_lock);
+	psa_set_key_type(&key_attr, PSA_KEY_TYPE_AES);
+	psa_set_key_algorithm(&key_attr, session->psa_alg);
+	if (op_type == CRYPTO_CIPHER_OP_ENCRYPT) {
+		psa_set_key_usage_flags(&key_attr, PSA_KEY_USAGE_ENCRYPT);
+	} else {
+		psa_set_key_usage_flags(&key_attr, PSA_KEY_USAGE_DECRYPT);
 	}
-	return ret;
+
+	status = psa_import_key(&key_attr, ctx->key.bit_stream, ctx->keylen, &session->key_id);
+	psa_reset_key_attributes(&key_attr);
+	if (status != PSA_SUCCESS) {
+		LOG_ERR("psa_import_key() failed (%d)", status);
+		return -EIO;
+	}
+
+	session->cipher_op = op_type;
+	ctx->drv_sessn_state = session;
+
+	return 0;
 }
 
 static int mbedtls_cipher_session_free(const struct device *dev, struct cipher_ctx *ctx)
 {
-	struct mbedtls_shim_session *mbedtls_session =
-		(struct mbedtls_shim_session *)ctx->drv_sessn_state;
+	struct mbedtls_shim_session *session = ctx->drv_sessn_state;
 
-	if (mbedtls_session->mode == CRYPTO_CIPHER_MODE_CCM) {
-		mbedtls_ccm_free(&mbedtls_session->ccm_ctx);
-#ifdef CONFIG_MBEDTLS_CIPHER_GCM_ENABLED
-	} else if (mbedtls_session->mode == CRYPTO_CIPHER_MODE_GCM) {
-		mbedtls_gcm_free(&mbedtls_session->gcm_ctx);
-#endif
-	} else {
-		mbedtls_aes_free(&mbedtls_session->aes_ctx);
-	}
+	psa_destroy_key(session->key_id);
+
 	k_mutex_lock(&mbedtls_sessions_lock, K_FOREVER);
-	mbedtls_session->in_use = false;
+	session->in_use = false;
 	k_mutex_unlock(&mbedtls_sessions_lock);
 
 	return 0;
