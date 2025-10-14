@@ -1,0 +1,10 @@
+common:
+  platform_allow:
+    - qemu_riscv32
+    - qemu_riscv32e
+    - qemu_riscv64
+  filter: CONFIG_RISCV_PMP
+  ignore_faults: true
+
+tests:
+  arch.riscv.pmp.clear.unlocked.entries: {}
