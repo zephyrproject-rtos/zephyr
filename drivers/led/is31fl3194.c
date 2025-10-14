@@ -237,20 +237,39 @@ static int is31fl3194_blink(const struct device *dev, uint32_t led, uint32_t del
 		return -ENODEV;
 	}
 
-	/* RGB mode is selected for blinking.
-	 * Single mode cannot be used, as the LED channels
-	 * blink out of sync after a few hours.
-	 */
-	conf_reg |= IS31FL3194_CONF_RGB;
+	if (!delay_off || !delay_on) {
+		/* delay_off=0, delay_on=x: LED on and blinking disabled
+		 * delay_off=x, delay_on=0: LED off and blinking disabled
+		 * For both cases, clear the RGB mode so individual LED's
+		 * can be turned solid on or completely off.
+		 */
+		conf_reg &= ~IS31FL3194_CONF_RGB;
 
-	if (data->mode == IS31FL3194_MODE_RGB) {
-		/* OUTx to pattern mode for all 3 channels */
-		conf_reg |= IS31FL3194_CONF_OUTX_MASK;
-	} else if (data->mode == IS31FL3194_MODE_SINGLE) {
-		/* OUTx to pattern mode for single channel */
-		conf_reg |= LSB_GET(IS31FL3194_CONF_OUTX_MASK) << led;
+		if (data->mode == IS31FL3194_MODE_RGB) {
+			/* OUTx to single mode for all 3 channels */
+			conf_reg &= ~IS31FL3194_CONF_OUTX_MASK;
+		} else if (data->mode == IS31FL3194_MODE_SINGLE) {
+			/* OUTx to single mode for single channel */
+			conf_reg &= ~(LSB_GET(IS31FL3194_CONF_OUTX_MASK) << led);
+		} else {
+			return -ENOTSUP;
+		}
 	} else {
-		return -ENOTSUP;
+		/* RGB mode is selected for blinking.
+		 * Single mode cannot be used, as the LED channels
+		 * blink out of sync after a few hours.
+		 */
+		conf_reg |= IS31FL3194_CONF_RGB;
+
+		if (data->mode == IS31FL3194_MODE_RGB) {
+			/* OUTx to pattern mode for all 3 channels */
+			conf_reg |= IS31FL3194_CONF_OUTX_MASK;
+		} else if (data->mode == IS31FL3194_MODE_SINGLE) {
+			/* OUTx to pattern mode for single channel */
+			conf_reg |= LSB_GET(IS31FL3194_CONF_OUTX_MASK) << led;
+		} else {
+			return -ENOTSUP;
+		}
 	}
 
 	if (conf_reg != data->conf_reg) {
@@ -262,10 +281,32 @@ static int is31fl3194_blink(const struct device *dev, uint32_t led, uint32_t del
 		data->conf_reg = conf_reg;
 	}
 
-	if (data->mode == IS31FL3194_MODE_RGB) {
-		ret = is31fl3194_blink_one(dev, 0, delay_on, delay_off);
-	} else if (data->mode == IS31FL3194_MODE_SINGLE) {
-		ret = is31fl3194_blink_one(dev, led, delay_on, delay_off);
+	if (!delay_on) {
+		/* delay_off=x, delay_on=0: LED off and blinking disabled.
+		 * For this specific case, the color/brightness of the channel
+		 * is cleared to turn off the LED channel.
+		 */
+		static const uint8_t color_off[3] = {0, 0, 0};
+
+		if (data->mode == IS31FL3194_MODE_RGB) {
+			ret = led_set_color(dev, led, 3, color_off);
+		} else if (data->mode == IS31FL3194_MODE_SINGLE) {
+			ret = led_set_brightness(dev, led, 0);
+		} else {
+			return -ENOTSUP;
+		}
+	} else if (!delay_off) {
+		/* delay_off=0, delay_on=x: LED on and blinking disabled
+		 * LED output level already previously configured with
+		 * led_set_color() or led_set_brightness().
+		 */
+
+	} else {
+		if (data->mode == IS31FL3194_MODE_RGB) {
+			ret = is31fl3194_blink_one(dev, 0, delay_on, delay_off);
+		} else if (data->mode == IS31FL3194_MODE_SINGLE) {
+			ret = is31fl3194_blink_one(dev, led, delay_on, delay_off);
+		}
 	}
 
 	if (ret == 0) {
