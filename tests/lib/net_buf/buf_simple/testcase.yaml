@@ -4,3 +4,7 @@ common:
 tests:
   libraries.net_buf.buf_simple:
     type: unit
+  libraries.net_buf.large_buf_simple:
+    type: unit
+    extra_configs:
+      - CONFIG_NET_BUF_LARGE_SIZE=y
