@@ -68,11 +68,9 @@ LOG_MODULE_REGISTER(mpu);
  * @param start Pointer to where the calculated start address should be stored.
  * @param end Pointer to where the calculated end address should be stored.
  */
-static void pmp_decode_region(uint8_t cfg_byte,
-                              unsigned long *pmp_addr,
-                              unsigned int index,
-                              unsigned long *start,
-                              unsigned long *end)
+IF_DISABLED(CONFIG_ZTEST, (static))
+void pmp_decode_region(uint8_t cfg_byte, unsigned long *pmp_addr, unsigned int index,
+		       unsigned long *start, unsigned long *end)
 {
 	unsigned long tmp;
 	unsigned long pmp_addr_val = pmp_addr[index];
@@ -172,7 +170,8 @@ void z_riscv_pmp_read_config(unsigned long *pmp_cfg, size_t pmp_cfg_size)
  * @param pmp_addr Pointer to the array where the CSR contents will be stored.
  * @param pmp_addr_size The size of the pmp_addr array, measured in unsigned long entries.
  */
-static inline void z_riscv_pmp_read_addr(unsigned long *pmp_addr, size_t pmp_addr_size)
+IF_DISABLED(CONFIG_ZTEST, (static inline))
+void z_riscv_pmp_read_addr(unsigned long *pmp_addr, size_t pmp_addr_size)
 {
 	__ASSERT(pmp_addr_size == (size_t)(CONFIG_PMP_SLOTS), "PMP address array size mismatch");
 
