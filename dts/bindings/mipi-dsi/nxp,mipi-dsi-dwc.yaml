@@ -7,7 +7,7 @@ description: NXP MCUX MIPI DSI DWC
 
 compatible: "nxp,mipi-dsi-dwc"
 
-include: [mipi-dsi-host.yaml, display-controller.yaml]
+include: mipi-dsi-host.yaml
 
 properties:
   interrupts:
