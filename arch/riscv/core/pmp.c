@@ -15,7 +15,7 @@
  * cycles on corresponding CSR registers. Relevant CSR registers are always
  * written in batch from their shadow copy in RAM for better efficiency.
  *
- * In the stackguard case we keep an m-mode copy for each thread. Each user
+ * In the kernel mode case we keep an m-mode copy for each thread. Each user
  * mode threads also has a u-mode copy. This makes faster context switching
  * as precomputed content just have to be written to actual registers with
  * no additional processing.
@@ -450,7 +450,7 @@ void z_riscv_pmp_init(void)
 	 * This early, the kernel init code uses the IRQ stack and we want to
 	 * safeguard it as soon as possible. But we need a temporary default
 	 * "catch all" PMP entry for MPRV to work. Later on, this entry will
-	 * be set for each thread by z_riscv_pmp_stackguard_prepare().
+	 * be set for each thread by z_riscv_pmp_kernelmode_prepare().
 	 */
 	set_pmp_mprv_catchall(&index, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 
@@ -539,11 +539,11 @@ static inline unsigned int z_riscv_pmp_thread_init(unsigned long *pmp_addr,
 
 #ifdef CONFIG_MULTITHREADING
 /**
- * @brief Prepare the PMP stackguard content for given thread.
+ * @brief Prepare the PMP kernelmode content for given thread.
  *
  * This is called once during new thread creation.
  */
-void z_riscv_pmp_stackguard_prepare(struct k_thread *thread)
+void z_riscv_pmp_kernelmode_prepare(struct k_thread *thread)
 {
 	unsigned int index = z_riscv_pmp_thread_init(PMP_M_MODE(thread));
 	uintptr_t stack_bottom;
@@ -567,13 +567,13 @@ void z_riscv_pmp_stackguard_prepare(struct k_thread *thread)
 }
 
 /**
- * @brief Write PMP stackguard content to actual PMP registers
+ * @brief Write PMP kernel mode content to actual PMP registers
  *
  * This is called on every context switch.
  */
-void z_riscv_pmp_stackguard_enable(struct k_thread *thread)
+void z_riscv_pmp_kernelmode_enable(struct k_thread *thread)
 {
-	LOG_DBG("pmp_stackguard_enable for thread %p", thread);
+	LOG_DBG("pmp_kernelmode_enable for thread %p", thread);
 
 	/*
 	 * Disable (non-locked) PMP entries for m-mode while we update them.
@@ -598,9 +598,9 @@ void z_riscv_pmp_stackguard_enable(struct k_thread *thread)
 #endif /* CONFIG_MULTITHREADING */
 
 /**
- * @brief Remove PMP stackguard content to actual PMP registers
+ * @brief Remove PMP kernel mode content to actual PMP registers
  */
-void z_riscv_pmp_stackguard_disable(void)
+void z_riscv_pmp_kernelmode_disable(void)
 {
 
 	unsigned long pmp_addr[CONFIG_PMP_SLOTS];
