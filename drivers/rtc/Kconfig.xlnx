@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Advanced Micro Devices, Inc. (AMD)
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_XLNX
+	bool "XLNX RTC driver"
+	default y
+	depends on DT_HAS_XLNX_ZYNQMP_RTC_ENABLED
+	help
+	  Enable the XILINX RTC driver

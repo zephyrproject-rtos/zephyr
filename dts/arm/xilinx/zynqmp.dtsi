@@ -97,6 +97,16 @@
 			reg = <0xff140000 0x1000>;
 		};
 
+		rtc0: rtc@ffa60000 {
+			compatible = "xlnx,zynqmp-rtc";
+			status = "disabled";
+			reg = <0xffa60000 0x100>;
+			interrupts = <GIC_SPI 26 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 27 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "alarm", "sec";
+			alarms-count = <1>;
+		};
+
 		gem0: ethernet@ff0b0000 {
 			compatible = "xlnx,gem";
 			reg = <0xff0b0000 0x1000>,
