@@ -803,7 +803,6 @@ config NXP_WIFI_TX_PER_TRACK
 config NXP_WIFI_CSI
 	bool "CSI support"
 	default y
-	depends on NXP_RW610 || NXP_88W8987 || NXP_IW610 || NXP_WIFI_CUSTOM
 	help
 	  This option enable/disable channel state information collection.
 
