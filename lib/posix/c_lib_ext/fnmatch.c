@@ -48,11 +48,13 @@
 
 #define EOS '\0'
 
-#define MATCH_CLASS6(p,a,b,c,d,e,f,g) \
-	((p)[0]==(a) && (p)[1]==(b) && (p)[2]==(c) && (p)[3]==(d) && (p)[4]==(e) && (p)[5]==(f) && (p)[6]==(g))
+#define MATCH_CLASS6(p, a, b, c, d, e, f, g)                                                       \
+	((p)[0] == (a) && (p)[1] == (b) && (p)[2] == (c) && (p)[3] == (d) && (p)[4] == (e) &&      \
+	 (p)[5] == (f) && (p)[6] == (g))
 
-#define MATCH_CLASS7(p,a,b,c,d,e,f,g,h) \
-	((p)[0]==(a) && (p)[1]==(b) && (p)[2]==(c) && (p)[3]==(d) && (p)[4]==(e) && (p)[5]==(f) && (p)[6]==(g) && (p)[7]==(h))
+#define MATCH_CLASS7(p, a, b, c, d, e, f, g, h)                                                    \
+	((p)[0] == (a) && (p)[1] == (b) && (p)[2] == (c) && (p)[3] == (d) && (p)[4] == (e) &&      \
+	 (p)[5] == (f) && (p)[6] == (g) && (p)[7] == (h))
 
 enum fnm_char_class {
 	FNM_CC_ALNUM,
@@ -76,84 +78,84 @@ static bool fnm_cc_is_valid(const char *pattern, size_t psize, enum fnm_char_cla
 		return false;
 	}
 
-	pattern++;  /* skip ':' */
+	pattern++; /* skip ':' */
 	psize--;
 
 	/* Each class name ends with ":]" */
 	switch (pattern[0]) {
 	case 'a':
-		if (MATCH_CLASS6(pattern,'a','l','n','u','m',':',']')) {
+		if (MATCH_CLASS6(pattern, 'a', 'l', 'n', 'u', 'm', ':', ']')) {
 			*cc = FNM_CC_ALNUM;
 			return true;
 		}
-		if (MATCH_CLASS6(pattern,'a','l','p','h','a',':',']')) {
+		if (MATCH_CLASS6(pattern, 'a', 'l', 'p', 'h', 'a', ':', ']')) {
 			*cc = FNM_CC_ALPHA;
 			return true;
 		}
 		break;
-	
+
 	case 'b':
-		if (MATCH_CLASS6(pattern,'b','l','a','n','k',':',']')) {
+		if (MATCH_CLASS6(pattern, 'b', 'l', 'a', 'n', 'k', ':', ']')) {
 			*cc = FNM_CC_BLANK;
 			return true;
 		}
 		break;
 
 	case 'c':
-		if (MATCH_CLASS6(pattern,'c','n','t','r','l',':',']')) {
+		if (MATCH_CLASS6(pattern, 'c', 'n', 't', 'r', 'l', ':', ']')) {
 			*cc = FNM_CC_CNTRL;
 			return true;
 		}
 		break;
 
 	case 'd':
-		if (MATCH_CLASS6(pattern,'d','i','g','i','t',':',']')) {
+		if (MATCH_CLASS6(pattern, 'd', 'i', 'g', 'i', 't', ':', ']')) {
 			*cc = FNM_CC_DIGIT;
 			return true;
 		}
 		break;
 
 	case 'g':
-		if (MATCH_CLASS6(pattern,'g','r','a','p','h',':',']')) {
+		if (MATCH_CLASS6(pattern, 'g', 'r', 'a', 'p', 'h', ':', ']')) {
 			*cc = FNM_CC_GRAPH;
 			return true;
 		}
 		break;
 
 	case 'l':
-		if (MATCH_CLASS6(pattern,'l','o','w','e','r',':',']')) {
+		if (MATCH_CLASS6(pattern, 'l', 'o', 'w', 'e', 'r', ':', ']')) {
 			*cc = FNM_CC_LOWER;
 			return true;
 		}
 		break;
 
 	case 'p':
-		if (MATCH_CLASS6(pattern,'p','r','i','n','t',':',']')) {
+		if (MATCH_CLASS6(pattern, 'p', 'r', 'i', 'n', 't', ':', ']')) {
 			*cc = FNM_CC_PRINT;
 			return true;
 		}
-		if (MATCH_CLASS6(pattern,'p','u','n','c','t',':',']')) {
+		if (MATCH_CLASS6(pattern, 'p', 'u', 'n', 'c', 't', ':', ']')) {
 			*cc = FNM_CC_PUNCT;
 			return true;
 		}
 		break;
 
 	case 's':
-		if (MATCH_CLASS6(pattern,'s','p','a','c','e',':',']')) {
+		if (MATCH_CLASS6(pattern, 's', 'p', 'a', 'c', 'e', ':', ']')) {
 			*cc = FNM_CC_SPACE;
 			return true;
 		}
 		break;
 
 	case 'u':
-		if (MATCH_CLASS6(pattern,'u','p','p','e','r',':',']')) {
+		if (MATCH_CLASS6(pattern, 'u', 'p', 'p', 'e', 'r', ':', ']')) {
 			*cc = FNM_CC_UPPER;
 			return true;
 		}
 		break;
 
 	case 'x':
-		if (MATCH_CLASS7(pattern,'x','d','i','g','i','t',':',']')) {
+		if (MATCH_CLASS7(pattern, 'x', 'd', 'i', 'g', 'i', 't', ':', ']')) {
 			*cc = FNM_CC_XDIGIT;
 			return true;
 		}
@@ -169,18 +171,30 @@ static bool fnm_cc_is_valid(const char *pattern, size_t psize, enum fnm_char_cla
 static inline int fnm_cc_match(int c, enum fnm_char_class cc)
 {
 	switch (cc) {
-	case FNM_CC_ALNUM:  return isalnum(c);
-	case FNM_CC_ALPHA:  return isalpha(c);
-	case FNM_CC_BLANK:  return isblank(c);
-	case FNM_CC_CNTRL:  return iscntrl(c);
-	case FNM_CC_DIGIT:  return isdigit(c);
-	case FNM_CC_GRAPH:  return isgraph(c);
-	case FNM_CC_LOWER:  return islower(c);
-	case FNM_CC_PRINT:  return isprint(c);
-	case FNM_CC_PUNCT:  return ispunct(c);
-	case FNM_CC_SPACE:  return isspace(c);
-	case FNM_CC_UPPER:  return isupper(c);
-	case FNM_CC_XDIGIT: return isxdigit(c);
+	case FNM_CC_ALNUM:
+		return isalnum(c);
+	case FNM_CC_ALPHA:
+		return isalpha(c);
+	case FNM_CC_BLANK:
+		return isblank(c);
+	case FNM_CC_CNTRL:
+		return iscntrl(c);
+	case FNM_CC_DIGIT:
+		return isdigit(c);
+	case FNM_CC_GRAPH:
+		return isgraph(c);
+	case FNM_CC_LOWER:
+		return islower(c);
+	case FNM_CC_PRINT:
+		return isprint(c);
+	case FNM_CC_PUNCT:
+		return ispunct(c);
+	case FNM_CC_SPACE:
+		return isspace(c);
+	case FNM_CC_UPPER:
+		return isupper(c);
+	case FNM_CC_XDIGIT:
+		return isxdigit(c);
 	default:
 		break;
 	}
@@ -213,6 +227,7 @@ static bool match_posix_class(const char **pattern, int test)
 
 	/* move pattern pointer past ":]" */
 	const char *end = strstr(p, ":]");
+
 	if (end) {
 		*pattern = end + 2;
 	}
