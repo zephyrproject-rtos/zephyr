@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(spi_siwx91x_gspi, CONFIG_SPI_LOG_LEVEL);
 
 #define GSPI_MAX_BAUDRATE_FOR_DYNAMIC_CLOCK   110000000
 #define GSPI_MAX_BAUDRATE_FOR_POS_EDGE_SAMPLE 40000000
-#define GSPI_DMA_MAX_DESCRIPTOR_TRANSFER_SIZE 1024
+#define GSPI_DMA_MAX_DESCRIPTOR_TRANSFER_SIZE 4096
 
 /* Warning for unsupported configurations */
 #if defined(CONFIG_SPI_ASYNC) && !defined(CONFIG_SPI_SILABS_SIWX91X_GSPI_DMA)
@@ -221,11 +221,12 @@ static int gspi_siwx91x_dma_config(const struct device *dev,
 {
 	struct dma_config cfg = {
 		.channel_direction = is_tx ? MEMORY_TO_PERIPHERAL : PERIPHERAL_TO_MEMORY,
+		.channel_priority = 1,
 		.complete_callback_en = 0,
 		.source_data_size = dfs,
 		.dest_data_size = dfs,
-		.source_burst_length = dfs,
-		.dest_burst_length = dfs,
+		.source_burst_length = 1,
+		.dest_burst_length = 1,
 		.block_count = block_count,
 		.head_block = channel->dma_descriptors,
 		.dma_slot = channel->dma_slot,
@@ -238,7 +239,7 @@ static int gspi_siwx91x_dma_config(const struct device *dev,
 
 static uint32_t gspi_siwx91x_fill_desc(const struct gspi_siwx91x_config *cfg,
 				       struct dma_block_config *new_blk_cfg, uint8_t *buffer,
-				       size_t requested_transaction_size, bool is_tx, uint8_t dfs)
+				       size_t requested_transaction_size, bool is_tx)
 {
 
 	/* Set-up source and destination address with increment behavior */
@@ -266,11 +267,11 @@ static uint32_t gspi_siwx91x_fill_desc(const struct gspi_siwx91x_config *cfg,
 		}
 	}
 
-	/* Setup max transfer according to requested transaction size.
-	 * Will top if bigger than the maximum transfer size.
+	/* The underlying DMA can sent a bit less than 4k of data depending of the data size of and
+	 * the burst length. We avoid complex computation, 32 bytes fits all the cases.
 	 */
-	new_blk_cfg->block_size =
-		MIN(requested_transaction_size, GSPI_DMA_MAX_DESCRIPTOR_TRANSFER_SIZE * dfs);
+	new_blk_cfg->block_size = MIN(requested_transaction_size,
+				      GSPI_DMA_MAX_DESCRIPTOR_TRANSFER_SIZE - 32);
 	return new_blk_cfg->block_size;
 }
 
@@ -278,7 +279,7 @@ struct dma_block_config *gspi_siwx91x_fill_data_desc(const struct gspi_siwx91x_c
 						     struct dma_block_config *desc,
 						     const struct spi_buf buffers[],
 						     int buffer_count, size_t transaction_len,
-						     bool is_tx, uint8_t dfs)
+						     bool is_tx)
 {
 	__ASSERT(transaction_len > 0, "Not supported");
 
@@ -299,8 +300,7 @@ struct dma_block_config *gspi_siwx91x_fill_data_desc(const struct gspi_siwx91x_c
 		/* Calculate the buffer pointer with the current offset */
 		buffer = buffers[i].buf ? (uint8_t *)buffers[i].buf + offset : NULL;
 		/* Fill the descriptor with the buffer data and update the offset */
-		offset += gspi_siwx91x_fill_desc(cfg, desc, buffer, buffers[i].len - offset, is_tx,
-						 dfs);
+		offset += gspi_siwx91x_fill_desc(cfg, desc, buffer, buffers[i].len - offset, is_tx);
 		/* If the end of the current buffer is reached, move to the next buffer */
 		if (offset == buffers[i].len) {
 			transaction_len -= offset;
@@ -319,8 +319,7 @@ struct dma_block_config *gspi_siwx91x_fill_data_desc(const struct gspi_siwx91x_c
 			return NULL;
 		}
 
-		transaction_len -= gspi_siwx91x_fill_desc(cfg, desc, NULL,
-							  transaction_len, is_tx, dfs);
+		transaction_len -= gspi_siwx91x_fill_desc(cfg, desc, NULL, transaction_len, is_tx);
 		if (transaction_len) {
 			desc = desc->next_block;
 		}
@@ -356,7 +355,7 @@ static int gspi_siwx91x_prepare_dma_channel(const struct device *spi_dev,
 	gspi_siwx91x_reset_desc(channel);
 
 	desc = gspi_siwx91x_fill_data_desc(cfg, channel->dma_descriptors, buffer, buffer_count,
-					   padded_transaction_size, is_tx, dfs);
+					   padded_transaction_size, is_tx);
 	if (!desc) {
 		return -ENOMEM;
 	}
