@@ -209,24 +209,19 @@ void mfd_pca9422_set_irqhandler(const struct device *dev, const struct device *c
 	child->child_isr = handler;
 }
 
-static int mfd_pca9422_init(const struct device *dev)
+#define PCA9422_PROBE_DELAY_MS 100
+
+static void mfd_pca9422_deferred_init(struct k_work *work)
 {
+	const struct device *dev = DEVICE_DT_GET(DT_INST(0, nxp_pca9422));
 	const struct mfd_pca9422_config *config = dev->config;
 	struct mfd_pca9422_data *data = dev->data;
 	uint8_t val;
 	int ret;
 
+	LOG_INF("pca9422: deferred init started");
 	if (!i2c_is_ready_dt(&config->bus)) {
-		return -ENODEV;
-	}
-
-	ret = i2c_reg_read_byte_dt(&config->bus, PCA9422_REG_DEV_INFO, &val);
-	if (ret < 0) {
-		return ret;
-	}
-
-	if ((val != PCA9422_DEV_REV_VAL) && (val != PCA9422_DEV_REV_VAL_B0)) {
-		return -ENODEV;
+		LOG_ERR("pca9422: i2c not ready");
 	}
 
 	k_work_init(&data->work, mfd_pca9422_work_handler);
@@ -254,23 +249,28 @@ static int mfd_pca9422_init(const struct device *dev)
 	/* Read all interrupt registers */
 	ret = i2c_reg_read_byte_dt(&config->bus, PCA9422_REG_TOP_INT, &val);
 	if (ret < 0) {
-		return ret;
+		LOG_ERR("pca9422: failed to read reg:%d , ret:%d", PCA9422_REG_TOP_INT, ret);
+		return;
 	}
 	ret = i2c_reg_read_byte_dt(&config->bus, PCA9422_REG_SUB_INT0, &val);
 	if (ret < 0) {
-		return ret;
+		LOG_ERR("pca9422: failed to read reg:%d , ret:%d", PCA9422_REG_SUB_INT0, ret);
+		return;
 	}
 	ret = i2c_reg_read_byte_dt(&config->bus, PCA9422_REG_SUB_INT1, &val);
 	if (ret < 0) {
-		return ret;
+		LOG_ERR("pca9422: failed to read reg:%d , ret:%d", PCA9422_REG_SUB_INT1, ret);
+		return;
 	}
 	ret = i2c_reg_read_byte_dt(&config->bus, PCA9422_REG_SUB_INT2, &val);
 	if (ret < 0) {
-		return ret;
+		LOG_ERR("pca9422: failed to read reg:%d , ret:%d", PCA9422_REG_SUB_INT2, ret);
+		return;
 	}
 	ret = i2c_reg_read_byte_dt(&config->bus, PCA9422_REG_INT1, &val);
 	if (ret < 0) {
-		return ret;
+		LOG_ERR("pca9422: failed to read reg:%d , ret:%d", PCA9422_REG_INT1, ret);
+		return;
 	}
 
 	/* Set sub level mask register */
@@ -280,24 +280,38 @@ static int mfd_pca9422_init(const struct device *dev)
 	val = val & ~PCA9422_BIT_ON_SHORT_PUSH;
 	ret = i2c_reg_write_byte_dt(&config->bus, PCA9422_REG_SUB_INT0_MASK, val);
 	if (ret < 0) {
-		return ret;
+		LOG_ERR("pca9422: failed to write reg:%d , ret:%d", PCA9422_REG_SUB_INT0_MASK, ret);
+		return;
 	}
 
 	val = 0xFFU;
 	ret = i2c_reg_write_byte_dt(&config->bus, PCA9422_REG_SUB_INT1_MASK, val);
 	if (ret < 0) {
-		return ret;
+		LOG_ERR("pca9422: failed to write reg:%d , ret:%d", PCA9422_REG_SUB_INT1_MASK, ret);
+		return;
 	}
 
 	val = 0xFFU;
 	ret = i2c_reg_write_byte_dt(&config->bus, PCA9422_REG_SUB_INT2_MASK, val);
 	if (ret < 0) {
-		return ret;
+		LOG_ERR("pca9422: failed to write reg:%d , ret:%d", PCA9422_REG_SUB_INT2_MASK, ret);
+		return;
 	}
 
 	/* Set INT1 mask register */
 	val = 0xFFU;
-	return i2c_reg_write_byte_dt(&config->bus, PCA9422_REG_INT1_MASK, val);
+	i2c_reg_write_byte_dt(&config->bus, PCA9422_REG_INT1_MASK, val);
+}
+
+static int mfd_pca9422_init_wrapper(const struct device *dev)
+{
+	static struct k_work_delayable init_work;
+
+	LOG_INF("pca9422: scheduling deferred init");
+	k_work_init_delayable(&init_work, mfd_pca9422_deferred_init);
+	k_work_schedule(&init_work, K_MSEC(PCA9422_PROBE_DELAY_MS));
+
+	return 0; /* return success immediately */
 }
 
 int mfd_pca9422_reg_burst_read(const struct device *dev, uint8_t reg, uint8_t *value, size_t len)
@@ -348,7 +362,7 @@ int mfd_pca9422_reg_update_byte(const struct device *dev, uint8_t reg, uint8_t m
 		.dev = DEVICE_DT_INST_GET(inst),                                                   \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, mfd_pca9422_init, NULL, &mfd_pca9422_data_##inst,              \
+	DEVICE_DT_INST_DEFINE(inst, mfd_pca9422_init_wrapper, NULL, &mfd_pca9422_data_##inst,      \
 			      &mfd_pca9422_config_##inst, POST_KERNEL, CONFIG_MFD_INIT_PRIORITY,   \
 			      NULL);                                                               \
                                                                                                    \
