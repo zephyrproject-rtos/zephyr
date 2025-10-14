@@ -515,6 +515,17 @@ static void handle_msg_setup(struct udc_stm32_data *priv)
 	struct net_buf *buf;
 	int err;
 
+	/* Drop all transfers in control endpoints queue upon new SETUP */
+	buf = udc_buf_get_all(udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT));
+	if (buf != NULL) {
+		net_buf_unref(buf);
+	}
+
+	buf = udc_buf_get_all(udc_get_ep_cfg(dev, USB_CONTROL_EP_IN));
+	if (buf != NULL) {
+		net_buf_unref(buf);
+	}
+
 	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, sizeof(struct usb_setup_packet));
 	if (buf == NULL) {
 		LOG_ERR("Failed to allocate for setup");
@@ -522,8 +533,7 @@ static void handle_msg_setup(struct udc_stm32_data *priv)
 	}
 
 	udc_ep_buf_set_setup(buf);
-	memcpy(buf->data, setup, 8);
-	net_buf_add(buf, 8);
+	net_buf_add_mem(buf, setup, sizeof(struct usb_setup_packet));
 
 	udc_ctrl_update_stage(dev, buf);
 
