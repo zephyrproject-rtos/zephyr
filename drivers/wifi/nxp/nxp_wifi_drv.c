@@ -1004,15 +1004,16 @@ static int nxp_wifi_connect(const struct device *dev, struct wifi_connect_req_pa
 
 	ret = wlan_add_network(&nxp_wlan_network);
 	if (ret != WM_SUCCESS) {
-		status = NXP_WIFI_RET_FAIL;
+		wifi_mgmt_raise_connect_result_event(g_mlan.netif, NXP_WIFI_RET_FAIL);
+		return -EINVAL;
 	}
 
 	ret = wlan_connect(nxp_wlan_network.name);
 	if (ret != WM_SUCCESS) {
-		status = NXP_WIFI_RET_FAIL;
+		wifi_mgmt_raise_connect_result_event(g_mlan.netif, NXP_WIFI_RET_FAIL);
+		return -EINVAL;
 	}
-
-	return 0;
+	return status;
 }
 
 static int nxp_wifi_disconnect(const struct device *dev)
