@@ -24,4 +24,11 @@ void z_riscv_pmp_usermode_init(struct k_thread *thread);
 void z_riscv_pmp_usermode_prepare(struct k_thread *thread);
 void z_riscv_pmp_usermode_enable(struct k_thread *thread);
 
+#ifdef CONFIG_ZTEST
+void z_riscv_pmp_read_config(unsigned long *pmp_cfg, size_t pmp_cfg_size);
+void z_riscv_pmp_read_addr(unsigned long *pmp_addr, size_t pmp_addr_size);
+void pmp_decode_region(uint8_t cfg_byte, unsigned long *pmp_addr, unsigned int index,
+		       unsigned long *start, unsigned long *end);
+#endif /* CONFIG_ZTEST */
+
 #endif /* PMP_H_ */
