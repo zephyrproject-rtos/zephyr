@@ -116,7 +116,9 @@ kobjects = OrderedDict([
     ("rtio_iodev", ("CONFIG_RTIO", False, False)),
     ("rtio_pool", ("CONFIG_RTIO", False, False)),
     ("adc_decoder_api", ("CONFIG_ADC_STREAM", True, False)),
-    ("sensor_decoder_api", ("CONFIG_SENSOR_ASYNC_API", True, False))
+    ("sensor_decoder_api", ("CONFIG_SENSOR_ASYNC_API", True, False)),
+    ("dma_channel", ("CONFIG_DMA", False, True)),
+    ("dma_fifo", ("CONFIG_DMA", False, True)),
 ])
 
 def kobject_to_enum(kobj):
