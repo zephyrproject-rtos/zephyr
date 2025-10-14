@@ -2466,6 +2466,12 @@ static int uhc_dwc2_enable(const struct device *dev)
 		return ret;
 	}
 
+	ret = uhc_dwc2_quirk_post_enable(dev);
+	if (ret) {
+		LOG_ERR("Quirk post enable failed %d", ret);
+		return ret;
+	}
+
 	return 0;
 }
 
