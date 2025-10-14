@@ -231,22 +231,40 @@ files for a SoC:
 
   .. code-block:: kconfig
 
-     config SOC_<series name>
+     config SOC_FAMILY_<SOC_FAMILY_NAME>
              bool
+
+     config SOC_SERIES_<SOC_SERIES_NAME>
+             bool
+             select SOC_FAMILY_<SOC_FAMILY_NAME>
 
      config SOC_<SOC_NAME>
              bool
-             select SOC_SERIES_<series name>
+             select SOC_SERIES_<SOC_SERIES_NAME>
+
+     config SOC_FAMILY
+             default "<soc_family_name>" if SOC_FAMILY_<SOC_FAMILY_NAME>
+
+     config SOC_SERIES
+             default "<soc_series_name>" if SOC_SERIES_<SOC_SERIES_NAME>
 
      config SOC
-             default "SoC name" if SOC_<SOC_NAME>
+             default "<soc_name>" if SOC_<SOC_NAME>
 
-  Notice that ``SOC_NAME`` is a pure upper case version of the SoC name.
+  Notice that ``SOC_NAME`` is a pure uppercase version of the SoC name, ``SOC_SERIES_NAME`` is
+  a pure uppercase version of SoC series name and ``SOC_FAMILY_NAME`` is a pure uppercase version
+  of the SoC family name. If these fields do not appear in the :file:`soc.yml` file then they
+  should not be present in the :file:`Kconfig.soc` file.
 
-  The Kconfig ``SOC`` setting is globally defined as a string and therefore the
-  :file:`Kconfig.soc` file shall only define the default string value and not
-  the type. Notice that the string value must match the SoC name used in the
+  The Kconfigs ``SOC``, ``SOC_SERIES`` and ``SOC_FAMILY`` settings are globally defined as
+  strings and therefore the :file:`Kconfig.soc` file shall only define the default string values
+  and not the types. Notice that the string values must match the values used in the
   :file:`soc.yml` file.
+
+.. note::
+  The build system supports any variation of case for ``soc_name``, ``soc_series_name`` and
+  ``soc_family_mame``, but when submitting boards for inclusion in Zephyr itself, these must be
+  purely lowercase versions of the Kconfig names
 
 :file:`Kconfig`
   Included by :zephyr_file:`soc/Kconfig`.
