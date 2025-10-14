@@ -1,7 +1,5 @@
-Copyright 2021 Arduino SA/*
+/*
  * Copyright 2024 NXP
- * Copyright 2021 Arduino SA
- * Copyright (c) 2025 Mike S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -134,14 +132,15 @@ struct ov767x_data {
 #define OV7670_HAECC5             0xA8
 #define OV7670_HAECC6             0xA9
 
-/* Addition defines for OV7675 */
-#define OV7675_RGB444               0x8C /* REG444 */
-#define OV7675_COM3_DCW_EN          0x04 /* DCW enable */
+/* Addition defines to support OV7675 */
+#define OV7670_RGB444               0x8C /* REG444 */
 #define OV7670_COM1                 0x04 /*Com Cntrl1 */
+#define OV7675_COM3_DCW_EN          0x04 /* DCW enable */
 #define OV7675_COM7_RGB_FMT         0x04 /* Output format RGB        */
 #define OV7675_COM13_GAMMA_EN       0x80 /* Gamma enable */
 #define OV7675_COM13_UVSAT_AUTO     0x40 /* UV saturation level - UV auto adjustment. */
 #define OV7675_COM15_OUT_00_FF      0xC0 /* Output data range 00 to FF  */
+#define OV7675_COM15_FMT_RGB_NORMAL 0x00 /* Normal RGB normal output    */
 #define OV7675_COM15_FMT_RGB565     0x10 /* Normal RGB 565 output       */
 
 /* OV7670 definitions */
@@ -344,7 +343,7 @@ static const struct video_reg8 ov767x_init_regtbl[] = {
 
 static const struct video_reg8 ov767x_rgb565_regs[] = {
 	{OV7670_COM7, OV7675_COM7_RGB_FMT}, /* Selects RGB mode */
-	{OV7675_RGB444, 0x00},              /* No RGB444 please */
+	{OV7670_RGB444, 0x00},              /* No RGB444 please */
 	{OV7670_COM1, 0x00},                /* CCIR601 */
 	{OV7670_COM15, OV7675_COM15_OUT_00_FF | OV7675_COM15_FMT_RGB565},
 	{OV7670_COM9, 0x38}, /* 16x gain ceiling; 0x8 is reserved bit */
@@ -360,7 +359,7 @@ static const struct video_reg8 ov767x_rgb565_regs[] = {
 /* TODO: These registers probably need to be fixed too. */
 static const struct video_reg8 ov767x_yuv422_regs[] = {
 	{OV7670_COM7, 0x00},   /* Selects YUV mode */
-	{OV7675_RGB444, 0x00}, /* No RGB444 please */
+	{OV7670_RGB444, 0x00}, /* No RGB444 please */
 	{OV7670_COM1, 0x00},   /* CCIR601 */
 	{OV7670_COM15, OV7675_COM15_OUT_00_FF},
 	{OV7670_COM9, 0x48}, /* 32x gain ceiling; 0x8 is reserved bit */
@@ -373,6 +372,7 @@ static const struct video_reg8 ov767x_yuv422_regs[] = {
 	{OV7670_COM13, OV7675_COM13_GAMMA_EN | OV7675_COM13_UVSAT_AUTO},
 };
 
+#if DT_HAS_COMPAT_STATUS_OKAY(ovti_ov7670)
 /* Resolution settings for camera, based on those present in MCUX SDK */
 static const struct video_reg8 ov7670_regs_qcif[] = {
 	{OV7670_COM7, 0x2c},
@@ -417,19 +417,27 @@ static const struct video_reg8 ov7670_regs_vga[] = {
 	{OV7670_SCALING_PCLK_DIV, 0xf0},
 	{OV7670_SCALING_PCLK_DELAY, 0x02},
 };
+#endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(ovti_ov7675)
 static const struct video_reg8 ov7675_regs_vga[] = {
-	{OV7670_COM3, 0x00},   {OV7670_COM14, 0x00}, {0x72, 0x11}, /* downsample by 4 */
-	{0x73, 0xf0},                                              /* divide by 4 */
-	{OV7670_HSTART, 0x12}, {OV7670_HSTOP, 0x00}, {OV7670_HREF, 0xb6},
-	{OV7670_VSTRT, 0x02},  {OV7670_VSTOP, 0x7a}, {OV7670_VREF, 0x00},
+	{OV7670_COM3, 0x00},
+	{OV7670_COM14, 0x00},
+	{0x72, 0x11}, /* downsample by 4 */
+	{0x73, 0xf0}, /* divide by 4 */
+	{OV7670_HSTART, 0x12},
+	{OV7670_HSTOP, 0x00},
+	{OV7670_HREF, 0xb6},
+	{OV7670_VSTRT, 0x02},
+	{OV7670_VSTOP, 0x7a},
+	{OV7670_VREF, 0x00},
 };
 
 static const struct video_reg8 ov7675_regs_qvga[] = {
 	{OV7670_COM3, OV7675_COM3_DCW_EN},
 	{OV7670_COM14, 0x11}, /* Divide by 2 */
-	{0x72, 0x22},         /* This has no effect on OV7675 */
-	{0x73, 0xf2},         /* This has no effect on OV7675 */
+	{0x72, 0x22},
+	{0x73, 0xf2},
 	{OV7670_HSTART, 0x15},
 	{OV7670_HSTOP, 0x03},
 	{OV7670_HREF, 0xC0},
@@ -441,8 +449,8 @@ static const struct video_reg8 ov7675_regs_qvga[] = {
 static const struct video_reg8 ov7675_regs_qqvga[] = {
 	{OV7670_COM3, OV7675_COM3_DCW_EN},
 	{OV7670_COM14, 0x11}, /* Divide by 2 */
-	{0x72, 0x22},         /* This has no effect on OV7675*/
-	{0x73, 0xf2},         /* This has no effect on OV7675*/
+	{0x72, 0x22},
+	{0x73, 0xf2},
 	{OV7670_HSTART, 0x16},
 	{OV7670_HSTOP, 0x04},
 	{OV7670_HREF, 0xa4},
@@ -450,6 +458,7 @@ static const struct video_reg8 ov7675_regs_qqvga[] = {
 	{OV7670_VSTOP, 0x7a},
 	{OV7670_VREF, 0xfa},
 };
+#endif
 
 static int ov767x_get_caps(const struct device *dev, struct video_caps *caps)
 {
@@ -470,6 +479,30 @@ static int ov7670_set_fmt(const struct device *dev, struct video_format *fmt)
 	if (fmt->pixelformat != VIDEO_PIX_FMT_RGB565 && fmt->pixelformat != VIDEO_PIX_FMT_YUYV) {
 		LOG_ERR("Only RGB565 and YUYV supported!");
 		return -ENOTSUP;
+	}
+
+	if (!memcmp(&data->fmt, fmt, sizeof(data->fmt))) {
+		/* nothing to do */
+		return 0;
+	}
+
+	memcpy(&data->fmt, fmt, sizeof(data->fmt));
+
+	/* Set RGB Format */
+	if (fmt->pixelformat == VIDEO_PIX_FMT_RGB565) {
+		ret = video_write_cci_multiregs8(&config->bus, ov767x_rgb565_regs,
+						 ARRAY_SIZE(ov767x_rgb565_regs));
+	} else if (fmt->pixelformat == VIDEO_PIX_FMT_YUYV) {
+		ret = video_write_cci_multiregs8(&config->bus, ov767x_yuv422_regs,
+						 ARRAY_SIZE(ov767x_yuv422_regs));
+	} else {
+		LOG_ERR("Image format not supported");
+		ret = -ENOTSUP;
+	}
+
+	if (ret < 0) {
+		LOG_ERR("Format not set!");
+		return ret;
 	}
 
 	if (config->camera_model == OV767X_MODEL_OV7670) {
@@ -513,6 +546,50 @@ static int ov7670_set_fmt(const struct device *dev, struct video_format *fmt)
 			}
 			i++;
 		}
+	}
+	if (ret < 0) {
+		LOG_ERR("Resolution not supported!");
+		return ret;
+	}
+
+	return 0;
+}
+#endif
+#if DT_HAS_COMPAT_STATUS_OKAY(ovti_ov7675)
+static int ov7675_set_fmt(const struct device *dev, struct video_format *fmt)
+{
+	const struct ov767x_config *config = dev->config;
+	struct ov767x_data *data = dev->data;
+	int ret = -ENOTSUP;
+	uint8_t i = 0U;
+
+	if (fmt->pixelformat != VIDEO_PIX_FMT_RGB565 && fmt->pixelformat != VIDEO_PIX_FMT_YUYV) {
+		LOG_ERR("Only RGB565 and YUYV supported!");
+		return -ENOTSUP;
+	}
+
+	if (!memcmp(&data->fmt, fmt, sizeof(data->fmt))) {
+		/* nothing to do */
+		return 0;
+	}
+
+	memcpy(&data->fmt, fmt, sizeof(data->fmt));
+
+	/* Set RGB Format */
+	if (fmt->pixelformat == VIDEO_PIX_FMT_RGB565) {
+		ret = video_write_cci_multiregs8(&config->bus, ov767x_rgb565_regs,
+						 ARRAY_SIZE(ov767x_rgb565_regs));
+	} else if (fmt->pixelformat == VIDEO_PIX_FMT_YUYV) {
+		ret = video_write_cci_multiregs8(&config->bus, ov767x_yuv422_regs,
+						 ARRAY_SIZE(ov767x_yuv422_regs));
+	} else {
+		LOG_ERR("Image format not supported");
+		ret = -ENOTSUP;
+	}
+
+	if (ret < 0) {
+		LOG_ERR("Format not set!");
+		return ret;
 	}
 
 	if (config->camera_model == OV767X_MODEL_OV7675) {
@@ -565,13 +642,14 @@ static int ov767x_set_fmt(const struct device *dev, struct video_format *fmt)
 {
 	int ret;
 
-	if (fmt->pixelformat != VIDEO_PIX_FMT_RGB565 && fmt->pixelformat != VIDEO_PIX_FMT_YUYV) {
-		LOG_ERR("Only RGB565 and YUYV supported!");
-		return -ENOTSUP;
-	}
-
 #if DT_HAS_COMPAT_STATUS_OKAY(ovti_ov7670)
 	ret = ov7670_set_fmt(dev, fmt);
+	if (ret < 0) {
+		return ret;
+	}
+#endif
+#if DT_HAS_COMPAT_STATUS_OKAY(ovti_ov7675)
+	ret = ov7675_set_fmt(dev, fmt);
 	if (ret < 0) {
 		return ret;
 	}
@@ -688,7 +766,9 @@ static int ov767x_init(const struct device *dev)
 	}
 	/* Delay after reset */
 	k_msleep(5);
+
 	ret = ov767x_set_fmt(dev, &fmt);
+
 	if (ret < 0) {
 		return ret;
 	}
