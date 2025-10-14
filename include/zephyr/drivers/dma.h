@@ -784,6 +784,125 @@ static inline uint32_t dma_burst_index(uint32_t burst)
  */
 #define DMA_COPY_ALIGNMENT(node) DT_PROP(node, dma_copy_alignment)
 
+
+/**
+ * @brief A handle around a DMA channel provided as a kernel object
+ *
+ * In order to provide per channel permissions access on a DMA a kobject
+ * per dma channel is provided. This could also be used for convienence around
+ * instantiation of dma channels from device tree using some macros
+ * that understand a particular nodes DMA channel configuration. This isn't
+ * always a single channel or commonly named property though.
+ */
+struct dma_channel {
+	const struct device *dma;
+	uint32_t channel;
+};
+
+/**
+ * @brief A handle around a hardware FIFO address provided as a kernel object
+ *
+ * In order to provide secure transfers to/from buffers and to/from hardware fifos
+ * in a syscall, the hardware FIFO needs to be a well understood kernel object with
+ * access control. Effectively "just" a memory address for the machine, this kobject
+ * can be checked against for each usermode thread wishing to send/recv data to it.
+ */
+struct dma_fifo {
+	uint32_t hwfifo;
+};
+
+/**
+ * @brief Start a DMA channel
+ *
+ * @see `dma_start` for details
+ *
+ * @param dma_chan A DMA channel to start
+ * @retval 0 Success
+ * @retval -errno Error
+ */
+__syscall int dma_channel_start(const struct dma_channel *dma_chan);
+
+static inline int z_impl_dma_channel_start(const struct dma_channel *dma_chan)
+{
+	return dma_start(dma_chan->dma, dma_chan->channel);
+}
+
+/**
+ * @brief Stop a DMA channel
+ *
+ * @see `dma_stop` for details
+ *
+ * @param dma_chan A DMA channel to stop
+ * @retval 0 Success
+ * @retval -errno Error
+ */
+__syscall int dma_channel_stop(const struct dma_channel *dma_chan);
+
+static inline int z_impl_dma_channel_stop(const struct dma_channel *dma_chan)
+{
+	return dma_stop(dma_chan->dma, dma_chan->channel);
+}
+
+/**
+ * @brief Obtain the status of a DMA channel
+ *
+ * @param dma_chan A DMA channel to stop
+ * @retval 0 Success
+ * @retval -errno Error
+ */
+__syscall int dma_channel_get_status(const struct dma_channel *dma_chan, struct dma_status *status);
+
+static inline int z_impl_dma_channel_get_status(const struct dma_channel *dma_chan,
+						struct dma_status *status)
+{
+	return dma_get_status(dma_chan->dma, dma_chan->channel, status);
+}
+
+
+/**
+ * @brief Reload a DMA channel transfer from a hardware FIFO
+ *
+ * @see `dma_reload` for details
+ *
+ * @param dma_chan A DMA channel to stop
+ * @param src_fifo A hardware FIFO handle
+ * @param dst A buffer address
+ * @param len Length of the transfer
+ * @retval 0 Success
+ * @retval -errno Error
+ */
+__syscall int dma_channel_reload_from_fifo(const struct dma_channel *dma_chan,
+					   struct dma_fifo *src_fifo, uint32_t dst, size_t len);
+
+static inline int z_impl_dma_channel_reload_from_fifo(const struct dma_channel *dma_chan,
+						      struct dma_fifo *src_fifo,
+						      uint32_t dst, size_t len)
+{
+	return dma_reload(dma_chan->dma, dma_chan->channel, src_fifo->hwfifo, dst, len);
+}
+
+/**
+ * @brief Reload a DMA channel transfer to a hardware FIFO
+ *
+ * @see `dma_reload` for details
+ *
+ * @param dma_chan A DMA channel to stop
+ * @param src A buffer address
+ * @param dst_fifo A hardware FIFO handle
+ * @param len Length of the transfer
+ * @retval 0 Success
+ * @retval -errno Error
+ */
+__syscall int dma_channel_reload_to_fifo(const struct dma_channel *dma_chan, uint32_t src,
+					 struct dma_fifo *dst_fifo, size_t len);
+
+static inline int z_impl_dma_channel_reload_to_fifo(const struct dma_channel *dma_chan,
+						    uint32_t src, struct dma_fifo *dst_fifo,
+						    size_t len)
+{
+	return dma_reload(dma_chan->dma, dma_chan->channel, src, dst_fifo->hwfifo, len);
+}
+
 /**
  * @}
  */
@@ -791,5 +910,7 @@ static inline uint32_t dma_burst_index(uint32_t burst)
 #ifdef __cplusplus
 }
 #endif
+
+#include <zephyr/syscalls/dma.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_DMA_H_ */
