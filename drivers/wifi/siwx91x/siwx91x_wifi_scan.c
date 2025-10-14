@@ -5,7 +5,7 @@
  */
 #include <zephyr/logging/log.h>
 
-#include <nwp.h>
+#include <siwx91x_nwp.h>
 #include "siwx91x_wifi.h"
 #include "siwx91x_wifi_scan.h"
 
