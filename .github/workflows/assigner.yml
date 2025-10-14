@@ -21,7 +21,7 @@ permissions:
 jobs:
   assignment:
     name: Pull Request/Issue Assignment
-    if: github.event.pull_request.draft == false
+    if: ${{ github.event_name != 'pull_request_target' || github.event.pull_request.draft == false }}
     runs-on: ubuntu-24.04
     permissions:
       issues: write        # to add assignees to issues
