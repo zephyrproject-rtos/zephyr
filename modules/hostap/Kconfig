@@ -24,6 +24,10 @@ config WIFI_NM_WPA_SUPPLICANT
 
 if WIFI_NM_WPA_SUPPLICANT
 
+config ZVFS_OPEN_ADD_SIZE_WIFI_NM_WPA_SUPPLICANT
+	int "Number of socket descriptors needed by hostap"
+	default 12
+
 config WIFI_NM_WPA_SUPPLICANT_GLOBAL_HEAP
 	bool "Use Zephyr kernel heap for Wi-Fi driver"
 	default y
