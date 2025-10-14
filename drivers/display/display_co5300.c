@@ -40,6 +40,7 @@ struct co5300_config {
 };
 
 struct co5300_data {
+	uint8_t* last_known_framebuffer;
 	uint8_t pixel_format;
 	uint8_t bytes_per_pixel;
 	struct gpio_callback tear_effect_gpio_cb;
@@ -111,7 +112,15 @@ static int co5300_write(const struct device *dev,
 	uint32_t framebuffer_size = 0U;
 	int bytes_written = 0;
 
-	LOG_DBG("W=%d, H=%d @%d,%d", desc->width, desc->height, x, y);
+	LOG_DBG("WRITE:: W=%d, H=%d @%d,%d", desc->width, desc->height, x, y);
+
+	//@TODO(Emilio): Should we update the api to allow this to happen
+	//		Keep in mind we will now have a conflict the driver
+	//		needs to settle, which framebuffer is our focus
+	//		one given internally via Kconfig or DTS
+	//		or one given externally via Application or external peripheral
+	/* Capture the buffer we are drawing to */
+//	data->last_known_framebuffer = buf;
 
 	/* Set column address of target area */
 	/* First two bytes are starting X coordinate */
@@ -189,6 +198,93 @@ static int co5300_read(const struct device *dev,
 		const uint16_t x, const uint16_t y,
 		const struct display_buffer_descriptor *desc, void *buf)
 {
+#if 0
+	const struct co5300_config *config = dev->config;
+	struct co5300_data *data = dev->data;
+	int ret;
+	uint16_t start_xpos;
+	uint16_t end_xpos;
+	uint16_t start_ypos;
+	uint16_t end_ypos;
+	const uint8_t *framebuffer_addr;
+	uint8_t cmd_params[4];
+	struct mipi_dsi_msg msg = {0};
+	uint32_t total_bytes_sent = 0U;
+	uint32_t framebuffer_size = 0U;
+	int bytes_written = 0;
+
+	LOG_DBG("READ:: W=%d, H=%d @%d,%d", desc->width, desc->height, x, y);
+
+	/* Set column address of target area */
+	/* First two bytes are starting X coordinate */
+	start_xpos = x;
+	sys_put_be16(start_xpos, &cmd_params[0]);
+
+	/* Second two bytes are ending X coordinate */
+	end_xpos = x + desc->width - 1;
+	sys_put_be16(end_xpos, &cmd_params[2]);
+	ret = mipi_dsi_dcs_write(config->mipi_dsi, config->channel,
+				MIPI_DCS_SET_COLUMN_ADDRESS, cmd_params,
+				sizeof(cmd_params));
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Set page address of target area */
+	/* First two bytes are starting Y coordinate */
+	start_ypos = y;
+	sys_put_be16(start_ypos, &cmd_params[0]);
+
+	/* Second two bytes are ending X coordinate */
+	end_ypos = y + desc->height - 1;
+	sys_put_be16(end_ypos, &cmd_params[2]);
+	ret = mipi_dsi_dcs_write(config->mipi_dsi, config->channel,
+				MIPI_DCS_SET_PAGE_ADDRESS, cmd_params,
+				sizeof(cmd_params));
+	if (ret < 0) {
+		return ret;
+	}
+
+	/*
+	 * When writing the to the framebuffer and the tearing effect GPIO is present,
+	 * we need to wait for the tear_effect GPIO semaphore to be released.
+	 */
+	if (config->tear_effect_gpio.port != NULL) {
+		k_sem_take(&data->tear_effect_sem, K_FOREVER);
+	}
+
+
+	/* Start filling out the framebuffer */
+	framebuffer_addr = buf;
+	framebuffer_size = desc->height * desc->width * data->bytes_per_pixel;
+
+	msg.type = MIPI_DSI_DCS_LONG_WRITE;
+	msg.flags = MCUX_DSI_2L_FB_DATA;
+	msg.user_data = (void *)desc;
+	msg.cmd = MIPI_DCS_WRITE_MEMORY_START;
+
+	while (framebuffer_size > 0) {
+		msg.tx_len = framebuffer_size;
+		msg.tx_buf = framebuffer_addr;
+		bytes_written = (int)mipi_dsi_transfer(config->mipi_dsi, config->channel, &msg);
+		if (bytes_written < 0) {
+			return bytes_written;
+		}
+
+		/* Advance source pointer and decrement remaining */
+		if (desc->pitch > desc->width) {
+			total_bytes_sent += bytes_written;
+			framebuffer_addr += bytes_written + total_bytes_sent / (desc->width * data->bytes_per_pixel) *
+				((desc->pitch - desc->width) * data->bytes_per_pixel);
+		} else {
+			framebuffer_addr += bytes_written;
+		}
+		framebuffer_size -= bytes_written;
+
+		/* All future commands should use WRITE_MEMORY_CONTINUE */
+		msg.cmd = MIPI_DCS_WRITE_MEMORY_CONTINUE;
+	}
+#endif
 	return 0;
 }
 
@@ -230,38 +326,32 @@ static int co5300_clear(const struct device *dev)
 
 static void *co5300_get_framebuffer(const struct device *dev)
 {
-#if 0
-	struct display_stm32_ltdc_data *data = dev->data;
+	struct co5300_data *data = dev->data;
 
-	return ((void *)data->front_buf);
-#endif
-	return 0;
+	if(data->last_known_framebuffer)
+	{
+		return data->last_known_framebuffer;
+	}
+
+	/* Value NULL is reported as unsupported function. */
+	/* Thus, -1 will result in framebuffer not found */
+	return (void*)-1;
 }
 
 static int co5300_set_brightness(const struct device *dev, const uint8_t contrast)
 {
-#if 0
-	uint8_t cmd_buf[] = {
-		MIPI_DCS_SET_DISPLAY_BRIGHTNESS,
-		contrast,
-	};
+	const struct co5300_config *config = dev->config;
 
-	return st7567_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
-#endif
-	return 0;
+	return mipi_dsi_dcs_write(config->mipi_dsi, config->channel, MIPI_DCS_SET_DISPLAY_BRIGHTNESS, &contrast, 1);
 }
 
 static int co5300_set_contrast(const struct device *dev, uint8_t contrast)
 {
-#if 0
-	uint8_t cmd_buf[] = {
-		ST7567_SET_CONTRAST_CTRL,
-		contrast,
-	};
+	/*
+	const struct co5300_config *config = dev->config;
 
-	return st7567_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
-
-#endif
+	return mipi_dcs_write(config->mipi_dsi, config->channel, **CONTRAST**, &contrast, 1);
+	*/
 	return 0;
 }
 
