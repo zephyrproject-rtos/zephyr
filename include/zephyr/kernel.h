@@ -1268,6 +1268,15 @@ static inline bool k_is_pre_kernel(void)
 {
 	extern bool z_sys_post_kernel; /* in init.c */
 
+	/*
+	 * If called from user mode, it must already be post kernel.
+	 * This guard is necessary because z_sys_post_kernel memory
+	 * is not accessible to user threads.
+	 */
+	if (k_is_user_context()) {
+		return false;
+	}
+
 	return !z_sys_post_kernel;
 }
 
