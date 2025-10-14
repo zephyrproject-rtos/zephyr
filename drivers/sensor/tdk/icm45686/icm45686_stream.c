@@ -86,8 +86,7 @@ static inline bool should_read_all_fifo(const struct sensor_read_config *read_cf
 	return (trig_fifo_full && trig_fifo_full->opt == SENSOR_STREAM_DATA_INCLUDE);
 }
 
-static inline bool should_read_data(const struct sensor_read_config *read_cfg,
-				    uint8_t int_status)
+static inline bool should_read_data(const struct sensor_read_config *read_cfg)
 {
 	struct sensor_stream_trigger *trig_drdy = get_read_config_trigger(
 		read_cfg,
