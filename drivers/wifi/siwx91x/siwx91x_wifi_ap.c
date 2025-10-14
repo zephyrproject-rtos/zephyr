@@ -3,7 +3,7 @@
  * Copyright (c) 2024-2025 Silicon Laboratories Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <nwp.h>
+#include <siwx91x_nwp.h>
 #include "siwx91x_wifi.h"
 
 #include "sl_rsi_utility.h"
@@ -15,11 +15,13 @@ LOG_MODULE_DECLARE(siwx91x_wifi);
 
 static int siwx91x_nwp_reboot_if_required(const struct device *dev, uint8_t oper_mode)
 {
+	const struct siwx91x_config *siwx91x_cfg = dev->config;
 	struct siwx91x_dev *sidev = dev->data;
 	int ret;
 
 	if (sidev->reboot_needed) {
-		ret = siwx91x_nwp_mode_switch(oper_mode, sidev->hidden_ssid, sidev->max_num_sta);
+		ret = siwx91x_nwp_mode_switch(siwx91x_cfg->nwp_dev, oper_mode, sidev->hidden_ssid,
+					      sidev->max_num_sta);
 		if (ret < 0) {
 			LOG_ERR("Failed to reboot the device: %d", ret);
 			return ret;
