@@ -5,7 +5,6 @@
  */
 #include <soc.h>
 #include <zephyr/drivers/counter.h>
-#include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <zephyr/devicetree.h>
 #include <hal/nrf_timer.h>
 #include <zephyr/sys/atomic.h>
@@ -35,21 +34,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 #define MAYBE_CONST_CONFIG const
 #endif
 
-#if NRF_DT_INST_ANY_IS_FAST && CONFIG_CLOCK_CONTROL
-#define COUNTER_IS_FAST(idx) NRF_DT_INST_IS_FAST(idx)
-#define COUNTER_ANY_FAST
-#else
-#define COUNTER_IS_FAST(idx) 0
-#endif
-
 struct counter_nrfx_data {
 	counter_top_callback_t top_cb;
 	void *top_user_data;
 	uint32_t guard_period;
 	atomic_t cc_int_pending;
-#ifdef COUNTER_ANY_FAST
-	atomic_t active;
-#endif
 };
 
 struct counter_nrfx_ch_data {
@@ -61,10 +50,6 @@ struct counter_nrfx_config {
 	struct counter_config_info info;
 	struct counter_nrfx_ch_data *ch_data;
 	NRF_TIMER_Type *timer;
-#ifdef COUNTER_ANY_FAST
-	const struct device *clk_dev;
-	struct nrf_clock_spec clk_spec;
-#endif
 	LOG_INSTANCE_PTR_DECLARE(log);
 };
 
@@ -78,18 +63,6 @@ static int start(const struct device *dev)
 {
 	const struct counter_nrfx_config *config = dev->config;
 
-#ifdef COUNTER_ANY_FAST
-	struct counter_nrfx_data *data = dev->data;
-
-	if (config->clk_dev && atomic_cas(&data->active, 0, 1)) {
-		int err;
-
-		err = nrf_clock_control_request_sync(config->clk_dev, &config->clk_spec, K_FOREVER);
-		if (err < 0) {
-			return err;
-		}
-	}
-#endif
 	nrf_timer_task_trigger(config->timer, NRF_TIMER_TASK_START);
 
 	return 0;
@@ -104,19 +77,6 @@ static int stop(const struct device *dev)
 #else
 	nrf_timer_task_trigger(config->timer, NRF_TIMER_TASK_STOP);
 	nrf_timer_task_trigger(config->timer, NRF_TIMER_TASK_CLEAR);
-#endif
-
-#ifdef COUNTER_ANY_FAST
-	struct counter_nrfx_data *data = dev->data;
-
-	if (config->clk_dev && atomic_cas(&data->active, 1, 0)) {
-		int err;
-
-		err = nrf_clock_control_release(config->clk_dev, &config->clk_spec);
-		if (err < 0) {
-			return err;
-		}
-	}
 #endif
 
 	return 0;
@@ -459,20 +419,6 @@ static DEVICE_API(counter, counter_nrfx_driver_api) = {
 	.set_guard_period = set_guard_period,
 };
 
-/* Get initialization level of an instance. Instances that requires clock control
- * which is using nrfs (IPC) are initialized later.
- */
-#define TIMER_INIT_LEVEL(idx) \
-	COND_CODE_1(COUNTER_IS_FAST(idx), (POST_KERNEL), (PRE_KERNEL_1))
-
-/* Get initialization priority of an instance. Instances that requires clock control
- * which is using nrfs (IPC) are initialized later.
- */
-#define TIMER_INIT_PRIO(idx)								\
-	COND_CODE_1(COUNTER_IS_FAST(idx),						\
-		    (UTIL_INC(CONFIG_CLOCK_CONTROL_NRF_HSFLL_GLOBAL_INIT_PRIORITY)),	\
-		    (CONFIG_COUNTER_INIT_PRIORITY))
-
 /*
  * Device instantiation is done with node labels due to HAL API
  * requirements. In particular, TIMERx_MAX_SIZE values from HALs
@@ -525,14 +471,6 @@ static DEVICE_API(counter, counter_nrfx_driver_api) = {
 		},										\
 		.ch_data = counter##idx##_ch_data,						\
 		.timer = (NRF_TIMER_Type *)DT_INST_REG_ADDR(idx),				\
-		IF_ENABLED(COUNTER_IS_FAST(idx),						\
-			(.clk_dev = DEVICE_DT_GET_OR_NULL(DT_CLOCKS_CTLR(DT_DRV_INST(idx))),	\
-			 .clk_spec = {								\
-				.frequency = NRF_PERIPH_GET_FREQUENCY(DT_DRV_INST(idx)),	\
-				.accuracy = 0,							\
-				.precision = NRF_CLOCK_CONTROL_PRECISION_DEFAULT,		\
-				},								\
-			 ))									\
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, idx)				\
 	};											\
 	DEVICE_DT_INST_DEFINE(idx,								\
@@ -540,7 +478,7 @@ static DEVICE_API(counter, counter_nrfx_driver_api) = {
 			    NULL,								\
 			    &counter_##idx##_data,						\
 			    &nrfx_counter_##idx##_config.info,					\
-			    TIMER_INIT_LEVEL(idx), TIMER_INIT_PRIO(idx),			\
+			    PRE_KERNEL_1, CONFIG_COUNTER_INIT_PRIORITY,				\
 			    &counter_nrfx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_NRFX_TIMER_DEVICE)

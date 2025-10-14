@@ -13,7 +13,6 @@
 #include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/cache.h>
 #include <zephyr/mem_mgmt/mem_attr.h>
-#include <zephyr/drivers/clock_control/nrf_clock_control.h>
 
 #include <zephyr/logging/log.h>
 
@@ -36,20 +35,6 @@ LOG_MODULE_REGISTER(pwm_nrfx, CONFIG_PWM_LOG_LEVEL);
 #define PWM(dev_idx) DT_NODELABEL(pwm##dev_idx)
 #define PWM_PROP(dev_idx, prop) DT_PROP(PWM(dev_idx), prop)
 #define PWM_HAS_PROP(idx, prop) DT_NODE_HAS_PROP(PWM(idx), prop)
-#define PWM_NRFX_IS_FAST(idx) NRF_DT_IS_FAST(PWM(idx))
-
-#if NRF_DT_INST_ANY_IS_FAST
-#define PWM_NRFX_FAST_PRESENT 1
-/* If fast instances are used then system managed device PM cannot be used because
- * it may call PM actions from locked context and fast PWM PM actions can only be
- * called in a thread context.
- */
-BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED));
-#endif
-
-#if defined(PWM_NRFX_FAST_PRESENT) && CONFIG_CLOCK_CONTROL_NRF_HSFLL_GLOBAL
-#define PWM_NRFX_USE_CLOCK_CONTROL 1
-#endif
 
 #define PWM_NRFX_CH_POLARITY_MASK BIT(15)
 #define PWM_NRFX_CH_COMPARE_MASK  BIT_MASK(15)
@@ -65,10 +50,6 @@ struct pwm_nrfx_config {
 #ifdef CONFIG_DCACHE
 	uint32_t mem_attr;
 #endif
-#ifdef PWM_NRFX_USE_CLOCK_CONTROL
-	const struct device *clk_dev;
-	struct nrf_clock_spec clk_spec;
-#endif
 };
 
 struct pwm_nrfx_data {
@@ -77,25 +58,10 @@ struct pwm_nrfx_data {
 	uint8_t  pwm_needed;
 	uint8_t  prescaler;
 	bool     stop_requested;
-#ifdef PWM_NRFX_USE_CLOCK_CONTROL
-	bool     clock_requested;
-#endif
 };
 /* Ensure the pwm_needed bit mask can accommodate all available channels. */
 #if (NRF_PWM_CHANNEL_COUNT > 8)
 #error "Current implementation supports maximum 8 channels."
-#endif
-
-#ifdef PWM_NRFX_FAST_PRESENT
-static bool pwm_is_fast(const struct pwm_nrfx_config *config)
-{
-	return config->clock_freq > MHZ(16);
-}
-#else
-static bool pwm_is_fast(const struct pwm_nrfx_config *config)
-{
-	return false;
-}
 #endif
 
 static uint16_t *seq_values_ptr_get(const struct device *dev)
@@ -178,21 +144,6 @@ static int stop_pwm(const struct device *dev)
 	 */
 	nrfx_pwm_stop(&config->pwm, false);
 
-#if PWM_NRFX_USE_CLOCK_CONTROL
-	struct pwm_nrfx_data *data = dev->data;
-
-	if (data->clock_requested) {
-		int ret = nrf_clock_control_release(config->clk_dev, &config->clk_spec);
-
-		if (ret < 0) {
-			LOG_ERR("Global HSFLL release failed: %d", ret);
-			return ret;
-		}
-
-		data->clock_requested = false;
-	}
-#endif
-
 	return 0;
 }
 
@@ -232,9 +183,8 @@ static int pwm_nrfx_set_cycles(const struct device *dev, uint32_t channel,
 		/* Constantly active (duty 100%). */
 		/* This value is always greater than or equal to COUNTERTOP. */
 		compare_value = PWM_NRFX_CH_COMPARE_MASK;
-		needs_pwm = pwm_is_fast(config) ||
-			(IS_ENABLED(NRF_PWM_HAS_IDLEOUT) &&
-			 IS_ENABLED(CONFIG_PWM_NRFX_NO_GLITCH_DUTY_100));
+		needs_pwm = IS_ENABLED(NRF_PWM_HAS_IDLEOUT) &&
+			    IS_ENABLED(CONFIG_PWM_NRFX_NO_GLITCH_DUTY_100);
 	} else {
 		/* PWM generation needed. Check if the requested period matches
 		 * the one that is currently set, or the PWM peripheral can be
@@ -290,22 +240,6 @@ static int pwm_nrfx_set_cycles(const struct device *dev, uint32_t channel,
 	 * registers and drives its outputs accordingly.
 	 */
 	if (data->pwm_needed == 0) {
-		if (pwm_is_fast(config)) {
-#if PWM_NRFX_USE_CLOCK_CONTROL
-			if (data->clock_requested) {
-				int ret = nrf_clock_control_release(config->clk_dev,
-							    &config->clk_spec);
-
-				if (ret < 0) {
-					LOG_ERR("Global HSFLL release failed: %d", ret);
-					return ret;
-				}
-
-				data->clock_requested = false;
-			}
-#endif
-			return 0;
-		}
 		int ret = stop_pwm(dev);
 
 		if (ret < 0) {
@@ -332,20 +266,6 @@ static int pwm_nrfx_set_cycles(const struct device *dev, uint32_t channel,
 		 * until another playback is requested (new values will be
 		 * loaded then) or the PWM peripheral is stopped.
 		 */
-#if PWM_NRFX_USE_CLOCK_CONTROL
-		if (config->clk_dev && !data->clock_requested) {
-			int ret = nrf_clock_control_request_sync(config->clk_dev,
-								 &config->clk_spec,
-								 K_FOREVER);
-
-			if (ret < 0) {
-				LOG_ERR("Global HSFLL request failed: %d", ret);
-				return ret;
-			}
-
-			data->clock_requested = true;
-		}
-#endif
 		nrfx_pwm_simple_playback(&config->pwm, &config->seq, 1,
 					 NRFX_PWM_FLAG_NO_EVT_FINISHED);
 	}
@@ -463,21 +383,6 @@ static int pwm_nrfx_init(const struct device *dev)
 	COND_CODE_1(PWM_HAS_PROP(idx, memory_regions),			      \
 		(DT_PROP_OR(PWM_MEM_REGION(idx), zephyr_memory_attr, 0)), (0))
 
-/* Fast instances depend on the global HSFLL clock controller (as they need
- * to request the highest frequency from it to operate correctly), so they
- * must be initialized after that controller driver, hence the default PWM
- * initialization priority may be too early for them.
- */
-#if defined(CONFIG_CLOCK_CONTROL_NRF_HSFLL_GLOBAL_INIT_PRIORITY) && \
-	CONFIG_PWM_INIT_PRIORITY < CONFIG_CLOCK_CONTROL_NRF_HSFLL_GLOBAL_INIT_PRIORITY
-#define PWM_INIT_PRIORITY(idx)								\
-	COND_CODE_1(PWM_NRFX_IS_FAST(idx),						\
-		    (UTIL_INC(CONFIG_CLOCK_CONTROL_NRF_HSFLL_GLOBAL_INIT_PRIORITY)),	\
-		    (CONFIG_PWM_INIT_PRIORITY))
-#else
-#define PWM_INIT_PRIORITY(idx) CONFIG_PWM_INIT_PRIORITY
-#endif
-
 #define PWM_NRFX_DEVICE(idx)						      \
 	NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(PWM(idx));			      \
 	NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(PWM(idx));	      \
@@ -506,14 +411,6 @@ static int pwm_nrfx_init(const struct device *dev)
 			(16ul * 1000ul * 1000ul)),			      \
 		IF_ENABLED(CONFIG_DCACHE,				      \
 			(.mem_attr = PWM_GET_MEM_ATTR(idx),))		      \
-		IF_ENABLED(PWM_NRFX_USE_CLOCK_CONTROL,			      \
-			(.clk_dev = PWM_NRFX_IS_FAST(idx)		      \
-				    ? DEVICE_DT_GET(DT_CLOCKS_CTLR(PWM(idx))) \
-				    : NULL,				      \
-			 .clk_spec = {					      \
-				.frequency =				      \
-					NRF_PERIPH_GET_FREQUENCY(PWM(idx)),   \
-			 },))						      \
 	};								      \
 	static int pwm_nrfx_init##idx(const struct device *dev)		      \
 	{								      \
@@ -526,7 +423,7 @@ static int pwm_nrfx_init(const struct device *dev)
 			 pwm_nrfx_init##idx, PM_DEVICE_DT_GET(PWM(idx)),      \
 			 &pwm_nrfx_##idx##_data,			      \
 			 &pwm_nrfx_##idx##_config,			      \
-			 POST_KERNEL, PWM_INIT_PRIORITY(idx),		      \
+			 POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,		      \
 			 &pwm_nrfx_drv_api_funcs)
 
 #define COND_PWM_NRFX_DEVICE(unused, prefix, i, _) \

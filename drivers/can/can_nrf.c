@@ -29,7 +29,6 @@ struct can_nrf_config {
 	uint32_t mrba;
 	uint32_t mram;
 	const struct device *auxpll;
-	const struct device *hsfll;
 	const struct pinctrl_dev_config *pcfg;
 	void (*irq_configure)(void);
 	uint16_t irq;
@@ -133,38 +132,14 @@ static const struct can_mcan_ops can_mcan_nrf_ops = {
 	.clear_mram = can_nrf_clear_mram,
 };
 
-static int configure_hsfll(const struct device *dev, bool on)
-{
-	const struct can_mcan_config *mcan_config = dev->config;
-	const struct can_nrf_config *config = mcan_config->custom;
-	struct nrf_clock_spec spec = { 0 };
-
-	/* If CAN is on, HSFLL frequency >= AUXPLL frequency */
-	if (on) {
-		int ret;
-
-		ret = clock_control_get_rate(config->auxpll, NULL, &spec.frequency);
-		if (ret < 0) {
-			return ret;
-		}
-	}
-
-	return nrf_clock_control_request_sync(config->hsfll, &spec, K_FOREVER);
-}
-
 static int can_nrf_init(const struct device *dev)
 {
 	const struct can_mcan_config *mcan_config = dev->config;
 	const struct can_nrf_config *config = mcan_config->custom;
 	int ret;
 
-	if (!device_is_ready(config->auxpll) || !device_is_ready(config->hsfll)) {
+	if (!device_is_ready(config->auxpll)) {
 		return -ENODEV;
-	}
-
-	ret = configure_hsfll(dev, true);
-	if (ret < 0) {
-		return ret;
 	}
 
 	ret = nrf_clock_control_request_sync(config->auxpll, NULL, K_FOREVER);
@@ -215,7 +190,6 @@ static int can_nrf_init(const struct device *dev)
 		.mram = CAN_MCAN_DT_INST_MRAM_ADDR(n),                                             \
 		.auxpll = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(n, auxpll)),                   \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		.hsfll = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(n, hsfll)),                     \
 		.irq = DT_INST_IRQN(n),                                                            \
 		.irq_configure = can_nrf_irq_configure##n,                                         \
 	};                                                                                         \
