@@ -46,3 +46,32 @@ properties:
                                                down.
 
       If absent, then STM32_TIM_COUNTERMODE_UP is used (reset state).
+
+  st,master-mode:
+    type: int
+    default: 0
+    enum:
+      - 0    # STM32_TIM_MASTERMODE_RESET
+      - 0x10 # STM32_TIM_MASTERMODE_ENABLE
+      - 0x20 # STM32_TIM_MASTERMODE_UPDATE
+      - 0x30 # STM32_TIM_MASTERMODE_COMPARE_PULSE
+      - 0x40 # STM32_TIM_MASTERMODE_COMPARE_OC1REFC
+      - 0x50 # STM32_TIM_MASTERMODE_COMPARE_OC2REFC
+      - 0x60 # STM32_TIM_MASTERMODE_COMPARE_OC3REFC
+      - 0x70 # STM32_TIM_MASTERMODE_COMPARE_OC4REFC
+    description: |
+      Sets the master mode.
+      Only available for timer instances with master function.
+
+      For details refer to the reference manual of your device.
+
+      Use constants defined in dt-bindings/timer/stm32-timer.h.
+
+      * STM32_TIM_MASTERMODE_RESET           - Update event is used as trigger output (TRGO).
+      * STM32_TIM_MASTERMODE_ENABLE          - Uses counter enable signal as trigger output (TRGO).
+      * STM32_TIM_MASTERMODE_UPDATE          - Uses update event as trigger output (TRGO).
+      * STM32_TIM_MASTERMODE_COMPARE_PULSE   - Uses CC1IF flag as pulse source for TRGO outout.
+      * STM32_TIM_MASTERMODE_COMPARE_OC1REFC - OC1REFC signal is used as trigger output (TRGO).
+      * STM32_TIM_MASTERMODE_COMPARE_OC2REFC - OC2REFC signal is used as trigger output (TRGO).
+      * STM32_TIM_MASTERMODE_COMPARE_OC3REFC - OC3REFC signal is used as trigger output (TRGO).
+      * STM32_TIM_MASTERMODE_COMPARE_OC4REFC - OC4REFC signal is used as trigger output (TRGO).
