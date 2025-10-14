@@ -1,29 +1,37 @@
 # Copyright (c) 2022 Carlo Caione <ccaione@baylibre.com>
 # SPDX-License-Identifier: Apache-2.0
 
+RISCV_ISA_BASE_PROP := riscv,isa-base
+RISCV_ISA_EXT_PROP  := riscv,isa-extensions
+
 config RISCV_ISA_RV32I
 	bool
+	default y if $(dt_node_str_prop_equals,/cpus/cpu@0,$(RISCV_ISA_BASE_PROP),rv32i)
 	help
 	  RV32I Base Integer Instruction Set - 32bit
 
 config RISCV_ISA_RV32E
 	bool
+	default y if $(dt_node_str_prop_equals,/cpus/cpu@0,$(RISCV_ISA_BASE_PROP),rv32e)
 	help
 	  RV32E Base Integer Instruction Set (Embedded) - 32bit
 
 config RISCV_ISA_RV64I
 	bool
+	default y if $(dt_node_str_prop_equals,/cpus/cpu@0,$(RISCV_ISA_BASE_PROP),rv64i)
 	default y if 64BIT
 	help
 	  RV64I Base Integer Instruction Set - 64bit
 
 config RISCV_ISA_RV128I
 	bool
+	default y if $(dt_node_str_prop_equals,/cpus/cpu@0,$(RISCV_ISA_BASE_PROP),rv128i)
 	help
 	  RV128I Base Integer Instruction Set - 128bit
 
 config RISCV_ISA_EXT_M
 	bool
+	default y if $(dt_node_array_prop_has_val,/cpus/cpu@0,$(RISCV_ISA_EXT_PROP),m)
 	help
 	  (M) - Standard Extension for Integer Multiplication and Division
 
@@ -33,6 +41,7 @@ config RISCV_ISA_EXT_M
 
 config RISCV_ISA_EXT_A
 	bool
+	default y if $(dt_node_array_prop_has_val,/cpus/cpu@0,$(RISCV_ISA_EXT_PROP),a)
 	imply RISCV_ISA_EXT_ZAAMO
 	imply RISCV_ISA_EXT_ZALRSC
 	help
@@ -45,6 +54,7 @@ config RISCV_ISA_EXT_A
 
 config RISCV_ISA_EXT_F
 	bool
+	default y if $(dt_node_array_prop_has_val,/cpus/cpu@0,$(RISCV_ISA_EXT_PROP),f)
 	help
 	  (F) - Standard Extension for Single-Precision Floating-Point
 
@@ -55,6 +65,7 @@ config RISCV_ISA_EXT_F
 
 config RISCV_ISA_EXT_D
 	bool
+	default y if $(dt_node_array_prop_has_val,/cpus/cpu@0,$(RISCV_ISA_EXT_PROP),d)
 	depends on RISCV_ISA_EXT_F
 	help
 	  (D) - Standard Extension for Double-Precision Floating-Point
@@ -66,6 +77,7 @@ config RISCV_ISA_EXT_D
 
 config RISCV_ISA_EXT_G
 	bool
+	default y if $(dt_node_array_prop_has_val,/cpus/cpu@0,$(RISCV_ISA_EXT_PROP),g)
 	select RISCV_ISA_EXT_M
 	select RISCV_ISA_EXT_A
 	select RISCV_ISA_EXT_F
@@ -77,6 +89,7 @@ config RISCV_ISA_EXT_G
 
 config RISCV_ISA_EXT_Q
 	bool
+	default y if $(dt_node_array_prop_has_val,/cpus/cpu@0,$(RISCV_ISA_EXT_PROP),q)
 	depends on RISCV_ISA_RV64I
 	depends on RISCV_ISA_EXT_F
 	depends on RISCV_ISA_EXT_D
@@ -89,6 +102,7 @@ config RISCV_ISA_EXT_Q
 
 config RISCV_ISA_EXT_C
 	bool
+	default y if $(dt_node_array_prop_has_val,/cpus/cpu@0,$(RISCV_ISA_EXT_PROP),c)
 	select RISCV_ISA_EXT_ZCA
 	select RISCV_ISA_EXT_ZCD if RISCV_ISA_EXT_D
 	select RISCV_ISA_EXT_ZCF if RISCV_ISA_EXT_F && (RISCV_ISA_RV32I || RISCV_ISA_RV32E)
@@ -101,6 +115,7 @@ config RISCV_ISA_EXT_C
 
 config RISCV_ISA_EXT_ZICNTR
 	bool
+	default y if $(dt_node_array_prop_has_val,/cpus/cpu@0,$(RISCV_ISA_EXT_PROP),zicntr)
 	depends on RISCV_ISA_EXT_ZICSR
 	help
 	  (Zicntr) - Standard Extension for Base Counters and Timers
@@ -111,6 +126,7 @@ config RISCV_ISA_EXT_ZICNTR
 
 config RISCV_ISA_EXT_ZICSR
 	bool
+	default y if $(dt_node_array_prop_has_val,/cpus/cpu@0,$(RISCV_ISA_EXT_PROP),zicsr)
 	help
 	  (Zicsr) - Standard Extension for Control and Status Register (CSR) Instructions
 
@@ -119,6 +135,7 @@ config RISCV_ISA_EXT_ZICSR
 
 config RISCV_ISA_EXT_ZIFENCEI
 	bool
+	default y if $(dt_node_array_prop_has_val,/cpus/cpu@0,$(RISCV_ISA_EXT_PROP),zifencei)
 	help
 	  (Zifencei) - Standard Extension for Instruction-Fetch Fence
 
@@ -128,6 +145,7 @@ config RISCV_ISA_EXT_ZIFENCEI
 
 config RISCV_ISA_EXT_ZAAMO
 	bool
+	default y if $(dt_node_array_prop_has_val,/cpus/cpu@0,$(RISCV_ISA_EXT_PROP),zaamo)
 	help
 	  (Zaamo) - Atomic memory operation subset of the A extension
 
@@ -135,6 +153,7 @@ config RISCV_ISA_EXT_ZAAMO
 
 config RISCV_ISA_EXT_ZALRSC
 	bool
+	default y if $(dt_node_array_prop_has_val,/cpus/cpu@0,$(RISCV_ISA_EXT_PROP),zalrsc)
 	help
 	  (Zalrsc) - Load-Reserved/Store-Conditional subset of the A extension
 
@@ -142,6 +161,7 @@ config RISCV_ISA_EXT_ZALRSC
 
 config RISCV_ISA_EXT_ZCA
 	bool
+	default y if $(dt_node_array_prop_has_val,/cpus/cpu@0,$(RISCV_ISA_EXT_PROP),zca)
 	help
 	  (Zca) - Zba Extension for Compressed Instructions
 
@@ -150,6 +170,7 @@ config RISCV_ISA_EXT_ZCA
 
 config RISCV_ISA_EXT_ZCB
 	bool
+	default y if $(dt_node_array_prop_has_val,/cpus/cpu@0,$(RISCV_ISA_EXT_PROP),zcb)
 	depends on RISCV_ISA_EXT_ZCA
 	help
 	  (Zcb) - Zcb Extension for Simple Compressed Instructions
@@ -159,6 +180,7 @@ config RISCV_ISA_EXT_ZCB
 
 config RISCV_ISA_EXT_ZCD
 	bool
+	default y if $(dt_node_array_prop_has_val,/cpus/cpu@0,$(RISCV_ISA_EXT_PROP),zcd)
 	depends on RISCV_ISA_EXT_D
 	depends on RISCV_ISA_EXT_ZCA
 	help
@@ -169,6 +191,7 @@ config RISCV_ISA_EXT_ZCD
 
 config RISCV_ISA_EXT_ZCF
 	bool
+	default y if $(dt_node_array_prop_has_val,/cpus/cpu@0,$(RISCV_ISA_EXT_PROP),zcf)
 	depends on RISCV_ISA_RV32I || RISCV_ISA_RV32E
 	depends on RISCV_ISA_EXT_F
 	depends on RISCV_ISA_EXT_ZCA
@@ -180,6 +203,7 @@ config RISCV_ISA_EXT_ZCF
 
 config RISCV_ISA_EXT_ZCMP
 	bool
+	default y if $(dt_node_array_prop_has_val,/cpus/cpu@0,$(RISCV_ISA_EXT_PROP),zcmp)
 	depends on RISCV_ISA_EXT_ZCA
 	depends on !RISCV_ISA_EXT_ZCD
 	help
@@ -190,6 +214,7 @@ config RISCV_ISA_EXT_ZCMP
 
 config RISCV_ISA_EXT_ZCMT
 	bool
+	default y if $(dt_node_array_prop_has_val,/cpus/cpu@0,$(RISCV_ISA_EXT_PROP),zcmt)
 	depends on RISCV_ISA_EXT_ZICSR
 	depends on RISCV_ISA_EXT_ZCA
 	depends on !RISCV_ISA_EXT_ZCD
@@ -201,6 +226,7 @@ config RISCV_ISA_EXT_ZCMT
 
 config RISCV_ISA_EXT_ZBA
 	bool
+	default y if $(dt_node_array_prop_has_val,/cpus/cpu@0,$(RISCV_ISA_EXT_PROP),zba)
 	help
 	  (Zba) - Zba BitManip Extension
 
@@ -211,6 +237,7 @@ config RISCV_ISA_EXT_ZBA
 
 config RISCV_ISA_EXT_ZBB
 	bool
+	default y if $(dt_node_array_prop_has_val,/cpus/cpu@0,$(RISCV_ISA_EXT_PROP),zbb)
 	help
 	  (Zbb) - Zbb BitManip Extension (Basic bit-manipulation)
 
@@ -220,6 +247,7 @@ config RISCV_ISA_EXT_ZBB
 
 config RISCV_ISA_EXT_ZBC
 	bool
+	default y if $(dt_node_array_prop_has_val,/cpus/cpu@0,$(RISCV_ISA_EXT_PROP),zbc)
 	help
 	  (Zbc) - Zbc BitManip Extension (Carry-less multiplication)
 
@@ -228,6 +256,7 @@ config RISCV_ISA_EXT_ZBC
 
 config RISCV_ISA_EXT_ZBS
 	bool
+	default y if $(dt_node_array_prop_has_val,/cpus/cpu@0,$(RISCV_ISA_EXT_PROP),zbs)
 	help
 	  (Zbs) - Zbs BitManip Extension (Single-bit instructions)
 
@@ -237,6 +266,7 @@ config RISCV_ISA_EXT_ZBS
 
 config RISCV_ISA_EXT_ZMMUL
 	bool
+	default y if $(dt_node_array_prop_has_val,/cpus/cpu@0,$(RISCV_ISA_EXT_PROP),zmmul)
 	help
 	  (Zmmul) - Zmmul Extension for Integer Multiplication
 
