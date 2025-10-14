@@ -672,7 +672,41 @@ static int dns_read(int sock,
 		/* If the query matches to our hostname, then send reply.
 		 * We skip the first dot, and make sure there is dot after
 		 * matching hostname.
+		 * The AAAA/IN query type, reflects the hostname which is a substring of the original alias.
+		 * [1] query AAAA/IN label .DYMOLW550PWNCB-macE.local (26 bytes)
+		 * alias DYMO Label Writer 550 PRO WNCB on DYMOLW550PWNCB-macE
 		 */
+
+		{
+			char needle[128] = {};
+			char * end = &result->data[ret];
+			char * rd = &result->data[1];
+			char * wr = &needle[0];
+
+			for ( ; (rd < end) && (*rd != '.'); *wr = *rd, ++rd, ++wr );
+			int dns_sd_rec_count = 0;
+			int response_sent = 0;
+			const struct dns_sd_rec *record;
+			DNS_SD_COUNT(&dns_sd_rec_count);
+			for (int i = 0; i<dns_sd_rec_count; ++i) {
+				DNS_SD_GET(i, &record);
+				NET_DBG("verify alias %s\n", record->alias);
+				if (record->alias && record->iface) {
+					if (strstr(record->alias, needle) && (0 == strcmp(ifname, record->iface))) {
+						NET_DBG("%s %s %s to our alias %s%s", "mDNS",
+							family == AF_INET ? "IPv4" : "IPv6", "query",
+							record->alias, ".local");
+						send_response(sock, family, src_addr, addrlen,
+							result, qtype);
+						response_sent = 1;
+					}
+				}
+			}
+			if (response_sent) {
+				continue;
+			}
+		}
+
 		if (!strncasecmp(hostname, result->data + 1, hostname_len) &&
 		    (result->len - 1) >= hostname_len &&
 		    &(result->data + 1)[hostname_len] == lquery) {
@@ -684,26 +718,6 @@ static int dns_read(int sock,
 		} else if (IS_ENABLED(CONFIG_MDNS_RESPONDER_DNS_SD)
 			&& qtype == DNS_RR_TYPE_PTR) {
 			send_sd_response(sock, family, src_addr, addrlen, result);
-		} else {
-			/* if no answer has been sent yet, iterate over the registered services,
-			 * which might have responded with an alias
-			 */
-			int dns_sd_rec_count = 0;
-			const struct dns_sd_rec *record;
-			DNS_SD_COUNT(&dns_sd_rec_count);
-			for (int i = 0; i<dns_sd_rec_count; ++i) {
-				DNS_SD_GET(i, &record);
-				if (record->alias) {
-					int alias_len = strlen(record->alias);
-					if (!strncasecmp(record->alias, result->data + 1, alias_len)) {
-						NET_DBG("%s %s %s to our alias %s%s", "mDNS",
-							family == AF_INET ? "IPv4" : "IPv6", "query",
-							record->alias, ".local");
-						send_response(sock, family, src_addr, addrlen,
-								  result, qtype);
-					}
-				}
-			}
 		}
 
 	} while (--queries);
