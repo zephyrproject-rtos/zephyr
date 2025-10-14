@@ -121,7 +121,7 @@ static inline void icm45686_stream_result(const struct device *dev,
 }
 
 static void icm45686_complete_handler(struct rtio *ctx,
-				      const struct rtio_sqe *sqe,
+				      const struct rtio_sqe *sqe, int result,
 				      void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
@@ -129,6 +129,12 @@ static void icm45686_complete_handler(struct rtio *ctx,
 	const struct sensor_read_config *read_cfg = data->stream.iodev_sqe->sqe.iodev->data;
 	uint8_t int_status = data->stream.data.int_status;
 	int err;
+
+	if (result < 0) {
+		LOG_ERR("Data readout failed: %d", result);
+		icm45686_stream_result(dev, result);
+		return;
+	}
 
 	data->stream.data.events.drdy = int_status & REG_INT1_STATUS0_DRDY(true);
 	data->stream.data.events.fifo_ths = int_status & REG_INT1_STATUS0_FIFO_THS(true);
