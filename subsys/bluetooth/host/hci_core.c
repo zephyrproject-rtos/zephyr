@@ -4894,6 +4894,14 @@ int bt_set_name(const char *name)
 		return 0;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		err = bt_br_write_local_name(name);
+		if (err != 0) {
+			LOG_ERR("Unable to set local name %d", err);
+			return err;
+		}
+	}
+
 	memcpy(bt_dev.name, name, len);
 	bt_dev.name[len] = '\0';
 
