@@ -166,9 +166,19 @@ static inline int fnm_cc_match(int c, enum fnm_char_class cc)
 	case FNM_CC_CNTRL:  return iscntrl(c);
 	case FNM_CC_DIGIT:  return isdigit(c);
 	case FNM_CC_GRAPH:  return isgraph(c);
-	case FNM_CC_LOWER:  return islower(c);
+	case FNM_CC_LOWER:  return (c >= 'a' && c <= 'z');
 	case FNM_CC_PRINT:  return isprint(c);
-	case FNM_CC_PUNCT:  return ispunct(c);
+	case FNM_CC_PUNCT: {
+		/** Explicit list of punctuation characters in ASCII */
+		const char *punct_chars = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
+
+		for (const char *p = punct_chars; *p != '\0'; p++) {
+			if (c == *p) {
+				return 1;
+			}
+		}
+		return 0;
+	}
 	case FNM_CC_SPACE:  return isspace(c);
 	case FNM_CC_UPPER:  return isupper(c);
 	case FNM_CC_XDIGIT: return isxdigit(c);
