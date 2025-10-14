@@ -17,7 +17,7 @@ common:
       tolerance_percentage: 20
     record:
       regex:
-        - "RECORD:(?P<metrics>.*)"
+        - "^INFO: RECORD:(?P<metrics>.*)"
       as_json: ['metrics']
 
 tests:
