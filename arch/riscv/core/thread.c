@@ -99,7 +99,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 #if defined(CONFIG_PMP_STACK_GUARD)
 	/* Setup PMP regions of PMP stack guard of thread. */
-	z_riscv_pmp_stackguard_prepare(thread);
+	z_riscv_pmp_kernelmode_prepare(thread);
 #endif /* CONFIG_PMP_STACK_GUARD */
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
@@ -178,7 +178,7 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 
 #ifdef CONFIG_PMP_STACK_GUARD
 	/* reconfigure as the kernel mode stack will be different */
-	z_riscv_pmp_stackguard_prepare(_current);
+	z_riscv_pmp_kernelmode_prepare(_current);
 #endif
 
 	/* Set up Physical Memory Protection */

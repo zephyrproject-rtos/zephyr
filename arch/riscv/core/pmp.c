@@ -442,7 +442,7 @@ void z_riscv_pmp_init(void)
 	 * This early, the kernel init code uses the IRQ stack and we want to
 	 * safeguard it as soon as possible. But we need a temporary default
 	 * "catch all" PMP entry for MPRV to work. Later on, this entry will
-	 * be set for each thread by z_riscv_pmp_stackguard_prepare().
+	 * be set for each thread by z_riscv_pmp_kernelmode_prepare().
 	 */
 	set_pmp_mprv_catchall(&index, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 
@@ -535,7 +535,7 @@ static inline unsigned int z_riscv_pmp_thread_init(unsigned long *pmp_addr,
  *
  * This is called once during new thread creation.
  */
-void z_riscv_pmp_stackguard_prepare(struct k_thread *thread)
+void z_riscv_pmp_kernelmode_prepare(struct k_thread *thread)
 {
 	unsigned int index = z_riscv_pmp_thread_init(PMP_M_MODE(thread));
 	uintptr_t stack_bottom;
@@ -563,7 +563,7 @@ void z_riscv_pmp_stackguard_prepare(struct k_thread *thread)
  *
  * This is called on every context switch.
  */
-void z_riscv_pmp_stackguard_enable(struct k_thread *thread)
+void z_riscv_pmp_kernelmode_enable(struct k_thread *thread)
 {
 	LOG_DBG("pmp_stackguard_enable for thread %p", thread);
 
@@ -592,7 +592,7 @@ void z_riscv_pmp_stackguard_enable(struct k_thread *thread)
 /**
  * @brief Remove PMP stackguard content to actual PMP registers
  */
-void z_riscv_pmp_stackguard_disable(void)
+void z_riscv_pmp_kernelmode_disable(void)
 {
 
 	unsigned long pmp_addr[CONFIG_PMP_SLOTS];
