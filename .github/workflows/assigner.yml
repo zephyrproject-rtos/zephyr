@@ -14,6 +14,7 @@ on:
   issues:
     types:
     - labeled
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -52,6 +53,15 @@ jobs:
         git config --global user.email "you@example.com"
         git config --global user.name "Your Name"
         west init -l . || true
+
+    - name: Install Python dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('scripts/requirements-actions-small.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
 
     - name: Install Python dependencies
       run: |
