@@ -26,13 +26,14 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       issues: write        # to add assignees to issues
+      pull-requests: write # to add reviewers to PRs
 
     steps:
     - name: Check out source code
       uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       with:
         fetch-depth: 0
-        persist-credentials: false
+        persist-credentials: true
 
     - name: Set up Python
       uses: zephyrproject-rtos/action-python-env@ace91a63fd503cd618ff1eb83fbcf302dabd7d44 # main
@@ -76,7 +77,7 @@ jobs:
 
     - name: Run assignment script
       env:
-        GITHUB_TOKEN: ${{ secrets.ZB_PR_ASSIGNER_GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         FLAGS="-v"
         FLAGS+=" -o ${{ github.event.repository.owner.login }}"
