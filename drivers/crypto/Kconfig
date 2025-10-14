@@ -29,7 +29,11 @@ config CRYPTO_MBEDTLS_SHIM
 	imply PSA_WANT_ALG_SHA_256
 	imply PSA_WANT_ALG_SHA_384
 	imply PSA_WANT_ALG_SHA_512
-	select MBEDTLS_CIPHER_AES_ENABLED
+	imply PSA_WANT_KEY_TYPE_AES
+	imply PSA_WANT_ALG_ECB_NO_PADDING
+	imply PSA_WANT_ALG_CBC_NO_PADDING
+	imply PSA_WANT_ALG_CCM
+	imply PSA_WANT_ALG_GCM
 	select EXPERIMENTAL
 	help
 	  Enable Mbed TLS shim layer compliant with crypto APIs. You will need
