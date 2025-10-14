@@ -78,7 +78,9 @@ ZTEST(posix_c_lib_ext, test_fnmatch)
 	zassert_ok(fnmatch("*[[:lower:]]", "z", 0));
 	zassert_ok(fnmatch("*[[:upper:]]", "G", 0));
 	zassert_ok(fnmatch("*[[:space:]]", " ", 0));
-	zassert_ok(fnmatch("*[[:alpha:]]/""*[[:alnum:]]", "a/b", FNM_PATHNAME));
+	zassert_ok(fnmatch("*[[:alpha:]]/"
+			   "*[[:alnum:]]",
+			   "a/b", FNM_PATHNAME));
 	zassert_not_equal(fnmatch("*[![:digit:]]*/[![:d-d]", "a/b", FNM_PATHNAME), 0);
 	zassert_not_equal(fnmatch("*[![:digit:]]*/[[:d-d]", "a/[", FNM_PATHNAME), 0);
 	zassert_not_equal(fnmatch("*[![:digit:]]*/[![:d-d]", "a/[", FNM_PATHNAME), 0);
