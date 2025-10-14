@@ -566,7 +566,7 @@ int silabs_ldma_append_block(const struct device *dev, uint32_t channel, struct 
 	}
 
 	/* A link is already set by a previous call to the function */
-	if (sys_test_bit((mem_addr_t)&LDMA->CH[channel].LINK, _LDMA_CH_LINK_LINK_SHIFT)) {
+	if (sys_io_test_bit((mem_addr_t)&LDMA->CH[channel].LINK, _LDMA_CH_LINK_LINK_SHIFT)) {
 		return -EINVAL;
 	}
 

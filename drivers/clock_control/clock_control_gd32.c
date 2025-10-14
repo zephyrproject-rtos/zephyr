@@ -190,8 +190,8 @@ clock_control_gd32_get_status(const struct device *dev,
 	const struct clock_control_gd32_config *config = dev->config;
 	uint16_t id = *(uint16_t *)sys;
 
-	if (sys_test_bit(config->base + GD32_CLOCK_ID_OFFSET(id),
-			 GD32_CLOCK_ID_BIT(id)) != 0) {
+	if (sys_io_test_bit(config->base + GD32_CLOCK_ID_OFFSET(id),
+			    GD32_CLOCK_ID_BIT(id))) {
 		return CLOCK_CONTROL_STATUS_ON;
 	}
 

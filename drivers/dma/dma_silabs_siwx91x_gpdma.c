@@ -289,7 +289,7 @@ static int siwx91x_gpdma_configure(const struct device *dev, uint32_t channel,
 		return -ENOTSUP;
 	}
 
-	if (sys_test_bit((mem_addr_t)&cfg->reg->GLOBAL.DMA_CHNL_ENABLE_REG, channel)) {
+	if (sys_io_test_bit((mem_addr_t)&cfg->reg->GLOBAL.DMA_CHNL_ENABLE_REG, channel)) {
 		/* Transfer in progress */
 		return -EIO;
 	}
@@ -336,7 +336,7 @@ static int siwx91x_gpdma_reload(const struct device *dev, uint32_t channel, uint
 		return -ENOTSUP;
 	}
 
-	if (sys_test_bit((mem_addr_t)&cfg->reg->GLOBAL.DMA_CHNL_ENABLE_REG, channel)) {
+	if (sys_io_test_bit((mem_addr_t)&cfg->reg->GLOBAL.DMA_CHNL_ENABLE_REG, channel)) {
 		/* Transfer in progress */
 		return -EIO;
 	}
@@ -407,7 +407,7 @@ static int siwx91x_gpdma_get_status(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
-	stat->busy = sys_test_bit((mem_addr_t)&cfg->reg->GLOBAL.DMA_CHNL_ENABLE_REG, channel);
+	stat->busy = sys_io_test_bit((mem_addr_t)&cfg->reg->GLOBAL.DMA_CHNL_ENABLE_REG, channel);
 	stat->dir = data->chan_info[channel].xfer_direction;
 
 	return 0;
