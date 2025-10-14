@@ -28,6 +28,10 @@ extern void __start(void);
 void soc_interrupt_init(void);
 #endif
 
+#if defined(CONFIG_RISCV_IMSIC) && defined(CONFIG_SMP)
+extern void z_riscv_imsic_secondary_init(void);
+#endif
+
 void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
 {
@@ -79,6 +83,10 @@ void arch_secondary_cpu_init(int hartid)
 	/* Enable on secondary cores so that they can respond to PLIC */
 	irq_enable(RISCV_IRQ_MEXT);
 #endif /* CONFIG_PLIC_IRQ_AFFINITY */
+#if defined(CONFIG_RISCV_IMSIC) && defined(CONFIG_SMP)
+	/* Initialize IMSIC on secondary CPU */
+	z_riscv_imsic_secondary_init();
+#endif /* CONFIG_RISCV_IMSIC && CONFIG_SMP */
 #ifdef CONFIG_SOC_PER_CORE_INIT_HOOK
 	soc_per_core_init_hook();
 #endif /* CONFIG_SOC_PER_CORE_INIT_HOOK */

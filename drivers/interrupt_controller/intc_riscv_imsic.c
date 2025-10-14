@@ -244,3 +244,39 @@ static void imsic_mext_isr(const void *arg)
 		riscv_imsic_complete(eiid);
 	}
 }
+
+#ifdef CONFIG_SMP
+/**
+ * @brief Initialize IMSIC on secondary CPUs
+ *
+ * This function is called on each secondary CPU during SMP boot to initialize
+ * the IMSIC interrupt controller on that CPU. It configures the EIDELIVERY
+ * and EITHRESHOLD CSRs to enable interrupt delivery.
+ *
+ * This follows the same pattern as smp_timer_init() for the CLINT timer.
+ *
+ * Note: IMSIC CSRs (accessed via ISELECT/IREG) are local to each CPU.
+ * When this function executes on CPU N, it configures that CPU's IMSIC file.
+ */
+void z_riscv_imsic_secondary_init(void)
+{
+	unsigned int cpu_id = arch_proc_id();
+
+	LOG_INF("IMSIC secondary init on CPU %u", cpu_id);
+
+	/* Enable interrupt delivery in MMSI mode */
+	/* EIDELIVERY[0] = 1: Enable delivery */
+	/* EIDELIVERY[30:29] = 10: MMSI mode (0x40000000) */
+	uint32_t eidelivery_value = EIDELIVERY_ENABLE | EIDELIVERY_MODE_MMSI;
+
+	write_imsic_csr(ICSR_EIDELIVERY, eidelivery_value);
+
+	/* Set EITHRESHOLD to 0 to allow all interrupt priorities */
+	write_imsic_csr(ICSR_EITHRESH, 0);
+
+	/* Enable MEXT interrupt on this CPU */
+	irq_enable(RISCV_IRQ_MEXT);
+
+	LOG_INF("CPU %u IMSIC initialized", cpu_id);
+}
+#endif /* CONFIG_SMP */
