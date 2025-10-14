@@ -39,10 +39,10 @@ struct fd_entry {
 #if defined(CONFIG_POSIX_DEVICE_IO)
 static const struct fd_op_vtable stdinout_fd_op_vtable;
 
-BUILD_ASSERT(CONFIG_ZVFS_OPEN_MAX >= 3, "CONFIG_ZVFS_OPEN_MAX >= 3 for CONFIG_POSIX_DEVICE_IO");
+BUILD_ASSERT(ZVFS_OPEN_SIZE >= 3, "ZVFS_OPEN_SIZE >= 3 for CONFIG_POSIX_DEVICE_IO");
 #endif /* defined(CONFIG_POSIX_DEVICE_IO) */
 
-static struct fd_entry fdtable[CONFIG_ZVFS_OPEN_MAX] = {
+static struct fd_entry fdtable[ZVFS_OPEN_SIZE] = {
 #if defined(CONFIG_POSIX_DEVICE_IO)
 	/*
 	 * Predefine entries for stdin/stdout/stderr.
