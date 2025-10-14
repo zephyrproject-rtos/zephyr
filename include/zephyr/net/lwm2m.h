@@ -349,6 +349,20 @@ struct lwm2m_time_series_elem {
 };
 
 /**
+ * @typedef lwm2m_cache_filter_cb_t
+ * @brief Callback type for filtering cached time series samples.
+ *
+ * Returning false skips storing the provided sample in the LwM2M cache.
+ *
+ * @param path    Object path of the cached resource.
+ * @param element Sample produced by the engine for the cache.
+ *
+ * @return true to keep the sample, false to discard it.
+ */
+typedef bool (*lwm2m_cache_filter_cb_t)(const struct lwm2m_obj_path *path,
+					const struct lwm2m_time_series_elem *element);
+
+/**
  * @brief Asynchronous callback to get a resource buffer and length.
  *
  * Prior to accessing the data buffer of a resource, the engine can
@@ -1589,6 +1603,21 @@ struct lwm2m_ctx *lwm2m_rd_client_ctx(void);
  */
 int lwm2m_enable_cache(const struct lwm2m_obj_path *path, struct lwm2m_time_series_elem *data_cache,
 		       size_t cache_len);
+
+/**
+ * @brief Register a filtering callback for cached resource samples.
+ *
+ * The callback is invoked whenever the LwM2M engine attempts to append a new
+ * sample to the resource cache. Returning false prevents the sample from being
+ * stored. Passing a NULL callback removes any previously registered filter.
+ *
+ * @param path      LwM2M path to the cached resource.
+ * @param filter_cb Callback used to decide whether samples should be cached.
+ *
+ * @return 0 for success or a negative errno code in case of error.
+ */
+int lwm2m_set_cache_filter(const struct lwm2m_obj_path *path,
+			   lwm2m_cache_filter_cb_t filter_cb);
 
 /**
  * @brief Security modes as defined in LwM2M Security object.

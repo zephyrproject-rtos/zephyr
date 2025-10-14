@@ -628,6 +628,7 @@ ZTEST(lwm2m_registry, test_resource_cache)
 	/* Resource cache is turned off */
 	zassert_is_null(lwm2m_cache_entry_get_by_object(&path));
 	zassert_equal(lwm2m_enable_cache(&path, &e, 1), -ENOTSUP);
+	zassert_equal(lwm2m_set_cache_filter(&path, NULL), -ENOTSUP);
 	zassert_false(lwm2m_cache_write(NULL, NULL));
 	zassert_false(lwm2m_cache_read(NULL, NULL));
 	zassert_equal(lwm2m_cache_size(NULL), 0);
