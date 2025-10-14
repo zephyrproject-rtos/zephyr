@@ -940,25 +940,61 @@ def dt_nodelabel_enabled_with_compat(kconf, _, label, compat):
 
     return "n"
 
-
-def dt_nodelabel_array_prop_has_val(kconf, _, label, prop, val):
+def _dt_node_array_prop_has_val_generic(node_search_function, search_arg, prop, val):
     """
-    This function looks for a node with node label 'label'.
-    If the node exists, it checks if the node node has a property
+    This function takes the 'node_search_function' and uses it to search for
+    a node with 'search_arg' and checks if the node has a property
+    'prop' of type "array". If so, and the property contains
+    an element equal to the integer 'val', it returns "y".
+    If the property is of type "string-array", it checks if 'val' is
+    one of the strings in the array, returning "y" if so.
+    Otherwise, it returns "n".
+    """
+    try:
+        node = node_search_function(search_arg)
+    except edtlib.EDTError:
+        return "n"
+
+    if node is None or prop not in node.props:
+        return "n"
+
+    if node.props[prop].type == "array":
+        return "y" if int(val, base=0) in node.props[prop].val else "n"
+
+    if node.props[prop].type == "string-array":
+        return "y" if val in node.props[prop].val else "n"
+
+    return "n"
+
+def dt_node_array_prop_has_val(kconf, _, path, prop, val):
+    """
+    This function looks for a node at 'path'.
+    If the node exists, it checks if the node has a property
     'prop' with type "array". If so, and the property contains
     an element equal to the integer 'val', it returns "y".
+    If the property is of type "string-array", it checks if 'val' is
+    one of the strings in the array, returning "y" if so.
     Otherwise, it returns "n".
     """
     if doc_mode or edt is None:
         return "n"
 
-    node = edt.label2node.get(label)
+    return _dt_node_array_prop_has_val_generic(edt.get_node, path, prop, val)
 
-    if not node or (prop not in node.props) or (node.props[prop].type != "array"):
+def dt_nodelabel_array_prop_has_val(kconf, _, label, prop, val):
+    """
+    This function looks for a node with node label 'label'.
+    If the node exists, it checks if the node has a property
+    'prop' with type "array". If so, and the property contains
+    an element equal to the integer 'val', it returns "y".
+    If the property is of type "string-array", it checks if 'val' is
+    one of the strings in the array, returning "y" if so.
+    Otherwise, it returns "n".
+    """
+    if doc_mode or edt is None:
         return "n"
-    else:
-        return "y" if int(val, base=0) in node.props[prop].val else "n"
 
+    return _dt_node_array_prop_has_val_generic(edt.label2node.get, label, prop, val)
 
 def dt_nodelabel_path(kconf, _, label):
     """
@@ -1183,6 +1219,7 @@ functions = {
         "dt_nodelabel_path": (dt_nodelabel_path, 1, 1),
         "dt_node_parent": (dt_node_parent, 1, 1),
         "dt_nodelabel_array_prop_has_val": (dt_nodelabel_array_prop_has_val, 3, 3),
+        "dt_node_array_prop_has_val": (dt_node_array_prop_has_val, 3, 3),
         "dt_gpio_hogs_enabled": (dt_gpio_hogs_enabled, 0, 0),
         "dt_chosen_partition_addr_int": (dt_chosen_partition_addr, 1, 3),
         "dt_chosen_partition_addr_hex": (dt_chosen_partition_addr, 1, 3),
