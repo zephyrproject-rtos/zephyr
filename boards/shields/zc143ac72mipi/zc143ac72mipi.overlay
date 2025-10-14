@@ -7,9 +7,10 @@
 / {
 	chosen {
 		zephyr,display = &co5300_zc143ac72mipi;
-		zephyr,touch = &tma525b_zc143ac72mipi;
+//		zephyr,touch = &tma525b_zc143ac72mipi;
 	};
 
+	/*
 	en_mipi_display_g1120b0mipi: enable-mipi-display {
 		compatible = "regulator-fixed";
 		regulator-name = "en_mipi_display";
@@ -23,8 +24,9 @@
 		display = <&co5300_zc143ac72mipi>;
 		invert-y;
 	};
+	*/
 };
-
+/*
 &nxp_mipi_i2c {
 	status = "okay";
 
@@ -33,12 +35,14 @@
 		 * Note- the actual controller present on this IC is a FT3267,
 		 * but the FT35336 driver in Zephyr supports this IC.
 		 */
+		 /*
 		compatible = "focaltech,tma525b";
 		reg = <0x24>;
 		int-gpio = <&nxp_mipi_connector 29 GPIO_ACTIVE_LOW>;
 		reset-gpio = <&nxp_mipi_connector 28 GPIO_ACTIVE_LOW>;
 	};
 };
+*/
 
 &zephyr_mipi_dsi {
 	status = "okay";
