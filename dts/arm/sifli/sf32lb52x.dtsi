@@ -87,6 +87,11 @@
 					status = "disabled";
 				};
 			};
+
+			rcc_rst: reset-controller {
+				compatible = "sifli,sf32lb-rcc-rctl";
+				#reset-cells = <1>;
+			};
 		};
 
 		pinctrl: pinctrl@50003000 {
