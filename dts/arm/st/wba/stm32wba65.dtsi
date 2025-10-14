@@ -77,6 +77,25 @@
 				#pwm-cells = <3>;
 			};
 		};
+
+		usbotg_hs: usb@42040000 {
+			compatible = "st,stm32-otghs";
+			reg = <0x42040000 DT_SIZE_K(128)>;
+			interrupts = <76 0>;
+			interrupt-names = "otghs";
+			num-bidir-endpoints = <9>;
+			ram-size = <4096>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 14)>;
+			phys = <&otghs_phy>;
+			status = "disabled";
+		};
+	};
+
+	otghs_phy: otghs_phy {
+		compatible = "st,stm32u5-otghs-phy";
+		clocks = <&rcc STM32_CLOCK(AHB2, 15)>;
+		#phy-cells = <0>;
+		status = "disabled";
 	};
 
 	/*
