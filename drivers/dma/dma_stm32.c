@@ -117,7 +117,8 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		if (!stream->hal_override) {
 			dma_stm32_clear_ht(dma, id);
 		}
-		stream->dma_callback(dev, stream->user_data, callback_arg, DMA_STATUS_BLOCK);
+		stream->dma_callback(dev, stream->user_data,
+							 callback_arg, DMA_STATUS_BLOCK);
 	} else if (stm32_dma_is_tc_irq_active(dma, id)) {
 		/* Circular buffer never stops receiving as long as peripheral is enabled */
 		if (!stream->cyclic) {
@@ -127,18 +128,25 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		if (!stream->hal_override) {
 			dma_stm32_clear_tc(dma, id);
 		}
-		stream->dma_callback(dev, stream->user_data, callback_arg, DMA_STATUS_COMPLETE);
+		if (stream->dma_callback != NULL) {
+			stream->dma_callback(dev, stream->user_data,
+								 callback_arg, DMA_STATUS_COMPLETE);
+		}
 	} else if (stm32_dma_is_unexpected_irq_happened(dma, id)) {
 		LOG_ERR("Unexpected irq happened.");
-		stream->dma_callback(dev, stream->user_data,
-				     callback_arg, -EIO);
+		if (stream->dma_callback != NULL) {
+			stream->dma_callback(dev, stream->user_data,
+				    			 callback_arg, -EIO);
+		}
 	} else {
 		LOG_ERR("Transfer Error.");
 		stream->busy = false;
 		dma_stm32_dump_stream_irq(dev, id);
 		dma_stm32_clear_stream_irq(dev, id);
-		stream->dma_callback(dev, stream->user_data,
-				     callback_arg, -EIO);
+		if (stream->dma_callback != NULL) {
+			stream->dma_callback(dev, stream->user_data,
+				    			 callback_arg, -EIO);
+		}
 	}
 }
 
@@ -492,10 +500,13 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 #endif
 	LL_DMA_Init(dma, dma_stm32_id_to_stream(id), &DMA_InitStruct);
 
-	LL_DMA_EnableIT_TC(dma, dma_stm32_id_to_stream(id));
+	/* Enable transfer complete ISR if in non-cyclic mode or a callback is requested */
+	if ((!stream->cyclic) || (stream->dma_callback != NULL)) {
+		LL_DMA_EnableIT_TC(dma, dma_stm32_id_to_stream(id));
+	}
 
-	/* Enable Half-Transfer irq if circular mode is enabled */
-	if (stream->cyclic) {
+	/* Enable Half-Transfer irq if circular mode is enabled and a callback is requested */
+	if (stream->cyclic && stream->dma_callback != NULL) {
 		LL_DMA_EnableIT_HT(dma, dma_stm32_id_to_stream(id));
 	}
 
