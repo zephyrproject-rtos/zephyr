@@ -53,6 +53,15 @@ jobs:
         git config --global user.name "Your Name"
         west init -l . || true
 
+    - name: Install Python dependencies
+      run: |
+        python3 -m pip install --upgrade pip
+        if [ -f scripts/requirements-actions.txt ]; then
+          python3 -m pip install -r scripts/requirements-actions.txt
+        else
+          python3 -m pip install pygithub==2.8.1
+        fi
+
     - name: Run assignment script
       env:
         GITHUB_TOKEN: ${{ secrets.ZB_PR_ASSIGNER_GITHUB_TOKEN }}
