@@ -58,7 +58,15 @@ BUILD_ASSERT(CONFIG_BT_ISO_TX_BUF_COUNT >= TOTAL_BUF_NEEDED,
 	     "CONFIG_BT_ISO_TX_BUF_COUNT should be at least "
 	     "BROADCAST_ENQUEUE_COUNT * CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT");
 
-#if defined(CONFIG_BAP_BROADCAST_16_2_1)
+#if defined(CONFIG_BAP_BROADCAST_8_2_1)
+
+static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_8_2_1(
+	BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT,
+	BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+
+#define BROADCAST_SAMPLE_RATE 8000
+
+#elif defined(CONFIG_BAP_BROADCAST_16_2_1)
 
 static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_16_2_1(
 	BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT,
@@ -92,7 +100,9 @@ static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_48_6
 
 #endif
 
-#if defined(CONFIG_BAP_BROADCAST_16_2_1)
+#if defined(CONFIG_BAP_BROADCAST_8_2_1)
+#define MAX_SAMPLE_RATE 8000U
+#elif defined(CONFIG_BAP_BROADCAST_16_2_1)
 #define MAX_SAMPLE_RATE 16000U
 #elif defined(CONFIG_BAP_BROADCAST_24_2_1)
 #define MAX_SAMPLE_RATE 24000U
@@ -167,7 +177,9 @@ static struct broadcast_source_stream {
 
 #if defined(CONFIG_LIBLC3)
 	lc3_encoder_t lc3_encoder;
-#if defined(CONFIG_BAP_BROADCAST_16_2_1)
+#if defined(CONFIG_BAP_BROADCAST_8_2_1)
+	lc3_encoder_mem_16k_t lc3_encoder_mem;
+#elif defined(CONFIG_BAP_BROADCAST_16_2_1)
 	lc3_encoder_mem_16k_t lc3_encoder_mem;
 #elif defined(CONFIG_BAP_BROADCAST_24_2_1)
 	lc3_encoder_mem_48k_t lc3_encoder_mem;
