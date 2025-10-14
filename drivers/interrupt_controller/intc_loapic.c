@@ -378,7 +378,7 @@ int loapic_resume(const struct device *port)
 							 loapic_irq]);
 
 			if (sys_bitfield_test_bit((mem_addr_t) loapic_suspend_buf,
-							loapic_irq)) {
+							loapic_irq) != 0) {
 				z_loapic_irq_enable(loapic_irq);
 			}
 		}

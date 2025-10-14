@@ -614,7 +614,7 @@ static void wordlist_cb(struct k_object *ko, void *ctx_ptr)
 {
 	struct perm_ctx *ctx = (struct perm_ctx *)ctx_ptr;
 
-	if (sys_bitfield_test_bit((mem_addr_t)&ko->perms, ctx->parent_id) &&
+	if ((sys_bitfield_test_bit((mem_addr_t)&ko->perms, ctx->parent_id) != 0) &&
 				  ((struct k_thread *)ko->name != ctx->parent)) {
 		sys_bitfield_set_bit((mem_addr_t)&ko->perms, ctx->child_id);
 	}
