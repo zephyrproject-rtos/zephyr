@@ -157,6 +157,13 @@
 			status = "disabled";
 		};
 
+		wdt: watchdog@50094000 {
+			compatible = "sifli,sf32lb-wdt";
+			reg = <0x50094000 0x1000>;
+			interrupts = <26 0>;
+			status = "disabled";
+		};
+
 		gpioa: gpio@500a0000 {
 			compatible = "sifli,sf32lb-gpio-parent";
 			reg = <0x500a0000 0x1000>;
