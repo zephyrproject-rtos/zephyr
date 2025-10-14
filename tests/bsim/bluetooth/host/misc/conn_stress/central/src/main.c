@@ -22,13 +22,15 @@
 #include <zephyr/types.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(central, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(central, LOG_LEVEL_DBG);
 
 #include "bstests.h"
 #include "bs_types.h"
 #include "bs_tracing.h"
 #include "bstests.h"
 #include "bs_pc_backchannel.h"
+
+#include "babblekit/testcase.h"
 
 #define DEFAULT_CONN_INTERVAL	   20
 #define PERIPHERAL_DEVICE_NAME	   "Zephyr Peripheral"
@@ -49,6 +51,8 @@ BUILD_ASSERT(NOTIFICATION_DATA_LEN <= CHARACTERISTIC_DATA_MAX_LEN);
 
 #define PERIPHERAL_SERVICE_UUID	       BT_UUID_DECLARE_128(PERIPHERAL_SERVICE_UUID_VAL)
 #define PERIPHERAL_CHARACTERISTIC_UUID BT_UUID_DECLARE_128(PERIPHERAL_CHARACTERISTIC_UUID_VAL)
+
+#define EXPECTED_CONN_CYCLES	1
 
 static struct bt_uuid_128 vnd_uuid =
 	BT_UUID_INIT_128(BT_UUID_128_ENCODE(0x12345678, 0x1234, 0x5678, 0x1234, 0x56789abcdea0));
@@ -89,6 +93,7 @@ struct conn_info {
 	struct bt_gatt_discover_params discover_params;
 	struct bt_gatt_subscribe_params subscribe_params;
 	bt_addr_le_t addr;
+	atomic_t conn_count;
 };
 
 static struct conn_info conn_infos[CONFIG_BT_MAX_CONN] = {0};
@@ -232,8 +237,6 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 	conn_info_ref = get_connected_conn_info_ref(conn);
 	__ASSERT_NO_MSG(conn_info_ref);
 
-	atomic_clear_bit(conn_info_ref->flags, CONN_INFO_DISCOVER_PAUSED);
-
 	if (conn_info_ref->discover_params.type == BT_GATT_DISCOVER_PRIMARY) {
 		LOG_DBG("Primary Service Found");
 		memcpy(&conn_info_ref->uuid,
@@ -295,7 +298,7 @@ retry:
 	/* if we're out of buffers or metadata contexts, continue discovery
 	 * later.
 	 */
-	LOG_INF("out of memory/not connected, continuing sub later");
+	LOG_INF("out of memory/not connected, continuing sub later (err %d)", err);
 	atomic_set_bit(conn_info_ref->flags, CONN_INFO_DISCOVER_PAUSED);
 
 	return BT_GATT_ITER_STOP;
@@ -326,6 +329,17 @@ static bool check_if_peer_connected(const bt_addr_le_t *addr)
 	}
 
 	return false;
+}
+
+static bool check_if_completed(void)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(conn_infos); i++) {
+		if (atomic_get(&conn_infos[i].conn_count) < EXPECTED_CONN_CYCLES) {
+			return false;
+		}
+	}
+
+	return true;
 }
 
 static bool parse_ad(struct bt_data *data, void *user_data)
@@ -451,6 +465,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	bt_conn_unref(conn);
 	clear_info(conn_info_ref);
 	atomic_dec(&conn_count);
+	atomic_inc(&conn_info_ref->conn_count);
 }
 
 #if defined(CONFIG_BT_SMP)
@@ -602,6 +617,8 @@ static void subscribe_to_service(struct bt_conn *conn, void *data)
 		if (err != -ENOMEM && err != -ENOTCONN) {
 			__ASSERT(!err, "Subscribe failed (err %d)", err);
 		}
+
+		atomic_clear_bit(conn_info_ref->flags, CONN_INFO_DISCOVER_PAUSED);
 	}
 }
 
@@ -669,7 +686,7 @@ void test_central_main(void)
 
 	start_scan();
 
-	while (true) {
+	while (!check_if_completed()) {
 		/* reconnect peripherals when they drop out */
 		if (atomic_get(&conn_count) < CONFIG_BT_MAX_CONN &&
 		    !atomic_test_bit(status_flags, DEVICE_IS_SCANNING) &&
@@ -698,6 +715,8 @@ void test_central_main(void)
 		}
 		k_msleep(10);
 	}
+
+	TEST_PASS("Central tests passed");
 }
 
 void test_init(void)
@@ -705,6 +724,7 @@ void test_init(void)
 	extern enum bst_result_t bst_result;
 
 	LOG_INF("Initializing Test");
+	bst_ticker_set_next_tick_absolute(600*1e6);
 	/* The peripherals determines whether the test passed. */
 	bst_result = Passed;
 }
@@ -739,12 +759,23 @@ static void test_args(int argc, char **argv)
 	bs_trace_raw(0, "Notification data size : %d\n", notification_size);
 }
 
+static void test_tick(bs_time_t HW_device_time)
+{
+	if (bst_result != Passed) {
+		TEST_FAIL("Test timeout (not passed after %lu seconds)",
+			  (unsigned long)(HW_device_time / USEC_PER_SEC));
+	}
+
+	bs_trace_silent_exit(0);
+}
+
 static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "central",
 		.test_descr = "Central Connection Stress",
 		.test_args_f = test_args,
 		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
 		.test_main_f = test_central_main
 	},
 	BSTEST_END_MARKER
