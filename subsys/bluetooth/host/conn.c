@@ -2493,35 +2493,11 @@ uint8_t bt_conn_enc_key_size(const struct bt_conn *conn)
 		return 0;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_CLASSIC) &&
-	    conn->type == BT_CONN_TYPE_BR) {
-		struct bt_hci_cp_read_encryption_key_size *cp;
-		struct bt_hci_rp_read_encryption_key_size *rp;
-		struct net_buf *buf;
-		struct net_buf *rsp;
-		uint8_t key_size;
-
-		buf = bt_hci_cmd_alloc(K_FOREVER);
-		if (!buf) {
-			return 0;
-		}
-
-		cp = net_buf_add(buf, sizeof(*cp));
-		cp->handle = sys_cpu_to_le16(conn->handle);
-
-		if (bt_hci_cmd_send_sync(BT_HCI_OP_READ_ENCRYPTION_KEY_SIZE,
-					buf, &rsp)) {
-			return 0;
-		}
-
-		rp = (void *)rsp->data;
-
-		key_size = rp->status ? 0 : rp->key_size;
-
-		net_buf_unref(rsp);
-
-		return key_size;
+#if defined(CONFIG_BT_CLASSIC)
+	if (conn->type == BT_CONN_TYPE_BR) {
+		return conn->br.link_key ? conn->br.link_key->enc_key_size : 0;
 	}
+#endif /* CONFIG_BT_CLASSIC */
 
 	if (IS_ENABLED(CONFIG_BT_SMP)) {
 		return conn->le.keys ? conn->le.keys->enc_size : 0;
