@@ -1,0 +1,23 @@
+#
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: litex_vexiiriscv
+name: LiteX SoC with VexiiRiscV softcore CPU
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+ram: 262144
+supported:
+  - uart
+  - spi
+  - netif:eth
+  - watchdog
+testing:
+  ignore_tags:
+    - bluetooth
+    - xip
+vendor: litex
