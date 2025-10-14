@@ -95,6 +95,7 @@ struct mspi_dw_data {
 
 struct mspi_dw_config {
 	DEVICE_MMIO_ROM;
+	void *wrapper_regs;
 	void (*irq_config)(void);
 	uint32_t clock_frequency;
 #if defined(CONFIG_PINCTRL)
@@ -112,6 +113,11 @@ struct mspi_dw_config {
 	uint8_t max_queued_dummy_bytes;
 	uint8_t tx_fifo_threshold;
 	uint8_t rx_fifo_threshold;
+#ifdef CONFIG_MSPI_DMA
+	uint8_t dma_tx_data_level;
+	uint8_t dma_rx_data_level;
+#endif
+	void *vendor_specific_data;
 	DECLARE_REG_ACCESS();
 	bool sw_multi_periph;
 	enum mspi_op_mode op_mode;
@@ -139,6 +145,11 @@ DEFINE_MM_REG_RD_WR(dr,		0x60)
 DEFINE_MM_REG_WR(rx_sample_dly,	0xf0)
 DEFINE_MM_REG_WR(spi_ctrlr0,	0xf4)
 DEFINE_MM_REG_WR(txd_drive_edge, 0xf8)
+#if defined(CONFIG_MSPI_DMA)
+DEFINE_MM_REG_WR(dmacr,		0x4C)
+DEFINE_MM_REG_WR(dmatdlr,	0x50)
+DEFINE_MM_REG_WR(dmardlr,	0x54)
+#endif
 
 #if defined(CONFIG_MSPI_XIP)
 DEFINE_MM_REG_WR(xip_incr_inst,		0x100)
@@ -541,6 +552,19 @@ static void fifo_work_handler(struct k_work *work)
 
 static void mspi_dw_isr(const struct device *dev)
 {
+#if defined(CONFIG_MSPI_DMA)
+	struct mspi_dw_data *dev_data = dev->data;
+
+	if (dev_data->xfer.xfer_mode == MSPI_DMA) {
+		if (vendor_specific_read_dma_irq(dev)) {
+			set_imr(dev, 0);
+			handle_end_of_packet(dev_data);
+		}
+		vendor_specific_irq_clear(dev);
+		return;
+	}
+#endif
+
 #if defined(CONFIG_MSPI_DW_HANDLE_FIFOS_IN_SYSTEM_WORKQUEUE)
 	struct mspi_dw_data *dev_data = dev->data;
 	int rc;
@@ -1067,7 +1091,7 @@ static int start_next_packet(const struct device *dev)
 				       (false));
 	unsigned int key;
 	uint32_t packet_frames;
-	uint32_t imr;
+	uint32_t imr = 0;
 	int rc = 0;
 
 	if (packet->num_bytes == 0 &&
@@ -1115,6 +1139,18 @@ static int start_next_packet(const struct device *dev)
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_MSPI_DMA)
+	if (dev_data->xfer.xfer_mode == MSPI_DMA) {
+		/* Check if the packet buffer is accessible */
+		if (packet->num_bytes > 0 &&
+		    !vendor_specific_dma_accessible_check(dev, packet->data_buf)) {
+			LOG_ERR("Buffer not DMA accessible: ptr=0x%lx, size=%u",
+				(uintptr_t)packet->data_buf, packet->num_bytes);
+			return -EINVAL;
+		}
+	}
+#endif
+
 	if (packet->dir == MSPI_TX || packet->num_bytes == 0) {
 		imr = IMR_TXEIM_BIT;
 		dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_TMOD_MASK,
@@ -1123,6 +1159,12 @@ static int start_next_packet(const struct device *dev)
 						   dev_data->xfer.tx_dummy);
 
 		write_rxftlr(dev, 0);
+#if defined(CONFIG_MSPI_DMA)
+	} else if (dev_data->xfer.xfer_mode == MSPI_DMA) {
+		dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_TMOD_MASK, CTRLR0_TMOD_RX);
+		dev_data->spi_ctrlr0 |= FIELD_PREP(SPI_CTRLR0_WAIT_CYCLES_MASK,
+							dev_data->xfer.rx_dummy);
+#endif
 	} else {
 		uint32_t tmod;
 		uint8_t rx_fifo_threshold;
@@ -1211,95 +1253,124 @@ static int start_next_packet(const struct device *dev)
 		irq_unlock(key);
 	}
 
-	dev_data->buf_pos = packet->data_buf;
-	dev_data->buf_end = &packet->data_buf[packet->num_bytes];
+#if defined(CONFIG_MSPI_DMA)
+	if (dev_data->xfer.xfer_mode == MSPI_DMA) {
+		/* For DMA mode, set start level based on transfer length to prevent underflow */
+		uint32_t total_transfer_bytes = packet->num_bytes + dev_data->xfer.addr_length +
+						dev_data->xfer.cmd_length;
+		uint32_t transfer_frames = total_transfer_bytes >> dev_data->bytes_per_frame_exp;
 
-	/* Set the TX FIFO threshold and its transmit start level. */
-	if (packet->num_bytes) {
-		/* If there is some data to send/receive, set the threshold to
-		 * the value configured for the driver instance and the start
-		 * level to the maximum possible value (it will be updated later
-		 * in tx_fifo() or tx_dummy_bytes() when TX is to be finished).
-		 * This helps avoid a situation when the TX FIFO becomes empty
-		 * before the transfer is complete and the SSI core finishes the
-		 * transaction and deactivates the CE line. This could occur
-		 * right before the data phase in enhanced SPI modes, when the
-		 * clock stretching feature does not work yet, or in Standard
-		 * SPI mode, where the clock stretching is not available at all.
-		 */
-		uint8_t start_level = dev_data->dummy_bytes != 0
-				    ? dev_config->max_queued_dummy_bytes - 1
-				    : dev_config->tx_fifo_depth_minus_1;
+		/* Use minimum of transfer length or FIFO depth, but at least 1 */
+		uint8_t dma_start_level = MIN(transfer_frames - 1,
+					      dev_config->tx_fifo_depth_minus_1);
 
-		write_txftlr(dev, FIELD_PREP(TXFTLR_TXFTHR_MASK, start_level) |
-				  FIELD_PREP(TXFTLR_TFT_MASK,
-					     dev_config->tx_fifo_threshold));
+		dma_start_level = (dma_start_level > 0 ? dma_start_level : 1);
+
+		/* Only TXFTHR needs to be set to the minimum number of frames */
+		write_txftlr(dev, FIELD_PREP(TXFTLR_TXFTHR_MASK, dma_start_level));
+		write_dmatdlr(dev, FIELD_PREP(DMATDLR_DMATDL_MASK, dev_config->dma_tx_data_level));
+		write_dmardlr(dev, FIELD_PREP(DMARDLR_DMARDL_MASK, dev_config->dma_rx_data_level));
+		write_dmacr(dev, DMACR_TDMAE_BIT | DMACR_RDMAE_BIT);
+		write_imr(dev, 0);
+		write_ssienr(dev, SSIENR_SSIC_EN_BIT);
+
+		vendor_specific_start_dma_xfer(dev);
 	} else {
-		uint32_t total_tx_entries = 0;
+#endif
+		/* PIO mode */
+		dev_data->buf_pos = packet->data_buf;
+		dev_data->buf_end = &packet->data_buf[packet->num_bytes];
+		/* Set the TX FIFO threshold and its transmit start level. */
+		if (packet->num_bytes) {
+			/* If there is some data to send/receive, set the threshold to
+			 * the value configured for the driver instance and the start
+			 * level to the maximum possible value (it will be updated later
+			 * in tx_fifo() or tx_dummy_bytes() when TX is to be finished).
+			 * This helps avoid a situation when the TX FIFO becomes empty
+			 * before the transfer is complete and the SSI core finishes the
+			 * transaction and deactivates the CE line. This could occur
+			 * right before the data phase in enhanced SPI modes, when the
+			 * clock stretching feature does not work yet, or in Standard
+			 * SPI mode, where the clock stretching is not available at all.
+			 */
+			uint8_t start_level = dev_data->dummy_bytes != 0
+					? dev_config->max_queued_dummy_bytes - 1
+					: dev_config->tx_fifo_depth_minus_1;
 
-		/* It the whole transfer is to contain only the command and/or
-		 * address, set up the transfer to start right after entries
-		 * for those appear in the TX FIFO, and the threshold to 0,
-		 * so that the interrupt occurs when the TX FIFO gets emptied.
+			write_txftlr(dev, FIELD_PREP(TXFTLR_TXFTHR_MASK, start_level) |
+				     FIELD_PREP(TXFTLR_TFT_MASK,
+						dev_config->tx_fifo_threshold));
+
+		} else {
+			uint32_t total_tx_entries = 0;
+
+			/* It the whole transfer is to contain only the command and/or
+			 * address, set up the transfer to start right after entries
+			 * for those appear in the TX FIFO, and the threshold to 0,
+			 * so that the interrupt occurs when the TX FIFO gets emptied.
+			 */
+			if (dev_data->xfer.cmd_length) {
+				if (dev_data->standard_spi) {
+					total_tx_entries += dev_data->xfer.cmd_length;
+				} else {
+					total_tx_entries += 1;
+				}
+			}
+
+			if (dev_data->xfer.addr_length) {
+				if (dev_data->standard_spi) {
+					total_tx_entries += dev_data->xfer.addr_length;
+				} else {
+					total_tx_entries += 1;
+				}
+			}
+
+			write_txftlr(dev, FIELD_PREP(TXFTLR_TXFTHR_MASK,
+						     total_tx_entries - 1));
+		}
+
+		/* Ensure that there will be no interrupt from the controller yet. */
+		write_imr(dev, 0);
+		/* Enable the controller. This must be done before DR is written. */
+		write_ssienr(dev, SSIENR_SSIC_EN_BIT);
+
+		/* Since the FIFO depth in SSI is always at least 8, it can be safely
+		 * assumed that the command and address fields (max. 2 and 4 bytes,
+		 * respectively) can be written here before the TX FIFO gets filled up.
 		 */
-		if (dev_data->xfer.cmd_length) {
-			if (dev_data->standard_spi) {
-				total_tx_entries += dev_data->xfer.cmd_length;
-			} else {
-				total_tx_entries += 1;
+		if (dev_data->standard_spi) {
+			if (dev_data->xfer.cmd_length) {
+				tx_control_field(dev, packet->cmd,
+						 dev_data->xfer.cmd_length);
+			}
+
+			if (dev_data->xfer.addr_length) {
+				tx_control_field(dev, packet->address,
+						 dev_data->xfer.addr_length);
+			}
+		} else {
+			if (dev_data->xfer.cmd_length) {
+				write_dr(dev, packet->cmd);
+			}
+
+			if (dev_data->xfer.addr_length) {
+				write_dr(dev, packet->address);
 			}
 		}
 
-		if (dev_data->xfer.addr_length) {
-			if (dev_data->standard_spi) {
-				total_tx_entries += dev_data->xfer.addr_length;
-			} else {
-				total_tx_entries += 1;
-			}
+		/* Prefill TX FIFO with any data we can */
+		if (dev_data->dummy_bytes && tx_dummy_bytes(dev, NULL)) {
+			imr = IMR_RXFIM_BIT;
+		} else if (packet->dir == MSPI_TX && packet->num_bytes) {
+			tx_data(dev, packet);
 		}
 
-		write_txftlr(dev, FIELD_PREP(TXFTLR_TXFTHR_MASK,
-					     total_tx_entries - 1));
+		/* Enable interrupts now and wait until the packet is done unless async. */
+		write_imr(dev, imr);
+#if defined(CONFIG_MSPI_DMA)
 	}
+#endif
 
-	/* Ensure that there will be no interrupt from the controller yet. */
-	write_imr(dev, 0);
-	/* Enable the controller. This must be done before DR is written. */
-	write_ssienr(dev, SSIENR_SSIC_EN_BIT);
-
-	/* Since the FIFO depth in SSI is always at least 8, it can be safely
-	 * assumed that the command and address fields (max. 2 and 4 bytes,
-	 * respectively) can be written here before the TX FIFO gets filled up.
-	 */
-	if (dev_data->standard_spi) {
-		if (dev_data->xfer.cmd_length) {
-			tx_control_field(dev, packet->cmd,
-					 dev_data->xfer.cmd_length);
-		}
-
-		if (dev_data->xfer.addr_length) {
-			tx_control_field(dev, packet->address,
-					 dev_data->xfer.addr_length);
-		}
-	} else {
-		if (dev_data->xfer.cmd_length) {
-			write_dr(dev, packet->cmd);
-		}
-
-		if (dev_data->xfer.addr_length) {
-			write_dr(dev, packet->address);
-		}
-	}
-
-	/* Prefill TX FIFO with any data we can */
-	if (dev_data->dummy_bytes && tx_dummy_bytes(dev, NULL)) {
-		imr = IMR_RXFIM_BIT;
-	} else if (packet->dir == MSPI_TX && packet->num_bytes) {
-		tx_data(dev, packet);
-	}
-
-	/* Enable interrupts now */
-	write_imr(dev, imr);
 	/* Write SER to start transfer */
 	write_ser(dev, BIT(dev_data->dev_id->dev_idx));
 
@@ -1867,9 +1938,16 @@ static DEVICE_API(mspi, drv_api) = {
 		DT_INST_PROP_OR(inst, rx_fifo_threshold,		\
 				1 * RX_FIFO_DEPTH(inst) / 8 - 1)
 
+#define MSPI_DW_DMA_DATA_LEVELS(inst)					\
+	.dma_tx_data_level =						\
+		DT_INST_PROP_OR(inst, dma_transmit_data_level, 0),	\
+	.dma_rx_data_level =						\
+		DT_INST_PROP_OR(inst, dma_receive_data_level, 0)
+
 #define MSPI_DW_INST(inst)						\
 	PM_DEVICE_DT_INST_DEFINE(inst, dev_pm_action_cb);		\
 	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_INST_DEFINE(inst);))	\
+	VENDOR_SPECIFIC_DATA_DEFINE(inst);				\
 	static void irq_config##inst(void)				\
 	{								\
 		LISTIFY(DT_INST_NUM_IRQS(inst),				\
@@ -1878,6 +1956,7 @@ static DEVICE_API(mspi, drv_api) = {
 	static struct mspi_dw_data dev##inst##_data;			\
 	static const struct mspi_dw_config dev##inst##_config = {	\
 		MSPI_DW_MMIO_ROM_INIT(DT_DRV_INST(inst)),		\
+		.wrapper_regs = (void *)DT_INST_REG_ADDR(inst),          \
 		.irq_config = irq_config##inst,				\
 		.clock_frequency = MSPI_DW_CLOCK_FREQUENCY(inst),	\
 	IF_ENABLED(CONFIG_PINCTRL,					\
@@ -1885,6 +1964,8 @@ static DEVICE_API(mspi, drv_api) = {
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, ce_gpios),		\
 		(MSPI_DW_CE_GPIOS(inst),))				\
 		MSPI_DW_FIFO_PROPS(inst),				\
+	IF_ENABLED(CONFIG_MSPI_DMA, (MSPI_DW_DMA_DATA_LEVELS(inst),))	\
+		.vendor_specific_data = VENDOR_SPECIFIC_DATA_GET(inst),	\
 		DEFINE_REG_ACCESS(inst)					\
 		.sw_multi_periph =					\
 			DT_INST_PROP(inst, software_multiperipheral),	\

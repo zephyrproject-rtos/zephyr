@@ -194,6 +194,7 @@ Related configuration options:
 * :kconfig:option:`CONFIG_MSPI_TIMING`
 * :kconfig:option:`CONFIG_MSPI_INIT_PRIORITY`
 * :kconfig:option:`CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE`
+* :kconfig:option:`CONFIG_MSPI_DMA`
 
 API Reference
 *************
