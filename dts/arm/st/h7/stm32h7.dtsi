@@ -921,8 +921,8 @@
 				       STM32_ADC_RES(10, 0x03)
 				       STM32_ADC_RES(8, 0x07)>;
 			sampling-times = <2 3 9 17 33 65 388 811>;
-			st,adc-sequencer = "FULLY_CONFIGURABLE";
-			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
+			st,adc-sequencer = "programmable";
+			st,adc-oversampler = "extended";
 			st,adc-internal-regulator = "startup-hw-status";
 			st,adc-has-deep-powerdown;
 			st,adc-has-channel-preselection;
@@ -942,8 +942,8 @@
 				       STM32_ADC_RES(10, 0x03)
 				       STM32_ADC_RES(8, 0x07)>;
 			sampling-times = <2 3 9 17 33 65 388 811>;
-			st,adc-sequencer = "FULLY_CONFIGURABLE";
-			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
+			st,adc-sequencer = "programmable";
+			st,adc-oversampler = "extended";
 			st,adc-internal-regulator = "startup-hw-status";
 			st,adc-has-deep-powerdown;
 			st,adc-has-channel-preselection;
@@ -964,8 +964,8 @@
 				       STM32_ADC_RES(10, 0x03)
 				       STM32_ADC_RES(8, 0x07)>;
 			sampling-times = <2 3 9 17 33 65 388 811>;
-			st,adc-sequencer = "FULLY_CONFIGURABLE";
-			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
+			st,adc-sequencer = "programmable";
+			st,adc-oversampler = "extended";
 			st,adc-internal-regulator = "startup-hw-status";
 			st,adc-has-deep-powerdown;
 			st,adc-has-channel-preselection;
@@ -985,8 +985,8 @@
 				       STM32_ADC_RES(10, 0x03)
 				       STM32_ADC_RES(8, 0x07)>;
 			sampling-times = <2 3 9 17 33 65 388 811>;
-			st,adc-sequencer = "FULLY_CONFIGURABLE";
-			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
+			st,adc-sequencer = "programmable";
+			st,adc-oversampler = "extended";
 			st,adc-internal-regulator = "startup-hw-status";
 			st,adc-has-deep-powerdown;
 			st,adc-has-channel-preselection;

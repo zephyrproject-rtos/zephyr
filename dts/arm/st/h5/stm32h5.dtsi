@@ -319,8 +319,8 @@
 				       STM32_ADC_RES(8, 0x02)
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <3 7 13 25 48 93 248 641>;
-			st,adc-sequencer = "FULLY_CONFIGURABLE";
-			st,adc-oversampler = "OVERSAMPLER_MINIMAL";
+			st,adc-sequencer = "programmable";
+			st,adc-oversampler = "minimal";
 			st,adc-internal-regulator = "startup-sw-delay";
 			st,adc-has-deep-powerdown;
 			st,adc-has-differential-support;
