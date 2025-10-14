@@ -1798,6 +1798,9 @@ int nrf_wifi_supp_get_capa(void *if_priv, struct wpa_driver_capa *capa)
 	if (IS_ENABLED(CONFIG_NRF70_AP_MODE)) {
 		capa->flags |= WPA_DRIVER_FLAGS_AP;
 	}
+	if (IS_ENABLED(CONFIG_NRF70_P2P_MODE)) {
+		capa->flags |= WPA_DRIVER_FLAGS_P2P_CAPABLE;
+	}
 
 	capa->enc |= WPA_DRIVER_CAPA_ENC_WEP40 |
 			WPA_DRIVER_CAPA_ENC_WEP104 |
