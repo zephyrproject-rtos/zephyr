@@ -78,6 +78,14 @@ config MODEM_CMUX_MSC_FC_THRESHOLD
 	  This only works if the peer supports MSC messages.
 	  Disable flow control by setting this value to 0.
 
+config MODEM_CMUX_T3_TIMEOUT
+	int "CMUX T3 timeout in seconds"
+	range 1 255
+	default 10
+	help
+	  Response Timer for wake-up procedure(T3).
+	  Time in seconds before the link is considered dead.
+
 module = MODEM_CMUX
 module-str = modem_cmux
 source "subsys/logging/Kconfig.template.log_config"
