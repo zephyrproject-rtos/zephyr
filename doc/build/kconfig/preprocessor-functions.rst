@@ -47,6 +47,7 @@ while the ``*_hex`` version returns a hexadecimal value starting with ``0x``.
    $(dt_compat_on_bus,<compatible string>,<bus>)
    $(dt_gpio_hogs_enabled)
    $(dt_has_compat,<compatible string>)
+   $(dt_node_array_prop_has_val,<node path>,<prop>,<value>)
    $(dt_node_array_prop_hex,<node path>,<prop>,<index>[,<unit>])
    $(dt_node_array_prop_int,<node path>,<prop>,<index>[,<unit>])
    $(dt_node_bool_prop,<node path>,<prop>)
