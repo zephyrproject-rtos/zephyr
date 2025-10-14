@@ -545,6 +545,19 @@ static void modem_cmux_on_control_frame_uih(struct modem_cmux *cmux)
 
 	modem_cmux_log_received_command(command);
 
+	if (!command->type.cr) {
+		LOG_DBG("Received response command");
+		switch (command->type.value) {
+		case MODEM_CMUX_COMMAND_CLD:
+			modem_cmux_on_cld_command(cmux, command);
+			break;
+		default:
+			/* Responses to other commands are ignored */
+			break;
+		}
+		return;
+	}
+
 	switch (command->type.value) {
 	case MODEM_CMUX_COMMAND_CLD:
 		modem_cmux_on_cld_command(cmux, command);
@@ -631,8 +644,7 @@ static void modem_cmux_on_control_frame(struct modem_cmux *cmux)
 	modem_cmux_log_received_frame(&cmux->frame);
 
 	if (is_connected(cmux) && cmux->frame.cr == cmux->initiator) {
-		LOG_DBG("Received a response frame, dropping");
-		return;
+		LOG_DBG("Received a response frame");
 	}
 
 	switch (cmux->frame.type) {
