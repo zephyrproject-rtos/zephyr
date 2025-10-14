@@ -112,7 +112,8 @@ static void print_pmp_entries(unsigned int pmp_start, unsigned int pmp_end,
  * @param pmp_cfg Pointer to the array where the CSR contents will be stored.
  * @param pmp_cfg_size The size of the pmp_cfg array, measured in unsigned long entries.
  */
-static inline void z_riscv_pmp_read_config(unsigned long *pmp_cfg, size_t pmp_cfg_size)
+IF_DISABLED(CONFIG_ZTEST, (static inline))
+void z_riscv_pmp_read_config(unsigned long *pmp_cfg, size_t pmp_cfg_size)
 {
 	__ASSERT(pmp_cfg_size == (size_t)(CONFIG_PMP_SLOTS / PMPCFG_STRIDE),
 		 "Invalid PMP config array size");
