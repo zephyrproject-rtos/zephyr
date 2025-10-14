@@ -502,8 +502,8 @@
 			sampling-times = <2 4 8 13 20 40 80 815>;
 			num-sampling-time-common-channels = <2>;
 			st,adc-clock-source = "ASYNC";
-			st,adc-sequencer = "NOT_FULLY_CONFIGURABLE";
-			st,adc-oversampler = "OVERSAMPLER_MINIMAL";
+			st,adc-sequencer = "fixed";
+			st,adc-oversampler = "minimal";
 			st,adc-internal-regulator = "startup-hw-status";
 			status = "disabled";
 		};
