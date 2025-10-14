@@ -287,7 +287,7 @@ static void shell_a2dp_print_capabilities(struct bt_a2dp_ep_info *ep_info)
 	}
 }
 
-void app_connected(struct bt_a2dp *a2dp, int err)
+static void app_connected(struct bt_a2dp *a2dp, int err)
 {
 	if (!err) {
 		default_a2dp = a2dp;
@@ -297,13 +297,13 @@ void app_connected(struct bt_a2dp *a2dp, int err)
 	}
 }
 
-void app_disconnected(struct bt_a2dp *a2dp)
+static void app_disconnected(struct bt_a2dp *a2dp)
 {
 	found_peer_sbc_endpoint = NULL;
 	bt_shell_print("a2dp disconnected");
 }
 
-int app_config_req(struct bt_a2dp *a2dp, struct bt_a2dp_ep *ep,
+static int app_config_req(struct bt_a2dp *a2dp, struct bt_a2dp_ep *ep,
 		struct bt_a2dp_codec_cfg *codec_cfg, struct bt_a2dp_stream **stream,
 		uint8_t *rsp_err_code)
 {
@@ -321,8 +321,8 @@ int app_config_req(struct bt_a2dp *a2dp, struct bt_a2dp_ep *ep,
 	return 0;
 }
 
-int app_reconfig_req(struct bt_a2dp_stream *stream,
-	struct bt_a2dp_codec_cfg *codec_cfg, uint8_t *rsp_err_code)
+static int app_reconfig_req(struct bt_a2dp_stream *stream, struct bt_a2dp_codec_cfg *codec_cfg,
+			    uint8_t *rsp_err_code)
 {
 	uint32_t sample_rate;
 
@@ -335,7 +335,7 @@ int app_reconfig_req(struct bt_a2dp_stream *stream,
 	return 0;
 }
 
-void app_config_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
+static void app_config_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 {
 	if (rsp_err_code == 0) {
 		bt_shell_print("success to configure");
@@ -344,14 +344,14 @@ void app_config_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 	}
 }
 
-int app_establish_req(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code)
+static int app_establish_req(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code)
 {
 	*rsp_err_code = 0;
 	bt_shell_print("receive requesting establishment and accept");
 	return 0;
 }
 
-void app_establish_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
+static void app_establish_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 {
 	if (rsp_err_code == 0) {
 		bt_shell_print("success to establish");
@@ -360,14 +360,14 @@ void app_establish_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 	}
 }
 
-int app_release_req(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code)
+static int app_release_req(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code)
 {
 	*rsp_err_code = 0;
 	bt_shell_print("receive requesting release and accept");
 	return 0;
 }
 
-void app_release_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
+static void app_release_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 {
 	if (rsp_err_code == 0) {
 		bt_shell_print("success to release");
@@ -376,14 +376,14 @@ void app_release_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 	}
 }
 
-int app_start_req(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code)
+static int app_start_req(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code)
 {
 	*rsp_err_code = 0;
 	bt_shell_print("receive requesting start and accept");
 	return 0;
 }
 
-void app_start_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
+static void app_start_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 {
 	if (rsp_err_code == 0) {
 		bt_shell_print("success to start");
@@ -392,14 +392,14 @@ void app_start_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 	}
 }
 
-int app_suspend_req(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code)
+static int app_suspend_req(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code)
 {
 	*rsp_err_code = 0;
 	bt_shell_print("receive requesting suspend and accept");
 	return 0;
 }
 
-void app_suspend_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
+static void app_suspend_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 {
 	if (rsp_err_code == 0) {
 		bt_shell_print("success to suspend");
@@ -408,33 +408,33 @@ void app_suspend_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 	}
 }
 
-void stream_configured(struct bt_a2dp_stream *stream)
+static void stream_configured(struct bt_a2dp_stream *stream)
 {
 	bt_shell_print("stream configured");
 }
 
-void stream_established(struct bt_a2dp_stream *stream)
+static void stream_established(struct bt_a2dp_stream *stream)
 {
 	bt_shell_print("stream established");
 }
 
-void stream_released(struct bt_a2dp_stream *stream)
+static void stream_released(struct bt_a2dp_stream *stream)
 {
 	bt_shell_print("stream released");
 }
 
-void stream_started(struct bt_a2dp_stream *stream)
+static void stream_started(struct bt_a2dp_stream *stream)
 {
 	bt_shell_print("stream started");
 }
 
-void stream_suspended(struct bt_a2dp_stream *stream)
+static void stream_suspended(struct bt_a2dp_stream *stream)
 {
 	bt_shell_print("stream suspended");
 }
 
-void sink_sbc_streamer_data(struct bt_a2dp_stream *stream, struct net_buf *buf,
-			uint16_t seq_num, uint32_t ts)
+static void sink_sbc_streamer_data(struct bt_a2dp_stream *stream, struct net_buf *buf,
+				   uint16_t seq_num, uint32_t ts)
 {
 	uint8_t sbc_hdr;
 
@@ -448,20 +448,21 @@ void sink_sbc_streamer_data(struct bt_a2dp_stream *stream, struct net_buf *buf,
 		buf->data[1], buf->data[2], buf->data[3], buf->data[4], buf->data[5]);
 }
 
-void stream_recv(struct bt_a2dp_stream *stream,
-		struct net_buf *buf, uint16_t seq_num, uint32_t ts)
+static void stream_recv(struct bt_a2dp_stream *stream,
+			struct net_buf *buf, uint16_t seq_num, uint32_t ts)
 {
 	sink_sbc_streamer_data(stream, buf, seq_num, ts);
 }
 
-int app_delay_report_req(struct bt_a2dp_stream *stream, uint16_t value, uint8_t *rsp_err_code)
+static int app_delay_report_req(struct bt_a2dp_stream *stream, uint16_t value,
+				uint8_t *rsp_err_code)
 {
 	*rsp_err_code = 0;
 	bt_shell_print("receive delay report and accept");
 	return 0;
 }
 
-void app_delay_report_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
+static void app_delay_report_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 {
 	if (rsp_err_code == 0) {
 		bt_shell_print("success to send report delay");
@@ -470,15 +471,15 @@ void app_delay_report_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 	}
 }
 
-int app_get_config_req(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code)
+static int app_get_config_req(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code)
 {
 	*rsp_err_code = 0;
 	bt_shell_print("receive get config request and accept");
 	return 0;
 }
 
-void app_get_config_rsp(struct bt_a2dp_stream *stream, struct bt_a2dp_codec_cfg *codec_cfg,
-			uint8_t rsp_err_code)
+static void app_get_config_rsp(struct bt_a2dp_stream *stream, struct bt_a2dp_codec_cfg *codec_cfg,
+			       uint8_t rsp_err_code)
 {
 	bt_shell_print("get config result: %d", rsp_err_code);
 
@@ -489,7 +490,7 @@ void app_get_config_rsp(struct bt_a2dp_stream *stream, struct bt_a2dp_codec_cfg 
 	}
 }
 
-struct bt_a2dp_cb a2dp_cb = {
+static struct bt_a2dp_cb a2dp_cb = {
 	.connected = app_connected,
 	.disconnected = app_disconnected,
 	.config_req = app_config_req,
@@ -620,7 +621,7 @@ static int cmd_disconnect(const struct shell *sh, int32_t argc, char *argv[])
 	return 0;
 }
 
-void delay_report(struct bt_a2dp_stream *stream, uint16_t value)
+static void delay_report(struct bt_a2dp_stream *stream, uint16_t value)
 {
 	bt_shell_print("received delay report: %d 1/10ms", value);
 }
@@ -705,7 +706,7 @@ static uint8_t bt_a2dp_discover_peer_endpoint_cb(struct bt_a2dp *a2dp,
 
 static struct bt_avdtp_sep_info found_seps[5];
 
-struct bt_a2dp_discover_param discover_param = {
+static struct bt_a2dp_discover_param discover_param = {
 	.cb = bt_a2dp_discover_peer_endpoint_cb,
 	.seps_info = &found_seps[0],
 	.sep_count = 5,
