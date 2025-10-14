@@ -863,6 +863,10 @@ int bt_br_init(void)
 		return err;
 	}
 
+#if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
+	strncpy(bt_dev.name, CONFIG_BT_DEVICE_NAME, CONFIG_BT_DEVICE_NAME_MAX);
+#endif
+
 	/* Set Class of device */
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {

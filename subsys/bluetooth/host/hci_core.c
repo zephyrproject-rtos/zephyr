@@ -4766,6 +4766,14 @@ int bt_set_name(const char *name)
 		}
 	}
 
+	if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
+		err = bt_br_write_local_name(bt_dev.name);
+		if (err) {
+			LOG_WRN("Unable to set local name");
+			return err;
+		}
+	}
+
 	return 0;
 #else
 	return -ENOMEM;
