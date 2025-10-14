@@ -135,7 +135,7 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #define USB_USBPHYC_CR_FSEL_24MHZ        USB_USBPHYC_CR_FSEL_1
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) && defined(CONFIG_SOC_SERIES_STM32U5X)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_otghs_phy)
 static const int syscfg_otg_hs_phy_clk[] = {
 	SYSCFG_OTG_HS_PHY_CLK_SELECT_1,	/* 16Mhz   */
 	SYSCFG_OTG_HS_PHY_CLK_SELECT_2,	/* 19.2Mhz */
@@ -1266,6 +1266,29 @@ static int priv_clock_enable(void)
 
 	/* Enable VDDUSB */
 	LL_PWR_EnableVddUSB();
+#elif defined(CONFIG_SOC_SERIES_STM32WBAX)
+	/* Remove VDDUSB power isolation */
+	LL_PWR_EnableVddUSB();
+
+	/* Make sure that voltage scaling is Range 1 */
+	__ASSERT_NO_MSG(LL_PWR_GetRegulCurrentVOS() == LL_PWR_REGU_VOLTAGE_SCALE1);
+
+	/* Enable VDD11USB */
+	LL_PWR_EnableVdd11USB();
+
+	/* Enable USB OTG internal power */
+	LL_PWR_EnableUSBPWR();
+
+	while (!LL_PWR_IsActiveFlag_VDD11USBRDY()) {
+		/* Wait for VDD11USB supply to be ready */
+	}
+
+	/* Enable USB OTG booster */
+	LL_PWR_EnableUSBBooster();
+
+	while (!LL_PWR_IsActiveFlag_USBBOOSTRDY()) {
+		/* Wait for USB OTG booster to be ready */
+	}
 #elif defined(PWR_USBSCR_USB33SV) || defined(PWR_SVMCR_USV)
 	/*
 	 * VDDUSB independent USB supply (PWR clock is on)
@@ -1331,16 +1354,31 @@ static int priv_clock_enable(void)
 
 	/* Peripheral OTGPHY clock enable */
 	LL_AHB5_GRP1_EnableClock(LL_AHB5_GRP1_PERIPH_OTGPHY1);
-#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_otghs_phy)
+	const struct stm32_pclken hsphy_clk[] = STM32_DT_CLOCKS(DT_NODELABEL(otghs_phy));
+	const uint32_t hsphy_clknum = DT_NUM_CLOCKS(DT_NODELABEL(otghs_phy));
+
 	/* Configure OTG PHY reference clock through SYSCFG */
-	LL_APB3_GRP1_EnableClock(LL_APB3_GRP1_PERIPH_SYSCFG);
+	__HAL_RCC_SYSCFG_CLK_ENABLE();
+
 	HAL_SYSCFG_SetOTGPHYReferenceClockSelection(
 		syscfg_otg_hs_phy_clk[DT_ENUM_IDX(DT_NODELABEL(otghs_phy), clock_reference)]
 	);
 
 	/* De-assert reset and enable clock of OTG PHY */
 	HAL_SYSCFG_EnableOTGPHY(SYSCFG_OTG_HS_PHY_ENABLE);
-	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_USBPHY);
+
+	if (hsphy_clknum > 1) {
+		if (clock_control_configure(clk, (void *)&hsphy_clk[1], NULL) != 0) {
+			LOG_ERR("Failed OTGHS PHY mux configuration");
+			return -EIO;
+		}
+	}
+
+	if (clock_control_on(clk, (void *)&hsphy_clk[0]) != 0) {
+		LOG_ERR("Failed enabling OTGHS PHY clock");
+		return -EIO;
+	}
 #elif defined(CONFIG_SOC_SERIES_STM32H7X)
 	/*
 	 * If HS PHY (over ULPI) is used, enable ULPI interface clock.
