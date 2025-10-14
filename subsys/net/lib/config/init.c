@@ -1134,6 +1134,18 @@ int net_config_get(struct networking *cfg)
 		settings_loaded = true;
 	}
 
+	/* Verify that the yaml schema file is not changed between what is in
+	 * use and what was used when the user modified the configuration.
+	 */
+	if (net_init_config_user.config_format_hash != NULL &&
+	    strncmp(config->config_format_hash,
+		    net_init_config_user.config_format_hash,
+		    sizeof(config->config_format_hash) - 1) != 0) {
+		NET_ERR("User network configuration format hash mismatch");
+		settings_loaded = false;
+		return -EINVAL;
+	}
+
 	/* Make a union of the default config and the user modified one and
 	 * return results in cfg pointer.
 	 */
