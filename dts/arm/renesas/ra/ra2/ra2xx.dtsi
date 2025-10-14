@@ -158,6 +158,15 @@
 				channel = <0>;
 				status = "disabled";
 			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <0>;
+				overrun-character = <0x00>;
+				status = "disabled";
+			};
 		};
 
 		sci1: sci@40070020 {
@@ -171,6 +180,15 @@
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <1>;
+				status = "disabled";
+			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <1>;
+				overrun-character = <0x00>;
 				status = "disabled";
 			};
 		};
@@ -216,6 +234,15 @@
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <9>;
+				status = "disabled";
+			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <9>;
+				overrun-character = <0x00>;
 				status = "disabled";
 			};
 		};

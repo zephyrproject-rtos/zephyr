@@ -29,6 +29,15 @@
 				channel = <1>;
 				status = "disabled";
 			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <1>;
+				overrun-character = <0x00>;
+				status = "disabled";
+			};
 		};
 
 		sci2: sci2@40118200 {
@@ -42,6 +51,15 @@
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <2>;
+				status = "disabled";
+			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <2>;
+				overrun-character = <0x00>;
 				status = "disabled";
 			};
 		};
@@ -59,6 +77,15 @@
 				channel = <3>;
 				status = "disabled";
 			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <3>;
+				overrun-character = <0x00>;
+				status = "disabled";
+			};
 		};
 
 		sci4: sci4@40118400 {
@@ -72,6 +99,15 @@
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <4>;
+				status = "disabled";
+			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <4>;
+				overrun-character = <0x00>;
 				status = "disabled";
 			};
 		};
@@ -89,6 +125,15 @@
 				channel = <5>;
 				status = "disabled";
 			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <5>;
+				overrun-character = <0x00>;
+				status = "disabled";
+			};
 		};
 
 		sci6: sci6@40118600 {
@@ -102,6 +147,15 @@
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <6>;
+				status = "disabled";
+			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <6>;
+				overrun-character = <0x00>;
 				status = "disabled";
 			};
 		};
@@ -119,6 +173,15 @@
 				channel = <7>;
 				status = "disabled";
 			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <7>;
+				overrun-character = <0x00>;
+				status = "disabled";
+			};
 		};
 
 		sci8: sci8@40118800 {
@@ -132,6 +195,15 @@
 			uart {
 				compatible = "renesas,ra-sci-uart";
 				channel = <8>;
+				status = "disabled";
+			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <8>;
+				overrun-character = <0x00>;
 				status = "disabled";
 			};
 		};
