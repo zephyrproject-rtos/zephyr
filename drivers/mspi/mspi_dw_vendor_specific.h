@@ -14,6 +14,10 @@
 
 #include <nrf.h>
 
+/* Empty macros for generic case - no vendor-specific data */
+#define VENDOR_SPECIFIC_DATA_DEFINE(inst)
+#define VENDOR_SPECIFIC_DATA_GET(inst) NULL
+
 static inline void vendor_specific_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -97,7 +101,217 @@ static inline int vendor_specific_xip_disable(const struct device *dev,
 }
 #endif /* defined(CONFIG_MSPI_XIP) */
 
-#else
+#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_qspi_v2)
+#define MSPI_DT_DRV_COMPAT nordic_nrf_qspi_v2
+#include <nrf.h>
+
+static inline void vendor_specific_init(const struct device *dev)
+{
+	const struct mspi_dw_config *config = dev->config;
+	NRF_QSPI_Type *preg = (NRF_QSPI_Type *)config->wrapper_regs;
+
+	preg->EVENTS_CORE = 0;
+	preg->EVENTS_DMA.DONE = 0;
+
+	preg->INTENSET = BIT(QSPI_INTENSET_CORE_Pos)
+		       | BIT(QSPI_INTENSET_DMADONE_Pos);
+}
+
+static inline void vendor_specific_suspend(const struct device *dev)
+{
+	const struct mspi_dw_config *config = dev->config;
+	NRF_QSPI_Type *preg = (NRF_QSPI_Type *)config->wrapper_regs;
+
+	preg->ENABLE = 0;
+}
+
+static inline void vendor_specific_resume(const struct device *dev)
+{
+	const struct mspi_dw_config *config = dev->config;
+	NRF_QSPI_Type *preg = (NRF_QSPI_Type *)config->wrapper_regs;
+
+	preg->ENABLE = 1;
+
+}
+
+static inline void vendor_specific_irq_clear(const struct device *dev)
+{
+	const struct mspi_dw_config *config = dev->config;
+	NRF_QSPI_Type *preg = (NRF_QSPI_Type *)config->wrapper_regs;
+
+	preg->EVENTS_CORE = 0;
+	preg->EVENTS_DMA.DONE = 0;
+}
+
+/* DMA support */
+
+#define EVDMA_ATTR_LEN_Pos (0UL)
+#define EVDMA_ATTR_LEN_Msk (0x00FFFFFFUL)
+
+#define EVDMA_ATTR_ATTR_Pos (24UL)
+#define EVDMA_ATTR_ATTR_Msk (0x3FUL << EVDMA_ATTR_ATTR_Pos)
+
+#define EVDMA_ATTR_32AXI_Pos (30UL)
+#define EVDMA_ATTR_32AXI_Msk (0x1UL << EVDMA_ATTR_32AXI_Pos)
+
+#define EVDMA_ATTR_EVENTS_Pos (31UL)
+#define EVDMA_ATTR_EVENTS_Msk (0x1UL << EVDMA_ATTR_EVENTS_Pos)
+
+typedef enum {
+	EVDMA_BYTE_SWAP = 0,
+	EVDMA_JOBLIST = 1,
+	EVDMA_BUFFER_FILL = 2,
+	EVDMA_FIXED_ATTR = 3,
+	EVDMA_STATIC_ADDR = 4,
+	EVDMA_PLAIN_DATA_BUF_WR = 5,
+} EVDMA_ATTR_Type;
+
+/* Setup EVDMA attribute with the following configuratrion */
+#define EVDMA_ATTRIBUTE (BIT(EVDMA_BYTE_SWAP)   | BIT(EVDMA_JOBLIST)    | \
+			 BIT(EVDMA_BUFFER_FILL) | BIT(EVDMA_FIXED_ATTR) | \
+			 BIT(EVDMA_STATIC_ADDR) | BIT(EVDMA_PLAIN_DATA_BUF_WR))
+
+
+typedef struct {
+	uint8_t *addr;
+	uint32_t attr;
+} EVDMA_JOB_Type;
+
+#define EVDMA_JOB(BUFFER, SIZE, ATTR) \
+	(EVDMA_JOB_Type) { .addr = (uint8_t *)BUFFER, .attr = (ATTR << EVDMA_ATTR_ATTR_Pos | SIZE) }
+#define EVDMA_NULL_JOB() \
+	(EVDMA_JOB_Type) { .addr = (uint8_t *)0, .attr = 0 }
+typedef struct {
+	EVDMA_JOB_Type *tx_job;
+	EVDMA_JOB_Type *rx_job;
+} QSPI_TRANSFER_LIST_Type;
+
+/* Number of jobs needed for transmit trasaction */
+#define MAX_NUM_JOBS 4
+
+/* Vendor-specific data structure for Nordic QSPI */
+typedef struct {
+	QSPI_TRANSFER_LIST_Type *transfer_list;
+	EVDMA_JOB_Type *joblist;
+} nordic_qspi_vendor_data_t;
+
+/* Static allocation macros for vendor-specific data */
+#define VENDOR_SPECIFIC_DATA_DEFINE(inst) \
+	static QSPI_TRANSFER_LIST_Type mspi_dw_##inst##_transfer_list; \
+	static EVDMA_JOB_Type mspi_dw_##inst##_joblist[MAX_NUM_JOBS]; \
+	static nordic_qspi_vendor_data_t mspi_dw_##inst##_vendor_data = { \
+		.transfer_list = &mspi_dw_##inst##_transfer_list, \
+		.joblist = &mspi_dw_##inst##_joblist[0] \
+	};
+
+#define VENDOR_SPECIFIC_DATA_GET(inst) &mspi_dw_##inst##_vendor_data
+
+/* Temporarily hard-coded as not in MDK yet */
+#define QSPI_TMOD_OFFSET (0x490UL)
+#define QSPI_TMOD_RX_ONLY (0x2)
+static inline void vendor_specific_start_dma_xfer(const struct device *dev)
+{
+	struct mspi_dw_data *dev_data = dev->data;
+	const struct mspi_dw_config *config = dev->config;
+	const struct mspi_xfer_packet *packet =
+		&dev_data->xfer.packets[dev_data->packets_done];
+	NRF_QSPI_Type *preg = (NRF_QSPI_Type *)config->wrapper_regs;
+
+	/* Use vendor-specific data from config - stores job and transfer lists */
+	nordic_qspi_vendor_data_t *vendor_data = (nordic_qspi_vendor_data_t *)
+						 config->vendor_specific_data;
+
+
+	QSPI_TRANSFER_LIST_Type *transfer_list = vendor_data->transfer_list;
+	EVDMA_JOB_Type *joblist = vendor_data->joblist;
+
+	int tmod = 0;
+	int job_idx = 0;
+
+	if (packet->dir == MSPI_TX) {
+		preg->CONFIG.RXTRANSFERLENGTH = 0;
+
+		/* Setting up EVDMA joblist depending on cmd, addr and data */
+
+		/*
+		 * Command address will always have a length of 4 from the DMA's perspective,
+		 * QSPI peripheral will use length of data specified in core registers
+		 */
+		if (dev_data->xfer.cmd_length > 0) {
+			joblist[job_idx++] = EVDMA_JOB(&packet->cmd, 4, EVDMA_ATTRIBUTE);
+		}
+		if (dev_data->xfer.addr_length > 0) {
+			joblist[job_idx++] = EVDMA_JOB(&packet->address, 4, EVDMA_ATTRIBUTE);
+		}
+		if (packet->num_bytes > 0) {
+			joblist[job_idx++] = EVDMA_JOB(packet->data_buf, packet->num_bytes,
+						       EVDMA_ATTRIBUTE);
+		}
+		/* Always terminate with null job */
+		joblist[job_idx] = EVDMA_NULL_JOB();
+		/* tx_job should point to first valid job, or null if none */
+		if (job_idx > 0) {
+			transfer_list->tx_job = &joblist[0];
+		} else {
+			transfer_list->tx_job = &joblist[job_idx];
+		}
+
+		/* rx_job always EVDMA_NULL_JOB() for transmit */
+		transfer_list->rx_job = &joblist[job_idx];
+		tmod = 0;
+	} else {
+		preg->CONFIG.RXTRANSFERLENGTH = ((packet->num_bytes + dev_data->xfer.addr_length +
+						dev_data->xfer.cmd_length) >>
+						dev_data->bytes_per_frame_exp) - 1;
+		joblist[0] = EVDMA_JOB(packet->data_buf, packet->num_bytes, EVDMA_ATTRIBUTE);
+		joblist[1] = EVDMA_NULL_JOB();
+		transfer_list->tx_job = &joblist[1];
+		transfer_list->rx_job = &joblist[0];
+
+		tmod = QSPI_TMOD_RX_ONLY;
+	}
+
+	/*
+	 * In slave mode, a tmod register in the wrapper also needs to be set. Currently
+	 * the address not in MDK so temp fix.
+	 */
+	uintptr_t tmod_addr = (uintptr_t)preg + QSPI_TMOD_OFFSET;
+
+	sys_write32(tmod, tmod_addr);
+
+	preg->CONFIG.TXBURSTLENGTH = (config->tx_fifo_depth_minus_1+1)-config->dma_tx_data_level;
+	preg->CONFIG.RXBURSTLENGTH = config->dma_rx_data_level+1;
+	preg->DMA.CONFIG.LISTPTR = (uint32_t)transfer_list;
+
+	preg->INTENSET = BIT(QSPI_INTENSET_CORE_Pos)
+		       | BIT(QSPI_INTENSET_DMADONE_Pos);
+
+	preg->TASKS_START = 1;
+}
+
+static inline bool vendor_specific_dma_accessible_check(const struct device *dev,
+							const uint8_t *data_buf)
+{
+	const struct mspi_dw_config *config = dev->config;
+	NRF_QSPI_Type *preg = (NRF_QSPI_Type *)config->wrapper_regs;
+
+	return nrf_dma_accessible_check(preg, data_buf);
+}
+
+static inline bool vendor_specific_read_dma_irq(const struct device *dev)
+{
+	const struct mspi_dw_config *config = dev->config;
+	NRF_QSPI_Type *preg = (NRF_QSPI_Type *)config->wrapper_regs;
+
+	return (bool) preg->EVENTS_DMA.DONE;
+}
+
+#else /* Supply empty vendor specific macros for generic case */
+
+/* Empty macros for generic case - no vendor-specific data */
+#define VENDOR_SPECIFIC_DATA_DEFINE(inst)
+#define VENDOR_SPECIFIC_DATA_GET(inst) NULL
+
 static inline void vendor_specific_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -134,4 +348,24 @@ static inline int vendor_specific_xip_disable(const struct device *dev,
 
 	return 0;
 }
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_exmif) */
+#if defined(CONFIG_MSPI_DMA)
+static inline void vendor_specific_start_dma_xfer(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
+static inline bool vendor_specific_dma_accessible_check(const struct device *dev,
+							const uint8_t *data_buf) {
+	ARG_UNUSED(dev);
+	ARG_UNUSED(data_buf);
+
+	return true;
+}
+static inline bool vendor_specific_read_dma_irq(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return true;
+}
+#endif /* defined(CONFIG_MSPI_DMA) */
+#endif /* Empty vendor specific macros */

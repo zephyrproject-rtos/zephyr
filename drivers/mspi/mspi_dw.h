@@ -173,6 +173,22 @@
 #define XIP_WRITE_CTRL_FRF_QUAD		2UL
 #define XIP_WRITE_CTRL_FRF_OCTAL	3UL
 
+/* DMACR - DMA Control Register */
+#define DMACR_ATW_MASK			GENMASK(4, 3)
+#define DMACR_ATW_1			0UL
+#define DMACR_ATW_2			1UL
+#define DMACR_ATW_4			2UL
+#define DMACR_ATW_8			3UL
+#define DMACR_IDMAE_BIT			BIT(2)
+#define DMACR_TDMAE_BIT			BIT(1)
+#define DMACR_RDMAE_BIT			BIT(0)
+
+/* DMATDLR - DMA Transmit Data Level */
+#define DMATDLR_DMATDL_MASK		GENMASK(3, 0)
+
+/* DMARDLR - DMA Receive Data Level */
+#define DMARDLR_DMARDL_MASK		GENMASK(3, 0)
+
 /* Register access helpers. */
 #define USES_AUX_REG(inst) + DT_INST_PROP(inst, aux_reg_enable)
 #define AUX_REG_INSTANCES (0 DT_INST_FOREACH_STATUS_OKAY(USES_AUX_REG))
