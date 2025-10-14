@@ -1,0 +1,87 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP PDM Microphone Interface (MICFIL)
+
+compatible: "nxp,micfil"
+
+include:
+  - base.yaml
+  - pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  quality-mode:
+    type: int
+    enum: [0, 1, 4, 5, 6, 7]
+    default: 0
+    description: |
+      Decimation filter quality mode.
+      0 = Medium, default value, PoR reset value of register
+      1 = High
+      4 = VeryLow2
+      5 = VeryLow1
+      6 = VeryLow0
+      7 = Low
+
+  cic-decimation-rate:
+    type: int
+    description: |
+      CIC filter decimation rate setting,
+      range is SoC specific, may [0, 15] or [8, 31]
+      The final OSR = (16 - cic-decimation-rate)
+      CIC decimation rate = 2 * OSR; If HQ, VLQ0 mode.
+      CIC decimation rate = OSR; If other modes.
+      0: CIC oversampling rate = 0, default value, PoR reset value
+      1: CIC oversampling rate = 1
+      ...
+      15: CIC oversampling rate = 15
+
+  fifo-watermark:
+    type: int
+    description: |
+      FIFO watermark level (implementation defined, typically 7),
+      range is SoC specific, may [0, 7] or [0, 15].
+      Default is PoR reset value of register.
+
+  sample-rate:
+    type: int
+    enum: [8000, 12000, 16000, 24000, 32000, 48000, 96000]
+    description: |
+      Sample rate in Hz.
+
+child-binding:
+  description: |
+    NXP MICFIL channel. Can be used to configure DC remover cutoff frequency and gain
+  include:
+    - name: base.yaml
+      property-allowlist:
+        - reg
+  properties:
+    reg:
+      required: true
+    dc-remover-cutoff-freq:
+      type: int
+      enum: [0, 1, 2, 3]
+      default: 0
+      description: |
+        DC remover cutoff frequency in Hz
+        0: 20Hz (FS=48KHz), default value, PoR reset value
+        1: 13.3Hz (FS=48KHz)
+        2: 40Hz (FS=48KHz)
+        3: DC remover is bypassed
+
+    decimation-filter-gain:
+      type: int
+      default: 0
+      description: |
+        Decimation filter gain setting, range: [0, 15].
+        Default is PoR reset value of register.
