@@ -1295,8 +1295,11 @@
 		npu: npu@580c0000 {
 			compatible = "st,stm32-npu";
 			reg = <0x580c0000 0x1000>;
-			clocks = <&rcc STM32_CLOCK(AHB5, 31)>;
-			resets = <&rctl STM32_RESET(AHB5, 31)>;
+			clocks = <&rcc STM32_CLOCK(AHB5, 31)>,
+				 <&rcc STM32_CLOCK(AHB5, 30)>;
+			clock-names = "npu", "cacheaxi";
+			resets = <&rctl STM32_RESET(AHB5, 31)>,
+				 <&rctl STM32_RESET(AHB5, 30)>;
 			status = "disabled";
 		};
 
