@@ -188,6 +188,8 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE=boards/mx25uw63_single_io.overlay
+    harness_config:
+      fixture: gpio_loopback
   drivers.flash.common.ra_qspi_nor:
     filter: CONFIG_FLASH_RENESAS_RA_QSPI and dt_compat_enabled("renesas,ra-qspi-nor")
     platform_allow:
@@ -203,6 +205,8 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE=boards/mx25uw63_single_io_4B_addr_sreset.overlay
+    harness_config:
+      fixture: gpio_loopback
   drivers.flash.common.mspi_low_frequency:
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
