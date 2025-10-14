@@ -536,6 +536,26 @@ function(zephyr_library_sources source)
   target_sources(${ZEPHYR_CURRENT_LIBRARY} PRIVATE ${source} ${ARGN})
 endfunction()
 
+#
+# Use this function to add source files to a zephyr library in a module.
+# This should be used with zephyr_library_amend() and ensures that same sources
+# are added only once and in the right order.
+#
+function(zephyr_library_sources_amend source)
+  get_target_property(CURRENT_SOURCES ${ZEPHYR_CURRENT_LIBRARY} SOURCES)
+  get_filename_component(sourcex ${source} NAME)
+  list(FIND CURRENT_SOURCES ${sourcex} _index)
+  if(_index EQUAL -1)
+    # Source file not found, add it
+    target_sources(${ZEPHYR_CURRENT_LIBRARY} PRIVATE ${source} ${ARGN})
+  else()
+    # replace the source file with the new one
+    list(REMOVE_AT CURRENT_SOURCES ${_index})
+    set_target_properties(${ZEPHYR_CURRENT_LIBRARY} PROPERTIES SOURCES "${CURRENT_SOURCES}")
+    target_sources(${ZEPHYR_CURRENT_LIBRARY} PRIVATE ${source} ${ARGN})
+  endif()
+endfunction()
+
 function(zephyr_library_include_directories)
   target_include_directories(${ZEPHYR_CURRENT_LIBRARY} PRIVATE ${ARGN})
 endfunction()
@@ -2066,6 +2086,12 @@ endfunction()
 function(zephyr_library_sources_ifdef feature_toggle source)
   if(${${feature_toggle}})
     zephyr_library_sources(${source} ${ARGN})
+  endif()
+endfunction()
+
+function(zephyr_library_sources_amend_ifdef feature_toggle source)
+  if(${${feature_toggle}})
+    zephyr_library_sources_amend(${source} ${ARGN})
   endif()
 endfunction()
 
