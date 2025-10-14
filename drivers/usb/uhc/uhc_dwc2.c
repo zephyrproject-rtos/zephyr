@@ -875,6 +875,8 @@ static inline int uhc_dwc2_config_phy(const struct device *dev)
 			LOG_WRN("Highspeed UTMI+ PHY init");
 			/* Select UTMI+ PHY (internal) */
 			gusbcfg &= ~USB_DWC2_GUSBCFG_ULPI_UTMI_SEL_ULPI;
+			gusbcfg |= USB_DWC2_GUSBCFG_PHYSEL_USB20 |
+				   USB_DWC2_GUSBCFG_ULPI_UTMI_SEL_UTMI;
 			/* Set 16-bit interface if supported */
 			if (priv->const_cfg.phydatawidth) {
 				gusbcfg |= USB_DWC2_GUSBCFG_PHYIF_16_BIT;
@@ -1013,6 +1015,20 @@ static int uhc_dwc2_init_controller(const struct device *dev)
 	        priv->channels.hdls[i] = NULL;
 	    }
 	}
+
+	/*
+	 * TODO: As soon as the refactoring is complete, DWC2 will of course be configured
+	 * in host mode.
+	 */
+	sys_set_bits((mem_addr_t)&dwc2->gusbcfg, USB_DWC2_GUSBCFG_FORCEDEVMODE);
+	k_msleep(25);
+	sys_set_bits((mem_addr_t)&dwc2->gintmsk,
+		USB_DWC2_GINTSTS_OEPINT | USB_DWC2_GINTSTS_IEPINT |
+		USB_DWC2_GINTSTS_ENUMDONE | USB_DWC2_GINTSTS_USBRST |
+		USB_DWC2_GINTSTS_WKUPINT | USB_DWC2_GINTSTS_USBSUSP |
+		USB_DWC2_GINTSTS_PRTINT | USB_DWC2_GINTSTS_HCHINT |
+		USB_DWC2_GINTSTS_GOUTNAKEFF);
+	sys_clear_bits((mem_addr_t)&dwc2->dctl, USB_DWC2_DCTL_SFTDISCON);
 
 	return ret;
 }
