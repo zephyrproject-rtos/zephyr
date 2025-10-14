@@ -56,7 +56,9 @@ jobs:
     - name: Install Python dependencies
       run: |
         python3 -m pip install --upgrade pip
-        if [ -f scripts/requirements-actions.txt ]; then
+        if [ -f scripts/requirements-actions-small.txt ]; then
+          python3 -m pip install -r scripts/requirements-actions-small.txt
+        elif [ -f scripts/requirements-actions.txt ]; then
           python3 -m pip install -r scripts/requirements-actions.txt
         else
           python3 -m pip install pygithub==2.8.1
