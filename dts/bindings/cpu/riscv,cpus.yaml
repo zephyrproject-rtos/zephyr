@@ -21,3 +21,21 @@ properties:
     description: RISC-V instruction set architecture
     required: true
     type: string
+
+  riscv,isa-base:
+    description: The base ISA implemented by the hart.
+    type: string
+    enum:
+      - rv32i
+      - rv32e
+      - rv64i
+      - rv128i
+
+  riscv,isa-extensions:
+    description: |
+      Extensions supported by the hart. Take a look at
+      https://www.kernel.org/doc/Documentation/devicetree/bindings/riscv/extensions.yaml
+      and https://gcc.gnu.org/onlinedocs/gcc/RISC-V-Options.html
+      for a list of possible extensions. Not all options listed there are
+      necessarily supported by Zephyr.
+    type: string-array
