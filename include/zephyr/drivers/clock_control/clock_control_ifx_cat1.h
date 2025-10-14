@@ -43,6 +43,22 @@
 		IFX_CAT1_PERIPHERAL_GROUP_ADJUST((instance), (gr), CY_SYSCLK_DIV_24_5_BIT)
 #endif
 
+/* High frequency clock indices. */
+#define CLK_HF0  (0U)
+#define CLK_HF1  (1U)
+#define CLK_HF2  (2U)
+#define CLK_HF3  (3U)
+#define CLK_HF4  (4U)
+#define CLK_HF5  (5U)
+#define CLK_HF6  (6U)
+#define CLK_HF7  (7U)
+#define CLK_HF8  (8U)
+#define CLK_HF9  (9U)
+#define CLK_HF10 (10U)
+#define CLK_HF11 (11U)
+#define CLK_HF12 (12U)
+#define CLK_HF13 (13U)
+
 enum ifx_cat1_clock_block {
 #if defined(CONFIG_SOC_FAMILY_INFINEON_CAT1A)
 	/* The first four items are here for backwards compatibility with old clock APIs */
