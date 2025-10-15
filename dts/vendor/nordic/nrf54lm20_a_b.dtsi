@@ -253,6 +253,12 @@
 					ghwcfg4 = <0x3e10aa60>;
 					status = "disabled";
 				};
+
+				usbhs_bc12: usbhs_bc12 {
+					compatible = "nordic,nrf-usbhs-bc12";
+					charging-mode = "BC12_TYPE_NONE";
+					status = "disabled";
+				};
 			};
 
 			dppic10: dppic@82000 {
