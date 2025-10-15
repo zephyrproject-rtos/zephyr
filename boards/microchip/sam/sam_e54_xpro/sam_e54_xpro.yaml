@@ -12,6 +12,7 @@ ram: 256
 supported:
   - clock_control
   - flash
+  - gpio
   - mcuboot
   - pinctrl
   - pwm
