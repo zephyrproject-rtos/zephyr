@@ -482,6 +482,9 @@ extern const struct in6_addr in6addr_loopback;
 #define NET_IPV6_ADDR_LEN sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxx.xxx.xxx.xxx")
 #define NET_IPV4_ADDR_LEN sizeof("xxx.xxx.xxx.xxx")
 
+/* Max length of the IPv6 address as a string without IPv4 mapping */
+#define NET_IPV6_ADDR_STR_LEN sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx")
+
 /** @endcond */
 
 /** @brief IP Maximum Transfer Unit */
