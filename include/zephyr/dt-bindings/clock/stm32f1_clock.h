@@ -38,6 +38,8 @@
 #define BDCR_REG		0x20
 
 /** @brief Device domain clocks selection helpers */
+/** CFGR1 devices */
+#define ADC_PRE(val)		STM32_DT_CLOCK_SELECT((val), 15, 14, CFGR1_REG)
 /** CFGR2 devices */
 #define I2S2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 17, 17, CFGR2_REG)
 #define I2S3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 18, 18, CFGR2_REG)
@@ -47,5 +49,11 @@
 /** CFGR1 devices */
 #define MCO1_SEL(val)           STM32_DT_CLOCK_SELECT((val), 26, 24, CFGR1_REG)
 /* No MCO prescaler support on STM32F1 series. */
+
+/* ADC prescaler division factor */
+#define ADC_PRE_DIV_2		0
+#define ADC_PRE_DIV_4		1
+#define ADC_PRE_DIV_6		2
+#define ADC_PRE_DIV_8		3
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F1_CLOCK_H_ */
