@@ -15,7 +15,6 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/types.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys/ring_buffer.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <hci_core.h>

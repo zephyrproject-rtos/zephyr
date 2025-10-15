@@ -95,7 +95,7 @@ struct decoded_sdu {
 	uint32_t ts;
 } decoded_sdu;
 
-RING_BUF_DECLARE(usb_in_ring_buf, USB_IN_RING_BUF_SIZE);
+RING_BUFFER_DEFINE(usb_in_ring_buf, USB_IN_RING_BUF_SIZE);
 K_MEM_SLAB_DEFINE_STATIC(usb_in_buf_pool, ROUND_UP(USB_STEREO_FRAME_SIZE, UDC_BUF_GRANULARITY),
 			 USB_ENQUEUE_COUNT, UDC_BUF_ALIGN);
 
@@ -118,7 +118,7 @@ static void usb_data_request(const struct device *dev)
 	}
 
 	/* This may fail without causing issues since usb_audio_data is 0-initialized */
-	size = ring_buf_get(&usb_in_ring_buf, pcm_buf, USB_STEREO_FRAME_SIZE);
+	size = ring_buffer_read(&usb_in_ring_buf, pcm_buf, USB_STEREO_FRAME_SIZE);
 	if (size != USB_STEREO_FRAME_SIZE) {
 		/* If we could not fill the buffer, zero-fill the rest (possibly all) */
 		memset(((uint8_t *)pcm_buf) + size, 0, USB_STEREO_FRAME_SIZE - size);
@@ -181,7 +181,7 @@ static void bap_usb_send_frames_to_usb(void)
 		uint32_t rb_size;
 
 		/* Not enough space to store data */
-		if (ring_buf_space_get(&usb_in_ring_buf) < sizeof(stereo_frame)) {
+		if (ring_buffer_space(&usb_in_ring_buf) < sizeof(stereo_frame)) {
 			if ((fail_cnt % bap_get_stats_interval()) == 0U) {
 				LOG_WRN("[%zu] Could not send more than %zu frames to USB",
 					fail_cnt, i);
@@ -219,7 +219,7 @@ static void bap_usb_send_frames_to_usb(void)
 			}
 		}
 
-		rb_size = ring_buf_put(&usb_in_ring_buf, (uint8_t *)stereo_frame,
+		rb_size = ring_buffer_write(&usb_in_ring_buf, (uint8_t *)stereo_frame,
 				       sizeof(stereo_frame));
 		if (rb_size != sizeof(stereo_frame)) {
 			LOG_WRN("Failed to put frame on USB ring buf");

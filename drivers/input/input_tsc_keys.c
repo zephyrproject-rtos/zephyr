@@ -345,7 +345,7 @@ DT_INST_FOREACH_STATUS_OKAY(STM32_TSC_INIT)
 
 struct input_tsc_keys_data {
 	uint32_t buffer[CONFIG_INPUT_STM32_TSC_KEYS_BUFFER_WORD_SIZE];
-	struct ring_buf rb;
+	struct ring_buffer rb;
 	bool expect_release;
 	struct k_timer sampling_timer;
 };
@@ -372,11 +372,11 @@ static void input_tsc_callback_handler(uint32_t count_value, void *user_data)
 		(const struct input_tsc_keys_config *)dev->config;
 	struct input_tsc_keys_data *data = (struct input_tsc_keys_data *)dev->data;
 
-	if (ring_buf_item_space_get(&data->rb) == 0) {
+	if (ring_buffer_space(&data->rb) < sizeof(int32_t)) {
 		uint32_t oldest_point;
 		int32_t slope;
 
-		(void)ring_buf_get(&data->rb, (uint8_t *)&oldest_point, sizeof(oldest_point));
+		(void)ring_buffer_read(&data->rb, (uint8_t *)&oldest_point, sizeof(oldest_point));
 
 		slope = count_value - oldest_point;
 		if (slope < -config->noise_threshold && !data->expect_release) {
@@ -388,7 +388,7 @@ static void input_tsc_callback_handler(uint32_t count_value, void *user_data)
 		}
 	}
 
-	(void)ring_buf_put(&data->rb, (uint8_t *)&count_value, sizeof(count_value));
+	(void)ring_buffer_write(&data->rb, (uint8_t *)&count_value, sizeof(count_value));
 }
 
 static int input_tsc_keys_init(const struct device *dev)
@@ -401,7 +401,8 @@ static int input_tsc_keys_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ring_buf_item_init(&data->rb, CONFIG_INPUT_STM32_TSC_KEYS_BUFFER_WORD_SIZE, data->buffer);
+	ring_buffer_init(&data->rb, (uint8_t *)data->buffer,
+			CONFIG_INPUT_STM32_TSC_KEYS_BUFFER_WORD_SIZE * sizeof(uint32_t));
 
 	uint8_t group_index = 0;
 

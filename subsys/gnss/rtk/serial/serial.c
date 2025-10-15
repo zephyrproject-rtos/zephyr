@@ -18,13 +18,13 @@
 LOG_MODULE_REGISTER(rtk_serial, CONFIG_GNSS_RTK_LOG_LEVEL);
 
 static const struct device *rtk_serial_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_rtk_serial));
-static struct ring_buf process_ringbuf;
+static struct ring_buffer process_ringbuf;
 static uint8_t process_buf[2048];
 
 static void gnss_rtk_process_work_handler(struct k_work *work)
 {
 	static uint8_t work_buf[2048];
-	uint32_t len = ring_buf_get(&process_ringbuf, work_buf, sizeof(work_buf));
+	uint32_t len = ring_buffer_read(&process_ringbuf, work_buf, sizeof(work_buf));
 	uint32_t offset = 0;
 
 	ARG_UNUSED(work);
@@ -70,7 +70,7 @@ static void rtk_uart_isr_callback(const struct device *dev, void *user_data)
 
 			ret = uart_fifo_read(dev, &c, 1);
 			if (ret > 0) {
-				ret = ring_buf_put(&process_ringbuf, &c, 1);
+				ret = ring_buffer_write(&process_ringbuf, &c, 1);
 			}
 		} while (ret > 0);
 
@@ -86,7 +86,7 @@ static int rtk_serial_client_init(void)
 {
 	int err;
 
-	ring_buf_init(&process_ringbuf, ARRAY_SIZE(process_buf), process_buf);
+	ring_buffer_init(&process_ringbuf, process_buf, ARRAY_SIZE(process_buf));
 
 	err = uart_irq_callback_user_data_set(rtk_serial_dev, rtk_uart_isr_callback, NULL);
 	if (err < 0) {

@@ -56,7 +56,7 @@ struct uart_bitbang_data {
 	/* Tx counter config */
 	struct counter_top_cfg tx_counter_cfg;
 	/* Tx ring buffer */
-	struct ring_buf *tx_ringbuf;
+	struct ring_buffer *tx_ringbuf;
 	/* Rx state */
 	enum uart_bitbang_state rx_state;
 	/* Rx bit index */
@@ -70,7 +70,7 @@ struct uart_bitbang_data {
 	/* Rx callback data */
 	struct gpio_callback rx_gpio_cb_data;
 	/* Rx ring buffer */
-	struct ring_buf *rx_ringbuf;
+	struct ring_buffer *rx_ringbuf;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	/* Interrupt flags */
 #define UART_BITBANG_IRQ_TC   (1 << 0)
@@ -196,7 +196,8 @@ static void uart_bitbang_rx_counter_top_interrupt(const struct device *dev, void
 		}
 
 		/* Push data received to rx ring buffer */
-		ring_buf_put(data->rx_ringbuf, (const uint8_t *)&data->rx_data, sizeof(uint16_t));
+		ring_buffer_write(data->rx_ringbuf, (const uint8_t *)&data->rx_data,
+				sizeof(uint16_t));
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 		if ((data->user_cb) && (data->irq & UART_BITBANG_IRQ_RXNE)) {
@@ -233,7 +234,7 @@ static int uart_bitbang_poll_in_u16(const struct device *dev, uint16_t *in_u16)
 {
 	struct uart_bitbang_data *data = dev->data;
 
-	uint32_t s = ring_buf_get(data->rx_ringbuf, (uint8_t *)in_u16, sizeof(uint16_t));
+	uint32_t s = ring_buffer_read(data->rx_ringbuf, (uint8_t *)in_u16, sizeof(uint16_t));
 
 	return (s == sizeof(uint16_t)) ? 0 : -1;
 }
@@ -265,7 +266,7 @@ static void uart_bitbang_tx_counter_top_interrupt(const struct device *dev, void
 	switch (data->tx_state) {
 	case UART_BITBANG_IDLE:
 		/* Claim the next data */
-		size = ring_buf_get_claim(data->tx_ringbuf, (uint8_t **)&data->tx_data,
+		size = MIN(ring_buffer_read_ptr(data->tx_ringbuf, (uint8_t **)&data->tx_data),
 					  sizeof(uint16_t));
 		if (size == sizeof(uint16_t)) {
 			/* Start next transmission */
@@ -333,7 +334,7 @@ static void uart_bitbang_tx_counter_top_interrupt(const struct device *dev, void
 		break;
 	case UART_BITBANG_COMPLETE:
 		/* Terminate current transfer */
-		ring_buf_get_finish(data->tx_ringbuf, sizeof(uint16_t));
+		ring_buffer_consume(data->tx_ringbuf, sizeof(uint16_t));
 		data->tx_state = UART_BITBANG_IDLE;
 		break;
 	}
@@ -348,7 +349,7 @@ static void uart_bitbang_poll_out_u16(const struct device *dev, uint16_t out_u16
 	if (config->tx_gpio.port != NULL) {
 
 		/* Push data to send to tx ring buffer */
-		ring_buf_put(data->tx_ringbuf, (const uint8_t *)&out_u16, sizeof(uint16_t));
+		ring_buffer_write(data->tx_ringbuf, (const uint8_t *)&out_u16, sizeof(uint16_t));
 
 		/* Start tx counter if not already started */
 		counter_reset(config->tx_counter);
@@ -497,7 +498,7 @@ static int uart_bitbang_irq_tx_ready(const struct device *dev)
 {
 	struct uart_bitbang_data *data = dev->data;
 
-	return (int)(ring_buf_space_get(data->tx_ringbuf) / sizeof(uint16_t));
+	return (int)(ring_buffer_space(data->tx_ringbuf) / sizeof(uint16_t));
 }
 
 static void uart_bitbang_irq_rx_enable(const struct device *dev)
@@ -520,14 +521,14 @@ static int uart_bitbang_irq_tx_complete(const struct device *dev)
 {
 	struct uart_bitbang_data *data = dev->data;
 
-	return ring_buf_is_empty(data->tx_ringbuf) ? 1 : 0;
+	return ring_buffer_empty(data->tx_ringbuf) ? 1 : 0;
 }
 
 static int uart_bitbang_irq_rx_ready(const struct device *dev)
 {
 	struct uart_bitbang_data *data = dev->data;
 
-	return (ring_buf_size_get(data->rx_ringbuf) > 0) ? 1 : 0;
+	return (ring_buffer_size(data->rx_ringbuf) > 0) ? 1 : 0;
 }
 
 static void uart_bitbang_irq_err_enable(const struct device *dev)
@@ -777,8 +778,8 @@ static int uart_bitbang_init(const struct device *dev)
 		.uart_cfg = &uart_cfg_##index,                                                     \
 		.msb = DT_INST_PROP_OR(index, msb, false),                                         \
 	};                                                                                         \
-	RING_BUF_DECLARE(uart_bitbang_tx_ringbuf##index, DT_INST_PROP(index, tx_fifo_size));       \
-	RING_BUF_DECLARE(uart_bitbang_rx_ringbuf##index, DT_INST_PROP(index, rx_fifo_size));       \
+	RING_BUFFER_DEFINE(uart_bitbang_tx_ringbuf##index, DT_INST_PROP(index, tx_fifo_size));    \
+	RING_BUFFER_DEFINE(uart_bitbang_rx_ringbuf##index, DT_INST_PROP(index, rx_fifo_size));    \
 	static struct uart_bitbang_data uart_bitbang_data_##index = {                              \
 		.config = &uart_bitbang_config_##index,                                            \
 		.tx_ringbuf = &uart_bitbang_tx_ringbuf##index,                                     \

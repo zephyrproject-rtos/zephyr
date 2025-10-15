@@ -101,7 +101,7 @@ struct ppp_driver_context {
 	atomic_t modem_init_done;
 
 	/* Incoming data is routed via ring buffer */
-	struct ring_buf rx_ringbuf;
+	struct ring_buffer rx_ringbuf;
 	uint8_t rx_buf[CONFIG_NET_PPP_RINGBUF_SIZE];
 
 	/* ISR function callback worker */
@@ -176,7 +176,7 @@ static void uart_callback(const struct device *dev,
 
 		LOG_DBG("Received data %d bytes", len);
 
-		ret = ring_buf_put(&context->rx_ringbuf, p, len);
+		ret = ring_buffer_write(&context->rx_ringbuf, p, len);
 		if (ret < evt->data.rx.len) {
 			LOG_WRN("Rx buffer doesn't have enough space. "
 				"Bytes pending: %d, written only: %d. "
@@ -193,7 +193,7 @@ static void uart_callback(const struct device *dev,
 			}
 		}
 
-		space_left = ring_buf_space_get(&context->rx_ringbuf);
+		space_left = ring_buffer_space(&context->rx_ringbuf);
 		if (!rx_retry_pending && space_left < (sizeof(context->rx_buf) / 8)) {
 			/* Not much room left in buffer after a write to ring buffer.
 			 * We submit a work, but enable flow ctrl also
@@ -277,7 +277,7 @@ static void uart_recovery(struct k_work *work)
 		CONTAINER_OF(dwork, struct ppp_driver_context, uart_recovery_work);
 	int ret;
 
-	ret = ring_buf_space_get(&ppp->rx_ringbuf);
+	ret = ring_buffer_space(&ppp->rx_ringbuf);
 	if (ret >= (sizeof(ppp->rx_buf) / 2)) {
 		ret = ppp_async_uart_rx_enable(ppp);
 		if (ret) {
@@ -902,10 +902,8 @@ static int ppp_consume_ringbuf(struct ppp_driver_context *ppp)
 {
 	uint8_t *data;
 	size_t len, tmp;
-	int ret;
 
-	len = ring_buf_get_claim(&ppp->rx_ringbuf, &data,
-				 CONFIG_NET_PPP_RINGBUF_SIZE);
+	len = ring_buffer_read_ptr(&ppp->rx_ringbuf, &data);
 	if (len == 0) {
 		LOG_DBG("Ringbuf %p is empty!", &ppp->rx_ringbuf);
 		return 0;
@@ -927,10 +925,7 @@ static int ppp_consume_ringbuf(struct ppp_driver_context *ppp)
 		}
 	} while (--tmp);
 
-	ret = ring_buf_get_finish(&ppp->rx_ringbuf, len);
-	if (ret < 0) {
-		LOG_DBG("Cannot flush ring buffer (%d)", ret);
-	}
+	ring_buffer_consume(&ppp->rx_ringbuf, len);
 
 	return -EAGAIN;
 }
@@ -954,7 +949,7 @@ static int ppp_driver_init(const struct device *dev)
 	LOG_DBG("[%p] dev %p", ppp, dev);
 
 #if !defined(CONFIG_NET_TEST)
-	ring_buf_init(&ppp->rx_ringbuf, sizeof(ppp->rx_buf), ppp->rx_buf);
+	ring_buffer_init(&ppp->rx_ringbuf, ppp->rx_buf, sizeof(ppp->rx_buf));
 	k_work_init(&ppp->cb_work, ppp_isr_cb_work);
 
 	k_work_queue_start(&ppp->cb_workq, ppp_workq,
@@ -1077,7 +1072,7 @@ static void ppp_uart_isr(const struct device *uart, void *user_data)
 			continue;
 		}
 
-		ret = ring_buf_put(&context->rx_ringbuf, context->buf, rx);
+		ret = ring_buffer_write(&context->rx_ringbuf, context->buf, rx);
 		if (ret < rx) {
 			LOG_ERR("Rx buffer doesn't have enough space. "
 				"Bytes pending: %d, written: %d",

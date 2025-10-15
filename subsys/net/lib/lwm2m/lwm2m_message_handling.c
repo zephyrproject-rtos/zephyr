@@ -1404,7 +1404,7 @@ static int lwm2m_read_cached_data(struct lwm2m_message *msg,
 		read_info = &msg->cache_info->read_info[msg->cache_info->entry_size];
 		/* Store original timeseries ring buffer get states for failure handling */
 		read_info->cache_data = cached_data;
-		read_info->original_rb_get = cached_data->rb.get;
+		read_info->original_rb_get = cached_data->rb.read_ptr;
 		msg->cache_info->entry_size++;
 		if (msg->cache_info->entry_limit) {
 			length = MIN(length, msg->cache_info->entry_limit);
@@ -3089,7 +3089,7 @@ static bool lwm2m_timeseries_data_rebuild(struct lwm2m_message *msg, int error_c
 
 	/* Put Ring buffer back to original */
 	for (int i = 0; i < cache_temp->entry_size; i++) {
-		cache_temp->read_info[i].cache_data->rb.get =
+		cache_temp->read_info[i].cache_data->rb.read_ptr =
 			cache_temp->read_info[i].original_rb_get;
 	}
 
@@ -3523,7 +3523,7 @@ static bool init_next_pending_timeseries_data(struct lwm2m_cache_read_info *cach
 
 	/* Check do we have still pending data to send */
 	for (int i = 0; i < cache_temp->entry_size; i++) {
-		if (ring_buf_is_empty(&cache_temp->read_info[i].cache_data->rb)) {
+		if (ring_buffer_empty(&cache_temp->read_info[i].cache_data->rb)) {
 			/* Skip Empty cached buffers */
 			continue;
 		}
@@ -3534,7 +3534,7 @@ static bool init_next_pending_timeseries_data(struct lwm2m_cache_read_info *cach
 			return false;
 		}
 
-		bytes_available += ring_buf_size_get(&cache_temp->read_info[i].cache_data->rb);
+		bytes_available += ring_buffer_size(&cache_temp->read_info[i].cache_data->rb);
 	}
 
 	if (bytes_available == 0) {

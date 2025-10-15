@@ -58,7 +58,6 @@ config USE_USB_AUDIO_OUTPUT
 	depends on ENABLE_LC3
 	select USB_DEVICE_STACK_NEXT
 	select USBD_AUDIO2_CLASS
-	select RING_BUFFER
 	help
 	  Enables USB audio as output as a USB peripheral. This does not support providing USB
 	  audio to e.g. speakers that are also USB peripherals, but can be connected to e.g. a

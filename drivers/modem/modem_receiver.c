@@ -121,7 +121,7 @@ static void mdm_receiver_isr(const struct device *uart_dev, void *user_data)
 	       uart_irq_rx_ready(ctx->uart_dev)) {
 		rx = uart_fifo_read(ctx->uart_dev, read_buf, sizeof(read_buf));
 		if (rx > 0) {
-			ret = ring_buf_put(&ctx->rx_rb, read_buf, rx);
+			ret = ring_buffer_write(&ctx->rx_rb, read_buf, rx);
 			if (ret != rx) {
 				LOG_ERR("Rx buffer doesn't have enough space. "
 						"Bytes pending: %d, written: %d",
@@ -174,7 +174,7 @@ int mdm_receiver_recv(struct mdm_receiver_context *ctx,
 		return 0;
 	}
 
-	*bytes_read = ring_buf_get(&ctx->rx_rb, buf, size);
+	*bytes_read = ring_buffer_read(&ctx->rx_rb, buf, size);
 	return 0;
 }
 
@@ -232,7 +232,7 @@ int mdm_receiver_register(struct mdm_receiver_context *ctx,
 	}
 
 	ctx->uart_dev = uart_dev;
-	ring_buf_init(&ctx->rx_rb, size, buf);
+	ring_buffer_init(&ctx->rx_rb, buf, size);
 	k_sem_init(&ctx->rx_sem, 0, 1);
 
 	ret = mdm_receiver_get(ctx);
