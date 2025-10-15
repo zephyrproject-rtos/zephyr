@@ -1,0 +1,73 @@
+/*
+ * Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "qcc744m.dtsi"
+#include "qcc744m_evk-pinctrl.dtsi"
+
+/ {
+	model = "Qualcomm QCC744M Evaluation Board";
+
+	aliases {
+		sw0 = &button_0;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button_0: sw0 {
+			/* To use, CH347 DTR1 jumper must be removed */
+			gpios = <&gpio0 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(320)>;
+};
+
+&flashctrl {
+	flash0: flash@A0000000 {
+		compatible = "soc-nv-flash", "giantec,25q64a";
+		reg = <0xA0000000 (0x800000 - 0x2000)>;
+		write-block-size = <256>;
+		erase-block-size = <DT_SIZE_K(4)>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			slot0_partition: partition@0 {
+				label = "image-0";
+				reg = <0x00000000 0x00100000>;
+				read-only;
+			};
+
+			storage_partition: partition@100000 {
+				label = "storage";
+				reg = <0x00100000 (0x700000 - 0x2000)>;
+			};
+		};
+	};
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+};
+
+&spi0 {
+	status = "okay";
+
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+};
