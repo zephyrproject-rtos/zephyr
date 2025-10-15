@@ -326,7 +326,7 @@ DT_INST_FOREACH_STATUS_OKAY(QUIRK_NRF_USBHS_DEFINE)
 
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_usbhs_nrf54l)
 
-#define USBHS_DT_WRAPPER_REG_ADDR(n) UINT_TO_POINTER(DT_INST_REG_ADDR_BY_NAME(n, wrapper))
+#define USBHS_DT_WRAPPER_REG_ADDR(n) UINT_TO_POINTER(DT_REG_ADDR(DT_INST_PARENT(n)))
 
 #include <nrf.h>
 #include <zephyr/logging/log.h>
