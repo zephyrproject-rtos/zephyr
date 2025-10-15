@@ -792,6 +792,45 @@ static int cmd_discoverable(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_iscan_param(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+
+	if (!strcmp(argv[1], "default")) {
+		err = bt_br_inquiry_scan_update_param(BT_BR_INQUIRY_SCAN_PARAM_DEFAULT);
+		if (err) {
+			shell_print(sh, "BR/EDR update inquiry scan param failed (err %d)", err);
+			return -ENOEXEC;
+		}
+	} else if (!strcmp(argv[1], "defined")) {
+		uint16_t interval;
+		uint16_t window;
+		enum bt_br_scan_type type;
+		struct bt_br_inquiry_scan_param param = {0};
+
+		interval = strtoul(argv[2], NULL, 16);
+		window = strtoul(argv[3], NULL, 16);
+		type = strtoul(argv[4], NULL, 16);
+
+		param.interval = interval;
+		param.window = window;
+		param.type = type;
+
+		err = bt_br_inquiry_scan_update_param(&param);
+		if (err) {
+			shell_print(sh, "BR/EDR update inquiry scan param failed (err %d)", err);
+			return -ENOEXEC;
+		}
+	} else {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	shell_print(sh, "BR/EDR update inquiry scan param done");
+
+	return 0;
+}
+
 static int cmd_connectable(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
@@ -1627,6 +1666,10 @@ static int cmd_default_handler(const struct shell *sh, size_t argc, char **argv)
 	"[<interval>] [<window>] [<type>]\n" \
 	"<interval>: scan interval in units of 0.625 ms"
 
+#define HELP_ISCAN_PARAM \
+	"<type: default, defined> [<interval>] [<window>] [<type>]\n" \
+	"<interval>: scan interval in units of 0.625 ms"
+
 SHELL_STATIC_SUBCMD_SET_CREATE(echo_cmds,
 	SHELL_CMD_ARG(register, NULL, HELP_NONE, cmd_l2cap_echo_reg, 1, 0),
 	SHELL_CMD_ARG(unregister, NULL, HELP_NONE, cmd_l2cap_echo_unreg, 1, 0),
@@ -1676,6 +1719,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
 		      cmd_discovery, 2, 2),
 	SHELL_CMD_ARG(iscan, NULL, "<value: on, off> [mode: limited]",
 		      cmd_discoverable, 2, 1),
+	SHELL_CMD_ARG(iscan-param, NULL, HELP_ISCAN_PARAM, cmd_iscan_param, 2, 3),
 	SHELL_CMD(l2cap, &l2cap_cmds, HELP_NONE, cmd_default_handler),
 	SHELL_CMD_ARG(oob, NULL, NULL, cmd_oob, 1, 0),
 	SHELL_CMD_ARG(pscan, NULL, "<value: on, off>", cmd_connectable, 2, 0),
