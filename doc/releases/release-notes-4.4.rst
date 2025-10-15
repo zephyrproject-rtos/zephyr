@@ -52,6 +52,14 @@ API Changes
 ..
   Only removed, deprecated and new APIs. Changes go in migration guide.
 
+* Architectures
+
+  * Xtensa
+
+    * Removed as these are architectural features:
+
+      * :kconfig:option:`CONFIG_XTENSA_MMU_DOUBLE_MAP`
+
 Removed APIs and options
 ========================
 
