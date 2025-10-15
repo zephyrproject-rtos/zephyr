@@ -620,13 +620,6 @@ static int cmd_disconnect(const struct shell *sh, int32_t argc, char *argv[])
 	return 0;
 }
 
-void app_configured(int err)
-{
-	if (err) {
-		bt_shell_print("configure fail");
-	}
-}
-
 void delay_report(struct bt_a2dp_stream *stream, uint16_t value)
 {
 	bt_shell_print("received delay report: %d 1/10ms", value);
