@@ -433,6 +433,14 @@ def main() -> None:
         help="Size in bytes of cpurad_its_partition (decimal or 0x-prefixed hex)",
     )
     parser.add_argument(
+        "--permit-permanently-transitioning-device-to-deployed",
+        action="store_true",
+        help=(
+            "Safety flag required to enable both UICR.LOCK and UICR.ERASEPROTECT together. "
+            "Must be explicitly provided to acknowledge permanent device state changes."
+        ),
+    )
+    parser.add_argument(
         "--lock",
         action="store_true",
         help="Enable UICR.LOCK to prevent modifications without ERASEALL",
@@ -624,10 +632,22 @@ def main() -> None:
             uicr.SECURESTORAGE.ITS.APPLICATIONSIZE1KB = args.cpuapp_its_size // 1024
             uicr.SECURESTORAGE.ITS.RADIOCORESIZE1KB = args.cpurad_its_size // 1024
 
-        # Handle LOCK configuration
+        # Handle LOCK and ERASEPROTECT configuration
+        # Check if both are enabled together - this requires explicit acknowledgment
+        if (
+            args.lock
+            and args.eraseprotect
+            and not args.permit_permanently_transitioning_device_to_deployed
+        ):
+            raise ScriptError(
+                "Enabling both --lock and --eraseprotect requires "
+                "--permit-permanently-transitioning-device-to-deployed to be specified. "
+                "This combination permanently locks the device configuration and prevents "
+                "ERASEALL."
+            )
+
         if args.lock:
             uicr.LOCK = ENABLED_VALUE
-        # Handle ERASEPROTECT configuration
         if args.eraseprotect:
             uicr.ERASEPROTECT = ENABLED_VALUE
         # Handle APPROTECT configuration
