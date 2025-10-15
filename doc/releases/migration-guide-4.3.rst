@@ -375,6 +375,13 @@ Shell
   compatibility.
   (:github:`92677`).
 
+UpdateHub
+=========
+
+* Legacy Mbed TLS as an option for crypto support has been removed and PSA Crypto is now used in all
+  cases. :kconfig:option:`CONFIG_UPDATEHUB` will automatically enable the Mbed TLS implementation of
+  PSA Crypto if TF-M is not enabled in the build.
+
 .. zephyr-keep-sorted-stop
 
 Modules
