@@ -29,3 +29,8 @@ __vector_table:
     .long __MathErrorTrap
     .long __GeneralTrap
     .long __ReservedTrap7
+    .set offset, 0
+    .rept CONFIG_NUM_IRQS
+        .pword __irq_vector_table + offset
+        .set offset, offset + 4
+    .endr

@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <kernel_offsets.h>
 
+GEN_OFFSET_SYM(_thread_arch_t, cpu_level);
 GEN_OFFSET_SYM(_thread_arch_t, swap_return_value);
 GEN_OFFSET_SYM(_thread_arch_t, swapped_from_thread);
 

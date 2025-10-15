@@ -26,6 +26,8 @@
 #define DSPIC_IRQ_PER_REG    8u
 #define DSPIC_PRIORITY_MASK  ((1u << DSPIC_PRIORITY_BITS) - 1u)
 
+#define ARCH_IRQ_VECTOR_JUMP_CODE(v) "call _" STRINGIFY(v)
+
 #ifndef _ASMLANGUAGE
 #include <xc.h>
 #ifdef __cplusplus

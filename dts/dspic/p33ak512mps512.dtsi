@@ -66,7 +66,7 @@
 			compatible = "microchip,dspic33-timer";
 			reg = <0x1CE0 0xC>;
 			clock-frequency = <4000000>;
-			prescalar = <8>;
+			prescaler = <8>;
 			interrupt-parent = <&intc0>;
 			interrupts = <48 1>;
 			label = "TIMER_1";

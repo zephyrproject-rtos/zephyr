@@ -94,7 +94,7 @@ static int pinctrl_configure_pin(pinctrl_soc_pin_t soc_pin)
 		ret = -EINVAL;
 	}
 
-	return 0;
+	return ret;
 }
 
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintptr_t reg)
@@ -105,6 +105,9 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 
 	for (uint8_t i = 0U; i < pin_cnt; i++) {
 		ret = pinctrl_configure_pin(pins[i]);
+		if (ret) {
+			break;
+		}
 	}
 
 	return ret;

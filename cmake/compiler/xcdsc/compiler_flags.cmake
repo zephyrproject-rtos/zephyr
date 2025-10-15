@@ -2,10 +2,10 @@
 set_compiler_property(PROPERTY debug -g)
 # Optimization for debug builds
 set_compiler_property(PROPERTY optimization_debug -O1)
-set_compiler_property(PROPERTY optimization_speed -O1)
+set_compiler_property(PROPERTY optimization_speed -O2)
 # Optimize for size
-set_compiler_property(PROPERTY optimization_size -O1)
-set_compiler_property(PROPERTY optimization_size_aggressive -O1)
+set_compiler_property(PROPERTY optimization_size -O2)
+set_compiler_property(PROPERTY optimization_size_aggressive -Os)
 # Basic warnings
 check_set_compiler_property(PROPERTY warning_base -Wall -Wformat -Wformat-security -Wno-format-zero-length -Wno-unused-but-set-variable )
 # Compiler flags for imacros. The specific header must be appended by user.

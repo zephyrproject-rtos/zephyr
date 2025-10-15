@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2025, Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+
+/* SOC level init for dspic33a family of chips
+ */
+void soc_early_init_hook(void)
+{
+}

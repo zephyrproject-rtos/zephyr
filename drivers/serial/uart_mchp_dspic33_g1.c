@@ -303,9 +303,10 @@ static int uart_dspic_poll_in(const struct device *dev, unsigned char *c)
 	int ret_val;
 
 	key = k_spin_lock(&lock);
-	/* If receiver buffer is empty, return -1 */
+
 	if ((*UxSTA & BIT_RXBE) != 0U) {
-		ret_val = -EPERM;
+	/* uart_poll_in api expects to return -1, if receiver buffer is empty */
+		ret_val = -1;
 	}
 
 	else {
