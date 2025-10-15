@@ -23,8 +23,5 @@ Requirements
 Building and Running
 ********************
 
-This sample can be found under :zephyr_file:`samples/subsys/logging/ble_backend` in the
-Zephyr tree.
-
 The Bluetooth logger can be tested with the NRF Toolbox app or any similar app that can connect over
 Bluetooth and detect the NRF NUS UUID service.
