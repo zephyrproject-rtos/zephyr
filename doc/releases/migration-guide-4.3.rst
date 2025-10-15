@@ -78,6 +78,15 @@ Comparator
   and :c:macro:`NRF_COMP_AIN_VDDH_DIV5` represents VDDH/5.
   The old ``string`` properties type is deprecated.
 
+Display
+===
+
+* The macros :c:macro:`MIPI_DBI_SPI_CONFIG_DT` :c:macro:`MIPI_DBI_SPI_CONFIG_DT_INST`,
+  :c:macro:`MIPI_DBI_CONFIG_DT`, and :c:macro:`MIPI_DBI_CONFIG_DT_INST` have been changed so that
+  they do not need to be provided a delay parameter anymore. This is because the timing parameters
+  of a SPI peripheral chip select should now be specified in DT with the
+  ``spi-cs-setup-delay-ns`` and ``spi-cs-hold-delay-ns`` properties.
+
 MFD
 ===
 

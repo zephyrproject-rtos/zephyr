@@ -542,7 +542,7 @@ static const struct st730x_specific st7306_specifics = {
 	static const struct st730x_config config##node_id = {                                      \
 		.mipi_dev = DEVICE_DT_GET(DT_PARENT(node_id)),                                     \
 		.dbi_config = MIPI_DBI_CONFIG_DT(                                                  \
-			node_id, ST730X_WORD_SIZE(node_id) | SPI_OP_MODE_MASTER, 0),               \
+			node_id, ST730X_WORD_SIZE(node_id) | SPI_OP_MODE_MASTER),                  \
 		.height = DT_PROP(node_id, height),                                                \
 		.width = DT_PROP(node_id, width),                                                  \
 		.start_line = DT_PROP(node_id, start_line),                                        \

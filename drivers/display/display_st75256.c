@@ -597,7 +597,7 @@ static DEVICE_API(display, st75256_driver_api) = {
 		.inversion_on = DT_PROP(node_id, inversion_on),                                    \
 		.mipi_dev = DEVICE_DT_GET(DT_PARENT(node_id)),                                     \
 		.dbi_config = MIPI_DBI_CONFIG_DT(                                                  \
-			node_id, ST75256_WORD_SIZE(node_id) | SPI_OP_MODE_MASTER, 0),              \
+			node_id, ST75256_WORD_SIZE(node_id) | SPI_OP_MODE_MASTER),                 \
 		.conversion_buf = conversion_buf##node_id,                                         \
 		.conversion_buf_size = sizeof(conversion_buf##node_id),                            \
 	};                                                                                         \

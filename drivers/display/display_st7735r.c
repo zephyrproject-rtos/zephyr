@@ -497,7 +497,7 @@ static DEVICE_API(display, st7735r_api) = {
 				((DT_INST_STRING_UPPER_TOKEN(inst, mipi_mode) == \
 				 MIPI_DBI_MODE_SPI_4WIRE) ? SPI_WORD_SET(8) :	\
 				 SPI_WORD_SET(9)) |				\
-				SPI_HOLD_ON_CS | SPI_LOCK_ON, 0),		\
+				SPI_HOLD_ON_CS | SPI_LOCK_ON),			\
 		.width = DT_INST_PROP(inst, width),				\
 		.height = DT_INST_PROP(inst, height),				\
 		.madctl = DT_INST_PROP(inst, madctl),				\

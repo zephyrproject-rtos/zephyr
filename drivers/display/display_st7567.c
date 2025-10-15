@@ -532,7 +532,7 @@ static DEVICE_API(display, st7567_driver_api) = {
 
 #define ST7567_CONFIG_DBI(node_id)                                                                 \
 	.bus = {.dbi.dbi_config = MIPI_DBI_CONFIG_DT(                                              \
-			node_id, ST7567_WORD_SIZE(node_id) | SPI_OP_MODE_MASTER, 0),               \
+			node_id, ST7567_WORD_SIZE(node_id) | SPI_OP_MODE_MASTER),                  \
 		.dbi.mipi_dev = DEVICE_DT_GET(DT_PARENT(node_id)),},                               \
 	.bus_ready = st7567_bus_ready_dbi,                                                         \
 	.write_cmd_bus = st7567_write_cmd_bus_dbi, .write_pixels_bus = st7567_write_pixels_bus_dbi,\
