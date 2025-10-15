@@ -869,6 +869,61 @@ static int cmd_auto_reject_conn(const struct shell *sh, size_t argc, char *argv[
 	return 0;
 }
 
+static int cmd_pscan_mode(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+	const struct bt_br_page_scan_param *param;
+
+	if (!strcmp(argv[1], "r0")) {
+		param = BT_BR_PAGE_SCAN_PARAM_R0;
+	} else if (!strcmp(argv[1], "fr1")) {
+		param = BT_BR_PAGE_SCAN_PARAM_FAST_R1;
+	} else if (!strcmp(argv[1], "fr2")) {
+		param = BT_BR_PAGE_SCAN_PARAM_FAST_R2;
+	} else if (!strcmp(argv[1], "mr1")) {
+		param = BT_BR_PAGE_SCAN_PARAM_MEDIUM_R1;
+	} else if (!strcmp(argv[1], "sr1")) {
+		param = BT_BR_PAGE_SCAN_PARAM_SLOW_R1;
+	} else if (!strcmp(argv[1], "sr2")) {
+		param = BT_BR_PAGE_SCAN_PARAM_SLOW_R2;
+	} else {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	err = bt_br_page_scan_update_param(param);
+	if (err != 0) {
+		shell_error(sh, "BR/EDR update page scan mode failed (err %d)", err);
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "BR/EDR update page scan mode success");
+	return 0;
+}
+
+static int cmd_pscan_param(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+	struct bt_br_page_scan_param param;
+
+	param.interval = strtoul(argv[1], NULL, 16);
+	param.window = strtoul(argv[2], NULL, 16);
+	param.type = strtoul(argv[3], NULL, 16);
+
+	err = bt_br_page_scan_update_param(&param);
+	if (err != 0) {
+		shell_error(sh, "BR/EDR update page scan param failed (err %d)", err);
+		return -ENOEXEC;
+	}
+
+	shell_print(
+		sh,
+		"BR/EDR update page scan param(interval 0x%04x, window 0x%04x, type: %u) success",
+		param.interval, param.window, param.type);
+
+	return 0;
+}
+
 static int cmd_oob(const struct shell *sh, size_t argc, char *argv[])
 {
 	char addr[BT_ADDR_STR_LEN];
@@ -1926,6 +1981,11 @@ static int cmd_default_handler(const struct shell *sh, size_t argc, char **argv)
 	"<psm> <mode: none, ret, fc, eret, stream> [hold_credit] "    \
 	"[mode_optional] [extended_control]"
 
+#define HELP_PSCAN_PARAM                                                                           \
+	"<interval: scan interval in units of 0.625 ms> "                                          \
+	"<window: window in units of 0.625 ms> "                                                   \
+	"<type: 0 for standard, 1 for interlaced>"
+
 SHELL_STATIC_SUBCMD_SET_CREATE(echo_cmds,
 	SHELL_CMD_ARG(register, NULL, HELP_NONE, cmd_l2cap_echo_reg, 1, 0),
 	SHELL_CMD_ARG(unregister, NULL, HELP_NONE, cmd_l2cap_echo_unreg, 1, 0),
@@ -1979,6 +2039,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
 	SHELL_CMD_ARG(oob, NULL, NULL, cmd_oob, 1, 0),
 	SHELL_CMD_ARG(pscan, NULL, "<value: on, off> [central/peripheral]", cmd_connectable, 2, 1),
 	SHELL_CMD_ARG(auto_reject_conn, NULL, "<value: on, off>", cmd_auto_reject_conn, 2, 0),
+	SHELL_CMD_ARG(pscan-mode, NULL, "<mode: r0, fr1, mr1, sr1, fr2, sr2>",
+		      cmd_pscan_mode, 2, 0),
+	SHELL_CMD_ARG(pscan-param, NULL, HELP_PSCAN_PARAM, cmd_pscan_param, 4, 0),
 	SHELL_CMD_ARG(sdp-find, NULL, "[HFPAG, HFPHF, A2SRC, A2SNK, PNP, AVRCP_CT, AVRCP_TG]",
 		      cmd_sdp_find_record, 1, 1),
 	SHELL_CMD_ARG(switch-role, NULL, "<value: central, peripheral>", cmd_switch_role, 2, 0),
