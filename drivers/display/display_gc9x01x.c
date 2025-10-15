@@ -626,7 +626,7 @@ static DEVICE_API(display, gc9x01x_api) = {
 			.mode = MIPI_DBI_MODE_SPI_4WIRE,                                           \
 			.config = MIPI_DBI_SPI_CONFIG_DT_INST(inst,                                \
 							      SPI_OP_MODE_MASTER |                 \
-							      SPI_WORD_SET(8), 0),                 \
+							      SPI_WORD_SET(8)),                    \
 		},                                                                                 \
 		.pixel_format = DT_INST_PROP(inst, pixel_format),                                  \
 		.orientation = DT_INST_ENUM_IDX(inst, orientation),                                \

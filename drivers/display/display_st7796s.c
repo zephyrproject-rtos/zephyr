@@ -377,8 +377,7 @@ static DEVICE_API(display, st7796s_api) = {
 			.config = MIPI_DBI_SPI_CONFIG_DT(			\
 						DT_DRV_INST(n),			\
 						SPI_OP_MODE_MASTER |		\
-						SPI_WORD_SET(8),		\
-						0),				\
+						SPI_WORD_SET(8)),		\
 			.mode = DT_INST_STRING_UPPER_TOKEN_OR(n, mipi_mode,     \
 						MIPI_DBI_MODE_SPI_4WIRE),	\
 		},								\
