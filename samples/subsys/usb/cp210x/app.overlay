@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2025 Sergey Matsievskiy
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&zephyr_udc0 {
+	cp210x_uart0 {
+		compatible = "zephyr,cp210x-uart";
+		label = "Zephyr USB CP210x";
+	};
+};
