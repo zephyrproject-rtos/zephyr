@@ -97,3 +97,75 @@ tests:
     timeout: 600
     extra_args:
       DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc4.overlay"
+  drivers.counter.basic_api.mchp_tc0:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow: sam_e54_xpro
+    timeout: 600
+    extra_args:
+      DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc0.overlay"
+  drivers.counter.basic_api.mchp_tc1:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow: sam_e54_xpro
+    timeout: 600
+    extra_args:
+      DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc1.overlay"
+  drivers.counter.basic_api.mchp_tc2:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow: sam_e54_xpro
+    timeout: 600
+    extra_args:
+      DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc2.overlay"
+  drivers.counter.basic_api.mchp_tc3:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow: sam_e54_xpro
+    timeout: 600
+    extra_args:
+      DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc3.overlay"
+  drivers.counter.basic_api.mchp_tc4:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow: sam_e54_xpro
+    timeout: 600
+    extra_args:
+      DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc4.overlay"
+  drivers.counter.basic_api.mchp_tc5:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow: sam_e54_xpro
+    timeout: 600
+    extra_args:
+      DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc5.overlay"
+  drivers.counter.basic_api.mchp_tc6:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow: sam_e54_xpro
+    timeout: 600
+    extra_args:
+      DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc6.overlay"
+  drivers.counter.basic_api.mchp_tc7:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow: sam_e54_xpro
+    timeout: 600
+    extra_args:
+      DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc7.overlay"
