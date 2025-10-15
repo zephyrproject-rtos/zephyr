@@ -41,6 +41,7 @@ _names = [
     'intel_cyclonev',
     'jlink',
     'linkserver',
+    'lldbac',
     'mdb',
     'minichlink',
     'misc',
