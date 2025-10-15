@@ -296,6 +296,81 @@ For example, to erase and verify flash content:
 
    west flash -r trace32 --startup-args elfFile=build/zephyr/zephyr.elf loadTo=flash eraseFlash=yes verifyFlash=yes
 
+MCUboot chain-loading
+=====================
+
+This board supports booting Zephyr applications via :ref:`mcuboot`.
+
+.. important::
+
+   On S32K3 the vector table is larger than 512 bytes, so MCUboot images
+   **must be signed with a 1 KiB (0x400) header**. You do **not** need to
+   change :kconfig:option:`CONFIG_ROM_START_OFFSET` in your app (the
+   S32K3 linker naturally aligns the vector table to 0x400 when needed),
+   but you **do** need to sign the image with ``--header-size 0x400``.
+
+Build and flash MCUboot
+-----------------------
+
+Use the provided overlays to place MCUboot and the application slots in
+internal flash (PFLASH):
+
+.. code-block:: console
+
+   west build -b mr_canhubk3 -d build/mcuboot bootloader/mcuboot/boot/zephyr \
+     -DEXTRA_DTC_OVERLAY_FILE="boards/nxp/mr_canhubk3/mr_canhubk3_mcuboot_layout.overlay;boards/nxp/mr_canhubk3/mr_canhubk3_mcuboot_boot.overlay"
+
+   west flash -d build/mcuboot -r jlink
+
+Build the application for MCUboot
+---------------------------------
+
+Use the application overlay so the app links to the primary slot:
+
+.. code-block:: console
+
+   west build -b mr_canhubk3 -d build/flash_shell samples/drivers/flash_shell \
+     -DEXTRA_DTC_OVERLAY_FILE="boards/nxp/mr_canhubk3/mr_canhubk3_mcuboot_layout.overlay;boards/nxp/mr_canhubk3/mr_canhubk3_mcuboot_app.overlay" \
+     -DOVERLAY_CONFIG=samples/drivers/flash_shell/overlay-mcuboot.conf
+
+Sign the image with a 1 KiB header
+----------------------------------
+
+Either pass the extra header size when signing:
+
+.. code-block:: console
+
+   west sign -d build/flash_shell -t imgtool -- \
+     --key bootloader/mcuboot/root-rsa-2048.pem \
+     --header-size 0x400
+
+or bake it into the build with:
+
+.. code-block:: console
+
+   -DMCUBOOT_EXTRA_IMGTOOL_ARGS="--header-size 0x400"
+
+Flash the signed application
+----------------------------
+
+.. code-block:: console
+
+   west flash -d build/flash_shell -r jlink -f build/flash_shell/zephyr/zephyr.signed.hex
+
+After reset you should see MCUboot logs followed by the application banner
+(e.g. the Flash Shell prompt).
+
+Troubleshooting
+---------------
+
+* If MCUboot prints *“Image in the primary slot is not valid”* or gets stuck
+  after *“Jumping to the first image slot”*, the image was likely signed with
+  a 512-byte header. Re-sign with ``--header-size 0x400`` and re-flash.
+
+* Do **not** add an IVT to MCUboot-chainloaded applications. The SoC support
+  emits the IVT for standalone/XIP images or for MCUboot itself; it is
+  automatically omitted for apps built with :kconfig:option:`CONFIG_BOOTLOADER_MCUBOOT`.
+
 Debugging
 =========
 

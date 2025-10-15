@@ -216,6 +216,8 @@
 };
 
 &flash0 {
+	status = "disabled";
+
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;

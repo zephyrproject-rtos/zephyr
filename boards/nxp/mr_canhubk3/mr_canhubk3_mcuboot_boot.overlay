@@ -1,0 +1,8 @@
+/ {
+	chosen {
+		/* Bootloader image is linked to its own partition */
+		zephyr,code-partition = &mcuboot;
+		/* Ensure we are using internal flash as the main flash */
+		zephyr,flash = &flash0;
+	};
+};
