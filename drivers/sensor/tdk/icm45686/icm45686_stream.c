@@ -193,7 +193,6 @@ static void icm45686_event_handler(const struct device *dev)
 	const struct icm45686_config *cfg = dev->config;
 	const struct sensor_read_config *read_cfg = data->stream.iodev_sqe->sqe.iodev->data;
 	uint8_t val = 0;
-	uint64_t cycles;
 	int err;
 
 	if (!data->stream.iodev_sqe ||
@@ -222,14 +221,7 @@ static void icm45686_event_handler(const struct device *dev)
 		return;
 	}
 
-	err = sensor_clock_get_cycles(&cycles);
-	if (err) {
-		LOG_ERR("Failed to get timestamp: %d", err);
-		icm45686_stream_result(dev, err);
-		return;
-	}
-
-	data->stream.data.timestamp = sensor_clock_cycles_to_ns(cycles);
+	data->stream.data.timestamp = sensor_clock_get_ns();
 
 	/** Prepare an asynchronous read of the INT status register */
 	struct rtio_sqe *read_sqe;

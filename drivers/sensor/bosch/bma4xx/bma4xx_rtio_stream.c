@@ -318,21 +318,11 @@ void bma4xx_fifo_event(const struct device *dev)
 	const struct bma4xx_config *drv_cfg = dev->config;
 	struct rtio_iodev *iodev = drv_data->iodev;
 	struct rtio *r = drv_data->r;
-	uint64_t cycles;
-	int rc;
 
 	if (drv_data->streaming_sqe == NULL) {
 		return;
 	}
-
-	rc = sensor_clock_get_cycles(&cycles);
-	if (rc != 0) {
-		LOG_ERR("Failed to get sensor clock cycles");
-		rtio_iodev_sqe_err(drv_data->streaming_sqe, rc);
-		return;
-	}
-
-	drv_data->timestamp = sensor_clock_cycles_to_ns(cycles);
+	drv_data->timestamp = sensor_clock_get_ns();
 
 	struct rtio_sqe *write_int_reg = rtio_sqe_acquire(r);
 	struct rtio_sqe *read_int_reg = rtio_sqe_acquire(r);

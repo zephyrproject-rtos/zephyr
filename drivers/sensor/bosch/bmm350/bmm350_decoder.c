@@ -139,8 +139,6 @@ int bmm350_encode(const struct device *dev,
 {
 	struct bmm350_encoded_data *edata = (struct bmm350_encoded_data *)buf;
 	struct bmm350_data *data = dev->data;
-	uint64_t cycles;
-	int err;
 
 	edata->header.channels = 0;
 
@@ -155,13 +153,8 @@ int bmm350_encode(const struct device *dev,
 		}
 	}
 
-	err = sensor_clock_get_cycles(&cycles);
-	if (err != 0) {
-		return err;
-	}
-
 	edata->header.events = is_trigger ? BIT(0) : 0;
-	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
+	edata->header.timestamp = sensor_clock_get_ns();
 
 	memcpy(&edata->comp, &data->mag_comp, sizeof(edata->comp));
 

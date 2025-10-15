@@ -650,22 +650,14 @@ void lsm6dsv16x_stream_irq_handler(const struct device *dev)
 	const struct lsm6dsv16x_config *config = dev->config;
 	struct rtio *rtio = lsm6dsv16x->rtio_ctx;
 #endif
-	uint64_t cycles;
 	int rc;
 
 	if (lsm6dsv16x->streaming_sqe == NULL) {
 		return;
 	}
 
-	rc = sensor_clock_get_cycles(&cycles);
-	if (rc != 0) {
-		LOG_ERR("Failed to get sensor clock cycles");
-		rtio_iodev_sqe_err(lsm6dsv16x->streaming_sqe, rc);
-		return;
-	}
-
 	/* get timestamp as soon as the irq is served */
-	lsm6dsv16x->timestamp = sensor_clock_cycles_to_ns(cycles);
+	lsm6dsv16x->timestamp = sensor_clock_get_ns();
 
 	/* handle FIFO triggers */
 	if (lsm6dsv16x->trig_cfg.int_fifo_th || lsm6dsv16x->trig_cfg.int_fifo_full) {

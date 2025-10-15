@@ -115,7 +115,6 @@ static void paa3905_complete_result(struct rtio *ctx,
 static void paa3905_stream_get_data(const struct device *dev)
 {
 	struct paa3905_data *data = dev->data;
-	uint64_t cycles;
 	int err;
 
 	CHECKIF(!data->stream.iodev_sqe) {
@@ -149,13 +148,7 @@ static void paa3905_stream_get_data(const struct device *dev)
 	struct rtio_sqe *cb_sqe = rtio_sqe_acquire(data->rtio.ctx);
 	uint8_t val;
 
-	err = sensor_clock_get_cycles(&cycles);
-	CHECKIF(err) {
-		LOG_ERR("Failed to get timestamp: %d", err);
-		handle_result_on_error(dev, err);
-		return;
-	}
-	buf->header.timestamp = sensor_clock_cycles_to_ns(cycles);
+	buf->header.timestamp = sensor_clock_get_ns();
 
 	CHECKIF(!write_sqe || !read_sqe || !cb_sqe) {
 		LOG_ERR("Failed to acquire RTIO SQE's");

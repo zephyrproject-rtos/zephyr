@@ -81,18 +81,10 @@ void akm09918_after_start_cb(struct rtio *rtio_ctx, const struct rtio_sqe *sqe,
 	const struct device *dev = cfg->sensor;
 	struct akm09918c_data *data = dev->data;
 	struct rtio_iodev_sqe *iodev_sqe = (struct rtio_iodev_sqe *)arg0;
-	uint64_t cycles;
 	int rc;
 
-	rc = sensor_clock_get_cycles(&cycles);
-	if (rc != 0) {
-		LOG_ERR("Failed to get sensor clock cycles");
-		rtio_iodev_sqe_err(iodev_sqe, rc);
-		return;
-	}
-
 	/* save information for the work item */
-	data->work_ctx.timestamp = sensor_clock_cycles_to_ns(cycles);
+	data->work_ctx.timestamp = sensor_clock_get_ns();
 	data->work_ctx.iodev_sqe = iodev_sqe;
 
 	rc = akm09918c_flush_cqes(data->rtio_ctx);

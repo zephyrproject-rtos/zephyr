@@ -41,8 +41,6 @@ int bmp581_encode(const struct device *dev,
 {
 	struct bmp581_encoded_data *edata = (struct bmp581_encoded_data *)buf;
 	struct bmp581_data *data = dev->data;
-	uint64_t cycles;
-	int err;
 
 	edata->header.channels = 0;
 	edata->header.press_en = data->osr_odr_press_config.press_en;
@@ -59,13 +57,8 @@ int bmp581_encode(const struct device *dev,
 		}
 	}
 
-	err = sensor_clock_get_cycles(&cycles);
-	if (err != 0) {
-		return err;
-	}
-
 	edata->header.events = trigger_status;
-	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
+	edata->header.timestamp = sensor_clock_get_ns();
 
 	return 0;
 }

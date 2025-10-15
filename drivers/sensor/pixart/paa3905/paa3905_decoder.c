@@ -230,23 +230,15 @@ int paa3905_encode(const struct device *dev,
 		   uint8_t *buf)
 {
 	struct paa3905_encoded_data *edata = (struct paa3905_encoded_data *)buf;
-	uint64_t cycles;
-	int err;
 
 	edata->header.channels = 0;
 	edata->header.events.drdy = false;
 	edata->header.events.motion = false;
+	edata->header.timestamp = sensor_clock_get_ns();
 
 	for (size_t i = 0 ; i < num_channels; i++) {
 		edata->header.channels |= paa3905_encode_channel(channels[i].chan_type);
 	}
-
-	err = sensor_clock_get_cycles(&cycles);
-	if (err != 0) {
-		return err;
-	}
-
-	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
 
 	return 0;
 }
