@@ -671,21 +671,17 @@ static int phy_mc_ksz8081_init(const struct device *dev)
 
 	data->dev = dev;
 
-	k_busy_wait(100000);
-
 	ret = k_mutex_init(&data->mutex);
 	if (ret) {
 		return ret;
 	}
 
 	mdio_bus_enable(config->mdio_dev);
-	k_busy_wait(100000);
 
 	ret = ksz8081_init_reset_gpios(dev);
 	if (ret) {
 		return ret;
 	}
-	k_busy_wait(100000);
 
 	/* Reset PHY */
 	ret = phy_mc_ksz8081_reset(dev);
@@ -698,12 +694,10 @@ static int phy_mc_ksz8081_init(const struct device *dev)
 		return ret;
 	}
 
-	k_busy_wait(100000);
 	k_work_init_delayable(&data->phy_monitor_work,
 				phy_mc_ksz8081_monitor_work_handler);
 
 	/* Advertise default speeds */
-	k_busy_wait(100000);
 	phy_mc_ksz8081_cfg_link(dev, config->default_speeds, 0);
 
 	return 0;
