@@ -15,7 +15,7 @@ properties:
     type: int
     required: true
 
-  prescalar:
+  prescaler:
     type: int
     required: true
 

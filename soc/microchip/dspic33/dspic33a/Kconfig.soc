@@ -25,5 +25,4 @@ config SOC_P33AK256MC506
 
 config SOC
 	default "p33ak128mc106" if SOC_P33AK128MC106
-	default "p33ak256mc506" if SOC_P33AK256MC506
 	default "p33ak512mps512" if SOC_P33AK512MPS512

@@ -49,7 +49,7 @@
 
 		sram0: memory@4000 {
 			compatible = "zephyr,memory";
-			reg = <0x4000 0x20000>;
+			reg = <0x4000 0x4000>;
 			label = "SRAM";
 		};
 
@@ -67,7 +67,7 @@
 			compatible = "microchip,dspic33-timer";
 			reg = <0x1E00 0xC>;
 			clock-frequency = <4000000>;
-			prescalar = <8>;
+			prescaler = <8>;
 			interrupt-parent = <&intc0>;
 			interrupts = <48 1>;
 			label = "TIMER_1";

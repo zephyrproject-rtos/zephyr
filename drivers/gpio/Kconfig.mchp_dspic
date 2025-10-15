@@ -5,5 +5,6 @@
 config GPIO_DSPIC
 	bool "dsPIC33A GPIO driver"
 	default y
+	depends on DT_HAS_MICROCHIP_DSPIC_GPIO_ENABLED
 	help
 	  Enable support for the dsPIC33A GPIO driver.

@@ -7,7 +7,7 @@ zephyr_library_sources(
     isr_wrapper.S
     prep_c.c
     thread.c
-    swap.c
+    swap.S
     tls.c
     reset0.S
     init.S

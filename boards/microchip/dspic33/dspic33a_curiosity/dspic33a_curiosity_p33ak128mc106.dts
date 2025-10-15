@@ -80,7 +80,6 @@
 };
 
 &timer1 {
-	clock-frequency = <8000000>;
 	status = "okay";
 };
 

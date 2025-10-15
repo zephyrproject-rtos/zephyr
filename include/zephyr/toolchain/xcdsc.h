@@ -237,17 +237,22 @@ static inline int popcount(unsigned int x)
 #define __GENERIC_DOT_SECTION(segment) __attribute__((section("." STRINGIFY(segment))))
 #define Z_GENERIC_DOT_SECTION(segment) __GENERIC_DOT_SECTION(segment)
 
-#endif /* ZEPHYR_INCLUDE_TOOLCHAIN_XSDSC_H_ */
-
-/* Double indirection to ensure section names are expanded before
- * stringification
- */
-#define __GENERIC_SECTION(segment) __attribute__((section(STRINGIFY(segment))))
-#define Z_GENERIC_SECTION(segment) __GENERIC_SECTION(segment)
-
-#define __GENERIC_DOT_SECTION(segment) __attribute__((section("." STRINGIFY(segment))))
-#define Z_GENERIC_DOT_SECTION(segment) __GENERIC_DOT_SECTION(segment)
-
 #define ALIAS_OF(of) __attribute__((alias(#of)))
 
 #define FUNC_ALIAS(real_func, new_alias, return_type) return_type new_alias() ALIAS_OF(real_func)
+
+#if defined(_ASMLANGUAGE)
+
+.macro func_section sect sym
+	.section .&sect&.&sym&, keep, code, keep
+	.align 4
+	.type _&sym&, @function
+_&sym&:
+.endm
+
+#define GTEXT(sym) .global _##sym
+#define SECTION_FUNC(sect, sym) func_section sect sym
+
+#endif /* _ASMLANGUAGE */
+
+#endif /* ZEPHYR_INCLUDE_TOOLCHAIN_XSDSC_H_ */

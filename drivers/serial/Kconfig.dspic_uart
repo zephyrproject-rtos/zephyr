@@ -4,6 +4,7 @@
 config UART_DSPIC
 	bool "dsPIC33A UART driver"
 	default y
+	depends on DT_HAS_MICROCHIP_DSPIC33_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	select PINCTRL

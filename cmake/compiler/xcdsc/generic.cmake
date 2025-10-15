@@ -35,7 +35,7 @@ function(find_dspic33_dfp)
   set(_home "$ENV{HOME}")
   if(WIN32 AND NOT _home)
     set(_home "$ENV{USERPROFILE}")
-	file(TO_CMAKE_PATH "${_home}" _home)
+    file(TO_CMAKE_PATH "${_home}" _home)
   endif()
 
   # Root search list: HOME first (highest priority), then system roots
@@ -155,24 +155,24 @@ function(find_dspic33_dfp)
   set(${FD_OUT_ROOT} "${DFP_ROOT}"  PARENT_SCOPE)
 endfunction()
 
-if ("${BOARD_QUALIFIERS}" MATCHES "/p33ak128mc106" AND
-	"${BOARD}" MATCHES "dspic33a_curiosity")
-	set(TARGET_CPU "33AK128MC106")
-	find_dspic33_dfp(
-	OUT_INFO C30_DEVICE_INFO
-	OUT_ROOT DFP_ROOT
-	ARCHES AK
-	FAMILIES MC
-	)
+if("${BOARD_QUALIFIERS}" MATCHES "/p33ak128mc106" AND
+    "${BOARD}" MATCHES "dspic33a_curiosity")
+    set(TARGET_CPU "33AK128MC106")
+    find_dspic33_dfp(
+    OUT_INFO C30_DEVICE_INFO
+    OUT_ROOT DFP_ROOT
+    ARCHES AK
+    FAMILIES MC
+    )
 elseif("${BOARD_QUALIFIERS}" MATCHES "/p33ak512mps512" AND
-	"${BOARD}" MATCHES "dspic33a_curiosity")
-	set(TARGET_CPU "33AK512MPS512")
-	find_dspic33_dfp(
-	OUT_INFO C30_DEVICE_INFO
-	OUT_ROOT DFP_ROOT
-	ARCHES AK
-	FAMILIES MP
-	)
+    "${BOARD}" MATCHES "dspic33a_curiosity")
+    set(TARGET_CPU "33AK512MPS512")
+    find_dspic33_dfp(
+    OUT_INFO C30_DEVICE_INFO
+    OUT_ROOT DFP_ROOT
+    ARCHES AK
+    FAMILIES MP
+    )
 endif()
 message(STATUS "DFP file in ${C30_DEVICE_INFO}")
 message(STATUS "DFP path  ${DFP_ROOT}")
@@ -182,7 +182,7 @@ set(ENV{DFP_ROOT}        "${DFP_ROOT}")
 set(ENV{TARGET_CPU}      "${TARGET_CPU}")
 
 set(CMAKE_C_FLAGS "-D__XC_DSC__ -mdfp=\"${DFP_ROOT}/xc16\"" CACHE STRING "" FORCE)
-set(CMAKE_ASM_FLAGS "-mdfp=\"${DFP_ROOT}/xc16\"" CACHE STRING "" FORCE)
+set(CMAKE_ASM_FLAGS "-D__XC_DSC__ -mdfp=\"${DFP_ROOT}/xc16\"" CACHE STRING "" FORCE)
 
 # Append to DTS preprocessor flags with DFP path
 if(DEFINED DTS_EXTRA_CPPFLAGS AND NOT "${DTS_EXTRA_CPPFLAGS}" STREQUAL "")
@@ -195,17 +195,17 @@ find_program(CMAKE_C_COMPILER xc-dsc-gcc PATHS ${XCDSC_TOOLCHAIN_PATH}/bin/ NO_D
 
 # Get compiler version
 execute_process(
-	COMMAND ${CMAKE_C_COMPILER} --version
-	OUTPUT_VARIABLE XCDSC_VERSION_STR
-	ERROR_VARIABLE XCDSC_VERSION_ERR
-	OUTPUT_STRIP_TRAILING_WHITESPACE )
+    COMMAND ${CMAKE_C_COMPILER} --version
+    OUTPUT_VARIABLE XCDSC_VERSION_STR
+    ERROR_VARIABLE XCDSC_VERSION_ERR
+    OUTPUT_STRIP_TRAILING_WHITESPACE )
 # Verify that the installed version is v3.30 or higher
 if("${XCDSC_VERSION_STR}" MATCHES ".*v([0-9]+)\\.([0-9]+).*")
-	string(REGEX REPLACE ".*v([0-9]+)\\.([0-9]+).*" "\\1\\2" __XCDSC_VERSION__ "${XCDSC_VERSION_STR}")
-	math(EXPR XCDSC_VERSION_INT "${__XCDSC_VERSION__}")
-	if(XCDSC_VERSION_INT LESS 330)
-	message(FATAL_ERROR "XC-DSC compiler v3.30 or newer is required. Found version: ${XCDSC_VERSION_STR}")
-	endif()
+    string(REGEX REPLACE ".*v([0-9]+)\\.([0-9]+).*" "\\1\\2" __XCDSC_VERSION__ "${XCDSC_VERSION_STR}")
+    math(EXPR XCDSC_VERSION_INT "${__XCDSC_VERSION__}")
+    if(XCDSC_VERSION_INT LESS 330)
+    message(FATAL_ERROR "XC-DSC compiler v3.30 or newer is required. Found version: ${XCDSC_VERSION_STR}")
+    endif()
 else()
-	message(FATAL_ERROR "Unable to detect XC-DSC compiler version from: '${XCDSC_VERSION_STR}'")
+    message(FATAL_ERROR "Unable to detect XC-DSC compiler version from: '${XCDSC_VERSION_STR}'")
 endif()
