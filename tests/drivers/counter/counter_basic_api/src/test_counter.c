@@ -169,6 +169,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_MCHP_G1_TCC
 	DEVS_FOR_DT_COMPAT(microchip_tcc_g1_counter)
 #endif
+#ifdef CONFIG_COUNTER_MCHP_TC_G1
+	DEVS_FOR_DT_COMPAT(microchip_tc_g1_counter)
+#endif
 };
 
 static const struct device *const period_devs[] = {
