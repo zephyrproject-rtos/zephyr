@@ -236,7 +236,7 @@ static int z_get_fd_by_obj_and_vtable(void *obj, const struct fd_op_vtable *vtab
 }
 
 bool zvfs_get_obj_lock_and_cond(void *obj, const struct fd_op_vtable *vtable, struct k_mutex **lock,
-			     struct k_condvar **cond)
+				struct k_condvar **cond)
 {
 	int fd;
 	struct fd_entry *entry;
@@ -259,8 +259,7 @@ bool zvfs_get_obj_lock_and_cond(void *obj, const struct fd_op_vtable *vtable, st
 	return true;
 }
 
-void *zvfs_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable,
-			      struct k_mutex **lock)
+void *zvfs_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable, struct k_mutex **lock)
 {
 	struct fd_entry *entry;
 
@@ -324,8 +323,7 @@ void zvfs_finalize_typed_fd(int fd, void *obj, const struct fd_op_vtable *vtable
 	if (vtable && vtable->ioctl) {
 		int prev_errno = errno;
 
-		(void)zvfs_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_SET_LOCK,
-					   &fdtable[fd].lock);
+		(void)zvfs_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_SET_LOCK, &fdtable[fd].lock);
 		if ((prev_errno != EOPNOTSUPP) && (errno == EOPNOTSUPP)) {
 			/* restore backed-up errno value if the backend does not support locking */
 			errno = prev_errno;
@@ -625,7 +623,6 @@ static int stdinout_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 	errno = EINVAL;
 	return -1;
 }
-
 
 static const struct fd_op_vtable stdinout_fd_op_vtable = {
 	.read = stdinout_read_vmeth,
