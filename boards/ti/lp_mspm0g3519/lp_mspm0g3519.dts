@@ -78,7 +78,7 @@
 };
 
 &hsclk {
-	clocks = <&syspll2x 0>;
+	clocks = <&syspll>;
 	status = "okay";
 };
 
