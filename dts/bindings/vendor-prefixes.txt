@@ -603,6 +603,7 @@ sbs	Smart Battery System
 sc	Space Cubics Inc.
 schindler	Schindler
 sciosense	Sciosense B.V.
+sct	StarChips Technology Inc.
 seagate	Seagate Technology PLC
 seco	SECO S.p.A.
 seeed	Seeed Technology Co., Ltd
