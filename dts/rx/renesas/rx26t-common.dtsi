@@ -55,6 +55,13 @@
 		};
 	};
 
+	dtc: rx-dtc@82400 {
+		compatible = "renesas,rx-dtc";
+		reg = <0x00082400 0x1c>;
+		clocks = <&iclk MSTPA 28>;
+		status = "okay";
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -470,6 +477,7 @@
 			reg = <0x8A020 0x20>;
 			clocks = <&pclkb MSTPB 30>;
 			channel = <1>;
+			dtc = <&dtc>;
 			status = "disabled";
 
 			uart {
@@ -486,6 +494,7 @@
 					      <&group_irq_bl0 10 1>, <&group_irq_bl0 11 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			channel = <5>;
+			dtc = <&dtc>;
 			status = "disabled";
 
 			uart {
@@ -502,6 +511,7 @@
 			reg = <0x8A0C0 0x20>;
 			clocks = <&pclkb MSTPB 25>;
 			channel = <6>;
+			dtc = <&dtc>;
 			status = "disabled";
 
 			uart {
@@ -518,6 +528,7 @@
 			reg = <0x8B300 0x20>;
 			clocks = <&pclkb MSTPB 4>;
 			channel = <12>;
+			dtc = <&dtc>;
 			status = "disabled";
 
 			uart {
