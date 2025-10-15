@@ -8,14 +8,14 @@
 
 /**
  * @file
- * @brief Soc and Board hooks
+ * @brief SoC and Board hooks
  *
  * This header file contains function prototypes for the interfaces between
- * zephyr architecture and initialization code and the SoC and board specific logic
+ * Zephyr's architecture and initialization code and SoC/board-specific logic
  * that resides under boards/ and soc/
  *
- * @note These are all standard soc and board interfaces that are exported from
- * soc and board specific logic to OS internal logic.  These should never be accessed
+ * @note These are all standard SoC and board interfaces that are exported from
+ * SoC/board-specific logic to OS internal logic. These should never be accessed
  * directly from application code but may be freely used within the OS.
  */
 
