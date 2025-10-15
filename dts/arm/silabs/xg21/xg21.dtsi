@@ -442,6 +442,12 @@
 			status = "disabled";
 		};
 
+		buram: retained-memory@50080000 {
+			compatible = "silabs,buram";
+			reg = <0x50080000 0x80>;
+			status = "disabled";
+		};
+
 		rtcc0: stimer0: rtcc@58000000 {
 			compatible = "silabs,gecko-stimer";
 			reg = <0x58000000 0x4000>;
