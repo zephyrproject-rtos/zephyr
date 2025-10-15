@@ -19,12 +19,6 @@
 			#clock-cells = <0>;
 			status = "okay";
 		};
-
-		syspll2x: syspll2x {
-			#clock-cells = <1>;
-			compatible = "ti,mspm0-clk";
-			status = "disabled";
-		};
 	};
 
 	soc {
