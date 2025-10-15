@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018, Nordic Semiconductor ASA
  * Copyright 2024, 2025 NXP
+ * Copyright (c) 2025 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +23,8 @@ void *exp_user_data = (void *)199;
 
 struct counter_alarm_cfg cntr_alarm_cfg;
 struct counter_alarm_cfg cntr_alarm_cfg2;
+
+/* clang-format off */
 
 #define DEVICE_DT_GET_AND_COMMA(node_id) DEVICE_DT_GET(node_id),
 /* Generate a list of devices for all instances of the "compat" */
@@ -153,11 +156,15 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_RA_AGT
 	DEVS_FOR_DT_COMPAT(renesas_ra_agt_counter)
 #endif
+
 #ifdef CONFIG_COUNTER_RENESAS_RZ_CMTW
 	DEVS_FOR_DT_COMPAT(renesas_rz_cmtw_counter)
 #endif
 #ifdef CONFIG_COUNTER_INFINEON_TCPWM
 	DEVS_FOR_DT_COMPAT(infineon_tcpwm_counter)
+#endif
+#ifdef CONFIG_COUNTER_MCHP_G1_TCC
+	DEVS_FOR_DT_COMPAT(microchip_tcc_g1_counter)
 #endif
 };
 
@@ -179,6 +186,7 @@ static const struct device *const period_devs[] = {
 #endif
 };
 
+/* clang-format on */
 typedef void (*counter_test_func_t)(const struct device *dev);
 typedef bool (*counter_capability_func_t)(const struct device *dev);
 
