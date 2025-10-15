@@ -29,6 +29,15 @@
 			DT_PROP(DT_NODELABEL(mfpclk), clk_div))),	\
 		(0))
 
+#define DT_SYSOSC_FREQ	DT_PROP(DT_NODELABEL(sysosc), clock_frequency)
+#if DT_SYSOSC_FREQ == 32000000
+#define SYSOSC_FREQ	DL_SYSCTL_SYSOSC_FREQ_BASE
+#elif DT_SYSOSC_FREQ == 4000000
+#define SYSOSC_FREQ	DL_SYSCTL_SYSOSC_FREQ_4M
+#else
+#error "Set SYSOSC clock frequency not supported"
+#endif
+
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(mfpclk), okay)
 #define MSPM0_MFPCLK_ENABLED 1
 #endif
@@ -60,11 +69,6 @@ static struct mspm0_clk_cfg mspm0_lfclk_cfg = {
 static struct mspm0_clk_cfg mspm0_ulpclk_cfg = {
 	.clk_freq = DT_PROP(DT_NODELABEL(ulpclk), clock_frequency),
 	.clk_div = MSPM0_ULPCLK_DIV,
-};
-
-static struct mspm0_clk_cfg mspm0_mclk_cfg = {
-	.clk_freq = DT_PROP(DT_NODELABEL(mclk), clock_frequency),
-	.clk_div = MSPM0_MCLK_DIV,
 };
 
 #if MSPM0_MFPCLK_ENABLED
@@ -153,9 +157,12 @@ static int clock_mspm0_get_rate(const struct device *dev,
 static int clock_mspm0_init(const struct device *dev)
 {
 	/* setup clocks based on specific rates */
-	DL_SYSCTL_setSYSOSCFreq(DL_SYSCTL_SYSOSC_FREQ_BASE);
+	DL_SYSCTL_setSYSOSCFreq(SYSOSC_FREQ);
 
-	DL_SYSCTL_setMCLKDivider(mspm0_mclk_cfg.clk_div);
+#if DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_NODELABEL(sysosc)) && (DT_SYSOSC_FREQ == 4000000)
+	DL_SYSCTL_setMCLKDivider(MSPM0_MCLK_DIV);
+#endif
+
 #if DT_NODE_HAS_PROP(DT_NODELABEL(ulpclk), clk_div)
 	DL_SYSCTL_setULPCLKDivider(mspm0_ulpclk_cfg.clk_div);
 #endif
