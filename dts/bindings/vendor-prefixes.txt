@@ -612,6 +612,7 @@ sc	Space Cubics Inc.
 scdz	Shenzhen Qiushi IoT Technology Co., Ltd.
 schindler	Schindler
 sciosense	Sciosense B.V.
+sct	StarChips Technology Inc.
 seagate	Seagate Technology PLC
 seco	SECO S.p.A.
 seeed	Seeed Technology Co., Ltd
