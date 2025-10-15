@@ -56,6 +56,16 @@ Boards
 
 * Panasonic ``panb511evb`` is renamed to ``panb611evb``.
 
+* STM32 boards OpenOCD configuration files have been changed to support latest OpenOCD versions
+  (> v0.12.0) in which the HLA/SWD transport has been deprecated (see
+  https://review.openocd.org/c/openocd/+/8523 and commit
+  https://sourceforge.net/p/openocd/code/ci/34ec5536c0ba3315bc5a841244bbf70141ccfbb4/).
+  Issues may be encountered when connecting to an ST-Link adapter running firmware prior
+  v2j24 which do not support the new transport. In this case, the ST-Link firmware should
+  be upgraded or, if not possible, the OpenOCD configuration script should be changed to
+  source "interface/stlink-hla.cfg" and select the "hla_swd" interface explicitly.
+  Backward compatibility with OpenOCD v0.12.0 or older is maintained.
+
 Device Drivers and Devicetree
 *****************************
 
