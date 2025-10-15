@@ -9,7 +9,7 @@
 
 / {
 	clocks: clocks {
-		pll: pll {
+		syspll: syspll {
 			compatible = "ti,mspm0-pll";
 			clocks = <&sysosc>;
 			p-div = <2>;
