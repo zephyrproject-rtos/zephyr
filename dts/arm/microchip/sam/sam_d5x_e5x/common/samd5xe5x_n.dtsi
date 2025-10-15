@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <microchip/sam/sam_d5x_e5x/common/samd5xe5x.dtsi>
+
 / {
 	soc {
 		tcc3: tcc@42001000 {
@@ -47,5 +49,16 @@
 			max-bit-width = <16>;
 			channels = <2>;
 		};
+	};
+};
+
+&pinctrl {
+	portc: gpio@41008100 {
+		compatible = "microchip,port-g1-gpio";
+		reg = <0x41008100 0x80>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		#microchip,pin-cells = <2>;
+		status = "disabled";
 	};
 };
