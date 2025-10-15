@@ -17,7 +17,7 @@
     BOARD_InitMipiPanelPins();
     BOARD_InitMipiTouchPanelPins();
 
-@IMPORTANT @TODO(Emilio): I2C is going to be needed for the Touch pins to 
+@IMPORTANT @TODO(Emilio): I2C is going to be needed for the Touch pins to
 	work.
 @SPEED(Emilio): Until we have the actual display working we will not
 	worry about I2C.
@@ -235,7 +235,7 @@
 
 /*****************************/
 @IMPORTANT @NOTE(Emilio): We are currently skipping lv_init, since we think
-	it is mostly init for middleware code and nothing to deal with 
+	it is mostly init for middleware code and nothing to deal with
 	the actual display, may need to look at this again.
 
 
@@ -250,7 +250,7 @@
 #define DEMO_FB_WIDTH  (DEMO_PANEL_WIDTH) // 466
 #define DEMO_FB_HEIGHT (DEMO_PANEL_HEIGHT) // 466
 // 960
-#define DEMO_BUFFER_STRIDE_BYTE DEMO_FB_WIDTH * DEMO_BUFFER_BYTE_PER_PIXEL 
+#define DEMO_BUFFER_STRIDE_BYTE DEMO_FB_WIDTH * DEMO_BUFFER_BYTE_PER_PIXEL
 // 447360
 #define DEMO_FB_SIZE (DEMO_BUFFER_STRIDE_BYTE * DEMO_FB_HEIGHT)
 
@@ -265,4 +265,32 @@
 @IMPORTANT @NOTE(Emilio): It seems that majority of the display init support
 	is located in examples\_boards\mimxrt700evk\display_support.c
 	in func BOARD_PrepareDisplayController()
+
+
+/*****************************/
+//@NOTE(Emilio): Where you left off
+
+//@TODO(Emilio): Look at enabling mipi_dsi->mode_flag = MIPI_DSI_MODE_VIDEO;
+
+//@IMPORTANT @NOTE(Emilio): While the register fields in both GPIO
+	drivers line up, the api interface seems to be
+	unaligned with how the bit mask values and flags
+	are defined, as a result it will take more digging to
+	find out if the gpio signals are being configured correctly.
+	Specifically is ACTIVE HIGH or ACTIVE LOW?
+
+//@TODO(Emilio): GPIOs we KNOWN we need to configure referanced above.
+									///////////////////////
+									//SIGNAL_DIR | ACTIVE /
+									///////////////////////
+	reset-gpios = <&nxp_mipi_connector 21 GPIO_ACTIVE_HIGH>; 	//OUTPUT     |
+	backlight-gpios = <&nxp_mipi_connector 0 GPIO_ACTIVE_HIGH>;	//---        |
+	tear-effect-gpios = <&nxp_mipi_connector 22 GPIO_ACTIVE_HIGH>;  //INPUT      |
+	power-gpios = <&nxp_mipi_connector 32 GPIO_ACTIVE_HIGH>;	//OUTPUT     |
+
+	//@NOTE(Emilio): Touch Screen
+	int-gpios = <&nxp_mipi_connector 29 GPIO_ACTIVE_LOW>;		//---        |
+	reset-gpios = <&nxp_mipi_connector 28 GPIO_ACTIVE_LOW>;		//---        |
+
+
 
