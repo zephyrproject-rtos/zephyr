@@ -9,11 +9,9 @@ LOG_MODULE_DECLARE(updatehub, CONFIG_UPDATEHUB_LOG_LEVEL);
 
 #include "updatehub_integrity.h"
 
-#define SUCCESS_VALUE PSA_SUCCESS
-
-int updatehub_integrity_init(updatehub_crypto_context_t *ctx)
+int updatehub_integrity_init(psa_hash_operation_t *ctx)
 {
-	int ret;
+	psa_status_t status;
 
 	if (ctx == NULL) {
 		LOG_DBG("Invalid integrity context");
@@ -21,19 +19,19 @@ int updatehub_integrity_init(updatehub_crypto_context_t *ctx)
 	}
 
 	*ctx = psa_hash_operation_init();
-	ret = psa_hash_setup(ctx, PSA_ALG_SHA_256);
-	if (ret != SUCCESS_VALUE) {
-		LOG_DBG("Failed to %s SHA-256 operation. (%d)", "set up", ret);
+	status = psa_hash_setup(ctx, PSA_ALG_SHA_256);
+	if (status != PSA_SUCCESS) {
+		LOG_DBG("Failed to %s SHA-256 operation. (%d)", "set up", status);
 		return -EFAULT;
 	}
 
 	return 0;
 }
 
-int updatehub_integrity_update(updatehub_crypto_context_t *ctx,
+int updatehub_integrity_update(psa_hash_operation_t *ctx,
 			       const uint8_t *buffer, const uint32_t len)
 {
-	int ret;
+	psa_status_t status;
 
 	if (ctx == NULL || buffer == NULL) {
 		return -EINVAL;
@@ -44,20 +42,20 @@ int updatehub_integrity_update(updatehub_crypto_context_t *ctx,
 		return 0;
 	}
 
-	ret = psa_hash_update(ctx, buffer, len);
-	if (ret != SUCCESS_VALUE) {
+	status = psa_hash_update(ctx, buffer, len);
+	if (status != PSA_SUCCESS) {
 		psa_hash_abort(ctx);
-		LOG_DBG("Failed to %s SHA-256 operation. (%d)", "update", ret);
+		LOG_DBG("Failed to %s SHA-256 operation. (%d)", "update", status);
 		return -EFAULT;
 	}
 
 	return 0;
 }
 
-int updatehub_integrity_finish(updatehub_crypto_context_t *ctx,
+int updatehub_integrity_finish(psa_hash_operation_t *ctx,
 			       uint8_t *hash, const uint32_t size)
 {
-	int ret;
+	psa_status_t status;
 	size_t hash_len;
 
 	if (ctx == NULL || hash == NULL) {
@@ -69,10 +67,10 @@ int updatehub_integrity_finish(updatehub_crypto_context_t *ctx,
 		return -EINVAL;
 	}
 
-	ret = psa_hash_finish(ctx, hash, size, &hash_len);
-	if (ret != SUCCESS_VALUE) {
+	status = psa_hash_finish(ctx, hash, size, &hash_len);
+	if (status != PSA_SUCCESS) {
 		psa_hash_abort(ctx);
-		LOG_DBG("Failed to %s SHA-256 operation. (%d)", "finish", ret);
+		LOG_DBG("Failed to %s SHA-256 operation. (%d)", "finish", status);
 		return -EFAULT;
 	}
 
