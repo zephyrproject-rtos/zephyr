@@ -36,6 +36,7 @@
 
 /** @brief RCC_CFGRx register offset */
 #define CFGR_REG		0x04
+#define CFGR2_REG		0x2C
 #define CFGR3_REG		0x30
 
 /** @brief RCC_BDCR register offset */
@@ -43,9 +44,13 @@
 
 /** @brief Device domain clocks selection helpers) */
 /** CFGR devices */
+#define ADC_PRE(val)		STM32_DT_CLOCK_SELECT((val), 2, 14, CFGR_REG) /* F37x only */
 #define I2S_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 23, CFGR_REG)
 #define MCO1_SEL(val)           STM32_DT_CLOCK_SELECT((val), 3, 24, CFGR_REG)
 #define MCO1_PRE(val)           STM32_DT_CLOCK_SELECT((val), 3, 28, CFGR_REG)
+/** CFGR2 devices */
+#define ADC12_PRE(val)		STM32_DT_CLOCK_SELECT((val), 5, 4, CFGR2_REG) /* All but F37x */
+#define ADC34_PRE(val)		STM32_DT_CLOCK_SELECT((val), 5, 9, CFGR2_REG)
 /** CFGR3 devices */
 #define USART1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 2, 0, CFGR3_REG)
 #define I2C1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 4, CFGR3_REG)
@@ -65,5 +70,26 @@
 #define TIM3_4_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 25, CFGR3_REG)
 /** BDCR devices */
 #define RTC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 2, 8, BDCR_REG)
+
+/* ADCxx prescaler for all F3 but F37x: division factor */
+#define ADCxx_PRE_DISABLED	0x0
+#define ADCxx_PRE_DIV_1		0x10
+#define ADCxx_PRE_DIV_2		0x11
+#define ADCxx_PRE_DIV_4		0x12
+#define ADCxx_PRE_DIV_6		0x13
+#define ADCxx_PRE_DIV_8		0x14
+#define ADCxx_PRE_DIV_10	0x15
+#define ADCxx_PRE_DIV_12	0x16
+#define ADCxx_PRE_DIV_16	0x17
+#define ADCxx_PRE_DIV_32	0x18
+#define ADCxx_PRE_DIV_64	0x19
+#define ADCxx_PRE_DIV_128	0x1A
+#define ADCxx_PRE_DIV_256	0x1B
+
+/* ADC prescaler for F37x: division factor */
+#define ADC_PRE_DIV_2		0
+#define ADC_PRE_DIV_4		1
+#define ADC_PRE_DIV_6		2
+#define ADC_PRE_DIV_8		3
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F3_CLOCK_H_ */

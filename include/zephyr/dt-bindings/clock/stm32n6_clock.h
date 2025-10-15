@@ -98,6 +98,7 @@
 /** CCIPR1 devices */
 #define ADF1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 0, CCIPR1_REG)
 #define ADC12_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 4, CCIPR1_REG)
+#define ADC_PRE(val)		STM32_DT_CLOCK_SELECT((val), 8, 8, CCIPR1_REG)
 #define DCMIPP_SEL(val)		STM32_DT_CLOCK_SELECT((val), 2, 20, CCIPR1_REG)
 /** CCIPR2 devices */
 #define ETH1PTP_SEL(val)	STM32_DT_CLOCK_SELECT((val), 2, 0, CCIPR2_REG)
@@ -176,5 +177,8 @@
 
 /** @brief CPU clock switch selection */
 #define CPU_SEL(val)		STM32_DT_CLOCK_SELECT((val), 2, 16, CFGR1_REG)
+
+/* ADC prescaler : division factor */
+#define ADC_PRE_DIV(pres) ((pres - 1) & 0xFFU)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32N6_CLOCK_H_ */
