@@ -1,0 +1,12 @@
+description: |
+  Nordic wrapper for USB controller and PHY hardware. The wrapper is used to
+  configure, control, and enable/disable the USB PHY, and to enable/disable USB
+  controller.
+
+compatible: "nordic,nrf-usbhs-wrapper"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
