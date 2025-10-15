@@ -62,6 +62,14 @@ New APIs and options
 
     * :c:func:`bt_gatt_cb_unregister` Added an API to unregister GATT callback handlers.
 
+    * :c:func:`bt_gatt_send_read_rsp`
+      Added an API to send deferred GATT Read Responses when an attribute
+      read handler returns ``-EINPROGRESS``.
+
+    * :c:func:`bt_gatt_send_write_rsp`
+      Added an API to send deferred GATT Write Responses when an attribute
+      write handler returns ``-EINPROGRESS``.
+
 ..
   Link to new APIs here, in a group if you think it's necessary, no need to get
   fancy just list the link, that should contain the documentation. If you feel
