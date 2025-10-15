@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2025 Texas Instruments
  * Copyright (c) 2025 Linumiz
+ * Copyright (c) 2025 Bang & Olufsen A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -93,12 +94,6 @@
 			compatible = "ti,mspm0-clk";
 			clock-frequency = <32768>;
 			clocks = <&lfosc>;
-		};
-
-		hsclk: hsclk {
-			#clock-cells = <1>;
-			compatible = "ti,mspm0-clk";
-			clocks = <&sysosc>;
 		};
 
 		ulpclk: ulpclk {
