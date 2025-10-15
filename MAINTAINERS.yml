@@ -3387,8 +3387,6 @@ Modem:
   status: maintained
   maintainers:
     - bjarki-andreasen
-  collaborators:
-    - tomi-font
   files:
     - subsys/modem/
     - include/zephyr/modem/
