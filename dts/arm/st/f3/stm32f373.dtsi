@@ -6,6 +6,7 @@
 
 #include <st/f3/stm32f3.dtsi>
 #include <zephyr/dt-bindings/adc/stm32f1_adc.h>
+#include <zephyr/dt-bindings/clock/stm32f37x_clock.h>
 #include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 
 / {
