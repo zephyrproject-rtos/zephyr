@@ -10,3 +10,9 @@ include: [base.yaml]
 properties:
   reg:
     required: true
+
+  regulator:
+    required: true
+    type: phandle
+    description: |
+      USB PHY and controller function depends on the USB regulator VREGUSB.
