@@ -18,4 +18,14 @@ config NXP_PMC_TMPSNS_CALIBRATION_OTP_FUSE_INDEX
 	  TSENS_CAL is an 8-bit signed calibration constant
 	  retrieved from non-volatile memory. We need this
 	  index to read the fuse to get TSENS_CAL.
+
+config NXP_PMC_TMPSNS_USE_FLOAT_CALC
+	bool "Use float and FPU"
+	default y
+	help
+	  When enabled, the driver performs more floating-point
+	  calculations. If your SoC has an FPU, it is recommended
+	  to select this option. Testing has shown that enabling
+	  this option results in shorter code execution times.
+
 endif

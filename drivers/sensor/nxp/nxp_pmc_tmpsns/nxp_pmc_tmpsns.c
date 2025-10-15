@@ -10,10 +10,24 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(nxp_pmc_tmpsns, CONFIG_SENSOR_LOG_LEVEL);
 
 #define DT_DRV_COMPAT nxp_pmc_tmpsns
+
+#if !CONFIG_NXP_PMC_TMPSNS_USE_FLOAT_CALC
+/* Scale factor for 3 decimal places */
+#define NXP_PMC_TMPSNS_TEMP_SCALE_FACTOR		1000
+/* For intermediate calculations */
+#define NXP_PMC_TMPSNS_TEMP_SCALE_FACTOR_LARGE		1000000
+
+#define NXP_PMC_TMPSNS_TEMP_KELVIN_TO_CELSIUS_SCALED	273150	/* 273.15 * 1000 */
+#define NXP_PMC_TMPSNS_TEMP_COEFFICIENT_SCALED		370980	/* 370.98 * 1000 */
+#define NXP_PMC_TMPSNS_VREF_BASE_OFFSET_SCALED		953360	/* 953.36 * 1000 */
+#define NXP_PMC_TMPSNS_VREF_SCALE_FACTOR		2048	/* Already an integer */
+#define NXP_PMC_TMPSNS_CALIBRATION_MASK			0xFF
+#endif
 
 struct nxp_pmc_tmpsns_config {
 	const struct device *adc;
@@ -27,14 +41,80 @@ struct nxp_pmc_tmpsns_data {
 	float pmc_tmpsns_value;
 };
 
+#if !CONFIG_NXP_PMC_TMPSNS_USE_FLOAT_CALC
+/**
+ * Calculate weighted average for CTAT using integer arithmetic
+ * Result is scaled by 1000 for precision.
+ */
+static inline int32_t calculate_cm_ctat_int(const int16_t *values)
+{
+	int32_t sum = (2 * values[1]  - values[2] +
+		2 * values[13] - values[12] +
+		2 * values[6]  - values[5] +
+		2 * values[8]  - values[9]);
+
+	return (sum * 250);
+}
+
+/**
+ * Calculate weighted average for temperature using integer arithmetic
+ * Result is scaled by 1000 for precision.
+ */
+static inline int32_t calculate_cm_temp_int(const int16_t *values)
+{
+	int32_t sum = (2 * values[0]  - values[3] +
+		2 * values[14] - values[11] +
+		4 * values[7]  - values[4] - values[10]);
+
+	return (sum * 250);
+}
+
+/**
+ * Calculate temperature in millidegrees Celsius using integer arithmetic.
+ */
+static int32_t get_temperature_millidegrees(struct nxp_pmc_tmpsns_data *data,
+				const int16_t *pmc_tmpsns_value)
+{
+	if (!data || !pmc_tmpsns_value) {
+		return -EINVAL;
+	}
+
+	/* Calculate temperature sensor components (scaled by 1000) */
+	int32_t cm_ctat_scaled = calculate_cm_ctat_int(pmc_tmpsns_value);
+	int32_t cm_temp_scaled = calculate_cm_temp_int(pmc_tmpsns_value);
+
+	/* Extract calibration value  */
+	int32_t calibration = (int8_t)(data->pmc_tmpsns_calibration &
+				NXP_PMC_TMPSNS_CALIBRATION_MASK);
+
+	/* Calculate reference voltage with calibration  */
+	int64_t vref_numerator = (int64_t)(NXP_PMC_TMPSNS_VREF_BASE_OFFSET_SCALED +
+			calibration * NXP_PMC_TMPSNS_TEMP_SCALE_FACTOR) * cm_temp_scaled;
+	int32_t cm_vref_scaled = cm_ctat_scaled + (int32_t)(vref_numerator /
+			(NXP_PMC_TMPSNS_VREF_SCALE_FACTOR * NXP_PMC_TMPSNS_TEMP_SCALE_FACTOR));
+
+	if (cm_vref_scaled == 0) {
+		return -EINVAL;
+	}
+
+	/* Calculate temperature in millidegrees Celsius */
+	int64_t temp_ratio = ((int64_t)NXP_PMC_TMPSNS_TEMP_COEFFICIENT_SCALED *
+					cm_temp_scaled) / cm_vref_scaled;
+
+	return (int32_t)temp_ratio - NXP_PMC_TMPSNS_TEMP_KELVIN_TO_CELSIUS_SCALED;
+}
+#endif
+
 static int nxp_pmc_tmpsns_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	uint8_t pmc_tmpsns_select[15] = {0, 1, 3, 2, 6, 7, 5, 4, 5, 7, 6, 2, 3, 1, 0};
 	const struct nxp_pmc_tmpsns_config *config = dev->config;
 	struct nxp_pmc_tmpsns_data *data = dev->data;
 	uint16_t pmc_tmpsns_value[15] = {0};
+#if CONFIG_NXP_PMC_TMPSNS_USE_FLOAT_CALC
 	float cm_vref, cm_ctat, cm_temp;
 	int8_t calibration = 0;
+#endif
 	int ret;
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_DIE_TEMP) {
@@ -52,6 +132,7 @@ static int nxp_pmc_tmpsns_sample_fetch(const struct device *dev, enum sensor_cha
 		pmc_tmpsns_value[index] = data->buffer;
 	}
 
+#if CONFIG_NXP_PMC_TMPSNS_USE_FLOAT_CALC
 	cm_ctat = (float)(2 * pmc_tmpsns_value[1] - pmc_tmpsns_value[2] +
 			2 * pmc_tmpsns_value[13] - pmc_tmpsns_value[12] +
 			2 * pmc_tmpsns_value[6] - pmc_tmpsns_value[5] +
@@ -67,6 +148,9 @@ static int nxp_pmc_tmpsns_sample_fetch(const struct device *dev, enum sensor_cha
 	cm_vref = cm_ctat + (953.36f + calibration) * cm_temp / 2048;
 
 	data->pmc_tmpsns_value = 370.98f * (cm_temp / cm_vref) - 273.15f;
+#else
+	data->pmc_tmpsns_value = get_temperature_millidegrees(data, pmc_tmpsns_value) / 1000.0f;
+#endif
 
 	return 0;
 }
