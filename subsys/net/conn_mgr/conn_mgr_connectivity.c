@@ -23,7 +23,7 @@ int conn_mgr_if_connect(struct net_if *iface)
 	LOG_DBG("iface %p connect", iface);
 
 	binding = conn_mgr_if_get_binding(iface);
-	if (!binding) {
+	if (binding == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -60,7 +60,7 @@ int conn_mgr_if_disconnect(struct net_if *iface)
 	LOG_DBG("iface %p disconnect", iface);
 
 	binding = conn_mgr_if_get_binding(iface);
-	if (!binding) {
+	if (binding == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -108,7 +108,7 @@ int conn_mgr_if_get_opt(struct net_if *iface, int optname, void *optval, size_t 
 	}
 
 	binding = conn_mgr_if_get_binding(iface);
-	if (!binding) {
+	if (binding == NULL) {
 		*optlen = 0;
 		return -ENOTSUP;
 	}
@@ -139,7 +139,7 @@ int conn_mgr_if_set_opt(struct net_if *iface, int optname, const void *optval, s
 	}
 
 	binding = conn_mgr_if_get_binding(iface);
-	if (!binding) {
+	if (binding == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -166,7 +166,7 @@ int conn_mgr_if_set_flag(struct net_if *iface, enum conn_mgr_if_flag flag, bool 
 	}
 
 	binding = conn_mgr_if_get_binding(iface);
-	if (!binding) {
+	if (binding == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -184,7 +184,7 @@ bool conn_mgr_if_get_flag(struct net_if *iface, enum conn_mgr_if_flag flag)
 	}
 
 	binding = conn_mgr_if_get_binding(iface);
-	if (!binding) {
+	if (binding == NULL) {
 		return false;
 	}
 
@@ -196,7 +196,7 @@ int conn_mgr_if_get_timeout(struct net_if *iface)
 	struct conn_mgr_conn_binding *binding = conn_mgr_if_get_binding(iface);
 	int value;
 
-	if (!binding) {
+	if (binding == NULL) {
 		return false;
 	}
 
@@ -213,7 +213,7 @@ int conn_mgr_if_set_timeout(struct net_if *iface, int timeout)
 {
 	struct conn_mgr_conn_binding *binding = conn_mgr_if_get_binding(iface);
 
-	if (!binding) {
+	if (binding == NULL) {
 		return -ENOTSUP;
 	}
 
