@@ -55,6 +55,13 @@
 		};
 	};
 
+	dtc: rx-dtc@82400 {
+		compatible = "renesas,rx-dtc";
+		reg = <0x00082400 0x1c>;
+		clocks = <&iclk MSTPA 28>;
+		status = "okay";
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -468,8 +475,13 @@
 			interrupt-names = "rxi", "txi";
 			reg = <0x8A020 0x20>;
 			clocks = <&pclkb MSTPB 30>;
-			status = "disabled";
+			tei-ctrl = <&group_irq_bl0>;
+			tei-number = <2>;
+			eri-ctrl = <&group_irq_bl0>;
+			eri-number = <3>;
 			channel = <1>;
+			dtc = <&dtc>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -483,8 +495,13 @@
 			interrupt-names = "rxi", "txi";
 			reg = <0x8A0A0 0x20>;
 			clocks = <&pclkb MSTPB 26>;
-			status = "disabled";
+			tei-ctrl = <&group_irq_bl0>;
+			tei-number = <10>;
+			eri-ctrl = <&group_irq_bl0>;
+			eri-number = <11>;
 			channel = <5>;
+			dtc = <&dtc>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -498,8 +515,13 @@
 			interrupt-names = "rxi", "txi";
 			reg = <0x8A0C0 0x20>;
 			clocks = <&pclkb MSTPB 25>;
-			status = "disabled";
+			tei-ctrl = <&group_irq_bl0>;
+			tei-number = <12>;
+			eri-ctrl = <&group_irq_bl0>;
+			eri-number = <13>;
 			channel = <6>;
+			dtc = <&dtc>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -513,8 +535,13 @@
 			interrupt-names = "rxi", "txi";
 			reg = <0x8B300 0x20>;
 			clocks = <&pclkb MSTPB 4>;
-			status = "disabled";
+			tei-ctrl = <&group_irq_bl0>;
+			tei-number = <16>;
+			eri-ctrl = <&group_irq_bl0>;
+			eri-number = <17>;
 			channel = <12>;
+			dtc = <&dtc>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -561,6 +588,78 @@
 			reg = <0x00120040 0xBF>;
 			zephyr,memory-region = "OFSM";
 			status = "okay";
+		};
+
+		group_irq_be0: grp_intc@87600 {
+			compatible = "renesas,rx-grp-intc";
+			interrupt-controller;
+			label = "be0";
+			reg =	<0x00087600 0x04>,
+				<0x00087640 0x04>;
+			reg-names = "GRP", "GEN";
+			interrupts = <106 4>;
+			status = "disabled";
+			#interrupt-cells = <2>;
+		};
+
+		group_irq_bl0: grp_intc@87630 {
+			compatible = "renesas,rx-grp-intc";
+			interrupt-controller;
+			label = "bl0";
+			reg =	<0x00087630 0x04>,
+				<0x00087670 0x04>;
+			reg-names = "GRP", "GEN";
+			interrupts = <110 4>;
+			status = "okay";
+			#interrupt-cells = <2>;
+		};
+
+		group_irq_bl1: grp_intc@87634 {
+			compatible = "renesas,rx-grp-intc";
+			interrupt-controller;
+			label = "bl1";
+			reg =	<0x00087634 0x04>,
+				<0x00087674 0x04>;
+			reg-names = "GRP", "GEN";
+			interrupts = <111 4>;
+			status = "disabled";
+			#interrupt-cells = <2>;
+		};
+
+		group_irq_bl2: grp_intc@87638 {
+			compatible = "renesas,rx-grp-intc";
+			interrupt-controller;
+			label = "bl2";
+			reg =	<0x00087638 0x04>,
+				<0x00087678 0x04>;
+			reg-names = "GRP", "GEN";
+			interrupts = <107 4>;
+			status = "disabled";
+			#interrupt-cells = <2>;
+		};
+
+		group_irq_al0: grp_intc@87830 {
+			compatible = "renesas,rx-grp-intc";
+			interrupt-controller;
+			label = "al0";
+			reg =	<0x00087830 0x04>,
+				<0x00087870 0x04>;
+			reg-names = "GRP", "GEN";
+			interrupts = <112 4>;
+			status = "disabled";
+			#interrupt-cells = <2>;
+		};
+
+		group_irq_al1: grp_intc@87834 {
+			compatible = "renesas,rx-grp-intc";
+			interrupt-controller;
+			label = "al1";
+			reg =	<0x00087834 0x04>,
+				<0x00087874 0x04>;
+			reg-names = "GRP", "GEN";
+			interrupts = <113 4>;
+			status = "disabled";
+			#interrupt-cells = <2>;
 		};
 	};
 };
