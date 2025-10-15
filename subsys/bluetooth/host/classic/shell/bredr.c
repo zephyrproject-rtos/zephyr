@@ -1469,6 +1469,38 @@ static int cmd_set_role_switchable(const struct shell *sh, size_t argc, char *ar
 	return 0;
 }
 
+static int cmd_class_of_device(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+	const char *action;
+	uint32_t cod;
+
+	action = argv[1];
+
+	if (!strcmp(action, "get")) {
+		err = bt_br_get_class_of_device(&cod);
+		if (err) {
+			shell_error(sh, "fail to set cod (err %d)", err);
+		} else {
+			shell_print(sh, "get cod:0x%04x success", cod);
+		}
+	} else if (!strcmp(action, "set")) {
+		cod = strtoul(argv[2], NULL, 16);
+
+		err = bt_br_set_class_of_device(cod);
+		if (err) {
+			shell_error(sh, "fail to set cod (err %d)", err);
+		} else {
+			shell_print(sh, "set cod:0x%04x success", cod);
+		}
+	} else {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	return 0;
+}
+
 #if defined(CONFIG_BT_L2CAP_CONNLESS)
 static void connless_recv(struct bt_conn *conn, uint16_t psm, struct net_buf *buf)
 {
@@ -1639,6 +1671,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
 	SHELL_CMD_ARG(switch-role, NULL, "<value: central, peripheral>", cmd_switch_role, 2, 0),
 	SHELL_CMD_ARG(set-role-switchable, NULL, "<value: enable, disable>",
 		      cmd_set_role_switchable, 2, 0),
+	SHELL_CMD_ARG(cod, NULL, "<value: set, get> [<cod>]", cmd_class_of_device, 2, 1),
 	SHELL_SUBCMD_SET_END
 );
 
