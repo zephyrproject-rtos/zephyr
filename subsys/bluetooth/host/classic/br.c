@@ -1405,6 +1405,39 @@ static int bt_br_write_page_scan_activity(uint16_t interval, uint16_t window)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_PAGE_SCAN_ACTIVITY, buf, NULL);
 }
 
+static int bt_br_write_inquiry_scan_activity(uint16_t interval, uint16_t window)
+{
+	struct bt_hci_cp_write_inquiry_scan_activity *cp;
+	struct net_buf *buf;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	if (interval < BT_BR_SCAN_INTERVAL_MIN || interval > BT_BR_SCAN_INTERVAL_MAX) {
+		return -EINVAL;
+	}
+
+	if (window < BT_BR_SCAN_WINDOW_MIN || window > BT_BR_SCAN_WINDOW_MAX) {
+		return -EINVAL;
+	}
+
+	if (interval < window) {
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->interval = sys_cpu_to_le16(interval);
+	cp->window = sys_cpu_to_le16(window);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_INQUIRY_SCAN_ACTIVITY, buf, NULL);
+}
+
 static int bt_br_write_page_scan_type(uint8_t type)
 {
 	struct bt_hci_cp_write_page_scan_type *cp;
@@ -1429,6 +1462,30 @@ static int bt_br_write_page_scan_type(uint8_t type)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_PAGE_SCAN_TYPE, buf, NULL);
 }
 
+static int bt_br_write_inquiry_scan_type(uint8_t type)
+{
+	struct bt_hci_cp_write_inquiry_scan_type *cp;
+	struct net_buf *buf;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	if (type != BT_BR_SCAN_TYPE_STANDARD && type != BT_BR_SCAN_TYPE_INTERLACED) {
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->type = type;
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_INQUIRY_SCAN_TYPE, buf, NULL);
+}
+
 int bt_br_page_scan_update_param(const struct bt_br_page_scan_param *param)
 {
 	int err;
@@ -1446,6 +1503,29 @@ int bt_br_page_scan_update_param(const struct bt_br_page_scan_param *param)
 	err = bt_br_write_page_scan_type(param->type);
 	if (err != 0) {
 		LOG_ERR("write page scan type failed (err %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
+int bt_br_inquiry_scan_update_param(const struct bt_br_inquiry_scan_param *param)
+{
+	int err;
+
+	if (param == NULL) {
+		return -EINVAL;
+	}
+
+	err = bt_br_write_inquiry_scan_activity(param->interval, param->window);
+	if (err != 0) {
+		LOG_ERR("write inquiry scan activity failed (err %d)", err);
+		return err;
+	}
+
+	err = bt_br_write_inquiry_scan_type(param->type);
+	if (err != 0) {
+		LOG_ERR("write inquiry scan type failed (err %d)", err);
 		return err;
 	}
 

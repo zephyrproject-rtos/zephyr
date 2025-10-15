@@ -470,6 +470,99 @@ struct bt_br_page_scan_param {
 int bt_br_page_scan_update_param(const struct bt_br_page_scan_param *param);
 
 /**
+ * @brief BR/EDR inquiry scan parameters
+ * @note These parameters are used to configure the inquiry scan behavior of the
+ *       local BR/EDR controller.
+ */
+struct bt_br_inquiry_scan_param {
+	/** Inquiry scan interval in 0.625 ms units
+	 *  Range: 0x0012 to 0x1000.
+	 *
+	 *  According to the Bluetooth Core Specification, only even values are
+	 *  used by the controller; if an odd value is provided, the controller
+	 *  may ignore the LSB or round the value. Applications should use even
+	 *  values to be compliant.
+	 */
+	uint16_t interval;
+
+	/** Inquiry scan window in 0.625 ms units
+	 *  Range: 0x0011 to 0x1000.
+	 */
+	uint16_t window;
+
+	/** Inquiry scan type. */
+	enum bt_br_scan_type type;
+};
+
+/**
+ * @name Defined BR Inquiry Scan Intervals and Windows
+ * @{
+ */
+
+/** Default inquiry scan interval (0x1000, 2.560 s, 0.625 ms units). */
+#define BT_BR_INQUIRY_SCAN_INTERVAL_DEFAULT 0x1000
+/** Default inquiry scan window (0x0012, 11.25 ms, 0.625 ms units). */
+#define BT_BR_INQUIRY_SCAN_WINDOW_DEFAULT   0x0012
+
+/**
+ * @}
+ */
+
+/**
+ * @brief Helper to declare BR/EDR inquiry scan parameters inline
+ *
+ * @param _interval Inquiry scan interval, N * 0.625 milliseconds
+ * @param _window   Inquiry scan window, N * 0.625 milliseconds
+ * @param _type     @ref BT_BR_SCAN_TYPE_STANDARD or @ref BT_BR_SCAN_TYPE_INTERLACED
+ */
+#define BT_BR_INQUIRY_SCAN_PARAM(_interval, _window, _type)                                        \
+	((const struct bt_br_inquiry_scan_param[]){BT_BR_SCAN_INIT(_interval, _window, _type)})
+
+/**
+ * @brief Default inquiry scan parameters
+ *
+ * Inquiry scan interval is set to 2.560 seconds (0x1000 in 0.625 ms units), and the
+ * inquiry scan window is set to 11.25 milliseconds (0x0012 in 0.625 ms units).
+ * The scan type is set to standard.
+ */
+#define BT_BR_INQUIRY_SCAN_PARAM_DEFAULT                                                           \
+	BT_BR_INQUIRY_SCAN_PARAM(BT_BR_INQUIRY_SCAN_INTERVAL_DEFAULT,                              \
+				 BT_BR_INQUIRY_SCAN_WINDOW_DEFAULT, BT_BR_SCAN_TYPE_STANDARD)
+
+/**
+ * @brief Update BR/EDR inquiry scan parameters.
+ *
+ * This function updates the inquiry scan parameters of the local BR/EDR controller.
+ * Inquiry scan parameters determine how the controller handles inquiry requests.
+ *
+ * The function validates the provided parameters, including the interval,
+ * window, and scan type, and sends the appropriate HCI commands to update
+ * the controller's inquiry scan activity and scan type.
+ *
+ * The user can set custom inquiry scan parameters using the helper macro
+ * @ref BT_BR_INQUIRY_SCAN_PARAM to define their own values.
+ * Alternatively, the user can use predefined standard parameters as defined
+ * in the Bluetooth specification:
+ * - @ref BT_BR_INQUIRY_SCAN_PARAM_DEFAULT Default inquiry scan parameters.
+ * These predefined parameters are designed to meet common use cases and
+ * ensure compliance with the Bluetooth specification.
+ *
+ * @param param Inquiry scan parameters, including:
+ *              - interval: Time between consecutive inquiry scans (in 0.625 ms units).
+ *                          Must be in the range [0x0012, 0x1000].
+ *              - window: Duration of a single inquiry scan (in 0.625 ms units).
+ *                        Must be in the range [0x0011, 0x1000].
+ *              - type: Inquiry scan type (e.g., standard or interlaced).
+ *
+ * @return 0 on success.
+ * @return -EINVAL if the provided parameters are invalid.
+ * @return -EAGAIN if the device is not ready.
+ * @return -ENOBUFS if memory allocation for HCI commands fails.
+ * @return Other negative error codes for internal failures.
+ */
+int bt_br_inquiry_scan_update_param(const struct bt_br_inquiry_scan_param *param);
+
+/**
  * @brief Set the Class of Device of the local BR/EDR Controller.
  *
  * This function writes the Class of Device (COD) value to the BR/EDR

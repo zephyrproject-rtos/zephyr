@@ -722,6 +722,16 @@ struct bt_hci_cp_write_page_scan_activity {
 	uint16_t window;
 } __packed;
 
+/** HCI opcode for Write Inquiry Scan Activity. */
+#define BT_HCI_OP_WRITE_INQUIRY_SCAN_ACTIVITY   BT_OP(BT_OGF_BASEBAND, 0x001e) /* 0x0c1e */
+/** HCI command parameters for Write Inquiry Scan Activity. */
+struct bt_hci_cp_write_inquiry_scan_activity {
+	/** Inquiry scan interval in 0.625 ms units. */
+	uint16_t interval;
+	/** Inquiry scan window in 0.625 ms units. */
+	uint16_t window;
+} __packed;
+
 #define BT_HCI_OP_READ_CLASS_OF_DEVICE          BT_OP(BT_OGF_BASEBAND, 0x0023) /* 0x0c23 */
 struct bt_hci_rp_read_class_of_device {
 	uint8_t  status;
@@ -861,6 +871,14 @@ struct bt_hci_iac_lap {
 struct bt_hci_cp_write_current_iac_lap {
 	uint8_t  num_current_iac;
 	struct bt_hci_iac_lap lap[0];
+} __packed;
+
+/** HCI opcode for Write Inquiry Scan Type. */
+#define BT_HCI_OP_WRITE_INQUIRY_SCAN_TYPE       BT_OP(BT_OGF_BASEBAND, 0x0043) /* 0x0c43 */
+/** HCI command parameters for Write Inquiry Scan Type. */
+struct bt_hci_cp_write_inquiry_scan_type {
+	/** Inquiry scan type. */
+	uint8_t type;
 } __packed;
 
 #define BT_HCI_OP_WRITE_INQUIRY_MODE            BT_OP(BT_OGF_BASEBAND, 0x0045) /* 0x0c45 */
