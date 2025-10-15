@@ -3,24 +3,6 @@
 
 menu "OS Support Library"
 
-config FDTABLE
-	bool "File descriptor table"
-	help
-	  This file provides generic file descriptor table implementation, suitable
-	  for any I/O object implementing POSIX I/O semantics (i.e. read/write +
-	  aux operations).
-
-if FDTABLE
-
-config ZVFS_DEFAULT_FILE_VMETHODS
-	bool "ZVFS default virtual methods for files"
-	default y
-	help
-	  Provide typical file operations, which can be referenced in a struct fd_op_vtable
-	  and subsequently called by ZVFS functions.
-
-endif
-
 config ZVFS_OPEN_MAX
 	int "Maximum number of open file descriptors"
 	default 0

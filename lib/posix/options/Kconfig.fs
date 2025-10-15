@@ -6,7 +6,8 @@ menuconfig POSIX_FILE_SYSTEM
 	bool "POSIX file system API support"
 	default y if POSIX_API
 	select FILE_SYSTEM
-	select FDTABLE
+	select ZVFS
+	select ZVFS_FDTABLE
 	help
 	  This enables POSIX style file system related APIs.
 
