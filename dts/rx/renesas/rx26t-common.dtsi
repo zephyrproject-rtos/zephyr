@@ -55,6 +55,13 @@
 		};
 	};
 
+	dtc: rx-dtc@82400 {
+		compatible = "renesas,rx-dtc";
+		reg = <0x00082400 0x1c>;
+		clocks = <&iclk MSTPA 28>;
+		status = "okay";
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -472,8 +479,9 @@
 			tei-number = <2>;
 			eri-ctrl = <&group_irq_bl0>;
 			eri-number = <3>;
-			status = "disabled";
 			channel = <1>;
+			dtc = <&dtc>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -491,8 +499,9 @@
 			tei-number = <10>;
 			eri-ctrl = <&group_irq_bl0>;
 			eri-number = <11>;
-			status = "disabled";
 			channel = <5>;
+			dtc = <&dtc>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -510,8 +519,9 @@
 			tei-number = <12>;
 			eri-ctrl = <&group_irq_bl0>;
 			eri-number = <13>;
-			status = "disabled";
 			channel = <6>;
+			dtc = <&dtc>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -529,8 +539,9 @@
 			tei-number = <16>;
 			eri-ctrl = <&group_irq_bl0>;
 			eri-number = <17>;
-			status = "disabled";
 			channel = <12>;
+			dtc = <&dtc>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
