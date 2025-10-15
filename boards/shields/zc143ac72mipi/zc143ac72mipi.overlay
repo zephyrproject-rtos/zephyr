@@ -13,7 +13,7 @@
 	en_mipi_display_g1120b0mipi: enable-mipi-display {
 		compatible = "regulator-fixed";
 		regulator-name = "en_mipi_display";
-		enable-gpios = <&nxp_mipi_connector 32 GPIO_ACTIVE_HIGH>;
+		enable-gpio = <&nxp_mipi_connector 32 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
 	};
 
@@ -35,8 +35,8 @@
 		 */
 		compatible = "focaltech,tma525b";
 		reg = <0x24>;
-		int-gpios = <&nxp_mipi_connector 29 GPIO_ACTIVE_LOW>;
-		reset-gpios = <&nxp_mipi_connector 28 GPIO_ACTIVE_LOW>;
+		int-gpio = <&nxp_mipi_connector 29 GPIO_ACTIVE_LOW>;
+		reset-gpio = <&nxp_mipi_connector 28 GPIO_ACTIVE_LOW>;
 	};
 };
 
@@ -50,7 +50,7 @@
 		compatible = "chipone,co5300";
 		reg = <0x0>;
 		reset-gpios = <&nxp_mipi_connector 21 GPIO_ACTIVE_HIGH>;
-		backlight-gpios = <&nxp_mipi_connector 0 GPIO_ACTIVE_HIGH>;
+		backlight-gpios = <&nxp_mipi_connector 34 GPIO_ACTIVE_HIGH>;
 		tear-effect-gpios = <&nxp_mipi_connector 22 GPIO_ACTIVE_HIGH>;
 		power-gpios = <&nxp_mipi_connector 32 GPIO_ACTIVE_HIGH>;
 		data-lanes = <1>;

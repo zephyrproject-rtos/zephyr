@@ -284,7 +284,7 @@
 									//SIGNAL_DIR | ACTIVE /
 									///////////////////////
 	reset-gpios = <&nxp_mipi_connector 21 GPIO_ACTIVE_HIGH>; 	//OUTPUT     |
-	backlight-gpios = <&nxp_mipi_connector 0 GPIO_ACTIVE_HIGH>;	//---        |
+	backlight-gpios = <&nxp_mipi_connector 0 GPIO_ACTIVE_HIGH>;	//INPUT      |
 	tear-effect-gpios = <&nxp_mipi_connector 22 GPIO_ACTIVE_HIGH>;  //INPUT      |
 	power-gpios = <&nxp_mipi_connector 32 GPIO_ACTIVE_HIGH>;	//OUTPUT     |
 

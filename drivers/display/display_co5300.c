@@ -29,10 +29,10 @@ struct display_cmds {
 
 struct co5300_config {
 	const struct device *mipi_dsi;
-	const struct gpio_dt_spec reset_gpio;
-	const struct gpio_dt_spec backlight_gpio;
-	const struct gpio_dt_spec tear_effect_gpio;
-	const struct gpio_dt_spec power_gpio;
+	const struct gpio_dt_spec reset_gpios;
+	const struct gpio_dt_spec backlight_gpios;
+	const struct gpio_dt_spec tear_effect_gpios;
+	const struct gpio_dt_spec power_gpios;
 	uint16_t panel_width;
 	uint16_t panel_height;
 	uint16_t channel;
@@ -62,6 +62,9 @@ uint8_t lcm_init_cmds[] = {	0xFE, 0x1, 0x20,
 				0x2A, 0x4, 0x00, 0x06, 0x01, 0xD7,
 				0x2B, 0x4, 0x00, 0x00, 0x01, 0xD1};
 
+uint8_t pixel_format_bgr_cmds[] = {0x36, 0x1, 0x8};
+
+
 static void co5300_tear_effect_isr_handler(const struct device* gpio_dev,
 			struct gpio_callback *cb, uint32_t pins)
 {
@@ -75,8 +78,8 @@ static int co5300_blanking_on(const struct device *dev)
 {
 	const struct co5300_config *config = dev->config;
 
-	if (config->backlight_gpio.port != NULL) {
-		return gpio_pin_set_dt(&config->backlight_gpio, 0);
+	if (config->backlight_gpios.port != NULL) {
+		return gpio_pin_set_dt(&config->backlight_gpios, 0);
 	} else {
 		return -ENOTSUP;
 	}
@@ -86,8 +89,8 @@ static int co5300_blanking_off(const struct device *dev)
 {
 	const struct co5300_config *config = dev->config;
 
-	if (config->backlight_gpio.port != NULL) {
-		return gpio_pin_set_dt(&config->backlight_gpio, 1);
+	if (config->backlight_gpios.port != NULL) {
+		return gpio_pin_set_dt(&config->backlight_gpios, 1);
 	} else {
 		return -ENOTSUP;
 	}
@@ -156,7 +159,7 @@ static int co5300_write(const struct device *dev,
 	 * When writing the to the framebuffer and the tearing effect GPIO is present,
 	 * we need to wait for the tear_effect GPIO semaphore to be released.
 	 */
-	if (config->tear_effect_gpio.port != NULL) {
+	if (config->tear_effect_gpios.port != NULL) {
 		k_sem_take(&data->tear_effect_sem, K_FOREVER);
 	}
 
@@ -249,7 +252,7 @@ static int co5300_read(const struct device *dev,
 	 * When writing the to the framebuffer and the tearing effect GPIO is present,
 	 * we need to wait for the tear_effect GPIO semaphore to be released.
 	 */
-	if (config->tear_effect_gpio.port != NULL) {
+	if (config->tear_effect_gpios.port != NULL) {
 		k_sem_take(&data->tear_effect_sem, K_FOREVER);
 	}
 
@@ -427,6 +430,7 @@ static int co5300_init(const struct device *dev)
 	struct co5300_data *data = dev->data;
 	struct mipi_dsi_device mdev = {0};
 	struct display_cmds lcm_init_settings = {0};
+	struct display_cmds pixel_format_bgr_settings = {0};
 	uint8_t* ptr_to_curr_cmd = 0;
 	uint8_t* ptr_to_last_cmd = 0;
 	uint8_t cmd_params = 0;
@@ -443,14 +447,15 @@ static int co5300_init(const struct device *dev)
 	}
 
 	/* Perform GPIO Reset */
-	if (config->power_gpio.port != NULL) {
-		ret = gpio_pin_configure_dt(&config->power_gpio, GPIO_OUTPUT_INACTIVE);
+		/*
+	if (config->power_gpios.port != NULL) {
+		ret = gpio_pin_configure_dt(&config->power_gpios, GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
 			LOG_ERR("Could not configure power GPIO (%d)", ret);
 			return ret;
 		}
 
-		ret = gpio_pin_set_dt(&config->power_gpio, 1);
+		ret = gpio_pin_set_dt(&config->power_gpios, 1);
 		if (ret < 0) {
 			LOG_ERR("Could not pull power high (%d)", ret);
 			return ret;
@@ -458,21 +463,22 @@ static int co5300_init(const struct device *dev)
 
 		k_sleep(K_MSEC(100));
 
-		if (config->reset_gpio.port != NULL) {
-			ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE);
+		if (config->reset_gpios.port != NULL) {
+			ret = gpio_pin_set_dt(&config->power_gpios, 1);
 			if (ret < 0) {
-				LOG_ERR("Could not configure reset GPIO (%d)", ret);
+				LOG_ERR("Could not set power GPIO (%d)", ret);
 				return ret;
 			}
 
-			ret = gpio_pin_set_dt(&config->reset_gpio, 0);
+			k_sleep(K_MSEC(100));
+			ret = gpio_pin_set_dt(&config->reset_gpios, 0);
 			if (ret < 0) {
 				LOG_ERR("Could not pull reset low (%d)", ret);
 				return ret;
 			}
 
 			k_sleep(K_MSEC(1));
-			gpio_pin_set_dt(&config->reset_gpio, 1);
+			gpio_pin_set_dt(&config->reset_gpios, 1);
 			if (ret < 0) {
 				LOG_ERR("Could not pull reset high (%d)", ret);
 				return ret;
@@ -480,6 +486,43 @@ static int co5300_init(const struct device *dev)
 			k_sleep(K_MSEC(150));
 		}
 	}
+	*/
+	if (config->reset_gpios.port != NULL) {
+		ret = gpio_pin_configure_dt(&config->reset_gpios, GPIO_OUTPUT_INACTIVE);
+		if (ret < 0) {
+			LOG_ERR("Could not configure reset GPIO (%d)", ret);
+			return ret;
+		}
+
+		/*
+		 * Power to the display has been enabled via the regulator fixed api during
+		 * regulator init. Per datasheet, we must wait at least 10ms before
+		 * starting reset sequence after power on.
+		 */
+		k_sleep(K_MSEC(10));
+		/* Start reset sequence */
+		ret = gpio_pin_set_dt(&config->reset_gpios, 0);
+		if (ret < 0) {
+			LOG_ERR("Could not pull reset low (%d)", ret);
+			return ret;
+		}
+		/* Per datasheet, reset low pulse width should be at least 10usec */
+		k_sleep(K_USEC(30));
+		gpio_pin_set_dt(&config->reset_gpios, 1);
+		if (ret < 0) {
+			LOG_ERR("Could not pull reset high (%d)", ret);
+			return ret;
+		}
+		/*
+		 * It is necessary to wait at least 120msec after releasing reset,
+		 * before sending additional commands. This delay can be 5msec
+		 * if we are certain the display module is in SLEEP IN state,
+		 * but this is not guaranteed (for example, with a warm reset)
+		 */
+		k_sleep(K_MSEC(150));
+	}
+
+
 
 	/* Set the LCM init settings. */
 	lcm_init_settings.cmd_code = lcm_init_cmds;
@@ -501,6 +544,12 @@ static int co5300_init(const struct device *dev)
 	}
 
 	/* Set pixel format */
+//	curr_cmd = pixel_format_bgr_cmds[0];
+//	cmd_param_size = pixel_format_bgr_cmds[1];
+	cmd_params = pixel_format_bgr_cmds[2];
+	ret = mipi_dsi_dcs_write(config->mipi_dsi, config->channel,
+			0x36, &cmd_params, 1);
+
 	if (data->pixel_format == MIPI_DSI_PIXFMT_RGB888) {
 		cmd_params = (uint8_t)MIPI_DCS_PIXEL_FORMAT_24BIT;
 		data->bytes_per_pixel = 3;
@@ -512,6 +561,9 @@ static int co5300_init(const struct device *dev)
 		LOG_ERR("Pixel format not supported");
 		return -ENOTSUP;
 	}
+	cmd_params = (uint8_t)MIPI_DCS_PIXEL_FORMAT_24BIT;
+	data->bytes_per_pixel = 2;
+
 	ret = mipi_dsi_dcs_write(config->mipi_dsi, config->channel,
 				MIPI_DCS_SET_PIXEL_FORMAT, &cmd_params, 1);
 	if (ret < 0) {
@@ -530,8 +582,8 @@ static int co5300_init(const struct device *dev)
 	k_sleep(K_MSEC(150));
 
 	/* Setup backlight */
-	if (config->backlight_gpio.port != NULL) {
-		ret = gpio_pin_configure_dt(&config->backlight_gpio, GPIO_OUTPUT_ACTIVE);
+	if (config->backlight_gpios.port != NULL) {
+		ret = gpio_pin_configure_dt(&config->backlight_gpios, GPIO_OUTPUT_ACTIVE);
 		if (ret < 0) {
 			LOG_ERR("Could not configure bl GPIO (%d)", ret);
 			return ret;
@@ -539,14 +591,14 @@ static int co5300_init(const struct device *dev)
 	}
 
 	/* Setup tear effect pin and callback */
-	if (config->tear_effect_gpio.port != NULL) {
-		ret = gpio_pin_configure_dt(&config->tear_effect_gpio, GPIO_INPUT);
+	if (config->tear_effect_gpios.port != NULL) {
+		ret = gpio_pin_configure_dt(&config->tear_effect_gpios, GPIO_INPUT);
 		if (ret < 0) {
 			LOG_ERR("Could not configure TE GPIO (%d)", ret);
 			return ret;
 		}
 
-		ret = gpio_pin_interrupt_configure_dt(&config->tear_effect_gpio,
+		ret = gpio_pin_interrupt_configure_dt(&config->tear_effect_gpios,
 						      GPIO_INT_EDGE_TO_ACTIVE);
 		if (ret < 0) {
 			LOG_ERR("Could not configure TE interrupt (%d)", ret);
@@ -554,8 +606,8 @@ static int co5300_init(const struct device *dev)
 		}
 
 		gpio_init_callback(&data->tear_effect_gpio_cb, co5300_tear_effect_isr_handler,
-				BIT(config->tear_effect_gpio.pin));
-		ret = gpio_add_callback(config->tear_effect_gpio.port, &data->tear_effect_gpio_cb);
+				BIT(config->tear_effect_gpios.pin));
+		ret = gpio_add_callback(config->tear_effect_gpios.port, &data->tear_effect_gpio_cb);
 		if (ret < 0) {
 			LOG_ERR("Could not add TE gpio callback");
 			return ret;
@@ -589,9 +641,10 @@ static DEVICE_API(display, co5300_api) = {
 		.mipi_dsi = DEVICE_DT_GET(DT_INST_BUS(node_id)),					\
 		.num_of_lanes = DT_INST_PROP_BY_IDX(node_id, data_lanes, 0),				\
 		.channel = DT_INST_REG_ADDR(node_id),							\
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(node_id, reset_gpios, {0}),			\
-		.backlight_gpio = GPIO_DT_SPEC_INST_GET_OR(node_id, backlight_gpios, {0}),		\
-		.tear_effect_gpio = GPIO_DT_SPEC_INST_GET_OR(node_id, tear_effect_gpios, {0}),		\
+		.reset_gpios = GPIO_DT_SPEC_INST_GET_OR(node_id, reset_gpios, {0}),			\
+		.power_gpios = GPIO_DT_SPEC_INST_GET_OR(node_id, power_gpios, {0}),			\
+		.backlight_gpios = GPIO_DT_SPEC_INST_GET_OR(node_id, backlight_gpios, {0}),		\
+		.tear_effect_gpios = GPIO_DT_SPEC_INST_GET_OR(node_id, tear_effect_gpios, {0}),		\
 		.panel_width = DT_INST_PROP(node_id, width),						\
 		.panel_height = DT_INST_PROP(node_id, height),						\
 	};												\
