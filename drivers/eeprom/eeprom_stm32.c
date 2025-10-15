@@ -70,16 +70,21 @@ static int eeprom_stm32_write(const struct device *dev, off_t offset,
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	HAL_FLASHEx_DATAEEPROM_Unlock();
+	hal_ret = HAL_FLASHEx_DATAEEPROM_Unlock();
+	if (hal_ret != HAL_OK) {
+		LOG_ERR("failed to unlock to EEPROM");
+		goto out;
+	}
 
 	while (len) {
 		hal_ret = HAL_FLASHEx_DATAEEPROM_Program(FLASH_TYPEPROGRAMDATA_BYTE,
 							 config->addr + offset, *pbuf);
 		if (hal_ret != HAL_OK) {
 			LOG_ERR("failed to write to EEPROM (err %d)", hal_ret);
-			HAL_FLASHEx_DATAEEPROM_Lock();
-			k_mutex_unlock(&lock);
-			return -EIO;
+			if (HAL_FLASHEx_DATAEEPROM_Lock() != HAL_OK) {
+				LOG_ERR("failed to lock to EEPROM");
+			}
+			goto out;
 		}
 
 		pbuf++;
@@ -88,11 +93,14 @@ static int eeprom_stm32_write(const struct device *dev, off_t offset,
 	}
 
 	hal_ret = HAL_FLASHEx_DATAEEPROM_Lock();
+	if (hal_ret != HAL_OK) {
+		LOG_ERR("failed to lock EEPROM");
+	}
 
+out:
 	k_mutex_unlock(&lock);
 
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("failed to lock EEPROM");
 		return -EIO;
 	}
 
