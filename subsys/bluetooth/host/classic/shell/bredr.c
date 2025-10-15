@@ -1781,6 +1781,38 @@ static int cmd_set_sniff_mode(const struct shell *sh, size_t argc, char *argv[])
 }
 #endif
 
+static int cmd_get_class_of_device(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+	uint32_t cod;
+
+	err = bt_br_get_class_of_device(&cod);
+	if (err != 0) {
+		shell_error(sh, "fail to get cod (err %d)", err);
+		return err;
+	}
+
+	shell_print(sh, "get cod:0x%06x success", cod);
+	return 0;
+}
+
+static int cmd_set_class_of_device(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+	uint32_t cod;
+
+	cod = strtoul(argv[1], NULL, 16);
+
+	err = bt_br_set_class_of_device(cod);
+	if (err != 0) {
+		shell_error(sh, "fail to set cod (err %d)", err);
+		return err;
+	}
+
+	shell_print(sh, "set cod:0x%06x success", cod);
+	return 0;
+}
+
 #if defined(CONFIG_BT_L2CAP_CONNLESS)
 static void connless_recv(struct bt_conn *conn, uint16_t psm, struct net_buf *buf)
 {
@@ -1957,6 +1989,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
 		      "<value:on, off> [min_interval] [max_interval] [attempt] [timeout]",
 		      cmd_set_sniff_mode, 2, 4),
 #endif
+	SHELL_CMD_ARG(cod-get, NULL, HELP_NONE, cmd_get_class_of_device, 1, 0),
+	SHELL_CMD_ARG(cod-set, NULL, "<cod>", cmd_set_class_of_device, 2, 0),
 	SHELL_SUBCMD_SET_END
 );
 
