@@ -239,8 +239,10 @@ def do_run_common(command, user_args, user_runner_args, domain_file=None):
     for module in zephyr_module.parse_modules(ZEPHYR_BASE, command.manifest):
         runners_ext = module.meta.get("runners", [])
         for runner in runners_ext:
+            module_name = module.meta.get("name", "runners_ext") + "." + Path(runner["file"]).stem
+
             import_from_path(
-                module.meta.get("name", "runners_ext"), Path(module.project) / runner["file"]
+                module_name, Path(module.project) / runner["file"]
             )
 
     build_dir = get_build_dir(user_args)

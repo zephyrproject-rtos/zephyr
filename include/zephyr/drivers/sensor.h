@@ -513,7 +513,7 @@ struct sensor_decoder_api {
 	/**
 	 * @brief Decode up to @p max_count frames specified by @p chan_spec from the @p buffer
 	 *
-	 * Sample showing the process of decoding at most @code MAX_FRAMES for each distance
+	 * Sample showing the process of decoding at most `MAX_FRAMES` for each distance
 	 * sensor channel. The frame iterator is reset for each new channel to allow the
 	 * full history of each channel to be decoded.
 	 *

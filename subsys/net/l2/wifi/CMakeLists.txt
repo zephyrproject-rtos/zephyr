@@ -28,6 +28,8 @@ if(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE AND CONFIG_NET_L2_WIFI_SHELL)
   # Wi-Fi Enterprise test certificates handling
   set(gen_inc_dir ${ZEPHYR_BINARY_DIR}/misc/generated)
   set(gen_dir ${gen_inc_dir}/wifi_enterprise_test_certs)
+  zephyr_get(WIFI_TEST_CERTS_DIR SYSBUILD GLOBAL)
+  message(DEBUG "WIFI_TEST_CERTS_DIR is set to ${WIFI_TEST_CERTS_DIR}")
   if(NOT DEFINED WIFI_TEST_CERTS_DIR)
     set(WIFI_TEST_CERTS_DIR ${ZEPHYR_BASE}/samples/net/wifi/test_certs/rsa3k)
   endif()

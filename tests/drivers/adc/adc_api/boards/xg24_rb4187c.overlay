@@ -16,6 +16,7 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "okay";
+	dmas = <&dma0 DMA_REQSEL_IADC0IADC_SCAN>;
 
 	channel@0 {
 		reg = <0>;
@@ -34,4 +35,8 @@
 		zephyr,resolution = <12>;
 		zephyr,input-positive = <IADC_INPUT_GND>;
 	};
+};
+
+&dma0 {
+	status = "okay";
 };

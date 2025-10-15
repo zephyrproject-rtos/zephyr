@@ -143,6 +143,10 @@ static bool br_sufficient_key_size(struct bt_conn *conn)
 	key_size = rp->key_size;
 	net_buf_unref(rsp);
 
+	if (conn->br.link_key) {
+		conn->br.link_key->enc_key_size = key_size;
+	}
+
 	LOG_DBG("Encryption key size is %u", key_size);
 
 	if (conn->sec_level == BT_SECURITY_L4) {

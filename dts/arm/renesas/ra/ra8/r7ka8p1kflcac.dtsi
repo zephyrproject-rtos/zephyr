@@ -9,9 +9,32 @@
 
 / {
 	soc {
-		sram: memory@22000000 {
+		mram-controller@4013c000 {
+			code_mram_cm85: mram@2000000 {
+				compatible = "renesas,ra-nv-mram";
+				reg = <0x2000000 DT_SIZE_K(768)>;
+				write-block-size = <1>;
+				erase-block-size = <32>;
+			};
+
+			code_mram_cm33: mram@20c0000 {
+				compatible = "renesas,ra-nv-mram";
+				reg = <0x20c0000 DT_SIZE_K(256)>;
+				write-block-size = <1>;
+				erase-block-size = <32>;
+			};
+		};
+
+		sram0: memory@22000000 {
 			compatible = "mmio-sram";
-			reg = <0x22000000 0x1d4000>;
+			reg = <0x22000000 DT_SIZE_K(1404)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		sram1: memory@2215f000 {
+			compatible = "mmio-sram";
+			reg = <0x2215f000 DT_SIZE_K(468)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 		};

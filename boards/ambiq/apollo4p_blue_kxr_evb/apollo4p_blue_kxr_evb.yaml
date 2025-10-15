@@ -10,6 +10,7 @@ toolchain:
 supported:
   - uart
   - watchdog
+  - adc
   - counter
   - gpio
   - spi

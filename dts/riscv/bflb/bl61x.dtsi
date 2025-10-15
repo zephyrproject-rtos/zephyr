@@ -79,6 +79,8 @@
 			compatible = "xuantie,e907", "riscv";
 			reg = <0>;
 			riscv,isa = "rv32imafcp";
+			i-cache-line-size = <32>;
+			d-cache-line-size = <32>;
 			hardware-exec-breakpoint-count = <4>;
 			status = "okay";
 

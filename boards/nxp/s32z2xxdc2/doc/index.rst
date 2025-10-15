@@ -294,8 +294,7 @@ line:
 Where ``<elf_path>`` is the path to the Zephyr application ELF in the output
 directory.
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 References
 **********

@@ -47,7 +47,6 @@ properties:
       - "Shunt Voltage, Triggered"
       - "Bus Voltage, Triggered"
       - "Shunt and Bus, Triggered"
-      - "Power-Down (or Shutdown)"
       - "Shunt Voltage, Continuous"
       - "Bus Voltage, Continuous"
       - "Shunt and Bus, Continuous"

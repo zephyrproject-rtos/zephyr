@@ -73,4 +73,9 @@ config INITIALIZATION_STACK_SIZE
 	help
 	  Stack size for initialization process of kernel (in bytes)
 
+config HAS_MAPPED_INTERRUPTS
+	bool
+	help
+	  Support for mapped interrupts.
+
 endmenu

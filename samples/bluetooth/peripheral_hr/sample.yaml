@@ -98,7 +98,6 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
     extra_args:
       - CONFIG_BT_EXT_ADV=y
-      - CONFIG_BT_AUTO_PHY_UPDATE=n
     tags: bluetooth
     sysbuild: true
   sample.bluetooth.peripheral_hr_rv32m1_vega_openisa_rv32m1_ri5cy:

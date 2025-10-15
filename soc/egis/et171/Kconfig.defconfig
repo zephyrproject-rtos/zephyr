@@ -12,7 +12,7 @@ config KERNEL_ENTRY
 	default "entry"
 
 config RISCV_GENERIC_TOOLCHAIN
-	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr"
+	default n if "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "zephyr"
 
 config RISCV_SOC_INTERRUPT_INIT
 	default y

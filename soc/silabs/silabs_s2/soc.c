@@ -18,6 +18,8 @@
 #include <sl_hfxo_manager.h>
 #include <sl_power_manager.h>
 
+#include <soc_radio.h>
+
 #if defined(CONFIG_PRINTK) || defined(CONFIG_LOG)
 #define PR_EXC(...) LOG_ERR(__VA_ARGS__)
 #else
@@ -107,5 +109,9 @@ void soc_prep_hook(void)
 
 	IRQ_DIRECT_CONNECT(SMU_SECURE_IRQn, 0, smu_fault, 0);
 	irq_enable(SMU_SECURE_IRQn);
+
+	if (IS_ENABLED(CONFIG_SOC_GECKO_USE_RAIL)) {
+		rail_isr_installer();
+	}
 #endif
 }

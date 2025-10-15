@@ -239,6 +239,7 @@ static int nxp_video_sdma_set_format(const struct device *dev, struct video_form
 	}
 
 	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
+	fmt->size = fmt->pitch * SDMA_LINE_COUNT;
 
 	return 0;
 }
@@ -271,6 +272,7 @@ static int nxp_video_sdma_get_format(const struct device *dev, struct video_form
 	}
 
 	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
+	fmt->size = fmt->pitch * SDMA_LINE_COUNT;
 
 	return 0;
 }
@@ -279,8 +281,6 @@ static int nxp_video_sdma_get_caps(const struct device *dev, struct video_caps *
 {
 	/* SmartDMA needs at least two buffers allocated before starting */
 	caps->min_vbuf_count = 2;
-	/* Firmware reads 30 lines per queued vbuf */
-	caps->min_line_count = caps->max_line_count = SDMA_LINE_COUNT;
 	caps->format_caps = fmts;
 	return 0;
 }

@@ -61,6 +61,12 @@ Device Drivers and Devicetree
 
 .. zephyr-keep-sorted-start re(^\w)
 
+ADC
+===
+
+* ``iadc_gecko.c`` driver is replaced by ``adc_silabs_iadc.c``.
+  :dtcompatible:`silabs,gecko-iadc` is replaced by :dtcompatible:`silabs,iadc`.
+
 Comparator
 ==========
 
@@ -75,7 +81,7 @@ Comparator
 MFD
 ===
 
-* Driver suppor for AXP2101 has been separated from the AXP192 one. As a consequence the
+* Driver support for AXP2101 has been separated from the AXP192 one. As a consequence the
   kconfig symbol ``MFD_AXP192_AXP2101`` is removed. :kconfig:option:`MFD_AXP192` is now to be
   used for AXP192 device while :kconfig:option:`MFD_AXP2101` for the AXP2101 one.
 
@@ -144,6 +150,9 @@ Bluetooth Controller
     * :kconfig:option:`CONFIG_BT_CTRL_ADV_ADI_IN_SCAN_RSP` to
       :kconfig:option:`CONFIG_BT_CTLR_ADV_ADI_IN_SCAN_RSP`
 
+   * :c:func:`bt_ctlr_set_public_addr` is deprecated. To set the public Bluetooth device address,
+     sending a vendor specific HCI command with :c:struct:`bt_hci_cp_vs_write_bd_addr` can be used.
+
 .. zephyr-keep-sorted-start re(^\w)
 
 Bluetooth Audio
@@ -200,11 +209,13 @@ Power management
   longer enable them directly, instead, enable or disable the "suspend-to-ram" power states
   in the devicetree.
 
+* For the NXP RW61x, the devicetree property ``exit-latency-us`` has been updated to reflect more
+  accurate, measured wake-up times. For applications utilizing Standby mode (PM3), this update and
+  an increase to the ``min-residency-us`` devicetree property may influence how the system
+  transitions between power modes. In some cases, this could lead to changes in power consumption.
+
 Networking
 **********
-
-* The :c:type:`coap_client_response_cb_t` signature has changed. The list of arguments
-  is passed as a :c:struct:`coap_client_response_data` pointer instead.
 
 * The HTTP server now respects the configured ``_config`` value. Check that
   you provide applicable value to :c:macro:`HTTP_SERVICE_DEFINE_EMPTY`,
@@ -217,6 +228,21 @@ Networking
   configuration.
 
 .. zephyr-keep-sorted-start re(^\w)
+
+CoAP
+====
+
+* The :c:type:`coap_client_response_cb_t` signature has changed. The list of arguments
+  is passed as a :c:struct:`coap_client_response_data` pointer instead.
+
+* The :c:struct:`coap_client_request` has changed to improve the library's resilience against
+  misconfiguration (i.e. using transient pointers within the struct):
+
+  * The :c:member:`coap_client_request.path` is now a ``char`` array instead of a pointer.
+    The array size is configurable with :kconfig:option:`CONFIG_COAP_CLIENT_MAX_PATH_LENGTH`.
+  * The :c:member:`coap_client_request.options` is now a :c:struct:`coap_client_option` array
+    instead of a pointer. The array size is configurable with
+    :kconfig:option:`CONFIG_COAP_CLIENT_MAX_EXTRA_OPTIONS`.
 
 .. zephyr-keep-sorted-stop
 
@@ -244,6 +270,12 @@ PTP Clock
   Now PI servo is introduced in both PTP and gPTP, and this API function is changed to use for rate
   ratio adjusting based on nominal frequency. Drivers implementing :c:func:`ptp_clock_rate_adjust`
   should be adjusted to account for the new behavior.
+
+Video
+*****
+
+* The ``min_line_count`` and ``max_line_count`` fields have been removed from :c:struct:`video_caps`.
+  Application should base on the new :c:member:`video_format.size` to allocate buffers.
 
 Other subsystems
 ****************

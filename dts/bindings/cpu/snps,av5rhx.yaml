@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Synopsys, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Synopsys ARC-V RHX RISC-V CPU
+
+compatible: "snps,av5rhx"
+
+include: riscv,cpus.yaml

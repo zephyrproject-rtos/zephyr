@@ -59,7 +59,7 @@ static void do_coap_download(struct sockaddr *sa)
 					      .payload = NULL,
 					      .len = 0,
 					      .cb = on_coap_response,
-					      .options = NULL,
+					      .options = { },
 					      .num_options = 0,
 					      .user_data = NULL};
 

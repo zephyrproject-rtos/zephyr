@@ -20,3 +20,15 @@ config TEST_WDT_SLEEP_TIME
 	  The units for this value will change based on the watchdog
 	  driver being tested. Most drivers represent this as milliseconds
 	  due to the max window reaching the millisecond feed window.
+
+config TEST_WDT_SETUP_FLAGS
+	int "WDT setup flags for test, selectable options are: No flags (0x0U), WDT_OPT_PAUSE_IN_SLEEP (0x1U), WDT_OPT_PAUSE_HALTED_BY_DBG (0x2U)"
+	default 2
+	help
+	  Set the watchdog setup flags for the test.
+
+config TEST_WDT_TIMEOUT_UNIT_TICKS
+	bool "Use watchdog timeout unit in ticks"
+	default n
+	help
+	  Enable this option to configure the watchdog timeout unit in system ticks

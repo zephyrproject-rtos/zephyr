@@ -207,6 +207,8 @@ static int modem_backend_uart_isr_receive(void *data, uint8_t *buf, size_t size)
 	read_bytes += ring_buf_get(&backend->isr.receive_rdb[receive_rdb_unused], buf, size);
 
 	if (ring_buf_is_empty(&backend->isr.receive_rdb[receive_rdb_unused]) == false) {
+		/* More data available in the buffer */
+		k_work_schedule(&backend->receive_ready_work, K_NO_WAIT);
 		return (int)read_bytes;
 	}
 
@@ -218,8 +220,12 @@ static int modem_backend_uart_isr_receive(void *data, uint8_t *buf, size_t size)
 	/* Read data from previously used buffer */
 	receive_rdb_unused = (backend->isr.receive_rdb_used == 1) ? 0 : 1;
 
-	read_bytes += ring_buf_get(&backend->isr.receive_rdb[receive_rdb_unused],
-				   &buf[read_bytes], (size - read_bytes));
+	read_bytes += ring_buf_get(&backend->isr.receive_rdb[receive_rdb_unused], &buf[read_bytes],
+				   (size - read_bytes));
+	if (ring_buf_is_empty(&backend->isr.receive_rdb[receive_rdb_unused]) == false) {
+		/* More data available in the buffer */
+		k_work_schedule(&backend->receive_ready_work, K_NO_WAIT);
+	}
 
 	return (int)read_bytes;
 }

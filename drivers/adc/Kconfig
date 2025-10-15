@@ -132,9 +132,7 @@ source "drivers/adc/Kconfig.rpi_pico"
 
 source "drivers/adc/Kconfig.xmc4xxx"
 
-source "drivers/adc/Kconfig.gecko"
-
-source "drivers/adc/Kconfig.siwx91x"
+source "drivers/adc/Kconfig.silabs"
 
 source "drivers/adc/Kconfig.ifx_cat1"
 

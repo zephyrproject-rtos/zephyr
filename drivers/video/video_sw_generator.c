@@ -81,7 +81,10 @@ static int video_sw_generator_set_fmt(const struct device *dev, struct video_for
 		return ret;
 	}
 
-	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
+	ret = video_estimate_fmt_size(fmt);
+	if (ret < 0) {
+		return ret;
+	}
 
 	data->fmt = *fmt;
 	return 0;
@@ -365,9 +368,6 @@ static int video_sw_generator_get_caps(const struct device *dev, struct video_ca
 	caps->format_caps = fmts;
 	caps->min_vbuf_count = 1;
 
-	/* SW generator produces full frames */
-	caps->min_line_count = caps->max_line_count = LINE_COUNT_HEIGHT;
-
 	return 0;
 }
 
@@ -477,6 +477,7 @@ static int video_sw_generator_init(const struct device *dev)
 		.fmt.height = 160,                                                                 \
 		.fmt.pitch = 320 * 2,                                                              \
 		.fmt.pixelformat = VIDEO_PIX_FMT_RGB565,                                           \
+		.fmt.size = 320 * 2 * 160,                                                         \
 		.frame_rate = DEFAULT_FRAME_RATE,                                                  \
 	};                                                                                         \
                                                                                                    \

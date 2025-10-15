@@ -8,6 +8,7 @@ config SOC_SERIES_NRF54LX
 	select HAS_NRFX
 	select HAS_NORDIC_DRIVERS
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+	select NRF_PLATFORM_LUMOS
 
 config SOC_NRF54L_CPUAPP_COMMON
 	bool
@@ -54,12 +55,6 @@ config SOC_NRF54LM20A_ENGA_CPUFLPR
 	select RISCV_CORE_NORDIC_VPR
 
 if SOC_SERIES_NRF54LX
-
-config SOC_NRF54LX_SKIP_CLOCK_CONFIG
-	bool "Skip clock frequency configuration in system initialization"
-	help
-	  With this option, the CPU clock frequency is not set during system initialization.
-	  The CPU runs with the default, hardware-selected frequency.
 
 config SOC_NRF54LX_DISABLE_FICR_TRIMCNF
 	bool "Disable trimming of the device"

@@ -321,10 +321,10 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
 		+ expected_period_drift;
 
 	zassert_true(min_us >= min_us_bound,
-		"Shortest timer period too short (off by more than expected %d%)",
+		"Shortest timer period too short (off by more than expected %d%%)",
 		CONFIG_TIMER_TEST_PERIOD_MAX_DRIFT_PERCENT);
 	zassert_true(max_us <= max_us_bound,
-		"Longest timer period too long (off by more than expected %d%)",
+		"Longest timer period too long (off by more than expected %d%%)",
 		CONFIG_TIMER_TEST_PERIOD_MAX_DRIFT_PERCENT);
 
 

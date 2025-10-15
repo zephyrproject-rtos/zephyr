@@ -20,7 +20,7 @@
 #define STM32_PERIPH_BUS_MAX	STM32_CLOCK_BUS_APB2
 
 /** Domain clocks */
-/* RM0351/RM0432/RM0438, § Clock configuration register (RCC_CCIPRx) */
+/* RM0351/RM0432, § Clock configuration register (RCC_CCIPRx) */
 
 /** System clock */
 /* defined in stm32_common_clocks.h */

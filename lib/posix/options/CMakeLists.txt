@@ -9,7 +9,7 @@ zephyr_syscall_header_ifdef(CONFIG_POSIX_CLOCK_SELECTION posix_clock.h)
 zephyr_syscall_header_ifdef(CONFIG_POSIX_TIMERS posix_clock.h)
 zephyr_syscall_header_ifdef(CONFIG_XSI_SINGLE_PROCESS posix_clock.h)
 
-if(CONFIG_POSIX_SYSTEM_HEADERS)
+if(CONFIG_POSIX_SYSTEM_INTERFACES)
   zephyr_include_directories(${ZEPHYR_BASE}/include/zephyr/posix)
 endif()
 
@@ -30,7 +30,6 @@ if (NOT CONFIG_TC_PROVIDES_POSIX_SIGNALS)
 endif()
 
 zephyr_library()
-zephyr_library_sources_ifdef(CONFIG_EVENTFD eventfd.c)
 
 if (NOT CONFIG_TC_PROVIDES_POSIX_ASYNCHRONOUS_IO)
   zephyr_library_sources_ifdef(CONFIG_POSIX_ASYNCHRONOUS_IO aio.c)
@@ -45,15 +44,6 @@ if (NOT CONFIG_TC_PROVIDES_POSIX_CLOCK_SELECTION)
 endif()
 if (CONFIG_POSIX_CLOCK_SELECTION)
   zephyr_compile_definitions(-D_POSIX_CLOCK_SELECTION=${POSIX_VERSION})
-endif()
-
-if (NOT CONFIG_TC_PROVIDES_POSIX_C_LIB_EXT)
-  zephyr_library_sources_ifdef(CONFIG_POSIX_C_LIB_EXT
-    fnmatch.c
-    getentropy.c
-    getopt/getopt.c
-    getopt/getopt_common.c
-  )
 endif()
 
 if (NOT CONFIG_TC_PROVIDES_POSIX_DEVICE_IO)
@@ -94,6 +84,9 @@ if (NOT CONFIG_TC_PROVIDES_POSIX_MULTI_PROCESS)
     sleep.c
     multi_process.c
   )
+endif()
+if (CONFIG_POSIX_MULTI_PROCESS)
+  zephyr_compile_definitions(-D_POSIX_MULTI_PROCESS=${POSIX_VERSION})
 endif()
 
 if (NOT CONFIG_TC_PROVIDES_POSIX_NETWORKING)
@@ -184,13 +177,6 @@ endif()
 if (NOT CONFIG_TC_PROVIDES_XSI_SYSTEM_LOGGING)
   zephyr_library_sources_ifdef(CONFIG_XSI_SYSTEM_LOGGING syslog.c)
 endif()
-
-zephyr_library_sources_ifdef(CONFIG_GETOPT_LONG
-  getopt/getopt_long.c
-)
-zephyr_include_directories_ifdef(CONFIG_POSIX_C_LIB_EXT
-  getopt/
-)
 
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include

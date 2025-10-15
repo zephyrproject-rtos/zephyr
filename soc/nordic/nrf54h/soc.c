@@ -35,6 +35,12 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #define HSFLL_NODE DT_NODELABEL(cpurad_hsfll)
 #endif
 
+#define FIXED_PARTITION_ADDRESS(label)                                                             \
+	(DT_REG_ADDR(DT_NODELABEL(label)) +                                                        \
+	 DT_REG_ADDR(COND_CODE_1(DT_FIXED_SUBPARTITION_EXISTS(DT_NODELABEL(label)),                \
+			(DT_GPARENT(DT_PARENT(DT_NODELABEL(label)))),                              \
+			(DT_GPARENT(DT_NODELABEL(label))))))
+
 #ifdef CONFIG_USE_DT_CODE_PARTITION
 #define FLASH_LOAD_OFFSET DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition))
 #elif defined(CONFIG_FLASH_LOAD_OFFSET)
@@ -42,7 +48,8 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #endif
 
 #define PARTITION_IS_RUNNING_APP_PARTITION(label)                                                  \
-	(DT_REG_ADDR(DT_NODELABEL(label)) == FLASH_LOAD_OFFSET)
+	(DT_REG_ADDR(DT_NODELABEL(label)) <= FLASH_LOAD_OFFSET &&                                  \
+	 DT_REG_ADDR(DT_NODELABEL(label)) + DT_REG_SIZE(DT_NODELABEL(label)) > FLASH_LOAD_OFFSET)
 
 sys_snode_t soc_node;
 
@@ -191,22 +198,16 @@ void soc_late_init_hook(void)
 	void *radiocore_address = NULL;
 
 #if DT_NODE_EXISTS(DT_NODELABEL(cpurad_slot1_partition))
-	if (PARTITION_IS_RUNNING_APP_PARTITION(slot1_partition)) {
-		radiocore_address =
-			(void *)(DT_REG_ADDR(DT_GPARENT(DT_NODELABEL(cpurad_slot1_partition))) +
-				 DT_REG_ADDR(DT_NODELABEL(cpurad_slot1_partition)) +
-				 CONFIG_ROM_START_OFFSET);
+	if (PARTITION_IS_RUNNING_APP_PARTITION(cpuapp_slot1_partition)) {
+		radiocore_address = (void *)(FIXED_PARTITION_ADDRESS(cpurad_slot1_partition) +
+					     CONFIG_ROM_START_OFFSET);
 	} else {
-		radiocore_address =
-			(void *)(DT_REG_ADDR(DT_GPARENT(DT_NODELABEL(cpurad_slot0_partition))) +
-				 DT_REG_ADDR(DT_NODELABEL(cpurad_slot0_partition)) +
-				 CONFIG_ROM_START_OFFSET);
+		radiocore_address = (void *)(FIXED_PARTITION_ADDRESS(cpurad_slot0_partition) +
+					     CONFIG_ROM_START_OFFSET);
 	}
 #else
 	radiocore_address =
-		(void *)(DT_REG_ADDR(DT_GPARENT(DT_NODELABEL(cpurad_slot0_partition))) +
-			 DT_REG_ADDR(DT_NODELABEL(cpurad_slot0_partition)) +
-			 CONFIG_ROM_START_OFFSET);
+		(void *)(FIXED_PARTITION_ADDRESS(cpurad_slot0_partition) + CONFIG_ROM_START_OFFSET);
 #endif
 
 	if (IS_ENABLED(CONFIG_SOC_NRF54H20_CPURAD_ENABLE_CHECK_VTOR) &&

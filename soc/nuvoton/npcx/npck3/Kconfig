@@ -11,6 +11,7 @@ config SOC_SERIES_NPCK3
 	select CPU_HAS_ARM_MPU
 	select HAS_PM
 	select HAS_SWO
+	select SOC_EARLY_INIT_HOOK
 
 if SOC_SERIES_NPCK3
 

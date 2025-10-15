@@ -353,6 +353,8 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #ifdef CONFIG_COVERAGE_DUMP
 	/* Dump coverage data once the main() has exited. */
 	gcov_coverage_dump();
+#elif defined(CONFIG_COVERAGE_SEMIHOST)
+	gcov_coverage_semihost();
 #endif /* CONFIG_COVERAGE_DUMP */
 } /* LCOV_EXCL_LINE ... because we just dumped final coverage data */
 

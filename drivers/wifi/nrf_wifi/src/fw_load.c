@@ -17,13 +17,17 @@
 LOG_MODULE_DECLARE(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 
 #include <fmac_main.h>
+#ifndef CONFIG_NRF71_ON_IPC
 static const char fw_patch[] = {
 	#include <nrf70_fw_patch/nrf70.bin.inc>
 };
+#endif /* CONFIG_NRF71_ON_IPC */
 
 enum nrf_wifi_status nrf_wifi_fw_load(void *rpu_ctx)
 {
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
+
+#ifndef CONFIG_NRF71_ON_IPC
 	struct nrf_wifi_fmac_fw_info fw_info = { 0 };
 
 	status = nrf_wifi_fmac_fw_parse(rpu_ctx, fw_patch, sizeof(fw_patch), &fw_info);
@@ -31,13 +35,15 @@ enum nrf_wifi_status nrf_wifi_fw_load(void *rpu_ctx)
 		LOG_ERR("%s: nrf_wifi_fmac_fw_parse failed", __func__);
 		return status;
 	}
-#ifndef CONFIG_NRF71_ON_IPC
+
 	/* Load the FW patches to the RPU */
 	status = nrf_wifi_fmac_fw_load(rpu_ctx, &fw_info);
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
 		LOG_ERR("%s: nrf_wifi_fmac_fw_load failed", __func__);
 	}
+#else
+	status = NRF_WIFI_STATUS_SUCCESS;
 #endif /* !CONFIG_NRF71_ON_IPC */
 	return status;
 }

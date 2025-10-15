@@ -14,7 +14,7 @@
 			compatible = "st,stm32-uart";
 			reg = <0x40004c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 19)>;
-			resets = <&rctl STM32_RESET(APB1, 19U)>;
+			resets = <&rctl STM32_RESET(APB1, 19)>;
 			interrupts = <52 0>;
 			status = "disabled";
 		};
@@ -23,7 +23,7 @@
 			compatible = "st,stm32-uart";
 			reg = <0x40005000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 20)>;
-			resets = <&rctl STM32_RESET(APB1, 20U)>;
+			resets = <&rctl STM32_RESET(APB1, 20)>;
 			interrupts = <53 0>;
 			status = "disabled";
 		};
@@ -32,7 +32,7 @@
 			compatible = "st,stm32-uart";
 			reg = <0x40007800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 30)>;
-			resets = <&rctl STM32_RESET(APB1, 30U)>;
+			resets = <&rctl STM32_RESET(APB1, 30)>;
 			interrupts = <82 0>;
 			status = "disabled";
 		};
@@ -41,7 +41,7 @@
 			compatible = "st,stm32-uart";
 			reg = <0x40007c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 31)>;
-			resets = <&rctl STM32_RESET(APB1, 31U)>;
+			resets = <&rctl STM32_RESET(APB1, 31)>;
 			interrupts = <83 0>;
 			status = "disabled";
 		};
@@ -50,7 +50,7 @@
 			compatible = "st,stm32-uart";
 			reg = <0x40011800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 6)>;
-			resets = <&rctl STM32_RESET(APB2, 6U)>;
+			resets = <&rctl STM32_RESET(APB2, 6)>;
 			interrupts = <88 0>;
 			status = "disabled";
 		};
@@ -59,7 +59,7 @@
 			compatible = "st,stm32-uart";
 			reg = <0x40011c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 7)>;
-			resets = <&rctl STM32_RESET(APB2, 7U)>;
+			resets = <&rctl STM32_RESET(APB2, 7)>;
 			interrupts = <89 0>;
 			status = "disabled";
 		};

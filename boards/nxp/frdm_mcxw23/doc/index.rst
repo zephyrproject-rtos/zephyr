@@ -198,8 +198,7 @@ should see the following message in the terminal:
    *** Booting Zephyr OS build v4.2.0-2105-g48f2ffda26de ***
    Hello World! frdm_mcxw23/mcxw236
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _MCXW23 SoC Website:
    https://www.nxp.com/products/MCX-W23

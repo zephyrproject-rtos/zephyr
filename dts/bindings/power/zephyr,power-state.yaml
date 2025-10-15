@@ -1,7 +1,9 @@
 # Copyright (c) 2020, Intel Corporation
+# Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: Properties for power management state
+description: |
+  Properties for power management idle states.
 
 compatible: "zephyr,power-state"
 
@@ -24,9 +26,13 @@ properties:
   min-residency-us:
     type: int
     description: |
-        Minimum residency duration in microseconds. It is the minimum time for a
-        given idle state to be worthwhile energywise. It includes the time to enter
-        in this state.
+      Minimum residency duration in microseconds.
+
+      How much time the residency in a given idle state must last for state entry
+      to be worthwhile energywise. It includes the time to enter into this state
+      and represents the "break-even" time to justify the time and power spent
+      on the work needed for entering and exiting the state based on how much actual energy
+      is saved once in the state, compared to choosing the next shallowest state.
   exit-latency-us:
     type: int
     description: |

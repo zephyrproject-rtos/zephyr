@@ -20,4 +20,6 @@ supported:
   - counter
   - flash
   - i2c
+  - watchdog
+  - pwm
 vendor: nxp

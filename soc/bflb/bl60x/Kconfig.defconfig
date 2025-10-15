@@ -18,4 +18,8 @@ config ARCH_SW_ISR_TABLE_ALIGN
 config RISCV_MCAUSE_EXCEPTION_MASK
 	default 0x3FF
 
+choice CACHE_TYPE
+	default EXTERNAL_CACHE
+endchoice
+
 endif # SOC_SERIES_BL60X

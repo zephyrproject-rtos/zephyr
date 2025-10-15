@@ -1729,9 +1729,14 @@ static int max32_i3c_init(const struct device *dev)
 
 	cfg->irq_config_func(dev);
 
-	ret = i3c_bus_init(dev, &cfg->common.dev_list);
+	if (cfg->common.dev_list.num_i3c > 0) {
+		ret = i3c_bus_init(dev, &cfg->common.dev_list);
+		if (ret) {
+			LOG_ERR("Failed to do i3c bus init, err=%d", ret);
+		}
+	}
 
-	return ret;
+	return 0;
 }
 
 static int max32_i3c_i2c_api_configure(const struct device *dev, uint32_t dev_config)

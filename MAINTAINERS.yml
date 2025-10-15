@@ -848,6 +848,20 @@ CMSIS-NN integration:
   tests:
     - libraries.cmsis_nn
 
+CPU Frequency Scaling:
+  status: maintained
+  maintainers:
+    - peter-mitsis
+    - seankyer
+  files:
+    - include/zephyr/cpu_freq/
+    - include/zephyr/cpu_load/
+    - subsys/cpu_load/
+    - subsys/cpu_freq/
+    - dts/bindings/p_state/
+  labels:
+    - "area: CPU Frequency Scaling"
+
 CRC:
   status: maintained
   maintainers:
@@ -3339,6 +3353,7 @@ Microchip SAM Platforms:
   maintainers:
     - nandojve
   collaborators:
+    - ArunMCHP
     - pdgendt
     - stephanosio
   files:
@@ -3372,8 +3387,6 @@ Modem:
   status: maintained
   maintainers:
     - bjarki-andreasen
-  collaborators:
-    - tomi-font
   files:
     - subsys/modem/
     - include/zephyr/modem/
@@ -3623,6 +3636,8 @@ Native_sim and POSIX arch:
   status: maintained
   maintainers:
     - aescolar
+  collaborators:
+    - tpambor
   files:
     - arch/posix/
     - boards/native/common/
@@ -4099,7 +4114,8 @@ PMCI:
     - kehintel
   files:
     - subsys/pmci/
-    - samples/modules/pmci/
+    - samples/subsys/pmci/
+    - include/zephyr/pmci/
   labels:
     - "area: PMCI"
 
@@ -5522,6 +5538,7 @@ West:
     - AzharMCHP
     - scottwcpg
     - nandojve
+    - NhMchp
   collaborators:
     - VenkatKotakonda
     - albertofloyd
@@ -5613,6 +5630,8 @@ West:
     - soburi
     - duynguyenxa
     - thaoluonguw
+    - binhnguyen2434
+    - nhutnguyenkc
   files: []
   labels:
     - "platform: Renesas"

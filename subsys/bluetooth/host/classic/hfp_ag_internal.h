@@ -137,6 +137,7 @@ enum {
 	BT_HFP_AG_VRE_ACTIVATE,  /* VRE is activated */
 	BT_HFP_AG_VRE_R2A,       /* HF is ready to accept audio */
 	BT_HGP_AG_ONGOING_CALLS, /* Waiting ongoing calls */
+	BT_HFP_AG_SLC_CONNECTED, /* SLC connected event needs to be notified */
 
 	/* Total number of flags - must be at the end of the enum */
 	BT_HFP_AG_NUM_FLAGS,

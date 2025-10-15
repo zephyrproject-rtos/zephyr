@@ -20,7 +20,7 @@
 #include <zephyr/net/wifi_mgmt.h>
 #ifdef CONFIG_PM_DEVICE
 #include <zephyr/pm/device.h>
-#ifdef CONFIG_NXP_IW610
+#ifndef CONFIG_NXP_RW610
 #include <fsl_gpc.h>
 #endif
 #endif
@@ -2018,7 +2018,7 @@ extern void WL_MCI_WAKEUP_DONE0_DriverIRQHandler(void);
 #endif
 
 #ifdef CONFIG_PM_DEVICE
-#ifdef CONFIG_NXP_IW610
+#ifndef CONFIG_NXP_RW610
 struct gpio_callback wakeup_callback;
 
 static void gpio_wakeup_callback(const struct device *port, struct gpio_callback *cb,
@@ -2142,8 +2142,10 @@ static bool nxp_wifi_wlan_wakeup(void)
 {
 #ifdef CONFIG_NXP_RW610
 	return POWER_GetWakeupStatus(WL_MCI_WAKEUP0_IRQn);
-#elif CONFIG_NXP_IW610
+#elif CONFIG_NXP_IW610 || CONFIG_NXP_IW61X
 	return GPC_GetIRQStatusFlag(GPC, GPIO1_Combined_0_15_IRQn);
+#elif CONFIG_NXP_IW416
+	return GPC_GetIRQStatusFlag(GPC, GPIO1_Combined_16_31_IRQn);
 #else
 	return false;
 #endif

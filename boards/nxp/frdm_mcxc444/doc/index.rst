@@ -169,8 +169,7 @@ should see the following message in the terminal:
    *** Booting Zephyr OS build v3.6.0-4475-gfa5bd8bb098e ***
    Hello World! frdm_mcxc444/mcxc444
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _MCX C14x/24x/44x Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/mcx-arm-cortex-m/mcx-c-series-microcontrollers/mcx-c14x-24x-44x-mcus-with-arm-cortex-m0-plus-entry-level-mcus-with-usb-segment-lcd-and-classical-peripherals:MCX-C14x-24x-44x

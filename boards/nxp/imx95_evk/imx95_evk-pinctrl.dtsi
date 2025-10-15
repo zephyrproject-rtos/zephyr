@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -134,6 +134,16 @@
 				 <&iomuxc_gpio_io21_sai_tx_data_bit_sai3_tx_data_bit0>,
 				 <&iomuxc_gpio_io26_sai_tx_sync_sai3_tx_sync>;
 			bias-pull-up;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
+		};
+	};
+
+	flexcan2_default: flexcan2_default {
+		group0 {
+			pinmux = <&iomuxc_gpio_io27_can_rx_can2_rx>,
+				<&iomuxc_gpio_io25_can_tx_can2_tx>;
+			bias-pull-down;
 			slew-rate = "slightly_fast";
 			drive-strength = "x4";
 		};

@@ -41,3 +41,6 @@ tests:
       - ek_ra8d1/r7fa8d1bhecbd
     extra_args:
       - platform:ek_ra81/r7fa8d1bhecbd:SHIELD="dvp_20pin_ov7670"
+  drivers.video.stm32_venc.build:
+    platform_allow:
+      - stm32n6570_dk/stm32n657xx/sb

@@ -112,9 +112,13 @@ static void log_backend_swo_init(struct log_backend const *const backend)
 	DWT->CTRL &= (DWT_CTRL_POSTPRESET_Msk | DWT_CTRL_POSTINIT_Msk | DWT_CTRL_CYCCNTENA_Msk);
 	DWT->CTRL |= (DWT_CTRL_POSTPRESET_Msk | DWT_CTRL_POSTINIT_Msk);
 	/* Configure Formatter and Flush Control Register */
-	TPIU->FFCR = 0x00000100;
+	TPIU->FFCR = TPIU_FFCR_TrigIn_Msk;
 	/* Enable ITM, set TraceBusID=1, no local timestamp generation */
-	ITM->TCR  = 0x0001000D;
+	uint32_t tcr = ITM_TCR_ITMENA_Msk | ITM_TCR_DWTENA_Msk | (1 << ITM_TCR_TRACEBUSID_Pos);
+#if CONFIG_LOG_BACKEND_SWO_SYNC_PACKETS
+	tcr |= ITM_TCR_SYNCENA_Msk;
+#endif
+	ITM->TCR  = tcr;
 	/* Enable stimulus port used by the logger */
 	ITM->TER  = 1 << ITM_PORT_LOGGER;
 

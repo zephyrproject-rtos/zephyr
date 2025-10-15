@@ -572,4 +572,4 @@ References
    https://developer.arm.com/documentation/100935/0100/The-TrustZone-hardware-architecture-
 
 .. _Trusted Firmware M:
-   https://tf-m-user-guide.trustedfirmware.org/building/tfm_build_instruction.html
+   https://tf-m.docs.trustedfirmware.org/en/latest/building/tfm_build_instruction.html

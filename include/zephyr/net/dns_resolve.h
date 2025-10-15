@@ -679,6 +679,23 @@ int dns_resolve_remove_source(struct dns_resolve_context *ctx, int if_index,
 			      enum dns_server_source source);
 
 /**
+ * @brief Remove servers from the DNS resolving context that have a specific IP address.
+ *
+ * @param ctx DNS context
+ * @param servers_sa DNS server addresses as struct sockaddr. The array
+ *        is NULL terminated. Port numbers are optional in struct sockaddr, the
+ *        default will be used if set to 0.
+ * @param interfaces Network interfaces to which the DNS servers are bound.
+ *        This is an array of network interface indices. The array must be
+ *        the same length as the servers_sa array.
+ *
+ * @return 0 if ok, <0 if error.
+ */
+int dns_resolve_remove_server_addresses(struct dns_resolve_context *ctx,
+					const struct sockaddr *servers_sa[],
+					int interfaces[]);
+
+/**
  * @brief Cancel a pending DNS query.
  *
  * @details This releases DNS resources used by a pending query.

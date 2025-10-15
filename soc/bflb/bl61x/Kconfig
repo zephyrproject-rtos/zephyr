@@ -15,4 +15,5 @@ config SOC_SERIES_BL61X
 	select SOC_EARLY_INIT_HOOK
 	select SYSCON
 	select XIP
-	select XUANTIE_E907
+	select CPU_XUANTIE_E907
+	select CACHE_MANAGEMENT

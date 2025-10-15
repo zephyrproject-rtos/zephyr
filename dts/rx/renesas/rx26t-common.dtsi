@@ -39,8 +39,12 @@
 		      <0x00872f0 0x02>,
 		      <0x0087500 0x0f>,
 		      <0x0087510 0x01>,
-		      <0x0087514 0x01>;
-		reg-names = "IR", "IER", "IPR", "FIR", "IRQCR", "IRQFLTE", "IRQFLTC0";
+		      <0x0087514 0x01>,
+		      <0x0087580 0x01>,
+		      <0x0087581 0x01>,
+		      <0x0087582 0x01>;
+		reg-names = "IR", "IER", "IPR", "FIR", "IRQCR", "IRQFLTE", "IRQFLTC0", "NMISR",
+			    "NMIER", "NMICLR";
 
 		swint1: swint1@872e0 {
 			compatible = "renesas,rx-swint";

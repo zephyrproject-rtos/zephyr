@@ -153,11 +153,9 @@ should see the following message in the terminal:
 Troubleshooting
 ===============
 
-.. include:: ../../common/segger-ecc-systemview.rst
-   :start-after: segger-ecc-systemview
+.. include:: ../../common/segger-ecc-systemview.rst.inc
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _MCX-A266 SoC Website:
    https://www.nxp.com/products/MCX-A345-A346

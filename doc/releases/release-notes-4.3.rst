@@ -59,6 +59,7 @@ Removed APIs and options
 * The legacy pipe object API was removed. Use the new pipe API instead.
 * ``bt_le_set_auto_conn``
 * ``CONFIG_BT_BUF_ACL_RX_COUNT``
+* ``ok`` enum value has now been removed completely from ``base.yaml`` binding ``status`` property in devicetree.
 
 Deprecated APIs and options
 ===========================
@@ -72,7 +73,14 @@ Deprecated APIs and options
 * :c:enum:`bt_hci_bus` was deprecated as it was not used. :c:macro:`BT_DT_HCI_BUS_GET` should be
   used instead.
 
+* :kconfig:option:`CONFIG_BT_AUTO_PHY_UPDATE` was deprecated and has been replaced with
+  role-specific (central vs peripheral) options that allow specifying exactly which PHY is
+  preferred for automatic updates.
+
 * :kconfig:option:`CONFIG_POSIX_READER_WRITER_LOCKS` is deprecated. Use :kconfig:option:`CONFIG_POSIX_RW_LOCKS` instead.
+
+* :c:func:`bt_ctlr_set_public_addr` is deprecated in favor of using
+  :c:struct:`bt_hci_cp_vs_write_bd_addr` for setting the public Bluetooth device address.
 
 New APIs and options
 ====================
@@ -121,6 +129,14 @@ New APIs and options
     * :c:struct:`bt_iso_broadcaster_info` now contains a ``big_handle`` and a ``bis_number`` field
     * :c:struct:`bt_iso_sync_receiver_info` now contains a ``big_handle`` and a ``bis_number`` field
     * :c:struct:`bt_le_ext_adv_info` now contains an ``sid`` field with the Advertising Set ID.
+    * :kconfig:option:`CONFIG_BT_AUTO_PHY_PERIPHERAL_NONE`
+    * :kconfig:option:`CONFIG_BT_AUTO_PHY_PERIPHERAL_1M`
+    * :kconfig:option:`CONFIG_BT_AUTO_PHY_PERIPHERAL_2M`
+    * :kconfig:option:`CONFIG_BT_AUTO_PHY_PERIPHERAL_CODED`
+    * :kconfig:option:`CONFIG_BT_AUTO_PHY_CENTRAL_NONE`
+    * :kconfig:option:`CONFIG_BT_AUTO_PHY_CENTRAL_1M`
+    * :kconfig:option:`CONFIG_BT_AUTO_PHY_CENTRAL_2M`
+    * :kconfig:option:`CONFIG_BT_AUTO_PHY_CENTRAL_CODED`
 
 * CPUFreq
 
@@ -159,6 +175,8 @@ New APIs and options
   * :kconfig:option:`CONFIG_LV_Z_VDB_ZEPHYR_REGION_NAME`
 
 * Logging:
+
+  * :kconfig:option:`CONFIG_LOG_BACKEND_SWO_SYNC_PACKETS`
 
   * Added options to skip timestamp and level in log backends.
 
@@ -212,6 +230,7 @@ New APIs and options
   * CoAP
 
     * :c:struct:`coap_client_response_data`
+    * :c:member:`coap_client_request.payload_cb`
 
   * Sockets
 
@@ -269,6 +288,15 @@ New APIs and options
 * Task Watchdog
 
   * :kconfig:option:`CONFIG_TASK_WDT_DUMMY`
+
+* Toolchain
+
+  * :c:macro:`__deprecated_version`
+
+* Video
+
+  * :c:member:`video_format.size` field
+  * :c:func:`video_estimate_fmt_size`
 
 .. zephyr-keep-sorted-stop
 

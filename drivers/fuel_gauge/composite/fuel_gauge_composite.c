@@ -28,17 +28,19 @@ struct composite_data {
 
 static int composite_fetch(const struct device *dev)
 {
-	int rc;
+	int rc, rc2;
 
 	rc = pm_device_runtime_get(dev);
 	if (rc < 0) {
 		return rc;
 	}
 	rc = sensor_sample_fetch(dev);
-	if (rc < 0) {
-		return rc;
+	/* Unconditionally release the PM constraint */
+	rc2 = pm_device_runtime_put(dev);
+	if (rc == 0) {
+		rc = rc2;
 	}
-	return pm_device_runtime_put(dev);
+	return rc;
 }
 
 static int composite_channel_get(const struct device *dev, enum sensor_channel chan,

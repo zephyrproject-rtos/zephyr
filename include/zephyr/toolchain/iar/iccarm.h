@@ -187,6 +187,11 @@ do {                                                                    \
 #define __deprecated	__attribute__((deprecated))
 #endif
 
+#ifndef __deprecated_version
+#define __deprecated_version(version) \
+	__attribute__((deprecated("planned removal in v" #version)))
+#endif
+
 #define FUNC_NO_STACK_PROTECTOR _Pragma("no_stack_protect")
 
 #ifndef __attribute_const__

@@ -41,3 +41,15 @@ config FLASH_RENESAS_RA_HP_CHECK_BEFORE_READING
 	  are undefined.
 
 endif # SOC_FLASH_RENESAS_RA_HP
+
+config SOC_FLASH_RENESAS_RA_MRAM
+	bool "RA Flash MRAM driver"
+	depends on DT_HAS_RENESAS_RA_MRAM_CONTROLLER_ENABLED
+	default y
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_PAGE_LAYOUT
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_NO_EXPLICIT_ERASE
+	select USE_RA_FSP_MRAM
+	help
+	  Enable Flash MRAM driver for RA series

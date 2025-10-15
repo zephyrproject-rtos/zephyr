@@ -816,7 +816,6 @@
 			clocks = <&rcc STM32_CLOCK(AHB2, 10)>,
 				 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
 			interrupts = <37 0>;
-			status = "disabled";
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(14, 0x00)
 				       STM32_ADC_RES(12, 0x01)
@@ -826,6 +825,11 @@
 			st,adc-clock-source = "ASYNC";
 			st,adc-sequencer = "FULLY_CONFIGURABLE";
 			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
+			st,adc-internal-regulator = "startup-hw-status";
+			st,adc-has-deep-powerdown;
+			st,adc-has-channel-preselection;
+			st,adc-has-differential-support;
+			status = "disabled";
 		};
 
 		adc4: adc@46021000 {
@@ -834,7 +838,6 @@
 			clocks = <&rcc STM32_CLOCK(AHB3, 5)>,
 				 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
 			interrupts = <113 0>;
-			status = "disabled";
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
 				       STM32_ADC_RES(10, 0x01)
@@ -845,6 +848,8 @@
 			st,adc-clock-source = "ASYNC";
 			st,adc-sequencer = "NOT_FULLY_CONFIGURABLE";
 			st,adc-oversampler = "OVERSAMPLER_MINIMAL";
+			st,adc-internal-regulator = "startup-hw-status";
+			status = "disabled";
 		};
 
 		fdcan1: can@4000a400 {

@@ -606,8 +606,8 @@ bool k_work_cancel_sync(struct k_work *work,
 static void work_timeout_handler(struct _timeout *record)
 {
 	struct k_work_q *queue = CONTAINER_OF(record, struct k_work_q, work_timeout_record);
-	struct k_work *work;
-	k_work_handler_t handler;
+	struct k_work *work = NULL;
+	k_work_handler_t handler = NULL;
 	const char *name;
 	const char *space = " ";
 

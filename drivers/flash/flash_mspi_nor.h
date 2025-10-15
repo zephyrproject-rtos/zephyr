@@ -70,6 +70,7 @@ struct flash_mspi_nor_switch_info {
 
 struct flash_mspi_nor_config {
 	const struct device *bus;
+	uint32_t packet_data_limit;
 	uint32_t flash_size;
 	uint16_t page_size;
 	struct mspi_dev_id mspi_id;

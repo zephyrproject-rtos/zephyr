@@ -7,6 +7,7 @@
 #include <mem.h>
 #include <freq.h>
 #include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/clock/renesas_rzv_clock.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
@@ -33,6 +34,12 @@
 		};
 	};
 
+	osc: osc {
+		compatible = "fixed-clock";
+		clock-frequency = <DT_FREQ_M(24)>;
+		#clock-cells = <0>;
+	};
+
 	soc {
 		adc: adc@40059000 {
 			compatible = "renesas,rz-adc-c";
@@ -43,6 +50,133 @@
 			vref-mv = <1800>;
 			channel-available-mask = <0xFF>;
 			status = "disabled";
+		};
+
+		cpg: clock-controller@41010000 {
+			compatible = "renesas,rz-cpg";
+			reg = <0x41010000 DT_SIZE_K(64)>;
+			#clock-cells = <1>;
+			status = "okay";
+
+			iclk: iclk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(1200)>;
+				#clock-cells = <0>;
+			};
+
+			i2clk: i2clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(200)>;
+				#clock-cells = <0>;
+			};
+
+			gclk: gclk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(500)>;
+				#clock-cells = <0>;
+			};
+
+			s0clk: s0clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_K(12)>;
+				#clock-cells = <0>;
+			};
+
+			spi0clk: spi0clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(200)>;
+				#clock-cells = <0>;
+			};
+
+			spi1clk: spi1clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(100)>;
+				#clock-cells = <0>;
+			};
+
+			sd0clk: sd0clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(533)>;
+				#clock-cells = <0>;
+			};
+
+			sd1clk: sd1clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(533)>;
+				#clock-cells = <0>;
+			};
+
+			m0clk: m0clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(200)>;
+				#clock-cells = <0>;
+			};
+
+			m1clk: m1clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(3000)>;
+				#clock-cells = <0>;
+			};
+
+			m2clk: m2clk {
+				compatible = "fixed-clock";
+				clock-frequency = <266500000>;
+				#clock-cells = <0>;
+			};
+
+			m3clk: m3clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(3000)>;
+				#clock-cells = <0>;
+			};
+
+			m4clk: m4clk {
+				compatible = "fixed-clock";
+				clock-frequency = <16656000>;
+				#clock-cells = <0>;
+			};
+
+			hpclk: hpclk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(250)>;
+				#clock-cells = <0>;
+			};
+
+			tsuclk: tsuclk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(80)>;
+				#clock-cells = <0>;
+			};
+
+			ztclk: ztclk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(100)>;
+				#clock-cells = <0>;
+			};
+
+			p0clk: p0clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(100)>;
+				#clock-cells = <0>;
+			};
+
+			p1clk: p1clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(200)>;
+				#clock-cells = <0>;
+			};
+
+			p2clk: p2clk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(100)>;
+				#clock-cells = <0>;
+			};
+
+			atclk: atclk {
+				compatible = "fixed-clock";
+				clock-frequency = <DT_FREQ_M(400)>;
+				#clock-cells = <0>;
+			};
 		};
 
 		pinctrl: pin-controller@41030000 {

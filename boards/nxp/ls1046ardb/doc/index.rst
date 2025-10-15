@@ -183,8 +183,7 @@ Debugging
 LS1046A RDB board includes one JTAG connector on board, connect it to
 CodeWarrior TAP for debugging.
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 References
 ==========

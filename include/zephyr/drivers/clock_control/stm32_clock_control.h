@@ -41,9 +41,10 @@
 #include <zephyr/dt-bindings/clock/stm32l0_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32L1X)
 #include <zephyr/dt-bindings/clock/stm32l1_clock.h>
-#elif defined(CONFIG_SOC_SERIES_STM32L4X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X)
+#elif defined(CONFIG_SOC_SERIES_STM32L4X)
 #include <zephyr/dt-bindings/clock/stm32l4_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32L5X)
+#include <zephyr/dt-bindings/clock/stm32l5_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32MP2X)
 #include <zephyr/dt-bindings/clock/stm32mp2_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32WBX)

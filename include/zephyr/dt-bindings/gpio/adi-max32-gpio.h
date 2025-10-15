@@ -56,10 +56,10 @@
 #define MAX32_GPIO_DRV_STRENGTH_3    (3U << MAX32_GPIO_DRV_STRENGTH_POS)
 
 /** GPIO bias weak pull up selection, to VDDIO (1MOhm) */
-#define MAX32_GPIO_WEAK_PULL_UP_POS   (10U)
+#define MAX32_GPIO_WEAK_PULL_UP_POS   (11U)
 #define MAX32_GPIO_WEAK_PULL_UP       (1U << MAX32_GPIO_WEAK_PULL_UP_POS)
 /** GPIO bias weak pull down selection, to VDDIOH (1MOhm) */
-#define MAX32_GPIO_WEAK_PULL_DOWN_POS (11U)
+#define MAX32_GPIO_WEAK_PULL_DOWN_POS (12U)
 #define MAX32_GPIO_WEAK_PULL_DOWN     (1U << MAX32_GPIO_WEAK_PULL_DOWN_POS)
 
 /** @} */

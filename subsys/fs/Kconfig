@@ -99,6 +99,11 @@ config FILE_SYSTEM_MKFS
 	help
 	  Enables function fs_mkfs that can be used to format a storage device.
 
+config FILE_SYSTEM_GC
+	bool "Allow explicit garbage collector call"
+	help
+	  Enables function fs_gc that can be used to proactively run garbage collector.
+
 config FUSE_FS_ACCESS
 	bool "FUSE based access to file system partitions"
 	depends on ARCH_POSIX

@@ -25,4 +25,11 @@
 			power-source = "3v3";
 		};
 	};
+
+	pinmux_sctimer_default: pinmux_sctimer_default {
+		group0 {
+			pinmux = <SCT0_OUT0_PIO0_15>;
+			slew-rate = "standard";
+		};
+	};
 };

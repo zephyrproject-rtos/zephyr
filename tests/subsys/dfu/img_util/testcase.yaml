@@ -12,7 +12,7 @@ tests:
       - native_sim
     tags: dfu_image_util
   dfu.image_util.progressive:
-    extra_args: EXTRA_CONF_FILE=progressively_overlay.conf
+    extra_args: EXTRA_CONF_FILE=progressively.conf
     platform_allow:
       - native_sim
       - native_sim/native/64

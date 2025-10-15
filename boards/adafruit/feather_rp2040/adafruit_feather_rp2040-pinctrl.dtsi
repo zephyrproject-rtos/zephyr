@@ -54,7 +54,7 @@
 
 	ws2812_pio1_default: ws2812_pio1_default {
 		ws2812 {
-			pinmux = <PIO1_P12>;
+			pinmux = <PIO1_P16>;
 		};
 	};
 };

@@ -94,7 +94,7 @@
 };
 
 &espi0 {
-	status = "disabled";
+	status = "okay";
 	pinctrl-0 = <&espi_lpc_gp10_f7>;
 	pinctrl-names = "default";
 };

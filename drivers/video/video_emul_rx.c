@@ -67,7 +67,11 @@ static int emul_rx_set_fmt(const struct device *const dev, struct video_format *
 	}
 
 	/* Cache the format selected locally to use it for getting the size of the buffer  */
-	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
+	ret = video_estimate_fmt_size(fmt);
+	if (ret < 0) {
+		return ret;
+	}
+
 	data->fmt = *fmt;
 
 	return 0;
@@ -218,8 +222,10 @@ int emul_rx_init(const struct device *dev)
 		return ret;
 	}
 
-	data->fmt.pitch =
-		data->fmt.width * video_bits_per_pixel(data->fmt.pixelformat) / BITS_PER_BYTE;
+	ret = video_estimate_fmt_size(&data->fmt);
+	if (ret < 0) {
+		return ret;
+	}
 
 	k_fifo_init(&data->fifo_in);
 	k_fifo_init(&data->fifo_out);

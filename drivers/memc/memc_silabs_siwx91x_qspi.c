@@ -30,7 +30,7 @@ static int siwx91x_memc_init(const struct device *dev)
 	/* Memory controller is automatically setup by the siwx91x bootloader,
 	 * so we have to uninitialize it before to change the configuration
 	 */
-	ret = sl_si91x_psram_uninit();
+	ret = sl_si91x_psram_device_uninit();
 	if (ret) {
 		return -EIO;
 	}
@@ -50,7 +50,7 @@ static int siwx91x_memc_init(const struct device *dev)
 		}
 	}
 
-	ret = sl_si91x_psram_init();
+	ret = sl_si91x_psram_device_init();
 	if (ret) {
 		LOG_ERR("sl_si91x_psram_init() returned %d", ret);
 		return -EIO;
@@ -111,12 +111,6 @@ struct sl_psram_info_type_t PSRAM_Device = {
 	.spi_config.spi_config_4.valid_prot_bits   = 4,
 	.spi_config.spi_config_1.d3d2_data         = 0x03,
 	.spi_config.spi_config_5.d7_d4_data        = 0x0f,
-};
-/* PSRAMSecureSegments is directly referenced by sl_si91x_psram_init() */
-struct PSRAMSecureSegmentType PSRAMSecureSegments[MAX_SEC_SEGMENTS] = {
-	[0].segmentEnable = 1,
-	[0].lowerBoundary = 0x00000,
-	[0].higherBoundary = 0x0ffff,
 };
 DEVICE_DT_INST_DEFINE(0, siwx91x_memc_init, NULL, NULL, &siwx91x_memc_config,
 		      PRE_KERNEL_1, CONFIG_MEMC_INIT_PRIORITY, NULL);

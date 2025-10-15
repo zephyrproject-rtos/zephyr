@@ -23,11 +23,19 @@ project(uicr)
 function(parse_kconfig_value config_file config_name output_var)
   file(STRINGS ${config_file} config_lines ENCODING "UTF-8")
   foreach(line ${config_lines})
+    # Match quoted strings like CONFIG_FOO="value"
     if("${line}" MATCHES "^${config_name}=\"(.*)\"$")
       set(${output_var} "${CMAKE_MATCH_1}" PARENT_SCOPE)
       return()
     endif()
+    # Match unquoted values like CONFIG_FOO=y or CONFIG_FOO=n
+    if("${line}" MATCHES "^${config_name}=(.*)$")
+      set(${output_var} "${CMAKE_MATCH_1}" PARENT_SCOPE)
+      return()
+    endif()
   endforeach()
+  # If not found, return empty (including "# CONFIG_FOO is not set" case)
+  set(${output_var} "" PARENT_SCOPE)
 endfunction()
 
 # Function to compute partition absolute address and size from devicetree
@@ -131,8 +139,9 @@ if(CONFIG_GEN_UICR_GENERATE_PERIPHCONF)
       parse_kconfig_value(${_dir}/zephyr/.config CONFIG_KERNEL_BIN_NAME kernel_bin_name)
       set(kernel_elf_path ${_dir}/zephyr/${kernel_bin_name}.elf)
 
-      # Check if this is secondary firmware by looking for the marker file
-      if(EXISTS ${_dir}/is_secondary_firmware.txt)
+      # Check if this is secondary firmware by reading the Kconfig from .config
+      parse_kconfig_value(${_dir}/zephyr/.config CONFIG_IS_IRONSIDE_SE_SECONDARY_IMAGE is_secondary)
+      if(is_secondary STREQUAL "y")
         list(APPEND secondary_periphconf_elfs ${kernel_elf_path})
       else()
         list(APPEND periphconf_elfs ${kernel_elf_path})

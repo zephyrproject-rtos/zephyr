@@ -350,8 +350,7 @@ should see the following message in the terminal:
    ***** Booting Zephyr OS v3.7.0-xxx-xxxxxxxxxxxxx *****
    Hello World! mimxrt1180_evk/mimxrt1189/cm33
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _MIMXRT1180-EVK Website:
    https://www.nxp.com/design/design-center/development-boards-and-designs/MIMXRT1180-EVK

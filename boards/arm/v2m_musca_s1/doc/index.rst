@@ -421,7 +421,7 @@ corresponding TF-M integration example's README file.
    https://developer.arm.com/documentation/100235/latest/
 
 .. _Trusted Firmware-M Guide:
-   https://tf-m-user-guide.trustedfirmware.org/building/tfm_build_instruction.html
+   https://tf-m.docs.trustedfirmware.org/en/latest/building/tfm_build_instruction.html
 
 .. _Corelink SSE-200 Subsystem:
    https://developer.arm.com/documentation/dto0051/latest/subsystem-overview/about-the-sse-200

@@ -23,23 +23,21 @@
 			mbox-names = "tx", "rx";
 			status = "okay";
 		};
-	};
-};
 
-&sram {
-	/* Redefine sram regions for CPU0 */
-	sram0: sram@22000000 {
-		reg = <0x22000000 0xe6000>;
-	};
+		/* Redefine sram regions for CPU0 */
+		sram0: sram@22000000 {
+			reg = <0x22000000 0xe6000>;
+		};
 
-	/* Redefine sram regions for CPU1 */
-	sram1: sram@220e6000 {
-		reg = <0x220e6000 0xe6000>;
-	};
+		/* Redefine sram regions for CPU1 */
+		sram1: sram@220e6000 {
+			reg = <0x220e6000 0xe6000>;
+		};
 
-	/* Define shared memory regions for IPC */
-	sram_shm: sram@221cc000 {
-		reg = <0x221cc000 0x8000>;
+		/* Define shared memory regions for IPC */
+		sram_shm: sram@221cc000 {
+			reg = <0x221cc000 0x8000>;
+		};
 	};
 };
 

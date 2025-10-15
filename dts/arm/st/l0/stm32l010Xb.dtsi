@@ -28,7 +28,7 @@
 			reg = <0x40011400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 5)>,
 				 <&rcc STM32_SRC_TIMPCLK2 NO_SEL>;
-			resets = <&rctl STM32_RESET(APB2, 5U)>;
+			resets = <&rctl STM32_RESET(APB2, 5)>;
 			interrupts = <22 0>;
 			interrupt-names = "global";
 			status = "disabled";

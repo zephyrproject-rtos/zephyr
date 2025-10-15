@@ -195,7 +195,7 @@ static void tx_data(const struct device *dev,
 	dev_data->buf_pos = (uint8_t *)buf_pos;
 }
 
-static bool tx_dummy_bytes(const struct device *dev)
+static bool tx_dummy_bytes(const struct device *dev, bool *repeat)
 {
 	struct mspi_dw_data *dev_data = dev->data;
 	const struct mspi_dw_config *dev_config = dev->config;
@@ -209,8 +209,17 @@ static bool tx_dummy_bytes(const struct device *dev)
 	 * FIFO to avoid overflowing it; `max_queued_dummy_bytes` accounts
 	 * that one byte that can be partially received, thus not included
 	 * in the value from the RXFLR register.
+	 * This check also handles the case when the function is called but
+	 * the TX FIFO is already filled up (fifo_room == 0).
 	 */
 	if (fifo_room <= rx_fifo_items) {
+		if (repeat) {
+			/* If no dummy bytes can be sent now, there is no point
+			 * in repeating the loop that reads the RX FIFO.
+			 */
+			*repeat = false;
+		}
+
 		return false;
 	}
 	fifo_room -= rx_fifo_items;
@@ -329,7 +338,9 @@ static void handle_fifos(const struct device *dev)
 			finished = true;
 		}
 	} else {
-		for (;;) {
+		bool repeat = true;
+
+		do {
 			/* Always read everything from the RX FIFO, regardless
 			 * of the interrupt status.
 			 * tx_dummy_bytes() subtracts the number of items that
@@ -363,19 +374,28 @@ static void handle_fifos(const struct device *dev)
 				break;
 			}
 
-			if (dev_data->dummy_bytes == 0 ||
-			    !(int_status & RISR_TXEIR_BIT)) {
+			/* If there are still some dummy bytes to transmit,
+			 * always try to put some into the TX FIFO, no matter
+			 * what's the TXE interrupt status - the TX FIFO may be
+			 * filled above its threshold level (then its interrupt
+			 * flag is not set), but below its transfer start level,
+			 * so the controller may be waiting for more items to
+			 * appear there.
+			 */
+			if (dev_data->dummy_bytes == 0) {
 				break;
 			}
 
-			if (tx_dummy_bytes(dev)) {
+			if (tx_dummy_bytes(dev, &repeat)) {
 				/* All the required dummy bytes were written
 				 * to the FIFO; disable the TXE interrupt,
 				 * as it's no longer needed.
 				 */
 				set_imr(dev, IMR_RXFIM_BIT);
 			}
-		}
+
+			/* Repeat the loop only if any dummy bytes were sent. */
+		} while (repeat);
 	}
 
 	if (finished) {
@@ -1151,7 +1171,7 @@ static int start_next_packet(const struct device *dev, k_timeout_t timeout)
 	}
 
 	/* Prefill TX FIFO with any data we can */
-	if (dev_data->dummy_bytes && tx_dummy_bytes(dev)) {
+	if (dev_data->dummy_bytes && tx_dummy_bytes(dev, NULL)) {
 		imr = IMR_RXFIM_BIT;
 	} else if (packet->dir == MSPI_TX && packet->num_bytes) {
 		tx_data(dev, packet);

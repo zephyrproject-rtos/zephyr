@@ -51,11 +51,6 @@ static const struct smf_state *get_child_of(const struct smf_state *states,
 	}
 }
 
-static const struct smf_state *get_last_of(const struct smf_state *states)
-{
-	return get_child_of(states, NULL);
-}
-
 /**
  * @brief Find the Least Common Ancestor (LCA) of two states,
  *	  that are not ancestors of one another.
@@ -256,7 +251,8 @@ void smf_set_initial(struct smf_ctx *const ctx, const struct smf_state *init_sta
 	struct internal_ctx *const internal = (void *)&ctx->internal;
 
 	ctx->executing = init_state;
-	const struct smf_state *topmost = get_last_of(init_state);
+	/* topmost is the root ancestor of init_state, its parent == NULL */
+	const struct smf_state *topmost = get_child_of(init_state, NULL);
 
 	/* Execute topmost state entry action, since smf_execute_all_entry_actions()
 	 * doesn't

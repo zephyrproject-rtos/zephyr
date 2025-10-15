@@ -601,9 +601,9 @@
 
 				emdio: mdio@4cb00000 {
 					compatible = "nxp,imx-netc-emdio";
-					reg = <0x4cce0000 0x2000>,
-					      <0x4cb00000 0x100000>;
-					reg-names = "basic", "pfconfig";
+					reg = <0x4cb00000 0x100000>,
+					      <0x4cce0000 0x2000>;
+					reg-names = "pfconfig", "basic";
 					clocks = <&scmi_clk IMX95_CLK_ENET>;
 					#address-cells = <1>;
 					#size-cells = <0>;

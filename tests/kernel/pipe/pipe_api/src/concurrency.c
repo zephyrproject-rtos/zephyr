@@ -15,7 +15,7 @@ ZTEST_SUITE(k_pipe_concurrency, NULL, NULL, NULL, NULL, NULL);
 static const int partial_wait_time = 2000;
 #define DUMMY_DATA_SIZE 16
 static struct k_thread thread;
-static K_THREAD_STACK_DEFINE(stack, 1024);
+static K_THREAD_STACK_DEFINE(stack, 1024 + CONFIG_TEST_EXTRA_STACK_SIZE);
 static struct k_pipe pipe;
 
 static void thread_close(void *arg1, void *arg2, void *arg3)

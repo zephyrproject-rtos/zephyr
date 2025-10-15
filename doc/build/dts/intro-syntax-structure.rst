@@ -282,9 +282,7 @@ status
 
     A node is considered enabled if its status property is either ``"okay"`` or
     not defined (i.e. does not exist in the devicetree source). Nodes with
-    status ``"disabled"`` are explicitly disabled. (For backwards
-    compatibility, the value ``"ok"`` is treated the same as ``"okay"``, but
-    this usage is deprecated.) Devicetree nodes which correspond to physical
+    status ``"disabled"`` are explicitly disabled. Devicetree nodes which correspond to physical
     devices must be enabled for the corresponding ``struct device`` in the
     Zephyr driver model to be allocated and initialized.
 

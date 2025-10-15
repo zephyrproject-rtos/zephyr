@@ -297,7 +297,7 @@ static inline void fs_dir_t_init(struct fs_dir_t *zdp)
  * @warning If @p flags are set to 0 the function will open file, if it exists
  *          and is accessible, but you will have no read/write access to it.
  *
- * @param zfp Pointer to a file object
+ * @param zfp Pointer to an @b initialized file object
  * @param file_name The name of a file to open
  * @param flags The mode flags
  *
@@ -506,7 +506,7 @@ int fs_mkdir(const char *path);
  *
  * Opens an existing directory specified by the path.
  *
- * @param zdp Pointer to the directory object
+ * @param zdp Pointer to the @b initialized directory object
  * @param path Path to the directory to open
  *
  * @retval 0 on success;
@@ -689,6 +689,21 @@ int fs_register(int type, const struct fs_file_system_t *fs);
  * @retval -EINVAL when file system of a given type has not been registered.
  */
 int fs_unregister(int type, const struct fs_file_system_t *fs);
+
+/**
+ * @brief Attempt to proactively clean file system
+ *
+ * Returns a negative error code on failure.
+ * Ignored cleaning request is not a failure.
+ *
+ * @param mp Pointer to the mounted fs_mount_t structure.
+ *
+ * @retval 0 on success;
+ * @retval -EINVAL when a bad path to a directory, or a file, is given;
+ * @retval -ENOTSUP when not implemented by underlying file system driver;
+ * @retval <0 an other negative errno code on error.
+ */
+int fs_gc(struct fs_mount_t *mp);
 
 /**
  * @}

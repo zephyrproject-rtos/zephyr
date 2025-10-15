@@ -6,8 +6,6 @@
 #ifndef ZEPHYR_INCLUDE_TRACING_TRACING_H_
 #define ZEPHYR_INCLUDE_TRACING_TRACING_H_
 
-#include <zephyr/kernel.h>
-
 #include "tracking.h"
 
 #if defined CONFIG_SEGGER_SYSTEMVIEW

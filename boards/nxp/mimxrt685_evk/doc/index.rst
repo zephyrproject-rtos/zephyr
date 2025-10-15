@@ -330,8 +330,7 @@ and clocks are set up upon it initialising. This is sufficient for
 attaching a debugger to the core. For the use in an AMP system, this driver
 handles code loading and run control.
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _MIMXRT685-EVK Website:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/i-mx-rt600-evaluation-kit:MIMXRT685-EVK

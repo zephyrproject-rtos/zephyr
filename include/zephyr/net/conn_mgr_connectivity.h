@@ -44,6 +44,7 @@ extern "C" {
 enum {
 	NET_EVENT_CONN_CMD_IF_TIMEOUT_VAL,
 	NET_EVENT_CONN_CMD_IF_FATAL_ERROR_VAL,
+	NET_EVENT_CONN_CMD_IF_IDLE_TIMEOUT_VAL,
 
 	NET_EVENT_CONN_CMD_MAX
 };
@@ -54,6 +55,7 @@ BUILD_ASSERT(NET_EVENT_CONN_CMD_MAX <= NET_MGMT_MAX_COMMANDS,
 enum net_event_conn_cmd {
 	NET_MGMT_CMD(NET_EVENT_CONN_CMD_IF_TIMEOUT),
 	NET_MGMT_CMD(NET_EVENT_CONN_CMD_IF_FATAL_ERROR),
+	NET_MGMT_CMD(NET_EVENT_CONN_CMD_IF_IDLE_TIMEOUT),
 };
 
 /** @endcond */
@@ -69,6 +71,12 @@ enum net_event_conn_cmd {
  */
 #define NET_EVENT_CONN_IF_FATAL_ERROR					\
 	(NET_MGMT_CONN_IF_EVENT | NET_EVENT_CONN_CMD_IF_FATAL_ERROR)
+
+/**
+ * @brief net_mgmt event raised when an interface times out due to inactivity
+ */
+#define NET_EVENT_CONN_IF_IDLE_TIMEOUT					\
+	(NET_MGMT_CONN_IF_EVENT | NET_EVENT_CONN_CMD_IF_IDLE_TIMEOUT)
 
 
 /**
@@ -263,6 +271,45 @@ int conn_mgr_if_get_timeout(struct net_if *iface);
  * @retval -ENOTSUP if the provided iface is not bound to a connectivity implementation.
  */
 int conn_mgr_if_set_timeout(struct net_if *iface, int timeout);
+
+/**
+ * @brief Get the idle timeout for an iface
+ *
+ * If the provided iface is bound to a connectivity implementation, retrieves the idle timeout
+ * setting in seconds for it.
+ *
+ * @param iface - Pointer to the iface to check.
+ * @return int - The connectivity timeout value (in seconds) if it could be retrieved, otherwise
+ *		 CONN_MGR_IF_NO_TIMEOUT.
+ */
+int conn_mgr_if_get_idle_timeout(struct net_if *iface);
+
+/**
+ * @brief Set the idle timeout for an iface.
+ *
+ * If the provided iface is bound to a connectivity implementation, sets the idle timeout setting
+ * in seconds for it.
+ *
+ * @param iface - Pointer to the network interface to modify.
+ * @param timeout - The timeout value to set (in seconds).
+ *		    Pass @ref CONN_MGR_IF_NO_TIMEOUT to disable the timeout.
+ * @retval 0 on success.
+ * @retval -ENOTSUP if the provided iface is not bound to a connectivity implementation.
+ */
+int conn_mgr_if_set_idle_timeout(struct net_if *iface, int timeout);
+
+#if defined(CONFIG_NET_CONNECTION_MANAGER) || defined(__DOXYGEN__)
+/**
+ * @brief Notify connection manager that interface was just used
+ *
+ * @note Typically called from network drivers, not application software.
+ *
+ * @param iface iface that was just used
+ */
+void conn_mgr_if_used(struct net_if *iface);
+#else
+#define conn_mgr_if_used(iface) (void)(iface)
+#endif /* defined(CONFIG_NET_CONNECTION_MANAGER) || defined(__DOXYGEN__) */
 
 /**
  * @}

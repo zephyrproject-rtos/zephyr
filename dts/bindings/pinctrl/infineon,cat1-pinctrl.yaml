@@ -120,3 +120,12 @@ child-binding:
         Encodes port/pin and alternate function.
       required: true
       type: int
+    drive-strength:
+      type: string
+      enum:
+        - "full"
+        - "half"
+        - "one-fourth"
+        - "one-eighth"
+      description: |
+        Pin output drive strength.

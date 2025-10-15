@@ -98,6 +98,36 @@
 			   <ARDUINO_HEADER_R3_D15 0 &ioport5 12 0>;
 	};
 
+	pmod1_header: pmod-connector-1 {
+		compatible = "digilent,pmod";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &ioport3 1 0>,	/* IO1 */
+			   <1 0 &ioport2 3 0>,	/* IO2 */
+			   <2 0 &ioport2 2 0>,	/* IO3 */
+			   <3 0 &ioport2 4 0>,	/* IO4 */
+			   <4 0 &ioport0 8 0>,	/* IO5 */
+			   <5 0 &ioport3 11 0>,	/* IO6 */
+			   <6 0 &ioport3 12 0>,	/* IO7 */
+			   <7 0 &ioport3 13 0>;	/* IO8 */
+	};
+
+	pmod2_header: pmod-connector-2 {
+		compatible = "digilent,pmod";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &ioport4 13 0>,	/* IO1 */
+			   <1 0 &ioport4 11 0>,	/* IO2 */
+			   <2 0 &ioport4 10 0>,	/* IO3 */
+			   <3 0 &ioport4 12 0>,	/* IO4 */
+			   <4 0 &ioport4 14 0>,	/* IO5 */
+			   <5 0 &ioport7 8 0>,	/* IO6 */
+			   <6 0 &ioport7 9 0>,	/* IO7 */
+			   <7 0 &ioport7 10 0>;	/* IO8 */
+	};
+
 	buttons {
 		compatible = "gpio-keys";
 
@@ -299,6 +329,12 @@ arduino_serial: &uart7 {};
 arduino_i2c: &iic1 {};
 
 arduino_spi: &spi0 {};
+
+pmod2_serial: &uart0 {};
+
+pmod_serial: &pmod2_serial {};
+
+pmod_header: &pmod2_header {};
 
 &wdt {
 	status = "okay";

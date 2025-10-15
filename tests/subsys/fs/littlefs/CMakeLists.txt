@@ -20,4 +20,5 @@ target_sources(app PRIVATE
   ../common/test_fs_basic.c
   ../common/test_fs_mount_flags.c
   ../common/test_fs_mkfs.c
+  ../common/test_fs_gc.c
 )

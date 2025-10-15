@@ -175,8 +175,7 @@ you should see the following message in the terminal:
    ***** Booting Zephyr OS v1.14.0-rc1 *****
    Hello World! usb_kw24d512
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _USB-KW24D512 Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-based-processors-and-mcus/kinetis-cortex-m-mcus/w-serieswireless-conn.m0-plus-m4/ieee-802.15.4-packet-sniffer-usb-dongle-form-factor:USB-KW24D512

@@ -416,8 +416,7 @@ while, for the ``imx95_evk/mimx9596/m7/ddr`` board, you should get the following
 .. _MCUX SDK release:
    https://mcuxpresso.nxp.com/
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _NXP website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-processors/i-mx-applications-processors/i-mx-9-processors/i-mx-95-applications-processor-family-high-performance-safety-enabled-platform-with-eiq-neutron-npu:iMX95

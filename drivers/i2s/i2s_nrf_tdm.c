@@ -16,6 +16,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <dmm.h>
+#include <soc.h>
 #include <stdlib.h>
 
 LOG_MODULE_REGISTER(tdm_nrf, CONFIG_I2S_LOG_LEVEL);

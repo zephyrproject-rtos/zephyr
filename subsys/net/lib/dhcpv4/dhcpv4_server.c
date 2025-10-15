@@ -1771,7 +1771,7 @@ int net_dhcpv4_server_foreach_lease(struct net_if *iface,
 			}
 		}
 
-		return 0;
+		goto out;
 	}
 
 	for (int i = 0; i < ARRAY_SIZE(server_ctx); i++) {

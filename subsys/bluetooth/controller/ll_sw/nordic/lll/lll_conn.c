@@ -311,9 +311,6 @@ void lll_conn_isr_rx(void *param)
 	struct pdu_data *pdu_data_tx;
 	struct node_rx_pdu *node_rx;
 	struct node_tx *tx_release;
-#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
-	uint32_t pa_lna_enable_us;
-#endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 	uint8_t is_rx_enqueue;
 	struct lll_conn *lll;
 	uint8_t rssi_ready;
@@ -384,7 +381,12 @@ void lll_conn_isr_rx(void *param)
 			radio_disable();
 
 			/* assert if radio started tx before being disabled */
-			LL_ASSERT(!radio_is_ready());
+			if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+				LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u",
+					      __func__, lll_prof_latency_get());
+			} else {
+				LL_ASSERT(!radio_is_ready());
+			}
 
 			goto lll_conn_isr_rx_exit;
 		}
@@ -468,10 +470,13 @@ void lll_conn_isr_rx(void *param)
 		} else if (!lll->role) {
 			radio_disable();
 
-			/* assert if radio packet ptr is not set and radio
-			 * started tx.
-			 */
-			LL_ASSERT(!radio_is_ready());
+			/* assert if radio started tx before being disabled */
+			if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+				LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u",
+					      __func__, lll_prof_latency_get());
+			} else {
+				LL_ASSERT(!radio_is_ready());
+			}
 
 			/* Restore state if last transmitted was empty PDU */
 			lll->empty = is_empty_pdu_tx_retry;
@@ -507,6 +512,7 @@ void lll_conn_isr_rx(void *param)
 	lll_conn_tx_pkt_set(lll, pdu_data_tx);
 
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
+	uint32_t pa_lna_enable_us;
 
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR)
 	/* PA enable is overwriting packet end used in ISR profiling, hence
@@ -529,10 +535,10 @@ void lll_conn_isr_rx(void *param)
 
 	/* assert if radio packet ptr is not set and radio started tx */
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-		LL_ASSERT_MSG(!radio_is_address(), "%s: Radio ISR latency: %u", __func__,
+		LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u", __func__,
 			      lll_prof_latency_get());
 	} else {
-		LL_ASSERT(!radio_is_address());
+		LL_ASSERT(!radio_is_ready());
 	}
 
 #if defined(CONFIG_BT_CTLR_TX_DEFER)
@@ -727,10 +733,10 @@ void lll_conn_isr_tx(void *param)
 
 	/* assert if radio packet ptr is not set and radio started rx */
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-		LL_ASSERT_MSG(!radio_is_address(), "%s: Radio ISR latency: %u", __func__,
+		LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u", __func__,
 			      lll_prof_latency_get());
 	} else {
-		LL_ASSERT(!radio_is_address());
+		LL_ASSERT(!radio_is_ready());
 	}
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)

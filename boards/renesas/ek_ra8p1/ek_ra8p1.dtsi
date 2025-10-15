@@ -113,28 +113,6 @@
 	};
 };
 
-&flash {
-	flash0: flash@2000000 {
-		compatible = "soc-nv-flash";
-		reg = <0x2000000 0x80000>;
-	};
-
-	flash1: flash@2080000 {
-		compatible = "soc-nv-flash";
-		reg = <0x2080000 0x80000>;
-	};
-};
-
-&sram {
-	sram0: sram@22000000 {
-		reg = <0x22000000 0xea000>;
-	};
-
-	sram1: sram@220ea000 {
-		reg = <0x220ea000 0xea000>;
-	};
-};
-
 &sciclk {
 	clocks = <&pll2r>;
 	div = <4>;

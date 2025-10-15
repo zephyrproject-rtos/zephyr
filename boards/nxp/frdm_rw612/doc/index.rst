@@ -151,8 +151,7 @@ following modifications to the board hardware:
 
 After this change, the ENET will stop functioning on the board.
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 Resources
 *********

@@ -148,7 +148,6 @@ Deviations from the standard
 
 Certain parts of the protocol are not yet supported in the library.
 
-* QoS -1 - it's most useful with predefined topics
 * Forwarder Encapsulation
 
 .. _mqtt_sn_api_reference:

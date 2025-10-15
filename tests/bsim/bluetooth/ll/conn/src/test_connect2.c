@@ -151,14 +151,7 @@ static void bt_ready(void)
 
 	printk("Peripheral Bluetooth initialized\n");
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), NULL, 0);
-	if (err) {
-		FAIL("Advertising failed to start (err %d)\n", err);
-		return;
-	}
-
 	err = start_advertising();
-
 	if (!err) {
 		printk("Advertising successfully started\n");
 	}

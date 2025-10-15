@@ -15,7 +15,7 @@
 			reg = <0x46008c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB4, 12)>,
 				 <&rcc STM32_SRC_PLL1_Q SDMMC2_SEL(0)>;
-			resets = <&rctl STM32_RESET(AHB4, 12U)>;
+			resets = <&rctl STM32_RESET(AHB4, 12)>;
 			interrupts = <102 0>;
 			status = "disabled";
 		};

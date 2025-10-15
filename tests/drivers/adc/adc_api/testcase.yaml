@@ -77,9 +77,40 @@ tests:
       - frdm_k82f
   drivers.adc.dma_espressif:
     extra_args:
-      - platform:esp32s3_devkitc/esp32s3/procpu:DTC_OVERLAY_FILE="boards/esp32s3_devkitc_procpu.overlay"
       - EXTRA_CONF_FILE="overlay-dma-esp32.conf"
+    depends_on:
+      - adc
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32c3_devkitm
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+      - esp32s2_devkitc
+      - esp32s3_devkitc/esp32s3/procpu
+  drivers.adc.dma_silabs:
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-dma-silabs.conf"
     depends_on:
       - dma
     platform_allow:
-      - esp32s3_devkitc/esp32s3/procpu
+      - slwrb4180a
+      - sltb010a
+      - xg23_rb4210a
+      - xg24_rb4187c
+      - xg27_dk2602a
+      - bg29_rb4420a
+      - xg29_rb4412a
+  drivers.adc.dma_silabs_async:
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-dma-silabs.conf"
+      - CONFIG_ADC_ASYNC=y
+    depends_on:
+      - dma
+    platform_allow:
+      - slwrb4180a
+      - sltb010a
+      - xg23_rb4210a
+      - xg24_rb4187c
+      - xg27_dk2602a
+      - bg29_rb4420a
+      - xg29_rb4412a

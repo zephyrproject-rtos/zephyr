@@ -18,12 +18,14 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/kernel.h>
 
+#include <infineon_kconfig.h>
 #include <cy_scb_uart.h>
 #include <cy_gpio.h>
 #include <cy_syslib.h>
 #include <cy_sysint.h>
 
 #include <zephyr/drivers/clock_control/clock_control_ifx_cat1.h>
+#include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uart_ifx_cat1, CONFIG_UART_LOG_LEVEL);
@@ -37,7 +39,7 @@ struct ifx_cat1_uart_data {
 	struct uart_config cfg;
 	struct ifx_cat1_resource_inst hw_resource;
 	struct ifx_cat1_clock clock;
-#if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C)
+#if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) || defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 	uint8_t clock_peri_group;
 #endif
 
@@ -133,10 +135,43 @@ static uint32_t convert_uart_data_bits_z_to_cy(const enum uart_config_data_bits 
 	return cy_data_bits;
 }
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+#define IFX_CAT1_INSTANCE_GROUP(instance, group) (((instance) << 4) | (group))
+#endif
+
 static uint8_t ifx_cat1_get_hfclk_for_peri_group(uint8_t peri_group)
 {
+#if defined(CONFIG_SOC_SERIES_PSE84)
 	switch (peri_group) {
-		/* Peripheral groups are device specific. */
+	case IFX_CAT1_INSTANCE_GROUP(0, 0):
+	case IFX_CAT1_INSTANCE_GROUP(1, 4):
+		return 0;
+	case IFX_CAT1_INSTANCE_GROUP(0, 7):
+	case IFX_CAT1_INSTANCE_GROUP(1, 0):
+		return 1;
+	case IFX_CAT1_INSTANCE_GROUP(0, 3):
+	case IFX_CAT1_INSTANCE_GROUP(1, 2):
+		return 5;
+	case IFX_CAT1_INSTANCE_GROUP(0, 4):
+	case IFX_CAT1_INSTANCE_GROUP(1, 3):
+		return 6;
+	case IFX_CAT1_INSTANCE_GROUP(1, 1):
+		return 7;
+	case IFX_CAT1_INSTANCE_GROUP(0, 2):
+		return 9;
+	case IFX_CAT1_INSTANCE_GROUP(0, 1):
+	case IFX_CAT1_INSTANCE_GROUP(0, 5):
+		return 10;
+	case IFX_CAT1_INSTANCE_GROUP(0, 8):
+		return 11;
+	case IFX_CAT1_INSTANCE_GROUP(0, 6):
+	case IFX_CAT1_INSTANCE_GROUP(0, 9):
+		return 13;
+	default:
+		break;
+	}
+#elif defined(CONFIG_SOC_SERIES_PSC3)
+	switch (peri_group) {
 	case 0:
 	case 2:
 		return 0;
@@ -152,7 +187,8 @@ static uint8_t ifx_cat1_get_hfclk_for_peri_group(uint8_t peri_group)
 	default:
 		break;
 	}
-	return -1;
+#endif
+	return -EINVAL;
 }
 
 cy_rslt_t ifx_cat1_uart_set_baud(const struct device *dev, uint32_t baudrate)
@@ -175,7 +211,8 @@ cy_rslt_t ifx_cat1_uart_set_baud(const struct device *dev, uint32_t baudrate)
 
 #if defined(COMPONENT_CAT1A)
 	peri_frequency = Cy_SysClk_ClkPeriGetFrequency();
-#elif defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C)
+#elif defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) ||                                      \
+	defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 	uint8_t hfclk = ifx_cat1_get_hfclk_for_peri_group(data->clock_peri_group);
 
 	peri_frequency = Cy_SysClk_ClkHfGetFrequency(hfclk);
@@ -571,11 +608,17 @@ static void ifx_cat1_uart_irq_handler(const struct device *dev)
 /* Default Counter configuration structure */
 static const cy_stc_scb_uart_config_t _uart_default_config = {
 	.uartMode = CY_SCB_UART_STANDARD,
+#if defined(CONFIG_SOC_SERIES_PSE84)
+	.enableMultiProcessorMode = false,
+#else
 	.enableMutliProcessorMode = false,
+#endif
 	.smartCardRetryOnNack = false,
 	.irdaInvertRx = false,
 	.irdaEnableLowPowerReceiver = false,
+#if ((defined(CY_IP_MXSCB_VERSION)) && (CY_IP_MXSCB_VERSION >= 4))
 	.halfDuplexMode = false,
+#endif
 	.oversample = 8,
 	.enableMsbFirst = false,
 	.dataWidth = 8UL,
@@ -731,7 +774,7 @@ static int ifx_cat1_uart_init(const struct device *dev)
 	int ret;
 
 	/* Dedicate SCB HW resource */
-	data->hw_resource.type = IFX_CAT1_RSC_SCB;
+	data->hw_resource.type = IFX_RSC_SCB;
 	data->hw_resource.block_num = ifx_cat1_uart_get_hw_block_num(config->reg_addr);
 
 	/* Configure dt provided device signals when available */
@@ -802,8 +845,8 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 #define IRQ_INFO(n) .irq_num = DT_INST_IRQN(n), .irq_priority = DT_INST_IRQ(n, priority)
 #endif
 
-#if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C)
-#define PERI_INFO(n) .clock_peri_group = DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), clk_dst, 1),
+#if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) || defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+#define PERI_INFO(n) .clock_peri_group = DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),
 #else
 #define PERI_INFO(n)
 #endif
@@ -825,15 +868,28 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 #define CALL_UART_IRQ_CONFIG(n)
 #endif
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 #define UART_PERI_CLOCK_INIT(n)                                                                    \
 	.clock =                                                                                   \
 		{                                                                                  \
 			.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(                                 \
-				DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), clk_dst, 1),            \
+				DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 0),         \
+				DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),         \
 				DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                     \
-			.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, div_num),                    \
+			.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                    \
 	},                                                                                         \
 	PERI_INFO(n)
+#else
+#define UART_PERI_CLOCK_INIT(n)                                                                    \
+	.clock =                                                                                   \
+		{                                                                                  \
+			.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(                                 \
+				DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),         \
+				DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                     \
+			.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                    \
+	},                                                                                         \
+	PERI_INFO(n)
+#endif
 
 #define INFINEON_CAT1_UART_INIT(n)                                                                 \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \

@@ -82,3 +82,8 @@ tests:
   sample.filesystem.fat_fs.stm32h747i_disco_m7_sdmmc:
     build_only: true
     platform_allow: stm32h747i_disco/stm32h747xx/m7
+  sample.filesystem.fat_fs.stm32f746g_sdmmc_dma:
+    build_only: true
+    platform_allow: stm32f746g_disco
+    extra_args:
+      - FILE_SUFFIX=dma

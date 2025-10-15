@@ -174,6 +174,7 @@ config NRF_WIFI_LOW_POWER
 
 config NRF70_TCP_IP_CHECKSUM_OFFLOAD
 	bool "TCP/IP checksum offload"
+	depends on !NRF71_ON_IPC
 	default y
 
 config NRF70_REG_DOMAIN
@@ -664,28 +665,27 @@ config WIFI_NRF70_SCAN_TIMEOUT_S
 	int "Scan timeout in seconds"
 	default 30
 
-menu "nRF Wi-Fi operation band(s)"
-	visible if !NRF70_2_4G_ONLY
+choice NRF_WIFI_OP_BAND
+	prompt "nRF Wi-Fi operation bands"
+	default NRF_WIFI_2G_BAND if NRF70_2_4G_ONLY
+	default NRF_WIFI_ALL_BAND
+
+config NRF_WIFI_ALL_BAND
+	bool "Set operation band to all supported bands"
 
 config NRF_WIFI_2G_BAND
 	bool "Set operation band to 2.4GHz"
-	default y if NRF70_2_4G_ONLY
 
 config NRF_WIFI_5G_BAND
 	bool "Set operation band to 5GHz"
-	depends on !NRF70_2_4G_ONLY
+if NRF71_ON_IPC
+config NRF_WIFI_6G_BAND
+	bool "Set operation band to 6GHz"
 
-config NRF_WIFI_OP_BAND
-	int "Options to set operation band"
-	default 1 if NRF_WIFI_2G_BAND
-	default 2 if NRF_WIFI_5G_BAND
-	default 3
-	help
-	  Set this option to select frequency band
-	  1 - 2.4GHz
-	  2 - 5GHz
-	  3 - All ( 2.4GHz and 5GHz )
-endmenu
+config NRF_WIFI_DUAL_BAND
+	bool "Set operation band to 2.4GHz and 5GHz"
+endif # NRF71_ON_IPC
+endchoice
 
 config NRF_WIFI_IFACE_MTU
 	int "MTU for Wi-Fi interface"

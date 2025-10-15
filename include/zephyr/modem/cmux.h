@@ -57,8 +57,15 @@ typedef void (*modem_cmux_callback)(struct modem_cmux *cmux, enum modem_cmux_eve
  * @cond INTERNAL_HIDDEN
  */
 
+#if CONFIG_MODEM_CMUX_MTU > 127
+#define MODEM_CMUX_HEADER_SIZE			7
+#else
+#define MODEM_CMUX_HEADER_SIZE			6
+#endif
+
+
 /* Total size of the CMUX work buffers */
-#define MODEM_CMUX_WORK_BUFFER_SIZE (CONFIG_MODEM_CMUX_MTU + 7 + \
+#define MODEM_CMUX_WORK_BUFFER_SIZE (CONFIG_MODEM_CMUX_MTU + MODEM_CMUX_HEADER_SIZE + \
 				     CONFIG_MODEM_CMUX_WORK_BUFFER_SIZE_EXTRA)
 
 enum modem_cmux_state {
@@ -142,10 +149,11 @@ struct modem_cmux {
 
 	/* State */
 	enum modem_cmux_state state;
-	bool flow_control_on;
+	bool flow_control_on : 1;
+	bool initiator : 1;
 
 	/* Work lock */
-	bool attached;
+	bool attached : 1;
 	struct k_spinlock work_lock;
 
 	/* Receive state*/

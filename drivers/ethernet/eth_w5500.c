@@ -311,7 +311,7 @@ static void w5500_thread(void *p1, void *p2, void *p3)
 	const struct w5500_config *config = dev->config;
 
 	while (true) {
-		res = k_sem_take(&ctx->int_sem, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
+		res = k_sem_take(&ctx->int_sem, K_MSEC(CONFIG_ETH_W5500_MONITOR_PERIOD));
 
 		if (res == 0) {
 			/* semaphore taken, update link status and receive packets */

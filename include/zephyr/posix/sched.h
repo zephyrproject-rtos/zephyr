@@ -40,11 +40,7 @@ struct sched_param {
  *
  * See IEEE 1003.1
  */
-static inline int sched_yield(void)
-{
-	k_yield();
-	return 0;
-}
+int sched_yield(void);
 
 int sched_get_priority_min(int policy);
 int sched_get_priority_max(int policy);

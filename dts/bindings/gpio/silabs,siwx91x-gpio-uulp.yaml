@@ -1,4 +1,11 @@
-description: Silabs SiWx91x UULP (ultra ultra low power) GPIO Port
+description: |
+  Silabs SiWx91x UULP (ultra ultra low power) GPIO Port
+
+  Lookup table: Pin (dts) -> SoC Pin (ULP Pin from reference manual):
+
+  Pin : 0  1  2  3  4
+
+  ULP : 0  1  2  3  4
 
 compatible: "silabs,siwx91x-gpio-uulp"
 
