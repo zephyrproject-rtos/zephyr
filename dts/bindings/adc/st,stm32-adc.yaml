@@ -1,5 +1,6 @@
 # Copyright (c) 2018, Endre Karlson
 # Copyright (c) 2018, Song Qiang <songqiang1304521@gmail.com>
+# Copyright (c) 2025 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
 description: STM32 ADC
@@ -14,6 +15,22 @@ properties:
 
   clocks:
     required: true
+
+  clock-names:
+    required: true
+    enum:
+      - "adcx"
+      - "adc_ker"
+      - "adc_pre"
+    description: |
+      Expected names are the following:
+      - "adcx" for the enabling the register clock (mandatory)
+      - "adc_ker" for configuring the kernel clock (if applicable)
+      - "adc_pre" for configuring the prescaler (if applicable)
+      Kernel clock and prescaler may be shared between several ADC instances.
+      In that case, the same kernel clock/prescaler Device Tree configuration
+      must be used on all instances that share the kernel clock/prescaler
+      to avoid conflicts.
 
   interrupts:
     required: true

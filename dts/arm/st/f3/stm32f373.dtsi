@@ -255,6 +255,7 @@
 			compatible = "st,stm32f1-adc", "st,stm32-adc";
 			reg = <0x40012400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 9)>;
+			clock-names = "adcx";
 			interrupts = <18 0>;
 			#io-channel-cells = <1>;
 			resolutions = <STM32F1_ADC_RES(12)>;
