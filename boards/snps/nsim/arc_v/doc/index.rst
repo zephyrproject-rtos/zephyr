@@ -132,6 +132,94 @@ This command loads the symbol table from the elf binary file, for example the
 Now the debug environment has been set up, and it's possible to debug the application with gdb
 commands.
 
+Debugging with lldbac
+---------------------
+
+The ``run-lldbac`` tool is provided as part of the Synopsys ARC MWDT toolchain. The Zephyr runner
+``lldbac`` uses the ``run-lldbac`` tool to provide interactive debugging capabilities.
+
+.. note::
+   Ensure ``run-lldbac`` (from `ARC MWDT`_) is installed and available in your ``PATH``.
+
+Simulator (nSIM)
+****************
+
+The ``lldbac`` runner provides interactive debugging for nSIM simulator targets. To start a
+debugging session:
+
+.. code-block:: console
+
+   west debug --runner lldbac
+
+The runner uses nSIM properties configured in the board's ``board.cmake`` file. You can override
+with ``--nsim-props``:
+
+.. code-block:: console
+
+   west debug --runner lldbac --nsim-props=rmx100.props
+
+.. note::
+   The ``lldbac`` runner is designed specifically for interactive debugging workflows. For
+   simulator execution without debugging (flash), use the ``arc-nsim`` runner which provides
+   efficient non-interactive execution:
+
+   .. code-block:: console
+
+      west flash --runner arc-nsim
+
+   This separation allows ``lldbac`` to focus on debugging features while ``arc-nsim`` handles
+   standard execution efficiently.
+
+Required nSIM properties
+************************
+
+The ``lldbac`` runner requires an nSIM properties (``.props``) file to launch the simulator. For
+ARC‑V boards, properties are located under :zephyr_file:`boards/snps/nsim/arc_v/support/`.
+
+The board configuration wires the default properties file via ``board_runner_args()`` in
+``board.cmake``, but you can override it on the command line:
+
+.. code-block:: console
+
+   west debug --runner lldbac --nsim-props=rmx100.props
+
+GUI Mode
+********
+
+To launch debugging with VS Code GUI support, add the ``--gui`` flag:
+
+.. code-block:: console
+
+   west debug --runner lldbac --gui
+
+Hardware (optional)
+*******************
+
+If debugging on physical hardware is required, the lldbac runner supports connecting via a
+JSON-based board configuration. Provide ``--hardware`` and a ``board.json`` file located in the
+board directory or pass an explicit path:
+
+.. code-block:: console
+
+   west debug --runner lldbac --hardware --board-json board.json
+
+Minimal ``board.json`` example:
+
+.. code-block:: json
+
+   [
+     {
+       "connect": "jtag-digilent",
+       "jtag_device": "JtagHs2",
+       "jtag_frequency": "500KHz"
+       // Optional: "postconnect": ["command source preload.cmd"]
+     }
+   ]
+
+.. note::
+   Current ``nsim_arc_v`` targets are single-core. Multi-core workflows may require additional
+   board-specific integration and are not covered here.
+
 Modifying the configuration
 ***************************
 
