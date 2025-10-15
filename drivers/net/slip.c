@@ -389,8 +389,6 @@ void slip_iface_init(struct net_if *iface)
 		return;
 	}
 
-	ll_addr = slip_get_mac(slip);
-
 	slip->init_done = true;
 	slip->iface = iface;
 
@@ -409,6 +407,7 @@ use_random_mac:
 		slip->mac_addr[4] = 0x53;
 		slip->mac_addr[5] = sys_rand8_get();
 	}
+	ll_addr = slip_get_mac(slip);
 	net_if_set_link_addr(iface, ll_addr->addr, ll_addr->len,
 			     NET_LINK_ETHERNET);
 }
