@@ -107,5 +107,6 @@ config USBD_HWINFO_DEVID_LENGTH
 
 rsource "class/Kconfig"
 rsource "app/Kconfig.cdc_acm_serial"
+rsource "app/Kconfig.cp210x_serial"
 
 endif # USB_DEVICE_STACK_NEXT
