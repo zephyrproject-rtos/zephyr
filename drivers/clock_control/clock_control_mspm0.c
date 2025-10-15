@@ -210,15 +210,14 @@ static int clock_mspm0_init(const struct device *dev)
 #endif
 #endif
 
-#if MSPM0_LFCLK_ENABLED
 #if DT_SAME_NODE(DT_LFCLK_CLOCKS_CTRL, DT_NODELABEL(lfxt))
 	DL_SYSCTL_LFCLKConfig config = {0};
 
 	DL_SYSCTL_setLFCLKSourceLFXT(&config);
 #elif DT_SAME_NODE(DT_LFCLK_CLOCKS_CTRL, DT_NODELABEL(lfdig_in))
 	DL_SYSCTL_setLFCLKSourceEXLF();
+
 #endif
-#endif /* MSPM0_LFCLK_ENABLED */
 
 #if DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_NODELABEL(hfclk))
 	DL_SYSCTL_setMCLKSource(SYSOSC, HSCLK,
