@@ -367,6 +367,7 @@ static uint8_t get_io_capa(struct bt_smp *smp)
 	}
 
 	if (smp_auth_cb->passkey_entry) {
+		/* TODO remove IS_ENABLED(CONFIG_BT_FIXED_PASSKEY) part after deprecation period. */
 		if ((IS_ENABLED(CONFIG_BT_FIXED_PASSKEY) ||
 		     IS_ENABLED(CONFIG_BT_ONE_TIME_PASSKEY)) &&
 		    fixed_passkey != BT_PASSKEY_INVALID) {
@@ -381,6 +382,7 @@ static uint8_t get_io_capa(struct bt_smp *smp)
 	}
 
 no_callbacks:
+	/* TODO remove IS_ENABLED(CONFIG_BT_FIXED_PASSKEY) part after deprecation period. */
 	if ((IS_ENABLED(CONFIG_BT_FIXED_PASSKEY) || IS_ENABLED(CONFIG_BT_ONE_TIME_PASSKEY)) &&
 	    fixed_passkey != BT_PASSKEY_INVALID) {
 		return BT_SMP_IO_DISPLAY_ONLY;
@@ -2508,6 +2510,7 @@ static uint8_t legacy_request_tk(struct bt_smp *smp)
 
 		break;
 	case PASSKEY_DISPLAY:
+		/* TODO remove IS_ENABLED(CONFIG_BT_FIXED_PASSKEY) part after deprecation period. */
 		if ((IS_ENABLED(CONFIG_BT_FIXED_PASSKEY) ||
 		     IS_ENABLED(CONFIG_BT_ONE_TIME_PASSKEY)) &&
 		    fixed_passkey != BT_PASSKEY_INVALID) {
@@ -4439,6 +4442,7 @@ __maybe_unused static uint8_t display_passkey(struct bt_smp *smp)
 	struct bt_conn *conn = smp->chan.chan.conn;
 	const struct bt_conn_auth_cb *smp_auth_cb = latch_auth_cb(smp);
 
+	/* TODO remove IS_ENABLED(CONFIG_BT_FIXED_PASSKEY) part after deprecation period. */
 	if ((IS_ENABLED(CONFIG_BT_FIXED_PASSKEY) || IS_ENABLED(CONFIG_BT_ONE_TIME_PASSKEY)) &&
 	    fixed_passkey != BT_PASSKEY_INVALID) {
 		smp->passkey = fixed_passkey;
@@ -6182,6 +6186,7 @@ int bt_smp_auth_pairing_confirm(struct bt_conn *conn)
 }
 #endif /* !CONFIG_BT_SMP_SC_PAIR_ONLY */
 
+/* TODO remove CONFIG_BT_FIXED_PASSKEY part after deprecation period. */
 #if defined(CONFIG_BT_FIXED_PASSKEY) || defined(CONFIG_BT_ONE_TIME_PASSKEY)
 int bt_passkey_set(unsigned int passkey)
 {

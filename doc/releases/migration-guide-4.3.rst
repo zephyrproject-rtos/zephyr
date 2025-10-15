@@ -183,6 +183,13 @@ Bluetooth HCI
 * The deprecated ``ipm`` value was removed from ``bt-hci-bus`` devicetree property.
   ``ipc`` should be used instead.
 
+Bluetooth Host
+==============
+
+* :kconfig:option:`CONFIG_BT_FIXED_PASSKEY` has been deprecated. To set a passkey for pairing,
+  use :kconfig:option:`CONFIG_BT_ONE_TIME_PASSKEY` instead. This passkey will be used for only one
+  pairing attempt, and a new passkey will need to be provided for each new pairing attempt.
+
 Ethernet
 ========
 
