@@ -11,8 +11,6 @@ This sample demonstrates how to use the Binary Device Object Store (BOS),
 Microsoft OS 2.0 descriptors, and WebUSB descriptors to implement a WebUSB
 sample application. The sample USB function receives the data and echoes back
 to the WebUSB API based application running in the browser on your local host.
-This sample can be found at :zephyr_file:`samples/subsys/usb/webusb` in the
-Zephyr project tree.
 
 Requirements
 ************
