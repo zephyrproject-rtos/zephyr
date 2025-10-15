@@ -39,7 +39,7 @@ struct usb_req_type_field {
 #endif
 } __packed;
 
-/** USB Setup Data packet defined in spec. Table 9-2 */
+/** USB Setup Data packet (Table 9-2) */
 struct usb_setup_packet {
 	/** Request type union providing raw and structured access. */
 	union {
@@ -137,7 +137,7 @@ static inline bool usb_reqtype_is_to_device(const struct usb_setup_packet *setup
 }
 
 /**
- * @name USB Standard Request Codes defined in spec. Table 9-4
+ * @name USB Standard Request Codes (from Table 9-4)
  * @{
  */
 #define USB_SREQ_GET_STATUS		0x00 /**< Get Status request. */
@@ -154,7 +154,7 @@ static inline bool usb_reqtype_is_to_device(const struct usb_setup_packet *setup
 /** @} */
 
 /**
- * @name Descriptor Types defined in spec. Table 9-5
+ * @name Descriptor Types (from Table 9-5)
  * @{
  */
 #define USB_DESC_DEVICE			1 /**< Device descriptor type. */
@@ -168,7 +168,7 @@ static inline bool usb_reqtype_is_to_device(const struct usb_setup_packet *setup
 /** @} */
 
 /**
- * @name Additional Descriptor Types defined in USB 3 spec. Table 9-5
+ * @name Additional Descriptor Types (USB 3 spec. Table 9-5)
  * @{
  */
 #define USB_DESC_OTG			9  /**< OTG descriptor type. */
@@ -190,7 +190,7 @@ static inline bool usb_reqtype_is_to_device(const struct usb_setup_packet *setup
 /** @} */
 
 /**
- * @name USB Standard Feature Selectors defined in spec. Table 9-6
+ * @name USB Standard Feature Selectors (from Table 9-6)
  * @{
  */
 #define USB_SFS_ENDPOINT_HALT		0x00 /**< Endpoint halt feature selector. */
@@ -199,7 +199,7 @@ static inline bool usb_reqtype_is_to_device(const struct usb_setup_packet *setup
 /** @} */
 
 /**
- * @name USB Test Mode Selectors defined in spec. Table 9-7
+ * @name USB Test Mode Selectors (from Table 9-7)
  * @{
  */
 #define USB_SFS_TEST_MODE_J		0x01 /**< Test_J test mode. */
@@ -210,7 +210,7 @@ static inline bool usb_reqtype_is_to_device(const struct usb_setup_packet *setup
 /** @} */
 
 /**
- * @name Bits used for GetStatus response defined in spec. Figure 9-4
+ * @name Bits used for GetStatus response (Figure 9-4)
  * @{
  */
 #define USB_GET_STATUS_SELF_POWERED	BIT(0) /**< Self-powered status bit. */
@@ -225,9 +225,7 @@ struct usb_desc_header {
 	uint8_t bDescriptorType; /**< Descriptor type. */
 } __packed;
 
-/**
- USB Standard Device Descriptor defined in spec. Table 9-8.
- */
+/** USB Standard Device Descriptor (Table 9-8) */
 struct usb_device_descriptor {
 	uint8_t bLength;            /**< Descriptor length. */
 	uint8_t bDescriptorType;    /**< Descriptor type. */
@@ -245,9 +243,7 @@ struct usb_device_descriptor {
 	uint8_t bNumConfigurations; /**< Number of configurations. */
 } __packed;
 
-/**
- * USB Device Qualifier Descriptor defined in spec. Table 9-9.
- */
+/** USB Device Qualifier Descriptor (Table 9-9) */
 struct usb_device_qualifier_descriptor {
 	uint8_t bLength;            /**< Descriptor length. */
 	uint8_t bDescriptorType;    /**< Descriptor type. */
@@ -260,7 +256,7 @@ struct usb_device_qualifier_descriptor {
 	uint8_t bReserved;          /**< Reserved field. */
 } __packed;
 
-/** USB Standard Configuration Descriptor defined in spec. Table 9-10 */
+/** USB Standard Configuration Descriptor (Table 9-10) */
 struct usb_cfg_descriptor {
 	uint8_t bLength;             /**< Descriptor length. */
 	uint8_t bDescriptorType;     /**< Descriptor type. */
@@ -272,9 +268,7 @@ struct usb_cfg_descriptor {
 	uint8_t bMaxPower;           /**< Maximum power consumption. */
 } __packed;
 
-/**
- * USB Standard Interface Descriptor defined in spec. Table 9-12.
- */
+/** USB Standard Interface Descriptor (Table 9-12) */
 struct usb_if_descriptor {
 	uint8_t bLength;            /**< Descriptor length. */
 	uint8_t bDescriptorType;    /**< Descriptor type. */
@@ -288,7 +282,7 @@ struct usb_if_descriptor {
 } __packed;
 
 /**
- * Endpoint attribute bit fields from Table 9-13.
+ * Endpoint attribute bit fields (Table 9-13).
  */
 struct usb_ep_desc_bmattr {
 #ifdef CONFIG_LITTLE_ENDIAN
@@ -304,9 +298,7 @@ struct usb_ep_desc_bmattr {
 #endif
 } __packed;
 
-/**
- * USB Standard Endpoint Descriptor defined in spec. Table 9-13.
- */
+/** USB Standard Endpoint Descriptor (Table 9-13) */
 struct usb_ep_descriptor {
 	uint8_t bLength;          /**< Descriptor length. */
 	uint8_t bDescriptorType;  /**< Descriptor type. */
@@ -319,18 +311,14 @@ struct usb_ep_descriptor {
 	uint8_t bInterval;       /**< Polling interval. */
 } __packed;
 
-/**
- * USB Unicode (UTF16LE) String Descriptor defined in spec. Table 9-15.
- */
+/** USB Unicode (UTF16LE) String Descriptor (Table 9-15) */
 struct usb_string_descriptor {
 	uint8_t bLength;         /**< Descriptor length. */
 	uint8_t bDescriptorType; /**< Descriptor type. */
 	uint16_t bString;        /**< UTF-16LE encoded character. */
 } __packed;
 
-/**
- * USB Association Descriptor defined in USB 3 spec. Table 9-16.
- */
+/** USB Association Descriptor (USB 3 spec. Table 9-16) */
 struct usb_association_descriptor {
 	uint8_t bLength;           /**< Descriptor length. */
 	uint8_t bDescriptorType;   /**< Descriptor type. */
@@ -343,7 +331,7 @@ struct usb_association_descriptor {
 } __packed;
 
 /**
- * @name USB Standard Configuration Descriptor Characteristics from Table 9-10
+ * @name USB Standard Configuration Descriptor Characteristics (Table 9-10)
  * @{
  */
 #define USB_SCD_RESERVED	BIT(7) /**< Reserved configuration bit. */
