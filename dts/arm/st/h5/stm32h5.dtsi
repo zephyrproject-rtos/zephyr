@@ -312,6 +312,7 @@
 			compatible = "st,stm32-adc";
 			reg = <0x42028000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 10)>;
+			clock-names = "adcx";
 			interrupts = <37 0>;
 			vref-mv = <3300>;
 			#io-channel-cells = <1>;
