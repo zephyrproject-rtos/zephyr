@@ -63,3 +63,12 @@ properties:
       &scb0 : resource-instance = <0>
       &scb3 : resource-instance = <3>
       &scb5 : resource-instance = <5>
+      &tcpwm0_3: resource-instance = <0>
+
+  resource-channel:
+    type: int
+    description: |
+      Resource instance's channel that the peripheral clock is assigned to:
+      &tcpwm0_0 : resource-channel = <0>
+      &tcpwm0_4 : resource-channel = <4>
+      &tcpwm1_2 : resource-channel = <2>
