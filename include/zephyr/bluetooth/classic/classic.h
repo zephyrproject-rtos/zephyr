@@ -204,6 +204,200 @@ int bt_br_set_discoverable(bool enable, bool limited);
  */
 int bt_br_set_connectable(bool enable);
 
+#define BT_BR_SCAN_INTERVAL_MIN 0x0012 /* 0x0012, 11.25ms, U:0.625 */
+#define BT_BR_SCAN_INTERVAL_MAX 0x1000 /* 0x1000, 2.560s, U:0.625 */
+
+#define BT_BR_SCAN_WINDOW_MIN 0x0011 /* 0x0011, 10.625ms, U:0.625 */
+#define BT_BR_SCAN_WINDOW_MAX 0x1000 /* 0x1000, 2.560s, U:0.625 */
+
+/**
+ * @name Defined BR/EDR Page Scan Intervals and Windows
+ * @{
+ */
+#define BT_BR_PAGE_SCAN_INTERVAL_R0 0x0800 /* 0x0800, 1.280s, U:0.625 */
+#define BT_BR_PAGE_SCAN_WINDOW_R0   0x0800 /* 0x0800, 1.280s, U:0.625 */
+
+#define BT_BR_PAGE_SCAN_FAST_INTERVAL_R1 0x00a0 /* 0x00a0, 100.0ms, U:0.625 */
+#define BT_BR_PAGE_SCAN_FAST_WINDOW_R1   0x0011 /* 0x0011, 10.625ms, U:0.625 */
+
+#define BT_BR_PAGE_SCAN_MEDIUM_INTERVAL_R1 0x0800 /* 0x0800, 1.280s, U:0.625 */
+#define BT_BR_PAGE_SCAN_MEDIUM_WINDOW_R1   0x0011 /* 0x0011, 10.625ms, U:0.625 */
+
+#define BT_BR_PAGE_SCAN_SLOW_INTERVAL_R1 0x0800 /* 0x0800, 1.280s, U:0.625 */
+#define BT_BR_PAGE_SCAN_SLOW_WINDOW_R1   0x0011 /* 0x0011, 10.625ms, U:0.625 */
+
+#define BT_BR_PAGE_SCAN_FAST_INTERVAL_R2 0x1000 /* 0x1000, 2.560s, U:0.625 */
+#define BT_BR_PAGE_SCAN_FAST_WINDOW_R2   0x0011 /* 0x0011, 10.625ms, U:0.625 */
+
+#define BT_BR_PAGE_SCAN_SLOW_INTERVAL_R2 0x1000 /* 0x1000, 2.560s, U:0.625 */
+#define BT_BR_PAGE_SCAN_SLOW_WINDOW_R2   0x0011 /* 0x0011, 10.625ms, U:0.625 */
+/**
+ * @}
+ */
+
+/** Page scan type. */
+enum bt_br_scan_type {
+	/** Standard scan (default) */
+	BT_BR_SCAN_TYPE_STANDARD = 0,
+
+	/** Interlaced scan (1.2 devices only) */
+	BT_BR_SCAN_TYPE_INTERLACED = 1,
+};
+
+struct bt_br_page_scan_param {
+	/** Page scan interval in 0.625 ms units
+	 *  Range: 0x0012 to 0x1000; only even values are valid.
+	 */
+	uint16_t interval;
+
+	/** Page scan window in 0.625 ms units
+	 *  Range: 0x0011 to 0x1000.
+	 */
+	uint16_t window;
+
+	/** Page scan type. */
+	enum bt_br_scan_type type;
+};
+
+/**
+ * @brief Initialize BR Scan parameters
+ *
+ * @param _interval  Scan interval
+ * @param _window    Scan window
+ * @param _type      Scan type
+ */
+
+#define BT_BR_SCAN_INIT(_interval, _window, _type) \
+{ \
+	.interval = (_interval), \
+	.window = (_window), \
+	.type = (_type) \
+}
+
+/**
+ * Helper to declare BR/EDR page scan parameters inline
+ *
+ * @param _interval page scan interval, N * 0.625 milliseconds
+ * @param _window   page scan window, N * 0.625 milliseconds
+ * @param _type    BT_BR_SCAN_TYPE_STANDARD or BT_BR_SCAN_TYPE_INTERLACED
+ */
+
+#define BT_BR_PAGE_SCAN_PARAM(_interval, _window, _type) \
+	((const struct bt_br_page_scan_param[]) { \
+		BT_BR_SCAN_INIT(_interval, _window, _type) \
+	})
+
+/**
+ * @brief Default page scan parameters for R0
+ *
+ * Page scan interval and window are set to 1.280 seconds (0x0800 in 0.625 ms units).
+ * The scan type is set to standard.
+ */
+#define BT_BR_PAGE_SCAN_PARAM_R0 BT_BR_PAGE_SCAN_PARAM(BT_BR_PAGE_SCAN_INTERVAL_R0, \
+						       BT_BR_PAGE_SCAN_WINDOW_R0, \
+						       BT_BR_SCAN_TYPE_STANDARD)
+
+/**
+ * @brief Fast page scan parameters for R1
+ *
+ * Page scan interval is set to 100 ms (0x00A0 in 0.625 ms units), and the
+ * page scan window is set to 10.240 seconds (0x27FF in 1 ms units).
+ * The scan type is set to interlaced.
+ */
+#define BT_BR_PAGE_SCAN_PARAM_FAST_R1 \
+	BT_BR_PAGE_SCAN_PARAM(BT_BR_PAGE_SCAN_FAST_INTERVAL_R1, \
+	BT_BR_PAGE_SCAN_FAST_WINDOW_R1, \
+	BT_BR_SCAN_TYPE_INTERLACED)
+
+/**
+ * @brief Medium page scan parameters for R1
+ *
+ * Page scan interval and window are set to 1.280 seconds (0x0800 in 0.625 ms units).
+ * The scan type is set to standard.
+ */
+#define BT_BR_PAGE_SCAN_PARAM_MEDIUM_R1 \
+	BT_BR_PAGE_SCAN_PARAM( \
+	BT_BR_PAGE_SCAN_MEDIUM_INTERVAL_R1, \
+	BT_BR_PAGE_SCAN_MEDIUM_WINDOW_R1, \
+	BT_BR_SCAN_TYPE_INTERLACED)
+
+/**
+ * @brief Slow page scan parameters for R1
+ *
+ * Page scan interval and window are set to 1.280 seconds (0x0800 in 0.625 ms units).
+ * The scan type is set to standard.
+ */
+#define BT_BR_PAGE_SCAN_PARAM_SLOW_R1 \
+	BT_BR_PAGE_SCAN_PARAM( \
+	BT_BR_PAGE_SCAN_SLOW_INTERVAL_R1, \
+	BT_BR_PAGE_SCAN_SLOW_WINDOW_R1, \
+	BT_BR_SCAN_TYPE_STANDARD)
+
+/**
+ * @brief Fast page scan parameters for R2
+ *
+ * Page scan interval is set to 2.560 seconds (0x1000 in 0.625 ms units), and the
+ * page scan window is set to 10.240 seconds (0x27FF in 1 ms units).
+ * The scan type is set to standard.
+ */
+#define BT_BR_PAGE_SCAN_PARAM_FAST_R2 \
+	BT_BR_PAGE_SCAN_PARAM( \
+	BT_BR_PAGE_SCAN_FAST_INTERVAL_R2, \
+	BT_BR_PAGE_SCAN_FAST_WINDOW_R2, \
+	BT_BR_SCAN_TYPE_INTERLACED)
+
+/**
+ * @brief Slow page scan parameters for R2
+ *
+ * Page scan interval and window are set to 2.560 seconds (0x1000 in 0.625 ms units).
+ * The scan type is set to standard.
+ */
+#define BT_BR_PAGE_SCAN_PARAM_SLOW_R2 \
+	BT_BR_PAGE_SCAN_PARAM( \
+	BT_BR_PAGE_SCAN_SLOW_INTERVAL_R2, \
+	BT_BR_PAGE_SCAN_SLOW_WINDOW_R2, \
+	BT_BR_SCAN_TYPE_STANDARD)
+
+/**
+ * @brief Update BR/EDR page scan parameters.
+ *
+ * This function updates the page scan parameters of the local BR/EDR controller.
+ * Page scan parameters determine how the controller listens for incoming
+ * connection requests from remote devices.
+ *
+ * The function validates the provided parameters, including the interval,
+ * window, and scan type, and sends the appropriate HCI commands to update
+ * the controller's page scan activity and scan type.
+ *
+ * The user can set custom page scan parameters using the helper macro
+ * `BT_BR_PAGE_SCAN_PARAM(interval, window, type)` to define their own values.
+ * Alternatively, the user can use predefined standard parameters as defined
+ * in the Bluetooth specification:
+ * - `BT_BR_PAGE_SCAN_PARAM_R0`: Default page scan parameters.
+ * - `BT_BR_PAGE_SCAN_PARAM_FAST_R1`: Fast page scan parameters for R1.
+ * - `BT_BR_PAGE_SCAN_PARAM_MEDIUM_R1`: Medium page scan parameters for R1.
+ * - `BT_BR_PAGE_SCAN_PARAM_SLOW_R1`: Slow page scan parameters for R1.
+ * - `BT_BR_PAGE_SCAN_PARAM_FAST_R2`: Fast page scan parameters for R2.
+ * - `BT_BR_PAGE_SCAN_PARAM_SLOW_R2`: Slow page scan parameters for R2.
+ *
+ * These predefined parameters are designed to meet common use cases and
+ * ensure compliance with the Bluetooth specification.
+ *
+ * @param param Page scan parameters, including:
+ *              - interval: Time between consecutive page scans (in 0.625 ms units).
+ *                          Must be in the range [0x0012, 0x1000].
+ *              - window: Duration of a single page scan (in 0.625 ms units).
+ *                        Must be in the range [0x0011, 0x1000].
+ *              - type: Page scan type (e.g., standard or interlaced).
+ *
+ * @return 0 on success.
+ * @return -EINVAL if the provided parameters are invalid.
+ * @return -EAGAIN if the device is not ready.
+ * @return -ENOBUFS if memory allocation for HCI commands fails.
+ * @return Other negative error codes for internal failures.
+ */
+int bt_br_page_scan_update_param(const struct bt_br_page_scan_param *param);
+
 /**
  * @name Defined BR Class of Device (CoD) values
  * @{
