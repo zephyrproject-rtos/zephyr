@@ -107,26 +107,13 @@ static int perform_xfer(const struct device *dev, uint8_t cmd)
 			cfg = &dev_config->mspi_nor_cfg;
 		}
 	} else {
-		/* For all other commands, switch to Single IO mode if a given
-		 * command needs the data or address phase and in the target IO
-		 * mode multiple IO lines are used in these phases.
-		 */
-		if (dev_data->in_target_io_mode) {
-			if (dev_data->packet.num_bytes != 0 ||
-			    (dev_data->xfer.addr_length != 0 &&
-			     !dev_config->single_io_addr)) {
-				/* Only the IO mode is to be changed, so the
-				 * initial configuration structure can be used
-				 * for this operation.
-				 */
-				cfg = &dev_config->mspi_nor_init_cfg;
-			}
-		}
+		/* For all other commands, use control command config */
+		cfg = &dev_data->mspi_control_cfg;
 	}
 
 	if (cfg && cfg != dev_data->last_applied_cfg) {
 		rc = mspi_dev_config(dev_config->bus, &dev_config->mspi_id,
-				     MSPI_DEVICE_CONFIG_IO_MODE, cfg);
+			MSPI_DEVICE_CONFIG_IO_MODE | MSPI_DEVICE_CONFIG_FREQUENCY, cfg);
 		if (rc < 0) {
 			LOG_ERR("%s: dev_config() failed: %d", __func__, rc);
 			return rc;
@@ -981,12 +968,12 @@ static int soft_reset(const struct device *dev)
 
 		rc = mspi_dev_config(dev_config->bus, &dev_config->mspi_id,
 				     MSPI_DEVICE_CONFIG_IO_MODE,
-				     &dev_config->mspi_nor_init_cfg);
+				     &dev_data->mspi_control_cfg);
 		if (rc < 0) {
 			LOG_ERR("%s: dev_config() failed: %d", __func__, rc);
 			return rc;
 		}
-		dev_data->last_applied_cfg = &dev_config->mspi_nor_init_cfg;
+		dev_data->last_applied_cfg = &dev_data->mspi_control_cfg;
 		dev_data->in_target_io_mode = false;
 	}
 
@@ -1003,20 +990,24 @@ static int flash_chip_init(const struct device *dev)
 {
 	const struct flash_mspi_nor_config *dev_config = dev->config;
 	struct flash_mspi_nor_data *dev_data = dev->data;
+	uint32_t target_freq = dev_data->mspi_control_cfg.freq;
 	uint8_t id[JESD216_READ_ID_LEN] = {0};
 	uint16_t dts_cmd = 0;
 	uint32_t sfdp_signature;
 	bool flash_reset = false;
 	int rc;
 
+	/* Do initial checks at max 50MHz required to be supported by JEDEC */
+	dev_data->mspi_control_cfg.freq = MIN(target_freq, MHZ(50));
 	rc = mspi_dev_config(dev_config->bus, &dev_config->mspi_id,
 			     MSPI_DEVICE_CONFIG_ALL,
-			     &dev_config->mspi_nor_init_cfg);
+			     &dev_data->mspi_control_cfg);
 	if (rc < 0) {
 		LOG_ERR("%s: dev_config() failed: %d", __func__, rc);
 		return rc;
 	}
-	dev_data->last_applied_cfg = &dev_config->mspi_nor_init_cfg;
+	dev_data->last_applied_cfg = &dev_data->mspi_control_cfg;
+	dev_data->mspi_control_cfg.freq = target_freq;
 	dev_data->in_target_io_mode = false;
 
 #if defined(WITH_SUPPLY_GPIO)
@@ -1266,10 +1257,10 @@ static DEVICE_API(flash, drv_api) = {
 #endif
 };
 
-#define FLASH_INITIAL_CONFIG(inst)					\
+#define FLASH_CONTROL_CMD_CONFIG(inst)					\
 {									\
 	.ce_num = DT_INST_PROP_OR(inst, mspi_hardware_ce_num, 0),	\
-	.freq = MIN(DT_INST_PROP(inst, mspi_max_frequency), MHZ(50)),	\
+	.freq = DT_INST_PROP(inst, mspi_max_frequency),			\
 	.io_mode = MSPI_IO_MODE_SINGLE,					\
 	.data_rate = MSPI_DATA_RATE_SINGLE,				\
 	.cpp = MSPI_CPP_MODE_0,						\
@@ -1326,7 +1317,9 @@ BUILD_ASSERT((FLASH_SIZE(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) == 0, \
 	SFDP_BUILD_ASSERTS(inst);						\
 	PM_DEVICE_DT_INST_DEFINE(inst, dev_pm_action_cb);			\
 	DEFAULT_ERASE_TYPES_DEFINE(inst);					\
-	static struct flash_mspi_nor_data dev##inst##_data;			\
+	static struct flash_mspi_nor_data dev##inst##_data = {			\
+		.mspi_control_cfg = FLASH_CONTROL_CMD_CONFIG(inst),		\
+	};									\
 	static const struct flash_mspi_nor_config dev##inst##_config = {	\
 		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),			\
 		.packet_data_limit = DT_PROP_OR(DT_INST_BUS(inst),		\
@@ -1335,7 +1328,6 @@ BUILD_ASSERT((FLASH_SIZE(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) == 0, \
 		.page_size = FLASH_PAGE_SIZE(inst),				\
 		.mspi_id = MSPI_DEVICE_ID_DT_INST(inst),			\
 		.mspi_nor_cfg = MSPI_DEVICE_CONFIG_DT_INST(inst),		\
-		.mspi_nor_init_cfg = FLASH_INITIAL_CONFIG(inst),		\
 	IF_ENABLED(CONFIG_MSPI_XIP,						\
 		(.xip_cfg = MSPI_XIP_CONFIG_DT_INST(inst),))			\
 	IF_ENABLED(WITH_SUPPLY_GPIO,						\
