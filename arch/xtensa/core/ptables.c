@@ -402,32 +402,6 @@ static void map_memory_range(const uint32_t start, const uint32_t end,
 	}
 }
 
-static void map_memory(const uint32_t start, const uint32_t end,
-		       const uint32_t attrs, const uint32_t options)
-{
-#ifdef CONFIG_XTENSA_MMU_DOUBLE_MAP
-	uint32_t uc_attrs = attrs & ~PTE_ATTR_CACHED_MASK;
-	uint32_t c_attrs = attrs | XTENSA_MMU_CACHED_WB;
-
-	if (sys_cache_is_ptr_uncached((void *)start)) {
-		map_memory_range(start, end, uc_attrs, options);
-
-		map_memory_range(POINTER_TO_UINT(sys_cache_cached_ptr_get((void *)start)),
-				 POINTER_TO_UINT(sys_cache_cached_ptr_get((void *)end)),
-				 c_attrs, options);
-	} else if (sys_cache_is_ptr_cached((void *)start)) {
-		map_memory_range(start, end, c_attrs, options);
-
-		map_memory_range(POINTER_TO_UINT(sys_cache_uncached_ptr_get((void *)start)),
-				 POINTER_TO_UINT(sys_cache_uncached_ptr_get((void *)end)),
-				 uc_attrs, options);
-	} else
-#endif
-	{
-		map_memory_range(start, end, attrs, options);
-	}
-}
-
 static void xtensa_init_page_tables(void)
 {
 	volatile uint8_t entry;
@@ -445,14 +419,14 @@ static void xtensa_init_page_tables(void)
 	for (entry = 0; entry < ARRAY_SIZE(mmu_zephyr_ranges); entry++) {
 		const struct xtensa_mmu_range *range = &mmu_zephyr_ranges[entry];
 
-		map_memory(range->start, range->end, range->attrs, OPTION_SAVE_ATTRS);
+		map_memory_range(range->start, range->end, range->attrs, OPTION_SAVE_ATTRS);
 	}
 #endif /* CONFIG_XTENSA_MMU_USE_DEFAULT_MAPPINGS */
 
 	for (entry = 0; entry < xtensa_soc_mmu_ranges_num; entry++) {
 		const struct xtensa_mmu_range *range = &xtensa_soc_mmu_ranges[entry];
 
-		map_memory(range->start, range->end, range->attrs, OPTION_SAVE_ATTRS);
+		map_memory_range(range->start, range->end, range->attrs, OPTION_SAVE_ATTRS);
 	}
 
 	/* Finally, the direct-mapped pages used in the page tables
@@ -575,47 +549,13 @@ static bool l2_page_table_map(uint32_t *l1_table, void *vaddr, uintptr_t phys,
 	return true;
 }
 
-static inline void __arch_mem_map(void *va, uintptr_t pa, uint32_t new_attrs, bool is_user)
+static inline void __arch_mem_map(void *vaddr, uintptr_t paddr, uint32_t attrs, bool is_user)
 {
 	bool ret;
-	void *vaddr, *vaddr_uc;
-	uintptr_t paddr, paddr_uc;
-	uint32_t attrs, attrs_uc;
-
-	if (IS_ENABLED(CONFIG_XTENSA_MMU_DOUBLE_MAP)) {
-		if (sys_cache_is_ptr_cached(va)) {
-			vaddr = va;
-			vaddr_uc = sys_cache_uncached_ptr_get(va);
-		} else {
-			vaddr = sys_cache_cached_ptr_get(va);
-			vaddr_uc = va;
-		}
-
-		if (sys_cache_is_ptr_cached((void *)pa)) {
-			paddr = pa;
-			paddr_uc = (uintptr_t)sys_cache_uncached_ptr_get((void *)pa);
-		} else {
-			paddr = (uintptr_t)sys_cache_cached_ptr_get((void *)pa);
-			paddr_uc = pa;
-		}
-
-		attrs_uc = (new_attrs & ~PTE_ATTR_CACHED_MASK);
-		attrs = attrs_uc | XTENSA_MMU_CACHED_WB;
-	} else {
-		vaddr = va;
-		paddr = pa;
-		attrs = new_attrs;
-	}
 
 	ret = l2_page_table_map(xtensa_kernel_ptables, (void *)vaddr, paddr,
 				attrs, is_user);
-	__ASSERT(ret, "Cannot map virtual address (%p)", va);
-
-	if (IS_ENABLED(CONFIG_XTENSA_MMU_DOUBLE_MAP) && ret) {
-		ret = l2_page_table_map(xtensa_kernel_ptables, (void *)vaddr_uc, paddr_uc,
-					attrs_uc, is_user);
-		__ASSERT(ret, "Cannot map virtual address (%p)", vaddr_uc);
-	}
+	__ASSERT(ret, "Cannot map virtual address (%p)", vaddr);
 
 #ifndef CONFIG_USERSPACE
 	ARG_UNUSED(ret);
@@ -633,14 +573,6 @@ static inline void __arch_mem_map(void *va, uintptr_t pa, uint32_t new_attrs, bo
 						attrs, is_user);
 			__ASSERT(ret, "Cannot map virtual address (%p) for domain %p",
 				 vaddr, domain);
-
-			if (IS_ENABLED(CONFIG_XTENSA_MMU_DOUBLE_MAP) && ret) {
-				ret = l2_page_table_map(domain->ptables,
-							(void *)vaddr_uc, paddr_uc,
-							attrs_uc, is_user);
-				__ASSERT(ret, "Cannot map virtual address (%p) for domain %p",
-					 vaddr_uc, domain);
-			}
 
 			/* We may have made a copy of L2 table containing VECBASE.
 			 * So we need to re-calculate the static TLBs so the correct ones
@@ -786,27 +718,9 @@ end:
 	}
 }
 
-static inline void __arch_mem_unmap(void *va)
+static inline void __arch_mem_unmap(void *vaddr)
 {
-	void *vaddr, *vaddr_uc;
-
-	if (IS_ENABLED(CONFIG_XTENSA_MMU_DOUBLE_MAP)) {
-		if (sys_cache_is_ptr_cached(va)) {
-			vaddr = va;
-			vaddr_uc = sys_cache_uncached_ptr_get(va);
-		} else {
-			vaddr = sys_cache_cached_ptr_get(va);
-			vaddr_uc = va;
-		}
-	} else {
-		vaddr = va;
-	}
-
 	l2_page_table_unmap(xtensa_kernel_ptables, (void *)vaddr);
-
-	if (IS_ENABLED(CONFIG_XTENSA_MMU_DOUBLE_MAP)) {
-		(void)l2_page_table_unmap(xtensa_kernel_ptables, (void *)vaddr_uc);
-	}
 
 #ifdef CONFIG_USERSPACE
 	sys_snode_t *node;
@@ -818,10 +732,6 @@ static inline void __arch_mem_unmap(void *va)
 		domain = CONTAINER_OF(node, struct arch_mem_domain, node);
 
 		(void)l2_page_table_unmap(domain->ptables, (void *)vaddr);
-
-		if (IS_ENABLED(CONFIG_XTENSA_MMU_DOUBLE_MAP)) {
-			(void)l2_page_table_unmap(domain->ptables, (void *)vaddr_uc);
-		}
 	}
 	k_spin_unlock(&z_mem_domain_lock, key);
 #endif /* CONFIG_USERSPACE */
@@ -1261,26 +1171,7 @@ static void update_region(uint32_t *ptables, uintptr_t start, size_t size,
 
 	key = k_spin_lock(&xtensa_mmu_lock);
 
-#ifdef CONFIG_XTENSA_MMU_DOUBLE_MAP
-	uintptr_t va, va_uc;
-	uint32_t new_flags, new_flags_uc;
-
-	if (sys_cache_is_ptr_cached((void *)start)) {
-		va = start;
-		va_uc = (uintptr_t)sys_cache_uncached_ptr_get((void *)start);
-	} else {
-		va = (uintptr_t)sys_cache_cached_ptr_get((void *)start);
-		va_uc = start;
-	}
-
-	new_flags_uc = (flags & ~PTE_ATTR_CACHED_MASK);
-	new_flags = new_flags_uc | XTENSA_MMU_CACHED_WB;
-
-	region_map_update(ptables, va, size, ring, new_flags, option);
-	region_map_update(ptables, va_uc, size, ring, new_flags_uc, option);
-#else
 	region_map_update(ptables, start, size, ring, flags, option);
-#endif /* CONFIG_XTENSA_MMU_DOUBLE_MAP */
 
 #if CONFIG_MP_MAX_NUM_CPUS > 1
 	if ((option & OPTION_NO_TLB_IPI) != OPTION_NO_TLB_IPI) {

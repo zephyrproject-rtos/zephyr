@@ -256,12 +256,6 @@ config XTENSA_MMU_NUM_L2_TABLES
 	help
 	  Each table can address up to 4MB memory address.
 
-config XTENSA_MMU_DOUBLE_MAP
-	bool "Map memory in cached and uncached region"
-	help
-	  This option specifies that the memory is mapped in two
-	  distinct region, cached and uncached.
-
 config PRIVILEGED_STACK_SIZE
 	# Must be multiple of CONFIG_MMU_PAGE_SIZE
 	default 4096
