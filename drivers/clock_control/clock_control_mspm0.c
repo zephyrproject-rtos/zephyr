@@ -62,11 +62,6 @@ static struct mspm0_clk_cfg mspm0_ulpclk_cfg = {
 	.clk_div = MSPM0_ULPCLK_DIV,
 };
 
-static struct mspm0_clk_cfg mspm0_mclk_cfg = {
-	.clk_freq = DT_PROP(DT_NODELABEL(mclk), clock_frequency),
-	.clk_div = MSPM0_MCLK_DIV,
-};
-
 #if MSPM0_MFPCLK_ENABLED
 static struct mspm0_clk_cfg mspm0_mfpclk_cfg = {
 	.clk_freq = DT_PROP(DT_NODELABEL(mfpclk), clock_frequency),
@@ -155,7 +150,6 @@ static int clock_mspm0_init(const struct device *dev)
 	/* setup clocks based on specific rates */
 	DL_SYSCTL_setSYSOSCFreq(DL_SYSCTL_SYSOSC_FREQ_BASE);
 
-	DL_SYSCTL_setMCLKDivider(mspm0_mclk_cfg.clk_div);
 #if DT_NODE_HAS_PROP(DT_NODELABEL(ulpclk), clk_div)
 	DL_SYSCTL_setULPCLKDivider(mspm0_ulpclk_cfg.clk_div);
 #endif
