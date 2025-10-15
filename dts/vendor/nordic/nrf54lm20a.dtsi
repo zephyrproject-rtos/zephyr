@@ -213,6 +213,7 @@
 			usbhs_wrapper: usbhs_wrapper@5a000 {
 				compatible = "nordic,nrf-usbhs-wrapper";
 				reg = <0x5a000 0x1000>;
+				regulator = <&vregusb>;
 				#address-cells = <1>;
 				#size-cells = <1>;
 
@@ -832,6 +833,14 @@
 					status = "disabled";
 					regulator-name = "VREGMAIN";
 					regulator-initial-mode = <NRF5X_REG_MODE_LDO>;
+				};
+
+				vregusb: regulator@50121000 {
+					compatible = "nordic,vregusb-regulator";
+					reg = <0x50121000 0x1>;
+					interrupts = <289 NRF_DEFAULT_IRQ_PRIORITY>;
+					status = "disabled";
+					regulator-name = "VREGUSB";
 				};
 			};
 		};
