@@ -331,7 +331,7 @@ manifest:
         - debug
       revision: 5a9d6055b62edc54566d6d0034d9daec91749b98
     - name: nanopb
-      revision: 7307ce399b81ddcb3c3a5dc862c52d4754328d38
+      revision: 5499fd4c9a478f8139eeb07a82c3b4468d6067f7
       path: modules/lib/nanopb
     - name: net-tools
       revision: 64d7acc661ae2772282570f21beab85d02f2f35c
