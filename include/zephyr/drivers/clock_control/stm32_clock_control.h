@@ -861,7 +861,7 @@ struct stm32_pclken {
  * @param clock Clock bit field value.
  */
 #define STM32_DT_CLKSEL_MASK_GET(clock) \
-	(((clock) >> STM32_DT_CLKSEL_MASK_SHIFT) & STM32_DT_CLKSEL_MASK_MASK)
+	BIT_MASK((((clock) >> STM32_DT_CLKSEL_WIDTH_SHIFT) & STM32_DT_CLKSEL_WIDTH_MASK) + 1)
 
 /**
  * @brief Obtain value field from clock source selection configuration.

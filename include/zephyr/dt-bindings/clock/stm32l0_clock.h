@@ -41,14 +41,14 @@
 
 /** @brief Device domain clocks selection helpers */
 /** CCIPR devices */
-#define USART1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 0, CCIPR_REG)
+#define USART1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 0, CCIPR_REG)
 #define USART2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 2, CCIPR_REG)
-#define LPUART1_SEL(val)	STM32_DT_CLOCK_SELECT((val), 3, 10, CCIPR_REG)
-#define I2C1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 12, CCIPR_REG)
-#define I2C3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 16, CCIPR_REG)
-#define LPTIM1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 18, CCIPR_REG)
-#define HSI48_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 26, CCIPR_REG)
+#define LPUART1_SEL(val)	STM32_DT_CLOCK_SELECT((val), 11, 10, CCIPR_REG)
+#define I2C1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 13, 12, CCIPR_REG)
+#define I2C3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 17, 16, CCIPR_REG)
+#define LPTIM1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 19, 18, CCIPR_REG)
+#define HSI48_SEL(val)		STM32_DT_CLOCK_SELECT((val), 26, 26, CCIPR_REG)
 /** CSR devices */
-#define RTC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 16, CSR_REG)
+#define RTC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 17, 16, CSR_REG)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32L0_CLOCK_H_ */
