@@ -52,15 +52,19 @@
 #endif
 
 #ifndef WDT_MAX_WINDOW
-#define WDT_MAX_WINDOW  1000U
+#define WDT_MAX_WINDOW  5000U
 #endif
 
 #ifndef WDT_MIN_WINDOW
-#define WDT_MIN_WINDOW  0U
+#define WDT_MIN_WINDOW  10U
 #endif
 
 #ifndef WDG_FEED_INTERVAL
-#define WDG_FEED_INTERVAL 50U
+#define WDG_FEED_INTERVAL 1000U
+#endif
+
+#ifndef WDT_WARN_WINDOW
+#define WDT_WARN_WINDOW  4000U
 #endif
 
 #ifndef WDT_OPT
@@ -103,6 +107,7 @@ int main(void)
 		/* Expire watchdog after max window */
 		.window.min = WDT_MIN_WINDOW,
 		.window.max = WDT_MAX_WINDOW,
+		.window.warn_limit = WDT_WARN_WINDOW,
 	};
 
 #if WDT_ALLOW_CALLBACK

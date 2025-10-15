@@ -1,0 +1,9 @@
+/ {
+	aliases {
+		watchdog0 = &wdt0;
+	};
+};
+
+&wdt0 {
+	status = "okay";
+};
