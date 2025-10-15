@@ -44,10 +44,10 @@
 /** @brief Device domain clocks selection helpers) */
 /** CFGR devices */
 #define I2S_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 23, CFGR_REG)
-#define MCO1_SEL(val)           STM32_DT_CLOCK_SELECT((val), 0x7, 24, CFGR_REG)
-#define MCO1_PRE(val)           STM32_DT_CLOCK_SELECT((val), 0x7, 28, CFGR_REG)
+#define MCO1_SEL(val)           STM32_DT_CLOCK_SELECT((val), 3, 24, CFGR_REG)
+#define MCO1_PRE(val)           STM32_DT_CLOCK_SELECT((val), 3, 28, CFGR_REG)
 /** CFGR3 devices */
-#define USART1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 0, CFGR3_REG)
+#define USART1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 2, 0, CFGR3_REG)
 #define I2C1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 4, CFGR3_REG)
 #define I2C2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 5, CFGR3_REG)
 #define I2C3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 6, CFGR3_REG)
@@ -57,13 +57,13 @@
 #define TIM16_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 11, CFGR3_REG)
 #define TIM17_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 13, CFGR3_REG)
 #define TIM20_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 15, CFGR3_REG)
-#define USART2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 16, CFGR3_REG)
-#define USART3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 18, CFGR3_REG)
-#define USART4_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 20, CFGR3_REG)
-#define USART5_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 22, CFGR3_REG)
+#define USART2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 2, 16, CFGR3_REG)
+#define USART3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 2, 18, CFGR3_REG)
+#define USART4_SEL(val)		STM32_DT_CLOCK_SELECT((val), 2, 20, CFGR3_REG)
+#define USART5_SEL(val)		STM32_DT_CLOCK_SELECT((val), 2, 22, CFGR3_REG)
 #define TIM2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 24, CFGR3_REG)
 #define TIM3_4_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 25, CFGR3_REG)
 /** BDCR devices */
-#define RTC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 8, BDCR_REG)
+#define RTC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 2, 8, BDCR_REG)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F3_CLOCK_H_ */

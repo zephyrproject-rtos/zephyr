@@ -40,6 +40,6 @@
 /* WB06/WB07 only */
 #define SPI2_I2S2_SEL(val)	STM32_DT_CLOCK_SELECT((val), 1, 22, CFGR_REG)
 /* `mask` is only 0x1 for WB06/WB07, but a single definition with mask=0x3 is acceptable */
-#define SPI3_I2S3_SEL(val)	STM32_DT_CLOCK_SELECT((val), 3, 22, CFGR_REG)
+#define SPI3_I2S3_SEL(val)	STM32_DT_CLOCK_SELECT((val), 2, 22, CFGR_REG)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32WB0_CLOCK_H_ */

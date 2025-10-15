@@ -23,30 +23,30 @@
 /** Helper macros to pack RCC clock source selection register info in the DT */
 #define STM32_DT_CLKSEL_REG_MASK	0xFFFFU
 #define STM32_DT_CLKSEL_REG_SHIFT	0U
-#define STM32_DT_CLKSEL_SHIFT_MASK	0x3FU
+#define STM32_DT_CLKSEL_SHIFT_MASK	0x1FU
 #define STM32_DT_CLKSEL_SHIFT_SHIFT	16U
-#define STM32_DT_CLKSEL_MASK_MASK	0x1FU
-#define STM32_DT_CLKSEL_MASK_SHIFT	22U
-#define STM32_DT_CLKSEL_VAL_MASK	0x1FU
-#define STM32_DT_CLKSEL_VAL_SHIFT	27U
+#define STM32_DT_CLKSEL_WIDTH_MASK	0x3U
+#define STM32_DT_CLKSEL_WIDTH_SHIFT	21U
+#define STM32_DT_CLKSEL_VAL_MASK	0xFFU
+#define STM32_DT_CLKSEL_VAL_SHIFT	24U
 
 /**
  * @brief Pack STM32 source clock selection RCC register bit fields for the DT
  *
  * @param val    Clock configuration field value
- * @param mask   Mask of register field in RCC register
+ * @param width  Width of register field in RCC register
  * @param shift  Position of field within RCC register (= field LSB's index)
  * @param reg    Offset to target clock configuration register in RCC
  *
  * @note 'reg' range:    0x0~0xFFFF   [ 00 : 15 ]
- * @note 'shift' range:  0~63         [ 16 : 21 ]
- * @note 'mask' range:   0x00~0x1F    [ 22 : 26 ]
- * @note 'val' range:    0x00~0x1F    [ 27 : 31 ]
+ * @note 'shift' range:  0~31         [ 16 : 20 ]
+ * @note 'width' range:  1~8          [ 21 : 23 ] (internally stored as 0~7 to fit on 3 bits)
+ * @note 'val' range:    0x00~0x1F    [ 24 : 31 ]
  */
-#define STM32_DT_CLOCK_SELECT(val, mask, shift, reg)					\
+#define STM32_DT_CLOCK_SELECT(val, width, shift, reg)					\
 	((((reg) & STM32_DT_CLKSEL_REG_MASK) << STM32_DT_CLKSEL_REG_SHIFT) |		\
 	 (((shift) & STM32_DT_CLKSEL_SHIFT_MASK) << STM32_DT_CLKSEL_SHIFT_SHIFT) |	\
-	 (((mask) & STM32_DT_CLKSEL_MASK_MASK) << STM32_DT_CLKSEL_MASK_SHIFT) |		\
+	 (((width - 1) & STM32_DT_CLKSEL_WIDTH_MASK) << STM32_DT_CLKSEL_WIDTH_SHIFT) |	\
 	 (((val) & STM32_DT_CLKSEL_VAL_MASK) << STM32_DT_CLKSEL_VAL_SHIFT))
 
 /**

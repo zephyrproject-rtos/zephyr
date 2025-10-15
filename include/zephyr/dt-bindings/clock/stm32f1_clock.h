@@ -42,10 +42,10 @@
 #define I2S2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 17, CFGR2_REG)
 #define I2S3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 18, CFGR2_REG)
 /** BDCR devices */
-#define RTC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 8, BDCR_REG)
+#define RTC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 2, 8, BDCR_REG)
 
 /** CFGR1 devices */
-#define MCO1_SEL(val)           STM32_DT_CLOCK_SELECT((val), 0x7, 24, CFGR1_REG)
+#define MCO1_SEL(val)           STM32_DT_CLOCK_SELECT((val), 3, 24, CFGR1_REG)
 /* No MCO prescaler support on STM32F1 series. */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F1_CLOCK_H_ */
