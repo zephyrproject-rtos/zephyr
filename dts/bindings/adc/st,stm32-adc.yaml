@@ -49,7 +49,7 @@ properties:
       - "SYNC": derived from the bus clock.
       - "ASYNC" : independent and asynchronous with the bus clock
       One of the two values may not apply to some series. Refer to the RefMan.
-      If an asynchronous clock is selected, a domain clock in the clock property
+      If an asynchronous clock is selected, a kernel clock in the "clocks" property
       has to be defined explicitly.
 
   st,adc-prescaler:
@@ -74,9 +74,8 @@ properties:
       st,adc-clock-source.
       Some of the values may not apply to some series, and may depend on the
       selected clock source. Refer to the RefMan.
-      On STM32F3x (except STM32F37x), this configures only the synchronous
-      prescaler (see properties adcXX-prescaler in st,stm32f3-rcc bindings to
-      set asynchronous prescaler).
+      On STM32F3x, this configures only the synchronous prescaler
+      (use the "clocks" property to set asynchronous prescaler).
 
   vref-mv:
     type: int
