@@ -156,6 +156,11 @@ void thread_entry(void *thread, void *cb, void *user_data)
 	lv_thread_delete((lv_thread_t *)thread);
 }
 
+void lv_sleep_ms(uint32_t ms)
+{
+	k_msleep(ms);
+}
+
 #endif /* CONFIG_LV_Z_USE_OSAL */
 
 uint32_t lv_os_get_idle_percent(void)
