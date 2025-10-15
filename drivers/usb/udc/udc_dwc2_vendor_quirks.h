@@ -370,18 +370,21 @@ static void vregusb_event_cb(const struct device *dev,
 static inline int usbhs_init_vreg_and_clock(const struct device *dev)
 {
 	LOG_MODULE_DECLARE(udc_dwc2, CONFIG_UDC_DRIVER_LOG_LEVEL);
-	int err;
 
-	err = regulator_set_callback(vregusb_dev, vregusb_event_cb, dev);
-	if (err) {
-		LOG_ERR("Failed to set regulator callback");
-		return err;
-	}
+	if (!IS_ENABLED(CONFIG_USB_BC12_NRF_USBHS)) {
+		int err;
 
-	err = regulator_enable(vregusb_dev);
-	if (err) {
-		LOG_ERR("Failed to enable regulator");
-		return err;
+		err = regulator_set_callback(vregusb_dev, vregusb_event_cb, dev);
+		if (err) {
+			LOG_ERR("Failed to set regulator callback");
+			return err;
+		}
+
+		err = regulator_enable(vregusb_dev);
+		if (err) {
+			LOG_ERR("Failed to enable regulator");
+			return err;
+		}
 	}
 
 	pclk24m_mgr = z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF24M);
@@ -393,17 +396,20 @@ static inline int usbhs_enable_core(const struct device *dev)
 {
 	LOG_MODULE_DECLARE(udc_dwc2, CONFIG_UDC_DRIVER_LOG_LEVEL);
 	NRF_USBHS_Type *wrapper = USBHS_DT_WRAPPER_REG_ADDR(0);
-	k_timeout_t timeout = K_FOREVER;
 	int err;
 
-	if (CONFIG_UDC_DWC2_USBHS_VBUS_READY_TIMEOUT) {
-		timeout = K_MSEC(CONFIG_UDC_DWC2_USBHS_VBUS_READY_TIMEOUT);
-	}
+	if (!IS_ENABLED(CONFIG_USB_BC12_NRF_USBHS)) {
+		k_timeout_t timeout = K_FOREVER;
 
-	if (!k_event_wait(&usbhs_events, USBHS_VBUS_READY, false, K_NO_WAIT)) {
-		LOG_WRN("VBUS is not ready, block udc_enable()");
-		if (!k_event_wait(&usbhs_events, USBHS_VBUS_READY, false, timeout)) {
-			return -ETIMEDOUT;
+		if (CONFIG_UDC_DWC2_USBHS_VBUS_READY_TIMEOUT) {
+			timeout = K_MSEC(CONFIG_UDC_DWC2_USBHS_VBUS_READY_TIMEOUT);
+		}
+
+		if (!k_event_wait(&usbhs_events, USBHS_VBUS_READY, false, K_NO_WAIT)) {
+			LOG_WRN("VBUS is not ready, block udc_enable()");
+			if (!k_event_wait(&usbhs_events, USBHS_VBUS_READY, false, timeout)) {
+				return -ETIMEDOUT;
+			}
 		}
 	}
 
@@ -415,15 +421,19 @@ static inline int usbhs_enable_core(const struct device *dev)
 		return err;
 	}
 
-	/* Power up peripheral */
-	wrapper->ENABLE = USBHS_ENABLE_CORE_Msk;
+	if (!IS_ENABLED(CONFIG_USB_BC12_NRF_USBHS)) {
+		/* Power up peripheral */
+		wrapper->ENABLE = USBHS_ENABLE_CORE_Msk;
 
-	/* Set ID to Device and force D+ pull-up off for now */
-	wrapper->PHY.OVERRIDEVALUES = (1 << 31);
-	wrapper->PHY.INPUTOVERRIDE = (1 << 31) | USBHS_PHY_INPUTOVERRIDE_VBUSVALID_Msk;
+		/* Set ID to Device and force D+ pull-up off for now */
+		wrapper->PHY.OVERRIDEVALUES = (1 << 31);
+		wrapper->PHY.INPUTOVERRIDE = (1 << 31) | USBHS_PHY_INPUTOVERRIDE_VBUSVALID_Msk;
 
-	/* Release PHY power-on reset */
-	wrapper->ENABLE = USBHS_ENABLE_PHY_Msk | USBHS_ENABLE_CORE_Msk;
+		/* Release PHY power-on reset */
+		wrapper->ENABLE = USBHS_ENABLE_PHY_Msk | USBHS_ENABLE_CORE_Msk;
+	} else {
+		wrapper->PHY.INPUTOVERRIDE &= ~BIT(25);
+	}
 
 	/* Wait for PHY clock to start */
 	k_busy_wait(45);
@@ -434,10 +444,13 @@ static inline int usbhs_enable_core(const struct device *dev)
 	/* Wait for clock to start to avoid hang on too early register read */
 	k_busy_wait(1);
 
+	wrapper->PHY.INPUTOVERRIDE = (1 << 31);
 	/* DWC2 opmode is now guaranteed to be Non-Driving, allow D+ pull-up to
 	 * become active once driver clears DCTL SftDiscon bit.
 	 */
-	wrapper->PHY.INPUTOVERRIDE = (1 << 31);
+	if (IS_ENABLED(CONFIG_USB_BC12_NRF_USBHS)) {
+		wrapper->PHY.OVERRIDEVALUES = (1 << 31);
+	}
 
 	return 0;
 }
@@ -468,7 +481,11 @@ static inline int usbhs_disable_vreg(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return regulator_disable(vregusb_dev);
+	if (!IS_ENABLED(CONFIG_USB_BC12_NRF_USBHS)) {
+		return regulator_disable(vregusb_dev);
+	}
+
+	return 0;
 }
 
 static inline int usbhs_init_caps(const struct device *dev)
@@ -483,7 +500,19 @@ static inline int usbhs_init_caps(const struct device *dev)
 
 static inline int usbhs_is_phy_clk_off(const struct device *dev)
 {
-	return !k_event_test(&usbhs_events, USBHS_VBUS_READY);
+	LOG_MODULE_DECLARE(udc_dwc2, CONFIG_UDC_DRIVER_LOG_LEVEL);
+	NRF_USBHS_Type *wrapper = USBHS_DT_WRAPPER_REG_ADDR(0);
+	bool clk_on;
+
+	if (!IS_ENABLED(CONFIG_USB_BC12_NRF_USBHS)) {
+		clk_on = k_event_test(&usbhs_events, USBHS_VBUS_READY);
+	} else {
+		clk_on = (sys_read32((mem_addr_t)NRF_VREGUSB + 0x400) & BIT(2)) &&
+			 !((wrapper->PHY.OVERRIDEVALUES & BIT(25)) &&
+			   (wrapper->PHY.INPUTOVERRIDE & BIT(25)));
+	}
+
+	return !clk_on;
 }
 
 static inline int usbhs_post_hibernation_entry(const struct device *dev)
