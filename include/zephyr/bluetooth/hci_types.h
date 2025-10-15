@@ -651,6 +651,7 @@ struct bt_hci_rp_write_conn_accept_timeout {
 #define BT_BREDR_SCAN_PAGE                      0x02
 
 #define BT_HCI_OP_WRITE_PAGE_SCAN_ACTIVITY      BT_OP(BT_OGF_BASEBAND, 0x001c) /* 0x0c1c */
+#define BT_HCI_OP_WRITE_INQUIRY_SCAN_ACTIVITY   BT_OP(BT_OGF_BASEBAND, 0x001e) /* 0x0c1e */
 struct bt_hci_cp_write_scan_activity {
 	uint16_t interval;
 	uint16_t window;
@@ -856,6 +857,8 @@ struct bt_hci_cp_write_current_iac_lap {
 	uint8_t  num_current_iac;
 	struct bt_hci_iac_lap lap[0];
 } __packed;
+
+#define BT_HCI_OP_WRITE_INQUIRY_SCAN_TYPE       BT_OP(BT_OGF_BASEBAND, 0x0043) /* 0x0c43 */
 
 #define BT_HCI_OP_WRITE_INQUIRY_MODE            BT_OP(BT_OGF_BASEBAND, 0x0045) /* 0x0c45 */
 struct bt_hci_cp_write_inquiry_mode {

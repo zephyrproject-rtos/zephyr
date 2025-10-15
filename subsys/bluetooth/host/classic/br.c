@@ -1418,6 +1418,43 @@ int bt_br_page_scan_update_param(const struct bt_br_page_scan_param *param)
 	return 0;
 }
 
+int bt_br_inquiry_scan_update_param(const struct bt_br_inquiry_scan_param *param)
+{
+	int err;
+
+	if (param == NULL) {
+		return -EINVAL;
+	}
+
+	if (param->interval < BT_BR_SCAN_INTERVAL_MIN ||
+	    param->interval > BT_BR_SCAN_INTERVAL_MAX) {
+		return -EINVAL;
+	}
+
+	if (param->window < BT_BR_SCAN_WINDOW_MIN || param->window > BT_BR_SCAN_WINDOW_MAX) {
+		return -EINVAL;
+	}
+
+	if (param->interval < param->window) {
+		return -EINVAL;
+	}
+
+	err = bt_br_write_scan_activity(BT_HCI_OP_WRITE_INQUIRY_SCAN_ACTIVITY, param->interval,
+					param->window);
+	if (err) {
+		LOG_ERR("write inquiry scan activity failed (err %d)", err);
+		return err;
+	}
+
+	err = bt_br_write_scan_type(BT_HCI_OP_WRITE_INQUIRY_SCAN_TYPE, param->type);
+	if (err) {
+		LOG_ERR("write inquiry scan type failed (err %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
 int bt_br_set_class_of_device(uint32_t cod)
 {
 	int err;
