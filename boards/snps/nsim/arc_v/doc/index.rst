@@ -132,6 +132,87 @@ This command loads the symbol table from the elf binary file, for example the
 Now the debug environment has been set up, and it's possible to debug the application with gdb
 commands.
 
+Debugging with lldbac
+---------------------
+
+The ``lldbac`` runner is provided as part of the Synopsys ARC MWDT toolchain and uses
+``run-lldbac`` for integrated debugging of both simulator and hardware targets.
+
+.. note::
+   Ensure ``run-lldbac`` (from `ARC MWDT`_) is installed and available in your
+   ``PATH``.
+
+The ``lldbac`` runner supports the following commands:
+
+1. ``debug``: Interactive debugging with integrated server management
+2. ``flash``: Flash and run on physical hardware
+
+Debugging with Simulator (nSIM)
+********************************
+
+For interactive debugging on nSIM simulator, use the ``debug`` command with ``--simulator`` flag:
+
+.. code-block:: console
+
+   west debug --runner lldbac --simulator
+
+The runner uses nSIM properties configured in the board's ``board.cmake`` file. You can override
+with ``--nsim-props`` or use a TCF file with ``--tcf``:
+
+.. code-block:: console
+
+   west debug --runner lldbac --simulator --nsim-props=rmx100.props
+   west debug --runner lldbac --simulator --tcf=rmx100
+
+.. note::
+   The ``lldbac`` runner is designed specifically for interactive debugging workflows. For
+   simulator execution without debugging (flash), use the ``arc-nsim`` runner which provides
+   efficient non-interactive execution:
+
+   .. code-block:: console
+
+      west flash --runner arc-nsim
+
+   This separation allows ``lldbac`` to focus on debugging features while ``arc-nsim`` handles
+   standard execution efficiently.
+
+Debugging with Hardware
+************************
+
+For debugging on physical hardware, provide JTAG configuration via command-line flags:
+
+.. code-block:: console
+
+   west debug --runner lldbac
+   west flash --runner lldbac
+
+Available hardware options:
+
+* ``--jtag``: JTAG adapter type (default: jtag-digilent)
+* ``--jtag-device``: JTAG device name (optional, auto-detected if not specified, e.g., JtagHs2)
+* ``--jtag-frequency``: JTAG clock frequency (default: 500KHz)
+* ``--postconnect-cmd``: Command to execute after connection (can be used multiple times)
+* ``--postconnect-file``: File containing commands to execute after hardware initialization
+* ``--board-json``: Path to board.json file for complex board configurations
+
+Examples with postconnect commands for hardware initialization:
+
+.. code-block:: console
+
+   west flash --runner lldbac --postconnect-cmd "reg write sp 0x1000"
+   west flash --runner lldbac --postconnect-file postconnect.cmd
+   west debug --runner lldbac --board-json board.json
+
+GUI Mode
+********
+
+To launch debugging with VS Code GUI support, add the ``--gui`` flag:
+
+.. code-block:: console
+
+   west debug --runner lldbac --simulator --gui
+   west debug --runner lldbac --gui
+
 Modifying the configuration
 ***************************
 
