@@ -563,7 +563,7 @@ function(zephyr_library_compile_options item)
   string(MD5 uniqueness "${ARGV}")
   set(lib_name options_interface_lib_${uniqueness})
 
-  if (NOT TARGET ${lib_name})
+  if(NOT TARGET ${lib_name})
     # Create the unique target only if it doesn't exist.
     add_library(           ${lib_name} INTERFACE)
     target_compile_options(${lib_name} INTERFACE ${item} ${ARGN})
@@ -758,7 +758,7 @@ endfunction()
 
 set(TYPES "FLASH" "DEBUG" "SIM" "ROBOT")
 function(_board_check_runner_type type) # private helper
-  if (NOT "${type}" IN_LIST TYPES)
+  if(NOT "${type}" IN_LIST TYPES)
     message(FATAL_ERROR "invalid type ${type}; should be one of: ${TYPES}")
   endif()
 endfunction()
@@ -779,7 +779,7 @@ endfunction()
 # the name of a runner.
 function(board_set_runner type runner)
   _board_check_runner_type(${type})
-  if (DEFINED BOARD_${type}_RUNNER)
+  if(DEFINED BOARD_${type}_RUNNER)
     message(STATUS "overriding ${type} runner ${BOARD_${type}_RUNNER}; it's now ${runner}")
   endif()
   set(BOARD_${type}_RUNNER ${runner} PARENT_SCOPE)
@@ -1335,7 +1335,7 @@ function(zephyr_linker_sources location)
 
   # Clear destination files if this is the first time the function is called.
   get_property(cleared GLOBAL PROPERTY snippet_files_cleared)
-  if (NOT DEFINED cleared)
+  if(NOT DEFINED cleared)
     file(WRITE ${sections_path} "")
     file(WRITE ${rom_sections_path} "")
     file(WRITE ${ram_sections_path} "")
@@ -1356,7 +1356,7 @@ function(zephyr_linker_sources location)
   endif()
 
   # Choose destination file, based on the <location> argument.
-  if ("${location}" STREQUAL "SECTIONS")
+  if("${location}" STREQUAL "SECTIONS")
     set(snippet_path "${sections_path}")
   elseif("${location}" STREQUAL "ROM_SECTIONS")
     set(snippet_path "${rom_sections_path}")
@@ -1430,7 +1430,7 @@ function(zephyr_linker_sources location)
 
     # Remove line from other snippet file, if already used
     get_property(old_path GLOBAL PROPERTY "snippet_files_used_${relpath}")
-    if (DEFINED old_path)
+    if(DEFINED old_path)
       file(STRINGS ${old_path} lines)
       list(FILTER lines EXCLUDE REGEX ${relpath})
       string(REPLACE ";" "\n;" lines "${lines}") # Add newline to each line.
@@ -1573,7 +1573,7 @@ function(check_dtc_flag flag ok)
     OUTPUT_QUIET
     RESULT_VARIABLE dtc_check_ret
   )
-  if (dtc_check_ret EQUAL 0)
+  if(dtc_check_ret EQUAL 0)
     set(${ok} 1 PARENT_SCOPE)
   else()
     set(${ok} 0 PARENT_SCOPE)
@@ -3088,7 +3088,7 @@ function(zephyr_string)
 
   zephyr_check_flags_exclusive(${CMAKE_CURRENT_FUNCTION} ZEPHYR_STRING SANITIZE ESCAPE)
 
-  if (NOT ZEPHYR_STRING_UNPARSED_ARGUMENTS)
+  if(NOT ZEPHYR_STRING_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR "Function zephyr_string() called without a return variable")
   endif()
 
@@ -3552,7 +3552,7 @@ function(zephyr_boilerplate_watch variable)
 endfunction()
 
 function(zephyr_variable_set_too_late variable access value current_list_file)
-  if (access STREQUAL "MODIFIED_ACCESS")
+  if(access STREQUAL "MODIFIED_ACCESS")
     message(WARNING
 "
    **********************************************************************
@@ -3758,8 +3758,8 @@ function(build_info)
   endif()
 
   string(GENEX_STRIP "${arg_list}" arg_list_no_genexes)
-  if (NOT "${arg_list}" STREQUAL "${arg_list_no_genexes}")
-    if (convert_path)
+  if(NOT "${arg_list}" STREQUAL "${arg_list_no_genexes}")
+    if(convert_path)
       message(FATAL_ERROR "build_info: generator expressions unsupported on PATH entries")
     endif()
     set(genex_flag GENEX)
@@ -3978,7 +3978,7 @@ function(dt_node_exists var)
   endforeach()
 
   dt_path_internal(canonical "${DT_NODE_PATH}" "${DT_NODE_TARGET}")
-  if (DEFINED canonical)
+  if(DEFINED canonical)
     set(${var} TRUE PARENT_SCOPE)
   else()
     set(${var} FALSE PARENT_SCOPE)
@@ -4519,7 +4519,7 @@ function(dt_path_internal var path target)
     # If the string starts with a slash, it should be an existing
     # canonical path.
     dt_path_internal_exists(check "${path}" "${target}")
-    if (check)
+    if(check)
       set(${var} "${path}" PARENT_SCOPE)
       return()
     endif()
@@ -4530,13 +4530,13 @@ function(dt_path_internal var path target)
 
     # If there is a leading alias, append the rest of the string
     # onto it and see if that's an existing node.
-    if (DEFINED alias_path)
+    if(DEFINED alias_path)
       set(rest)
-      if (NOT "${slash_index}" EQUAL -1)
+      if(NOT "${slash_index}" EQUAL -1)
         string(SUBSTRING "${path}" "${slash_index}" -1 rest)
       endif()
       dt_path_internal_exists(expanded_path_exists "${alias_path}${rest}" "${target}")
-      if (expanded_path_exists)
+      if(expanded_path_exists)
         set(${var} "${alias_path}${rest}" PARENT_SCOPE)
         return()
       endif()
@@ -4552,7 +4552,7 @@ endfunction()
 # dt_path_internal for a definition and examples of 'canonical' paths.
 function(dt_path_internal_exists var path target)
   get_target_property(path_prop "${target}" "DT_NODE|${path}")
-  if (path_prop)
+  if(path_prop)
     set(${var} TRUE PARENT_SCOPE)
   else()
     set(${var} FALSE PARENT_SCOPE)
@@ -5847,7 +5847,7 @@ function(add_llext_target target_name)
   cmake_parse_arguments(PARSE_ARGV 1 LLEXT "${options}" "${single_args}" "${multi_args}")
 
   # Check that the llext subsystem is enabled for this build
-  if (NOT CONFIG_LLEXT)
+  if(NOT CONFIG_LLEXT)
     message(FATAL_ERROR "add_llext_target: CONFIG_LLEXT must be enabled")
   endif()
 
@@ -5965,7 +5965,7 @@ function(add_llext_target target_name)
   # to ensure that the ELF processed for binary generation contains SLIDs.
   # If executed too early, it is possible that some tools executed to modify
   # the ELF file (e.g., strip) undo the work performed here.
-  if (CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
+  if(CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
     set(slid_inject_cmd
       ${PYTHON_EXECUTABLE}
       ${ZEPHYR_BASE}/scripts/build/llext_inject_slids.py
@@ -5979,7 +5979,7 @@ function(add_llext_target target_name)
   # .arcextmap.* sections that bloat the shstrtab. stripac removes
   # these sections, but it does not remove their names from the shstrtab.
   # Use GNU strip to remove these sections beforehand.
-  if (${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "arcmwdt")
+  if(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "arcmwdt")
     set(gnu_strip_for_mwdt_cmd
       ${CMAKE_GNU_STRIP}
       --remove-section=.arcextmap* --strip-unneeded
@@ -6121,7 +6121,7 @@ function(llext_filter_zephyr_flags filter flags outvar)
        OUTPUT_VARIABLE llext_remove_flags_regexp
   )
   list(JOIN llext_remove_flags_regexp "|" llext_remove_flags_regexp)
-  if ("${llext_remove_flags_regexp}" STREQUAL "")
+  if("${llext_remove_flags_regexp}" STREQUAL "")
     # an empty regexp would match anything, we actually need the opposite
     # so set it to match empty strings
     set(llext_remove_flags_regexp "^$")
