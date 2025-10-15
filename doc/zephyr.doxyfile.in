@@ -67,7 +67,7 @@ PROJECT_LOGO           = @ZEPHYR_BASE@/doc/_doxygen/logo.svg
 # when the HTML document is shown. Doxygen will copy the logo to the output
 # directory.
 
-PROJECT_ICON           =
+PROJECT_ICON           = @ZEPHYR_BASE@/doc/_doxygen/favicon.png
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) path
 # into which the generated documentation will be written. If a relative path is
