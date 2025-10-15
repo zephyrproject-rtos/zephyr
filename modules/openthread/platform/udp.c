@@ -23,6 +23,9 @@
 #include <zephyr/posix/arpa/inet.h>
 #include <zephyr/posix/unistd.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(net_otPlat_udp, CONFIG_OPENTHREAD_BORDER_ROUTER_PLATFORM_LOG_LEVEL);
 
 static struct zsock_pollfd sockfd_udp[CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_MAX_UDP_SERVICES];
 
@@ -44,15 +47,21 @@ otError udp_plat_init(otInstance *ot_instance, struct net_if *ail_iface, struct 
 	ot_iface_index = (uint32_t)net_if_get_by_iface(ot_iface);
 	ail_iface_index = (uint32_t)net_if_get_by_iface(ail_iface);
 
+	LOG_DBG("Initializing platform UDP module");
+
 	for (uint8_t i = 0; i < CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_MAX_UDP_SERVICES; i++) {
 		sockfd_udp[i].fd = -1;
 	}
+
+	LOG_DBG("%s finished with code %d", __func__, OT_ERROR_NONE);
 
 	return OT_ERROR_NONE;
 }
 
 void udp_plat_deinit(void)
 {
+	LOG_DBG("Disabling platform UDP module");
+
 	ARRAY_FOR_EACH(sockfd_udp, idx) {
 		if (sockfd_udp[idx].fd != -1) {
 			zsock_close(sockfd_udp[idx].fd);
@@ -66,6 +75,8 @@ otError otPlatUdpSocket(otUdpSocket *aUdpSocket)
 	otError error = OT_ERROR_NONE;
 	int sock = -1;
 	uint8_t idx;
+
+	LOG_DBG("Creating UDP socket");
 
 	VerifyOrExit(aUdpSocket != NULL, error = OT_ERROR_INVALID_ARGS);
 	VerifyOrExit(sock_cnt < CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_MAX_UDP_SERVICES,
@@ -97,12 +108,23 @@ otError otPlatUdpSocket(otUdpSocket *aUdpSocket)
 						 error = OT_ERROR_FAILED);
 
 exit:
+	if (error != OT_ERROR_NONE) {
+		if (sock > 0) {
+			/* failure to net_socket_service_register */
+			otPlatUdpClose(aUdpSocket);
+		}
+	}
+
+	LOG_DBG("%s finished with code %d", __func__, error);
+
 	return error;
 }
 
 otError otPlatUdpClose(otUdpSocket *aUdpSocket)
 {
 	otError error = OT_ERROR_NONE;
+
+	LOG_DBG("Closing UDP socket");
 
 	VerifyOrExit(aUdpSocket != NULL && aUdpSocket->mHandle != NULL,
 		     error = OT_ERROR_INVALID_ARGS);
@@ -121,6 +143,8 @@ otError otPlatUdpClose(otUdpSocket *aUdpSocket)
 	}
 
 exit:
+	LOG_DBG("%s finished with code %d", __func__, error);
+
 	return error;
 }
 
@@ -148,6 +172,9 @@ otError otPlatUdpBind(otUdpSocket *aUdpSocket)
 		     error = OT_ERROR_FAILED);
 
 exit:
+	LOG_DBG("%s : binding to port %d finished with code %d",
+		__func__, aUdpSocket->mSockName.mPort, error);
+
 	return error;
 }
 
@@ -192,6 +219,7 @@ otError otPlatUdpBindToNetif(otUdpSocket *aUdpSocket, otNetifIdentifier aNetifId
 		break;
 	}
 exit:
+	LOG_DBG("%s : finished with code %d", __func__, error);
 	return error;
 }
 
@@ -217,6 +245,7 @@ otError otPlatUdpConnect(otUdpSocket *aUdpSocket)
 	}
 
 exit:
+	LOG_DBG("%s : finished with code %d", __func__, error);
 	return error;
 }
 
@@ -246,7 +275,8 @@ otError otPlatUdpSend(otUdpSocket *aUdpSocket,
 	VerifyOrExit(sock >= 0, error = OT_ERROR_INVALID_ARGS);
 
 	VerifyOrExit(len <= OTBR_MESSAGE_SIZE, error = OT_ERROR_FAILED);
-	VerifyOrExit(openthread_border_router_allocate_message((void **)&req) == OT_ERROR_NONE);
+	VerifyOrExit(openthread_border_router_allocate_message((void **)&req) == OT_ERROR_NONE,
+		     error = OT_ERROR_FAILED);
 	VerifyOrExit(otMessageRead(aMessage, 0, req->buffer, len) == len, error = OT_ERROR_FAILED);
 
 	iov.iov_base = req->buffer;
@@ -320,10 +350,13 @@ otError otPlatUdpSend(otUdpSocket *aUdpSocket,
 	}
 
 exit:
-	if (error == OT_ERROR_NONE && aMessage) {
+	if (aMessage != NULL) {
 		otMessageFree(aMessage);
 	}
 	openthread_border_router_deallocate_message((void *)req);
+
+	LOG_DBG("%s : finished with code %d", __func__, error);
+
 	return error;
 }
 
@@ -360,6 +393,8 @@ otError otPlatUdpJoinMulticastGroup(otUdpSocket *aUdpSocket, otNetifIdentifier a
 		     error = OT_ERROR_FAILED);
 
 exit:
+	LOG_DBG("%s : finished with code %d", __func__, error);
+
 	return error;
 }
 
@@ -396,6 +431,8 @@ otError otPlatUdpLeaveMulticastGroup(otUdpSocket *aUdpSocket, otNetifIdentifier 
 		     error = OT_ERROR_FAILED);
 
 exit:
+	LOG_DBG("%s : finished with code %d", __func__, error);
+
 	return error;
 }
 
@@ -436,7 +473,7 @@ static void udp_receive_handler(struct net_socket_service_event *evt)
 	msg.msg_flags = 0;
 
 	rval = zsock_recvmsg(evt->event.fd, &msg, 0);
-	VerifyOrExit(rval > 0);
+	VerifyOrExit(rval > 0, openthread_border_router_deallocate_message((void *)req));
 	req->length = (uint16_t)rval;
 
 	for (cmsg = CMSG_FIRSTHDR(&msg); cmsg != NULL; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
