@@ -43,7 +43,7 @@
 &zephyr_mipi_dsi {
 	status = "okay";
 	autoinsert-eotp;
-	phy-clock = <316800000>;
+	phy-clock = <319488000>;
 
 	co5300_zc143ac72mipi: co5300@0 {
 		status = "okay";
