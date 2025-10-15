@@ -101,7 +101,7 @@ static uint8_t asid_count = 3;
 /*
  * List with all active and initialized memory domains.
  */
-static sys_slist_t xtensa_domain_list;
+sys_slist_t xtensa_domain_list;
 #endif /* CONFIG_USERSPACE */
 
 extern char _heap_end[];
@@ -426,12 +426,11 @@ static inline void __arch_mem_map(void *va, uintptr_t pa, uint32_t xtensa_flags,
 		flags = xtensa_flags;
 	}
 
-	ret = l2_page_table_map(xtensa_kernel_ptables, (void *)vaddr, paddr,
-				flags, is_user);
+	ret = l2_page_table_map(xtensa_kernel_ptables, vaddr, paddr, flags, is_user);
 	__ASSERT(ret, "Virtual address (%p) already mapped", va);
 
 	if (IS_ENABLED(CONFIG_XTENSA_MMU_DOUBLE_MAP) && ret) {
-		ret = l2_page_table_map(xtensa_kernel_ptables, (void *)vaddr_uc, paddr_uc,
+		ret = l2_page_table_map(xtensa_kernel_ptables, vaddr_uc, paddr_uc,
 					flags_uc, is_user);
 		__ASSERT(ret, "Virtual address (%p) already mapped", vaddr_uc);
 	}
@@ -448,14 +447,13 @@ static inline void __arch_mem_map(void *va, uintptr_t pa, uint32_t xtensa_flags,
 		SYS_SLIST_FOR_EACH_NODE(&xtensa_domain_list, node) {
 			domain = CONTAINER_OF(node, struct arch_mem_domain, node);
 
-			ret = l2_page_table_map(domain->ptables, (void *)vaddr, paddr,
+			ret = l2_page_table_map(domain->ptables, vaddr, paddr,
 						flags, is_user);
 			__ASSERT(ret, "Virtual address (%p) already mapped for domain %p",
 				 vaddr, domain);
 
 			if (IS_ENABLED(CONFIG_XTENSA_MMU_DOUBLE_MAP) && ret) {
-				ret = l2_page_table_map(domain->ptables,
-							(void *)vaddr_uc, paddr_uc,
+				ret = l2_page_table_map(domain->ptables, vaddr_uc, paddr_uc,
 							flags_uc, is_user);
 				__ASSERT(ret, "Virtual address (%p) already mapped for domain %p",
 					 vaddr_uc, domain);
@@ -588,10 +586,10 @@ static inline void __arch_mem_unmap(void *va)
 		vaddr = va;
 	}
 
-	is_exec = l2_page_table_unmap(xtensa_kernel_ptables, (void *)vaddr);
+	is_exec = l2_page_table_unmap(xtensa_kernel_ptables, vaddr);
 
 	if (IS_ENABLED(CONFIG_XTENSA_MMU_DOUBLE_MAP)) {
-		(void)l2_page_table_unmap(xtensa_kernel_ptables, (void *)vaddr_uc);
+		(void)l2_page_table_unmap(xtensa_kernel_ptables, vaddr_uc);
 	}
 
 #ifdef CONFIG_USERSPACE
@@ -603,10 +601,12 @@ static inline void __arch_mem_unmap(void *va)
 	SYS_SLIST_FOR_EACH_NODE(&xtensa_domain_list, node) {
 		domain = CONTAINER_OF(node, struct arch_mem_domain, node);
 
-		(void)l2_page_table_unmap(domain->ptables, (void *)vaddr);
+		uint32_t *ptables = domain->ptables;
+
+		(void)l2_page_table_unmap(ptables, vaddr);
 
 		if (IS_ENABLED(CONFIG_XTENSA_MMU_DOUBLE_MAP)) {
-			(void)l2_page_table_unmap(domain->ptables, (void *)vaddr_uc);
+			(void)l2_page_table_unmap(ptables, vaddr_uc);
 		}
 	}
 	k_spin_unlock(&z_mem_domain_lock, key);
