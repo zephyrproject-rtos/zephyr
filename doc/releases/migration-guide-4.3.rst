@@ -320,6 +320,10 @@ MCUmgr
   but can still be used by enabling
   :kconfig:option:`CONFIG_MCUMGR_GRP_OS_INFO_HARDWARE_INFO_SHORT_HARDWARE_PLATFORM`.
 
+* Support for legacy Mbed TLS hash crypto is removed and only PSA Crypto API is used.
+  :kconfig:option:`CONFIG_MCUMGR_GRP_FS_HASH_SHA256` automatically enables Mbed TLS and its
+  PSA Crypto implementation if TF-M is not enabled in the build.
+
 RTIO
 ====
 
