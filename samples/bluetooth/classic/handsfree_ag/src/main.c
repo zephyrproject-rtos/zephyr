@@ -345,8 +345,8 @@ static void discovery_timeout_cb(const struct bt_br_discovery_result *results, s
 		major_device = (uint8_t)BT_COD_MAJOR_DEVICE_CLASS(results[i].cod);
 		minor_device = (uint8_t)BT_COD_MINOR_DEVICE_CLASS(results[i].cod);
 
-		if ((major_device & BT_COD_MAJOR_AUDIO_VIDEO) &&
-		    (minor_device & BT_COD_MAJOR_AUDIO_VIDEO_MINOR_HANDS_FREE)) {
+		if ((major_device & BT_COD_MAJOR_DEVICE_CLASS_AUDIO_VIDEO) &&
+		    (minor_device & BT_COD_MINOR_DEVICE_CLASS_AUDIO_VIDEO_HANDSFREE)) {
 			cod_hf = true;
 		}
 

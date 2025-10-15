@@ -248,6 +248,46 @@ typedef enum bt_br_conn_req_rsp (*bt_br_conn_req_func_t)(const bt_addr_t *addr, 
  */
 int bt_br_set_connectable(bool enable, bt_br_conn_req_func_t func);
 
+/**
+ * @brief Set the Class of Device of the local BR/EDR Controller.
+ *
+ * This function writes the Class of Device (COD) value to the BR/EDR
+ * controller. The COD is used by remote devices during the discovery
+ * process to identify the type of device and the services it provides.
+ *
+ * @note The limited discoverable mode bit (@ref BT_COD_MAJOR_SVC_CLASS_LIMITED_DISCOVER)
+ *       cannot be set directly through this function. Use bt_br_set_discoverable()
+ *       with the limited parameter to enable limited discoverable mode, which will
+ *       automatically set the corresponding COD bit.
+ *
+ * @param cod Class of Device value to set. This should be a combination of
+ *            Major Service Class bits (BT_COD_MAJOR_SVC_CLASS_*), Major Device
+ *            Class bits (BT_COD_MAJOR_DEVICE_CLASS_*), and Minor Device Class
+ *            bits (BT_COD_MINOR_DEVICE_CLASS_*).
+ *
+ * @retval 0 on success
+ * @retval -EAGAIN if the Bluetooth device is not ready
+ * @retval -EINVAL if the provided COD value attempts to set the limited
+ *         discoverable bit directly, which is not permitted
+ * @retval Other negative error codes from underlying HCI command failures
+ *
+ * @see bt_br_set_discoverable()
+ * @see bt_br_get_class_of_device()
+ */
+int bt_br_set_class_of_device(uint32_t cod);
+
+/**
+ * @brief Get the Class of Device of the local BR/EDR Controller.
+ *
+ * @param cod Pointer to where the current Class of Device value will be stored.
+ *
+ * @retval 0 on success
+ * @retval -EAGAIN if the Bluetooth device is not ready
+ * @retval -EINVAL if @p cod is NULL
+ * @retval Other negative error codes on failure
+ */
+int bt_br_get_class_of_device(uint32_t *cod);
+
 /** @brief Check if a Bluetooth classic device address is bonded.
  *
  *  @param addr Bluetooth classic device address.
