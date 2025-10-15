@@ -18,9 +18,6 @@ Requirements
 Building and Running
 ********************
 
-This sample can be found under :zephyr_file:`samples/bluetooth/periodic_sync` in
-the Zephyr tree.
-
 Use the sample found under :zephyr_file:`samples/bluetooth/periodic_adv` on
 another board that will start periodic advertising, to which this sample will
 establish periodic advertising synchronization.

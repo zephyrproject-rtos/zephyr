@@ -24,9 +24,6 @@ Requirements
 
 Building and Running
 ********************
-This sample can be found under :zephyr_file:`samples/bluetooth/iso_central` in
-the Zephyr tree.
-
 1. Start the application.
    In the terminal window, check that it is scanning for other devices.
 

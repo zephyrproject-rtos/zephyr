@@ -15,9 +15,6 @@ provided by this driver.
 .. note::
    This samples demonstrate deprecated :ref:`usb_device_stack`.
 
-This sample can be found under :zephyr_file:`samples/subsys/usb/legacy/cdc_acm` in the
-Zephyr project tree.
-
 Requirements
 ************
 
