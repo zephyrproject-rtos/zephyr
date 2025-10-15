@@ -4703,8 +4703,8 @@ static int cmd_fal_connect(const struct shell *sh, size_t argc, char *argv[])
 #endif /* CONFIG_BT_CENTRAL */
 #endif /* defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
 
-#if defined(CONFIG_BT_FIXED_PASSKEY)
-static int cmd_fixed_passkey(const struct shell *sh,
+#if defined(CONFIG_BT_ONE_TIME_PASSKEY)
+static int cmd_one_time_passkey(const struct shell *sh,
 			     size_t argc, char *argv[])
 {
 	unsigned int passkey;
@@ -4712,7 +4712,7 @@ static int cmd_fixed_passkey(const struct shell *sh,
 
 	if (argc < 2) {
 		bt_passkey_set(BT_PASSKEY_INVALID);
-		shell_print(sh, "Fixed passkey cleared");
+		shell_print(sh, "One-time passkey cleared");
 		return 0;
 	}
 
@@ -4724,7 +4724,7 @@ static int cmd_fixed_passkey(const struct shell *sh,
 
 	err = bt_passkey_set(passkey);
 	if (err) {
-		shell_print(sh, "Setting fixed passkey failed (err %d)", err);
+		shell_print(sh, "Setting one-time passkey failed (err %d)", err);
 	}
 
 	return err;
@@ -5340,8 +5340,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      cmd_fal_connect, 2, 3),
 #endif /* CONFIG_BT_CENTRAL */
 #endif /* defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
-#if defined(CONFIG_BT_FIXED_PASSKEY)
-	SHELL_CMD_ARG(fixed-passkey, NULL, "[passkey]", cmd_fixed_passkey,
+#if defined(CONFIG_BT_ONE_TIME_PASSKEY)
+	SHELL_CMD_ARG(one-time-passkey, NULL, "[passkey]", cmd_one_time_passkey,
 		      1, 1),
 #endif
 #endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC) */
