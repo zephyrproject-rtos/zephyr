@@ -228,8 +228,7 @@ static int clock_mspm0_init(const struct device *dev)
 #endif
 
 #if MSPM0_PLL_ENABLED
-#if (DT_SAME_NODE(DT_HSCLK_CLOCKS_CTRL, DT_NODELABEL(syspll)) || \
-	DT_SAME_NODE(DT_HSCLK_CLOCKS_CTRL, DT_NODELABEL(syspll2x)))
+#if (DT_SAME_NODE(DT_HSCLK_CLOCKS_CTRL, DT_NODELABEL(syspll))
 	DL_SYSCTL_setMCLKSource(SYSOSC, HSCLK,
 				DL_SYSCTL_HSCLK_SOURCE_SYSPLL);
 #endif
