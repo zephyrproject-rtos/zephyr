@@ -19,6 +19,7 @@ supported:
   - spi
   - can
   - net
+  - display
   - watchdog
 testing:
   ignore_tags:
