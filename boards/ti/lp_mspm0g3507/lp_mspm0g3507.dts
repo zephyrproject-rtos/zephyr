@@ -59,12 +59,7 @@
 
 &mclk {
 	clock-frequency = <DT_FREQ_M(80)>;
-	clocks = <&hsclk 0>;
-};
-
-&hsclk {
 	clocks = <&syspll>;
-	status = "okay";
 };
 
 &flash0 {
