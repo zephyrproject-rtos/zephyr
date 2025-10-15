@@ -27,6 +27,12 @@
 
 LOG_MODULE_REGISTER(pwm_mcux_tpm, CONFIG_PWM_LOG_LEVEL);
 
+#ifdef CONFIG_PWM_CAPTURE
+#if !defined(FSL_FEATURE_TPM_HAS_COMBINE) || (FSL_FEATURE_TPM_HAS_COMBINE == 0)
+#error "TPM combine mode not available, PWM capture feature is unsupported."
+#endif
+#endif
+
 #define TPM_MAX_CHANNELS TPM_CnSC_COUNT
 #define TPM_COMBINE_SHIFT (8U)
 
@@ -54,6 +60,7 @@ struct mcux_tpm_config {
 #endif /* CONFIG_PWM_CAPTURE */
 };
 
+#ifdef CONFIG_PWM_CAPTURE
 struct mcux_tpm_capture_data {
 	tpm_dual_edge_capture_param_t param;
 	pwm_capture_callback_handler_t callback;
@@ -66,6 +73,7 @@ struct mcux_tpm_capture_data {
 	bool pulse_capture;
 	bool continuous_capture;
 };
+#endif /* CONFIG_PWM_CAPTURE */
 
 struct mcux_tpm_data {
 	DEVICE_MMIO_NAMED_RAM(base);
