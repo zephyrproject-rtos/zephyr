@@ -196,13 +196,35 @@ int bt_br_set_discoverable(bool enable, bool limited);
  * Allows make local controller to be connectable. It means the controller
  * start listen to devices requests on PAGE SCAN channel. If disabled also
  * resets discoverability if was set.
+*
+* @param enable Value allowing/disallowing controller to be connectable.
+*
+* @return Negative if fail set to requested state or requested state has been
+*         already set. Zero if done successfully.
+*/
+int bt_br_set_connectable(bool enable);
+
+/**
+ * @brief Set the Class of Device configuration parameter of the local
+ *        BR/EDR Controller.
  *
- * @param enable Value allowing/disallowing controller to be connectable.
+ * @param local_cod Class of Device value.
  *
  * @return Negative if fail set to requested state or requested state has been
  *         already set. Zero if done successfully.
  */
-int bt_br_set_connectable(bool enable);
+int bt_br_set_class_of_device(uint32_t local_cod);
+
+/**
+ * @brief Get the Class of Device configuration parameter of the local
+ *        BR/EDR Controller.
+ *
+ * @param local_cod Class of Device value.
+ *
+ * @return Negative if fail set to requested state or requested state has been
+ *         already set. Zero if done successfully.
+ */
+int bt_br_get_class_of_device(uint32_t *cod);
 
 /** @brief Check if a Bluetooth classic device address is bonded.
  *

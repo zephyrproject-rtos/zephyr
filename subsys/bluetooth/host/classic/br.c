@@ -1292,6 +1292,40 @@ int bt_br_set_discoverable(bool enable, bool limited)
 	return 0;
 }
 
+int bt_br_set_class_of_device(uint32_t cod)
+{
+	int err;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	err = bt_br_write_cod(cod);
+	if (err) {
+		LOG_ERR("write cod:0x%08x failed (err %d)", cod, err);
+		return err;
+	}
+
+	return 0;
+}
+
+int bt_br_get_class_of_device(uint32_t *cod)
+{
+	int err;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	err = bt_br_read_cod(cod);
+	if (err) {
+		LOG_ERR("read cod failed (err %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
 bool bt_br_bond_exists(const bt_addr_t *addr)
 {
 	struct bt_keys_link_key *key = bt_keys_find_link_key(addr);
