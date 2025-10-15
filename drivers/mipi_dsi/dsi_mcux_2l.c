@@ -481,6 +481,7 @@ static int dsi_mcux_attach(const struct device *dev,
 		return -EINVAL;
 	}
 
+	//@IMPORTANT @TODO(Emilio): Comeback to this line of code after dts question is answered.
 	switch (config->dpi_config.pixelPacket) {
 	case kDSI_PixelPacket16Bit:
 		bit_width = 16;
