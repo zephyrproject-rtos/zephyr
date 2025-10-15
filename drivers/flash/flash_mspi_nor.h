@@ -95,6 +95,10 @@ struct flash_mspi_nor_config {
 	const struct jesd216_erase_type *default_erase_types;
 	struct flash_mspi_nor_cmd_info default_cmd_info;
 	struct flash_mspi_nor_switch_info default_switch_info;
+	uint32_t read_freq;
+	enum mspi_io_mode read_io_mode;
+	uint32_t write_freq;
+	enum mspi_io_mode write_io_mode;
 	bool jedec_id_specified  : 1;
 	bool rx_dummy_specified  : 1;
 	bool multiperipheral_bus : 1;
@@ -117,6 +121,10 @@ struct flash_mspi_nor_data {
 	struct mspi_dev_cfg mspi_dev_xip_cfg;
 #endif
 	const struct mspi_dev_cfg *last_applied_cfg;
+	const struct mspi_dev_cfg *read_cfg;
+	struct mspi_dev_cfg mspi_dev_read_cfg;
+	const struct mspi_dev_cfg *write_cfg;
+	struct mspi_dev_cfg mspi_dev_write_cfg;
 };
 
 #ifdef __cplusplus
