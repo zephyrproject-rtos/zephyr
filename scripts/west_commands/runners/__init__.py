@@ -57,6 +57,7 @@ _names = [
     'renode-robot',
     'rfp',
     'sftool',
+    'rtsflash',
     'silabs_commander',
     'spi_burn',
     'spsdk',
