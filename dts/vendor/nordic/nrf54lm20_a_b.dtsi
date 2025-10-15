@@ -245,6 +245,7 @@
 				ranges = <0x20000 0x20000 0x1a000>;
 				#address-cells = <1>;
 				#size-cells = <1>;
+				regulator = <&vregusb>;
 
 				usbhs: usbhs@20000 {
 					compatible = "nordic,nrf-usbhs-nrf54l", "snps,dwc2";
@@ -866,17 +867,26 @@
 
 			regulators: regulator@120000 {
 				compatible = "nordic,nrf54l-regulators";
-				reg = <0x120000 0x1000>;
+				reg = <0x120000 0x2000>;
+				ranges = <0x0 0x120000 0x2000>;
 				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <1>;
 
-				vregmain: regulator@120600 {
+				vregmain: regulator@0 {
 					compatible = "nordic,nrf5x-regulator";
-					reg = <0x120600 0x1>;
+					reg = <0x0 0x1000>;
 					status = "disabled";
 					regulator-name = "VREGMAIN";
 					regulator-initial-mode = <NRF5X_REG_MODE_LDO>;
+				};
+
+				vregusb: regulator@1000 {
+					compatible = "nordic,vregusb-regulator";
+					reg = <0x1000 0x1000>;
+					status = "disabled";
+					regulator-name = "VREGUSB";
+					interrupts = <289 NRF_DEFAULT_IRQ_PRIORITY>;
 				};
 			};
 		};
