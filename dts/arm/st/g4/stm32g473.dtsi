@@ -39,6 +39,7 @@
 			compatible = "st,stm32-adc";
 			reg = <0x50000500 0x100>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 14)>;
+			clock-names = "adcx";
 			interrupts = <61 0>;
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
@@ -58,6 +59,7 @@
 			compatible = "st,stm32-adc";
 			reg = <0x50000600 0x100>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 14)>;
+			clock-names = "adcx";
 			interrupts = <62 0>;
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)

@@ -69,5 +69,6 @@
 	/* changes clock source for both ADC1 and ADC2 */
 	clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00002000>,
 		 <&rcc STM32_SRC_PLL_P ADC12_SEL(1)>;
+	clock-names = "adcx", "adc_ker";
 	status = "okay";
 };

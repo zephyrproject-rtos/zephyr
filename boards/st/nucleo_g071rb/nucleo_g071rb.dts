@@ -147,6 +147,7 @@
 &adc1 {
 	clocks = <&rcc STM32_CLOCK(APB1_2, 20)>,
 		 <&rcc STM32_SRC_SYSCLK ADC_SEL(0)>;
+	clock-names = "adcx", "adc_ker";
 	pinctrl-0 = <&adc1_in0_pa0 &adc1_in1_pa1>;
 	pinctrl-names = "default";
 	st,adc-clock-source = "ASYNC";
