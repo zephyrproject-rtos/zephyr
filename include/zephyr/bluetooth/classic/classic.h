@@ -389,6 +389,48 @@ struct bt_br_page_scan_param {
  */
 int bt_br_page_scan_update_param(const struct bt_br_page_scan_param *param);
 
+struct bt_br_inquiry_scan_param {
+	/** Inquiry scan interval in 0.625 ms units
+	 *  Range: 0x0012 to 0x1000; only even values are valid.
+	 */
+	uint16_t interval;
+
+	/** Inquiry scan window in 0.625 ms units
+	 *  Range: 0x0011 to 0x1000.
+	 */
+	uint16_t window;
+
+	/** Inquiry scan type. */
+	enum bt_br_scan_type type;
+};
+
+/**
+ * @name Defined BR Page Scan timers
+ * @{
+ */
+#define BT_BR_INQUIRY_SCAN_INTERVAL_DEFAULT 0x1000  /* 0x1000, 2.560s, U:0.625 */
+#define BT_BR_INQUIRY_SCAN_WINDOW_DEFAULT   0x0012  /* 0x0012, 11.25mss, U:0.625 */
+
+/**
+ * Helper to declare BR/EDR inquiry scan parameters inline
+ *
+ * @param _interval Inquiry scan interval, N * 0.625 milliseconds
+ * @param _window   Inquiry scan window, N * 0.625 milliseconds
+ * @param _type     BT_BR_SCAN_TYPE_STANDARD or BT_BR_SCAN_TYPE_INTERLACED
+ */
+#define BT_BR_INQUIRY_SCAN_PARAM(_interval, _window, _type) \
+    ((const struct bt_br_inquiry_scan_param[]) { \
+		BT_BR_SCAN_INIT(_interval, _window, _type) \
+    })
+
+#define BT_BR_INQUIRY_SCAN_PARAM_DEFAULT \
+	BT_BR_INQUIRY_SCAN_PARAM( \
+	BT_BR_INQUIRY_SCAN_INTERVAL_DEFAULT, \
+	BT_BR_INQUIRY_SCAN_WINDOW_DEFAULT, \
+	BT_BR_SCAN_TYPE_STANDARD)
+
+int bt_br_inquiry_scan_update_param(const struct bt_br_inquiry_scan_param *param);
+
 /**
  * @brief Set the Class of Device configuration parameter of the local
  *        BR/EDR Controller.
