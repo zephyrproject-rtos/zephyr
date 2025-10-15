@@ -1139,32 +1139,30 @@ static int flash_chip_init(const struct device *dev)
 #if defined(CONFIG_MSPI_XIP)
 	/* Enable XIP access for this chip if specified so in DT. */
 	if (dev_config->xip_cfg.enable) {
-		struct mspi_dev_cfg mspi_cfg = {
-			.addr_length = dev_data->cmd_info.uses_4byte_addr
-				     ? 4 : 3,
-			.rx_dummy = get_rx_dummy(dev),
-		};
+		struct mspi_dev_cfg *mspi_cfg = &dev_data->mspi_dev_xip_cfg;
 
+		mspi_cfg->addr_length = dev_data->cmd_info.uses_4byte_addr ? 4 : 3;
+		mspi_cfg->rx_dummy = get_rx_dummy(dev);
 		if (dev_data->cmd_info.cmd_extension != CMD_EXTENSION_NONE) {
-			mspi_cfg.cmd_length = 2;
-			mspi_cfg.read_cmd = get_extended_command(dev,
+			mspi_cfg->cmd_length = 2;
+			mspi_cfg->read_cmd = get_extended_command(dev,
 				dev_data->cmd_info.read_cmd);
-			mspi_cfg.write_cmd = get_extended_command(dev,
+			mspi_cfg->write_cmd = get_extended_command(dev,
 				dev_data->cmd_info.pp_cmd);
 		} else {
-			mspi_cfg.cmd_length = 1;
-			mspi_cfg.read_cmd = dev_data->cmd_info.read_cmd;
-			mspi_cfg.write_cmd = dev_data->cmd_info.pp_cmd;
+			mspi_cfg->cmd_length = 1;
+			mspi_cfg->read_cmd = dev_data->cmd_info.read_cmd;
+			mspi_cfg->write_cmd = dev_data->cmd_info.pp_cmd;
 		}
 
 		rc = mspi_dev_config(dev_config->bus, &dev_config->mspi_id,
-				     XIP_DEV_CFG_MASK, &mspi_cfg);
+				     XIP_DEV_CFG_MASK, mspi_cfg);
 		if (rc < 0) {
 			LOG_ERR("Failed to configure controller for XIP: %d",
 				rc);
 			return rc;
 		}
-		dev_data->last_applied_cfg = NULL;
+		dev_data->last_applied_cfg = mspi_cfg;
 
 		rc = mspi_xip_config(dev_config->bus, &dev_config->mspi_id,
 				     &dev_config->xip_cfg);

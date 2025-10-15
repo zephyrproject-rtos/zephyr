@@ -114,6 +114,9 @@ struct flash_mspi_nor_data {
 	struct flash_mspi_nor_cmd_info cmd_info;
 	struct flash_mspi_nor_switch_info switch_info;
 	bool in_target_io_mode;
+#if defined(CONFIG_MSPI_XIP)
+	struct mspi_dev_cfg mspi_dev_xip_cfg;
+#endif
 	const struct mspi_dev_cfg *last_applied_cfg;
 };
 
