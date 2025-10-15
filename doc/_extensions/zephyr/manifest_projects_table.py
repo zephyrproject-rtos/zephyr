@@ -27,6 +27,7 @@ SPDX-License-Identifier: Apache-2.0
 """
 
 import re
+from pathlib import Path
 from typing import Any
 
 from docutils import nodes
@@ -69,7 +70,15 @@ class ManifestProjectsTable(SphinxDirective):
     def run(self) -> list[nodes.Element]:
         active_filter = self.options.get("filter", None)
 
-        manifest = Manifest.from_file(self.env.config.manifest_projects_table_manifest)
+        manifest_path = Path(self.env.config.manifest_projects_table_manifest)
+        with open(manifest_path) as f:
+            manifest_data = f.read()
+
+        # Use from_data instead of from_file to avoid loading local configuration
+        # This ensures we show projects that are enabled by default, independently of any local
+        # override in the user's manifest.project-filter setting.
+        manifest = Manifest.from_data(source_data=manifest_data)
+
         projects = []
         for project in manifest.projects:
             if project.name == "manifest":
