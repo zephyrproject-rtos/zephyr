@@ -13,25 +13,15 @@
 #include <mgmt/mcumgr/grp/fs_mgmt/fs_mgmt_config.h>
 #include <mgmt/mcumgr/grp/fs_mgmt/fs_mgmt_hash_checksum_sha256.h>
 
-#ifdef CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT
 #include <psa/crypto.h>
-typedef psa_hash_operation_t hash_ctx_t;
-#define SUCCESS_VALUE PSA_SUCCESS
 
-#else
-#include <mbedtls/sha256.h>
-typedef mbedtls_sha256_context hash_ctx_t;
-#define SUCCESS_VALUE 0
-
-#endif /* CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT */
-
-#define SHA256_DIGEST_SIZE 32
+#define SHA256_DIGEST_SIZE PSA_HASH_LENGTH(PSA_ALG_SHA_256)
 
 /* The API that the different hash implementations provide further down. */
-static int hash_setup(hash_ctx_t *);
-static int hash_update(hash_ctx_t *, const uint8_t *input, size_t ilen);
-static int hash_finish(hash_ctx_t *, uint8_t *output);
-static void hash_teardown(hash_ctx_t *);
+static int hash_setup(psa_hash_operation_t *);
+static int hash_update(psa_hash_operation_t *, const uint8_t *input, size_t ilen);
+static int hash_finish(psa_hash_operation_t *, uint8_t *output);
+static void hash_teardown(psa_hash_operation_t *);
 
 static int fs_mgmt_hash_checksum_sha256(struct fs_file_t *file, uint8_t *output,
 					size_t *out_len, size_t len)
@@ -40,13 +30,13 @@ static int fs_mgmt_hash_checksum_sha256(struct fs_file_t *file, uint8_t *output,
 	ssize_t bytes_read = 0;
 	size_t read_size = CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH_CHUNK_SIZE;
 	uint8_t buffer[CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH_CHUNK_SIZE];
-	hash_ctx_t hash_ctx;
+	psa_hash_operation_t hash_ctx;
 
 	/* Clear variables prior to calculation */
 	*out_len = 0;
 	memset(output, 0, SHA256_DIGEST_SIZE);
 
-	if (hash_setup(&hash_ctx) != SUCCESS_VALUE) {
+	if (hash_setup(&hash_ctx) != PSA_SUCCESS) {
 		goto teardown;
 	}
 
@@ -63,7 +53,7 @@ static int fs_mgmt_hash_checksum_sha256(struct fs_file_t *file, uint8_t *output,
 			/* Failed to read file data */
 			goto teardown;
 		} else if (bytes_read > 0) {
-			if (hash_update(&hash_ctx, buffer, bytes_read) != SUCCESS_VALUE) {
+			if (hash_update(&hash_ctx, buffer, bytes_read) != PSA_SUCCESS) {
 				goto teardown;
 			}
 
@@ -72,7 +62,7 @@ static int fs_mgmt_hash_checksum_sha256(struct fs_file_t *file, uint8_t *output,
 	} while (bytes_read > 0 && *out_len < len);
 
 	/* Finalise SHA256 hash calculation and store output in provided output buffer */
-	if (hash_finish(&hash_ctx, output) == SUCCESS_VALUE) {
+	if (hash_finish(&hash_ctx, output) == PSA_SUCCESS) {
 		rc = 0;
 	}
 
@@ -99,8 +89,6 @@ void fs_mgmt_hash_checksum_unregister_sha256(void)
 	fs_mgmt_hash_checksum_unregister_group(&sha256);
 }
 
-#ifdef CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT
-
 static int hash_setup(psa_hash_operation_t *ctx)
 {
 	*ctx = psa_hash_operation_init();
@@ -120,25 +108,3 @@ static void hash_teardown(psa_hash_operation_t *ctx)
 {
 	psa_hash_abort(ctx);
 }
-
-#else
-
-static int hash_setup(mbedtls_sha256_context *ctx)
-{
-	mbedtls_sha256_init(ctx);
-	return mbedtls_sha256_starts(ctx, false);
-}
-static int hash_update(mbedtls_sha256_context *ctx, const uint8_t *input, size_t ilen)
-{
-	return mbedtls_sha256_update(ctx, input, ilen);
-}
-static int hash_finish(mbedtls_sha256_context *ctx, uint8_t *output)
-{
-	return mbedtls_sha256_finish(ctx, output);
-}
-static void hash_teardown(mbedtls_sha256_context *ctx)
-{
-	mbedtls_sha256_free(ctx);
-}
-
-#endif /* CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT */
