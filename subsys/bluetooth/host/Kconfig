@@ -732,6 +732,18 @@ config BT_FIXED_PASSKEY
 	  bt_passkey_set() API to set a fixed passkey. If set, the
 	  pairing_confirm() callback will be called for all incoming pairings.
 
+config BT_ONE_TIME_PASSKEY
+	bool "Use a user-provided passkey for pairing"
+	help
+	  This option allows the application to provide a passkey for pairing.
+	  The passkey can be set using the bt_passkey_set() API, and will be used only once before
+	  being cleared. The user can monitor that the passkey has been used through the
+	  @ref bt_conn_auth_info_cb.pairing_complete and @ref bt_conn_auth_info_cb.pairing_failed
+	  callbacks (the key will be cleared whether or not the pairing is successful). If set, the
+	  pairing_confirm() callback will be called for all incoming pairings.
+
+	  WARNING: It is the responsibility of the application to use random and unique keys.
+
 config BT_USE_DEBUG_KEYS
 	bool "Security Manager Debug Mode"
 	help

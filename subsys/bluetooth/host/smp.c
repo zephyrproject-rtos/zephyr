@@ -224,9 +224,12 @@ struct bt_smp {
 
 static unsigned int fixed_passkey = BT_PASSKEY_INVALID;
 
-#define DISPLAY_FIXED(smp) (IS_ENABLED(CONFIG_BT_FIXED_PASSKEY) && \
-			    fixed_passkey != BT_PASSKEY_INVALID && \
-			    (smp)->method == PASSKEY_DISPLAY)
+/* TODO this might need to be revised as fixed_passkey is cleared after use when using
+ *CONFIG_BT_ONE_TIME_PASSKEY.
+ */
+#define DISPLAY_FIXED(smp)                                                                         \
+	((IS_ENABLED(CONFIG_BT_FIXED_PASSKEY) || IS_ENABLED(CONFIG_BT_ONE_TIME_PASSKEY)) &&        \
+	 fixed_passkey != BT_PASSKEY_INVALID && (smp)->method == PASSKEY_DISPLAY)
 
 #if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
 /* based on table 2.8 Core Spec 2.3.5.1 Vol. 3 Part H */
@@ -364,7 +367,8 @@ static uint8_t get_io_capa(struct bt_smp *smp)
 	}
 
 	if (smp_auth_cb->passkey_entry) {
-		if (IS_ENABLED(CONFIG_BT_FIXED_PASSKEY) &&
+		if ((IS_ENABLED(CONFIG_BT_FIXED_PASSKEY) ||
+		     IS_ENABLED(CONFIG_BT_ONE_TIME_PASSKEY)) &&
 		    fixed_passkey != BT_PASSKEY_INVALID) {
 			return BT_SMP_IO_KEYBOARD_DISPLAY;
 		} else {
@@ -377,7 +381,7 @@ static uint8_t get_io_capa(struct bt_smp *smp)
 	}
 
 no_callbacks:
-	if (IS_ENABLED(CONFIG_BT_FIXED_PASSKEY) &&
+	if ((IS_ENABLED(CONFIG_BT_FIXED_PASSKEY) || IS_ENABLED(CONFIG_BT_ONE_TIME_PASSKEY)) &&
 	    fixed_passkey != BT_PASSKEY_INVALID) {
 		return BT_SMP_IO_DISPLAY_ONLY;
 	} else {
@@ -2504,10 +2508,15 @@ static uint8_t legacy_request_tk(struct bt_smp *smp)
 
 		break;
 	case PASSKEY_DISPLAY:
-		if (IS_ENABLED(CONFIG_BT_FIXED_PASSKEY) &&
+		if ((IS_ENABLED(CONFIG_BT_FIXED_PASSKEY) ||
+		     IS_ENABLED(CONFIG_BT_ONE_TIME_PASSKEY)) &&
 		    fixed_passkey != BT_PASSKEY_INVALID) {
 			passkey = fixed_passkey;
-		} else  {
+
+			if (IS_ENABLED(CONFIG_BT_ONE_TIME_PASSKEY)) {
+				fixed_passkey = BT_PASSKEY_INVALID;
+			}
+		} else {
 			if (bt_rand(&passkey, sizeof(passkey))) {
 				return BT_SMP_ERR_UNSPECIFIED;
 			}
@@ -4430,9 +4439,13 @@ __maybe_unused static uint8_t display_passkey(struct bt_smp *smp)
 	struct bt_conn *conn = smp->chan.chan.conn;
 	const struct bt_conn_auth_cb *smp_auth_cb = latch_auth_cb(smp);
 
-	if (IS_ENABLED(CONFIG_BT_FIXED_PASSKEY) &&
+	if ((IS_ENABLED(CONFIG_BT_FIXED_PASSKEY) || IS_ENABLED(CONFIG_BT_ONE_TIME_PASSKEY)) &&
 	    fixed_passkey != BT_PASSKEY_INVALID) {
 		smp->passkey = fixed_passkey;
+
+		if (IS_ENABLED(CONFIG_BT_ONE_TIME_PASSKEY)) {
+			fixed_passkey = BT_PASSKEY_INVALID;
+		}
 	} else {
 		if (bt_rand(&smp->passkey, sizeof(smp->passkey))) {
 			return BT_SMP_ERR_UNSPECIFIED;
@@ -6169,7 +6182,7 @@ int bt_smp_auth_pairing_confirm(struct bt_conn *conn)
 }
 #endif /* !CONFIG_BT_SMP_SC_PAIR_ONLY */
 
-#if defined(CONFIG_BT_FIXED_PASSKEY)
+#if defined(CONFIG_BT_FIXED_PASSKEY) || defined(CONFIG_BT_ONE_TIME_PASSKEY)
 int bt_passkey_set(unsigned int passkey)
 {
 	if (passkey == BT_PASSKEY_INVALID) {
@@ -6184,7 +6197,7 @@ int bt_passkey_set(unsigned int passkey)
 	fixed_passkey = passkey;
 	return 0;
 }
-#endif /* CONFIG_BT_FIXED_PASSKEY */
+#endif /* CONFIG_BT_FIXED_PASSKEY || CONFIG_BT_ONE_TIME_PASSKEY */
 
 int bt_smp_start_security(struct bt_conn *conn)
 {
