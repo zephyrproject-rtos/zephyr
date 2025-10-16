@@ -9,10 +9,10 @@
 
 LOG_MODULE_REGISTER(scmi_mbox);
 
-static void scmi_mbox_cb(const struct device *mbox,
-			 mbox_channel_id_t channel_id,
-			 void *user_data,
-			 struct mbox_msg *data)
+static void scmi_mbox_tx_reply_cb(const struct device *mbox,
+		mbox_channel_id_t channel_id,
+		void *user_data,
+		struct mbox_msg *data)
 {
 	struct scmi_channel *scmi_chan = user_data;
 
@@ -81,7 +81,7 @@ static int scmi_mbox_setup_chan(const struct device *transport,
 		tx_reply = &mbox_chan->tx;
 	}
 
-	ret = mbox_register_callback_dt(tx_reply, scmi_mbox_cb, chan);
+	ret = mbox_register_callback_dt(tx_reply, scmi_mbox_tx_reply_cb, chan);
 	if (ret < 0) {
 		LOG_ERR("failed to register tx reply cb");
 		return ret;
