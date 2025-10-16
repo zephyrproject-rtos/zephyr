@@ -12,7 +12,7 @@
 
 / {
 	model = "WeAct Studio ESP32-S3-B APPCPU";
-	compatible = "espressif,esp32s3";
+	compatible = "weact,esp32s3-b";
 
 	chosen {
 		zephyr,sram = &sram1;
