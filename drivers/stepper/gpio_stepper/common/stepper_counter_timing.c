@@ -4,24 +4,26 @@
  */
 
 #include <zephyr/drivers/counter.h>
-#include "step_dir_stepper_common.h"
+#include "gpio_stepper_common.h"
+#include "stepper_timing_source.h"
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_DECLARE(step_dir_stepper);
+LOG_MODULE_DECLARE(gpio_stepper);
 
 static void step_counter_top_interrupt(const struct device *dev, void *user_data)
 {
 	ARG_UNUSED(dev);
-	struct step_dir_stepper_common_data *data = user_data;
+	struct gpio_stepper_common_data *data = user_data;
+	const struct gpio_stepper_common_config *config = data->dev->config;
 
-	stepper_handle_timing_signal(data->dev);
+	config->timing_source_cb(data->dev);
 }
 
 int step_counter_timing_source_update(const struct device *dev,
 				      const uint64_t microstep_interval_ns)
 {
-	const struct step_dir_stepper_common_config *config = dev->config;
-	struct step_dir_stepper_common_data *data = dev->data;
+	const struct gpio_stepper_common_config *config = dev->config;
+	struct gpio_stepper_common_data *data = dev->data;
 	int ret;
 
 	if (microstep_interval_ns == 0) {
@@ -48,8 +50,8 @@ int step_counter_timing_source_update(const struct device *dev,
 
 int step_counter_timing_source_start(const struct device *dev)
 {
-	const struct step_dir_stepper_common_config *config = dev->config;
-	struct step_dir_stepper_common_data *data = dev->data;
+	const struct gpio_stepper_common_config *config = dev->config;
+	struct gpio_stepper_common_data *data = dev->data;
 	int ret;
 
 	ret = counter_start(config->counter);
@@ -65,8 +67,8 @@ int step_counter_timing_source_start(const struct device *dev)
 
 int step_counter_timing_source_stop(const struct device *dev)
 {
-	const struct step_dir_stepper_common_config *config = dev->config;
-	struct step_dir_stepper_common_data *data = dev->data;
+	const struct gpio_stepper_common_config *config = dev->config;
+	struct gpio_stepper_common_data *data = dev->data;
 	int ret;
 
 	ret = counter_stop(config->counter);
@@ -88,15 +90,15 @@ bool step_counter_timing_source_needs_reschedule(const struct device *dev)
 
 bool step_counter_timing_source_is_running(const struct device *dev)
 {
-	struct step_dir_stepper_common_data *data = dev->data;
+	struct gpio_stepper_common_data *data = dev->data;
 
 	return data->counter_running;
 }
 
 int step_counter_timing_source_init(const struct device *dev)
 {
-	const struct step_dir_stepper_common_config *config = dev->config;
-	struct step_dir_stepper_common_data *data = dev->data;
+	const struct gpio_stepper_common_config *config = dev->config;
+	struct gpio_stepper_common_data *data = dev->data;
 
 	if (!device_is_ready(config->counter)) {
 		LOG_ERR("Counter device is not ready");

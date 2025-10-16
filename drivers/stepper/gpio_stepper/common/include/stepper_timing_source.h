@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVER_STEPPER_STEP_DIR_STEPPER_TIMING_SOURCE_H_
-#define ZEPHYR_DRIVER_STEPPER_STEP_DIR_STEPPER_TIMING_SOURCE_H_
+#ifndef ZEPHYR_DRIVER_STEPPER_GPIO_STEPPER_STEPPER_TIMING_SOURCE_H_
+#define ZEPHYR_DRIVER_STEPPER_GPIO_STEPPER_STEPPER_TIMING_SOURCE_H_
 
 #include <zephyr/device.h>
 
@@ -72,8 +72,8 @@ struct stepper_timing_source_api {
 };
 
 extern const struct stepper_timing_source_api step_work_timing_source_api;
-#ifdef CONFIG_STEP_DIR_STEPPER_COUNTER_TIMING
+#ifdef CONFIG_GPIO_STEPPER_COUNTER_TIMING
 extern const struct stepper_timing_source_api step_counter_timing_source_api;
-#endif /* CONFIG_STEP_DIR_STEPPER_COUNTER_TIMING */
+#endif /* CONFIG_GPIO_STEPPER_COUNTER_TIMING */
 
-#endif /* ZEPHYR_DRIVER_STEPPER_STEP_DIR_STEPPER_TIMING_SOURCE_H_ */
+#endif /* ZEPHYR_DRIVER_STEPPER_GPIO_STEPPER_STEPPER_TIMING_SOURCE_H_ */

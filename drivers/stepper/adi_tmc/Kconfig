@@ -7,4 +7,4 @@ rsource "bus/Kconfig"
 
 rsource "Kconfig.tmc22xx"
 rsource "Kconfig.tmc50xx"
-rsource "tmc51xx/Kconfig.tmc51xx"
+rsource "Kconfig.tmc51xx"
