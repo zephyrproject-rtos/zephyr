@@ -367,7 +367,15 @@ static int hfp_ag_next_step(struct bt_hfp_ag *ag, bt_hfp_ag_tx_cb_t cb, void *us
 	tx->user_data = user_data;
 	tx->err = 0;
 
-	k_fifo_put(&ag_tx_notify, tx);
+	hfp_ag_lock(ag);
+	if (atomic_test_bit(ag->flags, BT_HFP_AG_AT_PROCESS)) {
+		sys_slist_append(&ag->tx_submit_pending, &tx->node);
+	} else {
+		sys_slist_append(&ag->tx_pending, &tx->node);
+		/* Always active tx work */
+		k_work_reschedule(&ag->tx_work, K_NO_WAIT);
+	}
+	hfp_ag_unlock(ag);
 
 	return 0;
 }
@@ -835,6 +843,70 @@ static int hfp_ag_send(struct bt_hfp_ag *ag, struct bt_ag_tx *tx)
 	return err;
 }
 
+static void bt_ag_notify_work(struct k_work *work);
+
+struct k_work ag_notify_work = Z_WORK_INITIALIZER(bt_ag_notify_work);
+
+static void bt_ag_notify_work(struct k_work *work)
+{
+	struct bt_ag_tx *tx;
+	bt_hfp_ag_tx_cb_t cb;
+	struct bt_hfp_ag *ag;
+	void *user_data;
+	bt_hfp_state_t state;
+	int err;
+
+	tx = (struct bt_ag_tx *)k_fifo_get(&ag_tx_notify, K_NO_WAIT);
+
+	if (tx == NULL) {
+		return;
+	}
+
+	cb = tx->cb;
+	ag = tx->ag;
+	user_data = tx->user_data;
+	err = tx->err;
+
+	bt_ag_tx_free(tx);
+
+	if (err < 0) {
+		state = ag->state;
+		if ((state != BT_HFP_DISCONNECTED) && (state != BT_HFP_DISCONNECTING)) {
+			bt_hfp_ag_set_state(ag, BT_HFP_DISCONNECTING);
+			bt_rfcomm_dlc_disconnect(&ag->rfcomm_dlc);
+		}
+	}
+
+	if (cb != NULL) {
+		cb(ag, user_data);
+	}
+
+	if (!k_fifo_is_empty(&ag_tx_notify)) {
+		/* Submit worker if the fifo ag_tx_notify is not empty. */
+		k_work_submit(&ag_notify_work);
+	}
+}
+
+static void bt_ag_tx_notify(struct bt_ag_tx *tx)
+{
+	k_fifo_put(&ag_tx_notify, tx);
+
+	k_work_submit(&ag_notify_work);
+}
+
+static void bt_ag_tx_done_with_err(struct bt_hfp_ag *ag, struct bt_ag_tx *tx, int err)
+{
+	sys_slist_find_and_remove(&ag->tx_pending, &tx->node);
+	tx->err = err;
+	bt_ag_tx_notify(tx);
+	/* Clear the tx ongoing flag */
+	if (!atomic_test_and_clear_bit(ag->flags, BT_HFP_AG_TX_ONGOING)) {
+		LOG_WRN("tx ongoing flag is not set");
+	}
+	/* Due to the work is done, restart the tx work */
+	k_work_reschedule(&ag->tx_work, K_NO_WAIT);
+}
+
 static void bt_ag_tx_work(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
@@ -859,20 +931,21 @@ static void bt_ag_tx_work(struct k_work *work)
 	tx = CONTAINER_OF(node, struct bt_ag_tx, node);
 
 	if (!atomic_test_and_set_bit(ag->flags, BT_HFP_AG_TX_ONGOING)) {
+		int err;
+
 		LOG_DBG("AG %p sending tx %p", ag, tx);
-		int err = hfp_ag_send(ag, tx);
+
+		if (tx->buf == NULL) {
+			/* Goto next state and remove the current tx */
+			bt_ag_tx_done_with_err(ag, tx, 0);
+			goto unlock;
+		}
+
+		err = hfp_ag_send(ag, tx);
 
 		if (err < 0) {
 			LOG_ERR("Rfcomm send error :(%d)", err);
-			sys_slist_find_and_remove(&ag->tx_pending, &tx->node);
-			tx->err = err;
-			k_fifo_put(&ag_tx_notify, tx);
-			/* Clear the tx ongoing flag */
-			if (!atomic_test_and_clear_bit(ag->flags, BT_HFP_AG_TX_ONGOING)) {
-				LOG_WRN("tx ongoing flag is not set");
-			}
-			/* Due to the work is failed, restart the tx work */
-			k_work_reschedule(&ag->tx_work, K_NO_WAIT);
+			bt_ag_tx_done_with_err(ag, tx, err);
 		}
 	}
 
@@ -3458,29 +3531,47 @@ static void hfp_ag_connected(struct bt_rfcomm_dlc *dlc)
 	LOG_DBG("AG %p", ag);
 }
 
+static struct bt_ag_tx *ag_get_tx(struct bt_hfp_ag *ag, sys_slist_t *list)
+{
+	sys_snode_t *node;
+
+	hfp_ag_lock(ag);
+	node = sys_slist_get(list);
+	hfp_ag_unlock(ag);
+	if (node == NULL) {
+		return NULL;
+	}
+
+	return CONTAINER_OF(node, struct bt_ag_tx, node);
+}
+
 static void hfp_ag_disconnected(struct bt_rfcomm_dlc *dlc)
 {
 	struct bt_hfp_ag *ag = CONTAINER_OF(dlc, struct bt_hfp_ag, rfcomm_dlc);
-	sys_snode_t *node;
 	struct bt_ag_tx *tx;
 	struct bt_hfp_ag_call *call;
 
 	k_work_cancel_delayable(&ag->tx_work);
 
-	hfp_ag_lock(ag);
-	node = sys_slist_get(&ag->tx_pending);
-	hfp_ag_unlock(ag);
-	tx = CONTAINER_OF(node, struct bt_ag_tx, node);
-	while (tx) {
-		if (tx->buf && !atomic_test_and_clear_bit(ag->flags, BT_HFP_AG_TX_ONGOING)) {
+	tx = ag_get_tx(ag, &ag->tx_pending);
+	while (tx != NULL) {
+		if ((tx->buf != NULL) &&
+		    !atomic_test_and_clear_bit(ag->flags, BT_HFP_AG_TX_ONGOING)) {
 			net_buf_unref(tx->buf);
 		}
 		tx->err = -ESHUTDOWN;
-		k_fifo_put(&ag_tx_notify, tx);
-		hfp_ag_lock(ag);
-		node = sys_slist_get(&ag->tx_pending);
-		hfp_ag_unlock(ag);
-		tx = CONTAINER_OF(node, struct bt_ag_tx, node);
+		bt_ag_tx_notify(tx);
+		tx = ag_get_tx(ag, &ag->tx_pending);
+	}
+
+	tx = ag_get_tx(ag, &ag->tx_submit_pending);
+	while (tx != NULL) {
+		if (tx->buf != NULL) {
+			net_buf_unref(tx->buf);
+		}
+		tx->err = -ESHUTDOWN;
+		bt_ag_tx_notify(tx);
+		tx = ag_get_tx(ag, &ag->tx_submit_pending);
 	}
 
 	bt_hfp_ag_set_state(ag, BT_HFP_DISCONNECTED);
@@ -3502,6 +3593,31 @@ static void hfp_ag_disconnected(struct bt_rfcomm_dlc *dlc)
 	LOG_DBG("AG %p", ag);
 }
 
+static void hfp_ag_preprocess_at_cmd(struct bt_hfp_ag *ag)
+{
+	atomic_set_bit(ag->flags, BT_HFP_AG_AT_PROCESS);
+}
+
+static void hfp_ag_postprocess_at_cmd(struct bt_hfp_ag *ag)
+{
+	sys_snode_t *node;
+
+	if (!atomic_test_and_clear_bit(ag->flags, BT_HFP_AG_AT_PROCESS)) {
+		LOG_WRN("No AT CMD is processing");
+	}
+
+	hfp_ag_lock(ag);
+	node = sys_slist_get(&ag->tx_submit_pending);
+	while (node != NULL) {
+		sys_slist_append(&ag->tx_pending, node);
+		node = sys_slist_get(&ag->tx_submit_pending);
+	}
+	hfp_ag_unlock(ag);
+
+	/* Always active tx work */
+	k_work_reschedule(&ag->tx_work, K_NO_WAIT);
+}
+
 static void hfp_ag_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 {
 	struct bt_hfp_ag *ag = CONTAINER_OF(dlc, struct bt_hfp_ag, rfcomm_dlc);
@@ -3511,6 +3627,8 @@ static void hfp_ag_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 	int err = -ENOEXEC;
 
 	LOG_HEXDUMP_DBG(data, len, "Received:");
+
+	hfp_ag_preprocess_at_cmd(ag);
 
 	for (uint32_t index = 0; index < ARRAY_SIZE(cmd_handlers); index++) {
 		if (strlen(cmd_handlers[index].cmd) > len) {
@@ -3545,45 +3663,10 @@ static void hfp_ag_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 		err = hfp_ag_send_data(ag, cb, NULL, "\r\n%s\r\n", (err == 0) ? "OK" : "ERROR");
 	}
 
+	hfp_ag_postprocess_at_cmd(ag);
+
 	if (err != 0) {
 		LOG_ERR("HFP AG send response err :(%d)", err);
-	}
-}
-
-static void bt_hfp_ag_thread(void *p1, void *p2, void *p3)
-{
-	struct bt_ag_tx *tx;
-	bt_hfp_ag_tx_cb_t cb;
-	struct bt_hfp_ag *ag;
-	void *user_data;
-	bt_hfp_state_t state;
-	int err;
-
-	while (true) {
-		tx = (struct bt_ag_tx *)k_fifo_get(&ag_tx_notify, K_FOREVER);
-
-		if (tx == NULL) {
-			continue;
-		}
-
-		cb = tx->cb;
-		ag = tx->ag;
-		user_data = tx->user_data;
-		err = tx->err;
-
-		bt_ag_tx_free(tx);
-
-		if (err < 0) {
-			state = ag->state;
-			if ((state != BT_HFP_DISCONNECTED) && (state != BT_HFP_DISCONNECTING)) {
-				bt_hfp_ag_set_state(ag, BT_HFP_DISCONNECTING);
-				bt_rfcomm_dlc_disconnect(&ag->rfcomm_dlc);
-			}
-		}
-
-		if (cb) {
-			cb(ag, user_data);
-		}
 	}
 }
 
@@ -3615,7 +3698,7 @@ static void hfp_ag_sent(struct bt_rfcomm_dlc *dlc, int err)
 	k_work_reschedule(&ag->tx_work, K_NO_WAIT);
 
 	tx->err = err;
-	k_fifo_put(&ag_tx_notify, tx);
+	bt_ag_tx_notify(tx);
 }
 
 static const char *bt_ag_get_call_state_string(bt_hfp_call_state_t call_state)
@@ -3793,6 +3876,7 @@ static void bt_ag_send_ok_code(struct bt_hfp_ag *ag)
 	if (hfp_ag_send_data(ag, NULL, NULL, "\r\nOK\r\n") != 0) {
 		LOG_ERR("Failed to send OK code");
 	}
+	hfp_ag_postprocess_at_cmd(ag);
 }
 
 static void bt_ag_ongoing_call_work(struct k_work *work)
@@ -3811,8 +3895,6 @@ static void bt_ag_ongoing_call_work(struct k_work *work)
 	bt_ag_send_ok_code(ag);
 }
 
-static K_KERNEL_STACK_MEMBER(ag_thread_stack, CONFIG_BT_HFP_AG_THREAD_STACK_SIZE);
-
 static struct bt_hfp_ag *hfp_ag_create(struct bt_conn *conn)
 {
 	static struct bt_rfcomm_dlc_ops ops = {
@@ -3821,29 +3903,10 @@ static struct bt_hfp_ag *hfp_ag_create(struct bt_conn *conn)
 		.recv = hfp_ag_recv,
 		.sent = hfp_ag_sent,
 	};
-	static k_tid_t ag_thread_id;
-	static struct k_thread ag_thread;
 	size_t index;
 	struct bt_hfp_ag *ag;
 
 	LOG_DBG("conn %p", conn);
-
-	if (ag_thread_id == NULL) {
-
-		k_fifo_init(&ag_tx_free);
-		k_fifo_init(&ag_tx_notify);
-
-		for (index = 0; index < ARRAY_SIZE(ag_tx); index++) {
-			k_fifo_put(&ag_tx_free, &ag_tx[index]);
-		}
-
-		ag_thread_id = k_thread_create(
-			&ag_thread, ag_thread_stack, K_KERNEL_STACK_SIZEOF(ag_thread_stack),
-			bt_hfp_ag_thread, NULL, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BT_HFP_AG_THREAD_PRIO), 0, K_NO_WAIT);
-		__ASSERT(ag_thread_id, "Cannot create thread for AG");
-		k_thread_name_set(ag_thread_id, "HFP AG");
-	}
 
 	index = (size_t)bt_conn_index(conn);
 	__ASSERT(index < ARRAY_SIZE(bt_hfp_ag_pool), "Conn index is out of bounds");
@@ -3857,6 +3920,7 @@ static struct bt_hfp_ag *hfp_ag_create(struct bt_conn *conn)
 	(void)memset(ag, 0, sizeof(struct bt_hfp_ag));
 
 	sys_slist_init(&ag->tx_pending);
+	sys_slist_init(&ag->tx_submit_pending);
 
 	k_sem_init(&ag->lock, 1, 1);
 
@@ -4053,6 +4117,13 @@ static void hfp_ag_init(void)
 	bt_sdp_register_service(&hfp_ag_rec);
 
 	bt_sco_conn_cb_register(&ag_sco_conn_cb);
+
+	k_fifo_init(&ag_tx_free);
+	k_fifo_init(&ag_tx_notify);
+
+	ARRAY_FOR_EACH(ag_tx, index) {
+		k_fifo_put(&ag_tx_free, &ag_tx[index]);
+	}
 }
 
 int bt_hfp_ag_register(struct bt_hfp_ag_cb *cb)
