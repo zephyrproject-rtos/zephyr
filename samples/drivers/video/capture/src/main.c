@@ -202,9 +202,11 @@ static inline void video_display_frame(const struct device *const display_dev,
 }
 #endif
 
-/* TODO: handle disconnection,etc.. */
 static void video_uvc_device_signal_handler(void)
 {
+	/* TODO: This function is intentionally left empty.
+	 * Implementation may be added in future if needed.
+	 */
 }
 
 int main(void)
@@ -277,270 +279,271 @@ int main(void)
 		}
 
 		k_poll_signal_check(&sig, &signaled, &result);
+		if (!signaled) {
+			continue;
+		}
 
-		if (signaled) {
-			k_poll_signal_reset(&sig);
+		k_poll_signal_reset(&sig);
 
-			switch (result) {
-			case USBH_DEVICE_CONNECTED:
-				LOG_INF("UVC device connected successfully!");
+		switch (result) {
+		case USBH_DEVICE_CONNECTED:
+			LOG_INF("UVC device connected successfully!");
 
-				/* Get capabilities */
-				caps.type = type;
-				if (video_get_caps(uvc_host, &caps)) {
-					LOG_ERR("Unable to retrieve video capabilities");
-					break;
-				}
+			/* Get capabilities */
+			caps.type = type;
+			if (video_get_caps(uvc_host, &caps)) {
+				LOG_ERR("Unable to retrieve video capabilities");
+				break;
+			}
 
-				LOG_INF("- Capabilities:");
-				i = 0;
-				while (caps.format_caps[i].pixelformat) {
-					const struct video_format_cap *fcap = &caps.format_caps[i];
-					/* fourcc to string */
-					LOG_INF("  %s width [%u; %u; %u] height [%u; %u; %u]",
-						VIDEO_FOURCC_TO_STR(fcap->pixelformat),
-						fcap->width_min, fcap->width_max, fcap->width_step,
-						fcap->height_min, fcap->height_max, fcap->height_step);
-					i++;
-				}
+			LOG_INF("- Capabilities:");
+			i = 0;
+			while (caps.format_caps[i].pixelformat) {
+				const struct video_format_cap *fcap = &caps.format_caps[i];
+				/* fourcc to string */
+				LOG_INF("  %s width [%u; %u; %u] height [%u; %u; %u]",
+					VIDEO_FOURCC_TO_STR(fcap->pixelformat),
+					fcap->width_min, fcap->width_max, fcap->width_step,
+					fcap->height_min, fcap->height_max, fcap->height_step);
+				i++;
+			}
 
-				/* Get default/native format */
-				fmt.type = type;
-				if (video_get_format(uvc_host, &fmt)) {
-					LOG_ERR("Unable to retrieve video format");
-					break;
-				}
+			/* Get default/native format */
+			fmt.type = type;
+			if (video_get_format(uvc_host, &fmt)) {
+				LOG_ERR("Unable to retrieve video format");
+				break;
+			}
 
-				/* Set the crop setting if necessary */
+			/* Set the crop setting if necessary */
 #if CONFIG_VIDEO_SOURCE_CROP_WIDTH && CONFIG_VIDEO_SOURCE_CROP_HEIGHT
-				sel.target = VIDEO_SEL_TGT_CROP;
-				sel.rect.left = CONFIG_VIDEO_SOURCE_CROP_LEFT;
-				sel.rect.top = CONFIG_VIDEO_SOURCE_CROP_TOP;
-				sel.rect.width = CONFIG_VIDEO_SOURCE_CROP_WIDTH;
-				sel.rect.height = CONFIG_VIDEO_SOURCE_CROP_HEIGHT;
-				if (video_set_selection(uvc_host, &sel)) {
-					LOG_ERR("Unable to set selection crop");
-					break;
-				}
-				LOG_INF("Selection crop set to (%u,%u)/%ux%u",
-					sel.rect.left, sel.rect.top, sel.rect.width, sel.rect.height);
+			sel.target = VIDEO_SEL_TGT_CROP;
+			sel.rect.left = CONFIG_VIDEO_SOURCE_CROP_LEFT;
+			sel.rect.top = CONFIG_VIDEO_SOURCE_CROP_TOP;
+			sel.rect.width = CONFIG_VIDEO_SOURCE_CROP_WIDTH;
+			sel.rect.height = CONFIG_VIDEO_SOURCE_CROP_HEIGHT;
+			if (video_set_selection(uvc_host, &sel)) {
+				LOG_ERR("Unable to set selection crop");
+				break;
+			}
+			LOG_INF("Selection crop set to (%u,%u)/%ux%u",
+				sel.rect.left, sel.rect.top, sel.rect.width, sel.rect.height);
 #endif
 
 #if CONFIG_VIDEO_FRAME_HEIGHT || CONFIG_VIDEO_FRAME_WIDTH
 #if CONFIG_VIDEO_FRAME_HEIGHT
-				fmt.height = CONFIG_VIDEO_FRAME_HEIGHT;
+			fmt.height = CONFIG_VIDEO_FRAME_HEIGHT;
 #endif
 
 #if CONFIG_VIDEO_FRAME_WIDTH
-				fmt.width = CONFIG_VIDEO_FRAME_WIDTH;
+			fmt.width = CONFIG_VIDEO_FRAME_WIDTH;
 #endif
 
-				/*
-				 * Check (if possible) if targeted size is same as crop
-				 * and if compose is necessary
-				 */
-				sel.target = VIDEO_SEL_TGT_CROP;
-				err = video_get_selection(uvc_host, &sel);
+			/*
+				* Check (if possible) if targeted size is same as crop
+				* and if compose is necessary
+				*/
+			sel.target = VIDEO_SEL_TGT_CROP;
+			err = video_get_selection(uvc_host, &sel);
+			if (err < 0 && err != -ENOSYS) {
+				LOG_ERR("Unable to get selection crop");
+				break;
+			}
+
+			if (err == 0 && (sel.rect.width != fmt.width || sel.rect.height != fmt.height)) {
+				sel.target = VIDEO_SEL_TGT_COMPOSE;
+				sel.rect.left = 0;
+				sel.rect.top = 0;
+				sel.rect.width = fmt.width;
+				sel.rect.height = fmt.height;
+				err = video_set_selection(uvc_host, &sel);
 				if (err < 0 && err != -ENOSYS) {
-					LOG_ERR("Unable to get selection crop");
+					LOG_ERR("Unable to set selection compose");
 					break;
 				}
-
-				if (err == 0 && (sel.rect.width != fmt.width || sel.rect.height != fmt.height)) {
-					sel.target = VIDEO_SEL_TGT_COMPOSE;
-					sel.rect.left = 0;
-					sel.rect.top = 0;
-					sel.rect.width = fmt.width;
-					sel.rect.height = fmt.height;
-					err = video_set_selection(uvc_host, &sel);
-					if (err < 0 && err != -ENOSYS) {
-						LOG_ERR("Unable to set selection compose");
-						break;
-					}
-				}
+			}
 #endif
 
-				if (strcmp(CONFIG_VIDEO_PIXEL_FORMAT, "")) {
-					fmt.pixelformat = VIDEO_FOURCC_FROM_STR(CONFIG_VIDEO_PIXEL_FORMAT);
-				}
+			if (strcmp(CONFIG_VIDEO_PIXEL_FORMAT, "")) {
+				fmt.pixelformat = VIDEO_FOURCC_FROM_STR(CONFIG_VIDEO_PIXEL_FORMAT);
+			}
 #if CONFIG_VIDEO_FRAME_WIDTH > 0
-				fmt.width = CONFIG_VIDEO_FRAME_WIDTH;
+			fmt.width = CONFIG_VIDEO_FRAME_WIDTH;
 #endif
 
 #if CONFIG_VIDEO_FRAME_HEIGHT > 0
-				fmt.height = CONFIG_VIDEO_FRAME_HEIGHT;
+			fmt.height = CONFIG_VIDEO_FRAME_HEIGHT;
 #endif
 
-				LOG_INF("- Video format: %s %ux%u",
-					VIDEO_FOURCC_TO_STR(fmt.pixelformat), fmt.width, fmt.height);
+			LOG_INF("- Video format: %s %ux%u",
+				VIDEO_FOURCC_TO_STR(fmt.pixelformat), fmt.width, fmt.height);
 
-				if (video_set_format(uvc_host, &fmt)) {
-					LOG_ERR("Unable to set format");
-					break;
-				}
-
-				if (!video_get_frmival(uvc_host, &frmival)) {
-					LOG_INF("- Default frame rate : %f fps",
-						1.0 * frmival.denominator / frmival.numerator);
-				}
-
-				LOG_INF("- Supported frame intervals for the default format:");
-				memset(&fie, 0, sizeof(fie));
-				fie.format = &fmt;
-				while (video_enum_frmival(uvc_host, &fie) == 0) {
-					if (fie.type == VIDEO_FRMIVAL_TYPE_DISCRETE) {
-						LOG_INF("   %u/%u", fie.discrete.numerator, fie.discrete.denominator);
-					} else {
-						LOG_INF("   [min = %u/%u; max = %u/%u; step = %u/%u]",
-							fie.stepwise.min.numerator, fie.stepwise.min.denominator,
-							fie.stepwise.max.numerator, fie.stepwise.max.denominator,
-							fie.stepwise.step.numerator, fie.stepwise.step.denominator);
-					}
-					fie.index++;
-				}
-
-#if CONFIG_VIDEO_TARGET_FPS > 0
-				frmival.denominator = CONFIG_VIDEO_TARGET_FPS;
-				frmival.numerator = 1;
-				if (!video_set_frmival(uvc_host, &frmival)) {
-					/* Get the actual frame rate that was set */
-					if (!video_get_frmival(uvc_host, &frmival)) {
-						LOG_INF("- Target frame rate set to: %f fps",
-							1.0 * frmival.denominator / frmival.numerator);
-					}
-				}
-#endif
-
-				/* Get supported controls */
-				LOG_INF("- Supported controls:");
-				const struct device *last_dev = NULL;
-				struct video_ctrl_query cq = {.dev = uvc_host, .id = VIDEO_CTRL_FLAG_NEXT_CTRL};
-
-				while (!video_query_ctrl(&cq)) {
-					if (cq.dev != last_dev) {
-						last_dev = cq.dev;
-						LOG_INF("\t\tdevice: %s", cq.dev->name);
-					}
-					video_print_ctrl(&cq);
-					cq.id |= VIDEO_CTRL_FLAG_NEXT_CTRL;
-				}
-
-				/* Set controls */
-				struct video_control ctrl = {.id = VIDEO_CID_HFLIP, .val = 1};
-
-				if (IS_ENABLED(CONFIG_VIDEO_CTRL_HFLIP)) {
-					video_set_ctrl(uvc_host, &ctrl);
-				}
-
-				if (IS_ENABLED(CONFIG_VIDEO_CTRL_VFLIP)) {
-					ctrl.id = VIDEO_CID_VFLIP;
-					video_set_ctrl(uvc_host, &ctrl);
-				}
-
-				if (IS_ENABLED(CONFIG_TEST)) {
-					ctrl.id = VIDEO_CID_TEST_PATTERN;
-					tp_set_ret = video_set_ctrl(uvc_host, &ctrl);
-				}
-
-#if DT_HAS_CHOSEN(zephyr_display)
-				if (!display_configured && device_is_ready(display_dev)) {
-					err = display_setup(display_dev, fmt.pixelformat);
-					if (err) {
-						LOG_ERR("Unable to set up display: %d", err);
-					} else {
-						display_configured = true;
-						LOG_INF("Display configured successfully");
-					}
-				}
-#endif
-
-				/* Size to allocate for each buffer */
-				if (caps.min_line_count == LINE_COUNT_HEIGHT) {
-					bsize = fmt.width * fmt.height * 2;
-				} else {
-					bsize = fmt.pitch * caps.min_line_count;
-				}
-
-				/* Alloc video buffers and enqueue for capture */
-				if (caps.min_vbuf_count > CONFIG_VIDEO_BUFFER_POOL_NUM_MAX ||
-				    bsize > CONFIG_VIDEO_BUFFER_POOL_SZ_MAX) {
-					LOG_ERR("Not enough buffers or memory to start streaming");
-					break;
-				}
-
-				for (i = 0; i < CONFIG_VIDEO_BUFFER_POOL_NUM_MAX; i++) {
-					/*
-					 * For some hardwares, such as the PxP used on i.MX RT1170 to do image rotation,
-					 * buffer alignment is needed in order to achieve the best performance
-					 */
-					vbuf = video_buffer_aligned_alloc(bsize, CONFIG_VIDEO_BUFFER_POOL_ALIGN,
-										K_FOREVER);
-					if (vbuf == NULL) {
-						LOG_ERR("Unable to alloc video buffer");
-						break;
-					}
-					vbuf->type = type;
-					video_enqueue(uvc_host, vbuf);
-				}
-
-				/* enable UVC device streaming */
-				if (video_stream_start(uvc_host, type)) {
-					LOG_ERR("Unable to start capture (interface)");
-					break;
-				}
-
-				/* Delay to wait UVC device ready */
-				k_msleep(500);
-
-				LOG_INF("Capture started");
-				break;
-
-			case USBH_DEVICE_DISCONNECTED:
-				/* TODO: CONFIG_VIDEO_BUFFER_POOL_NUM_MAX is 1 now, consider multiple video buffers */
-				for (i = 0; i < CONFIG_VIDEO_BUFFER_POOL_NUM_MAX; i++) {
-					err = video_dequeue(uvc_host, &vbuf, K_NO_WAIT);
-					if (!err && vbuf) {
-						video_buffer_release(vbuf);
-					}
-				}
-				LOG_INF("UVC device disconnected!");
-				break;
-
-			case VIDEO_BUF_DONE:
-				/* Process completed video buffer */
-				err = video_dequeue(uvc_host, &vbuf, K_FOREVER);
-				if (err) {
-					LOG_ERR("Unable to dequeue video buf");
-					break;
-				}
-
-				LOG_DBG("Got frame %u! size: %u; timestamp %u ms",
-					frame++, vbuf->bytesused, vbuf->timestamp);
-
-#ifdef CONFIG_TEST
-				if (tp_set_ret < 0) {
-					LOG_DBG("Test pattern control was not successful. Skip test");
-				} else if (is_colorbar_ok(vbuf->buffer, fmt)) {
-					LOG_DBG("Pattern OK!\n");
-				}
-#endif
-
-#if DT_HAS_CHOSEN(zephyr_display)
-				if (display_configured) {
-					video_display_frame(display_dev, vbuf, fmt);
-				}
-#endif
-				err = video_enqueue(uvc_host, vbuf);
-				if (err) {
-					LOG_ERR("Unable to requeue video buf");
-					break;
-				}
-				break;
-
-			default:
-				LOG_WRN("Received unknown signal: %d", result);
+			if (video_set_format(uvc_host, &fmt)) {
+				LOG_ERR("Unable to set format");
 				break;
 			}
+
+			if (!video_get_frmival(uvc_host, &frmival)) {
+				LOG_INF("- Default frame rate : %f fps",
+					1.0 * frmival.denominator / frmival.numerator);
+			}
+
+			LOG_INF("- Supported frame intervals for the default format:");
+			memset(&fie, 0, sizeof(fie));
+			fie.format = &fmt;
+			while (video_enum_frmival(uvc_host, &fie) == 0) {
+				if (fie.type == VIDEO_FRMIVAL_TYPE_DISCRETE) {
+					LOG_INF("   %u/%u", fie.discrete.numerator, fie.discrete.denominator);
+				} else {
+					LOG_INF("   [min = %u/%u; max = %u/%u; step = %u/%u]",
+						fie.stepwise.min.numerator, fie.stepwise.min.denominator,
+						fie.stepwise.max.numerator, fie.stepwise.max.denominator,
+						fie.stepwise.step.numerator, fie.stepwise.step.denominator);
+				}
+				fie.index++;
+			}
+
+#if CONFIG_VIDEO_TARGET_FPS > 0
+			frmival.denominator = CONFIG_VIDEO_TARGET_FPS;
+			frmival.numerator = 1;
+			if (!video_set_frmival(uvc_host, &frmival)) {
+				/* Get the actual frame rate that was set */
+				if (!video_get_frmival(uvc_host, &frmival)) {
+					LOG_INF("- Target frame rate set to: %f fps",
+						1.0 * frmival.denominator / frmival.numerator);
+				}
+			}
+#endif
+
+			/* Get supported controls */
+			LOG_INF("- Supported controls:");
+			const struct device *last_dev = NULL;
+			struct video_ctrl_query cq = {.dev = uvc_host, .id = VIDEO_CTRL_FLAG_NEXT_CTRL};
+
+			while (!video_query_ctrl(&cq)) {
+				if (cq.dev != last_dev) {
+					last_dev = cq.dev;
+					LOG_INF("\t\tdevice: %s", cq.dev->name);
+				}
+				video_print_ctrl(&cq);
+				cq.id |= VIDEO_CTRL_FLAG_NEXT_CTRL;
+			}
+
+			/* Set controls */
+			struct video_control ctrl = {.id = VIDEO_CID_HFLIP, .val = 1};
+
+			if (IS_ENABLED(CONFIG_VIDEO_CTRL_HFLIP)) {
+				video_set_ctrl(uvc_host, &ctrl);
+			}
+
+			if (IS_ENABLED(CONFIG_VIDEO_CTRL_VFLIP)) {
+				ctrl.id = VIDEO_CID_VFLIP;
+				video_set_ctrl(uvc_host, &ctrl);
+			}
+
+			if (IS_ENABLED(CONFIG_TEST)) {
+				ctrl.id = VIDEO_CID_TEST_PATTERN;
+				tp_set_ret = video_set_ctrl(uvc_host, &ctrl);
+			}
+
+#if DT_HAS_CHOSEN(zephyr_display)
+			if (!display_configured && device_is_ready(display_dev)) {
+				err = display_setup(display_dev, fmt.pixelformat);
+				if (err) {
+					LOG_ERR("Unable to set up display: %d", err);
+				} else {
+					display_configured = true;
+					LOG_INF("Display configured successfully");
+				}
+			}
+#endif
+
+			/* Size to allocate for each buffer */
+			if (caps.min_line_count == LINE_COUNT_HEIGHT) {
+				bsize = fmt.width * fmt.height * 2;
+			} else {
+				bsize = fmt.pitch * caps.min_line_count;
+			}
+
+			/* Alloc video buffers and enqueue for capture */
+			if (caps.min_vbuf_count > CONFIG_VIDEO_BUFFER_POOL_NUM_MAX ||
+				bsize > CONFIG_VIDEO_BUFFER_POOL_SZ_MAX) {
+				LOG_ERR("Not enough buffers or memory to start streaming");
+				break;
+			}
+
+			for (i = 0; i < CONFIG_VIDEO_BUFFER_POOL_NUM_MAX; i++) {
+				/*
+					* For some hardwares, such as the PxP used on i.MX RT1170 to do image rotation,
+					* buffer alignment is needed in order to achieve the best performance
+					*/
+				vbuf = video_buffer_aligned_alloc(bsize, CONFIG_VIDEO_BUFFER_POOL_ALIGN,
+									K_FOREVER);
+				if (vbuf == NULL) {
+					LOG_ERR("Unable to alloc video buffer");
+					break;
+				}
+				vbuf->type = type;
+				video_enqueue(uvc_host, vbuf);
+			}
+
+			/* enable UVC device streaming */
+			if (video_stream_start(uvc_host, type)) {
+				LOG_ERR("Unable to start capture (interface)");
+				break;
+			}
+
+			/* Delay to wait UVC device ready */
+			k_msleep(500);
+
+			LOG_INF("Capture started");
+			break;
+
+		case USBH_DEVICE_DISCONNECTED:
+			/* TODO: CONFIG_VIDEO_BUFFER_POOL_NUM_MAX is 1 now, consider multiple video buffers */
+			for (i = 0; i < CONFIG_VIDEO_BUFFER_POOL_NUM_MAX; i++) {
+				err = video_dequeue(uvc_host, &vbuf, K_NO_WAIT);
+				if (!err && vbuf) {
+					video_buffer_release(vbuf);
+				}
+			}
+			LOG_INF("UVC device disconnected!");
+			break;
+
+		case VIDEO_BUF_DONE:
+			/* Process completed video buffer */
+			err = video_dequeue(uvc_host, &vbuf, K_FOREVER);
+			if (err) {
+				LOG_ERR("Unable to dequeue video buf");
+				break;
+			}
+
+			LOG_DBG("Got frame %u! size: %u; timestamp %u ms",
+				frame++, vbuf->bytesused, vbuf->timestamp);
+
+#ifdef CONFIG_TEST
+			if (tp_set_ret < 0) {
+				LOG_DBG("Test pattern control was not successful. Skip test");
+			} else if (is_colorbar_ok(vbuf->buffer, fmt)) {
+				LOG_DBG("Pattern OK!\n");
+			}
+#endif
+
+#if DT_HAS_CHOSEN(zephyr_display)
+			if (display_configured) {
+				video_display_frame(display_dev, vbuf, fmt);
+			}
+#endif
+			err = video_enqueue(uvc_host, vbuf);
+			if (err) {
+				LOG_ERR("Unable to requeue video buf");
+				break;
+			}
+			break;
+
+		default:
+			LOG_WRN("Received unknown signal: %d", result);
+			break;
 		}
 	}
 }
