@@ -493,7 +493,7 @@ static int icm45686_fifo_decode(const uint8_t *buffer,
 			(fdata->header & FIFO_HEADER_ACCEL_EN(true)) &&
 			(fdata->header & FIFO_HEADER_GYRO_EN(true)) &&
 			(fdata->header & FIFO_HEADER_HIRES_EN(true)),
-			"Unsupported FIFO packet format");
+			"Unsupported FIFO packet format 0x%02x", fdata->header);
 
 		switch (chan_spec.chan_type) {
 		case SENSOR_CHAN_ACCEL_XYZ:
