@@ -1,0 +1,2 @@
+# Needed to run USB host test script.
+pyusb
