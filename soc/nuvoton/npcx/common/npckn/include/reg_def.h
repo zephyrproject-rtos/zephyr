@@ -1853,10 +1853,6 @@ struct lct_reg {
 	volatile uint8_t reserved5;
 	/* 0x00C: LCT Weeks */
 	volatile uint8_t LCTWEEK;
-#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_npcx_lct_v2)
-	/* 0x00D: LCT Weeks MSB */
-	volatile uint8_t LCTWEEKM;
-#endif
 };
 
 #define NPCX_LCTCONT_LCTEN        0
