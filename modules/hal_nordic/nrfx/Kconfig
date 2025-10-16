@@ -162,7 +162,7 @@ config NRFX_LPCOMP
 
 config NRFX_MRAMC
 	bool "MRAMC driver"
-	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_MRAMC))
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_MRAMC)) || $(dt_has_compat,$(DT_COMPAT_NORDIC_MRAM))
 
 config NRFX_NFCT
 	bool "NFCT driver"
