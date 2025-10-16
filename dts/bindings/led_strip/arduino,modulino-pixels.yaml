@@ -1,9 +1,9 @@
 # Copyright (c) 2025 Google, LLC
 # SPDX-License-Identifier: Apache-2.0
 
-description: Arduino Modulino smart LEDs
+description: Arduino Modulino Pixels
 
-compatible: "arduino,modulino-smartleds"
+compatible: "arduino,modulino-pixels"
 
 include: [led-strip.yaml, i2c-device.yaml]
 
