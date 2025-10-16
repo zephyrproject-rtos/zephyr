@@ -246,12 +246,7 @@ static int max32_counter_init(const struct device *dev)
 	int prescaler_index;
 
 	prescaler_index = LOG2(cfg->prescaler);
-	if (prescaler_index == 0) {
-		tmr_cfg.pres = TMR_PRES_1; /* TMR_PRES_1 is 0 */
-	} else {
-		/* TMR_PRES_2 is  1<<X */
-		tmr_cfg.pres = TMR_PRES_2 + (prescaler_index - 1);
-	}
+	tmr_cfg.pres = prescaler_index * TMR_PRES_2;
 	tmr_cfg.mode = TMR_MODE_COMPARE;
 	tmr_cfg.cmp_cnt = cfg->info.max_top_value;
 	tmr_cfg.bitMode = 0; /* Timer Mode 32 bit */
