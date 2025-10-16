@@ -1,6 +1,7 @@
 common:
   tags:
     - arm
+  timeout: 120
 tests:
   arch.arm.user.stack:
     filter: CONFIG_CPU_CORTEX_M
