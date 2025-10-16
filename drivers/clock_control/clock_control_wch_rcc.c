@@ -13,6 +13,7 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/hwinfo.h>
 #include <zephyr/sys/util_macro.h>
 
 #include <hal_ch32fun.h>
@@ -327,6 +328,58 @@ static int clock_control_wch_rcc_init(const struct device *dev)
 
 	return 0;
 }
+
+#if defined(CONFIG_HWINFO)
+
+int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
+{
+	uint32_t status = RCC->RSTSCKR;
+
+	*cause = 0;
+	if ((status & (RCC_IWDGRSTF | RCC_WWDGRSTF)) != 0) {
+		*cause |= RESET_WATCHDOG;
+	}
+
+	if ((status & RCC_PINRSTF) != 0) {
+		*cause |= RESET_PIN;
+	}
+
+	if ((status & RCC_PORRSTF) != 0) {
+		*cause |= RESET_POR;
+	}
+
+	if ((status & RCC_SFTRSTF) != 0) {
+		*cause |= RESET_SOFTWARE;
+	}
+
+#if defined(RCC_LPWRRSTF)
+	if ((status & RCC_LPWRRSTF) != 0) {
+		*cause |= RESET_BROWNOUT;
+	}
+#endif
+
+	return 0;
+}
+
+int z_impl_hwinfo_clear_reset_cause(void)
+{
+	RCC->RSTSCKR |= RCC_RMVF;
+
+	return 0;
+}
+
+int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
+{
+	*supported = RESET_WATCHDOG | RESET_PIN | RESET_POR | RESET_SOFTWARE
+#if defined(RCC_LPWRRSTF)
+		     | RESET_BROWNOUT
+#endif
+		;
+
+	return 0;
+}
+
+#endif
 
 #define CLOCK_CONTROL_WCH_RCC_INIT(idx)                                                            \
 	static const struct clock_control_wch_rcc_config clock_control_wch_rcc_##idx##_config = {  \

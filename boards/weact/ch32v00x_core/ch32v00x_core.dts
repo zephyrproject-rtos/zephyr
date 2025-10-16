@@ -100,3 +100,7 @@
 &tim1 {
 	status = "okay";
 };
+
+&esig {
+	status = "okay";
+};

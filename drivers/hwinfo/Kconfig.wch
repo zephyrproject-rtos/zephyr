@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright Michael Hope <michaelh@juju.nz>
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_WCH
+	bool "WCH CH32V Electronic Signature (ESIG)"
+	default y
+	depends on DT_HAS_WCH_ESIG_ENABLED
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable the WCH CH32V series Electronic Signature (ESIG) driver.

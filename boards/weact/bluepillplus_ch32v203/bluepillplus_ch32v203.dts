@@ -81,3 +81,7 @@
 	pinctrl-0 = <&usart3_default>;
 	pinctrl-names = "default";
 };
+
+&esig {
+	status = "okay";
+};
