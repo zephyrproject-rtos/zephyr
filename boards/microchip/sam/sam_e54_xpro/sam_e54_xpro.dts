@@ -214,7 +214,7 @@
 
 &gmac {
 	status = "okay";
-	compatible = "microchip,gmac-u2005-eth";
+	compatible = "microchip,gmac-g1-eth";
 
 	pinctrl-0 = <&gmac_rmii>;
 	pinctrl-names = "default";
@@ -225,7 +225,7 @@
 
 &mdio {
 	status = "okay";
-	compatible = "microchip,gmac-u2005-mdio";
+	compatible = "microchip,gmac-g1-mdio";
 
 	pinctrl-0 = <&mdio_default>;
 	pinctrl-names = "default";
