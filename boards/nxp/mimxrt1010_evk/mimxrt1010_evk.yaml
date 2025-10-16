@@ -1,6 +1,6 @@
 #
 # Copyright (c) 2023 TiaC Systems
-# Copyright (c) 2019, NXP
+# Copyright 2019, 2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -27,4 +27,5 @@ supported:
   - i2c
   - spi
   - usb_device
+  - rtc
 vendor: nxp
