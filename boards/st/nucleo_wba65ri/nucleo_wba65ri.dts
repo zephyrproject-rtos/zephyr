@@ -86,6 +86,12 @@
 
 &clk_hse {
 	status = "okay";
+
+	/*
+	 * Disable HSE trim applied by Clock Control.
+	 * Board-specific init will apply trim from OTP.
+	 */
+	/delete-property/ hse-trimming;
 };
 
 &clk_hsi {
