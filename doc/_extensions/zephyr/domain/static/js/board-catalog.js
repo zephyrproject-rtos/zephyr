@@ -41,15 +41,21 @@ function populateFormFromURL() {
     const features = hashParams.get("features").split(",");
     setTimeout(() => {
       features.forEach(feature => {
-        const tagContainer = document.getElementById('tag-container');
-        const tagInput = document.getElementById('tag-input');
+        const tagContainer = document.getElementById('hwcaps-tags');
+        const tagInput = document.getElementById('hwcaps-input');
 
         const tagElement = document.createElement('span');
         tagElement.classList.add('tag');
         tagElement.textContent = feature;
         tagElement.onclick = () => {
-          const selectedTags = [...document.querySelectorAll('.tag')].map(tag => tag.textContent);
-          selectedTags.splice(selectedTags.indexOf(feature), 1);
+          tagElement.remove();
+          filterBoards();
+        };
+        tagContainer.insertBefore(tagElement, tagInput);
+      });
+      filterBoards();
+    }, 0);
+  }
           tagElement.remove();
           filterBoards();
         };
@@ -83,8 +89,8 @@ function updateURL() {
   });
 
   // Add supported features to URL
-  const selectedTags = [...document.querySelectorAll('.tag')].map(tag => tag.textContent);
-  selectedTags.length ? hashParams.set("features", selectedTags.join(",")) : hashParams.delete("features");
+  const selectedHWTags = [...document.querySelectorAll('#hwcaps-tags .tag')].map(tag => tag.textContent);
+  selectedHWTags.length ? hashParams.set("features", selectedHWTags.join(",")) : hashParams.delete("features");
 
   window.history.replaceState({}, "", `#${hashParams.toString()}`);
 }
@@ -126,8 +132,8 @@ function fillSocSocSelect(families, series = undefined, selectOnFill = false) {
 function setupHWCapabilitiesField() {
   let selectedTags = [];
 
-  const tagContainer = document.getElementById('tag-container');
-  const tagInput = document.getElementById('tag-input');
+  const tagContainer = document.getElementById('hwcaps-tags');
+  const tagInput = document.getElementById('hwcaps-input');
   const datalist = document.getElementById('tag-list');
 
   const tagCounts = Array.from(document.querySelectorAll('.board-card')).reduce((acc, board) => {
@@ -272,8 +278,8 @@ function resetForm() {
   document.getElementById("show-shields").checked = true;
 
   // Clear supported features
-  document.querySelectorAll('.tag').forEach(tag => tag.remove());
-  document.getElementById('tag-input').value = '';
+  document.querySelectorAll('#hwcaps-tags .tag').forEach(tag => tag.remove());
+  document.getElementById('hwcaps-input').value = '';
 
   filterBoards();
 }
@@ -297,10 +303,11 @@ function filterBoards() {
   const showBoards = document.getElementById("show-boards").checked;
   const showShields = document.getElementById("show-shields").checked;
 
-  const selectedTags = [...document.querySelectorAll('.tag')].map(tag => tag.textContent);
+  // Get selected hardware capability tags
+  const selectedHWTags = [...document.querySelectorAll('#hwcaps-tags .tag')].map(tag => tag.textContent);
 
   const resetFiltersBtn = document.getElementById("reset-filters");
-  if (nameInput || archSelect || vendorSelect || socSocSelect.selectedOptions.length || selectedTags.length || !showBoards || !showShields) {
+  if (nameInput || archSelect || vendorSelect || socSocSelect.selectedOptions.length || selectedHWTags.length || !showBoards || !showShields) {
     resetFiltersBtn.classList.remove("btn-disabled");
   } else {
     resetFiltersBtn.classList.add("btn-disabled");
@@ -328,7 +335,7 @@ function filterBoards() {
         !(archSelect && !boardArchs.includes(archSelect)) &&
         !(vendorSelect && boardVendor !== vendorSelect) &&
         (selectedSocs.length === 0 || selectedSocs.some((soc) => boardSocs.includes(soc))) &&
-        (selectedTags.length === 0 || selectedTags.every((tag) => boardSupportedFeatures.includes(tag)));
+        (selectedHWTags.length === 0 || selectedHWTags.every((tag) => boardSupportedFeatures.includes(tag)));
     }
 
     board.classList.toggle("hidden", !matches);
