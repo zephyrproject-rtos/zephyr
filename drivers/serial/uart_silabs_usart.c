@@ -539,11 +539,12 @@ static int uart_silabs_async_tx_abort(const struct device *dev)
 	USART_IntClear(config->base, USART_IF_TXC | USART_IF_TCMP2);
 	(void)uart_silabs_pm_lock_put(dev, UART_SILABS_PM_LOCK_TX);
 
+	dma_stop(data->dma_tx.dma_dev, data->dma_tx.dma_channel);
+
 	if (!dma_get_status(data->dma_tx.dma_dev, data->dma_tx.dma_channel, &stat)) {
 		data->dma_tx.counter = tx_buffer_length - stat.pending_length;
 	}
 
-	dma_stop(data->dma_tx.dma_dev, data->dma_tx.dma_channel);
 	data->dma_tx.enabled = false;
 
 	async_evt_tx_abort(data);
