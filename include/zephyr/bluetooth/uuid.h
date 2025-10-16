@@ -5311,6 +5311,24 @@ void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len);
  */
 int bt_uuid_from_str(const char *str, struct bt_uuid_any *uuid);
 
+/** @brief Compress a 128-bit UUID to 16-bit or 32-bit if it matches the
+ *         Bluetooth Base UUID.
+ *
+ *  If @p src is already 16-bit or 32-bit it is copied as-is.
+ *  A 128-bit UUID whose bytes [4..15] match the Bluetooth Base UUID is
+ *  compressed to 16-bit (when bytes [0..1] of the RFC 9562 form are zero)
+ *  or 32-bit. Non-matching 128-bit UUIDs are not compressed and cause the
+ *  function to return -ENOTSUP without modifying @p dst.
+ *
+ *  @param[in]  src  Source UUID to compress.
+ *  @param[out] dst  Destination to receive the (possibly shorter) UUID.
+ *
+ *  @retval 0        UUID was compressed (or copied for 16/32-bit input).
+ *  @retval -ENOTSUP 128-bit UUID does not match the Bluetooth Base UUID;
+ *                   @p dst is left unmodified.
+ */
+int bt_uuid_compress(const struct bt_uuid *src, struct bt_uuid_any *dst);
+
 #ifdef __cplusplus
 }
 #endif
