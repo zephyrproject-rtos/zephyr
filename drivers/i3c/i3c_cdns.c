@@ -3416,6 +3416,39 @@ static int cdns_i3c_target_controller_handoff(const struct device *dev, bool acc
 #endif
 #ifdef CONFIG_I3C_CONTROLLER
 /**
+ * @brief Recover the I3C bus. This only performs a fifo flush.
+ *
+ * @param dev Pointer to device driver instance.
+ *
+ * @return 0 if successful, errno otherwise.
+ */
+static int cdns_i3c_recover_bus(const struct device *dev)
+{
+	const struct cdns_i3c_config *config = dev->config;
+	struct cdns_i3c_data *data = dev->data;
+
+	k_mutex_lock(&data->bus_lock, K_FOREVER);
+
+	/* Clear main enable bit to disable further transactions */
+	sys_write32(~CTRL_DEV_EN & sys_read32(config->base + CTRL), config->base + CTRL);
+
+	/**
+	 * Flush all queues.
+	 */
+	sys_write32(FLUSH_RX_FIFO | FLUSH_TX_FIFO | FLUSH_CMD_FIFO | FLUSH_CMD_RESP,
+		    config->base + FLUSH_CTRL);
+
+	/* Re-enable device */
+	sys_write32(CTRL_DEV_EN | sys_read32(config->base + CTRL), config->base + CTRL);
+
+	k_mutex_unlock(&data->bus_lock);
+
+	LOG_INF("%s: Bus recovery complete", dev->name);
+
+	return 0;
+}
+
+/**
  * Determine I3C bus mode from the i2c devices on the bus
  *
  * Reads the LVR of all I2C devices and returns the I3C bus
@@ -3743,6 +3776,7 @@ static DEVICE_API(i3c, api) = {
 #ifdef CONFIG_I3C_CONTROLLER
 	.i2c_api.configure = cdns_i3c_i2c_api_configure,
 	.i2c_api.transfer = cdns_i3c_i2c_api_transfer,
+	.i2c_api.recover_bus = cdns_i3c_recover_bus,
 #ifdef CONFIG_I2C_RTIO
 	.i2c_api.iodev_submit = i2c_iodev_submit_fallback,
 #endif
@@ -3751,6 +3785,9 @@ static DEVICE_API(i3c, api) = {
 	.configure = cdns_i3c_configure,
 	.config_get = cdns_i3c_config_get,
 #ifdef CONFIG_I3C_CONTROLLER
+
+	.recover_bus = cdns_i3c_recover_bus,
+
 	.attach_i3c_device = cdns_i3c_attach_device,
 	.reattach_i3c_device = cdns_i3c_reattach_device,
 	.detach_i3c_device = cdns_i3c_detach_device,
