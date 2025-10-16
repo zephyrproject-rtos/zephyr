@@ -50,6 +50,20 @@ endif # SHELL
 
 endif # BT
 
+if MBEDTLS_PSA_CRYPTO_C
+
+config MBEDTLS_USER_CONFIG_ENABLE
+	default y
+
+config MBEDTLS_USER_CONFIG_FILE
+    string "mbedTLS user config file"
+    default "ble_els_pkc_mbedtls_psa_config.h" if BT
+	default "wpa_supp_els_pkc_mbedtls_config.h" if WIFI_NM_WPA_SUPPLICANT
+    help
+      Automatically select mbedTLS config file based on enabled modules.
+
+endif #MBEDTLS_PSA_CRYPTO_C
+
 config NXP_MONOLITHIC_WIFI
 	default y if WIFI
 
