@@ -579,9 +579,30 @@ static void ipv4_setup(struct net_if *iface,
 			continue;
 		}
 
+		/* If ipv4_multicast_address[] is not set in the config file,
+		 * then compiler may emit this warning which looks like false positive:
+		 *
+		 * zephyr/subsys/net/lib/config/init.c: In function 'ipv4_setup.constprop':
+		 * zephyr/subsys/net/lib/config/init.c:599:67: warning: offset '4294967279' outside
+		 *                                       bounds of constant string [-Warray-bounds]
+		 *  599 |                 ret = parse_mask(ipv4->ipv4_multicast_addresses[j].value,
+		 *      |                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~
+		 * In file included from zephyr/subsys/net/lib/config/init.c:2028:
+		 * build/test/zephyr/include/generated/net_init_config.inc:137:37:
+		 *                      note: 'net_init_config_data' declared here
+		 *  137 | static const struct net_init_config net_init_config_data = {
+		 *      |                                     ^~~~~~~~~~~~~~~~~~~~
+		 *
+		 * If user has specified ipv4_multicast_addresses in the yaml file, there is no
+		 * warning printed.
+		 *
+		 * Suppress this warning here temporarily before we find out why this happens.
+		 */
+		TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ARRAY_BOUNDS);
 		ret = parse_mask(ipv4->ipv4_multicast_addresses[j].value,
 				 strlen(ipv4->ipv4_multicast_addresses[j].value),
 				 (struct sockaddr *)&addr, NULL);
+		TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_ARRAY_BOUNDS);
 		if (!ret) {
 			NET_DBG("Invalid IPv%c %s address \"%s\"", '4', "multicast",
 				ipv4->ipv4_addresses[j].value);
