@@ -208,6 +208,7 @@ def run_twister_cmake_only(outdir, vendor_filter):
         *[arg for path in RUNNERS_YAML_PATHS for arg in ('--keep-artifacts', path)],
         "--cmake-only",
         "-v",
+        # "-j 32",
         "--outdir",
         str(outdir),
     ]
