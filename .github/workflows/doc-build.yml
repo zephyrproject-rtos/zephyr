@@ -17,7 +17,7 @@ permissions:
 env:
   DOXYGEN_VERSION: 1.14.0
   DOXYGEN_MD5SUM: e761a5097ae20ecccfd02041925f102a
-  JOB_COUNT: 8
+  JOB_COUNT: 6
 
 jobs:
   doc-file-check:
@@ -133,14 +133,14 @@ jobs:
         fi
 
         if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-          DOC_TARGET="html-fast"
+          DOC_TARGET="html"
         else
           DOC_TARGET="html"
         fi
 
         DOC_TAG=${DOC_TAG} \
         SPHINXOPTS="-j ${JOB_COUNT} -W --keep-going -T" \
-        SPHINXOPTS_EXTRA="-q -t publish" \
+        SPHINXOPTS_EXTRA="-t publish" \
         make -C doc ${DOC_TARGET}
 
         # API documentation coverage
