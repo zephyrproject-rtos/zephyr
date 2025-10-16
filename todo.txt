@@ -294,3 +294,82 @@
 
 
 
+
+/*****************************/
+@NOTE(Emilio): Handmade Sample to test individual pixel color and memory writing.
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/display.h>
+#include <stdint.h>
+
+
+typedef uint8_t u8;
+typedef uint16_t u16;
+typedef uint32_t u32;
+
+typedef int8_t s8;
+typedef int16_t s16;
+typedef int32_t s32;
+
+
+typedef struct
+{
+	s32 Width;
+	s32 Height;
+	s32 BytesPerPixel;
+	u8* Memory;
+} zephyr_graphics_buffer;
+
+
+//@IMPORTANT Color is in u16
+
+#define SQUARE_WIDTH 60
+#define X_POS (466 / 2) - SQUARE_WIDTH
+#define Y_POS (466 / 2) - SQUARE_WIDTH
+
+int main(void)
+{
+	const struct device* DisplayController = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
+
+	struct display_capabilities Capabilities = {};
+	display_get_capabilities(DisplayController, &Capabilities);
+
+	zephyr_graphics_buffer GraphicsBuffer = {};
+	GraphicsBuffer.Width = 466;
+	GraphicsBuffer.Height = 466;
+	GraphicsBuffer.BytesPerPixel = 2;
+	u32 GraphicsBufferMemorySize = GraphicsBuffer.Width * GraphicsBuffer.Height * GraphicsBuffer.BytesPerPixel;
+//	GraphicsBuffer.Memory = (u8*)malloc(GraphicsBufferMemorySize);
+//	memset(GraphicsBuffer.Memory, 0xFF, GraphicsBufferMemorySize);
+
+	struct display_buffer_descriptor Descriptor = {};
+
+	Descriptor.buf_size = GraphicsBufferMemorySize;
+	Descriptor.width = GraphicsBuffer.Width;
+	Descriptor.height = GraphicsBuffer.Height;
+	Descriptor.pitch = GraphicsBuffer.Width;
+	Descriptor.frame_incomplete = true;
+
+	u8 Color = 0xAAFF;
+	display_write(DisplayController, 0, 0, &Descriptor, &Color);
+
+
+//	memset(GraphicsBuffer.Memory, 0x3812, GraphicsBufferMemorySize);
+	//display_write(DisplayController, X_POS, Y_POS, &Descriptor, GraphicsBuffer.Memory);
+	display_write(DisplayController, 50, 50, &Descriptor, 0xFF);
+//	display_write(DisplayController, 350, 350, &Descriptor, GraphicsBuffer.Memory);
+
+	/*
+	for(u32 Y = 300; Y < GraphicsBuffer.Height; Y++)
+	{
+		for(u32 X = 100; X < GraphicsBuffer.Width; X++)
+		{
+			display_write(DisplayController, X, Y, &Descriptor, GraphicsBuffer.Memory);
+		}
+	}
+	*/
+
+//	display_blanking_off(DisplayController);
+	return 0;
+}
+

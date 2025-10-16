@@ -166,7 +166,7 @@ static int co5300_write(const struct device *dev,
 
 	/* Start filling out the framebuffer */
 	framebuffer_addr = buf;
-	framebuffer_size = desc->height * desc->width * data->bytes_per_pixel;
+	framebuffer_size = desc->buf_size;
 
 	msg.type = MIPI_DSI_DCS_LONG_WRITE;
 	msg.flags = MCUX_DSI_2L_FB_DATA;
@@ -391,9 +391,15 @@ static int co5300_set_pixel_format(const struct device *dev,
 	const struct co5300_config *config = dev->config;
 	struct co5300_data *data = dev->data;
 	uint8_t param;
+	//@SPEED(Emilio): From init function
+	uint8_t curr_cmd = pixel_format_bgr_cmds[0];
+	uint8_t cmd_param_size = pixel_format_bgr_cmds[1];
+	uint8_t cmd_params = pixel_format_bgr_cmds[1];
+	int ret;
 
 	switch (pixel_format) {
 	case PIXEL_FORMAT_RGB_565:
+		cmd_params = pixel_format_bgr_cmds[2];
 		data->pixel_format = MIPI_DSI_PIXFMT_RGB565;
 		param = MIPI_DCS_PIXEL_FORMAT_16BIT;
 		data->bytes_per_pixel = 2;
@@ -407,6 +413,13 @@ static int co5300_set_pixel_format(const struct device *dev,
 		/* Other display formats not implemented */
 		return -ENOTSUP;
 	}
+
+	ret = mipi_dsi_dcs_write(config->mipi_dsi, config->channel,
+			0x36, &cmd_params, 1);
+	if (ret < 0) {
+		return ret;
+	}
+
 
 	return mipi_dsi_dcs_write(config->mipi_dsi, config->channel,
 				MIPI_DCS_SET_PIXEL_FORMAT, &param, 1);
@@ -561,11 +574,13 @@ static int co5300_init(const struct device *dev)
 		LOG_ERR("Pixel format not supported");
 		return -ENOTSUP;
 	}
-	cmd_params = (uint8_t)MIPI_DCS_PIXEL_FORMAT_24BIT;
-	data->bytes_per_pixel = 2;
+
+	uint8_t temp_cmd_params[2];
+	temp_cmd_params[0] = (uint8_t)cmd_params;
+	temp_cmd_params[1] = (uint8_t)MIPI_DCS_PIXEL_FORMAT_24BIT;
 
 	ret = mipi_dsi_dcs_write(config->mipi_dsi, config->channel,
-				MIPI_DCS_SET_PIXEL_FORMAT, &cmd_params, 1);
+				MIPI_DCS_SET_PIXEL_FORMAT, &temp_cmd_params, 2);
 	if (ret < 0) {
 		return ret;
 	}
