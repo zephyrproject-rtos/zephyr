@@ -11,7 +11,6 @@ from importlib import reload
 from unittest import mock
 
 import pytest
-
 import twisterlib.log_helper
 
 TESTDATA = [

@@ -13,7 +13,6 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
-
 from twisterlib.error import TwisterRuntimeError
 from twisterlib.platform import Platform
 from twisterlib.quarantine import Quarantine

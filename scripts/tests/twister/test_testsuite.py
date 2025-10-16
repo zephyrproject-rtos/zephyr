@@ -12,7 +12,6 @@ from contextlib import nullcontext
 from unittest import mock
 
 import pytest
-
 from twisterlib.error import TwisterException, TwisterRuntimeError
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testsuite import (

@@ -11,7 +11,6 @@ from unittest import mock
 
 import pytest
 from pykwalify.errors import SchemaError
-
 from twisterlib.platform import Platform, Simulator, generate_platforms
 
 TESTDATA_1 = [

@@ -11,7 +11,6 @@ import textwrap
 from unittest import mock
 
 import pytest
-
 from twisterlib.quarantine import QuarantineData, QuarantineElement, QuarantineException
 
 TESTDATA_1 = [

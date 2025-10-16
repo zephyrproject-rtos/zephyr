@@ -12,7 +12,6 @@ from contextlib import nullcontext
 from unittest import mock
 
 import pytest
-
 import scl
 from twisterlib.config_parser import (
     ConfigurationError,

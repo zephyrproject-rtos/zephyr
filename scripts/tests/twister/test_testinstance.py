@@ -13,7 +13,6 @@ from unittest import mock
 
 import pytest
 from expr_parser import reserved
-
 from twisterlib.error import BuildError
 from twisterlib.handlers import QEMUHandler
 from twisterlib.platform import Simulator
