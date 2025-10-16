@@ -1040,6 +1040,14 @@ int stm32_clock_control_init(const struct device *dev)
 #endif
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sram1))
+	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_AHBSRAM1);
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sram2))
+	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_AHBSRAM2);
+#endif
+#endif
 	/* Set up individual enabled clocks */
 	set_up_fixed_clock_sources();
 
