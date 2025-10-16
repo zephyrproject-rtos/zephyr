@@ -58,7 +58,7 @@ static int mcux_qtmr_pwm_set_cycles(const struct device *dev, uint32_t channel,
 {
 	const struct pwm_mcux_qtmr_config *config = dev->config;
 	struct pwm_mcux_qtmr_data *data = dev->data;
-	uint32_t periodCount, highCount, lowCount;
+	uint32_t highCount, lowCount;
 	uint16_t reg;
 
 	if (channel >= CHANNEL_COUNT) {
@@ -67,7 +67,6 @@ static int mcux_qtmr_pwm_set_cycles(const struct device *dev, uint32_t channel,
 	}
 
 	/* Counter values to generate a PWM signal */
-	periodCount = period_cycles;
 	highCount = pulse_cycles;
 	lowCount = period_cycles - pulse_cycles;
 
@@ -110,12 +109,12 @@ static int mcux_qtmr_pwm_set_cycles(const struct device *dev, uint32_t channel,
 
 	reg = config->base->CHANNEL[channel].CTRL;
 	reg &= ~(uint16_t)TMR_CTRL_OUTMODE_MASK;
-	if (highCount == periodCount) {
-		/* Set OFLAG output on compare */
-		reg |= (TMR_CTRL_LENGTH_MASK | TMR_CTRL_OUTMODE(kQTMR_SetOnCompare));
-	} else if (periodCount == 0U) {
-		/* Clear OFLAG output on compare */
+	if (pulse_cycles == 0U) {
+		/* 0% duty cycle, clear OFLAG output on compare */
 		reg |= (TMR_CTRL_LENGTH_MASK | TMR_CTRL_OUTMODE(kQTMR_ClearOnCompare));
+	} else if (pulse_cycles == period_cycles) {
+		/* 100% duty cycle, set OFLAG output on compare */
+		reg |= (TMR_CTRL_LENGTH_MASK | TMR_CTRL_OUTMODE(kQTMR_SetOnCompare));
 	} else {
 		/* Toggle OFLAG output using alternating compare register */
 		reg |= (TMR_CTRL_LENGTH_MASK | TMR_CTRL_OUTMODE(kQTMR_ToggleOnAltCompareReg));
