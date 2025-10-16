@@ -161,6 +161,18 @@
 			#mbox-cells = <1>;
 		};
 
+		rtc_slow_ram: memory@50000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x50000000 DT_SIZE_K(8)>;
+			zephyr,memory-region = "RTC_SLOW_RAM";
+		};
+
+		rtc_fast_ram: memory@600fe000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x600fe000 DT_SIZE_K(8)>;
+			zephyr,memory-region = "RTC_FAST_RAM";
+		};
+
 		intc: interrupt-controller@600c2000 {
 			#interrupt-cells = <3>;
 			#address-cells = <0>;
