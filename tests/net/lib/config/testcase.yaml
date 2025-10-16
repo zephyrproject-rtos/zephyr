@@ -5,8 +5,15 @@ common:
   platform_exclude:
     - native_sim
     - native_sim/native/64
+  tags:
+    - net
+    - iface
 tests:
-  net.config:
-    tags:
-      - net
-      - iface
+  net.config: {}
+  net.config.settings:
+    extra_configs:
+      # The yaml configuration contains multiple network interface
+      # so we need larger heap to store the information.
+      - CONFIG_HEAP_MEM_POOL_ADD_SIZE_NET_CONFIG=4096
+      - CONFIG_SETTINGS=y
+      - CONFIG_SETTINGS_RUNTIME=y
