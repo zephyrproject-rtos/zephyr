@@ -2354,7 +2354,7 @@ int bt_avdtp_parse_capability_codec(struct net_buf *buf, uint8_t *codec_type,
 		return -EINVAL;
 	}
 
-	if (codec_type == NULL || *codec_info_element == NULL || codec_info_element_len == NULL) {
+	if (codec_type == NULL || codec_info_element == NULL || codec_info_element_len == NULL) {
 		LOG_DBG("Error: parameters not valid");
 		return -EINVAL;
 	}
