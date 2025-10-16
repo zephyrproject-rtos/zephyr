@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-config MDIO_MCHP_GMAC_U2005
+config MDIO_MCHP_GMAC_G1
 	bool "Microchip MDIO driver"
 	depends on ETH_MCHP_GMAC
 	default y

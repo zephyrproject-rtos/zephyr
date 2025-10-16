@@ -5,7 +5,7 @@
  */
 
 /**
- * @file mdio_mchp_gmac_u2005.c
+ * @file mdio_mchp_gmac_g1.c
  * @brief MDIO driver for Microchip devices.
  *
  * This file provides the implementation of mdio functions
@@ -19,10 +19,10 @@
 #include <zephyr/net/mdio.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(mdio_mchp_gmac_u2005, CONFIG_MDIO_LOG_LEVEL);
+LOG_MODULE_REGISTER(mdio_mchp_gmac_g1, CONFIG_MDIO_LOG_LEVEL);
 
 /* Define compatible string */
-#define DT_DRV_COMPAT microchip_gmac_u2005_mdio
+#define DT_DRV_COMPAT microchip_gmac_g1_mdio
 
 #define MDIO_MCHP_CLOCK_RATE_20MHZ  (20000000U)
 #define MDIO_MCHP_CLOCK_RATE_40MHZ  (40000000U)
@@ -479,7 +479,7 @@ static int mdio_mchp_initialize(const struct device *dev)
  * This structure defines the function pointers for MDIO operations,
  * including reading/ writing to bus, and enabling/ disabling of the bus.
  */
-static const struct mdio_driver_api mdio_mchp_driver_api = {
+static DEVICE_API(mdio, mdio_mchp_driver_api) = {
 	/* read function */
 	.read = mdio_mchp_read,
 
