@@ -62,6 +62,15 @@
 		};
 	};
 
+	clocks {
+		clk_hsi48: clk-hsi48 {
+			#clock-cells = <0>;
+			compatible = "st,stm32-hsi48-clock";
+			clock-frequency = <DT_FREQ_M(48)>;
+			status = "disabled";
+		};
+	};
+
 	sram1: memory@20000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		zephyr,memory-region = "SRAM1";
