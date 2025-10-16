@@ -5887,6 +5887,31 @@ void *k_heap_realloc(struct k_heap *h, void *ptr, size_t bytes, k_timeout_t time
 	__attribute_nonnull(1);
 
 /**
+ * @brief Reallocate aligned memory from a k_heap
+ *
+ * Behaves in all ways like k_heap_realloc(), except that the returned
+ * memory (if available) will have a starting address in memory which
+ * is a multiple of the specified power-of-two alignment value in
+ * bytes.  The resulting memory can be returned to the heap using
+ * k_heap_free().
+ *
+ * @note @a timeout must be set to K_NO_WAIT if called from ISR.
+ * @note When CONFIG_MULTITHREADING=n any @a timeout is treated as K_NO_WAIT.
+ *
+ * @funcprops \isr_ok
+ *
+ * @param h Heap from which to allocate
+ * @param ptr Original pointer returned from a previous allocation
+ * @param align Alignment in bytes, must be a power of two
+ * @param bytes Desired size of block to allocate
+ * @param timeout How long to wait, or K_NO_WAIT
+ *
+ * @return Pointer to memory the caller can now use, or NULL
+ */
+void *k_heap_aligned_realloc(struct k_heap *h, void *ptr, size_t align, size_t bytes,
+			     k_timeout_t timeout) __attribute_nonnull(1);
+
+/**
  * @brief Free memory allocated by k_heap_alloc()
  *
  * Returns the specified memory block, which must have been returned
@@ -6063,6 +6088,19 @@ void *k_calloc(size_t nmemb, size_t size);
  * @return Pointer to memory the caller can now use, or NULL.
  */
 void *k_realloc(void *ptr, size_t size);
+
+/** @brief Expand the size of an existing allocation with a specified alignment
+ *
+ * This routine works similar to k_realloc but the memory is allocated
+ * as per sys_heap_aligned_realloc.
+ *
+ * @param ptr Original pointer returned from a previous allocation
+ * @param align Alignment of memory requested (in bytes).
+ * @param size Amount of memory requested (in bytes).
+ *
+ * @return Pointer to memory the caller can now use, or NULL.
+ */
+void *k_aligned_realloc(void *ptr, size_t align, size_t size);
 
 /** @} */
 

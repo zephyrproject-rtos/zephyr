@@ -164,6 +164,43 @@ void *k_realloc(void *ptr, size_t size)
 	return ret;
 }
 
+void *k_aligned_realloc(void *ptr, size_t align, size_t size)
+{
+	struct k_heap *heap, **heap_ref;
+	k_spinlock_key_t key;
+	void *ret;
+
+	if (size == 0) {
+		k_free(ptr);
+		return NULL;
+	}
+	if (ptr == NULL) {
+		return k_aligned_alloc(align, size);
+	}
+	heap_ref = ptr;
+	ptr = --heap_ref;
+	heap = *heap_ref;
+
+	if (size_add_overflow(size, sizeof(heap_ref), &size)) {
+		return NULL;
+	}
+
+	/*
+	 * No point calling k_heap_realloc() with K_NO_WAIT here.
+	 * Better bypass it and go directly to sys_heap_realloc() instead.
+	 */
+	key = k_spin_lock(&heap->lock);
+	ret = sys_heap_aligned_realloc(&heap->heap, ptr, align, size);
+	k_spin_unlock(&heap->lock, key);
+
+	if (ret != NULL) {
+		heap_ref = ret;
+		ret = ++heap_ref;
+	}
+
+	return ret;
+}
+
 void k_thread_system_pool_assign(struct k_thread *thread)
 {
 	thread->resource_pool = _SYSTEM_HEAP;
