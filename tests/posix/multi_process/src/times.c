@@ -57,7 +57,7 @@ ZTEST(posix_multi_process, test_times)
 		clock_t t0 = *(clock_t *)((uint8_t *)&test_tms[0] + offset);
 		clock_t t1 = *(clock_t *)((uint8_t *)&test_tms[1] + offset);
 
-		zexpect_true(t1 >= t0, "time moved backward for tms_%s: t0: %d t1: %d", name, t0,
+		zexpect_true(t1 >= t0, "time moved backward for tms_%s: t0: %ld t1: %ld", name, t0,
 			     t1);
 	}
 }
