@@ -11,6 +11,15 @@
 #define SRAM_DRAM_START  DT_REG_ADDR(DT_NODELABEL(sram0))
 #define SRAM_CACHE_SIZE  (CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE + CONFIG_ESP32S2_DATA_CACHE_SIZE)
 
+/* RTC SLOW RAM (8k) */
+#define RCT_SLOW_RAM_START DT_REG_ADDR(DT_NODELABEL(rtc_slow_ram))
+#define RCT_SLOW_RAM_SIZE  DT_REG_SIZE(DT_NODELABEL(rtc_slow_ram))
+
+/* RTC FAST RAM (8k) */
+#define RCT_FAST_RAM_START        DT_REG_ADDR(DT_NODELABEL(rtc_fast_ram))
+#define RCT_FAST_RAM_SIZE         DT_REG_SIZE(DT_NODELABEL(rtc_fast_ram))
+#define RTC_FAST_IRAM_DRAM_OFFSET 0xd2000;
+
 /** Simplified memory map for the bootloader.
  *  Make sure the bootloader can load into main memory without overwriting itself.
  *
