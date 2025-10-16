@@ -635,6 +635,7 @@ enum sensor_stream_data_opt {
 struct sensor_stream_trigger {
 	enum sensor_trigger_type trigger;
 	enum sensor_stream_data_opt opt;
+	struct sensor_chan_spec chan_spec;
 };
 
 #define SENSOR_STREAM_TRIGGER_PREP(_trigger, _opt)                                                 \
