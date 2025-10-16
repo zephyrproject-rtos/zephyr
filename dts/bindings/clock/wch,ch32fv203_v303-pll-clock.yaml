@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Fiona Behrens
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH CH32V203/303 CH32F203 PLL
+
+compatible: "wch,ch32fv203_v303-pll-clock"
+
+include: ["wch,ch32fv2x_v3x-pll-clock.yaml"]
+
+properties:
+  div:
+    type: int
+    required: true
+    description: |
+      PLL divider factor applied before the multiplication
+    enum:
+      - 1 # /1
+      - 2 # /2
