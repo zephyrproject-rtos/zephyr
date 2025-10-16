@@ -185,6 +185,7 @@ dlc	DLC Display Co., Ltd.
 dlg	Dialog Semiconductor
 dlink	D-Link Corporation
 dmo	Data Modul AG
+doit	Shenzhen Sibo Zhilian Technology Co, Ltd
 doiting	Doctors of Intelligence & Technology
 domintech	Domintech Co., Ltd.
 dongwoon	Dongwoon Anatech
