@@ -224,6 +224,11 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
+
+		esig: esig@1ffff7e0 {
+			compatible = "wch,esig";
+			reg = <0x1ffff7e0 0x20>;
+		};
 	};
 };
 

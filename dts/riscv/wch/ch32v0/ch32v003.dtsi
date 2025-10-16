@@ -216,6 +216,11 @@
 			#io-channel-cells = <1>;
 			status = "disabled";
 		};
+
+		esig: esig@1ffff7e0 {
+			compatible = "wch,esig";
+			reg = <0x1ffff7e0 0x20>;
+		};
 	};
 };
 
