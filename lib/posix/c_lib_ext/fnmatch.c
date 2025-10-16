@@ -45,6 +45,7 @@
 
 #include <zephyr/posix/fnmatch.h>
 #include <zephyr/toolchain.h>
+#include <zephyr/sys/util.h> /** For ARRAY_SIZE */
 
 #define EOS '\0'
 
@@ -100,6 +101,7 @@ static int check_for_pathname(const char letter, const int flags)
 static int is_lower(int a)
 {
 	char c = (char)a;
+
 	return (c >= 'a' && c <= 'z');
 }
 
@@ -139,7 +141,7 @@ static bool match_posix_class(const char **pattern, int test)
 {
 	const struct {
 		const char *name;
-		int (*func)(int);
+		int (*func)(int char_value);
 	} classes[] = {
 		{"alnum", isalnum}, {"alpha", isalpha}, {"digit", isdigit},   {"lower", is_lower},
 		{"upper", isupper}, {"space", isspace}, {"xdigit", isxdigit}, {"punct", is_punct},
@@ -147,12 +149,14 @@ static bool match_posix_class(const char **pattern, int test)
 	};
 
 	const char *p = *pattern;
+
 	if (*p != ':') {
 		return false;
 	}
 	p++;
-	for (size_t i = 0; i < sizeof(classes) / sizeof(classes[0]); i++) {
+	for (size_t i = 0; i < ARRAY_SIZE(classes); i++) {
 		size_t len = strlen(classes[i].name);
+
 		if (strncmp(p, classes[i].name, len) == 0 && p[len] == ':' && p[len + 1] == ']') {
 			*pattern = p + len + 2; /* move past ":]" */
 			return classes[i].func(test);
