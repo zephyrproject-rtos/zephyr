@@ -473,8 +473,16 @@ void icm45686_stream_submit(const struct device *dev,
 
 		if (data->stream.settings.enabled.fifo_ths ||
 		    data->stream.settings.enabled.fifo_full) {
+			/** AN-000364: When operating in FIFO streaming mode, if FIFO threshold
+			 * interrupt is triggered with M number of FIFO frames accumulated in the
+			 * FIFO buffer, the host should only read the first M-1 number of FIFO
+			 * frames.
+			 *
+			 * To avoid the case where M == 1 and M-- would be 0,
+			 * M + 1 threshold is used so M count is read.
+			 */
 			uint16_t fifo_ths = data->stream.settings.enabled.fifo_ths ?
-					    cfg->settings.fifo_watermark : 0;
+					    cfg->settings.fifo_watermark + 1 : 0;
 
 			val = REG_FIFO_CONFIG2_FIFO_WM_GT_THS(wm_gt_ths) |
 			      REG_FIFO_CONFIG2_FIFO_FLUSH(true);
