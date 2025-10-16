@@ -543,6 +543,16 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
+
+		lct0: lct@400d7000 {
+			compatible = "nuvoton,npcx-lct-v2";
+			reg = <0x400d7000 0x10>;
+			lct-wui = <&wui_lct>;
+			/* The maximum counter value is (1025 weeks - 1 second) */
+			maximum-cnt-in-sec = <619919999>;
+			pwr-by-vsby;
+			status = "disabled";
+		};
 	};
 
 	soc-if {
