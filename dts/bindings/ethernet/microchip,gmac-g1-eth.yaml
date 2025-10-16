@@ -3,7 +3,7 @@
 
 description: Microchip GMAC Ethernet binding
 
-compatible: "microchip,gmac-u2005-eth"
+compatible: "microchip,gmac-g1-eth"
 
 include:
   - name: ethernet-controller.yaml

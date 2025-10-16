@@ -8,7 +8,7 @@
 	soc {
 		/* todo: Define CAN node */
 		gmac: ethernet@42000800 {
-			compatible = "microchip,gmac-u2005-eth";
+			compatible = "microchip,gmac-g1-eth";
 			reg = <0x42000800 0x400>;
 			interrupts = <84 0>;
 			interrupt-names = "gmac";
@@ -20,7 +20,7 @@
 			clock-names = "mclk-ahb", "mclk-apb";
 		};
 		mdio: mdio@42000800 {
-			compatible = "microchip,gmac-u2005-mdio";
+			compatible = "microchip,gmac-g1-mdio";
 			reg = <0x42000800 0x400>;
 			status = "disabled";
 			#address-cells = <1>;
