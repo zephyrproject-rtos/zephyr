@@ -217,3 +217,41 @@ int bt_uuid_from_str(const char *str, struct bt_uuid_any *uuid)
 		return -EINVAL;
 	}
 }
+
+int bt_uuid_compress(const struct bt_uuid *src, struct bt_uuid_any *dst)
+{
+	struct uuid u;
+
+	if (src == NULL || dst == NULL) {
+		return -EINVAL;
+	}
+
+	switch (src->type) {
+	case BT_UUID_TYPE_16:
+		dst->uuid.type = BT_UUID_TYPE_16;
+		BT_UUID_16(&dst->uuid)->val = BT_UUID_16(src)->val;
+		return 0;
+	case BT_UUID_TYPE_32:
+		dst->uuid.type = BT_UUID_TYPE_32;
+		BT_UUID_32(&dst->uuid)->val = BT_UUID_32(src)->val;
+		return 0;
+	case BT_UUID_TYPE_128:
+		bt_uuid_to_uuid(src, &u);
+
+		if (!is_bt_base_uuid(&u)) {
+			return -ENOTSUP;
+		}
+
+		dst->uuid.type = bt_base_uuid_type(&u);
+
+		if (dst->uuid.type == BT_UUID_TYPE_16) {
+			BT_UUID_16(&dst->uuid)->val = sys_get_be16(&u.val[2]);
+		} else {
+			BT_UUID_32(&dst->uuid)->val = sys_get_be32(u.val);
+		}
+
+		return 0;
+	default:
+		return -EINVAL;
+	}
+}
