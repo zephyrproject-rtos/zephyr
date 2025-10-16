@@ -328,17 +328,6 @@ config BT_HFP_AG_TX_BUF_COUNT
 	  sending buf. Normally this can be left to the default value, which
 	  is equal to the number of session in the stack-internal pool.
 
-config BT_HFP_AG_THREAD_STACK_SIZE
-	int "Size of the HFP AG thread stack [EXPERIMENTAL]"
-	default 1024
-	help
-	  Stack size needed for executing thread for HFP AG.
-
-config BT_HFP_AG_THREAD_PRIO
-	# Hidden option for HFP AG thread priority
-	int
-	default 6
-
 config BT_HFP_AG_OUTGOING_TIMEOUT
 	int "Call outgoing timeout value for HFP AG [EXPERIMENTAL]"
 	default 3
