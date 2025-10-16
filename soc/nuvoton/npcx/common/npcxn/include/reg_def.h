@@ -2236,4 +2236,43 @@ struct gdma_reg {
 #define NPCX_DMACTL_BMSAFIX              30
 #define NPCX_DMACTL_BMDAFIX              31
 
+/* LCT (Long Countdown Timer) registers */
+struct lct_reg {
+	/* 0x000-0x001 */
+	volatile uint8_t reserved1[2];
+	/* 0x002: LCT Control */
+	volatile uint8_t LCTCONT;
+	/* 0x003 */
+	volatile uint8_t reserved2;
+	/* 0x004: LCT Status */
+	volatile uint8_t LCTSTAT;
+	/* 0x005: LCT Seconds */
+	volatile uint8_t LCTSECOND;
+	/* 0x006: LCT Minutes */
+	volatile uint8_t LCTMINUTE;
+	/* 0x007 */
+	volatile uint8_t reserved3;
+	/* 0x008: LCT Hours */
+	volatile uint8_t LCTHOUR;
+	/* 0x009 */
+	volatile uint8_t reserved4;
+	/* 0x00A: LCT Days */
+	volatile uint8_t LCTDAY;
+	/* 0x00B */
+	volatile uint8_t reserved5;
+	/* 0x00C: LCT Weeks */
+	volatile uint8_t LCTWEEK;
+#if DT_HAS_COMPAT_STATUS_OKAY(nuvoton_npcx_lct_v2)
+	/* 0x00D: LCT Weeks MSB */
+	volatile uint8_t LCTWEEKM;
+#endif
+};
+
+#define NPCX_LCTCONT_LCTEN        0
+#define NPCX_LCTCONT_LCTEVEN      1
+#define NPCX_LCTCONT_LCTPSLEN     2
+#define NPCX_LCTCONT_LCT_CLK_EN   6
+#define NPCX_LCTCONT_LCT_VSBY_PWR 7
+#define NPCX_LCTSTAT_LCTEVST      0
+
 #endif /* _NUVOTON_NPCX_REG_DEF_H */
