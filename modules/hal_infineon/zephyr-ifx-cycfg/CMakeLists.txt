@@ -8,6 +8,9 @@ if(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 
   zephyr_include_directories(${zephyr_ifx_cycfg_dir})
   zephyr_library_sources(${zephyr_ifx_cycfg_dir}/cycfg_qspi_memslot.c)
+  zephyr_library_sources(${zephyr_ifx_cycfg_dir}/ifx_cycfg_init.c)
+  zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_AUTANALOG_SAR_ADC
+    ${zephyr_ifx_cycfg_dir}/ifx_autanalog.c)
 endif()
 
 if(CONFIG_SOC_SERIES_PSC3)
