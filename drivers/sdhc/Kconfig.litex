@@ -1,0 +1,26 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SDHC_LITEX_LITESDCARD
+	bool "LiteX LiteSDCard SDHC driver"
+	default y
+	depends on DT_HAS_LITEX_LITESDCARD_SDHC_ENABLED
+	select SDHC_SUPPORTS_NATIVE_MODE
+	help
+	  sdhc driver for LiteX LiteSDCard.
+
+if SDHC_LITEX_LITESDCARD
+
+configdefault SDHC_BUFFER_ALIGNMENT
+	default 4
+
+config SDHC_LITEX_LITESDCARD_NO_COHERENT_DMA
+	bool "No coherent DMA bus, need cache management"
+	select CACHE_MANAGEMENT
+	depends on DCACHE
+	help
+	  This needs to be enabled if the LiteSDCard Module is not connected
+	  to a coherent DMA bus, meaning that the cache needs to be managed
+	  before and after DMA operations.
+
+endif # SDHC_LITEX_LITESDCARD
