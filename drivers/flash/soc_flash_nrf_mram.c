@@ -25,9 +25,25 @@ LOG_MODULE_REGISTER(flash_nrf_mram, CONFIG_FLASH_LOG_LEVEL);
 
 #define ERASE_VALUE 0xff
 
+#define SOC_NRF_MRAM_BANK_11_OFFSET  0x10000
+#define SOC_NRF_MRAM_BANK_11_ADDRESS (MRAM_START + SOC_NRF_MRAM_BANK_11_OFFSET)
+#define SOC_NRF_MRAMC_ADDR_0         0x5f092000
+#define SOC_NRF_MRAMC_ADDR_1         0x5f093000
+#define SOC_NRF_MRAMC_READY_REG_0    (SOC_NRF_MRAMC_ADDR_0 + 0x400)
+#define SOC_NRF_MRAMC_READY_REG_1    (SOC_NRF_MRAMC_ADDR_1 + 0x400)
+
 BUILD_ASSERT(MRAM_START > 0, "nordic,mram: start address expected to be non-zero");
 BUILD_ASSERT((ERASE_BLOCK_SIZE % WRITE_BLOCK_SIZE) == 0,
 	     "erase-block-size expected to be a multiple of write-block-size");
+
+static inline uint32_t nrf_mram_ready(uint32_t addr)
+{
+	if (addr < SOC_NRF_MRAM_BANK_11_ADDRESS) {
+		return sys_read32(SOC_NRF_MRAMC_READY_REG_0);
+	} else {
+		return sys_read32(SOC_NRF_MRAMC_READY_REG_1);
+	}
+}
 
 /**
  * @param[in,out] offset      Relative offset into memory, from the driver API.
@@ -80,6 +96,9 @@ static void commit_changes(uintptr_t addr_end)
 	 * Doing this lets us finalize our changes before we exit the driver API.
 	 */
 	sys_write8(sys_read8(addr_end), addr_end);
+	while (!nrf_mram_ready(addr_end)) {
+		/* Wait until MRAM controller is ready */
+	}
 }
 
 static int nrf_mram_read(const struct device *dev, off_t offset, void *data, size_t len)
@@ -111,7 +130,20 @@ static int nrf_mram_write(const struct device *dev, off_t offset, const void *da
 
 	LOG_DBG("write: %p:%zu", (void *)addr, len);
 
-	memcpy((void *)addr, data, len);
+	for (uint32_t i = 0; i < (len / MRAM_WORD_SIZE); i++) {
+		memcpy((void *)(addr + (i * MRAM_WORD_SIZE)),
+		       (void *)((uintptr_t)data + (i * MRAM_WORD_SIZE)), MRAM_WORD_SIZE);
+		while (!nrf_mram_ready(addr + (i * MRAM_WORD_SIZE))) {
+			/* Wait until MRAM controller is ready */
+		}
+	}
+	if (len % MRAM_WORD_SIZE) {
+		memcpy((void *)(addr + (len & ~MRAM_WORD_MASK)),
+		       (void *)((uintptr_t)data + (len & ~MRAM_WORD_MASK)), len & MRAM_WORD_MASK);
+		while (!nrf_mram_ready(addr + (len & ~MRAM_WORD_MASK))) {
+			/* Wait until MRAM controller is ready */
+		}
+	}
 	commit_changes(addr + len);
 
 	return 0;
@@ -129,7 +161,19 @@ static int nrf_mram_erase(const struct device *dev, off_t offset, size_t size)
 
 	LOG_DBG("erase: %p:%zu", (void *)addr, size);
 
-	memset((void *)addr, ERASE_VALUE, size);
+	for (uint32_t i = 0; i < (size / MRAM_WORD_SIZE); i++) {
+		memset((void *)(addr + (i * MRAM_WORD_SIZE)), ERASE_VALUE, MRAM_WORD_SIZE);
+		while (!nrf_mram_ready(addr + (i * MRAM_WORD_SIZE))) {
+			/* Wait until MRAM controller is ready */
+		}
+	}
+	if (size % MRAM_WORD_SIZE) {
+		memset((void *)(addr + (size & ~MRAM_WORD_MASK)), ERASE_VALUE,
+		       size & MRAM_WORD_MASK);
+		while (!nrf_mram_ready(addr + (size & ~MRAM_WORD_MASK))) {
+			/* Wait until MRAM controller is ready */
+		}
+	}
 	commit_changes(addr + size);
 
 	return 0;
@@ -151,9 +195,10 @@ static const struct flash_parameters *nrf_mram_get_parameters(const struct devic
 	static const struct flash_parameters parameters = {
 		.write_block_size = WRITE_BLOCK_SIZE,
 		.erase_value = ERASE_VALUE,
-		.caps = {
-			.no_explicit_erase = true,
-		},
+		.caps =
+			{
+				.no_explicit_erase = true,
+			},
 	};
 
 	return &parameters;
