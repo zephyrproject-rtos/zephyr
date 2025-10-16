@@ -753,7 +753,7 @@ New shields
 
 * :ref:`Arduino Giga Display Shield <arduino_giga_display_shield>`
 * :ref:`Arduino Modulino Buttons <arduino_modulino_buttons>`
-* :ref:`Arduino Modulino SmartLEDs <arduino_modulino_smartleds>`
+* :ref:`Arduino Modulino SmartLEDs <arduino_modulino_pixels>`
 * :ref:`DVP 20-pin OV7670 <dvp_20pin_ov7670>`
 * :ref:`EVAL AD4052 ARDZ <eval_ad4052_ardz>`
 * :ref:`EVAL ADXL367 ARDZ <eval_adxl367_ardz>`
