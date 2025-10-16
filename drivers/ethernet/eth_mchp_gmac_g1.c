@@ -5,14 +5,14 @@
  */
 
 /**
- * @file eth_mchp_gmac_u2005.c
+ * @file eth_mchp_gmac_g1.c
  * @brief Eth GMAC driver for Microchip devices.
  *
  * This file provides the implementation of eth GMAC functions
  * for Microchip-based systems.
  */
 
-#define LOG_MODULE_NAME eth_mchp_gmac_u2005
+#define LOG_MODULE_NAME eth_mchp_gmac_g1
 #define LOG_LEVEL       CONFIG_ETHERNET_LOG_LEVEL
 
 #include <zephyr/logging/log.h>
@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 /**
  * @brief Define compatible string for device tree.
  */
-#define DT_DRV_COMPAT microchip_gmac_u2005_eth
+#define DT_DRV_COMPAT microchip_gmac_g1_eth
 
 #include <zephyr/types.h>
 
@@ -687,7 +687,7 @@ static int gmac_init(gmac_registers_t *gmac)
 		val |= gmac_ncfgr_val;
 		gmac->GMAC_NCFGR = val;
 
-		/* Default (RMII) is defined at microchip,gmac-u2005-eth.yaml file */
+		/* Default (RMII) is defined at microchip,gmac-g1-eth.yaml file */
 		switch (DT_INST_ENUM_IDX(0, phy_connection_type)) {
 		case 0: /* mii */
 			gmac->GMAC_UR = 0x1;
@@ -1687,7 +1687,7 @@ static int eth_mchp_get_config(const struct device *dev, enum ethernet_config_ty
  * This structure defines the function pointers for Eth MAC operations,
  * including sending/ receiving frames and optional statistics functions.
  */
-static const struct ethernet_api eth_api = {
+static DEVICE_API(eth, eth_api) = {
 	/* interface initialization function */
 	.iface_api.init = eth_mchp_iface_init,
 
