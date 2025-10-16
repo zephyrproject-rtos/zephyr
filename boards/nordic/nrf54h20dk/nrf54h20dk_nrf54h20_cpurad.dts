@@ -152,3 +152,5 @@ zephyr_udc0: &usbhs {
 &lfclk {
 	status = "okay";
 };
+
+ironside_se_boot_report: &cpurad_ironside_se_boot_report {};
