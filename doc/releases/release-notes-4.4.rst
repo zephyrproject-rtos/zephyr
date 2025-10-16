@@ -62,6 +62,12 @@ Deprecated APIs and options
     * The callback :c:member:`output_number` in :c:struct:`bt_mesh_prov` structure was deprecated.
       Applications should use :c:member:`output_numeric` callback instead.
 
+  * Host
+
+    * :c:member:`bt_conn_le_info.interval` has been deprecated. Use
+      :c:member:`bt_conn_le_info.interval_us` instead. Note that the units have changed:
+      ``interval`` was in units of 1.25 milliseconds, while ``interval_us`` is in microseconds.
+
 New APIs and options
 ====================
 

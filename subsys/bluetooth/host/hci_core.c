@@ -1409,7 +1409,7 @@ static void update_conn(struct bt_conn *conn, const bt_addr_le_t *id_addr,
 {
 	conn->handle = sys_le16_to_cpu(evt->handle);
 	bt_addr_le_copy(&conn->le.dst, id_addr);
-	conn->le.interval = sys_le16_to_cpu(evt->interval);
+	conn->le.interval_us = sys_le16_to_cpu(evt->interval) * BT_HCI_LE_INTERVAL_UNIT_US;
 	conn->le.latency = sys_le16_to_cpu(evt->latency);
 	conn->le.timeout = sys_le16_to_cpu(evt->supv_timeout);
 	conn->role = evt->role;
@@ -2061,15 +2061,16 @@ static void le_conn_update_complete(struct net_buf *buf)
 		bt_l2cap_update_conn_param(conn, &param);
 	} else {
 		if (!evt->status) {
-			conn->le.interval = sys_le16_to_cpu(evt->interval);
+			conn->le.interval_us =
+				sys_le16_to_cpu(evt->interval) * BT_HCI_LE_INTERVAL_UNIT_US;
 			conn->le.latency = sys_le16_to_cpu(evt->latency);
 			conn->le.timeout = sys_le16_to_cpu(evt->supv_timeout);
 
 			if (!IS_ENABLED(CONFIG_BT_CONN_PARAM_ANY)) {
-				if (!IN_RANGE(conn->le.interval, BT_HCI_LE_INTERVAL_MIN,
-					      BT_HCI_LE_INTERVAL_MAX)) {
-					LOG_WRN("interval exceeds the valid range 0x%04x",
-						conn->le.interval);
+				if (!IN_RANGE(conn->le.interval_us / BT_HCI_LE_INTERVAL_UNIT_US,
+					      BT_HCI_LE_INTERVAL_MIN, BT_HCI_LE_INTERVAL_MAX)) {
+					LOG_WRN("interval exceeds the valid range %u us",
+						conn->le.interval_us);
 				}
 				if (conn->le.latency > BT_HCI_LE_PERIPHERAL_LATENCY_MAX) {
 					LOG_WRN("latency exceeds the valid range 0x%04x",
