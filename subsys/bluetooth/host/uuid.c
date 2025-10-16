@@ -1,6 +1,7 @@
 /* uuid.c - Bluetooth UUID handling */
 
 /*
+ * Copyright (c) 2025 Xiaomi Corporation
  * Copyright (c) 2015-2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -12,58 +13,51 @@
 #include <string.h>
 
 #include <zephyr/bluetooth/uuid.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/sys/uuid.h>
 
-#define UUID_16_BASE_OFFSET 12
-
-/* TODO: Decide whether to continue using Bluetooth LE format or switch to RFC 4122 */
-
-/* Base UUID : 0000[0000]-0000-1000-8000-00805F9B34FB
- * 0x2800    : 0000[2800]-0000-1000-8000-00805F9B34FB
- *  little endian 0x2800 : [00 28] -> no swapping required
- *  big endian 0x2800    : [28 00] -> swapping required
+/*
+ * Bluetooth Base UUID (big-endian / RFC 9562):
+ *   00000000-0000-1000-8000-00805F9B34FB
  */
-static const struct bt_uuid_128 uuid128_base = {
-	.uuid = { BT_UUID_TYPE_128 },
-	.val = { BT_UUID_128_ENCODE(
-		0x00000000, 0x0000, 0x1000, 0x8000, 0x00805F9B34FB) }
+static const struct uuid bt_uuid_base = {
+	.val = { 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U, 0x10U, 0x00U,
+		 0x80U, 0x00U, 0x00U, 0x80U, 0x5fU, 0x9bU, 0x34U, 0xfbU }
 };
 
-static void uuid_to_uuid128(const struct bt_uuid *src, struct bt_uuid_128 *dst)
+/**
+ * @brief Expand a Bluetooth UUID to the generic UUID representation.
+ *
+ * 16-bit and 32-bit short UUIDs are expanded using the Bluetooth Base UUID.
+ * 128-bit UUIDs are byte-swapped from BT wire order (LE) to RFC 9562 order (BE).
+ */
+static void bt_uuid_to_uuid(const struct bt_uuid *src, struct uuid *dst)
 {
 	switch (src->type) {
 	case BT_UUID_TYPE_16:
-		*dst = uuid128_base;
-		sys_put_le16(BT_UUID_16(src)->val,
-			     &dst->val[UUID_16_BASE_OFFSET]);
+		*dst = bt_uuid_base;
+		sys_put_be16(BT_UUID_16(src)->val, &dst->val[2]);
 		return;
 	case BT_UUID_TYPE_32:
-		*dst = uuid128_base;
-		sys_put_le32(BT_UUID_32(src)->val,
-			     &dst->val[UUID_16_BASE_OFFSET]);
+		*dst = bt_uuid_base;
+		sys_put_be32(BT_UUID_32(src)->val, dst->val);
 		return;
 	case BT_UUID_TYPE_128:
-		memcpy(dst, src, sizeof(*dst));
+		sys_memcpy_swap(dst->val, BT_UUID_128(src)->val, UUID_SIZE);
 		return;
 	}
 }
 
-static int uuid128_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2)
-{
-	struct bt_uuid_128 uuid1, uuid2;
-
-	uuid_to_uuid128(u1, &uuid1);
-	uuid_to_uuid128(u2, &uuid2);
-
-	return memcmp(uuid1.val, uuid2.val, 16);
-}
-
 int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2)
 {
-	/* Convert to 128 bit if types don't match */
 	if (u1->type != u2->type) {
-		return uuid128_cmp(u1, u2);
+		struct uuid uu1, uu2;
+
+		bt_uuid_to_uuid(u1, &uu1);
+		bt_uuid_to_uuid(u2, &uu2);
+		return memcmp(uu1.val, uu2.val, UUID_SIZE);
 	}
 
 	switch (u1->type) {
@@ -102,9 +96,6 @@ bool bt_uuid_create(struct bt_uuid *uuid, const uint8_t *data, uint8_t data_len)
 
 void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len)
 {
-	uint32_t tmp1, tmp5;
-	uint16_t tmp0, tmp2, tmp3, tmp4;
-
 	switch (uuid->type) {
 	case BT_UUID_TYPE_16:
 		snprintk(str, len, "%04x", BT_UUID_16(uuid)->val);
@@ -112,19 +103,19 @@ void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len)
 	case BT_UUID_TYPE_32:
 		snprintk(str, len, "%08x", BT_UUID_32(uuid)->val);
 		break;
-	case BT_UUID_TYPE_128:
-		memcpy(&tmp0, &BT_UUID_128(uuid)->val[0], sizeof(tmp0));
-		memcpy(&tmp1, &BT_UUID_128(uuid)->val[2], sizeof(tmp1));
-		memcpy(&tmp2, &BT_UUID_128(uuid)->val[6], sizeof(tmp2));
-		memcpy(&tmp3, &BT_UUID_128(uuid)->val[8], sizeof(tmp3));
-		memcpy(&tmp4, &BT_UUID_128(uuid)->val[10], sizeof(tmp4));
-		memcpy(&tmp5, &BT_UUID_128(uuid)->val[12], sizeof(tmp5));
+	case BT_UUID_TYPE_128: {
+		struct uuid gen_uuid;
+		char full[UUID_STR_LEN];
 
-		snprintk(str, len, "%08x-%04x-%04x-%04x-%08x%04x",
-			 sys_le32_to_cpu(tmp5), sys_le16_to_cpu(tmp4),
-			 sys_le16_to_cpu(tmp3), sys_le16_to_cpu(tmp2),
-			 sys_le32_to_cpu(tmp1), sys_le16_to_cpu(tmp0));
+		bt_uuid_to_uuid(uuid, &gen_uuid);
+		if (uuid_to_string(&gen_uuid, full) != 0) {
+			(void)memset(str, 0, len);
+			return;
+		}
+
+		snprintk(str, len, "%s", full);
 		break;
+	}
 	default:
 		(void)memset(str, 0, len);
 		return;
