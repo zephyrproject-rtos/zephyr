@@ -110,19 +110,19 @@ References
 .. target-notes::
 
 .. _CY8CKIT 062S4 Pioneer Kit Guide:
-    https://www.infineon.com/dgdl/Infineon-CY8CKIT_062S4_PSOC62S4_pioneer_kit_guide-UserManual-v01_00-EN.pdf?fileId=8ac78c8c7e7124d1017e962f98992207
+    https://www.infineon.com/assets/row/public/documents/30/44/infineon-cy8ckit-062s4-user-guide-usermanual-en.pdf
 
 .. _CY8CKIT 062S4 Pioneer Kit Website:
     https://www.infineon.com/cms/en/product/evaluation-boards/cy8ckit-062s4/?redirId=VL1508&utm_medium=referral&utm_source=cypress&utm_campaign=202110_globe_en_all_integration-dev_kit
 
 .. _CY8CKIT 062S4 Pioneer Kit Schematic:
-    https://www.infineon.com/dgdl/Infineon-CY8CKIT-062S4_PSOC_62S4_Pioneer_Kit_Schematic-PCBDesignData-v01_00-EN.pdf?fileId=8ac78c8c7d710014017d7153484d2081
+    https://www.infineon.com/row/public/documents/30/60/infineon-cy8ckit-062s4-psoc-62s4-pioneer-kit-schematic-pcbdesigndata-en.pdf
 
 .. _CY8CKIT 062S4 Pioneer Kit Technical Reference Manual:
     https://www.infineon.com/dgdl/Infineon-PSOC_6_MCU_CY8C61X4CY8C62X4_REGISTERS_TECHNICAL_REFERENCE_MANUAL_(TRM)_PSOC_61_PSOC_62_MCU-AdditionalTechnicalInformation-v03_00-EN.pdf?fileId=8ac78c8c7d0d8da4017d0fb34f0627a7
 
 .. _CY8CKIT 062S4 Pioneer Kit Datasheet:
-   https://www.infineon.com/dgdl/Infineon-PSOC_6_MCU_CY8C62X4-DataSheet-v12_00-EN.pdf?fileId=8ac78c8c7ddc01d7017ddd026d585901
+   https://www.infineon.com/assets/row/public/documents/30/49/infineon-cy8c62x4-datasheet-datasheet-en.pdf
 
 .. _ModusToolbox:
     https://softwaretools.infineon.com/tools/com.ifx.tb.tool.modustoolbox

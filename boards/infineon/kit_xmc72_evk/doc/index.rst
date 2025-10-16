@@ -128,7 +128,7 @@ References
 .. target-notes::
 
 .. _XMC7200D SoC Website:
-    https://www.infineon.com/cms/en/product/microcontroller/32-bit-industrial-microcontroller-based-on-arm-cortex-m/32-bit-xmc7000-industrial-microcontroller-arm-cortex-m7/xmc7200d-e272k8384aa/
+    https://www.infineon.com/evaluation-board/KIT-XMC72-EVK
 
 .. _kit_xmc72_evk Board Website:
     https://www.infineon.com/cms/en/product/evaluation-boards/kit_xmc72_evk
