@@ -60,7 +60,7 @@ jobs:
     container:
       image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.28.6.20251003
       options: '--entrypoint /bin/bash'
-    timeout-minutes: 20
+    timeout-minutes: 60
     concurrency:
       group: doc-build-html-${{ github.ref }}
       cancel-in-progress: true
