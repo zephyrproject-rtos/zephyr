@@ -19,3 +19,6 @@ CONFIG_ARM_MPU=y
 
 # Enable HW stack protection
 CONFIG_HW_STACK_PROTECTION=y
+
+# Get HSE Tuning from OTP
+CONFIG_GET_HSE_TUNING_FROM_OTP=y
