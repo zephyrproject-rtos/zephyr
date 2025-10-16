@@ -67,6 +67,19 @@ ADC
 * ``iadc_gecko.c`` driver is replaced by ``adc_silabs_iadc.c``.
   :dtcompatible:`silabs,gecko-iadc` is replaced by :dtcompatible:`silabs,iadc`.
 
+* :dtcompatible:`st,stm32-adc` and its derivatives now require the ``clock-names`` property to be
+  defined and to match the number of clocks in the ``clocks`` property. The expected clock names are
+  ``adcx`` for the register clock, ``adc-ker`` for the kernel source clock, and ``adc-pre`` to set
+  the ADC prescaler (for series where it is located in the RCC registers).
+
+Clocks
+======
+
+* :dtcompatible:`st,stm32f1-rcc` and :dtcompatible:`st,stm32f3-rcc` do not exist anymore. Therefore
+  ``adc-prescaler``, ``adc12-prescaler`` and ``adc34-prescaler`` properties are no longer defined
+  either. They are replaced by adding the prescaler as an additional clock in the ADC ``clocks``
+  property.
+
 Comparator
 ==========
 
