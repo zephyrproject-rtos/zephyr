@@ -52,6 +52,7 @@
 		led0 = &led0;
 		sw0 = &key1;
 		sw1 = &key2;
+		watchdog0 = &wdt;
 	};
 };
 
@@ -118,4 +119,8 @@
 	current-speed = <1000000>;
 	pinctrl-0 = <&usart1_default>;
 	pinctrl-names = "default";
+};
+
+&wdt {
+	status = "okay";
 };
