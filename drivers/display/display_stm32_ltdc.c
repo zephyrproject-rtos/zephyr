@@ -46,20 +46,19 @@ LOG_MODULE_REGISTER(display_stm32_ltdc, CONFIG_DISPLAY_LOG_LEVEL);
 #define LTDC_PCPOL_ACTIVE_HIGH    0x10000000
 
 #if CONFIG_STM32_LTDC_ARGB8888
-#define STM32_LTDC_INIT_PIXEL_SIZE	4u
 #define STM32_LTDC_INIT_PIXEL_FORMAT	LTDC_PIXEL_FORMAT_ARGB8888
 #define DISPLAY_INIT_PIXEL_FORMAT	PIXEL_FORMAT_ARGB_8888
 #elif CONFIG_STM32_LTDC_RGB888
-#define STM32_LTDC_INIT_PIXEL_SIZE	3u
 #define STM32_LTDC_INIT_PIXEL_FORMAT	LTDC_PIXEL_FORMAT_RGB888
 #define DISPLAY_INIT_PIXEL_FORMAT	PIXEL_FORMAT_RGB_888
 #elif CONFIG_STM32_LTDC_RGB565
-#define STM32_LTDC_INIT_PIXEL_SIZE	2u
 #define STM32_LTDC_INIT_PIXEL_FORMAT	LTDC_PIXEL_FORMAT_RGB565
 #define DISPLAY_INIT_PIXEL_FORMAT	PIXEL_FORMAT_RGB_565
 #else
 #error "Invalid LTDC pixel format chosen"
 #endif
+#define STM32_LTDC_INIT_PIXEL_SIZE	DISPLAY_BITS_PER_PIXEL(DISPLAY_INIT_PIXEL_FORMAT) \
+					/ BITS_PER_BYTE
 
 struct display_stm32_ltdc_data {
 	LTDC_HandleTypeDef hltdc;
@@ -109,26 +108,23 @@ static int stm32_ltdc_set_pixel_format(const struct device *dev,
 {
 	int err;
 	struct display_stm32_ltdc_data *data = dev->data;
+	uint32_t ltdc_pix_fmt;
 
-	switch (format) {
-	case PIXEL_FORMAT_RGB_565:
-		err = HAL_LTDC_SetPixelFormat(&data->hltdc, LTDC_PIXEL_FORMAT_RGB565, 0);
-		data->current_pixel_format = PIXEL_FORMAT_RGB_565;
-		data->current_pixel_size = 2u;
-		break;
-	case PIXEL_FORMAT_RGB_888:
-		err = HAL_LTDC_SetPixelFormat(&data->hltdc, LTDC_PIXEL_FORMAT_RGB888, 0);
-		data->current_pixel_format = PIXEL_FORMAT_RGB_888;
-		data->current_pixel_size = 3u;
-		break;
-	case PIXEL_FORMAT_ARGB_8888:
-		err = HAL_LTDC_SetPixelFormat(&data->hltdc, LTDC_PIXEL_FORMAT_ARGB8888, 0);
-		data->current_pixel_format = PIXEL_FORMAT_ARGB_8888;
-		data->current_pixel_size = 4u;
-		break;
-	default:
-		err = -ENOTSUP;
-		break;
+	if (format == PIXEL_FORMAT_RGB_565) {
+		ltdc_pix_fmt = LTDC_PIXEL_FORMAT_RGB565;
+	} else if (format == PIXEL_FORMAT_RGB_888) {
+		ltdc_pix_fmt = LTDC_PIXEL_FORMAT_RGB888;
+	} else if (format == PIXEL_FORMAT_ARGB_8888) {
+		ltdc_pix_fmt = LTDC_PIXEL_FORMAT_ARGB8888;
+	} else {
+		return -ENOTSUP;
+	}
+
+	err = HAL_LTDC_SetPixelFormat(&data->hltdc, ltdc_pix_fmt, 0);
+	if (!err) {
+		data->current_pixel_format = format;
+		data->current_pixel_size =
+			DISPLAY_BITS_PER_PIXEL(data->current_pixel_format) / BITS_PER_BYTE;
 	}
 
 	return err;

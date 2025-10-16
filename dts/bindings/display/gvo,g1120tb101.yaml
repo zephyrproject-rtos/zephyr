@@ -1,0 +1,15 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: GVO G1120TB101 Panel
+
+compatible: "gvo,g1120tb101"
+
+include: [mipi-dsi-device.yaml, display-controller.yaml]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      The RESETn pin is asserted to disable the sensor causing a hard
+      reset.  The sensor receives this as an active-low signal.
