@@ -190,6 +190,12 @@ struct net_buf *bt_l2cap_create_pdu_timeout(struct net_buf_pool *pool,
 /* Send L2CAP PDU over a connection
  *
  * Buffer ownership is transferred to stack in case of success.
+ *
+ * The callback will always be invoked exactly once: After the
+ * Controller gives a Number of Completed Packets Event for the
+ * last L2CAP PDU of the buffer or after the channel is
+ * disconnected and the buffer may or may not have been sent in
+ * full, in which case the error code will be -ESHUTDOWN.
  */
 int bt_l2cap_send_pdu(struct bt_l2cap_le_chan *le_chan, struct net_buf *pdu,
 		      bt_conn_tx_cb_t cb, void *user_data);
