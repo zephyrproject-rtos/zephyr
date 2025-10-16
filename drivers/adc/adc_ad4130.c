@@ -113,6 +113,7 @@ LOG_MODULE_REGISTER(adc_ad4130, CONFIG_ADC_LOG_LEVEL);
  */
 
 #define AD4130_8_ID 0x04 /* AD4130-8 Device ID */
+#define AD4130_ID_MODEL_MASK 0x03 /* Mask for the model bits in Device ID register */
 
 static const unsigned int ad4130_reg_size[] = {
 	[AD4130_STATUS_REG] = 1,
@@ -690,7 +691,7 @@ static int adc_ad4130_check_chip_id(const struct device *dev)
 		return ret;
 	}
 
-	return reg_data == AD4130_8_ID ? 0 : -EINVAL;
+	return (reg_data & (~AD4130_ID_MODEL_MASK)) == AD4130_8_ID ? 0 : -EINVAL;
 }
 
 static int adc_ad4130_set_polarity(const struct device *dev, bool enable)
