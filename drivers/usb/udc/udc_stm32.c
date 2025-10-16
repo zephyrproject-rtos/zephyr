@@ -158,6 +158,8 @@ struct udc_stm32_data  {
 	const struct device *dev;
 	uint32_t irq;
 	uint32_t occupied_mem;
+	/* wLength of SETUP packet for s-out-status */
+	uint32_t ep0_out_wlength;
 	void (*pcd_prepare)(const struct device *dev);
 	int (*clk_enable)(void);
 	int (*clk_disable)(void);
@@ -275,20 +277,50 @@ void HAL_PCD_SOFCallback(PCD_HandleTypeDef *hpcd)
 	udc_submit_sof_event(priv->dev);
 }
 
-static int usbd_ctrl_feed_dout(const struct device *dev, const size_t length)
+/*
+ * Prepare OUT EP0 for reception.
+ *
+ * @param dev		USB controller
+ * @param length	wLength from SETUP packet for s-out-status
+ *                      0 for s-in-status ZLP
+ */
+static int udc_stm32_prep_out_ep0_rx(const struct device *dev, const size_t length)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	struct udc_ep_config *cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
 	struct net_buf *buf;
+	uint32_t buf_size;
 
-	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, length);
+	udc_ep_set_busy(cfg, true);
+
+	/*
+	 * Make sure OUT EP0 can receive bMaxPacketSize0 bytes
+	 * from each Data packet by rounding up allocation size
+	 * even if "device behaviour is undefined if the host
+	 * should send more data than specified in wLength"
+	 * according to the USB Specification.
+	 *
+	 * Note that ROUND_UP() will return 0 for ZLP.
+	 */
+	buf_size = ROUND_UP(length, UDC_STM32_EP0_MAX_PACKET_SIZE);
+
+	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, buf_size);
 	if (buf == NULL) {
 		return -ENOMEM;
 	}
 
 	k_fifo_put(&cfg->fifo, buf);
 
-	HAL_PCD_EP_Receive(&priv->pcd, cfg->addr, buf->data, buf->size);
+	/*
+	 * Keep track of how much data we're expecting from
+	 * host so we know when the transfer is complete.
+	 * Unlike other endpoints, this bookkeeping isn't
+	 * done by the HAL for OUT EP0.
+	 */
+	priv->ep0_out_wlength = length;
+
+	/* Don't try to receive more than bMaxPacketSize0 */
+	HAL_PCD_EP_Receive(&priv->pcd, cfg->addr, net_buf_tail(buf), UDC_STM32_EP0_MAX_PACKET_SIZE);
 
 	return 0;
 }
@@ -339,7 +371,7 @@ static int udc_stm32_tx(const struct device *dev, struct udc_ep_config *epcfg,
 		if (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)) {
 			udc_stm32_flush_tx_fifo(dev);
 		} else {
-			usbd_ctrl_feed_dout(dev, 0);
+			udc_stm32_prep_out_ep0_rx(dev, 0);
 		}
 	}
 
@@ -351,6 +383,9 @@ static int udc_stm32_rx(const struct device *dev, struct udc_ep_config *epcfg,
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	HAL_StatusTypeDef status;
+
+	/* OUT EP0 requires special logic! */
+	__ASSERT_NO_MSG(epcfg->addr != USB_CONTROL_EP_OUT);
 
 	LOG_DBG("RX ep 0x%02x len %u", epcfg->addr, buf->size);
 
@@ -411,33 +446,72 @@ static void handle_msg_data_out(struct udc_stm32_data *priv, uint8_t epnum, uint
 	LOG_DBG("DataOut ep 0x%02x",  ep);
 
 	epcfg = udc_get_ep_cfg(dev, ep);
-	udc_ep_set_busy(epcfg, false);
 
-	buf = udc_buf_get(epcfg);
+	buf = udc_buf_peek(epcfg);
 	if (unlikely(buf == NULL)) {
 		LOG_ERR("ep 0x%02x queue is empty", ep);
+		udc_ep_set_busy(epcfg, false);
 		return;
 	}
 
+	/* HAL copies data - we just need to update bookkeeping */
 	net_buf_add(buf, rx_count);
 
 	if (ep == USB_CONTROL_EP_OUT) {
+		/*
+		 * OUT EP0 is used for two purposes:
+		 *  - receive 'out' Data packets during s-(out)-status
+		 *  - receive Status OUT ZLP during s-in-(status)
+		 */
 		if (udc_ctrl_stage_is_status_out(dev)) {
+			/* s-in-status completed */
+			__ASSERT_NO_MSG(rx_count == 0);
 			udc_ctrl_update_stage(dev, buf);
 			udc_ctrl_submit_status(dev, buf);
 		} else {
-			udc_ctrl_update_stage(dev, buf);
-		}
+			/* Verify that host did not send more data than it promised */
+			__ASSERT(buf->len <= priv->ep0_out_wlength,
+				 "Received more data from Host than expected!");
 
-		if (udc_ctrl_stage_is_status_in(dev)) {
+			/* Check if the data stage is complete */
+			if (buf->len < priv->ep0_out_wlength) {
+				/* Not yet - prepare to receive more data and wait */
+				HAL_PCD_EP_Receive(&priv->pcd, epcfg->addr, net_buf_tail(buf),
+						   UDC_STM32_EP0_MAX_PACKET_SIZE);
+				return;
+			} /* else: buf->len == priv->ep0_out_wlength */
+
+			/*
+			 * Data stage is complete: update to next step
+			 * which should be Status IN, then submit the
+			 * Setup+Data phase buffers to UDC stack and
+			 * let it handle the next stage.
+			 */
+			udc_ctrl_update_stage(dev, buf);
+			__ASSERT_NO_MSG(udc_ctrl_stage_is_status_in(dev));
 			udc_ctrl_submit_s_out_status(dev, buf);
 		}
 	} else {
 		udc_submit_ep_event(dev, buf, 0);
 	}
 
+	/* Buffer was filled and submitted - remove it from queue */
+	(void)udc_buf_get(epcfg);
+
+	/* Endpoint is no longer busy */
+	udc_ep_set_busy(epcfg, false);
+
+	/* Prepare next transfer for EP if its queue is not empty */
 	buf = udc_buf_peek(epcfg);
 	if (buf) {
+		/*
+		 * Only the driver is allowed to queue transfers on OUT EP0,
+		 * and it should only be doing so once per Control transfer.
+		 * If it has a queued transfer, something must be wrong.
+		 */
+		__ASSERT(epcfg->addr != USB_CONTROL_EP_OUT,
+			 "OUT EP0 should never have pending transfers!");
+
 		udc_stm32_rx(dev, epcfg, buf);
 	}
 }
@@ -548,7 +622,7 @@ static void handle_msg_setup(struct udc_stm32_data *priv)
 
 	if (udc_ctrl_stage_is_data_out(dev)) {
 		/*  Allocate and feed buffer for data OUT stage */
-		err = usbd_ctrl_feed_dout(dev, udc_data_stage_length(buf));
+		err = udc_stm32_prep_out_ep0_rx(dev, udc_data_stage_length(buf));
 		if (err == -ENOMEM) {
 			udc_submit_ep_event(dev, buf, err);
 		}
