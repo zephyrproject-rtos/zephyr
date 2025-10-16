@@ -181,7 +181,10 @@ void *k_aligned_realloc(void *ptr, size_t align, size_t size)
 	ptr = --heap_ref;
 	heap = *heap_ref;
 
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap_sys, k_aligned_realloc, heap, ptr);
+
 	if (size_add_overflow(size, sizeof(heap_ref), &size)) {
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_heap_sys, k_aligned_realloc, heap, ptr, NULL);
 		return NULL;
 	}
 
@@ -197,6 +200,8 @@ void *k_aligned_realloc(void *ptr, size_t align, size_t size)
 		heap_ref = ret;
 		ret = ++heap_ref;
 	}
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_heap_sys, k_aligned_realloc, heap, ptr, ret);
 
 	return ret;
 }
