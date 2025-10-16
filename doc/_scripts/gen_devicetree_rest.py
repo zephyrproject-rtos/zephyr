@@ -505,6 +505,8 @@ def make_sidebar(compatible, vendor_name, vendor_ref_target, driver_path=None):
         "",
         f"   :Name: ``{compatible}``",
         f"   :Vendor: :ref:`{vendor_name} <{vendor_ref_target}>`",
+        f"   :Used in: :zephyr:board-catalog:`List of boards <#compatibles={compatible}>` using",
+        "               this compatible",
     ]
     if driver_path:
         lines.append(f"   :Driver: :zephyr_file:`{driver_path}`")
