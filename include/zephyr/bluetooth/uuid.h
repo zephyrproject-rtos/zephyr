@@ -5249,6 +5249,25 @@ bool bt_uuid_create(struct bt_uuid *uuid, const uint8_t *data, uint8_t data_len)
  */
 void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len);
 
+/** @brief Convert string to Bluetooth UUID.
+ *
+ *  Converts string to Bluetooth UUID. If the string UUID is 16 bit, the converted
+ *  bt_uuid will be bt_uuid_16 type. If the string UUID is 32 bit UUID, the converted
+ *  bt_uuid will be bt_uuid_32 type. If the string UUID is 128 bit UUID, the converted
+ *  bt_uuid will be bt_uuid_128 type.
+ *
+ *  @note The string can be in any format, 16-bit, 32-bit or 128-bit format. And the
+ *  UUID pointer should point to a bt_uuid large enough to hold the converted UUID.
+ *  For example: 128 bit format "00001101-0000-1000-8000-00805F9B34FB",
+ *  the converted bt_uuid will be bt_uuid_128 type.
+ *
+ *  @param str Pointer to string to convert
+ *  @param uuid Pointer where to put converted UUID
+ *
+ *  @return 0 if the string was converted successfully, otherwise negative error
+ */
+int bt_uuid_from_str(const char *str, struct bt_uuid *uuid);
+
 #ifdef __cplusplus
 }
 #endif

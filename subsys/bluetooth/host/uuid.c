@@ -1,6 +1,7 @@
 /* uuid.c - Bluetooth UUID handling */
 
 /*
+ * Copyright (c) 2025 Xiaomi Corporation
  * Copyright (c) 2015-2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -9,6 +10,7 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 
 #include <zephyr/bluetooth/uuid.h>
@@ -128,5 +130,51 @@ void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len)
 	default:
 		(void)memset(str, 0, len);
 		return;
+	}
+}
+
+int bt_uuid_from_str(const char *str, struct bt_uuid *uuid)
+{
+	if (str == NULL || uuid == NULL) {
+		return -EINVAL;
+	}
+
+	switch (strlen(str)) {
+	case BT_UUID_SIZE_16 * 2: {
+		uint16_t *p = &BT_UUID_16(uuid)->val;
+
+		if (sscanf(str, "%04hx", p) != 1) {
+			return -EINVAL;
+		}
+
+		uuid->type = BT_UUID_TYPE_16;
+		return 0;
+	}
+	case BT_UUID_SIZE_32 * 2: {
+		uint32_t *p = &BT_UUID_32(uuid)->val;
+
+		if (sscanf(str, "%08x", p) != 1) {
+			return -EINVAL;
+		}
+
+		uuid->type = BT_UUID_TYPE_32;
+		return 0;
+	}
+	case BT_UUID_STR_LEN - 1: {
+		uint8_t *p = BT_UUID_128(uuid)->val;
+
+		if (sscanf(str,
+			   "%02hhx%02hhx%02hhx%02hhx-%02hhx%02hhx-%02hhx%02hhx"
+			   "-%02hhx%02hhx-%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx",
+			   &p[15], &p[14], &p[13], &p[12], &p[11], &p[10], &p[9], &p[8], &p[7],
+			   &p[6], &p[5], &p[4], &p[3], &p[2], &p[1], &p[0]) != BT_UUID_SIZE_128) {
+			return -EINVAL;
+		}
+
+		uuid->type = BT_UUID_TYPE_128;
+		return 0;
+	}
+	default:
+		return -EINVAL;
 	}
 }
