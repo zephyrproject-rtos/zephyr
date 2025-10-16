@@ -93,6 +93,12 @@ MISC
   the ``NRF_ETR`` symbols. Also the driver needs to be explicitly enabled via
   :kconfig:option:`DEBUG_DRIVER` as it is no longer built by default.
 
+Modem
+=====
+
+* ``CONFIG_MODEM_CELLULAR_NEW_BAUDRATE`` has been removed. Updated baudrates
+  are now specified in devicetree as the ``target-speed`` property.
+
 PWM
 ===
 
