@@ -89,6 +89,20 @@
     </div>
   </div>
 
+  <div class="form-group" style="flex-basis: 100%">
+    <label for="compatibles-input">Supported devices (compatible strings, supports wildcards)</label>
+    <div class="tag-container" id="compatibles-tags">
+      <input list="compatibles-list" class="tag-input" id="compatibles-input"
+        placeholder="{% if hw_features_present -%}
+          Type a compatible, e.g. &quot;ti,hdc2080&quot; or wildcard like &quot;bosch,bmp*&quot;
+        {%- else -%}
+          List of supported devices is not available
+        {%- endif %}"
+        {% if not hw_features_present %}disabled{% endif %}>
+      <datalist id="compatibles-list"></datalist>
+    </div>
+  </div>
+
 </form>
 
 <div id="form-options" style="text-align: center; margin-bottom: 20px">
