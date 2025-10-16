@@ -69,6 +69,13 @@ config STM32_FLASH_PREFETCH
 	  be enabled when flash is accessed through a cache memory. Flash
 	  prefetch also improves performances a bit.
 
+config GET_HSE_TUNING_FROM_OTP
+	bool "Get HSE Tuning from OTP"
+	default n
+	help
+	  Get HSE Tuning present in OTP according to a specific format.
+	  This tuning value would be used to set the HSE Clock Trimming.
+
 config STM32_WKUP_PINS
 	bool "STM32 PWR Wake-up Pins"
 	depends on DT_HAS_ST_STM32_PWR_ENABLED
