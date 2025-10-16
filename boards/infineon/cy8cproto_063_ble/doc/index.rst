@@ -108,7 +108,7 @@ References
 .. target-notes::
 
 .. _PSOC 63 BLE MCU SoC Website:
-    https://www.cypress.com/products/32-bit-arm-cortex-m4-psoc-6
+    https://www.infineon.com/products/microcontroller/32-bit-psoc-arm-cortex/psoc-6-m4-mcu/psoc-63
 
 .. _PSOC 63 BLE MCU Datasheet:
     https://www.infineon.com/dgdl/Infineon-PSOC_6_MCU_PSOC_63_with_BLE_Datasheet_Programmable_System-on-Chip_(PSOC)-DataSheet-v16_00-EN.pdf?fileId=8ac78c8c7d0d8da4017d0ee4efe46c37&utm_source=cypress&utm_medium=referral&utm_campaign=202110_globe_en_all_integration-files
