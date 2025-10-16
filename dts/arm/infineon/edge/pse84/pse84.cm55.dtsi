@@ -108,7 +108,7 @@
 	interrupts = <19 4>;
 };
 
-&adc0 {
+&autanalog {
 	interrupts = <36 4>;
 };
 
