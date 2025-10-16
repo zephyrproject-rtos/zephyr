@@ -106,8 +106,12 @@ static int i2c_silabs_dev_configure(const struct device *dev, uint32_t dev_confi
 	/* Initialize I2C parameters */
 	data->i2c_handle.i2c_peripheral = config->peripheral;
 
-	/* Set the operating mode (leader) */
-	data->i2c_handle.operating_mode = SL_I2C_LEADER_MODE;
+	/* Set the operating mode (leader or follower) */
+	if (IS_ENABLED(CONFIG_I2C_TARGET)) {
+		data->i2c_handle.operating_mode = SL_I2C_FOLLOWER_MODE;
+	} else {
+		data->i2c_handle.operating_mode = SL_I2C_LEADER_MODE;
+	}
 
 	/* Configure the I2C instance */
 	sli_i2c_init_core(&data->i2c_handle);
@@ -158,19 +162,41 @@ static int i2c_silabs_transfer_dma(const struct device *dev, struct i2c_msg *msg
 			}
 		} else if (msgs[i].flags & I2C_MSG_READ) {
 			/* Start DMA receive */
-			if (sl_i2c_leader_receive_non_blocking(&data->i2c_handle, addr, msgs[i].buf,
-							       msgs[i].len, NULL) != 0) {
-				k_sem_give(&data->bus_lock);
-				i2c_silabs_pm_policy_state_lock_put(dev);
-				return -EIO;
+			if (IS_ENABLED(CONFIG_I2C_TARGET)) {
+				if (sl_i2c_follower_receive_non_blocking(&data->i2c_handle,
+									 msgs[i].buf, msgs[i].len,
+									 NULL) != 0) {
+					k_sem_give(&data->bus_lock);
+					i2c_silabs_pm_policy_state_lock_put(dev);
+					return -EIO;
+				}
+			} else {
+				if (sl_i2c_leader_receive_non_blocking(&data->i2c_handle, addr,
+								       msgs[i].buf, msgs[i].len,
+								       NULL) != 0) {
+					k_sem_give(&data->bus_lock);
+					i2c_silabs_pm_policy_state_lock_put(dev);
+					return -EIO;
+				}
 			}
 		} else {
 			/* Start DMA send */
-			if (sl_i2c_leader_send_non_blocking(&data->i2c_handle, addr, msgs[i].buf,
-							    msgs[i].len, NULL) != 0) {
-				k_sem_give(&data->bus_lock);
-				i2c_silabs_pm_policy_state_lock_put(dev);
-				return -EIO;
+			if (IS_ENABLED(CONFIG_I2C_TARGET)) {
+				if (sl_i2c_follower_send_non_blocking(&data->i2c_handle,
+								      msgs[i].buf, msgs[i].len,
+								      NULL) != 0) {
+					k_sem_give(&data->bus_lock);
+					i2c_silabs_pm_policy_state_lock_put(dev);
+					return -EIO;
+				}
+			} else {
+				if (sl_i2c_leader_send_non_blocking(&data->i2c_handle, addr,
+								    msgs[i].buf, msgs[i].len,
+								    NULL) != 0) {
+					k_sem_give(&data->bus_lock);
+					i2c_silabs_pm_policy_state_lock_put(dev);
+					return -EIO;
+				}
 			}
 		}
 		if (!asynchronous) {
@@ -220,20 +246,40 @@ static int i2c_silabs_transfer_sync(const struct device *dev, struct i2c_msg *ms
 			}
 			i++;
 		} else if (msgs[i].flags & I2C_MSG_READ) {
-			if (sl_i2c_leader_receive_blocking(&data->i2c_handle, addr, msgs[i].buf,
-							   msgs[i].len,
-							   CONFIG_I2C_SILABS_TIMEOUT) != 0) {
-				k_sem_give(&data->bus_lock);
-				err = -ETIMEDOUT;
-				goto out;
+			if (IS_ENABLED(CONFIG_I2C_TARGET)) {
+				if (sl_i2c_follower_receive_blocking(
+					    &data->i2c_handle, msgs[i].buf, msgs[i].len,
+					    CONFIG_I2C_SILABS_TIMEOUT) != 0) {
+					k_sem_give(&data->bus_lock);
+					err = -ETIMEDOUT;
+					goto out;
+				}
+			} else {
+				if (sl_i2c_leader_receive_blocking(
+					    &data->i2c_handle, addr, msgs[i].buf, msgs[i].len,
+					    CONFIG_I2C_SILABS_TIMEOUT) != 0) {
+					k_sem_give(&data->bus_lock);
+					err = -ETIMEDOUT;
+					goto out;
+				}
 			}
 		} else {
-			if (sl_i2c_leader_send_blocking(&data->i2c_handle, addr, msgs[i].buf,
-							msgs[i].len,
-							CONFIG_I2C_SILABS_TIMEOUT) != 0) {
-				k_sem_give(&data->bus_lock);
-				err = -ETIMEDOUT;
-				goto out;
+			if (IS_ENABLED(CONFIG_I2C_TARGET)) {
+				if (sl_i2c_follower_send_blocking(&data->i2c_handle, msgs[i].buf,
+								  msgs[i].len,
+								  CONFIG_I2C_SILABS_TIMEOUT) != 0) {
+					k_sem_give(&data->bus_lock);
+					err = -ETIMEDOUT;
+					goto out;
+				}
+			} else {
+				if (sl_i2c_leader_send_blocking(&data->i2c_handle, addr,
+								msgs[i].buf, msgs[i].len,
+								CONFIG_I2C_SILABS_TIMEOUT) != 0) {
+					k_sem_give(&data->bus_lock);
+					err = -ETIMEDOUT;
+					goto out;
+				}
 			}
 		}
 		i += msgs_in_transfer;
@@ -279,6 +325,15 @@ static int i2c_silabs_transfer_impl(const struct device *dev, struct i2c_msg *ms
 			return -EWOULDBLOCK;
 		}
 		return ret;
+	}
+
+	if (IS_ENABLED(CONFIG_I2C_TARGET)) {
+		/* Set the follower address */
+		if (sl_i2c_set_follower_address(&data->i2c_handle, addr, data->is_10bit_addr) !=
+						0) {
+			k_sem_give(&data->bus_lock);
+			return -EINVAL;
+		}
 	}
 
 	if (i2c_silabs_is_dma_enabled_instance(dev)) {
@@ -428,7 +483,11 @@ void i2c_silabs_isr_handler(const struct device *dev)
 	struct i2c_silabs_dev_data *data = dev->data;
 	sl_i2c_handle_t *sl_i2c_handle = &data->i2c_handle;
 
-	sli_i2c_leader_dispatch_interrupt(sl_i2c_handle);
+	if (IS_ENABLED(CONFIG_I2C_TARGET)) {
+		sli_i2c_follower_dispatch_interrupt(sl_i2c_handle);
+	} else {
+		sli_i2c_leader_dispatch_interrupt(sl_i2c_handle);
+	}
 	if (sl_i2c_handle->event != SL_I2C_EVENT_IN_PROGRESS) {
 		if (!data->asynchronous) {
 			k_sem_give(&data->transfer_sem);
