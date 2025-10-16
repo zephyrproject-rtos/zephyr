@@ -107,6 +107,35 @@ struct usb_camera_ctrls {
 	struct video_ctrl pixel_rate;
 };
 
+/**
+ * @brief UVC device descriptors collection
+ *
+ * This structure contains pointers to all UVC-specific descriptors
+ * parsed from the device configuration.
+ */
+struct uvc_device_descriptors {
+	/** Video Control Header descriptor from device */
+	struct uvc_control_header_descriptor *vc_header;
+	/** Video Control Input Terminal descriptor from device */
+	struct uvc_input_terminal_descriptor *vc_itd;
+	/** Video Control Output Terminal descriptor from device */
+	struct uvc_output_terminal_descriptor *vc_otd;
+	/** Video Control Camera Terminal descriptor from device */
+	struct uvc_camera_terminal_descriptor *vc_ctd;
+	/** Video Control Selector Unit descriptor from device */
+	struct uvc_selector_unit_descriptor *vc_sud;
+	/** Video Control Processing Unit descriptor from device */
+	struct uvc_processing_unit_descriptor *vc_pud;
+	/** Video Control Encoding Unit descriptor from device */
+	struct uvc_encoding_unit_descriptor *vc_encoding_unit;
+	/** Video Control Extension Unit descriptor from device */
+	struct uvc_extension_unit_descriptor *vc_extension_unit;
+	/** Video Stream Input Header descriptor from device */
+	struct uvc_stream_input_header_descriptor *vs_input_header;
+	/** Video Stream Output Header descriptor from device */
+	struct uvc_stream_output_header_descriptor *vs_output_header;
+};
+
 struct uvc_device {
 	/** Associated USB device */
 	struct usb_device *udev;
@@ -148,28 +177,8 @@ struct uvc_device {
 	struct usb_if_descriptor *current_control_interface;
 	/** Information about current streaming interface */
 	struct uvc_stream_iface_info current_stream_iface_info;
-
-	/** Video Control Header descriptor from device */
-	struct uvc_control_header_descriptor *vc_header;
-	/** Video Control Input Terminal descriptor from device */
-	struct uvc_input_terminal_descriptor *vc_itd;
-	/** Video Control Output Terminal descriptor from device */
-	struct uvc_output_terminal_descriptor *vc_otd;
-	/** Video Control Camera Terminal descriptor from device */
-	struct uvc_camera_terminal_descriptor *vc_ctd;
-	/** Video Control Selector Unit descriptor from device */
-	struct uvc_selector_unit_descriptor *vc_sud;
-	/** Video Control Processing Unit descriptor from device */
-	struct uvc_processing_unit_descriptor *vc_pud;
-	/** Video Control Encoding Unit descriptor from device */
-	struct uvc_encoding_unit_descriptor *vc_encoding_unit;
-	/** Video Control Extension Unit descriptor from device */
-	struct uvc_extension_unit_descriptor *vc_extension_unit;
-
-	/** Video Stream Input Header descriptor from device */
-	struct uvc_stream_input_header_descriptor *vs_input_header;
-	/** Video Stream Output Header descriptor from device */
-	struct uvc_stream_output_header_descriptor *vs_output_header;
+	/** UVC device descriptors collection */
+	struct uvc_device_descriptors uvc_descriptors;
 	/** Available format groups parsed from descriptors */
 	struct uvc_format_info_all formats;
 	/** Currently selected video format */
@@ -240,7 +249,9 @@ process_frames:
 	while (desc_buf) {
 		struct uvc_frame_descriptor *frame = (struct uvc_frame_descriptor *)desc_buf;
 
-		if (frame->bLength == 0) break;
+		if (frame->bLength == 0) {
+			break;
+		}
 
 		if (frame->bDescriptorType == USB_DESC_CS_INTERFACE &&
 			frame->bDescriptorSubType == frame_subtype &&
@@ -414,288 +425,292 @@ static int uvc_host_parse_cs_vc_interface_descriptor(struct uvc_device *uvc_dev,
 			break;
 		}
 
-		if (header->bDescriptorType == USB_DESC_CS_INTERFACE) {
-			switch (header->bDescriptorSubType) {
-			case UVC_VC_HEADER: {
-				struct uvc_control_header_descriptor *header_desc =
-					(struct uvc_control_header_descriptor *)header;
+		if (header->bDescriptorType != USB_DESC_CS_INTERFACE) {
+			/* Move to next descriptor */
+			header = (struct uvc_cs_descriptor_header *)((uint8_t *)header + header->bLength);
+			continue;
+		}
 
-				/* Check descriptor length - at least basic fields */
-				if (header->bLength < sizeof(struct uvc_control_header_descriptor)) {
-					LOG_ERR("Invalid VC header descriptor length: %u", header->bLength);
-					return -EINVAL;
-				}
+		switch (header->bDescriptorSubType) {
+		case UVC_VC_HEADER: {
+			struct uvc_control_header_descriptor *header_desc =
+				(struct uvc_control_header_descriptor *)header;
 
-				/* Additional length check for interface collection */
-				if (header->bLength < (sizeof(struct uvc_control_header_descriptor) +
-									header_desc->bInCollection)) {
-					LOG_ERR("VC header descriptor too short for interface collection: %u < %u",
-							header->bLength,
-							(unsigned)(sizeof(struct uvc_control_header_descriptor) + header_desc->bInCollection));
-					return -EINVAL;
-				}
-
-				/* Save VideoControl Interface Header descriptor pointer */
-				uvc_dev->vc_header = header_desc;
-				LOG_DBG("Found VideoControl Header: UVC v%u.%u, TotalLength=%u, ClockFreq=%u Hz, Interfaces=%u",
-						(sys_le16_to_cpu(header_desc->bcdUVC) >> 8) & 0xFF,
-						sys_le16_to_cpu(header_desc->bcdUVC) & 0xFF,
-						sys_le16_to_cpu(header_desc->wTotalLength),
-						sys_le32_to_cpu(header_desc->dwClockFrequency),
-						header_desc->bInCollection);
-
-				/* Print interface collection for debugging */
-				if (header_desc->bInCollection > 0) {
-					LOG_HEXDUMP_DBG(header_desc->baInterfaceNr, header_desc->bInCollection,
-									"VideoStreaming Interface Numbers");
-				}
-
-				break;
+			/* Check descriptor length - at least basic fields */
+			if (header->bLength < sizeof(struct uvc_control_header_descriptor)) {
+				LOG_ERR("Invalid VC header descriptor length: %u", header->bLength);
+				return -EINVAL;
 			}
 
-			case UVC_VC_INPUT_TERMINAL: {
-				struct uvc_input_terminal_descriptor *it_desc =
-					(struct uvc_input_terminal_descriptor *)header;
-
-				/* Check descriptor length - at least basic fields */
-				if (header->bLength < sizeof(struct uvc_input_terminal_descriptor)) {
-					LOG_ERR("Invalid input terminal descriptor length: %u", header->bLength);
-					return -EINVAL;
-				}
-
-				/* Check if this is Camera Terminal (wTerminalType = 0x0201) */
-				if (sys_le16_to_cpu(it_desc->wTerminalType) == UVC_ITT_CAMERA) {
-					struct uvc_camera_terminal_descriptor *ct_desc =
-						(struct uvc_camera_terminal_descriptor *)header;
-
-					/* Check Camera Terminal descriptor length */
-					if (header->bLength < (sizeof(struct uvc_input_terminal_descriptor) + 6 + ct_desc->bControlSize)) {
-						LOG_ERR("Invalid camera terminal descriptor length: %u", header->bLength);
-						return -EINVAL;
-					}
-
-					/* Check if Camera Terminal already exists */
-					if (uvc_dev->vc_ctd != NULL) {
-						LOG_WRN("Multiple camera terminals found, replacing previous one");
-					}
-
-					/* Save Camera Terminal descriptor pointer */
-					uvc_dev->vc_ctd = ct_desc;
-
-					LOG_DBG("Found Camera Terminal: ID=%u, Type=0x%04x, ControlSize=%u",
-							ct_desc->bTerminalID,
-							sys_le16_to_cpu(ct_desc->wTerminalType),
-							ct_desc->bControlSize);
-
-					/* Print control bitmap for debugging */
-					if (ct_desc->bControlSize > 0) {
-						LOG_HEXDUMP_DBG(ct_desc->bmControls, ct_desc->bControlSize,
-										"Camera Terminal Controls");
-					}
-				} else {
-
-					/* Check if Input Terminal already exists */
-					if (uvc_dev->vc_itd != NULL) {
-						LOG_WRN("Multiple input terminals found, replacing previous one");
-					}
-
-					/* Save Input Terminal descriptor pointer */
-					uvc_dev->vc_itd = it_desc;
-
-					LOG_DBG("Found Input Terminal: ID=%u, Type=0x%04x",
-							it_desc->bTerminalID,
-							sys_le16_to_cpu(it_desc->wTerminalType));
-				}
-
-				break;
+			/* Additional length check for interface collection */
+			if (header->bLength < (sizeof(struct uvc_control_header_descriptor) +
+								header_desc->bInCollection)) {
+				LOG_ERR("VC header descriptor too short for interface collection: %u < %u",
+						header->bLength,
+						(unsigned)(sizeof(struct uvc_control_header_descriptor) + header_desc->bInCollection));
+				return -EINVAL;
 			}
 
-			case UVC_VC_OUTPUT_TERMINAL: {
-				struct uvc_output_terminal_descriptor *ot_desc =
-					(struct uvc_output_terminal_descriptor *)header;
+			/* Save VideoControl Interface Header descriptor pointer */
+			uvc_dev->uvc_descriptors.vc_header = header_desc;
+			LOG_DBG("Found VideoControl Header: UVC v%u.%u, TotalLength=%u, ClockFreq=%u Hz, Interfaces=%u",
+					(sys_le16_to_cpu(header_desc->bcdUVC) >> 8) & 0xFF,
+					sys_le16_to_cpu(header_desc->bcdUVC) & 0xFF,
+					sys_le16_to_cpu(header_desc->wTotalLength),
+					sys_le32_to_cpu(header_desc->dwClockFrequency),
+					header_desc->bInCollection);
 
-				/* Check descriptor length - at least basic fields */
-				if (header->bLength < sizeof(struct uvc_output_terminal_descriptor)) {
-					LOG_ERR("Invalid output terminal descriptor length: %u", header->bLength);
-					return -EINVAL;
-				}
-
-				/* Check if Output Terminal already exists */
-				if (uvc_dev->vc_otd != NULL) {
-					LOG_WRN("Multiple output terminals found, replacing previous one");
-				}
-
-				/* Save Output Terminal descriptor pointer */
-				uvc_dev->vc_otd = ot_desc;
-
-				LOG_DBG("Found Output Terminal: ID=%u, Type=0x%04x, SourceID=%u",
-						ot_desc->bTerminalID,
-						sys_le16_to_cpu(ot_desc->wTerminalType),
-						ot_desc->bSourceID);
-
-				break;
+			/* Print interface collection for debugging */
+			if (header_desc->bInCollection > 0) {
+				LOG_HEXDUMP_DBG(header_desc->baInterfaceNr, header_desc->bInCollection,
+								"VideoStreaming Interface Numbers");
 			}
 
-			case UVC_VC_SELECTOR_UNIT: {
-				struct uvc_selector_unit_descriptor *su_desc =
-					(struct uvc_selector_unit_descriptor *)header;
+			break;
+		}
 
-				/* Check descriptor length - at least basic fields */
-				if (header->bLength < 5) { /* bLength + bDescriptorType + bDescriptorSubType + bUnitID + bNrInPins */
-					LOG_ERR("Invalid selector unit descriptor length: %u", header->bLength);
-					return -EINVAL;
-				}
+		case UVC_VC_INPUT_TERMINAL: {
+			struct uvc_input_terminal_descriptor *it_desc =
+				(struct uvc_input_terminal_descriptor *)header;
 
-				/* Check if there's enough space for source ID array */
-				if (header->bLength < (5 + su_desc->bNrInPins + 1)) { /* 5 basic bytes + source IDs + iSelector */
-					LOG_ERR("Selector unit descriptor too short for source IDs: %u < %u",
-							header->bLength, 5 + su_desc->bNrInPins + 1);
-					return -EINVAL;
-				}
-
-				/* Check if Selector Unit already exists */
-				if (uvc_dev->vc_sud != NULL) {
-					LOG_WRN("Multiple selector units found, replacing previous one");
-				}
-
-				/* Save Selector Unit descriptor pointer */
-				uvc_dev->vc_sud = su_desc;
-
-				LOG_DBG("Found Selector Unit: ID=%u, InputPins=%u",
-						su_desc->bUnitID,
-						su_desc->bNrInPins);
-
-				/* Print source IDs for debugging */
-				if (su_desc->bNrInPins > 0) {
-					LOG_HEXDUMP_DBG(su_desc->baSourceID, su_desc->bNrInPins,
-									"Selector Unit Source IDs");
-				}
-
-				break;
+			/* Check descriptor length - at least basic fields */
+			if (header->bLength < sizeof(struct uvc_input_terminal_descriptor)) {
+				LOG_ERR("Invalid input terminal descriptor length: %u", header->bLength);
+				return -EINVAL;
 			}
 
-			case UVC_VC_PROCESSING_UNIT: {
-				struct uvc_processing_unit_descriptor *pu_desc =
-					(struct uvc_processing_unit_descriptor *)header;
+			/* Check if this is Camera Terminal (wTerminalType = 0x0201) */
+			if (sys_le16_to_cpu(it_desc->wTerminalType) == UVC_ITT_CAMERA) {
+				struct uvc_camera_terminal_descriptor *ct_desc =
+					(struct uvc_camera_terminal_descriptor *)header;
 
-				/* Check descriptor length - at least basic fields */
-				if (header->bLength < 8) { /* Basic field length */
-					LOG_ERR("Invalid processing unit descriptor length: %u", header->bLength);
+				/* Check Camera Terminal descriptor length */
+				if (header->bLength < (sizeof(struct uvc_input_terminal_descriptor) + 6 + ct_desc->bControlSize)) {
+					LOG_ERR("Invalid camera terminal descriptor length: %u", header->bLength);
 					return -EINVAL;
 				}
 
-				/* Check if there's enough space for control bitmap */
-				if (header->bLength < (8 + pu_desc->bControlSize)) {
-					LOG_ERR("Processing unit descriptor too short for control bitmap: %u < %u",
-							header->bLength, 8 + pu_desc->bControlSize);
-					return -EINVAL;
+				/* Check if Camera Terminal already exists */
+				if (uvc_dev->uvc_descriptors.vc_ctd != NULL) {
+					LOG_WRN("Multiple camera terminals found, replacing previous one");
 				}
 
-				/* Check if Processing Unit already exists (most devices have only one) */
-				if (uvc_dev->vc_pud != NULL) {
-					LOG_WRN("Multiple processing units found, replacing previous one");
-				}
+				/* Save Camera Terminal descriptor pointer */
+				uvc_dev->uvc_descriptors.vc_ctd = ct_desc;
 
-				/* Save Processing Unit descriptor pointer */
-				uvc_dev->vc_pud = pu_desc;
-
-				LOG_DBG("Found Processing Unit: ID=%u, SourceID=%u, MaxMultiplier=%u, ControlSize=%u",
-						pu_desc->bUnitID,
-						pu_desc->bSourceID,
-						sys_le16_to_cpu(pu_desc->wMaxMultiplier),
-						pu_desc->bControlSize);
+				LOG_DBG("Found Camera Terminal: ID=%u, Type=0x%04x, ControlSize=%u",
+						ct_desc->bTerminalID,
+						sys_le16_to_cpu(ct_desc->wTerminalType),
+						ct_desc->bControlSize);
 
 				/* Print control bitmap for debugging */
-				if (pu_desc->bControlSize > 0) {
-					LOG_HEXDUMP_DBG(pu_desc->bmControls, pu_desc->bControlSize,
-									"Processing Unit Controls");
+				if (ct_desc->bControlSize > 0) {
+					LOG_HEXDUMP_DBG(ct_desc->bmControls, ct_desc->bControlSize,
+									"Camera Terminal Controls");
+				}
+			} else {
+
+				/* Check if Input Terminal already exists */
+				if (uvc_dev->uvc_descriptors.vc_itd != NULL) {
+					LOG_WRN("Multiple input terminals found, replacing previous one");
 				}
 
-				break;
+				/* Save Input Terminal descriptor pointer */
+				uvc_dev->uvc_descriptors.vc_itd = it_desc;
+
+				LOG_DBG("Found Input Terminal: ID=%u, Type=0x%04x",
+						it_desc->bTerminalID,
+						sys_le16_to_cpu(it_desc->wTerminalType));
 			}
 
-			case UVC_VC_ENCODING_UNIT: {
-				struct uvc_encoding_unit_descriptor *enc_desc =
-					(struct uvc_encoding_unit_descriptor *)header;
+			break;
+		}
 
-				/* Check descriptor length - at least basic fields */
-				if (header->bLength < 8) { /* Basic field length */
-					LOG_ERR("Invalid encoding unit descriptor length: %u", header->bLength);
-					return -EINVAL;
-				}
+		case UVC_VC_OUTPUT_TERMINAL: {
+			struct uvc_output_terminal_descriptor *ot_desc =
+				(struct uvc_output_terminal_descriptor *)header;
 
-				/* Check if there's enough space for control bitmap */
-				if (header->bLength < (8 + enc_desc->bControlSize)) {
-					LOG_ERR("Encoding unit descriptor too short for control bitmap: %u < %u",
-							header->bLength, 8 + enc_desc->bControlSize);
-					return -EINVAL;
-				}
-
-				/* Check if Encoding Unit already exists */
-				if (uvc_dev->vc_encoding_unit != NULL) {
-					LOG_WRN("Multiple encoding units found, replacing previous one");
-				}
-
-				/* Save Encoding Unit descriptor pointer */
-				uvc_dev->vc_encoding_unit = enc_desc;
-
-				LOG_DBG("Found Encoding Unit: ID=%u, SourceID=%u, ControlSize=%u",
-						enc_desc->bUnitID,
-						enc_desc->bSourceID,
-						enc_desc->bControlSize);
-
-				/* Print control bitmap for debugging */
-				if (enc_desc->bControlSize > 0) {
-					LOG_HEXDUMP_DBG(enc_desc->bmControls, enc_desc->bControlSize,
-									"Encoding Unit Controls");
-				}
-
-				break;
+			/* Check descriptor length - at least basic fields */
+			if (header->bLength < sizeof(struct uvc_output_terminal_descriptor)) {
+				LOG_ERR("Invalid output terminal descriptor length: %u", header->bLength);
+				return -EINVAL;
 			}
 
-			case UVC_VC_EXTENSION_UNIT: {
-				struct uvc_extension_unit_descriptor *eu_desc =
-					(struct uvc_extension_unit_descriptor *)header;
-
-				/* Check descriptor length - at least basic fields */
-				if (header->bLength < 24) { /* Minimum: 3 + 1 + 16 + 1 + 1 + 1 + 1 = 24 bytes */
-					LOG_ERR("Invalid extension unit descriptor length: %u", header->bLength);
-					return -EINVAL;
-				}
-
-				/* Check if there's enough space for source ID array */
-				uint8_t min_length = 24 + eu_desc->bNrInPins; /* 24 basic bytes + source IDs */
-				if (header->bLength < min_length) {
-					LOG_ERR("Extension unit descriptor too short: %u < %u",
-							header->bLength, min_length);
-					return -EINVAL;
-				}
-
-				/* Check if Extension Unit already exists */
-				if (uvc_dev->vc_extension_unit != NULL) {
-					LOG_WRN("Multiple extension units found, replacing previous one");
-				}
-
-				/* Save Extension Unit descriptor pointer */
-				uvc_dev->vc_extension_unit = eu_desc;
-
-				LOG_DBG("Found Extension Unit: ID=%u, NumControls=%u, InputPins=%u",
-						eu_desc->bUnitID,
-						eu_desc->bNumControls,
-						eu_desc->bNrInPins);
-
-				/* Print Extension Code GUID for debugging */
-				LOG_HEXDUMP_DBG(eu_desc->guidExtensionCode, 16, "Extension Unit GUID");
-
-				break;
+			/* Check if Output Terminal already exists */
+			if (uvc_dev->uvc_descriptors.vc_otd != NULL) {
+				LOG_WRN("Multiple output terminals found, replacing previous one");
 			}
 
-			default:
-				/* Other CS_INTERFACE descriptor types, ignore */
-				LOG_DBG("Ignoring CS_INTERFACE subtype: 0x%02x", header->bDescriptorSubType);
-				break;
+			/* Save Output Terminal descriptor pointer */
+			uvc_dev->uvc_descriptors.vc_otd = ot_desc;
 
+			LOG_DBG("Found Output Terminal: ID=%u, Type=0x%04x, SourceID=%u",
+					ot_desc->bTerminalID,
+					sys_le16_to_cpu(ot_desc->wTerminalType),
+					ot_desc->bSourceID);
+
+			break;
+		}
+
+		case UVC_VC_SELECTOR_UNIT: {
+			struct uvc_selector_unit_descriptor *su_desc =
+				(struct uvc_selector_unit_descriptor *)header;
+
+			/* Check descriptor length - at least basic fields */
+			if (header->bLength < 5) { /* bLength + bDescriptorType + bDescriptorSubType + bUnitID + bNrInPins */
+				LOG_ERR("Invalid selector unit descriptor length: %u", header->bLength);
+				return -EINVAL;
 			}
+
+			/* Check if there's enough space for source ID array */
+			if (header->bLength < (5 + su_desc->bNrInPins + 1)) { /* 5 basic bytes + source IDs + iSelector */
+				LOG_ERR("Selector unit descriptor too short for source IDs: %u < %u",
+						header->bLength, 5 + su_desc->bNrInPins + 1);
+				return -EINVAL;
+			}
+
+			/* Check if Selector Unit already exists */
+			if (uvc_dev->uvc_descriptors.vc_sud != NULL) {
+				LOG_WRN("Multiple selector units found, replacing previous one");
+			}
+
+			/* Save Selector Unit descriptor pointer */
+			uvc_dev->uvc_descriptors.vc_sud = su_desc;
+
+			LOG_DBG("Found Selector Unit: ID=%u, InputPins=%u",
+					su_desc->bUnitID,
+					su_desc->bNrInPins);
+
+			/* Print source IDs for debugging */
+			if (su_desc->bNrInPins > 0) {
+				LOG_HEXDUMP_DBG(su_desc->baSourceID, su_desc->bNrInPins,
+								"Selector Unit Source IDs");
+			}
+
+			break;
+		}
+
+		case UVC_VC_PROCESSING_UNIT: {
+			struct uvc_processing_unit_descriptor *pu_desc =
+				(struct uvc_processing_unit_descriptor *)header;
+
+			/* Check descriptor length - at least basic fields */
+			if (header->bLength < 8) { /* Basic field length */
+				LOG_ERR("Invalid processing unit descriptor length: %u", header->bLength);
+				return -EINVAL;
+			}
+
+			/* Check if there's enough space for control bitmap */
+			if (header->bLength < (8 + pu_desc->bControlSize)) {
+				LOG_ERR("Processing unit descriptor too short for control bitmap: %u < %u",
+						header->bLength, 8 + pu_desc->bControlSize);
+				return -EINVAL;
+			}
+
+			/* Check if Processing Unit already exists (most devices have only one) */
+			if (uvc_dev->uvc_descriptors.vc_pud != NULL) {
+				LOG_WRN("Multiple processing units found, replacing previous one");
+			}
+
+			/* Save Processing Unit descriptor pointer */
+			uvc_dev->uvc_descriptors.vc_pud = pu_desc;
+
+			LOG_DBG("Found Processing Unit: ID=%u, SourceID=%u, MaxMultiplier=%u, ControlSize=%u",
+					pu_desc->bUnitID,
+					pu_desc->bSourceID,
+					sys_le16_to_cpu(pu_desc->wMaxMultiplier),
+					pu_desc->bControlSize);
+
+			/* Print control bitmap for debugging */
+			if (pu_desc->bControlSize > 0) {
+				LOG_HEXDUMP_DBG(pu_desc->bmControls, pu_desc->bControlSize,
+								"Processing Unit Controls");
+			}
+
+			break;
+		}
+
+		case UVC_VC_ENCODING_UNIT: {
+			struct uvc_encoding_unit_descriptor *enc_desc =
+				(struct uvc_encoding_unit_descriptor *)header;
+
+			/* Check descriptor length - at least basic fields */
+			if (header->bLength < 8) { /* Basic field length */
+				LOG_ERR("Invalid encoding unit descriptor length: %u", header->bLength);
+				return -EINVAL;
+			}
+
+			/* Check if there's enough space for control bitmap */
+			if (header->bLength < (8 + enc_desc->bControlSize)) {
+				LOG_ERR("Encoding unit descriptor too short for control bitmap: %u < %u",
+						header->bLength, 8 + enc_desc->bControlSize);
+				return -EINVAL;
+			}
+
+			/* Check if Encoding Unit already exists */
+			if (uvc_dev->uvc_descriptors.vc_encoding_unit != NULL) {
+				LOG_WRN("Multiple encoding units found, replacing previous one");
+			}
+
+			/* Save Encoding Unit descriptor pointer */
+			uvc_dev->uvc_descriptors.vc_encoding_unit = enc_desc;
+
+			LOG_DBG("Found Encoding Unit: ID=%u, SourceID=%u, ControlSize=%u",
+					enc_desc->bUnitID,
+					enc_desc->bSourceID,
+					enc_desc->bControlSize);
+
+			/* Print control bitmap for debugging */
+			if (enc_desc->bControlSize > 0) {
+				LOG_HEXDUMP_DBG(enc_desc->bmControls, enc_desc->bControlSize,
+								"Encoding Unit Controls");
+			}
+
+			break;
+		}
+
+		case UVC_VC_EXTENSION_UNIT: {
+			struct uvc_extension_unit_descriptor *eu_desc =
+				(struct uvc_extension_unit_descriptor *)header;
+
+			/* Check descriptor length - at least basic fields */
+			if (header->bLength < 24) { /* Minimum: 3 + 1 + 16 + 1 + 1 + 1 + 1 = 24 bytes */
+				LOG_ERR("Invalid extension unit descriptor length: %u", header->bLength);
+				return -EINVAL;
+			}
+
+			/* Check if there's enough space for source ID array */
+			uint8_t min_length = 24 + eu_desc->bNrInPins; /* 24 basic bytes + source IDs */
+			if (header->bLength < min_length) {
+				LOG_ERR("Extension unit descriptor too short: %u < %u",
+						header->bLength, min_length);
+				return -EINVAL;
+			}
+
+			/* Check if Extension Unit already exists */
+			if (uvc_dev->uvc_descriptors.vc_extension_unit != NULL) {
+				LOG_WRN("Multiple extension units found, replacing previous one");
+			}
+
+			/* Save Extension Unit descriptor pointer */
+			uvc_dev->uvc_descriptors.vc_extension_unit = eu_desc;
+
+			LOG_DBG("Found Extension Unit: ID=%u, NumControls=%u, InputPins=%u",
+					eu_desc->bUnitID,
+					eu_desc->bNumControls,
+					eu_desc->bNrInPins);
+
+			/* Print Extension Code GUID for debugging */
+			LOG_HEXDUMP_DBG(eu_desc->guidExtensionCode, 16, "Extension Unit GUID");
+
+			break;
+		}
+
+		default:
+			/* Other CS_INTERFACE descriptor types, ignore */
+			LOG_DBG("Ignoring CS_INTERFACE subtype: 0x%02x", header->bDescriptorSubType);
+			break;
+
 		}
 		/* Move to next descriptor */
 		header = (struct uvc_cs_descriptor_header *)((uint8_t *)header + header->bLength);
@@ -735,116 +750,120 @@ static int uvc_host_parse_cs_vs_interface_descriptor(struct uvc_device *uvc_dev,
 			break;
 		}
 
-		if (header->bDescriptorType == USB_DESC_CS_INTERFACE) {
-			switch (header->bDescriptorSubType) {
-			case UVC_VS_INPUT_HEADER: {
-				struct uvc_stream_input_header_descriptor *header_desc = (struct uvc_stream_input_header_descriptor *)header;
+		if (header->bDescriptorType != USB_DESC_CS_INTERFACE) {
+			/* Move to next descriptor */
+			header = (struct uvc_cs_descriptor_header *)((uint8_t *)header + header->bLength);
+			continue;
+		}
 
-				/* Check descriptor length */
-				if (header->bLength < sizeof(struct uvc_stream_input_header_descriptor)) {
-					LOG_ERR("Invalid VS input header descriptor length: %u", header->bLength);
-					return -EINVAL;
-				}
+		switch (header->bDescriptorSubType) {
+		case UVC_VS_INPUT_HEADER: {
+			struct uvc_stream_input_header_descriptor *header_desc = (struct uvc_stream_input_header_descriptor *)header;
 
-				/* Save descriptor pointer */
-				uvc_dev->vs_input_header = header_desc;
+			/* Check descriptor length */
+			if (header->bLength < sizeof(struct uvc_stream_input_header_descriptor)) {
+				LOG_ERR("Invalid VS input header descriptor length: %u", header->bLength);
+				return -EINVAL;
+			}
 
-				LOG_DBG("Added VS input header: formats=%u, total_len=%u, ep=0x%02x, terminal_link=%u",
-						header_desc->bNumFormats,
-						header_desc->wTotalLength,
-						header_desc->bEndpointAddress,
-						header_desc->bTerminalLink);
+			/* Save descriptor pointer */
+			uvc_dev->uvc_descriptors.vs_input_header = header_desc;
 
+			LOG_DBG("Added VS input header: formats=%u, total_len=%u, ep=0x%02x, terminal_link=%u",
+					header_desc->bNumFormats,
+					header_desc->wTotalLength,
+					header_desc->bEndpointAddress,
+					header_desc->bTerminalLink);
+
+			break;
+		}
+
+		case UVC_VS_OUTPUT_HEADER: {
+			struct uvc_stream_output_header_descriptor *header_desc = (struct uvc_stream_output_header_descriptor *)header;
+
+			/* Check descriptor length */
+			if (header->bLength < sizeof(struct uvc_stream_output_header_descriptor)) {
+				LOG_ERR("Invalid VS output header descriptor length: %u", header->bLength);
+				return -EINVAL;
+			}
+
+			/* Save descriptor pointer */
+			uvc_dev->uvc_descriptors.vs_output_header = header_desc;
+
+			LOG_DBG("Added VS output header: formats=%u, total_len=%u, ep=0x%02x, terminal_link=%u",
+					header_desc->bNumFormats,
+					header_desc->wTotalLength,
+					header_desc->bEndpointAddress,
+					header_desc->bTerminalLink);
+
+			break;
+		}
+
+		case UVC_VS_FORMAT_UNCOMPRESSED: {
+			struct uvc_format_uncomp_descriptor *format_desc = (struct uvc_format_uncomp_descriptor *)header;
+			struct uvc_vs_format_uncompressed_info *info = &uvc_dev->formats.format_uncompressed;
+
+			/* Check descriptor length */
+			if (header->bLength < sizeof(struct uvc_format_uncomp_descriptor)) {
+				LOG_ERR("Invalid uncompressed format descriptor length: %u", header->bLength);
+				return -EINVAL;
+			}
+
+			/* Check array space */
+			if (info->num_uncompressed_formats >= CONFIG_USBH_VIDEO_MAX_FORMATS) {
+				LOG_WRN("Too many uncompressed formats, ignoring format index %u",
+						format_desc->bFormatIndex);
 				break;
 			}
 
-			case UVC_VS_OUTPUT_HEADER: {
-				struct uvc_stream_output_header_descriptor *header_desc = (struct uvc_stream_output_header_descriptor *)header;
+			/* Save descriptor pointer */
+			info->uncompressed_format[info->num_uncompressed_formats] = format_desc;
+			info->num_uncompressed_formats++;
 
-				/* Check descriptor length */
-				if (header->bLength < sizeof(struct uvc_stream_output_header_descriptor)) {
-					LOG_ERR("Invalid VS output header descriptor length: %u", header->bLength);
-					return -EINVAL;
-				}
+			LOG_DBG("Added uncompressed format[%u]: index=%u, frames=%u, bpp=%u",
+					info->num_uncompressed_formats - 1,
+					format_desc->bFormatIndex,
+					format_desc->bNumFrameDescriptors,
+					format_desc->bBitsPerPixel);
 
-				/* Save descriptor pointer */
-				uvc_dev->vs_output_header = header_desc;
+			break;
+		}
 
-				LOG_DBG("Added VS output header: formats=%u, total_len=%u, ep=0x%02x, terminal_link=%u",
-						header_desc->bNumFormats,
-						header_desc->wTotalLength,
-						header_desc->bEndpointAddress,
-						header_desc->bTerminalLink);
+		case UVC_VS_FORMAT_MJPEG: {
+			struct uvc_format_mjpeg_descriptor *format_desc = (struct uvc_format_mjpeg_descriptor *)header;
+			struct uvc_vs_format_mjpeg_info *info = &uvc_dev->formats.format_mjpeg;
 
+			/* Check descriptor length */
+			if (header->bLength < sizeof(struct uvc_format_mjpeg_descriptor)) {
+				LOG_ERR("Invalid MJPEG format descriptor length: %u", header->bLength);
+				return -EINVAL;
+			}
+
+			/* Check array space */
+			if (info->num_mjpeg_formats >= CONFIG_USBH_VIDEO_MAX_FORMATS) {
+				LOG_WRN("Too many MJPEG formats, ignoring format index %u",
+						format_desc->bFormatIndex);
 				break;
 			}
 
-			case UVC_VS_FORMAT_UNCOMPRESSED: {
-				struct uvc_format_uncomp_descriptor *format_desc = (struct uvc_format_uncomp_descriptor *)header;
-				struct uvc_vs_format_uncompressed_info *info = &uvc_dev->formats.format_uncompressed;
+			/* Save descriptor pointer */
+			info->vs_mjpeg_format[info->num_mjpeg_formats] = format_desc;
+			info->num_mjpeg_formats++;
 
-				/* Check descriptor length */
-				if (header->bLength < sizeof(struct uvc_format_uncomp_descriptor)) {
-					LOG_ERR("Invalid uncompressed format descriptor length: %u", header->bLength);
-					return -EINVAL;
-				}
+			LOG_DBG("Added MJPEG format[%u]: index=%u, frames=%u, flags=0x%02x",
+					info->num_mjpeg_formats - 1,
+					format_desc->bFormatIndex,
+					format_desc->bNumFrameDescriptors,
+					format_desc->bmFlags);
 
-				/* Check array space */
-				if (info->num_uncompressed_formats >= CONFIG_USBH_VIDEO_MAX_FORMATS) {
-					LOG_WRN("Too many uncompressed formats, ignoring format index %u",
-							format_desc->bFormatIndex);
-					return 0;
-				}
+			break;
+		}
 
-				/* Save descriptor pointer */
-				info->uncompressed_format[info->num_uncompressed_formats] = format_desc;
-				info->num_uncompressed_formats++;
+		default:
+			/* Other CS_INTERFACE descriptor types, ignore */
+			LOG_DBG("Ignoring CS_INTERFACE subtype: 0x%02x", header->bDescriptorSubType);
+			break;
 
-				LOG_DBG("Added uncompressed format[%u]: index=%u, frames=%u, bpp=%u",
-						info->num_uncompressed_formats - 1,
-						format_desc->bFormatIndex,
-						format_desc->bNumFrameDescriptors,
-						format_desc->bBitsPerPixel);
-
-				break;
-			}
-
-			case UVC_VS_FORMAT_MJPEG: {
-				struct uvc_format_mjpeg_descriptor *format_desc = (struct uvc_format_mjpeg_descriptor *)header;
-				struct uvc_vs_format_mjpeg_info *info = &uvc_dev->formats.format_mjpeg;
-
-				/* Check descriptor length */
-				if (header->bLength < sizeof(struct uvc_format_mjpeg_descriptor)) {
-					LOG_ERR("Invalid MJPEG format descriptor length: %u", header->bLength);
-					return -EINVAL;
-				}
-
-				/* Check array space */
-				if (info->num_mjpeg_formats >= CONFIG_USBH_VIDEO_MAX_FORMATS) {
-					LOG_WRN("Too many MJPEG formats, ignoring format index %u",
-							format_desc->bFormatIndex);
-					return 0;
-				}
-
-				/* Save descriptor pointer */
-				info->vs_mjpeg_format[info->num_mjpeg_formats] = format_desc;
-				info->num_mjpeg_formats++;
-
-				LOG_DBG("Added MJPEG format[%u]: index=%u, frames=%u, flags=0x%02x",
-						info->num_mjpeg_formats - 1,
-						format_desc->bFormatIndex,
-						format_desc->bNumFrameDescriptors,
-						format_desc->bmFlags);
-
-				break;
-			}
-
-			default:
-				/* Other CS_INTERFACE descriptor types, ignore */
-				LOG_DBG("Ignoring CS_INTERFACE subtype: 0x%02x", header->bDescriptorSubType);
-				break;
-
-			}
 		}
 		/* Move to next descriptor */
 		header = (struct uvc_cs_descriptor_header *)((uint8_t *)header + header->bLength);
@@ -906,8 +925,14 @@ static int uvc_host_parse_descriptors(struct uvc_device *uvc_dev)
 		if (USB_DESC_INTERFACE == header->bDescriptorType) {
 			if_desc = (struct usb_if_descriptor *)desc_buf;
 			ret = uvc_host_parse_interface_descriptor(uvc_dev, if_desc);
-			LOG_DBG("Parsed interface descriptor (bInterfaceNumber=%d, class=0x%02x)",
-				if_desc->bInterfaceNumber, if_desc->bInterfaceClass);
+			if (ret) {
+				LOG_WRN("Failed to parse interface descriptor (bInterfaceNumber=%d, class=0x%02x): %d",
+					if_desc->bInterfaceNumber, if_desc->bInterfaceClass, ret);
+				/* Continue parsing other interfaces instead of failing completely */
+			} else {
+				LOG_DBG("Parsed interface descriptor (bInterfaceNumber=%d, class=0x%02x)",
+					if_desc->bInterfaceNumber, if_desc->bInterfaceClass);
+			}
 		}
 
 		/* Move to next descriptor in the buffer */
@@ -1017,7 +1042,9 @@ static int uvc_host_find_frame_in_format(struct uvc_format_descriptor_header *fo
 				return 0;
 			}
 			frames_found++;
-		} else if (frame_header->bDescriptorType == USB_DESC_CS_INTERFACE &&
+		}
+
+		if (frame_header->bDescriptorType == USB_DESC_CS_INTERFACE &&
 				(frame_header->bDescriptorSubType == UVC_VS_FORMAT_UNCOMPRESSED || frame_header->bDescriptorSubType == UVC_VS_FORMAT_MJPEG)) {
 			/* Encountered new format descriptor, stop searching */
 			break;
@@ -1065,7 +1092,9 @@ static int uvc_host_find_format(struct uvc_device *uvc_dev,
 	for (int i = 0; i < uncompressed_info->num_uncompressed_formats; i++) {
 		struct uvc_format_uncomp_descriptor *format_desc = uncompressed_info->uncompressed_format[i];
 
-		if (!format_desc) continue;
+		if (!format_desc) {
+			continue;
+		}
 
 		/* Convert GUID to pixel format for comparison */
 		uint32_t desc_pixelformat = uvc_guid_to_fourcc(format_desc->guidFormat);
@@ -1092,7 +1121,9 @@ static int uvc_host_find_format(struct uvc_device *uvc_dev,
 		for (int i = 0; i < mjpeg_info->num_mjpeg_formats; i++) {
 			struct uvc_format_mjpeg_descriptor *format_desc = mjpeg_info->vs_mjpeg_format[i];
 
-			if (!format_desc) continue;
+			if (!format_desc) {
+				continue;
+			}
 
 			LOG_DBG("Checking MJPEG format: index=%u", format_desc->bFormatIndex);
 
@@ -1130,7 +1161,7 @@ static int uvc_host_select_streaming_alternate(struct uvc_device *uvc_dev, uint3
 	uint32_t optimal_bandwidth = UINT32_MAX;
 	uint32_t selected_payload_size = 0;
 	bool found_suitable = false;
-	enum usbh_speed device_speed = uvc_dev->udev->speed;
+	enum usb_device_speed device_speed = uvc_dev->udev->speed;
 	uint32_t max_payload_transfer_size = sys_le32_to_cpu(uvc_dev->video_probe.dwMaxPayloadTransferSize);
 	
 	LOG_DBG("Required bandwidth: %u bytes/sec, Max payload: %u bytes (device speed: %s)", 
@@ -1193,15 +1224,6 @@ static int uvc_host_select_streaming_alternate(struct uvc_device *uvc_dev, uint3
 					LOG_DBG("Selected optimal endpoint: interface %u alt %u EP 0x%02x, bandwidth=%u, payload=%u",
 							if_desc->bInterfaceNumber, if_desc->bAlternateSetting,
 							ep_desc->bEndpointAddress, ep_bandwidth, ep_payload_size);
-				} else {
-					if (ep_bandwidth < required_bandwidth) {
-						LOG_DBG("Endpoint rejected: insufficient bandwidth (%u < %u)", 
-								ep_bandwidth, required_bandwidth);
-					}
-					if (ep_payload_size < max_payload_transfer_size) {
-						LOG_DBG("Endpoint rejected: insufficient payload size (%u < %u)", 
-								ep_payload_size, max_payload_transfer_size);
-					}
 				}
 			}
 
@@ -1567,7 +1589,6 @@ static int uvc_host_set_frame_rate(struct uvc_device *uvc_dev, uint32_t fps)
 	uint32_t best_frame_interval;
 	uint32_t min_diff = UINT32_MAX;
 	uint32_t required_bandwidth;
-	bool found_exact_match = false;
 	int ret;
 
 	if (!uvc_dev || fps == 0) {
@@ -1611,7 +1632,6 @@ static int uvc_host_set_frame_rate(struct uvc_device *uvc_dev, uint32_t fps)
 			/* Find closest step-aligned interval */
 			uint32_t steps = (target_frame_interval - min_interval) / step_interval;
 			best_frame_interval = min_interval + (steps * step_interval);
-			found_exact_match = (best_frame_interval == target_frame_interval);
 		}
 	} else {
 		/* Discrete frame intervals */
@@ -1625,7 +1645,6 @@ static int uvc_host_set_frame_rate(struct uvc_device *uvc_dev, uint32_t fps)
 			if (diff < min_diff) {
 				min_diff = diff;
 				best_frame_interval = interval;
-				found_exact_match = (diff == 0);
 			}
 		}
 	}
@@ -1639,9 +1658,8 @@ static int uvc_host_set_frame_rate(struct uvc_device *uvc_dev, uint32_t fps)
 
 	k_mutex_unlock(&uvc_dev->lock);
 
-	LOG_INF("Setting frame rate: %u fps -> %u fps (%s match)",
-			fps, 10000000 / best_frame_interval,
-			found_exact_match ? "exact" : "closest");
+	LOG_INF("Setting frame rate: %u fps -> %u fps",
+			fps, 10000000 / best_frame_interval);
 
 	/* Send PROBE request */
 	ret = uvc_host_stream_interface_control(uvc_dev, UVC_SET_CUR, UVC_VS_PROBE_CONTROL,
@@ -1720,22 +1738,23 @@ static int uvc_host_set_frame_rate(struct uvc_device *uvc_dev, uint32_t fps)
  * @param frame_subtype Expected frame descriptor subtype
  * @param caps_array Capabilities array to fill
  * @param start_index Starting index in capabilities array
- * @param max_caps Maximum number of capabilities
  * @return Updated capability index
  */
 static int uvc_host_parse_format_frames(uint8_t *format_ptr, uint8_t format_length,
-										uint8_t num_frames, uint32_t pixelformat,
-										uint8_t frame_subtype, struct video_format_cap *caps_array,
-										int start_index, int max_caps)
+					uint8_t num_frames, uint32_t pixelformat,
+					uint8_t frame_subtype, struct video_format_cap *caps_array,
+					int start_index)
 {
 	uint8_t *desc_buf = format_ptr + format_length;
 	int frames_found = 0;
 	int cap_index = start_index;
 
-	while (frames_found < num_frames && cap_index < max_caps) {
+	while (frames_found < num_frames) {
 		struct uvc_frame_descriptor *frame_header = (struct uvc_frame_descriptor *)desc_buf;
 
-		if (frame_header->bLength == 0) break;
+		if (frame_header->bLength == 0) {
+			break;
+		}
 
 		if (frame_header->bDescriptorType == USB_DESC_CS_INTERFACE &&
 			frame_header->bDescriptorSubType == frame_subtype) {
@@ -1764,6 +1783,10 @@ static int uvc_host_parse_format_frames(uint8_t *format_ptr, uint8_t format_leng
 				   frame_header->bDescriptorSubType == UVC_VS_FORMAT_MJPEG)) {
 			/* Found new format descriptor, stop parsing current format frames */
 			break;
+		} else {
+			/* Skip other descriptor types */
+			LOG_DBG("Skipping descriptor: type=0x%02x, subtype=0x%02x",
+					frame_header->bDescriptorType, frame_header->bDescriptorSubType);
 		}
 
 		desc_buf += frame_header->bLength;
@@ -1828,7 +1851,9 @@ static struct video_format_cap* uvc_host_create_format_caps(struct uvc_device *u
 	/* Process uncompressed formats */
 	for (int i = 0; i < uncompressed_info->num_uncompressed_formats; i++) {
 		struct uvc_format_uncomp_descriptor *format = uncompressed_info->uncompressed_format[i];
-		if (!format) continue;
+		if (!format) {
+			continue;
+		}
 
 		/* Get pixel format from GUID */
 		uint32_t pixelformat = uvc_guid_to_fourcc(format->guidFormat);
@@ -1841,19 +1866,21 @@ static struct video_format_cap* uvc_host_create_format_caps(struct uvc_device *u
 		cap_index = uvc_host_parse_format_frames((uint8_t *)format, format->bLength,
 												format->bNumFrameDescriptors, pixelformat,
 												UVC_VS_FRAME_UNCOMPRESSED, caps_array,
-												cap_index, total_caps);
+												cap_index);
 	}
 
 	/* Process MJPEG formats */
 	for (int i = 0; i < mjpeg_info->num_mjpeg_formats; i++) {
 		struct uvc_format_mjpeg_descriptor *format = mjpeg_info->vs_mjpeg_format[i];
-		if (!format) continue;
+		if (!format) {
+			continue;
+		}
 
 		/* Parse frames for this format */
 		cap_index = uvc_host_parse_format_frames((uint8_t *)format, format->bLength,
 												format->bNumFrameDescriptors, VIDEO_PIX_FMT_JPEG,
 												UVC_VS_FRAME_MJPEG, caps_array,
-												cap_index, total_caps);
+												cap_index);
 	}
 
 	LOG_INF("Created %d format capabilities from UVC descriptors", cap_index);
@@ -2125,104 +2152,108 @@ static int uvc_host_stream_iso_req_cb(struct usb_device *const dev, struct uhc_t
 	presentationTime = sys_le32_to_cpu(payload_header->dwPresentationTime);
 	headLength = payload_header->bHeaderLength;
 
-	if (buf->len > 0) {
-		/* the standard header is 12 bytes */
-		if (buf->len > 11) {
-			dataSize = buf->len - headLength;
-			/* there is payload for this transfer */
-			if (dataSize) {
-				if (vbuf->bytesused == 0U) {
-					if (s_currentFrameTimeStamp != presentationTime) {
-						s_currentFrameTimeStamp = presentationTime;
-					}
-				}
-				/* presentation time should be the same for the same frame, if not, discard this picture */
-				else if (presentationTime != s_currentFrameTimeStamp) {
-					s_savePicture = 0;
-				}
+	/* Early return if buffer too short for standard header (12 bytes) */
+	if (buf->len <= 11) {
+		goto cleanup;
+	}
 
-				/* the current picture buffers are not available, now discard the receiving picture */
-				if ((!vbuf && s_savePicture)) {
-					s_savePicture = 0;
-				} else if (s_savePicture) {
-					if (dataSize > (vbuf->size - vbuf->bytesused)) { /* error here */
-						s_savePicture = 0;
-						vbuf->bytesused = 0U;
-						uvc_dev->vbuf_offset = 0;
-					} else {
-						/* the same frame id indicates they belong to the same frame */
-						if (frame_id == uvc_dev->expect_frame_id) {
-							/* copy data to picture buffer */
-							memcpy((void *)(((uint8_t *)vbuf->buffer) + vbuf->bytesused),
-									(void *)(((uint8_t *)buf->data) + headLength),
-									dataSize);
-							vbuf->bytesused += dataSize;
-							uvc_dev->vbuf_offset = vbuf->bytesused;
-							
-							LOG_DBG("Processed %u payload bytes (FID:%u), total: %u, EOF: %u",
-									dataSize, frame_id, vbuf->bytesused, endOfFrame);
-						} else {
-							/* for the payload that has different frame id, discard it */
-							s_savePicture = 0;
-							LOG_DBG("Frame ID mismatch: expected %u, got %u - discarding",
-									uvc_dev->expect_frame_id, frame_id);
-						}
-					}
-				} else {
-					/* no action */
+	dataSize = buf->len - headLength;
+	
+	/* Handle payload data processing */
+	if (dataSize > 0) {
+		/* Handle frame timestamp for new frames */
+		if (vbuf->bytesused == 0U) {
+			if (s_currentFrameTimeStamp != presentationTime) {
+				s_currentFrameTimeStamp = presentationTime;
+			}
+		} 
+		/* Check timestamp consistency for ongoing frames */
+		else if (presentationTime != s_currentFrameTimeStamp) {
+			s_savePicture = 0;
+		}
+
+		/* Check buffer availability and save picture state */
+		if (!vbuf && s_savePicture) {
+			s_savePicture = 0;
+		}
+
+		/* Process payload if we're saving and have valid buffer */
+		if (s_savePicture && vbuf) {
+			/* Check for buffer overflow */
+			if (dataSize > (vbuf->size - vbuf->bytesused)) {
+				s_savePicture = 0;
+				vbuf->bytesused = 0U;
+				uvc_dev->vbuf_offset = 0;
+			} 
+			/* Check frame ID match and copy data */
+			else if (frame_id == uvc_dev->expect_frame_id) {
+				/* copy data to picture buffer */
+				memcpy((void *)(((uint8_t *)vbuf->buffer) + vbuf->bytesused),
+						(void *)(((uint8_t *)buf->data) + headLength),
+						dataSize);
+				vbuf->bytesused += dataSize;
+				uvc_dev->vbuf_offset = vbuf->bytesused;
+				
+				LOG_DBG("Processed %u payload bytes (FID:%u), total: %u, EOF: %u",
+						dataSize, frame_id, vbuf->bytesused, endOfFrame);
+			} 
+			/* Frame ID mismatch - discard frame */
+			else {
+				s_savePicture = 0;
+				LOG_DBG("Frame ID mismatch: expected %u, got %u - discarding",
+						uvc_dev->expect_frame_id, frame_id);
+			}
+		}
+	}
+
+	/* Handle end of frame processing */
+	if (endOfFrame) {
+		if (s_savePicture) {
+			/* Complete valid frame */
+			if (vbuf && vbuf->bytesused != 0) {
+				LOG_INF("Frame completed: %u bytes (FID: %u)", 
+						vbuf->bytesused, frame_id);
+						
+				/* Move completed buffer from input to output queue */
+				k_fifo_get(&uvc_dev->fifo_in, K_NO_WAIT);
+				k_fifo_put(&uvc_dev->fifo_out, vbuf);
+
+				/* toggle the expected frame id */
+				uvc_dev->expect_frame_id = uvc_dev->expect_frame_id ^ 1;
+				s_savePicture = 1;
+				
+				/* Clean up transfer resources */
+				uvc_dev->vbuf_offset = 0;
+				uvc_dev->transfer_count = 0;
+
+				/* Signal frame completion to application */
+				LOG_DBG("Raising VIDEO_BUF_DONE signal");
+				k_poll_signal_raise(uvc_dev->sig, VIDEO_BUF_DONE);
+				
+				/* switch to another buffer to save picture frame */
+				if ((vbuf = k_fifo_peek_head(&uvc_dev->fifo_in)) != NULL) {
+					vbuf->bytesused = 0;
+					memset(vbuf->buffer, 0, vbuf->size);
+					uvc_dev->current_vbuf = vbuf;
 				}
 			}
-
-			if (s_savePicture) {
-				if (endOfFrame) {
-					if (vbuf->bytesused != 0) {
-						LOG_INF("Frame completed: %u bytes (FID: %u)", 
-								vbuf->bytesused, frame_id);
-								
-						/* Move completed buffer from input to output queue */
-						k_fifo_get(&uvc_dev->fifo_in, K_NO_WAIT);
-						k_fifo_put(&uvc_dev->fifo_out, vbuf);
-
-						/* toggle the expected frame id */
-						uvc_dev->expect_frame_id = uvc_dev->expect_frame_id ^ 1;
-						s_savePicture = 1;
-						
-						/* Clean up transfer resources */
-						uvc_dev->vbuf_offset = 0;
-						uvc_dev->transfer_count = 0;
-
-						/* Signal frame completion to application */
-						LOG_DBG("Raising VIDEO_BUF_DONE signal");
-						k_poll_signal_raise(uvc_dev->sig, VIDEO_BUF_DONE);
-						
-						/* switch to another buffer to save picture frame */
-						if ((vbuf = k_fifo_peek_head(&uvc_dev->fifo_in)) != NULL) {
-							vbuf->bytesused = 0;
-							memset(vbuf->buffer, 0, vbuf->size);
-							uvc_dev->current_vbuf = vbuf;
-						}
-					}
-				}
-			} else {
-				/* the last frame of one picture */
-				if (endOfFrame) {
-					if (uvc_dev->discard_first_frame) {
-						uvc_dev->discard_first_frame = 0;
-						uvc_dev->expect_frame_id = frame_id ^ 1;
-					}
-					if (vbuf && vbuf->bytesused != 0) {
-						uvc_dev->discard_frame_cnt++;
-					}
-					if (vbuf) {
-						vbuf->bytesused = 0U;
-						uvc_dev->vbuf_offset = 0;
-					}
-					if (!uvc_dev->discard_first_frame) {
-						uvc_dev->expect_frame_id = frame_id ^ 1;
-					}
-					s_savePicture = 1;
-				}
+		} else {
+			/* Handle discarded frame end */
+			if (uvc_dev->discard_first_frame) {
+				uvc_dev->discard_first_frame = 0;
+				uvc_dev->expect_frame_id = frame_id ^ 1;
 			}
+			if (vbuf && vbuf->bytesused != 0) {
+				uvc_dev->discard_frame_cnt++;
+			}
+			if (vbuf) {
+				vbuf->bytesused = 0U;
+				uvc_dev->vbuf_offset = 0;
+			}
+			if (!uvc_dev->discard_first_frame) {
+				uvc_dev->expect_frame_id = frame_id ^ 1;
+			}
+			s_savePicture = 1;
 		}
 	}
 
@@ -2523,11 +2554,11 @@ cleanup:
  */
 static bool uvc_host_pu_supports_control(struct uvc_device *uvc_dev, uint32_t bmcontrol_bit)
 {
-	if (!uvc_dev || !uvc_dev->vc_pud) {
+	if (!uvc_dev || !uvc_dev->uvc_descriptors.vc_pud) {
 		return false;
 	}
 
-	struct uvc_processing_unit_descriptor *pud = uvc_dev->vc_pud;
+	struct uvc_processing_unit_descriptor *pud = uvc_dev->uvc_descriptors.vc_pud;
 
 	if (pud->bControlSize == 0) {
 		return false;
@@ -2535,7 +2566,7 @@ static bool uvc_host_pu_supports_control(struct uvc_device *uvc_dev, uint32_t bm
 
 	/* Convert the bmControls array to a 32-bit value for easier bit checking */
 	uint32_t controls = 0;
-	for (int i = 0; i < pud->bControlSize && i < 4; i++) {
+	for (int i = 0; i < pud->bControlSize && i < 3; i++) {
 		controls |= ((uint32_t)pud->bmControls[i]) << (i * 8);
 	}
 
@@ -2550,11 +2581,11 @@ static bool uvc_host_pu_supports_control(struct uvc_device *uvc_dev, uint32_t bm
  */
 static bool uvc_host_ct_supports_control(struct uvc_device *uvc_dev, uint32_t bmcontrol_bit)
 {
-	if (!uvc_dev || !uvc_dev->vc_ctd) {
+	if (!uvc_dev || !uvc_dev->uvc_descriptors.vc_ctd) {
 		return false;
 	}
 
-	struct uvc_camera_terminal_descriptor *vc_ctd = uvc_dev->vc_ctd;
+	struct uvc_camera_terminal_descriptor *vc_ctd = uvc_dev->uvc_descriptors.vc_ctd;
 
 	if (vc_ctd->bControlSize == 0) {
 		return false;
@@ -2562,7 +2593,7 @@ static bool uvc_host_ct_supports_control(struct uvc_device *uvc_dev, uint32_t bm
 
 	/* Convert the bmControls array to a 32-bit value for easier bit checking */
 	uint32_t controls = 0;
-	for (int i = 0; i < vc_ctd->bControlSize && i < 4; i++) {
+	for (int i = 0; i < vc_ctd->bControlSize && i < 3; i++) {
 		controls |= ((uint32_t)vc_ctd->bmControls[i]) << (i * 8);
 	}
 
@@ -2685,7 +2716,7 @@ static uint32_t uvc_host_extract_control_bitmap(const uint8_t *bmControls, uint8
 {
 	uint32_t controls = 0;
 
-	for (int i = 0; i < control_size && i < 4; i++) {
+	for (int i = 0; i < control_size; i++) {
 		controls |= ((uint32_t)bmControls[i]) << (i * 8);
 	}
 
@@ -2841,7 +2872,7 @@ static int uvc_host_init_unit_controls(struct uvc_device *uvc_dev,
 		if (ret == 0) {
 			(*initialized_count)++;
 			LOG_DBG("Successfully initialized control CID 0x%08x", ctrl_map->cid);
-		} else if (ret != -ENOTSUP) {
+		} else {
 			LOG_WRN("Failed to initialize control CID 0x%08x: %d", ctrl_map->cid, ret);
 		}
 	}
@@ -2866,7 +2897,7 @@ static int usb_host_camera_init_controls(const struct device *dev)
 	uint32_t control_bitmap;
 	int initialized_count = 0;
 
-	if (!uvc_dev->vc_pud) {
+	if (!uvc_dev->uvc_descriptors.vc_pud) {
 		LOG_WRN("No processing unit found, skipping control initialization");
 		return 0;
 	}
@@ -2874,14 +2905,14 @@ static int usb_host_camera_init_controls(const struct device *dev)
 	LOG_INF("Initializing controls based on processing unit capabilities");
 
 	/* Initialize Processing Unit controls */
-	if (uvc_dev->vc_pud) {
-		LOG_DBG("Found Processing Unit (ID: %u)", uvc_dev->vc_pud->bUnitID);
+	if (uvc_dev->uvc_descriptors.vc_pud) {
+		LOG_DBG("Found Processing Unit (ID: %u)", uvc_dev->uvc_descriptors.vc_pud->bUnitID);
 
-		control_bitmap = uvc_host_extract_control_bitmap(uvc_dev->vc_pud->bmControls,
-								 uvc_dev->vc_pud->bControlSize);
+		control_bitmap = uvc_host_extract_control_bitmap(uvc_dev->uvc_descriptors.vc_pud->bmControls,
+								 uvc_dev->uvc_descriptors.vc_pud->bControlSize);
 
 		ret = uvc_host_init_unit_controls(uvc_dev, dev, UVC_VC_PROCESSING_UNIT,
-						  uvc_dev->vc_pud->bUnitID, control_bitmap,
+						  uvc_dev->uvc_descriptors.vc_pud->bUnitID, control_bitmap,
 						  &initialized_count);
 		if (ret) {
 			LOG_ERR("Failed to initialize Processing Unit controls: %d", ret);
@@ -2891,14 +2922,14 @@ static int usb_host_camera_init_controls(const struct device *dev)
 	}
 
 	/* Initialize Camera Terminal controls */
-	if (uvc_dev->vc_ctd) {
-		LOG_DBG("Found Camera Terminal (ID: %u)", uvc_dev->vc_ctd->bTerminalID);
+	if (uvc_dev->uvc_descriptors.vc_ctd) {
+		LOG_DBG("Found Camera Terminal (ID: %u)", uvc_dev->uvc_descriptors.vc_ctd->bTerminalID);
 
-		control_bitmap = uvc_host_extract_control_bitmap(uvc_dev->vc_ctd->bmControls,
-								 uvc_dev->vc_ctd->bControlSize);
+		control_bitmap = uvc_host_extract_control_bitmap(uvc_dev->uvc_descriptors.vc_ctd->bmControls,
+								 uvc_dev->uvc_descriptors.vc_ctd->bControlSize);
 
 		ret = uvc_host_init_unit_controls(uvc_dev, dev, UVC_VC_INPUT_TERMINAL,
-						  uvc_dev->vc_ctd->bTerminalID, control_bitmap,
+						  uvc_dev->uvc_descriptors.vc_ctd->bTerminalID, control_bitmap,
 						  &initialized_count);
 		if (ret) {
 			LOG_ERR("Failed to initialize Camera Terminal controls: %d", ret);
@@ -2908,14 +2939,14 @@ static int usb_host_camera_init_controls(const struct device *dev)
 	}
 
 	/* Initialize Selector Unit controls */
-	if (uvc_dev->vc_sud) {
-		LOG_DBG("Found Selector Unit (ID: %u)", uvc_dev->vc_sud->bUnitID);
+	if (uvc_dev->uvc_descriptors.vc_sud) {
+		LOG_DBG("Found Selector Unit (ID: %u)", uvc_dev->uvc_descriptors.vc_sud->bUnitID);
 
 		/* Selector Unit typically supports input selection control */
 		control_bitmap = BIT(0);
 
 		ret = uvc_host_init_unit_controls(uvc_dev, dev, UVC_VC_SELECTOR_UNIT,
-						  uvc_dev->vc_sud->bUnitID, control_bitmap,
+						  uvc_dev->uvc_descriptors.vc_sud->bUnitID, control_bitmap,
 						  &initialized_count);
 		if (ret) {
 			LOG_ERR("Failed to initialize Selector Unit controls: %d", ret);
@@ -2923,15 +2954,15 @@ static int usb_host_camera_init_controls(const struct device *dev)
 	}
 
 	/* Initialize Extension Unit controls */
-	if (uvc_dev->vc_extension_unit) {
-		LOG_DBG("Found Extension Unit (ID: %u)", uvc_dev->vc_extension_unit->bUnitID);
+	if (uvc_dev->uvc_descriptors.vc_extension_unit) {
+		LOG_DBG("Found Extension Unit (ID: %u)", uvc_dev->uvc_descriptors.vc_extension_unit->bUnitID);
 
 		control_bitmap = uvc_host_extract_control_bitmap(
-					uvc_dev->vc_extension_unit->bmControls,
-					uvc_dev->vc_extension_unit->bControlSize);
+					uvc_dev->uvc_descriptors.vc_extension_unit->bmControls,
+					uvc_dev->uvc_descriptors.vc_extension_unit->bControlSize);
 
 		ret = uvc_host_init_unit_controls(uvc_dev, dev, UVC_VC_EXTENSION_UNIT,
-						  uvc_dev->vc_extension_unit->bUnitID, control_bitmap,
+						  uvc_dev->uvc_descriptors.vc_extension_unit->bUnitID, control_bitmap,
 						  &initialized_count);
 		if (ret) {
 			LOG_ERR("Failed to initialize Extension Unit controls: %d", ret);
@@ -2982,16 +3013,16 @@ static int uvc_host_init(struct usbh_class_data *cdata)
 	memset(&uvc_dev->current_stream_iface_info, 0, sizeof(struct uvc_stream_iface_info));
 
 	/** Initialize descriptor pointers */
-	uvc_dev->vc_header = NULL;
-	uvc_dev->vc_itd = NULL;
-	uvc_dev->vc_otd = NULL;
-	uvc_dev->vc_ctd = NULL;
-	uvc_dev->vc_sud = NULL;
-	uvc_dev->vc_pud = NULL;
-	uvc_dev->vc_encoding_unit = NULL;
-	uvc_dev->vc_extension_unit = NULL;
-	uvc_dev->vs_input_header = NULL;
-	uvc_dev->vs_output_header = NULL;
+	uvc_dev->uvc_descriptors.vc_header = NULL;
+	uvc_dev->uvc_descriptors.vc_itd = NULL;
+	uvc_dev->uvc_descriptors.vc_otd = NULL;
+	uvc_dev->uvc_descriptors.vc_ctd = NULL;
+	uvc_dev->uvc_descriptors.vc_sud = NULL;
+	uvc_dev->uvc_descriptors.vc_pud = NULL;
+	uvc_dev->uvc_descriptors.vc_encoding_unit = NULL;
+	uvc_dev->uvc_descriptors.vc_extension_unit = NULL;
+	uvc_dev->uvc_descriptors.vs_input_header = NULL;
+	uvc_dev->uvc_descriptors.vs_output_header = NULL;
 
 	/** Initialize format information */
 	memset(&uvc_dev->formats, 0, sizeof(struct uvc_format_info_all));
@@ -3159,19 +3190,19 @@ static int uvc_host_removed(struct usb_device *udev, struct usbh_class_data *cda
 
 	/* Clear Video Control descriptors */
 	LOG_DBG("Clearing Video Control descriptors");
-	uvc_dev->vc_header = NULL;
-	uvc_dev->vc_itd = NULL;
-	uvc_dev->vc_otd = NULL;
-	uvc_dev->vc_ctd = NULL;
-	uvc_dev->vc_sud = NULL;
-	uvc_dev->vc_pud = NULL;
-	uvc_dev->vc_encoding_unit = NULL;
-	uvc_dev->vc_extension_unit = NULL;
+	uvc_dev->uvc_descriptors.vc_header = NULL;
+	uvc_dev->uvc_descriptors.vc_itd = NULL;
+	uvc_dev->uvc_descriptors.vc_otd = NULL;
+	uvc_dev->uvc_descriptors.vc_ctd = NULL;
+	uvc_dev->uvc_descriptors.vc_sud = NULL;
+	uvc_dev->uvc_descriptors.vc_pud = NULL;
+	uvc_dev->uvc_descriptors.vc_encoding_unit = NULL;
+	uvc_dev->uvc_descriptors.vc_extension_unit = NULL;
 
 	/* Clear Video Streaming descriptors */
 	LOG_DBG("Clearing Video Streaming descriptors");
-	uvc_dev->vs_input_header = NULL;
-	uvc_dev->vs_output_header = NULL;
+	uvc_dev->uvc_descriptors.vs_input_header = NULL;
+	uvc_dev->uvc_descriptors.vs_output_header = NULL;
 
 	/* Clear format information */
 	memset(&uvc_dev->formats, 0, sizeof(uvc_dev->formats));
@@ -3493,83 +3524,89 @@ static int video_usb_uvc_host_get_volatile_ctrl(const struct device *dev, uint32
 }
 
 /**
- * @brief Find control mapping by CID based on available units
- *
- * @param uvc_dev UVC device structure
+ * @brief Search for control in a specific UVC entity type
+ * @param subtype UVC entity subtype to search in
  * @param cid Control ID to find
- * @param unit_subtype Output: unit subtype where control was found
+ * @param found_type Output: entity subtype where control was found
  * @param map Output: pointer to control mapping
  * @return 0 on success, negative error code if not found
  */
-static int uvc_host_find_control_mapping(struct uvc_device *uvc_dev, uint32_t cid,
-					 uint8_t *unit_subtype,
-					 const struct uvc_control_map **map)
+static int uvc_host_search_control_in_entity(uint8_t subtype, uint32_t cid,
+					      uint8_t *found_type,
+					      const struct uvc_control_map **map)
 {
 	const struct uvc_control_map *map_table;
 	size_t map_length;
 	int ret;
 
+	ret = uvc_get_control_map(subtype, &map_table, &map_length);
+	if (ret != 0) {
+		return ret;
+	}
+
+	for (size_t i = 0; i < map_length; i++) {
+		if (map_table[i].cid == cid) {
+			*found_type = subtype;
+			*map = &map_table[i];
+			return 0;
+		}
+	}
+
+	return -ENOENT;
+}
+
+/**
+ * @brief Find control mapping by CID based on available entities
+ *
+ * @param uvc_dev UVC device structure
+ * @param cid Control ID to find
+ * @param entity_subtype Output: entity subtype where control was found
+ * @param map Output: pointer to control mapping
+ * @return 0 on success, negative error code if not found
+ */
+static int uvc_host_find_control_mapping(struct uvc_device *uvc_dev, uint32_t cid,
+					 uint8_t *entity_subtype,
+					 const struct uvc_control_map **map)
+{
+	int ret;
+
 	/* Search in Processing Unit if it exists */
-	if (uvc_dev->vc_pud) {
-		ret = uvc_get_control_map(UVC_VC_PROCESSING_UNIT, &map_table, &map_length);
+	if (uvc_dev->uvc_descriptors.vc_pud) {
+		ret = uvc_host_search_control_in_entity(UVC_VC_PROCESSING_UNIT, cid, entity_subtype, map);
 		if (ret == 0) {
-			for (size_t i = 0; i < map_length; i++) {
-				if (map_table[i].cid == cid) {
-					*unit_subtype = UVC_VC_PROCESSING_UNIT;
-					*map = &map_table[i];
-					LOG_DBG("Found control CID 0x%08x in Processing Unit", cid);
-					return 0;
-				}
-			}
+			LOG_DBG("Found control CID 0x%08x in Processing Unit", cid);
+			return 0;
 		}
 	}
 
 	/* Search in Camera Terminal if it exists */
-	if (uvc_dev->vc_ctd) {
-		ret = uvc_get_control_map(UVC_VC_INPUT_TERMINAL, &map_table, &map_length);
+	if (uvc_dev->uvc_descriptors.vc_ctd) {
+		ret = uvc_host_search_control_in_entity(UVC_VC_INPUT_TERMINAL, cid, entity_subtype, map);
 		if (ret == 0) {
-			for (size_t i = 0; i < map_length; i++) {
-				if (map_table[i].cid == cid) {
-					*unit_subtype = UVC_VC_INPUT_TERMINAL;
-					*map = &map_table[i];
-					LOG_DBG("Found control CID 0x%08x in Camera Terminal", cid);
-					return 0;
-				}
-			}
+			LOG_DBG("Found control CID 0x%08x in Camera Terminal", cid);
+			return 0;
 		}
 	}
 
 	/* Search in Selector Unit if it exists */
-	if (uvc_dev->vc_sud) {
-		ret = uvc_get_control_map(UVC_VC_SELECTOR_UNIT, &map_table, &map_length);
+	if (uvc_dev->uvc_descriptors.vc_sud) {
+		ret = uvc_host_search_control_in_entity(UVC_VC_SELECTOR_UNIT, cid, entity_subtype, map);
 		if (ret == 0) {
-			for (size_t i = 0; i < map_length; i++) {
-				if (map_table[i].cid == cid) {
-					*unit_subtype = UVC_VC_SELECTOR_UNIT;
-					*map = &map_table[i];
-					LOG_DBG("Found control CID 0x%08x in Selector Unit", cid);
-					return 0;
-				}
-			}
+			LOG_DBG("Found control CID 0x%08x in Selector Unit", cid);
+			return 0;
 		}
 	}
 
 	/* Search in Extension Unit if it exists */
-	if (uvc_dev->vc_extension_unit) {
-		ret = uvc_get_control_map(UVC_VC_EXTENSION_UNIT, &map_table, &map_length);
+	if (uvc_dev->uvc_descriptors.vc_extension_unit) {
+		ret = uvc_host_search_control_in_entity(UVC_VC_EXTENSION_UNIT, cid, entity_subtype, map);
 		if (ret == 0) {
-			for (size_t i = 0; i < map_length; i++) {
-				if (map_table[i].cid == cid) {
-					*unit_subtype = UVC_VC_EXTENSION_UNIT;
-					*map = &map_table[i];
-					LOG_DBG("Found control CID 0x%08x in Extension Unit", cid);
-					return 0;
-				}
-			}
+			LOG_DBG("Found control CID 0x%08x in Extension Unit", cid);
+			return 0;
 		}
 	}
 
-	LOG_DBG("Control CID 0x%08x not found in any available unit", cid);
+	LOG_DBG("Control CID 0x%08x not found in any available entity", cid);
 	return -ENOENT;
 }
 
@@ -3584,16 +3621,16 @@ static uint8_t uvc_host_get_entity_id(struct uvc_device *uvc_dev, uint8_t unit_s
 {
 	switch (unit_subtype) {
 	case UVC_VC_PROCESSING_UNIT:
-		return uvc_dev->vc_pud ? uvc_dev->vc_pud->bUnitID : 0;
+		return uvc_dev->uvc_descriptors.vc_pud ? uvc_dev->uvc_descriptors.vc_pud->bUnitID : 0;
 
 	case UVC_VC_INPUT_TERMINAL:
-		return uvc_dev->vc_ctd ? uvc_dev->vc_ctd->bTerminalID : 0;
+		return uvc_dev->uvc_descriptors.vc_ctd ? uvc_dev->uvc_descriptors.vc_ctd->bTerminalID : 0;
 
 	case UVC_VC_SELECTOR_UNIT:
-		return uvc_dev->vc_sud ? uvc_dev->vc_sud->bUnitID : 0;
+		return uvc_dev->uvc_descriptors.vc_sud ? uvc_dev->uvc_descriptors.vc_sud->bUnitID : 0;
 
 	case UVC_VC_EXTENSION_UNIT:
-		return uvc_dev->vc_extension_unit ? uvc_dev->vc_extension_unit->bUnitID : 0;
+		return uvc_dev->uvc_descriptors.vc_extension_unit ? uvc_dev->uvc_descriptors.vc_extension_unit->bUnitID : 0;
 
 	default:
 		LOG_ERR("Unknown unit subtype: %u", unit_subtype);
@@ -3917,7 +3954,6 @@ static int video_usb_uvc_host_set_stream(const struct device *dev, bool enable, 
 static int video_usb_uvc_host_enqueue(const struct device *dev, struct video_buffer *vbuf)
 {
 	struct uvc_device *uvc_dev;
-	int ret;
 
 	if (!dev) {
 		return -EINVAL;
@@ -3934,6 +3970,8 @@ static int video_usb_uvc_host_enqueue(const struct device *dev, struct video_buf
 	vbuf->line_offset = 0;
 
 	k_fifo_put(&uvc_dev->fifo_in, vbuf);
+
+	return 0; 
 }
 
 /**
