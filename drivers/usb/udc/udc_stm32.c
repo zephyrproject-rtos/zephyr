@@ -877,9 +877,9 @@ static int udc_stm32_enable(const struct device *dev)
 		return ret;
 	}
 
-	ret |= udc_ep_enable_internal(dev, USB_CONTROL_EP_IN,
-				      USB_EP_TYPE_CONTROL,
-				      UDC_STM32_EP0_MAX_PACKET_SIZE, 0);
+	ret = udc_ep_enable_internal(dev, USB_CONTROL_EP_IN,
+				     USB_EP_TYPE_CONTROL,
+				     UDC_STM32_EP0_MAX_PACKET_SIZE, 0);
 	if (ret != 0) {
 		LOG_ERR("Failed enabling ep 0x%02x", USB_CONTROL_EP_IN);
 		return ret;
