@@ -11,6 +11,8 @@ config SOC_FLASH_NRF_MRAM
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_NO_EXPLICIT_ERASE
+	select MRAM_LATENCY
+	select NRF_IRONSIDE_BOOT_REPORT
 	imply MPU_ALLOW_FLASH_WRITE if ARM_MPU
 	help
 	  Enables Nordic Semiconductor flash driver for MRAM in direct write mode.
