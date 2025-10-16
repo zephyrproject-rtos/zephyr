@@ -4,11 +4,10 @@
 name: Documentation Build
 
 on:
-  schedule:
-  - cron: '0 */3 * * *'
   push:
     tags:
     - v*
+    - main
   pull_request:
 
 permissions:
