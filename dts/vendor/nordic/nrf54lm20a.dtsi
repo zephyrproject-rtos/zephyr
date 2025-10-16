@@ -224,7 +224,7 @@
 
 			usbhs: usbhs@5a000 {
 				compatible = "nordic,nrf-usbhs-nrf54l", "snps,dwc2";
-				reg = <0x5a000 0x1000>, <0x50020000 0x1a000>;
+				reg = <0x5a000 0x1000>, <0x20000 0x1a000>;
 				reg-names = "wrapper", "core";
 				interrupts = <90 NRF_DEFAULT_IRQ_PRIORITY>;
 				num-in-eps = <16>;
