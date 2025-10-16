@@ -6,4 +6,7 @@ if BOARD_LITEX_VEXRISCV
 configdefault NET_L2_ETHERNET
 	default y
 
+configdefault SDHC_LITEX_LITESDCARD_NO_COHERENT_DMA
+	default y
+
 endif # BOARD_LITEX_VEXRISCV
