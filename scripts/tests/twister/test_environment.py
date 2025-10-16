@@ -13,7 +13,6 @@ from contextlib import nullcontext
 from unittest import mock
 
 import pytest
-
 import twisterlib.environment
 
 TESTDATA_1 = [

@@ -11,7 +11,6 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
-
 import scl
 from twisterlib.error import ConfigurationError
 from twisterlib.testplan import TwisterConfigParser

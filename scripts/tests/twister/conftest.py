@@ -8,7 +8,6 @@ import logging
 import os
 
 import pytest
-
 from twisterlib.environment import TwisterEnv, add_parse_arguments, parse_arguments
 from twisterlib.testinstance import TestInstance
 from twisterlib.testplan import TestConfiguration, TestPlan

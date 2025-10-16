@@ -19,9 +19,8 @@ from types import SimpleNamespace
 from unittest import mock
 
 import pytest
-from serial import SerialException
-
 import twisterlib.harness
+from serial import SerialException
 from twisterlib.error import TwisterException
 from twisterlib.handlers import (
     BinaryHandler,

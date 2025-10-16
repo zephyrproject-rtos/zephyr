@@ -13,10 +13,9 @@ from importlib import reload
 from unittest import mock
 
 import pytest
+import scl
 from pykwalify.errors import SchemaError
 from yaml.scanner import ScannerError
-
-import scl
 
 TESTDATA_1 = [
     (False,),

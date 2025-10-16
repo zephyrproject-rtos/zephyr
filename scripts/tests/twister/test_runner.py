@@ -20,7 +20,6 @@ from unittest import mock
 import pytest
 import yaml
 from elftools.elf.sections import SymbolTableSection
-
 from twisterlib.error import BuildError
 from twisterlib.harness import Pytest
 from twisterlib.runner import CMake, ExecutionCounter, FilterBuilder, ProjectBuilder, TwisterRunner

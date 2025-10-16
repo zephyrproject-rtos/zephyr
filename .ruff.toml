@@ -25,20 +25,6 @@ ignore = [
     # zephyr-keep-sorted-stop
 ]
 
-[lint.isort]
-known-first-party = [
-    # zephyr-keep-sorted-start
-    "camera_shield",
-    "domains",
-    "list_boards",
-    "scl",
-    "twister",
-    "twister_harness",
-    "twisterlib",
-    "zephyr_module" ,
-    # zephyr-keep-sorted-stop
-]
-
 [format]
 quote-style = "preserve"
 line-ending = "lf"

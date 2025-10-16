@@ -10,7 +10,6 @@ from contextlib import nullcontext
 from unittest import mock
 
 import pytest
-
 from twisterlib.cmakecache import CMakeCache, CMakeCacheEntry
 
 TESTDATA_1 = [

@@ -7,7 +7,6 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
-
 from twisterlib.harness import Pytest
 from twisterlib.platform import Platform
 from twisterlib.testinstance import TestInstance

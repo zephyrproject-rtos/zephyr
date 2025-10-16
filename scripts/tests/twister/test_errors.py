@@ -10,7 +10,6 @@ import os
 from pathlib import Path
 
 import pytest
-
 from twisterlib.error import ConfigurationError, StatusAttributeError
 from twisterlib.harness import Test
 

@@ -13,7 +13,6 @@ import textwrap
 from unittest import mock
 
 import pytest
-
 from twisterlib.harness import (
     Bsim,
     Console,
