@@ -461,9 +461,12 @@ void uart_silabs_dma_tx_cb(const struct device *dma_dev, void *user_data, uint32
 {
 	const struct device *uart_dev = user_data;
 	struct uart_silabs_data *data = uart_dev->data;
+	const struct uart_silabs_config *config = uart_dev->config;
 
 	dma_stop(data->dma_tx.dma_dev, data->dma_tx.dma_channel);
 	data->dma_tx.enabled = false;
+
+	USART_IntEnable(config->base, USART_IF_TXC);
 }
 
 static int uart_silabs_async_tx(const struct device *dev, const uint8_t *tx_data, size_t buf_size,
@@ -499,7 +502,6 @@ static int uart_silabs_async_tx(const struct device *dev, const uint8_t *tx_data
 
 	(void)uart_silabs_pm_lock_get(dev, UART_SILABS_PM_LOCK_TX);
 	USART_IntClear(config->base, USART_IF_TXC | USART_IF_TCMP2);
-	USART_IntEnable(config->base, USART_IF_TXC);
 	if (timeout >= 0) {
 		USART_IntEnable(config->base, USART_IF_TCMP2);
 	}

@@ -470,9 +470,12 @@ __maybe_unused static void eusart_dma_tx_cb(const struct device *dma_dev, void *
 {
 	const struct device *uart_dev = user_data;
 	struct eusart_data *data = uart_dev->data;
+	const struct eusart_config *config = uart_dev->config;
 
 	dma_stop(data->dma_tx.dma_dev, data->dma_tx.dma_channel);
 	data->dma_tx.enabled = false;
+
+	EUSART_IntEnable(config->eusart, EUSART_IF_TXC);
 }
 
 static int eusart_async_tx(const struct device *dev, const uint8_t *tx_data, size_t buf_size,
@@ -500,7 +503,6 @@ static int eusart_async_tx(const struct device *dev, const uint8_t *tx_data, siz
 	eusart_pm_lock_get(dev, EUSART_PM_LOCK_TX);
 
 	EUSART_IntClear(config->eusart, EUSART_IF_TXC);
-	EUSART_IntEnable(config->eusart, EUSART_IF_TXC);
 
 	ret = dma_config(data->dma_tx.dma_dev, data->dma_tx.dma_channel, &data->dma_tx.dma_cfg);
 	if (ret) {
