@@ -108,6 +108,8 @@ struct modem_cellular_data {
 	struct modem_backend_uart uart_backend;
 	uint8_t uart_backend_receive_buf[CONFIG_MODEM_CELLULAR_UART_BUFFER_SIZES];
 	uint8_t uart_backend_transmit_buf[CONFIG_MODEM_CELLULAR_UART_BUFFER_SIZES];
+	const char *target_baudrate_req;
+	uint32_t target_baudrate;
 	uint32_t original_baudrate;
 
 	/* CMUX */
@@ -1062,7 +1064,7 @@ static void modem_cellular_set_baudrate_event_handler(struct modem_cellular_data
 
 		/* Update UART port baudrate and preserve the original value */
 		data->original_baudrate = modem_cellular_baudrate_update(
-			data, CONFIG_MODEM_CELLULAR_NEW_BAUDRATE);
+			data, data->target_baudrate);
 		break;
 
 	case MODEM_CELLULAR_EVENT_BUS_CLOSED:
@@ -2181,6 +2183,14 @@ static void modem_cellular_init_apn(struct modem_cellular_data *data)
 				       modem_cellular_chat_callback_handler);
 }
 
+__maybe_unused static uint16_t modem_baudrate_cmd(const uint8_t **request, void *user_data)
+{
+	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
+
+	*request = data->target_baudrate_req;
+	return strlen(*request);
+}
+
 static int modem_cellular_init(const struct device *dev)
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)dev->data;
@@ -2656,8 +2666,7 @@ MODEM_CHAT_SCRIPT_DEFINE(u_blox_sara_r5_periodic_chat_script,
 #if DT_HAS_COMPAT_STATUS_OKAY(u_blox_lara_r6)
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(u_blox_lara_r6_set_baudrate_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+IPR="
-					STRINGIFY(CONFIG_MODEM_CELLULAR_NEW_BAUDRATE), ok_match));
+			      MODEM_CHAT_SCRIPT_CMD_RESP_FN(modem_baudrate_cmd, ok_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(u_blox_lara_r6_set_baudrate_chat_script,
 			 u_blox_lara_r6_set_baudrate_chat_script_cmds,
@@ -3141,6 +3150,8 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 		.chat_delimiter = "\r",                                                            \
 		.chat_filter = "\n",                                                               \
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
+		.target_baudrate_req = "AT+IPR=" STRINGIFY(DT_INST_PROP(inst, target_speed)),	   \
+		.target_baudrate = DT_INST_PROP(inst, target_speed),                               \
 	};                                                                                         \
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst,                                            \
