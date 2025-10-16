@@ -239,7 +239,7 @@ static void receive_state_notify_cb(struct bt_conn *conn, void *data)
 
 		LOG_DBG("Could not notify receive state: %d", err);
 		err = k_work_reschedule(&internal_state->notify_work,
-					K_USEC(BT_CONN_INTERVAL_TO_US(conn_info.le.interval)));
+					K_USEC(conn_info.le.interval_us));
 		__ASSERT(err >= 0, "Failed to reschedule work: %d", err);
 	}
 }

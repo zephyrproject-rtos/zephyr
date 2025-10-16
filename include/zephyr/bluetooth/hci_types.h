@@ -3374,6 +3374,8 @@ struct bt_hci_evt_le_advertising_report {
 #define BT_HCI_LE_SUPERVISON_TIMEOUT_MIN 0x000a
 #define BT_HCI_LE_SUPERVISON_TIMEOUT_MAX 0x0c80
 
+#define BT_HCI_LE_INTERVAL_UNIT_US (1250U)
+
 #define BT_HCI_EVT_LE_CONN_UPDATE_COMPLETE      0x03
 struct bt_hci_evt_le_conn_update_complete {
 	uint8_t  status;

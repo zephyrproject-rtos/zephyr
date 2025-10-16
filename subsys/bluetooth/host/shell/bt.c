@@ -3715,8 +3715,13 @@ static int cmd_info(const struct shell *sh, size_t argc, char *argv[])
 		print_le_addr("Local on-air", info.le.local);
 
 		shell_print(sh, "Interval: 0x%04x (%u us)",
-			    info.le.interval,
-			    BT_CONN_INTERVAL_TO_US(info.le.interval));
+#if defined(CONFIG_BT_SHORTER_CONNECTION_INTERVALS)
+			    info.le.interval_us / BT_HCI_LE_SCI_INTERVAL_UNIT_US,
+#else
+			    info.le.interval_us / BT_HCI_LE_INTERVAL_UNIT_US,
+#endif /* CONFIG_BT_SHORTER_CONNECTION_INTERVALS */
+			    info.le.interval_us);
+
 		shell_print(sh, "Latency: 0x%04x",
 			    info.le.latency);
 		shell_print(sh, "Supervision timeout: 0x%04x (%d ms)",
@@ -4138,9 +4143,9 @@ static void connection_info(struct bt_conn *conn, void *user_data)
 #endif
 	case BT_CONN_TYPE_LE:
 		bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
-		bt_shell_print("%s#%u [LE][%s] %s: Interval %u latency %u timeout %u", selected,
-			       info.id, role_str, addr, info.le.interval, info.le.latency,
-			       info.le.timeout);
+		bt_shell_print("%s#%u [LE][%s] %s: Interval %u us, latency %u, timeout %u ms",
+			       selected, info.id, role_str, addr, info.le.interval_us,
+			       info.le.latency, info.le.timeout * 10);
 		break;
 #if defined(CONFIG_BT_ISO)
 	case BT_CONN_TYPE_ISO:

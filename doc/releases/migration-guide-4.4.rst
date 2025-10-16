@@ -48,6 +48,9 @@ Bluetooth Host
 
 * :kconfig:option:`CONFIG_BT_SIGNING` has been deprecated.
 * :c:macro:`BT_GATT_CHRC_AUTH` has been deprecated.
+* :c:member:`bt_conn_le_info.interval` has been deprecated. Use
+  :c:member:`bt_conn_le_info.interval_us` instead. Note that the units have changed: ``interval``
+  was in units of 1.25 milliseconds, while ``interval_us`` is in microseconds.
 
 Networking
 **********
