@@ -188,6 +188,29 @@ uint32_t z_nrf_clock_bt_ctlr_hf_get_startup_time_us(void);
 /* Specifies that default precision of the clock is sufficient. */
 #define NRF_CLOCK_CONTROL_PRECISION_DEFAULT 0
 
+/* AUXPLL devicetree takes in raw register values, these are the actual frequencies outputted */
+#define CLOCK_CONTROL_NRF_AUXPLL_FREQ_OUT_MIN_HZ        80000000
+#define CLOCK_CONTROL_NRF_AUXPLL_FREQ_OUT_AUDIO_44K1_HZ 11289591
+#define CLOCK_CONTROL_NRF_AUXPLL_FREQ_OUT_USB24M_HZ     24000000
+#define CLOCK_CONTROL_NRF_AUXPLL_FREQ_OUT_AUDIO_48K_HZ  12287963
+
+/* Internal helper macro to map DT property value to output frequency */
+#define _CLOCK_CONTROL_NRF_AUXPLL_MAP_FREQ(freq_val)			  \
+	((freq_val) == NRF_AUXPLL_FREQ_DIV_MIN ?			  \
+		       CLOCK_CONTROL_NRF_AUXPLL_FREQ_OUT_MIN_HZ :	  \
+	 (freq_val) == NRF_AUXPLL_FREQ_DIV_AUDIO_44K1 ?			  \
+		       CLOCK_CONTROL_NRF_AUXPLL_FREQ_OUT_AUDIO_44K1_HZ :  \
+	 (freq_val) == NRF_AUXPLL_FREQ_DIV_USB24M ?			  \
+		       CLOCK_CONTROL_NRF_AUXPLL_FREQ_OUT_USB24M_HZ :	  \
+	 (freq_val) == NRF_AUXPLL_FREQ_DIV_AUDIO_48K ?			  \
+		       CLOCK_CONTROL_NRF_AUXPLL_FREQ_OUT_AUDIO_48K_HZ : 0)
+
+/* Public macro to get output frequency of AUXPLL */
+#define CLOCK_CONTROL_NRF_AUXPLL_GET_FREQ(node) \
+	COND_CODE_1(DT_NODE_HAS_PROP(node, nordic_frequency), \
+		(_CLOCK_CONTROL_NRF_AUXPLL_MAP_FREQ(DT_PROP(node, nordic_frequency))), \
+		(0))
+
 struct nrf_clock_spec {
 	uint32_t frequency;
 	uint16_t accuracy : 15;
