@@ -8,13 +8,13 @@
 
 / {
 	aliases {
-		led-strip = &modulino_smartleds;
+		led-strip = &modulino_pixels;
 	};
 };
 
 &zephyr_i2c {
-	modulino_smartleds: modulino-smartleds@36 {
-		compatible = "arduino,modulino-smartleds";
+	modulino_pixels: modulino-pixels@36 {
+		compatible = "arduino,modulino-pixels";
 		reg = <0x36>;
 		chain-length = <8>;
 		color-mapping = <LED_COLOR_ID_RED
