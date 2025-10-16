@@ -1,0 +1,54 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  CPU based Stepper Motion Controller for controlling stepper motors using GPIO pins.
+  It is used to generate step and direction signals for a stepper motor driver.
+  Example:
+  step_dir_motion_control: step_dir_motion_control {
+      compatible = "zephyr,gpio-step-dir-controller";
+      step-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+      dir-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+      invert-direction;
+      counter = <&counter1>;
+  };
+
+compatible: "zephyr,gpio-step-dir-controller"
+
+properties:
+  invert-direction:
+    type: boolean
+    description: |
+      Invert motor direction.
+
+  step-gpios:
+    type: phandle-array
+    description: |
+      The GPIO pins used to send step signals to the stepper motor.
+
+  dir-gpios:
+    type: phandle-array
+    description: |
+      The GPIO pins used to send direction signals to the stepper motor.
+      Pin will be driven high for forward direction and low for reverse direction.
+
+  counter:
+    type: phandle
+    description: |
+      Counter used for generating step-accurate pulse signals.
+      This should be a reference to a counter node in the device tree.
+      When this property is present, the stepper motion controller will use
+      the counter as a timing source instead of the default work queue timing.
+      This enables more precise step timing control.
+
+  step-width-ns:
+    type: int
+    required: true
+    description: |
+      Minimum pulse width in nanoseconds for the step signal.
+
+  dual-edge-step:
+    type: boolean
+    description: |
+      If present, the stepper motor controller supports dual edge step signals.
+      This means that the step signal can be toggled on both the rising and falling edge.

@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config H_BRIDGE_STEPPER
-	bool "Activate driver for gpio stepper control"
+	bool "Activate driver for gpio h-bridge stepper control"
+	select GPIO_STEPPER
 	depends on DT_HAS_ZEPHYR_H_BRIDGE_STEPPER_ENABLED
 	default y
