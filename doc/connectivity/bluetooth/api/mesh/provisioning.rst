@@ -144,7 +144,7 @@ sequence should be repeated after a delay of three seconds or more.
 When an Input OOB action is selected, the user should be prompted when the
 application receives the :c:member:`bt_mesh_prov.input` callback. The user
 response should be fed back to the Provisioning API through
-:c:func:`bt_mesh_input_string` or :c:func:`bt_mesh_input_number`. If
+:c:func:`bt_mesh_input_string` or :c:func:`bt_mesh_input_numeric`. If
 no user response is recorded within 60 seconds, the Provisioning process is
 aborted.
 
