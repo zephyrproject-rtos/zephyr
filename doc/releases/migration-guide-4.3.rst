@@ -51,6 +51,15 @@ Base Libraries
   may include :zephyr_file:`include/zephyr/posix/posix_limits.h` for Zephyr's definitions. Some
   runtime-invariant values may need to be queried via :c:func:`sysconf`.
 
+* The number of file descriptor table size and its availability is now determined by
+  a ``ZVFS_OPEN_SIZE`` define instead of the :kconfig:option:`CONFIG_ZVFS_OPEN_MAX`
+  Kconfig option. Subsystems can specify their own custom file descriptor table size
+  requirements by specifying Kconfig options with the prefix ``CONFIG_ZVFS_OPEN_ADD_SIZE_``.
+  The old Kconfig option still exists, but will be overridden if the custom requirements
+  are larger. To force the old Kconfig option to be used, even when its value is less
+  than the indicated custom requirements, a new :kconfig:option:`CONFIG_ZVFS_OPEN_IGNORE_MIN`
+  option has been introduced (which defaults being disabled).
+
 Boards
 ******
 
