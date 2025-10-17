@@ -1,0 +1,48 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon TCPWM Timer
+
+compatible: "infineon,tcpwm"
+
+include: base.yaml
+
+properties:
+  reg:
+    type: array
+    required: true
+    description: Register base address and size information
+
+  interrupts:
+    type: array
+    description: Interrupt mapping for TCPWM instance
+
+  divider-type:
+    type: int
+    description: |
+      Specifies which type of divider to use.
+      Defined by cy_en_divider_types_t in cy_sysclk.h.
+    required: true
+
+  divider-sel:
+    type: int
+    description: |
+      Specifies which divider of the selected type to configure.
+    required: true
+
+  divider-val:
+    type: int
+    description: |
+      Causes integer division of (divider value + 1), or division by 1 to 256
+      (8-bit divider) or 1 to 65536 (16-bit divider).
+    required: true
+
+  resolution:
+    type: int
+    required: true
+    description: Counter/timer resolution (16 or 32 bits)
+    enum:
+      - 16
+      - 32

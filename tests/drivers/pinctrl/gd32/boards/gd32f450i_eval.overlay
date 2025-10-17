@@ -14,8 +14,9 @@
 &pinctrl {
 	test_device_default: test_device_default {
 		/* Note: the groups are just meant for testing if properties and
-		   pins are parsed correctly, but do not necessarily represent a
-		   feasible combination */
+		 * pins are parsed correctly, but do not necessarily represent a
+		 * feasible combination
+		 */
 		group1 {
 			pinmux = <GD32_PINMUX_AF('A', 0, AF0)>,
 				 <GD32_PINMUX_AF('B', 1, AF1)>;

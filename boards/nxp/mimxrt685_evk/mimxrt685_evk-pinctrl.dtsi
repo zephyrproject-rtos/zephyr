@@ -6,7 +6,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <nxp/nxp_imx/rt/MIMXRT685SFVKB-pinctrl.h>
 
 &pinctrl {
@@ -17,6 +16,7 @@
 			slew-rate = "normal";
 			drive-strength = "normal";
 		};
+
 		group1 {
 			pinmux = <FC0_TXD_SCL_MISO_WS_PIO0_1>;
 			slew-rate = "normal";
@@ -36,7 +36,7 @@
 	pinmux_flexcomm2_i2c: pinmux_flexcomm2_i2c {
 		group0 {
 			pinmux = <FC2_CTS_SDA_SSEL0_PIO0_17>,
-				<FC2_RTS_SCL_SSEL1_PIO0_18>;
+				 <FC2_RTS_SCL_SSEL1_PIO0_18>;
 			bias-pull-up;
 			input-enable;
 			slew-rate = "normal";
@@ -48,9 +48,9 @@
 	pinmux_flexcomm3_i2s: pinmux_flexcomm3_i2s {
 		group0 {
 			pinmux = <FC3_RXD_SDA_MOSI_DATA_PIO0_23>,
-				<FC3_TXD_SCL_MISO_WS_PIO0_22>,
-				<FC3_SCK_PIO0_21>,
-				<MCLK_PIO1_10>;
+				 <FC3_TXD_SCL_MISO_WS_PIO0_22>,
+				 <FC3_SCK_PIO0_21>,
+				 <MCLK_PIO1_10>;
 			input-enable;
 			slew-rate = "normal";
 			drive-strength = "high";
@@ -64,6 +64,7 @@
 			slew-rate = "normal";
 			drive-strength = "normal";
 		};
+
 		group1 {
 			pinmux = <FC4_TXD_SCL_MISO_WS_PIO0_29>;
 			slew-rate = "normal";
@@ -74,9 +75,9 @@
 	pinmux_flexcomm5_spi: pinmux_flexcomm5_spi {
 		group0 {
 			pinmux = <FC5_SCK_PIO1_3>,
-				<FC5_TXD_SCL_MISO_WS_PIO1_4>,
-				<FC5_RXD_SDA_MOSI_DATA_PIO1_5>,
-				<FC5_CTS_SDA_SSEL0_PIO1_6>;
+				 <FC5_TXD_SCL_MISO_WS_PIO1_4>,
+				 <FC5_RXD_SDA_MOSI_DATA_PIO1_5>,
+				 <FC5_CTS_SDA_SSEL0_PIO1_6>;
 			input-enable;
 			slew-rate = "normal";
 			drive-strength = "normal";
@@ -86,7 +87,7 @@
 	pinmux_dmic0: pinmux_dmic0 {
 		group0 {
 			pinmux = <DMIC0_DATA2_3_PIO2_21>, <DMIC0_DATA0_1_PIO2_20>,
-			       <DMIC0_CLK0_1_PIO2_16>;
+				 <DMIC0_CLK0_1_PIO2_16>;
 			slew-rate = "normal";
 			drive-strength = "normal";
 			input-enable;
@@ -96,25 +97,27 @@
 	pinmux_flexspi: pinmux_flexspi {
 		group0 {
 			pinmux = <FLEXSPI0B_DATA0_PIO1_11>,
-				<FLEXSPI0B_DATA1_PIO1_12>,
-				<FLEXSPI0B_DATA2_PIO1_13>,
-				<FLEXSPI0B_DATA3_PIO1_14>,
-				<FLEXSPI0B_SCLK_PIO1_29>,
-				<FLEXSPI0B_DATA4_PIO2_17>,
-				<FLEXSPI0B_DATA5_PIO2_18>,
-				<FLEXSPI0B_SS0_N_PIO2_19>,
-				<FLEXSPI0B_DATA6_PIO2_22>,
-				<FLEXSPI0B_DATA7_PIO2_23>;
+				 <FLEXSPI0B_DATA1_PIO1_12>,
+				 <FLEXSPI0B_DATA2_PIO1_13>,
+				 <FLEXSPI0B_DATA3_PIO1_14>,
+				 <FLEXSPI0B_SCLK_PIO1_29>,
+				 <FLEXSPI0B_DATA4_PIO2_17>,
+				 <FLEXSPI0B_DATA5_PIO2_18>,
+				 <FLEXSPI0B_SS0_N_PIO2_19>,
+				 <FLEXSPI0B_DATA6_PIO2_22>,
+				 <FLEXSPI0B_DATA7_PIO2_23>;
 			input-enable;
 			slew-rate = "normal";
 			drive-strength = "high";
 		};
+
 		group1 {
 			pinmux = <GPIO_PIO212_PIO2_12>;
 			slew-rate = "normal";
 			drive-strength = "normal";
 		};
 	};
+
 	/*
 	 * The current test and sample applications uses a single channel for
 	 * testing so we only need to enable the pin for that single use.
@@ -159,7 +162,7 @@
 	pinmux_lpadc0: pinmux_lpadc0 {
 		group0 {
 			pinmux = <ADC0_CH0_PIO0_5>,
-				<ADC0_CH8_PIO0_6>;
+				 <ADC0_CH8_PIO0_6>;
 			slew-rate = "normal";
 			drive-strength = "normal";
 			nxp,analog-mode;
@@ -169,7 +172,7 @@
 	pinmux_pmic_i2c: pinmux_pmic_i2c {
 		group0 {
 			pinmux = <PMIC_I2C_SCL>,
-				<PMIC_I2C_SDA>;
+				 <PMIC_I2C_SDA>;
 			bias-pull-up;
 			input-enable;
 			slew-rate = "normal";
@@ -181,9 +184,9 @@
 	pinmux_sctimer: pinmux_sctimer {
 		group0 {
 			pinmux = <SCT0_OUT7_PIO0_27>,
-				<SCT0_OUT0_PIO0_14>,
-				<SCT0_OUT6_PIO0_26>,
-				<SCT0_OUT6_PIO0_31>;
+				 <SCT0_OUT0_PIO0_14>,
+				 <SCT0_OUT6_PIO0_26>,
+				 <SCT0_OUT6_PIO0_31>;
 			slew-rate = "normal";
 			drive-strength = "normal";
 		};
@@ -192,25 +195,27 @@
 	pinmux_usdhc: pinmux_usdhc {
 		group0 {
 			pinmux = <SD0_CMD_PIO1_31>,
-				<USDHC0_USDHC_DATA0_PIO2_0>,
-				<USDHC0_USDHC_DATA1_PIO2_1>,
-				<USDHC0_USDHC_DATA2_PIO2_2>,
-				<USDHC0_USDHC_DATA3_PIO2_3>,
-				<GPIO_PIO29_PIO2_9>;
+				 <USDHC0_USDHC_DATA0_PIO2_0>,
+				 <USDHC0_USDHC_DATA1_PIO2_1>,
+				 <USDHC0_USDHC_DATA2_PIO2_2>,
+				 <USDHC0_USDHC_DATA3_PIO2_3>,
+				 <GPIO_PIO29_PIO2_9>;
 			bias-pull-up;
 			input-enable;
 			slew-rate = "normal";
 			drive-strength = "normal";
 		};
+
 		group1 {
 			pinmux = <SD0_CLK_PIO1_30>;
 			input-enable;
 			slew-rate = "normal";
 			drive-strength = "normal";
 		};
+
 		group2 {
 			pinmux = <GPIO_PIO210_PIO2_10>,
-				<GPIO_PIO24_PIO2_4>;
+				 <GPIO_PIO24_PIO2_4>;
 			slew-rate = "normal";
 			drive-strength = "normal";
 		};
@@ -219,7 +224,7 @@
 	pinmux_i3c: pinmux_i3c {
 		group0 {
 			pinmux = <I3C0_SCL_PIO2_29>,
-				<I3C0_SDA_PIO2_30>;
+				 <I3C0_SDA_PIO2_30>;
 			input-enable;
 			slew-rate = "slow";
 			drive-strength = "high";
@@ -239,5 +244,4 @@
 			drive-strength = "normal";
 		};
 	};
-
 };

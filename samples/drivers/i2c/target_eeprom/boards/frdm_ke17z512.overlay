@@ -13,4 +13,4 @@
 	};
 };
 
-target_eeprom: &eeprom0{};
+target_eeprom: &eeprom0 {};

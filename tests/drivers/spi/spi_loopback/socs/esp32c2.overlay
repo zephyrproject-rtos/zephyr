@@ -16,7 +16,7 @@
 		};
 		group3 {
 			pinmux = <SPIM2_SCLK_GPIO6>,
-				<SPIM2_CSEL_GPIO10>;
+				 <SPIM2_CSEL_GPIO10>;
 		};
 	};
 };

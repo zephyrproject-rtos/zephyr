@@ -81,13 +81,13 @@ struct pdm_io_cfg {
 	 *@{
 	 */
 	/** Minimum clock frequency supported by the mic */
-	uint32_t	min_pdm_clk_freq;
+	uint32_t min_pdm_clk_freq;
 	/** Maximum clock frequency supported by the mic */
-	uint32_t	max_pdm_clk_freq;
+	uint32_t max_pdm_clk_freq;
 	/** Minimum duty cycle in % supported by the mic */
-	uint8_t	min_pdm_clk_dc;
+	uint8_t min_pdm_clk_dc;
 	/** Maximum duty cycle in % supported by the mic */
-	uint8_t	max_pdm_clk_dc;
+	uint8_t max_pdm_clk_dc;
 	/**
 	 * @}
 	 */
@@ -97,11 +97,11 @@ struct pdm_io_cfg {
 	 * @{
 	 */
 	/** Bit mask to optionally invert PDM clock */
-	uint8_t	pdm_clk_pol;
+	uint8_t pdm_clk_pol;
 	/** Bit mask to optionally invert mic data */
-	uint8_t	pdm_data_pol;
+	uint8_t pdm_data_pol;
 	/** Collection of clock skew values for each PDM port */
-	uint32_t	pdm_clk_skew;
+	uint32_t pdm_clk_skew;
 	/**
 	 * @}
 	 */
@@ -115,13 +115,13 @@ struct pdm_io_cfg {
  */
 struct pcm_stream_cfg {
 	/** PCM sample rate of stream */
-	uint32_t			pcm_rate;
+	uint32_t pcm_rate;
 	/** PCM sample width of stream */
-	uint8_t			pcm_width;
+	uint8_t pcm_width;
 	/** PCM sample block size per transfer */
-	uint16_t			block_size;
+	uint16_t block_size;
 	/** SLAB for DMIC driver to allocate buffers for stream */
-	struct k_mem_slab	*mem_slab;
+	struct k_mem_slab *mem_slab;
 };
 
 /**
@@ -150,26 +150,26 @@ struct pdm_chan_cfg {
 	 * @name Requested channel map
 	 * @{
 	 */
-	uint32_t	req_chan_map_lo;	/**< Channels 0 to 7 */
-	uint32_t	req_chan_map_hi;	/**< Channels 8 to 15 */
+	uint32_t req_chan_map_lo;	/**< Channels 0 to 7 */
+	uint32_t req_chan_map_hi;	/**< Channels 8 to 15 */
 	/** @} */
 
 	/**
 	 * @name Actual channel map that the driver could configure
 	 * @{
 	 */
-	uint32_t	act_chan_map_lo;	/**< Channels 0 to 7 */
-	uint32_t	act_chan_map_hi;	/**< Channels 8 to 15 */
+	uint32_t act_chan_map_lo;	/**< Channels 0 to 7 */
+	uint32_t act_chan_map_hi;	/**< Channels 8 to 15 */
 	/** @} */
 
 	/** Requested number of channels */
-	uint8_t	req_num_chan;
+	uint8_t req_num_chan;
 	/** Actual number of channels that the driver could configure */
-	uint8_t	act_num_chan;
+	uint8_t act_num_chan;
 	/** Requested number of streams for each channel */
-	uint8_t	req_num_streams;
+	uint8_t req_num_streams;
 	/** Actual number of streams that the driver could configure */
-	uint8_t	act_num_streams;
+	uint8_t act_num_streams;
 };
 
 /**

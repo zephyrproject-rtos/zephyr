@@ -6,7 +6,7 @@
 
 #include <zephyr/dt-bindings/display/panel.h>
 
-/{
+/ {
 	chosen {
 		zephyr,display = &zephyr_lcdif;
 		zephyr,touch = &gt911_rk043fn66hs_ctg;
@@ -20,6 +20,7 @@
 
 &nxp_touch_i2c {
 	status = "okay";
+
 	gt911_rk043fn66hs_ctg: gt911@5d {
 		compatible = "goodix,gt911";
 		reg = <0x5d>;
@@ -32,6 +33,7 @@
 	status = "okay";
 	width = <480>;
 	height = <272>;
+
 	display-timings {
 		compatible = "zephyr,panel-timing";
 		hsync-len = <4>;
@@ -40,7 +42,7 @@
 		vsync-len = <4>;
 		vfront-porch = <8>;
 		vback-porch = <12>;
-		de-active= <1>;
+		de-active = <1>;
 		pixelclk-active = <1>;
 		hsync-active = <0>;
 		vsync-active = <0>;

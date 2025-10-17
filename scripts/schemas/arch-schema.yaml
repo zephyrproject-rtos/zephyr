@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2023, Nordic Semiconductor ASA
+
+# JSON Schema for architecture metadata YAML files
+# When possible, constraints and validation rules should be modeled directly in this file.
+
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://zephyrproject.org/schemas/zephyr/arch"
+title: Zephyr Architecture Schema
+description: Schema for validating Zephyr architecture metadata files
+type: object
+properties:
+  archs:
+    type: array
+    description: List of supported architectures
+    items:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the architecture
+        full_name:
+          type: string
+          description: Full display name of the architecture
+        path:
+          type: string
+          description: >-
+            Location of the architecture implementation relative to the
+            archs.yml file
+        comment:
+          type: string
+          description: Free form comment with extra information regarding the architecture
+      required:
+        - name
+        - path
+      additionalProperties: false
+required:
+  - archs
+additionalProperties: false

@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
 &arduino_spi {
 	status = "okay";
 
@@ -10,6 +12,6 @@
 		compatible = "wiznet,w5500";
 		reg = <0x0>;
 		spi-max-frequency = <DT_FREQ_M(20)>;
-		int-gpios = <&arduino_header 8 GPIO_ACTIVE_LOW>;	/* D2 */
+		int-gpios = <&arduino_header ARDUINO_HEADER_R3_D2 GPIO_ACTIVE_LOW>;
 	};
 };

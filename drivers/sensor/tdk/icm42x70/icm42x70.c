@@ -983,7 +983,7 @@ static DEVICE_API(sensor, icm42x70_driver_api) = {
 
 /* Initializes the bus members for an instance on a SPI bus. */
 #define ICM42X70_CONFIG_SPI(inst)                                                                  \
-	{.bus.spi = SPI_DT_SPEC_INST_GET(inst, ICM42X70_SPI_CFG, 0),                               \
+	{.bus.spi = SPI_DT_SPEC_INST_GET(inst, ICM42X70_SPI_CFG),                                  \
 	 .bus_io = &icm42x70_bus_io_spi,                                                           \
 	 .serif_type = UI_SPI4,                                                                    \
 	 ICM42X70_CONFIG_COMMON(inst)}

@@ -222,9 +222,9 @@ struct pm_device {
 	const struct device *dev;
 	/** Lock to synchronize the get/put operations */
 	struct k_sem lock;
+#if defined(CONFIG_PM_DEVICE_RUNTIME_ASYNC) || defined(__DOXYGEN__)
 	/** Event var to listen to the sync request events */
 	struct k_event event;
-#if defined(CONFIG_PM_DEVICE_RUNTIME_ASYNC) || defined(__DOXYGEN__)
 	/** Work object for asynchronous calls */
 	struct k_work_delayable work;
 #endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
@@ -253,10 +253,13 @@ BUILD_ASSERT(offsetof(struct pm_device_isr, base) == 0);
 
 /** @cond INTERNAL_HIDDEN */
 
-#ifdef CONFIG_PM_DEVICE_RUNTIME
+#ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
 #define Z_PM_DEVICE_RUNTIME_INIT(obj)			\
 	.lock = Z_SEM_INITIALIZER(obj.lock, 1, 1),	\
 	.event = Z_EVENT_INITIALIZER(obj.event),
+#elif CONFIG_PM_DEVICE_RUNTIME
+#define Z_PM_DEVICE_RUNTIME_INIT(obj)			\
+	.lock = Z_SEM_INITIALIZER(obj.lock, 1, 1),
 #else
 #define Z_PM_DEVICE_RUNTIME_INIT(obj)
 #endif /* CONFIG_PM_DEVICE_RUNTIME */

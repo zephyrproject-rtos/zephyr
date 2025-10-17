@@ -138,7 +138,7 @@ class Sdk(WestCommand):
             help="SDK install destination directory. "
             "The SDK will be installed on the specified path. "
             "The directory contained in the archive will be renamed and installed for the specified directory. "
-            "For example, if you specify -b /foo/bar/baz, The archive's zephyr-sdk-<version> directory will be renamed baz and placed under /foo/bar. "
+            "For example, if you specify -d /foo/bar/baz, The archive's zephyr-sdk-<version> directory will be renamed baz and placed under /foo/bar. "
             "If this option is specified, the --install-base option is ignored. "
         )
         install_args_parser.add_argument(
@@ -519,6 +519,10 @@ class Sdk(WestCommand):
 
         except Exception as e:
             self.die(e)
+
+        zephyr_sdk_install_dir = os.environ.get("ZEPHYR_SDK_INSTALL_DIR", None)
+        if zephyr_sdk_install_dir:
+            sdk_lines += [f'dir={zephyr_sdk_install_dir}']
 
         def parse_sdk_entry(line):
             class SdkEntry:

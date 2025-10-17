@@ -98,7 +98,7 @@
 &sdmmc1 {
 	status = "okay";
 	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9 &sdmmc1_d2_pc10
-		&sdmmc1_d3_pc11 &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+		     &sdmmc1_d3_pc11 &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	pinctrl-names = "default";
 	cd-gpios = <&gpioi 15 GPIO_ACTIVE_LOW>;
 	disk-name = "SD";
@@ -183,7 +183,7 @@ zephyr_udc0: &usbotg_fs {
 
 &rtc {
 	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
-		<&rcc STM32_SRC_LSI RTC_SEL(2)>;
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
 
@@ -214,8 +214,8 @@ zephyr_udc0: &usbotg_fs {
 &quadspi {
 	pinctrl-names = "default";
 	pinctrl-0 = <&quadspi_clk_pb2 &quadspi_bk1_ncs_pb6
-				&quadspi_bk1_io0_pd11 &quadspi_bk1_io1_pd12
-				&quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pd13>;
+		     &quadspi_bk1_io0_pd11 &quadspi_bk1_io1_pd12
+		     &quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pd13>;
 	flash-id = <1>;
 	status = "okay";
 };

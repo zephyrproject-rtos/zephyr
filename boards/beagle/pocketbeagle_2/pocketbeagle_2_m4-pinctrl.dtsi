@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2025 Ayush Singh, BeagleBoard.org Foundation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/ti-k3-pinctrl.h>
+
+&pinctrl {
+	mcu_uart0_rx_default: mcu_uart0_rx_default {
+		pinmux = <K3_PINMUX(0x0014, PIN_INPUT, MUX_MODE_0)>;
+	};
+
+	mcu_uart0_tx_default: mcu_uart0_tx_default {
+		pinmux = <K3_PINMUX(0x0018, PIN_OUTPUT, MUX_MODE_0)>;
+	};
+
+	P2_09_D4_gpio: P2-09-D4-gpio-pins {
+		/* (D4) MCU_MCAN1_RX.MCU_GPIO0_16 */
+		pinmux = <K3_PINMUX(0x0040, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_11_E5_gpio: P2-11-E5-gpio-pins {
+		/* (E5) MCU_MCAN1_TX.MCU_GPIO0_15 */
+		pinmux = <K3_PINMUX(0x003c, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	main_uart0_pins_default: main-uart0-default-pins {
+		pinmux = <K3_PINMUX(0x1c8, PIN_INPUT, MUX_MODE_0) /* (D14/A13) UART0_RXD */
+			  K3_PINMUX(0x1cc, PIN_OUTPUT, MUX_MODE_0) /* (E14/E11) UART0_TXD */ >;
+	};
+};

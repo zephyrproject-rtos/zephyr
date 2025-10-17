@@ -20,6 +20,7 @@
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/ead.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/util.h>
@@ -844,6 +845,8 @@ int tester_gap_create_adv_instance(struct bt_le_adv_param *param,
 	return err;
 }
 
+static struct bt_le_ext_adv *gap_ext_adv;
+
 static uint8_t start_advertising(const void *cmd, uint16_t cmd_len,
 				 void *rsp, uint16_t *rsp_len)
 {
@@ -897,17 +900,15 @@ static uint8_t start_advertising(const void *cmd, uint16_t cmd_len,
 		i += sd[sd_len].data_len;
 	}
 
-	struct bt_le_ext_adv *ext_adv = NULL;
-
 	err = tester_gap_create_adv_instance(&param, own_addr_type, ad, adv_len, sd,
-					     sd_len, NULL, &ext_adv);
+					     sd_len, NULL, &gap_ext_adv);
 	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	    atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_EXTENDED_ADVERTISING)) {
-		err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
+		err = bt_le_ext_adv_start(gap_ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
 	} else {
 		err = bt_le_adv_start(&param, ad, adv_len, sd_len ? sd : NULL, sd_len);
 	}
@@ -971,7 +972,13 @@ static uint8_t stop_advertising(const void *cmd, uint16_t cmd_len,
 	struct btp_gap_stop_advertising_rp *rp = rsp;
 	int err;
 
-	err = bt_le_adv_stop();
+	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
+	    atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_EXTENDED_ADVERTISING)) {
+		err = bt_le_ext_adv_stop(gap_ext_adv);
+	} else {
+		err = bt_le_adv_stop();
+	}
+
 	if (err < 0) {
 		tester_rsp(BTP_SERVICE_ID_GAP, BTP_GAP_STOP_ADVERTISING, BTP_STATUS_FAILED);
 		LOG_ERR("Failed to stop advertising: %d", err);
@@ -1190,6 +1197,48 @@ static uint8_t br_start_discovery(const struct btp_gap_start_discovery_cmd *cp)
 }
 #endif /* CONFIG_BT_CLASSIC */
 
+static struct bt_le_scan_param scan_param = {
+	.type = BT_LE_SCAN_TYPE_PASSIVE,
+	.options = BT_LE_SCAN_OPT_FILTER_DUPLICATE,
+	.interval = BT_GAP_SCAN_FAST_INTERVAL,
+	.window = BT_GAP_SCAN_FAST_WINDOW,
+	.timeout = 0,
+	.interval_coded = 0,
+	.window_coded = 0,
+};
+
+#define MIN_SCAN_WINDOW   0x04
+#define MIN_SCAN_INTERVAL 0x04
+#define MAX_SCAN_INTERVAL 0x4000
+#define MAX_SCAN_WINDOW   0x4000
+static uint8_t set_le_discovery_params(const void *cmd, uint16_t cmd_len, void *rsp,
+				       uint16_t *rsp_len)
+{
+	const struct btp_gap_le_set_discovery_params_cmd *cp = cmd;
+
+	if (!IN_RANGE(cp->interval, MIN_SCAN_INTERVAL, MAX_SCAN_INTERVAL) ||
+	    !IN_RANGE(cp->window, MIN_SCAN_WINDOW, MAX_SCAN_WINDOW)) {
+		LOG_ERR("Invalid discovery parameters interval %u window %u", cp->interval,
+			cp->window);
+		return BTP_STATUS_FAILED;
+	}
+
+	/* 1M default we do not need to test for it */
+	if ((cp->phy & ~(BTP_GAP_PHY_LE_1M | BTP_GAP_PHY_LE_CODED)) != 0) {
+		LOG_ERR("Invalid PHY %u", cp->phy);
+		return BTP_STATUS_FAILED;
+	}
+
+	scan_param.interval = cp->interval;
+	scan_param.window = cp->window;
+
+	if ((cp->phy & BTP_GAP_PHY_LE_CODED) != 0) {
+		scan_param.options |= BT_LE_SCAN_OPT_CODED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
 static uint8_t start_discovery(const void *cmd, uint16_t cmd_len,
 			       void *rsp, uint16_t *rsp_len)
 {
@@ -1199,16 +1248,6 @@ static uint8_t start_discovery(const void *cmd, uint16_t cmd_len,
 		/* Start BR discovery*/
 		return br_start_discovery(cp);
 	}
-
-	struct bt_le_scan_param scan_param = {
-		.type     = BT_LE_SCAN_TYPE_PASSIVE,
-		.options  = BT_LE_SCAN_OPT_FILTER_DUPLICATE,
-		.interval = BT_GAP_SCAN_FAST_INTERVAL,
-		.window   = BT_GAP_SCAN_FAST_WINDOW,
-		.timeout = 0,
-		.interval_coded = 0,
-		.window_coded = 0,
-	};
 
 	if (cp->flags & BTP_GAP_DISCOVERY_FLAG_LE_ACTIVE_SCAN) {
 		scan_param.type = BT_LE_SCAN_TYPE_ACTIVE;
@@ -1860,6 +1899,10 @@ static uint8_t set_extended_advertising(const void *cmd, uint16_t cmd_len, void 
 	struct btp_gap_set_extended_advertising_rp *rp = rsp;
 
 	LOG_DBG("ext adv settings: %u", cp->settings);
+
+	if (atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_ADVERTISING)) {
+		return BTP_STATUS_FAILED;
+	}
 
 	if (cp->settings != 0) {
 		atomic_set_bit(&current_settings, BTP_GAP_SETTINGS_EXTENDED_ADVERTISING);
@@ -2821,6 +2864,85 @@ static uint8_t bis_broadcast(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 }
 #endif /* defined(CONFIG_BT_ISO_BROADCASTER) */
 
+#if defined(CONFIG_BT_EAD)
+static struct ead_key_materials_s {
+	uint8_t session_key[BTP_GAP_EAD_SET_KEY_MATERIAL_KEY_SIZE];
+	uint8_t initialization_vector[BTP_GAP_EAD_SET_KEY_MATERIAL_IV_SIZE];
+} ead_key_materials;
+
+/*
+ * This command to be used by both central and peripheral.
+ * central side should get key material by reading them from the peripheral
+ * gatt database. Obviously key materials can be shared OOB as well.
+ */
+static uint8_t ead_set_key_material(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_gap_ead_set_key_material_cmd *cp = cmd;
+
+	(void)memcpy(ead_key_materials.session_key, cp->session_key,
+		     sizeof(ead_key_materials.session_key));
+	(void)memcpy(ead_key_materials.initialization_vector, cp->initialization_vector,
+		     sizeof(ead_key_materials.initialization_vector));
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t ead_encrypt_data(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_gap_ead_encrypt_adv_data_cmd *cp = cmd;
+	struct btp_gap_ead_encrypt_adv_data_rp *rp = rsp;
+	int err;
+	size_t encrypted_size;
+
+	if ((cmd_len < sizeof(*cp)) || (cmd_len != sizeof(*cp) + cp->adv_data_len)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	encrypted_size = BT_EAD_ENCRYPTED_PAYLOAD_SIZE(cp->adv_data_len);
+	if (encrypted_size > BTP_GAP_EAD_MAX_DATA_LEN) {
+		LOG_ERR("Plain text data length exceeds max supported");
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_ead_encrypt(ead_key_materials.session_key, ead_key_materials.initialization_vector,
+			     cp->adv_data, cp->adv_data_len, rp->encrypted_data);
+
+	if (err < 0) {
+		LOG_ERR("Failed to encrypt data: %d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	rp->encrypted_data_len = encrypted_size;
+	*rsp_len = sizeof(*rp) + rp->encrypted_data_len;
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t ead_decrypt_data(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_gap_ead_decrypt_adv_data_cmd *cp = cmd;
+	struct btp_gap_decrypt_ead_adv_data_rp *rp = rsp;
+	int err;
+
+	if ((cmd_len < sizeof(*cp)) || (cmd_len != sizeof(*cp) + cp->encrypted_data_len)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_ead_decrypt(ead_key_materials.session_key, ead_key_materials.initialization_vector,
+			     cp->encrypted_data, cp->encrypted_data_len, rp->decrypted_data);
+
+	if (err < 0) {
+		LOG_ERR("Failed to decrypt data: %d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	rp->decrypted_data_len = BT_EAD_DECRYPTED_PAYLOAD_SIZE(cp->encrypted_data_len);
+	*rsp_len = sizeof(*rp) + rp->decrypted_data_len;
+
+	return BTP_STATUS_SUCCESS;
+}
+#endif /* defined(CONFIG_BT_EAD) */
+
 static const struct btp_handler handlers[] = {
 	{
 		.opcode = BTP_GAP_READ_SUPPORTED_COMMANDS,
@@ -2873,6 +2995,11 @@ static const struct btp_handler handlers[] = {
 		.opcode = BTP_GAP_STOP_ADVERTISING,
 		.expect_len = 0,
 		.func = stop_advertising,
+	},
+	{
+		.opcode = BTP_GAP_SET_DISCOVERY_PARAMS,
+		.expect_len = sizeof(struct btp_gap_le_set_discovery_params_cmd),
+		.func = set_le_discovery_params,
 	},
 	{
 		.opcode = BTP_GAP_START_DISCOVERY,
@@ -3035,6 +3162,23 @@ static const struct btp_handler handlers[] = {
 		.func = bis_broadcast,
 	},
 #endif /* defined(CONFIG_BT_ISO_BROADCASTER) */
+#if defined(CONFIG_BT_EAD)
+	{
+		.opcode = BTP_GAP_EAD_SET_KEY_MATERIAL,
+		.expect_len = sizeof(struct btp_gap_ead_set_key_material_cmd),
+		.func = ead_set_key_material,
+	},
+	{
+		.opcode = BTP_GAP_EAD_ENCRYPT_ADV_DATA,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = ead_encrypt_data,
+	},
+	{
+		.opcode = BTP_GAP_EAD_DECRYPT_ADV_DATA,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = ead_decrypt_data,
+	},
+#endif /* defined(CONFIG_BT_EAD) */
 };
 
 uint8_t tester_init_gap(void)

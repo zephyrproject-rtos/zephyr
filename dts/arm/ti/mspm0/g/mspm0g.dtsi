@@ -7,7 +7,7 @@
 
 #include <ti/mspm0/mspm0.dtsi>
 
-/{
+/ {
 	clocks: clocks {
 		pll: pll {
 			compatible = "ti,mspm0-pll";
@@ -154,4 +154,39 @@
 			status = "disabled";
 		};
 	};
+};
+
+&run1 {
+	exit-latency-us = <2>; /* 1.5us */
+	min-residency-us = <5000>;
+};
+
+&run2 {
+	exit-latency-us = <3>; /* 2.1us */
+	min-residency-us = <5000>;
+};
+
+&stop0 {
+	exit-latency-us = <13>; /* 12.1us */
+	min-residency-us = <7500>;
+};
+
+&stop1 {
+	exit-latency-us = <14>; /* 13.5us */
+	min-residency-us = <7500>;
+};
+
+&stop2 {
+	exit-latency-us = <13>; /* 12.9us */
+	min-residency-us = <7500>;
+};
+
+&stdby0 {
+	exit-latency-us = <16>; /* 15.2us */
+	min-residency-us = <10000>;
+};
+
+&stdby1 {
+	exit-latency-us = <16>; /* 15.2us */
+	min-residency-us = <10000>;
 };

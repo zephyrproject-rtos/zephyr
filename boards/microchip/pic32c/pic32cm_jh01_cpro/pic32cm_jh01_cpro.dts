@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <microchip/pic32c/pic32cm_jh/pic32cm_jh01/pic32cm5164jh01100.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "PIC32CM JH01 Curiosity Pro";
+	compatible = "pic32cmjh01,cpro", "microchip,pic32cm5164jh01100", "microchip,pic32cm";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	aliases {
+		led0 = &led0;
+		sw0 = &button0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&portc 5 GPIO_ACTIVE_HIGH>;
+			label = "Yellow LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&portb 19 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@7c000 {
+			label = "storage";
+			reg = <0x0007c000 0x4000>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <4000000>;
+};

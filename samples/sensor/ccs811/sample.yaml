@@ -14,6 +14,10 @@ tests:
     platform_allow:
       - thingy52/nrf52832
       - sltb004a
+      - mikroe_clicker_ra4m1
     integration_platforms:
       - sltb004a
+      - mikroe_clicker_ra4m1/r7fa4m1ab3cfm
+    extra_args:
+      - platform:mikroe_clicker_ra4m1/r7fa4m1ab3cfm:SHIELD="mikroe_air_quality_3_click"
     depends_on: i2c

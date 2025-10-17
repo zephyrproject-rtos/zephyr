@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2020 Thomas Stranger
  * SPDX-License-Identifier: Apache-2.0
-*/
+ */
 
 /* I2C bus pins are exposed on the ST morpho header.
  *

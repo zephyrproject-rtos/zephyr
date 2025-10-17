@@ -68,8 +68,13 @@
 
 /* Due to limited available memory, don't enable gpiod and gpiof */
 /* (Test cases fail due to 'SRAM' region overflow) */
-&gpiod {status = "disabled";};
-&gpiof {status = "disabled";};
+&gpiod {
+	status = "disabled";
+};
+
+&gpiof {
+	status = "disabled";
+};
 
 &timers2 {
 	status = "okay";

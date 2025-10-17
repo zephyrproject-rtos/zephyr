@@ -144,26 +144,19 @@ static inline enum bt_buf_type bt_buf_type_from_h4(uint8_t h4_type, enum bt_buf_
 #define BT_BUF_ACL_RX_COUNT_MAX 65535
 
 #if defined(CONFIG_BT_CONN) && defined(CONFIG_BT_HCI_HOST)
- /* The host needs more ACL buffers than maximum ACL links. This is because of
-  * the way we re-assemble ACL packets into L2CAP PDUs.
-  *
-  * We keep around the first buffer (that comes from the driver) to do
-  * re-assembly into, and if all links are re-assembling, there will be no buffer
-  * available for the HCI driver to allocate from.
-  *
-  * TODO: When CONFIG_BT_BUF_ACL_RX_COUNT is removed,
-  *       remove the MAX and only keep the 1.
-  */
+/* The host needs more ACL buffers than maximum ACL links. This is because of
+ * the way we re-assemble ACL packets into L2CAP PDUs.
+ *
+ * We keep around the first buffer (that comes from the driver) to do
+ * re-assembly into, and if all links are re-assembling, there will be no buffer
+ * available for the HCI driver to allocate from.
+ */
 #define BT_BUF_ACL_RX_COUNT_EXTRA CONFIG_BT_BUF_ACL_RX_COUNT_EXTRA
-#define BT_BUF_ACL_RX_COUNT       (MAX(CONFIG_BT_BUF_ACL_RX_COUNT, 1) + BT_BUF_ACL_RX_COUNT_EXTRA)
+#define BT_BUF_ACL_RX_COUNT       (1 + BT_BUF_ACL_RX_COUNT_EXTRA)
 #else
 #define BT_BUF_ACL_RX_COUNT_EXTRA 0
 #define BT_BUF_ACL_RX_COUNT       0
 #endif /* CONFIG_BT_CONN && CONFIG_BT_HCI_HOST */
-
-#if defined(CONFIG_BT_BUF_ACL_RX_COUNT) && CONFIG_BT_BUF_ACL_RX_COUNT > 0
-#warning "CONFIG_BT_BUF_ACL_RX_COUNT is deprecated, see Zephyr 4.1 migration guide"
-#endif /* CONFIG_BT_BUF_ACL_RX_COUNT && CONFIG_BT_BUF_ACL_RX_COUNT > 0 */
 
 BUILD_ASSERT(BT_BUF_ACL_RX_COUNT <= BT_BUF_ACL_RX_COUNT_MAX,
 	     "Maximum number of ACL RX buffer is 65535, reduce CONFIG_BT_BUF_ACL_RX_COUNT_EXTRA");

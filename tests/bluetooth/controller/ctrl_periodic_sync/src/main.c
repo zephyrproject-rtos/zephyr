@@ -109,7 +109,7 @@ FAKE_VOID_FUNC(ull_sync_transfer_received, struct ll_conn *, uint16_t,
 					uint16_t,
 					uint8_t);
 
-void ull_sync_transfer_received_custom_fake(struct ll_conn *conn, uint16_t service_data,
+void ull_sync_transfer_received_custom_fake(struct ll_conn *llconn, uint16_t service_data,
 				struct pdu_adv_sync_info *si, uint16_t conn_event_count,
 				uint16_t last_pa_event_counter, uint8_t sid,
 				uint8_t addr_type, uint8_t sca, uint8_t phy,

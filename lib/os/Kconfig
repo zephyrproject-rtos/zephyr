@@ -12,6 +12,7 @@ config FDTABLE
 
 config ZVFS_OPEN_MAX
 	int "Maximum number of open file descriptors"
+	default 24 if NRF70_ENABLE_DUAL_VIF
 	default 16 if WIFI_NM_WPA_SUPPLICANT
 	default 16 if POSIX_API
 	default 4

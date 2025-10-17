@@ -38,8 +38,23 @@ class HardwareAdapter(DeviceAdapter):
         self.device_log_path: Path = device_config.build_dir / 'device.log'
         self._log_files.append(self.device_log_path)
 
+    def _generate_flash_command(self) -> None:
+        command = [self.device_config.flash_command[0]]
+        command.extend(['--build-dir', str(self.device_config.build_dir)])
+
+        if self.device_config.id:
+            command.extend(['--board-id', self.device_config.id])
+
+        command.extend(self.device_config.flash_command[1:])
+
+        self.command = command
+
     def generate_command(self) -> None:
         """Return command to flash."""
+        if self.device_config.flash_command:
+            self._generate_flash_command()
+            return
+
         command = [
             self.west,
             'flash',
@@ -91,7 +106,7 @@ class HardwareAdapter(DeviceAdapter):
             elif runner == 'jlink':
                 base_args.append('--dev-id')
                 base_args.append(board_id)
-            elif runner == 'stm32cubeprogrammer':
+            elif runner == 'stm32cubeprogrammer' and self.device_config.product != "BOOT-SERIAL":
                 base_args.append(f'--tool-opt=sn={board_id}')
             elif runner == 'linkserver':
                 base_args.append(f'--probe={board_id}')

@@ -707,6 +707,32 @@ static int stm32_ospi_write_enable(struct flash_stm32_ospi_data *dev_data,
 	return stm32_ospi_wait_auto_polling(dev_data, &s_config, HAL_OSPI_TIMEOUT_DEFAULT_VALUE);
 }
 
+static int ospi_write_unprotect(const struct device *dev)
+{
+	struct flash_stm32_ospi_data *dev_data = dev->data;
+	int ret = 0;
+
+	/* This is a SPI/STR command to issue to the external Flash device */
+	OSPI_RegularCmdTypeDef cmd_unprotect = ospi_prepare_cmd(OSPI_SPI_MODE, OSPI_STR_TRANSFER);
+
+	cmd_unprotect.Instruction = SPI_NOR_CMD_ULBPR;
+	cmd_unprotect.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
+	cmd_unprotect.AddressMode = HAL_OSPI_ADDRESS_NONE;
+	cmd_unprotect.DataMode    = HAL_OSPI_DATA_NONE;
+
+	if (IS_ENABLED(DT_INST_PROP(0, requires_ulbpr))) {
+		ret = stm32_ospi_write_enable(dev_data, OSPI_SPI_MODE, OSPI_STR_TRANSFER);
+
+		if (ret != 0) {
+			return ret;
+		}
+
+		ret = ospi_send_cmd(dev, &cmd_unprotect);
+	}
+
+	return ret;
+}
+
 /* Write Flash configuration register 2 with new dummy cycles */
 static int stm32_ospi_write_cfg2reg_dummy(OSPI_HandleTypeDef *hospi,
 					uint8_t nor_mode, uint8_t nor_rate)
@@ -1487,6 +1513,10 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 	case SPI_NOR_CMD_PP_1_4_4_4B:
 		__fallthrough;
 	case SPI_NOR_CMD_PP_1_4_4:
+#if defined(CONFIG_USE_MICROCHIP_QSPI_FLASH_WITH_STM32)
+		/* Microchip QSPI flash uses PP_1_1_4 opcode for the PP_1_4_4 operation */
+		cmd_pp.Instruction = SPI_NOR_CMD_PP_1_1_4;
+#endif /* CONFIG_USE_MICROCHIP_QSPI_FLASH_WITH_STM32 */
 		cmd_pp.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
 		cmd_pp.AddressMode = HAL_OSPI_ADDRESS_4_LINES;
 		cmd_pp.DataMode = HAL_OSPI_DATA_4_LINES;
@@ -2229,12 +2259,9 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	dma_cfg.user_data = &hdma;
 	/* HACK: This field is used to inform driver that it is overridden */
 	dma_cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
-	/* Because of the STREAM OFFSET, the DMA channel given here is from 1 - 8 */
-	ret = dma_config(dev_data->dma.dev,
-			 (dev_data->dma.channel + STM32_DMA_STREAM_OFFSET), &dma_cfg);
+	ret = dma_config(dev_data->dma.dev, dev_data->dma.channel, &dma_cfg);
 	if (ret != 0) {
-		LOG_ERR("Failed to configure DMA channel %d",
-			dev_data->dma.channel + STM32_DMA_STREAM_OFFSET);
+		LOG_ERR("Failed to configure DMA channel %d", dev_data->dma.channel);
 		return ret;
 	}
 
@@ -2266,27 +2293,12 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	hdma.Init.Mode = DMA_NORMAL;
 	hdma.Init.Priority = table_priority[dma_cfg.channel_priority];
 	hdma.Init.Direction = DMA_PERIPH_TO_MEMORY;
+	hdma.Instance = STM32_DMA_GET_INSTANCE(dev_data->dma.reg, dev_data->dma.channel);
 #ifdef CONFIG_DMA_STM32_V1
 	/* TODO: Not tested in this configuration */
 	hdma.Init.Channel = dma_cfg.dma_slot;
-	hdma.Instance = __LL_DMA_GET_STREAM_INSTANCE(dev_data->dma.reg,
-						     dev_data->dma.channel);
 #else
 	hdma.Init.Request = dma_cfg.dma_slot;
-#if CONFIG_DMA_STM32U5
-	hdma.Instance = LL_DMA_GET_CHANNEL_INSTANCE(dev_data->dma.reg,
-						      dev_data->dma.channel);
-#elif defined(CONFIG_DMAMUX_STM32)
-	/*
-	 * HAL expects a valid DMA channel (not DMAMUX).
-	 * The channel is from 0 to 7 because of the STM32_DMA_STREAM_OFFSET in the dma_stm32 driver
-	 */
-	hdma.Instance = __LL_DMA_GET_CHANNEL_INSTANCE(dev_data->dma.reg,
-						      dev_data->dma.channel);
-#else
-	hdma.Instance = __LL_DMA_GET_CHANNEL_INSTANCE(dev_data->dma.reg,
-						      dev_data->dma.channel-1);
-#endif /* CONFIG_DMA_STM32U5 */
 #endif /* CONFIG_DMA_STM32_V1 */
 
 	/* Initialize DMA HAL */
@@ -2586,6 +2598,13 @@ static int flash_stm32_ospi_init(const struct device *dev)
 		return -ENODEV;
 	}
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
+
+	ret = ospi_write_unprotect(dev);
+	if (ret != 0) {
+		LOG_ERR("write unprotect failed: %d", ret);
+		return -ENODEV;
+	}
+	LOG_DBG("Write Un-protected");
 
 #ifdef CONFIG_STM32_MEMMAP
 	/* Now configure the octo Flash in MemoryMapped (access by address) */

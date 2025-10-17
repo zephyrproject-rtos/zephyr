@@ -1,0 +1,39 @@
+# Copyright (c) 2025 Renesas Electronics Corporation and/or its affiliates
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RX Independent Watchdog
+
+compatible: "renesas,rx-iwdt"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  window-start:
+    required: true
+    type: int
+    enum: [0, 0x1000, 0x2000, 0x3000]
+    description: |
+      The start of the window in clock cycles. The watchdog will reset the system
+      if the watchdog is not refreshed within the window.
+      - 0: 25%
+      - 0x1000: 50%
+      - 0x2000: 75%
+      - 0x3000: 100% (window end position is not specified.)
+
+  window-end:
+    required: true
+    type: int
+    enum: [0, 0x100, 0x200, 0x300]
+    description: |
+      The end of the window in clock cycles. The watchdog will reset the system
+      if the watchdog is not refreshed within the window.
+      - 0: 75%
+      - 0x200: 50%
+      - 0x200: 25%
+      - 0x300: 0% (window start position is not specified.)

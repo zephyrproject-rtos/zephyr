@@ -1,23 +1,10 @@
 # Copyright 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
-
-description: PCA6416 I2C-based GPIO expander
-
-compatible: "nxp,pca6416"
-
-include: [gpio-controller.yaml, i2c-device.yaml]
+description: NXP PCA6416 I2C GPIO expander
+compatible: nxp,pca6416
+include: nxp,pca_series.yaml
 
 properties:
-  interrupt-gpios:
-    type: phandle-array
-    description:
-      Interrupt GPIO pin (active-low open-drain)
-      Left blank if the pin is not connected in your
-      application.
-
-  "#gpio-cells":
-    const: 2
-
-gpio-cells:
-  - pin
-  - flags
+  ngpios:
+    required: true
+    const: 16

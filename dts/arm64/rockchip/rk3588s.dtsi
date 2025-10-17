@@ -64,7 +64,7 @@
 		};
 	};
 
-	gic: interrupt-controller@fe600000  {
+	gic: interrupt-controller@fe600000 {
 		#address-cells = <1>;
 		compatible = "arm,gic-v3", "arm,gic";
 		reg = <0xfe600000 0x10000>, /* GICD */
@@ -91,7 +91,7 @@
 			      IRQ_DEFAULT_PRIORITY>;
 	};
 
-	uart2: serial@feb50000  {
+	uart2: serial@feb50000 {
 		compatible = "rockchip,rk3588s-uart", "ns16550";
 		reg = <0xfeb50000 0x1000>;
 		interrupt-parent = <&gic>;

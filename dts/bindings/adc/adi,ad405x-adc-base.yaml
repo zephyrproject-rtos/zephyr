@@ -35,5 +35,10 @@ properties:
       This option increases the range from 0V to 2 x Vref. Note that this
       requires VDD >= 2 x Vref.
 
+  sampling-period:
+    type: int
+    description: |
+      Specify ADC sampling period in uS.
+
 io-channel-cells:
   - input

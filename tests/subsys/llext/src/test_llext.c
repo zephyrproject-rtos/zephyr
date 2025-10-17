@@ -237,7 +237,7 @@ void load_call_unload(const struct llext_test *test_case)
 
 /*
  * Attempt to load, list, list symbols, call a fn, and unload each
- * extension in the test table. This excercises loading, calling into, and
+ * extension in the test table. This exercises loading, calling into, and
  * unloading each extension which may itself excercise various APIs provided by
  * Zephyr.
  */
@@ -523,7 +523,8 @@ ZTEST(llext, test_find_section)
 	res = llext_get_section_header(loader, ext, ".data", &shdr);
 	zassert_ok(res, "get_section_header() should succeed");
 	zassert_equal(shdr.sh_offset, section_ofs,
-		     "different section offset %zd from get_section_header", shdr.sh_offset);
+		     "different section offset %llu from get_section_header",
+		     (uint64_t)shdr.sh_offset);
 
 	uintptr_t symbol_ptr = (uintptr_t)llext_find_sym(&ext->exp_tab, "number");
 	uintptr_t section_ptr = (uintptr_t)find_section_ext + section_ofs;

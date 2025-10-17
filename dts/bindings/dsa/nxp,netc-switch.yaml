@@ -5,4 +5,8 @@ description: NXP NETC ethernet switch
 
 compatible: "nxp,netc-switch"
 
-include: [dsa.yaml]
+include: [dsa.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true

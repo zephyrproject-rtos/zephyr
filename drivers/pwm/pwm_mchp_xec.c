@@ -40,7 +40,7 @@ LOG_MODULE_REGISTER(pwm_mchp_xec, CONFIG_PWM_LOG_LEVEL);
 #define XEC_PWM_MAX_LOW_CLK_FREQ			\
 	(MCHP_PWM_INPUT_FREQ_LO / XEC_PWM_LOWEST_ON_OFF)
 /* Precision factor for frequency calculation
- * To mitigate frequency comparision up to the first digit after 0.
+ * To mitigate frequency comparison up to the first digit after 0.
  */
 #define XEC_PWM_FREQ_PF		10U
 /* Precision factor for DC calculation

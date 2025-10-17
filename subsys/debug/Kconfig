@@ -353,7 +353,7 @@ config CS_TRACE_DEFMT
 
 config CPU_LOAD
 	select TRACING
-	depends on CPU_CORTEX_M || RISCV
+	depends on CPU_CORTEX_M || RISCV || CPU_CORTEX_A
 	depends on !SMP
 	bool "CPU load measurement"
 

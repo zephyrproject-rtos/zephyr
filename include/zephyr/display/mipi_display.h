@@ -7,6 +7,7 @@
 /**
  * @file
  * @brief Display definitions for MIPI devices
+ * @ingroup mipi_interface
  */
 
 #ifndef ZEPHYR_INCLUDE_DISPLAY_MIPI_DISPLAY_H_
@@ -15,10 +16,9 @@
 /**
  * @brief MIPI Display definitions
  * @defgroup mipi_interface MIPI Display interface
- * @ingroup io_interfaces
+ * @ingroup display_interface
  * @{
  */
-
 
 #ifdef __cplusplus
 extern "C" {

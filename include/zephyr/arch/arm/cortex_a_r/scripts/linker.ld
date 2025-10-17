@@ -153,6 +153,9 @@ SECTIONS
 
         *(.text)
         *(".text.*")
+
+#include <snippets-text-sections.ld>
+
         *(.gnu.linkonce.t.*)
 
         /*

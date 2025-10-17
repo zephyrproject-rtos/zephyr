@@ -14,7 +14,6 @@
 	};
 };
 
-
 /* Enable Target to Controller Virtual Wires GPIO 0 - 3 */
 &vw_t2c_gpio_0 {
 	status = "okay";

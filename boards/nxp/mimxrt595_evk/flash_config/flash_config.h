@@ -5,16 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  */
-#ifndef __FLASH_CONFIG_H__
-#define __FLASH_CONFIG_H__
+#ifndef FLASH_CONFIG_H_
+#define FLASH_CONFIG_H_
+
 #include <stdint.h>
 #include "fsl_iap.h"
-
-/*! @name Driver version */
-/*@{*/
-/*! @brief FLASH_CONFIG driver version 2.0.0. */
-#define FSL_FLASH_CONFIG_DRIVER_VERSION (MAKE_VERSION(2, 0, 0))
-/*@}*/
 
 /* FLEXSPI memory config block related definitions */
 #define FLEXSPI_CFG_BLK_TAG     (0x42464346UL) /* ascii "FCFB" Big Endian */
@@ -22,15 +17,15 @@
 
 /*! @brief FLEXSPI clock configuration - When clock source is PLL */
 enum {
-	kFlexSpiSerialClk_30MHz = 1,
-	kFlexSpiSerialClk_50MHz = 2,
-	kFlexSpiSerialClk_60MHz = 3,
-	kFlexSpiSerialClk_80MHz = 4,
-	kFlexSpiSerialClk_100MHz = 5,
-	kFlexSpiSerialClk_120MHz = 6,
-	kFlexSpiSerialClk_133MHz = 7,
-	kFlexSpiSerialClk_166MHz = 8,
-	kFlexSpiSerialClk_200MHz = 9,
+	FLEXSPI_SERIAL_CLK_30MHZ = 1,
+	FLEXSPI_SERIAL_CLK_50MHZ = 2,
+	FLEXSPI_SERIAL_CLK_60MHZ = 3,
+	FLEXSPI_SERIAL_CLK_80MHZ = 4,
+	FLEXSPI_SERIAL_CLK_100MHZ = 5,
+	FLEXSPI_SERIAL_CLK_120MHZ = 6,
+	FLEXSPI_SERIAL_CLK_133MHZ = 7,
+	FLEXSPI_SERIAL_CLK_166MHZ = 8,
+	FLEXSPI_SERIAL_CLK_200MHZ = 9,
 };
 
 /*! @brief LUT instructions supported by FLEXSPI */
@@ -74,29 +69,29 @@ enum {
 	FLEXSPI_LUT_NUM_PADS1(pad1) | FLEXSPI_LUT_OPCODE1(cmd1))
 
 /*! @brief FlexSPI Read Sample Clock Source definition */
-typedef enum _FlashReadSampleClkSource {
-	kFlexSPIReadSampleClk_LoopbackInternally = 0,
-	kFlexSPIReadSampleClk_LoopbackFromDqsPad = 1,
-	kFlexSPIReadSampleClk_LoopbackFromSckPad = 2,
-	kFlexSPIReadSampleClk_ExternalInputFromDqsPad = 3,
+typedef enum flexspi_read_sample_clk_source {
+	FLEXSPI_READ_SAMPLE_CLK_LOOPBACK_INTERNALLY = 0,
+	FLEXSPI_READ_SAMPLE_CLK_LOOPBACK_FROM_DQS_PAD = 1,
+	FLEXSPI_READ_SAMPLE_CLK_LOOPBACK_FROM_SCK_PAD = 2,
+	FLEXSPI_READ_SAMPLE_CLK_EXTERNAL_INPUT_FROM_DQS_PAD = 3,
 } flexspi_read_sample_clk_t;
 
 /*! @brief Misc feature bit definitions */
 enum {
 	/* Bit for Differential clock enable */
-	kFlexSpiMiscOffset_DiffClkEnable = 0,
+	FLEXSPI_MISC_OFFSET_DIFF_CLK_ENABLE = 0,
 	/* Bit for Parallel mode enable */
-	kFlexSpiMiscOffset_ParallelEnable = 2,
+	FLEXSPI_MISC_OFFSET_PARALLEL_ENABLE = 2,
 	/* Bit for Word Addressable enable */
-	kFlexSpiMiscOffset_WordAddressableEnable = 3,
+	FLEXSPI_MISC_OFFSET_WORD_ADDRESSABLE_ENABLE = 3,
 	/* Bit for Safe Configuration Frequency enable */
-	kFlexSpiMiscOffset_SafeConfigFreqEnable = 4,
+	FLEXSPI_MISC_OFFSET_SAFE_CONFIG_FREQ_ENABLE = 4,
 	/* Bit for Pad setting override enable */
-	kFlexSpiMiscOffset_PadSettingOverrideEnable = 5,
+	FLEXSPI_MISC_OFFSET_PAD_SETTING_OVERRIDE_ENABLE = 5,
 	/* Bit for DDR clock confiuration indication. */
-	kFlexSpiMiscOffset_DdrModeEnable = 6,
+	FLEXSPI_MISC_OFFSET_DDR_MODE_ENABLE = 6,
 	/* Bit for DLLCR settings under all modes */
-	kFlexSpiMiscOffset_UseValidTimeForAllFreq = 7,
+	FLEXSPI_MISC_OFFSET_USE_VALID_TIME_FOR_ALL_FREQ = 7,
 };
 
-#endif
+#endif /* FLASH_CONFIG_H_ */

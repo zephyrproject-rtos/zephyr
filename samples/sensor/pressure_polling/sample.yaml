@@ -7,3 +7,8 @@ tests:
     filter: dt_alias_exists("pressure-sensor")
     integration_platforms:
       - nrf52dk/nrf52832
+      - adafruit_qt_py_rp2040/rp2040       # adafruit_dps310 shield
+      - mikroe_clicker_ra4m1/r7fa4m1ab3cfm # mikroe_pressure_3_click shield
+    extra_args:
+      - platform:adafruit_qt_py_rp2040/rp2040:SHIELD="adafruit_dps310"
+      - platform:mikroe_clicker_ra4m1/r7fa4m1ab3cfm:SHIELD="mikroe_pressure_3_click"

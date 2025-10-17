@@ -17,10 +17,9 @@
 			d-cache-line-size = <64>;
 			reg = <0>;
 		};
-
 	};
 
-	intc: ioapic@fec00000  {
+	intc: ioapic@fec00000 {
 		compatible = "intel,ioapic";
 		#address-cells = <1>;
 		#interrupt-cells = <3>;
@@ -28,7 +27,7 @@
 		interrupt-controller;
 	};
 
-	intc_loapic: loapic@fee00000  {
+	intc_loapic: loapic@fee00000 {
 		compatible = "intel,loapic";
 		reg = <0xfee00000 0x1000>;
 		interrupt-controller;
@@ -78,15 +77,20 @@
 			status = "disabled";
 		};
 
-		rtc: counter: rtc@70 {
-			compatible = "motorola,mc146818";
-			reg = <0x70 0x0D 0x71 0x0D>;
-			interrupts = <8 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
-			interrupt-parent = <&intc>;
-			alarms-count = <1>;
+		mfd: mfd@70 {
+			compatible = "motorola,mc146818-mfd";
+			reg = <0x70 0x01 0x71 0x01 0x72 0x01 0x73 0x01>;
+
+			rtc: counter: rtc {
+				compatible = "motorola,mc146818";
+				interrupts = <8 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
+				interrupt-parent = <&intc>;
+				alarms-count = <1>;
+
+				status = "okay";
+			};
 
 			status = "okay";
 		};
-
 	};
 };

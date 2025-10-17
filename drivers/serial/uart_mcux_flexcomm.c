@@ -58,6 +58,7 @@ struct mcux_flexcomm_config {
 	void (*pm_unlock_work_fn)(struct k_work *);
 #endif
 #if FC_UART_IS_WAKEUP
+	struct pm_state_constraints lp_states;
 	void (*wakeup_cfg)(void);
 	clock_control_subsys_t lp_clock_subsys;
 #endif
@@ -660,7 +661,7 @@ static int mcux_flexcomm_uart_rx_enable(const struct device *dev, uint8_t *buf,
 	data->rx_data.xfer_len = len;
 	data->rx_data.active_block.dest_address = (uint32_t)data->rx_data.xfer_buf;
 	data->rx_data.active_block.source_address = (uint32_t) &config->base->FIFORD;
-	data->tx_data.active_block.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+	data->rx_data.active_block.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 	data->rx_data.active_block.block_size = data->rx_data.xfer_len;
 
 	ret = dma_config(config->rx_dma.dev, config->rx_dma.channel,
@@ -1161,17 +1162,22 @@ static int mcux_flexcomm_init_common(const struct device *dev)
 }
 
 #if FC_UART_IS_WAKEUP
-static void mcux_flexcomm_pm_prepare_wake(const struct device *dev, enum pm_state state)
+static void mcux_flexcomm_pm_prepare_wake(const struct device *dev,
+					  enum pm_state state, uint8_t substate)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
 	struct mcux_flexcomm_data *data = dev->data;
 	USART_Type *base = config->base;
+	struct pm_state_constraint match = {
+		.state = state,
+		.substate_id = substate,
+	};
 
 	/* Switch to the lowest possible baud rate, in order to
 	 * both minimize power consumption and also be able to
 	 * potentially wake up the chip from this mode.
 	 */
-	if (pm_policy_device_is_disabling_state(dev, state, 0)) {
+	if (pm_state_in_constraints(&config->lp_states, match)) {
 		clock_control_configure(config->clock_dev, config->lp_clock_subsys, NULL);
 		data->old_brg = base->BRG;
 		data->old_osr = base->OSR;
@@ -1180,13 +1186,18 @@ static void mcux_flexcomm_pm_prepare_wake(const struct device *dev, enum pm_stat
 	}
 }
 
-static void mcux_flexcomm_pm_restore_wake(const struct device *dev, enum pm_state state)
+static void mcux_flexcomm_pm_restore_wake(const struct device *dev,
+					  enum pm_state state, uint8_t substate)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
 	struct mcux_flexcomm_data *data = dev->data;
 	USART_Type *base = config->base;
+	struct pm_state_constraint match = {
+		.state = state,
+		.substate_id = substate,
+	};
 
-	if (pm_policy_device_is_disabling_state(dev, state, 0)) {
+	if (pm_state_in_constraints(&config->lp_states, match)) {
 		clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
 		base->OSR = data->old_osr;
 		base->BRG = data->old_brg;
@@ -1373,34 +1384,42 @@ DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_RX_TIMEOUT_FUNC);
 #endif /* CONFIG_UART_ASYNC_API */
 
 #if FC_UART_IS_WAKEUP
+
 #define UART_MCUX_FLEXCOMM_WAKEUP_CFG_DEFINE(n)					\
 static void serial_mcux_flexcomm_##n##_wakeup_cfg(void)				\
 {										\
 	IF_ENABLED(DT_INST_PROP(n, wakeup_source), (				\
-		POWER_EnableWakeup(DT_INST_IRQN(n));				\
+		NXP_ENABLE_WAKEUP_SIGNAL(DT_INST_IRQN(n));			\
 	))									\
 }
 #define UART_MCUX_FLEXCOMM_WAKEUP_CFG_BIND(n)					\
 		.wakeup_cfg = serial_mcux_flexcomm_##n##_wakeup_cfg,
 
+#define UART_MCUX_FLEXCOMM_LP_STATES_DEFINE(n)	\
+	PM_STATE_CONSTRAINTS_LIST_DEFINE(DT_DRV_INST(n), low_power_states);	\
+
+#define UART_MCUX_FLEXCOMM_LP_STATES_BIND(n)	\
+	.lp_states = PM_STATE_CONSTRAINTS_GET(DT_DRV_INST(n), low_power_states),\
+
 #define UART_MCUX_FLEXCOMM_PM_HANDLES_DEFINE(n)					\
-static void serial_mcux_flexcomm_##n##_pm_entry(enum pm_state state)		\
+static void serial_mcux_flexcomm_##n##_pm_entry(enum pm_state state, uint8_t substate) \
 {										\
 	IF_ENABLED(DT_INST_PROP(n, wakeup_source), (				\
-		mcux_flexcomm_pm_prepare_wake(DEVICE_DT_INST_GET(n), state);	\
+		mcux_flexcomm_pm_prepare_wake(DEVICE_DT_INST_GET(n), state, substate); \
 	))									\
 }										\
 										\
-static void serial_mcux_flexcomm_##n##_pm_exit(enum pm_state state)		\
+static void serial_mcux_flexcomm_##n##_pm_exit(enum pm_state state, uint8_t substate) \
 {										\
 	IF_ENABLED(DT_INST_PROP(n, wakeup_source), (				\
-		mcux_flexcomm_pm_restore_wake(DEVICE_DT_INST_GET(n), state);	\
+		mcux_flexcomm_pm_restore_wake(DEVICE_DT_INST_GET(n), state, substate); \
 	))									\
 }
 #define UART_MCUX_FLEXCOMM_PM_HANDLES_BIND(n)					\
 	.pm_handles = {								\
-			.state_entry = serial_mcux_flexcomm_##n##_pm_entry,	\
-			.state_exit = serial_mcux_flexcomm_##n##_pm_exit,	\
+			.substate_entry = serial_mcux_flexcomm_##n##_pm_entry,	\
+			.substate_exit = serial_mcux_flexcomm_##n##_pm_exit,	\
+			.report_substate = true,				\
 	},
 #define UART_MCUX_FLEXCOMM_LP_CLK_SUBSYS(n)					\
 	.lp_clock_subsys = (clock_control_subsys_t)				\
@@ -1410,6 +1429,8 @@ static void serial_mcux_flexcomm_##n##_pm_exit(enum pm_state state)		\
 #define UART_MCUX_FLEXCOMM_WAKEUP_CFG_BIND(n)
 #define UART_MCUX_FLEXCOMM_PM_HANDLES_DEFINE(n)
 #define UART_MCUX_FLEXCOMM_PM_HANDLES_BIND(n)
+#define UART_MCUX_FLEXCOMM_LP_STATES_DEFINE(n)
+#define UART_MCUX_FLEXCOMM_LP_STATES_BIND(n)
 #define UART_MCUX_FLEXCOMM_LP_CLK_SUBSYS(n)
 #endif /* FC_UART_IS_WAKEUP */
 
@@ -1422,6 +1443,7 @@ static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config = {		\
 	.baud_rate = DT_INST_PROP(n, current_speed),				\
 	.parity = DT_INST_ENUM_IDX(n, parity),					\
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
+	UART_MCUX_FLEXCOMM_LP_STATES_BIND(n)					\
 	UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC_INIT(n)					\
 	UART_MCUX_FLEXCOMM_ASYNC_CFG(n)						\
 	UART_MCUX_FLEXCOMM_PM_UNLOCK_FUNC_BIND(n)				\
@@ -1447,7 +1469,10 @@ static struct mcux_flexcomm_data mcux_flexcomm_##n##_data = {			\
 										\
 	UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC(n)					\
 										\
+	UART_MCUX_FLEXCOMM_LP_STATES_DEFINE(n)					\
+										\
 	UART_MCUX_FLEXCOMM_INIT_CFG(n)						\
+										\
 										\
 	DEVICE_DT_INST_DEFINE(n,						\
 			    &mcux_flexcomm_init,				\

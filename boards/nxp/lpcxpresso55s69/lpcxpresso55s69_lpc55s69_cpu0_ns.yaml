@@ -1,5 +1,5 @@
 #
-# Copyright 2019, 2024 NXP
+# Copyright 2019, 2024, 2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -21,4 +21,5 @@ supported:
   - gpio
   - spi
   - watchdog
+  - rtc
 vendor: nxp

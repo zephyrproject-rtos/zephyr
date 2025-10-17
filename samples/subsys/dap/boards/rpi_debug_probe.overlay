@@ -1,0 +1,37 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,console = &cdc_acm_uart0;
+		zephyr,shell-uart = &cdc_acm_uart0;
+	};
+
+	uart-bridge0 {
+		compatible = "zephyr,uart-bridge";
+		peers = <&cdc_acm_uart1 &uart1>;
+	};
+
+	dp0 {
+		compatible = "zephyr,swdp-gpio";
+		status = "okay";
+		clk-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+		dio-gpios = <&gpio0 14 GPIO_PULL_UP>;
+		port-write-cycles = <1>;
+	};
+};
+
+&zephyr_udc0 {
+	cdc_acm_uart0: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+		label = "Zephyr USB CDC-ACM console";
+	};
+
+	cdc_acm_uart1: cdc_acm_uart1 {
+		compatible = "zephyr,cdc-acm-uart";
+		label = "Zephyr USB CDC-ACM target";
+	};
+};

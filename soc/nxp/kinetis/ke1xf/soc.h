@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019 Vestas Wind Systems A/S
- * Copyright 2023 NXP
+ * Copyright 2023, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,7 @@
 #ifndef _ASMLANGUAGE
 
 #include <fsl_common.h>
+#include <soc_common.h>
 
 
 #endif /* !_ASMLANGUAGE */

@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/xg24/efr32mg24b220f1536im48.dtsi>
+#include "xg24_rb418xc.dtsi"
+
+/ {
+	model = "Silicon Labs EFR32xG24 2.4 GHz 20 dBm Radio Board (xG24-RB4187C, BRD4187C)";
+	compatible = "silabs,xg24_rb4187c", "silabs,efr32mg24";
+};

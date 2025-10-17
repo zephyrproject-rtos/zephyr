@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	aliases {
+		pwm-test = &pwm2;
+	};
+};
 
 &pinctrl {
 	pwm2_default: pwm2_default {

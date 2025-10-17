@@ -62,7 +62,7 @@ static inline int clk_enable_ambiq_uart(const struct device *dev, uint32_t clk)
 	return pl011_ambiq_clk_set(dev, clk);
 }
 
-#if !defined(CONFIG_SOC_SERIES_APOLLO2X)
+#if defined(CONFIG_SOC_SERIES_APOLLO3X) || defined(CONFIG_SOC_SERIES_APOLLO5X)
 #ifdef CONFIG_PM_DEVICE
 
 /* Register status record.

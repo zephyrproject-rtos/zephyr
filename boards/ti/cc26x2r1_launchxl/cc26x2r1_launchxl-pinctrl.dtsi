@@ -12,6 +12,7 @@
 		pinmux = <3 IOC_PORT_MCU_UART0_TX>;
 		bias-disable;
 	};
+
 	uart0_rx_default: uart0_rx_default {
 		pinmux = <2 IOC_PORT_MCU_UART0_RX>;
 		bias-disable;

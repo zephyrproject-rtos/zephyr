@@ -21,6 +21,7 @@ zephyr_linker_sources_ifdef(CONFIG_NXP_RW6XX_BOOT_HEADER
 set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
 
 zephyr_include_directories(.)
+zephyr_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../common)
 
 zephyr_linker_sources(RODATA firmwares.ld)
 

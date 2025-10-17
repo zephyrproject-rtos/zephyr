@@ -16,7 +16,6 @@
 	zephyr,user {
 		test-gpios = <&gpioc 5 GPIO_ACTIVE_HIGH>;
 	};
-
 };
 
 &pinctrl {

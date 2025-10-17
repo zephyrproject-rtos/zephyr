@@ -499,6 +499,11 @@ static DEVICE_API(i2c, i2c_ra_iic_driver_api) = {
 		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, eri, irq)] =                               \
 			EVENT_IIC_ERI(DT_INST_PROP(index, channel));                               \
                                                                                                    \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_IIC_RXI(DT_INST_PROP(index, channel)));     \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_IIC_TXI(DT_INST_PROP(index, channel)));     \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_IIC_TEI(DT_INST_PROP(index, channel)));     \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_IIC_ERI(DT_INST_PROP(index, channel)));     \
+                                                                                                   \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, rxi, irq),                                  \
 			    DT_INST_IRQ_BY_NAME(index, rxi, priority), iic_master_rxi_isr,         \
 			    DEVICE_DT_INST_GET(index), 0);                                         \

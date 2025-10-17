@@ -277,9 +277,10 @@ struct rtio_iodev_sqe;
  * @brief Callback signature for RTIO_OP_CALLBACK
  * @param r RTIO context being used with the callback
  * @param sqe Submission for the callback op
+ * @param res Result of the previously linked submission.
  * @param arg0 Argument option as part of the sqe
  */
-typedef void (*rtio_callback_t)(struct rtio *r, const struct rtio_sqe *sqe, void *arg0);
+typedef void (*rtio_callback_t)(struct rtio *r, const struct rtio_sqe *sqe, int res, void *arg0);
 
 /**
  * @typedef rtio_signaled_t
@@ -580,7 +581,7 @@ struct rtio_iodev {
 /** An operation to sends I3C CCC */
 #define RTIO_OP_I3C_CCC (RTIO_OP_I3C_CONFIGURE+1)
 
-/** An operation to suspend bus while awaiting signal */
+/** An operation to await a signal while blocking the iodev (if one is provided) */
 #define RTIO_OP_AWAIT (RTIO_OP_I3C_CCC+1)
 
 /**
@@ -745,6 +746,20 @@ static inline void rtio_sqe_prep_transceive(struct rtio_sqe *sqe,
 	sqe->userdata = userdata;
 }
 
+/**
+ * @brief Prepare an await op submission
+ *
+ * The await operation will await the completion signal before the sqe completes.
+ *
+ * If an rtio_iodev is provided then it will be blocked while awaiting. This facilitates a
+ * low-latency continuation of the rtio sequence, a sort of "critical section" during a bus
+ * operation if you will.
+ * Note that it is the responsibility of the rtio_iodev driver to properly block during the
+ * operation.
+ *
+ * See @ref rtio_sqe_prep_await_iodev for a helper, where an rtio_iodev is blocked.
+ * See @ref rtio_sqe_prep_await_executor for a helper, where no rtio_iodev is blocked.
+ */
 static inline void rtio_sqe_prep_await(struct rtio_sqe *sqe,
 				       const struct rtio_iodev *iodev,
 				       int8_t prio,
@@ -755,6 +770,39 @@ static inline void rtio_sqe_prep_await(struct rtio_sqe *sqe,
 	sqe->prio = prio;
 	sqe->iodev = iodev;
 	sqe->userdata = userdata;
+}
+
+/**
+ * @brief Prepare an await op submission which blocks an rtio_iodev until completion
+ *
+ * This variant can be useful if the await op is part of a sequence which must run within a tight
+ * time window as it effectively keeps the underlying bus locked while awaiting completion.
+ * Note that it is the responsibility of the rtio_iodev driver to properly block during the
+ * operation.
+ *
+ * See @ref rtio_sqe_prep_await for details.
+ * See @ref rtio_sqe_prep_await_executor for a counterpart where no rtio_iodev is blocked.
+ */
+static inline void rtio_sqe_prep_await_iodev(struct rtio_sqe *sqe, const struct rtio_iodev *iodev,
+					     int8_t prio, void *userdata)
+{
+	__ASSERT_NO_MSG(iodev != NULL);
+	rtio_sqe_prep_await(sqe, iodev, prio, userdata);
+}
+
+/**
+ * @brief Prepare an await op submission which completes the sqe after being signaled
+ *
+ * This variant can be useful when the await op serves as a logical piece of a sequence without
+ * requirements for a low-latency continuation of the sequence upon completion, or if the await
+ * op is expected to take "a long time" to complete.
+ *
+ * See @ref rtio_sqe_prep_await for details.
+ * See @ref rtio_sqe_prep_await_iodev for a counterpart where an rtio_iodev is blocked.
+ */
+static inline void rtio_sqe_prep_await_executor(struct rtio_sqe *sqe, int8_t prio, void *userdata)
+{
+	rtio_sqe_prep_await(sqe, NULL, prio, userdata);
 }
 
 static inline void rtio_sqe_prep_delay(struct rtio_sqe *sqe,

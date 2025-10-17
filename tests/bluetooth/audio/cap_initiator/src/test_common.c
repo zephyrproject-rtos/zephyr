@@ -48,6 +48,7 @@ void test_unicast_set_state(struct bt_cap_stream *cap_stream, struct bt_conn *co
 			    enum bt_bap_ep_state state)
 {
 	struct bt_bap_stream *bap_stream = &cap_stream->bap_stream;
+	int err;
 
 	printk("Setting stream %p to state %d\n", bap_stream, state);
 
@@ -60,9 +61,12 @@ void test_unicast_set_state(struct bt_cap_stream *cap_stream, struct bt_conn *co
 	zassert_not_null(ep);
 	zassert_not_null(preset);
 
+	err = bt_bap_stream_config(conn, &cap_stream->bap_stream, ep, &preset->codec_cfg);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+
 	bap_stream->conn = conn;
 	bap_stream->ep = ep;
 	bap_stream->qos = &preset->qos;
 	bap_stream->codec_cfg = &preset->codec_cfg;
-	bap_stream->ep->status.state = state;
+	bap_stream->ep->state = state;
 }

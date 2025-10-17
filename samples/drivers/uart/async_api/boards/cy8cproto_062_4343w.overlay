@@ -13,7 +13,6 @@
 	input-enable;
 };
 
-
 dut: &scb3 {
 	compatible = "infineon,cat1-uart";
 	status = "okay";

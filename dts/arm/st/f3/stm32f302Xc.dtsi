@@ -6,6 +6,7 @@
 
 #include <mem.h>
 #include <st/f3/stm32f302.dtsi>
+#include <zephyr/dt-bindings/adc/stm32l4_adc.h>
 
 / {
 	sram0: memory@20000000 {
@@ -45,6 +46,12 @@
 				compatible = "st,stm32-counter";
 				status = "disabled";
 			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
 		};
 
 		timers4: timers@40000800 {
@@ -63,13 +70,19 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
 		};
 
 		dma2: dma@40020400 {
 			compatible = "st,stm32-dma-v2bis";
 			#dma-cells = <2>;
 			reg = <0x40020400 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB1, 1U)>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 1)>;
 			interrupts = <56 0 57 0 58 0 59 0 60 0>;
 			status = "disabled";
 		};
@@ -77,7 +90,7 @@
 		uart5: serial@40005000 {
 			compatible = "st,stm32-uart";
 			reg = <0x40005000 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 20U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 20)>;
 			interrupts = <53 0>;
 			status = "disabled";
 		};
@@ -88,7 +101,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x48001000 0x400>;
-				clocks = <&rcc STM32_CLOCK(AHB1, 21U)>;
+				clocks = <&rcc STM32_CLOCK(AHB1, 21)>;
 			};
 		};
 	};

@@ -46,10 +46,12 @@
 			gpios = <&gpiod 15 GPIO_ACTIVE_LOW>;
 			label = "LED1_RGB_RED";
 		};
+
 		led1_green: led_1 {
 			gpios = <&gpiod 16 GPIO_ACTIVE_LOW>;
 			label = "LED1_RGB_GREEN";
 		};
+
 		led1_blue: led_2 {
 			gpios = <&gpiod 0 GPIO_ACTIVE_LOW>;
 			label = "LED1_RGB_BLUE";
@@ -63,10 +65,12 @@
 			pwms = <&ftm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "LED1_RGB_RED_PWM";
 		};
+
 		led1_green_pwm: led_pwm_1 {
 			pwms = <&ftm0 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "LED1_RGB_GREEN_PWM";
 		};
+
 		led1_blue_pwm: led_pwm_2 {
 			pwms = <&ftm0 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "LED1_RGB_BLUE_PWM";
@@ -99,7 +103,7 @@
 };
 
 &cpu0 {
-	clock-frequency = <80000000>;
+	clock-frequency = <DT_FREQ_M(80)>;
 };
 
 &gpioa {

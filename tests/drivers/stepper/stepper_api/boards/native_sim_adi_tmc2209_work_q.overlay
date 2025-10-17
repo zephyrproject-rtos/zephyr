@@ -7,7 +7,7 @@
 
 / {
 	aliases {
-		stepper =  &adi_tmc2209;
+		stepper = &adi_tmc2209;
 	};
 };
 
@@ -20,5 +20,6 @@
 		step-gpios = <&gpio1 1 0>;
 		en-gpios = <&gpio2 1 0>;
 		msx-gpios = <&gpio3 0 0>, <&gpio4 1 0>;
+		dual-edge-step;
 	};
 };

@@ -3,14 +3,13 @@
  * from LPCXpresso51U68.mex
  */
 
-
 #include <nxp/lpc/LPC51U68JBD64-pinctrl.h>
 
 &pinctrl {
 	pinmux_flexcomm0_uart: pinmux_flexcomm0_uart {
 		group0 {
 			pinmux = <FC0_TXD_SCL_MISO_PIO0_1>,
-				<FC0_RXD_SDA_MOSI_PIO0_0>;
+				 <FC0_RXD_SDA_MOSI_PIO0_0>;
 			bias-pull-up;
 			slew-rate = "standard";
 		};
@@ -19,7 +18,7 @@
 	pinmux_flexcomm4_i2c: pinmux_flexcomm4_i2c {
 		group0 {
 			pinmux = <FC4_RTS_SCL_SSEL1_PIO0_25>,
-				<FC4_CTS_SDA_SSEL0_PIO0_26>;
+				 <FC4_CTS_SDA_SSEL0_PIO0_26>;
 		};
 	};
 
@@ -28,10 +27,11 @@
 			pinmux = <FC5_SSEL3_PIO1_2>;
 			bias-pull-up;
 		};
+
 		group1 {
 			pinmux = <FC5_TXD_SCL_MISO_PIO0_18>,
-				<FC5_SCK_PIO0_19>,
-				<FC5_RXD_SDA_MOSI_PIO0_20>;
+				 <FC5_SCK_PIO0_19>,
+				 <FC5_RXD_SDA_MOSI_PIO0_20>;
 			bias-pull-up;
 			slew-rate = "standard";
 		};

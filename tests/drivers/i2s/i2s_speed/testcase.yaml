@@ -8,6 +8,8 @@ tests:
     platform_exclude:
       - nrf54h20dk/nrf54h20/cpuapp
       - mimxrt1060_evk/mimxrt1062/qspi
+      - mimxrt1180_evk/mimxrt1189/cm33
+      - mimxrt1180_evk/mimxrt1189/cm7
   drivers.i2s.speed.gpio_loopback:
     depends_on:
       - i2s

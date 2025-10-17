@@ -82,6 +82,7 @@ if WIFI_NM
 
 config WIFI_NM_MAX_MANAGED_INTERFACES
 	int "Maximum number of managed interfaces per Wi-Fi network manager"
+	default 2 if WIFI_USAGE_MODE_STA_AP
 	default 1
 	help
 	  This option defines the maximum number of managed interfaces per Wi-Fi

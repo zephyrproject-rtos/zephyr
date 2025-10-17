@@ -44,6 +44,18 @@ config BT_MAX_SCO_CONN
 	  Maximum number of simultaneous Bluetooth synchronous connections
 	  supported. The minimum (and default) number is 1.
 
+config BT_L2CAP_RX_FLUSH_TO
+	hex "Minimum Bluetooth L2CAP RX flush Timeout accepted in milliseconds"
+	default 0x0001 if BT_A2DP_SINK
+	default 0xFFFF
+	range 0x0001 0xFFFF
+	help
+	  This option configures minimum Bluetooth L2CAP RX flush timeout accepted during
+	  processing peer's l2cap flush timeout configuration.
+	  The flush timeout applies to all channels on the same ACL logical transport but
+	  may be overridden on a packet by packet basis by marking individual L2CAP packets
+	  as non-automatically-flushable via the Packet_Boundary_Flag in the HCI ACL Data packet.
+
 config BT_L2CAP_CONNLESS
 	bool "Bluetooth L2CAP connectionless data reception [EXPERIMENTAL]"
 	select EXPERIMENTAL
@@ -444,6 +456,14 @@ config BT_AVDTP_RTP_VERSION
 	help
 	  This option sets the AVDTP RTP protocol version
 
+config BT_AVDTP_SIGNAL_SDU_MAX
+	int "Maximum size of AVDTP signaling SDU"
+	default 512
+	range 48 $(UINT16_MAX)
+	help
+	  This option sets the maximum size of AVDTP signaling SDU.
+	  The default value is 512 bytes.
+
 endif # BT_AVDTP
 
 if BT_A2DP
@@ -494,6 +514,36 @@ config BT_AVRCP_BROWSING
 	  over Bluetooth BR/EDR.
 
 endif # BT_AVRCP
+
+config BT_DID
+	bool "Bluetooth DID Profile [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables the DID profile
+
+if BT_DID
+config BT_DEVICE_VEDNOR_ID
+	hex "Bluetooth Device Vendor ID"
+	range 0x0000 $(UINT16_MAX)
+	default 0x0000
+	help
+	  This option sets the device vendor id
+
+config BT_DEVICE_PRODUCT_ID
+	hex "Bluetooth Device Product ID"
+	range 0x0000 $(UINT16_MAX)
+	default 0x0000
+	help
+	  This option sets the device product id
+
+config BT_DEVICE_VERSION
+	hex "Bluetooth Device Version"
+	range 0x0000 $(UINT16_MAX)
+	default 0x0000
+	help
+	  This option sets the device version
+
+endif # BT_DID
 
 config BT_PAGE_TIMEOUT
 	hex "Bluetooth Page Timeout"

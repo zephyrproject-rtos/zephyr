@@ -1,0 +1,16 @@
+sample:
+  description: Sample for HL78XX modem
+  name: Hello HL78XX sample
+common:
+  tags:
+    - modem
+    - hl78xx
+  filter: dt_alias_exists("modem")
+tests:
+  sample.driver.modem.hello_hl78xx:
+    platform_allow:
+      - nucleo_u575zi_q
+    integration_platforms:
+      - nucleo_u575zi_q
+    extra_args:
+      - SHIELD=swir_hl78xx_ev_kit

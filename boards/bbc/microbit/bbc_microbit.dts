@@ -35,6 +35,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		buttonA: button_0 {
 			label = "BTN_A";
 			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
@@ -61,12 +62,12 @@
 		row-gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>,
 			    <&gpio0 14 GPIO_ACTIVE_HIGH>,
 			    <&gpio0 15 GPIO_ACTIVE_HIGH>;
-		col-gpios = <&gpio0  4 GPIO_ACTIVE_LOW>,
-			    <&gpio0  5 GPIO_ACTIVE_LOW>,
-			    <&gpio0  6 GPIO_ACTIVE_LOW>,
-			    <&gpio0  7 GPIO_ACTIVE_LOW>,
-			    <&gpio0  8 GPIO_ACTIVE_LOW>,
-			    <&gpio0  9 GPIO_ACTIVE_LOW>,
+		col-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>,
+			    <&gpio0 5 GPIO_ACTIVE_LOW>,
+			    <&gpio0 6 GPIO_ACTIVE_LOW>,
+			    <&gpio0 7 GPIO_ACTIVE_LOW>,
+			    <&gpio0 8 GPIO_ACTIVE_LOW>,
+			    <&gpio0 9 GPIO_ACTIVE_LOW>,
 			    <&gpio0 10 GPIO_ACTIVE_LOW>,
 			    <&gpio0 11 GPIO_ACTIVE_LOW>,
 			    <&gpio0 12 GPIO_ACTIVE_LOW>;
@@ -134,6 +135,7 @@
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	mma8653fc: mma8653fc@1d {
 		compatible = "nxp,fxos8700", "nxp,mma8653fc";
 		status = "okay";
@@ -159,7 +161,6 @@
 };
 
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -169,18 +170,22 @@
 			label = "mcuboot";
 			reg = <0x00000000 0x8000>;
 		};
+
 		slot0_partition: partition@8000 {
 			label = "image-0";
 			reg = <0x00008000 0x1a000>;
 		};
+
 		slot1_partition: partition@22000 {
 			label = "image-1";
 			reg = <0x00022000 0x1a000>;
 		};
+
 		scratch_partition: partition@3c000 {
 			label = "image-scratch";
 			reg = <0x0003c000 0x2000>;
 		};
+
 		storage_partition: partition@3e000 {
 			label = "storage";
 			reg = <0x0003e000 0x00002000>;

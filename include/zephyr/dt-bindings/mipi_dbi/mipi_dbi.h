@@ -8,9 +8,7 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_MIPI_DBI_MIPI_DBI_H_
 
 /**
- * @brief MIPI-DBI driver APIs
- * @defgroup mipi_dbi_interface MIPI-DBI driver APIs
- * @ingroup io_interfaces
+ * @addtogroup mipi_dbi_interface
  * @{
  */
 
@@ -54,7 +52,7 @@
  */
 #define MIPI_DBI_MODE_SPI_4WIRE 0x2
 /**
- * Parallel Bus protocol for MIPI DBI Type A based on Motorola 6800 bus.
+ * @name Parallel Bus protocol for MIPI DBI Type A based on Motorola 6800 bus.
  *
  *              -.   .--------.	  .------------------------
  *     CS        '---'        '---'
@@ -77,12 +75,15 @@
  *     D[7:0]
  *
  * Please refer to the MIPI DBI specification for a detailed cycle diagram.
+ *
+ * @{
  */
-#define MIPI_DBI_MODE_6800_BUS_16_BIT 0x3
-#define MIPI_DBI_MODE_6800_BUS_9_BIT 0x4
-#define MIPI_DBI_MODE_6800_BUS_8_BIT 0x5
+#define MIPI_DBI_MODE_6800_BUS_16_BIT 0x3 /**< Motorola 6800 parallel bus, 16-bit width */
+#define MIPI_DBI_MODE_6800_BUS_9_BIT  0x4 /**< Motorola 6800 parallel bus, 9-bit width */
+#define MIPI_DBI_MODE_6800_BUS_8_BIT  0x5 /**< Motorola 6800 parallel bus, 8-bit width */
+/** @} */
 /**
- * Parallel Bus protocol for MIPI DBI Type B based on Intel 8080 bus.
+ * @name Parallel Bus protocol for MIPI DBI Type B based on Intel 8080 bus.
  *
  *              -.					 .-
  *     CS        '---------------------------------------'
@@ -105,58 +106,78 @@
  *     D[7:0]
  *
  * Please refer to the MIPI DBI specification for a detailed cycle diagram.
+ * @{
  */
-#define MIPI_DBI_MODE_8080_BUS_16_BIT 0x6
-#define MIPI_DBI_MODE_8080_BUS_9_BIT 0x7
-#define MIPI_DBI_MODE_8080_BUS_8_BIT 0x8
+#define MIPI_DBI_MODE_8080_BUS_16_BIT 0x6 /**< Intel 8080 parallel bus, 16-bit width */
+#define MIPI_DBI_MODE_8080_BUS_9_BIT  0x7 /**< Intel 8080 parallel bus, 9-bit width */
+#define MIPI_DBI_MODE_8080_BUS_8_BIT  0x8 /**< Intel 8080 parallel bus, 8-bit width */
+/** @} */
 
-/** Color coding for MIPI DBI Type A or Type B interface. */
 /**
- * For 8-bit data bus width, 1 pixel is sent in 1 cycle. For 16-bit data bus width,
- * 2 pixels are sent in 1 cycle.
+ * @name Color coding for MIPI DBI Type A or Type B interface.
+ * @{
+ */
+/**
+ * RGB332 (8 bpp).
+ *
+ * - For 8-bit data bus width, 1 pixel is sent in 1 cycle.
+ * - For 16-bit data bus width, 2 pixels are sent in 1 cycle.
  */
 #define MIPI_DBI_MODE_RGB332 (0x1 << 4U)
 /**
- * For 8-bit data bus width, 2 pixels are sent in 3 cycles. For 16-bit data bus width,
- * 1 pixel is sent in 1 cycle, the high 4 bits are not used.
+ * RGB444 (12 bpp).
+ *
+ * - For 8-bit data bus width, 2 pixels are sent in 3 cycles.
+ * - For 16-bit data bus width, 1 pixel is sent in 1 cycle, the high 4 bits are not used.
  */
 #define MIPI_DBI_MODE_RGB444 (0x2 << 4U)
 /**
- * For 8-bit data bus width, 1 pixel is sent in 2 cycles. For 16-bit data bus width,
- * 1 pixel is sent in 1 cycle.
+ * RGB565 (16 bpp).
+ *
+ * - For 8-bit data bus width, 1 pixel is sent in 2 cycles.
+ * - For 16-bit data bus width, 1 pixel is sent in 1 cycle.
  */
 #define MIPI_DBI_MODE_RGB565 (0x3 << 4U)
 /**
- * For 8-bit data bus width, MIPI_DBI_MODE_RGB666_1 and MIPI_DBI_MODE_RGB666_2
- * are the same. 1 pixel is sent in 3 cycles, R component first, and the low 2
- * bits are not used.
- * For 9-bit data bus width, MIPI_DBI_MODE_RGB666_1 and MIPI_DBI_MODE_RGB666_2
- * are the same. 1 pixel is sent in 2 cycles.
- * For 16-bit data bus width, MIPI_DBI_MODE_RGB666_1 is option 1,
- * 2 pixels are sent in 3 cycles. The first pixel's R/G/B components are sent in
- * cycle 1 bits 10-15, cycle 1 bits 2-7 and cycle 2 bits 10-15.
- * The second pixel's R/G/B components are sent in cycle 2 bits 2-7, cycle 3 bits
- * 10-15 and cycle 3 bits 2-7.
- * MIPI_DBI_MODE_RGB666_2 is option 2, 1 pixel is sent in 2 cycles. The pixel's
- * R/G/B components are sent in cycle 1 bits 2-7, cycle 2 bits 10-15 and cycle 2
- * bits 2-7.
+ * RGB666 (18 bpp).
+ *
+ * - For 8-bit data bus width, #MIPI_DBI_MODE_RGB666_1 and #MIPI_DBI_MODE_RGB666_2 are the same.
+ *   1 pixel is sent in 3 cycles, R component first, and the low 2 bits are not used.
+ * - For 9-bit data bus width, #MIPI_DBI_MODE_RGB666_1 and #MIPI_DBI_MODE_RGB666_2 are the same.
+ *   1 pixel is sent in 2 cycles.
+ * - For 16-bit data bus width, #MIPI_DBI_MODE_RGB666_1 is option 1, 2 pixels are sent in 3 cycles.
+ *   The first pixel's R/G/B components are sent in cycle 1 bits 10-15, cycle 1 bits 2-7 and cycle
+ *   2 bits 10-15. The second pixel's R/G/B components are sent in cycle 2 bits 2-7, cycle 3 bits
+ *   10-15 and cycle 3 bits 2-7. #MIPI_DBI_MODE_RGB666_2 is option 2, 1 pixel is sent in 2 cycles.
+ *   The pixel's R/G/B components are sent in cycle 1 bits 2-7, cycle 2 bits 10-15 and cycle 2 bits
+ *   2-7.
  */
 #define MIPI_DBI_MODE_RGB666_1 (0x4 << 4U)
+/**
+ * RGB666 (18 bpp).
+ *
+ * @see MIPI_DBI_MODE_RGB666_1
+ */
 #define MIPI_DBI_MODE_RGB666_2 (0x5 << 4U)
 /**
- * For 8-bit data bus width, MIPI_DBI_MODE_RGB666_1 and MIPI_DBI_MODE_RGB666_2
- * are the same. 1 pixel is sent in 3 cycles, R component first.
- * For 16-bit data bus width, MIPI_DBI_MODE_RGB666_1 is option 1,
- * 2 pixels are sent in 3 cycles. The first pixel's R/G/B components are sent in
- * cycle 1 bits 8-15, cycle 1 bits 0-7 and cycle 2 bits 0-15.
- * The second pixel's R/G/B components are sent in cycle 2 bits 0-7, cycle 3 bits
- * 8-15 and cycle 3 bits 0-7.
- * MIPI_DBI_MODE_RGB666_2 is option 2, 1 pixel is sent in 2 cycles. The pixel's
- * R/G/B components are sent in cycle 1 bits 0-7, cycle 2 bits 8-15 and cycle 2
- * bits 0-7.
+ * RGB666 (18 bpp).
+ *
+ * - For 8-bit data bus width, #MIPI_DBI_MODE_RGB666_1 and #MIPI_DBI_MODE_RGB666_2 are the same.
+ *   1 pixel is sent in 3 cycles, R component first.
+ * - For 16-bit data bus width, #MIPI_DBI_MODE_RGB666_1 is option 1, 2 pixels are sent in 3 cycles.
+ *   The first pixel's R/G/B components are sent in cycle 1 bits 8-15, cycle 1 bits 0-7 and cycle 2
+ *   bits 0-15. The second pixel's R/G/B components are sent in cycle 2 bits 0-7, cycle 3 bits 8-15
+ *   and cycle 3 bits 0-7.
+ *   #MIPI_DBI_MODE_RGB666_2 is option 2, 1 pixel is sent in 2 cycles. The pixel's R/G/B components
+ *   are sent in cycle 1 bits 0-7, cycle 2 bits 8-15 and cycle 2 bits 0-7.
  */
 #define MIPI_DBI_MODE_RGB888_1 (0x6 << 4U)
+/**
+ * RGB888 (24 bpp).
+ * @see MIPI_DBI_MODE_RGB888_1
+ */
 #define MIPI_DBI_MODE_RGB888_2 (0x7 << 4U)
+/** @} */
 
 /** MIPI DBI tearing enable synchronization is disabled. */
 #define MIPI_DBI_TE_NO_EDGE 0x0

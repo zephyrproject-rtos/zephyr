@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #include <mem.h>
+#include <freq.h>
 #include "armv6-m.dtsi"
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/kinetis_sim.h>
@@ -87,7 +88,7 @@
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
 				reg = <0 DT_SIZE_K(512)>;
-				erase-block-size = <1024>;
+				erase-block-size = <DT_SIZE_K(1)>;
 				write-block-size = <4>;
 			};
 		};
@@ -215,7 +216,7 @@
 			/* channel information needed - fixme */
 		};
 
-		adc0: adc@4003b000{
+		adc0: adc@4003b000 {
 			compatible = "nxp,kinetis-adc16";
 			reg = <0x4003b000 0x70>;
 			interrupts = <15 0>;

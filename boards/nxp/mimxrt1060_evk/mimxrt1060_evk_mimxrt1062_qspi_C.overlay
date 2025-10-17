@@ -43,7 +43,6 @@
 		clocks = <&ccm IMX_CCM_SAI1_CLK 0x7C 18>;
 		clock-names = "mclk";
 	};
-
 };
 
 /* MIMXRT1060-EVK/EVKB have the is25wp064 flash module, but EVKC has w25q128jw */
@@ -57,10 +56,10 @@
 		compatible = "nxp,imx-flexspi-nor";
 		size = <DT_SIZE_M(16*8)>;
 		reg = <0>;
-		spi-max-frequency = <133000000>;
+		spi-max-frequency = <DT_FREQ_M(133)>;
 		status = "okay";
 		jedec-id = [ef 60 18];
-		erase-block-size = <4096>;
+		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <1>;
 
 		partitions {
@@ -76,14 +75,17 @@
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
+
 			slot0_partition: partition@20000 {
 				label = "image-0";
 				reg = <0x00020000 DT_SIZE_M(7)>;
 			};
+
 			slot1_partition: partition@720000 {
 				label = "image-1";
 				reg = <0x00720000 DT_SIZE_M(7)>;
 			};
+
 			storage_partition: partition@E20000 {
 				label = "storage";
 				reg = <0x00E20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;

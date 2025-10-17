@@ -5,7 +5,6 @@
 
 #include <zephyr/kernel/thread_stack.h>
 #include <zephyr/kernel.h>
-#include <ksched.h>
 #include <zephyr/arch/arm/cortex_a_r/lib_helpers.h>
 #include <zephyr/drivers/interrupt_controller/gic.h>
 #include <ipi.h>

@@ -375,7 +375,7 @@ static int phy_tja1103_init(const struct device *dev)
 		return ret;
 	}
 
-	/* Check always accesible register for handling NMIs */
+	/* Check always accessible register for handling NMIs */
 	ret = phy_tja1103_c45_read(dev, MDIO_MMD_VENDOR_SPECIFIC1, TJA1103_ALWAYS_ACCESSIBLE, &val);
 	if (ret < 0) {
 		return ret;

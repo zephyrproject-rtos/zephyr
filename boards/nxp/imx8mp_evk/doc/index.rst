@@ -155,7 +155,7 @@ Or use "cpu" command to boot from secondary Core, for example Core1:
 Option 3. Boot Zephyr by Using Remoteproc under Linux
 =====================================================
 
-When running Linux on the A55 core, it can use the remoteproc framework to load and boot Zephyr,
+When running Linux on the A53 cores, it can use the remoteproc framework to load and boot Zephyr,
 refer to Real-Time Edge user guide for more details. Pre-build images and user guide can be found
 at `Real-Time Edge Software`_.
 
@@ -362,8 +362,7 @@ should see the following message in the terminal:
    *** Booting Zephyr OS build v2.7.99-1310-g2801bf644a91  ***
    Hello World! imx8mp_evk
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _NXP website:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/evaluation-kit-for-the-i-mx-8m-plus-applications-processor:8MPLUSLPD4-EVK

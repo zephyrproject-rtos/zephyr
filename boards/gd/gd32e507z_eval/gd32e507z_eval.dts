@@ -22,15 +22,19 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led1: led1 {
 			gpios = <&gpiog 10 GPIO_ACTIVE_HIGH>;
 		};
+
 		led2: led2 {
 			gpios = <&gpiog 11 GPIO_ACTIVE_HIGH>;
 		};
+
 		led3: led3 {
 			gpios = <&gpiog 12 GPIO_ACTIVE_HIGH>;
 		};
+
 		led4: led4 {
 			gpios = <&gpiog 13 GPIO_ACTIVE_HIGH>;
 		};
@@ -38,26 +42,31 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		key_a: key_a {
 			label = "KEY_A";
 			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_A>;
 		};
+
 		key_b: key_b {
 			label = "KEY_B";
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_B>;
 		};
+
 		key_c: key_c {
 			label = "KEY_C";
 			gpios = <&gpiof 13 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_C>;
 		};
+
 		key_d: key_d {
 			label = "KEY_D";
 			gpios = <&gpiof 14 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_D>;
 		};
+
 		key_cet: key_cet {
 			label = "KEY_CET";
 			gpios = <&gpiof 15 GPIO_ACTIVE_LOW>;

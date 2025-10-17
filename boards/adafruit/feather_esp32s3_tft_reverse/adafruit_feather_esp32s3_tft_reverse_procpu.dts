@@ -74,7 +74,6 @@
 		};
 
 		led1: led_1 {
-
 			label = "TFT Backlight";
 			gpios = <&gpio1 45 GPIO_ACTIVE_HIGH>;
 		};

@@ -51,6 +51,11 @@ enum {
 	BT_BIG_PENDING,
 	/* Creating a BIG as a receiver */
 	BT_BIG_SYNCING,
+	/* BIG is busy handling an HCI event.
+	 *
+	 * Use this to prevent API calls from modifying the BIG while the event is being processed.
+	 */
+	BT_BIG_BUSY,
 
 	BT_BIG_NUM_FLAGS,
 };

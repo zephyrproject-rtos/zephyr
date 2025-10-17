@@ -1077,9 +1077,16 @@ static void hci_disconn_complete(struct net_buf *buf)
 		 * If only for one connection session bond was set, clear keys
 		 * database row for this connection.
 		 */
-		if (conn->type == BT_CONN_TYPE_BR && conn->br.link_key != NULL &&
-		    atomic_test_and_clear_bit(conn->flags, BT_CONN_BR_NOBOND)) {
-			bt_keys_link_key_clear(conn->br.link_key);
+		if (conn->type == BT_CONN_TYPE_BR && conn->br.link_key != NULL) {
+			/*
+			 * If the connection link is paired but not bond, remove
+			 * the link key upon disconnection.
+			 */
+			if (atomic_test_and_clear_bit(conn->flags, BT_CONN_BR_NOBOND)) {
+				bt_keys_link_key_clear(conn->br.link_key);
+			}
+
+			conn->br.link_key->enc_key_size = 0;
 		}
 #endif
 		bt_conn_unref(conn);
@@ -1497,24 +1504,12 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 			bt_addr_copy(&conn->le.resp_addr.a, &evt->local_rpa);
 		}
 
-		/* if the controller supports, lets advertise for another
-		 * peripheral connection.
-		 * check for connectable advertising state is sufficient as
-		 * this is how this le connection complete for peripheral occurred.
-		 */
-		if (BT_LE_STATES_PER_CONN_ADV(bt_dev.le.states)) {
-			bt_le_adv_resume();
-		}
-
 		if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 		    !BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
-			struct bt_le_ext_adv *adv = bt_le_adv_lookup_legacy();
 			/* No advertising set terminated event, must be a
 			 * legacy advertiser set.
 			 */
-			if (!atomic_test_bit(adv->flags, BT_ADV_PERSIST)) {
-				bt_le_adv_delete_legacy();
-			}
+			bt_le_adv_delete_legacy();
 		}
 	}
 
@@ -4662,6 +4657,10 @@ int bt_disable(void)
 	bt_periodic_sync_disable();
 #endif /* CONFIG_BT_PER_ADV_SYNC */
 
+	if (IS_ENABLED(CONFIG_BT_ISO)) {
+		bt_iso_reset();
+	}
+
 #if defined(CONFIG_BT_CONN)
 	if (IS_ENABLED(CONFIG_BT_SMP)) {
 		bt_pub_key_hci_disrupted();
@@ -4715,10 +4714,6 @@ int bt_disable(void)
 
 	/* If random address was set up - clear it */
 	bt_addr_le_copy(&bt_dev.random_addr, BT_ADDR_LE_ANY);
-
-	if (IS_ENABLED(CONFIG_BT_ISO)) {
-		bt_iso_reset();
-	}
 
 	bt_monitor_send(BT_MONITOR_CLOSE_INDEX, NULL, 0);
 

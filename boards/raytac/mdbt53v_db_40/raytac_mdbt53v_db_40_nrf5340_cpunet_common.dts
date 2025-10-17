@@ -31,7 +31,6 @@
 };
 
 &flash1 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -41,14 +40,17 @@
 			label = "mcuboot";
 			reg = <0x00000000 0xc000>;
 		};
+
 		slot0_partition: partition@c000 {
 			label = "image-0";
 			reg = <0x0000C000 0x17000>;
 		};
+
 		slot1_partition: partition@23000 {
 			label = "image-1";
 			reg = <0x00023000 0x17000>;
 		};
+
 		storage_partition: partition@3a000 {
 			label = "storage";
 			reg = <0x0003a000 0x6000>;

@@ -9,7 +9,7 @@
 	emdio_default: emdio_default {
 		group1 {
 			pinmux = <&iomuxc_eth4_mdc_gpio1_netc_emdc_netc_emdc>,
-				<&iomuxc_eth4_mdio_gpio2_netc_emdio_netc_emdio>;
+				 <&iomuxc_eth4_mdio_gpio2_netc_emdio_netc_emdio>;
 			bias-pull-down;
 			slew-rate = "slightly_fast";
 			drive-strength = "x6";
@@ -19,148 +19,103 @@
 	eth0_default: eth0_default {
 		group1 {
 			pinmux = <&iomuxc_eth0_rx_dv_netc_swt_eth_rx_dv_netc_swt_eth0_rx_dv>,
-				<&iomuxc_eth0_rx_er_netc_swt_eth_rx_er_netc_swt_eth0_rx_er>,
-				<&iomuxc_eth0_rxd0_netc_swt_eth_rxd_netc_swt_eth0_rxd0>,
-				<&iomuxc_eth0_rxd1_netc_swt_eth_rxd_netc_swt_eth0_rxd1>,
-				<&iomuxc_eth0_rxd2_netc_swt_eth_rxd_netc_swt_eth0_rxd2>,
-				<&iomuxc_eth0_rxd3_netc_swt_eth_rxd_netc_swt_eth0_rxd3>,
-				<&iomuxc_eth0_tx_en_netc_swt_eth_tx_en_netc_swt_eth0_tx_en>,
-				<&iomuxc_eth0_tx_er_netc_swt_eth_tx_er_netc_swt_eth0_tx_er>,
-				<&iomuxc_eth0_txd0_netc_swt_eth_txd_netc_swt_eth0_txd0>,
-				<&iomuxc_eth0_txd1_netc_swt_eth_txd_netc_swt_eth0_txd1>,
-				<&iomuxc_eth0_txd2_netc_swt_eth_txd_netc_swt_eth0_txd2>,
-				<&iomuxc_eth0_txd3_netc_swt_eth_txd_netc_swt_eth0_txd3>;
+				 <&iomuxc_eth0_rx_er_netc_swt_eth_rx_er_netc_swt_eth0_rx_er>,
+				 <&iomuxc_eth0_rxd0_netc_swt_eth_rxd_netc_swt_eth0_rxd0>,
+				 <&iomuxc_eth0_rxd1_netc_swt_eth_rxd_netc_swt_eth0_rxd1>,
+				 <&iomuxc_eth0_rxd2_netc_swt_eth_rxd_netc_swt_eth0_rxd2>,
+				 <&iomuxc_eth0_rxd3_netc_swt_eth_rxd_netc_swt_eth0_rxd3>,
+				 <&iomuxc_eth0_tx_en_netc_swt_eth_tx_en_netc_swt_eth0_tx_en>,
+				 <&iomuxc_eth0_tx_er_netc_swt_eth_tx_er_netc_swt_eth0_tx_er>,
+				 <&iomuxc_eth0_txd0_netc_swt_eth_txd_netc_swt_eth0_txd0>,
+				 <&iomuxc_eth0_txd1_netc_swt_eth_txd_netc_swt_eth0_txd1>,
+				 <&iomuxc_eth0_txd2_netc_swt_eth_txd_netc_swt_eth0_txd2>,
+				 <&iomuxc_eth0_txd3_netc_swt_eth_txd_netc_swt_eth0_txd3>;
 			bias-pull-down;
 			slew-rate = "slightly_fast";
 			drive-strength = "x6";
 		};
+
 		group2 {
 			pinmux = <&iomuxc_eth0_rx_clk_netc_swt_eth_rx_clk_netc_swt_eth0_rx_clk>,
-				<&iomuxc_eth0_tx_clk_netc_swt_eth_tx_clk_netc_swt_eth0_tx_clk>;
+				 <&iomuxc_eth0_tx_clk_netc_swt_eth_tx_clk_netc_swt_eth0_tx_clk>;
 			bias-pull-down;
 			slew-rate = "fast";
 			drive-strength = "x6";
 		};
-
 	};
 
 	eth1_default: eth1_default {
 		group1 {
 			pinmux = <&iomuxc_eth1_rx_dv_netc_swt_eth_rx_dv_netc_swt_eth1_rx_dv>,
-				<&iomuxc_eth1_rx_er_netc_swt_eth_rx_er_netc_swt_eth1_rx_er>,
-				<&iomuxc_eth1_rxd0_netc_swt_eth_rxd_netc_swt_eth1_rxd0>,
-				<&iomuxc_eth1_rxd1_netc_swt_eth_rxd_netc_swt_eth1_rxd1>,
-				<&iomuxc_eth1_rxd2_netc_swt_eth_rxd_netc_swt_eth1_rxd2>,
-				<&iomuxc_eth1_rxd3_netc_swt_eth_rxd_netc_swt_eth1_rxd3>,
-				<&iomuxc_eth1_tx_en_netc_swt_eth_tx_en_netc_swt_eth1_tx_en>,
-				<&iomuxc_eth1_tx_er_netc_swt_eth_tx_er_netc_swt_eth1_tx_er>,
-				<&iomuxc_eth1_txd0_netc_swt_eth_txd_netc_swt_eth1_txd0>,
-				<&iomuxc_eth1_txd1_netc_swt_eth_txd_netc_swt_eth1_txd1>,
-				<&iomuxc_eth1_txd2_netc_swt_eth_txd_netc_swt_eth1_txd2>,
-				<&iomuxc_eth1_txd3_netc_swt_eth_txd_netc_swt_eth1_txd3>;
+				 <&iomuxc_eth1_rx_er_netc_swt_eth_rx_er_netc_swt_eth1_rx_er>,
+				 <&iomuxc_eth1_rxd0_netc_swt_eth_rxd_netc_swt_eth1_rxd0>,
+				 <&iomuxc_eth1_rxd1_netc_swt_eth_rxd_netc_swt_eth1_rxd1>,
+				 <&iomuxc_eth1_rxd2_netc_swt_eth_rxd_netc_swt_eth1_rxd2>,
+				 <&iomuxc_eth1_rxd3_netc_swt_eth_rxd_netc_swt_eth1_rxd3>,
+				 <&iomuxc_eth1_tx_en_netc_swt_eth_tx_en_netc_swt_eth1_tx_en>,
+				 <&iomuxc_eth1_tx_er_netc_swt_eth_tx_er_netc_swt_eth1_tx_er>,
+				 <&iomuxc_eth1_txd0_netc_swt_eth_txd_netc_swt_eth1_txd0>,
+				 <&iomuxc_eth1_txd1_netc_swt_eth_txd_netc_swt_eth1_txd1>,
+				 <&iomuxc_eth1_txd2_netc_swt_eth_txd_netc_swt_eth1_txd2>,
+				 <&iomuxc_eth1_txd3_netc_swt_eth_txd_netc_swt_eth1_txd3>;
 			bias-pull-down;
 			slew-rate = "slightly_fast";
 			drive-strength = "x6";
 		};
+
 		group2 {
 			pinmux = <&iomuxc_eth1_rx_clk_netc_swt_eth_rx_clk_netc_swt_eth1_rx_clk>,
-				<&iomuxc_eth1_tx_clk_netc_swt_eth_tx_clk_netc_swt_eth1_tx_clk>;
+				 <&iomuxc_eth1_tx_clk_netc_swt_eth_tx_clk_netc_swt_eth1_tx_clk>;
 			bias-pull-down;
 			slew-rate = "fast";
 			drive-strength = "x6";
 		};
-
 	};
 
 	eth2_default: eth2_default {
-		group1 {
-			pinmux =
-			<&iomuxc_eth2_rx_ctl_netc_enetc_swt_eth_rx_ctl_netc_enetc2_swt_eth2_rx_ctl>,
-			<&iomuxc_eth2_rxd0_netc_enetc_swt_eth_rxd_netc_enetc2_swt_eth2_rxd0>,
-			<&iomuxc_eth2_rxd1_netc_enetc_swt_eth_rxd_netc_enetc2_swt_eth2_rxd1>,
-			<&iomuxc_eth2_rxd2_netc_enetc_swt_eth_rxd_netc_enetc2_swt_eth2_rxd2>,
-			<&iomuxc_eth2_rxd3_netc_enetc_swt_eth_rxd_netc_enetc2_swt_eth2_rxd3>,
-			<&iomuxc_eth2_tx_ctl_netc_enetc_swt_eth_tx_ctl_netc_enetc2_swt_eth2_tx_ctl>,
-			<&iomuxc_eth2_txd0_netc_enetc_swt_eth_txd_netc_enetc2_swt_eth2_txd0>,
-			<&iomuxc_eth2_txd1_netc_enetc_swt_eth_txd_netc_enetc2_swt_eth2_txd1>,
-			<&iomuxc_eth2_txd2_netc_enetc_swt_eth_txd_netc_enetc2_swt_eth2_txd2>,
-			<&iomuxc_eth2_txd3_netc_enetc_swt_eth_txd_netc_enetc2_swt_eth2_txd3>;
+		eth2_default_group1: group1 {
 			bias-pull-down;
 			slew-rate = "slightly_fast";
 			drive-strength = "x6";
 		};
-		group2 {
-			pinmux =
-			<&iomuxc_eth2_rx_clk_netc_enetc_swt_eth_rx_clk_netc_enetc2_swt_eth2_rx_clk>,
-			<&iomuxc_eth2_tx_clk_netc_enetc_swt_eth_tx_clk_netc_enetc2_swt_eth2_tx_clk>;
+
+		eth2_default_group2: group2 {
 			bias-pull-down;
 			slew-rate = "fast";
 			drive-strength = "x6";
 		};
-
 	};
 
 	eth3_default: eth3_default {
 		group1 {
-			pinmux =
-				<&iomuxc_eth3_rx_ctl_netc_enetc_eth_rx_ctl_netc_enetc1_eth3_rx_ctl>,
-				<&iomuxc_eth3_rxd0_netc_enetc_eth_rxd_netc_enetc1_eth3_rxd0>,
-				<&iomuxc_eth3_rxd1_netc_enetc_eth_rxd_netc_enetc1_eth3_rxd1>,
-				<&iomuxc_eth3_rxd2_netc_enetc_eth_rxd_netc_enetc1_eth3_rxd2>,
-				<&iomuxc_eth3_rxd3_netc_enetc_eth_rxd_netc_enetc1_eth3_rxd3>,
-				<&iomuxc_eth3_tx_ctl_netc_enetc_eth_tx_ctl_netc_enetc1_eth3_tx_ctl>,
-				<&iomuxc_eth3_txd0_netc_enetc_eth_txd_netc_enetc1_eth3_txd0>,
-				<&iomuxc_eth3_txd1_netc_enetc_eth_txd_netc_enetc1_eth3_txd1>,
-				<&iomuxc_eth3_txd2_netc_enetc_eth_txd_netc_enetc1_eth3_txd2>,
-				<&iomuxc_eth3_txd3_netc_enetc_eth_txd_netc_enetc1_eth3_txd3>;
 			bias-pull-down;
 			slew-rate = "slightly_fast";
 			drive-strength = "x6";
 		};
+
 		group2 {
-			pinmux =
-				<&iomuxc_eth3_rx_clk_netc_enetc_eth_rx_clk_netc_enetc1_eth3_rx_clk>,
-				<&iomuxc_eth3_tx_clk_netc_enetc_eth_tx_clk_netc_enetc1_eth3_tx_clk>;
 			bias-pull-down;
 			slew-rate = "fast";
 			drive-strength = "x6";
 		};
-
 	};
 
-
 	eth4_default: eth4_default {
-		group1 {
-			pinmux =
-				<&iomuxc_eth4_rx_ctl_netc_enetc_eth_rx_ctl_netc_enetc0_eth4_rx_ctl>,
-				<&iomuxc_eth4_rxd0_netc_enetc_eth_rxd_netc_enetc0_eth4_rxd0>,
-				<&iomuxc_eth4_rxd1_netc_enetc_eth_rxd_netc_enetc0_eth4_rxd1>,
-				<&iomuxc_eth4_rxd2_netc_enetc_eth_rxd_netc_enetc0_eth4_rxd2>,
-				<&iomuxc_eth4_rxd3_netc_enetc_eth_rxd_netc_enetc0_eth4_rxd3>,
-				<&iomuxc_eth4_tx_ctl_netc_enetc_eth_tx_ctl_netc_enetc0_eth4_tx_ctl>,
-				<&iomuxc_eth4_txd0_netc_enetc_eth_txd_netc_enetc0_eth4_txd0>,
-				<&iomuxc_eth4_txd1_netc_enetc_eth_txd_netc_enetc0_eth4_txd1>,
-				<&iomuxc_eth4_txd2_netc_enetc_eth_txd_netc_enetc0_eth4_txd2>,
-				<&iomuxc_eth4_txd3_netc_enetc_eth_txd_netc_enetc0_eth4_txd3>;
+		eth4_default_group_1: group1 {
 			bias-pull-down;
 			slew-rate = "slightly_fast";
 			drive-strength = "x6";
 		};
-		group2 {
-			pinmux =
-				<&iomuxc_eth4_rx_clk_netc_enetc_eth_rx_clk_netc_enetc0_eth4_rx_clk>,
-				<&iomuxc_eth4_tx_clk_netc_enetc_eth_tx_clk_netc_enetc0_eth4_tx_clk>;
+
+		eth4_default_group_2: group2 {
 			bias-pull-down;
 			slew-rate = "fast";
 			drive-strength = "x6";
 		};
-
 	};
 
 	flexio1_io5_default: flexio1_io5_default {
-		group0 {
-			pinmux =
-				<&iomuxc_gpio_io31_flexio_1_3_mux1_flexio5_flexio_1_3_mux1_flexio5>;
+		flexio1_io5_default_group_0: group0 {
 			slew-rate = "slightly_fast";
 			drive-strength = "x4";
 		};
@@ -169,7 +124,7 @@
 	lpi2c6_default: lpi2c6_default {
 		group0 {
 			pinmux = <&iomuxc_gpio_io28_lpi2c_scl_lpi2c6_scl>,
-				<&iomuxc_gpio_io29_lpi2c_sda_lpi2c6_sda>;
+				 <&iomuxc_gpio_io29_lpi2c_sda_lpi2c6_sda>;
 			drive-open-drain;
 			slew-rate = "slightly_fast";
 			drive-strength = "x4";
@@ -180,7 +135,7 @@
 	lpuart1_default: lpuart1_default {
 		group0 {
 			pinmux = <&iomuxc_uart1_rxd_lpuart_rx_lpuart1_rx>,
-				<&iomuxc_uart1_txd_lpuart_tx_lpuart1_tx>;
+				 <&iomuxc_uart1_txd_lpuart_tx_lpuart1_tx>;
 			bias-pull-up;
 			slew-rate = "slightly_fast";
 			drive-strength = "x4";
@@ -190,10 +145,92 @@
 	lpuart8_default: lpuart8_default {
 		group0 {
 			pinmux = <&iomuxc_dap_tclk_swclk_lpuart_rx_lpuart8_rx>,
-				<&iomuxc_dap_tms_swdio_lpuart_tx_lpuart8_tx>;
+				 <&iomuxc_dap_tms_swdio_lpuart_tx_lpuart8_tx>;
 			bias-pull-up;
 			slew-rate = "slightly_fast";
 			drive-strength = "x4";
 		};
 	};
+
+	lpuart11_default: lpuart11_default {
+		group0 {
+			pinmux = <&iomuxc_gpio_io25_lpuart_rx_lpuart11_rx>,
+				<&iomuxc_gpio_io24_lpuart_tx_lpuart11_tx>;
+			bias-pull-up;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
+		};
+	};
+
+	lpuart12_default: lpuart12_default {
+		group0 {
+			pinmux = <&iomuxc_gpio_io27_lpuart_rx_lpuart12_rx>,
+				<&iomuxc_gpio_io26_lpuart_tx_lpuart12_tx>;
+			bias-pull-up;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
+		};
+	};
+};
+
+&eth2_default_group1 {
+	pinmux = <&iomuxc_eth2_rx_ctl_netc_enetc_swt_eth_rx_ctl_netc_enetc2_swt_eth2_rx_ctl>,
+		 <&iomuxc_eth2_rxd0_netc_enetc_swt_eth_rxd_netc_enetc2_swt_eth2_rxd0>,
+		 <&iomuxc_eth2_rxd1_netc_enetc_swt_eth_rxd_netc_enetc2_swt_eth2_rxd1>,
+		 <&iomuxc_eth2_rxd2_netc_enetc_swt_eth_rxd_netc_enetc2_swt_eth2_rxd2>,
+		 <&iomuxc_eth2_rxd3_netc_enetc_swt_eth_rxd_netc_enetc2_swt_eth2_rxd3>,
+		 <&iomuxc_eth2_tx_ctl_netc_enetc_swt_eth_tx_ctl_netc_enetc2_swt_eth2_tx_ctl>,
+		 <&iomuxc_eth2_txd0_netc_enetc_swt_eth_txd_netc_enetc2_swt_eth2_txd0>,
+		 <&iomuxc_eth2_txd1_netc_enetc_swt_eth_txd_netc_enetc2_swt_eth2_txd1>,
+		 <&iomuxc_eth2_txd2_netc_enetc_swt_eth_txd_netc_enetc2_swt_eth2_txd2>,
+		 <&iomuxc_eth2_txd3_netc_enetc_swt_eth_txd_netc_enetc2_swt_eth2_txd3>;
+};
+
+&eth2_default_group2 {
+	pinmux = <&iomuxc_eth2_rx_clk_netc_enetc_swt_eth_rx_clk_netc_enetc2_swt_eth2_rx_clk>,
+		 <&iomuxc_eth2_tx_clk_netc_enetc_swt_eth_tx_clk_netc_enetc2_swt_eth2_tx_clk>;
+};
+
+&eth3_default {
+	group1 {
+		pinmux = <&iomuxc_eth3_rx_ctl_netc_enetc_eth_rx_ctl_netc_enetc1_eth3_rx_ctl>,
+			 <&iomuxc_eth3_rxd0_netc_enetc_eth_rxd_netc_enetc1_eth3_rxd0>,
+			 <&iomuxc_eth3_rxd1_netc_enetc_eth_rxd_netc_enetc1_eth3_rxd1>,
+			 <&iomuxc_eth3_rxd2_netc_enetc_eth_rxd_netc_enetc1_eth3_rxd2>,
+			 <&iomuxc_eth3_rxd3_netc_enetc_eth_rxd_netc_enetc1_eth3_rxd3>,
+			 <&iomuxc_eth3_tx_ctl_netc_enetc_eth_tx_ctl_netc_enetc1_eth3_tx_ctl>,
+			 <&iomuxc_eth3_txd0_netc_enetc_eth_txd_netc_enetc1_eth3_txd0>,
+			 <&iomuxc_eth3_txd1_netc_enetc_eth_txd_netc_enetc1_eth3_txd1>,
+			 <&iomuxc_eth3_txd2_netc_enetc_eth_txd_netc_enetc1_eth3_txd2>,
+			 <&iomuxc_eth3_txd3_netc_enetc_eth_txd_netc_enetc1_eth3_txd3>;
+	};
+
+	group2 {
+		pinmux = <&iomuxc_eth3_rx_clk_netc_enetc_eth_rx_clk_netc_enetc1_eth3_rx_clk>,
+			 <&iomuxc_eth3_tx_clk_netc_enetc_eth_tx_clk_netc_enetc1_eth3_tx_clk>;
+	};
+};
+
+&eth4_default {
+	group1 {
+		pinmux = <&iomuxc_eth4_rx_ctl_netc_enetc_eth_rx_ctl_netc_enetc0_eth4_rx_ctl>,
+			 <&iomuxc_eth4_rxd0_netc_enetc_eth_rxd_netc_enetc0_eth4_rxd0>,
+			 <&iomuxc_eth4_rxd1_netc_enetc_eth_rxd_netc_enetc0_eth4_rxd1>,
+			 <&iomuxc_eth4_rxd2_netc_enetc_eth_rxd_netc_enetc0_eth4_rxd2>,
+			 <&iomuxc_eth4_rxd3_netc_enetc_eth_rxd_netc_enetc0_eth4_rxd3>,
+			 <&iomuxc_eth4_tx_ctl_netc_enetc_eth_tx_ctl_netc_enetc0_eth4_tx_ctl>,
+			 <&iomuxc_eth4_txd0_netc_enetc_eth_txd_netc_enetc0_eth4_txd0>,
+			 <&iomuxc_eth4_txd1_netc_enetc_eth_txd_netc_enetc0_eth4_txd1>,
+			 <&iomuxc_eth4_txd2_netc_enetc_eth_txd_netc_enetc0_eth4_txd2>,
+			 <&iomuxc_eth4_txd3_netc_enetc_eth_txd_netc_enetc0_eth4_txd3>;
+	};
+
+	group2 {
+		pinmux = <&iomuxc_eth4_rx_clk_netc_enetc_eth_rx_clk_netc_enetc0_eth4_rx_clk>,
+			 <&iomuxc_eth4_tx_clk_netc_enetc_eth_tx_clk_netc_enetc0_eth4_tx_clk>;
+	};
+};
+
+&flexio1_io5_default_group_0 {
+	pinmux = <&iomuxc_gpio_io31_flexio_1_3_mux1_flexio5_flexio_1_3_mux1_flexio5>;
 };

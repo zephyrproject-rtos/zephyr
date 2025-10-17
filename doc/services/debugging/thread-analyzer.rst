@@ -86,6 +86,12 @@ Configure this module using the following options.
 :kconfig:option:`CONFIG_THREAD_RUNTIME_STATS`
   Print thread runtime data such as utilization.
   This options is automatically selected by :kconfig:option:`CONFIG_THREAD_ANALYZER`.
+:kconfig:option:`CONFIG_THREAD_ANALYZER_LONG_FRAME_PER_INTERVAL`
+  Reset Longest Frame value statistics after printing.
+  When using :kconfig:option:`SCHED_THREAD_USAGE_ANALYSIS` to get average and longest
+  frame thread statistics, reset the Longest Frame value to zero after each time
+  printing the thread statistics.  This enables observation of the longest frame
+  during the most recent interval rather than longest frame since startup.
 
 API documentation
 *****************

@@ -15,9 +15,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/rtc.h>
 #include <zephyr/sys/sys_io.h>
-
-#define RTC_STD_INDEX (DT_INST_REG_ADDR_BY_IDX(0, 0))
-#define RTC_STD_TARGET (DT_INST_REG_ADDR_BY_IDX(0, 1))
+#include <zephyr/drivers/mfd/mc146818.h>
 
 /* Time indices in RTC RAM */
 #define RTC_SEC		0x00
@@ -127,21 +125,9 @@ struct rtc_mc146818_data {
 	void *update_cb_data;
 };
 
-static uint8_t rtc_read(int reg)
-{
-	uint8_t value;
-
-	sys_out8(reg, RTC_STD_INDEX);
-	value = sys_in8(RTC_STD_TARGET);
-
-	return value;
-}
-
-static void rtc_write(int reg, uint8_t value)
-{
-	sys_out8(reg, RTC_STD_INDEX);
-	sys_out8(value, RTC_STD_TARGET);
-}
+struct rtc_mc146818_config {
+	const struct device *mfd;
+};
 
 static bool rtc_mc146818_validate_time(const struct rtc_time *timeptr)
 {
@@ -172,6 +158,7 @@ static bool rtc_mc146818_validate_time(const struct rtc_time *timeptr)
 static int rtc_mc146818_set_time(const struct device *dev, const struct rtc_time *timeptr)
 {
 	struct rtc_mc146818_data * const dev_data = dev->data;
+	const struct rtc_mc146818_config *config = dev->config;
 	uint8_t value;
 	int year;
 	int cent;
@@ -190,23 +177,23 @@ static int rtc_mc146818_set_time(const struct device *dev, const struct rtc_time
 		goto out;
 	}
 
-	value = rtc_read(RTC_DATA);
-	rtc_write(RTC_DATA, value | RTC_UCI_BIT);
+	value = mfd_mc146818_std_read(config->mfd, RTC_DATA);
+	mfd_mc146818_std_write(config->mfd, RTC_DATA, value | RTC_UCI_BIT);
 
 	year = (1900 + timeptr->tm_year) % 100;
 	cent = (1900 + timeptr->tm_year) / 100;
 
-	rtc_write(RTC_SEC, (uint8_t)timeptr->tm_sec);
-	rtc_write(RTC_MIN, (uint8_t)timeptr->tm_min);
-	rtc_write(RTC_HOUR, (uint8_t)timeptr->tm_hour);
-	rtc_write(RTC_WDAY, (uint8_t)timeptr->tm_wday);
-	rtc_write(RTC_MDAY, (uint8_t)timeptr->tm_mday);
-	rtc_write(RTC_MONTH, (uint8_t)timeptr->tm_mon + 1);
-	rtc_write(RTC_YEAR, year);
-	rtc_write(RTC_CENTURY, cent);
+	mfd_mc146818_std_write(config->mfd, RTC_SEC, (uint8_t)timeptr->tm_sec);
+	mfd_mc146818_std_write(config->mfd, RTC_MIN, (uint8_t)timeptr->tm_min);
+	mfd_mc146818_std_write(config->mfd, RTC_HOUR, (uint8_t)timeptr->tm_hour);
+	mfd_mc146818_std_write(config->mfd, RTC_WDAY, (uint8_t)timeptr->tm_wday);
+	mfd_mc146818_std_write(config->mfd, RTC_MDAY, (uint8_t)timeptr->tm_mday);
+	mfd_mc146818_std_write(config->mfd, RTC_MONTH, (uint8_t)timeptr->tm_mon + 1);
+	mfd_mc146818_std_write(config->mfd, RTC_YEAR, year);
+	mfd_mc146818_std_write(config->mfd, RTC_CENTURY, cent);
 
 	value &= (~RTC_UCI_BIT);
-	rtc_write(RTC_DATA, value);
+	mfd_mc146818_std_write(config->mfd, RTC_DATA, value);
 	ret = 0;
 out:
 	k_spin_unlock(&dev_data->lock, key);
@@ -216,10 +203,10 @@ out:
 static int rtc_mc146818_get_time(const struct device *dev, struct rtc_time  *timeptr)
 {
 	struct rtc_mc146818_data * const dev_data = dev->data;
+	const struct rtc_mc146818_config *config = dev->config;
 	int ret;
 	uint8_t cent;
 	uint8_t year;
-	uint8_t value;
 
 	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
 
@@ -229,29 +216,28 @@ static int rtc_mc146818_get_time(const struct device *dev, struct rtc_time  *tim
 		goto out;
 	}
 
-	if (!(rtc_read(RTC_REG_D) & RTC_VRT_BIT)) {
+	if (!(mfd_mc146818_std_read(config->mfd, RTC_REG_D) & RTC_VRT_BIT)) {
 		ret = -ENODATA;
 		goto out;
 	}
 
-	while (rtc_read(RTC_UIP) & RTC_UIP_BIT) {
+	while (mfd_mc146818_std_read(config->mfd, RTC_UIP) & RTC_UIP_BIT) {
 		continue;
 	}
 
-	cent = rtc_read(RTC_CENTURY);
-	year = rtc_read(RTC_YEAR);
-	timeptr->tm_mon = rtc_read(RTC_MONTH) - 1;
-	timeptr->tm_mday = rtc_read(RTC_MDAY);
-	timeptr->tm_wday = rtc_read(RTC_WDAY) - 1;
-	timeptr->tm_hour = rtc_read(RTC_HOUR);
-	timeptr->tm_min = rtc_read(RTC_MIN);
-	timeptr->tm_sec = rtc_read(RTC_SEC);
+	cent = mfd_mc146818_std_read(config->mfd, RTC_CENTURY);
+	year = mfd_mc146818_std_read(config->mfd, RTC_YEAR);
+	timeptr->tm_mon = mfd_mc146818_std_read(config->mfd, RTC_MONTH) - 1;
+	timeptr->tm_mday = mfd_mc146818_std_read(config->mfd, RTC_MDAY);
+	timeptr->tm_wday = mfd_mc146818_std_read(config->mfd, RTC_WDAY) - 1;
+	timeptr->tm_hour = mfd_mc146818_std_read(config->mfd, RTC_HOUR);
+	timeptr->tm_min = mfd_mc146818_std_read(config->mfd, RTC_MIN);
+	timeptr->tm_sec = mfd_mc146818_std_read(config->mfd, RTC_SEC);
 
 	timeptr->tm_year = 100 * (int)cent + year - 1900;
 
 	timeptr->tm_nsec = 0;
 	timeptr->tm_yday = 0;
-	value = rtc_read(RTC_DATA);
 
 	/* Check time valid */
 	if (!rtc_mc146818_validate_time(timeptr)) {
@@ -305,6 +291,7 @@ static int rtc_mc146818_alarm_set_time(const struct device *dev, uint16_t id, ui
 				       const struct rtc_time *timeptr)
 {
 	struct rtc_mc146818_data * const dev_data = dev->data;
+	const struct rtc_mc146818_config *config = dev->config;
 	int ret;
 
 	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
@@ -326,23 +313,24 @@ static int rtc_mc146818_alarm_set_time(const struct device *dev, uint16_t id, ui
 	}
 
 	if (mask & RTC_ALARM_TIME_MASK_SECOND) {
-		rtc_write(RTC_ALARM_SEC, timeptr->tm_sec);
+		mfd_mc146818_std_write(config->mfd, RTC_ALARM_SEC, timeptr->tm_sec);
 	} else {
-		rtc_write(RTC_ALARM_SEC, RTC_ALARM_DC);
+		mfd_mc146818_std_write(config->mfd, RTC_ALARM_SEC, RTC_ALARM_DC);
 	}
 
 	if (mask & RTC_ALARM_TIME_MASK_MINUTE) {
-		rtc_write(RTC_ALARM_MIN, timeptr->tm_min);
+		mfd_mc146818_std_write(config->mfd, RTC_ALARM_MIN, timeptr->tm_min);
 	} else {
-		rtc_write(RTC_ALARM_SEC, RTC_ALARM_DC);
+		mfd_mc146818_std_write(config->mfd, RTC_ALARM_SEC, RTC_ALARM_DC);
 	}
 	if (mask & RTC_ALARM_TIME_MASK_HOUR) {
-		rtc_write(RTC_ALARM_HOUR, timeptr->tm_hour);
+		mfd_mc146818_std_write(config->mfd, RTC_ALARM_HOUR, timeptr->tm_hour);
 	} else {
-		rtc_write(RTC_ALARM_SEC, RTC_ALARM_DC);
+		mfd_mc146818_std_write(config->mfd, RTC_ALARM_SEC, RTC_ALARM_DC);
 	}
 
-	rtc_write(RTC_DATA, rtc_read(RTC_DATA) | RTC_AIE_BIT);
+	mfd_mc146818_std_write(config->mfd, RTC_DATA,
+			       mfd_mc146818_std_read(config->mfd, RTC_DATA) | RTC_AIE_BIT);
 	ret = 0;
 out:
 	k_spin_unlock(&dev_data->lock, key);
@@ -353,6 +341,7 @@ static int rtc_mc146818_alarm_get_time(const struct device *dev, uint16_t id, ui
 				   struct rtc_time *timeptr)
 {
 	struct rtc_mc146818_data * const dev_data = dev->data;
+	const struct rtc_mc146818_config *config = dev->config;
 	uint8_t value;
 	int ret;
 
@@ -370,19 +359,19 @@ static int rtc_mc146818_alarm_get_time(const struct device *dev, uint16_t id, ui
 
 	(*mask) = 0;
 
-	value = rtc_read(RTC_ALARM_SEC);
+	value = mfd_mc146818_std_read(config->mfd, RTC_ALARM_SEC);
 	if (value <= MAX_SEC) {
 		timeptr->tm_sec = value;
 		(*mask) |= RTC_ALARM_TIME_MASK_SECOND;
 	}
 
-	value = rtc_read(RTC_ALARM_MIN);
+	value = mfd_mc146818_std_read(config->mfd, RTC_ALARM_MIN);
 	if (value <= MAX_MIN) {
 		timeptr->tm_min = value;
 		(*mask) |= RTC_ALARM_TIME_MASK_MINUTE;
 	}
 
-	value = rtc_read(RTC_ALARM_HOUR);
+	value = mfd_mc146818_std_read(config->mfd, RTC_ALARM_HOUR);
 	if (value <= MAX_HOUR) {
 		timeptr->tm_hour = value;
 		(*mask) |= RTC_ALARM_TIME_MASK_HOUR;
@@ -398,6 +387,7 @@ static int rtc_mc146818_alarm_set_callback(const struct device *dev, uint16_t id
 				       rtc_alarm_callback callback, void *user_data)
 {
 	struct rtc_mc146818_data * const dev_data = dev->data;
+	const struct rtc_mc146818_config *config = dev->config;
 
 	if (id != 0) {
 		return -EINVAL;
@@ -410,10 +400,14 @@ static int rtc_mc146818_alarm_set_callback(const struct device *dev, uint16_t id
 
 	if (callback != NULL) {
 		/* Enable Alarm callback */
-		rtc_write(RTC_DATA, (rtc_read(RTC_DATA) | RTC_AIE_BIT));
+		mfd_mc146818_std_write(config->mfd, RTC_DATA,
+				       (mfd_mc146818_std_read(config->mfd,
+				       RTC_DATA) | RTC_AIE_BIT));
 	} else {
 		/* Disable Alarm callback */
-		rtc_write(RTC_DATA, (rtc_read(RTC_DATA) & (~RTC_AIE_BIT)));
+		mfd_mc146818_std_write(config->mfd, RTC_DATA,
+				       (mfd_mc146818_std_read(config->mfd,
+				       RTC_DATA) & (~RTC_AIE_BIT)));
 	}
 
 	k_spin_unlock(&dev_data->lock, key);
@@ -444,6 +438,7 @@ static int rtc_mc146818_update_set_callback(const struct device *dev,
 					rtc_update_callback callback, void *user_data)
 {
 	struct rtc_mc146818_data * const dev_data = dev->data;
+	const struct rtc_mc146818_config *config = dev->config;
 
 	k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
 
@@ -452,10 +447,14 @@ static int rtc_mc146818_update_set_callback(const struct device *dev,
 
 	if (callback != NULL) {
 		/* Enable update callback */
-		rtc_write(RTC_DATA, (rtc_read(RTC_DATA) | RTC_UIE_BIT));
+		mfd_mc146818_std_write(config->mfd, RTC_DATA,
+				       (mfd_mc146818_std_read(config->mfd,
+				       RTC_DATA) | RTC_UIE_BIT));
 	} else {
 		/* Disable update callback */
-		rtc_write(RTC_DATA, (rtc_read(RTC_DATA) & (~RTC_UIE_BIT)));
+		mfd_mc146818_std_write(config->mfd, RTC_DATA,
+				       (mfd_mc146818_std_read(config->mfd,
+				       RTC_DATA) & (~RTC_UIE_BIT)));
 	}
 
 
@@ -468,12 +467,13 @@ static int rtc_mc146818_update_set_callback(const struct device *dev,
 static void rtc_mc146818_isr(const struct device *dev)
 {
 	struct rtc_mc146818_data * const dev_data = dev->data;
+	const struct rtc_mc146818_config *config = dev->config;
 	uint8_t regc;
 
 	ARG_UNUSED(dev_data);
 
 	/* Read register, which clears the register */
-	regc = rtc_read(RTC_FLAG);
+	regc = mfd_mc146818_std_read(config->mfd, RTC_FLAG);
 
 #if defined(CONFIG_RTC_ALARM)
 	if (regc & RTC_AF_BIT) {
@@ -514,11 +514,17 @@ static DEVICE_API(rtc, rtc_mc146818_driver_api) = {
 #define RTC_MC146818_INIT_FN_DEFINE(n)						\
 	static int rtc_mc146818_init##n(const struct device *dev)		\
 	{									\
-		rtc_write(RTC_REG_A,						\
+		const struct rtc_mc146818_config *config = dev->config;		\
+										\
+		if (!device_is_ready(config->mfd)) {				\
+			return -ENODEV;						\
+		}								\
+		mfd_mc146818_std_write(config->mfd, RTC_REG_A,			\
 			  _CONCAT(RTC_IN_CLK_DIV_BITS_,				\
 				  DT_INST_PROP(n, clock_frequency)));		\
 										\
-		rtc_write(RTC_REG_B, RTC_DMODE_BIT | RTC_HFORMAT_BIT);		\
+		mfd_mc146818_std_write(config->mfd,				\
+				RTC_REG_B, RTC_DMODE_BIT | RTC_HFORMAT_BIT);	\
 										\
 		IRQ_CONNECT(DT_INST_IRQN(0),					\
 				DT_INST_IRQ(0, priority),			\
@@ -530,14 +536,17 @@ static DEVICE_API(rtc, rtc_mc146818_driver_api) = {
 		return 0;							\
 	}
 
-#define RTC_MC146818_DEV_CFG(inst)						\
-	struct rtc_mc146818_data rtc_mc146818_data##inst;			\
-										\
-	RTC_MC146818_INIT_FN_DEFINE(inst)					\
-										\
-	DEVICE_DT_INST_DEFINE(inst, &rtc_mc146818_init##inst, NULL,		\
-			      &rtc_mc146818_data##inst, NULL, POST_KERNEL,	\
-			      CONFIG_RTC_INIT_PRIORITY,				\
-			      &rtc_mc146818_driver_api);			\
+#define RTC_MC146818_DEV_CFG(inst)						   \
+	static struct rtc_mc146818_data rtc_mc146818_data##inst;		   \
+										   \
+	static const struct rtc_mc146818_config rtc_mc146818_config##inst = {	   \
+		.mfd = DEVICE_DT_GET(DT_INST_PARENT(inst))};			   \
+										   \
+	RTC_MC146818_INIT_FN_DEFINE(inst)					   \
+	DEVICE_DT_INST_DEFINE(inst, &rtc_mc146818_init##inst, NULL,		   \
+			      &rtc_mc146818_data##inst, &rtc_mc146818_config##inst,\
+			      POST_KERNEL,					   \
+			      UTIL_INC(CONFIG_MFD_MOTOROLA_MC146818_INIT_PRIORITY),\
+			      &rtc_mc146818_driver_api);			   \
 
 DT_INST_FOREACH_STATUS_OKAY(RTC_MC146818_DEV_CFG)

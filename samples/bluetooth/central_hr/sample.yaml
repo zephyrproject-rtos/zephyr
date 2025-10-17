@@ -59,6 +59,6 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
     extra_args:
       - CONFIG_BT_EXT_ADV=y
-      - CONFIG_BT_AUTO_PHY_UPDATE=n
+      - CONFIG_BT_AUTO_PHY_CENTRAL_NONE=y
     tags: bluetooth
     sysbuild: true

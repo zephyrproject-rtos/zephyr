@@ -9,9 +9,8 @@
 &pinctrl {
 	lpuart0_default: lpuart0_default {
 		group0 {
-			pinmux =
-				<LPUART0_RX_PTA1>,
-				<LPUART0_TX_PTA2>;
+			pinmux = <LPUART0_RX_PTA1>,
+				 <LPUART0_TX_PTA2>;
 			slew-rate = "slow";
 			drive-strength = "low";
 		};
@@ -19,9 +18,8 @@
 
 	i2c0_default: i2c0_default {
 		group0 {
-			pinmux =
-				<I2C0_SCL_PTE24>,
-				<I2C0_SDA_PTE25>;
+			pinmux = <I2C0_SCL_PTE24>,
+				 <I2C0_SDA_PTE25>;
 			bias-pull-up;
 			slew-rate = "fast";
 			drive-strength = "low";

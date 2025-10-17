@@ -9,10 +9,26 @@ config DMA_SILABS_SIWX91X
 	help
 	  Enable the High Power(HP)/Ultra Low Power(ULP) DMA driver for the Silabs SiWx91x SoC series.
 
+config DMA_SILABS_SIWX91X_GPDMA
+	bool "Silabs SiWx91x GPDMA driver"
+	default y
+	select SYS_MEM_BLOCKS
+	depends on DT_HAS_SILABS_GPDMA_ENABLED
+	help
+	  Enable the GDMA driver for the Silabs SiWx91x SoC series.
+
 if DMA_SILABS_SIWX91X
 
 config DMA_SILABS_SIWX91X_SG_BUFFER_COUNT
 	int "The maximum allowable number of buffers for scatter-gather transfers"
 	default 30
+
+endif
+
+if DMA_SILABS_SIWX91X_GPDMA
+
+config GPDMA_SILABS_SIWX91X_DESCRIPTOR_COUNT
+	int "The maximum GPDMA descriptor count"
+	default 32
 
 endif

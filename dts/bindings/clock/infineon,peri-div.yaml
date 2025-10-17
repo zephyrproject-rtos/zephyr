@@ -1,0 +1,65 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: infineon peripheral divider
+
+compatible: "infineon,peri-div"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  peri-group:
+    type: uint8-array
+    description: |
+      Peri instance and group of given peripheral divider:
+      peri0_group1_... : peri-group = [00 01]
+      peri1_group3_... : peri-group = [01 03]
+
+  div-type:
+    type: int
+    description: |
+      Programmable clock divider types: DIV_8_BIT, DIV_16_BIT, DIV_16_5_BIT, DIV_24_5_BIT
+
+  channel:
+    type: int
+    description: |
+      Channel of given peripheral divider.
+
+  clock-div:
+    type: int
+    description: |
+      For non-fractional clock dividers (div-type: DIV_8_BIT, DIV_16_BIT)
+      Causes integer division of (divider value + 1), or division by 1 to 256
+      (8-bit divider) or 1 to 65536 (16-bit divider).
+
+      For fractional clock dividers (div-type: DIV_16_5_BIT, DIV_24_5_BIT):
+      The integer divider value. The source of the divider is peri_clk, which is a
+      divided version of hf_clk[0]. The divider value causes integer division of
+      (divider value + 1), or division by 1 to 65536 (16-bit divider) or 1 to 16777216
+      (24-bit divider).
+
+  div-frac-value:
+    type: int
+    description: |
+      The fraction part of the divider. The fractional divider can be 0-31, thus
+      it divides the clock by 1/32 for each count. To divide the clock by 11/32nds
+      set this value to 11.
+
+  resource-type:
+    type: int
+    required: true
+    description: |
+      Resource type that the peripheral clock is assigned to:
+      &scb3     : resource-type = IFX_RSC_SCB
+      &tcpwm0_0 : resource-type = IFX_RSC_TCPWM
+
+  resource-instance:
+    type: int
+    required: true
+    description: |
+      Resource instance that the peripheral clock is assigned to:
+      &scb0 : resource-instance = <0>
+      &scb3 : resource-instance = <3>
+      &scb5 : resource-instance = <5>

@@ -11,7 +11,7 @@
 
 / {
 	model = "NXP LPCXPRESSO54114 board";
-	compatible = "nxp,lpc54xxx","nxp,lpc";
+	compatible = "nxp,lpc54xxx", "nxp,lpc";
 
 	chosen {
 		zephyr,sram = &sram2;
@@ -23,7 +23,7 @@
 };
 
 &cpu1 {
-	clock-frequency = <48000000>;
+	clock-frequency = <DT_FREQ_M(48)>;
 };
 
 &mailbox0 {

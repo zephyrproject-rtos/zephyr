@@ -7,7 +7,7 @@
 	pinmux_flexcomm1_lpi2c: pinmux_flexcomm1_lpi2c {
 		group0 {
 			pinmux = <FC1_P0_PIO0_24>,
-				<FC1_P1_PIO0_25>;
+				 <FC1_P1_PIO0_25>;
 			slew-rate = "fast";
 			drive-strength = "low";
 			input-enable;

@@ -17,7 +17,6 @@
 
 / {
 	soc {
-		compatible = "nordic,nrf51822-qfac", "nordic,nrf51822",
-			     "nordic,nrf51", "simple-bus";
+		compatible = "simple-bus";
 	};
 };

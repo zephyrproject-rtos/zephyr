@@ -25,6 +25,33 @@ properties:
     type: int
     description: Pin offset of this GPIO entry
 
+  int-en-offset:
+    type: int
+    description: |
+      This parameter enables to add proper offset to access
+      GPIO_INT_EN register from General Purpose Events status
+      Register, as it is observed that the offset varies from
+      platform to platform. GP_EVENT_STAT register is fetched
+      from ACPI GPIO table.
+
+  int-stat-offset:
+    type: int
+    description: |
+      This parameter enables to add proper offset to access
+      GPIO_INT_STAT register from General Purpose Events status
+      Register, as it is observed that the offset varies from
+      platform to platform. GP_EVENT_STAT register is fetched
+      from ACPI GPIO table.
+
+  acpi-ginf-3-param:
+    type: boolean
+    description: |
+      This boolean will indicate the version of GINF method ACPI
+      enabled for a given platform. If the value is true, GINF
+      method which takes 3 parameters (u-id, bank-id and field-id)
+      will be used else GINF method with 2 parameters (field-id
+      and bank-id) will be used.
+
   "#gpio-cells":
     const: 2
 

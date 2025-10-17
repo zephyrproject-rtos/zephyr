@@ -352,6 +352,8 @@ int uhc_mcux_hal_init_transfer_common(const struct device *dev, usb_host_transfe
 		mcux_xfer->direction = USB_REQTYPE_GET_DIR(mcux_xfer->setupPacket->bmRequestType)
 					       ? USB_IN
 					       : USB_OUT;
+	} else {
+		mcux_xfer->direction = USB_EP_DIR_IS_IN(xfer->ep) ? USB_IN : USB_OUT;
 	}
 
 	return 0;

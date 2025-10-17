@@ -47,7 +47,6 @@
 	status = "okay";
 };
 
-
 &timers3 {
 	status = "okay";
 };

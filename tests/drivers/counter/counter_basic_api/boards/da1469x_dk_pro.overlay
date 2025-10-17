@@ -4,11 +4,7 @@
 	status = "okay";
 };
 
-&timer2 {
-	clock-src = <&divn_clk>;
-	prescaler = <1>;
-	status = "okay";
-};
+/* timer2 is used as low-power clock source, reserved for the OS tick generation */
 
 &timer3 {
 	clock-src = <&lp_clk>;

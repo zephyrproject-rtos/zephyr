@@ -16,6 +16,7 @@ if NET_IPV6
 config NET_IF_MAX_IPV6_COUNT
 	int "Max number of IPv6 network interfaces in the system"
 	default NET_VLAN_COUNT if NET_VLAN && NET_VLAN_COUNT > 0
+	default 2 if NRF70_ENABLE_DUAL_VIF
 	default 2 if NET_LOOPBACK
 	default 1
 	help

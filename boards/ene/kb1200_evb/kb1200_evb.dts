@@ -29,6 +29,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User";
 			gpios = <&gpio0x1x 0x10 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -38,11 +39,13 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		/* green led */
 		led0: led_0 {
 			gpios = <&gpio0x1x 0x0f GPIO_ACTIVE_HIGH>;
 			label = "LED0";
 		};
+
 		/* blue led */
 		led1: led_1 {
 			gpios = <&gpio0x1x 0x11 GPIO_ACTIVE_HIGH>;

@@ -634,6 +634,11 @@ static void ra_spi_eri_isr(const struct device *dev)
 		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, eri, irq)] =                               \
 			EVENT_SPI_ERI(DT_INST_PROP(index, channel));                               \
                                                                                                    \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SPI_RXI(DT_INST_PROP(index, channel)));     \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SPI_TXI(DT_INST_PROP(index, channel)));     \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SPI_TEI(DT_INST_PROP(index, channel)));     \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SPI_ERI(DT_INST_PROP(index, channel)));     \
+                                                                                                   \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, rxi, irq),                                  \
 			    DT_INST_IRQ_BY_NAME(index, rxi, priority), ra_spi_rxi_isr,             \
 			    DEVICE_DT_INST_GET(index), 0);                                         \

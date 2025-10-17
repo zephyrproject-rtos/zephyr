@@ -146,8 +146,8 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
-Bluetooh support
-----------------
+Bluetooth support
+-----------------
 
 BLE support is enabled on nucleo_wba55cg. To build a zephyr sample using this board
 you first need to install Bluetooth Controller libraries available in Zephyr as binary

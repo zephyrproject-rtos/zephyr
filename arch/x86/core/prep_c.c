@@ -5,14 +5,19 @@
  */
 
 #include <zephyr/kernel.h>
-#include <kernel_internal.h>
+#include <kernel_arch_func.h>
+#include <kernel_arch_interface.h>
 #include <zephyr/arch/x86/multiboot.h>
 #include <zephyr/arch/x86/efi.h>
 #include <x86_mmu.h>
 #include <zephyr/platform/hooks.h>
-#include <zephyr/arch/cache.h>
+#include <zephyr/cache.h>
+#include <zephyr/arch/common/init.h>
 
-extern FUNC_NORETURN void z_cstart(void);
+K_KERNEL_PINNED_STACK_ARRAY_DECLARE(z_interrupt_stacks,
+		CONFIG_MP_MAX_NUM_CPUS,
+		CONFIG_ISR_STACK_SIZE);
+
 extern void x86_64_irq_init(void);
 
 #if !defined(CONFIG_X86_64)
@@ -31,9 +36,8 @@ FUNC_NORETURN void z_prep_c(void *arg)
 {
 	x86_boot_arg_t *cpu_arg = arg;
 
-#if defined(CONFIG_SOC_PREP_HOOK)
 	soc_prep_hook();
-#endif
+
 	_kernel.cpus[0].nested = 0;
 
 #ifdef CONFIG_MMU

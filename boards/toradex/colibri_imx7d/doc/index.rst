@@ -304,7 +304,7 @@ from its currently loaded dtb file.
    };
 
    #Add these definitions under / { } just before the __symbols__
-   #Disgard the comments with #-->
+   #Discard the comments with #-->
    reserved-memory {
       #address-cells = <0x01>;
       #size-cells = <0x01>;

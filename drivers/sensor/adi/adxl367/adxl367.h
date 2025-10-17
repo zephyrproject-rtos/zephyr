@@ -442,7 +442,7 @@ void adxl367_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
 int adxl367_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder);
 int adxl367_get_accel_data(const struct device *dev,
 			   struct adxl367_xyz_accel_data *accel_data);
-int adxl367_get_temp_data(const struct device *dev, int16_t *raw_temp);
+int adxl367_get_temp_data(const struct device *dev, int16_t *raw_temp, bool check_data_rdy);
 void adxl367_accel_convert(struct sensor_value *val, int16_t value,
 				enum adxl367_range range);
 void adxl367_temp_convert(struct sensor_value *val, int16_t value);

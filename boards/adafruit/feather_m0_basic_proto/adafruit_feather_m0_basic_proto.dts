@@ -13,7 +13,7 @@
 / {
 	model = "Adafruit Feather M0 Basic Proto";
 	compatible = "adafruit,feather-m0-basic-proto", "atmel,samd21g18a",
-			"atmel,samd21";
+		     "atmel,samd21";
 
 	chosen {
 		zephyr,console = &sercom0;
@@ -30,6 +30,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&porta 17 0>;
 			label = "LED";

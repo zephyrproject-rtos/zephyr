@@ -128,7 +128,7 @@ class NXPS32DebugProbeRunner(ZephyrBinaryRunner):
         """Return a list of debug probe serial numbers connected via USB to this host."""
         # use system's native commands to enumerate and retrieve the USB serial ID
         # to avoid bloating this runner with third-party dependencies that often
-        # require priviledged permissions to access the device info
+        # require privileged permissions to access the device info
         macaddr_pattern = r'(?:[0-9a-f]{2}[:]){5}[0-9a-f]{2}'
         if platform.system() == 'Windows':
             cmd = 'pnputil /enum-devices /connected'

@@ -11,13 +11,13 @@
 		columns = <20>;
 		rows = <4>;
 		mode = <4>;
-		register-select-gpios = <&gpiob 8 (GPIO_ACTIVE_HIGH)>;
-		enable-gpios = <&gpiob 9 (GPIO_ACTIVE_HIGH)>;
+		register-select-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
 		data-bus-gpios = <0>, <0>, <0>, <0>,
-				 <&gpioa 5 (GPIO_ACTIVE_HIGH)>,
-				 <&gpioa 6 (GPIO_ACTIVE_HIGH)>,
-				 <&gpioa 7 (GPIO_ACTIVE_HIGH)>,
-				 <&gpiod 14 (GPIO_ACTIVE_HIGH)>;
+				 <&gpioa 5 GPIO_ACTIVE_HIGH>,
+				 <&gpioa 6 GPIO_ACTIVE_HIGH>,
+				 <&gpioa 7 GPIO_ACTIVE_HIGH>,
+				 <&gpiod 14 GPIO_ACTIVE_HIGH>;
 	};
 };
 

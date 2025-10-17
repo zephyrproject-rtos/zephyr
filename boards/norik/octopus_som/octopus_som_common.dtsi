@@ -21,7 +21,6 @@
 			gpios = <&gpio0 7 0>;
 			label = "Green LED 1";
 		};
-
 	};
 
 	pwmleds {
@@ -34,7 +33,7 @@
 
 	sim_select: sim_select {
 		compatible = "norik,sim_select";
-		sim-gpios= <&gpio0 25 GPIO_ACTIVE_HIGH>;
+		sim-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
 		sim = "external";
 	};
 

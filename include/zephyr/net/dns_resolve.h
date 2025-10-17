@@ -6,6 +6,7 @@
 
 /*
  * Copyright (c) 2017 Intel Corporation
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,10 +39,16 @@ extern "C" {
 enum dns_query_type {
 	/** IPv4 query */
 	DNS_QUERY_TYPE_A = 1,
-	/** PTR query */
+	/** Canonical name query */
+	DNS_QUERY_TYPE_CNAME = 5,
+	/** Pointer query */
 	DNS_QUERY_TYPE_PTR = 12,
+	/** Text query */
+	DNS_QUERY_TYPE_TXT = 16,
 	/** IPv6 query */
-	DNS_QUERY_TYPE_AAAA = 28
+	DNS_QUERY_TYPE_AAAA = 28,
+	/** Service location query */
+	DNS_QUERY_TYPE_SRV = 33
 };
 
 /**
@@ -68,6 +75,13 @@ enum dns_server_source {
 #else
 #define DNS_MAX_NAME_SIZE 20
 #endif /* CONFIG_DNS_RESOLVER_MAX_NAME_LEN */
+
+/** Max size of the resolved txt record. */
+#if defined(CONFIG_DNS_RESOLVER_MAX_TEXT_LEN)
+#define DNS_MAX_TEXT_SIZE CONFIG_DNS_RESOLVER_MAX_TEXT_LEN
+#else
+#define DNS_MAX_TEXT_SIZE 64
+#endif /* CONFIG_DNS_RESOLVER_MAX_TEXT_LEN */
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -267,17 +281,56 @@ int dns_dispatcher_unregister(struct dns_socket_dispatcher *ctx);
 /** @endcond */
 
 /**
+ * Enumerate the extensions that are available in the address info
+ */
+enum dns_resolve_extension {
+	DNS_RESOLVE_NONE = 0,
+	DNS_RESOLVE_TXT,
+	DNS_RESOLVE_SRV,
+};
+
+struct dns_resolve_txt {
+	size_t textlen;
+	char   text[DNS_MAX_TEXT_SIZE + 1];
+};
+
+struct dns_resolve_srv {
+	uint16_t priority;
+	uint16_t weight;
+	uint16_t port;
+	size_t   targetlen;
+	char     target[DNS_MAX_NAME_SIZE + 1];
+};
+
+/**
  * Address info struct is passed to callback that gets all the results.
  */
 struct dns_addrinfo {
-	/** IP address information */
-	struct sockaddr ai_addr;
-	/** Length of the ai_addr field */
-	socklen_t       ai_addrlen;
-	/** Address family of the address information */
-	uint8_t         ai_family;
-	/** Canonical name of the address */
-	char            ai_canonname[DNS_MAX_NAME_SIZE + 1];
+	/** Address family of the address information and discriminator */
+	uint8_t ai_family;
+
+	union {
+		struct {
+			/** Length of the ai_addr field or ai_canonname */
+			socklen_t ai_addrlen;
+
+			/* AF_INET or AF_INET6 address info */
+			struct sockaddr ai_addr;
+
+			/** AF_LOCAL Canonical name of the address */
+			char ai_canonname[DNS_MAX_NAME_SIZE + 1];
+		};
+
+		/* AF_UNSPEC extensions */
+		struct {
+			enum dns_resolve_extension ai_extension;
+
+			union {
+				struct dns_resolve_txt ai_txt;
+				struct dns_resolve_srv ai_srv;
+			};
+		};
+	};
 };
 
 /**
@@ -342,6 +395,19 @@ enum dns_resolve_status {
 typedef void (*dns_resolve_cb_t)(enum dns_resolve_status status,
 				 struct dns_addrinfo *info,
 				 void *user_data);
+
+/**
+ * @typedef dns_resolve_pkt_fw_cb_t
+ * @brief DNS resolve callback which passes the received packet from DNS server to application
+ *
+ * @details The DNS resolve packet forwarding callback is called after a successful
+ * DNS resolving.
+ *
+ * @param dns_data Pointer to data buffer containing the DNS message.
+ * @param buf_len Length of the data.
+ * @param user_data User data passed in dns_resolve function call.
+ */
+typedef void (*dns_resolve_pkt_fw_cb_t)(struct net_buf *dns_data, size_t buf_len, void *user_data);
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -454,6 +520,11 @@ struct dns_resolve_context {
 
 	/** Is this context in use */
 	enum dns_resolve_context_state state;
+
+#if defined(CONFIG_DNS_RESOLVER_PACKET_FORWARDING) || defined(__DOXYGEN__)
+	/** DNS packet forwarding callback. */
+	dns_resolve_pkt_fw_cb_t pkt_fw_cb;
+#endif /* CONFIG_DNS_RESOLVER_PACKET_FORWARDING */
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -608,6 +679,23 @@ int dns_resolve_remove_source(struct dns_resolve_context *ctx, int if_index,
 			      enum dns_server_source source);
 
 /**
+ * @brief Remove servers from the DNS resolving context that have a specific IP address.
+ *
+ * @param ctx DNS context
+ * @param servers_sa DNS server addresses as struct sockaddr. The array
+ *        is NULL terminated. Port numbers are optional in struct sockaddr, the
+ *        default will be used if set to 0.
+ * @param interfaces Network interfaces to which the DNS servers are bound.
+ *        This is an array of network interface indices. The array must be
+ *        the same length as the servers_sa array.
+ *
+ * @return 0 if ok, <0 if error.
+ */
+int dns_resolve_remove_server_addresses(struct dns_resolve_context *ctx,
+					const struct sockaddr *servers_sa[],
+					int interfaces[]);
+
+/**
  * @brief Cancel a pending DNS query.
  *
  * @details This releases DNS resources used by a pending query.
@@ -721,6 +809,25 @@ static inline int dns_resolve_service(struct dns_resolve_context *ctx,
  * @return Default DNS context.
  */
 struct dns_resolve_context *dns_resolve_get_default(void);
+
+#if defined(CONFIG_DNS_RESOLVER_PACKET_FORWARDING) || defined(__DOXYGEN__)
+/**
+ * @brief Installs the packet forwarding callback to the DNS resolving context.
+ *
+ * @details When this callback is installed, a received message from DNS server
+ * will be passed to callback.
+ *
+ * @param ctx Pointer to DNS resolver context.
+ * If the application wants to use the default DNS context, pointer to default dns
+ * context can be obtained by calling dns_resolve_get_default() function.
+ * @param cb Callback to call when received DNS message is required by application.
+ */
+static inline void dns_resolve_enable_packet_forwarding(struct dns_resolve_context *ctx,
+							dns_resolve_pkt_fw_cb_t cb)
+{
+	ctx->pkt_fw_cb = cb;
+}
+#endif /* CONFIG_DNS_RESOLVER_PACKET_FORWARDING */
 
 /**
  * @brief Get IP address info from DNS.

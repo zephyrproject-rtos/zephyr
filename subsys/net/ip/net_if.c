@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include <zephyr/internal/syscall_handler.h>
 #include <stdlib.h>
 #include <string.h>
+#include <zephyr/net/conn_mgr_connectivity.h>
 #include <zephyr/net/igmp.h>
 #include <zephyr/net/ipv4_autoconf.h>
 #include <zephyr/net/mld.h>
@@ -310,6 +311,7 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 		net_pkt_unref(pkt);
 	} else {
 		net_stats_update_bytes_sent(iface, status);
+		conn_mgr_if_used(iface);
 	}
 
 	if (context) {
@@ -5736,7 +5738,7 @@ static void notify_iface_up(struct net_if *iface)
 		/* CAN does not require link address. */
 	} else {
 		if (!net_if_is_offloaded(iface)) {
-			NET_ASSERT(net_if_get_link_addr(iface)->addr != NULL);
+			NET_ASSERT(net_if_get_link_addr(iface)->len > 0);
 		}
 	}
 
@@ -6415,6 +6417,11 @@ static void set_default_name(struct net_if *iface)
 		static int count;
 
 		snprintk(name, sizeof(name), "thread%d", count++);
+	} else if (IS_ENABLED(CONFIG_NET_VLAN) &&
+		   (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL))) {
+		static int count;
+
+		snprintk(name, sizeof(name), "vlan%d", count++);
 	} else {
 		static int count;
 

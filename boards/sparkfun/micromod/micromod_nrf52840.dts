@@ -29,6 +29,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio0 13 0>;
 			label = "Blue LED";
@@ -138,8 +139,9 @@
 	pinctrl-0 = <&qspi_default>;
 	pinctrl-1 = <&qspi_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	w25q128jv: w25q128jv@0 {
-		status="okay";
+		status = "okay";
 		compatible = "nordic,qspi-nor";
 		reg = <0>;
 		writeoc = "pp4io";
@@ -158,7 +160,6 @@
 };
 
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -168,6 +169,7 @@
 			label = "mcuboot";
 			reg = <0x00000000 0x00010000>;
 		};
+
 		slot0_partition: partition@10000 {
 			label = "image-0";
 			reg = <0x00010000 0x00076000>;
@@ -202,7 +204,11 @@ zephyr_udc0: &usbd {
 
 // Sparkfun Micromod compatible pins
 micromod_1_uart: &uart0 {};
+
 micromod_2_uart: &uart1 {};
+
 micromod_0_i2c: &i2c0 {};
+
 micromod_1_i2c: &i2c1 {};
+
 micromod_0_spi: &spi2 {};

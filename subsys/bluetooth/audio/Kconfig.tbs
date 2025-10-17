@@ -263,7 +263,7 @@ config BT_TBS_MAX_URI_LENGTH
 config BT_TBS_MAX_PROVIDER_NAME_LENGTH
 	int "The maximum length of the bearer provider name"
 	default 30
-	range 0 512
+	range 1 512
 	help
 	  Sets the maximum length of the bearer provider name.
 

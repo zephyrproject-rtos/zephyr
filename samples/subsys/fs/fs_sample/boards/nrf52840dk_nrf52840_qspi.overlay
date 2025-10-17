@@ -25,7 +25,7 @@
 
 / {
 	msc_disk0 {
-		status="okay";
+		status = "okay";
 		compatible = "zephyr,flash-disk";
 		partition = <&external_partition>;
 		disk-name = "SD";

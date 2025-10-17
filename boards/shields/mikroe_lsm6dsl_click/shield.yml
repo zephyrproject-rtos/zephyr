@@ -1,0 +1,6 @@
+shield:
+  name: mikroe_lsm6dsl_click
+  full_name: LSM6DSL Click
+  vendor: mikroe
+  supported_features:
+    - sensor

@@ -23,5 +23,4 @@
 		 * STM32F103TB. Delete node in stm32f103tb.dtsi.
 		 */
 	};
-
 };

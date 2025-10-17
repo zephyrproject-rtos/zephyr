@@ -24,7 +24,7 @@
 #include <esp_cpu.h>
 
 #include <zephyr/linker/linker-defs.h>
-#include <kernel_internal.h>
+#include <zephyr/arch/common/init.h>
 
 #if CONFIG_SOC_SERIES_ESP32C6
 #include <soc/hp_apm_reg.h>
@@ -137,14 +137,20 @@ void map_rom_segments(int core, struct rom_segments *map)
 			break;
 		}
 
-		ESP_EARLY_LOGI(TAG, "%s\t: lma=%08xh vma=%08xh size=%05xh (%6d)",
-			       IS_LAST(segment_hdr)       ? "???"
-			       : IS_DRAM(segment_hdr)     ? "DRAM"
-			       : IS_RTC_IRAM(segment_hdr) ? "RTC_IRAM"
-			       : IS_RTC_DRAM(segment_hdr) ? "RTC_DRAM"
-			       : IS_RTC_DATA(segment_hdr) ? "RTC_DATA" : "IRAM",
-			       offset + sizeof(esp_image_segment_header_t), segment_hdr.load_addr,
-			       segment_hdr.data_len, segment_hdr.data_len);
+		if (segment_hdr.load_addr) {
+			ESP_EARLY_LOGI(TAG, "%s\t: lma=%08xh vma=%08xh size=%05xh (%6d)",
+				       IS_LAST(segment_hdr)       ? "---"
+				       : IS_DRAM(segment_hdr)     ? "DRAM"
+				       : IS_IRAM(segment_hdr)     ? "IRAM"
+				       : IS_IROM(segment_hdr)     ? "IROM"
+				       : IS_DROM(segment_hdr)     ? "DROM"
+				       : IS_RTC_IRAM(segment_hdr) ? "RTC_IRAM"
+				       : IS_RTC_DRAM(segment_hdr) ? "RTC_DRAM"
+				       : IS_RTC_DATA(segment_hdr) ? "RTC_DATA" : "???",
+				       offset + sizeof(esp_image_segment_header_t),
+				       segment_hdr.load_addr, segment_hdr.data_len,
+				       segment_hdr.data_len);
+		}
 
 		/* Fix drom and irom produced be the linker, as it could
 		 * be invalidated by the elf2image and flash load offset
@@ -172,8 +178,15 @@ void map_rom_segments(int core, struct rom_segments *map)
 		ESP_EARLY_LOGE(TAG, "Error parsing segments");
 		abort();
 	}
-
+#else /* CONFIG_BOOTLOADER_MCUBOOT */
+	/* Show map segments continue using same log format as during MCUboot phase */
+	ESP_EARLY_LOGI(TAG, "%s\t: lma=%08xh vma=%08xh size=%05Xh (%6d) map", "IROM",
+		map->irom_flash_offset, map->irom_map_addr, map->irom_size, map->irom_size);
+	ESP_EARLY_LOGI(TAG, "%s\t: lma=%08xh vma=%08xh size=%05Xh (%6d) map", "DROM",
+		map->drom_flash_offset, map->drom_map_addr, map->drom_size, map->drom_size);
 #endif /* !CONFIG_BOOTLOADER_MCUBOOT */
+
+	esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
 
 #if CONFIG_SOC_SERIES_ESP32
 	Cache_Read_Disable(core);
@@ -270,7 +283,7 @@ void __start(void)
 			     "la gp, __global_pointer$\n"
 			     ".option pop");
 
-	z_bss_zero();
+	arch_bss_zero();
 
 #else /* xtensa */
 
@@ -279,7 +292,7 @@ void __start(void)
 	/* Move the exception vector table to IRAM. */
 	__asm__ __volatile__("wsr %0, vecbase" : : "r"(&_init_start));
 
-	z_bss_zero();
+	arch_bss_zero();
 
 	__asm__ __volatile__("" : : "g"(&__bss_start) : "memory");
 
@@ -304,13 +317,6 @@ void __start(void)
 
 #if defined(CONFIG_ESP_SIMPLE_BOOT) || defined(CONFIG_BOOTLOADER_MCUBOOT)
 	map_rom_segments(0, &map);
-
-	/* Show map segments continue using same log format as during MCUboot phase */
-	ESP_EARLY_LOGI(TAG, "%s\t: lma=%08xh vma=%08xh size=%05Xh (%6d) map", "IROM",
-		       map.irom_flash_offset, map.irom_map_addr, map.irom_size, map.irom_size);
-	ESP_EARLY_LOGI(TAG, "%s\t: lma=%08xh vma=%08xh size=%05Xh (%6d) map", "DROM",
-		       map.drom_flash_offset, map.drom_map_addr, map.drom_size, map.drom_size);
-	esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
 
 	/* Disable RNG entropy source as it was already used */
 	soc_random_disable();

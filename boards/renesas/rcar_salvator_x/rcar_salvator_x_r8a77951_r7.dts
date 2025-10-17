@@ -23,14 +23,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		user_led_0: led_4 {
 			gpios = <&gpio6 11 GPIO_ACTIVE_HIGH>;
 			label = "led4";
 		};
+
 		user_led_1: led_5 {
 			gpios = <&gpio6 12 GPIO_ACTIVE_HIGH>;
 			label = "led5";
 		};
+
 		user_led_2: led_6 {
 			gpios = <&gpio6 13 GPIO_ACTIVE_HIGH>;
 			label = "led6";
@@ -39,16 +42,19 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_0: sw20 {
 			gpios = <&gpio6 11 GPIO_ACTIVE_LOW>;
 			label = "sw20";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_button_1: sw21 {
 			gpios = <&gpio6 12 GPIO_ACTIVE_LOW>;
 			label = "sw21";
 			zephyr,code = <INPUT_KEY_1>;
 		};
+
 		user_button_2: sw22 {
 			gpios = <&gpio6 13 GPIO_ACTIVE_LOW>;
 			label = "sw22";

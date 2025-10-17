@@ -63,6 +63,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+
 		/* nRF54L10 has 1012 kB of non volatile memory (RRAM) but the
 		 * last 62kB are reserved for the FLPR MCU.
 		 *

@@ -393,6 +393,8 @@
 			/* WUI maps for eSPI signals */
 			espi-rst-wui = <&wui_espi_rst>;
 
+			support-npckn-v1;
+
 			#address-cells = <1>;
 			#size-cells = <0>;
 			#vw-cells = <3>;
@@ -428,10 +430,10 @@
 
 			/* clocks for host sub-modules */
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 3>,
-				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 4>,
-				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 5>,
-				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 6>,
-				<&pcc NPCX_CLOCK_BUS_APB1 NPCX_PWDWN_CTL5 7>;
+				 <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 4>,
+				 <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 5>,
+				 <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 6>,
+				 <&pcc NPCX_CLOCK_BUS_APB1 NPCX_PWDWN_CTL5 7>;
 		};
 
 		/* I2c Controllers - Do not use them as i2c node directly */
@@ -551,6 +553,7 @@
 			#size-cells = <0>;
 			reg = <0x40020000 0x1000>;
 			clocks = <&pcc NPCX_CLOCK_BUS_FIU NPCX_PWDWN_CTL1 2>;
+			support-npckn-v1;
 		};
 
 		peci0: peci@400d4000 {
@@ -570,6 +573,23 @@
 			clocks = <&pcc NPCX_CLOCK_BUS_APB1 NPCX_PWDWN_CTL1 0>;
 			wui-maps = <&wui_ioa0 &wui_ioa1 &wui_ioa2 &wui_ioa3
 				    &wui_ioa4 &wui_ioa5 &wui_ioa6 &wui_ioa7>;
+			status = "disabled";
+		};
+
+		gdma0: dma@40011000 {
+			compatible = "nuvoton,npcx-gdma";
+			reg = <0x40011000 0x40>;
+			chan-offset = <0x20>;
+			support-npckn-v1;
+
+			interrupts = <22 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_AHB6 NPCX_PWDWN_CTL3 7>;
+
+			dma-channels = <2>;
+
+			#dma-cells = <2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 	};

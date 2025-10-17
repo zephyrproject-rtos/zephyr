@@ -448,6 +448,34 @@ Enable this option group with :kconfig:option:`CONFIG_POSIX_REALTIME_SIGNALS`.
     sigtimedwait(),
     sigwaitinfo(),
 
+..
+   this link is "deprecated" - mainly left here so that older links still work
+
+.. _posix_option_reader_writer_locks:
+
+.. _posix_option_group_rw_locks:
+
+POSIX_RW_LOCKS
+++++++++++++++
+
+Enable this option with :kconfig:option:`CONFIG_POSIX_RW_LOCKS`.
+
+.. csv-table:: POSIX_RW_LOCKS
+   :header: API, Supported
+   :widths: 50,10
+
+    pthread_rwlock_destroy(),yes
+    pthread_rwlock_init(),yes
+    pthread_rwlock_rdlock(),yes
+    pthread_rwlock_tryrdlock(),yes
+    pthread_rwlock_trywrlock(),yes
+    pthread_rwlock_unlock(),yes
+    pthread_rwlock_wrlock(),yes
+    pthread_rwlockattr_destroy(),yes
+    pthread_rwlockattr_getpshared(),yes
+    pthread_rwlockattr_init(),yes
+    pthread_rwlockattr_setpshared(),yes
+
 .. _posix_option_group_semaphores:
 
 POSIX_SEMAPHORES
@@ -622,6 +650,7 @@ Enable this option group with :kconfig:option:`CONFIG_POSIX_THREADS`.
     pthread_setspecific(),yes
     pthread_sigmask(),yes
     pthread_testcancel(),yes
+    sched_yield(),yes
 
 .. _posix_option_group_posix_threads_ext:
 
@@ -882,7 +911,6 @@ Enable this option with :kconfig:option:`CONFIG_POSIX_PRIORITY_SCHEDULING`.
     sched_rr_get_interval(),yes :ref:`†<posix_undefined_behaviour>`
     sched_setparam(),yes :ref:`†<posix_undefined_behaviour>`
     sched_setscheduler(),yes :ref:`†<posix_undefined_behaviour>`
-    sched_yield(),yes
 
 .. _posix_option_raw_sockets:
 
@@ -895,31 +923,6 @@ For more information, please refer to :kconfig:option:`CONFIG_NET_SOCKETS_PACKET
 
 Enable this option with :kconfig:option:`CONFIG_POSIX_RAW_SOCKETS`.
 
-.. _posix_option_reader_writer_locks:
-
-_POSIX_READER_WRITER_LOCKS
-++++++++++++++++++++++++++
-
-Enable this option with :kconfig:option:`CONFIG_POSIX_READER_WRITER_LOCKS`.
-
-.. csv-table:: _POSIX_READER_WRITER_LOCKS
-   :header: API, Supported
-   :widths: 50,10
-
-    pthread_rwlock_destroy(),yes
-    pthread_rwlock_init(),yes
-    pthread_rwlock_rdlock(),yes
-    pthread_rwlock_tryrdlock(),yes
-    pthread_rwlock_trywrlock(),yes
-    pthread_rwlock_unlock(),yes
-    pthread_rwlock_wrlock(),yes
-    pthread_rwlockattr_destroy(),yes
-    pthread_rwlockattr_getpshared(),yes
-    pthread_rwlockattr_init(),yes
-    pthread_rwlockattr_setpshared(),yes
-
-..
-   this link is "deprecated" - mainly left here so that older links still work
 .. _posix_shared_memory_objects:
 
 .. _posix_option_shared_memory_objects:

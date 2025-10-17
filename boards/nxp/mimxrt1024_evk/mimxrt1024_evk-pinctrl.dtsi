@@ -13,7 +13,7 @@
 	pinmux_adc1: pinmux_adc1 {
 		group0 {
 			pinmux = <&iomuxc_gpio_ad_b1_10_adc1_in10>,
-				<&iomuxc_gpio_ad_b1_11_adc1_in11>;
+				 <&iomuxc_gpio_ad_b1_11_adc1_in11>;
 			drive-strength = "r0-6";
 			slew-rate = "slow";
 			nxp,speed = "100-mhz";
@@ -29,19 +29,21 @@
 			nxp,speed = "50-mhz";
 			input-enable;
 		};
+
 		group1 {
 			pinmux = <&iomuxc_gpio_ad_b0_09_enet_rx_data1>,
-				<&iomuxc_gpio_ad_b0_11_enet_rx_en>,
-				<&iomuxc_gpio_ad_b0_14_enet_tx_data0>,
-				<&iomuxc_gpio_ad_b0_15_enet_tx_data1>,
-				<&iomuxc_gpio_ad_b0_13_enet_tx_en>,
-				<&iomuxc_gpio_ad_b0_12_enet_rx_er>;
+				 <&iomuxc_gpio_ad_b0_11_enet_rx_en>,
+				 <&iomuxc_gpio_ad_b0_14_enet_tx_data0>,
+				 <&iomuxc_gpio_ad_b0_15_enet_tx_data1>,
+				 <&iomuxc_gpio_ad_b0_13_enet_tx_en>,
+				 <&iomuxc_gpio_ad_b0_12_enet_rx_er>;
 			drive-strength = "r0-5";
 			bias-pull-up;
 			bias-pull-up-value = "100k";
 			slew-rate = "fast";
 			nxp,speed = "200-mhz";
 		};
+
 		group2 {
 			pinmux = <&iomuxc_gpio_ad_b0_10_enet_rx_data0>;
 			drive-strength = "r0-6";
@@ -53,13 +55,14 @@
 	pinmux_enet_mdio: pinmux_enet_mdio {
 		group0 {
 			pinmux = <&iomuxc_gpio_emc_40_enet_mdio>,
-				<&iomuxc_gpio_emc_41_enet_mdc>;
+				 <&iomuxc_gpio_emc_41_enet_mdc>;
 			drive-strength = "r0-5";
 			bias-pull-up;
 			bias-pull-up-value = "100k";
 			slew-rate = "fast";
 			nxp,speed = "200-mhz";
 		};
+
 		group1 {
 			pinmux = <&iomuxc_gpio_ad_b1_06_gpio1_io22>;
 			drive-strength = "r0-5";
@@ -68,6 +71,7 @@
 			slew-rate = "slow";
 			nxp,speed = "100-mhz";
 		};
+
 		group2 {
 			pinmux = <&iomuxc_gpio_ad_b0_04_gpio1_io04>;
 			drive-strength = "r0-5";
@@ -85,7 +89,7 @@
 	pinmux_flexcan1: pinmux_flexcan1 {
 		group0 {
 			pinmux = <&iomuxc_gpio_sd_b1_00_flexcan1_tx>,
-				<&iomuxc_gpio_sd_b1_01_flexcan1_rx>;
+				 <&iomuxc_gpio_sd_b1_01_flexcan1_rx>;
 			drive-strength = "r0-6";
 			slew-rate = "slow";
 			nxp,speed = "100-mhz";
@@ -96,7 +100,7 @@
 	pinmux_lpi2c1: pinmux_lpi2c1 {
 		group0 {
 			pinmux = <&iomuxc_gpio_ad_b1_14_lpi2c1_scl>,
-				<&iomuxc_gpio_ad_b1_15_lpi2c1_sda>;
+				 <&iomuxc_gpio_ad_b1_15_lpi2c1_sda>;
 			drive-strength = "r0-6";
 			drive-open-drain;
 			slew-rate = "slow";
@@ -108,7 +112,7 @@
 	pinmux_lpi2c4: pinmux_lpi2c4 {
 		group0 {
 			pinmux = <&iomuxc_gpio_sd_b1_03_lpi2c4_sda>,
-				<&iomuxc_gpio_sd_b1_02_lpi2c4_scl>;
+				 <&iomuxc_gpio_sd_b1_02_lpi2c4_scl>;
 			drive-strength = "r0-6";
 			drive-open-drain;
 			slew-rate = "slow";
@@ -121,9 +125,9 @@
 	pinmux_lpspi1: pinmux_lpspi1 {
 		group0 {
 			pinmux = <&iomuxc_gpio_ad_b0_10_lpspi1_sck>,
-				<&iomuxc_gpio_ad_b0_11_lpspi1_pcs0>,
-				<&iomuxc_gpio_ad_b0_12_lpspi1_sdo>,
-				<&iomuxc_gpio_ad_b0_13_lpspi1_sdi>;
+				 <&iomuxc_gpio_ad_b0_11_lpspi1_pcs0>,
+				 <&iomuxc_gpio_ad_b0_12_lpspi1_sdo>,
+				 <&iomuxc_gpio_ad_b0_13_lpspi1_sdi>;
 			drive-strength = "r0-6";
 			slew-rate = "slow";
 			nxp,speed = "100-mhz";
@@ -133,7 +137,7 @@
 	pinmux_lpuart1: pinmux_lpuart1 {
 		group0 {
 			pinmux = <&iomuxc_gpio_ad_b0_07_lpuart1_rx>,
-				<&iomuxc_gpio_ad_b0_06_lpuart1_tx>;
+				 <&iomuxc_gpio_ad_b0_06_lpuart1_tx>;
 			drive-strength = "r0-6";
 			slew-rate = "slow";
 			nxp,speed = "100-mhz";
@@ -149,6 +153,7 @@
 			slew-rate = "slow";
 			nxp,speed = "100-mhz";
 		};
+
 		group1 {
 			pinmux = <&iomuxc_gpio_ad_b0_06_lpuart1_tx>;
 			drive-strength = "r0-6";
@@ -161,7 +166,7 @@
 	pinmux_lpuart2: pinmux_lpuart2 {
 		group0 {
 			pinmux = <&iomuxc_gpio_ad_b1_09_lpuart2_rx>,
-				<&iomuxc_gpio_ad_b1_08_lpuart2_tx>;
+				 <&iomuxc_gpio_ad_b1_08_lpuart2_tx>;
 			drive-strength = "r0-6";
 			slew-rate = "slow";
 			nxp,speed = "100-mhz";
@@ -178,6 +183,7 @@
 			slew-rate = "slow";
 			nxp,speed = "100-mhz";
 		};
+
 		group1 {
 			pinmux = <&iomuxc_gpio_ad_b1_08_lpuart2_tx>;
 			drive-strength = "r0-6";
@@ -189,10 +195,10 @@
 	pinmux_sai3: pinmux_sai3 {
 		group0 {
 			pinmux = <&iomuxc_gpio_sd_b1_06_sai3_tx_bclk>,
-				<&iomuxc_gpio_sd_b1_07_sai3_tx_sync>,
-				<&iomuxc_gpio_sd_b1_08_sai3_tx_data>,
-				<&iomuxc_gpio_sd_b1_11_sai3_rx_data>,
-				<&iomuxc_gpio_emc_28_sai3_mclk>;
+				 <&iomuxc_gpio_sd_b1_07_sai3_tx_sync>,
+				 <&iomuxc_gpio_sd_b1_08_sai3_tx_data>,
+				 <&iomuxc_gpio_sd_b1_11_sai3_rx_data>,
+				 <&iomuxc_gpio_emc_28_sai3_mclk>;
 			drive-strength = "r0-6";
 			slew-rate = "slow";
 			nxp,speed = "100-mhz";
@@ -208,13 +214,14 @@
 			slew-rate = "fast";
 			nxp,speed = "100-mhz";
 		};
+
 		group1 {
 			pinmux = <&iomuxc_gpio_sd_b0_02_usdhc1_cmd>,
-				<&iomuxc_gpio_sd_b0_04_usdhc1_data0>,
-				<&iomuxc_gpio_sd_b0_05_usdhc1_data1>,
-				<&iomuxc_gpio_sd_b0_00_usdhc1_data2>,
-				<&iomuxc_gpio_sd_b0_01_usdhc1_data3>,
-				<&iomuxc_gpio_sd_b0_06_gpio3_io19>;
+				 <&iomuxc_gpio_sd_b0_04_usdhc1_data0>,
+				 <&iomuxc_gpio_sd_b0_05_usdhc1_data1>,
+				 <&iomuxc_gpio_sd_b0_00_usdhc1_data2>,
+				 <&iomuxc_gpio_sd_b0_01_usdhc1_data3>,
+				 <&iomuxc_gpio_sd_b0_06_gpio3_io19>;
 			drive-strength = "r0";
 			input-schmitt-enable;
 			bias-pull-up;
@@ -222,6 +229,7 @@
 			slew-rate = "fast";
 			nxp,speed = "100-mhz";
 		};
+
 		group2 {
 			pinmux = <&iomuxc_gpio_ad_b1_07_usdhc1_vselect>;
 			drive-strength = "r0-4";
@@ -231,6 +239,7 @@
 			slew-rate = "fast";
 			nxp,speed = "100-mhz";
 		};
+
 		group3 {
 			pinmux = <&iomuxc_gpio_sd_b1_10_gpio3_io30>;
 			drive-strength = "r0-6";
@@ -249,12 +258,13 @@
 			slew-rate = "fast";
 			nxp,speed = "200-mhz";
 		};
+
 		group1 {
 			pinmux = <&iomuxc_gpio_sd_b0_02_usdhc1_cmd>,
-				<&iomuxc_gpio_sd_b0_04_usdhc1_data0>,
-				<&iomuxc_gpio_sd_b0_05_usdhc1_data1>,
-				<&iomuxc_gpio_sd_b0_00_usdhc1_data2>,
-				<&iomuxc_gpio_sd_b0_01_usdhc1_data3>;
+				 <&iomuxc_gpio_sd_b0_04_usdhc1_data0>,
+				 <&iomuxc_gpio_sd_b0_05_usdhc1_data1>,
+				 <&iomuxc_gpio_sd_b0_00_usdhc1_data2>,
+				 <&iomuxc_gpio_sd_b0_01_usdhc1_data3>;
 			drive-strength = "r0-7";
 			input-schmitt-enable;
 			bias-pull-up;
@@ -274,12 +284,13 @@
 			slew-rate = "fast";
 			nxp,speed = "100-mhz";
 		};
+
 		group1 {
 			pinmux = <&iomuxc_gpio_sd_b0_02_usdhc1_cmd>,
-				<&iomuxc_gpio_sd_b0_04_usdhc1_data0>,
-				<&iomuxc_gpio_sd_b0_05_usdhc1_data1>,
-				<&iomuxc_gpio_sd_b0_00_usdhc1_data2>,
-				<&iomuxc_gpio_sd_b0_01_usdhc1_data3>;
+				 <&iomuxc_gpio_sd_b0_04_usdhc1_data0>,
+				 <&iomuxc_gpio_sd_b0_05_usdhc1_data1>,
+				 <&iomuxc_gpio_sd_b0_00_usdhc1_data2>,
+				 <&iomuxc_gpio_sd_b0_01_usdhc1_data3>;
 			drive-strength = "r0-7";
 			input-schmitt-enable;
 			bias-pull-up;
@@ -299,12 +310,13 @@
 			slew-rate = "fast";
 			nxp,speed = "50-mhz";
 		};
+
 		group1 {
 			pinmux = <&iomuxc_gpio_sd_b0_02_usdhc1_cmd>,
-				<&iomuxc_gpio_sd_b0_04_usdhc1_data0>,
-				<&iomuxc_gpio_sd_b0_05_usdhc1_data1>,
-				<&iomuxc_gpio_sd_b0_00_usdhc1_data2>,
-				<&iomuxc_gpio_sd_b0_01_usdhc1_data3>;
+				 <&iomuxc_gpio_sd_b0_04_usdhc1_data0>,
+				 <&iomuxc_gpio_sd_b0_05_usdhc1_data1>,
+				 <&iomuxc_gpio_sd_b0_00_usdhc1_data2>,
+				 <&iomuxc_gpio_sd_b0_01_usdhc1_data3>;
 			drive-strength = "r0-7";
 			input-schmitt-enable;
 			bias-pull-up;

@@ -21,7 +21,6 @@
 		zephyr,flash = &w25q64jvssiq;
 		zephyr,flash-controller = &w25q64jvssiq;
 	};
-
 };
 
 &w25q64jvssiq {
@@ -34,14 +33,17 @@
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(80)>;
 		};
+
 		slot0_partition: partition@14000 {
 			label = "image-0";
 			reg = <0x00014000 DT_SIZE_M(3)>;
 		};
+
 		slot1_partition: partition@314000 {
 			label = "image-1";
 			reg = <0x00314000 DT_SIZE_M(3)>;
 		};
+
 		storage_partition: partition@614000 {
 			label = "storage";
 			reg = <0x00614000 DT_SIZE_K(1968)>;

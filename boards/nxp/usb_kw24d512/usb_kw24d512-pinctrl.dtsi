@@ -6,18 +6,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <nxp/kinetis/MKW24D512VHA5-pinctrl.h>
 
 &pinctrl {
 	uart0_default: uart0_default {
 		group0 {
 			pinmux = <UART0_RX_PTA1>,
-				<UART0_TX_PTA2>;
+				 <UART0_TX_PTA2>;
 			drive-strength = "high";
 			bias-pull-up;
 			slew-rate = "fast";
 		};
 	};
-
 };

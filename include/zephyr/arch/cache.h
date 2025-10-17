@@ -13,9 +13,8 @@
 #define ZEPHYR_INCLUDE_ARCH_CACHE_H_
 
 /**
- * @brief Cache Controller Interface
- * @defgroup cache_arch_interface Cache Controller Interface
- * @ingroup io_interfaces
+ * @defgroup arch-cache Architecture-specific cache controllers.
+ * @ingroup arch-interface
  * @{
  */
 

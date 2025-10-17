@@ -28,23 +28,32 @@ extern void z_arm64_fpu_restore(struct z_arm64_fp_context *saved_fp_context);
 
 #include <string.h>
 
-static void DBG(char *msg, struct k_thread *th)
+static char *dbg_prefix(char *buf, char *msg, struct k_thread *th)
 {
-	char buf[80], *p;
-	unsigned int v;
-
 	strcpy(buf, "CPU# exc# ");
 	buf[3] = '0' + _current_cpu->id;
 	buf[8] = '0' + arch_exception_depth();
 	strcat(buf, _current->name);
 	strcat(buf, ": ");
 	strcat(buf, msg);
-	strcat(buf, " ");
-	strcat(buf, th->name);
+	if (th != NULL) {
+		strcat(buf, " ");
+		strcat(buf, th->name);
+	}
+	return buf + strlen(buf);
+}
 
+static void DBG(char *msg, struct k_thread *th)
+{
+	char buf[80], *p;
+	unsigned int v;
 
+	p = dbg_prefix(buf, msg, th);
+
+	if (th == NULL) {
+		th = _current;
+	}
 	v = *(unsigned char *)&th->arch.saved_fp_context;
-	p = buf + strlen(buf);
 	*p++ = ' ';
 	*p++ = ((v >> 4) < 10) ? ((v >> 4) + '0') : ((v >> 4) - 10 + 'a');
 	*p++ = ((v & 15) < 10) ? ((v & 15) + '0') : ((v & 15) - 10 + 'a');
@@ -54,9 +63,31 @@ static void DBG(char *msg, struct k_thread *th)
 	k_str_out(buf, p - buf);
 }
 
+static void DBG_PC(char *msg, uintptr_t pc)
+{
+	char buf[80], *p;
+	uintptr_t addr = pc;
+	int i;
+
+	p = dbg_prefix(buf, msg, NULL);
+	strcpy(p, " PC=0x");
+	p += 6;
+
+	/* Format PC address as hex */
+	for (i = (sizeof(uintptr_t) * 2) - 1; i >= 0; i--) {
+		unsigned int nibble = (addr >> (i * 4)) & 0xf;
+		*p++ = (nibble < 10) ? (nibble + '0') : (nibble - 10 + 'a');
+	}
+	*p++ = '\n';
+	*p = 0;
+
+	k_str_out(buf, p - buf);
+}
+
 #else
 
 static inline void DBG(char *msg, struct k_thread *t) { }
+static inline void DBG_PC(char *msg, uintptr_t pc) { }
 
 #endif /* FPU_DEBUG */
 
@@ -199,6 +230,7 @@ static bool simulate_str_q_insn(struct arch_esf *esf)
 
 	/* did we do something? */
 	if (pc != (uint32_t *)esf->elr) {
+		DBG_PC("simulated", esf->elr);
 		/* resume execution past the simulated instructions */
 		esf->elr = (uintptr_t)pc;
 		return true;
@@ -229,6 +261,8 @@ void z_arm64_fpu_trap(struct arch_esf *esf)
 	if (simulate_str_q_insn(esf)) {
 		return;
 	}
+
+	DBG_PC("trap entry", esf->elr);
 
 	/* turn on FPU access */
 	write_cpacr_el1(read_cpacr_el1() | CPACR_EL1_FPEN_NOTRAP);
@@ -268,7 +302,7 @@ void z_arm64_fpu_trap(struct arch_esf *esf)
 
 	/* restore our content */
 	z_arm64_fpu_restore(&_current->arch.saved_fp_context);
-	DBG("restore", _current);
+	DBG("restore", NULL);
 }
 
 /*

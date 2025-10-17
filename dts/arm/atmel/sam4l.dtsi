@@ -92,6 +92,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
+
 		twim1: twim@4001c000 {
 			compatible = "atmel,sam-i2c-twim";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -102,6 +103,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
+
 		twim2: twim@40078000 {
 			compatible = "atmel,sam-i2c-twim";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -112,6 +114,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
+
 		twim3: twim@4007c000 {
 			compatible = "atmel,sam-i2c-twim";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -140,6 +143,7 @@
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 8>;
 			status = "disabled";
 		};
+
 		usart1: usart@40028000 {
 			compatible = "atmel,sam-usart";
 			reg = <0x40028000 0x4000>;
@@ -147,6 +151,7 @@
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 9>;
 			status = "disabled";
 		};
+
 		usart2: usart@4002c000 {
 			compatible = "atmel,sam-usart";
 			reg = <0x4002c000 0x4000>;
@@ -154,6 +159,7 @@
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 10>;
 			status = "disabled";
 		};
+
 		usart3: usart@40030000 {
 			compatible = "atmel,sam-usart";
 			reg = <0x40030000 0x4000>;
@@ -188,6 +194,7 @@
 				#gpio-cells = <2>;
 				#atmel,pin-cells = <2>;
 			};
+
 			gpiob: gpio@400e1200 {
 				compatible = "atmel,sam4l-gpio";
 				reg = <0x400e1200 0x200>;
@@ -197,6 +204,7 @@
 				#gpio-cells = <2>;
 				#atmel,pin-cells = <2>;
 			};
+
 			gpioc: gpio@400e1400 {
 				compatible = "atmel,sam4l-gpio";
 				reg = <0x400e1400 0x200>;

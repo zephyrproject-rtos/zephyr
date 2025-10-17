@@ -7,6 +7,7 @@
 /**
  * @file
  * @brief Public APIs for the Device Multiplexer driver
+ * @ingroup demux_interface
  */
 
 #ifndef INCLUDE_ZEPHYR_DRIVERS_MISC_DEVMUX_H_
@@ -22,8 +23,8 @@ extern "C" {
 #endif
 
 /**
- * @brief Devmux Driver APIs
- * @defgroup demux_interface Devmux Driver APIs
+ * @brief Interfaces for device multiplexers.
+ * @defgroup demux_interface Devmux
  * @ingroup misc_interfaces
  *
  * @details

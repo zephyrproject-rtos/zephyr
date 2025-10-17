@@ -10,7 +10,6 @@
 #include <adi/max32/max32675-pinctrl.dtsi>
 #include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
-#include <zephyr/dt-bindings/dma/max32675_dma.h>
 
 / {
 	model = "Analog Devices MAX32675EVKIT";
@@ -25,10 +24,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led1: led_1 {
 			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
 			label = "Red LED";
 		};
+
 		led2: led_2 {
 			gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
 			label = "Green LED";
@@ -37,15 +38,17 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		pb1: pb1 {
-			gpios = <&gpio1 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW
-						| MAX32_GPIO_VSEL_VDDIOH)>;
+			gpios = <&gpio1 11
+				 (GPIO_PULL_UP | GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
 			label = "SW1";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		pb2: pb2 {
-			gpios = <&gpio1 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW
-						| MAX32_GPIO_VSEL_VDDIOH)>;
+			gpios = <&gpio1 12
+				 (GPIO_PULL_UP | GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
 			label = "SW2";
 			zephyr,code = <INPUT_KEY_1>;
 		};
@@ -57,6 +60,7 @@
 		led1 = &led2;
 		sw0 = &pb1;
 		sw1 = &pb2;
+		watchdog0 = &wdt0;
 	};
 };
 
@@ -99,4 +103,8 @@
 	status = "okay";
 	pinctrl-0 = <&spi1a_mosi_p0_15 &spi1a_miso_p0_14 &spi1a_sck_p0_16 &spi1a_ss0_p0_17>;
 	pinctrl-names = "default";
+};
+
+&wdt0 {
+	status = "okay";
 };

@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2022 Codecoup
+ * Copyright (c) 2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +24,7 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 
 #include "audio_internal.h"
@@ -146,18 +148,7 @@ uint8_t bt_audio_get_chan_count(enum bt_audio_location chan_allocation)
 		return 1;
 	}
 
-#ifdef POPCOUNT
-	return POPCOUNT(chan_allocation);
-#else
-	uint8_t cnt = 0U;
-
-	while (chan_allocation != 0U) {
-		cnt += chan_allocation & 1U;
-		chan_allocation >>= 1U;
-	}
-
-	return cnt;
-#endif
+	return sys_count_bits(&chan_allocation, sizeof(chan_allocation));
 }
 
 static bool valid_ltv_cb(struct bt_data *data, void *user_data)

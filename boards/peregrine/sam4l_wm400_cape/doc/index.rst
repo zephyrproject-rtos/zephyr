@@ -6,7 +6,7 @@ Overview
 The SAM4L WM-400 Cape is a full featured design to enable IEEE 802.15.4 low
 power nodes. It is a Beaglebone Black cape concept with an Atmel AT86RF233
 radio transceiver. User can develop Touch interface and have access to many
-sensors and conectivity buses.
+sensors and connectivity buses.
 
 Hardware
 ********

@@ -13,6 +13,7 @@ tests:
       - native_sim/native/64
       - nucleo_h563zi
       - nucleo_h743zi
+      - nucleo_h753zi
       - nucleo_h745zi_q/stm32h745xx/m7
       - qemu_x86
     depends_on: eth

@@ -3,20 +3,33 @@ sample:
 tests:
   sample.bluetooth.observer:
     harness: bluetooth
+    tags: bluetooth
     platform_allow:
       - qemu_cortex_m3
       - qemu_x86
       - nrf52840dk/nrf52840
     integration_platforms:
       - qemu_cortex_m3
-    tags: bluetooth
+      - nrf52840dk/nrf52840
   sample.bluetooth.observer.extended:
     harness: bluetooth
-    extra_args: CONF_FILE="prj_extended.conf"
+    tags: bluetooth
+    extra_args:
+      - CONF_FILE="prj_extended.conf"
     platform_allow:
       - qemu_cortex_m3
       - qemu_x86
       - nrf52840dk/nrf52840
-    tags: bluetooth
     integration_platforms:
       - qemu_cortex_m3
+      - nrf52840dk/nrf52840
+  sample.bluetooth.observer.extended.bbc_microbit.bt_ll_sw_split:
+    harness: bluetooth
+    tags: bluetooth
+    extra_args:
+      - CONF_FILE="prj_extended.conf"
+      - EXTRA_CONF_FILE="debug.conf;overlay_bbc_microbit-bt_ll_sw_split.conf"
+    platform_allow:
+      - bbc_microbit
+    integration_platforms:
+      - bbc_microbit

@@ -79,18 +79,18 @@ int mfd_npm13xx_reg_read(const struct device *dev, uint8_t base, uint8_t offset,
 int mfd_npm13xx_reg_write(const struct device *dev, uint8_t base, uint8_t offset, uint8_t data);
 
 /**
- * @brief Write two registers to npm13xx
+ * @brief Write multiple registers to npm13xx
  *
  * @param dev npm13xx mfd device
  * @param base Register base address (bits 15..8 of 16-bit address)
- * @param offset Register offset address (bits 7..0 of 16-bit address)
- * @param data1 first byte of data to write
- * @param data2 second byte of data to write
+ * @param offset First register offset address (bits 7..0 of 16-bit address)
+ * @param data Pointer to buffer to write
+ * @param len Number of bytes to write
  * @retval 0 If successful
  * @retval -errno In case of any bus error (see i2c_write_dt())
  */
-int mfd_npm13xx_reg_write2(const struct device *dev, uint8_t base, uint8_t offset, uint8_t data1,
-			   uint8_t data2);
+int mfd_npm13xx_reg_write_burst(const struct device *dev, uint8_t base, uint8_t offset, void *data,
+				size_t len);
 
 /**
  * @brief Update selected bits in npm13xx register

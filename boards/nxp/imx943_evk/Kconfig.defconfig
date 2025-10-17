@@ -1,11 +1,79 @@
 # Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
+if SOC_MIMX94398_A55
+
+if ETH_NXP_IMX_NETC
+
+config GIC_V3_ITS
+	default y
+
+endif # ETH_NXP_IMX_NETC
+
+# GIC ITS depends on kernel heap which init priority is 30, so set
+# GIC to be 31, mailbox and SCMI will be initialized by the order
+# according to dts dependency although they use the same init priority.
+config INTC_INIT_PRIORITY
+	default 31
+
+config MBOX_INIT_PRIORITY
+	default 31
+
+config ARM_SCMI_SHMEM_INIT_PRIORITY
+	default 31 if SOC_MIMX94398_A55
+
+config ARM_SCMI_TRANSPORT_INIT_PRIORITY
+	default 31 if SOC_MIMX94398_A55
+
+config CLOCK_CONTROL_INIT_PRIORITY
+	default 31 if SOC_MIMX94398_A55
+
+# Enlarge default networking stack
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+config NET_TX_STACK_SIZE
+	default 8192
+
+config NET_RX_STACK_SIZE
+	default 8192
+
+if NET_TCP
+
+config NET_TCP_WORKQ_STACK_SIZE
+	default 8192
+
+endif # NET_TCP
+
+if NET_MGMT_EVENT
+
+config NET_MGMT_EVENT_STACK_SIZE
+	default 8192
+
+endif # NET_MGMT_EVENT
+
+if NET_SOCKETS_SERVICE
+
+config NET_SOCKETS_SERVICE_STACK_SIZE
+	default 8192
+
+endif # NET_SOCKETS_SERVICE
+
+endif # NETWORKING
+
+endif # SOC_MIMX94398_A55
+
+if SOC_MIMX94398_M33
+
 config INTC_INIT_PRIORITY
 	default 2
 
 config MBOX_INIT_PRIORITY
 	default 3
+
+endif # SOC_MIMX94398_M33
 
 if ETH_NXP_IMX_NETC
 

@@ -11,6 +11,15 @@
  * the driver is going to achieve the zephyr API.
  */
 
+ /*
+  * The other spi_nxp_lpspi driver source files also use DT_DRV_COMPAT and it is used by the
+  * spi_context.h file to determine if the gpio cs code can be removed.
+  * If DT_DRV_COMPAT is not defined in this file, the gpio cs code may not be removed for this file
+  * but in the other spi_nxp_lpspi driver source files it may be removed and result in breakage of
+  * this driver. Do not remove DT_DRV_COMPAT from this file.
+  */
+#define DT_DRV_COMPAT nxp_lpspi
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_lpspi, CONFIG_SPI_LOG_LEVEL);
 
@@ -149,16 +158,32 @@ static uint8_t lpspi_calc_delay_scaler(uint32_t desired_delay_ns,
 }
 
 /* returns CCR mask of the bits 8-31 */
-static inline uint32_t lpspi_set_delays(const struct device *dev, uint32_t prescaled_clock)
+static inline uint32_t lpspi_set_delays(const struct device *dev,
+					const struct spi_config *spi_cfg,
+					uint32_t prescaled_clock)
 {
 	const struct lpspi_config *config = dev->config;
+	uint32_t val = 0;
 
-	return LPSPI_CCR_PCSSCK(lpspi_calc_delay_scaler(config->pcs_sck_delay,
-							prescaled_clock, 1)) |
-	       LPSPI_CCR_SCKPCS(lpspi_calc_delay_scaler(config->sck_pcs_delay,
-							prescaled_clock, 1)) |
-	       LPSPI_CCR_DBT(lpspi_calc_delay_scaler(config->transfer_delay,
-							prescaled_clock, 2));
+	if (!spi_cs_is_gpio(spi_cfg)) {
+		uint32_t lead_time_ns = config->pcs_sck_delay > 0 ?
+					config->pcs_sck_delay : spi_cfg->cs.setup_ns;
+		uint32_t lag_time_ns = config->sck_pcs_delay > 0 ?
+					config->sck_pcs_delay : spi_cfg->cs.hold_ns;
+
+		val |= LPSPI_CCR_PCSSCK(lpspi_calc_delay_scaler(lead_time_ns,
+								prescaled_clock, 1)) |
+		       LPSPI_CCR_SCKPCS(lpspi_calc_delay_scaler(lag_time_ns,
+								prescaled_clock, 1));
+	}
+
+	uint16_t word_delay = config->transfer_delay > 0 ?
+				(uint16_t)(config->transfer_delay & 0xFFFF) :
+				spi_get_word_delay(spi_cfg);
+
+	val |= LPSPI_CCR_DBT(lpspi_calc_delay_scaler(word_delay, prescaled_clock, 2));
+
+	return val;
 }
 
 /* This is the equation for the sck frequency given a div and prescaler. */
@@ -315,7 +340,7 @@ int lpspi_configure(const struct device *dev, const struct spi_config *spi_cfg)
 
 		/* sckdiv algorithm must run *before* delays are set in order to know prescaler */
 		ccr |= lpspi_set_sckdiv(spi_cfg->frequency, clock_freq, &prescaler);
-		ccr |= lpspi_set_delays(dev, clock_freq / TWO_EXP(prescaler));
+		ccr |= lpspi_set_delays(dev, spi_cfg, clock_freq / TWO_EXP(prescaler));
 
 		/* note that not all bits of the register are readable on some platform,
 		 * that's why we update it on one write

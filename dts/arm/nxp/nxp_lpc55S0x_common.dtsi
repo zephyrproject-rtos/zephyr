@@ -8,6 +8,7 @@
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <mem.h>
+#include <freq.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 
 / {
@@ -43,18 +44,22 @@
 		compatible = "mmio-sram";
 		reg = <0x04000000 DT_SIZE_K(16)>;
 	};
+
 	sram0: memory@20000000 {
 		compatible = "mmio-sram";
 		reg = <0x20000000 DT_SIZE_K(32)>;
 	};
+
 	sram1: memory@20008000 {
 		compatible = "mmio-sram";
 		reg = <0x20008000 DT_SIZE_K(16)>;
 	};
+
 	sram2: memory@2000C000 {
 		compatible = "mmio-sram";
 		reg = <0x2000C000 DT_SIZE_K(16)>;
 	};
+
 	sram3: memory@20010000 {
 		compatible = "mmio-sram";
 		reg = <0x20010000 DT_SIZE_K(16)>;
@@ -69,6 +74,7 @@
 		compatible = "nxp,lpc-syscon";
 		reg = <0x0 0x4000>;
 		#clock-cells = <1>;
+
 		reset: reset {
 			compatible = "nxp,lpc-syscon-reset";
 			#reset-cells = <1>;
@@ -112,6 +118,7 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges = <0x0 0x1000 0x100>;
+
 		pinctrl: pinctrl {
 			compatible = "nxp,lpc-iocon-pinctrl";
 		};
@@ -122,6 +129,7 @@
 		reg = <0x8c000 0x2488>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+
 		gpio0: gpio@0 {
 			compatible = "nxp,lpc-gpio-port";
 			int-source = "pint";
@@ -146,7 +154,7 @@
 		#interrupt-cells = <1>;
 		#address-cells = <0>;
 		interrupts = <4 2>, <5 2>, <6 2>, <7 2>,
-			<32 2>, <33 2>, <34 2>, <35 2>;
+			     <32 2>, <33 2>, <34 2>, <35 2>;
 		num-lines = <8>;
 		num-inputs = <64>;
 	};

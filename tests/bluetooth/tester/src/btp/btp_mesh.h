@@ -10,13 +10,14 @@
 #include <stdint.h>
 
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
 /* MESH Service */
 /* commands */
 #define BTP_MESH_READ_SUPPORTED_COMMANDS	0x01
 struct btp_mesh_read_supported_commands_rp {
-	uint8_t data[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
 #define BTP_MESH_OUT_BLINK			BIT(0)
@@ -156,7 +157,7 @@ struct btp_mesh_comp_data_get_cmd {
 	uint8_t page;
 } __packed;
 struct btp_mesh_comp_data_get_rp {
-	uint8_t data[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
 #define BTP_MESH_CFG_BEACON_GET			0x15
@@ -824,7 +825,7 @@ struct btp_mesh_large_comp_data_get_cmd {
 	uint16_t offset;
 } __packed;
 struct btp_mesh_large_comp_data_get_rp {
-	uint8_t data[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
 #define BTP_MESH_MODELS_METADATA_GET		0x54
@@ -835,7 +836,7 @@ struct btp_mesh_models_metadata_get_cmd {
 	uint16_t offset;
 } __packed;
 struct btp_mesh_models_metadata_get_rp {
-	uint8_t data[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
 #define BTP_MESH_OPCODES_AGGREGATOR_INIT	0x55

@@ -13,7 +13,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
 
-#include <zephyr/drivers/timer/ti_dmtimer.h>
+#include "ti_dmtimer.h"
 
 #define DT_DRV_COMPAT ti_am654_timer
 

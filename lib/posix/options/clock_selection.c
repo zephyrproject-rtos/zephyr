@@ -12,7 +12,6 @@
 #include <time.h>
 #include <errno.h>
 
-#include <zephyr/posix/time.h>
 #include <zephyr/sys/clock.h>
 #include <zephyr/toolchain.h>
 

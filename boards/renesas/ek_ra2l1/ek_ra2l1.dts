@@ -28,6 +28,7 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,entropy = &trng;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -111,5 +112,9 @@
 
 &port_irq7 {
 	interrupts = <15 1>;
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };

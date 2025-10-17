@@ -24,10 +24,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led_1: led_1 {
 			gpios = <&gpioa 6 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
 		};
+
 		green_led_2: led_2 {
 			gpios = <&gpioa 7 GPIO_ACTIVE_LOW>;
 			label = "User LD2";
@@ -36,16 +38,19 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_0: K0 {
 			label = "Key K0";
 			gpios = <&gpioe 4 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_button_1: K1 {
 			label = "Key K1";
 			gpios = <&gpioe 3 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_1>;
 		};
+
 		user_button_UP: K_UP {
 			label = "Key WK_UP";
 			gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
@@ -139,6 +144,7 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-names = "default";
 	status = "okay";
 	cs-gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+
 	w25q16cv: w25q16cv@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;

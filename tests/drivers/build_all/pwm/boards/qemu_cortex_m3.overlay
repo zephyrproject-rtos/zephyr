@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/{
+/ {
 	test_pwm: pwm@11112222 {
 		compatible = "vnd,pwm";
 		#pwm-cells = <3>;

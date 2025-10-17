@@ -4,7 +4,7 @@
 config HWINFO_MCUX_MCX_CMC
 	bool "NXP MCX CMC reset cause"
 	default y
-	depends on HAS_MCUX_MCX_CMC
+	depends on DT_HAS_NXP_CMC_RESET_CAUSE_ENABLED
 	select HWINFO_HAS_DRIVER
 	help
 	  Enable NXP kinetis mcux CMC hwinfo driver.

@@ -14,17 +14,19 @@ config I2C_INFINEON_CAT1
 	help
 	  This option enables the I2C driver for Infineon CAT1 family.
 
+config I2C_PDL_INFINEON_CAT1
+	bool "Infineon CAT1 I2C driver (PDL)"
+	default y
+	depends on DT_HAS_INFINEON_CAT1_I2C_PDL_ENABLED
+	select USE_INFINEON_I2C
+	select PINCTRL
+	help
+	  This option enables the I2C driver for the Infineon CAT1 family.
+
 config I2C_INFINEON_CAT1_TARGET_BUF
 	int "I2C Target data buffer length"
-	depends on I2C_INFINEON_CAT1
+	depends on USE_INFINEON_I2C
 	range 1 1024
 	default 64
 	help
 	  Buffer to receive data as an I2C Target.
-
-config I2C_INFINEON_CAT1_ASYNC
-	bool "Support Asynchronous I2C driver"
-	default y
-	depends on I2C_INFINEON_CAT1
-	help
-	  Configure the I2C driver to be non-blocking/Asynchronous mode.

@@ -49,6 +49,13 @@ The Renesas RZ/V2L MPU documentation can be found at `RZ/V2L Group Website`_
 
 Detailed hardware features for the board can be found at `RZV2L-EVKIT Website`_
 
+Multi-OS processing
+*******************
+
+The RZ/V2L-EVKIT allows different applications to be executed in RZ/V2L SoC. With its multi-core architecture,
+each core can operate independently to perform customized tasks or exchange data using the OpenAMP framework.
+Please see :zephyr:code-sample:`rz-openamp-linux-zephyr` sample for reference.
+
 Supported Features
 ==================
 
@@ -92,14 +99,15 @@ to run Zephyr on Cortex-M33 with u-boot. The minimal steps are described below.
 1. Follow ''2.2 Building Images'' of `SMARC EVK of RZ/V2L Linux Start-up Guide`_ to prepare the build environment.
 
 2. At step (4), follow step ''2. Download Multi-OS Package'' and ''3. Add the layer for Multi-OS Package''
-   of ''3.2 OpenAMP related stuff Integration for RZ/V2L'' of `RZ/V2L Quick Start Guide for RZ/V Multi-OS Package`_
+   of ''3.2 Integration of OpenAMP related stuff'' of `RZ/V2L Quick Start Guide for RZ/V Multi-OS Package`_
    to add the layer for Multi-OS Package.
 
 .. code-block:: console
 
    $ cd ~/rzv_vlp_<pkg ver>
-   $ unzip <Multi-OS Dir>/r01an7254ej0300-rzv-multi-os-pkg.zip
-   $ tar zxvf r01an7254ej0300-rzv-multi-os-pkg/meta-rz-features_multi-os_v3.0.0.tar.gz
+   $ unzip <Multi-OS Dir>/r01an7254ej0311-rzv-multi-os-pkg.zip
+   $ tar zxvf r01an7254ej0311-rzv-multi-os-pkg/meta-rz-features_multi-os_v3.1.1.tar.gz
+   $ cd build
    $ bitbake-layers add-layer ../meta-rz-features/meta-rz-multi-os/meta-rzv2l
 
 3. Start the build:
@@ -155,13 +163,13 @@ References
 .. target-notes::
 
 .. _RZ/V2L Group Website:
-   https://www.renesas.com/en/products/microcontrollers-microprocessors/rz-mpus/rzv2l-general-purpose-microprocessor-equipped-renesas-original-ai-accelerator-drp-ai-12ghz-dual-core-arm
+   https://www.renesas.com/en/products/rz-v2l
 
 .. _RZV2L-EVKIT Website:
-   https://www.renesas.com/en/products/microcontrollers-microprocessors/rz-mpus/rzv2l-evkit-smarc-som-evaluation-kit-rzv2l-mpu-ai-accelerator
+   https://www.renesas.com/en/design-resources/boards-kits/rz-v2l-evkit
 
 .. _SMARC EVK of RZ/V2L Linux Start-up Guide:
-   https://www.renesas.com/en/document/gde/smarc-evk-rzv2l-linux-start-guide-rev104
+   https://www.renesas.com/en/document/gde/rzv2l-linux-start-guide-rev105
 
 .. _RZ/V2L Quick Start Guide for RZ/V Multi-OS Package:
-   https://www.renesas.com/en/document/apn/rzv2l-quick-start-guide-rzv-multi-os-package-v300
+   https://www.renesas.com/en/document/apn/rzv2l-quick-start-guide-rzv-multi-os-package-v311

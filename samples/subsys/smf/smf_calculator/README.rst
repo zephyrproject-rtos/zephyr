@@ -69,7 +69,7 @@ a :ref:`adafruit_2_8_tft_touch_v2`.
    :shield: adafruit_2_8_tft_touch_v2
    :compact:
 
-For testing purpose without the need of any hardware, the :ref:`native_sim <native_sim>`
+For testing purpose without the need of any hardware, the :zephyr:board:`native_sim <native_sim>`
 board is also supported and can be built as follows;
 
 .. zephyr-app-commands::

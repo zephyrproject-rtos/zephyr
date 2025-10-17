@@ -23,7 +23,7 @@
 };
 
 &pio1 {
- 	status = "okay";
+	status = "okay";
 
 	pio1_uart0: uart0 {
 		pinctrl-0 = <&pio1_uart0_default>;

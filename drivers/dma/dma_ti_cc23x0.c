@@ -12,6 +12,8 @@ LOG_MODULE_REGISTER(dma_cc23x0, CONFIG_DMA_LOG_LEVEL);
 #include <zephyr/device.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/irq.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/sys/util.h>
 
 #include <driverlib/clkctl.h>
@@ -55,6 +57,18 @@ struct dma_cc23x0_data {
 	__aligned(1024) uDMAControlTableEntry desc[UDMA_NUM_CHANNELS];
 	struct dma_cc23x0_channel channels[UDMA_NUM_CHANNELS];
 };
+
+static inline void dma_cc23x0_pm_policy_state_lock_get(void)
+{
+	pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+}
+
+static inline void dma_cc23x0_pm_policy_state_lock_put(void)
+{
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+}
 
 /*
  * If the channel is a software channel, then the completion will be signaled
@@ -343,10 +357,36 @@ static int dma_cc23x0_get_status(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
-static int dma_cc23x0_init(const struct device *dev)
+static int dma_cc23x0_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	struct dma_cc23x0_data *data = dev->data;
+	int ret = 0;
 
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		uDMADisable();
+		CLKCTLDisable(CLKCTL_BASE, CLKCTL_DMA);
+		dma_cc23x0_pm_policy_state_lock_put();
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		dma_cc23x0_pm_policy_state_lock_get();
+		CLKCTLEnable(CLKCTL_BASE, CLKCTL_DMA);
+		uDMAEnable();
+		/* Set base address for channel control table (descriptors) */
+		uDMASetControlBase(data->desc);
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+	default:
+		ret = -ENOTSUP;
+	}
+
+	return ret;
+}
+
+static int dma_cc23x0_init(const struct device *dev)
+{
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
 		    dma_cc23x0_isr,
@@ -354,16 +394,7 @@ static int dma_cc23x0_init(const struct device *dev)
 		    0);
 	irq_enable(DT_INST_IRQN(0));
 
-	/* Enable clock */
-	CLKCTLEnable(CLKCTL_BASE, CLKCTL_DMA);
-
-	/* Enable DMA */
-	uDMAEnable();
-
-	/* Set base address for channel control table (descriptors) */
-	uDMASetControlBase(data->desc);
-
-	return 0;
+	return pm_device_driver_init(dev, dma_cc23x0_pm_action);
 }
 
 static struct dma_cc23x0_data cc23x0_data;
@@ -376,7 +407,10 @@ static DEVICE_API(dma, dma_cc23x0_api) = {
 	.get_status = dma_cc23x0_get_status,
 };
 
-DEVICE_DT_INST_DEFINE(0, dma_cc23x0_init, NULL,
+PM_DEVICE_DT_INST_DEFINE(0, dma_cc23x0_pm_action);
+
+DEVICE_DT_INST_DEFINE(0, dma_cc23x0_init,
+		      PM_DEVICE_DT_INST_GET(0),
 		      &cc23x0_data, NULL,
 		      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,
 		      &dma_cc23x0_api);

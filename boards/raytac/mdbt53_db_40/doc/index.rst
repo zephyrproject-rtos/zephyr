@@ -56,7 +56,7 @@ Hardware
 - Supports Bluetooth Direction Finding & Mesh
 - Supports Bluetooth low energy audio
 - Certifications: FCC, IC, CE, Telec (MIC), KC, SRRC, NCC, RCM, WPC
-- RoHs & Reach Compiant.
+- RoHs & Reach Compliant.
 - 48 GPIO
 - Chip Antenna
 - Interfaces: SPI, UART, I2C, I2S, PWM, ADC, NFC, and USB

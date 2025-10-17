@@ -57,6 +57,17 @@ typedef void (*modem_cmux_callback)(struct modem_cmux *cmux, enum modem_cmux_eve
  * @cond INTERNAL_HIDDEN
  */
 
+#if CONFIG_MODEM_CMUX_MTU > 127
+#define MODEM_CMUX_HEADER_SIZE			7
+#else
+#define MODEM_CMUX_HEADER_SIZE			6
+#endif
+
+
+/* Total size of the CMUX work buffers */
+#define MODEM_CMUX_WORK_BUFFER_SIZE (CONFIG_MODEM_CMUX_MTU + MODEM_CMUX_HEADER_SIZE + \
+				     CONFIG_MODEM_CMUX_WORK_BUFFER_SIZE_EXTRA)
+
 enum modem_cmux_state {
 	MODEM_CMUX_STATE_DISCONNECTED = 0,
 	MODEM_CMUX_STATE_CONNECTING,
@@ -74,7 +85,6 @@ enum modem_cmux_receive_state {
 	MODEM_CMUX_RECEIVE_STATE_LENGTH_CONT,
 	MODEM_CMUX_RECEIVE_STATE_DATA,
 	MODEM_CMUX_RECEIVE_STATE_FCS,
-	MODEM_CMUX_RECEIVE_STATE_DROP,
 	MODEM_CMUX_RECEIVE_STATE_EOF,
 };
 
@@ -139,10 +149,11 @@ struct modem_cmux {
 
 	/* State */
 	enum modem_cmux_state state;
-	bool flow_control_on;
+	bool flow_control_on : 1;
+	bool initiator : 1;
 
 	/* Work lock */
-	bool attached;
+	bool attached : 1;
 	struct k_spinlock work_lock;
 
 	/* Receive state*/
@@ -153,7 +164,7 @@ struct modem_cmux {
 	uint16_t receive_buf_size;
 	uint16_t receive_buf_len;
 
-	uint8_t work_buf[CONFIG_MODEM_CMUX_WORK_BUFFER_SIZE];
+	uint8_t work_buf[MODEM_CMUX_WORK_BUFFER_SIZE];
 
 	/* Transmit buffer */
 	struct ring_buf transmit_rb;
