@@ -17,6 +17,7 @@
 #include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <freq.h>
+#include <mem.h>
 
 / {
 	chosen {
