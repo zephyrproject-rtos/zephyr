@@ -215,6 +215,11 @@ config NET_SOCKETS_TLS_MAX_CONTEXTS
 	  "This variable specifies maximum number of TLS/DTLS contexts that can
 	   be allocated at the same time."
 
+config ZVFS_OPEN_ADD_SIZE_TLS
+	int "Number of TLS network sockets to allocate"
+	default NET_SOCKETS_TLS_MAX_CONTEXTS if NET_SOCKETS_SOCKOPT_TLS
+	default 0
+
 config NET_SOCKETS_TLS_MAX_CREDENTIALS
 	int "Maximum number of TLS/DTLS credentials per socket"
 	default 4
