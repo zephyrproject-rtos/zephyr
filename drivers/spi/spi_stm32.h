@@ -37,6 +37,7 @@ struct spi_stm32_config {
 #endif
 	size_t pclk_len;
 	const struct stm32_pclken *pclken;
+	int datawidth;
 	bool fifo_enabled: 1;
 	bool ioswp: 1;
 };
