@@ -72,7 +72,7 @@ struct sf32lb_clock_dt_spec {
  * @return true If the clock device is ready.
  * @return false If the clock device is not ready.
  */
-static inline bool sf3232lb_clock_is_ready_dt(const struct sf32lb_clock_dt_spec *spec)
+static inline bool sf32lb_clock_is_ready_dt(const struct sf32lb_clock_dt_spec *spec)
 {
 	return device_is_ready(spec->dev);
 }
