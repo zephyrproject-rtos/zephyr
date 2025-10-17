@@ -29,6 +29,11 @@
 #define RAM_CONSOLE_BUF_ATTR
 #endif
 
+/* workaround the fact that device_map() is not defined for SoCs with no MMU */
+#ifndef DEVICE_MMIO_IS_IN_RAM
+#define device_map(virt, phys, size, flags) *(virt) = (phys)
+#endif /* DEVICE_MMIO_IS_IN_RAM */
+
 char ram_console_buf[CONFIG_RAM_CONSOLE_BUFFER_SIZE] RAM_CONSOLE_BUF_ATTR;
 char *ram_console;
 static int pos;
