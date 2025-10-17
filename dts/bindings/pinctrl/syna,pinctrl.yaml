@@ -1,0 +1,59 @@
+# Copyright (c) 2025 Synaptics, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Synaptics Pin controller Node
+    Based on pincfg-node.yaml binding.
+
+    Note: `bias-disable` and `drive-push-pull` are default pin configurations.
+           They will be applied in case no `bias-foo` or `driver-bar` properties
+           are set.
+
+compatible: "syna,pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: |
+      This binding gives a base representation of the Synaptics pins configuration
+
+  include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+        - bias-disable
+        - bias-pull-down
+        - bias-pull-up
+        - slew-rate
+        - drive-strength
+
+  properties:
+    pincfg:
+      type: int
+      description: |
+        Register offset of pin configuration (drive strength, slew-rate etc.).
+    port:
+      type: int
+      description: |
+        Port control configuration (input pin routing). The following macro is
+        available to define this part of the configuration:
+        - SRXXX_PORT_PINMUX(reg, bit, mode, mask)
+    pinmux:
+      required: true
+      type: int
+      description: |
+        Pin muxing configuration. The bitfield contains the following fields:
+        - ctrl [ 0.. 7]: Pinmux controller (0..4): in Global, AON, LPS, SWIRE, I2C1
+        - reg  [ 8..15]: Register offset for pinmux configuration
+        - bit  [16..23]: Bit offset in register for pinmux configuration
+        - mode [24..31]: Alternate function
+
+        To simplify the usage, macros are available to generate the "pinmux"
+        field:
+        - SRXXX_GLOBAL_PINMUX(reg, bit, mode)
+        - SRXXX_AON_PINMUX(reg, bit, mode)
+        - SRXXX_LPS_PINMUX(reg, bit, mode)
+        - SRXXX_SWIRE_PINMUX(reg, bit, mode)
