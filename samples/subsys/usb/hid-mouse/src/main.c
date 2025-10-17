@@ -12,6 +12,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/usb/usb_bc12.h>
 #include <zephyr/input/input.h>
 #include <zephyr/sys/util.h>
 
@@ -21,6 +22,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
+static const struct device *bc12_dev = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_usb_bc12));
 static const struct gpio_dt_spec led0 = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
 static const uint8_t hid_report_desc[] = HID_MOUSE_REPORT_DESC(2);
 
@@ -101,6 +103,40 @@ struct hid_device_ops mouse_ops = {
 	.get_report = mouse_get_report,
 };
 
+static const char *bc12type_to_str(const enum bc12_type type)
+{
+	switch (type) {
+	case BC12_TYPE_NONE:
+		return "NONE";
+	case BC12_TYPE_SDP:
+		return "SDP";
+	case BC12_TYPE_DCP:
+		return "DCP";
+	case BC12_TYPE_CDP:
+		return "CDP";
+	case BC12_TYPE_PROPRIETARY:
+		return "PROPRIETARY";
+	case BC12_TYPE_UNKNOWN:
+		return "UNKNOWN";
+	default:
+		return "ERROR";
+	}
+}
+
+static void bc12_result_cb(const struct device *dev,
+			   struct bc12_partner_state *const state,
+			   void *const user_data)
+{
+	if (state->bc12_role != BC12_PORTABLE_DEVICE) {
+		LOG_ERR("Unexpected BC role");
+		return;
+	}
+
+	LOG_INF("New BC state %s (%d uV %d uA)",
+		bc12type_to_str(state->type), state->voltage_uv, state->current_ua);
+
+}
+
 int main(void)
 {
 	struct usbd_context *sample_usbd;
@@ -136,6 +172,20 @@ int main(void)
 	if (sample_usbd == NULL) {
 		LOG_ERR("Failed to initialize USB device");
 		return -ENODEV;
+	}
+
+	if (IS_ENABLED(CONFIG_USB_BC12)) {
+		if (!device_is_ready(bc12_dev)) {
+			LOG_ERR("USB BC1.2 device %s is not ready", bc12_dev->name);
+			return -EIO;
+		}
+
+		bc12_set_result_cb(bc12_dev, &bc12_result_cb, sample_usbd);
+		ret = bc12_set_role(bc12_dev, BC12_PORTABLE_DEVICE);
+		if (ret != 0) {
+			LOG_ERR("Failed to set BC12 role");
+			return -EIO;
+		}
 	}
 
 	ret = usbd_enable(sample_usbd);
