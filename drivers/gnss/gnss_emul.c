@@ -73,15 +73,6 @@ static void gnss_emul_update_fix_timestamp(const struct device *dev, bool resumi
 	}
 }
 
-static bool gnss_emul_fix_is_acquired(const struct device *dev)
-{
-	struct gnss_emul_data *data = dev->data;
-	int64_t time_since_resume;
-
-	time_since_resume = data->fix_timestamp_ms - data->resume_timestamp_ms;
-	return time_since_resume >= GNSS_EMUL_FIX_ACQUIRE_TIME_MS;
-}
-
 #ifdef CONFIG_PM_DEVICE
 static void gnss_emul_clear_fix_timestamp(const struct device *dev)
 {
@@ -346,21 +337,11 @@ static DEVICE_API(gnss, api) = {
 	.get_supported_systems = gnss_emul_api_get_supported_systems,
 };
 
-static void gnss_emul_clear_data(const struct device *dev)
+void gnss_emul_clear_data(const struct device *dev)
 {
 	struct gnss_emul_data *data = dev->data;
 
 	memset(&data->data, 0, sizeof(data->data));
-}
-
-static void gnss_emul_set_fix(const struct device *dev)
-{
-	struct gnss_emul_data *data = dev->data;
-
-	data->data.info.satellites_cnt = 8;
-	data->data.info.hdop = 100;
-	data->data.info.fix_status = GNSS_FIX_STATUS_GNSS_FIX;
-	data->data.info.fix_quality = GNSS_FIX_QUALITY_GNSS_SPS;
 }
 
 static void gnss_emul_set_utc(const struct device *dev)
@@ -384,6 +365,40 @@ static void gnss_emul_set_utc(const struct device *dev)
 	data->data.utc.century_year = datetime.tm_year % 100;
 }
 
+#ifdef CONFIG_GNSS_EMUL_MANUAL_UPDATE
+
+void gnss_emul_set_data(const struct device *dev, const struct navigation_data *nav,
+			const struct gnss_info *info, int64_t timestamp_ms)
+{
+	struct gnss_emul_data *data = dev->data;
+
+	data->data.nav_data = *nav;
+	data->data.info = *info;
+	data->fix_timestamp_ms = timestamp_ms;
+	gnss_emul_set_utc(dev);
+}
+
+#else
+
+static bool gnss_emul_fix_is_acquired(const struct device *dev)
+{
+	struct gnss_emul_data *data = dev->data;
+	int64_t time_since_resume;
+
+	time_since_resume = data->fix_timestamp_ms - data->resume_timestamp_ms;
+	return time_since_resume >= GNSS_EMUL_FIX_ACQUIRE_TIME_MS;
+}
+
+static void gnss_emul_set_fix(const struct device *dev)
+{
+	struct gnss_emul_data *data = dev->data;
+
+	data->data.info.satellites_cnt = 8;
+	data->data.info.hdop = 100;
+	data->data.info.fix_status = GNSS_FIX_STATUS_GNSS_FIX;
+	data->data.info.fix_quality = GNSS_FIX_QUALITY_GNSS_SPS;
+}
+
 static void gnss_emul_set_nav_data(const struct device *dev)
 {
 	struct gnss_emul_data *data = dev->data;
@@ -394,6 +409,8 @@ static void gnss_emul_set_nav_data(const struct device *dev)
 	data->data.nav_data.speed = 0;
 	data->data.nav_data.altitude = 20000;
 }
+
+#endif /* CONFIG_GNSS_EMUL_MANUAL_UPDATE */
 
 #ifdef CONFIG_GNSS_SATELLITES
 static void gnss_emul_clear_satellites(const struct device *dev)
@@ -444,6 +461,11 @@ static void gnss_emul_work_handler(struct k_work *work)
 	struct gnss_emul_data *data = CONTAINER_OF(dwork, struct gnss_emul_data, data_dwork);
 	const struct device *dev = data->dev;
 
+#ifdef CONFIG_GNSS_EMUL_MANUAL_UPDATE
+	/* Tick the timestamp */
+	gnss_emul_set_utc(dev);
+#else
+	/* Automatically update internal state if not done manually */
 	if (!gnss_emul_fix_is_acquired(dev)) {
 		gnss_emul_clear_data(dev);
 	} else {
@@ -451,6 +473,7 @@ static void gnss_emul_work_handler(struct k_work *work)
 		gnss_emul_set_utc(dev);
 		gnss_emul_set_nav_data(dev);
 	}
+#endif /* CONFIG_GNSS_EMUL_MANUAL_UPDATE */
 
 	gnss_publish_data(dev, &data->data);
 
