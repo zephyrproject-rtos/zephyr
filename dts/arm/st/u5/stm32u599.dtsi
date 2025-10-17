@@ -10,7 +10,6 @@
 #include <zephyr/dt-bindings/memory-attr/memory-attr.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/flash_controller/xspi.h>
-#include <mem.h>
 
 / {
 	soc {
