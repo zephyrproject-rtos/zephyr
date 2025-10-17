@@ -1186,6 +1186,7 @@ exclude = [
     "./scripts/ci/coverage/coverage_analysis.py",
     "./scripts/ci/errno.py",
     "./scripts/ci/guideline_check.py",
+    "./scripts/ci/set_assignees.py",
     "./scripts/ci/stats/merged_prs.py",
     "./scripts/ci/test_plan.py",
     "./scripts/ci/twister_report_analyzer.py",
