@@ -3719,7 +3719,7 @@ static void after(void *arg)
 {
 	ARG_UNUSED(arg);
 
-	for (int i = 0; i < CONFIG_ZVFS_OPEN_MAX; ++i) {
+	for (int i = 0; i < ZVFS_OPEN_SIZE; ++i) {
 		(void)zsock_close(i);
 	}
 }
