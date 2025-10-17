@@ -415,14 +415,14 @@
 		};
 
 		mcwdt0: mcwdt@5240d000 {
-			compatible = "infineon,lp-timer-pdl";
+			compatible = "infineon,lp-timer";
 			reg = <0x5240d000 0x40>;
 			interrupts = <55 4>;
 			status = "disabled";
 		};
 
 		mcwdt1: mcwdt@5240d040 {
-			compatible = "infineon,lp-timer-pdl";
+			compatible = "infineon,lp-timer";
 			reg = <0x5240d040 0x40>;
 			interrupts = <0 4>;
 			status = "disabled";
