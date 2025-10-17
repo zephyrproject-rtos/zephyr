@@ -306,6 +306,16 @@
 	(((uint32_t)(x) & (mask)) << (shift))
 
 /**
+ * @brief Extract an SCMI message field
+ *
+ * @param x value to encode
+ * @param mask value to perform bitwise-and with `x`
+ * @param shift value to left-shift masked `x`
+ */
+#define SCMI_FIELD_TAKE(x, mask, shift) \
+	((((uint32_t)(x)) >> (shift)) & (uint32_t)(mask))
+
+/**
  * @brief SCMI protocol IDs
  *
  * Each SCMI protocol is identified by an ID. Each
