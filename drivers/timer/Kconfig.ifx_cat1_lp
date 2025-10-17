@@ -15,3 +15,14 @@ config INFINEON_CAT1_LP_TIMER
 	help
 	  This module implements a kernel device driver for the LowPower Timer
 	  and provides the standard "system clock driver" interfaces.
+
+config INFINEON_CAT1_LP_TIMER_PDL
+	bool "Infineon CAT1 Low Power Timer driver"
+	default y
+	depends on DT_HAS_INFINEON_CAT1_LP_TIMER_PDL_ENABLED
+	depends on PM
+	select USE_INFINEON_LPTIMER
+	select TICKLESS_CAPABLE
+	help
+	  This module implements a kernel device driver for the LowPower Timer
+	  and provides the standard "system clock driver" interfaces.
