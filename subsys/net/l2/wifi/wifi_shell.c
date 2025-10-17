@@ -61,6 +61,12 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 
 #define MAX_BANDS_STR_LEN 64
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+#define P2P_RESP_BUF_SIZE 8192
+#define P2P_MAC_ADDR_STR_LEN 18
+#define P2P_DEFAULT_WAIT_TIME_MS 2000
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
+
 static struct {
 	const struct shell *sh;
 	uint32_t scan_result;
@@ -3516,6 +3522,286 @@ static int cmd_wifi_dpp_reconfig(const struct shell *sh, size_t argc, char *argv
 }
 
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+static int p2p_args_to_params(const struct shell *sh, size_t argc, char *argv[],
+			       struct wifi_p2p_params *params, char *mac_addr_str)
+{
+	int opt;
+	int opt_index = 0;
+	struct getopt_state *state;
+	static const struct option long_options[] = {
+		{"timeout", required_argument, 0, 't'},
+		{"type", required_argument, 0, 'T'},
+		{"mac_addr", required_argument, 0, 'm'},
+		{"iface", required_argument, 0, 'i'},
+		{"help", no_argument, 0, 'h'},
+		{0, 0, 0, 0}};
+	long val;
+
+	/* Set defaults */
+	params->discovery_type = WIFI_P2P_FIND_START_WITH_FULL;
+	params->timeout = 0; /* No timeout by default */
+	mac_addr_str[0] = '\0'; /* No MAC address by default */
+
+	while ((opt = getopt_long(argc, argv, "t:T:m:i:h",
+				  long_options, &opt_index)) != -1) {
+		state = getopt_state_get();
+		switch (opt) {
+		case 't':
+			if (!parse_number(sh, &val, state->optarg, "timeout", 0, 65535)) {
+				return -EINVAL;
+			}
+			params->timeout = (uint16_t)val;
+			break;
+		case 'T':
+			if (!parse_number(sh, &val, state->optarg, "type", 0, 2)) {
+				return -EINVAL;
+			}
+			switch (val) {
+			case 0:
+				params->discovery_type = WIFI_P2P_FIND_ONLY_SOCIAL;
+				break;
+			case 1:
+				params->discovery_type = WIFI_P2P_FIND_PROGRESSIVE;
+				break;
+			case 2:
+				params->discovery_type = WIFI_P2P_FIND_START_WITH_FULL;
+				break;
+			default:
+				PR_ERROR("Invalid discovery type: %ld (must be 0-2)\n", val);
+				return -EINVAL;
+			}
+			break;
+		case 'm':
+			/* Store MAC address string for later use */
+			strncpy(mac_addr_str, state->optarg, 17);
+			mac_addr_str[17] = '\0';
+			break;
+		case 'i':
+			/* Unused, but parsing to avoid unknown option error */
+			break;
+		case 'h':
+			return -ENOEXEC;
+		default:
+			PR_ERROR("Invalid option %c\n", state->optopt);
+			return -EINVAL;
+		}
+	}
+
+	return 0;
+}
+
+static void parse_and_print_peer_info(const struct shell *sh, const char *mac_addr,
+				       const char *peer_info)
+{
+	const char *line = peer_info;
+	const char *pos;
+	char value[128];
+	size_t len;
+
+	shell_print(sh, "MAC Address     : %s", mac_addr);
+
+	while (line && *line) {
+		if (*line == '\n') {
+			line++;
+			continue;
+		}
+
+		if (strncmp(line, "device_name=", 12) == 0) {
+			pos = line + 12;
+			len = 0;
+			while (*pos != '\0' && *pos != '\n' && len < sizeof(value) - 1) {
+				value[len++] = *pos++;
+			}
+			value[len] = '\0';
+			if (value[0] != '\0') {
+				shell_print(sh, "Device Name     : %s", value);
+			} else {
+				shell_print(sh, "Device Name     : <Unknown>");
+			}
+		} else if (strncmp(line, "pri_dev_type=", 13) == 0) {
+			pos = line + 13;
+			len = 0;
+			while (*pos != '\0' && *pos != '\n' && len < sizeof(value) - 1) {
+				value[len++] = *pos++;
+			}
+			value[len] = '\0';
+			if (value[0] != '\0') {
+				shell_print(sh, "Device Type     : %s", value);
+			}
+		} else if (strncmp(line, "level=", 6) == 0) {
+			pos = line + 6;
+			len = 0;
+			while (*pos != '\0' && *pos != '\n' && len < sizeof(value) - 1) {
+				value[len++] = *pos++;
+			}
+			value[len] = '\0';
+			if (value[0] != '\0') {
+				shell_print(sh, "Signal Level    : %s dBm", value);
+			}
+		} else if (strncmp(line, "config_methods=", 15) == 0) {
+			pos = line + 15;
+			len = 0;
+			while (*pos != '\0' && *pos != '\n' && len < sizeof(value) - 1) {
+				value[len++] = *pos++;
+			}
+			value[len] = '\0';
+			if (value[0] != '\0') {
+				shell_print(sh, "Config Methods  : %s", value);
+			}
+		} else if (strncmp(line, "manufacturer=", 13) == 0) {
+			pos = line + 13;
+			len = 0;
+			while (*pos != '\0' && *pos != '\n' && len < sizeof(value) - 1) {
+				value[len++] = *pos++;
+			}
+			value[len] = '\0';
+			if (value[0] != '\0') {
+				shell_print(sh, "Manufacturer    : %s", value);
+			}
+		} else if (strncmp(line, "model_name=", 11) == 0) {
+			pos = line + 11;
+			len = 0;
+			while (*pos != '\0' && *pos != '\n' && len < sizeof(value) - 1) {
+				value[len++] = *pos++;
+			}
+			value[len] = '\0';
+			if (value[0] != '\0') {
+				shell_print(sh, "Model Name      : %s", value);
+			}
+		}
+
+		while (*line != '\0' && *line != '\n') {
+			line++;
+		}
+		if (*line == '\n') {
+			line++;
+		}
+	}
+}
+
+static int cmd_wifi_p2p_find(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_p2p_params params = {0};
+	char mac_addr_str[P2P_MAC_ADDR_STR_LEN] = {0};
+	uint8_t mac_addr[WIFI_MAC_ADDR_LEN];
+	char *resp_buf = NULL;
+	uint32_t wait_time_ms;
+
+	context.sh = sh;
+
+	params.oper = WIFI_P2P_FIND;
+	if (argc > 1) {
+		if (p2p_args_to_params(sh, argc, argv, &params, mac_addr_str)) {
+			shell_help(sh);
+			return -ENOEXEC;
+		}
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_P2P, iface, &params, sizeof(params))) {
+		PR_WARNING("P2P find request failed\n");
+		return -ENOEXEC;
+	}
+
+	PR("P2P find started\n");
+
+	wait_time_ms = (params.timeout > 0) ? params.timeout * 1000 : P2P_DEFAULT_WAIT_TIME_MS;
+	k_sleep(K_MSEC(wait_time_ms));
+
+	PR("\n");
+
+	resp_buf = k_malloc(P2P_RESP_BUF_SIZE);
+	if (!resp_buf) {
+		PR_ERROR("Failed to allocate memory for response\n");
+		return -ENOMEM;
+	}
+	memset(resp_buf, 0, P2P_RESP_BUF_SIZE);
+
+	params.resp = resp_buf;
+
+	if (mac_addr_str[0] != '\0') {
+		if (sscanf(mac_addr_str, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+			   &mac_addr[0], &mac_addr[1], &mac_addr[2],
+			   &mac_addr[3], &mac_addr[4], &mac_addr[5]) != WIFI_MAC_ADDR_LEN) {
+			PR_ERROR("Invalid MAC address format. Use: XX:XX:XX:XX:XX:XX\n");
+			k_free(resp_buf);
+			return -EINVAL;
+		}
+
+		params.oper = WIFI_P2P_PEER;
+		memcpy(params.peer_addr, mac_addr, WIFI_MAC_ADDR_LEN);
+
+		if (net_mgmt(NET_REQUEST_WIFI_P2P, iface, &params, sizeof(params))) {
+			PR_WARNING("P2P peer info request failed\n");
+			k_free(resp_buf);
+			return -ENOEXEC;
+		}
+
+		if (resp_buf[0] != '\0') {
+			shell_print(sh, "\n========== Peer Information ==========");
+			parse_and_print_peer_info(sh, mac_addr_str, resp_buf);
+			shell_print(sh, "======================================\n");
+		} else {
+			shell_print(sh, "No information available for peer %s\n", mac_addr_str);
+		}
+	} else {
+		params.oper = WIFI_P2P_PEERS;
+		params.discovered_only = false;
+
+		if (net_mgmt(NET_REQUEST_WIFI_P2P, iface, &params, sizeof(params))) {
+			PR_WARNING("P2P peers request failed\n");
+			k_free(resp_buf);
+			return -ENOEXEC;
+		}
+
+		if (resp_buf[0] != '\0') {
+			char *peer_block = resp_buf;
+			char *next_peer;
+			char mac[P2P_MAC_ADDR_STR_LEN];
+			int peer_count = 0;
+
+			shell_print(sh, "\n========== P2P Peers ==========");
+
+			while ((next_peer = strstr(peer_block, "\n---\n")) != NULL) {
+				*next_peer = '\0';
+
+				char *newline = strchr(peer_block, '\n');
+
+				if (newline) {
+					size_t mac_len = newline - peer_block;
+
+					if (mac_len < sizeof(mac)) {
+						strncpy(mac, peer_block, mac_len);
+						mac[mac_len] = '\0';
+
+						peer_count++;
+						shell_print(sh, "");
+						parse_and_print_peer_info(sh, mac, newline + 1);
+					}
+				}
+
+				peer_block = next_peer + 5; /* Skip past "\n---\n" */
+			}
+
+			if (peer_count == 0) {
+				shell_print(sh, "No P2P peers found");
+			}
+
+			shell_print(sh, "\n===============================");
+			shell_print(sh, "Total peers: %d\n", peer_count);
+		} else {
+			shell_print(sh, "No P2P peers found\n");
+		}
+	}
+
+	k_free(resp_buf);
+	return 0;
+}
+
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
+
 static int cmd_wifi_pmksa_flush(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
@@ -4104,6 +4390,29 @@ SHELL_SUBCMD_ADD((wifi), config, NULL,
 		 "[-i, --iface=<interface index>] : Interface index.\n",
 		 cmd_wifi_config_params,
 		 3, 12);
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	wifi_cmd_p2p,
+	SHELL_CMD_ARG(find, NULL,
+		      "Start P2P device discovery and show available peers\n"
+		      "[-t, --timeout=<timeout in seconds>]: Discovery timeout (0=no timeout, default 2s)\n"
+		      "[-T, --type=<0|1|2>]: Discovery type\n"
+		      "  0: Social channels only (1, 6, 11)\n"
+		      "  1: Progressive scan (all channels)\n"
+		      "  2: Full scan first, then social (default)\n"
+		      "[-m, --mac_addr=<MAC address>]: Show specific peer info (format: XX:XX:XX:XX:XX:XX)\n"
+		      "[-i, --iface=<interface index>]: Interface index\n"
+		      "[-h, --help]: Show help\n",
+		      cmd_wifi_p2p_find, 1, 8),
+	SHELL_SUBCMD_SET_END
+);
+
+SHELL_SUBCMD_ADD((wifi), p2p, &wifi_cmd_p2p,
+		 "Wi-Fi Direct (P2P) commands.",
+		 NULL,
+		 0, 0);
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
 
 SHELL_CMD_REGISTER(wifi, &wifi_commands, "Wi-Fi commands", NULL);
 
