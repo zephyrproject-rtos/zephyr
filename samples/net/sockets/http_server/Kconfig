@@ -76,4 +76,5 @@ if USB_DEVICE_STACK_NEXT
 	source "samples/subsys/usb/common/Kconfig.sample_usbd"
 endif
 
+source "samples/net/common/Kconfig"
 source "Kconfig.zephyr"
