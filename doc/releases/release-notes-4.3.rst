@@ -146,6 +146,12 @@ New APIs and options
 
     * :kconfig:option:`CONFIG_CPU_FREQ`
 
+* Cellular
+
+  * :c:enumerator:`CELLULAR_EVENT_PERIODIC_SCRIPT_RESULT`
+  * :c:enumerator:`CELLULAR_EVENT_MODEM_SUSPENDED`
+  * :kconfig:option:`CONFIG_MODEM_CELLULAR_SUSPEND_ASYNC`
+
 * Display
 
   * :c:enumerator:`PIXEL_FORMAT_AL_88`
