@@ -17,6 +17,10 @@ tests:
     platform_allow: qemu_x86
     extra_configs:
       - CONFIG_NET_ZPERF_SERVER=n
+  sample.net.zperf.async_tx.stm32:
+    filter: dt_compat_enabled("st,stm32-ethernet") and CONFIG_ETH_STM32_HAL_API_V2
+    extra_configs:
+      - CONFIG_ETH_STM32_HAL_TX_ASYNC=y
   sample.net.zperf_st:
     harness: console
     harness_config:
