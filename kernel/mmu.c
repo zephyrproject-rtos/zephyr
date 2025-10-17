@@ -1503,7 +1503,7 @@ int k_mem_page_frame_evict(uintptr_t phys)
 		do_backing_store_page_out(location);
 	}
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
-	k_spin_unlock(&z_mm_lock, key);
+	key = k_spin_lock(&z_mm_lock);
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 	page_frame_free_locked(pf);
 out:
