@@ -67,6 +67,14 @@ ADC
 * ``iadc_gecko.c`` driver is replaced by ``adc_silabs_iadc.c``.
   :dtcompatible:`silabs,gecko-iadc` is replaced by :dtcompatible:`silabs,iadc`.
 
+Clock Control
+=============
+
+* :kconfig:option:`CONFIG_CLOCK_STM32_HSE_CLOCK` is no longer user-configurable. Its value is now
+  always taken from the ``clock-frequency`` property of ``&clk_hse`` DT node, but only if the node
+  is enabled (otherwise, the symbol is not defined). This change should only affect STM32 MPU-based
+  platforms and aligns them with existing practice from STM32 MCU platforms.
+
 Comparator
 ==========
 
