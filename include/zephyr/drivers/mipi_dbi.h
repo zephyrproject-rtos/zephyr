@@ -62,10 +62,10 @@ extern "C" {
 			COND_CODE_1(DT_PROP(node_id, mipi_hold_cs), SPI_HOLD_ON_CS, (0)),	\
 		.slave = DT_REG_ADDR(node_id),				\
 		.cs = {							\
+			.cs_is_gpio = DT_SPI_DEV_HAS_CS_GPIOS(node_id),	\
 			COND_CODE_1(DT_SPI_DEV_HAS_CS_GPIOS(node_id),	\
 			(SPI_CS_CONTROL_INIT_GPIO(node_id, delay_)),	\
 			(SPI_CS_CONTROL_INIT_NATIVE(node_id)))		\
-			.cs_is_gpio = DT_SPI_DEV_HAS_CS_GPIOS(node_id),	\
 		},							\
 	}
 
