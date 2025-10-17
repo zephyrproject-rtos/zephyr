@@ -5114,6 +5114,20 @@ USB-C:
   tests:
     - sample.usbc
 
+UUID:
+  status: maintained
+  maintainers:
+    - sorru94
+  files:
+    - lib/uuid/
+    - include/zephyr/sys/uuid.h
+    - tests/lib/uuid/
+    - samples/subsys/uuid/
+  labels:
+    - "area: UUID"
+  tests:
+    - libraries.uuid
+
 Userspace:
   status: maintained
   maintainers:
