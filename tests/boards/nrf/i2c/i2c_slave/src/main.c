@@ -17,24 +17,6 @@
 
 #include <zephyr/ztest.h>
 
-#if CONFIG_NRFX_TWIS1
-#define I2C_S_INSTANCE 1
-#elif CONFIG_NRFX_TWIS2
-#define I2C_S_INSTANCE 2
-#elif CONFIG_NRFX_TWIS20
-#define I2C_S_INSTANCE 20
-#elif CONFIG_NRFX_TWIS21
-#define I2C_S_INSTANCE 21
-#elif CONFIG_NRFX_TWIS22
-#define I2C_S_INSTANCE 22
-#elif CONFIG_NRFX_TWIS30
-#define I2C_S_INSTANCE 30
-#elif CONFIG_NRFX_TWIS131
-#define I2C_S_INSTANCE 131
-#else
-#error "TWIS instance not enabled or not supported"
-#endif
-
 #define NODE_SENSOR DT_NODELABEL(sensor)
 #define NODE_TWIS   DT_ALIAS(i2c_slave)
 
@@ -46,7 +28,9 @@
 
 #define TEST_DATA_SIZE 6
 static const uint8_t msg[TEST_DATA_SIZE] = "Nordic";
-static const nrfx_twis_t twis = NRFX_TWIS_INSTANCE(I2C_S_INSTANCE);
+static nrfx_twis_t twis = {
+	.p_reg = (NRF_TWIS_Type *)DT_REG_ADDR(NODE_TWIS)
+};
 
 static uint8_t i2c_slave_buffer[TEST_DATA_SIZE] TWIS_MEMORY_SECTION;
 static uint8_t i2c_master_buffer[TEST_DATA_SIZE];
@@ -57,7 +41,7 @@ struct i2c_api_twis_fixture {
 	uint8_t *const slave_buffer;
 };
 
-void i2s_slave_handler(nrfx_twis_evt_t const *p_event)
+void i2s_slave_handler(nrfx_twis_event_t const *p_event)
 {
 	switch (p_event->type) {
 	case NRFX_TWIS_EVT_READ_REQ:
@@ -104,7 +88,7 @@ static void *test_setup(void)
 	zassert_ok(ret);
 
 	IRQ_CONNECT(DT_IRQN(NODE_TWIS), DT_IRQ(NODE_TWIS, priority),
-		    NRFX_TWIS_INST_HANDLER_GET(I2C_S_INSTANCE), NULL, 0);
+		    nrfx_twis_irq_handler, &twis, 0);
 
 	nrfx_twis_enable(&twis);
 
