@@ -591,9 +591,10 @@
 		irqsteer: interrupt-controller@44680000 {
 			compatible = "nxp,irqsteer-intc";
 			reg = <0x44680000 DT_SIZE_K(64)>;
-
 			#size-cells = <0>;
 			#address-cells = <1>;
+			nxp,irq-offset = <234>;
+			nxp,num-irqs = <640>;
 
 			irqsteer_master0: interrupt-controller@0 {
 				compatible = "nxp,irqsteer-master";

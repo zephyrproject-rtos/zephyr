@@ -127,7 +127,6 @@ set_variable_ifdef(CONFIG_MCUX_XBARB            CONFIG_MCUX_COMPONENT_driver.xba
 set_variable_ifdef(CONFIG_QDEC_MCUX             CONFIG_MCUX_COMPONENT_driver.enc)
 set_variable_ifdef(CONFIG_CRYPTO_MCUX_DCP       CONFIG_MCUX_COMPONENT_driver.dcp)
 set_variable_ifdef(CONFIG_DAC_MCUX_LPDAC        CONFIG_MCUX_COMPONENT_driver.dac_1)
-set_variable_ifdef(CONFIG_NXP_IRQSTEER          CONFIG_MCUX_COMPONENT_driver.irqsteer)
 set_variable_ifdef(CONFIG_AUDIO_DMIC_MCUX       CONFIG_MCUX_COMPONENT_driver.dmic)
 set_variable_ifdef(CONFIG_DMA_NXP_SDMA          CONFIG_MCUX_COMPONENT_driver.sdma)
 set_variable_ifdef(CONFIG_ADC_MCUX_GAU          CONFIG_MCUX_COMPONENT_driver.cns_adc)
@@ -184,7 +183,6 @@ if(CONFIG_ETH_NXP_IMX_NETC)
     set(CONFIG_MCUX_COMPONENT_driver.msgintr ON)
   endif()
 
-  set_variable_ifdef(CONFIG_SOC_MIMX9596_M7 CONFIG_MCUX_COMPONENT_driver.irqsteer)
 endif()
 
 if(CONFIG_SOC_FAMILY_MCXN OR CONFIG_SOC_FAMILY_MCXA)
@@ -227,11 +225,6 @@ endif()
   set_variable_ifdef(CONFIG_HAS_MCUX_XCACHE		CONFIG_MCUX_COMPONENT_driver.cache_xcache)
 
 if((${MCUX_DEVICE} MATCHES "MIMX9596") OR (${MCUX_DEVICE} MATCHES "MIMX8UD7") OR (${MCUX_DEVICE} MATCHES "MIMXRT118") OR (${MCUX_DEVICE} MATCHES "MIMXRT798") OR (CONFIG_SOC_MIMX94398) OR CONFIG_SOC_MIMX9352)
-
-  if(CONFIG_SOC_MIMX94398_M33)
-    set(CONFIG_MCUX_COMPONENT_driver.irqsteer_1 ON)
-    set(CONFIG_MCUX_COMPONENT_driver.irqsteer_1_soc.cm33_core1 ON)
-  endif()
 
   set_variable_ifdef(CONFIG_IPM_IMX	CONFIG_MCUX_COMPONENT_driver.mu1)
   set_variable_ifdef(CONFIG_MBOX_NXP_IMX_MU	CONFIG_MCUX_COMPONENT_driver.mu1)
