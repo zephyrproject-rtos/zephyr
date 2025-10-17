@@ -26,6 +26,7 @@ tests:
       - esp32s2_saola
       - esp32s3_devkitm/esp32s3/procpu
       - bgm220_ek4314a
+      - slwrb4180b
       - xg24_rb4187c
       - bg29_rb4420a
       - xg29_rb4412a
