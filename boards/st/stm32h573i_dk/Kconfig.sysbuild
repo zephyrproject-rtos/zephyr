@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+choice BOOTLOADER
+	default BOOTLOADER_MCUBOOT
+endchoice
+
+choice BOOT_SIGNATURE_TYPE
+	default BOOT_SIGNATURE_TYPE_NONE
+endchoice
+
+choice MCUBOOT_MODE
+	default MCUBOOT_MODE_DIRECT_XIP
+endchoice
