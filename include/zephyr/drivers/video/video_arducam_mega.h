@@ -23,13 +23,9 @@ extern "C" {
 /* Info default settings */
 #define SUPPORT_RESOLUTION_5M 7894
 #define SUPPORT_SP_EFF_5M     63
-#define ENABLE_FOCUS_5M       1
-#define ENABLE_SHARPNESS_5M   0
 
 #define SUPPORT_RESOLUTION_3M 7638
 #define SUPPORT_SP_EFF_3M     319
-#define ENABLE_FOCUS_3M       0
-#define ENABLE_SHARPNESS_3M   1
 
 #define EXPOSURE_MAX   30000
 #define EXPOSURE_MIN   0
@@ -201,6 +197,16 @@ enum mega_resolution {
 	MEGA_RESOLUTION_14 = 0x0f,      /**<Reserve*/
 	MEGA_RESOLUTION_15 = 0x10,      /**<Reserve*/
 	MEGA_RESOLUTION_NONE,
+};
+
+/**
+ * @enum mega_features
+ * @brief Configure camera available features
+ */
+enum mega_features {
+	MEGA_HAS_DEFAULT = 0,			/**< Default features enabled */
+    MEGA_HAS_SHARPNESS = 1 << 0,	/**< Sharpness feature enabled */
+    MEGA_HAS_FOCUS = 1 << 1,		/**< Focus feature enabled */
 };
 
 #ifdef __cplusplus

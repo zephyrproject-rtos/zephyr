@@ -100,10 +100,7 @@ struct arducam_mega_ctrls {
 	struct video_ctrl quality;
 	struct video_ctrl lowpower;
 	struct video_ctrl whitebalauto;
-	struct {
-		struct video_ctrl enable_sharpness;
-		struct video_ctrl sharpness;
-	};
+	struct video_ctrl sharpness;
 	struct {
 		struct video_ctrl exp_auto;
 		struct video_ctrl exposure;
@@ -112,10 +109,7 @@ struct arducam_mega_ctrls {
 		struct video_ctrl gain;
 		struct video_ctrl gain_auto;
 	};
-	struct {
-		struct video_ctrl enable_focus;
-		struct video_ctrl focus_auto;
-	};
+	struct video_ctrl focus_auto;
 	/* Read only registers */
 	struct video_ctrl support_resolution;
 	struct video_ctrl support_special_effects;
@@ -137,6 +131,7 @@ struct arducam_mega_data {
 	uint8_t fifo_first_read;
 	uint32_t fifo_length;
 	uint8_t stream_on;
+	uint32_t features;
 };
 
 #define ARDUCAM_MEGA_VIDEO_FORMAT_CAP(width, height, format)                                       \
@@ -329,28 +324,14 @@ static int arducam_mega_set_EV(const struct device *dev, enum mega_ev_level leve
 
 static int arducam_mega_set_sharpness(const struct device *dev, enum mega_sharpness_level level)
 {
-	struct arducam_mega_data *drv_data = dev->data;
-	struct arducam_mega_ctrls *drv_ctrls = &drv_data->ctrls;
 	const struct arducam_mega_config *cfg = dev->config;
-
-	if (!drv_ctrls->enable_sharpness.val) {
-		LOG_ERR("This device does not support setting sharpness.");
-		return -ENOTSUP;
-	}
 
 	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_SHARPNESS_CONTROL, level, 3);
 }
 
 static int arducam_mega_set_auto_focus(const struct device *dev, enum mega_auto_focus_level level)
 {
-	struct arducam_mega_data *drv_data = dev->data;
-	struct arducam_mega_ctrls *drv_ctrls = &drv_data->ctrls;
 	const struct arducam_mega_config *cfg = dev->config;
-
-	if (!drv_ctrls->enable_focus.val) {
-		LOG_ERR("This device does not support setting auto focus.");
-		return -ENOTSUP;
-	}
 
 	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_AUTO_FOCUS_CONTROL, level, 3);
 }
@@ -620,6 +601,7 @@ static int arducam_mega_check_connection(const struct device *dev)
 		LOG_ERR("arducam mega not detected, 0x%x\n", cam_id);
 		return -ENODEV;
 	}
+	drv_data->features = MEGA_HAS_DEFAULT;
 
 	switch (cam_id) {
 	case ARDUCAM_SENSOR_5MP_1:
@@ -633,9 +615,8 @@ static int arducam_mega_check_connection(const struct device *dev)
 
 		drv_data->ctrls.support_resolution.val = SUPPORT_RESOLUTION_5M;
 		drv_data->ctrls.support_special_effects.val = SUPPORT_SP_EFF_5M;
-		drv_data->ctrls.enable_focus.val = ENABLE_FOCUS_5M;
-		drv_data->ctrls.enable_sharpness.val = ENABLE_SHARPNESS_5M;
 		drv_data->ctrls.device_address.val = DEVICE_ADDRESS;
+		drv_data->features |= MEGA_HAS_FOCUS;
 		break;
 	case ARDUCAM_SENSOR_3MP_1:
 	case ARDUCAM_SENSOR_3MP_2:
@@ -648,9 +629,8 @@ static int arducam_mega_check_connection(const struct device *dev)
 		support_resolution[8] = MEGA_RESOLUTION_QXGA;
 		drv_data->ctrls.support_resolution.val = SUPPORT_RESOLUTION_3M;
 		drv_data->ctrls.support_special_effects.val = SUPPORT_SP_EFF_3M;
-		drv_data->ctrls.enable_focus.val = ENABLE_FOCUS_3M;
-		drv_data->ctrls.enable_sharpness.val = ENABLE_SHARPNESS_3M;
 		drv_data->ctrls.device_address.val = DEVICE_ADDRESS;
+		drv_data->features |= MEGA_HAS_SHARPNESS;
 		break;
 	case ARDUCAM_SENSOR_5MP_2:
 		fmts[8] = (struct video_format_cap)ARDUCAM_MEGA_VIDEO_FORMAT_CAP(
@@ -662,9 +642,8 @@ static int arducam_mega_check_connection(const struct device *dev)
 		support_resolution[8] = MEGA_RESOLUTION_WQXGA2;
 		drv_data->ctrls.support_resolution.val = SUPPORT_RESOLUTION_5M;
 		drv_data->ctrls.support_special_effects.val = SUPPORT_SP_EFF_5M;
-		drv_data->ctrls.enable_focus.val = ENABLE_FOCUS_5M;
-		drv_data->ctrls.enable_sharpness.val = ENABLE_SHARPNESS_5M;
 		drv_data->ctrls.device_address.val = DEVICE_ADDRESS;
+		drv_data->features |= MEGA_HAS_FOCUS;
 		break;
 	default:
 		return -ENODEV;
@@ -1046,10 +1025,12 @@ static int arducam_mega_init_controls(const struct device *dev)
 	if (ret < 0) {
 		return ret;
 	}
-	ret = video_init_ctrl(&ctrls->sharpness, dev, VIDEO_CID_SHARPNESS,
-			      (struct video_ctrl_range){.min = 0, .max = 8, .step = 1, .def = 0});
-	if (ret < 0) {
-		return ret;
+	if (drv_data->features & MEGA_HAS_SHARPNESS){
+		ret = video_init_ctrl(&ctrls->sharpness, dev, VIDEO_CID_SHARPNESS,
+					(struct video_ctrl_range){.min = 0, .max = 8, .step = 1, .def = 0});
+		if (ret < 0) {
+			return ret;
+		}
 	}
 	ret = video_init_ctrl(
 		&ctrls->gain, dev, VIDEO_CID_GAIN,
@@ -1075,11 +1056,13 @@ static int arducam_mega_init_controls(const struct device *dev)
 	if (ret < 0) {
 		return ret;
 	}
-	ret = video_init_ctrl(
-		&ctrls->focus_auto, dev, VIDEO_CID_FOCUS_AUTO,
-		(struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
-	if (ret < 0) {
-		return ret;
+	if (drv_data->features & MEGA_HAS_FOCUS){
+		ret = video_init_ctrl(
+			&ctrls->focus_auto, dev, VIDEO_CID_FOCUS_AUTO,
+			(struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
+		if (ret < 0) {
+			return ret;
+		}
 	}
 	/* Read only controls */
 	ret = video_init_ctrl(
