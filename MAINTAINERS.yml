@@ -4881,10 +4881,13 @@ TI SimpleLink Platforms:
   status: maintained
   maintainers:
     - vaishnavachath
+  collaborators:
+    - bogdanovs
   files:
     - boards/ti/cc*/
     - boards/ti/msp*/
     - drivers/*/*cc13*
+    - drivers/*/*cc23*
     - drivers/*/*cc25*
     - drivers/*/*cc26*
     - drivers/*/*cc32*
