@@ -121,6 +121,17 @@
 		};
 	};
 
+	lpi2c3_default: lpi2c3_default {
+		group0 {
+			pinmux = <&iomuxc_gpio_io16_lpi2c_sda_lpi2c3_sda>,
+				 <&iomuxc_gpio_io17_lpi2c_scl_lpi2c3_scl>;
+			drive-open-drain;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
+			input-enable;
+		};
+	};
+
 	lpi2c6_default: lpi2c6_default {
 		group0 {
 			pinmux = <&iomuxc_gpio_io28_lpi2c_scl_lpi2c6_scl>,
@@ -176,6 +187,19 @@
 		group0 {
 			pinmux = <&iomuxc_gpio_io27_lpuart_rx_lpuart12_rx>,
 				 <&iomuxc_gpio_io26_lpuart_tx_lpuart12_tx>;
+			bias-pull-up;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
+		};
+	};
+
+	sai1_default: sai1_default {
+		group0 {
+			pinmux = <&iomuxc_sai1_txc_sai_tx_bclk_sai1_tx_bclk>,
+				 <&iomuxc_i2c2_sda_sai_mclk_sai1_mclk>,
+				 <&iomuxc_sai1_rxd0_sai_rx_data_sai1_rx_data0>,
+				 <&iomuxc_sai1_txd0_sai_tx_data_sai1_tx_data0>,
+				 <&iomuxc_sai1_txfs_sai_tx_sync_sai1_tx_sync>;
 			bias-pull-up;
 			slew-rate = "slightly_fast";
 			drive-strength = "x4";
