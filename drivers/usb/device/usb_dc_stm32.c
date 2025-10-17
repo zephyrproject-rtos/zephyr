@@ -349,7 +349,7 @@ static int usb_dc_stm32_phy_specific_clock_enable(const struct device *const clk
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
 	/* Enable Vdd USB voltage monitoring */
 	LL_PWR_EnableVddUSBMonitoring();
-	while (__HAL_PWR_GET_FLAG(PWR_FLAG_USB33RDY)) {
+	while (!__HAL_PWR_GET_FLAG(PWR_FLAG_USB33RDY)) {
 		/* Wait for VDD33USB ready */
 	}
 	/* Enable VDDUSB */
