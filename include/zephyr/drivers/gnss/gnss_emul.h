@@ -25,10 +25,10 @@ void gnss_emul_clear_data(const struct device *dev);
  * @param dev GNSS emulator device
  * @param nav Updated navigation state
  * @param info Updated GNSS fix information
- * @param timestamp_ms Timestamp associated with the GNSS fix
+ * @param boot_realtime_ms Unix timestamp associated with system boot
  */
 void gnss_emul_set_data(const struct device *dev, const struct navigation_data *nav,
-			const struct gnss_info *info, int64_t timestamp_ms);
+			const struct gnss_info *info, int64_t boot_realtime_ms);
 
 /**
  * @brief Retrieve the last configured fix rate, regardless of PM state
