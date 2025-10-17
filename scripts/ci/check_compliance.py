@@ -1370,6 +1370,7 @@ flagged.
         "ZEPHYR_TRY_MASS_ERASE", # MCUBoot setting described in sysbuild
                                  # documentation
         "ZTEST_FAIL_TEST_",  # regex in tests/ztest/fail/CMakeLists.txt
+        "ZVFS_OPEN_ADD_SIZE_", # Used as an option matching prefix
         # zephyr-keep-sorted-stop
     }
 
