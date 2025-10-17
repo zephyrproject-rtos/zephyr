@@ -174,6 +174,27 @@ static struct video_format_cap fmts[] = {
 	{0},
 };
 
+enum mega_resolution {
+	MEGA_RESOLUTION_QQVGA = 0x00,
+	MEGA_RESOLUTION_QVGA = 0x01,
+	MEGA_RESOLUTION_VGA = 0x02,
+	MEGA_RESOLUTION_SVGA = 0x03,
+	MEGA_RESOLUTION_HD = 0x04,
+	MEGA_RESOLUTION_SXGAM = 0x05,
+	MEGA_RESOLUTION_UXGA = 0x06,
+	MEGA_RESOLUTION_FHD = 0x07,
+	MEGA_RESOLUTION_QXGA = 0x08,
+	MEGA_RESOLUTION_WQXGA2 = 0x09,
+	MEGA_RESOLUTION_96X96 = 0x0a,
+	MEGA_RESOLUTION_128X128 = 0x0b,
+	MEGA_RESOLUTION_320X320 = 0x0c,
+	MEGA_RESOLUTION_12 = 0x0d,
+	MEGA_RESOLUTION_13 = 0x0e,
+	MEGA_RESOLUTION_14 = 0x0f,
+	MEGA_RESOLUTION_15 = 0x10,
+	MEGA_RESOLUTION_NONE,
+};
+
 #define SUPPORT_RESOLUTION_NUM 9
 
 static uint8_t support_resolution[SUPPORT_RESOLUTION_NUM] = {
@@ -294,6 +315,25 @@ static int arducam_mega_write_reg_wait(const struct arducam_mega_bus *bus, uint1
 	return ret;
 }
 
+enum mega_ev_level get_ev_level(int value) {
+	static const enum mega_ev_level ev_level_map[] = {
+		MEGA_EV_LEVEL_NEGATIVE_3,
+		MEGA_EV_LEVEL_NEGATIVE_2,
+		MEGA_EV_LEVEL_NEGATIVE_1,
+		MEGA_EV_LEVEL_DEFAULT,
+		MEGA_EV_LEVEL_1,
+		MEGA_EV_LEVEL_2,
+		MEGA_EV_LEVEL_3,
+	};
+
+	int index = value + 3;
+	if (index >= 0 && index < sizeof(ev_level_map) / sizeof(ev_level_map[0])) {
+		return ev_level_map[index];
+	} else {
+		return MEGA_EV_LEVEL_DEFAULT;
+	}
+}
+
 static int arducam_mega_set_brightness(const struct device *dev, enum mega_brightness_level level)
 {
 	const struct arducam_mega_config *cfg = dev->config;
@@ -315,11 +355,11 @@ static int arducam_mega_set_contrast(const struct device *dev, enum mega_contras
 	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_CONTRAST_CONTROL, level, 3);
 }
 
-static int arducam_mega_set_EV(const struct device *dev, enum mega_ev_level level)
+static int arducam_mega_set_EV(const struct device *dev, int level)
 {
 	const struct arducam_mega_config *cfg = dev->config;
 
-	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_EV_CONTROL, level, 3);
+	return arducam_mega_write_reg_wait(&cfg->bus, CAM_REG_EV_CONTROL, get_ev_level(level), 3);
 }
 
 static int arducam_mega_set_sharpness(const struct device *dev, enum mega_sharpness_level level)
@@ -442,7 +482,7 @@ static int arducam_mega_set_white_bal_enable(const struct device *dev, int enabl
 	return ret;
 }
 
-static int arducam_mega_set_white_bal(const struct device *dev, enum mega_ev_level level)
+static int arducam_mega_set_white_bal(const struct device *dev, enum mega_white_balance level)
 {
 	const struct arducam_mega_config *cfg = dev->config;
 
@@ -1034,13 +1074,13 @@ static int arducam_mega_init_controls(const struct device *dev)
 	}
 	ret = video_init_ctrl(
 		&ctrls->gain, dev, VIDEO_CID_GAIN,
-		(struct video_ctrl_range){.min = GAIN_MIN, .max = GAIN_MAX, .step = 1, .def = 0});
+		(struct video_ctrl_range){.min = 0, .max = 1023, .step = 1, .def = 0});
 	if (ret < 0) {
 		return ret;
 	}
 	ret = video_init_ctrl(&ctrls->exposure, dev, VIDEO_CID_EXPOSURE,
 			      (struct video_ctrl_range){
-				      .min = GAIN_MIN, .max = EXPOSURE_MAX, .step = 1, .def = 0});
+				      .min = 0, .max = 30000, .step = 1, .def = 0});
 	if (ret < 0) {
 		return ret;
 	}
