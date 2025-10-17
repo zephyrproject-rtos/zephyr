@@ -52,4 +52,5 @@ config NET_SAMPLE_LWM2M_WAIT_DNS
 	  Make sure we get DNS server addresses from the network
 	  before considering the connection to be up.
 
+source "samples/net/common/Kconfig"
 source "Kconfig.zephyr"
