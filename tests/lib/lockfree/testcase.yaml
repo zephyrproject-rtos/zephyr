@@ -2,5 +2,10 @@ tests:
   libraries.lockfree:
     platform_exclude:
       - m2gl025_miv # renode times out
+      # FVP SMP: test timeout in lockfree synchronization
+      - fvp_base_revc_2xaem/v8a/smp
+      - fvp_base_revc_2xaem/v8a/smp/ns
+      - fvp_base_revc_2xaem/v9a/smp
+      - fvp_base_revc_2xaem/v9a/smp/ns
     tags:
       - lockfree
