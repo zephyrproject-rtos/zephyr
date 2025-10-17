@@ -39,6 +39,7 @@ struct gnss_emul_data {
 	enum gnss_navigation_mode nav_mode;
 	gnss_systems_t enabled_systems;
 	struct gnss_data data;
+	bool active;
 
 #ifdef CONFIG_GNSS_SATELLITES
 	struct gnss_satellite satellites[GNSS_EMUL_SUPPORTED_SYSTEMS_COUNT];
@@ -92,7 +93,7 @@ static bool gnss_emul_is_resumed(const struct device *dev)
 {
 	struct gnss_emul_data *data = dev->data;
 
-	return data->fix_timestamp_ms > 0;
+	return data->active;
 }
 
 static void gnss_emul_lock(const struct device *dev)
@@ -443,11 +444,19 @@ static void gnss_emul_work_handler(struct k_work *work)
 
 static void gnss_emul_resume(const struct device *dev)
 {
+	struct gnss_emul_data *data = dev->data;
+
+	data->active = true;
 	gnss_emul_update_fix_timestamp(dev, true);
+	gnss_emul_schedule_work(dev);
 }
 
 static void gnss_emul_suspend(const struct device *dev)
 {
+	struct gnss_emul_data *data = dev->data;
+
+	data->active = false;
+	gnss_emul_cancel_work(dev);
 	gnss_emul_clear_data(dev);
 }
 
