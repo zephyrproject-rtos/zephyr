@@ -24,6 +24,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
+#include "stream_rx.h"
 #include "hap_ha.h"
 
 #define MANDATORY_SINK_CONTEXT (BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | \
@@ -178,7 +179,7 @@ int main(void)
 		return 0;
 	}
 
-	err = init_bap_sink();
+	err = init_bap_broadcast_sink();
 	if (err != 0) {
 		printk("BAP broadcast sink init failed (err %d)\n", err);
 	}

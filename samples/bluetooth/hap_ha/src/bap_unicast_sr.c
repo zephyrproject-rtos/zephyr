@@ -132,6 +132,12 @@ static void print_qos(const struct bt_bap_qos_cfg *qos)
 	       qos->rtn, qos->latency, qos->pd);
 }
 
+/**
+ * @brief check for connection
+ * 
+ *
+ * @param bool return true if there is a connection. 
+ */
 bool bap_unicast_sr_has_connection(void)
 {
 	return default_conn != NULL;
