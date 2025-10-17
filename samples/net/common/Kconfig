@@ -50,3 +50,8 @@ config NET_SAMPLE_COMMON_TUNNEL_MY_ADDR
 	depends on NET_L2_IPIP
 	help
 	  The value depends on your network setup.
+
+# Generic way to allocate enough sockets for the application
+config ZVFS_OPEN_ADD_SIZE_NET_SAMPLE
+	int "Amount of sockets needed by the networking sample"
+	default 0
