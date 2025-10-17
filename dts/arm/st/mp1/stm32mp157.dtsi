@@ -42,6 +42,15 @@
 		reg = <0x10000000 DT_SIZE_K(320)>;
 	};
 
+	clocks {
+		/* NOTE: clocks must be enabled by Cortex-A */
+		clk_hse: clk-hse {
+			#clock-cells = <0>;
+			compatible = "st,stm32-hse-clock";
+			status = "disabled";
+		};
+	};
+
 	soc {
 		compatible = "st,stm32mp157", "st,stm32mp1", "simple-bus";
 
