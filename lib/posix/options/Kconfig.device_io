@@ -45,12 +45,17 @@ config POSIX_DEVICE_IO_ALIAS_WRITE
 
 endif # POSIX_DEVICE_IO
 
+# Allocate fd for stdin, stdout and stderr
+config ZVFS_OPEN_ADD_SIZE_POSIX
+	int "Amount of file descriptors used by Posix"
+	default 3
+
 config POSIX_OPEN_MAX
 	int
-	default ZVFS_OPEN_MAX
+	default ZVFS_OPEN_ADD_SIZE_POSIX
 	help
 	  The maximum number of files that a process can have open at one time. This option is not
-	  directly user-configurable but can be adjusted via CONFIG_ZVFS_OPEN_MAX.
+	  directly user-configurable but can be adjusted via CONFIG_ZVFS_OPEN_ADD_SIZE_POSIX.
 
 	  For more information, please see
 	  https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/limits.h.html
