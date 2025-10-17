@@ -1,0 +1,80 @@
+/*
+ * Copyright (c) 2025 Synaptics, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_SYNA_CLOCK_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_SYNA_CLOCK_H_
+
+#define CLK_ENABLE1		0x00
+#define XSPI_CORE_CLK_CTRL	0x30
+#define SD0_CORE_CLK_CTRL	0x38
+#define SD1_CORE_CLK_CTRL	0x3c
+#define SPI_MSTR_SSI_CLK_CTRL	0x40
+#define SPI_SLV_SSI_CLK_CTRL	0x44
+#define I3C0_CORE_CLK_CTRL	0x48
+#define I3C1_CORE_CLK_CTRL	0x4c
+#define UART0_CORE_CLK_CTRL	0x50
+#define UART1_CORE_CLK_CTRL	0x54
+#define I2C0_MSTR_CORE_CLK_CTRL	0x58
+#define I2C1_MSTR_CORE_CLK_CTRL	0x5c
+#define I2C_SLV_CORE_CLK_CTRL	0x60
+#define USB2_CORE_CLK_CTRL	0x64
+
+#define CGL_REG			16
+#define AXI_ID			8
+/* Bit locations in GLOBAL_CLK_ENABLE1/2 registers */
+#define CLK_ID			0
+
+#define SYNA_IMG_CAM_CLK	0
+#define SYNA_GPIO_DB_CLK	1
+#define SYNA_AXI_CLK		2
+#define SYNA_NPU_CLK		3
+#define SYNA_DMA0_CLK		4
+#define SYNA_IMG_SYS_CLK	9
+#define SYNA_IMG_CFG_CLK	10
+#define SYNA_IMG_APB_CLK	11
+#define SYNA_DMA1_CLK		12
+#define SYNA_PVT_APB_CLK	13
+
+#define SYNA_XSPI_CLK		((XSPI_CORE_CLK_CTRL << CGL_REG) | \
+				 (7 << AXI_ID) | 32)
+#define SYNA_USB_CLK		((USB2_CORE_CLK_CTRL << CGL_REG) | \
+				 (8 << AXI_ID) | 35)
+#define SYNA_SD0_CLK		((SD0_CORE_CLK_CTRL << CGL_REG) | \
+				 (5 << AXI_ID) | 33)
+#define SYNA_SD1_CLK		((SD1_CORE_CLK_CTRL << CGL_REG) | \
+				 (6 << AXI_ID) | 34)
+#define SYNA_SPI_MSTR_CLK	((SPI_MSTR_SSI_CLK_CTRL << CGL_REG) | \
+				 36)
+#define SYNA_SPI_SLV_CLK	((SPI_SLV_SSI_CLK_CTRL << CGL_REG) | \
+				 37)
+#define SYNA_I3C0_CLK		((I3C0_CORE_CLK_CTRL << CGL_REG) | \
+				 38)
+#define SYNA_I3C1_CLK		((I3C1_CORE_CLK_CTRL << CGL_REG) | \
+				 39)
+#define SYNA_UART0_CLK		((UART0_CORE_CLK_CTRL << CGL_REG) | \
+				 40)
+#define SYNA_UART1_CLK		((UART1_CORE_CLK_CTRL << CGL_REG) | \
+				 41)
+#define SYNA_I2C0_MSTR_CLK	((I2C0_MSTR_CORE_CLK_CTRL << CGL_REG) | \
+				 42)
+#define SYNA_I2C1_MSTR_CLK	((I2C1_MSTR_CORE_CLK_CTRL << CGL_REG) | \
+				 43)
+#define SYNA_I2C_SLV_CLK	((I2C_SLV_CORE_CLK_CTRL << CGL_REG) | \
+				 44)
+
+#define SYNA_GPIO_CFG_CLK	45
+#define SYNA_I2S_CFG_CLK	46
+#define SYNA_I2S_TX0_PCLK	47
+#define SYNA_I2S_TX1_PCLK	48
+#define SYNA_I2S_TX2_PCLK	49
+#define SYNA_I2S_TX3_PCLK	50
+#define SYNA_I2S_RX0_PCLK	51
+#define SYNA_I2S_RX1_PCLK	52
+#define SYNA_I2S_RX2_PCLK	53
+#define SYNA_I2S_RX3_PCLK	54
+#define SYNA_I2S_SWIRE_CFG_CLK	55
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_SYNA_CLOCK_H_ */
