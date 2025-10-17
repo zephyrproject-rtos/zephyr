@@ -19,6 +19,7 @@
 #include <zephyr/dt-bindings/flash_controller/xspi.h>
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <freq.h>
+#include <mem.h>
 
 /*
  * STM32H7RS line contains has many common peripherals with STM32H7.
