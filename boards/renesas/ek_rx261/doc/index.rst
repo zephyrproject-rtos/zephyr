@@ -25,15 +25,18 @@ The key features of the EK-RX261 board are categorized in three groups:
   - External power supply (via TP5, TP6)
 
 - Two Debug Modes:
+
   - Debug on-board via E2 Emulator OB (FINE interface)
   - Debug in via 14-pin external header (FINE interface)
 
 - User LEDs:
+
   - 3 User LEDs (Red, Green, Blue)
   - 1 Power LED (White)
   - 1 Debug LED (Yellow)
 
 - User Buttons:
+
   - 2 User Switches
   - 1 Reset Switch
 
@@ -57,6 +60,7 @@ Hardware
 ********
 
 Detailed hardware features can be found at:
+
 - RX261 MCU: `RX261 Group User's Manual Hardware`_.
 - EK-RX261 board: `EK-RX261 - User's Manual`_.
 
@@ -124,7 +128,7 @@ an external **SEGGER J-Link** debugger (using the FINE interface).
 
      - J22: Open
      - J23: Jumper on pins **1-2** or **2-3**
-     - J24: **Closed**
+     - J24: Closed
      - J25: Open
 
 3. **Run flashing command:**

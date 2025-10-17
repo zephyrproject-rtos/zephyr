@@ -55,6 +55,9 @@ enum settings_mgmt_ret_code_t {
 
 	/** The provided key name does not support being deleted. */
 	SETTINGS_MGMT_ERR_DELETE_NOT_SUPPORTED,
+
+	/** The provided key name does not support being saved. */
+	SETTINGS_MGMT_ERR_SAVE_NOT_SUPPORTED,
 };
 
 #ifdef __cplusplus

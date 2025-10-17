@@ -39,7 +39,7 @@
 	pwm_default: pwm_default {
 		group1 {
 			pinmux = <PWM_1B_P3>, <PWM_2B_P5>, <PWM_3A_P6>, <PWM_4B_P9>, <PWM_5A_P10>,
-				<PWM_5B_P11>;
+				 <PWM_5B_P11>;
 		};
 	};
 

@@ -19,7 +19,7 @@
 	pinctrl-0 = <&mspi1_default>;
 	pinctrl-1 = <&mspi1_sleep>;
 	pinctrl-2 = <&mspi1_flash>;
-	pinctrl-names = "default","sleep","flash";
+	pinctrl-names = "default", "sleep", "flash";
 	status = "okay";
 
 	ce-gpios = <&gpio32_63 18 GPIO_ACTIVE_LOW>;
@@ -47,12 +47,11 @@
 		ambiq,timing-config-mask = <3>;
 		ambiq,timing-config = <0 8 0 0 0 0 0 0>;
 	};
-
 };
 
 &pinctrl {
 
-	mspi1_sleep: mspi1_sleep{
+	mspi1_sleep: mspi1_sleep {
 		group1 {
 			pinmux = <GPIO_P51>,
 				 <GPIO_P52>,
@@ -68,7 +67,7 @@
 		};
 	};
 
-	mspi1_flash: mspi1_flash{
+	mspi1_flash: mspi1_flash {
 
 		group1 {
 			pinmux = <MSPI1_0_P51>,
@@ -101,7 +100,5 @@
 		group4 {
 			pinmux = <GPIO_P69>;
 		};
-
 	};
-
 };

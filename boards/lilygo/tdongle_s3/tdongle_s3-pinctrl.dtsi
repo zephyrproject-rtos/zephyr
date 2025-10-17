@@ -24,26 +24,26 @@
 	spim2_default: spim2_default {
 		group1 {
 			pinmux = <SPIM2_SCLK_GPIO5>,
-					 <SPIM2_CSEL_GPIO4>,
-					 <SPIM2_MOSI_GPIO3>;
+				 <SPIM2_CSEL_GPIO4>,
+				 <SPIM2_MOSI_GPIO3>;
 		};
 	};
 
 	spim3_default: spim3_default {
 		group1 {
 			pinmux = <SPIM3_SCLK_GPIO39>,
-					 <SPIM3_MOSI_GPIO40>;
+				 <SPIM3_MOSI_GPIO40>;
 		};
 	};
 
 	sdhc0_default: sdhc0_default {
 		group1 {
 			pinmux = <SDHC0_CLKOUT_GPIO12>,
-					 <SDHC0_CMD_GPIO16>,
-					 <SDHC0_DATA0_GPIO14>,
-					 <SDHC0_DATA1_GPIO17>,
-					 <SDHC0_DATA2_GPIO21>,
-					 <SDHC0_DATA3_GPIO18>;
+				 <SDHC0_CMD_GPIO16>,
+				 <SDHC0_DATA0_GPIO14>,
+				 <SDHC0_DATA1_GPIO17>,
+				 <SDHC0_DATA2_GPIO21>,
+				 <SDHC0_DATA3_GPIO18>;
 			bias-pull-up;
 			output-high;
 		};

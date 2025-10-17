@@ -9,7 +9,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <zephyr/net/hostname.h>
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/socket.h>
 #include <zephyr/posix/arpa/inet.h>
 #include <zephyr/posix/netinet/in.h>
 #include <zephyr/posix/net/if.h>
@@ -322,6 +324,11 @@ int bind(int sock, const struct sockaddr *addr, socklen_t addrlen)
 int connect(int sock, const struct sockaddr *addr, socklen_t addrlen)
 {
 	return zsock_connect(sock, addr, addrlen);
+}
+
+int gethostname(char *name, size_t namelen)
+{
+	return zsock_gethostname(name, namelen);
 }
 
 int getsockname(int sock, struct sockaddr *addr, socklen_t *addrlen)

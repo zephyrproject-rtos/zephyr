@@ -13,6 +13,7 @@ platform includes the following features:
 Supported board targets for that platform are listed below:
 
 * ``nsim_arc_v/rmx100`` - Synopsys RISC-V RMX100 core
+* ``nsim_arc_v/rhx100`` - Synopsys RISC-V RHX100 core
 
 .. _board_nsim_arc_v_prop_files:
 
@@ -43,6 +44,7 @@ there might be exceptions from that, especially for newly added targets. You can
 toolchains for the board targets in the corresponding ``.yaml`` file.
 
 I.e. for the ``nsim_arc_v/rmx100`` board we can check :zephyr_file:`boards/snps/nsim/arc_v/nsim_arc_v_rmx100.yaml`
+and for the ``nsim_arc_v/rhx100`` board we can check :zephyr_file:`boards/snps/nsim/arc_v/nsim_arc_v_rhx100.yaml`
 
 The supported toolchains are listed in ``toolchain:`` array in ``.yaml`` file, where we can find:
 

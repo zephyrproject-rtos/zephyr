@@ -6,7 +6,7 @@
 
 #include <zephyr/dt-bindings/display/panel.h>
 
-/{
+/ {
 	chosen {
 		zephyr,display = &lcdif;
 		zephyr,touch = &gt911_rk055hdmipi4m;
@@ -27,6 +27,7 @@
 
 &nxp_mipi_i2c {
 	status = "okay";
+
 	gt911_rk055hdmipi4m: gt911@5d {
 		compatible = "goodix,gt911";
 		reg = <0x5d>;
@@ -39,6 +40,7 @@
 	status = "okay";
 	width = <720>;
 	height = <1280>;
+
 	display-timings {
 		compatible = "zephyr,panel-timing";
 		hsync-len = <8>;
@@ -76,6 +78,7 @@
 	 * (pixel clock * bits per pixel) / MIPI data lanes
 	 */
 	phy-clock = <748154880>;
+
 	rm68200@0 {
 		status = "okay";
 		compatible = "raydium,rm68200";

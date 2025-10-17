@@ -22,6 +22,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led_1: led_0 {
 			gpios = <&gpiob 5 GPIO_ACTIVE_LOW>;
 			label = "User LED1";
@@ -31,6 +32,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		boot_button: button_0 {
 			label = "SW1";
 			gpios = <&gpiob 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -168,6 +170,7 @@ stm32_lp_tick_source: &lptim1 {
 
 /* connectors: */
 grove_serial: &usart1 {};
+
 zephyr_i2c: &i2c2 {};
 
 &flash0 {
@@ -181,14 +184,17 @@ zephyr_i2c: &i2c2 {};
 			reg = <0x00000000 DT_SIZE_K(32)>;
 			read-only;
 		};
+
 		slot0_partition: partition@8000 {
 			label = "image-0";
 			reg = <0x00008000 DT_SIZE_K(104)>;
 		};
+
 		slot1_partition: partition@22000 {
 			label = "image-1";
 			reg = <0x00022000 DT_SIZE_K(104)>;
 		};
+
 		/* 16KB (8x2kB pages) of storage at the end of the flash */
 		storage_partition: partition@3c000 {
 			label = "storage";

@@ -22,9 +22,12 @@ rsource "Kconfig.fake_comp"
 rsource "Kconfig.silabs_acmp"
 rsource "Kconfig.it51xxx_vcmp"
 rsource "Kconfig.mcux_acmp"
+rsource "Kconfig.nxp_cmp"
 rsource "Kconfig.nrf_comp"
 rsource "Kconfig.nrf_lpcomp"
 rsource "Kconfig.shell"
 rsource "Kconfig.renesas_ra"
+rsource "Kconfig.renesas_rx"
+rsource "Kconfig.stm32_comp"
 
 endif # COMPARATOR

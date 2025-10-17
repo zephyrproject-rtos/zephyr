@@ -3,6 +3,7 @@
  * Copyright (c) 2024-2025 Silicon Laboratories Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <zephyr/sys/util.h>
 #include <nwp.h>
 #include "siwx91x_wifi.h"
 #include "siwx91x_wifi_ps.h"
@@ -199,7 +200,7 @@ int siwx91x_get_power_save_config(const struct device *dev, struct wifi_ps_confi
 		beacon_interval = siwx91x_get_connected_ap_beacon_interval_ms();
 		if (beacon_interval > 0) {
 			config->ps_params.listen_interval =
-				sl_ps_profile.listen_interval / beacon_interval;
+				DIV_ROUND_UP(sl_ps_profile.listen_interval, beacon_interval);
 		}
 	}
 

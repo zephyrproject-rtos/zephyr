@@ -220,6 +220,12 @@ static void avrcp_unit_info_req(struct bt_avrcp_tg *tg, uint8_t tid)
 	tg_tid = tid;
 }
 
+static void avrcp_subunit_info_req(struct bt_avrcp_tg *tg, uint8_t tid)
+{
+	bt_shell_print("AVRCP subunit info request received");
+	tg_tid = tid;
+}
+
 static void avrcp_tg_browsing_disconnected(struct bt_avrcp_tg *tg)
 {
 	bt_shell_print("AVRCP TG browsing disconnected");
@@ -232,13 +238,55 @@ static void avrcp_set_browsed_player_req(struct bt_avrcp_tg *tg, uint8_t tid,
 	tg_tid = tid;
 }
 
+static void avrcp_passthrough_req(struct bt_avrcp_tg *tg, uint8_t tid, struct net_buf *buf)
+{
+	struct bt_avrcp_passthrough_cmd *cmd;
+	struct bt_avrcp_passthrough_opvu_data *opvu = NULL;
+	const char *state_str;
+	bt_avrcp_opid_t opid;
+	bt_avrcp_button_state_t state;
+
+	tg_tid = tid;
+	cmd = net_buf_pull_mem(buf, sizeof(*cmd));
+	opid = BT_AVRCP_PASSTHROUGH_GET_STATE(cmd);
+	state = BT_AVRCP_PASSTHROUGH_GET_OPID(cmd);
+
+	if (cmd->data_len > 0U) {
+		if (buf->len < sizeof(struct bt_avrcp_passthrough_opvu_data)) {
+			bt_shell_print("Invalid passthrough data: buf length = %u, need >= %zu",
+				       buf->len, sizeof(struct bt_avrcp_passthrough_opvu_data));
+			return;
+		}
+
+		if (buf->len < cmd->data_len) {
+			bt_shell_print("Invalid passthrough cmd data length: %u, buf length = %u",
+				       cmd->data_len, buf->len);
+		}
+		opvu = net_buf_pull_mem(buf, sizeof(*opvu));
+	}
+
+	/* Convert button state to string */
+	state_str = (state == BT_AVRCP_BUTTON_PRESSED) ? "PRESSED" : "RELEASED";
+
+	bt_shell_print("AVRCP passthrough command received: opid = 0x%02x (%s), tid=0x%02x, len=%u",
+		       opid, state_str, tid, cmd->data_len);
+
+	if (cmd->data_len > 0U && opvu != NULL) {
+		bt_shell_print("company_id: 0x%06x", sys_get_be24(opvu->company_id));
+		bt_shell_print("opid_vu: 0x%04x", sys_be16_to_cpu(opvu->opid_vu));
+	}
+
+}
+
 static struct bt_avrcp_tg_cb app_avrcp_tg_cb = {
 	.connected = avrcp_tg_connected,
 	.disconnected = avrcp_tg_disconnected,
 	.browsing_connected = avrcp_tg_browsing_connected,
 	.browsing_disconnected = avrcp_tg_browsing_disconnected,
 	.unit_info_req = avrcp_unit_info_req,
+	.subunit_info_req = avrcp_subunit_info_req,
 	.set_browsed_player_req = avrcp_set_browsed_player_req,
+	.passthrough_req = avrcp_passthrough_req,
 };
 
 static int register_ct_cb(const struct shell *sh)
@@ -429,6 +477,132 @@ static int cmd_send_unit_info_rsp(const struct shell *sh, int32_t argc, char *ar
 			shell_print(sh, "AVRCP send unit info response");
 		} else {
 			shell_error(sh, "Failed to send unit info response");
+		}
+	} else {
+		shell_error(sh, "AVRCP is not connected");
+	}
+
+	return 0;
+}
+
+static int cmd_send_passthrough_rsp(const struct shell *sh, int32_t argc, char *argv[])
+{
+	struct bt_avrcp_passthrough_rsp *rsp;
+	struct bt_avrcp_passthrough_opvu_data *opvu = NULL;
+	bt_avrcp_opid_t opid = 0;
+	bt_avrcp_button_state_t state;
+	uint16_t vu_opid = 0;
+	bool is_op_vu = true;
+	struct net_buf *buf;
+	char *endptr;
+	unsigned long val;
+	int err;
+
+	if (!avrcp_tg_registered && register_tg_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_tg == NULL) {
+		shell_error(sh, "AVRCP TG is not connected");
+		return -ENOEXEC;
+	}
+
+	buf = bt_avrcp_create_pdu(NULL);
+	if (buf == NULL) {
+		shell_error(sh, "Failed to allocate buffer for AVRCP passthrough response");
+		return -ENOMEM;
+	}
+
+	if (net_buf_tailroom(buf) < sizeof(struct bt_avrcp_passthrough_rsp)) {
+		shell_error(sh, "Not enough tailroom in buffer for passthrough rsp");
+		goto failed;
+	}
+	rsp = net_buf_add(buf, sizeof(*rsp));
+
+	if (!strcmp(argv[1], "op")) {
+		is_op_vu = false;
+	} else if (!strcmp(argv[1], "opvu")) {
+		is_op_vu = true;
+	} else {
+		shell_error(sh, "Invalid response: %s", argv[1]);
+		goto failed;
+	}
+
+	if (!strcmp(argv[2], "play")) {
+		opid = BT_AVRCP_OPID_PLAY;
+		vu_opid = (uint16_t)opid;
+	} else if (!strcmp(argv[2], "pause")) {
+		opid = BT_AVRCP_OPID_PAUSE;
+		vu_opid = (uint16_t)opid;
+	} else {
+		/* Try to parse as hex value */
+		val = strtoul(argv[2], &endptr, 16);
+		if (*endptr != '\0' || val > 0xFFFFU) {
+			shell_error(sh, "Invalid opid: %s", argv[2]);
+			goto failed;
+		}
+		if (is_op_vu) {
+			vu_opid = (uint16_t)val;
+		} else {
+			opid = (bt_avrcp_opid_t)val;
+		}
+	}
+
+	if (!strcmp(argv[3], "pressed")) {
+		state = BT_AVRCP_BUTTON_PRESSED;
+	} else if (!strcmp(argv[3], "released")) {
+		state = BT_AVRCP_BUTTON_RELEASED;
+	} else {
+		shell_error(sh, "Invalid state: %s", argv[3]);
+		goto failed;
+	}
+
+	if (is_op_vu) {
+		opid = BT_AVRCP_OPID_VENDOR_UNIQUE;
+	}
+
+	BT_AVRCP_PASSTHROUGH_SET_STATE_OPID(rsp, state, opid);
+	if (is_op_vu) {
+		if (net_buf_tailroom(buf) < sizeof(*opvu)) {
+			shell_error(sh, "Not enough tailroom in buffer for opvu");
+			goto failed;
+		}
+		opvu = net_buf_add(buf, sizeof(*opvu));
+		sys_put_be24(BT_AVRCP_COMPANY_ID_BLUETOOTH_SIG, opvu->company_id);
+		opvu->opid_vu = sys_cpu_to_be16(vu_opid);
+		rsp->data_len = sizeof(*opvu);
+	} else {
+		rsp->data_len = 0;
+	}
+
+	err = bt_avrcp_tg_send_passthrough_rsp(default_tg, tg_tid, BT_AVRCP_RSP_ACCEPTED, buf);
+	if (err < 0) {
+		shell_error(sh, "Failed to send passthrough response: %d", err);
+		goto failed;
+	} else {
+		shell_print(sh, "Passthrough opid=0x%02x, state=%s", opid, argv[2]);
+		return 0;
+	}
+
+failed:
+	net_buf_unref(buf);
+	return -ENOEXEC;
+}
+
+static int cmd_send_subunit_info_rsp(const struct shell *sh, int32_t argc, char *argv[])
+{
+	int err;
+
+	if (!avrcp_tg_registered && register_tg_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_tg != NULL) {
+		err = bt_avrcp_tg_send_subunit_info_rsp(default_tg, tg_tid);
+		if (err == 0) {
+			shell_print(sh, "AVRCP send subunit info response");
+		} else {
+			shell_error(sh, "Failed to send subunit info response");
 		}
 	} else {
 		shell_error(sh, "AVRCP is not connected");
@@ -632,6 +806,13 @@ failed:
 	return -ENOEXEC;
 }
 
+#define HELP_NONE "[none]"
+#define HELP_PASSTHROUGH_RSP                                                     \
+	"send_passthrough_rsp <op/opvu> <opid> <state>\n"                        \
+	"op/opvu: passthrough command (normal/passthrough VENDOR UNIQUE)\n"      \
+	"opid: operation identifier (e.g., play/pause or hex value)\n"           \
+	"state: [pressed|released]"
+
 #define HELP_BROWSED_PLAYER_RSP                                                      \
 	"Send SetBrowsedPlayer response\n"					     \
 	"Usage: send_browsed_player_rsp [status] [uid_counter] [num_items] "         \
@@ -654,8 +835,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	tg_cmds,
 	SHELL_CMD_ARG(register_cb, NULL, "register avrcp tg callbacks", cmd_register_tg_cb, 1, 0),
 	SHELL_CMD_ARG(send_unit_rsp, NULL, "send unit info response", cmd_send_unit_info_rsp, 1, 0),
+	SHELL_CMD_ARG(send_subunit_rsp, NULL, HELP_NONE, cmd_send_subunit_info_rsp, 1, 0),
 	SHELL_CMD_ARG(send_browsed_player_rsp, NULL, HELP_BROWSED_PLAYER_RSP,
 		      cmd_send_set_browsed_player_rsp, 1, 5),
+	SHELL_CMD_ARG(send_passthrough_rsp, NULL, HELP_PASSTHROUGH_RSP, cmd_send_passthrough_rsp,
+		      4, 0),
 	SHELL_SUBCMD_SET_END);
 
 static int cmd_avrcp(const struct shell *sh, size_t argc, char **argv)

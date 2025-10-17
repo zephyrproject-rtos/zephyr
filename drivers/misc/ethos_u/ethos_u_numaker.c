@@ -26,8 +26,6 @@ struct ethos_u_numaker_config {
 	void (*irq_config)(const struct device *dev);
 	bool secure_enable;
 	bool privilege_enable;
-	uint8_t flush_mask;
-	uint8_t invalidate_mask;
 };
 
 struct ethos_u_numaker_data {
@@ -80,8 +78,6 @@ static int ethos_u_numaker_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	ethosu_set_basep_cache_mask(drv, config->flush_mask, config->invalidate_mask);
-
 	config->irq_config(dev);
 
 	return 0;
@@ -113,8 +109,6 @@ static int ethos_u_numaker_init(const struct device *dev)
 		.irq_config = ethos_u_numaker_irq_config_##inst,                                   \
 		.secure_enable = DT_INST_PROP(inst, secure_enable),                                \
 		.privilege_enable = DT_INST_PROP(inst, privilege_enable),                          \
-		.flush_mask = DT_INST_PROP(inst, flush_mask),                                      \
-		.invalidate_mask = DT_INST_PROP(inst, invalidate_mask),                            \
 	};                                                                                         \
                                                                                                    \
 	static struct ethos_u_numaker_data ethos_u_numaker_data_##inst;                            \

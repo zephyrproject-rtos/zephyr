@@ -644,6 +644,50 @@ static void unicast_group_create(struct bt_cap_unicast_group **out_unicast_group
 	}
 }
 
+static bool unicast_group_foreach_stream_cb(struct bt_cap_stream *cap_stream, void *user_data)
+{
+	const uint32_t expected_pd = cap_stream->bap_stream.qos->pd;
+	struct bt_cap_unicast_group *unicast_group = user_data;
+	struct bt_bap_unicast_group_info bap_info;
+	struct bt_cap_unicast_group_info cap_info;
+	struct bt_bap_ep_info ep_info;
+	int err;
+
+	err = bt_bap_ep_get_info(cap_stream->bap_stream.ep, &ep_info);
+	if (err != 0) {
+		FAIL("Failed to get EP info: %d\n", err);
+		return true;
+	}
+
+	err = bt_cap_unicast_group_get_info(unicast_group, &cap_info);
+	if (err != 0) {
+		FAIL("Failed to get CAP unicast group info: %d\n", err);
+		return true;
+	}
+
+	err = bt_bap_unicast_group_get_info(cap_info.unicast_group, &bap_info);
+	if (err != 0) {
+		FAIL("Failed to get BAP unicast group info: %d\n", err);
+		return true;
+	}
+
+	if (ep_info.dir == BT_AUDIO_DIR_SINK) {
+		if (bap_info.sink_pd != expected_pd) {
+			FAIL("Unexpected sink PD %u (expected %u)\n", bap_info.sink_pd,
+			     expected_pd);
+			return true;
+		}
+	} else {
+		if (bap_info.source_pd != expected_pd) {
+			FAIL("Unexpected source PD %u (expected %u)\n", bap_info.source_pd,
+			     expected_pd);
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static void unicast_audio_start(struct bt_cap_unicast_group *unicast_group, bool wait)
 {
 	struct bt_cap_unicast_audio_start_stream_param stream_param[2];
@@ -676,6 +720,13 @@ static void unicast_audio_start(struct bt_cap_unicast_group *unicast_group, bool
 		WAIT_FOR_FLAG(flag_started);
 		/* let other devices know we have started what we wanted */
 		backchannel_sync_send_all();
+
+		err = bt_cap_unicast_group_foreach_stream(
+			unicast_group, unicast_group_foreach_stream_cb, unicast_group);
+		if (err != 0) {
+			FAIL("Failed iterate on unicast group: %d\n", err);
+			return;
+		}
 	}
 }
 

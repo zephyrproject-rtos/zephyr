@@ -137,7 +137,7 @@ static void virtio_mmio_write_status_bit(const struct device *dev, int bit)
 static int virtio_mmio_write_driver_feature_bit_range_check(const struct device *dev, int bit,
 							    bool value)
 {
-	if (!IN_RANGE(bit, DEV_TYPE_FEAT_RANGE_0_BEGIN, DEV_TYPE_FEAT_RANGE_0_END) ||
+	if (!IN_RANGE(bit, DEV_TYPE_FEAT_RANGE_0_BEGIN, DEV_TYPE_FEAT_RANGE_0_END) &&
 	    !IN_RANGE(bit, DEV_TYPE_FEAT_RANGE_1_BEGIN, DEV_TYPE_FEAT_RANGE_1_END)) {
 		return -EINVAL;
 	}

@@ -23,11 +23,12 @@ set_property(TARGET linker PROPERTY optimization_speed --entry_list_in_address_o
 set_property(TARGET linker PROPERTY optimization_size --entry_list_in_address_order)
 set_property(TARGET linker PROPERTY optimization_size_aggressive --entry_list_in_address_order)
 
+set_linker_property(TARGET linker PROPERTY undefined "--keep=")
 
 string(APPEND CMAKE_C_LINK_FLAGS --no-wrap-diagnostics)
 
 if(CONFIG_IAR_DATA_INIT)
-  string(APPEND CMAKE_C_LINK_FLAGS " --redirect z_data_copy=__iar_data_init3")
+  string(APPEND CMAKE_C_LINK_FLAGS " --redirect arch_data_copy=__iar_data_init3")
 endif()
 foreach(lang C CXX ASM)
   set(commands "--log modules,libraries,initialization,redirects,sections")

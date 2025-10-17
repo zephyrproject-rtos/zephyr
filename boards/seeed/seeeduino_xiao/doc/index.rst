@@ -134,4 +134,4 @@ References
     https://wiki.seeedstudio.com/Seeeduino-XIAO/#hardware-overview
 
 .. _schematic:
-    https://wiki.seeedstudio.com/Seeeduino-XIAO/#resourses
+    https://wiki.seeedstudio.com/Seeeduino-XIAO/#resources

@@ -10,8 +10,8 @@
 
 /**
  * @file
- *
- * @brief Public APIs for Video.
+ * @ingroup video_controls
+ * @brief Main header file for video controls driver API.
  */
 
 /**

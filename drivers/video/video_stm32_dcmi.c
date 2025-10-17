@@ -136,12 +136,9 @@ static int stm32_dma_init(const struct device *dev)
 	dma_cfg.user_data = &hdma;
 	/* HACK: This field is used to inform driver that it is overridden */
 	dma_cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
-	/* Because of the STREAM OFFSET, the DMA channel given here is from 1 - 8 */
-	ret = dma_config(config->dma.dma_dev,
-			config->dma.channel + STM32_DMA_STREAM_OFFSET, &dma_cfg);
+	ret = dma_config(config->dma.dma_dev, config->dma.channel, &dma_cfg);
 	if (ret != 0) {
-		LOG_ERR("Failed to configure DMA channel %d",
-			config->dma.channel + STM32_DMA_STREAM_OFFSET);
+		LOG_ERR("Failed to configure DMA channel %d", config->dma.channel);
 		return ret;
 	}
 
@@ -155,15 +152,10 @@ static int stm32_dma_init(const struct device *dev)
 	hdma.Init.MemDataAlignment	= DMA_MDATAALIGN_WORD;
 	hdma.Init.Mode			= DMA_CIRCULAR;
 	hdma.Init.Priority		= DMA_PRIORITY_HIGH;
+	hdma.Instance			= STM32_DMA_GET_INSTANCE(config->dma.reg,
+								 config->dma.channel);
 #if defined(CONFIG_SOC_SERIES_STM32F7X) || defined(CONFIG_SOC_SERIES_STM32H7X)
 	hdma.Init.FIFOMode		= DMA_FIFOMODE_DISABLE;
-#endif
-
-#if defined(CONFIG_SOC_SERIES_STM32F7X) || defined(CONFIG_SOC_SERIES_STM32H7X)
-	hdma.Instance = __LL_DMA_GET_STREAM_INSTANCE(config->dma.reg,
-						config->dma.channel);
-#elif defined(CONFIG_SOC_SERIES_STM32L4X)
-	hdma.Instance = __LL_DMA_GET_CHANNEL_INSTANCE(config->dma.reg, config->dma.channel);
 #endif
 
 	/* Initialize DMA HAL */
@@ -188,7 +180,7 @@ static int stm32_dcmi_enable_clock(const struct device *dev)
 	}
 
 	/* Turn on DCMI peripheral clock */
-	return clock_control_on(dcmi_clock, (clock_control_subsys_t *)&config->pclken);
+	return clock_control_on(dcmi_clock, (clock_control_subsys_t)&config->pclken);
 }
 
 static int video_stm32_dcmi_set_fmt(const struct device *dev, struct video_format *fmt)
@@ -202,7 +194,10 @@ static int video_stm32_dcmi_set_fmt(const struct device *dev, struct video_forma
 		return ret;
 	}
 
-	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
+	ret = video_estimate_fmt_size(fmt);
+	if (ret < 0) {
+		return ret;
+	}
 
 	data->fmt = *fmt;
 
@@ -221,7 +216,10 @@ static int video_stm32_dcmi_get_fmt(const struct device *dev, struct video_forma
 		return ret;
 	}
 
-	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
+	ret = video_estimate_fmt_size(fmt);
+	if (ret < 0) {
+		return ret;
+	}
 
 	data->fmt = *fmt;
 
@@ -314,8 +312,8 @@ static int video_stm32_dcmi_get_caps(const struct device *dev, struct video_caps
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
 
-	/* DCMI produces full frames */
-	caps->min_line_count = caps->max_line_count = LINE_COUNT_HEIGHT;
+	/* 2 buffers are needed for DCMI_MODE_CONTINUOUS */
+	caps->min_vbuf_count = 2;
 
 	/* Forward the message to the sensor device */
 	return video_get_caps(config->sensor_dev, caps);

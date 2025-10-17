@@ -253,7 +253,7 @@ zephyr_udc0: &usbotg_fs {
 		ospi-max-frequency = <DT_FREQ_M(26)>; /* for Voltage Range 2 */
 		spi-bus-width = <OSPI_QUAD_MODE>;
 		data-rate = <OSPI_STR_TRANSFER>;
-		writeoc="PP_1_4_4";
+		writeoc = "PP_1_4_4";
 
 		status = "okay";
 

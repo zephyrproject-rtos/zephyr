@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __FLEXSPI_NOR_CONFIG__
-#define __FLEXSPI_NOR_CONFIG__
+#ifndef FLEXSPI_NOR_CONFIG_
+#define FLEXSPI_NOR_CONFIG_
 
 #include <zephyr/types.h>
 #include "fsl_common.h"
@@ -66,129 +66,129 @@
 	(FLEXSPI_LUT_OPERAND0(op0) | FLEXSPI_LUT_NUM_PADS0(pad0) | FLEXSPI_LUT_OPCODE0(cmd0) |     \
 	 FLEXSPI_LUT_OPERAND1(op1) | FLEXSPI_LUT_NUM_PADS1(pad1) | FLEXSPI_LUT_OPCODE1(cmd1))
 
-/* For flexspi_mem_config.serialClkFreq */
+/* For flexspi_mem_config.serial_clk_freq */
 #if defined(CONFIG_SOC_MIMXRT1011)
 enum {
-	kFlexSpiSerialClk_30MHz = 1,
-	kFlexSpiSerialClk_50MHz = 2,
-	kFlexSpiSerialClk_60MHz = 3,
-	kFlexSpiSerialClk_75MHz = 4,
-	kFlexSpiSerialClk_80MHz = 5,
-	kFlexSpiSerialClk_100MHz = 6,
-	kFlexSpiSerialClk_120MHz = 7,
-	kFlexSpiSerialClk_133MHz = 8,
+	FLEXSPI_SERIAL_CLK_30MHZ = 1,
+	FLEXSPI_SERIAL_CLK_50MHZ = 2,
+	FLEXSPI_SERIAL_CLK_60MHZ = 3,
+	FLEXSPI_SERIAL_CLK_75MHZ = 4,
+	FLEXSPI_SERIAL_CLK_80MHZ = 5,
+	FLEXSPI_SERIAL_CLK_100MHZ = 6,
+	FLEXSPI_SERIAL_CLK_120MHZ = 7,
+	FLEXSPI_SERIAL_CLK_133MHZ = 8,
 };
 #elif defined(CONFIG_SOC_MIMXRT1015) || defined(CONFIG_SOC_MIMXRT1021) ||                          \
 	defined(CONFIG_SOC_MIMXRT1024)
 enum {
-	kFlexSpiSerialClk_30MHz = 1,
-	kFlexSpiSerialClk_50MHz = 2,
-	kFlexSpiSerialClk_60MHz = 3,
-	kFlexSpiSerialClk_75MHz = 4,
-	kFlexSpiSerialClk_80MHz = 5,
-	kFlexSpiSerialClk_100MHz = 6,
-	kFlexSpiSerialClk_133MHz = 7,
+	FLEXSPI_SERIAL_CLK_30MHZ = 1,
+	FLEXSPI_SERIAL_CLK_50MHZ = 2,
+	FLEXSPI_SERIAL_CLK_60MHZ = 3,
+	FLEXSPI_SERIAL_CLK_75MHZ = 4,
+	FLEXSPI_SERIAL_CLK_80MHZ = 5,
+	FLEXSPI_SERIAL_CLK_100MHZ = 6,
+	FLEXSPI_SERIAL_CLK_133MHZ = 7,
 };
 #elif defined(CONFIG_SOC_MIMXRT1052) || defined(CONFIG_SOC_SERIES_IMXRT11XX)
 enum {
-	kFlexSpiSerialClk_30MHz = 1,
-	kFlexSpiSerialClk_50MHz = 2,
-	kFlexSpiSerialClk_60MHz = 3,
-	kFlexSpiSerialClk_75MHz = 4,
-	kFlexSpiSerialClk_80MHz = 5,
-	kFlexSpiSerialClk_100MHz = 6,
-	kFlexSpiSerialClk_133MHz = 7,
-	kFlexSpiSerialClk_166MHz = 8,
-	kFlexSpiSerialClk_200MHz = 9,
+	FLEXSPI_SERIAL_CLK_30MHZ = 1,
+	FLEXSPI_SERIAL_CLK_50MHZ = 2,
+	FLEXSPI_SERIAL_CLK_60MHZ = 3,
+	FLEXSPI_SERIAL_CLK_75MHZ = 4,
+	FLEXSPI_SERIAL_CLK_80MHZ = 5,
+	FLEXSPI_SERIAL_CLK_100MHZ = 6,
+	FLEXSPI_SERIAL_CLK_133MHZ = 7,
+	FLEXSPI_SERIAL_CLK_166MHZ = 8,
+	FLEXSPI_SERIAL_CLK_200MHZ = 9,
 };
 #elif defined(CONFIG_SOC_MIMXRT1062) || defined(CONFIG_SOC_MIMXRT1064)
 enum {
-	kFlexSpiSerialClk_30MHz = 1,
-	kFlexSpiSerialClk_50MHz = 2,
-	kFlexSpiSerialClk_60MHz = 3,
-	kFlexSpiSerialClk_75MHz = 4,
-	kFlexSpiSerialClk_80MHz = 5,
-	kFlexSpiSerialClk_100MHz = 6,
-	kFlexSpiSerialClk_120MHz = 7,
-	kFlexSpiSerialClk_133MHz = 8,
-	kFlexSpiSerialClk_166MHz = 9,
+	FLEXSPI_SERIAL_CLK_30MHZ = 1,
+	FLEXSPI_SERIAL_CLK_50MHZ = 2,
+	FLEXSPI_SERIAL_CLK_60MHZ = 3,
+	FLEXSPI_SERIAL_CLK_75MHZ = 4,
+	FLEXSPI_SERIAL_CLK_80MHZ = 5,
+	FLEXSPI_SERIAL_CLK_100MHZ = 6,
+	FLEXSPI_SERIAL_CLK_120MHZ = 7,
+	FLEXSPI_SERIAL_CLK_133MHZ = 8,
+	FLEXSPI_SERIAL_CLK_166MHZ = 9,
 };
 #else
 #error "kFlexSpiSerialClk is not defined for this SoC"
 #endif
 
-/* For flexspi_mem_config.controllerMiscOption */
+/* For flexspi_mem_config.controller_misc_option */
 enum {
-	kFlexSpiClk_SDR,
-	kFlexSpiClk_DDR,
+	FLEXSPI_CLK_SDR,
+	FLEXSPI_CLK_DDR,
 };
 
-/* For flexspi_mem_config.readSampleClkSrc */
+/* For flexspi_mem_config.read_sample_clk_src */
 enum {
-	kFlexSPIReadSampleClk_LoopbackInternally = 0,
-	kFlexSPIReadSampleClk_LoopbackFromDqsPad = 1,
-	kFlexSPIReadSampleClk_LoopbackFromSckPad = 2,
-	kFlexSPIReadSampleClk_ExternalInputFromDqsPad = 3,
+	FLEXSPI_READ_SAMPLE_CLK_LOOPBACK_INTERNALLY = 0,
+	FLEXSPI_READ_SAMPLE_CLK_LOOPBACK_FROM_DQS_PAD = 1,
+	FLEXSPI_READ_SAMPLE_CLK_LOOPBACK_FROM_SCK_PAD = 2,
+	FLEXSPI_READ_SAMPLE_CLK_EXTERNAL_INPUT_FROM_DQS_PAD = 3,
 };
 
-/* For flexspi_mem_config.controllerMiscOption */
+/* For flexspi_mem_config.controller_misc_option */
 enum {
 	/* !< Bit for Differential clock enable */
-	kFlexSpiMiscOffset_DiffClkEnable = 0,
+	FLEXSPI_MISC_OFFSET_DIFF_CLK_ENABLE = 0,
 	/* !< Bit for CK2 enable */
-	kFlexSpiMiscOffset_Ck2Enable = 1,
+	FLEXSPI_MISC_OFFSET_CK2_ENABLE = 1,
 	/* !< Bit for Parallel mode enable */
-	kFlexSpiMiscOffset_ParallelEnable = 2,
+	FLEXSPI_MISC_OFFSET_PARALLEL_ENABLE = 2,
 	/* !< Bit for Word Addressable enable */
-	kFlexSpiMiscOffset_WordAddressableEnable = 3,
+	FLEXSPI_MISC_OFFSET_WORD_ADDRESSABLE_ENABLE = 3,
 	/* !< Bit for Safe Configuration Frequency enable */
-	kFlexSpiMiscOffset_SafeConfigFreqEnable = 4,
+	FLEXSPI_MISC_OFFSET_SAFE_CONFIG_FREQ_ENABLE = 4,
 	/* !< Bit for Pad setting override enable */
-	kFlexSpiMiscOffset_PadSettingOverrideEnable = 5,
+	FLEXSPI_MISC_OFFSET_PAD_SETTING_OVERRIDE_ENABLE = 5,
 	/* !< Bit for DDR clock configuration indication. */
-	kFlexSpiMiscOffset_DdrModeEnable = 6,
+	FLEXSPI_MISC_OFFSET_DDR_MODE_ENABLE = 6,
 };
 
-/* For flexspi_mem_config.deviceType */
+/* For flexspi_mem_config.device_type */
 enum {
 	/* !< Flash devices are Serial NOR */
-	kFlexSpiDeviceType_SerialNOR = 1,
+	FLEXSPI_DEVICE_TYPE_SERIAL_NOR = 1,
 	/* !< Flash devices are Serial NAND */
-	kFlexSpiDeviceType_SerialNAND = 2,
+	FLEXSPI_DEVICE_TYPE_SERIAL_NAND = 2,
 	/* !< Flash devices are Serial RAM/HyperFLASH */
-	kFlexSpiDeviceType_SerialRAM = 3,
+	FLEXSPI_DEVICE_TYPE_SERIAL_RAM = 3,
 	/* !< Flash device is MCP device, A1 is Serial NOR, A2 is Serial NAND */
-	kFlexSpiDeviceType_MCP_NOR_NAND = 0x12,
+	FLEXSPI_DEVICE_TYPE_MCP_NOR_NAND = 0x12,
 	/* !< Flash device is MCP device, A1 is Serial NOR, A2 is Serial RAMs */
-	kFlexSpiDeviceType_MCP_NOR_RAM = 0x13,
+	FLEXSPI_DEVICE_TYPE_MCP_NOR_RAM = 0x13,
 };
 
-/* For flexspi_mem_config.sflashPadType */
+/* For flexspi_mem_config.sflash_pad_type */
 enum {
-	kSerialFlash_1Pad = 1,
-	kSerialFlash_2Pads = 2,
-	kSerialFlash_4Pads = 4,
-	kSerialFlash_8Pads = 8,
+	SERIAL_FLASH_1_PAD = 1,
+	SERIAL_FLASH_2_PADS = 2,
+	SERIAL_FLASH_4_PADS = 4,
+	SERIAL_FLASH_8_PADS = 8,
 };
 
 enum {
 	/* !< Generic command, for example: configure dummy cycles, drive strength, etc */
-	kDeviceConfigCmdType_Generic,
+	DEVICE_CONFIG_CMD_TYPE_GENERIC,
 	/* !< Quad Enable command */
-	kDeviceConfigCmdType_QuadEnable,
+	DEVICE_CONFIG_CMD_TYPE_QUAD_ENABLE,
 	/* !< Switch from SPI to DPI/QPI/OPI mode */
-	kDeviceConfigCmdType_Spi2Xpi,
+	DEVICE_CONFIG_CMD_TYPE_SPI2XPI,
 	/* !< Switch from DPI/QPI/OPI to SPI mode */
-	kDeviceConfigCmdType_Xpi2Spi,
+	DEVICE_CONFIG_CMD_TYPE_XPI2SPI,
 	/* !< Switch to 0-4-4/0-8-8 mode */
-	kDeviceConfigCmdType_Spi2NoCmd,
+	DEVICE_CONFIG_CMD_TYPE_SPI2NOCMD,
 	/* !< Reset device command */
-	kDeviceConfigCmdType_Reset,
+	DEVICE_CONFIG_CMD_TYPE_RESET,
 };
 
 struct flexspi_lut_seq_t {
-	uint8_t seqNum;
-	uint8_t seqId;
+	uint8_t seq_num;
+	uint8_t seq_id;
 	uint16_t reserved;
 };
 
@@ -200,89 +200,89 @@ struct flexspi_mem_config_t {
 	/* !< [0x008-0x00b] Reserved for future use */
 	uint32_t reserved0;
 	/* !< [0x00c-0x00c] Read Sample Clock Source, valid value: 0/1/3 */
-	uint8_t readSampleClkSrc;
+	uint8_t read_sample_clk_src;
 	/* !< [0x00d-0x00d] CS hold time, default value: 3 */
-	uint8_t csHoldTime;
+	uint8_t cs_hold_time;
 	/* !< [0x00e-0x00e] CS setup time, default value: 3 */
-	uint8_t csSetupTime;
+	uint8_t cs_setup_time;
 	/* !< [0x00f-0x00f] Column Address with, for HyperBus protocol, it is fixed to 3, For */
-	uint8_t columnAddressWidth;
+	uint8_t column_address_width;
 	/* ! Serial NAND, need to refer to datasheet */
 	/* !< [0x010-0x010] Device Mode Configure enable flag, 1 - Enable, 0 - Disable */
-	uint8_t deviceModeCfgEnable;
+	uint8_t device_mode_cfg_enable;
 	/* !< [0x011-0x011] Specify the configuration command
 	 * type:Quad Enable, DPI/QPI/OPI switch,
 	 */
-	uint8_t deviceModeType;
+	uint8_t device_mode_type;
 	/* ! Generic configuration, etc. */
 	/* !< [0x012-0x013] Wait time for all configuration commands, unit: 100us, Used for */
-	uint16_t waitTimeCfgCommands;
+	uint16_t wait_time_cfg_commands;
 	/* ! DPI/QPI/OPI switch or reset command */
 	/* !< [0x014-0x017] Device mode sequence info, [7:0] - LUT sequence id, [15:8] - LUt */
-	struct flexspi_lut_seq_t deviceModeSeq;
+	struct flexspi_lut_seq_t device_mode_seq;
 	/* ! sequence number, [31:16] Reserved */
 	/* !< [0x018-0x01b] Argument/Parameter for device configuration */
-	uint32_t deviceModeArg;
+	uint32_t device_mode_arg;
 	/* !< [0x01c-0x01c] Configure command Enable Flag, 1 - Enable, 0 - Disable */
-	uint8_t configCmdEnable;
+	uint8_t config_cmd_enable;
 	/* !< [0x01d-0x01f] Configure Mode Type, similar as deviceModeTpe */
-	uint8_t configModeType[3];
+	uint8_t config_mode_type[3];
 	/* !< [0x020-0x02b] Sequence info for Device Configuration command, similar as
 	 * deviceModeSeq
 	 */
-	struct flexspi_lut_seq_t configCmdSeqs[3];
+	struct flexspi_lut_seq_t config_cmd_seqs[3];
 	/* !< [0x02c-0x02f] Reserved for future use */
 	uint32_t reserved1;
 	/* !< [0x030-0x03b] Arguments/Parameters for device Configuration commands */
-	uint32_t configCmdArgs[3];
+	uint32_t config_cmd_args[3];
 	/* !< [0x03c-0x03f] Reserved for future use */
 	uint32_t reserved2;
 	/* !< [0x040-0x043] Controller Misc Options, see Misc feature bit definitions for more */
-	uint32_t controllerMiscOption;
+	uint32_t controller_misc_option;
 	/* ! details */
 	/* !< [0x044-0x044] Device Type:  See Flash Type Definition for more details */
-	uint8_t deviceType;
+	uint8_t device_type;
 	/* !< [0x045-0x045] Serial Flash Pad Type: 1 - Single, 2 - Dual, 4 - Quad, 8 - Octal */
-	uint8_t sflashPadType;
+	uint8_t sflash_pad_type;
 	/* !< [0x046-0x046] Serial Flash Frequency, device specific definitions, See System Boot */
-	uint8_t serialClkFreq;
+	uint8_t serial_clk_freq;
 	/* ! Chapter for more details */
 	/* !< [0x047-0x047] LUT customization Enable, it is required if the program/erase cannot */
-	uint8_t lutCustomSeqEnable;
+	uint8_t lut_custom_seq_enable;
 	/* ! be done using 1 LUT sequence, currently, only applicable to HyperFLASH */
 	/* !< [0x048-0x04f] Reserved for future use */
 	uint32_t reserved3[2];
 	/* !< [0x050-0x053] Size of Flash connected to A1 */
-	uint32_t sflashA1Size;
+	uint32_t sflash_a1_size;
 	/* !< [0x054-0x057] Size of Flash connected to A2 */
-	uint32_t sflashA2Size;
+	uint32_t sflash_a2_size;
 	/* !< [0x058-0x05b] Size of Flash connected to B1 */
-	uint32_t sflashB1Size;
+	uint32_t sflash_b1_size;
 	/* !< [0x05c-0x05f] Size of Flash connected to B2 */
-	uint32_t sflashB2Size;
+	uint32_t sflash_b2_size;
 	/* !< [0x060-0x063] CS pad setting override value */
-	uint32_t csPadSettingOverride;
+	uint32_t cs_pad_setting_override;
 	/* !< [0x064-0x067] SCK pad setting override value */
-	uint32_t sclkPadSettingOverride;
+	uint32_t sclk_pad_setting_override;
 	/* !< [0x068-0x06b] data pad setting override value */
-	uint32_t dataPadSettingOverride;
+	uint32_t data_pad_setting_override;
 	/* !< [0x06c-0x06f] DQS pad setting override value */
-	uint32_t dqsPadSettingOverride;
+	uint32_t dqs_pad_setting_override;
 	/* !< [0x070-0x073] Timeout threshold for read status command */
-	uint32_t timeoutInMs;
+	uint32_t timeout_in_ms;
 	/* !< [0x074-0x077] CS deselect interval between two commands */
-	uint32_t commandInterval;
+	uint32_t command_interval;
 	/* !< [0x078-0x07b] CLK edge to data valid time for PORT A and PORT B, in terms of 0.1ns */
-	uint16_t dataValidTime[2];
+	uint16_t data_valid_time[2];
 	/* !< [0x07c-0x07d] Busy offset, valid value: 0-31 */
-	uint16_t busyOffset;
+	uint16_t busy_offset;
 	/* !< [0x07e-0x07f] Busy flag polarity, 0 - busy flag is 1 when flash device is busy, 1 - */
-	uint16_t busyBitPolarity;
+	uint16_t busy_bit_polarity;
 	/* ! busy flag is 0 when flash device is busy */
 	/* !< [0x080-0x17f] Lookup table holds Flash command sequences */
-	uint32_t lookupTable[64];
+	uint32_t lookup_table[64];
 	/* !< [0x180-0x1af] Customizable LUT Sequences */
-	struct flexspi_lut_seq_t lutCustomSeq[12];
+	struct flexspi_lut_seq_t lut_custom_seq[12];
 	/* !< [0x1b0-0x1bf] Reserved for future use */
 	uint32_t reserved4[4];
 };
@@ -311,34 +311,34 @@ struct flexspi_mem_config_t {
 
 struct flexspi_nor_config_t {
 	/* !< Common memory configuration info via FlexSPI */
-	struct flexspi_mem_config_t memConfig;
+	struct flexspi_mem_config_t mem_config;
 	/* !< Page size of Serial NOR */
-	uint32_t pageSize;
+	uint32_t page_size;
 	/* !< Sector size of Serial NOR */
-	uint32_t sectorSize;
+	uint32_t sector_size;
 	/* !< Clock frequency for IP command */
-	uint8_t ipcmdSerialClkFreq;
+	uint8_t ipcmd_serial_clk_freq;
 	/* !< Sector/Block size is the same */
-	uint8_t isUniformBlockSize;
+	uint8_t is_uniform_block_size;
 	/* !< Reserved for future use */
 	uint8_t reserved0[2];
 	/* !< Serial NOR Flash type: 0/1/2/3 */
-	uint8_t serialNorType;
+	uint8_t serial_nor_type;
 	/* !< Need to exit NoCmd mode before other IP command */
-	uint8_t needExitNoCmdMode;
+	uint8_t need_exit_nocmd_mode;
 	/* !< Half the Serial Clock for non-read command: true/false */
-	uint8_t halfClkForNonReadCmd;
+	uint8_t half_clk_for_non_read_cmd;
 	/* !< Need to Restore NoCmd mode after IP command execution */
-	uint8_t needRestoreNoCmdMode;
+	uint8_t need_restore_nocmd_mode;
 	/* !< Block size */
-	uint32_t blockSize;
+	uint32_t block_size;
 	/* !< Reserved for future use */
 	uint32_t reserve2[11];
 };
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif /* FLEXSPI_NOR_CONFIG_ */
 
 #ifdef __cplusplus
 }

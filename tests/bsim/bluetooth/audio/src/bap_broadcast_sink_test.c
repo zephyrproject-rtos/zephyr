@@ -801,7 +801,7 @@ static void test_broadcast_sync(const uint8_t broadcast_code[BT_ISO_BROADCAST_CO
 		return;
 	}
 
-	stream_sync_cnt = POPCOUNT(bis_index_bitfield);
+	stream_sync_cnt = sys_count_bits(&bis_index_bitfield, sizeof(bis_index_bitfield));
 }
 
 static void test_broadcast_sync_inval(void)

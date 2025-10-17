@@ -6,7 +6,6 @@
 
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
-#include <ksched.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 

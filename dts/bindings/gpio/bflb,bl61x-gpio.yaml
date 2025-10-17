@@ -1,0 +1,24 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: BouffaloLab GPIO node for BL61X serie
+
+compatible: "bflb,bl61x-gpio"
+
+include:
+  - name: base.yaml
+  - name: gpio-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

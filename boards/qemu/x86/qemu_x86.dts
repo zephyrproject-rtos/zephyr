@@ -114,7 +114,6 @@
 	ieee802154: ieee802154 {
 		compatible = "zephyr,ieee802154-uart-pipe";
 	};
-
 };
 
 &uart0 {
@@ -137,7 +136,6 @@
 };
 
 &flash_sim0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -156,10 +154,12 @@
 			label = "image-0";
 			reg = <0x00011000 0x00010000>;
 		};
+
 		slot1_partition: partition@21000 {
 			label = "image-1";
 			reg = <0x00021000 0x00010000>;
 		};
+
 		eepromemu_partition: partition@31000 {
 			label = "eeprom-emu";
 			reg = <0x00031000 0x00010000>;

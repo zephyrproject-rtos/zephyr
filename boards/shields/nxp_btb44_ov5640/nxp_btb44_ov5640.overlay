@@ -6,7 +6,7 @@
 
 #include <zephyr/dt-bindings/video/video-interfaces.h>
 
-/{
+/ {
 	chosen {
 		zephyr,camera = &nxp_csi;
 	};

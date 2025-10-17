@@ -74,7 +74,7 @@ struct z_heap {
 	size_t allocated_bytes;
 	size_t max_allocated_bytes;
 #endif
-	struct z_heap_bucket buckets[0];
+	struct z_heap_bucket buckets[];
 };
 
 static inline bool big_heap_chunks(chunksz_t chunks)

@@ -13,8 +13,8 @@
 &i2s0_default {
 	group1 {
 		pinmux = <I2S0_O_WS_GPIO33>,
-				<I2S0_O_BCK_GPIO32>,
-				<I2S0_O_SD_GPIO27>;
+			 <I2S0_O_BCK_GPIO32>,
+			 <I2S0_O_SD_GPIO27>;
 		output-enable;
 	};
 	group2 {

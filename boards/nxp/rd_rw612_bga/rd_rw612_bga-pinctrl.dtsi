@@ -24,9 +24,9 @@
 	pinmux_flexcomm0_spi: pinmux_flexcomm0_spi {
 		group0 {
 			pinmux = <IO_MUX_FC0_SPI_SS0_IO0>,
-				<IO_MUX_FC0_SPI_SS0_IO2>,
-				<IO_MUX_FC0_SPI_SS0_IO3>,
-				<IO_MUX_FC0_SPI_SS0_IO4>;
+				 <IO_MUX_FC0_SPI_SS0_IO2>,
+				 <IO_MUX_FC0_SPI_SS0_IO3>,
+				 <IO_MUX_FC0_SPI_SS0_IO4>;
 			slew-rate = "ultra";
 		};
 	};
@@ -42,9 +42,9 @@
 	pinmux_dmic0: pinmux_dmic0 {
 		group0 {
 			pinmux = <IO_MUX_PDM_IO51
-				IO_MUX_PDM_IO52
-				IO_MUX_PDM_IO53
-				IO_MUX_PDM_IO54>;
+				  IO_MUX_PDM_IO52
+				  IO_MUX_PDM_IO53
+				  IO_MUX_PDM_IO54>;
 			slew-rate = "fast";
 		};
 	};
@@ -52,11 +52,11 @@
 	pinmux_lcdic: pinmux_lcdic {
 		group0 {
 			pinmux = <IO_MUX_LCD_SPI_IO44>,
-				<IO_MUX_LCD_SPI_IO45>,
-				<IO_MUX_LCD_SPI_IO46>,
-				<IO_MUX_LCD_SPI_IO47>,
-				<IO_MUX_LCD_SPI_IO48>,
-				<IO_MUX_LCD_SPI_IO49>;
+				 <IO_MUX_LCD_SPI_IO45>,
+				 <IO_MUX_LCD_SPI_IO46>,
+				 <IO_MUX_LCD_SPI_IO47>,
+				 <IO_MUX_LCD_SPI_IO48>,
+				 <IO_MUX_LCD_SPI_IO49>;
 			slew-rate = "ultra";
 		};
 	};
@@ -64,11 +64,11 @@
 	pinmux_flexspi: pinmux_flexspi {
 		group0 {
 			pinmux = <IO_MUX_QUAD_SPI_FLASH_IO28
-				IO_MUX_QUAD_SPI_FLASH_IO30
-				IO_MUX_QUAD_SPI_FLASH_IO31
-				IO_MUX_QUAD_SPI_FLASH_IO32
-				IO_MUX_QUAD_SPI_FLASH_IO33
-				IO_MUX_QUAD_SPI_FLASH_IO34>;
+				  IO_MUX_QUAD_SPI_FLASH_IO30
+				  IO_MUX_QUAD_SPI_FLASH_IO31
+				  IO_MUX_QUAD_SPI_FLASH_IO32
+				  IO_MUX_QUAD_SPI_FLASH_IO33
+				  IO_MUX_QUAD_SPI_FLASH_IO34>;
 			slew-rate = "ultra";
 		};
 
@@ -80,11 +80,11 @@
 
 		group2 {
 			pinmux = <IO_MUX_QUAD_SPI_PSRAM_IO35
-				IO_MUX_QUAD_SPI_PSRAM_IO36
-				IO_MUX_QUAD_SPI_PSRAM_IO38
-				IO_MUX_QUAD_SPI_PSRAM_IO39
-				IO_MUX_QUAD_SPI_PSRAM_IO40
-				IO_MUX_QUAD_SPI_PSRAM_IO41>;
+				  IO_MUX_QUAD_SPI_PSRAM_IO36
+				  IO_MUX_QUAD_SPI_PSRAM_IO38
+				  IO_MUX_QUAD_SPI_PSRAM_IO39
+				  IO_MUX_QUAD_SPI_PSRAM_IO40
+				  IO_MUX_QUAD_SPI_PSRAM_IO41>;
 			slew-rate = "normal";
 		};
 
@@ -98,10 +98,10 @@
 	pinmux_enet: pinmux_enet {
 		group0 {
 			pinmux = <IO_MUX_ENET_CLK
-				IO_MUX_ENET_RX
-				IO_MUX_ENET_TX
-				IO_MUX_GPIO21
-				IO_MUX_GPIO55>;
+				  IO_MUX_ENET_RX
+				  IO_MUX_ENET_TX
+				  IO_MUX_GPIO21
+				  IO_MUX_GPIO55>;
 			slew-rate = "fast";
 		};
 	};

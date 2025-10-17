@@ -14,6 +14,6 @@ supported:
   - spi
   - arduino_spi
   - usb_device
-ram: 192
-flash: 512
+ram: 128
+flash: 168
 vendor: st

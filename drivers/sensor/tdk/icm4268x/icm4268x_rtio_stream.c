@@ -55,8 +55,10 @@ void icm4268x_submit_stream(const struct device *sensor, struct rtio_iodev_sqe *
 	data->streaming_sqe = iodev_sqe;
 }
 
-static void icm4268x_complete_cb(struct rtio *r, const struct rtio_sqe *sqe, void *arg)
+static void icm4268x_complete_cb(struct rtio *r, const struct rtio_sqe *sqe, int result, void *arg)
 {
+	ARG_UNUSED(result);
+
 	const struct device *dev = arg;
 	struct icm4268x_dev_data *drv_data = dev->data;
 	const struct icm4268x_dev_cfg *drv_cfg = dev->config;
@@ -67,8 +69,11 @@ static void icm4268x_complete_cb(struct rtio *r, const struct rtio_sqe *sqe, voi
 	gpio_pin_interrupt_configure_dt(&drv_cfg->gpio_int1, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
-static void icm4268x_fifo_count_cb(struct rtio *r, const struct rtio_sqe *sqe, void *arg)
+static void icm4268x_fifo_count_cb(struct rtio *r, const struct rtio_sqe *sqe,
+				   int result, void *arg)
 {
+	ARG_UNUSED(result);
+
 	const struct device *dev = arg;
 	struct icm4268x_dev_data *drv_data = dev->data;
 	const struct icm4268x_dev_cfg *drv_cfg = dev->config;
@@ -201,8 +206,11 @@ icm4268x_get_read_config_trigger(const struct sensor_read_config *cfg,
 	return NULL;
 }
 
-static void icm4268x_int_status_cb(struct rtio *r, const struct rtio_sqe *sqr, void *arg)
+static void icm4268x_int_status_cb(struct rtio *r, const struct rtio_sqe *sqr,
+				   int result, void *arg)
 {
+	ARG_UNUSED(result);
+
 	const struct device *dev = arg;
 	struct icm4268x_dev_data *drv_data = dev->data;
 	const struct icm4268x_dev_cfg *drv_cfg = dev->config;

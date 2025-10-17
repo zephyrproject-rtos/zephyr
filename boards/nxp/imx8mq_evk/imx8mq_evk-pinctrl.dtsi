@@ -12,10 +12,9 @@
 	uart2_default: uart2_default {
 		group0 {
 			pinmux = <&iomuxc_uart2_rxd_uart_rx_uart2_rx>,
-				<&iomuxc_uart2_txd_uart_tx_uart2_tx>;
+				 <&iomuxc_uart2_txd_uart_tx_uart2_tx>;
 			slew-rate = "fast";
 			drive-strength = "45-ohm";
 		};
 	};
-
 };

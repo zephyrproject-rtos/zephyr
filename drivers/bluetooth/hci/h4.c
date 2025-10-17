@@ -13,6 +13,7 @@
 #include <zephyr/arch/cpu.h>
 
 #include <zephyr/init.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/byteorder.h>
@@ -70,6 +71,10 @@ struct h4_config {
 	k_thread_stack_t *rx_thread_stack;
 	size_t rx_thread_stack_size;
 	struct k_thread *rx_thread;
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+	struct gpio_dt_spec reset;
+	uint16_t reset_ms;
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios) */
 };
 
 static inline void h4_get_type(const struct device *dev)
@@ -523,6 +528,14 @@ static int h4_open(const struct device *dev, bt_hci_recv_t recv)
 
 	uart_irq_callback_user_data_set(cfg->uart, bt_uart_isr, (void *)dev);
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+	if (cfg->reset.port) {
+		(void)gpio_pin_configure_dt(&cfg->reset, GPIO_OUTPUT_ACTIVE);
+		k_sleep(K_MSEC(cfg->reset_ms));
+		gpio_pin_set_dt(&cfg->reset, 0);
+	}
+#endif
+
 	tid = k_thread_create(cfg->rx_thread, cfg->rx_thread_stack,
 			      cfg->rx_thread_stack_size,
 			      rx_thread, (void *)dev, NULL, NULL,
@@ -601,6 +614,10 @@ static DEVICE_API(bt_hci, h4_driver_api) = {
 		.rx_thread_stack = rx_thread_stack_##inst, \
 		.rx_thread_stack_size = K_KERNEL_STACK_SIZEOF(rx_thread_stack_##inst), \
 		.rx_thread = &rx_thread_##inst, \
+		COND_CODE_1(DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios), \
+			(.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}), \
+			.reset_ms = DT_INST_PROP_OR(0, reset_assert_duration_ms, 0), \
+		), ()) \
 	}; \
 	static struct h4_data h4_data_##inst = { \
 		.rx = { \

@@ -76,16 +76,16 @@
 	lpuart2_default: lpuart2_default {
 		group0 {
 			pinmux = <&iomuxc_uart2_rx_uart0_rts_b>,
-				<&iomuxc_uart2_tx_uart0_cts_b>;
+				 <&iomuxc_uart2_tx_uart0_cts_b>;
 		};
 	};
 
 	sai1_default: sai1_default {
 		group0 {
 			pinmux = <&iomuxc_aud_sai1_rxd_sai1_rxd>,
-				<&iomuxc_aud_sai1_txc_sai1_txc>,
-				<&iomuxc_aud_sai1_txd_sai1_txd>,
-				<&iomuxc_aud_sai1_txfs_sai1_txfs>;
+				 <&iomuxc_aud_sai1_txc_sai1_txc>,
+				 <&iomuxc_aud_sai1_txd_sai1_txd>,
+				 <&iomuxc_aud_sai1_txfs_sai1_txfs>;
 		};
 	};
 

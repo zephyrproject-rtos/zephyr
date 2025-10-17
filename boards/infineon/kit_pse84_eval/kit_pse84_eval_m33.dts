@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <infineon/edge/mpns/pse846gps2dbzc4a_s.dtsi>
+#include <infineon/edge/pse84/pse84.cm33.dtsi>
+#include <infineon/edge/pse84/system_clocks.dtsi>
+
+#include "kit_pse84_eval_common.dtsi"
+#include "kit_pse84_eval_memory_map.dtsi"
+
+/ {
+	model = "kit_pse84_eval";
+	compatible = "kit_pse84_eval";
+
+	aliases {
+		led0 = &led_red;
+		led1 = &led_green;
+		led2 = &led_blue;
+	};
+
+	chosen {
+		zephyr,flash = &m33s_xip;
+		zephyr,sram = &m33s_data;
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+	};
+};

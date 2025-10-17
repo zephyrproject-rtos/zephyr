@@ -45,7 +45,7 @@ int siwx91x_status(const struct device *dev, struct wifi_iface_status *status)
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
 	sl_si91x_rsp_wireless_info_t wlan_info = { };
 	struct siwx91x_dev *sidev = dev->data;
-	uint8_t join_config;
+	sl_wifi_mfp_mode_t mfp;
 	int32_t rssi;
 	int ret;
 
@@ -83,25 +83,15 @@ int siwx91x_status(const struct device *dev, struct wifi_iface_status *status)
 		status->channel = wlan_info.channel_number;
 		status->twt_capable = true;
 
-		ret = sl_si91x_get_join_configuration(interface, &join_config);
+		ret = sl_wifi_get_mfp(interface, &mfp);
 		if (ret) {
-			LOG_ERR("Failed to get join configuration: 0x%x", ret);
+			LOG_ERR("Failed to get MFP configuration: 0x%x", ret);
 			return -EINVAL;
 		}
-
-		if (wlan_info.sec_type == SL_WIFI_WPA3) {
-			status->mfp = WIFI_MFP_REQUIRED;
-		} else if (wlan_info.sec_type == SL_WIFI_WPA3_TRANSITION) {
-			status->mfp = WIFI_MFP_OPTIONAL;
-		} else if (wlan_info.sec_type == SL_WIFI_WPA2) {
-			if (join_config & SL_SI91X_JOIN_FEAT_MFP_CAPABLE_REQUIRED) {
-				status->mfp = WIFI_MFP_REQUIRED;
-			} else {
-				status->mfp = WIFI_MFP_OPTIONAL;
-			}
-		} else {
-			status->mfp = WIFI_MFP_DISABLE;
-		}
+		/* The Wiseconnect mfp values match the values expected by
+		 * Zephyr's mfp, even though the enum type differs.
+		 */
+		status->mfp = mfp;
 
 		ret = sl_wifi_get_signal_strength(SL_WIFI_CLIENT_INTERFACE, &rssi);
 		if (ret) {

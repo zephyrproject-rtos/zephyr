@@ -10,4 +10,4 @@
 	status = "okay";
 };
 
-test_dma0: &dma { };
+test_dma0: &dma {};

@@ -6,7 +6,6 @@
 #include <zephyr/dt-bindings/led/led.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
-
 / {
 	model = "Adafruit MacroPad RP2040";
 	compatible = "adafruit,macropad-rp2040";
@@ -104,6 +103,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
 			label = "LED 0";

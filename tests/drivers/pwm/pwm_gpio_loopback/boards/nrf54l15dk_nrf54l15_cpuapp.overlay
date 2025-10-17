@@ -11,8 +11,8 @@
 / {
 	zephyr,user {
 		pwms = <&pwm20 0 160000 PWM_POLARITY_NORMAL>,
-			<&pwm20 1 160000 PWM_POLARITY_NORMAL>,
-			<&pwm20 2 160000 PWM_POLARITY_NORMAL>;
+		       <&pwm20 1 160000 PWM_POLARITY_NORMAL>,
+		       <&pwm20 2 160000 PWM_POLARITY_NORMAL>;
 		gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>,
 			<&gpio1 11 GPIO_ACTIVE_HIGH>,
 			<&gpio1 13 GPIO_ACTIVE_HIGH>;
@@ -30,9 +30,9 @@
 
 	pwm20_sleep: pwm20_sleep {
 		group1 {
-		psels = <NRF_PSEL(PWM_OUT0, 1, 8)>,
-			<NRF_PSEL(PWM_OUT1, 1, 10)>,
-			<NRF_PSEL(PWM_OUT2, 1, 12)>;
+			psels = <NRF_PSEL(PWM_OUT0, 1, 8)>,
+				<NRF_PSEL(PWM_OUT1, 1, 10)>,
+				<NRF_PSEL(PWM_OUT2, 1, 12)>;
 		};
 	};
 };

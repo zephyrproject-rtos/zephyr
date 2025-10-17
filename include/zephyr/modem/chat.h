@@ -338,6 +338,14 @@ int modem_chat_init(struct modem_chat *chat, const struct modem_chat_config *con
 int modem_chat_attach(struct modem_chat *chat, struct modem_pipe *pipe);
 
 /**
+ * @brief Check if a script is running
+ * @param chat Chat instance
+ * @returns true if a script is currently running
+ * @returns false if a script is not currently running
+ */
+bool modem_chat_is_running(struct modem_chat *chat);
+
+/**
  * @brief Run script asynchronously
  * @param chat Chat instance
  * @param script Script to run

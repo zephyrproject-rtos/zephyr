@@ -1,0 +1,23 @@
+common:
+  tags: cpu_freq
+
+tests:
+  # Use the SoC version of cpu_freq_pstate_set()
+  subsys.cpu_freq.soc:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
+
+  # Use the stub version of cpu_freq_pstate_set()
+  subsys.cpu_freq.stub:
+    extra_dtc_overlay_files:
+      - pstate-stub.overlay
+    platform_allow:
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+    integration_platforms:
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+    extra_configs:
+      - CONFIG_CPU_FREQ_PSTATE_SET_STUB=y

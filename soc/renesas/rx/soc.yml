@@ -10,3 +10,6 @@ family:
       - name: rx261
         socs:
           - name: r5f52618bgfp
+      - name: rx26t
+        socs:
+          - name: r5f526tfddfp

@@ -1,0 +1,35 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_PSE84
+	select ARM
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select CPU_HAS_ARM_MPU
+	select BUILD_OUTPUT_HEX
+	select BUILD_OUTPUT_BIN
+	select DYNAMIC_INTERRUPTS
+	select SOC_EARLY_INIT_HOOK
+
+config SOC_SERIES_PSE84_M33
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_SAU
+	select ARM_TRUSTZONE_M
+	select ARCH_HAS_TRUSTED_EXECUTION
+
+config SOC_SERIES_PSE84_M55
+	select CPU_CORTEX_M55
+
+config SOC_SERIES_PSE84_M33
+	select SOC_LATE_INIT_HOOK
+
+if SOC_SERIES_PSE84_M33
+
+config SOC_PSE84_M55_ENABLE
+	bool "pse84 m55 core is enabled during setup"
+	help
+	  This option enables the m55 core on pse84, by m33 core.
+
+endif # SOC_SERIES_PSE84_M33

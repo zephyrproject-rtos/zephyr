@@ -6,7 +6,6 @@
 
 #include <st/n6/stm32n6.dtsi>
 
-
 / {
 	soc {
 		compatible = "st,stm32n657", "st,stm32n6", "simple-bus";

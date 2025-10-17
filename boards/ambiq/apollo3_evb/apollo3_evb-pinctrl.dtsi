@@ -12,16 +12,19 @@
 		group1 {
 			pinmux = <UART0TX_P22>;
 		};
+
 		group2 {
 			pinmux = <UART0RX_P23>;
 			input-enable;
 		};
 	};
+
 	itm_default: itm_default {
 		group1 {
 			pinmux = <SWO_P41>;
 		};
 	};
+
 	i2c0_default: i2c0_default {
 		group1 {
 			pinmux = <M0SCL_P5>, <M0SDAWIR3_P6>;
@@ -30,6 +33,7 @@
 			bias-pull-up;
 		};
 	};
+
 	i2c1_default: i2c1_default {
 		group1 {
 			pinmux = <M1SCL_P8>, <M1SDAWIR3_P9>;
@@ -38,6 +42,7 @@
 			bias-pull-up;
 		};
 	};
+
 	i2c2_default: i2c2_default {
 		group1 {
 			pinmux = <M2SCL_P27>, <M2SDAWIR3_P25>;
@@ -46,6 +51,7 @@
 			bias-pull-up;
 		};
 	};
+
 	i2c3_default: i2c3_default {
 		group1 {
 			pinmux = <M3SCL_P42>, <M3SDAWIR3_P43>;
@@ -54,6 +60,7 @@
 			bias-pull-up;
 		};
 	};
+
 	i2c4_default: i2c4_default {
 		group1 {
 			pinmux = <M4SCL_P39>, <M4SDAWIR3_P40>;
@@ -62,6 +69,7 @@
 			bias-pull-up;
 		};
 	};
+
 	i2c5_default: i2c5_default {
 		group1 {
 			pinmux = <M5SCL_P48>, <M5SDAWIR3_P49>;
@@ -70,50 +78,57 @@
 			bias-pull-up;
 		};
 	};
+
 	spid0_default: spid0_default {
 		group1 {
 			pinmux = <SLSCK_P0>, <SLMISO_P2>, <SLMOSI_P1>, <SLNCE_P3>;
 		};
 	};
+
 	spi0_default: spi0_default {
 		group1 {
 			pinmux = <M0SCK_P5>, <M0MISO_P6>, <M0MOSI_P7>;
 		};
 	};
+
 	spi1_default: spi1_default {
 		group1 {
 			pinmux = <M1SCK_P8>, <M1MISO_P9>, <M1MOSI_P10>;
 		};
 	};
+
 	spi2_default: spi2_default {
 		group1 {
 			pinmux = <M2SCK_P27>, <M2MISO_P25>, <M2MOSI_P28>;
 		};
 	};
+
 	spi3_default: spi3_default {
 		group1 {
 			pinmux = <M3SCK_P42>, <M3MISO_P43>, <M3MOSI_P38>;
 		};
 	};
+
 	spi4_default: spi4_default {
 		group1 {
 			pinmux = <M4SCK_P39>, <M4MISO_P40>, <M4MOSI_P44>;
 		};
 	};
+
 	spi5_default: spi5_default {
 		group1 {
 			pinmux = <M5SCK_P48>, <M5MISO_P49>, <M5MOSI_P47>;
 		};
 	};
 
-	adc0_default: adc0_default{
+	adc0_default: adc0_default {
 		group1 {
 			pinmux = <ADCSE4_P32>, <ADCSE7_P35>;
 			drive-strength = "0.1";
 		};
 	};
 
-	mspi0_default: mspi0_default{
+	mspi0_default: mspi0_default {
 		group1 {
 			pinmux = <MSPI0_0_P22>,
 				 <MSPI0_1_P26>,
@@ -121,6 +136,7 @@
 				 <MSPI0_3_P23>,
 				 <MSPI0_8_P24>;
 		};
+
 		group2 {
 			pinmux = <NCE19_P19>;
 			drive-push-pull;
@@ -130,7 +146,7 @@
 		};
 	};
 
-	bleif_default: bleif_default{
+	bleif_default: bleif_default {
 		group1 {
 			pinmux = <BLEIF_SCK_P30>,
 				 <BLEIF_MISO_P31>,
@@ -141,7 +157,7 @@
 		};
 	};
 
-	pwm2_default: pwm2_default{
+	pwm2_default: pwm2_default {
 		group1 {
 			pinmux = <GPIO_P30>;
 		};

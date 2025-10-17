@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Device-tree nodes specific to 48-pin package variants */
+
+#include <microchip/pic32c/pic32cm_jh/common/pic32cm_jh.dtsi>
+
+&pinctrl {
+	portb: gpio@41000080 {
+		compatible = "microchip,port-g1-gpio";
+		reg = <0x41000080 0x80>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		#microchip,pin-cells = <2>;
+	};
+};

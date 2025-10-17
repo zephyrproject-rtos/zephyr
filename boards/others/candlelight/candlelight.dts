@@ -27,10 +27,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led_rx: led_rx {
 			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
 			label = "LED RX";
 		};
+
 		led_tx: led_tx {
 			gpios = <&gpioa 1 GPIO_ACTIVE_LOW>;
 			label = "LED TX";
@@ -88,6 +90,7 @@ zephyr_udc0: &usb {
 			reg = <0x00000000 DT_SIZE_K(48)>;
 			read-only;
 		};
+
 		slot0_partition: partition@c000 {
 			label = "image-0";
 			reg = <0x0000c000 DT_SIZE_K(80)>;

@@ -14,7 +14,7 @@
 	pcnt_default: pcnt_default {
 		group1 {
 			pinmux = <PCNT0_CH0SIG_GPIO2>,
-				<PCNT0_CH0CTRL_GPIO3>;
+				 <PCNT0_CH0CTRL_GPIO3>;
 			bias-pull-up;
 		};
 	};

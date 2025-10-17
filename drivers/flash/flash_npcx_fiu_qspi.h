@@ -7,6 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_FLASH_NPCX_FIU_QSPI_H_
 #define ZEPHYR_DRIVERS_FLASH_NPCX_FIU_QSPI_H_
 
+#include <soc.h>
 #include <zephyr/device.h>
 #include "jesd216.h"
 
@@ -79,6 +80,45 @@ struct npcx_qspi_cfg {
 int qspi_npcx_fiu_uma_transceive(const struct device *dev, struct npcx_uma_cfg *cfg,
 				 uint32_t flags);
 
+#if defined(CONFIG_FLASH_NPCX_FIU_USE_DMA)
+/**
+ * @brief Execute GDMA transactions on qspi bus
+ *
+ * @param dev Pointer to the device structure for qspi bus controller instance.
+ * @param src Pointer to the source address.
+ * @param dest Pointer to the destination address.
+ * @param size Size of GDMA transaction.
+ * @retval 0 on success, -EINVAL if a GDMA transaction is not valid.
+ */
+int qspi_npcx_fiu_dma_transceive(const struct device *dev, uint8_t *src, uint8_t *dest,
+				 size_t size);
+#endif
+
+/**
+ * @brief Lock the mutex of npcx qspi bus controller.
+ *
+ * @param dev Pointer to the device structure for qspi bus controller instance.
+ */
+void qspi_npcx_fiu_mutex_lock(const struct device *dev);
+
+/**
+ * @brief Unlock the mutex of npcx qspi bus controller.
+ *
+ * @param dev Pointer to the device structure for qspi bus controller instance.
+ */
+void qspi_npcx_fiu_mutex_unlock(const struct device *dev);
+
+/**
+ * @brief Apply qspi configuration
+ *
+ * @param dev Pointer to the device structure for qspi bus controller instance.
+ * @param cfg Pointer to the configuration for the device on qspi bus.
+ * @param operation Qspi bus operation for the device.
+ */
+void qspi_npcx_fiu_apply_cfg(const struct device *dev,
+			     const struct npcx_qspi_cfg *cfg,
+			     const uint32_t operation);
+
 /**
  * @brief Lock the mutex of npcx qspi bus controller and apply its configuration
  *
@@ -91,19 +131,21 @@ void qspi_npcx_fiu_mutex_lock_configure(const struct device *dev,
 					const uint32_t operation);
 
 /**
- * @brief Unlock the mutex of npcx qspi bus controller.
- *
- * @param dev Pointer to the device structure for qspi bus controller instance.
- */
-void qspi_npcx_fiu_mutex_unlock(const struct device *dev);
-
-/**
  * @brief Set the size of the address space allocated for SPI device.
  *
  * @param dev Pointer to the device structure for qspi bus controller instance.
  * @param cfg Pointer to the configuration for the device on qspi bus.
  */
 void qspi_npcx_fiu_set_spi_size(const struct device *dev, const struct npcx_qspi_cfg *cfg);
+
+/**
+ * @brief Block FIU master to generate flash transactions.
+ *
+ * @param dev Pointer to the device structure for qspi bus controller instance.
+ * @param lock Block or unblock FIU master transactions.
+ * @retval 0 on success, otherwise a negative error code.
+ */
+int qspi_npcx_fiu_uma_block(const struct device *dev, bool lock_en);
 
 #ifdef __cplusplus
 }

@@ -60,7 +60,9 @@ config MCUBOOT_SIGNATURE_KEY_FILE
 	  config option can be a relative path from the MCUboot repository
 	  root.)
 
-	  If left empty, you must sign the Zephyr binaries manually.
+	  If left empty and MCUBOOT_GENERATE_UNSIGNED_IMAGE is not set, you
+	  must sign and prepare the Zephyr binaries manually to be bootable
+	  from MCUboot.
 
 config MCUBOOT_ENCRYPTION_KEY_FILE
 	string "Path to the mcuboot encryption key file"
@@ -120,6 +122,40 @@ config MCUBOOT_IMGTOOL_OVERWRITE_ONLY
 	  If enabled, --overwrite-only option passed to imgtool to avoid
 	  adding the swap status area size when calculating overflow.
 
+config MCUBOOT_IMGTOOL_UUID_VID
+	bool "Append vendor unique identifier TLV"
+	help
+	  If enabled, --vid option passed to imgtool with the value set by
+	  the MCUBOOT_IMGTOOL_UUID_VID_NAME option.
+
+config MCUBOOT_IMGTOOL_UUID_VID_NAME
+	string "Vendor UUID"
+	depends on MCUBOOT_IMGTOOL_UUID_VID
+	help
+	  The vendor unique identifier.
+	  The following formats are supported:
+	   - Domain name (i.e. amce.corp)
+	   - Raw UUID (i.e. 12345678-1234-5678-1234-567812345678)
+	   - Raw HEX UUID (i.e. 12345678123456781234567812345678)
+
+config MCUBOOT_IMGTOOL_UUID_CID
+	bool "Append image class unique identifier TLV"
+	help
+	  If enabled, --cid option passed to imgtool with the value set by
+	  the MCUBOOT_IMGTOOL_UUID_CID_NAME option.
+
+config MCUBOOT_IMGTOOL_UUID_CID_NAME
+	string "Image class UUID"
+	depends on MCUBOOT_IMGTOOL_UUID_CID
+	help
+	  The image class unique identifier.
+	  The following formats are supported:
+	   - Image class name (i.e. nRF5340_door_lock_btperipheral).
+	     This format requires MCUBOOT_IMGTOOL_UUID_VID_NAME to be defined
+	     as the VID UUID is used as the namespace for image class UUID.
+	   - Raw UUID (i.e. 12345678-1234-5678-1234-567812345678)
+	   - Raw HEX UUID (i.e. 12345678123456781234567812345678)
+
 config MCUBOOT_EXTRA_IMGTOOL_ARGS
 	string "Extra arguments to pass to imgtool when signing"
 	default ""
@@ -133,7 +169,9 @@ config MCUBOOT_GENERATE_UNSIGNED_IMAGE
 	help
 	  Enabling this configuration allows automatic unsigned binary image
 	  generation when MCUboot signing key is not provided,
-	  i.e., MCUBOOT_SIGNATURE_KEY_FILE is left empty.
+	  i.e., MCUBOOT_SIGNATURE_KEY_FILE is left empty. A hash of the
+	  image will be generated and included in the unsigned image, instead
+	  of a signature.
 
 config MCUBOOT_GENERATE_CONFIRMED_IMAGE
 	bool "Also generate a padded, confirmed image"
@@ -151,7 +189,7 @@ menu "On board MCUboot operation mode"
 choice MCUBOOT_BOOTLOADER_MODE
 	prompt "Application assumed MCUboot mode of operation"
 	# Should be removed if board dts is updated
-	default MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE if SOC_FAMILY_STM32
+	default MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE if SOC_FAMILY_STM32 || SOC_FAMILY_ESPRESSIF_ESP32
 	default MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET
 	help
 	  Informs application build on assumed MCUboot mode of operation.
@@ -238,7 +276,7 @@ config MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT
 	  will select the image with the higher version number, copy it to RAM and begin execution
 	  from there. The image must be linked to execute from RAM, the address that it is copied
 	  to is specified using the load-addr argument when running imgtool.
-	  This option automatically selectes MCUBOOT_BOOTLOADER_NO_DOWNGRADE as
+	  This option automatically selects MCUBOOT_BOOTLOADER_NO_DOWNGRADE as
 	  MCUBoot will automatically select the highest revision of the application
 	  to boot. Note however that MCUBoot will select an older revision of
 	  the application if the booted revision does not mark itself as confirmed.
@@ -391,5 +429,16 @@ config MCUBOOT_BOOTUTIL_LIB_FOR_DIRECT_XIP
 	  Adds support for setting for test and confirming images
 	  when bootloader is in DirectXIP-revert mode.
 endif
+
+DT_CHOSEN_ZEPHYR_FLASH := zephyr,flash
+DT_CHOSEN_ZEPHYR_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_ZEPHYR_FLASH))
+
+config MCUBOOT_BOOT_MAX_ALIGN
+	int "Override programmable flash block alignment"
+	default $(dt_node_int_prop_int,$(DT_CHOSEN_ZEPHYR_FLASH_NODE),write-block-size)
+	help
+	  Allow to override the programmable flash block alignment size.
+	  By default it's set to the maximum of the write block size of
+	  the chosen zephyr,flash node and 8.
 
 endif # MCUBOOT_BOOTUTIL_LIB

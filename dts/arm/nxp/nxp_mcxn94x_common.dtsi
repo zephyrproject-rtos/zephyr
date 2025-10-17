@@ -6,10 +6,16 @@
 
 #include "nxp_mcxnx4x_common.dtsi"
 
+/ {
+	chosen {
+		zephyr,entropy = &trng;
+	};
+};
+
 &peripheral {
 	dac1: dac@112000 {
 		compatible = "nxp,lpdac";
-		reg = < 0x112000 0x1000>;
+		reg = <0x112000 0x1000>;
 		interrupts = <107 0>;
 		status = "disabled";
 		voltage-reference = <0>;
@@ -21,6 +27,7 @@
 		reg = <0xd0000 0x1000>;
 		interrupt-names = "RELOAD-ERROR", "FAULT";
 		interrupts = <118 0>, <119 0>;
+
 		flexpwm1_pwm0: pwm0 {
 			compatible = "nxp,imx-pwm";
 			index = <0>;
@@ -74,6 +81,30 @@
 		#io-channel-cells = <2>;
 	};
 
+	opamp0: opamp@110000 {
+		compatible = "nxp,opamp";
+		reg = <0x110000 0x1000>;
+		status = "disabled";
+		operation-mode = "low_noise";
+		clocks = <&syscon MCUX_OPAMP0_CLK>;
+	};
+
+	opamp1: opamp@113000 {
+		compatible = "nxp,opamp";
+		reg = <0x40113000 0x1000>;
+		status = "disabled";
+		operation-mode = "low_noise";
+		clocks = <&syscon MCUX_OPAMP1_CLK>;
+	};
+
+	opamp2: opamp@115000 {
+		compatible = "nxp,opamp";
+		reg = <0x115000 0x1000>;
+		status = "disabled";
+		operation-mode = "low_noise";
+		clocks = <&syscon MCUX_OPAMP2_CLK>;
+	};
+
 	flexcan1: can@d8000 {
 		compatible = "nxp,flexcan";
 		reg = <0xd8000 0x4000>;
@@ -82,5 +113,15 @@
 		clocks = <&syscon MCUX_FLEXCAN1_CLK>;
 		clk-source = <0>;
 		status = "disabled";
+	};
+
+	crypto@54000 {
+		compatible = "nxp,els";
+		reg = <0x54000 0x200>;
+		clocks = <&syscon MCUX_ELS_CLK>;
+
+		trng: rng {
+			compatible = "nxp,els-trng";
+		};
 	};
 };

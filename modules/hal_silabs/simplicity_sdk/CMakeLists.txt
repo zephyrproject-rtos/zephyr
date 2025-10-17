@@ -145,6 +145,8 @@ zephyr_include_directories(
   ${COMMON_DIR}/config
   ${COMMON_DIR}/inc
   ${DRIVER_DIR}/gpio/inc
+  ${DRIVER_DIR}/i2c/inc
+  ${DRIVER_DIR}/i2c/src
   ${EMDRV_DIR}/common/inc
   ${EMDRV_DIR}/dmadrv/config/s2_8ch/
   ${EMDRV_DIR}/dmadrv/inc
@@ -165,6 +167,7 @@ zephyr_include_directories(
   ${SERVICE_DIR}/sleeptimer/config
   ${SERVICE_DIR}/sleeptimer/inc
   ${SERVICE_DIR}/sleeptimer/src
+  ${SERVICE_DIR}/udelay/inc
   ${SECURITY_DIR}/sl_component/sl_protocol_crypto/src
   ${SECURITY_DIR}/sl_component/sli_crypto/inc
   ${BOARD_DIR}
@@ -213,7 +216,12 @@ if(CONFIG_SOC_SILABS_SLEEPTIMER)
   )
 endif()
 
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_IADC         ${EMLIB_DIR}/src/em_iadc.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_SYSTEM         ${PERIPHERAL_DIR}/src/sl_hal_system.c)
+
+#Keep em_iadc.c for compatibility for now. Not used anymore.
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_IADC         ${EMLIB_DIR}/src/em_iadc.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_IADC         ${PERIPHERAL_DIR}/src/sl_hal_iadc.c)
+
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_BURTC        ${EMLIB_DIR}/src/em_burtc.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_CMU          ${EMLIB_DIR}/src/em_cmu.c)
 
@@ -286,6 +294,14 @@ if(CONFIG_SILABS_SISDK_GPIO)
   )
 endif()
 
+if(CONFIG_SILABS_SISDK_I2C)
+  zephyr_library_sources(
+    ${DRIVER_DIR}/i2c/src/sl_i2c.c
+    ${SERVICE_DIR}/udelay/src/sl_udelay.c
+    ${PERIPHERAL_DIR}/src/sl_hal_i2c.c
+  )
+endif()
+
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_LETIMER   ${PERIPHERAL_DIR}/src/sl_hal_letimer.c)
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_TIMER     ${PERIPHERAL_DIR}/src/sl_hal_timer.c)
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_VDAC      ${PERIPHERAL_DIR}/src/sl_hal_vdac.c)
@@ -328,6 +344,7 @@ zephyr_library_sources_ifdef(CONFIG_ENTROPY_GECKO_SE
 zephyr_library_sources(
   src/sl_interrupt_manager_shim.c
   src/sl_memory_manager_shim.c
+  src/sl_memory_manager_pool_shim.c
 )
 
 zephyr_library_sources_ifdef(

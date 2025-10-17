@@ -15,10 +15,6 @@ endif()
 
 # keep first
 board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
-
-set_ifndef(BOARD_DEBUG_RUNNER pyocd)
-set_ifndef(BOARD_FLASH_RUNNER pyocd)
-
 board_runner_args(pyocd "--target=stm32l552zetxq")
 
 # keep first

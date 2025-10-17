@@ -40,5 +40,7 @@
 };
 
 boosterpack_i2c: &i2c0 {};
+
 boosterpack_spi: &spi0 {};
+
 boosterpack_serial: &uart0 {};

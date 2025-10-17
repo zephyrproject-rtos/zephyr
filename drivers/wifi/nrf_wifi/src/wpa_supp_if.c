@@ -447,7 +447,10 @@ void *nrf_wifi_wpa_supp_dev_init(void *supp_drv_if_ctx, const char *iface_name,
 				 struct zep_wpa_supp_dev_callbk_fns *supp_callbk_fns)
 {
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
-	const struct device *device = DEVICE_DT_GET(DT_CHOSEN(zephyr_wifi));
+	/* Get device for each interface */
+	int if_idx = net_if_get_by_name(iface_name);
+	struct net_if *iface = net_if_get_by_index(if_idx);
+	const struct device *device = net_if_get_device(iface);
 
 	if (!device) {
 		LOG_ERR("%s: Interface %s not found", __func__, iface_name);
@@ -1578,6 +1581,7 @@ enum nrf_wifi_status nrf_wifi_parse_sband(
 	band->ht_cap.wpa_supp_ampdu_factor = event->ht_cap.nrf_wifi_ampdu_factor;
 	band->ht_cap.wpa_supp_ampdu_density = event->ht_cap.nrf_wifi_ampdu_density;
 
+#ifndef CONFIG_WIFI_NM_WPA_SUPPLICANT_AP
 	band->vht_cap.wpa_supp_vht_supported = event->vht_cap.nrf_wifi_vht_supported;
 	band->vht_cap.wpa_supp_cap = event->vht_cap.nrf_wifi_cap;
 
@@ -1585,6 +1589,7 @@ enum nrf_wifi_status nrf_wifi_parse_sband(
 	band->vht_cap.vht_mcs.rx_highest = event->vht_cap.vht_mcs.rx_highest;
 	band->vht_cap.vht_mcs.tx_mcs_map = event->vht_cap.vht_mcs.tx_mcs_map;
 	band->vht_cap.vht_mcs.tx_highest = event->vht_cap.vht_mcs.tx_highest;
+#endif /* !CONFIG_WIFI_NM_WPA_SUPPLICANT_AP */
 
 	band->band = event->band;
 

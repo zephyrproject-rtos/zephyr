@@ -48,6 +48,8 @@ The Renesas RZ/G3S MPU documentation can be found at `RZ/G3S Group Website`_
 
 	RZ/G3S block diagram (Credit: Renesas Electronics Corporation)
 
+Detailed hardware features for the board can be found at `RZG3S-EVKIT Website`_
+
 Multi-OS processing
 *******************
 
@@ -241,10 +243,10 @@ References
 .. target-notes::
 
 .. _RZ/G3S Group Website:
-   https://www.renesas.com/us/en/products/microcontrollers-microprocessors/rz-mpus/rzg3s-general-purpose-microprocessors-single-core-arm-cortex-a55-11-ghz-cpu-and-dual-core-cortex-m33-250
+   https://www.renesas.com/en/products/rz-g3s
 
 .. _RZG3S-EVKIT Website:
-   https://www.renesas.com/us/en/products/microcontrollers-microprocessors/rz-mpus/rzg3s-evkit-evaluation-board-kit-rzg3s-mpu
+   https://www.renesas.com/en/design-resources/boards-kits/rz-g3s-evkit
 
 .. _SMARC EVK of RZ/G3S Linux Start-up Guide:
-   https://www.renesas.com/us/en/document/gde/smarc-evk-rzg3s-linux-start-guide-rev104
+   https://www.renesas.com/en/document/gde/smarc-evk-rzg3s-linux-start-guide-rev106

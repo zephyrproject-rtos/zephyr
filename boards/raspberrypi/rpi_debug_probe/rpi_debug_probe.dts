@@ -1,0 +1,122 @@
+/*
+ * Copyright (c) 2021 Yonatan Schachter
+ * Copyright (c) 2022 Peter Johanson
+ * Copyright (c) 2025 Jonas Berg
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <raspberrypi/rpi_pico/rp2040.dtsi>
+#include <dt-bindings/pinctrl/rpi-pico-rp2040-pinctrl.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/led/led.h>
+#include "rpi_debug_probe-pincontrol.dtsi"
+
+/ {
+	model = "Raspberry Pi Debug Probe";
+	compatible = "raspberry_pi,debug_probe";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &ssi;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,code-partition = &code_partition;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+		led0 = &red_led;
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		red_led: red_led {
+			gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+			label = "Red LED D1";
+		};
+
+		green_led_uart: green_led_uart {
+			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+			label = "Green LED UART D2";
+		};
+
+		yellow_led_uart: yellow_led_uart {
+			gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+			label = "Yellow LED UART D3";
+		};
+
+		green_led_dbug: green_led_dbug {
+			gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+			label = "Green LED DBUG D4";
+		};
+
+		yellow_led_dbug: yellow_led_dbug {
+			gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+			label = "Yellow LED DBUG D5";
+		};
+	};
+};
+
+&flash0 {
+	reg = <0x10000000 DT_SIZE_M(2)>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Reserved memory for the second stage bootloader */
+		second_stage_bootloader: partition@0 {
+			label = "second_stage_bootloader";
+			reg = <0x00000000 0x100>;
+			read-only;
+		};
+
+		/*
+		 * Usable flash. Starts at 0x100, after the bootloader. The partition
+		 * size is 2 MB minus the 0x100 bytes taken by the bootloader.
+		 */
+		code_partition: partition@100 {
+			label = "code-partition";
+			reg = <0x100 (DT_SIZE_M(2) - 0x100)>;
+			read-only;
+		};
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&uart1 {
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+};
+
+&timer {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+zephyr_udc0: &usbd {
+	status = "okay";
+};
+
+&vreg {
+	regulator-always-on;
+	regulator-allowed-modes = <REGULATOR_RPI_PICO_MODE_NORMAL>;
+};
+
+&xosc {
+	startup-delay-multiplier = <64>;
+};

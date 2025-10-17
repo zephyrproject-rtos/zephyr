@@ -108,9 +108,5 @@
 	pinctrl-names = "default", "sleep";
 };
 
-&hfxo {
-	startup-time-us = <854>;
-};
-
 /* Get a node label for wi-fi spi to use in shield files */
 wifi_spi: &spi22 {};

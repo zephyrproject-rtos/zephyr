@@ -19,7 +19,7 @@ static void lpi_irq_handle(const void *parameter)
 	last_lpi_irq_num = i;
 }
 
-#ifdef CONFIG_SOC_MIMX9596_A55
+#if defined(CONFIG_SOC_MIMX9596_A55) || defined(CONFIG_SOC_MIMX94398_A55)
 /* DeviceID is 8bits */
 #define ITS_TEST_DEV(id)        (id & 0xff)
 /* Cover up to 832 LPIs over 26 DevicesIDs and 32 EventIDs per DeviceID */

@@ -11,6 +11,7 @@
 #ifndef BT_ASCS_INTERNAL_H
 #define BT_ASCS_INTERNAL_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include <zephyr/bluetooth/audio/audio.h>
@@ -350,7 +351,8 @@ static inline const char *bt_ascs_reason_str(uint8_t reason)
 int bt_ascs_init(const struct bt_bap_unicast_server_cb *cb);
 void bt_ascs_cleanup(void);
 
-int ascs_ep_set_state(struct bt_bap_ep *ep, uint8_t state);
+int ascs_ep_set_state(struct bt_bap_ep *ep, enum bt_bap_ep_state state);
+bool bt_ascs_has_ep(const struct bt_bap_ep *ep);
 
 int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
 		       struct bt_audio_codec_cfg *codec_cfg,

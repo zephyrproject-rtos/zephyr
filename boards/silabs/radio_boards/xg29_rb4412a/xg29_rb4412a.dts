@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <silabs/xg29/efr32mg29b140f1024im40.dtsi>
+#include <dt-bindings/adc/silabs-adc.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
@@ -34,6 +35,8 @@
 		sw0 = &button0;
 		sw1 = &button1;
 		watchdog0 = &wdog0;
+		dht0 = &si7021;
+		adc0 = &adc0;
 	};
 
 	leds {
@@ -74,10 +77,63 @@
 		};
 	};
 
+	joystick {
+		compatible = "adc-keys";
+		io-channels = <&adc0 0>;
+		keyup-threshold-mv = <3300>;
+
+		select-key {
+			press-thresholds-mv = <33>;
+			zephyr,code = <INPUT_KEY_ENTER>;
+		};
+
+		left-key {
+			press-thresholds-mv = <1980>;
+			zephyr,code = <INPUT_KEY_LEFT>;
+		};
+
+		down-key {
+			press-thresholds-mv = <1650>;
+			zephyr,code = <INPUT_KEY_DOWN>;
+		};
+
+		up-key {
+			press-thresholds-mv = <2831>;
+			zephyr,code = <INPUT_KEY_UP>;
+		};
+
+		right-key {
+			press-thresholds-mv = <2533>;
+			zephyr,code = <INPUT_KEY_RIGHT>;
+		};
+	};
+
 	display_enable: sensor_enable: gpio_switch_0 {
 		compatible = "regulator-fixed";
 		enable-gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>;
 		regulator-name = "sensor_enable";
+	};
+
+	exp_header: exp-header {
+		compatible = "silabs,exp-header";
+		#gpio-cells = <2>;
+		gpio-map = <4 0 &gpioc 0 0>,
+			   <6 0 &gpioc 1 0>,
+			   <7 0 &gpiob 0 0>,
+			   <8 0 &gpioc 2 0>,
+			   <9 0 &gpiob 1 0>,
+			   <10 0 &gpioc 3 0>,
+			   <12 0 &gpioa 5 0>,
+			   <13 0 &gpioa 8 0>,
+			   <14 0 &gpioa 6 0>,
+			   <15 0 &gpiob 2 0>,
+			   <16 0 &gpiob 3 0>;
+		gpio-map-mask = <0xffffffff 0x0>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
+	};
+
+	zephyr,user {
+		io-channels = <&adc0 0>;
 	};
 };
 
@@ -144,6 +200,7 @@
 	si7021: si7021@40 {
 		compatible = "silabs,si7006";
 		reg = <0x40>;
+		vin-supply = <&sensor_enable>;
 	};
 };
 
@@ -187,6 +244,24 @@
 		pinctrl-0 = <&letimer0_default>;
 		pinctrl-names = "default";
 		status = "okay";
+	};
+};
+
+&adc0 {
+	pinctrl-0 = <&iadc0_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	channel@0 {
+		reg = <0>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,input-positive = <IADC_INPUT_PD3>;
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
 	};
 };
 

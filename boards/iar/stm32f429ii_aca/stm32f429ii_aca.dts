@@ -197,7 +197,6 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
-
 &spi5 {
 	pinctrl-0 = <&spi5_nss_pf6 &spi5_sck_pf7
 		     &spi5_miso_pf8 &spi5_mosi_pf9>;

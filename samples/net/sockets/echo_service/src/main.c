@@ -20,19 +20,19 @@ LOG_MODULE_REGISTER(net_echo_server_svc_sample, LOG_LEVEL_DBG);
 
 #define MY_PORT 4242
 
-static char addr_str[INET6_ADDRSTRLEN];
+#define MAX_SERVICES (CONFIG_ZVFS_POLL_MAX - 3)
 
-static struct pollfd sockfd_udp[1] = {
-	[0] = { .fd = -1 }, /* UDP socket */
-};
-static struct pollfd sockfd_tcp[1] = {
-	[0] = { .fd = -1 }, /* TCP socket */
-};
+BUILD_ASSERT(MAX_SERVICES > 0, "Need at least 4 poll fds, increase CONFIG_ZVFS_POLL_MAX");
 
-#define MAX_SERVICES 1
+K_MUTEX_DEFINE(lock);
+static struct pollfd sockfd_tcp[MAX_SERVICES];
+static int tcp_socket = -1;
+static int udp_socket = -1;
 
 static void receive_data(bool is_udp, struct net_socket_service_event *pev,
 			 char *buf, size_t buflen);
+static void tcp_accept_handler(struct net_socket_service_event *pev);
+static void restart_echo_service(void);
 
 static void tcp_service_handler(struct net_socket_service_event *pev)
 {
@@ -48,8 +48,80 @@ static void udp_service_handler(struct net_socket_service_event *pev)
 	receive_data(true, pev, buf, sizeof(buf));
 }
 
-NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(service_udp, udp_service_handler, MAX_SERVICES);
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(service_udp, udp_service_handler, 1);
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(service_accept, tcp_accept_handler, 1);
 NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(service_tcp, tcp_service_handler, MAX_SERVICES);
+
+static void client_list_init(void)
+{
+	k_mutex_lock(&lock, K_FOREVER);
+	ARRAY_FOR_EACH_PTR(sockfd_tcp, sockfd) {
+		sockfd->fd = -1;
+	}
+	k_mutex_unlock(&lock);
+}
+
+static void client_list_deinit(void)
+{
+	(void)net_socket_service_unregister(&service_tcp);
+
+	k_mutex_lock(&lock, K_FOREVER);
+	ARRAY_FOR_EACH_PTR(sockfd_tcp, sockfd) {
+		if (sockfd->fd != -1) {
+			close(sockfd->fd);
+			sockfd->fd = -1;
+		}
+	}
+	k_mutex_unlock(&lock);
+}
+
+static void client_list_try_add(int sock)
+{
+	int ret;
+
+	k_mutex_lock(&lock, K_FOREVER);
+	ARRAY_FOR_EACH_PTR(sockfd_tcp, sockfd) {
+		if (sockfd->fd == -1) {
+			sockfd->fd = sock;
+			sockfd->events = POLLIN;
+
+			ret = net_socket_service_register(&service_tcp, sockfd_tcp,
+							  ARRAY_SIZE(sockfd_tcp), NULL);
+			if (ret < 0) {
+				LOG_ERR("Cannot register socket service handler (%d). "
+					"Attempting to restart service.", ret);
+				restart_echo_service();
+			}
+			k_mutex_unlock(&lock);
+			return;
+		}
+	}
+	k_mutex_unlock(&lock);
+	LOG_WRN("Max capacity reached");
+	close(sock);
+}
+
+static void client_list_remove(int client)
+{
+	int ret;
+
+	k_mutex_lock(&lock, K_FOREVER);
+	ARRAY_FOR_EACH_PTR(sockfd_tcp, sockfd) {
+		if (sockfd->fd == client) {
+			close(client);
+			sockfd->fd = -1;
+			ret = net_socket_service_register(&service_tcp, sockfd_tcp,
+							  ARRAY_SIZE(sockfd_tcp), NULL);
+			if (ret < 0) {
+				LOG_ERR("Cannot register socket service handler (%d). "
+					"Attempting to restart service.", ret);
+				restart_echo_service();
+			}
+			break;
+		}
+	}
+	k_mutex_unlock(&lock);
+}
 
 static void receive_data(bool is_udp, struct net_socket_service_event *pev,
 			 char *buf, size_t buflen)
@@ -57,6 +129,7 @@ static void receive_data(bool is_udp, struct net_socket_service_event *pev,
 	struct pollfd *pfd = &pev->event;
 	int client = pfd->fd;
 	struct sockaddr_in6 addr;
+	char addr_str[INET6_ADDRSTRLEN];
 	socklen_t addrlen = sizeof(addr);
 	int len, out_len;
 	char *p;
@@ -67,21 +140,11 @@ static void receive_data(bool is_udp, struct net_socket_service_event *pev,
 		if (len < 0) {
 			LOG_ERR("recv: %d", -errno);
 		}
-
-		/* If the TCP socket is closed, mark it as non pollable */
-		if (!is_udp && sockfd_tcp[0].fd == client) {
-			sockfd_tcp[0].fd = -1;
-
-			/* Update the handler so that client connection is
-			 * not monitored any more.
-			 */
-			(void)net_socket_service_register(&service_tcp, sockfd_tcp,
-							  ARRAY_SIZE(sockfd_tcp), NULL);
-			close(client);
-
+		if (!is_udp) {
+			client_list_remove(client);
+			inet_ntop(addr.sin6_family, &addr.sin6_addr, addr_str, sizeof(addr_str));
 			LOG_INF("Connection from %s closed", addr_str);
 		}
-
 		return;
 	}
 
@@ -102,6 +165,27 @@ static void receive_data(bool is_udp, struct net_socket_service_event *pev,
 		p += out_len;
 		len -= out_len;
 	} while (len);
+}
+
+static void tcp_accept_handler(struct net_socket_service_event *pev)
+{
+	int client;
+	int sock = pev->event.fd;
+	char addr_str[INET6_ADDRSTRLEN];
+	struct sockaddr_in6 client_addr;
+	socklen_t client_addr_len = sizeof(client_addr);
+
+	client = accept(sock, (struct sockaddr *)&client_addr, &client_addr_len);
+	if (client < 0) {
+		LOG_ERR("accept: %d. Restarting service.", -errno);
+		restart_echo_service();
+		return;
+	}
+
+	inet_ntop(client_addr.sin6_family, &client_addr.sin6_addr, addr_str, sizeof(addr_str));
+	LOG_INF("Connection from %s (%d)", addr_str, client);
+
+	client_list_try_add(client);
 }
 
 static int setup_tcp_socket(struct sockaddr_in6 *addr)
@@ -130,11 +214,13 @@ static int setup_tcp_socket(struct sockaddr_in6 *addr)
 
 	if (bind(sock, (struct sockaddr *)addr, sizeof(*addr)) < 0) {
 		LOG_ERR("bind: %d", -errno);
+		close(sock);
 		return -errno;
 	}
 
 	if (listen(sock, 5) < 0) {
 		LOG_ERR("listen: %d", -errno);
+		close(sock);
 		return -errno;
 	}
 
@@ -167,79 +253,96 @@ static int setup_udp_socket(struct sockaddr_in6 *addr)
 
 	if (bind(sock, (struct sockaddr *)addr, sizeof(*addr)) < 0) {
 		LOG_ERR("bind: %d", -errno);
+		close(sock);
 		return -errno;
 	}
 
 	return sock;
 }
 
-int main(void)
+static int start_echo_service(void)
 {
+	struct pollfd sockfd_accept, sockfd_udp;
 	int tcp_sock, udp_sock, ret;
 	struct sockaddr_in6 addr = {
 		.sin6_family = AF_INET6,
 		.sin6_addr = IN6ADDR_ANY_INIT,
 		.sin6_port = htons(MY_PORT),
 	};
-	static int counter;
+
+	client_list_init();
 
 	tcp_sock = setup_tcp_socket(&addr);
 	if (tcp_sock < 0) {
+		LOG_ERR("Failed to setup tcp listening socket");
 		return tcp_sock;
 	}
 
 	udp_sock = setup_udp_socket(&addr);
 	if (udp_sock < 0) {
-		return udp_sock;
+		LOG_ERR("Failed to setup udp socket");
+		ret = udp_sock;
+		goto cleanup_tcp;
 	}
 
-	sockfd_udp[0].fd = udp_sock;
-	sockfd_udp[0].events = POLLIN;
-
-	/* Register UDP socket to service handler */
-	ret = net_socket_service_register(&service_udp, sockfd_udp,
-					  ARRAY_SIZE(sockfd_udp), NULL);
+	/* Register TCP listening socket to service handler */
+	sockfd_accept = (struct pollfd){ .fd = tcp_sock, .events = POLLIN };
+	ret = net_socket_service_register(&service_accept, &sockfd_accept, 1, NULL);
 	if (ret < 0) {
 		LOG_ERR("Cannot register socket service handler (%d)", ret);
+		goto cleanup_sockets;
 	}
+
+	/* Register UDP socket to service handler */
+	sockfd_udp = (struct pollfd){ .fd = udp_sock, .events = POLLIN };
+	ret = net_socket_service_register(&service_udp, &sockfd_udp, 1, NULL);
+	if (ret < 0) {
+		LOG_ERR("Cannot register socket service handler (%d)", ret);
+		goto cleanup_sockets;
+	}
+
+	k_mutex_lock(&lock, K_FOREVER);
+	tcp_socket = tcp_sock;
+	udp_socket = udp_sock;
+	k_mutex_unlock(&lock);
 
 	LOG_INF("Single-threaded TCP/UDP echo server waits "
 		"for a connection on port %d", MY_PORT);
 
-	while (1) {
-		struct sockaddr_in6 client_addr;
-		socklen_t client_addr_len = sizeof(client_addr);
-		int client;
+	return 0;
 
-		client = accept(tcp_sock, (struct sockaddr *)&client_addr,
-				&client_addr_len);
-		if (client < 0) {
-			LOG_ERR("accept: %d", -errno);
-			continue;
-		}
-
-		inet_ntop(client_addr.sin6_family, &client_addr.sin6_addr,
-			  addr_str, sizeof(addr_str));
-		LOG_INF("Connection #%d from %s (%d)", counter++, addr_str, client);
-
-		sockfd_tcp[0].fd = client;
-		sockfd_tcp[0].events = POLLIN;
-
-		/* Register all the sockets to service handler */
-		ret = net_socket_service_register(&service_tcp, sockfd_tcp,
-						  ARRAY_SIZE(sockfd_tcp), NULL);
-		if (ret < 0) {
-			LOG_ERR("Cannot register socket service handler (%d)",
-				ret);
-			break;
-		}
-	}
-
-	(void)net_socket_service_unregister(&service_tcp);
-	(void)net_socket_service_unregister(&service_udp);
-
-	close(tcp_sock);
+cleanup_sockets:
 	close(udp_sock);
+cleanup_tcp:
+	close(tcp_sock);
+	return -1;
+
+}
+
+static int stop_echo_service(void)
+{
+	client_list_deinit();
+	(void)net_socket_service_unregister(&service_udp);
+	(void)net_socket_service_unregister(&service_accept);
+
+	k_mutex_lock(&lock, K_FOREVER);
+	if (tcp_socket >= 0) {
+		close(tcp_socket);
+		tcp_socket = -1;
+	}
+	if (udp_socket >= 0) {
+		close(udp_socket);
+		udp_socket = -1;
+	}
+	k_mutex_unlock(&lock);
 
 	return 0;
 }
+
+static void restart_echo_service(void)
+{
+	stop_echo_service();
+	start_echo_service();
+}
+
+SYS_INIT(start_echo_service, APPLICATION, 99);

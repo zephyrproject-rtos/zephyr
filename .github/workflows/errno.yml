@@ -13,26 +13,24 @@ permissions:
 jobs:
   check-errno:
     runs-on: ubuntu-24.04
-    container:
-      image: ghcr.io/zephyrproject-rtos/ci:v0.28.2
-
     steps:
-      - name: Apply container owner mismatch workaround
-        run: |
-          # FIXME: The owner UID of the GITHUB_WORKSPACE directory may not
-          #        match the container user UID because of the way GitHub
-          #        Actions runner is implemented. Remove this workaround when
-          #        GitHub comes up with a fundamental fix for this problem.
-          git config --global --add safe.directory ${GITHUB_WORKSPACE}
-
       - name: checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          path: zephyr
 
-      - name: Environment Setup
-        run: |
-          echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
+      - name: Setup Zephyr project
+        uses: zephyrproject-rtos/action-zephyr-setup@c125c5ebeeadbd727fa740b407f862734af1e52a # v1.0.9
+        with:
+          app-path: zephyr
+          toolchains: 'arm-zephyr-eabi'
+          west-group-filter: -hal,-tools,-bootloader,-babblesim
+          west-project-filter: -nrf_hw_models
+          enable-ccache: false
 
       - name: Run errno.py
+        working-directory: zephyr
         run: |
+          export ZEPHYR_SDK_INSTALL_DIR=${{ github.workspace }}/zephyr-sdk
           export ZEPHYR_BASE=${PWD}
           ./scripts/ci/errno.py

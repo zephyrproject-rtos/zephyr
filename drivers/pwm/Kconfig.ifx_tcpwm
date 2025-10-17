@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Infineon TCPWM PWM configuration options
+
+config PWM_INFINEON_TCPWM
+	bool "Infineon TCPWM driver"
+	default y
+	depends on DT_HAS_INFINEON_TCPWM_PWM_ENABLED
+	select USE_INFINEON_PWM
+	select PINCTRL
+	help
+	  This option enables the PWM driver in the Infineon TCPWM peripheral.

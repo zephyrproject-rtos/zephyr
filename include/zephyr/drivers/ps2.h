@@ -6,9 +6,8 @@
 
 /**
  * @file
- * @brief Public API for PS/2 devices such as keyboard and mouse.
- * Callers of this API are responsible for setting the typematic rate
- * and decode keys using their desired scan code tables.
+ * @ingroup ps2_interface
+ * @brief Main header file for PS/2 (Personal System/2) driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_PS2_H_
@@ -24,9 +23,13 @@ extern "C" {
 #endif
 
 /**
- * @brief PS/2 Driver APIs
- * @defgroup ps2_interface PS/2 Driver APIs
+ * @brief Interfaces for PS/2 devices.
+ * @defgroup ps2_interface PS/2
  * @ingroup io_interfaces
+ *
+ * Callers of this API are responsible for setting the typematic rate
+ * and decode keys using their desired scan code tables.
+ *
  * @{
  */
 

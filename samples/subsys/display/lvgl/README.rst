@@ -48,9 +48,9 @@ or a board with an integrated display:
 - :zephyr:board:`esp_wrover_kit`
 - :zephyr:board:`adafruit_feather_esp32s3_tft`
 
-or a simulated display environment in a :ref:`native_sim <native_sim>` application:
+or a simulated display environment in a :zephyr:board:`native_sim <native_sim>` application:
 
-- :ref:`native_sim`
+- :zephyr:board:`native_sim`
 - `SDL2`_
 
 or
@@ -74,7 +74,7 @@ Example building for :zephyr:board:`nrf52840dk`:
    :shield: adafruit_2_8_tft_touch_v2
    :goals: build flash
 
-Example building for :ref:`native_sim <native_sim>`:
+Example building for :zephyr:board:`native_sim <native_sim>`:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/display/lvgl

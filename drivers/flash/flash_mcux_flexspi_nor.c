@@ -185,12 +185,14 @@ static int flash_flexspi_nor_read_id_helper(struct flash_flexspi_nor_data *data,
 	return ret;
 }
 
+#if defined(CONFIG_FLASH_JESD216_API)
 static int flash_flexspi_nor_read_jedec_id(const struct device *dev, uint8_t *vendor_id)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
 
 	return flash_flexspi_nor_read_id_helper(data, vendor_id);
 }
+#endif
 
 static int flash_flexspi_nor_read_status(struct flash_flexspi_nor_data *data,
 		uint32_t *status)
@@ -755,9 +757,41 @@ static int flash_flexspi_nor_4byte_enable(struct flash_flexspi_nor_data *data,
 	if (en4b & BIT(6)) {
 		/* Flash is always in 4 byte mode. We just need to configure LUT */
 		return 0;
-	} else if (en4b & BIT(5)) {
-		/* Dedicated vendor instruction set, which we don't support. Exit here */
-		return -ENOTSUP;
+	} else if (en4b & BIT(0)) {
+		/* Issue instruction 0xB7 */
+		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xB7,
+				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
+		ret = memc_flexspi_set_device_config(&data->controller,
+					&config,
+					(uint32_t *)flexspi_lut,
+					FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
+					data->port);
+		if (ret < 0) {
+			return ret;
+		}
+		transfer.dataSize = 0;
+		transfer.seqIndex = SCRATCH_CMD;
+		transfer.cmdType = kFLEXSPI_Command;
+		return memc_flexspi_transfer(&data->controller, &transfer);
+	} else if (en4b & BIT(1)) {
+		/* Issue write enable, then instruction 0xB7 */
+		flash_flexspi_nor_write_enable(data);
+		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xB7,
+				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
+		ret = memc_flexspi_set_device_config(&data->controller,
+					&config,
+					(uint32_t *)flexspi_lut,
+					FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
+					data->port);
+		if (ret < 0) {
+			return ret;
+		}
+		transfer.dataSize = 0;
+		transfer.seqIndex = SCRATCH_CMD;
+		transfer.cmdType = kFLEXSPI_Command;
+		return memc_flexspi_transfer(&data->controller, &transfer);
 	} else if (en4b & BIT(4)) {
 		/* Set bit 0 of 16 bit configuration register */
 		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
@@ -787,43 +821,14 @@ static int flash_flexspi_nor_4byte_enable(struct flash_flexspi_nor_data *data,
 		transfer.seqIndex = SCRATCH_CMD2;
 		transfer.cmdType = kFLEXSPI_Read;
 		return memc_flexspi_transfer(&data->controller, &transfer);
-	} else if (en4b & BIT(1)) {
-		/* Issue write enable, then instruction 0xB7 */
-		flash_flexspi_nor_write_enable(data);
-		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xB7,
-				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
-		ret = memc_flexspi_set_device_config(&data->controller,
-					&config,
-					(uint32_t *)flexspi_lut,
-					FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
-					data->port);
-		if (ret < 0) {
-			return ret;
-		}
-		transfer.dataSize = 0;
-		transfer.seqIndex = SCRATCH_CMD;
-		transfer.cmdType = kFLEXSPI_Command;
-		return memc_flexspi_transfer(&data->controller, &transfer);
-	} else if (en4b & BIT(0)) {
-		/* Issue instruction 0xB7 */
-		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xB7,
-				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
-		ret = memc_flexspi_set_device_config(&data->controller,
-					&config,
-					(uint32_t *)flexspi_lut,
-					FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
-					data->port);
-		if (ret < 0) {
-			return ret;
-		}
-		transfer.dataSize = 0;
-		transfer.seqIndex = SCRATCH_CMD;
-		transfer.cmdType = kFLEXSPI_Command;
-		return memc_flexspi_transfer(&data->controller, &transfer);
 	}
-	/* Other methods not supported */
+
+	/* Other methods not supported. Include:
+	 *
+	 *	BIT(2): 8-bit volatile extended address register used to define A[31:24] bits.
+	 *	BIT(3): 8-bit volatile bank register used to define A[31:24] bits.
+	 *	BIT(5): Dedicated vendor instruction set.
+	 */
 	return -ENOTSUP;
 }
 
@@ -1088,6 +1093,19 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 	ret = flash_flexspi_nor_read_id_helper(data, (uint8_t *)&vendor_id);
 	if (ret < 0) {
 		return ret;
+	}
+
+	LOG_DBG("Jedec id: %02x %02x %02x", vendor_id & 0xff, (vendor_id>>8) & 0xff,
+		(vendor_id>>16) & 0xff);
+
+	if (data->jedec_id[0]) {
+		/* Check the JEDEC ID against the one from devicetree. */
+		if (memcmp((uint8_t *)&vendor_id, data->jedec_id, sizeof(data->jedec_id)) != 0) {
+			LOG_ERR("Jedec id %02x %02x %02x does not match devicetree %02x %02x %02x",
+				vendor_id & 0xff, (vendor_id>>8) & 0xff, (vendor_id>>16) & 0xff,
+				data->jedec_id[0], data->jedec_id[1], data->jedec_id[2]);
+			return -EINVAL;
+		}
 	}
 
 	/* Switch on manufacturer and vendor ID */
@@ -1457,7 +1475,6 @@ static int flash_flexspi_nor_init(const struct device *dev)
 {
 	const struct flash_flexspi_nor_config *config = dev->config;
 	struct flash_flexspi_nor_data *data = dev->data;
-	uint8_t jedec_id[JESD216_READ_ID_LEN];
 
 	/* First step- use ROM pointer to controller device to create
 	 * a copy of the device structure in RAM we can use while in
@@ -1493,22 +1510,6 @@ static int flash_flexspi_nor_init(const struct device *dev)
 
 
 	memc_flexspi_reset(&data->controller);
-
-	if (flash_flexspi_nor_read_jedec_id(dev, jedec_id)) {
-		LOG_ERR("Could not read jedec id");
-		return -EIO;
-	}
-	LOG_DBG("Jedec id: %02x %02x %02x", jedec_id[0], jedec_id[1], jedec_id[2]);
-
-	if (data->jedec_id[0]) {
-		/* Check the JEDEC ID against the one from devicetree. */
-		if (memcmp(jedec_id, data->jedec_id, sizeof(jedec_id)) != 0) {
-			LOG_ERR("Jedec id %02x %02x %02x does not match devicetree %02x %02x %02x",
-				jedec_id[0], jedec_id[1], jedec_id[2],
-				data->jedec_id[0], data->jedec_id[1], data->jedec_id[2]);
-			return -EINVAL;
-		}
-	}
 
 	return 0;
 }
@@ -1578,7 +1579,8 @@ static DEVICE_API(flash, flash_flexspi_nor_api) = {
 			.pages_size = SPI_NOR_SECTOR_SIZE,		\
 		},))							\
 		.flash_parameters = {					\
-			.write_block_size = NOR_WRITE_SIZE,		\
+			.write_block_size = DT_INST_PROP_OR(n,		\
+				write_block_size, NOR_WRITE_SIZE),	\
 			.erase_value = NOR_ERASE_VALUE,			\
 		},							\
 	};								\

@@ -11,11 +11,12 @@
 
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/services/ots.h>
+#include <zephyr/sys/util.h>
 
 /* MCP commands */
 #define BTP_MCP_READ_SUPPORTED_COMMANDS		0x01
 struct btp_mcp_read_supported_commands_rp {
-	uint8_t data[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
 #define BTP_MCP_DISCOVER			0x02

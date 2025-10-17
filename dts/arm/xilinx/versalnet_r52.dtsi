@@ -13,6 +13,7 @@
 
 / {
 	model = "Versal NET RPU";
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -41,7 +42,7 @@
 	gic: interrupt-controller@e2000000 {
 		compatible = "arm,gic-v3", "arm,gic";
 		reg = <0xe2000000 0x10000>,
-					<0xe2100000 0x80000>;
+		      <0xe2100000 0x80000>;
 		interrupt-controller;
 		#interrupt-cells = <4>;
 		status = "okay";

@@ -22,7 +22,7 @@
 		zephyr,flash-controller = &iap;
 	};
 
-	aliases{
+	aliases {
 		led0 = &red_led;
 		led1 = &green_led;
 		led2 = &blue_led;
@@ -37,14 +37,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_0 {
 			gpios = <&gpio1 4 0>;
 			label = "Red LED";
 		};
+
 		green_led: led_1 {
 			gpios = <&gpio1 7 0>;
 			label = "Green LED";
 		};
+
 		blue_led: led_2 {
 			gpios = <&gpio1 6 0>;
 			label = "Blue LED";
@@ -53,16 +56,19 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		btn_wk: button_0 {
 			label = "Wakeup button";
 			gpios = <&gpio1 18 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_WAKEUP>;
 		};
+
 		btn_usr: button_1 {
 			label = "USR button";
 			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		btn_isp: button_2 {
 			label = "ISP button";
 			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
@@ -75,22 +81,22 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<0 0 &gpio0 16 0>,	/* AN  */
-				/* Not a GPIO*/		/* RST */
-				<2 0 &gpio1 1 0>,	/* CS   */
-				<3 0 &gpio1 2 0>,	/* SCK  */
-				<4 0 &gpio1 3 0>,	/* MISO */
-				<5 0 &gpio0 26 0>,	/* MOSI */
-							/* +3.3V */
-							/* GND */
-				<6 0 &gpio1 5 0>,	/* PWM  */
-				<7 0 &gpio1 18 0>,	/* INT  */
-				<8 0 &gpio1 24 0>,	/* RX   */
-				<9 0 &gpio0 27 0>,	/* TX   */
-				<10 0 &gpio1 20 0>,	/* SCL  */
-				<11 0 &gpio1 21 0>;	/* SDA  */
-							/* +5V */
-							/* GND */
+		gpio-map = <0 0 &gpio0 16 0>,	/* AN  */
+			   /* Not a GPIO*/		/* RST */
+			   <2 0 &gpio1 1 0>,	/* CS   */
+			   <3 0 &gpio1 2 0>,	/* SCK  */
+			   <4 0 &gpio1 3 0>,	/* MISO */
+			   <5 0 &gpio0 26 0>,	/* MOSI */
+			   /* +3.3V */
+			   /* GND */
+			   <6 0 &gpio1 5 0>,	/* PWM  */
+			   <7 0 &gpio1 18 0>,	/* INT  */
+			   <8 0 &gpio1 24 0>,	/* RX   */
+			   <9 0 &gpio0 27 0>,	/* TX   */
+			   <10 0 &gpio1 20 0>,	/* SCL  */
+			   <11 0 &gpio1 21 0>;	/* SDA  */
+		/* +5V */
+		/* GND */
 	};
 
 	arduino_header: arduino-connector {
@@ -98,29 +104,29 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<ARDUINO_HEADER_R3_A0 0 &gpio0 16 0>,
-				<ARDUINO_HEADER_R3_A1 0 &gpio0 23 0>,
-				<ARDUINO_HEADER_R3_A2 0 &gpio0 0 0>,
-				/* R63 DNP, A3 not connected  */
-				/* <ARDUINO_HEADER_R3_A3 0 &gpio1 31 0>,*/
-				<ARDUINO_HEADER_R3_A4 0 &gpio0 13 0>,
-				<ARDUINO_HEADER_R3_A5 0 &gpio0 14 0>,
-				<ARDUINO_HEADER_R3_D0 0 &gpio1 24 0>,
-				<ARDUINO_HEADER_R3_D1 0 &gpio0 27 0>,
-				<ARDUINO_HEADER_R3_D2 0 &gpio0 15 0>,
-				<ARDUINO_HEADER_R3_D3 0 &gpio1 6 0>,
-				<ARDUINO_HEADER_R3_D4 0 &gpio1 7 0>,
-				<ARDUINO_HEADER_R3_D5 0 &gpio1 4 0>,
-				<ARDUINO_HEADER_R3_D6 0 &gpio1 10 0>,
-				<ARDUINO_HEADER_R3_D7 0 &gpio1 9 0>,
-				<ARDUINO_HEADER_R3_D8 0 &gpio1 8 0>,
-				<ARDUINO_HEADER_R3_D9 0 &gpio1 5 0>,
-				<ARDUINO_HEADER_R3_D10 0 &gpio1 1 0>,
-				<ARDUINO_HEADER_R3_D11 0 &gpio0 26 0>,
-				<ARDUINO_HEADER_R3_D12 0 &gpio1 3 0>,
-				<ARDUINO_HEADER_R3_D13 0 &gpio1 2 0>,
-				<ARDUINO_HEADER_R3_D14 0 &gpio1 21 0>,
-				<ARDUINO_HEADER_R3_D15 0 &gpio1 20 0>;
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &gpio0 16 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &gpio0 23 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &gpio0 0 0>,
+			   /* R63 DNP, A3 not connected  */
+			   /* <ARDUINO_HEADER_R3_A3 0 &gpio1 31 0>,*/
+			   <ARDUINO_HEADER_R3_A4 0 &gpio0 13 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &gpio0 14 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &gpio1 24 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &gpio0 27 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &gpio0 15 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &gpio1 6 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &gpio1 7 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &gpio1 4 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &gpio1 10 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &gpio1 9 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &gpio1 8 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &gpio1 5 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &gpio1 1 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &gpio0 26 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &gpio1 3 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &gpio1 2 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &gpio1 21 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &gpio1 20 0>;
 	};
 };
 
@@ -189,18 +195,22 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+
 		boot_partition: partition@0 {
 			label = "mcuboot";
 			reg = <0x0 DT_SIZE_K(32)>;
 		};
+
 		slot0_partition: partition@8000 {
 			label = "image-0";
 			reg = <0x00008000 DT_SIZE_K(96)>;
 		};
+
 		slot1_partition: partition@20000 {
 			label = "image-1";
 			reg = <0x00020000 DT_SIZE_K(96)>;
 		};
+
 		storage_partition: partition@38000 {
 			label = "storage";
 			reg = <0x00038000 DT_SIZE_K(20)>;

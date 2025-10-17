@@ -1,3 +1,0 @@
-&arduino_serial{
-	status = "okay";
-};

@@ -5,6 +5,7 @@
  */
 
 #include <mem.h>
+#include <freq.h>
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -27,6 +28,10 @@
 	pinctrl: pinctrl {
 		compatible = "nxp,port-pinctrl";
 		status = "okay";
+	};
+
+	cmc {
+		compatible = "nxp,cmc-reset-cause";
 	};
 
 	soc {
@@ -84,6 +89,7 @@
 			reg = <0x400a9000 0x1000>;
 			interrupt-names = "RELOAD-ERROR", "FAULT";
 			interrupts = <44 0>, <45 0>;
+
 			flexpwm0_pwm0: pwm0 {
 				compatible = "nxp,imx-pwm";
 				index = <0>;
@@ -129,8 +135,8 @@
 			flash: flash@0 {
 				compatible = "soc-nv-flash";
 				reg = <0 DT_SIZE_K(128)>;
-				erase-block-size = <8192>;
-				write-block-size = <128>;
+				erase-block-size = <DT_SIZE_K(8)>;
+				write-block-size = <16>;
 			};
 
 			uuid: uuid@1100800 {
@@ -199,7 +205,7 @@
 			status = "disabled";
 			clk-divider = <1>;
 			clk-source = <0>;
-			voltage-ref= <2>;
+			voltage-ref = <2>;
 			calibration-average = <128>;
 			power-level = <0>;
 			offset-value-a = <0>;
@@ -264,7 +270,7 @@
 			reg = <0x400ab000 0x1000>;
 			interrupts = <55 0>;
 			clock-frequency = <16000>;
-			prescaler = <1>;
+			prescale-glitch-filter = <0>;
 			clk-source = <1>;
 			resolution = <32>;
 			status = "disabled";
@@ -350,7 +356,7 @@
 			#clock-cells = <1>;
 
 			reset: reset {
-				compatible = "nxp,lpc-syscon-reset";
+				compatible = "nxp,mrcc-reset";
 				#reset-cells = <1>;
 			};
 		};

@@ -193,21 +193,6 @@ class Build(Forceable):
         # Store legacy -s option locally
         source_dir = self.args.source_dir
         self._parse_remainder(remainder)
-        board, origin = self._find_board()
-        # Parse testcase.yaml or sample.yaml files for additional options.
-        if self.args.test_item:
-            # we get path + testitem
-            item = os.path.basename(self.args.test_item)
-            if self.args.source_dir:
-                test_path = self.args.source_dir
-            else:
-                test_path = os.path.dirname(self.args.test_item)
-            if test_path and os.path.exists(test_path):
-                self.args.source_dir = test_path
-                if not self._parse_test_item(item, board):
-                    self.die("No test metadata found")
-            else:
-                self.die("test item path does not exist")
 
         if source_dir:
             if self.args.source_dir:
@@ -263,6 +248,23 @@ class Build(Forceable):
                     yaml.dump(build_command, f, default_flow_style=False)
             except Exception as e:
                 self.wrn(f'Failed to create info file: {build_info_file},', e)
+
+        board, origin = self._find_board()
+
+        # Parse testcase.yaml or sample.yaml files for additional options.
+        if self.args.test_item:
+            # we get path + testitem
+            item = os.path.basename(self.args.test_item)
+            if self.args.source_dir:
+                test_path = self.args.source_dir
+            else:
+                test_path = os.path.dirname(self.args.test_item)
+            if test_path and os.path.exists(test_path):
+                self.args.source_dir = test_path
+                if not self._parse_test_item(item, board):
+                    self.die("No test metadata found")
+            else:
+                self.die("test item path does not exist")
 
         self._run_cmake(board, origin, self.args.cmake_opts)
         if args.cmake_only:
@@ -587,7 +589,7 @@ class Build(Forceable):
         self.check_force(
             not boards_mismatched or self.auto_pristine,
             f'Build directory {self.build_dir} targets board {cached_board}, '
-            'but board {self.args.board} was specified. '
+            f'but board {self.args.board} was specified. '
             '(Clean the directory, use --pristine, or use --build-dir to '
             'specify a different one.)')
 
@@ -616,6 +618,8 @@ class Build(Forceable):
         if not self.run_cmake:
             return
 
+        cmake_env = None
+
         self._banner('generating a build system')
 
         if board is not None and origin != 'CMakeCache.txt':
@@ -642,8 +646,9 @@ class Build(Forceable):
 
         config_sysbuild = config_getboolean('sysbuild', False)
         if self.args.sysbuild or (config_sysbuild and not self.args.no_sysbuild):
-            cmake_opts.extend([f'-S{SYSBUILD_PROJ_DIR}',
-                               f'-DAPP_DIR:PATH={self.source_dir}'])
+            cmake_opts.extend([f'-S{SYSBUILD_PROJ_DIR}'])
+            cmake_env = os.environ.copy()
+            cmake_env["APP_DIR"] = str(self.source_dir)
         else:
             # self.args.no_sysbuild == True or config sysbuild False
             cmake_opts.extend([f'-S{self.source_dir}'])
@@ -659,7 +664,7 @@ class Build(Forceable):
                             f'-G{config_get("generator", DEFAULT_CMAKE_GENERATOR)}']
         if cmake_opts:
             final_cmake_args.extend(cmake_opts)
-        run_cmake(final_cmake_args, dry_run=self.args.dry_run)
+        run_cmake(final_cmake_args, dry_run=self.args.dry_run, env=cmake_env)
 
     def _run_pristine(self):
         self._banner(f'making build dir {self.build_dir} pristine')

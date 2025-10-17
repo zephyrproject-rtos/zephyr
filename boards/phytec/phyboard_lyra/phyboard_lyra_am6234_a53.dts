@@ -13,8 +13,8 @@
 	compatible = "phytec,phyboard-lyra-am62xx-a53", "ti,am625";
 
 	chosen {
-		zephyr,console = &uart0;
-		zephyr,shell-uart = &uart0;
+		zephyr,console = &main_uart0;
+		zephyr,shell-uart = &main_uart0;
 		zephyr,sram = &ddr0;
 	};
 
@@ -22,12 +22,15 @@
 		cpu@0 {
 			status = "okay";
 		};
+
 		cpu@1 {
 			status = "disabled";
 		};
+
 		cpu@2 {
 			status = "disabled";
 		};
+
 		cpu@3 {
 			status = "disabled";
 		};
@@ -43,12 +46,13 @@
 	uart0_rx_default: uart0_rx_default {
 		pinmux = <K3_PINMUX(0x1c8, PIN_INPUT, MUX_MODE_0)>;
 	};
+
 	uart0_tx_default: uart0_tx_default {
 		pinmux = <K3_PINMUX(0x1cc, PIN_OUTPUT, MUX_MODE_0)>;
 	};
 };
 
-&uart0 {
+&main_uart0 {
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_rx_default &uart0_tx_default>;
 	pinctrl-names = "default";

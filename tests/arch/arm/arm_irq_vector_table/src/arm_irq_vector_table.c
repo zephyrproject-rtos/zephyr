@@ -46,7 +46,6 @@ struct k_sem sem[3];
 
 void isr0(void)
 {
-	printk("%s ran!\n", __func__);
 	k_sem_give(&sem[0]);
 	z_arm_int_exit();
 }
@@ -59,7 +58,6 @@ void isr0(void)
 
 void isr1(void)
 {
-	printk("%s ran!\n", __func__);
 	k_sem_give(&sem[1]);
 	z_arm_int_exit();
 }
@@ -72,7 +70,6 @@ void isr1(void)
 
 void isr2(void)
 {
-	printk("%s ran!\n", __func__);
 	k_sem_give(&sem[2]);
 	z_arm_int_exit();
 }
@@ -97,7 +94,7 @@ void isr2(void)
  */
 ZTEST(vector_table, test_arm_irq_vector_table)
 {
-	printk("Test Cortex-M IRQs installed directly in the vector table\n");
+	TC_PRINT("Test Cortex-M IRQs installed directly in the vector table\n");
 
 	for (int ii = 0; ii < 3; ii++) {
 		irq_enable(_ISR_OFFSET + ii);

@@ -35,3 +35,6 @@
 		#include "nrf70_common_5g.dtsi"
 	};
 };
+
+/* Include default memory partition configuration file */
+#include <nordic/nrf5340_cpuapp_partition.dtsi>

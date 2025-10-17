@@ -10,7 +10,6 @@
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 
 / {
-
 	aliases {
 		uart-0 = &uart0;
 		led0 = &led0;
@@ -21,18 +20,22 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&cy8c95xx_port1 4 GPIO_ACTIVE_HIGH>;
 			label = "LED 0";
 		};
+
 		led1: led_1 {
 			gpios = <&cy8c95xx_port1 5 GPIO_ACTIVE_HIGH>;
 			label = "LED 1";
 		};
+
 		led2: led_2 {
 			gpios = <&cy8c95xx_port1 6 GPIO_ACTIVE_HIGH>;
 			label = "LED 2";
 		};
+
 		led3: led_3 {
 			gpios = <&cy8c95xx_port1 7 GPIO_ACTIVE_HIGH>;
 			label = "LED 3";
@@ -95,25 +98,25 @@ arduino_spi: &spi2 {};
 	status = "okay";
 	clock-frequency = <33333333>;
 	cs-gpios = <&creg_gpio 0 GPIO_ACTIVE_HIGH>,
-			   <&creg_gpio 1 GPIO_ACTIVE_HIGH>,
-			   <&creg_gpio 2 GPIO_ACTIVE_HIGH>,
-			   <&creg_gpio 3 GPIO_ACTIVE_HIGH>;
+		   <&creg_gpio 1 GPIO_ACTIVE_HIGH>,
+		   <&creg_gpio 2 GPIO_ACTIVE_HIGH>,
+		   <&creg_gpio 3 GPIO_ACTIVE_HIGH>;
 };
 
 &spi1 {
 	status = "okay";
 	clock-frequency = <33333333>;
 	cs-gpios = <&creg_gpio 4 GPIO_ACTIVE_HIGH>,
-			   <&creg_gpio 5 GPIO_ACTIVE_HIGH>,
-			   <&creg_gpio 6 GPIO_ACTIVE_HIGH>;
+		   <&creg_gpio 5 GPIO_ACTIVE_HIGH>,
+		   <&creg_gpio 6 GPIO_ACTIVE_HIGH>;
 };
 
 &spi2 {
 	status = "okay";
 	clock-frequency = <33333333>;
 	cs-gpios = <&creg_gpio 8 GPIO_ACTIVE_HIGH>,
-			   <&creg_gpio 9 GPIO_ACTIVE_HIGH>,
-			   <&creg_gpio 10 GPIO_ACTIVE_HIGH>;
+		   <&creg_gpio 9 GPIO_ACTIVE_HIGH>,
+		   <&creg_gpio 10 GPIO_ACTIVE_HIGH>;
 };
 
 &i2c0 {

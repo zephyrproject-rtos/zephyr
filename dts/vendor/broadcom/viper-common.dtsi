@@ -33,7 +33,7 @@
 			      <0x482f005c 0x20>;
 			reg-names = "pl330_regs",
 				    "control_regs";
-			microcode = <0x63b00000  0x1000>;
+			microcode = <0x63b00000 0x1000>;
 			dma-channels = <8>;
 			#dma-cells = <1>;
 		};

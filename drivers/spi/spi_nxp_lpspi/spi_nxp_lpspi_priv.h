@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_DRIVERS_SPI_SPI_NXP_LPSPI_PRIV_H_
+#define ZEPHYR_DRIVERS_SPI_SPI_NXP_LPSPI_PRIV_H_
+
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -53,6 +56,19 @@ struct lpspi_data {
 	uint8_t major_version;
 	uint32_t clock_freq;
 };
+
+/* Common helper functions used to interact with LPSPI FIFOs (TX and RX) when dealing
+ * with cpu-based implementation.
+ */
+static inline uint8_t rx_fifo_cur_len(LPSPI_Type *base)
+{
+	return (base->FSR & LPSPI_FSR_RXCOUNT_MASK) >> LPSPI_FSR_RXCOUNT_SHIFT;
+}
+
+static inline uint8_t tx_fifo_cur_len(LPSPI_Type *base)
+{
+	return (base->FSR & LPSPI_FSR_TXCOUNT_MASK) >> LPSPI_FSR_TXCOUNT_SHIFT;
+}
 
 /* Verifies spi_cfg validity and set up configuration of hardware for xfer
  * Unsets interrupt and watermark options, specific implementation should configure that.
@@ -123,3 +139,5 @@ int lpspi_wait_tx_fifo_empty(const struct device *dev);
 
 #define SPI_NXP_LPSPI_HAS_DMAS(n)                                                                  \
 	UTIL_AND(DT_INST_DMAS_HAS_NAME(n, tx), DT_INST_DMAS_HAS_NAME(n, rx))
+
+#endif /* ZEPHYR_DRIVERS_SPI_SPI_NXP_LPSPI_PRIV_H_ */

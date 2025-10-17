@@ -10,7 +10,7 @@ config NUM_IRQS
 	default 512
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 24000000
+	default	$(dt_node_int_prop_int,/osc,clock-frequency)
 
 config FLASH_SIZE
 	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)

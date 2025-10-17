@@ -10,3 +10,4 @@ string
 	default "nrf5340bsim/nrf5340/cpunet" if $(BOARD) = "nrf5340bsim"
 	default "nrf54l15dk/nrf54l15/cpuflpr" if $(BOARD) = "nrf54l15dk"
 	default "stm32h747i_disco/stm32h747xx/m4" if $(BOARD) = "stm32h747i_disco"
+	default "ek_ra8p1/r7ka8p1kflcac/cm33" if $(BOARD) = "ek_ra8p1"

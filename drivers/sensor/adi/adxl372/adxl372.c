@@ -870,8 +870,8 @@ static int adxl372_init(const struct device *dev)
  */
 #define ADXL372_SPI_CFG SPI_WORD_SET(8) | SPI_TRANSFER_MSB
 
-#define ADXL372_RTIO_DEFINE(inst)                                                                  \
-	SPI_DT_IODEV_DEFINE(adxl372_iodev_##inst, DT_DRV_INST(inst), ADXL372_SPI_CFG, 0U);         \
+#define ADXL372_RTIO_DEFINE(inst)                                                                 \
+	SPI_DT_IODEV_DEFINE(adxl372_iodev_##inst, DT_DRV_INST(inst), ADXL372_SPI_CFG);            \
 	RTIO_DEFINE(adxl372_rtio_ctx_##inst, 16, 16);
 
 #ifdef CONFIG_ADXL372_TRIGGER
@@ -910,7 +910,7 @@ static int adxl372_init(const struct device *dev)
 #define ADXL372_CONFIG_SPI(inst)					\
 	{								\
 		.bus_init = adxl372_spi_init,				\
-		.spi = SPI_DT_SPEC_INST_GET(inst, ADXL372_SPI_CFG, 0),		\
+		.spi = SPI_DT_SPEC_INST_GET(inst, ADXL372_SPI_CFG),	\
 		ADXL372_CONFIG(inst)					\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int1_gpios),	\
 		(ADXL372_CFG_IRQ(inst)), ())				\

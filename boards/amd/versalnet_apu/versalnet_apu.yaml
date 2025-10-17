@@ -1,0 +1,11 @@
+identifier: versalnet_apu
+name: AMD Development board for Versal NET APU
+arch: arm
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+    - fpu
+vendor: amd

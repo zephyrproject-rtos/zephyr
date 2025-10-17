@@ -28,6 +28,7 @@
 			label = "LD3";
 		};
 	};
+
 	pwmleds {
 		compatible = "pwm-leds";
 

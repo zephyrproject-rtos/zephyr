@@ -31,14 +31,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_0 {
 			gpios = <&gpioe 7 GPIO_ACTIVE_HIGH>;
 			label = "User LED_R";
 		};
+
 		green_led: led_1 {
 			gpios = <&gpioe 8 GPIO_ACTIVE_HIGH>;
 			label = "User LED_G";
 		};
+
 		blue_led: led_2 {
 			gpios = <&gpioe 9 GPIO_ACTIVE_HIGH>;
 			label = "User LED_B";
@@ -47,21 +50,25 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		joy_up: joystick_up {
 			label = "joystick up";
 			gpios = <&gpioc 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 			zephyr,code = <INPUT_KEY_UP>;
 		};
+
 		joy_down: joystick_down {
 			label = "joystick down";
 			gpios = <&gpiod 9 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_DOWN>;
 		};
+
 		joy_left: joystick_left {
 			label = "joystick left";
 			gpios = <&gpiod 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_LEFT>;
 		};
+
 		joy_right: joystick_right {
 			label = "joystick right";
 			gpios = <&gpiod 10 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -72,8 +79,8 @@
 
 &quadspi {
 	pinctrl-0 = <&quadspi_clk_pe10 &quadspi_ncs_pe11
-			&quadspi_bk1_io0_pe12 &quadspi_bk1_io1_pe13
-			&quadspi_bk1_io2_pe14 &quadspi_bk1_io3_pe15>;
+		     &quadspi_bk1_io0_pe12 &quadspi_bk1_io1_pe13
+		     &quadspi_bk1_io2_pe14 &quadspi_bk1_io3_pe15>;
 	pinctrl-names = "default";
 	status = "okay";
 
@@ -89,7 +96,6 @@
 		status = "okay";
 	};
 };
-
 
 &clk_lsi {
 	status = "okay";

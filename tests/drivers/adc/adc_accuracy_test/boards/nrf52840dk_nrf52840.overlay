@@ -4,7 +4,6 @@
  * Copyright (c) 2024 Nordic Semiconductor ASA
  */
 
-
 / {
 	zephyr,user {
 		io-channels = <&adc 0>;
@@ -25,5 +24,4 @@
 		zephyr,input-positive = <NRF_SAADC_AIN1>; /* P0.03 */
 		zephyr,resolution = <14>;
 	};
-
 };

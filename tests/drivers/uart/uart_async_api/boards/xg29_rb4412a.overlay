@@ -15,7 +15,7 @@
 	};
 };
 
-&pinctrl{
+&pinctrl {
 	usart0_default: usart0_default {
 		group0 {
 			pins = <USART0_TX_PC0>; /* WPK EXP4 (PC0) */

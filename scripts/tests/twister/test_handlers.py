@@ -8,35 +8,32 @@ Tests for handlers.py classes' methods
 """
 
 import itertools
-from unittest import mock
 import os
-import pytest
 import signal
 import subprocess
 import sys
-
 from contextlib import nullcontext
 from importlib import reload
-from serial import SerialException
 from subprocess import CalledProcessError, TimeoutExpired
 from types import SimpleNamespace
+from unittest import mock
 
+import pytest
 import twisterlib.harness
-
-ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
-
+from serial import SerialException
 from twisterlib.error import TwisterException
-from twisterlib.statuses import TwisterStatus
 from twisterlib.handlers import (
-    Handler,
     BinaryHandler,
     DeviceHandler,
+    Handler,
     QEMUHandler,
-    SimulationHandler
+    SimulationHandler,
 )
-from twisterlib.hardwaremap import (
-    DUT
-)
+from twisterlib.hardwaremap import DUT
+from twisterlib.statuses import TwisterStatus
+
+from . import ZEPHYR_BASE
+
 
 @pytest.fixture
 def mocked_instance(tmp_path):
@@ -1049,10 +1046,12 @@ TESTDATA_13 = [
         None,
         None,
         None,
+        None,
         ['west', 'flash', '--skip-rebuild', '-d', '$build_dir']
     ),
     (
         [],
+        None,
         None,
         None,
         ['west', 'flash', '--skip-rebuild', '-d', '$build_dir']
@@ -1061,21 +1060,24 @@ TESTDATA_13 = [
         '--dummy',
         None,
         None,
+        None,
         ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
          '--', '--dummy']
     ),
     (
-        '--dummy1,--dummy2',
+        '--dummy1,--dummy2,"--dummy, 3"',
+        None,
         None,
         None,
         ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
-         '--', '--dummy1', '--dummy2']
+         '--', '--dummy1', '--dummy2', '--dummy, 3']
     ),
 
     (
         None,
         'runner',
         'product',
+        None,
         ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
          '--runner', 'runner', 'param1', 'param2']
     ),
@@ -1084,6 +1086,7 @@ TESTDATA_13 = [
         None,
         'pyocd',
         'product',
+        None,
         ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
          '--runner', 'pyocd', 'param1', 'param2', '--', '--dev-id', 12345]
     ),
@@ -1091,6 +1094,7 @@ TESTDATA_13 = [
         None,
         'nrfjprog',
         'product',
+        None,
         ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
          '--runner', 'nrfjprog', 'param1', 'param2', '--', '--dev-id', 12345]
     ),
@@ -1098,6 +1102,7 @@ TESTDATA_13 = [
         None,
         'openocd',
         'STM32 STLink',
+        None,
         ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
          '--runner', 'openocd', 'param1', 'param2',
          '--', '--cmd-pre-init', 'hla_serial 12345']
@@ -1106,6 +1111,7 @@ TESTDATA_13 = [
         None,
         'openocd',
         'STLINK-V3',
+        None,
         ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
          '--runner', 'openocd', 'param1', 'param2',
          '--', '--cmd-pre-init', 'hla_serial 12345']
@@ -1114,6 +1120,7 @@ TESTDATA_13 = [
         None,
         'openocd',
         'EDBG CMSIS-DAP',
+        None,
         ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
          '--runner', 'openocd', 'param1', 'param2',
          '--', '--cmd-pre-init', 'cmsis_dap_serial 12345']
@@ -1122,6 +1129,7 @@ TESTDATA_13 = [
         None,
         'jlink',
         'product',
+        None,
         ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
          '--runner', 'jlink', '--dev-id', 12345,
          'param1', 'param2']
@@ -1130,23 +1138,39 @@ TESTDATA_13 = [
         None,
         'stm32cubeprogrammer',
         'product',
+        None,
         ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
          '--runner', 'stm32cubeprogrammer', '--tool-opt=sn=12345',
          'param1', 'param2']
     ),
-
+    (
+        None,
+        None,
+        None,
+        'flash_command',
+        ['flash_command', '--build-dir', '$build_dir', '--board-id', 12345]
+    ),
+    (
+        None,
+        None,
+        None,
+        'path to/flash_command,with,args,"1, 2, 3",4',
+        ['path to/flash_command', '--build-dir', '$build_dir', '--board-id',
+         12345, 'with', 'args', '1, 2, 3', '4']
+    ),
 ]
 
 TESTDATA_13_2 = [(True), (False)]
 
 @pytest.mark.parametrize(
     'self_west_flash, runner,' \
-    ' hardware_product_name, expected',
+    ' hardware_product_name, self_flash_command, expected',
     TESTDATA_13,
     ids=['default', '--west-flash', 'one west flash value',
          'multiple west flash values', 'generic runner', 'pyocd',
          'nrfjprog', 'openocd, STM32 STLink', 'openocd, STLINK-v3',
-         'openocd, EDBG CMSIS-DAP', 'jlink', 'stm32cubeprogrammer']
+         'openocd, EDBG CMSIS-DAP', 'jlink', 'stm32cubeprogrammer',
+         'flash_command', 'flash_command with args']
 )
 @pytest.mark.parametrize('hardware_probe', TESTDATA_13_2, ids=['probe', 'id'])
 def test_devicehandler_create_command(
@@ -1155,10 +1179,12 @@ def test_devicehandler_create_command(
     runner,
     hardware_probe,
     hardware_product_name,
+    self_flash_command,
     expected
 ):
     handler = DeviceHandler(mocked_instance, 'build', mock.Mock())
-    handler.options = mock.Mock(west_flash=self_west_flash)
+    handler.options = mock.Mock(west_flash=self_west_flash,
+                                flash_command=self_flash_command, verbose=0)
     handler.generator_cmd = 'generator_cmd'
 
     expected = [handler.build_dir if val == '$build_dir' else \
@@ -1424,7 +1450,8 @@ def test_devicehandler_handle(
     handler.options = mock.Mock(
         timeout_multiplier=1,
         west_flash=None,
-        west_runner=None
+        west_runner=None,
+        verbose=0
     )
     handler._start_serial_pty = mock.Mock(side_effect=mock_start_serial_pty)
     handler._create_command = mock.Mock(return_value=['dummy', 'command'])
@@ -1998,7 +2025,8 @@ def test_qemuhandler_handle(
     handler.options = mock.Mock(
         timeout_multiplier=1,
         west_flash=handler_options_west_flash,
-        west_runner=None
+        west_runner=None,
+        verbose=0,
     )
     handler.run_custom_script = mock.Mock(return_value=None)
     handler.make_device_available = mock.Mock(return_value=None)

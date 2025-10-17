@@ -56,7 +56,14 @@ config SOC_FLASH_NRF_RADIO_SYNC_NONE
 	bool "none"
 	help
 	  disable synchronization between flash memory driver and radio.
+
 endchoice
+
+config SOC_FLASH_NRF_THROTTLING
+	bool "Nordic nRFx throttling for flash write operations"
+	help
+	  Enable throttling for flash write operations to avoid overloading the
+	  flash memory controller.
 
 config SOC_FLASH_NRF_TIMEOUT_MULTIPLIER
 	int "Multiplier for flash operation timeouts [x0.1]"
@@ -80,5 +87,21 @@ config NRF_RRAM_REGION_SIZE_UNIT
 	default 0x400
 	help
 	  Base unit for the size of RRAMC's region protection.
+
+config NRF_RRAM_THROTTLING_DELAY
+	int "Delay between flash write operations"
+	depends on SOC_FLASH_NRF_THROTTLING
+	default 2000
+	help
+	  This is the delay (in microseconds) between consecutive flash write
+	  operations when throttling is enabled.
+
+config NRF_RRAM_THROTTLING_DATA_BLOCK
+	int "Number of Data blocks for each flash write operations"
+	depends on SOC_FLASH_NRF_THROTTLING
+	default 16
+	help
+	  This is the number of data blocks (in number of 128-bit words) for flash write
+	  operations when throttling is enabled.
 
 endif # SOC_FLASH_NRF_RRAM

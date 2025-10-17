@@ -7,8 +7,6 @@ source "lib/libc/Kconfig"
 
 source "lib/cpp/Kconfig"
 
-source "lib/crc/Kconfig"
-
 menu "Additional libraries"
 
 source "lib/hash/Kconfig"
@@ -17,13 +15,13 @@ source "lib/heap/Kconfig"
 
 source "lib/mem_blocks/Kconfig"
 
+source "lib/midi2/Kconfig"
+
 source "lib/net_buf/Kconfig"
 
 source "lib/os/Kconfig"
 
 source "lib/posix/Kconfig"
-
-source "lib/open-amp/Kconfig"
 
 source "lib/smf/Kconfig"
 

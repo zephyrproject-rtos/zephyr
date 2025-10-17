@@ -13,6 +13,7 @@ description: |
 
   Group g1 PORT PINCTRL driver supports following hardware peripherals:
     - module name="PORT" id="U2210" version="2.2.0"
+    - module name="PORT" id="U2210" version="3.1.0"
 
   The node has the 'pinctrl' node label set in your SoC's devicetree, so you can
   modify it like this:
@@ -112,7 +113,7 @@ child-binding:
         description: |
           An array of pins sharing the same group properties. The pins should
           be defined using pre-defined macros or, alternatively, using the
-          SAM_PINMUX utility macros depending on the pinmux model used by the
+          MCHP_PINMUX utility macros depending on the pinmux model used by the
           SoC series.
       drive-strength:
         enum:

@@ -30,7 +30,7 @@
 
 		loco: clock-loco {
 			compatible = "renesas,rx-cgc-root-clock";
-			clock-frequency =  <DT_FREQ_M(4)>;
+			clock-frequency = <DT_FREQ_M(4)>;
 			#clock-cells = <0>;
 			status = "okay";
 		};
@@ -62,7 +62,7 @@
 		pclkblock: pclkblock@80010 {
 			compatible = "renesas,rx-cgc-pclk-block";
 			reg = <0x00080010 4>, <0x00080014 4>, <0x00080018 4>,
-					<0x0008001C 4>;
+			      <0x0008001C 4>;
 			reg-names = "MSTPA", "MSTPB", "MSTPC", "MSTPD";
 			#clock-cells = <0>;
 			clocks = <&pll>;
@@ -162,6 +162,7 @@
 			reg = <0x7fc090 0x3f24>;
 			interrupts = <23 1>;
 			interrupt-names = "frdyi";
+
 			code_flash: flash@fff80000 {
 				compatible = "renesas,rx-nv-flash";
 				reg = <0xfff80000 DT_SIZE_K(512)>;

@@ -11,6 +11,7 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 	};
+
 	expander2_x_nucleo_53l0a1: stmpe1600@43 {
 		compatible = "st,stmpe1600";
 		reg = <0x43>;
@@ -32,6 +33,7 @@
 		reg = <0x31>;
 		xshut-gpios = <&expander2_x_nucleo_53l0a1 14 GPIO_ACTIVE_LOW>;
 	};
+
 	vl53l0x_r_x_nucleo_53l0a1: vl53l0x@32 {
 		compatible = "st,vl53l0x";
 		reg = <0x32>;

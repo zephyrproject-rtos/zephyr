@@ -53,7 +53,6 @@ struct uart_silabs_config {
 
 enum uart_silabs_pm_lock {
 	UART_SILABS_PM_LOCK_TX,
-	UART_SILABS_PM_LOCK_TX_POLL,
 	UART_SILABS_PM_LOCK_RX,
 	UART_SILABS_PM_LOCK_COUNT,
 };
@@ -88,7 +87,8 @@ static int uart_silabs_pm_action(const struct device *dev, enum pm_device_action
  *
  * @return true if lock was taken, false otherwise
  */
-static bool uart_silabs_pm_lock_get(const struct device *dev, enum uart_silabs_pm_lock lock)
+static __maybe_unused bool uart_silabs_pm_lock_get(const struct device *dev,
+						   enum uart_silabs_pm_lock lock)
 {
 #ifdef CONFIG_PM
 	struct uart_silabs_data *data = dev->data;
@@ -114,7 +114,8 @@ static bool uart_silabs_pm_lock_get(const struct device *dev, enum uart_silabs_p
  *
  * @return true if lock was released, false otherwise
  */
-static bool uart_silabs_pm_lock_put(const struct device *dev, enum uart_silabs_pm_lock lock)
+static __maybe_unused bool uart_silabs_pm_lock_put(const struct device *dev,
+						   enum uart_silabs_pm_lock lock)
 {
 #ifdef CONFIG_PM
 	struct uart_silabs_data *data = dev->data;
@@ -149,11 +150,13 @@ static void uart_silabs_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct uart_silabs_config *config = dev->config;
 
-	if (uart_silabs_pm_lock_get(dev, UART_SILABS_PM_LOCK_TX_POLL)) {
-		USART_IntEnable(config->base, USART_IF_TXC);
-	}
-
+	/* USART_Tx function already waits for the transmit buffer being empty
+	 * and waits for the bus to be free to transmit.
+	 */
 	USART_Tx(config->base, c);
+
+	while (!(config->base->STATUS & USART_STATUS_TXC)) {
+	}
 }
 
 static int uart_silabs_err_check(const struct device *dev)
@@ -746,25 +749,21 @@ static int uart_silabs_async_init(const struct device *dev)
 static void uart_silabs_isr(const struct device *dev)
 {
 	__maybe_unused struct uart_silabs_data *data = dev->data;
+#ifdef CONFIG_UART_SILABS_USART_ASYNC
 	const struct uart_silabs_config *config = dev->config;
 	USART_TypeDef *usart = config->base;
 	uint32_t flags = USART_IntGet(usart);
-#ifdef CONFIG_UART_SILABS_USART_ASYNC
 	struct dma_status stat;
 #endif
-
-	if (flags & USART_IF_TXC) {
-		if (uart_silabs_pm_lock_put(dev, UART_SILABS_PM_LOCK_TX_POLL)) {
-			USART_IntDisable(usart, USART_IEN_TXC);
-			USART_IntClear(usart, USART_IF_TXC);
-		}
-	}
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	if (data->callback) {
 		data->callback(dev, data->cb_data);
 	}
 #endif
 #ifdef CONFIG_UART_SILABS_USART_ASYNC
+	if (!data->dma_tx.dma_dev) {
+		return;
+	}
 	if (flags & USART_IF_TCMP1) {
 
 		data->dma_rx.timeout_cnt++;

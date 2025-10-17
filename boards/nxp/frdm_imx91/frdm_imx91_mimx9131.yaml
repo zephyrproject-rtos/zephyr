@@ -1,0 +1,18 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: frdm_imx91/mimx9131
+name: NXP FRDM-IMX91
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 1024
+supported:
+  - counter
+  - uart
+vendor: nxp

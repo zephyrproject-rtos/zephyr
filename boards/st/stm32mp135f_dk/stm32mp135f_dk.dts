@@ -70,8 +70,8 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <CSI_IO0  0 &mcp23017 4  0>,
-			   <CSI_IO1  0 &mcp23017 3  0>;
+		gpio-map = <CSI_IO0 0 &mcp23017 4 0>,
+			   <CSI_IO1 0 &mcp23017 3 0>;
 	};
 };
 
@@ -159,6 +159,7 @@ csi_i2c: &i2c5 {
 		ports {
 			#address-cells = <1>;
 			#size-cells = <0>;
+
 			port@0 {
 				reg = <0>;
 
@@ -188,32 +189,26 @@ csi_interface: &dcmipp {
 		     &dcmipp_pixclk_pb7 &dcmipp_vsync_pg9 &dcmipp_hsync_ph8>;
 	pinctrl-names = "default";
 
-	ports {
-		port@0 {
-			dcmipp_ep_in: endpoint {
-				bus-width = <8>;
-				hsync-active = <0>;
-				vsync-active = <0>;
-				pclk-sample = <0>;
-				bus-type = <VIDEO_BUS_TYPE_PARALLEL>;
-				remote-endpoint-label = "mipid02_2";
-			};
-		};
-
-		port@1 {
-			csi_capture_port: endpoint { };
+	port {
+		dcmipp_ep_in: endpoint {
+			bus-width = <8>;
+			hsync-active = <0>;
+			vsync-active = <0>;
+			pclk-sample = <0>;
+			bus-type = <VIDEO_BUS_TYPE_PARALLEL>;
+			remote-endpoint-label = "mipid02_2";
 		};
 	};
 };
 
 &ltdc {
 	pinctrl-0 = <&ltdc_r2_pg7 &ltdc_r3_pb12
-			&ltdc_r4_pd14 &ltdc_r5_pe7 &ltdc_r6_pe13 &ltdc_r7_pe9
-			&ltdc_g2_ph13 &ltdc_g3_pf3
-			&ltdc_g4_pd5 &ltdc_g5_pg0 &ltdc_g6_pc7 &ltdc_g7_pa15
-			&ltdc_b2_pd10 &ltdc_b3_pf2
-			&ltdc_b4_ph14 &ltdc_b5_pe0 &ltdc_b6_pb6 &ltdc_b7_pf1
-			&ltdc_de_ph9 &ltdc_clk_pd9 &ltdc_hsync_pc6 &ltdc_vsync_pg4>;
+		     &ltdc_r4_pd14 &ltdc_r5_pe7 &ltdc_r6_pe13 &ltdc_r7_pe9
+		     &ltdc_g2_ph13 &ltdc_g3_pf3
+		     &ltdc_g4_pd5 &ltdc_g5_pg0 &ltdc_g6_pc7 &ltdc_g7_pa15
+		     &ltdc_b2_pd10 &ltdc_b3_pf2
+		     &ltdc_b4_ph14 &ltdc_b5_pe0 &ltdc_b6_pb6 &ltdc_b7_pf1
+		     &ltdc_de_ph9 &ltdc_clk_pd9 &ltdc_hsync_pc6 &ltdc_vsync_pg4>;
 	pinctrl-names = "default";
 	disp-on-gpios = <&gpioi 7 GPIO_ACTIVE_HIGH>;
 	bl-ctrl-gpios = <&gpioe 12 GPIO_ACTIVE_HIGH>;

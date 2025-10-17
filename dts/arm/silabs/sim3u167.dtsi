@@ -9,7 +9,7 @@
 
 / {
 	soc {
-		compatible =  "silabs,sim3u167", "silabs,sim3u", "silabs,sim3", "simple-bus";
+		compatible = "silabs,sim3u167", "silabs,sim3u", "silabs,sim3", "simple-bus";
 	};
 };
 

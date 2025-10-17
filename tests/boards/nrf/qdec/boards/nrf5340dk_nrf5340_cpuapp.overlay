@@ -4,12 +4,6 @@
  */
 
 / {
-	aliases {
-		qdec0 = &qdec1;
-		qenca = &phase_a;
-		qencb = &phase_b;
-	};
-
 	encoder-emulate {
 		compatible = "gpio-leds";
 		phase_a: phase_a {
@@ -21,12 +15,20 @@
 			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 		};
 	};
+
+	qdec_loopbacks: loopbacks {
+		compatible = "test-qdec-loopbacks";
+		loopback0 {
+			qdec = <&qdec1>;
+			qenc-emul-gpios = <&phase_a &phase_b>;
+		};
+	};
 };
 
 &pinctrl {
 	qdec_pinctrl: qdec_pinctrl {
 		group1 {
-			psels = <NRF_PSEL(QDEC_A, 0, 4)>,   /* Ardiuno A0 */
+			psels = <NRF_PSEL(QDEC_A, 0, 4)>,   /* Arduino A0 */
 				<NRF_PSEL(QDEC_B, 0, 6)>;   /* Arduino A2 */
 		};
 	};
@@ -45,8 +47,8 @@
 	pinctrl-0 = <&qdec_pinctrl>;
 	pinctrl-1 = <&qdec_sleep_pinctrl>;
 	pinctrl-names = "default", "sleep";
-	steps = < 127 >;
-	led-pre = < 500 >;
+	steps = <127>;
+	led-pre = <500>;
 	zephyr,pm-device-runtime-auto;
 };
 

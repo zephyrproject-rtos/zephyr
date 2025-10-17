@@ -23,6 +23,9 @@
 };
 
 xiao_i2c: &i2c22 {};
+
 xiao_spi: &spi00 {};
+
 xiao_serial: &uart21 {};
+
 xiao_adc: &adc {};

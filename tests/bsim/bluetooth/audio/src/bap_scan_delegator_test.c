@@ -123,6 +123,7 @@ static void pa_timer_handler(struct k_work *work)
 
 	if (state->recv_state != NULL) {
 		enum bt_bap_pa_state pa_state;
+		int err;
 
 		if (state->recv_state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
 			pa_state = BT_BAP_PA_STATE_NO_PAST;
@@ -130,8 +131,11 @@ static void pa_timer_handler(struct k_work *work)
 			pa_state = BT_BAP_PA_STATE_FAILED;
 		}
 
-		bt_bap_scan_delegator_set_pa_state(state->recv_state->src_id,
-						   pa_state);
+		err = bt_bap_scan_delegator_set_pa_state(state->recv_state->src_id, pa_state);
+		if (err != 0) {
+			FAIL("Could not set PA sync state: %d\n", err);
+			return;
+		}
 	}
 
 	FAIL("PA timeout\n");
@@ -286,7 +290,8 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 			err = bt_bap_scan_delegator_set_pa_state(state->recv_state->src_id,
 								 BT_BAP_PA_STATE_INFO_REQ);
 			if (err != 0) {
-				printk("Failed to set INFO_REQ state: %d", err);
+				FAIL("Could not set PA sync state: %d\n", err);
+				return err;
 			}
 		}
 	} else {
@@ -426,6 +431,16 @@ static void pa_synced_cb(struct bt_le_per_adv_sync *sync,
 		return;
 	}
 
+	if (state->recv_state != NULL) {
+		int err;
+
+		err = bt_bap_scan_delegator_set_pa_state(state->src_id, BT_BAP_PA_STATE_SYNCED);
+		if (err != 0) {
+			FAIL("Could not set PA sync state: %d\n", err);
+			return;
+		}
+	}
+
 	k_work_cancel_delayable(&state->pa_timer);
 
 	SET_FLAG(flag_pa_synced);
@@ -442,6 +457,16 @@ static void pa_term_cb(struct bt_le_per_adv_sync *sync,
 	if (state == NULL) {
 		FAIL("Could not get sync state from PA sync %p\n", sync);
 		return;
+	}
+
+	if (state->recv_state != NULL) {
+		int err;
+
+		err = bt_bap_scan_delegator_set_pa_state(state->src_id, BT_BAP_PA_STATE_NOT_SYNCED);
+		if (err != 0) {
+			FAIL("Could not set PA sync state: %d\n", err);
+			return;
+		}
 	}
 
 	k_work_cancel_delayable(&state->pa_timer);
@@ -541,6 +566,7 @@ static int add_source(struct sync_state *state)
 
 	bt_addr_le_copy(&param.addr, &sync_info.addr);
 	param.sid = sync_info.sid;
+	param.pa_state = BT_BAP_PA_STATE_SYNCED;
 	param.encrypt_state = BT_BAP_BIG_ENC_STATE_NO_ENC;
 	param.broadcast_id = g_broadcast_id;
 	param.num_subgroups = 1U;
@@ -656,6 +682,8 @@ static int remove_source(struct sync_state *state)
 	if (err) {
 		return err;
 	}
+
+	state->recv_state = NULL;
 
 	WAIT_FOR_FLAG(flag_recv_state_updated);
 

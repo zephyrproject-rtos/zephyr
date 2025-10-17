@@ -88,13 +88,13 @@ static int video_esp32_reload_dma(struct video_esp32_data *data)
 
 	ret = dma_reload(cfg->dma_dev, cfg->rx_dma_channel, 0, (uint32_t)data->active_vbuf->buffer,
 			 data->active_vbuf->bytesused);
-	if (ret) {
+	if (ret < 0) {
 		LOG_ERR("Unable to reload DMA (%d)", ret);
 		return ret;
 	}
 
 	ret = dma_start(cfg->dma_dev, cfg->rx_dma_channel);
-	if (ret) {
+	if (ret < 0) {
 		LOG_ERR("Unable to start DMA (%d)", ret);
 		return ret;
 	}
@@ -245,8 +245,8 @@ static int video_esp32_get_caps(const struct device *dev, struct video_caps *cap
 {
 	const struct video_esp32_config *config = dev->config;
 
-	/* ESP32 produces full frames */
-	caps->min_line_count = caps->max_line_count = LINE_COUNT_HEIGHT;
+	/* Two buffers are needed to perform transfers */
+	caps->min_vbuf_count = 2;
 
 	/* Forward the message to the source device */
 	return video_get_caps(config->source_dev, caps);
@@ -260,12 +260,15 @@ static int video_esp32_get_fmt(const struct device *dev, struct video_format *fm
 	LOG_DBG("Get format");
 
 	ret = video_get_format(cfg->source_dev, fmt);
-	if (ret) {
+	if (ret < 0) {
 		LOG_ERR("Failed to get format from source");
 		return ret;
 	}
 
-	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
+	ret = video_estimate_fmt_size(fmt);
+	if (ret < 0) {
+		return ret;
+	}
 
 	return 0;
 }
@@ -281,7 +284,10 @@ static int video_esp32_set_fmt(const struct device *dev, struct video_format *fm
 		return ret;
 	}
 
-	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
+	ret = video_estimate_fmt_size(fmt);
+	if (ret < 0) {
+		return ret;
+	}
 
 	data->video_format = *fmt;
 
@@ -371,6 +377,20 @@ static void video_esp32_cam_ctrl_init(const struct device *dev)
 	cam_ll_enable_invert_hsync(data->hal.hw, cfg->invert_hsync);
 }
 
+static int video_esp32_set_frmival(const struct device *dev, struct video_frmival *frmival)
+{
+	const struct video_esp32_config *cfg = dev->config;
+
+	return video_set_frmival(cfg->source_dev, frmival);
+}
+
+static int video_esp32_get_frmival(const struct device *dev, struct video_frmival *frmival)
+{
+	const struct video_esp32_config *cfg = dev->config;
+
+	return video_get_frmival(cfg->source_dev, frmival);
+}
+
 static int video_esp32_init(const struct device *dev)
 {
 	const struct video_esp32_config *cfg = dev->config;
@@ -389,6 +409,34 @@ static int video_esp32_init(const struct device *dev)
 	return 0;
 }
 
+int video_esp32_set_selection(const struct device *dev, struct video_selection *sel)
+{
+	struct video_esp32_data *data = dev->data;
+	const struct video_esp32_config *cfg = dev->config;
+	int ret;
+
+	ret = video_set_selection(cfg->source_dev, sel);
+	if (ret < 0) {
+		LOG_ERR("Failed to set selection on source device");
+		return ret;
+	}
+
+	ret = video_get_format(cfg->source_dev, &data->video_format);
+	if (ret < 0) {
+		LOG_ERR("Failed to get format from source device");
+		return ret;
+	}
+
+	return 0;
+}
+
+int video_esp32_get_selection(const struct device *dev, struct video_selection *sel)
+{
+	const struct video_esp32_config *cfg = dev->config;
+
+	return video_get_selection(cfg->source_dev, sel);
+}
+
 static DEVICE_API(video, esp32_driver_api) = {
 	/* mandatory callbacks */
 	.set_format = video_esp32_set_fmt,
@@ -399,6 +447,10 @@ static DEVICE_API(video, esp32_driver_api) = {
 	.enqueue = video_esp32_enqueue,
 	.dequeue = video_esp32_dequeue,
 	.flush = video_esp32_flush,
+	.set_selection = video_esp32_set_selection,
+	.get_selection = video_esp32_get_selection,
+	.set_frmival = video_esp32_set_frmival,
+	.get_frmival = video_esp32_get_frmival,
 #ifdef CONFIG_POLL
 	.set_signal = video_esp32_set_signal,
 #endif

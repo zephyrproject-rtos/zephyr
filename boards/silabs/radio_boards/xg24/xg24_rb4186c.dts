@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/xg24/efr32mg24b210f1536im48.dtsi>
+#include "xg24_rb418xc.dtsi"
+
+/ {
+	model = "Silicon Labs EFR32xG24 2.4 GHz 10 dBm Radio Board (xG24-RB4186C, BRD4186C)";
+	compatible = "silabs,xg24_rb4186c", "silabs,efr32mg24";
+};
+
+&dcdc {
+	silabs,pfmx-peak-current-milliamp = <120>;
+};
+
+&radio {
+	pa-voltage-mv = <1800>;
+};

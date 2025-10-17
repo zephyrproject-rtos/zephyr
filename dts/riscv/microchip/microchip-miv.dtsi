@@ -11,12 +11,14 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+
 		cpu@0 {
 			clock-frequency = <0>;
 			compatible = "microchip,miv", "riscv";
 			device_type = "cpu";
 			reg = <0>;
 			riscv,isa = "rv32ima_zicsr_zifencei";
+
 			hlic: interrupt-controller {
 				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;

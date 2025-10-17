@@ -9,3 +9,5 @@ properties:
     default: "BT IPM"
   bt-hci-bus:
     default: "ipc"
+  bt-hci-quirks:
+    default: ["no-reset"]

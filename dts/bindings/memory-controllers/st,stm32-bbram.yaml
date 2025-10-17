@@ -10,6 +10,9 @@ description: |
   by system reset or when the device wakes up from Standby mode. They are
   reset by a backup domain reset.
 
+  Note: Since STM32 BBRAM is in RTC backup domain, STM32 RTC node must be
+        enabled if STM32 BBRAM node is enabled.
+
 compatible: "st,stm32-bbram"
 
 include: base.yaml

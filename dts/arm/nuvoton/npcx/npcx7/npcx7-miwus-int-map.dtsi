@@ -16,13 +16,14 @@
 			parent = <&miwu0>;
 
 			group_ad0: group-ad0-map {
-				irq        = <7>;
-				irq-prio   = <3>;
+				irq = <7>;
+				irq-prio = <3>;
 				group-mask = <0x09>;
 			};
+
 			group_efgh0: group-efgh0-map {
-				irq        = <11>;
-				irq-prio   = <3>;
+				irq = <11>;
+				irq-prio = <3>;
 				group-mask = <0xF0>;
 			};
 		};
@@ -32,8 +33,8 @@
 			parent = <&miwu2>;
 
 			group_fg2: group-fg2-map {
-				irq        = <59>;
-				irq-prio   = <3>;
+				irq = <59>;
+				irq-prio = <3>;
 				group-mask = <0x60>;
 			};
 		};

@@ -9,6 +9,7 @@ toolchain:
   - zephyr
 ram: 128
 supported:
+  - sdhc
   - shell
   - uart
 vendor: microchip

@@ -1,0 +1,10 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8.1-m.dtsi>
+#include <arm/renesas/ra/ra8/r7ka8t2lfecac.dtsi>
+
+/delete-node/ &cpu1;

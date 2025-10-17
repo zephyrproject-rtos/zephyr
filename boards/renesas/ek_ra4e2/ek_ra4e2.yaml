@@ -13,4 +13,5 @@ supported:
   - watchdog
   - counter
   - i3c
+  - crc
 vendor: renesas

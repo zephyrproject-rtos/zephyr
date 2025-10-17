@@ -15,6 +15,7 @@ import time
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
 from enum import Enum
+from string import Template
 
 import junitparser.junitparser as junit
 import yaml
@@ -242,6 +243,7 @@ class Robot(Harness):
                     f"Robot test failure: {handler.sourcedir} for {self.instance.platform.name}"
                 )
                 self.instance.status = TwisterStatus.FAIL
+                self.instance.reason = f"Exited with {renode_test_proc.returncode}"
                 self.instance.testcases[0].status = TwisterStatus.FAIL
 
             if out:
@@ -434,6 +436,9 @@ class Pytest(Harness):
                 f'Support for handler {handler.type_str} not implemented yet'
             )
 
+        for req_build in self.instance.required_build_dirs:
+            command.append(f'--required-build={req_build}')
+
         if handler.type_str != 'device':
             for fixture in handler.options.fixture:
                 command.append(f'--twister-fixture={fixture}')
@@ -478,6 +483,9 @@ class Pytest(Harness):
 
         if options.west_flash and options.west_flash != []:
             command.append(f'--west-flash-extra-args={options.west_flash}')
+
+        if options.flash_command:
+            command.append(f'--flash-command={options.flash_command}')
 
         if board_id := hardware.probe_id or hardware.id:
             command.append(f'--device-id={board_id}')
@@ -644,7 +652,9 @@ class Display_capture(Pytest):
 
     def _get_display_config_file(self, harness_config):
         if test_config_file := harness_config.get('display_capture_config'):
-            test_config_path = os.path.join(self.source_dir, test_config_file)
+            _template = Template(test_config_file)
+            _config_file = _template.safe_substitute(os.environ)
+            test_config_path = os.path.join(self.source_dir, _config_file)
             logger.info(f'test_config_path = {test_config_path}')
             if os.path.exists(test_config_path):
                 return test_config_path

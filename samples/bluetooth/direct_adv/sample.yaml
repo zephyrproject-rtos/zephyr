@@ -1,5 +1,5 @@
 sample:
-  name: Bluetooh Direct Advertising
+  name: Bluetooth Direct Advertising
 tests:
   sample.bluetooth.direct_adv:
     harness: bluetooth

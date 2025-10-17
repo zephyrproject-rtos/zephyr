@@ -637,16 +637,14 @@ out:
 #endif /* defined(CONFIG_NET_SOCKETS_PACKET) || defined(CONFIG_NET_SOCKETS_INET_RAW) */
 
 #if defined(CONFIG_NET_SOCKETS_PACKET)
-enum net_verdict net_conn_packet_input(struct net_pkt *pkt, uint16_t proto)
+void net_conn_packet_input(struct net_pkt *pkt, uint16_t proto, enum net_sock_type type)
 {
-	bool raw_sock_found = false;
-	bool raw_pkt_continue = false;
 	struct sockaddr_ll *local;
 	struct net_conn *conn;
 
 	/* Only accept input with AF_PACKET family. */
 	if (net_pkt_family(pkt) != AF_PACKET) {
-		return NET_CONTINUE;
+		return;
 	}
 
 	NET_DBG("Check proto 0x%04x listener for pkt %p family %d",
@@ -666,33 +664,22 @@ enum net_verdict net_conn_packet_input(struct net_pkt *pkt, uint16_t proto)
 		 * in this packet.
 		 */
 		if (conn->family != AF_PACKET) {
-			raw_pkt_continue = true;
 			continue; /* wrong family */
 		}
 
-		if (conn->type == SOCK_DGRAM && !net_pkt_is_l2_processed(pkt)) {
-			/* If DGRAM packet sockets are present, we shall continue
-			 * with this packet regardless the result.
-			 */
-			raw_pkt_continue = true;
-			continue; /* L2 not processed yet */
-		}
-
-		if (conn->type == SOCK_RAW && net_pkt_is_l2_processed(pkt)) {
-			continue; /* L2 already processed */
+		if (conn->type != type) {
+			continue;
 		}
 
 		if (conn->proto == 0) {
 			continue; /* Local proto 0 doesn't forward any packets */
 		}
 
-		if (conn->proto != proto) {
-			/* Allow proto mismatch if socket was created with ETH_P_ALL, or it's raw
-			 * packet socket input (proto ETH_P_ALL).
-			 */
-			if (conn->proto != ETH_P_ALL && proto != ETH_P_ALL) {
-				continue; /* wrong protocol */
-			}
+		/* Allow proto mismatch if socket was created with ETH_P_ALL, or it's raw
+		 * packet socket input.
+		 */
+		if (conn->proto != proto && conn->proto != ETH_P_ALL && type != SOCK_RAW) {
+			continue; /* wrong protocol */
 		}
 
 		/* Apply protocol-specific matching criteria... */
@@ -708,31 +695,17 @@ enum net_verdict net_conn_packet_input(struct net_pkt *pkt, uint16_t proto)
 
 		conn_raw_socket_deliver(pkt, conn, false);
 
-		raw_sock_found = true;
 	}
 
 	k_mutex_unlock(&conn_lock);
 
-	if (!raw_pkt_continue && raw_sock_found) {
-		/* As one or more raw socket packets have already been delivered
-		 * in the loop above, report NET_OK.
-		 */
-		net_pkt_unref(pkt);
-		return NET_OK;
-	}
-
-	/* When there is open connection different than AF_PACKET this
-	 * packet shall be also handled in the upper net stack layers.
-	 */
-	return NET_CONTINUE;
 }
 #else
-enum net_verdict net_conn_packet_input(struct net_pkt *pkt, uint16_t proto)
+void net_conn_packet_input(struct net_pkt *pkt, uint16_t proto, enum net_sock_type type)
 {
 	ARG_UNUSED(pkt);
 	ARG_UNUSED(proto);
-
-	return NET_CONTINUE;
+	ARG_UNUSED(type);
 }
 #endif /* defined(CONFIG_NET_SOCKETS_PACKET) */
 

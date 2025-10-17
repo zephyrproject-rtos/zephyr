@@ -16,6 +16,7 @@ supported:
   - spi
   - i2c
   - mspi
+  - logging
 testing:
   ignore_tags:
     - net

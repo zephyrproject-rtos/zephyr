@@ -25,7 +25,11 @@ if(CONFIG_BOARD_MPS3_CORSTONE300_AN547 OR CONFIG_BOARD_MPS3_CORSTONE300_AN547_NS
     )
 elseif(CONFIG_BOARD_MPS3_CORSTONE300_FVP OR CONFIG_BOARD_MPS3_CORSTONE300_FVP_NS)
   set(SUPPORTED_EMU_PLATFORMS armfvp)
-  set(ARMFVP_BIN_NAME FVP_Corstone_SSE-300_Ethos-U55)
+  if(CONFIG_ETHOS_U65_128 OR CONFIG_ETHOS_U65_256 OR CONFIG_ETHOS_U65_512)
+    set(ARMFVP_BIN_NAME FVP_Corstone_SSE-300_Ethos-U65)
+  else()
+    set(ARMFVP_BIN_NAME FVP_Corstone_SSE-300_Ethos-U55)
+  endif()
 elseif(CONFIG_BOARD_MPS3_CORSTONE300)
   string(REPLACE "mps3/corstone300;" "" board_targets "${board_targets}")
   string(REPLACE ";" "\n" board_targets "${board_targets}")
@@ -41,6 +45,11 @@ elseif(CONFIG_BOARD_MPS3_CORSTONE310_FVP OR CONFIG_BOARD_MPS3_CORSTONE310_FVP_NS
       # and sram and it reduces the number of available mpu regions causing a
       # few MPU tests to fail.
       -C cpu0.MPU_S=16
+    )
+  endif()
+  if(CONFIG_ARM_PAC OR CONFIG_ARM_BTI)
+    set(ARMFVP_FLAGS ${ARMFVP_FLAGS}
+      -C cpu0.CFGPACBTI=1
     )
   endif()
 endif()

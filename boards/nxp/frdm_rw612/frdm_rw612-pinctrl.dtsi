@@ -24,10 +24,10 @@
 	pinmux_enet: pinmux_enet {
 		group0 {
 			pinmux = <IO_MUX_ENET_CLK
-				IO_MUX_ENET_RX
-				IO_MUX_ENET_TX
-				IO_MUX_GPIO21
-				IO_MUX_GPIO55>;
+				  IO_MUX_ENET_RX
+				  IO_MUX_ENET_TX
+				  IO_MUX_GPIO21
+				  IO_MUX_GPIO55>;
 			slew-rate = "fast";
 		};
 	};
@@ -64,12 +64,13 @@
 	pinmux_lcdic: pinmux_lcdic {
 		group0 {
 			pinmux = <IO_MUX_LCD_SPI_IO45
-				IO_MUX_LCD_SPI_IO46
-				IO_MUX_LCD_SPI_IO47
-				IO_MUX_LCD_SPI_IO48
-				IO_MUX_LCD_SPI_IO49>;
+				  IO_MUX_LCD_SPI_IO46
+				  IO_MUX_LCD_SPI_IO47
+				  IO_MUX_LCD_SPI_IO48
+				  IO_MUX_LCD_SPI_IO49>;
 			slew-rate = "ultra";
 		};
+
 		group1 {
 			pinmux = <IO_MUX_LCD_SPI_IO44>;
 			slew-rate = "ultra";
@@ -87,16 +88,15 @@
 	pinmux_hsgpio0: pinmux_hsgpio0 {
 		group0 {
 			pinmux = <IO_MUX_GPIO11
-				IO_MUX_GPIO18
-				IO_MUX_GPIO21
-				>;
+				  IO_MUX_GPIO18
+				  IO_MUX_GPIO21>;
 			slew-rate = "normal";
 		};
+
 		group1 {
 			pinmux = <IO_MUX_GPIO0
-				IO_MUX_GPIO1
-				IO_MUX_GPIO12
-				>;
+				  IO_MUX_GPIO1
+				  IO_MUX_GPIO12>;
 			slew-rate = "normal";
 			sleep-output = "high";
 		};
@@ -105,8 +105,7 @@
 	pinmux_hsgpio1: pinmux_hsgpio1 {
 		group0 {
 			pinmux = <IO_MUX_GPIO44
-				IO_MUX_GPIO55
-				>;
+				  IO_MUX_GPIO55>;
 			slew-rate = "normal";
 		};
 	};

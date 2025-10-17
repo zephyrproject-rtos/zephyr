@@ -28,10 +28,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led1: led_1 {
 			gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
 			label = "Red LED 1";
 		};
+
 		led2: led_2 {
 			gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
 			label = "Green LED 2";
@@ -54,11 +56,13 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button1: button_1 {
 			gpios = <&gpio0 24 GPIO_PULL_UP>;
 			label = "Boot button switch 1 (SW1)";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		button2: button_2 {
 			gpios = <&gpio1 1 GPIO_PULL_UP>;
 			label = "Tamper switch 2 (SW2)";
@@ -186,6 +190,7 @@
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	gpio_exp0: tca9538@70 {
 		compatible = "ti,tca9538";
 		reg = <0x70>;
@@ -200,7 +205,7 @@
 	compatible = "nordic,nrf-spi";
 	status = "okay";
 	cs-gpios = <&gpio0 25 0>,
-		<&gpio0 31 0>;
+		   <&gpio0 31 0>;
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
@@ -211,6 +216,7 @@
 	pinctrl-0 = <&qspi_default>;
 	pinctrl-1 = <&qspi_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	mx25r64: mx25r6435f@0 {
 		compatible = "nordic,qspi-nor";
 		reg = <0>;
@@ -218,12 +224,10 @@
 		readoc = "read4io";
 		sck-frequency = <8000000>;
 		jedec-id = [c2 28 17];
-		sfdp-bfp = [
-			e5 20 f1 ff  ff ff ff 03  44 eb 08 6b  08 3b 04 bb
-			ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 0f 52
-			10 d8 00 ff  23 72 f5 00  82 ed 04 cc  44 83 68 44
-			30 b0 30 b0  f7 c4 d5 5c  00 be 29 ff  f0 d0 ff ff
-		];
+		sfdp-bfp = [e5 20 f1 ff ff ff ff 03 44 eb 08 6b 08 3b 04 bb
+			    ee ff ff ff ff ff 00 ff ff ff 00 ff 0c 20 0f 52
+			    10 d8 00 ff 23 72 f5 00 82 ed 04 cc 44 83 68 44
+			    30 b0 30 b0 f7 c4 d5 5c 00 be 29 ff f0 d0 ff ff];
 		size = <67108864>;
 		has-dpd;
 		t-enter-dpd = <10000>;
@@ -246,6 +250,7 @@
 			label = "mcuboot";
 			reg = <0x00000000 0x00018000>;
 		};
+
 		/* 896K */
 		slot0_partition: partition@18000 {
 			label = "image-0";
@@ -279,16 +284,19 @@
 			label = "image-1";
 			reg = <0x00000000 0x000E0000>;
 		};
+
 		/* 16K */
 		scratch_partition: partition@E0000 {
 			label = "image-scratch";
 			reg = <0x000E0000 0x00004000>;
 		};
+
 		/* 112K */
 		customer_partition: partition@E4000 {
 			label = "customer-storage";
 			reg = <0x000E4000 0x0001C000>;
 		};
+
 		/* 7MB */
 		lfs_partition: partition@100000 {
 			label = "lfs_storage";

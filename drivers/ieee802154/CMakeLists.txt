@@ -20,4 +20,5 @@ zephyr_library_sources_ifdef(CONFIG_IEEE802154_MCXW		ieee802154_mcxw.c		ieee8021
 zephyr_library_sources_ifdef(CONFIG_IEEE802154_NRF5		ieee802154_nrf5.c)
 zephyr_library_sources_ifdef(CONFIG_IEEE802154_RF2XX		ieee802154_rf2xx.c)
 zephyr_library_sources_ifdef(CONFIG_IEEE802154_RF2XX		ieee802154_rf2xx_iface.c)
+zephyr_library_sources_ifdef(CONFIG_IEEE802154_STM32WBA		ieee802154_stm32wba.c)
 zephyr_library_sources_ifdef(CONFIG_IEEE802154_TELINK_B91	ieee802154_b91.c)

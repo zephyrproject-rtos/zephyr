@@ -30,7 +30,7 @@
 		eeprom-1 = &eeprom1;
 	};
 
-	i2c_ref_clk: i2c_ref_clk {
+	i2c_ref_clk: i2c-ref-clk {
 		compatible = "fixed-clock";
 		clock-frequency = <100000000>;
 		#clock-cells = <0>;
@@ -45,7 +45,7 @@
 
 &ttc0 {
 	status = "okay";
-	clock-frequency = <5000000>;
+	clock-frequency = <100000000>;
 };
 
 &psgpio {
