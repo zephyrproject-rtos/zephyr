@@ -45,6 +45,7 @@ static void start_drdy_cooldown_timer(const struct device *dev)
 
 static void pat9136_complete_result(struct rtio *ctx,
 				    const struct rtio_sqe *sqe,
+				    int result,
 				    void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
@@ -74,11 +75,13 @@ static void pat9136_complete_result(struct rtio *ctx,
 
 	/** Attempt chip recovery if erratic behavior is detected  */
 	if (!REG_OBSERVATION_READ_IS_VALID(edata->observation)) {
-
 		LOG_WRN("CHIP OK register indicates issues. Attempting chip recovery: 0x%02X",
 			edata->observation);
+		result = -EAGAIN;
+	}
 
-		rtio_iodev_sqe_err(iodev_sqe, -EAGAIN);
+	if (result < 0) {
+		rtio_iodev_sqe_err(iodev_sqe, result);
 	} else {
 		rtio_iodev_sqe_ok(iodev_sqe, 0);
 	}
