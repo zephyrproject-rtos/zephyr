@@ -86,6 +86,13 @@ config ETH_STM32_HW_CHECKSUM
 	  performances.
 	  See reference manual for more information on this feature.
 
+config ETH_STM32_HAL_TX_ASYNC
+	bool "Use TX async mode"
+	depends on ETH_STM32_HAL_API_V2
+	help
+	  Enable TX transmission asynchronous mode to enhance throughput
+	  performances.
+
 menuconfig PTP_CLOCK_STM32_HAL
 	bool "STM32 HAL PTP clock driver support"
 	default y
