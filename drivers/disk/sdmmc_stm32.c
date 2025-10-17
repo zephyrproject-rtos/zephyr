@@ -63,6 +63,14 @@ LOG_MODULE_REGISTER(stm32_sdmmc, CONFIG_SDMMC_LOG_LEVEL);
 #define SDMMC_HARDWARE_FLOW_CONTROL_DISABLE SDIO_HARDWARE_FLOW_CONTROL_DISABLE
 #endif
 
+#if DT_INST_PROP(0, bus_width) == 1
+#define SDMMC_BUS_WIDTH SDMMC_BUS_WIDE_1B
+#elif DT_INST_PROP(0, bus_width) == 4
+#define SDMMC_BUS_WIDTH SDMMC_BUS_WIDE_4B
+#elif DT_INST_PROP(0, bus_width) == 8
+#define SDMMC_BUS_WIDTH SDMMC_BUS_WIDE_8B
+#endif /* DT_INST_PROP(0, bus_width) */
+
 typedef void (*irq_config_func_t)(const struct device *dev);
 
 #if STM32_SDMMC_USE_DMA
@@ -341,9 +349,13 @@ static int stm32_sdmmc_dma_deinit(struct stm32_sdmmc_priv *priv)
 /* Forward declarations */
 static int stm32_sdmmc_pwr_on(struct stm32_sdmmc_priv *priv);
 static void stm32_sdmmc_pwr_off(struct stm32_sdmmc_priv *priv);
+
+#if !defined(CONFIG_SDMMC_STM32_EMMC)
 static int stm32_sdmmc_card_detect_init(struct stm32_sdmmc_priv *priv);
-static bool stm32_sdmmc_card_present(struct stm32_sdmmc_priv *priv);
 static int stm32_sdmmc_card_detect_uninit(struct stm32_sdmmc_priv *priv);
+#endif /* !CONFIG_SDMMC_STM32_EMMC */
+
+static bool stm32_sdmmc_card_present(struct stm32_sdmmc_priv *priv);
 
 static int stm32_sdmmc_access_init(struct disk_info *disk)
 {
@@ -410,6 +422,17 @@ static int stm32_sdmmc_access_init(struct disk_info *disk)
 		goto error;
 	}
 
+	if (SDMMC_BUS_WIDTH != SDMMC_BUS_WIDE_1B) {
+		priv->hsd.Init.BusWide = SDMMC_BUS_WIDTH;
+		err = HAL_SD_ConfigWideBusOperation(&priv->hsd, priv->hsd.Init.BusWide);
+		if (err != HAL_OK) {
+			LOG_ERR("failed to configure wide bus operation (ErrorCode 0x%X)",
+				priv->hsd.ErrorCode);
+			err = -EIO;
+			goto error;
+		}
+	}
+
 #ifdef CONFIG_SDMMC_STM32_HWFC
 	stm32_sdmmc_fc_enable(priv);
 #endif
@@ -417,7 +440,9 @@ static int stm32_sdmmc_access_init(struct disk_info *disk)
 	priv->status = DISK_STATUS_OK;
 	return 0;
 error:
+#if !defined(CONFIG_SDMMC_STM32_EMMC)
 	stm32_sdmmc_card_detect_uninit(priv);
+#endif /* !CONFIG_SDMMC_STM32_EMMC */
 	stm32_sdmmc_pwr_off(priv);
 	return err;
 }
@@ -893,14 +918,6 @@ static void stm32_sdmmc_irq_config_func(const struct device *dev)
 	irq_enable(DT_INST_IRQN(0));
 }
 
-#if DT_INST_PROP(0, bus_width) == 1
-#define SDMMC_BUS_WIDTH SDMMC_BUS_WIDE_1B
-#elif DT_INST_PROP(0, bus_width) == 4
-#define SDMMC_BUS_WIDTH SDMMC_BUS_WIDE_4B
-#elif DT_INST_PROP(0, bus_width) == 8
-#define SDMMC_BUS_WIDTH SDMMC_BUS_WIDE_8B
-#endif /* DT_INST_PROP(0, bus_width) */
-
 static struct stm32_pclken pclken_sdmmc[] = STM32_DT_INST_CLOCKS(0);
 
 static struct stm32_sdmmc_priv stm32_sdmmc_priv_1 = {
@@ -918,7 +935,7 @@ static struct stm32_sdmmc_priv stm32_sdmmc_priv_1 = {
 						: SDMMC_CLOCK_BYPASS_DISABLE,
 #endif
 		.Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_DISABLE,
-		.Init.BusWide = SDMMC_BUS_WIDTH,
+		.Init.BusWide = SDMMC_BUS_WIDE_1B,
 		.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE,
 		.Init.ClockDiv = DT_INST_PROP_OR(0, clk_div, 0),
 	},

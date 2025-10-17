@@ -16,8 +16,12 @@ properties:
     description: Counter clock frequency
 
   prescaler:
-    required: true
-    description: The frequency of the counter is divided by this value.
+    type: int
+    deprecated: true
+    description: |
+      This property has been deprecated and replaced by prescale-glitch-filter.
+      It no longer has any functional impact. Any value assigned to this property
+      will be disregarded. Consequently, the prescaler will be bypassed.
 
   clk-source:
     type: int
@@ -50,15 +54,19 @@ properties:
 
   prescale-glitch-filter:
     type: int
-    default: 1
-    enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+    default: 0
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
     description: |
-      When in prescaler mode, the counter is incremented every
+      When in prescaler mode, if prescale-glitch-filter is 0, the prescaler
+        is bypassed, the selected prescaler clock increments Counter (CNR) on every
+        clock cycle. Otherwise the counter is incremented every
         2 ^ [prescaler-glitch-filter] clock cycles.
-      When in pulse mode, the counter is incremented every
-        2 ^ [prescaler-glitch-filter] rising edges detected
-        by the pin configured from the input-pin value.
-        Note, that the pulse mode cannot be 2 ^ 16.
+      When in pulse mode, if prescale-glitch-filter is 0, the glitch filter
+        is bypassed, the selected input source increments the value of Counter(CNR)
+        every time it asserts. Otherwise the counter is incremented every
+        2 ^ [prescaler-glitch-filter] rising edges detected by the pin configured
+        from the input-pin value.
+      Note, that the pulse mode cannot be 2 ^ 16.
 
   timer-mode-sel:
     type: int

@@ -201,6 +201,7 @@ eckelmann	Eckelmann AG
 edt	Emerging Display Technologies
 eeti	eGalax_eMPIA Technology Inc
 efinix	Efinix Inc
+egis	Egis Technology Inc
 einfochips	Einfochips
 elan	Elan Microelectronic Corp.
 electronut	Electronut Labs
@@ -286,6 +287,7 @@ hamamatsu	Hamamatsu Photonics K.K.
 hannstar	HannStar Display Corporation
 haoyu	Haoyu Microelectronic Co. Ltd.
 hardkernel	Hardkernel Co., Ltd
+hazard3	Hazard3 by Luke Wren
 heltec	Chengdu Heltec Automation Technology Co., Ltd.
 hideep	HiDeep Inc.
 himax	Himax Technologies, Inc.
@@ -491,6 +493,7 @@ okaya	Okaya Electric America, Inc.
 oki	Oki Electric Industry Co., Ltd.
 olimex	OLIMEX Ltd.
 olpc	One Laptop Per Child
+omron	OMRON Corporation
 onion	Onion Corporation
 onnn	ON Semiconductor Corp.
 ontat	On Tat Industrial Company
@@ -598,6 +601,7 @@ sandisk	Sandisk Corporation
 satoz	Satoz International Co., Ltd
 sbs	Smart Battery System
 sc	Space Cubics Inc.
+scdz	Shenzhen Qiushi IoT Technology Co., Ltd.
 schindler	Schindler
 sciosense	Sciosense B.V.
 seagate	Seagate Technology PLC
@@ -662,6 +666,7 @@ starfive	StarFive Technology Co. Ltd.
 starry	Starry Electronic Technology (ShenZhen) Co., LTD
 startek	Startek
 ste	ST-Ericsson
+steelseries	SteelSeries
 stericsson	ST-Ericsson
 summit	Summit microelectronics
 sunchip	Shenzhen Sunchip Technology Co., Ltd

@@ -778,7 +778,7 @@ static struct enc424j600_runtime enc424j600_0_runtime = {
 };
 
 static const struct enc424j600_config enc424j600_0_config = {
-	.spi = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8), 0),
+	.spi = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8)),
 	.interrupt = GPIO_DT_SPEC_INST_GET(0, int_gpios),
 	.timeout = CONFIG_ETH_ENC424J600_TIMEOUT,
 };

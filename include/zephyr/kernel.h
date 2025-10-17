@@ -103,6 +103,27 @@ typedef int (*_poller_cb_t)(struct k_poll_event *event, uint32_t state);
  * @{
  */
 
+/**
+ * @brief Resets thread longest frame usage data for specified thread
+ *
+ * This routine resets the longest frame value statistic
+ * after printing to zero, enabling observation of the
+ * longest frame from the most recent interval rather than
+ * the longest frame since startup.
+ *
+ * @param thread Pointer to the thread to reset counter.
+ *
+ * @note @kconfig{CONFIG_THREAD_ANALYZER_LONG_FRAME_PER_INTERVAL} must
+ * be set for this function to be effective.
+ */
+static inline void
+	k_thread_runtime_stats_longest_frame_reset(__maybe_unused struct k_thread *thread)
+{
+#ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
+	thread->base.usage.longest = 0ULL;
+#endif
+}
+
 typedef void (*k_thread_user_cb_t)(const struct k_thread *thread,
 				   void *user_data);
 
@@ -927,7 +948,7 @@ __syscall void k_thread_priority_set(k_tid_t thread, int prio);
 
 #ifdef CONFIG_SCHED_DEADLINE
 /**
- * @brief Set deadline expiration time for scheduler
+ * @brief Set relative deadline expiration time for scheduler
  *
  * This sets the "deadline" expiration as a time delta from the
  * current time, in the same units used by k_cycle_get_32().  The
@@ -951,8 +972,7 @@ __syscall void k_thread_priority_set(k_tid_t thread, int prio);
  * above this call, which is simply input to the priority selection
  * logic.
  *
- * @note You should enable @kconfig{CONFIG_SCHED_DEADLINE} in your project
- * configuration.
+ * @kconfig_dep{CONFIG_SCHED_DEADLINE}
  *
  * @param thread A thread on which to set the deadline
  * @param deadline A time delta, in cycle units
@@ -961,7 +981,7 @@ __syscall void k_thread_priority_set(k_tid_t thread, int prio);
 __syscall void k_thread_deadline_set(k_tid_t thread, int deadline);
 
 /**
- * @brief Set deadline expiration time for scheduler
+ * @brief Set absolute deadline expiration time for scheduler
  *
  * This sets the "deadline" expiration as a timestamp in the same
  * units used by k_cycle_get_32(). The scheduler (when deadline scheduling
@@ -985,7 +1005,7 @@ __syscall void k_thread_deadline_set(k_tid_t thread, int deadline);
  *
  * @note Even if a provided timestamp is in the past, the kernel will
  * still schedule threads with deadlines in order from the earliest to
- * the latest
+ * the latest.
  *
  * @note Despite the API naming, the scheduler makes no guarantees
  * the thread WILL be scheduled within that deadline, nor does it take
@@ -995,8 +1015,7 @@ __syscall void k_thread_deadline_set(k_tid_t thread, int deadline);
  * above this call, which is simply input to the priority selection
  * logic.
  *
- * @note You should enable @kconfig_dep{CONFIG_SCHED_DEADLINE} in your project
- * configuration.
+ * @kconfig_dep{CONFIG_SCHED_DEADLINE}
  *
  * @param thread A thread on which to set the deadline
  * @param deadline A timestamp, in cycle units
@@ -3932,6 +3951,7 @@ int k_work_queue_unplug(struct k_work_q *queue);
  * @retval -EALREADY if the work queue was not started (or already stopped)
  * @retval -EBUSY if the work queue is actively processing work items
  * @retval -ETIMEDOUT if the work queue did not stop within the stipulated timeout
+ * @retval -ENOSUP if the work queue is essential
  */
 int k_work_queue_stop(struct k_work_q *queue, k_timeout_t timeout);
 
@@ -5664,6 +5684,8 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem,
  * This routine releases a previously allocated memory block back to its
  * associated memory slab.
  *
+ * @funcprops \isr_ok
+ *
  * @param slab Address of the memory slab.
  * @param mem Pointer to the memory block (as returned by k_mem_slab_alloc()).
  */
@@ -5674,6 +5696,8 @@ void k_mem_slab_free(struct k_mem_slab *slab, void *mem);
  *
  * This routine gets the number of memory blocks that are currently
  * allocated in @a slab.
+ *
+ * @funcprops \isr_ok
  *
  * @param slab Address of the memory slab.
  *
@@ -5689,6 +5713,8 @@ static inline uint32_t k_mem_slab_num_used_get(struct k_mem_slab *slab)
  *
  * This routine gets the maximum number of memory blocks that were
  * allocated in @a slab.
+ *
+ * @funcprops \isr_ok
  *
  * @param slab Address of the memory slab.
  *
@@ -5710,6 +5736,8 @@ static inline uint32_t k_mem_slab_max_used_get(struct k_mem_slab *slab)
  * This routine gets the number of memory blocks that are currently
  * unallocated in @a slab.
  *
+ * @funcprops \isr_ok
+ *
  * @param slab Address of the memory slab.
  *
  * @return Number of unallocated memory blocks.
@@ -5723,6 +5751,8 @@ static inline uint32_t k_mem_slab_num_free_get(struct k_mem_slab *slab)
  * @brief Get the memory stats for a memory slab
  *
  * This routine gets the runtime memory usage stats for the slab @a slab.
+ *
+ * @funcprops \isr_ok
  *
  * @param slab Address of the memory slab
  * @param stats Pointer to memory into which to copy memory usage statistics
@@ -5738,6 +5768,8 @@ int k_mem_slab_runtime_stats_get(struct k_mem_slab *slab, struct sys_memory_stat
  *
  * This routine resets the maximum memory usage for the slab @a slab to its
  * current usage.
+ *
+ * @funcprops \isr_ok
  *
  * @param slab Address of the memory slab
  *

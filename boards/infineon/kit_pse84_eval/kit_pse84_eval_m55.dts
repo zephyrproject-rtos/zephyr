@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <infineon/edge/mpns/pse846gps2dbzc4a.dtsi>
+#include <infineon/edge/pse84/pse84.cm55.dtsi>
+#include <infineon/edge/pse84/system_clocks.dtsi>
+
+#include "kit_pse84_eval_common.dtsi"
+#include "kit_pse84_eval_memory_map.dtsi"
+
+/ {
+	model = "kit_pse84_eval";
+	compatible = "kit_pse84_eval";
+
+	aliases {
+		led0 = &led_red;
+		led1 = &led_green;
+		led2 = &led_blue;
+	};
+
+	chosen {
+		/* m55_xip is used in the pse84_boot.c file for m55 core startup
+		 * If a different region is assigned here, it also needs to be updated at:
+		 * soc/infineon/edge/pse84/security_config/pse84_boot.c
+		 */
+		zephyr,flash = &m55_xip;
+		zephyr,sram = &m55_data;
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+	};
+};

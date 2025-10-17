@@ -1703,6 +1703,7 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 	struct net_linkaddr *cached_lladdr;
 	struct net_pkt *pending;
 	struct net_nbr *nbr;
+	bool point_to_point = net_if_flag_is_set(net_pkt_iface(pkt), NET_IF_POINTOPOINT);
 
 	net_ipv6_nbr_lock();
 
@@ -1733,7 +1734,10 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 	if (nbr->idx == NET_NBR_LLADDR_UNKNOWN) {
 		struct net_linkaddr nbr_lladdr;
 
-		if (!tllao_offset) {
+		/* RFC 7066, ch 2.2:
+		 * for point-to-point interfaces the target link layer address is not required.
+		 */
+		if (!tllao_offset && !point_to_point) {
 			NET_DBG("No target link layer address.");
 			goto err;
 		}
@@ -1765,7 +1769,7 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 
 	/* Update the cached address if we do not yet known it */
 	if (net_ipv6_nbr_data(nbr)->state == NET_IPV6_NBR_STATE_INCOMPLETE) {
-		if (!tllao_offset) {
+		if (!tllao_offset && !point_to_point) {
 			goto err;
 		}
 
@@ -2587,13 +2591,22 @@ static inline bool handle_ra_rdnss(struct net_pkt *pkt, uint8_t len)
 		return false;
 	}
 
-	/* TODO: Handle lifetime. */
 	ctx = dns_resolve_get_default();
-	ret = dns_resolve_reconfigure_with_interfaces(ctx, NULL, dns_servers,
-						      interfaces,
-						      DNS_SOURCE_IPV6_RA);
+	if (rdnss->lifetime > 0) {
+		ret = dns_resolve_reconfigure_with_interfaces(ctx, NULL, dns_servers,
+							      interfaces,
+							      DNS_SOURCE_IPV6_RA);
+	} else {
+		dns.sin6_port = htons(53);
+		ret = dns_resolve_remove_server_addresses(ctx, dns_servers, interfaces);
+	}
+
 	if (ret < 0) {
-		NET_DBG("Failed to set RDNSS resolve address: %d", ret);
+		if (rdnss->lifetime > 0) {
+			NET_DBG("Failed to set RDNSS resolve address: %d", ret);
+		} else {
+			NET_DBG("Failed to remove RDNSS resolve address: %d", ret);
+		}
 	}
 
 	return true;

@@ -302,7 +302,7 @@ static int iis2dh_init(const struct device *dev)
 
 #define IIS2DH_SPI(inst)                                                                           \
 	(.spi = SPI_DT_SPEC_INST_GET(                                                              \
-		 0, SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8), 0),)
+		 0, SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8)),)
 
 #define IIS2DH_I2C(inst) (.i2c = I2C_DT_SPEC_INST_GET(inst),)
 

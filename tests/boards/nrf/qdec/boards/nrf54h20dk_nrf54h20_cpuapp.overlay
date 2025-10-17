@@ -11,21 +11,12 @@
  */
 
 / {
-	aliases {
-		qdec0 = &qdec130;
-		qdec1 = &qdec131;
-		qenca = &phase_a;
-		qencb = &phase_b;
-		qenca1 = &phase_a1;
-		qencb1 = &phase_b1;
-	};
-
 	encoder-emulate {
 		compatible = "gpio-leds";
-		phase_a: phase_a {
+		phase_a0: phase_a0 {
 			gpios = <&gpio2 9 GPIO_ACTIVE_HIGH>;
 		};
-		phase_b: phase_b {
+		phase_b0: phase_b0 {
 			gpios = <&gpio2 11 GPIO_ACTIVE_HIGH>;
 		};
 		phase_a1: phase_a1 {
@@ -33,6 +24,18 @@
 		};
 		phase_b1: phase_b1 {
 			gpios = <&gpio7 1 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	qdec_loopbacks: loopbacks {
+		compatible = "test-qdec-loopbacks";
+		loopback0 {
+			qdec = <&qdec130>;
+			qenc-emul-gpios = <&phase_a0 &phase_b0>;
+		};
+		loopback1 {
+			qdec = <&qdec131>;
+			qenc-emul-gpios = <&phase_a1 &phase_b1>;
 		};
 	};
 };

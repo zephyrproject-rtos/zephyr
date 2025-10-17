@@ -6,6 +6,7 @@ config UART_SF32LB
 	default y
 	depends on DT_HAS_SIFLI_SF32LB_USART_ENABLED
 	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 	select PINCTRL
 	select CLOCK_CONTROL
 	help

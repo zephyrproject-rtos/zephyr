@@ -1265,9 +1265,33 @@ flagged.
         "FOO_LOG_LEVEL",
         "FOO_SETTING_1",
         "FOO_SETTING_2",
-        "GEN_UICR_GENERATE_PERIPHCONF", # Used in specialized build tool, not part of main Kconfig
-        "GEN_UICR_SECONDARY", # Used in specialized build tool, not part of main Kconfig
-        "GEN_UICR_SECONDARY_GENERATE_PERIPHCONF", # Used in specialized build tool, not part of main Kconfig
+        "GEN_UICR_APPROTECT_APPLICATION_PROTECTED",
+        "GEN_UICR_APPROTECT_CORESIGHT_PROTECTED",
+        "GEN_UICR_APPROTECT_RADIOCORE_PROTECTED",
+        "GEN_UICR_ERASEPROTECT",
+        "GEN_UICR_GENERATE_PERIPHCONF",
+        "GEN_UICR_LOCK",
+        "GEN_UICR_PROTECTEDMEM",
+        "GEN_UICR_PROTECTEDMEM_SIZE_BYTES",
+        "GEN_UICR_SECONDARY",
+        "GEN_UICR_SECONDARY_GENERATE_PERIPHCONF",
+        "GEN_UICR_SECONDARY_PROCESSOR_VALUE",
+        "GEN_UICR_SECONDARY_PROTECTEDMEM",
+        "GEN_UICR_SECONDARY_PROTECTEDMEM_SIZE_BYTES",
+        "GEN_UICR_SECONDARY_TRIGGER",
+        "GEN_UICR_SECONDARY_TRIGGER_APPLICATIONLOCKUP",
+        "GEN_UICR_SECONDARY_TRIGGER_APPLICATIONWDT0",
+        "GEN_UICR_SECONDARY_TRIGGER_APPLICATIONWDT1",
+        "GEN_UICR_SECONDARY_TRIGGER_RADIOCORELOCKUP",
+        "GEN_UICR_SECONDARY_TRIGGER_RADIOCOREWDT0",
+        "GEN_UICR_SECONDARY_TRIGGER_RADIOCOREWDT1",
+        "GEN_UICR_SECONDARY_WDTSTART",
+        "GEN_UICR_SECONDARY_WDTSTART_CRV",
+        "GEN_UICR_SECONDARY_WDTSTART_INSTANCE_CODE",
+        "GEN_UICR_SECURESTORAGE",
+        "GEN_UICR_WDTSTART",
+        "GEN_UICR_WDTSTART_CRV",
+        "GEN_UICR_WDTSTART_INSTANCE_CODE",
         "HEAP_MEM_POOL_ADD_SIZE_", # Used as an option matching prefix
         "HUGETLBFS",          # Linux, in boards/xtensa/intel_adsp_cavs25/doc
         "IAR_BUFFERED_WRITE",
@@ -1719,6 +1743,34 @@ def filter_py(root, fnames):
                              mime=True) == "text/x-python")]
 
 
+class CMakeStyle(ComplianceTest):
+    """
+    Checks cmake style added/modified files
+    """
+    name = "CMakeStyle"
+    doc = "See https://docs.zephyrproject.org/latest/contribute/style/cmake.html for more details."
+
+    def run(self):
+        # Loop through added/modified files
+        for fname in get_files(filter="d"):
+            if fname.endswith(".cmake") or fname == "CMakeLists.txt":
+                self.check_style(fname)
+
+    def check_style(self, fname):
+        SPACE_BEFORE_OPEN_BRACKETS_CHECK = re.compile(r"^\s*if\s+\(")
+        TAB_INDENTATION_CHECK = re.compile(r"^\t+")
+
+        with open(fname, encoding="utf-8") as f:
+            for line_num, line in enumerate(f.readlines(), start=1):
+                if TAB_INDENTATION_CHECK.match(line):
+                    self.fmtd_failure("error", "CMakeStyle", fname, line_num,
+                                      "Use spaces instead of tabs for indentation")
+
+                if SPACE_BEFORE_OPEN_BRACKETS_CHECK.match(line):
+                    self.fmtd_failure("error", "CMakeStyle", fname, line_num,
+                                      "Remove space before '(' in if() statements")
+
+
 class Identity(ComplianceTest):
     """
     Checks if Emails of author and signed-off messages are consistent.
@@ -1740,28 +1792,33 @@ class Identity(ComplianceTest):
                 auth_name, auth_email, body = commit_info
             else:
                 self.failure(f'Unable to parse commit message for {shaidx}')
-
-            match_signoff = re.search(r"signed-off-by:\s(.*)", body,
-                                      re.IGNORECASE)
-            detailed_match = re.search(rf"signed-off-by:\s({re.escape(auth_name)}) <({re.escape(auth_email)})>",
-                                       body,
-                                       re.IGNORECASE)
+                continue
 
             if auth_email.endswith("@users.noreply.github.com"):
                 failures.append(f"{shaidx}: author email ({auth_email}) must "
                                 "be a real email and cannot end in "
                                 "@users.noreply.github.com")
 
-            if not match_signoff:
+            # Returns an array of everything to the right of ':' on each signoff line
+            signoff_lines = re.findall(r"signed-off-by:\s(.*)", body, re.IGNORECASE)
+            if len(signoff_lines) == 0:
                 failures.append(f'{shaidx}: Missing signed-off-by line')
-            elif not detailed_match:
-                signoff = match_signoff.group(0)
-                failures.append(f"{shaidx}: Signed-off-by line ({signoff}) "
-                                "does not follow the syntax: First "
-                                "Last <email>.")
-            elif (auth_name, auth_email) != detailed_match.groups():
-                failures.append(f"{shaidx}: author email ({auth_email}) needs "
-                                "to match one of the signed-off-by entries.")
+            else:
+                # Validate all signoff lines' syntax while also searching for commit author
+                found_author_signoff = False
+                for signoff in signoff_lines:
+                    match = re.search(r"(.+) <(.+)>", signoff)
+
+                    if not match:
+                        failures.append(f"{shaidx}: Signed-off-by line ({signoff}) "
+                                        "does not follow the syntax: First "
+                                        "Last <email>.")
+                    elif (auth_name, auth_email) == match.groups():
+                        found_author_signoff = True
+
+                if not found_author_signoff:
+                    failures.append(f"{shaidx}: author name ({auth_name}) and email ({auth_email}) "
+                                    "needs to match one of the signed-off-by entries.")
 
             if failures:
                 self.failure('\n'.join(failures))

@@ -99,12 +99,34 @@ config FILE_SYSTEM_MKFS
 	help
 	  Enables function fs_mkfs that can be used to format a storage device.
 
+config FILE_SYSTEM_GC
+	bool "Allow explicit garbage collector call"
+	help
+	  Enables function fs_gc that can be used to proactively run garbage collector.
+
 config FUSE_FS_ACCESS
 	bool "FUSE based access to file system partitions"
 	depends on ARCH_POSIX
 	select NATIVE_USE_NSI_ERRNO
 	help
 	  Expose file system partitions to the host system through FUSE.
+
+choice FUSE_LIBRARY_VERSION
+	prompt "Host FUSE library version"
+	depends on FUSE_FS_ACCESS
+	default FUSE_LIBRARY_V2
+
+config FUSE_LIBRARY_V2
+	bool "Use libfuse(2)"
+	help
+	  Use v2 of the host FUSE library.
+
+config FUSE_LIBRARY_V3
+	bool "Use libfuse3"
+	help
+	  Use the host fuse3 library. This may not be available in older distributions.
+
+endchoice
 
 endif # FILE_SYSTEM
 

@@ -11,13 +11,16 @@ source "Kconfig.zephyr"
 ZEPHYR_USER := zephyr,user
 
 config DAC_SOURCE_TEST
-	bool
+	bool "Test using a DAC source"
 	select DAC
-	default y if $(dt_node_has_prop,/$(ZEPHYR_USER),dac)
+	depends on $(dt_node_has_prop,/$(ZEPHYR_USER),dac)
+	depends on $(dt_node_has_prop,/$(ZEPHYR_USER),dac-channel-id)
+	depends on $(dt_node_has_prop,/$(ZEPHYR_USER),dac-resolution)
 
 config REFERENCE_VOLTAGE_TEST
-	bool
-	default y if $(dt_node_has_prop,/$(ZEPHYR_USER),reference-mv)
+	bool "Test using a ref voltage source"
+	depends on $(dt_node_has_prop,/$(ZEPHYR_USER),reference-mv)
+	depends on $(dt_node_has_prop,/$(ZEPHYR_USER),expected-accuracy)
 
 config NUMBER_OF_PASSES
 	int "Number of passes"

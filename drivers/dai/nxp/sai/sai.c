@@ -886,6 +886,21 @@ static int sai_init(const struct device *dev)
 
 	device_map(&data->regmap, cfg->regmap_phys, cfg->regmap_size, K_MEM_CACHE_NONE);
 
+	if (SAI_DLINE_COUNT(cfg->regmap_phys) == -1) {
+		LOG_ERR("bad or unsupported SAI instance");
+		return -EINVAL;
+	}
+
+	if (cfg->tx_dline >= SAI_DLINE_COUNT(cfg->regmap_phys)) {
+		LOG_ERR("invalid TX data line index");
+		return -EINVAL;
+	}
+
+	if (cfg->rx_dline >= SAI_DLINE_COUNT(cfg->regmap_phys)) {
+		LOG_ERR("invalid RX data line index");
+		return -EINVAL;
+	}
+
 #ifndef CONFIG_PM_DEVICE_RUNTIME
 	ret = sai_clks_enable_disable(dev, true);
 	if (ret < 0) {
@@ -934,17 +949,6 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_SAI_HAS_MCLK_CONFIG_OPTION) ||			\
 BUILD_ASSERT(SAI_TX_SYNC_MODE(inst) != SAI_RX_SYNC_MODE(inst) ||		\
 	     SAI_TX_SYNC_MODE(inst) != kSAI_ModeSync,				\
 	     "transmitter and receiver can't be both SYNC with each other");	\
-										\
-BUILD_ASSERT(SAI_DLINE_COUNT(inst) != -1,					\
-	     "bad or unsupported SAI instance. Is the base address correct?");	\
-										\
-BUILD_ASSERT(SAI_TX_DLINE_INDEX(inst) >= 0 &&					\
-	     (SAI_TX_DLINE_INDEX(inst) < SAI_DLINE_COUNT(inst)),		\
-	     "invalid TX data line index");					\
-										\
-BUILD_ASSERT(SAI_RX_DLINE_INDEX(inst) >= 0 &&					\
-	     (SAI_RX_DLINE_INDEX(inst) < SAI_DLINE_COUNT(inst)),		\
-	     "invalid RX data line index");					\
 										\
 static const struct dai_properties sai_tx_props_##inst = {			\
 	.fifo_address = SAI_TX_FIFO_BASE(inst, SAI_TX_DLINE_INDEX(inst)),	\

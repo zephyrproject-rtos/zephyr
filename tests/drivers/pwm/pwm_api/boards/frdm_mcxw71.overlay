@@ -1,0 +1,27 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/ {
+	aliases {
+		pwm-test = &tpm1;
+	};
+};
+
+&pinctrl {
+	tpm1_default: tpm1_default {
+		group0 {
+			pinmux = <TPM1_CH0_PTB0>,
+					 <TPM1_CH2_PTB2>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+};
+
+&tpm1 {
+	status = "okay";
+	pinctrl-0 = <&tpm1_default>;
+	pinctrl-names = "default";
+};

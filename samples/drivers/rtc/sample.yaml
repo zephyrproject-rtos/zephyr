@@ -1,24 +1,32 @@
 sample:
   name: Real-Time Clock Sample
+common:
+  tags:
+    - samples
+    - rtc
+    - api
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "RTC date and time: 2024-11-17 04:19:01"
 tests:
   sample.drivers.rtc:
     platform_allow:
       - stm32f3_disco
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
       - mimxrt700_evk/mimxrt798s/cm33_cpu1
-      - adafruit_qt_py_rp2040/rp2040
     integration_platforms:
       - stm32f3_disco
-    extra_args:
-      - platform:adafruit_qt_py_rp2040/rp2040:SHIELD="sparkfun_rv8803"
-    tags:
-      - samples
-      - rtc
-      - api
     depends_on:
       - rtc
-    harness: console
-    harness_config:
-      type: one_line
-      regex:
-        - "RTC date and time: 2024-11-17 04:19:01"
+  sample.drivers.rtc.shields:
+    platform_allow:
+      - adafruit_qt_py_rp2040/rp2040
+      - adafruit_metro_rp2040/rp2040
+    integration_platforms:
+      - adafruit_qt_py_rp2040/rp2040
+      - adafruit_metro_rp2040/rp2040
+    extra_args:
+      - platform:adafruit_qt_py_rp2040/rp2040:SHIELD="sparkfun_rv8803"
+      - platform:adafruit_metro_rp2040/rp2040:SHIELD="adafruit_pcf8523"

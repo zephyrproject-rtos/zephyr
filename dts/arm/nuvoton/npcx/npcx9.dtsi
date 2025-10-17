@@ -379,6 +379,7 @@
 		/* FIU0 configuration in npcx9 series */
 		qspi_fiu0: quadspi@40020000 {
 			clocks = <&pcc NPCX_CLOCK_BUS_FIU NPCX_PWDWN_CTL1 2>;
+			support-npcxn-v1;
 		};
 
 		sha0: sha@13c {
@@ -402,6 +403,8 @@
 		espi0: espi@4000a000 {
 			rx-plsize = <64>;
 			tx-plsize = <16>;
+
+			support-npcxn-v2;
 		};
 
 		rctl: reset-controller@400c3100 {

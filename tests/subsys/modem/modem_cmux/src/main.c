@@ -886,4 +886,22 @@ ZTEST(modem_cmux, test_modem_cmux_split_large_data)
 		     "Incorrect number of bytes transmitted %d", ret);
 }
 
+ZTEST(modem_cmux, test_modem_cmux_invalid_cr)
+{
+	uint32_t events;
+
+	/* We are initiator, so any CMD with CR set should be dropped */
+	modem_backend_mock_put(&bus_mock, cmux_frame_control_cld_cmd,
+			       sizeof(cmux_frame_control_cld_cmd));
+
+	modem_backend_mock_put(&bus_mock, cmux_frame_control_sabm_cmd,
+			       sizeof(cmux_frame_control_sabm_cmd));
+
+	events = k_event_wait_all(&cmux_event,
+				  (MODEM_CMUX_EVENT_CONNECTED | MODEM_CMUX_EVENT_DISCONNECTED),
+				  false, K_MSEC(100));
+
+	zassert_false(events, "Wrong CMD should have been ignored");
+}
+
 ZTEST_SUITE(modem_cmux, NULL, test_modem_cmux_setup, test_modem_cmux_before, NULL, NULL);

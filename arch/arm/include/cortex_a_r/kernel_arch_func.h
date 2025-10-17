@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Carlo Caione <ccaione@baylibre.com>
+ * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -77,7 +78,8 @@ static ALWAYS_INLINE void arch_switch(void *switch_to, void **switched_from)
 extern FUNC_NORETURN void z_arm_userspace_enter(k_thread_entry_t user_entry,
 					       void *p1, void *p2, void *p3,
 					       uint32_t stack_end,
-					       uint32_t stack_start);
+					       uint32_t stack_start,
+					       uint32_t sp_is_priv);
 
 extern void z_arm_fatal_error(unsigned int reason, const struct arch_esf *esf);
 

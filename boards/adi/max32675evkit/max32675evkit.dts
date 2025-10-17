@@ -60,6 +60,7 @@
 		led1 = &led2;
 		sw0 = &pb1;
 		sw1 = &pb2;
+		watchdog0 = &wdt0;
 	};
 };
 
@@ -102,4 +103,8 @@
 	status = "okay";
 	pinctrl-0 = <&spi1a_mosi_p0_15 &spi1a_miso_p0_14 &spi1a_sck_p0_16 &spi1a_ss0_p0_17>;
 	pinctrl-names = "default";
+};
+
+&wdt0 {
+	status = "okay";
 };

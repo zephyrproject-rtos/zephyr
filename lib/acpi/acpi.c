@@ -544,6 +544,11 @@ int acpi_device_mmio_get(struct acpi_dev *child_dev, struct acpi_mmio_resource *
 			reg_base[mmio_cnt].mmio = (uintptr_t)res->Data.FixedMemory32.Address;
 			reg_base[mmio_cnt++].length = res->Data.FixedMemory32.AddressLength;
 			break;
+		case ACPI_RESOURCE_TYPE_ADDRESS64:
+			reg_base[mmio_cnt].type = ACPI_RES_TYPE_MEM;
+			reg_base[mmio_cnt].mmio = (uintptr_t)res->Data.Address64.Address.Minimum;
+			reg_base[mmio_cnt++].length = res->Data.Address64.Address.AddressLength;
+			break;
 		}
 
 		res = ACPI_NEXT_RESOURCE(res);

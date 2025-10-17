@@ -18,6 +18,7 @@
 #include <zephyr/dt-bindings/adc/stm32l4_adc.h>
 #include <zephyr/dt-bindings/reset/stm32g4_l4_5_reset.h>
 #include <zephyr/dt-bindings/power/stm32_pwr.h>
+#include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 #include <freq.h>
 
 / {
@@ -226,7 +227,7 @@
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40013800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 14)>;
-			resets = <&rctl STM32_RESET(APB2, 14U)>;
+			resets = <&rctl STM32_RESET(APB2, 14)>;
 			interrupts = <37 0>;
 			status = "disabled";
 		};
@@ -235,7 +236,7 @@
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40004400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 17)>;
-			resets = <&rctl STM32_RESET(APB1L, 17U)>;
+			resets = <&rctl STM32_RESET(APB1L, 17)>;
 			interrupts = <38 0>;
 			status = "disabled";
 		};
@@ -244,7 +245,7 @@
 			compatible = "st,stm32-lpuart", "st,stm32-uart";
 			reg = <0x40008000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1_2, 0)>;
-			resets = <&rctl STM32_RESET(APB1H, 0U)>;
+			resets = <&rctl STM32_RESET(APB1H, 0)>;
 			interrupts = <70 0>;
 			status = "disabled";
 		};
@@ -298,7 +299,7 @@
 			reg = <0x40012c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 11)>,
 				 <&rcc STM32_SRC_TIMPCLK2 NO_SEL>;
-			resets = <&rctl STM32_RESET(APB2, 11U)>;
+			resets = <&rctl STM32_RESET(APB2, 11)>;
 			interrupts = <24 0>, <25 0>, <26 0>, <27 0>;
 			interrupt-names = "brk", "up", "trgcom", "cc";
 			st,prescaler = <0>;
@@ -309,6 +310,12 @@
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
 		};
 
 		timers2: timers@40000000 {
@@ -316,7 +323,7 @@
 			reg = <0x40000000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 0)>,
 				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
-			resets = <&rctl STM32_RESET(APB1L, 0U)>;
+			resets = <&rctl STM32_RESET(APB1L, 0)>;
 			interrupts = <28 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -332,6 +339,12 @@
 				compatible = "st,stm32-counter";
 				status = "disabled";
 			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
 		};
 
 		timers6: timers@40001000 {
@@ -339,7 +352,7 @@
 			reg = <0x40001000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 4)>,
 				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
-			resets = <&rctl STM32_RESET(APB1L, 4U)>;
+			resets = <&rctl STM32_RESET(APB1L, 4)>;
 			interrupts = <54 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -356,7 +369,7 @@
 			reg = <0x40014000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 16)>,
 				 <&rcc STM32_SRC_TIMPCLK2 NO_SEL>;
-			resets = <&rctl STM32_RESET(APB2, 16U)>;
+			resets = <&rctl STM32_RESET(APB2, 16)>;
 			interrupts = <24 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -379,7 +392,7 @@
 			reg = <0x40014400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 17)>,
 				 <&rcc STM32_SRC_TIMPCLK2 NO_SEL>;
-			resets = <&rctl STM32_RESET(APB2, 17U)>;
+			resets = <&rctl STM32_RESET(APB2, 17)>;
 			interrupts = <25 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -413,15 +426,18 @@
 			reg = <0x50040000 0x100>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 13)>;
 			interrupts = <18 0>;
-			status = "disabled";
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
 				       STM32_ADC_RES(10, 0x01)
 				       STM32_ADC_RES(8, 0x02)
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <3 7 13 25 48 93 248 641>;
-			st,adc-sequencer = "FULLY_CONFIGURABLE";
-			st,adc-oversampler = "OVERSAMPLER_MINIMAL";
+			st,adc-sequencer = "programmable";
+			st,adc-oversampler = "minimal";
+			st,adc-internal-regulator = "startup-sw-delay";
+			st,adc-has-deep-powerdown;
+			st,adc-has-differential-support;
+			status = "disabled";
 		};
 
 		adc2: adc@50040100 {
@@ -429,15 +445,18 @@
 			reg = <0x50040100 0x100>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 13)>;
 			interrupts = <18 0>;
-			status = "disabled";
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
 				       STM32_ADC_RES(10, 0x01)
 				       STM32_ADC_RES(8, 0x02)
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <3 7 13 25 48 93 248 641>;
-			st,adc-sequencer = "FULLY_CONFIGURABLE";
-			st,adc-oversampler = "OVERSAMPLER_MINIMAL";
+			st,adc-sequencer = "programmable";
+			st,adc-oversampler = "minimal";
+			st,adc-internal-regulator = "startup-sw-delay";
+			st,adc-has-deep-powerdown;
+			st,adc-has-differential-support;
+			status = "disabled";
 		};
 
 		dma1: dma@40020000 {

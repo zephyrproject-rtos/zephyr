@@ -43,7 +43,7 @@ config MCUMGR_TRANSPORT_UDP_PORT
 
 config MCUMGR_TRANSPORT_UDP_STACK_SIZE
 	int "UDP SMP stack size"
-	default 512
+	default 1024
 	help
 	  Stack size of the SMP UDP listening thread
 
@@ -62,9 +62,31 @@ config MCUMGR_TRANSPORT_UDP_MTU
 	  MCUMGR_TRANSPORT_UDP_MTU <= MCUMGR_TRANSPORT_NETBUF_SIZE + SMP msg overhead - address size
 	  where address size is determined by IPv4/IPv6 selection.
 
+config MCUMGR_TRANSPORT_UDP_DTLS
+	bool "DTLS"
+	select MBEDTLS
+	select MBEDTLS_ENABLE_HEAP
+	select NET_SOCKETS_SOCKOPT_TLS
+	select NET_SOCKETS_ENABLE_DTLS
+	select TLS_CREDENTIALS
+	help
+	  Enable DTLS for UDP transport, this means normal non-authenticated connections will not
+	  be supported and the transport will not be started automatically at boot-up, the
+	  application will need to add the certificates to the system and set them up before
+	  opening the transport using the `smp_udp_open` function.
+
+config MCUMGR_TRANSPORT_UDP_DTLS_TLS_TAG
+	int "TLS credential tag"
+	default 1
+	depends on MCUMGR_TRANSPORT_UDP_DTLS
+	help
+	  The TLS tag which the application must add the certificates to before starting the UDP
+	  transport.
+
 config MCUMGR_TRANSPORT_UDP_AUTOMATIC_INIT
 	bool "UDP SMP autostart"
 	default y
+	depends on !MCUMGR_TRANSPORT_UDP_DTLS
 	help
 	  Enable starting the UDP SMP transport at boot time without needing
 	  any code in the application to do this, otherwise will need the user

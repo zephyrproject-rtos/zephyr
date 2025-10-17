@@ -1,15 +1,6 @@
 CONFIG_XIP=n
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
-
-# Serial driver options
 CONFIG_SERIAL=y
-
-# GPIO driver options
 CONFIG_GPIO=y
-
-# PMP granularity options
 CONFIG_PMP_GRANULARITY=8
-
-# EXEC.IT options
-CONFIG_SOC_ANDES_V5_EXECIT=y

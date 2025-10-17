@@ -444,8 +444,7 @@ static int pat9136_init(const struct device *dev)
 	RTIO_DEFINE(pat9136_rtio_ctx_##inst, 16, 16);						   \
 	SPI_DT_IODEV_DEFINE(pat9136_bus_##inst,							   \
 			    DT_DRV_INST(inst),							   \
-			    SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB,		   \
-			    0U);								   \
+			    SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB);		   \
 												   \
 	static const struct pat9136_config pat9136_cfg_##inst = {				   \
 		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),			   \

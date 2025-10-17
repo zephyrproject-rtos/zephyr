@@ -181,7 +181,15 @@
 };
 
 &flexspi {
-	status = "okay";
+	/*
+	 * If booting with XIP from FlexSPI flash, the flash memory will be initialized by the
+	 * bootloader in ROM.
+	 * If not configured by the ROM bootloader, the user must ensure the w25q128jw QSPI device
+	 * is enabled in the DTS, otherwise, the user must set 'status = "disabled";
+	 * Note: mpu_region.c uses the status property from the DTS to configure the
+	 * corresponding MPU settings.
+	 */
+	status = "disabled";
 	ahb-prefetch;
 	ahb-read-addr-opt;
 	rx-clock-source = <1>;

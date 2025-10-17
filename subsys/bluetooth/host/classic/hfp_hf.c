@@ -552,7 +552,7 @@ static void hf_query_current_calls(struct bt_hfp_hf *hf)
 		return;
 	}
 
-	if (atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_CLCC_PENDING)) {
+	if (atomic_test_and_set_bit(hf->flags, BT_HFP_HF_FLAG_CLCC_PENDING)) {
 		k_work_reschedule(&hf->deferred_work, K_MSEC(HF_ENHANCED_CALL_STATUS_TIMEOUT));
 		return;
 	}
@@ -1091,8 +1091,8 @@ static void ag_indicator_handle_call(struct bt_hfp_hf *hf, uint32_t value)
 
 	LOG_DBG("call %d", value);
 
-	if (value != 0) {
-		atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_CLCC_PENDING);
+	if ((value != 0) && atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_INITIATING)) {
+		atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_QUERY_CALLS);
 	}
 
 	if (value) {
@@ -1153,8 +1153,9 @@ static void ag_indicator_handle_call_setup(struct bt_hfp_hf *hf, uint32_t value)
 
 	LOG_DBG("call setup %d", value);
 
-	if (value != BT_HFP_CALL_SETUP_NONE) {
-		atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_CLCC_PENDING);
+	if ((value != BT_HFP_CALL_SETUP_NONE) &&
+	    atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_INITIATING)) {
+		atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_QUERY_CALLS);
 	}
 
 	switch (value) {
@@ -1258,8 +1259,9 @@ static void ag_indicator_handle_call_held(struct bt_hfp_hf *hf, uint32_t value)
 
 	LOG_DBG("call setup %d", value);
 
-	if (value != BT_HFP_CALL_HELD_NONE) {
-		atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_CLCC_PENDING);
+	if ((value != BT_HFP_CALL_HELD_NONE) &&
+	    atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_INITIATING)) {
+		atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_QUERY_CALLS);
 	}
 
 	switch (value) {
@@ -2077,9 +2079,12 @@ static int at_cmd_init_start(struct bt_hfp_hf *hf)
 		hf->cmd_init_seq++;
 	}
 
-	if ((ARRAY_SIZE(cmd_init_list) <= hf->cmd_init_seq) &&
-	    atomic_test_and_clear_bit(hf->flags, BT_HFP_HF_FLAG_CLCC_PENDING)) {
-		k_work_reschedule(&hf->deferred_work, K_MSEC(HF_ENHANCED_CALL_STATUS_TIMEOUT));
+	if (ARRAY_SIZE(cmd_init_list) <= hf->cmd_init_seq) {
+		atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_INITIATING);
+		if (atomic_test_and_clear_bit(hf->flags, BT_HFP_HF_FLAG_QUERY_CALLS)) {
+			k_work_reschedule(&hf->deferred_work,
+					  K_MSEC(HF_ENHANCED_CALL_STATUS_TIMEOUT));
+		}
 	}
 
 	return err;
@@ -2307,6 +2312,8 @@ int hf_slc_establish(struct bt_hfp_hf *hf)
 	int err;
 
 	LOG_DBG("");
+
+	atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_INITIATING);
 
 	hf->cmd_init_seq = 0;
 	err = slc_init_start(hf);

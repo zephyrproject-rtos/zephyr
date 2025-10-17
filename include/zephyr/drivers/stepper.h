@@ -354,7 +354,9 @@ static inline int z_impl_stepper_set_reference_position(const struct device *dev
 }
 
 /**
- * @brief Get the actual a.k.a reference position of the stepper
+ * @brief Get the actual step count for a given stepper.
+ * @note This function does not guarantee that the returned position is the exact current
+ * position. For precise positioning, encoders should be used in addition to the stepper driver.
  *
  * @param dev pointer to the stepper driver instance
  * @param value The actual position to get in micro-steps
@@ -432,13 +434,14 @@ static inline int z_impl_stepper_set_microstep_interval(const struct device *dev
 /**
  * @brief Set the micro-steps to be moved from the current position i.e. relative movement
  *
- * @details The stepper will move by the given number of micro-steps from the current position.
+ * @note The stepper will move by the given number of micro-steps from the current position.
  * This function is non-blocking.
  *
  * @param dev pointer to the stepper driver instance
  * @param micro_steps target micro-steps to be moved from the current position
  *
  * @retval -EIO General input / output error
+ * @retval -EINVAL If the timing for steps is incorrectly configured
  * @retval 0 Success
  */
 __syscall int stepper_move_by(const struct device *dev, int32_t micro_steps);
@@ -453,14 +456,14 @@ static inline int z_impl_stepper_move_by(const struct device *dev, const int32_t
 /**
  * @brief Set the absolute target position of the stepper
  *
- * @details The stepper will move to the given micro-steps position from the reference position.
+ * @note The stepper will move to the given micro-steps position from the reference position.
  * This function is non-blocking.
  *
  * @param dev pointer to the stepper driver instance
  * @param micro_steps target position to set in micro-steps
  *
  * @retval -EIO General input / output error
- * @retval -ENOSYS If not implemented by device driver
+ * @retval -EINVAL If the timing for steps is incorrectly configured
  * @retval 0 Success
  */
 __syscall int stepper_move_to(const struct device *dev, int32_t micro_steps);
@@ -478,7 +481,7 @@ static inline int z_impl_stepper_move_to(const struct device *dev, const int32_t
 /**
  * @brief Run the stepper with a given step interval in a given direction
  *
- * @details The stepper shall be set into motion and run continuously until
+ * @note The stepper shall be set into motion and run continuously until
  * stalled or stopped using some other command, for instance, stepper_stop(). This
  * function is non-blocking.
  *
@@ -486,6 +489,7 @@ static inline int z_impl_stepper_move_to(const struct device *dev, const int32_t
  * @param direction The direction to set
  *
  * @retval -EIO General input / output error
+ * @retval -EINVAL If the timing for steps is incorrectly configured
  * @retval -ENOSYS If not implemented by device driver
  * @retval 0 Success
  */
@@ -504,7 +508,7 @@ static inline int z_impl_stepper_run(const struct device *dev,
 
 /**
  * @brief Stop the stepper
- * @details Cancel all active movements.
+ * @note Cancel all active movements.
  *
  * @param dev pointer to the stepper driver instance
  *

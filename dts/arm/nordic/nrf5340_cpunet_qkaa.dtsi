@@ -21,7 +21,6 @@
 
 / {
 	soc {
-		compatible = "nordic,nrf5340-cpunet-qkaa", "nordic,nrf5340-cpunet",
-			     "nordic,nrf53", "simple-bus";
+		compatible = "simple-bus";
 	};
 };

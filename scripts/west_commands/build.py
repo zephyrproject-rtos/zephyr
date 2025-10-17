@@ -618,6 +618,8 @@ class Build(Forceable):
         if not self.run_cmake:
             return
 
+        cmake_env = None
+
         self._banner('generating a build system')
 
         if board is not None and origin != 'CMakeCache.txt':
@@ -644,8 +646,9 @@ class Build(Forceable):
 
         config_sysbuild = config_getboolean('sysbuild', False)
         if self.args.sysbuild or (config_sysbuild and not self.args.no_sysbuild):
-            cmake_opts.extend([f'-S{SYSBUILD_PROJ_DIR}',
-                               f'-DAPP_DIR:PATH={self.source_dir}'])
+            cmake_opts.extend([f'-S{SYSBUILD_PROJ_DIR}'])
+            cmake_env = os.environ.copy()
+            cmake_env["APP_DIR"] = str(self.source_dir)
         else:
             # self.args.no_sysbuild == True or config sysbuild False
             cmake_opts.extend([f'-S{self.source_dir}'])
@@ -661,7 +664,7 @@ class Build(Forceable):
                             f'-G{config_get("generator", DEFAULT_CMAKE_GENERATOR)}']
         if cmake_opts:
             final_cmake_args.extend(cmake_opts)
-        run_cmake(final_cmake_args, dry_run=self.args.dry_run)
+        run_cmake(final_cmake_args, dry_run=self.args.dry_run, env=cmake_env)
 
     def _run_pristine(self):
         self._banner(f'making build dir {self.build_dir} pristine')

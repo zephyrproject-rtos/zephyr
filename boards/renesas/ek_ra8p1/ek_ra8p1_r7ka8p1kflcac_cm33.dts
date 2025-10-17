@@ -14,7 +14,7 @@
 
 	chosen {
 		zephyr,sram = &sram1;
-		zephyr,flash = &flash1;
+		zephyr,flash = &code_mram_cm33;
 		zephyr,console = &uart9;
 		zephyr,shell-uart = &uart9;
 	};

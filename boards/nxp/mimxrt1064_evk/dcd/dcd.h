@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __DCD__
-#define __DCD__
+#ifndef DCD_
+#define DCD_
 
 #include <stdint.h>
 
@@ -15,4 +15,4 @@
 #define DCD_TAG_HEADER_SHIFT (24)
 #define DCD_ARRAY_SIZE       1
 
-#endif /* __DCD__ */
+#endif /* DCD_ */

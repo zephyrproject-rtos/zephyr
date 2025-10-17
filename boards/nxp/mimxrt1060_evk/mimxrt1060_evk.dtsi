@@ -1,5 +1,5 @@
 /*
- * Copyright 2018,2024-2025 NXP
+ * Copyright 2018, 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,7 @@
 		watchdog0 = &wdog0;
 		sdhc0 = &usdhc1;
 		mcuboot-button0 = &user_button;
+		rtc = &counter_rtc;
 	};
 
 	chosen {
@@ -342,3 +343,7 @@ dvp_fpc24_interface: &csi {};
 m2_hci_bt_uart: &lpuart3 {};
 
 m2_wifi_sdio: &usdhc1 {};
+
+&counter_rtc {
+	status = "okay";
+};

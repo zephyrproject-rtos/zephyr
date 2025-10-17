@@ -38,6 +38,9 @@ Base Libraries
   been moved from ``util.h`` to a separate
   :zephyr_file:`include/zephyr/sys/util_utf8.h` file.
 
+* ``Z_MIN``, ``Z_MAX`` and ``Z_CLAMP`` macros have been renamed to
+  :c:macro:`min` :c:macro:`max` and :c:macro:`clamp`.
+
 Boards
 ******
 
@@ -58,12 +61,52 @@ Device Drivers and Devicetree
 
 .. zephyr-keep-sorted-start re(^\w)
 
+ADC
+===
+
+* ``iadc_gecko.c`` driver is replaced by ``adc_silabs_iadc.c``.
+  :dtcompatible:`silabs,gecko-iadc` is replaced by :dtcompatible:`silabs,iadc`.
+
+Comparator
+==========
+
+* :dtcompatible:`nordic,nrf-comp` and :dtcompatible:`nordic,nrf-lpcomp` ``psel`` and ``extrefsel``
+  properties type has been changed to integer. The value of these properties is in the range
+  of :c:macro:`NRF_COMP_AIN0` to :c:macro:`NRF_COMP_AIN_VDDH_DIV5`, where :c:macro:`NRF_COMP_AIN0`
+  to :c:macro:`NRF_COMP_AIN7` represent the external inputs AIN0 to AIN7,
+  :c:macro:`NRF_COMP_AIN_VDD_DIV2` represents internal reference VDD/2,
+  and :c:macro:`NRF_COMP_AIN_VDDH_DIV5` represents VDDH/5.
+  The old ``string`` properties type is deprecated.
+
+DMA
+===
+
+* DMA no longer implements user mode syscalls as part of its API. The syscalls were determined to be
+  too broadly defined in access and impossible to implement the syscall parameter verification step
+  in another.
+
 MFD
 ===
 
-* Driver suppor for AXP2101 has been separated from the AXP192 one. As a consequence the
+* Driver support for AXP2101 has been separated from the AXP192 one. As a consequence the
   kconfig symbol ``MFD_AXP192_AXP2101`` is removed. :kconfig:option:`MFD_AXP192` is now to be
   used for AXP192 device while :kconfig:option:`MFD_AXP2101` for the AXP2101 one.
+
+MISC
+====
+
+* The nrf_etr driver has been migrated to drivers/debug. As a consequence the related Kconfig
+  symbol was renamed from ``NRF_ETR`` to :kconfig:option:`DEBUG_NRF_ETR`, along with the rest of
+  the ``NRF_ETR`` symbols. Also the driver needs to be explicitly enabled via
+  :kconfig:option:`DEBUG_DRIVER` as it is no longer built by default.
+
+PWM
+===
+
+* :dtcompatible:`nxp,pca9685` ``invert`` property has been removed and you can now use the
+  :c:macro:`PWM_POLARITY_INVERTED` or :c:macro:`PWM_POLARITY_NORMAL` flags as specifier cells for
+  space "pwm" are now named: ``['channel', 'period', 'flags']`` (old value:
+  ``['channel', 'period']``) and ``#pwm-cells`` const value changed from 2 to 3.
 
 Phy
 ===
@@ -72,6 +115,17 @@ Phy
   CLKSEL (phy reference clock) in the SYSCFG_OTGHSPHYCR register using the new property
   clock-reference. The selection directly depends on the value on OTGHSSEL (OTG_HS PHY kernel
   clock source selection) located in the RCC_CCIPR2 register.
+
+SPI
+===
+
+* The macros :c:macro:`SPI_CS_CONTROL_INIT` :c:macro:`SPI_CS_CONTROL_INIT_INST`,
+  :c:macro:`SPI_CONFIG_DT`, :c:macro:`SPI_CONFIG_DT_INST`, :c:macro:`SPI_DT_SPEC_GET`,
+  and :c:macro:`SPI_DT_SPEC_INST_GET` have been changed so that they do not need to be
+  provided a delay parameter anymore. This is because the timing parameters of a SPI peripheral
+  chip select should now be specified in DT with the
+  ``spi-cs-setup-delay-ns`` and ``spi-cs-hold-delay-ns`` properties.
+  (:github:`87427`).
 
 Sensors
 =======
@@ -103,6 +157,9 @@ Bluetooth Controller
     * :kconfig:option:`CONFIG_BT_CTRL_ADV_ADI_IN_SCAN_RSP` to
       :kconfig:option:`CONFIG_BT_CTLR_ADV_ADI_IN_SCAN_RSP`
 
+   * :c:func:`bt_ctlr_set_public_addr` is deprecated. To set the public Bluetooth device address,
+     sending a vendor specific HCI command with :c:struct:`bt_hci_cp_vs_write_bd_addr` can be used.
+
 .. zephyr-keep-sorted-start re(^\w)
 
 Bluetooth Audio
@@ -114,7 +171,7 @@ Bluetooth Audio
   :c:enumerator:`BT_AUDIO_CODEC_CFG_TARGET_LATENCY_BALANCED` and ``target_phy`` to
   :c:enumerator:`BT_AUDIO_CODEC_CFG_TARGET_PHY_2M`.
   The :c:macro:`BT_AUDIO_CODEC_CFG` macro defaults to these values.
-  (:github:`93825``)
+  (:github:`93825`)
 * Setting the BGS role for GMAP now requires also supporting and implementing the
   :kconfig:option:`CONFIG_BT_BAP_BROADCAST_ASSISTANT`.
   See the :zephyr:code-sample:`bluetooth_bap_broadcast_assistant` sample as a reference.
@@ -122,7 +179,7 @@ Bluetooth Audio
   :c:func:`bt_bap_scan_delegator_set_pa_state` must be used to update the state. If the
   BAP Scan Delegator is used together with the BAP Broadcast Sink, then the PA state of the
   receive state of a  :c:struct:`bt_bap_broadcast_sink` will still be automatically updated when the
-  PA state changes. (:github:`95453``)
+  PA state changes. (:github:`95453`)
 
 
 .. zephyr-keep-sorted-stop
@@ -132,6 +189,13 @@ Bluetooth HCI
 
 * The deprecated ``ipm`` value was removed from ``bt-hci-bus`` devicetree property.
   ``ipc`` should be used instead.
+
+Bluetooth Mesh
+==============
+
+* Kconfigs ``CONFIG_BT_MESH_USES_MBEDTLS_PSA`` and ``CONFIG_BT_MESH_USES_TFM_PSA`` have
+  been removed. The selection of the PSA Crypto provider is now automatically controlled
+  by Kconfig :kconfig:option:`CONFIG_PSA_CRYPTO`.
 
 Ethernet
 ========
@@ -151,6 +215,19 @@ Ethernet
     * Replaced devicetree property ``tx-checksum-offload`` which enabled TX checksum offloading
       ``disable-tx-checksum-offload`` which now actively disables it.
 
+Power management
+****************
+
+* :kconfig:option:`CONFIG_PM_S2RAM` and :kconfig:option:`PM_S2RAM_CUSTOM_MARKING` have been
+  refactored to be automatically managed by SoCs and the devicetree. Applications shall no
+  longer enable them directly, instead, enable or disable the "suspend-to-ram" power states
+  in the devicetree.
+
+* For the NXP RW61x, the devicetree property ``exit-latency-us`` has been updated to reflect more
+  accurate, measured wake-up times. For applications utilizing Standby mode (PM3), this update and
+  an increase to the ``min-residency-us`` devicetree property may influence how the system
+  transitions between power modes. In some cases, this could lead to changes in power consumption.
+
 Networking
 **********
 
@@ -159,9 +236,36 @@ Networking
   :c:macro:`HTTPS_SERVICE_DEFINE_EMPTY`, :c:macro:`HTTP_SERVICE_DEFINE` and
   :c:macro:`HTTPS_SERVICE_DEFINE`.
 
+* The size of socket address length type :c:type:`socklen_t` has changed. It is now defined to
+  be always 32 bit ``uint32_t`` in order to be aligned with Linux. Previously it was defined as
+  ``size_t`` which meant that the size could be either 32 bit or 64 bit depending on system
+  configuration.
+
 .. zephyr-keep-sorted-start re(^\w)
 
+CoAP
+====
+
+* The :c:type:`coap_client_response_cb_t` signature has changed. The list of arguments
+  is passed as a :c:struct:`coap_client_response_data` pointer instead.
+
+* The :c:struct:`coap_client_request` has changed to improve the library's resilience against
+  misconfiguration (i.e. using transient pointers within the struct):
+
+  * The :c:member:`coap_client_request.path` is now a ``char`` array instead of a pointer.
+    The array size is configurable with :kconfig:option:`CONFIG_COAP_CLIENT_MAX_PATH_LENGTH`.
+  * The :c:member:`coap_client_request.options` is now a :c:struct:`coap_client_option` array
+    instead of a pointer. The array size is configurable with
+    :kconfig:option:`CONFIG_COAP_CLIENT_MAX_EXTRA_OPTIONS`.
+
 .. zephyr-keep-sorted-stop
+
+Modem
+*****
+
+* ``CONFIG_MODEM_AT_SHELL_USER_PIPE`` has been renamed to :kconfig:option:`CONFIG_MODEM_AT_USER_PIPE`.
+* ``CONFIG_MODEM_CMUX_WORK_BUFFER_SIZE`` has been updated to :kconfig:option:`CONFIG_MODEM_CMUX_WORK_BUFFER_SIZE_EXTRA`,
+  which only takes the number of extra bytes desired over the default of (:kconfig:option:`CONFIG_MODEM_CMUX_MTU` + 7).
 
 Display
 *******
@@ -181,10 +285,22 @@ PTP Clock
   ratio adjusting based on nominal frequency. Drivers implementing :c:func:`ptp_clock_rate_adjust`
   should be adjusted to account for the new behavior.
 
+Video
+*****
+
+* The ``min_line_count`` and ``max_line_count`` fields have been removed from :c:struct:`video_caps`.
+  Application should base on the new :c:member:`video_format.size` to allocate buffers.
+
 Other subsystems
 ****************
 
 .. zephyr-keep-sorted-start re(^\w)
+
+Cellular
+========
+
+ * :c:enum:`cellular_access_technology` values have been redefined to align with 3GPP TS 27.007.
+ * :c:enum:`cellular_registration_status` values have been extended to align with 3GPP TS 27.007.
 
 Logging
 =======
@@ -194,6 +310,15 @@ Logging
   more generic script of :zephyr_file:`scripts/logging/dictionary/live_log_parser.py` should be
   used. The new script supports the same functionality (and more), but requires different command
   line arguments when invoked.
+
+MCUmgr
+======
+
+* The :ref:`OS mgmt<mcumgr_smp_group_0>` :ref:`mcumgr_os_application_info` command's response for
+  hardware platform has been updated to output the board target instead of the board and board
+  revision, which now includes the SoC and board variant. The old behaviour has been deprecated,
+  but can still be used by enabling
+  :kconfig:option:`CONFIG_MCUMGR_GRP_OS_INFO_HARDWARE_INFO_SHORT_HARDWARE_PLATFORM`.
 
 RTIO
 ====
@@ -249,6 +374,15 @@ Silabs
 
 * The separate ``em3`` power state was removed from Series 2 SoCs. The system automatically
   transitions to EM2 or EM3 depending on hardware peripheral requests for the oscillators.
+
+LVGL
+====
+
+* The PIXEL_FORMAT_MONO10 and PIXEL_FORMAT_MONO01 formats were swapped
+  in :zephyr_file:`modules/lvgl/lvgl_display_mono.c`, which caused
+  black and white to be inverted when using LVGL with monochrome displays.
+  This issue has now been fixed. Any workarounds previously applied to achieve the expected
+  behavior should be removed, otherwise black and white will be inverted again.
 
 Architectures
 *************

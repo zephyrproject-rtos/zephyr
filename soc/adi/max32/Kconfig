@@ -64,6 +64,14 @@ config MAX32_SECONDARY_RV32
 	bool "Secondary RISC-V core enable"
 	depends on MAX32_HAS_SECONDARY_RV32
 
+config MAX32_STANDBY_DELAY
+	int "Prevent standby on boot for given ms"
+	depends on PM
+	default 1000
+	help
+	  Prevents the system from entering standby mode for a give number of ms.
+	  This is intended to prevent debug lockout when using power management.
+
 DT_CHOSEN_Z_CODE_RV32_PARTITION := zephyr,code-rv32-partition
 
 config MAX32_SECONDARY_RV32_BOOT_ADDRESS

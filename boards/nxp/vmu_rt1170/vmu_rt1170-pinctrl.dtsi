@@ -237,7 +237,7 @@
 
 	pinmux_lpspi1: pinmux_lpspi1 {
 		group0 {
-			pinmux = <&iomuxc_gpio_emc_b2_01_gpio_mux2_io11>,
+			pinmux = <&iomuxc_gpio_emc_b2_01_lpspi1_pcs0>,
 				 <&iomuxc_gpio_emc_b2_00_lpspi1_sck>,
 				 <&iomuxc_gpio_emc_b2_03_lpspi1_sdi>,
 				 <&iomuxc_gpio_emc_b2_02_lpspi1_sdo>,
@@ -249,7 +249,7 @@
 
 	pinmux_lpspi2: pinmux_lpspi2 {
 		group0 {
-			pinmux = <&iomuxc_gpio_ad_25_gpio_mux3_io24>,
+			pinmux = <&iomuxc_gpio_ad_25_lpspi2_pcs0>,
 				 <&iomuxc_gpio_ad_24_lpspi2_sck>,
 				 <&iomuxc_gpio_ad_27_lpspi2_sdi>,
 				 <&iomuxc_gpio_ad_26_lpspi2_sdo>,

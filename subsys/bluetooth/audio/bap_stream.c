@@ -36,6 +36,7 @@
 #include "../host/iso_internal.h"
 
 #include "audio_internal.h"
+#include "bap_internal.h"
 #include "bap_iso.h"
 #include "bap_endpoint.h"
 #include "bap_unicast_client_internal.h"
@@ -142,24 +143,30 @@ int bt_bap_ep_get_info(const struct bt_bap_ep *ep, struct bt_bap_ep_info *info)
 	info->can_send = false;
 	info->can_recv = false;
 	if (IS_ENABLED(CONFIG_BT_AUDIO_TX) && ep->stream != NULL) {
-		if (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE) && bt_bap_ep_is_broadcast_src(ep)) {
+		if (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE) &&
+		    bt_bap_broadcast_source_has_ep(ep)) {
 			info->can_send = true;
 		} else if (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK) &&
-			   bt_bap_ep_is_broadcast_snk(ep)) {
+			   bt_bap_broadcast_sink_has_ep(ep)) {
 			info->can_recv = true;
 		} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) &&
-			   bt_bap_ep_is_unicast_client(ep)) {
+			   bt_bap_unicast_client_has_ep(ep)) {
 			/* dir is not initialized before the connection is set */
 			if (ep->stream->conn != NULL) {
 				info->can_send = dir == BT_AUDIO_DIR_SINK;
 				info->can_recv = dir == BT_AUDIO_DIR_SOURCE;
 			}
-		} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER)) {
+		} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) &&
+			   bt_bap_unicast_server_has_ep(ep)) {
 			/* dir is not initialized before the connection is set */
 			if (ep->stream->conn != NULL) {
 				info->can_send = dir == BT_AUDIO_DIR_SOURCE;
 				info->can_recv = dir == BT_AUDIO_DIR_SINK;
 			}
+		} else {
+			LOG_DBG("Invalid endpoint");
+
+			return -EINVAL;
 		}
 	}
 
@@ -497,8 +504,9 @@ bool bt_bap_stream_can_disconnect(const struct bt_bap_stream *stream)
 static bool bt_bap_stream_is_broadcast(const struct bt_bap_stream *stream)
 {
 	return (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE) &&
-		bt_bap_ep_is_broadcast_src(stream->ep)) ||
-	       (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK) && bt_bap_ep_is_broadcast_snk(stream->ep));
+		bt_bap_broadcast_source_has_ep(stream->ep)) ||
+	       (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK) &&
+		bt_bap_broadcast_sink_has_ep(stream->ep));
 }
 
 enum bt_bap_ascs_reason bt_bap_stream_verify_qos(const struct bt_bap_stream *stream,
@@ -531,8 +539,11 @@ void bt_bap_stream_detach(struct bt_bap_stream *stream)
 		stream->conn = NULL;
 	}
 	stream->codec_cfg = NULL;
-	stream->ep->stream = NULL;
-	stream->ep = NULL;
+
+	if (stream->ep != NULL) {
+		stream->ep->stream = NULL;
+		stream->ep = NULL;
+	}
 
 	if (!is_broadcast) {
 		const int err = bt_bap_stream_disconnect(stream);
@@ -631,11 +642,30 @@ int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, str
 		return -EBADMSG;
 	}
 
+	if (ep->stream != NULL) {
+		LOG_DBG("Endpoint %p already configured for stream %p", ep, stream);
+
+		return -EINVAL;
+	}
+	__ASSERT(ep->iso == NULL, "endpoint %p already bound to iso %p", ep, ep->iso);
+
 	bt_bap_stream_attach(conn, stream, ep, codec_cfg);
+
+	/* If a stream has been added to a group at this point, then it has a reference to a CIS.
+	 * and we can bind the ep to the CIS
+	 */
+	if (stream->iso != NULL) {
+		struct bt_bap_iso *bap_iso = CONTAINER_OF(stream->iso, struct bt_bap_iso, chan);
+
+		/* Not yet bound with the bap_iso */
+		bt_bap_iso_bind_ep(bap_iso, ep);
+	}
 
 	err = bt_bap_unicast_client_config(stream, codec_cfg);
 	if (err != 0) {
 		LOG_DBG("Failed to configure stream: %d", err);
+
+		bt_bap_stream_reset(stream);
 		return err;
 	}
 

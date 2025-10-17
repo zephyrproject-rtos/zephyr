@@ -12,29 +12,37 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 
+#define SIGNO_WORD_IDX(_signo) (_signo / BITS_PER_LONG)
+#define SIGNO_WORD_BIT(_signo) (_signo & BIT_MASK(LOG2(BITS_PER_LONG)))
+
+#define SIGSET_NLONGS (sizeof(sigset_t) / sizeof(unsigned long))
+BUILD_ASSERT(SIGSET_NLONGS > 0, "sigset_t has no storage");
+
 ZTEST(posix_signals, test_sigemptyset)
 {
 	sigset_t set;
+	unsigned long *const _set = (unsigned long *)&set;
 
-	for (int i = 0; i < ARRAY_SIZE(set.sig); i++) {
-		set.sig[i] = -1;
+	for (int i = 0; i < SIGSET_NLONGS; i++) {
+		_set[i] = -1;
 	}
 
 	zassert_ok(sigemptyset(&set));
 
-	for (int i = 0; i < ARRAY_SIZE(set.sig); i++) {
-		zassert_equal(set.sig[i], 0u, "set.sig[%d] is not empty: 0x%lx", i, set.sig[i]);
+	for (int i = 0; i < SIGSET_NLONGS; i++) {
+		zassert_equal(_set[i], 0u, "set.sig[%d] is not empty: 0x%lx", i, _set[i]);
 	}
 }
 
 ZTEST(posix_signals, test_sigfillset)
 {
 	sigset_t set = (sigset_t){0};
+	unsigned long *const _set = (unsigned long *)&set;
 
 	zassert_ok(sigfillset(&set));
 
-	for (int i = 0; i < ARRAY_SIZE(set.sig); i++) {
-		zassert_equal(set.sig[i], -1, "set.sig[%d] is not filled: 0x%lx", i, set.sig[i]);
+	for (int i = 0; i < SIGSET_NLONGS; i++) {
+		zassert_equal(_set[i], -1, "set.sig[%d] is not filled: 0x%lx", i, _set[i]);
 	}
 }
 
@@ -56,46 +64,52 @@ ZTEST(posix_signals, test_sigaddset)
 {
 	int signo;
 	sigset_t set = (sigset_t){0};
+	unsigned long *const _set = (unsigned long *)&set;
 	sigset_t target = (sigset_t){0};
+	unsigned long *const _target = (unsigned long *)&target;
 
 	signo = SIGHUP;
 	zassert_ok(sigaddset(&set, signo));
-	WRITE_BIT(target.sig[0], signo, 1);
-	for (int i = 0; i < ARRAY_SIZE(set.sig); i++) {
-		zassert_equal(set.sig[i], target.sig[i],
+	WRITE_BIT(_target[0], signo, 1);
+	for (int i = 0; i < SIGSET_NLONGS; i++) {
+		zassert_equal(_set[i], _target[i],
 			      "set.sig[%d of %d] has content: %lx, expected %lx", i,
-			      ARRAY_SIZE(set.sig) - 1, set.sig[i], target.sig[i]);
+			      (int)(SIGSET_NLONGS - 1), _set[i], _target[i]);
 	}
 
 	signo = SIGSYS;
 	zassert_ok(sigaddset(&set, signo));
-	WRITE_BIT(target.sig[0], signo, 1);
-	for (int i = 0; i < ARRAY_SIZE(set.sig); i++) {
-		zassert_equal(set.sig[i], target.sig[i],
+	WRITE_BIT(_target[0], signo, 1);
+	for (int i = 0; i < SIGSET_NLONGS; i++) {
+		zassert_equal(_set[i], _target[i],
 			      "set.sig[%d of %d] has content: %lx, expected %lx", i,
-			      ARRAY_SIZE(set.sig) - 1, set.sig[i], target.sig[i]);
+			      (int)(SIGSET_NLONGS - 1), _set[i], _target[i]);
 	}
 
-	signo = SIGRTMIN; /* >=32, will be in the second sig set for 32bit */
-	zassert_ok(sigaddset(&set, signo));
-#ifdef CONFIG_64BIT
-	WRITE_BIT(target.sig[0], signo, 1);
-#else /* 32BIT */
-	WRITE_BIT(target.sig[1], (signo)-BITS_PER_LONG, 1);
-#endif
-	for (int i = 0; i < ARRAY_SIZE(set.sig); i++) {
-		zassert_equal(set.sig[i], target.sig[i],
-			      "set.sig[%d of %d] has content: %lx, expected %lx", i,
-			      ARRAY_SIZE(set.sig) - 1, set.sig[i], target.sig[i]);
-	}
+	/* TODO: move rt signal tests to realtime_signals testsuite */
+	static const int rtsigs[] = {SIGRTMIN, SIGRTMAX};
 
-	signo = SIGRTMAX;
-	zassert_ok(sigaddset(&set, signo));
-	WRITE_BIT(target.sig[signo / BITS_PER_LONG], signo % BITS_PER_LONG, 1);
-	for (int i = 0; i < ARRAY_SIZE(set.sig); i++) {
-		zassert_equal(set.sig[i], target.sig[i],
-			      "set.sig[%d of %d] has content: %lx, expected %lx", i,
-			      ARRAY_SIZE(set.sig) - 1, set.sig[i], target.sig[i]);
+	ARRAY_FOR_EACH(rtsigs, i) {
+		int expected_ret = 0;
+		int expected_errno = 0;
+
+		signo = rtsigs[i];
+		if (signo >= SIGSET_NLONGS * BITS_PER_LONG) {
+			/* Some libc's provide a sigset_t that is too small for real-time signals */
+			expected_ret = -1;
+			expected_errno = EINVAL;
+		} else {
+			WRITE_BIT(_target[signo / BITS_PER_LONG], signo % BITS_PER_LONG, 1);
+		}
+
+		errno = 0;
+		zassert_equal(sigaddset(&set, signo), expected_ret);
+		zassert_equal(errno, expected_errno);
+		for (int i = 0; i < SIGSET_NLONGS; i++) {
+			zassert_equal(_set[i], _target[i],
+				      "set.sig[%d of %d] has content: %lx, expected %lx", i,
+				      (int)(SIGSET_NLONGS - 1), _set[i], _target[i]);
+		}
 	}
 }
 
@@ -117,82 +131,109 @@ ZTEST(posix_signals, test_sigdelset)
 {
 	int signo;
 	sigset_t set = (sigset_t){0};
+	unsigned long *const _set = (unsigned long *)&set;
 	sigset_t target = (sigset_t){0};
+	unsigned long *const _target = (unsigned long *)&target;
+
+	zassert_ok(sigfillset(&set));
+	zassert_ok(sigfillset(&target));
 
 	signo = SIGHUP;
 	zassert_ok(sigdelset(&set, signo));
-	WRITE_BIT(target.sig[0], signo, 0);
-	for (int i = 0; i < ARRAY_SIZE(set.sig); i++) {
-		zassert_equal(set.sig[i], target.sig[i],
+	WRITE_BIT(_target[0], signo, 0);
+	for (int i = 0; i < SIGSET_NLONGS; i++) {
+		zassert_equal(_set[i], _target[i],
 			      "set.sig[%d of %d] has content: %lx, expected %lx", i,
-			      ARRAY_SIZE(set.sig) - 1, set.sig[i], target.sig[i]);
+			      (int)(SIGSET_NLONGS - 1), _set[i], _target[i]);
 	}
 
 	signo = SIGSYS;
 	zassert_ok(sigdelset(&set, signo));
-	WRITE_BIT(target.sig[0], signo, 0);
-	for (int i = 0; i < ARRAY_SIZE(set.sig); i++) {
-		zassert_equal(set.sig[i], target.sig[i],
+	WRITE_BIT(_target[0], signo, 0);
+	for (int i = 0; i < SIGSET_NLONGS; i++) {
+		zassert_equal(_set[i], _target[i],
 			      "set.sig[%d of %d] has content: %lx, expected %lx", i,
-			      ARRAY_SIZE(set.sig) - 1, set.sig[i], target.sig[i]);
+			      (int)(SIGSET_NLONGS - 1), _set[i], _target[i]);
 	}
 
-	signo = SIGRTMIN; /* >=32, will be in the second sig set for 32bit */
-	zassert_ok(sigdelset(&set, signo));
-#ifdef CONFIG_64BIT
-	WRITE_BIT(target.sig[0], signo, 0);
-#else /* 32BIT */
-	WRITE_BIT(target.sig[1], (signo)-BITS_PER_LONG, 0);
-#endif
-	for (int i = 0; i < ARRAY_SIZE(set.sig); i++) {
-		zassert_equal(set.sig[i], target.sig[i],
-			      "set.sig[%d of %d] has content: %lx, expected %lx", i,
-			      ARRAY_SIZE(set.sig) - 1, set.sig[i], target.sig[i]);
-	}
+	/* TODO: move rt signal tests to realtime_signals testsuite */
+	static const int rtsigs[] = {SIGRTMIN, SIGRTMAX};
 
-	signo = SIGRTMAX;
-	zassert_ok(sigdelset(&set, signo));
-	WRITE_BIT(target.sig[signo / BITS_PER_LONG], signo % BITS_PER_LONG, 0);
-	for (int i = 0; i < ARRAY_SIZE(set.sig); i++) {
-		zassert_equal(set.sig[i], target.sig[i],
-			      "set.sig[%d of %d] has content: %lx, expected %lx", i,
-			      ARRAY_SIZE(set.sig) - 1, set.sig[i], target.sig[i]);
+	ARRAY_FOR_EACH(rtsigs, i) {
+		int expected_ret = 0;
+		int expected_errno = 0;
+
+		signo = rtsigs[i];
+		if (signo >= SIGSET_NLONGS * BITS_PER_LONG) {
+			/* Some libc's provide a sigset_t that is too small for real-time signals */
+			expected_ret = -1;
+			expected_errno = EINVAL;
+		} else {
+			WRITE_BIT(_target[signo / BITS_PER_LONG], signo % BITS_PER_LONG, 0);
+		}
+
+		errno = 0;
+		zassert_equal(sigdelset(&set, signo), expected_ret);
+		zassert_equal(errno, expected_errno);
+		for (int i = 0; i < SIGSET_NLONGS; i++) {
+			zassert_equal(_set[i], _target[i],
+				      "set.sig[%d of %d] has content: %lx, expected %lx", i,
+				      (int)(SIGSET_NLONGS - 1), _set[i], _target[i]);
+		}
 	}
 }
 
 ZTEST(posix_signals, test_sigismember_oor)
 {
+	int res;
 	sigset_t set = {0};
 
-	zassert_equal(sigismember(&set, -1), -1, "rc should be -1");
-	zassert_equal(errno, EINVAL, "errno should be %s", "EINVAL");
+	res = sigismember(&set, -1);
+	zexpect_equal(res, -1, "rc should be -1 but is %d", res);
+	zexpect_equal(errno, EINVAL, "errno should be %s", "EINVAL");
 
-	zassert_equal(sigismember(&set, 0), -1, "rc should be -1");
-	zassert_equal(errno, EINVAL, "errno should be %s", "EINVAL");
+	res = sigismember(&set, 0);
+	zexpect_equal(res, -1, "rc should be -1 but is %d", res);
+	zexpect_equal(errno, EINVAL, "errno should be %s", "EINVAL");
 
-	zassert_equal(sigismember(&set, SIGRTMAX + 1), -1, "rc should be -1");
-	zassert_equal(errno, EINVAL, "errno should be %s", "EINVAL");
+	res = sigismember(&set, SIGRTMAX + 1);
+	zexpect_equal(res, -1, "rc should be -1 but is %d", res);
+	zexpect_equal(errno, EINVAL, "errno should be %s", "EINVAL");
 }
 
 ZTEST(posix_signals, test_sigismember)
 {
 	sigset_t set = (sigset_t){0};
+	unsigned long *const _set = (unsigned long *)&set;
 
-#ifdef CONFIG_64BIT
-	set.sig[0] = BIT(SIGHUP) | BIT(SIGSYS) | BIT(SIGRTMIN);
-#else /* 32BIT */
-	set.sig[0] = BIT(SIGHUP) | BIT(SIGSYS);
-	set.sig[1] = BIT((SIGRTMIN)-BITS_PER_LONG);
-#endif
-	WRITE_BIT(set.sig[SIGRTMAX / BITS_PER_LONG], SIGRTMAX % BITS_PER_LONG, 1);
+	_set[0] = BIT(SIGHUP) | BIT(SIGSYS);
 
 	zassert_equal(sigismember(&set, SIGHUP), 1, "%s expected to be member", "SIGHUP");
 	zassert_equal(sigismember(&set, SIGSYS), 1, "%s expected to be member", "SIGSYS");
-	zassert_equal(sigismember(&set, SIGRTMIN), 1, "%s expected to be member", "SIGRTMIN");
-	zassert_equal(sigismember(&set, SIGRTMAX), 1, "%s expected to be member", "SIGRTMAX");
 
 	zassert_equal(sigismember(&set, SIGKILL), 0, "%s not expected to be member", "SIGKILL");
 	zassert_equal(sigismember(&set, SIGTERM), 0, "%s not expected to be member", "SIGTERM");
+
+	/* TODO: move rt signal tests to realtime_signals testsuite */
+	static const int rtsigs[] = {SIGRTMIN, SIGRTMAX};
+
+	ARRAY_FOR_EACH(rtsigs, i) {
+		int expected_ret = 1;
+		int expected_errno = 0;
+		int signo = rtsigs[i];
+
+		if (signo >= SIGSET_NLONGS * BITS_PER_LONG) {
+			/* Some libc's provide a sigset_t that is too small for real-time signals */
+			expected_ret = -1;
+			expected_errno = EINVAL;
+		} else {
+			WRITE_BIT(_set[signo / BITS_PER_LONG], signo % BITS_PER_LONG, 1);
+		}
+
+		errno = 0;
+		zassert_equal(sigismember(&set, signo), expected_ret);
+		zassert_equal(errno, expected_errno);
+	}
 }
 
 ZTEST(posix_signals, test_signal_strsignal)
@@ -214,8 +255,10 @@ ZTEST(posix_signals, test_signal_strsignal)
 	zassert_mem_equal(strsignal(SIGHUP), "Hangup", sizeof("Hangup"));
 	zassert_mem_equal(strsignal(SIGSYS), "Bad system call", sizeof("Bad system call"));
 #else
-	zassert_mem_equal(strsignal(SIGHUP), "Signal 1", sizeof("Signal 1"));
-	zassert_mem_equal(strsignal(SIGSYS), "Signal 31", sizeof("Signal 31"));
+	snprintf(buf, sizeof(buf), "Signal %d", SIGHUP);
+	zassert_mem_equal(strsignal(SIGHUP), buf, strlen(buf));
+	snprintf(buf, sizeof(buf), "Signal %d", SIGSYS);
+	zassert_mem_equal(strsignal(SIGSYS), buf, strlen(buf));
 #endif
 }
 
@@ -320,14 +363,4 @@ ZTEST(posix_signals, test_sigprocmask)
 	}
 }
 
-static void before(void *arg)
-{
-	ARG_UNUSED(arg);
-
-	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD)) {
-		/* skip redundant testing if there is no thread pool / heap allocation */
-		ztest_test_skip();
-	}
-}
-
-ZTEST_SUITE(posix_signals, NULL, NULL, before, NULL, NULL);
+ZTEST_SUITE(posix_signals, NULL, NULL, NULL, NULL, NULL);

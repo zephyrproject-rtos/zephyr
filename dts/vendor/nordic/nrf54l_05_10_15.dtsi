@@ -103,12 +103,13 @@
 
 #ifdef USE_NON_SECURE_ADDRESS_MAP
 		global_peripherals: peripheral@40000000 {
+			reg = <0x40000000 0x10000000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x40000000 0x10000000>;
 #else
-
 		global_peripherals: peripheral@50000000 {
+			reg = <0x50000000 0x10000000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x50000000 0x10000000>;

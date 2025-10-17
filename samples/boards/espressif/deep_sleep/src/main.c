@@ -7,13 +7,20 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/poweroff.h>
 #include <esp_sleep.h>
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 #include <driver/rtc_io.h>
+#endif
 
 #include <esp_attr.h>
 
 #ifdef CONFIG_EXAMPLE_EXT1_WAKEUP
+#ifdef CONFIG_SOC_SERIES_ESP32H2
+#define EXT_WAKEUP_PIN_1	(10)
+#define EXT_WAKEUP_PIN_2	(11)
+#else
 #define EXT_WAKEUP_PIN_1	(2)
 #define EXT_WAKEUP_PIN_2	(4)
+#endif
 #endif
 
 #ifdef CONFIG_EXAMPLE_GPIO_WAKEUP
@@ -90,11 +97,13 @@ int main(void)
 	esp_sleep_enable_ext1_wakeup(ext_wakeup_pin_1_mask | ext_wakeup_pin_2_mask,
 			ESP_EXT1_WAKEUP_ANY_HIGH);
 
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 	/* enable pull-down on ext1 pins to avoid random wake-ups */
 	rtc_gpio_pullup_dis(EXT_WAKEUP_PIN_1);
 	rtc_gpio_pulldown_en(EXT_WAKEUP_PIN_1);
 	rtc_gpio_pullup_dis(EXT_WAKEUP_PIN_2);
 	rtc_gpio_pulldown_en(EXT_WAKEUP_PIN_2);
+#endif
 #endif /* CONFIG_EXAMPLE_EXT1_WAKEUP */
 #ifdef CONFIG_EXAMPLE_GPIO_WAKEUP
 	if (!gpio_is_ready_dt(&wakeup_button)) {

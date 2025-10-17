@@ -94,6 +94,8 @@ struct otbr_msg_ctx {
 	/** Actual length of incoming data */
 	uint16_t length;
 
+	/** A pointer to user data */
+	void *user_data;
 	union {
 		/** Generic OpenThread message info structure */
 		otMessageInfo message_info;

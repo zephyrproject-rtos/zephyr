@@ -27,24 +27,42 @@ ZTEST(cpu_freq_on_demand, test_pstates)
 	zassert_equal(cpu_freq_policy_select_pstate(NULL), -EINVAL,
 		      "Expected -EINVAL for NULL pstate_out");
 
+#if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
+	k_sched_lock();  /* Lock scheduler to prevent thread migration */
+#endif
+
 	/* Simulate high-load and get pstate */
 	k_busy_wait(WAIT_US);
 
 	/* Get pstate after a moment of high-load */
 	ret = cpu_freq_policy_select_pstate(&test_pstate);
+
+#if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
+	k_sched_unlock();
+#endif
+
 	zassert_equal(ret, 0, "Expected success from cpu_freq_policy_select_pstate");
 
 	int prev_threshold = test_pstate->load_threshold;
+
+#if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
+	k_sched_lock();
+#endif
 
 	/* Simulate low-load by sleeping, then getting pstate*/
 	k_sleep(K_USEC(WAIT_US));
 
 	/* Get pstate after a moment of low-load between calls to policy */
 	ret = cpu_freq_policy_select_pstate(&test_pstate);
+
+#if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
+	k_sched_unlock();
+#endif
+
 	zassert_equal(ret, 0, "Expected success from cpu_freq_policy_select_pstate");
 
 	zassert_not_equal(test_pstate->load_threshold, prev_threshold,
-			  "Expected different p-state after sleep");
+			  "Expected different P-state after sleep");
 }
 
 ZTEST_SUITE(cpu_freq_on_demand, NULL, NULL, NULL, NULL, NULL);

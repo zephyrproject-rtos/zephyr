@@ -1,0 +1,246 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+family:
+- name: edge
+  series:
+  - name: pse84
+    socs:
+    - name: pse846gps4dbzc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse846gps4dbzc4a
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse846gps2dbzc4a
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse846gos4dbzc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse846gos2dbzc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse845gps4dfnc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse845gps4dfmc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse845gps2dfnc4a
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse845gps2dfmc4a
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse845gos4dfnc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse845gos4dfmc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse845gos2dfnc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse845gos2dfmc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse846gps4dbzq3b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse846gps2dbzq3a
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse846gos4dbzq3b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse846gos2dbzq3b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse832gos4dfnc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse833gos4dbzc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse832gos2dfnc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse833gos2dbzc4a
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse832gms4dfnc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse833gms4dbzc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse832gms2dfnc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse833gms2dbzc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse833gos4dbzq3b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse833gos2dbzq3b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse833gms4dbzq3b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse833gms2dbzq3b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse822gos4dfnc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse823gos4dbzc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse822gos2dfnc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse823gos2dbzc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse822gms4dfnc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse823gms4dbzc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse822gms2dfnc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse823gms2dbzc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse823gos4dbzq3b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse823gos2dbzq3b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse823gms4dbzq3b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse823gms2dbzq3b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse812gos4dfnc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse813gos4dbzc4a
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse812gos2dfnc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse813gos2dbzc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse812gms4dfnc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse813gms4dbzc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse812gms2dfnc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse813gms2dbzc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse813gos4dbzq3b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse813gos2dbzq3b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse813gms4dbzq3b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse813gms2dbzq3b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse846gps2dbzc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse845gps2dfnc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse845gps2dfmc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse846gps2dbzq3b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse833gos2dbzc4b
+      cpuclusters:
+      - name: m33
+      - name: m55
+    - name: pse813gos4dbzc4b
+      cpuclusters:
+      - name: m33
+      - name: m55

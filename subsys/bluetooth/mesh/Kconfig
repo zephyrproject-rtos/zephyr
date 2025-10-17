@@ -1038,6 +1038,7 @@ config BT_MESH_BLOB_IO_FLASH
 	default y
 	depends on BT_MESH_BLOB_SRV || BT_MESH_BLOB_CLI
 	depends on FLASH_MAP
+	depends on FLASH_PAGE_LAYOUT
 	help
 	  Enable the BLOB flash stream for reading and writing BLOBs directly to
 	  and from flash.
@@ -1045,24 +1046,28 @@ config BT_MESH_BLOB_IO_FLASH
 if BT_MESH_BLOB_IO_FLASH
 
 config BT_MESH_BLOB_IO_FLASH_WITHOUT_ERASE
-	bool "BLOB flash support for devices without erase"
-	default y if FLASH_HAS_NO_EXPLICIT_ERASE
+	bool "BLOB flash support for devices without erase [DEPRECATED]"
+	default n
 	depends on FLASH_HAS_NO_EXPLICIT_ERASE
+	select DEPRECATED
 	help
-	  Enable path supporting devices without erase. This option appears only
-	  if there are devices without explicit erase requirements in the system
-	  and may be disabled to reduce code size in case when no operations
-	  are intended on such type of devices.
+	  This option is deprecated and is no longer used by the BLOB IO Flash module.
 
 config BT_MESH_BLOB_IO_FLASH_WITH_ERASE
-	bool "BLOB flash support for devices with erase"
-	default y if FLASH_HAS_EXPLICIT_ERASE
+	bool "BLOB flash support for devices with erase [DEPRECATED]"
+	default n
 	depends on FLASH_HAS_EXPLICIT_ERASE
+	depends on FLASH_PAGE_LAYOUT
+	select DEPRECATED
 	help
-	  Enable path supporting devices with erase. This option appears only
-	  if there are devices requiring erase,  before write, in the system
-	  and may be disabled to reduce code size in case when no operations
-	  are intended on such type of devices.
+	  This option is deprecated and is no longer used by the BLOB IO Flash module.
+
+config BT_MESH_BLOB_IO_FLASH_WRITE_BLOCK_SIZE_MAX
+	int "Maximum supported write block size"
+	default 4
+	help
+	  The BLOB IO Flash module will support flash devices with explicit erase
+	  when this value is set to a multiple of the device write block size.
 
 endif # BT_MESH_BLOB_IO_FLASH
 
@@ -1487,17 +1492,10 @@ config BT_MESH_SECURE_STORAGE
 	bool
 	depends on SECURE_STORAGE
 
-choice BT_MESH_CRYPTO_LIB
-	prompt "Crypto library:"
-	default BT_MESH_USES_TFM_PSA if BUILD_WITH_TFM
-	default BT_MESH_USES_MBEDTLS_PSA
-	help
-	  Crypto library selection for mesh security.
-
-config BT_MESH_USES_MBEDTLS_PSA
-	bool "mbed TLS PSA"
-	select MBEDTLS
-	select MBEDTLS_PSA_CRYPTO_C
+config BT_MESH_CRYPTO_LIB
+	bool
+	default y
+	select PSA_CRYPTO
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
@@ -1512,18 +1510,9 @@ config BT_MESH_USES_MBEDTLS_PSA
 	select PSA_WANT_ALG_ECDH
 	select PSA_WANT_ECC_SECP_R1_256
 	select BT_MESH_SECURE_STORAGE if BT_SETTINGS
-	imply MBEDTLS_AES_ROM_TABLES
+	imply MBEDTLS_AES_ROM_TABLES if PSA_CRYPTO_PROVIDER_MBEDTLS
 	help
-	  Use Mbed TLS as PSA Crypto API provider.
-
-config BT_MESH_USES_TFM_PSA
-	bool "TF-M PSA"
-	depends on BUILD_WITH_TFM
-	help
-	  Use TF-M as PSA Crypto API provider. This is only possible on platforms
-	  that support TF-M.
-
-endchoice
+	  Crypto library support for mesh security.
 
 menu "Beacons"
 

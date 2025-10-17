@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(dsa_netc, CONFIG_ETHERNET_LOG_LEVEL);
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/ethernet/nxp_imx_netc.h>
 #include <zephyr/dt-bindings/ethernet/dsa_tag_proto.h>
+#include <zephyr/sys/util_macro.h>
 
 #include "../eth.h"
 #include "fsl_netc_switch.h"
@@ -32,6 +33,13 @@ struct dsa_netc_config {
 	DEVICE_MMIO_NAMED_ROM(pfconfig);
 };
 
+#ifdef CONFIG_NET_QBV
+struct netc_qbv_config {
+	netc_tb_tgs_gcl_t tgs_config;
+	netc_tgs_gate_entry_t gcList[CONFIG_DSA_NXP_NETC_GCL_LEN];
+};
+#endif
+
 struct dsa_netc_data {
 	DEVICE_MMIO_NAMED_RAM(base);
 	DEVICE_MMIO_NAMED_RAM(pfconfig);
@@ -42,6 +50,10 @@ struct dsa_netc_data {
 	uint8_t cpu_port_idx;
 	struct k_fifo tx_ts_queue;
 #endif
+#ifdef CONFIG_NET_QBV
+	struct netc_qbv_config qbv_config[DSA_PORT_MAX_COUNT];
+#endif
+
 };
 
 static int dsa_netc_port_init(const struct device *dev)
@@ -84,6 +96,14 @@ static int dsa_netc_port_init(const struct device *dev)
 	} else {
 		swt_config->ports[cfg->port_idx].commonCfg.ipfCfg.enIPFTable = true;
 	}
+#endif
+
+#ifdef CONFIG_NET_QBV
+	memset(&(prv->qbv_config[cfg->port_idx].tgs_config), 0, sizeof(netc_tb_tgs_gcl_t));
+	memset(prv->qbv_config[cfg->port_idx].gcList, 0,
+	       sizeof(netc_tgs_gate_entry_t) * CONFIG_DSA_NXP_NETC_GCL_LEN);
+	prv->qbv_config[cfg->port_idx].tgs_config.entryID = cfg->port_idx;
+	prv->qbv_config[cfg->port_idx].tgs_config.gcList = prv->qbv_config[cfg->port_idx].gcList;
 #endif
 
 	return 0;
@@ -235,6 +255,179 @@ static int dsa_netc_switch_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_NET_QBV
+static int dsa_netc_set_qbv(const struct device *dev, const struct ethernet_config *config)
+{
+	struct dsa_switch_context *dsa_switch_ctx = dev->data;
+	struct dsa_netc_data *prv = PRV_DATA(dsa_switch_ctx);
+	struct dsa_port_config *cfg = (struct dsa_port_config *)dev->config;
+	status_t result;
+	uint32_t gate_num;
+	int i;
+	uint16_t row;
+	int ret = 0;
+
+	switch (config->qbv_param.type) {
+	case ETHERNET_QBV_PARAM_TYPE_STATUS:
+		result = SWT_TxPortTGSEnable(&prv->swt_handle, cfg->port_idx,
+					     config->qbv_param.enabled);
+		if (result != kStatus_Success) {
+			LOG_ERR("Couldn't enable/disable QBV");
+			ret = -ENOTSUP;
+		}
+		break;
+	case ETHERNET_QBV_PARAM_TYPE_TIME:
+		prv->qbv_config[cfg->port_idx].tgs_config.baseTime =
+			config->qbv_param.base_time.second * NSEC_PER_SEC
+			+ (config->qbv_param.base_time.fract_nsecond >> 16);
+		prv->qbv_config[cfg->port_idx].tgs_config.cycleTime =
+			(uint32_t)(config->qbv_param.cycle_time.second * NSEC_PER_SEC
+			+ config->qbv_param.cycle_time.nanosecond);
+		prv->qbv_config[cfg->port_idx].tgs_config.extTime =
+			config->qbv_param.extension_time;
+		break;
+	case ETHERNET_QBV_PARAM_TYPE_GATE_CONTROL_LIST:
+		row = config->qbv_param.gate_control.row;
+		gate_num = ((CONFIG_NET_TC_TX_COUNT) < 8 ? (CONFIG_NET_TC_TX_COUNT) : 8);
+		if (row > CONFIG_DSA_NXP_NETC_GCL_LEN) {
+			LOG_ERR("The gate control list length exceeds the limit");
+			return -ENOTSUP;
+		}
+		prv->qbv_config[cfg->port_idx].gcList[row].interval =
+			config->qbv_param.gate_control.time_interval;
+		prv->qbv_config[cfg->port_idx].gcList[row].tcGateState = 0;
+		for (i = 0; i < gate_num; i++) {
+			prv->qbv_config[cfg->port_idx].gcList[row].tcGateState
+				|= config->qbv_param.gate_control.gate_status[i] << i;
+		}
+		if (prv->qbv_config[cfg->port_idx].tgs_config.numEntries > 0 &&
+		    (row + 1) == prv->qbv_config[cfg->port_idx].tgs_config.numEntries) {
+			result = SWT_TxTGSConfigAdminGcl(&prv->swt_handle,
+				&(prv->qbv_config[cfg->port_idx].tgs_config));
+			if (result != kStatus_Success) {
+				LOG_ERR("Fail to set gate control list, err code: 0x%x", result);
+				ret = -ENOTSUP;
+			}
+		}
+		break;
+	case ETHERNET_QBV_PARAM_TYPE_GATE_CONTROL_LIST_LEN:
+		prv->qbv_config[cfg->port_idx].tgs_config.numEntries =
+			config->qbv_param.gate_control_list_len;
+		break;
+	default:
+		/* No validation needed */
+		break;
+	}
+
+	return ret;
+}
+
+static int dsa_netc_get_qbv(const struct device *dev, struct ethernet_config *config)
+{
+	struct dsa_switch_context *dsa_switch_ctx = dev->data;
+	struct dsa_netc_data *prv = PRV_DATA(dsa_switch_ctx);
+	struct dsa_port_config *cfg = (struct dsa_port_config *)dev->config;
+	uint32_t gate_num;
+	int i;
+	uint16_t row;
+	int ret = 0;
+
+	switch (config->qbv_param.type) {
+	case ETHERNET_QBV_PARAM_TYPE_STATUS:
+		config->qbv_param.enabled = ((prv->swt_handle.hw.ports[cfg->port_idx].port->PTGSCR
+			& NETC_PORT_PTGSCR_TGE_MASK) != 0);
+		break;
+	case ETHERNET_QBV_PARAM_TYPE_TIME:
+		config->qbv_param.base_time.second =
+			prv->qbv_config[cfg->port_idx].tgs_config.baseTime / NSEC_PER_SEC;
+		config->qbv_param.base_time.fract_nsecond =
+			prv->qbv_config[cfg->port_idx].tgs_config.baseTime % NSEC_PER_SEC << 16;
+		config->qbv_param.cycle_time.second = (uint64_t)
+			(prv->qbv_config[cfg->port_idx].tgs_config.cycleTime / NSEC_PER_SEC);
+		config->qbv_param.cycle_time.nanosecond =
+			prv->qbv_config[cfg->port_idx].tgs_config.cycleTime % NSEC_PER_SEC;
+		config->qbv_param.extension_time =
+			prv->qbv_config[cfg->port_idx].tgs_config.extTime;
+		break;
+	case ETHERNET_QBV_PARAM_TYPE_GATE_CONTROL_LIST:
+		row = config->qbv_param.gate_control.row;
+		gate_num = ((CONFIG_NET_TC_TX_COUNT) < 8 ? (CONFIG_NET_TC_TX_COUNT) : 8);
+		if (row > CONFIG_DSA_NXP_NETC_GCL_LEN) {
+			LOG_ERR("The gate control list length exceeds the limit");
+			return -ENOTSUP;
+		}
+		config->qbv_param.gate_control.time_interval =
+			prv->qbv_config[cfg->port_idx].gcList[row].interval;
+		for (i = 0; i < gate_num; i++) {
+			config->qbv_param.gate_control.gate_status[i] =
+				((prv->qbv_config[cfg->port_idx].gcList[row].tcGateState
+				  & BIT(i)) != 0);
+		}
+		break;
+	case ETHERNET_QBV_PARAM_TYPE_GATE_CONTROL_LIST_LEN:
+		config->qbv_param.gate_control_list_len =
+			prv->qbv_config[cfg->port_idx].tgs_config.numEntries;
+		break;
+	default:
+		/* No validation needed */
+		break;
+	}
+
+	return ret;
+}
+#endif
+
+static int dsa_netc_set_config(const struct device *dev, enum ethernet_config_type type,
+			const struct ethernet_config *config)
+{
+	int ret = 0;
+
+	switch (type) {
+#ifdef CONFIG_NET_QBV
+	case ETHERNET_CONFIG_TYPE_QBV_PARAM:
+		ret = dsa_netc_set_qbv(dev, config);
+		break;
+#endif
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	return ret;
+}
+
+static int dsa_netc_get_config(const struct device *dev, enum ethernet_config_type type,
+			struct ethernet_config *config)
+{
+	int ret = 0;
+
+	switch (type) {
+#ifdef CONFIG_NET_QBV
+	case ETHERNET_CONFIG_TYPE_QBV_PARAM:
+		ret = dsa_netc_get_qbv(dev, config);
+		break;
+#endif
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	return ret;
+}
+
+static enum ethernet_hw_caps dsa_port_get_capabilities(const struct device *dev)
+{
+	uint32_t caps = 0;
+
+	ARG_UNUSED(dev);
+
+#ifdef CONFIG_NET_QBV
+	caps |= ETHERNET_QBV;
+#endif
+
+	return caps;
+}
+
 static struct dsa_api dsa_netc_api = {
 	.port_init = dsa_netc_port_init,
 	.port_generate_random_mac = dsa_netc_port_generate_random_mac,
@@ -244,6 +437,9 @@ static struct dsa_api dsa_netc_api = {
 	.port_txtstamp = dsa_netc_port_txtstamp,
 #endif
 	.connect_tag_protocol = dsa_netc_connect_tag_protocol,
+	.get_capabilities = dsa_port_get_capabilities,
+	.set_config = dsa_netc_set_config,
+	.get_config = dsa_netc_get_config,
 };
 
 #define DSA_NETC_PORT_INST_INIT(port, n)                                                    \

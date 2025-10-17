@@ -207,7 +207,7 @@ endchoice
 
 config WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA
 	bool "Crypto Platform Secure Architecture support for WiFi"
-	imply MBEDTLS_PSA_CRYPTO_C
+	select PSA_CRYPTO
 	select MBEDTLS_USE_PSA_CRYPTO
 	select PSA_WANT_ALG_ECDH
 	select PSA_WANT_ALG_HMAC
@@ -455,6 +455,27 @@ config WIFI_NM_WPA_SUPPLICANT_SKIP_DHCP_ON_ROAMING
 	  needs to get new IP address after roaming to new AP. Disable this to keep
 	  DHCP after roaming.
 
+config WIFI_NM_WPA_SUPPLICANT_BGSCAN
+	bool "Background scanning (for legacy roaming), recommended if 802.11r is not supported"
+	depends on WIFI_NM_WPA_SUPPLICANT_WNM
+	depends on !WIFI_NM_WPA_SUPPLICANT_ROAMING
+
+if WIFI_NM_WPA_SUPPLICANT_BGSCAN
+
+config WIFI_NM_WPA_SUPPLICANT_BGSCAN_SIMPLE
+	bool "Simple background scanning"
+	default y
+	help
+	  Periodic background scans based on signal strength.
+
+config WIFI_NM_WPA_SUPPLICANT_BGSCAN_LEARN
+	bool "Learning"
+	help
+	  Learn channels used by the network and try to avoid
+	  background scans on other channels (experimental).
+
+endif # WIFI_NM_WPA_SUPPLICANT_BGSCAN
+
 # Create hidden config options that are used in hostap. This way we do not need
 # to mark them as allowed for CI checks, and also someone else cannot use the
 # same name options.
@@ -484,6 +505,15 @@ config NO_RANDOM_POOL
 	default y
 
 config WNM
+	bool
+
+config BGSCAN
+	bool
+
+config BGSCAN_SIMPLE
+	bool
+
+config BGSCAN_LEARN
 	bool
 
 config NO_WPA

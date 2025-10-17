@@ -237,7 +237,9 @@ static int acquire(const struct device *dev)
 	struct flash_mspi_nor_data *dev_data = dev->data;
 	int rc;
 
+#if defined(CONFIG_MULTITHREADING)
 	k_sem_take(&dev_data->acquired, K_FOREVER);
+#endif
 
 	rc = pm_device_runtime_get(dev_config->bus);
 	if (rc < 0) {
@@ -269,21 +271,27 @@ static int acquire(const struct device *dev)
 		(void)pm_device_runtime_put(dev_config->bus);
 	}
 
+#if defined(CONFIG_MULTITHREADING)
 	k_sem_give(&dev_data->acquired);
+#endif
+
 	return rc;
 }
 
 static void release(const struct device *dev)
 {
 	const struct flash_mspi_nor_config *dev_config = dev->config;
-	struct flash_mspi_nor_data *dev_data = dev->data;
 
 	/* This releases the MSPI controller. */
 	(void)mspi_get_channel_status(dev_config->bus, 0);
 
 	(void)pm_device_runtime_put(dev_config->bus);
 
+#if defined(CONFIG_MULTITHREADING)
+	struct flash_mspi_nor_data *dev_data = dev->data;
+
 	k_sem_give(&dev_data->acquired);
+#endif
 }
 
 static inline uint32_t dev_flash_size(const struct device *dev)
@@ -328,6 +336,7 @@ static uint8_t get_rx_dummy(const struct device *dev)
 static int api_read(const struct device *dev, off_t addr, void *dest,
 		    size_t size)
 {
+	const struct flash_mspi_nor_config *dev_config = dev->config;
 	struct flash_mspi_nor_data *dev_data = dev->data;
 	const uint32_t flash_size = dev_flash_size(dev);
 	int rc;
@@ -345,11 +354,26 @@ static int api_read(const struct device *dev, off_t addr, void *dest,
 		return rc;
 	}
 
-	set_up_xfer_with_addr(dev, MSPI_RX, addr);
-	dev_data->xfer.rx_dummy = get_rx_dummy(dev);
-	dev_data->packet.data_buf  = dest;
-	dev_data->packet.num_bytes = size;
-	rc = perform_xfer(dev, dev_data->cmd_info.read_cmd, true);
+	while (size > 0) {
+		uint32_t to_read;
+
+		if (dev_config->packet_data_limit &&
+		    dev_config->packet_data_limit < size) {
+			to_read = dev_config->packet_data_limit;
+		} else {
+			to_read = size;
+		}
+
+		set_up_xfer_with_addr(dev, MSPI_RX, addr);
+		dev_data->xfer.rx_dummy = get_rx_dummy(dev);
+		dev_data->packet.data_buf  = dest;
+		dev_data->packet.num_bytes = to_read;
+		rc = perform_xfer(dev, dev_data->cmd_info.read_cmd, true);
+
+		addr += to_read;
+		dest  = (uint8_t *)dest + to_read;
+		size -= to_read;
+	}
 
 	release(dev);
 
@@ -1215,7 +1239,9 @@ static int drv_init(const struct device *dev)
 		}
 	}
 
+#if defined(CONFIG_MULTITHREADING)
 	k_sem_init(&dev_data->acquired, 1, K_SEM_MAX_LIMIT);
+#endif
 
 	return pm_device_driver_init(dev, dev_pm_action_cb);
 }
@@ -1284,13 +1310,22 @@ BUILD_ASSERT((FLASH_SIZE(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) == 0, \
 #define INIT_PRIORITY UTIL_INC(CONFIG_MSPI_INIT_PRIORITY)
 #endif
 
+#define PACKET_DATA_LIMIT(inst) \
+	DT_PROP_OR(DT_INST_BUS(inst), packet_data_limit, 0)
+
 #define FLASH_MSPI_NOR_INST(inst)						\
+	BUILD_ASSERT(!PACKET_DATA_LIMIT(inst) ||				\
+		     FLASH_PAGE_SIZE(inst) <= PACKET_DATA_LIMIT(inst),		\
+		"Page size for " DT_NODE_FULL_NAME(DT_DRV_INST(inst))		\
+		" exceeds controller packet data limit");			\
 	SFDP_BUILD_ASSERTS(inst);						\
 	PM_DEVICE_DT_INST_DEFINE(inst, dev_pm_action_cb);			\
 	DEFAULT_ERASE_TYPES_DEFINE(inst);					\
 	static struct flash_mspi_nor_data dev##inst##_data;			\
 	static const struct flash_mspi_nor_config dev##inst##_config = {	\
 		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),			\
+		.packet_data_limit = DT_PROP_OR(DT_INST_BUS(inst),		\
+						packet_data_limit, 0),		\
 		.flash_size = FLASH_SIZE(inst),					\
 		.page_size = FLASH_PAGE_SIZE(inst),				\
 		.mspi_id = MSPI_DEVICE_ID_DT_INST(inst),			\

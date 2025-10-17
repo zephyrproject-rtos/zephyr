@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __EVKMIMXRT1180_FLEXSPI_NOR_CONFIG__
-#define __EVKMIMXRT1180_FLEXSPI_NOR_CONFIG__
+#ifndef EVKMIMXRT1180_FLEXSPI_NOR_CONFIG_
+#define EVKMIMXRT1180_FLEXSPI_NOR_CONFIG_
 
 #include "fsl_common.h"
 
@@ -54,40 +54,40 @@
 
 /*! @brief FlexSPI Read Sample Clock Source definition */
 typedef enum flexspi_read_sample_clk_source {
-	flexspi_read_sample_clk_loopback_internally = 0,
-	flexspi_read_sample_clk_loopback_from_dqs_pad = 1,
-	flexspi_read_sample_clk_reversed = 2,
-	flexspi_read_sample_clk_flash_provided_dqs = 3,
+	FLEXSPI_READ_SAMPLE_CLK_LOOPBACK_INTERNALLY = 0,
+	FLEXSPI_READ_SAMPLE_CLK_LOOPBACK_FROM_DQS_PAD = 1,
+	FLEXSPI_READ_SAMPLE_CLK_REVERSED = 2,
+	FLEXSPI_READ_SAMPLE_CLK_FLASH_PROVIDED_DQS = 3,
 } flexspi_read_sample_clk_t;
 
 /*! @brief Flash Type Definition */
 enum {
 	/* Flash devices are Serial NOR */
-	flexspi_device_type_serial_nor = 1,
+	FLEXSPI_DEVICE_TYPE_SERIAL_NOR = 1,
 	/* Flash devices are Serial NAND */
-	flexspi_device_type_serial_nand = 2,
+	FLEXSPI_DEVICE_TYPE_SERIAL_NAND = 2,
 	/* Flash devices are Serial RAM/HyperFLASH */
-	flexspi_device_type_serial_ram = 3
+	FLEXSPI_DEVICE_TYPE_SERIAL_RAM = 3
 };
 
 /*! @brief Flash Pad Definitions */
 enum {
-	serial_flash_1_pads = 1,
-	serial_flash_2_pads = 2,
-	serial_flash_4_pads = 4,
-	serial_flash_8_pads = 8,
+	SERIAL_FLASH_1_PADS = 1,
+	SERIAL_FLASH_2_PADS = 2,
+	SERIAL_FLASH_4_PADS = 4,
+	SERIAL_FLASH_8_PADS = 8,
 };
 
 /*! @brief Definitions for FlexSPI Serial Clock Frequency */
 typedef enum flexspi_serial_clock_freq {
-	flexspi_serial_clk_30mhz = 1,
-	flexspi_serial_clk_50mhz = 2,
-	flexspi_serial_clk_60mhz = 3,
-	flexspi_serial_clk_80mhz = 4,
-	flexspi_serial_clk_100mhz = 5,
-	flexspi_serial_clk_120mhz = 6,
-	flexspi_serial_clk_133mhz = 7,
-	flexspi_serial_clk_166mhz = 8,
+	FLEXSPI_SERIAL_CLK_30MHZ = 1,
+	FLEXSPI_SERIAL_CLK_50MHZ = 2,
+	FLEXSPI_SERIAL_CLK_60MHZ = 3,
+	FLEXSPI_SERIAL_CLK_80MHZ = 4,
+	FLEXSPI_SERIAL_CLK_100MHZ = 5,
+	FLEXSPI_SERIAL_CLK_120MHZ = 6,
+	FLEXSPI_SERIAL_CLK_133MHZ = 7,
+	FLEXSPI_SERIAL_CLK_166MHZ = 8,
 } flexspi_serial_clk_freq_t;
 
 /*! @brief Flash Configuration Command Type */
@@ -95,17 +95,17 @@ enum {
 	/* Generic command, for example: configure dummy cycles,
 	 * drive strength, etc
 	 */
-	device_config_cmd_type_generic,
+	DEVICE_CONFIG_CMD_TYPE_GENERIC,
 	/* Quad Enable command */
-	device_config_cmd_type_quad_enable,
+	DEVICE_CONFIG_CMD_TYPE_QUAD_ENABLE,
 	/* Switch from SPI to DPI/QPI/OPI mode */
-	device_config_cmd_type_spi2xpi,
+	DEVICE_CONFIG_CMD_TYPE_SPI2XPI,
 	/* Switch from DPI/QPI/OPI to SPI mode */
-	device_config_cmd_type_xpi2spi,
+	DEVICE_CONFIG_CMD_TYPE_XPI2SPI,
 	/* Switch to 0-4-4/0-8-8 mode */
-	device_config_cmd_type_spi2nocmd,
+	DEVICE_CONFIG_CMD_TYPE_SPI2NOCMD,
 	/* Reset device command */
-	device_config_cmd_type_reset,
+	DEVICE_CONFIG_CMD_TYPE_RESET,
 };
 
 /*! @brief FlexSPI LUT Sequence structure */
@@ -266,4 +266,4 @@ typedef struct _flexspi_nor_config {
 	uint32_t reserve1[10];
 } flexspi_nor_config_t;
 
-#endif /* __EVKMIMXRT1180_FLEXSPI_NOR_CONFIG__ */
+#endif /* EVKMIMXRT1180_FLEXSPI_NOR_CONFIG_ */

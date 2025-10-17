@@ -11,4 +11,5 @@ toolchain:
   - zephyr
 supported:
   - uart
+  - gpio
 vendor: sifli

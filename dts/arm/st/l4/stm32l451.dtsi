@@ -5,6 +5,7 @@
  */
 
 #include <st/l4/stm32l4.dtsi>
+#include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 
 / {
 	clocks {
@@ -90,7 +91,7 @@
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40004800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 18)>;
-			resets = <&rctl STM32_RESET(APB1L, 18U)>;
+			resets = <&rctl STM32_RESET(APB1L, 18)>;
 			interrupts = <39 0>;
 			status = "disabled";
 		};
@@ -99,7 +100,7 @@
 			compatible = "st,stm32-uart";
 			reg = <0x40004c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 19)>;
-			resets = <&rctl STM32_RESET(APB1L, 19U)>;
+			resets = <&rctl STM32_RESET(APB1L, 19)>;
 			interrupts = <52 0>;
 			status = "disabled";
 		};
@@ -109,7 +110,7 @@
 			reg = <0x40000400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 1)>,
 				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
-			resets = <&rctl STM32_RESET(APB1L, 1U)>;
+			resets = <&rctl STM32_RESET(APB1L, 1)>;
 			interrupts = <29 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -123,6 +124,12 @@
 
 			counter {
 				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
 				status = "disabled";
 			};
 		};
@@ -149,7 +156,7 @@
 			reg = <0x40012800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 10)>,
 				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
-			resets = <&rctl STM32_RESET(APB2, 10U)>;
+			resets = <&rctl STM32_RESET(APB2, 10)>;
 			interrupts = <49 0>;
 			status = "disabled";
 		};

@@ -1,0 +1,819 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/renesas/ra/ra8/ra8x2.dtsi>
+#include <zephyr/dt-bindings/clock/ra_clock.h>
+
+/ {
+	clocks: clocks {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		xtal: clock-main-osc {
+			compatible = "renesas,ra-cgc-external-clock";
+			clock-frequency = <DT_FREQ_M(24)>;
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		hoco: clock-hoco {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(48)>;
+			#clock-cells = <0>;
+		};
+
+		moco: clock-moco {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(8)>;
+			#clock-cells = <0>;
+		};
+
+		loco: clock-loco {
+			compatible = "fixed-clock";
+			clock-frequency = <32768>;
+			#clock-cells = <0>;
+		};
+
+		subclk: clock-subclk {
+			compatible = "renesas,ra-cgc-subclk";
+			clock-frequency = <32768>;
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		pll: pll {
+			compatible = "renesas,ra-cgc-pll";
+			#clock-cells = <0>;
+
+			/* PLL */
+			clocks = <&xtal>;
+			div = <3>;
+			mul = <250 0>;
+			status = "disabled";
+
+			pllp: pllp {
+				compatible = "renesas,ra-cgc-pll-out";
+				div = <2>;
+				freq = <DT_FREQ_M(1000)>;
+				status = "disabled";
+				#clock-cells = <0>;
+			};
+
+			pllq: pllq {
+				compatible = "renesas,ra-cgc-pll-out";
+				div = <6>;
+				freq = <333333333>;
+				status = "disabled";
+				#clock-cells = <0>;
+			};
+
+			pllr: pllr {
+				compatible = "renesas,ra-cgc-pll-out";
+				div = <5>;
+				freq = <DT_FREQ_M(400)>;
+				status = "disabled";
+				#clock-cells = <0>;
+			};
+		};
+
+		pll2: pll2 {
+			compatible = "renesas,ra-cgc-pll";
+			#clock-cells = <0>;
+
+			/* PLL2 */
+			clocks = <&xtal>;
+			div = <3>;
+			mul = <300 0>;
+			status = "disabled";
+
+			pll2p: pll2p {
+				compatible = "renesas,ra-cgc-pll-out";
+				div = <4>;
+				freq = <DT_FREQ_M(600)>;
+				status = "disabled";
+				#clock-cells = <0>;
+			};
+
+			pll2q: pll2q {
+				compatible = "renesas,ra-cgc-pll-out";
+				div = <3>;
+				freq = <DT_FREQ_M(800)>;
+				status = "disabled";
+				#clock-cells = <0>;
+			};
+
+			pll2r: pll2r {
+				compatible = "renesas,ra-cgc-pll-out";
+				div = <5>;
+				freq = <DT_FREQ_M(480)>;
+				status = "disabled";
+				#clock-cells = <0>;
+			};
+		};
+
+		pclkblock: pclkblock@40203000 {
+			compatible = "renesas,ra-cgc-pclk-block";
+			reg = <0x40203000 4>, <0x40203004 4>, <0x40203008 4>,
+			      <0x4020300c 4>, <0x40203010 4>;
+			reg-names = "MSTPA", "MSTPB","MSTPC",
+				    "MSTPD", "MSTPE";
+			#clock-cells = <0>;
+			clocks = <&pllp>;
+			status = "okay";
+
+			cpuclk0: cpuclk0 {
+				compatible = "renesas,ra-cgc-pclk";
+				clock-frequency = <1000000000>;
+				div = <1>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			cpuclk1: cpuclk1 {
+				compatible = "renesas,ra-cgc-pclk";
+				clock-frequency = <250000000>;
+				div = <4>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			mriclk: mriclk {
+				compatible = "renesas,ra-cgc-pclk";
+				div = <4>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			mrpclk: mrpclk {
+				compatible = "renesas,ra-cgc-pclk";
+				div = <8>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			iclk: iclk {
+				compatible = "renesas,ra-cgc-pclk";
+				div = <4>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclka: pclka {
+				compatible = "renesas,ra-cgc-pclk";
+				div = <8>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclkb: pclkb {
+				compatible = "renesas,ra-cgc-pclk";
+				div = <16>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclkc: pclkc {
+				compatible = "renesas,ra-cgc-pclk";
+				div = <8>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclkd: pclkd {
+				compatible = "renesas,ra-cgc-pclk";
+				div = <4>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclke: pclke {
+				compatible = "renesas,ra-cgc-pclk";
+				div = <4>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			bclk: bclk {
+				compatible = "renesas,ra-cgc-pclk";
+				div = <8>;
+				#clock-cells = <2>;
+				status = "okay";
+
+				bclkout: bclkout {
+					compatible = "renesas,ra-cgc-busclk";
+					clk-out-div = <2>;
+					sdclk = <1>;
+					#clock-cells = <0>;
+					status = "okay";
+				};
+			};
+
+			bclka: bclka {
+				compatible = "renesas,ra-cgc-pclk";
+				div = <6>;
+				clocks = <&pll2q>;
+				#clock-cells = <2>;
+				status = "disabled";
+			};
+
+			clkout: clkout {
+				compatible = "renesas,ra-cgc-pclk";
+				div = <1>;
+				clocks = <&hoco>;
+				#clock-cells = <2>;
+				status = "disabled";
+			};
+
+			sciclk: sciclk {
+				compatible = "renesas,ra-cgc-pclk";
+				clocks = <&pll2r>;
+				div = <4>;
+				#clock-cells = <2>;
+				status = "disabled";
+			};
+
+			spiclk: spiclk {
+				compatible = "renesas,ra-cgc-pclk";
+				clocks = <&pllq>;
+				div = <1>;
+				#clock-cells = <2>;
+				status = "disabled";
+			};
+
+			canfdclk: canfdclk {
+				compatible = "renesas,ra-cgc-pclk";
+				clocks = <&pll2r>;
+				div = <6>;
+				#clock-cells = <2>;
+				status = "disabled";
+			};
+
+			gptclk: gptclk {
+				compatible = "renesas,ra-cgc-pclk";
+				clocks = <&pll2p>;
+				div = <2>;
+				#clock-cells = <2>;
+				status = "disabled";
+			};
+
+			i3cclk: i3cclk {
+				compatible = "renesas,ra-cgc-pclk";
+				clocks = <&pll2q>;
+				div = <4>;
+				#clock-cells = <2>;
+				status = "disabled";
+			};
+
+			uclk: uclk {
+				compatible = "renesas,ra-cgc-pclk";
+				#clock-cells = <2>;
+				clocks = <&pll2r>;
+				div = <10>;
+				status = "disabled";
+			};
+
+			octaspiclk: octaspiclk {
+				compatible = "renesas,ra-cgc-pclk";
+				clocks = <&pllq>;
+				div = <1>;
+				#clock-cells = <2>;
+				status = "disabled";
+			};
+
+			adcclk: adcclk {
+				compatible = "renesas,ra-cgc-pclk";
+				clocks = <&pll2r>;
+				div = <4>;
+				#clock-cells = <2>;
+				status = "disabled";
+			};
+
+			eswclk: eswclk {
+				compatible = "renesas,ra-cgc-pclk";
+				clocks = <&pllp>;
+				div = <4>;
+				#clock-cells = <2>;
+				status = "disabled";
+			};
+
+			eswphyclk: eswphyclk {
+				compatible = "renesas,ra-cgc-pclk";
+				clocks = <&pllp>;
+				div = <2>;
+				#clock-cells = <2>;
+				status = "disabled";
+			};
+
+			ethphyclk: ethphyclk {
+				compatible = "renesas,ra-cgc-pclk";
+				clocks = <&pll2q>;
+				div = <32>;
+				#clock-cells = <2>;
+				status = "disabled";
+			};
+
+			escclk: escclk {
+				compatible = "renesas,ra-cgc-pclk";
+				clocks = <&pll2q>;
+				div = <8>;
+				#clock-cells = <2>;
+				status = "disabled";
+			};
+
+			dsmifclk: dsmifclk {
+				compatible = "renesas,ra-cgc-pclk";
+				clocks = <&pll2r>;
+				div = <2>;
+				#clock-cells = <2>;
+				status = "disabled";
+			};
+		};
+	};
+};
+
+&ioport0 {
+	port-irqs = <&port_irq6 &port_irq7 &port_irq8
+	&port_irq9 &port_irq10 &port_irq11
+	&port_irq12 &port_irq13 &port_irq14
+	&port_irq15 &port_irq16 &port_irq27
+	&port_irq28 &port_irq29>;
+	port-irq-names = "port-irq6",
+			 "port-irq7",
+			 "port-irq8",
+			 "port-irq9",
+			 "port-irq10",
+			 "port-irq11",
+			 "port-irq12",
+			 "port-irq13",
+			 "port-irq14",
+			 "port-irq15",
+			 "port-irq16",
+			 "port-irq27",
+			 "port-irq28",
+			 "port-irq29";
+	port-irq6-pins = <0>;
+	port-irq7-pins = <1>;
+	port-irq8-pins = <2>;
+	port-irq9-pins = <4>;
+	port-irq10-pins = <5>;
+	port-irq11-pins = <6>;
+	port-irq12-pins = <8>;
+	port-irq13-pins = <9 15>;
+	port-irq14-pins = <10 13>;
+	port-irq15-pins = <12>;
+	port-irq16-pins = <11>;
+	port-irq27-pins = <14>;
+	port-irq28-pins = <7>;
+	port-irq29-pins = <3>;
+};
+
+&ioport1 {
+	port-irqs = <&port_irq0 &port_irq1 &port_irq2
+	&port_irq16 &port_irq17 &port_irq19
+	&port_irq20 &port_irq23 &port_irq24
+	&port_irq27 &port_irq28 &port_irq30
+	&port_irq31>;
+	port-irq-names = "port-irq0",
+			 "port-irq1",
+			 "port-irq2",
+			 "port-irq16",
+			 "port-irq17",
+			 "port-irq19",
+			 "port-irq20",
+			 "port-irq23",
+			 "port-irq24",
+			 "port-irq27",
+			 "port-irq28",
+			 "port-irq30",
+			 "port-irq31";
+	port-irq0-pins = <5>;
+	port-irq1-pins = <1 4>;
+	port-irq2-pins = <0>;
+	port-irq16-pins = <3 6>;
+	port-irq17-pins = <2>;
+	port-irq19-pins = <11>;
+	port-irq20-pins = <10>;
+	port-irq23-pins = <9>;
+	port-irq24-pins = <8>;
+	port-irq27-pins = <12>;
+	port-irq28-pins = <13>;
+	port-irq30-pins = <14>;
+	port-irq31-pins = <7 15>;
+};
+
+&ioport2 {
+	port-irqs = <&port_irq0 &port_irq1 &port_irq2
+	&port_irq3 &port_irq4 &port_irq20 &port_irq21
+	&port_irq23 &port_irq24 &port_irq25
+	&port_irq26>;
+	port-irq-names = "port-irq0",
+			 "port-irq1",
+			 "port-irq2",
+			 "port-irq3",
+			 "port-irq4",
+			 "port-irq20",
+			 "port-irq21",
+			 "port-irq23",
+			 "port-irq24",
+			 "port-irq25",
+			 "port-irq26";
+	port-irq0-pins = <6>;
+	port-irq1-pins = <5>;
+	port-irq2-pins = <3 13>;
+	port-irq3-pins = <2 8 12>;
+	port-irq4-pins = <1>;
+	port-irq20-pins = <15>;
+	port-irq21-pins = <14>;
+	port-irq23-pins = <11>;
+	port-irq24-pins = <10>;
+	port-irq25-pins = <7 9>;
+	port-irq26-pins = <4>;
+};
+
+&ioport3 {
+	port-irqs = <&port_irq4 &port_irq5 &port_irq6
+	&port_irq8 &port_irq9 &port_irq22 &port_irq23
+	&port_irq24 &port_irq25 &port_irq26
+	&port_irq27 &port_irq28 &port_irq29>;
+	port-irq-names = "port-irq4",
+			 "port-irq5",
+			 "port-irq6",
+			 "port-irq8",
+			 "port-irq9",
+			 "port-irq22",
+			 "port-irq23",
+			 "port-irq24",
+			 "port-irq25",
+			 "port-irq26",
+			 "port-irq27",
+			 "port-irq28",
+			 "port-irq29";
+	port-irq4-pins = <0>;
+	port-irq5-pins = <2>;
+	port-irq6-pins = <1>;
+	port-irq8-pins = <5>;
+	port-irq9-pins = <4>;
+	port-irq22-pins = <12>;
+	port-irq23-pins = <11>;
+	port-irq24-pins = <10>;
+	port-irq25-pins = <9>;
+	port-irq26-pins = <8>;
+	port-irq27-pins = <7 13>;
+	port-irq28-pins = <6 14>;
+	port-irq29-pins = <3 15>;
+};
+
+&ioport4 {
+	port-irqs = <&port_irq0 &port_irq4 &port_irq5
+	&port_irq6 &port_irq7 &port_irq8
+	&port_irq9 &port_irq14 &port_irq15
+	&port_irq18 &port_irq20 &port_irq22
+	&port_irq30 &port_irq31>;
+	port-irq-names = "port-irq0",
+			 "port-irq4",
+			 "port-irq5",
+			 "port-irq6",
+			 "port-irq7",
+			 "port-irq8",
+			 "port-irq9",
+			 "port-irq14",
+			 "port-irq15",
+			 "port-irq18",
+			 "port-irq20",
+			 "port-irq22",
+			 "port-irq30",
+			 "port-irq31";
+	port-irq0-pins = <0>;
+	port-irq4-pins = <2 11>;
+	port-irq5-pins = <1 10>;
+	port-irq6-pins = <9>;
+	port-irq7-pins = <8>;
+	port-irq8-pins = <15>;
+	port-irq9-pins = <14>;
+	port-irq14-pins = <3>;
+	port-irq15-pins = <4>;
+	port-irq18-pins = <13>;
+	port-irq20-pins = <12>;
+	port-irq22-pins = <7>;
+	port-irq30-pins = <5>;
+	port-irq31-pins = <6>;
+};
+
+&ioport5 {
+	port-irqs = <&port_irq1 &port_irq2 &port_irq3
+	&port_irq6 &port_irq7 &port_irq8 &port_irq9
+	&port_irq10 &port_irq12 &port_irq13
+	&port_irq14 &port_irq15 &port_irq24
+	&port_irq25 &port_irq26 &port_irq31>;
+	port-irq-names = "port-irq1",
+			 "port-irq2",
+			 "port-irq3",
+			 "port-irq6",
+			 "port-irq7",
+			 "port-irq8",
+			 "port-irq9",
+			 "port-irq10",
+			 "port-irq12",
+			 "port-irq13",
+			 "port-irq14",
+			 "port-irq15",
+			 "port-irq24",
+			 "port-irq25",
+			 "port-irq26",
+			 "port-irq31";
+	port-irq1-pins = <8>;
+	port-irq2-pins = <9>;
+	port-irq3-pins = <10>;
+	port-irq6-pins = <3>;
+	port-irq7-pins = <4>;
+	port-irq8-pins = <5>;
+	port-irq9-pins = <6>;
+	port-irq10-pins = <7>;
+	port-irq12-pins = <15>;
+	port-irq13-pins = <14>;
+	port-irq14-pins = <12>;
+	port-irq15-pins = <11>;
+	port-irq24-pins = <0>;
+	port-irq25-pins = <1>;
+	port-irq26-pins = <2>;
+	port-irq31-pins = <13>;
+};
+
+&ioport6 {
+	port-irqs = <&port_irq7 &port_irq16 &port_irq17
+	&port_irq18 &port_irq19 &port_irq20 &port_irq22
+	&port_irq23 &port_irq24 &port_irq25 &port_irq26
+	&port_irq27 &port_irq28 &port_irq29
+	&port_irq30>;
+	port-irq-names = "port-irq7",
+			 "port-irq16",
+			 "port-irq17",
+			 "port-irq18",
+			 "port-irq19",
+			 "port-irq20",
+			 "port-irq22",
+			 "port-irq23",
+			 "port-irq24",
+			 "port-irq25",
+			 "port-irq26",
+			 "port-irq27",
+			 "port-irq28",
+			 "port-irq29",
+			 "port-irq30";
+	port-irq7-pins = <15>;
+	port-irq16-pins = <10>;
+	port-irq17-pins = <11>;
+	port-irq18-pins = <12>;
+	port-irq19-pins = <13>;
+	port-irq20-pins = <14>;
+	port-irq22-pins = <8>;
+	port-irq23-pins = <7>;
+	port-irq24-pins = <6>;
+	port-irq25-pins = <5>;
+	port-irq26-pins = <4>;
+	port-irq27-pins = <3>;
+	port-irq28-pins = <2>;
+	port-irq29-pins = <1 9>;
+	port-irq30-pins = <0>;
+};
+
+&ioport7 {
+	port-irqs = <&port_irq2 &port_irq3 &port_irq7
+	&port_irq8 &port_irq10	&port_irq11
+	&port_irq12 &port_irq13 &port_irq14
+	&port_irq16 &port_irq17 &port_irq18
+	&port_irq19 &port_irq26>;
+	port-irq-names = "port-irq2",
+			 "port-irq3",
+			 "port-irq7",
+			 "port-irq8",
+			 "port-irq10",
+			 "port-irq11",
+			 "port-irq12",
+			 "port-irq13",
+			 "port-irq14",
+			 "port-irq16",
+			 "port-irq17",
+			 "port-irq18",
+			 "port-irq19",
+			 "port-irq26";
+	port-irq2-pins = <12>;
+	port-irq3-pins = <11>;
+	port-irq7-pins = <6>;
+	port-irq8-pins = <7>;
+	port-irq10-pins = <9>;
+	port-irq11-pins = <8>;
+	port-irq12-pins = <15>;
+	port-irq13-pins = <14>;
+	port-irq14-pins = <13>;
+	port-irq16-pins = <0>;
+	port-irq17-pins = <1 10>;
+	port-irq18-pins = <2>;
+	port-irq19-pins = <3 5>;
+	port-irq26-pins = <4>;
+};
+
+&ioport8 {
+	port-irqs = <&port_irq0 &port_irq11 &port_irq12
+	&port_irq14 &port_irq15 &port_irq16
+	&port_irq18 &port_irq19 &port_irq20
+	&port_irq21 &port_irq22 &port_irq23
+	&port_irq30>;
+	port-irq-names = "port-irq0",
+			 "port-irq11",
+			 "port-irq12",
+			 "port-irq14",
+			 "port-irq15",
+			 "port-irq16",
+			 "port-irq18",
+			 "port-irq19",
+			 "port-irq20",
+			 "port-irq21",
+			 "port-irq22",
+			 "port-irq23",
+			 "port-irq30";
+	port-irq0-pins = <6>;
+	port-irq11-pins = <0 7>;
+	port-irq12-pins = <1>;
+	port-irq14-pins = <4>;
+	port-irq15-pins = <8 13 15>;
+	port-irq16-pins = <14>;
+	port-irq18-pins = <2>;
+	port-irq19-pins = <3>;
+	port-irq20-pins = <9>;
+	port-irq21-pins = <10>;
+	port-irq22-pins = <11>;
+	port-irq23-pins = <12>;
+	port-irq30-pins = <5>;
+};
+
+&ioport9 {
+	port-irqs = <&port_irq0 &port_irq1 &port_irq2
+	&port_irq3 &port_irq5 &port_irq6 &port_irq7
+	&port_irq8 &port_irq9 &port_irq10
+	&port_irq11 &port_irq21 &port_irq30
+	&port_irq31>;
+	port-irq-names = "port-irq0",
+			 "port-irq1",
+			 "port-irq2",
+			 "port-irq3",
+			 "port-irq5",
+			 "port-irq6",
+			 "port-irq7",
+			 "port-irq8",
+			 "port-irq9",
+			 "port-irq10",
+			 "port-irq11",
+			 "port-irq21",
+			 "port-irq30",
+			 "port-irq31";
+	port-irq0-pins = <2>;
+	port-irq1-pins = <3>;
+	port-irq2-pins = <4>;
+	port-irq3-pins = <13>;
+	port-irq5-pins = <12>;
+	port-irq6-pins = <11>;
+	port-irq7-pins = <10>;
+	port-irq8-pins = <5 15>;
+	port-irq9-pins = <6 14>;
+	port-irq10-pins = <7>;
+	port-irq11-pins = <8>;
+	port-irq21-pins = <9>;
+	port-irq30-pins = <0>;
+	port-irq31-pins = <1>;
+};
+
+&ioporta {
+	port-irqs = <&port_irq4 &port_irq5 &port_irq6
+	&port_irq10 &port_irq11 &port_irq12
+	&port_irq13 &port_irq14 &port_irq16
+	&port_irq17 &port_irq18 &port_irq19
+	&port_irq20 &port_irq21 &port_irq22
+	&port_irq31>;
+	port-irq-names = "port-irq4",
+			 "port-irq5",
+			 "port-irq6",
+			 "port-irq10",
+			 "port-irq11",
+			 "port-irq12",
+			 "port-irq13",
+			 "port-irq14",
+			 "port-irq16",
+			 "port-irq17",
+			 "port-irq18",
+			 "port-irq19",
+			 "port-irq20",
+			 "port-irq21",
+			 "port-irq22",
+			 "port-irq31";
+	port-irq4-pins = <10>;
+	port-irq5-pins = <9>;
+	port-irq6-pins = <8>;
+	port-irq10-pins = <11>;
+	port-irq11-pins = <12>;
+	port-irq12-pins = <13>;
+	port-irq13-pins = <14>;
+	port-irq14-pins = <15>;
+	port-irq16-pins = <7>;
+	port-irq17-pins = <6>;
+	port-irq18-pins = <5>;
+	port-irq19-pins = <4>;
+	port-irq20-pins = <3>;
+	port-irq21-pins = <1>;
+	port-irq22-pins = <0>;
+	port-irq31-pins = <2>;
+};
+
+&ioportb {
+	port-irqs = <&port_irq0 &port_irq1 &port_irq4
+	&port_irq5 &port_irq6 &port_irq7
+	&port_irq9 &port_irq10 &port_irq11
+	&port_irq12 &port_irq13 &port_irq15>;
+	port-irq-names = "port-irq0",
+			 "port-irq1",
+			 "port-irq4",
+			 "port-irq5",
+			 "port-irq6",
+			 "port-irq7",
+			 "port-irq9",
+			 "port-irq10",
+			 "port-irq11",
+			 "port-irq12",
+			 "port-irq13",
+			 "port-irq15";
+	port-irq0-pins = <6>;
+	port-irq1-pins = <7>;
+	port-irq4-pins = <10>;
+	port-irq5-pins = <11>;
+	port-irq6-pins = <12>;
+	port-irq7-pins = <13>;
+	port-irq9-pins = <4>;
+	port-irq10-pins = <0 14>;
+	port-irq11-pins = <2>;
+	port-irq12-pins = <1 8>;
+	port-irq13-pins = <3 9>;
+	port-irq15-pins = <5>;
+};
+
+&ioportc {
+	port-irqs = <&port_irq0 &port_irq1 &port_irq2
+	&port_irq3 &port_irq4 &port_irq5
+	&port_irq21 &port_irq22 &port_irq23
+	&port_irq24 &port_irq25 &port_irq26
+	&port_irq27 &port_irq28 &port_irq29
+	&port_irq30>;
+	port-irq-names = "port-irq0",
+			 "port-irq1",
+			 "port-irq2",
+			 "port-irq3",
+			 "port-irq4",
+			 "port-irq5",
+			 "port-irq21",
+			 "port-irq22",
+			 "port-irq23",
+			 "port-irq24",
+			 "port-irq25",
+			 "port-irq26",
+			 "port-irq27",
+			 "port-irq28",
+			 "port-irq29",
+			 "port-irq30";
+	port-irq0-pins = <14>;
+	port-irq1-pins = <13>;
+	port-irq2-pins = <12>;
+	port-irq3-pins = <11>;
+	port-irq4-pins = <10>;
+	port-irq5-pins = <9>;
+	port-irq21-pins = <7>;
+	port-irq22-pins = <6>;
+	port-irq23-pins = <5>;
+	port-irq24-pins = <4>;
+	port-irq25-pins = <3>;
+	port-irq26-pins = <2>;
+	port-irq27-pins = <1>;
+	port-irq28-pins = <0>;
+	port-irq29-pins = <8>;
+	port-irq30-pins = <15>;
+};
+
+&ioportd {
+	port-irqs = <&port_irq17 &port_irq18 &port_irq19
+	&port_irq20 &port_irq21 &port_irq22 &port_irq23>;
+	port-irq-names = "port-irq17",
+			 "port-irq18",
+			 "port-irq19",
+			 "port-irq20",
+			 "port-irq21",
+			 "port-irq22",
+			 "port-irq23";
+	port-irq17-pins = <7>;
+	port-irq18-pins = <6>;
+	port-irq19-pins = <5>;
+	port-irq20-pins = <4>;
+	port-irq21-pins = <2 3>;
+	port-irq22-pins = <1>;
+	port-irq23-pins = <0>;
+};

@@ -73,10 +73,12 @@
 			status = "okay";
 		};
 
-		flash: flash-controller@4013c000 {
+		mram: mram-controller@4013c000 {
+			compatible = "renesas,ra-mram-controller";
 			reg = <0x4013c000 0x4000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			status = "okay";
 		};
 
 		ioport0: gpio@40400000 {
@@ -693,6 +695,17 @@
 			};
 		};
 
+		i3c0: i3c@4035f000 {
+			compatible = "renesas,ra-i3c";
+			#address-cells = <3>;
+			#size-cells = <0>;
+			reg = <0x4035f000 0x3e8>;
+			channel = <0>;
+			clocks = <&pclka MSTPB 4>, <&i3cclk 0 0>;
+			clock-names = "pclk", "tclk";
+			status = "disabled";
+		};
+
 		acmphs_global: acmphs_global@40236000 {
 			compatible = "renesas,ra-acmphs-global";
 			reg = <0x40236000 0x400>;
@@ -1032,6 +1045,14 @@
 			max-bus-freq = <DT_FREQ_M(52)>;
 			clocks = <&pclkb MSTPC 11>;
 			reg = <0x40252400 0x0400>;
+			status = "disabled";
+		};
+
+		ceu: ceu@40348000 {
+			compatible = "renesas,ra-ceu";
+			reg = <0x40348000 0x8000>;
+			clocks = <&pclka MSTPC 16>;
+			clock-names = "pclk";
 			status = "disabled";
 		};
 

@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2025 Ambiq Micro Inc. <www.ambiq.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 /dts-v1/;
 #include <ambiq/ambiq_apollo4p_blue.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -180,6 +186,12 @@
 	pinctrl-0 = <&xo32k_default>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&adc0 {
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+	status = "disabled";
 };
 
 zephyr_udc0: &usb {

@@ -45,7 +45,7 @@ jobs:
             and update (by amending and force-pushing the commits) your pull request if necessary.
 
             If you are stuck or need help please join us on [Discord](https://chat.zephyrproject.org/)
-            and ask your question there. Additionally, you can [escalate the review](https://docs.zephyrproject.org/latest/contribute/contributor_expectations.html#pr-review-escalation)
+            and ask your question there. Additionally, you can [escalate the review](https://docs.zephyrproject.org/latest/contribute/contributor_expectations.html#pr-technical-escalation)
             when applicable. 😊
 
           pr-merged-message: >

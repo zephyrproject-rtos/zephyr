@@ -216,7 +216,12 @@ if(CONFIG_SOC_SILABS_SLEEPTIMER)
   )
 endif()
 
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_IADC         ${EMLIB_DIR}/src/em_iadc.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_SYSTEM         ${PERIPHERAL_DIR}/src/sl_hal_system.c)
+
+#Keep em_iadc.c for compatibility for now. Not used anymore.
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_IADC         ${EMLIB_DIR}/src/em_iadc.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_IADC         ${PERIPHERAL_DIR}/src/sl_hal_iadc.c)
+
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_BURTC        ${EMLIB_DIR}/src/em_burtc.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_CMU          ${EMLIB_DIR}/src/em_cmu.c)
 
@@ -339,6 +344,7 @@ zephyr_library_sources_ifdef(CONFIG_ENTROPY_GECKO_SE
 zephyr_library_sources(
   src/sl_interrupt_manager_shim.c
   src/sl_memory_manager_shim.c
+  src/sl_memory_manager_pool_shim.c
 )
 
 zephyr_library_sources_ifdef(

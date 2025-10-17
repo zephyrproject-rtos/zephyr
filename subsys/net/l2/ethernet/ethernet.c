@@ -782,28 +782,6 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 	net_pkt_cursor_init(pkt);
 
 send:
-	if (IS_ENABLED(CONFIG_NET_ETHERNET_BRIDGE) &&
-	    net_eth_iface_is_bridged(ctx) && !net_pkt_is_l2_bridged(pkt)) {
-		struct net_if *bridge = net_eth_get_bridge(ctx);
-		struct net_pkt *out_pkt;
-
-		out_pkt = net_pkt_clone(pkt, K_NO_WAIT);
-		if (out_pkt == NULL) {
-			ret = -ENOMEM;
-			goto error;
-		}
-
-		net_pkt_set_l2_bridged(out_pkt, true);
-		net_pkt_set_iface(out_pkt, bridge);
-		net_pkt_set_orig_iface(out_pkt, iface);
-
-		NET_DBG("Passing pkt %p (orig %p) to bridge %d from %d",
-			out_pkt, pkt, net_if_get_by_iface(bridge),
-			net_if_get_by_iface(iface));
-
-		(void)net_if_queue_tx(bridge, out_pkt);
-	}
-
 	ret = net_l2_send(api->send, net_if_get_device(iface), iface, pkt);
 	if (ret != 0) {
 		eth_stats_update_errors_tx(iface);

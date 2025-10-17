@@ -1,0 +1,20 @@
+identifier: sparkfun_samd21_breakout
+name: Sparkfun SAMD21 Dev Breakout
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+flash: 256
+ram: 32
+supported:
+  - dma
+  - dac
+  - gpio
+  - hwinfo
+  - i2c
+  - spi
+  - uart
+  - usb_device
+  - watchdog
+vendor: sparkfun

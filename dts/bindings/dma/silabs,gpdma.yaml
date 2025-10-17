@@ -1,0 +1,72 @@
+description: |
+  Silicon Labs SiWx91x General Purpose DMA (GPDMA) Controller
+
+  The SiWx91x GPDMA controller provides high-performance DMA transfers for
+  memory-to-memory, memory-to-peripheral, and peripheral-to-memory operations.
+  It supports up to 8 channels.
+
+  Usage in Device Tree Overlays:
+
+  To enable GPDMA for a peripheral (e.g., SPI), add the following to your overlay:
+
+  ```dts
+  &spi0 {
+      status = "okay";
+      cs-gpios = <&gpiob 12 GPIO_ACTIVE_LOW>;
+      pinctrl-0 = <&spi0_default>;
+      pinctrl-names = "default";
+
+      dmas = <&gpdma0 0 11>, <&gpdma0 1 10>;
+      dma-names = "tx", "rx";
+
+      slow@0 {
+          compatible = "test-spi-loopback-slow";
+          reg = <0>;
+          spi-max-frequency = <500000>;
+      };
+      fast@1 {
+          compatible = "test-spi-loopback-fast";
+          reg = <1>;
+          spi-max-frequency = <10000000>;
+      };
+  };
+
+  &gpdma0 {
+      status = "okay";
+  };
+  ```
+
+  DMA Configuration:
+  - Channel 0: Used for TX (transmit) operations
+  - Channel 1: Used for RX (receive) operations
+  - Slot 11: Peripheral slot for SPI TX
+  - Slot 10: Peripheral slot for SPI RX
+
+  The GPDMA controller automatically handles descriptor management and
+  interrupt generation for transfer completion and error conditions.
+
+compatible: "silabs,gpdma"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  silabs,channel-reg-base:
+    type: int
+    description: |
+        Base address for channel specific registers.
+
+  silabs,dma-channel-count:
+    type: int
+    description: |
+        Base address for channel specific registers.
+
+  "#dma-cells":
+    const: 2
+
+# Parameter syntax
+dma-cells:
+  - channel
+  - slot
