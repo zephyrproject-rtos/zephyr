@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Nordic Semiconductor ASA
+ * Copyright (c) 2023-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,7 +24,7 @@
 #include <zephyr/types.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(peripheral, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(peripheral, LOG_LEVEL_INF);
 
 #include "bstests.h"
 #include "bs_types.h"
@@ -424,7 +424,7 @@ void test_peripheral_main(void)
 		LOG_ERR("Advertising failed to start (err %d)", err);
 		__ASSERT_NO_MSG(err);
 	}
-	LOG_DBG("Started advertising");
+	LOG_INF("Started advertising");
 
 	bt_gatt_cb_register(&gatt_callbacks);
 
@@ -449,7 +449,7 @@ void test_peripheral_main(void)
 			k_sleep(K_MSEC(10));
 		}
 
-		LOG_DBG("Begin sending notifications to central..");
+		LOG_INF("Begin sending notifications to central..");
 		while (central_subscription &&
 		       atomic_test_bit(conn_info.flags, CONN_INFO_CONNECTED)) {
 
@@ -468,7 +468,7 @@ void test_peripheral_main(void)
 
 			if (atomic_get(&conn_info.tx_notify_counter) > MIN_NOTIFICATIONS &&
 			    atomic_get(&conn_info.notify_counter) > MIN_NOTIFICATIONS) {
-				LOG_DBG("Disconnecting..");
+				LOG_INF("Disconnecting..");
 				disconnect();
 			}
 		}
@@ -482,7 +482,7 @@ void test_init(void)
 	extern enum bst_result_t bst_result;
 
 	LOG_INF("Initializing Test");
-	bst_ticker_set_next_tick_absolute(600*1e6);
+	bst_ticker_set_next_tick_absolute(100*1e6);
 	bst_result = Failed;
 }
 
