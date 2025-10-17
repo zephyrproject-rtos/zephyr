@@ -479,3 +479,11 @@ test_spi_iis3dwb: iis3dwb@39 {
 	odr = <IIS3DWB_DT_ODR_26k7Hz>;
 	filter = <IIS3DWB_DT_HP_ODR_DIV_800>;
 };
+
+test_spi_adxl345: adxl345@3a {
+	compatible = "adi,adxl345";
+	reg = <0x3a>;
+	spi-max-frequency = <0>;
+	int1-gpios = <&test_gpio 0 0>;
+	fifo-watermark = <1>;
+};
