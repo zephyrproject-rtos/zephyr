@@ -72,7 +72,7 @@ jobs:
           echo "Unknown event: ${{ github.event_name }}"
           exit 1
         fi
-        python3 scripts/set_assignees.py $FLAGS
+        python3 scripts/ci/set_assignees.py $FLAGS
 
     - name: Check maintainer file changes
       if: >
