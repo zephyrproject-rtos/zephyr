@@ -21,6 +21,7 @@
 #include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 #include <zephyr/dt-bindings/reset/stm32g0_reset.h>
 #include <freq.h>
+#include <mem.h>
 
 / {
 	chosen {
