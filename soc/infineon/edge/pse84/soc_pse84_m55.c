@@ -16,6 +16,7 @@
 #include "soc.h"
 #include <cy_sysint.h>
 #include <system_edge.h>
+#include <ifx_cycfg_init.h>
 #include "cy_pdl.h"
 
 #define CY_IPC_MAX_ENDPOINTS (8UL)
@@ -92,7 +93,7 @@ void soc_early_init_hook(void)
 	SCB_EnableDCache();
 
 	/* Initializes the system */
-	SystemInit();
+	ifx_cycfg_init();
 
 	static cy_stc_ipc_pipe_ep_t systemIpcPipeEpArray[CY_IPC_MAX_ENDPOINTS];
 
