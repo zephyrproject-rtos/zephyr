@@ -8,6 +8,6 @@
 #ifndef _STM32WBA_LINK_LAYER_PLAT_LOCAL_H_
 #define _STM32WBA_LINK_LAYER_PLAT_LOCAL_H_
 
-void link_layer_register_isr(void);
+void link_layer_register_isr(uint8_t force);
 
 #endif /* _STM32WBA_LINK_LAYER_PLAT_LOCAL_H_ */
