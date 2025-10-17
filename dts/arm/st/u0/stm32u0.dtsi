@@ -15,6 +15,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/reset/stm32u0_reset.h>
 #include <freq.h>
+#include <mem.h>
 
 / {
 	chosen {
