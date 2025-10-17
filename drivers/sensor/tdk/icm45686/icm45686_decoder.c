@@ -476,7 +476,7 @@ static int icm45686_fifo_decode(const uint8_t *buffer,
 				void *data_out)
 {
 	struct icm45686_encoded_data *edata = (struct icm45686_encoded_data *)buffer;
-	struct icm45686_encoded_fifo_payload *frame_begin = &edata->fifo_payload;
+	struct icm45686_encoded_fifo_payload *frame_begin = edata->fifo_payload;
 	int count = 0;
 	int err;
 
