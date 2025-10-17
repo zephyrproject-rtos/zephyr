@@ -4674,6 +4674,7 @@ SiFli SF32LB Platforms:
     - gmarull
   collaborators:
     - cameled
+    - ck-telecom
   files:
     - boards/sifli/
     - drivers/*/*sf32lb*
