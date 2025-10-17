@@ -17,5 +17,7 @@ supported:
   - uart
   - usart
   - watchdog
+  - pwm
+  - counter
 ram: 256
 flash: 1024
