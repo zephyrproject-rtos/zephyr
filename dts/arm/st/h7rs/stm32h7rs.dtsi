@@ -61,6 +61,7 @@
 		reg = <0x30000000 DT_SIZE_K(16)>;
 		compatible = "zephyr,memory-region", "mmio-sram";
 		zephyr,memory-region = "SRAM1";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 
 	/* System data RAM accessible over AHB bus: SRAM2 in D2 domain */
@@ -68,6 +69,11 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x30004000 DT_SIZE_K(16)>;
 		zephyr,memory-region = "SRAM2";
+		/* Disable SRAM2 by default to avoid unintended access.
+		 * To enable it, explicitly define zephyr,memory-attr
+		 * to configure MPU attributes.
+		 */
+		status = "disabled";
 	};
 
 	dtcm: memory@20000000 {
