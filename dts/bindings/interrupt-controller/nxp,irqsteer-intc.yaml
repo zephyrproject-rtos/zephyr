@@ -7,3 +7,8 @@ include: [base.yaml]
 properties:
   reg:
     required: true
+
+  nxp,version:
+    type: int
+    description: |
+      MCUX SDK IRQSTEER driver version.
