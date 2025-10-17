@@ -849,7 +849,7 @@ static int rtc_ds3231_init(const struct device *dev)
 	static struct rtc_ds3231_data rtc_ds3231_data_##inst;                                      \
 	static const struct rtc_ds3231_conf rtc_ds3231_conf_##inst = {                             \
 		.mfd = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                        \
-		.isw_gpios = GPIO_DT_SPEC_INST_GET(inst, isw_gpios),                               \
+		.isw_gpios = GPIO_DT_SPEC_INST_GET_OR(inst, isw_gpios, {NULL}),                    \
 		.freq_32k_gpios = GPIO_DT_SPEC_INST_GET_OR(inst, freq_32khz_gpios, {NULL})};       \
 	PM_DEVICE_DT_INST_DEFINE(inst, rtc_ds3231_pm_action);                                      \
 	DEVICE_DT_INST_DEFINE(inst, &rtc_ds3231_init, PM_DEVICE_DT_INST_GET(inst),                 \
