@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+spi1: &scb10 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	compatible = "infineon,cat1-spi-pdl";
+	status = "okay";
+
+	pinctrl-0 = <&p16_1_scb10_spi_m_mosi &p16_2_scb10_spi_m_miso &p16_0_scb10_spi_m_clk>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio_prt16 3 GPIO_ACTIVE_LOW>;
+
+	clocks = <&peri0_group1_16bit_2>;
+
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <3000000>;
+	};
+
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <3000000>;
+	};
+};
+
+&peri0_group1_16bit_2 {
+	status = "okay";
+	resource-type = <IFX_RSC_SCB>;
+	resource-instance = <10>;
+};
+
+&p16_1_scb10_spi_m_mosi {
+	drive-strength = "full";
+	drive-push-pull;
+};
+
+&p16_2_scb10_spi_m_miso {
+	drive-strength = "full";
+	input-enable;
+};
+
+&p16_0_scb10_spi_m_clk {
+	drive-strength = "full";
+	drive-push-pull;
+};
