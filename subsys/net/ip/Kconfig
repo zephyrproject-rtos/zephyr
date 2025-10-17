@@ -509,6 +509,10 @@ config NET_MAX_CONTEXTS
 	  is used when listening or sending network traffic. This is very
 	  similar as one could call a network socket in some other systems.
 
+config ZVFS_OPEN_ADD_SIZE_NET
+	int "Number of network sockets to allocate"
+	default NET_MAX_CONTEXTS
+
 config NET_CONTEXT_NET_PKT_POOL
 	bool "Net_buf TX pool / context"
 	default y if NET_TCP && NET_6LO
