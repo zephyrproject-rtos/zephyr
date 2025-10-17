@@ -63,32 +63,33 @@
 #define I2C2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 12, CCIPR1_REG)
 #define I3C2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 14, CCIPR1_REG)
 #define SPI2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 16, CCIPR1_REG)
-#define LPTIM2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 18, CCIPR1_REG)
+#define LPTIM2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 2, 18, CCIPR1_REG)
 #define SPI1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 20, CCIPR1_REG)
-#define SYSTICK_SEL(val)	STM32_DT_CLOCK_SELECT((val), 3, 22, CCIPR1_REG)
+#define SYSTICK_SEL(val)	STM32_DT_CLOCK_SELECT((val), 2, 22, CCIPR1_REG)
 #define FDCAN1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 24, CCIPR1_REG)
-#define ICLK_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 26, CCIPR1_REG)
+#define ICLK_SEL(val)		STM32_DT_CLOCK_SELECT((val), 2, 26, CCIPR1_REG)
 #define USB1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 28, CCIPR1_REG)
-#define TIMIC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 29, CCIPR1_REG)
+#define TIMIC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 29, CCIPR1_REG)
 /** CCIPR2 devices */
-#define ADF1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 0, CCIPR2_REG)
+#define ADF1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 2, 0, CCIPR2_REG)
 #define SPI3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 3, CCIPR2_REG)
-#define SAI1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 5, CCIPR2_REG)
+#define SAI1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 2, 5, CCIPR2_REG)
 #define RNG_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 11, CCIPR2_REG)
-#define ADCDAC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 16, CCIPR2_REG)
+#define ADCDAC_PRE(val)		STM32_DT_CLOCK_SELECT((val), 4, 12, CCIPR2_REG)
+#define ADCDAC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 2, 16, CCIPR2_REG)
 #define DAC1SH_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 19, CCIPR2_REG)
 #define OCTOSPI_SEL(val)	STM32_DT_CLOCK_SELECT((val), 1, 20, CCIPR2_REG)
 /** CCIPR3 devices */
-#define LPUART1_SEL(val)	STM32_DT_CLOCK_SELECT((val), 3, 0, CCIPR3_REG)
+#define LPUART1_SEL(val)	STM32_DT_CLOCK_SELECT((val), 2, 0, CCIPR3_REG)
 #define I2C3_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 6, CCIPR3_REG)
-#define LPTIM34_SEL(val)	STM32_DT_CLOCK_SELECT((val), 3, 8, CCIPR3_REG)
-#define LPTIM1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 10, CCIPR3_REG)
+#define LPTIM34_SEL(val)	STM32_DT_CLOCK_SELECT((val), 2, 8, CCIPR3_REG)
+#define LPTIM1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 2, 10, CCIPR3_REG)
 /** BDCR devices */
-#define RTC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 8, BDCR_REG)
+#define RTC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 2, 8, BDCR_REG)
 
 /** CFGR1 devices */
-#define MCO1_SEL(val)           STM32_DT_CLOCK_SELECT((val), 0xF, 24, CFGR1_REG)
-#define MCO1_PRE(val)           STM32_DT_CLOCK_SELECT((val), 0x7, 28, CFGR1_REG)
+#define MCO1_SEL(val)           STM32_DT_CLOCK_SELECT((val), 4, 24, CFGR1_REG)
+#define MCO1_PRE(val)           STM32_DT_CLOCK_SELECT((val), 3, 28, CFGR1_REG)
 
 /* MCO prescaler : division factor */
 #define MCO_PRE_DIV_1   0
@@ -99,5 +100,17 @@
 #define MCO_PRE_DIV_32  5
 #define MCO_PRE_DIV_64  6
 #define MCO_PRE_DIV_128 7
+
+/* ADC/DAC prescaler : division factor */
+#define ADCDAC_PRE_DIV_1	0
+#define ADCDAC_PRE_DIV_2	1
+#define ADCDAC_PRE_DIV_4	8
+#define ADCDAC_PRE_DIV_8	9
+#define ADCDAC_PRE_DIV_16	10
+#define ADCDAC_PRE_DIV_32	11
+#define ADCDAC_PRE_DIV_64	12
+#define ADCDAC_PRE_DIV_128	13
+#define ADCDAC_PRE_DIV_256	14
+#define ADCDAC_PRE_DIV_512	15
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32U3_CLOCK_H_ */

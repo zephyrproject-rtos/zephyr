@@ -15,6 +15,14 @@ properties:
   clocks:
     required: true
 
+  clock-names:
+    required: true
+    description: |
+      Expected names are the following:
+      - "adcx" for the enabling the register clock (mandatory)
+      - "adc_ker" for configuring the kernel clock (if applicable)
+      - "adc_pre" for configuring the prescaler (if applicable)
+
   interrupts:
     required: true
 
@@ -58,8 +66,7 @@ properties:
       Some of the values may not apply to some series, and may depend on the
       selected clock source. Refer to the RefMan.
       On STM32F3x (except STM32F37x), this configures only the synchronous
-      prescaler (see properties adcXX-prescaler in st,stm32f3-rcc bindings to
-      set asynchronous prescaler).
+      prescaler (use the clock property to set asynchronous prescaler).
 
   vref-mv:
     type: int

@@ -61,12 +61,12 @@
 /** @brief Device domain clocks selection helpers */
 /** CFGR devices */
 #define I2S_SEL(val)  STM32_DT_CLOCK_SELECT((val), 1, 23, CFGR_REG)
-#define MCO1_SEL(val) STM32_DT_CLOCK_SELECT((val), 0x3, 21, CFGR_REG)
-#define MCO1_PRE(val) STM32_DT_CLOCK_SELECT((val), 0x7, 24, CFGR_REG)
-#define MCO2_SEL(val) STM32_DT_CLOCK_SELECT((val), 0x3, 30, CFGR_REG)
-#define MCO2_PRE(val) STM32_DT_CLOCK_SELECT((val), 0x7, 27, CFGR_REG)
+#define MCO1_SEL(val) STM32_DT_CLOCK_SELECT((val), 2, 21, CFGR_REG)
+#define MCO1_PRE(val) STM32_DT_CLOCK_SELECT((val), 3, 24, CFGR_REG)
+#define MCO2_SEL(val) STM32_DT_CLOCK_SELECT((val), 2, 30, CFGR_REG)
+#define MCO2_PRE(val) STM32_DT_CLOCK_SELECT((val), 3, 27, CFGR_REG)
 /** BDCR devices */
-#define RTC_SEL(val)  STM32_DT_CLOCK_SELECT((val), 3, 8, BDCR_REG)
+#define RTC_SEL(val)  STM32_DT_CLOCK_SELECT((val), 2, 8, BDCR_REG)
 
 /* MCO prescaler : division factor */
 #define MCO_PRE_DIV_1 0
