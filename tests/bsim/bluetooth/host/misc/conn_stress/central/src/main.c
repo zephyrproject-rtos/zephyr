@@ -73,6 +73,7 @@ enum {
 	CONN_INFO_MTU_EXCHANGED,
 	CONN_INFO_DISCOVERING,
 	CONN_INFO_DISCOVER_PAUSED,
+	CONN_INFO_SUBSCRIPTION_FAILED,
 	CONN_INFO_SUBSCRIBED,
 
 	/* Total number of flags - must be at the end of the enum */
@@ -213,6 +214,26 @@ static uint8_t notify_func(struct bt_conn *conn, struct bt_gatt_subscribe_params
 	return BT_GATT_ITER_CONTINUE;
 }
 
+static void subscribe_func(struct bt_conn *conn, uint8_t err,
+			      struct bt_gatt_subscribe_params *params)
+{
+	struct conn_info *conn_info_ref;
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	if (err) {
+		__ASSERT(!err, "Subscribe failed for addr %s (err %d)", addr, err);
+	}
+
+	conn_info_ref = get_conn_info_ref(conn);
+	__ASSERT_NO_MSG(conn_info_ref);
+
+	atomic_clear_bit(conn_info_ref->flags, CONN_INFO_SUBSCRIPTION_FAILED);
+	atomic_set_bit(conn_info_ref->flags, CONN_INFO_SUBSCRIBED);
+
+	LOG_DBG("[SUBSCRIBED] addr %s", addr);
+}
+
 static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			     struct bt_gatt_discover_params *params)
 {
@@ -248,6 +269,7 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 
 		err = bt_gatt_discover(conn, &conn_info_ref->discover_params);
 		if (err == -ENOMEM || err == -ENOTCONN) {
+			atomic_set_bit(conn_info_ref->flags, CONN_INFO_DISCOVER_PAUSED);
 			goto retry;
 		}
 
@@ -263,6 +285,7 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 
 		err = bt_gatt_discover(conn, &conn_info_ref->discover_params);
 		if (err == -ENOMEM || err == -ENOTCONN) {
+			atomic_set_bit(conn_info_ref->flags, CONN_INFO_DISCOVER_PAUSED);
 			goto retry;
 		}
 
@@ -270,26 +293,19 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 
 	} else {
 		conn_info_ref->subscribe_params.notify = notify_func;
+		conn_info_ref->subscribe_params.subscribe = subscribe_func;
 		conn_info_ref->subscribe_params.value = BT_GATT_CCC_NOTIFY;
 		conn_info_ref->subscribe_params.ccc_handle = attr->handle;
 
 		err = bt_gatt_subscribe(conn, &conn_info_ref->subscribe_params);
-		if (err == -ENOMEM || err == -ENOTCONN) {
+		if (err == -ENOMEM || err == -ENOTCONN || err == -EALREADY) {
+			LOG_DBG("Subcription failed (err %d)", err);
+			atomic_set_bit(conn_info_ref->flags, CONN_INFO_SUBSCRIPTION_FAILED);
 			goto retry;
-		}
-
-		if (err != -EALREADY) {
-			__ASSERT(!err, "Subscribe failed (err %d)", err);
 		}
 
 		__ASSERT_NO_MSG(atomic_test_bit(conn_info_ref->flags, CONN_INFO_DISCOVERING));
 		__ASSERT_NO_MSG(!atomic_test_bit(conn_info_ref->flags, CONN_INFO_SUBSCRIBED));
-		atomic_set_bit(conn_info_ref->flags, CONN_INFO_SUBSCRIBED);
-
-		char addr[BT_ADDR_LE_STR_LEN];
-
-		bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-		LOG_INF("[SUBSCRIBED] addr %s", addr);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -299,7 +315,6 @@ retry:
 	 * later.
 	 */
 	LOG_INF("out of memory/not connected, continuing sub later (err %d)", err);
-	atomic_set_bit(conn_info_ref->flags, CONN_INFO_DISCOVER_PAUSED);
 
 	return BT_GATT_ITER_STOP;
 }
@@ -577,6 +592,18 @@ static void subscribe_to_service(struct bt_conn *conn, void *data)
 	if (conn_info_ref == NULL) {
 		LOG_DBG("not connected: %s", addr);
 		return;
+	}
+
+	/* If subcription attempt failed before (due to most likely lack of TX buffers),
+	 *  make a new attempt here.
+	 */
+	if (atomic_test_bit(conn_info_ref->flags, CONN_INFO_SUBSCRIPTION_FAILED)) {
+		err = bt_gatt_subscribe(conn, &conn_info_ref->subscribe_params);
+		if (err != -ENOMEM) {
+			__ASSERT(!err, "Subcription failed");
+		} else {
+			return;
+		}
 	}
 
 	/* start subscription procedure if:
