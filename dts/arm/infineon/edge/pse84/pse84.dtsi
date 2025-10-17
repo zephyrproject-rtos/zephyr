@@ -1102,7 +1102,7 @@
 		};
 
 		sdhc0: sdhc@44810000 {
-			compatible = "infineon,cat1-sdhc-sdio";
+			compatible = "infineon,cat1-pdl-sdhc-sdio";
 			reg = <0x44810000 0x2000>;
 			interrupts = <155 4>, /* SDIO wakeup interrupt for mxsdhc */
 			<154 6>; /* Consolidated interrupt for mxsdhc */
@@ -1110,7 +1110,7 @@
 		};
 
 		sdhc1: sdhc@44820000 {
-			compatible = "infineon,cat1-sdhc-sdio";
+			compatible = "infineon,cat1-pdl-sdhc-sdio";
 			reg = <0x44820000 0x2000>;
 			interrupts = <157 4>, /* SDIO wakeup interrupt for mxsdhc */
 			<156 6>; /* Consolidated interrupt for mxsdhc */
