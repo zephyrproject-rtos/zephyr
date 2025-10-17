@@ -1051,8 +1051,7 @@ static DEVICE_API(adc, adc_ad4130_driver_api) = {
 #define AD4130_ADC_INIT(inst)                                                                      \
 	static const struct ad4130_config ad4130_config_##inst = {                                 \
 		.bus = SPI_DT_SPEC_GET(DT_INST(inst, adi_ad4130_adc),                              \
-				       SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB,    \
-				       1),                                                         \
+				       SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB),   \
 		.resolution = AD4130_ADC_RESOLUTION,                                               \
 		.bipolar = DT_INST_PROP_OR(inst, bipolar, 1),                                      \
 		.int_ref = DT_INST_PROP_OR(inst, internal_reference_value, 0),                     \
@@ -1064,7 +1063,7 @@ static DEVICE_API(adc, adc_ad4130_driver_api) = {
 		ADC_CONTEXT_INIT_TIMER(adc_ad4130_data_##inst, ctx),                               \
 		ADC_CONTEXT_INIT_SYNC(adc_ad4130_data_##inst, ctx),                                \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &ad4130_init, NULL, &adc_ad4130_data_##inst,                   \
+	DEVICE_DT_INST_DEFINE(inst, ad4130_init, NULL, &adc_ad4130_data_##inst,                    \
 			      &ad4130_config_##inst, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,        \
 			      &adc_ad4130_driver_api);
 

@@ -1639,23 +1639,6 @@ int bt_conn_le_create_auto(const struct bt_conn_le_create_param *create_param,
  */
 int bt_conn_create_auto_stop(void);
 
-/** @brief Automatically connect to remote device if it's in range.
- *
- *  This function enables/disables automatic connection initiation.
- *  Every time the device loses the connection with peer, this connection
- *  will be re-established if connectable advertisement from peer is received.
- *
- *  @note Auto connect is disabled during explicit scanning.
- *
- *  @param addr Remote Bluetooth address.
- *  @param param If non-NULL, auto connect is enabled with the given
- *  parameters. If NULL, auto connect is disabled.
- *
- *  @return Zero on success or error code otherwise.
- */
-__deprecated int bt_le_set_auto_conn(const bt_addr_le_t *addr,
-				     const struct bt_le_conn_param *param);
-
 /** @brief Set security level for a connection.
  *
  *  This function enable security (encryption) for a connection. If the device
@@ -1877,9 +1860,8 @@ struct bt_conn_cb {
 	 *  start either a connectable advertiser or create a new connection
 	 *  this might fail because there are no free connection objects
 	 *  available.
-	 *  To avoid this issue it is recommended to either start connectable
-	 *  advertise or create a new connection using @ref k_work_submit or
-	 *  increase @kconfig{CONFIG_BT_MAX_CONN}.
+	 *  To avoid this issue, it's recommended to rely instead on @ref bt_conn_cb.recycled
+	 *  which notifies the application when a connection object has actually been freed.
 	 *
 	 *  @param conn Connection object.
 	 *  @param reason BT_HCI_ERR_* reason for the disconnection.
@@ -1891,12 +1873,13 @@ struct bt_conn_cb {
 	 * This callback notifies the application that it might be able to
 	 * allocate a connection object. No guarantee, first come, first serve.
 	 *
-	 * Use this to e.g. re-start connectable advertising or scanning.
+	 * The maximum number of simultaneous connections is configured
+	 * by @kconfig{CONFIG_BT_MAX_CONN}.
 	 *
-	 * Treat this callback as an ISR, as it originates from
-	 * @ref bt_conn_unref which is used by the BT stack. Making
-	 * Bluetooth API calls in this context is error-prone and strongly
-	 * discouraged.
+	 * This is the event to listen for to start a new connection or connectable advertiser,
+	 * both when the intention is to start it after the system is completely
+	 * finished with an earlier connection, and when the application wants to start
+	 * a connection for any reason but failed and is waiting for the right time to retry.
 	 */
 	void (*recycled)(void);
 

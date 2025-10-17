@@ -34,14 +34,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_0 {
 			gpios = <&gpioc 8 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
 		};
+
 		green_led: led_1 {
 			gpios = <&gpiod 0 GPIO_ACTIVE_LOW>;
 			label = "User LD2";
 		};
+
 		blue_led: led_2 {
 			gpios = <&gpioc 9 GPIO_ACTIVE_LOW>;
 			label = "User LD3";
@@ -54,9 +57,11 @@
 		red_pwm_led: red_pwm_led {
 			pwms = <&ftm3 4 15625000 PWM_POLARITY_INVERTED>;
 		};
+
 		green_pwm_led: green_pwm_led {
 			pwms = <&ftm3 0 15625000 PWM_POLARITY_INVERTED>;
 		};
+
 		blue_pwm_led: blue_pwm_led {
 			pwms = <&ftm3 5 15625000 PWM_POLARITY_INVERTED>;
 		};
@@ -90,7 +95,7 @@
 };
 
 &cpu0 {
-	clock-frequency = <120000000>;
+	clock-frequency = <DT_FREQ_M(120)>;
 };
 
 &adc0 {
@@ -182,7 +187,6 @@
 };
 
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -197,14 +201,17 @@
 			reg = <0x00000000 DT_SIZE_K(64)>;
 			read-only;
 		};
+
 		slot0_partition: partition@10000 {
 			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(420)>;
 		};
+
 		slot1_partition: partition@79000 {
 			label = "image-1";
 			reg = <0x00079000 DT_SIZE_K(420)>;
 		};
+
 		storage_partition: partition@e2000 {
 			label = "storage";
 			reg = <0x000e2000 DT_SIZE_K(120)>;

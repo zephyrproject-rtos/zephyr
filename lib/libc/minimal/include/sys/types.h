@@ -46,18 +46,4 @@ typedef _TIME_T_ time_t;
 typedef _SUSECONDS_T_ suseconds_t;
 #endif
 
-#if !defined(__mem_word_t_defined)
-#define __mem_word_t_defined
-
-/*
- * The mem_word_t should match the optimal memory access word width
- * on the target platform. Here we defaults it to uintptr_t.
- */
-
-typedef uintptr_t mem_word_t;
-
-#define Z_MEM_WORD_T_WIDTH __INTPTR_WIDTH__
-
-#endif
-
 #endif /* ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_SYS_TYPES_H_ */

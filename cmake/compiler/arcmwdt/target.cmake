@@ -63,3 +63,6 @@ endif()
 # The MWDT compiler doesn't need to pass any properties to the linker as for now
 function(compiler_set_linker_properties)
 endfunction()
+
+# Include architecture-specific settings
+include(${CMAKE_CURRENT_LIST_DIR}/target_${ARCH}.cmake OPTIONAL)

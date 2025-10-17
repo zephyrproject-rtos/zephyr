@@ -34,10 +34,11 @@
  * @param create_flags Flags indicating the properties of the entry.
  *
  * @retval PSA_SUCCESS                    The operation completed successfully.
+ * @retval PSA_ERROR_GENERIC_ERROR        An unspecified internal failure happened.
  * @retval PSA_ERROR_NOT_PERMITTED        An entry associated with the provided `uid` already
  *                                        exists and was created with `PSA_STORAGE_FLAG_WRITE_ONCE`.
  * @retval PSA_ERROR_NOT_SUPPORTED        One or more of the flags provided in `create_flags`
- *                                        are not supported or invalid.
+ *                                        are not supported or not valid.
  * @retval PSA_ERROR_INVALID_ARGUMENT     One or more arguments other than `create_flags` are
  *                                        invalid.
  * @retval PSA_ERROR_INSUFFICIENT_STORAGE There is insufficient space on the storage medium.
@@ -63,8 +64,9 @@ psa_status_t psa_its_set(psa_storage_uid_t uid, size_t data_length,
  * @param[out] p_data_length On success, the number of bytes placed in `p_data`.
  *
  * @retval PSA_SUCCESS                The operation completed successfully.
- * @retval PSA_ERROR_INVALID_ARGUMENT One or more of the arguments are invalid. This can also
- *                                    happen if `data_offset` is larger than the size of the data
+ * @retval PSA_ERROR_GENERIC_ERROR    An unspecified internal failure happened.
+ * @retval PSA_ERROR_INVALID_ARGUMENT One or more arguments are invalid. This can also happen
+ *                                    if `data_offset` is larger than the size of the data
  *                                    associated with `uid`.
  * @retval PSA_ERROR_DOES_NOT_EXIST   The provided `uid` was not found in the storage.
  * @retval PSA_ERROR_STORAGE_FAILURE  The physical storage has failed (fatal error).
@@ -87,7 +89,8 @@ psa_status_t psa_its_get(psa_storage_uid_t uid, size_t data_offset,
  *                    be populated with the metadata on success.
  *
  * @retval PSA_SUCCESS                The operation completed successfully.
- * @retval PSA_ERROR_INVALID_ARGUMENT One or more of the arguments are invalid.
+ * @retval PSA_ERROR_GENERIC_ERROR    An unspecified internal failure happened.
+ * @retval PSA_ERROR_INVALID_ARGUMENT `uid` is invalid.
  * @retval PSA_ERROR_DOES_NOT_EXIST   The provided `uid` was not found in the storage.
  * @retval PSA_ERROR_STORAGE_FAILURE  The physical storage has failed (fatal error).
  */

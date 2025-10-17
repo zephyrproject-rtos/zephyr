@@ -5,9 +5,9 @@
  */
 
 /**
- * @file drivers/tee.h
- *
- * @brief Public APIs for the tee driver.
+ * @file
+ * @ingroup tee_interface
+ * @brief Main header file for TEE (Trusted Execution Environment) driver API.
  */
 
 /*
@@ -44,8 +44,8 @@
 #include <zephyr/sys/util.h>
 
 /**
- * @brief Trusted Execution Environment Interface
- * @defgroup tee_interface TEE Interface
+ * @brief Interfaces to work with Trusted Execution Environment (TEE).
+ * @defgroup tee_interface TEE
  * @ingroup io_interfaces
  * @{
  *

@@ -59,9 +59,5 @@ int scmi_pinctrl_settings_configure(struct scmi_pinctrl_settings *settings)
 		return ret;
 	}
 
-	if (status != SCMI_SUCCESS) {
-		return scmi_status_to_errno(status);
-	}
-
-	return 0;
+	return scmi_status_to_errno(status);
 }

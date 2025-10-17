@@ -271,6 +271,8 @@ static int adxl345_attr_set(const struct device *dev,
 	switch (attr) {
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		return adxl345_attr_set_odr(dev, chan, attr, val);
+	case SENSOR_ATTR_UPPER_THRESH:
+		return adxl345_reg_write_byte(dev, ADXL345_THRESH_ACT_REG, val->val1);
 	default:
 		return -ENOTSUP;
 	}
@@ -485,6 +487,10 @@ static int adxl345_init(const struct device *dev)
 	if (rc) {
 		return rc;
 	}
+	rc = adxl345_interrupt_config(dev, ADXL345_INT_MAP_ACT_MSK);
+	if (rc) {
+		return rc;
+	}
 #endif
 
 	rc = adxl345_reg_read_byte(dev, ADXL345_DATA_FORMAT_REG, &full_res);
@@ -515,7 +521,7 @@ static int adxl345_init(const struct device *dev)
 	COND_CODE_1(CONFIG_SPI_RTIO,								   \
 			(SPI_DT_IODEV_DEFINE(adxl345_iodev_##inst, DT_DRV_INST(inst),		   \
 			SPI_WORD_SET(8) | SPI_TRANSFER_MSB |					   \
-			SPI_MODE_CPOL | SPI_MODE_CPHA, 0U);),					   \
+			SPI_MODE_CPOL | SPI_MODE_CPHA);),					   \
 			())
 
 #define ADXL345_RTIO_I2C_DEFINE(inst)								   \
@@ -554,8 +560,7 @@ static int adxl345_init(const struct device *dev)
 						    SPI_WORD_SET(8) |				   \
 						    SPI_TRANSFER_MSB |				   \
 						    SPI_MODE_CPOL |				   \
-						    SPI_MODE_CPHA,				   \
-						    0)},					   \
+						    SPI_MODE_CPHA)},				   \
 		.bus_is_ready = adxl345_bus_is_ready_spi,					   \
 		.reg_access = adxl345_reg_access_spi,						   \
 		.bus_type = ADXL345_BUS_SPI,							   \

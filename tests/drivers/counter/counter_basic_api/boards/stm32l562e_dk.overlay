@@ -19,7 +19,6 @@
 	};
 };
 
-
 &timers5 {
 	st,prescaler = <79>;
 	counter {

@@ -1,4 +1,5 @@
-# Copyright: (c)  2024, Intel Corporation
+# Copyright (c) 2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
 
 import logging
 
@@ -45,17 +46,31 @@ def test_power_harness(probe_class: PowerMonitor, test_data, request, dut: Devic
         padding=measurements_dict['peak_padding'],
     )
 
-    # # Convert measured values from amps to milliamps for comparison
+    # Convert measured values from amps to milliamps for comparison
+    # Measured states: ['idle', 'state 0', 'state 1', 'state 2', 'active']
     rms_values_in_milliamps = [value * 1e3 for value in rms_values_measured]
 
-    # # Log the calculated values in milliamps for debugging purposes
+    # Log the calculated values in milliamps for debugging purposes
     logger.debug(f"Measured RMS values in mA: {rms_values_in_milliamps}")
+    logger.debug(f"Expected RMS values in mA: {measurements_dict['expected_rms_values']}")
 
     tuples = zip(measurements_dict['expected_rms_values'], rms_values_in_milliamps, strict=False)
+    if not tuple:
+        pytest.skip('Measured values not provided')
+
+    logger.debug("Check if measured values are in tolerance")
+    measure_passed = True
     for expected_rms_value, measured_rms_value in tuples:
-        assert is_within_tolerance(
+        if not is_within_tolerance(
             measured_rms_value, expected_rms_value, measurements_dict['tolerance_percentage']
-        )
+        ):
+            logger.error(f"Measured RMS value {measured_rms_value} mA is out of tolerance.")
+            measure_passed = False
+
+    assert measure_passed, (
+        f"Measured RMS value in mA is out of tolerance "
+        f"{measurements_dict['tolerance_percentage']} %"
+    )
 
 
 def is_within_tolerance(measured_rms_value, expected_rms_value, tolerance_percentage) -> bool:
@@ -74,21 +89,27 @@ def is_within_tolerance(measured_rms_value, expected_rms_value, tolerance_percen
     tolerance = (tolerance_percentage / 100) * expected_rms_value
 
     # Log the values for debugging purposes
-    logger.debug(f"Expected RMS: {expected_rms_value:.2f} mA")
-    logger.debug(f"Tolerance: {tolerance:.2f} mA")
-    logger.debug(f"Measured  RMS: {measured_rms_value:.2f} mA")
+    logger.debug(f"Expected RMS: {expected_rms_value:.3f} mA")
+    logger.debug(f"Tolerance: {tolerance:.3f} mA")
+    logger.debug(f"Measured  RMS: {measured_rms_value:.3f} mA")
     logger.info(
         'RECORD: ['
         '{'
-        f'"expected_rms_ua": {expected_rms_value:.2f}'
+        f'"expected_rms_ua": {expected_rms_value:.3f}'
         '}'
         ',{'
-        f'"tolerance_ua": {tolerance:.2f}'
+        f'"tolerance_ua": {tolerance:.3f}'
         '}'
         ',{'
-        f'"measured_rms_ua": {measured_rms_value:.2f}'
+        f'"measured_rms_ua": {measured_rms_value:.3f}'
         '}'
         ']'
     )
     # Check if the measured value is within the range of expected ± tolerance
-    return (expected_rms_value - tolerance) < measured_rms_value < (expected_rms_value + tolerance)
+    if (expected_rms_value - tolerance) < measured_rms_value < (expected_rms_value + tolerance):
+        return True
+
+    logger.error(
+        f"Measured RMS value: {measured_rms_value:.3f} mA is out of tolerance: {tolerance:.3f} mA"
+    )
+    return False

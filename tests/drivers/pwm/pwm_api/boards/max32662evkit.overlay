@@ -6,12 +6,12 @@
 
 / {
 	aliases {
-		pwm-0 = &pwm0;
+		pwm-test = &pwm0;
 	};
 };
 
 &tmr0c_oa_p0_3 {
-	power-source=<MAX32_VSEL_VDDIOH>;
+	power-source = <MAX32_VSEL_VDDIOH>;
 };
 
 &timer0 {

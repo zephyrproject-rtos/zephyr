@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/pwm/ra_pwm.h>
+
+&pinctrl {
+	pwm8_default: pwm8_default {
+		group1 {
+			/* GTIOC8A */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 6, 5)>;
+		};
+	};
+};
+
+&gptclk {
+	status = "okay";
+};
+
+&pwm8 {
+	pinctrl-0 = <&pwm8_default>;
+	pinctrl-names = "default";
+	interrupts = <94 1>, <95 1>;
+	interrupt-names = "gtioca", "overflow";
+	status = "okay";
+};

@@ -28,7 +28,7 @@
 	};
 
 	leds: leds {
-		compatible ="gpio-leds";
+		compatible = "gpio-leds";
 
 		blue_led_1: led_0 {
 			gpios = <&gpiob 1 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -90,6 +90,7 @@
 &pwrc {
 	smps-mode = "RUN";
 	smps-bom = <3>;
+	smps-lp-floating;
 };
 
 &clk_lse {
@@ -121,7 +122,7 @@
 	 * NO_SEL reflects STM32WB0's lack of RTC clock mux to configure.
 	 */
 	clocks = <&rcc STM32_CLOCK(APB0, 12)>,
-		<&rcc STM32_SRC_LSE NO_SEL>;
+		 <&rcc STM32_SRC_LSE NO_SEL>;
 	status = "okay";
 };
 
@@ -129,7 +130,42 @@
 	status = "okay";
 };
 
+/* Optimize power consumption during lower power state */
+&gpioa {
+	gpios-pull-up {
+		gpio-hog;
+		gpios = <0 GPIO_PULL_UP>;
+		input;
+	};
+
+	gpios-pull-down {
+		gpio-hog;
+		gpios = <8 GPIO_PULL_DOWN>, <9 GPIO_PULL_DOWN>,
+			<10 GPIO_PULL_DOWN>, <11 GPIO_PULL_DOWN>;
+		input;
+	};
+};
+
+&gpiob {
+	gpios-pull-up {
+		gpio-hog;
+		gpios = <1 GPIO_PULL_UP>, <2 GPIO_PULL_UP>, <4 GPIO_PULL_UP>,
+			<5 GPIO_PULL_UP>, <14 GPIO_PULL_UP>, <15 GPIO_PULL_UP>;
+		input;
+	};
+
+	gpios-pull-down {
+		gpio-hog;
+		gpios = <3 GPIO_PULL_DOWN>, <6 GPIO_PULL_DOWN>, <7 GPIO_PULL_DOWN>;
+		input;
+	};
+};
+
 &bt_hci_wb0 {
+	status = "okay";
+};
+
+&radio_timer {
 	status = "okay";
 };
 
@@ -152,7 +188,7 @@
 	status = "okay";
 	/* Select 64MHz clock for SPI3 */
 	clocks = <&rcc STM32_CLOCK(APB1, 14)>,
-		<&rcc STM32_SRC_SYSCLK SPI3_I2S3_SEL(3)>;
+		 <&rcc STM32_SRC_SYSCLK SPI3_I2S3_SEL(3)>;
 };
 
 &timers2 {

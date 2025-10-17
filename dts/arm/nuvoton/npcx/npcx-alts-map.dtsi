@@ -13,9 +13,11 @@
 		alt0_spip_sl: alt00 {
 			alts = <&scfg 0x00 0x0 0>;
 		};
+
 		alt0_gpio_no_spip: alt03-inv {
 			alts = <&scfg 0x00 0x3 1>;
 		};
+
 		alt0_gpio_no_fpip: alt07-inv {
 			/* FPIP (FIU SPI Interface Peripheral) for external flash. */
 			alts = <&scfg 0x00 0x7 1>;
@@ -25,21 +27,27 @@
 		alt1_kbrst_sl: alt10 {
 			alts = <&scfg 0x01 0x0 0>;
 		};
+
 		alt1_smi_sl: alt12 {
 			alts = <&scfg 0x01 0x2 0>;
 		};
+
 		alt1_ec_sci_sl: alt13 {
 			alts = <&scfg 0x01 0x3 0>;
 		};
+
 		alt1_no_pwrgd: alt14-inv {
 			alts = <&scfg 0x01 0x4 1>;
 		};
+
 		alt1_pwroff: alt15 {
 			alts = <&scfg 0x01 0x5 0>;
 		};
+
 		alt1_clkrn_sl: alt16 {
 			alts = <&scfg 0x01 0x6 0>;
 		};
+
 		alt1_no_lpc_espi: alt17-inv {
 			alts = <&scfg 0x01 0x7 1>;
 		};
@@ -48,21 +56,27 @@
 		alt2_i2c0_0_sl: alt20 {
 			alts = <&scfg 0x02 0x0 0>;
 		};
+
 		alt2_i2c7_0_sl: alt21 {
 			alts = <&scfg 0x02 0x1 0>;
 		};
+
 		alt2_i2c1_0_sl: alt22 {
 			alts = <&scfg 0x02 0x2 0>;
 		};
+
 		alt2_i2c6_0_sl: alt23 {
 			alts = <&scfg 0x02 0x3 0>;
 		};
+
 		alt2_i2c2_0_sl: alt24 {
 			alts = <&scfg 0x02 0x4 0>;
 		};
+
 		alt2_i2c5_0_sl: alt25 {
 			alts = <&scfg 0x02 0x5 0>;
 		};
+
 		alt2_i2c3_0_sl: alt26 {
 			alts = <&scfg 0x02 0x6 0>;
 		};
@@ -71,18 +85,23 @@
 		alt3_ps2_0_sl: alt30 {
 			alts = <&scfg 0x03 0x0 0>;
 		};
+
 		alt3_ps2_1_sl: alt31 {
 			alts = <&scfg 0x03 0x1 0>;
 		};
+
 		alt3_ps2_2_sl: alt32 {
 			alts = <&scfg 0x03 0x2 0>;
 		};
+
 		alt3_ta1_sl1: alt34 {
 			alts = <&scfg 0x03 0x4 0>;
 		};
+
 		alt3_tb1_sl1: alt35 {
 			alts = <&scfg 0x03 0x5 0>;
 		};
+
 		alt3_ta2_sl1: alt36 {
 			alts = <&scfg 0x03 0x6 0>;
 		};
@@ -91,24 +110,31 @@
 		alt4_pwm0_sl: alt40 {
 			alts = <&scfg 0x04 0x0 0>;
 		};
+
 		alt4_pwm1_sl: alt41 {
 			alts = <&scfg 0x04 0x1 0>;
 		};
+
 		alt4_pwm2_sl: alt42 {
 			alts = <&scfg 0x04 0x2 0>;
 		};
+
 		alt4_pwm3_sl: alt43 {
 			alts = <&scfg 0x04 0x3 0>;
 		};
+
 		alt4_pwm4_sl: alt44 {
 			alts = <&scfg 0x04 0x4 0>;
 		};
+
 		alt4_pwm5_sl: alt45 {
 			alts = <&scfg 0x04 0x5 0>;
 		};
+
 		alt4_pwm6_sl: alt46 {
 			alts = <&scfg 0x04 0x6 0>;
 		};
+
 		alt4_pwm7_sl: alt47 {
 			alts = <&scfg 0x04 0x7 0>;
 		};
@@ -117,6 +143,7 @@
 		alt5_trace_en: alt50 {
 			alts = <&scfg 0x05 0x0 0>;
 		};
+
 		alt5_strace_en: alt54 {
 			alts = <&scfg 0x05 0x4 0>;
 		};
@@ -125,24 +152,31 @@
 		alt6_adc0_sl: alt60 {
 			alts = <&scfg 0x06 0x0 0>;
 		};
+
 		alt6_adc1_sl: alt61 {
 			alts = <&scfg 0x06 0x1 0>;
 		};
+
 		alt6_adc2_sl: alt62 {
 			alts = <&scfg 0x06 0x2 0>;
 		};
+
 		alt6_adc3_sl: alt63 {
 			alts = <&scfg 0x06 0x3 0>;
 		};
+
 		alt6_adc4_sl: alt64 {
 			alts = <&scfg 0x06 0x4 0>;
 		};
+
 		alt6_i2c6_1_sl: alt65 {
 			alts = <&scfg 0x06 0x5 0>;
 		};
+
 		alt6_i2c5_1_sl: alt66 {
 			alts = <&scfg 0x06 0x6 0>;
 		};
+
 		alt6_i2c4_1_sl: alt67 {
 			alts = <&scfg 0x06 0x7 0>;
 		};
@@ -151,24 +185,31 @@
 		alt7_no_ksi0_sl: alt70-inv {
 			alts = <&scfg 0x07 0x0 1>;
 		};
+
 		alt7_no_ksi1_sl: alt71-inv {
 			alts = <&scfg 0x07 0x1 1>;
 		};
+
 		alt7_no_ksi2_sl: alt72-inv {
 			alts = <&scfg 0x07 0x2 1>;
 		};
+
 		alt7_no_ksi3_sl: alt73-inv {
 			alts = <&scfg 0x07 0x3 1>;
 		};
+
 		alt7_no_ksi4_sl: alt74-inv {
 			alts = <&scfg 0x07 0x4 1>;
 		};
+
 		alt7_no_ksi5_sl: alt75-inv {
 			alts = <&scfg 0x07 0x5 1>;
 		};
+
 		alt7_no_ksi6_sl: alt76-inv {
 			alts = <&scfg 0x07 0x6 1>;
 		};
+
 		alt7_no_ksi7_sl: alt77-inv {
 			alts = <&scfg 0x07 0x7 1>;
 		};
@@ -177,24 +218,31 @@
 		alt8_no_kso00_sl: alt80-inv {
 			alts = <&scfg 0x08 0x0 1>;
 		};
+
 		alt8_no_kso01_sl: alt81-inv {
 			alts = <&scfg 0x08 0x1 1>;
 		};
+
 		alt8_no_kso02_sl: alt82-inv {
 			alts = <&scfg 0x08 0x2 1>;
 		};
+
 		alt8_no_kso03_sl: alt83-inv {
 			alts = <&scfg 0x08 0x3 1>;
 		};
+
 		alt8_no_kso04_sl: alt84-inv {
 			alts = <&scfg 0x08 0x4 1>;
 		};
+
 		alt8_no_kso05_sl: alt85-inv {
 			alts = <&scfg 0x08 0x5 1>;
 		};
+
 		alt8_no_kso06_sl: alt86-inv {
 			alts = <&scfg 0x08 0x6 1>;
 		};
+
 		alt8_no_kso07_sl: alt87-inv {
 			alts = <&scfg 0x08 0x7 1>;
 		};
@@ -203,24 +251,31 @@
 		alt9_no_kso08_sl: alt90-inv {
 			alts = <&scfg 0x09 0x0 1>;
 		};
+
 		alt9_no_kso09_sl: alt91-inv {
 			alts = <&scfg 0x09 0x1 1>;
 		};
+
 		alt9_no_kso10_sl: alt92-inv {
 			alts = <&scfg 0x09 0x2 1>;
 		};
+
 		alt9_no_kso11_sl: alt93-inv {
 			alts = <&scfg 0x09 0x3 1>;
 		};
+
 		alt9_no_kso12_sl: alt94-inv {
 			alts = <&scfg 0x09 0x4 1>;
 		};
+
 		alt9_no_kso13_sl: alt95-inv {
 			alts = <&scfg 0x09 0x5 1>;
 		};
+
 		alt9_no_kso14_sl: alt96-inv {
 			alts = <&scfg 0x09 0x6 1>;
 		};
+
 		alt9_no_kso15_sl: alt97-inv {
 			alts = <&scfg 0x09 0x7 1>;
 		};
@@ -229,15 +284,19 @@
 		alta_no_kso16_sl: alta0-inv {
 			alts = <&scfg 0x0A 0x0 1>;
 		};
+
 		alta_no_kso17_sl: alta1-inv {
 			alts = <&scfg 0x0A 0x1 1>;
 		};
+
 		alta_32k_out_sl: alta2 {
 			alts = <&scfg 0x0A 0x2 0>;
 		};
+
 		alta_no_vcc1_rst: alta4-inv {
 			alts = <&scfg 0x0A 0x4 1>;
 		};
+
 		alta_no_peci_en: alta6-inv {
 			alts = <&scfg 0x0A 0x6 1>;
 		};
@@ -246,24 +305,31 @@
 		altb_rxd_sl: altb0 {
 			alts = <&scfg 0x0B 0x0 0>;
 		};
+
 		altb_txd_sl: altb1 {
 			alts = <&scfg 0x0B 0x1 0>;
 		};
+
 		altb_rts_sl: altb2 {
 			alts = <&scfg 0x0B 0x2 0>;
 		};
+
 		altb_cts_sl: altb3 {
 			alts = <&scfg 0x0B 0x3 0>;
 		};
-		altb_ri_sl:  altb4 {
+
+		altb_ri_sl: altb4 {
 			alts = <&scfg 0x0B 0x4 0>;
 		};
+
 		altb_dtr_bout_sl: altb5 {
 			alts = <&scfg 0x0B 0x5 0>;
 		};
+
 		altb_dcd_sl: altb6 {
 			alts = <&scfg 0x0B 0x6 0>;
 		};
+
 		altb_dsr_sl: altb7 {
 			alts = <&scfg 0x0B 0x7 0>;
 		};
@@ -272,18 +338,23 @@
 		altc_shi_sl: altc1 {
 			alts = <&scfg 0x0C 0x1 0>;
 		};
+
 		altc_ps2_3_sl2: altc3 {
 			alts = <&scfg 0x0C 0x3 0>;
 		};
+
 		altc_ta1_sl2: altc4 {
 			alts = <&scfg 0x0C 0x4 0>;
 		};
+
 		altc_tb1_sl2: altc5 {
 			alts = <&scfg 0x0C 0x5 0>;
 		};
+
 		altc_ta2_sl2: altc6 {
 			alts = <&scfg 0x0C 0x6 0>;
 		};
+
 		altc_tb2_sl2: altc7 {
 			alts = <&scfg 0x0C 0x7 0>;
 		};
@@ -292,24 +363,31 @@
 		altd_psl_in1_ahi: altd0 {
 			alts = <&scfg 0x0D 0x0 0>;
 		};
+
 		altd_npsl_in1_sl: altd1-inv {
 			alts = <&scfg 0x0D 0x1 1>;
 		};
+
 		altd_psl_in2_ahi: altd2 {
 			alts = <&scfg 0x0D 0x2 0>;
 		};
+
 		altd_npsl_in2_sl: altd3-inv {
 			alts = <&scfg 0x0D 0x3 1>;
 		};
+
 		altd_psl_in3_ahi: altd4 {
 			alts = <&scfg 0x0D 0x4 0>;
 		};
+
 		altd_psl_in3_sl: altd5 {
 			alts = <&scfg 0x0D 0x5 0>;
 		};
+
 		altd_psl_in4_ahi: altd6 {
 			alts = <&scfg 0x0D 0x6 0>;
 		};
+
 		altd_psl_in4_sl: altd7 {
 			alts = <&scfg 0x0D 0x7 0>;
 		};
@@ -320,18 +398,23 @@
 		altf_adc5_sl: altf0 {
 			alts = <&scfg 0x0F 0x0 0>;
 		};
+
 		altf_adc6_sl: altf1 {
 			alts = <&scfg 0x0F 0x1 0>;
 		};
+
 		altf_adc7_sl: altf2 {
 			alts = <&scfg 0x0F 0x2 0>;
 		};
+
 		altf_adc8_sl: altf3 {
 			alts = <&scfg 0x0F 0x3 0>;
 		};
+
 		altf_adc9_sl: altf4 {
 			alts = <&scfg 0x0F 0x4 0>;
 		};
+
 		altf_shi_new: altf7 {
 			alts = <&scfg 0x0F 0x7 0>;
 		};

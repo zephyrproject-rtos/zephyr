@@ -411,7 +411,8 @@ static int handle_event(struct lwm2m_swmgmt_data *instance, uint8_t event)
 			/* Inform the instance of DOWNLOAD_FAILED by calling
 			 * write_package_cb with a bunch of NULL parameters
 			 */
-			instance->write_package_cb(instance->obj_inst_id, 0, 0, NULL, 0, false, 0);
+			instance->write_package_cb(instance->obj_inst_id, 0, 0, NULL, 0,
+					 false, 0, 0);
 			break;
 		default:
 			ret = -EINVAL;
@@ -576,7 +577,7 @@ static int package_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 	}
 
 	ret = instance->write_package_cb(obj_inst_id, res_id, res_inst_id, data, data_len,
-					 last_block, total_size);
+					 last_block, total_size, offset);
 
 	if (ret < 0) {
 		handle_event(instance, EVENT_DOWNLOAD_FAILED);

@@ -232,7 +232,7 @@
 		dma-requests = <105>;
 
 		interrupts = <20 0 0>, <21 0 0>, <22 0 0>, <23 0 0>,
-			<24 0 0>, <25 0 0>, <26 0 0>, <27 0 0>;
+			     <24 0 0>, <25 0 0>, <26 0 0>, <27 0 0>;
 		no-error-irq;
 
 		compatible = "nxp,mcux-edma";
@@ -302,7 +302,8 @@
 		status = "disabled";
 	};
 
-	mbox4: mbox@188000 {
+    /* MU4: MUB, Hifi4 to CPU0 */
+	mbox4_b: mbox@188000 {
 		#mbox-cells = <1>;
 
 		reg = <0x188000 0x1000>;

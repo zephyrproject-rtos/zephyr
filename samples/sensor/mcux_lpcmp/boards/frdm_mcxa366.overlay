@@ -1,0 +1,10 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&lpcmp0 {
+	status = "okay";
+	function-clock = "CMP_CLOCK";
+};

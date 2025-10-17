@@ -14,8 +14,8 @@ if(CONFIG_LLEXT)
 		llext_export.c
 		llext_handlers.c
 		buf_loader.c
-    fs_loader.c
 	)
+  zephyr_library_sources_ifdef(CONFIG_FILE_SYSTEM fs_loader.c)
   zephyr_library_sources_ifdef(CONFIG_LLEXT_SHELL shell.c)
   zephyr_library_sources_ifdef(CONFIG_LLEXT_EXPERIMENTAL llext_experimental.c)
 

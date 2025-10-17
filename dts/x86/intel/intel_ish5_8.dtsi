@@ -6,6 +6,15 @@
 
 #include <intel/intel_ish5.dtsi>
 
+&soc {
+	interrupts = <
+		8 IRQ_TYPE_FIXED_LEVEL_HIGH 1
+		11 IRQ_TYPE_FIXED_LEVEL_HIGH 1
+		12 IRQ_TYPE_FIXED_LEVEL_HIGH 1
+	>;
+	interrupt-names = "reset_prep", "pcidev", "pmu2ioapic";
+};
+
 &hpet {
 	interrupts = <17 IRQ_TYPE_FIXED_LEVEL_HIGH 2>;
 

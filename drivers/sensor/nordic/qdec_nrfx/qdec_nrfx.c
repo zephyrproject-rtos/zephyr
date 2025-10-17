@@ -272,6 +272,26 @@ static int qdec_nrfx_init(const struct device *dev)
 #define QDEC(idx)			DT_NODELABEL(qdec##idx)
 #define QDEC_PROP(idx, prop)		DT_PROP(QDEC(idx), prop)
 
+/* Macro determines PM actions interrupt safety level.
+ *
+ * Requesting/releasing QDEC device may be ISR safe, but it cannot be reliably known whether
+ * managing its power domain is. It is then assumed that if power domains are used, device is
+ * no longer ISR safe. This macro let's us check if we will be requesting/releasing
+ * power domains and determines PM device ISR safety value.
+ */
+#define QDEC_PM_ISR_SAFE(idx)									\
+	COND_CODE_1(										\
+		UTIL_AND(									\
+			IS_ENABLED(CONFIG_PM_DEVICE_POWER_DOMAIN),				\
+			UTIL_AND(								\
+				DT_NODE_HAS_PROP(QDEC(idx), power_domains),			\
+				DT_NODE_HAS_STATUS_OKAY(DT_PHANDLE(QDEC(idx), power_domains))	\
+			)									\
+		),										\
+		(0),										\
+		(PM_DEVICE_ISR_SAFE)								\
+	)
+
 #define SENSOR_NRFX_QDEC_DEVICE(idx)							     \
 	NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(QDEC(idx));					     \
 	BUILD_ASSERT(QDEC_PROP(idx, steps) > 0,						     \
@@ -301,7 +321,7 @@ static int qdec_nrfx_init(const struct device *dev)
 		.enable_pin = DT_PROP_OR(QDEC(idx), enable_pin, NRF_QDEC_PIN_NOT_CONNECTED), \
 		.steps = QDEC_PROP(idx, steps),						     \
 	};										     \
-	PM_DEVICE_DT_DEFINE(QDEC(idx), qdec_nrfx_pm_action, PM_DEVICE_ISR_SAFE);	     \
+	PM_DEVICE_DT_DEFINE(QDEC(idx), qdec_nrfx_pm_action, QDEC_PM_ISR_SAFE(idx));	     \
 	SENSOR_DEVICE_DT_DEFINE(QDEC(idx),						     \
 				qdec_nrfx_init,						     \
 				PM_DEVICE_DT_GET(QDEC(idx)),				     \

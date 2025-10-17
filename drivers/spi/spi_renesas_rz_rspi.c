@@ -41,7 +41,6 @@ struct spi_rz_rspi_data {
 	rspi_extended_cfg_t fsp_extend_config;
 #ifdef CONFIG_SPI_RTIO
 	struct spi_rtio *rtio_ctx;
-	int rtio_buf_remain;
 	int rtio_tiny_buf_idx;
 #endif /* CONFIG_SPI_RTIO */
 };
@@ -71,6 +70,31 @@ static bool spi_rz_rspi_transfer_ongoing(struct spi_rz_rspi_data *data)
 	}
 #endif
 }
+
+static void spi_rz_rspi_retransmit(const struct device *dev)
+{
+	struct spi_rz_rspi_data *data = dev->data;
+	const struct spi_rz_rspi_config *config = dev->config;
+
+	if (data->ctx.rx_len == 0) {
+		data->data_len = data->ctx.tx_len;
+	} else if (data->ctx.tx_len == 0) {
+		data->data_len = data->ctx.rx_len;
+	} else {
+		data->data_len = MIN(data->ctx.tx_len, data->ctx.rx_len);
+	}
+
+	if (data->ctx.tx_buf == NULL) { /* If there is only the rx buffer */
+		config->fsp_api->read(data->fsp_ctrl, data->ctx.rx_buf, data->data_len,
+				      data->fsp_ctrl->bit_width);
+	} else if (data->ctx.rx_buf == NULL) { /* If there is only the tx buffer */
+		config->fsp_api->write(data->fsp_ctrl, data->ctx.tx_buf, data->data_len,
+				       data->fsp_ctrl->bit_width);
+	} else {
+		config->fsp_api->writeRead(data->fsp_ctrl, data->ctx.tx_buf, data->ctx.rx_buf,
+					   data->data_len, data->fsp_ctrl->bit_width);
+	}
+}
 #endif /* CONFIG_SPI_RTIO */
 
 #ifdef CONFIG_SPI_RENESAS_RZ_RSPI_INTERRUPT
@@ -93,48 +117,6 @@ static void spi_rz_rspi_eri_isr(const struct device *dev)
 }
 #endif /* CONFIG_SPI_RENESAS_RZ_RSPI_INTERRUPT */
 
-static void spi_rz_rspi_retransmit(struct spi_rz_rspi_data *data)
-{
-	const uint8_t *tx = NULL;
-	uint8_t *rx = NULL;
-
-#ifdef CONFIG_SPI_RTIO
-	struct spi_rtio *rtio_ctx = data->rtio_ctx;
-	struct rtio_sqe *sqe = &rtio_ctx->txn_curr->sqe;
-
-	switch (sqe->op) {
-	case RTIO_OP_RX:
-		rx = sqe->rx.buf++;
-		break;
-	case RTIO_OP_TX:
-		tx = sqe->tx.buf++;
-		break;
-	case RTIO_OP_TINY_TX:
-		data->rtio_tiny_buf_idx++;
-		tx = &sqe->tiny_tx.buf[data->rtio_tiny_buf_idx];
-		break;
-	case RTIO_OP_TXRX:
-		rx = sqe->txrx.rx_buf++;
-		tx = sqe->txrx.tx_buf++;
-		break;
-	default:
-		LOG_ERR("Invalid op %d for sqe %p\n", sqe->op, (void *)sqe);
-		return;
-	}
-#else
-	tx = data->ctx.tx_buf;
-	rx = data->ctx.rx_buf;
-#endif
-
-	if (tx == NULL) { /* If there is only the rx buffer */
-		R_RSPI_Read(data->fsp_ctrl, rx, 1, data->fsp_ctrl->bit_width);
-	} else if (rx == NULL) { /* If there is only the tx buffer */
-		R_RSPI_Write(data->fsp_ctrl, tx, 1, data->fsp_ctrl->bit_width);
-	} else {
-		R_RSPI_WriteRead(data->fsp_ctrl, tx, rx, 1, data->fsp_ctrl->bit_width);
-	}
-}
-
 static void spi_callbacks(spi_callback_args_t *p_args)
 {
 	struct device *dev = (struct device *)p_args->p_context;
@@ -144,23 +126,17 @@ static void spi_callbacks(spi_callback_args_t *p_args)
 	case SPI_EVENT_TRANSFER_COMPLETE:
 
 #ifndef CONFIG_SPI_RTIO
-		spi_context_update_tx(&data->ctx, data->dfs, 1);
-		spi_context_update_rx(&data->ctx, data->dfs, 1);
+		spi_context_update_tx(&data->ctx, data->dfs, data->data_len);
+		spi_context_update_rx(&data->ctx, data->dfs, data->data_len);
 		if (spi_rz_rspi_transfer_ongoing(data)) {
-			spi_rz_rspi_retransmit(data);
-		} else {
-			spi_context_complete(&data->ctx, dev, 0);
+			spi_rz_rspi_retransmit(dev);
 			return;
 		}
 #else
-		if (data->rtio_buf_remain-- > 0) {
-			spi_rz_rspi_retransmit(data);
-		} else {
-			struct spi_rtio *rtio_ctx = data->rtio_ctx;
+		struct spi_rtio *rtio_ctx = data->rtio_ctx;
 
-			if (rtio_ctx->txn_head != NULL) {
-				spi_rz_rspi_iodev_complete(dev, 0);
-			}
+		if (rtio_ctx->txn_head != NULL) {
+			spi_rz_rspi_iodev_complete(dev, 0);
 		}
 #endif /* CONFIG_SPI_RTIO */
 		spi_context_complete(&data->ctx, dev, 0);
@@ -178,62 +154,63 @@ static void spi_callbacks(spi_callback_args_t *p_args)
 	}
 }
 
-static int spi_rz_rspi_configure(const struct device *dev, const struct spi_config *config)
+static int spi_rz_rspi_configure(const struct device *dev, const struct spi_config *spi_cfg)
 {
 	struct spi_rz_rspi_data *data = dev->data;
+	const struct spi_rz_rspi_config *config = dev->config;
 	spi_bit_width_t spi_width;
 	fsp_err_t err;
 
-	if (spi_context_configured(&data->ctx, config)) {
+	if (spi_context_configured(&data->ctx, spi_cfg)) {
 		/* This configuration is already in use */
 		return 0;
 	}
 
 	if (data->fsp_ctrl->open != 0) {
-		R_RSPI_Close(data->fsp_ctrl);
+		config->fsp_api->close(data->fsp_ctrl);
 	}
 
-	if (config->operation & SPI_FRAME_FORMAT_TI) {
+	if (spi_cfg->operation & SPI_FRAME_FORMAT_TI) {
 		LOG_ERR("TI frame not supported");
 		return -ENOTSUP;
 	}
 
 	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
-	    (config->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
+	    (spi_cfg->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
 		LOG_DEV_ERR(dev, "Only single line mode is supported");
 		return -ENOTSUP;
 	}
 
 	/* SPI mode */
-	if (config->operation & SPI_OP_MODE_SLAVE) {
+	if (spi_cfg->operation & SPI_OP_MODE_SLAVE) {
 		data->fsp_config->operating_mode = SPI_MODE_SLAVE;
 	} else {
 		data->fsp_config->operating_mode = SPI_MODE_MASTER;
 	}
 
 	/* SPI POLARITY */
-	if (SPI_MODE_GET(config->operation) & SPI_MODE_CPOL) {
+	if (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL) {
 		data->fsp_config->clk_polarity = SPI_CLK_POLARITY_HIGH;
 	} else {
 		data->fsp_config->clk_polarity = SPI_CLK_POLARITY_LOW;
 	}
 
 	/* SPI PHASE */
-	if (SPI_MODE_GET(config->operation) & SPI_MODE_CPHA) {
+	if (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA) {
 		data->fsp_config->clk_phase = SPI_CLK_PHASE_EDGE_EVEN;
 	} else {
 		data->fsp_config->clk_phase = SPI_CLK_PHASE_EDGE_ODD;
 	}
 
 	/* SPI bit order */
-	if (config->operation & SPI_TRANSFER_LSB) {
+	if (spi_cfg->operation & SPI_TRANSFER_LSB) {
 		data->fsp_config->bit_order = SPI_BIT_ORDER_LSB_FIRST;
 	} else {
 		data->fsp_config->bit_order = SPI_BIT_ORDER_MSB_FIRST;
 	}
 
 	/* SPI bit width */
-	spi_width = (spi_bit_width_t)(SPI_WORD_SIZE_GET(config->operation) - 1);
+	spi_width = (spi_bit_width_t)(SPI_WORD_SIZE_GET(spi_cfg->operation) - 1);
 	if (spi_width > SPI_BIT_WIDTH_16_BITS) {
 		data->dfs = 4;
 		data->fsp_ctrl->bit_width = SPI_BIT_WIDTH_32_BITS;
@@ -246,15 +223,16 @@ static int spi_rz_rspi_configure(const struct device *dev, const struct spi_conf
 	}
 
 	/* SPI slave select polarity */
-	if (config->operation & SPI_CS_ACTIVE_HIGH) {
+	if (spi_cfg->operation & SPI_CS_ACTIVE_HIGH) {
 		data->fsp_extend_config.ssl_polarity = RSPI_SSLP_HIGH;
 	} else {
 		data->fsp_extend_config.ssl_polarity = RSPI_SSLP_LOW;
 	}
 
 	/* Calculate bitrate */
-	if (config->frequency > 0) {
-		err = R_RSPI_CalculateBitrate(config->frequency, &data->fsp_extend_config.spck_div);
+	if (spi_cfg->frequency > 0) {
+		err = R_RSPI_CalculateBitrate(spi_cfg->frequency,
+					      &data->fsp_extend_config.spck_div);
 		if (err != FSP_SUCCESS) {
 			LOG_DEV_ERR(dev, "rspi: bitrate calculate error: %d", err);
 			return -ENOSYS;
@@ -269,13 +247,13 @@ static int spi_rz_rspi_configure(const struct device *dev, const struct spi_conf
 	/* Data is passed into spi_callbacks. */
 	data->fsp_config->p_context = dev;
 	/* Open module RSPI. */
-	err = R_RSPI_Open(data->fsp_ctrl, data->fsp_config);
+	err = config->fsp_api->open(data->fsp_ctrl, data->fsp_config);
 	if (err != FSP_SUCCESS) {
 		LOG_ERR("R_RSPI_Open error: %d", err);
 		return -EINVAL;
 	}
 
-	data->ctx.config = config;
+	data->ctx.config = spi_cfg;
 
 	return 0;
 }
@@ -295,9 +273,9 @@ static int spi_rz_rspi_transceive_data(struct spi_rz_rspi_data *data)
 	if (data_count) {
 		if (data->dfs > 2) {
 			if (spi_context_tx_buf_on(&data->ctx)) {
-				p_spi_reg->SPDR = *(uint32_t *)(data->ctx.tx_buf);
+				p_spi_reg->SPDR_b.SPD = *(uint32_t *)(data->ctx.tx_buf);
 			} else {
-				p_spi_reg->SPDR = 0;
+				p_spi_reg->SPDR_b.SPD = 0;
 			}
 		} else if (data->dfs > 1) {
 			if (spi_context_tx_buf_on(&data->ctx)) {
@@ -314,8 +292,6 @@ static int spi_rz_rspi_transceive_data(struct spi_rz_rspi_data *data)
 		}
 	}
 
-	/* Clear Transmit Buffer Empty Flags */
-	p_spi_reg->SPBFCR = R_RSPI0_SPBFCR_TXRST_Msk;
 	spi_context_update_tx(&data->ctx, data->dfs, 1);
 
 	/* RX transfer */
@@ -326,14 +302,12 @@ static int spi_rz_rspi_transceive_data(struct spi_rz_rspi_data *data)
 
 		/* Read data from Data Register */
 		if (data->dfs > 2) {
-			UNALIGNED_PUT(p_spi_reg->SPDR, (uint32_t *)data->ctx.rx_buf);
+			UNALIGNED_PUT(p_spi_reg->SPDR_b.SPD, (uint32_t *)data->ctx.rx_buf);
 		} else if (data->dfs > 1) {
 			UNALIGNED_PUT(p_spi_reg->SPDR_hword.L, (uint16_t *)data->ctx.rx_buf);
 		} else {
 			UNALIGNED_PUT(p_spi_reg->SPDR_byte.LL, (uint8_t *)data->ctx.rx_buf);
 		}
-		/* Clear Receive Buffer Full Flag */
-		p_spi_reg->SPBFCR = R_RSPI0_SPBFCR_RXRST_Msk;
 		spi_context_update_rx(&data->ctx, data->dfs, 1);
 	}
 	return 0;
@@ -341,7 +315,7 @@ static int spi_rz_rspi_transceive_data(struct spi_rz_rspi_data *data)
 #endif /* #if !defined(CONFIG_SPI_RENESAS_RZ_RSPI_INTERRUPT) */
        /* && !defined(CONFIG_SPI_RENESAS_RZ_RSPI_DMAC) */
 
-static int transceive(const struct device *dev, const struct spi_config *config,
+static int transceive(const struct device *dev, const struct spi_config *spi_cfg,
 		      const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs,
 		      bool asynchronous, spi_callback_t cb, void *userdata)
 {
@@ -358,51 +332,73 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 		return -ENOTSUP;
 	}
 #endif
-	spi_context_lock(spi_ctx, asynchronous, cb, userdata, config);
+	spi_context_lock(spi_ctx, asynchronous, cb, userdata, spi_cfg);
 
-#ifndef CONFIG_SPI_RTIO
 	/* Configure module RSPI. */
-	ret = spi_rz_rspi_configure(dev, config);
+	ret = spi_rz_rspi_configure(dev, spi_cfg);
 	if (ret) {
 		spi_context_release(spi_ctx, ret);
 		return -EIO;
 	}
+#ifndef CONFIG_SPI_RTIO
 	/* Setup tx buffer and rx buffer info. */
 	spi_context_buffers_setup(spi_ctx, tx_bufs, rx_bufs, data->dfs);
 	spi_context_cs_control(spi_ctx, true);
 
 #if (defined(CONFIG_SPI_RENESAS_RZ_RSPI_INTERRUPT) || defined(CONFIG_SPI_RENESAS_RZ_RSPI_DMAC))
-	if (data->ctx.tx_buf == NULL) { /* If there is only the rx buffer */
-		ret = R_RSPI_Read(data->fsp_ctrl, data->ctx.rx_buf, 1, data->fsp_ctrl->bit_width);
-	} else if (data->ctx.rx_buf == NULL) { /* If there is only the tx buffer */
-		ret = R_RSPI_Write(data->fsp_ctrl, data->ctx.tx_buf, 1, data->fsp_ctrl->bit_width);
+	const struct spi_rz_rspi_config *config = dev->config;
+
+	if (!spi_context_total_tx_len(&data->ctx) && !spi_context_total_rx_len(&data->ctx)) {
+		goto end_transceive;
+	}
+	if (data->ctx.rx_len == 0) {
+		data->data_len = spi_context_is_slave(&data->ctx)
+					 ? spi_context_total_tx_len(&data->ctx)
+					 : data->ctx.tx_len;
+	} else if (data->ctx.tx_len == 0) {
+		data->data_len = spi_context_is_slave(&data->ctx)
+					 ? spi_context_total_rx_len(&data->ctx)
+					 : data->ctx.rx_len;
 	} else {
-		ret = R_RSPI_WriteRead(data->fsp_ctrl, data->ctx.tx_buf, data->ctx.rx_buf, 1,
-				       data->fsp_ctrl->bit_width);
+		data->data_len = spi_context_is_slave(&data->ctx)
+					 ? MAX(spi_context_total_tx_len(&data->ctx),
+					       spi_context_total_rx_len(&data->ctx))
+					 : MIN(data->ctx.tx_len, data->ctx.rx_len);
+	}
+	if (data->ctx.tx_buf == NULL) { /* If there is only the rx buffer */
+		ret = config->fsp_api->read(data->fsp_ctrl, data->ctx.rx_buf, data->data_len,
+					    data->fsp_ctrl->bit_width);
+	} else if (data->ctx.rx_buf == NULL) { /* If there is only the tx buffer */
+		ret = config->fsp_api->write(data->fsp_ctrl, data->ctx.tx_buf, data->data_len,
+					     data->fsp_ctrl->bit_width);
+	} else {
+		ret = config->fsp_api->writeRead(data->fsp_ctrl, data->ctx.tx_buf, data->ctx.rx_buf,
+						 data->data_len, data->fsp_ctrl->bit_width);
 	}
 	if (ret) {
 		LOG_ERR("Async transmit fail: %d", ret);
 		return -EIO;
 	}
 	ret = spi_context_wait_for_completion(spi_ctx);
+end_transceive:
 #else
-	spi_bit_width_t spi_width =
-		(spi_bit_width_t)(SPI_WORD_SIZE_GET(data->ctx.config->operation) - 1);
-
 	/* Enable the SPI transfer */
-	data->fsp_ctrl->p_regs->SPCR_b.SPE = 1;
-	data->fsp_ctrl->p_regs->SPBFCR = (3 << R_RSPI0_SPBFCR_TXTRG_Pos);
-	data->fsp_ctrl->p_regs->SPBFCR |= R_RSPI0_SPBFCR_TXRST_Msk | R_RSPI0_SPBFCR_RXRST_Msk;
-	if (spi_width > SPI_BIT_WIDTH_16_BITS) {
-		data->fsp_ctrl->p_regs->SPDCR |= (3 << R_RSPI0_SPDCR_SPLW_Pos);
-		data->fsp_ctrl->p_regs->SPCMD0 |= (3 << R_RSPI0_SPCMD0_SPB_Pos);
-	} else if (spi_width > SPI_BIT_WIDTH_8_BITS) {
-		data->fsp_ctrl->p_regs->SPDCR |= (2 << R_RSPI0_SPDCR_SPLW_Pos);
-		data->fsp_ctrl->p_regs->SPCMD0 |= (15 << R_RSPI0_SPCMD0_SPB_Pos);
+	data->fsp_ctrl->p_regs->SPBFCR_b.TXTRG = 0x3; /* Trigger when TX FIFO is empty */
+	data->fsp_ctrl->p_regs->SPBFCR_b.RXRST = 0x1; /* Reset the receive buffer to empty state */
+	data->fsp_ctrl->p_regs->SPCMD0 &= ~R_RSPI0_SPCMD0_SPB_Msk; /* Reset data length setting */
+	if (data->fsp_ctrl->bit_width > SPI_BIT_WIDTH_16_BITS) {
+		data->fsp_ctrl->p_regs->SPDCR_b.SPLW = 0x3; /* Set access width 32 bit */
+		data->fsp_ctrl->p_regs->SPCMD0_b.SPB = 0x3; /* Set data length 32 bit */
+	} else if (data->fsp_ctrl->bit_width > SPI_BIT_WIDTH_8_BITS) {
+		data->fsp_ctrl->p_regs->SPDCR_b.SPLW = 0x2; /* Set access width 16 bit */
+		data->fsp_ctrl->p_regs->SPCMD0_b.SPB = 0xF; /* Set data length 16 bit */
 	} else {
-		data->fsp_ctrl->p_regs->SPDCR |= (1 << R_RSPI0_SPDCR_SPLW_Pos);
-		data->fsp_ctrl->p_regs->SPCMD0 |= (7 << R_RSPI0_SPCMD0_SPB_Pos);
+		data->fsp_ctrl->p_regs->SPDCR_b.SPLW = 0x1; /* Set access width 8 bit */
+		data->fsp_ctrl->p_regs->SPCMD0_b.SPB = 0x7; /* Set data length 8 bit */
 	}
+	data->fsp_ctrl->p_regs->SPBFCR &= ~(R_RSPI0_SPBFCR_RXRST_Msk | R_RSPI0_SPBFCR_TXRST_Msk);
+	/* Enable the SPI Transfer */
+	data->fsp_ctrl->p_regs->SPCR_b.SPE = 0x1;
 
 	do {
 		spi_rz_rspi_transceive_data(data);
@@ -412,8 +408,8 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 	while (!data->fsp_ctrl->p_regs->SPSR_b.TEND) {
 	}
 
-	/* Disable the SPI Transfer. */
-	data->fsp_ctrl->p_regs->SPCR_b.SPE = 0;
+	/* Disable the SPI Transfer */
+	data->fsp_ctrl->p_regs->SPCR_b.SPE = 0x0;
 #endif  /* #if (defined(CONFIG_SPI_RENESAS_RZ_RSPI_INTERRUPT) */
 	/* || defined(CONFIG_SPI_RENESAS_RZ_RSPI_DMAC)) */
 
@@ -428,7 +424,7 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 #else
 	struct spi_rtio *rtio_ctx = data->rtio_ctx;
 
-	ret = spi_rtio_transceive(rtio_ctx, config, tx_bufs, rx_bufs);
+	ret = spi_rtio_transceive(rtio_ctx, spi_cfg, tx_bufs, rx_bufs);
 #endif /* CONFIG_SPI_RTIO */
 
 	spi_context_release(spi_ctx, ret);
@@ -436,14 +432,14 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 	return ret;
 }
 
-static int spi_rz_rspi_transceive_sync(const struct device *dev, const struct spi_config *config,
+static int spi_rz_rspi_transceive_sync(const struct device *dev, const struct spi_config *spi_cfg,
 				       const struct spi_buf_set *tx_bufs,
 				       const struct spi_buf_set *rx_bufs)
 {
-	return transceive(dev, config, tx_bufs, rx_bufs, false, NULL, NULL);
+	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL, NULL);
 }
 
-static int spi_rz_rspi_release(const struct device *dev, const struct spi_config *config)
+static int spi_rz_rspi_release(const struct device *dev, const struct spi_config *spi_cfg)
 {
 	struct spi_rz_rspi_data *data = dev->data;
 
@@ -453,12 +449,12 @@ static int spi_rz_rspi_release(const struct device *dev, const struct spi_config
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int spi_rz_rspi_transceive_async(const struct device *dev, const struct spi_config *config,
+static int spi_rz_rspi_transceive_async(const struct device *dev, const struct spi_config *spi_cfg,
 					const struct spi_buf_set *tx_bufs,
 					const struct spi_buf_set *rx_bufs, spi_callback_t cb,
 					void *userdata)
 {
-	return transceive(dev, config, tx_bufs, rx_bufs, true, cb, userdata);
+	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, true, cb, userdata);
 }
 #endif /* CONFIG_SPI_ASYNC */
 
@@ -469,10 +465,10 @@ static inline void spi_rz_rspi_iodev_prepare_start(const struct device *dev)
 	struct spi_rz_rspi_data *data = dev->data;
 	struct spi_rtio *rtio_ctx = data->rtio_ctx;
 	struct spi_dt_spec *spi_dt_spec = rtio_ctx->txn_curr->sqe.iodev->data;
-	struct spi_config *config = &spi_dt_spec->config;
+	struct spi_config *spi_config = &spi_dt_spec->config;
 	int err;
 
-	err = spi_rz_rspi_configure(dev, config);
+	err = spi_rz_rspi_configure(dev, spi_config);
 	if (err != 0) {
 		LOG_ERR("RTIO config spi error: %d", err);
 	}
@@ -482,28 +478,31 @@ static inline void spi_rz_rspi_iodev_prepare_start(const struct device *dev)
 static void spi_rz_rspi_iodev_start(const struct device *dev)
 {
 	struct spi_rz_rspi_data *data = dev->data;
+	const struct spi_rz_rspi_config *config = dev->config;
 	struct spi_rtio *rtio_ctx = data->rtio_ctx;
 	struct rtio_sqe *sqe = &rtio_ctx->txn_curr->sqe;
 	int ret = 0;
 
 	switch (sqe->op) {
 	case RTIO_OP_RX:
-		data->rtio_buf_remain = sqe->rx.buf_len;
-		ret = R_RSPI_Read(data->fsp_ctrl, sqe->rx.buf, 1, data->fsp_ctrl->bit_width);
+		data->data_len = sqe->rx.buf_len / data->dfs;
+		ret = config->fsp_api->read(data->fsp_ctrl, sqe->rx.buf, data->data_len,
+					    data->fsp_ctrl->bit_width);
 		break;
 	case RTIO_OP_TX:
-		data->rtio_buf_remain = sqe->tx.buf_len;
-		ret = R_RSPI_Write(data->fsp_ctrl, sqe->tx.buf, 1, data->fsp_ctrl->bit_width);
+		data->data_len = sqe->tx.buf_len / data->dfs;
+		ret = config->fsp_api->write(data->fsp_ctrl, sqe->tx.buf, data->data_len,
+					     data->fsp_ctrl->bit_width);
 		break;
 	case RTIO_OP_TINY_TX:
-		data->rtio_buf_remain = sqe->tiny_tx.buf_len;
-		data->rtio_tiny_buf_idx = 0;
-		ret = R_RSPI_Write(data->fsp_ctrl, sqe->tiny_tx.buf, 1, data->fsp_ctrl->bit_width);
+		data->data_len = sqe->tiny_tx.buf_len / data->dfs;
+		ret = config->fsp_api->write(data->fsp_ctrl, sqe->tiny_tx.buf, data->data_len,
+					     data->fsp_ctrl->bit_width);
 		break;
 	case RTIO_OP_TXRX:
-		data->rtio_buf_remain = sqe->txrx.buf_len;
-		ret = R_RSPI_WriteRead(data->fsp_ctrl, sqe->txrx.tx_buf, sqe->txrx.rx_buf, 1,
-				       data->fsp_ctrl->bit_width);
+		data->data_len = sqe->txrx.buf_len / data->dfs;
+		ret = config->fsp_api->writeRead(data->fsp_ctrl, sqe->txrx.tx_buf, sqe->txrx.rx_buf,
+						 data->data_len, data->fsp_ctrl->bit_width);
 		break;
 	default:
 		spi_rz_rspi_iodev_complete(dev, -EINVAL);

@@ -13,6 +13,7 @@
 	pinctrl-0 = <&sdhc0_default>;
 	pinctrl-names = "default";
 	status = "okay";
+
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
 		disk-name = "SD";

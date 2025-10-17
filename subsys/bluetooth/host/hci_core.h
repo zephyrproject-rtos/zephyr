@@ -140,10 +140,6 @@ enum {
 	 * the identity address instead.
 	 */
 	BT_ADV_USE_IDENTITY,
-	/* Advertiser has been configured to keep advertising after a connection
-	 * has been established as long as there are connections available.
-	 */
-	BT_ADV_PERSIST,
 	/* Advertiser has been temporarily disabled. */
 	BT_ADV_PAUSED,
 	/* Periodic Advertising has been enabled in the controller. */

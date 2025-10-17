@@ -128,7 +128,18 @@
  * The board uses STM32F412CG in UFQFPN48 package in which gpio[d-g] is not
  * exposed, so disable it.
  */
-&gpiod {status = "disabled";};
-&gpioe {status = "disabled";};
-&gpiof {status = "disabled";};
-&gpiog {status = "disabled";};
+&gpiod {
+	status = "disabled";
+};
+
+&gpioe {
+	status = "disabled";
+};
+
+&gpiof {
+	status = "disabled";
+};
+
+&gpiog {
+	status = "disabled";
+};

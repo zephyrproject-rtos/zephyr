@@ -13,29 +13,30 @@
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
 		gpio-map = <ARDUINO_HEADER_R3_A0 0 &gpioa 7 0>,
-				<ARDUINO_HEADER_R3_A1 0 &gpioc 4 0>,
-				<ARDUINO_HEADER_R3_A2 0 &gpioc 3 0>,
-				<ARDUINO_HEADER_R3_A3 0 &gpiob 0 0>,
-				<ARDUINO_HEADER_R3_A4 0 &gpioa 0 0>,
-				<ARDUINO_HEADER_R3_A5 0 &gpioa 5 0>,
-				<ARDUINO_HEADER_R3_D0 0 &gpioc 0 0>,
-				<ARDUINO_HEADER_R3_D1 0 &gpioc 1 0>,
-				<ARDUINO_HEADER_R3_D2 0 &gpiog 11 0>,
-				<ARDUINO_HEADER_R3_D3 0 &gpiof 10 0>,
-				<ARDUINO_HEADER_R3_D4 0 &gpiog 6 0>,
-				<ARDUINO_HEADER_R3_D5 0 &gpioa 1 0>,
-				<ARDUINO_HEADER_R3_D6 0 &gpiob 4 0>,
-				<ARDUINO_HEADER_R3_D7 0 &gpioa 4 0>,
-				<ARDUINO_HEADER_R3_D8 0 &gpioh 15 0>,
-				<ARDUINO_HEADER_R3_D9 0 &gpioh 13 0>,
-				<ARDUINO_HEADER_R3_D10 0 &gpioi 0 0>,
-				<ARDUINO_HEADER_R3_D11 0 &gpiob 15 0>,
-				<ARDUINO_HEADER_R3_D12 0 &gpiob 14 0>,
-				<ARDUINO_HEADER_R3_D13 0 &gpiob 13 0>,
-				<ARDUINO_HEADER_R3_D14 0 &gpiog 8 0>,
-				<ARDUINO_HEADER_R3_D15 0 &gpiog 7 0>;
+			   <ARDUINO_HEADER_R3_A1 0 &gpioc 4 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &gpioc 3 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &gpiob 0 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &gpioa 0 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &gpioa 5 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &gpioc 0 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &gpioc 1 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &gpiog 11 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &gpiof 10 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &gpiog 6 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &gpioa 1 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &gpiob 4 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &gpioa 4 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &gpioh 15 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &gpioh 13 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &gpioi 0 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &gpiob 15 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &gpiob 14 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &gpiob 13 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &gpiog 8 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &gpiog 7 0>;
 	};
 };
 
 arduino_i2c: &i2c3 {};
+
 arduino_spi: &spi2 {};

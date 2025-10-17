@@ -13,7 +13,7 @@ The key features of the EK-RA8D1 board are categorized in three groups as follow
 **MCU Native Pin Access**
 
 - 480MHz Arm Cortex-M85 based RA8D1 MCU in 224 pins, BGA package
-- Native pin acces througgh 2 x 50-pin, and 2 x 40-pin male headers
+- Native pin access through 2 x 50-pin, and 2 x 40-pin male headers
 - MCU current measurement points for precision current consumption measurement
 - Multiple clock sources - RA8D1 MCU oscillator and sub-clock oscillator crystals,
   providing precision 20.000MHz and 32,768 Hz refeence clocks.
@@ -116,6 +116,14 @@ Supported Features
      | SW1-1 PMOD1 | SW1-2 TRACE | SW1-3 CAMERA | SW1-4 ETHA | SW1-5 ETHB | SW1-6 GLCD | SW1-7 SDRAM | SW1-8 I3C |
      +-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
      |     OFF     |      OFF    |      OFF     |     OFF    |     OFF    |      OFF   |      OFF    |     ON    |
+     +-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
+
+   - For using the Camera Expansion Port (J59) with the Camera, please set switch SW1 as following configuration:
+
+     +-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
+     | SW1-1 PMOD1 | SW1-2 TRACE | SW1-3 CAMERA | SW1-4 ETHA | SW1-5 ETHB | SW1-6 GLCD | SW1-7 SDRAM | SW1-8 I3C |
+     +-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
+     |     OFF     |     OFF     |      ON     |     OFF    |     OFF    |     OFF     |     ON      |    OFF    |
      +-------------+-------------+--------------+------------+------------+------------+-------------+-----------+
 
 .. warning::

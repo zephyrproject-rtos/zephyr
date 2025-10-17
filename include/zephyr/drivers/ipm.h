@@ -1,21 +1,21 @@
-/**
- * @file
- *
- * @brief Generic low-level inter-processor mailbox communication API.
- */
-
 /*
  * Copyright (c) 2015 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup ipm_interface
+ * @brief Main header file for IPM (Inter-Processor Mailbox) driver API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_IPM_H_
 #define ZEPHYR_INCLUDE_DRIVERS_IPM_H_
 
 /**
- * @brief IPM Interface
- * @defgroup ipm_interface IPM Interface
+ * @brief Interfaces for Inter-Processor Mailbox (IPM) controllers.
+ * @defgroup ipm_interface IPM
  * @since 1.0
  * @version 1.0.0
  * @ingroup io_interfaces

@@ -13,6 +13,7 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/irq.h>
+#include <zephyr/cache.h>
 
 #include <clic.h>
 #include <bflb_soc.h>
@@ -43,13 +44,9 @@ static void system_bor_init(void)
 
 void soc_early_init_hook(void)
 {
-	uint32_t key;
 	uint32_t *p;
 	uint32_t i = 0;
 	uint32_t tmp;
-
-	key = irq_lock();
-
 
 	/* disable hardware_pullup_pull_down (reg_en_hw_pu_pd = 0) */
 	tmp = sys_read32(HBN_BASE + HBN_IRQ_MODE_OFFSET);
@@ -83,5 +80,5 @@ void soc_early_init_hook(void)
 	/* init bor for all platform */
 	system_bor_init();
 
-	irq_unlock(key);
+	sys_cache_data_flush_and_invd_all();
 }

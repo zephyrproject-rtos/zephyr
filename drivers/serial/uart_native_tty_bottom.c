@@ -267,7 +267,7 @@ int native_tty_poll_bottom(int fd)
 
 int native_tty_open_tty_bottom(const char *pathname)
 {
-	int fd = open(pathname, O_RDWR | O_NOCTTY);
+	int fd = open(pathname, O_RDWR | O_NOCTTY | O_CLOEXEC);
 
 	if (fd < 0) {
 		ERROR("Failed to open serial port %s, errno: %i\n", pathname, errno);

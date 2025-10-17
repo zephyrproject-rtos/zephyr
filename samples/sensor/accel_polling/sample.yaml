@@ -27,6 +27,7 @@ tests:
       - b_l4s5i_iot01a                  # lsm6dsl
       - sensortile_box                  # lis2dw12, lsm6dso, iisdhhc
       - thingy53/nrf5340/cpuapp         # adxl362, bmi270
+      - frdm_mcxw23                     # fxls8974
   sample.sensor.accel_polling.adxl345-stream:
     extra_args:
       - SHIELD=pmod_acl

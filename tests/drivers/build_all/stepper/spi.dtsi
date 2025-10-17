@@ -4,7 +4,8 @@
  */
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
- ***************************************/
+ **************************************
+ */
 
 adi_tmc50xx: adi_tmc50xx@0 {
 	compatible = "adi,tmc50xx";
@@ -16,7 +17,9 @@ adi_tmc50xx: adi_tmc50xx@0 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 
-	poscmp-enable; test-mode; lock-gconf; /* ADI TMC Global configuration flags */
+	poscmp-enable;
+	test-mode;
+	lock-gconf; /* ADI TMC Global configuration flags */
 	clock-frequency = <16000000>; /* Internal/External Clock frequency */
 
 	tmc50xx_0: tmc50xx_0@0 {
@@ -29,9 +32,9 @@ adi_tmc50xx: adi_tmc50xx@0 {
 
 		/* ADI TMC stallguard settings specific to TMC50XX */
 		activate-stallguard2;
-		stallguard-velocity-check-interval-ms=<100>;
-		stallguard2-threshold=<9>;
-		stallguard-threshold-velocity=<500000>;
+		stallguard-velocity-check-interval-ms = <100>;
+		stallguard2-threshold = <9>;
+		stallguard-threshold-velocity = <500000>;
 
 		/* ADI TMC ramp generator as well as current settings */
 		vstart = <10>;
@@ -59,9 +62,9 @@ adi_tmc50xx: adi_tmc50xx@0 {
 
 		/* ADI TMC stallguard settings specific to TMC50XX */
 		activate-stallguard2;
-		stallguard-velocity-check-interval-ms=<100>;
-		stallguard2-threshold=<9>;
-		stallguard-threshold-velocity=<500000>;
+		stallguard-velocity-check-interval-ms = <100>;
+		stallguard2-threshold = <9>;
+		stallguard-threshold-velocity = <500000>;
 
 		/* ADI TMC ramp generator as well as current settings */
 		vstart = <10>;
@@ -90,7 +93,8 @@ adi_tmc51xx_1: adi_tmc51xx@1 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 
-	en-pwm-mode; test-mode; /* ADI TMC Global configuration flags */
+	en-pwm-mode;
+	test-mode; /* ADI TMC Global configuration flags */
 	clock-frequency = <16000000>; /* Internal/External Clock frequency */
 
 	/* common stepper controller settings */
@@ -132,7 +136,8 @@ adi_tmc51xx_2: adi_tmc51xx@2 {
 	#size-cells = <0>;
 	diag0-gpios = <&test_gpio 0x01 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>; /* DIAG pin @0x01 */
 
-	en-pwm-mode; test-mode; /* ADI TMC Global configuration flags */
+	en-pwm-mode;
+	test-mode; /* ADI TMC Global configuration flags */
 	clock-frequency = <16000000>; /* Internal/External Clock frequency */
 
 	/* common stepper controller settings */

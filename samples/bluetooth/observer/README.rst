@@ -16,6 +16,23 @@ If the used Bluetooth Low Energy Controller supports Extended Scanning, you may
 enable :kconfig:option:`CONFIG_BT_EXT_ADV` in the project configuration file. Refer to the
 project configuration file for further details.
 
+Building Extended Scanning support for BBC Micro Bit board
+**********************************************************
+
+.. code-block:: console
+
+   west build -b bbc_microbit . -- -DCONF_FILE='prj_extended.conf' -DEXTRA_CONF_FILE='overlay_bbc_microbit-bt_ll_sw_split.conf'
+
+Thread Analysis for BBC Micro Bit board
+***************************************
+
+Due to resource constraints on the BBC Micro Bit board, thread analysis can be enabled to profile
+the RAM usage and thread stack sizes be updated to successfully build and run the sample.
+
+.. code-block:: console
+
+   west build -b bbc_microbit . -- -DCONF_FILE='prj_extended.conf' -DEXTRA_CONF_FILE='debug.conf;overlay_bbc_microbit-bt_ll_sw_split.conf'
+
 Requirements
 ************
 

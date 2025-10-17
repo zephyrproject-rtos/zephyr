@@ -166,7 +166,7 @@ static const struct i2c_emul_api ina237_emul_api_i2c = {
 			{INA237_REG_BUVL, 2, 0},					\
 			{INA237_REG_TEMP_LIMIT, 2, 0x7FFF},				\
 			{INA237_REG_PWR_LIMIT, 2, 0xFFFF},				\
-			{INA237_REG_MANUFACTURER_ID, 2, INA237_MANUFACTURER_ID},	\
+			{INA237_REG_MANUFACTURER_ID, 2, INA2XX_MANUFACTURER_ID},	\
 		}};									\
 	EMUL_DT_INST_DEFINE(n, ina237_emul_init, &ina237_emul_data_##n, &ina237_emul_cfg_##n, \
 			    &ina237_emul_api_i2c, NULL)

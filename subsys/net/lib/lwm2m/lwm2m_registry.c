@@ -1466,6 +1466,7 @@ lwm2m_cache_entry_allocate(const struct lwm2m_obj_path *path)
 	for (i = 0; i < ARRAY_SIZE(lwm2m_cache_entries); i++) {
 		if (lwm2m_cache_entries[i].path.level == 0) {
 			lwm2m_cache_entries[i].path = *path;
+			lwm2m_cache_entries[i].filter_cb = NULL;
 			sys_slist_append(&lwm2m_timed_cache_list, &lwm2m_cache_entries[i].node);
 			return &lwm2m_cache_entries[i];
 		}
@@ -1540,6 +1541,14 @@ static void lwm2m_engine_cache_write(const struct lwm2m_engine_obj_field *obj_fi
 	default:
 		elements.f = *(double *)value;
 		break;
+	}
+
+	if (cache_entry->filter_cb &&
+	    !cache_entry->filter_cb(&cache_entry->path, &elements)) {
+		LOG_DBG("Cache filter dropped sample for %u/%u/%u",
+			cache_entry->path.obj_id, cache_entry->path.obj_inst_id,
+			cache_entry->path.res_id);
+		return;
 	}
 
 	if (!lwm2m_cache_write(cache_entry, &elements)) {
@@ -1624,6 +1633,29 @@ int lwm2m_enable_cache(const struct lwm2m_obj_path *path, struct lwm2m_time_seri
 #else
 	LOG_ERR("LwM2M resource cache is only supported for "
 		"CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT");
+	return -ENOTSUP;
+#endif /* CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT */
+}
+
+int lwm2m_set_cache_filter(const struct lwm2m_obj_path *path,
+			   lwm2m_cache_filter_cb_t filter_cb)
+{
+#if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
+	struct lwm2m_time_series_resource *cache_entry;
+
+	if (path == NULL) {
+		return -EINVAL;
+	}
+
+	cache_entry = lwm2m_cache_entry_get_by_object(path);
+	if (cache_entry == NULL) {
+		return -ENOENT;
+	}
+
+	cache_entry->filter_cb = filter_cb;
+
+	return 0;
+#else
 	return -ENOTSUP;
 #endif /* CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT */
 }

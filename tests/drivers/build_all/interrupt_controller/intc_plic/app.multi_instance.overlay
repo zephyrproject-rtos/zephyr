@@ -4,22 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- /{
+/ {
 	soc {
 		plic1: interrupt-controller@8000000 {
 			riscv,max-priority = <7>;
 			riscv,ndev = <0x35>;
 			reg = <0x08000000 0x04000000>;
-			interrupts-extended = <
-				&hlic0 0x08
-				&hlic1 0x08
-				&hlic2 0x08
-				&hlic3 0x08
-				&hlic4 0x08
-				&hlic5 0x08
-				&hlic6 0x08
-				&hlic7 0x08
-			>;
+			interrupts-extended = <&hlic0 0x08
+					       &hlic1 0x08
+					       &hlic2 0x08
+					       &hlic3 0x08
+					       &hlic4 0x08
+					       &hlic5 0x08
+					       &hlic6 0x08
+					       &hlic7 0x08>;
 			interrupt-controller;
 			compatible = "sifive,plic-1.0.0";
 			#address-cells = <0x00>;

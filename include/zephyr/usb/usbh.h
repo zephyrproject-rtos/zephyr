@@ -36,7 +36,7 @@ extern "C" {
 /**
  * USB host support runtime context
  */
-struct usbh_contex {
+struct usbh_context {
 	/** Name of the USB device */
 	const char *name;
 	/** Access mutex */
@@ -53,7 +53,7 @@ struct usbh_contex {
 
 #define USBH_CONTROLLER_DEFINE(device_name, uhc_dev)			\
 	SYS_BITARRAY_DEFINE_STATIC(ba_##device_name, 128);		\
-	static STRUCT_SECTION_ITERABLE(usbh_contex, device_name) = {	\
+	static STRUCT_SECTION_ITERABLE(usbh_context, device_name) = {	\
 		.name = STRINGIFY(device_name),				\
 		.mutex = Z_MUTEX_INITIALIZER(device_name.mutex),	\
 		.dev = uhc_dev,						\
@@ -80,20 +80,20 @@ struct usbh_class_data {
 	struct usbh_code_triple code;
 
 	/** Initialization of the class implementation */
-	/* int (*init)(struct usbh_contex *const uhs_ctx); */
+	/* int (*init)(struct usbh_context *const uhs_ctx); */
 	/** Request completion event handler */
-	int (*request)(struct usbh_contex *const uhs_ctx,
+	int (*request)(struct usbh_context *const uhs_ctx,
 			struct uhc_transfer *const xfer, int err);
 	/** Device connected handler  */
-	int (*connected)(struct usbh_contex *const uhs_ctx);
+	int (*connected)(struct usbh_context *const uhs_ctx);
 	/** Device removed handler  */
-	int (*removed)(struct usbh_contex *const uhs_ctx);
+	int (*removed)(struct usbh_context *const uhs_ctx);
 	/** Bus remote wakeup handler  */
-	int (*rwup)(struct usbh_contex *const uhs_ctx);
+	int (*rwup)(struct usbh_context *const uhs_ctx);
 	/** Bus suspended handler  */
-	int (*suspended)(struct usbh_contex *const uhs_ctx);
+	int (*suspended)(struct usbh_context *const uhs_ctx);
 	/** Bus resumed handler  */
-	int (*resumed)(struct usbh_contex *const uhs_ctx);
+	int (*resumed)(struct usbh_context *const uhs_ctx);
 };
 
 /**
@@ -109,7 +109,7 @@ struct usbh_class_data {
  *
  * @return 0 on success, other values on fail.
  */
-int usbh_init(struct usbh_contex *uhs_ctx);
+int usbh_init(struct usbh_context *uhs_ctx);
 
 /**
  * @brief Enable the USB host support and class instances
@@ -120,7 +120,7 @@ int usbh_init(struct usbh_contex *uhs_ctx);
  *
  * @return 0 on success, other values on fail.
  */
-int usbh_enable(struct usbh_contex *uhs_ctx);
+int usbh_enable(struct usbh_context *uhs_ctx);
 
 /**
  * @brief Disable the USB host support
@@ -131,7 +131,7 @@ int usbh_enable(struct usbh_contex *uhs_ctx);
  *
  * @return 0 on success, other values on fail.
  */
-int usbh_disable(struct usbh_contex *uhs_ctx);
+int usbh_disable(struct usbh_context *uhs_ctx);
 
 /**
  * @brief Shutdown the USB host support
@@ -142,7 +142,7 @@ int usbh_disable(struct usbh_contex *uhs_ctx);
  *
  * @return 0 on success, other values on fail.
  */
-int usbh_shutdown(struct usbh_contex *const uhs_ctx);
+int usbh_shutdown(struct usbh_context *const uhs_ctx);
 
 /**
  * @}

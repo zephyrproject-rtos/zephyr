@@ -1,4 +1,8 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Copyright (c) 2024 Ambiq Micro Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <arm/armv7-m.dtsi>
 #include <mem.h>
@@ -9,14 +13,6 @@
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
-	clocks {
-		uartclk: apb-pclk {
-			compatible = "fixed-clock";
-			clock-frequency = <DT_FREQ_M(24)>;
-			#clock-cells = <0>;
-		};
-	};
-
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -34,6 +30,7 @@
 				swo-ref-frequency = <DT_FREQ_M(48)>;
 			};
 		};
+
 		power-states {
 			idle: idle {
 				compatible = "zephyr,power-state";
@@ -110,6 +107,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -127,6 +125,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -144,6 +143,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -161,6 +161,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -178,6 +179,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -195,6 +197,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -212,6 +215,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -229,6 +233,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -246,6 +251,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -263,6 +269,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -280,6 +287,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -297,6 +305,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -314,6 +323,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -331,6 +341,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -348,6 +359,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -365,6 +377,7 @@
 				compatible = "ambiq,counter";
 				status = "disabled";
 			};
+
 			pwm {
 				compatible = "ambiq,timer-pwm";
 				status = "disabled";
@@ -373,39 +386,35 @@
 		};
 
 		uart0: uart@4001c000 {
-			compatible = "ambiq,pl011-uart", "arm,pl011";
+			compatible = "ambiq,uart";
 			reg = <0x4001c000 0x1000>;
 			interrupts = <15 0>;
-			interrupt-names = "UART0";
+			clk-src = <0>;
 			status = "disabled";
-			clocks = <&uartclk>;
 		};
 
 		uart1: uart@4001d000 {
-			compatible = "ambiq,pl011-uart", "arm,pl011";
+			compatible = "ambiq,uart";
 			reg = <0x4001d000 0x1000>;
 			interrupts = <16 0>;
-			interrupt-names = "UART1";
+			clk-src = <0>;
 			status = "disabled";
-			clocks = <&uartclk>;
 		};
 
 		uart2: uart@4001e000 {
-			compatible = "ambiq,pl011-uart", "arm,pl011";
+			compatible = "ambiq,uart";
 			reg = <0x4001e000 0x1000>;
 			interrupts = <17 0>;
-			interrupt-names = "UART2";
+			clk-src = <0>;
 			status = "disabled";
-			clocks = <&uartclk>;
 		};
 
 		uart3: uart@4001f000 {
-			compatible = "ambiq,pl011-uart", "arm,pl011";
+			compatible = "ambiq,uart";
 			reg = <0x4001f000 0x1000>;
 			interrupts = <18 0>;
-			interrupt-names = "UART3";
+			clk-src = <0>;
 			status = "disabled";
-			clocks = <&uartclk>;
 		};
 
 		iom0: iom@40050000 {
@@ -420,6 +429,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -441,6 +451,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -462,6 +473,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -483,6 +495,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -504,6 +517,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -525,6 +539,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -546,6 +561,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -567,6 +583,7 @@
 				status = "disabled";
 				zephyr,pm-device-runtime-auto;
 			};
+
 			i2c {
 				compatible = "ambiq,i2c";
 				#address-cells = <1>;
@@ -652,12 +669,10 @@
 				compatible = "ambiq,gpio";
 				gpio-map-mask = <0xffffffe0 0xffffffc0>;
 				gpio-map-pass-thru = <0x1f 0x3f>;
-				gpio-map = <
-					0x00 0x0 &gpio0_31 0x0 0x0
-					0x20 0x0 &gpio32_63 0x0 0x0
-					0x40 0x0 &gpio64_95 0x0 0x0
-					0x60 0x0 &gpio96_127 0x0 0x0
-				>;
+				gpio-map = <0x00 0x0 &gpio0_31 0x0 0x0
+					    0x20 0x0 &gpio32_63 0x0 0x0
+					    0x40 0x0 &gpio64_95 0x0 0x0
+					    0x60 0x0 &gpio96_127 0x0 0x0>;
 				reg = <0x40010000>;
 				#gpio-cells = <2>;
 				#address-cells = <1>;

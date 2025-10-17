@@ -34,6 +34,7 @@
 
 #include "lll_internal.h"
 #include "lll_tim_internal.h"
+#include "lll_prof_internal.h"
 
 #include "ll_feat.h"
 
@@ -496,6 +497,10 @@ static void isr_rx(void *param)
 	uint8_t crc_ok;
 	uint8_t cie;
 
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_latency_capture();
+	}
+
 	/* Read radio status and events */
 	trx_done = radio_is_done();
 	if (trx_done) {
@@ -555,8 +560,15 @@ static void isr_rx(void *param)
 		radio_tmr_ready_save(radio_tmr_ready_get() - se_offset_us);
 	}
 
-	/* Close subevent, one tx-rx chain */
-	radio_switch_complete_and_disable();
+	/* Close subevent, one rx-tx chain */
+	if (IS_ENABLED(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)) {
+		/* Required under single time tIFS switching, to accumulate the packet
+		 * timer value at the time of clear on radio end.
+		 */
+		radio_switch_complete_end_capture_and_disable();
+	} else {
+		radio_switch_complete_and_disable();
+	}
 
 	/* FIXME: Do not call this for every event/subevent */
 	ull_conn_iso_lll_cis_established(param);
@@ -767,6 +779,13 @@ static void isr_rx(void *param)
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 	uint32_t pa_lna_enable_us;
 
+	/* PA enable is overwriting packet end used in ISR profiling, hence
+	 * back it up for later use.
+	 */
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_radio_end_backup();
+	}
+
 	radio_gpio_pa_setup();
 
 	pa_lna_enable_us = radio_tmr_tifs_base_get() + cis_lll->tifs_us -
@@ -781,7 +800,16 @@ static void isr_rx(void *param)
 #endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 
 	/* assert if radio packet ptr is not set and radio started tx */
-	LL_ASSERT(!radio_is_ready());
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u", __func__,
+			      lll_prof_latency_get());
+	} else {
+		LL_ASSERT(!radio_is_ready());
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_cputime_capture();
+	}
 
 	/* Schedule next subevent */
 	if (!cie && (se_curr < cis_lll->nse)) {
@@ -858,6 +886,10 @@ static void isr_rx(void *param)
 	start_us = radio_tmr_start_us(0U, subevent_us);
 	LL_ASSERT(start_us == (subevent_us + 1U));
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_send();
+	}
 }
 
 static void isr_tx(void *param)
@@ -868,6 +900,15 @@ static void isr_tx(void *param)
 	uint32_t subevent_us;
 	uint32_t start_us;
 	uint32_t hcto;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_latency_capture();
+	}
+
+	/* Call to ensure packet/event timer accumulates the elapsed time
+	 * under single timer use.
+	 */
+	(void)radio_is_tx_done();
 
 	lll_isr_tx_sub_status_reset();
 
@@ -981,6 +1022,10 @@ static void isr_tx(void *param)
 #endif /* !CONFIG_BT_CTLR_PHY */
 
 	radio_tmr_hcto_configure_abs(hcto);
+
+#if defined(CONFIG_BT_CTLR_PROFILE_ISR) || defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
+	radio_tmr_end_capture();
+#endif /* CONFIG_BT_CTLR_PROFILE_ISR || HAL_RADIO_GPIO_HAVE_PA_PIN */
 
 #if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	radio_gpio_lna_setup();

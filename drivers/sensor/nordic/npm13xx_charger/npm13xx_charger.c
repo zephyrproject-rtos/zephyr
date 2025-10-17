@@ -76,6 +76,8 @@ struct npm13xx_charger_data {
 #define ADC_OFFSET_RESULTS   0x10U
 #define ADC_OFFSET_IBAT_EN   0x24U
 
+#define ADC_CONV_TIME_US 250U
+
 /* nPM13xx VBUS register offsets */
 #define VBUS_OFFSET_ILIMUPDATE  0x00U
 #define VBUS_OFFSET_ILIM        0x01U
@@ -302,6 +304,17 @@ int npm13xx_charger_sample_fetch(const struct device *dev, enum sensor_channel c
 	struct npm13xx_charger_data *data = dev->data;
 	struct adc_results_t results;
 	int ret;
+	k_timepoint_t conv_done;
+
+	/* Trigger current+voltage, NTC and die temp measurements (four in total) */
+	ret = mfd_npm13xx_reg_write_burst(config->mfd, ADC_BASE, ADC_OFFSET_TASK_VBAT,
+					  (uint8_t []){1U, 1U, 1U}, 3U);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* Set timepoint for conversion and read status registers in the meantime */
+	conv_done = sys_timepoint_calc(K_USEC(ADC_CONV_TIME_US * 4));
 
 	/* Read charge status and error reason */
 	ret = mfd_npm13xx_reg_read(config->mfd, CHGR_BASE, CHGR_OFFSET_CHG_STAT, &data->status);
@@ -313,6 +326,14 @@ int npm13xx_charger_sample_fetch(const struct device *dev, enum sensor_channel c
 	if (ret != 0) {
 		return ret;
 	}
+
+	/* Read vbus status */
+	ret = mfd_npm13xx_reg_read(config->mfd, VBUS_BASE, VBUS_OFFSET_STATUS, &data->vbus_stat);
+	if (ret != 0) {
+		return ret;
+	}
+
+	k_sleep(sys_timepoint_timeout(conv_done));
 
 	/* Read adc results */
 	ret = mfd_npm13xx_reg_read_burst(config->mfd, ADC_BASE, ADC_OFFSET_RESULTS, &results,
@@ -327,21 +348,6 @@ int npm13xx_charger_sample_fetch(const struct device *dev, enum sensor_channel c
 	data->current = adc_get_res(results.msb_ibat, results.lsb_b, ADC_LSB_IBAT_SHIFT);
 	data->ibat_stat = results.ibat_stat;
 
-	/* Trigger ntc and die temperature measurements */
-	ret = mfd_npm13xx_reg_write2(config->mfd, ADC_BASE, ADC_OFFSET_TASK_TEMP, 1U, 1U);
-	if (ret != 0) {
-		return ret;
-	}
-
-	/* Trigger current and voltage measurement */
-	ret = mfd_npm13xx_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_TASK_VBAT, 1U);
-	if (ret != 0) {
-		return ret;
-	}
-
-	/* Read vbus status */
-	ret = mfd_npm13xx_reg_read(config->mfd, VBUS_BASE, VBUS_OFFSET_STATUS, &data->vbus_stat);
-
 	return ret;
 }
 
@@ -354,9 +360,10 @@ static int set_ntc_thresholds(const struct npm13xx_charger_config *const config)
 			/* Ref: Datasheet Figure 14: Equation for battery temperature */
 			uint16_t code = (1024 * res) / (res + config->thermistor_ohms);
 
-			int ret = mfd_npm13xx_reg_write2(
+			int ret = mfd_npm13xx_reg_write_burst(
 				config->mfd, CHGR_BASE, CHGR_OFFSET_NTC_TEMPS + (idx * 2U),
-				code >> NTCTEMP_MSB_SHIFT, code & NTCTEMP_LSB_MASK);
+				(uint8_t []){code >> NTCTEMP_MSB_SHIFT, code & NTCTEMP_LSB_MASK},
+				2U);
 
 			if (ret != 0) {
 				return ret;
@@ -377,9 +384,10 @@ static int set_dietemp_thresholds(const struct npm13xx_charger_config *const con
 				DIETEMP_FACTOR_DIV;
 			uint16_t code = DIV_ROUND_CLOSEST(numerator, DIETEMP_FACTOR_MUL);
 
-			int ret = mfd_npm13xx_reg_write2(
+			int ret = mfd_npm13xx_reg_write_burst(
 				config->mfd, CHGR_BASE, CHGR_OFFSET_DIE_TEMPS + (idx * 2U),
-				code >> DIETEMP_MSB_SHIFT, code & DIETEMP_LSB_MASK);
+				(uint8_t []){code >> DIETEMP_MSB_SHIFT, code & DIETEMP_LSB_MASK},
+				2U);
 
 			if (ret != 0) {
 				return ret;
@@ -582,16 +590,16 @@ int npm13xx_charger_init(const struct device *dev)
 		ret = mfd_npm13xx_reg_write(config->mfd, CHGR_BASE, CHGR_OFFSET_ISET, idx);
 	} else {
 		/* Set charge current MSB and LSB and discharge limit for nPM1300 */
-		ret = mfd_npm13xx_reg_write2(config->mfd, CHGR_BASE, CHGR_OFFSET_ISET, idx / 2U,
-					     idx & 1U);
+		ret = mfd_npm13xx_reg_write_burst(config->mfd, CHGR_BASE, CHGR_OFFSET_ISET,
+						  (uint8_t []){idx / 2U, idx & 1U}, 2U);
 		if (ret != 0) {
 			return ret;
 		}
 
-		ret = mfd_npm13xx_reg_write2(
+		ret = mfd_npm13xx_reg_write_burst(
 			config->mfd, CHGR_BASE, CHGR_OFFSET_ISET_DISCHG,
-			npm1300_discharge_limits[config->dischg_limit_idx] / 2U,
-			npm1300_discharge_limits[config->dischg_limit_idx] & 1U);
+			(uint8_t []){npm1300_discharge_limits[config->dischg_limit_idx] / 2U,
+			npm1300_discharge_limits[config->dischg_limit_idx] & 1U}, 2U);
 	}
 	if (ret != 0) {
 		return ret;
@@ -624,18 +632,6 @@ int npm13xx_charger_init(const struct device *dev)
 
 	/* Enable current measurement */
 	ret = mfd_npm13xx_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_IBAT_EN, 1U);
-	if (ret != 0) {
-		return ret;
-	}
-
-	/* Trigger current and voltage measurement */
-	ret = mfd_npm13xx_reg_write(config->mfd, ADC_BASE, ADC_OFFSET_TASK_VBAT, 1U);
-	if (ret != 0) {
-		return ret;
-	}
-
-	/* Trigger ntc and die temperature measurements */
-	ret = mfd_npm13xx_reg_write2(config->mfd, ADC_BASE, ADC_OFFSET_TASK_TEMP, 1U, 1U);
 	if (ret != 0) {
 		return ret;
 	}

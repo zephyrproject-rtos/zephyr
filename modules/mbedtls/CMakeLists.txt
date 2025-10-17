@@ -253,4 +253,15 @@ else()
   # included the required directories for mbedtls in their projects.
 endif()
 
+if (CONFIG_MBEDTLS_TLS_VERSION_1_2 OR CONFIG_MBEDTLS_TLS_VERSION_1_3)
+  if (NOT CONFIG_MBEDTLS_HAVE_TIME_DATE)
+    message(WARNING "
+    The option CONFIG_MBEDTLS_HAVE_TIME_DATE is required for proper
+    certificate validation. If it is not enabled, certificates will
+    not be checked for expiration or validity dates, which may lead
+    to security vulnerabilities.
+    ")
+  endif()
+endif()
+
 endif()

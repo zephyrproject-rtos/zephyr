@@ -146,8 +146,7 @@ should see the following message in the terminal:
    *** Booting Zephyr OS build xxxxxxxxxxxx ***
    Hello World! frdm_ke17z/mke17z7
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _FRDM-KE17Z Website:
    https://www.nxp.com/design/design-center/development-boards-and-designs/general-purpose-mcus/freedom-development-platform-for-72mhz-ke17z-ke13z-ke12z-mcus:FRDM-KE17Z

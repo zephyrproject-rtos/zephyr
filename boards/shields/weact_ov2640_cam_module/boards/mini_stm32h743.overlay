@@ -6,7 +6,7 @@
 
 /* AHB clocks must respect the minimum ratio AHB / DCMI_PIXCLK of 2.5 (AN5020 - Rev 3).
  * The OV2640 PCLK is around 72 MHz for QQVGA resolution (160x120) with MCO1_SEL_HSI48
- * and MCO1_PRE_DIV_4.
+ * and MCO_PRE_DIV_4.
  */
 &rcc {
 	clocks = <&pll>;
@@ -19,20 +19,10 @@
 	d3ppre = <2>;
 };
 
-/* See reference manual (RM0433 Rev 8) page 390:
- *   100: HSI48 clock selected (hsi48_ck)
- */
-#define MCO1_SEL_HSI48 4
-
- /* See reference manual (RM0433 Rev 8) page 391:
-  *   0100: division by 4
-  */
-#define MCO1_PRE_DIV_4 4
-
 &mco1 {
 	status = "okay";
 	clocks = <&rcc STM32_SRC_HSI48 MCO1_SEL(MCO1_SEL_HSI48)>;
-	prescaler = <MCO1_PRE(MCO1_PRE_DIV_4)>;
+	prescaler = <MCO1_PRE(MCO_PRE_DIV_4)>;
 	pinctrl-0 = <&rcc_mco_1_pa8>;
 	pinctrl-names = "default";
 };

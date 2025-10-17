@@ -1,0 +1,13 @@
+identifier: mck_ra8t2/r7ka8t2lfecac/cm85
+name: Renesas MCK-RA8T2
+type: mcu
+arch: arm
+ram: 1664
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - uart
+vendor: renesas

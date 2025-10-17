@@ -1,0 +1,17 @@
+# Copyright 2024-2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MCX_N9XX_EVK || BOARD_MCX_N5XX_EVK
+
+config NET_L2_ETHERNET
+	default y if NETWORKING
+
+if SD_STACK
+
+# SD stack requires larger main stack size
+config MAIN_STACK_SIZE
+	default 1536
+
+endif
+
+endif

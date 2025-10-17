@@ -25,6 +25,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_0 {
 			gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
 		};
@@ -32,9 +33,10 @@
 
 	buttons {
 		compatible = "gpio-keys";
-		button0: button_0 {
+
+		user_button: button {
 			gpios = <&gpio0 6 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
-			label = "Push button switch K1";
+			label = "User (K1)";
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
@@ -44,22 +46,22 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<0 0 &gpio1 9 0>,	/* AN  */
-				<1 0 &gpio0 12 0>,	/* RST */
-				<2 0 &gpio0 20 0>,	/* CS   */
-				<3 0 &gpio0 21 0>,	/* SCK  */
-				<4 0 &gpio0 24 0>,	/* MISO */
-				<5 0 &gpio0 26 0>,	/* MOSI */
-							/* +3.3V */
-							/* GND */
-				<6 0 &gpio1 1 0>,	/* PWM  */
-				<7 0 &gpio0 27 0>,	/* INT  */
-				<8 0 &gpio0 28 0>,	/* RX   */
-				<9 0 &gpio0 29 0>,	/* TX   */
-				<10 0 &gpio0 30 0>,	/* SCL  */
-				<11 0 &gpio0 31 0>;	/* SDA  */
-							/* +5V */
-							/* GND */
+		gpio-map = <0 0 &gpio1 9 0>,	/* AN  */
+			   <1 0 &gpio0 12 0>,	/* RST */
+			   <2 0 &gpio0 20 0>,	/* CS   */
+			   <3 0 &gpio0 21 0>,	/* SCK  */
+			   <4 0 &gpio0 24 0>,	/* MISO */
+			   <5 0 &gpio0 26 0>,	/* MOSI */
+			   /* +3.3V */
+			   /* GND */
+			   <6 0 &gpio1 1 0>,	/* PWM  */
+			   <7 0 &gpio0 27 0>,	/* INT  */
+			   <8 0 &gpio0 28 0>,	/* RX   */
+			   <9 0 &gpio0 29 0>,	/* TX   */
+			   <10 0 &gpio0 30 0>,	/* SCL  */
+			   <11 0 &gpio0 31 0>;	/* SDA  */
+		/* +5V */
+		/* GND */
 	};
 
 	mikrobus_2_header: mikrobus-connector-2 {
@@ -67,27 +69,29 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<0 0 &gpio0 25 0>,	/* AN  */
-				<1 0 &gpio0 12 0>,	/* RST */
-				<2 0 &gpio1 2 0>,	/* CS   */
-				<3 0 &gpio1 3 0>,	/* SCK  */
-				<4 0 &gpio1 4 0>,	/* MISO */
-				<5 0 &gpio1 5 0>,	/* MOSI */
-							/* +3.3V */
-							/* GND */
-				<6 0 &gpio1 6 0>,	/* PWM  */
-				<7 0 &gpio1 7 0>,	/* INT  */
-				<8 0 &gpio1 8 0>,	/* RX   */
-				<9 0 &gpio0 17 0>,	/* TX   */
-				<10 0 &gpio0 18 0>,	/* SCL  */
-				<11 0 &gpio0 19 0>;	/* SDA  */
-							/* +5V */
-							/* GND */
+		gpio-map = <0 0 &gpio0 25 0>,	/* AN  */
+			   <1 0 &gpio0 12 0>,	/* RST */
+			   <2 0 &gpio1 2 0>,	/* CS   */
+			   <3 0 &gpio1 3 0>,	/* SCK  */
+			   <4 0 &gpio1 4 0>,	/* MISO */
+			   <5 0 &gpio1 5 0>,	/* MOSI */
+			   /* +3.3V */
+			   /* GND */
+			   <6 0 &gpio1 6 0>,	/* PWM  */
+			   <7 0 &gpio1 7 0>,	/* INT  */
+			   <8 0 &gpio1 8 0>,	/* RX   */
+			   <9 0 &gpio0 17 0>,	/* TX   */
+			   <10 0 &gpio0 18 0>,	/* SCL  */
+			   <11 0 &gpio0 19 0>;	/* SDA  */
+		/* +5V */
+		/* GND */
 	};
 
 	aliases {
 		led0 = &red_led;
 		watchdog0 = &wdog;
+		sw0 = &user_button;
+		rtc = &rtc;
 	};
 
 	sysclk: system-clock {
@@ -98,7 +102,7 @@
 };
 
 &flash0 {
-	reg = <0x16000000 DT_SIZE_M(1)>;
+	reg = <0x16000000 DT_SIZE_M(4)>;
 
 	partitions {
 		compatible = "fixed-partitions";
@@ -106,25 +110,33 @@
 		#size-cells = <1>;
 
 		/*
-		 * Flash area from 0x0000 to 0x2400 is reserved
-		 * for product header added by flasher.
+		 * By default, and due to executing from external flash memories, the I-cache
+		 * controller is employed so that no latencies are introduced.
+		 * Normally, the controller imposes that image's base address is aligned
+		 * to CACHE_FLASH_REG[FLASH_REGION_SIZE], which should reflect image's
+		 * size (should be configured on the fly at soc level based on the image size).
+		 * The controller should allow for a small offset, up to 0x1000 words,
+		 * in case image metadata should be appended.
+		 * The current scheme imposes that mcuboot should occupy up to 64kB which is the
+		 * minimum cacheable area and then slot0 and slot1 partition entries should follow
+		 * without gaps in between.
 		 */
 
 		boot_partition: partition@2400 {
 			label = "mcuboot";
-			reg = <0x000002400 0x00009c00>;
+			reg = <0x000002400 0x0000dc00>;
 		};
-		slot0_partition: partition@c000 {
+		slot0_partition: partition@10000 {
 			label = "image-0";
-			reg = <0x0000c000 0x00076000>;
+			reg = <0x00010000 DT_SIZE_K(512)>;
 		};
-		slot1_partition: partition@82000 {
+		slot1_partition: partition@90000 {
 			label = "image-1";
-			reg = <0x00082000 0x00076000>;
+			reg = <0x00090000 DT_SIZE_K(512)>;
 		};
-		storage_partition: partition@f8000 {
+		storage_partition: partition@110000 {
 			label = "storage";
-			reg = <0x000f8000 0x00008000>;
+			reg = <0x00110000 DT_SIZE_K(32)>;
 		};
 	};
 };
@@ -146,14 +158,12 @@
 
 &uart2 {
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart2_default>;
 	pinctrl-names = "default";
 };
 
 &uart3 {
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart3_default>;
 	pinctrl-names = "default";
 };
@@ -175,6 +185,14 @@ zephyr_udc0: &usbd {
 	status = "okay";
 };
 
+/*
+ * On board level we switch to XTAL32K and
+ * so RCX can be disabled.
+ */
+&rcx {
+	status = "disabled";
+};
+
 &lp_clk {
 	clock-src = <&xtal32k>;
 };
@@ -188,28 +206,24 @@ zephyr_udc0: &usbd {
 };
 
 &i2c {
-	status = "okay";
 	pinctrl-0 = <&i2c_default>;
 	pinctrl-1 = <&i2c_sleep>;
 	pinctrl-names = "default", "sleep";
 };
 
 &i2c2 {
-	status = "okay";
 	pinctrl-0 = <&i2c2_default>;
 	pinctrl-1 = <&i2c2_sleep>;
 	pinctrl-names = "default", "sleep";
 };
 
 &spi {
-	status = "okay";
 	pinctrl-0 = <&spi_controller>;
 	pinctrl-1 = <&spi_sleep>;
 	pinctrl-names = "default", "sleep";
 };
 
 &spi2 {
-	status = "okay";
 	pinctrl-0 = <&spi2_controller>;
 	pinctrl-1 = <&spi2_sleep>;
 	pinctrl-names = "default", "sleep";
@@ -218,7 +232,6 @@ zephyr_udc0: &usbd {
 &bt_hci_da1469x {
 	status = "okay";
 };
-
 
 mikrobus_1_i2c: &i2c {};
 

@@ -1099,7 +1099,10 @@ static bool send_request(struct hawkbit_context *hb_context, enum hawkbit_http_r
 	static const char *const headers[] = {AUTH_HEADER_FULL, NULL};
 #endif /* CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME */
 #endif /* CONFIG_HAWKBIT_DDI_NO_SECURITY */
-
+#ifdef CONFIG_HAWKBIT_SAVE_PROGRESS
+	char header_range[RANGE_HEADER_SIZE] = {0};
+	char const *headers_range[] = {header_range, NULL};
+#endif
 	http_req.url = url_buffer;
 	http_req.host = HAWKBIT_SERVER_DOMAIN;
 	http_req.port = HAWKBIT_PORT;
@@ -1172,13 +1175,10 @@ static bool send_request(struct hawkbit_context *hb_context, enum hawkbit_http_r
 #ifdef CONFIG_HAWKBIT_SAVE_PROGRESS
 		hb_context->dl.downloaded_size = flash_img_bytes_written(&hb_context->flash_ctx);
 		if (IN_RANGE(hb_context->dl.downloaded_size, 1, hb_context->dl.file_size)) {
-			char header_range[RANGE_HEADER_SIZE] = {0};
-
 			snprintf(header_range, sizeof(header_range), "Range: bytes=%u-" HTTP_CRLF,
 				 hb_context->dl.downloaded_size);
-			const char *const headers_range[] = {header_range, NULL};
 
-			http_req.optional_headers = (const char **)headers_range;
+			http_req.optional_headers = headers_range;
 			LOG_DBG("optional header: %s", header_range);
 			LOG_INF("Resuming download from %d bytes", hb_context->dl.downloaded_size);
 		}
@@ -1209,6 +1209,11 @@ static bool send_request(struct hawkbit_context *hb_context, enum hawkbit_http_r
 void hawkbit_reboot(void)
 {
 	hawkbit_event_raise(HAWKBIT_EVENT_BEFORE_REBOOT);
+
+	if (IS_ENABLED(CONFIG_HAWKBIT_REBOOT_NONE)) {
+		return;
+	}
+
 	LOG_PANIC();
 	sys_reboot(IS_ENABLED(CONFIG_HAWKBIT_REBOOT_COLD) ? SYS_REBOOT_COLD : SYS_REBOOT_WARM);
 }

@@ -3,4 +3,3 @@
 
 config SOC_FAMILY_MTK
 	select XTENSA
-	select XTENSA_GEN_HANDLERS

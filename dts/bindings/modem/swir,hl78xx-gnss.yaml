@@ -1,0 +1,24 @@
+description: |
+  Binding for a modem child node that indicates the modem supports
+  GNSS functionality. This node is intended to be a child of a modem
+  device node (for example, `modem: hl_modem { ... };`).
+
+  The binding is intentionally small and extensible; it documents a
+  presence node (compatible = "swir,hl78xx-gnss") and may be extended
+  in future with additional properties that the driver may consume.
+
+compatible: "swir,hl78xx-gnss"
+
+include:
+  - uart-device.yaml
+  - gnss-nmea-generic.yaml
+  - gnss-pps.yaml
+
+properties:
+  fix-rate:
+    type: int
+    default: 1000
+    description: |
+      Initial fix-rate GNSS modem will be operating on. May be adjusted at
+      run-time through GNSS APIs. Must be greater than 50-ms.
+      Default is power-on setting.

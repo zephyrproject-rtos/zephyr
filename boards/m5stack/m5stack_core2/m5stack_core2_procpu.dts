@@ -41,6 +41,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led_pwr: led_pwr {
 			gpios = <&axp192_gpio 1 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
 			label = "Power LED";
@@ -212,22 +213,21 @@
 	dma-enabled;
 	clock-frequency = <20000000>;
 	cs-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>,
-			   <&gpio0 4 GPIO_ACTIVE_LOW>;
+		   <&gpio0 4 GPIO_ACTIVE_LOW>;
 
 	sd0: sd@1 {
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <1>;
 		status = "okay";
 		spi-max-frequency = <20000000>;
+
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
 			disk-name = "SD";
 			status = "okay";
 		};
-
 	};
 };
-
 
 &timer0 {
 	status = "okay";

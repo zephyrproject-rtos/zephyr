@@ -120,20 +120,21 @@ struct gpio_intel_data {
 	uint32_t pad_owner_reg;
 	uint32_t host_owner_reg;
 	uint32_t intr_stat_reg;
+	uint32_t intr_en_reg;
 	uint32_t base_num;
 #endif
 };
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(acpi_hid)
+#define GPIO_PAD_OWNERSHIP_SHIFT (0x04) /* Shift between Ownership regs */
+
+#define GPIO_PAD_PINS_PER_REG (8) /*Pins for each Register */
+
 #define GPIO_REG_BASE_GET(dev) DEVICE_MMIO_NAMED_GET(dev, reg_base)
 
 #define REG_GPI_INT_STS_BASE_GET(data) (data)->intr_stat_reg
 
-#define REG_GPI_INT_EN_BASE_GET(data) (data)->intr_stat_reg + 0x20
-
 #define PIN_OFFSET_GET(dev) (0)
-
-#define GPIO_PAD_OWNERSHIP_GET(data, pin, offset) (data)->pad_owner_reg + (((pin) / 8) * 0x4)
 
 #define REG_PAD_HOST_SW_OWNER_GET(data) (data)->host_owner_reg
 
@@ -142,6 +143,19 @@ struct gpio_intel_data {
 #define GPIO_INTERRUPT_BASE_GET(cfg) (0)
 
 #define GPIO_GET_PIN_MAX(dev) ((struct gpio_intel_data *)(dev)->data)->num_pins
+
+#define REG_GPI_INT_EN_BASE_GET(data) (data)->intr_en_reg
+
+#if DT_ANY_INST_HAS_BOOL_STATUS_OKAY(acpi_ginf)
+#define GPIO_PAD_OWNERSHIP_GET(data, pin, offset)\
+	(data)->pad_owner_reg + (pin * GPIO_PAD_OWNERSHIP_SHIFT)
+
+#else
+#define GPIO_PAD_OWNERSHIP_GET(data, pin, offset) (data)->pad_owner_reg +\
+	(((pin) / GPIO_PAD_PINS_PER_REG) * GPIO_PAD_OWNERSHIP_SHIFT)
+
+#endif
+
 #else /* Non-ACPI */
 #define GPIO_REG_BASE_GET(dev) GPIO_REG_BASE(DEVICE_MMIO_NAMED_GET(dev, reg_base))
 
@@ -564,13 +578,14 @@ static DEVICE_API(gpio, gpio_intel_api) = {
 /* We need support either DTS or ACPI base resource enumeration at time.*/
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(acpi_hid)
 
-static int gpio_intel_acpi_enum(const struct device *dev, int bank_idx, char *hid, char *uid)
+static int gpio_intel_acpi_enum(const struct device *dev, int bank_idx, char *hid, char *uid,
+				bool ginf)
 {
 	int ret;
 	struct gpio_acpi_res res;
 	struct gpio_intel_data *data = dev->data;
 
-	ret = soc_acpi_gpio_resource_get(bank_idx, hid, uid, &res);
+	ret = soc_acpi_gpio_resource_get(bank_idx, hid, uid, &res, ginf);
 	if (ret) {
 		return ret;
 	}
@@ -580,7 +595,8 @@ static int gpio_intel_acpi_enum(const struct device *dev, int bank_idx, char *hi
 	data->num_pins = res.num_pins;
 	data->pad_owner_reg = res.pad_owner_reg;
 	data->host_owner_reg = res.host_owner_reg;
-	data->intr_stat_reg = res.intr_stat_reg;
+	data->intr_stat_reg = res.gp_evt_stat_reg - DT_INST_PROP(0, int_stat_offset);
+	data->intr_en_reg = res.gp_evt_stat_reg - DT_INST_PROP(0, int_en_offset);
 	data->base_num = res.base_num;
 	data->pad_base = res.pad_base;
 
@@ -605,8 +621,9 @@ static int gpio_intel_acpi_enum(const struct device *dev, int bank_idx, char *hi
 #define GPIO_INIT_FN_DEFINE(n)                                                                     \
 	static int gpio_intel_init##n(const struct device *dev)                                    \
 	{                                                                                          \
-		return gpio_intel_acpi_enum(dev, DT_INST_PROP(n, group_index),	\
-			ACPI_DT_HID(DT_DRV_INST(n)),  ACPI_DT_UID(DT_DRV_INST(n)));   \
+		return gpio_intel_acpi_enum(dev, DT_INST_PROP(n, group_index),			   \
+			ACPI_DT_HID(DT_DRV_INST(n)),  ACPI_DT_UID(DT_DRV_INST(n)),		   \
+			DT_INST_PROP(n, acpi_ginf_3_param));					   \
 	}
 
 #define GPIO_MMIO_ROM_INIT(n)

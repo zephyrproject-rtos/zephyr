@@ -12,6 +12,7 @@
 		pinmux = <13 IOC_PORT_MCU_UART0_TX>;
 		bias-disable;
 	};
+
 	uart0_rx_default: uart0_rx_default {
 		pinmux = <12 IOC_PORT_MCU_UART0_RX>;
 		bias-disable;
@@ -23,14 +24,17 @@
 		pinmux = <29 IOC_PORT_GPIO>;
 		bias-disable;
 	};
+
 	board_ant_tx_pa_on: board_ant_tx_pa_on {
 		pinmux = <29 IOC_PORT_RFC_GPO3>;
 		bias-disable;
 	};
+
 	board_ant_subg_off: board_ant_subg_off {
 		pinmux = <30 IOC_PORT_GPIO>;
 		bias-disable;
 	};
+
 	board_ant_subg_on: board_ant_subg_on {
 		pinmux = <30 IOC_PORT_RFC_GPO0>;
 		bias-disable;

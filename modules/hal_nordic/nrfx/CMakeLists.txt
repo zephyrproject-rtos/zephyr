@@ -1,10 +1,12 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-zephyr_library()
+zephyr_library_named("nrfx")
 
 # The nrfx source directory can be override through the definition of the NRFX_DIR symbol
 # during the invocation of the build system
+zephyr_get(NRFX_DIR SYSBUILD GLOBAL)
+
 if(NOT DEFINED NRFX_DIR)
   set(NRFX_DIR ${ZEPHYR_CURRENT_MODULE_DIR}/nrfx CACHE PATH "nrfx Directory")
 endif()
@@ -188,7 +190,7 @@ if(CONFIG_SOC_NRF54L_CPUAPP_COMMON)
 	zephyr_compile_definitions("NRF_CONFIG_CPU_FREQ_MHZ=${clock_frequency_mhz}")
 endif()
 
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LX_SKIP_CLOCK_CONFIG NRF_SKIP_CLOCK_CONFIGURATION)
+zephyr_compile_definitions_ifdef(CONFIG_NRF_SKIP_CLOCK_CONFIG NRF_SKIP_CLOCK_CONFIGURATION)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LX_DISABLE_FICR_TRIMCNF NRF_DISABLE_FICR_TRIMCNF)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LX_SKIP_GLITCHDETECTOR_DISABLE NRF_SKIP_GLITCHDETECTOR_DISABLE)
 zephyr_compile_definitions_ifndef(CONFIG_SOC_NRF54L_ANOMALY_56_WORKAROUND NRF54L_CONFIGURATION_56_ENABLE=0)

@@ -2,11 +2,20 @@
  * Copyright (c) 2025 tinyVision.ai Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Arducam DVP 20-pin connector pin constants
+ * @ingroup dvp-20pin-connector
+ */
+
 #ifndef INCLUDE_ZEPHYR_DT_BINDINGS_GPIO_DVP_20PIN_CONNECTOR_H_
 #define INCLUDE_ZEPHYR_DT_BINDINGS_GPIO_DVP_20PIN_CONNECTOR_H_
 
 /**
- * @name Arducam DVP 20-pin or 18-pin connector pinout
+ * @defgroup dvp-20pin-connector Arducam DVP 20-pin connector
+ * @brief Constants for pins exposed on Arducam DVP 20-pin or 18-pin connector
+ * @ingroup devicetree-gpio-pin-headers
  * @{
  */
 #define DVP_20PIN_SCL	3	/**< I2C clock pin */

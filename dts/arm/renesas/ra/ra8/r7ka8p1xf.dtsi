@@ -41,7 +41,6 @@
 			compatible = "renesas,ra-cgc-subclk";
 			clock-frequency = <32768>;
 			#clock-cells = <0>;
-			status = "disabled";
 		};
 
 		pll: pll {
@@ -64,16 +63,16 @@
 
 			pllq: pllq {
 				compatible = "renesas,ra-cgc-pll-out";
-				div = <2>;
-				freq = <DT_FREQ_M(1000)>;
+				div = <6>;
+				freq = <333333333>;
 				status = "disabled";
 				#clock-cells = <0>;
 			};
 
 			pllr: pllr {
 				compatible = "renesas,ra-cgc-pll-out";
-				div = <2>;
-				freq = <DT_FREQ_M(1000)>;
+				div = <5>;
+				freq = <DT_FREQ_M(400)>;
 				status = "disabled";
 				#clock-cells = <0>;
 			};
@@ -109,7 +108,7 @@
 			compatible = "renesas,ra-cgc-pclk-block";
 			reg = <0x40203000 4>, <0x40203004 4>, <0x40203008 4>,
 			      <0x4020300c 4>, <0x40203010 4>;
-			reg-names = "MSTPA", "MSTPB","MSTPC",
+			reg-names = "MSTPA", "MSTPB", "MSTPC",
 				    "MSTPD", "MSTPE";
 			#clock-cells = <0>;
 			clocks = <&pllp>;
@@ -305,10 +304,10 @@
 
 &ioport0 {
 	port-irqs = <&port_irq6 &port_irq7 &port_irq8
-	&port_irq9 &port_irq10 &port_irq12
-	&port_irq13 &port_irq14 &port_irq15
-	&port_irq16 &port_irq27 &port_irq28
-	&port_irq29>;
+		     &port_irq9 &port_irq10 &port_irq12
+		     &port_irq13 &port_irq14 &port_irq15
+		     &port_irq16 &port_irq27 &port_irq28
+		     &port_irq29>;
 	port-irq-names = "port-irq6",
 			 "port-irq7",
 			 "port-irq8",
@@ -339,10 +338,10 @@
 
 &ioport1 {
 	port-irqs = <&port_irq0 &port_irq1 &port_irq2
-	&port_irq16 &port_irq17 &port_irq19
-	&port_irq20 &port_irq23 &port_irq24
-	&port_irq27 &port_irq28 &port_irq30
-	&port_irq31>;
+		     &port_irq16 &port_irq17 &port_irq19
+		     &port_irq20 &port_irq23 &port_irq24
+		     &port_irq27 &port_irq28 &port_irq30
+		     &port_irq31>;
 	port-irq-names = "port-irq0",
 			 "port-irq1",
 			 "port-irq2",
@@ -373,9 +372,9 @@
 
 &ioport2 {
 	port-irqs = <&port_irq0 &port_irq1 &port_irq2
-	&port_irq3 &port_irq4 &port_irq20 &port_irq21
-	&port_irq23 &port_irq24 &port_irq25
-	&port_irq26>;
+		     &port_irq3 &port_irq4 &port_irq20 &port_irq21
+		     &port_irq23 &port_irq24 &port_irq25
+		     &port_irq26>;
 	port-irq-names = "port-irq0",
 			 "port-irq1",
 			 "port-irq2",
@@ -402,9 +401,9 @@
 
 &ioport3 {
 	port-irqs = <&port_irq4 &port_irq5 &port_irq6
-	&port_irq8 &port_irq9 &port_irq22 &port_irq23
-	&port_irq24 &port_irq25 &port_irq26
-	&port_irq27 &port_irq28 &port_irq29>;
+		     &port_irq8 &port_irq9 &port_irq22 &port_irq23
+		     &port_irq24 &port_irq25 &port_irq26
+		     &port_irq27 &port_irq28 &port_irq29>;
 	port-irq-names = "port-irq4",
 			 "port-irq5",
 			 "port-irq6",
@@ -435,10 +434,10 @@
 
 &ioport4 {
 	port-irqs = <&port_irq0 &port_irq4 &port_irq5
-	&port_irq6 &port_irq7 &port_irq8
-	&port_irq9 &port_irq14 &port_irq15
-	&port_irq18 &port_irq20 &port_irq22
-	&port_irq30 &port_irq31>;
+		     &port_irq6 &port_irq7 &port_irq8
+		     &port_irq9 &port_irq14 &port_irq15
+		     &port_irq18 &port_irq20 &port_irq22
+		     &port_irq30 &port_irq31>;
 	port-irq-names = "port-irq0",
 			 "port-irq4",
 			 "port-irq5",
@@ -471,10 +470,10 @@
 
 &ioport5 {
 	port-irqs = <&port_irq1 &port_irq2 &port_irq3
-	&port_irq6 &port_irq7 &port_irq8 &port_irq9
-	&port_irq10 &port_irq12 &port_irq13
-	&port_irq14 &port_irq15 &port_irq24
-	&port_irq25 &port_irq26 &port_irq31>;
+		     &port_irq6 &port_irq7 &port_irq8 &port_irq9
+		     &port_irq10 &port_irq12 &port_irq13
+		     &port_irq14 &port_irq15 &port_irq24
+		     &port_irq25 &port_irq26 &port_irq31>;
 	port-irq-names = "port-irq1",
 			 "port-irq2",
 			 "port-irq3",
@@ -511,10 +510,10 @@
 
 &ioport6 {
 	port-irqs = <&port_irq7 &port_irq16 &port_irq17
-	&port_irq18 &port_irq19 &port_irq20 &port_irq22
-	&port_irq23 &port_irq24 &port_irq25 &port_irq26
-	&port_irq27 &port_irq28 &port_irq29
-	&port_irq30>;
+		     &port_irq18 &port_irq19 &port_irq20 &port_irq22
+		     &port_irq23 &port_irq24 &port_irq25 &port_irq26
+		     &port_irq27 &port_irq28 &port_irq29
+		     &port_irq30>;
 	port-irq-names = "port-irq7",
 			 "port-irq16",
 			 "port-irq17",
@@ -549,10 +548,10 @@
 
 &ioport7 {
 	port-irqs = <&port_irq2 &port_irq3 &port_irq7
-	&port_irq8 &port_irq10	&port_irq11
-	&port_irq12 &port_irq13 &port_irq14
-	&port_irq16 &port_irq17 &port_irq18
-	&port_irq19 &port_irq26>;
+		     &port_irq8 &port_irq10 &port_irq11
+		     &port_irq12 &port_irq13 &port_irq14
+		     &port_irq16 &port_irq17 &port_irq18
+		     &port_irq19 &port_irq26>;
 	port-irq-names = "port-irq2",
 			 "port-irq3",
 			 "port-irq7",
@@ -585,10 +584,10 @@
 
 &ioport8 {
 	port-irqs = <&port_irq0 &port_irq11 &port_irq12
-	&port_irq14 &port_irq15 &port_irq16
-	&port_irq18 &port_irq19 &port_irq20
-	&port_irq21 &port_irq22 &port_irq23
-	&port_irq30>;
+		     &port_irq14 &port_irq15 &port_irq16
+		     &port_irq18 &port_irq19 &port_irq20
+		     &port_irq21 &port_irq22 &port_irq23
+		     &port_irq30>;
 	port-irq-names = "port-irq0",
 			 "port-irq11",
 			 "port-irq12",
@@ -619,10 +618,10 @@
 
 &ioport9 {
 	port-irqs = <&port_irq0 &port_irq1 &port_irq2
-	&port_irq3 &port_irq5 &port_irq6 &port_irq7
-	&port_irq8 &port_irq9 &port_irq10
-	&port_irq11 &port_irq21 &port_irq30
-	&port_irq31>;
+		     &port_irq3 &port_irq5 &port_irq6 &port_irq7
+		     &port_irq8 &port_irq9 &port_irq10
+		     &port_irq11 &port_irq21 &port_irq30
+		     &port_irq31>;
 	port-irq-names = "port-irq0",
 			 "port-irq1",
 			 "port-irq2",
@@ -655,11 +654,11 @@
 
 &ioporta {
 	port-irqs = <&port_irq4 &port_irq5 &port_irq6
-	&port_irq10 &port_irq11 &port_irq12
-	&port_irq13 &port_irq14 &port_irq16
-	&port_irq17 &port_irq18 &port_irq19
-	&port_irq20 &port_irq21 &port_irq22
-	&port_irq31>;
+		     &port_irq10 &port_irq11 &port_irq12
+		     &port_irq13 &port_irq14 &port_irq16
+		     &port_irq17 &port_irq18 &port_irq19
+		     &port_irq20 &port_irq21 &port_irq22
+		     &port_irq31>;
 	port-irq-names = "port-irq4",
 			 "port-irq5",
 			 "port-irq6",
@@ -696,8 +695,8 @@
 
 &ioportb {
 	port-irqs = <&port_irq0 &port_irq1 &port_irq9
-	&port_irq10 &port_irq11 &port_irq12
-	&port_irq13 &port_irq15>;
+		     &port_irq10 &port_irq11 &port_irq12
+		     &port_irq13 &port_irq15>;
 	port-irq-names = "port-irq0",
 			 "port-irq1",
 			 "port-irq9",
@@ -718,11 +717,11 @@
 
 &ioportc {
 	port-irqs = <&port_irq0 &port_irq1 &port_irq2
-	&port_irq3 &port_irq4 &port_irq5
-	&port_irq21 &port_irq22 &port_irq23
-	&port_irq24 &port_irq25 &port_irq26
-	&port_irq27 &port_irq28 &port_irq29
-	&port_irq30>;
+		     &port_irq3 &port_irq4 &port_irq5
+		     &port_irq21 &port_irq22 &port_irq23
+		     &port_irq24 &port_irq25 &port_irq26
+		     &port_irq27 &port_irq28 &port_irq29
+		     &port_irq30>;
 	port-irq-names = "port-irq0",
 			 "port-irq1",
 			 "port-irq2",
@@ -759,7 +758,7 @@
 
 &ioportd {
 	port-irqs = <&port_irq17 &port_irq18 &port_irq19
-	&port_irq20 &port_irq21 &port_irq22 &port_irq23>;
+		     &port_irq20 &port_irq21 &port_irq22 &port_irq23>;
 	port-irq-names = "port-irq17",
 			 "port-irq18",
 			 "port-irq19",

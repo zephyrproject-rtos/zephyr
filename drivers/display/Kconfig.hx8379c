@@ -1,0 +1,21 @@
+# Copyright 2025 Charles Dias
+# SPDX-License-Identifier: Apache-2.0
+
+config HX8379C
+	bool "HX8379C display controller driver"
+	default y
+	depends on DT_HAS_HIMAX_HX8379C_ENABLED
+	select MIPI_DSI
+	help
+	  Enable driver for HX8379C display controller.
+
+if HX8379C
+
+config DISPLAY_HX8379C_INIT_PRIORITY
+	int "Initialization priority"
+	default APPLICATION_INIT_PRIORITY
+
+	help
+	  HX8379C display driver initialization priority.
+
+endif

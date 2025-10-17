@@ -59,6 +59,12 @@ struct qspi_nor_config {
 	const struct pinctrl_dev_config *pcfg;
 };
 
+#ifdef CONFIG_NORDIC_QSPI_NOR_ACTIVE_DWELL_MS
+#define ACTIVE_DWELL_MS CONFIG_NORDIC_QSPI_NOR_ACTIVE_DWELL_MS
+#else
+#define ACTIVE_DWELL_MS 0
+#endif
+
 /* Status register bits */
 #define QSPI_SECTOR_SIZE SPI_NOR_SECTOR_SIZE
 #define QSPI_BLOCK_SIZE SPI_NOR_BLOCK_SIZE
@@ -363,7 +369,7 @@ static void qspi_release(const struct device *dev)
 
 	qspi_unlock(dev);
 
-	rc = pm_device_runtime_put(dev);
+	rc = pm_device_runtime_put_async(dev, K_MSEC(ACTIVE_DWELL_MS));
 	if (rc < 0) {
 		LOG_ERR("pm_device_runtime_put failed: %d", rc);
 	}

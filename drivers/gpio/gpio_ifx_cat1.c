@@ -19,6 +19,7 @@
 #include <zephyr/drivers/gpio/gpio_utils.h>
 #include <zephyr/irq.h>
 
+#include <infineon_kconfig.h>
 #include <cy_gpio.h>
 
 #include <zephyr/logging/log.h>

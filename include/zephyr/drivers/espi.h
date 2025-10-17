@@ -6,7 +6,8 @@
 
 /**
  * @file
- * @brief Public APIs for eSPI driver
+ * @ingroup espi_interface
+ * @brief Main header file for eSPI (Enhanced Serial Peripheral Interface) driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_ESPI_H_
@@ -24,8 +25,9 @@ extern "C" {
 #endif
 
 /**
- * @brief eSPI Driver APIs
- * @defgroup espi_interface ESPI Driver APIs
+ * @brief Interfaces for Enhanced Serial Peripheral Interface (eSPI)
+ *        controllers.
+ * @defgroup espi_interface ESPI
  * @ingroup io_interfaces
  * @{
  */

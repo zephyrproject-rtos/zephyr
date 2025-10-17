@@ -83,7 +83,7 @@ static struct airoc_wifi_config airoc_wifi_config = {
 #if defined(CONFIG_AIROC_WIFI_BUS_SDIO)
 	.bus_dev.bus_sdio = DEVICE_DT_GET(DT_INST_PARENT(0)),
 #elif defined(CONFIG_AIROC_WIFI_BUS_SPI)
-	.bus_dev.bus_spi = SPI_DT_SPEC_GET(DT_DRV_INST(0), AIROC_WIFI_SPI_OPERATION, 0),
+	.bus_dev.bus_spi = SPI_DT_SPEC_GET(DT_DRV_INST(0), AIROC_WIFI_SPI_OPERATION),
 	.bus_select_gpio = GPIO_DT_SPEC_GET_OR(DT_DRV_INST(0), bus_select_gpios, {0}),
 #if defined(SPI_DATA_IRQ_SHARED)
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
@@ -258,7 +258,7 @@ static void scan_callback(whd_scan_result_t **result_ptr, void *user_data, whd_s
 		return;
 	}
 
-	/* We recived scan data so process it */
+	/* We received scan data so process it */
 	if ((result_ptr != NULL) && (*result_ptr != NULL)) {
 		memcpy(&whd_scan_result, *result_ptr, sizeof(whd_scan_result_t));
 		parse_scan_result(&whd_scan_result, &zephyr_scan_result);

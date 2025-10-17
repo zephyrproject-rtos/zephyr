@@ -1,0 +1,11 @@
+common:
+  integration_platforms:
+    - esp32s3_devkitm/esp32s3/procpu
+tests:
+  boards.esp32.interrupts:
+    tags:
+      - drivers
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32s2_saola
+      - esp32s3_devkitm/esp32s3/procpu

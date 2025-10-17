@@ -73,6 +73,6 @@
 	mclk-output;
 };
 
-&mbox4 {
+&mbox4_b {
 	status = "okay";
 };

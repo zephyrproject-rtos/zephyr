@@ -30,6 +30,7 @@
 #include "a2dp_internal.h"
 #include "avctp_internal.h"
 #include "avrcp_internal.h"
+#include "did_internal.h"
 #include "rfcomm_internal.h"
 #include "sdp_internal.h"
 
@@ -897,6 +898,11 @@ int bt_l2cap_br_send_cb(struct bt_conn *conn, uint16_t cid, struct net_buf *buf,
 	if (ch == NULL) {
 		LOG_WRN("CID %d is not found on conn %p", cid, conn);
 		return -ESHUTDOWN;
+	}
+
+	if (ch->conn == NULL) {
+		LOG_WRN("ACL conn of chan %p is invalid", ch);
+		return -ENOTCONN;
 	}
 
 	br_chan = CONTAINER_OF(ch, struct bt_l2cap_br_chan, chan);
@@ -2683,6 +2689,7 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 
 	br_chan = BR_CHAN(chan);
 	br_chan->required_sec_level = server->sec_level;
+	br_chan->psm = psm;
 
 	l2cap_br_chan_add(conn, chan, l2cap_br_chan_destroy);
 	BR_CHAN(chan)->tx.cid = scid;
@@ -2800,8 +2807,20 @@ static uint16_t l2cap_br_conf_rsp_opt_flush_timeout(struct bt_l2cap_chan *chan, 
 
 	LOG_DBG("Flash timeout %u", opt_to->timeout);
 
-	opt_to->timeout = sys_cpu_to_le32(0xffff);
-	result = BT_L2CAP_CONF_UNACCEPT;
+	opt_to->timeout = sys_le16_to_cpu(opt_to->timeout);
+
+	if (opt_to->timeout == 0) {
+		/* 0 is illegal value */
+		LOG_ERR("Flush timeout cannot be 0");
+		result = BT_L2CAP_CONF_REJECT;
+		goto done;
+	}
+
+	/* For tx, only support the default value (0xFFFF - infinite amount of retransmissions) */
+	if (opt_to->timeout != 0xFFFF) {
+		result = BT_L2CAP_CONF_UNACCEPT;
+	}
+
 done:
 	return result;
 }
@@ -3894,8 +3913,21 @@ static uint16_t l2cap_br_conf_opt_flush_timeout(struct bt_l2cap_chan *chan, stru
 
 	LOG_DBG("Flush timeout %u", opt_to->timeout);
 
-	opt_to->timeout = sys_cpu_to_le16(0xffff);
-	result = BT_L2CAP_CONF_UNACCEPT;
+	opt_to->timeout = sys_le16_to_cpu(opt_to->timeout);
+
+	if (opt_to->timeout == 0) {
+		/* 0 is illegal value */
+		LOG_ERR("Flush timeout cannot be 0");
+		result = BT_L2CAP_CONF_REJECT;
+		goto done;
+	}
+
+	if (opt_to->timeout < CONFIG_BT_L2CAP_RX_FLUSH_TO) {
+		LOG_DBG("Flush timeout %u is too small", opt_to->timeout);
+		opt_to->timeout = sys_cpu_to_le16(CONFIG_BT_L2CAP_RX_FLUSH_TO);
+		result = BT_L2CAP_CONF_UNACCEPT;
+	}
+
 done:
 	return result;
 }
@@ -6180,6 +6212,10 @@ void bt_l2cap_br_init(void)
 
 	if (IS_ENABLED(CONFIG_BT_AVRCP)) {
 		bt_avrcp_init();
+	}
+
+	if (IS_ENABLED(CONFIG_BT_DID)) {
+		bt_did_init();
 	}
 }
 

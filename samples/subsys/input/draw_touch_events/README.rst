@@ -22,7 +22,7 @@ Below is an example on how to build the sample for :zephyr:board:`stm32f746g_dis
    :goals: build
    :compact:
 
-For testing purposes without the need of any hardware, the :ref:`native_sim <native_sim>`
+For testing purposes without the need of any hardware, the :zephyr:board:`native_sim <native_sim>`
 board is also supported and can be built as follows:
 
 .. zephyr-app-commands::

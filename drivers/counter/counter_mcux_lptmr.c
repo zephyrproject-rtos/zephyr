@@ -106,6 +106,13 @@ static uint32_t mcux_lptmr_get_top_value(const struct device *dev)
 	return (config->base->CMR & LPTMR_CMR_COMPARE_MASK) + 1U;
 }
 
+static uint32_t mcux_lptmr_get_freq(const struct device *dev)
+{
+	const struct mcux_lptmr_config *config = dev->config;
+
+	return config->info.freq;
+}
+
 static void mcux_lptmr_isr(const struct device *dev)
 {
 	const struct mcux_lptmr_config *config = dev->config;
@@ -153,6 +160,7 @@ static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 	.set_top_value = mcux_lptmr_set_top_value,
 	.get_pending_int = mcux_lptmr_get_pending_int,
 	.get_top_value = mcux_lptmr_get_top_value,
+	.get_freq = mcux_lptmr_get_freq,
 };
 
 #define COUNTER_MCUX_LPTMR_DEVICE_INIT(n)					\
@@ -179,19 +187,21 @@ static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 			.max_top_value =					\
 				GENMASK(DT_INST_PROP(n, resolution) - 1, 0),	\
 			.freq = DT_INST_PROP(n, clock_frequency) /		\
-				DT_INST_PROP(n, prescaler),			\
+				BIT(DT_INST_PROP(n, prescale_glitch_filter)),	\
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP,			\
 			.channels = 0,						\
 		},								\
 		.base = (LPTMR_Type *)DT_INST_REG_ADDR(n),			\
 		.clk_source = DT_INST_PROP(n, clk_source),			\
-		.bypass_prescaler_glitch =					\
-			1 - DT_INST_PROP(n, timer_mode_sel),			\
+		.bypass_prescaler_glitch = (DT_INST_PROP(n,			\
+			prescale_glitch_filter) == 0),				\
 		.mode = DT_INST_PROP(n, timer_mode_sel),			\
 		.pin = DT_INST_PROP_OR(n, input_pin, 0),			\
 		.polarity = DT_INST_PROP(n, active_low),			\
-		.prescaler_glitch = DT_INST_PROP(n, prescale_glitch_filter) +	\
-			DT_INST_PROP(n, timer_mode_sel) - 1,			\
+		.prescaler_glitch = (DT_INST_PROP(n,				\
+			prescale_glitch_filter) == 0) ? 0 : DT_INST_PROP(n,	\
+			prescale_glitch_filter) + DT_INST_PROP(n,		\
+			timer_mode_sel) - 1,					\
 		.irq_config_func = mcux_lptmr_irq_config_##n,			\
 	};									\
 										\
@@ -200,6 +210,5 @@ static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 		&mcux_lptmr_config_##n,						\
 		POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,			\
 		&mcux_lptmr_driver_api);
-
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_MCUX_LPTMR_DEVICE_INIT)

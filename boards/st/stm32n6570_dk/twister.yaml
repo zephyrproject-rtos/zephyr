@@ -14,12 +14,14 @@ supported:
   - dma
   - i2c
   - gpio
-  - pwm
   - memc
+  - netif:eth
+  - pwm
   - spi
   - uart
   - usb_device
   - usbd
+  - video
 variants:
   stm32n6570_dk/stm32n657xx:
     twister: false

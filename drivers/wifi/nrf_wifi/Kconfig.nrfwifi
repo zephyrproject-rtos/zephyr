@@ -108,6 +108,15 @@ config NRF70_AP_MODE
 	depends on WIFI_NM_WPA_SUPPLICANT_AP
 	default y if WIFI_USAGE_MODE_AP || WIFI_USAGE_MODE_STA_AP
 
+config NRF70_ENABLE_DUAL_VIF
+	bool "Dual virtual Wi-Fi interfaces"
+	default y if WIFI_NM_MAX_MANAGED_INTERFACES = 2
+	depends on (WIFI_NRF7002 || WIFI_NRF7001) && NET_L2_ETHERNET
+	help
+	  Enable support for two virtual Wi-Fi interfaces (VIFs).
+	  When enabled, the driver can operate two VIFs simultaneously,
+	  allowing use cases such as one interface in AP mode and another in STA mode.
+
 config NRF70_P2P_MODE
 	bool "P2P support in driver"
 
@@ -165,6 +174,7 @@ config NRF_WIFI_LOW_POWER
 
 config NRF70_TCP_IP_CHECKSUM_OFFLOAD
 	bool "TCP/IP checksum offload"
+	depends on !NRF71_ON_IPC
 	default y
 
 config NRF70_REG_DOMAIN
@@ -655,28 +665,27 @@ config WIFI_NRF70_SCAN_TIMEOUT_S
 	int "Scan timeout in seconds"
 	default 30
 
-menu "nRF Wi-Fi operation band(s)"
-	visible if !NRF70_2_4G_ONLY
+choice NRF_WIFI_OP_BAND
+	prompt "nRF Wi-Fi operation bands"
+	default NRF_WIFI_2G_BAND if NRF70_2_4G_ONLY
+	default NRF_WIFI_ALL_BAND
+
+config NRF_WIFI_ALL_BAND
+	bool "Set operation band to all supported bands"
 
 config NRF_WIFI_2G_BAND
 	bool "Set operation band to 2.4GHz"
-	default y if NRF70_2_4G_ONLY
 
 config NRF_WIFI_5G_BAND
 	bool "Set operation band to 5GHz"
-	depends on !NRF70_2_4G_ONLY
+if NRF71_ON_IPC
+config NRF_WIFI_6G_BAND
+	bool "Set operation band to 6GHz"
 
-config NRF_WIFI_OP_BAND
-	int "Options to set operation band"
-	default 1 if NRF_WIFI_2G_BAND
-	default 2 if NRF_WIFI_5G_BAND
-	default 3
-	help
-	  Set this option to select frequency band
-	  1 - 2.4GHz
-	  2 - 5GHz
-	  3 - All ( 2.4GHz and 5GHz )
-endmenu
+config NRF_WIFI_DUAL_BAND
+	bool "Set operation band to 2.4GHz and 5GHz"
+endif # NRF71_ON_IPC
+endchoice
 
 config NRF_WIFI_IFACE_MTU
 	int "MTU for Wi-Fi interface"

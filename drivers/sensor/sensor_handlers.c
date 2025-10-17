@@ -68,7 +68,7 @@ static inline int z_vrfy_sensor_get_decoder(const struct device *dev,
 }
 #include <zephyr/syscalls/sensor_get_decoder_mrsh.c>
 
-static inline int z_vrfy_sensor_reconfigure_read_iodev(struct rtio_iodev *iodev,
+static inline int z_vrfy_sensor_reconfigure_read_iodev(const struct rtio_iodev *iodev,
 						       const struct device *sensor,
 						       const struct sensor_chan_spec *channels,
 						       size_t num_channels)

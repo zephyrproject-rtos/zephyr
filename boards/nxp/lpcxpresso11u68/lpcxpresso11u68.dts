@@ -15,6 +15,7 @@
 / {
 	model = "NXP LPCXPRESSO11U68 board";
 	compatible = "nxp,lpcxpresso11u68", "nxp,lpc";
+
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
@@ -33,11 +34,13 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		isp_button: button_0 {
 			gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
 			label = "ISP enable button";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		wake_up_button: button_1 {
 			gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
 			label = "Wake-up button";
@@ -47,14 +50,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio2 16 GPIO_ACTIVE_LOW>;
 			label = "Green LED 0";
 		};
+
 		led1: led_1 {
 			gpios = <&gpio2 17 GPIO_ACTIVE_LOW>;
 			label = "Red LED 1";
 		};
+
 		led2: led_2 {
 			gpios = <&gpio2 18 GPIO_ACTIVE_LOW>;
 			label = "Blue LED 2";
@@ -89,7 +95,6 @@
 			   <ARDUINO_HEADER_R3_D14 0 &gpio0 5 0>,
 			   <ARDUINO_HEADER_R3_D15 0 &gpio0 4 0>;
 	};
-
 };
 
 &uart0 {
@@ -114,7 +119,7 @@ arduino_i2c: &i2c0 {
 };
 
 &cpu0 {
-	clock-frequency = <48000000>;
+	clock-frequency = <DT_FREQ_M(48)>;
 };
 
 &gpio0 {

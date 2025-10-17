@@ -126,7 +126,7 @@
 			reg = <0x40081000 0x2000>;
 			gpio-controller;
 			index = <0x0>;
-			#gpio-cells=<2>;
+			#gpio-cells = <2>;
 		};
 
 		gpio1: gpio@40083000 {
@@ -134,7 +134,7 @@
 			reg = <0x40083000 0x2000>;
 			gpio-controller;
 			index = <0x1>;
-			#gpio-cells=<2>;
+			#gpio-cells = <2>;
 		};
 
 		gpio2: gpio@40085000 {
@@ -142,7 +142,7 @@
 			reg = <0x40085000 0x2000>;
 			gpio-controller;
 			index = <0x2>;
-			#gpio-cells=<2>;
+			#gpio-cells = <2>;
 		};
 
 		gpio3: gpio@40087000 {
@@ -150,7 +150,7 @@
 			reg = <0x40087000 0x2000>;
 			gpio-controller;
 			index = <0x3>;
-			#gpio-cells=<2>;
+			#gpio-cells = <2>;
 		};
 
 		gpio4: gpio@40089000 {
@@ -158,7 +158,7 @@
 			reg = <0x40089000 0x2000>;
 			gpio-controller;
 			index = <0x4>;
-			#gpio-cells=<2>;
+			#gpio-cells = <2>;
 		};
 
 		gpio5: gpio@4008b000 {
@@ -166,7 +166,7 @@
 			reg = <0x4008b000 0x2000>;
 			gpio-controller;
 			index = <0x5>;
-			#gpio-cells=<2>;
+			#gpio-cells = <2>;
 		};
 
 		gpio6: gpio@4008d000 {
@@ -174,7 +174,7 @@
 			reg = <0x4008d000 0x2000>;
 			gpio-controller;
 			index = <0x6>;
-			#gpio-cells=<2>;
+			#gpio-cells = <2>;
 		};
 
 		gpio7: gpio@4008f000 {
@@ -182,7 +182,7 @@
 			reg = <0x4008f000 0x2000>;
 			gpio-controller;
 			index = <0x7>;
-			#gpio-cells=<2>;
+			#gpio-cells = <2>;
 		};
 
 		gpio8: gpio@40091000 {
@@ -190,7 +190,7 @@
 			reg = <0x40091000 0x2000>;
 			gpio-controller;
 			index = <0x8>;
-			#gpio-cells=<2>;
+			#gpio-cells = <2>;
 		};
 
 		gpio9: gpio@40093000 {
@@ -198,7 +198,7 @@
 			reg = <0x40093000 0x2000>;
 			gpio-controller;
 			index = <0x9>;
-			#gpio-cells=<2>;
+			#gpio-cells = <2>;
 		};
 
 		gpioa: gpio@40095000 {
@@ -206,7 +206,7 @@
 			reg = <0x40095000 0x2000>;
 			gpio-controller;
 			index = <0xA>;
-			#gpio-cells=<2>;
+			#gpio-cells = <2>;
 		};
 
 		gpiob: gpio@40097000 {
@@ -214,7 +214,7 @@
 			reg = <0x40097000 0x2000>;
 			gpio-controller;
 			index = <0xB>;
-			#gpio-cells=<2>;
+			#gpio-cells = <2>;
 		};
 
 		gpioc: gpio@40099000 {
@@ -222,7 +222,7 @@
 			reg = <0x40099000 0x2000>;
 			gpio-controller;
 			index = <0xC>;
-			#gpio-cells=<2>;
+			#gpio-cells = <2>;
 		};
 
 		gpiod: gpio@4009b000 {
@@ -230,7 +230,7 @@
 			reg = <0x4009b000 0x2000>;
 			gpio-controller;
 			index = <0xD>;
-			#gpio-cells=<2>;
+			#gpio-cells = <2>;
 		};
 
 		gpioe: gpio@4009d000 {
@@ -238,7 +238,7 @@
 			reg = <0x4009d000 0x2000>;
 			gpio-controller;
 			index = <0xE>;
-			#gpio-cells=<2>;
+			#gpio-cells = <2>;
 		};
 
 		gpiof: gpio@4009f000 {
@@ -246,7 +246,7 @@
 			reg = <0x4009f000 0x2000>;
 			gpio-controller;
 			index = <0xF>;
-			#gpio-cells=<2>;
+			#gpio-cells = <2>;
 		};
 
 		pwm0: pwm@40080000 {
@@ -379,10 +379,10 @@
 
 			/* clocks for host sub-modules */
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 3>,
-				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 4>,
-				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 5>,
-				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 6>,
-				<&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 7>;
+				 <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 4>,
+				 <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 5>,
+				 <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 6>,
+				 <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 7>;
 		};
 
 		tach1: tach@400e1000 {
@@ -467,7 +467,22 @@
 			interrupts = <57 4>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL4 7>;
 			status = "disabled";
+		};
 
+		gdma0: dma@40011000 {
+			compatible = "nuvoton,npcx-gdma";
+			reg = <0x40011000 0x40>;
+			chan-offset = <0x20>;
+
+			interrupts = <12 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_AHB6 NPCX_PWDWN_CTL3 7>;
+
+			dma-channels = <2>;
+
+			#dma-cells = <2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
 		};
 	};
 

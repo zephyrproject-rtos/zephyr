@@ -15,7 +15,7 @@
 	model = "NXP LPCXpresso55S28 board";
 	compatible = "nxp,lpc55xxx", "nxp,lpc";
 
-	aliases{
+	aliases {
 		sw0 = &user_button_1;
 		sw1 = &user_button_2;
 		sw2 = &user_button_3;
@@ -37,16 +37,19 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_1: button_0 {
 			label = "User SW1";
 			gpios = <&gpio0 5 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_button_2: button_1 {
 			label = "User SW2";
 			gpios = <&gpio1 18 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_1>;
 		};
+
 		user_button_3: button_2 {
 			label = "User SW3";
 			gpios = <&gpio1 9 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -104,18 +107,22 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+
 		boot_partition: partition@0 {
 			label = "mcuboot";
 			reg = <0x0 DT_SIZE_K(32)>;
 		};
+
 		slot0_partition: partition@8000 {
 			label = "image-0";
 			reg = <0x00008000 DT_SIZE_K(208)>;
 		};
+
 		slot1_partition: partition@3C000 {
 			label = "image-1";
 			reg = <0x0003C000 DT_SIZE_K(208)>;
 		};
+
 		storage_partition: partition@70000 {
 			label = "storage";
 			reg = <0x00070000 DT_SIZE_K(52)>;

@@ -22,11 +22,11 @@
 		};
 
 		dmamux1: dmamux@40020800 {
-			dma-requests= <107>;
+			dma-requests = <107>;
 		};
 
 		dmamux2: dmamux@58025800 {
-			dma-requests= <12>;
+			dma-requests = <12>;
 		};
 
 		usbotg_fs: usb@40080000 {
@@ -64,8 +64,9 @@
 
 	/* System data RAM accessible over AXI bus: AXI SRAM in D1 domain */
 	sram0: memory@24000000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x24000000 DT_SIZE_K(384)>;
+		zephyr,memory-region = "SRAM0";
 	};
 
 	/* System data RAM accessible over AHB bus: SRAM1 in D2 domain */

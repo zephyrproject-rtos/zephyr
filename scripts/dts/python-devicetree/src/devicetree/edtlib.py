@@ -855,7 +855,7 @@ class ControllerAndData:
       *-names property
 
     basename:
-      Basename for the controller when supporting named cells
+      Basename for the controller when supporting named cells. AKA, the specifier space.
     """
     node: 'Node'
     controller: 'Node'
@@ -972,8 +972,7 @@ class Node:
 
     status:
       The node's status property value, as a string, or "okay" if the node
-      has no status property set. If the node's status property is "ok",
-      it is converted to "okay" for consistency.
+      has no status property set.
 
     read_only:
       True if the node has a 'read-only' property, and False otherwise
@@ -1198,9 +1197,6 @@ class Node:
             as_string = "okay"
         else:
             as_string = status.to_string()
-
-        if as_string == "ok":
-            as_string = "okay"
 
         return as_string
 
@@ -3312,8 +3308,7 @@ def _check_dt(dt: DT) -> None:
 
     # Check that 'status' has one of the values given in the devicetree spec.
 
-    # Accept "ok" for backwards compatibility
-    ok_status = {"ok", "okay", "disabled", "reserved", "fail", "fail-sss"}
+    ok_status = {"okay", "disabled", "reserved", "fail", "fail-sss"}
 
     for node in dt.node_iter():
         if "status" in node.props:

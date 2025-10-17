@@ -57,18 +57,22 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		orange_led: led_0 {
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 			label = "User LED D9";
 		};
+
 		yellow_led: led_1 {
 			gpios = <&gpioc 12 GPIO_ACTIVE_LOW>;
 			label = "User LED D8";
 		};
+
 		green_led: led_2 {
 			gpios = <&gpioc 11 GPIO_ACTIVE_LOW>;
 			label = "User LED D7";
 		};
+
 		red_led: led_3 {
 			gpios = <&gpioc 10 GPIO_ACTIVE_LOW>;
 			label = "User LED D6";
@@ -78,10 +82,12 @@
 			gpios = <&gpiod 16 GPIO_ACTIVE_LOW>;
 			label = "User Tricolor LED D5 (Red)";
 		};
+
 		tri_green_led: led_5 {
 			gpios = <&gpiod 15 GPIO_ACTIVE_LOW>;
 			label = "User Tricolor LED D5 (Green)";
 		};
+
 		tri_blue_led: led_6 {
 			gpios = <&gpiob 5 GPIO_ACTIVE_LOW>;
 			label = "User Tricolor LED D5 (Blue)";
@@ -90,18 +96,22 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		orange_pwm_led: led_pwm_0 {
 			pwms = <&ftm3 7 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "User PWM LED D9";
 		};
+
 		yellow_pwm_led: led_pwm_1 {
 			pwms = <&ftm3 6 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "User PWM LED D8";
 		};
+
 		green_pwm_led: led_pwm_2 {
 			pwms = <&ftm3 5 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "User PWM LED D7";
 		};
+
 		red_pwm_led: led_pwm_3 {
 			pwms = <&ftm3 4 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "User PWM LED D6";
@@ -111,10 +121,12 @@
 			pwms = <&ftm0 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "User Tricolor PWM LED D5 (Red)";
 		};
+
 		tri_green_pwm_led: led_pwm_5 {
 			pwms = <&ftm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "User Tricolor PWM LED D5 (Green)";
 		};
+
 		tri_blue_pwm_led: led_pwm_6 {
 			pwms = <&ftm0 5 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "User Tricolor PWM LED D5 (Blue)";
@@ -123,11 +135,13 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_2: button_0 {
 			label = "User SW2";
 			gpios = <&gpiod 3 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_button_3: button_1 {
 			label = "User SW3";
 			gpios = <&gpiod 6 GPIO_ACTIVE_LOW>;
@@ -137,7 +151,7 @@
 };
 
 &cpu0 {
-	clock-frequency = <120000000>;
+	clock-frequency = <DT_FREQ_M(120)>;
 };
 
 &idle {
@@ -159,7 +173,7 @@
 
 	sosc_clk {
 		status = "okay";
-		clock-frequency = <8000000>;
+		clock-frequency = <DT_FREQ_M(8)>;
 	};
 
 	pll {
@@ -333,7 +347,6 @@
 };
 
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -348,14 +361,17 @@
 			reg = <0x00000000 DT_SIZE_K(64)>;
 			read-only;
 		};
+
 		slot0_partition: partition@10000 {
 			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(204)>;
 		};
+
 		slot1_partition: partition@43000 {
 			label = "image-1";
 			reg = <0x00043000 DT_SIZE_K(204)>;
 		};
+
 		storage_partition: partition@76000 {
 			label = "storage";
 			reg = <0x00076000 DT_SIZE_K(40)>;

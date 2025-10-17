@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&gpio{
+&gpio {
 	status = "okay";
 };
 
-&gpio18{
+&gpio18 {
 	irqs = <0 16>;
 };

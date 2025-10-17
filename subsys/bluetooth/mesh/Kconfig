@@ -1038,6 +1038,7 @@ config BT_MESH_BLOB_IO_FLASH
 	default y
 	depends on BT_MESH_BLOB_SRV || BT_MESH_BLOB_CLI
 	depends on FLASH_MAP
+	depends on FLASH_PAGE_LAYOUT
 	help
 	  Enable the BLOB flash stream for reading and writing BLOBs directly to
 	  and from flash.
@@ -1045,24 +1046,28 @@ config BT_MESH_BLOB_IO_FLASH
 if BT_MESH_BLOB_IO_FLASH
 
 config BT_MESH_BLOB_IO_FLASH_WITHOUT_ERASE
-	bool "BLOB flash support for devices without erase"
-	default y if FLASH_HAS_NO_EXPLICIT_ERASE
+	bool "BLOB flash support for devices without erase [DEPRECATED]"
+	default n
 	depends on FLASH_HAS_NO_EXPLICIT_ERASE
+	select DEPRECATED
 	help
-	  Enable path supporting devices without erase. This option appears only
-	  if there are devices without explicit erase requirements in the system
-	  and may be disabled to reduce code size in case when no operations
-	  are intended on such type of devices.
+	  This option is deprecated and is no longer used by the BLOB IO Flash module.
 
 config BT_MESH_BLOB_IO_FLASH_WITH_ERASE
-	bool "BLOB flash support for devices with erase"
-	default y if FLASH_HAS_EXPLICIT_ERASE
+	bool "BLOB flash support for devices with erase [DEPRECATED]"
+	default n
 	depends on FLASH_HAS_EXPLICIT_ERASE
+	depends on FLASH_PAGE_LAYOUT
+	select DEPRECATED
 	help
-	  Enable path supporting devices with erase. This option appears only
-	  if there are devices requiring erase,  before write, in the system
-	  and may be disabled to reduce code size in case when no operations
-	  are intended on such type of devices.
+	  This option is deprecated and is no longer used by the BLOB IO Flash module.
+
+config BT_MESH_BLOB_IO_FLASH_WRITE_BLOCK_SIZE_MAX
+	int "Maximum supported write block size"
+	default 4
+	help
+	  The BLOB IO Flash module will support flash devices with explicit erase
+	  when this value is set to a multiple of the device write block size.
 
 endif # BT_MESH_BLOB_IO_FLASH
 

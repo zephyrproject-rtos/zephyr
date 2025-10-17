@@ -474,6 +474,16 @@ if(DEFINED TOOLCHAIN_LD_FLAGS)
   zephyr_ld_options(${TOOLCHAIN_LD_FLAGS})
 endif()
 
+foreach(GROUPED_FLAGS IN LISTS TOOLCHAIN_GROUPED_LD_FLAGS)
+  if(DEFINED ${GROUPED_FLAGS})
+    zephyr_ld_options(NO_SPLIT ${${GROUPED_FLAGS}})
+  else()
+    message(FATAL_ERROR "Variable '${GROUPED_FLAGS}' is not defined, "
+      "please ensure the variable is defined and points to valid linker flags. "
+      "If '${GROUPED_FLAGS}' is a linker flags itself, then it must be placed in a list")
+  endif()
+endforeach()
+
 zephyr_link_libraries(PROPERTY base)
 
 zephyr_link_libraries_ifndef(CONFIG_LINKER_USE_RELAX PROPERTY no_relax)
@@ -567,6 +577,24 @@ zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,no_p
 # relocatable link into a static library
 zephyr_link_libraries_ifndef(CONFIG_NATIVE_LIBRARY
                              $<TARGET_PROPERTY:linker,no_position_independent>)
+
+if(CONFIG_INSTRUMENTATION)
+  # @Intent: Enable function instrumentation injection at compile time
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,func_instrumentation>>)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,func_instrumentation>>)
+
+  # @Intent: Enable function blocklist for the instrumentation subsystem
+  if(CONFIG_INSTRUMENTATION_EXCLUDE_FUNCTION_LIST)
+    zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,func_instrumentation_exclude_function_list>>)
+    zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,func_instrumentation_exclude_function_list>>)
+  endif()
+
+  # @Intent: Enable file blocklist for the instrumentation subsystem
+  if(CONFIG_INSTRUMENTATION_EXCLUDE_FILE_LIST)
+    zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,func_instrumentation_exclude_file_list>>)
+    zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,func_instrumentation_exclude_file_list>>)
+  endif()
+endif()
 
 # Allow the user to inject options when calling cmake, e.g.
 # 'cmake -DEXTRA_CFLAGS="-Werror -Wno-deprecated-declarations" ..'

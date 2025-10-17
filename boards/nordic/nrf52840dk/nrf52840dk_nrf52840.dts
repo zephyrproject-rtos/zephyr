@@ -170,16 +170,16 @@
 	status = "okay";
 	gpio-reserved-ranges = <0 2>, <6 1>, <8 3>, <17 7>;
 	gpio-line-names = "XL1", "XL2", "AREF", "A0", "A1", "RTS", "TXD",
-		"CTS", "RXD", "NFC1", "NFC2", "BUTTON1", "BUTTON2", "LED1",
-		"LED2", "LED3", "LED4", "QSPI CS", "RESET", "QSPI CLK",
-		"QSPI DIO0", "QSPI DIO1", "QSPI DIO2", "QSPI DIO3","BUTTON3",
-		"BUTTON4", "SDA", "SCL", "A2", "A3", "A4", "A5";
+			  "CTS", "RXD", "NFC1", "NFC2", "BUTTON1", "BUTTON2", "LED1",
+			  "LED2", "LED3", "LED4", "QSPI CS", "RESET", "QSPI CLK",
+			  "QSPI DIO0", "QSPI DIO1", "QSPI DIO2", "QSPI DIO3", "BUTTON3",
+			  "BUTTON4", "SDA", "SCL", "A2", "A3", "A4", "A5";
 };
 
 &gpio1 {
 	status = "okay";
 	gpio-line-names = "", "D0", "D1", "D2", "D3", "D4", "D5", "D6",
-		"D7", "", "D8", "D9", "D10", "D11", "D12", "D13";
+			  "D7", "", "D8", "D9", "D10", "D11", "D12", "D13";
 };
 
 &uart0 {
@@ -262,12 +262,10 @@ arduino_i2c: &i2c0 {
 		readoc = "read4io";
 		sck-frequency = <8000000>;
 		jedec-id = [c2 28 17];
-		sfdp-bfp = [
-			e5 20 f1 ff  ff ff ff 03  44 eb 08 6b  08 3b 04 bb
-			ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 0f 52
-			10 d8 00 ff  23 72 f5 00  82 ed 04 cc  44 83 68 44
-			30 b0 30 b0  f7 c4 d5 5c  00 be 29 ff  f0 d0 ff ff
-		];
+		sfdp-bfp = [e5 20 f1 ff ff ff ff 03 44 eb 08 6b 08 3b 04 bb
+			    ee ff ff ff ff ff 00 ff ff ff 00 ff 0c 20 0f 52
+			    10 d8 00 ff 23 72 f5 00 82 ed 04 cc 44 83 68 44
+			    30 b0 30 b0 f7 c4 d5 5c 00 be 29 ff f0 d0 ff ff];
 		size = <67108864>;
 		has-dpd;
 		t-enter-dpd = <10000>;

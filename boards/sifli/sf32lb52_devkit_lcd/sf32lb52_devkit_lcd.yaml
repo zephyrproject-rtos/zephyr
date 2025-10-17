@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: sf32lb52_devkit_lcd
+name: SF32LB52-DevKit-LCD
+type: mcu
+arch: arm
+ram: 512
+flash: 16320
+toolchain:
+  - zephyr
+supported:
+  - uart
+  - gpio
+vendor: sifli

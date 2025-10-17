@@ -848,7 +848,7 @@ ZTEST(net_ipv6, test_send_neighbor_discovery)
 		      k_mem_slab_num_free_get(tx), avail_pkt_count);
 
 	zassert_equal(atomic_get(&tx_data->avail_count), avail_buf_count,
-		      "Unexpected tx data pool available count (%d vs %d)",
+		      "Unexpected tx data pool available count (%ld vs %d)",
 		      atomic_get(&tx_data->avail_count), avail_buf_count);
 }
 
@@ -1735,7 +1735,7 @@ static enum net_verdict recv_msg(struct in6_addr *src, struct in6_addr *dst)
 	/* We by-pass the normal packet receiving flow in this case in order
 	 * to simplify the testing.
 	 */
-	return net_ipv6_input(pkt, false);
+	return net_ipv6_input(pkt);
 }
 
 static int send_msg(struct in6_addr *src, struct in6_addr *dst)

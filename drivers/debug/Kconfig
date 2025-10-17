@@ -15,6 +15,7 @@ config DEBUG_DRIVER_INIT_PRIORITY
 	  Debug drivers initialization priority.
 
 # zephyr-keep-sorted-start
+source "drivers/debug/Kconfig.nrf"
 source "drivers/debug/Kconfig.silabs"
 # zephyr-keep-sorted-stop
 

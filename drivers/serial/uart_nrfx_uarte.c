@@ -2392,7 +2392,6 @@ static void uarte_pm_resume(const struct device *dev)
 	const struct uarte_nrfx_config *cfg = dev->config;
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) || !LOW_POWER_ENABLED(cfg)) {
-		(void)pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 		uarte_periph_enable(dev);
 	}
 }

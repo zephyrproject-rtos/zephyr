@@ -8,7 +8,7 @@
 #include <string.h>
 #include <zephyr/sys/__assert.h>
 #include <errno.h>
-#include <sys/types.h>
+#include <zephyr/sys/util_utf8.h>
 
 #define ASCII_CHAR 0x7F
 #define SEQUENCE_FIRST_MASK 0xC0
@@ -83,9 +83,9 @@ char *utf8_lcpy(char *dst, const char *src, size_t n)
 	return dst;
 }
 
-ssize_t utf8_count_chars(const char *s)
+int utf8_count_chars(const char *s)
 {
-	ssize_t count = 0;
+	int count = 0;
 	const char *p = s; /* getting a pointer to increment */
 
 	while (*p != '\0') {

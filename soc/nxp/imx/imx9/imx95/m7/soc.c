@@ -91,6 +91,7 @@ static int soc_init(void)
 void pm_state_before(void)
 {
 	struct scmi_cpu_pd_lpm_config cpu_pd_lpm_cfg;
+	struct scmi_cpu_irq_mask_config cpu_irq_mask_cfg;
 
 	/*
 	 * 1. Set M7 mix as power on state in suspend mode
@@ -114,8 +115,27 @@ void pm_state_before(void)
 	cpu_pd_lpm_cfg.cfgs[1].ret_mask = 0;
 
 	scmi_cpu_pd_lpm_set(&cpu_pd_lpm_cfg);
-}
 
+	/* Set wakeup mask */
+	uint32_t wake_mask[GPC_CMC_IRQ_WAKEUP_MASK_COUNT] = {
+		[0 ... GPC_CMC_IRQ_WAKEUP_MASK_COUNT - 1]  = 0xFFFFFFFFU
+	};
+
+	/* IRQs enabled at NVIC level become GPC wake sources */
+	for (uint32_t idx = 0; idx < 8; idx++) {
+		wake_mask[idx] = ~(NVIC->ISER[idx]);
+	}
+
+	cpu_irq_mask_cfg.cpu_id = CPU_IDX_M7P;
+	cpu_irq_mask_cfg.mask_idx = 0;
+	cpu_irq_mask_cfg.num_mask = GPC_CMC_IRQ_WAKEUP_MASK_COUNT;
+
+	for (uint8_t val = 0; val < GPC_CMC_IRQ_WAKEUP_MASK_COUNT; val++) {
+		cpu_irq_mask_cfg.mask[val] = wake_mask[val];
+	}
+
+	scmi_cpu_set_irq_mask(&cpu_irq_mask_cfg);
+}
 
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
@@ -166,6 +186,23 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(state);
+
+	struct scmi_cpu_irq_mask_config cpu_irq_mask_cfg;
+
+	/* Restore scmi cpu wake mask */
+	uint32_t wake_mask[GPC_CMC_IRQ_WAKEUP_MASK_COUNT] = {
+		[0 ... GPC_CMC_IRQ_WAKEUP_MASK_COUNT - 1] = 0x0U
+	};
+
+	cpu_irq_mask_cfg.cpu_id = CPU_IDX_M7P;
+	cpu_irq_mask_cfg.mask_idx = 0;
+	cpu_irq_mask_cfg.num_mask = GPC_CMC_IRQ_WAKEUP_MASK_COUNT;
+
+	for (uint8_t val = 0; val < GPC_CMC_IRQ_WAKEUP_MASK_COUNT; val++) {
+		cpu_irq_mask_cfg.mask[val] = wake_mask[val];
+	}
+
+	scmi_cpu_set_irq_mask(&cpu_irq_mask_cfg);
 
 	struct scmi_cpu_sleep_mode_config cpu_cfg = {0};
 	/* restore M7 core state into ACTIVE. */

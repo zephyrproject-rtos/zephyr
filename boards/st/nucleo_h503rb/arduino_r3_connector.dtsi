@@ -38,5 +38,6 @@
 };
 
 arduino_serial: &usart1 {};
+
 arduino_i2c: &i2c1 {};
 /* arduino_spi (SPI1) uses PA5, to which the user LED is connected */

@@ -20,4 +20,10 @@
 			silabs,input-filter;
 		};
 	};
+
+	iadc0_default: iadc0_default {
+		group0 {
+			silabs,analog-bus = <ABUS_AEVEN0_IADC0>;
+		};
+	};
 };

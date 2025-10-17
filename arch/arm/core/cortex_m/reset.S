@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
+ * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +20,7 @@
 _ASM_FILE_PROLOGUE
 
 GTEXT(z_arm_reset)
-GTEXT(z_early_memset)
+GTEXT(arch_early_memset)
 GDATA(z_interrupt_stacks)
 GDATA(z_main_stack)
 #if defined(CONFIG_DEBUG_THREAD_INFO)
@@ -33,6 +34,27 @@ GTEXT(z_arm_init_arch_hw_at_boot)
 #endif
 #if defined(CONFIG_PM_S2RAM)
 GTEXT(arch_pm_s2ram_resume)
+#endif
+#if defined(CONFIG_SOC_EARLY_RESET_HOOK)
+GTEXT(soc_early_reset_hook)
+#endif
+
+
+/*
+ * PACBTI Mask for CONTROL register:
+ * bit 4 - BTI_EN, bit 5 - UBTI_EN,
+ * bit 6 - PAC_EN, bit 7 - UPAC_EN
+ */
+#ifdef CONFIG_ARM_PAC
+#define CONTROL_ARM_PAC_MASK	(1<<6)|(1<<7)
+#else
+#define CONTROL_ARM_PAC_MASK	0
+#endif
+
+#ifdef CONFIG_ARM_BTI
+#define CONTROL_ARM_BTI_MASK	(1<<4)|(1<<5)
+#else
+#define CONTROL_ARM_BTI_MASK	0
 #endif
 
 /**
@@ -82,6 +104,10 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
 #endif /* CONFIG_INIT_ARCH_HW_AT_BOOT */
 
+#if defined(CONFIG_SOC_EARLY_RESET_HOOK)
+    /* Call custom code that executes before any stack is set up or RAM memory is accessed */
+    bl soc_early_reset_hook
+#endif
 #if defined(CONFIG_PM_S2RAM)
     /*
      * Temporarily set MSP to interrupt stack so that arch_pm_s2ram_resume can
@@ -177,7 +203,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
     ldr r0, =z_interrupt_stacks
     ldr r1, =0xaa
     ldr r2, =CONFIG_ISR_STACK_SIZE + MPU_GUARD_ALIGN_AND_SIZE
-    bl z_early_memset
+    bl arch_early_memset
 #endif
 
     /*
@@ -189,7 +215,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
     adds r0, r0, r1
     msr PSP, r0
     mrs r0, CONTROL
-    movs r1, #2
+    movs r1, #(2 | CONTROL_ARM_PAC_MASK | CONTROL_ARM_BTI_MASK)
     orrs r0, r1 /* CONTROL_SPSEL_Msk */
     msr CONTROL, r0
     /*

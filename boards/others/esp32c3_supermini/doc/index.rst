@@ -5,7 +5,7 @@ Overview
 
 ESP32-C3-SUPERMINI is based on the ESP32-C3, a single-core Wi-Fi and Bluetooth 5 (LE) microcontroller SoC,
 based on the open-source RISC-V architecture. This board also includes a Type-C USB Serial/JTAG port.
-There may be multiple variations depending on the specific vendor. For more information a reasonbly well documented version of this board can be found at `ESP32-C3-SUPERMINI`_
+There may be multiple variations depending on the specific vendor. For more information a reasonably well documented version of this board can be found at `ESP32-C3-SUPERMINI`_
 
 Hardware
 ********

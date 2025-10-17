@@ -33,17 +33,20 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpioc 0 GPIO_ACTIVE_HIGH>;
 			label = "Green LED";
 		};
 	};
 };
+
 &adc0 {
 	status = "okay";
 	pinctrl-0 = <&adc0_ch3_gpi3_default>;
 	pinctrl-names = "default";
 };
+
 /* voltage comparator for test */
 &vcmp0 {
 	status = "okay";
@@ -52,6 +55,7 @@
 	threshold-mv = <2000>;
 	io-channels = <&adc0 3>;
 };
+
 &i2c0 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -59,6 +63,7 @@
 		     &i2c0_data_gpb4_default>;
 	pinctrl-names = "default";
 };
+
 &i2c1 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -66,6 +71,7 @@
 		     &i2c1_data_gpc2_default>;
 	pinctrl-names = "default";
 };
+
 &i2c2 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -73,6 +79,7 @@
 		     &i2c2_data_gpf7_default>;
 	pinctrl-names = "default";
 };
+
 &i2c3 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -80,6 +87,7 @@
 		     &i2c3_data_gph2_default>;
 	pinctrl-names = "default";
 };
+
 &i2c4 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -87,6 +95,7 @@
 		     &i2c4_data_gpe7_default>;
 	pinctrl-names = "default";
 };
+
 &i2c5 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -94,11 +103,13 @@
 		     &i2c5_data_gpa5_default>;
 	pinctrl-names = "default";
 };
+
 &uart1 {
 	status = "okay";
 	current-speed = <115200>;
 	clock-frequency = <1843200>;
 };
+
 &uart2 {
 	status = "okay";
 	current-speed = <460800>;
@@ -109,18 +120,21 @@
 		status = "okay";
 	};
 };
+
 &ite_uart1_wrapper {
 	status = "okay";
 	pinctrl-0 = <&uart1_rx_gpb0_default
 		     &uart1_tx_gpb1_default>;
 	pinctrl-names = "default";
 };
+
 &ite_uart2_wrapper {
 	status = "okay";
 	pinctrl-0 = <&uart2_rx_gph1_default
 		     &uart2_tx_gph2_default>;
 	pinctrl-names = "default";
 };
+
 /*
  * pwm for test:
  * If we need pwm output in ITE chip power saving mode,
@@ -132,6 +146,7 @@
 	pinctrl-0 = <&pwm0_gpa0_default>;
 	pinctrl-names = "default";
 };
+
 /* pwm for fan */
 &pwm7 {
 	status = "okay";
@@ -139,6 +154,7 @@
 	pinctrl-0 = <&pwm7_gpa7_default>;
 	pinctrl-names = "default";
 };
+
 /* fan tachometer sensor */
 &tach0 {
 	status = "okay";
@@ -147,6 +163,7 @@
 	pinctrl-0 = <&tach0a_gpd6_default>;
 	pinctrl-names = "default";
 };
+
 &kbd {
 	status = "okay";
 	pinctrl-0 = <&ksi0_default
@@ -177,35 +194,43 @@
 	row-size = <8>;
 	col-size = <16>;
 };
+
 &peci0 {
 	status = "okay";
 	pinctrl-0 = <&peci_gpf6_default>;
 	pinctrl-names = "default";
 };
+
 &sha0 {
 	status = "okay";
 };
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+
 		boot_partition: partition@0 {
 			label = "mcuboot";
 			reg = <0x00000000 0x20000>;
 		};
+
 		slot0_partition: partition@20000 {
 			label = "image-0";
 			reg = <0x00020000 0x20000>;
 		};
+
 		slot1_partition: partition@40000 {
 			label = "image-1";
 			reg = <0x00040000 0x10000>;
 		};
+
 		scratch_partition: partition@50000 {
 			label = "image-scratch";
 			reg = <0x00050000 0x10000>;
 		};
+
 		storage_partition: partition@60000 {
 			label = "storage";
 			reg = <0x00060000 0x20000>;

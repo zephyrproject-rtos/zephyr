@@ -7,4 +7,13 @@ config TEST_DRIVER_COUNTER_MCUX_LPC_RTC_HIGHRES
 	help
 	  tests the nxp_lpc_rtc_highres compatible driver
 
+config TEST_DRIVER_COUNTER_TOLERANCE
+	int "Counter ticks tolerance (%)"
+	default 10
+	help
+	  Error tolerance used in counter driver tests.
+	  A number of ticks is estimated and counter is tested against systimer,
+	  to verify accuracy. Tolerance is a percentage of deviation allowed for
+	  the number of expected ticks.
+
 source "Kconfig.zephyr"

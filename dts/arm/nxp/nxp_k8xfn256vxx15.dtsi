@@ -5,6 +5,7 @@
  */
 
 #include <mem.h>
+#include <freq.h>
 #include <nxp/nxp_k8x.dtsi>
 
 / {

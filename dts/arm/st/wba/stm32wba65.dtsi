@@ -40,7 +40,7 @@
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40004800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 18)>;
-			resets = <&rctl STM32_RESET(APB1L, 18U)>;
+			resets = <&rctl STM32_RESET(APB1L, 18)>;
 			interrupts = <79 0>;
 			status = "disabled";
 		};
@@ -60,7 +60,7 @@
 			reg = <0x40000800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 2)>,
 				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
-			resets = <&rctl STM32_RESET(APB1L, 2U)>;
+			resets = <&rctl STM32_RESET(APB1L, 2)>;
 			interrupts = <72 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;

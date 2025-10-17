@@ -16,7 +16,10 @@
 #include <zephyr/devicetree.h>
 
 #include "nwp.h"
+#include "nwp_fw_version.h"
 #include "sl_wifi_callback_framework.h"
+
+#include "sl_si91x_ble.h"
 #ifdef CONFIG_BT_SILABS_SIWX91X
 #include "rsi_ble_common_config.h"
 #endif
@@ -187,7 +190,8 @@ static void siwx91x_configure_sta_mode(sl_si91x_boot_configuration_t *boot_confi
 			SL_SI91X_BLE_NUM_CONN_EVENTS(RSI_BLE_NUM_CONN_EVENTS) |
 			SL_SI91X_BLE_NUM_REC_BYTES(RSI_BLE_NUM_REC_BYTES) |
 			SL_SI91X_BLE_ENABLE_ADV_EXTN |
-			SL_SI91X_BLE_AE_MAX_ADV_SETS(RSI_BLE_AE_MAX_ADV_SETS);
+			SL_SI91X_BLE_AE_MAX_ADV_SETS(RSI_BLE_AE_MAX_ADV_SETS) |
+			SL_SI91X_BT_BLE_STACK_BYPASS_ENABLE;
 #endif
 }
 
@@ -245,6 +249,54 @@ static void siwx91x_configure_network_stack(sl_si91x_boot_configuration_t *boot_
 			/* No DHCPv4 configuration needed for other modes */
 		}
 	}
+}
+
+static int siwx91x_check_nwp_version(void)
+{
+	sl_wifi_firmware_version_t expected_version;
+	sl_wifi_firmware_version_t version;
+	int ret;
+
+	ret = sl_wifi_get_firmware_version(&version);
+	if (ret != SL_STATUS_OK) {
+		return -EINVAL;
+	}
+
+	sscanf(SIWX91X_NWP_FW_EXPECTED_VERSION, "%hhX.%hhd.%hhd.%hhd.%hhd.%hhd.%hd",
+	       &expected_version.rom_id,
+	       &expected_version.major,
+	       &expected_version.minor,
+	       &expected_version.security_version,
+	       &expected_version.patch_num,
+	       &expected_version.customer_id,
+	       &expected_version.build_num);
+
+	/* Ignore rom_id:
+	 * B is parsed as an hex value and we get 11 in expected_version.rom_id
+	 * We received rom_id=17 in version.rom_id, we suspect a double hex->decimal conversion
+	 */
+	if (expected_version.major != version.major) {
+		return -EINVAL;
+	}
+	if (expected_version.minor != version.minor) {
+		return -EINVAL;
+	}
+	if (expected_version.security_version != version.security_version) {
+		return -EINVAL;
+	}
+	if (expected_version.patch_num != version.patch_num) {
+		return -EINVAL;
+	}
+	if (expected_version.customer_id != version.customer_id) {
+		LOG_DBG("customer_id diverge: expected %d, actual %d", expected_version.customer_id,
+			version.customer_id);
+	}
+	if (expected_version.build_num != version.build_num) {
+		LOG_DBG("build_num diverge: expected %d, actual %d", expected_version.build_num,
+			version.build_num);
+	}
+
+	return 0;
 }
 
 int siwx91x_get_nwp_config(sl_wifi_device_configuration_t *get_config, uint8_t wifi_oper_mode,
@@ -332,8 +384,10 @@ int siwx91x_nwp_mode_switch(uint8_t oper_mode, bool hidden_ssid, uint8_t max_num
 static int siwg917_nwp_init(void)
 {
 	sl_wifi_device_configuration_t network_config;
-	sl_status_t status;
+	int status;
 	__maybe_unused sl_wifi_performance_profile_t performance_profile = {
+		.profile = SI91X_POWER_PROFILE};
+	__maybe_unused sl_bt_performance_profile_t bt_performance_profile = {
 		.profile = SI91X_POWER_PROFILE};
 
 	siwx91x_get_nwp_config(&network_config, WIFI_STA_MODE, false, 0);
@@ -345,7 +399,29 @@ static int siwg917_nwp_init(void)
 		return -EINVAL;
 	}
 
+	/* Check if the NWP firmware version is correct */
+	status = siwx91x_check_nwp_version();
+	if (status < 0) {
+		LOG_ERR("Unexpected NWP firmware version (expected: %s)",
+			 SIWX91X_NWP_FW_EXPECTED_VERSION);
+	}
+
 	if (IS_ENABLED(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)) {
+		if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
+			status = sl_si91x_bt_set_performance_profile(&bt_performance_profile);
+			if (status != SL_STATUS_OK) {
+				LOG_ERR("Failed to initiate power save in BLE mode");
+				return -EINVAL;
+			}
+		}
+		/*
+		 * Note: the WiFi related sources are always imported (because of
+		 * CONFIG_WISECONNECT_NETWORK_STACK) whatever the value of CONFIG_WIFI. However,
+		 * because of boot_config->coex_mode, sl_wifi_set_performance_profile() is a no-op
+		 * if CONFIG_WIFI=n and CONFIG_BT=y. We could probably remove the dependency to the
+		 * WiFi sources in this case. However, outside of the code size, this dependency
+		 * does not hurt.
+		 */
 		status = sl_wifi_set_performance_profile(&performance_profile);
 		if (status != SL_STATUS_OK) {
 			return -EINVAL;

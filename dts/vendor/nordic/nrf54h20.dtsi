@@ -13,7 +13,6 @@
 #include <zephyr/dt-bindings/misc/nordic-nrf-ficr-nrf54h20.h>
 #include <zephyr/dt-bindings/misc/nordic-domain-id-nrf54h20.h>
 #include <zephyr/dt-bindings/misc/nordic-owner-id-nrf54h20.h>
-#include <zephyr/dt-bindings/misc/nordic-tddconf.h>
 
 /delete-node/ &sw_pwm;
 
@@ -31,7 +30,7 @@
 			device_type = "cpu";
 			clocks = <&cpuapp_hsfll>;
 			clock-frequency = <DT_FREQ_M(320)>;
-			cpu-power-states = <&idle_cache_disabled &s2ram>;
+			cpu-power-states = <&idle_cache_retained &idle_cache_disabled &s2ram>;
 		};
 
 		cpurad: cpu@3 {
@@ -40,7 +39,7 @@
 			device_type = "cpu";
 			clocks = <&cpurad_hsfll>;
 			clock-frequency = <DT_FREQ_M(256)>;
-			cpu-power-states = <&idle_cache_disabled>;
+			cpu-power-states = <&idle_cache_retained &idle_cache_disabled>;
 		};
 
 		cpuppr: cpu@d {
@@ -130,7 +129,13 @@
 
 		power-states {
 			// substate-id = <0>; is reserved for "idle", cache powered on
-			// substate-id = <1>; is reserved for "idle-cache-retained"
+			idle_cache_retained: idle_cache_retained {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <1>;
+				min-residency-us = <700>;
+				exit-latency-us = <5>;
+			};
 			idle_cache_disabled: idle_cache_disabled {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
@@ -138,6 +143,7 @@
 				min-residency-us = <1000>;
 				exit-latency-us = <7>;
 			};
+
 			s2ram: s2ram {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-ram";
@@ -247,6 +253,15 @@
 		};
 	};
 
+	swext: swext {
+		compatible = "nordic,nrfs-swext";
+		status = "disabled";
+		max-current-ua = <7500>;
+		current-limit-ua = <7500>;
+		zephyr,pm-device-runtime-auto;
+		#power-domain-cells = <0>;
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -306,10 +321,12 @@
 				reg = <0xd000 0x1000>;
 				clocks = <&fll16m>;
 				clock-frequency = <DT_FREQ_M(320)>;
-				nordic,ficrs =
-					<&ficr NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_VSUP>,
-					<&ficr NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_COARSE_0>,
-					<&ficr NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_FINE_0>;
+				nordic,ficrs = <&ficr
+						NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_VSUP>,
+					       <&ficr
+						NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_COARSE_0>,
+					       <&ficr
+						NRF_FICR_TRIM_APPLICATION_HSFLL_TRIM_FINE_0>;
 				nordic,ficr-names = "vsup", "coarse", "fine";
 			};
 
@@ -361,10 +378,9 @@
 				status = "disabled";
 				clocks = <&fll16m>;
 				clock-frequency = <DT_FREQ_M(256)>;
-				nordic,ficrs =
-					<&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_VSUP>,
-					<&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_COARSE_1>,
-					<&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_FINE_1>;
+				nordic,ficrs = <&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_VSUP>,
+					       <&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_COARSE_1>,
+					       <&ficr NRF_FICR_TRIM_RADIOCORE_HSFLL_TRIM_FINE_1>;
 				nordic,ficr-names = "vsup", "coarse", "fine";
 			};
 
@@ -526,10 +542,82 @@
 				interrupts = <127 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
 
-			tddconf: tddconf@1000 {
-				compatible = "nordic,nrf-tddconf";
-				reg = <0x1000 0x10>;
+			hsfll200: clock@4000 {
+				compatible = "fixed-clock";
+				reg = <0x4000 0x1000>;
+				#clock-cells = <0>;
 				status = "disabled";
+				clock-frequency = <DT_FREQ_M(320)>;
+			};
+
+			coresight: coresight@40000 {
+				compatible = "nordic,coresight-nrf";
+				reg = <0x40000 0x11000>;
+				status = "disabled";
+				nordic,clockpin-enable = <NRF_FUN_TPIU_CLOCK>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x40000 0x11000>;
+
+				tsgen: tsgen@1000 {
+					reg = <0x1000 0x1000>;
+				};
+
+				stm: stm@2000 {
+					reg = <0x2000 0x1000>;
+				};
+
+				tpiu: tpiu@3000 {
+					reg = <0x3000 0x1000>;
+				};
+
+				etb: etb@4000 {
+					reg = <0x4000 0x1000>;
+				};
+
+				etr: etr@5000 {
+					reg = <0x5000 0x1000>;
+				};
+
+				cti210: cti@6000 {
+					reg = <0x6000 0x1000>;
+				};
+
+				cti211: cti@7000 {
+					reg = <0x7000 0x1000>;
+				};
+
+				atbreplicator210: atbreplicator@8000 {
+					reg = <0x8000 0x1000>;
+				};
+
+				atbreplicator211: atbreplicator@9000 {
+					reg = <0x9000 0x1000>;
+				};
+
+				atbreplicator212: atbreplicator@A000 {
+					reg = <0xA000 0x1000>;
+				};
+
+				atbreplicator213: atbreplicator@B000 {
+					reg = <0xB000 0x1000>;
+				};
+
+				atbfunnel210: atbfunnel@C000 {
+					reg = <0xC000 0x1000>;
+				};
+
+				atbfunnel211: atbfunnel@D000 {
+					reg = <0xD000 0x1000>;
+				};
+
+				atbfunnel212: atbfunnel@E000 {
+					reg = <0xE000 0x1000>;
+				};
+
+				atbfunnel213: atbfunnel@F000 {
+					reg = <0xF000 0x1000>;
+				};
 			};
 		};
 
@@ -563,6 +651,7 @@
 				interrupts = <149 NRF_DEFAULT_IRQ_PRIORITY>;
 				power-domains = <&gdpwr_fast_active_0>;
 				clock-frequency = <DT_FREQ_M(400)>;
+				packet-data-limit = <65536>;
 				fifo-depth = <32>;
 				status = "disabled";
 			};
@@ -588,7 +677,7 @@
 				#mbox-cells = <1>;
 			};
 
-			canpll: clock-controller@8c2000{
+			canpll: clock-controller@8c2000 {
 				compatible = "nordic,nrf-auxpll";
 				reg = <0x8c2000 0x1000>;
 				interrupts = <194 NRF_DEFAULT_IRQ_PRIORITY>;
@@ -733,6 +822,7 @@
 				power-domains = <&gdpwr_fast_active_1>;
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			spi121: spi@8e7000 {
@@ -981,7 +1071,13 @@
 				interrupts = <386 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
 				#io-channel-cells = <1>;
-				power-domains = <&gdpwr_slow_active>;
+				/*
+				 * This device is actually in the gdpwr_slow_active domain, but
+				 * all of its analog inputs are routed to pads in the
+				 * gdpwr_slow_main. Request gdpwr_slow_main and rely on the
+				 * device HW to force its own power domain on while ENABLED.
+				 */
+				power-domains = <&gdpwr_slow_main>;
 				zephyr,pm-device-runtime-auto;
 			};
 
@@ -994,7 +1090,13 @@
 				reg = <0x983000 0x1000>;
 				status = "disabled";
 				interrupts = <387 NRF_DEFAULT_IRQ_PRIORITY>;
-				power-domains = <&gdpwr_slow_active>;
+				/*
+				 * This device is actually in the gdpwr_slow_active domain, but
+				 * all of its analog inputs are routed to pads in the
+				 * gdpwr_slow_main. Request gdpwr_slow_main and rely on the
+				 * device HW to force its own power domain on while ENABLED.
+				 */
+				power-domains = <&gdpwr_slow_main>;
 			};
 
 			temp: temperature-sensor@984000 {
@@ -1141,6 +1243,7 @@
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			i2c131: i2c@9a6000 {
@@ -1276,6 +1379,7 @@
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			i2c133: i2c@9b6000 {
@@ -1322,6 +1426,7 @@
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			dppic135: dppic@9c1000 {
@@ -1410,6 +1515,7 @@
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			i2c135: i2c@9c6000 {
@@ -1456,6 +1562,7 @@
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			dppic136: dppic@9d1000 {
@@ -1591,6 +1698,7 @@
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			tdm130: tdm@992000 {

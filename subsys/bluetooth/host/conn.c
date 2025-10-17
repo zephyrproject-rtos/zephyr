@@ -1051,7 +1051,7 @@ void bt_conn_tx_processor(void)
 	LOG_DBG("processing conn %p", conn);
 
 	if (conn->state != BT_CONN_CONNECTED) {
-		LOG_WRN("conn %p: not connected", conn);
+		LOG_DBG("conn %p: not connected: state %d", conn, conn->state);
 		goto raise_and_exit;
 	}
 
@@ -1497,43 +1497,46 @@ void bt_conn_unref(struct bt_conn *conn)
 {
 	atomic_val_t old;
 	bool deallocated;
-	enum bt_conn_type conn_type;
-	uint8_t conn_role;
 	uint16_t conn_handle;
+	/* Used only if CONFIG_ASSERT and CONFIG_BT_CONN_TX. */
+	__maybe_unused bool conn_tx_is_pending;
 
 	__ASSERT(conn, "Invalid connection reference");
 
-	/* Storing parameters of interest so we don't access the object
-	 * after decrementing its ref-count
+	/* If we're removing the last reference, the connection object will be
+	 * considered freed and possibly re-allocated by the Bluetooth Host stack
+	 * as soon as we decrement the counter.
+	 * To prevent inconsistencies when accessing the connection's state,
+	 * we store its properties of interest before decrementing the ref-count,
+	 * then unset the local pointer.
 	 */
-	conn_type = conn->type;
-	conn_role = conn->role;
 	conn_handle = conn->handle;
-
+#if CONFIG_BT_CONN_TX && CONFIG_ASSERT
+	conn_tx_is_pending = k_work_is_pending(&conn->tx_complete_work);
+#endif
 	old = atomic_dec(&conn->ref);
-	/* Prevent from accessing connection object */
-	deallocated = (atomic_get(&old) == 1);
-	IF_ENABLED(CONFIG_BT_CONN_TX,
-		   (__ASSERT(!(deallocated && k_work_is_pending(&conn->tx_complete_work)),
-			     "tx_complete_work is pending when conn is deallocated")));
 	conn = NULL;
 
 	LOG_DBG("handle %u ref %ld -> %ld", conn_handle, old, (old - 1));
 
 	__ASSERT(old > 0, "Conn reference counter is 0");
 
-	/* Slot has been freed and can be taken. No guarantees are made on requests
-	 * to claim connection object as only the first claim will be served.
-	 */
-	if (deallocated) {
-		k_sem_give(&pending_recycled_events);
-		k_work_submit(&recycled_work);
+	/* Whether we removed the last reference. */
+	deallocated = (old == 1);
+	if (!deallocated) {
+		return;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn_type == BT_CONN_TYPE_LE &&
-	    conn_role == BT_CONN_ROLE_PERIPHERAL && deallocated) {
-		bt_le_adv_resume();
-	}
+	IF_ENABLED(CONFIG_BT_CONN_TX,
+		   (__ASSERT(!conn_tx_is_pending,
+			     "tx_complete_work is pending when conn is deallocated");))
+
+	/* Notify listeners that a slot has been freed and can be taken.
+	 * No guarantees are made on requests to claim connection object
+	 * as only the first claim will be served.
+	 */
+	k_sem_give(&pending_recycled_events);
+	k_work_submit(&recycled_work);
 }
 
 uint8_t bt_conn_index(const struct bt_conn *conn)
@@ -1678,26 +1681,85 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 /* Group Connected BT_CONN only in this */
 #if defined(CONFIG_BT_CONN)
 
-/* We don't want the application to get a PHY update callback upon connection
- * establishment on 2M PHY. Therefore we must prevent issuing LE Set PHY
- * in this scenario.
- *
- * It is ifdef'd because the struct fields don't exist in some configs.
- */
-static bool uses_symmetric_2mbit_phy(struct bt_conn *conn)
-{
-#if defined(CONFIG_BT_USER_PHY_UPDATE)
-	if (IS_ENABLED(CONFIG_BT_EXT_ADV)) {
-		if (conn->le.phy.tx_phy == BT_HCI_LE_PHY_2M &&
-		    conn->le.phy.rx_phy == BT_HCI_LE_PHY_2M) {
-			return true;
-		}
-	}
+#if defined(CONFIG_BT_AUTO_PHY_PERIPHERAL_1M)
+#define AUTO_PHY_PERIPHERAL                  BT_HCI_LE_PHY_1M
+#define AUTO_PHY_PERIPHERAL_PREF             BT_HCI_LE_PHY_PREFER_1M
+#define AUTO_PHY_PERIPHERAL_SUPPORTED(_feat) (true)
+#elif defined(CONFIG_BT_AUTO_PHY_PERIPHERAL_2M)
+#define AUTO_PHY_PERIPHERAL                  BT_HCI_LE_PHY_2M
+#define AUTO_PHY_PERIPHERAL_PREF             BT_HCI_LE_PHY_PREFER_2M
+#define AUTO_PHY_PERIPHERAL_SUPPORTED(feat)  BT_FEAT_LE_PHY_2M(feat)
+#elif defined(CONFIG_BT_AUTO_PHY_PERIPHERAL_CODED)
+#define AUTO_PHY_PERIPHERAL                  BT_HCI_LE_PHY_CODED
+#define AUTO_PHY_PERIPHERAL_PREF             BT_HCI_LE_PHY_PREFER_CODED
+#define AUTO_PHY_PERIPHERAL_SUPPORTED(feat)  BT_FEAT_LE_PHY_CODED(feat)
 #else
-	ARG_UNUSED(conn);
+/* Dummy values when there's no preference */
+#define AUTO_PHY_PERIPHERAL                  (0)
+#define AUTO_PHY_PERIPHERAL_PREF             (0)
+#define AUTO_PHY_PERIPHERAL_SUPPORTED(_feat) (false)
 #endif
 
-	return false;
+#if defined(CONFIG_BT_AUTO_PHY_CENTRAL_1M)
+#define AUTO_PHY_CENTRAL                  BT_HCI_LE_PHY_1M
+#define AUTO_PHY_CENTRAL_PREF             BT_HCI_LE_PHY_PREFER_1M
+#define AUTO_PHY_CENTRAL_SUPPORTED(_feat) (true)
+#elif defined(CONFIG_BT_AUTO_PHY_CENTRAL_2M)
+#define AUTO_PHY_CENTRAL                  BT_HCI_LE_PHY_2M
+#define AUTO_PHY_CENTRAL_PREF             BT_HCI_LE_PHY_PREFER_2M
+#define AUTO_PHY_CENTRAL_SUPPORTED(feat)  BT_FEAT_LE_PHY_2M(feat)
+#elif defined(CONFIG_BT_AUTO_PHY_CENTRAL_CODED)
+#define AUTO_PHY_CENTRAL                  BT_HCI_LE_PHY_CODED
+#define AUTO_PHY_CENTRAL_PREF             BT_HCI_LE_PHY_PREFER_CODED
+#define AUTO_PHY_CENTRAL_SUPPORTED(feat)  BT_FEAT_LE_PHY_CODED(feat)
+#else
+/* Dummy values when there's no preference */
+#define AUTO_PHY_CENTRAL                  (0)
+#define AUTO_PHY_CENTRAL_PREF             (0)
+#define AUTO_PHY_CENTRAL_SUPPORTED(_feat) (false)
+#endif
+
+static int do_phy_update(struct bt_conn *conn)
+{
+	uint8_t phy, pref;
+	bool supported;
+
+	switch (conn->role) {
+#if !defined(CONFIG_BT_AUTO_PHY_CENTRAL_NONE)
+	case BT_HCI_ROLE_CENTRAL:
+		phy = AUTO_PHY_CENTRAL;
+		pref = AUTO_PHY_CENTRAL_PREF;
+		supported = AUTO_PHY_CENTRAL_SUPPORTED(bt_dev.le.features);
+		break;
+#endif
+#if !defined(CONFIG_BT_AUTO_PHY_PERIPHERAL_NONE)
+	case BT_HCI_ROLE_PERIPHERAL:
+		phy = AUTO_PHY_PERIPHERAL;
+		pref = AUTO_PHY_PERIPHERAL_PREF;
+		supported = AUTO_PHY_PERIPHERAL_SUPPORTED(bt_dev.le.features);
+		break;
+#endif
+	default:
+		return 0;
+	}
+
+	if (!supported) {
+		LOG_WRN("PHY 0x%02x not supported", phy);
+		return 0;
+	}
+
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+	if (IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+		/* If the current PHYs are already the preferred PHYs, no need to issue
+		 * a PHY update procedure.
+		 */
+		if (conn->le.phy.tx_phy == phy && conn->le.phy.rx_phy == phy) {
+			return 0;
+		}
+	}
+#endif
+
+	return bt_le_set_phy(conn, 0U, pref, pref, BT_HCI_LE_PHY_CODED_ANY);
 }
 
 static bool can_initiate_feature_exchange(struct bt_conn *conn)
@@ -1764,13 +1826,14 @@ static void perform_auto_initiated_procedures(struct bt_conn *conn, void *unused
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) && BT_FEAT_LE_PHY_2M(bt_dev.le.features) &&
-	    !uses_symmetric_2mbit_phy(conn)) {
-		err = bt_le_set_phy(conn, 0U, BT_HCI_LE_PHY_PREFER_2M, BT_HCI_LE_PHY_PREFER_2M,
-				    BT_HCI_LE_PHY_CODED_ANY);
+	if (IS_ENABLED(CONFIG_BT_PHY_UPDATE) &&
+	    (!IS_ENABLED(CONFIG_BT_AUTO_PHY_CENTRAL_NONE) ||
+	     !IS_ENABLED(CONFIG_BT_AUTO_PHY_PERIPHERAL_NONE))) {
+		err = do_phy_update(conn);
 		if (err) {
 			LOG_ERR("Failed LE Set PHY (%d)", err);
 		}
+
 		if (conn->state != BT_CONN_CONNECTED) {
 			return;
 		}
@@ -2232,7 +2295,10 @@ static void deferred_work(struct k_work *work)
 		 * auto connect flag if it was set, instead just cancel
 		 * connection directly
 		 */
-		bt_le_create_conn_cancel();
+		if (bt_le_create_conn_cancel() == -ENOBUFS) {
+			LOG_WRN("No buffers to cancel connection, retrying in 10 ms");
+			k_work_reschedule(dwork, K_MSEC(10));
+		}
 		return;
 	}
 
@@ -2272,6 +2338,10 @@ static void deferred_work(struct k_work *work)
 				err);
 		}
 #endif
+	} else {
+		/* Neither the application nor the configuration
+		 * set LE connection parameters.
+		 */
 	}
 
 	atomic_set_bit(conn->flags, BT_CONN_PERIPHERAL_PARAM_UPDATE);
@@ -2374,6 +2444,8 @@ struct bt_conn *bt_conn_add_sco(const bt_addr_t *peer, int link_type)
 	} else if (link_type == BT_HCI_ESCO) {
 		sco_conn->sco.pkt_type = (bt_dev.br.esco_pkt_type &
 					  ~EDR_ESCO_PKT_MASK);
+	} else {
+		/* Ignoring unexpected link type BT_HCI_ACL. */
 	}
 
 	return sco_conn;
@@ -2481,35 +2553,11 @@ uint8_t bt_conn_enc_key_size(const struct bt_conn *conn)
 		return 0;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_CLASSIC) &&
-	    conn->type == BT_CONN_TYPE_BR) {
-		struct bt_hci_cp_read_encryption_key_size *cp;
-		struct bt_hci_rp_read_encryption_key_size *rp;
-		struct net_buf *buf;
-		struct net_buf *rsp;
-		uint8_t key_size;
-
-		buf = bt_hci_cmd_alloc(K_FOREVER);
-		if (!buf) {
-			return 0;
-		}
-
-		cp = net_buf_add(buf, sizeof(*cp));
-		cp->handle = sys_cpu_to_le16(conn->handle);
-
-		if (bt_hci_cmd_send_sync(BT_HCI_OP_READ_ENCRYPTION_KEY_SIZE,
-					buf, &rsp)) {
-			return 0;
-		}
-
-		rp = (void *)rsp->data;
-
-		key_size = rp->status ? 0 : rp->key_size;
-
-		net_buf_unref(rsp);
-
-		return key_size;
+#if defined(CONFIG_BT_CLASSIC)
+	if (conn->type == BT_CONN_TYPE_BR) {
+		return conn->br.link_key ? conn->br.link_key->enc_key_size : 0;
 	}
+#endif /* CONFIG_BT_CLASSIC */
 
 	if (IS_ENABLED(CONFIG_BT_SMP)) {
 		return conn->le.keys ? conn->le.keys->enc_size : 0;
@@ -3966,65 +4014,6 @@ int bt_conn_le_create_synced(const struct bt_le_ext_adv *adv,
 	*ret_conn = conn;
 	return 0;
 }
-
-#if !defined(CONFIG_BT_FILTER_ACCEPT_LIST)
-int bt_le_set_auto_conn(const bt_addr_le_t *addr,
-			const struct bt_le_conn_param *param)
-{
-	struct bt_conn *conn;
-
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
-		return -EAGAIN;
-	}
-
-	if (param && !bt_le_conn_params_valid(param)) {
-		return -EINVAL;
-	}
-
-	if (!bt_id_scan_random_addr_check()) {
-		return -EINVAL;
-	}
-
-	/* Only default identity is supported */
-	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, addr);
-	if (!conn) {
-		conn = bt_conn_add_le(BT_ID_DEFAULT, addr);
-		if (!conn) {
-			return -ENOMEM;
-		}
-	}
-
-	if (param) {
-		bt_conn_set_param_le(conn, param);
-
-		if (!atomic_test_and_set_bit(conn->flags,
-					     BT_CONN_AUTO_CONNECT)) {
-			bt_conn_ref(conn);
-		}
-	} else {
-		if (atomic_test_and_clear_bit(conn->flags,
-					      BT_CONN_AUTO_CONNECT)) {
-			bt_conn_unref(conn);
-			if (conn->state == BT_CONN_SCAN_BEFORE_INITIATING) {
-				bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
-			}
-		}
-	}
-
-	int err = 0;
-	if (conn->state == BT_CONN_DISCONNECTED &&
-	    atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
-		if (param) {
-			bt_conn_set_state(conn, BT_CONN_SCAN_BEFORE_INITIATING);
-			err = bt_le_scan_user_add(BT_LE_SCAN_USER_CONN);
-		}
-	}
-
-	bt_conn_unref(conn);
-
-	return err;
-}
-#endif /* !defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
 #endif /* CONFIG_BT_CENTRAL */
 
 int bt_conn_le_conn_update(struct bt_conn *conn,

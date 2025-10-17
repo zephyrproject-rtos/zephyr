@@ -1,0 +1,9 @@
+# Copyright 2022-2023, 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_NXP_SIUL2
+	bool "Pin controller driver for NXP SIUL2"
+	default y
+	depends on DT_HAS_NXP_S32ZE_SIUL2_PINCTRL_ENABLED || DT_HAS_NXP_S32K3_SIUL2_PINCTRL_ENABLED
+	help
+	  Enable pin controller driver for NXP SIUL2.

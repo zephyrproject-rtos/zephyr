@@ -63,7 +63,7 @@
 };
 
 &xiao_i2c {
-	clock-frequency = < I2C_BITRATE_FAST >;
+	clock-frequency = <I2C_BITRATE_FAST>;
 
 	pcf8563_xiao_round_display: pcf8563@51 {
 		status = "okay";
@@ -87,6 +87,7 @@
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <1>;
 		status = "okay";
+
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
 			disk-name = "SD";

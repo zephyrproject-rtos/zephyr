@@ -97,6 +97,8 @@ class TestInstance:
         self.init_cases()
         self.filters = []
         self.filter_type = None
+        self.required_applications = []
+        self.required_build_dirs = []
 
     def setup_run_id(self):
         self.run_id = self._get_run_id()
@@ -396,7 +398,6 @@ class TestInstance:
             for cp in coverage_platform:
                 if cp in platform.aliases:
                     content = content + "\nCONFIG_COVERAGE=y"
-                    content = content + "\nCONFIG_COVERAGE_DUMP=y"
 
         if platform.type == "native":
             if enable_asan:

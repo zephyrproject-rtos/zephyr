@@ -26,9 +26,11 @@
 		cpu@0 {
 			status = "disabled";
 		};
+
 		cpu@1 {
 			status = "disabled";
 		};
+
 		cpu@2 {
 			status = "disabled";
 		};
@@ -56,6 +58,7 @@
 	pinctrl-0 = <&pinmux_mdio>;
 	pinctrl-names = "default";
 	status = "okay";
+
 	phy: phy@0 {
 		compatible = "qca,ar8031";
 		reg = <0>;
@@ -85,7 +88,8 @@
 		reg = <0x20>;
 		gpio-controller;
 		#gpio-cells = <2>;
-		interrupt-gpios = <&gpio1 12 (GPIO_ACTIVE_LOW|GPIO_PULL_UP)>;
+		ngpios = <16>;
+		int-gpios = <&gpio1 12 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		status = "okay";
 	};
 };

@@ -1,0 +1,67 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+&emdio {
+	pinctrl-0 = <&emdio_default>;
+	pinctrl-names = "default";
+	status = "disabled";
+
+	phy0: phy@f {
+		compatible = "ethernet-phy";
+		reg = <0xf>;
+		status = "disabled";
+	};
+
+	phy1: phy@10 {
+		compatible = "ethernet-phy";
+		reg = <0x10>;
+		status = "disabled";
+	};
+
+	phy2: phy@5 {
+		compatible = "realtek,rtl8211f";
+		reg = <0x5>;
+		status = "disabled";
+	};
+
+	phy3: phy@6 {
+		compatible = "realtek,rtl8211f";
+		reg = <0x6>;
+		status = "disabled";
+	};
+
+	phy4: phy@7 {
+		compatible = "realtek,rtl8211f";
+		reg = <0x7>;
+		status = "disabled";
+	};
+};
+
+&enetc_psi0 {
+	pinctrl-0 = <&eth2_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy2>;
+	phy-connection-type = "rgmii";
+	status = "disabled";
+};
+
+&enetc_psi1 {
+	pinctrl-0 = <&eth3_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy3>;
+	phy-connection-type = "rgmii";
+	status = "disabled";
+};
+
+&enetc_psi2 {
+	pinctrl-0 = <&eth4_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy4>;
+	phy-connection-type = "rgmii";
+	status = "disabled";
+};

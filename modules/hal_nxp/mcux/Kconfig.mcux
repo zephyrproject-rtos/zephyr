@@ -35,12 +35,6 @@ config HAS_MCUX_SRC
 	  Set if the system reset controller (SRC) module is present in the
 	  SoC.
 
-config HAS_MCUX_SRC_V2
-	bool
-	help
-	  Set if version 2 of the system reset controller (SRC) module is
-	  present in the SoC.
-
 config HAS_MCUX_RDC
 	bool
 	help
@@ -50,12 +44,6 @@ config HAS_MCUX_RCM
 	bool
 	help
 	  Set if the Reset Control Module (RCM) module is present in
-	  the SoC.
-
-config HAS_MCUX_MCX_CMC
-	bool
-	help
-	  Set if the Core Mode Controller (CMC) module is present in
 	  the SoC.
 
 config HAS_MCUX_XCACHE

@@ -28,6 +28,7 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_mdio>;
 	pinctrl-names = "default";
+
 	phy: phy@2 {
 		compatible = "microchip,ksz8081";
 		reg = <2>;

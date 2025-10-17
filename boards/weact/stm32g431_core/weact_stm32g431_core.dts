@@ -33,6 +33,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led_0: led0 {
 			gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
 			label = "Status LED";
@@ -41,11 +42,13 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		button_0: button0 {
 			label = "User";
 			gpios = <&gpioc 13 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		button_1: button1 {
 			label = "Boot0";
 			gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;

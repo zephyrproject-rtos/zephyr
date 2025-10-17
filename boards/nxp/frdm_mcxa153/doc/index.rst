@@ -154,11 +154,9 @@ should see the following message in the terminal:
 Troubleshooting
 ===============
 
-.. include:: ../../common/segger-ecc-systemview.rst
-   :start-after: segger-ecc-systemview
+.. include:: ../../common/segger-ecc-systemview.rst.inc
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _MCX-A153 SoC Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/mcx-arm-cortex-m/mcx-a-series-microcontrollers/mcx-a13x-14x-15x-mcus-with-arm-cortex-m33-scalable-device-options-low-power-and-intelligent-peripherals:MCX-A13X-A14X-A15X

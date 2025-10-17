@@ -14,8 +14,8 @@
 #include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
 
 / {
-	 model = "Sparkfun MGM240P (Sparkfun Thing Plus Matter)";
-	 compatible = "sparkfun,sparkfun_thing_plus_mgm240p", "silabs,efr32mg24";
+	model = "Sparkfun MGM240P (Sparkfun Thing Plus Matter)";
+	compatible = "sparkfun,sparkfun_thing_plus_mgm240p", "silabs,efr32mg24";
 
 	chosen {
 		zephyr,bt-hci = &bt_hci_silabs;
@@ -48,11 +48,6 @@
 			pwms = <&timer0_pwm 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "blue";
 		};
-	};
-
-	wake_up_trigger: gpio-wake-up  {
-		compatible = "silabs,gecko-wake-up-trigger";
-		gpios = <&gpioa 5 GPIO_ACTIVE_LOW>;
 	};
 };
 

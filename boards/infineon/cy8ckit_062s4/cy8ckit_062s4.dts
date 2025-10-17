@@ -9,7 +9,8 @@
 
 / {
 	model = "Infineon PSOC 62S4 Pioneer Kit";
-	compatible ="cypress,psoc6";
+	compatible = "cypress,psoc6";
+
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
@@ -23,11 +24,11 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		user_led: led_0 {
 			label = "LED_0";
 			gpios = <&gpio_prt2 5 GPIO_ACTIVE_HIGH>;
 		};
-
 	};
 
 	arduino_header: connector {
@@ -65,7 +66,6 @@
 &p3_0_scb2_uart_rx {
 	input-enable;
 };
-
 
 uart2: &scb2 {
 	compatible = "infineon,cat1-uart";

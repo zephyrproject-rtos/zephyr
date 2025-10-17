@@ -49,14 +49,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_0 {
 			gpios = <&gpioc 8 0>;
 			label = "User LED D3 Red";
 		};
+
 		green_led: led_1 {
 			gpios = <&gpioc 9 0>;
 			label = "User LED D3 Green";
 		};
+
 		blue_led: led_2 {
 			gpios = <&gpioc 10 0>;
 			label = "User LED D3 Blue";
@@ -69,9 +72,11 @@
 		red_pwm_led: red_pwm_led {
 			pwms = <&ftm3 4 15625000 PWM_POLARITY_INVERTED>;
 		};
+
 		green_pwm_led: green_pwm_led {
 			pwms = <&ftm3 5 15625000 PWM_POLARITY_INVERTED>;
 		};
+
 		blue_pwm_led: blue_pwm_led {
 			pwms = <&ftm3 6 15625000 PWM_POLARITY_INVERTED>;
 		};
@@ -79,11 +84,13 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_0: button_0 {
 			label = "User SW2";
 			gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_button_1: button_1 {
 			label = "User SW3";
 			gpios = <&gpioc 6 GPIO_ACTIVE_LOW>;
@@ -153,7 +160,6 @@
 };
 
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -167,14 +173,17 @@
 			label = "mcuboot";
 			reg = <0x0 DT_SIZE_K(44)>;
 		};
+
 		slot0_partition: partition@b000 {
 			label = "image-0";
 			reg = <0xb000 DT_SIZE_K(100)>;
 		};
+
 		slot1_partition: partition@24000 {
 			label = "image-1";
 			reg = <0x24000 DT_SIZE_K(100)>;
 		};
+
 		storage_partition: partition@3d000 {
 			label = "storage";
 			reg = <0x3d000 DT_SIZE_K(12)>;
@@ -224,10 +233,10 @@
 	mx25u32: mx25u3235f@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <104000000>;
+		spi-max-frequency = <DT_FREQ_M(104)>;
 		wp-gpios = <&gpioe 3 0>;
 		reset-gpios = <&gpioe 0 0>;
-		size = <0x2000000>;
+		size = <DT_SIZE_M(32)>;
 		jedec-id = [c2 25 36];
 	};
 };

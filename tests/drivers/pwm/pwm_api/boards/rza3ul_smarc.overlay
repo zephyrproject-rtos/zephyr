@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	aliases {
+		pwm-test = &pwm1;
+	};
+};
+
 &mtu1 {
 	prescaler = <4>;
 	status = "okay";

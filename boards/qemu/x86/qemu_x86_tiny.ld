@@ -640,6 +640,8 @@ SECTIONS
 	*(.fini)
 	*(.eini)
 
+#include <snippets-text-sections.ld>
+
 #ifndef CONFIG_LINKER_USE_PINNED_SECTION
 #include <zephyr/linker/kobject-text.ld>
 #endif

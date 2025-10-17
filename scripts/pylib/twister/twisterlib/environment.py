@@ -23,7 +23,6 @@ from pathlib import Path
 import zephyr_module
 from twisterlib.constants import SUPPORTED_SIMS
 from twisterlib.coverage import supported_coverage_formats
-from twisterlib.error import TwisterRuntimeError
 from twisterlib.log_helper import log_command
 
 logger = logging.getLogger('twister')
@@ -836,6 +835,15 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
         will translate to "west flash --runner pyocd"
         """
     )
+    parser.add_argument(
+        "--flash-command",
+        help="""Instead of 'west flash', uses a custom flash command to flash
+            when running with --device-testing. Supports comma-separated
+            argument list, the script is also passed a --build-dir flag with
+            the build directory as an argument, and a --board-id flag with the
+            board or probe id if available.
+        """
+    )
 
     parser.add_argument(
         "-X", "--fixture", action="append", default=[],
@@ -1183,11 +1191,8 @@ class TwisterEnv:
         toolchain_script = Path(ZEPHYR_BASE) / Path('cmake/verify-toolchain.cmake')
         result = self.run_cmake_script([toolchain_script, "FORMAT=json"])
 
-        try:
-            if result['returncode']:
-                raise TwisterRuntimeError(f"E: {result['returnmsg']}")
-        except Exception as e:
-            print(str(e))
+        if result['returncode'] != 0:
+            print(f"E: {result['returnmsg']}")
             sys.exit(2)
         self.toolchain = json.loads(result['stdout'])['ZEPHYR_TOOLCHAIN_VARIANT']
         logger.info(f"Using '{self.toolchain}' toolchain.")

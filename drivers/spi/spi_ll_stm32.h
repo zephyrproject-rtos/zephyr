@@ -37,7 +37,8 @@ struct spi_stm32_config {
 #endif
 	size_t pclk_len;
 	const struct stm32_pclken *pclken;
-	bool fifo_enabled;
+	bool fifo_enabled: 1;
+	bool ioswp: 1;
 };
 
 #ifdef CONFIG_SPI_STM32_DMA

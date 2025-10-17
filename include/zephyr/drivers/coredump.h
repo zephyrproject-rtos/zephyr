@@ -6,7 +6,8 @@
 
 /**
  * @file
- * @brief Public APIs for coredump pseudo-device driver
+ * @ingroup coredump_device_interface
+ * @brief Main header file for coredump pseudo-device driver API.
  */
 
 #ifndef INCLUDE_ZEPHYR_DRIVERS_COREDUMP_H_
@@ -20,8 +21,8 @@ extern "C" {
 #endif
 
 /**
- * @brief Coredump pseudo-device driver APIs
- * @defgroup coredump_device_interface Coredump pseudo-device driver APIs
+ * @brief Interfaces for coredump pseudo-device.
+ * @defgroup coredump_device_interface Coredump pseudo-device
  * @ingroup io_interfaces
  * @{
  */

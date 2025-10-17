@@ -22,12 +22,12 @@ Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 \
-  -testid=cap_handover_peripheral_unicast_to_broadcast \
+  -testid=cap_handover_peripheral \
   -RealEncryption=1 -rs=46 -D=${NR_OF_DEVICES}
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=2 \
-  -testid=cap_handover_peripheral_unicast_to_broadcast \
+  -testid=cap_handover_peripheral \
   -RealEncryption=1 -rs=69 -D=${NR_OF_DEVICES}
 
 Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \

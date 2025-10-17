@@ -64,6 +64,12 @@ enum flash_npcx_ex_ops {
 	 *            result of the operation.
 	 */
 	FLASH_NPCX_EX_OP_GET_QSPI_OPER,
+	/*
+	 * NPCX General DMA (GDMA) mode execution.
+	 *
+	 * Execute transaction via GDMA module.
+	 */
+	FLASH_NPCX_EX_OP_EXEC_GDMA,
 };
 
 /**
@@ -106,6 +112,13 @@ struct npcx_ex_ops_qspi_oper_in {
  */
 struct npcx_ex_ops_qspi_oper_out {
 	uint32_t oper; /**< Bitfield of currently active operations. */
+};
+
+/* Structures used by FLASH_NPCX_EX_OP_EXEC_GDMA */
+struct npcx_ex_ops_gdma_in {
+	uint32_t src;
+	uint32_t dst;
+	uint16_t length;
 };
 
 /**

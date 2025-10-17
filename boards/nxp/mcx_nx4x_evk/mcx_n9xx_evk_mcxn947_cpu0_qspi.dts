@@ -1,0 +1,51 @@
+/*
+ * Copyright 2024-2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "mcx_n9xx_evk_mcxn947_cpu0.dtsi"
+
+/delete-node/ &boot_partition;
+/delete-node/ &slot0_partition;
+/delete-node/ &slot1_partition;
+/delete-node/ &storage_partition;
+
+/ {
+	model = "NXP MCX-N9XX-EVK board, QSPI variant";
+
+	chosen {
+		zephyr,flash = &w25q64jwtbjq;
+		zephyr,flash-controller = &w25q64jwtbjq;
+	};
+};
+
+&w25q64jwtbjq {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(80)>;
+		};
+
+		slot0_partition: partition@14000 {
+			label = "image-0";
+			reg = <0x00014000 DT_SIZE_M(3)>;
+		};
+
+		slot1_partition: partition@314000 {
+			label = "image-1";
+			reg = <0x00314000 DT_SIZE_M(3)>;
+		};
+
+		storage_partition: partition@614000 {
+			label = "storage";
+			reg = <0x00614000 DT_SIZE_K(1968)>;
+		};
+	};
+};

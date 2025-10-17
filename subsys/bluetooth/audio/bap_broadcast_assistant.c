@@ -581,7 +581,7 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 
 	(void)memset(params, 0, sizeof(*params));
 
-	LOG_DBG("%s receive state", active_recv_state ? "Active " : "Inactive");
+	LOG_DBG("%s receive state", active_recv_state ? "Active" : "Inactive");
 
 	if (cb_err == 0 && active_recv_state) {
 		int16_t index;
@@ -1407,7 +1407,9 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 	/* Check if this operation would result in a duplicate before proceeding */
 	if (broadcast_src_is_duplicate(inst, param->broadcast_id, param->adv_sid,
 				       param->addr.type)) {
-		LOG_DBG("Broadcast source already exists");
+		LOG_DBG("Broadcast source already exists for broadcast_id 0x%06X, sid 0x%02X and "
+			"type 0x%02X",
+			param->broadcast_id, param->adv_sid, param->addr.type);
 
 		return -EINVAL;
 	}
