@@ -16,7 +16,6 @@
 
 	/* We need to remove aliases to nodes we delete */
 	aliases {
-		/delete-property/ sram-0;
 		/delete-property/ sram-1;
 		/delete-property/ wdt-0;
 		/delete-property/ i2c-0;
@@ -33,7 +32,6 @@
 	};
 
 	soc {
-		/delete-node/ memory@20000000;
 		/delete-node/ memory@21000000;
 		/delete-node/ watchdog@4100b000;
 		/delete-node/ i2c@41013000;
@@ -68,6 +66,11 @@
 			reg = <0x00000000 DT_SIZE_K(256)>;
 		};
 	};
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(512)>;
+	ranges = <0x0 0x20000000 DT_SIZE_K(512)>;
 };
 
 &gpiote {
