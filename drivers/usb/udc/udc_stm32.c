@@ -1282,6 +1282,13 @@ static int priv_clock_enable(void)
 #else /* CONFIG_SOC_SERIES_STM32F2X || CONFIG_SOC_SERIES_STM32F4X */
 	if (UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)) == PCD_PHY_ULPI) {
 		LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
+	} else if (UDC_STM32_NODE_SPEED(DT_DRV_INST(0)) == PCD_SPEED_HIGH_IN_FULL) {
+		/*
+		 * Some parts of the STM32F4 series require the OTGHSULPILPEN to be
+		 * cleared if the OTG_HS is used in FS mode. Disable it on all parts
+		 * since it has no nefarious effect if performed when not required.
+		 */
+		LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 	}
 #endif /* CONFIG_SOC_SERIES_* */
 #elif defined(CONFIG_SOC_SERIES_STM32H7X) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs)
