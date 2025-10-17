@@ -6,7 +6,6 @@
  * where 'x' is replaced for specific SoCs like {R,V,Z}
  */
 
-#include <mem.h>
 #include <st/f1/stm32f103Xe.dtsi>
 
 / {
