@@ -573,18 +573,17 @@ int icm45686_stream_init(const struct device *dev)
 		}
 #if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(invensense_icm45686, i3c)
 	/** I3C devices use IBI only if no GPIO INT pin is defined. */
-	} else if (data->rtio.type == ICM45686_BUS_I3C) {
-		const struct i3c_iodev_data *iodev_data = data->rtio.iodev->data;
+	} else if (data->bus.rtio.type == ICM45686_BUS_I3C) {
+		const struct i3c_iodev_data *iodev_data = data->bus.rtio.iodev->data;
 
-		data->rtio.i3c.desc = i3c_device_find(iodev_data->bus,
-						      &data->rtio.i3c.id);
-		if (data->rtio.i3c.desc == NULL) {
+		data->bus.rtio.i3c.desc = i3c_device_find(iodev_data->bus, &data->bus.rtio.i3c.id);
+		if (data->bus.rtio.i3c.desc == NULL) {
 			LOG_ERR("Failed to find I3C device");
 			return -ENODEV;
 		}
-		data->rtio.i3c.desc->ibi_cb = icm45686_ibi_cb;
+		data->bus.rtio.i3c.desc->ibi_cb = icm45686_ibi_cb;
 
-		err = i3c_ibi_enable(data->rtio.i3c.desc);
+		err = i3c_ibi_enable(data->bus.rtio.i3c.desc);
 		if (err) {
 			LOG_ERR("Failed to enable IBI: %d", err);
 			return err;
