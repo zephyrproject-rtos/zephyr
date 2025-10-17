@@ -32,3 +32,9 @@ properties:
   fifo-enable:
     type: boolean
     description: Enable the SPI FIFO usage for performance improvement.
+
+  limited-instance:
+    type: boolean
+    description: |
+      Indicates if the SPI instance is a limited-features instance.
+      Notably, it indicates that the supported data width are only 8 and 16-bit.
