@@ -34,6 +34,8 @@
 	soc {
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 
 		peripheral@50000000 {
