@@ -15,40 +15,39 @@ description: |
             reg = <0>;
             spi-max-frequency = <DT_FREQ_M(8)>; /* Maximum SPI bus frequency */
 
-            #address-cells = <1>;
-            #size-cells = <0>;
-
             poscmp-enable; test-mode; lock-gconf; /* ADI TMC Global configuration flags */
             clock-frequency = <DT_FREQ_M(16)>; /* Internal/External Clock frequency */
 
-            motor: motor@0 {
-                status = "okay";
-                reg = <0>;
+            /* common stepper controller settings */
+            tmc50xx_0_stepper_driver: tmc50xx_0_stepper_driver {
+              idx = <0>;
+              compatible = "adi,tmc50xx-stepper-driver";
+              micro-step-res = <256>;
+              /* ADI TMC stallguard settings specific to TMC50XX */
+              stallguard2-threshold=<30>;
+            };
 
-                /* common stepper controller settings */
-                invert-direction;
-                micro-step-res = <256>;
-
-                /* ADI TMC stallguard settings specific to TMC50XX */
-                activate-stallguard2;
-                stallguard-velocity-check-interval-ms=<100>;
-                stallguard2-threshold=<9>;
-                stallguard-threshold-velocity=<500000>;
-
-                /* ADI TMC ramp generator as well as current settings */
-                vstart = <10>;
-                a1 = <20>;
-                v1 = <30>;
-                d1 = <40>;
-                vmax = <50>;
-                amax = <60>;
-                dmax = <70>;
-                tzerowait = <80>;
-                vhigh = <90>;
-                vcoolthrs = <100>;
-                ihold = <1>;
-                irun = <2>;
-                iholddelay = <3>;
+            /* ADI TMC ramp generator as well as current settings */
+            tmc50xx_0_motion_controller: tmc50xx_0_motion_controller {
+              idx = <0>;
+              compatible = "adi,tmc50xx-motion-controller";
+              vstart = <1000>;
+              vstop = <10>;
+              a1 = <10000>;
+              v1 = <50000>;
+              d1 = <14000>;
+              vmax = <900000>;
+              amax = <50000>;
+              dmax = <7000>;
+              tzerowait = <100>;
+              vhigh = <900000>;
+              vcoolthrs = <900000>;
+              ihold = <1>;
+              irun = <10>;
+              iholddelay = <1>;
+              activate-stallguard2;
+              stallguard-velocity-check-interval-ms=<1000>;
+              stallguard-threshold-velocity=<200000>;
             };
         };
     };
@@ -65,14 +64,6 @@ include:
       - lock-gconf
 
 properties:
-  "#address-cells":
-    default: 1
-    const: 1
-
-  "#size-cells":
-    default: 0
-    const: 0
-
   clock-frequency:
     type: int
     required: true
@@ -83,31 +74,18 @@ properties:
       Hint: µstep velocity v[Hz] µsteps / s v[Hz] = v[50xx] * ( fCLK[Hz]/2 / 2^23 )
             where v[50xx] is the value written to the TMC50XX.
 
+  shaft1:
+    type: boolean
+    description: |
+      Inverse motor 1 direction
+
+  shaft2:
+    type: boolean
+    description: |
+      Inverse motor 2 direction
+
 child-binding:
   include:
-    - name: stepper-controller.yaml
     - name: base.yaml
       property-allowlist:
         - reg
-    - name: adi,trinamic-ramp-generator.yaml
-      property-allowlist:
-        - vstart
-        - a1
-        - v1
-        - amax
-        - vmax
-        - dmax
-        - d1
-        - vstop
-        - tzerowait
-        - vhigh
-        - vcoolthrs
-        - ihold
-        - irun
-        - iholddelay
-    - name: adi,trinamic-stallguard.yaml
-      property-allowlist:
-        - activate-stallguard2
-        - stallguard2-threshold
-        - stallguard-threshold-velocity
-        - stallguard-velocity-check-interval-ms
