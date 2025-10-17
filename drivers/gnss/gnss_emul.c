@@ -123,7 +123,7 @@ static int gnss_emul_set_fix_rate(const struct device *dev, uint32_t fix_interva
 	return 0;
 }
 
-static int gnss_emul_get_fix_rate(const struct device *dev, uint32_t *fix_interval_ms)
+int gnss_emul_get_fix_rate(const struct device *dev, uint32_t *fix_interval_ms)
 {
 	struct gnss_emul_data *data = dev->data;
 
@@ -144,8 +144,7 @@ static int gnss_emul_set_navigation_mode(const struct device *dev,
 	return 0;
 }
 
-static int gnss_emul_get_navigation_mode(const struct device *dev,
-					 enum gnss_navigation_mode *mode)
+int gnss_emul_get_navigation_mode(const struct device *dev, enum gnss_navigation_mode *mode)
 {
 	struct gnss_emul_data *data = dev->data;
 
@@ -165,7 +164,7 @@ static int gnss_emul_set_enabled_systems(const struct device *dev, gnss_systems_
 	return 0;
 }
 
-static int gnss_emul_get_enabled_systems(const struct device *dev, gnss_systems_t *systems)
+int gnss_emul_get_enabled_systems(const struct device *dev, gnss_systems_t *systems)
 {
 	struct gnss_emul_data *data = dev->data;
 

@@ -30,4 +30,34 @@ void gnss_emul_clear_data(const struct device *dev);
 void gnss_emul_set_data(const struct device *dev, const struct navigation_data *nav,
 			const struct gnss_info *info, int64_t timestamp_ms);
 
+/**
+ * @brief Retrieve the last configured fix rate, regardless of PM state
+ *
+ * @param dev GNSS emulator device
+ * @param fix_interval_ms Output fix interval
+ *
+ * @retval 0 On success
+ */
+int gnss_emul_get_fix_rate(const struct device *dev, uint32_t *fix_interval_ms);
+
+/**
+ * @brief Retrieve the last configured navigation mode, regardless of PM state
+ *
+ * @param dev GNSS emulator device
+ * @param mode Output navigation mode
+ *
+ * @retval 0 On success
+ */
+int gnss_emul_get_navigation_mode(const struct device *dev, enum gnss_navigation_mode *mode);
+
+/**
+ * @brief Retrieve the last configured systems, regardless of PM state
+ *
+ * @param dev GNSS emulator device
+ * @param systems Output GNSS systems
+ *
+ * @retval 0 On success
+ */
+int gnss_emul_get_enabled_systems(const struct device *dev, gnss_systems_t *systems);
+
 #endif /* ZEPHYR_DRIVERS_GNSS_GNSS_EMUL_H_ */
