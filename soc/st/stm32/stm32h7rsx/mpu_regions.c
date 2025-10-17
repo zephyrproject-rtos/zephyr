@@ -26,6 +26,9 @@ static const struct arm_mpu_region mpu_regions[] = {
 
 	/* Region 3 */
 	MPU_REGION_ENTRY("SRAM_0", CONFIG_SRAM_BASE_ADDRESS, REGION_RAM_ATTR(REGION_SRAM_SIZE)),
+
+	/* Special region */
+	MPU_REGION_ENTRY("SPECIAL_REGION", 0x08fff800, REGION_FLASH_ATTR(REGION_2K)),
 };
 
 const struct arm_mpu_config mpu_config = {
