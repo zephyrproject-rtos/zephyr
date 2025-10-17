@@ -1397,7 +1397,7 @@ exclude = [
     "./scripts/release/bug_bash.py",
     "./scripts/release/list_backports.py",
     "./scripts/release/list_devicetree_bindings_changes.py",
-    "./scripts/set_assignees.py",
+    "./scripts/ci/set_assignees.py",
     "./scripts/snippets.py",
     "./scripts/tests/twister/conftest.py",
     "./scripts/tests/twister/pytest_integration/test_harness_pytest.py",
