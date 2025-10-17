@@ -35,6 +35,7 @@ struct gnss_emul_data {
 	struct k_sem lock;
 	int64_t resume_timestamp_ms;
 	int64_t fix_timestamp_ms;
+	int64_t boot_realtime_ms;
 	uint32_t fix_interval_ms;
 	enum gnss_navigation_mode nav_mode;
 	gnss_systems_t enabled_systems;
@@ -302,15 +303,16 @@ void gnss_emul_clear_data(const struct device *dev)
 static void gnss_emul_set_utc(const struct device *dev)
 {
 	struct gnss_emul_data *data = dev->data;
+	int64_t timestamp_realtime;
 	time_t timestamp;
 	struct tm datetime;
 	uint16_t millisecond;
 
-	timestamp = (time_t)(data->fix_timestamp_ms / 1000);
+	timestamp_realtime = data->boot_realtime_ms + data->fix_timestamp_ms;
+	timestamp = (time_t)(timestamp_realtime / 1000);
 	gmtime_r(&timestamp, &datetime);
 
-	millisecond = (uint16_t)(data->fix_timestamp_ms % 1000)
-		    + (uint16_t)(datetime.tm_sec * 1000);
+	millisecond = (uint16_t)(timestamp_realtime % 1000) + (uint16_t)(datetime.tm_sec * 1000);
 
 	data->data.utc.hour = datetime.tm_hour;
 	data->data.utc.millisecond = millisecond;
@@ -323,13 +325,13 @@ static void gnss_emul_set_utc(const struct device *dev)
 #ifdef CONFIG_GNSS_EMUL_MANUAL_UPDATE
 
 void gnss_emul_set_data(const struct device *dev, const struct navigation_data *nav,
-			const struct gnss_info *info, int64_t timestamp_ms)
+			const struct gnss_info *info, int64_t boot_realtime_ms)
 {
 	struct gnss_emul_data *data = dev->data;
 
 	data->data.nav_data = *nav;
 	data->data.info = *info;
-	data->fix_timestamp_ms = timestamp_ms;
+	data->boot_realtime_ms = boot_realtime_ms;
 	gnss_emul_set_utc(dev);
 }
 
