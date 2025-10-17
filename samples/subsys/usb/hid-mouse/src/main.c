@@ -12,6 +12,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/usb/usb_bc12.h>
 #include <zephyr/input/input.h>
 #include <zephyr/sys/util.h>
 
@@ -21,6 +22,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
+static const struct device *bc12_dev = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_usb_bc12));
 static const struct gpio_dt_spec led0 = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
 static const uint8_t hid_report_desc[] = HID_MOUSE_REPORT_DESC(2);
 
@@ -37,6 +39,12 @@ enum mouse_report_idx {
 
 K_MSGQ_DEFINE(mouse_msgq, MOUSE_REPORT_COUNT, 2, 1);
 static bool mouse_ready;
+
+struct app_bc_private {
+	struct k_work work;
+	struct bc12_partner_state state;
+	struct usbd_context *usbd_ctx;
+} app_bc_priv;
 
 static void input_cb(struct input_event *evt, void *user_data)
 {
@@ -101,6 +109,67 @@ struct hid_device_ops mouse_ops = {
 	.get_report = mouse_get_report,
 };
 
+static const char *bc12type_to_str(const enum bc12_type type)
+{
+	switch (type) {
+	case BC12_TYPE_NONE:
+		return "NONE";
+	case BC12_TYPE_SDP:
+		return "SDP";
+	case BC12_TYPE_DCP:
+		return "DCP";
+	case BC12_TYPE_CDP:
+		return "CDP";
+	case BC12_TYPE_PROPRIETARY:
+		return "PROPRIETARY";
+	case BC12_TYPE_UNKNOWN:
+		return "UNKNOWN";
+	default:
+		return "ERROR";
+	}
+}
+
+static void app_bc12_work_handler(struct k_work *item)
+{
+	struct app_bc_private *priv = CONTAINER_OF(item, struct app_bc_private, work);
+	struct bc12_partner_state *state = &priv->state;
+	struct usbd_context *const usbd_ctx = priv->usbd_ctx;
+
+	if (state->bc12_role != BC12_PORTABLE_DEVICE) {
+		LOG_ERR("Unexpected BC role");
+		return;
+	}
+
+	LOG_INF("New BC state %s (%d uV %d uA)",
+		bc12type_to_str(state->type), state->voltage_uv, state->current_ua);
+
+	if (state->type == BC12_TYPE_NONE) {
+		/* FIXME: check if USB device support is enabled */
+		if (usbd_disable(usbd_ctx)) {
+			LOG_WRN("Failed to disable device support");
+		}
+	} else if (state->type == BC12_TYPE_DCP) {
+		LOG_INF("Just charge");
+	} else {
+		if (usbd_enable(usbd_ctx)) {
+			LOG_ERR("Failed to enable device support");
+		}
+	}
+}
+
+static void bc12_result_cb(const struct device *dev,
+			   struct bc12_partner_state *const state,
+			   void *const user_data)
+{
+	memcpy(&app_bc_priv.state, state, sizeof(struct bc12_partner_state));
+	app_bc_priv.usbd_ctx = user_data;
+	/*
+	 * Offload detection handling to system workqueue, as the callback is
+	 * executed in the ISR context.
+	 */
+	k_work_submit(&app_bc_priv.work);
+}
+
 int main(void)
 {
 	struct usbd_context *sample_usbd;
@@ -138,10 +207,26 @@ int main(void)
 		return -ENODEV;
 	}
 
-	ret = usbd_enable(sample_usbd);
-	if (ret != 0) {
-		LOG_ERR("Failed to enable device support");
-		return ret;
+	if (IS_ENABLED(CONFIG_USB_BC12)) {
+		if (!device_is_ready(bc12_dev)) {
+			LOG_ERR("USB BC1.2 device %s is not ready", bc12_dev->name);
+			return -EIO;
+		}
+
+		k_work_init(&app_bc_priv.work, app_bc12_work_handler);
+
+		bc12_set_result_cb(bc12_dev, &bc12_result_cb, sample_usbd);
+		ret = bc12_set_role(bc12_dev, BC12_PORTABLE_DEVICE);
+		if (ret != 0) {
+			LOG_ERR("Failed to set BC12 role");
+			return -EIO;
+		}
+	} else {
+		ret = usbd_enable(sample_usbd);
+		if (ret != 0) {
+			LOG_ERR("Failed to enable device support");
+			return ret;
+		}
 	}
 
 	LOG_DBG("USB device support enabled");
