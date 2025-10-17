@@ -486,21 +486,21 @@
 		};
 
 		mcwdt0: mcwdt@40268000 {
-			compatible = "infineon,cat1-lp-timer";
+			compatible = "infineon,lp-timer";
 			reg = <0x40268000 0x100>;
 			system-interrupts = <13 6>;
 			status = "disabled";
 		};
 
 		mcwdt1: mcwdt@40268100 {
-			compatible = "infineon,cat1-lp-timer";
+			compatible = "infineon,lp-timer";
 			reg = <0x40268100 0x100>;
 			system-interrupts = <14 6>;
 			status = "disabled";
 		};
 
 		mcwdt2: mcwdt@40268200 {
-			compatible = "infineon,cat1-lp-timer";
+			compatible = "infineon,lp-timer";
 			reg = <0x40268200 0x100>;
 			system-interrupts = <15 6>;
 			status = "disabled";
