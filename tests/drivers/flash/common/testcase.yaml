@@ -61,6 +61,9 @@ tests:
     platform_exclude:
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpurad
+      - nrf54h20dk/nrf54h20/cpuppr
+      - nrf54h20dk/nrf54h20/cpuppr/xip
     integration_platforms:
       - qemu_x86
       - mimxrt1060_evk/mimxrt1062/qspi
