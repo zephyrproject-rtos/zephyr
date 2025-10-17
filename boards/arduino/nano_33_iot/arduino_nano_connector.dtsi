@@ -37,5 +37,7 @@
 };
 
 arduino_nano_i2c: &sercom4 {};
+
 arduino_nano_spi: &sercom1 {};
+
 arduino_nano_serial: &sercom5 {};

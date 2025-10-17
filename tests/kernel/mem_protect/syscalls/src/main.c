@@ -15,6 +15,9 @@
 
 #if defined(CONFIG_BOARD_FVP_BASE_REVC_2XAEMV8A)
 #define SLEEP_MS_LONG	30000
+#elif defined(CONFIG_BOARD_INTEL_ADSP_ACE30_PTL_SIM) ||                                            \
+	defined(CONFIG_BOARD_INTEL_ADSP_ACE40_NVL_SIM)
+#define SLEEP_MS_LONG	300
 #else
 #define SLEEP_MS_LONG	15000
 #endif
@@ -263,13 +266,13 @@ ZTEST_USER(syscalls, test_string_nlen)
 	} else {
 		zassert_equal(err, 0, "kernel string faulted in kernel mode (%d)", err);
 		zassert_equal(ret, strlen(kernel_string),
-			      "incorrect length returned (%d)", ret);
+			      "incorrect length returned (%zu)", ret);
 	}
 
 	/* Valid usage */
 	ret = string_nlen(user_string, BUF_SIZE, &err);
 	zassert_equal(err, 0, "user string faulted (%d)", err);
-	zassert_equal(ret, strlen(user_string), "incorrect length returned (%d)", ret);
+	zassert_equal(ret, strlen(user_string), "incorrect length returned (%zu)", ret);
 
 	/* Skip this scenario for nsim_sem emulated board, unfortunately
 	 * the emulator doesn't set up memory as specified in DTS and poking

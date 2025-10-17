@@ -1176,7 +1176,7 @@ static int64_t next_rx_off(void)
 /** Return timestamp to next even whether it is RX_OFF or update event */
 static int64_t calc_next_event(void)
 {
-	return Z_MIN(next_update(), next_rx_off());
+	return min(next_update(), next_rx_off());
 }
 
 static void sm_registration_done(void)

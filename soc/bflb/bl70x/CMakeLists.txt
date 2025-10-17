@@ -13,3 +13,4 @@ zephyr_code_relocate_ifdef(CONFIG_PINCTRL_BFLB LIBRARY drivers__pinctrl LOCATION
 zephyr_code_relocate_ifdef(CONFIG_SYSCON_BFLB_EFUSE LIBRARY drivers__syscon LOCATION ITCM NOKEEP)
 zephyr_code_relocate_ifdef(CONFIG_CLOCK_CONTROL_BOUFFALOLAB_BL70X
   LIBRARY drivers__clock_control LOCATION ITCM NOKEEP)
+zephyr_code_relocate_ifdef(CONFIG_CACHE_BFLB_L1C LIBRARY drivers__cache LOCATION ITCM NOKEEP)

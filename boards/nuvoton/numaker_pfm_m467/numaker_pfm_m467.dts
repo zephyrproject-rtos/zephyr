@@ -22,7 +22,6 @@
 		sw1 = &user_button_2;
 	};
 
-
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
@@ -32,17 +31,19 @@
 		zephyr,canbus = &canfd0;
 	};
 
-
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_0 {
 			gpios = <&gpioh 4 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
 		};
+
 		green_led: led_1 {
 			gpios = <&gpioh 6 GPIO_ACTIVE_LOW>;
 			label = "User LD2";
 		};
+
 		blue_led: led_2 {
 			gpios = <&gpioh 5 GPIO_ACTIVE_LOW>;
 			label = "User LD3";
@@ -51,11 +52,13 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_1: button_1 {
 			label = "User SW2";
 			gpios = <&gpioh 1 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_button_2: button_2 {
 			label = "User SW3";
 			gpios = <&gpioh 0 GPIO_ACTIVE_LOW>;
@@ -86,10 +89,12 @@
 			label = "image-0";
 			reg = <0x00000000 0x00080000>;
 		};
+
 		slot1_partition: partition@80000 {
 			label = "image-1";
 			reg = <0x00080000 0x0007e000>;
 		};
+
 		storage_partition: partition@fe000 {
 			label = "storage";
 			reg = <0x000fe000 0x00002000>;

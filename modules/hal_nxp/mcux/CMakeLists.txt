@@ -31,6 +31,7 @@ if(CONFIG_SOC_LPC11U66
     OR CONFIG_SOC_MKW40Z4
     OR CONFIG_SOC_MKW41Z4
     OR CONFIG_SOC_MIMX9131
+    OR CONFIG_SOC_MIMX9111
     )
 
     set (CONFIG_SOC_SDKNG_UNSUPPORTED ON)
@@ -73,14 +74,18 @@ endif() # CONFIG_SOC_SDKNG_UNSUPPORTED
 
 enable_language(C ASM)
 
-zephyr_linker_sources(RWDATA
-  ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/quick_access_data.ld
-  )
+if(CONFIG_CPU_CORTEX_A)
+  zephyr_compile_definitions(FSL_SDK_DRIVER_QUICK_ACCESS_DISABLE)
+else()
+  zephyr_linker_sources(RWDATA
+    ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/quick_access_data.ld
+    )
 
-zephyr_linker_sources_ifdef(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
-  RAMFUNC_SECTION
-  ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/quick_access_code.ld
-  )
+  zephyr_linker_sources_ifdef(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
+    RAMFUNC_SECTION
+    ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/quick_access_code.ld
+    )
+endif()
 
 zephyr_linker_sources_ifdef(CONFIG_NOCACHE_MEMORY
   NOCACHE_SECTION

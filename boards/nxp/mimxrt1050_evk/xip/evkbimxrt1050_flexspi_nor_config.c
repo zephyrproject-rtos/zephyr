@@ -7,44 +7,35 @@
 
 #include "evkbimxrt1050_flexspi_nor_config.h"
 
-/* Component ID definition, used by tools. */
-#ifndef FSL_COMPONENT_ID
-#define FSL_COMPONENT_ID "platform.drivers.xip_board"
-#endif
-
 #if defined(XIP_BOOT_HEADER_ENABLE) && (XIP_BOOT_HEADER_ENABLE == 1)
-#if defined(__CC_ARM) || defined(__ARMCC_VERSION) || defined(__GNUC__)
 __attribute__((section(".boot_hdr.conf"), used))
-#elif defined(__ICCARM__)
-#pragma location = ".boot_hdr.conf"
-#endif
 
 const flexspi_nor_config_t hyperflash_config = {
-	.memConfig = {
+	.mem_config = {
 		.tag                = FLEXSPI_CFG_BLK_TAG,
 		.version            = FLEXSPI_CFG_BLK_VERSION,
-		.readSampleClkSrc
-			= kFlexSPIReadSampleClk_ExternalInputFromDqsPad,
-		.csHoldTime         = 3u,
-		.csSetupTime        = 3u,
-		.columnAddressWidth = 3u,
+		.read_sample_clk_src
+			= FLEXSPI_READ_SAMPLE_CLK_EXTERNAL_INPUT_FROM_DQS_PAD,
+		.cs_hold_time         = 3u,
+		.cs_setup_time        = 3u,
+		.column_address_width = 3u,
 		/* Enable DDR mode, Wordaddassable,
 		 * Safe configuration, Differential clock
 		 */
-		.controllerMiscOption =
-			(1u << kFlexSpiMiscOffset_DdrModeEnable) |
-			(1u << kFlexSpiMiscOffset_WordAddressableEnable) |
-			(1u << kFlexSpiMiscOffset_SafeConfigFreqEnable) |
-			(1u << kFlexSpiMiscOffset_DiffClkEnable),
-		.deviceType         = kFlexSpiDeviceType_SerialNOR,
-		.sflashPadType      = kSerialFlash_8Pads,
-		.serialClkFreq      = kFlexSpiSerialClk_133MHz,
-		.lutCustomSeqEnable = 0x1,
-		.sflashA1Size       = 64u * 1024u * 1024u,
-		.dataValidTime      = {15u, 0u},
-		.busyOffset         = 15u,
-		.busyBitPolarity    = 1u,
-		.lookupTable = {
+		.controller_misc_option =
+			(1u << FLEXSPI_MISC_OFFSET_DDR_MODE_ENABLE) |
+			(1u << FLEXSPI_MISC_OFFSET_WORD_ADDRESSABLE_ENABLE) |
+			(1u << FLEXSPI_MISC_OFFSET_SAFE_CONFIG_FREQ_ENABLE) |
+			(1u << FLEXSPI_MISC_OFFSET_DIFF_CLK_ENABLE),
+		.device_type         = FLEXSPI_DEVICE_TYPE_SERIAL_NOR,
+		.sflash_pad_type      = SERIAL_FLASH_8_PADS,
+		.serial_clk_freq      = FLEXSPI_SERIAL_CLK_133MHZ,
+		.lut_custom_seq_enable = 0x1,
+		.sflash_a1_size       = 64u * 1024u * 1024u,
+		.data_valid_time      = {15u, 0u},
+		.busy_offset         = 15u,
+		.busy_bit_polarity    = 1u,
+		.lookup_table = {
 			/* Read LUTs */
 			[0] = FLEXSPI_LUT_SEQ(CMD_DDR, FLEXSPI_8PAD, 0xA0,
 				RADDR_DDR, FLEXSPI_8PAD, 0x18),
@@ -192,45 +183,45 @@ const flexspi_nor_config_t hyperflash_config = {
 				0x0, CMD_DDR, FLEXSPI_8PAD, 0x10),
 		},
 		/* LUT customized sequence */
-		.lutCustomSeq = {
+		.lut_custom_seq = {
 			{
-				.seqNum   = 0,
-				.seqId    = 0,
+				.seq_num   = 0,
+				.seq_id    = 0,
 				.reserved = 0,
 			},
 			{
-				.seqNum   = 2,
-				.seqId    = 1,
+				.seq_num   = 2,
+				.seq_id    = 1,
 				.reserved = 0,
 			},
 			{
-				.seqNum   = 2,
-				.seqId    = 3,
+				.seq_num   = 2,
+				.seq_id    = 3,
 				.reserved = 0,
 			},
 			{
-				.seqNum   = 4,
-				.seqId    = 5,
+				.seq_num   = 4,
+				.seq_id    = 5,
 				.reserved = 0,
 			},
 			{
-				.seqNum   = 2,
-				.seqId    = 9,
+				.seq_num   = 2,
+				.seq_id    = 9,
 				.reserved = 0,
 			},
 			{
-				.seqNum   = 4,
-				.seqId    = 11,
+				.seq_num   = 4,
+				.seq_id    = 11,
 				.reserved = 0,
 			}
 		},
 	},
-	.pageSize           = 512u,
-	.sectorSize         = 256u * 1024u,
-	.ipcmdSerialClkFreq = 1u,
-	.serialNorType      = 1u,
-	.blockSize          = 256u * 1024u,
-	.isUniformBlockSize = true,
+	.page_size           = 512u,
+	.sector_size         = 256u * 1024u,
+	.ipcmd_serial_clk_freq = 1u,
+	.serial_nor_type      = 1u,
+	.block_size          = 256u * 1024u,
+	.is_uniform_block_size = true,
 };
 
 #endif /* XIP_BOOT_HEADER_ENABLE */

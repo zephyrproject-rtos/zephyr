@@ -23,6 +23,7 @@
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/sys/util_utf8.h>
 
 #include "has_internal.h"
 

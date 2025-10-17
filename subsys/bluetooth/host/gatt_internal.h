@@ -68,3 +68,6 @@ struct bt_gatt_attr;
 /* Check attribute permission */
 uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			uint16_t mask);
+
+bool bt_gatt_attr_read_authorize(struct bt_conn *conn, const struct bt_gatt_attr *attr);
+bool bt_gatt_attr_write_authorize(struct bt_conn *conn, const struct bt_gatt_attr *attr);

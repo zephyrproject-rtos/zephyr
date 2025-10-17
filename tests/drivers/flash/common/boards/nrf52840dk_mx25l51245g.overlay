@@ -48,12 +48,10 @@
 		readoc = "read4io";
 		sck-frequency = <2000000>;
 		jedec-id = [c2 20 1A];
-		sfdp-bfp = [
-			e5 20 fb ff  1f ff ff ff  44 eb 08 6b  08 3b 04 bb
-			fe ff ff ff  ff ff 00 ff  ff ff 44 eb  0c 20 0f 52
-			10 d8 00 ff  d6 49 c5 00  81 df 04 e3  44 03 67 38
-			30 b0 30 b0  f7 bd d5 5c  4a 9e 29 ff  f0 50 f9 85
-		];
+		sfdp-bfp = [e5 20 fb ff 1f ff ff ff 44 eb 08 6b 08 3b 04 bb
+			    fe ff ff ff ff ff 00 ff ff ff 44 eb 0c 20 0f 52
+			    10 d8 00 ff d6 49 c5 00 81 df 04 e3 44 03 67 38
+			    30 b0 30 b0 f7 bd d5 5c 4a 9e 29 ff f0 50 f9 85];
 		size = <0x20000000>;
 		has-dpd;
 		t-enter-dpd = <10000>;

@@ -565,7 +565,7 @@ static int flash_mspi_is25xX0xx_write(const struct device *flash, off_t offset, 
 	int      ret;
 	uint8_t *src = (uint8_t *)wdata;
 	int      i;
-#if CONFIG_FLASH_MSPI_XIP_READ
+#if CONFIG_FLASH_MSPI_HANDLE_CACHE && CONFIG_FLASH_MSPI_XIP_READ
 	off_t  addr = offset;
 	size_t size = len;
 #endif

@@ -49,4 +49,12 @@ config SHARED_INTERRUPTS
 
 endif # UART_STM32
 
+# Default disable flash prefetch for G0Bx and G0Cx since ErrataSheet ES0548/ES0549,
+# section "Prefetch failure when branching across flash memory banks
+# which causes code execution corruption and may lead to HardFault interrupt"
+# Project may override this configuration if sure no cross-bank prefetch access is
+# awaited.
+config STM32_FLASH_PREFETCH
+	default n if SOC_STM32G0B0XX || SOC_STM32G0B1XX || SOC_STM32G0C1XX
+
 endif # SOC_SERIES_STM32G0X

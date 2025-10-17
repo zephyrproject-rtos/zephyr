@@ -255,6 +255,12 @@ path to add is:
 
          /usr/local/LinkServer
 
+   .. group-tab:: macOS
+
+      .. code-block:: console
+
+         /Applications/LinkServer_<version>
+
    .. group-tab:: Windows
 
       .. code-block:: console

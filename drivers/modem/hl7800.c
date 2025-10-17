@@ -286,7 +286,7 @@ struct xmodem_packet {
 #define MAX_PROFILE_LINE_LENGTH                                                \
 	MAX(sizeof(PROFILE_LINE_1), sizeof(PROFILE_LINE_2))
 
-#define IPV6_ADDR_FORMAT "####:####:####:####:####:####:####:####"
+#define IPV6_ADDR_FORMAT "####:####:####:####:####:####:xxx.xxx.xxx.xxx"
 #define HL7800_IPV6_ADDR_LEN                                                                       \
 	sizeof("a01.a02.a03.a04.a05.a06.a07.a08.a09.a10.a11.a12.a13.a14.a15.a16")
 

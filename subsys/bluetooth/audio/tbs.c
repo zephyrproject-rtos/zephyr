@@ -33,6 +33,7 @@
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/sys/util_utf8.h>
 #include <zephyr/types.h>
 
 #include "audio_internal.h"
@@ -68,6 +69,10 @@ struct tbs_flags {
 /* A service instance can either be a GTBS or a TBS instance */
 struct tbs_inst {
 	/* Attribute values */
+	/* TODO: The provider name should be removed from the tbs_inst and instead by stored by the
+	 * user of TBS. This will be done once the CCP API is complete as the CCP Server will own
+	 * all the data instead of the TBS
+	 */
 	char provider_name[CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH];
 	char uci[BT_TBS_MAX_UCI_SIZE];
 	uint8_t technology;

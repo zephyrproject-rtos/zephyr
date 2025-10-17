@@ -101,6 +101,7 @@ config ZTEST_ASSERT_HOOK
 
 config ZTEST_NO_YIELD
 	bool "Do not yield to the idle thread after tests complete"
+	default n if COVERAGE_DUMP
 	default y if (PM || PM_DEVICE || PM_DEVICE_RUNTIME)
 	help
 	  When the tests complete, do not yield to the idle thread and instead

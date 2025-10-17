@@ -1,0 +1,9 @@
+/*
+ * Copyright 2024-2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/nxp_mcxn54x.dtsi>
+#include "mcx_nx4x_evk.dtsi"
+#include "mcx_n5xx_evk-pinctrl.dtsi"

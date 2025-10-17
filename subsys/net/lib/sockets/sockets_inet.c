@@ -41,6 +41,9 @@ LOG_MODULE_DECLARE(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 BUILD_ASSERT(IPPROTO_IP == 0, "Wildcard IPPROTO_IP must equal 0.");
 #endif
 
+BUILD_ASSERT(sizeof(socklen_t) == sizeof(uint32_t),
+	     "socklen_t must be 32-bit wide");
+
 const struct socket_op_vtable sock_fd_op_vtable;
 
 static void zsock_received_cb(struct net_context *ctx,
@@ -225,11 +228,21 @@ static void zsock_received_cb(struct net_context *ctx,
 			      int status,
 			      void *user_data)
 {
+	if (sock_is_eof(ctx)) {
+		/* If receiving is not desired and socket is shutdown,
+		 * ignore all incoming data.
+		 */
+		NET_DBG("%sctx=%p, pkt=%p, st=%d, user_data=%p",
+			"DROP: ", ctx, pkt, status, user_data);
+		net_pkt_unref(pkt);
+		return;
+	}
+
 	if (ctx->cond.lock) {
 		(void)k_mutex_lock(ctx->cond.lock, K_FOREVER);
 	}
 
-	NET_DBG("ctx=%p, pkt=%p, st=%d, user_data=%p", ctx, pkt, status,
+	NET_DBG("%sctx=%p, pkt=%p, st=%d, user_data=%p", "", ctx, pkt, status,
 		user_data);
 
 	if (status < 0) {
@@ -363,12 +376,16 @@ int zsock_connect_ctx(struct net_context *ctx, const struct sockaddr *addr,
 			errno = -ret;
 			return -1;
 		}
-		ret = net_context_recv(ctx, zsock_received_cb,
-				       K_NO_WAIT, ctx->user_data);
-		if (ret < 0) {
-			errno = -ret;
-			return -1;
+
+		if (!sock_is_eof(ctx)) {
+			ret = net_context_recv(ctx, zsock_received_cb,
+					       K_NO_WAIT, ctx->user_data);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
 		}
+
 		return 0;
 	}
 #endif
@@ -416,11 +433,14 @@ int zsock_connect_ctx(struct net_context *ctx, const struct sockaddr *addr,
 			errno = -ret;
 			return -1;
 		}
-		ret = net_context_recv(ctx, zsock_received_cb,
-					K_NO_WAIT, ctx->user_data);
-		if (ret < 0) {
-			errno = -ret;
-			return -1;
+
+		if (!sock_is_eof(ctx)) {
+			ret = net_context_recv(ctx, zsock_received_cb,
+					       K_NO_WAIT, ctx->user_data);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
 		}
 	}
 
@@ -481,6 +501,8 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 		errno = EAGAIN;
 		return -1;
 	}
+
+	net_tcp_conn_accepted(ctx);
 
 	fd = zvfs_reserve_fd();
 	if (fd < 0) {
@@ -641,11 +663,13 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 	/* Register the callback before sending in order to receive the response
 	 * from the peer.
 	 */
-	status = net_context_recv(ctx, zsock_received_cb,
-				  K_NO_WAIT, ctx->user_data);
-	if (status < 0) {
-		errno = -status;
-		return -1;
+	if (!sock_is_eof(ctx)) {
+		status = net_context_recv(ctx, zsock_received_cb,
+					  K_NO_WAIT, ctx->user_data);
+		if (status < 0) {
+			errno = -status;
+			return -1;
+		}
 	}
 
 	while (1) {
@@ -815,6 +839,15 @@ static int sock_get_pkt_src_addr(struct net_context *ctx,
 		*port = 0;
 	} else {
 		ret = -ENOTSUP;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6) && net_pkt_family(pkt) == AF_INET &&
+	    net_context_get_family(ctx) == AF_INET6 && !net_context_is_v6only_set(ctx)) {
+		struct sockaddr_in6 mapped_addr;
+
+		net_ipv6_addr_create_v4_mapped(&net_sin(addr)->sin_addr, &(mapped_addr.sin6_addr));
+		net_ipaddr_copy(&net_sin6(addr)->sin6_addr, &mapped_addr.sin6_addr);
+		addr->sa_family = AF_INET6;
 	}
 
 error:
@@ -1680,7 +1713,7 @@ static int ipv4_multicast_if(struct net_context *ctx, const void *optval,
 
 	if (do_get) {
 		struct net_if_addr *ifaddr;
-		size_t len = sizeof(ifindex);
+		uint32_t len = sizeof(ifindex);
 
 		if (optval == NULL || (optlen != sizeof(struct in_addr))) {
 			errno = EINVAL;

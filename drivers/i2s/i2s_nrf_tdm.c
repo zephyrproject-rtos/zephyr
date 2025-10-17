@@ -16,6 +16,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <dmm.h>
+#include <soc.h>
 #include <stdlib.h>
 
 LOG_MODULE_REGISTER(tdm_nrf, CONFIG_I2S_LOG_LEVEL);
@@ -29,6 +30,10 @@ LOG_MODULE_REGISTER(tdm_nrf, CONFIG_I2S_LOG_LEVEL);
  * to the driver have been released.
  */
 #define NRFX_TDM_STATUS_TRANSFER_STOPPED BIT(1)
+
+/* Maximum clock divider value. Corresponds to CKDIV2. */
+#define NRFX_TDM_MAX_SCK_DIV_VALUE TDM_CONFIG_SCK_DIV_SCKDIV_Max
+#define NRFX_TDM_MAX_MCK_DIV_VALUE TDM_CONFIG_MCK_DIV_DIV_Max
 
 #define NRFX_TDM_NUM_OF_CHANNELS (TDM_CONFIG_CHANNEL_NUM_NUM_Max + 1)
 
@@ -814,11 +819,11 @@ static int trigger_start(const struct device *dev)
 
 	nrf_tdm_sck_configure(drv_cfg->p_reg,
 			      drv_cfg->sck_src == ACLK ? NRF_TDM_SRC_ACLK : NRF_TDM_SRC_PCLK32M,
-			      false);
+			      nrfx_cfg->sck_setup > NRFX_TDM_MAX_SCK_DIV_VALUE);
 
 	nrf_tdm_mck_configure(drv_cfg->p_reg,
 			      drv_cfg->mck_src == ACLK ? NRF_TDM_SRC_ACLK : NRF_TDM_SRC_PCLK32M,
-			      false);
+			      nrfx_cfg->mck_setup > NRFX_TDM_MAX_MCK_DIV_VALUE);
 	/* If it is required to use certain HF clock, request it to be running
 	 * first. If not, start the transfer directly.
 	 */

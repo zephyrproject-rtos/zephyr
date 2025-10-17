@@ -75,3 +75,12 @@ config DSA_NXP_IMX_NETC
 	  Add support for NXP i.MX NETC DSA device driver.
 
 endif # DSA_DRIVERS
+
+config DSA_NXP_NETC_GCL_LEN
+	int "Gate control list length for i.MX NETC DSA"
+	default 64
+	range 1 256
+	depends on DSA_NXP_IMX_NETC && NET_QBV
+	help
+	  Amount of Gate control list to use, reduce to save RAM.
+	  The Max of the value can be 64,128,256.

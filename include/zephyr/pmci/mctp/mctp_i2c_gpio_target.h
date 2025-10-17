@@ -34,14 +34,14 @@ struct mctp_binding_i2c_gpio_target {
 	struct k_sem *tx_complete;
 	uint8_t tx_idx;
 	struct mctp_pktbuf *tx_pkt;
-	/** @endcond INTERNAL_HIDDEN */
+	/** INTERNAL_HIDDEN @endcond */
 };
 
 /** @cond INTERNAL_HIDDEN */
 extern const struct i2c_target_callbacks mctp_i2c_gpio_target_callbacks;
 int mctp_i2c_gpio_target_start(struct mctp_binding *binding);
 int mctp_i2c_gpio_target_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt);
-/** @endcond INTERNAL_HIDDEN */
+/** INTERNAL_HIDDEN @endcond */
 
 /**
  * @brief Define a MCTP bus binding for I2C target with GPIO

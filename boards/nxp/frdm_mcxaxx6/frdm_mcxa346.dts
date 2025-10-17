@@ -1,0 +1,31 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_mcxa346.dtsi>
+#include "frdm_mcxa346-pinctrl.dtsi"
+#include "board_common.dtsi"
+
+/ {
+	model = "NXP FRDM_MCXA346 board";
+	compatible = "nxp,mcxa346", "nxp,mcx";
+};
+
+&cpu0 {
+	clock-frequency = <180000000>;
+};
+
+/* OPAMP configuration */
+&opamp0 {
+	pinctrl-0 = <&pinmux_opamp0>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&opamp1 {
+	status = "okay";
+};

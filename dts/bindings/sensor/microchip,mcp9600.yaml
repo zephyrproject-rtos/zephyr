@@ -1,3 +1,4 @@
+# Copyright (c) 2025, Thomas Schmid <tom@lfence.de>
 # Copyright (c) 2022, Maxmillion McLaughlin
 # Copyright (c) 2020, SER Consulting LLC / Steven Riedl
 #
@@ -7,6 +8,88 @@ description: |
   Microchip MCP9600 I2C Thermocouple EMF to Temperature Converter. See
   https://www.microchip.com/wwwproducts/en/MCP9600.
 
+  When setting the DTS properties, make sure to include
+  mcp9600.h and use the macros defined there.
+
+  Example:
+  #include <zephyr/dt-bindings/sensor/mcp9600.h>
+
+  mcp9600: mcp9600@60 {
+    ...
+
+    thermocouple-type = <MCP9600_DT_TYPE_K>;
+    adc-resolution = <MCP9600_DT_ADC_RES_18BIT>;
+    filter-coefficient = <0>;
+    cold-junction-temp-resolution: <MCP9600_DT_COLD_JUNC_TMP_RES_0_0625C>;
+  };
+
 compatible: "microchip,mcp9600"
 
 include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  thermocouple-type:
+    type: int
+    default: 0
+    description: |
+      Thermocouple type. Use MCP9600_DT_TYPE macros for setting the value.
+      The default value corresponds to the reset state of the chip.
+    enum:
+      - 0 # MCP9600_DT_TYPE_K
+      - 1 # MCP9600_DT_TYPE_J
+      - 2 # MCP9600_DT_TYPE_T
+      - 3 # MCP9600_DT_TYPE_N
+      - 4 # MCP9600_DT_TYPE_S
+      - 5 # MCP9600_DT_TYPE_E
+      - 6 # MCP9600_DT_TYPE_B
+      - 7 # MCP9600_DT_TYPE_R
+
+  adc-resolution:
+    type: int
+    default: 0
+    description: |
+      ADC resolution in bits. Use MCP9600_DT_ADC_RES macros for setting the value.
+      The default value corresponds to the reset state of the chip.
+    enum:
+      - 0 # MCP9600_DT_ADC_RES_18BIT
+      - 1 # MCP9600_DT_ADC_RES_16BIT
+      - 2 # MCP9600_DT_ADC_RES_14BIT
+      - 3 # MCP9600_DT_ADC_RES_12BIT
+
+  filter-coefficient:
+    type: int
+    default: 0
+    description: |
+      Filter coefficient:
+      - 0: Filter off
+      - 1: Minimum filter
+      - 2:
+      - 3:
+      - 4: Mid filter
+      - 5:
+      - 6:
+      - 7: Maximum filter
+      The default value corresponds to the reset state of the chip.
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+
+  cold-junction-temp-resolution:
+    description: |
+      Resolution of the cold junction temperature measurement.
+      Select from:
+      - 0: 0.0625 °C
+      - 1: 0.25 °C
+      or use MCP9600_DT_COLD_JUNC_TMP_RES_0_0625C or MCP9600_DT_COLD_JUNC_TMP_RES_0_25C Macros.
+      The default value corresponds to the reset state of the chip.
+    type: int
+    default: 0
+    enum:
+      - 0 # MCP9600_DT_COLD_JUNC_TMP_RES_0_0625C
+      - 1 # MCP9600_DT_COLD_JUNC_TMP_RES_0_25C

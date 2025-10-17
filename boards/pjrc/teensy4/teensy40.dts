@@ -32,6 +32,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		board_led: led-1 {
 			gpios = <&gpio2 3 GPIO_ACTIVE_HIGH>;
 			label = "User LED Pin 13";
@@ -43,6 +44,7 @@
 	status = "okay";
 
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(2)>;
+
 	/* WINBOND flash memory*/
 	w25q16jvuxim: w25q16jvuxim@0 {
 		compatible = "nxp,imx-flexspi-nor";
@@ -63,7 +65,7 @@ zephyr_udc0: &usb1 {
 
 &lpuart6 {
 	status = "okay";
-	current-speed = < 115200 >;
+	current-speed = <115200>;
 };
 
 &edma0 {

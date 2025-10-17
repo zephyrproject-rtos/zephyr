@@ -174,7 +174,13 @@ char *z_impl_net_addr_ntop(sa_family_t family, const void *src,
 	bool needcolon = false;
 	bool mapped = false;
 
-	if (family == AF_INET6) {
+	switch (family) {
+	case AF_INET6:
+		if (size < INET6_ADDRSTRLEN) {
+			/* POSIX definition is the size - includes nil */
+			return NULL;
+		}
+
 		net_ipv6_addr_copy_raw(addr6.s6_addr, src);
 		w = (uint16_t *)addr6.s6_addr16;
 		len = 8;
@@ -203,12 +209,20 @@ char *z_impl_net_addr_ntop(sa_family_t family, const void *src,
 		if (longest == 1U) {
 			pos = -1;
 		}
+		break;
 
-	} else if (family == AF_INET) {
+	case AF_INET:
+		if (size < INET_ADDRSTRLEN) {
+			/* POSIX definition is the size - includes nil */
+			return NULL;
+		}
+
 		net_ipv4_addr_copy_raw(addr.s4_addr, src);
 		len = 4;
 		delim = '.';
-	} else {
+		break;
+
+	default:
 		return NULL;
 	}
 
@@ -279,10 +293,6 @@ print_mapped:
 		}
 
 		needcolon = true;
-	}
-
-	if (!(ptr - dst)) {
-		return NULL;
 	}
 
 	if (family == AF_INET) {

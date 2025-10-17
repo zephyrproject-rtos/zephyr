@@ -179,6 +179,7 @@ Default Zephyr Peripheral Mapping:
 - ADC1 channel 6 input : PF12
 - USB OTG FS DM/DP : PM12/PM11
 - XSPI1 NCS/DQS0/DQS1/CLK/IO: PO0/PO2/PO3/PO4/PP0..15
+- I2C1 SCL/SDA: PB6/PB9
 
 System Clock
 ------------

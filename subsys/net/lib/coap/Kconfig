@@ -136,6 +136,16 @@ config COAP_CLIENT_MESSAGE_HEADER_SIZE
 	help
 	  Extra room allocated to handle CoAP header data
 
+config COAP_CLIENT_MAX_PATH_LENGTH
+	int "Maximum length of the path string"
+	default 64
+	range 1 128
+
+config COAP_CLIENT_MAX_EXTRA_OPTIONS
+	int "Maximum number of application-provided extra CoAP options"
+	default 2
+	range 1 16
+
 config COAP_CLIENT_STACK_SIZE
 	int "Stack size of the CoAP client thread"
 	default 1024

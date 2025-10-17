@@ -23,7 +23,6 @@
 		};
 	};
 
-
 	chosen {
 		zephyr,boot-mode = &boot_mode0;
 		zephyr,uart-mcumgr = &uart1;

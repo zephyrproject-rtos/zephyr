@@ -10,10 +10,14 @@
  * http://howardhinnant.github.io/date_algorithms.html#days_from_civil
  */
 
-#include <zephyr/types.h>
 #include <errno.h>
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <time.h>
+
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/timeutil.h>
 
 /** Convert a civil (proleptic Gregorian) date to days relative to
@@ -187,4 +191,50 @@ int32_t timeutil_sync_skew_to_ppb(float skew)
 	int32_t ppb32 = (int32_t)ppb64;
 
 	return (ppb64 == ppb32) ? ppb32 : INT32_MIN;
+}
+
+bool timespec_normalize(struct timespec *ts)
+{
+	__ASSERT_NO_MSG(ts != NULL);
+
+	long sec;
+
+	if (ts->tv_nsec >= (long)NSEC_PER_SEC) {
+		sec = ts->tv_nsec / (long)NSEC_PER_SEC;
+	} else if (ts->tv_nsec < 0) {
+		sec = DIV_ROUND_UP((unsigned long)-ts->tv_nsec, NSEC_PER_SEC);
+	} else {
+		sec = 0;
+	}
+
+	if ((ts->tv_nsec < 0) && (ts->tv_sec < 0) && (ts->tv_sec - SYS_TIME_T_MIN < sec)) {
+		/*
+		 * When `tv_nsec` is negative and `tv_sec` is already most negative,
+		 * further subtraction would cause integer overflow.
+		 */
+		return false;
+	}
+
+	if ((ts->tv_nsec >= (long)NSEC_PER_SEC) && (ts->tv_sec > 0) &&
+	    (SYS_TIME_T_MAX - ts->tv_sec < sec)) {
+		/*
+		 * When `tv_nsec` is >= `NSEC_PER_SEC` and `tv_sec` is already most
+		 * positive, further addition would cause integer overflow.
+		 */
+		return false;
+	}
+
+	if (ts->tv_nsec >= (long)NSEC_PER_SEC) {
+		ts->tv_sec += sec;
+		ts->tv_nsec -= sec * (long)NSEC_PER_SEC;
+	} else if (ts->tv_nsec < 0) {
+		ts->tv_sec -= sec;
+		ts->tv_nsec += sec * (long)NSEC_PER_SEC;
+	} else {
+		/* no change: SonarQube was complaining */
+	}
+
+	__ASSERT_NO_MSG(timespec_is_valid(ts));
+
+	return true;
 }

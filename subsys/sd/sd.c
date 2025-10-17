@@ -111,8 +111,7 @@ static int sd_common_init(struct sd_card *card)
 		LOG_ERR("Card error on CMD8");
 		return ret;
 	}
-	if (card->host_props.is_spi &&
-		IS_ENABLED(CONFIG_SDHC_SUPPORTS_SPI_MODE)) {
+	if (IS_ENABLED(CONFIG_SDHC_SUPPORTS_SPI_MODE) && card->host_props.is_spi) {
 		/* Enable CRC for spi commands using CMD59 */
 		ret = sd_enable_crc(card);
 	}

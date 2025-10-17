@@ -24,7 +24,7 @@
 
 &sai1_a {
 	pinctrl-0 = <&sai1_mclk_a_pe2 &sai1_sd_a_pe6
-		&sai1_fs_a_pe4 &sai1_sck_a_pe5>;
+		     &sai1_fs_a_pe4 &sai1_sck_a_pe5>;
 	pinctrl-names = "default";
 	status = "okay";
 	mclk-enable;

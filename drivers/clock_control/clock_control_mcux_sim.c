@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, NXP
+ * Copyright (c) 2017,2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,17 @@ static int mcux_sim_on(const struct device *dev,
 #ifdef CONFIG_ETH_NXP_ENET
 	if ((uint32_t)sub_system == KINETIS_SIM_ENET_CLK) {
 		clock_ip_name = kCLOCK_Enet0;
+	}
+#endif
+#ifdef CONFIG_COMPARATOR_NXP_CMP
+	if ((uint32_t)sub_system == KINETIS_SIM_CMP_CLK) {
+		clock_ip_name = kCLOCK_Cmp0;
+	}
+#endif
+
+#ifdef CONFIG_REGULATOR_NXP_VREFV1
+	if ((uint32_t)sub_system == KINETIS_SIM_VREF_CLK) {
+		clock_ip_name = kCLOCK_Vref0;
 	}
 #endif
 

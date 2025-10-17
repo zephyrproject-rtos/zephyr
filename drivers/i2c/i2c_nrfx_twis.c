@@ -10,7 +10,7 @@
 #include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
-
+#include <soc.h>
 #include <nrfx_twis.h>
 #include <string.h>
 

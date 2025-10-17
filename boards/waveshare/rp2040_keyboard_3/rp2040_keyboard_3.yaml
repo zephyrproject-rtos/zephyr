@@ -1,0 +1,18 @@
+identifier: rp2040_keyboard_3
+name: Waveshare RP2040-Keyboard-3
+type: mcu
+arch: arm
+flash: 2048
+ram: 264
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - clock
+  - counter
+  - dma
+  - flash
+  - gpio
+  - hwinfo
+  - usb
+  - watchdog

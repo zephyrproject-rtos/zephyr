@@ -23,6 +23,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led: led-1 {
 			gpios = <&gpio9 3 GPIO_ACTIVE_HIGH>;
 			label = "User LED D6";
@@ -36,6 +37,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button-1 {
 			label = "User SW7";
 			gpios = <&gpio13 0 GPIO_ACTIVE_HIGH>;
@@ -147,6 +149,7 @@ arduino_serial: &lpuart2 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_enet_mdio>;
 	pinctrl-names = "default";
+
 	phy: phy@0 {
 		compatible = "microchip,ksz8081";
 		reg = <0>;
@@ -176,6 +179,7 @@ arduino_serial: &lpuart2 {
 	status = "disabled";
 	pinctrl-0 = <&pinmux_enet1g_mdio>;
 	pinctrl-names = "default";
+
 	enet1g_phy: phy@1 {
 		compatible = "realtek,rtl8211f";
 		reg = <1>;
@@ -212,7 +216,7 @@ arduino_serial: &lpuart2 {
 };
 
 &lpi2c1 {
-	pinctrl-0 =<&pinmux_lpi2c1>;
+	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
 };
 
@@ -254,14 +258,15 @@ arduino_spi: &lpspi1 {
 	ahb-read-addr-opt;
 	rx-clock-source = <1>;
 	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(16)>;
+
 	is25wp128: is25wp128@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <DT_SIZE_M(16*8)>;
 		reg = <0>;
-		spi-max-frequency = <104000000>;
+		spi-max-frequency = <DT_FREQ_M(104)>;
 		status = "okay";
 		jedec-id = [9d 70 18];
-		erase-block-size = <4096>;
+		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <1>;
 
 		partitions {
@@ -277,14 +282,17 @@ arduino_spi: &lpspi1 {
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
+
 			slot0_partition: partition@20000 {
 				label = "image-0";
 				reg = <0x00020000 DT_SIZE_M(7)>;
 			};
+
 			slot1_partition: partition@720000 {
 				label = "image-1";
 				reg = <0x00720000 DT_SIZE_M(7)>;
 			};
+
 			storage_partition: partition@E20000 {
 				label = "storage";
 				reg = <0x00E20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;

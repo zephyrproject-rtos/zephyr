@@ -13,6 +13,14 @@ menuconfig TASK_WDT
 	  per thread, even if the hardware supports only a single watchdog.
 
 if TASK_WDT
+
+config TASK_WDT_DUMMY
+	bool "Dummy implementation for testing"
+	help
+	  Allows the code to use all Task Watchdog APIs, but does nothing.
+	  This can be useful to temporarily disable the Task Watchdog while
+	  debugging.
+
 config TASK_WDT_CHANNELS
 	int "Maximum number of task watchdog channels"
 	default 5

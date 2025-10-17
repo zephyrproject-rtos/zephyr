@@ -8,7 +8,6 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
@@ -22,18 +21,22 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		evb_led1: evb_led_1 {
 			gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
 			label = "LED1 on EVB";
 		};
+
 		evb_led2: evb_led_2 {
 			gpios = <&gpio0 29 GPIO_ACTIVE_LOW>;
 			label = "LED2 on EVB";
 		};
+
 		evb_led3: evb_led_3 {
 			gpios = <&gpio0 30 GPIO_ACTIVE_LOW>;
 			label = "LED3 on EVB";
 		};
+
 		evb_led4: evb_led_4 {
 			gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
 			label = "LED4 on EVB";
@@ -42,21 +45,25 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		evb_sw1: evb_sw_1 {
 			gpios = <&gpio0 23 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW1 on EVB";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		evb_sw2: evb_sw_2 {
 			gpios = <&gpio0 24 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW2 on EVB";
 			zephyr,code = <INPUT_KEY_1>;
 		};
+
 		evb_sw3: evb_sw_3 {
 			gpios = <&gpio0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW3 on EVB";
 			zephyr,code = <INPUT_KEY_2>;
 		};
+
 		evb_sw4: evb_sw_4 {
 			gpios = <&gpio0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "SW4 on EVB";
@@ -69,20 +76,20 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =        <0 0 &gpio0 4 0>,        /* AN  */
-		<1 0 &gpio1 6 0>,         /* RST */
-		<2 0 &gpio1 12 0>,        /* CS   */
-		<3 0 &gpio1 15 0>,        /* SCK  */
-		<4 0 &gpio1 14 0>,        /* MISO */
-		<5 0 &gpio1 13 0>,        /* MOSI */
-		/* +3.3V */
-		/* GND */
-		<6 0 &gpio1 7 0>,        /* PWM  */
-		<7 0 &gpio1 4 0>,        /* INT  */
-		<8 0 &gpio1 0 0>,        /* RX   */
-		<9 0 &gpio1 1 0>,        /* TX   */
-		<10 0 &gpio1 3 0>,        /* SCL  */
-		<11 0 &gpio1 2 0>;        /* SDA  */
+		gpio-map = <0 0 &gpio0 4 0>,        /* AN  */
+			   <1 0 &gpio1 6 0>,         /* RST */
+			   <2 0 &gpio1 12 0>,        /* CS   */
+			   <3 0 &gpio1 15 0>,        /* SCK  */
+			   <4 0 &gpio1 14 0>,        /* MISO */
+			   <5 0 &gpio1 13 0>,        /* MOSI */
+			   /* +3.3V */
+			   /* GND */
+			   <6 0 &gpio1 7 0>,        /* PWM  */
+			   <7 0 &gpio1 4 0>,        /* INT  */
+			   <8 0 &gpio1 0 0>,        /* RX   */
+			   <9 0 &gpio1 1 0>,        /* TX   */
+			   <10 0 &gpio1 3 0>,        /* SCL  */
+			   <11 0 &gpio1 2 0>;        /* SDA  */
 		/* +5V */
 		/* GND */
 	};
@@ -174,7 +181,6 @@ arduino_spi: &spi0 {
 };
 
 &flash1 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -184,14 +190,17 @@ arduino_spi: &spi0 {
 			label = "mcuboot";
 			reg = <0x00000000 0xc000>;
 		};
+
 		slot0_partition: partition@c000 {
 			label = "image-0";
 			reg = <0x0000C000 0x17000>;
 		};
+
 		slot1_partition: partition@23000 {
 			label = "image-1";
 			reg = <0x00023000 0x17000>;
 		};
+
 		storage_partition: partition@3a000 {
 			label = "storage";
 			reg = <0x0003a000 0x6000>;

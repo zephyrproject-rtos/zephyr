@@ -44,7 +44,7 @@ config WIFI_CREDENTIALS_MAX_ENTRIES
 	int "Number of supported WiFi credentials"
 	default 2
 	help
-	  This detemines how many different WiFi networks can be configured at a time.
+	  This determines how many different WiFi networks can be configured at a time.
 
 config WIFI_CREDENTIALS_SAE_PASSWORD_LENGTH
 	int "Max. length of SAE password"

@@ -150,6 +150,7 @@
 &timers3 {
 	st,prescaler = <10000>;
 	status = "okay";
+
 	pwm3: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim3_ch1_pb4>;
@@ -159,7 +160,7 @@
 
 stm32_lp_tick_source: &lptim1 {
 	clocks = <&rcc STM32_CLOCK(APB1, 31)>,
-		<&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
+		 <&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
 	status = "okay";
 };
 

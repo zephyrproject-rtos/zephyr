@@ -115,8 +115,7 @@ static DEVICE_API(led_strip, apa102_api) = {
 	static const struct apa102_config apa102_##idx##_config = {	 \
 		.bus = SPI_DT_SPEC_INST_GET(				 \
 			idx,						 \
-			SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), \
-			0),						 \
+			SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8)),\
 		.length = DT_INST_PROP(idx, chain_length),		 \
 		.end_frame = apa102_end_frame_##idx,			 \
 		.end_frame_size = (DT_INST_PROP(idx, chain_length) /	 \

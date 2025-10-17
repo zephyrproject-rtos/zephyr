@@ -19,6 +19,7 @@
 		zephyr,flash = &flash0;
 		zephyr,shell-uart = &usart4;
 		zephyr,sram = &sram0;
+		zephyr,display = &lpm013m126;
 	};
 
 	/* These aliases are provided for compatibility with samples */
@@ -28,6 +29,15 @@
 		sw0 = &button0;
 		sw1 = &button1;
 		watchdog0 = &wdog0;
+	};
+
+	/* GPIOs that power up different sensors */
+	sensor_enable: sensor-enable {
+		compatible = "regulator-fixed";
+		regulator-name = "sensor_enable";
+		enable-gpios = <&gpiob 3 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+		startup-delay-us = <100000>;
 	};
 
 	leds {
@@ -60,6 +70,27 @@
 			label = "User Push Button 1";
 			zephyr,code = <INPUT_KEY_1>;
 		};
+	};
+};
+
+&usart1 {
+	compatible = "silabs,usart-spi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	cs-gpios = <&gpioc 14 GPIO_ACTIVE_HIGH>;
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	lpm013m126: lpm013m126@0 {
+		compatible = "jdi,lpm013m126";
+		reg = <0>;
+		height = <176>;
+		width = <176>;
+		spi-max-frequency = <2000000>;
+		disp-gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>;
+		extcomin-gpios = <&gpioa 11 GPIO_ACTIVE_HIGH>;
+		extcomin-frequency = <60>;
 	};
 };
 
@@ -100,6 +131,12 @@
 	pinctrl-0 = <&i2c2_default>;
 	pinctrl-names = "default";
 	status = "okay";
+
+	si7210: si7210@30 {
+		compatible = "silabs,si7210";
+		reg = <0x30>;
+		vin-supply = <&sensor_enable>;
+	};
 };
 
 &rtcc0 {
@@ -159,20 +196,20 @@
 	phy-address = <0>;
 
 	/* PHY management pins */
-	location-mdio        = <GECKO_LOCATION(1)>;
-	location-phy-mdc     = <GECKO_LOCATION(1) GECKO_PORT_D GECKO_PIN(14)>;
-	location-phy-mdio    = <GECKO_LOCATION(1) GECKO_PORT_D GECKO_PIN(13)>;
+	location-mdio = <GECKO_LOCATION(1)>;
+	location-phy-mdc = <GECKO_LOCATION(1) GECKO_PORT_D GECKO_PIN(14)>;
+	location-phy-mdio = <GECKO_LOCATION(1) GECKO_PORT_D GECKO_PIN(13)>;
 
 	/* RMII interface pins */
-	location-rmii        = <GECKO_LOCATION(1)>;
+	location-rmii = <GECKO_LOCATION(1)>;
 	location-rmii-crs-dv = <GECKO_LOCATION(1) GECKO_PORT_D GECKO_PIN(11)>;
 	location-rmii-refclk = <GECKO_LOCATION(5) GECKO_PORT_D GECKO_PIN(10)>;
-	location-rmii-rx-er  = <GECKO_LOCATION(1) GECKO_PORT_D GECKO_PIN(12)>;
-	location-rmii-rxd0   = <GECKO_LOCATION(1) GECKO_PORT_D GECKO_PIN(9)>;
-	location-rmii-rxd1   = <GECKO_LOCATION(1) GECKO_PORT_F GECKO_PIN(9)>;
-	location-rmii-tx-en  = <GECKO_LOCATION(1) GECKO_PORT_F GECKO_PIN(8)>;
-	location-rmii-txd0   = <GECKO_LOCATION(1) GECKO_PORT_F GECKO_PIN(7)>;
-	location-rmii-txd1   = <GECKO_LOCATION(1) GECKO_PORT_F GECKO_PIN(6)>;
+	location-rmii-rx-er = <GECKO_LOCATION(1) GECKO_PORT_D GECKO_PIN(12)>;
+	location-rmii-rxd0 = <GECKO_LOCATION(1) GECKO_PORT_D GECKO_PIN(9)>;
+	location-rmii-rxd1 = <GECKO_LOCATION(1) GECKO_PORT_F GECKO_PIN(9)>;
+	location-rmii-tx-en = <GECKO_LOCATION(1) GECKO_PORT_F GECKO_PIN(8)>;
+	location-rmii-txd0 = <GECKO_LOCATION(1) GECKO_PORT_F GECKO_PIN(7)>;
+	location-rmii-txd1 = <GECKO_LOCATION(1) GECKO_PORT_F GECKO_PIN(6)>;
 
 	status = "okay";
 };

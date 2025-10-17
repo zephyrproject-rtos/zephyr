@@ -9,6 +9,8 @@
 #include <dt-bindings/pinctrl/bflb-common-pinctrl.h>
 #include <dt-bindings/pinctrl/bl61x-pinctrl.h>
 #include <dt-bindings/clock/bflb_bl61x_clock.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	#address-cells = <1>;
@@ -77,11 +79,14 @@
 			compatible = "xuantie,e907", "riscv";
 			reg = <0>;
 			riscv,isa = "rv32imafcp";
+			i-cache-line-size = <32>;
+			d-cache-line-size = <32>;
 			hardware-exec-breakpoint-count = <4>;
 			status = "okay";
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+
 			clic: clic@e0800000 {
 				compatible = "nuclei,eclic";
 				reg = <0xe0800000 0x10000>;
@@ -115,7 +120,7 @@
 			status = "okay";
 
 			gpio0: gpio@20000000 {
-				compatible = "bflb,gpio";
+				compatible = "bflb,bl61x-gpio";
 				reg = <0x20000000 0x1000>;
 				#gpio-cells = <2>;
 				#bflb,pin-cells = <2>;
@@ -133,19 +138,19 @@
 			#clock-cells = <1>;
 			status = "okay";
 			clocks = <&clk_rc32m>, <&clk_crystal>,
-				<&clk_wifipll BL61X_WIFIPLL_320MHz>,
-				<&clk_wifipll BL61X_WIFIPLL_240MHz>,
-				<&clk_wifipll BL61X_WIFIPLL_OC_480MHz>,
-				<&clk_wifipll BL61X_WIFIPLL_OC_360MHz>,
-				<&clk_aupll BL61X_AUPLL_DIV1>, <&clk_aupll BL61X_AUPLL_DIV2>,
-				<&clk_root>, <&clk_bclk>, <&clk_flash>;
+				 <&clk_wifipll BL61X_WIFIPLL_320MHz>,
+				 <&clk_wifipll BL61X_WIFIPLL_240MHz>,
+				 <&clk_wifipll BL61X_WIFIPLL_OC_480MHz>,
+				 <&clk_wifipll BL61X_WIFIPLL_OC_360MHz>,
+				 <&clk_aupll BL61X_AUPLL_DIV1>, <&clk_aupll BL61X_AUPLL_DIV2>,
+				 <&clk_root>, <&clk_bclk>, <&clk_flash>;
 			clock-names = "rc32m", "crystal",
-				"wifipll_320",
-				"wifipll_240",
-				"wifipll_480",
-				"wifipll_360",
-				"aupll_div1", "aupll_div2",
-				"root", "bclk", "flash";
+				      "wifipll_320",
+				      "wifipll_240",
+				      "wifipll_480",
+				      "wifipll_360",
+				      "aupll_div1", "aupll_div2",
+				      "root", "bclk", "flash";
 		};
 
 		uart0: uart@2000a000 {

@@ -30,6 +30,11 @@ config USE_RA_FSP_I3C
 	help
 	  Enable RA FSP I3C driver
 
+config USE_RA_FSP_DMA
+	bool
+	help
+	  Enable RA FSP DMA driver
+
 config USE_RA_FSP_DTC
 	bool
 	help
@@ -59,6 +64,11 @@ config USE_RA_FSP_SCE
 	bool
 	help
 	  Enable RA FSP SCE driver
+
+config USE_RA_FSP_MRAM
+	bool
+	help
+	  Enable RA FSP MRAM driver
 
 if USE_RA_FSP_SCE
 
@@ -159,6 +169,11 @@ config USE_RA_FSP_SDHI
 	help
 	  Enable RA FSP SDHI driver
 
+config USE_RA_FSP_CRC
+	bool
+	help
+	  Enable RA FSP CRC driver
+
 config USE_RA_FSP_DAC
 	bool
 	help
@@ -218,6 +233,21 @@ config USE_RA_FSP_TOUCH
 	help
 	  Enable RA FSP TOUCH library
 
+config USE_RA_FSP_QSPI_NOR_FLASH
+	bool
+	help
+	  Enable RA FSP Quad-SPI driver
+
+config USE_RA_FSP_CEU
+	bool
+	help
+	  Enable RA FSP CEU driver
+
+config USE_RA_FSP_IPC
+	bool
+	help
+	  Enable RA FSP IPC driver
+
 endif # HAS_RENESAS_RA_FSP
 
 if HAS_RENESAS_RZ_FSP
@@ -236,6 +266,11 @@ config USE_RZ_FSP_SCIF_UART
 	bool
 	help
 	  Enable RZ FSP SCIF UART driver
+
+config USE_RZ_FSP_IIC_MASTER
+	bool
+	help
+	  Enable RZ FSP IIC MASTER driver
 
 config USE_RZ_FSP_RIIC_MASTER
 	bool
@@ -277,6 +312,11 @@ config USE_RZ_FSP_CPG
 	help
 	  Enable RZ FSP CLOCK CONTROL driver
 
+config USE_RZ_FSP_CGC
+	bool
+	help
+	  Enable RZ FSP CGC driver
+
 config USE_RZ_FSP_RSPI_SPI
 	bool
 	help
@@ -291,6 +331,16 @@ config USE_RZ_FSP_MTU
 	bool
 	help
 	  Enable RZ FSP MTU driver
+
+config USE_RZ_FSP_CMTW
+	bool
+	help
+	  Enable RZ FSP CMTW driver
+
+config USE_RZ_FSP_WDT
+	bool
+	help
+	  Enable RZ FSP WDT driver
 
 endif
 
@@ -335,5 +385,20 @@ config USE_RX_RDP_ADC
 	bool
 	help
 	  Enable RX RDP ADC driver
+
+config USE_RX_RDP_IWDT
+	bool
+	help
+	  Enable RX RDP IWDT driver
+
+config USE_RX_RDP_CTSU
+	bool
+	help
+	  Enable RX RDP CTSU driver
+
+config USE_RX_RDP_LVD
+	bool
+	help
+	  Enable RX RDP LVD driver
 
 endif # HAS_RENESAS_RX_RDP

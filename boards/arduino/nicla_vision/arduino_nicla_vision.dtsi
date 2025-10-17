@@ -11,12 +11,15 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_0 {
 			gpios = <&gpioe 3 GPIO_ACTIVE_LOW>;
 		};
+
 		green_led: led_1 {
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 		};
+
 		blue_led: led_2 {
 			gpios = <&gpiof 4 GPIO_ACTIVE_LOW>;
 		};
@@ -41,8 +44,8 @@ sdhc: &sdmmc2 {
 	interrupts = <124 0>;
 	interrupt-names = "event";
 	pinctrl-0 = <&sdmmc2_d0_pb14 &sdmmc2_d1_pb15
-			&sdmmc2_d2_pg11 &sdmmc2_d3_pb4
-			&sdmmc2_ck_pd6 &sdmmc2_cmd_pd7>;
+		     &sdmmc2_d2_pg11 &sdmmc2_d3_pb4
+		     &sdmmc2_ck_pd6 &sdmmc2_cmd_pd7>;
 	pinctrl-names = "default";
 	sdhi-on-gpios = <&gpiog 4 GPIO_ACTIVE_HIGH>;
 	min-bus-freq = <DT_FREQ_K(400)>;

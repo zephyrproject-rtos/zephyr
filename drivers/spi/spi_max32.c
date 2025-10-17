@@ -127,6 +127,8 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 		return -EINVAL;
 	}
 
+	k_busy_wait(1);
+
 	ret = MXC_SPI_SetDataSize(regs, SPI_WORD_SIZE_GET(config->operation));
 	if (ret) {
 		return -ENOTSUP;
@@ -153,6 +155,8 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 		return -EINVAL;
 	}
 #endif
+
+	k_busy_wait(1);
 
 	data->ctx.config = config;
 
@@ -645,12 +649,12 @@ static int transceive_dma(const struct device *dev, const struct spi_config *con
 		spi->dma |= ADI_MAX32_SPI_DMA_TX_DMA_EN;
 		MXC_SPI_SetTXThreshold(spi, 2);
 
+		data->dma_stat = 0;
 		ret = spi_max32_tx_dma_load(dev, ctx->tx_buf, len, dfs_shift);
 		if (ret < 0) {
 			goto unlock;
 		}
 
-		data->dma_stat = 0;
 		MXC_SPI_StartTransmission(spi);
 		ret = spi_context_wait_for_completion(ctx);
 	} while (!ret && (spi_context_tx_on(ctx) || spi_context_rx_on(ctx)));

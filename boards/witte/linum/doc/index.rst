@@ -5,7 +5,7 @@ Overview
 Linum is a development board released by Witte Tenology in 2023, and it was developed around the
 STM32H753BI microcontroller. The board has 2 expansion connectors used by the LCD display with
 touchscreen and another for access to other peripherals of microcontroller. Also it brings plenty
-of communications interfaces like UART with RS232 and RS485 capabillities, CAN bus compatible to
+of communications interfaces like UART with RS232 and RS485 capabilities, CAN bus compatible to
 FD standard, and networking over Ethernet.
 
 Hardware

@@ -7,6 +7,8 @@
 #include <zephyr/dt-bindings/interrupt-controller/intel-ioapic.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pcie/pcie.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include "gpio_common.dtsi"
 
 / {
 	cpus {
@@ -26,7 +28,6 @@
 			d-cache-line-size = <64>;
 			reg = <1>;
 		};
-
 	};
 
 	dram0: memory@0 {
@@ -34,7 +35,7 @@
 		reg = <0x0 DT_DRAM_SIZE>;
 	};
 
-	intc: ioapic@fec00000  {
+	intc: ioapic@fec00000 {
 		compatible = "intel,ioapic";
 		#address-cells = <1>;
 		#interrupt-cells = <3>;
@@ -42,12 +43,104 @@
 		interrupt-controller;
 	};
 
-	intc_loapic: loapic@fee00000  {
+	intc_loapic: loapic@fee00000 {
 		compatible = "intel,loapic";
 		reg = <0xfee00000 0x1000>;
 		interrupt-controller;
 		#interrupt-cells = <3>;
 		#address-cells = <1>;
+	};
+
+	acpi {
+		gpio_a: gpio_a {
+			acpi-hid = "INTC10BC";
+			acpi-uid = "3";
+			group-index = <0x02>;
+			acpi-ginf-3-param;
+			int-stat-offset = <0x30>;
+			int-en-offset = <0x20>;
+			status = "disabled";
+		};
+
+		gpio_b: gpio_b {
+			acpi-hid = "INTC10BC";
+			acpi-uid = "5";
+			group-index = <0x00>;
+			acpi-ginf-3-param;
+			int-stat-offset = <0x30>;
+			int-en-offset = <0x20>;
+			status = "disabled";
+		};
+
+		gpio_c: gpio_c {
+			acpi-hid = "INTC10BC";
+			acpi-uid = "0";
+			group-index = <0x01>;
+			acpi-ginf-3-param;
+			int-stat-offset = <0x30>;
+			int-en-offset = <0x20>;
+			status = "disabled";
+		};
+
+		gpio_d: gpio_d {
+			acpi-hid = "INTC10BC";
+			acpi-uid = "5";
+			group-index = <0x01>;
+			acpi-ginf-3-param;
+			int-stat-offset = <0x30>;
+			int-en-offset = <0x20>;
+			status = "disabled";
+		};
+
+		gpio_e: gpio_e {
+			acpi-hid = "INTC10BC";
+			acpi-uid = "1";
+			group-index = <0x01>;
+			acpi-ginf-3-param;
+			int-stat-offset = <0x30>;
+			int-en-offset = <0x20>;
+			status = "disabled";
+		};
+
+		gpio_f: gpio_f {
+			acpi-hid = "INTC10BC";
+			acpi-uid = "1";
+			group-index = <0x00>;
+			acpi-ginf-3-param;
+			int-stat-offset = <0x30>;
+			int-en-offset = <0x20>;
+			status = "disabled";
+		};
+
+		gpio_h: gpio_h {
+			acpi-hid = "INTC10BC";
+			acpi-uid = "3";
+			group-index = <0x01>;
+			acpi-ginf-3-param;
+			int-stat-offset = <0x30>;
+			int-en-offset = <0x20>;
+			status = "disabled";
+		};
+
+		gpio_s: gpio_s {
+			acpi-hid = "INTC10BC";
+			acpi-uid = "4";
+			group-index = <0x00>;
+			acpi-ginf-3-param;
+			int-stat-offset = <0x30>;
+			int-en-offset = <0x20>;
+			status = "disabled";
+		};
+
+		gpio_v: gpio_v {
+			acpi-hid = "INTC10BC";
+			acpi-uid = "0";
+			group-index = <0x00>;
+			acpi-ginf-3-param;
+			int-stat-offset = <0x30>;
+			int-en-offset = <0x20>;
+			status = "disabled";
+		};
 	};
 
 	pcie0: pcie0 {
@@ -179,6 +272,7 @@
 			pw,cs-mode = <0>;
 			pw,cs-output = <0>;
 			pw,fifo-depth = <64>;
+			cs-gpios = <&gpio_e 17 GPIO_ACTIVE_LOW>;
 			clock-frequency = <100000000>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
@@ -194,6 +288,7 @@
 			pw,cs-mode = <0>;
 			pw,cs-output = <0>;
 			pw,fifo-depth = <64>;
+			cs-gpios = <&gpio_f 17 GPIO_ACTIVE_LOW>;
 			clock-frequency = <100000000>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
@@ -209,6 +304,7 @@
 			pw,cs-mode = <0>;
 			pw,cs-output = <0>;
 			pw,fifo-depth = <64>;
+			cs-gpios = <&gpio_f 18 GPIO_ACTIVE_LOW>;
 			clock-frequency = <100000000>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
@@ -266,7 +362,6 @@
 			current-speed = <115200>;
 			status = "disabled";
 		};
-
 	};
 
 	soc {
@@ -304,12 +399,34 @@
 			status = "disabled";
 		};
 
-		rtc: counter: rtc@70 {
-			compatible = "motorola,mc146818";
-			reg = <0x70 0x0D 0x71 0x0D>;
-			interrupts = <8 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
-			interrupt-parent = <&intc>;
-			alarms-count = <1>;
+		mfd: mfd@70 {
+			compatible = "motorola,mc146818-mfd";
+			reg = <0x70 0x01 0x71 0x01 0x72 0x01 0x73 0x01>;
+
+			rtc: counter: rtc {
+				compatible = "motorola,mc146818";
+				interrupts = <8 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
+				interrupt-parent = <&intc>;
+				alarms-count = <1>;
+
+				status = "disabled";
+			};
+
+			bbram: bbram {
+				compatible = "motorola,mc146818-bbram";
+				size = <241>;
+				status = "disabled";
+			};
+
+			status = "disabled";
+		};
+
+		tgpio: tgpio@fe001200 {
+			compatible = "intel,timeaware-gpio";
+			reg = <0xfe001200 0x100>;
+			timer-clock = <19200000>;
+			max-pins = <2>;
+			artv-ctrl;
 			status = "disabled";
 		};
 

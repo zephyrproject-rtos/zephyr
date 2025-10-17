@@ -5,6 +5,7 @@
  */
 
 #include <mem.h>
+#include <freq.h>
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/clock/scg_k4.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -53,7 +54,7 @@
 			flash: flash@0 {
 				compatible = "soc-nv-flash";
 				write-block-size = <16>;
-				erase-block-size = <8192>;
+				erase-block-size = <DT_SIZE_K(8)>;
 			};
 		};
 
@@ -179,6 +180,8 @@
 		reg = <0x38000 0x34>;
 		interrupts = <44 0>;
 		clocks = <&scg SCG_K4_FIRC_CLK 0xe0>;
+		dmas = <&edma 0 32>, <&edma 1 31>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
@@ -187,6 +190,8 @@
 		reg = <0x39000 0x34>;
 		interrupts = <45 0>;
 		clocks = <&scg SCG_K4_FIRC_CLK 0xe4>;
+		dmas = <&edma 2 34>, <&edma 3 33>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
@@ -236,7 +241,7 @@
 		status = "disabled";
 	};
 
-	gpiod: gpio@46000{
+	gpiod: gpio@46000 {
 		compatible = "nxp,kinetis-gpio";
 		reg = <0x46000 0x128>;
 		interrupts = <65 0>, <66 0>;
@@ -275,9 +280,9 @@
 		compatible = "nxp,wdog32";
 		reg = <0x1a000 10>;
 		interrupts = <23 0>;
-		clocks = <&scg SCG_K4_SYSOSC_CLK 0x68>;
+		clocks = <&scg SCG_K4_RTCOSC_CLK 0x68>;
 		clk-source = <1>;
-		clk-divider = <256>;
+		clk-divider = <1>;
 		status = "okay";
 	};
 
@@ -285,9 +290,9 @@
 		compatible = "nxp,wdog32";
 		reg = <0x1b000 10>;
 		interrupts = <24 0>;
-		clocks = <&scg SCG_K4_SYSOSC_CLK 0x6c>;
+		clocks = <&scg SCG_K4_RTCOSC_CLK 0x6c>;
 		clk-source = <1>;
-		clk-divider = <256>;
+		clk-divider = <1>;
 		status = "disabled";
 	};
 
@@ -295,9 +300,9 @@
 		compatible = "nxp,lptmr";
 		reg = <0x2d000 0x10>;
 		interrupts = <34 0>;
-		clock-frequency = <32000>;
+		clock-frequency = <DT_FREQ_K(32)>;
 		clk-source = <2>;
-		prescaler = <1>;
+		prescale-glitch-filter = <0>;
 		resolution = <32>;
 		status = "disabled";
 	};
@@ -306,9 +311,9 @@
 		compatible = "nxp,lptmr";
 		reg = <0x2e000 0x10>;
 		interrupts = <35 0>;
-		clock-frequency = <32000>;
+		clock-frequency = <DT_FREQ_K(32)>;
 		clk-source = <2>;
-		prescaler = <1>;
+		prescale-glitch-filter = <0>;
 		resolution = <32>;
 		status = "disabled";
 	};
@@ -346,7 +351,7 @@
 		reg = <0x47000 0x584>;
 		interrupts = <71 0>;
 		clocks = <&scg SCG_K4_FIRC_CLK 0x11c>;
-		voltage-ref= <1>;
+		voltage-ref = <1>;
 		calibration-average = <128>;
 		/* pwrlvl 0 is slow speed low power, 1 is opposite */
 		power-level = <0>;
@@ -379,6 +384,27 @@
 		interrupt-names = "alarm", "seconds";
 		clock-frequency = <32768>;
 		prescaler = <32768>;
+
+		counter_rtc: counter_rtc {
+			compatible = "zephyr,rtc-counter";
+			alarms-count = <1>;
+			status = "disabled";
+		};
+	};
+
+	edma: dma-controller@2000 {
+		compatible = "nxp,mcux-edma";
+		#dma-cells = <2>;
+		nxp,version = <3>;
+		dma-channels = <16>;
+		dma-requests = <64>;
+		reg = <0x2000 0x140>;
+		clocks = <&scg SCG_K4_EDMA_CLK 0x410>;
+		interrupts = <2 0>, <3 0>, <4 0>, <5 0>,
+			<6 0>, <7 0>, <8 0>, <9 0>,
+			<10 0>, <11 0>, <12 0>, <13 0>,
+			<14 0>, <15 0>, <16 0>, <17 0>;
+		status = "disabled";
 	};
 
 	ewm0: ewm@13000 {
@@ -402,11 +428,10 @@
 			status = "disabled";
 		};
 	};
-
 };
 
 &fast_peripheral0 {
-	gpioa: gpio@10000{
+	gpioa: gpio@10000 {
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		gpio-controller;
@@ -416,7 +441,7 @@
 		interrupts = <59 0>, <60 0>;
 	};
 
-	gpiob: gpio@20000{
+	gpiob: gpio@20000 {
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		gpio-controller;
@@ -426,7 +451,7 @@
 		interrupts = <61 0>, <62 0>;
 	};
 
-	gpioc: gpio@30000{
+	gpioc: gpio@30000 {
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		gpio-controller;
@@ -443,10 +468,10 @@
 		#size-cells = <1>;
 
 		rpmsgmem: memory@8800 {
-			compatible = "zephyr,memory-region","mmio-sram";
+			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x8800 DT_SIZE_K(6)>;
 			zephyr,memory-region = "rpmsg_sh_mem";
-			zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 		};
 	};
 };

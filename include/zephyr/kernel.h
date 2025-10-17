@@ -103,6 +103,27 @@ typedef int (*_poller_cb_t)(struct k_poll_event *event, uint32_t state);
  * @{
  */
 
+/**
+ * @brief Resets thread longest frame usage data for specified thread
+ *
+ * This routine resets the longest frame value statistic
+ * after printing to zero, enabling observation of the
+ * longest frame from the most recent interval rather than
+ * the longest frame since startup.
+ *
+ * @param thread Pointer to the thread to reset counter.
+ *
+ * @note @kconfig{CONFIG_THREAD_ANALYZER_LONG_FRAME_PER_INTERVAL} must
+ * be set for this function to be effective.
+ */
+static inline void
+	k_thread_runtime_stats_longest_frame_reset(__maybe_unused struct k_thread *thread)
+{
+#ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
+	thread->base.usage.longest = 0ULL;
+#endif
+}
+
 typedef void (*k_thread_user_cb_t)(const struct k_thread *thread,
 				   void *user_data);
 
@@ -805,7 +826,7 @@ struct _static_thread_data {
 				     _k_thread_stack_##name, stack_size,\
 				     entry, p1, p2, p3, prio, options,	\
 				     delay, name);			\
-	const k_tid_t name = (k_tid_t)&_k_thread_obj_##name
+	__maybe_unused const k_tid_t name = (k_tid_t)&_k_thread_obj_##name
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -927,7 +948,7 @@ __syscall void k_thread_priority_set(k_tid_t thread, int prio);
 
 #ifdef CONFIG_SCHED_DEADLINE
 /**
- * @brief Set deadline expiration time for scheduler
+ * @brief Set relative deadline expiration time for scheduler
  *
  * This sets the "deadline" expiration as a time delta from the
  * current time, in the same units used by k_cycle_get_32().  The
@@ -951,14 +972,55 @@ __syscall void k_thread_priority_set(k_tid_t thread, int prio);
  * above this call, which is simply input to the priority selection
  * logic.
  *
- * @note You should enable @kconfig{CONFIG_SCHED_DEADLINE} in your project
- * configuration.
+ * @kconfig_dep{CONFIG_SCHED_DEADLINE}
  *
  * @param thread A thread on which to set the deadline
  * @param deadline A time delta, in cycle units
  *
  */
 __syscall void k_thread_deadline_set(k_tid_t thread, int deadline);
+
+/**
+ * @brief Set absolute deadline expiration time for scheduler
+ *
+ * This sets the "deadline" expiration as a timestamp in the same
+ * units used by k_cycle_get_32(). The scheduler (when deadline scheduling
+ * is enabled) will choose the next expiring thread when selecting between
+ * threads at the same static priority.  Threads at different priorities
+ * will be scheduled according to their static priority.
+ *
+ * Unlike @ref k_thread_deadline_set which sets a relative timestamp to a
+ * "now" implicitly determined during its call, this routine sets an
+ * absolute timestamp that is computed from a timestamp relative to
+ * an explicit "now" that was determined before this routine is called.
+ * This allows the caller to specify deadlines for multiple threads
+ * using a common "now".
+ *
+ * @note Deadlines are stored internally using 32 bit unsigned
+ * integers.  The number of cycles between the "first" deadline in the
+ * scheduler queue and the "last" deadline must be less than 2^31 (i.e
+ * a signed non-negative quantity).  Failure to adhere to this rule
+ * may result in scheduled threads running in an incorrect deadline
+ * order.
+ *
+ * @note Even if a provided timestamp is in the past, the kernel will
+ * still schedule threads with deadlines in order from the earliest to
+ * the latest.
+ *
+ * @note Despite the API naming, the scheduler makes no guarantees
+ * the thread WILL be scheduled within that deadline, nor does it take
+ * extra metadata (like e.g. the "runtime" and "period" parameters in
+ * Linux sched_setattr()) that allows the kernel to validate the
+ * scheduling for achievability.  Such features could be implemented
+ * above this call, which is simply input to the priority selection
+ * logic.
+ *
+ * @kconfig_dep{CONFIG_SCHED_DEADLINE}
+ *
+ * @param thread A thread on which to set the deadline
+ * @param deadline A timestamp, in cycle units
+ */
+__syscall void k_thread_absolute_deadline_set(k_tid_t thread, int deadline);
 #endif
 
 /**
@@ -1571,10 +1633,16 @@ const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size);
  */
 
 /**
- * @cond INTERNAL_HIDDEN
+ * @brief Kernel timer structure
+ *
+ * This structure is used to represent a kernel timer.
+ * All the members are internal and should not be accessed directly.
  */
-
 struct k_timer {
+	/**
+	 * @cond INTERNAL_HIDDEN
+	 */
+
 	/*
 	 * _timeout structure must be first here if we want to use
 	 * dynamic timer allocation. timeout.node is used in the double-linked
@@ -1605,8 +1673,14 @@ struct k_timer {
 #ifdef CONFIG_OBJ_CORE_TIMER
 	struct k_obj_core  obj_core;
 #endif
+	/**
+	 * INTERNAL_HIDDEN @endcond
+	 */
 };
 
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 #define Z_TIMER_INITIALIZER(obj, expiry, stop) \
 	{ \
 	.timeout = { \
@@ -1697,6 +1771,9 @@ void k_timer_init(struct k_timer *timer,
  * Attempting to start a timer that is already running is permitted.
  * The timer's status is reset to zero and the timer begins counting down
  * using the new duration and period values.
+ *
+ * This routine neither updates nor has any other effect on the specified
+ * timer if @a duration is K_FOREVER.
  *
  * @param timer     Address of timer.
  * @param duration  Initial timer duration.
@@ -2353,7 +2430,17 @@ __syscall int k_futex_wake(struct k_futex *futex, bool wake_all);
  * @ingroup event_apis
  */
 
+/**
+ * @brief Kernel Event structure
+ *
+ * This structure is used to represent kernel events. All the members
+ * are internal and should not be accessed directly.
+ */
+
 struct k_event {
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 	_wait_q_t         wait_q;
 	uint32_t          events;
 	struct k_spinlock lock;
@@ -2363,8 +2450,15 @@ struct k_event {
 #ifdef CONFIG_OBJ_CORE_EVENT
 	struct k_obj_core obj_core;
 #endif
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 
 };
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 
 #define Z_EVENT_INITIALIZER(obj) \
 	{ \
@@ -2372,6 +2466,9 @@ struct k_event {
 	.events = 0, \
 	.lock = {}, \
 	}
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 
 /**
  * @brief Initialize an event object
@@ -2506,6 +2603,52 @@ __syscall uint32_t k_event_wait(struct k_event *event, uint32_t events,
  */
 __syscall uint32_t k_event_wait_all(struct k_event *event, uint32_t events,
 				    bool reset, k_timeout_t timeout);
+
+/**
+ * @brief Wait for any of the specified events (safe version)
+ *
+ * This call is nearly identical to @ref k_event_wait with the main difference
+ * being that the safe version atomically clears received events from the
+ * event object. This mitigates the need for calling @ref k_event_clear, or
+ * passing a "reset" argument, since doing so may result in lost event
+ * information.
+ *
+ * @param event Address of the event object
+ * @param events Set of desired events on which to wait
+ * @param reset If true, clear the set of events tracked by the event object
+ *              before waiting. If false, do not clear the events.
+ * @param timeout Waiting period for the desired set of events or one of the
+ *                special values K_NO_WAIT and K_FOREVER.
+ *
+ * @retval set of matching events upon success
+ * @retval 0 if no matching event was received within the specified time
+ */
+__syscall uint32_t k_event_wait_safe(struct k_event *event, uint32_t events,
+				     bool reset, k_timeout_t timeout);
+
+/**
+ * @brief Wait for all of the specified events (safe version)
+ *
+ * This call is nearly identical to @ref k_event_wait_all with the main
+ * difference being that the safe version atomically clears received events
+ * from the event object. This mitigates the need for calling
+ * @ref k_event_clear, or passing a "reset" argument, since doing so may
+ * result in lost event information.
+ *
+ * @param event Address of the event object
+ * @param events Set of desired events on which to wait
+ * @param reset If true, clear the set of events tracked by the event object
+ *              before waiting. If false, do not clear the events.
+ * @param timeout Waiting period for the desired set of events or one of the
+ *                special values K_NO_WAIT and K_FOREVER.
+ *
+ * @retval set of matching events upon success
+ * @retval 0 if all matching events were not received within the specified time
+ */
+__syscall uint32_t k_event_wait_all_safe(struct k_event *event, uint32_t events,
+					 bool reset, k_timeout_t timeout);
+
+
 
 /**
  * @brief Test the events currently tracked in the event object
@@ -3419,20 +3562,26 @@ static inline unsigned int z_impl_k_sem_count_get(struct k_sem *sem)
 #if defined(CONFIG_SCHED_IPI_SUPPORTED) || defined(__DOXYGEN__)
 struct k_ipi_work;
 
-/**
- * @cond INTERNAL_HIDDEN
- */
 
 typedef void (*k_ipi_func_t)(struct k_ipi_work *work);
 
+/**
+ * @brief IPI work item structure
+ *
+ * This structure is used to represent an IPI work item.
+ * All the members are internal and should not be accessed directly.
+ */
 struct k_ipi_work {
-	sys_dnode_t        node[CONFIG_MP_MAX_NUM_CPUS];   /* Node in IPI work queue */
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+	sys_dnode_t    node[CONFIG_MP_MAX_NUM_CPUS];   /* Node in IPI work queue */
 	k_ipi_func_t   func;     /* Function to execute on target CPU */
 	struct k_event event;    /* Event to signal when processed */
 	uint32_t       bitmask;  /* Bitmask of targeted CPUs */
+/** INTERNAL_HIDDEN @endcond */
 };
 
-/** @endcond */
 
 /**
  * @brief Initialize the specified IPI work item
@@ -3802,6 +3951,7 @@ int k_work_queue_unplug(struct k_work_q *queue);
  * @retval -EALREADY if the work queue was not started (or already stopped)
  * @retval -EBUSY if the work queue is actively processing work items
  * @retval -ETIMEDOUT if the work queue did not stop within the stipulated timeout
+ * @retval -ENOSUP if the work queue is essential
  */
 int k_work_queue_stop(struct k_work_q *queue, k_timeout_t timeout);
 
@@ -4911,18 +5061,17 @@ __syscall int k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t time
  * pointer is not retained, so the message content will not be modified
  * by this function.
  *
+ * @note k_msgq_put_front() does not block.
+ *
  * @funcprops \isr_ok
  *
  * @param msgq Address of the message queue.
  * @param data Pointer to the message.
- * @param timeout Waiting period to add the message, or one of the special
- *                values K_NO_WAIT and K_FOREVER.
  *
  * @retval 0 Message sent.
  * @retval -ENOMSG Returned without waiting or queue purged.
- * @retval -EAGAIN Waiting period timed out.
  */
-__syscall int k_msgq_put_front(struct k_msgq *msgq, const void *data, k_timeout_t timeout);
+__syscall int k_msgq_put_front(struct k_msgq *msgq, const void *data);
 
 /**
  * @brief Receive a message from a message queue.
@@ -5211,206 +5360,6 @@ void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer);
  */
 __syscall void k_pipe_init(struct k_pipe *pipe, uint8_t *buffer, size_t buffer_size);
 
-#ifdef CONFIG_PIPES
-/** Pipe Structure */
-struct k_pipe {
-	unsigned char *buffer;          /**< Pipe buffer: may be NULL */
-	size_t         size;            /**< Buffer size */
-	size_t         bytes_used;      /**< Number of bytes used in buffer */
-	size_t         read_index;      /**< Where in buffer to read from */
-	size_t         write_index;     /**< Where in buffer to write */
-	struct k_spinlock lock;		/**< Synchronization lock */
-
-	struct {
-		_wait_q_t      readers; /**< Reader wait queue */
-		_wait_q_t      writers; /**< Writer wait queue */
-	} wait_q;			/** Wait queue */
-
-	Z_DECL_POLL_EVENT
-
-	uint8_t	       flags;		/**< Flags */
-
-	SYS_PORT_TRACING_TRACKING_FIELD(k_pipe)
-
-#ifdef CONFIG_OBJ_CORE_PIPE
-	struct k_obj_core  obj_core;
-#endif
-};
-
-/**
- * @cond INTERNAL_HIDDEN
- */
-#define K_PIPE_FLAG_ALLOC	BIT(0)	/** Buffer was allocated */
-
-#define Z_PIPE_INITIALIZER(obj, pipe_buffer, pipe_buffer_size)     \
-	{                                                           \
-	.buffer = pipe_buffer,                                      \
-	.size = pipe_buffer_size,                                   \
-	.bytes_used = 0,                                            \
-	.read_index = 0,                                            \
-	.write_index = 0,                                           \
-	.lock = {},                                                 \
-	.wait_q = {                                                 \
-		.readers = Z_WAIT_Q_INIT(&obj.wait_q.readers),       \
-		.writers = Z_WAIT_Q_INIT(&obj.wait_q.writers)        \
-	},                                                          \
-	Z_POLL_EVENT_OBJ_INIT(obj)                                   \
-	.flags = 0,                                                 \
-	}
-
-/**
- * INTERNAL_HIDDEN @endcond
- */
-
-/**
- * @brief Statically define and initialize a pipe.
- *
- * The pipe can be accessed outside the module where it is defined using:
- *
- * @code extern struct k_pipe <name>; @endcode
- *
- * @param name Name of the pipe.
- * @param pipe_buffer_size Size of the pipe's ring buffer (in bytes),
- *                         or zero if no ring buffer is used.
- * @param pipe_align Alignment of the pipe's ring buffer (power of 2).
- *
- */
-#define K_PIPE_DEFINE(name, pipe_buffer_size, pipe_align)		\
-	static unsigned char __noinit __aligned(pipe_align)		\
-		_k_pipe_buf_##name[pipe_buffer_size];			\
-	STRUCT_SECTION_ITERABLE(k_pipe, name) =				\
-		Z_PIPE_INITIALIZER(name, _k_pipe_buf_##name, pipe_buffer_size)
-
-/**
- * @deprecated Dynamic allocation of pipe buffers will be removed in the new k_pipe API.
- * @brief Release a pipe's allocated buffer
- *
- * If a pipe object was given a dynamically allocated buffer via
- * k_pipe_alloc_init(), this will free it. This function does nothing
- * if the buffer wasn't dynamically allocated.
- *
- * @param pipe Address of the pipe.
- * @retval 0 on success
- * @retval -EAGAIN nothing to cleanup
- */
-__deprecated int k_pipe_cleanup(struct k_pipe *pipe);
-
-/**
- * @deprecated Dynamic allocation of pipe buffers will be removed in the new k_pipe API.
- * @brief Initialize a pipe and allocate a buffer for it
- *
- * Storage for the buffer region will be allocated from the calling thread's
- * resource pool. This memory will be released if k_pipe_cleanup() is called,
- * or userspace is enabled and the pipe object loses all references to it.
- *
- * This function should only be called on uninitialized pipe objects.
- *
- * @param pipe Address of the pipe.
- * @param size Size of the pipe's ring buffer (in bytes), or zero if no ring
- *             buffer is used.
- * @retval 0 on success
- * @retval -ENOMEM if memory couldn't be allocated
- */
-__deprecated __syscall int k_pipe_alloc_init(struct k_pipe *pipe, size_t size);
-
-/**
- * @deprecated k_pipe_put() is replaced by k_pipe_write(...) in the new k_pipe API.
- * @brief Write data to a pipe.
- *
- * This routine writes up to @a bytes_to_write bytes of data to @a pipe.
- *
- * @param pipe Address of the pipe.
- * @param data Address of data to write.
- * @param bytes_to_write Size of data (in bytes).
- * @param bytes_written Address of area to hold the number of bytes written.
- * @param min_xfer Minimum number of bytes to write.
- * @param timeout Waiting period to wait for the data to be written,
- *                or one of the special values K_NO_WAIT and K_FOREVER.
- *
- * @retval 0 At least @a min_xfer bytes of data were written.
- * @retval -EIO Returned without waiting; zero data bytes were written.
- * @retval -EAGAIN Waiting period timed out; between zero and @a min_xfer
- *                 minus one data bytes were written.
- */
-__deprecated __syscall int k_pipe_put(struct k_pipe *pipe, const void *data,
-			 size_t bytes_to_write, size_t *bytes_written,
-			 size_t min_xfer, k_timeout_t timeout);
-
-/**
- * @deprecated k_pipe_get() is replaced by k_pipe_read(...) in the new k_pipe API.
- * @brief Read data from a pipe.
- *
- * This routine reads up to @a bytes_to_read bytes of data from @a pipe.
- *
- * @param pipe Address of the pipe.
- * @param data Address to place the data read from pipe.
- * @param bytes_to_read Maximum number of data bytes to read.
- * @param bytes_read Address of area to hold the number of bytes read.
- * @param min_xfer Minimum number of data bytes to read.
- * @param timeout Waiting period to wait for the data to be read,
- *                or one of the special values K_NO_WAIT and K_FOREVER.
- *
- * @retval 0 At least @a min_xfer bytes of data were read.
- * @retval -EINVAL invalid parameters supplied
- * @retval -EIO Returned without waiting; zero data bytes were read.
- * @retval -EAGAIN Waiting period timed out; between zero and @a min_xfer
- *                 minus one data bytes were read.
- */
-__deprecated  __syscall int k_pipe_get(struct k_pipe *pipe, void *data,
-			 size_t bytes_to_read, size_t *bytes_read,
-			 size_t min_xfer, k_timeout_t timeout);
-
-/**
- * @deprecated k_pipe_read_avail() will be removed in the new k_pipe API.
- * @brief Query the number of bytes that may be read from @a pipe.
- *
- * @param pipe Address of the pipe.
- *
- * @retval a number n such that 0 <= n <= @ref k_pipe.size; the
- *         result is zero for unbuffered pipes.
- */
-__deprecated  __syscall size_t k_pipe_read_avail(struct k_pipe *pipe);
-
-/**
- * @deprecated k_pipe_write_avail() will be removed in the new k_pipe API.
- * @brief Query the number of bytes that may be written to @a pipe
- *
- * @param pipe Address of the pipe.
- *
- * @retval a number n such that 0 <= n <= @ref k_pipe.size; the
- *         result is zero for unbuffered pipes.
- */
-__deprecated __syscall size_t k_pipe_write_avail(struct k_pipe *pipe);
-
-/**
- * @deprecated k_pipe_flush() will be removed in the new k_pipe API.
- * @brief Flush the pipe of write data
- *
- * This routine flushes the pipe. Flushing the pipe is equivalent to reading
- * both all the data in the pipe's buffer and all the data waiting to go into
- * that pipe into a large temporary buffer and discarding the buffer. Any
- * writers that were previously pended become unpended.
- *
- * @param pipe Address of the pipe.
- */
-__deprecated __syscall void k_pipe_flush(struct k_pipe *pipe);
-
-/**
- * @deprecated k_pipe_buffer_flush will be removed in the new k_pipe API.
- * @brief Flush the pipe's internal buffer
- *
- * This routine flushes the pipe's internal buffer. This is equivalent to
- * reading up to N bytes from the pipe (where N is the size of the pipe's
- * buffer) into a temporary buffer and then discarding that buffer. If there
- * were writers previously pending, then some may unpend as they try to fill
- * up the pipe's emptied buffer.
- *
- * @param pipe Address of the pipe.
- */
-__deprecated __syscall void k_pipe_buffer_flush(struct k_pipe *pipe);
-
-#else /* CONFIG_PIPES */
-
 enum pipe_flags {
 	PIPE_FLAG_OPEN = BIT(0),
 	PIPE_FLAG_RESET = BIT(1),
@@ -5524,7 +5473,6 @@ __syscall void k_pipe_reset(struct k_pipe *pipe);
  * @param pipe Address of the pipe.
  */
 __syscall void k_pipe_close(struct k_pipe *pipe);
-#endif /* CONFIG_PIPES */
 /** @} */
 
 /**
@@ -5736,6 +5684,8 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem,
  * This routine releases a previously allocated memory block back to its
  * associated memory slab.
  *
+ * @funcprops \isr_ok
+ *
  * @param slab Address of the memory slab.
  * @param mem Pointer to the memory block (as returned by k_mem_slab_alloc()).
  */
@@ -5746,6 +5696,8 @@ void k_mem_slab_free(struct k_mem_slab *slab, void *mem);
  *
  * This routine gets the number of memory blocks that are currently
  * allocated in @a slab.
+ *
+ * @funcprops \isr_ok
  *
  * @param slab Address of the memory slab.
  *
@@ -5761,6 +5713,8 @@ static inline uint32_t k_mem_slab_num_used_get(struct k_mem_slab *slab)
  *
  * This routine gets the maximum number of memory blocks that were
  * allocated in @a slab.
+ *
+ * @funcprops \isr_ok
  *
  * @param slab Address of the memory slab.
  *
@@ -5782,6 +5736,8 @@ static inline uint32_t k_mem_slab_max_used_get(struct k_mem_slab *slab)
  * This routine gets the number of memory blocks that are currently
  * unallocated in @a slab.
  *
+ * @funcprops \isr_ok
+ *
  * @param slab Address of the memory slab.
  *
  * @return Number of unallocated memory blocks.
@@ -5795,6 +5751,8 @@ static inline uint32_t k_mem_slab_num_free_get(struct k_mem_slab *slab)
  * @brief Get the memory stats for a memory slab
  *
  * This routine gets the runtime memory usage stats for the slab @a slab.
+ *
+ * @funcprops \isr_ok
  *
  * @param slab Address of the memory slab
  * @param stats Pointer to memory into which to copy memory usage statistics
@@ -5810,6 +5768,8 @@ int k_mem_slab_runtime_stats_get(struct k_mem_slab *slab, struct sys_memory_stat
  *
  * This routine resets the maximum memory usage for the slab @a slab to its
  * current usage.
+ *
+ * @funcprops \isr_ok
  *
  * @param slab Address of the memory slab
  *

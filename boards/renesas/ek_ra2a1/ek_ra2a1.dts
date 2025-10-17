@@ -21,10 +21,12 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,entropy = &trng;
+		zephyr,crc = &crc;
 	};
 
 	leds {
 		compatible = "gpio-leds";
+
 		led1: led1 {
 			gpios = <&ioport2 5 GPIO_ACTIVE_HIGH>;
 			label = "LED1";
@@ -33,6 +35,7 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: s1 {
 			gpios = <&ioport2 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 1";
@@ -66,6 +69,7 @@
 	pinctrl-0 = <&sci0_default>;
 	pinctrl-names = "default";
 	status = "okay";
+
 	uart0: uart {
 		current-speed = <115200>;
 		status = "okay";
@@ -160,4 +164,8 @@
 			hysteresis = <115>;
 		};
 	};
+};
+
+&crc {
+	status = "okay";
 };

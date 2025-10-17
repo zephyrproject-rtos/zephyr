@@ -9,6 +9,13 @@ Overview
 The `Adafruit OLED FeatherWing Shield`_ features a SSD1306 compatible OLED display
 with a resolution of 128x32 pixels and three user buttons.
 
+.. figure:: adafruit_featherwing_128x32_oled.webp
+   :align: center
+   :alt: Adafruit FeatherWing 128x32 OLED Shield
+
+   Adafruit FeatherWing 128x32 OLED Shield (Credit: Adafruit)
+
+
 Pins Assignment of the Adafruit FeatherWing 128x32 OLED shield
 ==============================================================
 

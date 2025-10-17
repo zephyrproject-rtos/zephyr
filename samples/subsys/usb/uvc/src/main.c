@@ -29,7 +29,6 @@ int main(void)
 	struct k_poll_signal sig;
 	struct k_poll_event evt[1];
 	k_timeout_t timeout = K_FOREVER;
-	size_t bsize;
 	int ret;
 
 	if (!device_is_ready(video_dev)) {
@@ -79,15 +78,8 @@ int main(void)
 		VIDEO_FOURCC_TO_STR(fmt.pixelformat), fmt.width, fmt.height,
 		CONFIG_VIDEO_BUFFER_POOL_NUM_MAX, fmt.pitch * fmt.height);
 
-	/* Size to allocate for each buffer */
-	if (caps.min_line_count == LINE_COUNT_HEIGHT) {
-		bsize = fmt.pitch * fmt.height;
-	} else {
-		bsize = fmt.pitch * caps.min_line_count;
-	}
-
 	for (int i = 0; i < CONFIG_VIDEO_BUFFER_POOL_NUM_MAX; i++) {
-		vbuf = video_buffer_alloc(bsize, K_NO_WAIT);
+		vbuf = video_buffer_alloc(fmt.size, K_NO_WAIT);
 		if (vbuf == NULL) {
 			LOG_ERR("Could not allocate the video buffer");
 			return -ENOMEM;

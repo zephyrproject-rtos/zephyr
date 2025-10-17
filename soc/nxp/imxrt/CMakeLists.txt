@@ -4,6 +4,7 @@
 add_subdirectory(${SOC_SERIES})
 
 zephyr_include_directories(.)
+zephyr_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../common)
 zephyr_include_directories(${SOC_SERIES})
 
 zephyr_linker_sources_ifdef(CONFIG_NXP_IMXRT_BOOT_HEADER

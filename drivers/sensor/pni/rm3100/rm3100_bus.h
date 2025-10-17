@@ -31,10 +31,14 @@ static inline int rm3100_bus_read(const struct device *dev,
 		return -ENOMEM;
 	}
 
+	reg = reg | REG_READ_BIT;
+
 	rtio_sqe_prep_write(write_sqe, iodev, RTIO_PRIO_HIGH, &reg, 1, NULL);
 	write_sqe->flags |= RTIO_SQE_TRANSACTION;
 	rtio_sqe_prep_read(read_sqe, iodev, RTIO_PRIO_HIGH, buf, len, NULL);
-	read_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+	if (rtio_is_i2c(data->rtio.type)) {
+		read_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+	}
 
 	err = rtio_submit(ctx, 2);
 	if (err) {

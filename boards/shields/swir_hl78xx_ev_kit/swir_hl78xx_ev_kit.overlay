@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2025 Netfeasa Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		modem-uart = &usart2;
+		modem = &modem;
+		gnss = &gnss;
+	};
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3 &usart2_rts_pd4 &usart2_cts_pd3>;
+	pinctrl-1 = <&analog_pa2 &analog_pa3 &analog_pd4 &analog_pd3>;
+	dmas = <&gpdma1 0 27 STM32_DMA_PERIPH_TX
+	&gpdma1 1 26 STM32_DMA_PERIPH_RX>;
+	dma-names = "tx", "rx";
+	pinctrl-names = "default", "sleep";
+	current-speed = <115200>;
+	status = "okay";
+	hw-flow-control;
+	modem: hl_modem {
+		compatible = "swir,hl7812";
+		status = "okay";
+		mdm-reset-gpios = <&gpiod 5 (GPIO_ACTIVE_LOW)>;
+		socket_offload: socket_offload {
+			compatible = "swir,hl7812-offload";
+			status = "okay";
+			/* optional properties for future: */
+			max-data-length = <512>;
+		};
+		gnss: hl_gnss {
+			compatible = "swir,hl7812-gnss";
+			pps-mode = "GNSS_PPS_MODE_DISABLED";
+			fix-rate = <1000>;
+			status = "okay";
+		};
+	};
+
+};

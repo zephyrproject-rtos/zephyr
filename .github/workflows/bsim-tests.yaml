@@ -42,7 +42,7 @@ jobs:
     runs-on:
       group: zephyr-runner-v2-linux-x64-4xlarge
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.28.1.20250624
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.28.6.20251003
       options: '--entrypoint /bin/bash'
     env:
       ZEPHYR_TOOLCHAIN_VARIANT: zephyr
@@ -74,7 +74,7 @@ jobs:
           git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
 
       - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           fetch-depth: 0
 
@@ -97,8 +97,12 @@ jobs:
 
           echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
 
+      - name: Install Python packages
+        run: |
+          pip install -r scripts/requirements-actions.txt --require-hashes
+
       - name: Check common triggering files
-        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c # v46.0.5
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47.0.0
         id: check-common-files
         with:
           files: |
@@ -117,7 +121,7 @@ jobs:
             modules/hal_nordic/**
 
       - name: Check if Bluethooth files changed
-        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c # v46.0.5
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47.0.0
         id: check-bluetooth-files
         with:
           files: |
@@ -127,7 +131,7 @@ jobs:
             tests/bsim/bluetooth/
 
       - name: Check if Networking files changed
-        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c # v46.0.5
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47.0.0
         id: check-networking-files
         with:
           files: |
@@ -140,7 +144,7 @@ jobs:
             include/zephyr/net/ieee802154*
 
       - name: Check if UART files changed
-        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c # v46.0.5
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47.0.0
         id: check-uart-files
         with:
           files: |

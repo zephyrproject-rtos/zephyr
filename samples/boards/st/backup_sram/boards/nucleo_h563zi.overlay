@@ -4,6 +4,6 @@
  * Copyright (c) 2024 Thorsten Spätling <thorsten.spaetling@vierling.de>
  */
 
-&backup_sram{
+&backup_sram {
 	status = "okay";
 };

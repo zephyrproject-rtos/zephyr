@@ -52,6 +52,21 @@ config LV_Z_MEMORY_POOL_CUSTOM_SECTION
 	  memory pool to a custom location, such as tightly coupled or
 	  external memory.
 
+config LV_Z_MEMORY_POOL_ZEPHYR_REGION
+	bool "Place LVGL memory pool in a Zephyr memory-region"
+	depends on LV_Z_MEM_POOL_SYS_HEAP
+	depends on !LV_Z_MEMORY_POOL_CUSTOM_SECTION
+	help
+	  Place LVGL memory pool in a section, automatically
+	  created from a 'zephyr,memory-region' compatible node,
+	  whose name is specified in LV_Z_MEMORY_POOL_ZEPHYR_REGION_NAME.
+
+config LV_Z_MEMORY_POOL_ZEPHYR_REGION_NAME
+	string "Name of the zephyr memory-region for memory pool"
+	depends on LV_Z_MEMORY_POOL_ZEPHYR_REGION
+	help
+	  Name of the Zephyr memory-region where LVGL memory pool is placed.
+
 config LV_Z_VDB_SIZE
 	int "Rendering buffer size"
 	default 100 if LV_Z_FULL_REFRESH
@@ -91,6 +106,21 @@ config LV_Z_VDB_CUSTOM_SECTION
 	  This can be used by custom linker scripts to relocate the LVGL
 	  rendering buffers to a custom location, such as tightly coupled or
 	  external memory.
+
+config LV_Z_VDB_ZEPHYR_REGION
+	bool "Place LVGL rendering buffers in a Zephyr memory-region"
+	depends on LV_Z_BUFFER_ALLOC_STATIC
+	depends on !LV_Z_VDB_CUSTOM_SECTION
+	help
+	  Place LVGL rendering buffers in a section, automatically
+	  created from a 'zephyr,memory-region' compatible node,
+	  whose name is specified in LV_Z_VDB_ZEPHYR_REGION_NAME.
+
+config LV_Z_VDB_ZEPHYR_REGION_NAME
+	string "Name of the Zephyr memory-region for rendering buffers"
+	depends on LV_Z_VDB_ZEPHYR_REGION
+	help
+	  Name of the Zephyr memory-region where LVGL rendering buffers are placed.
 
 config LV_Z_MONOCHROME_CONVERSION_BUFFER
 	bool "Use intermediate conversion buffer for monochrome displays"

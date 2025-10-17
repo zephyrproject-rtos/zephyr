@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, NXP
+# Copyright 2018, 2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -32,4 +32,5 @@ supported:
   - usb_device
   - video
   - watchdog
+  - rtc
 vendor: nxp

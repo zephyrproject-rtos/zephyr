@@ -8,7 +8,6 @@
 /dts-v1/;
 #include "nucleo_h563zi-common.dtsi"
 
-
 / {
 	model = "STMicroelectronics STM32H563ZI-NUCLEO board";
 	compatible = "st,stm32h563zi-nucleo";

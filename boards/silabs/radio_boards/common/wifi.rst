@@ -236,13 +236,9 @@ parameters like TWT interval, TWT wake ahead duration and dialog token.
 Bugs and Limitations
 --------------------
 
-   - The default configuration complies with US regulatory domain. Thus, it
-     supports Channels 1-11 only, ensuring operation within permitted
-     frequencies for the US region.
    - For WPA3 (SAE), our device has a limitation of 64 characters on the
      password.
    - EAP security modes are not supported.
-   - The link mode in Wi-Fi status is always ``WIFI_LINK_MODE_UNKNOWN``.
    - The device supports bandwidth of 20 MHz only and 1 spatial stream.
    - 802.11r is not supported.
    - WMM power save mode is not supported.
@@ -292,10 +288,60 @@ privacy by preventing the SSID from being visible to unauthorized users.
 Bugs and Limitations
 --------------------
 
-   - The default configuration complies with US regulatory domain. Thus, it
-     supports Channels 1-11 only, ensuring operation within permitted
-     frequencies for the US region.
-   - The link mode in Wi-Fi status is always ``WIFI_LINK_MODE_UNKNOWN``.
    - The device supports bandwidth of 20 MHz only and 1 spatial stream.
    - Although STA and BLE can coexist simultaneously, AP and BLE cannot operate
      together.
+
+Common Features
+===============
+
+Regulatory Domain
+-----------------
+
+The SiWx91x driver supports regulatory domain configuration to enforce
+region-specific channel and transmit power limits in both STA and Soft-AP modes.
+
+   - Country code values follow ISO/IEC 3166-1 alpha-2 (for example, ``US``, ``IN``, ``FR``).
+   - The driver maps supported country codes to SiWx91x firmware region identifiers.
+   - Supported regions include: ``EU``, ``CN``, ``KR``, ``JP``, and ``US``.
+   - By default, the driver applies the ``US`` regulatory domain.
+
+.. note::
+   The regulatory domain must be configured **before** activating the device
+   (scan, connect, or Soft-AP start). This ensures only allowed channels and
+   transmit power levels are used.
+
+   If the requested country code is not supported, the driver falls back to
+   the default domain (``US``).
+
+Maximum Transmit Power
+----------------------
+
+The driver supports configuration of the maximum transmit (TX) power in both
+STA and Soft-AP modes. This setting defines the upper limit of RF output power,
+subject to hardware and regulatory constraints.
+
+   - Configuration is provided through Device Tree properties.
+   - If not specified, the default maximum TX power is ``31 dBm``.
+
+Device Tree Properties
+~~~~~~~~~~~~~~~~~~~~~~
+
+   - ``wifi-max-tx-pwr-scan``
+     Maximum TX power (in dBm) used during Wi-Fi scanning. Applicable only in STA mode.
+
+   - ``wifi-max-tx-pwr-join``
+     Maximum TX power (in dBm) used when joining a Wi-Fi network.
+
+.. note::
+   The SiWx91x firmware does not support per-rate TX power control.
+
+RTS Threshold
+-------------
+
+The driver supports configuration of the RTS (Request to Send) threshold,
+which determines the frame size above which RTS/CTS handshaking is enabled.
+
+   - Valid range: ``0`` to ``2347`` bytes.
+   - A value of ``0`` means every transmitted frame is preceded by an RTS frame.
+   - The default RTS threshold is ``2346`` bytes.

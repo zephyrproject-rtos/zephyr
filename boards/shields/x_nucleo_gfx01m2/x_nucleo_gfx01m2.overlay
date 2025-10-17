@@ -81,6 +81,7 @@
 };
 
 st_morpho_lcd_spi: &spi1 {};
+
 st_morpho_flash_spi: &spi2 {};
 
 &st_morpho_lcd_spi {

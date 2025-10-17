@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <silabs/xg21/efr32mg21a020f1024im32.dtsi>
+#include <dt-bindings/adc/silabs-adc.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "slwrb4180a-pinctrl.dtsi"
 
@@ -14,6 +15,7 @@
 	compatible = "silabs,slwrb4180a", "silabs,efr32mg21";
 
 	chosen {
+		zephyr,bt-hci = &bt_hci_silabs;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &usart0;
 		zephyr,flash = &flash0;
@@ -29,6 +31,7 @@
 		sw0 = &button0;
 		sw1 = &button1;
 		watchdog0 = &wdog0;
+		adc0 = &adc0;
 	};
 
 	leds {
@@ -61,6 +64,58 @@
 			label = "User Push Button 1";
 			zephyr,code = <INPUT_KEY_1>;
 		};
+	};
+
+	joystick {
+		compatible = "adc-keys";
+		io-channels = <&adc0 0>;
+		keyup-threshold-mv = <3300>;
+
+		select-key {
+			press-thresholds-mv = <33>;
+			zephyr,code = <INPUT_KEY_ENTER>;
+		};
+
+		left-key {
+			press-thresholds-mv = <1980>;
+			zephyr,code = <INPUT_KEY_LEFT>;
+		};
+
+		down-key {
+			press-thresholds-mv = <1650>;
+			zephyr,code = <INPUT_KEY_DOWN>;
+		};
+
+		up-key {
+			press-thresholds-mv = <2831>;
+			zephyr,code = <INPUT_KEY_UP>;
+		};
+
+		right-key {
+			press-thresholds-mv = <2533>;
+			zephyr,code = <INPUT_KEY_RIGHT>;
+		};
+	};
+
+	exp_header: exp-header {
+		compatible = "silabs,exp-header";
+		#gpio-cells = <2>;
+		gpio-map = <4 0 &gpioc 0 0>,
+			   <6 0 &gpioc 1 0>,
+			   <7 0 &gpiod 2 0>,
+			   <8 0 &gpioc 2 0>,
+			   <9 0 &gpiod 3 0>,
+			   <10 0 &gpioc 3 0>,
+			   <11 0 &gpiob 0 0>,
+			   <12 0 &gpioa 5 0>,
+			   <13 0 &gpiob 1 0>,
+			   <14 0 &gpioa 6 0>;
+		gpio-map-mask = <0xffffffff 0x0>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
+	};
+
+	zephyr,user {
+		io-channels = <&adc0 0>;
 	};
 };
 
@@ -110,6 +165,24 @@
 	clocks = <&lfxo>;
 };
 
+&adc0 {
+	pinctrl-0 = <&iadc0_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	channel@0 {
+		reg = <0>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,input-positive = <IADC_INPUT_PA0>;
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
+};
+
 &usart0 {
 	current-speed = <115200>;
 	pinctrl-0 = <&usart0_default>;
@@ -152,6 +225,14 @@
 	status = "okay";
 };
 
+&se {
+	status = "okay";
+};
+
+&bt_hci_silabs {
+	status = "okay";
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
@@ -160,34 +241,27 @@
 
 		/* Reserve 48 kB for the bootloader */
 		boot_partition: partition@0 {
-			reg = <0x0 0x0000c000>;
+			reg = <0x0 DT_SIZE_K(48)>;
 			label = "mcuboot";
 			read-only;
 		};
 
-		/* Reserve 464 kB for the application in slot 0 */
+		/* Reserve 472 kB for the application in slot 0 */
 		slot0_partition: partition@c000 {
-			reg = <0x0000c000 0x00074000>;
+			reg = <0x0000c000 DT_SIZE_K(472)>;
 			label = "image-0";
 		};
 
-		/* Reserve 464 kB for the application in slot 1 */
-		slot1_partition: partition@80000 {
-			reg = <0x00080000 0x00074000>;
+		/* Reserve 472 kB for the application in slot 1 */
+		slot1_partition: partition@82000 {
+			reg = <0x00082000 DT_SIZE_K(472)>;
 			label = "image-1";
 		};
 
-		/* Reserve 32 kB for the scratch partition */
-		scratch_partition: partition@f4000 {
-			reg = <0x000f4000 0x00008000>;
-			label = "image-scratch";
-		};
-
-		/* Set 16Kb of storage at the end of the 1024Kb of flash */
-		storage_partition: partition@fc000 {
-			reg = <0x000fc000 0x00004000>;
+		/* Set 32Kb of storage at the end of the 1024Kb of flash */
+		storage_partition: partition@f8000 {
+			reg = <0x000f8000 DT_SIZE_K(32)>;
 			label = "storage";
 		};
-
 	};
 };

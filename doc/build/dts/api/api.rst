@@ -399,6 +399,8 @@ device.
        into
    * - zephyr,console
      - Sets UART device used by console driver
+   * - zephyr,crc
+     - Selects the CRC device used as an accelerator by the CRC subsystem
    * - zephyr,display
      - Sets the default display controller
    * - zephyr,keyboard-scan
@@ -464,6 +466,8 @@ device.
        WS2812 GPIO driver
    * - zephyr,touch
      - touchscreen controller device node.
+   * - zephyr,videoenc
+     - Video encoder device, typically an H264 or MJPEG video encoder.
    * - mcuboot,ram-load-dev
      - When a Zephyr application is built to be loaded to RAM by MCUboot, with
        :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_MODE_SINGLE_APP_RAM_LOAD`,

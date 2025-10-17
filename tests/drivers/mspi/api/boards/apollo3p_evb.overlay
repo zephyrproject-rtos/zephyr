@@ -29,12 +29,11 @@
 		reg = <0x0>;
 		mspi-max-frequency = <48000000>;
 	};
-
 };
 
 &pinctrl {
 
-	mspi1_sleep: mspi1_sleep{
+	mspi1_sleep: mspi1_sleep {
 		group1 {
 			pinmux = <GPIO_P51>,
 				 <GPIO_P52>,
@@ -50,7 +49,7 @@
 		};
 	};
 
-	mspi1_emul: mspi1_emul{
+	mspi1_emul: mspi1_emul {
 
 		group1 {
 			pinmux = <MSPI1_0_P51>,
@@ -83,7 +82,5 @@
 		group4 {
 			pinmux = <GPIO_P69>;
 		};
-
 	};
-
 };

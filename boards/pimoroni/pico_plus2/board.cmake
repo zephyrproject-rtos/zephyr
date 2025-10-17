@@ -1,7 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 board_runner_args(openocd --cmd-pre-init "source [find interface/cmsis-dap.cfg]")
-board_runner_args(openocd --cmd-pre-init "source [find target/rp2350.cfg]")
+if(CONFIG_ARM)
+  board_runner_args(openocd --cmd-pre-init "source [find target/rp2350.cfg]")
+else()
+  board_runner_args(openocd --cmd-pre-init "source [find target/rp2350-riscv.cfg]")
+endif()
 
 board_runner_args(probe-rs "--chip=RP235x")
 

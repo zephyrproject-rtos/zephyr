@@ -6,14 +6,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <nxp/kinetis/MKV58F1M0VLQ24-pinctrl.h>
 
 &pinctrl {
 	i2c1_default: i2c1_default {
 		group0 {
 			pinmux = <I2C1_SCL_PTD8>,
-				<I2C1_SDA_PTD9>;
+				 <I2C1_SDA_PTD9>;
 			drive-strength = "low";
 			drive-open-drain;
 			slew-rate = "fast";
@@ -23,10 +22,9 @@
 	uart0_default: uart0_default {
 		group0 {
 			pinmux = <UART0_RX_PTB0>,
-				<UART0_TX_PTB1>;
+				 <UART0_TX_PTB1>;
 			drive-strength = "low";
 			slew-rate = "fast";
 		};
 	};
-
 };

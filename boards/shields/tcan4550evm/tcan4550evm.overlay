@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 
 / {
 	chosen {
@@ -14,7 +15,7 @@
 
 &arduino_spi {
 	status = "okay";
-	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
+	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D10 GPIO_ACTIVE_LOW>;
 
 	tcan4x5x_tcan4550evm: can@0 {
 		compatible = "ti,tcan4x5x";
@@ -23,10 +24,10 @@
 		spi-max-frequency = <2000000>;
 		status = "okay";
 		clock-frequency = <40000000>;
-		device-state-gpios = <&arduino_header 12 GPIO_ACTIVE_HIGH>; /* D6 */
-		device-wake-gpios = <&arduino_header 13 GPIO_ACTIVE_HIGH>; /* D7 */
-		reset-gpios = <&arduino_header 14 GPIO_ACTIVE_HIGH>; /* D8 */
-		int-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>; /* D9 */
+		device-state-gpios = <&arduino_header ARDUINO_HEADER_R3_D6 GPIO_ACTIVE_HIGH>;
+		device-wake-gpios = <&arduino_header ARDUINO_HEADER_R3_D7 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&arduino_header ARDUINO_HEADER_R3_D8 GPIO_ACTIVE_HIGH>;
+		int-gpios = <&arduino_header ARDUINO_HEADER_R3_D9 GPIO_ACTIVE_LOW>;
 		bosch,mram-cfg = <0x0 15 15 7 7 0 10 10>;
 		status = "okay";
 

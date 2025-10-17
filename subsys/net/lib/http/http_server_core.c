@@ -383,9 +383,11 @@ static void close_client_connection(struct http_client_ctx *client)
 {
 	int fd = client->fd;
 
-	http_server_release_client(client);
+	if (fd >= 0) {
+		http_server_release_client(client);
 
-	(void)zsock_close(fd);
+		(void)zsock_close(fd);
+	}
 }
 
 static void client_timeout(struct k_work *work)

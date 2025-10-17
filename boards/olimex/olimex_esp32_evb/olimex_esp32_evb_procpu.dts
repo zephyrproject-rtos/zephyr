@@ -31,6 +31,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		button1: button1 {
 			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
 			label = "BUT1";
@@ -56,7 +57,9 @@
 };
 
 uext_serial: &uart1 {};
+
 uext_i2c: &i2c0 {};
+
 uext_spi: &spi2 {};
 
 &uart0 {

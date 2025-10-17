@@ -43,7 +43,7 @@ on native_sim target
    :compact:
 
 After running the generated image on a native_sim target, the output on the console shows the
-multiple Iterations of read/write/delete exectuted.
+multiple Iterations of read/write/delete executed.
 
 Sample Output
 =============

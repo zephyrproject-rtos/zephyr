@@ -18,6 +18,7 @@
 		zephyr,flash = &itcm;
 		zephyr,sram = &dtcm;
 
+		zephyr,flash-controller = &mt35xu01gbba;
 		zephyr,console = &lpuart3;
 		zephyr,shell-uart = &lpuart3;
 	};
@@ -55,15 +56,16 @@
 	rx-clock-source = <1>;
 	pinctrl-0 = <&flexspi_default>;
 	pinctrl-names = "default";
+
 	mt35xu01gbba: mt35xu01gbba@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <DT_SIZE_M(1024)>;
 		reg = <0>;
-		spi-max-frequency = <200000000>;
+		spi-max-frequency = <DT_FREQ_M(200)>;
 		status = "okay";
 		jedec-id = [2c 5b 1b];
-		erase-block-size = <4096>;
-		write-block-size = <1>;
+		erase-block-size = <DT_SIZE_K(4)>;
+		write-block-size = <2>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -78,14 +80,17 @@
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
+
 			slot0_partition: partition@20000 {
 				label = "image-0";
 				reg = <0x00020000 DT_SIZE_M(7)>;
 			};
+
 			slot1_partition: partition@720000 {
 				label = "image-1";
 				reg = <0x00720000 DT_SIZE_M(7)>;
 			};
+
 			storage_partition: partition@E20000 {
 				label = "storage";
 				reg = <0x00E20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;

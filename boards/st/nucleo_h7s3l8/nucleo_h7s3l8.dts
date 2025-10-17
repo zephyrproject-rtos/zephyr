@@ -20,6 +20,7 @@
 		zephyr,dtcm = &dtcm;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,canbus = &fdcan1;
 	};
 
 	leds: leds {
@@ -65,7 +66,7 @@
 		reg = <0x70000000 DT_SIZE_M(64)>;
 		zephyr,memory-region = "EXTMEM";
 		/* The ATTR_MPU_EXTMEM attribut causing a MPU FAULT */
-		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 	};
 };
 
@@ -164,6 +165,14 @@
 	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&fdcan1 {
+	pinctrl-0 = <&fdcan1_rx_pd0 &fdcan1_tx_pd1>;
+	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK(APB1_2, 8)>,
+		 <&rcc STM32_SRC_HSE FDCAN_SEL(0)>;
+	status = "okay";
 };
 
 &flash0 {

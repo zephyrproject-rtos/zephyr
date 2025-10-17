@@ -1,0 +1,9 @@
+# Copyright (c) 2025 ITE Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_IT82000BW
+
+config SOC_IT8XXX2_GPIO_GROUP_K_L_DEFAULT_PULL_DOWN
+	default y
+
+endif #SOC_IT82000BW

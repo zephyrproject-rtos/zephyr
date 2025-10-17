@@ -7,33 +7,24 @@
 
 #include "evkmimxrt1060_flexspi_nor_config.h"
 
-/* Component ID definition, used by tools. */
-#ifndef FSL_COMPONENT_ID
-#define FSL_COMPONENT_ID "platform.drivers.xip_board"
-#endif
-
 #if defined(XIP_BOOT_HEADER_ENABLE) && (XIP_BOOT_HEADER_ENABLE == 1)
-#if defined(__CC_ARM) || defined(__ARMCC_VERSION) || defined(__GNUC__)
 __attribute__((section(".boot_hdr.conf"), used))
-#elif defined(__ICCARM__)
-#pragma location = ".boot_hdr.conf"
-#endif
 
-const flexspi_nor_config_t qspiflash_config = {
-	.memConfig = {
+const flexspi_nor_config_t qspi_flash_config = {
+	.mem_config = {
 		.tag = FLEXSPI_CFG_BLK_TAG,
 		.version = FLEXSPI_CFG_BLK_VERSION,
-		.readSampleClkSrc =
-			kFlexSPIReadSampleClk_LoopbackFromDqsPad,
-		.csHoldTime = 3u,
-		.csSetupTime = 3u,
-		.controllerMiscOption =
-			(1u << kFlexSpiMiscOffset_SafeConfigFreqEnable),
-		.deviceType = kFlexSpiDeviceType_SerialNOR,
-		.sflashPadType = kSerialFlash_4Pads,
-		.serialClkFreq = kFlexSpiSerialClk_120MHz,
-		.sflashA1Size = 8u * 1024u * 1024u,
-		.lookupTable = {
+		.read_sample_clk_src =
+			FLEXSPI_READ_SAMPLE_CLK_LOOPBACK_FROM_DQS_PAD,
+		.cs_hold_time = 3u,
+		.cs_setup_time = 3u,
+		.controller_misc_option =
+			(1u << FLEXSPI_MISC_OFFSET_SAFE_CONFIG_FREQ_ENABLE),
+		.device_type = FLEXSPI_DEVICE_TYPE_SERIAL_NOR,
+		.sflash_pad_type = SERIAL_FLASH_4_PADS,
+		.serial_clk_freq = FLEXSPI_SERIAL_CLK_120MHZ,
+		.sflash_a1_size = 8u * 1024u * 1024u,
+		.lookup_table = {
 			/* Read LUTs */
 			[0] = FLEXSPI_LUT_SEQ(CMD_SDR, FLEXSPI_1PAD,
 				0xEB, RADDR_SDR, FLEXSPI_4PAD, 0x18),
@@ -67,11 +58,11 @@ const flexspi_nor_config_t qspiflash_config = {
 				0x60, STOP, FLEXSPI_1PAD, 0x0),
 		},
 	},
-	.pageSize = 256u,
-	.sectorSize = 4u * 1024u,
-	.ipcmdSerialClkFreq = 1u,
-	.blockSize = 64u * 1024u,
-	.isUniformBlockSize = false,
+	.page_size = 256u,
+	.sector_size = 4u * 1024u,
+	.ipcmd_serial_clk_freq = 1u,
+	.block_size = 64u * 1024u,
+	.is_uniform_block_size = false,
 };
 
 #endif /* XIP_BOOT_HEADER_ENABLE */

@@ -8,4 +8,4 @@
 	status = "okay";
 };
 
-dma0: &edma5 { };
+dma0: &edma5 {};

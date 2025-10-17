@@ -118,7 +118,7 @@ I2C
 ---
 
 There are multiple on-device I2C devices already connected to
-I2C busses.
+I2C buses.
 Some of these devices should not be used by the M7-Core if
 running the PHYTEC BSP on the A53-Core.
 

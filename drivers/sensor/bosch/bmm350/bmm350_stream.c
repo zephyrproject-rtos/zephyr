@@ -33,8 +33,11 @@ static void bmm350_stream_result(const struct device *dev, int err)
 	}
 }
 
-static void bmm350_stream_event_complete(struct rtio *ctx, const struct rtio_sqe *sqe, void *arg0)
+static void bmm350_stream_event_complete(struct rtio *ctx, const struct rtio_sqe *sqe,
+					 int result, void *arg0)
 {
+	ARG_UNUSED(result);
+
 	struct rtio_iodev_sqe *iodev_sqe = (struct rtio_iodev_sqe *)arg0;
 	struct sensor_read_config *cfg = (struct sensor_read_config *)iodev_sqe->sqe.iodev->data;
 	const struct device *dev = (const struct device *)sqe->userdata;

@@ -1,0 +1,244 @@
+/*
+ * Copyright (c) 2025 Siratul Islam
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/wb/stm32wb55Xg.dtsi>
+#include <st/wb/stm32wb55cgux-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "WeAct Studio STM32WB55 Core Board";
+	compatible = "weact,stm32wb55-core";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,bt-mon-uart = &lpuart1;
+		zephyr,bt-c2h-uart = &lpuart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		blue_led: led_0 {
+			gpios = <&gpiob 2 GPIO_ACTIVE_HIGH>;
+			label = "User LED";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		boot_button: button_0 {
+			label = "BOOT";
+			gpios = <&gpioe 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &blue_led;
+		mcuboot-led0 = &blue_led;
+		sw0 = &boot_button;
+		mcuboot-button0 = &boot_button;
+		watchdog0 = &iwdg;
+		die-temp0 = &die_temp;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
+	};
+};
+
+&die_temp {
+	status = "okay";
+};
+
+&clk_lsi1 {
+	status = "okay";
+};
+
+&clk_hse {
+	status = "okay";
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk48 {
+	/* Node is disabled by default as default source is HSI48 */
+	/* To select another clock, enable the node */
+	clocks = <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
+};
+
+&rcc {
+	clocks = <&clk_hse>;
+	clock-frequency = <DT_FREQ_M(32)>;
+	cpu1-prescaler = <1>;
+	cpu2-prescaler = <1>;
+	ahb4-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB1, 10)>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+
+	backup_regs {
+		status = "okay";
+	};
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
+		     &spi1_miso_pb4 &spi1_mosi_pb5>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&timers1 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm1: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim1_ch1_pa8>;
+		pinctrl-names = "default";
+	};
+};
+
+&timers2 {
+	status = "okay";
+
+	pwm2: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim2_ch1_pa15>;
+		pinctrl-names = "default";
+	};
+};
+
+&lpuart1 {
+	pinctrl-0 = <&lpuart1_tx_pa2 &lpuart1_rx_pa3
+		     &lpuart1_cts_pa6 &lpuart1_rts_pb1>;
+	hw-flow-control;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_in5_pa0 &adc1_in6_pa1>;
+	pinctrl-names = "default";
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
+
+stm32_lp_tick_source: &lptim1 {
+	clocks = <&rcc STM32_CLOCK(APB1, 31)>,
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
+	status = "okay";
+};
+
+zephyr_udc0: &usb {
+	status = "okay";
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+};
+
+&rng {
+	status = "okay";
+};
+
+&aes1 {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * STM32WB55CGU6 Flash Layout (1MB total)
+		 *
+		 * 0x08000000 - 0x080D9FFF : M4 Application Space (872KB)
+		 * 0x080DA000 - 0x080DAFFF : Reserved Gap (4KB)
+		 * 0x080DB000 - 0x080FFFFF : M0+ Wireless Stack (148KB)
+		 *
+		 * Current M0+ Wireless Stack: BLE_HCILayer_extended @ 0x080DB000 V1.23.0
+		 *
+		 * Wireless Stack Options (STM32WB5xxG 1M):
+		 * - BLE_HCILayer_extended: 0x080DB000
+		 * - BLE_HCILayer: 0x080E1000
+		 * - BLE_HCI_AdvScan: 0x080EB000
+		 * - FUS v2.1.0: 0x080EE000
+		 *
+		 * Reference:
+		 * https://github.com/STMicroelectronics/STM32CubeWB/blob/master/Projects/STM32WB_Copro_Wireless_Binaries/STM32WB5x/Release_Notes.html
+		 */
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(48)>;
+		};
+
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000c000 DT_SIZE_K(400)>;
+		};
+
+		slot1_partition: partition@70000 {
+			label = "image-1";
+			reg = <0x00070000 DT_SIZE_K(400)>;
+		};
+
+		scratch_partition: partition@d4000 {
+			label = "image-scratch";
+			reg = <0x000d4000 DT_SIZE_K(16)>;
+		};
+
+		storage_partition: partition@d8000 {
+			label = "storage";
+			reg = <0x000d8000 DT_SIZE_K(8)>;
+		};
+	};
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
+};

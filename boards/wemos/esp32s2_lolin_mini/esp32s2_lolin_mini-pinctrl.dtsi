@@ -9,12 +9,12 @@
 #include <zephyr/dt-bindings/pinctrl/esp32s2-gpio-sigmap.h>
 
 &pinctrl {
-
 	uart0_default: uart0_default {
 		group1 {
 			pinmux = <UART0_TX_GPIO16>;
 			output-high;
 		};
+
 		group2 {
 			pinmux = <UART0_RX_GPIO17>;
 			bias-pull-up;

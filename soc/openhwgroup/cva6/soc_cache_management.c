@@ -1,7 +1,7 @@
 /*
  * Non-standard CVA6 cache management operations.
  *
- * Copyright(c) 2024, CISPA Helmholtz Center for Information Security
+ * Copyright (c) 2024, CISPA Helmholtz Center for Information Security
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stddef.h>
@@ -9,16 +9,16 @@
 #include <zephyr/arch/riscv/csr.h>
 #include <zephyr/kernel.h>
 
-#include "cva6.h"
+#include <cva6_csr.h>
 
 void __weak arch_dcache_enable(void)
 {
-	csr_write(SOC_CVA6_CUSTOM_CSR_DCACHE, SOC_CVA6_CUSTOM_CSR_DCACHE_ENABLE);
+	csr_write(CVA6_DCACHE, CVA6_DCACHE_ENABLE);
 }
 
 void __weak arch_dcache_disable(void)
 {
-	csr_write(SOC_CVA6_CUSTOM_CSR_DCACHE, SOC_CVA6_CUSTOM_CSR_DCACHE_DISABLE);
+	csr_write(CVA6_DCACHE, CVA6_DCACHE_DISABLE);
 }
 
 int __weak arch_dcache_flush_all(void)
@@ -66,12 +66,12 @@ int __weak arch_dcache_flush_and_invd_range(void *addr, size_t size)
 
 void __weak arch_icache_enable(void)
 {
-	csr_write(SOC_CVA6_CUSTOM_CSR_ICACHE, SOC_CVA6_CUSTOM_CSR_ICACHE_ENABLE);
+	csr_write(CVA6_ICACHE, CVA6_ICACHE_ENABLE);
 }
 
 void __weak arch_icache_disable(void)
 {
-	csr_write(SOC_CVA6_CUSTOM_CSR_ICACHE, SOC_CVA6_CUSTOM_CSR_ICACHE_DISABLE);
+	csr_write(CVA6_ICACHE, CVA6_ICACHE_DISABLE);
 }
 
 int __weak arch_icache_flush_all(void)

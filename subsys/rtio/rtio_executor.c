@@ -13,19 +13,38 @@
 LOG_MODULE_REGISTER(rtio_executor, CONFIG_RTIO_LOG_LEVEL);
 
 /**
+ * @brief Callback which completes an RTIO_AWAIT_OP handled by the executor
+ *
+ * The callback is triggered when the rtio_sqe tied to the RTIO_AWAIT_OP
+ * is signaled by the user.
+ *
+ * @param iodev_sqe Submission to complete
+ * @param userdata Additional data passed along
+ */
+static void rtio_executor_sqe_signaled(struct rtio_iodev_sqe *iodev_sqe, void *userdata)
+{
+	ARG_UNUSED(userdata);
+
+	rtio_iodev_sqe_ok(iodev_sqe, 0);
+}
+
+/**
  * @brief Executor handled submissions
  */
-static void rtio_executor_op(struct rtio_iodev_sqe *iodev_sqe)
+static void rtio_executor_op(struct rtio_iodev_sqe *iodev_sqe, int last_result)
 {
 	const struct rtio_sqe *sqe = &iodev_sqe->sqe;
 
 	switch (sqe->op) {
 	case RTIO_OP_CALLBACK:
-		sqe->callback.callback(iodev_sqe->r, sqe, sqe->callback.arg0);
+		sqe->callback.callback(iodev_sqe->r, sqe, last_result, sqe->callback.arg0);
 		rtio_iodev_sqe_ok(iodev_sqe, 0);
 		break;
 	case RTIO_OP_DELAY:
 		rtio_sched_alarm(iodev_sqe, sqe->delay.timeout);
+		break;
+	case RTIO_OP_AWAIT:
+		rtio_iodev_sqe_await_signal(iodev_sqe, rtio_executor_sqe_signaled, NULL);
 		break;
 	default:
 		rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
@@ -40,7 +59,7 @@ static void rtio_executor_op(struct rtio_iodev_sqe *iodev_sqe)
  *
  * @param iodev_sqe Submission to work on
  */
-static inline void rtio_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
+static inline void rtio_iodev_submit(struct rtio_iodev_sqe *iodev_sqe, int last_result)
 {
 	if (FIELD_GET(RTIO_SQE_CANCELED, iodev_sqe->sqe.flags)) {
 		rtio_iodev_sqe_err(iodev_sqe, -ECANCELED);
@@ -49,7 +68,7 @@ static inline void rtio_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
 
 	/* No iodev means its an executor specific operation */
 	if (iodev_sqe->sqe.iodev == NULL) {
-		rtio_executor_op(iodev_sqe);
+		rtio_executor_op(iodev_sqe, last_result);
 		return;
 	}
 
@@ -116,7 +135,7 @@ void rtio_executor_submit(struct rtio *r)
 		curr->next = NULL;
 		curr->r = r;
 
-		rtio_iodev_submit(iodev_sqe);
+		rtio_iodev_submit(iodev_sqe, 0);
 
 		node = mpsc_pop(&r->sq);
 	}
@@ -174,12 +193,13 @@ static inline void rtio_executor_handle_multishot(struct rtio_iodev_sqe *iodev_s
  * @param[in] is_ok Whether or not the SQE's result was successful
  */
 static inline void rtio_executor_handle_oneshot(struct rtio_iodev_sqe *iodev_sqe,
-						int result, bool is_ok)
+						int last_result, bool is_ok)
 {
 	const bool is_canceled = FIELD_GET(RTIO_SQE_CANCELED, iodev_sqe->sqe.flags) == 1;
 	struct rtio_iodev_sqe *curr = iodev_sqe;
 	struct rtio *r = iodev_sqe->r;
 	uint32_t sqe_flags;
+	int result = last_result;
 
 	/** Single-shot items may be linked as transactions or be chained together.
 	 * Untangle the set of SQEs and act accordingly on each one.
@@ -207,7 +227,7 @@ static inline void rtio_executor_handle_oneshot(struct rtio_iodev_sqe *iodev_sqe
 
 	/* curr should now be the last sqe in the transaction if that is what completed */
 	if (FIELD_GET(RTIO_SQE_CHAINED, sqe_flags) == 1) {
-		rtio_iodev_submit(curr);
+		rtio_iodev_submit(curr, last_result);
 	}
 }
 

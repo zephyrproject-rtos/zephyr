@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 DT_CHOSEN_STDBY_TIMER := st,lptim-stdby-timer
+DT_STM32_LPTIM_PATH := $(dt_nodelabel_path,stm32_lp_tick_source)
 
 menuconfig STM32_LPTIM_TIMER
 	bool "STM32 Low Power Timer [EXPERIMENTAL]"
@@ -18,23 +19,18 @@ menuconfig STM32_LPTIM_TIMER
 
 if STM32_LPTIM_TIMER
 
-choice STM32_LPTIM_CLOCK
-	prompt "LPTIM clock value configuration"
-	help
-	  This option is deprecated and configuration of LPTIM domain clock
-	  using devicetree should be preferred.
-
+# Invisible symbols exposing the selected LPTIM source to Kconfig
+# NOTE: the values 2/3 correspond too STM32_SRC_LSE/STM32_SRC_LSI
+# defined in include/zephyr/dt-bindings/clock/stm32_common_clocks.h
 config STM32_LPTIM_CLOCK_LSI
-	bool "LSI"
+	def_bool "$(dt_node_ph_array_prop_int,$(DT_STM32_LPTIM_PATH),clocks,1,bus)" = 3
 	help
-	  Use LSI as LPTIM clock
+	  LSI used as LPTIM clock source
 
 config STM32_LPTIM_CLOCK_LSE
-	bool "LSE"
+	def_bool "$(dt_node_ph_array_prop_int,$(DT_STM32_LPTIM_PATH),clocks,1,bus)" = 2
 	help
-	  Use LSE as LPTIM clock
-
-endchoice
+	  LSE used as LPTIM clock source
 
 config STM32_LPTIM_CLOCK
 	int
@@ -53,7 +49,7 @@ config STM32_LPTIM_TICK_FREQ_RATIO_OVERRIDE
 	  For LPTIM configuration, a specific tick freq is advised
 	  depending on LPTIM input clock:
 	  - LSI(32KHz): 4000 ticks/sec
-	  - LSE(32678): 4096 ticks/sec
+	  - LSE(32768): 4096 ticks/sec
 	  To prevent misconfigurations, a dedicated check is implemented
 	  in the driver.
 	  This options allows to override this check

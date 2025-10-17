@@ -60,6 +60,7 @@ struct bt_hci_sco_hdr {
 struct bt_hci_evt_hdr {
 	uint8_t  evt;
 	uint8_t  len;
+	uint8_t  data[];
 } __packed;
 #define BT_HCI_EVT_HDR_SIZE             2
 
@@ -3178,6 +3179,7 @@ struct bt_hci_evt_user_passkey_notify {
 #define BT_HCI_EVT_LE_META_EVENT                0x3e
 struct bt_hci_evt_le_meta_event {
 	uint8_t  subevent;
+	uint8_t  data[];
 } __packed;
 
 #define BT_HCI_EVT_AUTH_PAYLOAD_TIMEOUT_EXP     0x57

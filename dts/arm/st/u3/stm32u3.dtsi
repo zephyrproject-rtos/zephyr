@@ -33,7 +33,8 @@
 	};
 
 	sram0: memory@20000000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "SRAM0";
 	};
 
 	clocks {
@@ -119,7 +120,7 @@
 		};
 
 		exti: interrupt-controller@40032000 {
-			compatible = "st,stm32g0-exti","st,stm32-exti";
+			compatible = "st,stm32g0-exti", "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
 			#address-cells = <1>;
@@ -250,8 +251,11 @@
 				       STM32_ADC_RES(8, 0x02)
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <2 3 7 12 24 47 247 1500>;
-			st,adc-sequencer = "FULLY_CONFIGURABLE";
-			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
+			st,adc-sequencer = "programmable";
+			st,adc-oversampler = "extended";
+			st,adc-internal-regulator = "startup-hw-status";
+			st,adc-has-deep-powerdown;
+			st,adc-has-channel-preselection;
 			status = "disabled";
 		};
 
@@ -266,8 +270,11 @@
 				       STM32_ADC_RES(8, 0x02)
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <2 3 7 12 24 47 247 1500>;
-			st,adc-sequencer = "FULLY_CONFIGURABLE";
-			st,adc-oversampler = "OVERSAMPLER_EXTENDED";
+			st,adc-sequencer = "programmable";
+			st,adc-oversampler = "extended";
+			st,adc-internal-regulator = "startup-hw-status";
+			st,adc-has-deep-powerdown;
+			st,adc-has-channel-preselection;
 			status = "disabled";
 		};
 
@@ -339,7 +346,7 @@
 			#dma-cells = <3>;
 			reg = <0x40020000 0x400>;
 			interrupts = <29 0 30 0 31 0 32 0 33 0 34 0 35 0 36 0
-					80 0 81 0 82 0 83 0>;
+				      80 0 81 0 82 0 83 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 0)>;
 			dma-channels = <12>;
 			dma-requests = <114>;

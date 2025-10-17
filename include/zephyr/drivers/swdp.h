@@ -6,7 +6,8 @@
 
 /**
  * @file
- * @brief Serial Wire Debug Port interface driver API
+ * @ingroup swdp_interface
+ * @brief Main header file for SWDP (Serial Wire Debug Port) driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_SWDP_H_
@@ -19,7 +20,8 @@ extern "C" {
 #endif
 
 /**
- * @defgroup swdp_interface SWDP Interface
+ * @brief Interfaces for Serial Wire Debug Port (SWDP).
+ * @defgroup swdp_interface SWDP
  * @since 3.7
  * @version 0.1.0
  * @ingroup io_interfaces

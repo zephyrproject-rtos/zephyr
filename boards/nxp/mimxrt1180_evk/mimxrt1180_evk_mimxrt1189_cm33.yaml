@@ -32,4 +32,5 @@ supported:
   - sdhc
   - dac
   - kpp
+  - i2s
 vendor: nxp

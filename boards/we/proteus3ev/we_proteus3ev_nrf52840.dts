@@ -21,10 +21,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
 			label = "LED 0";
 		};
+
 		led1: led_1 {
 			gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
 			label = "LED 1";
@@ -33,13 +35,13 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpio0 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Wake-up";
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
-
 
 	/* These aliases are provided for compatibility with samples */
 	aliases {

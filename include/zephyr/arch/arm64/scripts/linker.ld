@@ -131,6 +131,8 @@ SECTIONS
         *(".text.*")
         *(.gnu.linkonce.t.*)
 
+#include <snippets-text-sections.ld>
+
 #include <zephyr/linker/kobject-text.ld>
 
         MMU_ALIGN;
