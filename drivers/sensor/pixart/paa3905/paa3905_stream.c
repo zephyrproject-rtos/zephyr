@@ -59,6 +59,7 @@ static void start_drdy_backup_timer(const struct device *dev)
 
 static void paa3905_complete_result(struct rtio *ctx,
 				    const struct rtio_sqe *sqe,
+				    int err,
 				    void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
@@ -66,7 +67,6 @@ static void paa3905_complete_result(struct rtio *ctx,
 	struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
 	struct paa3905_encoded_data *edata = sqe->userdata;
 	struct rtio_cqe *cqe;
-	int err;
 
 	edata->header.events.drdy = true &&
 				    data->stream.settings.enabled.drdy;
@@ -85,6 +85,22 @@ static void paa3905_complete_result(struct rtio *ctx,
 		start_drdy_backup_timer(dev);
 	}
 
+	/* Flush RTIO bus CQEs */
+	do {
+		cqe = rtio_cqe_consume(ctx);
+		if (cqe != NULL) {
+			if (err >= 0) {
+				err = cqe->result;
+			}
+			rtio_cqe_release(ctx, cqe);
+		}
+	} while (cqe != NULL);
+
+	if (err < 0) {
+		rtio_iodev_sqe_err(iodev_sqe, err);
+		return;
+	}
+
 	/** Attempt chip recovery if erratic behavior is detected  */
 	if (!REG_OBSERVATION_CHIP_OK(edata->observation)) {
 
@@ -101,15 +117,6 @@ static void paa3905_complete_result(struct rtio *ctx,
 	} else {
 		rtio_iodev_sqe_ok(iodev_sqe, 0);
 	}
-
-	/* Flush RTIO bus CQEs */
-	do {
-		cqe = rtio_cqe_consume(ctx);
-		if (cqe != NULL) {
-			err = cqe->result;
-			rtio_cqe_release(ctx, cqe);
-		}
-	} while (cqe != NULL);
 }
 
 static void paa3905_stream_get_data(const struct device *dev)
