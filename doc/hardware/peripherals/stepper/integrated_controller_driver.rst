@@ -6,8 +6,8 @@ Integrated Stepper Motion Control and Driver
 Devices which comprise of both motion controller and a stepper driver in a single IC. These devices
 have to be modelled as multi-functional-device in device tree, implementing both ``stepper`` and
 ``stepper_drv`` APIs. An example of such a device is :dtcompatible:`adi,tmc50xx`. ``stepper`` API is
-implemented by :dtcompatible:`adi,tmc50xx-motion-controller` and ``stepper_drv`` API is implemented by
-:dtcompatible:`adi,tmc50xx-stepper-driver`.
+implemented by :dtcompatible:`adi,tmc50xx-stepper` and ``stepper_drv`` API is implemented by
+:dtcompatible:`adi,tmc50xx-stepper-drv`.
 
 .. code-block:: dts
 
@@ -35,7 +35,7 @@ implemented by :dtcompatible:`adi,tmc50xx-motion-controller` and ``stepper_drv``
            /* DEVICE_API: stepper_drv api */
            tmc50xx_0_stepper_driver: tmc50xx_0_stepper_driver {
                idx = <0>;
-                compatible = "adi,tmc50xx-stepper-driver";
+                compatible = "adi,tmc50xx-stepper-drv";
                 micro-step-res = <256>;
                 /* ADI TMC stallguard settings specific to TMC50XX */
                 stallguard2-threshold=<30>;
@@ -44,7 +44,7 @@ implemented by :dtcompatible:`adi,tmc50xx-motion-controller` and ``stepper_drv``
            /* DEVICE_API: stepper api */
            tmc50xx_0_motion_controller: tmc50xx_0_motion_controller {
                idx = <0>;
-               compatible = "adi,tmc50xx-motion-controller";
+               compatible = "adi,tmc50xx-stepper";
                ...
                vmax = <900000>;
                amax = <50000>;
@@ -56,7 +56,7 @@ implemented by :dtcompatible:`adi,tmc50xx-motion-controller` and ``stepper_drv``
            /* DEVICE_API: stepper_drv api */
            tmc50xx_1_stepper_driver: tmc50xx_1_stepper_driver {
                idx = <1>;
-                compatible = "adi,tmc50xx-stepper-driver";
+                compatible = "adi,tmc50xx-stepper-drv";
                 micro-step-res = <256>;
                 /* ADI TMC stallguard settings specific to TMC50XX */
                 stallguard2-threshold=<30>;
@@ -65,7 +65,7 @@ implemented by :dtcompatible:`adi,tmc50xx-motion-controller` and ``stepper_drv``
            /* DEVICE_API: stepper api */
            tmc50xx_1_motion_controller: tmc50xx_1_motion_controller {
                idx = <1>;
-               compatible = "adi,tmc50xx-motion-controller";
+               compatible = "adi,tmc50xx-stepper";
                ...
                vstart = <1000>;
                ...
