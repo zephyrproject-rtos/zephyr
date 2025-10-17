@@ -82,7 +82,7 @@ static int sf32lb52x_pinctrl_init(const struct device *dev)
 {
 	const struct sf32lb52x_pinctrl_config *const config = dev->config;
 
-	if (!sf3232lb_clock_is_ready_dt(&config->clock)) {
+	if (!sf32lb_clock_is_ready_dt(&config->clock)) {
 		return -ENODEV;
 	}
 
