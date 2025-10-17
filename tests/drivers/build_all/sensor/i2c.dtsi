@@ -1417,3 +1417,9 @@ test_i2c_ina7xx: ina7xx@bc {
 	tct = <5>;
 	avg = <3>;
 };
+
+test_i2c_wsen_pdms_25131308XXX05: wsen_pdms_25131308XXX05@bd {
+	compatible = "we,wsen-pdms-25131308XXX05";
+	reg = <0xbd>;
+	sensor-type = <4>;
+};
