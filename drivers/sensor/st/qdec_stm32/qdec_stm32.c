@@ -114,12 +114,6 @@ static int qdec_stm32_initialize(const struct device *dev)
 		return retval;
 	}
 
-	if (dev_cfg->counts_per_revolution < 1) {
-		LOG_ERR("Invalid number of counts per revolution (%d)",
-			dev_cfg->counts_per_revolution);
-		return -EINVAL;
-	}
-
 	/* Ensure that the counter will always count up to a multiple of counts_per_revolution */
 	if (IS_TIM_32B_COUNTER_INSTANCE(dev_cfg->timer_inst)) {
 		max_counter_value = UINT32_MAX - (UINT32_MAX % dev_cfg->counts_per_revolution) - 1;
@@ -146,6 +140,9 @@ static DEVICE_API(sensor, qdec_stm32_driver_api) = {
 };
 
 #define QDEC_STM32_INIT(n)                                                                         \
+	BUILD_ASSERT(DT_INST_PROP(n, st_counts_per_revolution) > 0,                                \
+		     "Counts per revolution must be above 0");                                     \
+                                                                                                   \
 	BUILD_ASSERT(!(DT_INST_PROP(n, st_encoder_mode) & ~TIM_SMCR_SMS),                          \
 		     "Encoder mode is not supported by this MCU");                                 \
                                                                                                    \
