@@ -73,15 +73,6 @@ static void gnss_emul_update_fix_timestamp(const struct device *dev, bool resumi
 	}
 }
 
-#ifdef CONFIG_PM_DEVICE
-static void gnss_emul_clear_fix_timestamp(const struct device *dev)
-{
-	struct gnss_emul_data *data = dev->data;
-
-	data->fix_timestamp_ms = 0;
-}
-#endif
-
 static void gnss_emul_schedule_work(const struct device *dev)
 {
 	struct gnss_emul_data *data = dev->data;
@@ -180,42 +171,6 @@ static int gnss_emul_get_enabled_systems(const struct device *dev, gnss_systems_
 	*systems = data->enabled_systems;
 	return 0;
 }
-
-#ifdef CONFIG_PM_DEVICE
-static void gnss_emul_resume(const struct device *dev)
-{
-	gnss_emul_update_fix_timestamp(dev, true);
-}
-
-static void gnss_emul_suspend(const struct device *dev)
-{
-	gnss_emul_clear_fix_timestamp(dev);
-}
-
-static int gnss_emul_pm_action(const struct device *dev, enum pm_device_action action)
-{
-	int ret = 0;
-
-	gnss_emul_lock(dev);
-
-	switch (action) {
-	case PM_DEVICE_ACTION_SUSPEND:
-		gnss_emul_suspend(dev);
-		break;
-
-	case PM_DEVICE_ACTION_RESUME:
-		gnss_emul_resume(dev);
-		break;
-
-	default:
-		ret = -ENOTSUP;
-		break;
-	}
-
-	gnss_emul_unlock(dev);
-	return ret;
-}
-#endif
 
 static int gnss_emul_api_set_fix_rate(const struct device *dev, uint32_t fix_interval_ms)
 {
@@ -486,27 +441,49 @@ static void gnss_emul_work_handler(struct k_work *work)
 	gnss_emul_schedule_work(dev);
 }
 
-static void gnss_emul_init_data(const struct device *dev)
+static void gnss_emul_resume(const struct device *dev)
+{
+	gnss_emul_update_fix_timestamp(dev, true);
+}
+
+static void gnss_emul_suspend(const struct device *dev)
+{
+	gnss_emul_clear_data(dev);
+}
+
+static int gnss_emul_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	int ret = 0;
+
+	gnss_emul_lock(dev);
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		gnss_emul_suspend(dev);
+		break;
+
+	case PM_DEVICE_ACTION_RESUME:
+		gnss_emul_resume(dev);
+		break;
+
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	gnss_emul_unlock(dev);
+	return ret;
+}
+
+static int gnss_emul_init(const struct device *dev)
 {
 	struct gnss_emul_data *data = dev->data;
 
 	data->dev = dev;
 	k_sem_init(&data->lock, 1, 1);
 	k_work_init_delayable(&data->data_dwork, gnss_emul_work_handler);
-}
 
-static int gnss_emul_init(const struct device *dev)
-{
-	gnss_emul_init_data(dev);
-
-	if (pm_device_is_powered(dev)) {
-		gnss_emul_update_fix_timestamp(dev, true);
-		gnss_emul_schedule_work(dev);
-	} else {
-		pm_device_init_off(dev);
-	}
-
-	return pm_device_runtime_enable(dev);
+	return pm_device_driver_init(dev, gnss_emul_pm_action);
 }
 
 #define GNSS_EMUL_NAME(inst, name) _CONCAT(name, inst)
