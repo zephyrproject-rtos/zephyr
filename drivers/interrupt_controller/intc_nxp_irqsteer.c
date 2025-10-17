@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023,2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -261,9 +261,10 @@ LOG_MODULE_REGISTER(nxp_irqstr);
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP(parent_id, _IRQSTEER_REGISTER_DISPATCHER, (;))
 
 /* utility macros */
-#define UINT_TO_IRQSTEER(x) ((IRQSTEER_Type *)(x))
 #define DISPATCHER_REGMAP(disp) \
 	(((const struct irqsteer_config *)disp->dev->config)->regmap_phys)
+#define DISPATCHER_MASTER_INDEX(disp) \
+	((int32_t)((const struct irqsteer_dispatcher *)disp->master_index))
 
 #if defined(CONFIG_XTENSA)
 #define irqstr_l1_irq_enable_raw(irq)     xtensa_irq_enable(XTENSA_IRQ_NUMBER(irq))
@@ -277,6 +278,12 @@ LOG_MODULE_REGISTER(nxp_irqstr);
 #error ARCH not supported
 #endif
 
+#if defined(CONFIG_INTC_MCUX_IRQSTEER_V1)
+#define IRQSTEER_ADDR_OR_INST_INDEX(x) ((int32_t)(x))
+#else
+#define UINT_TO_IRQSTEER(x) ((IRQSTEER_Type *)(x))
+#define IRQSTEER_ADDR_OR_INST_INDEX(x) (UINT_TO_IRQSTEER(x))
+#endif
 struct irqsteer_config {
 	uint32_t regmap_phys;
 	uint32_t regmap_size;
@@ -310,7 +317,7 @@ static int to_zephyr_irq(uint32_t regmap, uint32_t irq,
 	idx = irq - FSL_FEATURE_IRQSTEER_IRQ_START_INDEX;
 
 	for (i = dispatcher->master_index - 1; i >= 0; i--) {
-		idx -= IRQSTEER_GetMasterIrqCount(UINT_TO_IRQSTEER(regmap), i);
+		idx -= IRQSTEER_GetMasterIrqCount(IRQSTEER_ADDR_OR_INST_INDEX(regmap), i);
 	}
 
 	return irq_to_level_2(idx) | dispatcher->irq;
@@ -322,7 +329,7 @@ static int to_system_irq(uint32_t regmap, int irq, int master_index)
 	int i;
 
 	for (i = master_index - 1; i >= 0; i--) {
-		irq += IRQSTEER_GetMasterIrqCount(UINT_TO_IRQSTEER(regmap), i);
+		irq += IRQSTEER_GetMasterIrqCount(IRQSTEER_ADDR_OR_INST_INDEX(regmap), i);
 	}
 
 	return irq + FSL_FEATURE_IRQSTEER_IRQ_START_INDEX;
@@ -336,7 +343,7 @@ static int from_zephyr_irq(uint32_t regmap, uint32_t irq, uint32_t master_index)
 	idx = irq;
 
 	for (i = 0; i < master_index; i++) {
-		idx += IRQSTEER_GetMasterIrqCount(UINT_TO_IRQSTEER(regmap), i);
+		idx += IRQSTEER_GetMasterIrqCount(IRQSTEER_ADDR_OR_INST_INDEX(regmap), i);
 	}
 
 	return idx + FSL_FEATURE_IRQSTEER_IRQ_START_INDEX;
@@ -357,13 +364,15 @@ static void irqstr_l1_irq_enable_disable(uint32_t irq,
 		irqstr_l1_irq_enable_raw(irq);
 
 		if (disp) {
-			IRQSTEER_EnableMasterInterrupt(UINT_TO_IRQSTEER(DISPATCHER_REGMAP(disp)),
-						       irq);
+			IRQSTEER_EnableMasterInterrupt(
+					IRQSTEER_ADDR_OR_INST_INDEX(DISPATCHER_REGMAP(disp)),
+					DISPATCHER_MASTER_INDEX(disp));
 		}
 	} else {
 		if (disp) {
-			IRQSTEER_DisableMasterInterrupt(UINT_TO_IRQSTEER(DISPATCHER_REGMAP(disp)),
-							irq);
+			IRQSTEER_DisableMasterInterrupt(
+					IRQSTEER_ADDR_OR_INST_INDEX(DISPATCHER_REGMAP(disp)),
+					DISPATCHER_MASTER_INDEX(disp));
 		}
 
 		irqstr_l1_irq_disable_raw(irq);
@@ -439,9 +448,9 @@ static void _irqstr_enable_disable_irq(struct irqsteer_dispatcher *disp,
 	uint32_t regmap = DISPATCHER_REGMAP(disp);
 
 	if (enable) {
-		IRQSTEER_EnableInterrupt(UINT_TO_IRQSTEER(regmap), system_irq);
+		IRQSTEER_EnableInterrupt(IRQSTEER_ADDR_OR_INST_INDEX(regmap), system_irq);
 	} else {
-		IRQSTEER_DisableInterrupt(UINT_TO_IRQSTEER(regmap), system_irq);
+		IRQSTEER_DisableInterrupt(IRQSTEER_ADDR_OR_INST_INDEX(regmap), system_irq);
 	}
 }
 
@@ -603,7 +612,7 @@ static void irqsteer_isr_dispatcher(const void *data)
 	cfg = dispatcher->dev->config;
 
 	/* fetch master interrupts status */
-	status = IRQSTEER_GetMasterInterruptsStatus(UINT_TO_IRQSTEER(cfg->regmap_phys),
+	status = IRQSTEER_GetMasterInterruptsStatus(IRQSTEER_ADDR_OR_INST_INDEX(cfg->regmap_phys),
 						    dispatcher->master_index);
 
 	for (i = 0; status; i++) {
@@ -636,9 +645,20 @@ __maybe_unused static int irqstr_pm_action(const struct device *dev,
 
 static int irqsteer_init(const struct device *dev)
 {
+	int ret = 0;
+
 	IRQSTEER_REGISTER_DISPATCHERS(DT_NODELABEL(irqsteer));
 
-	return pm_device_runtime_enable(dev);
+	ret = pm_device_runtime_enable(dev);
+	if (ret) {
+		LOG_ERR("Device %s: Failed to enable runtime PM, error: %d",
+			dev->name, ret);
+		return ret;
+	}
+
+	IRQSTEER_Init(IRQSTEER_ADDR_OR_INST_INDEX(DT_REG_ADDR(DT_NODELABEL(irqsteer))));
+
+	return 0;
 }
 
 
