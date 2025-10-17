@@ -9,15 +9,4 @@ config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
 
-# Kernel Options due to Low Memory (8k)
-# Will be added back in a future PR
-# config MAIN_STACK_SIZE
-# 	default 640
-
-# config IDLE_STACK_SIZE
-# 	default 200
-
-# config ISR_STACK_SIZE
-# 	default 512
-
 endif # BOARD_WEACT_STM32G030_CORE
