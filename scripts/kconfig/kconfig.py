@@ -16,7 +16,9 @@
 # Also does various checks (most via Kconfiglib warnings).
 
 import argparse
+import json
 import os
+import pickle
 import re
 import sys
 import textwrap
@@ -29,7 +31,9 @@ from kconfiglib import (
     OR,
     TRI_TO_STR,
     TRISTATE,
+    TYPE_TO_STR,
     Kconfig,
+    Symbol,
     expr_str,
     expr_value,
     split_expr,
@@ -131,6 +135,13 @@ def main():
     # Write the merged configuration and the C header
     print(kconf.write_config(args.config_out))
     print(kconf.write_autoconf(args.header_out))
+
+    # Write value origin information for the merged configuration
+    trace_data = collect_trace_data(kconf)
+    with open(args.config_out + '-trace.pickle', 'wb') as f:
+        pickle.dump(trace_data, f)
+    with open(args.config_out + '-trace.json', 'w') as f:
+        json.dump(trace_data, f, indent=2)
 
     # Write the list of parsed Kconfig files to a file
     write_kconfig_filenames(kconf, args.kconfig_list_out)
@@ -284,6 +295,44 @@ def promptless(sym):
     # multiple locations, we need to check all locations.
 
     return not any(node.prompt for node in sym.nodes)
+
+
+def collect_trace_data(kconf):
+    """
+    Collects trace data for all symbols in 'kconf'. The output is currently a
+    list of 6-tuples with one entry per symbol definition, with the following
+    layout:
+
+        (name, visibility, type, value, kind, location)
+
+    where the first 4 entries are the string representation of the symbol's
+    properties, and 'kind' and 'location' are taken from its 'origin'
+    attribute.
+    """
+
+    # NOTE: this data is used by scripts/kconfig/traceconfig.py and the tests
+    # under tests/kconfig/tracing. Make sure to keep them aligned if the
+    # format changes in any way.
+
+    trace_data = []
+    for node in kconf.node_iter(True):
+        item = node.item
+        if not isinstance(item, Symbol):
+            continue
+
+        origin = item.origin
+        if origin is None:
+            continue
+
+        name = kconf.config_prefix + item.name
+        kind, loc = origin
+        value = None if kind == "unset" else item.str_value
+
+        trace_entry = (name, TRI_TO_STR[item.visibility],
+                       TYPE_TO_STR[item.type], value, kind, loc)
+        trace_data.append(trace_entry)
+
+    return trace_data
 
 
 def write_kconfig_filenames(kconf, kconfig_list_path):
