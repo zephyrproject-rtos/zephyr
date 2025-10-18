@@ -852,16 +852,41 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 		ticks_at_preempt_next = ready->prepare_param.ticks_at_expire;
 		diff = ticker_ticks_diff_get(ticks_at_preempt_min,
 					     ticks_at_preempt_next);
+		/* If the enqueued prepare is a resume or current ready prepare is shorter, then we
+		 * should pick current ready prepare for setting up the prepare timeout.
+		 */
 		if (is_resume || ((diff & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U)) {
 			ticks_at_preempt_min = ticks_at_preempt_next;
 			if (&ready->prepare_param != prepare_param) {
+				/* There is a shorter prepare in the pipeline */
 				ready_short = ready;
+			} else {
+				/* It is the same prepare in the pipeline being enqueued.
+				 * This can happen executing `lll_done()`.
+				 * Hence, we should ignore it being the `first` that setup the
+				 * preempt timeout and also it has already setup the preempt
+				 * timeout, refer to `preempt_ticker_start()` for details.
+				 *
+				 * We also set the `ready` to NULL as it is the same ready, the one
+				 * being enqueued. This help short circuit a related assertion check
+				 * later in this function.
+				 */
+				ready = NULL;
 			}
 		} else {
 			ready = NULL;
 			idx_backup = UINT8_MAX;
 		}
 
+		/* Loop and find any short prepare present out-of-order in the prepare pipeline.
+		 *
+		 * NOTE: This loop is O(n), where n is number of items in prepare pipeline present
+		 *       before a short prepare was enqueued in to the FIFO.
+		 *       Use of ordered linked list implementation has show improved lower latencies
+		 *       and less CPU use.
+		 * TODO: Replace use of FIFO for prepare pipeline with ordered linked list
+		 *       implementation.
+		 */
 		do {
 			struct lll_event *ready_next;
 
