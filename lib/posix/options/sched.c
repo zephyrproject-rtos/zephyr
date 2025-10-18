@@ -7,7 +7,7 @@
 #include "pthread_sched.h"
 
 #include <zephyr/kernel.h>
-#include <zephyr/posix/sched.h>
+#include <sched.h>
 
 /**
  * @brief Get minimum priority value for a given policy
