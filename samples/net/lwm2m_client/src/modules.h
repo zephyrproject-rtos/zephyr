@@ -11,5 +11,6 @@ int init_led_device(void);
 void init_timer_object(void);
 void init_temp_sensor(void);
 void init_firmware_update(void);
+void init_generic_async_object(void);
 
 #endif

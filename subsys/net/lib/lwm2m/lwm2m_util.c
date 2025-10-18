@@ -576,3 +576,19 @@ char *sprint_token(const uint8_t *token, uint8_t tkl)
 
 	return buf;
 }
+
+/* Json parser inserts NULL terminator in-line in the payload, so restore the
+ * quotes here.
+ */
+void lwm2m_json_restore_quotes(struct lwm2m_message *msg)
+{
+	uint16_t in_len;
+	char *data_ptr;
+
+	data_ptr = (char *)coap_packet_get_payload(msg->in.in_cpkt, &in_len);
+	for (size_t i = 0; i < in_len; i++) {
+		if (data_ptr[i] == '\0') {
+			data_ptr[i] = '"';
+		}
+	}
+}
