@@ -19,7 +19,7 @@ implementation of the POSIX API.
 * :kconfig:option:`CONFIG_NET_SOCKETS`
 * :kconfig:option:`CONFIG_ZVFS_POLL_MAX`
 * :kconfig:option:`CONFIG_ZVFS_OPEN_MAX`
-* :kconfig:option:`CONFIG_POSIX_API`
+* :kconfig:option:`CONFIG_POSIX_SYSTEM_INTERFACES`
 * :kconfig:option:`CONFIG_POSIX_OPEN_MAX`
 * :kconfig:option:`CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_BITS`
 * :kconfig:option:`CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_DEFAULT`
