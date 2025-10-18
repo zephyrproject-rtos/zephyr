@@ -454,17 +454,12 @@ static int qspi_write_unprotect(const struct device *dev)
 			.InstructionMode = QSPI_INSTRUCTION_1_LINE,
 	};
 
-	if (IS_ENABLED(DT_INST_PROP(0, requires_ulbpr))) {
-		ret = qspi_send_cmd(dev, &cmd_write_en);
-
-		if (ret != 0) {
-			return ret;
-		}
-
-		ret = qspi_send_cmd(dev, &cmd_unprotect);
+	ret = qspi_send_cmd(dev, &cmd_write_en);
+	if (ret != 0) {
+		return ret;
 	}
 
-	return ret;
+	return qspi_send_cmd(dev, &cmd_unprotect);
 }
 
 /*
@@ -1739,12 +1734,14 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	}
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-	ret = qspi_write_unprotect(dev);
-	if (ret != 0) {
-		LOG_ERR("write unprotect failed: %d", ret);
-		return -ENODEV;
+	if (IS_ENABLED(DT_INST_PROP(0, requires_ulbpr))) {
+		ret = qspi_write_unprotect(dev);
+		if (ret != 0) {
+			LOG_ERR("write unprotect failed: %d", ret);
+			return -ENODEV;
+		}
+		LOG_DBG("Write Un-protected");
 	}
-	LOG_DBG("Write Un-protected");
 
 #ifdef CONFIG_STM32_MEMMAP
 	ret = stm32_qspi_set_memory_mapped(dev);

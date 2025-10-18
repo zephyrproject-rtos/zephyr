@@ -720,17 +720,12 @@ static int ospi_write_unprotect(const struct device *dev)
 	cmd_unprotect.AddressMode = HAL_OSPI_ADDRESS_NONE;
 	cmd_unprotect.DataMode    = HAL_OSPI_DATA_NONE;
 
-	if (IS_ENABLED(DT_INST_PROP(0, requires_ulbpr))) {
-		ret = stm32_ospi_write_enable(dev_data, OSPI_SPI_MODE, OSPI_STR_TRANSFER);
-
-		if (ret != 0) {
-			return ret;
-		}
-
-		ret = ospi_send_cmd(dev, &cmd_unprotect);
+	ret = stm32_ospi_write_enable(dev_data, OSPI_SPI_MODE, OSPI_STR_TRANSFER);
+	if (ret != 0) {
+		return ret;
 	}
 
-	return ret;
+	return ospi_send_cmd(dev, &cmd_unprotect);
 }
 
 /* Write Flash configuration register 2 with new dummy cycles */
@@ -2599,12 +2594,14 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	}
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-	ret = ospi_write_unprotect(dev);
-	if (ret != 0) {
-		LOG_ERR("write unprotect failed: %d", ret);
-		return -ENODEV;
+	if (IS_ENABLED(DT_INST_PROP(0, requires_ulbpr))) {
+		ret = ospi_write_unprotect(dev);
+		if (ret != 0) {
+			LOG_ERR("write unprotect failed: %d", ret);
+			return -ENODEV;
+		}
+		LOG_DBG("Write Un-protected");
 	}
-	LOG_DBG("Write Un-protected");
 
 #ifdef CONFIG_STM32_MEMMAP
 	/* Now configure the octo Flash in MemoryMapped (access by address) */
