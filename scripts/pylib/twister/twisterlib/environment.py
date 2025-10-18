@@ -172,27 +172,29 @@ Artificially long but functional example:
         help="Only build and run emulation platforms")
 
     run_group_option.add_argument(
-        "--device-testing", action="store_true",
-        help="Test on device directly. Specify the serial device to "
-             "use with the --device-serial option.")
-
-    run_group_option.add_argument("--generate-hardware-map",
-                        help="""Probe serial devices connected to this platform
-                        and create a hardware map file to be used with
-                        --device-testing
-                        """)
-
-    run_group_option.add_argument(
         "--simulation", dest="sim_name", choices=SUPPORTED_SIMS,
         help="Selects which simulation to use. Must match one of the names defined in the board's "
              "manifest. If multiple simulator are specified in the selected board and this "
              "argument is not passed, then the first simulator is selected.")
 
+    run_group_option.add_argument(
+        "--device-testing", action="store_true",
+        help="Test on device directly. Specify the serial device to "
+             "use with the --device-serial option.")
+
+    parser.add_argument("--pre-script",
+                        help="""specify a pre script. This will be executed
+                        before device handler open serial port and invoke runner.
+                        """)
 
     device.add_argument("--device-serial",
                         help="""Serial device for accessing the board
                         (e.g., /dev/ttyACM0)
                         """)
+
+    parser.add_argument(
+        "--device-serial-baud", action="store", default=None,
+        help="Serial device baud rate (default 115200)")
 
     device.add_argument("--device-serial-pty",
                         help="""Script for controlling pseudoterminal.
@@ -203,18 +205,30 @@ Artificially long but functional example:
                         --device-serial-pty <script>
                         """)
 
+    run_group_option.add_argument("--generate-hardware-map",
+                        help="""Probe serial devices connected to this platform
+                        and create a hardware map file to be used with
+                        --device-testing
+                        """)
+
     device.add_argument("--hardware-map",
                         help="""Load hardware map from a file. This will be used
                         for testing on hardware that is listed in the file.
                         """)
 
-    parser.add_argument("--device-flash-timeout", type=int, default=60,
-                        help="""Set timeout for the device flash operation in seconds.
+    parser.add_argument("--persistent-hardware-map", action='store_true',
+                        help="""With --generate-hardware-map, tries to use
+                        persistent names for serial devices on platforms
+                        that support this feature (currently only Linux).
                         """)
 
     parser.add_argument("--device-flash-with-test", action="store_true",
                         help="""Add a test case timeout to the flash operation timeout
                         when flash operation also executes test case on the platform.
+                        """)
+
+    parser.add_argument("--device-flash-timeout", type=int, default=60,
+                        help="""Set timeout for the device flash operation in seconds.
                         """)
 
     parser.add_argument("--flash-before", action="store_true", default=False,
@@ -223,6 +237,38 @@ Artificially long but functional example:
                         and serial console, or use soft-USB, where flash must come first.
                         Also, it skips reading remaining logs from the old image run.
                         """)
+
+    parser.add_argument(
+        "--flash-command",
+        help="""Instead of 'west flash', uses a custom flash command to flash
+            when running with --device-testing. Supports comma-separated
+            argument list, the script is also passed a --build-dir flag with
+            the build directory as an argument, and a --board-id flag with the
+            board or probe id if available.
+        """
+    )
+
+    parser.add_argument(
+        "--west-flash", nargs='?', const=[],
+        help="""Comma separated list of additional flags passed to west when
+            running with --device-testing.
+
+        E.g "twister --device-testing --device-serial /dev/ttyACM0
+                         --west-flash="--board-id=foobar,--erase"
+        will translate to "west flash -- --board-id=foobar --erase"
+        """
+    )
+
+    parser.add_argument(
+        "--west-runner",
+        help="""Uses the specified west runner instead of default when running
+             with --west-flash.
+
+        E.g "twister --device-testing --device-serial /dev/ttyACM0
+                         --west-flash --west-runner=pyocd"
+        will translate to "west flash --runner pyocd"
+        """
+    )
 
     test_or_build.add_argument(
         "-b",
@@ -418,10 +464,6 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
     parser.add_argument("--level", action="store",
         help="Test level to be used. By default, no levels are used for filtering "
              "and do the selection based on existing filters.")
-
-    parser.add_argument(
-        "--device-serial-baud", action="store", default=None,
-        help="Serial device baud rate (default 115200)")
 
     parser.add_argument(
         "--disable-suite-name-check", action="store_true", default=False,
@@ -660,12 +702,6 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
             """
             )
 
-    parser.add_argument("--persistent-hardware-map", action='store_true',
-                        help="""With --generate-hardware-map, tries to use
-                        persistent names for serial devices on platforms
-                        that support this feature (currently only Linux).
-                        """)
-
     parser.add_argument(
             "--vendor", action="append", default=[],
             help="Vendor filter for testing")
@@ -690,11 +726,6 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
         "--platform-reports", action="store_true",
         help="""Create individual reports for each platform.
         """)
-
-    parser.add_argument("--pre-script",
-                        help="""specify a pre script. This will be executed
-                        before device handler open serial port and invoke runner.
-                        """)
 
     parser.add_argument(
         "--quarantine-list",
@@ -814,36 +845,6 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
 
     parser.add_argument("-W", "--disable-warnings-as-errors", action="store_true",
                         help="Do not treat warning conditions as errors.")
-
-    parser.add_argument(
-        "--west-flash", nargs='?', const=[],
-        help="""Comma separated list of additional flags passed to west when
-            running with --device-testing.
-
-        E.g "twister --device-testing --device-serial /dev/ttyACM0
-                         --west-flash="--board-id=foobar,--erase"
-        will translate to "west flash -- --board-id=foobar --erase"
-        """
-    )
-    parser.add_argument(
-        "--west-runner",
-        help="""Uses the specified west runner instead of default when running
-             with --west-flash.
-
-        E.g "twister --device-testing --device-serial /dev/ttyACM0
-                         --west-flash --west-runner=pyocd"
-        will translate to "west flash --runner pyocd"
-        """
-    )
-    parser.add_argument(
-        "--flash-command",
-        help="""Instead of 'west flash', uses a custom flash command to flash
-            when running with --device-testing. Supports comma-separated
-            argument list, the script is also passed a --build-dir flag with
-            the build directory as an argument, and a --board-id flag with the
-            board or probe id if available.
-        """
-    )
 
     parser.add_argument(
         "-X", "--fixture", action="append", default=[],
