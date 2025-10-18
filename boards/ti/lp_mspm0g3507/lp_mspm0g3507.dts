@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2025 Texas Instruments
  * Copyright (c) 2025 Linumiz
+ * Copyright (c) 2025 Bang & Olufsen A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,16 +60,7 @@
 
 &mclk {
 	clock-frequency = <DT_FREQ_M(80)>;
-	clocks = <&hsclk 0>;
-};
-
-&hsclk {
-	clocks = <&syspll2x 0>;
-	status = "okay";
-};
-
-&syspll2x {
-	status = "okay";
+	clocks = <&syspll>;
 };
 
 &flash0 {

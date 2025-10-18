@@ -1,4 +1,8 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Copyright (c) 2025 Bang & Olufsen A/S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /dts-v1/;
 
@@ -74,12 +78,7 @@
 
 &mclk {
 	clock-frequency = <DT_FREQ_M(80)>;
-	clocks = <&hsclk 0>;
-};
-
-&hsclk {
-	clocks = <&syspll2x 0>;
-	status = "okay";
+	clocks = <&syspll>;
 };
 
 &syspll2x {
