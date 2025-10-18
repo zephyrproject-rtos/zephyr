@@ -29,6 +29,7 @@
 #include <zephyr/kernel.h>
 #include <kernel_arch_data.h>
 #include <kernel_offsets.h>
+#include <zephyr/arch/arm64/thread.h>
 
 GEN_OFFSET_SYM(_thread_arch_t, exception_depth);
 
@@ -76,6 +77,20 @@ GEN_NAMED_OFFSET_SYM(arm_smccc_res_t, a4, a4_a5);
 GEN_NAMED_OFFSET_SYM(arm_smccc_res_t, a6, a6_a7);
 
 #endif /* CONFIG_HAS_ARM_SMCCC */
+
+#ifdef CONFIG_FPU_SHARING
+GEN_OFFSET_SYM(z_arm64_fp_context, fpsr);
+GEN_OFFSET_SYM(z_arm64_fp_context, fpcr);
+GEN_OFFSET_SYM(z_arm64_fp_context, neon);
+#ifdef CONFIG_ARM64_SVE
+GEN_ABSOLUTE_SYM(__z_arm64_fp_context_sve_z_regs_OFFSET,
+	offsetof(struct z_arm64_fp_context, sve.z_regs));
+GEN_ABSOLUTE_SYM(__z_arm64_fp_context_sve_p_regs_OFFSET,
+	offsetof(struct z_arm64_fp_context, sve.p_regs));
+GEN_ABSOLUTE_SYM(__z_arm64_fp_context_sve_ffr_OFFSET,
+	offsetof(struct z_arm64_fp_context, sve.ffr));
+#endif
+#endif
 
 GEN_ABS_SYM_END
 

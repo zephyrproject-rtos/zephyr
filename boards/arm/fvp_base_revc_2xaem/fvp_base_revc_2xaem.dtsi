@@ -3,19 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/dts-v1/;
-
 #include <mem.h>
-#include <arm64/armv8-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
 / {
-	model = "FVP Base RevC 2xAEMv8A";
-
 	chosen {
 		/*
 		 * The SRAM node is actually located in the
-		 * DRAM region of the FVP Base RevC 2xAEMv8A.
+		 * DRAM region of the FVP Base RevC 2xAEM.
 		 */
 		zephyr,sram = &dram0;
 		zephyr,flash = &flash0;
@@ -32,27 +27,23 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			device_type = "cpu";
-			compatible = "arm,cortex-a53";
 			reg = <0>;
 		};
 
-		cpu@100 {
+		cpu1: cpu@100 {
 			device_type = "cpu";
-			compatible = "arm,cortex-a53";
 			reg = <0x100>;
 		};
 
-		cpu@200 {
+		cpu2: cpu@200 {
 			device_type = "cpu";
-			compatible = "arm,cortex-a53";
 			reg = <0x200>;
 		};
 
-		cpu@300 {
+		cpu3: cpu@300 {
 			device_type = "cpu";
-			compatible = "arm,cortex-a53";
 			reg = <0x300>;
 		};
 	};
@@ -94,6 +85,17 @@
 				reg = <0x2f020000 0x20000>;
 				status = "okay";
 			};
+		};
+
+		v2m_sysreg: sysreg@1c010000 {
+			compatible = "arm,vexpress-sysreg";
+			reg = <0x1c010000 0x1000>;
+		};
+
+		pwrc: power-controller@1c100000 {
+			compatible = "arm,fvp-pwrc";
+			reg = <0x1c100000 0x1000>;
+			arm,vexpress-sysreg = <&v2m_sysreg>;
 		};
 
 		uart0: uart@1c090000 {
@@ -164,7 +166,7 @@
 
 		dram0: memory@88000000 {
 			compatible = "mmio-dram";
-			reg = <0x88000000 DT_SIZE_K(2048)>;
+			reg = <0x88000000 DT_SIZE_M(128)>;
 		};
 	};
 };
