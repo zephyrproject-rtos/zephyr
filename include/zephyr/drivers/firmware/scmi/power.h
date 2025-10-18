@@ -17,6 +17,19 @@
 #define SCMI_POWER_STATE_SET_FLAGS_ASYNC BIT(0)
 
 /**
+ * @name SCMI power domain generic states
+ * @{
+ */
+
+/** Power domain is in ON state */
+#define SCMI_POWER_STATE_GENERIC_ON    0x00000000U
+
+/** Power domain is in OFF state */
+#define SCMI_POWER_STATE_GENERIC_OFF   0x40000000U
+
+/** @} */
+
+/**
  * @struct scmi_power_state_config
  *
  * @brief Describes the parameters for the POWER_STATE_SET
