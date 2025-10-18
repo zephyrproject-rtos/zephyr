@@ -535,13 +535,13 @@
 			/* PS2 Channels - Please use them as PS2 node */
 			ps2_channel2: io_ps2_channel2 {
 				compatible = "nuvoton,npcx-ps2-channel";
-				channel = <0x01>;
+				channel = <0x02>;
 				status = "disabled";
 			};
 
 			ps2_channel3: io_ps2_channel3 {
 				compatible = "nuvoton,npcx-ps2-channel";
-				channel = <0x02>;
+				channel = <0x03>;
 				status = "disabled";
 			};
 		};
