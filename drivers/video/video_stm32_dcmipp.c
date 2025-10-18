@@ -1359,22 +1359,95 @@ static int stm32_dcmipp_dequeue(const struct device *dev, struct video_buffer **
 }
 
 /*
- * TODO: caps aren't yet handled hence give back straight the caps given by the
- * source.  Normally this should be the intersection of what the source produces
- * vs what the DCMIPP can input (for pipe0) and, for pipe 1 and 2, for a given
- * input format, generate caps based on capabilities, color conversion, decimation
- * etc
+ * For MAIN / AUX pipe, it is necessary that the pitch is a multiple of 16 bytes.
+ * Give here the multiple in number of pixels, which depends on the format chosen
  */
+#define DCMIPP_CEIL_DIV_ROUND_UP_MUL(val, div, mul)						\
+		((((val) + (div) - 1) / (div) + (mul) - 1) / (mul) * (mul))
+
+#define DCMIPP_CEIL_DIV(val, div)								\
+		(((val) + (div) - 1) / (div))
+
+#define DCMIPP_VIDEO_FORMAT_CAP(format, pixmul)	{						\
+	.pixelformat = VIDEO_PIX_FMT_##format,							\
+	.width_min = DCMIPP_CEIL_DIV_ROUND_UP_MUL(CONFIG_VIDEO_STM32_DCMIPP_SENSOR_WIDTH,	\
+						  STM32_DCMIPP_MAX_PIPE_SCALE_FACTOR,		\
+						  pixmul),					\
+	.width_max = CONFIG_VIDEO_STM32_DCMIPP_SENSOR_WIDTH / (pixmul) * (pixmul),		\
+	.height_min = DCMIPP_CEIL_DIV(CONFIG_VIDEO_STM32_DCMIPP_SENSOR_HEIGHT,			\
+				      STM32_DCMIPP_MAX_PIPE_SCALE_FACTOR),			\
+	.height_max = CONFIG_VIDEO_STM32_DCMIPP_SENSOR_HEIGHT,					\
+	.width_step = pixmul, .height_step = 1,							\
+}
+
+static const struct video_format_cap stm32_dcmipp_dump_fmt[] = {
+	{
+		.pixelformat =
+			VIDEO_FOURCC_FROM_STR(CONFIG_VIDEO_STM32_DCMIPP_SENSOR_PIXEL_FORMAT),
+		.width_min = CONFIG_VIDEO_STM32_DCMIPP_SENSOR_WIDTH,
+		.width_max = CONFIG_VIDEO_STM32_DCMIPP_SENSOR_WIDTH,
+		.height_min = CONFIG_VIDEO_STM32_DCMIPP_SENSOR_HEIGHT,
+		.height_max = CONFIG_VIDEO_STM32_DCMIPP_SENSOR_HEIGHT,
+		.width_step = 1, .height_step = 1,
+	},
+	{0},
+};
+
+static const struct video_format_cap stm32_dcmipp_main_fmts[] = {
+	DCMIPP_VIDEO_FORMAT_CAP(RGB565, 8),
+	DCMIPP_VIDEO_FORMAT_CAP(YUYV, 8),
+	DCMIPP_VIDEO_FORMAT_CAP(YVYU, 8),
+	DCMIPP_VIDEO_FORMAT_CAP(GREY, 16),
+	DCMIPP_VIDEO_FORMAT_CAP(RGB24, 16),
+	DCMIPP_VIDEO_FORMAT_CAP(BGR24, 16),
+	DCMIPP_VIDEO_FORMAT_CAP(ARGB32, 4),
+	DCMIPP_VIDEO_FORMAT_CAP(ABGR32, 4),
+	DCMIPP_VIDEO_FORMAT_CAP(RGBA32, 4),
+	DCMIPP_VIDEO_FORMAT_CAP(BGRA32, 4),
+	DCMIPP_VIDEO_FORMAT_CAP(NV12, 16),
+	DCMIPP_VIDEO_FORMAT_CAP(NV21, 16),
+	DCMIPP_VIDEO_FORMAT_CAP(NV16, 16),
+	DCMIPP_VIDEO_FORMAT_CAP(NV61, 16),
+	DCMIPP_VIDEO_FORMAT_CAP(YUV420, 16),
+	DCMIPP_VIDEO_FORMAT_CAP(YVU420, 16),
+	{0},
+};
+
+static const struct video_format_cap stm32_dcmipp_aux_fmts[] = {
+	DCMIPP_VIDEO_FORMAT_CAP(RGB565, 8),
+	DCMIPP_VIDEO_FORMAT_CAP(YUYV, 8),
+	DCMIPP_VIDEO_FORMAT_CAP(YVYU, 8),
+	DCMIPP_VIDEO_FORMAT_CAP(GREY, 16),
+	DCMIPP_VIDEO_FORMAT_CAP(RGB24, 16),
+	DCMIPP_VIDEO_FORMAT_CAP(BGR24, 16),
+	DCMIPP_VIDEO_FORMAT_CAP(ARGB32, 4),
+	DCMIPP_VIDEO_FORMAT_CAP(ABGR32, 4),
+	DCMIPP_VIDEO_FORMAT_CAP(RGBA32, 4),
+	DCMIPP_VIDEO_FORMAT_CAP(BGRA32, 4),
+	{0},
+};
+
 static int stm32_dcmipp_get_caps(const struct device *dev, struct video_caps *caps)
 {
-	const struct stm32_dcmipp_config *config = dev->config;
-	int ret;
+	struct stm32_dcmipp_pipe_data *pipe = dev->data;
 
-	ret = video_get_caps(config->source_dev, caps);
+	switch (pipe->id) {
+	case DCMIPP_PIPE0:
+		caps->format_caps = stm32_dcmipp_dump_fmt;
+		break;
+	case DCMIPP_PIPE1:
+		caps->format_caps = stm32_dcmipp_main_fmts;
+		break;
+	case DCMIPP_PIPE2:
+		caps->format_caps = stm32_dcmipp_aux_fmts;
+		break;
+	default:
+		CODE_UNREACHABLE;
+	}
 
 	caps->min_vbuf_count = 1;
 
-	return ret;
+	return 0;
 }
 
 static int stm32_dcmipp_get_frmival(const struct device *dev, struct video_frmival *frmival)

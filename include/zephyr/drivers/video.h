@@ -983,6 +983,27 @@ int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t l
 int video_estimate_fmt_size(struct video_format *fmt);
 
 /**
+ * @brief Set compose rectangle (if applicable) prior to setting format
+ *
+ * Some devices expose compose capabilities, allowing them to apply a transformation
+ * (downscale / upscale) to the frame. For those devices, it is necessary to set the
+ * compose rectangle before being able to apply the frame format (which must have the
+ * same width / height as the compose rectangle width / height).
+ * In order to allow non-compose aware application to be able to control such devices,
+ * introduce a helper which, if available, will apply the compose rectangle prior to
+ * setting the format.
+ *
+ * @param dev Pointer to the video device struct to set format
+ * @param fmt Pointer to a video format struct.
+ *
+ * @retval 0 Is successful.
+ * @retval -EINVAL If parameters are invalid.
+ * @retval -ENOTSUP If format is not supported.
+ * @retval -EIO General input / output error.
+ */
+int video_set_compose_format(const struct device *dev, struct video_format *fmt);
+
+/**
  * @defgroup video_pixel_formats Video pixel formats
  * The '|' characters separate the pixels or logical blocks, and spaces separate the bytes.
  * The uppercase letter represents the most significant bit.
