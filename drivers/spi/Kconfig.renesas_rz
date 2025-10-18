@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Renesas Electronics Corporation
+# Copyright (c) 2024-2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 config SPI_RENESAS_RZ_RSPI
@@ -19,7 +19,7 @@ config SPI_RENESAS_RZ_RSPI_INTERRUPT
 
 config SPI_RENESAS_RZ_RSPI_DMAC
 	bool "RZ SPI DMA Support"
-	select USE_RZ_FSP_DMA
+	select USE_RZ_FSP_DMAC_B
 	help
 	  Enable the SPI DMA mode for SPI instances
 

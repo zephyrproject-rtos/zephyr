@@ -11,5 +11,6 @@ supported:
   - adc
   - i2c
   - counter
+  - dma
   - watchdog
 vendor: renesas
