@@ -277,6 +277,33 @@
 			status = "disabled";
 		};
 
+		edma1: dma@44000000 {
+			compatible = "nxp,mcux-edma";
+			reg = <0x44000000 0x210000>;
+			interrupts = <230 0>, <231 0>,
+				<232 0>, <233 0>,
+				<234 0>, <235 0>,
+				<236 0>, <237 0>,
+				<238 0>, <239 0>,
+				<240 0>, <241 0>,
+				<242 0>, <243 0>,
+				<244 0>, <245 0>,
+				<246 0>, <247 0>,
+				<248 0>, <249 0>,
+				<250 0>, <251 0>,
+				<252 0>, <253 0>,
+				<254 0>, <255 0>,
+				<256 0>, <257 0>,
+				<258 0>, <259 0>,
+				<260 0>, <261 0>;
+			#dma-cells = <2>;
+			nxp,version = <4>;
+			dma-channels = <32>;
+			dma-requests = <32>;
+			no-error-irq;
+			status = "disabled";
+		};
+
 		flexio3: flexio@4d100000 {
 			compatible = "nxp,flexio";
 			reg = <0x4d100000 DT_SIZE_K(4)>;
@@ -389,6 +416,21 @@
 			reg = <0x44390000 DT_SIZE_K(64)>;
 			interrupts = <22 3>;
 			clocks = <&scmi_clk IMX943_CLK_LPUART2>;
+			status = "disabled";
+		};
+
+		i2s1: i2s@443b0000 {
+			compatible = "nxp,mcux-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x443b0000 DT_SIZE_K(64)>;
+			clocks = <&scmi_clk IMX943_CLK_SAI1>;
+			interrupts = <38 0>;
+			nxp,tx-channel = <1>;
+			dmas = <&edma1 24 24>, <&edma1 25 25>;
+			dma-names = "tx", "rx";
+			nxp,tx-dma-channel = <24>;
+			nxp,rx-dma-channel = <25>;
 			status = "disabled";
 		};
 
