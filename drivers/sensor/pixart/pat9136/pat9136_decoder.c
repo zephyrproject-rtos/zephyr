@@ -327,23 +327,15 @@ int pat9136_encode(const struct device *dev,
 		   uint8_t *buf)
 {
 	struct pat9136_encoded_data *edata = (struct pat9136_encoded_data *)buf;
-	uint64_t cycles;
-	int err;
 
 	edata->header.channels = 0;
 	edata->header.events.drdy = 0;
 	edata->header.events.motion = 0;
+	edata->header.timestamp = sensor_clock_get_ns();
 
 	for (size_t i = 0 ; i < num_channels; i++) {
 		edata->header.channels |= pat9136_encode_channel(channels[i].chan_type);
 	}
-
-	err = sensor_clock_get_cycles(&cycles);
-	if (err != 0) {
-		return err;
-	}
-
-	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
 
 	return 0;
 }

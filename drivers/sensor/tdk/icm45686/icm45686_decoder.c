@@ -196,8 +196,6 @@ int icm45686_encode(const struct device *dev,
 {
 	struct icm45686_encoded_data *edata = (struct icm45686_encoded_data *)buf;
 	const struct icm45686_config *dev_config = dev->config;
-	uint64_t cycles;
-	int err;
 
 	edata->header.channels = 0;
 
@@ -205,15 +203,10 @@ int icm45686_encode(const struct device *dev,
 		edata->header.channels |= icm45686_encode_channel(channels[i].chan_type);
 	}
 
-	err = sensor_clock_get_cycles(&cycles);
-	if (err != 0) {
-		return err;
-	}
-
 	edata->header.events = 0;
 	edata->header.accel_fs = dev_config->settings.accel.fs;
 	edata->header.gyro_fs = dev_config->settings.gyro.fs;
-	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
+	edata->header.timestamp = sensor_clock_get_ns();
 
 	return 0;
 }

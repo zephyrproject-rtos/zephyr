@@ -195,18 +195,11 @@ int icm4268x_encode(const struct device *dev, const struct sensor_chan_spec *con
 {
 	struct icm4268x_dev_data *data = dev->data;
 	struct icm4268x_encoded_data *edata = (struct icm4268x_encoded_data *)buf;
-	uint64_t cycles;
-	int rc;
 
 	edata->channels = 0;
 
 	for (int i = 0; i < num_channels; i++) {
 		edata->channels |= icm4268x_encode_channel(channels[i].chan_type);
-	}
-
-	rc = sensor_clock_get_cycles(&cycles);
-	if (rc != 0) {
-		return rc;
 	}
 
 	edata->header.is_fifo = false;
@@ -216,7 +209,7 @@ int icm4268x_encode(const struct device *dev, const struct sensor_chan_spec *con
 	edata->header.axis_align[0] = data->cfg.axis_align[0];
 	edata->header.axis_align[1] = data->cfg.axis_align[1];
 	edata->header.axis_align[2] = data->cfg.axis_align[2];
-	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
+	edata->header.timestamp = sensor_clock_get_ns();
 
 	return 0;
 }

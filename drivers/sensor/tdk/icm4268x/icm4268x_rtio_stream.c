@@ -327,21 +327,12 @@ void icm4268x_fifo_event(const struct device *dev)
 	struct icm4268x_dev_data *drv_data = dev->data;
 	struct rtio_iodev *spi_iodev = drv_data->spi_iodev;
 	struct rtio *r = drv_data->r;
-	uint64_t cycles;
-	int rc;
 
 	if (drv_data->streaming_sqe == NULL) {
 		return;
 	}
 
-	rc = sensor_clock_get_cycles(&cycles);
-	if (rc != 0) {
-		LOG_ERR("Failed to get sensor clock cycles");
-		rtio_iodev_sqe_err(drv_data->streaming_sqe, rc);
-		return;
-	}
-
-	drv_data->timestamp = sensor_clock_cycles_to_ns(cycles);
+	drv_data->timestamp = sensor_clock_get_ns();
 
 	/*
 	 * Setup rtio chain of ops with inline calls to make decisions

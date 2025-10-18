@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2024 Cienet
+ * Copyright (c) 2025 Croxel Inc.
+ * Copyright (c) 2025 CogniPilot Foundation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,6 +39,25 @@ int sensor_clock_get_cycles(uint64_t *cycles);
  * @return Time in nanoseconds.
  */
 uint64_t sensor_clock_cycles_to_ns(uint64_t cycles);
+
+/**
+ * @brief Get Current sensor clock in nanoseconds.
+ *
+ * This helper function performs the acquisition of sensor time in cycles
+ * and converts it directly in nanoseconds, instead of having to do it in
+ * a two-step process.
+ *
+ * @return nanoseconds on succes, zero on failure.
+ */
+static inline uint64_t sensor_clock_get_ns(void)
+{
+	uint64_t cycles;
+
+	if (sensor_clock_get_cycles(&cycles) != 0) {
+		return 0;
+	}
+	return sensor_clock_cycles_to_ns(cycles);
+}
 
 #ifdef __cplusplus
 }

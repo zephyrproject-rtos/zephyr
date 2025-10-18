@@ -56,7 +56,6 @@ static void rm3100_complete_result(struct rtio *ctx, const struct rtio_sqe *sqe,
 static void rm3100_stream_get_data(const struct device *dev)
 {
 	struct rm3100_data *data = dev->data;
-	uint64_t cycles;
 	int err;
 
 	CHECKIF(!data->stream.iodev_sqe) {
@@ -81,15 +80,7 @@ static void rm3100_stream_get_data(const struct device *dev)
 
 	edata = (struct rm3100_encoded_data *)buf;
 
-	err = sensor_clock_get_cycles(&cycles);
-	CHECKIF(err) {
-		LOG_ERR("Failed to get timestamp: %d", err);
-
-		data->stream.iodev_sqe = NULL;
-		rtio_iodev_sqe_err(iodev_sqe, err);
-		return;
-	}
-	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
+	edata->header.timestamp = sensor_clock_get_ns();
 
 	struct rtio_sqe *status_wr_sqe = rtio_sqe_acquire(data->rtio.ctx);
 	struct rtio_sqe *status_rd_sqe = rtio_sqe_acquire(data->rtio.ctx);

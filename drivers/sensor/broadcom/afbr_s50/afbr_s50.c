@@ -103,16 +103,7 @@ static void data_ready_work_handler(struct rtio_iodev_sqe *iodev_sqe)
 		return;
 	}
 
-	uint64_t cycles;
-
-	err = sensor_clock_get_cycles(&cycles);
-	CHECKIF(err != 0) {
-		LOG_ERR("Failed to get sensor clock cycles");
-		handle_error_on_result(data, -EIO);
-		return;
-	}
-
-	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
+	edata->header.timestamp = sensor_clock_get_ns();
 	edata->header.channels = afbr_s50_encode_channel(SENSOR_CHAN_DISTANCE) |
 				 afbr_s50_encode_channel(SENSOR_CHAN_AFBR_S50_PIXELS);
 	edata->header.events = cfg->is_streaming ? afbr_s50_encode_event(SENSOR_TRIG_DATA_READY) :

@@ -36,10 +36,9 @@ int rm3100_encode(const struct device *dev,
 {
 	const struct rm3100_data *data = dev->data;
 	struct rm3100_encoded_data *edata = (struct rm3100_encoded_data *)buf;
-	uint64_t cycles;
-	int err;
 
 	edata->header.channels = 0;
+	edata->header.timestamp = sensor_clock_get_ns();
 
 	if (data->settings.odr == RM3100_DT_ODR_600) {
 		edata->header.cycle_count = RM3100_CYCLE_COUNT_HIGH_ODR;
@@ -50,13 +49,6 @@ int rm3100_encode(const struct device *dev,
 	for (size_t i = 0; i < num_channels; i++) {
 		edata->header.channels |= rm3100_encode_channel(channels[i].chan_type);
 	}
-
-	err = sensor_clock_get_cycles(&cycles);
-	if (err != 0) {
-		return err;
-	}
-
-	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
 
 	return 0;
 }

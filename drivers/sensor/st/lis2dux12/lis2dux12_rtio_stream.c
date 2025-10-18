@@ -432,22 +432,13 @@ static void lis2dux12_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe,
 void lis2dux12_stream_irq_handler(const struct device *dev)
 {
 	struct lis2dux12_data *lis2dux12 = dev->data;
-	uint64_t cycles;
-	int rc;
 
 	if (lis2dux12->streaming_sqe == NULL) {
 		return;
 	}
 
-	rc = sensor_clock_get_cycles(&cycles);
-	if (rc != 0) {
-		LOG_ERR("Failed to get sensor clock cycles");
-		rtio_iodev_sqe_err(lis2dux12->streaming_sqe, rc);
-		return;
-	}
-
 	/* get timestamp as soon as the irq is served */
-	lis2dux12->timestamp = sensor_clock_cycles_to_ns(cycles);
+	lis2dux12->timestamp = sensor_clock_get_ns();
 
 	/* handle FIFO triggers */
 	if (lis2dux12->trig_cfg.int_fifo_th || lis2dux12->trig_cfg.int_fifo_full) {

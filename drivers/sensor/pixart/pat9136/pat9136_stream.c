@@ -87,7 +87,6 @@ static void pat9136_complete_result(struct rtio *ctx,
 static void pat9136_stream_get_data(const struct device *dev)
 {
 	struct pat9136_data *data = dev->data;
-	uint64_t cycles;
 	int err;
 
 	CHECKIF(!data->stream.iodev_sqe) {
@@ -141,17 +140,7 @@ static void pat9136_stream_get_data(const struct device *dev)
 	struct rtio_sqe *cb_sqe = rtio_sqe_acquire(data->rtio.ctx);
 	uint8_t val;
 
-	err = sensor_clock_get_cycles(&cycles);
-	CHECKIF(err) {
-		struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
-
-		LOG_ERR("Failed to get timestamp: %d", err);
-
-		data->stream.iodev_sqe = NULL;
-		rtio_iodev_sqe_err(iodev_sqe, err);
-		return;
-	}
-	buf->header.timestamp = sensor_clock_cycles_to_ns(cycles);
+	buf->header.timestamp = sensor_clock_get_ns();
 
 	CHECKIF(!write_res_x_sqe || !read_res_x_sqe ||
 		!write_res_y_sqe || !read_res_y_sqe ||
