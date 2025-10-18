@@ -23,6 +23,21 @@ config SOC_SILABS_IMAGE_PROPERTIES
 	  verify the application. If Gecko bootloader is used, the Zephyr
 	  application image also needs the data structure.
 
+config CRYPTO_ACC_GECKO_TRNG
+	bool
+	help
+	  Enable Entropy driver based on the CRYPTO_ACC module for Silicon Labs
+	  Gecko chips.
+
+if PM
+config SOC_SILABS_PM_LOW_INTERRUPT_LATENCY
+	bool "Low interrupt latency mode"
+	default y
+	help
+	  Enabling low interrupt latency allows interrupts to be executed
+	  before the high frequency clock is restored after sleep.
+endif
+
 rsource "*/Kconfig"
 
 config ARM_SECURE_FIRMWARE
