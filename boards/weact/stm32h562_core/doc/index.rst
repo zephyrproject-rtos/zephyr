@@ -1,9 +1,9 @@
-.. zephyr:board:: weact_stm32h5_core
+.. zephyr:board:: weact_stm32h562_core
 
 Overview
 ********
 
-The ``weact_stm32h5_core`` board is a compact development board equipped with
+The ``weact_stm32h562_core`` board is a compact development board equipped with
 an STM32H562RGT6 microcontroller. It features basic set of peripherals:
 user LED and button, microSD |trade| card slot, and combined SWD & UART header.
 
@@ -26,7 +26,7 @@ More information about the board can be found on the `WeAct GitHub`_.
 Hardware
 ********
 
-The ``weact_stm32h5_core`` board provides the following hardware components:
+The ``weact_stm32h562_core`` board provides the following hardware components:
 
    - STM32H562RGT6 in LQFP64 package
    - ARM 32-bit Cortex-M33 CPU with FPU
@@ -77,7 +77,7 @@ Pin Mapping
 Default Zephyr Peripheral Mapping:
 ----------------------------------
 
-The ``weact_stm32h5_core`` board is configured as follows
+The ``weact_stm32h562_core`` board is configured as follows
 
 - USER_LED : PB2
 - USER_PB : PC13
@@ -103,7 +103,7 @@ Programming and Debugging
 
 .. zephyr:board-supported-runners::
 
-The ``weact_stm32h5_core`` board facilitates firmware flashing via the USB DFU
+The ``weact_stm32h562_core`` board facilitates firmware flashing via the USB DFU
 bootloader. This method simplifies the process of updating images, although
 it doesn't provide debugging capabilities. However, the board provides header
 pins for the Serial Wire Debug (SWD) interface, which can be used to connect
@@ -122,8 +122,8 @@ Upon successful execution of these steps, the device will transition into
 bootloader mode and present itself as a USB DFU Mode device. You can program
 the device using the west tool or the STM32CubeProgrammer.
 
-Flashing an application to ``weact_stm32h5_core``
--------------------------------------------------
+Flashing an application to ``weact_stm32h562_core``
+---------------------------------------------------
 
 Here is an example for the :zephyr:code-sample:`hello_world` application.
 
@@ -134,7 +134,7 @@ as below:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: weact_stm32h5_core
+   :board: weact_stm32h562_core
    :goals: build flash
    :gen-args: -DCONFIG_BOOT_DELAY=5000
 
@@ -148,7 +148,7 @@ Then, press the RESET button, you should see the following message after few sec
 
 .. code-block:: console
 
-   Hello World! weact_stm32h5_core
+   Hello World! weact_stm32h562_core
 
 Replace :code:`<tty_device>` with the port where the board can be found.
 For example, under Linux, :code:`/dev/ttyACM0`.
@@ -158,31 +158,31 @@ Debugging
 
 This current Zephyr port does not support debugging.
 
-Testing the LEDs in the ``weact_stm32h5_core``
-**********************************************
+Testing the LEDs in the ``weact_stm32h562_core``
+************************************************
 
 There is a sample that allows to test that LED on the board are working
 properly with Zephyr:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: weact_stm32h5_core
+   :board: weact_stm32h562_core
    :goals: build flash
    :gen-args: -DCONFIG_BOOT_DELAY=5000
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The LED definitions can be found in
-:zephyr_file:`boards/weact/stm32h5_core/weact_stm32h5_core.dts`.
+:zephyr_file:`boards/weact/stm32h562_core/weact_stm32h562_core.dts`.
 
-Testing shell over USB in the ``weact_stm32h5_core``
-****************************************************
+Testing shell over USB in the ``weact_stm32h562_core``
+******************************************************
 
 There is a sample that allows to test shell interface over USB CDC ACM interface
 with Zephyr:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/shell/shell_module
-   :board: weact_stm32h5_core
+   :board: weact_stm32h562_core
    :goals: build flash
    :gen-args: -DCONFIG_BOOT_DELAY=5000
 
