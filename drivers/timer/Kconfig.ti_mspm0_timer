@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Linumiz GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config TI_MSPM0_TIMER
+	bool "TI MSPM0 timer"
+	default n
+	depends on DT_HAS_TI_MSPM0_TIMER_SYSCLOCK_ENABLED
+	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
+	help
+	  This module implements a kernel device driver for the TI MSPM0
+	  Timer and provides the standard "system clock driver"
+	  interfaces.
