@@ -2,3 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_sources_ifdef(CONFIG_CDC_ACM_SERIAL_INITIALIZE_AT_BOOT cdc_acm_serial.c)
+zephyr_sources_ifdef(CONFIG_CP210X_SERIAL_INITIALIZE_AT_BOOT cp210x_serial.c)
