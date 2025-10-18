@@ -4,6 +4,10 @@
 config SOC_FAMILY_SF32
 	select HAS_SIFLI_HAL
 
+config SIFLI_LXT_DISABLE
+	bool
+	default n
+
 if SOC_FAMILY_SF32
 
 rsource "*/Kconfig"
