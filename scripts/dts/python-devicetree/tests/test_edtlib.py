@@ -130,6 +130,99 @@ def test_interrupts():
         edtlib.ControllerAndData(node=node, controller=edt.get_node('/interrupt-map-bitops-test/controller'), data={'one': 3, 'two': 2}, name=None, basename=None)
     ]
 
+
+def test_maps():
+    '''Tests for the maps property.'''
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
+
+    nexus = edt.get_node("/interrupt-map-test/nexus")
+    controller_0 = edt.get_node("/interrupt-map-test/controller-0")
+    controller_1 = edt.get_node("/interrupt-map-test/controller-1")
+    controller_2 = edt.get_node("/interrupt-map-test/controller-2")
+    controller_no_addr = edt.get_node("/interrupt-map-no-address/controller")
+
+    assert len(nexus.maps.keys()) == 1
+    assert "interrupt" in nexus.maps
+
+    entries = nexus.maps["interrupt"]
+    assert len(entries) == 7
+
+    assert entries[0] == edtlib.MapEntry(
+        node=nexus,
+        child_addresses=[0, 0],
+        child_specifiers=[0, 0],
+        parent=controller_0,
+        parent_addresses=[0],
+        parent_specifiers=[0],
+        basename="interrupt",
+    )
+
+    assert entries[1] == edtlib.MapEntry(
+        node=nexus,
+        child_addresses=[0, 0],
+        child_specifiers=[0, 1],
+        parent=controller_1,
+        parent_addresses=[0, 0],
+        parent_specifiers=[0, 1],
+        basename="interrupt",
+    )
+
+    assert entries[2] == edtlib.MapEntry(
+        node=nexus,
+        child_addresses=[0, 0],
+        child_specifiers=[0, 2],
+        parent=controller_2,
+        parent_addresses=[0, 0, 0],
+        parent_specifiers=[0, 0, 2],
+        basename="interrupt",
+    )
+
+    assert entries[3] == edtlib.MapEntry(
+        node=nexus,
+        child_addresses=[0, 1],
+        child_specifiers=[0, 0],
+        parent=controller_0,
+        parent_addresses=[0],
+        parent_specifiers=[3],
+        basename="interrupt",
+    )
+
+    assert entries[4] == edtlib.MapEntry(
+        node=nexus,
+        child_addresses=[0, 1],
+        child_specifiers=[0, 1],
+        parent=controller_1,
+        parent_addresses=[0, 0],
+        parent_specifiers=[0, 4],
+        basename="interrupt",
+    )
+
+    assert entries[5] == edtlib.MapEntry(
+        node=nexus,
+        child_addresses=[0, 1],
+        child_specifiers=[0, 2],
+        parent=controller_2,
+        parent_addresses=[0, 0, 0],
+        parent_specifiers=[0, 0, 5],
+        basename="interrupt",
+    )
+
+    assert entries[6] == edtlib.MapEntry(
+        node=nexus,
+        child_addresses=[0, 1],
+        child_specifiers=[1, 0],
+        parent=controller_no_addr,
+        parent_addresses=[],
+        parent_specifiers=[6],
+        basename="interrupt",
+    )
+
+    empty = edt.get_node("/interrupt-map-test/empty")
+    assert len(empty.maps) == 1
+    assert "interrupt" in empty.maps
+    assert len(empty.maps["interrupt"]) == 0
+
 def test_ranges():
     '''Tests for the ranges property'''
     with from_here():
