@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	sci3_spi_default: sci3_spi_default {
+		group1 {
+			/* MISO MOSI SCK */
+			psels = <RA_PSEL(RA_PSEL_SCI_3, 4, 8)>,
+				<RA_PSEL(RA_PSEL_SCI_3, 4, 9)>,
+				<RA_PSEL(RA_PSEL_SCI_3, 4, 10)>;
+			drive-strength = "high";
+		};
+	};
+};
+
+&sci3 {
+	pinctrl-0 = <&sci3_spi_default>;
+	pinctrl-names = "default";
+
+	spi {
+		status = "okay";
+
+		slow@0 {
+			compatible = "test-spi-loopback-slow";
+			reg = <0>;
+			spi-max-frequency = <1000000>;
+		};
+
+		fast@0 {
+			compatible = "test-spi-loopback-fast";
+			reg = <0>;
+			spi-max-frequency = <2500000>;
+		};
+	};
+
+	uart {
+		status = "disabled";
+	};
+
+	i2c {
+		status = "disabled";
+	};
+};
