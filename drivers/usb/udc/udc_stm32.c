@@ -1174,10 +1174,10 @@ static int priv_clock_enable(void)
 		}
 	#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) */
 #elif defined(CONFIG_SOC_SERIES_STM32N6X)
-	/* Enable Vdd USB voltage monitoring */
+	/* Enable Vdd33USB voltage monitoring */
 	LL_PWR_EnableVddUSBMonitoring();
-	while (__HAL_PWR_GET_FLAG(PWR_FLAG_USB33RDY)) {
-		/* Wait FOR VDD33USB ready */
+	while (!LL_PWR_IsActiveFlag_USB33RDY()) {
+		/* Wait for Vdd33USB ready */
 	}
 
 	/* Enable VDDUSB */
