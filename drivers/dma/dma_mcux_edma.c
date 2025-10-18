@@ -966,6 +966,8 @@ static int dma_mcux_edma_get_status(const struct device *dev, uint32_t channel,
 	LOG_DBG("DMA CHx_ES 0x%x",  DEV_BASE(dev)->TCD[hw_channel].CH_ES);
 	LOG_DBG("DMA CHx_INT 0x%x", DEV_BASE(dev)->TCD[hw_channel].CH_INT);
 	LOG_DBG("DMA TCD_CSR 0x%x", DEV_BASE(dev)->TCD[hw_channel].CSR);
+	LOG_DBG("DMA TCD_SADDR 0x%x", DEV_BASE(dev)->TCD[hw_channel].SADDR);
+	LOG_DBG("DMA TCD_DADDR 0x%x", DEV_BASE(dev)->TCD[hw_channel].DADDR);
 #else
 	LOG_DBG("DMA CR 0x%x", DEV_BASE(dev)->CR);
 	LOG_DBG("DMA INT 0x%x", DEV_BASE(dev)->INT);
@@ -1041,11 +1043,11 @@ static int dma_mcux_edma_init(const struct device *dev)
 
 #define IRQ_CONFIG(n, idx, fn)							\
 	{									\
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, idx, irq),			\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n, idx),			\
 			    DT_INST_IRQ_BY_IDX(n, idx, priority),		\
 			    fn,							\
 			    DEVICE_DT_INST_GET(n), 0);				\
-			    irq_enable(DT_INST_IRQ_BY_IDX(n, idx, irq));	\
+			    irq_enable(DT_INST_IRQN_BY_IDX(n, idx));	\
 	}
 
 #define EDMA_CHANNELS_MASK(n) static uint32_t edma_channel_mask_##n[] =  \
