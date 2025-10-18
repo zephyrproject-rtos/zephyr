@@ -7,9 +7,18 @@ common:
   filter: CONFIG_CPU_LOAD
 tests:
   debug.cpu_load:
+    filter: not CONFIG_SOC_FAMILY_MAX32
     integration_platforms:
       - mps2/an385
       - qemu_cortex_m3
+  debug.cpu_load.max32:
+    filter: CONFIG_SOC_FAMILY_MAX32
+    integration_platforms:
+      - max32655evkit/max32655/m4
+      - max32690evkit/max32690/m4
+    extra_configs:
+      - CONFIG_MAX32_ON_ENTER_CPU_IDLE_HOOK=n
+      - CONFIG_BOOT_DELAY=1000
   debug.cpu_load.counter:
     platform_allow:
       - nrf52840dk/nrf52840
@@ -21,13 +30,19 @@ tests:
     extra_configs:
       - CONFIG_CPU_LOAD_USE_COUNTER=y
   debug.cpu_load.periodic_report:
+    filter: not CONFIG_SOC_FAMILY_MAX32
     integration_platforms:
       - mps2/an385
       - qemu_cortex_m3
+    extra_args:
+      - EXTRA_CONF_FILE="prj_periodic.conf"
+  debug.cpu_load.periodic_report.max32:
+    filter: CONFIG_SOC_FAMILY_MAX32
+    integration_platforms:
+      - max32655evkit/max32655/m4
+      - max32690evkit/max32690/m4
+    extra_args:
+      - EXTRA_CONF_FILE="prj_periodic.conf"
     extra_configs:
-      - CONFIG_CPU_LOAD_LOG_PERIODICALLY=50
-      - CONFIG_LOG=y
-      - CONFIG_TEST_LOGGING_DEFAULTS=n
-      - CONFIG_LOG_PRINTK=n
-      - CONFIG_LOG_BACKEND_UART=n
-      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_MAX32_ON_ENTER_CPU_IDLE_HOOK=n
+      - CONFIG_BOOT_DELAY=1000
