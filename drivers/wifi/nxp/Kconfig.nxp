@@ -1112,10 +1112,15 @@ if NXP_WIFI_SMOKE_TESTS
 
 config NXP_WIFI_SIGMA_AGENT
 	bool "Wi-Fi Alliance Sigma Agent Support"
-	select POSIX_API
-	select POSIX_THREADS
+	select POSIX_SYSTEM_INTERFACES
+	select POSIX_BASE_DEFINITIONS
+	select POSIX_AEP_REALTIME_MINIMAL
+	select POSIX_NETWORKING
+	imply EVENTFD
+	imply POSIX_FD_MGMT
+	imply POSIX_MULTI_PROCESS
+	imply XSI_SINGLE_PROCESS
 	select PTHREAD_CREATE_BARRIER
-	select POSIX_TIMERS
 	help
 	  This option is to enable Wi-Fi Alliance Sigma Agent support in the Wi-Fi driver.
 
