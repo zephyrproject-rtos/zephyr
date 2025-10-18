@@ -1,0 +1,54 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	soc {
+		itcm: memory@0 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x0 DT_SIZE_K(32)>;
+			zephyr,memory-region = "ITCM";
+		};
+
+		itcm1: memory@11400000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x11400000 DT_SIZE_K(32)>;
+			zephyr,memory-region = "ITCM1";
+		};
+
+		dtcm: memory@20000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(64)>;
+			zephyr,memory-region = "DTCM";
+		};
+
+		/* stdby_ram memory supports content retention in Standby mode */
+		stdby_ram: memory@20400000 {
+			compatible = "mmio-sram";
+			reg = <0x20400000 DT_SIZE_K(32)>;
+		};
+
+		/* sram memory is available only in Run mode */
+		sram: memory@20408000 {
+			compatible = "mmio-sram";
+			reg = <0x20408000 DT_SIZE_K(288)>;
+		};
+
+		dtcm1: memory@21400000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x21400000 DT_SIZE_K(64)>;
+			zephyr,memory-region = "DTCM1";
+		};
+
+		peripheral: peripheral@40000000 {
+			ranges = <0x0 0x40000000 0x10000000>;
+		};
+	};
+};
+
+#include <nxp/nxp_mcxe31x_common.dtsi>
