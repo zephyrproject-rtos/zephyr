@@ -32,12 +32,35 @@
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-m33f";
 			reg = <0>;
+			cpu-power-states = <&sleep &sleep_optimized &deep_sleep>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
 				reg = <0xe000ed90 0x40>;
+			};
+		};
+
+		power-states {
+			sleep: sleep {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				min-residency-us = <100>;
+				exit-latency-us = <0>;
+			};
+			sleep_optimized: sleep-optimized {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <0>;
+				min-residency-us = <500>;
+				exit-latency-us = <10>;
+			};
+			deep_sleep: deep-sleep {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				min-residency-us = <1000>;
+				exit-latency-us = <11>;
 			};
 		};
 	};
@@ -113,6 +136,24 @@
 &pbridge2 {
 	#address-cells = <1>;
 	#size-cells = <1>;
+
+	cmc: system-modules@1000 {
+		compatible = "nxp,cmc";
+		reg = <0x1000 0x1000>;
+		interrupts = <1 0>;
+	};
+
+	spc: system-modules@16000 {
+		compatible = "nxp,spc";
+		reg = <0x16000 0x1000>;
+		interrupts = <21 0>;
+	};
+
+	wuu: system-modules@19000 {
+		compatible = "nxp,wuu";
+		reg = <0x19000 0x1000>;
+		interrupts = <22 0>;
+	};
 
 	scg: clock-controller@1e000 {
 		compatible = "nxp,scg-k4";
@@ -252,6 +293,7 @@
 	};
 
 	vbat: vbat@2b000 {
+		compatible = "nxp,vbat";
 		reg = <0x2b000 0x33c>;
 		interrupts = <74 0>;
 	};
