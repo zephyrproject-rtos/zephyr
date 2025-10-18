@@ -54,6 +54,12 @@
 			};
 		};
 
+		rstc: rstc@40000c00 {
+			compatible = "microchip,rstc-g1-reset";
+			status = "disabled";
+			reg = <0x40000c00 0x400>;
+		};
+
 		sercom0: sercom@40003000 {
 			compatible = "microchip,sercom-g1";
 			status = "disabled";
