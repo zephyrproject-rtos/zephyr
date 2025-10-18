@@ -87,8 +87,7 @@ static int pd_intel_adsp_pm_action(const struct device *dev, enum pm_device_acti
 
 static int pd_intel_adsp_init(const struct device *dev)
 {
-	pm_device_init_suspended(dev);
-	return pm_device_runtime_enable(dev);
+	return pm_device_driver_init(dev, pd_intel_adsp_pm_action);
 }
 
 #define DT_DRV_COMPAT intel_adsp_power_domain
