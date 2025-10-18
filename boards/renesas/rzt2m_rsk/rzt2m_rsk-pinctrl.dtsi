@@ -40,4 +40,13 @@
 				 <RZT_PINMUX(PORT_22, 7, 2)>; /* SDA */
 		};
 	};
+
+	/omit-if-no-ref/ spi2_pins: spi2 {
+		spi2-pinmux {
+			pinmux = <RZT_PINMUX(PORT_18, 4, 3)>, /* CK2 */
+				 <RZT_PINMUX(PORT_18, 5, 3)>, /* MOSI2 */
+				 <RZT_PINMUX(PORT_18, 6, 5)>, /* MISO2 */
+				 <RZT_PINMUX(PORT_18, 7, 3)>; /* SSL20 */
+		};
+	};
 };
