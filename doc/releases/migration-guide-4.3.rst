@@ -310,6 +310,14 @@ Cellular
  * :c:enum:`cellular_access_technology` values have been redefined to align with 3GPP TS 27.007.
  * :c:enum:`cellular_registration_status` values have been extended to align with 3GPP TS 27.007.
 
+Flash Map
+=========
+
+* With the long-term goal of transitioning to PSA Crypto API as the only crypto support in Zephyr,
+  :kconfig:option:`FLASH_AREA_CHECK_INTEGRITY_MBEDTLS` is deprecated.
+  :kconfig:option:`FLASH_AREA_CHECK_INTEGRITY_PSA` is now the default choice: if TF-M is not
+  enabled or not supported by the platform, Mbed TLS will be used as PSA Crypto API provider.
+
 Logging
 =======
 
