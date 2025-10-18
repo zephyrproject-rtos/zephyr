@@ -7,7 +7,7 @@ config NRF_RTC_TIMER
 	bool "nRF Real Time Counter (NRF_RTC1) Timer"
 	depends on CLOCK_CONTROL
 	depends on SOC_COMPATIBLE_NRF
-	depends on !DT_HAS_NORDIC_NRF_RTC_ENABLED && !DT_HAS_NORDIC_NRF_GRTC_ENABLED
+	depends on !$(dt_nodelabel_enabled,rtc1) && !DT_HAS_NORDIC_NRF_GRTC_ENABLED
 	select TICKLESS_CAPABLE
 	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
 	select NRFX_PPI if SOC_NRF52832
