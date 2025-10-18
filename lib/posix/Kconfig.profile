@@ -12,11 +12,15 @@ config POSIX_API
 	imply POSIX_FD_MGMT # open(), close(), read(), write()
 	imply POSIX_MULTI_PROCESS # sleep(), getpid(), etc
 	imply XSI_SINGLE_PROCESS # gettimeofday()
+	select DEPRECATED
 	help
-	  This option enables the required POSIX System Interfaces (base definitions), all of PSE51,
-	  and some features found in PSE52.
+	  This option is deprecated. Applications should select CONFIG_POSIX_AEP_CHOICE_BASE,
+	  CONFIG_POSIX_AEP_CHOICE_PSE51, CONFIG_POSIX_AEP_CHOICE_PSE52, or
+	  CONFIG_POSIX_AEP_CHOICE_PSE53. Libraries should depend on
+	  CONFIG_POSIX_SYSTEM_INTERFACES and other POSIX Option Groups.
 
-	  Note: in the future, this option may be deprecated in favour of subprofiling options.
+	  For more information, please see
+
 
 choice POSIX_AEP_CHOICE
 	prompt "POSIX Subprofile"
