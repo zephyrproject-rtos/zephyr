@@ -50,6 +50,7 @@ zephyr_syscall_header_ifdef(CONFIG_FDTABLE
 
 zephyr_sources_ifdef(CONFIG_CBPRINTF_COMPLETE cbprintf_complete.c)
 zephyr_sources_ifdef(CONFIG_CBPRINTF_NANO cbprintf_nano.c)
+add_subdirectory_ifdef(CONFIG_CPU_LOAD_METRIC cpu_load)
 
 if(NOT CONFIG_PICOLIBC)
   zephyr_sources(cbprintf.c)
