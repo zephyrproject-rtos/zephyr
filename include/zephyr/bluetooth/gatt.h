@@ -2024,6 +2024,26 @@ struct bt_gatt_read_params {
  */
 int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params);
 
+/** @brief Send a deferred Read Response
+ *
+ *  Used when an attribute read was deferred (attr->read returned
+ *  -EINPROGRESS). The application later provides the
+ *  response value via this API.
+ *
+ *  @param conn   Connection object.
+ *  @param handle Attribute handle that was read.
+ *  @param value  Pointer to the attribute value.
+ *  @param length Length of the attribute value.
+ *
+ *  @retval 0 Successfully queued response.
+ * 
+ *  @retval -ENOTCONN The connection is not established.
+ *  @retval -EINVAL Invalid parameters.
+ *  @retval -ENOMEM Out of memory.
+ */
+int bt_gatt_send_read_response(struct bt_conn *conn, uint16_t handle,
+                              const void *value, uint16_t length);
+
 struct bt_gatt_write_params;
 
 /** @typedef bt_gatt_write_func_t
@@ -2072,6 +2092,24 @@ struct bt_gatt_write_params {
  *  by @kconfig{CONFIG_BT_ATT_TX_COUNT}.
  */
 int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params);
+
+/**
+ * @brief Send a deferred Write Response
+ *
+ * Used when an attribute write was deferred (attr->write returned
+ * -EINPROGRESS). The application later
+ * responds using this API once the write has been processed.
+ *
+ * @param conn   Connection object.
+ * @param handle Attribute handle that was written.
+ *
+ * @retval 0 Successfully queued response.
+ * 
+ * @retval -ENOTCONN The connection is not established.
+ * @retval -EINVAL Invalid parameters.
+ * @retval -ENOMEM Out of memory.
+ */
+int bt_gatt_send_write_response(struct bt_conn *conn, uint16_t handle);
 
 /** @brief Write Attribute Value by handle without response with callback.
  *

@@ -5155,6 +5155,51 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
 	return bt_att_send(conn, buf);
 }
 
+int bt_gatt_send_read_response(struct bt_conn *conn, uint16_t handle,
+                              const void *value, uint16_t length)
+{
+    struct net_buf *buf;
+
+    __ASSERT(conn, "invalid connection\n");
+
+    if (conn->state != BT_CONN_CONNECTED) {
+        return -ENOTCONN;
+    }
+
+    buf = bt_att_create_pdu(conn, BT_ATT_OP_READ_RSP, length);
+    if (!buf) {
+        return -ENOMEM;
+    }
+
+    if (value && length) {
+        net_buf_add_mem(buf, value, length);
+    }
+
+    LOG_DBG("handle 0x%04x length %u", handle, length);
+
+    return bt_att_send(conn, buf);
+}
+
+int bt_gatt_send_write_response(struct bt_conn *conn, uint16_t handle)
+{
+    struct net_buf *buf;
+
+    __ASSERT(conn, "invalid connection\n");
+
+    if (conn->state != BT_CONN_CONNECTED) {
+        return -ENOTCONN;
+    }
+
+    buf = bt_att_create_pdu(conn, BT_ATT_OP_WRITE_RSP, 0);
+    if (!buf) {
+        return -ENOMEM;
+    }
+
+    LOG_DBG("handle 0x%04x length %u", handle, length);
+
+    return bt_att_send(conn, buf);
+}
+
 static int gatt_exec_encode(struct net_buf *buf, size_t len, void *user_data)
 {
 	struct bt_att_exec_write_req *req;

@@ -1401,6 +1401,11 @@ static ssize_t att_chan_read(struct bt_att_chan *chan,
 
 		read = attr->read(conn, attr, frag->data + frag->len, len,
 				  offset);
+
+		if (read == -EINPROGRESS) {
+			return -EINPROGRESS;
+		}
+
 		if (read < 0) {
 			if (total) {
 				return total;
@@ -1586,6 +1591,7 @@ struct read_data {
 	uint16_t offset;
 	struct net_buf *buf;
 	uint8_t err;
+	bool async;
 };
 
 static uint8_t read_cb(const struct bt_gatt_attr *attr, uint16_t handle,
@@ -1618,6 +1624,12 @@ static uint8_t read_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 
 	/* Read attribute value and store in the buffer */
 	ret = att_chan_read(chan, attr, data->buf, data->offset, NULL, NULL);
+
+	if (ret == -EINPROGRESS) {
+		data->async  = true;
+		return BT_GATT_ITER_STOP;
+	}
+
 	if (ret < 0) {
 		data->err = err_to_att(ret);
 		return BT_GATT_ITER_STOP;
@@ -1663,6 +1675,12 @@ static uint8_t att_read_rsp(struct bt_att_chan *chan, uint8_t op, uint8_t rsp,
 		net_buf_unref(data.buf);
 		/* Respond here since handle is set */
 		send_err_rsp(chan, op, handle, data.err);
+		return 0;
+	}
+
+	if (data.async) {
+		net_buf_unref(data.buf);
+		/* Async read: release buffer, app send response later */
 		return 0;
 	}
 
@@ -2029,6 +2047,7 @@ struct write_data {
 	uint16_t len;
 	uint16_t offset;
 	uint8_t err;
+	bool async;
 };
 
 static uint8_t write_cb(const struct bt_gatt_attr *attr, uint16_t handle,
@@ -2063,6 +2082,12 @@ static uint8_t write_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	/* Write attribute value */
 	write = attr->write(data->conn, attr, data->value, data->len,
 			    data->offset, flags);
+
+	if (write == -EINPROGRESS) {
+		data->async = true;
+		return BT_GATT_ITER_STOP;
+	}
+
 	if (write < 0 || write != data->len) {
 		data->err = err_to_att(write);
 		return BT_GATT_ITER_STOP;
@@ -2119,6 +2144,12 @@ static uint8_t att_write_rsp(struct bt_att_chan *chan, uint8_t req, uint8_t rsp,
 			send_err_rsp(chan, req, handle, data.err);
 		}
 		return req == BT_ATT_OP_EXEC_WRITE_REQ ? data.err : 0;
+	}
+
+	if (data.async) {
+		net_buf_unref(data.buf);
+		/* Async write: release buffer, app send response later */
+		return 0;
 	}
 
 	if (data.buf) {
