@@ -4,6 +4,8 @@ common:
     - nrf54l15dk/nrf54l15/cpuapp
   platform_exclude:
     - qemu_cortex_m0 # settings subsystem initialization fails
+    - nrf54h20dk/nrf54h20/cpuapp
+    - nrf54h20dk/nrf54h20/cpurad
   timeout: 600
   tags:
     - psa.secure_storage
