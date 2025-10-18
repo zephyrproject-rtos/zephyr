@@ -54,7 +54,30 @@ Programming and Debugging
 
 .. zephyr:board-supported-runners::
 
-Build and flash in the usual way. Here is an example for the :zephyr:code-sample:`hello_world` application.
+This board supports two deployment targets:
+
+QEMU Emulation
+==============
+
+For QEMU target, XSDB (Xilinx System Debugger) is not used and therefore PDI
+(Programmable Device Image) is not required. QEMU provides direct emulation
+without needing hardware initialization files.
+
+Build and run with QEMU:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: versalnet_rpu
+   :goals: build run
+
+Real Hardware
+=============
+
+For deployment on real Versal Net hardware, XSDB and a PDI file are required.
+The PDI file contains the hardware initialization and boot configuration needed
+for the physical device.
+
+Build and flash to real hardware:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
