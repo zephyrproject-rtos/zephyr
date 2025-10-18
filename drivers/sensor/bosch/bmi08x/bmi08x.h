@@ -14,6 +14,8 @@
 #include <zephyr/drivers/spi.h>
 #include <zephyr/sys/util.h>
 
+#include "bmi08x_bus.h"
+
 /* Accel Chip Id register */
 #define BMI08X_REG_ACCEL_CHIP_ID 0x00
 
@@ -65,6 +67,15 @@
 /* Sensor temperature LSB data register */
 #define BMI08X_REG_TEMP_LSB 0x23
 
+/* Accel FIFO Length (low byte) */
+#define BMI08X_REG_ACCEL_FIFO_LEN_0 0x24
+
+/* Accel FIFO Length (high byte) */
+#define BMI08X_REG_ACCEL_FIFO_LEN_1 0x25
+
+/* Accel FIFO Data register */
+#define BMI08X_REG_ACCEL_FIFO_DATA 0x26
+
 /* Accel general purpose register 4*/
 #define BMI08X_REG_ACCEL_GP_4 0x27
 
@@ -76,6 +87,18 @@
 
 /* Accel range setting register */
 #define BMI08X_REG_ACCEL_RANGE 0x41
+
+/* Accel FIFO Watermark (low byte) */
+#define BMI08X_REG_ACCEL_FIFO_WTM_0 0x46
+
+/* Accel FIFO Watermark (high byte) */
+#define BMI08X_REG_ACCEL_FIFO_WTM_1 0x47
+
+/* Accel FIFO Config (FIFO mode) */
+#define BMI08X_REG_ACCEL_FIFO_CONFIG_0 0x48
+
+/* Accel FIFO Config (Interrupt enabling) */
+#define BMI08X_REG_ACCEL_FIFO_CONFIG_1 0x49
 
 /* Accel Interrupt pin 1 configuration register */
 #define BMI08X_REG_ACCEL_INT1_IO_CONF 0x53
@@ -262,6 +285,9 @@
 /* Gyro Interrupt status register */
 #define BMI08X_REG_GYRO_INT_STAT_1 0x0A
 
+/* FIFO Status register (Overrun and Frame counter) */
+#define BMI08X_REG_FIFO_STATUS 0x0E
+
 /* Gyro Range register */
 #define BMI08X_REG_GYRO_RANGE 0x0F
 
@@ -283,8 +309,20 @@
 /* Gyro Interrupt Map register */
 #define BMI08X_REG_GYRO_INT3_INT4_IO_MAP 0x18
 
+/* FIFO Watermark enable */
+#define BMI08X_REG_GYRO_FIFO_WM_EN 0x1E
+
 /* Gyro Self test register */
 #define BMI08X_REG_GYRO_SELF_TEST 0x3C
+
+/* FIFO Config register (FIFO Watermark) */
+#define BMI08X_REG_GYRO_FIFO_CONFIG_0 0x3D
+
+/* FIFO Config register  (FIFO Mode) */
+#define BMI08X_REG_GYRO_FIFO_CONFIG_1 0x3E
+
+/* FIFO Data register */
+#define BMI08X_REG_GYRO_FIFO_DATA 0x3F
 
 /* Gyro unique chip identifier */
 #define BMI08X_GYRO_CHIP_ID 0x0F
@@ -469,8 +507,9 @@ struct bmi08x_gyro_bus_io {
 struct bmi08x_accel_config {
 	union bmi08x_bus bus;
 	const struct bmi08x_accel_bus_io *api;
-#if defined(CONFIG_BMI08X_ACCEL_TRIGGER)
 	struct gpio_dt_spec int_gpio;
+#if defined(CONFIG_SENSOR_ASYNC_API)
+	struct bmi08x_rtio_bus rtio_bus;
 #endif
 #if defined(CONFIG_BMI08X_ACCEL_TRIGGER) || BMI08X_ACCEL_ANY_INST_HAS_DATA_SYNC
 	uint8_t int1_map;
@@ -488,8 +527,9 @@ struct bmi08x_accel_config {
 struct bmi08x_gyro_config {
 	union bmi08x_bus bus;
 	const struct bmi08x_gyro_bus_io *api;
-#if defined(CONFIG_BMI08X_GYRO_TRIGGER)
 	struct gpio_dt_spec int_gpio;
+#if defined(CONFIG_SENSOR_ASYNC_API)
+	struct bmi08x_rtio_bus rtio_bus;
 #endif
 #if defined(CONFIG_BMI08X_GYRO_TRIGGER) || BMI08X_GYRO_ANY_INST_HAS_DATA_SYNC
 	uint8_t int3_4_map;
@@ -500,11 +540,20 @@ struct bmi08x_gyro_config {
 };
 
 struct bmi08x_accel_data {
-#if defined(CONFIG_BMI08X_ACCEL_TRIGGER)
+	const struct device *dev;
+#if defined(CONFIG_BMI08X_ACCEL_TRIGGER) || defined(CONFIG_SENSOR_ASYNC_API)
 	struct gpio_callback gpio_cb;
 #endif
 	uint16_t acc_sample[3];
 	uint16_t scale; /* micro m/s^2/lsb */
+	uint16_t range;
+#if defined(CONFIG_SENSOR_ASYNC_API)
+	struct {
+		struct rtio_iodev_sqe *iodev_sqe;
+		atomic_t state;
+		uint8_t fifo_wm;
+	} stream;
+#endif
 
 #if defined(CONFIG_BMI08X_ACCEL_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_BMI08X_ACCEL_THREAD_STACK_SIZE);
@@ -512,7 +561,6 @@ struct bmi08x_accel_data {
 	struct k_sem sem;
 #elif defined(CONFIG_BMI08X_ACCEL_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	const struct device *dev;
 #endif
 
 #ifdef CONFIG_BMI08X_ACCEL_TRIGGER
@@ -523,11 +571,20 @@ struct bmi08x_accel_data {
 };
 
 struct bmi08x_gyro_data {
-#if defined(CONFIG_BMI08X_GYRO_TRIGGER)
+	const struct device *dev;
+#if defined(CONFIG_BMI08X_GYRO_TRIGGER) || defined(CONFIG_SENSOR_ASYNC_API)
 	struct gpio_callback gpio_cb;
 #endif
 	uint16_t gyr_sample[3];
 	uint16_t scale; /* micro radians/s/lsb */
+	uint16_t range;
+#if defined(CONFIG_SENSOR_ASYNC_API)
+	struct {
+		struct rtio_iodev_sqe *iodev_sqe;
+		atomic_t state;
+		uint8_t fifo_wm;
+	} stream;
+#endif
 
 #if defined(CONFIG_BMI08X_GYRO_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_BMI08X_GYRO_THREAD_STACK_SIZE);
@@ -535,7 +592,6 @@ struct bmi08x_gyro_data {
 	struct k_sem sem;
 #elif defined(CONFIG_BMI08X_GYRO_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	const struct device *dev;
 #endif
 
 #ifdef CONFIG_BMI08X_GYRO_TRIGGER
@@ -543,6 +599,62 @@ struct bmi08x_gyro_data {
 	const struct sensor_trigger *drdy_trig_gyr;
 #endif /* CONFIG_BMI08X_GYRO_TRIGGER */
 };
+
+struct bmi08x_accel_frame {
+	uint8_t header;
+	union {
+		struct {
+			uint16_t payload[3];
+		} accel;
+		struct {
+			uint8_t skipped_frames;
+		} skip;
+		struct {
+			uint8_t time[3];
+		} sensortime;
+		struct {
+			uint8_t change;
+		} fifo_config;
+	};
+} __packed;
+
+struct bmi08x_gyro_frame {
+	uint16_t payload[3];
+} __packed;
+
+struct bmi08x_accel_encoded_data {
+	struct {
+		uint64_t timestamp;
+		uint16_t range;
+		uint8_t chip_id;
+		bool has_accel;
+		bool is_streaming;
+		uint16_t fifo_len;
+		uint8_t sample_count;
+		uint16_t buf_len;
+	} header;
+	union {
+		uint16_t payload[3];
+		uint8_t fifo[0]; /* Left as bytes since it can contain multiple frames */
+	};
+};
+
+struct bmi08x_gyro_encoded_data {
+	struct {
+		uint64_t timestamp;
+		uint16_t range;
+		bool has_gyro;
+		bool is_streaming;
+		uint8_t int_status;
+		uint8_t fifo_status;
+		uint8_t sample_count;
+	} header;
+	union {
+		struct bmi08x_gyro_frame frame;
+		struct bmi08x_gyro_frame fifo[0];
+	} __packed;
+};
+
 
 /* common functions for accel and gyro */
 int bmi08x_freq_to_odr_val(uint16_t freq_int, uint16_t freq_milli);
