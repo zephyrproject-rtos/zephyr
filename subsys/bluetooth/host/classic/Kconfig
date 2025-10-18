@@ -505,6 +505,17 @@ config BT_AVRCP_CONTROLLER
 	help
 	  This option enables the AVRCP profile controller function
 
+config BT_AVRCP_VENDOR_RX_DATA_BUF_SIZE
+	int "AVRCP Vendor Dependent RX data buffer Size"
+	default 1024
+	range 1024 $(INT16_MAX)
+	help
+	  Size of the AVRCP Vendor Dependent RX data buffer in bytes.
+	  This buffer is used for reassembling fragmented AVRCP Vendor Dependent
+	  commands and responses received from the remote device. If the remote
+	  sends large Vendor-specific PDUs or frequent fragmentation occurs,
+	  consider increasing this value to avoid incomplete message handling.
+
 config BT_AVRCP_BROWSING
 	bool "Bluetooth AVRCP Browsing channel support [EXPERIMENTAL]"
 	select EXPERIMENTAL
