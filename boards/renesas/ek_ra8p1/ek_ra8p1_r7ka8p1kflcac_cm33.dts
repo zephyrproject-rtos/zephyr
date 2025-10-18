@@ -15,6 +15,8 @@
 	chosen {
 		zephyr,sram = &sram1;
 		zephyr,flash = &code_mram_cm33;
+		zephyr,flash-controller = &mram_ctrl;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &uart9;
 		zephyr,shell-uart = &uart9;
 	};
@@ -102,6 +104,39 @@
 
 	timer {
 		status = "okay";
+	};
+};
+
+&code_mram_cm33 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 DT_SIZE_K(44)>;
+		};
+
+		slot0_partition: partition@b000 {
+			label = "image-0";
+			reg = <0xb000 DT_SIZE_K(98)>;
+		};
+
+		slot1_partition: partition@23800 {
+			label = "image-1";
+			reg = <0x23800 DT_SIZE_K(98)>;
+		};
+
+		scratch_partition: partition@3c000 {
+			label = "image-scratch";
+			reg = <0x3c000 DT_SIZE_K(8)>;
+		};
+
+		storage_partition: partition@3e000 {
+			label = "storage";
+			reg = <0x3e000 DT_SIZE_K(8)>;
+		};
 	};
 };
 

@@ -73,7 +73,7 @@
 			status = "okay";
 		};
 
-		mram: mram-controller@4013c000 {
+		mram_ctrl: mram-controller@4013c000 {
 			compatible = "renesas,ra-mram-controller";
 			reg = <0x4013c000 0x4000>;
 			#address-cells = <1>;

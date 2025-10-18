@@ -16,6 +16,8 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &code_mram_cm85;
+		zephyr,flash-controller = &mram_ctrl;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &uart8;
 		zephyr,shell-uart = &uart8;
 	};
@@ -128,6 +130,39 @@
 	clocks = <&pclka MSTPC 16>, <&cam_clock 0>;
 	clock-names = "pclk", "cam-xclk";
 	burst-transfer = <256>;
+};
+
+&code_mram_cm85 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 DT_SIZE_K(64)>;
+		};
+
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x10000 DT_SIZE_K(272)>;
+		};
+
+		slot1_partition: partition@54000 {
+			label = "image-1";
+			reg = <0x54000 DT_SIZE_K(272)>;
+		};
+
+		scratch_partition: partition@98000 {
+			label = "image-scratch";
+			reg = <0x98000 DT_SIZE_K(16)>;
+		};
+
+		storage_partition: partition@9c000 {
+			label = "storage";
+			reg = <0x9c000 DT_SIZE_K(16)>;
+		};
+	};
 };
 
 zephyr_lcdif: &lcdif {};
