@@ -28,6 +28,8 @@ uint32_t SystemCoreClock BSP_SECTION_EARLY_INIT;
 
 volatile uint32_t g_protect_pfswe_counter BSP_SECTION_EARLY_INIT;
 
+extern void cold_start_handler(void);
+
 /**
  * @brief Perform basic hardware initialization at boot.
  *
@@ -91,6 +93,7 @@ void soc_early_init_hook(void)
 	R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_SAR);
 #endif
 #endif /*CONFIG_CPU_CORTEX_M33*/
+	cold_start_handler();
 }
 
 #ifdef CONFIG_SOC_LATE_INIT_HOOK
