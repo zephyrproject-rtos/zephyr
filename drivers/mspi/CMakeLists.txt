@@ -8,3 +8,8 @@ zephyr_library_sources_ifdef(CONFIG_MSPI_AMBIQ_AP5   mspi_ambiq_ap5.c)
 zephyr_library_sources_ifdef(CONFIG_MSPI_AMBIQ_TIMING_SCAN mspi_ambiq_timing_scan.c)
 zephyr_library_sources_ifdef(CONFIG_MSPI_DW          mspi_dw.c)
 zephyr_library_sources_ifdef(CONFIG_MSPI_EMUL        mspi_emul.c)
+zephyr_library_sources_ifdef(CONFIG_MSPI_STM32_OSPI  mspi_stm32_ospi.c)
+zephyr_library_sources_ifdef(CONFIG_MSPI_STM32_QSPI  mspi_stm32_qspi.c)
+zephyr_library_sources_ifdef(CONFIG_MSPI_STM32_XSPI  mspi_stm32_xspi.c)
+
+zephyr_include_directories(${ZEPHYR_BASE}/drivers/flash)

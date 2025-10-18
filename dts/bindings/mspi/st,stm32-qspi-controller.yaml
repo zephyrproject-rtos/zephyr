@@ -1,0 +1,76 @@
+# Copyright (c) 2025 EXALT Technologies.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 QSPI controller representation for MSPI interface. Enabling a stm32 qspi node
+  in a board description would typically require this: (pinning depends on the stm32 mcu)
+
+      &qspi {
+          pinctrl-0 = <&quadspi_clk_pe10 &quadspi_ncs_pe11
+                       &quadspi_io0_pe12 &quadspi_io1_pe13
+                       &quadspi_io2_pe14 &quadspi_io3_pe15>;
+
+          dmas = <&dma1 5 41 0x10000>;
+          dma-names = "tx_rx";
+
+          status = "okay";
+      };
+
+compatible: "st,stm32-qspi-controller"
+
+include: [base.yaml, pinctrl-device.yaml, mspi-controller.yaml]
+
+bus: mspi
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  clock-names:
+    required: true
+
+  dmas:
+    description: |
+      Optional DMA channel specifier, required for DMA transactions.
+      For example dmas for TX/RX on QSPI
+         dmas = <&dma1 5 41 0x10000>;
+
+      With, in each cell of the dmas specifier:
+      - &dma1: dma controller phandle
+      - 5: channel number (0 to Max-Channel minus 1). From 0 to 15 on stm32u5x.
+      - 41: slot number (request which could be given by the DMAMUX)
+      - 0x10000: channel configuration (only for src/dest data size, priority)
+
+      Notes:
+        - On series supporting DMAMUX, the DMA phandle should be provided
+          but DMAMUX node should also be enabled in the DTS.
+        - For channel configuration, only the config bits priority and
+          periph/mem datasize are used. The periph/mem datasize must be equal,
+          0 is a correct value.
+        - There is no Fifo used by this DMA peripheral.
+
+      For example dmas for TX/RX on QSPI
+         dmas = <&dma1 5 41 0x10000>;
+
+  dma-names:
+    description: |
+      DMA channel name. If DMA should be used, expected value is "tx_rx".
+
+      For example
+         dma-names = "tx_rx";
+
+  ssht-enable:
+    type: boolean
+    description: |
+      Enables Sample Shifting half-cycle.
+
+      It is recommended to be enabled in STR mode and disabled in DTR mode.
