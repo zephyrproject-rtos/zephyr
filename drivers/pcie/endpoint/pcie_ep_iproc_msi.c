@@ -132,7 +132,7 @@ static bool is_msix_vector_mask(const int msix_num)
 /* Below function will be called from interrupt context */
 static int generate_pending_msix(const struct device *dev, const int msix_num)
 {
-	int is_msix_pending;
+	bool is_msix_pending;
 	struct iproc_pcie_ep_ctx *ctx = dev->data;
 	k_spinlock_key_t key;
 
@@ -144,8 +144,8 @@ static int generate_pending_msix(const struct device *dev, const int msix_num)
 
 	key = k_spin_lock(&ctx->pba_lock);
 
-	is_msix_pending = sys_test_bit(PBA_OFFSET(msix_num),
-				       PENDING_BIT(msix_num));
+	is_msix_pending = sys_io_test_bit(PBA_OFFSET(msix_num),
+					  PENDING_BIT(msix_num));
 
 	/* check if vector mask bit is cleared for pending msix */
 	if (is_msix_pending && !(is_msix_vector_mask(msix_num))) {
@@ -193,8 +193,8 @@ void iproc_pcie_func_mask_isr(void *arg)
 void iproc_pcie_vector_mask_isr(void *arg)
 {
 	const struct device *dev = arg;
-	int msix_table_update = sys_test_bit(PMON_LITE_PCIE_INTERRUPT_STATUS,
-					     WR_ADDR_CHK_INTR_EN);
+	bool msix_table_update = sys_io_test_bit(PMON_LITE_PCIE_INTERRUPT_STATUS,
+						 WR_ADDR_CHK_INTR_EN);
 
 	LOG_DBG("%s: %x\n", __func__,
 		sys_read32(PMON_LITE_PCIE_INTERRUPT_STATUS));

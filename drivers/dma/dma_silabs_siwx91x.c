@@ -531,7 +531,7 @@ static int siwx91x_dma_get_status(const struct device *dev, uint32_t channel,
 	}
 
 	/* Read the channel status register */
-	stat->busy = sys_test_bit((mem_addr_t)&cfg->reg->CHANNEL_STATUS_REG, channel);
+	stat->busy = sys_io_test_bit((mem_addr_t)&cfg->reg->CHANNEL_STATUS_REG, channel);
 
 	/* Obtain the transfer direction from channel descriptors */
 	if (udma_table[channel].vsUDMAChaConfigData1.srcInc == UDMA_SRC_INC_NONE) {

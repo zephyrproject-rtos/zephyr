@@ -121,6 +121,36 @@ static ALWAYS_INLINE
 	return ret;
 }
 
+/* Archtectures X86 and ARC v2 implement their own sys_io_test_bit() function */
+#if !(defined(CONFIG_X86) && !defined(CONFIG_X86_64)) && !defined(CONFIG_ISA_ARCV2)
+static ALWAYS_INLINE int sys_io_test_bit(mem_addr_t addr, unsigned int bit)
+{
+	uint32_t temp = *(volatile uint32_t *)addr;
+
+	return (int)((temp >> bit) & 1U);
+}
+
+static ALWAYS_INLINE int sys_io_test_and_set_bit(mem_addr_t addr, unsigned int bit)
+{
+	uint32_t temp = *(volatile uint32_t *)addr;
+	int ret = (int)((temp >> bit) & 1U);
+
+	*(volatile uint32_t *)addr = temp | (1U << bit);
+
+	return ret;
+}
+
+static ALWAYS_INLINE int sys_io_test_and_clear_bit(mem_addr_t addr, unsigned int bit)
+{
+	uint32_t temp = *(volatile uint32_t *)addr;
+	int ret = (int)((temp >> bit) & 1U);
+
+	*(volatile uint32_t *)addr = temp & ~(1U << bit);
+
+	return ret;
+}
+#endif /*  !(CONFIG_X86 && !CONFIG_X86_64) && !CONFIG_ISA_ARCV2 */
+
 #ifdef __cplusplus
 }
 #endif
