@@ -1,0 +1,27 @@
+menu "Zephyr"
+
+config MAIN_STACK_SIZE
+	int "MAIN_STACK_SIZE"
+	default 4096
+
+config ISR_STACK_SIZE
+	int "ISR_STACK_SIZE"
+	default 4096
+
+config IDLE_STACK_SIZE
+	int "IDLE_STACK_SIZE"
+	default 1024
+
+config UART_USE_RUNTIME_CONFIGURE
+	bool	"UART_USE_RUNTIME_CONFIGURE"
+	default n
+	
+config UART_INTERRUPT_DRIVEN
+	bool	"UART_INTERRUPT_DRIVEN"
+	default n
+	
+config UART_ASYNC_API
+	bool	"UART_ASYNC_API"
+	default n
+
+endmenu
