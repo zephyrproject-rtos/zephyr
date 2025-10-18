@@ -23,5 +23,6 @@ struct timeval {
 	time_t tv_sec;
 	suseconds_t tv_usec;
 };
+#define __timeval_defined
 
 #endif /* ZEPHYR_LIB_LIBC_IAR_INCLUDE_SYS__TIMEVAL_H_ */

@@ -1,0 +1,24 @@
+# Copyright (c) 2025 Tenstorrent AI ULC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig XSI
+	bool "X/Open System Interfaces (XSI)"
+	select POSIX_FSYNC
+	select POSIX_THREAD_ATTR_STACKADDR
+	select POSIX_THREAD_ATTR_STACKSIZE
+	help
+	  For more information, please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap02.html#tag_02_01_04_01
+
+if XSI
+
+# zephyr-keep-sorted-start
+rsource "Kconfig.xsi_realtime"
+rsource "Kconfig.xsi_single_process"
+rsource "Kconfig.xsi_streams"
+rsource "Kconfig.xsi_system_logging"
+rsource "Kconfig.xsi_threads_ext"
+# zephyr-keep-sorted-stop
+
+endif # XSI

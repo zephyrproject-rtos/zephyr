@@ -1075,6 +1075,7 @@ ZTEST(libc_common, test_time_gmtime)
  */
 ZTEST(libc_common, test_time_asctime)
 {
+	char *s;
 	char buf[26] = {0};
 	struct tm tp = {
 		.tm_sec = 10,   /* Seconds */
@@ -1086,11 +1087,12 @@ ZTEST(libc_common, test_time_asctime)
 		.tm_year = 124, /* Year (current year - 1900) */
 	};
 
-	zassert_not_null(asctime_r(&tp, buf));
-	zassert_equal(strncmp("Fri Jun  1 14:30:10 2024\n", buf, sizeof(buf)), 0);
+	s = asctime_r(&tp, buf);
+	zassert_equal(s, buf);
+	zassert_str_equal("Fri Jun  1 14:30:10 2024\n", buf);
 
-	zassert_not_null(asctime(&tp));
-	zassert_equal(strncmp("Fri Jun  1 14:30:10 2024\n", asctime(&tp), sizeof(buf)), 0);
+	s = asctime(&tp);
+	zassert_str_equal("Fri Jun  1 14:30:10 2024\n", s);
 
 	if (IS_ENABLED(CONFIG_COMMON_LIBC_ASCTIME_R)) {
 		tp.tm_wday = 8;

@@ -24,8 +24,8 @@
 
 #else
 
-#include <zephyr/posix/fcntl.h>
-#include <zephyr/posix/sys/select.h>
+#include <fcntl.h>
+#include <sys/select.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/kernel.h>
 

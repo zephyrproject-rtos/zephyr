@@ -6,11 +6,7 @@
 
 #include "_common.h"
 
-#ifdef CONFIG_POSIX_API
 #include <sys/time.h>
-#else
-#include <zephyr/posix/sys/time.h>
-#endif
 
 /**
  * @brief existence test for `<sys/time.h>`
