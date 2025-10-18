@@ -109,15 +109,6 @@ properties:
       ists within the current system setup that triggers the transmission
       of packets from within the context of the system work queue!
 
-  amba-ahb-dbus-width:
-    type: int
-    required: true
-    description: AMBA AHB data bus width.
-    enum:
-      - 0
-      - 1
-      - 2
-
   amba-ahb-burst-length:
     type: int
     required: true
