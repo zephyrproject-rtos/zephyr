@@ -14,6 +14,7 @@
 
 #define SHT4X_RESET_WAIT_MS	1
 #define SHT4X_POR_WAIT_MS	1
+#define SHT4X_CMD_WAIT_MS	1
 
 #define SHT4X_HEATER_POWER_IDX_MAX	3
 #define SHT4X_HEATER_DURATION_IDX_MAX	2
@@ -35,6 +36,7 @@ struct sht4x_data {
 	uint16_t rh_sample;
 	uint8_t heater_power;
 	uint8_t heater_duration;
+	uint32_t unique_id;
 };
 
 static const uint8_t measure_cmd[3] = {
