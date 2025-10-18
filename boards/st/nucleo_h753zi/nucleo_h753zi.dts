@@ -248,28 +248,22 @@ zephyr_udc0: &usbotg_fs {
 			read-only;
 		};
 
-		/* storage: 128KB for settings */
-		storage_partition: partition@20000 {
-			label = "storage";
-			reg = <0x00020000 DT_SIZE_K(128)>;
-		};
-
 		/* application image slot: 256KB */
-		slot0_partition: partition@40000 {
+		slot0_partition: partition@20000 {
 			label = "image-0";
-			reg = <0x00040000 DT_SIZE_K(256)>;
+			reg = <0x00020000 DT_SIZE_K(256)>;
 		};
 
 		/* backup slot: 256KB */
-		slot1_partition: partition@80000 {
+		slot1_partition: partition@60000 {
 			label = "image-1";
-			reg = <0x00080000 DT_SIZE_K(256)>;
+			reg = <0x00060000 DT_SIZE_K(256)>;
 		};
 
-		/* swap slot: 128KB */
-		scratch_partition: partition@c0000 {
-			label = "image-scratch";
-			reg = <0x000c0000 DT_SIZE_K(128)>;
+		/* storage: 256KB for settings */
+		storage_partition: partition@a0000 {
+			label = "storage";
+			reg = <0x000a0000 DT_SIZE_K(256)>;
 		};
 	};
 };
