@@ -21,3 +21,6 @@ properties:
 
       Driver waits in clock on API to check if the clock is actually on,
       so that the waiting time is not indefinite.
+
+# flash wait states need not be changed for this device, since automatic wait state generation
+# is enabled by default.
