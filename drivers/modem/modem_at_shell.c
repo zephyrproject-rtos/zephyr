@@ -117,7 +117,6 @@ static int at_shell_init(void)
 {
 	at_shell_init_chat();
 	at_shell_init_script_chat();
-	modem_at_user_pipe_init(&at_shell_chat);
 	return 0;
 }
 
@@ -131,7 +130,7 @@ static int at_shell_cmd_handler(const struct shell *sh, size_t argc, char **argv
 		return -EINVAL;
 	}
 
-	ret = modem_at_user_pipe_claim();
+	ret = modem_at_user_pipe_claim(&at_shell_chat);
 	if (ret < 0) {
 		switch (ret) {
 		case -EPERM:
