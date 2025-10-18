@@ -1,0 +1,184 @@
+/*
+ * Copyright (c) 2024 ELAN Microelectronics Corp.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/clock/em32_clock.h>
+#include <zephyr/dt-bindings/pinctrl/em32f967-pinctrl.h>
+#include <mem.h>
+
+/ {
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv7m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+		reg = <0x20000000 DT_SIZE_K(448)>;
+	};
+
+    clocks {
+		#size-cells = <0>;
+
+        clk_ahb: clk-ahb {
+            compatible = "elan,em32-ahb";
+			#clock-cells = <0>;
+            clock-source = <EM32_CLK_SRC_IRCHIGH>;
+            clock-frequency = <EM32_CLK_FREQ_IRCHIGH96>;
+            clock-divider = <EM32_AHB_CLK_DIV1>;
+			status = "disabled";
+		};
+
+		clk_apb: clk-apb {
+            compatible = "elan,em32-apb";
+			#clock-cells = <0>;
+			clocks = <&clk_ahb>;
+			status = "disabled";
+		};
+	};
+
+	soc { 
+		/* Pin Controller */
+		pinctrl: pin-controller@40030200 {
+			compatible = "elan,em32-pinctrl";
+			reg = <0x40030200 0x100>;
+			reg-names = "iomux";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			#pinctrl-cells = <1>;
+			status = "okay";
+		
+
+			/* GPIO Controllers - EM32F967 hardware */
+			gpioa: gpio@40020000 {
+				compatible = "elan,em32-gpio";
+				reg = <0x40020000 0x1000>;
+				port-id = <0>;
+				interrupts = <0 0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				clocks = <&clk_ahb>;
+				status = "disabled";
+			};
+
+			gpiob: gpio@40021000 {
+				compatible = "elan,em32-gpio";
+				reg = <0x40021000 0x1000>;
+				port-id = <1>;
+				interrupts = <1 0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				clocks = <&clk_ahb>;
+				status = "disabled";
+			};
+
+			uart0: serial@40002000 {
+				compatible = "elan,elandev-uart";
+				reg = <0x40002000 0x4c>;
+				clocks = <&clk_apb>;
+				status = "disabled";
+			};
+
+			spi2: spi@40013000 {
+                compatible = "elan,elandev-spi2";
+                reg = <0x40013000 0x1000>;
+                #address-cells = <1>;
+                #size-cells = <0>;
+				interrupts = <25 0>;
+				clocks = <&clk_apb>;
+                status = "disabled";
+           	};
+		};
+
+        em32_flash_controller: flash-controller@40034000 {
+            compatible = "elan,em32-flash-controller";
+            reg = <0x40034000 DT_SIZE_K(4)>;
+            status = "disabled";
+
+            #address-cells = <1>;
+            #size-cells = <1>;
+
+            flash0: flash@10000000 {
+                compatible = "soc-nv-flash";
+                reg = <0x10000000 DT_SIZE_K(536)>;
+                erase-block-size = <DT_SIZE_K(8)>;
+                write-block-size = <16>;
+            };
+
+            flash1: flash@10094000 {
+                compatible = "mcuboot";
+                reg = <0x10094000 DT_SIZE_K(48)>;
+            };
+        };
+
+		usbd: usbd@40038000 {
+			compatible = "elan,elandev-usbd";
+			reg = <0x40038000 0x1000>;
+			num-bidir-endpoints = <5>;
+		};
+
+		uid: device_uid@40030f00 {
+			compatible = "elan,em32-uid";
+            reg = <0x40030f00 0x4 /* Chip ID */
+                   0x100A6020 0x4 /* Device ID */
+				   0x100A6024 0x4 /* IC Version */>;
+            reg-names = "chip_id", "device_id", "ic_version";
+			status = "disabled";
+		};
+                bbram0: bbram@40033000 {
+                        compatible = "elan,em32-bbram";
+                        reg = <0x40033000 0x40>;
+                        backup-regs-count = <16>;
+                        status = "disabled";
+                };
+		trng0: trng@40018000 {
+			compatible = "elan,em32-trng";
+			reg = <0x40018000 0x100>;
+			interrupts = <41 0>;
+			clocks = <&clk_apb>;
+			status = "disabled";
+		};
+		wdt0: watchdog@40035000 {
+                        compatible = "elan,em32-wdt";
+                        reg = <0x40035000 0x1000>;
+                        interrupts = <2 0>;
+                        clocks = <&clk_apb>;
+                        status = "disabled";
+                };
+
+		crypto0: crypto@40016000 {
+			compatible = "elan,em32-crypto";
+			reg = <0x40016000 0x1000>;
+			interrupts = <40 0>;
+			clocks = <&clk_apb>;
+			status = "disabled";
+		};
+
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
