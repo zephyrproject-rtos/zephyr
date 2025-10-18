@@ -9,6 +9,8 @@
 
 #include <sys/_timespec.h>
 
+#define _TIMESPEC_DECLARED
+
 struct itimerspec {
 	struct timespec it_interval;  /* Timer interval */
 	struct timespec it_value;     /* Timer expiration */

@@ -6,11 +6,7 @@
 
 #include "_common.h"
 
-#ifdef CONFIG_POSIX_API
 #include <dirent.h>
-#else
-#include <zephyr/posix/dirent.h>
-#endif
 
 /**
  * @brief existence test for `<dirent.h>`

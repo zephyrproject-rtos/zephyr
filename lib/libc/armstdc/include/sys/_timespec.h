@@ -13,5 +13,6 @@ struct timespec {
 	time_t tv_sec;
 	long tv_nsec;
 };
+#define __timespec_defined
 
 #endif /* ZEPHYR_LIB_LIBC_ARMSTDC_INCLUDE_SYS__TIMESPEC_H_ */
