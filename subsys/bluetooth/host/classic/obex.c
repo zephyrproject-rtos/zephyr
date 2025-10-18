@@ -97,7 +97,7 @@ static bool bt_obex_has_header_cb(struct bt_obex_hdr *hdr, void *user_data)
 	return true;
 }
 
-static bool bt_obex_has_header(struct net_buf *buf, uint8_t id)
+bool bt_obex_has_header(struct net_buf *buf, uint8_t id)
 {
 	struct bt_obex_has_header data;
 	int err;
@@ -2479,7 +2479,7 @@ static bool bt_obex_unicode_is_valid(uint16_t len, const uint8_t *str)
 	return true;
 }
 
-static bool bt_obex_string_is_valid(uint8_t id, uint16_t len, const uint8_t *str)
+bool bt_obex_string_is_valid(uint8_t id, uint16_t len, const uint8_t *str)
 {
 	if (BT_OBEX_HEADER_ENCODING(id) == BT_OBEX_HEADER_ENCODING_UNICODE) {
 		return bt_obex_unicode_is_valid(len, str);
