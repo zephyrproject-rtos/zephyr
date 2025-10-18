@@ -1,0 +1,37 @@
+# Renesas RZ Family
+
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_RENESAS_RZ_QSPI_XSPI
+	bool "Renesas RZ Quad-SPI XSPI driver"
+	default y
+	depends on DT_HAS_RENESAS_RZ_QSPI_XSPI_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+	select USE_RZ_FSP_QSPI_XSPI
+	select FLASH_JESD216
+	select PINCTRL
+	help
+	  Enable Quad-SPI XSPI Nor flash driver for RZ series
+
+config FLASH_RENESAS_RZ_QSPI_SPIBSC
+	bool "Renesas RZ Quad-SPI SPIBSC driver"
+	default y
+	depends on DT_HAS_RENESAS_RZ_QSPI_SPIBSC_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+	select USE_RZ_FSP_QSPI_SPIBSC
+	select FLASH_JESD216
+	select PINCTRL
+	help
+	  Enable Quad-SPI SPIBSC Nor flash driver for RZ series
+
+config FLASH_RENESAS_RZ_MIRROR_OFFSET
+	hex
+	default 0x0 if SOC_SERIES_RZA3UL
+	default 0x20000000 if SOC_SERIES_RZT2M || SOC_SERIES_RZN2L
+	help
+	  Offset of mirror area in flash memory
