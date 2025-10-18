@@ -3,5 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-add_subdirectory(common)
-add_subdirectory(${SOC_SERIES})
+config SOC_FAMILY_MICROCHIP_SAMA7
+	select MICROCHIP_SAM
+	select ARM
+	select CPU_CORTEX_A7
+	select MMU
