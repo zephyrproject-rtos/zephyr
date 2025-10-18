@@ -18,6 +18,7 @@ supported:
   - counter
   - entropy
   - input
+  - retained_mem
 testing:
   ignore_tags:
     - bluetooth

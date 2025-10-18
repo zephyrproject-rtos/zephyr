@@ -26,6 +26,14 @@
 #define SRAM2_DRAM_USER_START (SRAM2_DRAM_START + SRAM2_DRAM_SHM_SIZE)
 #define SRAM2_DRAM_USER_SIZE  (SRAM2_DRAM_END - SRAM2_DRAM_USER_START)
 
+/* RTC SLOW RAM (8kB) */
+#define RCT_SLOW_RAM_START DT_REG_ADDR(DT_NODELABEL(rtc_slow_ram))
+#define RCT_SLOW_RAM_SIZE  DT_REG_SIZE(DT_NODELABEL(rtc_slow_ram))
+
+/* RTC FAST RAM (8kB) */
+#define RCT_FAST_RAM_START DT_REG_ADDR(DT_NODELABEL(rtc_fast_ram))
+#define RCT_FAST_RAM_SIZE  DT_REG_SIZE(DT_NODELABEL(rtc_fast_ram))
+
 /** Simplified memory map for the bootloader.
  *  Make sure the bootloader can load into main memory without overwriting itself.
  *

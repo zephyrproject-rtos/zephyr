@@ -20,6 +20,7 @@ supported:
   - input
   - can
   - dma
+  - retained_mem
 testing:
   ignore_tags:
     - bluetooth

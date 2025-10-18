@@ -100,6 +100,12 @@
 			zephyr,memory-region = "SRAM1";
 		};
 
+		rtc_fast_ram: memory@50000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x50000000 DT_SIZE_K(8)>;
+			zephyr,memory-region = "RTC_FAST_RAM";
+		};
+
 		intc: interrupt-controller@600c2000 {
 			compatible = "espressif,esp32-intc";
 			#address-cells = <0>;
