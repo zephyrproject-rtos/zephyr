@@ -125,10 +125,10 @@ void lll_scan_prepare(void *param)
 	int err;
 
 	err = lll_hfclock_on();
-	LL_ASSERT(err >= 0);
+	LL_ASSERT_ERR(err >= 0);
 
 	err = lll_prepare(is_abort_cb, abort_cb, prepare_cb, 0, param);
-	LL_ASSERT(!err || err == -EINPROGRESS);
+	LL_ASSERT_ERR(!err || err == -EINPROGRESS);
 }
 
 void lll_scan_isr_resume(void *param)
@@ -391,7 +391,7 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
-	LL_ASSERT(node_rx);
+	LL_ASSERT_DBG(node_rx);
 
 	radio_pkt_rx_set(node_rx->pdu);
 
@@ -497,8 +497,8 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 				   ticks_at_event, lll->ticks_window, TICKER_NULL_PERIOD,
 				   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY, TICKER_NULL_SLOT,
 				   ticker_stop_cb, lll, ticker_op_start_cb, (void *)__LINE__);
-		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-			  (ret == TICKER_STATUS_BUSY));
+		LL_ASSERT_ERR((ret == TICKER_STATUS_SUCCESS) ||
+			      (ret == TICKER_STATUS_BUSY));
 	}
 
 #if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
@@ -515,12 +515,12 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 
 		retval = mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_ULL_LOW, 1U,
 					&mfy_after_cen_offset_get);
-		LL_ASSERT(!retval);
+		LL_ASSERT_ERR(!retval);
 	}
 #endif /* CONFIG_BT_CENTRAL && CONFIG_BT_CTLR_SCHED_ADVANCED */
 
 	ret = lll_prepare_done(lll);
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
 
 	DEBUG_RADIO_START_O(1);
 
@@ -561,7 +561,7 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 
 				/* Retain HF clock */
 				err = lll_hfclock_on();
-				LL_ASSERT(err >= 0);
+				LL_ASSERT_ERR(err >= 0);
 
 				/* Yield to the pre-emptor, but be
 				 * resumed thereafter.
@@ -629,7 +629,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	 * currently in preparation pipeline.
 	 */
 	err = lll_hfclock_off();
-	LL_ASSERT(err >= 0);
+	LL_ASSERT_ERR(err >= 0);
 
 	lll_done(param);
 }
@@ -645,14 +645,14 @@ static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	mfy.param = param;
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL, 0,
 			     &mfy);
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
 }
 
 static void ticker_op_start_cb(uint32_t status, void *param)
 {
 	ARG_UNUSED(param);
 
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+	LL_ASSERT_ERR(status == TICKER_STATUS_SUCCESS);
 }
 
 static void isr_rx(void *param)
@@ -708,7 +708,7 @@ static void isr_rx(void *param)
 	}
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
-	LL_ASSERT(node_rx);
+	LL_ASSERT_DBG(node_rx);
 
 	pdu = (void *)node_rx->pdu;
 
@@ -787,7 +787,7 @@ static void isr_tx(void *param)
 	radio_switch_complete_and_disable();
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
-	LL_ASSERT(node_rx);
+	LL_ASSERT_DBG(node_rx);
 	radio_pkt_rx_set(node_rx->pdu);
 
 	/* assert if radio packet ptr is not set and radio started rx */
@@ -795,7 +795,7 @@ static void isr_tx(void *param)
 		LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u", __func__,
 			      lll_prof_latency_get());
 	} else {
-		LL_ASSERT(!radio_is_ready());
+		LL_ASSERT_ERR(!radio_is_ready());
 	}
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
@@ -865,7 +865,7 @@ static void isr_common_done(void *param)
 	}
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
-	LL_ASSERT(node_rx);
+	LL_ASSERT_DBG(node_rx);
 	radio_pkt_rx_set(node_rx->pdu);
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
@@ -1006,7 +1006,7 @@ static void isr_abort(void *param)
 	 * detected in ULL.
 	 */
 	extra = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_SCAN);
-	LL_ASSERT(extra);
+	LL_ASSERT_ERR(extra);
 #endif  /* CONFIG_BT_CTLR_ADV_EXT */
 
 	lll_isr_cleanup(param);
@@ -1084,7 +1084,7 @@ static void isr_done_cleanup(void *param)
 		 * detected in ULL.
 		 */
 		extra = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_SCAN);
-		LL_ASSERT(extra);
+		LL_ASSERT_ERR(extra);
 	}
 
 	/* Prevent scan events in pipeline from being scheduled if duration has
@@ -1103,7 +1103,7 @@ static void isr_done_cleanup(void *param)
 		lll->is_aux_sched = 0U;
 
 		node_rx2 = ull_pdu_rx_alloc();
-		LL_ASSERT(node_rx2);
+		LL_ASSERT_ERR(node_rx2);
 
 		node_rx2->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
 
@@ -1126,7 +1126,7 @@ static void isr_done_cleanup(void *param)
 		mfy.param = param;
 
 		ret = mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_LLL, 1U, &mfy);
-		LL_ASSERT(!ret);
+		LL_ASSERT_ERR(!ret);
 	}
 
 	lll_isr_cleanup(param);
@@ -1220,7 +1220,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 			LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u", __func__,
 				      lll_prof_latency_get());
 		} else {
-			LL_ASSERT(!radio_is_ready());
+			LL_ASSERT_ERR(!radio_is_ready());
 		}
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
@@ -1357,7 +1357,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 			LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u", __func__,
 				      lll_prof_latency_get());
 		} else {
-			LL_ASSERT(!radio_is_ready());
+			LL_ASSERT_ERR(!radio_is_ready());
 		}
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
@@ -1567,7 +1567,7 @@ static int isr_rx_scan_report(struct lll_scan *lll, uint8_t devmatch_ok,
 			break;
 
 		default:
-			LL_ASSERT(0);
+			LL_ASSERT_DBG(0);
 			break;
 		}
 
