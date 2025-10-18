@@ -38,3 +38,18 @@ void gnss_publish_satellites(const struct device *dev, const struct gnss_satelli
 	k_sem_give(&semlock);
 }
 #endif
+
+#if CONFIG_GNSS_VELNED
+void gnss_publish_velned(const struct device *dev, const struct gnss_velned *velned)
+{
+	(void)k_sem_take(&semlock, K_FOREVER);
+
+	STRUCT_SECTION_FOREACH(gnss_velned_callback, callback) {
+		if (callback->dev == NULL || callback->dev == dev) {
+			callback->callback(dev, velned);
+		}
+	}
+
+	k_sem_give(&semlock);
+}
+#endif
