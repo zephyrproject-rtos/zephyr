@@ -86,6 +86,9 @@ Deprecated APIs and options
 
 * :kconfig:option:`CONFIG_XOPEN_STREAMS` was deprecated. Use :kconfig:option:`CONFIG_XSI_STREAMS` instead.
 
+* :kconfig:option:`CONFIG_POSIX_API` was deprecated. See :ref:`POSIX Configuration<posix_config>`
+  for more details.
+
 New APIs and options
 ====================
 
