@@ -140,6 +140,8 @@ Sensors
 
 * Nodes with compatible property :dtcompatible:`invensense,icm42688` now additionally need to also
   include :dtcompatible:`invensense,icm4268x` in order to work.
+* :dtcompatible:`st,lps22hh` now ignores the ``odr`` property in favor of the one-shot sampling mode
+  unless :kconfig:option:`CONFIG_LPS22HH_TRIGGER` is enabled to make use of periodic sampling.
 
 Stepper
 =======
