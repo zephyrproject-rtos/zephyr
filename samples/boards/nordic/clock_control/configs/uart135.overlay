@@ -14,3 +14,7 @@
 	status = "okay";
 	memory-regions = <&cpuapp_dma_region>;
 };
+
+&fll16m {
+	status = "okay";
+};

@@ -5,6 +5,7 @@
  */
 
 #include <nrfx_comp.h>
+#include <hal/nrf_gpio.h>
 
 #include <zephyr/drivers/comparator/nrf_comp.h>
 #include <zephyr/kernel.h>
@@ -249,6 +250,11 @@ static int shim_nrf_comp_psel_to_nrf(uint8_t shim,
 	}
 
 	*nrf = shim_nrf_comp_ain_map[shim];
+
+#if NRF_GPIO_HAS_RETENTION_SETCLEAR
+	nrf_gpio_pin_retain_disable(shim_nrf_comp_ain_map[shim]);
+#endif
+
 	return 0;
 }
 #else
