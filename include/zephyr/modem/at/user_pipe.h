@@ -10,21 +10,15 @@
 #include <zephyr/modem/chat.h>
 
 /**
- * @brief Initialise the AT command user pipe
- *
- * @param chat Chat instance that will be used with the user pipe
- */
-void modem_at_user_pipe_init(struct modem_chat *chat);
-
-/**
  * @brief Claim the AT command user pipe to run commands
  *
+ * @param chat Chat instance that will be used with the user pipe
  *
  * @retval 0 On success
  * @retval -EPERM Modem is not ready
  * @retval -EBUSY User pipe already claimed
  */
-int modem_at_user_pipe_claim(void);
+int modem_at_user_pipe_claim(struct modem_chat *chat);
 
 /**
  * @brief Release the AT command user pipe to other users
