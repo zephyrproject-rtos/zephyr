@@ -224,7 +224,8 @@ static void configure_rng(void)
 #endif /* health_test_config */
 
 	if (cur_nist_cfg != desired_nist_cfg || cur_htcr != desired_htcr) {
-		MODIFY_REG(rng->CR, cur_nist_cfg, (desired_nist_cfg | RNG_CR_CONDRST));
+		sys_modify_bits((mem_addr_t)&rng->CR, cur_nist_cfg,
+				desired_nist_cfg | RNG_CR_CONDRST);
 
 #if DT_INST_NODE_HAS_PROP(0, health_test_config)
 #if DT_INST_NODE_HAS_PROP(0, health_test_magic)

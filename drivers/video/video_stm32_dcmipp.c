@@ -161,13 +161,13 @@ static void stm32_dcmipp_set_next_buffer_addr(struct stm32_dcmipp_pipe_data *pip
 	/* TODO - the HAL is missing a SetMemoryAddress for auxiliary addresses */
 	/* Update main buffer address */
 	if (pipe->id == DCMIPP_PIPE0) {
-		WRITE_REG(dcmipp->hdcmipp.Instance->P0PPM0AR1, (uint32_t)plane);
+		sys_write32((uint32_t)plane, (mem_addr_t)&dcmipp->hdcmipp.Instance->P0PPM0AR1);
 	}
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 	else if (pipe->id == DCMIPP_PIPE1) {
-		WRITE_REG(dcmipp->hdcmipp.Instance->P1PPM0AR1, (uint32_t)plane);
+		sys_write32((uint32_t)plane, (mem_addr_t)&dcmipp->hdcmipp.Instance->P1PPM0AR1);
 	} else {
-		WRITE_REG(dcmipp->hdcmipp.Instance->P2PPM0AR1, (uint32_t)plane);
+		sys_write32((uint32_t)plane, (mem_addr_t)&dcmipp->hdcmipp.Instance->P2PPM0AR1);
 	}
 
 	if (pipe->id != DCMIPP_PIPE1) {
@@ -178,13 +178,14 @@ static void stm32_dcmipp_set_next_buffer_addr(struct stm32_dcmipp_pipe_data *pip
 		/* Y plane has 8 bit per pixel, next plane is located at off + width * height */
 		plane += VIDEO_FMT_PLANAR_Y_PLANE_SIZE(fmt);
 
-		WRITE_REG(dcmipp->hdcmipp.Instance->P1PPM1AR1, (uint32_t)plane);
+		sys_write32((uint32_t)plane, (mem_addr_t)&dcmipp->hdcmipp.Instance->P1PPM1AR1);
 
 		if (VIDEO_FMT_IS_PLANAR(fmt)) {
 			/* In case of YUV420 / YVU420, U plane has half width / half height */
 			plane += VIDEO_FMT_PLANAR_Y_PLANE_SIZE(fmt) / 4;
 
-			WRITE_REG(dcmipp->hdcmipp.Instance->P1PPM2AR1, (uint32_t)plane);
+			sys_write32((uint32_t)plane,
+				    (mem_addr_t)&dcmipp->hdcmipp.Instance->P1PPM2AR1);
 		}
 	}
 #endif
@@ -252,13 +253,16 @@ void HAL_DCMIPP_PIPE_VsyncEventCallback(DCMIPP_HandleTypeDef *hdcmipp, uint32_t 
 		 */
 		pipe->state = STM32_DCMIPP_WAIT_FOR_BUFFER;
 		if (Pipe == DCMIPP_PIPE0) {
-			CLEAR_BIT(hdcmipp->Instance->P0FCTCR, DCMIPP_P0FCTCR_CPTREQ);
+			sys_clear_bits((mem_addr_t)&hdcmipp->Instance->P0FCTCR,
+				       DCMIPP_P0FCTCR_CPTREQ);
 		}
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 		else if (Pipe == DCMIPP_PIPE1) {
-			CLEAR_BIT(hdcmipp->Instance->P1FCTCR, DCMIPP_P1FCTCR_CPTREQ);
+			sys_clear_bits((mem_addr_t)&hdcmipp->Instance->P1FCTCR,
+				       DCMIPP_P1FCTCR_CPTREQ);
 		} else if (Pipe == DCMIPP_PIPE2) {
-			CLEAR_BIT(hdcmipp->Instance->P2FCTCR, DCMIPP_P2FCTCR_CPTREQ);
+			sys_clear_bits((mem_addr_t)&hdcmipp->Instance->P2FCTCR,
+				       DCMIPP_P2FCTCR_CPTREQ);
 		}
 #endif
 		return;
@@ -1326,13 +1330,16 @@ static int stm32_dcmipp_enqueue(const struct device *dev, struct video_buffer *v
 		pipe->next = vbuf;
 		stm32_dcmipp_set_next_buffer_addr(pipe);
 		if (pipe->id == DCMIPP_PIPE0) {
-			SET_BIT(dcmipp->hdcmipp.Instance->P0FCTCR, DCMIPP_P0FCTCR_CPTREQ);
+			sys_set_bits((mem_addr_t)&dcmipp->hdcmipp.Instance->P0FCTCR,
+				     DCMIPP_P0FCTCR_CPTREQ);
 		}
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 		else if (pipe->id == DCMIPP_PIPE1) {
-			SET_BIT(dcmipp->hdcmipp.Instance->P1FCTCR, DCMIPP_P1FCTCR_CPTREQ);
+			sys_set_bits((mem_addr_t)&dcmipp->hdcmipp.Instance->P1FCTCR,
+				     DCMIPP_P1FCTCR_CPTREQ);
 		} else if (pipe->id == DCMIPP_PIPE2) {
-			SET_BIT(dcmipp->hdcmipp.Instance->P2FCTCR, DCMIPP_P2FCTCR_CPTREQ);
+			sys_set_bits((mem_addr_t)&dcmipp->hdcmipp.Instance->P2FCTCR,
+				     DCMIPP_P2FCTCR_CPTREQ);
 		}
 #endif
 		pipe->state = STM32_DCMIPP_RUNNING;

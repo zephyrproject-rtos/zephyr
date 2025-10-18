@@ -1020,7 +1020,8 @@ static bool stm32_xspi_is_memorymap(const struct device *dev)
 {
 	struct flash_stm32_xspi_data *dev_data = dev->data;
 
-	return READ_BIT(dev_data->hxspi.Instance->CR, XSPI_CR_FMODE) == XSPI_CR_FMODE;
+	return sys_test_bits((mem_addr_t)&dev_data->hxspi.Instance->CR,
+			     XSPI_CR_FMODE) == XSPI_CR_FMODE;
 }
 #endif
 

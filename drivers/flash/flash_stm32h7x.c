@@ -467,7 +467,8 @@ static struct flash_stm32_sector_t get_sector(const struct device *dev, off_t of
 
 	bool bank_swap;
 	/* Check whether bank1/2 are swapped */
-	bank_swap = (READ_BIT(FLASH->OPTCR, FLASH_OPTCR_SWAP_BANK) == FLASH_OPTCR_SWAP_BANK);
+	bank_swap = (sys_test_bits((mem_addr_t)&FLASH->OPTCR,
+				   FLASH_OPTCR_SWAP_BANK) == FLASH_OPTCR_SWAP_BANK);
 	sector.sector_index = offset / FLASH_SECTOR_SIZE;
 	if ((temp_offset < (REAL_FLASH_SIZE_KB / 2)) && !bank_swap) {
 		sector.bank = 1;

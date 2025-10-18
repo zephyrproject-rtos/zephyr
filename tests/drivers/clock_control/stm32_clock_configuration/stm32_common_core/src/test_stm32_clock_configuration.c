@@ -91,7 +91,7 @@ ZTEST(stm32_sysclck_config, test_pll_src)
 	defined(CONFIG_SOC_SERIES_STM32F4X) || defined(CONFIG_SOC_SERIES_STM32F7X)
 #define RCC_PLLSOURCE_NONE 0
 	/* check RCC_CR_PLLON bit to enable/disable the PLL, but no status function exist */
-	if (READ_BIT(RCC->CR, RCC_CR_PLLON) == RCC_CR_PLLON) {
+	if (sys_test_bits((mem_addr_t)&RCC->CR, RCC_CR_PLLON) == RCC_CR_PLLON) {
 		/* should not happen : PLL must be disabled when not used */
 		pll_src = 0xFFFF; /* error code */
 	} else {
@@ -111,9 +111,10 @@ ZTEST(stm32_sysclck_config, test_hse_css)
 {
 	/* there is no function to read CSS status, so read directly from the register */
 #if STM32_HSE_CSS
-	zassert_true(READ_BIT(RCC->CR, RCC_CR_CSSON), "HSE CSS is not enabled");
+	zassert_true(sys_test_bits((mem_addr_t)&RCC->CR, RCC_CR_CSSON), "HSE CSS is not enabled");
 #else
-	zassert_false(READ_BIT(RCC->CR, RCC_CR_CSSON), "HSE CSS unexpectedly enabled");
+	zassert_false(sys_test_bits((mem_addr_t)&RCC->CR, RCC_CR_CSSON),
+		      "HSE CSS unexpectedly enabled");
 #endif /* STM32_HSE_CSS */
 
 }

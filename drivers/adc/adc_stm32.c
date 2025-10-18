@@ -565,11 +565,12 @@ static void adc_stm32_calibration_start(const struct device *dev, bool single_en
 		 */
 		if ((dev_id != 0x482UL) && (rev_id != 0x2001UL)) {
 			adc_stm32_enable(adc);
-			MODIFY_REG(adc->CR, ADC_CR_CALINDEX, 0x9UL << ADC_CR_CALINDEX_Pos);
+			sys_modify_bits((mem_addr_t)&adc->CR, ADC_CR_CALINDEX,
+					0x9UL << ADC_CR_CALINDEX_Pos);
 			__DMB();
-			MODIFY_REG(adc->CALFACT2, 0xFFFFFF00UL, 0x03021100UL);
+			sys_modify_bits((mem_addr_t)&adc->CALFACT2, 0xFFFFFF00UL, 0x03021100UL);
 			__DMB();
-			SET_BIT(adc->CALFACT, ADC_CALFACT_LATCH_COEF);
+			sys_set_bits((mem_addr_t)&adc->CALFACT, ADC_CALFACT_LATCH_COEF);
 			adc_stm32_disable(adc);
 		}
 	}
@@ -867,9 +868,9 @@ static void set_reg_value(const struct device *dev, uint32_t reg,
 	const struct adc_stm32_cfg *config = dev->config;
 	ADC_TypeDef *adc = config->base;
 
-	uintptr_t addr = (uintptr_t)adc + reg;
+	mem_addr_t addr = (mem_addr_t)adc + reg;
 
-	MODIFY_REG(*(volatile uint32_t *)addr, (mask << shift), (value << shift));
+	sys_modify_bits(addr, mask << shift, value << shift);
 }
 
 static int set_resolution(const struct device *dev,

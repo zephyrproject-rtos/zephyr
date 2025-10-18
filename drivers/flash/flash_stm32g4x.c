@@ -369,7 +369,7 @@ void flash_stm32_page_layout(const struct device *dev,
 int  flash_stm32_check_configuration(void)
 {
 #if defined(FLASH_STM32_DBANK)
-	if (READ_BIT(FLASH->OPTR, FLASH_STM32_DBANK) == 0U) {
+	if (sys_test_bits((mem_addr_t)&FLASH->OPTR, FLASH_STM32_DBANK) == 0U) {
 		/* Single bank not supported when dualbank is possible */
 		LOG_ERR("Single bank configuration not supported");
 		return -ENOTSUP;

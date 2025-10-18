@@ -354,7 +354,8 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 	}
 
 #if defined(XSPI_CR_NOPREF)
-	MODIFY_REG(hxspi.Instance->CR, XSPI_CR_NOPREF, HAL_XSPI_AUTOMATIC_PREFETCH_DISABLE);
+	sys_modify_bits((mem_addr_t)&hxspi.Instance->CR, XSPI_CR_NOPREF,
+			HAL_XSPI_AUTOMATIC_PREFETCH_DISABLE);
 #endif
 
 #ifdef CONFIG_SHARED_MULTI_HEAP

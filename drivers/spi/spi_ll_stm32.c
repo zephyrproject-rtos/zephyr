@@ -354,7 +354,7 @@ static bool spi_stm32_transfer_ongoing(struct spi_stm32_data *data)
 
 static int spi_stm32_get_err(SPI_TypeDef *spi)
 {
-	uint32_t sr = LL_SPI_ReadReg(spi, SR);
+	uint32_t sr = sys_read32((mem_addr_t)&spi->SR);
 
 	if (sr & SPI_STM32_ERR_MSK) {
 		LOG_ERR("%s: err=%d", __func__,
