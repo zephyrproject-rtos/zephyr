@@ -179,6 +179,16 @@ void nxp_enet_ptp_clock_callback(const struct device *dev,
 
 		ENET_Ptp1588SetChannelMode(data->base, kENET_PtpTimerChannel3,
 				kENET_PtpChannelPulseHighonCompare, true);
+
+		/* Set 1PPS pulse width to 32 clock cycles of PTP clock.
+		 * At 25 MHz clock frequency, this amounts to a pulse width of 1.28 us.
+		 * Note that this is still orders of magnitude shorter than the 1PPS
+		 * pulse width of many devices, which are often in the range of milliseconds.
+		 * However, 32 clock cycles is the upper limit.
+		 */
+		ENET_Ptp1588SetChannelOutputPulseWidth(data->base, kENET_PtpTimerChannel3, false,
+						       31, true);
+
 		ENET_Ptp1588StartTimer(data->base, ptp_config.ptp1588ClockSrc_Hz);
 		ENET_EnableInterrupts(data->base, ENET_TS_INTERRUPT);
 	}
