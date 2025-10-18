@@ -14,6 +14,20 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 
+/* FIXME: use k_off_t and k_ssize_t to avoid the POSIX->Zephyr->POSIX dependency cycle */
+#ifdef CONFIG_NEWLIB_LIBC
+#ifndef _OFF_T_DECLARED
+typedef _off_t off_t;
+#define _OFF_T_DECLARED
+#endif
+#ifndef _SSIZE_T_DECLARED
+typedef _ssize_t ssize_t;
+#define _SSIZE_T_DECLARED
+#endif
+#endif
+
+#include <stdio.h>
+
 #ifdef CONFIG_PICOLIBC
 #define ZVFS_O_APPEND 0x0400
 #define ZVFS_O_CREAT  0x0040
@@ -58,18 +72,6 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-/* FIXME: use k_off_t and k_ssize_t to avoid the POSIX->Zephyr->POSIX dependency cycle */
-#ifdef CONFIG_NEWLIB_LIBC
-#ifndef _OFF_T_DECLARED
-typedef __off_t off_t;
-#define _OFF_T_DECLARED
-#endif
-#ifndef _SSIZE_T_DECLARED
-typedef _ssize_t ssize_t;
-#define _SSIZE_T_DECLARED
-#endif
 #endif
 
 /**
@@ -260,6 +262,12 @@ __syscall int zvfs_select(int nfds, struct zvfs_fd_set *ZRESTRICT readfds,
 			  struct zvfs_fd_set *ZRESTRICT writefds,
 			  struct zvfs_fd_set *ZRESTRICT errorfds,
 			  const struct timespec *ZRESTRICT timeout, const void *ZRESTRICT sigmask);
+
+void zvfs_libc_file_alloc_cb(int fd, const char *mode, FILE *fp);
+int zvfs_libc_file_alloc(int fd, const char *mode, FILE **fp, k_timeout_t timeout);
+void zvfs_libc_file_free(FILE *fp);
+int zvfs_libc_file_get_fd(FILE *fp);
+FILE *zvfs_libc_file_from_fd(int fd);
 
 /**
  * Request codes for fd_op_vtable.ioctl().
