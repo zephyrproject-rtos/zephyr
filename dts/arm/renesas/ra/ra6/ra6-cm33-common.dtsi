@@ -137,6 +137,14 @@
 				channel = <0>;
 				status = "disabled";
 			};
+
+			i2c {
+				compatible = "renesas,ra-sci-i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <0>;
+				status = "disabled";
+			};
 		};
 
 		sci9: sci9@40118900 {
@@ -149,6 +157,14 @@
 
 			uart {
 				compatible = "renesas,ra-sci-uart";
+				channel = <9>;
+				status = "disabled";
+			};
+
+			i2c {
+				compatible = "renesas,ra-sci-i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
 				channel = <9>;
 				status = "disabled";
 			};
