@@ -15,5 +15,12 @@ properties:
 
   riscv,isa:
     description: RISC-V instruction set architecture
-    required: true
     type: string
+
+  riscv,isa-base:
+    description: The base ISA implemented by the hart.
+    type: string
+
+  riscv,isa-extensions:
+    description: Extensions supported by the hart.
+    type: string-array
