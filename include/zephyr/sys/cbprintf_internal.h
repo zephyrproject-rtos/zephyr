@@ -760,7 +760,7 @@ do { \
  * initial value to hush the compiler when compiling
  * with C++.
  */
-#if defined(CONFIG_XTENSA) && defined(__cplusplus)
+#if __xtensa__
 #define Z_CBPRINTF_XTENSA_PKG_DESC_PADDING_INITIALIZER .xtensa_padding = { },
 #else
 #define Z_CBPRINTF_XTENSA_PKG_DESC_PADDING_INITIALIZER
