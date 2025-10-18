@@ -43,6 +43,16 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
   endif()
   zephyr_linker_generate_linker_settings_file(${cmake_linker_script_settings})
 
+  #The concept of "the previously built pass" is somewhat elusive:
+  # linker_pass_define          ${ZEPHYR_CURRENT_LINKER_PASS} ${ZEPHYR_LINK_STAGE_EXECUTABLE}
+  # LINKER_APP_SMEM_UNALIGNED   0                             zephyr_pre0
+  # LINKER_ZEPHYR_PREBUILT      1                             zephyr_pre1
+  # LINKER_ZEPHYR_FINAL         1                             zephyr_pre1
+  # To avoid fixing this in CMakelists, We'll just keep track of the previous
+  # linker_pass_define we got and use that to pickup the previous pass name (if any).
+
+  message("Yopehjdi: ${linker_script_gen} pass: ${linker_pass_define} current pass: ${ZEPHYR_CURRENT_LINKER_PASS} previous pass: ${PREV_PASS} stage_executable: ${ZEPHYR_LINK_STAGE_EXECUTABLE} iar_evaluate: ${IAR_EVALUATE_FILE}")
+
   add_custom_command(
     OUTPUT ${linker_script_gen}
            ${STEERING_FILE}
