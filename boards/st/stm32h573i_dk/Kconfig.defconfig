@@ -39,4 +39,21 @@ config I2C_STM32_V2_TIMING
 
 endif # DISPLAY
 
+if BOARD_STM32H573I_DK_STM32H573XX_EXT_FLASH_APP
+
+if MCUBOOT
+
+# A dependency of FLASH_STM32_XSPI & STM32_MEMMAP
+config FLASH
+	default y
+
+# So MCUboot can access ext Flash in memory-mapped mode
+# to read app slots, start the app, or copy it to RAM.
+config STM32_MEMMAP
+	default y
+
+endif # MCUBOOT
+
+endif # BOARD_STM32H573I_DK_STM32H573XX_EXT_FLASH_APP
+
 endif # BOARD_STM32H573I_DK
