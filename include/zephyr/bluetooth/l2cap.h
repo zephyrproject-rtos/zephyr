@@ -267,7 +267,30 @@ struct bt_l2cap_le_chan {
 	 * L2CAP_LE_CREDIT_BASED_CONNECTION_REQ/RSP or L2CAP_CONFIGURATION_REQ.
 	 */
 	struct bt_l2cap_le_endpoint	tx;
-	/** Channel Transmission queue (for SDUs) */
+	/** Channel Transmission queue
+	 *
+	 * Internal
+	 *
+	 * SDUs/PDUs given to @ref bt_l2cap_chan_send and @c bt_l2cap_send_pdu
+	 * are stored here until they are sent to the Controller.
+	 *
+	 * The SDU header is prepended to SDUs before they are stored here. The
+	 * head of this list (the next data to be sent) may be just the
+	 * remaining part of an already partially transmitted SDU/PDU due to
+	 * L2CAP segmentation and fragmentation.
+	 *
+	 * This is the outbox for a single channel. Channels may be serviced in
+	 * any order. The transmission order does not follow the sequence of
+	 * @ref bt_l2cap_chan_send calls across channels.
+	 *
+	 * There may be more data here than the channel currently has credits
+	 * for. The transmission will wait until credits are available.
+	 *
+	 * Callbacks given to @ref bt_l2cap_chan_send are stored in the
+	 * user_data of the buffer. These callbacks must be invoked when the
+	 * Controller gives a Number of Buffers Complete Event for the last
+	 * L2CAP PDU of the buffer or when the channel is disconnected.
+	 */
 	struct k_fifo                   tx_queue;
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	/** Segment SDU packet from upper layer */
