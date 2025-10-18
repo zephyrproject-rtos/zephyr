@@ -73,6 +73,49 @@ void rx_thread(void *arg1, void *arg2, void *arg3)
 	filter_id = can_add_rx_filter_msgq(can_dev, &counter_msgq, &filter);
 	printf("Counter filter id: %d\n", filter_id);
 
+#if CONFIG_CAN_XILINX_CANFD
+	while (1) {
+		k_msgq_get(&counter_msgq, &frame, K_FOREVER);
+
+		if (IS_ENABLED(CONFIG_CAN_ACCEPT_RTR) && (frame.flags & CAN_FRAME_RTR) != 0U) {
+			continue;
+		}
+
+		/* Handle different frame types based on ID and flags */
+		if (frame.id == LED_MSG_ID) {
+			/* LED frame - should be standard ID with DLC=1 */
+			printf("LED frame received: %s\n",
+			       frame.data[0] == SET_LED ? "ON" : "OFF");
+		} else if (frame.id == COUNTER_MSG_ID) {
+			/* Counter frames - can be classic CAN or CAN-FD */
+			if (frame.flags & CAN_FRAME_FDF) {
+				int len;
+
+				printf("CAN-FD frame received: ID=0x%x, DLC=%u, flags=0x%02x\n",
+				       frame.id, frame.dlc, frame.flags);
+
+				printf("Data: ");
+				len = can_dlc_to_bytes(frame.dlc);
+
+				for (int i = 0; i < len; i++) {
+					printf("%02x ", frame.data[i]);
+				}
+				printf("\n");
+			} else {
+				if (frame.dlc != 2U) {
+					printf("Wrong counter frame data length: %u\n", frame.dlc);
+					continue;
+				}
+
+				printf("Counter received: %u\n",
+				       sys_be16_to_cpu(UNALIGNED_GET((uint16_t *)&frame.data)));
+			}
+		} else {
+			printf("Unknown frame: ID=0x%x, DLC=%u, flags=0x%02x\n",
+			       frame.id, frame.dlc, frame.flags);
+		}
+	}
+#else
 	while (1) {
 		k_msgq_get(&counter_msgq, &frame, K_FOREVER);
 
@@ -88,6 +131,7 @@ void rx_thread(void *arg1, void *arg2, void *arg3)
 		printf("Counter received: %u\n",
 		       sys_be16_to_cpu(UNALIGNED_GET((uint16_t *)&frame.data)));
 	}
+#endif
 }
 
 void change_led_work_handler(struct k_work *work)
@@ -204,6 +248,14 @@ int main(void)
 		.id = COUNTER_MSG_ID,
 		.dlc = 2
 	};
+#ifdef CONFIG_CAN_FD_MODE
+	struct can_frame canfd_frame = {
+		.flags = CAN_FRAME_IDE | CAN_FRAME_FDF,
+		.id = COUNTER_MSG_ID,
+		.dlc = 15
+	};
+#endif
+	can_mode_t mode = CAN_MODE_NORMAL;
 	uint8_t toggle = 1;
 	uint16_t counter = 0;
 	k_tid_t rx_tid, get_state_tid;
@@ -215,12 +267,17 @@ int main(void)
 	}
 
 #ifdef CONFIG_LOOPBACK_MODE
-	ret = can_set_mode(can_dev, CAN_MODE_LOOPBACK);
+	mode |= CAN_MODE_LOOPBACK;  /* Add loopback */
+#ifdef CONFIG_CAN_FD_MODE
+	mode |= CAN_MODE_FD;        /* Add CAN-FD */
+#endif
+#endif
+
+	ret = can_set_mode(can_dev, mode);
 	if (ret != 0) {
 		printf("Error setting CAN mode [%d]", ret);
 		return 0;
 	}
-#endif
 	ret = can_start(can_dev);
 	if (ret != 0) {
 		printf("Error starting CAN controller [%d]", ret);
@@ -295,5 +352,13 @@ int main(void)
 		/* This sending call is blocking until the message is sent. */
 		can_send(can_dev, &counter_frame, K_MSEC(100), NULL, NULL);
 		k_sleep(SLEEP_TIME);
+#ifdef CONFIG_CAN_FD_MODE
+		for (int i = 0; i < 64; ++i) {
+			canfd_frame.data[i] = counter + i;
+		}
+		/* Send CAN FD frame */
+		can_send(can_dev, &canfd_frame, K_MSEC(100), NULL, NULL);
+		k_sleep(SLEEP_TIME);
+#endif /* CONFIG_CAN_FD_MODE */
 	}
 }
