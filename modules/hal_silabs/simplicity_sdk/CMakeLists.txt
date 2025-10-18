@@ -232,7 +232,7 @@ zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_SYSTEM         ${PERIPHERAL_DIR
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_IADC         ${EMLIB_DIR}/src/em_iadc.c)
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_IADC         ${PERIPHERAL_DIR}/src/sl_hal_iadc.c)
 
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_BURTC        ${EMLIB_DIR}/src/em_burtc.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_BURTC     ${EMLIB_DIR}/src/em_burtc.c)
 
 # Device Init
 if(CONFIG_SILABS_SISDK_DEVICE_INIT)
@@ -253,7 +253,7 @@ if(CONFIG_SILABS_SISDK_POWER_MANAGER)
     SL_CATALOG_POWER_MANAGER_PRESENT
     SL_CODE_COMPONENT_POWER_MANAGER=power_manager
   )
-  zephyr_compile_definitions_ifdef(CONFIG_SOC_GECKO_RTCC
+  zephyr_compile_definitions_ifdef(CONFIG_SILABS_SISDK_RTCC
     SL_CATALOG_POWER_MANAGER_DEEPSLEEP_BLOCKING_HFXO_RESTORE_PRESENT
   )
 endif()
@@ -270,18 +270,18 @@ if(CONFIG_SILABS_SISDK_HFXO_MANAGER)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_SLIST ${COMMON_DIR}/src/sl_slist.c)
-if(CONFIG_SOC_GECKO_CORE)
-  zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_CORE
+
+if(CONFIG_SILABS_SISDK_CORE)
+  zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_CORE
     ${COMMON_DIR}/src/sl_core_cortexm.c
   )
   zephyr_compile_definitions(
     SL_CODE_COMPONENT_CORE=core
   )
 endif()
-zephyr_library_sources_ifdef(CONFIG_SOC_SILABS_ACMP        ${EMLIB_DIR}/src/em_acmp.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_CRYOTIMER    ${EMLIB_DIR}/src/em_cryotimer.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_EMU          ${EMLIB_DIR}/src/em_emu.c)
-if(CONFIG_SOC_GECKO_GPIO)
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_ACMP      ${EMLIB_DIR}/src/em_acmp.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_EMU       ${EMLIB_DIR}/src/em_emu.c)
+if(CONFIG_SILABS_SISDK_GPIO)
   zephyr_library_sources(
     ${EMLIB_DIR}/src/em_gpio.c
     ${DRIVER_DIR}/gpio/src/sl_gpio.c
@@ -315,19 +315,18 @@ zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_LETIMER   ${PERIPHERAL_DIR}/src
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_TIMER     ${PERIPHERAL_DIR}/src/sl_hal_timer.c)
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_VDAC      ${PERIPHERAL_DIR}/src/sl_hal_vdac.c)
 
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_LDMA         ${EMDRV_DIR}/dmadrv/src/dmadrv.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_LDMA
+  ${EMDRV_DIR}/dmadrv/src/dmadrv.c
+  ${EMLIB_DIR}/src/em_ldma.c
+)
 
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_I2C          ${EMLIB_DIR}/src/em_i2c.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_LEUART       ${EMLIB_DIR}/src/em_leuart.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_MSC          ${EMLIB_DIR}/src/em_msc.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_LDMA         ${EMLIB_DIR}/src/em_ldma.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_PRS          ${EMLIB_DIR}/src/em_prs.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_RMU          ${EMLIB_DIR}/src/em_rmu.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_RTC          ${EMLIB_DIR}/src/em_rtc.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_RTCC         ${EMLIB_DIR}/src/em_rtcc.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_EUSART       ${EMLIB_DIR}/src/em_eusart.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_USART        ${EMLIB_DIR}/src/em_usart.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_WDOG         ${EMLIB_DIR}/src/em_wdog.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_MSC       ${EMLIB_DIR}/src/em_msc.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_PRS       ${EMLIB_DIR}/src/em_prs.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_RMU       ${EMLIB_DIR}/src/em_rmu.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_RTCC      ${EMLIB_DIR}/src/em_rtcc.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_EUSART    ${EMLIB_DIR}/src/em_eusart.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_USART     ${EMLIB_DIR}/src/em_usart.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_WDOG      ${EMLIB_DIR}/src/em_wdog.c)
 
 zephyr_include_directories_ifdef(CONFIG_SILABS_SISDK_SE
   ${SECURITY_DIR}/sl_component/se_manager/src

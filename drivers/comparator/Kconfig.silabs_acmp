@@ -5,7 +5,7 @@ config COMPARATOR_SILABS_ACMP
 	default y
 	depends on DT_HAS_SILABS_ACMP_ENABLED
 	select PINCTRL
-	select SOC_SILABS_ACMP
+	select SILABS_SISDK_ACMP
 	help
 	  Enable the comparator driver for the Analog Comparator hardware block
 	  present on Silicon Labs devices. This block is commonly used to
