@@ -322,6 +322,8 @@ typedef enum _wm8962_protocol {
 	kWM8962_BusRightJustified = 0, /*!< Right justified mode */
 } wm8962_protocol_t;
 
+#define WM8962_INPUT_PGA_ENA BIT(4)
+
 /*! @brief wm8962 input source */
 typedef enum _wm8962_input_pga_source {
 	kWM8962_InputPGASourceInput1 = 8, /*!< Input PGA source input1 */
