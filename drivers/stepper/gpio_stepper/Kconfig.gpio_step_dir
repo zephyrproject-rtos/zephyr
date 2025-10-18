@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_STEP_DIR_CONTROLLER
+	bool "Activate driver for gpio step dir stepper control"
+	select GPIO_STEPPER
+	depends on DT_HAS_ZEPHYR_GPIO_STEP_DIR_CONTROLLER_ENABLED
+	default y
