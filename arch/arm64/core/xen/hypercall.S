@@ -23,6 +23,7 @@ HYPERCALL(sched_op);
 HYPERCALL(event_channel_op);
 HYPERCALL(hvm_op);
 HYPERCALL(memory_op);
+HYPERCALL(dm_op);
 
 #ifdef CONFIG_XEN_DOM0
 HYPERCALL(domctl);
