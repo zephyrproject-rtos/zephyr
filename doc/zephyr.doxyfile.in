@@ -1106,7 +1106,11 @@ EXCLUDE_PATTERNS       =
 # wildcard * is used, a substring. Examples: ANamespace, AClass,
 # ANamespace::AClass, ANamespace::*Test
 
-EXCLUDE_SYMBOLS        = _* \
+EXCLUDE_SYMBOLS        = _[^t]* \
+                         _t[^r]* \
+                         _tr[^a]* \
+                         _tra[^c]* \
+                         _trac[^k]* \
                          *.__unnamed__ \
                          z_* \
                          Z_*
