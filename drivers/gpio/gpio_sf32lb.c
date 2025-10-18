@@ -298,7 +298,7 @@ static int gpio_sf32lb_init(const struct device *dev)
 	if (!shared_initialized) {
 		struct sf32lb_clock_dt_spec clk = SF32LB_CLOCK_DT_SPEC_GET(DT_INST_PARENT(0));
 
-		if (!sf3232lb_clock_is_ready_dt(&clk)) {
+		if (!sf32lb_clock_is_ready_dt(&clk)) {
 			return -ENODEV;
 		}
 

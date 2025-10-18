@@ -384,7 +384,7 @@ static int uart_sf32lb_init(const struct device *dev)
 	}
 
 	if (config->clock.dev != NULL) {
-		if (!sf3232lb_clock_is_ready_dt(&config->clock)) {
+		if (!sf32lb_clock_is_ready_dt(&config->clock)) {
 			return -ENODEV;
 		}
 
