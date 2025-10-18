@@ -1,0 +1,6 @@
+shield:
+  name: mikroe_can_fd_6_click
+  full_name: CAN FD 6 Click
+  vendor: mikroe
+  supported_features:
+    - can
