@@ -45,15 +45,16 @@ DT_ST_PRESCALER := st,prescaler
 DT_STM32_LPTIM_PATH := $(dt_nodelabel_path,stm32_lp_tick_source)
 
 DT_CHOSEN_Z_FLASH := zephyr,flash
-DT_COMPAT_XSPI := st,stm32-xspi
-DT_COMPAT_OSPI := st,stm32-ospi
-DT_COMPAT_QSPI := st,stm32-qspi
+DT_CHOSEN_Z_FLASH_CTRL := zephyr,flash-controller
+DT_COMPAT_XSPI := st,stm32-xspi-nor
+DT_COMPAT_OSPI := st,stm32-ospi-nor
+DT_COMPAT_QSPI := st,stm32-qspi-nor
 
-DT_CHOSEN_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH))
-DT_CHOSEN_FLASH_PARENT := $(dt_node_parent,$(DT_CHOSEN_FLASH_NODE))
-DT_FLASH_PARENT_IS_XSPI := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_COMPAT_XSPI))
-DT_FLASH_PARENT_IS_OSPI := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_COMPAT_OSPI))
-DT_FLASH_PARENT_IS_QSPI := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_COMPAT_QSPI))
+DT_CHOSEN_FLASH_CTRL_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH_CTRL))
+DT_CHOSEN_FLASH_CTRL_PARENT := $(dt_node_parent,$(DT_CHOSEN_FLASH_CTRL_NODE))
+DT_FLASH_CTRL_IS_XSPI := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_CTRL_NODE),$(DT_COMPAT_XSPI))
+DT_FLASH_CTRL_IS_OSPI := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_CTRL_NODE),$(DT_COMPAT_OSPI))
+DT_FLASH_CTRL_IS_QSPI := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_CTRL_NODE),$(DT_COMPAT_QSPI))
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default "$(DT_STM32WB0_TIMER_FREQ)" if STM32WB0_RADIO_TIMER
@@ -99,12 +100,12 @@ config BUILD_WITH_TFM
 	default y if TRUSTED_EXECUTION_NONSECURE
 
 config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,$(DT_CHOSEN_FLASH_PARENT),1) \
-		if $(DT_FLASH_PARENT_IS_XSPI) || $(DT_FLASH_PARENT_IS_OSPI) || $(DT_FLASH_PARENT_IS_QSPI)
+	default $(dt_node_reg_addr_hex,$(DT_CHOSEN_FLASH_CTRL_PARENT),1) \
+		if $(DT_FLASH_CTRL_IS_XSPI) || $(DT_FLASH_CTRL_IS_OSPI) || $(DT_FLASH_CTRL_IS_QSPI)
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
 config STM32_APP_IN_EXT_FLASH
-	default $(DT_FLASH_PARENT_IS_XSPI)
+	default $(DT_FLASH_CTRL_IS_XSPI)
 
 # The XSPI PSRAM driver creates a SMH region with attribute SMH_REG_ATTR_EXTERNAL (2)
 # If applicable set the LTDC / VIDEO_BUFFER SMH attribute to SMH_REG_ATTR_EXTERNAL (2)
