@@ -11,6 +11,8 @@
 	};
 };
 
+/delete-node/ &storage_partition;
+
 &flash1 {
 	status = "okay";
 

@@ -5,10 +5,25 @@
 
 if SOC_MAX78000
 
+if SOC_MAX78000_M4
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/clocks/clk_ipo,clock-frequency)
 
 config NUM_IRQS
 	default 119
+
+endif # SOC_MAX78000_M4
+
+if SOC_MAX78000_RV32
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/clocks/clk_iso,clock-frequency)
+
+config NUM_IRQS
+	default 60
+
+endif # SOC_MAX78000_RV32
+
 
 endif # SOC_MAX78000
