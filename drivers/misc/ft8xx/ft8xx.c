@@ -15,8 +15,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
-#include <zephyr/drivers/misc/ft8xx/ft8xx_copro.h>
 #include <zephyr/drivers/misc/ft8xx/ft8xx_common.h>
+#include <zephyr/drivers/misc/ft8xx/ft8xx_copro.h>
 #include <zephyr/drivers/misc/ft8xx/ft8xx_dl.h>
 #include <zephyr/drivers/misc/ft8xx/ft8xx_memory.h>
 
@@ -150,6 +150,11 @@ int ft8xx_get_touch_tag(const struct device *dev)
 	(void)ft8xx_rd8(dev, FT800_REG_INT_FLAGS);
 
 	return (int)ft8xx_rd8(dev, FT800_REG_TOUCH_TAG);
+}
+
+uint32_t ft8xx_get_tracker_value(const struct device *dev)
+{
+	return ft8xx_rd32(dev, FT800_REG_TRACKER);
 }
 
 void ft8xx_drv_irq_triggered(const struct device *gpio_port, struct gpio_callback *cb,
