@@ -41,13 +41,13 @@ static int bt_rand_custom_fake(void *buf, size_t len)
 
 /*
  *  Test creating a new identity.
- *  A valid random static address is passed to bt_id_create() for the address and 'BT_DEV_ENABLE' is
+ *  A valid random static address is passed to bt_id_create() for the address and 'BT_DEV_READY' is
  *  set, the same address is used and copied to bt_dev.id_addr[].
  *
  *  Constraints:
  *   - Valid private random address is used
  *   - Input IRK is NULL
- *   - 'BT_DEV_ENABLE' flag is set in bt_dev.flags
+ *   - 'BT_DEV_READY' flag is set in bt_dev.flags
  *
  *  Expected behaviour:
  *   - The same address is used and loaded to bt_dev.id_addr[]
@@ -60,7 +60,8 @@ ZTEST(bt_id_create_privacy_enabled, test_create_id_valid_input_address_null_irk)
 	bt_addr_le_t addr = *BT_STATIC_RANDOM_LE_ADDR_1;
 
 	id_count = bt_dev.id_count;
-	atomic_set_bit(bt_dev.flags, BT_DEV_ENABLE);
+	atomic_set_bit(bt_dev.flags, BT_DEV_OPEN);
+	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
 	bt_rand_fake.custom_fake = bt_rand_custom_fake;
 	/* Calling bt_addr_le_create_static() isn't expected */
 	bt_addr_le_create_static_fake.return_val = -1;
@@ -81,13 +82,13 @@ ZTEST(bt_id_create_privacy_enabled, test_create_id_valid_input_address_null_irk)
 
 /*
  *  Test creating a new identity.
- *  A valid random static address is passed to bt_id_create() for the address and 'BT_DEV_ENABLE' is
+ *  A valid random static address is passed to bt_id_create() for the address and 'BT_DEV_READY' is
  *  set, the same address is used and copied to bt_dev.id_addr[].
  *
  *  Constraints:
  *   - Valid private random address is used
  *   - Input IRK is cleared (zero filled)
- *   - 'BT_DEV_ENABLE' flag is set in bt_dev.flags
+ *   - 'BT_DEV_READY' flag is set in bt_dev.flags
  *
  *  Expected behaviour:
  *   - The same address is used and loaded to bt_dev.id_addr[]
@@ -102,7 +103,8 @@ ZTEST(bt_id_create_privacy_enabled, test_create_id_valid_input_address_cleared_i
 	uint8_t zero_irk[16] = {0};
 
 	id_count = bt_dev.id_count;
-	atomic_set_bit(bt_dev.flags, BT_DEV_ENABLE);
+	atomic_set_bit(bt_dev.flags, BT_DEV_OPEN);
+	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
 	bt_rand_fake.custom_fake = bt_rand_custom_fake;
 	/* Calling bt_addr_le_create_static() isn't expected */
 	bt_addr_le_create_static_fake.return_val = -1;
@@ -125,13 +127,13 @@ ZTEST(bt_id_create_privacy_enabled, test_create_id_valid_input_address_cleared_i
 
 /*
  *  Test creating a new identity.
- *  A valid random static address is passed to bt_id_create() for the address and 'BT_DEV_ENABLE' is
+ *  A valid random static address is passed to bt_id_create() for the address and 'BT_DEV_READY' is
  *  set, the same address is used and copied to bt_dev.id_addr[].
  *
  *  Constraints:
  *   - Valid private random address is used
  *   - Input IRK is filled with non-zero values
- *   - 'BT_DEV_ENABLE' flag is set in bt_dev.flags
+ *   - 'BT_DEV_READY' flag is set in bt_dev.flags
  *
  *  Expected behaviour:
  *   - The same address is used and loaded to bt_dev.id_addr[]
@@ -144,7 +146,8 @@ ZTEST(bt_id_create_privacy_enabled, test_create_id_valid_input_address_filled_ir
 	bt_addr_le_t addr = *BT_STATIC_RANDOM_LE_ADDR_1;
 
 	id_count = bt_dev.id_count;
-	atomic_set_bit(bt_dev.flags, BT_DEV_ENABLE);
+	atomic_set_bit(bt_dev.flags, BT_DEV_OPEN);
+	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
 	bt_rand_fake.custom_fake = bt_rand_custom_fake;
 	/* Calling bt_addr_le_create_static() isn't expected */
 	bt_addr_le_create_static_fake.return_val = -1;
