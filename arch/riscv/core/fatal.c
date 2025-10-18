@@ -229,7 +229,7 @@ void z_riscv_fault(struct arch_esf *esf)
 		 * Remove the thread's PMP setting to prevent triggering a stack
 		 * overflow error again due to the previous configuration.
 		 */
-		z_riscv_pmp_stackguard_disable();
+		z_riscv_pmp_kernelmode_disable();
 #endif /* CONFIG_PMP_STACK_GUARD */
 		reason = K_ERR_STACK_CHK_FAIL;
 	}
