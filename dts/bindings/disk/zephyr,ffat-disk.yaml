@@ -1,0 +1,55 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Fake FAT (FFAT) disk
+  FFAT disk emulates a disk formatted with the FAT16 or FAT32 file system to
+  export specific data or information to a host system, for example, using USB
+  MSC support. This binding is a format to describe the virtual disk geometry
+  as if it were a real hardware disk, so the resulting fake file system
+  capacity is slightly smaller.
+
+compatible: "zephyr,ffat-disk"
+
+include: base.yaml
+
+properties:
+  disk-name:
+    type: string
+    required: true
+    description: |
+      Disk name.
+
+  sector-size:
+    type: int
+    required: true
+    enum:
+      - 512
+      - 1024
+      - 2048
+      - 4096
+    description: |
+      Sector size in bytes. Select it based on the granularity of the exported
+      data and, for example, the bootloader protocol overhead, if any.
+
+  sector-count:
+    type: int
+    required: true
+    description: |
+      Number of sectors, it defines the capacity of the disk. For a FFAT16 disk
+      the allowed range is 4085 (0x0FF5) to 65524 (0xFFF4) and for a FFAT32 disk
+      the allowed range is 65525 (0x0000FFF5) to 268435444 (0x0FFFFFF4).
+
+  sector-per-cluster:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+    description: |
+      Number of sectors per cluster.
