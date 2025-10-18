@@ -448,7 +448,7 @@ static void id_add(struct bt_keys *keys, void *user_data)
 	__ASSERT_NO_MSG(keys != NULL);
 
 	bt_id_pending_keys_update_set(keys, BT_KEYS_ID_PENDING_ADD);
-	k_work_submit(&add_id_work);
+	bt_work_submit(&add_id_work);
 }
 
 static int keys_commit(void)

@@ -127,6 +127,7 @@ config BT_CTLR_RX_PRIO_STACK_SIZE
 	# Hidden
 	int
 	depends on !BT_HCI_RAW
+	default 376 if SOC_SERIES_NRF51X && !BT_EXT_ADV
 	default 448
 	help
 	  Controller's Co-Operative high priority Rx thread stack size.
@@ -141,6 +142,7 @@ config BT_CTLR_RX_PRIO_STACK_SIZE
 config BT_CTLR_RX_STACK_SIZE
 	# Hidden, Controller's Co-Operative Rx thread stack size.
 	int
+	default 320 if SOC_SERIES_NRF51X && !BT_EXT_ADV
 	default 896
 
 config BT_CTLR_SETTINGS
