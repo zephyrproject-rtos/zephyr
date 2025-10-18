@@ -18,9 +18,6 @@ Requirements
 Building and Running
 ********************
 
-This sample can be found under :zephyr_file:`samples/boards/nordic/ieee802154/802154_rpmsg`
-in the Zephyr tree.
-
 To use this application, you need a board with nRF53 SoC.
 You can then build this application and flash it onto your board in
 the usual way. See :ref:`boards` for board-specific building and
