@@ -31,6 +31,7 @@
 #include <pmp.h>
 #include <zephyr/arch/arch_interface.h>
 #include <zephyr/arch/riscv/csr.h>
+#include <zephyr/mem_mgmt/mem_attr.h>
 
 #define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -114,7 +115,8 @@ static void print_pmp_entries(unsigned int pmp_start, unsigned int pmp_end,
  * @param pmp_cfg Pointer to the array where the CSR contents will be stored.
  * @param pmp_cfg_size The size of the pmp_cfg array, measured in unsigned long entries.
  */
-static inline void z_riscv_pmp_read_config(unsigned long *pmp_cfg, size_t pmp_cfg_size)
+IF_DISABLED(CONFIG_ZTEST, (static inline)) void z_riscv_pmp_read_config(unsigned long *pmp_cfg,
+								      size_t pmp_cfg_size)
 {
 	__ASSERT(pmp_cfg_size == (size_t)(CONFIG_PMP_SLOTS / PMPCFG_STRIDE),
 		 "Invalid PMP config array size");
@@ -170,20 +172,38 @@ static inline void z_riscv_pmp_write_config(unsigned long *pmp_cfg, size_t pmp_c
 #endif
 }
 
+/**
+ * @brief Reads the PMP address CSRs (pmpaddrX) for all configured slots.
+ *
+ * This helper function abstracts the iterative logic required to read the
+ * individual PMP address registers (pmpaddr0, pmpaddr1, ..., pmpaddrN)
+ * up to the total number of PMP slots configured by CONFIG_PMP_SLOTS.
+ *
+ * @param pmp_addr Pointer to the array where the CSR contents will be stored.
+ * @param pmp_addr_size The size of the pmp_addr array, measured in unsigned long entries.
+ */
+IF_DISABLED(CONFIG_ZTEST, (static inline)) void z_riscv_pmp_read_addr(unsigned long *pmp_addr,
+								    size_t pmp_addr_size)
+{
+	__ASSERT(pmp_addr_size == (size_t)(CONFIG_PMP_SLOTS), "PMP address array size mismatch");
+
+#define PMPADDR_READ(x) pmp_addr[x] = csr_read(pmpaddr##x)
+	FOR_EACH(PMPADDR_READ, (;), 0, 1, 2, 3, 4, 5, 6, 7)
+		;
+
+#if CONFIG_PMP_SLOTS > 8
+	FOR_EACH(PMPADDR_READ, (;), 8, 9, 10, 11, 12, 13, 14, 15)
+		;
+#endif
+#undef PMPADDR_READ
+}
+
 static void dump_pmp_regs(const char *banner)
 {
 	unsigned long pmp_addr[CONFIG_PMP_SLOTS];
 	unsigned long pmp_cfg[CONFIG_PMP_SLOTS / PMPCFG_STRIDE];
 
-#define PMPADDR_READ(x) pmp_addr[x] = csr_read(pmpaddr##x)
-
-	FOR_EACH(PMPADDR_READ, (;), 0, 1, 2, 3, 4, 5, 6, 7);
-#if CONFIG_PMP_SLOTS > 8
-	FOR_EACH(PMPADDR_READ, (;), 8, 9, 10, 11, 12, 13, 14, 15);
-#endif
-
-#undef PMPADDR_READ
-
+	z_riscv_pmp_read_addr(pmp_addr, (size_t)(CONFIG_PMP_SLOTS));
 	z_riscv_pmp_read_config(pmp_cfg, (size_t)(CONFIG_PMP_SLOTS / PMPCFG_STRIDE));
 	print_pmp_entries(0, CONFIG_PMP_SLOTS, pmp_addr, pmp_cfg, banner);
 }
@@ -257,7 +277,7 @@ static bool set_pmp_entry(unsigned int *index_p, uint8_t perm,
 	return ok;
 }
 
-#ifdef CONFIG_PMP_STACK_GUARD
+#if defined(CONFIG_PMP_STACK_GUARD) || defined(CONFIG_MEM_ATTR)
 static inline bool set_pmp_mprv_catchall(unsigned int *index_p,
 					 unsigned long *pmp_addr, unsigned long *pmp_cfg,
 					 unsigned int index_limit)
@@ -409,11 +429,13 @@ void z_riscv_pmp_init(void)
 	unsigned long pmp_cfg[CONFIG_PMP_SLOTS / PMPCFG_STRIDE];
 	unsigned int index = 0;
 
+#ifndef CONFIG_MEM_ATTR
 	/* The read-only area is always there for every mode */
 	set_pmp_entry(&index, PMP_R | PMP_X | PMP_L,
 		      (uintptr_t)__rom_region_start,
 		      (size_t)__rom_region_size,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+#endif /* CONFIG_MEM_ATTR */
 
 #ifdef CONFIG_NULL_POINTER_EXCEPTION_DETECTION_PMP
 	/*
@@ -442,7 +464,7 @@ void z_riscv_pmp_init(void)
 	 * This early, the kernel init code uses the IRQ stack and we want to
 	 * safeguard it as soon as possible. But we need a temporary default
 	 * "catch all" PMP entry for MPRV to work. Later on, this entry will
-	 * be set for each thread by z_riscv_pmp_stackguard_prepare().
+	 * be set for each thread by z_riscv_pmp_kernelmode_prepare().
 	 */
 	set_pmp_mprv_catchall(&index, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 
@@ -505,7 +527,8 @@ void z_riscv_pmp_init(void)
 /**
  * @Brief Initialize the per-thread PMP register copy with global values.
  */
-#if (defined(CONFIG_PMP_STACK_GUARD) && defined(CONFIG_MULTITHREADING)) || defined(CONFIG_USERSPACE)
+#if ((defined(CONFIG_PMP_STACK_GUARD) && defined(CONFIG_MULTITHREADING)) || \
+	defined(CONFIG_MEM_ATTR)) || defined(CONFIG_USERSPACE)
 static inline unsigned int z_riscv_pmp_thread_init(unsigned long *pmp_addr,
 						   unsigned long *pmp_cfg,
 						   unsigned int index_limit)
@@ -527,17 +550,18 @@ static inline unsigned int z_riscv_pmp_thread_init(unsigned long *pmp_addr,
 }
 #endif
 
-#ifdef CONFIG_PMP_STACK_GUARD
-
-#ifdef CONFIG_MULTITHREADING
+#if ((defined(CONFIG_PMP_STACK_GUARD) && defined(CONFIG_MULTITHREADING)) || \
+	defined(CONFIG_MEM_ATTR))
 /**
  * @brief Prepare the PMP stackguard content for given thread.
  *
  * This is called once during new thread creation.
  */
-void z_riscv_pmp_stackguard_prepare(struct k_thread *thread)
+void z_riscv_pmp_kernelmode_prepare(struct k_thread *thread)
 {
 	unsigned int index = z_riscv_pmp_thread_init(PMP_M_MODE(thread));
+
+#if (defined(CONFIG_PMP_STACK_GUARD) && defined(CONFIG_MULTITHREADING))
 	uintptr_t stack_bottom;
 
 	/* make the bottom addresses of our stack inaccessible */
@@ -552,6 +576,21 @@ void z_riscv_pmp_stackguard_prepare(struct k_thread *thread)
 	set_pmp_entry(&index, PMP_NONE,
 		      stack_bottom, Z_RISCV_STACK_GUARD_SIZE,
 		      PMP_M_MODE(thread));
+#endif /* CONFIG_PMP_STACK_GUARD */
+
+#ifdef CONFIG_MEM_ATTR
+	const struct mem_attr_region_t *region;
+	size_t num_regions;
+
+	num_regions = mem_attr_get_regions(&region);
+
+	for (size_t idx = 0; idx < num_regions; ++idx) {
+		set_pmp_entry(&index, DT_MEM_RISCV_TO_PMP_PERM(region[idx].dt_attr),
+			      (uintptr_t)(region[idx].dt_addr), (size_t)(region[idx].dt_size),
+			      PMP_M_MODE(thread));
+	}
+#endif /* CONFIG_MEM_ATTR */
+
 	set_pmp_mprv_catchall(&index, PMP_M_MODE(thread));
 
 	/* remember how many entries we use */
@@ -563,7 +602,7 @@ void z_riscv_pmp_stackguard_prepare(struct k_thread *thread)
  *
  * This is called on every context switch.
  */
-void z_riscv_pmp_stackguard_enable(struct k_thread *thread)
+void z_riscv_pmp_kernelmode_enable(struct k_thread *thread)
 {
 	LOG_DBG("pmp_stackguard_enable for thread %p", thread);
 
@@ -587,12 +626,13 @@ void z_riscv_pmp_stackguard_enable(struct k_thread *thread)
 	csr_set(mstatus, MSTATUS_MPRV);
 }
 
-#endif /* CONFIG_MULTITHREADING */
+#endif /* CONFIG_PMP_STACK_GUARD && CONFIG_MULTITHREADING || CONFIG_MEM_ATTR */
 
+#if (defined(CONFIG_PMP_STACK_GUARD) || defined(CONFIG_MEM_ATTR))
 /**
  * @brief Remove PMP stackguard content to actual PMP registers
  */
-void z_riscv_pmp_stackguard_disable(void)
+void z_riscv_pmp_kernelmode_disable(void)
 {
 
 	unsigned long pmp_addr[CONFIG_PMP_SLOTS];
@@ -620,7 +660,7 @@ void z_riscv_pmp_stackguard_disable(void)
 	}
 }
 
-#endif /* CONFIG_PMP_STACK_GUARD */
+#endif /* CONFIG_PMP_STACK_GUARD || CONFIG_MEM_ATTR */
 
 #ifdef CONFIG_USERSPACE
 
