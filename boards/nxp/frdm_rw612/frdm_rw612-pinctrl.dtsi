@@ -47,9 +47,14 @@
 		};
 	};
 
+	/* support CS0 (Arduino connector) and CS1 (MicroBus connector). */
 	pinmux_flexcomm1_spi: pinmux_flexcomm1_spi {
 		group0 {
 			pinmux = <IO_MUX_FC1_SPI_SS0>;
+			slew-rate = "ultra";
+		};
+		group1 {
+			pinmux = <IO_MUX_FC1_SPI_SS1>;
 			slew-rate = "ultra";
 		};
 	};
