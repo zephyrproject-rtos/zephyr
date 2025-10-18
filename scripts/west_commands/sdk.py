@@ -210,10 +210,11 @@ class Sdk(WestCommand):
         if args.version:
             version = args.version
         else:
-            if os.environ["ZEPHYR_BASE"]:
-                zephyr_base = Path(os.environ["ZEPHYR_BASE"])
+            zephyr_base_env = os.environ.get("ZEPHYR_BASE")
+            if zephyr_base_env:
+                zephyr_base = Path(zephyr_base_env)
             else:
-                zephyr_base = Path(__file__).parents[2]
+                zephyr_base = Path(__file__).resolve().parents[2]
 
             sdk_version_file = zephyr_base / "SDK_VERSION"
 
