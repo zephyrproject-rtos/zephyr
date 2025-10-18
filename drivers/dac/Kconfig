@@ -71,4 +71,6 @@ source "drivers/dac/Kconfig.samd5x"
 
 source "drivers/dac/Kconfig.silabs"
 
+source "drivers/dac/Kconfig.tx311"
+
 endif # DAC
