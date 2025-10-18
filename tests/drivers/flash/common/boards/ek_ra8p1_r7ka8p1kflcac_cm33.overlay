@@ -9,9 +9,9 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		storage_partition: partition@48000 {
+		storage_partition: partition@38000 {
 			label = "storage";
-			reg = <0x48000 DT_SIZE_K(32)>;
+			reg = <0x38000 DT_SIZE_K(32)>;
 		};
 	};
 };
