@@ -25,8 +25,13 @@ child-binding:
       type: int
       description: the index of XLPIN
 
+    latch-enable:
+      type: boolean
+      description: Enable latching of XLPIN if present
+
     polarity:
       type: string
+      required: true
       enum: ["default", "low-falling", "high-rising"]
       description: |
         Polarity setting for this XLPIN:
