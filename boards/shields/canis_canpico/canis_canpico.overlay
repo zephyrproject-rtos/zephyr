@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2025 Steve Boylan
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pico_spi {
+	status = "okay";
+	cs-gpios = <&pico_header 6 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&spi1_canpico>;
+	pinctrl-names = "default";
+
+	mcp251xfd_canis_canpico: can@0 {
+		compatible = "microchip,mcp251xfd";
+		spi-max-frequency = <1000000>;
+		int-gpios = <&pico_header 5 GPIO_ACTIVE_LOW>;
+		status = "okay";
+		reg = <0x0>;
+		osc-freq = <16000000>;
+
+		can-transceiver {
+			max-bitrate = <1000000>;
+		};
+	};
+};
+
+&pinctrl {
+	spi1_canpico: spi1_canpico {
+		group1 {
+			pinmux = <SPI1_SCK_P10>, <SPI1_TX_P11>;
+		};
+
+		group2 {
+			pinmux = <SPI1_RX_P8>;
+			input-enable;
+		};
+	};
+};
+
+/ {
+	chosen {
+		zephyr,canbus = &mcp251xfd_canis_canpico;
+	};
+};
