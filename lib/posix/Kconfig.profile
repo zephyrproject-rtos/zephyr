@@ -2,12 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config POSIX_SYSTEM_INTERFACES
-	bool
-	select NATIVE_LIBC_INCOMPATIBLE
-	help
-	  Make POSIX headers available to the system without the "zephyr/posix" prefix.
-
 config POSIX_API
 	bool "POSIX APIs"
 	select POSIX_SYSTEM_INTERFACES
