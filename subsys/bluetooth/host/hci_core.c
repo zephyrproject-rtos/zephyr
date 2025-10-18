@@ -4747,6 +4747,10 @@ int bt_set_name(const char *name)
 		return -ENOMEM;
 	}
 
+	if (len == 0) {
+		return -EINVAL;
+	}
+
 	if (!strcmp(bt_dev.name, name)) {
 		return 0;
 	}
@@ -4760,6 +4764,14 @@ int bt_set_name(const char *name)
 			LOG_WRN("Unable to store name");
 		}
 	}
+
+#if defined(CONFIG_BT_CLASSIC)
+	err = bt_br_write_local_name(bt_dev.name);
+	if (err) {
+		LOG_WRN("Unable to set local name");
+		return err;
+	}
+#endif
 
 	return 0;
 #else
