@@ -1,0 +1,6 @@
+board:
+  name: 32f967_dv
+  full_name: ELAN EM32F967
+  vendor: ELAN
+  socs:
+   - name: em32f967
