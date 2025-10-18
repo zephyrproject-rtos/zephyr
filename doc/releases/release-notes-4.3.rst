@@ -84,6 +84,8 @@ Deprecated APIs and options
 * :c:func:`bt_ctlr_set_public_addr` is deprecated in favor of using
   :c:struct:`bt_hci_cp_vs_write_bd_addr` for setting the public Bluetooth device address.
 
+* :kconfig:option:`CONFIG_XOPEN_STREAMS` was deprecated. Use :kconfig:option:`CONFIG_XSI_STREAMS` instead.
+
 New APIs and options
 ====================
 
