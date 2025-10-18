@@ -395,9 +395,11 @@ static inline void disable_tx(const struct device *dev)
 	sci->SCR.BYTE &= ~(BIT(R_SCI_SCR_TIE_Pos) | BIT(R_SCI_SCR_TEIE_Pos));
 
 	/* Make sure no transmission is in progress. */
-	while ((sci->SSR.BYTE & BIT(R_SCI_SSR_TDRE_Pos)) == 0) {
+	while ((sci->SSR.BYTE & BIT(R_SCI_SSR_TDRE_Pos)) == 0 ||
+	       (sci->SSR.BYTE & BIT(R_SCI_SSR_TEND_Pos)) == 0) {
+		/* Do nothing */
 	}
-	sci->SCR.BIT.TIE = 0;
+
 	sci->SCR.BIT.TE = 0;
 }
 
@@ -635,7 +637,6 @@ static int uart_rx_sci_async_tx_abort(const struct device *dev)
 
 	disable_tx(dev);
 	k_work_cancel_delayable(&data->tx_timeout);
-	dtc_renesas_rx_disable_transfer(data->txi_irq);
 
 	transfer_properties_t tx_properties = {0};
 
@@ -646,12 +647,19 @@ static int uart_rx_sci_async_tx_abort(const struct device *dev)
 		goto end;
 	}
 
-	struct uart_event event = {
-		.type = UART_TX_ABORTED,
-		.data.tx.buf = (uint8_t *)data->tx_transfer_info.p_src,
-		.data.tx.len = data->tx_buf_cap - tx_properties.transfer_length_remaining,
-	};
-	async_user_callback(dev, &event);
+	data->tx_buf_len = data->tx_buf_cap - tx_properties.transfer_length_remaining;
+
+	dtc_renesas_rx_disable_transfer(data->txi_irq);
+
+	if (data->tx_buf_len < data->tx_buf_cap) {
+		struct uart_event event = {
+			.type = UART_TX_ABORTED,
+			.data.tx.buf = (uint8_t *)data->tx_transfer_info.p_src,
+			.data.tx.len = data->tx_buf_cap - tx_properties.transfer_length_remaining,
+		};
+		async_user_callback(dev, &event);
+	}
+
 	data->tx_buffer = NULL;
 	data->tx_buf_cap = 0;
 
