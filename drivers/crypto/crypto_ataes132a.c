@@ -47,16 +47,18 @@ static int ataes132a_send_command(const struct device *dev, uint8_t opcode,
 	int retry_count = 0;
 	struct ataes132a_device_data *data = dev->data;
 	const struct ataes132a_device_config *cfg = dev->config;
+	uint16_t count_wide;
 	uint8_t count;
 	uint8_t status;
 	uint8_t crc[2];
 	int i, i2c_return;
 
-	count = nparams + 5;
-	if (count > 64) {
+	count_wide = (uint16_t)nparams + 5U;
+	if (count_wide > 64U) {
 		LOG_ERR("command too large for command buffer");
 		return -EDOM;
 	}
+	count = (uint8_t)count_wide;
 
 	/* If there is a command in progress, idle wait until it is available.
 	 * If there is concurrency protection around the driver, this should
@@ -583,7 +585,7 @@ int ataes132a_aes_ecb_block(const struct device *dev,
 			    struct cipher_pkt *pkt)
 {
 	struct ataes132a_device_data *data = dev->data;
-	uint8_t buf_len;
+	size_t buf_len;
 	uint8_t out_len;
 	uint8_t return_code;
 	uint8_t param_buffer[19];
@@ -594,7 +596,7 @@ int ataes132a_aes_ecb_block(const struct device *dev,
 	}
 
 	buf_len = pkt->in_len;
-	if (buf_len > 16) {
+	if (buf_len > 16U) {
 		LOG_ERR("input block cannot be above 16 bytes");
 		return -EINVAL;
 	}
@@ -634,17 +636,16 @@ int ataes132a_aes_ecb_block(const struct device *dev,
 	param_buffer[1] = key_id;
 	param_buffer[2] = 0x0;
 	memcpy(param_buffer + 3, pkt->in_buf, buf_len);
-	/* skip memset() if buf_len==16.
-	 * Indeed, calling memset(&param_buffer[19], 0x0, 0)
-	 * is an undefined behaviour in C as &param_buffer[19] is
-	 * an invalid pointer (even if size is 0).
-	 */
-	if (buf_len < 16) {
-		(void)memset(param_buffer + 3 + buf_len, 0x0, 16 - buf_len);
+	/* If buf_len is less than 16,
+         * zero-pad the payload in param_buffer to a 16-byte block.
+         */
+	if (buf_len < 16U) {
+		(void)memset(param_buffer + 3 + buf_len, 0x0, 16U - buf_len);
 	}
 
+	uint8_t nparams = (uint8_t)(buf_len + 3U);
 	return_code = ataes132a_send_command(dev, ATAES_LEGACY_OP, 0x00,
-					     param_buffer, buf_len + 3,
+					     param_buffer, nparams,
 					     param_buffer, &out_len);
 
 	if (return_code != 0U) {
