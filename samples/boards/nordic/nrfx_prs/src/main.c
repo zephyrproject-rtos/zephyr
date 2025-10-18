@@ -28,7 +28,7 @@
  */
 #define SPI_DEV_NODE DT_NODELABEL(spi1)
 
-static nrfx_spim_t spim = NRFX_SPIM_INSTANCE(2);
+static nrfx_spim_t spim = NRFX_SPIM_INSTANCE(NRF_SPIM2);
 static nrfx_uarte_t uarte = NRFX_UARTE_INSTANCE(2);
 static bool spim_initialized;
 static bool uarte_initialized;
@@ -121,7 +121,6 @@ static void spim_handler(const nrfx_spim_evt_t *p_event, void *p_context)
 static bool switch_to_spim(void)
 {
 	int ret;
-	nrfx_err_t err;
 	uint32_t sck_pin;
 
 	PINCTRL_DT_DEFINE(SPIM_NODE);
@@ -162,9 +161,9 @@ static bool switch_to_spim(void)
 		nrfy_gpio_pin_write(sck_pin, (spim_config.mode <= NRF_SPIM_MODE_1) ? 0 : 1);
 	}
 
-	err = nrfx_spim_init(&spim, &spim_config, spim_handler, NULL);
-	if (err != NRFX_SUCCESS) {
-		printk("nrfx_spim_init() failed: 0x%08x\n", err);
+	ret = nrfx_spim_init(&spim, &spim_config, spim_handler, NULL);
+	if (ret != 0) {
+		printk("nrfx_spim_init() failed: %d", ret);
 		return false;
 	}
 
@@ -176,7 +175,7 @@ static bool switch_to_spim(void)
 static bool spim_transfer(const uint8_t *tx_data, size_t tx_data_len,
 			  uint8_t *rx_buf, size_t rx_buf_size)
 {
-	nrfx_err_t err;
+	int err;
 	nrfx_spim_xfer_desc_t xfer_desc = {
 		.p_tx_buffer = tx_data,
 		.tx_length = tx_data_len,
@@ -185,8 +184,8 @@ static bool spim_transfer(const uint8_t *tx_data, size_t tx_data_len,
 	};
 
 	err = nrfx_spim_xfer(&spim, &xfer_desc, 0);
-	if (err != NRFX_SUCCESS) {
-		printk("nrfx_spim_xfer() failed: 0x%08x\n", err);
+	if (err != 0) {
+		printk("nrfx_spim_xfer() failed: %d\n", err);
 		return false;
 	}
 
