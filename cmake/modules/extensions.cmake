@@ -4469,6 +4469,54 @@ function(dt_chosen var)
   endif()
 endfunction()
 
+# Usage:
+#   dt_fixed_partition_addr(<var> PATH <partition_path> [TARGET <target>])
+#
+# Returns the absolute address of a fixed partition, i.e., the sum of the
+# base address of the containing grand-parent node and the partition's offset.
+#
+# <var>          : Return variable where the address value will be stored
+# PATH <path>    : Node path (partition node)
+# TARGET <target>: Optional target to retrieve devicetree information from
+
+function(dt_fixed_partition_addr var)
+  set(req_single_args "PATH")
+  set(single_args "TARGET")
+  cmake_parse_arguments(DT_FIXED_PART "" "${req_single_args};${single_args}" "" ${ARGN})
+
+  dt_target_internal(DT_FIXED_PART_TARGET)
+
+  foreach(arg ${req_single_args})
+    if(NOT DEFINED DT_FIXED_PART_${arg})
+      message(FATAL_ERROR "dt_fixed_partition_addr(${ARGV0} ...) missing required argument: ${arg}")
+    endif()
+  endforeach()
+
+  # Get canonical path of partition node
+  dt_path_internal(partition_canonical "${DT_FIXED_PART_PATH}" "${DT_FIXED_PART_TARGET}")
+
+  # Get grand-parent node
+  string(REGEX REPLACE "\/partitions\/partition@[0-9a-fA-F]+" "" partition_gparent "${partition_canonical}")
+
+  # Get grand-parent node address (base address)
+  get_target_property(gparent_addr_list "${DT_FIXED_PART_TARGET}" "DT_REG|${partition_gparent}|ADDR")
+  list(GET gparent_addr_list 0 gparent_addr)
+
+  # Get partition offset
+  get_target_property(partition_addr_list "${DT_FIXED_PART_TARGET}" "DT_REG|${partition_canonical}|ADDR")
+  list(GET partition_addr_list 0 partition_addr)
+
+  # If either address is missing, return undefined
+  if("${gparent_addr}" STREQUAL "NONE" OR "${partition_addr}" STREQUAL "NONE")
+    message(FATAL_ERROR "No partition DT addr or no grand-parent node's DT addr is found")
+    set(${var} PARENT_SCOPE)
+    return()
+  endif()
+
+  math(EXPR partition_abs_addr "${gparent_addr} + ${partition_addr}" OUTPUT_FORMAT HEXADECIMAL)
+  set(${var} ${partition_abs_addr} PARENT_SCOPE)
+endfunction()
+
 # Internal helper. Check that the CMake target named by variable 'var' is valid
 # for use in other dt_* functions. If 'var' is undefined, set it to the default
 # name of "devicetree_target", which is initialized in cmake/modules/dts.cmake.
