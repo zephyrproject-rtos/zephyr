@@ -855,8 +855,6 @@ CPU Frequency Scaling:
     - seankyer
   files:
     - include/zephyr/cpu_freq/
-    - include/zephyr/cpu_load/
-    - subsys/cpu_load/
     - subsys/cpu_freq/
     - dts/bindings/p_state/
   labels:

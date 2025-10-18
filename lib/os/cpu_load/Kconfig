@@ -3,14 +3,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig CPU_LOAD_METRIC
-	bool "CPU Load Subsystem"
+	bool "CPU Load Metric"
 	select EXPERIMENTAL
 	select THREAD_RUNTIME_STATS
 	select SCHED_THREAD_USAGE
 	select SCHED_THREAD_USAGE_ALL
 	select SCHED_THREAD_USAGE_AUTO_ENABLE
 	help
-	  CPU Load subsystem
+	  Tracking of CPU load statistics.
 
 if CPU_LOAD_METRIC
 
