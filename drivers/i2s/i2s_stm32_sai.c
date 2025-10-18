@@ -283,11 +283,16 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 	}
 
 	hdma->Instance = STM32_DMA_GET_INSTANCE(stream->reg, stream->dma_channel);
+#if defined(CONFIG_SOC_SERIES_STM32F7X)
+	hdma->Init.Channel = dma_cfg.dma_slot * DMA_CHANNEL_1;
+#else
 	hdma->Init.Request = dma_cfg.dma_slot;
+#endif
 	hdma->Init.Mode = DMA_NORMAL;
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32L4X) ||                  \
-	defined(CONFIG_SOC_SERIES_STM32G4X) || defined(CONFIG_SOC_SERIES_STM32L5X)
+	defined(CONFIG_SOC_SERIES_STM32G4X) || defined(CONFIG_SOC_SERIES_STM32L5X) ||              \
+	defined(CONFIG_SOC_SERIES_STM32F7X)
 	hdma->Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
 	hdma->Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
 	hdma->Init.Priority = DMA_PRIORITY_HIGH;
@@ -304,7 +309,7 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 	hdma->Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
 #endif
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32F7X)
 	hdma->Init.FIFOMode = DMA_FIFOMODE_DISABLE;
 #endif
 
@@ -312,7 +317,8 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 		hdma->Init.Direction = DMA_MEMORY_TO_PERIPH;
 
 #if !defined(CONFIG_SOC_SERIES_STM32H7X) && !defined(CONFIG_SOC_SERIES_STM32L4X) &&                \
-	!defined(CONFIG_SOC_SERIES_STM32G4X) && !defined(CONFIG_SOC_SERIES_STM32L5X)
+	!defined(CONFIG_SOC_SERIES_STM32G4X) && !defined(CONFIG_SOC_SERIES_STM32L5X) &&            \
+	!defined(CONFIG_SOC_SERIES_STM32F7X)
 		hdma->Init.SrcInc = DMA_SINC_INCREMENTED;
 		hdma->Init.DestInc = DMA_DINC_FIXED;
 #endif
@@ -322,7 +328,8 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 		hdma->Init.Direction = DMA_PERIPH_TO_MEMORY;
 
 #if !defined(CONFIG_SOC_SERIES_STM32H7X) && !defined(CONFIG_SOC_SERIES_STM32L4X) &&                \
-	!defined(CONFIG_SOC_SERIES_STM32G4X) && !defined(CONFIG_SOC_SERIES_STM32L5X)
+	!defined(CONFIG_SOC_SERIES_STM32G4X) && !defined(CONFIG_SOC_SERIES_STM32L5X) &&            \
+	!defined(CONFIG_SOC_SERIES_STM32F7X)
 		hdma->Init.SrcInc = DMA_SINC_FIXED;
 		hdma->Init.DestInc = DMA_DINC_INCREMENTED;
 #endif
@@ -342,7 +349,8 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 		return -EIO;
 	}
 #elif !defined(CONFIG_SOC_SERIES_STM32H7X) && !defined(CONFIG_SOC_SERIES_STM32L4X) &&              \
-	!defined(CONFIG_SOC_SERIES_STM32G4X) && !defined(CONFIG_SOC_SERIES_STM32L5X)
+	!defined(CONFIG_SOC_SERIES_STM32G4X) && !defined(CONFIG_SOC_SERIES_STM32L5X) &&            \
+	!defined(CONFIG_SOC_SERIES_STM32F7X)
 	if (HAL_DMA_ConfigChannelAttributes(&dev_data->hdma, DMA_CHANNEL_NPRIV) != HAL_OK) {
 		LOG_ERR("HAL_DMA_ConfigChannelAttributes: <Failed>");
 		return -EIO;
@@ -399,7 +407,6 @@ static int i2s_stm32_sai_initialize(const struct device *dev)
 static void dma_callback(const struct device *dma_dev, void *arg, uint32_t channel, int status)
 {
 	DMA_HandleTypeDef *hdma = arg;
-
 	ARG_UNUSED(dma_dev);
 
 	if (status < 0) {
@@ -458,7 +465,7 @@ static int i2s_stm32_sai_configure(const struct device *dev, enum i2s_dir dir,
 	}
 
 	/* Control of MCLK output from SAI configuration is not possible on STM32L4xx MCUs */
-#if !defined(CONFIG_SOC_SERIES_STM32L4X)
+#if !defined(CONFIG_SOC_SERIES_STM32L4X) && !defined(CONFIG_SOC_SERIES_STM32F7X)
 	if (cfg->mclk_enable && stream->master) {
 		hsai->Init.MckOutput = SAI_MCK_OUTPUT_ENABLE;
 	} else {
@@ -472,7 +479,7 @@ static int i2s_stm32_sai_configure(const struct device *dev, enum i2s_dir dir,
 		hsai->Init.NoDivider = SAI_MASTERDIVIDER_ENABLE;
 
 		/* MckOverSampling is not supported by all STM32L4xx MCUs */
-#if !defined(CONFIG_SOC_SERIES_STM32L4X)
+#if !defined(CONFIG_SOC_SERIES_STM32L4X) && !defined(CONFIG_SOC_SERIES_STM32F7X)
 		if (cfg->mclk_div == (enum mclk_divider)MCLK_DIV_256) {
 			hsai->Init.MckOverSampling = SAI_MCK_OVERSAMPLING_DISABLE;
 		} else {
