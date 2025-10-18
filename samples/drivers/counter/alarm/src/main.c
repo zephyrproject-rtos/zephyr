@@ -78,12 +78,18 @@ struct counter_alarm_cfg alarm_cfg;
 #error Unable to find a counter device node in devicetree
 #endif
 
+#ifdef CONFIG_COUNTER_64BITS
+#define COUNTER_TICKS_FMT "%llu"
+#else
+#define COUNTER_TICKS_FMT "%u"
+#endif
+
 static void test_counter_interrupt_fn(const struct device *counter_dev,
-				      uint8_t chan_id, uint32_t ticks,
+				      uint8_t chan_id, counter_ticks_t ticks,
 				      void *user_data)
 {
 	struct counter_alarm_cfg *config = user_data;
-	uint32_t now_ticks;
+	counter_ticks_t now_ticks;
 	uint64_t now_usec;
 	int now_sec;
 	int err;
@@ -107,7 +113,7 @@ static void test_counter_interrupt_fn(const struct device *counter_dev,
 	/* Set a new alarm with a double length duration */
 	config->ticks = config->ticks * 2U;
 
-	printk("Set alarm in %u sec (%u ticks)\n",
+	printk("Set alarm in %u sec (" COUNTER_TICKS_FMT " ticks)\n",
 	       (uint32_t)(counter_ticks_to_us(counter_dev,
 					   config->ticks) / USEC_PER_SEC),
 	       config->ticks);
@@ -140,7 +146,7 @@ int main(void)
 
 	err = counter_set_channel_alarm(counter_dev, ALARM_CHANNEL_ID,
 					&alarm_cfg);
-	printk("Set alarm in %u sec (%u ticks)\n",
+	printk("Set alarm in %u sec (" COUNTER_TICKS_FMT " ticks)\n",
 	       (uint32_t)(counter_ticks_to_us(counter_dev,
 					   alarm_cfg.ticks) / USEC_PER_SEC),
 	       alarm_cfg.ticks);

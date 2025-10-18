@@ -44,7 +44,7 @@ static int token[3];
 static int success_cnt;
 static int error_cnt;
 
-static void alarm_handler_c(const struct device *dev, uint8_t chan_id, uint32_t counter,
+static void alarm_handler_c(const struct device *dev, uint8_t chan_id, counter_ticks_t counter,
 			    void *user_data)
 {
 	if (dev == timer2 && token[0] == TOKEN_A && token[1] == TOKEN_B && token[2] == 0) {
@@ -54,7 +54,7 @@ static void alarm_handler_c(const struct device *dev, uint8_t chan_id, uint32_t 
 	k_busy_wait(ISR_DELAY_US);
 }
 
-static void alarm_handler_b(const struct device *dev, uint8_t chan_id, uint32_t counter,
+static void alarm_handler_b(const struct device *dev, uint8_t chan_id, counter_ticks_t counter,
 			    void *user_data)
 {
 	if (dev == timer1 && token[0] == TOKEN_A && token[1] == 0 && token[2] == 0) {
@@ -64,7 +64,7 @@ static void alarm_handler_b(const struct device *dev, uint8_t chan_id, uint32_t 
 	k_busy_wait(ISR_DELAY_US);
 }
 
-static void alarm_handler_a(const struct device *dev, uint8_t chan_id, uint32_t counter,
+static void alarm_handler_a(const struct device *dev, uint8_t chan_id, counter_ticks_t counter,
 			    void *user_data)
 {
 	if (dev == timer0 && token[0] == 0 && token[1] == 0 && token[2] == 0) {
