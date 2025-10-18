@@ -114,6 +114,10 @@ static enum net_verdict evaluate(sys_slist_t *rule_head, struct net_pkt *pkt)
 
 	SYS_SLIST_FOR_EACH_CONTAINER(rule_head, rule, node) {
 		if (apply_tests(rule, pkt) == true) {
+			if (rule->result == NET_CONTINUE) {
+				net_pkt_set_priority(pkt, rule->priority);
+				continue;
+			}
 			return rule->result;
 		}
 	}
