@@ -105,4 +105,6 @@ source "drivers/dma/Kconfig.sf32lb"
 
 source "drivers/dma/Kconfig.bflb"
 
+source "drivers/dma/Kconfig.nxp_4ch_dma"
+
 endif # DMA
