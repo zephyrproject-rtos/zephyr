@@ -222,7 +222,7 @@ function(zephyr_mcuboot_tasks)
     endif()
 
     if(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD OR CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT)
-      list(APPEND byproducts ${output}.slot1.signed.encrypted.bin)
+      list(APPEND byproducts ${output}.slot1.signed.bin)
       set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
                    ${imgtool_sign} ${imgtool_args_alt_slot} ${output}.bin
                    ${output}.slot1.signed.bin)
