@@ -172,7 +172,7 @@ static void tcp_accept_handler(struct net_socket_service_event *pev)
 	int client;
 	int sock = pev->event.fd;
 	char addr_str[INET6_ADDRSTRLEN];
-	struct sockaddr_in6 client_addr;
+	struct sockaddr_in6 client_addr = {};
 	socklen_t client_addr_len = sizeof(client_addr);
 
 	client = accept(sock, (struct sockaddr *)&client_addr, &client_addr_len);
