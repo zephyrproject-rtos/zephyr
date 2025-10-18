@@ -129,7 +129,12 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		}
 		stream->dma_callback(dev, stream->user_data, callback_arg, DMA_STATUS_COMPLETE);
 	} else if (stm32_dma_is_unexpected_irq_happened(dma, id)) {
-		LOG_ERR("Unexpected irq happened.");
+		/* Let HAL DMA handle flags on its own */
+		if (!stream->hal_override) {
+			LOG_ERR("Unexpected irq happened.");
+			stm32_dma_dump_stream_irq(dma, id);
+			stm32_dma_clear_stream_irq(dma, id);
+		}
 		stream->dma_callback(dev, stream->user_data,
 				     callback_arg, -EIO);
 	} else {
