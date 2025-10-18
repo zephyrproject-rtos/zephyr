@@ -111,6 +111,26 @@ enum fuel_gauge_prop_type {
 	FUEL_GAUGE_STATE_OF_CHARGE_ALARM,
 	/** Low Cell Voltage Alarm (uV)*/
 	FUEL_GAUGE_LOW_VOLTAGE_ALARM,
+	/** High Cell Voltage Alarm (uV)*/
+	FUEL_GAUGE_HIGH_VOLTAGE_ALARM,
+	/** Low Cell Current Alarm (uA)*/
+	FUEL_GAUGE_LOW_CURRENT_ALARM,
+	/** High Cell Current Alarm (uA)*/
+	FUEL_GAUGE_HIGH_CURRENT_ALARM,
+	/** Low Cell Temperature Alarm (dK)*/
+	FUEL_GAUGE_LOW_TEMPERATURE_ALARM,
+	/** High Cell Temperature Alarm (dK)*/
+	FUEL_GAUGE_HIGH_TEMPERATURE_ALARM,
+	/** Low GPIO Voltage Alarm (uV)*/
+	FUEL_GAUGE_LOW_GPIO_ALARM,
+	/** High GPIO Voltage Alarm (uV)*/
+	FUEL_GAUGE_HIGH_GPIO_ALARM,
+	/** GPIO Voltage (uV)*/
+	FUEL_GAUGE_GPIO_VOLTAGE,
+	/** ADC Mode (flags) */
+	FUEL_GAUGE_ADC_MODE,
+	/** Coulomb Counter Config (flags)*/
+	FUEL_GAUGE_CC_CONFIG,
 
 	/** Reserved to demark end of common fuel gauge properties */
 	FUEL_GAUGE_COMMON_COUNT,
@@ -195,6 +215,26 @@ union fuel_gauge_prop_val {
 	uint8_t state_of_charge_alarm;
 	/** FUEL_GAUGE_LOW_VOLTAGE_ALARM */
 	uint32_t low_voltage_alarm;
+	/** FUEL_GAUGE_HIGH_VOLTAGE_ALARM */
+	uint32_t high_voltage_alarm;
+	/** FUEL_GAUGE_LOW_CURRENT_ALARM */
+	int32_t low_current_alarm;
+	/** FUEL_GAUGE_HIGH_CURRENT_ALARM */
+	int32_t high_current_alarm;
+	/** FUEL_GAUGE_LOW_TEMPERATURE_ALARM */
+	uint16_t low_temperature_alarm;
+	/** FUEL_GAUGE_HIGH_TEMPERATURE_ALARM */
+	uint16_t high_temperature_alarm;
+	/** FUEL_GAUGE_GPIO_VOLTAGE*/
+	int32_t gpio_voltage;
+	/** FUEL_GAUGE_LOW_GPIO_ALARM */
+	int32_t low_gpio_alarm;
+	/** FUEL_GAUGE_HIGH_GPIO_ALARM */
+	int32_t high_gpio_alarm;
+	/** FUEL_GAUGE_ADC_MODE */
+	uint8_t adc_mode;
+	/** FUEL_GAUGE_CC_CONFIG */
+	uint8_t cc_config;
 };
 
 /**
