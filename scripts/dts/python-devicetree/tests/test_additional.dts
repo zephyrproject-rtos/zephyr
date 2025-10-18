@@ -1,0 +1,18 @@
+/*
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
+/dts-v1/;
+
+/ {
+	additional-parent {
+		compatible = "additional-prop-parent";
+		base = <7>;
+		child {
+			compatible = "additional-prop-child";
+			base = <8>;
+			child-only = "ok";
+			extra = <9>;
+		};
+	};
+};
