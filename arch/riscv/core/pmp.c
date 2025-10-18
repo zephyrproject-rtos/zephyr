@@ -48,7 +48,7 @@ LOG_MODULE_REGISTER(mpu);
 #define PMP_NA4_SUPPORTED	!IS_ENABLED(CONFIG_PMP_NO_NA4)
 #define PMP_NAPOT_SUPPORTED	!IS_ENABLED(CONFIG_PMP_NO_NAPOT)
 
-#define PMPCFG_STRIDE sizeof(unsigned long)
+#define PMPCFG_STRIDE (__riscv_xlen / 8)
 
 #define PMP_ADDR(addr)			((addr) >> 2)
 #define NAPOT_RANGE(size)		(((size) - 1) >> 1)
@@ -114,7 +114,8 @@ static void print_pmp_entries(unsigned int pmp_start, unsigned int pmp_end,
  * @param pmp_cfg Pointer to the array where the CSR contents will be stored.
  * @param pmp_cfg_size The size of the pmp_cfg array, measured in unsigned long entries.
  */
-static inline void z_riscv_pmp_read_config(unsigned long *pmp_cfg, size_t pmp_cfg_size)
+IF_DISABLED(CONFIG_ZTEST, (static inline)) void z_riscv_pmp_read_config(unsigned long *pmp_cfg,
+								      size_t pmp_cfg_size)
 {
 	__ASSERT(pmp_cfg_size == (size_t)(CONFIG_PMP_SLOTS / PMPCFG_STRIDE),
 		 "Invalid PMP config array size");
@@ -400,6 +401,29 @@ static unsigned long global_pmp_last_addr;
 /* End of global PMP entry range */
 static unsigned int global_pmp_end_index;
 
+void riscv_pmp_clear_all(void)
+{
+	/*
+	 * Ensure we are in M-mode and that memory accesses use M-mode privileges
+	 * (MPRV=0). We also set MPP to M-mode to establish a predictable prior privilege level.
+	 */
+	csr_clear(mstatus, MSTATUS_MPRV);
+	csr_set(mstatus, MSTATUS_MPP);
+
+	const size_t num_pmpcfg_reg = CONFIG_PMP_SLOTS / PMPCFG_STRIDE;
+	unsigned long pmp_cfg[num_pmpcfg_reg];
+
+	z_riscv_pmp_read_config(pmp_cfg, num_pmpcfg_reg);
+
+	uint8_t *pmp_n_cfg = (uint8_t *)pmp_cfg;
+
+	for (int index = 0; index < CONFIG_PMP_SLOTS; ++index) {
+		pmp_n_cfg[index] = 0x0;
+	}
+
+	z_riscv_pmp_write_config(pmp_cfg, num_pmpcfg_reg);
+}
+
 /**
  * @Brief Initialize the PMP with global entries on each CPU
  */
@@ -596,7 +620,7 @@ void z_riscv_pmp_stackguard_disable(void)
 {
 
 	unsigned long pmp_addr[CONFIG_PMP_SLOTS];
-	unsigned long pmp_cfg[CONFIG_PMP_SLOTS / sizeof(unsigned long)];
+	unsigned long pmp_cfg[CONFIG_PMP_SLOTS / (__riscv_xlen / 8)];
 	unsigned int index = global_pmp_end_index;
 
 	/* Retrieve the pmpaddr value matching the last global PMP slot. */
