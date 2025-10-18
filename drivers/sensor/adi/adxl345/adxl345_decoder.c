@@ -51,8 +51,9 @@ static const uint32_t range_to_shift[] = {
 	[ADXL345_RANGE_16G] = 8,
 };
 
-static inline void adxl345_accel_convert_q31(q31_t *out, int16_t sample, int32_t range,
-					uint8_t is_full_res)
+static inline void adxl345_accel_convert_q31(q31_t *out, int16_t sample,
+					     enum adxl345_range range,
+					     bool is_full_res)
 {
 	if (is_full_res) {
 		switch (range) {
@@ -113,17 +114,18 @@ static int adxl345_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 	}
 
 	struct sensor_three_axis_data *data = (struct sensor_three_axis_data *)data_out;
+	enum adxl345_range selected_range = enc_data->selected_range;
 
 	memset(data, 0, sizeof(struct sensor_three_axis_data));
 	data->header.base_timestamp_ns = enc_data->timestamp;
 	data->header.reading_count = 1;
-	data->shift = range_to_shift[enc_data->selected_range];
+	data->shift = range_to_shift[selected_range];
 
 	buffer += sizeof(struct adxl345_fifo_data);
 
 	uint8_t sample_set_size = enc_data->sample_set_size;
 	uint64_t period_ns = accel_period_ns[enc_data->accel_odr];
-	uint8_t is_full_res = enc_data->is_full_res;
+	bool is_full_res = enc_data->is_full_res;
 
 	/* Calculate which sample is decoded. */
 	if ((uint8_t *)*fit >= buffer) {
@@ -147,15 +149,15 @@ static int adxl345_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 			uint8_t buff_offset = 0;
 
 			adxl345_accel_convert_q31(&data->readings[count].x, *(int16_t *)buffer,
-					enc_data->selected_range, is_full_res);
+						  selected_range, is_full_res);
 			buff_offset = 2;
 			adxl345_accel_convert_q31(&data->readings[count].y,
-						*(int16_t *)(buffer + buff_offset),
-							enc_data->selected_range, is_full_res);
+						  *(int16_t *)(buffer + buff_offset),
+						  selected_range, is_full_res);
 			buff_offset += 2;
 			adxl345_accel_convert_q31(&data->readings[count].z,
-						*(int16_t *)(buffer + buff_offset),
-							enc_data->selected_range, is_full_res);
+						  *(int16_t *)(buffer + buff_offset),
+						  selected_range, is_full_res);
 			break;
 		default:
 			return -ENOTSUP;
@@ -275,7 +277,7 @@ static bool adxl345_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigg
 
 	switch (trigger) {
 	case SENSOR_TRIG_FIFO_WATERMARK:
-		return FIELD_GET(ADXL345_INT_MAP_WATERMARK_MSK, data->int_status);
+		return FIELD_GET(ADXL345_INT_WATERMARK, data->int_status);
 	default:
 		return false;
 	}
