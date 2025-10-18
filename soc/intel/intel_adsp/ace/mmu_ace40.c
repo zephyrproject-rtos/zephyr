@@ -131,12 +131,6 @@ const struct xtensa_mmu_range xtensa_soc_mmu_ranges[] = {
 		.name = "imr data",
 	},
 	{
-		.start = (uint32_t)IMR_L3_HEAP_BASE,
-		.end = (uint32_t)(IMR_L3_HEAP_BASE + IMR_L3_HEAP_SIZE),
-		.attrs = XTENSA_MMU_PERM_W | XTENSA_MMU_CACHED_WB,
-		.name = "imr L3 heap",
-	},
-	{
 		.start = (uint32_t)LP_SRAM_BASE,
 		.end = (uint32_t)(LP_SRAM_BASE + LP_SRAM_SIZE),
 		.attrs = XTENSA_MMU_PERM_W | XTENSA_MMU_CACHED_WB,
@@ -163,7 +157,7 @@ const struct xtensa_mmu_range xtensa_soc_mmu_ranges[] = {
 	},
 	{
 		/* FIXME: definitely need more refinements... */
-		.start = (uint32_t)0x170000,
+		.start = (uint32_t)0x160000,
 		.end = (uint32_t)0x180000,
 		.attrs = XTENSA_MMU_PERM_W,
 		.name = "hwreg1",
