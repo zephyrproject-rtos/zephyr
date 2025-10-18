@@ -826,9 +826,14 @@ def main():
         # is called.
         # Note that this only does the identity mapping
         # at the page directory level to minimize wasted space.
-        pt.reserve_unaligned(image_base_phys, image_size, to_level=PD_LEVEL)
+        if isdef("CONFIG_X86_IDENTITY_MAP_AT_PTE_LEVEL"):
+            to_level = PT_LEVEL
+        else:
+            to_level = PD_LEVEL
+
+        pt.reserve_unaligned(image_base_phys, image_size, to_level=to_level)
         pt.identity_map_unaligned(image_base_phys, image_size,
-                                  FLAG_P | FLAG_RW | FLAG_SZ, level=PD_LEVEL)
+                                  FLAG_P | FLAG_RW | FLAG_SZ, level=to_level)
 
     if isdef("CONFIG_X86_64"):
         # 64-bit has a special region in the first 64K to bootstrap other CPUs
