@@ -1,6 +1,7 @@
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
 # Copyright (c) 2016 Cadence Design Systems, Inc.
 # Copyright (c) 2019 Intel Corp.
+# Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config MCUX_LPTMR_TIMER
@@ -13,3 +14,23 @@ config MCUX_LPTMR_TIMER
 	  This module implements a kernel device driver for the NXP MCUX Low
 	  Power Timer (LPTMR) and provides the standard "system clock driver"
 	  interfaces.
+
+config MCUX_LPTMR_TIMER_CUSTOM_SAFETY_CYCLES_WINDOW
+	bool "Custom LPTMR safety window"
+	depends on MCUX_LPTMR_TIMER
+	help
+	  Custom safety window configuration for LPTMR timer.
+	  If enabled, the driver will use SoC-specific default values.
+
+config MCUX_LPTMR_TIMER_SAFETY_WINDOW_CYCLES
+	int "MCUX LPTMR timer safety window cycles"
+	default 100
+	depends on MCUX_LPTMR_TIMER_CUSTOM_SAFETY_CYCLES_WINDOW
+	help
+	  Safety window in cycles to prevent race conditions when updating
+	  the LPTMR compare register (CMR). This value determines the minimum
+	  distance between the current hardware counter and the new compare
+	  value to ensure reliable interrupt triggering.
+	  A smaller value reduces timer latency but increases the risk of
+	  missed interrupts due to hardware timing constraints. A larger
+	  value improves reliability at the cost of slightly increased.
