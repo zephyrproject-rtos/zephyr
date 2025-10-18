@@ -292,6 +292,10 @@ link_roles_manifest_baseurl = "https://github.com/zephyrproject-rtos/zephyr"
 
 notfound_urls_prefix = f"/{version}/" if is_release else "/latest/"
 
+# -- Options for zephyr.manifest_projects_table --------------------------
+
+manifest_projects_table_manifest = str(ZEPHYR_BASE / "west.yml")
+
 # -- Options for zephyr.gh_utils ------------------------------------------
 
 gh_link_version = f"v{version}" if is_release else "main"
