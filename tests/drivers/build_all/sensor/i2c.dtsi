@@ -41,6 +41,8 @@ test_i2c_adt7420: adt7420@0 {
 test_i2c_adxl345: adxl345@1 {
 	compatible = "adi,adxl345";
 	reg = <0x1>;
+	int1-gpios = <&test_gpio 0 0>;
+	fifo-watermark = <1>;
 };
 
 test_i2c_adxl372: adxl372@2 {
