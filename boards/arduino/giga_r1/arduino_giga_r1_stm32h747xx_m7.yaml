@@ -12,6 +12,7 @@ supported:
   - gpio
   - arduino_spi
   - spi
+  - i2c
   - memc
   - usbd
 vendor: arduino
