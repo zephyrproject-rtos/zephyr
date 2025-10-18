@@ -17,6 +17,7 @@
 #include <zephyr/dt-bindings/reset/stm32f0_1_3_reset.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <freq.h>
+#include <mem.h>
 
 / {
 	chosen {

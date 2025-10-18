@@ -16,6 +16,7 @@
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/power/stm32_pwr.h>
 #include <freq.h>
+#include <mem.h>
 
 / {
 	chosen {

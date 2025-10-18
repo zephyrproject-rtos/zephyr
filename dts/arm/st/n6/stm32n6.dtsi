@@ -18,6 +18,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/video/video-interfaces.h>
 #include <freq.h>
+#include <mem.h>
 
 / {
 	cpus {

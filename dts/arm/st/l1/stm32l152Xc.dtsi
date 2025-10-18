@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <mem.h>
 #include <st/l1/stm32l152.dtsi>
 #include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 
