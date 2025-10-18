@@ -11,15 +11,34 @@ if(NOT DEFINED NRFX_DIR)
   set(NRFX_DIR ${ZEPHYR_CURRENT_MODULE_DIR}/nrfx CACHE PATH "nrfx Directory")
 endif()
 
+if(NOT DEFINED CONFIG_SOC_NORDIC_BSP_NAME)
+  message(FATAL_ERROR "CONFIG_SOC_NORDIC_BSP_NAME has to be defined.")
+endif()
+
 set(INC_DIR ${NRFX_DIR}/drivers/include)
 set(SRC_DIR ${NRFX_DIR}/drivers/src)
-set(MDK_DIR ${NRFX_DIR}/mdk)
+set(BSP_DIR ${NRFX_DIR}/bsp)
 set(HELPERS_DIR ${NRFX_DIR}/helpers)
+set(SOC_DIR ${BSP_DIR}/${CONFIG_SOC_NORDIC_BSP_NAME})
+set(MDK_DIR ${SOC_DIR}/mdk)
+
+if(NOT CONFIG_SOC_NORDIC_BSP_NAME STREQUAL "stable")
+  zephyr_compile_definitions(NRFX_BSP_NRF_PATH="${CONFIG_SOC_NORDIC_BSP_NAME}/mdk/nrf.h")
+  zephyr_compile_definitions(NRFX_BSP_ERRATAS_PATH="${CONFIG_SOC_NORDIC_BSP_NAME}/mdk/nrf_erratas.h")
+  zephyr_compile_definitions(NRFX_BSP_SOC_IRQS_PATH="${CONFIG_SOC_NORDIC_BSP_NAME}/soc/nrfx_irqs.h")
+  zephyr_compile_definitions(NRFX_BSP_NRFX_EXT_PATH="${CONFIG_SOC_NORDIC_BSP_NAME}/nrfx_ext.h")
+  zephyr_compile_definitions(NRFX_BSP_NRFX_COREDEP_PATH="${CONFIG_SOC_NORDIC_BSP_NAME}/soc/nrfx_coredep_defs.h")
+endif()
 
 zephyr_include_directories(${NRFX_DIR})
 zephyr_include_directories(${INC_DIR})
+zephyr_include_directories(${BSP_DIR})
+zephyr_include_directories(${SOC_DIR})
+zephyr_include_directories(${SOC_DIR}/templates)
 zephyr_include_directories(${MDK_DIR})
 zephyr_include_directories(.)
+
+include(${SOC_DIR}/zephyr/nrfx.cmake OPTIONAL)
 
 # Define MDK defines globally
 zephyr_compile_definitions_ifdef(CONFIG_SOC_SERIES_NRF51X       NRF51)
@@ -197,13 +216,13 @@ zephyr_compile_definitions_ifndef(CONFIG_SOC_NRF54L_ANOMALY_56_WORKAROUND NRF54L
 
 if(CONFIG_SOC_COMPATIBLE_NRF54LX AND CONFIG_NRFX_GPPI)
   zephyr_library_sources(${HELPERS_DIR}/nrfx_gppi_dppi_ppib_lumos.c)
-  zephyr_library_sources(${NRFX_DIR}/soc/interconnect/dppic_ppib/nrfx_interconnect_dppic_ppib.c)
+  zephyr_library_sources(${SOC_DIR}/soc/interconnect/dppic_ppib/nrfx_interconnect_dppic_ppib.c)
 endif()
 
 if(CONFIG_SOC_SERIES_NRF54HX AND CONFIG_NRFX_GPPI)
   zephyr_library_sources(${HELPERS_DIR}/nrfx_gppi_dppi_ppib.c)
-  zephyr_library_sources(${NRFX_DIR}/soc/interconnect/apb/nrfx_interconnect_apb.c)
-  zephyr_library_sources(${NRFX_DIR}/soc/interconnect/ipct/nrfx_interconnect_ipct.c)
+  zephyr_library_sources(${SOC_DIR}/soc/interconnect/apb/nrfx_interconnect_apb.c)
+  zephyr_library_sources(${SOC_DIR}/soc/interconnect/ipct/nrfx_interconnect_ipct.c)
 endif()
 
 # Get the SVD file for the current SoC

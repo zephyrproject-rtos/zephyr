@@ -504,6 +504,9 @@
 #ifdef CONFIG_NRFX_SPIM4
 #define NRFX_SPIM4_ENABLED 1
 #endif
+#ifdef CONFIG_NRF52_ANOMALY_58_WORKAROUND
+#define NRF52_ERRATA_58_ENABLE_WORKAROUND 1
+#endif
 
 #define NRFX_SPIM_DT_HAS_RX_DELAY(node) DT_PROP(node, rx_delay_supported) +
 
