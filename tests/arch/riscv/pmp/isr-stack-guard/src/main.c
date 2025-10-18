@@ -24,6 +24,30 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 }
 
 #ifdef CONFIG_PMP_STACK_GUARD
+
+#ifdef CONFIG_MULTITHREADING
+
+static void check_isr_stack_guard(void)
+{
+	char *isr_stack = (char *)z_interrupt_stacks[_current_cpu->id];
+
+	valid_fault = true;
+	*isr_stack = 42;
+}
+
+static void check_main_stack_guard(void)
+{
+	struct k_thread *current_thread_ptr = k_current_get();
+	uintptr_t stack_bottom = current_thread_ptr->stack_info.start - K_KERNEL_STACK_RESERVED;
+
+	char *main_stack = (char *)stack_bottom;
+
+	valid_fault = true;
+	*main_stack = 42;
+}
+
+#else /* CONFIG_MULTITHREADING */
+
 static void check_isr_stack_guard(void)
 {
 	char *isr_stack = (char *)z_interrupt_stacks;
@@ -40,7 +64,9 @@ static void check_main_stack_guard(void)
 	*main_stack = 42;
 }
 
-#else
+#endif /* CONFIG_MULTITHREADING */
+
+#else /* CONFIG_PMP_STACK_GUARD */
 
 static void check_isr_stack_guard(void)
 {
@@ -65,7 +91,7 @@ static const pmp_test_func_t pmp_test_func[] = {
  * @brief Verify RISC-V specific PMP stack guard regions.
  * @details Manually write to the protected stack region to trigger fatal error.
  */
-ZTEST(riscv_pmp_no_mt, test_pmp)
+ZTEST(riscv_pmp_isr_main_stack, test_pmp)
 {
 #ifndef PMP_TEST_FUNC_IDX
 #define PMP_TEST_FUNC_IDX 0
@@ -76,4 +102,4 @@ ZTEST(riscv_pmp_no_mt, test_pmp)
 	TC_END_REPORT(TC_FAIL);
 }
 
-ZTEST_SUITE(riscv_pmp_no_mt, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(riscv_pmp_isr_main_stack, NULL, NULL, NULL, NULL, NULL);
