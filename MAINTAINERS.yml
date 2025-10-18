@@ -6099,10 +6099,8 @@ West:
     - thrift
 
 "West project: trusted-firmware-a":
-  status: maintained
+  status: odd fixes
   maintainers:
-    - povergoing
-    - sgrrzhf
   collaborators:
     - wearyzen
     - ithinuel
