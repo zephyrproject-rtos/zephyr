@@ -18,6 +18,18 @@
 		};
 	};
 
+	pinmux_flexcomm6_lpspi: pinmux_flexcomm6_lpspi {
+		group0 {
+			pinmux = <FC6_P0_PIO3_20>, /* SAI1_TXD0 */
+				 <FC6_P1_PIO3_21>, /* SAI1_RXD0 */
+				 <FC6_P2_PIO3_22>,
+				 <FC6_P3_PIO3_23>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
 	pinmux_flexcomm2_lpi2c: pinmux_flexcomm2_lpi2c {
 		group0 {
 			pinmux = <FC2_P0_PIO4_0>,
