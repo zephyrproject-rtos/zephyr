@@ -17,6 +17,7 @@
 #define _NLINK_T_DECLARED
 #define _UID_T_DECLARED
 #define _GID_T_DECLARED
+#define _PID_T_DECLARED
 
 #ifndef _SSIZE_T_DEFINED
 #define _SSIZE_T_DEFINED
