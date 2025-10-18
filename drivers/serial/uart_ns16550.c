@@ -115,6 +115,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define IER_TBE 0x02   /* transmit bit enable */
 #define IER_LSR 0x04   /* line status interrupts */
 #define IER_MSI 0x08   /* modem status interrupts */
+#define IER_UUE 0x40   /* UART Unit Enable (XScale) */
 
 /* equates for interrupt identification register */
 
@@ -732,7 +733,11 @@ static int uart_ns16550_configure(const struct device *dev,
 	(void)ns16550_read_char(dev, &c);
 
 	/* disable interrupts  */
+#if DT_HAS_COMPAT_STATUS_OKAY(intel_xscale_uart)
+	ns16550_outbyte(dev_cfg, IER(dev), IER_UUE);
+#else
 	ns16550_outbyte(dev_cfg, IER(dev), 0x00);
+#endif
 	ret = 0;
 
 out:

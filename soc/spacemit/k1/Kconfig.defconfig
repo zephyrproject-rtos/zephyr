@@ -1,0 +1,28 @@
+# Copyright (c) 2025 Junhui Liu <junhui.liu@pigmoral.tech>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_KEY_STONE
+
+if SOC_K1_N308
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+config RISCV_HART_MASK
+	default 0
+
+config RV_BOOT_HART
+	default 1
+
+config RISCV_MCAUSE_EXCEPTION_MASK
+	default 0xFFF
+
+config NUM_IRQS
+	default 80
+
+config RISCV_SOC_INTERRUPT_INIT
+	default y
+
+endif # SOC_K1_N308
+
+endif # SOC_SERIES_KEY_STONE
