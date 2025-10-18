@@ -40,5 +40,6 @@ rsource "Kconfig.nxp_rstctl"
 rsource "Kconfig.mmio"
 rsource "Kconfig.mchp_mss"
 rsource "Kconfig.sf32lb"
+rsource "Kconfig.focaltech"
 
 endif # RESET
