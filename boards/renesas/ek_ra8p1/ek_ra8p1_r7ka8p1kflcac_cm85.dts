@@ -130,6 +130,17 @@
 	burst-transfer = <256>;
 };
 
+&usbhs {
+	pinctrl-0 = <&usbhs_default>;
+	interrupts = <23 12>;
+	interrupt-names = "usbhs-ir";
+	status = "okay";
+
+	zephyr_udc0: udc {
+		status = "okay";
+	};
+};
+
 zephyr_lcdif: &lcdif {};
 
 pmod_sd_shield: &sdhc0 {};
