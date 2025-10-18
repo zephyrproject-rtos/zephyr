@@ -31,8 +31,9 @@ struct scmi_channel;
  *
  * @param chan pointer to SCMI channel on which the reply
  * arrived
+ * @param hdr is the share memory Message header
  */
-typedef void (*scmi_channel_cb)(struct scmi_channel *chan);
+typedef void (*scmi_channel_cb)(struct scmi_channel *chan, int hdr);
 
 /**
  * @struct scmi_channel
