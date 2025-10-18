@@ -142,6 +142,16 @@
 		};
 	};
 
+	lpuart3_default: lpuart3_default {
+		group0 {
+			pinmux = <&iomuxc_gpio_io31_lpuart_rx_lpuart3_rx>,
+				<&iomuxc_gpio_io30_lpuart_tx_lpuart3_tx>;
+			bias-pull-up;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
+		};
+	};
+
 	lpuart8_default: lpuart8_default {
 		group0 {
 			pinmux = <&iomuxc_dap_tclk_swclk_lpuart_rx_lpuart8_rx>,
