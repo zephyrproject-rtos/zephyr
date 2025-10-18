@@ -117,6 +117,79 @@ To flash the program to board
 
 		west flash -r jlink
 
+MCUboot bootloader
+==================
+
+The sysbuild makes possible to build and flash all necessary images needed to
+bootstrap the board.
+
+To build the sample application using sysbuild use the command:
+
+.. zephyr-app-commands::
+   :tool: west
+   :zephyr-app: samples/hello_world
+   :board: mck_ra8t2/r7ka8t2lfecac/cm85
+   :goals: build flash
+   :west-args: --sysbuild
+   :gen-args: -DSB_CONFIG_BOOTLOADER_MCUBOOT=y
+
+By default, Sysbuild creates MCUboot and user application images.
+
+Build directory structure created by sysbuild is different from traditional
+Zephyr build. Output is structured by the domain subdirectories:
+
+.. code-block::
+
+  build/
+  ├── hello_world
+  |    └── zephyr
+  │       ├── zephyr.elf
+  │       ├── zephyr.hex
+  │       ├── zephyr.bin
+  │       ├── zephyr.signed.bin
+  │       └── zephyr.signed.hex
+  ├── mcuboot
+  │    └── zephyr
+  │       ├── zephyr.elf
+  │       ├── zephyr.hex
+  │       └── zephyr.bin
+  └── domains.yaml
+
+.. note::
+
+   With ``--sysbuild`` option, MCUboot will be rebuilt and re-flashed
+   every time the pristine build is used.
+
+To only flash the user application in the subsequent builds, Use:
+
+.. code-block:: console
+
+   $ west flash --domain hello_world
+
+For more information about the system build please read the :ref:`sysbuild` documentation.
+
+You should see the following message in the terminal:
+
+.. code-block:: console
+
+   *** Booting MCUboot v2.2.0-171-g8513be710e5e ***
+   *** Using Zephyr OS build v4.2.0-6156-ged85ac9ffda9 ***
+   I: Starting bootloader
+   I: Image index: 0, Swap type: none
+   I: Image index: 0, Swap type: none
+   I: Primary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3
+   I: Secondary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3
+   I: Boot source: none
+   I: Image index: 0, Swap type: none
+   I: Image index: 0, Swap type: none
+   I: Image index: 0, Swap type: none
+   I: Image index: 0, Swap type: none
+   I: Bootloader chainload address offset: 0x10000
+   I: Image version: v0.0.0
+   I: Jumping to the first image slot
+   *** Booting Zephyr OS build v4.2.0-6156-ged85ac9ffda9 ***
+   Hello World! mck_ra8t2/r7ka8t2lfecac/cm85
+
 References
 **********
 - `MCK-RA8T2 Website`_
