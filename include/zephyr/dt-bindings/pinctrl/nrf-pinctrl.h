@@ -198,6 +198,18 @@
 #define NRF_FUN_TPIU_DATA2       82U
 /** TPIU DATA3 */
 #define NRF_FUN_TPIU_DATA3       83U
+/** MSPI version 2 Chip select */
+#define NRF_FUN_MSPI_CSN         84U
+/** MSPI version 2 Clock pin */
+#define NRF_FUN_MSPI_SCK         85U
+/** MSPI version 2 Data pin 0 */
+#define NRF_FUN_MSPI_DQ0         86U
+/** MSPI version 2 Data pin 1 */
+#define NRF_FUN_MSPI_DQ1         87U
+/** MSPI version 2 Data pin 2 */
+#define NRF_FUN_MSPI_DQ2         88U
+/** MSPI version 2 Data pin 3 */
+#define NRF_FUN_MSPI_DQ3         89U
 
 /** @} */
 
