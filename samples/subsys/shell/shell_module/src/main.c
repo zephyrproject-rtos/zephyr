@@ -110,7 +110,6 @@ static int cmd_demo_getopt_ts(const struct shell *sh, size_t argc,
 			      char **argv)
 {
 	struct getopt_state *state;
-	char *cvalue = NULL;
 	int aflag = 0;
 	int bflag = 0;
 	int c;
@@ -125,7 +124,6 @@ static int cmd_demo_getopt_ts(const struct shell *sh, size_t argc,
 			bflag = 1;
 			break;
 		case 'c':
-			cvalue = state->optarg;
 			break;
 		case 'h':
 			/* When getopt is active shell is not parsing
@@ -161,7 +159,6 @@ static int cmd_demo_getopt_ts(const struct shell *sh, size_t argc,
 static int cmd_demo_getopt(const struct shell *sh, size_t argc,
 			      char **argv)
 {
-	char *cvalue = NULL;
 	int aflag = 0;
 	int bflag = 0;
 	int c;
@@ -175,7 +172,6 @@ static int cmd_demo_getopt(const struct shell *sh, size_t argc,
 			bflag = 1;
 			break;
 		case 'c':
-			cvalue = optarg;
 			break;
 		case 'h':
 			/* When getopt is active shell is not parsing
