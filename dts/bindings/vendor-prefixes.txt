@@ -475,6 +475,7 @@ netgear	NETGEAR
 netlogic	Broadcom Corporation (formerly NetLogic Microsystems)
 netron-dy	Netron DY
 netronix	Netronix, Inc.
+netsol	Netsol, CO., LTD
 netxeon	Shenzhen Netxeon Technology CO., LTD
 neweast	Guangdong Neweast Optoelectronics CO., LTD
 newhaven	Newhaven Display International
