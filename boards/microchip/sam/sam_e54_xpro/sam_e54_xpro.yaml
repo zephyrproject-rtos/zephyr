@@ -13,4 +13,5 @@ supported:
   - pinctrl
   - shell
   - uart
+  - clock
 vendor: microchip

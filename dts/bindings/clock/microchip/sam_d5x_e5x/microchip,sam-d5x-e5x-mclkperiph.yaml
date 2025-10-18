@@ -1,10 +1,11 @@
 # Copyright (c) 2025 Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-title: Microchip MCLK (Main Clock) peripheral
+title: SAM_D5x_E5x MCLK (Main Clock) peripheral
 
 description: |
-  Main Clock (MCLK) configuration for peripheral AHB and APB clocks.
+  Main Clock Controller provides synchronous system clocks to the modules
+  connected to the AHBx and the APBx buses.
 
 include: [base.yaml]
 
@@ -24,3 +25,19 @@ properties:
 
 clock-cells:
   - subsystem
+
+child-binding:
+  properties:
+    subsystem:
+      type: int
+      required: true
+      description: Clock subsystem
+    mclk-en:
+      type: int
+      enum:
+        - 0
+        - 1
+      required: true
+      description: |
+        Enable mclk to the peripheral
+        0: to disable, 1: to enable
