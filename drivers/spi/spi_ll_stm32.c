@@ -779,6 +779,16 @@ static int spi_stm32_configure(const struct device *dev,
 	return 0;
 }
 
+static int spi_stm32_acquire(const struct device *dev,
+			     const struct spi_config *config)
+{
+	struct spi_stm32_data *data = dev->data;
+
+	spi_context_lock(&data->ctx, false, NULL, NULL, config);
+
+	return 0;
+}
+
 static int spi_stm32_release(const struct device *dev,
 			     const struct spi_config *config)
 {
@@ -1394,6 +1404,7 @@ static DEVICE_API(spi, api_funcs) = {
 #ifdef CONFIG_SPI_RTIO
 	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
+	.acquire = spi_stm32_acquire,
 	.release = spi_stm32_release,
 };
 
