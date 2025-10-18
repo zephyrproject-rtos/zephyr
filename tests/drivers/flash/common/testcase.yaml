@@ -214,3 +214,17 @@ tests:
       - EXTRA_DTC_OVERLAY_FILE=boards/mx25uw63_low_freq.overlay
     harness_config:
       fixture: gpio_loopback
+  drivers.flash.common.it8xxx2_indirect:
+    build_only: true
+    platform_allow:
+      - it8xxx2_evb
+      - it82xx2_evb
+      - it515xx_evb
+    extra_args:
+      - DTC_OVERLAY_FILE="./boards/it8xxx2_indirect.overlay"
+  drivers.flash.common.it515xx_m1k:
+    build_only: true
+    platform_allow:
+      - it515xx_evb
+    extra_args:
+      - DTC_OVERLAY_FILE="./boards/it515xx_m1k.overlay"
