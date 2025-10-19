@@ -20,6 +20,9 @@ config SILABS_SISDK_IADC
 config SILABS_SISDK_LETIMER
 	bool "Peripheral HAL for LETIMER"
 
+config SILABS_SISDK_SE
+	bool "Peripheral HAL for SE (Secure Engine)"
+
 config SILABS_SISDK_TIMER
 	bool "Peripheral HAL for TIMER"
 
