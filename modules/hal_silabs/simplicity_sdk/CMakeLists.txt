@@ -202,7 +202,7 @@ if(NOT SILABS_DEVICE_FAMILY_NUMBER EQUAL "21")
 endif()
 
 # Sleeptimer
-if(CONFIG_SOC_SILABS_SLEEPTIMER)
+if(CONFIG_SILABS_SISDK_SLEEPTIMER)
   zephyr_library_sources(
     ${PERIPHERAL_DIR}/src/sl_hal_sysrtc.c
     ${SERVICE_DIR}/sleeptimer/src/sl_sleeptimer_hal_rtcc.c
