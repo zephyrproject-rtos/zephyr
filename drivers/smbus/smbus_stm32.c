@@ -10,7 +10,6 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/smbus.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/sys/byteorder.h>
 #include <soc.h>
 
 #include "smbus_utils.h"
@@ -346,18 +345,46 @@ static int smbus_stm32_word_data_read(const struct device *dev, uint16_t periph_
 static int smbus_stm32_pcall(const struct device *dev, uint16_t periph_addr, uint8_t command,
 			     uint16_t send_word, uint16_t *recv_word)
 {
+	int ret;
+	uint8_t pec;
+	uint8_t num_msgs;
+	struct i2c_msg messages[] = {
+		{
+			.buf = &command,
+			.len = sizeof(command),
+			.flags = I2C_MSG_WRITE,
+		},
+		{
+			.buf = &send_word,
+			.len = sizeof(send_word),
+			.flags = I2C_MSG_WRITE,
+		},
+		{
+			.buf = recv_word,
+			.len = sizeof(*recv_word),
+			.flags = I2C_MSG_READ | I2C_MSG_RESTART,
+		},
+		{
+			.buf = &pec,
+			.len = 1,
+			.flags = I2C_MSG_READ,
+		},
+	};
+	struct smbus_stm32_data *data = dev->data;
 	const struct smbus_stm32_config *config = dev->config;
-	uint8_t buffer[sizeof(command) + sizeof(send_word)];
-	int result;
 
-	buffer[0] = command;
-	sys_put_le16(send_word, buffer + 1);
+	num_msgs = smbus_pec_num_msgs(data->config, ARRAY_SIZE(messages));
+	ret = i2c_transfer(config->i2c_dev, messages, num_msgs, periph_addr);
+	if (ret < 0) {
+		return ret;
+	}
 
-	result = i2c_write_read(config->i2c_dev, periph_addr, buffer, ARRAY_SIZE(buffer), recv_word,
-				sizeof(*recv_word));
-	*recv_word = sys_le16_to_cpu(*recv_word);
+	ret = smbus_read_check_pec(data->config, periph_addr, messages, num_msgs);
+	if (ret < 0) {
+		return ret;
+	}
 
-	return result;
+	return 0;
 }
 
 static int smbus_stm32_block_write(const struct device *dev, uint16_t periph_addr, uint8_t command,
