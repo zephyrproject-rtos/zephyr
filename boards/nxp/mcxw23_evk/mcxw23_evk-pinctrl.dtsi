@@ -26,6 +26,16 @@
 		};
 	};
 
+	pinmux_flexcomm2_spi: pinmux_flexcomm2_spi {
+		group0 {
+			pinmux = <FC2_RXD_SDA_MOSI_PIO0_6>,
+				<FC2_TXD_SCL_MISO_PIO0_7>,
+				<FC2_SCK_PIO0_10>,
+				<FC2_CTS_SDA_SSEL0_PIO0_5>;
+			slew-rate = "standard";
+		};
+	};
+
 	pinmux_sctimer_default: pinmux_sctimer_default {
 		group0 {
 			pinmux = <SCT0_OUT0_PIO0_15>;
