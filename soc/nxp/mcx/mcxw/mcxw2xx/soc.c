@@ -96,6 +96,12 @@ __weak void clock_init(void)
 	DT_FOREACH_STATUS_OKAY(nxp_ctimer_pwm, CTIMER_CLOCK_SETUP)
 
 	configure_32k_osc();
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(os_timer), nxp_os_timer, okay)
+	/*!< OS event timer select FRO 1 MHz clock */
+	PMC->OSTIMERr &= ~PMC_OSTIMER_OSTIMERCLKSEL_MASK;
+	PMC->OSTIMERr |= OSTIMERCLKSEL_FRO_1MHz << PMC_OSTIMER_OSTIMERCLKSEL_SHIFT;
+#endif
 }
 
 #ifdef CONFIG_SOC_RESET_HOOK
