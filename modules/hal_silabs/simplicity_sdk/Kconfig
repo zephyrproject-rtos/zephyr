@@ -26,6 +26,25 @@ config SILABS_SISDK_TIMER
 config SILABS_SISDK_VDAC
 	bool "Peripheral HAL for VDAC"
 
+# Utilities
+
+config SILABS_SISDK_SLIST
+	bool
+
+# Services
+
+config SILABS_SISDK_HFXO_MANAGER
+	bool "HFXO Manager service"
+	help
+	  Set if the HFXO Manager HAL module is used.
+
+config SILABS_SISDK_POWER_MANAGER
+	bool "Power Manager service"
+	select SOC_GECKO_EMU
+	select SILABS_SISDK_SLIST
+	help
+	  Set if the Power Manager HAL module is used.
+
 config SILABS_SISDK_SLEEPTIMER
 	bool
 	select SOC_GECKO_PRS
