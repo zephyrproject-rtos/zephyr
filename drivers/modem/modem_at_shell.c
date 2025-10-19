@@ -130,7 +130,7 @@ static int at_shell_cmd_handler(const struct shell *sh, size_t argc, char **argv
 		return -EINVAL;
 	}
 
-	ret = modem_at_user_pipe_claim(&at_shell_chat);
+	ret = modem_at_user_pipe_claim(&at_shell_chat, K_NO_WAIT);
 	if (ret < 0) {
 		switch (ret) {
 		case -EPERM:
