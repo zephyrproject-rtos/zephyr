@@ -1,0 +1,12 @@
+common:
+  tags:
+    - ring_buffer
+    - circular_buffer
+    - fifo
+  timeout: 150
+
+tests:
+  libraries.fifo:
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
