@@ -156,16 +156,6 @@ config CRYPTO_ACC_GECKO_TRNG
 	  Enable Entropy driver based on the CRYPTO_ACC module for Silicon Labs
 	  Gecko chips.
 
-config SOC_GECKO_DEV_INIT
-	bool
-	help
-	  Use the device initialization routines from the device_init service
-	  in Silicon Labs HAL. These routines initialize and tune HFXOs,
-	  configures DPLLs and manages the Energy Management Unit.
-
-	  Disabling these services may negatively impact counter and timer
-	  routines in Silabs SoCs.
-
 config COUNTER_GECKO_STIMER
 	bool
 	help

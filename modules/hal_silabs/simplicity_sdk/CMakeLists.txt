@@ -175,7 +175,6 @@ zephyr_include_directories(
 
 zephyr_compile_definitions(
   ${SILABS_DEVICE_PART_NUMBER}
-  SL_CODE_COMPONENT_CLOCK_MANAGER=clock_manager
   SL_CODE_COMPONENT_DEVICE_PERIPHERAL=peripheral
   SL_CODE_COMPONENT_HAL_COMMON=hal_common
   SL_CODE_COMPONENT_SYSTEM=system
@@ -184,10 +183,6 @@ zephyr_compile_definitions(
 zephyr_library_sources(
   ${DEVICE_DIR}/SiliconLabs/${SILABS_DEVICE_FAMILY}/Source/system_${CONFIG_SOC_SERIES}.c
   ${EMLIB_DIR}/src/em_system.c
-  ${SERVICE_DIR}/clock_manager/src/sl_clock_manager.c
-  ${SERVICE_DIR}/clock_manager/src/sl_clock_manager_hal_s2.c
-  ${SERVICE_DIR}/clock_manager/src/sl_clock_manager_init.c
-  ${SERVICE_DIR}/clock_manager/src/sl_clock_manager_init_hal_s2.c
   ${SERVICE_DIR}/device_manager/devices/sl_device_peripheral_hal_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}.c
   ${SERVICE_DIR}/device_manager/src/sl_device_clock.c
   ${SERVICE_DIR}/device_manager/src/sl_device_gpio.c
@@ -216,6 +211,20 @@ if(CONFIG_SILABS_SISDK_SLEEPTIMER)
   )
 endif()
 
+# Clock Manager
+if(CONFIG_SILABS_SISDK_CLOCK_MANAGER)
+  zephyr_library_sources(
+    ${EMLIB_DIR}/src/em_cmu.c
+    ${SERVICE_DIR}/clock_manager/src/sl_clock_manager.c
+    ${SERVICE_DIR}/clock_manager/src/sl_clock_manager_hal_s2.c
+    ${SERVICE_DIR}/clock_manager/src/sl_clock_manager_init.c
+    ${SERVICE_DIR}/clock_manager/src/sl_clock_manager_init_hal_s2.c
+  )
+  zephyr_compile_definitions(
+    SL_CODE_COMPONENT_CLOCK_MANAGER=clock_manager
+  )
+endif()
+
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_SYSTEM         ${PERIPHERAL_DIR}/src/sl_hal_system.c)
 
 #Keep em_iadc.c for compatibility for now. Not used anymore.
@@ -223,10 +232,9 @@ zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_IADC         ${EMLIB_DIR}/src/e
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_IADC         ${PERIPHERAL_DIR}/src/sl_hal_iadc.c)
 
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_BURTC        ${EMLIB_DIR}/src/em_burtc.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_CMU          ${EMLIB_DIR}/src/em_cmu.c)
 
 # Device Init
-if(CONFIG_SOC_GECKO_DEV_INIT)
+if(CONFIG_SILABS_SISDK_DEVICE_INIT)
   zephyr_library_sources_ifdef(CONFIG_DT_HAS_SILABS_SERIES2_DCDC_ENABLED
     ${SERVICE_DIR}/device_init/src/sl_device_init_dcdc_s2.c
   )
