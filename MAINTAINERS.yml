@@ -4301,6 +4301,19 @@ Raspberry Pi Pico Platforms:
   labels:
     - "platform: Raspberry Pi Pico"
 
+Realtek Ameba Platforms:
+  status: maintained
+  maintainers:
+    - zjian-zhang
+  files:
+    - drivers/*/*ameba*
+    - boards/realtek/
+    - soc/realtek/
+    - dts/arm/realtek/
+    - dts/bindings/*/*ameba*
+  labels:
+    - "platform: ameba"
+
 Realtek EC Platforms:
   status: maintained
   maintainers:
@@ -5637,6 +5650,16 @@ West:
   files: []
   labels:
     - "platform: Quicklogic"
+
+"West project: hal_realtek":
+  status: maintained
+  maintainers:
+    - zjian-zhang
+  collaborators:
+    - zjian-zhang
+  files: []
+  labels:
+    - "platform: ameba"
 
 "West project: hal_renesas":
   status: maintained
