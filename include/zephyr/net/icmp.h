@@ -186,7 +186,8 @@ int net_icmp_cleanup_ctx(struct net_icmp_ctx *ctx);
  *        suitable default parameters are used.
  * @param user_data User supplied opaque data passed to the handler. May be NULL.
  *
- * @return Return 0 if the sending succeed, <0 otherwise.
+ * @retval 0 if the sending succeed
+ * @retval <0 otherwise.
  */
 int net_icmp_send_echo_request(struct net_icmp_ctx *ctx,
 			       struct net_if *iface,
@@ -210,7 +211,8 @@ int net_icmp_send_echo_request(struct net_icmp_ctx *ctx,
  *        suitable default parameters are used.
  * @param user_data User supplied opaque data passed to the handler. May be NULL.
  *
- * @return Return 0 if the sending succeed, <0 otherwise.
+ * @retval 0 if the sending succeed
+ * @retval <0 otherwise.
  */
 int net_icmp_send_echo_request_no_wait(struct net_icmp_ctx *ctx,
 				       struct net_if *iface,
@@ -249,7 +251,8 @@ struct net_icmp_offload {
  * @param iface Network interface of the offloaded device.
  * @param ping_handler Function to be called when offloaded ping request is done.
  *
- * @return Return 0 if the register succeed, <0 otherwise.
+ * @retval 0 if the register succeed
+ * @retval <0 otherwise.
  */
 int net_icmp_register_offload_ping(struct net_icmp_offload *ctx,
 				   struct net_if *iface,
@@ -260,7 +263,8 @@ int net_icmp_register_offload_ping(struct net_icmp_offload *ctx,
  *
  * @param ctx ICMP offload context used for this interface.
  *
- * @return Return 0 if the call succeed, <0 otherwise.
+ * @retval 0 if the call succeed
+ * @retval <0 otherwise.
  */
 int net_icmp_unregister_offload_ping(struct net_icmp_offload *ctx);
 
@@ -275,7 +279,8 @@ int net_icmp_unregister_offload_ping(struct net_icmp_offload *ctx);
  *        is received by the offloaded driver. The ICMP response handler
  *        function is returned and the caller should call it when appropriate.
  *
- * @return Return 0 if the call succeed, <0 otherwise.
+ * @retval 0 if the call succeed
+ * @retval <0 otherwise.
  */
 int net_icmp_get_offload_rsp_handler(struct net_icmp_offload *ctx,
 				     net_icmp_handler_t *resp_handler);

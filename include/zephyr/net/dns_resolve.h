@@ -211,7 +211,8 @@ struct dns_socket_dispatcher;
  * @param buf Pointer to data buffer containing the DNS message.
  * @param data_len Length of the data in buffer chain.
  *
- * @return 0 if ok, <0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 typedef int (*dns_socket_dispatcher_cb)(struct dns_socket_dispatcher *ctx, int sock,
 					struct sockaddr *addr, size_t addrlen,
@@ -263,7 +264,8 @@ struct dns_socket_dispatcher {
  *
  * @param ctx DNS socket dispatcher context.
  *
- * @return 0 if ok, <1 if error
+ * @retval 0 if ok
+ * @retval <1 if error
  */
 int dns_dispatcher_register(struct dns_socket_dispatcher *ctx);
 
@@ -274,7 +276,8 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx);
  *
  * @param ctx DNS socket dispatcher context.
  *
- * @return 0 if ok, <1 if error
+ * @retval 0 if ok
+ * @retval <1 if error
  */
 int dns_dispatcher_unregister(struct dns_socket_dispatcher *ctx);
 
@@ -575,7 +578,8 @@ struct mdns_responder_context {
  * is NULL terminated. Port numbers are optional in struct sockaddr, the
  * default will be used if set to 0.
  *
- * @return 0 if ok, <0 if error.
+ * @retval 0 if ok
+ * @retval <0 if error.
  */
 int dns_resolve_init(struct dns_resolve_context *ctx,
 		     const char *dns_servers_str[],
@@ -586,7 +590,8 @@ int dns_resolve_init(struct dns_resolve_context *ctx,
  *
  * @param ctx DNS context.
  *
- * @return 0 if ok, <0 if error.
+ * @retval 0 if ok
+ * @retval <0 if error.
  */
 int dns_resolve_init_default(struct dns_resolve_context *ctx);
 
@@ -598,7 +603,8 @@ int dns_resolve_init_default(struct dns_resolve_context *ctx);
  *
  * @param ctx DNS context
  *
- * @return 0 if ok, <0 if error.
+ * @retval 0 if ok
+ * @retval <0 if error.
  */
 int dns_resolve_close(struct dns_resolve_context *ctx);
 
@@ -620,7 +626,8 @@ int dns_resolve_close(struct dns_resolve_context *ctx);
  * default will be used if set to 0.
  * @param source Source of the DNS servers, e.g., manual, DHCPv4/6, etc.
  *
- * @return 0 if ok, <0 if error.
+ * @retval 0 if ok
+ * @retval <0 if error.
  */
 int dns_resolve_reconfigure(struct dns_resolve_context *ctx,
 			    const char *servers_str[],
@@ -647,7 +654,8 @@ int dns_resolve_reconfigure(struct dns_resolve_context *ctx,
  *        the same length as the servers_str and servers_sa arrays.
  * @param source Source of the DNS servers, e.g., manual, DHCPv4/6, etc.
  *
- * @return 0 if ok, <0 if error.
+ * @retval 0 if ok
+ * @retval <0 if error.
  */
 int dns_resolve_reconfigure_with_interfaces(struct dns_resolve_context *ctx,
 					    const char *servers_str[],
@@ -661,7 +669,8 @@ int dns_resolve_reconfigure_with_interfaces(struct dns_resolve_context *ctx,
  * @param ctx DNS context
  * @param if_index Network interface from which the DNS servers are removed.
  *
- * @return 0 if ok, <0 if error.
+ * @retval 0 if ok
+ * @retval <0 if error.
  */
 int dns_resolve_remove(struct dns_resolve_context *ctx, int if_index);
 
@@ -673,7 +682,8 @@ int dns_resolve_remove(struct dns_resolve_context *ctx, int if_index);
  * @param if_index Network interface from which the DNS servers are removed.
  * @param source Source of the DNS servers, e.g., manual, DHCPv4/6, etc.
  *
- * @return 0 if ok, <0 if error.
+ * @retval 0 if ok
+ * @retval <0 if error.
  */
 int dns_resolve_remove_source(struct dns_resolve_context *ctx, int if_index,
 			      enum dns_server_source source);
@@ -689,7 +699,8 @@ int dns_resolve_remove_source(struct dns_resolve_context *ctx, int if_index,
  *        This is an array of network interface indices. The array must be
  *        the same length as the servers_sa array.
  *
- * @return 0 if ok, <0 if error.
+ * @retval 0 if ok
+ * @retval <0 if error.
  */
 int dns_resolve_remove_server_addresses(struct dns_resolve_context *ctx,
 					const struct sockaddr *servers_sa[],
@@ -703,7 +714,8 @@ int dns_resolve_remove_server_addresses(struct dns_resolve_context *ctx,
  * @param ctx DNS context
  * @param dns_id DNS id of the pending query
  *
- * @return 0 if ok, <0 if error.
+ * @retval 0 if ok
+ * @retval <0 if error.
  */
 int dns_resolve_cancel(struct dns_resolve_context *ctx,
 		       uint16_t dns_id);
@@ -718,7 +730,8 @@ int dns_resolve_cancel(struct dns_resolve_context *ctx,
  * @param query_name Name of the resource we are trying to query (hostname)
  * @param query_type Type of the query (A or AAAA)
  *
- * @return 0 if ok, <0 if error.
+ * @retval 0 if ok
+ * @retval <0 if error.
  */
 int dns_resolve_cancel_with_name(struct dns_resolve_context *ctx,
 				 uint16_t dns_id,
@@ -750,7 +763,8 @@ int dns_resolve_cancel_with_name(struct dns_resolve_context *ctx,
  *            manually if it takes too long time to finish
  * >0: start the query and let the system timeout it after specified ms
  *
- * @return 0 if resolving was started ok, < 0 otherwise
+ * @retval 0 if resolving was started ok
+ * @retval <0 otherwise
  */
 int dns_resolve_name(struct dns_resolve_context *ctx,
 		     const char *query,
@@ -785,7 +799,8 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
  *            manually if it takes too long time to finish
  * >0: start the query and let the system timeout it after specified ms
  *
- * @return 0 if resolving was started ok, < 0 otherwise
+ * @retval 0 if resolving was started ok
+ * @retval <0 otherwise
  */
 static inline int dns_resolve_service(struct dns_resolve_context *ctx,
 				      const char *query,
@@ -854,7 +869,8 @@ static inline void dns_resolve_enable_packet_forwarding(struct dns_resolve_conte
  *            manually if it takes too long time to finish
  * >0: start the query and let the system timeout it after specified ms
  *
- * @return 0 if resolving was started ok, < 0 otherwise
+ * @retval 0 if resolving was started ok
+ * @retval <0 otherwise
  */
 static inline int dns_get_addr_info(const char *query,
 				    enum dns_query_type type,
@@ -879,7 +895,8 @@ static inline int dns_get_addr_info(const char *query,
  *
  * @param dns_id DNS id of the pending query
  *
- * @return 0 if ok, <0 if error.
+ * @retval 0 if ok
+ * @retval <0 if error.
  */
 static inline int dns_cancel_addr_info(uint16_t dns_id)
 {

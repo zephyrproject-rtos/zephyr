@@ -26,7 +26,8 @@
  * @param iface Network interface
  * @param is_ap AP or Station mode
  *
- * @return 0 if ok, < 0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 int wifi_set_enterprise_credentials(struct net_if *iface, bool is_ap);
 

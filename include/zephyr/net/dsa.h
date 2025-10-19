@@ -76,7 +76,8 @@ typedef enum net_verdict (*dsa_net_recv_cb_t)(struct net_if *iface,
  * @param iface Network interface
  * @param cb Receive callback function
  *
- * @return 0 if ok, < 0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 int dsa_register_recv_callback(struct net_if *iface, dsa_net_recv_cb_t cb);
 
@@ -101,8 +102,8 @@ typedef int (*dsa_send_t)(const struct device *dev, struct net_pkt *pkt);
  * @param iface Network interface (master)
  * @param fn Pointer to master interface send method
  *
- * Returns:
- *  - 0 if ok, < 0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 int dsa_register_master_tx(struct net_if *iface, dsa_send_t fn);
 
@@ -111,8 +112,8 @@ int dsa_register_master_tx(struct net_if *iface, dsa_send_t fn);
  *
  * @param iface Network interface (master)
  *
- * Returns:
- *  - true if ok, false otherwise
+ * @retval true if ok
+ * @retval false otherwise
  */
 bool dsa_is_port_master(struct net_if *iface);
 
@@ -198,7 +199,7 @@ struct dsa_api {
  * @param[in]  slave_num  Slave port number
  *
  * @return     network interface of the slave if successful
- * @return     NULL if slave port does not exist
+ * @retval NULL if slave port does not exist
  */
 struct net_if *dsa_get_slave_port(struct net_if *iface, int slave_num);
 
@@ -209,7 +210,8 @@ struct net_if *dsa_get_slave_port(struct net_if *iface, int slave_num);
  * @param[in]  reg_addr  The register address
  * @param      value     The value
  *
- * @return     0 if successful, negative if error
+ * @retval     0  if successful
+ * @retval     <0 negative if error
  */
 int dsa_switch_read(struct net_if *iface, uint16_t reg_addr, uint8_t *value);
 
@@ -233,7 +235,8 @@ int dsa_switch_write(struct net_if *iface, uint16_t reg_addr, uint8_t value);
  * @param[in]  tbl_entry_idx  Table entry index
  * @param[in]  flags          Flags
  *
- * @return     0 if successful, negative if error
+ * @retval     0  if successful
+ * @retval     <0 negative if error
  */
 int dsa_switch_set_mac_table_entry(struct net_if *iface,
 					const uint8_t *mac,
@@ -248,7 +251,8 @@ int dsa_switch_set_mac_table_entry(struct net_if *iface,
  * @param      buf            Buffer to receive MAC address
  * @param[in]  tbl_entry_idx  Table entry index
  *
- * @return     0 if successful, negative if error
+ * @retval     0  if successful
+ * @retval     <0 negative if error
  */
 int dsa_switch_get_mac_table_entry(struct net_if *iface,
 					uint8_t *buf,

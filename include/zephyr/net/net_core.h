@@ -125,7 +125,8 @@ enum net_verdict {
  * @param iface Network interface where the packet was received.
  * @param pkt Network packet data.
  *
- * @return 0 if ok, <0 if error.
+ * @retval 0 if ok
+ * @retval <0 if error.
  */
 int net_recv_data(struct net_if *iface, struct net_pkt *pkt);
 
@@ -139,7 +140,8 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt);
  * @param pkt Network packet.
  * @param timeout Timeout for send.
  *
- * @return 0 if ok, <0 if error. If <0 is returned, then the caller needs
+ * @retval 0 if ok
+ * @retval <0 if error. If <0 is returned, then the caller needs
  * to unref the pkt in order to avoid memory leak.
  */
 int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout);
@@ -153,7 +155,8 @@ int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout);
  *
  * @param pkt Network packet.
  *
- * @return 0 if ok, <0 if error. If <0 is returned, then the caller needs
+ * @retval 0 if ok
+ * @retval <0 if error. If <0 is returned, then the caller needs
  * to unref the pkt in order to avoid memory leak.
  */
 static inline int net_send_data(struct net_pkt *pkt)

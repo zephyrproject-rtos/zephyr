@@ -755,7 +755,8 @@ struct net_eth_vlan_hdr {
  *
  * @param addr A valid pointer to a Ethernet MAC address.
  *
- * @return true if address is a broadcast address, false if not
+ * @retval true if address is a broadcast address
+ * @retval false if not
  */
 static inline bool net_eth_is_addr_broadcast(struct net_eth_addr *addr)
 {
@@ -776,7 +777,8 @@ static inline bool net_eth_is_addr_broadcast(struct net_eth_addr *addr)
  *
  * @param addr A valid pointer to an Ethernet MAC address.
  *
- * @return true if address is an all zeroes address, false if not
+ * @retval true if address is an all zeroes address
+ * @retval false if not
  */
 static inline bool net_eth_is_addr_all_zeroes(struct net_eth_addr *addr)
 {
@@ -797,7 +799,8 @@ static inline bool net_eth_is_addr_all_zeroes(struct net_eth_addr *addr)
  *
  * @param addr A valid pointer to a Ethernet MAC address.
  *
- * @return true if address is unspecified, false if not
+ * @retval true if address is unspecified
+ * @retval false if not
  */
 static inline bool net_eth_is_addr_unspecified(struct net_eth_addr *addr)
 {
@@ -818,7 +821,8 @@ static inline bool net_eth_is_addr_unspecified(struct net_eth_addr *addr)
  *
  * @param addr A valid pointer to a Ethernet MAC address.
  *
- * @return true if address is a multicast address, false if not
+ * @retval true if address is a multicast address
+ * @retval false if not
  */
 static inline bool net_eth_is_addr_multicast(struct net_eth_addr *addr)
 {
@@ -845,7 +849,8 @@ static inline bool net_eth_is_addr_multicast(struct net_eth_addr *addr)
  *
  * @param addr A valid pointer to a Ethernet MAC address.
  *
- * @return true if address is a group address, false if not
+ * @retval true if address is a group address
+ * @retval false if not
  */
 static inline bool net_eth_is_addr_group(struct net_eth_addr *addr)
 {
@@ -857,7 +862,8 @@ static inline bool net_eth_is_addr_group(struct net_eth_addr *addr)
  *
  * @param addr A valid pointer to a Ethernet MAC address.
  *
- * @return true if address is valid, false if not
+ * @retval true if address is valid
+ * @retval false if not
  */
 static inline bool net_eth_is_addr_valid(struct net_eth_addr *addr)
 {
@@ -869,7 +875,8 @@ static inline bool net_eth_is_addr_valid(struct net_eth_addr *addr)
  *
  * @param addr A valid pointer to a Ethernet MAC address.
  *
- * @return true if address is a LLDP multicast address, false if not
+ * @retval true if address is a LLDP multicast address
+ * @retval false if not
  */
 static inline bool net_eth_is_addr_lldp_multicast(struct net_eth_addr *addr)
 {
@@ -894,7 +901,8 @@ static inline bool net_eth_is_addr_lldp_multicast(struct net_eth_addr *addr)
  *
  * @param addr A valid pointer to a Ethernet MAC address.
  *
- * @return true if address is a PTP multicast address, false if not
+ * @retval true if address is a PTP multicast address
+ * @retval false if not
  */
 static inline bool net_eth_is_addr_ptp_multicast(struct net_eth_addr *addr)
 {
@@ -975,7 +983,8 @@ enum ethernet_hw_caps net_eth_get_hw_capabilities(struct net_if *iface)
  * @param type configuration type
  * @param config Ethernet configuration
  *
- * @return 0 if ok, <0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 static inline
 int net_eth_get_hw_config(struct net_if *iface, enum ethernet_config_type type,
@@ -998,7 +1007,8 @@ int net_eth_get_hw_config(struct net_if *iface, enum ethernet_config_type type,
  * @param iface Interface to use.
  * @param tag VLAN tag to add
  *
- * @return 0 if ok, <0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 #if defined(CONFIG_NET_VLAN) && NET_VLAN_MAX_COUNT > 0
 int net_eth_vlan_enable(struct net_if *iface, uint16_t tag);
@@ -1018,7 +1028,8 @@ static inline int net_eth_vlan_enable(struct net_if *iface, uint16_t tag)
  * @param iface Interface to use.
  * @param tag VLAN tag to remove
  *
- * @return 0 if ok, <0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 #if defined(CONFIG_NET_VLAN) && NET_VLAN_MAX_COUNT > 0
 int net_eth_vlan_disable(struct net_if *iface, uint16_t tag);
@@ -1040,8 +1051,8 @@ static inline int net_eth_vlan_disable(struct net_if *iface, uint16_t tag)
  *
  * @param iface VLAN network interface.
  *
- * @return VLAN tag for this interface or NET_VLAN_TAG_UNSPEC if VLAN
- * is not configured for that interface.
+ * @return VLAN tag for this interface
+ * @retval NET_VLAN_TAG_UNSPEC if VLAN is not configured for that interface.
  */
 #if defined(CONFIG_NET_VLAN) && NET_VLAN_MAX_COUNT > 0
 uint16_t net_eth_get_vlan_tag(struct net_if *iface);
@@ -1060,8 +1071,8 @@ static inline uint16_t net_eth_get_vlan_tag(struct net_if *iface)
  * @param iface Main network interface (not the VLAN one).
  * @param tag VLAN tag
  *
- * @return Network interface related to this tag or NULL if no such interface
- * exists.
+ * @return Network interface related to this tag
+ * @retval NULL if no such interface exists.
  */
 #if defined(CONFIG_NET_VLAN)
 struct net_if *net_eth_get_vlan_iface(struct net_if *iface, uint16_t tag);
@@ -1082,8 +1093,8 @@ struct net_if *net_eth_get_vlan_iface(struct net_if *iface, uint16_t tag)
  * @param iface VLAN network interface. This is used to get the
  *        pointer to ethernet L2 context
  *
- * @return Network interface related to this tag or NULL if no such interface
- * exists.
+ * @return Network interface related to this tag
+ * @retval NULL if no such interface exists.
  */
 #if defined(CONFIG_NET_VLAN) && NET_VLAN_MAX_COUNT > 0
 struct net_if *net_eth_get_vlan_main(struct net_if *iface);
@@ -1107,8 +1118,8 @@ struct net_if *net_eth_get_vlan_main(struct net_if *iface)
  * @param ctx Ethernet context
  * @param iface Ethernet network interface
  *
- * @return True if there are enabled VLANs for this network interface,
- *         false if not.
+ * @retval true if there are enabled VLANs for this network interface,
+ * @retval false if not.
  */
 #if defined(CONFIG_NET_VLAN)
 bool net_eth_is_vlan_enabled(struct ethernet_context *ctx,
@@ -1129,7 +1140,8 @@ static inline bool net_eth_is_vlan_enabled(struct ethernet_context *ctx,
  *
  * @param iface Network interface
  *
- * @return True if VLAN is enabled for this network interface, false if not.
+ * @retval true if VLAN is enabled for this network interface
+ * @retval false if not.
  */
 #if defined(CONFIG_NET_VLAN) && NET_VLAN_MAX_COUNT > 0
 bool net_eth_get_vlan_status(struct net_if *iface);
@@ -1147,7 +1159,8 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
  *
  * @param iface Network interface
  *
- * @return True if this network interface is VLAN one, false if not.
+ * @retval true if this network interface is VLAN one
+ * @retval false if not.
  */
 #if defined(CONFIG_NET_VLAN) && NET_VLAN_MAX_COUNT > 0
 bool net_eth_is_vlan_interface(struct net_if *iface);
@@ -1310,7 +1323,8 @@ void net_eth_carrier_off(struct net_if *iface);
  *
  * @param enable on (true) or off (false)
  *
- * @return 0 if mode set or unset was successful, <0 otherwise.
+ * @retval 0 if mode set or unset was successful
+ * @retval <0 otherwise.
  */
 int net_eth_promisc_mode(struct net_if *iface, bool enable);
 
@@ -1321,7 +1335,8 @@ int net_eth_promisc_mode(struct net_if *iface, bool enable);
  *
  * @param enable on (true) or off (false)
  *
- * @return 0 if mode set or unset was successful, <0 otherwise.
+ * @retval 0 if mode set or unset was successful
+ * @retval <0 otherwise.
  */
 int net_eth_txinjection_mode(struct net_if *iface, bool enable);
 
@@ -1333,7 +1348,8 @@ int net_eth_txinjection_mode(struct net_if *iface, bool enable);
  * @param type Filter type, either source or destination
  * @param enable Set (true) or unset (false)
  *
- * @return 0 if filter set or unset was successful, <0 otherwise.
+ * @retval 0 if filter set or unset was successful
+ * @retval <0 otherwise.
  */
 int net_eth_mac_filter(struct net_if *iface, struct net_eth_addr *mac,
 		       enum ethernet_filter_type type, bool enable);
@@ -1343,7 +1359,8 @@ int net_eth_mac_filter(struct net_if *iface, struct net_eth_addr *mac,
  *
  * @param iface Network interface
  *
- * @return Pointer to PHY device if found, NULL if not found.
+ * @return Pointer to PHY device if found
+ * @retval NULL if not found.
  */
 const struct device *net_eth_get_phy(struct net_if *iface);
 
@@ -1352,8 +1369,8 @@ const struct device *net_eth_get_phy(struct net_if *iface);
  *
  * @param iface Network interface
  *
- * @return Pointer to PTP clock if found, NULL if not found or if this
- * ethernet interface does not support PTP.
+ * @return Pointer to PTP clock if found
+ * @retval NULL if not found or if this ethernet interface does not support PTP.
  */
 #if defined(CONFIG_PTP_CLOCK)
 const struct device *net_eth_get_ptp_clock(struct net_if *iface);
@@ -1372,8 +1389,8 @@ static inline const struct device *net_eth_get_ptp_clock(struct net_if *iface)
  *
  * @param index Network interface index
  *
- * @return Pointer to PTP clock if found, NULL if not found or if this
- * ethernet interface index does not support PTP.
+ * @return Pointer to PTP clock if found
+ * @retval NULL if not found or if this ethernet interface index does not support PTP.
  */
 __syscall const struct device *net_eth_get_ptp_clock_by_index(int index);
 
@@ -1382,7 +1399,8 @@ __syscall const struct device *net_eth_get_ptp_clock_by_index(int index);
  *
  * @param iface Network interface
  *
- * @return Port number, no such port if < 0
+ * @return Port number
+ * @retval <0 no such port
  */
 #if defined(CONFIG_NET_L2_PTP)
 int net_eth_get_ptp_port(struct net_if *iface);
@@ -1416,7 +1434,8 @@ static inline void net_eth_set_ptp_port(struct net_if *iface, int port)
  *
  * @param iface Pointer to network interface
  *
- * @return True if interface supports Wi-Fi, False otherwise.
+ * @retval true if interface supports Wi-Fi
+ * @retval false otherwise.
  */
 static inline bool net_eth_type_is_wifi(struct net_if *iface)
 {

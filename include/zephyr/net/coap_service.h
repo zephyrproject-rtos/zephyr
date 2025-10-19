@@ -271,7 +271,7 @@ int coap_service_stop(const struct coap_service *service);
  * @param service Pointer to CoAP service
  * @retval 1 if the service is running
  * @retval 0 if the service is stopped
- * @retval negative in case of an error.
+ * @retval <0 negative in case of an error.
  */
 int coap_service_is_running(const struct coap_service *service);
 
@@ -285,7 +285,8 @@ int coap_service_is_running(const struct coap_service *service);
  * @param addr Peer address
  * @param addr_len Peer address length
  * @param params Pointer to transmission parameters structure or NULL to use default values.
- * @return 0 in case of success or negative in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative in case of error.
  */
 int coap_service_send(const struct coap_service *service, const struct coap_packet *cpkt,
 		      const struct sockaddr *addr, socklen_t addr_len,
@@ -301,7 +302,8 @@ int coap_service_send(const struct coap_service *service, const struct coap_pack
  * @param addr Peer address
  * @param addr_len Peer address length
  * @param params Pointer to transmission parameters structure or NULL to use default values.
- * @return 0 in case of success or negative in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative in case of error.
  */
 int coap_resource_send(const struct coap_resource *resource, const struct coap_packet *cpkt,
 		       const struct sockaddr *addr, socklen_t addr_len,
@@ -318,7 +320,8 @@ int coap_resource_send(const struct coap_resource *resource, const struct coap_p
  * @param resource Pointer to CoAP resource
  * @param request CoAP request to parse
  * @param addr Peer address
- * @return the observe option value in case of success or negative in case of error.
+ * @return the observe option value in case of success
+ * @retval <0 negative in case of error.
  */
 int coap_resource_parse_observe(struct coap_resource *resource, const struct coap_packet *request,
 				const struct sockaddr *addr);
@@ -330,7 +333,8 @@ int coap_resource_parse_observe(struct coap_resource *resource, const struct coa
  *
  * @param resource Pointer to CoAP resource
  * @param addr Peer address
- * @return 0 in case of success or negative in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative in case of error.
  */
 int coap_resource_remove_observer_by_addr(struct coap_resource *resource,
 					  const struct sockaddr *addr);
@@ -343,7 +347,8 @@ int coap_resource_remove_observer_by_addr(struct coap_resource *resource,
  * @param resource Pointer to CoAP resource
  * @param token Pointer to the token
  * @param token_len Length of valid bytes in the token
- * @return 0 in case of success or negative in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative in case of error.
  */
 int coap_resource_remove_observer_by_token(struct coap_resource *resource,
 					   const uint8_t *token, uint8_t token_len);

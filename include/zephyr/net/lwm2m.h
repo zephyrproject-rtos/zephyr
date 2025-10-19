@@ -357,7 +357,8 @@ struct lwm2m_time_series_elem {
  * @param path    Object path of the cached resource.
  * @param element Sample produced by the engine for the cache.
  *
- * @return true to keep the sample, false to discard it.
+ * @retval true to keep the sample
+ * @retval false to discard it.
  */
 typedef bool (*lwm2m_cache_filter_cb_t)(const struct lwm2m_obj_path *path,
 					const struct lwm2m_time_series_elem *element);
@@ -379,7 +380,8 @@ typedef bool (*lwm2m_cache_filter_cb_t)(const struct lwm2m_obj_path *path,
  *                        (typically 0 for non-multi instance resources).
  * @param[out] data_len Length of the data buffer.
  *
- * @return Callback returns a pointer to the data buffer or NULL for failure.
+ * @return Callback returns a pointer to the data buffer
+ * @retval NULL for failure.
  */
 typedef void *(*lwm2m_engine_get_data_cb_t)(uint16_t obj_inst_id,
 					    uint16_t res_id,
@@ -415,7 +417,8 @@ typedef void *(*lwm2m_engine_get_data_cb_t)(uint16_t obj_inst_id,
  * @param[in] offset Offset of the data block. For non-block transfers this is always 0.
  *
  * @return Callback returns a negative error code (errno.h) indicating
- *         reason of failure or 0 for success.
+ *         reason of failure
+ * @retval 0 for success.
  */
 typedef int (*lwm2m_engine_set_data_cb_t)(uint16_t obj_inst_id,
 					  uint16_t res_id, uint16_t res_inst_id,
@@ -436,7 +439,8 @@ typedef int (*lwm2m_engine_set_data_cb_t)(uint16_t obj_inst_id,
  * @param[in] obj_inst_id Object instance ID generating the callback.
  *
  * @return Callback returns a negative error code (errno.h) indicating
- *         reason of failure or 0 for success.
+ *         reason of failure
+ * @retval 0 for success.
  */
 typedef int (*lwm2m_engine_user_cb_t)(uint16_t obj_inst_id);
 
@@ -454,7 +458,8 @@ typedef int (*lwm2m_engine_user_cb_t)(uint16_t obj_inst_id);
  * @param[in] args_len Length of argument payload in bytes.
  *
  * @return Callback returns a negative error code (errno.h) indicating
- *         reason of failure or 0 for success.
+ *         reason of failure
+ * @retval 0 for success.
  */
 typedef int (*lwm2m_engine_execute_cb_t)(uint16_t obj_inst_id,
 					 uint8_t *args, uint16_t args_len);
@@ -520,7 +525,8 @@ typedef int (*lwm2m_engine_execute_cb_t)(uint16_t obj_inst_id,
  *
  * @param[in] error_code New error code.
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_device_add_err(uint8_t error_code);
 
@@ -694,7 +700,8 @@ lwm2m_engine_execute_cb_t lwm2m_firmware_get_update_cb_inst(uint16_t obj_inst_id
  * @param[in] obj_inst_id The instance number to set the callback for.
  * @param[in] cb A callback function to receive the execute event.
  *
- * @return 0 on success, otherwise a negative integer.
+ * @retval 0 on success
+ * @retval <0 otherwise a negative integer.
  */
 int lwm2m_swmgmt_set_activate_cb(uint16_t obj_inst_id, lwm2m_engine_execute_cb_t cb);
 
@@ -707,7 +714,8 @@ int lwm2m_swmgmt_set_activate_cb(uint16_t obj_inst_id, lwm2m_engine_execute_cb_t
  * @param[in] obj_inst_id The instance number to set the callback for.
  * @param[in] cb A callback function to receive the execute event.
  *
- * @return 0 on success, otherwise a negative integer.
+ * @retval 0 on success
+ * @retval <0 otherwise a negative integer.
  */
 int lwm2m_swmgmt_set_deactivate_cb(uint16_t obj_inst_id, lwm2m_engine_execute_cb_t cb);
 
@@ -720,7 +728,8 @@ int lwm2m_swmgmt_set_deactivate_cb(uint16_t obj_inst_id, lwm2m_engine_execute_cb
  * @param[in] obj_inst_id The instance number to set the callback for.
  * @param[in] cb A callback function to receive the execute event.
  *
- * @return 0 on success, otherwise a negative integer.
+ * @retval 0 on success
+ * @retval <0 otherwise a negative integer.
  */
 int lwm2m_swmgmt_set_install_package_cb(uint16_t obj_inst_id, lwm2m_engine_execute_cb_t cb);
 
@@ -733,7 +742,8 @@ int lwm2m_swmgmt_set_install_package_cb(uint16_t obj_inst_id, lwm2m_engine_execu
  * @param[in] obj_inst_id The instance number to set the callback for.
  * @param[in] cb A callback function for handling the execute event.
  *
- * @return 0 on success, otherwise a negative integer.
+ * @retval 0 on success
+ * @retval <0 otherwise a negative integer.
  */
 int lwm2m_swmgmt_set_delete_package_cb(uint16_t obj_inst_id, lwm2m_engine_execute_cb_t cb);
 
@@ -746,7 +756,8 @@ int lwm2m_swmgmt_set_delete_package_cb(uint16_t obj_inst_id, lwm2m_engine_execut
  * @param[in] obj_inst_id The instance number to set the callback for.
  * @param[in] cb A callback function for handling the read event.
  *
- * @return 0 on success, otherwise a negative integer.
+ * @retval 0 on success
+ * @retval <0 otherwise a negative integer.
  */
 int lwm2m_swmgmt_set_read_package_version_cb(uint16_t obj_inst_id, lwm2m_engine_get_data_cb_t cb);
 
@@ -759,7 +770,8 @@ int lwm2m_swmgmt_set_read_package_version_cb(uint16_t obj_inst_id, lwm2m_engine_
  * @param[in] obj_inst_id The instance number to set the callback for.
  * @param[in] cb A callback function for handling the block write event.
  *
- * @return 0 on success, otherwise a negative integer.
+ * @retval 0 on success
+ * @retval <0 otherwise a negative integer.
  */
 int lwm2m_swmgmt_set_write_package_cb(uint16_t obj_inst_id, lwm2m_engine_set_data_cb_t cb);
 
@@ -816,7 +828,8 @@ struct lwm2m_objlnk {
  * @param[in] path LwM2M path as a struct
  * @param[in] period_s Value of pmin to be given (in seconds).
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_update_observer_min_period(struct lwm2m_ctx *client_ctx,
 				     const struct lwm2m_obj_path *path, uint32_t period_s);
@@ -833,7 +846,8 @@ int lwm2m_update_observer_min_period(struct lwm2m_ctx *client_ctx,
  * @param[in] path LwM2M path as a struct
  * @param[in] period_s Value of pmax to be given (in seconds).
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_update_observer_max_period(struct lwm2m_ctx *client_ctx,
 				     const struct lwm2m_obj_path *path, uint32_t period_s);
@@ -847,7 +861,8 @@ int lwm2m_update_observer_max_period(struct lwm2m_ctx *client_ctx,
  *
  * @param[in] path LwM2M path as a struct
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_create_object_inst(const struct lwm2m_obj_path *path);
 
@@ -858,7 +873,8 @@ int lwm2m_create_object_inst(const struct lwm2m_obj_path *path);
  *
  * @param[in] path LwM2M path as a struct
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_delete_object_inst(const struct lwm2m_obj_path *path);
 
@@ -884,7 +900,8 @@ void lwm2m_registry_unlock(void);
  * @param[in] data_ptr Data buffer
  * @param[in] data_len Length of buffer
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_set_opaque(const struct lwm2m_obj_path *path, const char *data_ptr, uint16_t data_len);
 
@@ -894,7 +911,8 @@ int lwm2m_set_opaque(const struct lwm2m_obj_path *path, const char *data_ptr, ui
  * @param[in] path LwM2M path as a struct
  * @param[in] data_ptr NULL terminated char buffer
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_set_string(const struct lwm2m_obj_path *path, const char *data_ptr);
 
@@ -904,7 +922,8 @@ int lwm2m_set_string(const struct lwm2m_obj_path *path, const char *data_ptr);
  * @param[in] path LwM2M path as a struct
  * @param[in] value u8 value
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_set_u8(const struct lwm2m_obj_path *path, uint8_t value);
 
@@ -914,7 +933,8 @@ int lwm2m_set_u8(const struct lwm2m_obj_path *path, uint8_t value);
  * @param[in] path LwM2M path as a struct
  * @param[in] value u16 value
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_set_u16(const struct lwm2m_obj_path *path, uint16_t value);
 
@@ -924,7 +944,8 @@ int lwm2m_set_u16(const struct lwm2m_obj_path *path, uint16_t value);
  * @param[in] path LwM2M path as a struct
  * @param[in] value u32 value
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_set_u32(const struct lwm2m_obj_path *path, uint32_t value);
 
@@ -934,7 +955,8 @@ int lwm2m_set_u32(const struct lwm2m_obj_path *path, uint32_t value);
  * @param[in] path LwM2M path as a struct
  * @param[in] value s8 value
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_set_s8(const struct lwm2m_obj_path *path, int8_t value);
 
@@ -944,7 +966,8 @@ int lwm2m_set_s8(const struct lwm2m_obj_path *path, int8_t value);
  * @param[in] path LwM2M path as a struct
  * @param[in] value s16 value
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_set_s16(const struct lwm2m_obj_path *path, int16_t value);
 
@@ -954,7 +977,8 @@ int lwm2m_set_s16(const struct lwm2m_obj_path *path, int16_t value);
  * @param[in] path LwM2M path as a struct
  * @param[in] value s32 value
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_set_s32(const struct lwm2m_obj_path *path, int32_t value);
 
@@ -964,7 +988,8 @@ int lwm2m_set_s32(const struct lwm2m_obj_path *path, int32_t value);
  * @param[in] path LwM2M path as a struct
  * @param[in] value s64 value
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_set_s64(const struct lwm2m_obj_path *path, int64_t value);
 
@@ -974,7 +999,8 @@ int lwm2m_set_s64(const struct lwm2m_obj_path *path, int64_t value);
  * @param[in] path LwM2M path as a struct
  * @param[in] value bool value
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_set_bool(const struct lwm2m_obj_path *path, bool value);
 
@@ -984,7 +1010,8 @@ int lwm2m_set_bool(const struct lwm2m_obj_path *path, bool value);
  * @param[in] path LwM2M path as a struct
  * @param[in] value double value
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_set_f64(const struct lwm2m_obj_path *path, const double value);
 
@@ -994,7 +1021,8 @@ int lwm2m_set_f64(const struct lwm2m_obj_path *path, const double value);
  * @param[in] path LwM2M path as a struct
  * @param[in] value pointer to the lwm2m_objlnk structure
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_set_objlnk(const struct lwm2m_obj_path *path, const struct lwm2m_objlnk *value);
 
@@ -1004,7 +1032,8 @@ int lwm2m_set_objlnk(const struct lwm2m_obj_path *path, const struct lwm2m_objln
  * @param[in] path LwM2M path as a struct
  * @param[in] value Epoch timestamp
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_set_time(const struct lwm2m_obj_path *path, time_t value);
 
@@ -1050,7 +1079,8 @@ struct lwm2m_res_item {
  * @param[in] res_list LwM2M resource item list
  * @param[in] res_list_size Length of resource list
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_set_bulk(const struct lwm2m_res_item res_list[], size_t res_list_size);
 
@@ -1061,7 +1091,8 @@ int lwm2m_set_bulk(const struct lwm2m_res_item res_list[], size_t res_list_size)
  * @param[out] buf Data buffer to copy data into
  * @param[in] buflen Length of buffer
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_get_opaque(const struct lwm2m_obj_path *path, void *buf, uint16_t buflen);
 
@@ -1072,7 +1103,8 @@ int lwm2m_get_opaque(const struct lwm2m_obj_path *path, void *buf, uint16_t bufl
  * @param[out] str String buffer to copy data into
  * @param[in] buflen Length of buffer
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_get_string(const struct lwm2m_obj_path *path, void *str, uint16_t buflen);
 
@@ -1082,7 +1114,8 @@ int lwm2m_get_string(const struct lwm2m_obj_path *path, void *str, uint16_t bufl
  * @param[in] path LwM2M path as a struct
  * @param[out] value u8 buffer to copy data into
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_get_u8(const struct lwm2m_obj_path *path, uint8_t *value);
 
@@ -1092,7 +1125,8 @@ int lwm2m_get_u8(const struct lwm2m_obj_path *path, uint8_t *value);
  * @param[in] path LwM2M path as a struct
  * @param[out] value u16 buffer to copy data into
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_get_u16(const struct lwm2m_obj_path *path, uint16_t *value);
 
@@ -1102,7 +1136,8 @@ int lwm2m_get_u16(const struct lwm2m_obj_path *path, uint16_t *value);
  * @param[in] path LwM2M path as a struct
  * @param[out] value u32 buffer to copy data into
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_get_u32(const struct lwm2m_obj_path *path, uint32_t *value);
 
@@ -1112,7 +1147,8 @@ int lwm2m_get_u32(const struct lwm2m_obj_path *path, uint32_t *value);
  * @param[in] path LwM2M path as a struct
  * @param[out] value s8 buffer to copy data into
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_get_s8(const struct lwm2m_obj_path *path, int8_t *value);
 
@@ -1122,7 +1158,8 @@ int lwm2m_get_s8(const struct lwm2m_obj_path *path, int8_t *value);
  * @param[in] path LwM2M path as a struct
  * @param[out] value s16 buffer to copy data into
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_get_s16(const struct lwm2m_obj_path *path, int16_t *value);
 
@@ -1132,7 +1169,8 @@ int lwm2m_get_s16(const struct lwm2m_obj_path *path, int16_t *value);
  * @param[in] path LwM2M path as a struct
  * @param[out] value s32 buffer to copy data into
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_get_s32(const struct lwm2m_obj_path *path, int32_t *value);
 
@@ -1142,7 +1180,8 @@ int lwm2m_get_s32(const struct lwm2m_obj_path *path, int32_t *value);
  * @param[in] path LwM2M path as a struct
  * @param[out] value s64 buffer to copy data into
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_get_s64(const struct lwm2m_obj_path *path, int64_t *value);
 
@@ -1152,7 +1191,8 @@ int lwm2m_get_s64(const struct lwm2m_obj_path *path, int64_t *value);
  * @param[in] path LwM2M path as a struct
  * @param[out] value bool buffer to copy data into
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_get_bool(const struct lwm2m_obj_path *path, bool *value);
 
@@ -1162,7 +1202,8 @@ int lwm2m_get_bool(const struct lwm2m_obj_path *path, bool *value);
  * @param[in] path LwM2M path as a struct
  * @param[out] value double buffer to copy data into
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_get_f64(const struct lwm2m_obj_path *path, double *value);
 
@@ -1172,7 +1213,8 @@ int lwm2m_get_f64(const struct lwm2m_obj_path *path, double *value);
  * @param[in] path LwM2M path as a struct
  * @param[out] buf lwm2m_objlnk buffer to copy data into
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_get_objlnk(const struct lwm2m_obj_path *path, struct lwm2m_objlnk *buf);
 
@@ -1182,7 +1224,8 @@ int lwm2m_get_objlnk(const struct lwm2m_obj_path *path, struct lwm2m_objlnk *buf
  * @param[in] path LwM2M path as a struct
  * @param[out] buf time_t pointer to copy data
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_get_time(const struct lwm2m_obj_path *path, time_t *buf);
 
@@ -1202,7 +1245,8 @@ int lwm2m_get_time(const struct lwm2m_obj_path *path, time_t *buf);
  * @param[in] path LwM2M path as a struct
  * @param[in] cb Read resource callback
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_register_read_callback(const struct lwm2m_obj_path *path, lwm2m_engine_get_data_cb_t cb);
 
@@ -1216,7 +1260,8 @@ int lwm2m_register_read_callback(const struct lwm2m_obj_path *path, lwm2m_engine
  * @param[in] path LwM2M path as a struct
  * @param[in] cb Pre-write resource callback
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_register_pre_write_callback(const struct lwm2m_obj_path *path,
 				      lwm2m_engine_get_data_cb_t cb);
@@ -1239,7 +1284,8 @@ int lwm2m_register_pre_write_callback(const struct lwm2m_obj_path *path,
  * @param[in] path LwM2M path as a struct
  * @param[in] cb Validate resource data callback
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_register_validate_callback(const struct lwm2m_obj_path *path,
 				     lwm2m_engine_set_data_cb_t cb);
@@ -1256,7 +1302,8 @@ int lwm2m_register_validate_callback(const struct lwm2m_obj_path *path,
  * @param[in] path LwM2M path as a struct
  * @param[in] cb Post-write resource callback
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_register_post_write_callback(const struct lwm2m_obj_path *path,
 				       lwm2m_engine_set_data_cb_t cb);
@@ -1269,7 +1316,8 @@ int lwm2m_register_post_write_callback(const struct lwm2m_obj_path *path,
  * @param[in] path LwM2M path as a struct
  * @param[in] cb Execute resource callback
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_register_exec_callback(const struct lwm2m_obj_path *path, lwm2m_engine_execute_cb_t cb);
 
@@ -1281,7 +1329,8 @@ int lwm2m_register_exec_callback(const struct lwm2m_obj_path *path, lwm2m_engine
  * @param[in] obj_id LwM2M object id
  * @param[in] cb Create object instance callback
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_register_create_callback(uint16_t obj_id,
 				   lwm2m_engine_user_cb_t cb);
@@ -1294,7 +1343,8 @@ int lwm2m_register_create_callback(uint16_t obj_id,
  * @param[in] obj_id LwM2M object id
  * @param[in] cb Delete object instance callback
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_register_delete_callback(uint16_t obj_id,
 					  lwm2m_engine_user_cb_t cb);
@@ -1326,7 +1376,8 @@ int lwm2m_register_delete_callback(uint16_t obj_id,
  * @param[in] data_len Length of existing data in the buffer
  * @param[in] data_flags Data buffer flags (such as read-only, etc)
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_set_res_buf(const struct lwm2m_obj_path *path, void *buffer_ptr, uint16_t buffer_len,
 		      uint16_t data_len, uint8_t data_flags);
@@ -1339,7 +1390,8 @@ int lwm2m_set_res_buf(const struct lwm2m_obj_path *path, void *buffer_ptr, uint1
  *
  * @param[in] path LwM2M path as a struct
  * @param[in] data_len Length of data
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_set_res_data_len(const struct lwm2m_obj_path *path, uint16_t data_len);
 
@@ -1360,7 +1412,8 @@ int lwm2m_set_res_data_len(const struct lwm2m_obj_path *path, uint16_t data_len)
  * @param[out] data_len Length of existing data in the buffer
  * @param[out] data_flags Data buffer flags (such as read-only, etc)
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_get_res_buf(const struct lwm2m_obj_path *path, void **buffer_ptr, uint16_t *buffer_len,
 		      uint16_t *data_len, uint8_t *data_flags);
@@ -1374,7 +1427,8 @@ int lwm2m_get_res_buf(const struct lwm2m_obj_path *path, void **buffer_ptr, uint
  *
  * @param[in] path LwM2M path as a struct
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_create_res_inst(const struct lwm2m_obj_path *path);
 
@@ -1385,7 +1439,8 @@ int lwm2m_create_res_inst(const struct lwm2m_obj_path *path);
  *
  * @param[in] path LwM2M path as a struct
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_delete_res_inst(const struct lwm2m_obj_path *path);
 
@@ -1397,7 +1452,8 @@ int lwm2m_delete_res_inst(const struct lwm2m_obj_path *path);
  *
  * @param[in] period_ms New period for the device service (in milliseconds)
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_update_device_service_period(uint32_t period_ms);
 
@@ -1406,7 +1462,7 @@ int lwm2m_update_device_service_period(uint32_t period_ms);
  *
  * @param[in] path LwM2M path as a struct to check
  *
- * @return true when there exists an observation of the same level
+ * @retval true when there exists an observation of the same level
  *         or lower as the given path, false if it doesn't or path is not a
  *         valid LwM2M-path.
  *         E.g. true if path refers to a resource and the parent object has an
@@ -1423,7 +1479,8 @@ bool lwm2m_path_is_observed(const struct lwm2m_obj_path *path);
  *
  * @param[in] client_ctx LwM2M context
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_engine_stop(struct lwm2m_ctx *client_ctx);
 
@@ -1436,7 +1493,8 @@ int lwm2m_engine_stop(struct lwm2m_ctx *client_ctx);
  *
  * @param[in] client_ctx LwM2M context
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_engine_start(struct lwm2m_ctx *client_ctx);
 
@@ -1480,8 +1538,9 @@ void lwm2m_acknowledge(struct lwm2m_ctx *client_ctx);
  *			 added or deleted, and when a notification was acked or
  *			 has timed out
  *
- * @return 0 for success, -EINPROGRESS when client is already running
- *         or negative error codes in case of failure.
+ * @retval 0 for success
+ * @retval -EINPROGRESS when client is already running
+ * @retval <0 negative error codes in case of failure.
  */
 int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
 			   uint32_t flags, lwm2m_ctx_event_cb_t event_cb,
@@ -1500,7 +1559,8 @@ int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
  * @param[in] deregister True to deregister the client if registered.
  *                       False to force close the connection.
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
 			  lwm2m_ctx_event_cb_t event_cb, bool deregister);
@@ -1512,7 +1572,8 @@ int lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
  * LwM2M Engine indicate before it suspend by
  * LWM2M_RD_CLIENT_EVENT_ENGINE_SUSPENDED event.
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_engine_pause(void);
 
@@ -1524,7 +1585,8 @@ int lwm2m_engine_pause(void);
  * Event's LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE or LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE
  * indicate that client is connected to server.
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_engine_resume(void);
 
@@ -1574,13 +1636,14 @@ typedef void (*lwm2m_send_cb_t)(enum lwm2m_send_status status);
  * @param path_list_size Length of path list. Max size is CONFIG_LWM2M_COMPOSITE_PATH_LIST_SIZE
  * @param reply_cb Callback triggered with confirmation state or NULL if not used
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  *
  */
 int lwm2m_send_cb(struct lwm2m_ctx *ctx, const struct lwm2m_obj_path path_list[],
 			  uint8_t path_list_size, lwm2m_send_cb_t reply_cb);
 
-/** 
+/**
  * @brief Returns LwM2M client context
  *
  * @return ctx LwM2M context
@@ -1588,7 +1651,7 @@ int lwm2m_send_cb(struct lwm2m_ctx *ctx, const struct lwm2m_obj_path path_list[]
  */
 struct lwm2m_ctx *lwm2m_rd_client_ctx(void);
 
-/** 
+/**
  * @brief Enable data cache for a resource.
  *
  * Application may enable caching of resource data by allocating buffer for LwM2M engine to use.
@@ -1598,7 +1661,8 @@ struct lwm2m_ctx *lwm2m_rd_client_ctx(void);
  * @param data_cache Pointer to Data cache array
  * @param cache_len number of cached entries
  *
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  *
  */
 int lwm2m_enable_cache(const struct lwm2m_obj_path *path, struct lwm2m_time_series_elem *data_cache,
@@ -1614,7 +1678,8 @@ int lwm2m_enable_cache(const struct lwm2m_obj_path *path, struct lwm2m_time_seri
  * @param path      LwM2M path to the cached resource.
  * @param filter_cb Callback used to decide whether samples should be cached.
  *
- * @return 0 for success or a negative errno code in case of error.
+ * @retval 0 for success
+ * @retval <0 a negative errno code in case of error.
  */
 int lwm2m_set_cache_filter(const struct lwm2m_obj_path *path,
 			   lwm2m_cache_filter_cb_t filter_cb);
@@ -1636,7 +1701,8 @@ enum lwm2m_security_mode_e {
  * This data is valid only if RD client is running.
  *
  * @param ctx Pointer to client context.
- * @return int Positive values are @ref lwm2m_security_mode_e, negative error codes otherwise.
+ * @return Positive values are @ref lwm2m_security_mode_e
+ * @retval <0 negative error codes otherwise.
  */
 int lwm2m_security_mode(struct lwm2m_ctx *ctx);
 
@@ -1648,7 +1714,8 @@ int lwm2m_security_mode(struct lwm2m_ctx *ctx);
  * before defaults.
  *
  * @param ctx Client context
- * @return 0 for success or negative in case of error.
+ * @retval 0 for success
+ * @retval <0 negative in case of error.
  */
 int lwm2m_set_default_sockopt(struct lwm2m_ctx *ctx);
 

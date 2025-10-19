@@ -1468,7 +1468,8 @@ struct wifi_mgmt_ops {
 	 *           result by the driver. The wifi mgmt part will take care of
 	 *           raising the necessary event etc.
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*scan)(const struct device *dev,
 		    struct wifi_scan_params *params,
@@ -1478,7 +1479,8 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance.
 	 * @param params Connect parameters
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*connect)(const struct device *dev,
 		       struct wifi_connect_req_params *params);
@@ -1486,7 +1488,8 @@ struct wifi_mgmt_ops {
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*disconnect)(const struct device *dev);
 	/** Enable AP mode
@@ -1494,7 +1497,8 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance.
 	 * @param params AP mode parameters
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*ap_enable)(const struct device *dev,
 			 struct wifi_connect_req_params *params);
@@ -1502,7 +1506,8 @@ struct wifi_mgmt_ops {
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*ap_disable)(const struct device *dev);
 	/** Disconnect a STA from AP
@@ -1510,7 +1515,8 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance.
 	 * @param mac MAC address of the STA to disconnect
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*ap_sta_disconnect)(const struct device *dev, const uint8_t *mac);
 	/** Get interface status
@@ -1518,7 +1524,8 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance.
 	 * @param status Interface status
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*iface_status)(const struct device *dev, struct wifi_iface_status *status);
 #if defined(CONFIG_NET_STATISTICS_WIFI) || defined(__DOXYGEN__)
@@ -1527,14 +1534,16 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance.
 	 * @param stats Wi-Fi statistics
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*get_stats)(const struct device *dev, struct net_stats_wifi *stats);
 	/** Reset  Wi-Fi statistics
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*reset_stats)(const struct device *dev);
 #endif /* CONFIG_NET_STATISTICS_WIFI */
@@ -1543,7 +1552,8 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance.
 	 * @param params 11k parameters
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*cfg_11k)(const struct device *dev, struct wifi_11k_params *params);
 	/** Send 11k neighbor request
@@ -1551,7 +1561,8 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance.
 	 * @param params 11k parameters
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*send_11k_neighbor_request)(const struct device *dev, struct wifi_11k_params *params);
 	/** Set power save status
@@ -1559,7 +1570,8 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance.
 	 * @param params Power save parameters
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*set_power_save)(const struct device *dev, struct wifi_ps_params *params);
 	/** Setup or teardown TWT flow
@@ -1567,7 +1579,8 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance.
 	 * @param params TWT parameters
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*set_twt)(const struct device *dev, struct wifi_twt_params *params);
 	/** Setup BTWT flow
@@ -1575,7 +1588,8 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance.
 	 * @param params BTWT parameters
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*set_btwt)(const struct device *dev, struct wifi_twt_params *params);
 	/** Get power save config
@@ -1583,7 +1597,8 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance.
 	 * @param config Power save config
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*get_power_save_config)(const struct device *dev, struct wifi_ps_config *config);
 	/** Set or get regulatory domain
@@ -1591,7 +1606,8 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance.
 	 * @param reg_domain Regulatory domain
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*reg_domain)(const struct device *dev, struct wifi_reg_domain *reg_domain);
 	/** Set or get packet filter settings for monitor and promiscuous modes
@@ -1599,7 +1615,8 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance.
 	 * @param packet filter settings
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*filter)(const struct device *dev, struct wifi_filter_info *filter);
 	/** Set or get mode of operation
@@ -1607,7 +1624,8 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance.
 	 * @param mode settings
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*mode)(const struct device *dev, struct wifi_mode_info *mode);
 	/** Set or get current channel of operation
@@ -1615,7 +1633,8 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance.
 	 * @param channel settings
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*channel)(const struct device *dev, struct wifi_channel_info *channel);
 
@@ -1624,14 +1643,16 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance.
 	 * @param reason query reason
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*btm_query)(const struct device *dev, uint8_t reason);
 
 	/** Check if ap support Neighbor Report or not.
 	 * @param dev Pointer to the device structure for the driver instance.
 	 *
-	 * @return true if support, false if not support
+	 * @retval true if support
+	 * @retval false if not support
 	 */
 	bool (*bss_support_neighbor_rep)(const struct device *dev);
 
@@ -1640,7 +1661,8 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance.
 	 * @param capab is the capability to judge
 	 *
-	 * @return 1 if support, 0 if not support
+	 * @retval 1 if support
+	 * @retval 0 if not support
 	 */
 	int (*bss_ext_capab)(const struct device *dev, int capab);
 
@@ -1648,7 +1670,8 @@ struct wifi_mgmt_ops {
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*legacy_roam)(const struct device *dev);
 
@@ -1662,7 +1685,8 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance
 	 * @param params Version parameters
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*get_version)(const struct device *dev, struct wifi_version *params);
 	/** Get Wi-Fi connection parameters recently used
@@ -1670,7 +1694,8 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance
 	 * @param params the Wi-Fi connection parameters recently used
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*get_conn_params)(const struct device *dev, struct wifi_connect_req_params *params);
 	/** Set RTS threshold value
@@ -1678,7 +1703,8 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance.
 	 * @param RTS threshold value
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*set_rts_threshold)(const struct device *dev, unsigned int rts_threshold);
 	/** Configure AP parameter
@@ -1686,7 +1712,8 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance.
 	 * @param params AP mode parameter configuration parameter info
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*ap_config_params)(const struct device *dev, struct wifi_ap_config_params *params);
 	/** Configure STA parameter
@@ -1694,7 +1721,8 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance.
 	 * @param params STA mode parameter configuration parameter info
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*config_params)(const struct device *dev, struct wifi_config_params *params);
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
@@ -1703,7 +1731,8 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance
 	 * @param params DPP action enum and parameters in string
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*dpp_dispatch)(const struct device *dev, struct wifi_dpp_params *params);
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
@@ -1711,7 +1740,8 @@ struct wifi_mgmt_ops {
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*pmksa_flush)(const struct device *dev);
 	/** Set Wi-Fi enterprise mode CA/client Cert and key
@@ -1719,7 +1749,8 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance.
 	 * @param creds Pointer to the CA/client Cert and key.
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	int (*enterprise_creds)(const struct device *dev,
@@ -1730,7 +1761,8 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance.
 	 * @param rts_threshold Pointer to the RTS threshold value.
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*get_rts_threshold)(const struct device *dev, unsigned int *rts_threshold);
 	/** Start a WPS PBC/PIN connection
@@ -1738,7 +1770,8 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance
 	 * @param params wps operarion parameters
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*wps_config)(const struct device *dev, struct wifi_wps_config_params *params);
 	/** Trigger candidate scan
@@ -1746,14 +1779,16 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance
 	 * @param params Scan parameters
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*candidate_scan)(const struct device *dev, struct wifi_scan_params *params);
 	/** Start 11r roaming
 	 *
 	 * @param dev Pointer to the device structure for the driver instance
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*start_11r_roaming)(const struct device *dev);
 	/** Set BSS max idle period
@@ -1761,7 +1796,8 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance.
 	 * @param BSS max idle period value
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*set_bss_max_idle_period)(const struct device *dev,
 			unsigned short bss_max_idle_period);
@@ -1771,7 +1807,8 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance.
 	 * @param params Background scanning configuration parameters
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @retval 0 if ok
+	 * @retval <0 if error
 	 */
 	int (*set_bgscan)(const struct device *dev, struct wifi_bgscan_params *params);
 #endif

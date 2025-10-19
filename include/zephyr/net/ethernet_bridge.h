@@ -80,7 +80,8 @@ struct eth_bridge_iface_context {
  * @param br A pointer to a bridge interface
  * @param iface Interface to add
  *
- * @return 0 if OK, negative error code otherwise.
+ * @retval 0 if OK
+ * @retval <0 negative error code otherwise.
  */
 int eth_bridge_iface_add(struct net_if *br, struct net_if *iface);
 
@@ -95,7 +96,8 @@ int eth_bridge_iface_add(struct net_if *br, struct net_if *iface);
  * @param br A pointer to a bridge interface
  * @param iface Interface to remove
  *
- * @return 0 if OK, negative error code otherwise.
+ * @retval 0 if OK
+ * @retval <0 negative error code otherwise.
  */
 int eth_bridge_iface_remove(struct net_if *br, struct net_if *iface);
 
@@ -113,7 +115,8 @@ int eth_bridge_get_index(struct net_if *br);
  *
  * @param index Bridge instance index
  *
- * @return Pointer to bridge interface or NULL if not found.
+ * @return Pointer to bridge interface
+ * @retval NULL if not found.
  */
 struct net_if *eth_bridge_get_by_index(int index);
 

@@ -59,7 +59,8 @@ extern "C" {
  * @param timeout How long to wait the network setup before continuing
  * the startup.
  *
- * @return 0 if ok, <0 if error.
+ * @retval 0 if ok
+ * @retval <0 if error.
  */
 int net_config_init(const char *app_info, uint32_t flags, int32_t timeout);
 
@@ -76,7 +77,8 @@ int net_config_init(const char *app_info, uint32_t flags, int32_t timeout);
  * @param timeout How long to wait the network setup before continuing
  * the startup.
  *
- * @return 0 if ok, <0 if error.
+ * @retval 0 if ok
+ * @retval <0 if error.
  */
 int net_config_init_by_iface(struct net_if *iface, const char *app_info,
 			     uint32_t flags, int32_t timeout);
@@ -94,7 +96,8 @@ int net_config_init_by_iface(struct net_if *iface, const char *app_info,
  *        then default network interface is used by the function.
  * @param app_info String describing this application.
  *
- * @return 0 if ok, <0 if error.
+ * @retval 0 if ok
+ * @retval <0 if error.
  */
 int net_config_init_app(const struct device *dev, const char *app_info);
 

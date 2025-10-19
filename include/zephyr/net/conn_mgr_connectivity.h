@@ -138,7 +138,7 @@ enum conn_mgr_if_flag {
  * @retval 0 on success.
  * @retval -ESHUTDOWN if the iface is not admin-up.
  * @retval -ENOTSUP if the iface does not have a connectivity implementation.
- * @retval implementation-specific status code otherwise.
+ * @return implementation-specific status code otherwise.
  */
 int conn_mgr_if_connect(struct net_if *iface);
 
@@ -154,7 +154,7 @@ int conn_mgr_if_connect(struct net_if *iface);
  *
  * @retval 0 on success.
  * @retval -ENOTSUP if the iface does not have a connectivity implementation.
- * @retval implementation-specific status code otherwise.
+ * @return implementation-specific status code otherwise.
  */
 int conn_mgr_if_disconnect(struct net_if *iface);
 
@@ -185,7 +185,7 @@ bool conn_mgr_if_is_bound(struct net_if *iface);
  * @retval -ENOBUFS if optlen is too long.
  * @retval -EINVAL if NULL optval pointer provided.
  * @retval -ENOPROTOOPT if the optname is not recognized.
- * @retval implementation-specific error code otherwise.
+ * @return implementation-specific error code otherwise.
  */
 int conn_mgr_if_set_opt(struct net_if *iface, int optname, const void *optval, size_t optlen);
 
@@ -213,7 +213,7 @@ int conn_mgr_if_set_opt(struct net_if *iface, int optname, const void *optval, s
  * @retval -EINVAL if invalid retrieval buffer length is provided, or if NULL optval or
  *		   optlen pointer provided.
  * @retval -ENOPROTOOPT if the optname is not recognized.
- * @retval implementation-specific error code otherwise.
+ * @return implementation-specific error code otherwise.
  */
 int conn_mgr_if_get_opt(struct net_if *iface, int optname, void *optval, size_t *optlen);
 
@@ -225,7 +225,8 @@ int conn_mgr_if_get_opt(struct net_if *iface, int optname, void *optval, size_t 
  *
  * @param iface - Pointer to the network interface to check.
  * @param flag - The flag to check.
- * @return True if the flag is set, otherwise False.
+ * @retval true if the flag is set
+ * @retval false otherwise.
  *	   Also returns False if the provided iface is not bound to a connectivity implementation,
  *	   or the requested flag doesn't exist.
  */
@@ -253,8 +254,8 @@ int conn_mgr_if_set_flag(struct net_if *iface, enum conn_mgr_if_flag flag, bool 
  * in seconds for it.
  *
  * @param iface - Pointer to the iface to check.
- * @return int - The connectivity timeout value (in seconds) if it could be retrieved, otherwise
- *		 CONN_MGR_IF_NO_TIMEOUT.
+ * @retval timeout The connectivity timeout value (in seconds) if it could be retrieved
+ * @retval CONN_MGR_IF_NO_TIMEOUT otherwise.
  */
 int conn_mgr_if_get_timeout(struct net_if *iface);
 
@@ -279,8 +280,8 @@ int conn_mgr_if_set_timeout(struct net_if *iface, int timeout);
  * setting in seconds for it.
  *
  * @param iface - Pointer to the iface to check.
- * @return int - The connectivity timeout value (in seconds) if it could be retrieved, otherwise
- *		 CONN_MGR_IF_NO_TIMEOUT.
+ * @retval timeout The connectivity timeout value (in seconds) if it could be retrieved
+ * @retval CONN_MGR_IF_NO_TIMEOUT otherwise.
  */
 int conn_mgr_if_get_idle_timeout(struct net_if *iface);
 
@@ -331,8 +332,8 @@ void conn_mgr_if_used(struct net_if *iface);
  *
  * @param skip_ignored - If true, only affect ifaces that aren't ignored by conn_mgr.
  *			 Otherwise, affect all ifaces.
- * @return 0 if all net_if_up calls returned 0, otherwise the first nonzero value
- *         returned by a net_if_up call.
+ * @retval 0 if all net_if_up calls returned 0
+ * @retval val otherwise the first nonzero value returned by a net_if_up call.
  */
 int conn_mgr_all_if_up(bool skip_ignored);
 
@@ -344,8 +345,8 @@ int conn_mgr_all_if_up(bool skip_ignored);
  *
  * @param skip_ignored - If true, only affect ifaces that aren't ignored by conn_mgr.
  *			 Otherwise, affect all ifaces.
- * @return 0 if all net_if_down calls returned 0, otherwise the first nonzero value
- *         returned by a net_if_down call.
+ * @retval 0 if all net_if_down calls returned 0
+ * @retval val otherwise the first nonzero value returned by a net_if_down call.
  */
 int conn_mgr_all_if_down(bool skip_ignored);
 
@@ -357,8 +358,9 @@ int conn_mgr_all_if_down(bool skip_ignored);
  *
  * @param skip_ignored - If true, only affect ifaces that aren't ignored by conn_mgr.
  *			 Otherwise, affect all ifaces.
- * @return 0 if all net_if_up and conn_mgr_if_connect calls returned 0, otherwise the first nonzero
- *	   value returned by either net_if_up or conn_mgr_if_connect.
+ * @retval 0 if all net_if_up and conn_mgr_if_connect calls returned 0
+ * @retval val otherwise the first nonzero value returned by either net_if_up
+ *             or conn_mgr_if_connect.
  */
 int conn_mgr_all_if_connect(bool skip_ignored);
 
@@ -370,8 +372,9 @@ int conn_mgr_all_if_connect(bool skip_ignored);
  *
  * @param skip_ignored - If true, only affect ifaces that aren't ignored by conn_mgr.
  *			 Otherwise, affect all ifaces.
- * @return 0 if all net_if_up and conn_mgr_if_connect calls returned 0, otherwise the first nonzero
- *	   value returned by either net_if_up or conn_mgr_if_connect.
+ * @retval 0 if all net_if_up and conn_mgr_if_connect calls returned 0
+ * @retval val otherwise the first nonzero value returned by either net_if_up
+ *             or conn_mgr_if_connect.
  */
 int conn_mgr_all_if_disconnect(bool skip_ignored);
 

@@ -181,7 +181,8 @@ struct net_lldpdu {
  * @param iface Network interface
  * @param lldpdu LLDP data unit struct
  *
- * @return 0 if ok, <0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 int net_lldp_config(struct net_if *iface, const struct net_lldpdu *lldpdu);
 
@@ -192,7 +193,8 @@ int net_lldp_config(struct net_if *iface, const struct net_lldpdu *lldpdu);
  * @param tlv LLDP optional TLVs following mandatory part
  * @param len Length of the optional TLVs
  *
- * @return 0 if ok, <0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 int net_lldp_config_optional(struct net_if *iface, const uint8_t *tlv,
 			     size_t len);
@@ -224,7 +226,8 @@ typedef enum net_verdict (*net_lldp_recv_cb_t)(struct net_if *iface,
  * @param iface Network interface
  * @param cb Callback function
  *
- * @return 0 if ok, < 0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 int net_lldp_register_callback(struct net_if *iface, net_lldp_recv_cb_t cb);
 
@@ -233,7 +236,8 @@ int net_lldp_register_callback(struct net_if *iface, net_lldp_recv_cb_t cb);
  *
  * @param iface Network interface
  *
- * @return <0 if error, index in lldp array if iface is found there
+ * @return index in lldp array if iface is found there
+ * @retval <0 if error
  */
 #if defined(CONFIG_NET_LLDP)
 int net_lldp_set_lldpdu(struct net_if *iface);

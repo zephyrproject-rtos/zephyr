@@ -181,7 +181,8 @@ struct coap_client {
  * @param[in] info Name for the receiving thread of the client. Setting this NULL will result as
  *                 default name of "coap_client".
  *
- * @return int Zero on success, otherwise a negative error code.
+ * @retval 0 on success
+ * @retval <0 a negative error code otherwise.
  */
 int coap_client_init(struct coap_client *client, const char *info);
 
@@ -203,7 +204,8 @@ int coap_client_init(struct coap_client *client, const char *info);
  * @param addr the destination address of the request, NULL if socket is already connected.
  * @param req CoAP request structure
  * @param params Pointer to transmission parameters structure or NULL to use default values.
- * @return zero when operation started successfully or negative error code otherwise.
+ * @retval 0 when operation started successfully
+ * @retval <0 negative error code otherwise.
  */
 
 int coap_client_req(struct coap_client *client, int sock, const struct sockaddr *addr,
@@ -262,7 +264,8 @@ struct coap_client_option coap_client_option_initial_block2(void);
  *
  * @param client Pointer to the CoAP client instance.
  *
- * @return true if there is an ongoing exchange, false otherwise.
+ * @retval true if there is an ongoing exchange
+ * @retval false otherwise.
  */
 bool coap_client_has_ongoing_exchange(struct coap_client *client);
 

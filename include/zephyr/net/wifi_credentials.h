@@ -155,10 +155,10 @@ struct wifi_credentials_enterprise {
  * @param[out] channel			channel
  * @param[out] timeout			timeout
  *
- * @return 0		Success.
- * @return -ENOENT	No network with this SSID was found.
- * @return -EINVAL	A required buffer was NULL or invalid SSID length.
- * @return -EPROTO	The network with this SSID is not a personal network.
+ * @retval 0		Success.
+ * @retval -ENOENT	No network with this SSID was found.
+ * @retval -EINVAL	A required buffer was NULL or invalid SSID length.
+ * @retval -EPROTO	The network with this SSID is not a personal network.
  */
 int wifi_credentials_get_by_ssid_personal(const char *ssid, size_t ssid_len,
 					  enum wifi_security_type *type, uint8_t *bssid_buf,
@@ -180,10 +180,10 @@ int wifi_credentials_get_by_ssid_personal(const char *ssid, size_t ssid_len,
  * @param[in] channel			Channel
  * @param[in] timeout			Timeout
  *
- * @return 0			Success. Credentials are stored in persistent storage.
- * @return -EINVAL		A required buffer was NULL or security type is not supported.
- * @return -ENOTSUP		Security type is not supported.
- * @return -ENOBUFS		All slots are already taken.
+ * @retval 0			Success. Credentials are stored in persistent storage.
+ * @retval -EINVAL		A required buffer was NULL or security type is not supported.
+ * @retval -ENOTSUP		Security type is not supported.
+ * @retval -ENOBUFS		All slots are already taken.
  */
 int wifi_credentials_set_personal(const char *ssid, size_t ssid_len, enum wifi_security_type type,
 				  const uint8_t *bssid, size_t bssid_len, const char *password,
@@ -197,10 +197,10 @@ int wifi_credentials_set_personal(const char *ssid, size_t ssid_len, enum wifi_s
  * @param[in] ssid_len		length of SSID
  * @param[out] buf		credentials Pointer to struct where credentials are stored
  *
- * @return 0			Success.
- * @return -ENOENT		No network with this SSID was found.
- * @return -EINVAL		A required buffer was NULL or too small.
- * @return -EPROTO		The network with this SSID is not a personal network.
+ * @retval 0			Success.
+ * @retval -ENOENT		No network with this SSID was found.
+ * @retval -EINVAL		A required buffer was NULL or too small.
+ * @retval -EPROTO		The network with this SSID is not a personal network.
  */
 int wifi_credentials_get_by_ssid_personal_struct(const char *ssid, size_t ssid_len,
 						 struct wifi_credentials_personal *buf);
@@ -210,10 +210,10 @@ int wifi_credentials_get_by_ssid_personal_struct(const char *ssid, size_t ssid_l
  *
  * @param[in] creds		credentials Pointer to struct from which credentials are loaded
  *
- * @return 0			Success.
- * @return -ENOENT		No network with this SSID was found.
- * @return -EINVAL		A required buffer was NULL or incorrect size.
- * @return -ENOBUFS		All slots are already taken.
+ * @retval 0			Success.
+ * @retval -ENOENT		No network with this SSID was found.
+ * @retval -EINVAL		A required buffer was NULL or incorrect size.
+ * @retval -ENOBUFS		All slots are already taken.
  */
 int wifi_credentials_set_personal_struct(const struct wifi_credentials_personal *creds);
 

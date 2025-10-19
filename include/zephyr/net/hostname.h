@@ -73,7 +73,8 @@ static inline const char *net_hostname_get(void)
  * @param host new hostname as char array.
  * @param len Length of the hostname array.
  *
- * @return 0 if ok, <0 on error
+ * @retval 0 if ok
+ * @retval <0 on error
  */
 #if defined(CONFIG_NET_HOSTNAME_DYNAMIC)
 int net_hostname_set(char *host, size_t len);
@@ -109,7 +110,8 @@ static inline void net_hostname_init(void)
  * to a hexadecimal string.
  * @param postfix_len Length of the hostname_postfix array.
  *
- * @return 0 if ok, <0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 #if defined(CONFIG_NET_HOSTNAME_UNIQUE)
 int net_hostname_set_postfix(const uint8_t *hostname_postfix,
@@ -136,7 +138,8 @@ static inline int net_hostname_set_postfix(const uint8_t *hostname_postfix,
  * @param hostname_postfix Pointer to the postfix string to be appended to the network hostname.
  * @param postfix_len Length of the hostname_postfix array.
  *
- * @return 0 if ok, <0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 #if defined(CONFIG_NET_HOSTNAME_UNIQUE)
 int net_hostname_set_postfix_str(const uint8_t *hostname_postfix,

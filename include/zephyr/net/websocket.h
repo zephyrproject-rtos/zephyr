@@ -58,7 +58,8 @@ enum websocket_opcode  {
  * @param req HTTP handshake request
  * @param user_data A valid pointer on some user data or NULL
  *
- * @return 0 if ok, <0 if there is an error and connection should be aborted
+ * @retval 0 if ok
+ * @retval <0 if there is an error and connection should be aborted
  */
 typedef int (*websocket_connect_cb_t)(int ws_sock, struct http_request *req,
 				      void *user_data);
@@ -148,7 +149,8 @@ int websocket_connect(int http_sock, struct websocket_request *req,
  * @param timeout How long to try to send the message. The value is in
  *        milliseconds. Value SYS_FOREVER_MS means to wait forever.
  *
- * @return <0 if error, >=0 amount of bytes sent
+ * @retval >=0 amount of bytes sent
+ * @retval <0 if error
  */
 int websocket_send_msg(int ws_sock, const uint8_t *payload, size_t payload_len,
 		       enum websocket_opcode opcode, bool mask, bool final,
@@ -186,7 +188,8 @@ int websocket_recv_msg(int ws_sock, uint8_t *buf, size_t buf_len,
  *
  * @param ws_sock Websocket id returned by websocket_connect().
  *
- * @return <0 if error, 0 the connection was closed successfully
+ * @retval 0 the connection was closed successfully
+ * @retval <0 if error
  */
 int websocket_disconnect(int ws_sock);
 
@@ -200,7 +203,8 @@ int websocket_disconnect(int ws_sock);
  *        websocket session.
  * @param recv_buf_len Length of the temporary receive buffer.
  *
- * @return <0 if error, >=0 the actual websocket to be used by application
+ * @retval >=0 the actual websocket to be used by application
+ * @retval <0 if error
  */
 int websocket_register(int http_sock, uint8_t *recv_buf, size_t recv_buf_len);
 
@@ -211,7 +215,8 @@ int websocket_register(int http_sock, uint8_t *recv_buf, size_t recv_buf_len);
  *
  * @param ws_sock Websocket connection socket.
  *
- * @return <0 if error, 0 the websocket connection is now fully closed
+ * @retval 0 the websocket connection is now fully closed
+ * @retval <0 if error
  */
 int websocket_unregister(int ws_sock);
 

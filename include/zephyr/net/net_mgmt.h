@@ -344,9 +344,10 @@ static inline void net_mgmt_event_notify(uint64_t mgmt_event,
  *        the info is not NULL.
  * @param timeout A timeout delay. K_FOREVER can be used to wait indefinitely.
  *
- * @return 0 on success, a negative error code otherwise. -ETIMEDOUT will
- *         be specifically returned if the timeout kick-in instead of an
- *         actual event.
+ * @retval 0 on success
+ * @retval -ETIMEDOUT will be specifically returned if the timeout kick-in
+ *         instead of an actual event.
+ * @retval <0 a negative error code otherwise
  */
 #ifdef CONFIG_NET_MGMT_EVENT
 int net_mgmt_event_wait(uint64_t mgmt_event_mask,
@@ -388,9 +389,10 @@ static inline int net_mgmt_event_wait(uint64_t mgmt_event_mask,
  *        the info is not NULL.
  * @param timeout A timeout delay. K_FOREVER can be used to wait indefinitely.
  *
- * @return 0 on success, a negative error code otherwise. -ETIMEDOUT will
- *         be specifically returned if the timeout kick-in instead of an
- *         actual event.
+ * @retval 0 on success
+ * @retval -ETIMEDOUT will be specifically returned if the timeout kick-in
+ *         instead of an actual event.
+ * @retval <0 a negative error code otherwise
  */
 #ifdef CONFIG_NET_MGMT_EVENT
 int net_mgmt_event_wait_on_iface(struct net_if *iface,

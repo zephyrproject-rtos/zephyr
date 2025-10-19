@@ -2077,7 +2077,8 @@ struct net_pkt *net_pkt_rx_alloc_on_iface(struct net_if *iface,
  * @param proto   The IP protocol type (can be 0 for none).
  * @param timeout Maximum time to wait for an allocation.
  *
- * @return 0 on success, negative errno code otherwise.
+ * @retval 0 on success
+ * @retval <0 negative errno code otherwise.
  */
 int net_pkt_alloc_buffer(struct net_pkt *pkt,
 			 size_t size,
@@ -2101,7 +2102,8 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
  * @param proto   The IP protocol type (can be 0 for none).
  * @param timeout Maximum time to wait for an allocation.
  *
- * @return 0 on success, negative errno code otherwise.
+ * @retval 0 on success
+ * @retval <0 negative errno code otherwise.
  */
 #if !defined(NET_PKT_DEBUG_ENABLED)
 int net_pkt_alloc_buffer_with_reserve(struct net_pkt *pkt,
@@ -2122,7 +2124,8 @@ int net_pkt_alloc_buffer_with_reserve(struct net_pkt *pkt,
  * @param size    The size of buffer being requested.
  * @param timeout Maximum time to wait for an allocation.
  *
- * @return 0 on success, negative errno code otherwise.
+ * @retval 0 on success
+ * @retval <0 negative errno code otherwise.
  */
 int net_pkt_alloc_buffer_raw(struct net_pkt *pkt, size_t size,
 			     k_timeout_t timeout);
@@ -2138,7 +2141,8 @@ int net_pkt_alloc_buffer_raw(struct net_pkt *pkt, size_t size,
  * @param proto   The IP protocol type (can be 0 for none).
  * @param timeout Maximum time to wait for an allocation.
  *
- * @return a pointer to a newly allocated net_pkt on success, NULL otherwise.
+ * @return a pointer to a newly allocated net_pkt on success
+ * @retval NULL otherwise.
  */
 struct net_pkt *net_pkt_alloc_with_buffer(struct net_if *iface,
 					  size_t size,
@@ -2288,7 +2292,8 @@ static inline void *net_pkt_cursor_get_pos(struct net_pkt *pkt)
  *               amount of data from the buffer.
  * @param length Amount of data to skip in the buffer
  *
- * @return 0 in success, negative errno code otherwise.
+ * @retval 0 in success
+ * @retval <0 negative errno code otherwise.
  */
 int net_pkt_skip(struct net_pkt *pkt, size_t length);
 
@@ -2304,7 +2309,8 @@ int net_pkt_skip(struct net_pkt *pkt, size_t length);
  * @param byte   The byte to write in memory
  * @param length Amount of data to memset with given byte
  *
- * @return 0 in success, negative errno code otherwise.
+ * @retval 0 in success
+ * @retval <0 negative errno code otherwise.
  */
 int net_pkt_memset(struct net_pkt *pkt, int byte, size_t length);
 
@@ -2319,7 +2325,8 @@ int net_pkt_memset(struct net_pkt *pkt, int byte, size_t length);
  * @param pkt_src Source network packet.
  * @param length  Length of data to be copied.
  *
- * @return 0 on success, negative errno code otherwise.
+ * @retval 0 on success
+ * @retval <0 negative errno code otherwise.
  */
 int net_pkt_copy(struct net_pkt *pkt_dst,
 		 struct net_pkt *pkt_src,
@@ -2343,7 +2350,8 @@ struct net_pkt *net_pkt_clone(struct net_pkt *pkt, k_timeout_t timeout);
  * @param pkt Original pkt to be cloned
  * @param timeout Timeout to wait for free buffer
  *
- * @return NULL if error, cloned packet otherwise.
+ * @return cloned packet
+ * @retval NULL if error.
  */
 struct net_pkt *net_pkt_rx_clone(struct net_pkt *pkt, k_timeout_t timeout);
 
@@ -2353,7 +2361,8 @@ struct net_pkt *net_pkt_rx_clone(struct net_pkt *pkt, k_timeout_t timeout);
  * @param pkt Original pkt to be shallow cloned
  * @param timeout Timeout to wait for free packet
  *
- * @return NULL if error, cloned packet otherwise.
+ * @return cloned packet
+ * @retval NULL if error.
  */
 struct net_pkt *net_pkt_shallow_clone(struct net_pkt *pkt,
 				      k_timeout_t timeout);
@@ -2369,7 +2378,8 @@ struct net_pkt *net_pkt_shallow_clone(struct net_pkt *pkt,
  * @param data   The destination buffer where to copy the data
  * @param length The amount of data to copy
  *
- * @return 0 on success, negative errno code otherwise.
+ * @retval 0 on success
+ * @retval <0 negative errno code otherwise.
  */
 int net_pkt_read(struct net_pkt *pkt, void *data, size_t length);
 
@@ -2383,7 +2393,8 @@ int net_pkt_read(struct net_pkt *pkt, void *data, size_t length);
  * @param pkt  The network packet from where to read
  * @param data The destination uint8_t where to copy the data
  *
- * @return 0 on success, negative errno code otherwise.
+ * @retval 0 on success
+ * @retval <0 negative errno code otherwise.
  */
 static inline int net_pkt_read_u8(struct net_pkt *pkt, uint8_t *data)
 {
@@ -2400,7 +2411,8 @@ static inline int net_pkt_read_u8(struct net_pkt *pkt, uint8_t *data)
  * @param pkt  The network packet from where to read
  * @param data The destination uint16_t where to copy the data
  *
- * @return 0 on success, negative errno code otherwise.
+ * @retval 0 on success
+ * @retval <0 negative errno code otherwise.
  */
 int net_pkt_read_be16(struct net_pkt *pkt, uint16_t *data);
 
@@ -2414,7 +2426,8 @@ int net_pkt_read_be16(struct net_pkt *pkt, uint16_t *data);
  * @param pkt  The network packet from where to read
  * @param data The destination uint16_t where to copy the data
  *
- * @return 0 on success, negative errno code otherwise.
+ * @retval 0 on success
+ * @retval <0 negative errno code otherwise.
  */
 int net_pkt_read_le16(struct net_pkt *pkt, uint16_t *data);
 
@@ -2428,7 +2441,8 @@ int net_pkt_read_le16(struct net_pkt *pkt, uint16_t *data);
  * @param pkt  The network packet from where to read
  * @param data The destination uint32_t where to copy the data
  *
- * @return 0 on success, negative errno code otherwise.
+ * @retval 0 on success
+ * @retval <0 negative errno code otherwise.
  */
 int net_pkt_read_be32(struct net_pkt *pkt, uint32_t *data);
 
@@ -2443,7 +2457,8 @@ int net_pkt_read_be32(struct net_pkt *pkt, uint32_t *data);
  * @param data   Data to be written
  * @param length Length of the data to be written
  *
- * @return 0 on success, negative errno code otherwise.
+ * @retval 0 on success
+ * @retval <0 negative errno code otherwise.
  */
 int net_pkt_write(struct net_pkt *pkt, const void *data, size_t length);
 
@@ -2457,7 +2472,8 @@ int net_pkt_write(struct net_pkt *pkt, const void *data, size_t length);
  * @param pkt  The network packet from where to read
  * @param data The uint8_t value to write
  *
- * @return 0 on success, negative errno code otherwise.
+ * @retval 0 on success
+ * @retval <0 negative errno code otherwise.
  */
 static inline int net_pkt_write_u8(struct net_pkt *pkt, uint8_t data)
 {
@@ -2474,7 +2490,8 @@ static inline int net_pkt_write_u8(struct net_pkt *pkt, uint8_t data)
  * @param pkt  The network packet from where to read
  * @param data The uint16_t value in host byte order to write
  *
- * @return 0 on success, negative errno code otherwise.
+ * @retval 0 on success
+ * @retval <0 negative errno code otherwise.
  */
 static inline int net_pkt_write_be16(struct net_pkt *pkt, uint16_t data)
 {
@@ -2493,7 +2510,8 @@ static inline int net_pkt_write_be16(struct net_pkt *pkt, uint16_t data)
  * @param pkt  The network packet from where to read
  * @param data The uint32_t value in host byte order to write
  *
- * @return 0 on success, negative errno code otherwise.
+ * @retval 0 on success
+ * @retval <0 negative errno code otherwise.
  */
 static inline int net_pkt_write_be32(struct net_pkt *pkt, uint32_t data)
 {
@@ -2512,7 +2530,8 @@ static inline int net_pkt_write_be32(struct net_pkt *pkt, uint32_t data)
  * @param pkt  The network packet from where to read
  * @param data The uint32_t value in host byte order to write
  *
- * @return 0 on success, negative errno code otherwise.
+ * @retval 0 on success
+ * @retval <0 negative errno code otherwise.
  */
 static inline int net_pkt_write_le32(struct net_pkt *pkt, uint32_t data)
 {
@@ -2531,7 +2550,8 @@ static inline int net_pkt_write_le32(struct net_pkt *pkt, uint32_t data)
  * @param pkt  The network packet from where to read
  * @param data The uint16_t value in host byte order to write
  *
- * @return 0 on success, negative errno code otherwise.
+ * @retval 0 on success
+ * @retval <0 negative errno code otherwise.
  */
 static inline int net_pkt_write_le16(struct net_pkt *pkt, uint16_t data)
 {
@@ -2571,7 +2591,8 @@ static inline size_t net_pkt_get_len(struct net_pkt *pkt)
  * @param pkt    Network packet
  * @param length The new length of the packet
  *
- * @return 0 on success, negative errno code otherwise.
+ * @retval 0 on success
+ * @retval <0 negative errno code otherwise.
  */
 int net_pkt_update_length(struct net_pkt *pkt, size_t length);
 
@@ -2586,7 +2607,8 @@ int net_pkt_update_length(struct net_pkt *pkt, size_t length);
  * @param pkt    Network packet
  * @param length Number of bytes to be removed
  *
- * @return 0 on success, negative errno code otherwise.
+ * @retval 0 on success
+ * @retval <0 negative errno code otherwise.
  */
 int net_pkt_pull(struct net_pkt *pkt, size_t length);
 
@@ -2595,8 +2617,8 @@ int net_pkt_pull(struct net_pkt *pkt, size_t length);
  *
  * @param pkt Network packet.
  *
- * @return a valid offset on success, 0 otherwise as there is nothing that
- *         can be done to evaluate the offset.
+ * @return a valid offset on success
+ * @retval 0 otherwise as there is nothing that can be done to evaluate the offset.
  */
 uint16_t net_pkt_get_current_offset(struct net_pkt *pkt);
 
@@ -2609,7 +2631,8 @@ uint16_t net_pkt_get_current_offset(struct net_pkt *pkt);
  * @param pkt  Network packet.
  * @param size The size to check for contiguity
  *
- * @return true if that is the case, false otherwise.
+ * @retval true if that is the case
+ * @retval false otherwise.
  */
 bool net_pkt_is_contiguous(struct net_pkt *pkt, size_t size);
 
@@ -2619,7 +2642,8 @@ bool net_pkt_is_contiguous(struct net_pkt *pkt, size_t size);
  * @param pkt Network packet
  *
  * @return The available contiguous buffer space in bytes starting from the
- *         current cursor position. 0 in case of an error.
+ *         current cursor position.
+ * @retval 0 in case of an error.
  */
 size_t net_pkt_get_contiguous_len(struct net_pkt *pkt);
 
@@ -2670,7 +2694,8 @@ struct net_pkt_data_access {
  * @param access A pointer to a valid net_pkt_data_access describing the
  *        data to get in a contiguous way.
  *
- * @return a pointer to the requested contiguous data, NULL otherwise.
+ * @return a pointer to the requested contiguous data
+ * @retval NULL otherwise.
  */
 void *net_pkt_get_data(struct net_pkt *pkt,
 		       struct net_pkt_data_access *access);
@@ -2686,7 +2711,8 @@ void *net_pkt_get_data(struct net_pkt *pkt,
  * @param access A pointer to a valid net_pkt_data_access describing the
  *        data to set.
  *
- * @return 0 on success, a negative errno otherwise.
+ * @retval 0 on success
+ * @retval <0 a negative errno otherwise.
  */
 int net_pkt_set_data(struct net_pkt *pkt,
 		     struct net_pkt_data_access *access);

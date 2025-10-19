@@ -37,7 +37,8 @@ extern "C" {
  * @param iface Network interface where join message is sent
  * @param addr Multicast group to join
  *
- * @return 0 if joining was done, <0 otherwise.
+ * @retval 0 if joining was done
+ * @retval <0 otherwise.
  */
 #if defined(CONFIG_NET_IPV6_MLD)
 int net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr);
@@ -58,7 +59,8 @@ net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr)
  * @param iface Network interface where leave message is sent
  * @param addr Multicast group to leave
  *
- * @return 0 if leaving is done, <0 otherwise.
+ * @retval 0 if leaving is done
+ * @retval <0 otherwise.
  */
 #if defined(CONFIG_NET_IPV6_MLD)
 int net_ipv6_mld_leave(struct net_if *iface, const struct in6_addr *addr);

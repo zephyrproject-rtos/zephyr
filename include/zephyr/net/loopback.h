@@ -21,7 +21,8 @@ extern "C" {
  *
  * @param[in] ratio Value between 0 = no packet loss and 1 = all packets dropped
  *
- * @return 0 on success, otherwise a negative integer.
+ * @retval 0 on success
+ * @retval <0 otherwise a negative integer.
  */
 int loopback_set_packet_drop_ratio(float ratio);
 

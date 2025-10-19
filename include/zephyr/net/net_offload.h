@@ -139,7 +139,8 @@ struct net_offload {
  * @param ip_proto IP protocol, IPPROTO_UDP or IPPROTO_TCP
  * @param context The allocated context is returned to the caller.
  *
- * @return 0 if ok, < 0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 static inline int net_offload_get(struct net_if *iface,
 				  sa_family_t family,
@@ -165,7 +166,8 @@ static inline int net_offload_get(struct net_if *iface,
  * @param addr Address to assigned.
  * @param addrlen Length of the address.
  *
- * @return 0 if ok, < 0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 static inline int net_offload_bind(struct net_if *iface,
 				   struct net_context *context,
@@ -189,7 +191,8 @@ static inline int net_offload_bind(struct net_if *iface,
  * @param context The context to use.
  * @param backlog The size of the pending connections backlog.
  *
- * @return 0 if ok, < 0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 static inline int net_offload_listen(struct net_if *iface,
 				     struct net_context *context,
@@ -274,7 +277,8 @@ static inline int net_offload_connect(struct net_if *iface,
  * are K_FOREVER, K_NO_WAIT, >0.
  * @param user_data Caller-supplied user data.
  *
- * @return 0 if ok, < 0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 static inline int net_offload_accept(struct net_if *iface,
 				     struct net_context *context,
@@ -316,7 +320,8 @@ static inline int net_offload_accept(struct net_if *iface,
  * are K_FOREVER, K_NO_WAIT, >0.
  * @param user_data Caller-supplied user data.
  *
- * @return 0 if ok, < 0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 static inline int net_offload_send(struct net_if *iface,
 				   struct net_pkt *pkt,
@@ -360,7 +365,8 @@ static inline int net_offload_send(struct net_if *iface,
  * are K_FOREVER, K_NO_WAIT, >0.
  * @param user_data Caller-supplied user data.
  *
- * @return 0 if ok, < 0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 static inline int net_offload_sendto(struct net_if *iface,
 				     struct net_pkt *pkt,
@@ -411,7 +417,8 @@ static inline int net_offload_sendto(struct net_if *iface,
  * are K_FOREVER, K_NO_WAIT, >0.
  * @param user_data Caller-supplied user data.
  *
- * @return 0 if ok, < 0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 static inline int net_offload_recv(struct net_if *iface,
 				   struct net_context *context,
@@ -440,7 +447,8 @@ static inline int net_offload_recv(struct net_if *iface,
  * reached.
  * @param context The context to be closed.
  *
- * @return 0 if ok, < 0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 static inline int net_offload_put(struct net_if *iface,
 				  struct net_context *context)

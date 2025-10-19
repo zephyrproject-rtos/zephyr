@@ -676,8 +676,8 @@ static inline void ppp_mgmt_raise_phase_dead_event(struct net_if *iface)
  * @param timeout Amount of time to wait Echo-Reply. The value is in
  * milliseconds.
  *
- * @return 0 if Echo-Reply was received, < 0 if there is a timeout or network
- * index is not a valid PPP network index.
+ * @retval 0 if Echo-Reply was received
+ * @retval <0 if there is a timeout or network index is not a valid PPP network index.
  */
 #if defined(CONFIG_NET_L2_PPP)
 int net_ppp_ping(int idx, int32_t timeout);
@@ -697,7 +697,8 @@ static inline int net_ppp_ping(int idx, int32_t timeout)
  *
  * @param idx PPP network interface index
  *
- * @return PPP context or NULL if idx is invalid.
+ * @return PPP context
+ * @retval NULL if idx is invalid.
  */
 #if defined(CONFIG_NET_L2_PPP) && defined(CONFIG_NET_SHELL)
 struct ppp_context *net_ppp_context_get(int idx);

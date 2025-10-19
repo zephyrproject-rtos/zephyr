@@ -152,14 +152,16 @@ static inline void net_dhcpv4_init_option_callback(struct net_dhcpv4_option_call
 /**
  * @brief Add an application callback.
  * @param cb A valid application's callback structure pointer.
- * @return 0 if successful, negative errno code on failure.
+ * @retval 0 if successful
+ * @retval <0 negative errno code on failure.
  */
 int net_dhcpv4_add_option_callback(struct net_dhcpv4_option_callback *cb);
 
 /**
  * @brief Remove an application callback.
  * @param cb A valid application's callback structure pointer.
- * @return 0 if successful, negative errno code on failure.
+ * @retval 0 if successful
+ * @retval <0 negative errno code on failure.
  */
 int net_dhcpv4_remove_option_callback(struct net_dhcpv4_option_callback *cb);
 
@@ -190,14 +192,16 @@ net_dhcpv4_init_option_vendor_callback(struct net_dhcpv4_option_callback *callba
 /**
  * @brief Add an application callback for encapsulated vendor-specific options.
  * @param cb A valid application's callback structure pointer.
- * @return 0 if successful, negative errno code on failure.
+ * @retval 0 if successful
+ * @retval <0 negative errno code on failure.
  */
 int net_dhcpv4_add_option_vendor_callback(struct net_dhcpv4_option_callback *cb);
 
 /**
  * @brief Remove an application callback for encapsulated vendor-specific options.
  * @param cb A valid application's callback structure pointer.
- * @return 0 if successful, negative errno code on failure.
+ * @retval 0 if successful
+ * @retval <0 negative errno code on failure.
  */
 int net_dhcpv4_remove_option_vendor_callback(struct net_dhcpv4_option_callback *cb);
 

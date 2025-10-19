@@ -30,7 +30,8 @@ extern "C" {
  * @brief Callback function type for retrieving latency deltas.
  *
  * @param delta Pointer to store the calculated latency delta in cycles.
- * @return 0 on success, negative errno code on failure.
+ * @retval 0 on success
+ * @retval <0 negative errno code on failure.
  */
 typedef int (*net_latmon_measure_t)(uint32_t *delta);
 
@@ -56,7 +57,7 @@ void net_latmon_start(int latmus, net_latmon_measure_t measure_func);
  * @param socket A valid socket descriptor for listening.
  * @param ip The client's IP address.
  * @return A valid client socket descriptor connected to latmus on success,
- * negative errno code on failure.
+ * @retval <0 negative errno code on failure.
  *
  */
 int net_latmon_connect(int socket, struct in_addr *ip);
@@ -71,7 +72,8 @@ int net_latmon_connect(int socket, struct in_addr *ip);
  * will be bound to the first available address using the build time configured
  * latmus port.
  *
- * @return A valid socket descriptor on success, negative errno code on failure.
+ * @return A valid socket descriptor on success
+ * @retval <0 negative errno code on failure.
  */
 int net_latmon_get_socket(struct sockaddr *bind_addr);
 
@@ -81,8 +83,8 @@ int net_latmon_get_socket(struct sockaddr *bind_addr);
  * @details This function checks whether the latency monitor is currently
  * active and running.
  *
- * @return True if the latency monitor is running, false if it is waiting for a
- * Latmus connection
+ * @retval true if the latency monitor is running
+ * @retval false if it is waiting for a Latmus connection
  */
 bool net_latmon_running(void);
 

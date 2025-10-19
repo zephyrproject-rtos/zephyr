@@ -56,7 +56,8 @@ enum phy_link_speed {
  *
  * @param x Link capabilities
  *
- * @return True if link is full duplex, false if not.
+ * @retval true if link is full duplex
+ * @retval false if not.
  */
 #define PHY_LINK_IS_FULL_DUPLEX(x)                                                                 \
 	(x & (LINK_FULL_10BASE | LINK_FULL_100BASE | LINK_FULL_1000BASE | LINK_FULL_2500BASE |     \
@@ -67,7 +68,8 @@ enum phy_link_speed {
  *
  * @param x Link capabilities
  *
- * @return True if link is 1 Gbit/sec, false if not.
+ * @retval true if link is 1 Gbit/sec
+ * @retval false if not.
  */
 #define PHY_LINK_IS_SPEED_1000M(x) (x & (LINK_HALF_1000BASE | LINK_FULL_1000BASE))
 
@@ -76,7 +78,8 @@ enum phy_link_speed {
  *
  * @param x Link capabilities
  *
- * @return True if link is 100 Mbit/sec, false if not.
+ * @retval true if link is 100 Mbit/sec
+ * @retval false if not.
  */
 #define PHY_LINK_IS_SPEED_100M(x) (x & (LINK_HALF_100BASE | LINK_FULL_100BASE))
 
@@ -85,7 +88,8 @@ enum phy_link_speed {
  *
  * @param x Link capabilities
  *
- * @return True if link is 10 Mbit/sec, false if not.
+ * @retval true if link is 10 Mbit/sec
+ * @retval false if not.
  */
 #define PHY_LINK_IS_SPEED_10M(x) (x & (LINK_HALF_10BASE | LINK_FULL_10BASE))
 

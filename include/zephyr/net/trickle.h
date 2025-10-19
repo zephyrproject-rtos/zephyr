@@ -81,7 +81,8 @@ struct net_trickle {
  * @param Imax Max number of doublings.
  * @param k Redundancy constant parameter. See RFC 6206 for details.
  *
- * @return Return 0 if ok and <0 if error.
+ * @retval 0 if ok
+ * @retval <0 if error.
  */
 int net_trickle_create(struct net_trickle *trickle,
 		       uint32_t Imin,
@@ -96,7 +97,8 @@ int net_trickle_create(struct net_trickle *trickle,
  * interval
  * @param user_data User pointer that is passed to callback.
  *
- * @return Return 0 if ok and <0 if error.
+ * @retval 0 if ok
+ * @retval <0 if error.
  */
 int net_trickle_start(struct net_trickle *trickle,
 		      net_trickle_cb_t cb,
@@ -107,7 +109,8 @@ int net_trickle_start(struct net_trickle *trickle,
  *
  * @param trickle Pointer to Trickle struct.
  *
- * @return Return 0 if ok and <0 if error.
+ * @retval 0 if ok
+ * @retval <0 if error.
  */
 int net_trickle_stop(struct net_trickle *trickle);
 
@@ -132,7 +135,8 @@ void net_trickle_inconsistency(struct net_trickle *trickle);
  *
  * @param trickle Pointer to Trickle struct.
  *
- * @return Return True if timer is running and False if not.
+ * @retval true if timer is running
+ * @retval false if not.
  */
 static inline bool net_trickle_is_running(struct net_trickle *trickle)
 {

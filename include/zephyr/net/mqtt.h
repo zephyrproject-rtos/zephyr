@@ -1042,7 +1042,8 @@ void mqtt_client_init(struct mqtt_client *client);
  * @param[in] proxy_addr Proxy server address.
  * @param[in] addrlen Proxy server address length.
  *
- * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure.
  *
  * @note Must be called before calling mqtt_connect().
  */
@@ -1061,7 +1062,8 @@ int mqtt_client_set_proxy(struct mqtt_client *client,
  * @note Any subsequent changes to parameters like broker address, user name,
  *       device id, etc. have no effect once MQTT connection is established.
  *
- * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure.
  *
  * @note Default protocol revision used for connection request is 3.1.1. Please
  *       set client.protocol_version = MQTT_VERSION_3_1_0 to use protocol 3.1.0.
@@ -1079,7 +1081,8 @@ int mqtt_connect(struct mqtt_client *client);
  * @param[in] param Parameters to be used for the publish message.
  *                  Shall not be NULL.
  *
- * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure.
  */
 int mqtt_publish(struct mqtt_client *client,
 		 const struct mqtt_publish_param *param);
@@ -1093,7 +1096,8 @@ int mqtt_publish(struct mqtt_client *client,
  *                   Shall not be NULL.
  * @param[in] param Identifies message being acknowledged.
  *
- * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure.
  */
 int mqtt_publish_qos1_ack(struct mqtt_client *client,
 			  const struct mqtt_puback_param *param);
@@ -1107,7 +1111,8 @@ int mqtt_publish_qos1_ack(struct mqtt_client *client,
  *                   requested. Shall not be NULL.
  * @param[in] param Identifies message being acknowledged.
  *
- * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure.
  */
 int mqtt_publish_qos2_receive(struct mqtt_client *client,
 			      const struct mqtt_pubrec_param *param);
@@ -1120,7 +1125,8 @@ int mqtt_publish_qos2_receive(struct mqtt_client *client,
  *                   Shall not be NULL.
  * @param[in] param Identifies message being released.
  *
- * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure.
  */
 int mqtt_publish_qos2_release(struct mqtt_client *client,
 			      const struct mqtt_pubrel_param *param);
@@ -1134,7 +1140,8 @@ int mqtt_publish_qos2_release(struct mqtt_client *client,
  *                   requested. Shall not be NULL.
  * @param[in] param Identifies message being completed.
  *
- * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure.
  */
 int mqtt_publish_qos2_complete(struct mqtt_client *client,
 			       const struct mqtt_pubcomp_param *param);
@@ -1146,7 +1153,8 @@ int mqtt_publish_qos2_complete(struct mqtt_client *client,
  *                   is requested. Shall not be NULL.
  * @param[in] param Subscription parameters. Shall not be NULL.
  *
- * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure.
  */
 int mqtt_subscribe(struct mqtt_client *client,
 		   const struct mqtt_subscription_list *param);
@@ -1161,7 +1169,8 @@ int mqtt_subscribe(struct mqtt_client *client,
  *
  * @note QoS included in topic description is unused in this API.
  *
- * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure.
  */
 int mqtt_unsubscribe(struct mqtt_client *client,
 		     const struct mqtt_subscription_list *param);
@@ -1173,7 +1182,8 @@ int mqtt_unsubscribe(struct mqtt_client *client,
  * @param[in] client Identifies client instance for which procedure is
  *                   requested.
  *
- * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure.
  */
 int mqtt_ping(struct mqtt_client *client);
 
@@ -1185,7 +1195,8 @@ int mqtt_ping(struct mqtt_client *client);
  * @param[in] param Optional Disconnect parameters. May be NULL.
  *                  Ignored if MQTT 3.1.1 is used.
  *
- * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure.
  */
 int mqtt_disconnect(struct mqtt_client *client,
 		    const struct mqtt_disconnect_param *param);
@@ -1199,7 +1210,8 @@ int mqtt_disconnect(struct mqtt_client *client,
  * @param[in] param Parameters to be used for the auth message.
  *                  Shall not be NULL.
  *
- * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure.
  */
 int mqtt_auth(struct mqtt_client *client, const struct mqtt_auth_param *param);
 #endif /* CONFIG_MQTT_VERSION_5_0 */
@@ -1212,7 +1224,8 @@ int mqtt_auth(struct mqtt_client *client, const struct mqtt_auth_param *param);
  * @param[in] client Identifies client instance for which procedure is
  *                   requested.
  *
- * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure.
  */
 int mqtt_abort(struct mqtt_client *client);
 
@@ -1228,7 +1241,8 @@ int mqtt_abort(struct mqtt_client *client);
  *        broker on connection. @ref mqtt_connect for details on Keep Alive
  *        time.
  *
- * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure.
  */
 int mqtt_live(struct mqtt_client *client);
 
@@ -1257,7 +1271,8 @@ int mqtt_keepalive_time_left(const struct mqtt_client *client);
  * @param[in] client Client instance for which the procedure is requested.
  *                   Shall not be NULL.
  *
- * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure.
  */
 int mqtt_input(struct mqtt_client *client);
 
@@ -1273,8 +1288,8 @@ int mqtt_input(struct mqtt_client *client);
  * @param[out] buffer Buffer where payload should be stored.
  * @param[in] length Length of the buffer, in bytes.
  *
- * @return Number of bytes read or a negative error code (errno.h) indicating
- *         reason of failure.
+ * @return Number of bytes read
+ * @retval <0 a negative error code (errno.h) indicating reason of failure.
  */
 int mqtt_read_publish_payload(struct mqtt_client *client, void *buffer,
 			      size_t length);
@@ -1287,8 +1302,8 @@ int mqtt_read_publish_payload(struct mqtt_client *client, void *buffer,
  * @param[out] buffer Buffer where payload should be stored.
  * @param[in] length Length of the buffer, in bytes.
  *
- * @return Number of bytes read or a negative error code (errno.h) indicating
- *         reason of failure.
+ * @return Number of bytes read
+ * @retval <0 a negative error code (errno.h) indicating reason of failure.
  */
 int mqtt_read_publish_payload_blocking(struct mqtt_client *client, void *buffer,
 				       size_t length);
@@ -1302,7 +1317,8 @@ int mqtt_read_publish_payload_blocking(struct mqtt_client *client, void *buffer,
  * @param[out] buffer Buffer where payload should be stored.
  * @param[in] length Number of bytes to read.
  *
- * @return 0 if success, otherwise a negative error code (errno.h) indicating
+ * @retval 0 on success if success
+ * @retval <0 otherwise a negative error code (errno.h) indicating
  *         reason of failure.
  */
 int mqtt_readall_publish_payload(struct mqtt_client *client, uint8_t *buffer,

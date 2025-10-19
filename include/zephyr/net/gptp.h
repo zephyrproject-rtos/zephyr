@@ -281,7 +281,8 @@ void gptp_call_phase_dis_cb(void);
  * @param gm_present A pointer to a boolean where status of the
  *        presence of a grand master will be saved.
  *
- * @return Error code. 0 if no error.
+ * @retval 0 if no error.
+ * @retval err error code otherwise
  */
 int gptp_event_capture(struct net_ptp_time *slave_time, bool *gm_present);
 
@@ -320,7 +321,8 @@ void gptp_foreach_port(gptp_port_cb_t cb, void *user_data);
  * @brief Get gPTP domain.
  * @details This contains all the configuration / status of the gPTP domain.
  *
- * @return Pointer to domain or NULL if not found.
+ * @return Pointer to domain
+ * @retval NULL if not found.
  */
 struct gptp_domain *gptp_get_domain(void);
 

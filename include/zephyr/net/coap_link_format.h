@@ -39,7 +39,8 @@ extern "C" {
  * @param data A data pointer to be used to build the CoAP response
  * @param data_len The maximum length of the data buffer
  *
- * @return 0 in case of success or negative in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative in case of error.
  */
 int coap_well_known_core_get(struct coap_resource *resource,
 			     const struct coap_packet *request,
@@ -56,7 +57,8 @@ int coap_well_known_core_get(struct coap_resource *resource,
  * @param data A data pointer to be used to build the CoAP response
  * @param data_len The maximum length of the data buffer
  *
- * @return 0 in case of success or negative in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative in case of error.
  */
 int coap_well_known_core_get_len(struct coap_resource *resources,
 				 size_t resources_len,

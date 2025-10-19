@@ -442,7 +442,8 @@ __net_socket struct net_context {
  *
  * @param context Network context.
  *
- * @return True if the context is currently in use, False otherwise.
+ * @retval true if the context is currently in use
+ * @retval alse otherwise.
  */
 static inline bool net_context_is_used(struct net_context *context)
 {
@@ -456,7 +457,8 @@ static inline bool net_context_is_used(struct net_context *context)
  *
  * @param context Network context.
  *
- * @return True if the context is bound to network interface, False otherwise.
+ * @retval true if the context is bound to network interface
+ * @retval false otherwise.
  */
 static inline bool net_context_is_bound_to_iface(struct net_context *context)
 {
@@ -470,7 +472,8 @@ static inline bool net_context_is_bound_to_iface(struct net_context *context)
  *
  * @param context Network context.
  *
- * @return True if the context is accepting connections, False otherwise.
+ * @retval true if the context is accepting connections
+ * @retval false otherwise.
  */
 static inline bool net_context_is_accepting(struct net_context *context)
 {
@@ -502,7 +505,8 @@ static inline void net_context_set_accepting(struct net_context *context,
  *
  * @param context Network context.
  *
- * @return True if the context is closing, False otherwise.
+ * @retval true if the context is closing
+ * @retval false otherwise.
  */
 static inline bool net_context_is_closing(struct net_context *context)
 {
@@ -746,7 +750,7 @@ static inline void net_context_set_proto(struct net_context *context,
  * @param context Network context.
  *
  * @return Context network interface if context is bind to interface,
- * NULL otherwise.
+ * @retval NULL otherwise.
  */
 static inline
 struct net_if *net_context_get_iface(struct net_context *context)
@@ -1006,7 +1010,8 @@ static inline void net_context_set_proxy_enabled(struct net_context *context,
  *
  * @param context Network context.
  *
- * @return True if socks proxy is enabled for this context, False otherwise
+ * @retval true if socks proxy is enabled for this context
+ * @retval false otherwise
  */
 #if defined(CONFIG_SOCKS)
 static inline bool net_context_is_proxy_enabled(struct net_context *context)
@@ -1036,7 +1041,8 @@ static inline bool net_context_is_proxy_enabled(struct net_context *context)
  * access, the value is the L2 protocol value from IEEE 802.3 (see ethernet.h)
  * @param context The allocated context is returned to the caller.
  *
- * @return 0 if ok, < 0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 int net_context_get(sa_family_t family,
 		    enum net_sock_type type,
@@ -1054,7 +1060,8 @@ int net_context_get(sa_family_t family,
  *
  * @param context The context to be closed.
  *
- * @return 0 if ok, < 0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 int net_context_put(struct net_context *context);
 
@@ -1083,7 +1090,8 @@ int net_context_ref(struct net_context *context);
  *
  * @param context The context on which to decrement the reference count
  *
- * @return The new reference count, zero if the context was destroyed
+ * @return The new reference count
+ * @retval 0 if the context was destroyed
  */
 int net_context_unref(struct net_context *context);
 
@@ -1095,7 +1103,8 @@ int net_context_unref(struct net_context *context);
  * @param src Source address, or NULL to choose a default
  * @param dst Destination IPv4 address
  *
- * @return Return 0 on success, negative errno otherwise.
+ * @retval 0 on success
+ * @retval <0 negative errno otherwise.
  */
 #if defined(CONFIG_NET_IPV4)
 int net_context_create_ipv4_new(struct net_context *context,
@@ -1120,7 +1129,8 @@ static inline int net_context_create_ipv4_new(struct net_context *context,
  * @param src Source address, or NULL to choose a default from context
  * @param dst Destination IPv6 address
  *
- * @return Return 0 on success, negative errno otherwise.
+ * @retval 0 on success
+ * @retval <0 negative errno otherwise.
  */
 #if defined(CONFIG_NET_IPV6)
 int net_context_create_ipv6_new(struct net_context *context,
@@ -1150,7 +1160,8 @@ static inline int net_context_create_ipv6_new(struct net_context *context,
  * @param addr Address to assigned.
  * @param addrlen Length of the address.
  *
- * @return 0 if ok, < 0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 int net_context_bind(struct net_context *context,
 		     const struct sockaddr *addr,
@@ -1164,7 +1175,8 @@ int net_context_bind(struct net_context *context,
  * @param context The context to use.
  * @param backlog The size of the pending connections backlog.
  *
- * @return 0 if ok, < 0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 int net_context_listen(struct net_context *context,
 		       int backlog);
@@ -1227,7 +1239,8 @@ int net_context_connect(struct net_context *context,
  * are K_FOREVER, K_NO_WAIT, >0.
  * @param user_data Caller-supplied user data.
  *
- * @return 0 if ok, < 0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 int net_context_accept(struct net_context *context,
 		       net_tcp_accept_cb_t cb,
@@ -1251,7 +1264,8 @@ int net_context_accept(struct net_context *context,
  * @param timeout Currently this value is not used.
  * @param user_data Caller-supplied user data.
  *
- * @return 0 if ok, < 0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 int net_context_send(struct net_context *context,
 		     const void *buf,
@@ -1306,7 +1320,8 @@ int net_context_sendto(struct net_context *context,
  * @param timeout Currently this value is not used.
  * @param user_data Caller-supplied user data.
  *
- * @return numbers of bytes sent on success, a negative errno otherwise
+ * @return numbers of bytes sent on success
+ * @retval <0 a negative errno otherwise
  */
 int net_context_sendmsg(struct net_context *context,
 			const struct msghdr *msghdr,
@@ -1349,7 +1364,8 @@ int net_context_sendmsg(struct net_context *context,
  * are K_FOREVER, K_NO_WAIT, >0.
  * @param user_data Caller-supplied user data.
  *
- * @return 0 if ok, < 0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 int net_context_recv(struct net_context *context,
 		     net_context_recv_cb_t cb,
@@ -1374,7 +1390,8 @@ int net_context_recv(struct net_context *context,
  * @param delta Size, in bytes, by which to increase TCP receive
  * window (negative value to decrease).
  *
- * @return 0 if ok, < 0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 int net_context_update_recv_wnd(struct net_context *context,
 				int32_t delta);
@@ -1415,7 +1432,8 @@ enum net_context_option {
  * @param value Option value
  * @param len Option length
  *
- * @return 0 if ok, <0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 int net_context_set_option(struct net_context *context,
 			   enum net_context_option option,
@@ -1429,7 +1447,8 @@ int net_context_set_option(struct net_context *context,
  * @param value Option value
  * @param len Option length (returned to caller)
  *
- * @return 0 if ok, <0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 int net_context_get_option(struct net_context *context,
 			   enum net_context_option option,
@@ -1497,8 +1516,8 @@ static inline void net_context_setup_pools(struct net_context *context,
  * @param local_port the port to check
  * @param local_addr the network address
  *
- * @return true if the port is bound
- * @return false if the port is not bound
+ * @retval true if the port is bound
+ * @retval false if the port is not bound
  */
 bool net_context_port_in_use(enum net_ip_protocol ip_proto,
 	uint16_t local_port, const struct sockaddr *local_addr);

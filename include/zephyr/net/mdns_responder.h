@@ -27,7 +27,8 @@
  *                without copying the content so it must be kept valid. It can
  *                be set to NULL, e.g. before freeing the memory block.
  * @param count The number of elements
- * @return 0 for OK; -EINVAL for invalid parameters.
+ * @retval 0 for OK
+ * @retval -EINVAL for invalid parameters.
  */
 int mdns_responder_set_ext_records(const struct dns_sd_rec *records, size_t count);
 

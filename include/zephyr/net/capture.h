@@ -70,7 +70,8 @@ struct net_capture_interface_api {
  *        also port number which is used as UDP destination port.
  * @param dev Network capture device. This is returned to the caller.
  *
- * @return 0 if ok, <0 if network packet capture setup failed
+ * @retval 0 if ok
+ * @retval <0 if network packet capture setup failed
  */
 int net_capture_setup(const char *remote_addr, const char *my_local_addr, const char *peer_addr,
 		      const struct device **dev);
@@ -84,7 +85,8 @@ int net_capture_setup(const char *remote_addr, const char *my_local_addr, const 
  * @param dev Network capture device. User must allocate using the
  *            net_capture_setup() function.
  *
- * @return 0 if ok, <0 if network packet capture cleanup failed
+ * @retval 0 if ok
+ * @retval <0 if network packet capture cleanup failed
  */
 static inline int net_capture_cleanup(const struct device *dev)
 {
@@ -110,7 +112,8 @@ static inline int net_capture_cleanup(const struct device *dev)
  * @param dev Network capture device
  * @param iface Network interface we are starting to capture packets.
  *
- * @return 0 if ok, <0 if network packet capture enable failed
+ * @retval 0 if ok
+ * @retval <0 if network packet capture enable failed
  */
 static inline int net_capture_enable(const struct device *dev, struct net_if *iface)
 {
@@ -133,7 +136,8 @@ static inline int net_capture_enable(const struct device *dev, struct net_if *if
  * @param dev Network capture device. If set to NULL, then the
  *            default capture device is used.
  *
- * @return True if enabled, False if network capture is disabled.
+ * @retval true if enabled
+ * @retval false if network capture is disabled.
  */
 static inline bool net_capture_is_enabled(const struct device *dev)
 {
@@ -163,7 +167,8 @@ static inline bool net_capture_is_enabled(const struct device *dev)
  *
  * @param dev Network capture device
  *
- * @return 0 if ok, <0 if network packet capture disable failed
+ * @retval 0 if ok
+ * @retval <0 if network packet capture disable failed
  */
 static inline int net_capture_disable(const struct device *dev)
 {
@@ -188,7 +193,8 @@ static inline int net_capture_disable(const struct device *dev)
  * @param iface Network interface the packet is being sent
  * @param pkt The network packet that is sent
  *
- * @return 0 if ok, <0 if network packet capture send failed
+ * @retval 0 if ok
+ * @retval <0 if network packet capture send failed
  */
 static inline int net_capture_send(const struct device *dev, struct net_if *iface,
 				   struct net_pkt *pkt)
@@ -233,7 +239,8 @@ static inline void net_capture_pkt(struct net_if *iface, struct net_pkt *pkt)
  * @param iface Network interface the packet is being sent
  * @param pkt The network packet that is sent
  *
- * @return 0 if captured packet was handled ok, <0 if the capture failed
+ * @retval 0 if captured packet was handled ok
+ * @retval <0 if the capture failed
  */
 #if defined(CONFIG_NET_CAPTURE)
 int net_capture_pkt_with_status(struct net_if *iface, struct net_pkt *pkt);
@@ -278,7 +285,8 @@ struct net_capture_cooked {
  * @param halen Link-layer address length (maximum is 8 bytes)
  * @param addr Link-layer address
  *
- * @return 0 if ok, <0 if context initialization failed
+ * @retval 0 if ok
+ * @retval <0 if context initialization failed
  */
 #if defined(CONFIG_NET_CAPTURE_COOKED_MODE)
 int net_capture_cooked_setup(struct net_capture_cooked *ctx,

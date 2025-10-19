@@ -272,7 +272,7 @@ static inline size_t dns_sd_txt_size(const struct dns_sd_rec *rec)
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc6763#section-9">Service Type Enumeration, RFC 6763</a>.
  *
  * @param rec the record to in question
- * @return true if @a rec is a DNS-SD Service Type Enumeration
+ * @retval true if @a rec is a DNS-SD Service Type Enumeration
  */
 bool dns_sd_is_service_type_enumeration(const struct dns_sd_rec *rec);
 

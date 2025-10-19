@@ -690,7 +690,8 @@ static inline bool net_ipv6_is_addr_loopback_raw(const uint8_t *addr)
  *
  * @param addr IPv6 address
  *
- * @return True if address is a loopback address, False otherwise.
+ * @retval true if address is a loopback address
+ * @retval false otherwise.
  */
 static inline bool net_ipv6_is_addr_loopback(const struct in6_addr *addr)
 {
@@ -709,7 +710,8 @@ static inline bool net_ipv6_is_addr_mcast_raw(const uint8_t *addr)
  *
  * @param addr IPv6 address
  *
- * @return True if address is multicast address, False otherwise.
+ * @retval true if address is multicast address
+ * @retval false otherwise.
  */
 static inline bool net_ipv6_is_addr_mcast(const struct in6_addr *addr)
 {
@@ -737,7 +739,8 @@ extern struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
  *
  * @param addr IPv6 address
  *
- * @return True if address was found, False otherwise.
+ * @retval true if address was found
+ * @retval false otherwise.
  */
 static inline bool net_ipv6_is_my_addr(struct in6_addr *addr)
 {
@@ -753,7 +756,8 @@ extern struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(
  *
  * @param maddr Multicast IPv6 address
  *
- * @return True if address was found, False otherwise.
+ * @retval true if address was found
+ * @retval false otherwise.
  */
 static inline bool net_ipv6_is_my_maddr(struct in6_addr *maddr)
 {
@@ -767,7 +771,8 @@ static inline bool net_ipv6_is_my_maddr(struct in6_addr *maddr)
  * @param addr2 Second IPv6 address.
  * @param length Prefix length (max length is 128).
  *
- * @return True if IPv6 prefixes are the same, False otherwise.
+ * @retval true if IPv6 prefixes are the same
+ * @retval false otherwise.
  */
 static inline bool net_ipv6_is_prefix(const uint8_t *addr1,
 				      const uint8_t *addr2,
@@ -843,7 +848,8 @@ static inline bool net_ipv4_is_addr_loopback_raw(const uint8_t *addr)
  *
  * @param addr IPv4 address
  *
- * @return True if address is a loopback address, False otherwise.
+ * @retval true if address is a loopback address
+ * @retval false otherwise.
  */
 static inline bool net_ipv4_is_addr_loopback(const struct in_addr *addr)
 {
@@ -862,7 +868,8 @@ static inline bool net_ipv4_is_addr_unspecified_raw(const uint8_t *addr)
  *
  *  @param addr IPv4 address.
  *
- *  @return True if the address is unspecified, false otherwise.
+ *  @retval true if the address is unspecified
+ *  @retval false otherwise.
  */
 static inline bool net_ipv4_is_addr_unspecified(const struct in_addr *addr)
 {
@@ -881,7 +888,8 @@ static inline bool net_ipv4_is_addr_mcast_raw(const uint8_t *addr)
  *
  * @param addr IPv4 address
  *
- * @return True if address is multicast address, False otherwise.
+ * @retval true if address is multicast address
+ * @retval false otherwise.
  */
 static inline bool net_ipv4_is_addr_mcast(const struct in_addr *addr)
 {
@@ -900,7 +908,8 @@ static inline bool net_ipv4_is_ll_addr_raw(const uint8_t *addr)
  *
  * @param addr A valid pointer on an IPv4 address
  *
- * @return True if it is, false otherwise.
+ * @retval true if it is
+ *  @retval false otherwise.
  */
 static inline bool net_ipv4_is_ll_addr(const struct in_addr *addr)
 {
@@ -914,7 +923,8 @@ static inline bool net_ipv4_is_ll_addr(const struct in_addr *addr)
  *
  * @param addr A valid pointer on an IPv4 address
  *
- * @return True if it is, false otherwise.
+ * @retval true if it is
+ * @retval false otherwise.
  */
 static inline bool net_ipv4_is_private_addr(const struct in_addr *addr)
 {
@@ -976,7 +986,8 @@ static inline void net_ipv6_addr_copy_raw(uint8_t *dest,
  *  @param addr1 Pointer to IPv4 address buffer.
  *  @param addr2 Pointer to IPv4 address buffer.
  *
- *  @return True if the addresses are the same, false otherwise.
+ *  @retval true if the addresses are the same
+ *  @retval false otherwise.
  */
 static inline bool net_ipv4_addr_cmp_raw(const uint8_t *addr1,
 					 const uint8_t *addr2)
@@ -990,7 +1001,8 @@ static inline bool net_ipv4_addr_cmp_raw(const uint8_t *addr1,
  *  @param addr1 Pointer to IPv4 address.
  *  @param addr2 Pointer to IPv4 address.
  *
- *  @return True if the addresses are the same, false otherwise.
+ *  @retval true if the addresses are the same
+ *  @retval false otherwise.
  */
 static inline bool net_ipv4_addr_cmp(const struct in_addr *addr1,
 				     const struct in_addr *addr2)
@@ -1004,7 +1016,8 @@ static inline bool net_ipv4_addr_cmp(const struct in_addr *addr1,
  *  @param addr1 Pointer to IPv6 address.
  *  @param addr2 Pointer to IPv6 address.
  *
- *  @return True if the addresses are the same, false otherwise.
+ *  @retval true if the addresses are the same
+ *  @retval false otherwise.
  */
 static inline bool net_ipv6_addr_cmp(const struct in6_addr *addr1,
 				     const struct in6_addr *addr2)
@@ -1018,7 +1031,8 @@ static inline bool net_ipv6_addr_cmp(const struct in6_addr *addr1,
  *  @param addr1 Pointer to IPv6 address buffer.
  *  @param addr2 Pointer to IPv6 address buffer.
  *
- *  @return True if the addresses are the same, false otherwise.
+ *  @retval true if the addresses are the same
+ *  @retval false otherwise.
  */
 static inline bool net_ipv6_addr_cmp_raw(const uint8_t *addr1,
 					 const uint8_t *addr2)
@@ -1039,7 +1053,8 @@ static inline bool net_ipv6_is_ll_addr_raw(const uint8_t *addr)
  *
  * @param addr A valid pointer on an IPv6 address
  *
- * @return True if it is, false otherwise.
+ * @retval true if it is
+ * @retval false otherwise.
  */
 static inline bool net_ipv6_is_ll_addr(const struct in6_addr *addr)
 {
@@ -1051,7 +1066,8 @@ static inline bool net_ipv6_is_ll_addr(const struct in6_addr *addr)
  *
  * @param addr A valid pointer on an IPv6 address
  *
- * @return True if it is, false otherwise.
+ * @retval true if it is
+ * @retval false otherwise.
  */
 static inline bool net_ipv6_is_sl_addr(const struct in6_addr *addr)
 {
@@ -1064,7 +1080,8 @@ static inline bool net_ipv6_is_sl_addr(const struct in6_addr *addr)
  *
  * @param addr A valid pointer on an IPv6 address
  *
- * @return True if it is, false otherwise.
+ * @retval true if it is
+ * @retval false otherwise.
  */
 static inline bool net_ipv6_is_ula_addr(const struct in6_addr *addr)
 {
@@ -1076,7 +1093,8 @@ static inline bool net_ipv6_is_ula_addr(const struct in6_addr *addr)
  *
  * @param addr A valid pointer on an IPv6 address
  *
- * @return True if it is, false otherwise.
+ * @retval true if it is
+ * @retval false otherwise.
  */
 static inline bool net_ipv6_is_global_addr(const struct in6_addr *addr)
 {
@@ -1090,7 +1108,8 @@ static inline bool net_ipv6_is_global_addr(const struct in6_addr *addr)
  *
  * @param addr A valid pointer on an IPv6 address
  *
- * @return True if it is, false otherwise.
+ * @retval true if it is
+ * @retval false otherwise.
  */
 static inline bool net_ipv6_is_private_addr(const struct in6_addr *addr)
 {
@@ -1135,7 +1154,8 @@ extern bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
  * @param iface A valid pointer on an interface
  * @param addr IPv4 address
  *
- * @return True if address is in same subnet, false otherwise.
+ * @retval true if address is in same subnet
+ * @retval false otherwise.
  */
 static inline bool net_ipv4_addr_mask_cmp(struct net_if *iface,
 					  const struct in_addr *addr)
@@ -1178,7 +1198,8 @@ extern bool net_if_ipv4_is_addr_bcast(struct net_if *iface,
  * @param iface Interface to use. Must be a valid pointer to an interface.
  * @param addr IPv4 address
  *
- * @return True if address is a broadcast address, false otherwise.
+ * @retval true if address is a broadcast address
+ * @retval false otherwise.
  */
 #if defined(CONFIG_NET_NATIVE_IPV4)
 static inline bool net_ipv4_is_addr_bcast(struct net_if *iface,
@@ -1227,8 +1248,8 @@ extern struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
  *
  * @param addr A valid pointer on an IPv4 address
  *
- * @return True if IPv4 address is found in one of the network interfaces,
- * False otherwise.
+ * @retval true if IPv4 address is found in one of the network interfaces,
+ * @retval false otherwise.
  */
 static inline bool net_ipv4_is_my_addr(const struct in_addr *addr)
 {
@@ -1257,7 +1278,8 @@ static inline bool net_ipv6_is_addr_unspecified_raw(const uint8_t *addr)
  *
  *  @param addr IPv6 address.
  *
- *  @return True if the address is unspecified, false otherwise.
+ *  @retval true if the address is unspecified
+ *  @retval false otherwise.
  */
 static inline bool net_ipv6_is_addr_unspecified(const struct in6_addr *addr)
 {
@@ -1281,7 +1303,8 @@ static inline bool net_ipv6_is_addr_solicited_node_raw(const uint8_t *addr)
  *
  *  @param addr IPv6 address.
  *
- *  @return True if the address is solicited node address, false otherwise.
+ *  @retval true if the address is solicited node address
+ *  @retval false otherwise.
  */
 static inline bool net_ipv6_is_addr_solicited_node(const struct in6_addr *addr)
 {
@@ -1314,8 +1337,8 @@ static inline int net_ipv6_get_addr_mcast_scope_raw(const uint8_t *addr)
  * @param addr IPv6 address
  * @param scope Scope to check
  *
- * @return True if the address is in given scope multicast address,
- * false otherwise.
+ * @retval true if the address is in given scope multicast address,
+ * @retval false otherwise.
  */
 static inline bool net_ipv6_is_addr_mcast_scope(const struct in6_addr *addr,
 						int scope)
@@ -1329,8 +1352,8 @@ static inline bool net_ipv6_is_addr_mcast_scope(const struct in6_addr *addr,
  * @param addr_1 IPv6 address 1
  * @param addr_2 IPv6 address 2
  *
- * @return True if both addresses have same multicast scope,
- * false otherwise.
+ * @retval true if both addresses have same multicast scope,
+ * @retval false otherwise.
  */
 static inline bool net_ipv6_is_same_mcast_scope(const struct in6_addr *addr_1,
 						const struct in6_addr *addr_2)
@@ -1383,7 +1406,8 @@ static inline bool net_ipv6_is_addr_mcast_org_raw(const uint8_t *addr)
  *
  * @param addr IPv6 address.
  *
- * @return True if the address is global multicast address, false otherwise.
+ * @retval true if the address is global multicast address
+ * @retval false otherwise.
  */
 static inline bool net_ipv6_is_addr_mcast_global(const struct in6_addr *addr)
 {
@@ -1396,8 +1420,8 @@ static inline bool net_ipv6_is_addr_mcast_global(const struct in6_addr *addr)
  *
  * @param addr IPv6 address.
  *
- * @return True if the address is a interface scope multicast address,
- * false otherwise.
+ * @retval true if the address is a interface scope multicast address,
+ * @retval false otherwise.
  */
 static inline bool net_ipv6_is_addr_mcast_iface(const struct in6_addr *addr)
 {
@@ -1410,8 +1434,8 @@ static inline bool net_ipv6_is_addr_mcast_iface(const struct in6_addr *addr)
  *
  * @param addr IPv6 address.
  *
- * @return True if the address is a link local scope multicast address,
- * false otherwise.
+ * @retval true if the address is a link local scope multicast address,
+ * @retval false otherwise.
  */
 static inline bool net_ipv6_is_addr_mcast_link(const struct in6_addr *addr)
 {
@@ -1424,8 +1448,8 @@ static inline bool net_ipv6_is_addr_mcast_link(const struct in6_addr *addr)
  *
  * @param addr IPv6 address.
  *
- * @return True if the address is a mesh-local scope multicast address,
- * false otherwise.
+ * @retval true if the address is a mesh-local scope multicast address,
+ * @retval false otherwise.
  */
 static inline bool net_ipv6_is_addr_mcast_mesh(const struct in6_addr *addr)
 {
@@ -1438,8 +1462,8 @@ static inline bool net_ipv6_is_addr_mcast_mesh(const struct in6_addr *addr)
  *
  * @param addr IPv6 address.
  *
- * @return True if the address is a site scope multicast address,
- * false otherwise.
+ * @retval true if the address is a site scope multicast address,
+ * @retval false otherwise.
  */
 static inline bool net_ipv6_is_addr_mcast_site(const struct in6_addr *addr)
 {
@@ -1452,8 +1476,8 @@ static inline bool net_ipv6_is_addr_mcast_site(const struct in6_addr *addr)
  *
  * @param addr IPv6 address.
  *
- * @return True if the address is an organization scope multicast address,
- * false otherwise.
+ * @retval true if the address is an organization scope multicast address,
+ * @retval false otherwise.
  */
 static inline bool net_ipv6_is_addr_mcast_org(const struct in6_addr *addr)
 {
@@ -1478,8 +1502,9 @@ static inline bool net_ipv6_is_addr_mcast_group_raw(const uint8_t *addr,
  * @param group Group id IPv6 address, the values must be in network
  * byte order
  *
- * @return True if the IPv6 multicast address belongs to given multicast
- * group, false otherwise.
+ * @retval true if the IPv6 multicast address belongs to given multicast
+ * group
+ * @retval false otherwise.
  */
 static inline bool net_ipv6_is_addr_mcast_group(const struct in6_addr *addr,
 						const struct in6_addr *group)
@@ -1504,8 +1529,9 @@ static inline bool net_ipv6_is_addr_mcast_all_nodes_group_raw(const uint8_t *add
  *
  * @param addr IPv6 address
  *
- * @return True if the IPv6 multicast address belongs to the all nodes multicast
- * group, false otherwise
+ * @retval true if the IPv6 multicast address belongs to the all nodes multicast
+ * group
+ * @retval false otherwise
  */
 static inline bool
 net_ipv6_is_addr_mcast_all_nodes_group(const struct in6_addr *addr)
@@ -1519,8 +1545,8 @@ net_ipv6_is_addr_mcast_all_nodes_group(const struct in6_addr *addr)
  *
  * @param addr IPv6 address.
  *
- * @return True if the address is a interface scope all nodes multicast address,
- * false otherwise.
+ * @retval true if the address is a interface scope all nodes multicast address,
+ * @retval false otherwise.
  */
 static inline bool
 net_ipv6_is_addr_mcast_iface_all_nodes(const struct in6_addr *addr)
@@ -1543,8 +1569,9 @@ static inline bool net_ipv6_is_addr_mcast_link_all_nodes_raw(const uint8_t *addr
  *
  * @param addr IPv6 address.
  *
- * @return True if the address is a link local scope all nodes multicast
- * address, false otherwise.
+ * @retval true if the address is a link local scope all nodes multicast
+ * address
+ * @retval false otherwise.
  */
 static inline bool
 net_ipv6_is_addr_mcast_link_all_nodes(const struct in6_addr *addr)
@@ -1645,7 +1672,7 @@ static inline void net_ipv6_addr_create_v4_mapped(const struct in_addr *addr4,
  *
  *  @param addr IPv6 address
  *
- *  @return True if IPv6 address is a IPv4 mapped address, False otherwise.
+ *  @retval true if IPv6 address is a IPv4 mapped address, False otherwise.
  */
 static inline bool net_ipv6_addr_is_v4_mapped(const struct in6_addr *addr)
 {
@@ -1674,7 +1701,8 @@ static inline bool net_ipv6_addr_is_v4_mapped(const struct in6_addr *addr)
  *  @param addr IPv6 address
  *  @param lladdr Link local address
  *
- *  @return 0 if ok, < 0 if error
+ *  @retval 0 if ok
+ *  @retval <0 if error
  */
 int net_ipv6_addr_generate_iid(struct net_if *iface,
 			       const struct in6_addr *prefix,
@@ -1750,7 +1778,8 @@ static inline bool net_ipv6_addr_based_on_ll_raw(const uint8_t *addr,
 /**
  *  @brief Check if given address is based on link layer address
  *
- *  @return True if it is, False otherwise
+ *  @retval true if it is
+ *  @retval false otherwise
  */
 static inline bool net_ipv6_addr_based_on_ll(const struct in6_addr *addr,
 					     const struct net_linkaddr *lladdr)
@@ -1868,7 +1897,8 @@ struct sockaddr_can_ptr *net_can_ptr(const struct sockaddr_ptr *addr)
  * @note This function doesn't do precise error checking,
  * do not use for untrusted strings.
  *
- * @return 0 if ok, < 0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 __syscall int net_addr_pton(sa_family_t family, const char *src, void *dst);
 
@@ -1881,7 +1911,8 @@ __syscall int net_addr_pton(sa_family_t family, const char *src, void *dst);
  * @param dst Buffer for IP address as a null terminated string
  * @param size Number of bytes available in the buffer
  *
- * @return dst pointer if ok, NULL if error
+ * @return dst pointer if ok
+ * @retval NULL if error
  */
 __syscall char *net_addr_ntop(sa_family_t family, const void *src,
 			      char *dst, size_t size);
@@ -1894,7 +1925,8 @@ __syscall char *net_addr_ntop(sa_family_t family, const void *src,
  * @param mask Pointer to struct sockaddr_in if family is AF_INET or
  * pointer to struct sockaddr_in6 if family is AF_INET6
  *
- * @return 0 if ok, < 0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 int net_mask_len_to_netmask(sa_family_t family, uint8_t mask_len,
 			    struct sockaddr *mask);
@@ -1907,7 +1939,8 @@ int net_mask_len_to_netmask(sa_family_t family, uint8_t mask_len,
  * pointer to struct sockaddr_in6 if family is AF_INET6
  * @param mask_len Netmask length (in IPv4) or prefix length (in IPv6)
  *
- * @return 0 if ok, < 0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 int net_netmask_to_mask_len(sa_family_t family, struct sockaddr *mask,
 			    uint8_t *mask_len);
@@ -1931,7 +1964,8 @@ int net_netmask_to_mask_len(sa_family_t family, struct sockaddr *mask,
  * @param str_len Length of the string to be parsed.
  * @param addr Pointer to user supplied struct sockaddr.
  *
- * @return True if parsing could be done, false otherwise.
+ * @retval true if parsing could be done
+ * @retval false otherwise.
  */
 bool net_ipaddr_parse(const char *str, size_t str_len,
 		      struct sockaddr *addr);
@@ -1959,9 +1993,9 @@ bool net_ipaddr_parse(const char *str, size_t str_len,
  * @param addr Pointer to user supplied struct sockaddr.
  * @param mask_len Pointer to mask_len which is returned to the caller.
  *
- * @return NULL if there was an error while parsing.
- *         "" if we could parse the IP address and there is nothing more to parse.
- *         All other values point to next character after the "," or " " in the string.
+ * @retval NULL if there was an error while parsing.
+ * @retval "" if we could parse the IP address and there is nothing more to parse.
+ * @return All other values point to next character after the "," or " " in the string.
  */
 const char *net_ipaddr_parse_mask(const char *str, size_t str_len,
 				  struct sockaddr *addr, uint8_t *mask_len);
@@ -1973,7 +2007,8 @@ const char *net_ipaddr_parse_mask(const char *str, size_t str_len,
  * @param addr Pointer to user supplied struct sockaddr.
  * @param default_port Default port number to set.
  *
- * @return 0 if ok, <0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 int net_port_set_default(struct sockaddr *addr, uint16_t default_port);
 
@@ -1986,7 +2021,9 @@ int net_port_set_default(struct sockaddr *addr, uint16_t default_port);
  * @param seq1 First sequence number
  * @param seq2 Seconds sequence number
  *
- * @return < 0 if seq1 < seq2, 0 if seq1 == seq2, > 0 if seq > seq2
+ * @retval <0 if seq1 < seq2
+ * @retval 0 if seq1 == seq2
+ * @retval >0 if seq > seq2
  */
 static inline int32_t net_tcp_seq_cmp(uint32_t seq1, uint32_t seq2)
 {
@@ -2001,7 +2038,7 @@ static inline int32_t net_tcp_seq_cmp(uint32_t seq1, uint32_t seq2)
  * @param seq1 First sequence number
  * @param seq2 Seconds sequence number
  *
- * @return True if seq > seq2
+ * @retval true if seq > seq2
  */
 static inline bool net_tcp_seq_greater(uint32_t seq1, uint32_t seq2)
 {
@@ -2017,7 +2054,8 @@ static inline bool net_tcp_seq_greater(uint32_t seq1, uint32_t seq2)
  * @param buf_len Length of the memory area.
  * @param src String of bytes.
  *
- * @return 0 if ok, <0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 int net_bytes_from_str(uint8_t *buf, int buf_len, const char *src);
 
@@ -2090,7 +2128,8 @@ static inline uint8_t net_priority2vlan(enum net_priority priority)
  *
  * @param family Network address family code
  *
- * @return Network address family as a string, or NULL if family is unknown.
+ * @return Network address family as a string,
+ * @retval NULL if family is unknown.
  */
 const char *net_family2str(sa_family_t family);
 
@@ -2102,7 +2141,8 @@ const char *net_family2str(sa_family_t family);
  * @param addr IPv6 prefix
  * @param is_denylist Tells if this filter is for allowing or denying listing.
  *
- * @return 0 if ok, <0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 #if defined(CONFIG_NET_IPV6_PE)
 int net_ipv6_pe_add_filter(struct in6_addr *addr, bool is_denylist);
@@ -2122,7 +2162,8 @@ static inline int net_ipv6_pe_add_filter(struct in6_addr *addr,
  *
  * @param addr IPv6 prefix
  *
- * @return 0 if ok, <0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 #if defined(CONFIG_NET_IPV6_PE)
 int net_ipv6_pe_del_filter(struct in6_addr *addr);

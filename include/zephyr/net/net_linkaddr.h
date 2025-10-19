@@ -84,7 +84,8 @@ struct net_linkaddr {
  * @param lladdr1 Pointer to a link layer address
  * @param lladdr2 Pointer to a link layer address
  *
- * @return True if the addresses are the same, false otherwise.
+ * @retval true if the addresses are the same
+ * @retval false otherwise.
  */
 static inline bool net_linkaddr_cmp(struct net_linkaddr *lladdr1,
 				    struct net_linkaddr *lladdr2)
@@ -108,7 +109,8 @@ static inline bool net_linkaddr_cmp(struct net_linkaddr *lladdr1,
  * @param new_addr Array of bytes containing the link address.
  * @param new_len Length of the link address array.
  * This value should always be <= NET_LINK_ADDR_MAX_LENGTH.
- * @return 0 if ok, <0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 static inline int net_linkaddr_set(struct net_linkaddr *lladdr,
 				   const uint8_t *new_addr,
@@ -133,7 +135,8 @@ static inline int net_linkaddr_set(struct net_linkaddr *lladdr,
  *
  * @param dst The link address structure destination.
  * @param src The link address structure to source.
- * @return 0 if ok, <0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 static inline int net_linkaddr_copy(struct net_linkaddr *dst,
 				    const struct net_linkaddr *src)
@@ -161,7 +164,8 @@ static inline int net_linkaddr_copy(struct net_linkaddr *dst,
  * the address will be cleared.
  * @param len Length of the link address array.
  * @param type Type of the link address.
- * @return 0 if ok, <0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 static inline int net_linkaddr_create(struct net_linkaddr *lladdr,
 				      const uint8_t *addr, uint8_t len,
@@ -191,7 +195,8 @@ static inline int net_linkaddr_create(struct net_linkaddr *lladdr,
  * @brief Clear link address.
  *
  * @param lladdr The link address structure.
- * @return 0 if ok, <0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 static inline int net_linkaddr_clear(struct net_linkaddr *lladdr)
 {

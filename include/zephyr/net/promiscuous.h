@@ -53,7 +53,8 @@ static inline struct net_pkt *net_promisc_mode_wait_data(k_timeout_t timeout)
  *
  * @param iface Network interface
  *
- * @return 0 if ok, <0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 int net_promisc_mode_on(struct net_if *iface);
@@ -71,7 +72,8 @@ static inline int net_promisc_mode_on(struct net_if *iface)
  *
  * @param iface Network interface
  *
- * @return 0 if ok, <0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 int net_promisc_mode_off(struct net_if *iface);

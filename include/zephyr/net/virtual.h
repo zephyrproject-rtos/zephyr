@@ -190,7 +190,8 @@ struct virtual_interface_context {
  * @param iface Network interface we are attached to. This can be NULL,
  * if we want to detach.
  *
- * @return 0 if ok, <0 if attaching failed
+ * @retval 0 if ok
+ * @retval <0 if attaching failed
  */
 int net_virtual_interface_attach(struct net_if *virtual_iface,
 				  struct net_if *iface);

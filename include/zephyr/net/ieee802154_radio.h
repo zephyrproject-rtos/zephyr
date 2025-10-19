@@ -1969,7 +1969,8 @@ BUILD_ASSERT(offsetof(struct ieee802154_radio_api, iface_api) == 0);
  *        and its length should be at least 1 byte (ImmAck frames are the
  *        shortest supported frames with 3 bytes excluding FCS).
  *
- * @return true if AR flag is set, false otherwise
+ * @retval true if AR flag is set
+ * @retval false otherwise
  */
 static inline bool ieee802154_is_ar_flag_set(struct net_buf *frag)
 {

@@ -64,7 +64,8 @@ struct sntp_ctx {
  * @param addr IP address of NTP/SNTP server.
  * @param addr_len IP address length of NTP/SNTP server.
  *
- * @return 0 if ok, <0 if error.
+ * @retval 0 if ok
+ * @retval <0 if error.
  */
 int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr,
 	      socklen_t addr_len);
@@ -77,7 +78,8 @@ int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr,
  * @param ts Timestamp including integer and fractional seconds since
  * 1 Jan 1970 (output).
  *
- * @return 0 if ok, <0 if error (-ETIMEDOUT if timeout).
+ * @retval 0 if ok
+ * @retval <0 if error (-ETIMEDOUT if timeout).
  */
 int sntp_query(struct sntp_ctx *ctx, uint32_t timeout, struct sntp_time *ts);
 
@@ -89,7 +91,8 @@ int sntp_query(struct sntp_ctx *ctx, uint32_t timeout, struct sntp_time *ts);
  * @param ts Timestamp including integer and fractional seconds since
  * 1 Jan 1970 (output).
  *
- * @return 0 if ok, <0 if error (-ETIMEDOUT if timeout).
+ * @retval 0 if ok
+ * @retval <0 if error (-ETIMEDOUT if timeout).
  */
 int sntp_recv_response(struct sntp_ctx *ctx, uint32_t timeout, struct sntp_time *ts);
 
@@ -110,7 +113,8 @@ void sntp_close(struct sntp_ctx *ctx);
  * @param addr_len IP address length of NTP/SNTP server.
  * @param service Socket service defined by @ref NET_SOCKET_SERVICE_SYNC_DEFINE
  *
- * @return 0 if ok, <0 if error.
+ * @retval 0 if ok
+ * @retval <0 if error.
  */
 int sntp_init_async(struct sntp_ctx *ctx, struct sockaddr *addr, socklen_t addr_len,
 		    const struct net_socket_service_desc *service);
@@ -120,7 +124,8 @@ int sntp_init_async(struct sntp_ctx *ctx, struct sockaddr *addr, socklen_t addr_
  *
  * @param ctx Address of sntp context.
  *
- * @return 0 if ok, <0 if error.
+ * @retval 0 if ok
+ * @retval <0 if error.
  */
 int sntp_send_async(struct sntp_ctx *ctx);
 
@@ -134,7 +139,8 @@ int sntp_send_async(struct sntp_ctx *ctx);
  * @param ts Timestamp including integer and fractional seconds since
  * 1 Jan 1970 (output).
  *
- * @return 0 if ok, <0 if error
+ * @retval 0 if ok
+ * @retval <0 if error
  */
 int sntp_read_async(struct net_socket_service_event *event, struct sntp_time *ts);
 
@@ -156,7 +162,8 @@ void sntp_close_async(const struct net_socket_service_desc *service);
  * @param ts Timestamp including integer and fractional seconds since
  * 1 Jan 1970 (output).
  *
- * @return 0 if ok, <0 if error (-ETIMEDOUT if timeout).
+ * @retval 0 if ok
+ * @retval <0 if error (-ETIMEDOUT if timeout).
  */
 int sntp_simple(const char *server, uint32_t timeout,
 		struct sntp_time *ts);
@@ -174,7 +181,8 @@ int sntp_simple(const char *server, uint32_t timeout,
  * @param ts Timestamp including integer and fractional seconds since
  * 1 Jan 1970 (output).
  *
- * @return 0 if ok, <0 if error (-ETIMEDOUT if timeout).
+ * @retval 0 if ok
+ * @retval <0 if error (-ETIMEDOUT if timeout).
  */
 int sntp_simple_addr(struct sockaddr *addr, socklen_t addr_len, uint32_t timeout,
 		     struct sntp_time *ts);

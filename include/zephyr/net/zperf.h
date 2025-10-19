@@ -111,7 +111,8 @@ typedef void (*zperf_callback)(enum zperf_status status,
  * @param param Upload parameters.
  * @param result Session results.
  *
- * @return 0 if session completed successfully, a negative error code otherwise.
+ * @retval 0 if session completed successfully
+ * @retval <0 a negative error code otherwise.
  */
 int zperf_udp_upload(const struct zperf_upload_params *param,
 		     struct zperf_results *result);
@@ -123,7 +124,8 @@ int zperf_udp_upload(const struct zperf_upload_params *param,
  * @param param Upload parameters.
  * @param result Session results.
  *
- * @return 0 if session completed successfully, a negative error code otherwise.
+ * @retval 0 if session completed successfully
+ * @retval <0 a negative error code otherwise.
  */
 int zperf_tcp_upload(const struct zperf_upload_params *param,
 		     struct zperf_results *result);
@@ -137,8 +139,8 @@ int zperf_tcp_upload(const struct zperf_upload_params *param,
  * @param callback Session results callback.
  * @param user_data A pointer to the user data to be provided with the callback.
  *
- * @return 0 if session was scheduled successfully, a negative error code
- *         otherwise.
+ * @retval 0 if session was scheduled successfully
+ * @retval <0 a negative error code otherwise.
  */
 int zperf_udp_upload_async(const struct zperf_upload_params *param,
 			   zperf_callback callback, void *user_data);
@@ -152,8 +154,8 @@ int zperf_udp_upload_async(const struct zperf_upload_params *param,
  * @param callback Session results callback.
  * @param user_data A pointer to the user data to be provided with the callback.
  *
- * @return 0 if session was scheduled successfully, a negative error code
- *         otherwise.
+ * @retval 0 if session was scheduled successfully
+ * @retval <0 a negative error code otherwise.
  */
 int zperf_tcp_upload_async(const struct zperf_upload_params *param,
 			   zperf_callback callback, void *user_data);
@@ -167,7 +169,8 @@ int zperf_tcp_upload_async(const struct zperf_upload_params *param,
  * @param callback Session results callback.
  * @param user_data A pointer to the user data to be provided with the callback.
  *
- * @return 0 if server was started, a negative error code otherwise.
+ * @retval 0 if server was started
+ * @retval <0 a negative error code otherwise.
  */
 int zperf_udp_download(const struct zperf_download_params *param,
 		       zperf_callback callback, void *user_data);
@@ -181,7 +184,8 @@ int zperf_udp_download(const struct zperf_download_params *param,
  * @param callback Session results callback.
  * @param user_data A pointer to the user data to be provided with the callback.
  *
- * @return 0 if server was started, a negative error code otherwise.
+ * @retval 0 if server was started
+ * @retval <0 a negative error code otherwise.
  */
 int zperf_tcp_download(const struct zperf_download_params *param,
 		       zperf_callback callback, void *user_data);
@@ -189,14 +193,16 @@ int zperf_tcp_download(const struct zperf_download_params *param,
 /**
  * @brief Stop UDP server.
  *
- * @return 0 if server was stopped successfully, a negative error code otherwise.
+ * @retval 0 if server was stopped successfully
+ * @retval <0 a negative error code otherwise.
  */
 int zperf_udp_download_stop(void);
 
 /**
  * @brief Stop TCP server.
  *
- * @return 0 if server was stopped successfully, a negative error code otherwise.
+ * @retval 0 if server was stopped successfully
+ * @retval <0 a negative error code otherwise.
  */
 int zperf_tcp_download_stop(void);
 

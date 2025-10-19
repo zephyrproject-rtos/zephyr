@@ -447,7 +447,8 @@ uint8_t coap_header_get_code(const struct coap_packet *cpkt);
  *
  * @param cpkt CoAP packet representation
  * @param code CoAP code
- * @return 0 on success, -EINVAL on failure
+ * @retval 0 on success
+ * @retval -EINVAL on failure
  */
 int coap_header_set_code(const struct coap_packet *cpkt, uint8_t code);
 
@@ -479,8 +480,8 @@ const uint8_t *coap_packet_get_payload(const struct coap_packet *cpkt,
  * @param options Parsed options from coap_packet_parse()
  * @param opt_num Number of options
  *
- * @return true if the CoAP URI path matches,
- *        false otherwise.
+ * @retval true if the CoAP URI path matches,
+ * @retval false otherwise.
  */
 bool coap_uri_path_match(const char * const *path,
 			 struct coap_option *options,
@@ -512,7 +513,8 @@ int coap_packet_parse(struct coap_packet *cpkt, uint8_t *data, uint16_t len,
  * @param cpkt Packet to append path and query options for.
  * @param path Null-terminated string of coap path, query or both.
  *
- * @retval 0 in case of success or negative in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative in case of error.
  */
 int coap_packet_set_path(struct coap_packet *cpkt, const char *path);
 
@@ -529,7 +531,8 @@ int coap_packet_set_path(struct coap_packet *cpkt, const char *path);
  * @param code CoAP header code
  * @param id CoAP header message id
  *
- * @return 0 in case of success or negative in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative in case of error.
  */
 int coap_packet_init(struct coap_packet *cpkt, uint8_t *data, uint16_t max_len,
 		     uint8_t ver, uint8_t type, uint8_t token_len,
@@ -548,7 +551,8 @@ int coap_packet_init(struct coap_packet *cpkt, uint8_t *data, uint16_t max_len,
  * @param max_len Maximum allowable length of data
  * @param code CoAP header code
  *
- * @return 0 in case of success or negative in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative in case of error.
  */
 int coap_ack_init(struct coap_packet *cpkt, const struct coap_packet *req,
 		  uint8_t *data, uint16_t max_len, uint8_t code);
@@ -564,7 +568,8 @@ int coap_ack_init(struct coap_packet *cpkt, const struct coap_packet *req,
  * @param data Data that will contain a CoAP packet information
  * @param max_len Maximum allowable length of data
  *
- * @return 0 in case of success or negative in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative in case of error.
  */
 int coap_rst_init(struct coap_packet *cpkt, const struct coap_packet *req,
 		  uint8_t *data, uint16_t max_len);
@@ -594,7 +599,7 @@ uint16_t coap_next_id(void);
  * @param veclen Number of elements in the options array
  *
  * @return The number of options found in packet matching code,
- * negative on error.
+ * @retval <0 negative on error.
  */
 int coap_find_options(const struct coap_packet *cpkt, uint16_t code,
 		      struct coap_option *options, uint16_t veclen);
@@ -611,7 +616,8 @@ int coap_find_options(const struct coap_packet *cpkt, uint16_t code,
  * packet
  * @param len Size of the data to be added
  *
- * @return 0 in case of success or negative in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative in case of error.
  */
 int coap_packet_append_option(struct coap_packet *cpkt, uint16_t code,
 			      const uint8_t *value, uint16_t len);
@@ -622,7 +628,8 @@ int coap_packet_append_option(struct coap_packet *cpkt, uint16_t code,
  * @param cpkt Packet to be updated
  * @param code Option code to remove from the packet, see #coap_option_num
  *
- * @return 0 in case of success or negative in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative in case of error.
  */
 int coap_packet_remove_option(struct coap_packet *cpkt, uint16_t code);
 
@@ -649,7 +656,8 @@ unsigned int coap_option_value_to_int(const struct coap_option *option);
  * @param code Option code to add to the packet, see #coap_option_num
  * @param val Integer value to be added
  *
- * @return 0 in case of success or negative in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative in case of error.
  */
 int coap_append_option_int(struct coap_packet *cpkt, uint16_t code,
 			   unsigned int val);
@@ -659,7 +667,8 @@ int coap_append_option_int(struct coap_packet *cpkt, uint16_t code,
  *
  * @param cpkt Packet to append the payload marker (0xFF)
  *
- * @return 0 in case of success or negative in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative in case of error.
  */
 int coap_packet_append_payload_marker(struct coap_packet *cpkt);
 
@@ -670,7 +679,8 @@ int coap_packet_append_payload_marker(struct coap_packet *cpkt);
  * @param payload CoAP packet payload
  * @param payload_len CoAP packet payload len
  *
- * @return 0 in case of success or negative in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative in case of error.
  */
 int coap_packet_append_payload(struct coap_packet *cpkt, const uint8_t *payload,
 			       uint16_t payload_len);
@@ -680,8 +690,8 @@ int coap_packet_append_payload(struct coap_packet *cpkt, const uint8_t *payload,
  *
  * @param cpkt Packet to be checked.
  *
- * @return true if the packet is a request,
- *        false otherwise.
+ * @retval true if the packet is a request,
+ * @retval false otherwise.
  */
 bool coap_packet_is_request(const struct coap_packet *cpkt);
 
@@ -697,7 +707,7 @@ bool coap_packet_is_request(const struct coap_packet *cpkt);
  * @param addr Peer address
  * @param addr_len Peer address length
  *
- * @retval >= 0 in case of success.
+ * @retval >=0 in case of success.
  * @retval -ENOTSUP in case of invalid request code.
  * @retval -EPERM in case resource handler is not implemented.
  * @retval -ENOENT in case the resource is not found.
@@ -720,7 +730,7 @@ int coap_handle_request_len(struct coap_packet *cpkt,
  * @param addr Peer address
  * @param addr_len Peer address length
  *
- * @retval >= 0 in case of success.
+ * @retval >=0 in case of success.
  * @retval -ENOTSUP in case of invalid request code.
  * @retval -EPERM in case resource handler is not implemented.
  * @retval -ENOENT in case the resource is not found.
@@ -803,7 +813,8 @@ struct coap_block_context {
  * @param block_size The size of the block
  * @param total_size The total size of the transfer, if known
  *
- * @return 0 in case of success or negative in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative in case of error.
  */
 int coap_block_transfer_init(struct coap_block_context *ctx,
 			     enum coap_block_size block_size,
@@ -819,7 +830,8 @@ int coap_block_transfer_init(struct coap_block_context *ctx,
  * @param ctx Block context from which to retrieve the
  * information for the block option
  *
- * @return 0 in case of success or negative in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative in case of error.
  */
 int coap_append_descriptive_block_option(struct coap_packet *cpkt, struct coap_block_context *ctx);
 
@@ -831,7 +843,7 @@ int coap_append_descriptive_block_option(struct coap_packet *cpkt, struct coap_b
  *
  * @param cpkt Packet to be checked.
  *
- * @return true if the corresponding block option is set,
+ * @retval true if the corresponding block option is set,
  *        false otherwise.
  */
 bool coap_has_descriptive_block_option(struct coap_packet *cpkt);
@@ -844,7 +856,8 @@ bool coap_has_descriptive_block_option(struct coap_packet *cpkt);
  *
  * @param cpkt Packet to be updated.
  *
- * @return 0 in case of success or negative in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative in case of error.
  */
 int coap_remove_descriptive_block_option(struct coap_packet *cpkt);
 
@@ -852,8 +865,8 @@ int coap_remove_descriptive_block_option(struct coap_packet *cpkt);
  * @brief Check if BLOCK1 or BLOCK2 option has more flag set
  *
  * @param cpkt Packet to be checked.
- * @return true If more flag is set in BLOCK1 or BLOCK2
- * @return false If MORE flag is not set or BLOCK header not found.
+ * @retval true If more flag is set in BLOCK1 or BLOCK2
+ * @retval false If MORE flag is not set or BLOCK header not found.
  */
 bool coap_block_has_more(struct coap_packet *cpkt);
 
@@ -864,7 +877,8 @@ bool coap_block_has_more(struct coap_packet *cpkt);
  * @param ctx Block context from which to retrieve the
  * information for the Block1 option
  *
- * @return 0 in case of success or negative in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative in case of error.
  */
 int coap_append_block1_option(struct coap_packet *cpkt,
 			      struct coap_block_context *ctx);
@@ -876,7 +890,8 @@ int coap_append_block1_option(struct coap_packet *cpkt,
  * @param ctx Block context from which to retrieve the
  * information for the Block2 option
  *
- * @return 0 in case of success or negative in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative in case of error.
  */
 int coap_append_block2_option(struct coap_packet *cpkt,
 			      struct coap_block_context *ctx);
@@ -888,7 +903,8 @@ int coap_append_block2_option(struct coap_packet *cpkt,
  * @param ctx Block context from which to retrieve the
  * information for the Size1 option
  *
- * @return 0 in case of success or negative in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative in case of error.
  */
 int coap_append_size1_option(struct coap_packet *cpkt,
 			     struct coap_block_context *ctx);
@@ -900,7 +916,8 @@ int coap_append_size1_option(struct coap_packet *cpkt,
  * @param ctx Block context from which to retrieve the
  * information for the Size2 option
  *
- * @return 0 in case of success or negative in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative in case of error.
  */
 int coap_append_size2_option(struct coap_packet *cpkt,
 			     struct coap_block_context *ctx);
@@ -911,8 +928,8 @@ int coap_append_size2_option(struct coap_packet *cpkt,
  * @param cpkt Packet to be inspected
  * @param code CoAP option code
  *
- * @return Integer value >= 0 in case of success or negative in case
- * of error.
+ * @retval >=0 Integer value in case of success
+ * @retval <0 negative in case of error.
  */
 int coap_get_option_int(const struct coap_packet *cpkt, uint16_t code);
 
@@ -925,7 +942,7 @@ int coap_get_option_int(const struct coap_packet *cpkt, uint16_t code);
  * @param block_number Is set to the number of the block
  *
  * @return Integer value of the block size in case of success
- * or negative in case of error.
+ * @retval <0 negative in case of error.
  */
 int coap_get_block1_option(const struct coap_packet *cpkt, bool *has_more, uint32_t *block_number);
 
@@ -939,7 +956,7 @@ int coap_get_block1_option(const struct coap_packet *cpkt, bool *has_more, uint3
  * @param block_number Is set to the number of the block
  *
  * @return Integer value of the block size in case of success
- * or negative in case of error.
+ * @retval <0 negative in case of error.
  */
 int coap_get_block2_option(const struct coap_packet *cpkt, bool *has_more,
 			   uint32_t *block_number);
@@ -951,7 +968,8 @@ int coap_get_block2_option(const struct coap_packet *cpkt, bool *has_more,
  * @param cpkt Packet in which to look for block-wise transfers options
  * @param ctx Block context to be updated
  *
- * @return 0 in case of success or negative in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative in case of error.
  */
 int coap_update_from_block(const struct coap_packet *cpkt,
 			   struct coap_block_context *ctx);
@@ -965,8 +983,9 @@ int coap_update_from_block(const struct coap_packet *cpkt,
  * @param ctx Block context to be updated
  * @param option Either COAP_OPTION_BLOCK1 or COAP_OPTION_BLOCK2
  *
- * @return The offset in the block-wise transfer, 0 if the transfer
- * has finished or a negative value in case of an error.
+ * @return The offset in the block-wise transfer
+ * @retval 0 if the transfer has finished
+ * @retval <0 a negative value in case of an error.
  */
 int coap_next_block_for_option(const struct coap_packet *cpkt,
 			       struct coap_block_context *ctx,
@@ -980,8 +999,8 @@ int coap_next_block_for_option(const struct coap_packet *cpkt,
  * @param cpkt Packet in which to look for block-wise transfers options
  * @param ctx Block context to be updated
  *
- * @return The offset in the block-wise transfer, 0 if the transfer
- * has finished.
+ * @return The offset in the block-wise transfer
+ * @retval 0 if the transfer has finished
  */
 size_t coap_next_block(const struct coap_packet *cpkt,
 		       struct coap_block_context *ctx);
@@ -1005,7 +1024,7 @@ void coap_observer_init(struct coap_observer *observer,
  * @param resource Resource to add an observer
  * @param observer Observer to be added
  *
- * @return true if this is the first observer added to this resource.
+ * @retval true if this is the first observer added to this resource.
  */
 bool coap_register_observer(struct coap_resource *resource,
 			    struct coap_observer *observer);
@@ -1017,7 +1036,7 @@ bool coap_register_observer(struct coap_resource *resource,
  * @param resource Resource in which to remove the observer
  * @param observer Observer to be removed
  *
- * @return true if the observer was found and removed.
+ * @retval true if the observer was found and removed.
  */
 bool coap_remove_observer(struct coap_resource *resource,
 			  struct coap_observer *observer);
@@ -1032,8 +1051,8 @@ bool coap_remove_observer(struct coap_resource *resource,
  * @param token Pointer to the token
  * @param token_len Length of valid bytes in the token
  *
- * @return A pointer to a observer if a match is found, NULL
- * otherwise.
+ * @return A pointer to a observer if a match is found
+ * @retval NULL otherwise.
  */
 struct coap_observer *coap_find_observer(
 	struct coap_observer *observers, size_t len,
@@ -1050,8 +1069,8 @@ struct coap_observer *coap_find_observer(
  * @note The function coap_find_observer() should be preferred
  * if both the observer's address and token are known.
  *
- * @return A pointer to a observer if a match is found, NULL
- * otherwise.
+ * @return A pointer to a observer if a match is found
+ * @retval NULL otherwise.
  */
 struct coap_observer *coap_find_observer_by_addr(
 	struct coap_observer *observers, size_t len,
@@ -1068,8 +1087,8 @@ struct coap_observer *coap_find_observer_by_addr(
  * @note The function coap_find_observer() should be preferred
  * if both the observer's address and token are known.
  *
- * @return A pointer to a observer if a match is found, NULL
- * otherwise.
+ * @return A pointer to a observer if a match is found
+ * @retval NULL otherwise.
  */
 struct coap_observer *coap_find_observer_by_token(
 	struct coap_observer *observers, size_t len,
@@ -1082,7 +1101,7 @@ struct coap_observer *coap_find_observer_by_token(
  * @param len Size of the array of observers
  *
  * @return A pointer to a observer if there's an available observer,
- * NULL otherwise.
+ * @retval NULL otherwise.
  */
 struct coap_observer *coap_observer_next_unused(
 	struct coap_observer *observers, size_t len);
@@ -1110,7 +1129,8 @@ void coap_reply_init(struct coap_reply *reply,
  * @param params Pointer to the CoAP transmission parameters struct,
  * or NULL to use default values
  *
- * @return 0 in case of success or negative in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative in case of error.
  */
 int coap_pending_init(struct coap_pending *pending,
 		      const struct coap_packet *request,
@@ -1124,8 +1144,8 @@ int coap_pending_init(struct coap_pending *pending,
  * @param pendings Pointer to the array of #coap_pending structures
  * @param len Size of the array of #coap_pending structures
  *
- * @return pointer to a free #coap_pending structure, NULL in case
- * none could be found.
+ * @return pointer to a free #coap_pending structure
+ * @retval NULL in case none could be found.
  */
 struct coap_pending *coap_pending_next_unused(
 	struct coap_pending *pendings, size_t len);
@@ -1137,8 +1157,8 @@ struct coap_pending *coap_pending_next_unused(
  * @param replies Pointer to the array of #coap_reply structures
  * @param len Size of the array of #coap_reply structures
  *
- * @return pointer to a free #coap_reply structure, NULL in case
- * none could be found.
+ * @return pointer to a free #coap_reply structure
+ * @retval NULL in case none could be found.
  */
 struct coap_reply *coap_reply_next_unused(
 	struct coap_reply *replies, size_t len);
@@ -1153,8 +1173,8 @@ struct coap_reply *coap_reply_next_unused(
  * @param pendings Pointer to the array of #coap_reply structures
  * @param len Size of the array of #coap_reply structures
  *
- * @return pointer to the associated #coap_pending structure, NULL in
- * case none could be found.
+ * @return pointer to the associated #coap_pending structure
+ * @retval NULL in case none could be found.
  */
 struct coap_pending *coap_pending_received(
 	const struct coap_packet *response,
@@ -1169,8 +1189,8 @@ struct coap_pending *coap_pending_received(
  * @param replies Pointer to the array of #coap_reply structures
  * @param len Size of the array of #coap_reply structures
  *
- * @return Pointer to the reply matching the packet received, NULL if
- * none could be found.
+ * @return Pointer to the reply matching the packet received
+ * @retval NULL if none could be found.
  */
 struct coap_reply *coap_response_received(
 	const struct coap_packet *response,
@@ -1184,8 +1204,8 @@ struct coap_reply *coap_response_received(
  * @param pendings Pointer to the array of #coap_pending structures
  * @param len Size of the array of #coap_pending structures
  *
- * @return The next #coap_pending to expire, NULL if none is about to
- * expire.
+ * @return The next #coap_pending to expire
+ * @retval NULL if none is about to expire.
  */
 struct coap_pending *coap_pending_next_to_expire(
 	struct coap_pending *pendings, size_t len);
@@ -1196,7 +1216,7 @@ struct coap_pending *coap_pending_next_to_expire(
  *
  * @param pending Pending representation to have its timeout updated
  *
- * @return false if this is the last retransmission.
+ * @retval false if this is the last retransmission.
  */
 bool coap_pending_cycle(struct coap_pending *pending);
 
@@ -1248,7 +1268,8 @@ void coap_replies_clear(struct coap_reply *replies, size_t len);
  *
  * @param resource Resource that was updated
  *
- * @return 0 in case of success or negative in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative in case of error.
  */
 int coap_resource_notify(struct coap_resource *resource);
 
@@ -1257,8 +1278,8 @@ int coap_resource_notify(struct coap_resource *resource);
  *
  * @param request Request to be checked
  *
- * @return True if the request is enabling observing a resource, False
- * otherwise
+ * @retval true if the request is enabling observing a resource
+ * @retval false otherwise
  */
 bool coap_request_is_observe(const struct coap_packet *request);
 

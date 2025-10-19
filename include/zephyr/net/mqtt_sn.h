@@ -351,7 +351,8 @@ struct mqtt_sn_client {
  * @param rx            Pointer to the receive buffer.
  * @param rxsz          Size of the receive buffer.
  *
- * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure.
  */
 int mqtt_sn_client_init(struct mqtt_sn_client *client, const struct mqtt_sn_data *client_id,
 			struct mqtt_sn_transport *transport, mqtt_sn_evt_cb_t evt_cb, void *tx,
@@ -375,7 +376,8 @@ void mqtt_sn_client_deinit(struct mqtt_sn_client *client);
  * @param gw_id       Single byte Gateway Identifier
  * @param gw_addr     Address data structure to be used by the transport layer.
  *
- * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure.
  */
 int mqtt_sn_add_gw(struct mqtt_sn_client *client, uint8_t gw_id, struct mqtt_sn_data gw_addr);
 
@@ -385,7 +387,8 @@ int mqtt_sn_add_gw(struct mqtt_sn_client *client, uint8_t gw_id, struct mqtt_sn_
  * @param client     The MQTT-SN client to connect.
  * @param radius     Broadcast radius for the search message.
  *
- * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure.
  */
 int mqtt_sn_search(struct mqtt_sn_client *client, uint8_t radius);
 
@@ -396,7 +399,8 @@ int mqtt_sn_search(struct mqtt_sn_client *client, uint8_t radius);
  * @param will              Flag indicating if a Will message should be sent.
  * @param clean_session     Flag indicating if a clean session should be started.
  *
- * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure.
  */
 int mqtt_sn_connect(struct mqtt_sn_client *client, bool will, bool clean_session);
 
@@ -405,7 +409,8 @@ int mqtt_sn_connect(struct mqtt_sn_client *client, bool will, bool clean_session
  *
  * @param client            The MQTT-SN client to disconnect.
  *
- * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure.
  */
 int mqtt_sn_disconnect(struct mqtt_sn_client *client);
 
@@ -415,7 +420,8 @@ int mqtt_sn_disconnect(struct mqtt_sn_client *client);
  * @param client            The MQTT-SN client to be put to sleep.
  * @param duration          Sleep duration (in seconds).
  *
- * @return 0 on success, negative errno code on failure.
+ * @retval 0 on success
+ * @retval <0 negative errno code on failure.
  */
 int mqtt_sn_sleep(struct mqtt_sn_client *client, uint16_t duration);
 
@@ -426,7 +432,8 @@ int mqtt_sn_sleep(struct mqtt_sn_client *client, uint16_t duration);
  * @param qos               The desired quality of service for the subscription.
  * @param topic_name        The name of the topic to subscribe to.
  *
- * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure.
  */
 int mqtt_sn_subscribe(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 		      struct mqtt_sn_data *topic_name);
@@ -438,7 +445,8 @@ int mqtt_sn_subscribe(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
  * @param qos               The quality of service used when subscribing.
  * @param topic_name        The name of the topic to unsubscribe from.
  *
- * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure.
  */
 int mqtt_sn_unsubscribe(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 			struct mqtt_sn_data *topic_name);
@@ -454,7 +462,8 @@ int mqtt_sn_unsubscribe(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
  * @param retain            Flag indicating if the message should be retained by the broker.
  * @param data              The data to be published.
  *
- * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure.
  */
 int mqtt_sn_publish(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
 		    struct mqtt_sn_data *topic_name, bool retain, struct mqtt_sn_data *data);
@@ -467,7 +476,8 @@ int mqtt_sn_publish(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
  *
  * @param client            The MQTT-SN client to check for incoming data.
  *
- * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure.
  */
 int mqtt_sn_input(struct mqtt_sn_client *client);
 
@@ -478,8 +488,9 @@ int mqtt_sn_input(struct mqtt_sn_client *client);
  * @param[in] id Topic identifier.
  * @param[out] topic_name Will be assigned to topic name.
  *
- * @return 0 on success, -ENOENT if topic ID doesn't exist,
- * or -EINVAL on invalid arguments.
+ * @retval 0 on success
+ * @retval -ENOENT if topic ID doesn't exist,
+ * @retval -EINVAL on invalid arguments.
  */
 int mqtt_sn_get_topic_name(struct mqtt_sn_client *client, uint16_t id,
 			   struct mqtt_sn_data *topic_name);
@@ -496,7 +507,8 @@ int mqtt_sn_get_topic_name(struct mqtt_sn_client *client, uint16_t id,
  * @param[in] topic_id Topic identifier.
  * @param[in] topic_name The name of the topic.
  *
- * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure.
  */
 int mqtt_sn_predefine_topic(struct mqtt_sn_client *client, uint16_t topic_id,
 			    struct mqtt_sn_data *topic_name);
@@ -509,7 +521,8 @@ int mqtt_sn_predefine_topic(struct mqtt_sn_client *client, uint16_t topic_id,
  * @param[in] client The MQTT-SN client to define the topic on.
  * @param[in] topic_name The name of the topic. Must be exactly 2 bytes long.
  *
- * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure.
  */
 int mqtt_sn_define_short_topic(struct mqtt_sn_client *client, struct mqtt_sn_data *topic_name);
 
@@ -527,7 +540,8 @@ int mqtt_sn_define_short_topic(struct mqtt_sn_client *client, struct mqtt_sn_dat
  *
  * @param[in] client The MQTT-SN client to use for sending the update.
  *
- * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure.
  */
 int mqtt_sn_update_will_topic(struct mqtt_sn_client *client);
 
@@ -543,7 +557,8 @@ int mqtt_sn_update_will_topic(struct mqtt_sn_client *client);
  *
  * @param[in] client The MQTT-SN client to use for sending the update.
  *
- * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure.
  */
 int mqtt_sn_update_will_message(struct mqtt_sn_client *client);
 

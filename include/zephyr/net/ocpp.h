@@ -161,7 +161,8 @@ typedef void *ocpp_session_handle_t;
  * @param[in] io reffered corresponding to reason.
  * @param[in] user_data passed on ocpp_init.
  *
- * @return 0 or a negative error code (errno.h)
+ * @retval 0
+ * @retval <0 a negative error code (errno.h)
  */
 typedef int (*ocpp_user_notify_callback_t)(enum ocpp_notify_reason reason,
 					   union ocpp_io_value *io,
@@ -175,7 +176,8 @@ typedef int (*ocpp_user_notify_callback_t)(enum ocpp_notify_reason reason,
  * @param[in] cb user register callback
  * @param[in] user_data same reference will be passed on callback
  *
- * @return 0 on success or a negative error code (errno.h) indicating reason of failure
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure
  *
  * @note Must be called before any other ocpp API
  */
@@ -189,7 +191,8 @@ int ocpp_init(struct ocpp_cp_info *cpi,
  *
  * @param[out] hndl a valid opaque handle
  *
- * @return 0 on success or a negative error code (errno.h) indicating reason of failure
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure
  *
  * @note Each connector should open unique session after ocpp_init and
  * prior to anyother ocpp_* request message api
@@ -211,7 +214,8 @@ void ocpp_session_close(ocpp_session_handle_t hndl);
  * @param[out] status authorization status
  * @param[in] timeout_ms timeout in msec
  *
- * @return 0 on success or a negative error code (errno.h) indicating reason of failure
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure
  */
 int ocpp_authorize(ocpp_session_handle_t hndl,
 		   char *idtag,
@@ -226,9 +230,9 @@ int ocpp_authorize(ocpp_session_handle_t hndl,
  * @param[in] conn_id connector id should be > 0 and sequential number
  * @param[in] timeout_ms timeout in msec
  *
- * @return: 0 on success
- *	    EACCES - not authorized, should follow the stop charging process
- *	    a negative error code (errno.h) indicating reason of failure
+ * @retval 0 on success
+ * @retval -EACCES not authorized, should follow the stop charging process
+ * @retval <0 a negative error code (errno.h) indicating reason of failure
  */
 int ocpp_start_transaction(ocpp_session_handle_t hndl,
 			   int meter_val,
@@ -242,7 +246,8 @@ int ocpp_start_transaction(ocpp_session_handle_t hndl,
  * @param[in] meter_val energy meter reading of this connector in Wh
  * @param[in] timeout_ms timeout in msec
  *
- * @return 0 on success or a negative error code (errno.h) indicating reason of failure
+ * @retval 0 on success
+ * @retval <0 a negative error code (errno.h) indicating reason of failure
  */
 int ocpp_stop_transaction(ocpp_session_handle_t hndl,
 			  int meter_val,

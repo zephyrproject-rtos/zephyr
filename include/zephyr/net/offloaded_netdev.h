@@ -72,7 +72,8 @@ BUILD_ASSERT(offsetof(struct offloaded_if_api, iface_api) == 0);
  *
  * @param iface Pointer to network interface
  *
- * @return True if interface supports Wi-Fi, False otherwise.
+ * @retval true if interface supports Wi-Fi
+ * @retval false otherwise.
  */
 static inline bool net_off_is_wifi_offloaded(struct net_if *iface)
 {
