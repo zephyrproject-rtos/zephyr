@@ -156,12 +156,6 @@ config CRYPTO_ACC_GECKO_TRNG
 	  Enable Entropy driver based on the CRYPTO_ACC module for Silicon Labs
 	  Gecko chips.
 
-config COUNTER_GECKO_STIMER
-	bool
-	help
-	  Enable counter driver based on the Sleep Timer driver for Silicon Labs
-	  Gecko chips.
-
 config SOC_GECKO_CMU
 	bool
 	help
