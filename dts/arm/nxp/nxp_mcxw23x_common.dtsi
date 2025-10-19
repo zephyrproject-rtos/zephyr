@@ -64,6 +64,10 @@
 	};
 };
 
+&systick {
+	status = "disabled";
+};
+
 &peripheral {
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -231,12 +235,21 @@
 		#pwm-cells = <3>;
 	};
 
+	os_timer: timers@2d000 {
+		compatible = "nxp,os-timer";
+		reg = <0x2d000 0x1000>;
+		interrupts = <38 1>;
+		status = "disabled";
+	};
+
 	flexcomm0: flexcomm@86000 {
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x86000 0x1000>;
 		interrupts = <14 1>;
 		clocks = <&syscon MCUX_FLEXCOMM0_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(1, 11)>;
+		dmas = <&dma0 4 &dma0 5>;
+		dma-names = "rx", "tx";
 		status = "disabled";
 	};
 
@@ -246,6 +259,8 @@
 		interrupts = <15 1>;
 		clocks = <&syscon MCUX_FLEXCOMM1_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(1, 12)>;
+		dmas = <&dma0 6 &dma0 7>;
+		dma-names = "rx", "tx";
 		status = "disabled";
 	};
 
@@ -255,6 +270,8 @@
 		interrupts = <16 1>;
 		clocks = <&syscon MCUX_FLEXCOMM2_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(1, 13)>;
+		dmas = <&dma0 8 &dma0 9>;
+		dma-names = "rx", "tx";
 		status = "disabled";
 	};
 
