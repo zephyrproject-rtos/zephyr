@@ -28,3 +28,5 @@ zephyr_library_sources_ifdef(CONFIG_EEPROM_MB85RCXX eeprom_mb85rcxx.c)
 zephyr_library_sources_ifdef(CONFIG_EEPROM_MB85RSXX eeprom_mb85rsxx.c)
 
 zephyr_library_sources_ifdef(CONFIG_EEPROM_FM25XXX eeprom_fm25xxx.c)
+
+zephyr_library_sources_ifdef(CONFIG_EEPROM_S3AXX04 eeprom_s3axx04.c)

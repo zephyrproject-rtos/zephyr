@@ -101,6 +101,7 @@ source "drivers/eeprom/Kconfig.xec"
 source "drivers/eeprom/Kconfig.mb85rcxx"
 source "drivers/eeprom/Kconfig.mb85rsxx"
 source "drivers/eeprom/Kconfig.fm25xxx"
+source "drivers/eeprom/Kconfig.s3axx04"
 
 config EEPROM_SIMULATOR
 	bool "Simulated EEPROM driver"

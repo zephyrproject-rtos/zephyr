@@ -1,0 +1,17 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: Netsol S3Axx04 SPI MRAM
+
+compatible: "netsol,s3axx04"
+
+include: [eeprom-base.yaml, spi-device.yaml]
+
+properties:
+  size:
+    required: true
+    description: Total MRAM size in bytes.
+
+  disable-wren:
+    type: boolean
+    description: Disable the need for WREN command before writing to memory, making it a bit faster.
