@@ -125,36 +125,6 @@ config SOC_GECKO_TRNG
 	help
 	  Set if the SoC has a True Random Number Generator (TRNG) module.
 
-config SOC_SILABS_HFXO_MANAGER
-	bool
-	default y if PM && $(dt_nodelabel_enabled,sysrtc0) && $(dt_nodelabel_enabled,hfxo)
-	help
-	  Set if the HFXO Manager HAL module is used.
-
-if PM
-
-config SOC_GECKO_PM_BACKEND_PMGR
-	bool
-	depends on SOC_GECKO_DEV_INIT
-	default y if SOC_FAMILY_SILABS_S2
-	help
-	  Implement PM using sl_power_manager service from Gecko SDK
-
-config SOC_GECKO_PM_BACKEND_EMU
-	bool
-	default y if !SOC_GECKO_PM_BACKEND_PMGR
-	help
-	  Implement PM using direct calls to EMU driver in emlib
-
-config SOC_SILABS_PM_LOW_INTERRUPT_LATENCY
-	bool "Low interrupt latency mode"
-	default y if SOC_GECKO_PM_BACKEND_PMGR
-	help
-	  Enabling low interrupt latency allows interrupts to be executed
-	  before the high frequency clock is restored after sleep.
-
-endif # PM
-
 config SOC_GECKO_EMU_DCDC
 	bool "SoC DC/DC regulator"
 	select SOC_GECKO_EMU
