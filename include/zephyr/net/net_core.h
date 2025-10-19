@@ -181,6 +181,18 @@ static inline int net_send_data(struct net_pkt *pkt)
 #define NET_TC_COUNT 0
 #endif /* CONFIG_NET_TC_TX_COUNT && CONFIG_NET_TC_RX_COUNT */
 
+#if CONFIG_NET_TC_TX_SKIP_FOR_HIGH_PRIO
+#define NET_TC_TX_EFFECTIVE_COUNT (NET_TC_TX_COUNT + 1)
+#else
+#define NET_TC_TX_EFFECTIVE_COUNT NET_TC_TX_COUNT
+#endif
+
+#if CONFIG_NET_TC_RX_SKIP_FOR_HIGH_PRIO
+#define NET_TC_RX_EFFECTIVE_COUNT (NET_TC_RX_COUNT + 1)
+#else
+#define NET_TC_RX_EFFECTIVE_COUNT NET_TC_RX_COUNT
+#endif
+
 /**
  * @brief Registration information for a given L3 handler. Note that
  *        the layer number (L3) just refers to something that is on top
