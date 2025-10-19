@@ -106,6 +106,13 @@
 				spi-max-frequency = <DT_FREQ_M(20)>;
 				size = <8000>;
 			};
+
+			test_spi_s3axx04: s3axx04@3 {
+				compatible = "netsol,s3axx04";
+				reg = <0x3>;
+				spi-max-frequency = <DT_FREQ_M(54)>;
+				size = <DT_SIZE_M(1)>;
+			};
 		};
 	};
 };
