@@ -48,7 +48,8 @@ extern "C" {
  *     DT_SPI_HAS_CS_GPIOS(DT_NODELABEL(spi2)) // 0
  *
  * @param spi a SPI bus controller node identifier
- * @return 1 if "spi" has a cs-gpios property, 0 otherwise
+ * @retval 1 if "spi" has a cs-gpios property
+ * @retval 0 otherwise
  */
 #define DT_SPI_HAS_CS_GPIOS(spi) DT_NODE_HAS_PROP(spi, cs_gpios)
 
@@ -73,8 +74,8 @@ extern "C" {
  *     DT_SPI_NUM_CS_GPIOS(DT_NODELABEL(spi2)) // 0
  *
  * @param spi a SPI bus controller node identifier
- * @return Logical length of spi's cs-gpios property, or 0 if "spi" doesn't
- *         have a cs-gpios property
+ * @return Logical length of spi's cs-gpios property
+ * @retval 0 if "spi" doesn't have a cs-gpios property
  */
 #define DT_SPI_NUM_CS_GPIOS(spi) \
 	COND_CODE_1(DT_SPI_HAS_CS_GPIOS(spi), \
@@ -112,8 +113,9 @@ extern "C" {
  *     DT_SPI_DEV_HAS_CS_GPIOS(DT_NODELABEL(c)) // 0
  *
  * @param spi_dev a SPI device node identifier
- * @return 1 if spi_dev's bus node DT_BUS(spi_dev) has a chip select
- *         pin at index DT_REG_ADDR(spi_dev), 0 otherwise
+ * @retval 1 if spi_dev's bus node DT_BUS(spi_dev) has a chip select
+ *         pin at index DT_REG_ADDR(spi_dev)
+ * @retval 0 otherwise
  */
 #define DT_SPI_DEV_HAS_CS_GPIOS(spi_dev) DT_SPI_HAS_CS_GPIOS(DT_BUS(spi_dev))
 
@@ -206,8 +208,8 @@ extern "C" {
  * cs-gpios property has no flags cell, this expands to zero.
  *
  * @param spi_dev a SPI device node identifier
- * @return flags value of spi_dev's chip select GPIO specifier, or
- *         zero if there is none
+ * @return flags value of spi_dev's chip select GPIO specifier
+ * @retval 0 if there is none
  */
 #define DT_SPI_DEV_CS_GPIOS_FLAGS(spi_dev) \
 	DT_GPIO_FLAGS_BY_IDX(DT_BUS(spi_dev), cs_gpios, DT_REG_ADDR_RAW(spi_dev))
@@ -215,8 +217,9 @@ extern "C" {
 /**
  * @brief Equivalent to DT_SPI_DEV_HAS_CS_GPIOS(DT_DRV_INST(inst)).
  * @param inst DT_DRV_COMPAT instance number
- * @return 1 if the instance's bus has a CS pin at index
- *         DT_INST_REG_ADDR(inst), 0 otherwise
+ * @retval 1 if the instance's bus has a CS pin at index
+ *         DT_INST_REG_ADDR(inst)
+ * @retval 0 otherwise
  * @see DT_SPI_DEV_HAS_CS_GPIOS()
  */
 #define DT_INST_SPI_DEV_HAS_CS_GPIOS(inst) \
@@ -244,8 +247,8 @@ extern "C" {
 /**
  * @brief DT_SPI_DEV_CS_GPIOS_FLAGS(DT_DRV_INST(inst)).
  * @param inst DT_DRV_COMPAT instance number
- * @return flags value of the instance's chip select GPIO specifier,
- *         or zero if there is none
+ * @return flags value of the instance's chip select GPIO specifier
+ * @retval 0 if there is none
  * @see DT_SPI_DEV_CS_GPIOS_FLAGS()
  */
 #define DT_INST_SPI_DEV_CS_GPIOS_FLAGS(inst) \

@@ -55,7 +55,7 @@ extern "C" {
 /**
  * @brief Test if a fixed partition with a given label property exists
  * @param label lowercase-and-underscores label property value
- * @return 1 if any "fixed-partitions" child node has the given label,
+ * @retval 1 if any "fixed-partitions" child node has the given label,
  *         0 otherwise.
  */
 #define DT_HAS_FIXED_PARTITION_LABEL(label) \
@@ -65,7 +65,8 @@ extern "C" {
  * @brief Test if fixed-partition compatible node exists
  *
  * @param node_id DTS node to test
- * @return 1 if node exists and is fixed-partition compatible, 0 otherwise.
+ * @retval 1 if node exists and is fixed-partition compatible
+ * @retval 0 otherwise.
  */
 #define DT_FIXED_PARTITION_EXISTS(node_id)		\
 	DT_NODE_HAS_COMPAT(DT_PARENT(node_id), fixed_partitions)
@@ -137,7 +138,8 @@ extern "C" {
  * @brief Test if fixed-subpartitions compatible node exists
  *
  * @param node_id DTS node to test
- * @return 1 if node exists and is fixed-subpartitions compatible, 0 otherwise.
+ * @retval 1 if node exists and is fixed-subpartitions compatible
+ * @retval 0 otherwise.
  */
 #define DT_FIXED_SUBPARTITION_EXISTS(node_id)		\
 	DT_NODE_HAS_COMPAT(DT_PARENT(node_id), fixed_subpartitions)

@@ -48,7 +48,8 @@ extern "C" {
  *
  * @param node_id node identifier; may or may not have any clocks property
  * @param idx index of a clocks property phandle-array whose existence to check
- * @return 1 if the index exists, 0 otherwise
+ * @retval 1 if the index exists
+ * @retval 0 otherwise
  */
 #define DT_CLOCKS_HAS_IDX(node_id, idx) \
 	DT_PROP_HAS_IDX(node_id, clocks, idx)
@@ -79,7 +80,8 @@ extern "C" {
  *
  * @param node_id node identifier; may or may not have any clock-names property.
  * @param name lowercase-and-underscores clock-names cell value name to check
- * @return 1 if the clock name exists, 0 otherwise
+ * @retval 1 if the clock name exists
+ * @retval 0 otherwise
  */
 #define DT_CLOCKS_HAS_NAME(node_id, name) \
 	DT_PROP_HAS_NAME(node_id, clocks, name)
@@ -257,7 +259,8 @@ extern "C" {
  * @brief Equivalent to DT_CLOCKS_HAS_IDX(DT_DRV_INST(inst), idx)
  * @param inst DT_DRV_COMPAT instance number; may or may not have any clocks property
  * @param idx index of a clocks property phandle-array whose existence to check
- * @return 1 if the index exists, 0 otherwise
+ * @retval 1 if the index exists
+ * @retval 0 otherwise
  */
 #define DT_INST_CLOCKS_HAS_IDX(inst, idx) \
 	DT_CLOCKS_HAS_IDX(DT_DRV_INST(inst), idx)
@@ -266,7 +269,8 @@ extern "C" {
  * @brief Equivalent to DT_CLOCK_HAS_NAME(DT_DRV_INST(inst), name)
  * @param inst DT_DRV_COMPAT instance number; may or may not have any clock-names property.
  * @param name lowercase-and-underscores clock-names cell value name to check
- * @return 1 if the clock name exists, 0 otherwise
+ * @retval 1 if the clock name exists
+ * @retval 0 otherwise
  */
 #define DT_INST_CLOCKS_HAS_NAME(inst, name) \
 	DT_CLOCKS_HAS_NAME(DT_DRV_INST(inst), name)

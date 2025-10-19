@@ -238,7 +238,8 @@
 /**
  * @brief Test if the devicetree has a given alias
  * @param alias_name lowercase-and-underscores devicetree alias name
- * @return 1 if the alias exists and refers to a node, 0 otherwise
+ * @retval 1 if the alias exists and refers to a node
+ * @retval 0 otherwise
  */
 #define DT_HAS_ALIAS(alias_name) DT_NODE_EXISTS(DT_ALIAS(alias_name))
 
@@ -1039,7 +1040,8 @@
  * @param prop lowercase-and-underscores property name
  * @param idx the index to get
  * @param value lowercase-and-underscores enumeration value
- * @return 1 if the node property has the value @a value, 0 otherwise.
+ * @retval 1 if the node property has the value @a value
+ * @retval 0 otherwise.
  */
 #define DT_ENUM_HAS_VALUE_BY_IDX(node_id, prop, idx, value) \
 	IS_ENABLED(DT_CAT8(node_id, _P_, prop, _IDX_, idx, _ENUM_VAL_, value, _EXISTS))
@@ -1049,7 +1051,8 @@
  * @param node_id node identifier
  * @param prop lowercase-and-underscores property name
  * @param value lowercase-and-underscores enumeration value
- * @return 1 if the node property has the value @a value, 0 otherwise.
+ * @retval 1 if the node property has the value @a value
+ * @retval 0 otherwise.
  */
 #define DT_ENUM_HAS_VALUE(node_id, prop, value) \
 	IS_ENABLED(DT_CAT6(node_id, _P_, prop, _ENUM_VAL_, value, _EXISTS))
@@ -1895,8 +1898,8 @@
  *
  * @param node_id node identifier
  * @param idx index to check
- * @return 1 if @p idx is a valid register block index,
- *         0 otherwise.
+ * @retval 1 if @p idx is a valid register block index,
+ * @retval 0 otherwise.
  */
 #define DT_RANGES_HAS_IDX(node_id, idx) \
 	IS_ENABLED(DT_CAT4(node_id, _RANGES_IDX_, idx, _EXISTS))
@@ -1950,8 +1953,8 @@
  *
  * @param node_id node identifier
  * @param idx logical index into the ranges array
- * @return 1 if @p idx is a valid child bus flags index,
- *         0 otherwise.
+ * @retval 1 if @p idx is a valid child bus flags index,
+ * @retval 0 otherwise.
  */
 #define DT_RANGES_HAS_CHILD_BUS_FLAGS_AT_IDX(node_id, idx) \
 	IS_ENABLED(DT_CAT4(node_id, _RANGES_IDX_, idx, _VAL_CHILD_BUS_FLAGS_EXISTS))
@@ -1991,7 +1994,7 @@
  *
  * @param node_id node identifier
  * @param idx logical index into the ranges array
- * @returns range child bus flags field at idx
+ * @return range child bus flags field at idx
  */
 #define DT_RANGES_CHILD_BUS_FLAGS_BY_IDX(node_id, idx) \
 	DT_CAT4(node_id, _RANGES_IDX_, idx, _VAL_CHILD_BUS_FLAGS)
@@ -2040,7 +2043,7 @@
  *
  * @param node_id node identifier
  * @param idx logical index into the ranges array
- * @returns range child bus address field at idx
+ * @return range child bus address field at idx
  */
 #define DT_RANGES_CHILD_BUS_ADDRESS_BY_IDX(node_id, idx) \
 	DT_CAT4(node_id, _RANGES_IDX_, idx, _VAL_CHILD_BUS_ADDRESS)
@@ -2089,7 +2092,7 @@
  *
  * @param node_id node identifier
  * @param idx logical index into the ranges array
- * @returns range parent bus address field at idx
+ * @return range parent bus address field at idx
  */
 #define DT_RANGES_PARENT_BUS_ADDRESS_BY_IDX(node_id, idx) \
 	DT_CAT4(node_id, _RANGES_IDX_, idx, _VAL_PARENT_BUS_ADDRESS)
@@ -2138,7 +2141,7 @@
  *
  * @param node_id node identifier
  * @param idx logical index into the ranges array
- * @returns range length field at idx
+ * @return range length field at idx
  */
 #define DT_RANGES_LENGTH_BY_IDX(node_id, idx) \
 	DT_CAT4(node_id, _RANGES_IDX_, idx, _VAL_LENGTH)
@@ -2242,8 +2245,8 @@
  *
  * @param node_id node identifier
  * @param idx index of the vendor to check
- * @return 1 if @p idx is a valid vendor index,
- *         0 otherwise.
+ * @retval 1 if @p idx is a valid vendor index,
+ * @retval 0 otherwise.
  */
 #define DT_NODE_VENDOR_HAS_IDX(node_id, idx) \
 	IS_ENABLED(DT_CAT4(node_id, _COMPAT_VENDOR_IDX_, idx, _EXISTS))
@@ -2318,8 +2321,8 @@
  *
  * @param node_id node identifier
  * @param idx index of the model to check
- * @return 1 if "idx" is a valid model index,
- *         0 otherwise.
+ * @retval 1 if "idx" is a valid model index,
+ * @retval 0 otherwise.
  */
 #define DT_NODE_MODEL_HAS_IDX(node_id, idx) \
 	IS_ENABLED(DT_CAT4(node_id, _COMPAT_MODEL_IDX_, idx, _EXISTS))
@@ -2380,8 +2383,8 @@
  * If it returns 0, it is an error to use those macros with index @p idx.
  * @param node_id node identifier
  * @param idx index to check
- * @return 1 if @p idx is a valid register block index,
- *         0 otherwise.
+ * @retval 1 if @p idx is a valid register block index,
+ * @retval 0 otherwise.
  */
 #define DT_REG_HAS_IDX(node_id, idx) \
 	IS_ENABLED(DT_CAT4(node_id, _REG_IDX_, idx, _EXISTS))
@@ -2394,8 +2397,8 @@
  * If it returns 0, it is an error to use those macros with name @p name.
  * @param node_id node identifier
  * @param name name to check
- * @return 1 if @p name is a valid register block name,
- *         0 otherwise.
+ * @retval 1 if @p name is a valid register block name,
+ * @retval 0 otherwise.
  */
 #define DT_REG_HAS_NAME(node_id, name) \
 	IS_ENABLED(DT_CAT4(node_id, _REG_NAME_, name, _EXISTS))
@@ -2600,8 +2603,8 @@
  * If it returns 0, it is an error to use that macro with this index.
  * @param node_id node identifier
  * @param idx index to check
- * @return 1 if the idx is valid for the interrupt property
- *         0 otherwise.
+ * @retval 1 if the idx is valid for the interrupt property
+ * @retval 0 otherwise.
  */
 #define DT_IRQ_HAS_IDX(node_id, idx) \
 	IS_ENABLED(DT_CAT4(node_id, _IRQ_IDX_, idx, _EXISTS))
@@ -2613,8 +2616,8 @@
  * @param node_id node identifier
  * @param idx index to check
  * @param cell named cell value whose existence to check
- * @return 1 if the named cell exists in the interrupt specifier at index idx
- *         0 otherwise.
+ * @retval 1 if the named cell exists in the interrupt specifier at index idx
+ * @retval 0 otherwise.
  */
 #define DT_IRQ_HAS_CELL_AT_IDX(node_id, idx, cell) \
 	IS_ENABLED(DT_CAT6(node_id, _IRQ_IDX_, idx, _VAL_, cell, _EXISTS))
@@ -2623,8 +2626,8 @@
  * @brief Equivalent to DT_IRQ_HAS_CELL_AT_IDX(node_id, 0, cell)
  * @param node_id node identifier
  * @param cell named cell value whose existence to check
- * @return 1 if the named cell exists in the interrupt specifier at index 0
- *         0 otherwise.
+ * @retval 1 if the named cell exists in the interrupt specifier at index 0
+ * @retval 0 otherwise.
  */
 #define DT_IRQ_HAS_CELL(node_id, cell) DT_IRQ_HAS_CELL_AT_IDX(node_id, 0, cell)
 
@@ -2634,8 +2637,8 @@
  * If it returns 0, it is an error to use that macro.
  * @param node_id node identifier
  * @param name lowercase-and-underscores interrupt specifier name
- * @return 1 if "name" is a valid named specifier
- *         0 otherwise.
+ * @retval 1 if "name" is a valid named specifier
+ * @retval 0 otherwise.
  */
 #define DT_IRQ_HAS_NAME(node_id, name) \
 	IS_ENABLED(DT_CAT4(node_id, _IRQ_NAME_, name, _VAL_irq_EXISTS))
@@ -2916,8 +2919,8 @@
 /**
  * @brief Test if the devicetree has a `/chosen` node
  * @param prop lowercase-and-underscores devicetree property
- * @return 1 if the chosen property exists and refers to a node,
- *         0 otherwise
+ * @retval 1 if the chosen property exists and refers to a node,
+ * @retval 0 otherwise
  */
 #define DT_HAS_CHOSEN(prop) IS_ENABLED(DT_CAT3(DT_CHOSEN_, prop, _EXISTS))
 
@@ -3638,8 +3641,8 @@
  * whether the node exists at all.
  *
  * @param node_id a node identifier
- * @return 1 if the node identifier refers to a node,
- *         0 otherwise.
+ * @retval 1 if the node identifier refers to a node,
+ * @retval 0 otherwise.
  */
 #define DT_NODE_EXISTS(node_id) IS_ENABLED(DT_CAT(node_id, _EXISTS))
 
@@ -3662,7 +3665,8 @@
  *
  * @param node_id a node identifier
  * @param status a status as one of the tokens okay or disabled, not a string
- * @return 1 if the node has the given status, 0 otherwise.
+ * @retval 1 if the node has the given status
+ * @retval 0 otherwise.
  */
 #define DT_NODE_HAS_STATUS(node_id, status) \
 	DT_NODE_HAS_STATUS_INTERNAL(node_id, status)
@@ -3685,7 +3689,8 @@
  * `okay`.
  *
  * @param node_id a node identifier
- * @return 1 if the node has status as `okay`, 0 otherwise.
+ * @retval 1 if the node has status as `okay`
+ * @retval 0 otherwise.
  */
 #define DT_NODE_HAS_STATUS_OKAY(node_id) DT_NODE_HAS_STATUS(node_id, okay)
 
@@ -3706,7 +3711,8 @@
  * `okay`.
  *
  * @param compat lowercase-and-underscores compatible, without quotes
- * @return 1 if both of the above conditions are met, 0 otherwise
+ * @retval 1 if both of the above conditions are met
+ * @retval 0 otherwise
  */
 #define DT_HAS_COMPAT_STATUS_OKAY(compat) \
 	IS_ENABLED(DT_CAT(DT_COMPAT_HAS_OKAY_, compat))
@@ -3745,8 +3751,8 @@
  *
  * @param node_id node identifier
  * @param compat lowercase-and-underscores compatible, without quotes
- * @return 1 if the node's compatible property contains @p compat,
- *         0 otherwise.
+ * @retval 1 if the node's compatible property contains @p compat,
+ * @retval 0 otherwise.
  */
 #define DT_NODE_HAS_COMPAT(node_id, compat) \
 	IS_ENABLED(DT_CAT3(node_id, _COMPAT_MATCHES_, compat))
@@ -3779,7 +3785,8 @@
  *
  * @param node_id node identifier
  * @param prop lowercase-and-underscores property name
- * @return 1 if the node has the property, 0 otherwise.
+ * @retval 1 if the node has the property
+ * @retval 0 otherwise.
  */
 #define DT_NODE_HAS_PROP(node_id, prop) \
 	IS_ENABLED(DT_CAT4(node_id, _P_, prop, _EXISTS))
@@ -3798,8 +3805,8 @@
  * @param idx index to check within @p pha
  * @param cell lowercase-and-underscores cell name whose existence to check
  *             at index @p idx
- * @return 1 if the named cell exists in the specifier at index idx,
- *         0 otherwise.
+ * @retval 1 if the named cell exists in the specifier at index idx,
+ * @retval 0 otherwise.
  */
 #define DT_PHA_HAS_CELL_AT_IDX(node_id, pha, idx, cell)             \
 	IS_ENABLED(DT_CAT8(node_id, _P_, pha,			    \
@@ -3811,8 +3818,8 @@
  * @param pha lowercase-and-underscores property with type `phandle-array`
  * @param cell lowercase-and-underscores cell name whose existence to check
  *             at index @p idx
- * @return 1 if the named cell exists in the specifier at index 0,
- *         0 otherwise.
+ * @retval 1 if the named cell exists in the specifier at index 0,
+ * @retval 0 otherwise.
  */
 #define DT_PHA_HAS_CELL(node_id, pha, cell) \
 	DT_PHA_HAS_CELL_AT_IDX(node_id, pha, 0, cell)
@@ -4013,8 +4020,8 @@
  * @param node_id node identifier
  * @param bus lowercase-and-underscores bus type as a C token (i.e.
  *            without quotes)
- * @return 1 if the node is on a bus of the given type,
- *         0 otherwise
+ * @retval 1 if the node is on a bus of the given type,
+ * @retval 0 otherwise
  */
 #define DT_ON_BUS(node_id, bus) IS_ENABLED(DT_CAT3(node_id, _BUS_, bus))
 
@@ -4301,7 +4308,8 @@
  * @param inst instance number
  * @param prop lowercase-and-underscores property name
  * @param value lowercase-and-underscores enumeration value
- * @return 1 if the node property has the value @a value, 0 otherwise.
+ * @retval 1 if the node property has the value @a value
+ * @retval 0 otherwise.
  */
 #define DT_INST_ENUM_HAS_VALUE(inst, prop, value) \
 	DT_ENUM_HAS_VALUE(DT_DRV_INST(inst), prop, value)
@@ -4328,8 +4336,8 @@
  * @param inst instance number
  * @param prop lowercase-and-underscores property name
  * @param idx index to check
- * @return 1 if @p idx is a valid index into the given property,
- *         0 otherwise.
+ * @retval 1 if @p idx is a valid index into the given property,
+ * @retval 0 otherwise.
  */
 #define DT_INST_PROP_HAS_IDX(inst, prop, idx) \
 	DT_PROP_HAS_IDX(DT_DRV_INST(inst), prop, idx)
@@ -4568,8 +4576,8 @@
  * @brief is @p idx a valid register block index on a `DT_DRV_COMPAT` instance?
  * @param inst instance number
  * @param idx index to check
- * @return 1 if @p idx is a valid register block index,
- *         0 otherwise.
+ * @retval 1 if @p idx is a valid register block index,
+ * @retval 0 otherwise.
  */
 #define DT_INST_REG_HAS_IDX(inst, idx) DT_REG_HAS_IDX(DT_DRV_INST(inst), idx)
 
@@ -4577,8 +4585,8 @@
  * @brief is @p name a valid register block name on a `DT_DRV_COMPAT` instance?
  * @param inst instance number
  * @param name name to check
- * @return 1 if @p name is a valid register block name,
- *         0 otherwise.
+ * @retval 1 if @p name is a valid register block name,
+ * @retval 0 otherwise.
  */
 #define DT_INST_REG_HAS_NAME(inst, name) DT_REG_HAS_NAME(DT_DRV_INST(inst), name)
 
@@ -4794,8 +4802,8 @@
  * @brief Test if a `DT_DRV_COMPAT`'s bus type is a given type
  * @param inst instance number
  * @param bus a binding's bus type as a C token, lowercased and without quotes
- * @return 1 if the given instance is on a bus of the given type,
- *         0 otherwise
+ * @retval 1 if the given instance is on a bus of the given type,
+ * @retval 0 otherwise
  */
 #define DT_INST_ON_BUS(inst, bus) DT_ON_BUS(DT_DRV_INST(inst), bus)
 
@@ -4860,8 +4868,8 @@
  *
  * @param compat lowercase-and-underscores compatible, without quotes
  * @param bus a binding's bus type as a C token, lowercased and without quotes
- * @return 1 if any enabled node with that compatible is on that bus type,
- *         0 otherwise
+ * @retval 1 if any enabled node with that compatible is on that bus type,
+ * @retval 0 otherwise
  */
 #define DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(compat, bus) \
 	IS_ENABLED(DT_CAT4(DT_COMPAT_, compat, _BUS_, bus))
@@ -4895,8 +4903,8 @@
  * @endcode
  *
  * @param bus a binding's bus type as a C token, lowercased and without quotes
- * @return 1 if any enabled node with that compatible is on that bus type,
- *         0 otherwise
+ * @retval 1 if any enabled node with that compatible is on that bus type,
+ * @retval 0 otherwise
  */
 #define DT_ANY_INST_ON_BUS_STATUS_OKAY(bus) \
 	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(DT_DRV_COMPAT, bus)
@@ -5327,7 +5335,8 @@
  * @brief Does a DT_DRV_COMPAT instance have a property?
  * @param inst instance number
  * @param prop lowercase-and-underscores property name
- * @return 1 if the instance has the property, 0 otherwise.
+ * @retval 1 if the instance has the property
+ * @retval 0 otherwise.
  */
 #define DT_INST_NODE_HAS_PROP(inst, prop) \
 	DT_NODE_HAS_PROP(DT_DRV_INST(inst), prop)
@@ -5336,7 +5345,8 @@
  * @brief Does a DT_DRV_COMPAT instance have the compatible?
  * @param inst instance number
  * @param compat lowercase-and-underscores compatible, without quotes
- * @return 1 if the instance matches the compatible, 0 otherwise.
+ * @retval 1 if the instance matches the compatible
+ * @retval 0 otherwise.
  */
 #define DT_INST_NODE_HAS_COMPAT(inst, compat) \
 	DT_NODE_HAS_COMPAT(DT_DRV_INST(inst), compat)
@@ -5348,8 +5358,8 @@
  * @param pha lowercase-and-underscores property with type `phandle-array`
  * @param idx index to check
  * @param cell named cell value whose existence to check
- * @return 1 if the named @p cell exists in the specifier at index @p idx,
- *         0 otherwise.
+ * @retval 1 if the named @p cell exists in the specifier at index @p idx,
+ * @retval 0 otherwise.
  */
 #define DT_INST_PHA_HAS_CELL_AT_IDX(inst, pha, idx, cell) \
 	DT_PHA_HAS_CELL_AT_IDX(DT_DRV_INST(inst), pha, idx, cell)
@@ -5360,8 +5370,8 @@
  * @param inst instance number
  * @param pha lowercase-and-underscores property with type `phandle-array`
  * @param cell named cell value whose existence to check
- * @return 1 if the named @p cell exists in the specifier at index 0,
- *         0 otherwise.
+ * @retval 1 if the named @p cell exists in the specifier at index 0,
+ * @retval 0 otherwise.
  */
 #define DT_INST_PHA_HAS_CELL(inst, pha, cell) \
 	DT_INST_PHA_HAS_CELL_AT_IDX(inst, pha, 0, cell)
@@ -5370,8 +5380,8 @@
  * @brief is index valid for interrupt property on a `DT_DRV_COMPAT` instance?
  * @param inst instance number
  * @param idx logical index into the interrupt specifier array
- * @return 1 if the @p idx is valid for the interrupt property
- *         0 otherwise.
+ * @retval 1 if the @p idx is valid for the interrupt property
+ * @retval 0 otherwise.
  */
 #define DT_INST_IRQ_HAS_IDX(inst, idx) DT_IRQ_HAS_IDX(DT_DRV_INST(inst), idx)
 
@@ -5380,8 +5390,8 @@
  * @param inst instance number
  * @param idx index to check
  * @param cell named cell value whose existence to check
- * @return 1 if the named @p cell exists in the interrupt specifier at index
- *         @p idx 0 otherwise.
+ * @retval 1 if the named @p cell exists in the interrupt specifier at index @p idx
+ * @retval 0 otherwise.
  */
 #define DT_INST_IRQ_HAS_CELL_AT_IDX(inst, idx, cell) \
 	DT_IRQ_HAS_CELL_AT_IDX(DT_DRV_INST(inst), idx, cell)
@@ -5390,8 +5400,8 @@
  * @brief Does a `DT_DRV_COMPAT` instance have an interrupt value?
  * @param inst instance number
  * @param cell named cell value whose existence to check
- * @return 1 if the named @p cell exists in the interrupt specifier at index 0
- *         0 otherwise.
+ * @retval 1 if the named @p cell exists in the interrupt specifier at index 0
+ * @retval 0 otherwise.
  */
 #define DT_INST_IRQ_HAS_CELL(inst, cell) \
 	DT_INST_IRQ_HAS_CELL_AT_IDX(inst, 0, cell)
@@ -5400,7 +5410,7 @@
  * @brief Does a `DT_DRV_COMPAT` instance have an interrupt value?
  * @param inst instance number
  * @param name lowercase-and-underscores interrupt specifier name
- * @return 1 if @p name is a valid named specifier
+ * @retval 1 if @p name is a valid named specifier
  */
 #define DT_INST_IRQ_HAS_NAME(inst, name) \
 	DT_IRQ_HAS_NAME(DT_DRV_INST(inst), name)

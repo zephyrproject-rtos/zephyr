@@ -256,7 +256,8 @@ extern "C" {
  * @brief Is index "idx" valid for a dmas property?
  * @param node_id node identifier for a node with a dmas property
  * @param idx logical index into dmas property
- * @return 1 if the "dmas" property has index "idx", 0 otherwise
+ * @retval 1 if the "dmas" property has index "idx"
+ * @retval 0 otherwise
  */
 #define DT_DMAS_HAS_IDX(node_id, idx) \
 	IS_ENABLED(DT_CAT4(node_id, _P_dmas_IDX_, idx, _EXISTS))
@@ -265,7 +266,8 @@ extern "C" {
  * @brief Is index "idx" valid for a DT_DRV_COMPAT instance's dmas property?
  * @param inst DT_DRV_COMPAT instance number
  * @param idx logical index into dmas property
- * @return 1 if the "dmas" property has a specifier at index "idx", 0 otherwise
+ * @retval 1 if the "dmas" property has a specifier at index "idx"
+ * @retval 0 otherwise
  */
 #define DT_INST_DMAS_HAS_IDX(inst, idx) \
 	DT_DMAS_HAS_IDX(DT_DRV_INST(inst), idx)
@@ -275,7 +277,8 @@ extern "C" {
  * @param node_id node identifier for a node with a dmas property
  * @param name lowercase-and-underscores name of a dmas element
  *             as defined by the node's dma-names property
- * @return 1 if the dmas property has the named element, 0 otherwise
+ * @retval 1 if the dmas property has the named element
+ * @retval 0 otherwise
  */
 #define DT_DMAS_HAS_NAME(node_id, name) \
 	DT_PROP_HAS_NAME(node_id, dmas, name)
@@ -285,7 +288,8 @@ extern "C" {
  * @param inst DT_DRV_COMPAT instance number
  * @param name lowercase-and-underscores name of a dmas element
  *             as defined by the node's dma-names property
- * @return 1 if the dmas property has the named element, 0 otherwise
+ * @retval 1 if the dmas property has the named element
+ * @retval 0 otherwise
  */
 #define DT_INST_DMAS_HAS_NAME(inst, name) \
 	DT_DMAS_HAS_NAME(DT_DRV_INST(inst), name)

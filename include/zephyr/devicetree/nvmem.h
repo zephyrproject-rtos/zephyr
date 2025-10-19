@@ -48,7 +48,8 @@ extern "C" {
  * @param node_id node identifier; may or may not have any nvmem-cells property
  * @param idx index of a nvmem-cells property phandle-array whose existence to check
  *
- * @return 1 if the index exists, 0 otherwise
+ * @retval 1 if the index exists
+ * @retval 0 otherwise
  */
 #define DT_NVMEM_CELLS_HAS_IDX(node_id, idx) DT_PROP_HAS_IDX(node_id, nvmem_cells, idx)
 
@@ -77,7 +78,8 @@ extern "C" {
  * @param node_id node identifier; may or may not have any nvmem-cell-names property
  * @param name lowercase-and-underscores nvmem-cell-names cell value name to check
  *
- * @return 1 if the index exists, 0 otherwise
+ * @retval 1 if the index exists
+ * @retval 0 otherwise
  */
 #define DT_NVMEM_CELLS_HAS_NAME(node_id, name) DT_PROP_HAS_NAME(node_id, nvmem_cells, name)
 
@@ -200,7 +202,8 @@ extern "C" {
  * @param inst DT_DRV_COMPAT instance number; may or may not have any nvmem-cells property
  * @param idx index of an nvmem-cells property phandle-array whose existence to check
  *
- * @return 1 if the index exists, 0 otherwise
+ * @retval 1 if the index exists
+ * @retval 0 otherwise
  */
 #define DT_INST_NVMEM_CELLS_HAS_IDX(inst, idx) DT_NVMEM_CELLS_HAS_IDX(DT_DRV_INST(inst), idx)
 
@@ -210,7 +213,8 @@ extern "C" {
  * @param inst DT_DRV_COMPAT instance number; may or may not have any nvmem-cell-names property.
  * @param name lowercase-and-underscores nvmem-cell-names cell value name to check
  *
- * @return 1 if the nvmem cell name exists, 0 otherwise
+ * @retval 1 if the nvmem cell name exists
+ * @retval 0 otherwise
  */
 #define DT_INST_NVMEM_CELLS_HAS_NAME(inst, name) DT_NVMEM_CELLS_HAS_NAME(DT_DRV_INST(inst), name)
 

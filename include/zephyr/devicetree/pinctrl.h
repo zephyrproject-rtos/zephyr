@@ -264,7 +264,8 @@
  *
  * @param node_id node identifier; may or may not have any pinctrl properties
  * @param pc_idx index of a pinctrl property whose existence to check
- * @return 1 if the property exists, 0 otherwise
+ * @retval 1 if the property exists
+ * @retval 0 otherwise
  */
 #define DT_PINCTRL_HAS_IDX(node_id, pc_idx) \
 	IS_ENABLED(DT_CAT4(node_id, _PINCTRL_IDX_, pc_idx, _EXISTS))
@@ -293,7 +294,8 @@
  *
  * @param node_id node identifier; may or may not have any pinctrl properties
  * @param name lowercase-and-underscores pinctrl property name to check
- * @return 1 if the property exists, 0 otherwise
+ * @retval 1 if the property exists
+ * @retval 0 otherwise
  */
 #define DT_PINCTRL_HAS_NAME(node_id, name) \
 	IS_ENABLED(DT_CAT4(node_id, _PINCTRL_NAME_, name, _EXISTS))
@@ -431,7 +433,8 @@
  *
  * @param inst instance number
  * @param pc_idx index of a pinctrl property whose existence to check
- * @return 1 if the property exists, 0 otherwise
+ * @retval 1 if the property exists
+ * @retval 0 otherwise
  */
 #define DT_INST_PINCTRL_HAS_IDX(inst, pc_idx) \
 	DT_PINCTRL_HAS_IDX(DT_DRV_INST(inst), pc_idx)
@@ -443,7 +446,8 @@
  *
  * @param inst instance number
  * @param name lowercase-and-underscores pinctrl property name to check
- * @return 1 if the property exists, 0 otherwise
+ * @retval 1 if the property exists
+ * @retval 0 otherwise
  */
 #define DT_INST_PINCTRL_HAS_NAME(inst, name) \
 	DT_PINCTRL_HAS_NAME(DT_DRV_INST(inst), name)

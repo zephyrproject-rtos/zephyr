@@ -64,7 +64,9 @@ extern "C" {
  * @brief Get number of zephyr displays
  *
  * @return number of displays designated by "displays" property of "zephyr,displays" compatible
- * node, if it exists, otherwise 1 if "zephyr,display" chosen property exists, 0 otherwise
+ * node, if it exists
+ * @retval 1 if "zephyr,display" chosen property exists
+ * @retval 0 otherwise
  */
 #define DT_ZEPHYR_DISPLAYS_COUNT                                                                   \
 	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(zephyr_displays),                                    \
