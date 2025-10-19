@@ -170,6 +170,7 @@ zephyr_include_directories(
   ${SERVICE_DIR}/udelay/inc
   ${SECURITY_DIR}/sl_component/sl_protocol_crypto/src
   ${SECURITY_DIR}/sl_component/sli_crypto/inc
+  ${SECURITY_DIR}/sl_component/sli_psec_osal/inc
   ${BOARD_DIR}
 )
 
@@ -328,19 +329,18 @@ zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_EUSART       ${EMLIB_DIR}/src/em_e
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_USART        ${EMLIB_DIR}/src/em_usart.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_WDOG         ${EMLIB_DIR}/src/em_wdog.c)
 
-zephyr_include_directories_ifdef(CONFIG_SOC_GECKO_SE
+zephyr_include_directories_ifdef(CONFIG_SILABS_SISDK_SE
   ${SECURITY_DIR}/sl_component/se_manager/src
   ${SECURITY_DIR}/sl_component/se_manager/inc
-  ${SECURITY_DIR}/sl_component/sli_psec_osal/inc
 )
 
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_SE
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_SE
   ${SECURITY_DIR}/sl_component/se_manager/src/sl_se_manager.c
   ${SECURITY_DIR}/sl_component/se_manager/src/sl_se_manager_util.c
   ${SECURITY_DIR}/sl_component/se_manager/src/sli_se_manager_mailbox.c
 )
 
-zephyr_compile_definitions_ifdef(CONFIG_SOC_GECKO_SE
+zephyr_compile_definitions_ifdef(CONFIG_SILABS_SISDK_SE
   SL_CODE_COMPONENT_SE_MANAGER=se_manager
   SL_CODE_COMPONENT_PSEC_OSAL=psec_osal
 )
