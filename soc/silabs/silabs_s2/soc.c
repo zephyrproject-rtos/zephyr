@@ -34,7 +34,7 @@
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
-#if defined(CONFIG_SOC_SILABS_HFXO_MANAGER)
+#if defined(CONFIG_SILABS_SISDK_HFXO_MANAGER)
 Z_ISR_DECLARE_DIRECT(DT_IRQ(DT_NODELABEL(hfxo), irq), 0, sl_hfxo_manager_irq_handler);
 #endif
 
@@ -48,7 +48,7 @@ void soc_early_init_hook(void)
 	}
 	sl_clock_manager_init();
 
-	if (IS_ENABLED(CONFIG_SOC_SILABS_HFXO_MANAGER)) {
+	if (IS_ENABLED(CONFIG_SILABS_SISDK_HFXO_MANAGER)) {
 		sl_hfxo_manager_init_hardware();
 		sl_hfxo_manager_init();
 	}

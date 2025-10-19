@@ -233,7 +233,7 @@ if(CONFIG_SOC_GECKO_DEV_INIT)
 endif()
 
 # Power Manager
-if(CONFIG_SOC_GECKO_PM_BACKEND_PMGR)
+if(CONFIG_SILABS_SISDK_POWER_MANAGER)
   zephyr_library_sources(
     ${SERVICE_DIR}/power_manager/src/common/sl_power_manager_common.c
     ${SERVICE_DIR}/power_manager/src/common/sl_power_manager_em4.c
@@ -250,7 +250,7 @@ if(CONFIG_SOC_GECKO_PM_BACKEND_PMGR)
 endif()
 
 # HFXO Manager
-if(CONFIG_SOC_SILABS_HFXO_MANAGER)
+if(CONFIG_SILABS_SISDK_HFXO_MANAGER)
   zephyr_library_sources(
     ${SERVICE_DIR}/hfxo_manager/src/sl_hfxo_manager.c
     ${SERVICE_DIR}/hfxo_manager/src/sl_hfxo_manager_hal_s2.c
@@ -260,7 +260,7 @@ if(CONFIG_SOC_SILABS_HFXO_MANAGER)
   )
 endif()
 
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_DEV_INIT     ${COMMON_DIR}/src/sl_slist.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_SLIST ${COMMON_DIR}/src/sl_slist.c)
 if(CONFIG_SOC_GECKO_CORE)
   zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_CORE
     ${COMMON_DIR}/src/sl_core_cortexm.c
