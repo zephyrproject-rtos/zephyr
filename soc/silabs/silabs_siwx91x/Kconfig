@@ -15,11 +15,6 @@ if SOC_FAMILY_SILABS_SIWX91X
 
 rsource "*/Kconfig"
 
-config SOC_SILABS_SLEEPTIMER
-	bool
-	help
-	  The Sleeptimer HAL module is used for SIWX91X.
-
 config SILABS_SIWX91X_NWP
 	bool "Silabs Network Coprocessor"
 	depends on DT_HAS_SILABS_SIWX91X_NWP_ENABLED

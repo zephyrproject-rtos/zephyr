@@ -200,7 +200,7 @@ if(CONFIG_SILABS_SIWX91X_NWP)
   zephyr_include_directories(.)
 endif() # CONFIG_SILABS_SIWX91X_NWP
 
-if(CONFIG_SOC_SILABS_SLEEPTIMER)
+if(CONFIG_SILABS_SISDK_SLEEPTIMER)
   zephyr_include_directories(
     ${SISDK_DIR}/platform/service/sleeptimer/inc
     ${SISDK_DIR}/platform/service/sleeptimer/src
@@ -216,7 +216,7 @@ if(CONFIG_SOC_SILABS_SLEEPTIMER)
     SL_CODE_COMPONENT_SLEEPTIMER=sleeptimer
     SL_CODE_COMPONENT_HAL_SYSRTC=hal_sysrtc
   )
-endif() # CONFIG_SOC_SILABS_SLEEPTIMER
+endif() # CONFIG_SILABS_SISDK_SLEEPTIMER
 
 if(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
   zephyr_library_sources(

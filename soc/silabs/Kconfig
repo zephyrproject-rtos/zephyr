@@ -125,13 +125,6 @@ config SOC_GECKO_TRNG
 	help
 	  Set if the SoC has a True Random Number Generator (TRNG) module.
 
-config SOC_SILABS_SLEEPTIMER
-	bool
-	select SOC_GECKO_PRS
-	select SOC_GECKO_RTCC if SOC_FAMILY_SILABS_S2 && $(dt_nodelabel_enabled,rtcc0)
-	help
-	  Set if the Sleeptimer HAL module is used.
-
 config SOC_SILABS_HFXO_MANAGER
 	bool
 	default y if PM && $(dt_nodelabel_enabled,sysrtc0) && $(dt_nodelabel_enabled,hfxo)
