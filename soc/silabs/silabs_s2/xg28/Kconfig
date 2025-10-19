@@ -12,9 +12,9 @@ config SOC_SILABS_XG28
 	select CPU_HAS_FPU
 	select HAS_PM
 	select HAS_SWO
-	select SOC_GECKO_CMU
+	select SILABS_SISDK_CLOCK_MANAGER
+	select SILABS_SISDK_DEVICE_INIT
 	select SOC_GECKO_CORE
-	select SOC_GECKO_DEV_INIT
 	select SOC_GECKO_EMU
 	select SOC_GECKO_GPIO
 	select SOC_GECKO_SE

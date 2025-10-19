@@ -33,6 +33,18 @@ config SILABS_SISDK_SLIST
 
 # Services
 
+config SILABS_SISDK_CLOCK_MANAGER
+	bool "Clock Manager service"
+	help
+	  Set if the Clock Manager HAL module is used.
+
+config SILABS_SISDK_DEVICE_INIT
+	bool "Device Init service"
+	select SOC_GECKO_EMU
+	help
+	  Use the device initialization routines from the device_init service
+	  in Silicon Labs HAL.
+
 config SILABS_SISDK_HFXO_MANAGER
 	bool "HFXO Manager service"
 	help
