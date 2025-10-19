@@ -975,11 +975,9 @@ static int transceive(const struct device *dev,
 		return 0;
 	}
 
-#ifndef CONFIG_SPI_STM32_INTERRUPT
-	if (asynchronous) {
+	if (!IS_ENABLED(CONFIG_SPI_STM32_INTERRUPT) && asynchronous) {
 		return -ENOTSUP;
 	}
-#endif /* CONFIG_SPI_STM32_INTERRUPT */
 
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, config);
 
