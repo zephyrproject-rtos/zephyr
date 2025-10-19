@@ -507,9 +507,7 @@ static void net_queue_rx(struct net_if *iface, struct net_pkt *pkt)
 #if NET_TC_RX_COUNT > 1
 	NET_DBG("TC %d with prio %d pkt %p", tc, prio, pkt);
 #endif
-
-	if ((IS_ENABLED(CONFIG_NET_TC_RX_SKIP_FOR_HIGH_PRIO) &&
-	     prio >= NET_PRIORITY_CA) || NET_TC_RX_COUNT == 0) {
+	if (net_tc_rx_is_immediate(tc, prio)) {
 		net_process_rx_packet(pkt);
 	} else {
 		if (net_tc_submit_to_rx_queue(tc, pkt) != NET_OK) {
