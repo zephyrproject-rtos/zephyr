@@ -26,6 +26,15 @@ config SILABS_SISDK_TIMER
 config SILABS_SISDK_VDAC
 	bool "Peripheral HAL for VDAC"
 
+config SILABS_SISDK_SLEEPTIMER
+	bool
+	select SOC_GECKO_PRS
+	select SOC_GECKO_RTCC if $(dt_nodelabel_enabled,rtcc0)
+	help
+	  Set if the Sleeptimer HAL module is used.
+
+# Radio
+
 config SILABS_SISDK_RAIL_PA_CURVE_HEADER
 	string "RAIL PA custom curve header file"
 	default "pa_curves_efr32.h"
