@@ -259,8 +259,8 @@ struct bt_le_ext_adv_cb {
 	 *
 	 * @param adv  The advertising set object.
 	 *
-	 * @return true to rotate the current RPA, or false to use it for the
-	 *         next rotation period.
+	 * @retval true to rotate the current RPA,
+	 * @retval false to use it for the next rotation period.
 	 */
 	bool (*rpa_expired)(struct bt_le_ext_adv *adv);
 #endif /* defined(CONFIG_BT_PRIVACY) */
@@ -345,7 +345,8 @@ int bt_disable(void);
 /**
  * @brief Check if Bluetooth is ready
  *
- * @return true when Bluetooth is ready, false otherwise
+ * @retval true when Bluetooth is ready
+ * @retval false otherwise
  */
 bool bt_is_ready(void);
 
@@ -511,7 +512,8 @@ int bt_id_reset(uint8_t id, bt_addr_le_t *addr, uint8_t *irk);
  *
  * @param id   Existing identity handle.
  *
- * @return 0 in case of success, or a negative error code on failure.
+ * @retval 0 in case of success
+ * @retval <0 a negative error code on failure.
  */
 int bt_id_delete(uint8_t id);
 
@@ -1287,9 +1289,9 @@ struct bt_le_per_adv_param {
  * @param sd_len Number of elements in sd
  *
  * @return Zero on success or (negative) error code otherwise.
- * @return -ENOMEM No free connection objects available for connectable
+ * @retval -ENOMEM No free connection objects available for connectable
  *                 advertiser.
- * @return -ECONNREFUSED When connectable advertising is requested and there
+ * @retval -ECONNREFUSED When connectable advertising is requested and there
  *                       is already maximum number of connections established
  *                       in the controller.
  *                       This error code is only guaranteed when using Zephyr
@@ -2602,7 +2604,8 @@ BUILD_ASSERT(BT_GAP_SCAN_FAST_WINDOW == BT_GAP_SCAN_FAST_INTERVAL_MIN,
  * @param cb Callback to notify scan results. May be NULL if callback
  *           registration through @ref bt_le_scan_cb_register is preferred.
  *
- * @return Zero on success or error code otherwise, positive in case of
+ * @retval 0 on success
+ * @retval err error code otherwise, positive in case of
  *         protocol error or negative (POSIX) in case of stack internal error.
  * @retval -EBUSY if the scanner is already being started in a different thread.
  */
@@ -2613,7 +2616,8 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb);
  *
  * Stops ongoing LE scanning.
  *
- * @return Zero on success or error code otherwise, positive in case of
+ * @retval 0 on success
+ * @retval err error code otherwise, positive in case of
  *         protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_le_scan_stop(void);
@@ -2653,7 +2657,8 @@ void bt_le_scan_cb_unregister(struct bt_le_scan_cb *cb);
  *
  * @param addr Bluetooth LE identity address.
  *
- * @return Zero on success or error code otherwise, positive in case of
+ * @retval 0 on success
+ * @retval err error code otherwise, positive in case of
  *         protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_le_filter_accept_list_add(const bt_addr_le_t *addr);
@@ -2669,7 +2674,8 @@ int bt_le_filter_accept_list_add(const bt_addr_le_t *addr);
  *
  * @param addr Bluetooth LE identity address.
  *
- * @return Zero on success or error code otherwise, positive in case of
+ * @retval 0 on success
+ * @retval err error code otherwise, positive in case of
  *         protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_le_filter_accept_list_remove(const bt_addr_le_t *addr);
@@ -2683,7 +2689,8 @@ int bt_le_filter_accept_list_remove(const bt_addr_le_t *addr);
  * the filter accept list, i.e advertiser or scanner using a filter accept
  * list or automatic connecting to devices using filter accept list.
  *
- * @return Zero on success or error code otherwise, positive in case of
+ * @retval 0 on success
+ * @retval err error code otherwise, positive in case of
  *         protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_le_filter_accept_list_clear(void);
@@ -2700,7 +2707,8 @@ int bt_le_filter_accept_list_clear(void);
  * @param chan_map Channel map. 5 octets where each bit represents a channel. Only the lower 37 bits
  *        are valid.
  *
- * @return Zero on success or error code otherwise, positive in case of
+ * @retval 0 on success
+ * @retval err error code otherwise, positive in case of
  *         protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_le_set_chan_map(uint8_t chan_map[5]);
@@ -2792,7 +2800,8 @@ struct bt_le_oob {
  *                 address this function will be called for.
  * @param[out] oob LE OOB information
  *
- * @return Zero on success or error code otherwise, positive in case of
+ * @retval 0 on success
+ * @retval err error code otherwise, positive in case of
  *         protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob);
@@ -2818,7 +2827,8 @@ int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob);
  * @param[in]  adv The advertising set object
  * @param[out] oob LE OOB information
  *
- * @return Zero on success or error code otherwise, positive in case
+ * @retval 0 on success
+ * @retval err error code otherwise, positive in case
  * of protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_le_ext_adv_oob_get_local(struct bt_le_ext_adv *adv,
@@ -2832,7 +2842,8 @@ int bt_le_ext_adv_oob_get_local(struct bt_le_ext_adv *adv,
  * @param addr  Remote address, NULL or BT_ADDR_LE_ANY to clear all remote
  *              devices.
  *
- * @return 0 on success or negative error value on failure.
+ * @retval 0 on success
+ * @retval <0 negative error value on failure.
  */
 int bt_unpair(uint8_t id, const bt_addr_le_t *addr);
 
@@ -2867,7 +2878,8 @@ void bt_foreach_bond(uint8_t id, void (*func)(const struct bt_bond_info *info,
  * @param vs_config_len  Length of additional vendor specific configuration data
  * @param vs_config      Pointer to additional vendor specific configuration data
  *
- * @return 0 in case of success or negative value in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative value in case of error.
  */
 int bt_configure_data_path(uint8_t dir, uint8_t id, uint8_t vs_config_len,
 			   const uint8_t *vs_config);
@@ -2974,7 +2986,7 @@ int bt_le_per_adv_set_response_data(struct bt_le_per_adv_sync *per_adv_sync,
  *             address this function will be called for.
  * @param addr Bluetooth LE device address.
  *
- * @return true if @p addr is bonded with local @p id
+ * @retval true if @p addr is bonded with local @p id
  */
 bool bt_le_bond_exists(uint8_t id, const bt_addr_le_t *addr);
 

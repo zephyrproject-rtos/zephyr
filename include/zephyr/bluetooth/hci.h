@@ -94,7 +94,8 @@ struct net_buf *bt_hci_cmd_alloc(k_timeout_t timeout);
   * @param opcode Command OpCode.
   * @param buf    Command buffer or NULL (if no parameters).
   *
-  * @return 0 on success or negative error value on failure.
+  * @retval 0 on success
+  * @retval <0 negative error value on failure.
   */
 int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf);
 
@@ -119,7 +120,8 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf);
   *               for calling net_buf_unref() on the buffer when done parsing
   *               it.
   *
-  * @return 0 on success or negative error value on failure.
+  * @retval 0 on success
+  * @retval <0 negative error value on failure.
   */
 int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 			 struct net_buf **rsp);
@@ -129,7 +131,8 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
  * @param conn Connection object.
  * @param conn_handle Place to store the Connection handle.
  *
- * @return 0 on success or negative error value on failure.
+ * @retval 0 on success
+ * @retval <0 negative error value on failure.
  */
 int bt_hci_get_conn_handle(const struct bt_conn *conn, uint16_t *conn_handle);
 
@@ -141,7 +144,7 @@ int bt_hci_get_conn_handle(const struct bt_conn *conn, uint16_t *conn_handle);
  * @param handle The connection handle
  *
  * @returns The corresponding connection object on success.
- *          NULL if it does not exist.
+ * @retval NULL if it does not exist.
  */
 struct bt_conn *bt_hci_conn_lookup_handle(uint16_t handle);
 
@@ -150,7 +153,8 @@ struct bt_conn *bt_hci_conn_lookup_handle(uint16_t handle);
  * @param adv Advertising set.
  * @param adv_handle Place to store the advertising handle.
  *
- * @return 0 on success or negative error value on failure.
+ * @retval 0 on success
+ * @retval <0 negative error value on failure.
  */
 int bt_hci_get_adv_handle(const struct bt_le_ext_adv *adv, uint8_t *adv_handle);
 
@@ -159,7 +163,7 @@ int bt_hci_get_adv_handle(const struct bt_le_ext_adv *adv, uint8_t *adv_handle);
  * @param handle The advertising handle
  *
  * @returns The corresponding advertising set on success,
- *          NULL if it does not exist.
+ * @retval NULL if it does not exist.
  */
 struct bt_le_ext_adv *bt_hci_adv_lookup_handle(uint8_t handle);
 
@@ -168,7 +172,8 @@ struct bt_le_ext_adv *bt_hci_adv_lookup_handle(uint8_t handle);
  * @param sync Periodic advertising sync set.
  * @param sync_handle Place to store the periodic advertising sync handle.
  *
- * @return 0 on success or negative error value on failure.
+ * @retval 0 on success
+ * @retval <0 negative error value on failure.
  */
 int bt_hci_get_adv_sync_handle(const struct bt_le_per_adv_sync *sync, uint16_t *sync_handle);
 
@@ -176,8 +181,8 @@ int bt_hci_get_adv_sync_handle(const struct bt_le_per_adv_sync *sync, uint16_t *
  *
  * @param handle The periodic sync set handle
  *
- * @retval The corresponding periodic advertising sync set object on success,
- *         NULL if it does not exist.
+ * @return The corresponding periodic advertising sync set object on success
+ * @retval NULL if it does not exist.
  */
 struct bt_le_per_adv_sync *bt_hci_per_adv_sync_lookup_handle(uint16_t handle);
 
@@ -202,8 +207,8 @@ const char *bt_hci_get_ver_str(uint8_t core_version);
   *
   * @param buf Buffer containing event parameters.
   *
-  * @return true if the function handles the event or false to defer the
-  *         handling of this event back to the stack.
+  * @retval true if the function handles the event
+  * @retval false to defer the handling of this event back to the stack.
   */
 typedef bool bt_hci_vnd_evt_cb_t(struct net_buf_simple *buf);
 
@@ -212,7 +217,8 @@ typedef bool bt_hci_vnd_evt_cb_t(struct net_buf_simple *buf);
   * @param cb Callback to be called when the stack receives a
   *           HCI Vendor-Specific Event.
   *
-  * @return 0 on success or negative error value on failure.
+  * @retval 0 on success
+  * @retval <0 negative error value on failure.
   */
 int bt_hci_register_vnd_evt_cb(bt_hci_vnd_evt_cb_t cb);
 
@@ -227,7 +233,8 @@ int bt_hci_register_vnd_evt_cb(bt_hci_vnd_evt_cb_t cb);
  * @param buffer Buffer to fill with random bytes.
  * @param len Length of the buffer in bytes.
  *
- * @return 0 on success or negative error value on failure.
+ * @retval 0 on success
+ * @retval <0 negative error value on failure.
  */
 int bt_hci_le_rand(void *buffer, size_t len);
 

@@ -1185,7 +1185,8 @@ enum bt_conn_auth_keypress {
  *  @param conn Connection object.
  *  @param info Connection info object.
  *
- *  @return Zero on success or (negative) error code on failure.
+ *  @retval 0 on success
+ *  @retval <0 negative error code on failure.
  */
 int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info);
 
@@ -1212,9 +1213,10 @@ bool bt_conn_is_type(const struct bt_conn *conn, enum bt_conn_type type);
  *  been established. The application can be notified about when the remote
  *  information is available through the remote_info_available callback.
  *
- *  @return Zero on success or (negative) error code on failure.
- *  @return -EBUSY The remote information is not yet available.
- *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR connection.
+ *  @retval 0 on success
+ *  @retval <0 negative error code on failure.
+ *  @retval -EBUSY The remote information is not yet available.
+ *  @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR connection.
  */
 int bt_conn_get_remote_info(const struct bt_conn *conn, struct bt_conn_remote_info *remote_info);
 
@@ -1223,9 +1225,10 @@ int bt_conn_get_remote_info(const struct bt_conn *conn, struct bt_conn_remote_in
  *  @param conn           @ref BT_CONN_TYPE_LE connection object.
  *  @param tx_power_level Transmit power level descriptor.
  *
- *  @return Zero on success or (negative) error code on failure.
- *  @return -ENOBUFS HCI command buffer is not available.
- *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
+ *  @retval 0 on success
+ *  @retval <0 negative error code on failure.
+ *  @retval -ENOBUFS HCI command buffer is not available.
+ *  @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
  */
 int bt_conn_le_get_tx_power_level(struct bt_conn *conn,
 				  struct bt_conn_le_tx_power *tx_power_level);
@@ -1235,9 +1238,10 @@ int bt_conn_le_get_tx_power_level(struct bt_conn *conn,
  *  @param conn           @ref BT_CONN_TYPE_LE connection object.
  *  @param tx_power       Transmit power level descriptor.
  *
- *  @return Zero on success or (negative) error code on failure.
+ *  @retval 0 on success
+ *  @retval <0 negative error code on failure.
  *  @retval -ENOBUFS HCI command buffer is not available.
- *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
+ *  @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
  */
 int bt_conn_le_enhanced_get_tx_power_level(struct bt_conn *conn,
 					   struct bt_conn_le_tx_power *tx_power);
@@ -1247,9 +1251,10 @@ int bt_conn_le_enhanced_get_tx_power_level(struct bt_conn *conn,
  *  @param conn           @ref BT_CONN_TYPE_LE connection object.
  *  @param phy            PHY information.
  *
- *  @return Zero on success or (negative) error code on failure.
+ *  @retval 0 on success
+ *  @retval <0 negative error code on failure.
  *  @retval -ENOBUFS HCI command buffer is not available.
- *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
+ *  @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
  */
 int bt_conn_le_get_remote_tx_power_level(struct bt_conn *conn,
 					 enum bt_conn_le_tx_power_phy phy);
@@ -1260,9 +1265,10 @@ int bt_conn_le_get_remote_tx_power_level(struct bt_conn *conn,
  *  @param local_enable   Enable/disable reporting for local.
  *  @param remote_enable  Enable/disable reporting for remote.
  *
- *  @return Zero on success or (negative) error code on failure.
+ *  @retval 0 on success
+ *  @retval <0 negative error code on failure.
  *  @retval -ENOBUFS HCI command buffer is not available.
- *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
+ *  @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
  */
 int bt_conn_le_set_tx_power_report_enable(struct bt_conn *conn,
 					  bool local_enable,
@@ -1277,8 +1283,9 @@ int bt_conn_le_set_tx_power_report_enable(struct bt_conn *conn,
  *  @param conn  @ref BT_CONN_TYPE_LE connection object.
  *  @param param Path Loss Monitoring parameters
  *
- *  @return Zero on success or (negative) error code on failure.
- *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
+ *  @retval 0 on success
+ *  @retval <0 negative error code on failure.
+ *  @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
  */
 int bt_conn_le_set_path_loss_mon_param(struct bt_conn *conn,
 				       const struct bt_conn_le_path_loss_reporting_param *param);
@@ -1293,8 +1300,9 @@ int bt_conn_le_set_path_loss_mon_param(struct bt_conn *conn,
  * @param conn  @ref BT_CONN_TYPE_LE connection object.
  * @param enable Enable/disable path loss reporting.
  *
- * @return Zero on success or (negative) error code on failure.
- * @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
+ * @retval 0 on success
+ * @retval <0 negative error code on failure.
+ * @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
  */
 int bt_conn_le_set_path_loss_mon_enable(struct bt_conn *conn, bool enable);
 
@@ -1310,7 +1318,8 @@ int bt_conn_le_set_path_loss_mon_enable(struct bt_conn *conn, bool enable);
  *
  *  @param params Subrating parameters.
  *
- *  @return Zero on success or (negative) error code on failure.
+ *  @retval 0 on success
+ *  @retval <0 negative error code on failure.
  */
 int bt_conn_le_subrate_set_defaults(const struct bt_conn_le_subrate_param *params);
 
@@ -1323,8 +1332,9 @@ int bt_conn_le_subrate_set_defaults(const struct bt_conn_le_subrate_param *param
  *  @param conn   @ref BT_CONN_TYPE_LE connection object.
  *  @param params Subrating parameters.
  *
- *  @return Zero on success or (negative) error code on failure.
- *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
+ *  @retval 0 on success
+ *  @retval <0 negative error code on failure.
+ *  @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
  */
 int bt_conn_le_subrate_request(struct bt_conn *conn,
 			       const struct bt_conn_le_subrate_param *params);
@@ -1342,8 +1352,9 @@ int bt_conn_le_subrate_request(struct bt_conn *conn,
  *  @param pages_requested Number of feature pages to be requested from peer.
  *                         There is a maximum of 10 pages.
  *
- *  @return Zero on success or (negative) error code on failure.
- *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
+ *  @retval 0 on success
+ *  @retval <0 negative error code on failure.
+ *  @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
  */
 int bt_conn_le_read_all_remote_features(struct bt_conn *conn, uint8_t pages_requested);
 
@@ -1358,8 +1369,9 @@ int bt_conn_le_read_all_remote_features(struct bt_conn *conn, uint8_t pages_requ
  *  @param conn   @ref BT_CONN_TYPE_LE connection object.
  *  @param params Frame Space Update parameters.
  *
- *  @return Zero on success or (negative) error code on failure.
- *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
+ *  @retval 0 on success
+ *  @retval <0 negative error code on failure.
+ *  @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
  */
 int bt_conn_le_frame_space_update(struct bt_conn *conn,
 				  const struct bt_conn_le_frame_space_update_param *params);
@@ -1373,8 +1385,9 @@ int bt_conn_le_frame_space_update(struct bt_conn *conn,
  *  @param conn  @ref BT_CONN_TYPE_LE connection object.
  *  @param param Updated connection parameters.
  *
- *  @return Zero on success or (negative) error code on failure.
- *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
+ *  @retval 0 on success
+ *  @retval <0 negative error code on failure.
+ *  @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
  */
 int bt_conn_le_param_update(struct bt_conn *conn,
 			    const struct bt_le_conn_param *param);
@@ -1384,8 +1397,9 @@ int bt_conn_le_param_update(struct bt_conn *conn,
  *  @param conn  @ref BT_CONN_TYPE_LE connection object.
  *  @param param Updated data length parameters.
  *
- *  @return Zero on success or (negative) error code on failure.
- *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
+ *  @retval 0 on success
+ *  @retval <0 negative error code on failure.
+ *  @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
  */
 int bt_conn_le_data_len_update(struct bt_conn *conn,
 			       const struct bt_conn_le_data_len_param *param);
@@ -1398,8 +1412,9 @@ int bt_conn_le_data_len_update(struct bt_conn *conn,
  *  @param conn  @ref BT_CONN_TYPE_LE connection object.
  *  @param param Updated connection parameters.
  *
- *  @return Zero on success or (negative) error code on failure.
- *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
+ *  @retval 0 on success
+ *  @retval <0 negative error code on failure.
+ *  @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
  */
 int bt_conn_le_phy_update(struct bt_conn *conn,
 			  const struct bt_conn_le_phy_param *param);
@@ -1414,7 +1429,8 @@ int bt_conn_le_phy_update(struct bt_conn *conn,
  *  @param pref_tx_phy  Preferred transmitter phy prarameters.
  *  @param pref_rx_phy  Preferred receiver phy prameters.
  *
- *  @return Zero on success or (negative) error code on failure.
+ *  @retval 0 on success
+ *  @retval <0 negative error code on failure.
  */
 int bt_conn_le_set_default_phy(uint8_t pref_tx_phy, uint8_t pref_rx_phy);
 
@@ -1438,7 +1454,8 @@ int bt_conn_le_set_default_phy(uint8_t pref_tx_phy, uint8_t pref_rx_phy);
  *  @param conn Connection to disconnect.
  *  @param reason Reason code for the disconnection.
  *
- *  @return Zero on success or (negative) error code on failure.
+ *  @retval 0 on success
+ *  @retval <0 negative error code on failure.
  */
 int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason);
 
@@ -1572,7 +1589,8 @@ struct bt_conn_le_create_param {
  *  @param[in]  conn_param   Initial connection parameters.
  *  @param[out] conn         Valid connection object on success.
  *
- *  @return Zero on success or (negative) error code on failure.
+ *  @retval 0 on success
+ *  @retval <0 negative error code on failure.
  */
 int bt_conn_le_create(const bt_addr_le_t *peer,
 		      const struct bt_conn_le_create_param *create_param,
@@ -1609,7 +1627,8 @@ struct bt_conn_le_create_synced_param {
  *  @param[in]  conn_param   Initial connection parameters.
  *  @param[out] conn         Valid connection object on success.
  *
- *  @return Zero on success or (negative) error code on failure.
+ *  @retval 0 on success
+ *  @retval <0 negative error code on failure.
  */
 int bt_conn_le_create_synced(const struct bt_le_ext_adv *adv,
 			     const struct bt_conn_le_create_synced_param *synced_param,
@@ -1627,15 +1646,17 @@ int bt_conn_le_create_synced(const struct bt_le_ext_adv *adv,
  *  @param create_param Create connection parameters
  *  @param conn_param   Initial connection parameters.
  *
- *  @return Zero on success or (negative) error code on failure.
- *  @return -ENOMEM No free connection object available.
+ *  @retval 0 on success
+ *  @retval <0 negative error code on failure.
+ *  @retval -ENOMEM No free connection object available.
  */
 int bt_conn_le_create_auto(const struct bt_conn_le_create_param *create_param,
 			   const struct bt_le_conn_param *conn_param);
 
 /** @brief Stop automatic connect creation.
  *
- *  @return Zero on success or (negative) error code on failure.
+ *  @retval 0 on success
+ *  @retval <0 negative error code on failure.
  */
 int bt_conn_create_auto_stop(void);
 
@@ -1673,8 +1694,9 @@ int bt_conn_create_auto_stop(void);
  *  @param conn @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR connection object.
  *  @param sec Requested minimum security level.
  *
- *  @return 0 on success or negative error
- *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR connection.
+ *  @retval 0 on success
+ *  @retval <0 negative error
+ *  @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR connection.
  */
 int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec);
 
@@ -1697,7 +1719,7 @@ bt_security_t bt_conn_get_security(const struct bt_conn *conn);
  *  @param conn @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR connection object.
  *
  *  @return Encryption key size.
- *  @return 0 @p conn is not a valid @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR connection.
+ *  @retval 0 @p conn is not a valid @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR connection.
  */
 uint8_t bt_conn_enc_key_size(const struct bt_conn *conn);
 
@@ -2300,8 +2322,8 @@ bool bt_get_bondable(void);
  *
  *  @retval 0 Success
  *  @retval -EALREADY Already in the requested state
- *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR connection
- *  @return -EINVAL @p conn is a valid @ref BT_CONN_TYPE_LE but could not get SMP context
+ *  @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR connection
+ *  @retval -EINVAL @p conn is a valid @ref BT_CONN_TYPE_LE but could not get SMP context
  */
 int bt_conn_set_bondable(struct bt_conn *conn, bool enable);
 
@@ -2331,8 +2353,8 @@ void bt_le_oob_set_legacy_flag(bool enable);
  *  @param tk Pointer to 16 byte long TK array
  *
  *  @retval 0 Success
- *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
- *  @return -EINVAL @p tk is NULL.
+ *  @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
+ *  @retval -EINVAL @p tk is NULL.
  */
 int bt_le_oob_set_legacy_tk(struct bt_conn *conn, const uint8_t *tk);
 
@@ -2351,9 +2373,10 @@ int bt_le_oob_set_legacy_tk(struct bt_conn *conn, const uint8_t *tk);
  *  @param oobd_local Local OOB data or NULL if not present
  *  @param oobd_remote Remote OOB data or NULL if not present
  *
- *  @return Zero on success or error code otherwise, positive in case of
+ *  @retval 0 on success
+ * @retval err error code otherwise, positive in case of
  *          protocol error or negative (POSIX) in case of stack internal error.
- *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
+ *  @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
  */
 int bt_le_oob_set_sc_data(struct bt_conn *conn,
 			  const struct bt_le_oob_sc_data *oobd_local,
@@ -2371,9 +2394,10 @@ int bt_le_oob_set_sc_data(struct bt_conn *conn,
  *  @param oobd_local Local OOB data or NULL if not set
  *  @param oobd_remote Remote OOB data or NULL if not set
  *
- *  @return Zero on success or error code otherwise, positive in case of
+ *  @retval 0 on success
+ * @retval err error code otherwise, positive in case of
  *          protocol error or negative (POSIX) in case of stack internal error.
- *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
+ *  @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection.
  */
 int bt_le_oob_get_sc_data(struct bt_conn *conn,
 			  const struct bt_le_oob_sc_data **oobd_local,
@@ -2718,7 +2742,8 @@ struct bt_conn_auth_info_cb {
  *
  *  @param cb Callback struct.
  *
- *  @return Zero on success or negative error code otherwise
+ *  @return 0 on success
+ *  @retval <0 negative error code otherwise
  */
 int bt_conn_auth_cb_register(const struct bt_conn_auth_cb *cb);
 
@@ -2734,8 +2759,9 @@ int bt_conn_auth_cb_register(const struct bt_conn_auth_cb *cb);
  *  @param conn @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR connection object.
  *  @param cb	Callback struct.
  *
- *  @return Zero on success or negative error code otherwise
- *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR connection
+ *  @return 0 on success
+ *  @retval <0 negative error code otherwise
+ *  @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR connection
  */
 int bt_conn_auth_cb_overlay(struct bt_conn *conn, const struct bt_conn_auth_cb *cb);
 
@@ -2746,7 +2772,8 @@ int bt_conn_auth_cb_overlay(struct bt_conn *conn, const struct bt_conn_auth_cb *
  *
  *  @param cb Callback struct.
  *
- *  @return Zero on success or negative error code otherwise
+ *  @return 0 on success
+ *  @retval <0 negative error code otherwise
  */
 int bt_conn_auth_info_cb_register(struct bt_conn_auth_info_cb *cb);
 
@@ -2756,7 +2783,8 @@ int bt_conn_auth_info_cb_register(struct bt_conn_auth_info_cb *cb);
  *
  *  @param cb Callback struct.
  *
- *  @return Zero on success or negative error code otherwise
+ *  @return 0 on success
+ *  @retval <0 negative error code otherwise
  */
 int bt_conn_auth_info_cb_unregister(struct bt_conn_auth_info_cb *cb);
 
@@ -2768,8 +2796,9 @@ int bt_conn_auth_info_cb_unregister(struct bt_conn_auth_info_cb *cb);
  *  @param conn @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR connection object.
  *  @param passkey Entered passkey.
  *
- *  @return Zero on success or negative error code otherwise
- *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR connection
+ *  @return 0 on success
+ *  @retval <0 negative error code otherwise
+ *  @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR connection
  */
 int bt_conn_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey);
 
@@ -2787,7 +2816,7 @@ int bt_conn_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey);
  *  @retval -EINVAL Improper use of the API.
  *  @retval -ENOMEM Failed to allocate.
  *  @retval -ENOBUFS Failed to allocate.
- *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection
+ *  @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE connection
  */
 int bt_conn_auth_keypress_notify(struct bt_conn *conn, enum bt_conn_auth_keypress type);
 
@@ -2797,8 +2826,9 @@ int bt_conn_auth_keypress_notify(struct bt_conn *conn, enum bt_conn_auth_keypres
  *
  *  @param conn @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR connection object.
  *
- *  @return Zero on success or negative error code otherwise
- *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR connection
+ *  @return 0 on success
+ *  @retval <0 negative error code otherwise
+ *  @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR connection
  */
 int bt_conn_auth_cancel(struct bt_conn *conn);
 
@@ -2809,8 +2839,9 @@ int bt_conn_auth_cancel(struct bt_conn *conn);
  *
  *  @param conn @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR connection object.
  *
- *  @return Zero on success or negative error code otherwise
- *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR connection
+ *  @return 0 on success
+ *  @retval <0 negative error code otherwise
+ *  @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR connection
  */
 int bt_conn_auth_passkey_confirm(struct bt_conn *conn);
 
@@ -2821,8 +2852,9 @@ int bt_conn_auth_passkey_confirm(struct bt_conn *conn);
  *
  *  @param conn @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR connection object.
  *
- *  @return Zero on success or negative error code otherwise
- *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR connection
+ *  @return 0 on success
+ *  @retval <0 negative error code otherwise
+ *  @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR connection
  */
 int bt_conn_auth_pairing_confirm(struct bt_conn *conn);
 
@@ -2834,8 +2866,9 @@ int bt_conn_auth_pairing_confirm(struct bt_conn *conn);
  *  @param conn @ref BT_CONN_TYPE_BR connection object.
  *  @param pin Entered PIN code.
  *
- *  @return Zero on success or negative error code otherwise
- *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_BR connection
+ *  @return 0 on success
+ *  @retval <0 negative error code otherwise
+ *  @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_BR connection
  */
 int bt_conn_auth_pincode_entry(struct bt_conn *conn, const char *pin);
 
@@ -2910,9 +2943,10 @@ const bt_addr_t *bt_conn_get_dst_br(const struct bt_conn *conn);
  *  @param role The role that want to switch as, the value is @ref BT_HCI_ROLE_CENTRAL and
  *              @ref BT_HCI_ROLE_PERIPHERAL from hci_types.h.
  *
- *  @return Zero on success or (negative) error code on failure.
- *  @return -ENOBUFS HCI command buffer is not available.
- *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_BR connection
+ *  @retval 0 on success
+ *  @retval <0 negative error code on failure.
+ *  @retval -ENOBUFS HCI command buffer is not available.
+ *  @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_BR connection
  */
 int bt_conn_br_switch_role(const struct bt_conn *conn, uint8_t role);
 
@@ -2921,9 +2955,10 @@ int bt_conn_br_switch_role(const struct bt_conn *conn, uint8_t role);
  *  @param conn Connection object.
  *  @param enable Value enable/disable role switch of controller.
  *
- *  @return Zero on success or (negative) error code on failure.
- *  @return -ENOBUFS HCI command buffer is not available.
- *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_BR connection.
+ *  @retval 0 on success
+ *  @retval <0 negative error code on failure.
+ *  @retval -ENOBUFS HCI command buffer is not available.
+ *  @retval -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_BR connection.
  */
 int bt_conn_br_set_role_switch_enable(const struct bt_conn *conn, bool enable);
 

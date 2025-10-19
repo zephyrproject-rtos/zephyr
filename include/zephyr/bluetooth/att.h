@@ -152,10 +152,10 @@ int bt_eatt_reconfigure(struct bt_conn *conn, uint16_t mtu);
  * @param num_channels The number of Enhanced ATT bearers to request.
  * Must be in the range 1 - @kconfig{CONFIG_BT_EATT_MAX}, inclusive.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative value in case of error.
  * @retval -EINVAL if @p num_channels is not in the allowed range or @p conn is NULL.
  * @retval -ENOMEM if less than @p num_channels are allocated.
- * @retval 0 in case of success
  */
 int bt_eatt_connect(struct bt_conn *conn, size_t num_channels);
 

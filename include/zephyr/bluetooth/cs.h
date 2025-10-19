@@ -575,7 +575,8 @@ void bt_le_cs_set_valid_chmap_bits(uint8_t channel_map[10]);
  *
  * @param conn   Connection Object.
  *
- * @return Zero on success or (negative) error code on failure.
+ * @return 0 on success
+ * @retval <0 negative error code on failure.
  */
 int bt_le_cs_read_remote_supported_capabilities(struct bt_conn *conn);
 
@@ -589,7 +590,8 @@ int bt_le_cs_read_remote_supported_capabilities(struct bt_conn *conn);
  * @param conn   Connection Object.
  * @param params Channel sounding default settings parameters.
  *
- * @return Zero on success or (negative) error code on failure.
+ * @return 0 on success
+ * @retval <0 negative error code on failure.
  */
 int bt_le_cs_set_default_settings(struct bt_conn *conn,
 				  const struct bt_le_cs_set_default_settings_param *params);
@@ -609,7 +611,8 @@ int bt_le_cs_set_default_settings(struct bt_conn *conn,
  *
  * @param conn   Connection Object.
  *
- * @return Zero on success or (negative) error code on failure.
+ * @return 0 on success
+ * @retval <0 negative error code on failure.
  */
 int bt_le_cs_read_remote_fae_table(struct bt_conn *conn);
 
@@ -622,7 +625,8 @@ int bt_le_cs_read_remote_fae_table(struct bt_conn *conn);
  *
  * @param cs_test_cb Set of callbacks to be used with CS Test
  *
- * @return Zero on success or (negative) error code on failure.
+ * @return 0 on success
+ * @retval <0 negative error code on failure.
  */
 int bt_le_cs_test_cb_register(struct bt_le_cs_test_cb cs_test_cb);
 
@@ -644,7 +648,8 @@ int bt_le_cs_test_cb_register(struct bt_le_cs_test_cb cs_test_cb);
  *
  * @param params CS Test parameters
  *
- * @return Zero on success or (negative) error code on failure.
+ * @return 0 on success
+ * @retval <0 negative error code on failure.
  */
 int bt_le_cs_start_test(const struct bt_le_cs_test_param *params);
 
@@ -660,7 +665,8 @@ int bt_le_cs_start_test(const struct bt_le_cs_test_param *params);
  * @param context Controls whether the configuration is written to the local controller or
  *                both the local and the remote controller
  *
- * @return Zero on success or (negative) error code on failure.
+ * @return 0 on success
+ * @retval <0 negative error code on failure.
  */
 int bt_le_cs_create_config(struct bt_conn *conn, struct bt_le_cs_create_config_params *params,
 			   enum bt_le_cs_create_config_context context);
@@ -675,7 +681,8 @@ int bt_le_cs_create_config(struct bt_conn *conn, struct bt_le_cs_create_config_p
  * @param conn      Connection Object.
  * @param config_id CS Config ID
  *
- * @return Zero on success or (negative) error code on failure.
+ * @return 0 on success
+ * @retval <0 negative error code on failure.
  */
 int bt_le_cs_remove_config(struct bt_conn *conn, uint8_t config_id);
 
@@ -688,7 +695,8 @@ int bt_le_cs_remove_config(struct bt_conn *conn, uint8_t config_id);
  *
  * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING_TEST} must be set.
  *
- * @return Zero on success or (negative) error code on failure.
+ * @return 0 on success
+ * @retval <0 negative error code on failure.
  */
 int bt_le_cs_stop_test(void);
 
@@ -720,7 +728,8 @@ void bt_le_cs_step_data_parse(struct net_buf_simple *step_data_buf,
  *
  * @param conn   Connection Object.
  *
- * @return Zero on success or (negative) error code on failure.
+ * @return 0 on success
+ * @retval <0 negative error code on failure.
  */
 int bt_le_cs_security_enable(struct bt_conn *conn);
 
@@ -740,7 +749,8 @@ struct bt_le_cs_procedure_enable_param {
  * @param conn   Connection Object.
  * @param params Parameters for the CS Procedure Enable command.
  *
- * @return Zero on success or (negative) error code on failure.
+ * @return 0 on success
+ * @retval <0 negative error code on failure.
  */
 int bt_le_cs_procedure_enable(struct bt_conn *conn,
 			      const struct bt_le_cs_procedure_enable_param *params);
@@ -813,7 +823,8 @@ struct bt_le_cs_set_procedure_parameters_param {
  * @param conn Connection Object.
  * @param params Parameters for the CS Set Procedure Parameters command.
  *
- * @return Zero on success or (negative) error code on failure.
+ * @return 0 on success
+ * @retval <0 negative error code on failure.
  */
 int bt_le_cs_set_procedure_parameters(struct bt_conn *conn,
 				      const struct bt_le_cs_set_procedure_parameters_param *params);
@@ -835,7 +846,8 @@ int bt_le_cs_set_procedure_parameters(struct bt_conn *conn,
  *
  * @param channel_classification Bit fields
  *
- * @return Zero on success or (negative) error code on failure.
+ * @return 0 on success
+ * @retval <0 negative error code on failure.
  */
 int bt_le_cs_set_channel_classification(uint8_t channel_classification[10]);
 
@@ -848,7 +860,8 @@ int bt_le_cs_set_channel_classification(uint8_t channel_classification[10]);
  *
  * @param ret Return values for the CS Procedure Enable command.
  *
- * @return Zero on success or (negative) error code on failure.
+ * @return 0 on success
+ * @retval <0 negative error code on failure.
  */
 int bt_le_cs_read_local_supported_capabilities(struct bt_conn_le_cs_capabilities *ret);
 
@@ -863,7 +876,8 @@ int bt_le_cs_read_local_supported_capabilities(struct bt_conn_le_cs_capabilities
  * @param conn   Connection Object.
  * @param params Parameters for the CS Write Cached Remote Supported Capabilities command.
  *
- * @return Zero on success or (negative) error code on failure.
+ * @return 0 on success
+ * @retval <0 negative error code on failure.
  */
 int bt_le_cs_write_cached_remote_supported_capabilities(
 	struct bt_conn *conn, const struct bt_conn_le_cs_capabilities *params);
@@ -883,7 +897,8 @@ int bt_le_cs_write_cached_remote_supported_capabilities(
  * @param conn   Connection Object.
  * @param remote_fae_table Per-channel mode-0 FAE table of the local Controller
  *
- * @return Zero on success or (negative) error code on failure.
+ * @return 0 on success
+ * @retval <0 negative error code on failure.
  */
 int bt_le_cs_write_cached_remote_fae_table(struct bt_conn *conn, int8_t remote_fae_table[72]);
 
@@ -902,7 +917,7 @@ int bt_le_cs_write_cached_remote_fae_table(struct bt_conn *conn, int8_t remote_f
  *					 tone_index = n_ap corresponds to extension slot.
  *
  * @return Antenna path used to exchange CS tones, range: [0, 3].
- * @return -EINVAL if arguments are invalid.
+ * @retval -EINVAL if arguments are invalid.
  */
 int bt_le_cs_get_antenna_path(uint8_t n_ap,
 			      uint8_t antenna_path_permutation_index,

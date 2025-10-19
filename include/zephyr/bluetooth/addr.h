@@ -75,7 +75,9 @@ extern const bt_addr_le_t bt_addr_le_none;
  *  @param a First Bluetooth device address to compare
  *  @param b Second Bluetooth device address to compare
  *
- *  @return negative value if @a a < @a b, 0 if @a a == @a b, else positive
+ *  @retval <0 negative value if @a a < @a b
+ *  @retval 0 if @a a == @a b
+ *  @retval >0 else positive
  */
 static inline int bt_addr_cmp(const bt_addr_t *a, const bt_addr_t *b)
 {
@@ -84,8 +86,8 @@ static inline int bt_addr_cmp(const bt_addr_t *a, const bt_addr_t *b)
 
 /** @brief Determine equality of two Bluetooth device addresses.
  *
- *  @retval #true if the two addresses are equal
- *  @retval #false otherwise
+ *  @retval true if the two addresses are equal
+ *  @retval false otherwise
  */
 static inline bool bt_addr_eq(const bt_addr_t *a, const bt_addr_t *b)
 {
@@ -97,7 +99,9 @@ static inline bool bt_addr_eq(const bt_addr_t *a, const bt_addr_t *b)
  *  @param a First Bluetooth LE device address to compare
  *  @param b Second Bluetooth LE device address to compare
  *
- *  @return negative value if @a a < @a b, 0 if @a a == @a b, else positive
+ *  @retval <0 negative value if @a a < @a b
+ *  @retval 0 if @a a == @a b
+ *  @retval >0 else positive
  *
  *  @sa bt_addr_le_eq
  */
@@ -111,8 +115,8 @@ static inline int bt_addr_le_cmp(const bt_addr_le_t *a, const bt_addr_le_t *b)
  *  The Bluetooth LE addresses are equal if and only if both the types and
  *  the 48-bit addresses are numerically equal.
  *
- *  @retval #true if the two addresses are equal
- *  @retval #false otherwise
+ *  @retval true if the two addresses are equal
+ *  @retval false otherwise
  */
 static inline bool bt_addr_le_eq(const bt_addr_le_t *a, const bt_addr_le_t *b)
 {

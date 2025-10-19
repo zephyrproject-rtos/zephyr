@@ -34,7 +34,8 @@ extern "C" {
  *  @param buf Buffer to insert the random data
  *  @param len Length of random data to generate
  *
- *  @return Zero on success or error code otherwise, positive in case
+ *  @retval 0 on success
+ * @retval err error code otherwise, positive in case
  *  of protocol error or negative (POSIX) in case of stack internal error
  */
 int bt_rand(void *buf, size_t len);
@@ -49,7 +50,8 @@ int bt_rand(void *buf, size_t len);
  *  @param plaintext 128 bit LS byte first plaintext data block to be encrypted
  *  @param enc_data 128 bit LS byte first encrypted data block
  *
- *  @return Zero on success or error code otherwise.
+ *  @retval 0 on success
+ * @retval err error code otherwise.
  */
 int bt_encrypt_le(const uint8_t key[16], const uint8_t plaintext[16],
 		  uint8_t enc_data[16]);
@@ -64,7 +66,8 @@ int bt_encrypt_le(const uint8_t key[16], const uint8_t plaintext[16],
  *  @param plaintext 128 bit MS byte first plaintext data block to be encrypted
  *  @param enc_data 128 bit MS byte first encrypted data block
  *
- *  @return Zero on success or error code otherwise.
+ *  @retval 0 on success
+ * @retval err error code otherwise.
  */
 int bt_encrypt_be(const uint8_t key[16], const uint8_t plaintext[16],
 		  uint8_t enc_data[16]);

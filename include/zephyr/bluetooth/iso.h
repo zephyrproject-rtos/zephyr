@@ -812,7 +812,8 @@ struct bt_iso_server {
 	 * @param info The ISO accept information structure
 	 * @param chan Pointer to receive the allocated channel
 	 *
-	 * @return 0 in case of success or negative value in case of error.
+	 * @retval 0 in case of success
+	 * @retval <0 negative value in case of error.
 	 */
 	int (*accept)(const struct bt_iso_accept_info *info, struct bt_iso_chan **chan);
 };
@@ -826,7 +827,8 @@ struct bt_iso_server {
  *
  * @param server Server structure.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative value in case of error.
  */
 int bt_iso_server_register(struct bt_iso_server *server);
 
@@ -837,7 +839,8 @@ int bt_iso_server_register(struct bt_iso_server *server);
  *
  * @param server Server structure.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative value in case of error.
  */
 int bt_iso_server_unregister(struct bt_iso_server *server);
 
@@ -853,7 +856,8 @@ int bt_iso_server_unregister(struct bt_iso_server *server);
  * @param[in]  param    The parameters used to create and enable the CIG.
  * @param[out] out_cig  Connected Isochronous Group object on success.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative value in case of error.
  */
 int bt_iso_cig_create(const struct bt_iso_cig_param *param, struct bt_iso_cig **out_cig);
 
@@ -875,7 +879,8 @@ int bt_iso_cig_create(const struct bt_iso_cig_param *param, struct bt_iso_cig **
  * @param cig       Connected Isochronous Group object.
  * @param param     The parameters used to reconfigure the CIG.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative value in case of error.
  */
 int bt_iso_cig_reconfigure(struct bt_iso_cig *cig, const struct bt_iso_cig_param *param);
 
@@ -886,7 +891,8 @@ int bt_iso_cig_reconfigure(struct bt_iso_cig *cig, const struct bt_iso_cig_param
  *
  * @param cig    Pointer to the CIG structure.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative value in case of error.
  */
 int bt_iso_cig_terminate(struct bt_iso_cig *cig);
 
@@ -946,7 +952,8 @@ int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count);
  *
  * @param chan Channel object.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative value in case of error.
  */
 int bt_iso_chan_disconnect(struct bt_iso_chan *chan);
 
@@ -967,7 +974,8 @@ int bt_iso_chan_disconnect(struct bt_iso_chan *chan);
  *                 each call to this function and at least once per SDU
  *                 interval for a specific channel.
  *
- * @return Number of octets sent in case of success or negative value in case of error.
+ * @return Number of octets sent in case of success
+ * @retval <0 negative value in case of error.
  */
 int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t seq_num);
 
@@ -991,7 +999,8 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t seq
  *                 This value can be used to transmit multiple
  *                 SDUs in the same SDU interval in a CIG or BIG.
  *
- * @return Number of octets sent in case of success or negative value in case of error.
+ * @return Number of octets sent in case of success
+ * @retval <0 negative value in case of error.
  */
 int bt_iso_chan_send_ts(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t seq_num,
 			uint32_t ts);
@@ -1239,7 +1248,8 @@ struct bt_iso_info {
  * @param chan Channel object.
  * @param info Channel info object.
  *
- * @return Zero on success or (negative) error code on failure.
+ * @retval 0 on success
+ * @retval <0 negative error code on failure.
  */
 int bt_iso_chan_get_info(const struct bt_iso_chan *chan, struct bt_iso_info *info);
 
@@ -1256,7 +1266,8 @@ int bt_iso_chan_get_info(const struct bt_iso_chan *chan, struct bt_iso_info *inf
  * @param[in]  chan Channel object.
  * @param[out] info Transmit info object.
  *
- * @return Zero on success or (negative) error code on failure.
+ * @retval 0 on success
+ * @retval <0 negative error code on failure.
  */
 int bt_iso_chan_get_tx_sync(const struct bt_iso_chan *chan, struct bt_iso_tx_info *info);
 
@@ -1305,7 +1316,8 @@ int bt_iso_big_register_cb(struct bt_iso_big_cb *cb);
  *                      parameter.
  * @param[out] out_big  Broadcast Isochronous Group object on success.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative value in case of error.
  */
 int bt_iso_big_create(struct bt_le_ext_adv *padv, struct bt_iso_big_create_param *param,
 		      struct bt_iso_big **out_big);
@@ -1318,7 +1330,8 @@ int bt_iso_big_create(struct bt_le_ext_adv *padv, struct bt_iso_big_create_param
  *
  * @param big    Pointer to the BIG structure.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative value in case of error.
  */
 int bt_iso_big_terminate(struct bt_iso_big *big);
 
@@ -1329,7 +1342,8 @@ int bt_iso_big_terminate(struct bt_iso_big *big);
  * @param[in] param    The parameters used to create and enable the BIG sync.
  * @param[out] out_big Broadcast Isochronous Group object on success.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @retval 0 in case of success
+ * @retval <0 negative value in case of error.
  */
 int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_param *param,
 		    struct bt_iso_big **out_big);

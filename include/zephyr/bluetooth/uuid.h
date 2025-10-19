@@ -5220,7 +5220,9 @@ struct bt_uuid_128 {
  *  @param u1 First Bluetooth UUID to compare
  *  @param u2 Second Bluetooth UUID to compare
  *
- *  @return negative value if @a u1 < @a u2, 0 if @a u1 == @a u2, else positive
+ *  @retval <0 negative value if @a u1 < @a u2
+ *  @retval 0 if @a u1 == @a u2
+ *  @retval >0 else positive
  */
 int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2);
 
@@ -5234,7 +5236,7 @@ int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2);
  *  @param data pointer to UUID stored in little-endian data buffer
  *  @param data_len length of the UUID in the data buffer
  *
- *  @return true if the data was valid and the UUID was successfully created.
+ *  @retval true if the data was valid and the UUID was successfully created.
  */
 bool bt_uuid_create(struct bt_uuid *uuid, const uint8_t *data, uint8_t data_len);
 
