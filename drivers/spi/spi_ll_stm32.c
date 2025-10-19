@@ -6,7 +6,6 @@
 
 #define DT_DRV_COMPAT st_stm32_spi
 
-#define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_ll_stm32);
 
