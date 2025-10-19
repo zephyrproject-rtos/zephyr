@@ -253,7 +253,7 @@ static int cmd_load(const struct shell *sh, size_t argc, char **argv)
 
 static int memory_read(const struct shell *sh, mem_addr_t addr, uint8_t width)
 {
-	uint32_t value;
+	uint64_t value;
 	int err = 0;
 
 	switch (width) {
@@ -266,6 +266,11 @@ static int memory_read(const struct shell *sh, mem_addr_t addr, uint8_t width)
 	case 32:
 		value = sys_read32(addr);
 		break;
+#ifdef CONFIG_64BIT
+	case 64:
+		value = sys_read64(addr);
+		break;
+#endif /* CONFIG_64BIT */
 	default:
 		shell_fprintf(sh, SHELL_NORMAL, "Incorrect data width\n");
 		err = -EINVAL;
@@ -273,7 +278,7 @@ static int memory_read(const struct shell *sh, mem_addr_t addr, uint8_t width)
 	}
 
 	if (err == 0) {
-		shell_fprintf(sh, SHELL_NORMAL, "Read value 0x%x\n", value);
+		shell_fprintf(sh, SHELL_NORMAL, "Read value 0x%llx\n", value);
 	}
 
 	return err;
@@ -293,6 +298,11 @@ static int memory_write(const struct shell *sh, mem_addr_t addr, uint8_t width, 
 	case 32:
 		sys_write32(value, addr);
 		break;
+#ifdef CONFIG_64BIT
+	case 64:
+		sys_write64(value, addr);
+		break;
+#endif /* CONFIG_64BIT */
 	default:
 		shell_fprintf(sh, SHELL_NORMAL, "Incorrect data width\n");
 		err = -EINVAL;
@@ -306,7 +316,7 @@ static int memory_write(const struct shell *sh, mem_addr_t addr, uint8_t width, 
 static int cmd_devmem(const struct shell *sh, size_t argc, char **argv)
 {
 	mem_addr_t phys_addr, addr;
-	uint32_t value = 0;
+	uint64_t value = 0;
 	uint8_t width;
 
 	phys_addr = strtoul(argv[1], NULL, 16);
@@ -335,9 +345,9 @@ static int cmd_devmem(const struct shell *sh, size_t argc, char **argv)
 	 * this value at the address provided
 	 */
 
-	value = strtoul(argv[3], NULL, 16);
+	value = (uint64_t)strtoull(argv[3], NULL, 16);
 
-	shell_fprintf(sh, SHELL_NORMAL, "Writing value 0x%x\n", value);
+	shell_fprintf(sh, SHELL_NORMAL, "Writing value 0x%llx\n", value);
 
 	return memory_write(sh, addr, width, value);
 }
