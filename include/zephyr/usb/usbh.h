@@ -107,7 +107,8 @@ struct usbh_class_data {
  *
  * @param[in] uhs_ctx Pointer to USB host support context
  *
- * @return 0 on success, other values on fail.
+ * @retval 0 on success
+ * @retval err other values on fail.
  */
 int usbh_init(struct usbh_context *uhs_ctx);
 
@@ -118,7 +119,8 @@ int usbh_init(struct usbh_context *uhs_ctx);
  *
  * @param[in] uhs_ctx Pointer to USB host support context
  *
- * @return 0 on success, other values on fail.
+ * @retval 0 on success
+ * @retval err other values on fail.
  */
 int usbh_enable(struct usbh_context *uhs_ctx);
 
@@ -129,7 +131,8 @@ int usbh_enable(struct usbh_context *uhs_ctx);
  *
  * @param[in] uhs_ctx Pointer to USB host support context
  *
- * @return 0 on success, other values on fail.
+ * @retval 0 on success
+ * @retval err other values on fail.
  */
 int usbh_disable(struct usbh_context *uhs_ctx);
 
@@ -140,7 +143,8 @@ int usbh_disable(struct usbh_context *uhs_ctx);
  *
  * @param[in] uhs_ctx Pointer to USB host support context
  *
- * @return 0 on success, other values on fail.
+ * @retval 0 on success
+ * @retval err other values on fail.
  */
 int usbh_shutdown(struct usbh_context *const uhs_ctx);
 

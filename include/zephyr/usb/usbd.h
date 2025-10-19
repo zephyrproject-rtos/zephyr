@@ -793,7 +793,8 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
  * @param[in] uds_ctx Pointer to USB device support context
  * @param[in] dn      Pointer to USB descriptor node
  *
- * @return 0 on success, other values on fail.
+ * @retval 0 on success
+ * @retval err other values on fail.
  */
 int usbd_add_descriptor(struct usbd_context *uds_ctx,
 			struct usbd_desc_node *dn);
@@ -823,7 +824,8 @@ void usbd_remove_descriptor(struct usbd_desc_node *const desc_nd);
  * @param[in] speed   Speed at which this configuration operates
  * @param[in] cd      Pointer to USB configuration node
  *
- * @return 0 on success, other values on fail.
+ * @retval 0 on success
+ * @retval err other values on fail.
  */
 int usbd_add_configuration(struct usbd_context *uds_ctx,
 			   const enum usbd_speed speed,
@@ -848,7 +850,8 @@ int usbd_add_configuration(struct usbd_context *uds_ctx,
  * @param[in] speed   Configuration speed
  * @param[in] cfg     Configuration value (bConfigurationValue)
  *
- * @return 0 on success, other values on fail.
+ * @retval 0 on success
+ * @retval err other values on fail.
  */
 int usbd_register_class(struct usbd_context *uds_ctx,
 			const char *name,
@@ -883,7 +886,8 @@ int usbd_register_class(struct usbd_context *uds_ctx,
  * @param[in] blocklist Null pointer terminated array of pointers to string
  *                      literals to be used as a block list
  *
- * @return 0 on success, other values on fail.
+ * @retval 0 on success
+ * @retval err other values on fail.
  */
 int usbd_register_all_classes(struct usbd_context *uds_ctx,
 			      const enum usbd_speed speed, uint8_t cfg,
@@ -901,7 +905,8 @@ int usbd_register_all_classes(struct usbd_context *uds_ctx,
  * @param[in] speed   Configuration speed
  * @param[in] cfg     Configuration value (bConfigurationValue)
  *
- * @return 0 on success, other values on fail.
+ * @retval 0 on success
+ * @retval err other values on fail.
  */
 int usbd_unregister_class(struct usbd_context *uds_ctx,
 			  const char *name,
@@ -917,7 +922,8 @@ int usbd_unregister_class(struct usbd_context *uds_ctx,
  * @param[in] speed   Configuration speed
  * @param[in] cfg     Configuration value (bConfigurationValue)
  *
- * @return 0 on success, other values on fail.
+ * @retval 0 on success
+ * @retval err other values on fail.
  */
 int usbd_unregister_all_classes(struct usbd_context *uds_ctx,
 				const enum usbd_speed speed, uint8_t cfg);
@@ -928,7 +934,8 @@ int usbd_unregister_all_classes(struct usbd_context *uds_ctx,
  * @param[in] uds_ctx Pointer to USB device support context
  * @param[in] cb      Pointer to message callback function
  *
- * @return 0 on success, other values on fail.
+ * @retval 0 on success
+ * @retval err other values on fail.
  */
 int usbd_msg_register_cb(struct usbd_context *const uds_ctx,
 			 const usbd_msg_cb_t cb);
@@ -944,7 +951,8 @@ int usbd_msg_register_cb(struct usbd_context *const uds_ctx,
  *
  * @param[in] uds_ctx Pointer to USB device support context
  *
- * @return 0 on success, other values on fail.
+ * @retval 0 on success
+ * @retval err other values on fail.
  */
 int usbd_init(struct usbd_context *uds_ctx);
 
@@ -955,7 +963,8 @@ int usbd_init(struct usbd_context *uds_ctx);
  *
  * @param[in] uds_ctx Pointer to USB device support context
  *
- * @return 0 on success, other values on fail.
+ * @retval 0 on success
+ * @retval err other values on fail.
  */
 int usbd_enable(struct usbd_context *uds_ctx);
 
@@ -966,7 +975,8 @@ int usbd_enable(struct usbd_context *uds_ctx);
  *
  * @param[in] uds_ctx Pointer to USB device support context
  *
- * @return 0 on success, other values on fail.
+ * @retval 0 on success
+ * @retval err other values on fail.
  */
 int usbd_disable(struct usbd_context *uds_ctx);
 
@@ -977,7 +987,8 @@ int usbd_disable(struct usbd_context *uds_ctx);
  *
  * @param[in] uds_ctx Pointer to USB device support context
  *
- * @return 0 on success, other values on fail.
+ * @retval 0 on success
+ * @retval err other values on fail.
  */
 int usbd_shutdown(struct usbd_context *const uds_ctx);
 
@@ -987,7 +998,8 @@ int usbd_shutdown(struct usbd_context *const uds_ctx);
  * @param[in] uds_ctx Pointer to USB device support context
  * @param[in] ep      Endpoint address
  *
- * @return 0 on success, or error from udc_ep_set_halt()
+ * @retval 0 on success
+ * @retval err error from udc_ep_set_halt()
  */
 int usbd_ep_set_halt(struct usbd_context *uds_ctx, uint8_t ep);
 
@@ -997,7 +1009,8 @@ int usbd_ep_set_halt(struct usbd_context *uds_ctx, uint8_t ep);
  * @param[in] uds_ctx Pointer to USB device support context
  * @param[in] ep      Endpoint address
  *
- * @return 0 on success, or error from udc_ep_clear_halt()
+ * @retval 0 on success
+ * @retval err error from udc_ep_clear_halt()
  */
 int usbd_ep_clear_halt(struct usbd_context *uds_ctx, uint8_t ep);
 
@@ -1007,7 +1020,8 @@ int usbd_ep_clear_halt(struct usbd_context *uds_ctx, uint8_t ep);
  * @param[in] uds_ctx Pointer to USB device support context
  * @param[in] ep      Endpoint address
  *
- * @return true if endpoint is halted, false otherwise
+ * @retval true if endpoint is halted
+ * @retval false otherwise
  */
 bool usbd_ep_is_halted(struct usbd_context *uds_ctx, uint8_t ep);
 
@@ -1033,7 +1047,8 @@ struct net_buf *usbd_ep_buf_alloc(const struct usbd_class_data *const c_data,
  * @param[in] uds_ctx Pointer to USB device support context
  * @param[in] buf     Pointer to UDC request buffer
  *
- * @return 0 on success, all other values should be treated as error.
+ * @retval 0 on success
+ * @retval err all other values should be treated as error.
  */
 int usbd_ep_ctrl_enqueue(struct usbd_context *const uds_ctx,
 			 struct net_buf *const buf);
@@ -1046,7 +1061,8 @@ int usbd_ep_ctrl_enqueue(struct usbd_context *const uds_ctx,
  * @param[in] c_data   Pointer to USB device class data
  * @param[in] buf    Pointer to UDC request buffer
  *
- * @return 0 on success, or error from udc_ep_enqueue()
+ * @retval 0 on success
+ * @retval err error from udc_ep_enqueue()
  */
 int usbd_ep_enqueue(const struct usbd_class_data *const c_data,
 		    struct net_buf *const buf);
@@ -1057,7 +1073,8 @@ int usbd_ep_enqueue(const struct usbd_class_data *const c_data,
  * @param[in] uds_ctx Pointer to USB device support context
  * @param[in] ep      Endpoint address
  *
- * @return 0 on success, or error from udc_ep_dequeue()
+ * @retval 0 on success
+ * @retval err error from udc_ep_dequeue()
  */
 int usbd_ep_dequeue(struct usbd_context *uds_ctx, const uint8_t ep);
 
@@ -1069,7 +1086,8 @@ int usbd_ep_dequeue(struct usbd_context *uds_ctx, const uint8_t ep);
  * @param[in] uds_ctx Pointer to USB device support context
  * @param[in] buf     Pointer to UDC request buffer
  *
- * @return 0 on success, all other values should be treated as error.
+ * @retval 0 on success
+ * @retval err all other values should be treated as error.
  */
 int usbd_ep_buf_free(struct usbd_context *uds_ctx, struct net_buf *buf);
 
@@ -1078,14 +1096,16 @@ int usbd_ep_buf_free(struct usbd_context *uds_ctx, struct net_buf *buf);
  *
  * @param[in] uds_ctx Pointer to USB device support context
  *
- * @return true if endpoint is halted, false otherwise
+ * @retval true if endpoint is halted
+ * @retval false otherwise
  */
 bool usbd_is_suspended(struct usbd_context *uds_ctx);
 
 /**
  * @brief Initiate the USB remote wakeup (TBD)
  *
- * @return 0 on success, other values on fail.
+ * @retval 0 on success
+ * @retval err other values on fail.
  */
 int usbd_wakeup_request(struct usbd_context *uds_ctx);
 
@@ -1125,7 +1145,8 @@ enum usbd_speed usbd_caps_speed(const struct usbd_context *const uds_ctx);
  * @param[in] speed   Speed for which the bcdUSB should be set
  * @param[in] bcd     bcdUSB value
  *
- * @return 0 on success, other values on fail.
+ * @retval 0 on success
+ * @retval err other values on fail.
  */
 int usbd_device_set_bcd_usb(struct usbd_context *const uds_ctx,
 			    const enum usbd_speed speed, const uint16_t bcd);
@@ -1136,7 +1157,8 @@ int usbd_device_set_bcd_usb(struct usbd_context *const uds_ctx,
  * @param[in] uds_ctx Pointer to USB device support context
  * @param[in] vid     idVendor value
  *
- * @return 0 on success, other values on fail.
+ * @retval 0 on success
+ * @retval err other values on fail.
  */
 int usbd_device_set_vid(struct usbd_context *const uds_ctx,
 			 const uint16_t vid);
@@ -1147,7 +1169,8 @@ int usbd_device_set_vid(struct usbd_context *const uds_ctx,
  * @param[in] uds_ctx Pointer to USB device support context
  * @param[in] pid     idProduct value
  *
- * @return 0 on success, other values on fail.
+ * @retval 0 on success
+ * @retval err other values on fail.
  */
 int usbd_device_set_pid(struct usbd_context *const uds_ctx,
 			const uint16_t pid);
@@ -1158,7 +1181,8 @@ int usbd_device_set_pid(struct usbd_context *const uds_ctx,
  * @param[in] uds_ctx Pointer to USB device support context
  * @param[in] bcd     bcdDevice value
  *
- * @return 0 on success, other values on fail.
+ * @retval 0 on success
+ * @retval err other values on fail.
  */
 int usbd_device_set_bcd_device(struct usbd_context *const uds_ctx,
 			       const uint16_t bcd);
@@ -1172,7 +1196,8 @@ int usbd_device_set_bcd_device(struct usbd_context *const uds_ctx,
  * @param[in] subclass   bDeviceSubClass value
  * @param[in] protocol   bDeviceProtocol value
  *
- * @return 0 on success, other values on fail.
+ * @retval 0 on success
+ * @retval err other values on fail.
  */
 int usbd_device_set_code_triple(struct usbd_context *const uds_ctx,
 				const enum usbd_speed speed,
@@ -1187,7 +1212,8 @@ int usbd_device_set_code_triple(struct usbd_context *const uds_ctx,
  * @param[in] cfg     Configuration number
  * @param[in] enable  Sets attribute if true, clears it otherwise
  *
- * @return 0 on success, other values on fail.
+ * @retval 0 on success
+ * @retval err other values on fail.
  */
 int usbd_config_attrib_rwup(struct usbd_context *const uds_ctx,
 			    const enum usbd_speed speed,
@@ -1201,7 +1227,8 @@ int usbd_config_attrib_rwup(struct usbd_context *const uds_ctx,
  * @param[in] cfg     Configuration number
  * @param[in] enable  Sets attribute if true, clears it otherwise
  *
- * @return 0 on success, other values on fail.
+ * @retval 0 on success
+ * @retval err other values on fail.
  */
 int usbd_config_attrib_self(struct usbd_context *const uds_ctx,
 			    const enum usbd_speed speed,
@@ -1215,7 +1242,8 @@ int usbd_config_attrib_self(struct usbd_context *const uds_ctx,
  * @param[in] cfg     Configuration number
  * @param[in] power   Maximum power consumption value (bMaxPower)
  *
- * @return 0 on success, other values on fail.
+ * @retval 0 on success
+ * @retval err other values on fail.
  */
 int usbd_config_maxpower(struct usbd_context *const uds_ctx,
 			 const enum usbd_speed speed,
@@ -1231,7 +1259,8 @@ int usbd_config_maxpower(struct usbd_context *const uds_ctx,
  *
  * @param[in] uds_ctx Pointer to USB device support context
  *
- * @return true if controller can detect VBUS state change, false otherwise
+ * @retval true if controller can detect VBUS state change
+ * @retval false otherwise
  */
 bool usbd_can_detect_vbus(struct usbd_context *const uds_ctx);
 
@@ -1244,7 +1273,8 @@ bool usbd_can_detect_vbus(struct usbd_context *const uds_ctx);
  * @param[in] uds_ctx Pointer to USB device support context
  * @param[in] vreq_nd Pointer to vendor request node
  *
- * @return 0 on success, other values on fail.
+ * @retval 0 on success
+ * @retval err other values on fail.
  */
 int usbd_device_register_vreq(struct usbd_context *const uds_ctx,
 			      struct usbd_vreq_node *const vreq_nd);

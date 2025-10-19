@@ -207,7 +207,8 @@ struct usb_cfg_data {
  *
  * @param[in] usb_descriptor USB descriptor table
  *
- * @return 0 on success, negative errno code on fail
+ * @retval 0 on success
+ * @retval <0 negative errno code on fail
  */
 __deprecated int usb_set_config(const uint8_t *usb_descriptor);
 
@@ -218,7 +219,8 @@ __deprecated int usb_set_config(const uint8_t *usb_descriptor);
  *
  * This function returns the USB device to it's initial state
  *
- * @return 0 on success, negative errno code on fail
+ * @retval 0 on success
+ * @retval <0 negative errno code on fail
  */
 __deprecated int usb_deconfig(void);
 
@@ -238,7 +240,8 @@ __deprecated int usb_deconfig(void);
  * @param[in] status_cb Callback registered by user to notify
  *                      about USB device controller state.
  *
- * @return 0 on success, negative errno code on fail.
+ * @retval 0 on success
+ * @retval <0 negative errno code on fail.
  */
 __deprecated int usb_enable(usb_dc_status_callback status_cb);
 
@@ -251,7 +254,8 @@ __deprecated int usb_enable(usb_dc_status_callback status_cb);
  * Upon success, the specified USB interface is clock gated in hardware,
  * it is no longer capable of generating interrupts.
  *
- * @return 0 on success, negative errno code on fail
+ * @retval 0 on success
+ * @retval <0 negative errno code on fail
  */
 __deprecated int usb_disable(void);
 
@@ -271,7 +275,8 @@ __deprecated int usb_disable(void);
  * @param[out] bytes_ret Bytes written to the EP FIFO. This value may be NULL if
  *                       the application expects all bytes to be written
  *
- * @return 0 on success, negative errno code on fail
+ * @retval 0 on success
+ * @retval <0 negative errno code on fail
  */
 __deprecated int usb_write(uint8_t ep, const uint8_t *data, uint32_t data_len, uint32_t *bytes_ret);
 
@@ -292,7 +297,8 @@ __deprecated int usb_write(uint8_t ep, const uint8_t *data, uint32_t data_len, u
  *                          max_data_len is 0 the number of bytes available
  *                          for read is returned.
  *
- * @return  0 on success, negative errno code on fail
+ * @return  0 on success
+ * @retval <0 negative errno code on fail
  */
 __deprecated int usb_read(uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_t *ret_bytes);
 
@@ -307,7 +313,8 @@ __deprecated int usb_read(uint8_t ep, uint8_t *data, uint32_t max_data_len, uint
  * @param[in]  ep           Endpoint address corresponding to the one listed in
  *                          the device configuration table
  *
- * @return  0 on success, negative errno code on fail
+ * @return  0 on success
+ * @retval <0 negative errno code on fail
  */
 __deprecated int usb_ep_set_stall(uint8_t ep);
 
@@ -322,7 +329,8 @@ __deprecated int usb_ep_set_stall(uint8_t ep);
  * @param[in]  ep           Endpoint address corresponding to the one listed in
  *                          the device configuration table
  *
- * @return  0 on success, negative errno code on fail
+ * @return  0 on success
+ * @retval <0 negative errno code on fail
  */
 __deprecated int usb_ep_clear_stall(uint8_t ep);
 
@@ -344,7 +352,8 @@ __deprecated int usb_ep_clear_stall(uint8_t ep);
  *                          max_data_len is 0 the number of bytes
  *                          available for read should be returned.
  *
- * @return 0 on success, negative errno code on fail.
+ * @retval 0 on success
+ * @retval <0 negative errno code on fail.
  */
 __deprecated int usb_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 		     uint32_t *read_bytes);
@@ -363,7 +372,8 @@ __deprecated int usb_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_l
  * @param[in]  ep           Endpoint address corresponding to the one
  *                          listed in the device configuration table
  *
- * @return 0 on success, negative errno code on fail.
+ * @retval 0 on success
+ * @retval <0 negative errno code on fail.
  */
 __deprecated int usb_ep_read_continue(uint8_t ep);
 
@@ -404,7 +414,8 @@ __deprecated void usb_transfer_ep_callback(uint8_t ep, enum usb_dc_ep_cb_status_
  * @param[in]  cb           Function called on transfer completion/failure
  * @param[in]  priv         Data passed back to the transfer completion callback
  *
- * @return 0 on success, negative errno code on fail.
+ * @retval 0 on success
+ * @retval <0 negative errno code on fail.
  */
 __deprecated int usb_transfer(uint8_t ep, uint8_t *data, size_t dlen, unsigned int flags,
 		 usb_transfer_callback cb, void *priv);
@@ -454,7 +465,8 @@ __deprecated void usb_cancel_transfers(void);
  * @param[in]  ep           Endpoint address corresponding to the one
  *                          listed in the device configuration table
  *
- * @return true if transfer is ongoing, false otherwise.
+ * @retval true if transfer is ongoing
+ * @retval false otherwise.
  */
 __deprecated bool usb_transfer_is_busy(uint8_t ep);
 
@@ -467,7 +479,8 @@ __deprecated bool usb_transfer_is_busy(uint8_t ep);
  * This feature must be enabled in configuration, otherwise
  * it will always return -ENOTSUP error.
  *
- * @return 0 on success, negative errno code on fail,
+ * @retval 0 on success
+ * @retval <0 negative errno code on fail,
  *         i.e. when the bus is already active.
  */
 __deprecated int usb_wakeup_request(void);
@@ -477,7 +490,8 @@ __deprecated int usb_wakeup_request(void);
  *
  * @deprecated Use @ref usbd_api instead
  *
- * @return true if remote wakeup has been enabled by the host, false otherwise.
+ * @retval true if remote wakeup has been enabled by the host
+ * @retval false otherwise.
  */
 __deprecated bool usb_get_remote_wakeup_status(void);
 

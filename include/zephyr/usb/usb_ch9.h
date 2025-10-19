@@ -75,7 +75,7 @@ struct usb_setup_packet {
  * @brief Check if request transfer direction is to host.
  *
  * @param setup Pointer to USB Setup packet
- * @return true If transfer direction is to host
+ * @retval true If transfer direction is to host
  */
 static inline bool usb_reqtype_is_to_host(const struct usb_setup_packet *setup)
 {
@@ -86,7 +86,7 @@ static inline bool usb_reqtype_is_to_host(const struct usb_setup_packet *setup)
  * @brief Check if request transfer direction is to device.
  *
  * @param setup Pointer to USB Setup packet
- * @return true If transfer direction is to device
+ * @retval true If transfer direction is to device
  */
 static inline bool usb_reqtype_is_to_device(const struct usb_setup_packet *setup)
 {
