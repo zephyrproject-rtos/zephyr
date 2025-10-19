@@ -50,19 +50,19 @@ static inline const char *bt_hci_err_to_str(uint8_t hci_err)
 #endif
 
 /** Allocate a HCI command buffer.
-  *
-  * This function allocates a new buffer for a HCI command. It is given
-  * the OpCode (encoded e.g. using the BT_OP macro) and the total length
-  * of the parameters. Upon successful return the buffer is ready to have
-  * the parameters encoded into it.
-  *
-  * @deprecated Use bt_hci_cmd_alloc() instead.
-  *
-  * @param opcode     Command OpCode.
-  * @param param_len  Length of command parameters.
-  *
-  * @return Newly allocated buffer.
-  */
+ *
+ * This function allocates a new buffer for a HCI command. It is given
+ * the OpCode (encoded e.g. using the BT_OP macro) and the total length
+ * of the parameters. Upon successful return the buffer is ready to have
+ * the parameters encoded into it.
+ *
+ * @deprecated Use bt_hci_cmd_alloc() instead.
+ *
+ * @param opcode     Command OpCode.
+ * @param param_len  Length of command parameters.
+ *
+ * @return Newly allocated buffer.
+ */
 __deprecated struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len);
 
 /** Allocate an HCI command buffer.
@@ -80,49 +80,49 @@ __deprecated struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_le
 struct net_buf *bt_hci_cmd_alloc(k_timeout_t timeout);
 
 /** Send a HCI command asynchronously.
-  *
-  * This function is used for sending a HCI command asynchronously. It can
-  * either be called for a buffer created using bt_hci_cmd_alloc(), or
-  * if the command has no parameters a NULL can be passed instead. The
-  * sending of the command will happen asynchronously, i.e. upon successful
-  * return from this function the caller only knows that it was queued
-  * successfully.
-  *
-  * If synchronous behavior, and retrieval of the Command Complete parameters
-  * is desired, the bt_hci_cmd_send_sync() API should be used instead.
-  *
-  * @param opcode Command OpCode.
-  * @param buf    Command buffer or NULL (if no parameters).
-  *
-  * @retval 0 on success
-  * @retval <0 negative error value on failure.
-  */
+ *
+ * This function is used for sending a HCI command asynchronously. It can
+ * either be called for a buffer created using bt_hci_cmd_alloc(), or
+ * if the command has no parameters a NULL can be passed instead. The
+ * sending of the command will happen asynchronously, i.e. upon successful
+ * return from this function the caller only knows that it was queued
+ * successfully.
+ *
+ * If synchronous behavior, and retrieval of the Command Complete parameters
+ * is desired, the bt_hci_cmd_send_sync() API should be used instead.
+ *
+ * @param opcode Command OpCode.
+ * @param buf    Command buffer or NULL (if no parameters).
+ *
+ * @retval 0 on success
+ * @retval <0 negative error value on failure.
+ */
 int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf);
 
 /** Send a HCI command synchronously.
-  *
-  * This function is used for sending a HCI command synchronously. It can
-  * either be called for a buffer created using bt_hci_cmd_alloc(), or
-  * if the command has no parameters a NULL can be passed instead.
-  *
-  * The function will block until a Command Status or a Command Complete
-  * event is returned. If either of these have a non-zero status the function
-  * will return a negative error code and the response reference will not
-  * be set. If the command completed successfully and a non-NULL rsp parameter
-  * was given, this parameter will be set to point to a buffer containing
-  * the response parameters.
-  *
-  * @param opcode Command OpCode.
-  * @param buf    Command buffer or NULL (if no parameters).
-  * @param rsp    Place to store a reference to the command response. May
-  *               be NULL if the caller is not interested in the response
-  *               parameters. If non-NULL is passed the caller is responsible
-  *               for calling net_buf_unref() on the buffer when done parsing
-  *               it.
-  *
-  * @retval 0 on success
-  * @retval <0 negative error value on failure.
-  */
+ *
+ * This function is used for sending a HCI command synchronously. It can
+ * either be called for a buffer created using bt_hci_cmd_alloc(), or
+ * if the command has no parameters a NULL can be passed instead.
+ *
+ * The function will block until a Command Status or a Command Complete
+ * event is returned. If either of these have a non-zero status the function
+ * will return a negative error code and the response reference will not
+ * be set. If the command completed successfully and a non-NULL rsp parameter
+ * was given, this parameter will be set to point to a buffer containing
+ * the response parameters.
+ *
+ * @param opcode Command OpCode.
+ * @param buf    Command buffer or NULL (if no parameters).
+ * @param rsp    Place to store a reference to the command response. May
+ *               be NULL if the caller is not interested in the response
+ *               parameters. If non-NULL is passed the caller is responsible
+ *               for calling net_buf_unref() on the buffer when done parsing
+ *               it.
+ *
+ * @retval 0 on success
+ * @retval <0 negative error value on failure.
+ */
 int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 			 struct net_buf **rsp);
 
@@ -200,26 +200,26 @@ struct bt_le_per_adv_sync *bt_hci_per_adv_sync_lookup_handle(uint16_t handle);
 const char *bt_hci_get_ver_str(uint8_t core_version);
 
 /** @typedef bt_hci_vnd_evt_cb_t
-  * @brief Callback type for vendor handling of HCI Vendor-Specific Events.
-  *
-  * A function of this type is registered with bt_hci_register_vnd_evt_cb()
-  * and will be called for any HCI Vendor-Specific Event.
-  *
-  * @param buf Buffer containing event parameters.
-  *
-  * @retval true if the function handles the event
-  * @retval false to defer the handling of this event back to the stack.
-  */
+ * @brief Callback type for vendor handling of HCI Vendor-Specific Events.
+ *
+ * A function of this type is registered with bt_hci_register_vnd_evt_cb()
+ * and will be called for any HCI Vendor-Specific Event.
+ *
+ * @param buf Buffer containing event parameters.
+ *
+ * @retval true if the function handles the event
+ * @retval false to defer the handling of this event back to the stack.
+ */
 typedef bool bt_hci_vnd_evt_cb_t(struct net_buf_simple *buf);
 
 /** Register user callback for HCI Vendor-Specific Events
-  *
-  * @param cb Callback to be called when the stack receives a
-  *           HCI Vendor-Specific Event.
-  *
-  * @retval 0 on success
-  * @retval <0 negative error value on failure.
-  */
+ *
+ * @param cb Callback to be called when the stack receives a
+ *           HCI Vendor-Specific Event.
+ *
+ * @retval 0 on success
+ * @retval <0 negative error value on failure.
+ */
 int bt_hci_register_vnd_evt_cb(bt_hci_vnd_evt_cb_t cb);
 
 /** @brief Get Random bytes from the LE Controller.
