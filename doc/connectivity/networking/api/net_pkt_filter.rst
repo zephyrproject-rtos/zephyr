@@ -100,7 +100,7 @@ applications priority (``NET_PRIORITY_CA``) to the internet traffic of version
 traffic, and the lowest background priority (``NET_PRIORITY_BK``) to ``lldp``
 and ``arp``.
 
-Priority rules are only really usefull if multiple traffic class queues are
+Priority rules are only really useful if multiple traffic class queues are
 enabled in the project configuration :kconfig:option:`CONFIG_NET_TC_RX_COUNT`.
 The mapping from the priority of the packet to the traffic class queue is in
 accordance with the standard 802.1Q and depends on the
