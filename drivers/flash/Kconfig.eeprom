@@ -1,0 +1,12 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_EEPROM
+	bool "EEPROM to Flash driver"
+	default y
+	depends on DT_HAS_ZEPHYR_EEPROM_TO_FLASH_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_NO_EXPLICIT_ERASE
+	help
+	  Enables the EEPROM to Flash driver.
