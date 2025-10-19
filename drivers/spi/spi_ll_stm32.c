@@ -99,11 +99,6 @@ static void spi_stm32_pm_policy_state_lock_put(const struct device *dev)
 }
 
 #ifdef CONFIG_SPI_STM32_DMA
-static uint32_t bits2bytes(uint32_t bits)
-{
-	return bits / 8;
-}
-
 /* dummy buffer is used for transferring NOP when tx buf is null
  * and used as a dummy sink for when rx buf is null.
  */
@@ -862,7 +857,7 @@ static int32_t spi_stm32_count_bufset_frames(const struct spi_config *config,
 		num_bytes += bufs->buffers[i].len;
 	}
 
-	uint8_t bytes_per_frame = SPI_WORD_SIZE_GET(config->operation) / 8;
+	uint8_t bytes_per_frame = SPI_WORD_SIZE_GET(config->operation) / BITS_PER_BYTE;
 
 	if ((num_bytes % bytes_per_frame) != 0) {
 		return -EINVAL;
@@ -916,7 +911,8 @@ static int spi_stm32_half_duplex_switch_to_receive(const struct spi_stm32_config
 
 		if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
 			int num_bytes = spi_context_total_rx_len(&data->ctx);
-			uint8_t bytes_per_frame = SPI_WORD_SIZE_GET(config->operation) / 8;
+			uint8_t bytes_per_frame = SPI_WORD_SIZE_GET(config->operation) /
+						  BITS_PER_BYTE;
 
 			if ((num_bytes % bytes_per_frame) != 0) {
 				return -EINVAL;
@@ -1217,7 +1213,7 @@ static int transceive_dma(const struct device *dev,
 	/* This is turned off in spi_stm32_complete(). */
 	spi_stm32_cs_control(dev, true);
 
-	uint8_t word_size_bytes = bits2bytes(SPI_WORD_SIZE_GET(config->operation));
+	uint8_t word_size_bytes = SPI_WORD_SIZE_GET(config->operation) / BITS_PER_BYTE;
 
 	data->dma_rx.dma_cfg.source_data_size = word_size_bytes;
 	data->dma_rx.dma_cfg.dest_data_size = word_size_bytes;
@@ -1297,8 +1293,7 @@ static int transceive_dma(const struct device *dev,
 		LL_SPI_DisableDMAReq_RX(spi);
 #endif /* ! st_stm32h7_spi */
 
-		uint8_t frame_size_bytes = bits2bytes(
-			SPI_WORD_SIZE_GET(config->operation));
+		uint8_t frame_size_bytes = SPI_WORD_SIZE_GET(config->operation) / BITS_PER_BYTE;
 
 		if (transfer_dir == LL_SPI_FULL_DUPLEX) {
 			spi_context_update_tx(&data->ctx, frame_size_bytes, dma_len);
