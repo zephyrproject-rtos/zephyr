@@ -17,3 +17,7 @@ properties:
 
   interrupt-names:
     required: true
+
+  dtc:
+    type: phandle
+    description: DTC controller

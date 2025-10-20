@@ -120,6 +120,7 @@
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 	clock-frequency = <DT_FREQ_K(400)>;
+	status = "okay";
 };
 
 &ctsu {
