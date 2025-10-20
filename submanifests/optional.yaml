@@ -28,12 +28,6 @@ manifest:
       remote: upstream
       groups:
         - optional
-    - name: sof
-      revision: ba8de7551f88a4f8d4533791274fa85b37ec332e
-      path: modules/audio/sof
-      remote: upstream
-      groups:
-        - optional
     - name: tf-m-tests
       revision: a90702bcb8fadb6f70daf0ffbb13888dfe63fc99
       path: modules/tee/tf-m/tf-m-tests
