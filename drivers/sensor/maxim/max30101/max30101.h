@@ -91,6 +91,11 @@ enum max30101_callback_idx {
 #define MAX30101_ASYNC_RESOLUTION 31
 #define MAX30101_LIGHT_SHIFT      0
 #define MAX30101_TEMP_FRAC_MASK   GENMASK(MAX30101_TEMP_FRAC_SHIFT - 1, 0)
+
+static const uint32_t max30101_sample_period_ns[8] = {
+	20000000, 10000000, 5000000, 2500000,
+	1250000, 1000000, 625000, 312500,
+};
 #endif /* CONFIG_SENSOR_ASYNC_API */
 
 enum max30101_mode {
@@ -141,22 +146,23 @@ struct max30101_config {
 	uint8_t data_shift;
 #if CONFIG_MAX30101_TRIGGER
 	const struct gpio_dt_spec irq_gpio;
-#endif
+#if CONFIG_MAX30101_STREAM
+	uint8_t sample_period;
+	uint8_t decimation;
+#endif /* CONFIG_MAX30101_STREAM */
+#endif /* CONFIG_MAX30101_TRIGGER */
 };
 
 struct max30101_reading {
 	uint8_t raw[MAX30101_BYTES_PER_CHANNEL * MAX30101_MAX_NUM_CHANNELS];
-#if CONFIG_MAX30101_DIE_TEMPERATURE
-	uint8_t die_temp[2];
-#endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
 };
 
 #if CONFIG_MAX30101_STREAM
 	struct __attribute__((packed)) max30101_stream_config {
 		/* Set if `drdy` interrupt must be watched triggered */
 		uint8_t irq_data_rdy: 1;
-		/* Set if `watermark` interrupt must be watched triggered */
-		uint8_t irq_watermark: 1;
+		/* Set if `watermark` interrupt must be watched triggered / dropped */
+		uint8_t irq_watermark: 2;
 		/* Set if `overflow` interrupt must be watched triggered */
 		uint8_t irq_overflow: 1;
 	};
@@ -164,6 +170,9 @@ struct max30101_reading {
 
 struct max30101_data {
 	struct max30101_reading reading;
+#if CONFIG_MAX30101_DIE_TEMPERATURE
+	uint8_t die_temp[2];
+#endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
 	uint8_t map[MAX30101_MAX_NUM_CHANNELS][MAX30101_MAX_NUM_CHANNELS];
 	uint8_t num_channels[MAX30101_MAX_NUM_CHANNELS];
 	uint8_t total_channels;
@@ -203,10 +212,13 @@ int max30101_init_interrupts(const struct device *dev);
 #if CONFIG_SENSOR_ASYNC_API
 struct max30101_decoder_header {
 	uint64_t timestamp;
+#if CONFIG_MAX30101_STREAM
+	uint8_t fifo_info[3]; /* [0]: Write ptr, [1]: overflow counter, [2]: Read ptr */
+	uint8_t reading_count;
+#endif /* CONFIG_MAX30101_STREAM */
 } __attribute__((__packed__));
 
 struct max30101_encoded_data {
-	const struct device *sensor;
 	struct max30101_decoder_header header;
 	struct {
 		/* Set if `red` has data (0-3 values) */
@@ -226,10 +238,18 @@ struct max30101_encoded_data {
 		uint8_t has_overflow: 1;
 #endif /* CONFIG_MAX30101_STREAM */
 	} __attribute__((__packed__));
-	struct max30101_reading reading;
+	const struct device *sensor;
+#if CONFIG_MAX30101_DIE_TEMPERATURE
+	uint8_t die_temp[2];
+#endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
+	struct max30101_reading reading[1];
 };
 
+#if CONFIG_MAX30101_DIE_TEMPERATURE
+int max30101_read_sample(const struct device *dev, struct max30101_reading *reading, uint8_t *temp);
+#else
 int max30101_read_sample(const struct device *dev, struct max30101_reading *reading);
+#endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
 
 void max30101_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
 

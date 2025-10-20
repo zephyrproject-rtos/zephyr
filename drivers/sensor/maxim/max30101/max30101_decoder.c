@@ -38,11 +38,17 @@ static int max30101_decoder_get_frame_count(const uint8_t *buffer,
 #if CONFIG_MAX30101_DIE_TEMPERATURE
 	case SENSOR_CHAN_DIE_TEMP:
 		*frame_count = edata->has_temp ? 1 : 0;
-		break;
+		return (!*frame_count)? -ENODATA : 0;
 #endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
 	default:
 		return -ENOTSUP;
 	}
+
+//	LOG_INF("(%d) [%d]: [%d](%d) frames", chan_spec.chan_idx, chan_spec.chan_type, *frame_count, edata->header.reading_count);
+
+#if CONFIG_MAX30101_STREAM
+	*frame_count *= edata->header.reading_count;
+#endif /* CONFIG_MAX30101_STREAM */
 
 	return (!*frame_count)? -ENODATA : 0;
 }
@@ -71,15 +77,16 @@ static int max30101_decoder_decode(const uint8_t *buffer, struct sensor_chan_spe
 	const struct max30101_config *config = dev->config;
 	struct max30101_data *data = dev->data;
 
-	if (*fit != 0) {
+	if (*fit >= edata->header.reading_count) {
 		return 0;
 	}
 
 	enum max30101_led_channel led_chan;
 	struct sensor_q31_data *out = data_out;
 
-	out->header.base_timestamp_ns = edata->header.timestamp;
-	out->header.reading_count = 1;
+	uint32_t sample_period = max30101_sample_period_ns[config->sample_period] * config->decimation;
+	out->header.base_timestamp_ns = edata->header.timestamp - (edata->header.reading_count - 1) * sample_period;
+	out->header.reading_count = 0;
 
 	switch (chan_spec.chan_type) {
 	case SENSOR_CHAN_RED:
@@ -106,12 +113,13 @@ static int max30101_decoder_decode(const uint8_t *buffer, struct sensor_chan_spe
 #if CONFIG_MAX30101_DIE_TEMPERATURE
 	case SENSOR_CHAN_DIE_TEMP:
 		if (edata->has_temp) {
-			out->readings[0].temperature =
-				(edata->reading.die_temp[0] << MAX30101_TEMP_FRAC_SHIFT) |
-				(edata->reading.die_temp[1] & 0x0f);
+			out->readings[out->header.reading_count].timestamp_delta = 0;
+			out->readings[out->header.reading_count].timestamp_delta = (edata->header.reading_count - 1) * sample_period;
+			out->readings[out->header.reading_count].temperature = (edata->die_temp[0] << MAX30101_TEMP_FRAC_SHIFT) | (edata->die_temp[1] & 0x0f);
 			out->shift = MAX30101_ASYNC_RESOLUTION - MAX30101_TEMP_FRAC_SHIFT;
-			*fit = 1;
-			return 1;
+			out->header.reading_count++;
+			(*fit)++;
+			return out->header.reading_count;
 		} else {
 			return -ENODATA;
 		}
@@ -127,13 +135,24 @@ static int max30101_decoder_decode(const uint8_t *buffer, struct sensor_chan_spe
 		return -EINVAL;
 	}
 
-	uint8_t index = MAX30101_BYTES_PER_CHANNEL * data->map[led_chan][chan_spec.chan_idx];
-	out->readings[0].value = (edata->reading.raw[index] << 16) | (edata->reading.raw[index + 1] << 8) | (edata->reading.raw[index + 2]);
-	out->readings[0].value = (out->readings[0].value & MAX30101_FIFO_DATA_MASK) >> config->data_shift;
+	const uint8_t *read_data = (uint8_t *)&edata->reading[0].raw;
+#if CONFIG_MAX30101_STREAM
+	int max_frame = *fit + (max_count > edata->header.reading_count) ? edata->header.reading_count : max_count;
+	for (out->header.reading_count = 0; out->header.reading_count < max_frame; out->header.reading_count++) {
+#endif /* CONFIG_MAX30101_STREAM */
+//	uint8_t index = MAX30101_BYTES_PER_CHANNEL * data->map[led_chan][chan_spec.chan_idx];
+	uint8_t index = max30101_sample_bytes[data->total_channels] * (*fit) + max30101_sample_bytes[data->map[led_chan][chan_spec.chan_idx]];
+	out->readings[out->header.reading_count].timestamp_delta = (*fit) * sample_period;
+//	out->readings[out->header.reading_count].value = (edata->reading[*fit].raw[index] << 16) | (edata->reading[*fit].raw[index + 1] << 8) | (edata->reading[*fit].raw[index + 2]);
+	out->readings[out->header.reading_count].value = (read_data[index] << 16) | (read_data[index + 1] << 8) | (read_data[index + 2]);
+	out->readings[out->header.reading_count].value = (out->readings[out->header.reading_count].value & MAX30101_FIFO_DATA_MASK) >> config->data_shift;
 	out->shift = MAX30101_ASYNC_RESOLUTION - MAX30101_LIGHT_SHIFT;
-	*fit = 1;
+	(*fit)++;
+#if CONFIG_MAX30101_STREAM
+	}
+#endif /* CONFIG_MAX30101_STREAM */
 
-	return 1;
+	return out->header.reading_count;
 }
 
 #if CONFIG_MAX30101_STREAM

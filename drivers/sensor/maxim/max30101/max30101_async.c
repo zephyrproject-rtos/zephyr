@@ -80,6 +80,7 @@ void max30101_submit_sync(struct rtio_iodev_sqe *iodev_sqe)
 
 	edata = (struct max30101_encoded_data *)buf;
 	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
+	edata->header.reading_count = 1;
 	edata->has_red = 0;
 	edata->has_ir = 0;
 	edata->has_green = 0;
@@ -89,7 +90,11 @@ void max30101_submit_sync(struct rtio_iodev_sqe *iodev_sqe)
 	max30101_encode_channels(data, edata, channels, num_channels);
 
 	edata->sensor = dev;
-	rc = max30101_read_sample(dev, &edata->reading);
+#if CONFIG_MAX30101_DIE_TEMPERATURE
+	rc = max30101_read_sample(dev, &edata->reading[0], (uint8_t *)(&edata->die_temp));
+#else
+	rc = max30101_read_sample(dev, &edata->reading[0]);
+#endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
 	if (rc != 0) {
 		LOG_ERR("Failed to fetch samples");
 		rtio_iodev_sqe_err(iodev_sqe, rc);

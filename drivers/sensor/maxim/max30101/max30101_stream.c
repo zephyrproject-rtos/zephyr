@@ -107,6 +107,107 @@ static void max30101_complete_op_cb(struct rtio *r, const struct rtio_sqe *sqe,
  * Called by bus driver to complete the MAX30101_STATUS_REG read op.
  * If drdy is active it reads data from MAX30101 internal fifo reg.
  */
+static void max30101_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe,
+				      int result, void *arg)
+{
+	const struct device *dev = arg;
+	struct max30101_data *data = dev->data;
+	struct sensor_read_config *read_config;
+
+//	LOG_WRN("max30101_read_fifo_cb");
+	if (result) { /* reads failed → finish the original op with error */
+		LOG_ERR("FIFO read failed");
+		rtio_iodev_sqe_err(data->streaming_sqe, result);
+		return;
+	}
+
+	/* At this point, no sqe request is queued should be considered as a bug */
+	__ASSERT_NO_MSG(data->streaming_sqe != NULL);
+
+	read_config = (struct sensor_read_config *)data->streaming_sqe->sqe.iodev->data;
+	__ASSERT_NO_MSG(read_config != NULL);
+	__ASSERT_NO_MSG(read_config->is_streaming == true);
+
+	struct max30101_encoded_data *edata;
+	uint8_t *buf;
+	uint32_t buf_len;
+	uint8_t count;
+
+	if (rtio_sqe_rx_buf(data->streaming_sqe, sizeof(struct max30101_decoder_header),
+				sizeof(struct max30101_decoder_header), &buf, &buf_len) != 0) {
+		LOG_ERR("Failed to get buffer read_fifo");
+		rtio_iodev_sqe_err(data->streaming_sqe, -ENOMEM);
+		data->streaming_sqe = NULL;
+		return;
+	}
+
+	edata = (struct max30101_encoded_data *)buf;
+
+	if (edata->header.fifo_info[0] == edata->header.fifo_info[2]) {
+		count = 32;
+	} else if (edata->header.fifo_info[0] < edata->header.fifo_info[2]) {
+		count = edata->header.fifo_info[0] + (32 - edata->header.fifo_info[2]);
+	} else {
+		count = edata->header.fifo_info[0] - edata->header.fifo_info[2];
+	}
+
+	uint32_t req_len = sizeof(struct max30101_encoded_data) + sizeof(struct max30101_reading) * (count - 1);
+
+	if (rtio_sqe_rx_buf(data->streaming_sqe, req_len, req_len, &buf, &buf_len) != 0) {
+		LOG_ERR("Failed to get full buffer read_fifo");
+		rtio_iodev_sqe_err(data->streaming_sqe, -ENOMEM);
+		data->streaming_sqe = NULL;
+		return;
+	}
+
+	// LOG_WRN("FIFO: [0x%02X][0x%02X][0x%02X](%d)", edata->header.fifo_info[0],
+	// 	edata->header.fifo_info[1], edata->header.fifo_info[2], count);
+	// edata = (struct max30101_encoded_data *)buf;
+//	LOG_INF("edata Timestamp: [%lld]", edata->header.timestamp);
+//	LOG_WRN("FIFO: [0x%02X][0x%02X][0x%02X](%d)", edata->header.fifo_info[0],
+//		edata->header.fifo_info[1], edata->header.fifo_info[2], count);
+
+	edata->header.reading_count = count;
+
+	/* Check if the requested channels are supported */
+	const struct sensor_chan_spec all_channel[] = {{.chan_type=SENSOR_CHAN_ALL, .chan_idx=0}};
+
+	uint8_t data_channel = max30101_encode_channels(data, edata, all_channel, ARRAY_SIZE(all_channel));
+	edata->has_temp = 0;
+
+	/* Drop data */
+	if (!(data->stream_cfg.irq_watermark & 0x02)) {
+		edata->has_red = 0;
+		edata->has_ir = 0;
+		edata->has_green = 0;
+	}
+
+	uint8_t *read_data = (uint8_t *)&edata->reading[0].raw;
+	struct rtio_regs fifo_regs;
+	struct rtio_regs_list regs_list[] = {
+		{
+			MAX30101_REG_FIFO_DATA,
+			read_data,
+			count * max30101_sample_bytes[data_channel],
+		},
+	};
+
+	fifo_regs.rtio_regs_list = regs_list;
+	fifo_regs.rtio_regs_num = ARRAY_SIZE(regs_list);
+
+	/*
+	 * Prepare rtio enabled bus to read MAX30101_REG_INT_STS1/2 registers.
+	 * Then max30101_read_status_cb callback will be invoked.
+	 */
+	rtio_read_regs_async(data->rtio_ctx, data->iodev, data->bus_type,
+					&fifo_regs, data->streaming_sqe, dev,
+					max30101_complete_op_cb);
+}
+
+/*
+ * Called by bus driver to complete the MAX30101_STATUS_REG read op.
+ * If drdy is active it reads data from MAX30101 internal fifo reg.
+ */
 static void max30101_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe,
 				      int result, void *arg)
 {
@@ -183,33 +284,33 @@ static void max30101_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe,
 		overflow_event = !!(data->status[0] & MAX30101_INT_ALC_OVF_MASK);
 	}
 
+	uint8_t *buf;
+	uint32_t buf_len;
+
+	if (rtio_sqe_rx_buf(data->streaming_sqe, sizeof(struct max30101_encoded_data),
+				sizeof(struct max30101_encoded_data), &buf, &buf_len) != 0) {
+		LOG_ERR("Failed to get buffer read_status");
+		rtio_iodev_sqe_err(data->streaming_sqe, -ENOMEM);
+		data->streaming_sqe = NULL;
+		return;
+	}
+
+	memset(buf, 0, buf_len);
+	edata = (struct max30101_encoded_data *)buf;
+	edata->header.timestamp = data->timestamp;
+	edata->header.reading_count = 0;
+	edata->has_red = 0;
+	edata->has_ir = 0;
+	edata->has_green = 0;
+	edata->has_temp = 0;
+	/* Store interruptions status */
+	edata->has_data_rdy = rdy_event;
+	edata->has_watermark = watermark_event;
+	edata->has_overflow = overflow_event;
+
 //	LOG_DBG("Flags: [%d][%d][%d]", rdy_event, watermark_event, overflow_event);
 	/* If we're not interested in the data, just complete the request */
 	if (!rdy_event && !watermark_event && !overflow_event) {
-		uint8_t *buf;
-		uint32_t buf_len;
-
-		/* Clear streaming_sqe since we're done with the call */
-		if (rtio_sqe_rx_buf(data->streaming_sqe, sizeof(struct max30101_encoded_data),
-				    sizeof(struct max30101_encoded_data), &buf, &buf_len) != 0) {
-			rtio_iodev_sqe_err(data->streaming_sqe, -ENOMEM);
-			data->streaming_sqe = NULL;
-			return;
-		}
-
-		edata = (struct max30101_encoded_data *)buf;
-
-		memset(buf, 0, buf_len);
-		edata->header.timestamp = data->timestamp;
-		edata->has_red = 0;
-		edata->has_ir = 0;
-		edata->has_green = 0;
-		edata->has_temp = 0;
-		/* Store interruptions status */
-		edata->has_data_rdy = !!rdy_event;
-		edata->has_watermark = watermark_event;
-		edata->has_overflow = overflow_event;
-
 //		LOG_ERR("max30101_read_status_cb NOP");
 		/* complete request with ok */
 		data->streaming_sqe = NULL;
@@ -218,50 +319,30 @@ static void max30101_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe,
 		return;
 	}
 
-	if (!!rdy_event) {
-		uint8_t *buf;
-		uint32_t buf_len;
+	/* Store sensor pointer */
+	edata->sensor = dev;
 
-		if (rtio_sqe_rx_buf(data->streaming_sqe, sizeof(struct max30101_encoded_data),
-				    sizeof(struct max30101_encoded_data), &buf, &buf_len) != 0) {
-			LOG_ERR("Failed to get buffer");
-			rtio_iodev_sqe_err(data->streaming_sqe, -ENOMEM);
-			data->streaming_sqe = NULL;
-			return;
-		}
+	struct rtio_sqe *write_addr;
+	struct rtio_sqe *read_reg;
+	struct rtio_sqe *complete_op;
+	uint32_t acquirable = rtio_sqe_acquirable(data->rtio_ctx);
 
-		edata = (struct max30101_encoded_data *)buf;
+	if (acquirable < 3) {
+		LOG_ERR("MAX30101 Not enough sqes available: [%d/%d]", 3, acquirable);
+		rtio_iodev_sqe_err(data->streaming_sqe, -ENOMEM);
+		return;
+	}
 
-		memset(buf, 0, buf_len);
-		edata->header.timestamp = data->timestamp;
-		edata->has_red = 0;
-		edata->has_ir = 0;
-		edata->has_green = 0;
-		edata->has_temp = 0;
-		/* Store interruptions status */
-		edata->has_data_rdy = !!rdy_event;
-		edata->has_watermark = watermark_event;
-		edata->has_overflow = overflow_event;
-		/* Store sensor pointer */
-		edata->sensor = dev;
+	if (rdy_event) {
+		edata->header.reading_count = 1;
 
 		/* Check if the requested channels are supported */
 		const struct sensor_chan_spec all_channel[] = {{.chan_type=SENSOR_CHAN_ALL, .chan_idx=0}};
 		uint8_t data_channel = max30101_encode_channels(data, edata, all_channel, ARRAY_SIZE(all_channel));
-		struct rtio_sqe *write_addr;
-		struct rtio_sqe *read_reg;
-		struct rtio_sqe *complete_op;
-		uint32_t acquirable = rtio_sqe_acquirable(data->rtio_ctx);
 
 		if (!!data_channel) {
 			uint8_t reg_addr = MAX30101_REG_FIFO_DATA;
-			uint8_t *read_data = (uint8_t *)&edata->reading.raw;
-
-			if (acquirable < 2) {
-				LOG_ERR("DATA Not enough sqes available: [%d/%d]", 2, acquirable);
-				rtio_iodev_sqe_err(data->streaming_sqe, -ENOMEM);
-				return;
-			}
+			uint8_t *read_data = (uint8_t *)&edata->reading[0].raw;
 
 			/* Defined if the value should be dropped */
 			bool keep = (data_rdy->opt != SENSOR_STREAM_DATA_DROP);
@@ -288,11 +369,11 @@ static void max30101_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe,
 			if (data->temp_available && (edata->has_temp)) {
 				data->temp_available = false;
 				reg_addr = MAX30101_REG_TINT;
-				read_data = (uint8_t *)&edata->reading.die_temp;
+				read_data = (uint8_t *)&edata->die_temp;
 				uint8_t enable_buf[] = {MAX30101_REG_TEMP_CFG, 1};
 
 				if (acquirable < 3) {
-					LOG_ERR("Not enough sqes available: [%d/%d]", 3, acquirable);
+					LOG_ERR("TEMP Not enough sqes available: [%d/%d]", 3, acquirable);
 					rtio_iodev_sqe_err(data->streaming_sqe, -ENOMEM);
 					return;
 				}
@@ -326,6 +407,7 @@ static void max30101_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe,
 			}
 #endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
 		} else {
+			edata->header.reading_count = 0;
 			edata->has_red = 0;
 			edata->has_ir = 0;
 			edata->has_green = 0;
@@ -341,6 +423,38 @@ static void max30101_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe,
 
 //		LOG_ERR("max30101_read_status_cb complete_op");
 		rtio_sqe_prep_callback_no_cqe(complete_op, max30101_complete_op_cb, (void *)dev, data->streaming_sqe);
+		rtio_submit(data->rtio_ctx, 0);
+	}
+
+	if (watermark_event) {
+		uint8_t reg_addr = MAX30101_REG_FIFO_WR;
+		uint8_t *read_data = (uint8_t *)&edata->header.fifo_info;
+
+		write_addr = rtio_sqe_acquire(data->rtio_ctx);
+		read_reg = rtio_sqe_acquire(data->rtio_ctx);
+		// Is check acquired not NULL, necessary ?
+		acquirable -= 2;
+
+		rtio_sqe_prep_tiny_write(write_addr, data->iodev, RTIO_PRIO_NORM,
+					&reg_addr, 1, NULL);
+		write_addr->flags = RTIO_SQE_TRANSACTION;
+
+		/* Reads : MAX30101_REG_FIFO_WR, MAX30101_REG_FIFO_OVF, MAX30101_REG_FIFO_RD */
+		rtio_sqe_prep_read(read_reg, data->iodev, RTIO_PRIO_NORM, read_data,
+				3, NULL);
+		read_reg->flags = RTIO_SQE_CHAINED;
+		read_reg->iodev_flags |= RTIO_IODEV_I2C_RESTART | RTIO_IODEV_I2C_STOP;
+
+//		LOG_ERR("max30101_read_status_cb FIFO");
+		complete_op = rtio_sqe_acquire(data->rtio_ctx);
+		if (complete_op == NULL) {
+			rtio_iodev_sqe_err(data->streaming_sqe, -ENOMEM);
+			rtio_sqe_drop_all(data->rtio_ctx);
+			return;
+		}
+
+//		LOG_ERR("max30101_read_status_cb complete_op");
+		rtio_sqe_prep_callback_no_cqe(complete_op, max30101_read_fifo_cb, (void *)dev, data->streaming_sqe);
 		rtio_submit(data->rtio_ctx, 0);
 	}
 }
