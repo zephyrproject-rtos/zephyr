@@ -55,3 +55,32 @@ properties:
     description: |
       Target voltage for the SYS regulation loop. Defaults to 4.5V, matching
       the device default reset configuration.
+
+  battery-discharge-current-limit-milliamp:
+    type: int
+    enum:
+      - 500
+      - 1000
+      - 1500
+      - 3000
+    default: 3000
+    description:
+      Battery discharge current limit. If the current through the battery FET
+      exceeds this value, the discharge FET is turned off. Default matches the
+      register reset value.
+
+  battery-undervoltage-lockout-millivolt:
+    type: int
+    enum:
+      - 3000
+      - 2800
+      - 2600
+      - 2400
+      - 2200
+      - 2000
+    default: 3000
+    description:
+      Battery undervoltage lockout threshold (falling). If the voltage on the
+      BAT pin falls below this value, the BAT to SYS path will be disengaged.
+      There is a 150 mV hysterisis before the path will be re-enabled. Default
+      matches the register reset value.
