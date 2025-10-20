@@ -11,6 +11,7 @@
 
 / {
 	chosen {
+		silabs,sleeptimer = &sysrtc0;
 		zephyr,sram = &sram0;
 		zephyr,entropy = &rng0;
 		zephyr,flash = &flash0;
@@ -363,8 +364,8 @@
 			status = "disabled";
 		};
 
-		sysrtc0: stimer0: sysrtc@24048c00 {
-			compatible = "silabs,gecko-stimer";
+		sysrtc0: sysrtc@24048c00 {
+			compatible = "silabs,sysrtc";
 			reg = <0x24048c00 0x78>;
 			interrupts = <22 0>;
 			interrupt-names = "sysrtc";

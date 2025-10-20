@@ -1,0 +1,16 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Silicon Labs Series 2 RTCC (Real Time Clock with Capture)
+
+description: |
+  The Real Time Clock with Capture (RTCC) is a 32-bit counter kept running down to energy mode EM3.
+  It can be used as an EM2/3 wakeup source as well as a timekeeping counter during low energy mode.
+
+compatible: "silabs,rtcc"
+
+include: rtc.yaml
+
+properties:
+  reg:
+    required: true
