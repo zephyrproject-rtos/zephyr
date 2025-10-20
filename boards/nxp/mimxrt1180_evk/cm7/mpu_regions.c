@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/devicetree.h>
-#include <zephyr/arch/arm/cortex_m/arm_mpu_mem_cfg.h>
+#include <zephyr/arch/arm/mpu/arm_mpu_mem_cfg.h>
 
 #define MEMORY_REGION_SIZE_KB(SIZE)    (SIZE / 1024)
 
