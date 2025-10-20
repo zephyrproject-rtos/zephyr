@@ -5,5 +5,6 @@ config I2C_SF32LB
 	bool "SiFli SF32LB I2C driver"
 	default y
 	depends on DT_HAS_SIFLI_SF32LB_I2C_ENABLED
+	select DMA if $(dt_compat_any_has_prop,$(DT_COMPAT_SIFLI_SF32LB_I2C),dmas)
 	help
 	  Enable I2C driver for SiFli SF32LB.
