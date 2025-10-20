@@ -658,10 +658,59 @@ static int dmic_mcux_read(const struct device *dev,
 	return 0;
 }
 
+static int dmic_mcux_get_caps(const struct device *dev, struct audio_caps *caps)
+{
+	struct mcux_dmic_drv_data *drv_data = dev->data;
+	uint8_t num_pairs = 0U;
+	bool has_enabled = false;
+	bool has_unpaired = false;
+
+	/*
+	 * dmic_mcux_configure() requires each logical pair (2k, 2k + 1) to use
+	 * the left and right channels of the same PDM unit, i.e. hardware
+	 * channels 2n and 2n + 1. Only the last logical channel may be left
+	 * unpaired, and it can use any enabled hardware channel. So the
+	 * maximum is two channels per complete hardware pair, plus one if any
+	 * enabled hardware channel is not part of a complete pair.
+	 */
+	for (uint8_t chan = 0U; chan < FSL_FEATURE_DMIC_CHANNEL_NUM; chan += 2U) {
+		bool left = drv_data->pdm_channels[chan] != NULL;
+		bool right = ((chan + 1U) < FSL_FEATURE_DMIC_CHANNEL_NUM) &&
+			     (drv_data->pdm_channels[chan + 1U] != NULL);
+
+		if (left && right) {
+			num_pairs++;
+		} else if (left || right) {
+			has_unpaired = true;
+		}
+		has_enabled = has_enabled || left || right;
+	}
+
+	memset(caps, 0, sizeof(struct audio_caps));
+
+	caps->min_total_channels = has_enabled ? 1U : 0U;
+	caps->max_total_channels = (uint8_t)((num_pairs * 2U) + (has_unpaired ? 1U : 0U));
+	/*
+	 * These sample rates are static approximations. The actual achievable
+	 * rates depend on the PDM bit clock configured at runtime in
+	 * dmic_mcux_configure().
+	 */
+	caps->supported_sample_rates = AUDIO_SAMPLE_RATE_16000 | AUDIO_SAMPLE_RATE_48000;
+	/* Currently, driver supports only 16-bit samples */
+	caps->supported_bit_widths = AUDIO_BIT_WIDTH_16;
+	caps->min_num_buffers = CONFIG_DMIC_MCUX_DMA_BUFFERS;
+	caps->min_frame_interval = 1000;   /* 1ms minimum */
+	caps->max_frame_interval = 100000; /* 100ms maximum */
+	caps->supported_channel_layouts = AUDIO_CHANNEL_LAYOUT_INTERLEAVED;
+
+	return 0;
+}
+
 static DEVICE_API(dmic, dmic_ops) = {
 	.configure = dmic_mcux_configure,
 	.trigger = dmic_mcux_trigger,
 	.read = dmic_mcux_read,
+	.get_caps = dmic_mcux_get_caps,
 };
 
 /* Converts integer gainshift into 5 bit 2's complement value for GAINSHIFT reg */
