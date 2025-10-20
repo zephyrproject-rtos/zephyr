@@ -20,6 +20,21 @@ config CLOCK_CONTROL
 config CORTEX_M_SYSTICK
 	default n if STM32_LPTIM_TIMER
 
+# Reduce kernel stack sizes to fit MCUs with 8 KiB RAM or less
+config MAIN_STACK_SIZE
+	default 320 if SRAM_SIZE <= 2
+	default 512 if SRAM_SIZE <= 4
+	default 640 if SRAM_SIZE <= 8
+
+config IDLE_STACK_SIZE
+	default 100 if SRAM_SIZE <= 2
+	default 150 if SRAM_SIZE <= 4
+	default 200 if SRAM_SIZE <= 8
+
+config ISR_STACK_SIZE
+	default 256 if SRAM_SIZE <= 2
+	default 512 if SRAM_SIZE <= 8
+
 DT_STM32_RCC_PATH := $(dt_nodelabel_path,rcc)
 DT_STM32_RCC_CLOCK_FREQ := $(dt_node_int_prop_int,$(DT_STM32_RCC_PATH),clock-frequency)
 

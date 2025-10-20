@@ -38,6 +38,8 @@
 #define STM32_SRC_PLL3_P	(STM32_SRC_PLL2_R + 1)
 #define STM32_SRC_PLL3_Q	(STM32_SRC_PLL3_P + 1)
 #define STM32_SRC_PLL3_R	(STM32_SRC_PLL3_Q + 1)
+/** DSI PHY clock */
+#define STM32_SRC_DSIPHY	(STM32_SRC_PLL3_R + 1)
 /** Clock muxes */
 /* #define STM32_SRC_ICLK	TBD */
 
@@ -89,7 +91,7 @@
 #define SAE_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 11, CCIPR2_REG)
 #define RNG_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 12, CCIPR2_REG)
 #define SDMMC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 14, CCIPR2_REG)
-#define DSIHOST_SEL(val)	STM32_DT_CLOCK_SELECT((val), 1, 15, CCIPR2_REG)
+#define DSI_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 15, CCIPR2_REG)
 #define USART6_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 16, CCIPR2_REG)
 #define LTDC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 18, CCIPR2_REG)
 #define OCTOSPI_SEL(val)	STM32_DT_CLOCK_SELECT((val), 3, 20, CCIPR2_REG)

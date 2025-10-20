@@ -14,9 +14,6 @@ Broadcast Audio Source Endpoint (BASE) and finally the BIGinfo together with
 
 The BAP Broadcast Source will reset every 30 seconds to show the full API.
 
-This sample can be found under
-:zephyr_file:`samples/bluetooth/bap_broadcast_source` in the Zephyr tree.
-
 Check the :zephyr:code-sample-category:`bluetooth` samples for general information.
 
 Requirements

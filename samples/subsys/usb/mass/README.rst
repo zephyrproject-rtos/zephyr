@@ -9,8 +9,7 @@ Overview
 
 This sample app demonstrates use of a USB Mass Storage driver by the Zephyr
 project. This very simple driver enumerates a board with either RAM or FLASH
-into an USB disk.  This sample can be found under
-:zephyr_file:`samples/subsys/usb/mass` in the Zephyr project tree.
+into an USB disk.
 
 Requirements
 ************

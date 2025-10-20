@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2025, Jonas Berg
+
+shield:
+  name: adafruit_sht4x
+  full_name: Adafruit SHT40 SHT41 SHT45 Temperature and Humidity Sensor Shield
+  vendor: adafruit
+  supported_features:
+    - sensor

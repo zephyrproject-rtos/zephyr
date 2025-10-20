@@ -12,9 +12,6 @@ Will start advertising extended advertising and includes a Broadcast Audio Annou
 The advertised broadcast audio stream quality will cycle between high and standard quality
 every 15 seconds.
 
-This sample can be found under
-:zephyr_file:`samples/bluetooth/pbp_public_broadcast_source` in the Zephyr tree.
-
 Check the :zephyr:code-sample-category:`bluetooth` samples for general information.
 
 Requirements

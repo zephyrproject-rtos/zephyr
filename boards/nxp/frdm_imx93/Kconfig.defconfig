@@ -60,4 +60,11 @@ endif # NETWORKING
 
 endif # BOARD_FRDM_IMX93_MIMX9352_A55
 
+if IMX_USDHC
+
+config GPIO
+	default y
+
+endif # IMX_USDHC
+
 endif # BOARD_FRDM_IMX93

@@ -870,7 +870,8 @@ void bap_broadcast_snk_thread(void *p1, void *p2, void *p3)
             break;
  
         case BROADCAST_SNK_STATE_PA_SYNC:
-            if (k_sem_take(&sem_pa_synced, SEM_TIMEOUT) != 0) {
+			err = k_sem_take(&sem_pa_synced, SEM_TIMEOUT);
+            if (err != 0) {
                 printk("sem_pa_synced timed out, resetting\n");
                 state = BROADCAST_SNK_STATE_RESET;
                 break;
@@ -890,7 +891,8 @@ void bap_broadcast_snk_thread(void *p1, void *p2, void *p3)
             break;
  
         case BROADCAST_SNK_STATE_WAIT_BASE:
-            if (k_sem_take(&sem_base_received, SEM_TIMEOUT) != 0) {
+			err = k_sem_take(&sem_base_received, SEM_TIMEOUT);
+            if (err != 0) {
                 printk("sem_base_received timed out, resetting\n");
                 state = BROADCAST_SNK_STATE_RESET;
                 break;
@@ -900,7 +902,8 @@ void bap_broadcast_snk_thread(void *p1, void *p2, void *p3)
             break;
  
         case BROADCAST_SNK_STATE_WAIT_SYNCABLE:
-            if (k_sem_take(&sem_syncable, SEM_TIMEOUT) != 0) {
+			err = k_sem_take(&sem_syncable, SEM_TIMEOUT);
+            if (err != 0) {
                 printk("sem_syncable timed out, resetting\n");
                 state = BROADCAST_SNK_STATE_RESET;
                 break;
@@ -909,7 +912,8 @@ void bap_broadcast_snk_thread(void *p1, void *p2, void *p3)
             break;
  
         case BROADCAST_SNK_STATE_WAIT_CODE:
-            if (k_sem_take(&sem_broadcast_code_received, SEM_TIMEOUT) != 0) {
+			err = k_sem_take(&sem_broadcast_code_received, SEM_TIMEOUT);
+            if (err != 0) {
                 printk("sem_broadcast_code_received timed out, resetting\n");
                 state = BROADCAST_SNK_STATE_RESET;
                 break;
@@ -918,7 +922,8 @@ void bap_broadcast_snk_thread(void *p1, void *p2, void *p3)
             break;
  
         case BROADCAST_SNK_STATE_WAIT_BIS_REQ:
-            if (k_sem_take(&sem_bis_sync_requested, SEM_TIMEOUT) != 0) {
+			err = k_sem_take(&sem_bis_sync_requested, SEM_TIMEOUT);
+            if (err != 0) {
                 printk("sem_bis_sync_requested timed out, resetting\n");
                 state = BROADCAST_SNK_STATE_RESET;
                 break;
@@ -946,7 +951,8 @@ void bap_broadcast_snk_thread(void *p1, void *p2, void *p3)
             break;
  
         case BROADCAST_SNK_STATE_WAIT_STREAM:
-            if (k_sem_take(&sem_big_synced, SEM_TIMEOUT) != 0) {
+			err = k_sem_take(&sem_big_synced, SEM_TIMEOUT);
+            if (err != 0) {
                 printk("sem_big_synced timed out, resetting\n");
                 state = BROADCAST_SNK_STATE_RESET;
                 break;
@@ -960,7 +966,8 @@ void bap_broadcast_snk_thread(void *p1, void *p2, void *p3)
             break;
  
         case BROADCAST_SNK_STATE_WAIT_STOP:
-            if (k_sem_take(&sem_broadcast_sink_stopped, SEM_TIMEOUT) != 0) {
+			err = k_sem_take(&sem_broadcast_sink_stopped, SEM_TIMEOUT);
+            if (err != 0) {
                 printk("sem_broadcast_sink_stopped timed out, resetting\n");
                 state = BROADCAST_SNK_STATE_RESET;
                 break;

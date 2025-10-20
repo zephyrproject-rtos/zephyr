@@ -417,6 +417,22 @@ void soc_prep_hook(void)
 	IT8XXX2_GPIO_GPCRB3 = GPCR_PORT_PIN_MODE_INPUT;
 	IT8XXX2_GPIO_GPCRB4 = GPCR_PORT_PIN_MODE_INPUT;
 #endif
+
+#ifdef CONFIG_SOC_IT8XXX2_GPIO_Q_GROUP_SUPPORTED
+#if DT_HAS_COMPAT_STATUS_OKAY(ite_it8xxx2_power_elpm)
+	/* drive xlpout high and then enable elpm firmware control mode if
+	 * the elpm node is marked as okay.
+	 */
+	sys_write8(sys_read8(ELPM_BASE_ADDR + ELPMF1_WAKE_UP_CTRL_3) | FIRMWARE_CTRL_OUTPUT_H,
+		   ELPM_BASE_ADDR + ELPMF1_WAKE_UP_CTRL_3);
+	sys_write8(sys_read8(ELPM_BASE_ADDR + ELPMF1_WAKE_UP_CTRL_3) | FIRMWARE_CTRL_EN,
+		   ELPM_BASE_ADDR + ELPMF1_WAKE_UP_CTRL_3);
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(ite_it8xxx2_power_elpm) */
+
+	/* set gpio-q group as gpio by default */
+	sys_write8(sys_read8(ELPM_BASE_ADDR + ELPMF5_INPUT_EN) & ~XLPIN_INPUT_ENABLE_MASK,
+		   ELPM_BASE_ADDR + ELPMF5_INPUT_EN);
+#endif /* CONFIG_SOC_IT8XXX2_GPIO_Q_GROUP_SUPPORTED */
 }
 
 static int ite_it8xxx2_init(void)
@@ -536,22 +552,6 @@ static int ite_it8xxx2_init(void)
 				IT8XXX2_USBPD_DISCONNECT_5_1K_CC1_DB);
 	}
 #endif /* (SOC_USBPD_ITE_PHY_PORT_COUNT > 0) */
-
-#ifdef CONFIG_SOC_IT8XXX2_GPIO_Q_GROUP_SUPPORTED
-#if DT_HAS_COMPAT_STATUS_OKAY(ite_it8xxx2_power_elpm)
-	/* drive xlpout high and then enable elpm firmware control mode if
-	 * the elpm node is marked as okay.
-	 */
-	sys_write8(sys_read8(ELPM_BASE_ADDR + ELPMF1_WAKE_UP_CTRL_3) | FIRMWARE_CTRL_OUTPUT_H,
-		   ELPM_BASE_ADDR + ELPMF1_WAKE_UP_CTRL_3);
-	sys_write8(sys_read8(ELPM_BASE_ADDR + ELPMF1_WAKE_UP_CTRL_3) | FIRMWARE_CTRL_EN,
-		   ELPM_BASE_ADDR + ELPMF1_WAKE_UP_CTRL_3);
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(ite_it8xxx2_power_elpm) */
-
-	/* set gpio-q group as gpio by default */
-	sys_write8(sys_read8(ELPM_BASE_ADDR + ELPMF5_INPUT_EN) & ~XLPIN_INPUT_ENABLE_MASK,
-		   ELPM_BASE_ADDR + ELPMF5_INPUT_EN);
-#endif /* CONFIG_SOC_IT8XXX2_GPIO_Q_GROUP_SUPPORTED */
 
 	return 0;
 }

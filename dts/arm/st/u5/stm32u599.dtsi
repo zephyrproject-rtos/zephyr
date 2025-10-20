@@ -26,6 +26,20 @@
 			status = "disabled";
 		};
 
+		mipi_dsi: dsihost@40016c00 {
+			compatible = "st,stm32u5-mipi-dsi", "st,stm32-mipi-dsi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40016C00 0x1000>;
+			clock-names = "dsiclk", "dsisrc", "refclk", "pixelclk";
+			clocks = <&rcc STM32_CLOCK(APB2, 27U)>,
+					<&rcc STM32_SRC_DSIPHY DSI_SEL(1)>,
+					<&rcc STM32_SRC_HSE NO_SEL>,
+					<&rcc STM32_SRC_PLL3_R NO_SEL>;
+			resets = <&rctl STM32_RESET(APB2, 27U)>;
+			status = "disabled";
+		};
+
 		xspi1: spi@420d3400 {
 			compatible = "st,stm32-xspi";
 			reg = <0x420d3400 0x400>,
