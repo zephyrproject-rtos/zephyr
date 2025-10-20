@@ -2380,8 +2380,8 @@ int bt_le_oob_get_sc_data(struct bt_conn *conn,
 			  const struct bt_le_oob_sc_data **oobd_remote);
 
 /**
- *  Special passkey value that can be used to disable a previously
- *  set fixed passkey.
+ *  DEPRECATED - use @ref BT_PASSKEY_RAND instead. Special passkey value that can be used to disable
+ *  a previously set fixed passkey.
  */
 #define BT_PASSKEY_INVALID 0xffffffff
 
@@ -2393,12 +2393,15 @@ int bt_le_oob_get_sc_data(struct bt_conn *conn,
  *  Sets a fixed passkey to be used for pairing. If set, the
  *  pairing_confirm() callback will be called for all incoming pairings.
  *
+ * @deprecated Use @ref BT_PASSKEY_RAND and the app_passkey callback from @ref bt_conn_auth_cb
+ *             instead.
+ *
  *  @param passkey A valid passkey (0 - 999999) or BT_PASSKEY_INVALID
  *                 to disable a previously set fixed passkey.
  *
  *  @return 0 on success or a negative error code on failure.
  */
-int bt_passkey_set(unsigned int passkey);
+__deprecated int bt_passkey_set(unsigned int passkey);
 
 /** Info Structure for OOB pairing */
 struct bt_conn_oob_info {
