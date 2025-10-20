@@ -15,6 +15,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/drivers/dma/sf32lb.h>
 
 LOG_MODULE_REGISTER(i2c_sf32lb, CONFIG_I2C_LOG_LEVEL);
 
@@ -41,12 +42,17 @@ LOG_MODULE_REGISTER(i2c_sf32lb, CONFIG_I2C_LOG_LEVEL);
 
 #define SF32LB_I2C_TIMEOUT_MAX_US (30000)
 
+#define SF32LB_I2C_DMA_MAX_LEN (512U)
+
 struct i2c_sf32lb_config {
 	uintptr_t base;
 	const struct pinctrl_dev_config *pincfg;
 	struct sf32lb_clock_dt_spec clock;
 	uint32_t bitrate;
 	void (*irq_cfg_func)(void);
+	bool dma_used;
+	struct sf32lb_dma_dt_spec dma_rx;
+	struct sf32lb_dma_dt_spec dma_tx;
 };
 
 struct i2c_sf32lb_data {
@@ -154,11 +160,18 @@ static void i2c_sf32lb_isr(const struct device *dev)
 		k_sem_give(&data->i2c_compl);
 		return;
 	}
-
-	if (data->is_tx) {
-		i2c_sf32lb_tx_helper(dev, sr);
+	if (config->dma_used) {
+		if (IS_BIT_SET(sr, I2C_SR_DMADONE_Pos)) {
+			sys_set_bit(config->base + I2C_SR, I2C_SR_DMADONE_Pos);
+			sys_clear_bit(config->base + I2C_CR, I2C_CR_DMAEN_Pos);
+			k_sem_give(&data->i2c_compl);
+		}
 	} else {
-		i2c_sf32lb_rx_helper(dev, sr);
+		if (data->is_tx) {
+			i2c_sf32lb_tx_helper(dev, sr);
+		} else {
+			i2c_sf32lb_rx_helper(dev, sr);
+		}
 	}
 }
 
@@ -203,6 +216,228 @@ static int i2c_sf32lb_send_addr(const struct device *dev, uint16_t addr, struct 
 			      SF32LB_I2C_TIMEOUT_MAX_US, NULL)) {
 			LOG_ERR("Stop timed out (I2C_SR:0x%08x)", sys_read32(cfg->base + I2C_SR));
 		}
+	}
+
+	return ret;
+}
+
+static int i2c_sf32lb_dma_tx_config(const struct device *dev, struct i2c_msg *msg)
+{
+	const struct i2c_sf32lb_config *config = dev->config;
+	struct dma_config tx_dma_cfg = {0};
+	struct dma_block_config dma_blk = {0};
+	int err;
+
+	sf32lb_dma_config_init_dt(&config->dma_tx, &tx_dma_cfg);
+
+	tx_dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
+	tx_dma_cfg.block_count = 1U;
+	tx_dma_cfg.source_data_size = 1U;
+	tx_dma_cfg.dest_data_size = 1U;
+
+	tx_dma_cfg.head_block = &dma_blk;
+	dma_blk.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+	dma_blk.source_address = (uint32_t)msg->buf;
+	dma_blk.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+	dma_blk.dest_address = (uint32_t)(config->base + I2C_FIFO);
+	dma_blk.block_size = msg->len;
+	err = sf32lb_dma_config_dt(&config->dma_tx, &tx_dma_cfg);
+	if (err < 0) {
+		LOG_ERR("Error configuring Tx DMA (%d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int i2c_sf32lb_dma_rx_config(const struct device *dev, struct i2c_msg *msg)
+{
+	const struct i2c_sf32lb_config *config = dev->config;
+	struct dma_config rx_dma_cfg = {0};
+	struct dma_block_config dma_blk = {0};
+	int err;
+
+	sf32lb_dma_config_init_dt(&config->dma_rx, &rx_dma_cfg);
+
+	rx_dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
+	rx_dma_cfg.block_count = 1U;
+	rx_dma_cfg.source_data_size = 1U;
+	rx_dma_cfg.dest_data_size = 1U;
+
+	rx_dma_cfg.head_block = &dma_blk;
+	dma_blk.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+	dma_blk.source_address = (uint32_t)(config->base + I2C_FIFO);
+	dma_blk.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+	dma_blk.dest_address = (uint32_t)msg->buf;
+	dma_blk.block_size = msg->len;
+
+	err = sf32lb_dma_config_dt(&config->dma_rx, &rx_dma_cfg);
+	if (err < 0) {
+		LOG_ERR("Error configuring Rx DMA (%d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int i2c_sf32lb_master_send_dma(const struct device *dev, uint16_t addr, struct i2c_msg *msg)
+{
+	int ret;
+	const struct i2c_sf32lb_config *config = dev->config;
+	struct i2c_sf32lb_data *data = dev->data;
+	bool addr_sent = (data->rw_flags != (msg->flags & I2C_MSG_RW_MASK));
+	bool stop_needed = i2c_is_stop_op(msg);
+
+	data->rw_flags = msg->flags & I2C_MSG_RW_MASK;
+	data->error = 0;
+
+	if (msg->len > SF32LB_I2C_DMA_MAX_LEN) {
+		LOG_ERR("DMA length %d exceeds max %d",
+			msg->len, SF32LB_I2C_DMA_MAX_LEN);
+		return -ENOTSUP;
+	}
+
+	if (addr_sent) {
+		ret = i2c_sf32lb_send_addr(dev, addr, msg);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if (msg->len == 0) {
+		/* Zero-length message already handled in send_addr */
+		return ret;
+	}
+
+	if (stop_needed) {
+		sys_set_bit(config->base + I2C_CR, I2C_CR_LASTSTOP_Pos);
+	}
+
+	sys_set_bit(config->base + I2C_SR, I2C_SR_DMADONE_Pos);
+	sys_set_bits(config->base + I2C_IER, I2C_IER_DMADONEIE | I2C_IER_BEDIE);
+	sys_set_bits(config->base + I2C_CR, I2C_CR_MSDE);
+
+	ret = i2c_sf32lb_dma_tx_config(dev, msg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = sf32lb_dma_start_dt(&config->dma_tx);
+	if (ret < 0) {
+		return ret;
+	}
+
+	sys_set_bit(config->base + I2C_CR, I2C_CR_DMAEN_Pos);
+	sys_write8(msg->len, config->base + I2C_DNR);
+	sys_write32(I2C_TCR_TXREQ, config->base + I2C_TCR);
+
+	ret = k_sem_take(&data->i2c_compl, K_MSEC(SF32LB_I2C_TIMEOUT_MAX_US / 1000));
+	if (ret < 0) {
+		LOG_ERR("master send timeout");
+		sf32lb_dma_stop_dt(&config->dma_tx);
+		sys_clear_bit(config->base + I2C_CR, I2C_CR_DMAEN_Pos);
+		sys_clear_bits(config->base + I2C_IER, I2C_IER_DMADONEIE | I2C_IER_BEDIE);
+		sys_clear_bits(config->base + I2C_CR, I2C_CR_LASTSTOP | I2C_CR_MSDE);
+		return ret;
+	}
+	sys_clear_bit(config->base + I2C_CR, I2C_CR_DMAEN_Pos);
+	sys_set_bit(config->base + I2C_SR, I2C_SR_DMADONE_Pos);
+	sf32lb_dma_stop_dt(&config->dma_tx);
+
+	/* Wait for bus idle if stop was issued */
+	if (stop_needed) {
+		if (!WAIT_FOR(!sys_test_bit(config->base + I2C_SR, I2C_SR_UB_Pos),
+			      SF32LB_I2C_TIMEOUT_MAX_US, NULL)) {
+			LOG_ERR("Wait for bus idle timeout");
+			return -ETIMEDOUT;
+		}
+		sys_clear_bits(config->base + I2C_CR, I2C_CR_LASTSTOP | I2C_CR_MSDE);
+	}
+
+	if (data->error != 0) {
+		ret = data->error;
+		data->error = 0;
+	}
+
+	return ret;
+}
+
+static int i2c_sf32lb_master_recv_dma(const struct device *dev, uint16_t addr, struct i2c_msg *msg)
+{
+	const struct i2c_sf32lb_config *config = dev->config;
+	struct i2c_sf32lb_data *data = dev->data;
+	bool addr_sent = (data->rw_flags != (msg->flags & I2C_MSG_RW_MASK));
+	bool stop_needed = i2c_is_stop_op(msg);
+	int ret;
+
+	data->rw_flags = msg->flags & I2C_MSG_RW_MASK;
+	data->error = 0;
+
+	if (msg->len > SF32LB_I2C_DMA_MAX_LEN) {
+		return -ENOTSUP;
+	}
+
+	if (addr_sent) {
+		ret = i2c_sf32lb_send_addr(dev, addr, msg);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if (msg->len == 0) {
+		return 0;
+	}
+
+	if (stop_needed) {
+		sys_set_bits(config->base + I2C_CR, I2C_CR_LASTNACK | I2C_CR_LASTSTOP);
+	}
+
+	sys_set_bit(config->base + I2C_SR, I2C_SR_DMADONE_Pos);
+	sys_set_bits(config->base + I2C_IER, I2C_IER_DMADONEIE | I2C_IER_BEDIE);
+	sys_set_bits(config->base + I2C_CR, I2C_CR_MSDE);
+
+	ret = i2c_sf32lb_dma_rx_config(dev, msg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = sf32lb_dma_start_dt(&config->dma_rx);
+	if (ret < 0) {
+		return ret;
+	}
+
+	sys_set_bit(config->base + I2C_CR, I2C_CR_DMAEN_Pos);
+
+	sys_write8(msg->len, config->base + I2C_DNR);
+
+	sys_write32(I2C_TCR_RXREQ, config->base + I2C_TCR);
+
+	ret = k_sem_take(&data->i2c_compl, K_MSEC(SF32LB_I2C_TIMEOUT_MAX_US / 1000));
+	if (ret < 0) {
+		LOG_ERR("master recv timeout");
+		sys_clear_bit(config->base + I2C_CR, I2C_CR_DMAEN_Pos);
+		sys_set_bit(config->base + I2C_SR, I2C_SR_DMADONE_Pos);
+		sf32lb_dma_stop_dt(&config->dma_rx);
+		sys_write32(0, config->base + I2C_IER);
+		return ret;
+	}
+
+	sys_clear_bit(config->base + I2C_CR, I2C_CR_DMAEN_Pos);
+	sys_set_bit(config->base + I2C_SR, I2C_SR_DMADONE_Pos);
+	sf32lb_dma_stop_dt(&config->dma_rx);
+
+	if (stop_needed) {
+		if (!WAIT_FOR(!sys_test_bit(config->base + I2C_SR, I2C_SR_UB_Pos),
+			      SF32LB_I2C_TIMEOUT_MAX_US, NULL)) {
+			LOG_ERR("Stop timed out (I2C_SR:0x%08x)",
+				sys_read32(config->base + I2C_SR));
+		}
+		sys_clear_bits(config->base + I2C_CR, I2C_CR_LASTNACK | I2C_CR_LASTSTOP);
+	}
+
+	if (data->error != 0) {
+		ret = data->error;
+		data->error = 0;
 	}
 
 	return ret;
@@ -421,12 +656,20 @@ static int i2c_sf32lb_transfer(const struct device *dev, struct i2c_msg *msgs, u
 		}
 
 		if (msgs[i].flags & I2C_MSG_READ) {
-			ret = i2c_sf32lb_master_recv(dev, addr, &msgs[i]);
+			if (cfg->dma_used) {
+				ret = i2c_sf32lb_master_recv_dma(dev, addr, &msgs[i]);
+			} else {
+				ret = i2c_sf32lb_master_recv(dev, addr, &msgs[i]);
+			}
 			if (ret < 0) {
 				break;
 			}
 		} else {
-			ret = i2c_sf32lb_master_send(dev, addr, &msgs[i]);
+			if (cfg->dma_used) {
+				ret = i2c_sf32lb_master_send_dma(dev, addr, &msgs[i]);
+			} else {
+				ret = i2c_sf32lb_master_send(dev, addr, &msgs[i]);
+			}
 			if (ret < 0) {
 				break;
 			}
@@ -439,7 +682,7 @@ static int i2c_sf32lb_transfer(const struct device *dev, struct i2c_msg *msgs, u
 
 	k_mutex_unlock(&data->lock);
 
-	return ret;
+	return 0;
 }
 
 static int i2c_sf32lb_recover_bus(const struct device *dev)
@@ -475,6 +718,19 @@ static int i2c_sf32lb_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	if (config->dma_used) {
+		if (!sf32lb_dma_is_ready_dt(&config->dma_tx)) {
+			LOG_ERR("Tx DMA channel not ready");
+			return -ENODEV;
+		}
+
+		if (!sf32lb_dma_is_ready_dt(&config->dma_rx)) {
+			LOG_ERR("Rx DMA channel not ready");
+			return -ENODEV;
+		}
+
+		sys_set_bit(config->base + I2C_IER, I2C_IER_DMADONEIE_Pos);
+	}
 	ret = sf32lb_clock_control_on_dt(&config->clock);
 	if (ret < 0) {
 		return ret;
@@ -512,6 +768,9 @@ static int i2c_sf32lb_init(const struct device *dev)
 		.clock = SF32LB_CLOCK_DT_INST_SPEC_GET(n),                                         \
 		.bitrate = DT_INST_PROP_OR(n, clock_frequency, 100000),                            \
 		.irq_cfg_func = i2c_sf32lb_irq_config_func_##n,                                    \
+		.dma_used = DT_INST_NODE_HAS_PROP(n, dmas),                                        \
+		.dma_tx = SF32LB_DMA_DT_INST_SPEC_GET_BY_NAME_OR(n, tx, {}),                       \
+		.dma_rx = SF32LB_DMA_DT_INST_SPEC_GET_BY_NAME_OR(n, rx, {}),                       \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, i2c_sf32lb_init, NULL, &i2c_sf32lb_data_##n,                      \
 			      &i2c_sf32lb_config_##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,       \
