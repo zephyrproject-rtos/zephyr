@@ -21,6 +21,7 @@
 		led1 = &green_led;
 		led2 = &blue_led;
 		sw0 = &user_button;
+		rtc = &counter_rtc;
 	};
 
 	chosen {
@@ -172,4 +173,12 @@
 &stm_0 {
 	status = "okay";
 	prescaler = <1>;
+};
+
+&rtc {
+	status = "okay";
+};
+
+&counter_rtc {
+	status = "okay";
 };
