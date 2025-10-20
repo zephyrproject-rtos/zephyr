@@ -349,7 +349,7 @@ static int spi_stm32_get_err(SPI_TypeDef *spi)
 {
 	uint32_t sr = LL_SPI_ReadReg(spi, SR);
 
-	if (sr & SPI_STM32_ERR_MSK) {
+	if ((sr & SPI_STM32_ERR_MSK) != 0U) {
 		LOG_ERR("%s: err=%d", __func__,
 			    sr & (uint32_t)SPI_STM32_ERR_MSK);
 
@@ -762,7 +762,7 @@ static int spi_stm32_configure(const struct device *dev,
 		LL_SPI_SetClockPhase(spi, LL_SPI_PHASE_1EDGE);
 	}
 
-	if (config->operation & SPI_HALF_DUPLEX) {
+	if ((config->operation & SPI_HALF_DUPLEX) != 0U) {
 		if (write) {
 			LL_SPI_SetTransferDirection(spi, LL_SPI_HALF_DUPLEX_TX);
 		} else {
@@ -772,7 +772,7 @@ static int spi_stm32_configure(const struct device *dev,
 		LL_SPI_SetTransferDirection(spi, LL_SPI_FULL_DUPLEX);
 	}
 
-	if (config->operation & SPI_TRANSFER_LSB) {
+	if ((config->operation & SPI_TRANSFER_LSB) != 0) {
 		LL_SPI_SetTransferBitOrder(spi, LL_SPI_LSB_FIRST);
 	} else {
 		LL_SPI_SetTransferBitOrder(spi, LL_SPI_MSB_FIRST);
@@ -789,14 +789,14 @@ static int spi_stm32_configure(const struct device *dev,
 #endif
 		LL_SPI_SetNSSMode(spi, LL_SPI_NSS_SOFT);
 	} else {
-		if (config->operation & SPI_OP_MODE_SLAVE) {
+		if ((config->operation & SPI_OP_MODE_SLAVE) != 0U) {
 			LL_SPI_SetNSSMode(spi, LL_SPI_NSS_HARD_INPUT);
 		} else {
 			LL_SPI_SetNSSMode(spi, LL_SPI_NSS_HARD_OUTPUT);
 		}
 	}
 
-	if (config->operation & SPI_OP_MODE_SLAVE) {
+	if ((config->operation & SPI_OP_MODE_SLAVE) != 0U) {
 		LL_SPI_SetMode(spi, LL_SPI_MODE_SLAVE);
 	} else {
 		LL_SPI_SetMode(spi, LL_SPI_MODE_MASTER);
@@ -976,7 +976,7 @@ static int transceive(const struct device *dev,
 	SPI_TypeDef *spi = cfg->spi;
 	int ret;
 
-	if (!tx_bufs && !rx_bufs) {
+	if (tx_bufs == NULL && rx_bufs == NULL) {
 		return 0;
 	}
 
@@ -991,7 +991,7 @@ static int transceive(const struct device *dev,
 	spi_stm32_pm_policy_state_lock_get(dev);
 
 	ret = spi_stm32_configure(dev, config, tx_bufs != NULL);
-	if (ret) {
+	if (ret != 0) {
 		goto end;
 	}
 
@@ -1034,27 +1034,25 @@ static int transceive(const struct device *dev,
 	do {
 		ret = spi_context_wait_for_completion(&data->ctx);
 
-		if (!ret &&
-			transfer_dir == LL_SPI_HALF_DUPLEX_TX) {
+		if (ret == 0 && transfer_dir == LL_SPI_HALF_DUPLEX_TX) {
 			ret = spi_stm32_half_duplex_switch_to_receive(cfg, data);
 			transfer_dir = LL_SPI_GetTransferDirection(spi);
 		}
-	} while (!ret && spi_stm32_transfer_ongoing(data));
+	} while (ret == 0 && spi_stm32_transfer_ongoing(data));
 #else /* CONFIG_SPI_STM32_INTERRUPT */
 	do {
 		ret = spi_stm32_shift_frames(cfg, data);
 
-		if (!ret &&
-			transfer_dir == LL_SPI_HALF_DUPLEX_TX) {
+		if (ret == 0 && transfer_dir == LL_SPI_HALF_DUPLEX_TX) {
 			ret = spi_stm32_half_duplex_switch_to_receive(cfg, data);
 			transfer_dir = LL_SPI_GetTransferDirection(spi);
 		}
-	} while (!ret && spi_stm32_transfer_ongoing(data));
+	} while (ret == 0 && spi_stm32_transfer_ongoing(data));
 
 	spi_stm32_complete(dev, ret);
 
 #ifdef CONFIG_SPI_SLAVE
-	if (spi_context_is_slave(&data->ctx) && !ret) {
+	if (spi_context_is_slave(&data->ctx) && ret == 0) {
 		ret = data->ctx.recv_frames;
 	}
 #endif /* CONFIG_SPI_SLAVE */
@@ -1091,11 +1089,11 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 			return res;
 		}
 
-		if (data->status_flags & SPI_STM32_DMA_ERROR_FLAG) {
+		if ((data->status_flags & SPI_STM32_DMA_ERROR_FLAG) != 0U) {
 			return -EIO;
 		}
 
-		if (data->status_flags & SPI_STM32_DMA_DONE_FLAG) {
+		if ((data->status_flags & SPI_STM32_DMA_DONE_FLAG) != 0U) {
 			return 0;
 		}
 	}
@@ -1137,7 +1135,7 @@ static int transceive_dma(const struct device *dev,
 	int ret;
 	int err;
 
-	if (!tx_bufs && !rx_bufs) {
+	if (tx_bufs == NULL && rx_bufs == NULL) {
 		return 0;
 	}
 
@@ -1160,7 +1158,7 @@ static int transceive_dma(const struct device *dev,
 	k_sem_reset(&data->status_sem);
 
 	ret = spi_stm32_configure(dev, config, tx_bufs != NULL);
-	if (ret) {
+	if (ret != 0) {
 		goto end;
 	}
 
@@ -1338,16 +1336,16 @@ static int transceive_dma(const struct device *dev,
 	LL_SPI_DisableDMAReq_RX(spi);
 
 	err = dma_stop(data->dma_rx.dma_dev, data->dma_rx.channel);
-	if (err) {
+	if (err != 0) {
 		LOG_DBG("Rx dma_stop failed with error %d", err);
 	}
 	err = dma_stop(data->dma_tx.dma_dev, data->dma_tx.channel);
-	if (err) {
+	if (err != 0) {
 		LOG_DBG("Tx dma_stop failed with error %d", err);
 	}
 
 #ifdef CONFIG_SPI_SLAVE
-	if (spi_context_is_slave(&data->ctx) && !ret) {
+	if (spi_context_is_slave(&data->ctx) && ret == 0) {
 		ret = data->ctx.recv_frames;
 	}
 #endif /* CONFIG_SPI_SLAVE */
