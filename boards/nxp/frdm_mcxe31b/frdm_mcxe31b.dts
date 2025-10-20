@@ -21,6 +21,7 @@
 		led1 = &green_led;
 		led2 = &blue_led;
 		sw0 = &user_button;
+		rtc = &counter_rtc;
 	};
 
 	chosen {
@@ -164,4 +165,12 @@
 	mux-0-dc-4-div = <4>;
 	mux-0-dc-5-div = <4>;
 	mux-0-dc-6-div = <1>;
+};
+
+&rtc {
+	status = "okay";
+};
+
+&counter_rtc {
+	status = "okay";
 };
