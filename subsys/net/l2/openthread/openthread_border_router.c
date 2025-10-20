@@ -33,9 +33,9 @@
 #include <string.h>
 
 static struct net_mgmt_event_callback ail_net_event_connection_cb;
-static struct net_mgmt_event_callback ail_net_event_address_cb;
+static struct net_mgmt_event_callback ail_net_event_ipv6_addr_cb;
 #if defined(CONFIG_NET_IPV4)
-static struct net_mgmt_event_callback ail_net_event_ipv4_addr_add_cb;
+static struct net_mgmt_event_callback ail_net_event_ipv4_addr_cb;
 #endif /* CONFIG_NET_IPV4 */
 static uint32_t ail_iface_index;
 static struct net_if *ail_iface_ptr;
@@ -234,15 +234,14 @@ static void ail_connection_handler(struct net_mgmt_event_callback *cb, uint64_t 
 	mdns_plat_monitor_interface(iface);
 }
 
-static void ail_address_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
+static void ail_ipv6_address_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 				      struct net_if *iface)
 {
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
 		return;
 	}
 
-	if ((mgmt_event & (NET_EVENT_IPV6_ADDR_ADD | NET_EVENT_IPV6_ADDR_DEL |
-			   NET_EVENT_IPV4_ADDR_ADD | NET_EVENT_IPV4_ADDR_DEL)) != mgmt_event) {
+	if ((mgmt_event & (NET_EVENT_IPV6_ADDR_ADD | NET_EVENT_IPV6_ADDR_DEL)) != mgmt_event) {
 		return;
 	}
 
@@ -257,13 +256,15 @@ static void ail_ipv4_address_event_handler(struct net_mgmt_event_callback *cb, u
 		return;
 	}
 
-	if (mgmt_event != NET_EVENT_IPV4_ADDR_ADD) {
+	if ((mgmt_event & (NET_EVENT_IPV4_ADDR_ADD | NET_EVENT_IPV4_ADDR_DEL)) != mgmt_event) {
 		return;
 	}
 
-	struct openthread_context *ot_context = openthread_get_default_context();
+	if (mgmt_event == NET_EVENT_IPV4_ADDR_ADD) {
+		struct openthread_context *ot_context = openthread_get_default_context();
 
-	openthread_start_border_router_services(ot_context->iface, iface);
+		openthread_start_border_router_services(ot_context->iface, iface);
+	}
 
 	mdns_plat_monitor_interface(iface);
 }
@@ -318,15 +319,14 @@ void openthread_border_router_init(struct openthread_context *ot_ctx)
 	net_mgmt_init_event_callback(&ail_net_event_connection_cb, ail_connection_handler,
 				     NET_EVENT_IF_UP | NET_EVENT_IF_DOWN);
 	net_mgmt_add_event_callback(&ail_net_event_connection_cb);
-	net_mgmt_init_event_callback(&ail_net_event_address_cb, ail_address_event_handler,
-				     NET_EVENT_IPV6_ADDR_ADD | NET_EVENT_IPV6_ADDR_DEL |
-				     NET_EVENT_IPV4_ADDR_ADD | NET_EVENT_IPV4_ADDR_DEL);
-	net_mgmt_add_event_callback(&ail_net_event_address_cb);
+	net_mgmt_init_event_callback(&ail_net_event_ipv6_addr_cb, ail_ipv6_address_event_handler,
+				     NET_EVENT_IPV6_ADDR_ADD | NET_EVENT_IPV6_ADDR_DEL);
+	net_mgmt_add_event_callback(&ail_net_event_ipv6_addr_cb);
 #if defined(CONFIG_NET_IPV4)
-	net_mgmt_init_event_callback(&ail_net_event_ipv4_addr_add_cb,
+	net_mgmt_init_event_callback(&ail_net_event_ipv4_addr_cb,
 				     ail_ipv4_address_event_handler,
 				     NET_EVENT_IPV4_ADDR_ADD);
-	net_mgmt_add_event_callback(&ail_net_event_ipv4_addr_add_cb);
+	net_mgmt_add_event_callback(&ail_net_event_ipv4_addr_cb);
 #endif /* CONFIG_NET_IPV4 */
 	openthread_set_bbr_multicast_listener_cb(ot_bbr_multicast_listener_handler, (void *)ot_ctx);
 	(void)infra_if_start_icmp6_listener();
