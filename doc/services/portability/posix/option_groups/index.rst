@@ -109,13 +109,13 @@ Enable this option group with :kconfig:option:`CONFIG_POSIX_C_LIB_EXT`.
     opterr, yes
     optind, yes
     optopt, yes
-    stpcpy(),
-    stpncpy(),
-    strcasecmp(),
-    strdup(),
+    stpcpy(), yes
+    stpncpy(), yes
+    strcasecmp(), yes
+    strdup(), yes
     strfmon(),
     strncasecmp(), yes
-    strndup(),
+    strndup(), yes
     strnlen(), yes
 
 .. _posix_option_group_clock_selection:
