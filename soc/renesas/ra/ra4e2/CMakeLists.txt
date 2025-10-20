@@ -12,6 +12,7 @@ dt_nodelabel(option_setting_osis NODELABEL "option_setting_osis")
 dt_nodelabel(option_setting_ofs1_sec NODELABEL "option_setting_ofs1_sec")
 dt_nodelabel(option_setting_bps_sec NODELABEL "option_setting_bps_sec")
 dt_nodelabel(option_setting_pbps_sec NODELABEL "option_setting_pbps_sec")
+
 dt_reg_addr(ofs0_addr PATH ${option_setting_ofs0})
 dt_reg_addr(osis_addr PATH ${option_setting_osis})
 dt_reg_addr(ofs1_sec_addr PATH ${option_setting_ofs1_sec})
