@@ -17,22 +17,26 @@ int usbh_register_all_classes(struct usbh_context *uhs_ctx)
 {
 	int registered_count = 0;
 
-	STRUCT_SECTION_FOREACH(usbh_class_data, cdata_existing) {
+	STRUCT_SECTION_FOREACH(usbh_class_data, cdata) {
 		struct usbh_class_data *cdata_registered;
 		bool already_registered = false;
 
+		if (cdata == NULL) {
+			continue;
+		}
+
 		/* Check if already registered */
 		SYS_SLIST_FOR_EACH_CONTAINER(&uhs_ctx->class_list, cdata_registered, node) {
-			if (cdata_existing == cdata_registered) {
+			if (cdata == cdata_registered) {
 				already_registered = true;
 				break;
 			}
 		}
 
 		if (!already_registered) {
-			sys_slist_append(&uhs_ctx->class_list, &cdata_existing->node);
+			sys_slist_append(&uhs_ctx->class_list, &cdata->node);
 			registered_count++;
-			LOG_DBG("Auto-registered class: %s", cdata_existing->name);
+			LOG_DBG("Auto-registered class: %s", cdata->name);
 		}
 	}
 
@@ -65,16 +69,9 @@ bool usbh_class_is_matching(struct usbh_class_data *cdata,
 	for (int i = 0; cdata->filters[i].flags != 0; i++) {
 		const struct usbh_class_filter *filter = &cdata->filters[i];
 
-		if (filter->flags & USBH_CLASS_FILTER_VID) {
-			if (filter->vid != device_info->vid) {
-				continue;
-			}
-		}
-
-		if (filter->flags & USBH_CLASS_FILTER_VID) {
-			if (filter->vid == device_info->vid) {
-				continue;
-			}
+		if ((filter->flags & USBH_CLASS_FILTER_VID) && 
+			(filter->vid != device_info->vid)) {
+			continue;
 		}
 
 		if (filter->flags & USBH_CLASS_FILTER_CODE_TRIPLE) {
