@@ -1,21 +1,29 @@
 # Copyright (c) 2024 Trackunit Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-config MODEM_AT_SHELL
-	bool "AT command shell based on modem modules"
-	select MODEM_MODULES
+config MODEM_AT_USER_PIPE
+	bool "Modem AT command user pipe helpers"
+	depends on $(dt_alias_enabled,modem)
 	select MODEM_CHAT
 	select MODEM_PIPE
 	select MODEM_PIPELINK
+	help
+	  Utility functions for managing access to user pipes
+	  for arbitrary AT commands
+
+config MODEM_AT_USER_PIPE_IDX
+	int "User pipe number to use"
+	depends on MODEM_AT_USER_PIPE
+	default 0
+
+config MODEM_AT_SHELL
+	bool "AT command shell based on modem modules"
+	select MODEM_MODULES
+	select MODEM_AT_USER_PIPE
 	depends on !MODEM_SHELL
 	depends on !SHELL_WILDCARD
-	depends on $(dt_alias_enabled,modem)
 
 if MODEM_AT_SHELL
-
-config MODEM_AT_SHELL_USER_PIPE
-	int "User pipe number to use"
-	default 0
 
 config MODEM_AT_SHELL_RESPONSE_TIMEOUT_S
 	int "Timeout waiting for response to AT command in seconds"

@@ -1,10 +1,44 @@
 # Copyright (c) 2024 Meta
+# Copyright (c) 2025 Tenstorrent AI ULC
 #
 # SPDX-License-Identifier: Apache-2.0
 
 menu "POSIX API Support"
 
-rsource "options/Kconfig"
-rsource "shell/Kconfig"
+# POSIX Subprofile Definitions
+rsource "Kconfig.profile"
 
-endmenu # "POSIX API Support"
+# Toolchain hooks for external implementations
+rsource "Kconfig.toolchain"
+
+# POSIX C Library Extensions
+# This menu is for POSIX Option Groups that do not require OS support.
+menu "POSIX C Library Extensions"
+rsource "c_lang_support_r/Kconfig"
+rsource "c_lib_ext/Kconfig"
+endmenu
+
+# POSIX System Interfaces
+menuconfig POSIX_SYSTEM_INTERFACES
+	bool "POSIX System Interfaces"
+	select NATIVE_LIBC_INCOMPATIBLE
+	help
+	  Select 'y' here to support POSIX System Interfaces within Zephyr.
+
+	  Options in this menu are organized by POSIX subprofiling Option Group.
+
+	  For more information, see
+	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
+
+
+if POSIX_SYSTEM_INTERFACES
+rsource "options/Kconfig"
+
+# POSIX Shell utilities
+rsource "shell/Kconfig"
+endif
+
+endmenu
+
+# Eventfd Support (not officially POSIX)
+rsource "eventfd/Kconfig"

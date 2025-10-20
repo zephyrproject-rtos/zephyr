@@ -309,6 +309,9 @@ struct uart_reg {
 #define NPCX_UMDSL_ETD                        4
 #define NPCX_UMDSL_ERD                        5
 
+#define NPCX_UFRS_CHAR_DATA_BIT_8 0
+#define NPCX_UFRS_CHAR_DATA_BIT_7 1
+
 #define NPCX_UFTSTS_TEMPTY_LVL                FIELD(0, 5)
 #define NPCX_UFTSTS_TEMPTY_LVL_STS            5
 #define NPCX_UFTSTS_TFIFO_EMPTY_STS           6
@@ -742,11 +745,15 @@ struct espi_reg {
 #define NPCX_VWSWIRQ_EDGE_IRQ            28
 #define NPCX_VWEVMS_WIRE                 FIELD(0, 4)
 #define NPCX_VWEVMS_VALID                FIELD(4, 4)
+#define NPCX_VWEVMS_INDEX                FIELD(8, 7)
+#define NPCX_VWEVMS_INDEX_EN             15
 #define NPCX_VWEVMS_IE                   18
+#define NPCX_VWEVMS_ENESPIRST            19
 #define NPCX_VWEVMS_WE                   20
 #define NPCX_VWEVSM_WIRE                 FIELD(0, 4)
 #define NPCX_VWEVSM_VALID                FIELD(4, 4)
 #define NPCX_VWEVSM_BIT_VALID(n)         (4+n)
+#define NPCX_VWEVSM_DIRTY                16
 #define NPCX_VWEVSM_HW_WIRE              FIELD(24, 4)
 #define NPCX_VWGPSM_INDEX_EN             15
 #define NPCX_OOBCTL_OOB_FREE             0
@@ -758,9 +765,12 @@ struct espi_reg {
 #define NPCX_FLASHCFG_FLASHREQSIZE       FIELD(13, 3)
 #define NPCX_FLASHCFG_FLCAPA             FIELD(16, 2)
 #define NPCX_FLASHCFG_TRGFLEBLKSIZE      FIELD(18, 8)
+#define NPCX_FLASHCFG_TRGRPMCSUPP        FIELD(26, 6)
 #define NPCX_FLASHCFG_FLREQSUP           FIELD(0, 3)
+#define NPCX_FLASHCFG2_RPMC1OP1CODE      FIELD(24, 8)
+#define NPCX_FLASHCFG2_RPMC1COUNT        FIELD(20, 4)
 #define NPCX_FLASHCTL_FLASH_NP_FREE      0
-#define NPCX_FLASHCTL_FLASH_TX_AVAIL     1
+#define NPCX_FLASHCTL_FLASH_ACC_TX_AVAIL 1
 #define NPCX_FLASHCTL_STRPHDR            2
 #define NPCX_FLASHCTL_DMATHRESH          FIELD(3, 2)
 #define NPCX_FLASHCTL_AMTSIZE            FIELD(5, 8)

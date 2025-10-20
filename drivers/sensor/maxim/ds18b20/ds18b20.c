@@ -89,7 +89,7 @@ static inline void ds18b20_temperature_from_raw(const struct device *dev,
 
 	if (cfg->chip == type_ds18s20) {
 		val->val1 = temp / 2;
-		val->val2 = (temp % 2) * 5000000;
+		val->val2 = (temp % 2) * 500000;
 	} else {
 		val->val1 = temp / 16;
 		val->val2 = (temp % 16) * 1000000 / 16;

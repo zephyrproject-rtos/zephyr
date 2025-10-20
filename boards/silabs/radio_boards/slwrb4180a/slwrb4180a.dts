@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <silabs/xg21/efr32mg21a020f1024im32.dtsi>
+#include <dt-bindings/adc/silabs-adc.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "slwrb4180a-pinctrl.dtsi"
 
@@ -30,6 +31,7 @@
 		sw0 = &button0;
 		sw1 = &button1;
 		watchdog0 = &wdog0;
+		adc0 = &adc0;
 	};
 
 	leds {
@@ -64,6 +66,37 @@
 		};
 	};
 
+	joystick {
+		compatible = "adc-keys";
+		io-channels = <&adc0 0>;
+		keyup-threshold-mv = <3300>;
+
+		select-key {
+			press-thresholds-mv = <33>;
+			zephyr,code = <INPUT_KEY_ENTER>;
+		};
+
+		left-key {
+			press-thresholds-mv = <1980>;
+			zephyr,code = <INPUT_KEY_LEFT>;
+		};
+
+		down-key {
+			press-thresholds-mv = <1650>;
+			zephyr,code = <INPUT_KEY_DOWN>;
+		};
+
+		up-key {
+			press-thresholds-mv = <2831>;
+			zephyr,code = <INPUT_KEY_UP>;
+		};
+
+		right-key {
+			press-thresholds-mv = <2533>;
+			zephyr,code = <INPUT_KEY_RIGHT>;
+		};
+	};
+
 	exp_header: exp-header {
 		compatible = "silabs,exp-header";
 		#gpio-cells = <2>;
@@ -79,6 +112,10 @@
 			   <14 0 &gpioa 6 0>;
 		gpio-map-mask = <0xffffffff 0x0>;
 		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
+	};
+
+	zephyr,user {
+		io-channels = <&adc0 0>;
 	};
 };
 
@@ -126,6 +163,24 @@
 
 &wdog1clk {
 	clocks = <&lfxo>;
+};
+
+&adc0 {
+	pinctrl-0 = <&iadc0_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	channel@0 {
+		reg = <0>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,input-positive = <IADC_INPUT_PA0>;
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
 };
 
 &usart0 {

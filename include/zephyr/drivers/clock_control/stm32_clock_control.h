@@ -12,6 +12,9 @@
 
 #include <zephyr/drivers/clock_control.h>
 
+/* Retrieve the main system clock from DTS. */
+#define STM32_HCLK_FREQUENCY DT_PROP(DT_NODELABEL(rcc), clock_frequency)
+
 #if defined(CONFIG_SOC_SERIES_STM32C0X)
 #include <zephyr/dt-bindings/clock/stm32c0_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32F0X)
@@ -38,9 +41,10 @@
 #include <zephyr/dt-bindings/clock/stm32l0_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32L1X)
 #include <zephyr/dt-bindings/clock/stm32l1_clock.h>
-#elif defined(CONFIG_SOC_SERIES_STM32L4X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X)
+#elif defined(CONFIG_SOC_SERIES_STM32L4X)
 #include <zephyr/dt-bindings/clock/stm32l4_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32L5X)
+#include <zephyr/dt-bindings/clock/stm32l5_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32MP2X)
 #include <zephyr/dt-bindings/clock/stm32mp2_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32WBX)
@@ -171,6 +175,11 @@
 
 #define STM32_TIMG_PRESCALER	DT_PROP(DT_NODELABEL(rcc), timg_prescaler)
 #endif /* rcc node compatible st_stm32n6_rcc and okay */
+
+/** clock 48MHz node related symbols */
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk48), st_stm32_clock_mux, okay)
+#define STM32_CK48_ENABLED	1
+#endif
 
 /** PLL node related symbols */
 

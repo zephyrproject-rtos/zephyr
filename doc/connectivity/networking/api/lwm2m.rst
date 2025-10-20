@@ -532,9 +532,9 @@ Read and Write operations
 Full content of data cache is written into a payload when any READ, SEND or NOTIFY operation
 internally reads the content of a given resource. This has a side effect that any read callbacks
 registered for a that resource are ignored when cache is enabled.
-Data is written into a cache when any of the ``lwm2m_set_*`` functions are called. To filter
-the data entering the cache, application may register a validation callback using
-:c:func:`lwm2m_register_validate_callback`.
+Data is written into a cache when any of the ``lwm2m_set_*`` functions are called. Applications can
+register a cache filter callback with :c:func:`lwm2m_set_cache_filter` to drop otherwise valid samples
+based on application-specific rules.
 
 Limitations
 ===========

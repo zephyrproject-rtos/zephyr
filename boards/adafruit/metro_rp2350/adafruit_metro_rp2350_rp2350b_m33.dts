@@ -162,7 +162,7 @@ zephyr_udc0: &usbd {
 &pio0 {
 	status = "okay";
 
-	arduion_spi: pio0_spi0 {
+	arduino_spi: pio0_spi0 {
 		compatible = "raspberrypi,pico-spi-pio";
 		clocks = <&clocks RPI_PICO_CLKID_CLK_SYS>;
 		#address-cells = <1>;

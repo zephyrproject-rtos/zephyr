@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,7 +41,7 @@
 			#clock-cells = <1>;
 
 			reset: reset {
-				compatible = "nxp,lpc-syscon-reset";
+				compatible = "nxp,mrcc-reset";
 				#reset-cells = <1>;
 			};
 		};
@@ -167,7 +167,7 @@
 				compatible = "soc-nv-flash";
 				reg = <0 DT_SIZE_M(1)>;
 				erase-block-size = <DT_SIZE_K(8)>;
-				write-block-size = <128>;
+				write-block-size = <16>;
 			};
 
 			uuid: uuid@1100800 {
@@ -423,6 +423,14 @@
 			#io-channel-cells = <2>;
 		};
 
+		opamp0: opamp@400b7000 {
+			compatible = "nxp,opamp";
+			reg = <0x400b7000 0x1000>;
+			status = "disabled";
+			operation-mode = "low_noise";
+			clocks = <&syscon MCUX_OPAMP0_CLK>;
+		};
+
 		lpi2c0: i2c@4009a000 {
 			compatible = "nxp,lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -496,7 +504,7 @@
 			reg = <0x400ab000 0x1000>;
 			interrupts = <55 0>;
 			clock-frequency = <16000>;
-			prescaler = <1>;
+			prescale-glitch-filter = <0>;
 			clk-source = <1>;
 			resolution = <32>;
 			status = "disabled";

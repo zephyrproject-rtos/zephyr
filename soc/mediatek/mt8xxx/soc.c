@@ -173,7 +173,7 @@ __asm__(".align 4\n\t"
  * a 1024 byte alignment requirement, forcing us to waste ~1011 bytes
  * needlessly.
  */
-__asm__(".pushsection .sof_entry.text\n\t"
+__asm__(".pushsection .sof_entry.text, \"ax\"\n\t"
 	"  j 2f\n"
 	".align 4\n\t"
 	"1:\n\t"
@@ -298,7 +298,7 @@ void c_boot(void)
 	 */
 	__asm__ volatile("wsr %0, VECBASE; rsync" :: "r"(&z_xtensa_vecbase));
 
-#ifdef CONFIG_SOC_SERIES_MT8195
+#if defined(CONFIG_SOC_SERIES_MT8195) || defined(CONFIG_SOC_MT8188)
 	mtk_adsp_cpu_freq_init();
 #endif
 

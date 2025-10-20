@@ -93,7 +93,7 @@
 		reg = <0x34000 0x1000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		status = "ok";
+		status = "okay";
 
 		flash0: flash@0 {
 			compatible = "soc-nv-flash";
@@ -310,6 +310,33 @@
 		dma-names = "adc0-dma0", "adc0-dma1";
 		nxp,references = <&vref0 1800>;
 		clocks = <&syscon MCUX_LPADC1_CLK>;
+	};
+
+	opamp0: opamp@b4000 {
+		compatible = "nxp,opamp";
+		reg = <0xb4000 0x1000>;
+		status = "disabled";
+		operation-mode = "low_noise";
+		clocks = <&syscon MCUX_OPAMP0_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(3, 12)>;
+	};
+
+	opamp1: opamp@b8000 {
+		compatible = "nxp,opamp";
+		reg = <0xb8000 0x1000>;
+		status = "disabled";
+		operation-mode = "low_noise";
+		clocks = <&syscon MCUX_OPAMP1_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(3, 13)>;
+	};
+
+	opamp2: opamp@bb000 {
+		compatible = "nxp,opamp";
+		reg = <0xbb000 0x1000>;
+		status = "disabled";
+		operation-mode = "low_noise";
+		clocks = <&syscon MCUX_OPAMP2_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(3, 14)>;
 	};
 
 	dac0: dac@b2000 {

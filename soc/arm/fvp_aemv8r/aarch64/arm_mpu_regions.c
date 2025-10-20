@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Arm Limited (or its affiliates). All rights reserved.
+ * Copyright (c) 2021-2023,2025 Arm Limited (or its affiliates). All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -11,12 +11,14 @@
 
 static const struct arm_mpu_region mpu_regions[] = {
 	/* Region 0 */
+#if CONFIG_FLASH_SIZE
 	MPU_REGION_ENTRY("FLASH_0",
 			 CONFIG_FLASH_BASE_ADDRESS,
 			 CONFIG_FLASH_BASE_ADDRESS +
 			 KB(CONFIG_FLASH_SIZE),
 			 REGION_FLASH_ATTR),
 
+#endif
 	/* Region 1 zephyr text */
 	MPU_REGION_ENTRY("SRAM_0",
 			 (uintptr_t)__text_region_start,

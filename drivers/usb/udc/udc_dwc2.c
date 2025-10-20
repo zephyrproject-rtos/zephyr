@@ -437,6 +437,11 @@ static void dwc2_ensure_setup_ready(const struct device *dev)
 	} else {
 		struct udc_dwc2_data *const priv = udc_get_private(dev);
 
+		if (udc_ep_is_busy(udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT))) {
+			/* There is already buffer queued */
+			return;
+		}
+
 		/* Enable EP0 OUT only if there is no pending EP0 IN transfer
 		 * after which the stack has to enable EP0 OUT.
 		 */
@@ -1584,9 +1589,11 @@ static int dwc2_unset_dedicated_fifo(const struct device *dev,
 	*diepctl &= ~USB_DWC2_DEPCTL_TXFNUM_MASK;
 
 	if (priv->dynfifosizing) {
-		if (priv->txf_set & ~BIT_MASK(ep_idx)) {
-			LOG_WRN("Some of the FIFOs higher than %u are set, %lx",
-				ep_idx, priv->txf_set & ~BIT_MASK(ep_idx));
+		uint16_t higher_mask = ~BIT_MASK(ep_idx + 1);
+
+		if (priv->txf_set & higher_mask) {
+			LOG_WRN("Some of the FIFOs higher than %u are set, %x",
+				ep_idx, priv->txf_set & higher_mask);
 			return 0;
 		}
 

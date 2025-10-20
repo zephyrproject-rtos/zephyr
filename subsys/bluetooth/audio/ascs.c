@@ -1447,7 +1447,7 @@ static struct bt_ascs_ase *ase_find(struct bt_conn *conn, uint8_t id)
 	return NULL;
 }
 
-bool bt_ascs_is_ase_ep(const struct bt_bap_ep *ep)
+bool bt_ascs_has_ep(const struct bt_bap_ep *ep)
 {
 	return PART_OF_ARRAY(ascs.ase_pool, ep);
 }
@@ -3258,4 +3258,5 @@ int bt_ascs_unregister(void)
 
 	return err;
 }
+
 #endif /* BT_BAP_UNICAST_SERVER */

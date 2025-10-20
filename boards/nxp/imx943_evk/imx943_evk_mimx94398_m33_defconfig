@@ -21,3 +21,6 @@ CONFIG_ARM_SCMI_NXP_VENDOR_EXTENSIONS=y
 
 # kernel-related configurations
 CONFIG_XIP=y
+
+# nocache section related configurations
+CONFIG_NOCACHE_MEMORY=y

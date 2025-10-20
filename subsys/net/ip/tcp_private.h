@@ -149,7 +149,7 @@
 	({                                                                     \
 		NET_DBG("[%p] total=%zd, unacked_len=%d, "		       \
 			"send_win=%hu, mss=%hu",                               \
-			(_conn), net_pkt_get_len((_conn)->send_data),          \
+			(_conn), net_pkt_get_len(&(_conn)->send_data),         \
 			_conn->unacked_len, _conn->send_win,                   \
 			(uint16_t)conn_mss((_conn)));                          \
 		NET_DBG("[%p] send_data_timer=%hu, send_data_retries=%hu",     \
@@ -258,8 +258,8 @@ typedef void (*net_tcp_closed_cb_t)(struct tcp *conn, void *user_data);
 struct tcp { /* TCP connection */
 	sys_snode_t next;
 	struct net_context *context;
-	struct net_pkt *send_data;
-	struct net_pkt *queue_recv_data;
+	struct net_pkt send_data;
+	struct net_buf *queue_recv_data;
 	struct net_if *iface;
 	void *recv_user_data;
 	sys_slist_t send_queue;
@@ -317,6 +317,8 @@ struct tcp { /* TCP connection */
 	enum tcp_state state;
 	enum tcp_data_mode data_mode;
 	uint32_t seq;
+	uint32_t isn;
+	uint32_t isn_peer;
 	uint32_t ack;
 #if defined(CONFIG_NET_TCP_KEEPALIVE)
 	uint32_t keep_idle;

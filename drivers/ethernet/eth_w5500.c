@@ -311,7 +311,7 @@ static void w5500_thread(void *p1, void *p2, void *p3)
 	const struct w5500_config *config = dev->config;
 
 	while (true) {
-		res = k_sem_take(&ctx->int_sem, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
+		res = k_sem_take(&ctx->int_sem, K_MSEC(CONFIG_ETH_W5500_MONITOR_PERIOD));
 
 		if (res == 0) {
 			/* semaphore taken, update link status and receive packets */
@@ -611,7 +611,7 @@ static struct w5500_runtime w5500_0_runtime = {
 };
 
 static const struct w5500_config w5500_0_config = {
-	.spi = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8), 0),
+	.spi = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8)),
 	.interrupt = GPIO_DT_SPEC_INST_GET(0, int_gpios),
 	.reset = GPIO_DT_SPEC_INST_GET_OR(0, reset_gpios, { 0 }),
 	.timeout = CONFIG_ETH_W5500_TIMEOUT,

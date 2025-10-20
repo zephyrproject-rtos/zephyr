@@ -70,6 +70,7 @@ struct flash_mspi_nor_switch_info {
 
 struct flash_mspi_nor_config {
 	const struct device *bus;
+	uint32_t packet_data_limit;
 	uint32_t flash_size;
 	uint16_t page_size;
 	struct mspi_dev_id mspi_id;
@@ -104,7 +105,9 @@ struct flash_mspi_nor_config {
 };
 
 struct flash_mspi_nor_data {
+#if defined(CONFIG_MULTITHREADING)
 	struct k_sem acquired;
+#endif
 	struct mspi_xfer_packet packet;
 	struct mspi_xfer xfer;
 	struct jesd216_erase_type erase_types[JESD216_NUM_ERASE_TYPES];

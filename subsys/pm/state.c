@@ -11,34 +11,6 @@
 BUILD_ASSERT(DT_NODE_EXISTS(DT_PATH(cpus)),
 	     "cpus node not defined in Devicetree");
 
-/**
- * Check CPU power state consistency.
- *
- * @param i Power state index.
- * @param node_id CPU node identifier.
- */
-#define CHECK_POWER_STATE_CONSISTENCY(i, node_id)			       \
-	BUILD_ASSERT(							       \
-		DT_PROP_BY_PHANDLE_IDX_OR(node_id, cpu_power_states, i,	       \
-					  min_residency_us, 0U) >=	       \
-		DT_PROP_BY_PHANDLE_IDX_OR(node_id, cpu_power_states, i,	       \
-					  exit_latency_us, 0U),		       \
-		"Found CPU power state with min_residency < exit_latency")
-
-/**
- * @brief Check CPU power states consistency
- *
- * All states should have a minimum residency >= than the exit latency.
- *
- * @param node_id A CPU node identifier.
- */
-#define CHECK_POWER_STATES_CONSISTENCY(node_id)				       \
-	LISTIFY(DT_PROP_LEN_OR(node_id, cpu_power_states, 0),		       \
-		CHECK_POWER_STATE_CONSISTENCY, (;), node_id);		       \
-
-/* Check that all power states are consistent */
-DT_FOREACH_CHILD(DT_PATH(cpus), CHECK_POWER_STATES_CONSISTENCY)
-
 #define DEFINE_CPU_STATES(n) \
 	static const struct pm_state_info pmstates_##n[] \
 		= PM_STATE_INFO_LIST_FROM_DT_CPU(n);
@@ -151,4 +123,21 @@ int pm_state_from_str(const char *name, enum pm_state *out)
 	}
 
 	return 0;
+}
+
+bool pm_state_in_constraints(const struct pm_state_constraints *constraints,
+			     const struct pm_state_constraint match)
+{
+	struct pm_state_constraint *constraints_list = constraints->list;
+	size_t num_constraints = constraints->count;
+	bool match_found = false;
+
+	for (int i = 0; i < num_constraints; i++) {
+		enum pm_state state = constraints_list[i].state;
+		uint8_t substate = constraints_list[i].substate_id;
+
+		match_found |= ((state == match.state) && (substate == match.substate_id));
+	}
+
+	return match_found;
 }

@@ -17,3 +17,7 @@ properties:
 
   pinctrl-names:
     required: true
+
+  ioswp:
+    type: boolean
+    description: Swap SPI MOSI and MISO pins

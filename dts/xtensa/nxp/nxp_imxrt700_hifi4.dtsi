@@ -302,7 +302,8 @@
 		status = "disabled";
 	};
 
-	mbox4: mbox@188000 {
+    /* MU4: MUB, Hifi4 to CPU0 */
+	mbox4_b: mbox@188000 {
 		#mbox-cells = <1>;
 
 		reg = <0x188000 0x1000>;

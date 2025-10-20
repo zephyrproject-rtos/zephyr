@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include <zephyr/internal/syscall_handler.h>
 #include <stdlib.h>
 #include <string.h>
+#include <zephyr/net/conn_mgr_connectivity.h>
 #include <zephyr/net/igmp.h>
 #include <zephyr/net/ipv4_autoconf.h>
 #include <zephyr/net/mld.h>
@@ -310,6 +311,7 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 		net_pkt_unref(pkt);
 	} else {
 		net_stats_update_bytes_sent(iface, status);
+		conn_mgr_if_used(iface);
 	}
 
 	if (context) {

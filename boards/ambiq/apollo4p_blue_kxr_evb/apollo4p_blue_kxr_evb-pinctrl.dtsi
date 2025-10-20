@@ -194,7 +194,14 @@
 		};
 	};
 
-	pwm2_default: pwm2_default {
+	adc0_default: adc0_default {
+		group1 {
+			pinmux = <ADCSE4_P15>, <ADCSE6_P13>;
+			drive-strength = "0.1";
+		};
+	};
+
+	pwm2_default: pwm2_default{
 		group1 {
 			pinmux = <CT30_P30>;
 			drive-open-drain;

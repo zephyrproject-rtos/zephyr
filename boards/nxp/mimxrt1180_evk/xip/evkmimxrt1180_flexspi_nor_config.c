@@ -52,19 +52,19 @@ const flexspi_nor_config_t qspi_flash_nor_config = {
 	.mem_config = {
 		.tag		  = FLEXSPI_CFG_BLK_TAG,
 		.version          = FLEXSPI_CFG_BLK_VERSION,
-		.read_sample_clk_src = flexspi_read_sample_clk_loopback_from_dqs_pad,
+		.read_sample_clk_src = FLEXSPI_READ_SAMPLE_CLK_LOOPBACK_FROM_DQS_PAD,
 		.cs_hold_time       = 3u,
 		.cs_setup_time      = 3u,
 		/* Enable DDR mode, Wordaddassable, Safe configuration,
 		 * Differential clock
 		 */
 		.controller_misc_option = 0x10,
-		.device_type           = flexspi_device_type_serial_nor,
-		.sflash_pad_type        = serial_flash_4_pads,
-		.serial_clk_freq        = flexspi_serial_clk_133mhz,
+		.device_type           = FLEXSPI_DEVICE_TYPE_SERIAL_NOR,
+		.sflash_pad_type        = SERIAL_FLASH_4_PADS,
+		.serial_clk_freq        = FLEXSPI_SERIAL_CLK_133MHZ,
 		.sflash_a1_size         = 16u * 1024u * 1024u,
 
-		.config_mode_type[0] = device_config_cmd_type_generic,
+		.config_mode_type[0] = DEVICE_CONFIG_CMD_TYPE_GENERIC,
 
 		.lookup_table = {
 			/* Read LUTs */

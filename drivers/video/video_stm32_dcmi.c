@@ -55,9 +55,31 @@ struct video_stm32_dcmi_config {
 	const struct stream dma;
 };
 
+static void stm32_dcmi_process_dma_error(DCMI_HandleTypeDef *hdcmi)
+{
+	struct video_stm32_dcmi_data *dev_data =
+		CONTAINER_OF(hdcmi, struct video_stm32_dcmi_data, hdcmi);
+
+	LOG_DBG("Restart DMA after Error!");
+
+	/* Lets try to recover by stopping and restart */
+	if (HAL_DCMI_Stop(&dev_data->hdcmi) != HAL_OK) {
+		LOG_WRN("HAL_DCMI_Stop FAILED!");
+		return;
+	}
+
+	if (HAL_DCMI_Start_DMA(&dev_data->hdcmi,
+			       DCMI_MODE_CONTINUOUS,
+			       (uint32_t)dev_data->vbuf->buffer,
+			       dev_data->vbuf->size / 4) != HAL_OK) {
+		LOG_WRN("Continuous: HAL_DCMI_Start_DMA FAILED!");
+		return;
+	}
+}
+
 void HAL_DCMI_ErrorCallback(DCMI_HandleTypeDef *hdcmi)
 {
-	LOG_WRN("%s", __func__);
+	stm32_dcmi_process_dma_error(hdcmi);
 }
 
 void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
@@ -96,17 +118,10 @@ static void dcmi_dma_callback(const struct device *dev, void *arg, uint32_t chan
 	DMA_HandleTypeDef *hdma = arg;
 
 	ARG_UNUSED(dev);
-
-	if (status < 0) {
-		LOG_ERR("DMA callback error with channel %d.", channel);
-	}
+	ARG_UNUSED(channel);
+	ARG_UNUSED(status);
 
 	HAL_DMA_IRQHandler(hdma);
-}
-
-void HAL_DMA_ErrorCallback(DMA_HandleTypeDef *hdma)
-{
-	LOG_WRN("%s", __func__);
 }
 
 static int stm32_dma_init(const struct device *dev)
@@ -180,7 +195,7 @@ static int stm32_dcmi_enable_clock(const struct device *dev)
 	}
 
 	/* Turn on DCMI peripheral clock */
-	return clock_control_on(dcmi_clock, (clock_control_subsys_t *)&config->pclken);
+	return clock_control_on(dcmi_clock, (clock_control_subsys_t)&config->pclken);
 }
 
 static int video_stm32_dcmi_set_fmt(const struct device *dev, struct video_format *fmt)
@@ -194,7 +209,10 @@ static int video_stm32_dcmi_set_fmt(const struct device *dev, struct video_forma
 		return ret;
 	}
 
-	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
+	ret = video_estimate_fmt_size(fmt);
+	if (ret < 0) {
+		return ret;
+	}
 
 	data->fmt = *fmt;
 
@@ -213,7 +231,10 @@ static int video_stm32_dcmi_get_fmt(const struct device *dev, struct video_forma
 		return ret;
 	}
 
-	fmt->pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
+	ret = video_estimate_fmt_size(fmt);
+	if (ret < 0) {
+		return ret;
+	}
 
 	data->fmt = *fmt;
 
@@ -308,9 +329,6 @@ static int video_stm32_dcmi_get_caps(const struct device *dev, struct video_caps
 
 	/* 2 buffers are needed for DCMI_MODE_CONTINUOUS */
 	caps->min_vbuf_count = 2;
-
-	/* DCMI produces full frames */
-	caps->min_line_count = caps->max_line_count = LINE_COUNT_HEIGHT;
 
 	/* Forward the message to the sensor device */
 	return video_get_caps(config->sensor_dev, caps);
@@ -412,6 +430,20 @@ static int video_stm32_dcmi_get_frmival(const struct device *dev, struct video_f
 	return 0;
 }
 
+static int video_stm32_dcmi_set_selection(const struct device *dev, struct video_selection *sel)
+{
+	const struct video_stm32_dcmi_config *config = dev->config;
+
+	return video_set_selection(config->sensor_dev, sel);
+}
+
+static int video_stm32_dcmi_get_selection(const struct device *dev, struct video_selection *sel)
+{
+	const struct video_stm32_dcmi_config *config = dev->config;
+
+	return video_get_selection(config->sensor_dev, sel);
+}
+
 static DEVICE_API(video, video_stm32_dcmi_driver_api) = {
 	.set_format = video_stm32_dcmi_set_fmt,
 	.get_format = video_stm32_dcmi_get_fmt,
@@ -422,6 +454,8 @@ static DEVICE_API(video, video_stm32_dcmi_driver_api) = {
 	.enum_frmival = video_stm32_dcmi_enum_frmival,
 	.set_frmival = video_stm32_dcmi_set_frmival,
 	.get_frmival = video_stm32_dcmi_get_frmival,
+	.set_selection = video_stm32_dcmi_set_selection,
+	.get_selection = video_stm32_dcmi_get_selection,
 };
 
 static void video_stm32_dcmi_irq_config_func(const struct device *dev)

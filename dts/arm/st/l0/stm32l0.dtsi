@@ -15,6 +15,7 @@
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/adc/stm32l4_adc.h>
 #include <zephyr/dt-bindings/reset/stm32l0_reset.h>
+#include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 #include <freq.h>
 
 / {
@@ -217,7 +218,7 @@
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40004400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 17)>;
-			resets = <&rctl STM32_RESET(APB1, 17U)>;
+			resets = <&rctl STM32_RESET(APB1, 17)>;
 			interrupts = <28 0>;
 			status = "disabled";
 		};
@@ -226,7 +227,7 @@
 			compatible = "st,stm32-lpuart", "st,stm32-uart";
 			reg = <0x40004800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 18)>;
-			resets = <&rctl STM32_RESET(APB1, 18U)>;
+			resets = <&rctl STM32_RESET(APB1, 18)>;
 			interrupts = <29 0>;
 			status = "disabled";
 		};
@@ -258,7 +259,7 @@
 			reg = <0x40000000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 0)>,
 				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
-			resets = <&rctl STM32_RESET(APB1, 0U)>;
+			resets = <&rctl STM32_RESET(APB1, 0)>;
 			interrupts = <15 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -274,6 +275,12 @@
 				compatible = "st,stm32-counter";
 				status = "disabled";
 			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
 		};
 
 		timers21: timers@40010800 {
@@ -281,7 +288,7 @@
 			reg = <0x40010800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 2)>,
 				 <&rcc STM32_SRC_TIMPCLK2 NO_SEL>;
-			resets = <&rctl STM32_RESET(APB2, 2U)>;
+			resets = <&rctl STM32_RESET(APB2, 2)>;
 			interrupts = <20 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;
@@ -315,7 +322,6 @@
 			reg = <0x40012400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 9)>;
 			interrupts = <12 0>;
-			status = "disabled";
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
 				       STM32_ADC_RES(10, 0x01)
@@ -323,8 +329,10 @@
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <2 4 8 13 20 40 80 161>;
 			num-sampling-time-common-channels = <1>;
-			st,adc-sequencer = "NOT_FULLY_CONFIGURABLE";
-			st,adc-oversampler = "OVERSAMPLER_MINIMAL";
+			st,adc-sequencer = "fixed";
+			st,adc-oversampler = "minimal";
+			st,adc-internal-regulator = "startup-sw-delay";
+			status = "disabled";
 		};
 
 		dma1: dma@40020000 {

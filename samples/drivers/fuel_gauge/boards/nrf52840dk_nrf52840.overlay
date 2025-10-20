@@ -18,7 +18,7 @@
 	pinctrl-names = "default", "sleep";
 	max17048: max17048@36 {
 		compatible = "maxim,max17048";
-		status = "ok";
+		status = "okay";
 		reg = <0x36>;
 	};
 };

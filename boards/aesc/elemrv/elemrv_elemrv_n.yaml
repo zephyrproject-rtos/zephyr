@@ -7,3 +7,7 @@ toolchain:
   - zephyr
 ram: 32
 flash: 32
+vendor: aesc
+supported:
+  - gpio
+  - uart

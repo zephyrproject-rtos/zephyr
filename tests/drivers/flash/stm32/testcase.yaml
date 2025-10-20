@@ -48,6 +48,7 @@ tests:
       - stm32h750b_dk
       - stm32h745i_disco/stm32h745xx/m7
       - nucleo_h743zi
+      - nucleo_h753zi
       - google_icetower
     extra_configs:
       - CONFIG_FLASH_STM32_READOUT_PROTECTION=y
@@ -57,6 +58,7 @@ tests:
   drivers.flash.stm32.h7.block_registers:
     platform_allow:
       - nucleo_h743zi
+      - nucleo_h753zi
       - google_icetower
     extra_configs:
       - CONFIG_FLASH_STM32_BLOCK_REGISTERS=y

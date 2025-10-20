@@ -300,12 +300,10 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	arch_irq_offload_init();
 #endif
 	z_sys_init_run_level(INIT_LEVEL_POST_KERNEL);
-#if CONFIG_SOC_LATE_INIT_HOOK
+
 	soc_late_init_hook();
-#endif
-#if CONFIG_BOARD_LATE_INIT_HOOK
+
 	board_late_init_hook();
-#endif
 
 #if defined(CONFIG_STACK_POINTER_RANDOM) && (CONFIG_STACK_POINTER_RANDOM != 0)
 	z_stack_adjust_initialized = 1;
@@ -355,6 +353,8 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #ifdef CONFIG_COVERAGE_DUMP
 	/* Dump coverage data once the main() has exited. */
 	gcov_coverage_dump();
+#elif defined(CONFIG_COVERAGE_SEMIHOST)
+	gcov_coverage_semihost();
 #endif /* CONFIG_COVERAGE_DUMP */
 } /* LCOV_EXCL_LINE ... because we just dumped final coverage data */
 
@@ -554,12 +554,10 @@ FUNC_NORETURN void z_cstart(void)
 	/* do any necessary initialization of static devices */
 	z_device_state_init();
 
-#if CONFIG_SOC_EARLY_INIT_HOOK
 	soc_early_init_hook();
-#endif
-#if CONFIG_BOARD_EARLY_INIT_HOOK
+
 	board_early_init_hook();
-#endif
+
 	/* perform basic hardware initialization */
 	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL_1);
 #if defined(CONFIG_SMP)

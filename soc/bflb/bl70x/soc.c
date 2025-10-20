@@ -13,6 +13,7 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/irq.h>
+#include <zephyr/cache.h>
 
 #include <clic.h>
 #include <bflb_soc.h>
@@ -78,4 +79,6 @@ void soc_early_init_hook(void)
 
 	/* init bor for all platform */
 	system_bor_init();
+
+	sys_cache_data_flush_and_invd_all();
 }

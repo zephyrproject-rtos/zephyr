@@ -15,9 +15,6 @@
 	compatible = "arduino,giga-r1";
 
 	chosen {
-		zephyr,console = &usart1;
-		zephyr,shell-uart = &usart1;
-		zephyr,uart-mcumgr = &usart1;
 		zephyr,bt-hci = &bt_hci_uart;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
@@ -173,31 +170,16 @@
 	pinctrl-names = "default";
 	status = "okay";
 
-	n25q128a1: qspi-nor-flash@0 {
+	qspi_flash: n25q128a1: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
 		reg = <0>;
-		size = <DT_SIZE_M(128)>; /* 128 Mbits */
+		size = <DT_SIZE_M(128)>; /* 128 Mbits (16 MB) */
 		qspi-max-frequency = <72000000>;
 		cs-high-time = <4>; /* >= 50 ns */
 		status = "okay";
-
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			slot1_partition: partition@0 {
-				label = "image-1";
-				reg = <0x00000000 DT_SIZE_M(1)>;
-			};
-
-			storage_partition: partition@100000 {
-				label = "storage";
-				reg = <0x00100000 DT_SIZE_M(15)>;
-			};
-		};
 	};
 };
+#include <arduino/partitions_qspi_h7.dtsi>
 
 &rng {
 	status = "okay";
@@ -252,6 +234,8 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
 	pinctrl-names = "default";
 };
+
+#include <../boards/common/usb/cdc_acm_serial.dtsi>
 
 /* alias used by display shields */
 zephyr_mipi_dsi: &mipi_dsi {};

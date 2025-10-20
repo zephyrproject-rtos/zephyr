@@ -57,16 +57,34 @@ Removed APIs and options
 * The TinyCrypt library was removed as the upstream version is no longer maintained.
   PSA Crypto API is now the recommended cryptographic library for Zephyr.
 * The legacy pipe object API was removed. Use the new pipe API instead.
+* ``bt_le_set_auto_conn``
+* ``CONFIG_BT_BUF_ACL_RX_COUNT``
+* ``ok`` enum value has now been removed completely from ``base.yaml`` binding ``status`` property in devicetree.
+* STM32 LPTIM clock source selection through Kconfig was removed. Device Tree must now be used instead.
+  Affected Kconfig symbols: ``CONFIG_STM32_LPTIM_CLOCK_LSI`` / ``CONFIG_STM32_LPTIM_CLOCK_LSI``
 
 Deprecated APIs and options
 ===========================
 
 * :dtcompatible:`maxim,ds3231` is deprecated in favor of :dtcompatible:`maxim,ds3231-rtc`.
+* Providing a third agument to :c:macro:`SPI_CONFIG_DT`, :c:macro:`SPI_CONFIG_DT_INST`,
+  :c:macro:`SPI_DT_SPEC_GET`, :c:macro:`SPI_DT_SPEC_INST_GET` is deprecated. Providing a
+  second argument to :c:macro:`SPI_CS_CONTROL_INIT` is deprecated. Use new DT properties
+  ``spi-cs-setup-delay-ns`` and ``spi-cs-hold-delay-ns`` to specify delay instead.
 
 * :c:enum:`bt_hci_bus` was deprecated as it was not used. :c:macro:`BT_DT_HCI_BUS_GET` should be
   used instead.
 
+* :kconfig:option:`CONFIG_BT_AUTO_PHY_UPDATE` was deprecated and has been replaced with
+  role-specific (central vs peripheral) options that allow specifying exactly which PHY is
+  preferred for automatic updates.
+
 * :kconfig:option:`CONFIG_POSIX_READER_WRITER_LOCKS` is deprecated. Use :kconfig:option:`CONFIG_POSIX_RW_LOCKS` instead.
+
+* :c:func:`bt_ctlr_set_public_addr` is deprecated in favor of using
+  :c:struct:`bt_hci_cp_vs_write_bd_addr` for setting the public Bluetooth device address.
+
+* :kconfig:option:`CONFIG_XOPEN_STREAMS` was deprecated. Use :kconfig:option:`CONFIG_XSI_STREAMS` instead.
 
 New APIs and options
 ====================
@@ -115,12 +133,24 @@ New APIs and options
     * :c:struct:`bt_iso_broadcaster_info` now contains a ``big_handle`` and a ``bis_number`` field
     * :c:struct:`bt_iso_sync_receiver_info` now contains a ``big_handle`` and a ``bis_number`` field
     * :c:struct:`bt_le_ext_adv_info` now contains an ``sid`` field with the Advertising Set ID.
+    * :kconfig:option:`CONFIG_BT_AUTO_PHY_PERIPHERAL_NONE`
+    * :kconfig:option:`CONFIG_BT_AUTO_PHY_PERIPHERAL_1M`
+    * :kconfig:option:`CONFIG_BT_AUTO_PHY_PERIPHERAL_2M`
+    * :kconfig:option:`CONFIG_BT_AUTO_PHY_PERIPHERAL_CODED`
+    * :kconfig:option:`CONFIG_BT_AUTO_PHY_CENTRAL_NONE`
+    * :kconfig:option:`CONFIG_BT_AUTO_PHY_CENTRAL_1M`
+    * :kconfig:option:`CONFIG_BT_AUTO_PHY_CENTRAL_2M`
+    * :kconfig:option:`CONFIG_BT_AUTO_PHY_CENTRAL_CODED`
 
 * CPUFreq
 
   * Introduced experimental dynamic CPU frequency scaling subsystem
 
     * :kconfig:option:`CONFIG_CPU_FREQ`
+
+* Crypto
+
+  * :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_BUILTIN_KEYS`
 
 * Display
 
@@ -145,7 +175,21 @@ New APIs and options
   * :c:macro:`K_THREAD_HW_SHADOW_STACK_ATTACH`
   * :c:macro:`k_thread_hw_shadow_stack_attach`
 
+* LVGL (Light and Versatile Graphics Library)
+
+  * :kconfig:option:`CONFIG_LV_Z_MEMORY_POOL_ZEPHYR_REGION`
+  * :kconfig:option:`CONFIG_LV_Z_MEMORY_POOL_ZEPHYR_REGION_NAME`
+  * :kconfig:option:`CONFIG_LV_Z_VDB_ZEPHYR_REGION`
+  * :kconfig:option:`CONFIG_LV_Z_VDB_ZEPHYR_REGION_NAME`
+
 * Logging:
+
+  * :kconfig:option:`CONFIG_LOG_BACKEND_SWO_SYNC_PACKETS`
+
+  * Added options to skip timestamp and level in log backends.
+
+    * :kconfig:option:`CONFIG_LOG_BACKEND_SHOW_TIMESTAMP`
+    * :kconfig:option:`CONFIG_LOG_BACKEND_SHOW_LEVEL`
 
   * Added rate-limited logging macros to prevent log flooding when messages are generated frequently.
 
@@ -172,17 +216,55 @@ New APIs and options
 
     * :kconfig:option:`CONFIG_HAWKBIT_REBOOT_NONE`
 
+* Modem
+
+  * :kconfig:option:`CONFIG_MODEM_DEDICATED_WORKQUEUE`
+
+* NVMEM
+
+  * Introduced :ref:`Non-Volatile Memory (NVMEM)<nvmem>` subsystem
+
+    * :kconfig:option:`CONFIG_NVMEM`
+    * :kconfig:option:`CONFIG_NVMEM_EEPROM`
+    * :c:struct:`nvmem_cell`
+    * :c:func:`nvmem_cell_read`
+    * :c:func:`nvmem_cell_write`
+    * :c:func:`nvmem_cell_is_ready`
+    * :c:macro:`NVMEM_CELL_GET_BY_NAME` - and variants
+    * :c:macro:`NVMEM_CELL_GET_BY_IDX` - and variants
+
 * Networking
+
+  * CoAP
+
+    * :c:struct:`coap_client_response_data`
+    * :c:member:`coap_client_request.payload_cb`
 
   * Sockets
 
     * :c:func:`zsock_listen` now implements the ``backlog`` parameter support. The TCP server
       socket will limit the number of pending incoming connections to that value.
 
+* Newlib
+
+  * :kconfig:option:`CONFIG_NEWLIB_LIBC_USE_POSIX_LIMITS_H`
+
+* Opamp
+
+  * Introduced opamp device driver APIs selected with :kconfig:option:`CONFIG_OPAMP`. It supports
+    initial configuration through Devicetree and runtime configuration through vendor specific APIs.
+  * Added support for NXP OPAMP :dtcompatible:`nxp,opamp`.
+  * Added support for NXP OPAMP_FAST :dtcompatible:`nxp,opamp_fast`.
+
 * Power management
 
    * :c:func:`pm_device_driver_deinit`
    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEFAULT_ENABLE`
+   * :kconfig:option:`CONFIG_PM_S2RAM` has been refactored to be promptless. The application now
+     only needs to enable any "suspend-to-ram" power state in the devicetree.
+   * The :kconfig:option:`PM_S2RAM_CUSTOM_MARKING` has been renamed to
+     :kconfig:option:`HAS_PM_S2RAM_CUSTOM_MARKING` and refactored to be promptless. This option
+     is now selected by SoCs if they need it for their "suspend-to-ram" implementations.
 
 * Settings
 
@@ -198,6 +280,11 @@ New APIs and options
       * :kconfig:option:`CONFIG_SHELL_MQTT_WORK_DELAY_MS`
       * :kconfig:option:`CONFIG_SHELL_MQTT_LISTEN_TIMEOUT_MS`
 
+* State Machine Framework
+
+  * :c:func:`smf_get_current_leaf_state`
+  * :c:func:`smf_get_current_executing_state`
+
 * Storage
 
     * :kconfig:option:`CONFIG_FILE_SYSTEM_SHELL_LS_SIZE`
@@ -209,6 +296,15 @@ New APIs and options
 * Task Watchdog
 
   * :kconfig:option:`CONFIG_TASK_WDT_DUMMY`
+
+* Toolchain
+
+  * :c:macro:`__deprecated_version`
+
+* Video
+
+  * :c:member:`video_format.size` field
+  * :c:func:`video_estimate_fmt_size`
 
 .. zephyr-keep-sorted-stop
 
@@ -259,6 +355,8 @@ New Samples
   Same as above for boards and drivers, this will also be recomputed at the time of the release.
  Just link the sample, further details go in the sample documentation itself.
 
+* Added a new sample :zephyr:code-sample:`opamp_output_measure` showing how to use the opamp device driver.
+
 Libraries / Subsystems
 **********************
 
@@ -272,6 +370,19 @@ Libraries / Subsystems
     via :kconfig:option:`CONFIG_LOG_RATELIMIT`. When rate limiting is disabled, the behavior can be controlled
     via :kconfig:option:`CONFIG_LOG_RATELIMIT_FALLBACK` to either log all messages or drop them completely.
     For more details, see :ref:`logging_ratelimited`.
+
+* Mbed TLS
+
+  * Kconfig :kconfig:option:`CONFIG_PSA_CRYPTO` is added to simplify the enablement of a PSA
+    Crypto API provider. This is TF-M if :kconfig:option:`CONFIG_BUILD_WITH_TFM` is enabled,
+    or Mbed TLS otherwise. :kconfig:option:`CONFIG_PSA_CRYPTO_PROVIDER_TFM` is set in the former
+    case while :kconfig:option:`CONFIG_PSA_CRYPTO_PROVIDER_MBEDTLS` is set in the latter.
+    :kconfig:option:`CONFIG_PSA_CRYPTO_PROVIDER_CUSTOM` is also added to allow end users to
+    provide a custom solution.
+
+* Secure storage
+
+  * The experimental status has been removed. (:github:`96483`)
 
 Other notable changes
 *********************

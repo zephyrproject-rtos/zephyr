@@ -12,6 +12,7 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/drivers/clock_control/adi_max32_clock_control.h>
 
 #include <wrap_max32_uart.h>
@@ -987,6 +988,63 @@ static void uart_max32_async_rx_timeout(struct k_work *work)
 
 #endif
 
+#ifdef CONFIG_PM_DEVICE
+static int uart_max32_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	int ret;
+	const struct max32_uart_config *const cfg = dev->config;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+
+		/* Enable clock */
+		ret = clock_control_on(cfg->clock, (clock_control_subsys_t)&cfg->perclk);
+		if (ret != 0) {
+			LOG_ERR("cannot enable UART clock");
+			return ret;
+		}
+
+		/* Set pins to active state */
+		ret = pinctrl_apply_state(cfg->pctrl, PINCTRL_STATE_DEFAULT);
+		if (ret) {
+			return ret;
+		}
+
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Flush uart before sleep */
+		while (MXC_UART_ReadyForSleep(cfg->regs) != E_NO_ERROR) {
+		}
+
+		/* Move pins to sleep state */
+		ret = pinctrl_apply_state(cfg->pctrl, PINCTRL_STATE_SLEEP);
+		if ((ret < 0) && (ret != -ENOENT)) {
+			/*
+			 * If returning -ENOENT, no pins where defined for sleep mode :
+			 * Do not output on console (might sleep already) when going to sleep,
+			 * "(LP)UART pinctrl sleep state not available"
+			 * and don't block PM suspend.
+			 * Else return the error.
+			 */
+			return ret;
+		}
+
+		/* Disable clock */
+		ret = clock_control_off(cfg->clock, (clock_control_subsys_t)&cfg->perclk);
+		if (ret != 0) {
+			LOG_ERR("cannot disable UART clock");
+			return ret;
+		}
+
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static DEVICE_API(uart, uart_max32_driver_api) = {
 	.poll_in = api_poll_in,
 	.poll_out = api_poll_out,
@@ -1074,8 +1132,9 @@ static DEVICE_API(uart, uart_max32_driver_api) = {
 			MAX32_UART_USE_IRQ, (.irq_config_func = uart_max32_irq_init_##_num,))};    \
 	static struct max32_uart_data max32_uart_data##_num = {                                    \
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (.cb = NULL,))};                          \
-	DEVICE_DT_INST_DEFINE(_num, uart_max32_init, NULL, &max32_uart_data##_num,                 \
-			      &max32_uart_config_##_num, PRE_KERNEL_1,                             \
-			      CONFIG_SERIAL_INIT_PRIORITY, (void *)&uart_max32_driver_api);
+	PM_DEVICE_DT_INST_DEFINE(_num, uart_max32_pm_action);                                      \
+	DEVICE_DT_INST_DEFINE(_num, uart_max32_init, PM_DEVICE_DT_INST_GET(_num),                  \
+			&max32_uart_data##_num, &max32_uart_config_##_num, PRE_KERNEL_1,     \
+			CONFIG_SERIAL_INIT_PRIORITY, (void *)&uart_max32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX32_UART_INIT)

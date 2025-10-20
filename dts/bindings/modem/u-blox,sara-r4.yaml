@@ -5,15 +5,12 @@ description: u-blox SARA-R4 modem
 
 compatible: "u-blox,sara-r4"
 
-include: uart-device.yaml
+include: zephyr,cellular-modem-device.yaml
 
 properties:
   mdm-power-gpios:
     type: phandle-array
     required: true
-
-  mdm-reset-gpios:
-    type: phandle-array
 
   mdm-vint-gpios:
     type: phandle-array

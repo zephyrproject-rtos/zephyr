@@ -151,7 +151,7 @@ void config_pllsai1(void)
 #endif
 #if STM32_PLLSAI1_P_ENABLED
 	LL_RCC_PLLSAI1_ConfigDomain_SAI(get_pllsai1_source(),
-					pllsai1m(STM32_PLLSAI1_M_DIVISOR),
+					pllsaim(STM32_PLLSAI1_M_DIVISOR),
 					STM32_PLLSAI1_N_MULTIPLIER,
 					pllsai1p(STM32_PLLSAI1_P_DIVISOR));
 
@@ -160,7 +160,7 @@ void config_pllsai1(void)
 
 #if STM32_PLLSAI1_Q_ENABLED
 	LL_RCC_PLLSAI1_ConfigDomain_48M(get_pllsai1_source(),
-					pllsai1m(STM32_PLLSAI1_M_DIVISOR),
+					pllsaim(STM32_PLLSAI1_M_DIVISOR),
 					STM32_PLLSAI1_N_MULTIPLIER,
 					pllsai1q(STM32_PLLSAI1_Q_DIVISOR));
 
@@ -169,7 +169,7 @@ void config_pllsai1(void)
 
 #if STM32_PLLSAI1_R_ENABLED
 	LL_RCC_PLLSAI1_ConfigDomain_ADC(get_pllsai1_source(),
-					pllsai1m(STM32_PLLSAI1_M_DIVISOR),
+					pllsaim(STM32_PLLSAI1_M_DIVISOR),
 					STM32_PLLSAI1_N_MULTIPLIER,
 					pllsai1r(STM32_PLLSAI1_R_DIVISOR));
 

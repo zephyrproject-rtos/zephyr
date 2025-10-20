@@ -180,6 +180,8 @@
 		reg = <0x38000 0x34>;
 		interrupts = <44 0>;
 		clocks = <&scg SCG_K4_FIRC_CLK 0xe0>;
+		dmas = <&edma 0 32>, <&edma 1 31>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
@@ -188,6 +190,8 @@
 		reg = <0x39000 0x34>;
 		interrupts = <45 0>;
 		clocks = <&scg SCG_K4_FIRC_CLK 0xe4>;
+		dmas = <&edma 2 34>, <&edma 3 33>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
@@ -298,7 +302,7 @@
 		interrupts = <34 0>;
 		clock-frequency = <DT_FREQ_K(32)>;
 		clk-source = <2>;
-		prescaler = <1>;
+		prescale-glitch-filter = <0>;
 		resolution = <32>;
 		status = "disabled";
 	};
@@ -309,7 +313,7 @@
 		interrupts = <35 0>;
 		clock-frequency = <DT_FREQ_K(32)>;
 		clk-source = <2>;
-		prescaler = <1>;
+		prescale-glitch-filter = <0>;
 		resolution = <32>;
 		status = "disabled";
 	};
@@ -386,6 +390,21 @@
 			alarms-count = <1>;
 			status = "disabled";
 		};
+	};
+
+	edma: dma-controller@2000 {
+		compatible = "nxp,mcux-edma";
+		#dma-cells = <2>;
+		nxp,version = <3>;
+		dma-channels = <16>;
+		dma-requests = <64>;
+		reg = <0x2000 0x140>;
+		clocks = <&scg SCG_K4_EDMA_CLK 0x410>;
+		interrupts = <2 0>, <3 0>, <4 0>, <5 0>,
+			<6 0>, <7 0>, <8 0>, <9 0>,
+			<10 0>, <11 0>, <12 0>, <13 0>,
+			<14 0>, <15 0>, <16 0>, <17 0>;
+		status = "disabled";
 	};
 
 	ewm0: ewm@13000 {

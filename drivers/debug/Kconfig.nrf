@@ -1,0 +1,178 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_NORDIC_NRF_TBM := nordic,nrf-tbm
+
+config DEBUG_NRF_ETR
+	bool "Coresight ETR handler (with Nordic TBM)"
+	depends on $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_TBM))
+	select NRFX_TBM
+	imply UART_ASYNC_API
+	default y
+	help
+	  Module handles data stored in the ETR circular buffer (e.g. STM logging
+	  data). Busyness is tracked using TBM (Trace Buffer Monitor) peripheral
+	  which is specific to Nordic Semiconductor SoCs.
+
+if DEBUG_NRF_ETR
+
+config DEBUG_NRF_ETR_DECODE
+	bool "Decode ETR content"
+	default y if LOG_FRONTEND_STMESP_FSC
+	select MIPI_STP_DECODER
+	select CS_TRACE_DEFMT
+	select LOG_FRONTEND_STMESP_DEMUX
+	select LOG_OUTPUT
+	imply LOG_BACKEND_SHOW_COLOR
+	imply CBPRINTF_FP_SUPPORT
+	help
+	  In this mode, log messages stored by Coresight STM logging frontends are
+	  decoded and printed in the human readable form.
+
+config DEBUG_NRF_ETR_DECODE_DROP_PERIOD
+	int "Period of dropped messages notification"
+	default 5000
+	help
+	  Period (in milliseconds) how often it is checked if any dropped messages
+	  have occurred.
+
+config DEBUG_NRF_ETR_DEBUG
+	bool "Debug mode"
+	depends on !LOG_PRINTK
+	select MIPI_STP_DECODER
+	select CS_TRACE_DEFMT
+	help
+	  In debug mode STPv2 decoded data is printed.
+
+config DEBUG_NRF_ETR_STACK_SIZE
+	int "ETR thread stack size"
+	default 2048 if DEBUG_NRF_ETR_DECODE || DEBUG_NRF_ETR_DEBUG
+	default 1024
+
+config DEBUG_NRF_ETR_BACKOFF
+	int "Thread backoff time (ms)"
+	default 10
+	help
+	  Determines how often attempt to dump the data is performed.
+
+config DEBUG_NRF_ETR_FLUSH_TIMEOUT
+	int "Backoff time during flushing (ms)"
+	default 100
+	help
+	  When thread triggers flushing of ETR data, it periodically checks if
+	  there is still a pending ETR data. This option specifies how often
+	  thread is waking up to check. Given in milliseconds.
+
+config DEBUG_NRF_ETR_SYNC_PERIOD
+	int "Period of custom synchronization frame"
+	default 0 if DEBUG_NRF_ETR_DECODE
+	default 0 if DEBUG_NRF_ETR_DEBUG
+	default 16
+	help
+	  To help find the synchronization when decoding the ETR content
+	  by a host tool a synchronization pattern (16 bytes of 0xFF) can be
+	  sent on regular intervals. This frame is sent between Coresight formatter
+	  frames. Use 0 to disable.
+
+config DEBUG_NRF_ETR_SHELL
+	bool "Use shell"
+	select UART_ASYNC_API
+	select UART_ASYNC_RX_HELPER
+	select SHELL_LOG_BACKEND_CUSTOM
+	depends on DEBUG_NRF_ETR_DECODE
+	default y if SHELL
+	help
+	  Enable shell with Coresight STM logging support.
+
+if DEBUG_NRF_ETR_SHELL
+
+config DEBUG_NRF_ETR_SHELL_PROMPT
+	string "Displayed prompt name"
+	default "uart:~$ "
+	help
+	  Displayed prompt name for UART shell with Coresight STM logging.
+
+config DEBUG_NRF_ETR_SHELL_ASYNC_RX_BUFFER_SIZE
+	int "Size of the RX buffer"
+	default 16
+	help
+	  Size of a single RX buffer. Together with buffer count it defines the
+	  space that can hold RX data. It may be decreased if shell input is
+	  slow and may need to be increased if long messages are pasted directly
+	  to the shell prompt.
+
+config DEBUG_NRF_ETR_SHELL_ASYNC_RX_BUFFER_COUNT
+	int "Number of RX buffers"
+	default 4
+	range 2 64
+	help
+	  Number of RX buffers.
+
+endif # DEBUG_NRF_ETR_SHELL
+
+endif # DEBUG_NRF_ETR
+
+menuconfig DEBUG_CORESIGHT_NRF
+	bool "Coresight Trace support"
+	default y
+	depends on DT_HAS_NORDIC_CORESIGHT_NRF_ENABLED
+	select PINCTRL
+	select NRF_IRONSIDE_TDD_SERVICE
+	help
+	  Support CoreSight peripherals in Test and Debug Domain for ARM
+	  CoreSight System Trace Macrocell (STM) trace support.
+
+if DEBUG_CORESIGHT_NRF
+
+config DEBUG_CORESIGHT_NRF_ATB_TRACE_ID_STM_GLOBAL
+	def_hex 0x40
+	help
+	  Global trace ID used by STM.
+
+config DEBUG_CORESIGHT_NRF_STM_SYNC_BYTE_COUNT
+	int "STM: Emit synhronization packet every N bytes"
+	range 0 4095
+	default 512
+
+config DEBUG_CORESIGHT_NRF_STM_HWEVENTS
+	bool "STM: Enable hardware events"
+	help
+	  Enable the output of hardware events in STM.
+
+config DEBUG_CORESIGHT_NRF_TPIU_FFCR_TRIG
+	bool "TPIU: Use flush request trigger"
+	default y
+	help
+	  Use CTI channel 1 for triggering flush request in TPIU.
+
+config DEBUG_CORESIGHT_NRF_TPIU_SYNC_FRAME_COUNT
+	int "TPIU: Emit synchronisation packet every N frames"
+	default 8
+
+config DEBUG_CORESIGHT_NRF_TPIU_PORTSIZE
+	int "TPIU: Size of the current TPIU port in bits"
+	range 1 32
+	default 4
+
+config DEBUG_CORESIGHT_NRF_ATBFUNNEL_HOLD_TIME
+	int "ATBFUNNEL: Hold time for the transaction"
+	range 1 15
+	default 4
+	help
+	  Number of transactions that are output on the funnel master port from the
+	  same slave.
+
+config DEBUG_CORESIGHT_NRF_TSGEN_CLK_DIV
+	int
+	default 8
+	help
+	  Clock division factor for generating trace timestamps. The timestamp
+	  counter should not be slower than 10% of the fastest processor clock
+	  frequency in the system, therefore its clock speed is divided by
+	  eight.
+
+module = DEBUG_CORESIGHT_NRF
+module-str = CoreSight Trace
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # DEBUG_CORESIGHT_NRF

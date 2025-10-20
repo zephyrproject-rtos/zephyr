@@ -27,6 +27,7 @@ tests:
     platform_allow:
       - ek_ra8p1/r7ka8p1kflcac/cm85
       - ek_ra8p1/r7ka8p1kflcac/cm33
+      - mck_ra8t2/r7ka8t2lfecac/cm85
     extra_args:
       - DTC_OVERLAY_FILE="./boards/${BOARD}${NORMALIZED_BOARD_QUALIFIERS}_sci_b_i2c.overlay"
       - CONF_FILE="./prj.conf ./boards/${BOARD}${NORMALIZED_BOARD_QUALIFIERS}_sci_b_i2c.conf"

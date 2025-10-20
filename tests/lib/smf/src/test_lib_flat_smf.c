@@ -10,35 +10,34 @@
 /*
  * Flat Test Transition:
  *
- *	A_ENTRY --> A_RUN --> A_EXIT --> B_ENTRY --> B_RUN --|
- *	                                                     |
- *	|----------------------------------------------------|
- *	|
- *	|--> B_EXIT --> C_ENTRY --> C_RUN --> C_EXIT
+ * A_ENTRY --> A_RUN --> A_EXIT --> B_ENTRY --> B_RUN --|
+ *                                                      |
+ * |----------------------------------------------------|
+ * |
+ * |--> B_EXIT --> C_ENTRY --> C_RUN --> C_EXIT --> D_ENTRY
  *
  */
 
-
 #define TEST_OBJECT(o) ((struct test_object *)o)
 
-#define SMF_RUN                         3
+#define SMF_RUN 3
 
-#define STATE_A_ENTRY_BIT       (1 << 0)
-#define STATE_A_RUN_BIT         (1 << 1)
-#define STATE_A_EXIT_BIT        (1 << 2)
+#define STATE_A_ENTRY_BIT (1 << 0)
+#define STATE_A_RUN_BIT   (1 << 1)
+#define STATE_A_EXIT_BIT  (1 << 2)
 
-#define STATE_B_ENTRY_BIT       (1 << 3)
-#define STATE_B_RUN_BIT         (1 << 4)
-#define STATE_B_EXIT_BIT        (1 << 5)
+#define STATE_B_ENTRY_BIT (1 << 3)
+#define STATE_B_RUN_BIT   (1 << 4)
+#define STATE_B_EXIT_BIT  (1 << 5)
 
-#define STATE_C_ENTRY_BIT       (1 << 6)
-#define STATE_C_RUN_BIT         (1 << 7)
-#define STATE_C_EXIT_BIT        (1 << 8)
+#define STATE_C_ENTRY_BIT (1 << 6)
+#define STATE_C_RUN_BIT   (1 << 7)
+#define STATE_C_EXIT_BIT  (1 << 8)
 
-#define TEST_ENTRY_VALUE_NUM     0
-#define TEST_RUN_VALUE_NUM       4
-#define TEST_EXIT_VALUE_NUM      8
-#define TEST_VALUE_NUM           9
+#define TEST_ENTRY_VALUE_NUM 0
+#define TEST_RUN_VALUE_NUM   4
+#define TEST_EXIT_VALUE_NUM  8
+#define TEST_VALUE_NUM       9
 
 static uint32_t test_value[] = {
 	0x00,  /* STATE_A_ENTRY */
@@ -80,11 +79,15 @@ static struct test_object {
 
 static void state_a_entry(void *obj)
 {
+	zassert_equal(smf_get_current_executing_state(SMF_CTX(obj)), &test_states[STATE_A],
+		      "Fail to get the currently-executing state at entry. Expected: State A");
+	zassert_equal(smf_get_current_leaf_state(SMF_CTX(obj)), &test_states[STATE_A],
+		      "Fail to get the current leaf state at entry. Expected: State A");
+
 	struct test_object *o = TEST_OBJECT(obj);
 
 	o->tv_idx = 0;
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test State A entry failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test State A entry failed");
 
 	if (o->terminate == ENTRY) {
 		smf_set_terminate(obj, -1);
@@ -96,11 +99,15 @@ static void state_a_entry(void *obj)
 
 static enum smf_state_result state_a_run(void *obj)
 {
+	zassert_equal(smf_get_current_executing_state(SMF_CTX(obj)), &test_states[STATE_A],
+		      "Fail to get the currently-executing state at run. Expected: State A");
+	zassert_equal(smf_get_current_leaf_state(SMF_CTX(obj)), &test_states[STATE_A],
+		      "Fail to get the current leaf state at run. Expected: State A");
+
 	struct test_object *o = TEST_OBJECT(obj);
 
 	o->tv_idx++;
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test State A run failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test State A run failed");
 
 	o->transition_bits |= STATE_A_RUN_BIT;
 
@@ -110,33 +117,45 @@ static enum smf_state_result state_a_run(void *obj)
 
 static void state_a_exit(void *obj)
 {
+	zassert_equal(smf_get_current_executing_state(SMF_CTX(obj)), &test_states[STATE_A],
+		      "Fail to get the currently-executing state at exit. Expected: State A");
+	zassert_equal(smf_get_current_leaf_state(SMF_CTX(obj)), &test_states[STATE_A],
+		      "Fail to get the current leaf state at exit. Expected: State A");
+
 	struct test_object *o = TEST_OBJECT(obj);
 
 	o->tv_idx++;
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test State A exit failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test State A exit failed");
 
 	o->transition_bits |= STATE_A_EXIT_BIT;
 }
 
 static void state_b_entry(void *obj)
 {
+	zassert_equal(smf_get_current_executing_state(SMF_CTX(obj)), &test_states[STATE_B],
+		      "Fail to get the currently-executing state at entry. Expected: State B");
+	zassert_equal(smf_get_current_leaf_state(SMF_CTX(obj)), &test_states[STATE_B],
+		      "Fail to get the current leaf state at entry. Expected: State B");
+
 	struct test_object *o = TEST_OBJECT(obj);
 
 	o->tv_idx++;
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test State B entry failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test State B entry failed");
 
 	o->transition_bits |= STATE_B_ENTRY_BIT;
 }
 
 static enum smf_state_result state_b_run(void *obj)
 {
+	zassert_equal(smf_get_current_executing_state(SMF_CTX(obj)), &test_states[STATE_B],
+		      "Fail to get the currently-executing state at run. Expected: State B");
+	zassert_equal(smf_get_current_leaf_state(SMF_CTX(obj)), &test_states[STATE_B],
+		      "Fail to get the current leaf state at run. Expected: State B");
+
 	struct test_object *o = TEST_OBJECT(obj);
 
 	o->tv_idx++;
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test State B run failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test State B run failed");
 
 	if (o->terminate == RUN) {
 		smf_set_terminate(obj, -1);
@@ -151,31 +170,43 @@ static enum smf_state_result state_b_run(void *obj)
 
 static void state_b_exit(void *obj)
 {
+	zassert_equal(smf_get_current_executing_state(SMF_CTX(obj)), &test_states[STATE_B],
+		      "Fail to get the currently-executing state at exit. Expected: State B");
+	zassert_equal(smf_get_current_leaf_state(SMF_CTX(obj)), &test_states[STATE_B],
+		      "Fail to get the current leaf state at exit. Expected: State B");
+
 	struct test_object *o = TEST_OBJECT(obj);
 
 	o->tv_idx++;
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test State B exit failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test State B exit failed");
 	o->transition_bits |= STATE_B_EXIT_BIT;
 }
 
 static void state_c_entry(void *obj)
 {
+	zassert_equal(smf_get_current_executing_state(SMF_CTX(obj)), &test_states[STATE_C],
+		      "Fail to get the currently-executing state at entry. Expected: State C");
+	zassert_equal(smf_get_current_leaf_state(SMF_CTX(obj)), &test_states[STATE_C],
+		      "Fail to get the current leaf state at entry. Expected: State C");
+
 	struct test_object *o = TEST_OBJECT(obj);
 
 	o->tv_idx++;
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test State C entry failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test State C entry failed");
 	o->transition_bits |= STATE_C_ENTRY_BIT;
 }
 
 static enum smf_state_result state_c_run(void *obj)
 {
+	zassert_equal(smf_get_current_executing_state(SMF_CTX(obj)), &test_states[STATE_C],
+		      "Fail to get the currently-executing state at run. Expected: State C");
+	zassert_equal(smf_get_current_leaf_state(SMF_CTX(obj)), &test_states[STATE_C],
+		      "Fail to get the current leaf state at run. Expected: State C");
+
 	struct test_object *o = TEST_OBJECT(obj);
 
 	o->tv_idx++;
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test State C run failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test State C run failed");
 	o->transition_bits |= STATE_C_RUN_BIT;
 
 	smf_set_state(SMF_CTX(obj), &test_states[STATE_D]);
@@ -184,11 +215,15 @@ static enum smf_state_result state_c_run(void *obj)
 
 static void state_c_exit(void *obj)
 {
+	zassert_equal(smf_get_current_executing_state(SMF_CTX(obj)), &test_states[STATE_C],
+		      "Fail to get the currently-executing state at exit. Expected: State C");
+	zassert_equal(smf_get_current_leaf_state(SMF_CTX(obj)), &test_states[STATE_C],
+		      "Fail to get the current leaf state at exit. Expected: State C");
+
 	struct test_object *o = TEST_OBJECT(obj);
 
 	o->tv_idx++;
-	zassert_equal(o->transition_bits, test_value[o->tv_idx],
-		      "Test State C exit failed");
+	zassert_equal(o->transition_bits, test_value[o->tv_idx], "Test State C exit failed");
 
 	if (o->terminate == EXIT) {
 		smf_set_terminate(obj, -1);
@@ -229,16 +264,15 @@ ZTEST(smf_tests, test_smf_flat)
 
 	test_obj.transition_bits = 0;
 	test_obj.terminate = NONE;
-	smf_set_initial((struct smf_ctx *)&test_obj, &test_states[STATE_A]);
+	smf_set_initial(SMF_CTX(&test_obj), &test_states[STATE_A]);
 
 	for (int i = 0; i < SMF_RUN; i++) {
-		if (smf_run_state((struct smf_ctx *)&test_obj)) {
+		if (smf_run_state(SMF_CTX(&test_obj))) {
 			break;
 		}
 	}
 
-	zassert_equal(TEST_VALUE_NUM, test_obj.tv_idx,
-		      "Incorrect test value index");
+	zassert_equal(TEST_VALUE_NUM, test_obj.tv_idx, "Incorrect test value index");
 	zassert_equal(test_obj.transition_bits, test_value[test_obj.tv_idx],
 		      "Final state not reached");
 
@@ -246,10 +280,10 @@ ZTEST(smf_tests, test_smf_flat)
 
 	test_obj.transition_bits = 0;
 	test_obj.terminate = ENTRY;
-	smf_set_initial((struct smf_ctx *)&test_obj, &test_states[STATE_A]);
+	smf_set_initial(SMF_CTX(&test_obj), &test_states[STATE_A]);
 
 	for (int i = 0; i < SMF_RUN; i++) {
-		if (smf_run_state((struct smf_ctx *)&test_obj)) {
+		if (smf_run_state(SMF_CTX(&test_obj))) {
 			break;
 		}
 	}
@@ -263,10 +297,10 @@ ZTEST(smf_tests, test_smf_flat)
 
 	test_obj.transition_bits = 0;
 	test_obj.terminate = RUN;
-	smf_set_initial((struct smf_ctx *)&test_obj, &test_states[STATE_A]);
+	smf_set_initial(SMF_CTX(&test_obj), &test_states[STATE_A]);
 
 	for (int i = 0; i < SMF_RUN; i++) {
-		if (smf_run_state((struct smf_ctx *)&test_obj)) {
+		if (smf_run_state(SMF_CTX(&test_obj))) {
 			break;
 		}
 	}
@@ -280,10 +314,10 @@ ZTEST(smf_tests, test_smf_flat)
 
 	test_obj.transition_bits = 0;
 	test_obj.terminate = EXIT;
-	smf_set_initial((struct smf_ctx *)&test_obj, &test_states[STATE_A]);
+	smf_set_initial(SMF_CTX(&test_obj), &test_states[STATE_A]);
 
 	for (int i = 0; i < SMF_RUN; i++) {
-		if (smf_run_state((struct smf_ctx *)&test_obj)) {
+		if (smf_run_state(SMF_CTX(&test_obj))) {
 			break;
 		}
 	}

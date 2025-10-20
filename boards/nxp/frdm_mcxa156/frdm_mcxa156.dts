@@ -118,6 +118,10 @@
 	};
 };
 
+&cpu0 {
+	clock-frequency = <96000000>;
+};
+
 &gpio0 {
 	status = "okay";
 };
@@ -228,6 +232,12 @@ zephyr_mipi_dbi_parallel: &flexio0_lcd {
 &lpcmp0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpcmp0>;
+	pinctrl-names = "default";
+};
+
+&opamp0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_opamp0>;
 	pinctrl-names = "default";
 };
 

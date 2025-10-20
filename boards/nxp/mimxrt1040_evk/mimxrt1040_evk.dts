@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,7 @@
 		pwm-0 = &flexpwm1_pwm3;
 		accel0 = &fxls8974;
 		mcuboot-button0 = &user_button;
+		rtc = &counter_rtc;
 	};
 
 	chosen {
@@ -245,3 +246,7 @@ lpi2c3: &lpi2c3 {
 m2_hci_bt_uart: &lpuart3 {};
 
 m2_wifi_sdio: &usdhc1 {};
+
+&counter_rtc {
+	status = "okay";
+};

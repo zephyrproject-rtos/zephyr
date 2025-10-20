@@ -4,10 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/comparator/nrf-comp.h>
+
 &comp {
 	compatible = "nordic,nrf-lpcomp";
-	psel = "AIN0";
+	psel = <NRF_COMP_AIN0>;
 	refsel = "AREF";
-	extrefsel = "AIN1";
+	extrefsel = <NRF_COMP_AIN1>;
 	status = "okay";
 };

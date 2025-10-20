@@ -24,6 +24,7 @@
 		zephyr,canbus = &twai;
 		zephyr,entropy = &trng0;
 		zephyr,flash-controller = &flash;
+		zephyr,bt-hci = &esp32_bt_hci;
 	};
 
 	cpus {
@@ -35,9 +36,26 @@
 			compatible = "espressif,riscv";
 			riscv,isa = "rv32imac_zicsr";
 			reg = <0>;
+			cpu-power-states = <&light_sleep &deep_sleep>;
 			clock-source = <ESP32_CPU_CLK_SRC_PLL>;
 			clock-frequency = <DT_FREQ_M(96)>;
 			xtal-freq = <DT_FREQ_M(32)>;
+		};
+
+		power-states {
+			light_sleep: light_sleep {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				min-residency-us = <200>;
+				exit-latency-us = <60>;
+			};
+
+			deep_sleep: deep_sleep {
+				compatible = "zephyr,power-state";
+				power-state-name = "soft-off";
+				min-residency-us = <2000>;
+				exit-latency-us = <212>;
+			};
 		};
 	};
 
@@ -52,6 +70,16 @@
 		slow-clk-src = <ESP32_RTC_SLOW_CLK_SRC_RC_SLOW>;
 		#clock-cells = <1>;
 		status = "okay";
+	};
+
+	esp32_bt_hci: esp32_bt_hci {
+		compatible = "espressif,esp32-bt-hci";
+		status = "disabled";
+	};
+
+	ieee802154: ieee802154 {
+		compatible = "espressif,esp32-ieee802154";
+		status = "disabled";
 	};
 
 	soc {
@@ -124,7 +152,7 @@
 		};
 
 		rtc_timer: rtc_timer@600b0c00 {
-			compatible = "espressif,esp32-rtc_timer";
+			compatible = "espressif,esp32-rtc-timer";
 			reg = <0x600B0C00 DT_SIZE_K(1)>;
 			clocks = <&clock ESP32_MODULE_MAX>;
 			interrupts = <LP_RTC_TIMER_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;

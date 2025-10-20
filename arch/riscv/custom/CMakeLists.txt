@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Andes Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+add_subdirectory_ifdef(CONFIG_DT_HAS_ANDESTECH_ANDESCORE_V5_ENABLED andes)
+add_subdirectory_ifdef(CONFIG_DT_HAS_OPENHWGROUP_CVA6_ENABLED openhwgroup/cva6)
+add_subdirectory_ifdef(CONFIG_DT_HAS_NUCLEI_BUMBLEBEE_ENABLED nuclei)
+add_subdirectory_ifdef(CONFIG_DT_HAS_OPENISA_RI5CY_ENABLED openisa/ri5cy)
+add_subdirectory_ifdef(CONFIG_DT_HAS_OPENISA_ZERO_RI5CY_ENABLED openisa/zero_riscy)
+add_subdirectory_ifdef(CONFIG_DT_HAS_XUANTIE_E907_ENABLED thead)

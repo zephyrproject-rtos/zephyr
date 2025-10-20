@@ -76,7 +76,9 @@ typedef struct {
 
 struct backup {
 	_nvic_context_t nvic_context;
+#if defined(CONFIG_MPU)
 	_mpu_context_t mpu_context;
+#endif
 	_scb_context_t scb_context;
 #if defined(CONFIG_FPU) && !defined(CONFIG_FPU_SHARING)
 	_fpu_context_t fpu_context;
@@ -88,6 +90,7 @@ static __noinit struct backup backup_data;
 extern void z_arm_configure_static_mpu_regions(void);
 extern int z_arm_mpu_init(void);
 
+#if defined(CONFIG_MPU)
 /* MPU registers cannot be simply copied because content of RBARx RLARx registers
  * depends on region which is selected by RNR register.
  */
@@ -130,6 +133,7 @@ static void mpu_restore(_mpu_context_t *backup)
 	MPU->RNR = rnr;
 	MPU->CTRL = backup->CTRL;
 }
+#endif /* defined(CONFIG_MPU) */
 
 static void nvic_save(_nvic_context_t *backup)
 {
@@ -231,7 +235,9 @@ int soc_s2ram_suspend(pm_s2ram_system_off_fn_t system_off)
 	fpu_power_down();
 #endif
 	nvic_save(&backup_data.nvic_context);
+#if defined(CONFIG_MPU)
 	mpu_save(&backup_data.mpu_context);
+#endif
 	ret = arch_pm_s2ram_suspend(system_off);
 	/* Cache and FPU are powered down so power up is needed even if s2ram failed. */
 	nrf_power_up_cache();
@@ -246,7 +252,9 @@ int soc_s2ram_suspend(pm_s2ram_system_off_fn_t system_off)
 		return ret;
 	}
 
+#if defined(CONFIG_MPU)
 	mpu_restore(&backup_data.mpu_context);
+#endif
 	nvic_restore(&backup_data.nvic_context);
 	scb_restore(&backup_data.scb_context);
 

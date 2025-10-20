@@ -11,6 +11,8 @@ supported:
   - pwm
   - adc
   - i2c
+  - counter
+  - watchdog
 testing:
   ignore_tags:
     - bluetooth

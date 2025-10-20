@@ -692,6 +692,12 @@ static int spi_stm32_configure(const struct device *dev,
 	LL_SPI_Disable(spi);
 	LL_SPI_SetBaudRatePrescaler(spi, scaler[br - 1]);
 
+#if defined(SPI_CFG2_IOSWP)
+	if (cfg->ioswp) {
+		LL_SPI_EnableIOSwap(cfg->spi);
+	}
+#endif
+
 	if (SPI_MODE_GET(config->operation) & SPI_MODE_CPOL) {
 		LL_SPI_SetClockPolarity(spi, LL_SPI_POLARITY_HIGH);
 	} else {
@@ -1424,6 +1430,7 @@ static int spi_stm32_pinctrl_apply(const struct device *dev, uint8_t id)
 static int spi_stm32_pm_action(const struct device *dev,
 			       enum pm_device_action action)
 {
+	struct spi_stm32_data *data = dev->data;
 	const struct spi_stm32_config *config = dev->config;
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	int err;
@@ -1441,6 +1448,12 @@ static int spi_stm32_pm_action(const struct device *dev,
 			LOG_ERR("Could not enable SPI clock");
 			return err;
 		}
+		/* (re-)init SPI context and all CS configuration */
+		err = spi_context_cs_configure_all(&data->ctx);
+		if (err < 0) {
+			return err;
+		}
+		spi_context_unlock_unconditionally(&data->ctx);
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		/* Stop device clock. */
@@ -1504,13 +1517,6 @@ static int spi_stm32_init(const struct device *dev)
 	LOG_DBG("SPI with DMA transfer");
 
 #endif /* CONFIG_SPI_STM32_DMA */
-
-	err = spi_context_cs_configure_all(&data->ctx);
-	if (err < 0) {
-		return err;
-	}
-
-	spi_context_unlock_unconditionally(&data->ctx);
 
 	return pm_device_driver_init(dev, spi_stm32_pm_action);
 }
@@ -1595,6 +1601,7 @@ static const struct spi_stm32_config spi_stm32_cfg_##id = {		\
 	.pclk_len = DT_INST_NUM_CLOCKS(id),				\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),			\
 	.fifo_enabled = SPI_FIFO_ENABLED(id),				\
+	.ioswp = DT_INST_PROP(id, ioswp),				\
 	STM32_SPI_IRQ_HANDLER_FUNC(id)					\
 	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz),	\
 		(.use_subghzspi_nss =					\

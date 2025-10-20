@@ -38,7 +38,8 @@
 #include <stm32_ll_usart.h>
 #include <stm32_ll_lpuart.h>
 #if defined(CONFIG_PM) && defined(IS_UART_WAKEUP_FROMSTOP_INSTANCE)
-#include <stm32_ll_exti.h>
+#include <stm32_ll_pwr.h>
+#include <zephyr/drivers/interrupt_controller/intc_exti_stm32.h>
 #endif /* CONFIG_PM */
 
 #include <zephyr/linker/linker-defs.h>
@@ -64,6 +65,15 @@ LOG_MODULE_REGISTER(uart_stm32, CONFIG_UART_LOG_LEVEL);
 #define HAS_DRIVER_ENABLE 1
 #else
 #define HAS_DRIVER_ENABLE 0
+#endif
+
+/* Helper for checking if we can use hardware receive timeouts
+ * instead of the work queue on a given UART
+ */
+#ifdef USART_RTOR_RTO
+#define HAS_RTO 1
+#else
+#define HAS_RTO 0
 #endif
 
 #ifdef CONFIG_PM
@@ -111,6 +121,27 @@ static void uart_stm32_pm_policy_state_lock_get_unconditional(void)
 		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
 	}
 }
+
+#if defined(CONFIG_PM) && defined(IS_UART_WAKEUP_FROMSTOP_INSTANCE)
+static void uart_stm32_pm_enable_wakeup_line(uint32_t wakeup_line)
+{
+#if defined(CONFIG_SOC_SERIES_STM32WB0X)
+	ARG_UNUSED(wakeup_line);
+#if defined(PWR_CR3_EIWL2)
+	/**
+	 * If SoC is equipped with LPUART instance,
+	 * enable the associated wake-up line in PWRC.
+	 */
+	LL_PWR_EnableInternWU2();
+#endif /* PWR_CR3_EIWL2 */
+#else
+	if (wakeup_line != STM32_WAKEUP_LINE_NONE) {
+		/* Enable EXTI line associated to UART wake-up event */
+		stm32_exti_enable(wakeup_line, STM32_EXTI_TRIG_NONE, STM32_EXTI_MODE_IT);
+	}
+#endif /* CONFIG_SOC_SERIES_STM32WB0X */
+}
+#endif /* CONFIG_PM && IS_UART_WAKEUP_FROMSTOP_INSTANCE */
 
 static void uart_stm32_pm_policy_state_lock_get(const struct device *dev)
 {
@@ -1369,8 +1400,8 @@ static void uart_stm32_isr(const struct device *dev)
 		return;
 	}
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
-	if (LL_USART_IsEnabledIT_IDLE(usart) &&
-			LL_USART_IsActiveFlag_IDLE(usart)) {
+
+	if (LL_USART_IsEnabledIT_IDLE(usart) && LL_USART_IsActiveFlag_IDLE(usart)) {
 
 		LL_USART_ClearFlag_IDLE(usart);
 
@@ -1391,8 +1422,7 @@ static void uart_stm32_isr(const struct device *dev)
 			async_timer_start(&data->dma_rx.timeout_work,
 								data->dma_rx.timeout);
 		}
-	} else if (LL_USART_IsEnabledIT_TC(usart) &&
-			LL_USART_IsActiveFlag_TC(usart)) {
+	} else if (LL_USART_IsEnabledIT_TC(usart) && LL_USART_IsActiveFlag_TC(usart)) {
 
 		LL_USART_DisableIT_TC(usart);
 		/* Generate TX_DONE event when transmission is done */
@@ -1400,8 +1430,7 @@ static void uart_stm32_isr(const struct device *dev)
 #ifdef CONFIG_PM
 		uart_stm32_pm_policy_state_lock_put_unconditional();
 #endif
-	} else if (LL_USART_IsEnabledIT_RXNE(usart) &&
-			LL_USART_IsActiveFlag_RXNE(usart)) {
+	} else if (LL_USART_IsEnabledIT_RXNE(usart) && LL_USART_IsActiveFlag_RXNE(usart)) {
 #ifdef USART_SR_RXNE
 		/* clear the RXNE flag, because Rx data was not read */
 		LL_USART_ClearFlag_RXNE(usart);
@@ -1409,6 +1438,14 @@ static void uart_stm32_isr(const struct device *dev)
 		/* clear the RXNE by flushing the fifo, because Rx data was not read */
 		LL_USART_RequestRxDataFlush(usart);
 #endif /* USART_SR_RXNE */
+#if HAS_RTO
+	} else if (LL_USART_IsEnabledIT_RTO(usart) && LL_USART_IsActiveFlag_RTO(usart)) {
+
+		LOG_DBG("rx timeout interrupt occurred");
+
+		LL_USART_ClearFlag_RTO(usart);
+		uart_stm32_dma_rx_flush(dev, STM32_ASYNC_STATUS_TIMEOUT);
+#endif /* HAS_RTO */
 	}
 
 	/* Clear errors */
@@ -1492,7 +1529,15 @@ static int uart_stm32_async_rx_disable(const struct device *dev)
 		return -EFAULT;
 	}
 
+#if HAS_RTO
+	if (LL_USART_IsEnabledIT_RTO(usart)) {
+		LL_USART_DisableIT_RTO(usart);
+	} else {
+		LL_USART_DisableIT_IDLE(usart);
+	}
+#else  /* HAS_RTO */
 	LL_USART_DisableIT_IDLE(usart);
+#endif /* HAS_RTO */
 
 	uart_stm32_dma_rx_flush(dev, STM32_ASYNC_STATUS_TIMEOUT);
 
@@ -1738,6 +1783,63 @@ static int uart_stm32_async_tx(const struct device *dev,
 	return 0;
 }
 
+static void set_timeout_itr(USART_TypeDef *usart, uint32_t baudrate, int32_t timeout)
+{
+#if HAS_RTO
+#if HAS_LPUART
+	if (IS_LPUART_INSTANCE(usart)) {
+		goto enable_idle_itr;
+	}
+#endif
+
+	if (LL_USART_IsEnabledIT_RTO(usart)) {
+		LL_USART_DisableRxTimeout(usart);
+		LL_USART_DisableIT_RTO(usart);
+		LL_USART_ClearFlag_RTO(usart);
+	} else {
+		LL_USART_DisableIT_IDLE(usart);
+		LL_USART_ClearFlag_IDLE(usart);
+	}
+
+	if (timeout == SYS_FOREVER_US) {
+		goto enable_idle_itr;
+	}
+
+	/* Cast to uint64_t to avoid overflowing before the division */
+	uint64_t timeout_in_bits = ((uint64_t)timeout * baudrate) / 1000000;
+
+	if (timeout_in_bits > UINT32_MAX) {
+		goto enable_idle_itr;
+	}
+
+	/* Not all UARTs support hardware RX timeouts.
+	 * Try to set the timeout anyway, and see if it gets set.
+	 * Ref RM, "USART receiver timeout register (USART_RTOR):
+	 * "This register is reserved and forced by hardware to "0x00000000"
+	 * when the Receiver timeout feature is not supported."
+	 * This also falls back to using the IDLE interrupt
+	 * if the timeout requested is too short or 0.
+	 */
+	LL_USART_SetRxTimeout(usart, (uint32_t)timeout_in_bits);
+	if (LL_USART_GetRxTimeout(usart) == 0) {
+		goto enable_idle_itr;
+	}
+
+	/* Use hardware RTO interrupt */
+	LOG_DBG("Set RTO timeout: %d us / %d bits", timeout, (uint32_t)timeout_in_bits);
+
+	LL_USART_ClearFlag_RTO(usart);
+	LL_USART_EnableIT_RTO(usart);
+	LL_USART_EnableRxTimeout(usart);
+	return;
+
+enable_idle_itr:
+#endif /* HAS_RTO */
+
+	LL_USART_ClearFlag_IDLE(usart);
+	LL_USART_EnableIT_IDLE(usart);
+}
+
 static int uart_stm32_async_rx_enable(const struct device *dev,
 		uint8_t *rx_buf, size_t buf_size, int32_t timeout)
 {
@@ -1772,8 +1874,7 @@ static int uart_stm32_async_rx_enable(const struct device *dev,
 	data->dma_rx.blk_cfg.block_size = buf_size;
 	data->dma_rx.blk_cfg.dest_address = (uint32_t)data->dma_rx.buffer;
 
-	ret = dma_config(data->dma_rx.dma_dev, data->dma_rx.dma_channel,
-				&data->dma_rx.dma_cfg);
+	ret = dma_config(data->dma_rx.dma_dev, data->dma_rx.dma_channel, &data->dma_rx.dma_cfg);
 
 	if (ret != 0) {
 		LOG_ERR("UART ERR: RX DMA config failed!");
@@ -1795,11 +1896,7 @@ static int uart_stm32_async_rx_enable(const struct device *dev,
 	/* Enable RX DMA requests */
 	uart_stm32_dma_rx_enable(dev);
 
-	/* Enable IRQ IDLE to define the end of a
-	 * RX DMA transaction.
-	 */
-	LL_USART_ClearFlag_IDLE(usart);
-	LL_USART_EnableIT_IDLE(usart);
+	set_timeout_itr(usart, data->uart_cfg->baudrate, timeout);
 
 	LL_USART_EnableIT_ERROR(usart);
 
@@ -2202,21 +2299,24 @@ static int uart_stm32_registers_configure(const struct device *dev)
 		LL_USART_SetWKUPType(usart, LL_USART_WAKEUP_ON_RXNE);
 		LL_USART_EnableIT_WKUP(usart);
 		LL_USART_ClearFlag_WKUP(usart);
-#endif
-		LL_USART_EnableInStopMode(usart);
+#endif /* USART_CR3_WUFIE */
 
-		if (config->wakeup_line != STM32_WAKEUP_LINE_NONE) {
-			/* Prepare the WAKEUP with the expected EXTI line */
-			LL_EXTI_EnableIT_0_31(BIT(config->wakeup_line));
-		}
+#if !defined(CONFIG_SOC_SERIES_STM32WB0X) || defined(USART_CR1_UESM)
+		LL_USART_EnableInStopMode(usart);
+#endif /* !CONFIG_SOC_SERIES_STM32WB0X || USART_CR1_UESM */
+
+		/* Enable the wake-up line signal (if applicable to hardware) */
+		uart_stm32_pm_enable_wakeup_line(config->wakeup_line);
 	}
+
 #if defined(CONFIG_SOC_SERIES_STM32U5X) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_lpuart)
 	if (config->wakeup_source) {
 		/* Allow LPUART to operate in STOP modes. */
 		LL_SRDAMR_GRP1_EnableAutonomousClock(LL_SRDAMR_GRP1_PERIPH_LPUART1AMEN);
 	}
-#endif
-#endif /* CONFIG_PM */
+#endif /* CONFIG_SOC_SERIES_STM32U5X && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_lpuart) */
+
+#endif /* CONFIG_PM && IS_UART_WAKEUP_FROMSTOP_INSTANCE */
 
 	LL_USART_Enable(usart);
 

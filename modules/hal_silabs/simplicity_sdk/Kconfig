@@ -7,8 +7,15 @@ menu "SiSDK configuration"
 config SILABS_SISDK_GPIO
 	bool "Peripheral HAL for GPIO"
 
+config SILABS_SISDK_SYSTEM
+	bool "Peripheral HAL for SYSTEM (device info)"
+
 config SILABS_SISDK_I2C
 	bool "Peripheral HAL for I2C"
+
+config SILABS_SISDK_IADC
+	bool "Peripheral HAL for IADC"
+	select SILABS_SISDK_SYSTEM
 
 config SILABS_SISDK_LETIMER
 	bool "Peripheral HAL for LETIMER"
@@ -50,5 +57,9 @@ config SILABS_SISDK_RAIL_MULTIPROTOCOL
 	  Enable the Silicon Labs RAIL multiprotocol library, which provides
 	  coexistence and arbitration between multiple wireless protocols (for
 	  example, Bluetooth LE and a proprietary 2.4 GHz stack) on Gecko SoCs.
+
+config SILABS_SISDK_PROTOCOL_CRYPTO
+	bool
+	depends on SOC_GECKO_HAS_RADIO
 
 endmenu

@@ -57,7 +57,17 @@
 			ram-size = <1024>;
 			maximum-speed = "full-speed";
 			phys = <&usb_fs_phy>;
-			clocks = <&rcc STM32_CLOCK(APB1, 13)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 13)>,
+				 <&rcc STM32_SRC_CK48 NO_SEL>;
+			status = "disabled";
+		};
+	};
+
+	clocks {
+		clk_hsi48: clk-hsi48 {
+			#clock-cells = <0>;
+			compatible = "st,stm32-hsi48-clock";
+			clock-frequency = <DT_FREQ_M(48)>;
 			status = "disabled";
 		};
 	};

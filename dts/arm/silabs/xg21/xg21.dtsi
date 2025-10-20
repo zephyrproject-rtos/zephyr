@@ -442,6 +442,12 @@
 			status = "disabled";
 		};
 
+		buram: retained-memory@50080000 {
+			compatible = "silabs,buram";
+			reg = <0x50080000 0x80>;
+			status = "disabled";
+		};
+
 		rtcc0: stimer0: rtcc@58000000 {
 			compatible = "silabs,gecko-stimer";
 			reg = <0x58000000 0x4000>;
@@ -469,7 +475,7 @@
 		};
 
 		adc0: adc@5a004000 {
-			compatible = "silabs,gecko-iadc";
+			compatible = "silabs,iadc";
 			reg = <0x5a004000 0x4000>;
 			#io-channel-cells = <1>;
 			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_IADCCLK>;

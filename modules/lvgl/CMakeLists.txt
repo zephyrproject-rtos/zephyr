@@ -324,6 +324,7 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/widgets/3dtexture/lv_3dtexture.c
     ${LVGL_DIR}/src/widgets/animimage/lv_animimage.c
     ${LVGL_DIR}/src/widgets/arc/lv_arc.c
+    ${LVGL_DIR}/src/widgets/arclabel/lv_arclabel.c
     ${LVGL_DIR}/src/widgets/bar/lv_bar.c
     ${LVGL_DIR}/src/widgets/button/lv_button.c
     ${LVGL_DIR}/src/widgets/buttonmatrix/lv_buttonmatrix.c

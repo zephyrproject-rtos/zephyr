@@ -173,7 +173,7 @@
 		};
 
 		rtc_timer: rtc_timer@600b0c00 {
-			compatible = "espressif,esp32-rtc_timer";
+			compatible = "espressif,esp32-rtc-timer";
 			reg = <0x600B0C00 DT_SIZE_K(1)>;
 			clocks = <&clock ESP32_MODULE_MAX>;
 			interrupts = <LP_RTC_TIMER_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;

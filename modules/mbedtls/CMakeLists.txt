@@ -125,11 +125,11 @@ zephyr_interface_library_named(mbedTLS)
     zephyr_library_sources_ifdef(CONFIG_MBEDTLS_SHELL shell.c)
 
     zephyr_library_app_memory(k_mbedtls_partition)
-    if(CONFIG_ARCH_POSIX AND CONFIG_ASAN AND NOT CONFIG_64BIT)
+    if(CONFIG_ARCH_POSIX AND CONFIG_ASAN AND NOT CONFIG_64BIT AND NOT CONFIG_NO_OPTIMIZATIONS)
       # i386 assembly code used in MBEDTLS does not compile with size optimization
       # if address sanitizer is enabled, as such switch default optimization level
       # to speed
-      set_property(SOURCE ${ZEPHYR_CURRENT_MODULE_DIR}/mbedtls/library/bignum.c APPEND PROPERTY COMPILE_OPTIONS
+      set_property(SOURCE ${ZEPHYR_CURRENT_MODULE_DIR}/library/bignum_core.c APPEND PROPERTY COMPILE_OPTIONS
           "${COMPILER_OPTIMIZE_FOR_SPEED_FLAG}")
     endif ()
 
@@ -251,6 +251,17 @@ else()
   # are defined the users need add a custom Kconfig choice to the
   # MBEDTLS_IMPLEMENTATION and manually add the mbedtls library and
   # included the required directories for mbedtls in their projects.
+endif()
+
+if (CONFIG_MBEDTLS_TLS_VERSION_1_2 OR CONFIG_MBEDTLS_TLS_VERSION_1_3)
+  if (NOT CONFIG_MBEDTLS_HAVE_TIME_DATE)
+    message(WARNING "
+    The option CONFIG_MBEDTLS_HAVE_TIME_DATE is required for proper
+    certificate validation. If it is not enabled, certificates will
+    not be checked for expiration or validity dates, which may lead
+    to security vulnerabilities.
+    ")
+  endif()
 endif()
 
 endif()

@@ -707,6 +707,32 @@ static int stm32_ospi_write_enable(struct flash_stm32_ospi_data *dev_data,
 	return stm32_ospi_wait_auto_polling(dev_data, &s_config, HAL_OSPI_TIMEOUT_DEFAULT_VALUE);
 }
 
+static int ospi_write_unprotect(const struct device *dev)
+{
+	struct flash_stm32_ospi_data *dev_data = dev->data;
+	int ret = 0;
+
+	/* This is a SPI/STR command to issue to the external Flash device */
+	OSPI_RegularCmdTypeDef cmd_unprotect = ospi_prepare_cmd(OSPI_SPI_MODE, OSPI_STR_TRANSFER);
+
+	cmd_unprotect.Instruction = SPI_NOR_CMD_ULBPR;
+	cmd_unprotect.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
+	cmd_unprotect.AddressMode = HAL_OSPI_ADDRESS_NONE;
+	cmd_unprotect.DataMode    = HAL_OSPI_DATA_NONE;
+
+	if (IS_ENABLED(DT_INST_PROP(0, requires_ulbpr))) {
+		ret = stm32_ospi_write_enable(dev_data, OSPI_SPI_MODE, OSPI_STR_TRANSFER);
+
+		if (ret != 0) {
+			return ret;
+		}
+
+		ret = ospi_send_cmd(dev, &cmd_unprotect);
+	}
+
+	return ret;
+}
+
 /* Write Flash configuration register 2 with new dummy cycles */
 static int stm32_ospi_write_cfg2reg_dummy(OSPI_HandleTypeDef *hospi,
 					uint8_t nor_mode, uint8_t nor_rate)
@@ -1487,6 +1513,10 @@ static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 	case SPI_NOR_CMD_PP_1_4_4_4B:
 		__fallthrough;
 	case SPI_NOR_CMD_PP_1_4_4:
+#if defined(CONFIG_USE_MICROCHIP_QSPI_FLASH_WITH_STM32)
+		/* Microchip QSPI flash uses PP_1_1_4 opcode for the PP_1_4_4 operation */
+		cmd_pp.Instruction = SPI_NOR_CMD_PP_1_1_4;
+#endif /* CONFIG_USE_MICROCHIP_QSPI_FLASH_WITH_STM32 */
 		cmd_pp.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
 		cmd_pp.AddressMode = HAL_OSPI_ADDRESS_4_LINES;
 		cmd_pp.DataMode = HAL_OSPI_DATA_4_LINES;
@@ -2568,6 +2598,13 @@ static int flash_stm32_ospi_init(const struct device *dev)
 		return -ENODEV;
 	}
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
+
+	ret = ospi_write_unprotect(dev);
+	if (ret != 0) {
+		LOG_ERR("write unprotect failed: %d", ret);
+		return -ENODEV;
+	}
+	LOG_DBG("Write Un-protected");
 
 #ifdef CONFIG_STM32_MEMMAP
 	/* Now configure the octo Flash in MemoryMapped (access by address) */

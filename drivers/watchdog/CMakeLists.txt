@@ -63,8 +63,10 @@ zephyr_library_sources_ifdef(CONFIG_WDT_ANDES_ATCWDT200 wdt_andes_atcwdt200.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_NXP_FS26 wdt_nxp_fs26.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_SHELL wdt_shell.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_RENESAS_RA wdt_renesas_ra.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_RENESAS_RX_IWDT wdt_renesas_rx_iwdt.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_RENESAS_RZ wdt_renesas_rz.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_NXP_EWM wdt_nxp_ewm.c)
-
+zephyr_library_sources_ifdef(CONFIG_WDT_SF32LB wdt_sf32lb.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_TI_RTI wdt_ti_rti.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE wdt_handlers.c)

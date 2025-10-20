@@ -83,7 +83,7 @@ tests:
     tags:
       - net
       - usb
-  sample.net.sockets.echo_server.nrf_openthread:
+  sample.net.sockets.echo_server.openthread:
     extra_args: EXTRA_CONF_FILE="overlay-ot.conf"
     slow: true
     tags:

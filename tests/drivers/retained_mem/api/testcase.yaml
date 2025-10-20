@@ -29,3 +29,11 @@ tests:
     tags:
       - drivers
       - retained_mem
+  drivers.retained_mem.api.buram:
+    platform_allow:
+      - slwrb4180b
+      - xg24_rb4187c
+      - xg29_rb4412a
+    tags:
+      - drivers
+      - retained_mem

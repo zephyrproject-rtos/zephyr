@@ -848,7 +848,7 @@ ZTEST(net_ipv6, test_send_neighbor_discovery)
 		      k_mem_slab_num_free_get(tx), avail_pkt_count);
 
 	zassert_equal(atomic_get(&tx_data->avail_count), avail_buf_count,
-		      "Unexpected tx data pool available count (%d vs %d)",
+		      "Unexpected tx data pool available count (%ld vs %d)",
 		      atomic_get(&tx_data->avail_count), avail_buf_count);
 }
 

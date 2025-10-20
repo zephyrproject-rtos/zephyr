@@ -68,7 +68,7 @@ MEMORY
   drom0_0_seg(R):  org = DROM_SEG_ORG, len = DROM_SEG_LEN
 
   lp_ram_seg(RW):    org = LPSRAM_IRAM_START,
-                     len = 0x4000 - CONFIG_RESERVE_RTC_MEM
+                     len = LPSRAM_SIZE - CONFIG_RESERVE_RTC_MEM
 
   /* We reduced the size of lp_ram_seg by CONFIG_RESERVE_RTC_MEM value.
      It reserves the amount of LP memory that we use for this memory segment.
@@ -78,7 +78,7 @@ MEMORY
      The aim of this is to keep data that will not be moved around and have a fixed address.
   */
 #if (CONFIG_RESERVE_RTC_MEM > 0)
-  lp_reserved_seg(RW) :  org = LPSRAM_IRAM_START + 0x4000 - CONFIG_RESERVE_RTC_MEM,
+  lp_reserved_seg(RW) :  org = LPSRAM_IRAM_START + LPSRAM_SIZE - CONFIG_RESERVE_RTC_MEM,
                          len = CONFIG_RESERVE_RTC_MEM
 #endif
 
@@ -422,6 +422,9 @@ SECTIONS
     *libzephyr.a:esp_cache.*(.literal .literal.* .text .text.*)
     *libzephyr.a:cache_utils.*(.literal .text .literal.* .text.*)
 
+    *libble_app.a:(.high_perf_code_iram1 .high_perf_code_iram1.*)
+    *libble_app.a:(.bt_iram_text .bt_iram_text.*)
+
     . = ALIGN(4) + 16;
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
@@ -692,6 +695,18 @@ SECTIONS
     . = ALIGN (8);
     __bss_start = ABSOLUTE(.);
     _bss_start = ABSOLUTE(.);
+
+    . = ALIGN (4);
+    _bt_bss_start = ABSOLUTE(.);
+    *libbtbb.a:(.bss .bss.* COMMON)
+    . = ALIGN (4);
+    _bt_bss_end = ABSOLUTE(.);
+
+    . = ALIGN (4);
+    _bt_controller_bss_start = ABSOLUTE(.);
+    *libble_app.a:(.bss .bss.* COMMON)
+    . = ALIGN (4);
+    _bt_controller_bss_end = ABSOLUTE(.);
 
     *(.dynsbss)
     *(.sbss)

@@ -65,6 +65,11 @@ config USE_RA_FSP_SCE
 	help
 	  Enable RA FSP SCE driver
 
+config USE_RA_FSP_MRAM
+	bool
+	help
+	  Enable RA FSP MRAM driver
+
 if USE_RA_FSP_SCE
 
 config HAS_RENESAS_RA_RSIP_E51A
@@ -179,6 +184,11 @@ config USE_RA_FSP_ACMPHS
 	help
 	  Enable RA FSP ACMPHS driver
 
+config USE_RA_FSP_LVD
+	bool
+	help
+	  Enable RA FSP LVD driver
+
 config USE_RA_FSP_WDT
 	bool
 	help
@@ -237,6 +247,11 @@ config USE_RA_FSP_CEU
 	bool
 	help
 	  Enable RA FSP CEU driver
+
+config USE_RA_FSP_IPC
+	bool
+	help
+	  Enable RA FSP IPC driver
 
 endif # HAS_RENESAS_RA_FSP
 
@@ -302,6 +317,11 @@ config USE_RZ_FSP_CPG
 	help
 	  Enable RZ FSP CLOCK CONTROL driver
 
+config USE_RZ_FSP_CGC
+	bool
+	help
+	  Enable RZ FSP CGC driver
+
 config USE_RZ_FSP_RSPI_SPI
 	bool
 	help
@@ -321,6 +341,11 @@ config USE_RZ_FSP_CMTW
 	bool
 	help
 	  Enable RZ FSP CMTW driver
+
+config USE_RZ_FSP_WDT
+	bool
+	help
+	  Enable RZ FSP WDT driver
 
 endif
 
@@ -365,5 +390,20 @@ config USE_RX_RDP_ADC
 	bool
 	help
 	  Enable RX RDP ADC driver
+
+config USE_RX_RDP_IWDT
+	bool
+	help
+	  Enable RX RDP IWDT driver
+
+config USE_RX_RDP_CTSU
+	bool
+	help
+	  Enable RX RDP CTSU driver
+
+config USE_RX_RDP_LVD
+	bool
+	help
+	  Enable RX RDP LVD driver
 
 endif # HAS_RENESAS_RX_RDP

@@ -133,6 +133,7 @@ const struct device *dsa_port_get_ptp_clock(const struct device *dev)
 
 enum ethernet_hw_caps dsa_port_get_capabilities(const struct device *dev)
 {
+	struct dsa_switch_context *dsa_switch_ctx = dev->data;
 	uint32_t caps = 0;
 
 #ifdef CONFIG_NET_L2_PTP
@@ -140,7 +141,36 @@ enum ethernet_hw_caps dsa_port_get_capabilities(const struct device *dev)
 		caps |= ETHERNET_PTP;
 	}
 #endif
+
+	if (dsa_switch_ctx->dapi->get_capabilities) {
+		caps |= dsa_switch_ctx->dapi->get_capabilities(dev);
+	}
+
 	return caps;
+}
+
+static int dsa_set_config(const struct device *dev, enum ethernet_config_type type,
+			  const struct ethernet_config *config)
+{
+	struct dsa_switch_context *dsa_switch_ctx = dev->data;
+
+	if (!dsa_switch_ctx->dapi->set_config) {
+		return -ENOTSUP;
+	}
+
+	return dsa_switch_ctx->dapi->set_config(dev, type, config);
+}
+
+static int dsa_get_config(const struct device *dev, enum ethernet_config_type type,
+			  struct ethernet_config *config)
+{
+	struct dsa_switch_context *dsa_switch_ctx = dev->data;
+
+	if (!dsa_switch_ctx->dapi->get_config) {
+		return -ENOTSUP;
+	}
+
+	return dsa_switch_ctx->dapi->get_config(dev, type, config);
 }
 
 const struct ethernet_api dsa_eth_api = {
@@ -151,4 +181,6 @@ const struct ethernet_api dsa_eth_api = {
 	.get_ptp_clock = dsa_port_get_ptp_clock,
 #endif
 	.get_capabilities = dsa_port_get_capabilities,
+	.set_config = dsa_set_config,
+	.get_config = dsa_get_config,
 };

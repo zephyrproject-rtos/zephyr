@@ -41,9 +41,15 @@
 
 	psram: memory@90000000 {
 		compatible = "zephyr,memory-region";
-		reg = <0x90000000 DT_SIZE_M(32)>;
+		/*
+		 * Prevent access to the last 32bytes of the memory-mapped device
+		 * Issue described in the STM32N6xxxx errata sheet ES0620 Rev 1:
+		 * 2.4.5 Deadlock or data corruption when DQS is enabled and the
+		 * wrap request includes the last address of the memory
+		 */
+		reg = <0x90000000 (DT_SIZE_M(32) - 32)>;
 		zephyr,memory-region = "PSRAM";
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 
 	leds: leds {
@@ -91,7 +97,7 @@
 	gt911: gt911@5d {
 		compatible = "goodix,gt911";
 		reg = <0x5d>;
-		reset-gpios = <&gpioe 4 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpioe 1 GPIO_ACTIVE_LOW>;
 		irq-gpios = <&gpioq 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 	};
 };
@@ -164,6 +170,12 @@
 &ic6 {
 	pll-src = <3>;
 	ic-div = <2>;
+	status = "okay";
+};
+
+&ic10 {
+	pll-src = <4>;
+	ic-div = <32>;
 	status = "okay";
 };
 
@@ -254,7 +266,7 @@ csi_i2c: &i2c1 {
 		     &sdmmc2_ck_pc2 &sdmmc2_cmd_pc3>;
 	pinctrl-names = "default";
 	bus-width = <4>;
-	cd-gpios = <&gpion 12 GPIO_ACTIVE_HIGH>;
+	cd-gpios = <&gpion 12 GPIO_ACTIVE_LOW>;
 	pwr-gpios = <&gpioq 7 GPIO_ACTIVE_HIGH>;
 	disk-name = "SD";
 };
@@ -307,6 +319,20 @@ csi_i2c: &i2c1 {
 	};
 };
 
+&i3c1 {
+	pinctrl-0 = <&i3c1_scl_ph9 &i3c1_sda_pc1>;
+	pinctrl-names = "default";
+
+	clocks = <&rcc STM32_CLOCK(APB1, 24)>,
+		 <&rcc STM32_SRC_IC10 I3C1_SEL(2)>;
+
+	i2c-scl-hz = <400000>;
+	i3c-scl-hz = <6000000>;
+
+	/* Due to pin conflict with i2c1, keep it disabled  */
+	/* status = "okay"; */
+};
+
 zephyr_udc0: &usbotg_hs1 {
 	status = "okay";
 };
@@ -336,6 +362,7 @@ zephyr_udc0: &usbotg_hs1 {
 		read-latency = <4>;
 		write-latency = <1>;
 		burst-length = <0>;
+		st,csbound = <11>;
 		status = "okay";
 	};
 };
@@ -489,4 +516,12 @@ csi_interface: &dcmipp {
 	port {
 		csi_ep_in: endpoint {};
 	};
+};
+
+&venc {
+	status = "okay";
+};
+
+&jpeg {
+	status = "okay";
 };

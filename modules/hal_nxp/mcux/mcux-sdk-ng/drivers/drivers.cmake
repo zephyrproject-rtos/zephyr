@@ -57,7 +57,6 @@ set_variable_ifdef(CONFIG_DAC_MCUX_DAC          CONFIG_MCUX_COMPONENT_driver.dac
 set_variable_ifdef(CONFIG_DAC_MCUX_DAC12        CONFIG_MCUX_COMPONENT_driver.dac12)
 set_variable_ifdef(CONFIG_DAC_MCUX_DAC32        CONFIG_MCUX_COMPONENT_driver.dac32)
 set_variable_ifdef(CONFIG_DMA_MCUX_EDMA         CONFIG_MCUX_COMPONENT_driver.dmamux)
-set_variable_ifdef(CONFIG_DMA_MCUX_EDMA_V3      CONFIG_MCUX_COMPONENT_driver.dmamux)
 set_variable_ifdef(CONFIG_DMA_MCUX_EDMA         CONFIG_MCUX_COMPONENT_driver.edma)
 set_variable_ifdef(CONFIG_DMA_MCUX_EDMA_V3      CONFIG_MCUX_COMPONENT_driver.dma3)
 set_variable_ifdef(CONFIG_DMA_MCUX_EDMA_V4      CONFIG_MCUX_COMPONENT_driver.edma4)
@@ -146,6 +145,9 @@ set_variable_ifdef(CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF CONFIG_MCUX_COMPONENT_driver
 set_variable_ifdef(CONFIG_VIDEO_MCUX_MIPI_CSI2RX    CONFIG_MCUX_COMPONENT_driver.mipi_csi2rx)
 set_variable_ifdef(CONFIG_ETH_NXP_IMX_NETC          CONFIG_MCUX_COMPONENT_driver.netc)
 set_variable_ifdef(CONFIG_NXP_TMPSNS                CONFIG_MCUX_COMPONENT_driver.tempsensor)
+set_variable_ifdef(CONFIG_OPAMP_MCUX_OPAMP          CONFIG_MCUX_COMPONENT_driver.opamp)
+set_variable_ifdef(CONFIG_OPAMP_MCUX_OPAMP_FAST     CONFIG_MCUX_COMPONENT_driver.opamp_fast)
+
 if(NOT CONFIG_SOC_MIMX9596)
   set_variable_ifdef(CONFIG_ETH_NXP_IMX_NETC          CONFIG_MCUX_COMPONENT_driver.netc_switch)
 endif()
@@ -153,7 +155,6 @@ endif()
 set_variable_ifdef(CONFIG_SOC_SERIES_IMXRT10XX    CONFIG_MCUX_COMPONENT_driver.ocotp)
 set_variable_ifdef(CONFIG_SOC_SERIES_IMXRT11XX    CONFIG_MCUX_COMPONENT_driver.ocotp)
 set_variable_ifdef(CONFIG_SOC_FAMILY_KINETIS      CONFIG_MCUX_COMPONENT_driver.port)
-set_variable_ifdef(CONFIG_SOC_FAMILY_MCXW         CONFIG_MCUX_COMPONENT_driver.ccm32k)
 set_variable_ifdef(CONFIG_SOC_SERIES_IMXRT5XX     CONFIG_MCUX_COMPONENT_driver.iap3)
 
 if(CONFIG_DMA_MCUX_SMARTDMA)
@@ -183,7 +184,7 @@ if(CONFIG_SOC_FAMILY_MCXN OR CONFIG_SOC_FAMILY_MCXA)
   set(CONFIG_MCUX_COMPONENT_driver.mcx_spc ON)
 endif()
 
-if(CONFIG_BT_NXP AND CONFIG_SOC_FAMILY_MCXW OR CONFIG_IEEE802154_MCXW)
+if(CONFIG_BT_NXP AND CONFIG_SOC_SERIES_MCXW7XX OR CONFIG_IEEE802154_MCXW)
   set(CONFIG_MCUX_COMPONENT_driver.spc ON)
 endif()
 
@@ -199,7 +200,7 @@ elseif(CONFIG_CPU_CORTEX_A)
 endif()
   set_variable_ifdef(CONFIG_HAS_MCUX_XCACHE		CONFIG_MCUX_COMPONENT_driver.cache_xcache)
 
-if((${MCUX_DEVICE} MATCHES "MIMX9596") OR (${MCUX_DEVICE} MATCHES "MIMX8UD7") OR (${MCUX_DEVICE} MATCHES "MIMXRT118") OR (CONFIG_SOC_MIMX94398) OR (CONFIG_SOC_MIMXRT798S))
+if((${MCUX_DEVICE} MATCHES "MIMX9596") OR (${MCUX_DEVICE} MATCHES "MIMX8UD7") OR (${MCUX_DEVICE} MATCHES "MIMXRT118") OR (${MCUX_DEVICE} MATCHES "MIMXRT798") OR (CONFIG_SOC_MIMX94398))
 
   if(CONFIG_SOC_MIMX94398_M33)
     set(CONFIG_MCUX_COMPONENT_driver.irqsteer_1 ON)
@@ -223,8 +224,16 @@ if(CONFIG_SOC_MK82F25615 OR CONFIG_SOC_MK64F12 OR CONFIG_SOC_MK66F18 OR
   set(CONFIG_MCUX_COMPONENT_driver.sysmpu ON)
 endif()
 
-if(CONFIG_SOC_FAMILY_MCXW OR CONFIG_SOC_MCXN947 OR CONFIG_SOC_MCXN547)
+if(CONFIG_SOC_MCXW716C OR CONFIG_SOC_MCXW727C OR CONFIG_SOC_MCXN947 OR CONFIG_SOC_MCXN547)
   set_variable_ifdef(CONFIG_SOC_FLASH_MCUX CONFIG_MCUX_COMPONENT_driver.flash_k4)
+endif()
+
+if(CONFIG_SOC_FAMILY_MCXW OR CONFIG_SOC_MCXN547)
+  if(CONFIG_DMA)
+    zephyr_include_directories(${MCUX_SDK_NG_DIR}/drivers/trgmux)
+    set_variable_ifdef(CONFIG_MBOX_NXP_IMX_MU	CONFIG_MCUX_COMPONENT_driver.mu)
+    set(CONFIG_MCUX_COMPONENT_driver.trgmux ON)
+  endif()
 endif()
 
 if(CONFIG_SOC_SERIES_LPC51U68 OR CONFIG_SOC_SERIES_LPC54XXX)
@@ -287,6 +296,13 @@ if(CONFIG_SOC_SERIES_IMXRT118X)
   set_variable_ifdef(CONFIG_WDT_MCUX_RTWDOG	CONFIG_MCUX_COMPONENT_driver.src_3)
 endif()
 
+if(${MCUX_DEVICE} MATCHES "S32K3")
+  if(CONFIG_DMA)
+    zephyr_include_directories(${MCUX_SDK_NG_DIR}/drivers/dmamux)
+    set(CONFIG_MCUX_COMPONENT_driver.dmamux ON)
+  endif()
+endif()
+
 if(CONFIG_SOC_FAMILY_MCXA)
   set(CONFIG_MCUX_COMPONENT_driver.romapi ON)
 endif()
@@ -299,12 +315,20 @@ if(CONFIG_SOC_FAMILY_NXP_IMXRT)
   set_variable_ifdef(CONFIG_ETH_NXP_ENET CONFIG_MCUX_COMPONENT_driver.ocotp)
 endif()
 
-set_variable_ifdef(CONFIG_SOC_FAMILY_MCXW CONFIG_MCUX_COMPONENT_driver.elemu)
+if(CONFIG_SOC_MCXW727C OR CONFIG_SOC_MCXW716C)
+  set(CONFIG_MCUX_COMPONENT_driver.elemu ON)
+  set(CONFIG_MCUX_COMPONENT_driver.ccm32k ON)
+endif()
 
 #specific operation to shared drivers
 if((DEFINED CONFIG_FLASH_MCUX_FLEXSPI_XIP) AND (DEFINED CONFIG_FLASH))
   zephyr_code_relocate(FILES ${MCUX_SDK_NG_DIR}/drivers/flexspi/fsl_flexspi.c
     LOCATION ${CONFIG_FLASH_MCUX_FLEXSPI_XIP_MEM}_TEXT)
+endif()
+
+if(CONFIG_SOC_MCXW236 OR CONFIG_SOC_MCXW235)
+  set(CONFIG_MCUX_COMPONENT_driver.lpc_iocon ON)
+  set(CONFIG_MCUX_COMPONENT_driver.romapi ON)
 endif()
 
 # Load all drivers

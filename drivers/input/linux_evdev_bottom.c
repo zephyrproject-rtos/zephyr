@@ -42,7 +42,7 @@ int linux_evdev_open(const char *path)
 {
 	int fd;
 
-	fd = open(path, O_RDONLY | O_NONBLOCK);
+	fd = open(path, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
 	if (fd < 0) {
 		nsi_print_error_and_exit(
 				"Failed to open the evdev device %s: %s\n",

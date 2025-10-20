@@ -280,6 +280,17 @@ def ast_expr(ast, env, edt):
         if node and prop in node.props and node.props[prop].val:
             return True
         return False
+    elif ast[0] == "dt_node_has_prop":
+        # 1st arg 'label' must be a valid node alias or a node path
+        label = ast[1][0]
+        try:
+            node = edt.get_node(label)
+        except Exception:
+            return False
+        prop = ast[1][1]
+        if prop in node.props:
+            return True
+        return False
 
 
 mutex = threading.Lock()

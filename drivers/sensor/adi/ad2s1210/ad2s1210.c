@@ -868,7 +868,7 @@ static int ad2s1210_init(const struct device *dev) /* cppcheck-suppress unusedFu
 	static struct ad2s1210_data ad2s1210_data_##i;                                             \
                                                                                                    \
 	static const struct ad2s1210_config ad2s1210_config_##i = {                                \
-		.spi = SPI_DT_SPEC_INST_GET(i, SPI_WORD_SET(8), 0),                                \
+		.spi = SPI_DT_SPEC_INST_GET(i, SPI_WORD_SET(8)),                                   \
 		.sample_gpio = GPIO_DT_SPEC_INST_GET(i, sample_gpios),                             \
 		.mode_gpios =                                                                      \
 			{                                                                          \

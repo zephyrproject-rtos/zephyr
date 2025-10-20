@@ -499,6 +499,17 @@ def write_orphans(bindings, base_binding, vnd_lookup, driver_sources, out_dir):
     logging.info('done writing :orphan: files; %d files needed updates',
                  num_written)
 
+def make_sidebar(compatible, vendor_name, vendor_ref_target, driver_path=None):
+    lines = [
+        ".. sidebar:: Overview",
+        "",
+        f"   :Name: ``{compatible}``",
+        f"   :Vendor: :ref:`{vendor_name} <{vendor_ref_target}>`",
+    ]
+    if driver_path:
+        lines.append(f"   :Driver: :zephyr_file:`{driver_path}`")
+    return "\n".join(lines) + "\n"
+
 def print_binding_page(binding, base_names, vnd_lookup, driver_sources,dup_compats,
                        string_io):
     # Print the rst content for 'binding' to 'string_io'. The
@@ -550,24 +561,18 @@ def print_binding_page(binding, base_names, vnd_lookup, driver_sources,dup_compa
     {underline}
     ''', string_io)
 
-    # Vendor: <link-to-vendor-section>
     vnd = compatible_vnd(compatible)
-    print('Vendor: '
-          f':ref:`{vnd_lookup.vendor(vnd)} <{vnd_lookup.target(vnd)}>`\n',
-          file=string_io)
+    vendor_name = vnd_lookup.vendor(vnd)
+    vendor_target = vnd_lookup.target(vnd)
+    driver_path = driver_sources.get(re.sub("[-,.@/+]", "_", compatible.lower()))
 
-    # Link to driver implementation (if it exists).
-    compatible = re.sub("[-,.@/+]", "_", compatible.lower())
-    if compatible in driver_sources:
-        print_block(
-            f"""\
-            .. note::
-
-               An implementation of a driver matching this compatible is available in
-               :zephyr_file:`{driver_sources[compatible]}`.
-        """,
-            string_io,
-        )
+    sidebar_content = make_sidebar(
+        compatible=compatible,
+        vendor_name=vendor_name,
+        vendor_ref_target=vendor_target,
+        driver_path=driver_path,
+    )
+    print_block(sidebar_content, string_io)
 
     # Binding description.
     if binding.bus:

@@ -320,7 +320,7 @@ config OPENTHREAD_MAC_SOFTWARE_CSMA_BACKOFF_ENABLE
 
 config OPENTHREAD_CRYPTO_PSA
 	bool "ARM PSA crypto API"
-	depends on MBEDTLS_PSA_CRYPTO_CLIENT
+	depends on PSA_CRYPTO_CLIENT
 	select OPENTHREAD_PLATFORM_KEY_REF if !OPENTHREAD_COPROCESSOR_RCP
 	imply OPENTHREAD_PLATFORM_KEYS_EXPORTABLE_ENABLE
 	help
@@ -355,6 +355,12 @@ config OPENTHREAD_PLATFORM_CARRIER_FUNCTIONS
 	default y if OPENTHREAD_DIAG && IEEE802154_CARRIER_FUNCTIONS
 	help
 	  Enable support for functions such as modulated carrier and continuous carrier.
+
+config OPENTHREAD_PLATFORM_USEC_TIMER
+	bool
+	default y if (OPENTHREAD_CSL_RECEIVER && !OPENTHREAD_THREAD_VERSION_1_1) || OPENTHREAD_WAKEUP_END_DEVICE
+	help
+	  Enable microsecond backoff timer implemented in platform.
 
 menu "OpenThread Border Router"
 

@@ -32,11 +32,15 @@ DT_CHOSEN_IMAGE_M7 = nxp,m7-partition
 
 # Only adjust LMA if running from ITCM
 if !CM7_BOOT_FROM_FLASH
-	# Adjust the offset of the output image if building for RT18xx SOC ITCM
-	config BUILD_OUTPUT_ADJUST_LMA
-		default "($(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_M7)) + \
-		$(dt_node_reg_addr_hex,/soc/spi@425e0000,1)) - \
-		$(dt_node_reg_addr_hex,/soc/itcm@0)"
+
+# Adjust the offset of the output image if building for RT118x SOC ITCM
+FLEXSPI_BASE := $(dt_nodelabel_reg_addr_hex,flexspi,1)
+ITCM_BASE := $(dt_nodelabel_reg_addr_hex,itcm,1)
+IMAGE_M7_ADDR := $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_M7))
+
+config BUILD_OUTPUT_ADJUST_LMA
+	default "($(IMAGE_M7_ADDR) + $(FLEXSPI_BASE) - $(ITCM_BASE))"
+
 endif # !CM7_BOOT_FROM_FLASH
 endif # SECOND_CORE_MCUX && BOARD_MIMXRT1180_EVK_MIMXRT1189_CM7
 

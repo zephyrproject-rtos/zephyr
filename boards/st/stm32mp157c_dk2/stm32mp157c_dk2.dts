@@ -57,6 +57,11 @@
 	clock-frequency = <DT_FREQ_M(209)>;
 };
 
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(24)>;
+	status = "okay";
+};
+
 &spi4_miso_pe13 {
 	slew-rate = "very-high-speed";
 };

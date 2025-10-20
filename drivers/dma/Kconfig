@@ -101,4 +101,6 @@ source "drivers/dma/Kconfig.ti_cc23x0"
 
 source "drivers/dma/Kconfig.npcx"
 
+source "drivers/dma/Kconfig.sf32lb"
+
 endif # DMA

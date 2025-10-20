@@ -907,7 +907,7 @@
 		reg = <0x4300000 0x1000>;
 		interrupts = <18 0>;
 		clock-frequency = <DT_FREQ_M(80)>;
-		prescaler = <1>;
+		prescale-glitch-filter = <0>;
 		clk-source = <0>;
 		resolution = <32>;
 		status = "disabled";
@@ -918,7 +918,7 @@
 		reg = <0x24d0000 0x1000>;
 		interrupts = <67 0>;
 		clock-frequency = <DT_FREQ_M(80)>;
-		prescaler = <1>;
+		prescale-glitch-filter = <0>;
 		clk-source = <0>;
 		resolution = <32>;
 		status = "disabled";
@@ -929,7 +929,7 @@
 		reg = <0x2cd0000 0x1000>;
 		interrupts = <150 0>;
 		clock-frequency = <DT_FREQ_M(80)>;
-		prescaler = <1>;
+		prescale-glitch-filter = <0>;
 		clk-source = <0>;
 		resolution = <32>;
 		status = "disabled";
@@ -1610,13 +1610,18 @@
 	ocram1: memory@0 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		zephyr,memory-region = "OCRAM1";
-		/* OCRAM1 first 16K access is blocked by TRDC */
-		reg = <0x0 DT_SIZE_K(496)>;
+		reg = <0x0 DT_SIZE_K(512)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ocram1_available: memory@4000 {
+			/* OCRAM1 first 16K access is blocked by TRDC */
+			reg = <0x0 DT_SIZE_K(496)>;
+		};
 	};
 
-	ocram2: memory@7c000 {
+	ocram2: memory@80000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		zephyr,memory-region = "OCRAM2";
-		reg = <0x7c000 DT_SIZE_K(256)>;
+		reg = <0x80000 DT_SIZE_K(256)>;
 	};
 };

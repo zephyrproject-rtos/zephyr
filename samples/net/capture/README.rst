@@ -31,10 +31,17 @@ Build the sample application like this:
 .. zephyr-app-commands::
    :zephyr-app: samples/net/capture
    :board: <board to use>
-   :conf: <config file to use>
    :goals: build
    :compact:
 
+Example building for :zephyr:board:`native_sim`:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/capture
+   :board: native_sim
+   :gen-args: -DEXTRA_CONF_FILE=overlay-tunnel.conf
+   :goals: build
+   :compact:
 
 Network Configuration
 *********************

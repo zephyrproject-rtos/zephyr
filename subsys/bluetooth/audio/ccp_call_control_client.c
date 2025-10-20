@@ -28,6 +28,7 @@ LOG_MODULE_REGISTER(bt_ccp_call_control_client, CONFIG_BT_CCP_CALL_CONTROL_CLIEN
 
 static sys_slist_t ccp_call_control_client_cbs =
 	SYS_SLIST_STATIC_INIT(&ccp_call_control_client_cbs);
+static struct bt_tbs_client_cb tbs_client_cbs;
 
 static struct bt_tbs_client_cb tbs_client_cbs;
 
@@ -52,6 +53,32 @@ struct bt_ccp_call_control_client {
 };
 
 static struct bt_ccp_call_control_client clients[CONFIG_BT_MAX_CONN];
+
+static struct bt_ccp_call_control_client_bearer *
+get_bearer_by_tbs_index(struct bt_ccp_call_control_client *client, uint8_t index)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(client->bearers); i++) {
+		struct bt_ccp_call_control_client_bearer *bearer = &client->bearers[i];
+
+		if (bearer->discovered && bearer->tbs_index == index) {
+			return bearer;
+		}
+	}
+
+	return NULL;
+}
+
+static struct bt_ccp_call_control_client *
+get_client_by_bearer(const struct bt_ccp_call_control_client_bearer *bearer)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(clients); i++) {
+		if (IS_ARRAY_ELEMENT(clients[i].bearers, bearer)) {
+			return &clients[i];
+		}
+	}
+
+	return NULL;
+}
 
 static struct bt_ccp_call_control_client *get_client_by_conn(const struct bt_conn *conn)
 {
@@ -86,6 +113,8 @@ static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 	if (client->conn == conn) {
 		bt_conn_unref(client->conn);
 		client->conn = NULL;
+
+		memset(client->bearers, 0, sizeof(client->bearers));
 	}
 }
 
@@ -259,3 +288,104 @@ int bt_ccp_call_control_client_get_bearers(struct bt_ccp_call_control_client *cl
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)
+static void tbs_client_read_bearer_provider_name_cb(struct bt_conn *conn, int err,
+						    uint8_t inst_index, const char *name)
+{
+	struct bt_ccp_call_control_client *client = get_client_by_conn(conn);
+	struct bt_ccp_call_control_client_cb *listener, *next;
+	struct bt_ccp_call_control_client_bearer *bearer;
+
+	atomic_clear_bit(client->flags, CCP_CALL_CONTROL_CLIENT_FLAG_BUSY);
+
+	bearer = get_bearer_by_tbs_index(client, inst_index);
+	if (bearer == NULL) {
+		LOG_DBG("Could not lookup bearer for client %p and index 0x%02X", client,
+			inst_index);
+
+		return;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ccp_call_control_client_cbs, listener, next, _node) {
+		if (listener->bearer_provider_name != NULL) {
+			listener->bearer_provider_name(bearer, err, name);
+		}
+	}
+}
+
+/**
+ * @brief Validates a bearer and provides a client with ownership of the busy flag
+ *
+ * @param[in] bearer The bearer to validate
+ * @param[out] client A client identified by the @p bearer with the busy flag set if return
+ *                    value is 0.
+ *
+ * @return 0 if the bearer is valid and the @p client has been populated, else an error.
+ */
+static int validate_bearer_and_get_client(const struct bt_ccp_call_control_client_bearer *bearer,
+					  struct bt_ccp_call_control_client **client)
+{
+	CHECKIF(bearer == NULL) {
+		LOG_DBG("bearer is NULL");
+
+		return -EINVAL;
+	}
+
+	*client = get_client_by_bearer(bearer);
+	if (*client == NULL) {
+		LOG_DBG("Could not identify client from bearer %p", bearer);
+
+		return -EEXIST;
+	}
+
+	if (!bearer->discovered) {
+		LOG_DBG("bearer %p is not discovered", bearer);
+
+		return -EFAULT;
+	}
+
+	if (atomic_test_and_set_bit((*client)->flags, CCP_CALL_CONTROL_CLIENT_FLAG_BUSY)) {
+		LOG_DBG("Client %p identified by bearer %p is busy", *client, bearer);
+
+		return -EBUSY;
+	}
+
+	return 0;
+}
+
+int bt_ccp_call_control_client_read_bearer_provider_name(
+	struct bt_ccp_call_control_client_bearer *bearer)
+{
+	struct bt_ccp_call_control_client *client;
+	int err;
+
+	err = validate_bearer_and_get_client(bearer, &client);
+	if (err != 0) {
+		return err;
+	}
+
+	tbs_client_cbs.bearer_provider_name = tbs_client_read_bearer_provider_name_cb;
+
+	err = bt_tbs_client_read_bearer_provider_name(client->conn, bearer->tbs_index);
+	if (err != 0) {
+		atomic_clear_bit(client->flags, CCP_CALL_CONTROL_CLIENT_FLAG_BUSY);
+
+		/* Return expected return values directly */
+		if (err == -ENOTCONN || err == -EBUSY) {
+			LOG_DBG("bt_tbs_client_read_bearer_provider_name returned %d", err);
+
+			return err;
+		}
+
+		/* Assert if the return value is -EINVAL as that means we are missing a check */
+		__ASSERT(err != -EINVAL, "err shall not be -EINVAL");
+
+		LOG_DBG("Unexpected error from bt_tbs_client_read_bearer_provider_name: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME */
