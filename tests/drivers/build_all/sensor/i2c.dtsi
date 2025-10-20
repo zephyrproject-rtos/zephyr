@@ -1422,3 +1422,9 @@ test_i2c_als31300: als31300@bd {
 	compatible = "allegro,als31300";
 	reg = <0xbd>;
 };
+
+test_i2c_hdc302x: hdc302x@be {
+	compatible = "ti,hdc302x";
+	reg = <0xbe>;
+	int-gpios = <&test_gpio 0 0>;
+};
