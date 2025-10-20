@@ -706,6 +706,26 @@ static void WM8962_read_all_reg(const struct device *dev, uint16_t endAddress)
 }
 #endif
 
+static int wm8962_get_caps(const struct device *dev, struct audio_caps *caps)
+{
+	memset(caps, 0, sizeof(struct audio_caps));
+
+	caps->min_total_channels = 1;
+	caps->max_total_channels = 2;
+	caps->supported_sample_rates =
+		AUDIO_SAMPLE_RATE_8000 | AUDIO_SAMPLE_RATE_11025 | AUDIO_SAMPLE_RATE_12000 |
+		AUDIO_SAMPLE_RATE_16000 | AUDIO_SAMPLE_RATE_22050 | AUDIO_SAMPLE_RATE_24000 |
+		AUDIO_SAMPLE_RATE_32000 | AUDIO_SAMPLE_RATE_44100 | AUDIO_SAMPLE_RATE_48000;
+	caps->supported_bit_widths =
+		AUDIO_BIT_WIDTH_16 | AUDIO_BIT_WIDTH_20 | AUDIO_BIT_WIDTH_24 | AUDIO_BIT_WIDTH_32;
+	caps->min_num_buffers = 1;
+	caps->min_frame_interval = 1000;   /* 1ms minimum */
+	caps->max_frame_interval = 100000; /* 100ms maximum */
+	caps->interleaved = true;
+
+	return 0;
+}
+
 static DEVICE_API(audio_codec, wm8962_driver_api) = {.configure = wm8962_configure,
 							 .start_output = wm8962_start_output,
 							 .stop_output = wm8962_stop_output,
@@ -713,7 +733,8 @@ static DEVICE_API(audio_codec, wm8962_driver_api) = {.configure = wm8962_configu
 							 .apply_properties =
 								 wm8962_apply_properties,
 							 .route_input = wm8962_route_input,
-							 .route_output = wm8962_route_output};
+							 .route_output = wm8962_route_output,
+							 .get_caps = wm8962_get_caps};
 
 #define wm8962_INIT(n)                                                                             \
 	static const struct wm8962_driver_config wm8962_device_config_##n = {                      \
