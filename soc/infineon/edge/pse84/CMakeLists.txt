@@ -40,7 +40,7 @@ endif()
 zephyr_include_directories(security_config)
 zephyr_sources(security_config/pse84_boot.c)
 
-if(CONFIG_BOARD_KIT_PSE84_EVAL_PSE846GPS2DBZC4A_M55 AND CONFIG_CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS)
+if(CONFIG_CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS)
   zephyr_sources_ifdef(CONFIG_CPU_CORTEX_M55 mpu_regions.c)
 endif()
 
@@ -51,7 +51,7 @@ if(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "armclang")
 endif()
 
 # Add sections
-if(CONFIG_BOARD_KIT_PSE84_EVAL_PSE846GPS2DBZC4A_M33)
+if(CONFIG_CPU_CORTEX_M33)
   zephyr_linker_sources(SECTIONS shared_mem_sec.ld)
   set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
 else()
