@@ -59,6 +59,30 @@ static void scmi_shmem_memcpy(mm_reg_t dst, mm_reg_t src, uint32_t bytes)
 	}
 }
 
+int scmi_shmem_read_hdr(const struct device *shmem, struct scmi_message *msg)
+{
+	struct scmi_shmem_layout *layout;
+	struct scmi_shmem_data *data;
+
+	data = shmem->data;
+	layout = (struct scmi_shmem_layout *)data->regmap;
+
+	/* some sanity checks first */
+	if (!msg) {
+		return -EINVAL;
+	}
+
+	if (scmi_shmem_vendor_read_message(layout) < 0) {
+		LOG_ERR("vendor specific validation failed");
+		return -EINVAL;
+	}
+
+	scmi_shmem_memcpy(POINTER_TO_UINT(&msg->hdr),
+			data->regmap + SCMI_SHMEM_CHAN_MSG_HDR_OFFSET, sizeof(uint32_t));
+
+	return 0;
+}
+
 __weak int scmi_shmem_vendor_read_message(const struct scmi_shmem_layout *layout)
 {
 	return 0;

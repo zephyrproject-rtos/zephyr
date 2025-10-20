@@ -6,8 +6,29 @@
 
 #include <zephyr/logging/log.h>
 #include "mailbox.h"
+#include <zephyr/drivers/firmware/scmi/protocol.h>
 
 LOG_MODULE_REGISTER(scmi_mbox);
+
+static int scmi_mbox_read_msg_hdr(struct scmi_channel *chan,
+				struct scmi_message *msg)
+{
+	int ret;
+	struct scmi_mbox_channel *mbox_chan = chan->data;
+
+	/* Initialize message structure for header-only read */
+	msg->hdr = 0x0;
+	msg->len = sizeof(uint32_t);
+	msg->content = NULL;
+
+	ret = scmi_shmem_read_hdr(mbox_chan->shmem, msg);
+	if (ret < 0) {
+		LOG_ERR("failed to read message to shmem: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
 
 static void scmi_mbox_tx_reply_cb(const struct device *mbox,
 				mbox_channel_id_t channel_id,
@@ -15,6 +36,9 @@ static void scmi_mbox_tx_reply_cb(const struct device *mbox,
 				struct mbox_msg *data)
 {
 	struct scmi_channel *scmi_chan = user_data;
+	struct scmi_message msg;
+
+	scmi_mbox_read_msg_hdr(scmi_chan, &msg);
 
 	if (scmi_chan->cb) {
 		scmi_chan->cb(scmi_chan);
@@ -29,6 +53,9 @@ static void scmi_mbox_rx_notify_cb(const struct device *mbox,
 	struct scmi_channel *scmi_chan = user_data;
 	struct scmi_mbox_channel *mbox_chan = scmi_chan->data;
 	const struct device *shmem = mbox_chan->shmem;
+	struct scmi_message msg;
+
+	scmi_mbox_read_msg_hdr(scmi_chan, &msg);
 
 	if (scmi_chan->cb) {
 		scmi_chan->cb(scmi_chan);
