@@ -166,16 +166,23 @@ static void mdns_iface_event_handler(struct net_mgmt_event_callback *cb,
 {
 	if (mgmt_event == NET_EVENT_IF_UP) {
 #if defined(CONFIG_NET_IPV4)
-		ARRAY_FOR_EACH(v4_ctx, i) {
-			int ret = net_ipv4_igmp_join(iface,
-					&net_sin(&v4_ctx[i].dispatcher.local_addr)->sin_addr,
-					NULL);
-			if (ret < 0 && ret != -EALREADY) {
-				NET_DBG("Cannot add IPv4 multicast address %s to iface %d (%d)",
-					net_sprint_ipv4_addr(&net_sin(
-						&v4_ctx[i].dispatcher.local_addr)->sin_addr),
-					net_if_get_by_iface(iface), ret);
-			}
+
+		int ret = net_ipv4_igmp_join(iface,
+			&net_sin(&v4_ctx[net_if_get_by_iface(iface)-1].dispatcher.local_addr)->sin_addr,
+			NULL);
+		if (ret < 0 && ret != -EALREADY)
+		{
+			NET_DBG("Cannot add IPv4 multicast %d address %s to iface %d (%d)", net_if_get_by_iface(iface),
+				net_sprint_ipv4_addr(&net_sin(
+					&v4_ctx[net_if_get_by_iface(iface)-1].dispatcher.local_addr)->sin_addr),
+				net_if_get_by_iface(iface)-1, ret);
+		}
+		else
+		{
+			NET_DBG("Joined IPv4 multicast %d address %s to iface %d", net_if_get_by_iface(iface),
+				net_sprint_ipv4_addr(&net_sin(
+				&v4_ctx[net_if_get_by_iface(iface)-1].dispatcher.local_addr)->sin_addr),
+				net_if_get_by_iface(iface)-1);
 		}
 #endif /* defined(CONFIG_NET_IPV4) */
 	}
@@ -350,9 +357,10 @@ static int send_response(int sock,
 			 struct sockaddr *src_addr,
 			 size_t addrlen,
 			 struct net_buf *query,
-			 enum dns_rr_type qtype)
+			 enum dns_rr_type qtype,
+			 struct net_if * iface
+			)
 {
-	struct net_if *iface;
 	socklen_t dst_len;
 	int ret;
 	COND_CODE_1(IS_ENABLED(CONFIG_NET_IPV6),
@@ -362,12 +370,6 @@ static int send_response(int sock,
 	if (ret < 0) {
 		NET_DBG("unable to set up the response address");
 		return ret;
-	}
-
-	if (family == AF_INET6) {
-		iface = net_if_ipv6_select_src_iface(&net_sin6(src_addr)->sin6_addr);
-	} else {
-		iface = net_if_ipv4_select_src_iface(&net_sin(src_addr)->sin_addr);
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && qtype == DNS_RR_TYPE_A) {
@@ -425,9 +427,10 @@ static void send_sd_response(int sock,
 			     sa_family_t family,
 			     struct sockaddr *src_addr,
 			     size_t addrlen,
-			     struct net_buf *result)
+			     struct net_buf *result,
+				 struct net_if * iface
+				)
 {
-	struct net_if *iface;
 	socklen_t dst_len;
 	int ret;
 	const struct dns_sd_rec *record;
@@ -471,12 +474,6 @@ static void send_sd_response(int sock,
 	if (ret < 0) {
 		NET_DBG("unable to set up the response address");
 		return;
-	}
-
-	if (family == AF_INET6) {
-		iface = net_if_ipv6_select_src_iface(&net_sin6(src_addr)->sin6_addr);
-	} else {
-		iface = net_if_ipv4_select_src_iface(&net_sin(src_addr)->sin_addr);
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
@@ -692,12 +689,13 @@ static int dns_read(int sock,
 				DNS_SD_GET(i, &record);
 				NET_DBG("verify alias %s\n", record->alias);
 				if (record->alias && record->iface) {
+					/* The alias must contain the needle as substring */
 					if (strstr(record->alias, needle) && (0 == strcmp(ifname, record->iface))) {
-						NET_DBG("%s %s %s to our alias %s%s", "mDNS",
+						NET_DBG("%s %s %s to our alias %s%s from interface %s", "mDNS",
 							family == AF_INET ? "IPv4" : "IPv6", "query",
-							record->alias, ".local");
+							record->alias, ".local", record->iface);
 						send_response(sock, family, src_addr, addrlen,
-							result, qtype);
+							result, qtype, net_if_get_by_index(ifindex));
 						response_sent = 1;
 					}
 				}
@@ -714,10 +712,10 @@ static int dns_read(int sock,
 				family == AF_INET ? "IPv4" : "IPv6", "query",
 				hostname, ".local");
 			send_response(sock, family, src_addr, addrlen,
-				      result, qtype);
+				      result, qtype, net_if_get_by_index(ifindex));
 		} else if (IS_ENABLED(CONFIG_MDNS_RESPONDER_DNS_SD)
 			&& qtype == DNS_RR_TYPE_PTR) {
-			send_sd_response(sock, family, src_addr, addrlen, result);
+			send_sd_response(sock, family, src_addr, addrlen, result, net_if_get_by_index(ifindex));
 		}
 
 	} while (--queries);
