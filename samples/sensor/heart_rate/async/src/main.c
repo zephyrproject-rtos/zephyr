@@ -12,54 +12,34 @@
 #include <zephyr/rtio/rtio.h>
 #include <stdio.h>
 
+#include "async_channels.h"
+
 #if CONFIG_SAMPLE_STREAM
 LOG_MODULE_REGISTER(stream_hr, LOG_LEVEL_INF);
-#define TRIGGER_DATA_NOP_INCLUDE_DROP(_nop, _include) \
-		COND_CODE_1(_nop, (SENSOR_STREAM_DATA_NOP), \
-		(COND_CODE_1(_include, (SENSOR_STREAM_DATA_INCLUDE), \
-		(SENSOR_STREAM_DATA_DROP))))
-#define TRIGGER_TYPE_LIST \
-	IF_ENABLED(CONFIG_SAMPLE_TRIGGER_DRDY, (X(DATA_READY, "DRDY", \
-		TRIGGER_DATA_NOP_INCLUDE_DROP(CONFIG_SAMPLE_TRIG_DRDY_NOP, CONFIG_SAMPLE_TRIG_DRDY_INCLUDE)))) \
-	IF_ENABLED(CONFIG_SAMPLE_TRIGGER_FIFO_WATTERMARK, (X(FIFO_WATERMARK, "WATERMARK", \
-		TRIGGER_DATA_NOP_INCLUDE_DROP(CONFIG_SAMPLE_TRIG_FIFO_WATTERMARK_NOP, CONFIG_SAMPLE_TRIG_FIFO_WATTERMARK_INCLUDE)))) \
-	IF_ENABLED(CONFIG_SAMPLE_TRIGGER_OVERFLOW, (X(OVERFLOW, "OVERFLOW", \
-		TRIGGER_DATA_NOP_INCLUDE_DROP(CONFIG_SAMPLE_TRIG_OVERFLOW_NOP, CONFIG_SAMPLE_TRIG_OVERFLOW_INCLUDE))))
-#define X(trig, name, data) name,
-const char *trigger_names[] = {TRIGGER_TYPE_LIST};
-#undef X
-#define X(trig, name, data) (uint8_t)(data),
-const uint8_t trigger_state[] = {TRIGGER_TYPE_LIST};
-#undef X
+#include "async_triggers.h"
 #else
 LOG_MODULE_REGISTER(async_hr, LOG_LEVEL_INF);
 #endif /* CONFIG_SAMPLE_STREAM */
 
-#define SENSOR_CHANNEL_LIST                                                                        \
-	IF_ENABLED(CONFIG_SAMPLE_CHANNEL_RED, (X(RED, "red", 0)))                                                                           \
-	IF_ENABLED(CONFIG_SAMPLE_CHANNEL_IR, (X(IR, "ir", 0)))                                                                             \
-	IF_ENABLED(CONFIG_SAMPLE_CHANNEL_GREEN, (X(GREEN, "green", 0)))                                                                       \
-	IF_ENABLED(CONFIG_SAMPLE_CHANNEL_DIE_TEMP, (X(DIE_TEMP, "temp", 0)))
-#define X(chan, name, idx) name,
-const char *channel_names[] = {SENSOR_CHANNEL_LIST};
-#undef X
-#define X(chan, name, idx) (struct sensor_chan_spec){SENSOR_CHAN_##chan, idx},
-const struct sensor_chan_spec chan_list[] = {SENSOR_CHANNEL_LIST};
-#undef X
-
-const int max_width = 5;
+#define CHAN_X(_, chan, name, idx) name,
+const char *channel_names[] = {SENSOR_AVAILABLE_CHANNEL(CHAN_X)};
+#undef CHAN_X
+#define CHAN_X(_, chan, name, idx) (struct sensor_chan_spec){SENSOR_CHAN_##chan, idx},
+const struct sensor_chan_spec chan_list[] = {SENSOR_AVAILABLE_CHANNEL(CHAN_X)};
+#undef CHAN_X
 
 #if CONFIG_SAMPLE_STREAM
 #define NUM_SENSORS 1
-#define X(trig, name, data) (struct sensor_stream_trigger){SENSOR_TRIG_##trig, data},
-SENSOR_DT_STREAM_IODEV(iodev, DT_CHOSEN(heart_rate_sensor), TRIGGER_TYPE_LIST);
-#undef X
+#define TRIG_X(trig, opt, ...) (SENSOR_TRIG_##trig, OPT_FROM_TOKEN(opt) \
+	COND_CODE_1(IS_EMPTY(__VA_ARGS__), (), (, { __VA_ARGS__ }))),
+SENSOR_DT_STREAM_IODEV(iodev, DT_CHOSEN(heart_rate_sensor), TRIGGER_LIST);
+#undef TRIG_X
 RTIO_DEFINE_WITH_MEMPOOL(ctx, NUM_SENSORS, NUM_SENSORS, NUM_SENSORS*20, 256, sizeof(void *));
 struct rtio_sqe *handle;
 #else
-#define X(chan, name, idx) {SENSOR_CHAN_##chan, idx},
-SENSOR_DT_READ_IODEV(iodev, DT_CHOSEN(heart_rate_sensor), SENSOR_CHANNEL_LIST);
-#undef X
+#define CHAN_X(_, chan, name, idx) (SENSOR_CHAN_##chan, idx),
+SENSOR_DT_READ_IODEV(iodev, DT_CHOSEN(heart_rate_sensor), SENSOR_AVAILABLE_CHANNEL(CHAN_X));
+#undef CHAN_X
 RTIO_DEFINE(ctx, 1, 1);
 #endif
 
@@ -79,12 +59,6 @@ static const struct device *check_heart_rate_device(void)
 		LOG_ERR("Error: no device found in chosen node");
 		return NULL;
 	}
-
-#if CONFIG_SAMPLE_STREAM
-	for (size_t i = 0; i < ARRAY_SIZE(trigger_names); i++) {
-		LOG_WRN("Trigger: [%s][%d]", trigger_names[i], trigger_state[i]);
-	}
-#endif /* CONFIG_SAMPLE_STREAM */
 
 	/* Get heart rate sensor device */
 	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(heart_rate_sensor));
@@ -147,6 +121,8 @@ int main(void)
 			LOG_ERR("sensor_get_size_info(%s) failed: [%d]", channel_names[i], rc);
 			return rc;
 		}
+		LOG_INF("[%-*s]: [%d]", channel_width,
+			channel_names[i], chan_list[i].chan_idx);
 
 		data[i].fit = 0;
 		data[i].frame = NULL;
@@ -192,10 +168,10 @@ int main(void)
 #endif /* CONFIG_SAMPLE_STREAM */
 
 		for (size_t i = 0; i < ARRAY_SIZE(chan_list); i++) {
+			data[i].size = 0;
 			rc = decoder->get_frame_count(buf, chan_list[i], &data[i].size);
 
 			if (rc != 0) {
-//				LOG_ERR("sensor_get_frame_count(%s) failed: [%d]", channel_names[i], rc);
 				continue;
 			}
 
@@ -204,21 +180,21 @@ int main(void)
 			rc = decoder->decode(buf, chan_list[i], &data[i].fit, data[i].size, data[i].frame);
 
 			if (rc <= 0) {
-//				LOG_ERR("%s: sensor_decode(%s) failed: [%d]", dev->name,
-//					channel_names[i], rc);
 				continue;
 			}
 		}
 
 		for (size_t i = 0; i < data[0].size; i++) {
 			for (size_t j = 0; j < ARRAY_SIZE(chan_list); j++) {
-				LOG_INF("(%02d/%02d)[%-*s]: %" PRIsensor_q31_data, i + 1, data[j].size, max_width, channel_names[j],
+				LOG_INF("(%02d/%02d)[%-*s]: %" PRIsensor_q31_data, i + 1, data[j].size, channel_width, channel_names[j],
 				PRIsensor_q31_data_arg(*data[j].frame, i));
 			}
 		}
 
 		for (size_t i = 0; i < ARRAY_SIZE(chan_list); i++) {
-			free(data[i].frame);
+			if (data[i].size != 0) {
+				free(data[i].frame);
+			}
 		}
 
 #if CONFIG_SAMPLE_STREAM
