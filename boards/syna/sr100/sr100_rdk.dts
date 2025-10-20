@@ -1,0 +1,152 @@
+/*
+ * Copyright (c) 2025 Synaptics, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <syna/sr100_b0.dtsi>
+#include <syna/sr100_b0_pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Synaptics SR100 RDK board";
+	compatible = "syna,sr100-rdk";
+
+	chosen {
+		zephyr,console = &ns16550_uart1;
+		zephyr,shell-uart = &ns16550_uart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	aliases {
+		led0 = &led0;
+		led-controller-0 = &led_controller_0;
+		sw0 = &user_button;
+	};
+
+	led_controller_0: gpio-leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpio_exp0 0 GPIO_ACTIVE_HIGH>;
+			label = "LED0";
+		};
+
+		led1: led_1 {
+			gpios = <&gpio_exp0 1 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+	};
+
+	buttons: keys {
+		compatible = "gpio-keys";
+
+		user_button: user_button {
+			label = "SW8";
+			gpios = <&gpio_exp0 11 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	vcc_sd1: regulator-vcc-sd1 {
+		compatible = "regulator-fixed";
+
+		regulator-name = "SD1 Vcc";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+
+		enable-gpios = <&gpioa 25 GPIO_ACTIVE_HIGH
+				&gpio_exp0 7 GPIO_ACTIVE_HIGH>;
+	};
+
+	vccq_sd1: regulator-vccq-sd1 {
+		compatible = "regulator-fixed";
+
+		regulator-name = "SD1 VccQ";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+	};
+};
+
+&ns16550_uart0 {
+	pinctrl-0 = <&uart0_tx_b &uart0_rx_b>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	dlf = <2>;
+	status = "disabled";
+};
+
+&ns16550_uart1 {
+	pinctrl-0 = <&uart1_tx_a &uart1_rx_a>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	dlf = <2>;
+	status = "okay";
+};
+
+&i2c1_ms_scl_b {
+	bias-pull-up;
+};
+
+&i2c1_ms_sda_b {
+	bias-pull-up;
+};
+
+&i2c1 {
+	status = "okay";
+	pinctrl-0 = <&i2c1_ms_scl_b &i2c1_ms_sda_b>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	gpio_exp0: pca6416@20 {
+		compatible = "nxp,pcal6416a";
+		reg = <0x20>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <16>;
+		int-gpios = <&gpioa 3 GPIO_ACTIVE_LOW>;
+	};
+
+	mc3479: mc3419@4c {
+		compatible = "memsic,mc3419";
+		status = "disabled";
+		reg = <0x4c>;
+		int-gpios = <&gpio_exp0 4 0>;
+		lpf-fc-sel = <0>;
+	};
+};
+
+&spi0 {
+	/* Note that the default pinmux configuration for this board uses GP23/GP24
+	 * for UART1_TX/UART1_RX respectively, which conflicts with the
+	 * spi_mstr_mosi/spi_mstr_miso muxes.
+	 */
+	pinctrl-0 = <&spi_mstr_mosi &spi_mstr_miso &spi_mstr_clk &spi_mstr_cs>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+zephyr_udc0: &usb0 {
+	status = "okay";
+};
+
+&aon_event_gpio {
+	pinctrl-0 = <&aon_gpo1>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&gpo1 {
+	polarity = <GPIO_ACTIVE_HIGH>;
+};
