@@ -175,7 +175,10 @@ int hl78xx_api_func_get_modem_info_vendor(const struct device *dev,
 		safe_strncpy(info, (const char *)data->status.network_operator.operator,
 			     MIN(size, sizeof(data->status.network_operator.operator)));
 		break;
-
+	case HL78XX_MODEM_INFO_SERIAL_NUMBER:
+		safe_strncpy(info, (const char *)data->identity.serial_number,
+			     MIN(size, sizeof(data->identity.serial_number)));
+		break;
 	default:
 		break;
 	}
@@ -289,3 +292,34 @@ int hl78xx_api_func_modem_dynamic_cmd_send(const struct device *dev, const char 
 	return modem_dynamic_cmd_send(data, NULL, cmd, cmd_size, response_matches, matches_size,
 				      true);
 }
+#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
+int hl78xx_start_airvantage_dm_session(const struct device *dev)
+{
+	int ret = 0;
+	struct hl78xx_data *data = (struct hl78xx_data *)dev->data;
+
+	ret = modem_dynamic_cmd_send(data, NULL, WDSI_USER_INITIATED_CONNECTION_START_CMD,
+				     strlen(WDSI_USER_INITIATED_CONNECTION_START_CMD),
+				     hl78xx_get_ok_match(), 1, false);
+	if (ret < 0) {
+		LOG_ERR("Start DM session error %d", ret);
+		return ret;
+	}
+	return 0;
+}
+
+int hl78xx_stop_airvantage_dm_session(const struct device *dev)
+{
+	int ret = 0;
+	struct hl78xx_data *data = (struct hl78xx_data *)dev->data;
+
+	ret = modem_dynamic_cmd_send(data, NULL, WDSI_USER_INITIATED_CONNECTION_STOP_CMD,
+				     strlen(WDSI_USER_INITIATED_CONNECTION_STOP_CMD),
+				     hl78xx_get_ok_match(), 1, false);
+	if (ret < 0) {
+		LOG_ERR("Stop DM session error %d", ret);
+		return ret;
+	}
+	return 0;
+}
+#endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
