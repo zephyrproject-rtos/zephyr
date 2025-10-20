@@ -1390,7 +1390,7 @@ static DEVICE_API(spi, api_funcs) = {
 	.release = spi_stm32_release,
 };
 
-static inline bool spi_stm32_is_subghzspi(const struct device *dev)
+static bool spi_stm32_is_subghzspi(const struct device *dev)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)
 	const struct spi_stm32_config *cfg = dev->config;
