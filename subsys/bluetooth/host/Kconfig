@@ -725,8 +725,10 @@ config BT_SMP_USB_HCI_CTLR_WORKAROUND
 	  if the keys are distributed over an encrypted link.
 
 config BT_FIXED_PASSKEY
-	bool "Use a fixed passkey for pairing"
+	bool "Use a fixed passkey for pairing [DEPRECATED]"
+	select DEPRECATED
 	help
+	  This option is deprecated, use BT_APP_PASSKEY instead.
 	  With this option enabled, the application will be able to call the
 	  bt_passkey_set() API to set a fixed passkey. If set, the
 	  pairing_confirm() callback will be called for all incoming pairings.
