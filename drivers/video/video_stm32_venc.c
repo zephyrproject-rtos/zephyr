@@ -465,7 +465,7 @@ static int stm32_venc_get_fmt(const struct device *dev, struct video_format *fmt
 
 static int encoder_prepare(struct stm32_venc_data *data)
 {
-	H264EncRet ret;
+	H264EncRet h264ret;
 	H264EncConfig cfg = {0};
 	H264EncPreProcessingCfg preproc_cfg = {0};
 	H264EncRateCtrl ratectrl_cfg = {0};
@@ -489,42 +489,42 @@ static int encoder_prepare(struct stm32_venc_data *data)
 	cfg.svctLevel = 0;
 	cfg.viewMode = H264ENC_BASE_VIEW_SINGLE_BUFFER;
 
-	ret = H264EncInit(&cfg, &data->encoder);
-	if (ret != H264ENC_OK) {
-		LOG_ERR("H264EncInit error=%d", ret);
+	h264ret = H264EncInit(&cfg, &data->encoder);
+	if (h264ret != H264ENC_OK) {
+		LOG_ERR("H264EncInit error=%d", h264ret);
 		return -EIO;
 	}
 
 	/* set format conversion for preprocessing */
-	ret = H264EncGetPreProcessing(data->encoder, &preproc_cfg);
-	if (ret != H264ENC_OK) {
-		LOG_ERR("H264EncGetPreProcessing error=%d", ret);
+	h264ret = H264EncGetPreProcessing(data->encoder, &preproc_cfg);
+	if (h264ret != H264ENC_OK) {
+		LOG_ERR("H264EncGetPreProcessing error=%d", h264ret);
 		return -EIO;
 	}
 	preproc_cfg.inputType = to_h264pixfmt(data->in_fmt.pixelformat);
-	ret = H264EncSetPreProcessing(data->encoder, &preproc_cfg);
-	if (ret != H264ENC_OK) {
-		LOG_ERR("H264EncSetPreProcessing error=%d", ret);
+	h264ret = H264EncSetPreProcessing(data->encoder, &preproc_cfg);
+	if (h264ret != H264ENC_OK) {
+		LOG_ERR("H264EncSetPreProcessing error=%d", h264ret);
 		return -EIO;
 	}
 
 	/* setup coding ctrl */
-	ret = H264EncGetCodingCtrl(data->encoder, &codingctrl_cfg);
-	if (ret != H264ENC_OK) {
-		LOG_ERR("H264EncGetCodingCtrl error=%d", ret);
+	h264ret = H264EncGetCodingCtrl(data->encoder, &codingctrl_cfg);
+	if (h264ret != H264ENC_OK) {
+		LOG_ERR("H264EncGetCodingCtrl error=%d", h264ret);
 		return -EIO;
 	}
 
-	ret = H264EncSetCodingCtrl(data->encoder, &codingctrl_cfg);
-	if (ret != H264ENC_OK) {
-		LOG_ERR("H264EncSetCodingCtrl error=%d", ret);
+	h264ret = H264EncSetCodingCtrl(data->encoder, &codingctrl_cfg);
+	if (h264ret != H264ENC_OK) {
+		LOG_ERR("H264EncSetCodingCtrl error=%d", h264ret);
 		return -EIO;
 	}
 
 	/* set bit rate configuration */
-	ret = H264EncGetRateCtrl(data->encoder, &ratectrl_cfg);
-	if (ret != H264ENC_OK) {
-		LOG_ERR("H264EncGetRateCtrl error=%d", ret);
+	h264ret = H264EncGetRateCtrl(data->encoder, &ratectrl_cfg);
+	if (h264ret != H264ENC_OK) {
+		LOG_ERR("H264EncGetRateCtrl error=%d", h264ret);
 		return -EIO;
 	}
 
@@ -537,9 +537,9 @@ static int encoder_prepare(struct stm32_venc_data *data)
 	ratectrl_cfg.qpMin = ratectrl_cfg.qpHdr;
 	ratectrl_cfg.qpMax = ratectrl_cfg.qpHdr;
 
-	ret = H264EncSetRateCtrl(data->encoder, &ratectrl_cfg);
-	if (ret != H264ENC_OK) {
-		LOG_ERR("H264EncSetRateCtrl error=%d", ret);
+	h264ret = H264EncSetRateCtrl(data->encoder, &ratectrl_cfg);
+	if (h264ret != H264ENC_OK) {
+		LOG_ERR("H264EncSetRateCtrl error=%d", h264ret);
 		return -EIO;
 	}
 
@@ -548,7 +548,7 @@ static int encoder_prepare(struct stm32_venc_data *data)
 
 static int encoder_start(struct stm32_venc_data *data, struct video_buffer *output)
 {
-	H264EncRet ret;
+	H264EncRet h264ret;
 	H264EncIn encIn = {0};
 	H264EncOut encOut = {0};
 
@@ -557,9 +557,9 @@ static int encoder_start(struct stm32_venc_data *data, struct video_buffer *outp
 	encIn.outBufSize = output->size;
 
 	/* create stream */
-	ret = H264EncStrmStart(data->encoder, &encIn, &encOut);
-	if (ret != H264ENC_OK) {
-		LOG_ERR("H264EncStrmStart error=%d", ret);
+	h264ret = H264EncStrmStart(data->encoder, &encIn, &encOut);
+	if (h264ret != H264ENC_OK) {
+		LOG_ERR("H264EncStrmStart error=%d", h264ret);
 		return -EIO;
 	}
 
@@ -586,7 +586,8 @@ static int encoder_end(struct stm32_venc_data *data)
 
 static int encode_frame(struct stm32_venc_data *data)
 {
-	int ret = H264ENC_FRAME_READY;
+	int ret = 0;
+	H264EncRet h264ret = H264ENC_FRAME_READY;
 	struct video_buffer *input;
 	struct video_buffer *output;
 	H264EncIn encIn = {0};
@@ -637,11 +638,11 @@ static int encode_frame(struct stm32_venc_data *data)
 	encIn.outBufSize = output->size;
 	encOut.streamSize = 0;
 
-	ret = H264EncStrmEncode(data->encoder, &encIn, &encOut, NULL, NULL, NULL);
+	h264ret = H264EncStrmEncode(data->encoder, &encIn, &encOut, NULL, NULL, NULL);
 	output->bytesused = encOut.streamSize;
 	LOG_DBG("output=%p, encOut.streamSize=%d", output, encOut.streamSize);
 
-	switch (ret) {
+	switch (h264ret) {
 	case H264ENC_FRAME_READY:
 		/* save stream */
 		if (encOut.streamSize == 0) {
@@ -652,7 +653,7 @@ static int encode_frame(struct stm32_venc_data *data)
 		output->bytesused = encOut.streamSize;
 		break;
 	case H264ENC_FUSE_ERROR:
-		LOG_ERR("H264EncStrmEncode error=%d", ret);
+		LOG_ERR("H264EncStrmEncode error=%d", h264ret);
 
 		LOG_ERR("DCMIPP and VENC desync at frame %d, restart the video", data->frame_nb);
 		encoder_end(data);
@@ -663,7 +664,7 @@ static int encode_frame(struct stm32_venc_data *data)
 		}
 		break;
 	default:
-		LOG_ERR("H264EncStrmEncode error=%d", ret);
+		LOG_ERR("H264EncStrmEncode error=%d", h264ret);
 		LOG_ERR("error encoding frame %d", data->frame_nb);
 
 		encoder_end(data);
