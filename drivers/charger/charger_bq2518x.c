@@ -44,28 +44,32 @@ enum bq2518x_device_id {
 	BQ25188_DEVICE_ID = 0x04,
 };
 
-#define BQ2518X_STAT0_CHG_STAT_MASK             GENMASK(6, 5)
-#define BQ2518X_STAT0_CHG_STAT_NOT_CHARGING     0x00
-#define BQ2518X_STAT0_CHG_STAT_CONSTANT_CURRENT 0x01
-#define BQ2518X_STAT0_CHG_STAT_CONSTANT_VOLTAGE 0x02
-#define BQ2518X_STAT0_CHG_STAT_DONE             0x03
-#define BQ2518X_STAT0_VIN_PGOOD_STAT            BIT(0)
-#define BQ2518X_VBAT_MSK                        GENMASK(6, 0)
-#define BQ2518X_ICHG_CHG_DIS                    BIT(7)
-#define BQ2518X_ICHG_MSK                        GENMASK(6, 0)
-#define BQ2518X_IC_CTRL_WDOG_DISABLE            (BIT(0) | BIT(1))
-#define BQ2518X_IC_CTRL_SAFETY_6_HOUR           BIT(2)
-#define BQ2518X_IC_CTRL_VRCH_100                0x00
-#define BQ2518X_IC_CTRL_VRCH_200                BIT(5)
-#define BQ2518X_IC_CTRL_VLOWV_SEL_2_8           BIT(6)
-#define BQ2518X_IC_CTRL_VLOWV_SEL_3_0           0x00
-#define BQ2518X_IC_CTRL_TS_AUTO_EN              BIT(7)
-#define BQ2518X_SYS_REG_CTRL_OFFSET             5
-#define BQ2518X_DEVICE_ID_MSK                   GENMASK(3, 0)
-#define BQ2518X_DEVICE_ID                       0x00
-#define BQ2518X_SHIP_RST_EN_RST_SHIP_MSK        GENMASK(6, 5)
-#define BQ2518X_SHIP_RST_EN_RST_SHIP_ADAPTER    0x20
-#define BQ2518X_SHIP_RST_EN_RST_SHIP_BUTTON     0x40
+#define BQ2518X_STAT0_CHG_STAT_MASK              GENMASK(6, 5)
+#define BQ2518X_STAT0_CHG_STAT_NOT_CHARGING      0x00
+#define BQ2518X_STAT0_CHG_STAT_CONSTANT_CURRENT  0x01
+#define BQ2518X_STAT0_CHG_STAT_CONSTANT_VOLTAGE  0x02
+#define BQ2518X_STAT0_CHG_STAT_DONE              0x03
+#define BQ2518X_STAT0_VIN_PGOOD_STAT             BIT(0)
+#define BQ2518X_VBAT_MSK                         GENMASK(6, 0)
+#define BQ2518X_ICHG_CHG_DIS                     BIT(7)
+#define BQ2518X_ICHG_MSK                         GENMASK(6, 0)
+#define BQ2518X_CHARGE_CTRL1_DISCHARGE_OFFSET    6
+#define BQ2518X_CHARGE_CTRL1_UNDERVOLTAGE_OFFSET 3
+#define BQ2518X_CHARGE_CTRL1_CHG_STATUS_INT_MASK BIT(2)
+#define BQ2518X_CHARGE_CTRL1_ILIM_INT_MASK       BIT(1)
+#define BQ2518X_IC_CTRL_WDOG_DISABLE             (BIT(0) | BIT(1))
+#define BQ2518X_IC_CTRL_SAFETY_6_HOUR            BIT(2)
+#define BQ2518X_IC_CTRL_VRCH_100                 0x00
+#define BQ2518X_IC_CTRL_VRCH_200                 BIT(5)
+#define BQ2518X_IC_CTRL_VLOWV_SEL_2_8            BIT(6)
+#define BQ2518X_IC_CTRL_VLOWV_SEL_3_0            0x00
+#define BQ2518X_IC_CTRL_TS_AUTO_EN               BIT(7)
+#define BQ2518X_SYS_REG_CTRL_OFFSET              5
+#define BQ2518X_DEVICE_ID_MSK                    GENMASK(3, 0)
+#define BQ2518X_DEVICE_ID                        0x00
+#define BQ2518X_SHIP_RST_EN_RST_SHIP_MSK         GENMASK(6, 5)
+#define BQ2518X_SHIP_RST_EN_RST_SHIP_ADAPTER     0x20
+#define BQ2518X_SHIP_RST_EN_RST_SHIP_BUTTON      0x40
 
 /* Charging current limits */
 #define BQ2518X_CURRENT_MIN_MA 5
@@ -81,6 +85,7 @@ struct bq2518x_config {
 	uint32_t max_voltage_microvolt;
 	enum bq2518x_device_id device_id;
 	uint8_t reg_ic_ctrl;
+	uint8_t reg_charge_control1;
 	uint8_t reg_sys_regulation;
 };
 
@@ -359,6 +364,12 @@ static int bq2518x_init(const struct device *dev)
 		return ret;
 	}
 
+	/* Setup battery discharge limits */
+	ret = i2c_reg_write_byte_dt(&cfg->i2c, BQ2518X_CHARGE_CTRL1, cfg->reg_charge_control1);
+	if (ret < 0) {
+		return ret;
+	}
+
 	ret = bq2518x_set_charge_voltage(dev, cfg->max_voltage_microvolt);
 	if (ret < 0) {
 		LOG_ERR("Could not set the target voltage. (rc: %d)", ret);
@@ -390,6 +401,13 @@ static int bq2518x_init(const struct device *dev)
 			(DT_INST_PROP(inst, precharge_voltage_threshold_microvolt) == 2800000      \
 				 ? BQ2518X_IC_CTRL_VLOWV_SEL_2_8                                   \
 				 : BQ2518X_IC_CTRL_VLOWV_SEL_3_0),                                 \
+		.reg_charge_control1 =                                                             \
+			(DT_INST_ENUM_IDX(inst, battery_discharge_current_limit_milliamp)          \
+			 << BQ2518X_CHARGE_CTRL1_DISCHARGE_OFFSET) |                               \
+			((DT_INST_ENUM_IDX(inst, battery_undervoltage_lockout_millivolt) + 2)      \
+			 << BQ2518X_CHARGE_CTRL1_UNDERVOLTAGE_OFFSET) |                            \
+			BQ2518X_CHARGE_CTRL1_CHG_STATUS_INT_MASK |                                 \
+			BQ2518X_CHARGE_CTRL1_ILIM_INT_MASK,                                        \
 		.reg_sys_regulation = DT_INST_ENUM_IDX(inst, vsys_target_regulation)               \
 				      << BQ2518X_SYS_REG_CTRL_OFFSET,                              \
 	};                                                                                         \
