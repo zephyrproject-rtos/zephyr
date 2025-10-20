@@ -1,10 +1,12 @@
 # Copyright (c) 2024 Silicon Laboratories Inc.
 # SPDX-License-Identifier: Apache-2.0
 
+DT_CHOSEN_SILABS_SLEEPTIMER := silabs,sleeptimer
+
 config SILABS_SLEEPTIMER_TIMER
 	bool "Silabs Sleeptimer system clock driver"
 	depends on SOC_FAMILY_SILABS_S2 || SOC_FAMILY_SILABS_SIWX91X
-	depends on DT_HAS_SILABS_GECKO_STIMER_ENABLED
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_SILABS_SLEEPTIMER))
 	select SILABS_SISDK_SLEEPTIMER
 	select TICKLESS_CAPABLE
 	select TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
