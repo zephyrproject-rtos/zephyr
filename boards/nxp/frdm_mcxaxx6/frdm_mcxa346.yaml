@@ -24,4 +24,5 @@ supported:
   - counter
   - dma
   - opamp
+  - can
 vendor: nxp
