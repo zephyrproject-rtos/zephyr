@@ -252,6 +252,10 @@ You can dump all of the descriptors in an image using::
 
    west bindesc dump build/zephyr/zephyr.bin
 
+You can extract the descriptor data area of the image to a file using::
+
+   west bindesc extract
+
 You can list all known standard descriptor names using::
 
    west bindesc list
