@@ -66,6 +66,7 @@ RTIO_DEFINE(ctx, 1, 1);
 struct sensor_async_data {
 	uint32_t fit;
 	struct sensor_q31_data *frame;
+	uint16_t size;
 };
 
 #include <zephyr/drivers/gpio.h>
@@ -148,7 +149,8 @@ int main(void)
 		}
 
 		data[i].fit = 0;
-		data[i].frame = (struct sensor_q31_data *)malloc(base_size);
+		data[i].frame = NULL;
+		data[i].size = 0;
 	}
 
 #if CONFIG_SAMPLE_STREAM
@@ -190,17 +192,33 @@ int main(void)
 #endif /* CONFIG_SAMPLE_STREAM */
 
 		for (size_t i = 0; i < ARRAY_SIZE(chan_list); i++) {
+			rc = decoder->get_frame_count(buf, chan_list[i], &data[i].size);
+
+			if (rc != 0) {
+//				LOG_ERR("sensor_get_frame_count(%s) failed: [%d]", channel_names[i], rc);
+				continue;
+			}
+
 			data[i].fit = 0;
-			rc = decoder->decode(buf, chan_list[i], &data[i].fit, 1, data[i].frame);
-			
+			data[i].frame = (struct sensor_q31_data *)malloc(base_size + data[i].size * frame_size);
+			rc = decoder->decode(buf, chan_list[i], &data[i].fit, data[i].size, data[i].frame);
+
 			if (rc <= 0) {
 //				LOG_ERR("%s: sensor_decode(%s) failed: [%d]", dev->name,
 //					channel_names[i], rc);
 				continue;
 			}
+		}
 
-			LOG_INF("[%-*s]: %" PRIsensor_q31_data, max_width, channel_names[i],
-				PRIsensor_q31_data_arg(*data[i].frame, chan_list[i].chan_idx));
+		for (size_t i = 0; i < data[0].size; i++) {
+			for (size_t j = 0; j < ARRAY_SIZE(chan_list); j++) {
+				LOG_INF("(%02d/%02d)[%-*s]: %" PRIsensor_q31_data, i + 1, data[j].size, max_width, channel_names[j],
+				PRIsensor_q31_data_arg(*data[j].frame, i));
+			}
+		}
+
+		for (size_t i = 0; i < ARRAY_SIZE(chan_list); i++) {
+			free(data[i].frame);
 		}
 
 #if CONFIG_SAMPLE_STREAM

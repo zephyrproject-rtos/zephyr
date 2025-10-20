@@ -26,7 +26,11 @@ int max30101_start_temperature_measurement(const struct device *dev)
 }
 #endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
 
+#if CONFIG_MAX30101_DIE_TEMPERATURE
+int max30101_read_sample(const struct device *dev, struct max30101_reading *reading, uint8_t *temp)
+#else
 int max30101_read_sample(const struct device *dev, struct max30101_reading *reading)
+#endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
 {
 	struct max30101_data *data = dev->data;
 	const struct max30101_config *config = dev->config;
@@ -42,7 +46,7 @@ int max30101_read_sample(const struct device *dev, struct max30101_reading *read
 
 #if CONFIG_MAX30101_DIE_TEMPERATURE
 	/* Read the die temperature */
-	if (i2c_burst_read_dt(&config->i2c, MAX30101_REG_TINT, reading->die_temp, 2)) {
+	if (i2c_burst_read_dt(&config->i2c, MAX30101_REG_TINT, temp, 2)) {
 		LOG_ERR("Could not fetch die temperature");
 		return -EIO;
 	}
@@ -59,7 +63,11 @@ static int max30101_sample_fetch(const struct device *dev, enum sensor_channel c
 {
 	struct max30101_data *data = dev->data;
 
+#if CONFIG_MAX30101_DIE_TEMPERATURE
+	if (max30101_read_sample(dev, &data->reading, (uint8_t *)(data->die_temp))) {
+#else
 	if (max30101_read_sample(dev, &data->reading)) {
+#endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
 		LOG_ERR("Could not fetch sample");
 		return -EIO;
 	}
@@ -91,8 +99,8 @@ static int max30101_channel_get(const struct device *dev,
 
 #if CONFIG_MAX30101_DIE_TEMPERATURE
 	case SENSOR_CHAN_DIE_TEMP:
-		val->val1 = data->reading.die_temp[0];
-		val->val2 = (1000000 * data->reading.die_temp[1]) >> MAX30101_TEMP_FRAC_SHIFT;
+		val->val1 = data->die_temp[0];
+		val->val2 = (1000000 * data->die_temp[1]) >> MAX30101_TEMP_FRAC_SHIFT;
 		return 0;
 #endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
 
@@ -311,9 +319,13 @@ static int max30101_init(const struct device *dev)
 		.led_pa = DT_INST_PROP(n, led_pa),                                                 \
 		.slot = MAX30101_SLOT_CFG(n),                                                      \
 		.data_shift = MAX30101_FIFO_DATA_MAX_SHIFT - DT_INST_ENUM_IDX(n, led_pw),          \
-		IF_ENABLED(CONFIG_MAX30101_TRIGGER, \
-			(.irq_gpio = GPIO_DT_SPEC_INST_GET_OR(n, irq_gpios, {0}),) \
-		) };              \
+		IF_ENABLED(CONFIG_MAX30101_TRIGGER, (\
+			.irq_gpio = GPIO_DT_SPEC_INST_GET_OR(n, irq_gpios, {0}), \
+			IF_ENABLED(CONFIG_MAX30101_STREAM, ( \
+				.sample_period = DT_INST_ENUM_IDX(n, smp_sr), \
+				.decimation = DT_INST_PROP(n, smp_ave), \
+			)) \
+		)) };              \
 	static struct max30101_data max30101_data_##n = {                                          \
 		.map = {{3, 3, 3}, {3, 3, 3}, {3, 3, 3}},                                          \
 		.num_channels = {0, 0, 0},                                                         \

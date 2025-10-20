@@ -54,7 +54,6 @@ config SAMPLE_TRIG_FIFO_WATTERMARK_INCLUDE
 config SAMPLE_TRIGGER_FIFO_WATTERMARK
     bool
     default y if SAMPLE_TRIG_FIFO_WATTERMARK_NOP || SAMPLE_TRIG_FIFO_WATTERMARK_DROP || SAMPLE_TRIG_FIFO_WATTERMARK_INCLUDE
-    depends on SAMPLE_BURST_READ
 
 config SAMPLE_TRIG_OVERFLOW_NOP
     bool
@@ -72,6 +71,9 @@ config SAMPLE_TRIGGER_OVERFLOW
 # Sample stream
 config SAMPLE_STREAM_ENABLE
     bool "Enable asynchronous sensor stream API"
+
+config SAMPLE_STREAM_BURST
+    bool "Enable burst read"
 
 config SAMPLE_STREAM
     bool
