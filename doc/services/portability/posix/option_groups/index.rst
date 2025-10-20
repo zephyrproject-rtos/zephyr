@@ -1111,7 +1111,7 @@ implemented in Zephyr but are provided so that conformant applications can still
 Unimplemented functions in this option group will fail, setting ``errno`` to ``ENOSYS``
 :ref:`†<posix_undefined_behaviour>`.
 
-Enable this option with :kconfig:option:`CONFIG_XSI_STREAMS`.
+Enable this option with :kconfig:option:`CONFIG_XOPEN_STREAMS`.
 
 .. csv-table:: _XOPEN_STREAMS
    :header: API, Supported
