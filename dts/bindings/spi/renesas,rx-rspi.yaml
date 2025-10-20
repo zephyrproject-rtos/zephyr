@@ -17,6 +17,10 @@ properties:
     description: |
       The index of SPI channel
 
+  dtc:
+    type: phandle
+    description: DTC controller
+
   ssl-assert:
     type: int
     default: 0
