@@ -21,9 +21,6 @@ Requirements
 Building and Running
 ********************
 
-This sample can be found under :zephyr_file:`samples/bluetooth/peripheral_hr` in the
-Zephyr tree.
-
 Building a minimal variant
 --------------------------
 

@@ -96,12 +96,12 @@ static void test_capture(uint32_t period, uint32_t pulse, enum test_pwm_unit uni
 
 	if (flags & PWM_CAPTURE_TYPE_PERIOD) {
 		zassert_within(period_capture, period, period / 100,
-			       "period capture off by more than 1%");
+			       "period capture off by more than 1%%");
 	}
 
 	if (flags & PWM_CAPTURE_TYPE_PULSE) {
 		zassert_within(pulse_capture, pulse, pulse / 100,
-			       "pulse capture off by more than 1%");
+			       "pulse capture off by more than 1%%");
 	}
 }
 
@@ -272,10 +272,10 @@ ZTEST(pwm_loopback, test_continuous_capture)
 
 		if (data.pulse_capture) {
 			zassert_within(usec, TEST_PWM_PULSE_USEC, TEST_PWM_PULSE_USEC / 100,
-				       "pulse capture off by more than 1%");
+				       "pulse capture off by more than 1%%");
 		} else {
 			zassert_within(usec, TEST_PWM_PERIOD_USEC, TEST_PWM_PERIOD_USEC / 100,
-				       "period capture off by more than 1%");
+				       "period capture off by more than 1%%");
 		}
 	}
 }

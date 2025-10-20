@@ -180,6 +180,10 @@ static int cdb_net_set(const char *name, size_t len_rd,
 	struct net_val net;
 	int err;
 
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return 0;
+	}
+
 	if (len_rd == 0) {
 		LOG_DBG("val (null)");
 		return 0;
@@ -218,6 +222,10 @@ static int cdb_node_set(const char *name, size_t len_rd,
 	struct bt_mesh_key tmp;
 	uint16_t addr;
 	int err;
+
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return 0;
+	}
 
 	if (!name) {
 		LOG_ERR("Insufficient number of arguments");
@@ -280,6 +288,10 @@ static int cdb_subnet_set(const char *name, size_t len_rd,
 	struct bt_mesh_key tmp[2];
 	uint16_t net_idx;
 	int err;
+
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return 0;
+	}
 
 	if (!name) {
 		LOG_ERR("Insufficient number of arguments");
@@ -346,6 +358,10 @@ static int cdb_app_key_set(const char *name, size_t len_rd,
 	struct bt_mesh_key tmp[2];
 	uint16_t app_idx;
 	int err;
+
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return 0;
+	}
 
 	if (!name) {
 		LOG_ERR("Insufficient number of arguments");

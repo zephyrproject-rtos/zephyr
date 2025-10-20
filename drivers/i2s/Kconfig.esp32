@@ -8,7 +8,7 @@ config I2S_ESP32
 	depends on DT_HAS_ESPRESSIF_ESP32_I2S_ENABLED
 	select DMA if DT_HAS_ESPRESSIF_ESP32_GDMA_ENABLED
 	help
-	  Enables the ESP32 I2S driver (GDMA SoCs only).
+	  Enables the ESP32 I2S driver.
 
 if I2S_ESP32
 
@@ -30,5 +30,11 @@ config I2S_ESP32_DMA_DESC_NUM_MAX
 	depends on !DT_HAS_ESPRESSIF_ESP32_GDMA_ENABLED
 	help
 	  Max number of link descriptor available for DMA transfers on each I2S channel
+
+config I2S_ESP32_ALLOWED_EMPTY_TX_QUEUE_DEFERRAL_TIME_MS
+	int "ESP32 I2S empty TX queue processing deferral time"
+	default 0
+	help
+	  Allowed deferral time for processing an empty tx queue in milliseconds
 
 endif

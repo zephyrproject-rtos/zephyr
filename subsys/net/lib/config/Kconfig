@@ -215,6 +215,16 @@ config NET_CONFIG_CLOCK_SNTP_INIT
 
 if NET_CONFIG_CLOCK_SNTP_INIT
 
+ZEPHYR_RTC := zephyr,rtc
+
+config NET_CONFIG_CLOCK_SNTP_SET_RTC
+	bool "Set RTC on SNTP response"
+	depends on RTC
+	depends on $(dt_chosen_enabled,$(ZEPHYR_RTC))
+	help
+	  Set RTC when an SNTP response is received.
+	  Requires `zephyr,rtc` chosen.
+
 config NET_CONFIG_SNTP_INIT_SERVER
 	string "SNTP server to use for system clock init"
 	default ""

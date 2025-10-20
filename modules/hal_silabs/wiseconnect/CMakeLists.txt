@@ -154,7 +154,7 @@ if(CONFIG_BT_SILABS_SIWX91X)
   )
 endif() # CONFIG_BT_SILABS_SIWX91X
 
-if(CONFIG_WISECONNECT_NETWORK_STACK)
+if(CONFIG_SILABS_SIWX91X_NWP)
   zephyr_compile_definitions(
     SLI_SI91X_ENABLE_OS
     SL_SI91X_SI917_RAM_MEM_CONFIG=2
@@ -198,7 +198,7 @@ if(CONFIG_WISECONNECT_NETWORK_STACK)
     ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/firmware_upgrade/firmware_upgradation.c
   )
   zephyr_include_directories(.)
-endif() # CONFIG_WISECONNECT_NETWORK_STACK
+endif() # CONFIG_SILABS_SIWX91X_NWP
 
 if(CONFIG_SOC_SILABS_SLEEPTIMER)
   zephyr_include_directories(

@@ -126,7 +126,9 @@ static void icm45686_complete_handler(struct rtio *ctx,
 {
 	const struct device *dev = (const struct device *)arg;
 	struct icm45686_data *data = dev->data;
+	const struct icm45686_config *cfg = dev->config;
 	const struct sensor_read_config *read_cfg = data->stream.iodev_sqe->sqe.iodev->data;
+	const bool wm_gt_ths = !cfg->settings.fifo_watermark_equals;
 	uint8_t int_status = data->stream.data.int_status;
 	int err;
 
@@ -157,7 +159,7 @@ static void icm45686_complete_handler(struct rtio *ctx,
 
 	if (should_flush_fifo(read_cfg, int_status)) {
 		uint8_t write_reg = REG_FIFO_CONFIG2_FIFO_FLUSH(true) |
-				    REG_FIFO_CONFIG2_FIFO_WM_GT_THS(true);
+				    REG_FIFO_CONFIG2_FIFO_WM_GT_THS(wm_gt_ths);
 		LOG_WRN("Flushing FIFO: %d", int_status);
 
 		err = icm45686_prep_reg_write_rtio_async(&data->bus, REG_FIFO_CONFIG2, &write_reg,
@@ -372,6 +374,7 @@ void icm45686_stream_submit(const struct device *dev,
 	const struct sensor_read_config *read_cfg = iodev_sqe->sqe.iodev->data;
 	struct icm45686_data *data = dev->data;
 	const struct icm45686_config *cfg = dev->config;
+	const bool wm_gt_ths = !cfg->settings.fifo_watermark_equals;
 	uint8_t val = 0;
 	int err;
 
@@ -473,7 +476,7 @@ void icm45686_stream_submit(const struct device *dev,
 			uint16_t fifo_ths = data->stream.settings.enabled.fifo_ths ?
 					    cfg->settings.fifo_watermark : 0;
 
-			val = REG_FIFO_CONFIG2_FIFO_WM_GT_THS(true) |
+			val = REG_FIFO_CONFIG2_FIFO_WM_GT_THS(wm_gt_ths) |
 			      REG_FIFO_CONFIG2_FIFO_FLUSH(true);
 			err = icm45686_reg_write_rtio(&data->bus, REG_FIFO_CONFIG2, &val, 1);
 			if (err) {

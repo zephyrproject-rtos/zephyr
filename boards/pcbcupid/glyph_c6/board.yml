@@ -1,0 +1,6 @@
+board:
+  name: glyph_c6
+  full_name: Glyph-C6
+  vendor: pcbcupid
+  socs:
+  - name: esp32c6

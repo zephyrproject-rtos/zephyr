@@ -20,9 +20,22 @@ config SOC_SILABS_SLEEPTIMER
 	help
 	  The Sleeptimer HAL module is used for SIWX91X.
 
+config SILABS_SIWX91X_NWP
+	bool "Silabs Network Coprocessor"
+	depends on DT_HAS_SILABS_SIWX91X_NWP_ENABLED
+	select CMSIS_RTOS_V2
+	select POLL
+	select DYNAMIC_THREAD
+	select THREAD_NAME
+	select THREAD_STACK_INFO
+	select THREAD_MONITOR
+	select INIT_STACKS
+	help
+	  Add support for Network Coprocessor (also named NWP) presents on SiWx91x parts.
+
 config SOC_SIWX91X_PM_BACKEND_PMGR
 	bool
-	select WISECONNECT_NETWORK_STACK
+	select SILABS_SIWX91X_NWP
 	select SILABS_SLEEPTIMER_TIMER
 	select SRAM_VECTOR_TABLE
 	select CODE_DATA_RELOCATION_SRAM
@@ -64,7 +77,7 @@ config SIWX91X_ENCRYPT
 
 config SIWX91X_FIRMWARE_UPGRADE
 	bool "Support for firmware upgrade"
-	select WISECONNECT_NETWORK_STACK
+	select SILABS_SIWX91X_NWP
 	help
 	  The firmware upgrade process for SiWx91x devices involves coordinated
 	  communication with both the Network Co-Processor (NCP) and the ROM

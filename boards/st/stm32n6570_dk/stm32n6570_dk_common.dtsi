@@ -521,3 +521,7 @@ csi_interface: &dcmipp {
 &venc {
 	status = "okay";
 };
+
+&jpeg {
+	status = "okay";
+};

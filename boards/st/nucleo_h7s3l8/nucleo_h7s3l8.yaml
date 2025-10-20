@@ -15,4 +15,5 @@ supported:
   - octospi
   - can
   - canfd
+  - netif:eth
 vendor: st

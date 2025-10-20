@@ -381,10 +381,10 @@ ZTEST(smf_tests, test_smf_hierarchical)
 
 	test_obj.transition_bits = 0;
 	test_obj.terminate = NONE;
-	smf_set_initial((struct smf_ctx *)&test_obj, &test_states[STATE_A]);
+	smf_set_initial(SMF_CTX(&test_obj), &test_states[STATE_A]);
 
 	for (int i = 0; i < SMF_RUN; i++) {
-		if (smf_run_state((struct smf_ctx *)&test_obj) < 0) {
+		if (smf_run_state(SMF_CTX(&test_obj)) < 0) {
 			break;
 		}
 	}
@@ -397,10 +397,10 @@ ZTEST(smf_tests, test_smf_hierarchical)
 
 	test_obj.transition_bits = 0;
 	test_obj.terminate = PARENT_ENTRY;
-	smf_set_initial((struct smf_ctx *)&test_obj, &test_states[STATE_A]);
+	smf_set_initial(SMF_CTX(&test_obj), &test_states[STATE_A]);
 
 	for (int i = 0; i < SMF_RUN; i++) {
-		if (smf_run_state((struct smf_ctx *)&test_obj) < 0) {
+		if (smf_run_state(SMF_CTX(&test_obj)) < 0) {
 			break;
 		}
 	}
@@ -414,10 +414,10 @@ ZTEST(smf_tests, test_smf_hierarchical)
 
 	test_obj.transition_bits = 0;
 	test_obj.terminate = PARENT_RUN;
-	smf_set_initial((struct smf_ctx *)&test_obj, &test_states[STATE_A]);
+	smf_set_initial(SMF_CTX(&test_obj), &test_states[STATE_A]);
 
 	for (int i = 0; i < SMF_RUN; i++) {
-		if (smf_run_state((struct smf_ctx *)&test_obj) < 0) {
+		if (smf_run_state(SMF_CTX(&test_obj)) < 0) {
 			break;
 		}
 	}
@@ -431,10 +431,10 @@ ZTEST(smf_tests, test_smf_hierarchical)
 
 	test_obj.transition_bits = 0;
 	test_obj.terminate = PARENT_EXIT;
-	smf_set_initial((struct smf_ctx *)&test_obj, &test_states[STATE_A]);
+	smf_set_initial(SMF_CTX(&test_obj), &test_states[STATE_A]);
 
 	for (int i = 0; i < SMF_RUN; i++) {
-		if (smf_run_state((struct smf_ctx *)&test_obj) < 0) {
+		if (smf_run_state(SMF_CTX(&test_obj)) < 0) {
 			break;
 		}
 	}
@@ -448,10 +448,10 @@ ZTEST(smf_tests, test_smf_hierarchical)
 
 	test_obj.transition_bits = 0;
 	test_obj.terminate = ENTRY;
-	smf_set_initial((struct smf_ctx *)&test_obj, &test_states[STATE_A]);
+	smf_set_initial(SMF_CTX(&test_obj), &test_states[STATE_A]);
 
 	for (int i = 0; i < SMF_RUN; i++) {
-		if (smf_run_state((struct smf_ctx *)&test_obj) < 0) {
+		if (smf_run_state(SMF_CTX(&test_obj)) < 0) {
 			break;
 		}
 	}
@@ -465,10 +465,10 @@ ZTEST(smf_tests, test_smf_hierarchical)
 
 	test_obj.transition_bits = 0;
 	test_obj.terminate = RUN;
-	smf_set_initial((struct smf_ctx *)&test_obj, &test_states[STATE_A]);
+	smf_set_initial(SMF_CTX(&test_obj), &test_states[STATE_A]);
 
 	for (int i = 0; i < SMF_RUN; i++) {
-		if (smf_run_state((struct smf_ctx *)&test_obj) < 0) {
+		if (smf_run_state(SMF_CTX(&test_obj)) < 0) {
 			break;
 		}
 	}
@@ -482,10 +482,10 @@ ZTEST(smf_tests, test_smf_hierarchical)
 
 	test_obj.transition_bits = 0;
 	test_obj.terminate = EXIT;
-	smf_set_initial((struct smf_ctx *)&test_obj, &test_states[STATE_A]);
+	smf_set_initial(SMF_CTX(&test_obj), &test_states[STATE_A]);
 
 	for (int i = 0; i < SMF_RUN; i++) {
-		if (smf_run_state((struct smf_ctx *)&test_obj) < 0) {
+		if (smf_run_state(SMF_CTX(&test_obj)) < 0) {
 			break;
 		}
 	}

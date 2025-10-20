@@ -200,8 +200,7 @@ config BT_BUF_EVT_DISCARDABLE_COUNT
 config BT_HOST_CRYPTO
 	bool "Use crypto functionality implemented in the Bluetooth host"
 	default y if !BT_CTLR_CRYPTO
-	select MBEDTLS if !BUILD_WITH_TFM
-	select MBEDTLS_PSA_CRYPTO_C if !BUILD_WITH_TFM
+	select PSA_CRYPTO
 	select PSA_WANT_KEY_TYPE_AES
 	select PSA_WANT_ALG_ECB_NO_PADDING
 	help
@@ -1066,8 +1065,7 @@ endif # BT_DF
 
 config BT_ECC
 	bool
-	select MBEDTLS if !BUILD_WITH_TFM
-	select MBEDTLS_PSA_CRYPTO_C if !BUILD_WITH_TFM
+	select PSA_CRYPTO
 	select PSA_WANT_ALG_ECDH
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT

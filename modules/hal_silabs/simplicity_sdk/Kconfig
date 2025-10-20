@@ -58,4 +58,8 @@ config SILABS_SISDK_RAIL_MULTIPROTOCOL
 	  coexistence and arbitration between multiple wireless protocols (for
 	  example, Bluetooth LE and a proprietary 2.4 GHz stack) on Gecko SoCs.
 
+config SILABS_SISDK_PROTOCOL_CRYPTO
+	bool
+	depends on SOC_GECKO_HAS_RADIO
+
 endmenu

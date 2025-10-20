@@ -169,7 +169,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 21ff951cc2ca1c3ae6a096a4f9bc3b7f2f2c5409
+      revision: 78fb21d5bcd88adcc787fff9591da6975c80c5eb
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -185,7 +185,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: 3ef39bda93a67cf2ef735f1679aee5a103f92275
+      revision: 58ce131beba8ad94e58837b7d0f5e31a7894790a
       path: modules/hal/infineon
       groups:
         - hal
@@ -205,12 +205,12 @@ manifest:
       groups:
         - hal
     - name: hal_nuvoton
-      revision: be1042dc8a96ebe9ea4c5d714f07c617539106d6
+      revision: 9b455fffd6dd3936c5a4eb575e4d33edbcf1b6b0
       path: modules/hal/nuvoton
       groups:
         - hal
     - name: hal_nxp
-      revision: 18a86af73c63e37420a1044108c40fcb35635f5b
+      revision: 6adb4c509dc86d5702f48b952f209b7c91270250
       path: modules/hal/nxp
       groups:
         - hal
@@ -226,7 +226,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: bbfc2e605ddd5838924565c76320fb39a66cff89
+      revision: 2a4f856526e33b8e52c162e411a196981ff304f6
       groups:
         - hal
     - name: hal_rpi_pico
@@ -250,7 +250,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 5d27023564c9fbd9bb3aa51b0529ac3d2cf18134
+      revision: 55e159704b02ec4e7b4f0a88735044bee92c25c2
       path: modules/hal/stm32
       groups:
         - hal
@@ -286,7 +286,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 61182a45fecafaa0f20e98ca7f862d26fbf65293
+      revision: 3ec675be30c25b56cc0e7dbd5bd931a87d32937e
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
@@ -364,7 +364,7 @@ manifest:
       groups:
         - debug
     - name: trusted-firmware-a
-      revision: 713ffbf96c5bcbdeab757423f10f73eb304eff07
+      revision: 0a29cac8fe0f7bdb835b469d9ea11b8e17377a92
       path: modules/tee/tf-a/trusted-firmware-a
       groups:
         - tee

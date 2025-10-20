@@ -41,6 +41,16 @@ Base Libraries
 * ``Z_MIN``, ``Z_MAX`` and ``Z_CLAMP`` macros have been renamed to
   :c:macro:`min` :c:macro:`max` and :c:macro:`clamp`.
 
+* The header files ``<zephyr/posix/time.h>``, ``<zephyr/posix/signal.h>`` should no longer be used.
+  Include them in the standard path as ``<time.h>``, and ``<signal.h>``, provided by the C library.
+  Non-POSIX C library maintainers may include :zephyr_file:`include/zephyr/posix/posix_time.h`
+  and :zephyr_file:`include/zephyr/posix/posix_signal.h` to portably provide POSIX definitions.
+
+* POSIX limits are no longer defined in ``<zephyr/posix/posix_features.h>``. Similarly, include them
+  in the standard path via ``<limits.h>``, provided by the C library. Non-POSIX C library maintainers
+  may include :zephyr_file:`include/zephyr/posix/posix_limits.h` for Zephyr's definitions. Some
+  runtime-invariant values may need to be queried via :c:func:`sysconf`.
+
 Boards
 ******
 
@@ -66,6 +76,14 @@ ADC
 
 * ``iadc_gecko.c`` driver is replaced by ``adc_silabs_iadc.c``.
   :dtcompatible:`silabs,gecko-iadc` is replaced by :dtcompatible:`silabs,iadc`.
+
+Clock Control
+=============
+
+* :kconfig:option:`CONFIG_CLOCK_STM32_HSE_CLOCK` is no longer user-configurable. Its value is now
+  always taken from the ``clock-frequency`` property of ``&clk_hse`` DT node, but only if the node
+  is enabled (otherwise, the symbol is not defined). This change should only affect STM32 MPU-based
+  platforms and aligns them with existing practice from STM32 MCU platforms.
 
 Comparator
 ==========
@@ -190,6 +208,13 @@ Bluetooth HCI
 * The deprecated ``ipm`` value was removed from ``bt-hci-bus`` devicetree property.
   ``ipc`` should be used instead.
 
+Bluetooth Mesh
+==============
+
+* Kconfigs ``CONFIG_BT_MESH_USES_MBEDTLS_PSA`` and ``CONFIG_BT_MESH_USES_TFM_PSA`` have
+  been removed. The selection of the PSA Crypto provider is now automatically controlled
+  by Kconfig :kconfig:option:`CONFIG_PSA_CRYPTO`.
+
 Ethernet
 ========
 
@@ -295,6 +320,14 @@ Cellular
  * :c:enum:`cellular_access_technology` values have been redefined to align with 3GPP TS 27.007.
  * :c:enum:`cellular_registration_status` values have been extended to align with 3GPP TS 27.007.
 
+Flash Map
+=========
+
+* With the long-term goal of transitioning to PSA Crypto API as the only crypto support in Zephyr,
+  :kconfig:option:`FLASH_AREA_CHECK_INTEGRITY_MBEDTLS` is deprecated.
+  :kconfig:option:`FLASH_AREA_CHECK_INTEGRITY_PSA` is now the default choice: if TF-M is not
+  enabled or not supported by the platform, Mbed TLS will be used as PSA Crypto API provider.
+
 Logging
 =======
 
@@ -376,6 +409,11 @@ LVGL
   black and white to be inverted when using LVGL with monochrome displays.
   This issue has now been fixed. Any workarounds previously applied to achieve the expected
   behavior should be removed, otherwise black and white will be inverted again.
+
+LED Strip
+=========
+
+* Renamed ``arduino,modulino-smartleds`` to :dtcompatible:`arduino,modulino-pixels`
 
 Architectures
 *************

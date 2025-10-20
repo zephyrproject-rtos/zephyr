@@ -429,6 +429,10 @@ static int cfg_set(const char *name, size_t len_rd,
 	struct cfg_val cfg;
 	int err;
 
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return 0;
+	}
+
 	if (len_rd == 0) {
 		LOG_DBG("Cleared configuration state");
 		return 0;

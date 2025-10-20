@@ -416,6 +416,10 @@ static int hb_pub_set(const char *name, size_t len_rd,
 	struct hb_pub_val hb_val;
 	int err;
 
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return 0;
+	}
+
 	err = bt_mesh_settings_set(read_cb, cb_arg, &hb_val, sizeof(hb_val));
 	if (err) {
 		LOG_ERR("Failed to set \'hb_val\'");

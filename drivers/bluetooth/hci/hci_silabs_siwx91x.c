@@ -15,6 +15,10 @@ LOG_MODULE_REGISTER(bt_hci_driver_siwg917);
 
 static void siwx91x_bt_resp_rcvd(uint16_t status, rsi_ble_event_rcp_rcvd_info_t *resp_buf);
 
+struct hci_config {
+	const struct device *nwp_dev;
+};
+
 struct hci_data {
 	bt_hci_recv_t recv;
 	rsi_data_packet_t rsi_data_packet;
@@ -95,15 +99,30 @@ static void siwx91x_bt_resp_rcvd(uint16_t status, rsi_ble_event_rcp_rcvd_info_t 
 	}
 }
 
+static int siwx91x_bt_init(const struct device *dev)
+{
+	const struct hci_config *hci_config = dev->config;
+
+	if (!device_is_ready(hci_config->nwp_dev)) {
+		LOG_ERR("NWP device not ready");
+		return -ENODEV;
+	}
+
+	return 0;
+}
+
 static DEVICE_API(bt_hci, siwx91x_api) = {
 	.open = siwx91x_bt_open,
 	.send = siwx91x_bt_send,
 };
 
 #define HCI_DEVICE_INIT(inst)                                                                      \
+	static struct hci_config hci_config_##inst = {                                             \
+		.nwp_dev = DEVICE_DT_GET(DT_INST_PARENT(inst))                                     \
+	};                                                                                         \
 	static struct hci_data hci_data_##inst;                                                    \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &hci_data_##inst, NULL, POST_KERNEL,               \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &siwx91x_api)
+	DEVICE_DT_INST_DEFINE(inst, siwx91x_bt_init, NULL, &hci_data_##inst, &hci_config_##inst,   \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &siwx91x_api)
 
 /* Only one instance supported right now */
 HCI_DEVICE_INIT(0)

@@ -12,4 +12,5 @@ toolchain:
 supported:
   - uart
   - gpio
+  - watchdog
 vendor: sifli

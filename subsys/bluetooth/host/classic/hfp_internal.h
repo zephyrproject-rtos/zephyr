@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define BT_HFP_MAX_MTU       140
+#define BT_HFP_MAX_MTU       (BT_L2CAP_RX_MTU - BT_RFCOMM_HDR_MAX_SIZE - BT_RFCOMM_FCS_SIZE)
 #define BT_HF_CLIENT_MAX_PDU BT_HFP_MAX_MTU
 
 /* HFP AG Features */
