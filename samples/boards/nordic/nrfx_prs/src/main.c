@@ -29,7 +29,7 @@
 #define SPI_DEV_NODE DT_NODELABEL(spi1)
 
 static nrfx_spim_t spim = NRFX_SPIM_INSTANCE(NRF_SPIM2);
-static nrfx_uarte_t uarte = NRFX_UARTE_INSTANCE(2);
+static nrfx_uarte_t uarte = NRFX_UARTE_INSTANCE(NRF_UARTE2);
 static bool spim_initialized;
 static bool uarte_initialized;
 static volatile size_t received;
@@ -212,7 +212,6 @@ static void uarte_handler(const nrfx_uarte_event_t *p_event, void *p_context)
 static bool switch_to_uarte(void)
 {
 	int ret;
-	nrfx_err_t err;
 
 	PINCTRL_DT_DEFINE(UARTE_NODE);
 
@@ -243,9 +242,9 @@ static bool switch_to_uarte(void)
 		return ret;
 	}
 
-	err = nrfx_uarte_init(&uarte, &uarte_config, uarte_handler);
-	if (err != NRFX_SUCCESS) {
-		printk("nrfx_uarte_init() failed: 0x%08x\n", err);
+	ret = nrfx_uarte_init(&uarte, &uarte_config, uarte_handler);
+	if (err != 0) {
+		printk("nrfx_uarte_init() failed: %d\n", ret);
 		return false;
 	}
 
@@ -257,23 +256,23 @@ static bool switch_to_uarte(void)
 static bool uarte_transfer(const uint8_t *tx_data, size_t tx_data_len,
 			   uint8_t *rx_buf, size_t rx_buf_size)
 {
-	nrfx_err_t err;
+	int err;
 
 	err = nrfx_uarte_rx_buffer_set(&uarte, rx_buf, rx_buf_size);
-	if (err != NRFX_SUCCESS) {
-		printk("nrfx_uarte_rx_buffer_set() failed: 0x%08x\n", err);
+	if (err != 0) {
+		printk("nrfx_uarte_rx_buffer_set() failed: %d\n", err);
 		return false;
 	}
 
 	err = nrfx_uarte_rx_enable(&uarte, NRFX_UARTE_RX_ENABLE_STOP_ON_END);
-	if (err != NRFX_SUCCESS) {
-		printk("nrfx_uarte_rx_enable() failed: 0x%08x\n", err);
+	if (err != 0) {
+		printk("nrfx_uarte_rx_enable() failed: %d\n", err);
 		return false;
 	}
 
 	err = nrfx_uarte_tx(&uarte, tx_data, tx_data_len, 0);
-	if (err != NRFX_SUCCESS) {
-		printk("nrfx_uarte_tx() failed: 0x%08x\n", err);
+	if (err != 0) {
+		printk("nrfx_uarte_tx() failed: %d\n", err);
 		return false;
 	}
 
