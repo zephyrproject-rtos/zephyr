@@ -10,6 +10,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/dt-bindings/adc/ad4130-adc.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 
@@ -113,6 +114,7 @@ LOG_MODULE_REGISTER(adc_ad4130, CONFIG_ADC_LOG_LEVEL);
  */
 
 #define AD4130_8_ID 0x04 /* AD4130-8 Device ID */
+#define AD4130_ID_MODEL_MASK 0x03 /* Mask for the model bits in Device ID register */
 
 static const unsigned int ad4130_reg_size[] = {
 	[AD4130_STATUS_REG] = 1,
@@ -123,39 +125,6 @@ static const unsigned int ad4130_reg_size[] = {
 	[AD4130_CHANNEL_X_REG(0)... AD4130_CHANNEL_X_REG(AD4130_MAX_CHANNELS - 1)] = 3,
 	[AD4130_CONFIG_X_REG(0)... AD4130_CONFIG_X_REG(AD4130_MAX_SETUPS - 1)] = 2,
 	[AD4130_FILTER_X_REG(0)... AD4130_FILTER_X_REG(AD4130_MAX_SETUPS - 1)] = 3,
-};
-
-enum ad4130_input {
-	AD4130_AIN0,
-	AD4130_AIN1,
-	AD4130_AIN2,
-	AD4130_AIN3,
-	AD4130_AIN4,
-	AD4130_AIN5,
-	AD4130_AIN6,
-	AD4130_AIN7,
-	AD4130_AIN8,
-	AD4130_AIN9,
-	AD4130_AIN10,
-	AD4130_AIN11,
-	AD4130_AIN12,
-	AD4130_AIN13,
-	AD4130_AIN14,
-	AD4130_AIN15,
-	AD4130_TEMP,
-	AD4130_AVSS,
-	AD4130_INT_REF,
-	AD4130_DGND,
-	AD4130_AVDD_AVSS_6P,
-	AD4130_AVDD_AVSS_6M,
-	AD4130_IOVDD_DGND_6P,
-	AD4130_IOVDD_DGND_6M,
-	AD4130_ALDO_AVSS_6P,
-	AD4130_ALDO_AVSS_6M,
-	AD4130_DLDO_DGND_6P,
-	AD4130_DLDO_DGND_6M,
-	AD4130_V_MV_P,
-	AD4130_V_MV_M,
 };
 
 enum ad4130_int_ref {
@@ -532,10 +501,10 @@ static int adc_ad4130_channel_en(const struct device *dev, uint8_t channel_id, b
 }
 
 static int adc_ad4130_connect_analog_input(const struct device *dev, uint8_t channel_id,
-					   enum ad4130_input ainp, enum ad4130_input ainm)
+					   uint8_t ainp, uint8_t ainm)
 {
-	if (ainp < AD4130_AIN0 || ainp > AD4130_V_MV_M || ainm < AD4130_AIN0 ||
-	    ainm > AD4130_V_MV_M) {
+	if (ainp < AD4130_ADC_AIN0 || ainp > AD4130_ADC_V_MV_M || ainm < AD4130_ADC_AIN0 ||
+	    ainm > AD4130_ADC_V_MV_M) {
 		return -EINVAL;
 	}
 
@@ -690,7 +659,7 @@ static int adc_ad4130_check_chip_id(const struct device *dev)
 		return ret;
 	}
 
-	return reg_data == AD4130_8_ID ? 0 : -EINVAL;
+	return (reg_data & (~AD4130_ID_MODEL_MASK)) == AD4130_8_ID ? 0 : -EINVAL;
 }
 
 static int adc_ad4130_set_polarity(const struct device *dev, bool enable)
