@@ -40,7 +40,6 @@
 				<NRF_PSEL(EXMIF_DQ7, 6, 4)>;
 		};
 	};
-
 };
 
 &gpio6 {
@@ -61,4 +60,5 @@
 	mspi-io-mode = "MSPI_IO_MODE_SINGLE";
 	use-4byte-addressing;
 	initial-soft-reset;
+	transfer-timeout = <500>;
 };
