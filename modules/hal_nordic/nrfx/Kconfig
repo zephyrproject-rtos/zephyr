@@ -278,22 +278,7 @@ config NRFX_NVMC
 	depends on $(dt_nodelabel_exists,flash_controller)
 
 config NRFX_PDM
-	bool
-
-config NRFX_PDM0
-	bool "PDM0 driver instance"
-	depends on $(dt_nodelabel_exists,pdm0)
-	select NRFX_PDM
-
-config NRFX_PDM20
-	bool "PDM20 driver instance"
-	depends on $(dt_nodelabel_exists,pdm20)
-	select NRFX_PDM
-
-config NRFX_PDM21
-	bool "PDM21 driver instance"
-	depends on $(dt_nodelabel_exists,pdm21)
-	select NRFX_PDM
+	bool "PDM driver"
 
 config NRFX_POWER
 	bool "POWER driver"
