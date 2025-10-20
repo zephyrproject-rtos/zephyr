@@ -658,10 +658,46 @@ static int dmic_mcux_read(const struct device *dev,
 	return 0;
 }
 
+static int dmic_mcux_get_caps(const struct device *dev, struct audio_caps *caps)
+{
+	struct mcux_dmic_drv_data *drv_data = dev->data;
+	uint8_t num_enabled = 0U;
+
+	/*
+	 * dmic_mcux_init_channel() rejects hardware channels that are not
+	 * enabled in devicetree, so report only the enabled ones.
+	 */
+	for (uint8_t chan = 0U; chan < FSL_FEATURE_DMIC_CHANNEL_NUM; chan++) {
+		if (drv_data->pdm_channels[chan] != NULL) {
+			num_enabled++;
+		}
+	}
+
+	memset(caps, 0, sizeof(struct audio_caps));
+
+	caps->min_total_channels = MIN(1U, num_enabled);
+	caps->max_total_channels = num_enabled;
+	/*
+	 * These sample rates are static approximations. The actual achievable
+	 * rates depend on the PDM bit clock configured at runtime in
+	 * dmic_mcux_configure().
+	 */
+	caps->supported_sample_rates = AUDIO_SAMPLE_RATE_16000 | AUDIO_SAMPLE_RATE_48000;
+	/* Currently, driver supports only 16-bit samples */
+	caps->supported_bit_widths = AUDIO_BIT_WIDTH_16;
+	caps->min_num_buffers = CONFIG_DMIC_MCUX_DMA_BUFFERS;
+	caps->min_frame_interval = 1000;   /* 1ms minimum */
+	caps->max_frame_interval = 100000; /* 100ms maximum */
+	caps->interleaved = true;
+
+	return 0;
+}
+
 static DEVICE_API(dmic, dmic_ops) = {
 	.configure = dmic_mcux_configure,
 	.trigger = dmic_mcux_trigger,
 	.read = dmic_mcux_read,
+	.get_caps = dmic_mcux_get_caps,
 };
 
 /* Converts integer gainshift into 5 bit 2's complement value for GAINSHIFT reg */
