@@ -6,7 +6,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/arch/arm/cortex_m/arm_mpu_mem_cfg.h>
+#include <zephyr/arch/arm/mpu/arm_mpu_mem_cfg.h>
 
 extern const uint32_t __rom_region_start;
 extern const uint32_t __rom_region_mpu_size_bits;
