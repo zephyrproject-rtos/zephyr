@@ -1066,6 +1066,32 @@ static int i2s_mcux_write(const struct device *dev, void *mem_block, size_t size
 	return ret;
 }
 
+static int i2s_mcux_get_caps(const struct device *dev, struct audio_caps *caps, enum i2s_dir dir)
+{
+	ARG_UNUSED(dev);
+	/*
+	 * TX and RX share the same SAI capabilities on this controller, so the
+	 * reported caps are identical regardless of direction.
+	 */
+	ARG_UNUSED(dir);
+
+	memset(caps, 0, sizeof(struct audio_caps));
+
+	caps->min_total_channels = 1; /* Mono minimum */
+	caps->max_total_channels = 8; /* Up to 4 stereo pairs in TDM mode */
+	caps->supported_sample_rates =
+		AUDIO_SAMPLE_RATE_8000 | AUDIO_SAMPLE_RATE_11025 | AUDIO_SAMPLE_RATE_12000 |
+		AUDIO_SAMPLE_RATE_16000 | AUDIO_SAMPLE_RATE_22050 | AUDIO_SAMPLE_RATE_24000 |
+		AUDIO_SAMPLE_RATE_32000 | AUDIO_SAMPLE_RATE_44100 | AUDIO_SAMPLE_RATE_48000;
+	caps->supported_bit_widths = AUDIO_BIT_WIDTH_16 | AUDIO_BIT_WIDTH_24 | AUDIO_BIT_WIDTH_32;
+	caps->min_num_buffers = 1;
+	caps->min_frame_interval = 1000;   /* 1ms minimum */
+	caps->max_frame_interval = 100000; /* 100ms maximum */
+	caps->interleaved = true;
+
+	return 0;
+}
+
 static void sai_driver_irq(const struct device *dev)
 {
 	I2S_Type *base = get_base(dev);
@@ -1243,6 +1269,7 @@ static DEVICE_API(i2s, i2s_mcux_driver_api) = {
 	.write = i2s_mcux_write,
 	.config_get = i2s_mcux_config_get,
 	.trigger = i2s_mcux_trigger,
+	.get_caps = i2s_mcux_get_caps,
 };
 
 #define I2S_MCUX_PINMUX_INIT(i2s_id)                                                               \
