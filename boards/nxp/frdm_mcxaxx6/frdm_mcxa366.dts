@@ -40,7 +40,6 @@
 	};
 };
 
-
 /* OPAMP configuration */
 &opamp0 {
 	pinctrl-0 = <&pinmux_opamp0>;
@@ -49,5 +48,9 @@
 };
 
 &opamp1 {
+	status = "okay";
+};
+
+&flexio0 {
 	status = "okay";
 };
