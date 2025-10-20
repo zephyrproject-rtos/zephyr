@@ -1,0 +1,67 @@
+/*
+ * Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2026 Muhammed Asif
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <espressif/esp32h2/esp32h2_mini_h4.dtsi>
+#include "glyph_h2-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <espressif/partitions_0x0_default.dtsi>
+
+/ {
+	model = "PCB Cupid Glyph-H2";
+	compatible = "pcbcupid,glyph_h2";
+
+	chosen {
+		zephyr,sram = &sramhp;
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	aliases {
+		sw0 = &user_button1;
+		watchdog0 = &wdt0;
+		led0 = &red_led;
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		red_led: led_0 {
+			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+			label = "User LED0";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button1: button_1 {
+			label = "User SW1";
+			gpios = <&gpio0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&uart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&usb_serial {
+	current-speed = <115200>;
+	status = "okay";
+};
