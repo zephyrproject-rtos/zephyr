@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nordic_nrf_pdm
+
 #include <zephyr/audio/dmic.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -39,7 +41,7 @@ BUILD_ASSERT((AUXPLL_FREQUENCY_SETTING == NRF_AUXPLL_FREQ_DIV_AUDIO_48K) ||
 #endif
 
 struct dmic_nrfx_pdm_drv_data {
-	const nrfx_pdm_t *pdm;
+	nrfx_pdm_t pdm;
 #if CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL || DT_NODE_HAS_STATUS_OKAY(NODE_AUDIO_AUXPLL)
 	const struct device *audiopll_dev;
 #elif CONFIG_CLOCK_CONTROL_NRF
@@ -77,7 +79,7 @@ static void free_buffer(struct dmic_nrfx_pdm_drv_data *drv_data, void *buffer)
 static void stop_pdm(struct dmic_nrfx_pdm_drv_data *drv_data)
 {
 	drv_data->stopping = true;
-	nrfx_pdm_stop(drv_data->pdm);
+	nrfx_pdm_stop(&drv_data->pdm);
 }
 
 static int request_clock(struct dmic_nrfx_pdm_drv_data *drv_data)
@@ -118,7 +120,7 @@ static void event_handler(const struct device *dev, const nrfx_pdm_evt_t *evt)
 
 	if (evt->buffer_requested) {
 		void *buffer;
-		nrfx_err_t err;
+		int err;
 
 		ret = k_mem_slab_alloc(drv_data->mem_slab, &mem_slab_buffer, K_NO_WAIT);
 		if (ret < 0) {
@@ -140,9 +142,9 @@ static void event_handler(const struct device *dev, const nrfx_pdm_evt_t *evt)
 				stop_pdm(drv_data);
 				return;
 			}
-			err = nrfx_pdm_buffer_set(drv_data->pdm, buffer, drv_data->block_size / 2);
-			if (err != NRFX_SUCCESS) {
-				LOG_ERR("Failed to set buffer: 0x%08x", err);
+			err = nrfx_pdm_buffer_set(&drv_data->pdm, buffer, drv_data->block_size / 2);
+			if (err != 0) {
+				LOG_ERR("Failed to set buffer: %d", err);
 				stop = true;
 			}
 		}
@@ -213,7 +215,7 @@ static int dmic_nrfx_pdm_configure(const struct device *dev,
 	struct pcm_stream_cfg *stream = &config->streams[0];
 	uint32_t def_map, alt_map;
 	nrfx_pdm_config_t nrfx_cfg;
-	nrfx_err_t err;
+	int err;
 
 	if (drv_data->active) {
 		LOG_ERR("Cannot configure device while it is active");
@@ -259,7 +261,7 @@ static int dmic_nrfx_pdm_configure(const struct device *dev,
 	/* If either rate or width is 0, the stream is to be disabled. */
 	if (stream->pcm_rate == 0 || stream->pcm_width == 0) {
 		if (drv_data->configured) {
-			nrfx_pdm_uninit(drv_data->pdm);
+			nrfx_pdm_uninit(&drv_data->pdm);
 			drv_data->configured = false;
 		}
 
@@ -296,19 +298,19 @@ static int dmic_nrfx_pdm_configure(const struct device *dev,
 		.output_freq_max = config->io.max_pdm_clk_freq
 	};
 
-	if (nrfx_pdm_prescalers_calc(&output_config, &nrfx_cfg.prescalers) != NRFX_SUCCESS) {
+	if (nrfx_pdm_prescalers_calc(&output_config, &nrfx_cfg.prescalers) != 0) {
 		LOG_ERR("Cannot find suitable PDM clock configuration.");
 		return -EINVAL;
 	}
 
 	if (drv_data->configured) {
-		nrfx_pdm_uninit(drv_data->pdm);
+		nrfx_pdm_uninit(&drv_data->pdm);
 		drv_data->configured = false;
 	}
 
-	err = nrfx_pdm_init(drv_data->pdm, &nrfx_cfg, drv_cfg->event_handler);
-	if (err != NRFX_SUCCESS) {
-		LOG_ERR("Failed to initialize PDM: 0x%08x", err);
+	err = nrfx_pdm_init(&drv_data->pdm, &nrfx_cfg, drv_cfg->event_handler);
+	if (err != 0) {
+		LOG_ERR("Failed to initialize PDM: %d", err);
 		return -EIO;
 	}
 
@@ -329,15 +331,15 @@ static int dmic_nrfx_pdm_configure(const struct device *dev,
 
 static int start_transfer(struct dmic_nrfx_pdm_drv_data *drv_data)
 {
-	nrfx_err_t err;
+	int err;
 	int ret;
 
-	err = nrfx_pdm_start(drv_data->pdm);
-	if (err == NRFX_SUCCESS) {
+	err = nrfx_pdm_start(&drv_data->pdm);
+	if (err == 0) {
 		return 0;
 	}
 
-	LOG_ERR("Failed to start PDM: 0x%08x", err);
+	LOG_ERR("Failed to start PDM: %d", err);
 	ret =  -EIO;
 
 	ret = release_clock(drv_data);
@@ -414,7 +416,7 @@ static int dmic_nrfx_pdm_trigger(const struct device *dev,
 	case DMIC_TRIGGER_STOP:
 		if (drv_data->active) {
 			drv_data->stopping = true;
-			nrfx_pdm_stop(drv_data->pdm);
+			nrfx_pdm_stop(&drv_data->pdm);
 		}
 		break;
 
@@ -497,80 +499,60 @@ static const struct _dmic_ops dmic_ops = {
 	.read = dmic_nrfx_pdm_read,
 };
 
-#define PDM(idx) DT_NODELABEL(pdm##idx)
-#define PDM_CLK_SRC(idx) DT_STRING_TOKEN(PDM(idx), clock_source)
+#define PDM_CLK_SRC(inst) DT_STRING_TOKEN(DT_DRV_INST(inst), clock_source)
 
-#define PDM_NRFX_DEVICE(idx)						     \
-	static void *rx_msgs##idx[DT_PROP(PDM(idx), queue_size)];	     \
-	static void *mem_slab_msgs##idx[DT_PROP(PDM(idx), queue_size)];	     \
-	static struct dmic_nrfx_pdm_drv_data dmic_nrfx_pdm_data##idx;	     \
-	static const nrfx_pdm_t dmic_nrfx_pdm##idx = NRFX_PDM_INSTANCE(idx); \
-	static int pdm_nrfx_init##idx(const struct device *dev)		     \
-	{								     \
-		IRQ_CONNECT(DT_IRQN(PDM(idx)), DT_IRQ(PDM(idx), priority),   \
-			    nrfx_isr, nrfx_pdm_##idx##_irq_handler, 0);      \
-		const struct dmic_nrfx_pdm_drv_cfg *drv_cfg = dev->config;   \
-		int err = pinctrl_apply_state(drv_cfg->pcfg,		     \
-					      PINCTRL_STATE_DEFAULT);	     \
-		if (err < 0) {						     \
-			return err;					     \
-		}							     \
-		dmic_nrfx_pdm_data##idx.pdm = &dmic_nrfx_pdm##idx;	     \
-		k_msgq_init(&dmic_nrfx_pdm_data##idx.rx_queue,		     \
-			    (char *)rx_msgs##idx, sizeof(void *),	     \
-			    ARRAY_SIZE(rx_msgs##idx));			     \
-		k_msgq_init(&dmic_nrfx_pdm_data##idx.mem_slab_queue,	     \
-			    (char *)mem_slab_msgs##idx, sizeof(void *),	     \
-			    ARRAY_SIZE(mem_slab_msgs##idx));		     \
-		init_clock_manager(dev);				     \
-		return 0;						     \
-	}								     \
-	static void event_handler##idx(const nrfx_pdm_evt_t *evt)	     \
-	{								     \
-		event_handler(DEVICE_DT_GET(PDM(idx)), evt);		     \
-	}								     \
-	PINCTRL_DT_DEFINE(PDM(idx));					     \
-	static const struct dmic_nrfx_pdm_drv_cfg dmic_nrfx_pdm_cfg##idx = { \
-		.event_handler = event_handler##idx,			     \
-		.nrfx_def_cfg =	NRFX_PDM_DEFAULT_CONFIG(0, 0),		     \
-		.nrfx_def_cfg.skip_gpio_cfg = true,			     \
-		.nrfx_def_cfg.skip_psel_cfg = true,			     \
-		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(PDM(idx)),		     \
-		.clk_src = PDM_CLK_SRC(idx),				     \
-		.mem_reg = DMM_DEV_TO_REG(PDM(idx)),			     \
-	};								     \
-	NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(PDM(idx));	     \
-	BUILD_ASSERT(PDM_CLK_SRC(idx) != ACLK ||			     \
-		     NRF_PDM_HAS_SELECTABLE_CLOCK,			     \
-		"Clock source ACLK is not available.");			     \
-	BUILD_ASSERT(PDM_CLK_SRC(idx) != ACLK ||			     \
-		     DT_NODE_HAS_PROP(DT_NODELABEL(clock),		     \
-				      hfclkaudio_frequency) ||		     \
-		     DT_NODE_HAS_PROP(DT_NODELABEL(aclk),		     \
-				      clock_frequency) ||		     \
-		     DT_NODE_HAS_PROP(NODE_AUDIOPLL,			     \
-				      frequency) ||			     \
-		     DT_NODE_HAS_PROP(NODE_AUDIO_AUXPLL,		     \
-				      nordic_frequency),		     \
-		"Clock source ACLK requires one following defined frequency "\
-		"properties: "						     \
-		"hfclkaudio-frequency in the nordic,nrf-clock node, "	     \
-		"clock-frequency in the aclk node, "			     \
-		"frequency in the audiopll node, "			     \
-		"nordic-frequency in the audio_auxpll node");		     \
-	DEVICE_DT_DEFINE(PDM(idx), pdm_nrfx_init##idx, NULL,		     \
-			 &dmic_nrfx_pdm_data##idx, &dmic_nrfx_pdm_cfg##idx,  \
-			 POST_KERNEL, CONFIG_AUDIO_DMIC_INIT_PRIORITY,	     \
-			 &dmic_ops);
+#define PDM_NRFX_DEVICE(inst)                                                                      \
+	static void *rx_msgs##inst[DT_INST_PROP(inst, queue_size)];                                \
+	static void *mem_slab_msgs##inst[DT_INST_PROP(inst, queue_size)];                          \
+	static struct dmic_nrfx_pdm_drv_data dmic_nrfx_pdm_data##inst = {                          \
+		.pdm = NRFX_PDM_INSTANCE(DT_INST_REG_ADDR(inst)),                                  \
+	};                                                                                         \
+	static int pdm_nrfx_init##inst(const struct device *dev)                                   \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), nrfx_pdm_irq_handler, \
+			    &dmic_nrfx_pdm_data##inst.pdm, 0);                                     \
+		const struct dmic_nrfx_pdm_drv_cfg *drv_cfg = dev->config;                         \
+		int err = pinctrl_apply_state(drv_cfg->pcfg, PINCTRL_STATE_DEFAULT);               \
+		if (err < 0) {                                                                     \
+			return err;                                                                \
+		}                                                                                  \
+		k_msgq_init(&dmic_nrfx_pdm_data##inst.rx_queue, (char *)rx_msgs##inst,             \
+			    sizeof(void *), ARRAY_SIZE(rx_msgs##inst));                            \
+		k_msgq_init(&dmic_nrfx_pdm_data##inst.mem_slab_queue, (char *)mem_slab_msgs##inst, \
+			    sizeof(void *), ARRAY_SIZE(mem_slab_msgs##inst));                      \
+		init_clock_manager(dev);                                                           \
+		return 0;                                                                          \
+	}                                                                                          \
+	static void event_handler##inst(const nrfx_pdm_evt_t *evt)                                 \
+	{                                                                                          \
+		event_handler(DEVICE_DT_INST_GET(inst), evt);                                      \
+	}                                                                                          \
+	PINCTRL_DT_INST_DEFINE(inst);                                                              \
+	static const struct dmic_nrfx_pdm_drv_cfg dmic_nrfx_pdm_cfg##inst = {                      \
+		.event_handler = event_handler##inst,                                              \
+		.nrfx_def_cfg = NRFX_PDM_DEFAULT_CONFIG(0, 0),                                     \
+		.nrfx_def_cfg.skip_gpio_cfg = true,                                                \
+		.nrfx_def_cfg.skip_psel_cfg = true,                                                \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
+		.clk_src = PDM_CLK_SRC(inst),                                                      \
+		.mem_reg = DMM_DEV_TO_REG(DT_DRV_INST(inst)),                                      \
+	};                                                                                         \
+	NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(DT_DRV_INST(inst));                          \
+	BUILD_ASSERT(PDM_CLK_SRC(inst) != ACLK || NRF_PDM_HAS_SELECTABLE_CLOCK,                    \
+		     "Clock source ACLK is not available.");                                       \
+	BUILD_ASSERT(PDM_CLK_SRC(inst) != ACLK ||                                                  \
+			     DT_NODE_HAS_PROP(DT_NODELABEL(clock), hfclkaudio_frequency) ||        \
+			     DT_NODE_HAS_PROP(DT_NODELABEL(aclk), clock_frequency) ||              \
+			     DT_NODE_HAS_PROP(NODE_AUDIOPLL, frequency) ||                         \
+			     DT_NODE_HAS_PROP(NODE_AUDIO_AUXPLL, nordic_frequency),                \
+		     "Clock source ACLK requires one following defined frequency "                 \
+		     "properties: "                                                                \
+		     "hfclkaudio-frequency in the nordic,nrf-clock node, "                         \
+		     "clock-frequency in the aclk node, "                                          \
+		     "frequency in the audiopll node, "                                            \
+		     "nordic-frequency in the audio_auxpll node");                                 \
+	DEVICE_DT_INST_DEFINE(inst, pdm_nrfx_init##inst, NULL, &dmic_nrfx_pdm_data##inst,          \
+			      &dmic_nrfx_pdm_cfg##inst, POST_KERNEL,                               \
+			      CONFIG_AUDIO_DMIC_INIT_PRIORITY, &dmic_ops);
 
-#ifdef CONFIG_HAS_HW_NRF_PDM0
-PDM_NRFX_DEVICE(0);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_PDM20
-PDM_NRFX_DEVICE(20);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_PDM21
-PDM_NRFX_DEVICE(21);
-#endif
+DT_INST_FOREACH_STATUS_OKAY(PDM_NRFX_DEVICE)
