@@ -3,7 +3,7 @@
 
 config SPI_SF32LB
 	bool "SPI Driver for SF32LB family of MCUs"
-	default y
+	default y if DMA
 	depends on DT_HAS_SIFLI_SF32LB_SPI_ENABLED
 	help
 	  Enable SPI driver for SF32LB MCUs
