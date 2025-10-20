@@ -382,4 +382,17 @@
 			status = "disabled";
 		};
 	};
+
+	peri1: peri1 {
+		/* Peripheral clock dividers Group 1 */
+		peri1_group2_8bit_0: peri1_group2_8bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,peri-div";
+			peri-group  = [01 02]; /* inst#, group# */
+			div-type = <DIV_8_BIT>;
+			channel  = <0>;
+			clock-div = <1>;
+			status = "disabled";
+		};
+	};
 };
