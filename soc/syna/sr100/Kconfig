@@ -1,0 +1,24 @@
+# Copyright (c) 2025 Synaptics, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SR100_B0
+	select ARM
+	select ARM_MPU
+	select CLOCK_CONTROL
+	select CPU_CORTEX_M55
+	select DYNAMIC_INTERRUPTS
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	select CPU_HAS_FPU
+	select UART_NS16550_ACCESS_WORD_ONLY if UART_NS16550
+	select SERIAL_SUPPORT_ASYNC
+	select HAS_CMSIS_CORE
+	select SOC_EARLY_INIT_HOOK
+	select RESET
+
+config SOC_PART_NUMBER
+	default "SR100_B0" if SOC_SR100_B0

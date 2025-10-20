@@ -1,0 +1,226 @@
+/*
+ * Copyright (c) 2025, Synaptics, Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+#include <freq.h>
+#include <arm/armv8.1-m.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/clock/syna_sr100_clock.h>
+#include <zephyr/dt-bindings/reset/syna_sr100_reset.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m55";
+			device_type = "cpu";
+			reg = <0>;
+			clock-frequency = <400000000>;
+		};
+
+		cpu1: cpu@1 {
+			compatible = "arm,cortex-m4";
+			device_type = "cpu";
+			reg = <1>;
+		};
+	};
+
+	sram0: memory@33ea3000 {
+		compatible = "mmio-sram";
+		reg = <0x33ea3000 DT_SIZE_K(128)>;
+	};
+
+	flash0: memory@10000000 {
+		compatible = "mmio-sram";
+		reg = <0x10000000 DT_SIZE_K(128)>;
+	};
+
+	soc {
+		gcr: clock-controller@50330700 { /* GLOBAL */
+			reg = <0x50330700 0x100>;
+			compatible = "syna,sr100-clock";
+			#clock-cells = <1>;
+			status = "okay";
+		};
+
+		reset: reset-controller@50330600 { /* GLOBAL */
+			reg = <0x50330600 0x100>;
+			compatible = "syna,sr100-reset";
+			#reset-cells = <1>;
+			status = "okay";
+		};
+
+		ns16550_uart0: uart@50317000 {
+			compatible = "ns16550";
+			reg = <0x50317000 0x1000>;
+			current-speed = <115200>;
+			interrupts = <57 0>;
+			reg-shift = <2>;
+			clocks = <&gcr SYNA_UART0_CLK>;
+			resets = <&reset SYNA_UART0_RST>;
+			status = "disabled";
+		};
+
+		ns16550_uart1: uart@50318000 {
+			compatible = "ns16550";
+			reg = <0x50318000 0x1000>;
+			current-speed = <115200>;
+			interrupts = <58 0>;
+			reg-shift = <2>;
+			clocks = <&gcr SYNA_UART1_CLK>;
+			resets = <&reset SYNA_UART1_RST>;
+			status = "disabled";
+		};
+
+		ns16550_lp_uart: uart@b5000000 {
+			compatible = "ns16550";
+			reg = <0xb5000000 0x1000>;
+			current-speed = <115200>;
+			clock-frequency = <DT_FREQ_M(100)>;
+			interrupts = <81 0>;
+			reg-shift = <2>;
+			status = "disabled";
+		};
+
+		i2c0: i2c@50312000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "snps,designware-i2c";
+			clocks = <&gcr SYNA_I2C0_MSTR_CLK>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			resets = <&reset SYNA_I2C0M_RST>;
+			reg = <0x50312000 0x1000>;
+			interrupts = <52 0>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@50313000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "snps,designware-i2c";
+			clocks = <&gcr SYNA_I2C1_MSTR_CLK>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			resets = <&reset SYNA_I2C1M_RST>;
+			reg = <0x50313000 0x1000>;
+			interrupts = <53 0>;
+			status = "disabled";
+		};
+
+		i2c2: i2c@50314000 { /* I2C slave */
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "snps,designware-i2c";
+			clocks = <&gcr SYNA_I2C_SLV_CLK>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			resets = <&reset SYNA_I2CS_RST>;
+			reg = <0x50314000 0x1000>;
+			interrupts = <54 0>;
+			status = "disabled";
+		};
+
+		aon_event_gpio: gpio@50350060 {
+			compatible = "syna,aon-event-gpio";
+			reg = <0x50350060 0x4>;
+			pinctrl-0 = <>;
+			pinctrl-names = "default";
+			status = "disabled";
+
+			gpo0: gpo0 {
+				event = <0>;
+				pulse-width = <0>;
+				polarity = <GPIO_ACTIVE_LOW>;
+			};
+
+			gpo1: gpo1 {
+				event = <0>;
+				pulse-width = <0>;
+				polarity = <GPIO_ACTIVE_LOW>;
+			};
+
+			gpo2: gpo2 {
+				event = <0>;
+				pulse-width = <0>;
+				polarity = <GPIO_ACTIVE_LOW>;
+			};
+		};
+
+		gpioa: gpio@50306000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "snps,designware-gpio";
+			reg = <0x50306000 0x80>;
+			interrupts = <50 2>;
+			ngpios = <32>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpiob: gpio@50307000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "snps,designware-gpio";
+			reg = <0x50307000 0x80>;
+			interrupts = <51 2>;
+			ngpios = <32>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		spi0: spi@50315000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "snps,designware-spi";
+			clocks = <&gcr SYNA_SPI_MSTR_CLK>;
+			reg = <0x50315000 0x88>;
+			interrupts = <55 3>;
+			fifo-depth = <8>;
+			max-xfer-size = <32>;
+			clock-frequency = <DT_FREQ_M(100)>;
+			status = "disabled";
+		};
+
+		spi1: spi@50316000 { /* slave */
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "snps,designware-spi";
+			clocks = <&gcr SYNA_SPI_SLV_CLK>;
+			reg = <0x50316000 0x88>;
+			interrupts = <56 3>;
+			fifo-depth = <8>;
+			max-xfer-size = <32>;
+			clock-frequency = <DT_FREQ_M(200)>;
+			status = "disabled";
+		};
+
+		usb0: usb@50100000 {
+			compatible = "snps,dwc2";
+			reg = <0x50100000 0xffff>;
+			interrupts = <48 0>;
+			num-out-eps = <8>;
+			num-in-eps = <8>;
+			clocks = <&gcr SYNA_USB_CLK>;
+			ghwcfg1 = <0x00000000>;
+			ghwcfg2 = <0x02882054>; // 8 endpoints, dynamic sizing
+			ghwcfg4 = <0xe2003e20>; // 9 in endpoints, desc-DMA
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
+
+&systick {
+	status = "okay";
+};
