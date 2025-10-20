@@ -2464,6 +2464,13 @@ struct bt_conn_pairing_feat {
 };
 #endif /* CONFIG_BT_SMP_APP_PAIRING_ACCEPT */
 
+/**
+ * Special passkey value that can be used to generate a random passkey when using the
+ * app_passkey callback from @ref bt_conn_auth_cb.
+ *
+ */
+#define BT_PASSKEY_RAND 0xffffffff
+
 /** Authenticated pairing callback structure */
 struct bt_conn_auth_cb {
 #if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
@@ -2663,6 +2670,30 @@ struct bt_conn_auth_cb {
 	 */
 	void (*pincode_entry)(struct bt_conn *conn, bool highsec);
 #endif
+
+#if defined(CONFIG_BT_APP_PASSKEY)
+	/** @brief Allow the application to provide a passkey for pairing.
+	 *
+	 *  If implemented, this callback allows the application to provide passkeys for pairing.
+	 *  The valid range of passkeys is 0 - 999999. The application shall return the passkey for
+	 *  pairing, or BT_PASSKEY_RAND to generate a random passkey. This callback is invoked only
+	 *  for the Passkey Entry method as defined in Core Specification Vol. 3, Part H. Which
+	 *  device in the pairing is showing the passkey depends on the IO capabilities of the
+	 *  device; see Table 2.8 of the Bluetooth Core Specification V6.0, Vol. 3, Part H for more
+	 *  details. For the purposes of this table, the device gains the "display" capability when
+	 *  this callback is non-NULL. This is irrespective of whether the callback returns a
+	 *  specified key or BT_PASSKEY_RAND.
+	 *
+	 *
+	 *  @note When using this callback, it is the responsibility of the application to use
+	 *        random and unique keys.
+	 *
+	 *  @param conn Connection where pairing is currently active.
+	 *  @return Passkey for pairing, or BT_PASSKEY_RAND for the Host to generate a random
+	 *          passkey.
+	 */
+	uint32_t (*app_passkey)(struct bt_conn *conn);
+#endif /* CONFIG_BT_APP_PASSKEY */
 };
 
 /** Authenticated pairing information callback structure */
