@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/devicetree.h>
-#include <zephyr/arch/arm/cortex_m/arm_mpu_mem_cfg.h>
+#include <zephyr/arch/arm/mpu/arm_mpu_mem_cfg.h>
 
 #define BOOTSTRAP_SAHB_RAM_BASE_ADDRESS DT_REG_ADDR(DT_NODELABEL(sram_bootstrap_sahb))
 #define BOOTSTRAP_CBUS_RAM_BASE_ADDRESS DT_REG_ADDR(DT_NODELABEL(sram_bootstrap_cbus))
