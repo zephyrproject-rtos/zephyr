@@ -26,6 +26,7 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,crc = &crc;
 		zephyr,entropy = &trng;
+		zephyr,bt-hci = &mailbox;
 	};
 
 	buttons {
@@ -161,5 +162,9 @@ temp_sensor: &tsen {
 };
 
 &trng {
+	status = "okay";
+};
+
+&mailbox {
 	status = "okay";
 };
