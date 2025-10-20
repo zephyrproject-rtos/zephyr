@@ -1,0 +1,42 @@
+extends: substitution
+message: "Prefer '%s' over '%s'."
+# term preference should be based on microsoft style guide, such as
+link: https://learn.microsoft.com/en-us/style-guide/a-z-word-list-term-collections/a/adapter
+level: warning
+ignorecase: true
+action:
+  name: replace
+swap:
+  "(?:agent|virtual assistant|intelligent personal assistant)": personal digital assistant
+  "(?:assembler|machine language)": assembly language
+  "(?:drive C:|drive C>|C: drive)": drive C
+  "(?:internet bot|web robot)s?": bot(s)
+  "(?:microsoft cloud|the cloud)": cloud
+  "(?:mobile|smart) ?phone": phone
+  "24/7": every day
+  "audio(?:-| )book": audiobook
+  "back(?:-| )light": backlight
+  "chat ?bots?": chatbot(s)
+  adaptor: adapter
+  administrate: administer
+  afterwards: afterward
+  alphabetic: alphabetical
+  alphanumerical: alphanumeric
+  an URL: a URL
+  anti-aliasing: antialiasing
+  anti-malware: antimalware
+  anti-spyware: antispyware
+  anti-virus: antivirus
+  appendixes: appendices
+  artificial intelligence: AI
+  caap: CaaP
+  conversation-as-a-platform: conversation as a platform
+  eb: EB
+  gb: GB
+  gbps: Gbps
+  kb: KB
+  keypress: keystroke
+  mb: MB
+  pb: PB
+  tb: TB
+  zb: ZB

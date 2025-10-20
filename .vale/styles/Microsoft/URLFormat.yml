@@ -1,0 +1,9 @@
+extends: substitution
+message: Use 'of' (not 'for') to describe the relationship of the word URL to a resource.
+ignorecase: true
+link: https://learn.microsoft.com/en-us/style-guide/a-z-word-list-term-collections/u/url
+level: suggestion
+action:
+  name: replace
+swap:
+  URL for: URL of

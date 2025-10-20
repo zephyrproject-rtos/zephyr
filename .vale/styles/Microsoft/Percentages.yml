@@ -1,0 +1,7 @@
+extends: existence
+message: "Use a numeral plus the units."
+link: https://docs.microsoft.com/en-us/style-guide/numbers
+nonword: true
+level: error
+tokens:
+  - '\b[a-zA-z]+\spercent\b'

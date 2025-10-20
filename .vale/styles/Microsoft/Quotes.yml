@@ -1,0 +1,7 @@
+extends: existence
+message: 'Punctuation should be inside the quotes.'
+link: https://docs.microsoft.com/en-us/style-guide/punctuation/quotation-marks
+level: error
+nonword: true
+tokens:
+  - '["“][^"”“]+["”][.,]'

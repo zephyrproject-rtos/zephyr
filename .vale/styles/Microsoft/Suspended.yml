@@ -1,0 +1,7 @@
+extends: existence
+message: "Don't use '%s' unless space is limited."
+link: https://docs.microsoft.com/en-us/style-guide/punctuation/dashes-hyphens/hyphens
+ignorecase: true
+level: warning
+tokens:
+  - '\w+- and \w+-'
