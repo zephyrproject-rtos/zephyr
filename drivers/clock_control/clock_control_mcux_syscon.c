@@ -189,6 +189,14 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	CLOCK_EnableClock(kCLOCK_Micfil);
 #endif
 
+#ifdef CONFIG_SOC_FAMILY_MCXA
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio0))
+	if ((uint32_t)sub_system == MCUX_FLEXIO0_CLK) {
+		CLOCK_EnableClock(kCLOCK_GateFLEXIO0);
+	}
+#endif
+#endif
+
 	return 0;
 }
 
