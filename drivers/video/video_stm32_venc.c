@@ -326,7 +326,7 @@ i32 EWLWaitHwRdy(const void *instance, uint32_t *slicesReady)
 {
 	struct stm32_venc_ewl *inst = (struct stm32_venc_ewl *)instance;
 	const struct stm32_venc_config *config = inst->config;
-	uint32_t ret = EWL_HW_WAIT_TIMEOUT;
+	int32_t ret = EWL_HW_WAIT_TIMEOUT;
 	volatile uint32_t irq_stats;
 	uint32_t prevSlicesReady = 0;
 	k_timepoint_t timeout = sys_timepoint_calc(K_MSEC(EWL_TIMEOUT));
@@ -380,13 +380,18 @@ i32 EWLWaitHwRdy(const void *instance, uint32_t *slicesReady)
 
 	} while (!sys_timepoint_expired(timeout));
 
+	if (ret != EWL_OK) {
+		LOG_ERR("Timeout");
+		return ret;
+	}
+
 	LOG_DBG("encoding = %d ms", k_ticks_to_ms_ceil32(sys_clock_tick_get_32() - start));
 
 	if (slicesReady != NULL) {
 		LOG_DBG("slicesReady = %d", *slicesReady);
 	}
 
-	return ret;
+	return EWL_OK;
 }
 
 void EWLassert(bool expr, const char *str_expr, const char *file, unsigned int line)
