@@ -6065,20 +6065,6 @@ West:
   labels:
     - "area: Debugging"
 
-"West project: sof":
-  status: maintained
-  maintainers:
-    - kv2019i
-  collaborators:
-    - andyross
-    - nashif
-    - lyakh
-    - lgirdwood
-  files:
-    - modules/Kconfig.sof
-  labels:
-    - "area: Audio"
-
 "West project: tf-m-tests":
   status: maintained
   maintainers:
