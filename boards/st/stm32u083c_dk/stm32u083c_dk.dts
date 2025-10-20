@@ -175,3 +175,19 @@ stm32_lp_tick_source: &lptim2 {
 		};
 	};
 };
+
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&clk_hsi48 {
+	crs-usb-sof;
+	status = "okay";
+};
+
+&clk48 {
+	clocks = <&rcc STM32_SRC_HSI48 CLK48_SEL(3)>;
+	status = "okay";
+};

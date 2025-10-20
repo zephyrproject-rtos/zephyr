@@ -9,7 +9,7 @@ config SOC_FLASH_SILABS_SIWX91X
 	select FLASH_HAS_EXPLICIT_ERASE
 	select FLASH_HAS_PAGE_LAYOUT
 	# Flash controller is handled by the network coprocessor
-	select WISECONNECT_NETWORK_STACK
+	select SILABS_SIWX91X_NWP
 	help
 	  Enable flash controller for flash embedded on Silicon Labs SiWx91x
 	  chips.

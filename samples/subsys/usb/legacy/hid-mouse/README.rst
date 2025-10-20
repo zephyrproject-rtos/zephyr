@@ -14,8 +14,6 @@ the number of buttons on the board) a right mouse button, X-axis movement,
 and Y-axis movement.
 If the USB peripheral driver supports remote wakeup feature, wakeup request
 will be performed on every button click if the bus is in suspended state.
-This sample can be found under :zephyr_file:`samples/subsys/usb/legacy/hid-mouse` in the
-Zephyr project tree.
 
 .. note::
    This samples demonstrate deprecated :ref:`usb_device_stack`.

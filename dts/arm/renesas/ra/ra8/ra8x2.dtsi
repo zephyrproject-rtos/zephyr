@@ -736,6 +736,36 @@
 			};
 		};
 
+		lvd1: lvd@4001e0e0 {
+			compatible = "renesas,ra-lvd";
+			reg = <0x4001e0e0 0x02>;
+			channel = <1>;
+			status = "disabled";
+		};
+
+		lvd2: lvd@4001e0e2 {
+			compatible = "renesas,ra-lvd";
+			reg = <0x4001e0e2 0x02>;
+			channel = <2>;
+			status = "disabled";
+		};
+
+		lvd4: lvd@4001ea64 {
+			compatible = "renesas,ra-lvd";
+			reg = <0x4001ea64 0x02>;
+			channel = <4>;
+			reset-only;
+			status = "disabled";
+		};
+
+		lvd5: lvd@4001ea68 {
+			compatible = "renesas,ra-lvd";
+			reg = <0x4001ea68 0x02>;
+			channel = <5>;
+			reset-only;
+			status = "disabled";
+		};
+
 		port_irq0: external-interrupt@40006000 {
 			compatible = "renesas,ra-external-interrupt";
 			reg = <0x40006000 0x1>;

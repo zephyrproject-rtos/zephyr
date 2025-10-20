@@ -18,8 +18,6 @@ This application receives the data and echoes back to the WebUSB
 based web application (web page) running in the browser at host.
 This application is intended for testing purposes only. For running
 real usecase, implement applications based on the WebUSB API.
-This sample can be found under :zephyr_file:`samples/subsys/usb/legacy/webusb` in the
-Zephyr project tree.
 
 .. note::
    This samples demonstrate deprecated :ref:`usb_device_stack`.

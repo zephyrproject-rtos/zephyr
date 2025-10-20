@@ -76,6 +76,11 @@
 	nwp: nwp {
 		compatible = "silabs,siwx91x-nwp";
 		power-profile = "high-performance";
+		stack-size = <10240>;
+		interrupt-parent = <&nvic>;
+		interrupts = <30 0>, <74 0>;
+		interrupt-names = "nwp_stack", "nwp_irq";
+		status = "okay";
 
 		bt_hci0: bt_hci {
 			compatible = "silabs,siwx91x-bt-hci";

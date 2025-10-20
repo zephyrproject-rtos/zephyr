@@ -162,6 +162,7 @@ and a ST morpho connector. Board is configured as follows:
 - I2C : PB8, PB9
 - SPI1 NSS/SCK/MISO/MOSI : PD14PA5/PA6/PB5 (Arduino SPI)
 - FDCAN1 RX/TX : PD0, PD1
+- ETH : A2, A7, B6, G4, G5, G6, G11, G12, G13
 
 System Clock
 ------------
@@ -183,7 +184,7 @@ In order to test backup SRAM you may want to disconnect VBAT from VDD. You can
 do it by removing ``SB13`` jumper on the back side of the board.
 
 FDCAN
-=====
+-----
 
 The Nucleo H7S3L8 board does not have any onboard CAN transceiver. In order to
 use the FDCAN bus on this board, an external CAN bus transceiver must be

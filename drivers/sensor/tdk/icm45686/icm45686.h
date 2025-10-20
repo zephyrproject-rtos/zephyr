@@ -160,6 +160,7 @@ struct icm45686_config {
 			uint8_t lpf : 3;
 		} gyro;
 		uint16_t fifo_watermark;
+		bool fifo_watermark_equals : 1;
 	} settings;
 	struct gpio_dt_spec int_gpio;
 };

@@ -1314,6 +1314,15 @@
 			resets = <&rctl STM32_RESET(APB5, 5)>;
 			status = "disabled";
 		};
+
+		jpeg: codec@58023000 {
+			compatible = "st,stm32-jpeg";
+			reg = <0x58023000 0x1000>;
+			interrupts = <61 0>;
+			clocks = <&rcc STM32_CLOCK(AHB5, 3)>;
+			resets = <&rctl STM32_RESET(AHB5, 3)>;
+			status = "disabled";
+		};
 	};
 };
 
