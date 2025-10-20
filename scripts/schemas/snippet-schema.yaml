@@ -1,0 +1,59 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2022-2025, Nordic Semiconductor ASA
+
+# JSON Schema for snippet YAML files
+# When possible, constraints and validation rules should be modeled directly in this file.
+
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://zephyrproject.org/schemas/zephyr/snippet"
+title: Zephyr snippet Schema
+description: Schema for validating Zephyr snippet files
+type: object
+$defs:
+  append-schema:
+    # Sub-schema for appending onto CMake list variables.
+    # See uses under 'include: append-schema' keys below.
+    type: object
+    properties:
+      EXTRA_DTC_OVERLAY_FILE:
+        type: string
+      EXTRA_CONF_FILE:
+        type: string
+      SB_EXTRA_CONF_FILE:
+        type: string
+      DTS_EXTRA_CPPFLAGS:
+        type: string
+    additionalProperties: false
+
+properties:
+  name:
+    type: string
+  append:
+    example: |
+      Snippet-wide appending can be done here:
+
+        name: foo
+        append:
+          EXTRA_DTC_OVERLAY_FILE: m3.overlay
+    include: append-schema
+  boards:
+    example: |
+      Board-specific appending can be done here:
+
+        name: foo
+        boards:
+          qemu_cortex_m3:
+            append:
+              EXTRA_DTC_OVERLAY_FILE: m3.overlay
+    type: object
+    patternProperties:
+      "(.*)":
+        type: object
+        properties:
+          append:
+            include: append-schema
+        additionalProperties: false
+required:
+  - name
+additionalProperties: false
