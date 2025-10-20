@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/devicetree.h>
-#include <zephyr/arch/arm/cortex_m/arm_mpu_mem_cfg.h>
+#include <zephyr/arch/arm/mpu/arm_mpu_mem_cfg.h>
 
 #define REGION_MASK_BASE_ADDRESS			0x00000000U
 #define REGION_ITCM_BASE_ADDRESS			0x00000000U
