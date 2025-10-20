@@ -120,6 +120,8 @@ enum net_verdict net_tc_submit_to_rx_queue(uint8_t tc, struct net_pkt *pkt)
 int net_tx_priority2tc(enum net_priority prio)
 {
 #if NET_TC_TX_COUNT > 0
+	static const uint8_t tx_prio2tc_map[] = PRIORITY2TC_TX;
+
 	if (prio > NET_PRIORITY_NC) {
 		/* Use default value suggested in 802.1Q */
 		prio = NET_PRIORITY_BE;
@@ -136,6 +138,8 @@ int net_tx_priority2tc(enum net_priority prio)
 int net_rx_priority2tc(enum net_priority prio)
 {
 #if NET_TC_RX_COUNT > 0
+	static const uint8_t rx_prio2tc_map[] = PRIORITY2TC_RX;
+
 	if (prio > NET_PRIORITY_NC) {
 		/* Use default value suggested in 802.1Q */
 		prio = NET_PRIORITY_BE;
