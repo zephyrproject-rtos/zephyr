@@ -165,3 +165,8 @@
 	mux-0-dc-5-div = <4>;
 	mux-0-dc-6-div = <1>;
 };
+
+&stm_0 {
+	status = "okay";
+	prescaler = <1>;
+};
