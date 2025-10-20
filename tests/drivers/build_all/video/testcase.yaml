@@ -44,3 +44,10 @@ tests:
   drivers.video.stm32_venc.build:
     platform_allow:
       - stm32n6570_dk/stm32n657xx/sb
+    extra_configs:
+      - CONFIG_VIDEO_ENCODER_H264=y
+  drivers.video.stm32_jpeg.build:
+    platform_allow:
+      - stm32n6570_dk/stm32n657xx/sb
+    extra_configs:
+      - CONFIG_VIDEO_ENCODER_JPEG=y
