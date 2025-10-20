@@ -418,6 +418,10 @@ static void enable_mclk_direction(const struct device *dev, bool dir)
 	uint32_t mask = dev_cfg->mclk_pin_mask;
 	uint32_t *base = (uint32_t *)(control_base + offset);
 
+	if (control_base == 0 && offset == 0 && mask == 0) {
+		return;
+	}
+
 	if (dir) {
 		*base |= mask;
 	} else {
