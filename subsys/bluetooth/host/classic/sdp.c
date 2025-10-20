@@ -3445,7 +3445,7 @@ static int sdp_get_u16_data(const struct bt_sdp_attr_item *attr, uint16_t *u16)
 	return 0;
 }
 
-int bt_sdp_get_proto_param(const struct net_buf *buf, enum bt_sdp_proto proto,
+int bt_sdp_get_proto_param(const struct net_buf *buf, uint16_t proto,
 			   uint16_t *param)
 {
 	struct bt_sdp_attr_item attr;
@@ -3473,7 +3473,7 @@ int bt_sdp_get_proto_param(const struct net_buf *buf, enum bt_sdp_proto proto,
 	return sdp_get_param_item(&pd, param);
 }
 
-int bt_sdp_get_addl_proto_param(const struct net_buf *buf, enum bt_sdp_proto proto,
+int bt_sdp_get_addl_proto_param(const struct net_buf *buf, uint16_t proto,
 				uint8_t param_index, uint16_t *param)
 {
 	struct bt_sdp_attr_item attr;
