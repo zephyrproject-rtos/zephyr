@@ -41,7 +41,7 @@ static void scmi_mbox_tx_reply_cb(const struct device *mbox,
 	scmi_mbox_read_msg_hdr(scmi_chan, &msg);
 
 	if (scmi_chan->cb) {
-		scmi_chan->cb(scmi_chan);
+		scmi_chan->cb(scmi_chan, msg.hdr);
 	}
 }
 
@@ -58,7 +58,7 @@ static void scmi_mbox_rx_notify_cb(const struct device *mbox,
 	scmi_mbox_read_msg_hdr(scmi_chan, &msg);
 
 	if (scmi_chan->cb) {
-		scmi_chan->cb(scmi_chan);
+		scmi_chan->cb(scmi_chan, msg.hdr);
 		scmi_shmem_clear_channel_status(shmem);
 	}
 }
