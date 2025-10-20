@@ -66,6 +66,11 @@ static const uint16_t avago_apds9306_integration_time[] = {400, 200, 100, 50, 25
 /* This results in a gain of 8 (2^3) for a time if 25 ms (16 bits), etc. */
 static const uint16_t avago_apds9306_integration_time_gain[] = {128, 64, 32, 16, 8, 1};
 
+struct apds9306_worker_item_t {
+	struct k_work_delayable dwork;
+	const struct device *dev;
+};
+
 struct apds9306_data {
 	uint32_t light;
 	uint8_t measurement_period_idx; /* This field holds the index of the current */
@@ -74,6 +79,7 @@ struct apds9306_data {
 	uint8_t resolution_idx; /* This field holds the index of the current sampling */
 				/*  resolution.*/
 	uint8_t chip_id;
+	struct apds9306_worker_item_t worker_item;
 };
 
 struct apds9306_config {
@@ -82,11 +88,6 @@ struct apds9306_config {
 	uint8_t measurement_period_idx;
 	uint8_t gain_idx;
 };
-
-struct apds9306_worker_item_t {
-	struct k_work_delayable dwork;
-	const struct device *dev;
-} apds9306_worker_item;
 
 static int apds9306_enable(const struct device *dev)
 {
@@ -274,12 +275,10 @@ static int apds9306_sample_fetch(const struct device *dev, enum sensor_channel c
 	LOG_DBG("Wait for %d ms", delay);
 
 	/* We add a bit more delay to cover the startup time etc. */
-	if (!k_work_delayable_is_pending(&apds9306_worker_item.dwork)) {
+	if (!k_work_delayable_is_pending(&data->worker_item.dwork)) {
 		LOG_DBG("Schedule new work");
 
-		apds9306_worker_item.dev = dev;
-		k_work_init_delayable(&apds9306_worker_item.dwork, apds9306_worker);
-		k_work_schedule(&apds9306_worker_item.dwork, K_MSEC(delay + 100));
+		k_work_schedule(&data->worker_item.dwork, K_MSEC(delay + 100));
 	} else {
 		LOG_DBG("Work pending. Wait for completion.");
 	}
@@ -387,6 +386,9 @@ static int apds9306_init(const struct device *dev)
 	if (i2c_reg_write_byte_dt(&config->i2c, APDS9306_REGISTER_ALS_GAIN, data->gain_idx)) {
 		return -EFAULT;
 	}
+
+	data->worker_item.dev = dev;
+	k_work_init_delayable(&data->worker_item.dwork, apds9306_worker);
 
 	LOG_DBG("APDS9306 initialization successful!");
 
