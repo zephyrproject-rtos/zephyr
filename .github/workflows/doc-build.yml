@@ -5,9 +5,10 @@ name: Documentation Build
 
 on:
   push:
+    branches:
+    - main
     tags:
     - v*
-    - main
   pull_request:
 
 permissions:
