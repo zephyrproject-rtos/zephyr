@@ -273,7 +273,7 @@ config MBEDTLS_CIPHER_AES_ENABLED
 if MBEDTLS_CIPHER_AES_ENABLED
 
 config MBEDTLS_AES_ROM_TABLES
-	bool "Use precomputed AES tables stored in ROM."
+	bool "Use precomputed AES tables stored in ROM"
 
 config MBEDTLS_AES_FEWER_TABLES
 	bool "Reduce the size of precomputed AES tables by ~6kB"
@@ -325,7 +325,7 @@ config MBEDTLS_CHACHAPOLY_AEAD_ENABLED
 	depends on MBEDTLS_CIPHER_CHACHA20_ENABLED && MBEDTLS_POLY1305
 
 config MBEDTLS_CMAC
-	bool "CMAC (Cipher-based Message Authentication Code) mode for block ciphers."
+	bool "CMAC (Cipher-based Message Authentication Code) mode for block ciphers"
 	depends on MBEDTLS_CIPHER_AES_ENABLED || MBEDTLS_CIPHER_DES_ENABLED
 
 comment "Supported hash algorithms"
@@ -386,11 +386,11 @@ config MBEDTLS_HMAC_DRBG_C
 comment "Other configurations"
 
 config MBEDTLS_CIPHER
-	bool "generic cipher layer."
+	bool "Generic cipher layer"
 	default y if PSA_WANT_ALG_CMAC
 
 config MBEDTLS_MD_C
-	bool "generic message digest layer."
+	bool "Generic message digest layer"
 
 config MBEDTLS_ASN1_PARSE_C
 	bool "Support for ASN1 parser functions"
@@ -489,7 +489,7 @@ config MBEDTLS_HAVE_TIME_DATE
 	help
 	  System has time.h, time(), and an implementation for gmtime_r().
 	  There also need to be a valid time source in the system, as mbedTLS
-	  expects a valid date/time for certificate validation."
+	  expects a valid date/time for certificate validation.
 
 config MBEDTLS_PKCS5_C
 	bool "Password-based encryption functions"
@@ -500,7 +500,7 @@ config MBEDTLS_PKCS5_C
 config MBEDTLS_SSL_CACHE_C
 	bool "SSL session cache support"
 	help
-	  "This option enables simple SSL cache implementation (server side)."
+	  This option enables simple SSL cache implementation (server side).
 
 if MBEDTLS_SSL_CACHE_C
 
