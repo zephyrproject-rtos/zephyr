@@ -43,11 +43,6 @@ def is_ip(ip):
 def is_tunnel(tunnel):
     return tunnel.startswith("tunnel:") if tunnel else False
 
-class ToggleAction(argparse.Action):
-
-    def __call__(self, parser, args, ignored, option):
-        setattr(args, self.dest, not option.startswith('--no-'))
-
 class JLinkBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for the J-Link GDB server.'''
 
@@ -194,10 +189,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--commander', default=DEFAULT_JLINK_EXE,
                             help=f'''J-Link Commander, default is
                             {DEFAULT_JLINK_EXE}''')
-        parser.add_argument('--reset-after-load', '--no-reset-after-load',
-                            dest='reset', nargs=0,
-                            action=ToggleAction,
-                            help='obsolete synonym for --reset/--no-reset')
+        parser.add_argument('--reset-after-load', action=argparse.BooleanOptionalAction,
+                            dest='reset', help='obsolete synonym for --reset/--no-reset')
         parser.add_argument('--rtt-client', default='JLinkRTTClient',
                             help='RTT client, default is JLinkRTTClient')
         parser.add_argument('--rtt-port', default=DEFAULT_JLINK_RTT_PORT,
