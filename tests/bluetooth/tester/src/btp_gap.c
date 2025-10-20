@@ -601,6 +601,21 @@ static int tester_gap_ext_adv_idx_free_get(void)
 	return -ENOMEM;
 }
 
+static int tester_gap_ext_adv_idx_get(struct bt_le_ext_adv *ext_adv)
+{
+	if (!IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+		return -ENOTSUP;
+	}
+
+	for (int i = 0; i < ARRAY_SIZE(ext_adv_sets); i++) {
+		if (ext_adv_sets[i] == ext_adv) {
+			return i;
+		}
+	}
+
+	return -EINVAL;
+}
+
 int tester_gap_start_ext_adv(struct bt_le_ext_adv *ext_adv)
 {
 	if (!IS_ENABLED(CONFIG_BT_EXT_ADV)) {
@@ -644,6 +659,8 @@ int tester_gap_stop_ext_adv(struct bt_le_ext_adv *ext_adv)
 
 		return -EINVAL;
 	}
+
+	tester_gap_clear_adv_instance(ext_adv);
 
 	atomic_clear_bit(&current_settings, BTP_GAP_SETTINGS_ADVERTISING);
 
@@ -749,6 +766,29 @@ static uint8_t set_bondable(const void *cmd, uint16_t cmd_len,
 	rp->current_settings = sys_cpu_to_le32(current_settings);
 	*rsp_len = sizeof(*rp);
 	return BTP_STATUS_SUCCESS;
+}
+
+int tester_gap_clear_adv_instance(struct bt_le_ext_adv *ext_adv)
+{
+	if (!IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+		return -ENOTSUP;
+	}
+
+	if (ext_adv == NULL) {
+		LOG_ERR("Invalid ext_adv");
+		return -EINVAL;
+	}
+
+	int index = tester_gap_ext_adv_idx_get(ext_adv);
+
+	if (index < 0) {
+		LOG_ERR("Failed to get ext_adv index");
+		return -EINVAL;
+	}
+
+	ext_adv_sets[index] = NULL;
+
+	return 0;
 }
 
 int tester_gap_create_adv_instance(struct bt_le_adv_param *param,
@@ -974,7 +1014,7 @@ static uint8_t stop_advertising(const void *cmd, uint16_t cmd_len,
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	    atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_EXTENDED_ADVERTISING)) {
-		err = bt_le_ext_adv_stop(gap_ext_adv);
+		err = tester_gap_stop_ext_adv(gap_ext_adv);
 	} else {
 		err = bt_le_adv_stop();
 	}
