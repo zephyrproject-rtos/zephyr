@@ -223,6 +223,44 @@ extern "C" {
 #define BT_SDP_ATTR_PROVNAME_PRIMARY (0x0002 + BT_SDP_PRIMARY_LANG_BASE)
 
 /**
+ * @name Protocol identifier codes
+ * @brief Protocol identifiers used in Bluetooth Service Discovery Protocol (SDP)
+ * @note Based on Bluetooth Assigned Numbers specification
+ *
+ * Possible values for protocol-id are listed below.
+ * See Assigned Numbers Spec, section "Protocol Identifiers" for more details.
+ *
+ * @{
+ */
+#define BT_SDP_PROTO_SDP           0x0001 /**< Service Discovery Protocol */
+#define BT_SDP_PROTO_UDP           0x0002 /**< User Datagram Protocol */
+#define BT_SDP_PROTO_RFCOMM        0x0003 /**< Radio Frequency Communication */
+#define BT_SDP_PROTO_TCP           0x0004 /**< Transmission Control Protocol */
+#define BT_SDP_PROTO_TCS_BIN       0x0005 /**< Telephony Control Specification Binary */
+#define BT_SDP_PROTO_TCS_AT        0x0006 /**< Telephony Control Specification AT */
+#define BT_SDP_PROTO_ATT           0x0007 /**< Attribute Protocol */
+#define BT_SDP_PROTO_OBEX          0x0008 /**< Object Exchange Protocol */
+#define BT_SDP_PROTO_IP            0x0009 /**< Internet Protocol */
+#define BT_SDP_PROTO_FTP           0x000a /**< File Transfer Protocol */
+#define BT_SDP_PROTO_HTTP          0x000c /**< HyperText Transfer Protocol */
+#define BT_SDP_PROTO_WSP           0x000e /**< Wireless Session Protocol */
+#define BT_SDP_PROTO_BNEP          0x000f /**< Bluetooth Network Encapsulation Protocol */
+#define BT_SDP_PROTO_UPNP          0x0010 /**< Universal Plug and Play */
+#define BT_SDP_PROTO_HID           0x0011 /**< Human Interface Device Protocol */
+#define BT_SDP_PROTO_HARDCOPY_CTRL 0x0012 /**< Hardcopy Control Channel */
+#define BT_SDP_PROTO_HARDCOPY_DATA 0x0014 /**< Hardcopy Data Channel */
+#define BT_SDP_PROTO_HARDCOPY_NTF  0x0016 /**< Hardcopy Notification Channel */
+#define BT_SDP_PROTO_AVCTP         0x0017 /**< Audio/Video Control Transport Protocol */
+#define BT_SDP_PROTO_AVDTP         0x0019 /**< Audio/Video Distribution Transport Protocol */
+#define BT_SDP_PROTO_CMTP          0x001b /**< Common ISDN Access Protocol */
+#define BT_SDP_PROTO_MCAP_CTRL     0x001e /**< Multi-Channel Adaptation Protocol Control */
+#define BT_SDP_PROTO_MCAP_DATA     0x001f /**< Multi-Channel Adaptation Protocol Data */
+#define BT_SDP_PROTO_L2CAP         0x0100 /**< Logical Link Control and Adaptation Protocol */
+/**
+ * @}
+ */
+
+/**
  * @name The Data representation in SDP PDUs (pps 339, 340 of BT SDP Spec)
  *
  * These are the exact data type+size descriptor values
@@ -669,13 +707,6 @@ int bt_sdp_discover_cancel(struct bt_conn *conn,
 
 /* Helper types & functions for SDP client to get essential data from server */
 
-/** @brief Protocols to be asked about specific parameters */
-enum bt_sdp_proto {
-	BT_SDP_PROTO_RFCOMM = 0x0003,
-	BT_SDP_PROTO_AVDTP  = 0x0019,
-	BT_SDP_PROTO_L2CAP  = 0x0100,
-};
-
 /** @brief Give to user parameter value related to given stacked protocol UUID.
  *
  *  API extracts specific parameter associated with given protocol UUID
@@ -688,7 +719,7 @@ enum bt_sdp_proto {
  *  @return 0 on success when specific parameter associated with given protocol
  *  value is found, or negative if error occurred during processing.
  */
-int bt_sdp_get_proto_param(const struct net_buf *buf, enum bt_sdp_proto proto,
+int bt_sdp_get_proto_param(const struct net_buf *buf, uint16_t proto,
 			   uint16_t *param);
 
 /** @brief Get additional parameter value related to given stacked protocol UUID.
@@ -707,8 +738,8 @@ int bt_sdp_get_proto_param(const struct net_buf *buf, enum bt_sdp_proto proto,
  *  @return 0 on success when a specific parameter associated with a given protocol
  *  value is found, or negative if error occurred during processing.
  */
-int bt_sdp_get_addl_proto_param(const struct net_buf *buf, enum bt_sdp_proto proto,
-			uint8_t param_index, uint16_t *param);
+int bt_sdp_get_addl_proto_param(const struct net_buf *buf, uint16_t proto,
+				uint8_t param_index, uint16_t *param);
 
 /** @brief Get profile version.
  *
