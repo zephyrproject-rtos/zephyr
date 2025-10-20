@@ -58,4 +58,5 @@
 	status = "okay";
 	mspi-max-frequency = <DT_FREQ_M(50)>;
 	mspi-io-mode = "MSPI_IO_MODE_SINGLE";
+	transfer-timeout = <500>;
 };
