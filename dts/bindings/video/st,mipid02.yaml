@@ -1,7 +1,11 @@
 # Copyright (c) 2025 STMicroelectronics.
 # SPDX-License-Identifier: Apache-2.0
 
-description: MIPID02 CSI to DVP interface bridge
+title: MIPID02 CSI to DVP interface bridge
+
+description: |
+    The MIPID02 allows connecting a DVP sensor to a CSI-2–enabled
+    camera receiver.
 
 compatible: "st,mipid02"
 
