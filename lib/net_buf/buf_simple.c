@@ -620,7 +620,7 @@ size_t net_buf_simple_tailroom(const struct net_buf_simple *buf)
 	return buf->size - net_buf_simple_headroom(buf) - buf->len;
 }
 
-uint16_t net_buf_simple_max_len(const struct net_buf_simple *buf)
+size_t net_buf_simple_max_len(const struct net_buf_simple *buf)
 {
 	return buf->size - net_buf_simple_headroom(buf);
 }
