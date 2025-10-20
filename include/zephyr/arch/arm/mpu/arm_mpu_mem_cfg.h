@@ -4,8 +4,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _ARM_CORTEX_M_MPU_MEM_CFG_H_
-#define _ARM_CORTEX_M_MPU_MEM_CFG_H_
+#ifndef _INCLUDE_ZEPHYR_ARCH_ARM_MPU_MEM_CFG_H_
+#define _INCLUDE_ZEPHYR_ARCH_ARM_MPU_MEM_CFG_H_
 
 #include <zephyr/arch/arm/mpu/arm_mpu.h>
 
@@ -119,4 +119,4 @@
 
 #endif /* !ARMV8_M_BASELINE && !ARMV8_M_MAINLINE */
 
-#endif /* _ARM_CORTEX_M_MPU_MEM_CFG_H_ */
+#endif /* _INCLUDE_ZEPHYR_ARCH_ARM_MPU_MEM_CFG_H_ */
