@@ -74,6 +74,8 @@ struct counter_alarm_cfg alarm_cfg;
 #define TIMER DT_NODELABEL(rtc0)
 #elif defined(CONFIG_COUNTER_RENESAS_RZ_CMTW)
 #define TIMER DT_INST(0, renesas_rz_cmtw_counter)
+#elif defined(CONFIG_COUNTER_MCUX_RTC_JDP)
+#define TIMER DT_NODELABEL(rtc)
 #else
 #error Unable to find a counter device node in devicetree
 #endif
