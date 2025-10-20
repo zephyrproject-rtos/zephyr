@@ -305,6 +305,10 @@ void board_early_init_hook(void)
 	RESET_ReleasePeripheralReset(kFLEXIO0_RST_SHIFT_RSTn);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(trng))
+	RESET_ReleasePeripheralReset(kTRNG0_RST_SHIFT_RSTn);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 }

@@ -18,6 +18,10 @@
 	aliases {
 		ambient-temp0 = &p3t1755;
 	};
+
+	chosen {
+		zephyr,entropy = &trng;
+	};
 };
 
 &cpu0 {
