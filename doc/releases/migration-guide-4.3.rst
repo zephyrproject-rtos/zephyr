@@ -233,6 +233,11 @@ Ethernet
     * Replaced devicetree property ``tx-checksum-offload`` which enabled TX checksum offloading
       ``disable-tx-checksum-offload`` which now actively disables it.
 
+* The Xilinx GEM Ethernet driver (:dtcompatible:`xlnx,gem`) now obtains the AMBA AHB data bus
+  width matching the current target SoC (either Zynq-7000 or ZynqMP) from a design configuration
+  register at run-time, making the devicetree property ``amba-ahb-dbus-width`` obsolete, which
+  has therefore been removed.
+
 Power management
 ****************
 
