@@ -34,6 +34,8 @@ source "drivers/counter/Kconfig.tmr_cmsdk_apb"
 
 source "drivers/counter/Kconfig.dtmr_cmsdk_apb"
 
+source "drivers/counter/Kconfig.mchp_sam_pit64b"
+
 source "drivers/counter/Kconfig.mcux_rtc"
 
 source "drivers/counter/Kconfig.mcux_lpc_rtc"
