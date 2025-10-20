@@ -854,12 +854,33 @@ static int i2s_mcux_write(const struct device *dev, void *mem_block,
 	return ret;
 }
 
+static int i2s_mcux_get_caps(const struct device *dev, struct audio_caps *caps)
+{
+	memset(caps, 0, sizeof(struct audio_caps));
+
+	caps->min_total_channels = 2; /* Stereo minimum */
+	caps->max_total_channels = 8; /* Up to 4 stereo pairs in TDM mode */
+	caps->supported_sample_rates =
+		AUDIO_SAMPLE_RATE_8000 | AUDIO_SAMPLE_RATE_11025 | AUDIO_SAMPLE_RATE_16000 |
+		AUDIO_SAMPLE_RATE_22050 | AUDIO_SAMPLE_RATE_32000 | AUDIO_SAMPLE_RATE_44100 |
+		AUDIO_SAMPLE_RATE_48000 | AUDIO_SAMPLE_RATE_88200 | AUDIO_SAMPLE_RATE_96000;
+	caps->supported_bit_widths =
+		AUDIO_BIT_WIDTH_8 | AUDIO_BIT_WIDTH_16 | AUDIO_BIT_WIDTH_24 | AUDIO_BIT_WIDTH_32;
+	caps->min_num_buffers = NUM_RX_DMA_BLOCKS;
+	caps->min_frame_interval = 1000;   /* 1ms minimum */
+	caps->max_frame_interval = 100000; /* 100ms maximum */
+	caps->interleaved = true;
+
+	return 0;
+}
+
 static DEVICE_API(i2s, i2s_mcux_driver_api) = {
 	.configure = i2s_mcux_configure,
 	.config_get = i2s_mcux_config_get,
 	.read = i2s_mcux_read,
 	.write = i2s_mcux_write,
 	.trigger = i2s_mcux_trigger,
+	.get_caps = i2s_mcux_get_caps,
 };
 
 static void i2s_mcux_isr(const struct device *dev)
