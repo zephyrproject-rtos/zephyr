@@ -35,6 +35,7 @@ static int mdns_sock_v4 = -1;
 #endif /* CONFIG_NET_IPV4 */
 static struct otInstance *ot_instance_ptr;
 static uint32_t ail_iface_index;
+static bool mdns_socket_is_enabled;
 
 static otError mdns_socket_init_v6(uint32_t ail_iface_idx);
 #if defined(CONFIG_NET_IPV4)
@@ -87,10 +88,13 @@ static otError set_listening_enable(otInstance *instance, bool enable, uint32_t 
 #if defined(CONFIG_NET_IPV4)
 		SuccessOrExit(error = mdns_socket_init_v4(ail_iface_idx));
 #endif /* CONFIG_NET_IPV4 */
+		mdns_socket_is_enabled = true;
+		mdns_plat_monitor_interface(net_if_get_by_index(ail_iface_idx));
 		ExitNow();
 	}
 
 	SuccessOrExit(error = mdns_socket_deinit());
+	mdns_socket_is_enabled = false;
 exit:
 	return error;
 
@@ -389,6 +393,10 @@ void mdns_plat_monitor_interface(struct net_if *ail_iface)
 	otIp6Address ip6_addr = {0};
 	struct net_if_addr *unicast = NULL;
 
+	VerifyOrExit(mdns_socket_is_enabled);
+
+	net_if_lock(ail_iface);
+
 	otPlatMdnsHandleHostAddressRemoveAll(ot_instance_ptr, ail_iface_index);
 
 	ipv6 = ail_iface->config.ip.ipv6;
@@ -422,4 +430,8 @@ void mdns_plat_monitor_interface(struct net_if *ail_iface)
 						 ail_iface_index);
 	}
 #endif /* CONFIG_NET_IPV4 && CONFIG_NET_IPV4_MAPPING_TO_IPV6 */
+
+	net_if_unlock(ail_iface);
+exit:
+	return;
 }
