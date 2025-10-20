@@ -1771,6 +1771,11 @@ static void gpio_pca_series_interrupt_worker_extended(struct k_work *work)
 	const struct device *dev = data->self;
 
 	gpio_pca_series_interrupt_handler_extended(dev);
+	// If the interrupt is still active, schedule the worker again
+	const struct gpio_pca_series_config *cfg = dev->config;
+	if (gpio_pin_get_dt(&cfg->gpio_int)) {
+		k_work_submit(&data->int_work);
+	}
 }
 
 static void gpio_pca_series_gpio_int_handler(const struct device *dev,
