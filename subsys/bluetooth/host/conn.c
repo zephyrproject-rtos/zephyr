@@ -1546,23 +1546,20 @@ uint8_t bt_conn_index(const struct bt_conn *conn)
 	switch (conn->type) {
 #if defined(CONFIG_BT_ISO)
 	case BT_CONN_TYPE_ISO:
-		index = conn - iso_conns;
-		__ASSERT(index >= 0 && index < ARRAY_SIZE(iso_conns),
-			"Invalid bt_conn pointer");
+		__ASSERT(IS_ARRAY_ELEMENT(iso_conns, conn), "Invalid bt_conn pointer");
+		index = ARRAY_INDEX(iso_conns, conn);
 		break;
 #endif
 #if defined(CONFIG_BT_CLASSIC)
 	case BT_CONN_TYPE_SCO:
-		index = conn - sco_conns;
-		__ASSERT(index >= 0 && index < ARRAY_SIZE(sco_conns),
-			"Invalid bt_conn pointer");
+		__ASSERT(IS_ARRAY_ELEMENT(sco_conns, conn), "Invalid bt_conn pointer");
+		index = ARRAY_INDEX(sco_conns, conn);
 		break;
 #endif
 	default:
 #if defined(CONFIG_BT_CONN)
-		index = conn - acl_conns;
-		__ASSERT(index >= 0 && index < ARRAY_SIZE(acl_conns),
-			 "Invalid bt_conn pointer");
+		__ASSERT(IS_ARRAY_ELEMENT(acl_conns, conn), "Invalid bt_conn pointer");
+		index = ARRAY_INDEX(acl_conns, conn);
 #else
 		__ASSERT(false, "Invalid connection type %u", conn->type);
 #endif /* CONFIG_BT_CONN */
