@@ -383,11 +383,11 @@ static int adc_nrfx_channel_setup(const struct device *dev,
 		m_data.divide_single_ended_value &= ~BIT(channel_cfg->channel_id);
 	}
 
-	nrfx_err_t ret = nrfx_saadc_channel_config(&cfg);
+	err = nrfx_saadc_channel_config(&cfg);
 
-	if (ret != NRFX_SUCCESS) {
-		LOG_ERR("Cannot configure channel %d: 0x%08x", channel_cfg->channel_id, ret);
-		return -EINVAL;
+	if (err != 0) {
+		LOG_ERR("Cannot configure channel %d: %d", channel_cfg->channel_id, err);
+		return err;
 	}
 
 	return 0;
@@ -398,10 +398,10 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	if (ctx->sequence.calibrate) {
 		nrfx_saadc_offset_calibrate(event_handler);
 	} else {
-		nrfx_err_t ret = nrfx_saadc_mode_trigger();
+		int ret = nrfx_saadc_mode_trigger();
 
-		if (ret != NRFX_SUCCESS) {
-			LOG_ERR("Cannot start sampling: 0x%08x", ret);
+		if (ret != 0) {
+			LOG_ERR("Cannot start sampling: %d", ret);
 			adc_context_complete(ctx, -EIO);
 		}
 	}
@@ -426,10 +426,9 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repe
 			return;
 		}
 
-		nrfx_err_t nrfx_err =
-			nrfx_saadc_buffer_set(samples_buffer, m_data.active_channel_cnt);
-		if (nrfx_err != NRFX_SUCCESS) {
-			LOG_ERR("Failed to set buffer: 0x%08x", nrfx_err);
+		error = nrfx_saadc_buffer_set(samples_buffer, m_data.active_channel_cnt);
+		if (error != 0) {
+			LOG_ERR("Failed to set buffer: %d", error);
 			adc_context_complete(ctx, -EIO);
 		}
 	}
@@ -440,10 +439,10 @@ static inline void adc_context_enable_timer(struct adc_context *ctx)
 	if (!m_data.internal_timer_enabled) {
 		k_timer_start(&m_data.timer, K_NO_WAIT, K_USEC(ctx->options.interval_us));
 	} else {
-		nrfx_err_t ret = nrfx_saadc_mode_trigger();
+		int ret = nrfx_saadc_mode_trigger();
 
-		if (ret != NRFX_SUCCESS) {
-			LOG_ERR("Cannot start sampling: 0x%08x", ret);
+		if (ret != 0) {
+			LOG_ERR("Cannot start sampling: %d", ret);
 			adc_context_complete(&m_data.ctx, -EIO);
 		}
 	}
@@ -613,7 +612,6 @@ static inline uint16_t interval_to_cc(uint16_t interval_us)
 static int start_read(const struct device *dev,
 		      const struct adc_sequence *sequence)
 {
-	nrfx_err_t nrfx_err;
 	int error;
 	uint32_t selected_channels = sequence->channels;
 	nrf_saadc_resolution_t resolution;
@@ -671,21 +669,21 @@ static int start_read(const struct device *dev,
 
 		m_data.internal_timer_enabled = true;
 
-		nrfx_err = nrfx_saadc_advanced_mode_set(selected_channels, resolution, &adv_config,
-							event_handler);
+		error = nrfx_saadc_advanced_mode_set(selected_channels, resolution, &adv_config,
+						     event_handler);
 	} else {
 		m_data.internal_timer_enabled = false;
 
-		nrfx_err = nrfx_saadc_simple_mode_set(selected_channels, resolution, oversampling,
-						      event_handler);
+		error = nrfx_saadc_simple_mode_set(selected_channels, resolution, oversampling,
+						   event_handler);
 	}
 
-	if (nrfx_err != NRFX_SUCCESS) {
-		return -EINVAL;
+	if (error != 0) {
+		return error;
 	}
 
 	error = check_buffer_size(sequence, active_channel_cnt);
-	if (error) {
+	if (error != 0) {
 		return error;
 	}
 
@@ -706,14 +704,13 @@ static int start_read(const struct device *dev,
 	/* Buffer is filled in chunks, each chunk composed of number of samples equal to number
 	 * of active channels. Buffer pointer is advanced and reloaded after each chunk.
 	 */
-	nrfx_err = nrfx_saadc_buffer_set(
-		samples_buffer,
-		(m_data.internal_timer_enabled
-			 ? (1 + sequence->options->extra_samplings)
-			 : active_channel_cnt));
-	if (nrfx_err != NRFX_SUCCESS) {
-		LOG_ERR("Failed to set buffer: 0x%08x", nrfx_err);
-		return -EINVAL;
+	error = nrfx_saadc_buffer_set(samples_buffer,
+				      (m_data.internal_timer_enabled
+				      ? (1 + sequence->options->extra_samplings)
+				      : active_channel_cnt));
+	if (error != 0) {
+		LOG_ERR("Failed to set buffer: %d", error);
+		return error;
 	}
 
 	adc_context_start_read(&m_data.ctx, sequence);
@@ -761,7 +758,7 @@ static int adc_nrfx_read_async(const struct device *dev,
 
 static void event_handler(const nrfx_saadc_evt_t *event)
 {
-	nrfx_err_t err;
+	int err;
 
 	if (event->type == NRFX_SAADC_EVT_DONE) {
 		dmm_buffer_in_release(
@@ -780,8 +777,8 @@ static void event_handler(const nrfx_saadc_evt_t *event)
 		adc_context_on_sampling_done(&m_data.ctx, DEVICE_DT_INST_GET(0));
 	} else if (event->type == NRFX_SAADC_EVT_CALIBRATEDONE) {
 		err = nrfx_saadc_mode_trigger();
-		if (err != NRFX_SUCCESS) {
-			LOG_ERR("Cannot start sampling: 0x%08x", err);
+		if (err != 0) {
+			LOG_ERR("Cannot start sampling: %d", err);
 			adc_context_complete(&m_data.ctx, -EIO);
 		}
 	} else if (event->type == NRFX_SAADC_EVT_FINISHED) {
@@ -798,13 +795,13 @@ static int saadc_pm_handler(const struct device *dev, enum pm_device_action acti
 
 static int init_saadc(const struct device *dev)
 {
-	nrfx_err_t err;
+	int err;
 
 	k_timer_init(&m_data.timer, external_timer_expired_handler, NULL);
 
 	/* The priority value passed here is ignored (see nrfx_glue.h). */
 	err = nrfx_saadc_init(0);
-	if (err != NRFX_SUCCESS) {
+	if (err != 0) {
 		LOG_ERR("Failed to initialize device: %s", dev->name);
 		return -EIO;
 	}
