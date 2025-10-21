@@ -5,7 +5,6 @@
 config SOC_SERIES_BL61X
 	select CLOCK_CONTROL
 	select CODE_DATA_RELOCATION
-	select CPU_HAS_FPU
 	select DCACHE
 	select FLOAT_HARD
 	select FPU
