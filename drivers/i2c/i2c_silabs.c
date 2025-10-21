@@ -57,8 +57,6 @@ struct i2c_silabs_dev_data {
 	bool pm_lock_done; /* Tracks if PM lock release has occurred */
 };
 
-static int i2c_silabs_pm_action(const struct device *dev, enum pm_device_action action);
-
 static bool i2c_silabs_is_dma_enabled_instance(const struct device *dev)
 {
 	struct i2c_silabs_dev_data *data = dev->data;
@@ -68,13 +66,13 @@ static bool i2c_silabs_is_dma_enabled_instance(const struct device *dev)
 	return data->dma_rx.dma_dev != NULL;
 }
 
-static void i2c_silabs_pm_policy_state_lock_get(const struct device *dev)
+static void i2c_silabs_pm_policy_state_lock_get(void)
 {
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 }
 
-static void i2c_silabs_pm_policy_state_lock_put(const struct device *dev)
+static void i2c_silabs_pm_policy_state_lock_put(void)
 {
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
@@ -140,7 +138,7 @@ static int i2c_silabs_transfer_dma(const struct device *dev, struct i2c_msg *msg
 	}
 
 	/* Get the power management policy state lock */
-	i2c_silabs_pm_policy_state_lock_get(dev);
+	i2c_silabs_pm_policy_state_lock_get();
 
 	while (i < num_msgs) {
 		uint8_t msgs_in_transfer = 1;
@@ -157,7 +155,7 @@ static int i2c_silabs_transfer_dma(const struct device *dev, struct i2c_msg *msg
 				    &data->i2c_handle, addr, msgs[i].buf, msgs[i].len,
 				    msgs[i + 1].buf, msgs[i + 1].len, NULL) != 0) {
 				k_sem_give(&data->bus_lock);
-				i2c_silabs_pm_policy_state_lock_put(dev);
+				i2c_silabs_pm_policy_state_lock_put();
 				return -EIO;
 			}
 		} else if (msgs[i].flags & I2C_MSG_READ) {
@@ -167,7 +165,7 @@ static int i2c_silabs_transfer_dma(const struct device *dev, struct i2c_msg *msg
 									 msgs[i].buf, msgs[i].len,
 									 NULL) != 0) {
 					k_sem_give(&data->bus_lock);
-					i2c_silabs_pm_policy_state_lock_put(dev);
+					i2c_silabs_pm_policy_state_lock_put();
 					return -EIO;
 				}
 			} else {
@@ -175,7 +173,7 @@ static int i2c_silabs_transfer_dma(const struct device *dev, struct i2c_msg *msg
 								       msgs[i].buf, msgs[i].len,
 								       NULL) != 0) {
 					k_sem_give(&data->bus_lock);
-					i2c_silabs_pm_policy_state_lock_put(dev);
+					i2c_silabs_pm_policy_state_lock_put();
 					return -EIO;
 				}
 			}
@@ -186,7 +184,7 @@ static int i2c_silabs_transfer_dma(const struct device *dev, struct i2c_msg *msg
 								      msgs[i].buf, msgs[i].len,
 								      NULL) != 0) {
 					k_sem_give(&data->bus_lock);
-					i2c_silabs_pm_policy_state_lock_put(dev);
+					i2c_silabs_pm_policy_state_lock_put();
 					return -EIO;
 				}
 			} else {
@@ -194,7 +192,7 @@ static int i2c_silabs_transfer_dma(const struct device *dev, struct i2c_msg *msg
 								    msgs[i].buf, msgs[i].len,
 								    NULL) != 0) {
 					k_sem_give(&data->bus_lock);
-					i2c_silabs_pm_policy_state_lock_put(dev);
+					i2c_silabs_pm_policy_state_lock_put();
 					return -EIO;
 				}
 			}
@@ -209,7 +207,7 @@ static int i2c_silabs_transfer_dma(const struct device *dev, struct i2c_msg *msg
 			}
 			k_sem_reset(&data->transfer_sem);
 			if (err < 0) {
-				i2c_silabs_pm_policy_state_lock_put(dev);
+				i2c_silabs_pm_policy_state_lock_put();
 				break;
 			}
 		}
@@ -228,7 +226,7 @@ static int i2c_silabs_transfer_sync(const struct device *dev, struct i2c_msg *ms
 	int err = 0;
 
 	/* Get the power management policy state lock */
-	i2c_silabs_pm_policy_state_lock_get(dev);
+	i2c_silabs_pm_policy_state_lock_get();
 
 	while (i < num_msgs) {
 		uint8_t msgs_in_transfer = 1;
@@ -285,7 +283,7 @@ out:
 	k_sem_give(&data->bus_lock);
 
 	/* Release the power management policy state lock */
-	i2c_silabs_pm_policy_state_lock_put(dev);
+	i2c_silabs_pm_policy_state_lock_put();
 
 	return err;
 }
@@ -378,6 +376,48 @@ static int i2c_silabs_dev_transfer_cb(const struct device *dev, struct i2c_msg *
 }
 #endif /* CONFIG_I2C_CALLBACK */
 
+static int i2c_silabs_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct i2c_silabs_dev_config *config = dev->config;
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+
+		/* Enable clock */
+		ret = clock_control_on(config->clock, (clock_control_subsys_t)&config->clock_cfg);
+		if (ret < 0 && ret != -EALREADY) {
+			return ret;
+		}
+		/* Apply default pin configuration to resume normal operation */
+		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0) {
+			return ret;
+		}
+
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+
+		/* Apply low-power pin configuration */
+		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
+		if (ret < 0 && ret != -ENOENT) {
+			return ret;
+		}
+
+		/* Disable clock */
+		ret = clock_control_off(config->clock, (clock_control_subsys_t)&config->clock_cfg);
+		if (ret < 0) {
+			return ret;
+		}
+
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 /* Function to initialize the I2C peripheral */
 static int i2c_silabs_dev_init(const struct device *dev)
 {
@@ -430,48 +470,6 @@ static int i2c_silabs_dev_init(const struct device *dev)
 	return pm_device_driver_init(dev, i2c_silabs_pm_action);
 }
 
-static int i2c_silabs_pm_action(const struct device *dev, enum pm_device_action action)
-{
-	const struct i2c_silabs_dev_config *config = dev->config;
-	int ret;
-
-	switch (action) {
-	case PM_DEVICE_ACTION_RESUME:
-
-		/* Enable clock */
-		ret = clock_control_on(config->clock, (clock_control_subsys_t)&config->clock_cfg);
-		if (ret < 0 && ret != -EALREADY) {
-			return ret;
-		}
-		/* Apply default pin configuration to resume normal operation */
-		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-		if (ret < 0) {
-			return ret;
-		}
-
-		break;
-	case PM_DEVICE_ACTION_SUSPEND:
-
-		/* Apply low-power pin configuration */
-		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
-		if (ret < 0 && ret != -ENOENT) {
-			return ret;
-		}
-
-		/* Disable clock */
-		ret = clock_control_off(config->clock, (clock_control_subsys_t)&config->clock_cfg);
-		if (ret < 0) {
-			return ret;
-		}
-
-		break;
-	default:
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
-
 /* ISR to dispatch DMA interrupts */
 void i2c_silabs_isr_handler(const struct device *dev)
 {
@@ -506,7 +504,7 @@ void i2c_silabs_isr_handler(const struct device *dev)
 
 			if (!data->pm_lock_done) {
 				/* Release the power management policy state lock */
-				i2c_silabs_pm_policy_state_lock_put(dev);
+				i2c_silabs_pm_policy_state_lock_put();
 				data->pm_lock_done = true;
 			}
 		}
