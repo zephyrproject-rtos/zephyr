@@ -54,7 +54,7 @@ static int gpio_mcux_iopctl_configure(const struct device *dev, gpio_pin_t pin, 
 	const struct gpio_mcux_config *config = dev->config;
 	GPIO_Type *gpio_base = config->gpio_base;
 	uint32_t port_no = config->port_no;
-	volatile uint32_t pinconfig = 0;
+	uint32_t pinconfig = 0;
 
 	if (((flags & GPIO_INPUT) != 0) && ((flags & GPIO_OUTPUT) != 0)) {
 		return -ENOTSUP;
@@ -100,7 +100,6 @@ static int gpio_mcux_iopctl_configure(const struct device *dev, gpio_pin_t pin, 
 		pinconfig |= (IOPCTL_PUPD_EN | IOPCTL_PULLDOWN_EN);
 	}
 
-#if defined(FSL_FEATURE_PORT_HAS_DRIVE_STRENGTH) && FSL_FEATURE_PORT_HAS_DRIVE_STRENGTH
 	/* Determine the drive strength */
 	switch (flags & KINETIS_GPIO_DS_MASK) {
 	case KINETIS_GPIO_DS_DFLT:
@@ -114,7 +113,6 @@ static int gpio_mcux_iopctl_configure(const struct device *dev, gpio_pin_t pin, 
 	default:
 		return -ENOTSUP;
 	}
-#endif /* defined(FSL_FEATURE_PORT_HAS_DRIVE_STRENGTH) && FSL_FEATURE_PORT_HAS_DRIVE_STRENGTH */
 
 	IOPCTL_PinMuxSet(port_no, pin, pinconfig);
 
