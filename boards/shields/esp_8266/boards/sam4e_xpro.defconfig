@@ -11,7 +11,4 @@ config NET_L2_ETHERNET
 config ETH_SAM_GMAC
 	default n
 
-config USART_SAM
-	default y
-
 endif # BOARD_SAM4E_XPRO
