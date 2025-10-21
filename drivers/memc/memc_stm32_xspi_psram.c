@@ -8,6 +8,7 @@
 
 #include <errno.h>
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
@@ -354,7 +355,8 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 	}
 
 #if defined(XSPI_CR_NOPREF)
-	MODIFY_REG(hxspi.Instance->CR, XSPI_CR_NOPREF, HAL_XSPI_AUTOMATIC_PREFETCH_DISABLE);
+	stm32_reg_modify_bits(&hxspi.Instance->CR, XSPI_CR_NOPREF,
+			      HAL_XSPI_AUTOMATIC_PREFETCH_DISABLE);
 #endif
 
 #ifdef CONFIG_SHARED_MULTI_HEAP
