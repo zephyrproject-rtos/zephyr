@@ -23,6 +23,7 @@ supported:
   - watchdog
   - counter
   - dma
+  - dac
   - i3c
   - entropy
   - can
