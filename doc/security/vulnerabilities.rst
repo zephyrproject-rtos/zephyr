@@ -1999,3 +1999,8 @@ This has been fixed in main for v4.2.0
 
 - `PR 93174 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/93174>`_
+
+:cve:`2025-12035`
+-----------------
+
+Under embargo until 2025-12-13
