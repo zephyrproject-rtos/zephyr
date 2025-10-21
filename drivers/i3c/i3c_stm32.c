@@ -21,6 +21,7 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/logging/log.h>
 
+#include <stm32_bitops.h>
 #include <stm32_ll_i3c.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_rcc.h>
@@ -1293,7 +1294,7 @@ static int i3c_stm32_i3c_transfer(const struct device *dev, struct i3c_device_de
 #ifdef CONFIG_I3C_STM32_DMA
 	/* Fill the num_xfer for each message from the status FIFO */
 	for (size_t i = 0; i < num_msgs; i++) {
-		msgs[i].num_xfer = READ_BIT(data->status_fifo[i], I3C_SR_XDCNT);
+		msgs[i].num_xfer = stm32_reg_read_bits(&data->status_fifo[i], I3C_SR_XDCNT);
 	}
 
 	k_heap_free(&stm32_i3c_fifo_heap, data->control_fifo);

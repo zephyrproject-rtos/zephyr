@@ -74,7 +74,7 @@ static int stm32_digi_temp_sample_fetch(const struct device *dev, enum sensor_ch
 	k_mutex_lock(&data->mutex, K_FOREVER);
 
 	/* Wait for the sensor to be ready (~40µS delay after enabling it) */
-	while (READ_BIT(dts->SR, DTS_SR_TS1_RDY) == 0) {
+	while (stm32_reg_read_bits(&dts->SR, DTS_SR_TS1_RDY) == 0) {
 		k_yield();
 	}
 

@@ -6,6 +6,7 @@
 
 #include <zephyr/ztest.h>
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <stm32_ll_rcc.h>
@@ -91,7 +92,7 @@ ZTEST(stm32_sysclck_config, test_pll_src)
 	defined(CONFIG_SOC_SERIES_STM32F4X) || defined(CONFIG_SOC_SERIES_STM32F7X)
 #define RCC_PLLSOURCE_NONE 0
 	/* check RCC_CR_PLLON bit to enable/disable the PLL, but no status function exist */
-	if (READ_BIT(RCC->CR, RCC_CR_PLLON) == RCC_CR_PLLON) {
+	if (stm32_reg_read_bits(&RCC->CR, RCC_CR_PLLON) == RCC_CR_PLLON) {
 		/* should not happen : PLL must be disabled when not used */
 		pll_src = 0xFFFF; /* error code */
 	} else {
@@ -111,9 +112,11 @@ ZTEST(stm32_sysclck_config, test_hse_css)
 {
 	/* there is no function to read CSS status, so read directly from the register */
 #if STM32_HSE_CSS
-	zassert_true(READ_BIT(RCC->CR, RCC_CR_CSSON), "HSE CSS is not enabled");
+	zassert_true(stm32_reg_read_bits(&RCC->CR, RCC_CR_CSSON) == RCC_CR_CSSON,
+		     "HSE CSS is not enabled");
 #else
-	zassert_false(READ_BIT(RCC->CR, RCC_CR_CSSON), "HSE CSS unexpectedly enabled");
+	zassert_false(stm32_reg_read_bits(&RCC->CR, RCC_CR_CSSON) == RCC_CR_CSSON,
+		      "HSE CSS unexpectedly enabled");
 #endif /* STM32_HSE_CSS */
 
 }

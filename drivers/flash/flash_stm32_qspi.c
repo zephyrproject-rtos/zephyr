@@ -15,6 +15,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <string.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
@@ -578,7 +579,8 @@ static bool stm32_qspi_is_memory_mapped(const struct device *dev)
 {
 	struct flash_stm32_qspi_data *dev_data = dev->data;
 
-	return READ_BIT(dev_data->hqspi.Instance->CCR, QUADSPI_CCR_FMODE) == QUADSPI_CCR_FMODE;
+	return stm32_reg_read_bits(&dev_data->hqspi.Instance->CCR, QUADSPI_CCR_FMODE) ==
+	       QUADSPI_CCR_FMODE;
 }
 
 static int stm32_qspi_abort(const struct device *dev)
