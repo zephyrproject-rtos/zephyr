@@ -545,6 +545,11 @@ void bt_conn_identity_resolved(struct bt_conn *conn);
 void bt_conn_security_changed(struct bt_conn *conn, uint8_t hci_err,
 			      enum bt_security_err err);
 
+#if defined(CONFIG_BT_POWER_MODE_CONTROL)
+/* Notify higher layers that connection sniff mode changed */
+void bt_conn_notify_mode_changed(struct bt_conn *conn, uint8_t mode, uint16_t interval);
+#endif /* CONFIG_BT_POWER_MODE_CONTROL */
+
 /* Prepare a PDU to be sent over a connection */
 #if defined(CONFIG_NET_BUF_LOG)
 struct net_buf *bt_conn_create_pdu_timeout_debug(struct net_buf_pool *pool,
