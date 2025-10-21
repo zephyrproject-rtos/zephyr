@@ -37,6 +37,16 @@ config TEST_TYPE_BAR_FOO
 	help
 	  Test the snippet processing order (1. bar, 2. foo)
 
+config TEST_TYPE_VER_CHECK
+	bool "Test Type: Version check"
+	help
+	  Test board version snippet application
+
+config TEST_TYPE_VER_CHECK_SPECIFIC
+	bool "Test Type: Version check specific"
+	help
+	  Test board version snippet application with specific board version
+
 endchoice
 
 # Test values set by the snippet config overlays and tested by the test logic
@@ -57,3 +67,14 @@ config TEST_COMMON_VAL
 	help
 	  This option's value should be overridden by the snippet config
 	  overlays.
+
+# Used for testing board version snippets
+config TEST_VER_CHECK_APPLIED
+	bool "Test version check snippet applied"
+	help
+	  This option's value should be set by the ver_check snippet.
+
+config TEST_VER_CHECK_SPECIFIC_VERSION_APPLIED
+	bool "Test version check with board version snippet applied"
+	help
+	  This option's value should be set by the ver_check snippet.
