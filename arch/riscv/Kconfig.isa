@@ -13,7 +13,7 @@ config RISCV_ISA_RV32E
 
 config RISCV_ISA_RV64I
 	bool
-	default y if 64BIT
+	select 64BIT
 	help
 	  RV64I Base Integer Instruction Set - 64bit
 

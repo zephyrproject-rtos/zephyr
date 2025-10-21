@@ -4,8 +4,6 @@
 config SOC_SERIES_SIFIVE_FREEDOM_FU700
 	bool
 
-	select 64BIT
-
 	# RISC-V options
 	select RISCV
 	select RISCV_PRIVILEGED
