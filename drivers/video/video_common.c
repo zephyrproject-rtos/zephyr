@@ -489,3 +489,20 @@ int video_set_compose_format(const struct device *dev, struct video_format *fmt)
 
 	return video_set_format(dev, fmt);
 }
+
+int video_transfer_buffer(const struct device *src, const struct device *sink,
+			  enum video_buf_type src_type, enum video_buf_type sink_type,
+			  k_timeout_t timeout)
+{
+	struct video_buffer *buf = &(struct video_buffer){.type = src_type};
+	int ret;
+
+	ret = video_dequeue(src, &buf, timeout);
+	if (ret < 0) {
+		return ret;
+	}
+
+	buf->type = sink_type;
+
+	return video_enqueue(sink, buf);
+}

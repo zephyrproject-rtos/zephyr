@@ -330,6 +330,7 @@ New APIs and options
 
   * :c:member:`video_format.size` field
   * :c:func:`video_estimate_fmt_size`
+  * :c:func:`video_transfer_buffer`
 
 .. zephyr-keep-sorted-stop
 
