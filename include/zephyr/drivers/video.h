@@ -1805,6 +1805,70 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 #define VIDEO_PIX_FMT_YVU420 VIDEO_FOURCC('Y', 'V', '1', '2')
 
 /**
+ * YUV 4:2:2 with U and V planes non-interleaved (multi-planar)
+ *
+ * Chroma (U/V) are subsampled horizontally only
+ *
+ * @code{.unparsed}
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy |
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy |
+ * | ... |
+ * | Vvvvvvvv | Vvvvvvvv | Vvvvvvvv | Vvvvvvvv |
+ * | ... |
+ * | Uuuuuuuu | Uuuuuuuu | Uuuuuuuu | Uuuuuuuu |
+ * | ... |
+ * @endcode
+ *
+ * Below diagram show how luma and chroma relate to each others
+ *
+ * @code{.unparsed}
+ *  Y0        Y1        Y2        Y3        ...
+ *  Y4        Y5        Y6        Y7        ...
+ *  ...
+ *
+ *  V0/1      V2/3      ...
+ *  V4/5      V6/7      ...
+ *  ...
+ *
+ *  U0/1      U2/3      ...
+ *  U4/5      U6/7      ...
+ *  ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_YVU422M VIDEO_FOURCC('Y', 'M', '6', '1')
+
+/**
+ * YUV 4:2:0 with U and V planes non-interleaved (multi-planar)
+ *
+ * Chroma (U/V) are subsampled both horizontally and vertically
+ *
+ * @code{.unparsed}
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy |
+ * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy |
+ * | ... |
+ * | Vvvvvvvv | Vvvvvvvv |
+ * | ... |
+ * | Uuuuuuuu | Uuuuuuuu |
+ * | ... |
+ * @endcode
+ *
+ * Below diagram show how luma and chroma relate to each others
+ *
+ * @code{.unparsed}
+ *  Y0        Y1        Y2        Y3        ...
+ *  Y6        Y7        Y8        Y9        ...
+ *  ...
+ *
+ *  V0/1/6/7      V2/3/8/9      ...
+ *  ...
+ *
+ *  U0/1/6/7      U2/3/8/9      ...
+ *  ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_YVU420M VIDEO_FOURCC('Y', 'M', '2', '1')
+
+/**
  * @}
  */
 
@@ -1864,6 +1928,7 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 	case VIDEO_PIX_FMT_NV21:
 	case VIDEO_PIX_FMT_YUV420:
 	case VIDEO_PIX_FMT_YVU420:
+	case VIDEO_PIX_FMT_YVU420M:
 		return 12;
 	case VIDEO_PIX_FMT_SBGGR14P:
 	case VIDEO_PIX_FMT_SGBRG14P:
@@ -1898,6 +1963,7 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 	case VIDEO_PIX_FMT_Y16:
 	case VIDEO_PIX_FMT_NV16:
 	case VIDEO_PIX_FMT_NV61:
+	case VIDEO_PIX_FMT_YVU422M:
 		return 16;
 	case VIDEO_PIX_FMT_BGR24:
 	case VIDEO_PIX_FMT_RGB24:
