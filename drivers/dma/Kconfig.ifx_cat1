@@ -5,10 +5,27 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config DMA_INFINEON_CAT1
-	bool "Infineon CAT1 DMA driver"
+config DMA_INFINEON_CAT1_HAL
+	bool "Infineon CAT1 DMA Legacy HAL-based driver"
 	default y
 	depends on DT_HAS_INFINEON_CAT1_DMA_ENABLED
+	depends on USE_INFINEON_LEGACY_HAL
 	select USE_INFINEON_DMA
 	help
-	  This option enables the DMA driver for Infineon CAT1 family.
+	  This option enables the legacy HAL-based DMA driver for Infineon CAT1 family.
+
+config DMA_INFINEON_CAT1_PDL
+	bool "Infineon CAT1 DMA PDL-based driver"
+	default y
+	depends on DT_HAS_INFINEON_CAT1_DMA_ENABLED
+	depends on !USE_INFINEON_LEGACY_HAL
+	select USE_INFINEON_DMA
+	help
+	  This option enables the PDL-based DMA driver for Infineon CAT1 family.
+
+config INFINEON_DESCRIPTOR_POOL_SIZE
+	int
+	default 10
+	depends on DMA_INFINEON_CAT1_PDL
+	help
+	  This option provides the descritor pool size used for the DMA PDL driver
