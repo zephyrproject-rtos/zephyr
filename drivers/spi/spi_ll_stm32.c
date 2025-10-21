@@ -10,30 +10,30 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_ll_stm32);
 
-#include <zephyr/sys/util.h>
-#include <zephyr/kernel.h>
-#include <soc.h>
-#include <stm32_cache.h>
-#include <stm32_ll_spi.h>
-#include <errno.h>
 #include <zephyr/cache.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/dma/dma_stm32.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/spi/rtio.h>
-#include <zephyr/drivers/pinctrl.h>
-#include <zephyr/toolchain.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/irq.h>
+#include <zephyr/kernel.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/mem_mgmt/mem_attr.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
-#ifdef CONFIG_SPI_STM32_DMA
-#include <zephyr/drivers/dma/dma_stm32.h>
-#include <zephyr/drivers/dma.h>
-#endif
-#include <zephyr/drivers/clock_control/stm32_clock_control.h>
-#include <zephyr/drivers/clock_control.h>
-#include <zephyr/irq.h>
-#include <zephyr/mem_mgmt/mem_attr.h>
-#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
-#include <zephyr/linker/linker-defs.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
+
+#include <soc.h>
+#include <stm32_cache.h>
+#include <stm32_ll_spi.h>
+
+#include <errno.h>
 
 #include "spi_ll_stm32.h"
 
