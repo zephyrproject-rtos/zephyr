@@ -80,7 +80,7 @@ static int stm32_digi_temp_sample_fetch(const struct device *dev, enum sensor_ch
 
 	/* Trigger a measurement */
 	stm32_reg_set_bits(&dts->CFGR1, DTS_CFGR1_TS1_START);
-	CLEAR_BIT(dts->CFGR1, DTS_CFGR1_TS1_START);
+	stm32_reg_clear_bits(&dts->CFGR1, DTS_CFGR1_TS1_START);
 
 	/* Wait for interrupt */
 	k_sem_take(&data->sem_isr, K_FOREVER);
@@ -155,10 +155,10 @@ static void stm32_digi_temp_disable(const struct device *dev)
 	DTS_TypeDef *dts = cfg->base;
 
 	/* Disable interrupt */
-	CLEAR_BIT(dts->ITENR, DTS_ITENR_TS1_ITEEN);
+	stm32_reg_clear_bits(&dts->ITENR, DTS_ITENR_TS1_ITEEN);
 
 	/* Disable the sensor */
-	CLEAR_BIT(dts->CFGR1, DTS_CFGR1_TS1_EN);
+	stm32_reg_clear_bits(&dts->CFGR1, DTS_CFGR1_TS1_EN);
 }
 #endif
 

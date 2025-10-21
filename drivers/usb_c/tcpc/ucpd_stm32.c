@@ -384,7 +384,7 @@ static void dead_battery(const struct device *dev, bool en)
 	update_stm32g0x_cc_line(config->ucpd_port);
 #else
 	if (en) {
-		CLEAR_BIT(PWR->CR3, PWR_CR3_UCPD_DBDIS);
+		stm32_reg_clear_bits(&PWR->CR3, PWR_CR3_UCPD_DBDIS);
 	} else {
 		stm32_reg_set_bits(&PWR->CR3, PWR_CR3_UCPD_DBDIS);
 	}
