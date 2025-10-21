@@ -82,6 +82,8 @@ int eeprom_target_write_data(const struct device *dev, off_t offset,
 /**
  * @brief Program memory of the virtual EEPROM
  *
+ * @deprecated Use @ref eeprom_target_write_data instead.
+ *
  * @param dev Pointer to the device structure for the driver instance.
  * @param eeprom_data Pointer of data to program into the virtual eeprom memory
  * @param length Length of data to program into the virtual eeprom memory
@@ -89,8 +91,8 @@ int eeprom_target_write_data(const struct device *dev, off_t offset,
  * @retval 0 If successful.
  * @retval -EINVAL Invalid data size
  */
-int eeprom_target_program(const struct device *dev, const uint8_t *eeprom_data,
-			 unsigned int length);
+__deprecated int eeprom_target_program(const struct device *dev, const uint8_t *eeprom_data,
+				       unsigned int length);
 
 /**
  * @brief Read single byte of virtual EEPROM memory
