@@ -938,6 +938,104 @@ struct bt_avrcp_ct_cb {
 	 *               or BT_AVRCP_STATUS_INVALID_PARAMETER.
 	 */
 	void (*inform_batt_status_of_ct)(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t status);
+
+	/** @brief Callback function for Set Absolute Volume response (CT).
+	 *
+	 *  Called when the Set Absolute Volume response is received from the TG.
+	 *
+	 *  @param ct AVRCP CT connection object.
+	 *  @param tid The transaction label of the response.
+	 *  @param status The status code returned by the TG, indicating the result of the
+	 *               operation, @ref bt_avrcp_status_t. Typically corresponds to
+	 *               BT_AVRCP_STATUS_* values such as BT_AVRCP_STATUS_SUCCESS
+	 *               or BT_AVRCP_STATUS_INVALID_PARAMETER.
+	 *  @param absolute_volume The absolute volume value (0x00-0x7F).
+	 */
+	void (*set_absolute_volume)(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t status,
+				   uint8_t absolute_volume);
+
+	/** @brief Callback for PDU ID GET_ELEMENT_ATTRS.
+	 *
+	 *  Called when the response for GET_ELEMENT_ATTRS is received.
+	 *
+	 *  @param ct AVRCP CT connection object.
+	 *  @param tid The transaction label of the request.
+	 *  @param status The status code returned by the TG, indicating the result of the
+	 *               operation, @ref bt_avrcp_status_t. Typically corresponds to
+	 *               BT_AVRCP_STATUS_* values such as BT_AVRCP_STATUS_SUCCESS
+	 *               or BT_AVRCP_STATUS_INVALID_PARAMETER.
+	 *  @param buf The response buffer containing the GET_ELEMENT_ATTRS payload
+	 *            returned by the TG, formatted as
+	 *            @ref bt_avrcp_get_element_attrs_rsp.
+	 *            If status is in the range BT_AVRCP_STATUS_INVALID_COMMAND to
+	 *            BT_AVRCP_STATUS_ADDRESSED_PLAYER_CHANGED, and is not equal to
+	 *            BT_AVRCP_STATUS_OPERATION_COMPLETED, it indicates that the AVRCP response
+	 *            code is an AV/C REJECTED response, and buf is NULL.
+	 *            Note that all multi-octet fields are encoded in big-endian format.
+	 */
+	void (*get_element_attrs)(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t status,
+				  struct net_buf *buf);
+
+	/** @brief Callback for PDU ID GET_PLAY_STATUS.
+	 *
+	 *  Called when the response for GET_PLAY_STATUS is received.
+	 *
+	 *  @param ct AVRCP CT connection object.
+	 *  @param tid The transaction label of the request.
+	 *  @param status The status code returned by the TG, indicating the result of the
+	 *               operation, @ref bt_avrcp_status_t. Typically corresponds to
+	 *               BT_AVRCP_STATUS_* values such as BT_AVRCP_STATUS_SUCCESS
+	 *               or BT_AVRCP_STATUS_INVALID_PARAMETER.
+	 *  @param buf The response buffer containing the GET_PLAY_STATUS payload
+	 *            returned by the TG, formatted as
+	 *            @ref bt_avrcp_get_play_status_rsp.
+	 *            If status is in the range BT_AVRCP_STATUS_INVALID_COMMAND to
+	 *            BT_AVRCP_STATUS_ADDRESSED_PLAYER_CHANGED, and is not equal to
+	 *            BT_AVRCP_STATUS_OPERATION_COMPLETED, it indicates that the AVRCP response
+	 *            code is an AV/C REJECTED response, and buf is NULL.
+	 *            Note that all multi-octet fields are encoded in big-endian format.
+	 */
+	void (*get_play_status)(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t status,
+				struct net_buf *buf);
+
+	/** @brief Callback for PDU ID SET_ADDRESSED_PLAYER.
+	 *
+	 *  Called when the response for SET_ADDRESSED_PLAYER is received.
+	 *
+	 *  @param ct AVRCP CT connection object.
+	 *  @param tid The transaction label of the request.
+	 *  @param status The status code returned by the TG, indicating the result of the
+	 *               operation. @ref bt_avrcp_status_t. Typically corresponds to
+	 *               BT_AVRCP_STATUS_* values such as BT_AVRCP_STATUS_SUCCESS
+	 *               or BT_AVRCP_STATUS_INVALID_PARAMETER.
+	 */
+	void (*set_addressed_player)(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t status);
+
+	/** @brief Callback for PDU ID PLAY_ITEM.
+	 *
+	 *  Called when the response for PLAY_ITEM is received.
+	 *
+	 *  @param ct AVRCP CT connection object.
+	 *  @param tid The transaction label of the request.
+	 *  @param status The status code returned by the TG, indicating the result of the
+	 *               operation. @ref bt_avrcp_status_t. Typically corresponds to
+	 *               BT_AVRCP_STATUS_* values such as BT_AVRCP_STATUS_SUCCESS
+	 *               or BT_AVRCP_STATUS_INVALID_PARAMETER.
+	 */
+	void (*play_item)(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t status);
+
+	/** @brief Callback for PDU ID ADD_TO_NOW_PLAYING.
+	 *
+	 *  Called when the response for ADD_TO_NOW_PLAYING is received.
+	 *
+	 *  @param ct AVRCP CT connection object.
+	 *  @param tid The transaction label of the request.
+	 *  @param status The status code returned by the TG, indicating the result of the
+	 *               operation. @ref bt_avrcp_status_t. Typically corresponds to
+	 *               BT_AVRCP_STATUS_* values such as BT_AVRCP_STATUS_SUCCESS
+	 *               or BT_AVRCP_STATUS_INVALID_PARAMETER.
+	 */
+	void (*add_to_now_playing)(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t status);
 };
 
 /** @brief Connect AVRCP.
@@ -1203,6 +1301,77 @@ int bt_avrcp_ct_inform_displayable_char_set(struct bt_avrcp_ct *ct, uint8_t tid,
  */
 int bt_avrcp_ct_inform_batt_status_of_ct(struct bt_avrcp_ct *ct, uint8_t tid,
 					 uint8_t battery_status);
+
+/** @brief Send Set Absolute Volume command (CT).
+ *
+ *  This function sends the Set Absolute Volume command to the TG.
+ *
+ *  @param ct The AVRCP CT instance.
+ *  @param tid The transaction label of the command, valid from 0 to 15.
+ *  @param absolute_volume The absolute volume value (0x00-0x7F).
+ *
+ * @return 0 in case of success or error code in case of error.
+ */
+int bt_avrcp_ct_set_absolute_volume(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t absolute_volume);
+
+/** @brief Send AVRCP vendor dependent command for GET_ELEMENT_ATTRS.
+ *
+ *  @param ct AVRCP CT connection object.
+ *  @param tid The transaction label of the response, valid from 0 to 15.
+ *  @param buf The command buffer containing the GET_ELEMENT_ATTRS
+ *            request payload, formatted as
+ *            @ref bt_avrcp_get_element_attrs_cmd.
+ *            Note that all multi-octet fields are encoded in big-endian format.
+ *
+ *  @return 0 on success or error code.
+ */
+int bt_avrcp_ct_get_element_attrs(struct bt_avrcp_ct *ct, uint8_t tid, struct net_buf *buf);
+
+/** @brief Send AVRCP vendor dependent command for GET_PLAY_STATUS.
+ *
+ *  @param ct AVRCP CT connection object.
+ *  @param tid The transaction label of the response, valid from 0 to 15.
+ *
+ *  @return 0 on success or error code.
+ */
+int bt_avrcp_ct_get_play_status(struct bt_avrcp_ct *ct, uint8_t tid);
+
+/** @brief Send AVRCP vendor dependent command for SET_ADDRESSED_PLAYER.
+ *
+ *  @param ct AVRCP CT connection object.
+ *  @param tid The transaction label of the response, valid from 0 to 15.
+ *  @param player_id The player ID to be set as addressed player.
+ *
+ *  @return 0 on success or error code.
+ */
+int bt_avrcp_ct_set_addressed_player(struct bt_avrcp_ct *ct, uint8_t tid, uint16_t player_id);
+
+/** @brief Send AVRCP vendor dependent command for PLAY_ITEM.
+ *
+ *  @param ct AVRCP CT connection object.
+ *  @param tid The transaction label of the response, valid from 0 to 15.
+ *  @param buf The command buffer containing the PLAY_ITEM
+ *            request payload, formatted as
+ *            @ref bt_avrcp_play_item_cmd.
+ *            Note that all multi-octet fields are encoded in big-endian format.
+ *
+ *  @return 0 on success or error code.
+ */
+int bt_avrcp_ct_play_item(struct bt_avrcp_ct *ct, uint8_t tid, struct net_buf *buf);
+
+/** @brief Send AVRCP vendor dependent command for ADD_TO_NOW_PLAYING.
+ *
+ *  @param ct AVRCP CT connection object.
+ *  @param tid The transaction label of the response, valid from 0 to 15.
+ *  @param buf The command buffer containing the ADD_TO_NOW_PLAYING
+ *            request payload, formatted as
+ *            @ref bt_avrcp_add_to_now_playing_cmd.
+ *            Note that all multi-octet fields are encoded in big-endian format.
+ *
+ *  @return 0 on success or error code.
+ */
+int bt_avrcp_ct_add_to_now_playing(struct bt_avrcp_ct *ct, uint8_t tid, struct net_buf *buf);
+
 struct bt_avrcp_tg_cb {
 	/** @brief An AVRCP TG connection has been established.
 	 *
@@ -1413,6 +1582,59 @@ struct bt_avrcp_tg_cb {
 	 *            The application should parse fields in big-endian order.
 	 */
 	void (*get_element_attrs)(struct bt_avrcp_tg *tg, uint8_t tid, struct net_buf *buf);
+
+	/** @brief Callback function for Set Absolute Volume command (TG).
+	 *
+	 *  Called when the Set Absolute Volume command is received from the CT.
+	 *
+	 *  @param tg AVRCP TG connection object.
+	 *  @param tid The transaction label of the command.
+	 *  @param absolute_volume The absolute volume value (0x00-0x7F).
+	 */
+	void (*set_absolute_volume)(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t absolute_volume);
+
+	/** @brief Callback for PDU ID BT_AVRCP_PDU_ID_GET_PLAY_STATUS.
+	 *
+	 *  Called when the TG receives a vendor dependent command for GET_PLAY_STATUS.
+	 *
+	 *  @param tg AVRCP TG connection object.
+	 *  @param tid The transaction label of the command.
+	 */
+	void (*get_play_status)(struct bt_avrcp_tg *tg, uint8_t tid);
+
+	/** @brief Callback for PDU ID BT_AVRCP_PDU_ID_SET_ADDRESSED_PLAYER.
+	 *
+	 *  Called when the TG receives a vendor dependent command for SET_ADDRESSED_PLAYER.
+	 *
+	 *  @param tg AVRCP TG connection object.
+	 *  @param tid The transaction label of the command.
+	 *  @param player_id The player ID to be set as addressed player.
+	 */
+	void (*set_addressed_player)(struct bt_avrcp_tg *tg, uint8_t tid, uint16_t player_id);
+
+	/** @brief Callback for PDU ID BT_AVRCP_PDU_ID_PLAY_ITEM.
+	 *
+	 *  Called when the TG receives a vendor dependent command for PLAY_ITEM.
+	 *
+	 *  @param tg AVRCP TG connection object.
+	 *  @param tid The transaction label of the command.
+	 *  @param buf The buffer containing the PLAY_ITEM command payload,
+	 *            formatted as @ref bt_avrcp_play_item_cmd.
+	 *            The application should parse fields in big-endian order.
+	 */
+	void (*play_item)(struct bt_avrcp_tg *tg, uint8_t tid, struct net_buf *buf);
+
+	/** @brief Callback for PDU ID BT_AVRCP_PDU_ID_ADD_TO_NOW_PLAYING.
+	 *
+	 *  Called when the TG receives a vendor dependent command for ADD_TO_NOW_PLAYING.
+	 *
+	 *  @param tg AVRCP TG connection object.
+	 *  @param tid The transaction label of the command.
+	 *  @param buf The buffer containing the ADD_TO_NOW_PLAYING command payload,
+	 *            formatted as @ref bt_avrcp_add_to_now_playing_cmd.
+	 *            The application should parse fields in big-endian order.
+	 */
+	void (*add_to_now_playing)(struct bt_avrcp_tg *tg, uint8_t tid, struct net_buf *buf);
 };
 
 /** @brief Register callback.
@@ -1486,7 +1708,8 @@ int bt_avrcp_tg_get_caps(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t status, st
  * @note
  * - The first successful call for a given @p event_id sends an INTERIM response.
  * - The next successful call for the same @p event_id sends a CHANGED response.
- * - If @p status is not SUCCESS, a REJECTED or NOT_IMPLEMENTED response is sent.
+ * - If @p status is BT_AVRCP_STATUS_NOT_IMPLEMENTED, a NOT_IMPLEMENTED response is sent.
+ * - If @p status is any other non-SUCCESS value, a REJECTED response is sent.
  */
 int bt_avrcp_tg_notification(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t status, uint8_t event_id,
 			     struct bt_avrcp_event_data *data);
@@ -1621,6 +1844,78 @@ int bt_avrcp_tg_inform_displayable_char_set(struct bt_avrcp_tg *tg, uint8_t tid,
  *  @return 0 on success or error code.
  */
 int bt_avrcp_tg_inform_batt_status_of_ct(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t status);
+
+/** @brief Send Set Absolute Volume response (TG).
+ *
+ *  This function sends the Set Absolute Volume response to the CT.
+ *
+ *  @param tg The AVRCP TG instance.
+ *  @param tid The transaction label of the response, valid from 0 to 15.
+ *  @param status Status code of the operation @ref bt_avrcp_status_t.
+ *  @param absolute_volume The absolute volume value (0x00-0x7F).
+ *
+ *  @return 0 in case of success or error code in case of error.
+ */
+int bt_avrcp_tg_absolute_volume(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t status,
+				uint8_t absolute_volume);
+
+/** @brief Send response for PDU ID BT_AVRCP_PDU_ID_GET_ELEMENT_ATTRS.
+ *
+ *  @param tg AVRCP TG connection object.
+ *  @param tid The transaction label of the request.
+ *  @param status Status code of the operation @ref bt_avrcp_status_t.
+ *  @param buf The response buffer containing the GET_ELEMENT_ATTRS payload,
+ *            formatted as @ref bt_avrcp_get_element_attrs_rsp.
+ *            Note that all multi-octet fields are encoded in big-endian format.
+ *
+ * @return 0 on success or error code.
+ */
+int bt_avrcp_tg_get_element_attrs(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t status,
+				  struct net_buf *buf);
+
+/** @brief Send response for PDU ID BT_AVRCP_PDU_ID_GET_PLAY_STATUS.
+ *
+ *  @param tg AVRCP TG connection object.
+ *  @param tid The transaction label of the request.
+ *  @param status Status code of the operation @ref bt_avrcp_status_t.
+ *  @param buf The response buffer containing the GET_PLAY_STATUS payload,
+ *            formatted as @ref bt_avrcp_get_play_status_rsp.
+ *            Note that all multi-octet fields are encoded in big-endian format.
+ *
+ *  @return 0 on success or error code.
+ */
+int bt_avrcp_tg_get_play_status(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t status,
+				struct net_buf *buf);
+
+/** @brief Send response for PDU ID BT_AVRCP_PDU_ID_SET_ADDRESSED_PLAYER.
+ *
+ *  @param tg AVRCP TG connection object.
+ *  @param tid The transaction label of the request.
+ *  @param status Status code of the operation @ref bt_avrcp_status_t.
+ *
+ *  @return 0 on success or error code.
+ */
+int bt_avrcp_tg_set_addressed_player(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t status);
+
+/** @brief Send response for PDU ID BT_AVRCP_PDU_ID_PLAY_ITEM.
+ *
+ *  @param tg AVRCP TG connection object.
+ *  @param tid The transaction label of the request.
+ *  @param status Status code of the operation @ref bt_avrcp_status_t.
+ *
+ *  @return 0 on success or error code.
+ */
+int bt_avrcp_tg_play_item(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t status);
+
+/** @brief Send response for PDU ID BT_AVRCP_PDU_ID_ADD_TO_NOW_PLAYING.
+ *
+ *  @param tg AVRCP TG connection object.
+ *  @param tid The transaction label of the request.
+ *  @param status Status code of the operation @ref bt_avrcp_status_t.
+ *
+ *  @return 0 on success or error code.
+ */
+int bt_avrcp_tg_add_to_now_playing(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t status);
 #ifdef __cplusplus
 }
 #endif

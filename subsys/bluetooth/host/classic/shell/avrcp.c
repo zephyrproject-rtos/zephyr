@@ -33,6 +33,9 @@ NET_BUF_POOL_DEFINE(avrcp_tx_pool, CONFIG_BT_MAX_CONN,
 		    BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU),
 		    CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
+NET_BUF_POOL_DEFINE(avrcp_big_tx_pool, CONFIG_BT_MAX_CONN,
+		    1024, CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+
 #define FOLDER_NAME_HEX_BUF_LEN 80
 
 struct bt_avrcp_ct *default_ct;
@@ -49,6 +52,82 @@ static const uint8_t supported_avrcp_events[] = {
 	BT_AVRCP_EVT_TRACK_REACHED_END,
 	BT_AVRCP_EVT_TRACK_REACHED_START,
 	BT_AVRCP_EVT_VOLUME_CHANGED,
+};
+
+struct bt_avrcp_media_attr_rsp {
+	uint32_t attr_id;
+	uint16_t charset_id;
+	uint16_t attr_len;
+	const uint8_t *attr_val;
+} __packed;
+
+static struct bt_avrcp_media_attr_rsp test_media_attrs[] = {
+	{
+		.attr_id = BT_AVRCP_MEDIA_ATTR_TITLE,
+		.charset_id = BT_AVRCP_CHARSET_UTF8,
+		.attr_len = 11,
+		.attr_val = (const uint8_t *)"Test Title",
+	},
+	{
+		.attr_id = BT_AVRCP_MEDIA_ATTR_ARTIST,
+		.charset_id = BT_AVRCP_CHARSET_UTF8,
+		.attr_len = 11,
+		.attr_val = "Test Artist",
+	},
+	{
+		.attr_id = BT_AVRCP_MEDIA_ATTR_ALBUM,
+		.charset_id = BT_AVRCP_CHARSET_UTF8,
+		.attr_len = 10U,
+		.attr_val = (const uint8_t *)"Test Album",
+	},
+	{
+		.attr_id = BT_AVRCP_MEDIA_ATTR_TRACK_NUMBER,
+		.charset_id = BT_AVRCP_CHARSET_UTF8,
+		.attr_len = 1,
+		.attr_val = (const uint8_t *)"1",
+	},
+	{
+		.attr_id = BT_AVRCP_MEDIA_ATTR_TOTAL_TRACKS,
+		.charset_id = BT_AVRCP_CHARSET_UTF8,
+		.attr_len = 2U,
+		.attr_val = (const uint8_t *)"10",
+	},
+	{
+		.attr_id = BT_AVRCP_MEDIA_ATTR_GENRE,
+		.charset_id = BT_AVRCP_CHARSET_UTF8,
+		.attr_len = 4U,
+		.attr_val = (const uint8_t *)"Rock",
+	},
+	{
+		.attr_id = BT_AVRCP_MEDIA_ATTR_PLAYING_TIME,
+		.charset_id = BT_AVRCP_CHARSET_UTF8,
+		.attr_len = 6U,
+		.attr_val = (const uint8_t *)"240000", /* 4 minutes in milliseconds */
+	},
+};
+
+static struct bt_avrcp_media_attr_rsp large_media_attrs[] = {
+	{
+		.attr_id = BT_AVRCP_MEDIA_ATTR_TITLE,
+		.charset_id = BT_AVRCP_CHARSET_UTF8,
+		.attr_len = 200U,
+		.attr_val = (const uint8_t *)
+		"This is a long title that is designed to test the fragmentation of the AVRCP.",
+	},
+	{
+		.attr_id = BT_AVRCP_MEDIA_ATTR_ARTIST,
+		.charset_id = BT_AVRCP_CHARSET_UTF8,
+		.attr_len = 250U,
+		.attr_val = (const uint8_t *)
+		"This is a very long artist name that is also designed to test fragmentation.",
+	},
+	{
+		.attr_id = BT_AVRCP_MEDIA_ATTR_ALBUM,
+		.charset_id = BT_AVRCP_CHARSET_UTF8,
+		.attr_len = 100U,
+		.attr_val = (const uint8_t *)
+		"This is a long album name for testing fragmentation of AVRCP responses.",
+	},
 };
 
 static uint8_t get_next_tid(void)
@@ -157,6 +236,162 @@ static void avrcp_passthrough_rsp(struct bt_avrcp_ct *ct, uint8_t tid, bt_avrcp_
 	}
 }
 
+static void avrcp_set_absolute_volume_rsp(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t status,
+					  uint8_t absolute_volume)
+{
+	bt_shell_print("AVRCP set absolute volume rsp: tid=0x%02x, status=0x%02x, volume=0x%02x",
+		       tid, status, absolute_volume);
+}
+
+static void avrcp_get_element_attrs_rsp(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t status,
+					struct net_buf *buf)
+{
+	const struct bt_avrcp_get_element_attrs_rsp *rsp;
+	struct bt_avrcp_media_attr *attr;
+	uint8_t i = 0;
+	const char *attr_name;
+
+	bt_shell_print("GetElementAttributes : status=0x%02x", status);
+	if (buf == NULL) {
+		return;
+	}
+
+	if (buf->len < sizeof(*rsp)) {
+		bt_shell_print("Invalid GetElementAttributes response length: %d", buf->len);
+		return;
+	}
+
+	rsp = net_buf_pull_mem(buf, sizeof(*rsp));
+
+	bt_shell_print("AVRCP GetElementAttributes response received, tid=0x%02x, num_attrs=%u",
+		       tid, rsp->num_attrs);
+
+	while (buf->len > 0) {
+		if (buf->len < sizeof(struct bt_avrcp_media_attr)) {
+			bt_shell_print("incompleted message");
+			break;
+		}
+		attr = net_buf_pull_mem(buf, sizeof(struct bt_avrcp_media_attr));
+
+		attr->attr_id = sys_be32_to_cpu(attr->attr_id);
+		attr->charset_id = sys_be16_to_cpu(attr->charset_id);
+		attr->attr_len = sys_be16_to_cpu(attr->attr_len);
+		if (buf->len < attr->attr_len) {
+			bt_shell_print("incompleted message for attr_len");
+			break;
+		}
+		net_buf_pull_mem(buf, attr->attr_len);
+		switch (attr->attr_id) {
+		case BT_AVRCP_MEDIA_ATTR_TITLE:
+			attr_name = "TITLE";
+			break;
+		case BT_AVRCP_MEDIA_ATTR_ARTIST:
+			attr_name = "ARTIST";
+			break;
+		case BT_AVRCP_MEDIA_ATTR_ALBUM:
+			attr_name = "ALBUM";
+			break;
+		case BT_AVRCP_MEDIA_ATTR_TRACK_NUMBER:
+			attr_name = "TRACK_NUMBER";
+			break;
+		case BT_AVRCP_MEDIA_ATTR_TOTAL_TRACKS:
+			attr_name = "TOTAL_TRACKS";
+			break;
+		case BT_AVRCP_MEDIA_ATTR_GENRE:
+			attr_name = "GENRE";
+			break;
+		case BT_AVRCP_MEDIA_ATTR_PLAYING_TIME:
+			attr_name = "PLAYING_TIME";
+			break;
+		default:
+			attr_name = "UNKNOWN";
+			break;
+		}
+		bt_shell_print(" Attr[%u]: ID=0x%08x (%s), charset=0x%04x, len=%u",
+			       i, attr->attr_id, attr_name, attr->charset_id, attr->attr_len);
+
+		/* Print attribute value (truncate if too long for display) */
+		if (attr->attr_len > 0) {
+			uint16_t print_len = (attr->attr_len > 64) ? 64 : attr->attr_len;
+			char value_str[65];
+
+			memcpy(value_str, attr->attr_val, print_len);
+			value_str[print_len] = '\0';
+			bt_shell_print("   Value: \"%s\"%s", value_str,
+				       (attr->attr_len > 64) ? "..." : "");
+		}
+		i++;
+	}
+}
+
+static void avrcp_get_element_attrs_req(struct bt_avrcp_tg *tg, uint8_t tid, struct net_buf *buf)
+{
+	struct bt_avrcp_get_element_attrs_cmd *cmd;
+	uint16_t expected_len = 0;
+	uint64_t identifier;
+
+	tg_tid = tid;
+	if (buf->len < sizeof(*cmd)) {
+		bt_shell_print("Invalid GetElementAttributes command length: %d", buf->len);
+		goto err_rsp;
+	}
+
+	cmd = net_buf_pull_mem(buf, sizeof(*cmd));
+
+	expected_len = cmd->num_attrs * sizeof(uint32_t);
+	if (buf->len < expected_len) {
+		bt_shell_print("Invalid GetElementAttributes command attribute IDs length: %d, "
+			       "expected %d",
+			       buf->len, expected_len);
+		goto err_rsp;
+	}
+	net_buf_pull_mem(buf, expected_len);
+	identifier = sys_get_be64(cmd->identifier);
+	bt_shell_print("AVRCP GetElementAttributes command received, tid=0x%02x", tid);
+	bt_shell_print(" Identifier: 0x%016llx", identifier);
+	bt_shell_print(" Num attrs requested: %u %s", cmd->num_attrs,
+		       (cmd->num_attrs == 0U) ? "(all attributes)" : "");
+
+	if (cmd->num_attrs > 0U) {
+		bt_shell_print(" Requested attribute IDs:");
+		for (uint8_t i = 0U; i < cmd->num_attrs; i++) {
+			const char *attr_name;
+
+			cmd->attr_ids[i] = sys_be32_to_cpu(cmd->attr_ids[i]);
+			switch (cmd->attr_ids[i]) {
+			case BT_AVRCP_MEDIA_ATTR_TITLE:
+				attr_name = "TITLE";
+				break;
+			case BT_AVRCP_MEDIA_ATTR_ARTIST:
+				attr_name = "ARTIST";
+				break;
+			case BT_AVRCP_MEDIA_ATTR_ALBUM:
+				attr_name = "ALBUM";
+				break;
+			case BT_AVRCP_MEDIA_ATTR_TRACK_NUMBER:
+				attr_name = "TRACK_NUMBER";
+				break;
+			case BT_AVRCP_MEDIA_ATTR_TOTAL_TRACKS:
+				attr_name = "TOTAL_TRACKS";
+				break;
+			case BT_AVRCP_MEDIA_ATTR_GENRE:
+				attr_name = "GENRE";
+				break;
+			case BT_AVRCP_MEDIA_ATTR_PLAYING_TIME:
+				attr_name = "PLAYING_TIME";
+				break;
+			default:
+				attr_name = "UNKNOWN";
+				break;
+			}
+			bt_shell_print("   [%u]: 0x%08x (%s)", i, cmd->attr_ids[i], attr_name);
+		}
+	}
+
+err_rsp:
+	return;
+}
+
 static void print_notification_event(uint8_t event_id, struct bt_avrcp_event_data *data,
 				     bool is_interim)
 {
@@ -232,6 +467,14 @@ static void avrcp_register_notification_req(struct bt_avrcp_tg *tg, uint8_t tid,
 	tg_tid = tid;
 	bt_shell_print("AVRCP register_notification_req: tid=0x%02x, event_id=0x%02x, interval=%u",
 		       tid, event_id, interval);
+}
+
+static void avrcp_set_absolute_volume_req(struct bt_avrcp_tg *tg, uint8_t tid,
+					  uint8_t absolute_volume)
+{
+	bt_shell_print("AVRCP set_absolute_volume_req: tid=0x%02x, absolute_volume=0x%02x",
+		       tid, absolute_volume);
+	tg_tid = tid;
 }
 
 static void avrcp_notification_rsp(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t status,
@@ -548,6 +791,75 @@ static void avrcp_inform_batt_status_of_ct_rsp(struct bt_avrcp_ct *ct, uint8_t t
 	bt_shell_print("Inform battstatus of ct rsp: tid=0x%02x, status=0x%02x", tid, status);
 }
 
+static void avrcp_set_addressed_player_rsp(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t status)
+{
+	bt_shell_print("SetAddressedPlayer rsp: tid=0x%02x, status=0x%02x", tid, status);
+}
+
+static void avrcp_play_item_rsp(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t status)
+{
+	bt_shell_print("Play item rsp: tid=0x%02x, status=0x%02x", tid, status);
+}
+
+static void avrcp_add_to_now_playing_rsp(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t status)
+{
+	bt_shell_print("Add to now playing rsp: tid=0x%02x, status=0x%02x", tid, status);
+}
+
+static void avrcp_get_play_status_rsp(struct bt_avrcp_ct *ct, uint8_t tid,
+				      uint8_t status, struct net_buf *buf)
+{
+	struct bt_avrcp_get_play_status_rsp *rsp;
+
+	bt_shell_print("getplaystatus : status=0x%02x", status);
+	if (buf == NULL) {
+		return;
+	}
+	if (buf->len < sizeof(*rsp)) {
+		bt_shell_print("Invalid response data length");
+		return;
+	}
+	rsp = net_buf_pull_mem(buf, sizeof(*rsp));
+
+	uint32_t song_len = sys_be32_to_cpu(rsp->song_length);
+	uint32_t song_pos = sys_be32_to_cpu(rsp->song_position);
+	uint8_t  play_status = rsp->play_status;
+
+	bt_shell_print("GetPlayStatus: len=%u ms, pos=%u ms, status=0x%02x",
+		       song_len, song_pos, play_status);
+
+	switch (play_status) {
+	case BT_AVRCP_PLAYBACK_STATUS_STOPPED:
+		bt_shell_print(" status: STOPPED");
+		break;
+	case BT_AVRCP_PLAYBACK_STATUS_PLAYING:
+		bt_shell_print(" status: PLAYING");
+		break;
+	case BT_AVRCP_PLAYBACK_STATUS_PAUSED:
+		bt_shell_print(" status: PAUSED");
+		break;
+	case BT_AVRCP_PLAYBACK_STATUS_FWD_SEEK:
+		bt_shell_print(" status: FWD_SEEK");
+		break;
+	case BT_AVRCP_PLAYBACK_STATUS_REV_SEEK:
+		bt_shell_print(" status: REV_SEEK");
+		break;
+	case BT_AVRCP_PLAYBACK_STATUS_ERROR:
+		bt_shell_print(" status: ERROR");
+		break;
+	default:
+		break;
+	}
+
+	if (song_len != 0xFFFFFFFFU && song_pos > song_len) {
+		bt_shell_warn("song_pos %u > song_len %u", song_pos, song_len);
+	}
+
+	if (buf->len > 0U) {
+		bt_shell_warn("trailing bytes in GetPlayStatus rsp: %u", buf->len);
+	}
+}
+
 static struct bt_avrcp_ct_cb app_avrcp_ct_cb = {
 	.connected = avrcp_ct_connected,
 	.disconnected = avrcp_ct_disconnected,
@@ -567,6 +879,12 @@ static struct bt_avrcp_ct_cb app_avrcp_ct_cb = {
 	.get_player_app_setting_val_text = avrcp_get_player_app_setting_val_text_rsp,
 	.inform_displayable_char_set = avrcp_inform_displayable_char_rsp,
 	.inform_batt_status_of_ct = avrcp_inform_batt_status_of_ct_rsp,
+	.set_absolute_volume = avrcp_set_absolute_volume_rsp,
+	.get_element_attrs = avrcp_get_element_attrs_rsp,
+	.get_play_status = avrcp_get_play_status_rsp,
+	.set_addressed_player = avrcp_set_addressed_player_rsp,
+	.play_item = avrcp_play_item_rsp,
+	.add_to_now_playing = avrcp_add_to_now_playing_rsp,
 };
 
 static void avrcp_tg_connected(struct bt_conn *conn, struct bt_avrcp_tg *tg)
@@ -805,6 +1123,56 @@ static void avrcp_inform_batt_status_of_ct_req(struct bt_avrcp_tg *tg, uint8_t t
 	tg_tid = tid;
 }
 
+static void avrcp_get_play_status_req(struct bt_avrcp_tg *tg, uint8_t tid)
+{
+	bt_shell_print("AVRCP get play status request received");
+	tg_tid = tid;
+}
+
+static void avrcp_set_addressed_player_req(struct bt_avrcp_tg *tg, uint8_t tid, uint16_t player_id)
+{
+	bt_shell_print("AVRCP set addressed player request received, player_id = %u", player_id);
+	tg_tid = tid;
+}
+
+static void avrcp_play_item_req(struct bt_avrcp_tg *tg, uint8_t tid, struct net_buf *buf)
+{
+	struct bt_avrcp_play_item_cmd *cmd;
+
+	tg_tid = tid;
+
+	cmd = net_buf_pull_mem(buf, sizeof(*cmd));
+
+	uint64_t uid = sys_get_be64(cmd->uid);
+	uint16_t uid_counter = sys_be16_to_cpu(cmd->uid_counter);
+
+	bt_shell_print("PlayItem, tid=0x%02x, scope=0x%02x, uid=0x%016llx, uid_counter=0x%04x",
+		       tid, cmd->scope, uid, uid_counter);
+
+	if (buf->len > 0U) {
+		bt_shell_warn("trailing bytes in PlayItem req: %u", buf->len);
+	}
+}
+
+static void avrcp_add_to_now_playing_req(struct bt_avrcp_tg *tg, uint8_t tid, struct net_buf *buf)
+{
+	struct bt_avrcp_add_to_now_playing_cmd *cmd;
+
+	tg_tid = tid;
+
+	cmd = net_buf_pull_mem(buf, sizeof(*cmd));
+
+	uint64_t uid = sys_get_be64(cmd->uid);
+	uint16_t uid_counter = sys_be16_to_cpu(cmd->uid_counter);
+
+	bt_shell_print("AddToNowPlaying tid=%u, scope=0x%02x, uid=0x%016llx, uid_counter=0x%04x",
+		       tid, cmd->scope, (unsigned long long)uid, uid_counter);
+
+	if (buf->len > 0U) {
+		bt_shell_warn("trailing bytes in AddToNowPlaying req: %u", buf->len);
+	}
+}
+
 static struct bt_avrcp_tg_cb app_avrcp_tg_cb = {
 	.connected = avrcp_tg_connected,
 	.disconnected = avrcp_tg_disconnected,
@@ -824,6 +1192,12 @@ static struct bt_avrcp_tg_cb app_avrcp_tg_cb = {
 	.get_player_app_setting_val_text = avrcp_get_player_app_setting_val_text_req,
 	.inform_displayable_char_set = avrcp_inform_displayable_char_set_req,
 	.inform_batt_status_of_ct = avrcp_inform_batt_status_of_ct_req,
+	.set_absolute_volume = avrcp_set_absolute_volume_req,
+	.get_element_attrs = avrcp_get_element_attrs_req,
+	.get_play_status = avrcp_get_play_status_req,
+	.set_addressed_player = avrcp_set_addressed_player_req,
+	.play_item = avrcp_play_item_req,
+	.add_to_now_playing = avrcp_add_to_now_playing_req,
 };
 
 static int register_ct_cb(const struct shell *sh)
@@ -1756,6 +2130,387 @@ static int cmd_ct_inform_batt(const struct shell *sh, size_t argc, char **argv)
 	return err;
 }
 
+static int cmd_get_element_attrs(const struct shell *sh, int32_t argc, char *argv[])
+{
+	struct bt_avrcp_get_element_attrs_cmd *cmd;
+	struct net_buf *buf;
+	uint64_t identifier = 0;
+	char *endptr;
+	unsigned long val;
+	int err = 0;
+	int i;
+
+	if (!avrcp_ct_registered && register_ct_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_ct == NULL) {
+		shell_error(sh, "AVRCP CT is not connected");
+		return -ENOEXEC;
+	}
+
+	buf = bt_avrcp_create_vendor_pdu(&avrcp_tx_pool);
+	if (buf == NULL) {
+		shell_error(sh, "Failed to allocate vendor dependent command buffer");
+		return -ENOMEM;
+	}
+
+	if (net_buf_tailroom(buf) < sizeof(*cmd) + (7 * sizeof(uint32_t))) {
+		shell_error(sh, "Not enough tailroom in buffer for browsed player rsp");
+		goto failed;
+	}
+	cmd = net_buf_add(buf, sizeof(*cmd));
+	cmd->num_attrs = 0U;
+
+	/* Parse optional identifier */
+	if (argc > 1) {
+		identifier = sys_cpu_to_be64(strtoull(argv[1], &endptr, 16));
+		if (*endptr != '\0') {
+			shell_error(sh, "Invalid identifier: %s", argv[1]);
+			goto failed;
+		}
+		memcpy(cmd->identifier, &identifier, sizeof(identifier));
+	}
+
+	/* Parse optional attribute IDs */
+	if (argc > 2 && identifier != 0) {
+		for (i = 2; i < argc && i < 9; i++) { /* Max 7 attributes + cmd + identifier */
+			val = strtoul(argv[i], &endptr, 16);
+			if (*endptr != '\0' || val > 0xFFFFFFFFUL) {
+				shell_error(sh, "Invalid attribute ID: %s", argv[i]);
+				goto failed;
+			}
+			net_buf_add_be32(buf, (uint32_t)val);
+			cmd->num_attrs++;
+		}
+	}
+
+	shell_print(sh, "Requesting element attributes: identifier=0x%016llx, num_attrs=%u",
+		    identifier, cmd->num_attrs);
+
+	err = bt_avrcp_ct_get_element_attrs(default_ct, get_next_tid(), buf);
+	if (err < 0) {
+		shell_error(sh, "Failed to send get element attrs command: %d", err);
+		goto failed;
+	} else {
+		shell_print(sh, "AVRCP CT get element attrs command sent");
+		return 0;
+	}
+failed:
+	net_buf_unref(buf);
+	return err;
+}
+
+static int cmd_send_get_element_attrs_rsp(const struct shell *sh, int32_t argc, char *argv[])
+{
+
+	struct bt_avrcp_get_element_attrs_rsp *rsp;
+	struct bt_avrcp_media_attr *attr;
+	uint16_t total_size = 0;
+	bool use_large_attrs = false;
+	struct net_buf *buf;
+	char *endptr;
+	int err = 0;
+
+	if (!avrcp_tg_registered && register_tg_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_tg == NULL) {
+		shell_error(sh, "AVRCP TG is not connected");
+		return -ENOEXEC;
+	}
+
+	buf = bt_avrcp_create_vendor_pdu(&avrcp_big_tx_pool);
+	if (buf == NULL) {
+		shell_error(sh, "Failed to allocate vendor dependent command buffer");
+		return -ENOMEM;
+	}
+
+	if (net_buf_tailroom(buf) < sizeof(*rsp)) {
+		shell_error(sh, "Not enough tailroom in buffer for get element attrs rsp");
+		goto failed;
+	}
+
+	rsp = net_buf_add(buf, sizeof(*rsp));
+	if (argc > 1) {
+		use_large_attrs = strtoull(argv[1], &endptr, 16);
+		if (*endptr != '\0') {
+			shell_error(sh, "Invalid identifier: %s", argv[1]);
+			goto failed;
+		}
+	}
+
+	/* Determine which attribute set to use */
+	if (use_large_attrs) {
+		rsp->num_attrs = ARRAY_SIZE(large_media_attrs);
+		ARRAY_FOR_EACH(large_media_attrs, i) {
+			total_size += sizeof(*attr) + large_media_attrs[i].attr_len;
+		}
+
+		if (net_buf_tailroom(buf) < total_size) {
+			shell_error(sh, "Not enough tailroom in buffer for large attrs");
+			goto failed;
+		}
+
+		ARRAY_FOR_EACH(large_media_attrs, i) {
+			attr = net_buf_add(buf, sizeof(struct bt_avrcp_media_attr));
+			attr->attr_id = sys_cpu_to_be32(large_media_attrs[i].attr_id);
+			attr->charset_id = sys_cpu_to_be16(large_media_attrs[i].charset_id);
+			attr->attr_len = sys_cpu_to_be16(large_media_attrs[i].attr_len);
+			net_buf_add(buf, large_media_attrs[i].attr_len);
+			memset(attr->attr_val, 0x0, large_media_attrs[i].attr_len);
+			memcpy(attr->attr_val, large_media_attrs[i].attr_val,
+			       strlen(large_media_attrs[i].attr_val));
+		}
+
+		shell_print(sh, "Sending large Attributes response (%u attrs) for fragment test",
+			    rsp->num_attrs);
+	} else {
+		rsp->num_attrs = ARRAY_SIZE(test_media_attrs);
+		ARRAY_FOR_EACH(test_media_attrs, i) {
+			total_size += sizeof(*attr) + test_media_attrs[i].attr_len;
+		}
+
+		if (net_buf_tailroom(buf) < total_size) {
+			shell_error(sh, "Not enough tailroom in buffer for large attrs");
+			goto failed;
+		}
+
+		ARRAY_FOR_EACH(test_media_attrs, i) {
+			attr = net_buf_add(buf, sizeof(*attr));
+			attr->attr_id = sys_cpu_to_be32(test_media_attrs[i].attr_id);
+			attr->charset_id = sys_cpu_to_be16(test_media_attrs[i].charset_id);
+			attr->attr_len = sys_cpu_to_be16(test_media_attrs[i].attr_len);
+			net_buf_add_mem(buf, test_media_attrs[i].attr_val,
+					test_media_attrs[i].attr_len);
+		}
+		shell_print(sh, "Sending standard GetElementAttributes response (%u attrs)",
+			    rsp->num_attrs);
+	}
+
+	err = bt_avrcp_tg_get_element_attrs(default_tg, tg_tid, BT_AVRCP_STATUS_SUCCESS, buf);
+	if (err < 0) {
+		shell_error(sh, "Failed to send GetElementAttributes response: %d", err);
+		goto failed;
+	} else {
+		shell_print(sh, "GetElementAttributes response sent successfully");
+		return 0;
+	}
+
+failed:
+	net_buf_unref(buf);
+	return -ENOEXEC;
+}
+
+static int cmd_ct_set_absolute_volume(const struct shell *sh, int argc, char *argv[])
+{
+	uint8_t absolute_volume;
+	int err;
+
+	if (!avrcp_ct_registered && register_ct_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_ct == NULL) {
+		shell_error(sh, "AVRCP CT is not connected");
+		return -ENOEXEC;
+	}
+
+	absolute_volume = (uint8_t)strtoul(argv[1], NULL, 0);
+
+	err = bt_avrcp_ct_set_absolute_volume(default_ct, get_next_tid(), absolute_volume);
+	if (err < 0) {
+		shell_error(sh, "Failed to set absolute volume: %d", err);
+	} else {
+		shell_print(sh, "set absolute volume"
+			    " absolute_volume=0x%02x", absolute_volume);
+	}
+	return err;
+}
+
+static int cmd_ct_get_play_status(const struct shell *sh, int argc, char *argv[])
+{
+	int err;
+
+	if (!avrcp_ct_registered && register_ct_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_ct == NULL) {
+		shell_error(sh, "AVRCP is not connected");
+		return -ENOEXEC;
+	}
+
+	err = bt_avrcp_ct_get_play_status(default_ct, get_next_tid());
+	if (err < 0) {
+		shell_error(sh, "Fail to get_play_status");
+	} else {
+		shell_print(sh, "AVRCP GetPlayStatus");
+	}
+
+	return err;
+}
+
+static int cmd_ct_set_addressed_player(const struct shell *sh, int argc, char *argv[])
+{
+	uint16_t player_id;
+	int err;
+
+	if (!avrcp_ct_registered && register_ct_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_ct == NULL) {
+		shell_error(sh, "AVRCP is not connected");
+		return -ENOEXEC;
+	}
+
+	player_id = (uint16_t)strtoul(argv[1], NULL, 0);
+
+	err = bt_avrcp_ct_set_addressed_player(default_ct, get_next_tid(), player_id);
+	if (err < 0) {
+		shell_error(sh, "fail to set addressed player");
+	} else {
+		shell_print(sh, "AVRCP send set addressed player req");
+	}
+
+	return 0;
+}
+
+static int cmd_ct_play_item(const struct shell *sh, size_t argc, char **argv)
+{
+	struct bt_avrcp_play_item_cmd *cmd;
+	struct net_buf *buf;
+	char *endptr = NULL;
+	int err;
+
+	if (!avrcp_ct_registered && register_ct_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_ct == NULL) {
+		shell_error(sh, "AVRCP is not connected");
+		return -ENOEXEC;
+	}
+
+	buf = bt_avrcp_create_vendor_pdu(&avrcp_tx_pool);
+	if (buf == NULL) {
+		shell_error(sh, "No buffer");
+		return -ENOMEM;
+	}
+	cmd = net_buf_add(buf, sizeof(*cmd));
+
+	cmd->scope = strtoul(argv[1], NULL, 0);
+	if (cmd->scope > BT_AVRCP_SCOPE_NOW_PLAYING) {
+		shell_error(sh, "scope out of range ");
+		goto failed;
+	}
+
+	uint64_t uid = (uint64_t)strtoull(argv[2], &endptr, 16);
+
+	if ((endptr == argv[2]) || (*endptr != '\0')) {
+		shell_error(sh, "invalid uid hex: %s", argv[2]);
+		goto failed;
+	}
+	sys_put_be64(uid, cmd->uid);
+
+	cmd->uid_counter = sys_cpu_to_be16(strtoul(argv[3], NULL, 0));
+
+	err = bt_avrcp_ct_play_item(default_ct, get_next_tid(), buf);
+	if (err < 0) {
+		goto failed;
+	}
+
+	shell_print(sh, "Sent PlayItem scope=0x%02x uid=0x%016llx uid_counter=0x%04x",
+		    cmd->scope, uid, cmd->uid_counter);
+
+	return 0;
+failed:
+	net_buf_unref(buf);
+	return -ENOEXEC;
+}
+
+static int cmd_ct_add_to_now_playing(const struct shell *sh, size_t argc, char **argv)
+{
+	struct bt_avrcp_add_to_now_playing_cmd *cmd;
+	struct net_buf *buf;
+	char *endptr = NULL;
+	int err;
+
+	if (!avrcp_ct_registered && register_ct_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_ct == NULL) {
+		shell_error(sh, "AVRCP is not connected");
+		return -ENOEXEC;
+	}
+
+	buf = bt_avrcp_create_vendor_pdu(&avrcp_tx_pool);
+	if (buf == NULL) {
+		shell_error(sh, "No buffer");
+		return -ENOMEM;
+	}
+	cmd = net_buf_add(buf, sizeof(*cmd));
+
+	cmd->scope = strtoul(argv[1], NULL, 0);
+	if (cmd->scope > BT_AVRCP_SCOPE_NOW_PLAYING) {
+		shell_error(sh, "scope out of range ");
+		goto failed;
+	}
+
+	uint64_t uid = (uint64_t)strtoull(argv[2], &endptr, 16);
+
+	if ((endptr == argv[2]) || (*endptr != '\0')) {
+		shell_error(sh, "invalid uid hex: %s", argv[2]);
+		goto failed;
+	}
+	sys_put_be64(uid, cmd->uid);
+
+	cmd->uid_counter = sys_cpu_to_be16(strtoul(argv[3], NULL, 0));
+
+	err = bt_avrcp_ct_add_to_now_playing(default_ct, get_next_tid(), buf);
+	if (err < 0) {
+		goto failed;
+	}
+
+	shell_print(sh, "Sent AddToNowPlaying scope=0x%02x uid=0x%016llx  uid_counter=0x%04x",
+		    cmd->scope, uid, cmd->uid_counter);
+	return 0;
+
+failed:
+	net_buf_unref(buf);
+	return -ENOEXEC;
+}
+
+static int cmd_tg_send_absolute_volume_rsp(const struct shell *sh, int32_t argc, char *argv[])
+{
+	uint8_t absolute_volume;
+	int err;
+
+	if (!avrcp_tg_registered && register_tg_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_tg == NULL) {
+		shell_error(sh, "AVRCP TG is not connected");
+		return -ENOEXEC;
+	}
+
+	absolute_volume = (uint8_t)strtoul(argv[1], NULL, 0);
+
+	err = bt_avrcp_tg_absolute_volume(default_tg, tg_tid, BT_AVRCP_STATUS_SUCCESS,
+					  absolute_volume);
+	if (err < 0) {
+		shell_error(sh, "Failed to send set absolute volume response: %d", err);
+	} else {
+		shell_print(sh, "Set absolute volume response sent successfully");
+	}
+
+	return err;
+}
+
 static int cmd_tg_send_list_player_app_setting_attrs_rsp(const struct shell *sh, int argc,
 							 char *argv[])
 {
@@ -2120,6 +2875,141 @@ static int cmd_tg_send_inform_batt_status_of_ct_rsp(const struct shell *sh, int 
 	return 0;
 
 }
+
+static int cmd_tg_send_get_play_status_rsp(const struct shell *sh, int argc, char *argv[])
+{
+	struct bt_avrcp_get_play_status_rsp *rsp;
+	struct net_buf *buf;
+	int err;
+	uint8_t status = BT_AVRCP_STATUS_OPERATION_COMPLETED;
+
+	if (!avrcp_tg_registered && register_tg_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_tg == NULL) {
+		shell_error(sh, "AVRCP TG is not connected");
+		return -ENOEXEC;
+	}
+
+	if (argc > 1) {
+		status = (uint8_t)strtoul(argv[1], NULL, 0);
+	}
+
+	buf = bt_avrcp_create_vendor_pdu(&avrcp_tx_pool);
+	if (buf == NULL) {
+		shell_error(sh, "Failed to allocate buffer for AVRCP response");
+		return -ENOMEM;
+	}
+
+	if (net_buf_tailroom(buf) < sizeof(*rsp)) {
+		shell_error(sh, "Not enough tailroom in buffer");
+		goto failed;
+	}
+
+	rsp = net_buf_add(buf, sizeof(*rsp));
+	rsp->song_length = sys_cpu_to_be32(180000U);
+	rsp->song_position = sys_cpu_to_be32(30000U);
+	rsp->play_status = BT_AVRCP_PLAYBACK_STATUS_PLAYING;
+
+	err = bt_avrcp_tg_get_play_status(default_tg, tg_tid, status, buf);
+	if (err < 0) {
+		shell_error(sh, "Failed to send GetPlayStatus rsp: %d", err);
+		goto failed;
+	}
+
+	shell_print(sh, "GetPlayStatus rsp sent");
+	return 0;
+
+failed:
+	net_buf_unref(buf);
+	return -ENOEXEC;
+}
+
+static int cmd_tg_send_set_addressed_player_rsp(const struct shell *sh, size_t argc, char **argv)
+{
+	int err;
+	uint8_t status = BT_AVRCP_STATUS_OPERATION_COMPLETED;
+
+	if (!avrcp_tg_registered && register_tg_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_tg == NULL) {
+		shell_error(sh, "AVRCP TG is not connected");
+		return -ENOEXEC;
+	}
+
+	if (argc > 1) {
+		status = (uint8_t)strtoul(argv[1], NULL, 0);
+	}
+
+	err = bt_avrcp_tg_set_addressed_player(default_tg, tg_tid, status);
+	if (err < 0) {
+		shell_error(sh, "SetAddressedPlayer rsp send failed: err=%d", err);
+		return err;
+	}
+
+	shell_print(sh, "SetAddressedPlayer rsp sent (status=0x%02x)", status);
+	return 0;
+}
+
+static int cmd_tg_send_play_item_rsp(const struct shell *sh, size_t argc, char **argv)
+{
+	int err;
+	uint8_t status = BT_AVRCP_STATUS_OPERATION_COMPLETED;
+
+	if (!avrcp_tg_registered && register_tg_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_tg == NULL) {
+		shell_error(sh, "AVRCP TG is not connected");
+		return -ENOEXEC;
+	}
+
+	if (argc > 1) {
+		status = (uint8_t)strtoul(argv[1], NULL, 0);
+	}
+
+	err = bt_avrcp_tg_play_item(default_tg, tg_tid, status);
+	if (err < 0) {
+		shell_error(sh, "Play item rsp send failed: err=%d", err);
+		return err;
+	}
+
+	shell_print(sh, "Play item rsp sent (status=0x%02x)", status);
+	return 0;
+}
+
+static int cmd_tg_send_add_to_now_playing_rsp(const struct shell *sh, size_t argc, char **argv)
+{
+	int err;
+	uint8_t status = BT_AVRCP_STATUS_OPERATION_COMPLETED;
+
+	if (!avrcp_tg_registered && register_tg_cb(sh) != 0) {
+		return -ENOEXEC;
+	}
+
+	if (default_tg == NULL) {
+		shell_error(sh, "AVRCP TG is not connected");
+		return -ENOEXEC;
+	}
+
+	if (argc > 1) {
+		status = (uint8_t)strtoul(argv[1], NULL, 0);
+	}
+
+	err = bt_avrcp_tg_add_to_now_playing(default_tg, tg_tid, status);
+	if (err < 0) {
+		shell_error(sh, "Add to now playing rsp send failed: err=%d", err);
+		return err;
+	}
+
+	shell_print(sh, "Add to now playing rsp sent (status=0x%02x)", status);
+	return 0;
+}
+
 static int cmd_set_browsed_player(const struct shell *sh, int32_t argc, char *argv[])
 {
 	uint16_t player_id;
@@ -2288,6 +3178,17 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      cmd_ct_inform_displayable_char, 2, 7),
 	SHELL_CMD_ARG(inform_batt, NULL, "Inform Battery Status Of CT <Battery status>",
 		      cmd_ct_inform_batt, 2, 0),
+	SHELL_CMD_ARG(set_absolute_volume, NULL, "set absolute volume <volume>",
+		      cmd_ct_set_absolute_volume, 2, 0),
+	SHELL_CMD_ARG(get_element_attrs, NULL, "get element attrs [identifier] [attr1] [attr2] ...",
+		      cmd_get_element_attrs, 1, 9),
+	SHELL_CMD_ARG(get_play_status, NULL, HELP_NONE, cmd_ct_get_play_status, 1, 0),
+	SHELL_CMD_ARG(set_addressed_player, NULL, "set addressed player <player_id>",
+		      cmd_ct_set_addressed_player, 2, 0),
+	SHELL_CMD_ARG(play_item, NULL, "PlayItem <scope> <uid_hex> <uid_counter>",
+		      cmd_ct_play_item, 4, 0),
+	SHELL_CMD_ARG(add_to_now_playing, NULL, "AddToNowPlaying <scope> <uid_hex> <uid_counter>",
+		      cmd_ct_add_to_now_playing, 4, 0),
 	SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
@@ -2324,6 +3225,18 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      cmd_tg_send_inform_displayable_char_rsp, 1, 1),
 	SHELL_CMD_ARG(send_inform_batt_status_of_ct_rsp, NULL, "send inform batt rsp [status]",
 		      cmd_tg_send_inform_batt_status_of_ct_rsp, 1, 1),
+	SHELL_CMD_ARG(send_get_element_attrs_rsp, NULL, "send get element attrs response<large: 1>",
+		      cmd_send_get_element_attrs_rsp, 2, 0),
+	SHELL_CMD_ARG(send_absolute_volume_rsp, NULL, "send absolute volume rsp <volume>",
+		      cmd_tg_send_absolute_volume_rsp, 2, 0),
+	SHELL_CMD_ARG(send_get_play_status_rsp, NULL, "send get play status [status]",
+		      cmd_tg_send_get_play_status_rsp, 1, 1),
+	SHELL_CMD_ARG(send_set_addressed_player_rsp, NULL, "send set addressed player rsp [status]",
+		      cmd_tg_send_set_addressed_player_rsp, 1, 1),
+	SHELL_CMD_ARG(send_play_item_rsp, NULL, "send play item rsp [status]",
+		      cmd_tg_send_play_item_rsp, 1, 1),
+	SHELL_CMD_ARG(send_add_to_now_playing_rsp, NULL, "send add to now playing rsp [status]",
+		      cmd_tg_send_add_to_now_playing_rsp, 1, 1),
 	SHELL_SUBCMD_SET_END);
 
 static int cmd_avrcp(const struct shell *sh, size_t argc, char **argv)
