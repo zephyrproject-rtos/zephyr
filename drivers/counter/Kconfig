@@ -22,6 +22,14 @@ config COUNTER_SHELL
 	help
 	  Enable Shell Commands for Counter and Timer
 
+config COUNTER_64BITS
+	bool
+	help
+	  Select this option if the counter driver should use 64-bit
+	  tick values for counter_ticks_t instead of 32-bit.
+	  This is typically set by drivers that require extended
+	  tick ranges beyond the 32-bit limit.
+
 module = COUNTER
 module-str = counter
 source "subsys/logging/Kconfig.template.log_config"

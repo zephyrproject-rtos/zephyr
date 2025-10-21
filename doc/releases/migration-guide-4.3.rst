@@ -105,6 +105,24 @@ Comparator
   and :c:macro:`NRF_COMP_AIN_VDDH_DIV5` represents VDDH/5.
   The old ``string`` properties type is deprecated.
 
+Counter
+=======
+
+* Drivers that support 64-bit ticks now can use the new KConfig
+  :kconfig:option:`CONFIG_COUNTER_64BITS` to enable this feature. The drivers that support
+  this feature are :dtcompatible:`intel,ace-art-counter`,
+  :dtcompatible:`intel,ace-rtc-counter`, :dtcompatible:`ti,cc23x0-rtc`,
+  :dtcompatible:`espressif,esp32-counter`, and the :dtcompatible:`st,stm32-rtc` if
+  :kconfig:option:`CONFIG_COUNTER_RTC_STM32_SUBSECONDS` is enabled. This moves the ``uint32_t``
+  previously used for ticks to a typedef :c:type:`counter_ticks_t` that is ``uint64_t`` when 64-bit
+  ticks are enabled and ``uint32_t`` otherwise. The API functions that use ticks have been
+  updated to use this typedef. This change is backward compatible as long as the application
+  does not enable 64-bit ticks. Enabling 64-bit ticks may require changes in the application
+  code to use the new typedef and to handle the larger tick values. The
+  :c:func:`counter_get_value_64` has been removed in favor of just using
+  :c:func:`counter_get_value` along with the :c:type:`counter_ticks_t` as it's parameter
+  defined as ``uint64_t`` with :kconfig:option:`CONFIG_COUNTER_64BITS` enabled. (:github:`94189`)
+
 DMA
 ===
 
