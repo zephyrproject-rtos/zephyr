@@ -47,4 +47,27 @@ config SILABS_DEVICE_IS_MODULE
 	bool
 	default n
 
+# Hardware capability flags (auto-detected from Device Tree)
+# Bluetooth 5.0
+config HAS_HW_EFR32_RADIO_BLE_2M
+	def_bool $(dt_nodelabel_has_prop,radio,ble-2mbps-supported)
+
+config HAS_HW_EFR32_RADIO_BLE_CODED
+	def_bool $(dt_nodelabel_has_prop,radio,ble-coded-phy-supported)
+
+# Bluetooth 5.1
+config HAS_HW_EFR32_RADIO_CTE_TX
+	def_bool $(dt_nodelabel_has_prop,radio,ble-cte-tx-supported)
+
+config HAS_HW_EFR32_RADIO_CTE_RX
+	def_bool $(dt_nodelabel_has_prop,radio,ble-cte-rx-supported) && HAS_HW_EFR32_RADIO_CTE_TX
+
+# Bluetooth 6.0
+config HAS_HW_EFR32_RADIO_CS
+	def_bool $(dt_nodelabel_has_prop,radio,ble-cs-supported)
+
+# Vendor-specific
+config HAS_HW_EFR32_RADIO_TX_HIGH_POWER
+	def_bool $(dt_nodelabel_has_prop,radio,radio-tx-high-power-supported)
+
 endif

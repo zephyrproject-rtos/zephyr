@@ -26,6 +26,7 @@ config BT_SILABS_EFR32
 	select PSA_CRYPTO
 	select SILABS_SISDK_PROTOCOL_CRYPTO
 	select HAS_BT_CTLR
+	# Features supported by all EFR32 devices
 	select BT_CTLR_PHY_UPDATE_SUPPORT
 	select BT_CTLR_PER_INIT_FEAT_XCHG_SUPPORT
 	select BT_CTLR_DATA_LEN_UPDATE_SUPPORT
@@ -34,10 +35,20 @@ config BT_SILABS_EFR32
 	select BT_CTLR_CONN_RSSI_SUPPORT
 	select BT_CTLR_ADV_EXT_SUPPORT
 	select BT_CTLR_PRIVACY_SUPPORT
-	select BT_CTLR_PHY_2M_SUPPORT
 	select BT_CTLR_SYNC_PERIODIC_SUPPORT
 	select BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT
 	select BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT
+	# Features supported by some EFR32 devices
+	select BT_CTLR_PHY_2M_SUPPORT if HAS_HW_EFR32_RADIO_BLE_2M
+	select BT_CTLR_PHY_CODED_SUPPORT if HAS_HW_EFR32_RADIO_BLE_CODED
+	select BT_CTLR_CHANNEL_SOUNDING_SUPPORT if HAS_HW_EFR32_RADIO_CS
+	select BT_CTLR_DF_SUPPORT if HAS_HW_EFR32_RADIO_CTE_TX
+	select BT_CTLR_DF_CTE_TX_SUPPORT if HAS_HW_EFR32_RADIO_CTE_TX
+	select BT_CTLR_DF_CTE_RX_SUPPORT if HAS_HW_EFR32_RADIO_CTE_RX
+	select BT_CTLR_DF_CTE_RX_SAMPLE_1US_SUPPORT if HAS_HW_EFR32_RADIO_CTE_RX
+	select BT_CTLR_DF_ANT_SWITCH_1US_SUPPORT if HAS_HW_EFR32_RADIO_CTE_TX
+	select BT_CTLR_DF_ANT_SWITCH_2US_SUPPORT if HAS_HW_EFR32_RADIO_CTE_TX
+	select BT_SILABS_EFR32_HIGH_POWER if HAS_HW_EFR32_RADIO_TX_HIGH_POWER
 	help
 	  Use Silicon Labs binary Bluetooth library to connect to the
 	  controller.
@@ -101,11 +112,11 @@ config BT_SILABS_EFR32_MAX_QUEUED_ADV_REPORTS
 	  Additional advertising reports are dropped.
 
 config BT_SILABS_EFR32_HIGH_POWER
-	bool "High power transmission"
+	bool
 	help
-	  Normally the transmit power is limited to 10 dBm. Enable this option
-	  to allow the controller to transmit at higher power levels. Note that
-	  this feature is not available on all devices.
+	  Normally the transmit power is limited to 10 dBm. This option
+	  is automatically enabled on devices with high power PA support
+	  and allows the controller to transmit at higher power levels.
 
 config BT_SILABS_EFR32_HIGH_POWER_AFH
 	bool "Adaptive frequency hopping for high power transmitters"
