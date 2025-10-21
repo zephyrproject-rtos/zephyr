@@ -651,6 +651,7 @@ static int encode_frame(struct stm32_venc_data *data)
 	if ((data->frame_nb % VENC_DEFAULT_FRAMERATE) == 0 || data->resync) {
 		/* if frame is the first or resync needed: set as intra coded */
 		enc_in.codingType = H264ENC_INTRA_FRAME;
+		data->resync = false;
 	} else {
 		/* if there was a frame previously, set as predicted */
 		enc_in.timeIncrement = 1;
