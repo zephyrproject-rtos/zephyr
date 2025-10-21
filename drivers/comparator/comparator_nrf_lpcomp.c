@@ -357,7 +357,7 @@ static int shim_nrf_lpcomp_init(const struct device *dev)
 					    &shim_nrf_lpcomp_data0.config);
 
 	if (nrfx_lpcomp_init(&shim_nrf_lpcomp_data0.config,
-			     shim_nrf_lpcomp_event_handler) != NRFX_SUCCESS) {
+			     shim_nrf_lpcomp_event_handler) != 0) {
 		return -ENODEV;
 	}
 
