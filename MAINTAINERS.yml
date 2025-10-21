@@ -3047,9 +3047,10 @@ JSON Web Token:
     - libraries.encoding.jwt
 
 Kconfig:
-  status: odd fixes
-  collaborators:
+  status: maintained
+  maintainers:
     - tejlmand
+  collaborators:
     - nashif
   files:
     - scripts/kconfig/
