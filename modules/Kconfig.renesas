@@ -181,6 +181,21 @@ config USE_RA_FSP_ETHER
 	help
 	  Enable RA FSP Ethernet driver
 
+config USE_RA_FSP_RMAC_PHY
+	bool
+	help
+	  Enable RA FSP Ethernet RMAC phy driver
+
+config USE_RA_FSP_RMAC
+	bool
+	help
+	  Enable RA FSP Ethernet RMAC driver
+
+config USE_RA_FSP_LAYER3_SWITCH
+	bool
+	help
+	  Enable RA FSP Ethernet Layer3 Switch driver
+
 config USE_RA_FSP_USB_DEVICE
 	bool
 	help

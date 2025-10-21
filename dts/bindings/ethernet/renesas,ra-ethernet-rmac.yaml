@@ -1,0 +1,67 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA Ethernet MAC Controller
+
+compatible: "renesas,ra-ethernet-rmac"
+
+include: [ethernet-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  channel:
+    type: int
+    required: true
+
+  phy-handle:
+    required: true
+
+  phy-clock:
+    type: phandle
+    required: true
+    description: |
+      Specifies the reference clock node for PHY device.
+
+  phy-clock-type:
+    type: string
+    required: true
+    enum:
+      - "xtal"
+      - "internal"
+    description: |
+      Specifies the clock type of reference clock:
+      "xtal": use xtal as clock source
+      "internal": use ETHPHYCLK pin output as clock source
+
+  txq-num:
+    type: int
+    default: 2
+    description: Number of TX queues
+
+  rxq-num:
+    type: int
+    default: 2
+    description: Number of RX queues
+
+  txq-len:
+    type: int
+    default: 4
+    description: |
+      Number of descriptors in each TX queue
+
+  rxq-len:
+    type: int
+    default: 4
+    description: |
+      Number of descriptors in each RX queue
+
+  txb-num:
+    type: int
+    default: 12
+    description: |
+      Number of TX buffers
+
+  rxb-num:
+    type: int
+    default: 12
+    description: |
+      Number of RX buffers

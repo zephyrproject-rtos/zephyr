@@ -1,0 +1,48 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config ETH_RENESAS_RA_RMAC
+	bool "Renesas RA ethernet RMAC driver"
+	default y
+	depends on DT_HAS_RENESAS_RA_ETHERNET_RMAC_ENABLED
+	select USE_RA_FSP_RMAC
+	select USE_RA_FSP_LAYER3_SWITCH
+	select MDIO
+	help
+	  Add support for Renesas RA ethernet device driver.
+
+if ETH_RENESAS_RA_RMAC
+
+config ETH_RENESAS_RA_RX_THREAD_STACK_SIZE
+	int "Stack size for internal incoming packet handler"
+	default 1500
+	help
+	  Size of the stack used for internal thread which is ran for
+	  incoming packet processing.
+
+config ETH_RENESAS_RA_RX_THREAD_PRIORITY
+	int "Renesas RA Ethernet receive thread priority"
+	default 2
+
+config ETH_RENESAS_RA_USE_ZERO_COPY
+	bool "Use zero-copy for ethernet buffers"
+	default y
+	help
+	  Enable this option to use zero-copy mode, allowing the driver to directly
+	  access DMA buffers without using a staging buffer.
+
+config ETH_RENESAS_RA_USE_HW_WRITEBACK
+	bool "Wait hardware writeback of ethernet buffers"
+	default y
+	help
+	  Enable this option to wait for Ethernet descriptor writeback, ensuring
+	  that the TX frame is written successfully. Note that enabling this option
+	  may cause ethernet write operations to take slightly longer.
+
+config ESWM_RENESAS_RA_INIT_PRIORITY
+	int "Ethernet driver init priority"
+	default 55
+	help
+	  Ethernet switch module ESWM device driver initialization priority.
+
+endif
