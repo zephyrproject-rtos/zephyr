@@ -4,13 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Use the NRF_RTC instance for coarse radio event scheduling */
-#if !defined(CONFIG_BT_CTLR_NRF_GRTC)
-#define NRF_RTC NRF_RTC10
-#endif /* !CONFIG_BT_CTLR_NRF_GRTC */
-
 #undef EVENT_TIMER_ID
-#define EVENT_TIMER_ID 10
+#define EVENT_TIMER_ID 020
 
 #undef EVENT_TIMER
 #define EVENT_TIMER _CONCAT(NRF_TIMER, EVENT_TIMER_ID)
@@ -19,10 +14,9 @@
 #undef SW_SWITCH_TIMER
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 #define SW_SWITCH_TIMER EVENT_TIMER
-#else  /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
-/* TODO: Using NRF_TIMER from another domain needs DPPIC and PPIB setup */
-#error "SW tIFS switching using dedicated second timer not supported yet."
-#endif  /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#define SW_SWITCH_TIMER NRF_TIMER021
+#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 /* HAL abstraction of event timer prescaler value */
@@ -36,14 +30,14 @@
 /* TXEN->TXIDLE + TXIDLE->TX (with fast Radio ramp-up mode)
  * in microseconds for LE 1M PHY.
  */
-#define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_1M_FAST_NS 40900 /*40.1 + 0.8*/
+#define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_1M_FAST_NS 40900	/*40.1 + 0.8 */
 #define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_1M_FAST_US \
 	HAL_RADIO_NS2US_ROUND(HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_1M_FAST_NS)
 
 /* TXEN->TXIDLE + TXIDLE->TX (with default Radio ramp-up mode)
  * in microseconds for LE 1M PHY.
  */
-#define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_1M_DEFAULT_NS 140900 /*140.1 + 0.8*/
+#define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_1M_DEFAULT_NS 140900	/*140.1 + 0.8 */
 #define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_1M_DEFAULT_US \
 	HAL_RADIO_NS2US_ROUND(HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_1M_DEFAULT_NS)
 
@@ -59,14 +53,14 @@
 /* TXEN->TXIDLE + TXIDLE->TX (with fast Radio ramp-up mode)
  * in microseconds for LE 2M PHY.
  */
-#define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_2M_FAST_NS 40000 /* 40.1 - 0.1 */
+#define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_2M_FAST_NS 40000	/* 40.1 - 0.1 */
 #define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_2M_FAST_US \
 	HAL_RADIO_NS2US_ROUND(HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_2M_FAST_NS)
 
 /* TXEN->TXIDLE + TXIDLE->TX (with default Radio ramp-up mode)
  * in microseconds for LE 2M PHY.
  */
-#define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_2M_DEFAULT_NS 144900 /* 145 - 0.1 */
+#define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_2M_DEFAULT_NS 144900	/* 145 - 0.1 */
 #define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_2M_DEFAULT_US \
 	HAL_RADIO_NS2US_ROUND(HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_2M_DEFAULT_NS)
 
@@ -82,14 +76,14 @@
 /* TXEN->TXIDLE + TXIDLE->TX (with fast Radio ramp-up mode)
  * in microseconds for LE CODED PHY [S2].
  */
-#define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_S2_FAST_NS 42300 /* 40.1 + 2.2 */
+#define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_S2_FAST_NS 42300	/* 40.1 + 2.2 */
 #define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_S2_FAST_US \
 	HAL_RADIO_NS2US_ROUND(HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_S2_FAST_NS)
 
 /* TXEN->TXIDLE + TXIDLE->TX (with default Radio ramp-up mode)
  * in microseconds for LE 2M PHY [S2].
  */
-#define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_S2_DEFAULT_NS 132200 /* 130 + 2.2 */
+#define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_S2_DEFAULT_NS 132200	/* 130 + 2.2 */
 #define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_S2_DEFAULT_US \
 	HAL_RADIO_NS2US_ROUND(HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_S2_DEFAULT_NS)
 
@@ -105,13 +99,13 @@
 /* TXEN->TXIDLE + TXIDLE->TX (with fast Radio ramp-up mode)
  * in microseconds for LE CODED PHY [S8].
  */
-#define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_S8_FAST_NS 42300 /* 40.1 + 2.2 */
+#define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_S8_FAST_NS 42300	/* 40.1 + 2.2 */
 #define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_S8_FAST_US \
 	HAL_RADIO_NS2US_ROUND(HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_S8_FAST_NS)
 /* TXEN->TXIDLE + TXIDLE->TX (with default Radio ramp-up mode)
  * in microseconds for LE 2M PHY [S8].
  */
-#define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_S8_DEFAULT_NS 121800 /*119.6 + 2.2*/
+#define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_S8_DEFAULT_NS 121800	/*119.6 + 2.2 */
 #define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_S8_DEFAULT_US \
 	HAL_RADIO_NS2US_ROUND(HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_S8_DEFAULT_NS)
 
@@ -127,14 +121,14 @@
 /* RXEN->RXIDLE + RXIDLE->RX (with fast Radio ramp-up mode)
  * in microseconds for LE 1M PHY.
  */
-#define HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_1M_FAST_NS 40300 /* 40.1 + 0.2 */
+#define HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_1M_FAST_NS 40300	/* 40.1 + 0.2 */
 #define HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_1M_FAST_US \
 	HAL_RADIO_NS2US_CEIL(HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_1M_FAST_NS)
 
 /* RXEN->RXIDLE + RXIDLE->RX (with default Radio ramp-up mode)
  * in microseconds for LE 1M PHY.
  */
-#define HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_1M_DEFAULT_NS 140300 /*140.1 + 0.2*/
+#define HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_1M_DEFAULT_NS 140300	/*140.1 + 0.2 */
 #define HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_1M_DEFAULT_US \
 	HAL_RADIO_NS2US_CEIL(HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_1M_DEFAULT_NS)
 
@@ -150,14 +144,14 @@
 /* RXEN->RXIDLE + RXIDLE->RX (with fast Radio ramp-up mode)
  * in microseconds for LE 2M PHY.
  */
-#define HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_2M_FAST_NS 40300 /* 40.1 + 0.2 */
+#define HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_2M_FAST_NS 40300	/* 40.1 + 0.2 */
 #define HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_2M_FAST_US \
 	HAL_RADIO_NS2US_CEIL(HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_2M_FAST_NS)
 
 /* RXEN->RXIDLE + RXIDLE->RX (with default Radio ramp-up mode)
  * in microseconds for LE 2M PHY.
  */
-#define HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_2M_DEFAULT_NS 144800 /*144.6 + 0.2*/
+#define HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_2M_DEFAULT_NS 144800	/*144.6 + 0.2 */
 #define HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_2M_DEFAULT_US \
 	HAL_RADIO_NS2US_CEIL(HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_2M_DEFAULT_NS)
 
@@ -173,14 +167,14 @@
 /* RXEN->RXIDLE + RXIDLE->RX (with fast Radio ramp-up mode)
  * in microseconds for LE Coded PHY [S2].
  */
-#define HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_S2_FAST_NS 40300 /* 40.1 + 0.2 */
+#define HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_S2_FAST_NS 40300	/* 40.1 + 0.2 */
 #define HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_S2_FAST_US \
 	HAL_RADIO_NS2US_CEIL(HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_S2_FAST_NS)
 
 /* RXEN->RXIDLE + RXIDLE->RX (with default Radio ramp-up mode)
  * in microseconds for LE Coded PHY [S2].
  */
-#define HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_S2_DEFAULT_NS 130200 /* 130 + 0.2 */
+#define HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_S2_DEFAULT_NS 130200	/* 130 + 0.2 */
 #define HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_S2_DEFAULT_US \
 	HAL_RADIO_NS2US_CEIL(HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_S2_DEFAULT_NS)
 
@@ -196,14 +190,14 @@
 /* RXEN->RXIDLE + RXIDLE->RX (with fast Radio ramp-up mode)
  * in microseconds for LE Coded PHY [S8].
  */
-#define HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_S8_FAST_NS 40300 /* 40.1 + 0.2 */
+#define HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_S8_FAST_NS 40300	/* 40.1 + 0.2 */
 #define HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_S8_FAST_US \
 	HAL_RADIO_NS2US_CEIL(HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_S8_FAST_NS)
 
 /* RXEN->RXIDLE + RXIDLE->RX (with default Radio ramp-up mode)
  * in microseconds for LE Coded PHY [S8].
  */
-#define HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_S8_DEFAULT_NS 120200 /* 120.0 + 0.2 */
+#define HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_S8_DEFAULT_NS 120200	/* 120.0 + 0.2 */
 #define HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_S8_DEFAULT_US \
 	HAL_RADIO_NS2US_CEIL(HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_S8_DEFAULT_NS)
 
@@ -216,23 +210,23 @@
 	HAL_RADIO_NS2US_CEIL( \
 		HAL_RADIO_NRF54HX_RXEN_RXIDLE_RX_S8_DEFAULT_NO_HW_TIFS_NS)
 
-#define HAL_RADIO_NRF54HX_TX_CHAIN_DELAY_1M_US  1 /* ceil(0.6) */
-#define HAL_RADIO_NRF54HX_TX_CHAIN_DELAY_1M_NS  600 /* 0.6 */
-#define HAL_RADIO_NRF54HX_TX_CHAIN_DELAY_2M_US  1 /* ceil(0.6) */
-#define HAL_RADIO_NRF54HX_TX_CHAIN_DELAY_2M_NS  600 /* 0.6 */
-#define HAL_RADIO_NRF54HX_TX_CHAIN_DELAY_S2_US  1 /* ceil(0.6) */
-#define HAL_RADIO_NRF54HX_TX_CHAIN_DELAY_S2_NS  600 /* 0.6 */
-#define HAL_RADIO_NRF54HX_TX_CHAIN_DELAY_S8_US  1 /* ceil(0.6) */
-#define HAL_RADIO_NRF54HX_TX_CHAIN_DELAY_S8_NS  600 /* 0.6 */
+#define HAL_RADIO_NRF54HX_TX_CHAIN_DELAY_1M_US  1	/* ceil(0.6) */
+#define HAL_RADIO_NRF54HX_TX_CHAIN_DELAY_1M_NS  600	/* 0.6 */
+#define HAL_RADIO_NRF54HX_TX_CHAIN_DELAY_2M_US  1	/* ceil(0.6) */
+#define HAL_RADIO_NRF54HX_TX_CHAIN_DELAY_2M_NS  600	/* 0.6 */
+#define HAL_RADIO_NRF54HX_TX_CHAIN_DELAY_S2_US  1	/* ceil(0.6) */
+#define HAL_RADIO_NRF54HX_TX_CHAIN_DELAY_S2_NS  600	/* 0.6 */
+#define HAL_RADIO_NRF54HX_TX_CHAIN_DELAY_S8_US  1	/* ceil(0.6) */
+#define HAL_RADIO_NRF54HX_TX_CHAIN_DELAY_S8_NS  600	/* 0.6 */
 
-#define HAL_RADIO_NRF54HX_RX_CHAIN_DELAY_1M_US  10 /* ceil(9.4) */
-#define HAL_RADIO_NRF54HX_RX_CHAIN_DELAY_1M_NS  9400 /* 9.4 */
-#define HAL_RADIO_NRF54HX_RX_CHAIN_DELAY_2M_US  5 /* ceil(5.0) */
-#define HAL_RADIO_NRF54HX_RX_CHAIN_DELAY_2M_NS  5000 /* 5.0 */
-#define HAL_RADIO_NRF54HX_RX_CHAIN_DELAY_S2_US  25 /* ceil(19.6) */
-#define HAL_RADIO_NRF54HX_RX_CHAIN_DELAY_S2_NS  24600 /* 19.6 */
-#define HAL_RADIO_NRF54HX_RX_CHAIN_DELAY_S8_US  30 /* ceil(29.6) */
-#define HAL_RADIO_NRF54HX_RX_CHAIN_DELAY_S8_NS  29600 /* 29.6 */
+#define HAL_RADIO_NRF54HX_RX_CHAIN_DELAY_1M_US  10	/* ceil(9.4) */
+#define HAL_RADIO_NRF54HX_RX_CHAIN_DELAY_1M_NS  9400	/* 9.4 */
+#define HAL_RADIO_NRF54HX_RX_CHAIN_DELAY_2M_US  5	/* ceil(5.0) */
+#define HAL_RADIO_NRF54HX_RX_CHAIN_DELAY_2M_NS  5000	/* 5.0 */
+#define HAL_RADIO_NRF54HX_RX_CHAIN_DELAY_S2_US  25	/* ceil(19.6) */
+#define HAL_RADIO_NRF54HX_RX_CHAIN_DELAY_S2_NS  24600	/* 19.6 */
+#define HAL_RADIO_NRF54HX_RX_CHAIN_DELAY_S8_US  30	/* ceil(29.6) */
+#define HAL_RADIO_NRF54HX_RX_CHAIN_DELAY_S8_NS  29600	/* 29.6 */
 
 #if defined(CONFIG_BT_CTLR_RADIO_ENABLE_FAST)
 #define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_1M_US \
@@ -386,7 +380,7 @@
 #define HAL_RADIO_RESET_VALUE_DATAWHITE     0x00890040UL
 
 /* HAL abstraction of CCM h/w */
-#define NRF_CCM                               NRF_CCM00
+#define NRF_CCM                               NRF_CCM030
 #define NRF_CCM_TASK_CRYPT                    NRF_CCM_TASK_START
 #define EVENTS_ENDCRYPT                       EVENTS_END
 #define INPTR                                 IN.PTR
@@ -397,6 +391,9 @@
 #define CCM_MODE_DATARATE_125Kbps             CCM_MODE_DATARATE_125Kbit
 #define CCM_MODE_DATARATE_500Kbps             CCM_MODE_DATARATE_500Kbit
 #define CCM_RATEOVERRIDE_RATEOVERRIDE_500Kbps CCM_RATEOVERRIDE_RATEOVERRIDE_500Kbit
+
+/* HAL abstraction of AAR h/w */
+#define NRF_AAR                               NRF_AAR030
 
 static inline void hal_radio_reset(void)
 {
@@ -449,16 +446,24 @@ static inline uint32_t hal_radio_phy_mode_get(uint8_t phy, uint8_t flags)
 
 static inline int8_t hal_radio_tx_power_max_get(void)
 {
-	return 8; /* +8 dBm */
+	return 10;		/* +10 dBm */
 }
 
 static inline int8_t hal_radio_tx_power_min_get(void)
 {
-	return -46; /* -46 dBm */
+	return -70;		/* -70 dBm */
 }
 
 static inline int8_t hal_radio_tx_power_floor(int8_t tx_power_lvl)
 {
+	if (tx_power_lvl >= 10) {
+		return 10;
+	}
+
+	if (tx_power_lvl >= 9) {
+		return 9;
+	}
+
 	if (tx_power_lvl >= 8) {
 		return 8;
 	}
@@ -503,67 +508,63 @@ static inline int8_t hal_radio_tx_power_floor(int8_t tx_power_lvl)
 		return -2;
 	}
 
-	if (tx_power_lvl >= -3) {
-		return -3;
-	}
+	/* Step from -2 to -4 */
 
 	if (tx_power_lvl >= -4) {
 		return -4;
 	}
 
-	if (tx_power_lvl >= -5) {
-		return -5;
-	}
-
-	if (tx_power_lvl >= -6) {
-		return -6;
-	}
-
-	if (tx_power_lvl >= -7) {
-		return -7;
-	}
+	/* Step from -4 to -8 */
 
 	if (tx_power_lvl >= -8) {
 		return -8;
 	}
 
-	if (tx_power_lvl >= -9) {
-		return -9;
-	}
-
-	if (tx_power_lvl >= -10) {
-		return -10;
-	}
+	/* Step from -8 to -12 */
 
 	if (tx_power_lvl >= -12) {
 		return -12;
 	}
 
-	if (tx_power_lvl >= -14) {
-		return -14;
-	}
+	/* Step from -12 to -16 */
 
 	if (tx_power_lvl >= -16) {
 		return -16;
 	}
 
+	/* Step from -16 to -20 */
+
 	if (tx_power_lvl >= -20) {
 		return -20;
 	}
 
-	if (tx_power_lvl >= -26) {
-		return -26;
+	/* Step from -20 to -30 */
+
+	if (tx_power_lvl >= -30) {
+		return -30;
 	}
+
+	/* Step from -30 to -40 */
 
 	if (tx_power_lvl >= -40) {
 		return -40;
 	}
 
-	return -46;
+	/* Step from -40 to -70 */
+
+	return -70;
 }
 
 static inline uint32_t hal_radio_tx_power_value(int8_t tx_power_lvl)
 {
+	if (tx_power_lvl >= 10) {
+		return RADIO_TXPOWER_TXPOWER_Pos10dBm;
+	}
+
+	if (tx_power_lvl >= 9) {
+		return RADIO_TXPOWER_TXPOWER_Pos9dBm;
+	}
+
 	if (tx_power_lvl >= 8) {
 		return RADIO_TXPOWER_TXPOWER_Pos8dBm;
 	}
@@ -608,71 +609,51 @@ static inline uint32_t hal_radio_tx_power_value(int8_t tx_power_lvl)
 		return RADIO_TXPOWER_TXPOWER_Neg2dBm;
 	}
 
-	if (tx_power_lvl >= -3) {
-		return RADIO_TXPOWER_TXPOWER_Neg3dBm;
-	}
+	/* Step from -2 to -4 */
 
 	if (tx_power_lvl >= -4) {
 		return RADIO_TXPOWER_TXPOWER_Neg4dBm;
 	}
 
-	if (tx_power_lvl >= -5) {
-		return RADIO_TXPOWER_TXPOWER_Neg5dBm;
-	}
-
-	if (tx_power_lvl >= -6) {
-		return RADIO_TXPOWER_TXPOWER_Neg6dBm;
-	}
-
-	if (tx_power_lvl >= -7) {
-		return RADIO_TXPOWER_TXPOWER_Neg7dBm;
-	}
+	/* Step from -4 to -8 */
 
 	if (tx_power_lvl >= -8) {
 		return RADIO_TXPOWER_TXPOWER_Neg8dBm;
 	}
 
-	if (tx_power_lvl >= -9) {
-		return RADIO_TXPOWER_TXPOWER_Neg9dBm;
-	}
-
-	if (tx_power_lvl >= -10) {
-		return RADIO_TXPOWER_TXPOWER_Neg10dBm;
-	}
+	/* Step from -8 to -12 */
 
 	if (tx_power_lvl >= -12) {
 		return RADIO_TXPOWER_TXPOWER_Neg12dBm;
 	}
 
-	if (tx_power_lvl >= -14) {
-		return RADIO_TXPOWER_TXPOWER_Neg14dBm;
-	}
+	/* Step from -12 to -16 */
 
 	if (tx_power_lvl >= -16) {
 		return RADIO_TXPOWER_TXPOWER_Neg16dBm;
 	}
 
+	/* Step from -16 to -20 */
+
 	if (tx_power_lvl >= -20) {
 		return RADIO_TXPOWER_TXPOWER_Neg20dBm;
 	}
 
-#if defined(RADIO_TXPOWER_TXPOWER_Neg26dBm)
-	if (tx_power_lvl >= -26) {
-		return RADIO_TXPOWER_TXPOWER_Neg26dBm;
-	}
-#endif
+	/* Step from -20 to -30 */
 
-#if defined(RADIO_TXPOWER_TXPOWER_Neg28dBm)
-	if (tx_power_lvl >= -28) {
-		return RADIO_TXPOWER_TXPOWER_Neg28dBm;
+	if (tx_power_lvl >= -30) {
+		return RADIO_TXPOWER_TXPOWER_Neg30dBm;
 	}
-#endif
+
+	/* Step from -30 to -40 */
 
 	if (tx_power_lvl >= -40) {
 		return RADIO_TXPOWER_TXPOWER_Neg40dBm;
 	}
 
-	return RADIO_TXPOWER_TXPOWER_Neg46dBm;
+	/* Step from -40 to -70 */
+
+	return RADIO_TXPOWER_TXPOWER_Neg70dBm;
 }
 
 static inline uint32_t hal_radio_tx_ready_delay_us_get(uint8_t phy, uint8_t flags)
