@@ -3135,8 +3135,8 @@ struct bt_sdp_attr_item {
 	uint16_t                  len;
 };
 
-static int bt_sdp_get_attr(const struct net_buf *buf,
-			   struct bt_sdp_attr_item *attr, uint16_t attr_id)
+static int sdp_get_attr(const struct net_buf *buf,
+			struct bt_sdp_attr_item *attr, uint16_t attr_id)
 {
 	uint8_t *data;
 	uint16_t id;
@@ -3458,7 +3458,7 @@ int bt_sdp_get_proto_param(const struct net_buf *buf, uint16_t proto,
 		return -EINVAL;
 	}
 
-	res = bt_sdp_get_attr(buf, &attr, BT_SDP_ATTR_PROTO_DESC_LIST);
+	res = sdp_get_attr(buf, &attr, BT_SDP_ATTR_PROTO_DESC_LIST);
 	if (res < 0) {
 		LOG_WRN("Attribute 0x%04x not found, err %d", BT_SDP_ATTR_PROTO_DESC_LIST, res);
 		return res;
@@ -3486,7 +3486,7 @@ int bt_sdp_get_addl_proto_param(const struct net_buf *buf, uint16_t proto,
 		return -EINVAL;
 	}
 
-	res = bt_sdp_get_attr(buf, &attr, BT_SDP_ATTR_ADD_PROTO_DESC_LIST);
+	res = sdp_get_attr(buf, &attr, BT_SDP_ATTR_ADD_PROTO_DESC_LIST);
 	if (res < 0) {
 		LOG_WRN("Attribute 0x%04x not found, err %d", BT_SDP_ATTR_PROTO_DESC_LIST, res);
 		return res;
@@ -3508,7 +3508,7 @@ int bt_sdp_get_profile_version(const struct net_buf *buf, uint16_t profile,
 	struct bt_sdp_uuid_desc pd;
 	int res;
 
-	res = bt_sdp_get_attr(buf, &attr, BT_SDP_ATTR_PROFILE_DESC_LIST);
+	res = sdp_get_attr(buf, &attr, BT_SDP_ATTR_PROFILE_DESC_LIST);
 	if (res < 0) {
 		LOG_WRN("Attribute 0x%04x not found, err %d", BT_SDP_ATTR_PROFILE_DESC_LIST, res);
 		return res;
@@ -3528,7 +3528,7 @@ int bt_sdp_get_features(const struct net_buf *buf, uint16_t *features)
 	struct bt_sdp_attr_item attr;
 	int err;
 
-	err = bt_sdp_get_attr(buf, &attr, BT_SDP_ATTR_SUPPORTED_FEATURES);
+	err = sdp_get_attr(buf, &attr, BT_SDP_ATTR_SUPPORTED_FEATURES);
 	if (err < 0) {
 		LOG_WRN("Attribute 0x%04x not found, err %d", BT_SDP_ATTR_SUPPORTED_FEATURES, err);
 		return err;
@@ -3542,7 +3542,7 @@ int bt_sdp_get_vendor_id(const struct net_buf *buf, uint16_t *vendor_id)
 	struct bt_sdp_attr_item attr;
 	int err;
 
-	err = bt_sdp_get_attr(buf, &attr, BT_SDP_ATTR_VENDOR_ID);
+	err = sdp_get_attr(buf, &attr, BT_SDP_ATTR_VENDOR_ID);
 	if (err < 0) {
 		LOG_WRN("Attribute 0x%04x not found, err %d", BT_SDP_ATTR_VENDOR_ID, err);
 		return err;
@@ -3556,11 +3556,810 @@ int bt_sdp_get_product_id(const struct net_buf *buf, uint16_t *product_id)
 	struct bt_sdp_attr_item attr;
 	int err;
 
-	err = bt_sdp_get_attr(buf, &attr, BT_SDP_ATTR_PRODUCT_ID);
+	err = sdp_get_attr(buf, &attr, BT_SDP_ATTR_PRODUCT_ID);
 	if (err < 0) {
 		LOG_WRN("Attribute 0x%04x not found, err %d", BT_SDP_ATTR_PRODUCT_ID, err);
 		return err;
 	}
 
 	return sdp_get_u16_data(&attr, product_id);
+}
+
+static bool sdp_attr_has_len_field(uint8_t type)
+{
+	switch (type & BT_SDP_TYPE_DESC_MASK) {
+	case BT_SDP_TEXT_STR_UNSPEC:
+	case BT_SDP_SEQ_UNSPEC:
+	case BT_SDP_ALT_UNSPEC:
+	case BT_SDP_URL_STR_UNSPEC:
+		return true;
+	default:
+		break;
+	}
+
+	return false;
+}
+
+static int sdp_attr_pull_len(uint8_t size, struct net_buf_simple *buf, uint32_t *len)
+{
+	switch (size) {
+	case sizeof(uint8_t):
+		*len = net_buf_simple_pull_u8(buf);
+		break;
+	case sizeof(uint16_t):
+		*len = net_buf_simple_pull_be16(buf);
+		break;
+	case sizeof(uint32_t):
+		*len = net_buf_simple_pull_be32(buf);
+		break;
+	default:
+		LOG_WRN("Invalid size %u for sequence", size);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int sdp_attr_get_len(uint8_t type, struct net_buf_simple *buf, uint32_t *len)
+{
+	if (sdp_attr_has_len_field(type)) {
+		int err;
+		uint8_t size = BIT((type & BT_SDP_SIZE_DESC_MASK) - BT_SDP_SIZE_INDEX_OFFSET);
+
+		if (buf->len < size) {
+			LOG_WRN("Malformed packet");
+			return -EBADMSG;
+		}
+
+		err = sdp_attr_pull_len(size, buf, len);
+		if (err != 0) {
+			return err;
+		}
+	} else {
+		*len = BIT(type & BT_SDP_SIZE_DESC_MASK);
+	}
+
+	if (buf->len < *len) {
+		LOG_WRN("Invalid packet %u < %u", buf->len, *len);
+		return -EBADMSG;
+	}
+
+	return 0;
+}
+
+static int bt_sdp_parse_attribute(struct net_buf_simple *buf, struct bt_sdp_attribute *attr)
+{
+	uint8_t type;
+	uint32_t len;
+	int err;
+	uint8_t *src;
+
+	if (buf->len < (sizeof(uint8_t) + sizeof(attr->id))) {
+		LOG_WRN("Malformed packet");
+		return -EBADMSG;
+	}
+
+	if (net_buf_simple_pull_u8(buf) != BT_SDP_UINT16) {
+		LOG_WRN("Invalid attribute");
+		return -EINVAL;
+	}
+
+	/* Parse attribute ID */
+	attr->id = net_buf_simple_pull_be16(buf);
+
+	attr->val.data = buf->data;
+	src = buf->data;
+
+	type = net_buf_simple_pull_u8(buf);
+	err = sdp_attr_get_len(type, buf, &len);
+	if (err != 0) {
+		LOG_WRN("Failed to parse attr %u (err %u)", attr->id, err);
+		return -EINVAL;
+	}
+
+	net_buf_simple_pull(buf, len);
+
+	attr->val.total_size = buf->data - src;
+	attr->val.data_size = attr->val.total_size;
+
+	return 0;
+}
+
+int bt_sdp_record_parse(const struct net_buf *buf,
+			bool (*func)(const struct bt_sdp_attribute *attr, void *user_data),
+			void *user_data)
+{
+	struct net_buf_simple sbuf;
+	struct bt_sdp_attribute attr;
+	int err = -ENODATA;
+	bool stop;
+
+	if ((buf == NULL) || (func == NULL)) {
+		return -EINVAL;
+	}
+
+	net_buf_simple_init_with_data(&sbuf, buf->data, buf->len);
+	while (sbuf.len > 0) {
+		err = bt_sdp_parse_attribute(&sbuf, &attr);
+		if (err != 0) {
+			break;
+		}
+
+		stop = !func(&attr, user_data);
+		if (stop) {
+			break;
+		}
+	}
+
+	return err;
+}
+
+struct bt_sdp_has_attr_data {
+	uint16_t attr_id;
+	bool found;
+};
+
+static bool bt_sdp_has_attr_func(const struct bt_sdp_attribute *attr, void *user_data)
+{
+	struct bt_sdp_has_attr_data *data;
+
+	data = (struct bt_sdp_has_attr_data *)user_data;
+	if (attr->id == data->attr_id) {
+		data->found = true;
+		return false;
+	}
+
+	return true;
+}
+
+bool bt_sdp_has_attr(const struct net_buf *buf, uint16_t attr_id)
+{
+	struct bt_sdp_has_attr_data data;
+	int err;
+
+	if (buf == NULL) {
+		return false;
+	}
+
+	data.attr_id = attr_id;
+	data.found = false;
+
+	err = bt_sdp_record_parse(buf, bt_sdp_has_attr_func, &data);
+	if (err != 0) {
+		return false;
+	}
+
+	return data.found;
+}
+
+struct bt_sdp_get_attr_data {
+	struct bt_sdp_attribute *attr;
+	uint16_t attr_id;
+	bool found;
+};
+
+static bool bt_sdp_get_attr_func(const struct bt_sdp_attribute *attr, void *user_data)
+{
+	struct bt_sdp_get_attr_data *data;
+
+	data = (struct bt_sdp_get_attr_data *)user_data;
+
+	if (attr->id != data->attr_id) {
+		return true;
+	}
+
+	*data->attr = *attr;
+	data->found = true;
+	LOG_DBG("Stop iteration after finding the target attribute");
+	return false;
+}
+
+int bt_sdp_get_attr(const struct net_buf *buf, uint16_t attr_id, struct bt_sdp_attribute *attr)
+{
+	struct bt_sdp_get_attr_data data;
+	int err;
+
+	if ((buf == NULL) || (attr == NULL)) {
+		return -EINVAL;
+	}
+
+	data.attr = attr;
+	data.attr_id = attr_id;
+	data.found = false;
+
+	err = bt_sdp_record_parse(buf, bt_sdp_get_attr_func, &data);
+	if (err != 0) {
+		return err;
+	}
+
+	if (!data.found) {
+		LOG_WRN("Attribute %u not found", attr_id);
+		return -ENODATA;
+	}
+
+	return 0;
+}
+
+static bool sdp_attr_is_seq(uint8_t type)
+{
+	switch (type & BT_SDP_TYPE_DESC_MASK) {
+	case BT_SDP_SEQ_UNSPEC:
+	case BT_SDP_ALT_UNSPEC:
+		return true;
+	default:
+		break;
+	}
+
+	return false;
+}
+
+static int sdp_attr_get_uint(uint8_t size, struct net_buf_simple *buf,
+			     struct bt_sdp_attr_value_uint *uint)
+{
+	switch (size) {
+	case sizeof(uint8_t):
+		uint->u8 = net_buf_simple_pull_u8(buf);
+		break;
+	case sizeof(uint16_t):
+		uint->u16 = net_buf_simple_pull_be16(buf);
+		break;
+	case sizeof(uint32_t):
+		uint->u32 = net_buf_simple_pull_be32(buf);
+		break;
+	case sizeof(uint64_t):
+		uint->u64 = net_buf_simple_pull_be64(buf);
+		break;
+	case BIT(BT_SDP_UINT128 & BT_SDP_SIZE_DESC_MASK):
+		memcpy(uint->u128, net_buf_simple_pull_mem(buf, size), size);
+		break;
+	default:
+		LOG_WRN("Invalid size %u", size);
+		return -EINVAL;
+	}
+
+	uint->size = size;
+	return 0;
+}
+
+static int sdp_attr_get_sint(uint8_t size, struct net_buf_simple *buf,
+			     struct bt_sdp_attr_value_int *sint)
+{
+	switch (size) {
+	case sizeof(int8_t):
+		sint->s8 = (int8_t)net_buf_simple_pull_u8(buf);
+		break;
+	case sizeof(int16_t):
+		sint->s16 = (int16_t)net_buf_simple_pull_be16(buf);
+		break;
+	case sizeof(int32_t):
+		sint->s32 = (int32_t)net_buf_simple_pull_be32(buf);
+		break;
+	case sizeof(int64_t):
+		sint->s64 = (int64_t)net_buf_simple_pull_be64(buf);
+		break;
+	case BIT(BT_SDP_INT128 & BT_SDP_SIZE_DESC_MASK):
+		memcpy(sint->s128, net_buf_simple_pull_mem(buf, size), size);
+		break;
+	default:
+		LOG_WRN("Invalid size %u", size);
+		return -EINVAL;
+	}
+
+	sint->size = size;
+	return 0;
+}
+
+union sdp_attr_uuid {
+	struct bt_uuid u;
+	struct bt_uuid_16 u16;
+	struct bt_uuid_32 u32;
+	struct bt_uuid_128 u128;
+};
+
+static int sdp_attr_get_uuid(uint8_t size, struct net_buf_simple *buf, union sdp_attr_uuid *u)
+{
+	switch (size) {
+	case sizeof(uint16_t):
+		u->u.type = BT_UUID_TYPE_16;
+		u->u16.val = net_buf_simple_pull_be16(buf);
+		break;
+	case sizeof(uint32_t):
+		u->u.type = BT_UUID_TYPE_32;
+		u->u32.val = net_buf_simple_pull_be32(buf);
+		break;
+	case BT_UUID_SIZE_128:
+		u->u.type = BT_UUID_TYPE_128;
+		sys_memcpy_swap(u->u128.val, net_buf_simple_pull_mem(buf, size), size);
+		break;
+	default:
+		LOG_WRN("Invalid size %u for sequence", size);
+		return -EINVAL;
+	}
+	return 0;
+}
+
+static int sdp_attr_val_parse(uint8_t type, uint32_t len, struct net_buf_simple *buf,
+			      struct bt_sdp_attr_value_pair *pair, union sdp_attr_uuid *u,
+			      struct bt_sdp_attr_value *v)
+{
+	int err = 0;
+
+	switch (type & BT_SDP_TYPE_DESC_MASK) {
+	case BT_SDP_UINT8:
+		v->type = BT_SDP_ATTR_VALUE_TYPE_UINT;
+		err = sdp_attr_get_uint(len, buf, &v->uint);
+		pair->value = v;
+		break;
+	case BT_SDP_INT8:
+		v->type = BT_SDP_ATTR_VALUE_TYPE_SINT;
+		err = sdp_attr_get_sint(len, buf, &v->sint);
+		pair->value = v;
+		break;
+	case BT_SDP_UUID_UNSPEC:
+		if (pair->uuid != NULL) {
+			LOG_WRN("Unsupported case: ATTR Value is a UUID");
+			return -ENOTSUP;
+		}
+		v->type = BT_SDP_ATTR_VALUE_TYPE_NONE;
+		pair->uuid = &u->u;
+		err = sdp_attr_get_uuid(len, buf, u);
+		break;
+	case BT_SDP_BOOL:
+		v->type = BT_SDP_ATTR_VALUE_TYPE_BOOL;
+		v->value = net_buf_simple_pull_u8(buf) > 0 ? true : false;
+		pair->value = v;
+		break;
+	case BT_SDP_TEXT_STR_UNSPEC:
+		v->type = BT_SDP_ATTR_VALUE_TYPE_TEXT;
+		v->text.len = len;
+		v->text.text = net_buf_simple_pull_mem(buf, len);
+		pair->value = v;
+		break;
+	case BT_SDP_URL_STR_UNSPEC:
+		v->type = BT_SDP_ATTR_VALUE_TYPE_URL;
+		v->url.len = len;
+		v->url.url = net_buf_simple_pull_mem(buf, len);
+		pair->value = v;
+		break;
+	case BT_SDP_DATA_NIL:
+		pair->value = NULL;
+		break;
+	default:
+		LOG_WRN("Unsupported type %u", type);
+		err = -ENOTSUP;
+		break;
+	}
+
+	return err;
+}
+
+static int sdp_attr_parse(struct net_buf_simple *buf,
+			  bool (*func)(const struct bt_sdp_attr_value_pair *value, void *user_data),
+			  void *user_data, uint8_t nest_level)
+{
+	struct bt_sdp_attr_value_pair value;
+	union sdp_attr_uuid u;
+	struct bt_sdp_attr_value v;
+	struct net_buf_simple vbuf;
+	uint32_t len;
+	int err;
+	uint8_t type;
+
+	if (nest_level == SDP_DATA_ELEM_NEST_LEVEL_MAX) {
+		LOG_WRN("Maximum nesting level (%u) exceeded", SDP_DATA_ELEM_NEST_LEVEL_MAX);
+		return 0;
+	}
+
+	if (buf->len < sizeof(uint8_t)) {
+		return 0;
+	}
+
+	type = net_buf_simple_pull_u8(buf);
+
+	err = sdp_attr_get_len(type, buf, &len);
+	if (err != 0) {
+		return err;
+	}
+
+	/* The following is a data ele sequence, so recursively parse */
+	if ((buf->len > 0) && sdp_attr_is_seq(buf->data[0])) {
+		LOG_DBG("Recursively parse");
+
+		return sdp_attr_parse(buf, func, user_data, nest_level + 1);
+	}
+
+	net_buf_simple_init_with_data(&vbuf, net_buf_simple_pull_mem(buf, len), len);
+
+	if (sdp_attr_is_seq(type)) {
+		type = net_buf_simple_pull_u8(&vbuf);
+
+		err = sdp_attr_get_len(type, &vbuf, &len);
+		if (err != 0) {
+			return err;
+		}
+	}
+
+	while (vbuf.len > 0) {
+		memset(&value, 0, sizeof(value));
+
+		err = sdp_attr_val_parse(type, len, &vbuf, &value, &u, &v);
+		if (err != 0) {
+			return err;
+		}
+
+		if ((value.uuid != NULL) && (vbuf.len > 0)) {
+			type = vbuf.data[0];
+
+			/* If the next data is also UUID, parse it in the next sequence. */
+			if ((type & BT_SDP_TYPE_DESC_MASK) == BT_SDP_UUID_UNSPEC) {
+				goto out;
+			}
+
+			type = net_buf_simple_pull_u8(&vbuf);
+
+			err = sdp_attr_get_len(type, &vbuf, &len);
+			if (err != 0) {
+				return err;
+			}
+
+			err = sdp_attr_val_parse(type, len, &vbuf, &value, &u, &v);
+			if (err != 0) {
+				return err;
+			}
+		}
+
+out:
+		if (!func(&value, user_data)) {
+			return -ECANCELED;
+		}
+
+		if (vbuf.len < sizeof(uint8_t)) {
+			break;
+		}
+
+		type = net_buf_simple_pull_u8(&vbuf);
+
+		err = sdp_attr_get_len(type, &vbuf, &len);
+		if (err != 0) {
+			return err;
+		}
+	}
+
+	return 0;
+}
+
+int bt_sdp_attr_value_parse(const struct bt_sdp_attribute *attr,
+			    bool (*func)(const struct bt_sdp_attr_value_pair *value,
+					 void *user_data),
+			    void *user_data)
+{
+	struct net_buf_simple buf;
+
+	if ((attr == NULL) || (func == NULL) || (attr->val.data_size != attr->val.total_size)) {
+		return -EINVAL;
+	}
+
+	net_buf_simple_init_with_data(&buf, (uint8_t *)attr->val.data, attr->val.data_size);
+
+	while (buf.len > 0) {
+		int err;
+
+		err = sdp_attr_parse(&buf, func, user_data, 1);
+		if (err == -ECANCELED) {
+			/* Stopped by upper layer */
+			return 0;
+		}
+
+		if (err != 0) {
+			return err;
+		}
+	}
+
+	return 0;
+}
+
+struct bt_sdp_attr_has_uuid_data {
+	const struct bt_uuid *uuid;
+	bool found;
+};
+
+static bool sdp_attr_has_uuid_cb(const struct bt_sdp_attr_value_pair *value, void *user_data)
+{
+	struct bt_sdp_attr_has_uuid_data *data;
+
+	data = (struct bt_sdp_attr_has_uuid_data *)user_data;
+	if (value->uuid == NULL) {
+		return true;
+	}
+
+	if (bt_uuid_cmp(value->uuid, data->uuid) != 0) {
+		return true;
+	}
+
+	data->found = true;
+	return false;
+}
+
+bool bt_sdp_attr_has_uuid(const struct bt_sdp_attribute *attr, const struct bt_uuid *uuid)
+{
+	struct bt_sdp_attr_has_uuid_data data;
+	int err;
+
+	if ((attr == NULL) || (uuid == NULL) || (attr->val.data_size != attr->val.total_size)) {
+		return false;
+	}
+
+	data.uuid = uuid;
+	data.found = false;
+
+	err = bt_sdp_attr_value_parse(attr, sdp_attr_has_uuid_cb, &data);
+	if (err != 0) {
+		LOG_WRN("Reported error %d", err);
+	}
+	return data.found;
+}
+
+struct bt_sdp_attr_read_data {
+	const struct bt_uuid *uuid;
+	struct bt_sdp_attr_value *value;
+	bool read;
+};
+
+static bool sdp_attr_read_cb(const struct bt_sdp_attr_value_pair *value, void *user_data)
+{
+	struct bt_sdp_attr_read_data *data;
+
+	data = (struct bt_sdp_attr_read_data *)user_data;
+	if (data->uuid == NULL) {
+		goto found;
+	}
+
+	if (value->uuid == NULL) {
+		return true;
+	}
+
+	if (bt_uuid_cmp(value->uuid, data->uuid) != 0) {
+		return true;
+	}
+
+found:
+	if (value->value == NULL) {
+		data->value->type = BT_SDP_ATTR_VALUE_TYPE_NONE;
+		data->read = false;
+	} else {
+		*data->value = *value->value;
+		data->read = true;
+	}
+	return false;
+}
+
+int bt_sdp_attr_read(const struct bt_sdp_attribute *attr, const struct bt_uuid *uuid,
+		     struct bt_sdp_attr_value *value)
+{
+	struct bt_sdp_attr_read_data data;
+	int err;
+
+	if ((attr == NULL) || (value == NULL) || (attr->val.data_size != attr->val.total_size)) {
+		return -EINVAL;
+	}
+
+	data.uuid = uuid;
+	data.value = value;
+	data.read = false;
+
+	err = bt_sdp_attr_value_parse(attr, sdp_attr_read_cb, &data);
+	if (err != 0) {
+		LOG_WRN("Reported error %d", err);
+	}
+
+	if (data.read == true) {
+		return 0;
+	}
+
+	return -ENOENT;
+}
+
+static int bt_sdp_parse_addl_proto(struct net_buf_simple *buf, struct bt_sdp_attribute *attr)
+{
+	uint8_t type;
+	uint32_t len;
+	int err;
+	uint8_t *src;
+
+	if (!sdp_attr_is_seq(buf->data[0])) {
+		LOG_DBG("Invalid protocol sequence");
+		return -EINVAL;
+	}
+
+	attr->id = BT_SDP_ATTR_PROTO_DESC_LIST;
+
+	attr->val.data = buf->data;
+	src = buf->data;
+
+	type = net_buf_simple_pull_u8(buf);
+	err = sdp_attr_get_len(type, buf, &len);
+	if (err != 0) {
+		LOG_WRN("Failed to parse attr %u (err %u)", BT_SDP_ATTR_ADD_PROTO_DESC_LIST, err);
+		return -EINVAL;
+	}
+
+	net_buf_simple_pull(buf, len);
+
+	attr->val.total_size = buf->data - src;
+	attr->val.data_size = attr->val.total_size;
+
+	return 0;
+}
+
+static int bt_sdp_attr_addl_proto_pre_parse(struct net_buf_simple *buf)
+{
+	uint8_t type;
+	uint32_t len;
+	int err;
+	struct net_buf_simple_state state;
+
+	if (buf->len < sizeof(type)) {
+		LOG_WRN("No attribute value");
+		return -EINVAL;
+	}
+
+	if (!sdp_attr_is_seq(buf->data[0])) {
+		LOG_DBG("Invalid protocol sequence");
+		return -EINVAL;
+	}
+
+	net_buf_simple_save(buf, &state);
+
+	type = net_buf_simple_pull_u8(buf);
+	err = sdp_attr_get_len(type, buf, &len);
+	if (err != 0) {
+		LOG_WRN("Failed to parse attr %u (err %u)", BT_SDP_ATTR_ADD_PROTO_DESC_LIST, err);
+		return -EINVAL;
+	}
+
+	if ((buf->len == 0) || !sdp_attr_is_seq(buf->data[0])) {
+		LOG_DBG("Only one protocol descriptor");
+		net_buf_simple_restore(buf, &state);
+	}
+
+	return 0;
+}
+
+int bt_sdp_attr_addl_proto_parse(const struct bt_sdp_attribute *attr,
+				 bool (*func)(const struct bt_sdp_attribute *attr, void *user_data),
+				 void *user_data)
+{
+	struct net_buf_simple sbuf;
+	struct bt_sdp_attribute sattr;
+	int err;
+	bool stop;
+
+	if ((attr == NULL) || (func == NULL) || (attr->val.data_size != attr->val.total_size)) {
+		return -EINVAL;
+	}
+
+	if (attr->id != BT_SDP_ATTR_ADD_PROTO_DESC_LIST) {
+		LOG_ERR("Unsupported ATTR ID %u != %u", attr->id, BT_SDP_ATTR_ADD_PROTO_DESC_LIST);
+		return -ENOTSUP;
+	}
+
+	net_buf_simple_init_with_data(&sbuf, (uint8_t *)attr->val.data, attr->val.data_size);
+
+	err = bt_sdp_attr_addl_proto_pre_parse(&sbuf);
+	if (err != 0) {
+		return err;
+	}
+
+	while (sbuf.len > 0) {
+		err = bt_sdp_parse_addl_proto(&sbuf, &sattr);
+		if (err != 0) {
+			break;
+		}
+
+		stop = !func(&sattr, user_data);
+		if (stop) {
+			break;
+		}
+	}
+
+	return err;
+}
+
+struct bt_sdp_attr_addl_proto_count_data {
+	uint16_t count;
+};
+
+static bool sdp_attr_addl_proto_count_cb(const struct bt_sdp_attribute *attr, void *user_data)
+{
+	struct bt_sdp_attr_addl_proto_count_data *data;
+
+	data = (struct bt_sdp_attr_addl_proto_count_data *)user_data;
+
+	data->count++;
+
+	return true;
+}
+
+ssize_t bt_sdp_attr_addl_proto_count(const struct bt_sdp_attribute *attr)
+{
+	struct bt_sdp_attr_addl_proto_count_data data;
+	int err;
+
+	if ((attr == NULL) || (attr->val.data_size != attr->val.total_size)) {
+		return -EINVAL;
+	}
+
+	if (attr->id != BT_SDP_ATTR_ADD_PROTO_DESC_LIST) {
+		LOG_ERR("Unsupported ATTR ID %u != %u", attr->id, BT_SDP_ATTR_ADD_PROTO_DESC_LIST);
+		return -ENOTSUP;
+	}
+
+	data.count = 0;
+
+	err = bt_sdp_attr_addl_proto_parse(attr, sdp_attr_addl_proto_count_cb, &data);
+	if (err < 0) {
+		return (ssize_t)err;
+	}
+
+	return (ssize_t)data.count;
+}
+
+struct bt_sdp_attr_addl_proto_read_data {
+	const struct bt_uuid *uuid;
+	struct bt_sdp_attr_value *value;
+	uint16_t target_index;
+	uint16_t current_index;
+	bool read;
+};
+
+static bool bt_sdp_attr_addl_proto_read_cb(const struct bt_sdp_attribute *attr, void *user_data)
+{
+	struct bt_sdp_attr_addl_proto_read_data *data;
+	int err;
+
+	data = (struct bt_sdp_attr_addl_proto_read_data *)user_data;
+
+	if (data->current_index != data->target_index) {
+		data->current_index++;
+		return true;
+	}
+
+	err = bt_sdp_attr_read(attr, data->uuid, data->value);
+	if (err == 0) {
+		data->read = true;
+	}
+	return false;
+}
+
+int bt_sdp_attr_addl_proto_read(const struct bt_sdp_attribute *attr, uint16_t index,
+				const struct bt_uuid *uuid, struct bt_sdp_attr_value *value)
+{
+	struct bt_sdp_attr_addl_proto_read_data data;
+	int err;
+
+	if ((attr == NULL) || (value == NULL) || (attr->val.data_size != attr->val.total_size)) {
+		return -EINVAL;
+	}
+
+	if (attr->id != BT_SDP_ATTR_ADD_PROTO_DESC_LIST) {
+		LOG_ERR("Unsupported ATTR ID %u != %u", attr->id, BT_SDP_ATTR_ADD_PROTO_DESC_LIST);
+		return -ENOTSUP;
+	}
+
+	data.current_index = 0;
+	data.target_index = index;
+	data.read = false;
+	data.uuid = uuid;
+	data.value = value;
+
+	err = bt_sdp_attr_addl_proto_parse(attr, bt_sdp_attr_addl_proto_read_cb, &data);
+	if (err != 0) {
+		LOG_WRN("Reported error %d", err);
+	}
+
+	if (data.read == true) {
+		return 0;
+	}
+
+	return -ENOENT;
 }
