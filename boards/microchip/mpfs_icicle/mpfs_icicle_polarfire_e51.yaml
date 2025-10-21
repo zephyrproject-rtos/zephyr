@@ -9,4 +9,6 @@ testing:
   ignore_tags:
     - net
     - bluetooth
+supported:
+  - can
 vendor: microchip
