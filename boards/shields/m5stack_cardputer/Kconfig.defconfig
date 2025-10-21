@@ -6,13 +6,6 @@ if SHIELD_M5STACK_CARDPUTER
 config INPUT
 	default y
 
-if DISK_DRIVERS
-
-config DISK_DRIVER_SDMMC
-	default y
-
-endif # DISK_DRIVERS
-
 if DISPLAY
 
 choice ST7789V_PIXEL_FORMAT
