@@ -156,12 +156,12 @@ struct usbh_class_filter {
  * @brief USB host class instance data
  */
 struct usbh_class_data {
+	/** System linked list node for registered classes */
+	sys_snode_t node;
 	/** Name of the USB host class instance */
 	const char *name;
 	/** Pointer to USB host stack context structure */
 	struct usbh_context *uhs_ctx;
-	/** System linked list node for registered classes */
-	sys_snode_t node;
 	/** Table of filter rules used to match device classes */
 	const struct usbh_class_filter *filters;
 	/** Pointer to host support class API */
