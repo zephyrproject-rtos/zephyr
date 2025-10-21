@@ -1,0 +1,33 @@
+# Copyright (c) 2025 Espressif Systems
+# SPDX-License-Identifier: Apache-2.0
+
+config CRYPTO_ESP32
+	bool "Espressif Crypto driver"
+	depends on DT_HAS_ESPRESSIF_ESP32_SHA_ENABLED
+	default y
+	help
+	  Enable the Espressif hardware crypto drivers for SHA
+	  accelerator.
+
+if CRYPTO_ESP32
+
+config CRYPTO_ESP32_SHA
+	bool "ESP32 SHA Hardware Accelerator"
+	depends on DT_HAS_ESPRESSIF_ESP32_SHA_ENABLED
+	default y
+	help
+	  Enable support for the Espressif SHA hardware accelerator.
+	  This driver implements SHA-224, SHA-256, SHA-384, and SHA-512
+	  using the Espressif HAL SHA engine.
+
+config CRYPTO_ESP32_SHA_SESSIONS_MAX
+	int "Max ESP32 SHA sessions"
+	depends on CRYPTO_ESP32_SHA
+	range 1 32
+	default 2
+	help
+	  Maximum number of concurrent SHA hash sessions.
+	  Each session uses approximately 300-400 bytes of RAM
+	  (more for SHA-384/512 due to larger state).
+
+endif # CRYPTO_ESP32
