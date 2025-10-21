@@ -133,7 +133,7 @@ void register_radio_event(void)
 	/* Getting next radio event time if any */
 	cmd_status = ll_intf_le_get_remaining_time_for_next_event(&next_radio_event_us);
 	UNUSED(cmd_status);
-	__ASSERT(cmd_staus, "Unable to retrieve next radio event");
+	__ASSERT(cmd_status, "Unable to retrieve next radio event");
 
 	if (next_radio_event_us == LL_DP_SLP_NO_WAKEUP) {
 		/* No next radio event scheduled */
