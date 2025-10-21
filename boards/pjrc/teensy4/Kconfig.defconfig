@@ -10,9 +10,6 @@ config BUILD_OUTPUT_HEX
 	bool
 	default y
 
-config DISK_DRIVER_SDMMC
-	default y if DISK_DRIVERS
-
 if NETWORKING
 
 config NET_L2_ETHERNET
