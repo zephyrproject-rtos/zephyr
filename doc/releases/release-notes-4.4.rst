@@ -248,6 +248,7 @@ New APIs and options
   * :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_HEAP_SIZE`
   * :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_ZEPHYR_REGION`
   * :kconfig:option:`CONFIG_VIDEO_BUFFER_POOL_ZEPHYR_REGION_NAME`
+  * :c:func:`video_transform_cap` to know the relationship between input and output caps
 
 .. zephyr-keep-sorted-stop
 
