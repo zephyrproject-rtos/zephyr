@@ -58,6 +58,7 @@
 #define RA_PSEL_I3C          0x7  /**< I3C function. */
 #define RA_PSEL_CLKOUT_RTC   0x9  /**< CLKOUT / RTC function. */
 #define RA_PSEL_ACMPHS_VCOUT 0x9  /**< ACMPHS VCOUT function. */
+#define RA_PSEL_ETHPHYCLK    0x9  /**< ETHPHYCLK function. */
 #define RA_PSEL_CAC_ADC      0xa  /**< CAC / ADC function. */
 #define RA_PSEL_CAC_DAC      0xa  /**< CAC / DAC function. */
 #define RA_PSEL_BUS          0xb  /**< Bus function. */
@@ -67,8 +68,9 @@
 #define RA_PSEL_USBFS        0x13 /** USBFS function. */
 #define RA_PSEL_USBHS        0x14 /** USBHS function. */
 #define RA_PSEL_SDHI         0x15 /** SDHI function. */
-#define RA_PSEL_ETH_MII      0x16 /** ETH MII function. */
-#define RA_PSEL_ETH_RMII     0x17 /** ETH RMII function. */
+#define RA_PSEL_ETH_MII      0x16 /**< ETH MII function. */
+#define RA_PSEL_ETH_RMII     0x17 /**< ETH RMII function. */
+#define RA_PSEL_ETH_RGMII    0x18 /**< ETH RGMII function. */
 #define RA_PSEL_GLCDC        0x19 /** GLCDC function. */
 #define RA_PSEL_OSPI         0x1c /** OSPI function. */
 #define RA_PSEL_CTSU         0x0c /** CTSU function. */
