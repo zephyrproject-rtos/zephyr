@@ -22,7 +22,11 @@
 #if defined(NRF_ECB00) /* In some devices NRF_ECB was renamed NRF_ECB00 */
 #define NRF_ECB                   NRF_ECB00
 #define ECB_IRQn                  ECB00_IRQn
-#endif /* NRF_ECB00 */
+
+#elif defined(NRF_ECB030)
+#define NRF_ECB                   NRF_ECB030
+#define ECB_IRQn                  ECB030_IRQn
+#endif
 
 #if defined(ECB_INTENSET_ERROR_Msk)
 /* 54 and newer devices have renamed some of this peripheral's registers */
