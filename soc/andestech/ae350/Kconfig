@@ -49,7 +49,6 @@ config RV32E_CPU
 config RV64I_CPU
 	bool "RISCV64 CPU ISA"
 	select RISCV_ISA_RV64I
-	select 64BIT
 
 endchoice
 
