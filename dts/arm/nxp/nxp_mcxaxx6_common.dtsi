@@ -290,6 +290,15 @@
 			prescale = <0>;
 		};
 
+		dac0: dac@400b4000 {
+			compatible = "nxp,lpdac";
+			reg = <0x400b4000 0x1000>;
+			interrupts = <67 0>;
+			status = "disabled";
+			voltage-reference = <0>;
+			#io-channel-cells = <1>;
+		};
+
 		fmu: flash-controller@40095000 {
 			compatible = "nxp,msf1";
 			reg = <0x40095000 0x1000>;
