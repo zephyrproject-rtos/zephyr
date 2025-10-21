@@ -1877,17 +1877,19 @@ static int npcx_i3c_ibi_enable(const struct device *dev, struct i3c_device_desc 
 		idx = 0;
 	}
 
-	data->ibi.addr[idx] = target->dynamic_addr;
-	data->ibi.num_addr += 1U;
-
-	npcx_i3c_ibi_rules_setup(data, inst);
-
 	/* Enable target IBI event by ENEC command */
 	i3c_events.events = I3C_CCC_EVT_INTR;
 	ret = i3c_ccc_do_events_set(target, true, &i3c_events);
 	if (ret != 0) {
 		LOG_ERR("Error sending IBI ENEC for 0x%02x (%d)", target->dynamic_addr, ret);
+		goto out_ibi_enable;
 	}
+
+	/* Update IBI address table after CCC command succeeds */
+	data->ibi.addr[idx] = target->dynamic_addr;
+	data->ibi.num_addr += 1U;
+
+	npcx_i3c_ibi_rules_setup(data, inst);
 
 out_ibi_enable:
 	if (data->ibi.num_addr > 0U) {
@@ -1930,19 +1932,21 @@ static int npcx_i3c_ibi_disable(const struct device *dev, struct i3c_device_desc
 	/* Disable controller interrupt while we configure IBI rules. */
 	inst->MINTCLR = BIT(NPCX_I3C_MINTCLR_TGTSTART);
 
-	/* Clear the ibi rule data */
-	data->ibi.addr[idx] = 0U;
-	data->ibi.num_addr -= 1U;
-
 	/* Disable disable target IBI */
 	i3c_events.events = I3C_CCC_EVT_INTR;
 	ret = i3c_ccc_do_events_set(target, false, &i3c_events);
 	if (ret != 0) {
 		LOG_ERR("Error sending IBI DISEC for 0x%02x (%d)", target->dynamic_addr, ret);
+		goto out_ibi_disable;
 	}
+
+	/* Clear the ibi rule data after CCC command succeeds */
+	data->ibi.addr[idx] = 0U;
+	data->ibi.num_addr -= 1U;
 
 	npcx_i3c_ibi_rules_setup(data, inst);
 
+out_ibi_disable:
 	if (data->ibi.num_addr > 0U) {
 		/*
 		 * Enable controller to raise interrupt when a target
