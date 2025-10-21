@@ -57,6 +57,14 @@ properties:
     type: int
     description: MUX_0_DC_6 divider setting
 
+  mux-1-dc-0-div:
+    type: int
+    description: MUX_1_DC_0 divider setting
+
+  mux-2-dc-0-div:
+    type: int
+    description: MUX_2_DC_0 divider setting
+
   "#clock-cells":
     type: int
     const: 1
