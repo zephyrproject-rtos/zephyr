@@ -500,7 +500,7 @@ static int shim_nrf_comp_init(const struct device *dev)
 	(void)shim_nrf_comp_diff_config_to_nrf(&shim_nrf_comp_config0, &nrf);
 #endif
 
-	if (nrfx_comp_init(&nrf, shim_nrf_comp_event_handler) != NRFX_SUCCESS) {
+	if (nrfx_comp_init(&nrf, shim_nrf_comp_event_handler) != 0) {
 		return -ENODEV;
 	}
 
