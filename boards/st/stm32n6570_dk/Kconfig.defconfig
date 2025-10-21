@@ -5,12 +5,8 @@
 
 if BOARD_STM32N6570_DK
 
-if NETWORKING
-
-config NET_L2_ETHERNET
+configdefault NET_L2_ETHERNET
 	default y
-
-endif # NETWORKING
 
 if DISPLAY || VIDEO
 # MEMC needs to be enabled in order to store

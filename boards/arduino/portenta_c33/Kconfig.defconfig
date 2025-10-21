@@ -6,11 +6,7 @@ if BOARD_ARDUINO_PORTENTA_C33
 config USE_DT_CODE_PARTITION
 	default y
 
-if NETWORKING
-
-config NET_L2_ETHERNET
+configdefault NET_L2_ETHERNET
 	default y
-
-endif # NETWORKING
 
 endif # BOARD_ARDUINO_PORTENTA_C33

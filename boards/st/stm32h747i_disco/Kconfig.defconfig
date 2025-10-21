@@ -5,11 +5,7 @@
 
 if BOARD_STM32H747I_DISCO
 
-if NETWORKING
-
-config NET_L2_ETHERNET
+configdefault NET_L2_ETHERNET
 	default y
-
-endif # NETWORKING
 
 endif # BOARD_STM32H747I_DISCO

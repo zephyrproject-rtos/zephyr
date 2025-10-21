@@ -4,12 +4,8 @@
 
 if BOARD_W5500_EVB_PICO
 
-if NETWORKING
-
-config NET_L2_ETHERNET
+configdefault NET_L2_ETHERNET
 	default y
-
-endif # NETWORKING
 
 if I2C_DW
 
