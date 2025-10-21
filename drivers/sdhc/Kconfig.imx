@@ -7,6 +7,7 @@ config IMX_USDHC
 	depends on DT_HAS_NXP_IMX_USDHC_ENABLED
 	select SDHC_SUPPORTS_UHS
 	select SDHC_SUPPORTS_NATIVE_MODE
+	select SDHC_SUPPORTS_SCATTER_GATHER_TRANSFER if IMX_USDHC_DMA_SUPPORT
 	select PINCTRL
 	help
 	  Enable the NXP IMX SD Host controller driver
@@ -38,8 +39,13 @@ config IMX_USDHC_DMA_BUFFER_SIZE
 	help
 	  Size of USDHC ADMA descriptor buffer in bytes
 
+config IMX_USDHC_DMA_SCATTER_GATHER_BUF_COUNT
+	int "Scatter-Gather buffers count allocated"
+	default 36
+	depends on SDHC_SCATTER_GATHER_TRANSFER
+	help
+	  Count of USDHC Scatter-Gather buffers allocated.
+
 endif # IMX_USDHC_DMA_SUPPORT
-
-
 
 endif

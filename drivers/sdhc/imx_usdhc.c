@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,7 +47,11 @@ enum transfer_callback_status {
 #define DEV_DATA(_dev) ((struct usdhc_data *)(_dev)->data)
 
 struct usdhc_host_transfer {
+#ifdef CONFIG_SDHC_SCATTER_GATHER_TRANSFER
+	usdhc_scatter_gather_transfer_t *transfer;
+#else
 	usdhc_transfer_t *transfer;
+#endif
 	k_timeout_t command_timeout;
 	k_timeout_t data_timeout;
 };
@@ -96,6 +100,9 @@ struct usdhc_data {
 #ifdef CONFIG_IMX_USDHC_DMA_SUPPORT
 	uint32_t *usdhc_dma_descriptor; /* ADMA descriptor table (noncachable) */
 	uint32_t dma_descriptor_len;    /* DMA descriptor table length in words */
+#ifdef CONFIG_SDHC_SCATTER_GATHER_TRANSFER
+	usdhc_scatter_gather_data_list_t sg_buf[CONFIG_IMX_USDHC_DMA_SCATTER_GATHER_BUF_COUNT];
+#endif
 #endif
 };
 
@@ -461,8 +468,13 @@ static int imx_usdhc_transfer(const struct device *dev, struct usdhc_host_transf
 	/* Reset semaphore */
 	k_sem_reset(&dev_data->transfer_sem);
 #ifdef CONFIG_IMX_USDHC_DMA_SUPPORT
+#ifdef CONFIG_SDHC_SCATTER_GATHER_TRANSFER
+	error = USDHC_TransferScatterGatherADMANonBlocking(base, &dev_data->transfer_handle,
+							   &dma_config, request->transfer);
+#else
 	error = USDHC_TransferNonBlocking(base, &dev_data->transfer_handle, &dma_config,
 					  request->transfer);
+#endif
 #else
 	error = USDHC_TransferNonBlocking(base, &dev_data->transfer_handle, NULL,
 					  request->transfer);
@@ -500,7 +512,11 @@ static void imx_usdhc_stop_transmission(const struct device *dev)
 {
 	usdhc_command_t stop_cmd = {0};
 	struct usdhc_host_transfer request;
+#ifdef CONFIG_SDHC_SCATTER_GATHER_TRANSFER
+	usdhc_scatter_gather_transfer_t transfer;
+#else
 	usdhc_transfer_t transfer;
+#endif
 
 	/* Send CMD12 to stop transmission */
 	stop_cmd.index = SD_STOP_TRANSMISSION;
@@ -531,6 +547,64 @@ static int imx_usdhc_card_busy(const struct device *dev)
 		       : 1;
 }
 
+#ifdef CONFIG_SDHC_SCATTER_GATHER_TRANSFER
+/* Convert normal usdhc_data_t to usdhc_scatter_gather_data_t */
+static void imx_usdhc_to_sg_data(usdhc_scatter_gather_data_t *sg_data, usdhc_data_t *data)
+{
+	sg_data->enableAutoCommand12 = data->enableAutoCommand12;
+	sg_data->enableAutoCommand23 = data->enableAutoCommand23;
+	sg_data->enableIgnoreError = data->enableIgnoreError;
+	sg_data->dataType = data->dataType;
+	sg_data->blockSize = data->blockSize;
+
+	if (data->rxData != NULL) {
+		sg_data->dataDirection = kUSDHC_TransferDirectionReceive;
+		sg_data->sgData.dataAddr = data->rxData;
+	} else {
+		sg_data->dataDirection = kUSDHC_TransferDirectionSend;
+		sg_data->sgData.dataAddr = (uint32_t *)data->txData;
+	}
+
+	sg_data->sgData.dataSize = data->blockSize * data->blockCount;
+	sg_data->sgData.dataList = NULL;
+}
+
+static int imx_usdhc_fill_sg_list(struct usdhc_data *dev_data,
+				  usdhc_scatter_gather_data_t *usdhc_sg_data,
+				  struct net_buf *sg_data)
+{
+	usdhc_scatter_gather_data_list_t *usg = &(usdhc_sg_data->sgData);
+	struct net_buf *sg = sg_data;
+	int i = 0;
+
+	memset(dev_data->sg_buf, 0, sizeof(dev_data->sg_buf));
+
+	usg->dataAddr = (uint32_t *)sg->data;
+	usg->dataSize = sg->len;
+
+	for (i = 0; i < CONFIG_IMX_USDHC_DMA_SCATTER_GATHER_BUF_COUNT; i++) {
+		if (sg->frags == NULL) {
+			return 0;
+		}
+
+		/* Pick the usdhc sg buffer to set up */
+		usg->dataList = &dev_data->sg_buf[i];
+
+		/* Move to the fragment */
+		sg = sg->frags;
+		usg = usg->dataList;
+
+		/* Set up data and length */
+		usg->dataAddr = (uint32_t *)sg->data;
+		usg->dataSize = sg->len;
+	}
+
+	LOG_ERR("scatter gather buffer count is not enough");
+	return -ENOMEM;
+}
+
+#endif
+
 /*
  * Execute card tuning
  */
@@ -540,7 +614,12 @@ static int imx_usdhc_execute_tuning(const struct device *dev)
 	usdhc_command_t cmd = {0};
 	usdhc_data_t data = {0};
 	struct usdhc_host_transfer request;
+#ifdef CONFIG_SDHC_SCATTER_GATHER_TRANSFER
+	usdhc_scatter_gather_data_t sg_data = {0};
+	usdhc_scatter_gather_transfer_t transfer;
+#else
 	usdhc_transfer_t transfer;
+#endif
 	int ret;
 	bool retry_tuning = true;
 	USDHC_Type *base = get_base(dev);
@@ -565,7 +644,12 @@ static int imx_usdhc_execute_tuning(const struct device *dev)
 	data.dataType = kUSDHC_TransferDataTuning;
 
 	transfer.command = &cmd;
+#ifdef CONFIG_SDHC_SCATTER_GATHER_TRANSFER
+	imx_usdhc_to_sg_data(&sg_data, &data);
+	transfer.data = &sg_data;
+#else
 	transfer.data = &data;
+#endif
 
 	/* Reset tuning circuit */
 	USDHC_Reset(base, kUSDHC_ResetTuning, 100U);
@@ -632,7 +716,12 @@ static int imx_usdhc_request(const struct device *dev, struct sdhc_command *cmd,
 	usdhc_command_t host_cmd = {0};
 	usdhc_data_t host_data = {0};
 	struct usdhc_host_transfer request;
+#ifdef CONFIG_SDHC_SCATTER_GATHER_TRANSFER
+	usdhc_scatter_gather_data_t sg_data = {0};
+	usdhc_scatter_gather_transfer_t transfer;
+#else
 	usdhc_transfer_t transfer;
+#endif
 	int busy_timeout = IMX_USDHC_DEFAULT_TIMEOUT;
 	int ret = 0;
 	int retries = (int)cmd->retries;
@@ -707,7 +796,20 @@ static int imx_usdhc_request(const struct device *dev, struct sdhc_command *cmd,
 		default:
 			return -ENOTSUP;
 		}
+#ifdef CONFIG_SDHC_SCATTER_GATHER_TRANSFER
+		imx_usdhc_to_sg_data(&sg_data, &host_data);
+		/* sdhc is requesting scatter gather data transfer */
+		if (data->is_sg_data) {
+			ret = imx_usdhc_fill_sg_list(dev_data, &sg_data, data->data);
+			if (ret != 0) {
+				return ret;
+			}
+		}
+
+		transfer.data = &sg_data;
+#else
 		transfer.data = &host_data;
+#endif
 		if (data->timeout_ms == SDHC_TIMEOUT_FOREVER) {
 			request.data_timeout = K_FOREVER;
 		} else {
