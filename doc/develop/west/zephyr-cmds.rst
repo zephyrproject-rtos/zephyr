@@ -428,3 +428,55 @@ each individual commit associated with the given pull request.
     │   ├── second-commit-from-pr.patch
     │   └── third-commit-from-pr.patch
     └── patches.yml
+
+The Devicetree Shell: ``west dtsh``
+***********************************
+
+DTSh is an interactive DTS files *viewer* with a shell-like command line interface: the devicetree is presented as a hierarchical file system, navigated and queried with familiar commands like ``cd``, ``ls``, ``tree`` or ``find``.
+The shell has a rich user interface (contextual auto-completion, commands history, semantic highlighting, pager integration, user profiles), and can also execute commands or scripts non-interactively.
+Commands output redirection permits to export custom views of the devicetree to text, HTML, or SVG files.
+
+Please refer to the `DTSh manual`_ for detailed documentation.
+
+``dtsh`` is provided by an optional Zephyr module project,
+which interested users must install it explicitly:
+
+.. code-block:: bash
+
+    # Enable and download optional West project.
+    west config manifest.project-filter -- +dtsh
+    west update
+
+    # Install module requirements.
+    west packages -m dtsh pip --install
+
+
+Without argument, ``west dtsh`` will try to open the devicetree at :file:`build/zephy/zephyr.dts`:
+
+.. code-block:: none
+
+   $ west build
+   $ west dtsh
+   dtsh (0.2.3): Shell-like interface with Devicetree
+   How to exit: q, or quit, or exit, or press Ctrl-D
+
+   > ls -l
+   Name              Labels          Binding
+   ───────────────────────────────────────────────────────
+   chosen
+   aliases
+   soc
+   pin-controller    pinctrl         nordic,nrf-pinctrl
+   entropy_bt_hci    rng_hci         zephyr,bt-hci-entropy
+   sw-pwm            sw_pwm          nordic,nrf-sw-pwm
+   cpus
+   leds                              gpio-leds
+   pwmleds                           pwm-leds
+   buttons                           gpio-keys
+   connector         arduino_header  arduino-header-r3
+   analog-connector  arduino_adc     arduino,uno-adc
+
+Run ``west dtsh -h`` for the full West command synopsis.
+
+.. _DTSh manual:
+   https://dottspina.github.io/dtsh/handbook.html
