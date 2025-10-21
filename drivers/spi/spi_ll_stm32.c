@@ -779,9 +779,9 @@ static int spi_stm32_configure(const struct device *dev,
 
 	if (spi_cs_is_gpio(config) || !IS_ENABLED(CONFIG_SPI_STM32_USE_HW_SS)) {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-		if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
-			if (LL_SPI_GetNSSPolarity(spi) == LL_SPI_NSS_POLARITY_LOW)
-				LL_SPI_SetInternalSSLevel(spi, LL_SPI_SS_LEVEL_HIGH);
+		if ((SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) &&
+		    (LL_SPI_GetNSSPolarity(spi) == LL_SPI_NSS_POLARITY_LOW)) {
+			LL_SPI_SetInternalSSLevel(spi, LL_SPI_SS_LEVEL_HIGH);
 		}
 #endif
 		LL_SPI_SetNSSMode(spi, LL_SPI_NSS_SOFT);
