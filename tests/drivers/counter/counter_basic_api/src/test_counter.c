@@ -132,6 +132,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_MCUX_FTM
 	DEVS_FOR_DT_COMPAT(nxp_ftm)
 #endif
+#ifdef CONFIG_COUNTER_MCUX_STM
+	DEVS_FOR_DT_COMPAT(nxp_stm)
+#endif
 #ifdef CONFIG_COUNTER_RENESAS_RZ_GTM
 	DEVS_FOR_DT_COMPAT(renesas_rz_gtm_counter)
 #endif
