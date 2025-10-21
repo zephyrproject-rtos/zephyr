@@ -21,5 +21,5 @@ uint32_t timespec_to_timeoutms(int clock_id, const struct timespec *abstime)
 		return 0;
 	}
 
-	return CLAMP(tp_diff(abstime, &curtime) / NSEC_PER_MSEC, 0, UINT32_MAX);
+	return clamp(tp_diff(abstime, &curtime) / NSEC_PER_MSEC, 0, UINT32_MAX);
 }

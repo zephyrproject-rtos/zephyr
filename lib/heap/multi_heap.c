@@ -120,7 +120,7 @@ void *sys_multi_heap_aligned_realloc(struct sys_multi_heap *mheap, void *cfg,
 	/* Otherwise, allocate a new block and copy the data */
 	new_ptr = sys_multi_heap_aligned_alloc(mheap, cfg, align, bytes);
 	if (new_ptr != NULL) {
-		memcpy(new_ptr, ptr, MIN(old_size, bytes));
+		memcpy(new_ptr, ptr, min(old_size, bytes));
 		sys_multi_heap_free(mheap, ptr);
 	}
 
