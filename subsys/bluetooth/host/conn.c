@@ -4475,6 +4475,23 @@ int bt_conn_br_exit_sniff_mode(struct bt_conn *conn)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_EXIT_SNIFF_MODE, buf, NULL);
 }
 
+void bt_conn_notify_mode_changed(struct bt_conn *conn, uint8_t mode, uint16_t interval)
+{
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->br_mode_changed) {
+			callback->br_mode_changed(conn, mode, interval);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->br_mode_changed) {
+			cb->br_mode_changed(conn, mode, interval);
+		}
+	}
+}
+
 #endif /* CONFIG_BT_POWER_MODE_CONTROL */
 #endif /* CONFIG_BT_CONN */
 
