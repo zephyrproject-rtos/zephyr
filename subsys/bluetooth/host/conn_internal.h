@@ -155,6 +155,11 @@ struct bt_conn_br {
 	uint8_t			features[LMP_MAX_PAGES][8];
 
 	struct bt_keys_link_key	*link_key;
+
+#if defined(CONFIG_BT_POWER_MODE_CONTROL)
+	/* For power mode */
+	uint8_t mode;
+#endif /* CONFIG_BT_POWER_MODE_CONTROL */
 };
 
 struct bt_conn_sco {
