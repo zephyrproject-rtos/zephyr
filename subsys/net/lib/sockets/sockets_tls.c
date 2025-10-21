@@ -1552,7 +1552,6 @@ static int tls_check_psk(struct tls_credential *psk)
 #endif
 }
 
-/* TODO add decent logs */
 static int tls_check_credentials(const sec_tag_t *sec_tags, int sec_tag_count)
 {
 	int err = 0;
