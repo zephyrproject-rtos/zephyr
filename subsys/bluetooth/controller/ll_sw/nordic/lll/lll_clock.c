@@ -18,6 +18,40 @@
 
 static uint16_t const sca_ppm_lut[] = {500, 250, 150, 100, 75, 50, 30, 20};
 
+#if defined(CONFIG_SOC_SERIES_NRF54HX)
+#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 7U
+
+int lll_clock_init(void)
+{
+	return 0;
+}
+
+int lll_clock_deinit(void)
+{
+	return 0;
+}
+
+int lll_clock_wait(void)
+{
+	return 0;
+}
+
+int lll_hfclock_on(void)
+{
+	return 0;
+}
+
+int lll_hfclock_on_wait(void)
+{
+	return 0;
+}
+
+int lll_hfclock_off(void)
+{
+	return 0;
+}
+
+#else /* !CONFIG_SOC_SERIES_NRF54HX */
 struct lll_clock_state {
 	struct onoff_client cli;
 	struct k_sem sem;
@@ -140,6 +174,7 @@ int lll_hfclock_off(void)
 
 	return 0;
 }
+#endif /* !CONFIG_SOC_SERIES_NRF54HX */
 
 uint8_t lll_clock_sca_local_get(void)
 {
