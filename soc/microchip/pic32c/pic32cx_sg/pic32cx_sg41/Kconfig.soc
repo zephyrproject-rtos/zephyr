@@ -1,0 +1,33 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_PIC32CX_SG41
+	bool
+	select SOC_FAMILY_MICROCHIP_PIC32CX_SG
+	help
+	  Enable support for Microchip PIC32CX SG41 Cortex-M4F microcontrollers.
+
+config SOC_SERIES
+	default "pic32cx_sg41" if SOC_SERIES_PIC32CX_SG41
+
+config SOC_PIC32CX1025SG41064
+	bool
+	select SOC_SERIES_PIC32CX_SG41
+
+config SOC_PIC32CX1025SG41080
+	bool
+	select SOC_SERIES_PIC32CX_SG41
+
+config SOC_PIC32CX1025SG41100
+	bool
+	select SOC_SERIES_PIC32CX_SG41
+
+config SOC_PIC32CX1025SG41128
+	bool
+	select SOC_SERIES_PIC32CX_SG41
+
+config SOC
+	default "pic32cx1025sg41064" if SOC_PIC32CX1025SG41064
+	default "pic32cx1025sg41080" if SOC_PIC32CX1025SG41080
+	default "pic32cx1025sg41100" if SOC_PIC32CX1025SG41100
+	default "pic32cx1025sg41128" if SOC_PIC32CX1025SG41128

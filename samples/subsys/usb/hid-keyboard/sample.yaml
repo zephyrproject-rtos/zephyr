@@ -33,3 +33,5 @@ tests:
   sample.usbd.hid-keyboard.large-out-report:
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="large_out_report.overlay"
+    extra_configs:
+      - CONFIG_USBD_HID_SET_POLLING_PERIOD=y

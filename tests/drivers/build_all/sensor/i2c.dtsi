@@ -166,6 +166,7 @@ test_i2c_isl29035: isl29035@14 {
 test_i2c_max30101: max30101@15 {
 	compatible = "maxim,max30101";
 	reg = <0x15>;
+	acq-mode = "multi-led";
 };
 
 test_i2c_max44009: max44009@16 {
@@ -1421,4 +1422,10 @@ test_i2c_ina7xx: ina7xx@bc {
 test_i2c_als31300: als31300@bd {
 	compatible = "allegro,als31300";
 	reg = <0xbd>;
+};
+
+test_i2c_hdc302x: hdc302x@be {
+	compatible = "ti,hdc302x";
+	reg = <0xbe>;
+	int-gpios = <&test_gpio 0 0>;
 };
