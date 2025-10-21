@@ -357,10 +357,13 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
             if not self.erase and regtool_generated_uicr:
                 self.exec_op('erase', core=core, kind='uicr')
         else:
+            erase_mode = self._get_erase_mode(self.erase_mode)
             if self.erase:
                 erase_arg = 'ERASE_ALL'
+            elif self.erase_mode:
+                erase_arg = erase_mode
             elif self.family == 'nrf54l':
-                erase_arg = self._get_erase_mode(self.erase_mode) or 'ERASE_NONE'
+                erase_arg = 'ERASE_NONE'
             else:
                 erase_arg = 'ERASE_RANGES_TOUCHED_BY_FIRMWARE'
 
@@ -478,10 +481,6 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                                'exclusive.')
 
         self.ensure_family()
-
-        if self.family != 'nrf54l' and self.erase_mode:
-            raise RuntimeError('Option --erase-mode can only be used with the '
-                               'nRF54L family.')
 
         self.ensure_output('hex')
         if IntelHex is None:
