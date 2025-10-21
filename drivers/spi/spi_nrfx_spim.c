@@ -54,28 +54,6 @@ LOG_MODULE_REGISTER(spi_nrfx_spim, CONFIG_SPI_LOG_LEVEL);
 #define SPIM_FOR_EACH_INSTANCE(f, sep, off_code, ...) \
 	NRFX_FOREACH_PRESENT(SPIM, f, sep, off_code, __VA_ARGS__)
 
-#define SPIM_PINS_CROSS_DOMAIN(unused, prefix, idx, _)			\
-	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(SPIM(prefix##idx)),		\
-		   (SPIM_PROP(idx, cross_domain_pins_supported)),	\
-		   (0))
-
-#if NRFX_FOREACH_PRESENT(SPIM, SPIM_PINS_CROSS_DOMAIN, (||), (0))
-#include <hal/nrf_gpio.h>
-/* Certain SPIM instances support usage of cross domain pins in form of dedicated pins on
- * a port different from the default one.
- */
-#define SPIM_CROSS_DOMAIN_SUPPORTED 1
-#endif
-
-#if SPIM_CROSS_DOMAIN_SUPPORTED && defined(CONFIG_NRF_SYS_EVENT)
-#include <nrf_sys_event.h>
-/* To use cross domain pins, constant latency mode needs to be applied, which is
- * handled via nrf_sys_event requests.
- */
-#define SPIM_CROSS_DOMAIN_PINS_HANDLE 1
-#endif
-
-
 struct spi_nrfx_data {
 	struct spi_context ctx;
 	const struct device *dev;
@@ -105,40 +83,10 @@ struct spi_nrfx_config {
 #endif
 	uint32_t wake_pin;
 	nrfx_gpiote_t wake_gpiote;
-#if SPIM_CROSS_DOMAIN_SUPPORTED
-	bool cross_domain;
-	int8_t default_port;
-#endif
 	void *mem_reg;
 };
 
 static void event_handler(const nrfx_spim_evt_t *p_event, void *p_context);
-
-#if SPIM_CROSS_DOMAIN_SUPPORTED
-static bool spim_has_cross_domain_connection(const struct spi_nrfx_config *config)
-{
-	const struct pinctrl_dev_config *pcfg = config->pcfg;
-	const struct pinctrl_state *state;
-	int ret;
-
-	ret = pinctrl_lookup_state(pcfg, PINCTRL_STATE_DEFAULT, &state);
-	if (ret < 0) {
-		LOG_ERR("Unable to read pin state");
-		return false;
-	}
-
-	for (uint8_t i = 0U; i < state->pin_cnt; i++) {
-		uint32_t pin = NRF_GET_PIN(state->pins[i]);
-
-		if ((pin != NRF_PIN_DISCONNECTED) &&
-		    (nrf_gpio_pin_port_number_extract(&pin) != config->default_port)) {
-			return true;
-		}
-	}
-
-	return false;
-}
-#endif
 
 static inline void finalize_spi_transaction(const struct device *dev, bool deactivate_cs)
 {
@@ -692,20 +640,6 @@ static int spim_resume(const struct device *dev)
 		return -EAGAIN;
 	}
 
-#if SPIM_CROSS_DOMAIN_SUPPORTED
-	if (dev_config->cross_domain && spim_has_cross_domain_connection(dev_config)) {
-#if SPIM_CROSS_DOMAIN_PINS_HANDLE
-		int err;
-
-		err = nrf_sys_event_request_global_constlat();
-		(void)err;
-		__ASSERT_NO_MSG(err >= 0);
-#else
-		__ASSERT(false, "NRF_SYS_EVENT needs to be enabled to use cross domain pins.\n");
-#endif
-	}
-#endif
-
 	return 0;
 }
 
@@ -720,20 +654,6 @@ static void spim_suspend(const struct device *dev)
 	}
 
 	spi_context_cs_put_all(&dev_data->ctx);
-
-#if SPIM_CROSS_DOMAIN_SUPPORTED
-	if (dev_config->cross_domain && spim_has_cross_domain_connection(dev_config)) {
-#if SPIM_CROSS_DOMAIN_PINS_HANDLE
-		int err;
-
-		err = nrf_sys_event_release_global_constlat();
-		(void)err;
-		__ASSERT_NO_MSG(err >= 0);
-#else
-		__ASSERT(false, "NRF_SYS_EVENT needs to be enabled to use cross domain pins.\n");
-#endif
-	}
-#endif
 
 	(void)pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_SLEEP);
 }
@@ -872,11 +792,6 @@ static int spi_nrfx_deinit(const struct device *dev)
 		.wake_pin = NRF_DT_GPIOS_TO_PSEL_OR(SPIM(idx), wake_gpios,     \
 						    WAKE_PIN_NOT_USED),	       \
 		.wake_gpiote = WAKE_GPIOTE_INSTANCE(SPIM(idx)),		       \
-		IF_ENABLED(SPIM_PINS_CROSS_DOMAIN(_, /*empty*/, idx, _),       \
-			(.cross_domain = true,				       \
-			 .default_port =				       \
-				DT_PROP_OR(DT_PHANDLE(SPIM(idx),	       \
-					default_gpio_port), port, -1),))       \
 		.mem_reg = DMM_DEV_TO_REG(SPIM(idx)),			       \
 	};								       \
 	BUILD_ASSERT(!SPIM_HAS_PROP(idx, wake_gpios) ||			       \
