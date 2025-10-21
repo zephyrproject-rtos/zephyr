@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2025, FocalTech Systems CO.,Ltd
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <focaltech/ft9001/ft9001.dtsi>
+#include "ft9001_eval-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "FocalTech FT9001 Evaluation Board";
+	compatible = "focaltech,ft9001-eval", "focaltech,ft9001";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,shell-uart = &usart2;
+		zephyr,flash = &flash0;
+		zephyr,sram = &sram0;
+		zephyr,sram2 = &sramd0;
+		zephyr,flash-controller = &flash_ctrl;
+		zephyr,code-partition = &app_partition;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		romcfg_partition: partition@0 {
+			label = "romcfg";
+			reg = <0x00000000 0x00001000>;
+			read-only;
+		};
+
+		app_partition: partition@1000 {
+			label = "app";
+			reg = <0x00001000 0x001FF000>;
+		};
+	};
+};
+
+&usart2 {
+	current-speed = <115200>;
+	parity = "none";
+	stop-bits = "1";
+	data-bits = <8>;
+	hw-flow-control;
+	status = "okay";
+};
