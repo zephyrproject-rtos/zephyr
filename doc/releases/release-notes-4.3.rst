@@ -42,6 +42,8 @@ Security Vulnerability Related
 ******************************
 The following CVEs are addressed by this release:
 
+* :cve:`2025-12035`: Under embargo until 2025-12-13
+
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 
