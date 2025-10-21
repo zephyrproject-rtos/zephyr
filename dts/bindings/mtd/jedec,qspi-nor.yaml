@@ -5,4 +5,6 @@ description: Generic NOR flash on QSPI bus
 
 compatible: "jedec,qspi-nor"
 
+on-bus: qspi
+
 include: [base.yaml, "jedec,spi-nor-common.yaml"]
