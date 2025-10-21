@@ -20,6 +20,7 @@
 #include <zephyr/init.h>
 #include <zephyr/toolchain.h>
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <stm32_cache.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
@@ -569,7 +570,7 @@ static void adc_stm32_calibration_start(const struct device *dev, bool single_en
 			__DMB();
 			MODIFY_REG(adc->CALFACT2, 0xFFFFFF00UL, 0x03021100UL);
 			__DMB();
-			SET_BIT(adc->CALFACT, ADC_CALFACT_LATCH_COEF);
+			stm32_reg_set_bits(&adc->CALFACT, ADC_CALFACT_LATCH_COEF);
 			adc_stm32_disable(adc);
 		}
 	}
