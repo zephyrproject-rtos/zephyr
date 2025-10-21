@@ -444,14 +444,15 @@ static int anomaly_58_workaround_init(const struct device *dev)
 	struct spi_nrfx_data *dev_data = dev->data;
 	const struct spi_nrfx_config *dev_config = dev->config;
 	nrfx_err_t err_code;
+	int ret;
 
 	dev_data->anomaly_58_workaround_active = false;
 
 	if (dev_config->anomaly_58_workaround) {
-		err_code = nrfx_ppi_channel_alloc(&dev_data->ppi_ch);
-		if (err_code != NRFX_SUCCESS) {
+		ret = nrfx_ppi_channel_alloc(&dev_data->ppi_ch);
+		if (ret != 0) {
 			LOG_ERR("Failed to allocate PPI channel");
-			return -ENODEV;
+			return ret;
 		}
 
 		err_code = nrfx_gpiote_channel_alloc(&gpiote, &dev_data->gpiote_ch);

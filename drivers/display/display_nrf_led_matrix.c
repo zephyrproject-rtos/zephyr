@@ -438,19 +438,20 @@ static int instance_init(const struct device *dev)
 	nrf_pwm_shorts_set(dev_config->pwm, NRF_PWM_SHORT_SEQEND0_STOP_MASK);
 #else
 	nrfx_err_t err;
+	int ret;
 	nrf_ppi_channel_t ppi_ch;
 
 	for (int i = 0; i < GROUP_SIZE; ++i) {
 		uint8_t *gpiote_ch = &dev_data->gpiote_ch[i];
 
-		err = nrfx_ppi_channel_alloc(&ppi_ch);
-		if (err != NRFX_SUCCESS) {
+		ret = nrfx_ppi_channel_alloc(&ppi_ch);
+		if (ret != 0) {
 			LOG_ERR("Failed to allocate PPI channel.");
 			/* Do not bother with freeing resources allocated
 			 * so far. The application needs to be reconfigured
 			 * anyway.
 			 */
-			return -ENOMEM;
+			return ret;
 		}
 
 		err = nrfx_gpiote_channel_alloc(&dev_config->gpiote, gpiote_ch);
