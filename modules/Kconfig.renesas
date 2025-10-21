@@ -72,6 +72,21 @@ config USE_RA_FSP_MRAM
 
 if USE_RA_FSP_SCE
 
+config HAS_RENESAS_RA_RSIP_E11A
+	bool
+	help
+	  Includes RSIP-E11A implementation for SCE driver
+
+config HAS_RENESAS_RA_RSIP_E31A
+	bool
+	help
+	  Includes RSIP-E31A implementation for SCE driver
+
+config HAS_RENESAS_RA_RSIP_E50D
+	bool
+	help
+	  Includes RSIP-E50D implementation for SCE driver
+
 config HAS_RENESAS_RA_RSIP_E51A
 	bool
 	default y
