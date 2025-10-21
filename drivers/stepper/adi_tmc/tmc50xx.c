@@ -12,7 +12,7 @@
 #include <zephyr/drivers/stepper/stepper_trinamic.h>
 
 #include <adi_tmc_spi.h>
-#include "adi_tmc5xxx_common.h"
+#include <adi_tmc5xxx_common.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(tmc50xx, CONFIG_STEPPER_LOG_LEVEL);

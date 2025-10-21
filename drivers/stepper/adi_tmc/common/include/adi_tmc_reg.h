@@ -11,8 +11,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_STEPPER_ADI_TMC_REG_H_
-#define ZEPHYR_DRIVERS_STEPPER_ADI_TMC_REG_H_
+#ifndef ZEPHYR_DRIVERS_STEPPER_ADI_TMC_COMMON_ADI_TMC_REG_H_
+#define ZEPHYR_DRIVERS_STEPPER_ADI_TMC_COMMON_ADI_TMC_REG_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -192,4 +192,4 @@ extern "C" {
 }
 #endif
 
-#endif /* ZEPHYR_DRIVERS_STEPPER_ADI_TMC_REG_H_ */
+#endif /* ZEPHYR_DRIVERS_STEPPER_ADI_TMC_COMMON_ADI_TMC_REG_H_ */

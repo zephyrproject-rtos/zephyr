@@ -9,10 +9,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_STEPPER_ADI_TMC_ADI_TMC5XXX_COMMON_H_
-#define ZEPHYR_DRIVERS_STEPPER_ADI_TMC_ADI_TMC5XXX_COMMON_H_
+#ifndef ZEPHYR_DRIVERS_STEPPER_ADI_TMC_COMMON_ADI_TMC5XXX_COMMON_H_
+#define ZEPHYR_DRIVERS_STEPPER_ADI_TMC_COMMON_ADI_TMC5XXX_COMMON_H_
 
-#include "adi_tmc_reg.h"
+#include <adi_tmc_reg.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,4 +48,4 @@ static inline uint32_t tmc5xxx_calculate_velocity_from_hz_to_fclk(uint64_t veloc
 }
 #endif
 
-#endif /* ZEPHYR_DRIVERS_STEPPER_ADI_TMC_ADI_TMC5XXX_COMMON_H_ */
+#endif /* ZEPHYR_DRIVERS_STEPPER_ADI_TMC_COMMON_ADI_TMC5XXX_COMMON_H_ */
