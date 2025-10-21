@@ -532,6 +532,8 @@ static inline const char *video_get_ctrl_name(uint32_t id)
 		return "Camera Orientation";
 	case VIDEO_CID_CAMERA_SENSOR_ROTATION:
 		return "Camera Sensor Rotation";
+	case VIDEO_CID_SNAPSHOT_MODE:
+		return "Snapshot Mode";
 
 	/* JPEG encoder controls */
 	case VIDEO_CID_JPEG_COMPRESSION_QUALITY:

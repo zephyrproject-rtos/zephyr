@@ -334,6 +334,12 @@ enum video_camera_orientation {
  */
 #define VIDEO_CID_CAMERA_SENSOR_ROTATION (VIDEO_CID_CAMERA_CLASS_BASE + 35)
 
+/** Switch the camera between video mode and snapshot mode.
+ * Defaults to video mode unless max buffer count is set to 1
+ * 1 - enable snapshot mode
+ */
+#define VIDEO_CID_SNAPSHOT_MODE (VIDEO_CID_CAMERA_CLASS_BASE + 36)
+
 /**
  * @}
  */

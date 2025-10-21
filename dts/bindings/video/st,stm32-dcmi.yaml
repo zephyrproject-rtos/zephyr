@@ -49,6 +49,15 @@ properties:
               STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS | STM32_DMA_MEM_32BITS |
               STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_1_4>;
 
+  snapshot-mode:
+    type: boolean
+    description: Set DCMI to Snapshot mode, instead of the default Capture mode.
+
+  snapshot-timeout:
+    type: int
+    description: Set capture timeout in microseconds, default is 1000.
+    default: 1000
+
 child-binding:
   child-binding:
     include: video-interfaces.yaml
