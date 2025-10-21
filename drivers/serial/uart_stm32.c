@@ -1675,6 +1675,15 @@ static int uart_stm32_async_tx(const struct device *dev,
 	__maybe_unused unsigned int key;
 	int ret;
 
+#if defined(CONFIG_PM_DEVICE)
+	enum pm_device_state state;
+
+	(void)pm_device_state_get(dev, &state);
+	if (state != PM_DEVICE_STATE_ACTIVE) {
+		return -ECANCELED;
+	}
+#endif
+
 	/* Check size of singl character (1 or 2 bytes) */
 	const int char_size = (IS_ENABLED(CONFIG_UART_WIDE_DATA) &&
 			       (LL_USART_GetDataWidth(usart) == LL_USART_DATAWIDTH_9B) &&
