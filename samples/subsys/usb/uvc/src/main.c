@@ -23,6 +23,11 @@ const static struct device *const video_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_cam
 /* Format capabilities of video_dev, used everywhere through the sample */
 static struct video_caps video_caps = {.type = VIDEO_BUF_TYPE_OUTPUT};
 
+static const struct device *app_uvc_source_dev(void)
+{
+	return video_dev;
+}
+
 /* Pixel formats present in one of the UVC 1.5 standard */
 static bool app_is_supported_format(uint32_t pixfmt)
 {
@@ -46,6 +51,7 @@ static bool app_has_supported_format(void)
 
 static int app_add_format(uint32_t pixfmt, uint32_t width, uint32_t height, bool has_sup_fmts)
 {
+	const struct device *uvc_src_dev = app_uvc_source_dev();
 	struct video_format fmt = {
 		.pixelformat = pixfmt,
 		.width = width,
@@ -60,7 +66,7 @@ static int app_add_format(uint32_t pixfmt, uint32_t width, uint32_t height, bool
 	}
 
 	/* Set the format to get the size */
-	ret = video_set_compose_format(video_dev, &fmt);
+	ret = video_set_compose_format(uvc_src_dev, &fmt);
 	if (ret != 0) {
 		LOG_ERR("Could not set the format of %s to %s %ux%u (size %u)",
 			video_dev->name, VIDEO_FOURCC_TO_STR(fmt.pixelformat),
@@ -161,6 +167,7 @@ static int app_add_filtered_formats(void)
 
 int main(void)
 {
+	const struct device *uvc_src_dev = app_uvc_source_dev();
 	struct usbd_context *sample_usbd;
 	struct video_buffer *vbuf;
 	struct video_format fmt = {0};
@@ -182,7 +189,7 @@ int main(void)
 	}
 
 	/* Must be called before usb_enable() */
-	uvc_set_video_dev(uvc_dev, video_dev);
+	uvc_set_video_dev(uvc_dev, uvc_src_dev);
 
 	/* Must be called before usb_enable() */
 	ret = app_add_filtered_formats();
@@ -292,21 +299,21 @@ int main(void)
 			return ret;
 		}
 
-		ret = video_transfer_buffer(video_dev, uvc_dev,
+		ret = video_transfer_buffer(uvc_src_dev, uvc_dev,
 					    VIDEO_BUF_TYPE_OUTPUT, VIDEO_BUF_TYPE_INPUT,
 					    K_NO_WAIT);
 		if (ret != 0 && ret != -EAGAIN) {
 			LOG_ERR("Failed to transfer from %s to %s",
-				video_dev->name, uvc_dev->name);
+				uvc_src_dev->name, uvc_dev->name);
 			return ret;
 		}
 
-		ret = video_transfer_buffer(uvc_dev, video_dev,
+		ret = video_transfer_buffer(uvc_dev, uvc_src_dev,
 					    VIDEO_BUF_TYPE_INPUT, VIDEO_BUF_TYPE_OUTPUT,
 					    K_NO_WAIT);
 		if (ret != 0 && ret != -EAGAIN) {
 			LOG_ERR("Failed to transfer from %s to %s",
-				uvc_dev->name, video_dev->name);
+				uvc_dev->name, uvc_src_dev->name);
 			return ret;
 		}
 
