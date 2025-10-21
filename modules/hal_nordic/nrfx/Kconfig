@@ -409,36 +409,6 @@ config NRFX_PWM133
 config NRFX_QDEC
 	bool
 
-config NRFX_QDEC0
-	bool "QDEC0 driver instance"
-	depends on $(dt_nodelabel_exists,qdec0)
-	select NRFX_QDEC
-
-config NRFX_QDEC1
-	bool "QDEC1 driver instance"
-	depends on $(dt_nodelabel_exists,qdec1)
-	select NRFX_QDEC
-
-config NRFX_QDEC20
-	bool "QDEC20 driver instance"
-	depends on $(dt_nodelabel_exists,qdec20)
-	select NRFX_QDEC
-
-config NRFX_QDEC21
-	bool "QDEC21 driver instance"
-	depends on $(dt_nodelabel_exists,qdec21)
-	select NRFX_QDEC
-
-config NRFX_QDEC130
-	bool "QDEC130 driver instance"
-	depends on $(dt_nodelabel_exists,qdec130)
-	select NRFX_QDEC
-
-config NRFX_QDEC131
-	bool "QDEC131 driver instance"
-	depends on $(dt_nodelabel_exists,qdec131)
-	select NRFX_QDEC
-
 config NRFX_QSPI
 	bool "QSPI driver"
 	depends on $(dt_nodelabel_exists,qspi)
