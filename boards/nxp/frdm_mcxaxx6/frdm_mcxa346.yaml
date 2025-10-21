@@ -23,5 +23,6 @@ supported:
   - watchdog
   - counter
   - dma
+  - dac
   - opamp
 vendor: nxp
