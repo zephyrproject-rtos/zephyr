@@ -91,7 +91,7 @@ static int configure(const struct device *dev,
 	const struct spi_nrfx_config *dev_config = dev->config;
 	struct spi_context *ctx = &dev_data->ctx;
 	nrfx_spi_config_t config;
-	nrfx_err_t result;
+	int result;
 	uint32_t sck_pin;
 
 	if (dev_data->initialized && spi_context_configured(ctx, spi_cfg)) {
@@ -149,8 +149,8 @@ static int configure(const struct device *dev,
 
 	result = nrfx_spi_init(&dev_config->spi, &config,
 			       event_handler, dev_data);
-	if (result != NRFX_SUCCESS) {
-		LOG_ERR("Failed to initialize nrfx driver: %08x", result);
+	if (result != 0) {
+		LOG_ERR("Failed to initialize nrfx driver: %d", result);
 		return -EIO;
 	}
 
@@ -183,7 +183,6 @@ static void transfer_next_chunk(const struct device *dev)
 
 	if (chunk_len > 0) {
 		nrfx_spi_xfer_desc_t xfer;
-		nrfx_err_t result;
 
 		dev_data->chunk_len = chunk_len;
 
@@ -191,8 +190,8 @@ static void transfer_next_chunk(const struct device *dev)
 		xfer.tx_length   = spi_context_tx_buf_on(ctx) ? chunk_len : 0;
 		xfer.p_rx_buffer = ctx->rx_buf;
 		xfer.rx_length   = spi_context_rx_buf_on(ctx) ? chunk_len : 0;
-		result = nrfx_spi_xfer(&dev_config->spi, &xfer, 0);
-		if (result == NRFX_SUCCESS) {
+		error = nrfx_spi_xfer(&dev_config->spi, &xfer, 0);
+		if (error == 0) {
 			return;
 		}
 
