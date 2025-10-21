@@ -19,7 +19,8 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,sram = &sram2;
-		zephyr,flash = &code_partition;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &code_partition;
 	};
 
 	leds {
