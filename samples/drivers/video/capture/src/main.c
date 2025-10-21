@@ -54,6 +54,7 @@ static inline int app_setup_display(const struct device *const display_dev, cons
 		}
 		break;
 	default:
+		LOG_ERR("Display pixel format not supported by this sample");
 		return -ENOTSUP;
 	}
 	if (ret < 0) {
@@ -240,7 +241,7 @@ static int app_setup_video_frmival(const struct device *const video_dev,
 	} else if (ret < 0) {
 		LOG_ERR("Error while getting the frame interval");
 		return ret;
-	} else {
+	} else if (ret == 0) {
 		LOG_INF("- Default frame rate : %f fps",
 			1.0 * frmival.denominator / frmival.numerator);
 	}
@@ -357,27 +358,27 @@ int main(void)
 
 	ret = app_query_video_info(video_dev, &caps, &fmt);
 	if (ret < 0) {
-		return 0;
+		goto err;
 	}
 
 	ret = app_setup_video_selection(video_dev, &fmt);
 	if (ret < 0) {
-		return 0;
+		goto err;
 	}
 
 	ret = app_setup_video_format(video_dev, &fmt);
 	if (ret < 0) {
-		return 0;
+		goto err;
 	}
 
 	ret = app_setup_video_frmival(video_dev, &fmt);
 	if (ret < 0) {
-		return 0;
+		goto err;
 	}
 
 	ret = app_setup_video_controls(video_dev);
 	if (ret < 0) {
-		return 0;
+		goto err;
 	}
 
 #if DT_HAS_CHOSEN(zephyr_display)
@@ -385,20 +386,19 @@ int main(void)
 
 	ret = app_setup_display(display_dev, fmt.pixelformat);
 	if (ret < 0) {
-		LOG_ERR("Unable to set up display");
-		return 0;
+		goto err;
 	}
 #endif
 
 	ret = app_setup_video_buffers(video_dev, &caps, &fmt);
 	if (ret < 0) {
-		return 0;
+		goto err;
 	}
 
 	ret = video_stream_start(video_dev, VIDEO_BUF_TYPE_OUTPUT);
 	if (ret < 0) {
 		LOG_ERR("Unable to start capture (interface)");
-		return 0;
+		goto err;
 	}
 
 	LOG_INF("Capture started");
@@ -408,7 +408,7 @@ int main(void)
 		ret = video_dequeue(video_dev, &vbuf, K_FOREVER);
 		if (ret < 0) {
 			LOG_ERR("Unable to dequeue video buf");
-			return 0;
+			goto err;
 		}
 
 		LOG_INF("Got frame %u! size: %u; timestamp %u ms",
@@ -424,7 +424,11 @@ int main(void)
 		ret = video_enqueue(video_dev, vbuf);
 		if (ret < 0) {
 			LOG_ERR("Unable to requeue video buf");
-			return 0;
+			goto err;
 		}
 	}
+
+err:
+	LOG_ERR("Aborting sample");
+	return 0;
 }
