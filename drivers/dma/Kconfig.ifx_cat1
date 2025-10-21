@@ -12,3 +12,18 @@ config DMA_INFINEON_CAT1
 	select USE_INFINEON_DMA
 	help
 	  This option enables the DMA driver for Infineon CAT1 family.
+
+config DMA_PDL_INFINEON_CAT1
+	bool "Infineon CAT1 DMA driver"
+	default y
+	depends on DT_HAS_INFINEON_CAT1_DMA_PDL_ENABLED
+	select USE_INFINEON_DMA
+	help
+	  This option enables the DMA driver for Infineon CAT1 family.
+
+config INFINEON_DESCRIPTOR_POOL_SIZE
+	int
+	default 10
+	depends on DMA_PDL_INFINEON_CAT1
+	help
+	  This option provides the descritor pool size used for the DMA PDL driver
