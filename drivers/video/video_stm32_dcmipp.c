@@ -253,13 +253,13 @@ void HAL_DCMIPP_PIPE_VsyncEventCallback(DCMIPP_HandleTypeDef *hdcmipp, uint32_t 
 		 */
 		pipe->state = STM32_DCMIPP_WAIT_FOR_BUFFER;
 		if (Pipe == DCMIPP_PIPE0) {
-			CLEAR_BIT(hdcmipp->Instance->P0FCTCR, DCMIPP_P0FCTCR_CPTREQ);
+			stm32_reg_clear_bits(&hdcmipp->Instance->P0FCTCR, DCMIPP_P0FCTCR_CPTREQ);
 		}
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 		else if (Pipe == DCMIPP_PIPE1) {
-			CLEAR_BIT(hdcmipp->Instance->P1FCTCR, DCMIPP_P1FCTCR_CPTREQ);
+			stm32_reg_clear_bits(&hdcmipp->Instance->P1FCTCR, DCMIPP_P1FCTCR_CPTREQ);
 		} else if (Pipe == DCMIPP_PIPE2) {
-			CLEAR_BIT(hdcmipp->Instance->P2FCTCR, DCMIPP_P2FCTCR_CPTREQ);
+			stm32_reg_clear_bits(&hdcmipp->Instance->P2FCTCR, DCMIPP_P2FCTCR_CPTREQ);
 		}
 #endif
 		return;
