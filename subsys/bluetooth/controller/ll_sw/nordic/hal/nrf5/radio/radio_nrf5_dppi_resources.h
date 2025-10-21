@@ -184,5 +184,9 @@
 /* The 2 adjacent PPI groups used for implementing SW_SWITCH_TIMER-based
  * auto-switch for TIFS. 'index' must be 0 or 1.
  */
+#if defined(CONFIG_SOC_SERIES_NRF54HX)
+#define SW_SWITCH_TIMER_TASK_GROUP_BASE 2
+#else /* !CONFIG_SOC_SERIES_NRF54HX */
 #define SW_SWITCH_TIMER_TASK_GROUP_BASE 4
+#endif /* !CONFIG_SOC_SERIES_NRF54HX */
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */

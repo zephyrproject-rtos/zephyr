@@ -10,6 +10,13 @@
 
 #include <soc.h>
 
+#if defined(CONFIG_SOC_SERIES_NRF54HX)
+#define DEVICEADDR BLE.ADDR
+#define DEVICEADDRTYPE BLE.ADDRTYPE
+#define IR BLE.IR
+#define ER BLE.ER
+#endif
+
 uint8_t hci_vendor_read_static_addr(struct bt_hci_vs_static_addr addrs[],
 				 uint8_t size)
 {
