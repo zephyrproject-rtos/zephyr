@@ -10,6 +10,7 @@
 
 /delete-node/ &i2s0;
 /delete-node/ &i2s1;
+/delete-node/ &battery_backup;
 
 / {
 	clocks: clocks {
@@ -50,6 +51,7 @@
 
 		pll: pll {
 			compatible = "renesas,ra-cgc-pll";
+			status = "disabled";
 			#clock-cells = <0>;
 			clocks = <&xtal>;
 			div = <2>;
@@ -78,11 +80,11 @@
 				status = "disabled";
 				#clock-cells = <0>;
 			};
-			status = "disabled";
 		};
 
 		pll2: pll2 {
 			compatible = "renesas,ra-cgc-pll";
+			status = "disabled";
 			#clock-cells = <0>;
 
 			div = <2>;
@@ -111,7 +113,6 @@
 				status = "disabled";
 				#clock-cells = <0>;
 			};
-			status = "disabled";
 		};
 
 		pclkblock: pclkblock@40203000 {

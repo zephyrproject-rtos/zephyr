@@ -120,6 +120,10 @@ struct modem_cmux_dlci {
 #if CONFIG_MODEM_STATS
 	struct modem_stats_buffer receive_buf_stats;
 #endif
+	/* Flow control */
+	bool flow_control : 1;
+	bool rx_full : 1;
+	bool msc_sent : 1;
 };
 
 struct modem_cmux_frame {

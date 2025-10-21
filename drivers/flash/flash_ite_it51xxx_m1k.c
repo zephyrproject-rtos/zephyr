@@ -9,6 +9,7 @@
 #include <soc.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/flash.h>
+#include <zephyr/drivers/flash/it51xxx_flash_api_ex.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
@@ -28,6 +29,19 @@ LOG_MODULE_REGISTER(flash_ite_it51xxx, CONFIG_FLASH_LOG_LEVEL);
 #define IT51XXX_M1K_REGS_BASE  DT_INST_REG_ADDR_BY_IDX(0, 0)
 #define IT51XXX_SMFI_REGS_BASE DT_INST_REG_ADDR_BY_IDX(0, 1)
 
+/* 0x3b: EC-Indirect Memory Address Register 0 */
+#define SMFI_ECINDAR0    (IT51XXX_SMFI_REGS_BASE + 0x3b)
+/* 0x3c: EC-Indirect Memory Address Register 1 */
+#define SMFI_ECINDAR1    (IT51XXX_SMFI_REGS_BASE + 0x3c)
+/* 0x3d: EC-Indirect Memory Address Register 2 */
+#define SMFI_ECINDAR2    (IT51XXX_SMFI_REGS_BASE + 0x3d)
+/* 0x3e: EC-Indirect Memory Address Register 3 */
+#define SMFI_ECINDAR3    (IT51XXX_SMFI_REGS_BASE + 0x3e)
+#define SEL_SPI          0x00
+#define SEL_EFLASH       0x01
+#define ECINDA31_30(n)   FIELD_PREP(GENMASK(7, 6), n)
+/* 0x3f: EC-Indirect Memory Data Register */
+#define SMFI_ECINDDR     (IT51XXX_SMFI_REGS_BASE + 0x3f)
 /* 0x63: Flash Control Register 3 */
 #define SMFI_FLHCTRL3R   (IT51XXX_SMFI_REGS_BASE + 0x63)
 #define SIFE             BIT(3)
@@ -35,6 +49,9 @@ LOG_MODULE_REGISTER(flash_ite_it51xxx, CONFIG_FLASH_LOG_LEVEL);
 /* 0x64: Flash Control Register 4 */
 #define SMFI_FLHCTRL4R   (IT51XXX_SMFI_REGS_BASE + 0x64)
 #define EN2FLH           BIT(7)
+/* 0x81: Flash Control Register 6 */
+#define SMFI_FLHCTRL6R   (IT51XXX_SMFI_REGS_BASE + 0x81)
+#define FSPI28AMEN       BIT(4)
 /* 0xa6: Manual Flash 1K Command Control 1 */
 #define SMFI_M1KFLHCTRL1 (IT51XXX_M1K_REGS_BASE + 0x00)
 #define W1S_M1K_PE       BIT(1)
@@ -106,19 +123,14 @@ enum m1ksts2 {
 #define M1K_READ_BCNT_MASK GENMASK(9, 0)
 #define M1K_PROG_BCNT_MASK GENMASK(9, 0)
 
-enum flash_select {
-	INTERNAL,
-	EXTERNAL_FSPI_CS0,
-	EXTERNAL_FSPI_CS1,
-};
-
 struct flash_it51xxx_dev_data {
 	struct k_sem sem;
+	enum flash_it51xxx_ex_op flash;
 };
 
 struct flash_it51xxx_config {
 	const struct pinctrl_dev_config *pcfg;
-	enum flash_select m1k_sel_access_flash;
+	enum flash_it51xxx_ex_op target_flash;
 };
 
 static bool is_valid_range(off_t offset, uint32_t len)
@@ -282,6 +294,88 @@ static int m1k_flash_erase(const struct device *dev, off_t offset, size_t len)
 	ret = flash_wait_status(dev, M1K_PE_CYC);
 
 	return ret;
+}
+
+static int m1k_flash_sel_access(const struct device *dev, enum flash_it51xxx_ex_op target_flash)
+{
+	const struct flash_it51xxx_config *cfg = dev->config;
+	struct flash_it51xxx_dev_data *data = dev->data;
+	int ret;
+	uint8_t flhctrl3r_val;
+
+	LOG_DBG("%s: Runtime M1K select access flash=%d", __func__, target_flash);
+
+	/* Save the opcode to device data */
+	data->flash = target_flash;
+
+	/* Disable two-flash */
+	sys_write8(sys_read8(SMFI_FLHCTRL4R) & ~EN2FLH, SMFI_FLHCTRL4R);
+
+	flhctrl3r_val = sys_read8(SMFI_FLHCTRL3R);
+	if (target_flash != FLASH_IT51XXX_INTERNAL) {
+		/* Enable SPI flash and SPI pins are normal operation */
+		sys_write8((flhctrl3r_val | SIFE) & ~FFSPITRI, SMFI_FLHCTRL3R);
+
+		/* M1K-READ will access the SPI flash (FSPI) */
+		sys_write8(M1K_READ_SEL_FSPI, SMFI_M1K_READ_LBA3);
+		/* M1K-PROG/M1K-ERASE will access the SPI flash (FSPI) */
+		sys_write8(M1K_PE_SEL_FSPI, SMFI_M1K_PE_LBA3);
+
+		/* Set the pin to FSPI alternate function. */
+		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0) {
+			LOG_ERR("%s: Failed to configure FSPI pins", dev->name);
+			return ret;
+		}
+
+		if (target_flash == FLASH_IT51XXX_EXTERNAL_FSPI_CS1) {
+			/* M1K-READ will access the SPI flash on FSCE1# */
+			sys_write8(sys_read8(SMFI_M1K_READ_LBA3) | M1K_READ_SEL_FSCE1,
+				   SMFI_M1K_READ_LBA3);
+			/* M1K-PROG/M1K-ERASE will access the SPI flash on FSCE1# */
+			sys_write8(sys_read8(SMFI_M1K_PE_LBA3) | M1K_PE_SEL_FSCE1,
+				   SMFI_M1K_PE_LBA3);
+			/* Enable two-flash */
+			sys_write8(sys_read8(SMFI_FLHCTRL4R) | EN2FLH, SMFI_FLHCTRL4R);
+		}
+	} else {
+		/* Use internal flash, the SPI pins should be set to tri-state */
+		sys_write8((flhctrl3r_val & ~SIFE) | FFSPITRI, SMFI_FLHCTRL3R);
+
+		/* M1K-READ will access the e-flash */
+		sys_write8(0, SMFI_M1K_READ_LBA3);
+		/* M1K-PROG/M1K-ERASE will access the e-flash */
+		sys_write8(0, SMFI_M1K_PE_LBA3);
+	}
+
+	return 0;
+}
+
+static void m1k_flash_address_mode(const struct device *dev, enum flash_it51xxx_ex_op addr_mode)
+{
+	struct flash_it51xxx_dev_data *data = dev->data;
+	uint8_t sel_flash;
+
+	volatile uint8_t ecinddr __unused;
+
+	LOG_DBG("%s: Addressing mode=%d", __func__, addr_mode);
+
+	/* Decide whether legacy(24-bit) or external SPI flash(28-bit) addressing */
+	if (addr_mode == FLASH_IT51XXX_ADDR_4B) {
+		sys_write8(sys_read8(SMFI_FLHCTRL6R) | FSPI28AMEN, SMFI_FLHCTRL6R);
+	} else {
+		sys_write8(sys_read8(SMFI_FLHCTRL6R) & ~FSPI28AMEN, SMFI_FLHCTRL6R);
+	}
+
+	/* EC-Indirect memory address  (SPI or e-flash)*/
+	sel_flash = data->flash == FLASH_IT51XXX_INTERNAL ? SEL_EFLASH : SEL_SPI;
+	sys_write8(ECINDA31_30(sel_flash), SMFI_ECINDAR3);
+	sys_write8(0, SMFI_ECINDAR2);
+	sys_write8(0, SMFI_ECINDAR1);
+	sys_write8(0, SMFI_ECINDAR0);
+
+	/* Dummy read memory data*/
+	ecinddr = sys_read8(SMFI_ECINDDR);
 }
 
 /* Read data from flash */
@@ -448,6 +542,37 @@ static void flash_it51xxx_pages_layout(const struct device *dev,
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
+#ifdef CONFIG_FLASH_EX_OP_ENABLED
+static int flash_it51xxx_ex_op(const struct device *dev, uint16_t opcode, const uintptr_t in,
+			       void *out)
+{
+	struct flash_it51xxx_dev_data *data = dev->data;
+	int ret = 0;
+
+	LOG_DBG("%s: Extended operation code=%x", __func__, opcode);
+
+	k_sem_take(&data->sem, K_FOREVER);
+
+	switch (opcode) {
+	case FLASH_IT51XXX_INTERNAL:
+	case FLASH_IT51XXX_EXTERNAL_FSPI_CS0:
+	case FLASH_IT51XXX_EXTERNAL_FSPI_CS1:
+		ret = m1k_flash_sel_access(dev, opcode);
+		break;
+	case FLASH_IT51XXX_ADDR_3B:
+	case FLASH_IT51XXX_ADDR_4B:
+		m1k_flash_address_mode(dev, opcode);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	k_sem_give(&data->sem);
+
+	return ret;
+}
+#endif
+
 static DEVICE_API(flash, flash_it51xxx_api) = {
 	.read = flash_it51xxx_read,
 	.write = flash_it51xxx_write,
@@ -456,6 +581,9 @@ static DEVICE_API(flash, flash_it51xxx_api) = {
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = flash_it51xxx_pages_layout,
 #endif
+#if defined(CONFIG_FLASH_EX_OP_ENABLED)
+	.ex_op = flash_it51xxx_ex_op,
+#endif
 };
 
 static int flash_it51xxx_init(const struct device *dev)
@@ -463,46 +591,18 @@ static int flash_it51xxx_init(const struct device *dev)
 	const struct flash_it51xxx_config *cfg = dev->config;
 	struct flash_it51xxx_dev_data *data = dev->data;
 	int ret;
-	uint8_t flhctrl3r_val;
 
-	LOG_INF("%s: M1K select access flash=%d", __func__, cfg->m1k_sel_access_flash);
+	LOG_DBG("%s: M1K select access flash=%d", __func__, cfg->target_flash);
 
-	flhctrl3r_val = sys_read8(SMFI_FLHCTRL3R);
-	if (cfg->m1k_sel_access_flash) {
-		/* Enable SPI flash and SPI pins are normal operation */
-		sys_write8((flhctrl3r_val | SIFE) & ~FFSPITRI, SMFI_FLHCTRL3R);
-
-		/* M1K-READ will access the SPI flash (FSPI) */
-		sys_write8(M1K_READ_SEL_FSPI, SMFI_M1K_READ_LBA3);
-		/* M1K-PROG/M1K-ERASE will access the SPI flash (FSPI) */
-		sys_write8(M1K_PE_SEL_FSPI, SMFI_M1K_PE_LBA3);
-
-		/* Set the pin to FSPI alternate function. */
-		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-		if (ret < 0) {
-			LOG_ERR("%s: Failed to configure FSPI pins", dev->name);
-			return ret;
-		}
-
-		if (cfg->m1k_sel_access_flash == EXTERNAL_FSPI_CS1) {
-			/* M1K-READ will access the SPI flash on FSCE1# */
-			sys_write8(sys_read8(SMFI_M1K_READ_LBA3) | M1K_READ_SEL_FSCE1,
-				   SMFI_M1K_READ_LBA3);
-			/* M1K-PROG/M1K-ERASE will access the SPI flash on FSCE1# */
-			sys_write8(sys_read8(SMFI_M1K_PE_LBA3) | M1K_PE_SEL_FSCE1,
-				   SMFI_M1K_PE_LBA3);
-			/* Enable two-flash */
-			sys_write8(sys_read8(SMFI_FLHCTRL4R) | EN2FLH, SMFI_FLHCTRL4R);
-		}
-	} else {
-		/* Use internal flash, the SPI pins should be set to tri-state */
-		sys_write8((flhctrl3r_val & ~SIFE) | FFSPITRI, SMFI_FLHCTRL3R);
-	}
+	/* Default to access flash */
+	ret = m1k_flash_sel_access(dev, cfg->target_flash);
+	/* Default addressing mode */
+	m1k_flash_address_mode(dev, FLASH_IT51XXX_ADDR_3B);
 
 	/* Initialize mutex for flash controller */
 	k_sem_init(&data->sem, 1, 1);
 
-	return 0;
+	return ret;
 }
 
 static struct flash_it51xxx_dev_data flash_it51xxx_data;
@@ -511,10 +611,10 @@ PINCTRL_DT_INST_DEFINE(0);
 
 static const struct flash_it51xxx_config flash_it51xxx_cfg = {
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
-	.m1k_sel_access_flash = DT_INST_ENUM_IDX(0, m1k_sel_access_flash),
+	.target_flash = DT_INST_ENUM_IDX(0, m1k_sel_access_flash),
 };
 
-BUILD_ASSERT(!((DT_INST_ENUM_IDX(0, m1k_sel_access_flash) >= EXTERNAL_FSPI_CS0) &&
+BUILD_ASSERT(!((DT_INST_ENUM_IDX(0, m1k_sel_access_flash) >= FLASH_IT51XXX_EXTERNAL_FSPI_CS0) &&
 	       !DT_INST_NODE_HAS_PROP(0, pinctrl_0)),
 	     "Access external-fspi-cs0/cs1, pinctrl must be configured.");
 
