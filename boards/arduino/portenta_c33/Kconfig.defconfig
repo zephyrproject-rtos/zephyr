@@ -11,9 +11,6 @@ if NETWORKING
 config NET_L2_ETHERNET
 	default y
 
-config WIFI_ESP_HOSTED
-	default y
-
 endif # NETWORKING
 
 endif # BOARD_ARDUINO_PORTENTA_C33
