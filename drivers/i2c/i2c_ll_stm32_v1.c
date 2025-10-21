@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(i2c_ll_stm32_v1);
 
 static void i2c_stm32_generate_start_condition(I2C_TypeDef *i2c)
 {
-	uint16_t cr1 = LL_I2C_ReadReg(i2c, CR1);
+	uint16_t cr1 = stm32_reg_read(&i2c->CR1);
 
 	if (cr1 & I2C_CR1_STOP) {
 		LOG_DBG("%s: START while STOP active!", __func__);
@@ -88,14 +88,14 @@ static void i2c_stm32_reset(const struct device *dev)
 #endif
 
 	/* save all important registers before reset */
-	cr1 = LL_I2C_ReadReg(i2c, CR1);
-	cr2 = LL_I2C_ReadReg(i2c, CR2);
-	oar1 = LL_I2C_ReadReg(i2c, OAR1);
-	oar2 = LL_I2C_ReadReg(i2c, OAR2);
-	ccr = LL_I2C_ReadReg(i2c, CCR);
-	trise = LL_I2C_ReadReg(i2c, TRISE);
+	cr1 = stm32_reg_read(&i2c->CR1);
+	cr2 = stm32_reg_read(&i2c->CR2);
+	oar1 = stm32_reg_read(&i2c->OAR1);
+	oar2 = stm32_reg_read(&i2c->OAR2);
+	ccr = stm32_reg_read(&i2c->CCR);
+	trise = stm32_reg_read(&i2c->TRISE);
 #if defined(I2C_FLTR_ANOFF) && defined(I2C_FLTR_DNF)
-	fltr = LL_I2C_ReadReg(i2c, FLTR);
+	fltr = stm32_reg_read(&i2c->FLTR);
 #endif
 
 	/* reset i2c hardware */

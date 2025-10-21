@@ -112,7 +112,7 @@ static void ucpd_tx_interrupts_enable(const struct device *dev, bool enable)
 	const struct tcpc_config *const config = dev->config;
 	uint32_t imr;
 
-	imr = LL_UCPD_ReadReg(config->ucpd_port, IMR);
+	imr = stm32_reg_read(&config->ucpd_port->IMR);
 
 	if (enable) {
 		stm32_reg_write(&config->ucpd_port->ICR, UCPD_ICR_TX_INT_MASK);
@@ -160,7 +160,7 @@ static uint32_t ucpd_get_cc_enable_mask(const struct device *dev)
 	 * not being used for Power Delivery messages.
 	 */
 	if (data->ucpd_vconn_enable) {
-		uint32_t cr = LL_UCPD_ReadReg(config->ucpd_port, CR);
+		uint32_t cr = stm32_reg_read(&config->ucpd_port->CR);
 		int pol = (cr & UCPD_CR_PHYCCSEL);
 
 		/* Dissable CC line that's used for VCONN */
@@ -206,7 +206,7 @@ static int ucpd_get_cc(const struct device *dev,
 	 */
 
 	/* Get vstate_ccx values and power role */
-	sr = LL_UCPD_ReadReg(config->ucpd_port, SR);
+	sr = stm32_reg_read(&config->ucpd_port->SR);
 
 	/* Get Rp or Rd active */
 	anamode = LL_UCPD_GetRole(config->ucpd_port);
@@ -274,7 +274,7 @@ static int ucpd_set_vconn(const struct device *dev, bool enable)
 	/* Update VCONN on/off status. Do this before getting cc enable mask */
 	data->ucpd_vconn_enable = enable;
 
-	cr = LL_UCPD_ReadReg(config->ucpd_port, CR);
+	cr = stm32_reg_read(&config->ucpd_port->CR);
 	cr &= ~UCPD_CR_CCENABLE_Msk;
 	cr |= ucpd_get_cc_enable_mask(dev);
 
@@ -370,7 +370,7 @@ static void dead_battery(const struct device *dev, bool en)
 	const struct tcpc_config *const config = dev->config;
 	uint32_t cr;
 
-	cr = LL_UCPD_ReadReg(config->ucpd_port, CR);
+	cr = stm32_reg_read(&config->ucpd_port->CR);
 
 	if (en) {
 		cr |= UCPD_CR_DBATTEN;
@@ -408,7 +408,7 @@ static int ucpd_set_cc(const struct device *dev,
 		dead_battery(dev, false);
 	}
 
-	cr = LL_UCPD_ReadReg(config->ucpd_port, CR);
+	cr = stm32_reg_read(&config->ucpd_port->CR);
 
 	/*
 	 * Always set ANASUBMODE to match desired Rp. TCPM layer has a valid
@@ -453,7 +453,7 @@ static int ucpd_cc_set_polarity(const struct device *dev,
 	const struct tcpc_config *const config = dev->config;
 	uint32_t cr;
 
-	cr = LL_UCPD_ReadReg(config->ucpd_port, CR);
+	cr = stm32_reg_read(&config->ucpd_port->CR);
 
 	/*
 	 * Polarity impacts the PHYCCSEL, CCENABLE, and CCxTCDIS fields. This
@@ -488,8 +488,8 @@ static int ucpd_set_rx_enable(const struct device *dev, bool enable)
 	uint32_t imr;
 	uint32_t cr;
 
-	imr = LL_UCPD_ReadReg(config->ucpd_port, IMR);
-	cr = LL_UCPD_ReadReg(config->ucpd_port, CR);
+	imr = stm32_reg_read(&config->ucpd_port->IMR);
+	cr = stm32_reg_read(&config->ucpd_port->CR);
 
 	/*
 	 * USB PD receiver enable is controlled by the bit PHYRXEN in
@@ -558,7 +558,7 @@ static void ucpd_start_transmit(const struct device *dev,
 	uint32_t cr;
 	uint32_t imr;
 
-	cr = LL_UCPD_ReadReg(config->ucpd_port, CR);
+	cr = stm32_reg_read(&config->ucpd_port->CR);
 
 	/* Select the correct tx descriptor */
 	data->ucpd_tx_active_buffer = &data->ucpd_tx_buffers[msg_type];
@@ -585,7 +585,7 @@ static void ucpd_start_transmit(const struct device *dev,
 		/* Enable interrupt for Hard Reset sent/discarded */
 		stm32_reg_write(&config->ucpd_port->ICR, UCPD_ICR_HRSTDISCCF | UCPD_ICR_HRSTSENTCF);
 
-		imr = LL_UCPD_ReadReg(config->ucpd_port, IMR);
+		imr = stm32_reg_read(&config->ucpd_port->IMR);
 		imr |= UCPD_IMR_HRSTDISCIE | UCPD_IMR_HRSTSENTIE;
 		stm32_reg_write(&config->ucpd_port->IMR, imr);
 
@@ -1106,10 +1106,8 @@ static void ucpd_isr(const struct device *dev_inst[])
 
 	/* Read UCPD1 and UCPD2 Status Registers */
 
-	sr0 =
-	LL_UCPD_ReadReg(((const struct tcpc_config *)dev_inst[0]->config)->ucpd_port, SR);
-	sr1 =
-	LL_UCPD_ReadReg(((const struct tcpc_config *)dev_inst[1]->config)->ucpd_port, SR);
+	sr0 = stm32_reg_read(&((const struct tcpc_config *)dev_inst[0]->config)->ucpd_port->SR);
+	sr1 = stm32_reg_read(&((const struct tcpc_config *)dev_inst[1]->config)->ucpd_port->SR);
 
 	if (sr0) {
 		dev = dev_inst[0];
@@ -1135,7 +1133,7 @@ static void ucpd_isr(const struct device *dev_inst[])
 	info = &data->alert_info;
 
 	/* Read the status register */
-	sr = LL_UCPD_ReadReg(config->ucpd_port, SR);
+	sr = stm32_reg_read(&config->ucpd_port->SR);
 
 	/* Check for CC events, set event to wake PD task */
 	if (sr & (UCPD_SR_TYPECEVT1 | UCPD_SR_TYPECEVT2)) {
@@ -1254,12 +1252,12 @@ static int ucpd_dump_std_reg(const struct device *dev)
 {
 	const struct tcpc_config *const config = dev->config;
 
-	LOG_INF("CFGR1: %08x", LL_UCPD_ReadReg(config->ucpd_port, CFG1));
-	LOG_INF("CFGR2: %08x", LL_UCPD_ReadReg(config->ucpd_port, CFG2));
-	LOG_INF("CR:    %08x", LL_UCPD_ReadReg(config->ucpd_port, CR));
-	LOG_INF("IMR:   %08x", LL_UCPD_ReadReg(config->ucpd_port, IMR));
-	LOG_INF("SR:    %08x", LL_UCPD_ReadReg(config->ucpd_port, SR));
-	LOG_INF("ICR:   %08x\n", LL_UCPD_ReadReg(config->ucpd_port, ICR));
+	LOG_INF("CFGR1: %08x", stm32_reg_read(&config->ucpd_port->CFG1));
+	LOG_INF("CFGR2: %08x", stm32_reg_read(&config->ucpd_port->CFG2));
+	LOG_INF("CR:    %08x", stm32_reg_read(&config->ucpd_port->CR));
+	LOG_INF("IMR:   %08x", stm32_reg_read(&config->ucpd_port->IMR));
+	LOG_INF("SR:    %08x", stm32_reg_read(&config->ucpd_port->SR));
+	LOG_INF("ICR:   %08x\n", stm32_reg_read(&config->ucpd_port->ICR));
 
 	return 0;
 }
@@ -1386,7 +1384,7 @@ static int ucpd_init(const struct device *dev)
 		 * Set RXORDSETEN field to control which types of ordered sets the PD
 		 * receiver must receive.
 		 */
-		cfg1 = LL_UCPD_ReadReg(config->ucpd_port, CFG1);
+		cfg1 = stm32_reg_read(&config->ucpd_port->CFG1);
 		cfg1 |= LL_UCPD_ORDERSET_SOP | LL_UCPD_ORDERSET_SOP1 |
 			LL_UCPD_ORDERSET_SOP2 | LL_UCPD_ORDERSET_HARDRST;
 		stm32_reg_write(&config->ucpd_port->CFG1, cfg1);

@@ -54,7 +54,7 @@ static void i2c_stm32_enable_transfer_interrupts(const struct device *dev)
 
 static void i2c_stm32_generate_start_condition(I2C_TypeDef *i2c)
 {
-	uint16_t cr1 = LL_I2C_ReadReg(i2c, CR1);
+	uint16_t cr1 = stm32_reg_read(&i2c->CR1);
 
 	if ((cr1 & I2C_CR1_STOP) != 0) {
 		LOG_DBG("%s: START while STOP active!", __func__);

@@ -444,7 +444,7 @@ static int gpio_stm32_port_toggle_bits(const struct device *dev,
 	 * Skip it and use CMSIS API directly. Valid also on other series.
 	 */
 	z_stm32_hsem_lock(CFG_HW_GPIO_SEMID, HSEM_LOCK_DEFAULT_RETRY);
-	stm32_reg_write(&gpio->ODR, READ_REG(gpio->ODR) ^ pins);
+	stm32_reg_write(&gpio->ODR, stm32_reg_read(&gpio->ODR) ^ pins);
 	z_stm32_hsem_unlock(CFG_HW_GPIO_SEMID);
 
 	return 0;
