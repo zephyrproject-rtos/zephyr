@@ -196,6 +196,15 @@ config OPENTHREAD_MBEDTLS
 	select MBEDTLS_PK_WRITE_C if OPENTHREAD_ECDSA
 	select MBEDTLS_ECP_C if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER || OPENTHREAD_ECDSA
 
+config OPENTHREAD_CRYPTO_PSA
+	bool "ARM PSA crypto API"
+	depends on PSA_CRYPTO_CLIENT
+	select OPENTHREAD_PLATFORM_KEY_REF if !OPENTHREAD_COPROCESSOR_RCP
+	imply OPENTHREAD_PLATFORM_KEYS_EXPORTABLE_ENABLE
+	help
+	  Enable crypto backend library implementation based on ARM PSA crypto
+	  API instead of the default, using mbedTLS.
+
 config OPENTHREAD_MBEDTLS_LIB_NAME
 	string "mbedtls lib name"
 	default "mbedTLS"
@@ -318,15 +327,6 @@ config OPENTHREAD_MAC_SOFTWARE_CSMA_BACKOFF_ENABLE
 	help
 	  Set y to enable software CSMA backoff. The option can be disabled if
 	  the radio has hardware support for this feature (IEEE802154_HW_CSMA).
-
-config OPENTHREAD_CRYPTO_PSA
-	bool "ARM PSA crypto API"
-	depends on PSA_CRYPTO_CLIENT
-	select OPENTHREAD_PLATFORM_KEY_REF if !OPENTHREAD_COPROCESSOR_RCP
-	imply OPENTHREAD_PLATFORM_KEYS_EXPORTABLE_ENABLE
-	help
-	  Enable crypto backend library implementation based on ARM PSA crypto
-	  API instead of the default, using mbedTLS.
 
 config OPENTHREAD_PLATFORM_KEYS_EXPORTABLE_ENABLE
 	bool "Make MAC keys exportable"
