@@ -81,9 +81,9 @@ static const uint8_t alert_read_commands[][2] = {
 #define HDC_302X_TEMP_OFFSET           -45
 #define HDC_302X_TEMP_SCALE            175U
 /* Temperature offset: 7-bit value, max ±21.704101°C, 0.1708984375°C per bit */
-#define HDC_302X_TEMP_OFFSET_SCALE     170.8984375f
+#define HDC_302X_TEMP_OFFSET_SCALE     170.8984375
 /* Humidity offset: 7-bit value, max ±24.8046875%, 0.1953125% per bit */
-#define HDC_302X_HUMIDITY_OFFSET_SCALE 19.53125f
+#define HDC_302X_HUMIDITY_OFFSET_SCALE 19.53125
 /* EEPROM write timeout  in milliseconds (53–77 ms, use 80 ms to be safe) */
 #define HDC_302X_EEPROM_WRITE_TIME_OUT 80
 
