@@ -53,7 +53,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
 
     def __init__(self, cfg, family, softreset, pinreset, dev_id, erase=False,
                  erase_mode=None, ext_erase_mode=None, reset=True,
-                 tool_opt=None, force=False, recover=False):
+                 tool_opt=None, force=False, recover=False, dry_run=False):
         super().__init__(cfg)
         self.hex_ = cfg.hex_file
         # The old --nrf-family options takes upper-case family names
@@ -67,6 +67,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         self.reset = bool(reset)
         self.force = force
         self.recover = bool(recover)
+        self.dry_run = bool(dry_run)
 
         self.tool_opt = []
         if tool_opt is not None:
@@ -118,7 +119,6 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                             choices=['none', 'ranges', 'all'],
                             help='Select the type of erase operation for the '
                                  'external non-volatile memory')
-
         parser.set_defaults(reset=True)
 
     @classmethod
@@ -139,7 +139,10 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                 self.dev_id = [d.lstrip("0") for d in dev_id]
                 return
         if not dev_id or "*" in dev_id:
-            dev_id = self.get_board_snr(dev_id or "*")
+            if not self.dry_run:
+                dev_id = self.get_board_snr(dev_id or "*")
+            else:
+                dev_id = "DEVICEID" # for a dry run
         self.dev_id = dev_id.lstrip("0")
 
     @abc.abstractmethod
