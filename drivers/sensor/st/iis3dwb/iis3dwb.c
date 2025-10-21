@@ -137,7 +137,6 @@ static void iis3dwb_submit_one_shot(const struct device *dev, struct rtio_iodev_
 	const struct sensor_chan_spec *const channels = cfg->channels;
 	const size_t num_channels = cfg->count;
 	uint32_t min_buf_len = sizeof(struct iis3dwb_rtio_data);
-	uint64_t cycles;
 	int rc = 0;
 	uint8_t *buf;
 	uint32_t buf_len;
@@ -156,17 +155,9 @@ static void iis3dwb_submit_one_shot(const struct device *dev, struct rtio_iodev_
 
 	edata->has_accel = 0;
 	edata->has_temp = 0;
-
-	rc = sensor_clock_get_cycles(&cycles);
-	if (rc != 0) {
-		LOG_ERR("Failed to get sensor clock cycles");
-		rtio_iodev_sqe_err(iodev_sqe, rc);
-		return;
-	}
-
 	edata->header.is_fifo = false;
 	edata->header.range = data->range;
-	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
+	edata->header.timestamp = sensor_clock_get_ns();
 
 	for (int i = 0; i < num_channels; i++) {
 		switch (channels[i].chan_type) {

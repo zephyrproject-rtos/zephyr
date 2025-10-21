@@ -482,22 +482,14 @@ static void iis3dwb_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe, i
 void iis3dwb_stream_irq_handler(const struct device *dev)
 {
 	struct iis3dwb_data *iis3dwb = dev->data;
-	uint64_t cycles;
 	int rc;
 
 	if (iis3dwb->streaming_sqe == NULL) {
 		return;
 	}
 
-	rc = sensor_clock_get_cycles(&cycles);
-	if (rc != 0) {
-		LOG_ERR("Failed to get sensor clock cycles");
-		rtio_iodev_sqe_err(iis3dwb->streaming_sqe, rc);
-		return;
-	}
-
 	/* get timestamp as soon as the irq is served */
-	iis3dwb->timestamp = sensor_clock_cycles_to_ns(cycles);
+	iis3dwb->timestamp = sensor_clock_get_ns();
 
 	/* handle FIFO triggers */
 	if (iis3dwb->trig_cfg.int_fifo_th || iis3dwb->trig_cfg.int_fifo_full) {

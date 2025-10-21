@@ -55,7 +55,6 @@ static void bma4xx_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 	uint8_t *buf;
 	uint32_t buf_len;
 	uint32_t min_buf_len = sizeof(struct bma4xx_encoded_data);
-	uint64_t cycles;
 	int rc;
 
 	/* Get the buffer for the frame, it may be allocated dynamically by the rtio context */
@@ -74,15 +73,7 @@ static void bma4xx_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 	}
 
 	edata->header.accel_fs = bma4xx->cfg.accel_fs_range;
-
-	rc = sensor_clock_get_cycles(&cycles);
-	if (rc != 0) {
-		LOG_ERR("Failed to get sensor clock cycles");
-		rtio_iodev_sqe_err(iodev_sqe, rc);
-		return;
-	}
-
-	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
+	edata->header.timestamp = sensor_clock_get_ns();
 
 	struct rtio_sqe *write_accel_sqe = rtio_sqe_acquire(bma4xx->r);
 	struct rtio_sqe *read_accel_sqe = rtio_sqe_acquire(bma4xx->r);

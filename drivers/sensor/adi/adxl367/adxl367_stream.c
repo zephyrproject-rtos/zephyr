@@ -548,20 +548,11 @@ static void adxl367_process_status_cb(struct rtio *r, const struct rtio_sqe *sqe
 void adxl367_stream_irq_handler(const struct device *dev)
 {
 	struct adxl367_data *data = (struct adxl367_data *) dev->data;
-	uint64_t cycles;
-	int rc;
+
 	if (data->sqe == NULL) {
 		return;
 	}
-
-	rc = sensor_clock_get_cycles(&cycles);
-	if (rc != 0) {
-		LOG_ERR("Failed to get sensor clock cycles");
-		rtio_iodev_sqe_err(data->sqe, rc);
-		return;
-	}
-
-	data->timestamp = sensor_clock_cycles_to_ns(cycles);
+	data->timestamp = sensor_clock_get_ns();
 
 	struct rtio_sqe *write_status_addr = rtio_sqe_acquire(data->rtio_ctx);
 	struct rtio_sqe *read_status_reg = rtio_sqe_acquire(data->rtio_ctx);

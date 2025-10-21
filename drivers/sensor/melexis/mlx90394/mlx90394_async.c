@@ -96,10 +96,8 @@ void mlx90394_async_fetch(struct k_work *work)
 
 void mlx90394_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
-	int rc;
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
 	struct mlx90394_data *data = dev->data;
-	uint64_t cycles;
 
 	rc = mlx90394_trigger_measurement_internal(dev, cfg->channels->chan_type);
 	if (rc != 0) {
@@ -108,15 +106,8 @@ void mlx90394_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 		return;
 	}
 
-	rc = sensor_clock_get_cycles(&cycles);
-	if (rc != 0) {
-		LOG_ERR("Failed to get sensor clock cycles");
-		rtio_iodev_sqe_err(iodev_sqe, rc);
-		return;
-	}
-
 	/* save information for the work item */
-	data->work_ctx.timestamp = sensor_clock_cycles_to_ns(cycles);
+	data->work_ctx.timestamp = sensor_clock_get_ns();
 	data->work_ctx.iodev_sqe = iodev_sqe;
 	data->work_ctx.config_val = data->config_val;
 
