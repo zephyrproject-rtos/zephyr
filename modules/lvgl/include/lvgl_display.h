@@ -19,32 +19,11 @@ struct lvgl_disp_data {
 	const struct device *display_dev;
 	struct display_capabilities cap;
 	bool blanking_on;
+	lv_draw_buf_t *display_buffer;
+	struct k_mutex display_buffer_lock;
 };
 
-struct lvgl_display_flush {
-	lv_display_t *display;
-	uint16_t x;
-	uint16_t y;
-	struct display_buffer_descriptor desc;
-	void *buf;
-};
-
-void lvgl_flush_cb_mono(lv_display_t *display, const lv_area_t *area, uint8_t *px_map);
-void lvgl_flush_cb_8bit(lv_display_t *display, const lv_area_t *area, uint8_t *px_map);
-void lvgl_flush_cb_16bit(lv_display_t *display, const lv_area_t *area, uint8_t *px_map);
-void lvgl_flush_cb_24bit(lv_display_t *display, const lv_area_t *area, uint8_t *px_map);
-void lvgl_flush_cb_32bit(lv_display_t *display, const lv_area_t *area, uint8_t *px_map);
-
-void lvgl_rounder_cb_mono(lv_event_t *e);
-void lvgl_set_mono_conversion_buffer(uint8_t *buffer, uint32_t buffer_size);
-
-int set_lvgl_rendering_cb(lv_display_t *display);
-
-void lvgl_flush_display(struct lvgl_display_flush *request);
-
-#ifdef CONFIG_LV_Z_USE_ROUNDER_CB
-void lvgl_rounder_cb(lv_event_t *e);
-#endif
+int lvgl_display_init(void);
 
 #ifdef __cplusplus
 }

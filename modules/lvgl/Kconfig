@@ -142,6 +142,32 @@ config LV_Z_AREA_Y_ALIGNMENT_WIDTH
 	  the current frame dimensions to meet display and/or LCD host
 	  controller requirements. The value must be power of 2.
 
+config LV_Z_REFRESH_AREA_WIDTH
+	int "display refresh area width"
+	default 0
+	help
+		Refresh area width in the display, if 0 it will use the display hardware resolution
+
+config LV_Z_REFRESH_AREA_HEIGHT
+	int "display refresh area height"
+	default 0
+	help
+		Refresh area height in the display, if 0 it will use the display hardware resolution
+
+choice LV_Z_REFRESH_MODE
+	prompt "Display Render mode"
+	default LV_Z_REFRESH_MODE_DIRECT
+	help
+		Display render mode, which are defined as LV_DISPLAY_RENDER_MODE_PARTIAL,
+		LV_DISPLAY_RENDER_MODE_DIRECT and LV_DISPLAY_RENDER_MODE_FULL in lv_display.h .
+	config LV_Z_REFRESH_MODE_PARTIAL
+		bool "Partial mode"
+	config LV_Z_REFRESH_MODE_DIRECT
+		bool "Direct mode"
+	config LV_Z_REFRESH_MODE_FULL
+		bool "Full mode"
+endchoice
+
 config LV_Z_AUTO_INIT
 	bool "Initialize LVGL before application startup"
 	default y
@@ -212,6 +238,11 @@ config LV_USE_PXP
 config LV_USE_GPU_NXP_PXP
 	bool
 	default y if LV_USE_PXP
+
+config LV_USE_DRAW_AMBIQ
+	bool
+	default y
+	depends on GPU_AMBIQ
 
 config LV_Z_PXP_INTERRUPT_PRIORITY
 	int "PXP interrupt priority"
