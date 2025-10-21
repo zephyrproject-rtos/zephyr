@@ -67,6 +67,9 @@
 	defined(CONFIG_BOARD_BL653_DVK) || \
 	defined(CONFIG_BOARD_BL654_DVK) || \
 	defined(CONFIG_BOARD_BL5340_DVK) || \
+	defined(CONFIG_BOARD_FRDM_MCXA266) || \
+	defined(CONFIG_BOARD_FRDM_MCXA346) || \
+	defined(CONFIG_BOARD_FRDM_MCXA366) || \
 	DT_HAS_COMPAT_STATUS_OKAY(renesas_ra_dac)
 
 #define DAC_DEVICE_NODE		DT_NODELABEL(dac0)
