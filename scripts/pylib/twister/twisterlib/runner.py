@@ -4,8 +4,9 @@
 # Copyright 2022 NXP
 # SPDX-License-Identifier: Apache-2.0
 
+import contextlib
 import logging
-import multiprocessing
+import multiprocessing as mp
 import os
 import pathlib
 import pickle
@@ -51,6 +52,11 @@ from twisterlib.platform import Platform
 from twisterlib.testinstance import TestInstance
 from twisterlib.testplan import change_skip_to_error_if_integration
 from twisterlib.testsuite import TestSuite
+
+# Prefer 'fork' on POSIX to maintain pre-3.14 behavior
+if os.name == "posix":
+    with contextlib.suppress(RuntimeError):
+        mp.set_start_method("fork")
 
 try:
     from yaml import CSafeLoader as SafeLoader
@@ -1836,9 +1842,9 @@ class TwisterRunner:
         if self.options.jobs:
             self.jobs = self.options.jobs
         elif self.options.build_only:
-            self.jobs = multiprocessing.cpu_count() * 2
+            self.jobs = mp.cpu_count() * 2
         else:
-            self.jobs = multiprocessing.cpu_count()
+            self.jobs = mp.cpu_count()
 
         if sys.platform == "linux":
             if os.name == 'posix':
