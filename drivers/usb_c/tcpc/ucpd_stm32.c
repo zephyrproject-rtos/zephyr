@@ -115,12 +115,10 @@ static void ucpd_tx_interrupts_enable(const struct device *dev, bool enable)
 	imr = LL_UCPD_ReadReg(config->ucpd_port, IMR);
 
 	if (enable) {
-		LL_UCPD_WriteReg(config->ucpd_port, ICR, UCPD_ICR_TX_INT_MASK);
-		LL_UCPD_WriteReg(config->ucpd_port, IMR,
-				 imr | UCPD_IMR_TX_INT_MASK);
+		stm32_reg_write(&config->ucpd_port->ICR, UCPD_ICR_TX_INT_MASK);
+		stm32_reg_write(&config->ucpd_port->IMR, imr | UCPD_IMR_TX_INT_MASK);
 	} else {
-		LL_UCPD_WriteReg(config->ucpd_port, IMR,
-				 imr & ~UCPD_IMR_TX_INT_MASK);
+		stm32_reg_write(&config->ucpd_port->IMR, imr & ~UCPD_IMR_TX_INT_MASK);
 	}
 }
 
@@ -281,7 +279,7 @@ static int ucpd_set_vconn(const struct device *dev, bool enable)
 	cr |= ucpd_get_cc_enable_mask(dev);
 
 	/* Apply cc pull resistor change */
-	LL_UCPD_WriteReg(config->ucpd_port, CR, cr);
+	stm32_reg_write(&config->ucpd_port->CR, cr);
 
 #ifdef CONFIG_SOC_SERIES_STM32G0X
 	update_stm32g0x_cc_line(config->ucpd_port);
@@ -380,7 +378,7 @@ static void dead_battery(const struct device *dev, bool en)
 		cr &= ~UCPD_CR_DBATTEN;
 	}
 
-	LL_UCPD_WriteReg(config->ucpd_port, CR, cr);
+	stm32_reg_write(&config->ucpd_port->CR, cr);
 	update_stm32g0x_cc_line(config->ucpd_port);
 #else
 	if (en) {
@@ -432,7 +430,7 @@ static int ucpd_set_cc(const struct device *dev,
 	}
 
 	/* Update pull values */
-	LL_UCPD_WriteReg(config->ucpd_port, CR, cr);
+	stm32_reg_write(&config->ucpd_port->CR, cr);
 
 #ifdef CONFIG_SOC_SERIES_STM32G0X
 	update_stm32g0x_cc_line(config->ucpd_port);
@@ -473,7 +471,7 @@ static int ucpd_cc_set_polarity(const struct device *dev,
 	}
 
 	/* Update polarity */
-	LL_UCPD_WriteReg(config->ucpd_port, CR, cr);
+	stm32_reg_write(&config->ucpd_port->CR, cr);
 
 	return 0;
 }
@@ -499,16 +497,16 @@ static int ucpd_set_rx_enable(const struct device *dev, bool enable)
 	 */
 	if (enable) {
 		/* Clear the RX alerts bits */
-		LL_UCPD_WriteReg(config->ucpd_port, ICR, UCPD_ICR_RX_INT_MASK);
+		stm32_reg_write(&config->ucpd_port->ICR, UCPD_ICR_RX_INT_MASK);
 		imr |= UCPD_IMR_RX_INT_MASK;
 		cr |= UCPD_CR_PHYRXEN;
-		LL_UCPD_WriteReg(config->ucpd_port, IMR, imr);
-		LL_UCPD_WriteReg(config->ucpd_port, CR, cr);
+		stm32_reg_write(&config->ucpd_port->IMR, imr);
+		stm32_reg_write(&config->ucpd_port->CR, cr);
 	} else {
 		imr &= ~UCPD_IMR_RX_INT_MASK;
 		cr &= ~UCPD_CR_PHYRXEN;
-		LL_UCPD_WriteReg(config->ucpd_port, CR, cr);
-		LL_UCPD_WriteReg(config->ucpd_port, IMR, imr);
+		stm32_reg_write(&config->ucpd_port->CR, cr);
+		stm32_reg_write(&config->ucpd_port->IMR, imr);
 	}
 
 	return 0;
@@ -585,16 +583,15 @@ static void ucpd_start_transmit(const struct device *dev,
 		 * register to initiate.
 		 */
 		/* Enable interrupt for Hard Reset sent/discarded */
-		LL_UCPD_WriteReg(config->ucpd_port, ICR,
-				 UCPD_ICR_HRSTDISCCF | UCPD_ICR_HRSTSENTCF);
+		stm32_reg_write(&config->ucpd_port->ICR, UCPD_ICR_HRSTDISCCF | UCPD_ICR_HRSTSENTCF);
 
 		imr = LL_UCPD_ReadReg(config->ucpd_port, IMR);
 		imr |= UCPD_IMR_HRSTDISCIE | UCPD_IMR_HRSTSENTIE;
-		LL_UCPD_WriteReg(config->ucpd_port, IMR, imr);
+		stm32_reg_write(&config->ucpd_port->IMR, imr);
 
 		/* Initiate Hard Reset */
 		cr |= UCPD_CR_TXHRST;
-		LL_UCPD_WriteReg(config->ucpd_port, CR, cr);
+		stm32_reg_write(&config->ucpd_port->CR, cr);
 	} else if (type != PD_PACKET_MSG_INVALID) {
 		int msg_len = 0;
 		int mode;
@@ -633,7 +630,7 @@ static void ucpd_start_transmit(const struct device *dev,
 		/* Set tx mode */
 		cr &= ~UCPD_CR_TXMODE_Msk;
 		cr |= mode;
-		LL_UCPD_WriteReg(config->ucpd_port, CR, cr);
+		stm32_reg_write(&config->ucpd_port->CR, cr);
 
 		/* Index into ordset enum for start of packet */
 		if (type <= PD_PACKET_CABLE_RESET) {
@@ -1241,7 +1238,7 @@ static void ucpd_isr(const struct device *dev_inst[])
 	}
 
 	/* Clear interrupts now that PD events have been set */
-	LL_UCPD_WriteReg(config->ucpd_port, ICR, sr & UCPD_ICR_ALL_INT_MASK);
+	stm32_reg_write(&config->ucpd_port->ICR, sr & UCPD_ICR_ALL_INT_MASK);
 
 	/* Notify application of events */
 	k_work_submit(&info->work);
@@ -1326,7 +1323,7 @@ static void ucpd_isr_init(const struct device *dev)
 	k_timer_init(&data->goodcrc_rx_timer, NULL, NULL);
 
 	/* Disable all alert bits */
-	LL_UCPD_WriteReg(config->ucpd_port, IMR, 0);
+	stm32_reg_write(&config->ucpd_port->IMR, 0);
 
 	/* Clear all alert handler */
 	ucpd_set_alert_handler_cb(dev, NULL, NULL);
@@ -1338,10 +1335,8 @@ static void ucpd_isr_init(const struct device *dev)
 	k_work_init(&info->work, ucpd_alert_handler);
 
 	/* Configure CC change alerts */
-	LL_UCPD_WriteReg(config->ucpd_port, IMR,
-			 UCPD_IMR_TYPECEVT1IE | UCPD_IMR_TYPECEVT2IE);
-	LL_UCPD_WriteReg(config->ucpd_port, ICR,
-			 UCPD_ICR_TYPECEVT1CF | UCPD_ICR_TYPECEVT2CF);
+	stm32_reg_write(&config->ucpd_port->IMR, UCPD_IMR_TYPECEVT1IE | UCPD_IMR_TYPECEVT2IE);
+	stm32_reg_write(&config->ucpd_port->ICR, UCPD_ICR_TYPECEVT1CF | UCPD_ICR_TYPECEVT2CF);
 
 	/* SOP'/SOP'' must be enabled via TCPCI call */
 	data->ucpd_rx_sop_prime_enabled = false;
@@ -1394,7 +1389,7 @@ static int ucpd_init(const struct device *dev)
 		cfg1 = LL_UCPD_ReadReg(config->ucpd_port, CFG1);
 		cfg1 |= LL_UCPD_ORDERSET_SOP | LL_UCPD_ORDERSET_SOP1 |
 			LL_UCPD_ORDERSET_SOP2 | LL_UCPD_ORDERSET_HARDRST;
-		LL_UCPD_WriteReg(config->ucpd_port, CFG1, cfg1);
+		stm32_reg_write(&config->ucpd_port->CFG1, cfg1);
 
 		/* Enable UCPD port */
 		LL_UCPD_Enable(config->ucpd_port);

@@ -162,13 +162,13 @@ static void stm32_dcmipp_set_next_buffer_addr(struct stm32_dcmipp_pipe_data *pip
 	/* TODO - the HAL is missing a SetMemoryAddress for auxiliary addresses */
 	/* Update main buffer address */
 	if (pipe->id == DCMIPP_PIPE0) {
-		WRITE_REG(dcmipp->hdcmipp.Instance->P0PPM0AR1, (uint32_t)plane);
+		stm32_reg_write(&dcmipp->hdcmipp.Instance->P0PPM0AR1, (uint32_t)plane);
 	}
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 	else if (pipe->id == DCMIPP_PIPE1) {
-		WRITE_REG(dcmipp->hdcmipp.Instance->P1PPM0AR1, (uint32_t)plane);
+		stm32_reg_write(&dcmipp->hdcmipp.Instance->P1PPM0AR1, (uint32_t)plane);
 	} else {
-		WRITE_REG(dcmipp->hdcmipp.Instance->P2PPM0AR1, (uint32_t)plane);
+		stm32_reg_write(&dcmipp->hdcmipp.Instance->P2PPM0AR1, (uint32_t)plane);
 	}
 
 	if (pipe->id != DCMIPP_PIPE1) {
@@ -179,13 +179,13 @@ static void stm32_dcmipp_set_next_buffer_addr(struct stm32_dcmipp_pipe_data *pip
 		/* Y plane has 8 bit per pixel, next plane is located at off + width * height */
 		plane += VIDEO_FMT_PLANAR_Y_PLANE_SIZE(fmt);
 
-		WRITE_REG(dcmipp->hdcmipp.Instance->P1PPM1AR1, (uint32_t)plane);
+		stm32_reg_write(&dcmipp->hdcmipp.Instance->P1PPM1AR1, (uint32_t)plane);
 
 		if (VIDEO_FMT_IS_PLANAR(fmt)) {
 			/* In case of YUV420 / YVU420, U plane has half width / half height */
 			plane += VIDEO_FMT_PLANAR_Y_PLANE_SIZE(fmt) / 4;
 
-			WRITE_REG(dcmipp->hdcmipp.Instance->P1PPM2AR1, (uint32_t)plane);
+			stm32_reg_write(&dcmipp->hdcmipp.Instance->P1PPM2AR1, (uint32_t)plane);
 		}
 	}
 #endif

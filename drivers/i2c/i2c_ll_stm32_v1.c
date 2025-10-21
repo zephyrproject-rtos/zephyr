@@ -13,6 +13,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <stm32_ll_i2c.h>
 #include <errno.h>
 #include <zephyr/drivers/i2c.h>
@@ -35,7 +36,7 @@ static void i2c_stm32_generate_start_condition(I2C_TypeDef *i2c)
 
 	if (cr1 & I2C_CR1_STOP) {
 		LOG_DBG("%s: START while STOP active!", __func__);
-		LL_I2C_WriteReg(i2c, CR1, cr1 & ~I2C_CR1_STOP);
+		stm32_reg_write(&i2c->CR1, cr1 & ~I2C_CR1_STOP);
 	}
 
 	LL_I2C_GenerateStartCondition(i2c);
@@ -102,17 +103,17 @@ static void i2c_stm32_reset(const struct device *dev)
 	LL_I2C_DisableReset(i2c);
 
 	/* restore all important registers after reset */
-	LL_I2C_WriteReg(i2c, CR1, cr1);
-	LL_I2C_WriteReg(i2c, CR2, cr2);
+	stm32_reg_write(&i2c->CR1, cr1);
+	stm32_reg_write(&i2c->CR2, cr2);
 
 	/* bit 14 of OAR1 must always be 1 */
 	oar1 |= (1 << 14);
-	LL_I2C_WriteReg(i2c, OAR1, oar1);
-	LL_I2C_WriteReg(i2c, OAR2, oar2);
-	LL_I2C_WriteReg(i2c, CCR, ccr);
-	LL_I2C_WriteReg(i2c, TRISE, trise);
+	stm32_reg_write(&i2c->OAR1, oar1);
+	stm32_reg_write(&i2c->OAR2, oar2);
+	stm32_reg_write(&i2c->CCR, ccr);
+	stm32_reg_write(&i2c->TRISE, trise);
 #if defined(I2C_FLTR_ANOFF) && defined(I2C_FLTR_DNF)
-	LL_I2C_WriteReg(i2c, FLTR, fltr);
+	stm32_reg_write(&i2c->FLTR, fltr);
 #endif
 }
 
