@@ -5,6 +5,7 @@
  */
 
 #include <soc.h>
+#include <stm32_bitops.h>
 
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>
@@ -273,7 +274,7 @@ static int stm32_clock_control_init(const struct device *dev)
 	while (LL_RCC_PLL1_IsReady() != 1) {
 	}
 
-	SET_BIT(RCC->PLL1CR, RCC_PLL1CR_DIVPEN);
+	stm32_reg_set_bits(&RCC->PLL1CR, RCC_PLL1CR_DIVPEN);
 	while (READ_BIT(RCC->PLL1CR, RCC_PLL1CR_DIVPEN) != RCC_PLL1CR_DIVPEN) {
 	};
 

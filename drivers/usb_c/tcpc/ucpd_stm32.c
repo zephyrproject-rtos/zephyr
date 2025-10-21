@@ -9,6 +9,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ucpd_stm32, CONFIG_USBC_LOG_LEVEL);
 
+#include <stm32_bitops.h>
 #include <zephyr/device.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
@@ -385,7 +386,7 @@ static void dead_battery(const struct device *dev, bool en)
 	if (en) {
 		CLEAR_BIT(PWR->CR3, PWR_CR3_UCPD_DBDIS);
 	} else {
-		SET_BIT(PWR->CR3, PWR_CR3_UCPD_DBDIS);
+		stm32_reg_set_bits(&PWR->CR3, PWR_CR3_UCPD_DBDIS);
 	}
 #endif
 	data->dead_battery_active = en;
