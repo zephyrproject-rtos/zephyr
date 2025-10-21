@@ -1515,7 +1515,6 @@ void bt_conn_unref(struct bt_conn *conn)
 	conn_tx_is_pending = k_work_is_pending(&conn->tx_complete_work);
 #endif
 	old = atomic_dec(&conn->ref);
-	conn = NULL;
 
 	LOG_DBG("handle %u ref %ld -> %ld", conn_handle, old, (old - 1));
 
