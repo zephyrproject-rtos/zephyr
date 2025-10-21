@@ -152,6 +152,7 @@ cnxt	Conexant Systems, Inc.
 colorfly	Colorful GRP, Shenzhen Xueyushi Technology Ltd.
 compulab	CompuLab Ltd.
 contextualelectronics	Contextual Electronics
+coredevices	Core Devices LLC
 coreriver	CORERIVER Semiconductor Co.,Ltd.
 corpro	Chengdu Corpro Technology Co., Ltd.
 cortina	Cortina Systems, Inc.
