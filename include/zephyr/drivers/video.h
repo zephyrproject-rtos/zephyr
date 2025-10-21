@@ -1004,6 +1004,24 @@ int video_estimate_fmt_size(struct video_format *fmt);
 int video_set_compose_format(const struct device *dev, struct video_format *fmt);
 
 /**
+ * @brief Transfer a buffer between 2 video device
+ *
+ * Helper function which dequeues a buffer from a source device and enqueues it into a
+ * sink device, changing its buffer type between the two.
+ *
+ * @param src		Video device from where buffer is dequeued (source)
+ * @param sink		Video device into which the buffer is queued (sink)
+ * @param src_type	Video buffer type on the source device
+ * @param sink_type	Video buffer type on the sink device
+ * @param timeout	Timeout to be applied on dequeue
+ *
+ * @return 0 on success, otherwise a negative errno code
+ */
+int video_transfer_buffer(const struct device *src, const struct device *sink,
+			  enum video_buf_type src_type, enum video_buf_type sink_type,
+			  k_timeout_t timeout);
+
+/**
  * @defgroup video_pixel_formats Video pixel formats
  * The '|' characters separate the pixels or logical blocks, and spaces separate the bytes.
  * The uppercase letter represents the most significant bit.
