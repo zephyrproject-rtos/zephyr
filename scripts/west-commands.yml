@@ -99,3 +99,8 @@ west-commands:
       - name: gtags
         class: Gtags
         help: create a GNU global tags file for the current workspace
+  - file: scripts/west_commands/monitor.py
+    commands:
+      - name: monitor
+        class: Monitor
+        help: serial monitor for Zephyr
