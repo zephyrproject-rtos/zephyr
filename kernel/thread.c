@@ -217,7 +217,7 @@ static size_t copy_bytes(char *dest, size_t dest_size, const char *src, size_t s
 {
 	size_t  bytes_to_copy;
 
-	bytes_to_copy = MIN(dest_size, src_size);
+	bytes_to_copy = min(dest_size, src_size);
 	memcpy(dest, src, bytes_to_copy);
 
 	return bytes_to_copy;

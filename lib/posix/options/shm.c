@@ -211,7 +211,7 @@ static ssize_t shm_rw(struct shm_obj *shm, void *buf, size_t size, bool is_write
 	if (offset >= shm->size) {
 		size = 0;
 	} else {
-		size = MIN(size, shm->size - offset);
+		size = min(size, shm->size - offset);
 	}
 
 	if (size > 0) {
