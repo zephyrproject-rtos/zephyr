@@ -380,5 +380,19 @@
 			clocks = <&clock ESP32_PCNT_MODULE>;
 			status = "disabled";
 		};
+
+		sha: sha@60089000 {
+			compatible = "espressif,esp32-sha";
+			reg = <0x60089000 0x100>;
+			clocks = <&clock ESP32_SHA_MODULE>;
+			status = "okay";
+		};
+
+		aes: aes@60088000 {
+			compatible = "espressif,esp32-aes";
+			reg = <0x60088000 0x1000>;
+			clocks = <&clock ESP32_AES_MODULE>;
+			status = "okay";
+		};
 	};
 };
