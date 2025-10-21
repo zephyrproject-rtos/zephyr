@@ -6,6 +6,7 @@
 
 #include <errno.h>
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <stm32_ll_i2c.h>
 #include <stm32_ll_rcc.h>
 #include <zephyr/drivers/clock_control.h>
@@ -57,7 +58,7 @@ static void i2c_stm32_generate_start_condition(I2C_TypeDef *i2c)
 
 	if ((cr1 & I2C_CR1_STOP) != 0) {
 		LOG_DBG("%s: START while STOP active!", __func__);
-		LL_I2C_WriteReg(i2c, CR1, cr1 & ~I2C_CR1_STOP);
+		stm32_reg_write(&i2c->CR1, cr1 & ~I2C_CR1_STOP);
 	}
 
 	LL_I2C_GenerateStartCondition(i2c);

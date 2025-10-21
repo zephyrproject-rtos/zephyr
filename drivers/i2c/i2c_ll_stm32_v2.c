@@ -14,6 +14,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <stm32_cache.h>
 #include <stm32_ll_i2c.h>
 #include <errno.h>
@@ -535,7 +536,7 @@ void i2c_stm32_event(const struct device *dev)
 			 * remaining in current message
 			 * Keep RELOAD mode and set NBYTES to 255 again
 			 */
-			LL_I2C_WriteReg(regs, CR2, cr2);
+			stm32_reg_write(&regs->CR2, cr2);
 		} else {
 			/* Data for a single transfer remains in buffer, set its length and
 			 * - If more messages follow and transfer direction for next message is
@@ -550,7 +551,7 @@ void i2c_stm32_event(const struct device *dev)
 				/* Disable reload mode, expect I2C_ISR_TC next */
 				cr2 &= ~I2C_CR2_RELOAD;
 			}
-			LL_I2C_WriteReg(regs, CR2, cr2);
+			stm32_reg_write(&regs->CR2, cr2);
 		}
 
 	} else if ((isr & I2C_ISR_TXIS) != 0U) {
@@ -812,12 +813,12 @@ static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 #endif /* CONFIG_I2C_STM32_V2_DMA */
 
 	/* Commit configuration to I2C controller and start transfer */
-	LL_I2C_WriteReg(regs, CR2, cr2);
+	stm32_reg_write(&regs->CR2, cr2);
 
 	cr1 |= LL_I2C_ReadReg(regs, CR1);
 
 	/* Enable interrupts */
-	LL_I2C_WriteReg(regs, CR1, cr1);
+	stm32_reg_write(&regs->CR1, cr1);
 
 	/* Wait for transfer to finish */
 	return stm32_i2c_irq_msg_finish(dev, msg);

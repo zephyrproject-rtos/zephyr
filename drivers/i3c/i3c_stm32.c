@@ -1208,13 +1208,13 @@ static int i3c_stm32_transfer_begin(const struct device *dev)
 
 	/* Prepare all control words for all messages on the transfer */
 	for (size_t i = 0; i < curr_msg->num_msgs; i++) {
-		WRITE_REG(data->control_fifo[i],
-			  ((curr_msg->target_addr << I3C_CR_ADD_Pos) |
-			   i3c_stm32_curr_msg_control_get_len(dev) |
-			   i3c_stm32_curr_msg_control_get_dir(dev) | curr_msg->msg_type |
-			   i3c_stm32_curr_msg_control_get_end(dev)) &
-				  (I3C_CR_ADD | I3C_CR_DCNT | I3C_CR_RNW | I3C_CR_MTYPE |
-				   I3C_CR_MEND));
+		stm32_reg_write(&data->control_fifo[i],
+				((curr_msg->target_addr << I3C_CR_ADD_Pos) |
+				 i3c_stm32_curr_msg_control_get_len(dev) |
+				 i3c_stm32_curr_msg_control_get_dir(dev) | curr_msg->msg_type |
+				 i3c_stm32_curr_msg_control_get_end(dev)) &
+				(I3C_CR_ADD | I3C_CR_DCNT | I3C_CR_RNW | I3C_CR_MTYPE |
+				 I3C_CR_MEND));
 
 		i3c_stm32_curr_msg_control_next(dev);
 	}
