@@ -18,6 +18,8 @@
 #define NXP_PLL_MUX_0_DC_4_DIV DT_PROP(DT_NODELABEL(mc_cgm), mux_0_dc_4_div)
 #define NXP_PLL_MUX_0_DC_5_DIV DT_PROP(DT_NODELABEL(mc_cgm), mux_0_dc_5_div)
 #define NXP_PLL_MUX_0_DC_6_DIV DT_PROP(DT_NODELABEL(mc_cgm), mux_0_dc_6_div)
+#define NXP_PLL_MUX_1_DC_0_DIV DT_PROP(DT_NODELABEL(mc_cgm), mux_1_dc_0_div)
+#define NXP_PLL_MUX_2_DC_0_DIV DT_PROP(DT_NODELABEL(mc_cgm), mux_2_dc_0_div)
 
 /* Note- clock identifiers in this file must be unique,
  * as the driver uses them in a switch case
