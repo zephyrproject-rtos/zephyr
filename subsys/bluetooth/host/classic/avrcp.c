@@ -1277,6 +1277,36 @@ handle_error:
 	avrcp_ct_cb->notification_rsp(get_avrcp_ct(avrcp), tid, status, 0, NULL);
 }
 
+static void process_set_absolute_volume_rsp(struct bt_avrcp *avrcp, uint8_t tid,
+					    uint8_t rsp_code, struct net_buf *buf)
+{
+	uint8_t status = BT_AVRCP_STATUS_INTERNAL_ERROR;
+	uint8_t absolute_volume;
+	int err;
+
+	if ((avrcp_ct_cb == NULL) || (avrcp_ct_cb->set_absolute_volume_rsp == NULL)) {
+		return;
+	}
+
+	err = bt_avrcp_rsp_to_status(rsp_code, buf, &status);
+	if ((err < 0) || (rsp_code == BT_AVRCP_RSP_REJECTED)) {
+		avrcp_ct_cb->set_absolute_volume_rsp(get_avrcp_ct(avrcp), tid, status, 0);
+		return;
+	}
+
+	if (buf->len < sizeof(absolute_volume)) {
+		LOG_ERR("Invalid absolute volume response length");
+		return;
+	}
+	absolute_volume = net_buf_pull_u8(buf);
+	if (absolute_volume > BT_AVRCP_MAX_ABSOLUTE_VOLUME) {
+		LOG_ERR("Invalid absolute volume: %d", absolute_volume);
+		return;
+	}
+
+	avrcp_ct_cb->set_absolute_volume_rsp(get_avrcp_ct(avrcp), tid, status, absolute_volume);
+}
+
 static void process_list_player_app_setting_attrs_rsp(struct bt_avrcp *avrcp, uint8_t tid,
 						      uint8_t rsp_code, struct net_buf *buf)
 {
@@ -1419,6 +1449,84 @@ static void process_inform_batt_status_of_ct_rsp(struct bt_avrcp *avrcp, uint8_t
 	avrcp_ct_cb->inform_batt_status_of_ct_rsp(get_avrcp_ct(avrcp), tid, status);
 }
 
+static void process_get_element_attrs_rsp(struct bt_avrcp *avrcp, uint8_t tid,
+					  uint8_t rsp_code, struct net_buf *buf)
+{
+	uint8_t status = BT_AVRCP_STATUS_INTERNAL_ERROR;
+	int err;
+
+	if ((avrcp_ct_cb == NULL) || (avrcp_ct_cb->get_element_attrs_rsp == NULL)) {
+		return;
+	}
+
+	err = bt_avrcp_rsp_to_status(rsp_code, buf, &status);
+	if ((err < 0) || (rsp_code == BT_AVRCP_RSP_REJECTED)) {
+		avrcp_ct_cb->get_element_attrs_rsp(get_avrcp_ct(avrcp), tid, status, NULL);
+		return;
+	}
+
+	avrcp_ct_cb->get_element_attrs_rsp(get_avrcp_ct(avrcp), tid, status, buf);
+}
+
+static void process_get_play_status_rsp(struct bt_avrcp *avrcp, uint8_t tid,
+					uint8_t rsp_code, struct net_buf *buf)
+{
+	uint8_t status = BT_AVRCP_STATUS_INTERNAL_ERROR;
+	int err;
+
+	if ((avrcp_ct_cb == NULL) || (avrcp_ct_cb->get_play_status_rsp == NULL)) {
+		return;
+	}
+
+	err = bt_avrcp_rsp_to_status(rsp_code, buf, &status);
+	if ((err < 0) || (rsp_code == BT_AVRCP_RSP_REJECTED)) {
+		avrcp_ct_cb->get_play_status_rsp(get_avrcp_ct(avrcp), tid, status, NULL);
+		return;
+	}
+
+	avrcp_ct_cb->get_play_status_rsp(get_avrcp_ct(avrcp), tid, status, buf);
+}
+
+static void process_set_addressed_player_rsp(struct bt_avrcp *avrcp, uint8_t tid,
+					     uint8_t rsp_code, struct net_buf *buf)
+{
+	uint8_t status = BT_AVRCP_STATUS_INTERNAL_ERROR;
+
+	if ((avrcp_ct_cb == NULL) || (avrcp_ct_cb->set_addressed_player_rsp == NULL)) {
+		return;
+	}
+
+	bt_avrcp_rsp_to_status(rsp_code, buf, &status);
+
+	avrcp_ct_cb->set_addressed_player_rsp(get_avrcp_ct(avrcp), tid, status);
+}
+
+static void process_play_item_rsp(struct bt_avrcp *avrcp, uint8_t tid,
+				  uint8_t rsp_code, struct net_buf *buf)
+{
+	uint8_t status = BT_AVRCP_STATUS_INTERNAL_ERROR;
+
+	if ((avrcp_ct_cb == NULL) || (avrcp_ct_cb->play_item_rsp == NULL)) {
+		return;
+	}
+
+	bt_avrcp_rsp_to_status(rsp_code, buf, &status);
+	avrcp_ct_cb->play_item_rsp(get_avrcp_ct(avrcp), tid, status);
+}
+
+static void process_add_to_now_playing_rsp(struct bt_avrcp *avrcp, uint8_t tid,
+					   uint8_t rsp_code, struct net_buf *buf)
+{
+	uint8_t status = BT_AVRCP_STATUS_INTERNAL_ERROR;
+
+	if ((avrcp_ct_cb == NULL) || (avrcp_ct_cb->add_to_now_playing_rsp == NULL)) {
+		return;
+	}
+
+	bt_avrcp_rsp_to_status(rsp_code, buf, &status);
+	avrcp_ct_cb->add_to_now_playing_rsp(get_avrcp_ct(avrcp), tid, status);
+}
+
 /** Response vendor handlers table.
  * Note: The min_len field specifies the minimum payload/parameter length,
  * not including status/error codes. For REJECTED responses, only 1 byte
@@ -1454,6 +1562,18 @@ static const struct avrcp_pdu_vendor_handler rsp_vendor_handlers[] = {
 	  process_inform_displayable_char_set_rsp },
 	{ BT_AVRCP_PDU_ID_INFORM_BATT_STATUS_OF_CT, 0, BT_AVRCP_CTYPE_CONTROL,
 	  process_inform_batt_status_of_ct_rsp },
+	{ BT_AVRCP_PDU_ID_SET_ABSOLUTE_VOLUME, sizeof(uint8_t), BT_AVRCP_CTYPE_CONTROL,
+	  process_set_absolute_volume_rsp },
+	{ BT_AVRCP_PDU_ID_GET_ELEMENT_ATTRS, sizeof(uint8_t), BT_AVRCP_CTYPE_STATUS,
+	  process_get_element_attrs_rsp },
+	{ BT_AVRCP_PDU_ID_GET_PLAY_STATUS, sizeof(uint8_t), BT_AVRCP_CTYPE_STATUS,
+	  process_get_play_status_rsp },
+	{ BT_AVRCP_PDU_ID_SET_ADDRESSED_PLAYER, sizeof(uint8_t), BT_AVRCP_CTYPE_CONTROL,
+	  process_set_addressed_player_rsp },
+	{ BT_AVRCP_PDU_ID_PLAY_ITEM, sizeof(uint8_t), BT_AVRCP_CTYPE_CONTROL,
+	  process_play_item_rsp },
+	{ BT_AVRCP_PDU_ID_ADD_TO_NOW_PLAYING, sizeof(uint8_t), BT_AVRCP_CTYPE_CONTROL,
+	  process_add_to_now_playing_rsp },
 };
 
 static inline bt_avrcp_ctype_t get_cmd_type_by_pdu(uint8_t pdu_id)
@@ -2090,6 +2210,149 @@ err_rsp:
 		LOG_ERR("Failed to send INFORM_BATT_STATUS_OF_CT error response");
 	}
 }
+
+static void process_set_absolute_volume_cmd(struct bt_avrcp *avrcp, uint8_t tid,
+					    uint8_t ctype_or_rsp, struct net_buf *buf)
+{
+	uint8_t absolute_volume;
+	uint8_t error_code;
+	int err;
+
+	if ((avrcp_tg_cb == NULL) || (avrcp_tg_cb->set_absolute_volume_req == NULL)) {
+		error_code = BT_AVRCP_STATUS_NOT_IMPLEMENTED;
+		goto err_rsp;
+	}
+
+	absolute_volume = net_buf_pull_u8(buf);
+	if (absolute_volume > BT_AVRCP_MAX_ABSOLUTE_VOLUME) {
+		LOG_ERR("Invalid absolute volume: %d", absolute_volume);
+		error_code = BT_AVRCP_STATUS_INVALID_PARAMETER;
+		goto err_rsp;
+	}
+	avrcp_tg_cb->set_absolute_volume_req(get_avrcp_tg(avrcp), tid, absolute_volume);
+	return;
+
+err_rsp:
+	err = bt_avrcp_tg_send_vendor_err_rsp(get_avrcp_tg(avrcp), tid,
+					      BT_AVRCP_PDU_ID_SET_ABSOLUTE_VOLUME, error_code);
+	if (err < 0) {
+		LOG_ERR("Failed to send Set Absolute Volume error response");
+	}
+}
+
+static void process_get_element_attrs_cmd(struct bt_avrcp *avrcp, uint8_t tid,
+					  uint8_t ctype_or_rsp, struct net_buf *buf)
+{
+	int error_code;
+	int err;
+
+	if ((avrcp_tg_cb == NULL) || (avrcp_tg_cb->get_element_attrs_req == NULL)) {
+		error_code = BT_AVRCP_STATUS_NOT_IMPLEMENTED;
+		goto err_rsp;
+	}
+
+	avrcp_tg_cb->get_element_attrs_req(get_avrcp_tg(avrcp), tid, buf);
+	return;
+
+err_rsp:
+	err = bt_avrcp_tg_send_vendor_err_rsp(get_avrcp_tg(avrcp), tid,
+					      BT_AVRCP_PDU_ID_GET_ELEMENT_ATTRS, error_code);
+	if (err < 0) {
+		LOG_ERR("Failed to send GET_ELEMENT_ATTRS error response");
+	}
+}
+
+static void process_get_play_status_cmd(struct bt_avrcp *avrcp, uint8_t tid,
+					uint8_t ctype_or_rsp, struct net_buf *buf)
+{
+	int error_code;
+	int err;
+
+	if ((avrcp_tg_cb == NULL) || (avrcp_tg_cb->get_play_status_req == NULL)) {
+		error_code = BT_AVRCP_STATUS_NOT_IMPLEMENTED;
+		goto err_rsp;
+	}
+
+	avrcp_tg_cb->get_play_status_req(get_avrcp_tg(avrcp), tid);
+	return;
+
+err_rsp:
+	err = bt_avrcp_tg_send_vendor_err_rsp(get_avrcp_tg(avrcp), tid,
+					      BT_AVRCP_PDU_ID_GET_PLAY_STATUS, error_code);
+	if (err < 0) {
+		LOG_ERR("Failed to send GET_PLAY_STATUS error response");
+	}
+}
+
+static void process_set_addressed_player_cmd(struct bt_avrcp *avrcp, uint8_t tid,
+					    uint8_t ctype_or_rsp, struct net_buf *buf)
+{
+	uint16_t player_id;
+	int error_code;
+	int err;
+
+	player_id = net_buf_pull_be16(buf);
+
+	if ((avrcp_tg_cb == NULL) || (avrcp_tg_cb->set_addressed_player_req == NULL)) {
+		error_code = BT_AVRCP_STATUS_NOT_IMPLEMENTED;
+		goto err_rsp;
+	}
+
+	avrcp_tg_cb->set_addressed_player_req(get_avrcp_tg(avrcp), tid, player_id);
+	return;
+
+err_rsp:
+	err = bt_avrcp_tg_send_vendor_err_rsp(get_avrcp_tg(avrcp), tid,
+					      BT_AVRCP_PDU_ID_SET_ADDRESSED_PLAYER, error_code);
+	if (err < 0) {
+		LOG_ERR("Failed to send SET_ADDRESSED_PLAYER error response");
+	}
+}
+
+static void process_play_item_cmd(struct bt_avrcp *avrcp, uint8_t tid,
+				  uint8_t ctype_or_rsp, struct net_buf *buf)
+{
+	int error_code;
+	int err;
+
+	if ((avrcp_tg_cb == NULL) || (avrcp_tg_cb->play_item_req == NULL)) {
+		error_code = BT_AVRCP_STATUS_NOT_IMPLEMENTED;
+		goto err_rsp;
+	}
+
+	avrcp_tg_cb->play_item_req(get_avrcp_tg(avrcp), tid, buf);
+	return;
+
+err_rsp:
+	err = bt_avrcp_tg_send_vendor_err_rsp(get_avrcp_tg(avrcp), tid,
+					      BT_AVRCP_PDU_ID_PLAY_ITEM, error_code);
+	if (err < 0) {
+		LOG_ERR("Failed to send PLAY_ITEMS error response");
+	}
+}
+
+static void process_add_to_now_playing_cmd(struct bt_avrcp *avrcp, uint8_t tid,
+					   uint8_t ctype_or_rsp, struct net_buf *buf)
+{
+	int error_code;
+	int err;
+
+	if ((avrcp_tg_cb == NULL) || (avrcp_tg_cb->add_to_now_playing_req == NULL)) {
+		error_code = BT_AVRCP_STATUS_NOT_IMPLEMENTED;
+		goto err_rsp;
+	}
+
+	avrcp_tg_cb->add_to_now_playing_req(get_avrcp_tg(avrcp), tid, buf);
+	return;
+
+err_rsp:
+	err = bt_avrcp_tg_send_vendor_err_rsp(get_avrcp_tg(avrcp), tid,
+					      BT_AVRCP_PDU_ID_ADD_TO_NOW_PLAYING, error_code);
+	if (err < 0) {
+		LOG_ERR("Failed to send ADD_TO_NOW_PLAYING error response");
+	}
+}
+
 static const struct avrcp_pdu_vendor_handler cmd_vendor_handlers[] = {
 	{ BT_AVRCP_PDU_ID_REQ_CONTINUING_RSP, sizeof(uint8_t), BT_AVRCP_CTYPE_CONTROL,
 	  handle_avrcp_continuing_rsp },
@@ -2121,6 +2384,17 @@ static const struct avrcp_pdu_vendor_handler cmd_vendor_handlers[] = {
 	{ BT_AVRCP_PDU_ID_INFORM_BATT_STATUS_OF_CT,
 	  sizeof(struct bt_avrcp_inform_batt_status_of_ct_cmd), BT_AVRCP_CTYPE_CONTROL,
 	  process_inform_batt_status_of_ct_cmd },
+	{ BT_AVRCP_PDU_ID_SET_ABSOLUTE_VOLUME, sizeof(uint8_t), BT_AVRCP_CTYPE_CONTROL,
+	  process_set_absolute_volume_cmd },
+	{ BT_AVRCP_PDU_ID_GET_ELEMENT_ATTRS, sizeof(struct bt_avrcp_get_element_attrs_cmd),
+	  BT_AVRCP_CTYPE_STATUS, process_get_element_attrs_cmd },
+	{ BT_AVRCP_PDU_ID_GET_PLAY_STATUS, 0, BT_AVRCP_CTYPE_STATUS, process_get_play_status_cmd },
+	{ BT_AVRCP_PDU_ID_SET_ADDRESSED_PLAYER, sizeof(struct bt_avrcp_set_addressed_player_cmd),
+	  BT_AVRCP_CTYPE_CONTROL, process_set_addressed_player_cmd },
+	{ BT_AVRCP_PDU_ID_PLAY_ITEM, sizeof(struct bt_avrcp_play_item_cmd), BT_AVRCP_CTYPE_CONTROL,
+	  process_play_item_cmd },
+	{ BT_AVRCP_PDU_ID_ADD_TO_NOW_PLAYING, sizeof(struct bt_avrcp_add_to_now_playing_cmd),
+	  BT_AVRCP_CTYPE_CONTROL, process_add_to_now_playing_cmd },
 };
 
 static void avrcp_vendor_dependent_cmd_handler(struct bt_avrcp *avrcp, uint8_t tid,
@@ -3276,6 +3550,191 @@ int bt_avrcp_ct_inform_batt_status_of_ct(struct bt_avrcp_ct *ct, uint8_t tid,
 	return err;
 }
 
+int bt_avrcp_ct_set_absolute_volume(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t absolute_volume)
+{
+	struct net_buf *buf;
+	int err;
+
+	if ((ct == NULL) || (ct->avrcp == NULL)) {
+		return -EINVAL;
+	}
+
+	if (!IS_CT_ROLE_SUPPORTED()) {
+		return -ENOTSUP;
+	}
+
+	if (avrcp_ct_cb->set_absolute_volume_rsp == NULL) {
+		LOG_WRN("Rsp callback not registered");
+		return -EOPNOTSUPP;
+	}
+
+	if (absolute_volume > BT_AVRCP_MAX_ABSOLUTE_VOLUME) {
+		LOG_ERR("Invalid absolute volume: %d", absolute_volume);
+		return -EINVAL;
+	}
+
+	buf = bt_avrcp_create_vendor_pdu(&avrcp_vd_tx_pool);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	if (net_buf_tailroom(buf) < sizeof(absolute_volume)) {
+		LOG_WRN("Not enough tailroom: for absolute_volume");
+		net_buf_unref(buf);
+		return -ENOMEM;
+	}
+	net_buf_add_u8(buf, absolute_volume);
+
+	err = bt_avrcp_ct_vendor_dependent(ct, tid, BT_AVRCP_PDU_ID_SET_ABSOLUTE_VOLUME, buf);
+	if (err < 0) {
+		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
+		net_buf_unref(buf);
+	}
+	return err;
+}
+
+int bt_avrcp_ct_get_element_attrs(struct bt_avrcp_ct *ct, uint8_t tid,
+				  struct net_buf *buf)
+{
+	int err;
+
+	if ((ct == NULL) || (ct->avrcp == NULL) || (buf == NULL)) {
+		return -EINVAL;
+	}
+
+	if (!IS_CT_ROLE_SUPPORTED()) {
+		return -ENOTSUP;
+	}
+
+	if (avrcp_ct_cb->get_element_attrs_rsp == NULL) {
+		LOG_WRN("Rsp callback not registered");
+		return -EOPNOTSUPP;
+	}
+
+	err = bt_avrcp_ct_vendor_dependent(ct, tid, BT_AVRCP_PDU_ID_GET_ELEMENT_ATTRS, buf);
+	if (err < 0) {
+		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
+	}
+	return err;
+}
+
+int bt_avrcp_ct_get_play_status(struct bt_avrcp_ct *ct, uint8_t tid)
+{
+	struct net_buf *buf;
+	int err;
+
+	if ((ct == NULL) || (ct->avrcp == NULL)) {
+		return -EINVAL;
+	}
+
+	if (!IS_CT_ROLE_SUPPORTED()) {
+		return -ENOTSUP;
+	}
+
+	if (avrcp_ct_cb->get_play_status_rsp == NULL) {
+		LOG_WRN("Rsp callback not registered");
+		return -EOPNOTSUPP;
+	}
+
+	buf = bt_avrcp_create_vendor_pdu(&avrcp_vd_tx_pool);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	err = bt_avrcp_ct_vendor_dependent(ct, tid, BT_AVRCP_PDU_ID_GET_PLAY_STATUS, buf);
+	if (err < 0) {
+		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
+	}
+	return err;
+}
+
+int bt_avrcp_ct_set_addressed_player(struct bt_avrcp_ct *ct, uint8_t tid, uint16_t player_id)
+{
+	int err;
+	struct net_buf *buf;
+
+	if ((ct == NULL) || (ct->avrcp == NULL)) {
+		return -EINVAL;
+	}
+
+	if (!IS_CT_ROLE_SUPPORTED()) {
+		return -ENOTSUP;
+	}
+
+	if (avrcp_ct_cb->set_addressed_player_rsp == NULL) {
+		LOG_WRN("Rsp callback not registered");
+		return -EOPNOTSUPP;
+	}
+
+	buf = bt_avrcp_create_vendor_pdu(&avrcp_vd_tx_pool);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	if (net_buf_tailroom(buf) < sizeof(player_id)) {
+		LOG_WRN("Not enough tailroom: for player_id");
+		net_buf_unref(buf);
+		return -ENOMEM;
+	}
+
+	net_buf_add_be16(buf, player_id);
+
+	err = bt_avrcp_ct_vendor_dependent(ct, tid, BT_AVRCP_PDU_ID_SET_ADDRESSED_PLAYER, buf);
+	if (err < 0) {
+		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
+		net_buf_unref(buf);
+	}
+	return err;
+}
+
+int bt_avrcp_ct_play_item(struct bt_avrcp_ct *ct, uint8_t tid, struct net_buf *buf)
+{
+	int err;
+
+	if ((ct == NULL) || (ct->avrcp == NULL) || (buf == NULL)) {
+		return -EINVAL;
+	}
+
+	if (!IS_CT_ROLE_SUPPORTED()) {
+		return -ENOTSUP;
+	}
+
+	if (avrcp_ct_cb->play_item_rsp == NULL) {
+		LOG_WRN("Rsp callback not registered");
+		return -EOPNOTSUPP;
+	}
+
+	err = bt_avrcp_ct_vendor_dependent(ct, tid, BT_AVRCP_PDU_ID_PLAY_ITEM, buf);
+	if (err < 0) {
+		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
+	}
+	return err;
+}
+
+int bt_avrcp_ct_add_to_now_playing(struct bt_avrcp_ct *ct, uint8_t tid, struct net_buf *buf)
+{
+	int err;
+
+	if ((ct == NULL) || (ct->avrcp == NULL) || (buf == NULL)) {
+		return -EINVAL;
+	}
+
+	if (!IS_CT_ROLE_SUPPORTED()) {
+		return -ENOTSUP;
+	}
+
+	if (avrcp_ct_cb->add_to_now_playing_rsp == NULL) {
+		LOG_WRN("Rsp callback not registered");
+		return -EOPNOTSUPP;
+	}
+
+	err = bt_avrcp_ct_vendor_dependent(ct, tid, BT_AVRCP_PDU_ID_ADD_TO_NOW_PLAYING, buf);
+	if (err < 0) {
+		LOG_ERR("Failed to send AVRCP PDU (err: %d)", err);
+	}
+	return err;
+}
+
 int bt_avrcp_ct_register_cb(const struct bt_avrcp_ct_cb *cb)
 {
 	if (!cb) {
@@ -3689,6 +4148,7 @@ int bt_avrcp_tg_send_get_caps_rsp(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t s
 	}
 	return err;
 }
+
 int bt_avrcp_tg_send_list_player_app_setting_attrs_rsp(struct bt_avrcp_tg *tg, uint8_t tid,
 						       uint8_t status, struct net_buf *buf)
 {
@@ -3788,6 +4248,148 @@ int bt_avrcp_tg_send_inform_batt_status_of_ct_rsp(struct bt_avrcp_tg *tg, uint8_
 
 	err = bt_avrcp_tg_send_vendor_dependent_rsp(tg, tid,
 						    BT_AVRCP_PDU_ID_INFORM_BATT_STATUS_OF_CT,
+						    status, buf);
+	if (err < 0) {
+		LOG_ERR("Failed to send vendor dependent (err: %d)", err);
+		net_buf_unref(buf);
+	}
+	return err;
+}
+
+int bt_avrcp_tg_send_absolute_volume_rsp(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t status,
+					 uint8_t absolute_volume)
+{
+	struct net_buf *buf;
+	int err;
+
+	if (absolute_volume > BT_AVRCP_MAX_ABSOLUTE_VOLUME) {
+		return -EINVAL;
+	}
+
+	buf = bt_avrcp_create_vendor_pdu(&avrcp_vd_tx_pool);
+	if (buf == NULL) {
+		LOG_ERR("Failed to allocate buffer");
+		return -ENOBUFS;
+	}
+
+	if (net_buf_tailroom(buf) < sizeof(absolute_volume)) {
+		LOG_ERR("Not enough space in net_buf");
+		net_buf_unref(buf);
+		return -ENOMEM;
+	}
+	net_buf_add_u8(buf, absolute_volume);
+
+	err = bt_avrcp_tg_send_vendor_dependent_rsp(tg, tid, BT_AVRCP_PDU_ID_SET_ABSOLUTE_VOLUME,
+						    status, buf);
+	if (err < 0) {
+		LOG_ERR("Failed to absolute volume (err: %d)", err);
+		net_buf_unref(buf);
+	}
+	return err;
+}
+
+int bt_avrcp_tg_send_get_element_attrs_rsp(struct bt_avrcp_tg *tg, uint8_t tid,
+					   uint8_t status, struct net_buf *buf)
+{
+	return bt_avrcp_tg_send_vendor_dependent_rsp(tg, tid,
+						     BT_AVRCP_PDU_ID_GET_ELEMENT_ATTRS,
+						     status, buf);
+}
+
+int bt_avrcp_tg_send_get_play_status_rsp(struct bt_avrcp_tg *tg, uint8_t tid,
+					 uint8_t status, struct net_buf *buf)
+{
+	return bt_avrcp_tg_send_vendor_dependent_rsp(tg, tid,
+						     BT_AVRCP_PDU_ID_GET_PLAY_STATUS,
+						     status, buf);
+}
+
+int bt_avrcp_tg_send_set_addressed_player_rsp(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t status)
+{
+	struct net_buf *buf;
+	int err;
+
+	buf = bt_avrcp_create_vendor_pdu(&avrcp_vd_tx_pool);
+	if (buf == NULL) {
+		LOG_ERR("Failed to allocate buffer");
+		return -ENOBUFS;
+	}
+
+	if (AVRCP_STATUS_IS_REJECTED(status) == false) {
+		status = BT_AVRCP_STATUS_OPERATION_COMPLETED;
+	}
+
+	if (net_buf_tailroom(buf) < sizeof(status)) {
+		LOG_ERR("Not enough space in net_buf");
+		net_buf_unref(buf);
+		return -ENOMEM;
+	}
+	net_buf_add_u8(buf, status);
+
+	err = bt_avrcp_tg_send_vendor_dependent_rsp(tg, tid, BT_AVRCP_PDU_ID_SET_ADDRESSED_PLAYER,
+						    status, buf);
+	if (err < 0) {
+		LOG_ERR("Failed to send vendor dependent (err: %d)", err);
+		net_buf_unref(buf);
+	}
+	return err;
+}
+
+int bt_avrcp_tg_send_play_item_rsp(struct bt_avrcp_tg *tg, uint8_t tid, uint8_t status)
+{
+	struct net_buf *buf;
+	int err;
+
+	buf = bt_avrcp_create_vendor_pdu(&avrcp_vd_tx_pool);
+	if (buf == NULL) {
+		LOG_ERR("Failed to allocate buffer");
+		return -ENOBUFS;
+	}
+
+	if (AVRCP_STATUS_IS_REJECTED(status) == false) {
+		status = BT_AVRCP_STATUS_OPERATION_COMPLETED;
+	}
+
+	if (net_buf_tailroom(buf) < sizeof(status)) {
+		LOG_ERR("Not enough space in net_buf");
+		net_buf_unref(buf);
+		return -ENOMEM;
+	}
+	net_buf_add_u8(buf, status);
+
+	err = bt_avrcp_tg_send_vendor_dependent_rsp(tg, tid, BT_AVRCP_PDU_ID_PLAY_ITEM,
+						    status, buf);
+	if (err < 0) {
+		LOG_ERR("Failed to send vendor dependent (err: %d)", err);
+		net_buf_unref(buf);
+	}
+	return err;
+}
+
+int bt_avrcp_tg_send_add_to_now_playing_rsp(struct bt_avrcp_tg *tg, uint8_t tid,
+					    uint8_t status)
+{
+	struct net_buf *buf;
+	int err;
+
+	buf = bt_avrcp_create_vendor_pdu(&avrcp_vd_tx_pool);
+	if (buf == NULL) {
+		LOG_ERR("Failed to allocate buffer");
+		return -ENOBUFS;
+	}
+
+	if (AVRCP_STATUS_IS_REJECTED(status) == false) {
+		status = BT_AVRCP_STATUS_OPERATION_COMPLETED;
+	}
+
+	if (net_buf_tailroom(buf) < sizeof(status)) {
+		LOG_ERR("Not enough space in net_buf");
+		net_buf_unref(buf);
+		return -ENOMEM;
+	}
+	net_buf_add_u8(buf, status);
+
+	err = bt_avrcp_tg_send_vendor_dependent_rsp(tg, tid, BT_AVRCP_PDU_ID_ADD_TO_NOW_PLAYING,
 						    status, buf);
 	if (err < 0) {
 		LOG_ERR("Failed to send vendor dependent (err: %d)", err);
