@@ -390,6 +390,18 @@ typedef int (*video_api_ctrl_t)(const struct device *dev, uint32_t cid);
 typedef int (*video_api_get_caps_t)(const struct device *dev, struct video_caps *caps);
 
 /**
+ * @typedef video_api_transform_cap_t
+ * @brief Function pointer type for transforming a @ref video_format_cap from one end
+ * to the other end of a m2m video device.
+ *
+ * See @ref video_transform_cap for argument descriptions.
+ */
+typedef int (*video_api_transform_cap_t)(const struct device *const dev,
+					 const struct video_format_cap *const cap,
+					 struct video_format_cap *const res_cap,
+					 enum video_buf_type type, uint16_t ind);
+
+/**
  * @typedef video_api_set_signal_t
  * @brief Register/Unregister poll signal for buffer events.
  *
@@ -423,6 +435,7 @@ __subsystem struct video_driver_api {
 	video_api_enum_frmival_t enum_frmival;
 	video_api_selection_t set_selection;
 	video_api_selection_t get_selection;
+	video_api_transform_cap_t transform_cap;
 };
 
 /**
@@ -739,6 +752,48 @@ static inline int video_get_caps(const struct device *dev, struct video_caps *ca
 	}
 
 	return api->get_caps(dev, caps);
+}
+
+/**
+ * @brief Transform a video format capability from one end to the other end of a m2m video device.
+ *
+ * This function transforms a @ref video_format_cap from one end to the other end of a m2m video
+ * device. It allows applications to determine all the resulting format capabilities after passing
+ * the source format capability through the device.
+ *
+ * Applications need to pass the source cap, the type of the source cap and iteratively increase
+ * the index to get all the possible transformed caps.
+ *
+ * @param dev Pointer to the device structure.
+ * @param cap Pointer to the source video format capability structure.
+ * @param res_cap Pointer to the resulting video format capability structure, filled by the driver.
+ * @param type The @ref video_buf_type of the resulting transformed cap.
+ * @param ind Index of the resulting transformed cap.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If API is not implemented.
+ * @retval -EINVAL If parameters are invalid.
+ * @retval -ENOTSUP If the transformation is not supported.
+ * @retval -EIO General input / output error.
+ */
+static inline int video_transform_cap(const struct device *const dev,
+				      const struct video_format_cap *const cap,
+				      struct video_format_cap *const res_cap,
+				      enum video_buf_type type, uint16_t ind)
+{
+	const struct video_driver_api *api;
+
+	if (dev == NULL || cap == NULL || res_cap == NULL ||
+	    (type != VIDEO_BUF_TYPE_INPUT && type != VIDEO_BUF_TYPE_OUTPUT)) {
+		return -EINVAL;
+	}
+
+	api = (const struct video_driver_api *)dev->api;
+	if (api->transform_cap == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->transform_cap(dev, cap, res_cap, type, ind);
 }
 
 /**
