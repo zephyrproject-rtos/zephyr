@@ -481,7 +481,7 @@ void i2c_stm32_event(const struct device *dev)
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *regs = cfg->i2c;
-	uint32_t isr = LL_I2C_ReadReg(regs, ISR);
+	uint32_t isr = stm32_reg_read(&regs->ISR);
 
 #if defined(CONFIG_I2C_TARGET)
 	if (data->slave_attached && !data->master_active) {
@@ -515,7 +515,7 @@ void i2c_stm32_event(const struct device *dev)
 		/* Transfer complete with reload flag set means more data shall be transferred
 		 * in same direction (No RESTART or STOP)
 		 */
-		uint32_t cr2 = LL_I2C_ReadReg(regs, CR2);
+		uint32_t cr2 = stm32_reg_read(&regs->CR2);
 #ifdef CONFIG_I2C_STM32_V2_DMA
 		/* Get number of bytes bytes transferred by DMA */
 		uint32_t xfer_len = (cr2 & I2C_CR2_NBYTES_Msk) >> I2C_CR2_NBYTES_Pos;
@@ -724,8 +724,8 @@ static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 	/* Enable I2C peripheral if not already done */
 	LL_I2C_Enable(regs);
 
-	uint32_t cr2 = LL_I2C_ReadReg(regs, CR2);
-	uint32_t isr = LL_I2C_ReadReg(regs, ISR);
+	uint32_t cr2 = stm32_reg_read(&regs->CR2);
+	uint32_t isr = stm32_reg_read(&regs->ISR);
 
 	/* Clear fields in CR2 which will be filled in later in function */
 	cr2 &= ~(I2C_CR2_RELOAD | I2C_CR2_AUTOEND | I2C_CR2_NBYTES_Msk | I2C_CR2_SADD_Msk |
@@ -815,7 +815,7 @@ static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 	/* Commit configuration to I2C controller and start transfer */
 	stm32_reg_write(&regs->CR2, cr2);
 
-	cr1 |= LL_I2C_ReadReg(regs, CR1);
+	cr1 |= stm32_reg_read(&regs->CR1);
 
 	/* Enable interrupts */
 	stm32_reg_write(&regs->CR1, cr1);

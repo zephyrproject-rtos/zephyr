@@ -30,6 +30,7 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <zephyr/toolchain.h>
 
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <stm32_cache.h>
 #include <stm32_ll_spi.h>
 
@@ -347,7 +348,7 @@ static bool spi_stm32_transfer_ongoing(struct spi_stm32_data *data)
 
 static int spi_stm32_get_err(SPI_TypeDef *spi)
 {
-	uint32_t sr = LL_SPI_ReadReg(spi, SR);
+	uint32_t sr = stm32_reg_read(&spi->SR);
 
 	if ((sr & SPI_STM32_ERR_MSK) != 0U) {
 		LOG_ERR("%s: err=%d", __func__,
