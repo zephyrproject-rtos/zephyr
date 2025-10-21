@@ -4,6 +4,7 @@ common:
     - nrf54l15dk/nrf54l15/cpuapp
   platform_exclude:
     - qemu_cortex_m0 # settings subsystem initialization fails
+    - max78002evkit/max78002/rv32 # Erase of flash nukes the ARM core host app
   timeout: 600
   tags:
     - psa.secure_storage

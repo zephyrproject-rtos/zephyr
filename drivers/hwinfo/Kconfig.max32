@@ -6,6 +6,7 @@ config HWINFO_MAX32
 	default y
 	depends on SOC_FAMILY_MAX32
 	depends on !TRUSTED_EXECUTION_NONSECURE
+	depends on !SOC_FAMILY_MAX32_RV32
 	select HWINFO_HAS_DRIVER
 	help
 	  Enable MAX32 hwinfo driver.
