@@ -688,7 +688,9 @@ static void test_tx_send_relay(void)
 	net_buf_simple_add_u8(&relay_second->b, 0x02);
 
 	bt_mesh_adv_send(local, &local_send_cb, NULL);
+	k_sleep(K_MSEC(1));
 	bt_mesh_adv_send(relay_first, &relay_first_send_cb, NULL);
+	k_sleep(K_MSEC(1));
 	bt_mesh_adv_send(relay_second, &relay_second_send_cb, NULL);
 
 	bt_mesh_adv_unref(local);
