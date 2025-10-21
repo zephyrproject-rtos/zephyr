@@ -264,7 +264,7 @@ void test_single_shot_alarm_instance(const struct device *dev, bool set_top)
 		err = counter_set_top_value(dev, &top_cfg);
 
 		zassert_equal(0, err,
-			      "%s: Counter failed to set top value", dev->name);
+			      "%s: Counter failed to set top value (err: %d)", dev->name, err);
 
 		alarm_cfg.ticks = ticks + 1;
 		err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
@@ -398,7 +398,7 @@ void test_multiple_alarms_instance(const struct device *dev)
 
 	err = counter_set_top_value(dev, &top_cfg);
 	zassert_equal(-ENOTSUP, err,
-		      "%s: Counter failed to set top value: %d", dev->name);
+		      "%s: Counter failed to set top value (err: %d)", dev->name, err);
 
 	k_sleep(K_USEC(3 * (uint32_t)counter_ticks_to_us(dev, alarm_cfg.ticks)));
 

@@ -458,7 +458,7 @@ static void test_single_shot_alarm_instance(const struct device *dev, bool set_t
 		err = counter_set_top_value(dev, &top_cfg);
 
 		zassert_equal(0, err,
-			     "%s: Counter failed to set top value", dev->name);
+			     "%s: Counter failed to set top value (err: %d)", dev->name, err);
 
 		cntr_alarm_cfg.ticks = ticks + 1;
 		err = counter_set_channel_alarm(dev, 0, &cntr_alarm_cfg);
@@ -601,7 +601,8 @@ static void test_multiple_alarms_instance(const struct device *dev)
 
 	if (set_top_value_capable(dev)) {
 		err = counter_set_top_value(dev, &top_cfg);
-		zassert_equal(0, err, "%s: Counter failed to set top value", dev->name);
+		zassert_equal(0, err, "%s: Counter failed to set top value (err: %d)", dev->name,
+			      err);
 	} else {
 		/* Counter does not support top value, do not run this test
 		 * as it might take a long time to wrap and trigger the alarm
