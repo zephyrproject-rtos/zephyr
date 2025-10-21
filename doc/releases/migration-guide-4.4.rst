@@ -229,6 +229,12 @@ Counter
            resolution = <16>;
        };
 
+EEPROM
+======
+
+* Added :c:func:`eeprom_target_read_data()` and :c:func:`eeprom_target_write_data()` which takes an
+  offset and length and deprecated :c:func:`eeprom_target_program()` for the I2C EEPROM target driver.
+
 Ethernet
 ========
 
