@@ -1,6 +1,47 @@
 # Copyright (c) 2025 Silicon Laboratories Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
+
+config BT_SILABS_SIWX91X
+	bool "Silabs SiWx91x Bluetooth interface"
+	default y
+	depends on DT_HAS_SILABS_SIWX91X_BT_HCI_ENABLED
+	select SILABS_SIWX91X_NWP
+	select ENTROPY_GENERATOR
+	select BT_HCI_SETUP
+	help
+	  Use Silicon Labs Wiseconnect 3.x Bluetooth library to connect to the controller.
+
+# SiWx917 BLE controller currently does not support HCI Command: Host Number of Completed Packets
+configdefault BT_HCI_ACL_FLOW_CONTROL
+	default n if BT_SILABS_SIWX91X
+
+config BT_SILABS_EFR32
+	bool "Silabs EFR32 HCI driver"
+	default y
+	depends on DT_HAS_SILABS_BT_HCI_EFR32_ENABLED
+	depends on ZEPHYR_HAL_SILABS_MODULE_BLOBS || BUILD_ONLY_NO_BLOBS
+	depends on SOC_GECKO_HAS_RADIO
+	select SOC_GECKO_USE_RAIL
+	select PSA_CRYPTO
+	select SILABS_SISDK_PROTOCOL_CRYPTO
+	select HAS_BT_CTLR
+	select BT_CTLR_PHY_UPDATE_SUPPORT
+	select BT_CTLR_PER_INIT_FEAT_XCHG_SUPPORT
+	select BT_CTLR_DATA_LEN_UPDATE_SUPPORT
+	select BT_CTLR_EXT_REJ_IND_SUPPORT
+	select BT_CTLR_CHAN_SEL_2_SUPPORT
+	select BT_CTLR_CONN_RSSI_SUPPORT
+	select BT_CTLR_ADV_EXT_SUPPORT
+	select BT_CTLR_PRIVACY_SUPPORT
+	select BT_CTLR_PHY_2M_SUPPORT
+	select BT_CTLR_SYNC_PERIODIC_SUPPORT
+	select BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT
+	select BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT
+	help
+	  Use Silicon Labs binary Bluetooth library to connect to the
+	  controller.
+
 menu "EFR32 Bluetooth Controller Configuration"
 	depends on BT_SILABS_EFR32
 
