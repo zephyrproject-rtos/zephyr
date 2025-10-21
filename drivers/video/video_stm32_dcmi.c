@@ -12,6 +12,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/video.h>
+#include <zephyr/drivers/video-controls.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
@@ -20,12 +21,13 @@
 
 #include <stm32_ll_dma.h>
 
+#include "video_ctrls.h"
 #include "video_device.h"
 
 LOG_MODULE_REGISTER(video_stm32_dcmi, CONFIG_VIDEO_LOG_LEVEL);
 
-#if CONFIG_VIDEO_BUFFER_POOL_NUM_MAX < 2
-#error "The minimum required number of buffers for video_stm32 is 2"
+#if CONFIG_VIDEO_BUFFER_POOL_NUM_MAX < 1
+#error "The minimum required number of buffers for video_stm32 is 1"
 #endif
 
 typedef void (*irq_config_func_t)(const struct device *dev);
@@ -37,14 +39,21 @@ struct stream {
 	struct dma_config cfg;
 };
 
+struct video_stm32_dcmi_ctrls {
+	struct video_ctrl snapshot;
+};
+
 struct video_stm32_dcmi_data {
 	const struct device *dev;
 	DCMI_HandleTypeDef hdcmi;
 	struct video_format fmt;
+	struct video_stm32_dcmi_ctrls ctrls;
 	int capture_rate;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
 	struct video_buffer *vbuf;
+	uint32_t snapshot_start_time;
+	uint8_t snapshot_mode;
 };
 
 struct video_stm32_dcmi_config {
@@ -53,6 +62,8 @@ struct video_stm32_dcmi_config {
 	const struct pinctrl_dev_config *pctrl;
 	const struct device *sensor_dev;
 	const struct stream dma;
+	bool snapshot_mode;
+	int snapshot_timeout;
 };
 
 static void stm32_dcmi_process_dma_error(DCMI_HandleTypeDef *hdcmi)
@@ -69,10 +80,10 @@ static void stm32_dcmi_process_dma_error(DCMI_HandleTypeDef *hdcmi)
 	}
 
 	if (HAL_DCMI_Start_DMA(&dev_data->hdcmi,
-			       DCMI_MODE_CONTINUOUS,
+			       dev_data->snapshot_mode ? DCMI_MODE_SNAPSHOT : DCMI_MODE_CONTINUOUS,
 			       (uint32_t)dev_data->vbuf->buffer,
 			       dev_data->vbuf->size / 4) != HAL_OK) {
-		LOG_WRN("Continuous: HAL_DCMI_Start_DMA FAILED!");
+		LOG_WRN("HAL_DCMI_Start_DMA FAILED!");
 		return;
 	}
 }
@@ -89,6 +100,17 @@ void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
 	struct video_buffer *vbuf;
 	HAL_StatusTypeDef __maybe_unused hal_ret;
 
+	if (dev_data->snapshot_mode) {
+		/* we remove the buffer from the camera and add it to fifo_out */
+		vbuf = dev_data->vbuf;
+		dev_data->vbuf = NULL;
+		vbuf->timestamp = k_uptime_get_32();
+		k_fifo_put(&dev_data->fifo_out, vbuf);
+		LOG_DBG("event SH put: %p", vbuf);
+		return;
+	}
+
+	/* Not in snapshot_mode */
 	hal_ret = HAL_DCMI_Suspend(hdcmi);
 	__ASSERT_NO_MSG(hal_ret == HAL_OK);
 
@@ -276,22 +298,28 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable,
 		return 0;
 	}
 
-	data->vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
+	if (!data->snapshot_mode && (CONFIG_VIDEO_BUFFER_POOL_NUM_MAX != 1)) {
+		data->vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
 
-	if (data->vbuf == NULL) {
-		LOG_ERR("Failed to dequeue a DCMI buffer.");
-		return -ENOMEM;
+		if (data->vbuf == NULL) {
+			data->snapshot_mode = 1;
+			LOG_WRN("No buffers, assume snapshot mode.");
+		}
 	}
 
 	/* Set the frame control */
 	data->hdcmi.Instance->CR &= ~(DCMI_CR_FCRC_0 | DCMI_CR_FCRC_1);
 	data->hdcmi.Instance->CR |= STM32_DCMI_GET_CAPTURE_RATE(data->capture_rate);
 
-	hal_ret = HAL_DCMI_Start_DMA(&data->hdcmi, DCMI_MODE_CONTINUOUS,
-				     (uint32_t)data->vbuf->buffer, data->vbuf->bytesused / 4);
-	if (hal_ret != HAL_OK) {
-		LOG_ERR("Failed to start DCMI DMA");
-		return -EIO;
+	/* don't start the DCMI DMA if we are in Snapshot mode */
+	if (!data->snapshot_mode) {
+		hal_ret = HAL_DCMI_Start_DMA(&data->hdcmi, DCMI_MODE_CONTINUOUS,
+					     (uint32_t)data->vbuf->buffer,
+					     data->vbuf->bytesused / 4);
+		if (hal_ret != HAL_OK) {
+			LOG_ERR("Failed to start DCMI DMA");
+			return -EIO;
+		}
 	}
 
 	return video_stream_start(config->sensor_dev, type);
@@ -314,17 +342,90 @@ static int video_stm32_dcmi_enqueue(const struct device *dev, struct video_buffe
 	return 0;
 }
 
+static int video_stm32_dcmi_snapshot(const struct device *dev, struct video_buffer **vbuf,
+				     k_timeout_t timeout)
+{
+	struct video_stm32_dcmi_data *data = dev->data;
+	const struct video_stm32_dcmi_config *config = dev->config;
+	HAL_StatusTypeDef hal_ret;
+
+	LOG_DBG("dequeue snapshot: %p %llu", data->vbuf, timeout.ticks);
+
+	/* See if we were already called and have an active buffer */
+	if (data->vbuf == NULL) {
+		/* check first to see if we already have a buffer returned */
+		*vbuf = k_fifo_get(&data->fifo_out, K_NO_WAIT);
+		if (*vbuf != NULL) {
+			LOG_DBG("k_fifo_get returned: %p", *vbuf);
+			if (HAL_DCMI_Stop(&data->hdcmi) != HAL_OK) {
+				LOG_WRN("Snapshot: HAL_DCMI_Stop FAILED!");
+			}
+			return 0;
+		}
+		data->vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
+		LOG_DBG("camera buf: %p", data->vbuf);
+		if (data->vbuf == NULL) {
+			LOG_WRN("Snapshot: No Buffers available!");
+			return -ENOMEM;
+		}
+
+		hal_ret = HAL_DCMI_Start_DMA(&data->hdcmi, DCMI_MODE_SNAPSHOT,
+				       (uint32_t)data->vbuf->buffer,
+				       data->vbuf->size / 4);
+		if (hal_ret != HAL_OK) {
+			LOG_WRN("Snapshot: HAL_DCMI_Start_DMA FAILED!");
+			return -EIO;
+		}
+
+		/* remember when we started this request */
+		data->snapshot_start_time = k_uptime_get_32();
+	}
+
+	*vbuf = k_fifo_get(&data->fifo_out, timeout);
+	if (*vbuf == NULL) {
+		uint32_t time_since_start_time =
+			(uint32_t)(k_uptime_get_32() - data->snapshot_start_time);
+
+		if (time_since_start_time > config->snapshot_timeout) {
+			LOG_WRN("Snapshot: Timed out!");
+			if (HAL_DCMI_Stop(&data->hdcmi) != HAL_OK) {
+				LOG_WRN("Snapshot: HAL_DCMI_Stop FAILED!");
+			}
+			/* verify it did not come in during this procuessing */
+			*vbuf = k_fifo_get(&data->fifo_out, K_NO_WAIT);
+			if (*vbuf != NULL) {
+				return 0;
+			}
+
+			if (data->vbuf != NULL) {
+				k_fifo_put(&data->fifo_in, data->vbuf);
+				data->vbuf = NULL;
+			}
+		}
+
+		return -EAGAIN;
+	}
+
+	if (HAL_DCMI_Stop(&data->hdcmi) != HAL_OK) {
+		LOG_WRN("Snapshot: HAL_DCMI_Stop FAILED!");
+	}
+
+	return 0;
+}
+
 static int video_stm32_dcmi_dequeue(const struct device *dev, struct video_buffer **vbuf,
 				    k_timeout_t timeout)
 {
 	struct video_stm32_dcmi_data *data = dev->data;
 
-	*vbuf = k_fifo_get(&data->fifo_out, timeout);
-	if (*vbuf == NULL) {
-		return -EAGAIN;
+	if (data->snapshot_mode) {
+		return video_stm32_dcmi_snapshot(dev, vbuf, timeout);
 	}
 
-	return 0;
+	*vbuf = k_fifo_get(&data->fifo_out, timeout);
+	LOG_DBG("k_fifo_get returned: %p", *vbuf);
+
+	return (*vbuf == NULL) ? -EAGAIN : 0;
 }
 
 static int video_stm32_dcmi_get_caps(const struct device *dev, struct video_caps *caps)
@@ -336,6 +437,32 @@ static int video_stm32_dcmi_get_caps(const struct device *dev, struct video_caps
 
 	/* Forward the message to the sensor device */
 	return video_get_caps(config->sensor_dev, caps);
+}
+
+static int video_stm32_dcmi_set_ctrl_snapshot(const struct device *dev, int value)
+{
+	struct video_stm32_dcmi_data *data = dev->data;
+
+	LOG_INF("Set Snapshot: %d\n", value);
+	if ((CONFIG_VIDEO_BUFFER_POOL_NUM_MAX == 1) && (value == 0)) {
+		LOG_DBG("Only one buffer so snapshot mode only");
+		return -EINVAL;
+	}
+
+	data->snapshot_mode = value;
+	return 0;
+}
+
+static int video_stm32_dcmi_set_ctrl(const struct device *dev, uint32_t id)
+{
+	struct video_stm32_dcmi_data *data = dev->data;
+	struct video_stm32_dcmi_ctrls *ctrls = &data->ctrls;
+
+	if (id == VIDEO_CID_SNAPSHOT_MODE) {
+		return video_stm32_dcmi_set_ctrl_snapshot(dev, ctrls->snapshot.val);
+	}
+
+	return -ENOTSUP;
 }
 
 static int video_stm32_dcmi_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
@@ -455,12 +582,23 @@ static DEVICE_API(video, video_stm32_dcmi_driver_api) = {
 	.enqueue = video_stm32_dcmi_enqueue,
 	.dequeue = video_stm32_dcmi_dequeue,
 	.get_caps = video_stm32_dcmi_get_caps,
+	.set_ctrl = video_stm32_dcmi_set_ctrl,
 	.enum_frmival = video_stm32_dcmi_enum_frmival,
 	.set_frmival = video_stm32_dcmi_set_frmival,
 	.get_frmival = video_stm32_dcmi_get_frmival,
 	.set_selection = video_stm32_dcmi_set_selection,
 	.get_selection = video_stm32_dcmi_get_selection,
 };
+
+static int video_stm32_dcmi_init_controls(const struct device *dev)
+{
+	struct video_stm32_dcmi_data *data = dev->data;
+	struct video_stm32_dcmi_ctrls *ctrls = &data->ctrls;
+
+	return video_init_ctrl(&ctrls->snapshot, dev, VIDEO_CID_SNAPSHOT_MODE,
+			       (struct video_ctrl_range){.min = 0, .max = 1, .step = 1,
+							 .def = data->snapshot_mode});
+}
 
 static void video_stm32_dcmi_irq_config_func(const struct device *dev)
 {
@@ -539,6 +677,8 @@ static const struct video_stm32_dcmi_config video_stm32_dcmi_config_0 = {
 	.irq_config = video_stm32_dcmi_irq_config_func,
 	.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.sensor_dev = SOURCE_DEV(0),
+	.snapshot_mode = DT_INST_PROP(0, snapshot_mode),
+	.snapshot_timeout = DT_INST_PROP(0, snapshot_timeout),
 	DCMI_DMA_CHANNEL(0, PERIPHERAL, MEMORY)
 };
 
@@ -569,6 +709,13 @@ static int video_stm32_dcmi_init(const struct device *dev)
 		return err;
 	}
 
+	/* See if we should initialize to only support snapshot mode or not */
+	if (CONFIG_VIDEO_BUFFER_POOL_NUM_MAX == 1) {
+		LOG_DBG("Only one buffer so snapshot mode only");
+		data->snapshot_mode = 0;
+	} else {
+		data->snapshot_mode = config->snapshot_mode ? 1 : 0;
+	}
 	data->dev = dev;
 	k_fifo_init(&data->fifo_in);
 	k_fifo_init(&data->fifo_out);
@@ -586,7 +733,8 @@ static int video_stm32_dcmi_init(const struct device *dev)
 	k_sleep(K_MSEC(100));
 	LOG_DBG("%s inited", dev->name);
 
-	return 0;
+	/* Initialize controls */
+	return video_stm32_dcmi_init_controls(dev);
 }
 
 DEVICE_DT_INST_DEFINE(0, &video_stm32_dcmi_init,
