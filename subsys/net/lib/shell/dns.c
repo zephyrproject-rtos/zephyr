@@ -494,7 +494,7 @@ static int cmd_net_dns_service(const struct shell *sh, size_t argc, char *argv[]
 				port = info.ai_srv.port;
 
 				snprintf(query, sizeof(query), "%.*s",
-					info.ai_srv.targetlen,
+					(int)info.ai_srv.targetlen,
 					info.ai_srv.target);
 
 				/*
