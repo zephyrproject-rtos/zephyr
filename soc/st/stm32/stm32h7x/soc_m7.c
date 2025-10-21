@@ -47,7 +47,7 @@ static int stm32h7_m4_wakeup(void)
 	LL_AHB4_GRP1_EnableClock(LL_AHB4_GRP1_PERIPH_HSEM);
 	LL_APB4_GRP1_EnableClock(LL_APB4_GRP1_PERIPH_SYSCFG);
 
-	if (READ_BIT(SYSCFG->UR1, SYSCFG_UR1_BCM4)) {
+	if (stm32_reg_read_bits(&SYSCFG->UR1, SYSCFG_UR1_BCM4) != 0) {
 		/**
 		 * Cortex-M4 has been started by hardware.
 		 * Its `soc_early_init_hook()` will stall boot until

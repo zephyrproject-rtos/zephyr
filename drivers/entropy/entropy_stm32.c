@@ -17,6 +17,7 @@
 #include <errno.h>
 #include <soc.h>
 #include <zephyr/pm/policy.h>
+#include <stm32_bitops.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_rng.h>
@@ -209,9 +210,9 @@ static void configure_rng(void)
 	 * The RNG clock must be 48MHz else the clock DIV is not adpated.
 	 * The RNG_CR_CONDRST is set to 1 at the same time the RNG_CR is written
 	 */
-	cur_nist_cfg = READ_BIT(rng->CR,
-				(RNG_CR_NISTC | RNG_CR_CLKDIV | RNG_CR_RNG_CONFIG1 |
-				RNG_CR_RNG_CONFIG2 | RNG_CR_RNG_CONFIG3
+	cur_nist_cfg = stm32_reg_read_bits(&rng->CR,
+					   (RNG_CR_NISTC | RNG_CR_CLKDIV | RNG_CR_RNG_CONFIG1 |
+					    RNG_CR_RNG_CONFIG2 | RNG_CR_RNG_CONFIG3
 #if defined(RNG_CR_ARDIS)
 				| RNG_CR_ARDIS
 	/* For STM32U5 series, the ARDIS bit7 is considered in the nist-config */

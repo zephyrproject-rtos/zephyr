@@ -237,19 +237,20 @@ static int stm32_clock_control_init(const struct device *dev)
 	/* while active.*/
 
 	LL_RCC_SetMPUClkSource(LL_RCC_MPU_CLKSOURCE_HSE);
-	while ((READ_BIT(RCC->MPCKSELR, RCC_MPCKSELR_MPUSRCRDY) != RCC_MPCKSELR_MPUSRCRDY)) {
+	while (stm32_reg_read_bits(&RCC->MPCKSELR, RCC_MPCKSELR_MPUSRCRDY) !=
+	       RCC_MPCKSELR_MPUSRCRDY) {
 	}
 
 	stm32_reg_clear_bits(&RCC->PLL1CR, RCC_PLL1CR_DIVPEN);
-	while (READ_BIT(RCC->PLL1CR, RCC_PLL1CR_DIVPEN) == RCC_PLL1CR_DIVPEN) {
+	while (stm32_reg_read_bits(&RCC->PLL1CR, RCC_PLL1CR_DIVPEN) == RCC_PLL1CR_DIVPEN) {
 	};
 
 	stm32_reg_clear_bits(&RCC->PLL1CR, RCC_PLL1CR_DIVQEN);
-	while (READ_BIT(RCC->PLL1CR, RCC_PLL1CR_DIVQEN) == RCC_PLL1CR_DIVQEN) {
+	while (stm32_reg_read_bits(&RCC->PLL1CR, RCC_PLL1CR_DIVQEN) == RCC_PLL1CR_DIVQEN) {
 	};
 
 	stm32_reg_clear_bits(&RCC->PLL1CR, RCC_PLL1CR_DIVREN);
-	while (READ_BIT(RCC->PLL1CR, RCC_PLL1CR_DIVREN) == RCC_PLL1CR_DIVREN) {
+	while (stm32_reg_read_bits(&RCC->PLL1CR, RCC_PLL1CR_DIVREN) == RCC_PLL1CR_DIVREN) {
 	};
 
 	uint32_t pll1_n = DT_PROP(DT_NODELABEL(pll1), mul_n);
@@ -275,7 +276,7 @@ static int stm32_clock_control_init(const struct device *dev)
 	}
 
 	stm32_reg_set_bits(&RCC->PLL1CR, RCC_PLL1CR_DIVPEN);
-	while (READ_BIT(RCC->PLL1CR, RCC_PLL1CR_DIVPEN) != RCC_PLL1CR_DIVPEN) {
+	while (stm32_reg_read_bits(&RCC->PLL1CR, RCC_PLL1CR_DIVPEN) != RCC_PLL1CR_DIVPEN) {
 	};
 
 	LL_RCC_SetMPUClkSource(LL_RCC_MPU_CLKSOURCE_PLL1);
