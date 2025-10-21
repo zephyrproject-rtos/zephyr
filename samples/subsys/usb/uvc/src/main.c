@@ -292,34 +292,22 @@ int main(void)
 			return ret;
 		}
 
-		vbuf = &(struct video_buffer){.type = VIDEO_BUF_TYPE_OUTPUT};
-
-		if (video_dequeue(video_dev, &vbuf, K_NO_WAIT) == 0) {
-			LOG_DBG("Dequeued %p from %s, enqueueing to %s",
-				(void *)vbuf, video_dev->name, uvc_dev->name);
-
-			vbuf->type = VIDEO_BUF_TYPE_INPUT;
-
-			ret = video_enqueue(uvc_dev, vbuf);
-			if (ret != 0) {
-				LOG_ERR("Could not enqueue video buffer to %s", uvc_dev->name);
-				return ret;
-			}
+		ret = video_transfer_buffer(video_dev, uvc_dev,
+					    VIDEO_BUF_TYPE_OUTPUT, VIDEO_BUF_TYPE_INPUT,
+					    K_NO_WAIT);
+		if (ret != 0 && ret != -EAGAIN) {
+			LOG_ERR("Failed to transfer from %s to %s",
+				video_dev->name, uvc_dev->name);
+			return ret;
 		}
 
-		vbuf = &(struct video_buffer){.type = VIDEO_BUF_TYPE_INPUT};
-
-		if (video_dequeue(uvc_dev, &vbuf, K_NO_WAIT) == 0) {
-			LOG_DBG("Dequeued %p from %s, enqueueing to %s",
-				(void *)vbuf, uvc_dev->name, video_dev->name);
-
-			vbuf->type = VIDEO_BUF_TYPE_OUTPUT;
-
-			ret = video_enqueue(video_dev, vbuf);
-			if (ret != 0) {
-				LOG_ERR("Could not enqueue video buffer to %s", video_dev->name);
-				return ret;
-			}
+		ret = video_transfer_buffer(uvc_dev, video_dev,
+					    VIDEO_BUF_TYPE_INPUT, VIDEO_BUF_TYPE_OUTPUT,
+					    K_NO_WAIT);
+		if (ret != 0 && ret != -EAGAIN) {
+			LOG_ERR("Failed to transfer from %s to %s",
+				uvc_dev->name, video_dev->name);
+			return ret;
 		}
 
 		k_poll_signal_reset(&sig);
