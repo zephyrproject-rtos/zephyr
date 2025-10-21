@@ -1055,7 +1055,7 @@ static int rtc_stm32_set_calibration(const struct device *dev, int32_t calibrati
 
 	LL_RTC_DisableWriteProtection(RTC);
 
-	MODIFY_REG(RTC->CALR, RTC_CALR_CALP | RTC_CALR_CALM, calp | calm);
+	stm32_reg_modify_bits(&RTC->CALR, RTC_CALR_CALP | RTC_CALR_CALM, calp | calm);
 
 	LL_RTC_EnableWriteProtection(RTC);
 

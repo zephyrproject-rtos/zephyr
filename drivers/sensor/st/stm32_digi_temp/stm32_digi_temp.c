@@ -120,20 +120,20 @@ static void stm32_digi_temp_configure(const struct device *dev)
 	 * Allowed values are between 0 and 127.
 	 */
 	clk_div = MIN(DIV_ROUND_UP(data->pclk_freq, ONE_MHZ), 127);
-	MODIFY_REG(dts->CFGR1, DTS_CFGR1_HSREF_CLK_DIV_Msk,
-		   clk_div << DTS_CFGR1_HSREF_CLK_DIV_Pos);
+	stm32_reg_modify_bits(&dts->CFGR1, DTS_CFGR1_HSREF_CLK_DIV_Msk,
+			      clk_div << DTS_CFGR1_HSREF_CLK_DIV_Pos);
 
 	/* Select PCLK as reference clock */
-	MODIFY_REG(dts->CFGR1, DTS_CFGR1_REFCLK_SEL_Msk,
-		   0 << DTS_CFGR1_REFCLK_SEL_Pos);
+	stm32_reg_modify_bits(&dts->CFGR1, DTS_CFGR1_REFCLK_SEL_Msk,
+			      0 << DTS_CFGR1_REFCLK_SEL_Pos);
 
 	/* Select trigger */
-	MODIFY_REG(dts->CFGR1, DTS_CFGR1_TS1_INTRIG_SEL_Msk,
-		   0 << DTS_CFGR1_TS1_INTRIG_SEL_Pos);
+	stm32_reg_modify_bits(&dts->CFGR1, DTS_CFGR1_TS1_INTRIG_SEL_Msk,
+			      0 << DTS_CFGR1_TS1_INTRIG_SEL_Pos);
 
 	/* Set sampling time */
-	MODIFY_REG(dts->CFGR1, DTS_CFGR1_TS1_SMP_TIME_Msk,
-		   SAMPLING_TIME << DTS_CFGR1_TS1_SMP_TIME_Pos);
+	stm32_reg_modify_bits(&dts->CFGR1, DTS_CFGR1_TS1_SMP_TIME_Msk,
+			      SAMPLING_TIME << DTS_CFGR1_TS1_SMP_TIME_Pos);
 }
 
 static void stm32_digi_temp_enable(const struct device *dev)

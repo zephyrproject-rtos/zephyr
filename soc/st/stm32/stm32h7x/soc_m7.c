@@ -14,6 +14,7 @@
 #include <zephyr/init.h>
 #include <zephyr/cache.h>
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_rcc.h>
@@ -148,7 +149,7 @@ void soc_early_init_hook(void)
 	 * Applicable only to RevY (REV_ID 0x1003)
 	 */
 	if (LL_DBGMCU_GetRevisionID() == 0x1003) {
-		MODIFY_REG(GPV->AXI_TARG7_FN_MOD, 0x1, 0x1);
+		stm32_reg_set_bits(&GPV->AXI_TARG7_FN_MOD, 0x1);
 	}
 }
 
