@@ -44,6 +44,8 @@ if(CONFIG_BOARD_KIT_PSE84_EVAL_PSE846GPS2DBZC4A_M55 AND CONFIG_CPU_HAS_CUSTOM_FI
   zephyr_sources_ifdef(CONFIG_CPU_CORTEX_M55 mpu_regions.c)
 endif()
 
+zephyr_sources_ifdef(CONFIG_PM power.c)
+
 zephyr_include_directories(.)
 
 if(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "armclang")
