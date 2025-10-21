@@ -316,5 +316,23 @@
 			clock-frequency = <100000>;
 			status = "disabled";
 		};
+
+		can0: can@2010c000 {
+			compatible = "microchip,mpfs-can";
+			reg = <0x2010c000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <56 1>;
+			clock-frequency = <8000000>;
+			status = "disabled";
+		};
+
+		can1: can@2010d000 {
+			compatible = "microchip,mpfs-can";
+			reg = <0x2010d000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <57 1>;
+			clock-frequency = <8000000>;
+			status = "disabled";
+		};
 	};
 };
