@@ -60,6 +60,16 @@ int fputc(int c, FILE *stream);
 int fputs(const char *ZRESTRICT s, FILE *ZRESTRICT stream);
 size_t fwrite(const void *ZRESTRICT ptr, size_t size, size_t nitems,
 	      FILE *ZRESTRICT stream);
+/**
+ * @brief Open file with given name and mode.
+ *
+ * @param filename Name of file
+ * @param mode String declaring more details, as defined in the C standard
+ *
+ * @return FILE* pointer to be used with other C functions on success,
+ * NULL with errno set on failure
+ */
+FILE *fopen(const char *ZRESTRICT filename, const char *ZRESTRICT mode);
 int remove(const char *path);
 #define putc(c, stream) fputc(c, stream)
 #define putchar(c) putc(c, stdout)
