@@ -129,34 +129,34 @@
 	gpio8: gpio@320000 {
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
-		reg = <0x320000 0x1000>;
+		reg = <0x320000 0x1000>, <0x64000 0x80>;
+		reg-names = "gpio", "iopctl_pio";
 		interrupts = <61 0>, <62 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio8>;
-		gpio-port-offest = <8>;
 	};
 
 	gpio9: gpio@322000 {
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
-		reg = <0x322000 0x1000>;
+		reg = <0x322000 0x1000>, <0x64080 0x80>;
+		reg-names = "gpio", "iopctl_pio";
 		interrupts = <63 0>, <64 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio9>;
-		gpio-port-offest = <8>;
 	};
 
 	gpio10: gpio@324000 {
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
-		reg = <0x324000 0x1000>;
+		reg = <0x324000 0x1000>, <0x64100 0x80>;
+		reg-names = "gpio", "iopctl_pio";
 		interrupts = <65 0>, <66 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio10>;
-		gpio-port-offest = <8>;
 	};
 
 	flexcomm17: flexcomm@326000 {
