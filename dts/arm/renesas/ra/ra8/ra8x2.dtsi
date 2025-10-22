@@ -220,7 +220,7 @@
 			port = <11>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			ngpios = <16>;
+			ngpios = <8>;
 			status = "disabled";
 		};
 
@@ -240,7 +240,7 @@
 			port = <13>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			ngpios = <16>;
+			ngpios = <8>;
 			status = "disabled";
 		};
 
