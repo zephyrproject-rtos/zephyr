@@ -139,7 +139,7 @@ manifest:
       groups:
         - tools
     - name: fatfs
-      revision: 18ad3932f7f18b59abf99cb2f8a6cd5d6746cfe0
+      revision: f4ead3bf4a6dab3a07d7b5f5315795c073db568d
       path: modules/fs/fatfs
       groups:
         - fs
