@@ -15,8 +15,8 @@ permissions:
   contents: read
 
 env:
-  DOXYGEN_VERSION: 1.14.0
-  DOXYGEN_MD5SUM: e761a5097ae20ecccfd02041925f102a
+  DOXYGEN_VERSION: 1.15.0
+  DOXYGEN_SHA256SUM: 0ec2e5b2c3cd82b7106d19cb42d8466450730b8cb7a9e85af712be38bf4523a1
   JOB_COUNT: 8
 
 jobs:
@@ -221,7 +221,7 @@ jobs:
           texlive-fonts-recommended texlive-fonts-extra texlive-xetex \
           imagemagick fonts-noto xindy
         wget --no-verbose "https://github.com/doxygen/doxygen/releases/download/Release_${DOXYGEN_VERSION//./_}/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz"
-        echo "${DOXYGEN_MD5SUM}  doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz" | md5sum -c
+        echo "${DOXYGEN_SHA256SUM}  doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz" | sha256sum -c
         if [ $? -ne 0 ]; then
           echo "Failed to verify doxygen tarball"
           exit 1
