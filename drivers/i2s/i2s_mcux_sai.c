@@ -322,6 +322,7 @@ static void i2s_dma_tx_callback(const struct device *dma_dev, void *arg, uint32_
 		I2S_Type *base = (I2S_Type *)dev_cfg->base;
 
 		SAI_TxEnable(base, false);
+		strm->state = I2S_STATE_READY;
 		LOG_WRN("TX is paused.");
 	}
 	goto enabled_exit;
