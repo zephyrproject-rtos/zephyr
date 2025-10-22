@@ -107,7 +107,7 @@ int64_t timeutil_timegm64(const struct tm *tm);
  *
  * @return the corresponding time in the POSIX epoch time scale.  If
  * the time cannot be represented then @c (time_t)-1 is returned and
- * @c errno is set to @c ERANGE`.
+ * @c errno is set to @c ERANGE.
  *
  * @see http://man7.org/linux/man-pages/man3/timegm.3.html
  */

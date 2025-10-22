@@ -337,7 +337,7 @@ struct dns_addrinfo {
  * Status values for the callback.
  */
 enum dns_resolve_status {
-	/** Invalid value for `ai_flags' field */
+	/** Invalid value for `ai_flags` field */
 	DNS_EAI_BADFLAGS    = -1,
 	/** NAME or SERVICE is unknown */
 	DNS_EAI_NONAME      = -2,
@@ -347,17 +347,17 @@ enum dns_resolve_status {
 	DNS_EAI_FAIL        = -4,
 	/** No address associated with NAME */
 	DNS_EAI_NODATA      = -5,
-	/** `ai_family' not supported */
+	/** `ai_family` not supported */
 	DNS_EAI_FAMILY      = -6,
-	/** `ai_socktype' not supported */
+	/** `ai_socktype` not supported */
 	DNS_EAI_SOCKTYPE    = -7,
-	/** SRV not supported for `ai_socktype' */
+	/** SRV not supported for `ai_socktype` */
 	DNS_EAI_SERVICE     = -8,
 	/** Address family for NAME not supported */
 	DNS_EAI_ADDRFAMILY  = -9,
 	/** Memory allocation failure */
 	DNS_EAI_MEMORY      = -10,
-	/** System error returned in `errno' */
+	/** System error returned in `errno` */
 	DNS_EAI_SYSTEM      = -11,
 	/** Argument buffer overflow */
 	DNS_EAI_OVERFLOW    = -12,
