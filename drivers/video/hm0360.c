@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright The Zephyr Project Contributors
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,6 @@
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
-#include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/drivers/video-controls.h>
 #include <zephyr/logging/log.h>
@@ -29,11 +28,6 @@ struct hm0360_config {
 #endif
 };
 
-struct hm0360_reg {
-	uint16_t addr;
-	uint8_t val;
-};
-
 struct hm0360_ctrls {
 	struct video_ctrl hflip;
 	struct video_ctrl vflip;
@@ -47,18 +41,32 @@ struct hm0360_data {
 };
 
 /* hm0360 registers */
-#define HM0360_REG_A16D8(addr)   ((addr) | VIDEO_REG_ADDR16_DATA8)
-#define HM0360_MODEL_ID_H        0x0000
+#define HM0360_REG8(addr)         ((addr) | VIDEO_REG_ADDR16_DATA8)
+#define HM0360_REG16(addr)        ((addr) | VIDEO_REG_ADDR16_DATA16_BE)
+#define HM0360_CCI_ID             HM0360_REG16(0x0000)
+#define HM0360_CCI_RESET          HM0360_REG8(0x0103)
+#define HM0360_CCI_MODE           HM0360_REG8(0x0100)
+#define HM0360_CCI_Orientaton     HM0360_REG8(0x0101)
+#define HM0360_CCI_COMMAND_UPDATE HM0360_REG8(0x0104)
+#define HM0360_CCI_PLL1_CONFIG     HM0360_REG8(0x0300)
+#define HM0360_CCI_H_SUBSAMPLE     HM0360_REG8(0x0380)
+#define HM0360_CCI_V_SUBSAMPLE     HM0360_REG8(0x0381)
+#define HM0360_CCI_BINNING_MODE    HM0360_REG8(0x0382)
+#define HM0360_CCI_WIN_MODE        HM0360_REG8(0x3030)
+#define HM0360_CCI_MAX_INTG        HM0360_REG16(0x2029)
+#define HM0360_CCI_FRAME_LEN_LINES HM0360_REG16(0x0340)
+#define HM0360_CCI_LINE_LEN_PCK    HM0360_REG16(0x0342)
+#define HM0360_CCI_ROI_START_END_H HM0360_REG8(0x2082)
+#define HM0360_CCI_ROI_START_END_V HM0360_REG8(0x2081)
+
 #define HM0360_MODEL_ID_L        0x0001
 #define HM0360_SILICON_REV       0x0002
 #define HM0360_FRAME_COUNT_H     0x0005
 #define HM0360_FRAME_COUNT_L     0x0006
 #define HM0360_PIXEL_ORDER       0x0007
 /* Sensor mode control */
-#define HM0360_MODE_SELECT       0x0100
 #define HM0360_IMG_ORIENTATION   0x0101
 #define HM0360_EMBEDDED_LINE_EN  0x0102
-#define HM0360_SW_RESET          0x0103
 #define HM0360_COMMAND_UPDATE    0x0104
 /* Sensor exposure gain control */
 #define HM0360_INTEGRATION_H     0x0202
@@ -141,7 +149,7 @@ struct hm0360_data {
 #define HM0360_FS_CTRL           0x203B
 #define HM0360_FS_60HZ_H         0x203C
 #define HM0360_FS_60HZ_L         0x203D
-#define HM0360_HM0360_FS_50HZ_H  0x203E
+#define HM0360_FS_50HZ_H         0x203E
 #define HM0360_FS_50HZ_L         0x203F
 #define HM0360_FRAME_CNT_TH      0x205B
 #define HM0360_AE_MEAN           0x205D
@@ -200,7 +208,6 @@ struct hm0360_data {
 
 /* Initialization register structure */
 static const struct video_reg16 hm0360_default_regs[] = {
-	{HM0360_SW_RESET, 0x00},
 	{HM0360_MONO_MODE, 0x00},
 	{HM0360_MONO_MODE_ISP, 0x01},
 	{HM0360_MONO_MODE_SEL, 0x01},
@@ -485,139 +492,174 @@ static const struct video_reg16 hm0360_default_regs[] = {
 	{HM0360_COMMAND_UPDATE, 0x01},
 };
 
-static const struct video_reg16 hm0360_vga_regs[] = {
-	{HM0360_PLL1_CONFIG, 0x08}, /* Core=24MHz PCLKO=24MHz I2C= 12MHz */
-	{HM0360_H_SUBSAMPLE, 0x00},
-	{HM0360_V_SUBSAMPLE, 0x00},
-	{HM0360_BINNING_MODE, 0x00},
-	{HM0360_WIN_MODE, 0x01},
-	{HM0360_MAX_INTG_H, (HM0360_FRAME_LENGTH_VGA - 4) >> 8},
-	{HM0360_MAX_INTG_L, (HM0360_FRAME_LENGTH_VGA - 4) & 0xFF},
-	{HM0360_FRAME_LEN_LINES_H, (HM0360_FRAME_LENGTH_VGA >> 8)},
-	{HM0360_FRAME_LEN_LINES_L, (HM0360_FRAME_LENGTH_VGA & 0xFF)},
-	{HM0360_LINE_LEN_PCK_H, (HM0360_LINE_LEN_PCK_VGA >> 8)},
-	{HM0360_LINE_LEN_PCK_L, (HM0360_LINE_LEN_PCK_VGA & 0xFF)},
-	{HM0360_ROI_START_END_H, 0xF0},
-	{HM0360_ROI_START_END_V, 0xE0},
-	{0x310F, 0x00}, /* puts it in 8bit mode */
-	{0x3112, 0x04}, /* was 0x0c */
-	{HM0360_COMMAND_UPDATE, 0x01},
-};
-
-static const struct video_reg16 hm0360_qvga_regs[] = {
-	{HM0360_PLL1_CONFIG, 0x09}, /* Core=24MHz PCLKO=24MHz I2C= 12MHz */
-	{HM0360_H_SUBSAMPLE, 0x01},
-	{HM0360_V_SUBSAMPLE, 0x01},
-	{HM0360_BINNING_MODE, 0x00},
-	{HM0360_WIN_MODE, 0x01},
-	{HM0360_MAX_INTG_H, (HM0360_FRAME_LENGTH_QVGA - 4) >> 8},
-	{HM0360_MAX_INTG_L, (HM0360_FRAME_LENGTH_QVGA - 4) & 0xFF},
-	{HM0360_FRAME_LEN_LINES_H, (HM0360_FRAME_LENGTH_QVGA >> 8)},
-	{HM0360_FRAME_LEN_LINES_L, (HM0360_FRAME_LENGTH_QVGA & 0xFF)},
-	{HM0360_LINE_LEN_PCK_H, (HM0360_LINE_LEN_PCK_QVGA >> 8)},
-	{HM0360_LINE_LEN_PCK_L, (HM0360_LINE_LEN_PCK_QVGA & 0xFF)},
-	{HM0360_ROI_START_END_H, 0xF0},
-	{HM0360_ROI_START_END_V, 0xE0},
+static const struct video_reg hm0360_qvga_regs[] = {
+	{HM0360_CCI_PLL1_CONFIG, 0x09}, /* Core=24MHz PCLKO=24MHz I2C= 12MHz */
+	{HM0360_CCI_H_SUBSAMPLE, 1},
+	{HM0360_CCI_V_SUBSAMPLE, 1},
+	{HM0360_CCI_BINNING_MODE, 0x00},
+	{HM0360_CCI_WIN_MODE, 0x01},
+	{HM0360_CCI_MAX_INTG, HM0360_FRAME_LENGTH_QVGA - 4},
+	{HM0360_CCI_FRAME_LEN_LINES, HM0360_FRAME_LENGTH_QVGA},
+	{HM0360_CCI_LINE_LEN_PCK, HM0360_LINE_LEN_PCK_QVGA},
+	{HM0360_CCI_ROI_START_END_H, 0xF0},
+	{HM0360_CCI_ROI_START_END_V, 0xE0},
 	{0x310F, 0x00}, /* added to get a good pic */
 	{0x3112, 0x04}, /* was 0x0c */
-	{HM0360_COMMAND_UPDATE, 0x01},
+	{HM0360_CCI_COMMAND_UPDATE, 0x01},
 };
 
-static const struct video_reg16 hm0360_qqvga_regs[] = {
-	{HM0360_PLL1_CONFIG, 0x09}, /* Core = 12MHz PCLKO = 24MHz I2C = 12MHz */
-	{HM0360_H_SUBSAMPLE, 0x02},
-	{HM0360_V_SUBSAMPLE, 0x02},
-	{HM0360_BINNING_MODE, 0x00},
-	{HM0360_WIN_MODE, 0x01},
-	{HM0360_MAX_INTG_H, (HM0360_FRAME_LENGTH_QQVGA - 4) >> 8},
-	{HM0360_MAX_INTG_L, (HM0360_FRAME_LENGTH_QQVGA - 4) & 0xFF},
-	{HM0360_FRAME_LEN_LINES_H, (HM0360_FRAME_LENGTH_QQVGA >> 8)},
-	{HM0360_FRAME_LEN_LINES_L, (HM0360_FRAME_LENGTH_QQVGA & 0xFF)},
-	{HM0360_LINE_LEN_PCK_H, (HM0360_LINE_LEN_PCK_QQVGA >> 8)},
-	{HM0360_LINE_LEN_PCK_L, (HM0360_LINE_LEN_PCK_QQVGA & 0xFF)},
-	{HM0360_ROI_START_END_H, 0xF0},
-	{HM0360_ROI_START_END_V, 0xD0},
-	{HM0360_COMMAND_UPDATE, 0x01},
+static const struct video_reg hm0360_vga_regs[] = {
+	{HM0360_CCI_PLL1_CONFIG, 0x08}, /* Core=24MHz PCLKO=24MHz I2C= 12MHz */
+	{HM0360_CCI_H_SUBSAMPLE, 0x00},
+	{HM0360_CCI_V_SUBSAMPLE, 0x00},
+	{HM0360_CCI_BINNING_MODE, 0x00},
+	{HM0360_CCI_WIN_MODE, 0x01},
+	{HM0360_CCI_MAX_INTG, HM0360_FRAME_LENGTH_VGA - 4},
+	{HM0360_CCI_FRAME_LEN_LINES, HM0360_FRAME_LENGTH_VGA},
+	{HM0360_CCI_LINE_LEN_PCK, HM0360_LINE_LEN_PCK_VGA},
+	{HM0360_CCI_ROI_START_END_H, 0xF0},
+	{HM0360_CCI_ROI_START_END_V, 0xE0},
+	{0x310F, 0x00}, /* added to get a good pic */
+	{0x3112, 0x04}, /* was 0x0c */
+	{HM0360_CCI_COMMAND_UPDATE, 0x01},
 };
 
-#define hm0360_VIDEO_FORMAT_CAP(width, height, format)                                             \
+static const struct video_reg hm0360_qqvga_regs[] = {
+	{HM0360_CCI_PLL1_CONFIG, 0x09}, /* Core=24MHz PCLKO=24MHz I2C= 12MHz */
+	{HM0360_CCI_H_SUBSAMPLE, 0x02},
+	{HM0360_CCI_V_SUBSAMPLE, 0x02},
+	{HM0360_CCI_BINNING_MODE, 0x00},
+	{HM0360_CCI_WIN_MODE, 0x01},
+	{HM0360_CCI_MAX_INTG, HM0360_FRAME_LENGTH_QQVGA - 4},
+	{HM0360_CCI_FRAME_LEN_LINES, HM0360_FRAME_LENGTH_QQVGA},
+	{HM0360_CCI_LINE_LEN_PCK, HM0360_LINE_LEN_PCK_QQVGA},
+	{HM0360_CCI_ROI_START_END_H, 0xF0},
+	{HM0360_CCI_ROI_START_END_V, 0xD0},
+	{HM0360_CCI_COMMAND_UPDATE, 0x01},
+};
+
+#define HM0360_VIDEO_FORMAT_CAP(width, height, format)                                             \
 	{                                                                                          \
 		.pixelformat = (format), .width_min = (width), .width_max = (width),               \
 		.height_min = (height), .height_max = (height), .width_step = 0, .height_step = 0  \
 	}
 
 static const struct video_format_cap fmts[] = {
-	hm0360_VIDEO_FORMAT_CAP(160, 140, VIDEO_PIX_FMT_GREY), /* QQVGA  */
-	hm0360_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_GREY), /* QVGA  */
-	hm0360_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_GREY), /* VGA   */
+	HM0360_VIDEO_FORMAT_CAP(160, 120, VIDEO_PIX_FMT_GREY), /* QQVGA  */
+	HM0360_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_GREY), /* QVGA  */
+	HM0360_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_GREY), /* VGA   */
 	{0}};
+
+static int hm0360_get_caps(const struct device *dev, struct video_caps *caps)
+{
+	caps->format_caps = fmts;
+
+	return 0;
+}
+
+static int hm0360_set_fmt(const struct device *dev, struct video_format *fmt)
+{
+	const struct hm0360_config *config = dev->config;
+	struct hm0360_data *data = dev->data;
+	int ret;
+	size_t idx;
+
+	/* Note: hm0360 only supports grayscale */
+	LOG_DBG("HM01B0 set_fmt: %d x %d, fmt: %s", fmt->width, fmt->height,
+		VIDEO_FOURCC_TO_STR(fmt->pixelformat));
+
+	ret = video_format_caps_index(fmts, fmt, &idx);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (!memcmp(&data->fmt, fmt, sizeof(data->fmt))) {
+		/* nothing to do */
+		return 0;
+	}
+
+	memcpy(&data->fmt, fmt, sizeof(data->fmt));
+
+	switch (fmts[idx].width_min) {
+	case 160: /* QQVGA */
+		ret = video_write_cci_multiregs(&config->bus, hm0360_qqvga_regs,
+						ARRAY_SIZE(hm0360_qqvga_regs));
+		break;
+	case 320: /* QVGA */
+		ret = video_write_cci_multiregs(&config->bus, hm0360_qvga_regs,
+						ARRAY_SIZE(hm0360_qvga_regs));
+		break;
+	case 640: /* VGA */
+		ret = video_write_cci_multiregs(&config->bus, hm0360_vga_regs,
+						ARRAY_SIZE(hm0360_vga_regs));
+		break;
+	default:
+		CODE_UNREACHABLE;
+	}
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
+}
+
+static int hm0360_get_fmt(const struct device *dev, struct video_format *fmt)
+{
+	struct hm0360_data *data = dev->data;
+
+	memcpy(fmt, &data->fmt, sizeof(data->fmt));
+
+	return 0;
+}
 
 static int hm0360_set_frmival(const struct device *dev, struct video_frmival *frmival)
 {
 	const struct hm0360_config *config = dev->config;
 	struct video_format fmt;
 	struct hm0360_data *drv_data = dev->data;
-
 	int ret;
-	uint16_t i = 0U;
 
 	uint32_t pll_cfg = 0;
 	uint32_t osc_div = 0;
 	bool highres = false;
 
-	video_get_format(dev, &fmt);
-
-	/* Set output resolution */
-	while (fmts[i].pixelformat) {
-		if (fmts[i].width_min == fmt.width && fmts[i].height_min == fmt.height) {
-			/* Set output format */
-			switch (fmts[i].width_min) {
-			case 160: /* QQVGA */
-				highres = false;
-				break;
-			case 320: /* QVGA */
-				highres = false;
-				break;
-			case 640: /* VGA */
-				highres = true;
-				break;
-			default:
-				LOG_ERR("Resolution not set!");
-				return -ENOTSUP;
-			}
-		}
-		i++;
+	ret = hm0360_get_fmt(dev, &fmt);
+	if (ret < 0) {
+		LOG_ERR("Can not get format!");
+		return ret;
 	}
 
-	drv_data->cur_frmrate = frmival->numerator;
+	if (fmt.width == 640 && fmt.height == 480) {
+		highres = true;
+	}
 
 	if (frmival->numerator <= 10) {
-		osc_div = 0x03;
-	} else if (frmival->numerator <= 15) {
-		osc_div = (highres == true) ? 0x02 : 0x03;
+		osc_div = highres ? 0x02 : 0x03;
 	} else if (frmival->numerator <= 30) {
-		osc_div = (highres == true) ? 0x01 : 0x02;
+		osc_div = highres ? 0x01 : 0x02;
 	} else {
 		/* Set to the max possible FPS at this resolution. */
-		osc_div = (highres == true) ? 0x00 : 0x01;
+		osc_div = highres ? 0x00 : 0x01;
 	}
 
-	ret = video_read_cci_reg(&config->bus, HM0360_REG_A16D8(HM0360_PLL1_CONFIG), &pll_cfg);
+	ret = video_read_cci_reg(&config->bus, HM0360_CCI_PLL1_CONFIG, &pll_cfg);
 	if (ret < 0) {
 		LOG_ERR("Could not read PLL1 Config");
 		return ret;
 	}
 
-	ret = video_write_cci_reg(&config->bus, HM0360_REG_A16D8(HM0360_PLL1_CONFIG),
-				  (pll_cfg & 0xFC) | osc_div);
+	ret = video_write_cci_reg(&config->bus, HM0360_CCI_PLL1_CONFIG, (pll_cfg & 0xFC) | osc_div);
 	if (ret < 0) {
 		LOG_ERR("Could not set PLL1 Config");
 		return ret;
 	}
 
-	LOG_INF("FrameRate selected: %d", frmival->numerator);
-	LOG_INF("HIRES Selected: %d", highres);
-	LOG_INF("OSC DIV: %d", osc_div);
+	drv_data->cur_frmrate = frmival->numerator;
+
+	LOG_DBG("FrameRate selected: %d", frmival->numerator);
+	LOG_DBG("HIRES Selected: %d", highres);
+	LOG_DBG("OSC DIV: %d", osc_div);
 
 	return 0;
 }
@@ -632,78 +674,9 @@ static int hm0360_get_frmival(const struct device *dev, struct video_frmival *fr
 	return 0;
 }
 
-static int hm0360_get_caps(const struct device *dev, struct video_caps *caps)
-{
-	caps->format_caps = fmts;
-	return 0;
-}
-
-static int hm0360_set_fmt(const struct device *dev, struct video_format *fmt)
-{
-	const struct hm0360_config *config = dev->config;
-	struct hm0360_data *data = dev->data;
-	int ret;
-	uint16_t i = 0U;
-
-	if (fmt->pixelformat != VIDEO_PIX_FMT_GREY) {
-		LOG_ERR("Only Grayscale supported!");
-		return -ENOTSUP;
-	}
-
-	if (!memcmp(&data->fmt, fmt, sizeof(data->fmt))) {
-		/* nothing to do */
-		return 0;
-	}
-
-	memcpy(&data->fmt, fmt, sizeof(data->fmt));
-
-	k_msleep(300);
-	/* Note: hm0360 only supports grayscale */
-	LOG_INF("hm0360_set_fmt: W:%u H:%u fmt:%x", fmt->width, fmt->height, fmt->pixelformat);
-	/* Set output resolution */
-	while (fmts[i].pixelformat) {
-		if (fmts[i].width_min == fmt->width && fmts[i].height_min == fmt->height &&
-		    fmts[i].pixelformat == fmt->pixelformat) {
-			/* Set output format */
-			switch (fmts[i].width_min) {
-			case 160: /* QQVGA */
-				ret = video_write_cci_multiregs16(&config->bus, hm0360_qqvga_regs,
-								  ARRAY_SIZE(hm0360_qqvga_regs));
-				break;
-			case 320: /* QVGA */
-				ret = video_write_cci_multiregs16(&config->bus, hm0360_qvga_regs,
-								  ARRAY_SIZE(hm0360_qvga_regs));
-				break;
-			default: /* VGA */
-				ret = video_write_cci_multiregs16(&config->bus, hm0360_vga_regs,
-								  ARRAY_SIZE(hm0360_vga_regs));
-				break;
-			}
-			if (ret < 0) {
-				LOG_ERR("Resolution not set!");
-				return ret;
-			}
-		}
-		i++;
-	}
-
-	k_msleep(200);
-
-	return 0;
-}
-
-static int hm0360_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct hm0360_data *data = dev->data;
-
-	memcpy(fmt, &data->fmt, sizeof(data->fmt));
-	return 0;
-}
-
 static int hm0360_init_controls(const struct device *dev)
 {
 	int ret;
-	LOG_INF("Controls initialized!\n");
 	struct hm0360_data *drv_data = dev->data;
 	struct hm0360_ctrls *ctrls = &drv_data->ctrls;
 
@@ -713,26 +686,20 @@ static int hm0360_init_controls(const struct device *dev)
 		return ret;
 	}
 
-	ret = video_init_ctrl(&ctrls->vflip, dev, VIDEO_CID_VFLIP,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
-	if (ret) {
-		return ret;
-	}
-
-	return 0;
+	return video_init_ctrl(&ctrls->vflip, dev, VIDEO_CID_VFLIP,
+			       (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
 }
 
 static int hm0360_init(const struct device *dev)
 {
 	const struct hm0360_config *config = dev->config;
 	struct video_frmival frmival;
-
 	int ret;
 
 	struct video_format fmt = {
-		.pixelformat = VIDEO_PIX_FMT_GREY,
-		.width = 320,
-		.height = 240,
+		.pixelformat = fmts[0].pixelformat,
+		.width = fmts[0].width_min,
+		.height = fmts[0].height_min,
 	};
 
 	if (!i2c_is_ready_dt(&config->bus)) {
@@ -752,7 +719,6 @@ static int hm0360_init(const struct device *dev)
 			return ret;
 		}
 	}
-	gpio_pin_set_dt(&config->pwdn, 1);
 #endif
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	/* Reset camera module */
@@ -772,39 +738,23 @@ static int hm0360_init(const struct device *dev)
 	}
 #endif
 
-	/*
-	 * Read product ID from camera. This camera implements the SCCB,
-	 * spec- which *should* be I2C compatible, but in practice does
-	 * not seem to respond when I2C repeated start commands are used.
-	 * To work around this, use a write then a read to interface with
-	 * registers.
-	 */
-	uint32_t Data;
-	uint16_t pid = 0x0000;
+	uint32_t pid = 0x0000;
 
 	/*  Read Product ID and check if PID OK  */
-	ret = video_read_cci_reg(&config->bus, HM0360_REG_A16D8(HM0360_MODEL_ID_H), &Data);
+	ret = video_read_cci_reg(&config->bus, HM0360_CCI_ID, &pid);
 	if (ret < 0) {
 		LOG_ERR("Could not read product ID: %d", ret);
 		return ret;
 	}
-	pid = (Data << 8);
-
-	ret = video_read_cci_reg(&config->bus, HM0360_REG_A16D8(HM0360_MODEL_ID_L), &Data);
-	if (ret < 0) {
-		LOG_ERR("Could not read product ID: %d", ret);
-		return ret;
-	}
-	pid |= Data;
 
 	if (pid != hm0360_PROD_ID) {
 		LOG_ERR("Incorrect product ID: 0x%02X", pid);
 		return -ENODEV;
 	}
-	LOG_ERR("Product ID is: %x", pid);
+	LOG_DBG("Product ID is: %x", pid);
 
 	/* Reset camera registers */
-	ret = video_write_cci_reg(&config->bus, HM0360_REG_A16D8(HM0360_SW_RESET), HM0360_RESET);
+	ret = video_write_cci_reg(&config->bus, HM0360_CCI_RESET, 0x01);
 	if (ret) {
 		LOG_ERR("Could not write reset: %d", ret);
 		return ret;
@@ -827,9 +777,10 @@ static int hm0360_init(const struct device *dev)
 
 	frmival.numerator = 15;
 	frmival.denominator = 1;
-	if (hm0360_set_frmival(dev, &frmival)) {
-		printk("ERROR: Unable to set up video format\n");
-		return false;
+	ret = hm0360_set_frmival(dev, &frmival);
+	if (ret < 0) {
+		LOG_ERR("ERROR: Unable to set up video format");
+		return ret;
 	}
 
 	/* Initialize controls */
@@ -841,9 +792,8 @@ static int hm0360_set_stream(const struct device *dev, bool enable, enum video_b
 	int ret;
 	const struct hm0360_config *config = dev->config;
 
-	ret = video_write_cci_reg(&config->bus, HM0360_REG_A16D8(HM0360_MODE_SELECT),
-				  HM0360_MODE_STREAMING);
-	if (ret) {
+	ret = video_write_cci_reg(&config->bus, HM0360_CCI_MODE, HM0360_MODE_STREAMING);
+	if (ret < 0) {
 		LOG_ERR("Could not set streaming");
 		return ret;
 	}
@@ -862,31 +812,41 @@ static int hm0360_set_ctrl(const struct device *dev, uint32_t id)
 	uint32_t data;
 
 	switch (id) {
-	case VIDEO_CID_TEST_PATTERN:
-		ret = video_write_cci_reg(&config->bus, HM0360_REG_A16D8(HM0360_TEST_PATTERN_MODE),
-					  ctrls->test_pattern.val & 0x01);
-		ret |= video_write_cci_reg(&config->bus, HM0360_REG_A16D8(HM0360_COMMAND_UPDATE),
-					   0x01);
-		return ret;
 	case VIDEO_CID_HFLIP:
-		ret = video_read_cci_reg(&config->bus, HM0360_REG_A16D8(HM0360_IMG_ORIENTATION),
-					 &data);
-		ret |= video_write_cci_reg(&config->bus, HM0360_REG_A16D8(HM0360_IMG_ORIENTATION),
-					   HM0360_SET_HMIRROR(data, ctrls->hflip.val));
-		ret |= video_write_cci_reg(&config->bus, HM0360_REG_A16D8(HM0360_COMMAND_UPDATE),
-					   0x01);
-		return ret;
+		ret = video_read_cci_reg(&config->bus, HM0360_CCI_Orientaton, &data);
+		if (ret < 0) {
+			return ret;
+		}
+		ret = video_write_cci_reg(&config->bus, HM0360_CCI_Orientaton,
+					  HM0360_SET_HMIRROR(data, ctrls->hflip.val));
+		if (ret < 0) {
+			return ret;
+		}
+		ret = video_write_cci_reg(&config->bus, HM0360_CCI_COMMAND_UPDATE, 0x01);
+		if (ret < 0) {
+			return ret;
+		}
+		break;
 	case VIDEO_CID_VFLIP:
-		ret = video_read_cci_reg(&config->bus, HM0360_REG_A16D8(HM0360_IMG_ORIENTATION),
-					 &data);
-		ret |= video_write_cci_reg(&config->bus, HM0360_REG_A16D8(HM0360_IMG_ORIENTATION),
-					   HM0360_SET_VMIRROR(data, ctrls->vflip.val));
-		ret |= video_write_cci_reg(&config->bus, HM0360_REG_A16D8(HM0360_COMMAND_UPDATE),
-					   0x01);
-		return ret;
+		ret = video_read_cci_reg(&config->bus, HM0360_CCI_Orientaton, &data);
+		if (ret < 0) {
+			return ret;
+		}
+		ret = video_write_cci_reg(&config->bus, HM0360_CCI_Orientaton,
+					  HM0360_SET_VMIRROR(data, ctrls->vflip.val));
+		if (ret < 0) {
+			return ret;
+		}
+		ret = video_write_cci_reg(&config->bus, HM0360_CCI_COMMAND_UPDATE, 0x01);
+		if (ret < 0) {
+			return ret;
+		}
+		break;
 	default:
 		return -ENOTSUP;
 	}
+
+	return 0;
 }
 
 static DEVICE_API(video, hm0360_api) = {

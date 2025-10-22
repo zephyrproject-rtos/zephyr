@@ -1,4 +1,4 @@
-# Copyright 2024 NXP
+# Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 config VIDEO_HM0360
