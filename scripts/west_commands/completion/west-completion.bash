@@ -1208,12 +1208,14 @@ __comp_west()
 		update
 		list
 		manifest
+		compare
 		diff
 		status
 		forall
+		grep
+		help
 		config
 		topdir
-		help
 	)
 
 	local zephyr_ext_cmds=(
@@ -1221,16 +1223,23 @@ __comp_west()
 		boards
 		shields
 		build
+		twister
 		sign
 		flash
 		debug
 		debugserver
 		attach
+		rtt
 		zephyr-export
 		spdx
 		blobs
-		twister
+		bindesc
+		robot
+		simulate
 		sdk
+		packages
+		patch
+		gtags
 	)
 
 	local cmds=(${builtin_cmds[*]} ${zephyr_ext_cmds[*]})
