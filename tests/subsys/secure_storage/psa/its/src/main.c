@@ -4,7 +4,49 @@
 #include <zephyr/ztest.h>
 #include <psa/internal_trusted_storage.h>
 
+#include <zephyr/types.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/drivers/flash.h>
+
 /* The flash must be erased after this test suite is run for the write-once entry test to pass. */
+
+#if !defined(CONFIG_BUILD_WITH_TFM) && defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
+
+#define MAX_NUM_PAGES 2
+static const struct device *const fdev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
+
+#define FLASH_ERASE_END_ADDR                                                                       \
+	(FIXED_PARTITION_OFFSET(storage_partition) + FIXED_PARTITION_SIZE(storage_partition))
+
+static void erase_flash(void)
+{
+	int rc;
+	off_t address = FIXED_PARTITION_OFFSET(storage_partition);
+	struct flash_pages_info page_info;
+
+#if defined(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE)
+	const struct flash_parameters *fparam = flash_get_parameters(fdev);
+
+	if (!(flash_params_get_erase_cap(fparam) & FLASH_ERASE_C_EXPLICIT)) {
+		return;
+	}
+#endif
+
+	for (int i = 0; i < MAX_NUM_PAGES && address < FLASH_ERASE_END_ADDR; i++) {
+		rc = flash_get_page_info_by_offs(fdev, address, &page_info);
+
+		zassert_equal(rc, 0, "should succeed");
+
+		TC_PRINT("Erasing %d at %ld\n", page_info.size, page_info.start_offset);
+		rc = flash_erase(fdev, page_info.start_offset, page_info.size);
+		zassert_equal(rc, 0, "should succeed");
+
+		address += page_info.size;
+	}
+}
+
+#endif
+
 ZTEST_SUITE(secure_storage_psa_its, NULL, NULL, NULL, NULL, NULL);
 
 #ifdef CONFIG_SECURE_STORAGE
@@ -117,6 +159,10 @@ ZTEST(secure_storage_psa_its, test_write_once_flag)
 	const psa_storage_uid_t uid = 1 << 16;
 	const uint8_t data[MAX_DATA_SIZE] = {};
 	struct psa_storage_info_t info;
+
+#if !defined(CONFIG_BUILD_WITH_TFM) && defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
+	erase_flash();
+#endif
 
 	ret = psa_its_set(uid, sizeof(data), data, PSA_STORAGE_FLAG_WRITE_ONCE);
 	zassert_equal(ret, PSA_SUCCESS, "%s%d", (ret == PSA_ERROR_NOT_PERMITTED) ?
