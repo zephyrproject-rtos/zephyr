@@ -147,6 +147,7 @@ class HardwareMap:
         'Microsoft',
         'Nuvoton',
         'Espressif',
+        'SecuringHardware.com',
     ]
 
     runner_mapping = {
@@ -159,7 +160,7 @@ class HardwareMap:
             'J-Link OB'
         ],
         'openocd': [
-            'STM32 STLink', '^XDS110.*', 'STLINK-V3'
+            'STM32 STLink', '^XDS110.*', 'STLINK-V3', '^Tigard.*'
         ],
         'dediprog': [
             'TTL232R-3V3',
@@ -353,6 +354,11 @@ class HardwareMap:
                 # TI XDS110 can have multiple serial devices for a single board
                 # assume endpoint 0 is the serial, skip all others
                 if d.manufacturer == 'Texas Instruments' and not d.location.endswith('0'):
+                    continue
+
+                # The Tigard multi-protocol debug tool provides multiple serial devices.
+                # Assume endpoint 0 is the UART, skip all others.
+                if d.manufacturer == 'SecuringHardware.com' and not d.location.endswith('0'):
                     continue
 
                 if d.product is None:
