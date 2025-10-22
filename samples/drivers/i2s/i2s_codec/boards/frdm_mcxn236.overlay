@@ -18,3 +18,13 @@
 &sai1 {
 	mclk-output;
 };
+
+dmic_dev: &micfil {
+	channel0: micfil-channel@0 {
+		status = "okay";
+	};
+
+	channel1: micfil-channel@1 {
+		status = "okay";
+	};
+};
