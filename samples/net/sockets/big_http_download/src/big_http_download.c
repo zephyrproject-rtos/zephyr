@@ -13,19 +13,14 @@
 
 #include "mbedtls/md.h"
 
-#if !defined(__ZEPHYR__) || defined(CONFIG_POSIX_API)
-
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <netdb.h>
 
-#endif
-
 #if defined(__ZEPHYR__)
 
-#include <zephyr/net/socket.h>
 #include <zephyr/kernel.h>
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)

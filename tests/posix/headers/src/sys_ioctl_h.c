@@ -16,7 +16,7 @@
  */
 ZTEST(posix_headers, test_sys_ioctl_h)
 {
-	if (IS_ENABLED(CONFIG_POSIX_API)) {
+	if (IS_ENABLED(CONFIG_POSIX_AEP_CHOICE_PSE53)) {
 		zassert_not_null(ioctl);
 	}
 }
