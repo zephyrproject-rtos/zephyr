@@ -153,7 +153,7 @@ static int siwx91x_gpdma_desc_config(struct siwx19x_gpdma_data *data,
 
 	for (int i = 0; i < config->block_count; i++) {
 		if (block_addr->block_size > max_xfer_size) {
-			LOG_ERR("Maximum xfer size should be <= %d\n", max_xfer_size);
+			LOG_ERR("Maximum xfer size should be <= %d", max_xfer_size);
 			goto free_desc;
 		}
 
@@ -227,18 +227,18 @@ static int siwx91x_gpdma_xfer_configure(const struct device *dev, const struct d
 	data->chan_info[channel].xfer_direction = config->channel_direction;
 
 	if (config->dest_data_size != config->source_data_size) {
-		LOG_ERR("Data size mismatch\n");
+		LOG_ERR("Data size mismatch");
 		return -EINVAL;
 	}
 
 	if (config->dest_burst_length != config->source_burst_length) {
-		LOG_ERR("Burst length mismatch\n");
+		LOG_ERR("Burst length mismatch");
 		return -EINVAL;
 	}
 
 	if (config->source_data_size * config->source_burst_length >= GPDMA_MAX_CHANNEL_FIFO_SIZE) {
 		LOG_ERR("FIFO overflow detected: data_size × burst_length = %d >= %d (maximum "
-			"allowed)\n",
+			"allowed)",
 			config->source_data_size * config->source_burst_length,
 			GPDMA_MAX_CHANNEL_FIFO_SIZE);
 		return -EINVAL;
@@ -307,7 +307,7 @@ static int siwx91x_gpdma_configure(const struct device *dev, uint32_t channel,
 	}
 
 	if (!siwx91x_gpdma_is_priority_valid(config->channel_priority)) {
-		LOG_ERR("Invalid priority values: (valid range: 0-3)\n");
+		LOG_ERR("Invalid priority values: (valid range: 0-3)");
 		return -EINVAL;
 	}
 	gpdma_channel_cfg.channelPrio = config->channel_priority;
@@ -358,7 +358,7 @@ static int siwx91x_gpdma_reload(const struct device *dev, uint32_t channel, uint
 	}
 
 	if (size > (GPDMA_DESC_MAX_TRANSFER_SIZE - data_size)) {
-		LOG_ERR("Maximum xfer size should be <= %d\n",
+		LOG_ERR("Maximum xfer size should be <= %d",
 			GPDMA_DESC_MAX_TRANSFER_SIZE - data_size);
 		return -EINVAL;
 	}
