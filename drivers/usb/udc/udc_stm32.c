@@ -211,7 +211,7 @@ void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)
 
 	/* Re-Enable control endpoints */
 	ep_cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
-	if (ep_cfg && ep_cfg->stat.enabled) {
+	if (ep_cfg != NULL && ep_cfg->stat.enabled) {
 		status = HAL_PCD_EP_Open(&priv->pcd, USB_CONTROL_EP_OUT,
 					 UDC_STM32_EP0_MAX_PACKET_SIZE,
 					 EP_TYPE_CTRL);
@@ -219,7 +219,7 @@ void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)
 	}
 
 	ep_cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_IN);
-	if (ep_cfg && ep_cfg->stat.enabled) {
+	if (ep_cfg != NULL && ep_cfg->stat.enabled) {
 		status = HAL_PCD_EP_Open(&priv->pcd, USB_CONTROL_EP_IN,
 					 UDC_STM32_EP0_MAX_PACKET_SIZE,
 					 EP_TYPE_CTRL);
@@ -372,7 +372,7 @@ static int udc_stm32_tx(const struct device *dev, struct udc_ep_config *ep_cfg,
 
 	udc_ep_set_busy(ep_cfg, true);
 
-	if (ep_cfg->addr == USB_CONTROL_EP_IN && len > 0) {
+	if (ep_cfg->addr == USB_CONTROL_EP_IN && len > 0U) {
 		/* Wait for an empty package from the host.
 		 * This also flushes the TX FIFO to the host.
 		 */
@@ -515,7 +515,7 @@ static void handle_msg_data_out(struct udc_stm32_data *priv, uint8_t epnum, uint
 
 	/* Prepare next transfer for EP if its queue is not empty */
 	buf = udc_buf_peek(ep_cfg);
-	if (buf) {
+	if (buf != NULL) {
 		/*
 		 * Only the driver is allowed to queue transfers on OUT EP0,
 		 * and it should only be doing so once per Control transfer.
@@ -546,7 +546,7 @@ static void handle_msg_data_in(struct udc_stm32_data *priv, uint8_t epnum)
 		return;
 	}
 
-	if (ep == USB_CONTROL_EP_IN && buf->len) {
+	if (ep == USB_CONTROL_EP_IN && buf->len > 0U) {
 		uint32_t len = MIN(UDC_STM32_EP0_MAX_PACKET_SIZE, buf->len);
 
 		status = HAL_PCD_EP_Transmit(&priv->pcd, ep, buf->data, len);
@@ -599,7 +599,7 @@ static void handle_msg_data_in(struct udc_stm32_data *priv, uint8_t epnum)
 	udc_submit_ep_event(dev, buf, 0);
 
 	buf = udc_buf_peek(ep_cfg);
-	if (buf) {
+	if (buf != NULL) {
 		udc_stm32_tx(dev, ep_cfg, buf);
 	}
 }
@@ -634,7 +634,7 @@ static void handle_msg_setup(struct udc_stm32_data *priv)
 
 	udc_ctrl_update_stage(dev, buf);
 
-	if (!buf->len) {
+	if (buf->len == 0U) {
 		return;
 	}
 
@@ -705,7 +705,7 @@ int udc_stm32_init(const struct device *dev)
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	HAL_StatusTypeDef status;
 
-	if (priv->clk_enable && priv->clk_enable()) {
+	if (priv->clk_enable != NULL && priv->clk_enable() != 0) {
 		LOG_ERR("Error enabling clock(s)");
 		return -EIO;
 	}
@@ -821,7 +821,7 @@ static int udc_stm32_ep_mem_config(const struct device *dev,
 	const struct udc_stm32_config *cfg = dev->config;
 	unsigned int words;
 
-	if (!(ep_cfg->addr & USB_EP_DIR_IN) || !USB_EP_GET_IDX(ep_cfg->addr)) {
+	if (!USB_EP_DIR_IS_IN(ep_cfg->addr) || USB_EP_GET_IDX(ep_cfg->addr) == 0U) {
 		return 0;
 	}
 
@@ -872,7 +872,7 @@ static int udc_stm32_enable(const struct device *dev)
 	ret = udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
 				     USB_EP_TYPE_CONTROL,
 				     UDC_STM32_EP0_MAX_PACKET_SIZE, 0);
-	if (ret) {
+	if (ret != 0) {
 		LOG_ERR("Failed enabling ep 0x%02x", USB_CONTROL_EP_OUT);
 		return ret;
 	}
@@ -880,7 +880,7 @@ static int udc_stm32_enable(const struct device *dev)
 	ret |= udc_ep_enable_internal(dev, USB_CONTROL_EP_IN,
 				      USB_EP_TYPE_CONTROL,
 				      UDC_STM32_EP0_MAX_PACKET_SIZE, 0);
-	if (ret) {
+	if (ret != 0) {
 		LOG_ERR("Failed enabling ep 0x%02x", USB_CONTROL_EP_IN);
 		return ret;
 	}
@@ -897,12 +897,12 @@ static int udc_stm32_disable(const struct device *dev)
 
 	irq_disable(UDC_STM32_IRQ);
 
-	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
+	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT) != 0) {
 		LOG_ERR("Failed to disable control endpoint");
 		return -EIO;
 	}
 
-	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN)) {
+	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN) != 0) {
 		LOG_ERR("Failed to disable control endpoint");
 		return -EIO;
 	}
@@ -927,7 +927,7 @@ static int udc_stm32_shutdown(const struct device *dev)
 		/* continue anyway */
 	}
 
-	if (priv->clk_disable && priv->clk_disable()) {
+	if (priv->clk_disable != NULL && priv->clk_disable() != 0) {
 		LOG_ERR("Error disabling clock(s)");
 		/* continue anyway */
 	}
@@ -1009,7 +1009,7 @@ static int udc_stm32_ep_enable(const struct device *dev,
 	}
 
 	ret = udc_stm32_ep_mem_config(dev, ep_cfg, true);
-	if (ret) {
+	if (ret != 0) {
 		return ret;
 	}
 
@@ -1155,7 +1155,7 @@ static int udc_stm32_ep_dequeue(const struct device *dev,
 	udc_stm32_ep_flush(dev, ep_cfg);
 
 	buf = udc_buf_get_all(ep_cfg);
-	if (buf) {
+	if (buf != NULL) {
 		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 	}
 
@@ -1598,7 +1598,7 @@ static int udc_stm32_driver_init0(const struct device *dev)
 			LOG_ERR("Reset GPIO device not ready");
 			return -EINVAL;
 		}
-		if (gpio_pin_configure_dt(&ulpi_reset, GPIO_OUTPUT_INACTIVE)) {
+		if (gpio_pin_configure_dt(&ulpi_reset, GPIO_OUTPUT_INACTIVE) != 0) {
 			LOG_ERR("Couldn't configure reset pin");
 			return -EIO;
 		}
