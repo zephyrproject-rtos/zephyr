@@ -422,8 +422,9 @@ config MAIN_STACK_SIZE
 config ISR_STACK_SIZE
 	default 4096 if 64BIT
 
-config SYSTEM_WORKQUEUE_STACK_SIZE
-	default 4096 if 64BIT
+config SYSTEM_WORKQUEUE_STACK_MIN_SIZE_ARCH
+	def_int 4096 if 64BIT
+	def_int 0
 
 config IDLE_STACK_SIZE
 	default 1024 if 64BIT

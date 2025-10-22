@@ -1609,6 +1609,7 @@ flagged.
         "SRAM2",  # Referenced in a comment in samples/application_development
         "STACK_SIZE",  # Used as an example in the Kconfig docs
         "STD_CPP",  # Referenced in CMake comment
+        "SYSTEM_WORKQUEUE_STACK_MIN_SIZE_",  # Used as an option matching prefix
         "TEST1",
         "TFM_SPM_BACKEND_IPC",  # Used in TFM sample dummy partition - belongs to TFM
         "TFM_SPM_BACKEND_SFN",  # Used in TFM sample dummy partition - belongs to TFM

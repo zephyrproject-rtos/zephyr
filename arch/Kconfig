@@ -1246,3 +1246,9 @@ config ARCH_IPI_LAZY_COPROCESSORS_SAVE
 	help
 	  Select when the architecture has multi-CPU lazy context switching
 	  of coprocessor registers.
+
+config SYSTEM_WORKQUEUE_STACK_MIN_SIZE_ARCH
+	int
+	help
+	  Generic setting for minimum system workqueue stack size
+	  for the architecture.
