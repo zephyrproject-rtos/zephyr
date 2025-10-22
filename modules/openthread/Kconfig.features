@@ -215,6 +215,11 @@ config OPENTHREAD_JOINER
 	  mbedTLS heap than the default value. A minimum recommended value of
 	  CONFIG_MBEDTLS_HEAP_SIZE for the commissioning is 10KB.
 
+config OPENTHREAD_COMMISSIONER_JOINER
+	bool
+	default y
+	depends on OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+
 config OPENTHREAD_LEGACY
 	bool "Legacy network support"
 
@@ -396,6 +401,11 @@ config OPENTHREAD_SRP_SERVER
 	bool "SRP Server support"
 	select OPENTHREAD_NETDATA_PUBLISHER
 	select OPENTHREAD_ECDSA
+
+config OPENTHREAD_SRP
+	bool
+	default y
+	depends on OPENTHREAD_SRP_CLIENT || OPENTHREAD_SRP_SERVER
 
 config OPENTHREAD_SRP_SERVER_FAST_START
 	bool "SRP server fast start"
