@@ -5,13 +5,17 @@
  */
 
 #include <stdio.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <netdb.h>
+#include <poll.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/net/tls_credentials.h>
 #include <zephyr/net/http/server.h>
 #include <zephyr/net/http/service.h>
-#include <zephyr/net/net_ip.h>
-#include <zephyr/net/socket.h>
 #include <zephyr/net/websocket.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_stats.h>
