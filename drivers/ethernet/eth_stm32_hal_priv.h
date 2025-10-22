@@ -113,6 +113,7 @@ struct eth_stm32_hal_dev_cfg {
 	uint8_t rate_pclken_idx;
 #endif
 	const struct pinctrl_dev_config *pcfg;
+	const struct net_eth_mac_config mac_cfg;
 };
 
 /* Device run time data */

@@ -11,6 +11,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/dsa.h>
+#include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/lldp.h>
@@ -109,38 +110,6 @@ void HAL_ETH_RxCpltCallback(ETH_HandleTypeDef *heth_handle)
 	k_sem_give(&dev_data->rx_int_sem);
 }
 
-static void generate_mac(uint8_t *mac_addr)
-{
-#if defined(ETH_STM32_RANDOM_MAC)
-	/* "zephyr,random-mac-address" is set, generate a random mac address */
-	gen_random_mac(mac_addr, ST_OUI_B0, ST_OUI_B1, ST_OUI_B2);
-#else /* Use user defined mac address */
-	mac_addr[0] = ST_OUI_B0;
-	mac_addr[1] = ST_OUI_B1;
-	mac_addr[2] = ST_OUI_B2;
-#if NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))
-	mac_addr[3] = NODE_MAC_ADDR_OCTET(DT_DRV_INST(0), 3);
-	mac_addr[4] = NODE_MAC_ADDR_OCTET(DT_DRV_INST(0), 4);
-	mac_addr[5] = NODE_MAC_ADDR_OCTET(DT_DRV_INST(0), 5);
-#else
-	uint8_t unique_device_ID_12_bytes[12];
-	uint32_t result_mac_32_bits;
-
-	/* Nothing defined by the user, use device id */
-	hwinfo_get_device_id(unique_device_ID_12_bytes, 12);
-	result_mac_32_bits = crc32_ieee((uint8_t *)unique_device_ID_12_bytes, 12);
-	memcpy(&mac_addr[3], &result_mac_32_bits, 3);
-
-	/**
-	 * Set MAC address locally administered bit (LAA) as this is not assigned by the
-	 * manufacturer
-	 */
-	mac_addr[0] |= 0x02;
-
-#endif /* NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))) */
-#endif
-}
-
 static int eth_initialize(const struct device *dev)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
@@ -177,7 +146,42 @@ static int eth_initialize(const struct device *dev)
 		return ret;
 	}
 
-	generate_mac(dev_data->mac_addr);
+	if (cfg->mac_cfg.type != NET_ETH_MAC_NVMEM) {
+#if defined(ETH_STM32_RANDOM_MAC)
+		/* "zephyr,random-mac-address" is set, generate a random mac address */
+		gen_random_mac(dev_data->mac_addr, ST_OUI_B0, ST_OUI_B1, ST_OUI_B2);
+#else /* Use user defined mac address */
+		dev_data->mac_addr[0] = ST_OUI_B0;
+		dev_data->mac_addr[1] = ST_OUI_B1;
+		dev_data->mac_addr[2] = ST_OUI_B2;
+#if NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))
+		dev_data->mac_addr[3] = NODE_MAC_ADDR_OCTET(DT_DRV_INST(0), 3);
+		dev_data->mac_addr[4] = NODE_MAC_ADDR_OCTET(DT_DRV_INST(0), 4);
+		dev_data->mac_addr[5] = NODE_MAC_ADDR_OCTET(DT_DRV_INST(0), 5);
+#else
+		uint8_t unique_device_ID_12_bytes[12];
+		uint32_t result_mac_32_bits;
+
+		/* Nothing defined by the user, use device id */
+		hwinfo_get_device_id(unique_device_ID_12_bytes, 12);
+		result_mac_32_bits = crc32_ieee((uint8_t *)unique_device_ID_12_bytes, 12);
+		memcpy(&dev_data->mac_addr[3], &result_mac_32_bits, 3);
+
+		/**
+		 * Set MAC address locally administered bit (LAA) as this is not assigned by the
+		 * manufacturer
+		 */
+		dev_data->mac_addr[0] |= 0x02;
+
+#endif /* NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))) */
+#endif
+	} else {
+		ret = net_eth_mac_load(&cfg->mac_cfg, dev_data->mac_addr);
+		if (ret < 0) {
+			LOG_ERR("Failed to load MAC (%d)", ret);
+			return ret;
+		}
+	}
 
 	heth->Init.MACAddr = dev_data->mac_addr;
 
@@ -408,6 +412,7 @@ static const struct eth_stm32_hal_dev_cfg eth0_config = {
 							       (mac_clk_ptp), (stm_eth))),
 #endif
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
+	.mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(0),
 };
 
 BUILD_ASSERT(DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, mii)
