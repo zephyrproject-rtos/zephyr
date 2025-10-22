@@ -133,7 +133,7 @@ int scmi_shmem_write_message(const struct device *shmem, struct scmi_message *ms
 		return -EINVAL;
 	}
 
-	if (!(layout->chan_status & SCMI_SHMEM_CHAN_STATUS_BUSY_BIT)) {
+	if (!(layout->chan_status & SCMI_SHMEM_CHAN_STATUS_FREE_BIT)) {
 		return -EBUSY;
 	}
 
@@ -150,7 +150,7 @@ int scmi_shmem_write_message(const struct device *shmem, struct scmi_message *ms
 	}
 
 	/* done, mark channel as busy and proceed */
-	layout->chan_status &= ~SCMI_SHMEM_CHAN_STATUS_BUSY_BIT;
+	layout->chan_status &= ~SCMI_SHMEM_CHAN_STATUS_FREE_BIT;
 
 	return 0;
 }
