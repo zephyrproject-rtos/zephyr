@@ -615,11 +615,6 @@ static void handle_msg_setup(struct udc_stm32_data *priv)
 		return;
 	}
 
-	if ((setup->bmRequestType == 0) && (setup->bRequest == USB_SREQ_SET_ADDRESS)) {
-		/* HAL requires we set the address before submitting status */
-		HAL_PCD_SetAddress(&priv->pcd, setup->wValue);
-	}
-
 	if (udc_ctrl_stage_is_data_out(dev)) {
 		/*  Allocate and feed buffer for data OUT stage */
 		err = udc_stm32_prep_out_ep0_rx(dev, udc_data_stage_length(buf));
@@ -1505,6 +1500,7 @@ static int udc_stm32_driver_init0(const struct device *dev)
 
 	data->caps.rwup = true;
 	data->caps.out_ack = false;
+	data->caps.addr_before_status = true;
 	data->caps.mps0 = UDC_MPS0_64;
 	if (cfg->selected_speed == PCD_SPEED_HIGH) {
 		data->caps.hs = true;
