@@ -61,7 +61,7 @@ void test_timer(clockid_t clock_id, int sigev_notify)
 		(int)value.it_value.tv_nsec);
 
 	clock_gettime(clock_id, &ts);
-	sleep(SECS_TO_SLEEP);
+	k_sleep(K_SECONDS(SECS_TO_SLEEP));
 	clock_gettime(clock_id, &te);
 
 	if (te.tv_nsec >= ts.tv_nsec) {

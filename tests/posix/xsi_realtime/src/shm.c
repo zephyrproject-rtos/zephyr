@@ -7,9 +7,10 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <unistd.h>
+#include <sys/socket.h>
 
 #include <zephyr/kernel.h>
-#include <zephyr/net/socket.h>
 #include <zephyr/sys/fdtable.h>
 
 #include <zephyr/ztest.h>

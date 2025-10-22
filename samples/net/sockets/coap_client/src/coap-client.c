@@ -7,12 +7,18 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_coap_client_sample, LOG_LEVEL_DBG);
 
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <netdb.h>
+#include <poll.h>
+
 #include <errno.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/kernel.h>
 
-#include <zephyr/net/socket.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/udp.h>

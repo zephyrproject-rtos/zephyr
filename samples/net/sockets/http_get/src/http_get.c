@@ -6,18 +6,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
-#if !defined(__ZEPHYR__)
-
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <netdb.h>
 
-#else
+#if defined(__ZEPHYR__)
 
-#include <zephyr/net/socket.h>
 #include <zephyr/kernel.h>
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)

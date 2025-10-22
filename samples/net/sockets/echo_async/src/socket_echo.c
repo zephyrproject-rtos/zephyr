@@ -8,9 +8,6 @@
 #include <stdbool.h>
 #include <errno.h>
 #include <stdlib.h>
-
-#if !defined(__ZEPHYR__)
-
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -18,12 +15,12 @@
 #include <fcntl.h>
 #include <poll.h>
 
+#if !defined(__ZEPHYR__)
+
 #define USE_IPV6
 
 #else
 
-#include <fcntl.h>
-#include <zephyr/net/socket.h>
 #include <zephyr/kernel.h>
 
 #include "net_sample_common.h"
