@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		pwm-test = &tcc3;
+	};
+};
+
+&tcc3 {
+	compatible = "microchip,tcc-g1-pwm";
+	status = "okay";
+	#pwm-cells = < 0x3 >;
+	pinctrl-0 = < &tcc3_pwm_default >;
+	pinctrl-names = "default";
+	prescaler = < 0x1 >;
+};
+
+&tcc0 {
+	status = "disabled";
+};
+
+&pinctrl {
+	tcc3_pwm_default: tcc3_pwm_default {
+		group1 {
+			pinmux = <PB17F_TCC3_WO1>;
+		};
+	};
+};
