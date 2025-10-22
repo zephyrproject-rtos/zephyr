@@ -168,7 +168,7 @@
 			compatible = "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
-			#address-cells = <1>;
+			#address-cells = <0>;
 			reg = <0x58000000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB4, 1)>;
 			num-lines = <96>;
