@@ -12,3 +12,6 @@ family:
     - name: sama7d65d2g
     - name: sama7d65d2gn8
     - name: sama7d65d5m
+  - name: sama7g5
+    socs:
+    - name: sama7g54
