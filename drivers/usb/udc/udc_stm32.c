@@ -1170,8 +1170,8 @@ static enum udc_bus_speed udc_stm32_device_speed(const struct device *dev)
 
 	/*
 	 * N.B.: pcd.Init.speed is used here on purpose instead
-	 * of cfg->selected_speed because HAL updates this field
-	 * after USB enumeration to reflect actual bus speed.
+	 * of udc_stm32_config::selected_speed because HAL updates
+	 * this field after USB enumeration to reflect actual bus speed.
 	 */
 
 	if (priv->pcd.Init.speed == PCD_SPEED_HIGH) {
