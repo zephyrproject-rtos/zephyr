@@ -74,7 +74,7 @@ static bool scmi_mbox_channel_is_free(const struct device *transport,
 	struct scmi_mbox_channel *mbox_chan = chan->data;
 
 	return scmi_shmem_channel_status(mbox_chan->shmem) &
-		SCMI_SHMEM_CHAN_STATUS_BUSY_BIT;
+		SCMI_SHMEM_CHAN_STATUS_FREE_BIT;
 }
 
 static int scmi_mbox_setup_chan(const struct device *transport,

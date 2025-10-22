@@ -16,7 +16,7 @@
 #include <zephyr/arch/cpu.h>
 #include <errno.h>
 
-#define SCMI_SHMEM_CHAN_STATUS_BUSY_BIT BIT(0)
+#define SCMI_SHMEM_CHAN_STATUS_FREE_BIT BIT(0)
 #define SCMI_SHMEM_CHAN_FLAG_IRQ_BIT BIT(0)
 
 struct scmi_shmem_layout {
