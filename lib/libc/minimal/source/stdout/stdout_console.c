@@ -38,11 +38,6 @@ static inline int z_vrfy_zephyr_fputc(int c, FILE *stream)
 #include <zephyr/syscalls/zephyr_fputc_mrsh.c>
 #endif
 
-int fputc(int c, FILE *stream)
-{
-	return zephyr_fputc(c, stream);
-}
-
 int fputs(const char *ZRESTRICT s, FILE *ZRESTRICT stream)
 {
 	int len = strlen(s);
@@ -56,13 +51,13 @@ int fputs(const char *ZRESTRICT s, FILE *ZRESTRICT stream)
 #undef putc
 int putc(int c, FILE *stream)
 {
-	return zephyr_fputc(c, stream);
+	return fputc(c, stream);
 }
 
 #undef putchar
 int putchar(int c)
 {
-	return zephyr_fputc(c, stdout);
+	return fputc(c, stdout);
 }
 
 size_t z_impl_zephyr_fwrite(const void *ZRESTRICT ptr, size_t size,

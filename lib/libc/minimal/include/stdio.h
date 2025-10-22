@@ -78,6 +78,7 @@ FILE *fopen(const char *ZRESTRICT filename, const char *ZRESTRICT mode);
  * @return 0 on success; EOF with errno set on failure
  */
 int fclose(FILE *stream);
+int fputc(int c, FILE *stream);
 int remove(const char *path);
 #define putc(c, stream) fputc(c, stream)
 #define putchar(c) putc(c, stdout)

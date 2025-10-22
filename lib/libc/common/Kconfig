@@ -127,6 +127,12 @@ config COMMON_LIBC_FCLOSE
 	help
 	  Common implementation of fclose().
 
+config COMMON_LIBC_FPUTC
+	bool "Common C library fputc"
+	default y if ZVFS
+	help
+	  Common implementation of fputc().
+
 config COMMON_LIBC_REMOVE
 	bool "Common C library remove"
 	depends on !SEMIHOST
