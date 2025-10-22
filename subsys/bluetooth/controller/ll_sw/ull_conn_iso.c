@@ -979,6 +979,17 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 				lost_cig_events = 1U;
 				cis_offset = cis->offset + iso_interval_us - acl_latency_us;
 			}
+			/* Correct the cis_offset to next CIG event, if the ACL and CIG overlaps.
+			 * ACL radio event at the instant was skipped and a relative CIS offset at
+			 * the current ACL event has been calculated. But the current ACL event
+			 * is partially overlapping with the other of CISes (not yet established) in
+			 * the CIG event. Hence, lets establish the CIS at the next ISO interval so
+			 * as to have a positive CIG event offset.
+			 */
+			if (cis_offset < (cig->sync_delay - cis->sync_delay)) {
+				cis_offset += iso_interval_us;
+				lost_cig_events++;
+			}
 
 			cis->lll.event_count_prepare += lost_cig_events;
 
