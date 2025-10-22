@@ -5,9 +5,9 @@
 
 config SOC_SERIES_SAMA7G5
 	bool
-	select SOC_FAMILY_MICROCHIP_SAM
+	select SOC_FAMILY_MICROCHIP_SAMA7
 	help
-	  Enable support for Microchip SAM Microprocessors.
+	  Enable support for Microchip SAMA7G5 Cortex-A Microprocessors.
 
 config SOC_SERIES
 	default "sama7g5" if SOC_SERIES_SAMA7G5
