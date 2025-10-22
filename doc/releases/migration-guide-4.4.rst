@@ -807,6 +807,10 @@ OpenThread
   * ``CONFIG_CUSTOM_OPENTHREAD_SECURITY`` to
     :kconfig:option:`CONFIG_OPENTHREAD_SECURITY_CUSTOM_CONFIG`
 
+* :kconfig:option:`CONFIG_OPENTHREAD_CRYPTO_PSA` no more depends on
+  :kconfig:option:`CONFIG_PSA_CRYPTO_CLIENT`, but instead selects
+  :kconfig:option:`CONFIG_PSA_CRYPTO`.
+
 Trusted Firmware-M
 ==================
 
