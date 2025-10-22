@@ -1274,6 +1274,7 @@ Documentation Infrastructure:
     - martinjaeger
     - str4t0m
   files:
+    - boards/shields/canis_canpico/
     - boards/shields/mcp2515/
     - boards/shields/tcan4550evm/
     - doc/connectivity/canbus/
