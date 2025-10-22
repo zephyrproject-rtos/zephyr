@@ -18,4 +18,5 @@ supported:
   - spi
   - counter
   - entropy
+  - crypto
 vendor: espressif
