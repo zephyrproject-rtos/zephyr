@@ -241,6 +241,7 @@ endif # OPENTHREAD_SECURITY_DEFAULT_CONFIG
 
 config OPENTHREAD_CRYPTO_PSA
 	bool "PSA Crypto API"
+	default y
 	select PSA_CRYPTO
 	select SECURE_STORAGE if !BUILD_WITH_TFM
 	select OPENTHREAD_PLATFORM_KEY_REF if !OPENTHREAD_COPROCESSOR_RCP
@@ -248,6 +249,9 @@ config OPENTHREAD_CRYPTO_PSA
 	help
 	  Enable crypto backend library implementation based on PSA Crypto API
 	  instead of the default, using Mbed TLS.
+	  Warning: disabling this Kconfig (enabled by default) and falling back
+	  to legacy Mbed TLS crypto API is deprecated and will be removed in the
+	  future.
 
 config OPENTHREAD_MBEDTLS_LIB_NAME
 	string "mbedtls lib name"

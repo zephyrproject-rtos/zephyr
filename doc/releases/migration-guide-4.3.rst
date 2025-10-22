@@ -530,6 +530,8 @@ OpenThread
   This requires the backend for Secure Storage (Settings, ZMS or a custom one)
   to be configured.
 
+* :kconfig:option:`CONFIG_OPENTHREAD_CRYPTO_PSA` is now enabled by default.
+
 Trusted Firmware-M
 ==================
 
