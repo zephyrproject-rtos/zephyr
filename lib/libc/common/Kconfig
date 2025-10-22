@@ -114,6 +114,13 @@ config COMMON_LIBC_THRD
 	help
 	  Common implementation of C11 <threads.h> API.
 
+config COMMON_LIBC_FOPEN
+	bool "Common C library fopen"
+	default y if ZVFS
+	select ZVFS_DEFAULT_FILE_VMETHODS
+	help
+	  Common implementation of fopen().
+
 config COMMON_LIBC_REMOVE
 	bool "Common C library remove"
 	depends on !SEMIHOST
