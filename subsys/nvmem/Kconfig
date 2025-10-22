@@ -11,6 +11,11 @@ config NVMEM_EEPROM
 	default y
 	depends on EEPROM
 
+config NVMEM_FUSE
+	bool "NVMEM support for fuse handling devices"
+	default y
+	depends on FUSE
+
 module = NVMEM
 module-str = nvmem
 source "subsys/logging/Kconfig.template.log_config"
