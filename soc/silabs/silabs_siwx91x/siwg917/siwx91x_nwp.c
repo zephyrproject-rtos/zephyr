@@ -330,6 +330,11 @@ static int siwx91x_get_nwp_config(const struct device *dev,
 				SL_SI91X_EXT_FEAT_FRONT_END_SWITCH_PINS_ULP_GPIO_4_5_0 |
 				SL_SI91X_EXT_FEAT_FRONT_END_INTERNAL_SWITCH |
 				SL_SI91X_EXT_FEAT_XTAL_CLK,
+		},
+		.ta_pool = {
+			.tx_ratio_in_buffer_pool     = 1,
+			.rx_ratio_in_buffer_pool     = 1,
+			.global_ratio_in_buffer_pool = 1
 		}
 	};
 
