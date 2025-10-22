@@ -19,8 +19,6 @@
 
 #if defined(CONFIG_PINCTRL_NXP_IOCON)
 #include <fsl_iopctl.h>
-/* Use IOCON to configure electrical characteristic, set PORT_Type as void. */
-#define PORT_Type void
 #endif
 
 #if (defined(FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT) && \
@@ -47,9 +45,12 @@ struct gpio_mcux_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
 	GPIO_Type *gpio_base;
+#if defined(CONFIG_PINCTRL_NXP_IOCON)
+	mem_addr_t port_base;
+#else
 	PORT_Type *port_base;
+#endif /* defined(CONFIG_PINCTRL_NXP_IOCON) */
 	unsigned int flags;
-	uint32_t port_no;
 };
 
 struct gpio_mcux_data {
@@ -64,7 +65,6 @@ static int gpio_mcux_iopctl_configure(const struct device *dev, gpio_pin_t pin, 
 {
 	const struct gpio_mcux_config *config = dev->config;
 	GPIO_Type *gpio_base = config->gpio_base;
-	uint32_t port_no = config->port_no;
 	uint32_t pinconfig = 0;
 
 	if (((flags & GPIO_INPUT) != 0) && ((flags & GPIO_OUTPUT) != 0)) {
@@ -125,7 +125,7 @@ static int gpio_mcux_iopctl_configure(const struct device *dev, gpio_pin_t pin, 
 		return -ENOTSUP;
 	}
 
-	IOPCTL_PinMuxSet(port_no, pin, pinconfig);
+	*((volatile uint32_t *)(config->port_base + (pin * 4))) = pinconfig;
 
 	return 0;
 }
@@ -501,9 +501,20 @@ static DEVICE_API(gpio, gpio_mcux_driver_api) = {
 		irq_enable(DT_INST_IRQN(n));                                                       \
 	} while (false)
 
+#if defined(CONFIG_PINCTRL_NXP_IOCON)
+
+#define GPIO_PERIPH_BASE_DEFINE(n)                                                                 \
+		.gpio_base = (GPIO_Type *)DT_INST_REG_ADDR_BY_NAME(n, gpio),                       \
+		.port_base = DT_INST_REG_ADDR_BY_NAME(n, iopctl_pio),
+
+#else /* !defined(CONFIG_PINCTRL_NXP_IOCON) */
+
 #define GPIO_PORT_BASE_ADDR(n) DT_REG_ADDR(DT_INST_PHANDLE(n, nxp_kinetis_port))
-#define GPIO_PORT_NUMBER(n) COND_CODE_1(DT_INST_NODE_HAS_PROP(n, gpio_port_offest),	\
-						(DT_INST_PROP(n, gpio_port_offest) + n), (n))	\
+
+#define GPIO_PERIPH_BASE_DEFINE(n)                                                                 \
+		.gpio_base = (GPIO_Type *)DT_INST_REG_ADDR(n),                                     \
+		.port_base = (PORT_Type *)GPIO_PORT_BASE_ADDR(n),
+#endif
 
 #define GPIO_DEVICE_INIT_MCUX(n)                                                                   \
 	static int gpio_mcux_port##n##_init(const struct device *dev);                             \
@@ -513,11 +524,9 @@ static DEVICE_API(gpio, gpio_mcux_driver_api) = {
 			{                                                                          \
 				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
 			},                                                                         \
-		.gpio_base = (GPIO_Type *)DT_INST_REG_ADDR(n),                                     \
-		.port_base = (PORT_Type *)GPIO_PORT_BASE_ADDR(n),                                  \
+		GPIO_PERIPH_BASE_DEFINE(n)                                                         \
 		.flags = UTIL_AND(UTIL_OR(DT_INST_IRQ_HAS_IDX(n, 0), GPIO_HAS_SHARED_IRQ),         \
 				  GPIO_INT_ENABLE),                                                \
-		.port_no = GPIO_PORT_NUMBER(n),						\
 	};                                                                                         \
                                                                                                    \
 	static struct gpio_mcux_data gpio_mcux_port##n##_data;                                     \
