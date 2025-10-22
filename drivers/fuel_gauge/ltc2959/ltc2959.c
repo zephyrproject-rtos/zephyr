@@ -461,7 +461,7 @@ static int ltc2959_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 	int ret;
 
 	switch (prop) {
-	case FUEL_GAUGE_STATUS:
+	case FUEL_GAUGE_STATUS: {
 		uint8_t raw_st;
 
 		ret = i2c_reg_read_byte_dt(&cfg->i2c, LTC2959_REG_STATUS, &raw_st);
@@ -473,8 +473,8 @@ static int ltc2959_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		val->fg_status = raw_st;
 
 		break;
-
-	case FUEL_GAUGE_VOLTAGE:
+	}
+	case FUEL_GAUGE_VOLTAGE: {
 		uint16_t raw_voltage;
 
 		ret = ltc2959_read16(dev, LTC2959_REG_VOLTAGE_MSB, &raw_voltage);
@@ -490,8 +490,8 @@ static int ltc2959_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		val->voltage = raw_voltage * LTC2959_VOLT_UV_SF;
 
 		return 0;
-
-	case FUEL_GAUGE_CURRENT:
+	}
+	case FUEL_GAUGE_CURRENT: {
 		uint16_t raw_current;
 
 		ret = ltc2959_read16(dev, LTC2959_REG_CURRENT_MSB, &raw_current);
@@ -506,8 +506,8 @@ static int ltc2959_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		val->current = current_raw * cfg->current_lsb_ua;
 
 		break;
-
-	case FUEL_GAUGE_TEMPERATURE:
+	}
+	case FUEL_GAUGE_TEMPERATURE: {
 		uint16_t raw_temp;
 
 		ret = ltc2959_read16(dev, LTC2959_REG_TEMP_MSB, &raw_temp);
@@ -525,8 +525,8 @@ static int ltc2959_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		 */
 		val->temperature = ((uint32_t)raw_temp * LTC2959_TEMP_K_SF) >> 16;
 		break;
-
-	case FUEL_GAUGE_REMAINING_CAPACITY:
+	}
+	case FUEL_GAUGE_REMAINING_CAPACITY: {
 		uint32_t acr;
 
 		ret = ltc2959_read_acr(dev, &acr);
@@ -537,7 +537,7 @@ static int ltc2959_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 
 		val->remaining_capacity = ltc2959_counts_to_uah(acr, cfg);
 		break;
-
+	}
 	case FUEL_GAUGE_ADC_MODE:
 		ret = ltc2959_get_adc_mode(dev, &val->adc_mode);
 		break;
@@ -636,7 +636,7 @@ static int ltc2959_set_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		ret = ltc2959_set_cc_config(dev, val.cc_config);
 		break;
 
-	case FUEL_GAUGE_REMAINING_CAPACITY:
+	case FUEL_GAUGE_REMAINING_CAPACITY: {
 		uint32_t counts = ltc2959_uah_to_counts(val.remaining_capacity, cfg);
 
 		if (counts == LTC2959_ACR_CLR) {
@@ -644,7 +644,7 @@ static int ltc2959_set_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		}
 		ret = ltc2959_write_acr(dev, counts);
 		break;
-
+	}
 	default:
 		ret = -ENOTSUP;
 		break;
