@@ -443,3 +443,9 @@ dvp_20pin_interface: &video_sdma {};
 	pinctrl-0 = <&pinmux_sai1>;
 	pinctrl-names = "default";
 };
+
+&micfil {
+	status = "okay";
+	pinctrl-0 = <&pinmux_micfil>;
+	pinctrl-names = "default";
+};
