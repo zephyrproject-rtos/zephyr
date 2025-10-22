@@ -40,7 +40,7 @@ manifest:
     - name: ambiqhal_ambiq
       remote: github_ambiqmicro
       path: modules/hal/ambiq
-      revision: 73d35688855551b8ff84ecb1d1227886d038ef58
+      revision: 36e2640580944fad174bf75f44e9308f7181a04b
       groups:
         - hal
     - name: babblesim_base
@@ -319,7 +319,9 @@ manifest:
       revision: fb00b383072518c918e2258b0916c996f2d4eebe
       path: modules/lib/loramac-node
     - name: lvgl
-      revision: b03edc8e6282a963cd312cd0b409eb5ce263ea75
+      remote: github_ambiqmicro
+      repo-path: LVGL
+      revision: 7fa075871f2dd746978d0d69bf1623fb689e1219
       path: modules/lib/gui/lvgl
     - name: mbedtls
       revision: 85440ef5fffa95d0e9971e9163719189cf34d979
