@@ -32,6 +32,17 @@
 #define PORT_HAS_NO_INTERRUPT
 #endif
 
+#define GPIO_IRQ_CTRL_BY_PORT 0
+#define GPIO_IRQ_CTRL_BY_GPIO 1
+
+#if (defined(GPIO_MCUX_HAS_INTERRUPT_CHANNEL_SELECT) || defined(PORT_HAS_NO_INTERRUPT))
+#define GPIO_IRQ_CTRL GPIO_IRQ_CTRL_BY_GPIO
+#endif
+
+#if (!(defined(CONFIG_PINCTRL_NXP_IOCON)) && !(defined(PORT_HAS_NO_INTERRUPT)))
+#define GPIO_IRQ_CTRL GPIO_IRQ_CTRL_BY_PORT
+#endif
+
 struct gpio_mcux_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
@@ -261,8 +272,7 @@ static int gpio_mcux_port_toggle_bits(const struct device *dev, uint32_t mask)
 	return 0;
 }
 
-#if !(defined(CONFIG_PINCTRL_NXP_IOCON))
-#if !(defined(PORT_HAS_NO_INTERRUPT))
+#if (GPIO_IRQ_CTRL == GPIO_IRQ_CTRL_BY_PORT)
 static uint32_t get_port_pcr_irqc_value_from_flags(const struct device *dev, uint32_t pin,
 						   enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
@@ -296,10 +306,9 @@ static uint32_t get_port_pcr_irqc_value_from_flags(const struct device *dev, uin
 
 	return PORT_PCR_IRQC(port_interrupt);
 }
-#endif /* !(defined(PORT_HAS_NO_INTERRUPT)) */
-#endif /* !(defined(CONFIG_PINCTRL_NXP_IOCON)) */
+#endif /* (GPIO_IRQ_CTRL == GPIO_IRQ_CTRL_BY_PORT) */
 
-#if (defined(GPIO_MCUX_HAS_INTERRUPT_CHANNEL_SELECT) || defined(PORT_HAS_NO_INTERRUPT))
+#if (GPIO_IRQ_CTRL == GPIO_IRQ_CTRL_BY_GPIO)
 
 #define GPIO_MCUX_INTERRUPT_DISABLED     0
 #define GPIO_MCUX_INTERRUPT_LOGIC_0      0x8
@@ -341,21 +350,22 @@ static uint32_t get_gpio_icr_irqc_value_from_flags(const struct device *dev, uin
 
 	return GPIO_ICR_IRQC(gpio_interrupt);
 }
-#endif /* (defined(GPIO_MCUX_HAS_INTERRUPT_CHANNEL_SELECT) */
+#endif /* (GPIO_IRQ_CTRL == GPIO_IRQ_CTRL_BY_GPIO) */
 
 static int gpio_mcux_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
 					     enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	const struct gpio_mcux_config *config = dev->config;
 	GPIO_Type *gpio_base = config->gpio_base;
-#if !(defined(CONFIG_PINCTRL_NXP_IOCON))
+
+#if (GPIO_IRQ_CTRL == GPIO_IRQ_CTRL_BY_PORT)
 	PORT_Type *port_base = config->port_base;
 
 	/* Check for an invalid pin number */
 	if (pin >= ARRAY_SIZE(port_base->PCR)) {
 		return -EINVAL;
 	}
-#endif
+#endif /* (GPIO_IRQ_CTRL == GPIO_IRQ_CTRL_BY_PORT) */
 
 	/* Check for an invalid pin configuration */
 	if ((mode != GPIO_INT_MODE_DISABLED) && ((gpio_base->PDDR & BIT(pin)) != 0)) {
@@ -367,15 +377,15 @@ static int gpio_mcux_pin_interrupt_configure(const struct device *dev, gpio_pin_
 		return -ENOTSUP;
 	}
 
-#if (defined(GPIO_MCUX_HAS_INTERRUPT_CHANNEL_SELECT) || defined(PORT_HAS_NO_INTERRUPT))
+#if (GPIO_IRQ_CTRL == GPIO_IRQ_CTRL_BY_GPIO)
 	uint32_t icr = get_gpio_icr_irqc_value_from_flags(dev, pin, mode, trig);
 
 	gpio_base->ICR[pin] = (gpio_base->ICR[pin] & ~GPIO_ICR_IRQC_MASK) | icr;
-#elif !(defined(PORT_HAS_NO_INTERRUPT))
+#elif (GPIO_IRQ_CTRL == GPIO_IRQ_CTRL_BY_PORT)
 	uint32_t pcr = get_port_pcr_irqc_value_from_flags(dev, pin, mode, trig);
 
 	port_base->PCR[pin] = (port_base->PCR[pin] & ~PORT_PCR_IRQC_MASK) | pcr;
-#endif /* defined(GPIO_MCUX_HAS_INTERRUPT_CHANNEL_SELECT) || defined(PORT_HAS_NO_INTERRUPT) */
+#endif /* GPIO_IRQ_CTRL */
 
 	return 0;
 }
@@ -394,12 +404,12 @@ static void gpio_mcux_port_isr(const struct device *dev)
 	struct gpio_mcux_data *data = dev->data;
 	uint32_t int_status;
 
-#if (defined(GPIO_MCUX_HAS_INTERRUPT_CHANNEL_SELECT) || defined(PORT_HAS_NO_INTERRUPT))
+#if (GPIO_IRQ_CTRL == GPIO_IRQ_CTRL_BY_GPIO)
 	int_status = config->gpio_base->ISFR[0];
 
 	/* Clear the gpio interrupts */
 	config->gpio_base->ISFR[0] = int_status;
-#elif !(defined(PORT_HAS_NO_INTERRUPT))
+#elif (GPIO_IRQ_CTRL == GPIO_IRQ_CTRL_BY_PORT)
 	int_status = config->port_base->ISFR;
 
 	/* Clear the port interrupts */
@@ -407,7 +417,7 @@ static void gpio_mcux_port_isr(const struct device *dev)
 #else
 	int_status = 0U;
 	ARG_UNUSED(config);
-#endif /* defined(GPIO_MCUX_HAS_INTERRUPT_CHANNEL_SELECT) || defined(PORT_HAS_NO_INTERRUPT) */
+#endif /* GPIO_IRQ_CTRL */
 
 	gpio_fire_callbacks(&data->callbacks, dev, int_status);
 }
