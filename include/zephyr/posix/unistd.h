@@ -10,9 +10,7 @@
 #include <sys/types.h>
 #include <time.h>
 
-#ifdef CONFIG_POSIX_API
 #include <zephyr/fs/fs.h>
-#endif
 #include <zephyr/posix/sys/confstr.h>
 #include <zephyr/posix/sys/sysconf.h>
 
@@ -22,7 +20,6 @@
 extern "C" {
 #endif
 
-#ifdef CONFIG_POSIX_API
 /* File related operations */
 int close(int file);
 ssize_t write(int file, const void *buffer, size_t count);
@@ -45,8 +42,6 @@ int rmdir(const char *path);
 FUNC_NORETURN void _exit(int status);
 
 int gethostname(char *buf, size_t len);
-
-#endif /* CONFIG_POSIX_API */
 
 #ifdef CONFIG_POSIX_C_LIB_EXT
 int getopt(int argc, char *const argv[], const char *optstring);

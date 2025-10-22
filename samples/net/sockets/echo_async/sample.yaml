@@ -9,9 +9,7 @@ common:
     - net
     - socket
 tests:
-  sample.net.sockets.echo_async:
-    extra_configs:
-      - CONFIG_POSIX_API=y
+  sample.net.sockets.echo_async: {}
   sample.net.sockets.echo_async.wifi.nrf70dk:
     extra_args:
       - SNIPPET=wifi-ipv4
