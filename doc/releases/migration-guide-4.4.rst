@@ -809,6 +809,16 @@ Settings
 Modules
 *******
 
+OpenThread
+==========
+
+* The following Kconfigs options were renamed:
+
+  * ``CONFIG_OPENTHREAD_MBEDTLS_CHOICE`` to
+    :kconfig:option:`CONFIG_OPENTHREAD_SECURITY_DEFAULT_CONFIG`
+  * ``CONFIG_CUSTOM_OPENTHREAD_SECURITY`` to
+    :kconfig:option:`CONFIG_OPENTHREAD_SECURITY_CUSTOM_CONFIG`
+
 Trusted Firmware-M
 ==================
 
