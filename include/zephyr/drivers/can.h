@@ -1455,9 +1455,9 @@ static inline int z_impl_can_get_state(const struct device *dev, enum can_state 
  */
 __syscall int can_recover(const struct device *dev, k_timeout_t timeout);
 
-#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 static inline int z_impl_can_recover(const struct device *dev, k_timeout_t timeout)
 {
+#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
 	if (api->recover == NULL) {
@@ -1465,8 +1465,10 @@ static inline int z_impl_can_recover(const struct device *dev, k_timeout_t timeo
 	}
 
 	return api->recover(dev, timeout);
-}
+#else /* !CONFIG_CAN_MANUAL_RECOVERY_MODE */
+	return -ENOSYS;
 #endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
+}
 
 /**
  * @brief Set a callback for CAN controller state change events
