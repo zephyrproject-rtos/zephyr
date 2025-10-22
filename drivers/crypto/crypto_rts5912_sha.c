@@ -67,7 +67,7 @@ static void rts5912_sha256_start(const struct device *dev)
 	sha2dma_regs->msk_block = 0x0;
 }
 
-static int rts5912_sha256_process(const struct device *dev, uint8_t *input, size_t blk_size)
+static int rts5912_sha256_process(const struct device *dev, const uint8_t *input, size_t blk_size)
 {
 	const struct rts5912_sha_config *cfg = dev->config;
 	volatile struct sha2_type *sha2_regs = (volatile struct sha2_type *)cfg->cfg_sha2_regs;
