@@ -731,17 +731,15 @@ int bt_sdp_get_proto_param(const struct net_buf *buf, uint16_t proto,
  *
  *  @param buf Original buffered raw record data.
  *  @param proto Known protocol to be checked like RFCOMM or L2CAP.
- *  @param param_index There may be more than one parameter related to the
- *  given protocol UUID. This function returns the result that is
- *  indexed by this parameter. It's value is from 0, 0 means the
- *  first matched result, 1 means the second matched result.
+ *  @param index Zero-based index of the protocol descriptor (alternative protocol stack).
+ *               Use 0 for the first protocol descriptor, 1 for the second, etc.
  *  @param[out] param On success populated by found parameter value.
  *
  *  @return 0 on success when a specific parameter associated with a given protocol
  *  value is found, or negative if error occurred during processing.
  */
-int bt_sdp_get_addl_proto_param(const struct net_buf *buf, uint16_t proto,
-				uint8_t param_index, uint16_t *param);
+int bt_sdp_get_addl_proto_param(const struct net_buf *buf, uint16_t proto, uint8_t index,
+				uint16_t *param);
 
 /** @brief Get profile version.
  *
