@@ -70,6 +70,14 @@ size_t fwrite(const void *ZRESTRICT ptr, size_t size, size_t nitems,
  * NULL with errno set on failure
  */
 FILE *fopen(const char *ZRESTRICT filename, const char *ZRESTRICT mode);
+/**
+ * @brief Close stream.
+ *
+ * @param stream Pointer to stream to close; invalid after this function returns
+ *
+ * @return 0 on success; EOF with errno set on failure
+ */
+int fclose(FILE *stream);
 int remove(const char *path);
 #define putc(c, stream) fputc(c, stream)
 #define putchar(c) putc(c, stdout)
