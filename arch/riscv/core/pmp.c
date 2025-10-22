@@ -482,6 +482,9 @@ void z_riscv_pmp_init(void)
 	/* Write those entries to PMP regs. */
 	write_pmp_entries(0, index, true, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 #endif /* CONFIG_MULTITHREADING */
+#ifdef CONFIG_SMP
+	unsigned int irq_stack_pmp_index = index;
+#endif
 #else
 	 /* Write those entries to PMP regs. */
 	write_pmp_entries(0, index, true, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
@@ -494,7 +497,7 @@ void z_riscv_pmp_init(void)
 	 * Make sure TOR entry sharing won't be attempted with it by
 	 * remembering a bogus address for those entries.
 	 */
-	pmp_addr[index - 1] = -1L;
+	pmp_addr[irq_stack_pmp_index - 1] = -1L;
 #endif
 
 	/* Make sure secondary CPUs produced the same values */
