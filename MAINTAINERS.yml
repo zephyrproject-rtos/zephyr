@@ -337,6 +337,7 @@ Arduino Platforms:
     - boards/arduino/
     - boards/shields/arduino_*/
     - drivers/*/*modulino*
+    - dts/vendor/arduino/
 
 Base OS:
   status: maintained
