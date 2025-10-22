@@ -189,14 +189,9 @@ STRIP_FROM_PATH        = @ZEPHYR_BASE@/include
 # specify the list of include paths that are normally passed to the compiler
 # using the -I flag.
 
-# TODO: Once https://github.com/doxygen/doxygen/pull/11657 is accepted and
-# available in a released Doxygen version, the entry
-# "@ZEPHYR_BASE@/lib/libc/minimal/include/" should be added to this list.
-# In the meantime, API from headers contained in this folder (e.g. errno.h) will
-# continue to show incorrect include path in the generated docs.
-
 STRIP_FROM_INC_PATH    = @ZEPHYR_BASE@/include/ \
                          @ZEPHYR_BASE@/kernel/include/ \
+                         @ZEPHYR_BASE@/lib/libc/minimal/include/ \
                          @ZEPHYR_BASE@/subsys/testsuite/include/ \
                          @ZEPHYR_BASE@/subsys/secure_storage/include/internal \
                          @ZEPHYR_BASE@/subsys/secure_storage/include
