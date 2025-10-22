@@ -1,6 +1,6 @@
-# Copyright 2024 NXP
+# Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
-
+#
 # example:
 # &i2c4
 # {
@@ -16,6 +16,7 @@
 #       };
 # 	};
 # };
+#
 
 description: HM0360 CMOS video sensor
 
