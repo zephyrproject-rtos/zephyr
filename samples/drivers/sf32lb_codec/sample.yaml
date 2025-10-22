@@ -1,0 +1,18 @@
+sample:
+  description: sifli sf32lb onchip codec example
+    application
+  name: sf32lb_codec
+common:
+  min_ram: 2
+  min_flash: 16
+  tags: introduction
+  integration_platforms:
+    - sf32lb52_devkit_lcd
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "mic to speaker loopback"
+tests:
+  sample.basic.sf32lb_codec:
+    tags: introduction
