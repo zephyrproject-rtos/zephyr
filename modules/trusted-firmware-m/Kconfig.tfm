@@ -310,43 +310,6 @@ config TFM_MCUBOOT_IMAGE_NUMBER
 	  updated in one atomic operation. When this is 2, they are split and
 	  can be updated independently if dependency requirements are met.
 
-choice TFM_MCUBOOT_PATH
-	prompt "Path to MCUboot or DOWNLOAD to fetch automatically"
-	default TFM_MCUBOOT_PATH_LOCAL
-	help
-	   Path to MCUboot for TF-M builds. The default option
-	   is to use Zephyr's MCUboot module. As an alternative,
-	   users may switch to the 'download' version; in that
-	   case MCUboot will be fetched by the TF-M build during
-	   build time. The default option ensures that Zephyr builds
-	   with TF-M do not fetch external trees.
-
-config TFM_MCUBOOT_PATH_LOCAL
-	bool "TF-M to use Zephyr's MCUboot"
-	help
-	  TF-M builds with BL2 will use the Zephyr's MCUboot version,
-	  which is present in the MCUboot module.
-
-config TFM_MCUBOOT_PATH_DOWNLOAD
-	bool "TF-M to automatically download MCUboot during build"
-	help
-	  TF-M builds with BL2 will let the TF-M build to automatically
-	  fetch and check-out the MCUboot version to use in the build.
-
-endchoice
-
-config TFM_ETHOS_DRIVER_PATH_LOCAL
-	string "Path to a locally available Ethos-U driver or an empty string"
-	depends on SOC_SERIES_MPS3 || SOC_SERIES_MPS4
-	default "$(ZEPHYR_HAL_ETHOS_U_MODULE_DIR)"
-	help
-	  Path to a locally available Ethos-U driver to be used for TF-M builds or
-	  an empty string to allow TF-M to automatically fetch the Ethos-U
-	  driver from an external repository at build time.
-	  By default Zephyr's Ethos-U driver will be used. It is present in
-	  the hal_ethos_u module.
-	  Alternatively, applications can point to their own paths for Ethos-U driver.
-
 config TFM_QCBOR_PATH
 	string
 	prompt "Path to QCBOR or DOWNLOAD to fetch automatically"
