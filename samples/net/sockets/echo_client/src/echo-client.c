@@ -23,11 +23,16 @@ LOG_MODULE_REGISTER(net_echo_client_sample, LOG_LEVEL_DBG);
 #include <zephyr/kernel.h>
 #include <errno.h>
 #include <stdio.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <poll.h>
 
 #include <sys/eventfd.h>
 
 #include <zephyr/misc/lorem_ipsum.h>
-#include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_mgmt.h>

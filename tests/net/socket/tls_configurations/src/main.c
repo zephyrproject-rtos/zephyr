@@ -9,10 +9,15 @@ LOG_MODULE_REGISTER(tls_configuration_sample, LOG_LEVEL_INF);
 #include <zephyr/kernel.h>
 #include <errno.h>
 #include <stdio.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <poll.h>
 
 #include <sys/eventfd.h>
 
-#include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/sys/util.h>
@@ -147,7 +152,7 @@ void close_socket(void)
 
 static int setup_credentials(void)
 {
-	int err;
+	__maybe_unused int err;
 
 #if defined(USE_CERTIFICATE)
 	err = tls_credential_add(CA_CERTIFICATE_TAG,

@@ -12,6 +12,4 @@ common:
     - http
 tests:
   sample.net.sockets.dumb_http_server_mt:
-    extra_configs:
-      - CONFIG_POSIX_API=y
     platform_exclude: esp32s2_saola
