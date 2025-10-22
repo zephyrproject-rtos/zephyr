@@ -147,28 +147,28 @@ config OPENTHREAD_SHELL
 	depends on SHELL
 
 config MBEDTLS_PROMPTLESS
-	default y if !CUSTOM_OPENTHREAD_SECURITY
+	default y if OPENTHREAD_SECURITY_DEFAULT_CONFIG
 
-choice OPENTHREAD_SECURITY
-	prompt "OpenThread security"
-	default OPENTHREAD_MBEDTLS_CHOICE
+choice OPENTHREAD_SECURITY_CONFIG
+	prompt "OpenThread security configuration"
+	default OPENTHREAD_SECURITY_DEFAULT_CONFIG
 
-config CUSTOM_OPENTHREAD_SECURITY
-	bool "Custom"
+config OPENTHREAD_SECURITY_CUSTOM_CONFIG
+	bool "Custom configuration"
 	help
 	  Security settings will be controlled directly by the user.
 	  Enabling this setting will give access to full control of Mbed TLS
 	  configuration.
 
-config OPENTHREAD_MBEDTLS_CHOICE
-	bool "Mbed TLS built-in"
-	select OPENTHREAD_MBEDTLS
+config OPENTHREAD_SECURITY_DEFAULT_CONFIG
+	bool "Default configuration"
+	select OPENTHREAD_MBEDTLS_CONFIG
 	help
 	  Use the OpenThread Mbed TLS configuration pre-defined security scheme.
 
-endchoice
+endchoice # OPENTHREAD_SECURITY
 
-config OPENTHREAD_MBEDTLS
+config OPENTHREAD_MBEDTLS_CONFIG
 	bool
 	select MBEDTLS
 	select MBEDTLS_ENABLE_HEAP
