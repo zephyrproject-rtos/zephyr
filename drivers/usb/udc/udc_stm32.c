@@ -345,8 +345,9 @@ static int udc_stm32_tx(const struct device *dev, struct udc_ep_config *ep_cfg,
 			struct net_buf *buf)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
-	uint8_t *data; uint32_t len;
 	HAL_StatusTypeDef status;
+	uint8_t *data;
+	uint32_t len;
 
 	LOG_DBG("TX ep 0x%02x len %u", ep_cfg->addr, buf->len);
 
