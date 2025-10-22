@@ -385,10 +385,7 @@ struct uvc_frame_descriptor {
 	uint16_t wHeight;
 	uint32_t dwMinBitRate;
 	uint32_t dwMaxBitRate;
-	uint32_t dwMaxVideoFrameBufferSize;
-	uint32_t dwDefaultFrameInterval;
-	uint8_t bFrameIntervalType;
-	/* Other fields depending on bFrameIntervalType value */
+	/* Other fields depending on bDescriptorSubtype value */
 } __packed;
 
 struct uvc_frame_continuous_descriptor {
