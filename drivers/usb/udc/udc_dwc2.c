@@ -1733,7 +1733,19 @@ static int udc_dwc2_ep_deactivate(const struct device *dev,
 	mem_addr_t dxepctl_reg;
 	uint32_t dxepctl;
 
-	dxepctl_reg = dwc2_get_dxepctl_reg(dev, cfg->addr);
+	if (priv->hibernated) {
+		/* If usbd_disable() is called when core is hibernated, modify
+		 * backup registers instead of real ones.
+		 */
+		if (USB_EP_DIR_IS_OUT(cfg->addr)) {
+			dxepctl_reg = (mem_addr_t)&priv->backup.doepctl[ep_idx];
+		} else {
+			dxepctl_reg = (mem_addr_t)&priv->backup.diepctl[ep_idx];
+		}
+	} else {
+		dxepctl_reg = dwc2_get_dxepctl_reg(dev, cfg->addr);
+	}
+
 	dxepctl = sys_read32(dxepctl_reg);
 
 	if (dxepctl & USB_DWC2_DEPCTL_USBACTEP) {
