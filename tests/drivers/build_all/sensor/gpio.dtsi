@@ -23,3 +23,8 @@ test_gpio_hcsr04: hcsr04 {
 	trigger-gpios = <&test_gpio 0 0>;
 	echo-gpios = <&test_gpio 1 0>;
 };
+
+test_gpio_tach_gpio: tach-gpio {
+	compatible = "zephyr,tach-gpio";
+	gpios = <&test_gpio 0 0>;
+};
