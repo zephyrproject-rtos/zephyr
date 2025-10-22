@@ -58,6 +58,11 @@
 	pinctrl-names = "default";
 };
 
+&i2s {
+	pinctrl-0 = <&i2s_default>;
+	pinctrl-names = "default";
+};
+
 &spi2 {
 	#address-cells = <1>;
 	#size-cells = <0>;

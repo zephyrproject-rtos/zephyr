@@ -51,6 +51,15 @@ Base Libraries
   may include :zephyr_file:`include/zephyr/posix/posix_limits.h` for Zephyr's definitions. Some
   runtime-invariant values may need to be queried via :c:func:`sysconf`.
 
+* The number of file descriptor table size and its availability is now determined by
+  a ``ZVFS_OPEN_SIZE`` define instead of the :kconfig:option:`CONFIG_ZVFS_OPEN_MAX`
+  Kconfig option. Subsystems can specify their own custom file descriptor table size
+  requirements by specifying Kconfig options with the prefix ``CONFIG_ZVFS_OPEN_ADD_SIZE_``.
+  The old Kconfig option still exists, but will be overridden if the custom requirements
+  are larger. To force the old Kconfig option to be used, even when its value is less
+  than the indicated custom requirements, a new :kconfig:option:`CONFIG_ZVFS_OPEN_IGNORE_MIN`
+  option has been introduced (which defaults being disabled).
+
 Boards
 ******
 
@@ -233,6 +242,11 @@ Ethernet
     * Replaced devicetree property ``tx-checksum-offload`` which enabled TX checksum offloading
       ``disable-tx-checksum-offload`` which now actively disables it.
 
+* The Xilinx GEM Ethernet driver (:dtcompatible:`xlnx,gem`) now obtains the AMBA AHB data bus
+  width matching the current target SoC (either Zynq-7000 or ZynqMP) from a design configuration
+  register at run-time, making the devicetree property ``amba-ahb-dbus-width`` obsolete, which
+  has therefore been removed.
+
 Power management
 ****************
 
@@ -320,6 +334,13 @@ Cellular
  * :c:enum:`cellular_access_technology` values have been redefined to align with 3GPP TS 27.007.
  * :c:enum:`cellular_registration_status` values have been extended to align with 3GPP TS 27.007.
 
+Crypto
+======
+
+* Hashing operations now require a constant input in the :c:struct:`hash_pkt`.
+  This shouldn't affect any existing code, unless an out-of-tree hashing backend actually
+  performs that operation in-place (see :github:`94218`)
+
 Flash Map
 =========
 
@@ -375,6 +396,13 @@ Shell
   compatibility.
   (:github:`92677`).
 
+UpdateHub
+=========
+
+* Legacy Mbed TLS as an option for crypto support has been removed and PSA Crypto is now used in all
+  cases. :kconfig:option:`CONFIG_UPDATEHUB` will automatically enable the Mbed TLS implementation of
+  PSA Crypto if TF-M is not enabled in the build.
+
 .. zephyr-keep-sorted-stop
 
 Modules
@@ -409,6 +437,11 @@ LVGL
   black and white to be inverted when using LVGL with monochrome displays.
   This issue has now been fixed. Any workarounds previously applied to achieve the expected
   behavior should be removed, otherwise black and white will be inverted again.
+
+LED Strip
+=========
+
+* Renamed ``arduino,modulino-smartleds`` to :dtcompatible:`arduino,modulino-pixels`
 
 Architectures
 *************

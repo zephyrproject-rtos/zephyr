@@ -20,8 +20,6 @@ Requirements
 Building and Running
 ********************
 
-This sample can be found under :zephyr_file:`samples/subsys/rtio` in the Zephyr tree.
-
 The sample can be built for most platforms, the following commands build the
 application for the native_sim target.
 

@@ -1370,6 +1370,7 @@ flagged.
         "ZEPHYR_TRY_MASS_ERASE", # MCUBoot setting described in sysbuild
                                  # documentation
         "ZTEST_FAIL_TEST_",  # regex in tests/ztest/fail/CMakeLists.txt
+        "ZVFS_OPEN_ADD_SIZE_", # Used as an option matching prefix
         # zephyr-keep-sorted-stop
     }
 
@@ -2136,33 +2137,34 @@ class Ruff(ComplianceTest):
     doc = "Check python files with ruff."
 
     def run(self):
+        try:
+            subprocess.run(
+                "ruff check --output-format=json",
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                shell=True,
+                cwd=GIT_TOP,
+            )
+        except subprocess.CalledProcessError as ex:
+            output = ex.output.decode("utf-8")
+            messages = json.loads(output)
+            for m in messages:
+                self.fmtd_failure(
+                    "error",
+                    f'Python lint error ({m.get("code")}) see {m.get("url")}',
+                    m.get("filename"),
+                    line=m.get("location", {}).get("row"),
+                    col=m.get("location", {}).get("column"),
+                    end_line=m.get("end_location", {}).get("row"),
+                    end_col=m.get("end_location", {}).get("column"),
+                    desc=m.get("message"),
+                )
+
         for file in get_files(filter="d"):
             if not file.endswith((".py", ".pyi")):
                 continue
 
-            try:
-                subprocess.run(
-                    f"ruff check --force-exclude --output-format=json {file}",
-                    check=True,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.DEVNULL,
-                    shell=True,
-                    cwd=GIT_TOP,
-                )
-            except subprocess.CalledProcessError as ex:
-                output = ex.output.decode("utf-8")
-                messages = json.loads(output)
-                for m in messages:
-                    self.fmtd_failure(
-                        "error",
-                        f'Python lint error ({m.get("code")}) see {m.get("url")}',
-                        file,
-                        line=m.get("location", {}).get("row"),
-                        col=m.get("location", {}).get("column"),
-                        end_line=m.get("end_location", {}).get("row"),
-                        end_col=m.get("end_location", {}).get("column"),
-                        desc=m.get("message"),
-                    )
             try:
                 subprocess.run(
                     f"ruff format --force-exclude --diff {file}",

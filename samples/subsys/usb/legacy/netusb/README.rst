@@ -13,9 +13,6 @@ connection to a device running the Zephyr RTOS.
 .. note::
    This samples demonstrate deprecated :ref:`usb_device_stack`.
 
-This sample can be found under :zephyr_file:`samples/subsys/usb/legacy/netusb` in the
-Zephyr project tree.
-
 Requirements
 ************
 

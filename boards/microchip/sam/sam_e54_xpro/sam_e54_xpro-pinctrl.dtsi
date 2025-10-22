@@ -13,4 +13,10 @@
 				 <PB24D_SERCOM2_PAD1>;
 		};
 	};
+
+	tcc0_pwm_default: tcc0_pwm_default {
+		group1 {
+			pinmux = <PC18F_TCC0_WO2>;
+		};
+	};
 };

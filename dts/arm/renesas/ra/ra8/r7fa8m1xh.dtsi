@@ -47,6 +47,7 @@
 
 		pll: pll {
 			compatible = "renesas,ra-cgc-pll";
+			status = "disabled";
 			#clock-cells = <0>;
 
 			/* PLL */
@@ -77,11 +78,11 @@
 				status = "disabled";
 				#clock-cells = <0>;
 			};
-			status = "disabled";
 		};
 
 		pll2: pll2 {
 			compatible = "renesas,ra-cgc-pll";
+			status = "disabled";
 			#clock-cells = <0>;
 
 			/* PLL2 */
@@ -111,7 +112,6 @@
 				status = "disabled";
 				#clock-cells = <0>;
 			};
-			status = "disabled";
 		};
 
 		pclkblock: pclkblock@40203000 {

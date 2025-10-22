@@ -64,7 +64,29 @@
 		system: system@4001e000 {
 			compatible = "renesas,ra-system";
 			reg = <0x4001e000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 			status = "okay";
+
+			battery_backup: battery-backup@3b0{
+				compatible = "renesas,ra-battery-backup";
+				reg = <0x3b0 0x2>, <0x3d0 0x4>,
+				      <0xa84 0x1>, <0xa88 0x1>,
+				      <0xc40 0x1>, <0xc45 0x1>,
+				      <0xc46 0x1>, <0xc48 0x1>,
+				      <0xc49 0x1>, <0xc4a 0x1>,
+				      <0xc4c 0x1>, <0xc4d 0x1>,
+				      <0xc4e 0x1>, <0xd00 0x80>;
+				reg-names = "vbrsabar", "bbfsar",
+					    "vbattmnselr", "vbtbpcr1",
+					    "vbtber", "vbtbpcr2",
+					    "vbtbpsr", "vbtadsr",
+					    "vbtadcr1", "vbtadcr2",
+					    "vbtictlr", "vbtictlr2",
+					    "vbtimonr" , "vbtbkrn";
+				manual-configure;
+				status = "disabled";
+			};
 		};
 
 		pinctrl: pin-controller@40400800 {
@@ -766,6 +788,34 @@
 			status = "disabled";
 		};
 
+		usbfs: usbfs@40250000 {
+			compatible = "renesas,ra-usbfs";
+			reg = <0x40250000 0x2000>;
+			num-bidir-endpoints = <10>;
+			phys = <&usbfs_phy>;
+			phys-clock = <&uclk>;
+			status = "disabled";
+
+			udc {
+				compatible = "renesas,ra-udc";
+				status = "disabled";
+			};
+		};
+
+		usbhs: usbhs@40351000 {
+			compatible = "renesas,ra-usbhs";
+			reg = <0x40351000 0x2000>;
+			num-bidir-endpoints = <10>;
+			phys = <&usbhs_phy>;
+			phys-clock = <&uclk>, <&usb60clk>;
+			status = "disabled";
+
+			udc {
+				compatible = "renesas,ra-udc";
+				status = "disabled";
+			};
+		};
+
 		port_irq0: external-interrupt@40006000 {
 			compatible = "renesas,ra-external-interrupt";
 			reg = <0x40006000 0x1>;
@@ -1086,6 +1136,14 @@
 			status = "disabled";
 		};
 
+		rtc: rtc@40202000 {
+			compatible = "renesas,ra-rtc";
+			reg = <0x40202000 0x80>;
+			clocks = <&subclk>;
+			alarms-count = <1>;
+			status = "disabled";
+		};
+
 		option_setting_ofs_conf_sec: option-setting-ofs-conf-sec@2c9f040 {
 			reg = <0x02c9f040 0x3c0>;
 			#address-cells = <1>;
@@ -1162,6 +1220,16 @@
 				status = "okay";
 			};
 		};
+	};
+
+	usbfs_phy: usbfs-phy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
+	};
+
+	usbhs_phy: usbhs-phy {
+		compatible = "renesas,ra-usbphyc";
+		#phy-cells = <0>;
 	};
 };
 

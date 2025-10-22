@@ -89,8 +89,8 @@
 		flash0: flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_K(1016)>;
-			erase-block-size = <512>;
-			write-block-size = <512>;
+			erase-block-size = <DT_SIZE_K(8)>;
+			write-block-size = <16>;
 		};
 
 		flash_reserved: flash@fe000 {

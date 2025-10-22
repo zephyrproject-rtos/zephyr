@@ -208,6 +208,26 @@ static inline void net_tc_rx_init(void) { }
 enum net_verdict net_tc_try_submit_to_tx_queue(uint8_t tc, struct net_pkt *pkt,
 					       k_timeout_t timeout);
 extern enum net_verdict net_tc_submit_to_rx_queue(uint8_t tc, struct net_pkt *pkt);
+extern int net_tc_tx_thread_priority(int tc);
+extern int net_tc_rx_thread_priority(int tc);
+static inline bool net_tc_tx_is_immediate(int tc, int prio)
+{
+	ARG_UNUSED(tc);
+	bool high_prio = (prio >= NET_PRIORITY_CA);
+	bool skipping = IS_ENABLED(CONFIG_NET_TC_TX_SKIP_FOR_HIGH_PRIO);
+	bool no_queues = (0 == NET_TC_TX_COUNT);
+
+	return no_queues || (high_prio && skipping);
+}
+static inline bool net_tc_rx_is_immediate(int tc, int prio)
+{
+	ARG_UNUSED(tc);
+	bool high_prio = (prio >= NET_PRIORITY_CA);
+	bool skipping = IS_ENABLED(CONFIG_NET_TC_RX_SKIP_FOR_HIGH_PRIO);
+	bool no_queues = (0 == NET_TC_RX_COUNT);
+
+	return no_queues || (high_prio && skipping);
+}
 extern enum net_verdict net_promisc_mode_input(struct net_pkt *pkt);
 
 char *net_sprint_addr(sa_family_t af, const void *addr);

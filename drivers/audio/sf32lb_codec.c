@@ -13,6 +13,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/audio/sf32lb_codec.h>
+#include <zephyr/logging/log.h>
 #include "bf0_hal_dma.h"
 #include "bf0_hal_audcodec.h"
 #include "bf0_hal_rcc.h"
@@ -21,14 +22,7 @@
 #include "bf0_hal.h"
 #include "register.h"
 
-#define LOG_LEVEL CONFIG_AUDIO_CODEC_LOG_LEVEL
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(siflicodec);
-
-extern void set_pll_freq_type(uint8_t type);
-extern void HAL_TURN_ON_PLL();
-extern void HAL_TURN_OFF_PLL();
-
+LOG_MODULE_REGISTER(siflicodec, CONFIG_AUDIO_CODEC_LOG_LEVEL);
 
 /* todo: should using system irq device tree */
 #define AUDCODEC_ADC0_DMA_IRQ               DMAC1_CH4_IRQn
@@ -40,8 +34,6 @@ extern void HAL_TURN_OFF_PLL();
 #define AUDCODEC_DAC0_DMA_IRQ_PRIO          0
 #define AUDCODEC_DAC0_DMA_INSTANCE          DMA1_Channel1
 #define AUDCODEC_DAC0_DMA_REQUEST           41
-
-
 
 #define CODEC_CLK_USING_PLL         0
 #define AUDCODEC_MIN_VOLUME         -36
@@ -82,15 +74,6 @@ static const int volume_level_to_dac_gain[16] = {
 };
 
 static const struct sf32lb_codec_driver_config config = { 0 };
-
-#undef LOG_INF
-#define LOG_INF printf
-#if (LOG_LEVEL >= LOG_LEVEL_DEBUG)
-#else
-#endif
-
-static void clear_pll_enable_flag();
-
 
 #if AVDD_V18_ENABLE
 	#define SINC_GAIN   0xa0
@@ -282,7 +265,7 @@ int bf0_enable_pll(uint32_t freq, uint8_t type)
 	uint8_t test_result = -1;
 	uint8_t vco_index = 0;
 
-	LOG_INF("enable pll\n");
+	LOG_DBG("enable pll\n");
 
 	freq_type = type << 1;
 	if ((freq == 44100) || (freq == 22050) || (freq == 11025)) {
@@ -328,6 +311,10 @@ int bf0_update_pll(uint32_t freq, uint8_t type)
 	return test_result;
 }
 
+static void clear_pll_enable_flag()
+{
+	h_aud_codec.pll_state = AUDIO_PLL_CLOSED;
+}
 
 void bf0_disable_pll()
 {
@@ -335,13 +322,6 @@ void bf0_disable_pll()
 	clear_pll_enable_flag();
 	LOG_INF("PLL disable\n");
 }
-
-
-static void clear_pll_enable_flag()
-{
-	h_aud_codec.pll_state = AUDIO_PLL_CLOSED;
-}
-
 static int bf0_audio_init(const struct device *dev)
 {
 	const struct sf32lb_codec_driver_config *dev_cfg = dev->config;
@@ -385,7 +365,7 @@ static int bf0_audio_init(const struct device *dev)
 	HAL_RCC_EnableModule(RCC_MOD_AUDCODEC_LP);
 
 	HAL_AUDCODEC_Init(haudcodec);
-	LOG_INF("%s done\n", __func__);
+	LOG_DBG("%s done\n", __func__);
 	return 0;
 }
 
@@ -433,7 +413,7 @@ static void bf0_audio_pll_config(struct bf0_audio_private *priv,
 		}
 	}
 
-	LOG_INF("pll config state:%d, samplerate:%d\n", priv->pll_state, priv->pll_samplerate);
+	LOG_DBG("pll config state:%d, samplerate:%d\n", priv->pll_state, priv->pll_samplerate);
 }
 
 static void sf32lb_codec_set_dac_volume(const struct device *dev, uint8_t volume)
@@ -689,13 +669,13 @@ static int sf32lb_codec_configure(const struct device *dev, struct sf32lb_codec_
 
 static void codec_rx_isr(AUDCODEC_HandleTypeDef *haudcodec)
 {
-	LOG_INF("rx isr\n");
+	LOG_DBG("rx isr\n");
 	HAL_DMA_IRQHandler(haudcodec->hdma[HAL_AUDCODEC_ADC_CH0]);
 }
 
 static void codec_tx_isr(AUDCODEC_HandleTypeDef *haudcodec)
 {
-	LOG_INF("tx isr\n");
+	LOG_DBG("tx isr\n");
 	HAL_DMA_IRQHandler(haudcodec->hdma[HAL_AUDCODEC_DAC_CH0]);
 }
 
@@ -710,7 +690,7 @@ static void sf32lb_codec_start(const struct device *dev, enum sf32lb_audio_dir d
 	bool start_rx = (!priv->rx_enable && (dir & SF32LB_AUDIO_RX));
 	bool start_tx = (!priv->tx_enable && (dir & SF32LB_AUDIO_TX));
 
-	LOG_INF("codec start rx=%d tx=%d\n", start_rx, start_tx);
+	LOG_DBG("codec start rx=%d tx=%d\n", start_rx, start_tx);
 	if (start_rx) {
 		HAL_AUDCODEC_Receive_DMA(haudcodec, priv->rx_buf, priv->rx_block_size, HAL_AUDCODEC_ADC_CH0);
 		IRQ_CONNECT(AUDCODEC_ADC0_DMA_IRQ, AUDCODEC_ADC0_DMA_IRQ_PRIO, codec_rx_isr, &h_aud_codec.audcodec, 0);
@@ -718,7 +698,7 @@ static void sf32lb_codec_start(const struct device *dev, enum sf32lb_audio_dir d
 	}
 
 	if (start_tx) {
-		LOG_INF("start tx %d\n", priv->tx_block_size);
+		LOG_DBG("start tx %d\n", priv->tx_block_size);
 		HAL_AUDCODEC_Transmit_DMA(haudcodec, priv->tx_buf, priv->tx_block_size,	HAL_AUDCODEC_DAC_CH0);
 		IRQ_CONNECT(AUDCODEC_DAC0_DMA_IRQ, AUDCODEC_DAC0_DMA_IRQ_PRIO, codec_tx_isr, &h_aud_codec.audcodec, 0);
 		irq_enable(AUDCODEC_DAC0_DMA_IRQ);
@@ -749,7 +729,7 @@ static void sf32lb_codec_stop(const struct device *dev, enum sf32lb_audio_dir di
 	bool stop_rx = (priv->rx_enable && (dir & SF32LB_AUDIO_RX));
 	bool stop_tx = (priv->tx_enable && (dir & SF32LB_AUDIO_TX));
 
-	LOG_INF("codec stop rx=%d tx=%d", stop_rx, stop_tx);
+	LOG_DBG("codec stop rx=%d tx=%d", stop_rx, stop_tx);
 	if (stop_rx) {
 		irq_disable(AUDCODEC_ADC0_DMA_IRQ);
 		HAL_AUDCODEC_DMAStop(haudcodec, HAL_AUDCODEC_ADC_CH0);
@@ -757,7 +737,7 @@ static void sf32lb_codec_stop(const struct device *dev, enum sf32lb_audio_dir di
 	}
 
 	if (stop_tx) {
-		LOG_INF("stop dac irq");
+		LOG_DBG("stop dac irq");
 		irq_disable(AUDCODEC_DAC0_DMA_IRQ);
 		HAL_AUDCODEC_DMAStop(haudcodec, HAL_AUDCODEC_DAC_CH0);
 		haudcodec->State[HAL_AUDCODEC_DAC_CH0] = HAL_AUDCODEC_STATE_READY;
@@ -775,7 +755,7 @@ static void sf32lb_codec_stop(const struct device *dev, enum sf32lb_audio_dir di
 		priv->tx_enable = 0;
 	}
 	if (stop_rx) {
-		LOG_INF("stop adc irq");
+		LOG_DBG("stop adc irq");
 		irq_disable(AUDCODEC_ADC0_DMA_IRQ);
 		__HAL_AUDCODEC_ADC_DISABLE(haudcodec);
 		HAL_AUDCODEC_Close_Analog_ADCPath();

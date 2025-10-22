@@ -1,0 +1,31 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip G1 TCC pwm driver.
+
+description: |
+  Microchip TCC pwm driver.
+
+  This driver is used for configuring
+  and managing TCC (Timer/ Counter for Control Applications)
+  peripheral in Microchip microcontrollers. This peripherals
+  support creating PWM signals. The supported peripherals are
+  as follows:
+    - module name="TCC" id="U2213" version="3.1.0"
+
+compatible: "microchip,tcc-g1-pwm"
+
+include:
+  - base.yaml
+  - pwm-controller.yaml
+  - microchip,tcc-g1.yaml
+  - pinctrl-device.yaml
+
+properties:
+  "#pwm-cells":
+    const: 3
+
+pwm-cells:
+  - channel
+  - period
+  - polarity

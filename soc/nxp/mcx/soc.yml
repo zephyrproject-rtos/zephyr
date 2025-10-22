@@ -16,6 +16,13 @@ family:
   - name: mcxc142
   - name: mcxc242
   - name: mcxc444
+- name: mcxe
+  series:
+  - name: mcxe24x
+    socs:
+    - name: mcxe245
+    - name: mcxe246
+    - name: mcxe247
 - name: mcxa
   socs:
   - name: mcxa153
@@ -23,6 +30,7 @@ family:
   - name: mcxa346
   - name: mcxa266
   - name: mcxa366
+  - name: mcxa344
 - name: mcxw
   series:
   - name: mcxw2xx
@@ -70,6 +78,8 @@ runners:
         - mcxw716c
       - qualifiers:
         - mcxw236
+      - qualifiers:
+        - mcxa344
     '--reset':
     - run: last
       runners:
@@ -102,3 +112,5 @@ runners:
         - mcxw716c
       - qualifiers:
         - mcxw236
+      - qualifiers:
+        - mcxa344

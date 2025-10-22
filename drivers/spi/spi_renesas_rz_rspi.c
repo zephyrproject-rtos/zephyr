@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,9 +46,9 @@ struct spi_rz_rspi_data {
 };
 
 #ifdef CONFIG_SPI_RENESAS_RZ_RSPI_INTERRUPT
-void rspi_rxi_isr(void);
-void rspi_txi_isr(void);
-void rspi_eri_isr(void);
+void rspi_rxi_isr(void *irq);
+void rspi_txi_isr(void *irq);
+void rspi_eri_isr(void *irq);
 #elif defined(CONFIG_SPI_RENESAS_RZ_RSPI_DMAC)
 void dmac_b_int_isr(void);
 void rspi_tx_dmac_callback(rspi_instance_ctrl_t *p_ctrl);
@@ -63,10 +63,10 @@ static bool spi_rz_rspi_transfer_ongoing(struct spi_rz_rspi_data *data)
 #if defined(CONFIG_SPI_RENESAS_RZ_RSPI_INTERRUPT)
 	return (spi_context_tx_on(&data->ctx) || spi_context_rx_on(&data->ctx));
 #else
-	if (spi_context_total_tx_len(&data->ctx) < spi_context_total_rx_len(&data->ctx)) {
-		return (spi_context_tx_on(&data->ctx) || spi_context_rx_on(&data->ctx));
-	} else {
+	if (spi_context_total_tx_len(&data->ctx) == spi_context_total_rx_len(&data->ctx)) {
 		return (spi_context_tx_on(&data->ctx) && spi_context_rx_on(&data->ctx));
+	} else {
+		return (spi_context_tx_on(&data->ctx) || spi_context_rx_on(&data->ctx));
 	}
 #endif
 }
@@ -100,20 +100,23 @@ static void spi_rz_rspi_retransmit(const struct device *dev)
 #ifdef CONFIG_SPI_RENESAS_RZ_RSPI_INTERRUPT
 static void spi_rz_rspi_rxi_isr(const struct device *dev)
 {
-	ARG_UNUSED(dev);
-	rspi_rxi_isr();
+	struct spi_rz_rspi_data *data = dev->data;
+
+	rspi_rxi_isr((void *)data->fsp_config->rxi_irq);
 }
 
 static void spi_rz_rspi_txi_isr(const struct device *dev)
 {
-	ARG_UNUSED(dev);
-	rspi_txi_isr();
+	struct spi_rz_rspi_data *data = dev->data;
+
+	rspi_txi_isr((void *)data->fsp_config->txi_irq);
 }
 
 static void spi_rz_rspi_eri_isr(const struct device *dev)
 {
-	ARG_UNUSED(dev);
-	rspi_eri_isr();
+	struct spi_rz_rspi_data *data = dev->data;
+
+	rspi_eri_isr((void *)data->fsp_config->eri_irq);
 }
 #endif /* CONFIG_SPI_RENESAS_RZ_RSPI_INTERRUPT */
 
@@ -263,6 +266,7 @@ static int spi_rz_rspi_transceive_data(struct spi_rz_rspi_data *data)
 {
 	R_RSPI0_Type *p_spi_reg = (R_RSPI0_Type *)data->fsp_ctrl->p_regs;
 	uint32_t data_count = (p_spi_reg->SPBFDR & R_RSPI0_SPBFDR_T_Msk) >> R_RSPI0_SPBFDR_T_Pos;
+	uint32_t rx;
 
 	data_count = 8 - data_count;
 
@@ -295,21 +299,28 @@ static int spi_rz_rspi_transceive_data(struct spi_rz_rspi_data *data)
 	spi_context_update_tx(&data->ctx, data->dfs, 1);
 
 	/* RX transfer */
-	if (spi_context_rx_on(&data->ctx)) {
+	while (!p_spi_reg->SPSR_b.SPRF) {
+	}
 
-		while (!p_spi_reg->SPSR_b.SPRF) {
-		}
+	if (data->dfs > 2) {
+		rx = (uint32_t)p_spi_reg->SPDR_b.SPD;
+	} else if (data->dfs > 1) {
+		rx = (uint16_t)p_spi_reg->SPDR_hword.L;
+	} else {
+		rx = (uint8_t)p_spi_reg->SPDR_byte.LL;
+	}
 
+	if (spi_context_rx_buf_on(&data->ctx)) {
 		/* Read data from Data Register */
 		if (data->dfs > 2) {
-			UNALIGNED_PUT(p_spi_reg->SPDR_b.SPD, (uint32_t *)data->ctx.rx_buf);
+			UNALIGNED_PUT(rx, (uint32_t *)data->ctx.rx_buf);
 		} else if (data->dfs > 1) {
-			UNALIGNED_PUT(p_spi_reg->SPDR_hword.L, (uint16_t *)data->ctx.rx_buf);
+			UNALIGNED_PUT(rx, (uint16_t *)data->ctx.rx_buf);
 		} else {
-			UNALIGNED_PUT(p_spi_reg->SPDR_byte.LL, (uint8_t *)data->ctx.rx_buf);
+			UNALIGNED_PUT(rx, (uint8_t *)data->ctx.rx_buf);
 		}
-		spi_context_update_rx(&data->ctx, data->dfs, 1);
 	}
+	spi_context_update_rx(&data->ctx, data->dfs, 1);
 	return 0;
 }
 #endif /* #if !defined(CONFIG_SPI_RENESAS_RZ_RSPI_INTERRUPT) */

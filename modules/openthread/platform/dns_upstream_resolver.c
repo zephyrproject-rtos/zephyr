@@ -87,9 +87,28 @@ void otPlatDnsStartUpstreamQuery(otInstance *aInstance, otPlatDnsUpstreamQuery *
 
 	sys_slist_append(&query_list, &ctx->node);
 
-	VerifyOrExit(dns_get_addr_info(name, qtype, &ctx->resolve_query_id,
-				       dns_resolve_cb, (void *)ctx, DNS_TIMEOUT) == 0,
-		     error = OT_ERROR_FAILED);
+	switch (qtype) {
+	case DNS_RR_TYPE_AAAA:
+		VerifyOrExit(dns_get_addr_info(name, qtype, &ctx->resolve_query_id,
+					       dns_resolve_cb, (void *)ctx, DNS_TIMEOUT) == 0,
+			     error = OT_ERROR_FAILED);
+		break;
+	case DNS_RR_TYPE_PTR:
+		VerifyOrExit(dns_resolve_service(dns_resolve_get_default(), name,
+						 &ctx->resolve_query_id,
+						 dns_resolve_cb, (void *)ctx, DNS_TIMEOUT) == 0,
+			     error = OT_ERROR_FAILED);
+		break;
+	case DNS_RR_TYPE_SRV:
+		VerifyOrExit(dns_resolve_name(dns_resolve_get_default(), name, DNS_QUERY_TYPE_SRV,
+					      &ctx->resolve_query_id,
+					      dns_resolve_cb, (void *)ctx, DNS_TIMEOUT) == 0,
+			     error = OT_ERROR_FAILED);
+		break;
+	default:
+		break;
+	}
+
 
 exit:
 	net_buf_unref(result);

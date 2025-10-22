@@ -48,8 +48,6 @@ LOG_MODULE_REGISTER(mpu);
 #define PMP_NA4_SUPPORTED	!IS_ENABLED(CONFIG_PMP_NO_NA4)
 #define PMP_NAPOT_SUPPORTED	!IS_ENABLED(CONFIG_PMP_NO_NAPOT)
 
-#define PMPCFG_STRIDE sizeof(unsigned long)
-
 #define PMP_ADDR(addr)			((addr) >> 2)
 #define NAPOT_RANGE(size)		(((size) - 1) >> 1)
 #define PMP_ADDR_NAPOT(addr, size)	PMP_ADDR(addr | NAPOT_RANGE(size))
@@ -170,20 +168,35 @@ static inline void z_riscv_pmp_write_config(unsigned long *pmp_cfg, size_t pmp_c
 #endif
 }
 
+/**
+ * @brief Reads the PMP address CSRs (pmpaddrX) for all configured slots.
+ *
+ * This helper function abstracts the iterative logic required to read the
+ * individual PMP address registers (pmpaddr0, pmpaddr1, ..., pmpaddrN)
+ * up to the total number of PMP slots configured by CONFIG_PMP_SLOTS.
+ *
+ * @param pmp_addr Pointer to the array where the CSR contents will be stored.
+ * @param pmp_addr_size The size of the pmp_addr array, measured in unsigned long entries.
+ */
+static inline void z_riscv_pmp_read_addr(unsigned long *pmp_addr, size_t pmp_addr_size)
+{
+	__ASSERT(pmp_addr_size == (size_t)(CONFIG_PMP_SLOTS), "PMP address array size mismatch");
+
+#define PMPADDR_READ(x) pmp_addr[x] = csr_read(pmpaddr##x)
+	FOR_EACH(PMPADDR_READ, (;), 0, 1, 2, 3, 4, 5, 6, 7);
+
+#if CONFIG_PMP_SLOTS > 8
+	FOR_EACH(PMPADDR_READ, (;), 8, 9, 10, 11, 12, 13, 14, 15);
+#endif
+#undef PMPADDR_READ
+}
+
 static void dump_pmp_regs(const char *banner)
 {
 	unsigned long pmp_addr[CONFIG_PMP_SLOTS];
 	unsigned long pmp_cfg[CONFIG_PMP_SLOTS / PMPCFG_STRIDE];
 
-#define PMPADDR_READ(x) pmp_addr[x] = csr_read(pmpaddr##x)
-
-	FOR_EACH(PMPADDR_READ, (;), 0, 1, 2, 3, 4, 5, 6, 7);
-#if CONFIG_PMP_SLOTS > 8
-	FOR_EACH(PMPADDR_READ, (;), 8, 9, 10, 11, 12, 13, 14, 15);
-#endif
-
-#undef PMPADDR_READ
-
+	z_riscv_pmp_read_addr(pmp_addr, (size_t)(CONFIG_PMP_SLOTS));
 	z_riscv_pmp_read_config(pmp_cfg, (size_t)(CONFIG_PMP_SLOTS / PMPCFG_STRIDE));
 	print_pmp_entries(0, CONFIG_PMP_SLOTS, pmp_addr, pmp_cfg, banner);
 }
@@ -596,7 +609,7 @@ void z_riscv_pmp_stackguard_disable(void)
 {
 
 	unsigned long pmp_addr[CONFIG_PMP_SLOTS];
-	unsigned long pmp_cfg[CONFIG_PMP_SLOTS / sizeof(unsigned long)];
+	unsigned long pmp_cfg[CONFIG_PMP_SLOTS / PMPCFG_STRIDE];
 	unsigned int index = global_pmp_end_index;
 
 	/* Retrieve the pmpaddr value matching the last global PMP slot. */

@@ -278,6 +278,14 @@ static void l2cap_chan_del(struct bt_l2cap_chan *chan)
 	 * `l2cap_chan_destroy()` as it is not called for fixed channels.
 	 */
 	while ((buf = k_fifo_get(&le_chan->tx_queue, K_NO_WAIT))) {
+		bt_conn_tx_cb_t cb = closure_cb(buf->user_data);
+
+		if (cb != NULL) {
+			void *user_data = closure_data(buf->user_data);
+
+			cb(chan->conn, user_data, -ESHUTDOWN);
+		}
+
 		net_buf_unref(buf);
 	}
 

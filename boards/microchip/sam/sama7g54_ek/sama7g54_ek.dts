@@ -12,6 +12,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/gpio/microchip-sam-gpio.h>
 #include <dt-bindings/input/input-event-codes.h>
+#include <dt-bindings/pwm/pwm.h>
 #include <microchip/sam/sama7g5.dtsi>
 
 / {
@@ -20,6 +21,7 @@
 
 	aliases {
 		led0 = &led_green;
+		pwm-led0 = &pwm_led_green;
 		sw0 = &button_user;
 		sdhc0 = &sdmmc0;
 		sdhc1 = &sdmmc1;
@@ -28,6 +30,7 @@
 	chosen {
 		zephyr,sram = &ddram;
 		zephyr,console = &usart3;
+		zephyr,entropy = &trng;
 		zephyr,shell-uart = &usart3;
 	};
 
@@ -76,6 +79,31 @@
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
+
+	pwmleds: pwmleds {
+		compatible = "pwm-leds";
+		status = "disabled"; /* Conflict with leds. */
+
+		pwm_led_green: pwm_led_green {
+			pwms = <&pwm 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+
+		pwm_led_blue: pwm_led_blue {
+			pwms = <&pwm 3 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+	};
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dma2 {
+	status = "okay";
 };
 
 &flx3 {
@@ -138,6 +166,18 @@
 		};
 	};
 
+	pinctrl_mikrobus_pwm_default: pinctrl_mikrobus_pwm_default {
+		mikrobus1_pwm2 {
+			pinmux = <PIN_PA13__PWMH2>;
+			bias-disable;
+		};
+
+		mikrobus2_pwm3 {
+			pinmux = <PIN_PD20__PWMH3>;
+			bias-disable;
+		};
+	};
+
 	pinctrl_sdmmc0_default: sdmmc0_default {
 		cmd_data {
 			pinmux = <PIN_PA1__SDMMC0_CMD>,
@@ -185,6 +225,11 @@
 	clock-frequency = <DT_FREQ_M(10)>;
 };
 
+&pwm {
+	pinctrl-0 = <&pinctrl_mikrobus_pwm_default>;
+	pinctrl-names = "default";
+};
+
 &sdmmc0 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_sdmmc0_default>;
@@ -216,4 +261,8 @@
 		disk-name = "SD";
 		status = "okay";
 	};
+};
+
+&trng {
+	status = "okay";
 };

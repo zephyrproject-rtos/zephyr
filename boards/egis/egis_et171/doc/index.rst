@@ -22,10 +22,6 @@ The platform provides following hardware components:
 - DMA
 - USB
 
-.. figure:: img/et171_snapshot.webp
-     :align: center
-     :alt: EGIS_ET171_SOC
-
 Supported Features
 ==================
 

@@ -5,7 +5,7 @@ Releases
 
 Zephyr project is provided as source code and build scripts for different target
 architectures and configurations, and not as a binary image. Updated versions of
-the Zephyr project are released approximately every four months.
+the Zephyr project are released approximately every six months.
 
 All Zephyr project source code is maintained in a `GitHub repository`_. In order
 to use a released version of the Zephyr project, it is recommended that you use
@@ -20,21 +20,70 @@ of interest).
 Release Life Cycle and Maintenance
 **********************************
 
-Periodic Releases
-=================
+Major and Maintenance Release Cadence
+=====================================
 
-The Zephyr project provides periodic releases every 4 months leading to the
-long term support releases approximately every 2 years. Periodic and non-LTS
-releases are maintained with updates, bug fixes and security related updates
-for at least two cycles, meaning that the project supports the most recent two
-releases in addition to the most recent LTS.
+The Zephyr Project delivers major releases using a six month cadence roughly timed
+each April and October of the year.
+
+This timescale facilitates regular releases that have strong QA cycles while
+not overwhelming users with too many new releases.
+
+The cadence is predictable and avoids many major holidays in various geographies.
+
+The Zephyr project delivers maintenance releases on an unscheduled basis and
+are usually driven by the accumulation of enough significant fixes or enhancements
+to the associated major release.
+
+The point release indicates a point in the major release branch where a full QA
+cycle and release process validates the content of the new branch.
 
 Long Term Support and Maintenance
 =================================
 
+While stable releases are supported for the duration of 2 release cycles (roughly 1 year),
+some specific ones will be supported for a longer period by the Zephyr Project,
+and are called Long Term Support (LTS) releases.
+
 A Zephyr :ref:`Long Term Support (LTS) <release_process_lts>` release is
 published every 2.5 to 3 years and is branched and maintained independently from the
 main tree for approximately 5 years after it was released.
+
+This offers more stability to project users and leaves more time to
+upgrade to the following LTS release.
+
+
+Transitioning to the new Release Cadence
+========================================
+
+The transition to the new release cadence will begin in 2026. Zephyr 4.4 is scheduled
+for release in April 2026, and subsequent releases will occur every six months.
+
+The projected timeline for upcoming releases is as follows:
+
++---------+-------------------+---------------------+
+| Release | Planned Date      | Notes               |
++=========+===================+=====================+
+| 4.4     | April 2026        |                     |
++---------+-------------------+---------------------+
+| 4.5     | October 2026      |                     |
++---------+-------------------+---------------------+
+| 4.6     | April 2027        | LTS4                |
++---------+-------------------+---------------------+
+| 5.0     | October 2027      | Start of 5.x cycle  |
++---------+-------------------+---------------------+
+| 5.1     | April 2028        |                     |
++---------+-------------------+---------------------+
+| 5.2     | October 2028      |                     |
++---------+-------------------+---------------------+
+| 5.3     | April 2029        |                     |
++---------+-------------------+---------------------+
+| 5.4     | October 2029      | LTS5                |
++---------+-------------------+---------------------+
+
+Starting with the 5.x release cycle, all releases will follow the new six-month
+cadence from the beginning.
+
 
 Security Fixes
 ==============

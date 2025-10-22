@@ -104,7 +104,7 @@ int eeprom_fm25xxx_read(const struct device *dev, off_t offset, void *data, size
 		sys_put_be24(offset, &read_op[1]);
 		break;
 	default:
-		LOG_ERR("Invalid number of address bytes %u", addr_bytes);
+		LOG_ERR("Invalid number of address bytes %zu", addr_bytes);
 		return -EINVAL;
 	}
 
@@ -182,7 +182,7 @@ int eeprom_fm25xxx_write(const struct device *dev, off_t offset, const void *dat
 		sys_put_be24(offset, &write_op[1]);
 		break;
 	default:
-		LOG_ERR("Invalid number of address bytes %u", addr_bytes);
+		LOG_ERR("Invalid number of address bytes %zu", addr_bytes);
 		return -EINVAL;
 	}
 

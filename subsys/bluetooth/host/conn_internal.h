@@ -283,7 +283,12 @@ struct bt_conn {
 	 * Details about the returned net_buf when it is not NULL:
 	 *   - If the net_buf->len <= *length, then the net_buf has been removed
 	 *     from the tx_queue of the connection and the caller is now the
-	 *     owner of the only reference to the net_buf.
+	 *     owner of the only reference to the net_buf. The caller now has to
+	 *     invoke get_and_clear_cb to get the callback and user-data for the
+	 *     net_buf and is responsible for invoking the callback eventually
+	 *     after the Controller gives a Number of Completed Packets Event
+	 *     for this PDU or when the connection is disconnected, in which
+	 *     case the callback must be invoked with the error code -ESHUTDOWN.
 	 *   - Otherwise, the net_buf is still on the tx_queue of the connection,
 	 *     and the callback has incremented the reference count to account
 	 *     for it having a reference still.

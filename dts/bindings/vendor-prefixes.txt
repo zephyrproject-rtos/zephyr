@@ -518,6 +518,7 @@ panasonic	Panasonic Corporation
 parade	Parade Technologies Inc.
 parallax	Parallax Inc.
 particle	Particle.io
+pcbcupid	PCB Cupid
 pda	Precision Design Associates, Inc.
 peacefair	Ningbo Peacefair Electronic Technology Co., Ltd
 peregrine	Peregrine Consultoria e Servicos
