@@ -1423,4 +1423,13 @@ void *can_classic_setup(void)
 	return NULL;
 }
 
-ZTEST_SUITE(can_classic, NULL, can_classic_setup, NULL, NULL, NULL);
+static void can_classic_teardown(void *ignored)
+{
+	int err;
+
+	ARG_UNUSED(ignored);
+	err = can_stop(can_dev);
+	zassert_true(err == 0 || err == -EALREADY, "can_stop() failed");
+}
+
+ZTEST_SUITE(can_classic, NULL, can_classic_setup, NULL, NULL, can_classic_teardown);
