@@ -38,22 +38,29 @@
 			reg = <0x20000000 DT_SIZE_K(256)>;
 		};
 
-		porta: gpio@41008000 {
-			status = "disabled";
-			compatible = "microchip,port-g1-gpio";
-			reg = <0x41008000 0x80>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			#microchip,pin-cells = <2>;
-		};
+		pinctrl: pinctrl@41008000 {
+			compatible = "microchip,port-g1-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x41008000 0x41008000 0x200>;
 
-		portb: gpio@41008080 {
-			status = "disabled";
-			compatible = "microchip,port-g1-gpio";
-			reg = <0x41008080 0x80>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			#microchip,pin-cells = <2>;
+			porta: gpio@41008000 {
+				compatible = "microchip,port-g1-gpio";
+				reg = <0x41008000 0x80>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#microchip,pin-cells = <2>;
+				status = "disabled";
+			};
+
+			portb: gpio@41008080 {
+				compatible = "microchip,port-g1-gpio";
+				reg = <0x41008080 0x80>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#microchip,pin-cells = <2>;
+				status = "disabled";
+			};
 		};
 	};
 };
