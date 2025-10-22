@@ -772,7 +772,7 @@ static int i2s_rx_stream_start(const struct device *dev)
 	const struct device *dev_dma = dev_data->dev_dma;
 	const struct i2s_mcux_config *dev_cfg = dev->config;
 	I2S_Type *base = get_base(dev);
-	uint8_t num_of_bufs;
+	uint32_t num_of_bufs;
 
 	num_of_bufs = k_mem_slab_num_free_get(strm->cfg.mem_slab);
 
