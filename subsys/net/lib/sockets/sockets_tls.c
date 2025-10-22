@@ -6,6 +6,15 @@
  */
 
 #include <stdbool.h>
+
+/*
+ * TODO: avoid using POSIX APIs within the networking subsystem implementation because it creates
+ * a dependency cycle. POSIX_NETWORKING depends on NET_SOCKETS, but NET_SOCKETS depends on
+ * POSIX_NETWORKING.
+ * - O_NONBLOCK
+ * - F_GETFL
+ * - F_SETFL
+ */
 #include <fcntl.h>
 
 #include <zephyr/logging/log.h>
@@ -13,7 +22,6 @@ LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <zephyr/init.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/net/socket.h>
 #include <zephyr/random/random.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/fdtable.h>

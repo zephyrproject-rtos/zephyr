@@ -14,7 +14,7 @@
  */
 ZTEST(posix_headers, test_stropts_h)
 {
-	#ifdef CONFIG_POSIX_API
+#ifdef CONFIG_POSIX_AEP_CHOICE_PSE53
 	zassert_not_null((void *)putmsg, "putmsg is null");
 	zassert_not_null((void *)fdetach, "fdetach is null");
 	zassert_not_null((void *)fattach, "fattach is null");

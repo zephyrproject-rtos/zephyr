@@ -23,7 +23,7 @@ ZTEST(posix_headers, test_sys_eventfd_h)
 
 	zassert_not_equal((eventfd_t)-1, (eventfd_t)0);
 
-	if (IS_ENABLED(CONFIG_POSIX_API)) {
+	if (IS_ENABLED(CONFIG_EVENTFD)) {
 		zassert_not_null(eventfd);
 		zassert_not_null(eventfd_read);
 		zassert_not_null(eventfd_write);

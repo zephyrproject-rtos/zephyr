@@ -22,7 +22,7 @@ ZTEST(posix_headers, test_mqueue_h)
 	zassert_not_equal(-1, offsetof(struct mq_attr, mq_msgsize));
 	zassert_not_equal(-1, offsetof(struct mq_attr, mq_curmsgs));
 
-	if (IS_ENABLED(CONFIG_POSIX_API)) {
+	if (IS_ENABLED(CONFIG_POSIX_AEP_CHOICE_PSE53)) {
 		zassert_not_null(mq_close);
 		zassert_not_null(mq_getattr);
 		zassert_not_null(mq_notify);

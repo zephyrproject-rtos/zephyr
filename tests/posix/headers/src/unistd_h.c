@@ -190,7 +190,7 @@ ZTEST(posix_headers, test_unistd_h)
 	zassert_not_equal(INT_MIN, _SC_XOPEN_SHM);
 	zassert_not_equal(INT_MIN, _SC_XOPEN_STREAMS);
 	zassert_not_equal(INT_MIN, _SC_XOPEN_UNIX);
-	zassert_not_equal(INT_MIN, _SC_XOPEN_UUCP);
+	/* zassert_not_equal(INT_MIN, _SC_XOPEN_UUCP); */ /* not implemented */
 	zassert_not_equal(INT_MIN, _SC_XOPEN_VERSION);
 
 	/* zassert_equal(STDERR_FILENO, 2); */ /* not implemented */
@@ -201,14 +201,7 @@ ZTEST(posix_headers, test_unistd_h)
 	zassert_not_equal(INT_MIN, _POSIX_VDISABLE);
 #endif
 
-/*
- * FIXME: this should really use IS_ENABLED()
- * When CONFIG_POSIX_API is n-selected (i.e. POSIX headers can only be
- * included with <zephyr/posix/...>, i.e. are namespaced), then there
- * should be no reason to conditionally declare standard posix
- * function prototypes.
- */
-#ifdef CONFIG_POSIX_API
+#ifdef CONFIG_POSIX_AEP_CHOICE_PSE53
 	/* zassert_not_null(access); */ /* not implemented */
 	/* zassert_not_null(alarm); */ /* not implemented */
 	/* zassert_not_null(chdir); */ /* not implemented */
