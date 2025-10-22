@@ -14,8 +14,11 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 
+BUILD_ASSERT(SYSTEM_WORKQUEUE_STACK_SIZE > 0,
+	     "System workqueue stack size must be > 0");
+
 static K_KERNEL_STACK_DEFINE(sys_work_q_stack,
-			     CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE);
+			     SYSTEM_WORKQUEUE_STACK_SIZE);
 
 struct k_work_q k_sys_work_q;
 

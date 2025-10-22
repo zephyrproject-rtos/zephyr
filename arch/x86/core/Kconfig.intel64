@@ -17,8 +17,8 @@ config ISR_STACK_SIZE
 config TEST_EXTRA_STACK_SIZE
 	default 4096
 
-config SYSTEM_WORKQUEUE_STACK_SIZE
-	default 8192
+config SYSTEM_WORKQUEUE_STACK_MIN_SIZE_ARCH
+	def_int 8192
 
 config X86_EXCEPTION_STACK_SIZE
 	int "Size of the exception stack(s)"
