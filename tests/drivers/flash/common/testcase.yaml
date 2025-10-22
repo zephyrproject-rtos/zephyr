@@ -211,7 +211,7 @@ tests:
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
-      - EXTRA_DTC_OVERLAY_FILE=boards/mx25uw63_low_freq.overlay
+      - EXTRA_DTC_OVERLAY_FILE=boards/mx25uw63_freq_256k.overlay
     harness_config:
       fixture: gpio_loopback
   drivers.flash.common.it8xxx2_indirect:
@@ -228,3 +228,10 @@ tests:
       - it515xx_evb
     extra_args:
       - DTC_OVERLAY_FILE="./boards/it515xx_m1k.overlay"
+  drivers.flash.common.mspi_single_io_low_frequency:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="boards/mx25uw63_single_io.overlay;boards/mx25uw63_freq_1M.overlay"
+    harness_config:
+      fixture: gpio_loopback
