@@ -571,7 +571,7 @@ static const struct ov5640_mode_config csi2_modes[] = {
 		.def_frmrate = OV5640_30_FPS,
 	}};
 
-static const int ov5640_frame_rates[] = {OV5640_15_FPS, OV5640_30_FPS, OV5640_60_FPS};
+static const int ov5640_frame_rates[] = {OV5640_60_FPS, OV5640_30_FPS, OV5640_15_FPS};
 
 /* Initialization sequence for QQVGA resolution (160x120) */
 static const struct video_reg16 dvp_160x120_res_params[] = {
