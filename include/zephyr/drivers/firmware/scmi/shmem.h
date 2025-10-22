@@ -93,4 +93,11 @@ int scmi_shmem_vendor_write_message(struct scmi_shmem_layout *layout);
  */
 int scmi_shmem_vendor_read_message(const struct scmi_shmem_layout *layout);
 
+/**
+ * @brief Clear a SHMEM area channel status
+ *
+ * @param dev pointer to shmem device
+ */
+void scmi_shmem_clear_channel_status(const struct device *dev);
+
 #endif /* _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_SHMEM_H_ */
