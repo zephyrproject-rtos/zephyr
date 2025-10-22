@@ -1,0 +1,11 @@
+boards:
+  - name: slwrb4182a
+    full_name: EFR32xG22 2.4 GHz +6 dBm Radio Board
+    vendor: silabs
+    socs:
+      - name: efr32mg22c224f512im40
+  - name: slwrb4311a
+    full_name: BGM220P Bluetooth Module 2.4 GHz +8 dBm Radio Board
+    vendor: silabs
+    socs:
+      - name: bgm220pc22hna

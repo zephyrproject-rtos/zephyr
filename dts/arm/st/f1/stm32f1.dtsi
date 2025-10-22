@@ -18,6 +18,7 @@
 #include <zephyr/dt-bindings/power/stm32_pwr.h>
 #include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 #include <freq.h>
+#include <mem.h>
 
 / {
 	chosen {
@@ -136,7 +137,7 @@
 			compatible = "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
-			#address-cells = <1>;
+			#address-cells = <0>;
 			reg = <0x40010400 0x400>;
 			num-lines = <32>;
 			interrupts = <6 0>, <7 0>, <8 0>, <9 0>,
@@ -397,8 +398,8 @@
 			#io-channel-cells = <1>;
 			resolutions = <STM32F1_ADC_RES(12)>;
 			sampling-times = <2 8 14 29 42 56 72 240>;
-			st,adc-sequencer = "FULLY_CONFIGURABLE";
-			st,adc-oversampler = "OVERSAMPLER_NONE";
+			st,adc-sequencer = "programmable";
+			st,adc-oversampler = "none";
 			st,adc-internal-regulator = "none";
 			status = "disabled";
 		};

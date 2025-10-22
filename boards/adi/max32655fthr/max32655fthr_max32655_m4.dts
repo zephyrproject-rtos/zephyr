@@ -19,7 +19,7 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,sram = &sram2;
-		zephyr,flash = &flash0;
+		zephyr,flash = &code_partition;
 	};
 
 	leds {
@@ -197,5 +197,22 @@
 		hold-gpios = <&gpio0 9 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
 		wp-gpios = <&gpio0 8 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
 		status = "okay";
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		code_partition: partition@0 {
+			label = "image-m4";
+			reg = <0x0 DT_SIZE_K(448)>;
+		};
+		storage_partition: partition@70000 {
+			label = "storage";
+			reg = <0x70000 DT_SIZE_K(64)>;
+		};
 	};
 };

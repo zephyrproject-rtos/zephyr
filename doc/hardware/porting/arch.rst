@@ -87,6 +87,76 @@ Some examples of architecture-specific steps that have to be taken:
   race conditions.
 * Setup FIRQ and regular IRQ handling on ARCv2.
 
+Early Boot Sequence Hooks
+=========================
+
+Zephyr exposes several hooks (described in :zephyr_file:`include/zephyr/platform/hooks.h`)
+that allow execution of SoC- or board-specific code at precise moments of the boot process.
+
+The kernel takes care of calling most of the hooks from architecture-agnostic
+code. However, some hooks must be called during the early boot sequence; since
+the sequence is implemented in architecture-specific code, the call to the hooks
+must also be done there. The following gives a rough overview of the early
+boot sequence and when hooks should be called by architecture-specific code:
+
+#. Execution begins in an architecture-specific entry point whose name
+   matches :kconfig:option:`CONFIG_KERNEL_ENTRY`.
+
+#. Architecture-specific state is re-initialized immediately
+   (if :kconfig:option:`CONFIG_INIT_ARCH_HW_AT_BOOT` is enabled).
+
+#. :c:func:`soc_early_reset_hook` is called.
+
+   .. note::
+    It is not necessary to set up a valid stack before calling this hook.
+    However, the hook is allowed to overwrite the stack pointer before returning.
+    The architecture-specific code must not expect the stack pointer register
+    value to be preserved across the call to :c:func:`soc_early_reset_hook`.
+
+    On architectures with multiple stack pointers, there is usually a *"primary"*
+    stack pointer accessible directly and *"secondary"* stack pointer register(s).
+    :c:func:`soc_early_reset_hook` implementations may overwrite the *"primary"*
+    stack pointer must **not** read or modify the value of any *"secondary"* stack
+    pointer. (This allows the architecture-specific code to set up any *"secondary"*
+    stack pointer it desires before calling :c:func:`soc_early_reset_hook`)
+
+    For example, the ARM Cortex-A architecture defines several execution modes,
+    each of which has its own stack pointer register :samp:`sp_{mode}`. When
+    the processor is executing in mode :samp:`{X}`, operations involving the
+    ``sp`` general-purpose register operate on :samp:`sp_{X}`. On this
+    architecture, assuming that the processor is executing in mode :samp:`{M}`
+    when :c:func:`soc_early_reset_hook` is called, the hook is allowed to
+    overwrite :samp:`sp_{M}` (accessible through ``sp``) but **must not** read
+    or overwrite any other :samp:`sp_{mode}` (where :samp:`{mode} != {M}`).
+
+    :c:func:`soc_early_reset_hook` implementations are allowed to not return
+    execution to the architecture-specific code, in which case they "take over"
+    the system. Such hooks are not subject to the aforementioned rules and may
+    read or overwrite any stack pointer. However, when such an implementation
+    is provided, the rest of the early boot sequence obviously does not execute.
+
+#. An initial stack is set up for next steps of the early boot sequence.
+
+#. Architecture-specific "*resume from suspend-to-RAM*" logic is executed
+
+   .. note::
+    Refer to :kconfig:option:`CONFIG_PM_S2RAM` and the architecture-specific
+    implementation for more details, but note that the rest of the early boot
+    sequence is not executed if this logic determines that an exit from
+    suspend-to-RAM is ongoing.
+
+#. :c:func:`soc_reset_hook` is called.
+
+#. *Architecture-specific operations (in assembly) are performed here...*
+
+#. :c:func:`z_prep_c` is called. This architecture-specific function is implemented in C.
+
+#. :c:func:`z_prep_c` immediately calls :c:func:`soc_prep_hook`.
+
+#. *Architecture-specific operations (in C) are performed here...*
+
+#. :c:func:`z_cstart` is called. Architecture-agnostic code begins executing.
+
 Interrupt and Exception Handling
 ********************************
 

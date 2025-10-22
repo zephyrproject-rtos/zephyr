@@ -487,6 +487,31 @@
 					vfront-porch = <9>;
 				};
 			};
+
+			hx8379c: hx8379c@6 {
+				status = "okay";
+				compatible = "himax,hx8379c";
+				reg = <0x6>;
+				width = <480>;
+				height = <480>;
+				data-lanes = <2>;
+				pixel-format = <0>;
+				reset-gpios = <&test_gpio 0 0>;
+
+				display-timings {
+					compatible = "zephyr,panel-timing";
+					hsync-active = <1>;
+					vsync-active = <1>;
+					de-active = <0>;
+					pixelclk-active = <0>;
+					hsync-len = <2>;
+					hback-porch = <1>;
+					hfront-porch = <1>;
+					vsync-len = <1>;
+					vback-porch = <13>;
+					vfront-porch = <50>;
+				};
+			};
 		};
 
 		test_spi: spi@33334444 {

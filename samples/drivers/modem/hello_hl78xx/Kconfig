@@ -1,0 +1,7 @@
+# Sierra Wireless HL78XX Sample options
+
+# Copyright (c) 2025 Netfeasa
+# SPDX-License-Identifier: Apache-2.0
+
+source "samples/net/common/Kconfig"
+source "Kconfig.zephyr"

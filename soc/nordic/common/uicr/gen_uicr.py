@@ -25,6 +25,8 @@ PERIPHCONF_SECTION = "uicr_periphconf_entry"
 # Common values for representing enabled/disabled in the UICR format.
 ENABLED_VALUE = 0xFFFF_FFFF
 DISABLED_VALUE = 0xBD23_28A8
+PROTECTED_VALUE = ENABLED_VALUE  # UICR_PROTECTED = UICR_ENABLED per uicr_defs.h
+UNPROTECTED_VALUE = DISABLED_VALUE  # Unprotected uses the default erased value
 
 KB_4 = 4096
 
@@ -431,6 +433,39 @@ def main() -> None:
         help="Size in bytes of cpurad_its_partition (decimal or 0x-prefixed hex)",
     )
     parser.add_argument(
+        "--permit-permanently-transitioning-device-to-deployed",
+        action="store_true",
+        help=(
+            "Safety flag required to enable both UICR.LOCK and UICR.ERASEPROTECT together. "
+            "Must be explicitly provided to acknowledge permanent device state changes."
+        ),
+    )
+    parser.add_argument(
+        "--lock",
+        action="store_true",
+        help="Enable UICR.LOCK to prevent modifications without ERASEALL",
+    )
+    parser.add_argument(
+        "--eraseprotect",
+        action="store_true",
+        help="Enable UICR.ERASEPROTECT to block ERASEALL operations",
+    )
+    parser.add_argument(
+        "--approtect-application-protected",
+        action="store_true",
+        help="Protect application domain access port (disable debug access)",
+    )
+    parser.add_argument(
+        "--approtect-radiocore-protected",
+        action="store_true",
+        help="Protect radio core access port (disable debug access)",
+    )
+    parser.add_argument(
+        "--approtect-coresight-protected",
+        action="store_true",
+        help="Protect CoreSight access port (disable debug access)",
+    )
+    parser.add_argument(
         "--protectedmem",
         action="store_true",
         help="Enable protected memory region in UICR",
@@ -439,6 +474,36 @@ def main() -> None:
         "--protectedmem-size-bytes",
         type=int,
         help="Protected memory size in bytes (must be divisible by 4096)",
+    )
+    parser.add_argument(
+        "--wdtstart",
+        action="store_true",
+        help="Enable watchdog timer start in UICR",
+    )
+    parser.add_argument(
+        "--wdtstart-instance-code",
+        type=lambda s: int(s, 0),
+        help="Watchdog timer instance code (0xBD2328A8 for WDT0, 0x1730C77F for WDT1)",
+    )
+    parser.add_argument(
+        "--wdtstart-crv",
+        type=int,
+        help="Initial Counter Reload Value (CRV) for watchdog timer (minimum: 0xF)",
+    )
+    parser.add_argument(
+        "--secondary-wdtstart",
+        action="store_true",
+        help="Enable watchdog timer start in UICR.SECONDARY",
+    )
+    parser.add_argument(
+        "--secondary-wdtstart-instance-code",
+        type=lambda s: int(s, 0),
+        help="Secondary watchdog timer instance code (0xBD2328A8 for WDT0, 0x1730C77F for WDT1)",
+    )
+    parser.add_argument(
+        "--secondary-wdtstart-crv",
+        type=int,
+        help="Secondary initial Counter Reload Value (CRV) for watchdog timer (minimum: 0xF)",
     )
     parser.add_argument(
         "--secondary",
@@ -456,6 +521,26 @@ def main() -> None:
         default=0xBD2328A8,
         type=lambda s: int(s, 0),
         help="Processor to boot for the secondary firmware ",
+    )
+    parser.add_argument(
+        "--secondary-trigger",
+        action="store_true",
+        help="Enable UICR.SECONDARY.TRIGGER for automatic secondary firmware boot on reset events",
+    )
+    parser.add_argument(
+        "--secondary-trigger-resetreas",
+        default=0,
+        type=lambda s: int(s, 0),
+        help=(
+            "Bitmask of reset reasons that trigger secondary firmware boot "
+            "(decimal or 0x-prefixed hex)"
+        ),
+    )
+    parser.add_argument(
+        "--secondary-protectedmem-size",
+        default=None,
+        type=lambda s: int(s, 0),
+        help="Size in bytes of the secondary protected memory region (decimal or 0x-prefixed hex)",
     )
     parser.add_argument(
         "--secondary-periphconf-address",
@@ -547,6 +632,33 @@ def main() -> None:
             uicr.SECURESTORAGE.ITS.APPLICATIONSIZE1KB = args.cpuapp_its_size // 1024
             uicr.SECURESTORAGE.ITS.RADIOCORESIZE1KB = args.cpurad_its_size // 1024
 
+        # Handle LOCK and ERASEPROTECT configuration
+        # Check if both are enabled together - this requires explicit acknowledgment
+        if (
+            args.lock
+            and args.eraseprotect
+            and not args.permit_permanently_transitioning_device_to_deployed
+        ):
+            raise ScriptError(
+                "Enabling both --lock and --eraseprotect requires "
+                "--permit-permanently-transitioning-device-to-deployed to be specified. "
+                "This combination permanently locks the device configuration and prevents "
+                "ERASEALL."
+            )
+
+        if args.lock:
+            uicr.LOCK = ENABLED_VALUE
+        if args.eraseprotect:
+            uicr.ERASEPROTECT = ENABLED_VALUE
+        # Handle APPROTECT configuration
+        if args.approtect_application_protected:
+            uicr.APPROTECT.APPLICATION = PROTECTED_VALUE
+
+        if args.approtect_radiocore_protected:
+            uicr.APPROTECT.RADIOCORE = PROTECTED_VALUE
+
+        if args.approtect_coresight_protected:
+            uicr.APPROTECT.CORESIGHT = PROTECTED_VALUE
         # Handle protected memory configuration
         if args.protectedmem:
             if args.protectedmem_size_bytes % KB_4 != 0:
@@ -556,6 +668,12 @@ def main() -> None:
                 )
             uicr.PROTECTEDMEM.ENABLE = ENABLED_VALUE
             uicr.PROTECTEDMEM.SIZE4KB = args.protectedmem_size_bytes // KB_4
+
+        # Handle WDTSTART configuration
+        if args.wdtstart:
+            uicr.WDTSTART.ENABLE = ENABLED_VALUE
+            uicr.WDTSTART.CRV = args.wdtstart_crv
+            uicr.WDTSTART.INSTANCE = args.wdtstart_instance_code
 
         # Process periphconf data first and configure UICR completely before creating hex objects
         periphconf_hex = IntelHex()
@@ -592,6 +710,20 @@ def main() -> None:
             uicr.SECONDARY.ADDRESS = args.secondary_address
             uicr.SECONDARY.PROCESSOR = args.secondary_processor
 
+            # Handle secondary TRIGGER configuration
+            if args.secondary_trigger:
+                uicr.SECONDARY.TRIGGER.ENABLE = ENABLED_VALUE
+                uicr.SECONDARY.TRIGGER.RESETREAS = args.secondary_trigger_resetreas
+
+            # Handle secondary PROTECTEDMEM configuration
+            if args.secondary_protectedmem_size:
+                uicr.SECONDARY.PROTECTEDMEM.ENABLE = ENABLED_VALUE
+                if args.secondary_protectedmem_size % 4096 != 0:
+                    raise ScriptError(
+                        f"args.secondary_protectedmem_size was {args.secondary_protectedmem_size}, "
+                        f"but must be divisible by 4096"
+                    )
+                uicr.SECONDARY.PROTECTEDMEM.SIZE4KB = args.secondary_protectedmem_size // 4096
             # Handle secondary periphconf if provided
             if args.out_secondary_periphconf_hex:
                 secondary_periphconf_combined = extract_and_combine_periphconfs(
@@ -624,6 +756,12 @@ def main() -> None:
                     )
 
                 uicr.SECONDARY.PERIPHCONF.MAXCOUNT = args.secondary_periphconf_size // 8
+
+            # Handle secondary WDTSTART configuration
+            if args.secondary_wdtstart:
+                uicr.SECONDARY.WDTSTART.ENABLE = ENABLED_VALUE
+                uicr.SECONDARY.WDTSTART.CRV = args.secondary_wdtstart_crv
+                uicr.SECONDARY.WDTSTART.INSTANCE = args.secondary_wdtstart_instance_code
 
         # Create UICR hex object with final UICR data
         uicr_hex = IntelHex()

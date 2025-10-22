@@ -1,0 +1,33 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	sparkfun_d: connector {
+		compatible = "sparkfun,samd21-gpio";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0  0 &porta 11 0>, /* D0 */
+			   <1  0 &porta 10 0>, /* D1 */
+			   <2  0 &porta 14 0>, /* D2 */
+			   <3  0 &porta  9 0>, /* D3 */
+			   <4  0 &porta  8 0>, /* D4 */
+			   <5  0 &porta 15 0>, /* D5 */
+			   <6  0 &porta 20 0>, /* D6 */
+			   <7  0 &porta 21 0>, /* D7 */
+			   <8  0 &porta  6 0>, /* D8 */
+			   <9  0 &porta  7 0>, /* D9 */
+			   <10 0 &porta 18 0>, /* D10 */
+			   <11 0 &porta 16 0>, /* D11 */
+			   <12 0 &porta 19 0>, /* D12 */
+			   <13 0 &porta 17 0>; /* D13 */
+	};
+};
+
+sparkfun_spi: &sercom4 {};
+sparkfun_i2c: &sercom3 {};
+sparkfun_serial: &sercom0 {};
+sparkfun_dac: &dac0 {};
+sparkfun_adc: &adc {};

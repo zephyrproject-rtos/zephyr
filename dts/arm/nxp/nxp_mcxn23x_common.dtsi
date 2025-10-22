@@ -498,7 +498,7 @@
 		compatible = "nxp,mcux-edma";
 		nxp,version = <4>;
 		dma-channels = <16>;
-		dma-requests = <94>;
+		dma-requests = <119>;
 
 		reg = <0x80000 0x1000>;
 		interrupts = <1 0>, <2 0>, <3 0>, <4 0>,
@@ -514,7 +514,7 @@
 		compatible = "nxp,mcux-edma";
 		nxp,version = <4>;
 		dma-channels = <8>;
-		dma-requests = <94>;
+		dma-requests = <119>;
 
 		reg = <0xa0000 0x1000>;
 		interrupts = <77 0>, <78 0>, <79 0>, <80 0>,
@@ -871,7 +871,7 @@
 		reg = <0x4a000 0x1000>;
 		interrupts = <143 0>;
 		clock-frequency = <DT_FREQ_K(16)>;
-		prescaler = <1>;
+		prescale-glitch-filter = <0>;
 		clk-source = <1>;
 		resolution = <32>;
 	};
@@ -881,7 +881,7 @@
 		reg = <0x4b000 0x1000>;
 		interrupts = <144 0>;
 		clock-frequency = <DT_FREQ_K(16)>;
-		prescaler = <1>;
+		prescale-glitch-filter = <0>;
 		clk-source = <1>;
 		resolution = <32>;
 	};
@@ -982,6 +982,48 @@
 		nxp,tx-dma-channel = <2>;
 		nxp,rx-dma-channel = <3>;
 		status = "disabled";
+	};
+
+	micfil: micfil@10c000 {
+		compatible = "nxp,micfil";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		interrupts = <48 0>;
+		reg = <0x10c000 0x1000>;
+		clocks = <&syscon MCUX_MICFIL_CLK>;
+		status = "disabled";
+		quality-mode = <1>;
+		cic-decimation-rate = <0>;
+		fifo-watermark = <15>;
+		sample-rate = <16000>;
+
+		channel0: micfil-channel@0 {
+			reg = <0>;
+			status = "disabled";
+			dc-remover-cutoff-freq = <2>;
+			decimation-filter-gain = <4>;
+		};
+
+		channel1: micfil-channel@1 {
+			reg = <1>;
+			status = "disabled";
+			dc-remover-cutoff-freq = <2>;
+			decimation-filter-gain = <4>;
+		};
+
+		channel2: micfil-channel@2 {
+			reg = <2>;
+			status = "disabled";
+			dc-remover-cutoff-freq = <2>;
+			decimation-filter-gain = <4>;
+		};
+
+		channel3: micfil-channel@3 {
+			reg = <3>;
+			status = "disabled";
+			dc-remover-cutoff-freq = <2>;
+			decimation-filter-gain = <4>;
+		};
 	};
 };
 

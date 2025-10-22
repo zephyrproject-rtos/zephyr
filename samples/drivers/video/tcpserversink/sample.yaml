@@ -19,5 +19,5 @@ tests:
       - stm32n6570_dk/stm32n657xx/sb
     extra_args:
       - platform:mimxrt1064_evk/mimxrt1064:SHIELD=dvp_fpc24_mt9m114
-      - platform:stm32n6570_dk/stm32n657xx/sb:SNIPPET=video-stm32-venc
+      - platform:stm32n6570_dk/stm32n657xx/sb:FILE_SUFFIX=venc
       - platform:stm32n6570_dk/stm32n657xx/sb:SHIELD=st_b_cams_imx_mb1854

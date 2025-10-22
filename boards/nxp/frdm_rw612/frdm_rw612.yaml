@@ -14,6 +14,7 @@ toolchain:
 ram: 960
 flash: 65536
 supported:
+  - arduino_gpio
   - gpio
   - dma
   - spi

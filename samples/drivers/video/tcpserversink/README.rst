@@ -58,22 +58,14 @@ a video software pattern generator is supported by using :ref:`snippet-video-sw-
    :goals: build
    :compact:
 
-For :zephyr:board:`stm32n6570_dk`, the sample can be built with the following command:
+For :zephyr:board:`stm32n6570_dk`, the sample can be built with H264 video compression
+support using the venc file_suffix at the end of the following command:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/video/tcpserversink
    :board: stm32n6570_dk
    :shield: st_b_cams_imx_mb1854
-   :goals: build
-   :compact:
-
-The same can be built with H264 video compression support using :ref:`snippet-video-stm32-venc`:
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/drivers/video/tcpserversink
-   :board: stm32n6570_dk
-   :shield: st_b_cams_imx_mb1854
-   :snippets: video-stm32-venc
+   :gen-args: -DFILE_SUFFIX=venc
    :goals: build
    :compact:
 

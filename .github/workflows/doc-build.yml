@@ -4,9 +4,9 @@
 name: Documentation Build
 
 on:
-  schedule:
-  - cron: '0 */3 * * *'
   push:
+    branches:
+    - main
     tags:
     - v*
   pull_request:
@@ -61,7 +61,7 @@ jobs:
     container:
       image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.28.6.20251003
       options: '--entrypoint /bin/bash'
-    timeout-minutes: 20
+    timeout-minutes: 60
     concurrency:
       group: doc-build-html-${{ github.ref }}
       cancel-in-progress: true
@@ -112,7 +112,6 @@ jobs:
         echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
         west init -l . || true
-        west config manifest.group-filter -- +ci,+optional
         west config --global update.narrow true
         west update --path-cache /repo-cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /repo-cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /repo-cache/zephyrproject)
         west forall -c 'git reset --hard HEAD'

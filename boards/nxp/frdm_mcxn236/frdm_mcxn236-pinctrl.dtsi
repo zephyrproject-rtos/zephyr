@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -8,8 +8,8 @@
 &pinctrl {
 	pinmux_flexcomm0_lpuart: pinmux_flexcomm0_lpuart {
 		group0 {
-			pinmux = <FC0_P0_PIO0_16>,
-				 <FC0_P1_PIO0_17>;
+			pinmux = <FC0_P2_PIO0_6>,
+				 <FC0_P3_PIO0_7>;
 			slew-rate = "fast";
 			drive-strength = "low";
 			input-enable;
@@ -23,6 +23,7 @@
 			slew-rate = "fast";
 			drive-strength = "low";
 			input-enable;
+			bias-pull-up;
 		};
 	};
 
@@ -57,6 +58,7 @@
 			slew-rate = "fast";
 			drive-strength = "low";
 			input-enable;
+			bias-pull-up;
 		};
 	};
 
@@ -227,7 +229,30 @@
 				 <SAI1_TXD0_PIO2_8>,
 				 <SAI1_RX_FS_PIO1_7>,
 				 <SAI1_RX_BCLK_PIO3_18>,
+				 <SAI1_MCLK_PIO3_6>,
 				 <SAI1_RXD0_PIO2_9>;
+			drive-strength = "high";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	pinmux_flexcomm2_i2c: pinmux_flexcomm2_i2c {
+		group0 {
+			pinmux = <FC2_P0_PIO4_0>,
+				 <FC2_P1_PIO4_1>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+			bias-pull-up;
+			drive-open-drain;
+		};
+	};
+
+	pinmux_micfil: pinmux_micfil {
+		group0 {
+			pinmux = <PDM0_CLK_PIO0_16>,
+				 <PDM0_DATA0_PIO0_17>;
 			drive-strength = "high";
 			slew-rate = "fast";
 			input-enable;

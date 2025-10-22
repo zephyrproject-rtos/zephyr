@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/sys/util.h>
-#include <nwp.h>
+#include <siwx91x_nwp.h>
 #include "siwx91x_wifi.h"
 #include "siwx91x_wifi_ps.h"
 

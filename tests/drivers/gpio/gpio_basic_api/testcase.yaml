@@ -58,6 +58,8 @@ tests:
       - frdm_k64f
     platform_exclude:
       # below boards are customized
+      - frdm_mcxe247
+      - frdm_mcxe31b
       - mimxrt595_evk/mimxrt595s/cm33
       - mimxrt1020_evk
       - mimxrt1040_evk
@@ -75,6 +77,7 @@ tests:
       - arduino_gpio
     filter: dt_compat_enabled("test-gpio-basic-api") and dt_compat_enabled("arduino-header-r3")
     platform_allow:
+      - frdm_mcxe31b
       - mimxrt595_evk/mimxrt595s/cm33
       - mimxrt1020_evk
       - mimxrt1040_evk
@@ -130,3 +133,11 @@ tests:
       - nrf54h20dk/nrf54h20/cpurad
     extra_args:
       - DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpurad_gpiote0.overlay"
+  drivers.gpio.2pin_hsgpio:
+    min_flash: 34
+    filter: dt_compat_enabled("test-gpio-basic-api")
+    platform_allow:
+      - frdm_rw612
+    extra_args: "DTC_OVERLAY_FILE=boards/frdm_rw612_hsgpio.overlay"
+    harness_config:
+      fixture: hsgpio_loopback

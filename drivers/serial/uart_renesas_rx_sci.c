@@ -14,6 +14,8 @@
 #include <soc.h>
 #include <zephyr/irq.h>
 #include <zephyr/spinlock.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 
 #include "r_sci_rx_if.h"
 #include "iodefine_sci.h"
@@ -60,6 +62,8 @@ static void uart_rx_sci_txi_isr(const struct device *dev);
 struct uart_rx_sci_config {
 	uint32_t regs;
 	const struct pinctrl_dev_config *pcfg;
+	const struct device *clock;
+	struct clock_control_rx_subsys_cfg clock_subsys;
 };
 
 struct uart_rx_sci_data {
@@ -293,6 +297,9 @@ static void uart_rx_irq_tx_enable(const struct device *dev)
 
 	sci->SCR.BYTE |= (BIT(R_SCI_SCR_TIE_Pos) | BIT(R_SCI_SCR_TEIE_Pos));
 	irq_enable(data->tei_irq);
+#ifdef CONFIG_PM_DEVICE
+	pm_device_busy_set(dev);
+#endif
 }
 
 static void uart_rx_irq_tx_disable(const struct device *dev)
@@ -302,6 +309,9 @@ static void uart_rx_irq_tx_disable(const struct device *dev)
 
 	sci->SCR.BYTE &= ~(BIT(R_SCI_SCR_TIE_Pos) | BIT(R_SCI_SCR_TEIE_Pos));
 	irq_disable(data->tei_irq);
+#ifdef CONFIG_PM_DEVICE
+	pm_device_busy_clear(dev);
+#endif
 }
 
 static int uart_rx_irq_tx_ready(const struct device *dev)
@@ -324,6 +334,9 @@ static void uart_rx_irq_rx_enable(const struct device *dev)
 	volatile struct st_sci *sci = (struct st_sci *)DEV_BASE(dev);
 
 	sci->SCR.BIT.RIE = 1U;
+#ifdef CONFIG_PM_DEVICE
+	pm_device_busy_set(dev);
+#endif
 }
 
 static void uart_rx_irq_rx_disable(const struct device *dev)
@@ -331,6 +344,9 @@ static void uart_rx_irq_rx_disable(const struct device *dev)
 	volatile struct st_sci *sci = (struct st_sci *)DEV_BASE(dev);
 
 	sci->SCR.BIT.RIE = 0U;
+#ifdef CONFIG_PM_DEVICE
+	pm_device_busy_clear(dev);
+#endif
 }
 
 static int uart_rx_irq_rx_ready(const struct device *dev)
@@ -395,9 +411,11 @@ static inline void disable_tx(const struct device *dev)
 	sci->SCR.BYTE &= ~(BIT(R_SCI_SCR_TIE_Pos) | BIT(R_SCI_SCR_TEIE_Pos));
 
 	/* Make sure no transmission is in progress. */
-	while ((sci->SSR.BYTE & BIT(R_SCI_SSR_TDRE_Pos)) == 0) {
+	while ((sci->SSR.BYTE & BIT(R_SCI_SSR_TDRE_Pos)) == 0 ||
+	       (sci->SSR.BYTE & BIT(R_SCI_SSR_TEND_Pos)) == 0) {
+		/* Do nothing */
 	}
-	sci->SCR.BIT.TIE = 0;
+
 	sci->SCR.BIT.TE = 0;
 }
 
@@ -530,6 +548,11 @@ static int uart_rx_sci_async_tx(const struct device *dev, const uint8_t *buf, si
 		goto end;
 	}
 
+#ifdef CONFIG_PM
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+#endif
+
 	enable_tx(dev);
 	data->tx_buffer = (uint8_t *)buf;
 	data->tx_buf_cap = len;
@@ -635,7 +658,6 @@ static int uart_rx_sci_async_tx_abort(const struct device *dev)
 
 	disable_tx(dev);
 	k_work_cancel_delayable(&data->tx_timeout);
-	dtc_renesas_rx_disable_transfer(data->txi_irq);
 
 	transfer_properties_t tx_properties = {0};
 
@@ -646,12 +668,19 @@ static int uart_rx_sci_async_tx_abort(const struct device *dev)
 		goto end;
 	}
 
-	struct uart_event event = {
-		.type = UART_TX_ABORTED,
-		.data.tx.buf = (uint8_t *)data->tx_transfer_info.p_src,
-		.data.tx.len = data->tx_buf_cap - tx_properties.transfer_length_remaining,
-	};
-	async_user_callback(dev, &event);
+	data->tx_buf_len = data->tx_buf_cap - tx_properties.transfer_length_remaining;
+
+	dtc_renesas_rx_disable_transfer(data->txi_irq);
+
+	if (data->tx_buf_len < data->tx_buf_cap) {
+		struct uart_event event = {
+			.type = UART_TX_ABORTED,
+			.data.tx.buf = (uint8_t *)data->tx_transfer_info.p_src,
+			.data.tx.len = data->tx_buf_cap - tx_properties.transfer_length_remaining,
+		};
+		async_user_callback(dev, &event);
+	}
+
 	data->tx_buffer = NULL;
 	data->tx_buf_cap = 0;
 
@@ -796,20 +825,49 @@ static int uart_rx_init(const struct device *dev)
 #endif
 
 	sci_err = R_SCI_Open(data->channel, SCI_MODE_ASYNC, &data->sci_config, NULL, &data->hdl);
-
 	if (sci_err) {
 		return -EIO;
 	}
 
 	/* Set the Asynchronous Start Bit Edge Detection Select to falling edge on the RXDn pin */
 	sci_err = R_SCI_Control(data->hdl, SCI_CMD_START_BIT_EDGE, FIT_NO_PTR);
-
 	if (sci_err) {
 		return -EIO;
 	}
 
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int uart_rx_sci_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct uart_rx_sci_config *config = dev->config;
+	int ret = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = clock_control_on(config->clock,
+				       (clock_control_subsys_t)&config->clock_subsys);
+		if (ret < 0) {
+			return ret;
+		}
+		break;
+
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = clock_control_off(config->clock,
+					(clock_control_subsys_t)&config->clock_subsys);
+		if (ret < 0) {
+			return ret;
+		}
+		break;
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	return ret;
+}
+#endif
 
 static DEVICE_API(uart, uart_rx_driver_api) = {
 	.poll_in = uart_rx_sci_poll_in,
@@ -916,6 +974,10 @@ static void uart_rx_sci_tei_isr(const struct device *dev)
 		.data.tx.len = data->tx_buf_cap,
 	};
 	async_user_callback(dev, &event);
+#ifdef CONFIG_PM
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+#endif
 #endif
 }
 
@@ -1035,6 +1097,12 @@ static void uart_rx_sci_eri_isr(const struct device *dev)
 	static const struct uart_rx_sci_config uart_rx_sci_config_##index = {                      \
 		.regs = DT_REG_ADDR(DT_INST_PARENT(index)),                                        \
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_INST_PARENT(index)),                          \
+		.clock = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(index))),                     \
+		.clock_subsys =                                                                    \
+			{                                                                          \
+				.mstp = DT_CLOCKS_CELL(DT_INST_PARENT(index), mstp),               \
+				.stop_bit = DT_CLOCKS_CELL(DT_INST_PARENT(index), stop_bit),       \
+			},                                                                         \
 	};                                                                                         \
                                                                                                    \
 	static struct uart_rx_sci_data uart_rx_sci_data_##index = {                                \
@@ -1060,9 +1128,9 @@ static void uart_rx_sci_eri_isr(const struct device *dev)
 		}                                                                                  \
 		return 0;                                                                          \
 	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(index, uart_rx_init_##index, NULL, &uart_rx_sci_data_##index,        \
-			      &uart_rx_sci_config_##index, PRE_KERNEL_1,                           \
-			      CONFIG_SERIAL_INIT_PRIORITY, &uart_rx_driver_api);
+	PM_DEVICE_DT_INST_DEFINE(index, uart_rx_sci_pm_action);                                    \
+	DEVICE_DT_INST_DEFINE(index, uart_rx_init_##index, PM_DEVICE_DT_INST_GET(index),           \
+			      &uart_rx_sci_data_##index, &uart_rx_sci_config_##index,              \
+			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, &uart_rx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_RX_INIT)

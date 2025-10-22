@@ -170,12 +170,8 @@ class Build(Forceable):
                            -DEXTRA_DTC_OVERLAY_FILE... cmake arguments: the results are
                            undefined''')
 
-        group = parser.add_mutually_exclusive_group()
-        group.add_argument('--sysbuild', action='store_true',
-                           help='''create multi domain build system''')
-        group.add_argument('--no-sysbuild', action='store_true',
-                           help='''do not create multi domain build system
-                                   (default)''')
+        group.add_argument('--sysbuild', action=argparse.BooleanOptionalAction,
+                           help='''create multi domain build system or disable it (default)''')
 
         group = parser.add_argument_group('pristine builds',
                                           PRISTINE_DESCRIPTION)
@@ -645,12 +641,12 @@ class Build(Forceable):
             cmake_opts.extend(shlex.split(user_args))
 
         config_sysbuild = config_getboolean('sysbuild', False)
-        if self.args.sysbuild or (config_sysbuild and not self.args.no_sysbuild):
+        if self.args.sysbuild is True or (config_sysbuild and self.args.sysbuild is not False):
             cmake_opts.extend([f'-S{SYSBUILD_PROJ_DIR}'])
             cmake_env = os.environ.copy()
             cmake_env["APP_DIR"] = str(self.source_dir)
         else:
-            # self.args.no_sysbuild == True or config sysbuild False
+            # self.args.sysbuild == False or config sysbuild False
             cmake_opts.extend([f'-S{self.source_dir}'])
 
         # Invoke CMake from the current working directory using the

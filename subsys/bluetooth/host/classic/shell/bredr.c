@@ -1469,6 +1469,54 @@ static int cmd_set_role_switchable(const struct shell *sh, size_t argc, char *ar
 	return 0;
 }
 
+#if defined(CONFIG_BT_POWER_MODE_CONTROL)
+static int cmd_set_sniff_mode(const struct shell *sh, size_t argc, char *argv[])
+{
+	const char *action;
+	int err = 0;
+
+	action = argv[1];
+	if (!default_conn) {
+		shell_print(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
+	if (!strcmp(action, "on")) {
+		uint16_t min_interval;
+		uint16_t max_interval;
+		uint16_t attempt;
+		uint16_t timeout;
+
+		min_interval = atoi(argv[2]);
+		max_interval = atoi(argv[3]);
+		attempt = atoi(argv[4]);
+		timeout = atoi(argv[5]);
+		err = bt_conn_br_enter_sniff_mode(default_conn, min_interval, max_interval, attempt,
+						  timeout);
+		if (err) {
+			shell_print(sh, "request enter sniff mode, err:%d", err);
+		} else {
+			shell_print(sh,
+				    "request enter sniff mode, min_interval:%d, max_interval:%d, "
+				    "attempt:%d, timeout:%d",
+				    min_interval, max_interval, attempt, timeout);
+		}
+	} else if (!strcmp(action, "off")) {
+		err = bt_conn_br_exit_sniff_mode(default_conn);
+		if (err) {
+			shell_print(sh, "request enter active mode, err:%d", err);
+		} else {
+			shell_print(sh, "request enter active mode success");
+		}
+	} else {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	return 0;
+}
+#endif
+
 #if defined(CONFIG_BT_L2CAP_CONNLESS)
 static void connless_recv(struct bt_conn *conn, uint16_t psm, struct net_buf *buf)
 {
@@ -1639,6 +1687,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
 	SHELL_CMD_ARG(switch-role, NULL, "<value: central, peripheral>", cmd_switch_role, 2, 0),
 	SHELL_CMD_ARG(set-role-switchable, NULL, "<value: enable, disable>",
 		      cmd_set_role_switchable, 2, 0),
+#if defined(CONFIG_BT_POWER_MODE_CONTROL)
+	SHELL_CMD_ARG(set_sniff_mode, NULL,
+		      "<value:on, off> [min_interval] [max_interval] [attempt] [timeout]",
+		      cmd_set_sniff_mode, 2, 4),
+#endif
 	SHELL_SUBCMD_SET_END
 );
 

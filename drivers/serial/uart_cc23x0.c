@@ -84,7 +84,7 @@ struct uart_cc23x0_data {
 	uint8_t *rx_next_buf;
 	size_t rx_next_len;
 #endif /* CONFIG_UART_CC23X0_DMA_DRIVEN */
-#ifdef CONFIG_PM
+#ifdef CONFIG_PM_DEVICE
 	ATOMIC_DEFINE(pm_lock, UART_CC23X0_PM_LOCK_COUNT);
 #endif
 };

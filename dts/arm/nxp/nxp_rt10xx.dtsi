@@ -1,5 +1,5 @@
 /*
- * Copyright 2017,2023,2024 NXP
+ * Copyright 2017, 2023-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -345,6 +345,12 @@
 				compatible = "nxp,imx-snvs-rtc";
 				interrupts = <46 0>;
 				wakeup-source;
+
+				counter_rtc: counter_rtc {
+					compatible = "zephyr,rtc-counter";
+					alarms-count = <2>;
+					status = "disabled";
+				};
 			};
 		};
 

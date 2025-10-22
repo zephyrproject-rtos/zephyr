@@ -198,6 +198,10 @@
 	status = "okay";
 };
 
+&edma {
+	status = "okay";
+};
+
 &tpm0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_tpm0>;

@@ -55,9 +55,31 @@ struct video_stm32_dcmi_config {
 	const struct stream dma;
 };
 
+static void stm32_dcmi_process_dma_error(DCMI_HandleTypeDef *hdcmi)
+{
+	struct video_stm32_dcmi_data *dev_data =
+		CONTAINER_OF(hdcmi, struct video_stm32_dcmi_data, hdcmi);
+
+	LOG_DBG("Restart DMA after Error!");
+
+	/* Lets try to recover by stopping and restart */
+	if (HAL_DCMI_Stop(&dev_data->hdcmi) != HAL_OK) {
+		LOG_WRN("HAL_DCMI_Stop FAILED!");
+		return;
+	}
+
+	if (HAL_DCMI_Start_DMA(&dev_data->hdcmi,
+			       DCMI_MODE_CONTINUOUS,
+			       (uint32_t)dev_data->vbuf->buffer,
+			       dev_data->vbuf->size / 4) != HAL_OK) {
+		LOG_WRN("Continuous: HAL_DCMI_Start_DMA FAILED!");
+		return;
+	}
+}
+
 void HAL_DCMI_ErrorCallback(DCMI_HandleTypeDef *hdcmi)
 {
-	LOG_WRN("%s", __func__);
+	stm32_dcmi_process_dma_error(hdcmi);
 }
 
 void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
@@ -65,8 +87,10 @@ void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
 	struct video_stm32_dcmi_data *dev_data =
 			CONTAINER_OF(hdcmi, struct video_stm32_dcmi_data, hdcmi);
 	struct video_buffer *vbuf;
+	HAL_StatusTypeDef __maybe_unused hal_ret;
 
-	HAL_DCMI_Suspend(hdcmi);
+	hal_ret = HAL_DCMI_Suspend(hdcmi);
+	__ASSERT_NO_MSG(hal_ret == HAL_OK);
 
 	vbuf = k_fifo_get(&dev_data->fifo_in, K_NO_WAIT);
 
@@ -81,7 +105,8 @@ void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
 	k_fifo_put(&dev_data->fifo_out, vbuf);
 
 resume:
-	HAL_DCMI_Resume(hdcmi);
+	hal_ret = HAL_DCMI_Resume(hdcmi);
+	__ASSERT_NO_MSG(hal_ret == HAL_OK);
 }
 
 static void stm32_dcmi_isr(const struct device *dev)
@@ -96,17 +121,10 @@ static void dcmi_dma_callback(const struct device *dev, void *arg, uint32_t chan
 	DMA_HandleTypeDef *hdma = arg;
 
 	ARG_UNUSED(dev);
-
-	if (status < 0) {
-		LOG_ERR("DMA callback error with channel %d.", channel);
-	}
+	ARG_UNUSED(channel);
+	ARG_UNUSED(status);
 
 	HAL_DMA_IRQHandler(hdma);
-}
-
-void HAL_DMA_ErrorCallback(DMA_HandleTypeDef *hdma)
-{
-	LOG_WRN("%s", __func__);
 }
 
 static int stm32_dma_init(const struct device *dev)
@@ -237,6 +255,7 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable,
 {
 	struct video_stm32_dcmi_data *data = dev->data;
 	const struct video_stm32_dcmi_config *config = dev->config;
+	HAL_StatusTypeDef hal_ret;
 	int err;
 
 	if (!enable) {
@@ -245,8 +264,8 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable,
 			return err;
 		}
 
-		err = HAL_DCMI_Stop(&data->hdcmi);
-		if (err != HAL_OK) {
+		hal_ret = HAL_DCMI_Stop(&data->hdcmi);
+		if (hal_ret != HAL_OK) {
 			LOG_ERR("Failed to stop DCMI");
 			return -EIO;
 		}
@@ -268,9 +287,9 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable,
 	data->hdcmi.Instance->CR &= ~(DCMI_CR_FCRC_0 | DCMI_CR_FCRC_1);
 	data->hdcmi.Instance->CR |= STM32_DCMI_GET_CAPTURE_RATE(data->capture_rate);
 
-	err = HAL_DCMI_Start_DMA(&data->hdcmi, DCMI_MODE_CONTINUOUS,
-			(uint32_t)data->vbuf->buffer, data->vbuf->bytesused / 4);
-	if (err != HAL_OK) {
+	hal_ret = HAL_DCMI_Start_DMA(&data->hdcmi, DCMI_MODE_CONTINUOUS,
+				     (uint32_t)data->vbuf->buffer, data->vbuf->bytesused / 4);
+	if (hal_ret != HAL_OK) {
 		LOG_ERR("Failed to start DCMI DMA");
 		return -EIO;
 	}
@@ -415,6 +434,20 @@ static int video_stm32_dcmi_get_frmival(const struct device *dev, struct video_f
 	return 0;
 }
 
+static int video_stm32_dcmi_set_selection(const struct device *dev, struct video_selection *sel)
+{
+	const struct video_stm32_dcmi_config *config = dev->config;
+
+	return video_set_selection(config->sensor_dev, sel);
+}
+
+static int video_stm32_dcmi_get_selection(const struct device *dev, struct video_selection *sel)
+{
+	const struct video_stm32_dcmi_config *config = dev->config;
+
+	return video_get_selection(config->sensor_dev, sel);
+}
+
 static DEVICE_API(video, video_stm32_dcmi_driver_api) = {
 	.set_format = video_stm32_dcmi_set_fmt,
 	.get_format = video_stm32_dcmi_get_fmt,
@@ -425,6 +458,8 @@ static DEVICE_API(video, video_stm32_dcmi_driver_api) = {
 	.enum_frmival = video_stm32_dcmi_enum_frmival,
 	.set_frmival = video_stm32_dcmi_set_frmival,
 	.get_frmival = video_stm32_dcmi_get_frmival,
+	.set_selection = video_stm32_dcmi_set_selection,
+	.get_selection = video_stm32_dcmi_get_selection,
 };
 
 static void video_stm32_dcmi_irq_config_func(const struct device *dev)
@@ -546,8 +581,7 @@ static int video_stm32_dcmi_init(const struct device *dev)
 	config->irq_config(dev);
 
 	/* Initialize DCMI peripheral */
-	err = HAL_DCMI_Init(&data->hdcmi);
-	if (err != HAL_OK) {
+	if (HAL_DCMI_Init(&data->hdcmi) != HAL_OK) {
 		LOG_ERR("DCMI initialization failed.");
 		return -EIO;
 	}

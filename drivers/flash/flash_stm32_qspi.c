@@ -454,17 +454,12 @@ static int qspi_write_unprotect(const struct device *dev)
 			.InstructionMode = QSPI_INSTRUCTION_1_LINE,
 	};
 
-	if (IS_ENABLED(DT_INST_PROP(0, requires_ulbpr))) {
-		ret = qspi_send_cmd(dev, &cmd_write_en);
-
-		if (ret != 0) {
-			return ret;
-		}
-
-		ret = qspi_send_cmd(dev, &cmd_unprotect);
+	ret = qspi_send_cmd(dev, &cmd_write_en);
+	if (ret != 0) {
+		return ret;
 	}
 
-	return ret;
+	return qspi_send_cmd(dev, &cmd_unprotect);
 }
 
 /*
@@ -1601,7 +1596,9 @@ static int flash_stm32_qspi_init(const struct device *dev)
 
 	/* Initialize DMA HAL */
 	__HAL_LINKDMA(&dev_data->hqspi, hdma, hdma);
-	HAL_DMA_Init(&hdma);
+	if (HAL_DMA_Init(&hdma) != HAL_OK) {
+		return -EIO;
+	}
 
 #endif /* STM32_QSPI_USE_DMA */
 
@@ -1648,7 +1645,9 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	dev_data->hqspi.Init.FlashID = QSPI_FLASH_ID_1;
 #endif /* STM32_QSPI_DOUBLE_FLASH */
 
-	HAL_QSPI_Init(&dev_data->hqspi);
+	if (HAL_QSPI_Init(&dev_data->hqspi) != HAL_OK) {
+		return -EIO;
+	}
 
 #if DT_NODE_HAS_PROP(DT_NODELABEL(quadspi), flash_id) && \
 	defined(QUADSPI_CR_FSEL)
@@ -1658,8 +1657,10 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	 */
 	uint8_t qspi_flash_id = DT_PROP(DT_NODELABEL(quadspi), flash_id);
 
-	HAL_QSPI_SetFlashID(&dev_data->hqspi,
-			    (qspi_flash_id - 1) << QUADSPI_CR_FSEL_Pos);
+	if (HAL_QSPI_SetFlashID(&dev_data->hqspi,
+				(qspi_flash_id - 1) << QUADSPI_CR_FSEL_Pos) != HAL_OK) {
+		return -EIO;
+	}
 #endif
 	/* Initialize semaphores */
 	k_sem_init(&dev_data->sem, 1, 1);
@@ -1739,12 +1740,14 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	}
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-	ret = qspi_write_unprotect(dev);
-	if (ret != 0) {
-		LOG_ERR("write unprotect failed: %d", ret);
-		return -ENODEV;
+	if (IS_ENABLED(DT_INST_PROP(0, requires_ulbpr))) {
+		ret = qspi_write_unprotect(dev);
+		if (ret != 0) {
+			LOG_ERR("write unprotect failed: %d", ret);
+			return -ENODEV;
+		}
+		LOG_DBG("Write Un-protected");
 	}
-	LOG_DBG("Write Un-protected");
 
 #ifdef CONFIG_STM32_MEMMAP
 	ret = stm32_qspi_set_memory_mapped(dev);

@@ -26,9 +26,6 @@ The user can of course try out other client implementations with this sample.
 Building and Running
 ********************
 
-This sample can be found under
-:zephyr_file:`samples/subsys/modbus/tcp_server` in the Zephyr tree.
-
 The following commands build and flash TCP server sample.
 
 .. zephyr-app-commands::

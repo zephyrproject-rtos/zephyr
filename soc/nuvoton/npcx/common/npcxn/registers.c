@@ -35,7 +35,7 @@ NPCX_REG_OFFSET_CHECK(glue_reg, SMB_SEL, 0x021);
 NPCX_REG_OFFSET_CHECK(glue_reg, PSL_CTS, 0x027);
 
 /* UART register structure check */
-NPCX_REG_SIZE_CHECK(uart_reg, 0x027);
+NPCX_REG_SIZE_CHECK(uart_reg, 0x02d);
 NPCX_REG_OFFSET_CHECK(uart_reg, UPSR, 0x00e);
 NPCX_REG_OFFSET_CHECK(uart_reg, UFTSTS, 0x020);
 NPCX_REG_OFFSET_CHECK(uart_reg, UFRCTL, 0x026);

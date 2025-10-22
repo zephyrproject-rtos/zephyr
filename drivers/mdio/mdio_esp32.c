@@ -17,6 +17,7 @@
 #include <hal/emac_hal.h>
 #include <hal/emac_ll.h>
 #include <soc/rtc.h>
+#include <soc/io_mux_reg.h>
 #include <clk_ctrl_os.h>
 
 LOG_MODULE_REGISTER(mdio_esp32, CONFIG_MDIO_LOG_LEVEL);
@@ -152,15 +153,19 @@ static int mdio_esp32_initialize(const struct device *dev)
 		DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 17,
 		"Only GPIO0/16/17 are allowed as a GPIO REF_CLK source!");
 	int ref_clk_gpio = DT_INST_GPIO_PIN(0, ref_clk_output_gpios);
-
 	emac_hal_iomux_rmii_clk_output(ref_clk_gpio);
+
+	/* Configure REF_CLK output when GPIO0 is used */
+	if (ref_clk_gpio == 0) {
+		REG_SET_FIELD(PIN_CTRL, CLK_OUT1, 6);
+	}
+
 	emac_ll_clock_enable_rmii_output(dev_data->hal.ext_regs);
 	periph_rtc_apll_acquire();
 	res = emac_config_apll_clock();
 	if (res != 0) {
 		goto err;
 	}
-	rtc_clk_apll_enable(true);
 #endif
 
 	/* Init MDIO clock */

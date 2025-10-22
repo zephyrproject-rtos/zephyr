@@ -75,8 +75,12 @@ endfunction()
 if(CMAKE_VERBOSE_MAKEFILE)
 endif()
 
+set(lock_args)
+set(eraseprotect_args)
+set(approtect_args)
 set(protectedmem_args)
 set(periphconf_args)
+set(wdtstart_args)
 set(periphconf_elfs)
 set(merged_hex_file ${APPLICATION_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.hex)
 set(secondary_periphconf_elfs)
@@ -114,10 +118,40 @@ if(CONFIG_GEN_UICR_SECURESTORAGE)
   list(APPEND securestorage_args --cpurad-its-size ${CPURAD_ITS_SIZE})
 endif(CONFIG_GEN_UICR_SECURESTORAGE)
 
+# Handle LOCK configuration
+if(CONFIG_GEN_UICR_LOCK)
+  list(APPEND lock_args --lock)
+endif()
+
+# Handle ERASEPROTECT configuration
+if(CONFIG_GEN_UICR_ERASEPROTECT)
+  list(APPEND eraseprotect_args --eraseprotect)
+endif()
+
+# Handle APPROTECT configuration
+if(CONFIG_GEN_UICR_APPROTECT_APPLICATION_PROTECTED)
+  list(APPEND approtect_args --approtect-application-protected)
+endif()
+
+if(CONFIG_GEN_UICR_APPROTECT_RADIOCORE_PROTECTED)
+  list(APPEND approtect_args --approtect-radiocore-protected)
+endif()
+
+if(CONFIG_GEN_UICR_APPROTECT_CORESIGHT_PROTECTED)
+  list(APPEND approtect_args --approtect-coresight-protected)
+endif()
+
 # Handle protected memory configuration
 if(CONFIG_GEN_UICR_PROTECTEDMEM)
   list(APPEND protectedmem_args --protectedmem)
   list(APPEND protectedmem_args --protectedmem-size-bytes ${CONFIG_GEN_UICR_PROTECTEDMEM_SIZE_BYTES})
+endif()
+
+# Handle WDTSTART configuration
+if(CONFIG_GEN_UICR_WDTSTART)
+  list(APPEND wdtstart_args --wdtstart)
+  list(APPEND wdtstart_args --wdtstart-instance-code ${CONFIG_GEN_UICR_WDTSTART_INSTANCE_CODE})
+  list(APPEND wdtstart_args --wdtstart-crv ${CONFIG_GEN_UICR_WDTSTART_CRV})
 endif()
 
 if(CONFIG_GEN_UICR_GENERATE_PERIPHCONF)
@@ -173,6 +207,46 @@ if(CONFIG_GEN_UICR_SECONDARY)
     --secondary-processor ${CONFIG_GEN_UICR_SECONDARY_PROCESSOR_VALUE}
     )
 
+  # Handle secondary WDTSTART configuration
+  if(CONFIG_GEN_UICR_SECONDARY_WDTSTART)
+    list(APPEND secondary_args --secondary-wdtstart)
+    list(APPEND secondary_args --secondary-wdtstart-instance-code ${CONFIG_GEN_UICR_SECONDARY_WDTSTART_INSTANCE_CODE})
+    list(APPEND secondary_args --secondary-wdtstart-crv ${CONFIG_GEN_UICR_SECONDARY_WDTSTART_CRV})
+  endif()
+
+  # Handle secondary TRIGGER configuration
+  if(CONFIG_GEN_UICR_SECONDARY_TRIGGER)
+    list(APPEND secondary_args --secondary-trigger)
+
+    # Compute RESETREAS bitmask from individual trigger configs
+    set(resetreas_value 0)
+    if(CONFIG_GEN_UICR_SECONDARY_TRIGGER_APPLICATIONWDT0)
+      math(EXPR resetreas_value "${resetreas_value} + 0x001")
+    endif()
+    if(CONFIG_GEN_UICR_SECONDARY_TRIGGER_APPLICATIONWDT1)
+      math(EXPR resetreas_value "${resetreas_value} + 0x002")
+    endif()
+    if(CONFIG_GEN_UICR_SECONDARY_TRIGGER_APPLICATIONLOCKUP)
+      math(EXPR resetreas_value "${resetreas_value} + 0x008")
+    endif()
+    if(CONFIG_GEN_UICR_SECONDARY_TRIGGER_RADIOCOREWDT0)
+      math(EXPR resetreas_value "${resetreas_value} + 0x020")
+    endif()
+    if(CONFIG_GEN_UICR_SECONDARY_TRIGGER_RADIOCOREWDT1)
+      math(EXPR resetreas_value "${resetreas_value} + 0x040")
+    endif()
+    if(CONFIG_GEN_UICR_SECONDARY_TRIGGER_RADIOCORELOCKUP)
+      math(EXPR resetreas_value "${resetreas_value} + 0x100")
+    endif()
+
+    list(APPEND secondary_args --secondary-trigger-resetreas ${resetreas_value})
+  endif()
+
+  # Handle secondary PROTECTEDMEM configuration
+  if(CONFIG_GEN_UICR_SECONDARY_PROTECTEDMEM)
+    list(APPEND secondary_args --secondary-protectedmem-size ${CONFIG_GEN_UICR_SECONDARY_PROTECTEDMEM_SIZE_BYTES})
+  endif()
+
   if(CONFIG_GEN_UICR_SECONDARY_GENERATE_PERIPHCONF)
     # Compute SECONDARY_PERIPHCONF absolute address and size from this image's devicetree
     compute_partition_address_and_size("secondary_periphconf_partition" SECONDARY_PERIPHCONF_ADDRESS SECONDARY_PERIPHCONF_SIZE)
@@ -195,6 +269,10 @@ add_custom_command(
           --uicr-address ${UICR_ADDRESS}
           --out-merged-hex ${merged_hex_file}
           --out-uicr-hex ${uicr_hex_file}
+          ${lock_args}
+          ${eraseprotect_args}
+          ${approtect_args}
+          ${wdtstart_args}
           ${periphconf_args}
           ${securestorage_args}
           ${protectedmem_args}

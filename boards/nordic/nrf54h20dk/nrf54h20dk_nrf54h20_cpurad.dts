@@ -130,7 +130,7 @@ zephyr_udc0: &usbhs {
 		/* cache control functions - must be executed from RAM */
 		pm_ramfunc: cpurad_s2ram@2302ff40 {
 			compatible = "zephyr,memory-region", "mmio-sram";
-			reg = <0x2302ff80 192>;
+			reg = <0x2302ff40 192>;
 			zephyr,memory-region = "PMLocalRamfunc";
 		};
 	};

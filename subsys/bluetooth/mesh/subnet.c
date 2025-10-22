@@ -971,6 +971,10 @@ static int net_key_set(const char *name, size_t len_rd,
 	int err;
 	uint16_t net_idx;
 
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return 0;
+	}
+
 	if (!name) {
 		LOG_ERR("Insufficient number of arguments");
 		return -ENOENT;

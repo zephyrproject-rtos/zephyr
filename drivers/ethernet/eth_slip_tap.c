@@ -33,7 +33,14 @@ static enum ethernet_hw_caps eth_capabilities(const struct device *dev)
 static int eth_slip_tap_set_config(const struct device *dev, enum ethernet_config_type type,
 				   const struct ethernet_config *config)
 {
+	struct slip_context *slip = dev->data;
+
 	switch (type) {
+	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
+		memcpy(slip->mac_addr, config->mac_address.addr, 6);
+		net_if_set_link_addr(slip->iface, slip->mac_addr, sizeof(slip->mac_addr),
+				     NET_LINK_ETHERNET);
+		return 0;
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
 		return 0;

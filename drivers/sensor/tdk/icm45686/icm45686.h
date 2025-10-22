@@ -82,7 +82,7 @@ struct icm45686_encoded_data {
 	struct icm45686_encoded_header header;
 	union {
 		struct icm45686_encoded_payload payload;
-		struct icm45686_encoded_fifo_payload fifo_payload;
+		FLEXIBLE_ARRAY_DECLARE(struct icm45686_encoded_fifo_payload, fifo_payload);
 	};
 };
 
@@ -160,6 +160,7 @@ struct icm45686_config {
 			uint8_t lpf : 3;
 		} gyro;
 		uint16_t fifo_watermark;
+		bool fifo_watermark_equals : 1;
 	} settings;
 	struct gpio_dt_spec int_gpio;
 };

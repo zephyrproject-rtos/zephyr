@@ -302,6 +302,17 @@ static void virtconsole_control_recv_cb(void *priv, uint32_t len)
 			}
 			virtconsole_send_control_msg(data->dev, data->rx_ctlbuf[i].port,
 						     VIRTIO_CONSOLE_PORT_OPEN, 1);
+
+			if (atomic_test_bit(&data->flags, RX_IRQ_ENABLED)) {
+				if (!atomic_test_bit(&(data->rx_started), port)) {
+					uint16_t q_no = PORT_TO_RX_VQ_IDX(port);
+
+					virtconsole_recv_setup(data->dev, q_no,
+							       data->rxbuf + data->rxcurrent,
+							       sizeof(char), virtconsole_recv_cb,
+							       data->rx_cb_data + port);
+				}
+			}
 			break;
 		}
 		case VIRTIO_CONSOLE_RESIZE:

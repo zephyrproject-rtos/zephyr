@@ -24,17 +24,10 @@
 
 &stcm {
 	ranges = <0x0 0x30000000 DT_SIZE_K(112)>;
-
-	stcm1: system_memory@1a000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x1a000 DT_SIZE_K(8)>;
-		zephyr,memory-region = "RetainedMem";
-	};
 };
 
 &stcm0 {
-	/* With only the first 64KB having ECC */
-	reg = <0x0 DT_SIZE_K(104)>;
+	reg = <0x0 DT_SIZE_K(112)>;
 };
 
 &pbridge2 {

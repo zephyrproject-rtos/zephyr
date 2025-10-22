@@ -107,8 +107,8 @@ static void stm32_ltdc_global_isr(const struct device *dev)
 static int stm32_ltdc_set_pixel_format(const struct device *dev,
 				const enum display_pixel_format format)
 {
-	int err;
 	struct display_stm32_ltdc_data *data = dev->data;
+	HAL_StatusTypeDef err;
 
 	switch (format) {
 	case PIXEL_FORMAT_RGB_565:
@@ -127,11 +127,14 @@ static int stm32_ltdc_set_pixel_format(const struct device *dev,
 		data->current_pixel_size = 4u;
 		break;
 	default:
-		err = -ENOTSUP;
-		break;
+		return -ENOTSUP;
 	}
 
-	return err;
+	if (err != HAL_OK) {
+		return -EIO;
+	}
+
+	return 0;
 }
 
 static int stm32_ltdc_set_orientation(const struct device *dev,

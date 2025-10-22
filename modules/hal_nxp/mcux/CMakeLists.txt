@@ -74,14 +74,18 @@ endif() # CONFIG_SOC_SDKNG_UNSUPPORTED
 
 enable_language(C ASM)
 
-zephyr_linker_sources(RWDATA
-  ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/quick_access_data.ld
-  )
+if(CONFIG_CPU_CORTEX_A)
+  zephyr_compile_definitions(FSL_SDK_DRIVER_QUICK_ACCESS_DISABLE)
+else()
+  zephyr_linker_sources(RWDATA
+    ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/quick_access_data.ld
+    )
 
-zephyr_linker_sources_ifdef(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
-  RAMFUNC_SECTION
-  ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/quick_access_code.ld
-  )
+  zephyr_linker_sources_ifdef(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
+    RAMFUNC_SECTION
+    ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/quick_access_code.ld
+    )
+endif()
 
 zephyr_linker_sources_ifdef(CONFIG_NOCACHE_MEMORY
   NOCACHE_SECTION
@@ -106,8 +110,6 @@ zephyr_compile_definitions_ifdef(
   CONFIG_I2C_NXP_II2C
   I2C_RETRY_TIMES=40000
   )
-
-zephyr_compile_definitions(FSL_SDK_DRIVER_QUICK_ACCESS_DISABLE)
 
 # note: if FSL_IRQSTEER_ENABLE_MASTER_INT is not
 # defined then it will automatically be defined

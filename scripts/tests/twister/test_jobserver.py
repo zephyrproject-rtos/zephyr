@@ -7,20 +7,21 @@ Tests for jobserver.py classes' methods
 """
 
 import functools
-from unittest import mock
 import os
-import pytest
 import sys
-
 from contextlib import nullcontext
 from errno import ENOENT
 from selectors import EVENT_READ
+from unittest import mock
+
+import pytest
 
 # Job server only works on Linux for now.
 pytestmark = pytest.mark.skipif(sys.platform != 'linux', reason='JobServer only works on Linux.')
 if sys.platform == 'linux':
-    from twisterlib.jobserver import GNUMakeJobClient, GNUMakeJobServer, JobClient, JobHandle
     from fcntl import F_GETFL
+
+    from twisterlib.jobserver import GNUMakeJobClient, GNUMakeJobServer, JobClient, JobHandle
 
 
 def test_jobhandle(capfd):

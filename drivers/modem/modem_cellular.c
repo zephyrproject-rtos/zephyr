@@ -84,6 +84,7 @@ enum modem_cellular_event {
 	MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS,
 	MODEM_CELLULAR_EVENT_SCRIPT_FAILED,
 	MODEM_CELLULAR_EVENT_CMUX_CONNECTED,
+	MODEM_CELLULAR_EVENT_CMUX_DISCONNECTED,
 	MODEM_CELLULAR_EVENT_DLCI1_OPENED,
 	MODEM_CELLULAR_EVENT_DLCI2_OPENED,
 	MODEM_CELLULAR_EVENT_TIMEOUT,
@@ -261,6 +262,8 @@ static const char *modem_cellular_event_str(enum modem_cellular_event event)
 		return "script failed";
 	case MODEM_CELLULAR_EVENT_CMUX_CONNECTED:
 		return "cmux connected";
+	case MODEM_CELLULAR_EVENT_CMUX_DISCONNECTED:
+		return "cmux disconnected";
 	case MODEM_CELLULAR_EVENT_DLCI1_OPENED:
 		return "dlci1 opened";
 	case MODEM_CELLULAR_EVENT_DLCI2_OPENED:
@@ -1388,11 +1391,15 @@ static void modem_cellular_carrier_on_event_handler(struct modem_cellular_data *
 {
 	const struct modem_cellular_config *config =
 		(const struct modem_cellular_config *)data->dev->config;
+	struct cellular_evt_modem_comms_check_result result;
 
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
 	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
+		result.success = evt == MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS;
+
 		modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		modem_cellular_emit_event(data, CELLULAR_EVENT_MODEM_COMMS_CHECK_RESULT, &result);
 		break;
 
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
@@ -1454,6 +1461,7 @@ static int modem_cellular_on_dormant_state_leave(struct modem_cellular_data *dat
 
 static int modem_cellular_on_init_power_off_state_enter(struct modem_cellular_data *data)
 {
+	modem_cmux_disconnect_async(&data->cmux);
 	modem_cellular_start_timer(data, K_MSEC(2000));
 	return 0;
 }
@@ -1465,6 +1473,9 @@ static void modem_cellular_init_power_off_event_handler(struct modem_cellular_da
 		(const struct modem_cellular_config *)data->dev->config;
 
 	switch (evt) {
+	case MODEM_CELLULAR_EVENT_CMUX_DISCONNECTED:
+		modem_cellular_stop_timer(data);
+		__fallthrough;
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
 		/* Shutdown script can only be used if cmd_pipe is available, i.e. we are not in
 		 * some intermediary state without a pipe for commands available
@@ -1864,7 +1875,9 @@ static void modem_cellular_cmux_handler(struct modem_cmux *cmux, enum modem_cmux
 	case MODEM_CMUX_EVENT_CONNECTED:
 		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_CMUX_CONNECTED);
 		break;
-
+	case MODEM_CMUX_EVENT_DISCONNECTED:
+		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_CMUX_DISCONNECTED);
+		break;
 	default:
 		break;
 	}
@@ -2996,8 +3009,8 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, modem_cellular_init, PM_DEVICE_DT_INST_GET(inst),              \
 			      &MODEM_CELLULAR_INST_NAME(data, inst),                               \
-			      &MODEM_CELLULAR_INST_NAME(config, inst), POST_KERNEL, 99,            \
-			      &modem_cellular_api);
+			      &MODEM_CELLULAR_INST_NAME(config, inst), POST_KERNEL,                \
+			      CONFIG_MODEM_CELLULAR_INIT_PRIORITY, &modem_cellular_api);
 
 #define MODEM_CELLULAR_DEVICE_QUECTEL_BG9X(inst)                                                   \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);   \

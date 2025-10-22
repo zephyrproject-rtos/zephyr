@@ -653,6 +653,15 @@ config MBEDTLS_PSA_KEY_SLOT_COUNT
 	  * the heap-allocated memory to store the key material of a given slot,
 	    if it is used and MBEDTLS_PSA_STATIC_KEY_SLOTS is not set.
 
+config MBEDTLS_PSA_CRYPTO_BUILTIN_KEYS
+	bool "Built-in key support in PSA Crypto core"
+	help
+	  Enable support for platform built-in keys in PSA Crypto. Built-in keys
+	  are typically derived from a hardware unique key or stored in a secure
+	  element. Mbed TLS uses key IDs from MBEDTLS_PSA_KEY_ID_BUILTIN_MIN to
+	  MBEDTLS_PSA_KEY_ID_BUILTIN_MAX for built-in keys. The platform must
+	  implement mbedtls_psa_platform_get_builtin_key().
+
 endif # MBEDTLS_PSA_CRYPTO_C
 
 config MBEDTLS_SSL_DTLS_CONNECTION_ID

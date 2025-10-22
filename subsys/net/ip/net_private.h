@@ -15,6 +15,7 @@
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/icmp.h>
+#include <zephyr/net/net_core.h>
 
 #ifdef CONFIG_NET_MGMT_EVENT_INFO
 
@@ -208,6 +209,26 @@ static inline void net_tc_rx_init(void) { }
 enum net_verdict net_tc_try_submit_to_tx_queue(uint8_t tc, struct net_pkt *pkt,
 					       k_timeout_t timeout);
 extern enum net_verdict net_tc_submit_to_rx_queue(uint8_t tc, struct net_pkt *pkt);
+extern int net_tc_tx_thread_priority(int tc);
+extern int net_tc_rx_thread_priority(int tc);
+static inline bool net_tc_tx_is_immediate(int tc, int prio)
+{
+	ARG_UNUSED(prio);
+	bool high_prio = (tc == NET_TC_TX_EFFECTIVE_COUNT - 1);
+	bool skipping = IS_ENABLED(CONFIG_NET_TC_TX_SKIP_FOR_HIGH_PRIO);
+	bool no_queues = (0 == NET_TC_TX_COUNT);
+
+	return no_queues || (high_prio && skipping);
+}
+static inline bool net_tc_rx_is_immediate(int tc, int prio)
+{
+	ARG_UNUSED(prio);
+	bool high_prio = (tc == NET_TC_RX_EFFECTIVE_COUNT - 1);
+	bool skipping = IS_ENABLED(CONFIG_NET_TC_RX_SKIP_FOR_HIGH_PRIO);
+	bool no_queues = (0 == NET_TC_RX_COUNT);
+
+	return no_queues || (high_prio && skipping);
+}
 extern enum net_verdict net_promisc_mode_input(struct net_pkt *pkt);
 
 char *net_sprint_addr(sa_family_t af, const void *addr);

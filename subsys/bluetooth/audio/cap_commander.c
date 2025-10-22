@@ -364,6 +364,9 @@ int cap_commander_broadcast_reception_start(
 	if (err != 0) {
 		LOG_DBG("Failed to start broadcast reception for conn %p: %d", (void *)conn, err);
 
+		active_proc->err = err;
+		active_proc->failed_conn = conn;
+
 		return -ENOEXEC;
 	}
 

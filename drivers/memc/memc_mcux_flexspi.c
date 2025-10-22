@@ -233,6 +233,12 @@ int memc_flexspi_set_device_config(const struct device *dev,
 	/* Lock IRQs before reconfiguring FlexSPI, to prevent XIP */
 	key = irq_lock();
 	FLEXSPI_SetFlashConfig(data->base, &tmp_config, port);
+
+#if (CONFIG_FLASH_MCUX_FLEXSPI_FORCE_USING_OVRDVAL == 1)
+	data->base->DLLCR[port >> 1U] = FLEXSPI_DLLCR_OVRDEN(1) |
+					FLEXSPI_DLLCR_OVRDVAL(CONFIG_FLASH_MCUX_FLEXSPI_OVRDVAL);
+#endif
+
 	FLEXSPI_UpdateLUT(data->base, data->port_luts[port].lut_offset,
 			  lut_ptr, lut_count);
 	irq_unlock(key);

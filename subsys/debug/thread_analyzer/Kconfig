@@ -113,4 +113,12 @@ endif # THREAD_ANALYZER_AUTO_THREAD_PRIORITY_OVERRIDE
 
 endif # THREAD_ANALYZER_AUTO
 
+config THREAD_ANALYZER_LONG_FRAME_PER_INTERVAL
+	bool "Prints the longest frame since the last thread analyzer interval"
+	depends on SCHED_THREAD_USAGE_ANALYSIS
+	help
+	  Resets the thread longest frame field after printing so that the next print
+	  will show the longest frame during that interval.  This enables observation
+	  of what long frames come after the initial startup of a thread.
+
 endif # THREAD_ANALYZER

@@ -6,16 +6,12 @@
 Tests for hardwaremap.py classes' methods
 """
 
-from unittest import mock
-import pytest
 import sys
-
 from pathlib import Path
+from unittest import mock
 
-from twisterlib.hardwaremap import(
-    DUT,
-    HardwareMap
-)
+import pytest
+from twisterlib.hardwaremap import DUT, HardwareMap
 
 
 @pytest.fixture

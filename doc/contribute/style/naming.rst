@@ -15,7 +15,7 @@ as stated in each individual sub-section.
 Public symbol prefixes
 ======================
 
-All :term:`public APIs <public API>` in Zephyr must be prefixed according
+All :term:`public APIs <public API>` introduced to Zephyr must be prefixed according
 to the area or subsystem they belong to. Examples of area or subsystem prefixes
 are provided below for reference.
 

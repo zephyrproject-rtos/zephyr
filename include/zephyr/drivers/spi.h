@@ -339,7 +339,7 @@ struct spi_cs_control {
 	.gpio = SPI_CS_GPIOS_DT_SPEC_GET(node_id),					\
 	.delay = COND_CODE_1(IS_EMPTY(__VA_ARGS__),					\
 			(DIV_ROUND_UP(SPI_CS_CONTROL_MAX_DELAY(node_id), 1000)),	\
-			(__VA_ARGS__))
+			(__VA_ARGS__)),
 
 #define SPI_CS_CONTROL_INIT_NATIVE(node_id)						\
 	.setup_ns = DT_PROP_OR(node_id, spi_cs_setup_delay_ns, 0),			\
@@ -394,10 +394,10 @@ struct spi_cs_control {
 #define SPI_CS_CONTROL_INIT(node_id, ...)					\
 {										\
 	COND_CODE_0(IS_EMPTY(__VA_ARGS__), (SPI_DEPRECATE_DELAY_WARN), ())	\
-	.cs_is_gpio = DT_SPI_DEV_HAS_CS_GPIOS(node_id),				\
 	COND_CODE_1(DT_SPI_DEV_HAS_CS_GPIOS(node_id),				\
 			(SPI_CS_CONTROL_INIT_GPIO(node_id, __VA_ARGS__)),	\
 			(SPI_CS_CONTROL_INIT_NATIVE(node_id)))			\
+	.cs_is_gpio = DT_SPI_DEV_HAS_CS_GPIOS(node_id),				\
 }
 
 /**

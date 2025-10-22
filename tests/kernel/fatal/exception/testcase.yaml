@@ -9,6 +9,17 @@ tests:
     filter: CONFIG_ARCH_HAS_STACK_PROTECTION
     arch_exclude:
       - posix
+      - arc
+    tags:
+      - kernel
+      - userspace
+  kernel.common.stack_protection.arc:
+    extra_args: CONF_FILE=prj.conf
+    filter: CONFIG_ARCH_HAS_STACK_PROTECTION
+    arch_allow: arc
+    extra_configs:
+      - CONFIG_OVERRIDE_FRAME_POINTER_DEFAULT=y
+      - CONFIG_OMIT_FRAME_POINTER=y
     tags:
       - kernel
       - userspace

@@ -170,6 +170,11 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 	ARG_UNUSED(ret);
 
 	cb(&info);
+
+#ifdef CONFIG_THREAD_ANALYZER_LONG_FRAME_PER_INTERVAL
+	k_thread_runtime_stats_longest_frame_reset(thread);
+#endif
+
 }
 
 K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
@@ -252,7 +257,7 @@ void thread_analyzer_auto(void *a, void *b, void *c)
 	}
 }
 
-#if IS_ENABLED(CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES)
+#ifdef CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES
 
 static K_THREAD_STACK_ARRAY_DEFINE(analyzer_thread_stacks, CONFIG_MP_MAX_NUM_CPUS,
 				   CONFIG_THREAD_ANALYZER_AUTO_STACK_SIZE);

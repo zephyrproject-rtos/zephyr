@@ -7,7 +7,7 @@
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 
 / {
-	arduino_header: connector {
+	arduino_header: arduino_connector {
 		compatible = "arduino-header-r3";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;

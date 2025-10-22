@@ -17,6 +17,7 @@
 #include <zephyr/dt-bindings/reset/stm32f0_1_3_reset.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <freq.h>
+#include <mem.h>
 
 / {
 	chosen {
@@ -116,7 +117,7 @@
 			compatible = "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
-			#address-cells = <1>;
+			#address-cells = <0>;
 			reg = <0x40010400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 0)>;
 			num-lines = <32>;
@@ -354,8 +355,8 @@
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <2 8 14 29 42 56 72 240>;
 			num-sampling-time-common-channels = <1>;
-			st,adc-sequencer = "NOT_FULLY_CONFIGURABLE";
-			st,adc-oversampler = "OVERSAMPLER_NONE";
+			st,adc-sequencer = "fixed";
+			st,adc-oversampler = "none";
 			st,adc-internal-regulator = "none";
 			status = "disabled";
 		};

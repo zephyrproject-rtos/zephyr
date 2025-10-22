@@ -17,6 +17,7 @@
 #include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <freq.h>
+#include <mem.h>
 
 / {
 	chosen {
@@ -110,7 +111,7 @@
 			compatible = "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
-			#address-cells = <1>;
+			#address-cells = <0>;
 			reg = <0x40010400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 0)>;
 			num-lines = <32>;

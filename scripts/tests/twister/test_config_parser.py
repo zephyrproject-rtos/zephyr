@@ -8,12 +8,17 @@ Tests for config_parser.py
 """
 
 import os
-import pytest
-from unittest import mock
-import scl
-
-from twisterlib.config_parser import TwisterConfigParser, extract_fields_from_arg_list, ConfigurationError
 from contextlib import nullcontext
+from unittest import mock
+
+import pytest
+import scl
+from twisterlib.config_parser import (
+    ConfigurationError,
+    TwisterConfigParser,
+    extract_fields_from_arg_list,
+)
+
 
 def test_extract_single_field_from_string_argument():
     target_fields = {"FIELD1"}

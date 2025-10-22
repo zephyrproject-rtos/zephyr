@@ -76,6 +76,11 @@
 	nwp: nwp {
 		compatible = "silabs,siwx91x-nwp";
 		power-profile = "high-performance";
+		stack-size = <10240>;
+		interrupt-parent = <&nvic>;
+		interrupts = <30 0>, <74 0>;
+		interrupt-names = "nwp_stack", "nwp_irq";
+		status = "okay";
 
 		bt_hci0: bt_hci {
 			compatible = "silabs,siwx91x-bt-hci";
@@ -304,6 +309,8 @@
 			clocks = <&clock0 SIWX91X_CLK_DMA0>;
 			#dma-cells = <1>;
 			dma-channels = <32>;
+			power-domains = <&siwx91x_soc_pd>;
+			zephyr,pm-device-runtime-auto;
 			status = "disabled";
 		};
 
@@ -318,6 +325,8 @@
 			silabs,sram-region = <&sram_dma1>;
 			#dma-cells = <1>;
 			dma-channels = <12>;
+			power-domains = <&siwx91x_soc_pd>;
+			zephyr,pm-device-runtime-auto;
 			status = "disabled";
 		};
 

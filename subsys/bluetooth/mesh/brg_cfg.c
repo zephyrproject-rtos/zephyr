@@ -52,6 +52,10 @@ static int brg_en_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 {
 	int err;
 
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return 0;
+	}
+
 	if (len_rd == 0) {
 		brg_enabled = 0;
 		LOG_DBG("Cleared bridge enable state");

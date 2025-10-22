@@ -1293,6 +1293,28 @@ Boards
    This directive is used to generate a catalog of Zephyr-supported boards that can be used to
    quickly browse the list of all supported boards and filter them according to various criteria.
 
+.. rst:role:: zephyr:board-catalog
+
+   This role is used to reference the board catalog page, optionally with filter parameters.
+   For example::
+
+      Check out :zephyr:board-catalog:`` for more information.
+
+   Will render as:
+
+      Check out :zephyr:board-catalog:`` for more information.
+
+   This role can be used exactly like the built-in :rst:role:`ref` role, i.e. you may provide a
+   custom link text. For example::
+
+      Check out the :zephyr:board-catalog:`boards using this compatible <#compatibles=ti,hdc2080>`
+      for more information.
+
+   Will render as:
+
+      Check out the :zephyr:board-catalog:`boards using this compatible <#compatibles=ti,hdc2080>`
+      for more information.
+
 .. rst:directive:: .. zephyr:board-supported-hw::
 
    This directive is used to show supported hardware features for all the targets of the board

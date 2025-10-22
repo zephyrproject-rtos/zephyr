@@ -5,7 +5,7 @@ config DMA_SILABS_LDMA
 	bool "Silabs DMA driver"
 	default y
 	select SYS_MEM_BLOCKS
-	select SOC_GECKO_LDMA
+	select SILABS_SISDK_LDMA
 	depends on DT_HAS_SILABS_LDMA_ENABLED
 	help
 	  Driver for Silabs DMA.

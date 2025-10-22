@@ -7,29 +7,25 @@ Tests for testinstance class
 """
 
 import mmap
-from unittest import mock
 import os
-import pytest
-import sys
-
 from contextlib import nullcontext
+from unittest import mock
 
-ZEPHYR_BASE = os.getenv('ZEPHYR_BASE')
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, 'scripts', 'pylib', 'twister'))
-
+import pytest
+from twisterlib.error import TwisterException, TwisterRuntimeError
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testsuite import (
+    ScanPathResult,
+    TestCase,
+    TestSuite,
     _find_src_dir_path,
     _get_search_area_boundary,
     find_c_files_in,
     scan_file,
     scan_testsuite_path,
-    ScanPathResult,
-    TestCase,
-    TestSuite
 )
-from twisterlib.error import TwisterException, TwisterRuntimeError
 
+from . import ZEPHYR_BASE
 
 TESTDATA_1 = [
     (

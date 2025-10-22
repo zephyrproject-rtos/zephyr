@@ -31,10 +31,10 @@
 #define OPEN_FLAGS    (VALID_FLAGS & ~O_CREAT)
 
 /* account for stdin, stdout, stderr */
-#define N (CONFIG_ZVFS_OPEN_MAX - 3)
+#define N (ZVFS_OPEN_SIZE - 3)
 
 /* we need to have at least 2 shared memory objects */
-BUILD_ASSERT(N >= 2, "CONFIG_ZVFS_OPEN_MAX must be > 4");
+BUILD_ASSERT(N >= 2, "ZVFS_OPEN_SIZE must be > 4");
 
 #define S_TYPEISSHM(st) (((st)->st_mode & ZVFS_MODE_IFMT) == ZVFS_MODE_IFSHM)
 

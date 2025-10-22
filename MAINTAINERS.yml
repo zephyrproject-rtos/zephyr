@@ -337,6 +337,7 @@ Arduino Platforms:
     - boards/arduino/
     - boards/shields/arduino_*/
     - drivers/*/*modulino*
+    - dts/vendor/arduino/
 
 Base OS:
   status: maintained
@@ -855,8 +856,6 @@ CPU Frequency Scaling:
     - seankyer
   files:
     - include/zephyr/cpu_freq/
-    - include/zephyr/cpu_load/
-    - subsys/cpu_load/
     - subsys/cpu_freq/
     - dts/bindings/p_state/
   labels:
@@ -3047,9 +3046,10 @@ JSON Web Token:
     - libraries.encoding.jwt
 
 Kconfig:
-  status: odd fixes
-  collaborators:
+  status: maintained
+  maintainers:
     - tejlmand
+  collaborators:
     - nashif
   files:
     - scripts/kconfig/
@@ -4377,6 +4377,25 @@ Renesas RA Platforms:
     Renesas RA SOCs, dts files, and related drivers. Boards based
     on Renesas RA SoCs.
 
+Renesas RX Platform:
+  status: maintained
+  maintainers:
+    - duynguyenxa
+  collaborators:
+    - quytranpzz
+  files:
+    - boards/renesas/*rx*/
+    - drivers/*/*renesas_rx*
+    - drivers/pinctrl/renesas/rx/
+    - dts/rx/renesas/
+    - dts/bindings/*/*renesas,rx*
+    - soc/renesas/rx/
+  labels:
+    - "platform: Renesas RX"
+  description: >-
+    Renesas RX SOCs, dts files, and related drivers. Renesas boards based
+    on RX SoCs.
+
 Renesas RZ Platforms:
   status: maintained
   maintainers:
@@ -4655,6 +4674,7 @@ SiFli SF32LB Platforms:
     - gmarull
   collaborators:
     - cameled
+    - ck-telecom
   files:
     - boards/sifli/
     - drivers/*/*sf32lb*
@@ -4862,10 +4882,13 @@ TI SimpleLink Platforms:
   status: maintained
   maintainers:
     - vaishnavachath
+  collaborators:
+    - bogdanovs
   files:
     - boards/ti/cc*/
     - boards/ti/msp*/
     - drivers/*/*cc13*
+    - drivers/*/*cc23*
     - drivers/*/*cc25*
     - drivers/*/*cc26*
     - drivers/*/*cc32*
@@ -5794,6 +5817,7 @@ West:
   collaborators:
     - nashif
     - inteljiangwe1
+    - dkalowsk
   files: []
   labels:
     - "area: MCTP"
@@ -6078,10 +6102,7 @@ West:
     - thrift
 
 "West project: trusted-firmware-a":
-  status: maintained
-  maintainers:
-    - povergoing
-    - sgrrzhf
+  status: odd fixes
   collaborators:
     - wearyzen
     - ithinuel

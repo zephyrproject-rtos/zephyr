@@ -41,6 +41,25 @@ Base Libraries
 * ``Z_MIN``, ``Z_MAX`` and ``Z_CLAMP`` macros have been renamed to
   :c:macro:`min` :c:macro:`max` and :c:macro:`clamp`.
 
+* The header files ``<zephyr/posix/time.h>``, ``<zephyr/posix/signal.h>`` should no longer be used.
+  Include them in the standard path as ``<time.h>``, and ``<signal.h>``, provided by the C library.
+  Non-POSIX C library maintainers may include :zephyr_file:`include/zephyr/posix/posix_time.h`
+  and :zephyr_file:`include/zephyr/posix/posix_signal.h` to portably provide POSIX definitions.
+
+* POSIX limits are no longer defined in ``<zephyr/posix/posix_features.h>``. Similarly, include them
+  in the standard path via ``<limits.h>``, provided by the C library. Non-POSIX C library maintainers
+  may include :zephyr_file:`include/zephyr/posix/posix_limits.h` for Zephyr's definitions. Some
+  runtime-invariant values may need to be queried via :c:func:`sysconf`.
+
+* The number of file descriptor table size and its availability is now determined by
+  a ``ZVFS_OPEN_SIZE`` define instead of the :kconfig:option:`CONFIG_ZVFS_OPEN_MAX`
+  Kconfig option. Subsystems can specify their own custom file descriptor table size
+  requirements by specifying Kconfig options with the prefix ``CONFIG_ZVFS_OPEN_ADD_SIZE_``.
+  The old Kconfig option still exists, but will be overridden if the custom requirements
+  are larger. To force the old Kconfig option to be used, even when its value is less
+  than the indicated custom requirements, a new :kconfig:option:`CONFIG_ZVFS_OPEN_IGNORE_MIN`
+  option has been introduced (which defaults being disabled).
+
 Boards
 ******
 
@@ -56,6 +75,16 @@ Boards
 
 * Panasonic ``panb511evb`` is renamed to ``panb611evb``.
 
+* STM32 boards OpenOCD configuration files have been changed to support latest OpenOCD versions
+  (> v0.12.0) in which the HLA/SWD transport has been deprecated (see
+  https://review.openocd.org/c/openocd/+/8523 and commit
+  https://sourceforge.net/p/openocd/code/ci/34ec5536c0ba3315bc5a841244bbf70141ccfbb4/).
+  Issues may be encountered when connecting to an ST-Link adapter running firmware prior
+  v2j24 which do not support the new transport. In this case, the ST-Link firmware should
+  be upgraded or, if not possible, the OpenOCD configuration script should be changed to
+  source "interface/stlink-hla.cfg" and select the "hla_swd" interface explicitly.
+  Backward compatibility with OpenOCD v0.12.0 or older is maintained.
+
 Device Drivers and Devicetree
 *****************************
 
@@ -67,6 +96,14 @@ ADC
 * ``iadc_gecko.c`` driver is replaced by ``adc_silabs_iadc.c``.
   :dtcompatible:`silabs,gecko-iadc` is replaced by :dtcompatible:`silabs,iadc`.
 
+Clock Control
+=============
+
+* :kconfig:option:`CONFIG_CLOCK_STM32_HSE_CLOCK` is no longer user-configurable. Its value is now
+  always taken from the ``clock-frequency`` property of ``&clk_hse`` DT node, but only if the node
+  is enabled (otherwise, the symbol is not defined). This change should only affect STM32 MPU-based
+  platforms and aligns them with existing practice from STM32 MCU platforms.
+
 Comparator
 ==========
 
@@ -77,6 +114,13 @@ Comparator
   :c:macro:`NRF_COMP_AIN_VDD_DIV2` represents internal reference VDD/2,
   and :c:macro:`NRF_COMP_AIN_VDDH_DIV5` represents VDDH/5.
   The old ``string`` properties type is deprecated.
+
+DMA
+===
+
+* DMA no longer implements user mode syscalls as part of its API. The syscalls were determined to be
+  too broadly defined in access and impossible to implement the syscall parameter verification step
+  in another.
 
 MFD
 ===
@@ -183,6 +227,22 @@ Bluetooth HCI
 * The deprecated ``ipm`` value was removed from ``bt-hci-bus`` devicetree property.
   ``ipc`` should be used instead.
 
+Bluetooth Mesh
+==============
+
+* Kconfigs ``CONFIG_BT_MESH_USES_MBEDTLS_PSA`` and ``CONFIG_BT_MESH_USES_TFM_PSA`` have
+  been removed. The selection of the PSA Crypto provider is now automatically controlled
+  by Kconfig :kconfig:option:`CONFIG_PSA_CRYPTO`.
+
+Bluetooth Host
+==============
+
+* :kconfig:option:`CONFIG_BT_FIXED_PASSKEY` has been deprecated. Instead, the application can
+  provide passkeys for pairing using the :c:member:`bt_conn_auth_cb.app_passkey` callback, which is
+  available when :kconfig:option:`CONFIG_BT_APP_PASSKEY` is enabled. The application can return the
+  passkey for pairing, or :c:macro:`BT_PASSKEY_RAND` for the Host to generate a random passkey
+  instead.
+
 Ethernet
 ========
 
@@ -200,6 +260,11 @@ Ethernet
       ``disable-rx-checksum-offload`` which now actively disables it.
     * Replaced devicetree property ``tx-checksum-offload`` which enabled TX checksum offloading
       ``disable-tx-checksum-offload`` which now actively disables it.
+
+* The Xilinx GEM Ethernet driver (:dtcompatible:`xlnx,gem`) now obtains the AMBA AHB data bus
+  width matching the current target SoC (either Zynq-7000 or ZynqMP) from a design configuration
+  register at run-time, making the devicetree property ``amba-ahb-dbus-width`` obsolete, which
+  has therefore been removed.
 
 Power management
 ****************
@@ -288,6 +353,21 @@ Cellular
  * :c:enum:`cellular_access_technology` values have been redefined to align with 3GPP TS 27.007.
  * :c:enum:`cellular_registration_status` values have been extended to align with 3GPP TS 27.007.
 
+Crypto
+======
+
+* Hashing operations now require a constant input in the :c:struct:`hash_pkt`.
+  This shouldn't affect any existing code, unless an out-of-tree hashing backend actually
+  performs that operation in-place (see :github:`94218`)
+
+Flash Map
+=========
+
+* With the long-term goal of transitioning to PSA Crypto API as the only crypto support in Zephyr,
+  :kconfig:option:`FLASH_AREA_CHECK_INTEGRITY_MBEDTLS` is deprecated.
+  :kconfig:option:`FLASH_AREA_CHECK_INTEGRITY_PSA` is now the default choice: if TF-M is not
+  enabled or not supported by the platform, Mbed TLS will be used as PSA Crypto API provider.
+
 Logging
 =======
 
@@ -305,6 +385,10 @@ MCUmgr
   revision, which now includes the SoC and board variant. The old behaviour has been deprecated,
   but can still be used by enabling
   :kconfig:option:`CONFIG_MCUMGR_GRP_OS_INFO_HARDWARE_INFO_SHORT_HARDWARE_PLATFORM`.
+
+* Support for legacy Mbed TLS hash crypto is removed and only PSA Crypto API is used.
+  :kconfig:option:`CONFIG_MCUMGR_GRP_FS_HASH_SHA256` automatically enables Mbed TLS and its
+  PSA Crypto implementation if TF-M is not enabled in the build.
 
 RTIO
 ====
@@ -334,6 +418,13 @@ Shell
   and :kconfig:option:`SHELL_MQTT_TOPIC_TX_ID`. This allows keeping the previous topics for backward
   compatibility.
   (:github:`92677`).
+
+UpdateHub
+=========
+
+* Legacy Mbed TLS as an option for crypto support has been removed and PSA Crypto is now used in all
+  cases. :kconfig:option:`CONFIG_UPDATEHUB` will automatically enable the Mbed TLS implementation of
+  PSA Crypto if TF-M is not enabled in the build.
 
 .. zephyr-keep-sorted-stop
 
@@ -369,6 +460,11 @@ LVGL
   black and white to be inverted when using LVGL with monochrome displays.
   This issue has now been fixed. Any workarounds previously applied to achieve the expected
   behavior should be removed, otherwise black and white will be inverted again.
+
+LED Strip
+=========
+
+* Renamed ``arduino,modulino-smartleds`` to :dtcompatible:`arduino,modulino-pixels`
 
 Architectures
 *************

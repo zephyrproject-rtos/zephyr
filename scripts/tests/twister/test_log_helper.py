@@ -7,13 +7,11 @@ Tests for log_helper.py functions
 """
 
 import logging
-from unittest import mock
-import pytest
-
 from importlib import reload
+from unittest import mock
 
+import pytest
 import twisterlib.log_helper
-
 
 TESTDATA = [
     ('Windows', 'dummy message: [\'dummy\', \'command\', \'-flag\']'),

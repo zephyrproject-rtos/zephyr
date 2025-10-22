@@ -135,7 +135,7 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #define USB_USBPHYC_CR_FSEL_24MHZ        USB_USBPHYC_CR_FSEL_1
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) && defined(CONFIG_SOC_SERIES_STM32U5X)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_otghs_phy)
 static const int syscfg_otg_hs_phy_clk[] = {
 	SYSCFG_OTG_HS_PHY_CLK_SELECT_1,	/* 16Mhz   */
 	SYSCFG_OTG_HS_PHY_CLK_SELECT_2,	/* 19.2Mhz */
@@ -158,6 +158,8 @@ struct udc_stm32_data  {
 	const struct device *dev;
 	uint32_t irq;
 	uint32_t occupied_mem;
+	/* wLength of SETUP packet for s-out-status */
+	uint32_t ep0_out_wlength;
 	void (*pcd_prepare)(const struct device *dev);
 	int (*clk_enable)(void);
 	int (*clk_disable)(void);
@@ -275,20 +277,50 @@ void HAL_PCD_SOFCallback(PCD_HandleTypeDef *hpcd)
 	udc_submit_sof_event(priv->dev);
 }
 
-static int usbd_ctrl_feed_dout(const struct device *dev, const size_t length)
+/*
+ * Prepare OUT EP0 for reception.
+ *
+ * @param dev		USB controller
+ * @param length	wLength from SETUP packet for s-out-status
+ *                      0 for s-in-status ZLP
+ */
+static int udc_stm32_prep_out_ep0_rx(const struct device *dev, const size_t length)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	struct udc_ep_config *cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
 	struct net_buf *buf;
+	uint32_t buf_size;
 
-	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, length);
+	udc_ep_set_busy(cfg, true);
+
+	/*
+	 * Make sure OUT EP0 can receive bMaxPacketSize0 bytes
+	 * from each Data packet by rounding up allocation size
+	 * even if "device behaviour is undefined if the host
+	 * should send more data than specified in wLength"
+	 * according to the USB Specification.
+	 *
+	 * Note that ROUND_UP() will return 0 for ZLP.
+	 */
+	buf_size = ROUND_UP(length, UDC_STM32_EP0_MAX_PACKET_SIZE);
+
+	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, buf_size);
 	if (buf == NULL) {
 		return -ENOMEM;
 	}
 
 	k_fifo_put(&cfg->fifo, buf);
 
-	HAL_PCD_EP_Receive(&priv->pcd, cfg->addr, buf->data, buf->size);
+	/*
+	 * Keep track of how much data we're expecting from
+	 * host so we know when the transfer is complete.
+	 * Unlike other endpoints, this bookkeeping isn't
+	 * done by the HAL for OUT EP0.
+	 */
+	priv->ep0_out_wlength = length;
+
+	/* Don't try to receive more than bMaxPacketSize0 */
+	HAL_PCD_EP_Receive(&priv->pcd, cfg->addr, net_buf_tail(buf), UDC_STM32_EP0_MAX_PACKET_SIZE);
 
 	return 0;
 }
@@ -339,7 +371,7 @@ static int udc_stm32_tx(const struct device *dev, struct udc_ep_config *epcfg,
 		if (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)) {
 			udc_stm32_flush_tx_fifo(dev);
 		} else {
-			usbd_ctrl_feed_dout(dev, 0);
+			udc_stm32_prep_out_ep0_rx(dev, 0);
 		}
 	}
 
@@ -351,6 +383,9 @@ static int udc_stm32_rx(const struct device *dev, struct udc_ep_config *epcfg,
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	HAL_StatusTypeDef status;
+
+	/* OUT EP0 requires special logic! */
+	__ASSERT_NO_MSG(epcfg->addr != USB_CONTROL_EP_OUT);
 
 	LOG_DBG("RX ep 0x%02x len %u", epcfg->addr, buf->size);
 
@@ -411,33 +446,72 @@ static void handle_msg_data_out(struct udc_stm32_data *priv, uint8_t epnum, uint
 	LOG_DBG("DataOut ep 0x%02x",  ep);
 
 	epcfg = udc_get_ep_cfg(dev, ep);
-	udc_ep_set_busy(epcfg, false);
 
-	buf = udc_buf_get(epcfg);
+	buf = udc_buf_peek(epcfg);
 	if (unlikely(buf == NULL)) {
 		LOG_ERR("ep 0x%02x queue is empty", ep);
+		udc_ep_set_busy(epcfg, false);
 		return;
 	}
 
+	/* HAL copies data - we just need to update bookkeeping */
 	net_buf_add(buf, rx_count);
 
 	if (ep == USB_CONTROL_EP_OUT) {
+		/*
+		 * OUT EP0 is used for two purposes:
+		 *  - receive 'out' Data packets during s-(out)-status
+		 *  - receive Status OUT ZLP during s-in-(status)
+		 */
 		if (udc_ctrl_stage_is_status_out(dev)) {
+			/* s-in-status completed */
+			__ASSERT_NO_MSG(rx_count == 0);
 			udc_ctrl_update_stage(dev, buf);
 			udc_ctrl_submit_status(dev, buf);
 		} else {
-			udc_ctrl_update_stage(dev, buf);
-		}
+			/* Verify that host did not send more data than it promised */
+			__ASSERT(buf->len <= priv->ep0_out_wlength,
+				 "Received more data from Host than expected!");
 
-		if (udc_ctrl_stage_is_status_in(dev)) {
+			/* Check if the data stage is complete */
+			if (buf->len < priv->ep0_out_wlength) {
+				/* Not yet - prepare to receive more data and wait */
+				HAL_PCD_EP_Receive(&priv->pcd, epcfg->addr, net_buf_tail(buf),
+						   UDC_STM32_EP0_MAX_PACKET_SIZE);
+				return;
+			} /* else: buf->len == priv->ep0_out_wlength */
+
+			/*
+			 * Data stage is complete: update to next step
+			 * which should be Status IN, then submit the
+			 * Setup+Data phase buffers to UDC stack and
+			 * let it handle the next stage.
+			 */
+			udc_ctrl_update_stage(dev, buf);
+			__ASSERT_NO_MSG(udc_ctrl_stage_is_status_in(dev));
 			udc_ctrl_submit_s_out_status(dev, buf);
 		}
 	} else {
 		udc_submit_ep_event(dev, buf, 0);
 	}
 
+	/* Buffer was filled and submitted - remove it from queue */
+	(void)udc_buf_get(epcfg);
+
+	/* Endpoint is no longer busy */
+	udc_ep_set_busy(epcfg, false);
+
+	/* Prepare next transfer for EP if its queue is not empty */
 	buf = udc_buf_peek(epcfg);
 	if (buf) {
+		/*
+		 * Only the driver is allowed to queue transfers on OUT EP0,
+		 * and it should only be doing so once per Control transfer.
+		 * If it has a queued transfer, something must be wrong.
+		 */
+		__ASSERT(epcfg->addr != USB_CONTROL_EP_OUT,
+			 "OUT EP0 should never have pending transfers!");
+
 		udc_stm32_rx(dev, epcfg, buf);
 	}
 }
@@ -515,6 +589,17 @@ static void handle_msg_setup(struct udc_stm32_data *priv)
 	struct net_buf *buf;
 	int err;
 
+	/* Drop all transfers in control endpoints queue upon new SETUP */
+	buf = udc_buf_get_all(udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT));
+	if (buf != NULL) {
+		net_buf_unref(buf);
+	}
+
+	buf = udc_buf_get_all(udc_get_ep_cfg(dev, USB_CONTROL_EP_IN));
+	if (buf != NULL) {
+		net_buf_unref(buf);
+	}
+
 	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, sizeof(struct usb_setup_packet));
 	if (buf == NULL) {
 		LOG_ERR("Failed to allocate for setup");
@@ -522,8 +607,7 @@ static void handle_msg_setup(struct udc_stm32_data *priv)
 	}
 
 	udc_ep_buf_set_setup(buf);
-	memcpy(buf->data, setup, 8);
-	net_buf_add(buf, 8);
+	net_buf_add_mem(buf, setup, sizeof(struct usb_setup_packet));
 
 	udc_ctrl_update_stage(dev, buf);
 
@@ -538,7 +622,7 @@ static void handle_msg_setup(struct udc_stm32_data *priv)
 
 	if (udc_ctrl_stage_is_data_out(dev)) {
 		/*  Allocate and feed buffer for data OUT stage */
-		err = usbd_ctrl_feed_dout(dev, udc_data_stage_length(buf));
+		err = udc_stm32_prep_out_ep0_rx(dev, udc_data_stage_length(buf));
 		if (err == -ENOMEM) {
 			udc_submit_ep_event(dev, buf, err);
 		}
@@ -1174,14 +1258,37 @@ static int priv_clock_enable(void)
 		}
 	#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) */
 #elif defined(CONFIG_SOC_SERIES_STM32N6X)
-	/* Enable Vdd USB voltage monitoring */
+	/* Enable Vdd33USB voltage monitoring */
 	LL_PWR_EnableVddUSBMonitoring();
-	while (__HAL_PWR_GET_FLAG(PWR_FLAG_USB33RDY)) {
-		/* Wait FOR VDD33USB ready */
+	while (!LL_PWR_IsActiveFlag_USB33RDY()) {
+		/* Wait for Vdd33USB ready */
 	}
 
 	/* Enable VDDUSB */
 	LL_PWR_EnableVddUSB();
+#elif defined(CONFIG_SOC_SERIES_STM32WBAX)
+	/* Remove VDDUSB power isolation */
+	LL_PWR_EnableVddUSB();
+
+	/* Make sure that voltage scaling is Range 1 */
+	__ASSERT_NO_MSG(LL_PWR_GetRegulCurrentVOS() == LL_PWR_REGU_VOLTAGE_SCALE1);
+
+	/* Enable VDD11USB */
+	LL_PWR_EnableVdd11USB();
+
+	/* Enable USB OTG internal power */
+	LL_PWR_EnableUSBPWR();
+
+	while (!LL_PWR_IsActiveFlag_VDD11USBRDY()) {
+		/* Wait for VDD11USB supply to be ready */
+	}
+
+	/* Enable USB OTG booster */
+	LL_PWR_EnableUSBBooster();
+
+	while (!LL_PWR_IsActiveFlag_USBBOOSTRDY()) {
+		/* Wait for USB OTG booster to be ready */
+	}
 #elif defined(PWR_USBSCR_USB33SV) || defined(PWR_SVMCR_USV)
 	/*
 	 * VDDUSB independent USB supply (PWR clock is on)
@@ -1247,16 +1354,31 @@ static int priv_clock_enable(void)
 
 	/* Peripheral OTGPHY clock enable */
 	LL_AHB5_GRP1_EnableClock(LL_AHB5_GRP1_PERIPH_OTGPHY1);
-#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_otghs_phy)
+	const struct stm32_pclken hsphy_clk[] = STM32_DT_CLOCKS(DT_NODELABEL(otghs_phy));
+	const uint32_t hsphy_clknum = DT_NUM_CLOCKS(DT_NODELABEL(otghs_phy));
+
 	/* Configure OTG PHY reference clock through SYSCFG */
-	LL_APB3_GRP1_EnableClock(LL_APB3_GRP1_PERIPH_SYSCFG);
+	__HAL_RCC_SYSCFG_CLK_ENABLE();
+
 	HAL_SYSCFG_SetOTGPHYReferenceClockSelection(
 		syscfg_otg_hs_phy_clk[DT_ENUM_IDX(DT_NODELABEL(otghs_phy), clock_reference)]
 	);
 
 	/* De-assert reset and enable clock of OTG PHY */
 	HAL_SYSCFG_EnableOTGPHY(SYSCFG_OTG_HS_PHY_ENABLE);
-	LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_USBPHY);
+
+	if (hsphy_clknum > 1) {
+		if (clock_control_configure(clk, (void *)&hsphy_clk[1], NULL) != 0) {
+			LOG_ERR("Failed OTGHS PHY mux configuration");
+			return -EIO;
+		}
+	}
+
+	if (clock_control_on(clk, (void *)&hsphy_clk[0]) != 0) {
+		LOG_ERR("Failed enabling OTGHS PHY clock");
+		return -EIO;
+	}
 #elif defined(CONFIG_SOC_SERIES_STM32H7X)
 	/*
 	 * If HS PHY (over ULPI) is used, enable ULPI interface clock.
@@ -1282,6 +1404,13 @@ static int priv_clock_enable(void)
 #else /* CONFIG_SOC_SERIES_STM32F2X || CONFIG_SOC_SERIES_STM32F4X */
 	if (UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)) == PCD_PHY_ULPI) {
 		LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
+	} else if (UDC_STM32_NODE_SPEED(DT_DRV_INST(0)) == PCD_SPEED_HIGH_IN_FULL) {
+		/*
+		 * Some parts of the STM32F4 series require the OTGHSULPILPEN to be
+		 * cleared if the OTG_HS is used in FS mode. Disable it on all parts
+		 * since it has no nefarious effect if performed when not required.
+		 */
+		LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 	}
 #endif /* CONFIG_SOC_SERIES_* */
 #elif defined(CONFIG_SOC_SERIES_STM32H7X) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs)

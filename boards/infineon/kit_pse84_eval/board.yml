@@ -5,7 +5,7 @@
 
 board:
   name: kit_pse84_eval
-  full_name: kit_pse84_eval
+  full_name: PSOC Edge E84 Evaluation Kit
   vendor: infineon
   socs:
   - name: pse846gps2dbzc4a

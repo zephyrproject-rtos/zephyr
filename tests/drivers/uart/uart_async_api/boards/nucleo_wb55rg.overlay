@@ -6,8 +6,8 @@
 
 dut: &lpuart1 {
 	/delete-property/ hw-flow-control;
-	dmas = <&dmamux1 0 17 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)
-		&dmamux1 1 16 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+	dmas = <&dmamux1 0 17 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
+	       <&dmamux1 1 16 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
 	dma-names = "tx", "rx";
 };
 

@@ -509,6 +509,7 @@ static int clcc_finish(struct at_client *hf_at, enum at_result result,
 		clear_call_without_clcc(hf);
 	}
 
+	atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_USR_CLCC_CMD);
 	atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_CLCC_PENDING);
 
 	return 0;
@@ -529,7 +530,7 @@ static void clear_call_clcc_state(struct bt_hfp_hf *hf)
 	}
 }
 
-static void hf_query_current_calls(struct bt_hfp_hf *hf)
+static int hf_query_current_calls(struct bt_hfp_hf *hf)
 {
 	int err;
 
@@ -537,24 +538,28 @@ static void hf_query_current_calls(struct bt_hfp_hf *hf)
 
 	if (!hf) {
 		LOG_ERR("No HF connection found");
-		return;
+		return -EINVAL;
 	}
 
 	if (!atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_CONNECTED)) {
-		return;
+		return -ENOTCONN;
 	}
 
 	if (!(hf->ag_features & BT_HFP_AG_FEATURE_ECS)) {
-		return;
+		return -ENOTSUP;
 	}
 
 	if (!(hf->hf_features & BT_HFP_HF_FEATURE_ECS)) {
-		return;
+		return -ENOTSUP;
 	}
 
-	if (atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_CLCC_PENDING)) {
+	if (atomic_test_and_set_bit(hf->flags, BT_HFP_HF_FLAG_CLCC_PENDING)) {
 		k_work_reschedule(&hf->deferred_work, K_MSEC(HF_ENHANCED_CALL_STATUS_TIMEOUT));
-		return;
+		return 0;
+	}
+
+	if (atomic_test_and_clear_bit(hf->flags, BT_HFP_HF_FLAG_USR_CLCC_PND)) {
+		atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_USR_CLCC_CMD);
 	}
 
 	clear_call_clcc_state(hf);
@@ -563,6 +568,8 @@ static void hf_query_current_calls(struct bt_hfp_hf *hf)
 	if (err < 0) {
 		LOG_ERR("Fail to query current calls on %p", hf);
 	}
+
+	return err;
 }
 
 static void hf_call_state_update(struct bt_hfp_hf_call *call, int state)
@@ -812,20 +819,6 @@ static int clcc_handle(struct at_client *hf_at)
 		return err;
 	}
 
-	if (new_call) {
-		set_call_incoming_flag(call, dir == BT_HFP_CLCC_DIR_INCOMING);
-	}
-
-	if (atomic_test_bit(call->flags, BT_HFP_HF_CALL_INCOMING) ||
-	    atomic_test_bit(call->flags, BT_HFP_HF_CALL_INCOMING_3WAY)) {
-		incoming = true;
-	}
-
-	if (incoming != (dir == BT_HFP_CLCC_DIR_INCOMING)) {
-		LOG_ERR("Call dir of HF is not aligned with AG");
-		return 0;
-	}
-
 	err = at_get_number(hf_at, &status);
 	if (err < 0) {
 		LOG_ERR("Error getting status");
@@ -846,8 +839,40 @@ static int clcc_handle(struct at_client *hf_at)
 
 	number = at_get_string(hf_at);
 
-	if (number) {
+	if (number != NULL) {
 		(void)at_get_number(hf_at, &type);
+	}
+
+	if (atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_USR_CLCC_CMD) &&
+	    (bt_hf->query_call != NULL)) {
+		struct bt_hfp_hf_current_call current_call;
+
+		current_call.index = (uint8_t)index;
+		current_call.dir = (enum bt_hfp_hf_call_dir)dir;
+		current_call.status = (enum bt_hfp_hf_call_status)status;
+		current_call.mode = (enum bt_hfp_hf_call_mode)mode;
+		current_call.multiparty = mpty > 0 ? true : false;
+		current_call.number = number;
+		current_call.type = (uint8_t)type;
+
+		bt_hf->query_call(hf, &current_call);
+	}
+
+	LOG_DBG("CLCC idx %d dir %d status %d mode %d mpty %d number %s type %d",
+		index, dir, status, mode, mpty, number, type);
+
+	if (new_call) {
+		set_call_incoming_flag(call, dir == BT_HFP_CLCC_DIR_INCOMING);
+	}
+
+	if (atomic_test_bit(call->flags, BT_HFP_HF_CALL_INCOMING) ||
+	    atomic_test_bit(call->flags, BT_HFP_HF_CALL_INCOMING_3WAY)) {
+		incoming = true;
+	}
+
+	if (incoming != (dir == BT_HFP_CLCC_DIR_INCOMING)) {
+		LOG_ERR("Call dir of HF is not aligned with AG");
+		return 0;
 	}
 
 	if (new_call) {
@@ -855,9 +880,6 @@ static int clcc_handle(struct at_client *hf_at)
 	} else {
 		call_state_update(call, status);
 	}
-
-	LOG_DBG("CLCC idx %d dir %d status %d mode %d mpty %d number %s type %d",
-		index, dir, status, mode, mpty, number, type);
 
 	return 0;
 }
@@ -1054,8 +1076,12 @@ static void bt_hf_deferred_work(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct bt_hfp_hf *hf = CONTAINER_OF(dwork, struct bt_hfp_hf, deferred_work);
+	int err;
 
-	hf_query_current_calls(hf);
+	err = hf_query_current_calls(hf);
+	if (err != 0) {
+		LOG_ERR("Failed to query current calls: %d", err);
+	}
 }
 
 static void set_all_calls_held_state(struct bt_hfp_hf *hf, bool held)
@@ -1091,8 +1117,8 @@ static void ag_indicator_handle_call(struct bt_hfp_hf *hf, uint32_t value)
 
 	LOG_DBG("call %d", value);
 
-	if (value != 0) {
-		atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_CLCC_PENDING);
+	if ((value != 0) && atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_INITIATING)) {
+		atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_QUERY_CALLS);
 	}
 
 	if (value) {
@@ -1153,8 +1179,9 @@ static void ag_indicator_handle_call_setup(struct bt_hfp_hf *hf, uint32_t value)
 
 	LOG_DBG("call setup %d", value);
 
-	if (value != BT_HFP_CALL_SETUP_NONE) {
-		atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_CLCC_PENDING);
+	if ((value != BT_HFP_CALL_SETUP_NONE) &&
+	    atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_INITIATING)) {
+		atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_QUERY_CALLS);
 	}
 
 	switch (value) {
@@ -1254,12 +1281,15 @@ static void ag_indicator_handle_call_held(struct bt_hfp_hf *hf, uint32_t value)
 {
 	struct bt_hfp_hf_call *call;
 
-	k_work_reschedule(&hf->deferred_work, K_MSEC(HF_ENHANCED_CALL_STATUS_TIMEOUT));
+	if (atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_CONNECTED)) {
+		k_work_reschedule(&hf->deferred_work, K_MSEC(HF_ENHANCED_CALL_STATUS_TIMEOUT));
+	}
 
 	LOG_DBG("call setup %d", value);
 
-	if (value != BT_HFP_CALL_HELD_NONE) {
-		atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_CLCC_PENDING);
+	if ((value != BT_HFP_CALL_HELD_NONE) &&
+	    atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_INITIATING)) {
+		atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_QUERY_CALLS);
 	}
 
 	switch (value) {
@@ -2077,9 +2107,12 @@ static int at_cmd_init_start(struct bt_hfp_hf *hf)
 		hf->cmd_init_seq++;
 	}
 
-	if ((ARRAY_SIZE(cmd_init_list) <= hf->cmd_init_seq) &&
-	    atomic_test_and_clear_bit(hf->flags, BT_HFP_HF_FLAG_CLCC_PENDING)) {
-		k_work_reschedule(&hf->deferred_work, K_MSEC(HF_ENHANCED_CALL_STATUS_TIMEOUT));
+	if (ARRAY_SIZE(cmd_init_list) <= hf->cmd_init_seq) {
+		atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_INITIATING);
+		if (atomic_test_and_clear_bit(hf->flags, BT_HFP_HF_FLAG_QUERY_CALLS)) {
+			k_work_reschedule(&hf->deferred_work,
+					  K_MSEC(HF_ENHANCED_CALL_STATUS_TIMEOUT));
+		}
 	}
 
 	return err;
@@ -2307,6 +2340,8 @@ int hf_slc_establish(struct bt_hfp_hf *hf)
 	int err;
 
 	LOG_DBG("");
+
+	atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_INITIATING);
 
 	hf->cmd_init_seq = 0;
 	err = slc_init_start(hf);
@@ -4265,4 +4300,29 @@ int bt_hfp_hf_disconnect(struct bt_hfp_hf *hf)
 	}
 
 	return bt_rfcomm_dlc_disconnect(&hf->rfcomm_dlc);
+}
+
+int bt_hfp_hf_query_list_of_current_calls(struct bt_hfp_hf *hf)
+{
+	int err;
+
+	if ((hf == NULL) || (bt_hf == NULL) || (bt_hf->query_call == NULL)) {
+		return -EINVAL;
+	}
+
+	if (!IS_ENABLED(CONFIG_BT_HFP_HF_ECS)) {
+		return -ENOTSUP;
+	}
+
+	if (atomic_test_and_set_bit(hf->flags, BT_HFP_HF_FLAG_USR_CLCC_PND)) {
+		return -EBUSY;
+	}
+
+	err = hf_query_current_calls(hf);
+	if (err != 0) {
+		atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_USR_CLCC_PND);
+		LOG_ERR("Failed to query current calls, err %d", err);
+	}
+
+	return err;
 }

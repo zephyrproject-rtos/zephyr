@@ -176,6 +176,15 @@
 	pinctrl-names = "default";
 };
 
+/*
+ * MCXW23 FRDM board uses OS timer as the kernel timer
+ * In case we need to switch to SYSTICK timer, then
+ * replace &os_timer with &systick
+ */
+&os_timer {
+	status = "okay";
+};
+
 &wwdt0 {
 	status = "okay";
 };
@@ -185,6 +194,14 @@
 };
 
 &mrt0_channel0 {
+	status = "okay";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&dma1 {
 	status = "okay";
 };
 
@@ -218,7 +235,14 @@
 
 arduino_i2c: &flexcomm1 {};
 
-arduino_spi: &flexcomm2 {};
+arduino_spi: &flexcomm2 {
+	status = "okay";
+	compatible = "nxp,lpc-spi";
+	pinctrl-0 = <&pinmux_flexcomm2_spi>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+};
 
 mikrobus_i2c: &flexcomm1 {};
 

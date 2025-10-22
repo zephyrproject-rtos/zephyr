@@ -126,6 +126,18 @@ void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id);
 void pm_policy_state_lock_put(enum pm_state state, uint8_t substate_id);
 
 /**
+ * @brief Request to lock all power states.
+ *
+ * Requests use a reference counter.
+ */
+void pm_policy_state_all_lock_get(void);
+
+/**
+ * @brief Release locking of all power states.
+ */
+void pm_policy_state_all_lock_put(void);
+
+/**
  * @brief Apply power state constraints by locking the specified states.
  *
  * This function locks all power states specified in the union of all constraints
@@ -272,6 +284,14 @@ static inline void pm_policy_state_lock_put(enum pm_state state, uint8_t substat
 {
 	ARG_UNUSED(state);
 	ARG_UNUSED(substate_id);
+}
+
+static inline void pm_policy_state_all_lock_get(void)
+{
+}
+
+static inline void pm_policy_state_all_lock_put(void)
+{
 }
 
 static inline bool pm_policy_state_lock_is_active(enum pm_state state, uint8_t substate_id)

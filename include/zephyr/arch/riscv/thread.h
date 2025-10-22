@@ -72,7 +72,7 @@ struct _thread_arch {
 #ifdef CONFIG_USERSPACE
 	unsigned long priv_stack_start;
 	unsigned long u_mode_pmpaddr_regs[CONFIG_PMP_SLOTS];
-	unsigned long u_mode_pmpcfg_regs[CONFIG_PMP_SLOTS / sizeof(unsigned long)];
+	unsigned long u_mode_pmpcfg_regs[CONFIG_PMP_SLOTS / (__riscv_xlen / 8)];
 	unsigned int u_mode_pmp_domain_offset;
 	unsigned int u_mode_pmp_end_index;
 	unsigned int u_mode_pmp_update_nr;
@@ -80,9 +80,18 @@ struct _thread_arch {
 #ifdef CONFIG_PMP_STACK_GUARD
 	unsigned int m_mode_pmp_end_index;
 	unsigned long m_mode_pmpaddr_regs[CONFIG_PMP_SLOTS];
-	unsigned long m_mode_pmpcfg_regs[CONFIG_PMP_SLOTS / sizeof(unsigned long)];
+	unsigned long m_mode_pmpcfg_regs[CONFIG_PMP_SLOTS / (__riscv_xlen / 8)];
+#endif
+#if defined(CONFIG_CPP) && !defined(CONFIG_FPU_SHARING) && !defined(CONFIG_USERSPACE) &&           \
+	!defined(CONFIG_PMP_STACK_GUARD)
+	/* Empty struct has size 0 in C, size 1 in C++. Force them to be the same. */
+	uint8_t unused_cpp_size_compatibility;
 #endif
 };
+
+#if defined(CONFIG_CPP)
+BUILD_ASSERT(sizeof(struct _thread_arch) >= 1);
+#endif
 
 typedef struct _thread_arch _thread_arch_t;
 

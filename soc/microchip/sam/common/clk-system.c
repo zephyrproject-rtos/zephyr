@@ -25,7 +25,7 @@ struct clk_system {
 	uint8_t id;
 };
 
-static struct clk_system clocks_sys[8];
+static struct clk_system clocks_sys[SOC_NUM_CLOCK_SYSTEM];
 static uint32_t clocks_sys_idx;
 
 static inline int is_pck(int id)

@@ -70,9 +70,13 @@ if(CONFIG_SOC_FAMILY_INFINEON_EDGE)
   add_subdirectory(mtb-dsl-pse8xxgp)
 endif()
 
+if(CONFIG_SOC_SERIES_PSC3)
+  add_subdirectory(zephyr-ifx-cycfg)
+endif()
+
 ## Add Wi-Fi assets for AIROC devices
-if(CONFIG_WIFI_AIROC)
-  add_subdirectory(wifi-host-driver)
+if (CONFIG_WIFI_AIROC)
+  add_subdirectory(whd-expansion)
 
   ## Add core-lib sources for CAT1 devices
   add_subdirectory_ifndef(CONFIG_SOC_FAMILY_INFINEON_CAT1 core-lib)

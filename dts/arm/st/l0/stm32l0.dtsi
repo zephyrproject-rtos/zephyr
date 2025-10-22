@@ -17,6 +17,7 @@
 #include <zephyr/dt-bindings/reset/stm32l0_reset.h>
 #include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 #include <freq.h>
+#include <mem.h>
 
 / {
 	chosen {
@@ -144,7 +145,7 @@
 			compatible = "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
-			#address-cells = <1>;
+			#address-cells = <0>;
 			reg = <0x40010400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 0)>;
 			num-lines = <32>;
@@ -329,8 +330,8 @@
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <2 4 8 13 20 40 80 161>;
 			num-sampling-time-common-channels = <1>;
-			st,adc-sequencer = "NOT_FULLY_CONFIGURABLE";
-			st,adc-oversampler = "OVERSAMPLER_MINIMAL";
+			st,adc-sequencer = "fixed";
+			st,adc-oversampler = "minimal";
 			st,adc-internal-regulator = "startup-sw-delay";
 			status = "disabled";
 		};

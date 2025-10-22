@@ -99,6 +99,7 @@ typedef int (*bt_avdtp_func_t)(struct bt_avdtp_req *req, struct net_buf *buf);
 struct bt_avdtp_req {
 	uint8_t sig;
 	uint8_t tid;
+	/* set it as 0 (BT_AVDTP_SUCCESS) before giving the req to avdtp */
 	uint8_t status;
 	bt_avdtp_func_t func;
 };

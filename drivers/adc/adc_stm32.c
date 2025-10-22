@@ -86,8 +86,8 @@ LOG_MODULE_REGISTER(adc_stm32);
 #define ASYNC			2
 
 /* Sequencer type */
-#define NOT_FULLY_CONFIGURABLE	0
-#define FULLY_CONFIGURABLE	1
+#define SEQUENCER_FIXED		0
+#define SEQUENCER_PROGRAMMABLE	1
 
 /* Oversampler type */
 #define OVERSAMPLER_NONE	0
@@ -107,17 +107,17 @@ LOG_MODULE_REGISTER(adc_stm32);
 #define ANY_ADC_SEQUENCER_TYPE_IS(value) \
 	(DT_INST_FOREACH_STATUS_OKAY_VARGS(IS_EQ_STRING_PROP, \
 					   st_adc_sequencer,\
-					   value) 0)
+					   value, SEQUENCER_) 0)
 
 #define ANY_ADC_OVERSAMPLER_TYPE_IS(value) \
 	(DT_INST_FOREACH_STATUS_OKAY_VARGS(IS_EQ_STRING_PROP, \
 					   st_adc_oversampler,\
-					   value) 0)
+					   value, OVERSAMPLER_) 0)
 
 #define ANY_ADC_INTERNAL_REGULATOR_TYPE_IS(value) \
 	(DT_INST_FOREACH_STATUS_OKAY_VARGS(IS_EQ_STRING_PROP, \
 					   st_adc_internal_regulator,\
-					   value) 0)
+					   value, INTERNAL_REGULATOR_) 0)
 
 #define ANY_ADC_HAS_DEEP_POWERDOWN \
 	(DT_INST_FOREACH_STATUS_OKAY_VARGS(IS_EQ_PROP_OR, \
@@ -145,13 +145,13 @@ LOG_MODULE_REGISTER(adc_stm32);
 #define IS_EQ_NODE_PROP_OR(node, prop, default_value, compare_value) \
 	IS_EQ(DT_PROP_OR(node, prop, default_value), compare_value) ||
 
-#define IS_EQ_STRING_PROP(inst, prop, compare_value) \
-	IS_EQ(DT_INST_STRING_UPPER_TOKEN(inst, prop), compare_value) ||
+#define IS_EQ_STRING_PROP(inst, prop, compare_value, prefix) \
+	IS_EQ(CONCAT(prefix, DT_INST_STRING_UPPER_TOKEN(inst, prop)), compare_value) ||
 
 /* reference voltage for the ADC */
 #define STM32_ADC_VREF_MV DT_INST_PROP(0, vref_mv)
 
-#if ANY_ADC_SEQUENCER_TYPE_IS(FULLY_CONFIGURABLE)
+#if ANY_ADC_SEQUENCER_TYPE_IS(SEQUENCER_PROGRAMMABLE)
 
 #if defined(LL_ADC_REG_RANK_28)
 #define MAX_RANK	28
@@ -172,7 +172,7 @@ static const uint32_t table_seq_len[] = {
 	LISTIFY(UTIL_DEC(MAX_RANK), SEQ_LEN, (,))
 };
 
-#endif /* ANY_ADC_SEQUENCER_TYPE_IS(FULLY_CONFIGURABLE) */
+#endif /* ANY_ADC_SEQUENCER_TYPE_IS(SEQUENCER_PROGRAMMABLE) */
 
 /* Number of different sampling time values */
 #define STM32_NB_SAMPLING_TIME	8
@@ -946,8 +946,8 @@ static int set_sequencer(const struct device *dev)
 
 		channels_mask |= channel;
 
-#if ANY_ADC_SEQUENCER_TYPE_IS(FULLY_CONFIGURABLE)
-		if (config->sequencer_type == FULLY_CONFIGURABLE) {
+#if ANY_ADC_SEQUENCER_TYPE_IS(SEQUENCER_PROGRAMMABLE)
+		if (config->sequencer_type == SEQUENCER_PROGRAMMABLE) {
 #if ANY_ADC_HAS_CHANNEL_PRESELECTION
 			if (config->has_channel_preselection) {
 				/*
@@ -961,11 +961,11 @@ static int set_sequencer(const struct device *dev)
 			LL_ADC_REG_SetSequencerRanks(adc, table_rank[channel_index], channel);
 			LL_ADC_REG_SetSequencerLength(adc, table_seq_len[channel_index]);
 		}
-#endif /* ANY_ADC_SEQUENCER_TYPE_IS(FULLY_CONFIGURABLE) */
+#endif /* ANY_ADC_SEQUENCER_TYPE_IS(SEQUENCER_PROGRAMMABLE) */
 	}
 
-#if ANY_ADC_SEQUENCER_TYPE_IS(NOT_FULLY_CONFIGURABLE)
-	if (config->sequencer_type == NOT_FULLY_CONFIGURABLE) {
+#if ANY_ADC_SEQUENCER_TYPE_IS(SEQUENCER_FIXED)
+	if (config->sequencer_type == SEQUENCER_FIXED) {
 		LL_ADC_REG_SetSequencerChannels(adc, channels_mask);
 
 #ifdef LL_ADC_FLAG_CCRDY
@@ -978,7 +978,7 @@ static int set_sequencer(const struct device *dev)
 		LL_ADC_ClearFlag_CCRDY(adc);
 #endif /* LL_ADC_FLAG_CCRDY */
 	}
-#endif /* ANY_ADC_SEQUENCER_TYPE_IS(NOT_FULLY_CONFIGURABLE) */
+#endif /* ANY_ADC_SEQUENCER_TYPE_IS(SEQUENCER_FIXED) */
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) || \
 	DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
@@ -1006,12 +1006,12 @@ static int start_read(const struct device *dev,
 		return -EINVAL;
 	}
 
-#if ANY_ADC_SEQUENCER_TYPE_IS(FULLY_CONFIGURABLE)
+#if ANY_ADC_SEQUENCER_TYPE_IS(SEQUENCER_PROGRAMMABLE)
 	if (data->channel_count > ARRAY_SIZE(table_seq_len)) {
 		LOG_ERR("Too many channels for sequencer. Max: %d", ARRAY_SIZE(table_seq_len));
 		return -EINVAL;
 	}
-#endif /* ANY_ADC_SEQUENCER_TYPE_IS(FULLY_CONFIGURABLE) */
+#endif /* ANY_ADC_SEQUENCER_TYPE_IS(SEQUENCER_PROGRAMMABLE) */
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && !defined(CONFIG_ADC_STM32_DMA)
 	/* Multiple samplings is only supported with DMA for F1 */
@@ -1974,8 +1974,10 @@ static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 	.clk_prescaler = ADC_STM32_DT_PRESC(index),			\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
 	.differential_channels_used = (ANY_CHILD_NODE_IS_DIFFERENTIAL(index) > 0), \
-	.sequencer_type = DT_INST_STRING_UPPER_TOKEN(index, st_adc_sequencer),	\
-	.oversampler_type = DT_INST_STRING_UPPER_TOKEN(index, st_adc_oversampler),	\
+	.sequencer_type = CONCAT(SEQUENCER_,							\
+		DT_INST_STRING_UPPER_TOKEN(index, st_adc_sequencer)),				\
+	.oversampler_type = CONCAT(OVERSAMPLER_,						\
+		DT_INST_STRING_UPPER_TOKEN(index, st_adc_oversampler)),				\
 	.internal_regulator = CONCAT(INTERNAL_REGULATOR_,					\
 		DT_INST_STRING_UPPER_TOKEN(index, st_adc_internal_regulator)),			\
 	.has_deep_powerdown = DT_INST_PROP(index, st_adc_has_deep_powerdown),			\

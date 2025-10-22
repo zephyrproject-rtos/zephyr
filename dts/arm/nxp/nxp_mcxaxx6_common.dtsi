@@ -196,7 +196,7 @@
 			reg = <0x400ab000 0x1000>;
 			interrupts = <55 0>;
 			clock-frequency = <16000>;
-			prescaler = <1>;
+			prescale-glitch-filter = <0>;
 			clk-source = <1>;
 			resolution = <32>;
 			status = "disabled";

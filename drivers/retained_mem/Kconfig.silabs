@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config RETAINED_MEM_SILABS_BURAM
+	bool "Silicon Labs BURAM driver"
+	default y
+	depends on DT_HAS_SILABS_BURAM_ENABLED
+	help
+	  Enable driver for Silicon Labs BURAM-based retained memory register support.

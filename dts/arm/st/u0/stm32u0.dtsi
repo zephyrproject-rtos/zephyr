@@ -15,6 +15,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/reset/stm32u0_reset.h>
 #include <freq.h>
+#include <mem.h>
 
 / {
 	chosen {
@@ -77,13 +78,6 @@
 			status = "disabled";
 		};
 
-		clk_hsi48: clk-hsi48 {
-			#clock-cells = <0>;
-			compatible = "fixed-clock";
-			clock-frequency = <DT_FREQ_M(48)>;
-			status = "disabled";
-		};
-
 		clk_msi: clk-msi {
 			#clock-cells = <0>;
 			compatible = "st,stm32-msi-clock";
@@ -109,6 +103,13 @@
 		pll: pll {
 			#clock-cells = <0>;
 			compatible = "st,stm32u0-pll-clock";
+			status = "disabled";
+		};
+
+		clk48: clk48 {
+			#clock-cells = <0>;
+			compatible = "st,stm32-clock-mux";
+			clocks = <&rcc STM32_SRC_MSI CLK48_SEL(1)>;
 			status = "disabled";
 		};
 	};
@@ -148,7 +149,7 @@
 			compatible = "st,stm32g0-exti", "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
-			#address-cells = <1>;
+			#address-cells = <0>;
 			reg = <0x40021800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1_2, 0)>;
 			num-lines = <32>;
@@ -292,8 +293,8 @@
 				       STM32_ADC_RES(6, 0x03)>;
 			sampling-times = <2 4 8 13 20 40 80 161>;
 			num-sampling-time-common-channels = <2>;
-			st,adc-sequencer = "NOT_FULLY_CONFIGURABLE";
-			st,adc-oversampler = "OVERSAMPLER_MINIMAL";
+			st,adc-sequencer = "fixed";
+			st,adc-oversampler = "minimal";
 			st,adc-internal-regulator = "startup-sw-delay";
 			status = "disabled";
 		};
@@ -397,7 +398,8 @@
 		rng: rng@40025000 {
 			compatible = "st,stm32-rng";
 			reg = <0x40025000 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB1, 18)>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 18)>,
+				 <&rcc STM32_SRC_CK48 NO_SEL>;
 			interrupts = <31 0>;
 			status = "disabled";
 		};

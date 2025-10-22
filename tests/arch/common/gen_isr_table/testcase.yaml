@@ -62,6 +62,8 @@ tests:
       - CONFIG_ISR_TABLES_LOCAL_DECLARATION=y
   arch.interrupt.gen_isr_table_local.riscv:
     arch_allow: riscv
+    platform_exclude:
+      - it8xxx2_evb
     extra_configs:
       - CONFIG_ISR_TABLES_LOCAL_DECLARATION=y
 

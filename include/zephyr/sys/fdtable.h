@@ -245,7 +245,7 @@ struct zvfs_pollfd {
 __syscall int zvfs_poll(struct zvfs_pollfd *fds, int nfds, int poll_timeout);
 
 struct zvfs_fd_set {
-	uint32_t bitset[(CONFIG_ZVFS_OPEN_MAX + 31) / 32];
+	uint32_t bitset[DIV_ROUND_UP(ZVFS_OPEN_SIZE, 32)];
 };
 
 /** @brief Number of file descriptors which can be added @ref zvfs_fd_set */

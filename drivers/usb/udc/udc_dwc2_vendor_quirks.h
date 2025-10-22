@@ -607,26 +607,38 @@ static inline int esp32_usb_otg_init(const struct device *dev,
 	return ret;
 }
 
+static inline int esp32_usb_otg_enable_clk(struct phy_context_t *phy_ctx)
+{
+	usb_wrap_ll_enable_bus_clock(true);
+
+	usb_wrap_ll_reset_register();
+	usb_wrap_hal_init(&phy_ctx->wrap_hal);
+
+#if USB_WRAP_LL_EXT_PHY_SUPPORTED
+	usb_wrap_hal_phy_set_external(&phy_ctx->wrap_hal, (phy_ctx->target == USB_PHY_TARGET_EXT));
+#endif
+
+	return 0;
+}
+
 static inline int esp32_usb_otg_enable_phy(struct phy_context_t *phy_ctx, bool enable)
 {
 	LOG_MODULE_DECLARE(udc_dwc2, CONFIG_UDC_DRIVER_LOG_LEVEL);
 
 	if (enable) {
-		usb_wrap_ll_enable_bus_clock(true);
-		usb_wrap_hal_init(&phy_ctx->wrap_hal);
-
-#if USB_WRAP_LL_EXT_PHY_SUPPORTED
-		usb_wrap_hal_phy_set_external(&phy_ctx->wrap_hal,
-					      (phy_ctx->target == USB_PHY_TARGET_EXT));
-#endif
-
+		usb_wrap_ll_phy_enable_pad(phy_ctx->wrap_hal.dev, true);
 		LOG_DBG("PHY enabled");
 	} else {
-		usb_wrap_ll_enable_bus_clock(false);
 		usb_wrap_ll_phy_enable_pad(phy_ctx->wrap_hal.dev, false);
-
 		LOG_DBG("PHY disabled");
 	}
+
+	return 0;
+}
+
+static inline int esp32_usb_otg_shutdown(struct phy_context_t *phy_ctx)
+{
+	usb_wrap_ll_enable_bus_clock(false);
 
 	return 0;
 }
@@ -660,6 +672,11 @@ static inline int esp32_usb_otg_enable_phy(struct phy_context_t *phy_ctx, bool e
 			&usb_otg_config_##n, &usb_otg_data_##n);		\
 	}									\
 										\
+	static int esp32_usb_otg_enable_clk_##n(const struct device *dev)	\
+	{									\
+		return esp32_usb_otg_enable_clk(&phy_ctx_##n);			\
+	}									\
+										\
 	static int esp32_usb_otg_enable_phy_##n(const struct device *dev)	\
 	{									\
 		return esp32_usb_otg_enable_phy(&phy_ctx_##n, true);		\
@@ -669,11 +686,18 @@ static inline int esp32_usb_otg_enable_phy(struct phy_context_t *phy_ctx, bool e
 	{									\
 		return esp32_usb_otg_enable_phy(&phy_ctx_##n, false);		\
 	}									\
+	static int esp32_usb_otg_shutdown_##n(const struct device *dev)		\
+	{									\
+		esp_intr_free(usb_otg_data_##n.int_handle);			\
+		return esp32_usb_otg_shutdown(&phy_ctx_##n);			\
+	}									\
 										\
 	const struct dwc2_vendor_quirks dwc2_vendor_quirks_##n = {		\
 		.init = esp32_usb_otg_init_##n,					\
+		.pre_enable = esp32_usb_otg_enable_clk_##n,			\
 		.post_enable = esp32_usb_otg_enable_phy_##n,			\
 		.disable = esp32_usb_otg_disable_phy_##n,			\
+		.shutdown = esp32_usb_otg_shutdown_##n,				\
 	};									\
 
 #define UDC_DWC2_IRQ_DT_INST_DEFINE(n)						\
