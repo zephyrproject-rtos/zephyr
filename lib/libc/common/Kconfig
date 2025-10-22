@@ -121,6 +121,12 @@ config COMMON_LIBC_FOPEN
 	help
 	  Common implementation of fopen().
 
+config COMMON_LIBC_FCLOSE
+	bool "Common C library fclose"
+	default y if ZVFS
+	help
+	  Common implementation of fclose().
+
 config COMMON_LIBC_REMOVE
 	bool "Common C library remove"
 	depends on !SEMIHOST
