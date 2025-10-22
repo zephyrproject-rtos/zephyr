@@ -48,6 +48,7 @@ struct siwx91x_nwp_config {
 	bool support_1p8v;
 	bool enable_xtal_correction;
 	bool qspi_80mhz_clk;
+	uint32_t clock_frequency;
 };
 
 typedef struct {
@@ -340,6 +341,7 @@ static int siwx91x_get_nwp_config(const struct device *dev,
 				  sl_wifi_device_configuration_t *get_config,
 				  uint8_t wifi_oper_mode, bool hidden_ssid, uint8_t max_num_sta)
 {
+	const struct siwx91x_nwp_config *config = dev->config;
 	sl_wifi_device_configuration_t default_config = {
 		.region_code = siwx91x_map_country_code_to_region(DEFAULT_COUNTRY_CODE),
 		.band = SL_SI91X_WIFI_BAND_2_4GHZ,
@@ -350,6 +352,11 @@ static int siwx91x_get_nwp_config(const struct device *dev,
 			.custom_feature_bit_map = SL_SI91X_CUSTOM_FEAT_EXTENSION_VALID |
 						  SL_SI91X_CUSTOM_FEAT_ASYNC_CONNECTION_STATUS,
 			.ext_custom_feature_bit_map = SL_SI91X_EXT_FEAT_XTAL_CLK,
+		},
+		.ta_pool = {
+			.tx_ratio_in_buffer_pool     = 1,
+			.rx_ratio_in_buffer_pool     = 1,
+			.global_ratio_in_buffer_pool = 1
 		}
 	};
 
@@ -370,6 +377,22 @@ static int siwx91x_get_nwp_config(const struct device *dev,
 	siwx91x_store_country_code(dev, DEFAULT_COUNTRY_CODE);
 	siwx91x_apply_sram_config(boot_config);
 	siwx91x_apply_boot_config(dev, boot_config);
+
+	/* Apply TA clock configuration based on DT property */
+	switch (config->clock_frequency) {
+	case 80000000:
+		/* no configuration bit needed */
+		break;
+	case 120000000:
+		boot_config->custom_feature_bit_map |= SL_SI91X_CUSTOM_FEAT_SOC_CLK_CONFIG_120MHZ;
+		break;
+	case 160000000:
+		boot_config->custom_feature_bit_map |= SL_SI91X_CUSTOM_FEAT_SOC_CLK_CONFIG_160MHZ;
+		break;
+	default:
+		__ASSERT(0, "Corrupted DT configuration");
+		break;
+	}
 
 	switch (wifi_oper_mode) {
 	case WIFI_STA_MODE:
@@ -503,6 +526,7 @@ BUILD_ASSERT(CONFIG_SIWX91X_NWP_INIT_PRIORITY < CONFIG_KERNEL_INIT_PRIORITY_DEFA
 		.enable_xtal_correction = DT_INST_PROP(inst, enable_xtal_correction),              \
 		.qspi_80mhz_clk = DT_INST_PROP(inst, qspi_80mhz_clk),                              \
 		.antenna_selection = DT_INST_ENUM_IDX(inst, antenna_selection),                    \
+		.clock_frequency = DT_INST_PROP(inst, clock_frequency)                             \
 	};                                                                                         \
                                                                                                    \
 	/* Coprocessor uses value stored in IVT to store its stack. We can't use Z_ISR_DECLARE() */\
