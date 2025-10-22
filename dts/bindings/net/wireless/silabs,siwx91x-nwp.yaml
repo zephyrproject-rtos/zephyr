@@ -77,3 +77,15 @@ properties:
       - "ext-gpios"
       - "internal"
     required: true
+  clock-frequency:
+    type: int
+    enum:
+      - 80000000
+      - 120000000
+      - 160000000
+    required: true
+    description: |
+      SoC clock frequency configuration for the NWP in Hz. 80 MHz (80000000)
+      is the default and offers lower power consumption; 120 MHz (120000000)
+      can be used for higher throughput. 160 MHz (160000000) is not
+      recommended due to potential instabilities

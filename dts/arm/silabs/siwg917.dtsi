@@ -64,7 +64,7 @@
 		 * Less memory is allocated to Zephyr, more memory is allocated
 		 * to NWP, better are the WiFi and BLE performances.
 		 */
-		reg = <0x00000400 DT_SIZE_K(255)>;
+		reg = <0x00000400 DT_SIZE_K(319)>;
 	};
 
 	sram_dma1: memory-dma@24061c00 {
@@ -85,6 +85,7 @@
 		support-1p8v;
 		enable-xtal-correction;
 		qspi-80mhz-clk;
+		clock-frequency = <120000000>;
 		status = "okay";
 
 		bt_hci0: bt_hci {
