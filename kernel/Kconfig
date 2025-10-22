@@ -621,6 +621,12 @@ config SYSTEM_WORKQUEUE_STACK_IGNORE_MIN
 	  when optimizing memory usage and a more precise minimum stack size
 	  is known for a given application.
 
+config SYSTEM_WORKQUEUE_STACK_MIN_SIZE_APP
+	int "System workqueue stack size for a applications"
+	default 1024
+	help
+	  Default setting for application system work queue size.
+
 config SYSTEM_WORKQUEUE_PRIORITY
 	int "System workqueue priority"
 	default -2 if COOP_ENABLED && !PREEMPT_ENABLED
