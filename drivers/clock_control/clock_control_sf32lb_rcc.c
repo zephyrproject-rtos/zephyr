@@ -12,6 +12,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/clock_control/sf32lb.h>
 #include <zephyr/dt-bindings/clock/sf32lb-clocks-common.h>
+#include <zephyr/dt-bindings/clock/sf32lb52x-clocks.h>
 #include <zephyr/toolchain.h>
 
 #include <register.h>
@@ -93,6 +94,26 @@ static int clock_control_sf32lb_rcc_off(const struct device *dev, clock_control_
 	return 0;
 }
 
+int clock_control_sf32lb_rcc_get_rate(const struct device *dev, clock_control_subsys_t sys,
+				      uint32_t *rate)
+{
+	uint16_t id = *(uint16_t *)sys;
+
+	if ((id == SF32LB52X_CLOCK_I2C1) ||
+	    (id == SF32LB52X_CLOCK_I2C2) ||
+	    (id == SF32LB52X_CLOCK_I2C3) ||
+	    (id == SF32LB52X_CLOCK_I2C4) ||
+	    (id == SF32LB52X_CLOCK_SPI1) ||
+	    (id == SF32LB52X_CLOCK_SPI2) ||
+	    (id == SF32LB52X_CLOCK_USART2) ||
+	    (id == SF32LB52X_CLOCK_USART3)) {
+		*rate = 48000000U; /* clk_peri_hpsys always 48MHZ */
+		return 0;
+	}
+
+	return -ENOTSUP;
+}
+
 static enum clock_control_status clock_control_sf32lb_rcc_get_status(const struct device *dev,
 								     clock_control_subsys_t sys)
 {
@@ -110,6 +131,7 @@ static enum clock_control_status clock_control_sf32lb_rcc_get_status(const struc
 static DEVICE_API(clock_control, clock_control_sf32lb_rcc_api) = {
 	.on = clock_control_sf32lb_rcc_on,
 	.off = clock_control_sf32lb_rcc_off,
+	.get_rate = clock_control_sf32lb_rcc_get_rate,
 	.get_status = clock_control_sf32lb_rcc_get_status,
 };
 
