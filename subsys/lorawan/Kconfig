@@ -15,6 +15,10 @@ menuconfig LORAWAN
 
 if LORAWAN
 
+config SYSTEM_WORKQUEUE_STACK_MIN_SIZE_LORAWAN
+	int "System workqueue stack size for lorawan"
+	default 2048
+
 module = LORAWAN
 module-str = lorawan
 source "subsys/logging/Kconfig.template.log_config"
