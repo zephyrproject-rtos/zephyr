@@ -94,9 +94,7 @@ static inline uint64_t counter_sub(uint64_t a, uint64_t b)
 
 static inline uint64_t counter(void)
 {
-	uint64_t now;
-	nrfx_grtc_syscounter_get(&now);
-	return now;
+	return nrfx_grtc_syscounter_get();
 }
 
 static inline int get_comparator(uint32_t chan, uint64_t *cc)
