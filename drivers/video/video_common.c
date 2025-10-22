@@ -452,6 +452,7 @@ int video_estimate_fmt_size(struct video_format *fmt)
 
 	switch (fmt->pixelformat) {
 	case VIDEO_PIX_FMT_JPEG:
+	case VIDEO_PIX_FMT_H264:
 		/* Rough estimate for the worst case (quality = 100) */
 		fmt->pitch = 0;
 		fmt->size = fmt->width * fmt->height * 2;
