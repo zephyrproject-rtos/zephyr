@@ -427,5 +427,14 @@ LED Strip
 
 * Renamed ``arduino,modulino-smartleds`` to :dtcompatible:`arduino,modulino-pixels`
 
+OpenThread
+==========
+
+* Kconfigs renaming:
+  - ``CONFIG_OPENTHREAD_MBEDTLS_CHOICE`` to
+    :kconfig:option:`CONFIG_OPENTHREAD_SECURITY_DEFAULT_CONFIG`
+  - ``CONFIG_CUSTOM_OPENTHREAD_SECURITY`` to
+    :kconfig:option:`CONFIG_OPENTHREAD_SECURITY_CUSTOM`
+
 Architectures
 *************
