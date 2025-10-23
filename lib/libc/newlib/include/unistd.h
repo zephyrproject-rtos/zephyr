@@ -9,6 +9,8 @@
 
 #include_next <unistd.h>
 
+#include <zephyr/posix/posix_features.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

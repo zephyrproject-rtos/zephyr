@@ -11,6 +11,10 @@ zephyr_library_sources(
   stdio.c
   )
 zephyr_include_directories(include)
+if(CONFIG_PICOLIBC_USE_MODULE)
+  # temporary workaround for https://github.com/picolibc/picolibc/pull/1079
+  zephyr_compile_options(-Dpid_t=__pid_t)
+endif()
 
 zephyr_library_compile_options($<TARGET_PROPERTY:compiler,prohibit_lto>)
 
