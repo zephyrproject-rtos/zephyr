@@ -15,7 +15,9 @@
 #define NRF_COMP_AIN5 5 /** AIN5 external input */
 #define NRF_COMP_AIN6 6 /** AIN6 external input */
 #define NRF_COMP_AIN7 7 /** AIN7 external input */
-#define NRF_COMP_AIN_VDD_DIV2 8 /** VDD / 2 */
-#define NRF_COMP_AIN_VDDH_DIV5 9 /** VDDH / 5 */
+
+#define NRF_COMP_AIN_VDD_SHIM_OFFSET 128
+#define NRF_COMP_AIN_VDD_DIV2	     (NRF_COMP_AIN_VDD_SHIM_OFFSET + 1)
+#define NRF_COMP_AIN_VDDH_DIV5	     (NRF_COMP_AIN_VDD_SHIM_OFFSET + 4)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_ADC_NRF_COMP_H_ */
