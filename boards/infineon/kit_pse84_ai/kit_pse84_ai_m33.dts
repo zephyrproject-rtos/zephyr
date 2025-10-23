@@ -31,6 +31,61 @@
 	};
 };
 
+/* For the dpll clocks declared below
+ * The clock-frequency value is here for dts reference, but
+ * it does not affect the frequency set by the clock_control
+ * driver. That is decided by the rest of the variables in
+ * this block. They result in the set clock-frequency. For other
+ * frequencies, they need to be calculated separately and
+ * entered into the devicetree dpll_* block.
+ */
+
+/* This dpll_lp0 is on "clock path" 0. So HF clocks sourced
+ * from *_CLKPATH0 will receive this frequency, when the
+ * dpll_lp0 is set to "okay".
+ */
+&dpll_lp0 {
+	status = "okay";
+	clock-frequency = <400000000>;
+
+	feedback-div = <56>;
+	reference-div = <7>;
+	output-div = <1>;
+	fraction-div = <0>;
+	dco-mode-enable;
+};
+
+/* This dpll_lp1 is on "clock path" 1. So HF clocks sourced
+ * from *_CLKPATH1 will receive this frequency instead, when the
+ * dpll_lp1 is set to "okay".
+ */
+&dpll_lp1 {
+	status = "okay";
+	clock-frequency = <49152000>;
+
+	feedback-div = <27>;
+	reference-div = <7>;
+	output-div = <4>;
+	fraction-div = <8810051>;
+};
+
+/* This dpll_hp is on "clock path" 2. So HF clocks sourced
+ * from *_CLKPATH2 will receive this frequency, when the
+ * dpll_hp is set to "okay".
+ */
+&dpll_hp {
+	status = "okay";
+	clock-frequency = <300000000>;
+
+	div-p = <0>;
+	div-n = <11>;
+	div-k = <1>;
+	fraction-div = <0>;
+	freq-mode-sel = <7>;
+	flock-enable-threshold = <3>;
+	lf-beta-value = <20>;
+};
+
 &path_mux0 {
 	status = "okay";
 };
