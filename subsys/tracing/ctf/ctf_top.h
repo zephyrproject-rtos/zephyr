@@ -58,7 +58,13 @@ static inline uint64_t ctf_top_timestamp_get(void)
 	return timing_ns_get();
 }
 
-#define CTF_EVENT(...)                                                                             \
+#ifdef CONFIG_SMP
+#define CTF_EVENT_CPU_ID() arch_curr_cpu()->id
+#else
+#define CTF_EVENT_CPU_ID() 0
+#endif /* CONFIG_SMP */
+
+#define CTF_EVENT(event_id, ...)                                                                   \
 	{                                                                                          \
 		if (!is_tracing_enabled()) {                                                       \
 			return;                                                                    \
@@ -67,11 +73,10 @@ static inline uint64_t ctf_top_timestamp_get(void)
 		const uint16_t stream_id = 0;                                                      \
 		uint16_t packet_size = 0;                                                          \
 		const uint64_t tstamp = ctf_top_timestamp_get();                                   \
-                                                                                                   \
+		const uint8_t cpu_id = CTF_EVENT_CPU_ID();                                         \
 		packet_size = 8 * (0 MAP(CTF_INTERNAL_FIELD_SIZE, stream_id, packet_size, tstamp,  \
-					 ##__VA_ARGS__));                                          \
-                                                                                                   \
-		CTF_GATHER_FIELDS(stream_id, packet_size, tstamp, __VA_ARGS__)                     \
+					 event_id, cpu_id, ##__VA_ARGS__));                        \
+		CTF_GATHER_FIELDS(stream_id, packet_size, tstamp, event_id, cpu_id, ##__VA_ARGS__) \
 		irq_unlock(key);                                                                   \
 	}
 #else
