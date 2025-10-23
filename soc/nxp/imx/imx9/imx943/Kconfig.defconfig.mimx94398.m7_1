@@ -31,6 +31,12 @@ if PM
 config IDLE_STACK_SIZE
 	default 640
 
+config PM_S2RAM
+	default y
+
+config HAS_PM_S2RAM_CUSTOM_MARKING
+	default y
+
 endif
 
 endif # SOC_MIMX94398_M7_1
