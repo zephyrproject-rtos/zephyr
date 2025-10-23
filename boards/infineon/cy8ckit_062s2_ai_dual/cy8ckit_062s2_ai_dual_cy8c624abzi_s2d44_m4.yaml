@@ -1,0 +1,17 @@
+# Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: cy8ckit_062s2_ai_dual/cy8c624abzi_s2d44/m4
+name: CY8CKIT-062S2-AI Dual Core (M4)
+type: mcu
+arch: arm
+ram: 896
+flash: 1536
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - watchdog
+vendor: infineon
