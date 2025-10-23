@@ -280,7 +280,7 @@ static int gpio_cat1_pin_interrupt_configure(const struct device *dev, gpio_pin_
 }
 
 static int gpio_cat1_manage_callback(const struct device *port, struct gpio_callback *callback,
-				     bool set)
+					 bool set)
 {
 	struct gpio_cat1_data *const data = port->data;
 
@@ -366,6 +366,14 @@ static void gpio_psoc4_register_irq(const struct device *dev)
 	(.irq = -1, .intr_priority = 0))
 #define ENABLE_INT(n)
 
+#elif (CONFIG_SOC_FAMILY_PSOC6_M0)
+#define INTR_PRIORITY(n) .intr_priority = DT_INST_IRQ_BY_IDX(n, 0, priority),
+#define ENABLE_INT(n) \
+	psoc6_irq_connect_dynamic(DT_INST_IRQN(n), \
+				  DT_INST_IRQ_BY_IDX(n, 0, priority), \
+				  (void *) gpio_cat1_isr, \
+				  DEVICE_DT_INST_GET(n), 0); \
+	irq_enable(Cy_SysInt_GetNvicConnection(DT_INST_IRQN(n)));
 #else
 
 #define INTR_PRIORITY(n) .intr_priority = DT_INST_IRQ_BY_IDX(n, 0, priority),

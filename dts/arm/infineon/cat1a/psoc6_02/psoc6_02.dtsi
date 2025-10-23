@@ -7,6 +7,10 @@
 
 #include <mem.h>
 
+#ifndef PSOC6_02_DEFAULT_IRQ_PRIORITY
+#define PSOC6_02_DEFAULT_IRQ_PRIORITY 6
+#endif
+
 / {
 	cpus {
 		#address-cells = <1>;
@@ -61,14 +65,15 @@
 			hsiom: hsiom@40300000 {
 				compatible = "infineon,hsiom";
 				reg = <0x40300000 0x4000>;
-				interrupts = <15 6>, <16 6>;
+				interrupts = <15 PSOC6_02_DEFAULT_IRQ_PRIORITY>,
+							<16 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
 			};
 
 			gpio_prt0: gpio@40310000 {
 				compatible = "infineon,gpio";
 				reg = <0x40310000 0x80>;
-				interrupts = <0 6>;
+				interrupts = <0 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 				gpio-controller;
 				ngpios = <6>;
 				status = "disabled";
@@ -78,7 +83,7 @@
 			gpio_prt1: gpio@40310080 {
 				compatible = "infineon,gpio";
 				reg = <0x40310080 0x80>;
-				interrupts = <1 6>;
+				interrupts = <1 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 				gpio-controller;
 				ngpios = <6>;
 				status = "disabled";
@@ -88,7 +93,7 @@
 			gpio_prt2: gpio@40310100 {
 				compatible = "infineon,gpio";
 				reg = <0x40310100 0x80>;
-				interrupts = <2 6>;
+				interrupts = <2 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 				gpio-controller;
 				ngpios = <8>;
 				status = "disabled";
@@ -98,7 +103,7 @@
 			gpio_prt3: gpio@40310180 {
 				compatible = "infineon,gpio";
 				reg = <0x40310180 0x80>;
-				interrupts = <3 6>;
+				interrupts = <3 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 				gpio-controller;
 				ngpios = <6>;
 				status = "disabled";
@@ -108,7 +113,7 @@
 			gpio_prt4: gpio@40310200 {
 				compatible = "infineon,gpio";
 				reg = <0x40310200 0x80>;
-				interrupts = <4 6>;
+				interrupts = <4 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 				gpio-controller;
 				ngpios = <2>;
 				status = "disabled";
@@ -118,7 +123,7 @@
 			gpio_prt5: gpio@40310280 {
 				compatible = "infineon,gpio";
 				reg = <0x40310280 0x80>;
-				interrupts = <5 6>;
+				interrupts = <5 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 				gpio-controller;
 				ngpios = <8>;
 				status = "disabled";
@@ -128,7 +133,7 @@
 			gpio_prt6: gpio@40310300 {
 				compatible = "infineon,gpio";
 				reg = <0x40310300 0x80>;
-				interrupts = <6 6>;
+				interrupts = <6 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 				gpio-controller;
 				ngpios = <8>;
 				status = "disabled";
@@ -138,7 +143,7 @@
 			gpio_prt7: gpio@40310380 {
 				compatible = "infineon,gpio";
 				reg = <0x40310380 0x80>;
-				interrupts = <7 6>;
+				interrupts = <7 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 				gpio-controller;
 				ngpios = <8>;
 				status = "disabled";
@@ -148,7 +153,7 @@
 			gpio_prt8: gpio@40310400 {
 				compatible = "infineon,gpio";
 				reg = <0x40310400 0x80>;
-				interrupts = <8 6>;
+				interrupts = <8 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 				gpio-controller;
 				ngpios = <8>;
 				status = "disabled";
@@ -158,7 +163,7 @@
 			gpio_prt9: gpio@40310480 {
 				compatible = "infineon,gpio";
 				reg = <0x40310480 0x80>;
-				interrupts = <9 6>;
+				interrupts = <9 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 				gpio-controller;
 				ngpios = <8>;
 				status = "disabled";
@@ -168,7 +173,7 @@
 			gpio_prt10: gpio@40310500 {
 				compatible = "infineon,gpio";
 				reg = <0x40310500 0x80>;
-				interrupts = <10 6>;
+				interrupts = <10 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 				gpio-controller;
 				ngpios = <8>;
 				status = "disabled";
@@ -178,7 +183,7 @@
 			gpio_prt11: gpio@40310580 {
 				compatible = "infineon,gpio";
 				reg = <0x40310580 0x80>;
-				interrupts = <11 6>;
+				interrupts = <11 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 				gpio-controller;
 				ngpios = <8>;
 				status = "disabled";
@@ -188,7 +193,7 @@
 			gpio_prt12: gpio@40310600 {
 				compatible = "infineon,gpio";
 				reg = <0x40310600 0x80>;
-				interrupts = <12 6>;
+				interrupts = <12 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 				gpio-controller;
 				ngpios = <8>;
 				status = "disabled";
@@ -198,7 +203,7 @@
 			gpio_prt13: gpio@40310680 {
 				compatible = "infineon,gpio";
 				reg = <0x40310680 0x80>;
-				interrupts = <13 6>;
+				interrupts = <13 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 				gpio-controller;
 				ngpios = <8>;
 				status = "disabled";
@@ -208,7 +213,7 @@
 			gpio_prt14: gpio@40310700 {
 				compatible = "infineon,gpio";
 				reg = <0x40310700 0x80>;
-				interrupts = <14 6>;
+				interrupts = <14 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 				gpio-controller;
 				ngpios = <2>;
 				status = "disabled";
@@ -221,7 +226,7 @@
 			reg = <0x40600000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <39 6>;
+			interrupts = <39 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			clk-dst = <0x0>;
 			status = "disabled";
 		};
@@ -231,7 +236,7 @@
 			reg = <0x40610000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <40 6>;
+			interrupts = <40 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			clk-dst = <0x1>;
 			status = "disabled";
 		};
@@ -241,7 +246,7 @@
 			reg = <0x40620000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <41 6>;
+			interrupts = <41 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			clk-dst = <0x2>;
 			status = "disabled";
 		};
@@ -251,7 +256,7 @@
 			reg = <0x40630000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <42 6>;
+			interrupts = <42 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			clk-dst = <0x3>;
 			status = "disabled";
 		};
@@ -261,7 +266,7 @@
 			reg = <0x40640000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <43 6>;
+			interrupts = <43 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			clk-dst = <0x4>;
 			status = "disabled";
 		};
@@ -271,7 +276,7 @@
 			reg = <0x40650000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <44 6>;
+			interrupts = <44 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			clk-dst = <0x5>;
 			status = "disabled";
 		};
@@ -281,7 +286,7 @@
 			reg = <0x40660000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <45 6>;
+			interrupts = <45 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			clk-dst = <0x6>;
 			status = "disabled";
 		};
@@ -291,7 +296,7 @@
 			reg = <0x40670000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <46 6>;
+			interrupts = <46 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			clk-dst = <0x7>;
 			status = "disabled";
 		};
@@ -301,7 +306,7 @@
 			reg = <0x40680000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <18 6>;
+			interrupts = <18 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			clk-dst = <0x8>;
 			status = "disabled";
 		};
@@ -311,7 +316,7 @@
 			reg = <0x40690000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <47 6>;
+			interrupts = <47 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			clk-dst = <0x9>;
 			status = "disabled";
 		};
@@ -321,7 +326,7 @@
 			reg = <0x406a0000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <48 6>;
+			interrupts = <48 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			clk-dst = <0xa>;
 			status = "disabled";
 		};
@@ -331,7 +336,7 @@
 			reg = <0x406b0000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <49 6>;
+			interrupts = <49 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			clk-dst = <0xb>;
 			status = "disabled";
 		};
@@ -341,7 +346,7 @@
 			reg = <0x406c0000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <50 6>;
+			interrupts = <50 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			clk-dst = <0xc>;
 			status = "disabled";
 		};
@@ -349,7 +354,7 @@
 		adc0: adc@409d0000 {
 			compatible = "infineon,adc";
 			reg = <0x409d0000 0x10000>;
-			interrupts = <155 6>;
+			interrupts = <155 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
@@ -357,14 +362,14 @@
 		watchdog0: watchdog@40260180 {
 			compatible = "infineon,watchdog";
 			reg = <0x40260180 0xc>;
-			interrupts = <22 6>;
+			interrupts = <22 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
 		};
 
 		counter0_0: counter@40380100 {
 			compatible = "infineon,counter";
 			reg = <0x40380100 0x40>;
-			interrupts = <123 6>;
+			interrupts = <123 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <32>;
 			status = "disabled";
 		};
@@ -372,7 +377,7 @@
 		counter0_1: counter@40380140 {
 			compatible = "infineon,counter";
 			reg = <0x40380140 0x40>;
-			interrupts = <124 6>;
+			interrupts = <124 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <32>;
 			status = "disabled";
 		};
@@ -380,7 +385,7 @@
 		counter0_2: counter@40380180 {
 			compatible = "infineon,counter";
 			reg = <0x40380180 0x40>;
-			interrupts = <125 6>;
+			interrupts = <125 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <32>;
 			status = "disabled";
 		};
@@ -388,7 +393,7 @@
 		counter0_3: counter@403801c0 {
 			compatible = "infineon,counter";
 			reg = <0x403801c0 0x40>;
-			interrupts = <126 6>;
+			interrupts = <126 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <32>;
 			status = "disabled";
 		};
@@ -396,7 +401,7 @@
 		counter0_4: counter@40380200 {
 			compatible = "infineon,counter";
 			reg = <0x40380200 0x40>;
-			interrupts = <127 6>;
+			interrupts = <127 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <32>;
 			status = "disabled";
 		};
@@ -404,7 +409,7 @@
 		counter0_5: counter@40380240 {
 			compatible = "infineon,counter";
 			reg = <0x40380240 0x40>;
-			interrupts = <128 6>;
+			interrupts = <128 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <32>;
 			status = "disabled";
 		};
@@ -412,7 +417,7 @@
 		counter0_6: counter@40380280 {
 			compatible = "infineon,counter";
 			reg = <0x40380280 0x40>;
-			interrupts = <129 6>;
+			interrupts = <129 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <32>;
 			status = "disabled";
 		};
@@ -420,7 +425,7 @@
 		counter0_7: counter@403802c0 {
 			compatible = "infineon,counter";
 			reg = <0x403802c0 0x40>;
-			interrupts = <130 6>;
+			interrupts = <130 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <32>;
 			status = "disabled";
 		};
@@ -428,7 +433,7 @@
 		counter1_0: counter@40390100 {
 			compatible = "infineon,counter";
 			reg = <0x40390100 0x40>;
-			interrupts = <131 6>;
+			interrupts = <131 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <16>;
 			status = "disabled";
 		};
@@ -436,7 +441,7 @@
 		counter1_1: counter@40390140 {
 			compatible = "infineon,counter";
 			reg = <0x40390140 0x40>;
-			interrupts = <132 6>;
+			interrupts = <132 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <16>;
 			status = "disabled";
 		};
@@ -444,7 +449,7 @@
 		counter1_2: counter@40390180 {
 			compatible = "infineon,counter";
 			reg = <0x40390180 0x40>;
-			interrupts = <133 6>;
+			interrupts = <133 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <16>;
 			status = "disabled";
 		};
@@ -452,7 +457,7 @@
 		counter1_3: counter@403901c0 {
 			compatible = "infineon,counter";
 			reg = <0x403901c0 0x40>;
-			interrupts = <134 6>;
+			interrupts = <134 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <16>;
 			status = "disabled";
 		};
@@ -460,7 +465,7 @@
 		counter1_4: counter@40390200 {
 			compatible = "infineon,counter";
 			reg = <0x40390200 0x40>;
-			interrupts = <135 6>;
+			interrupts = <135 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <16>;
 			status = "disabled";
 		};
@@ -468,7 +473,7 @@
 		counter1_5: counter@40390240 {
 			compatible = "infineon,counter";
 			reg = <0x40390240 0x40>;
-			interrupts = <136 6>;
+			interrupts = <136 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <16>;
 			status = "disabled";
 		};
@@ -476,7 +481,7 @@
 		counter1_6: counter@40390280 {
 			compatible = "infineon,counter";
 			reg = <0x40390280 0x40>;
-			interrupts = <137 6>;
+			interrupts = <137 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <16>;
 			status = "disabled";
 		};
@@ -484,7 +489,7 @@
 		counter1_7: counter@403902c0 {
 			compatible = "infineon,counter";
 			reg = <0x403902c0 0x40>;
-			interrupts = <138 6>;
+			interrupts = <138 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <16>;
 			status = "disabled";
 		};
@@ -492,7 +497,7 @@
 		counter1_8: counter@40390300 {
 			compatible = "infineon,counter";
 			reg = <0x40390300 0x40>;
-			interrupts = <139 6>;
+			interrupts = <139 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <16>;
 			status = "disabled";
 		};
@@ -500,7 +505,7 @@
 		counter1_9: counter@40390340 {
 			compatible = "infineon,counter";
 			reg = <0x40390340 0x40>;
-			interrupts = <140 6>;
+			interrupts = <140 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <16>;
 			status = "disabled";
 		};
@@ -508,7 +513,7 @@
 		counter1_10: counter@40390380 {
 			compatible = "infineon,counter";
 			reg = <0x40390380 0x40>;
-			interrupts = <141 6>;
+			interrupts = <141 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <16>;
 			status = "disabled";
 		};
@@ -516,7 +521,7 @@
 		counter1_11: counter@403903c0 {
 			compatible = "infineon,counter";
 			reg = <0x403903c0 0x40>;
-			interrupts = <142 6>;
+			interrupts = <142 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <16>;
 			status = "disabled";
 		};
@@ -524,7 +529,7 @@
 		counter1_12: counter@40390400 {
 			compatible = "infineon,counter";
 			reg = <0x40390400 0x40>;
-			interrupts = <143 6>;
+			interrupts = <143 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <16>;
 			status = "disabled";
 		};
@@ -532,7 +537,7 @@
 		counter1_13: counter@40390440 {
 			compatible = "infineon,counter";
 			reg = <0x40390440 0x40>;
-			interrupts = <144 6>;
+			interrupts = <144 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <16>;
 			status = "disabled";
 		};
@@ -540,7 +545,7 @@
 		counter1_14: counter@40390480 {
 			compatible = "infineon,counter";
 			reg = <0x40390480 0x40>;
-			interrupts = <145 6>;
+			interrupts = <145 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <16>;
 			status = "disabled";
 		};
@@ -548,7 +553,7 @@
 		counter1_15: counter@403904c0 {
 			compatible = "infineon,counter";
 			reg = <0x403904c0 0x40>;
-			interrupts = <146 6>;
+			interrupts = <146 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <16>;
 			status = "disabled";
 		};
@@ -556,7 +561,7 @@
 		counter1_16: counter@40390500 {
 			compatible = "infineon,counter";
 			reg = <0x40390500 0x40>;
-			interrupts = <147 6>;
+			interrupts = <147 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <16>;
 			status = "disabled";
 		};
@@ -564,7 +569,7 @@
 		counter1_17: counter@40390540 {
 			compatible = "infineon,counter";
 			reg = <0x40390540 0x40>;
-			interrupts = <148 6>;
+			interrupts = <148 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <16>;
 			status = "disabled";
 		};
@@ -572,7 +577,7 @@
 		counter1_18: counter@40390580 {
 			compatible = "infineon,counter";
 			reg = <0x40390580 0x40>;
-			interrupts = <149 6>;
+			interrupts = <149 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <16>;
 			status = "disabled";
 		};
@@ -580,7 +585,7 @@
 		counter1_19: counter@403905c0 {
 			compatible = "infineon,counter";
 			reg = <0x403905c0 0x40>;
-			interrupts = <150 6>;
+			interrupts = <150 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <16>;
 			status = "disabled";
 		};
@@ -588,7 +593,7 @@
 		counter1_20: counter@40390600 {
 			compatible = "infineon,counter";
 			reg = <0x40390600 0x40>;
-			interrupts = <151 6>;
+			interrupts = <151 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <16>;
 			status = "disabled";
 		};
@@ -596,7 +601,7 @@
 		counter1_21: counter@40390640 {
 			compatible = "infineon,counter";
 			reg = <0x40390640 0x40>;
-			interrupts = <152 6>;
+			interrupts = <152 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <16>;
 			status = "disabled";
 		};
@@ -604,7 +609,7 @@
 		counter1_22: counter@40390680 {
 			compatible = "infineon,counter";
 			reg = <0x40390680 0x40>;
-			interrupts = <153 6>;
+			interrupts = <153 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <16>;
 			status = "disabled";
 		};
@@ -612,7 +617,7 @@
 		counter1_23: counter@403906c0 {
 			compatible = "infineon,counter";
 			reg = <0x403906c0 0x40>;
-			interrupts = <154 6>;
+			interrupts = <154 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			resolution = <16>;
 			status = "disabled";
 		};
@@ -620,7 +625,7 @@
 		sdhc0: sdhc@40460000 {
 			compatible = "infineon,sdhc-sdio";
 			reg = <0x40460000 0x2000>;
-			interrupts = <164 6>;
+			interrupts = <164 PSOC6_02_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
 		};
 
@@ -629,35 +634,35 @@
 			compatible = "infineon,dma";
 			reg = <0x40280000 0x8700>;
 			dma-channels = <29>;
-			interrupts = <56 6>,  /* CH0 */
-				     <57 6>,  /* CH1 */
-				     <58 6>,  /* CH2 */
-				     <59 6>,  /* CH3 */
-				     <60 6>,  /* CH4 */
-				     <61 6>,  /* CH5 */
-				     <62 6>,  /* CH6 */
-				     <63 6>,  /* CH7 */
-				     <64 6>,  /* CH8 */
-				     <65 6>,  /* CH9 */
-				     <66 6>,  /* CH10 */
-				     <67 6>,  /* CH11 */
-				     <68 6>,  /* CH12 */
-				     <69 6>,  /* CH13 */
-				     <70 6>,  /* CH14 */
-				     <71 6>,  /* CH15 */
-				     <72 6>,  /* CH16 */
-				     <73 6>,  /* CH17 */
-				     <74 6>,  /* CH18 */
-				     <75 6>,  /* CH19 */
-				     <76 6>,  /* CH20 */
-				     <77 6>,  /* CH21 */
-				     <78 6>,  /* CH22 */
-				     <79 6>,  /* CH23 */
-				     <80 6>,  /* CH24 */
-				     <81 6>,  /* CH25 */
-				     <82 6>,  /* CH26 */
-				     <83 6>,  /* CH27 */
-				     <84 6>;  /* CH28 */
+			interrupts = <56 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH0 */
+				     <57 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH1 */
+				     <58 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH2 */
+				     <59 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH3 */
+				     <60 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH4 */
+				     <61 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH5 */
+				     <62 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH6 */
+				     <63 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH7 */
+				     <64 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH8 */
+				     <65 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH9 */
+				     <66 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH10 */
+				     <67 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH11 */
+				     <68 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH12 */
+				     <69 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH13 */
+				     <70 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH14 */
+				     <71 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH15 */
+				     <72 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH16 */
+				     <73 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH17 */
+				     <74 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH18 */
+				     <75 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH19 */
+				     <76 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH20 */
+				     <77 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH21 */
+				     <78 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH22 */
+				     <79 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH23 */
+				     <80 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH24 */
+				     <81 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH25 */
+				     <82 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH26 */
+				     <83 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH27 */
+				     <84 PSOC6_02_DEFAULT_IRQ_PRIORITY>;  /* CH28 */
 			status = "disabled";
 		};
 
@@ -666,35 +671,35 @@
 			compatible = "infineon,dma";
 			reg = <0x40290000 0x8700>;
 			dma-channels = <29>;
-			interrupts = <85 6>,  /* CH0 */
-				     <86 6>,  /* CH1 */
-				     <87 6>,  /* CH2 */
-				     <88 6>,  /* CH3 */
-				     <89 6>,  /* CH4 */
-				     <90 6>,  /* CH5 */
-				     <91 6>,  /* CH6 */
-				     <92 6>,  /* CH7 */
-				     <93 6>,  /* CH8 */
-				     <94 6>,  /* CH9 */
-				     <95 6>,  /* CH10 */
-				     <96 6>,  /* CH11 */
-				     <97 6>,  /* CH12 */
-				     <98 6>,  /* CH13 */
-				     <99 6>,  /* CH14 */
-				     <100 6>,  /* CH15 */
-				     <101 6>,  /* CH16 */
-				     <102 6>,  /* CH17 */
-				     <103 6>,  /* CH18 */
-				     <104 6>,  /* CH19 */
-				     <105 6>,  /* CH20 */
-				     <106 6>,  /* CH21 */
-				     <107 6>,  /* CH22 */
-				     <108 6>,  /* CH23 */
-				     <109 6>,  /* CH24 */
-				     <110 6>,  /* CH25 */
-				     <111 6>,  /* CH26 */
-				     <112 6>,  /* CH27 */
-				     <113 6>;  /* CH28 */
+			interrupts = <85 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH0 */
+				     <86 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH1 */
+				     <87 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH2 */
+				     <88 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH3 */
+				     <89 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH4 */
+				     <90 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH5 */
+				     <91 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH6 */
+				     <92 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH7 */
+				     <93 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH8 */
+				     <94 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH9 */
+				     <95 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH10 */
+				     <96 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH11 */
+				     <97 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH12 */
+				     <98 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH13 */
+				     <99 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH14 */
+				     <100 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH15 */
+				     <101 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH16 */
+				     <102 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH17 */
+				     <103 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH18 */
+				     <104 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH19 */
+				     <105 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH20 */
+				     <106 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH21 */
+				     <107 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH22 */
+				     <108 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH23 */
+				     <109 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH24 */
+				     <110 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH25 */
+				     <111 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH26 */
+				     <112 PSOC6_02_DEFAULT_IRQ_PRIORITY>,  /* CH27 */
+				     <113 PSOC6_02_DEFAULT_IRQ_PRIORITY>;  /* CH28 */
 			status = "disabled";
 		};
 	};
