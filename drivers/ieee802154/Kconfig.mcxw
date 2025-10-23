@@ -8,6 +8,7 @@ menuconfig IEEE802154_MCXW
 	default y
 	depends on DT_HAS_NXP_MCXW_IEEE802154_ENABLED
 	select COUNTER
+	select SETTINGS
 
 if IEEE802154_MCXW
 
