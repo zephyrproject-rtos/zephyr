@@ -1338,6 +1338,15 @@ int video_estimate_fmt_size(struct video_format *fmt);
  */
 #define VIDEO_PIX_FMT_GREY VIDEO_FOURCC('G', 'R', 'E', 'Y')
 
+
+/**
+ * @code{.unparsed}
+ *   0                   1                   2
+ * | 0000yyyy 0000Yyyy | 0000yyyy 0000Yyyy | 0000yyyy 0000Yyyy | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_Y4 VIDEO_FOURCC('Y', '0', '4', ' ')
+
 /**
  * @code{.unparsed}
  *   0          1          2          3          3 2 1 0
@@ -1853,6 +1862,7 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 	case VIDEO_PIX_FMT_Y16:
 	case VIDEO_PIX_FMT_NV16:
 	case VIDEO_PIX_FMT_NV61:
+	case VIDEO_PIX_FMT_Y4:
 		return 16;
 	case VIDEO_PIX_FMT_BGR24:
 	case VIDEO_PIX_FMT_RGB24:
