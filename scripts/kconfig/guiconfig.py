@@ -61,23 +61,11 @@ $srctree is supported through Kconfiglib.
 import errno
 import os
 import re
-import sys
 
-_PY2 = sys.version_info[0] < 3
-
-if _PY2:
-    # Python 2
-    from Tkinter import *
-    import ttk
-    import tkFont as font
-    import tkFileDialog as filedialog
-    import tkMessageBox as messagebox
-else:
-    # Python 3
-    from tkinter import *
-    import tkinter.ttk as ttk
-    import tkinter.font as font
-    from tkinter import filedialog, messagebox
+from tkinter import *
+import tkinter.ttk as ttk
+import tkinter.font as font
+from tkinter import filedialog, messagebox
 
 from kconfiglib import Symbol, Choice, MENU, COMMENT, MenuNode, \
                        BOOL, TRISTATE, STRING, INT, HEX, \
@@ -1123,11 +1111,6 @@ def _change_node(node, parent):
 
     if sc.type in (INT, HEX, STRING):
         s = _set_val_dialog(node, parent)
-
-        # Tkinter can return 'unicode' strings on Python 2, which Kconfiglib
-        # can't deal with. UTF-8-encode the string to work around it.
-        if _PY2 and isinstance(s, unicode):
-            s = s.encode("utf-8", "ignore")
 
         if s is not None:
             _set_val(sc, s)
