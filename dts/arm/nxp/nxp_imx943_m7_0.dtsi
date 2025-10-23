@@ -77,6 +77,30 @@
 			reg = <0x20000000 DT_SIZE_K(256)>;
 		};
 	};
+
+	mailbox_m70_m71_for_m70_as_master: ipm-mbox4 {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mu_m70_m71_for_m70 1>, <&mu_m70_m71_for_m70 0>;
+		mbox-names = "tx", "rx";
+	};
+
+	mailbox_m70_m71_for_m70_as_remote: ipm-mbox5 {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mu_m70_m71_for_m70 0>, <&mu_m70_m71_for_m70 1>;
+		mbox-names = "tx", "rx";
+	};
+
+	mailbox_m33s_m70_for_m70_as_master: ipm-mbox6 {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mu_m33s_m70_for_m70 1>, <&mu_m33s_m70_for_m70 0>;
+		mbox-names = "tx", "rx";
+	};
+
+	mailbox_m33s_m70_for_m70_as_remote: ipm-mbox7 {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mu_m33s_m70_for_m70 0>, <&mu_m33s_m70_for_m70 1>;
+		mbox-names = "tx", "rx";
+	};
 };
 
 &nvic {
@@ -89,5 +113,22 @@
 };
 
 &mu5 {
+	status = "okay";
+};
+
+&mu_m70_m71_for_m70 {
+	interrupts = <130 0>;
+	status = "okay";
+};
+
+/* m70 and m33s secure */
+&mu_m33s_secure_m70_for_m70 {
+	interrupts = <133 0>;
+	status = "okay";
+};
+
+/* m70 and m33s non secure */
+&mu_m33s_m70_for_m70 {
+	interrupts = <134 0>;
 	status = "okay";
 };
