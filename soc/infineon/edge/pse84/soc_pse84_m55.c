@@ -29,7 +29,7 @@
 #define MPU_SRAM1_SHARED_MEM_REG_ID   0x6
 #define MPU_SRAM1_SHARED_MEM_ATTR_IDX 0x6
 
-#define CM55_STARTUP_WAIT_MS 25u
+#define CM55_STARTUP_WAIT_MS 50u
 
 void config_noncacheable_region(void)
 {
