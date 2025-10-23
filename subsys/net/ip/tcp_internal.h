@@ -494,6 +494,24 @@ static inline void net_tcp_conn_accepted(struct net_context *child_ctx)
 }
 #endif
 
+/**
+ * @brief Close and unref all TCP context bound to an network interface.
+ *
+ * @details This releases all the TCP contexts that are bound to a specific
+ * network interface. It is not possible to send or receive data via those
+ * contexts after this call.
+ *
+ * @param iface The network interface to use to find out the bound contexts.
+ */
+#if defined(CONFIG_NET_NATIVE_TCP)
+void net_tcp_close_all_for_iface(struct net_if *iface);
+#else
+static inline void net_tcp_close_all_for_iface(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+}
+#endif
+
 #ifdef __cplusplus
 }
 #endif
