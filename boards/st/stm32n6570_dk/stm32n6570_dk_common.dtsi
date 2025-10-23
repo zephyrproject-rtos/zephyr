@@ -535,10 +535,10 @@ csi_interface: &dcmipp {
 	};
 };
 
-&venc {
+zephyr_h264enc: &venc {
 	status = "okay";
 };
 
-&jpeg {
+zephyr_jpegenc: &jpeg {
 	status = "okay";
 };
