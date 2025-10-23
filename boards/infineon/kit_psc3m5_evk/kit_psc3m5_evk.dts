@@ -52,6 +52,50 @@ uart3: &scb3 {
 	status = "okay";
 };
 
+&fll0 {
+	clock-frequency = <96000000>;
+	status = "okay";
+};
+
+/* For the dpll clocks declared below
+ * The clock-frequency value is here for dts reference, but
+ * it does not affect the frequency set by the clock_control
+ * driver. That is decided by the rest of the variables in
+ * this block. They result in the set clock-frequency. For other
+ * frequencies, they need to be calculated separately and
+ * entered into the devicetree dpll_* block.
+ */
+
+/* This dpll_lp0 is on "clock path" 1. So HF clocks sourced
+ * from *_CLKPATH1 will receive this frequency, when the
+ * dpll_lp0 is set to "okay".
+ */
+&dpll_lp0 {
+	status = "okay";
+	clock-frequency = <180000000>;
+
+	feedback-div = <45>;
+	reference-div = <6>;
+	output-div = <2>;
+	fraction-div = <0>;
+	dco-mode-enable;
+};
+
+/* This dpll_lp1 is on "clock path" 2. So HF clocks sourced
+ * from *_CLKPATH2 will receive this frequency instead, when the
+ * dpll_lp1 is set to "okay".
+ */
+&dpll_lp1 {
+	status = "okay";
+	clock-frequency = <240000000>;
+
+	feedback-div = <60>;
+	reference-div = <6>;
+	output-div = <2>;
+	fraction-div = <0>;
+	dco-mode-enable;
+};
+
 &path_mux0 {
 	status = "okay";
 };
