@@ -29,6 +29,11 @@
 	};
 };
 
+&ocotp {
+	/* i.MX RT106X has 16 additional 32-bit registers */
+	size = <256>;
+};
+
 / {
 	soc {
 		/* i.MX rt1060 has a second Ethernet controller. */
