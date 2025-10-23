@@ -9,9 +9,14 @@
 
 #include <app_api.h>
 
+#ifndef GLOBAL_OPT
+#define GLOBAL_OPT "MISSING"
+#endif
+
 int start(int bar)
 {
 	printk("foo(%d) is %d\n", bar, foo(bar));
+	printk("GLOBAL_OPT is %s\n", GLOBAL_OPT);
 	return 0;
 }
 EXPORT_SYMBOL(start);
