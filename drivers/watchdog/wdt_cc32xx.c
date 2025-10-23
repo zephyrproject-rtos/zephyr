@@ -151,14 +151,7 @@ static int wdt_cc32xx_init(const struct device *dev)
 	while (!MAP_PRCMPeripheralStatusGet(PRCM_WDT)) {
 	}
 
-	if (IS_ENABLED(CONFIG_WDT_DISABLE_AT_BOOT)) {
-		return 0;
-	}
-
-	MAP_WatchdogUnlock(config->reg);
-	rv = wdt_cc32xx_enable(dev);
-	MAP_WatchdogLock(config->reg);
-	return rv;
+	return 0;
 }
 
 static DEVICE_API(wdt, wdt_cc32xx_api) = {
@@ -179,7 +172,7 @@ static DEVICE_API(wdt, wdt_cc32xx_api) = {
 	}									 \
 										 \
 	static struct wdt_cc32xx_data wdt_cc32xx_data_##index = {		 \
-		.reload = CONFIG_WDT_CC32XX_INITIAL_TIMEOUT,			 \
+		.reload = 0,							 \
 		.cb = NULL,							 \
 		.flags = 0,							 \
 	};									 \
