@@ -26,6 +26,8 @@
 #include <zephyr/arch/riscv/arch_inlines.h>
 #elif defined(CONFIG_MIPS)
 #include <zephyr/arch/mips/arch_inlines.h>
+#elif defined(CONFIG_OPENRISC)
+#include <zephyr/arch/openrisc/arch_inlines.h>
 #elif defined(CONFIG_ARCH_POSIX)
 #include <zephyr/arch/posix/arch_inlines.h>
 #elif defined(CONFIG_SPARC)

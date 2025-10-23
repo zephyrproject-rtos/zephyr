@@ -68,6 +68,16 @@ config MIPS
 	help
 	  MIPS architecture
 
+config OPENRISC
+	bool
+	select ARCH_IS_SET
+	select ATOMIC_OPERATIONS_BUILTIN
+	select BIG_ENDIAN
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	help
+	  OpenRISC architecture
+
 config SPARC
 	bool
 	select ARCH_IS_SET
@@ -242,7 +252,7 @@ config XIP
 	  option increases both the code and data footprint of the image.
 
 
-if ARC || ARM || ARM64 || X86 || RISCV || RX || ARCH_POSIX
+if ARC || ARM || ARM64 || X86 || RISCV || RX || OPENRISC || ARCH_POSIX
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash
@@ -265,7 +275,7 @@ config FLASH_BASE_ADDRESS
 	  normally set by the board's defconfig file and the user should generally
 	  avoid modifying it via the menu configuration.
 
-endif # ARM || ARM64 || ARC || X86 || RISCV || RX || ARCH_POSIX
+endif # ARM || ARM64 || ARC || X86 || RISCV || RX || OPENRISC || ARCH_POSIX
 
 if ARCH_HAS_TRUSTED_EXECUTION
 
