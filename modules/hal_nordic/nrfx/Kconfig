@@ -526,10 +526,10 @@ config NRFX_SPI2
 	select NRFX_SPI
 
 config NRFX_SPIM
-	bool
+	bool "SPIM driver"
 
 config NRFX_SPIS
-	bool
+	bool "SPIS driver"
 
 config NRFX_SYSTICK
 	bool "SYSTICK driver"
