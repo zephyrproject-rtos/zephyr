@@ -17,22 +17,17 @@ endif()
 
 set(INC_DIR ${NRFX_DIR}/drivers/include)
 set(SRC_DIR ${NRFX_DIR}/drivers/src)
-set(BSP_DIR ${NRFX_DIR}/bsp)
 set(HELPERS_DIR ${NRFX_DIR}/helpers)
-set(SOC_DIR ${BSP_DIR}/${CONFIG_SOC_NORDIC_BSP_NAME})
-set(MDK_DIR ${SOC_DIR}/mdk)
-
-if(NOT CONFIG_SOC_NORDIC_BSP_NAME STREQUAL "stable")
-  zephyr_compile_definitions(NRFX_BSP_NRF_PATH="${CONFIG_SOC_NORDIC_BSP_NAME}/bsp.h")
-endif()
+set(BSP_DIR ${NRFX_DIR}/bsp/${CONFIG_SOC_NORDIC_BSP_NAME})
+set(MDK_DIR ${BSP_DIR}/mdk)
 
 zephyr_include_directories(${NRFX_DIR})
 zephyr_include_directories(${INC_DIR})
 zephyr_include_directories(${BSP_DIR})
-zephyr_include_directories(${SOC_DIR}/templates)
+zephyr_include_directories(${BSP_DIR}/templates)
 zephyr_include_directories(.)
 
-include(${SOC_DIR}/zephyr/nrfx.cmake OPTIONAL)
+include(${BSP_DIR}/zephyr/nrfx.cmake OPTIONAL)
 
 # Define MDK defines globally
 zephyr_compile_definitions_ifdef(CONFIG_SOC_SERIES_NRF51X       NRF51)
