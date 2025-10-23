@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_LIB_LIBC_PICOLIBC_INCLUDE_TIME_H_
 #define ZEPHYR_LIB_LIBC_PICOLIBC_INCLUDE_TIME_H_
 
-#if defined(_POSIX_C_SOURCE) || defined(__DOXYGEN__)
+#if defined(_POSIX_C_SOURCE) || defined(CONFIG_POSIX_SYSTEM_INTERFACES)
 
 /* temporary workaround for https://github.com/picolibc/picolibc/pull/1079 */
 #include <sys/_types.h>
@@ -25,7 +25,7 @@ typedef __pid_t pid_t;
 }
 #endif
 
-#endif /* defined(_POSIX_C_SOURCE) || defined(__DOXYGEN__) */
+#endif /* defined(_POSIX_C_SOURCE) || defined(CONFIG_POSIX_SYSTEM_INTERFACES) */
 
 #include_next <time.h>
 
