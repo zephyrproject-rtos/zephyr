@@ -36,6 +36,12 @@
 #define STM32_CONDRST_SUPPORT
 #endif
 
+#if IRQLESS_TRNG
+#define MAX_AVAIL_RND_NUM 1
+#else
+#define MAX_AVAIL_RND_NUM 4 /* Internal four-word FIFO */
+#endif /* IRQLESS_TRNG */
+
 /*
  * This driver need to take into account all STM32 family:
  *  - simple rng without hardware fifo and no DMA.
@@ -327,9 +333,15 @@ static int recover_seed_error(RNG_TypeDef *rng)
 {
 	ll_rng_clear_seis(rng);
 
-	for (int i = 0; i < 12; ++i) {
+	for (int i = 0; i < MAX_AVAIL_RND_NUM; ++i) {
 		(void)ll_rng_read_rand_data(rng);
 	}
+
+#if defined(CONFIG_SOC_STM32WB09XX)
+	if (LL_RNG_GetErrorIrq(rng)) {
+		SET_BIT(rng->IRQ_SR, RNG_IRQ_SR_ERROR_IRQ);
+	}
+#endif /* CONFIG_SOC_STM32WB09XX */
 
 	if (ll_rng_is_active_seis(rng) != 0) {
 		return -EIO;
@@ -445,7 +457,7 @@ static uint16_t generate_from_isr(uint8_t *buf, uint16_t len)
 		ret = random_sample_get(&rnd_sample);
 #if !IRQLESS_TRNG
 		NVIC_ClearPendingIRQ(IRQN);
-#endif /* IRQLESS_TRNG */
+#endif /* !IRQLESS_TRNG */
 
 		if (ret < 0) {
 			continue;
