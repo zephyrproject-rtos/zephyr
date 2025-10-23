@@ -17,6 +17,10 @@ struct lll_scan {
 	uint8_t  adv_addr[BDADDR_SIZE];
 	uint32_t conn_win_offset_us;
 	uint16_t conn_timeout;
+
+#if defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
+	struct lll_prepare_param prepare_param;
+#endif /* CONFIG_BT_CTLR_SCHED_ADVANCED */
 #endif /* CONFIG_BT_CENTRAL */
 
 	uint8_t  state:1;
