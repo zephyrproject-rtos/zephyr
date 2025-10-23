@@ -62,5 +62,6 @@ source "drivers/display/Kconfig.renesas_ra"
 source "drivers/display/Kconfig.ili9806e_dsi"
 source "drivers/display/Kconfig.st7701"
 source "drivers/display/Kconfig.lpm013m126"
+source "drivers/display/Kconfig.co5300"
 
 endif # DISPLAY
