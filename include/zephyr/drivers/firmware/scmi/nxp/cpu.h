@@ -88,6 +88,18 @@ struct scmi_cpu_vector_config {
 };
 
 /**
+ * @struct scmi_cpu_info
+ *
+ * @brief Describes the parameters for the CPU_INFO_GET command
+ */
+struct scmi_cpu_info {
+	uint32_t run_mode;
+	uint32_t sleep_mode;
+	uint32_t vector_low;
+	uint32_t vector_high;
+};
+
+/**
  * @brief CPU domain protocol command message IDs
  */
 enum scmi_cpu_domain_message {
@@ -148,4 +160,15 @@ int scmi_cpu_set_irq_mask(struct scmi_cpu_irq_mask_config *cfg);
  * @retval negative errno if failure
  */
 int scmi_cpu_reset_vector(struct scmi_cpu_vector_config *cfg);
+
+/**
+ * @brief Send the CPU_INFO_GET command and get its reply
+ *
+ * @param cpu_id CPU ID to query (input)
+ * @param cfg pointer to structure to receive CPU information (output)
+ *
+ * @retval 0 if successful
+ * @retval negative errno if failure
+ */
+int scmi_cpu_info_get(uint32_t cpu_id, struct scmi_cpu_info *cfg);
 #endif /* _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_CPU_H_ */
