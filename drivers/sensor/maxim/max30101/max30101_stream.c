@@ -20,16 +20,16 @@ void max30101_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iod
 //	LOG_WRN("max30101_submit_stream");
 	for (size_t i = 0; i < cfg->count; i++) {
 		if (cfg->triggers[i].trigger == SENSOR_TRIG_DATA_READY) {
-			LOG_DBG("(%d) MAX30101 DRDY trigger", i);
-			stream_cfg.irq_data_rdy = 1;
+			LOG_DBG("(%d) MAX30101 DRDY trigger [%d](%d)", i, cfg->triggers[i].chan_spec.chan_type, cfg->triggers[i].chan_spec.chan_idx);
+			stream_cfg.irq_data_rdy |= 1;
 		} else if (cfg->triggers[i].trigger == SENSOR_TRIG_FIFO_WATERMARK) {
-			LOG_DBG("(%d) MAX30101 WATERMARK trigger", i);
-			stream_cfg.irq_watermark = (cfg->triggers[i].opt == SENSOR_STREAM_DATA_INCLUDE)? 3 : 1;
+			LOG_DBG("(%d) MAX30101 WATERMARK trigger [%d](%d)", i, cfg->triggers[i].chan_spec.chan_type, cfg->triggers[i].chan_spec.chan_idx);
+			stream_cfg.irq_watermark |= 1;
 		} else if (cfg->triggers[i].trigger == SENSOR_TRIG_OVERFLOW) {
-			LOG_DBG("(%d) MAX30101 OVERFLOW trigger", i);
+			LOG_DBG("(%d) MAX30101 OVERFLOW trigger [%d](%d)", i, cfg->triggers[i].chan_spec.chan_type, cfg->triggers[i].chan_spec.chan_idx);
 			if (cfg->triggers[i].opt != SENSOR_STREAM_DATA_NOP) {
-				LOG_WRN("MAX30101 OVERFLOW trigger only support SENSOR_STREAM_DATA_NOP");
-				stream_cfg.irq_overflow = 0;
+				LOG_ERR("MAX30101 OVERFLOW trigger only support SENSOR_STREAM_DATA_NOP");
+				return;
 			}
 			stream_cfg.irq_overflow = 1;
 		} else {

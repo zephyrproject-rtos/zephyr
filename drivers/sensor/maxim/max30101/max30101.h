@@ -158,14 +158,28 @@ struct max30101_reading {
 };
 
 #if CONFIG_MAX30101_STREAM
-	struct __attribute__((packed)) max30101_stream_config {
-		/* Set if `drdy` interrupt must be watched triggered */
-		uint8_t irq_data_rdy: 1;
-		/* Set if `watermark` interrupt must be watched triggered / dropped */
-		uint8_t irq_watermark: 2;
-		/* Set if `overflow` interrupt must be watched triggered */
+	struct max30101_stream_config {
+		/* Set if `overflow` interrupt must be watched */
 		uint8_t irq_overflow: 1;
-	};
+
+		/* Select `watermark` channels to be included/dropped */
+		uint8_t watermark_incl: 3;
+		uint8_t watermark_drop: 3;
+		/* Set if `watermark` interrupt must be watched */
+		uint8_t irq_watermark: 1;
+
+#if CONFIG_MAX30101_DIE_TEMPERATURE
+		/* Select `drdy` channels to be included/dropped */
+		uint8_t data_rdy_incl: 4;
+		uint8_t data_rdy_drop: 4;
+#else
+		/* Select `drdy` channels to be included/dropped */
+		uint8_t data_rdy_incl: 3;
+		uint8_t data_rdy_drop: 3;
+#endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
+		/* Set if `drdy` interrupt must be watched */
+		uint8_t irq_data_rdy: 1;
+	} __attribute__((__packed__));
 #endif /* CONFIG_MAX30101_STREAM */
 
 struct max30101_data {
