@@ -1864,9 +1864,6 @@ static int dev_init(const struct device *dev)
 		}
 	}
 
-	/* Make sure controller is disabled. */
-	write_ssienr(dev, 0);
-
 #if defined(CONFIG_PINCTRL)
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
 		rc = pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_SLEEP);
@@ -1877,7 +1874,15 @@ static int dev_init(const struct device *dev)
 	}
 #endif
 
-	return pm_device_driver_init(dev, dev_pm_action_cb);
+	rc = pm_device_driver_init(dev, dev_pm_action_cb);
+	if (rc < 0) {
+		return rc;
+	}
+
+	/* Make sure controller is disabled. */
+	write_ssienr(dev, 0);
+
+	return 0;
 }
 
 static DEVICE_API(mspi, drv_api) = {
