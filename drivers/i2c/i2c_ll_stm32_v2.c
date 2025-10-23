@@ -578,6 +578,11 @@ void i2c_stm32_event(const struct device *dev)
 		__ASSERT_NO_MSG(0);
 	}
 
+	/* Make a dummy read from ISR to ensure we don't return before
+	 * i2c controller had a chance to clear its interrupt flags due
+	 * to bus delays
+	 */
+	(void)LL_I2C_ReadReg(regs, ISR);
 	return;
 
 irq_xfer_completed:
