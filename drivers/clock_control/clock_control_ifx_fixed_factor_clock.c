@@ -90,6 +90,6 @@ static int fixed_factor_clk_init(const struct device *dev)
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, fixed_factor_clk_init, NULL, NULL,                                \
 			      &fixed_factor_clock_config_##n, PRE_KERNEL_1,                        \
-			      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, NULL);
+			      CONFIG_CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(FIXED_CLK_INIT)
