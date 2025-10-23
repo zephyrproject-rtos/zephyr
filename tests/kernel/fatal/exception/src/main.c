@@ -128,6 +128,8 @@ void entry_cpu_exception_extend(void *p1, void *p2, void *p3)
 	 * to trigger soft interrupt.
 	 */
 	__asm__ volatile ("swi");
+#elif defined(CONFIG_OPENRISC)
+	__asm__ volatile ("l.trap 0");
 #else
 	/* used to create a divide by zero error on X86 and MIPS */
 	volatile int error;

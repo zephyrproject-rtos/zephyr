@@ -182,6 +182,8 @@ extern "C" {
 #define PROCESSOR_NAME "xtensa"
 #elif defined(CONFIG_SPARC)
 #define PROCESSOR_NAME "sparc"
+#elif defined(CONFIG_OPENRISC)
+#define PROCESSOR_NAME "openrisc"
 #endif
 
 #if defined(CONFIG_ARCH_POSIX)
