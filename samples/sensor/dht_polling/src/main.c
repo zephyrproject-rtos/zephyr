@@ -22,11 +22,11 @@
 /* Support up to 10 temperature/humidity sensors */
 static const struct device *const sensors[] = {LISTIFY(10, DHT_DEVICE, ())};
 
-#define DHT_IODEV(i, _)                                                      \
+#define DHT_IODEV(i, _)                                                                            \
 	IF_ENABLED(DT_NODE_EXISTS(DHT_ALIAS(i)),                                 \
 		(SENSOR_DT_READ_IODEV(_CONCAT(dht_iodev, i), DHT_ALIAS(i),           \
-		{SENSOR_CHAN_AMBIENT_TEMP, 0},                                       \
-		{SENSOR_CHAN_HUMIDITY, 0})))
+		(SENSOR_CHAN_AMBIENT_TEMP, 0),                                       \
+		(SENSOR_CHAN_HUMIDITY, 0))))
 
 LISTIFY(10, DHT_IODEV, (;));
 

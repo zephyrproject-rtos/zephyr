@@ -460,6 +460,18 @@ struct sensor_chan_spec {
 	uint16_t chan_idx;  /**< A sensor channel index */
 };
 
+/*
+ * Internal macro to generate SENSOR_CHAN_SPEC
+ */
+#define SENSOR_CHAN_SPEC(_chan_type, _idx) {.chan_type = (_chan_type), .chan_idx = (_idx)}
+
+/*
+ * Each _item is a *parenthesized tuple*: (_chan_type, _idx)
+ * Unpack it and forward to SENSOR_CHAN_SPEC.
+ */
+#define _SENSOR_CHAN_SPEC_PREP(_chan_type, _idx) SENSOR_CHAN_SPEC(_chan_type, _idx)
+#define SENSOR_CHAN_SPEC_PREP(_item)             _SENSOR_CHAN_SPEC_PREP _item
+
 /** @cond INTERNAL_HIDDEN */
 /* Ensure sensor_chan_spec is sensibly sized to pass by value */
 BUILD_ASSERT(sizeof(struct sensor_chan_spec) <= sizeof(uintptr_t),
@@ -685,16 +697,19 @@ struct sensor_read_config {
  *
  * @code(.c)
  * SENSOR_DT_READ_IODEV(icm42688_accelgyro, DT_NODELABEL(icm42688),
- *     { SENSOR_CHAN_ACCEL_XYZ, 0 },
- *     { SENSOR_CHAN_GYRO_XYZ, 0 });
+ *     ( SENSOR_CHAN_ACCEL_XYZ, 0 ),
+ *     ( SENSOR_CHAN_GYRO_XYZ, 0 ));
  *
  * int main(void) {
  *   sensor_read_async_mempool(&icm42688_accelgyro, &rtio);
  * }
  * @endcode
  */
+/* clang-format off */
 #define SENSOR_DT_READ_IODEV(name, dt_node, ...)                                                   \
-	static struct sensor_chan_spec _CONCAT(__channel_array_, name)[] = {__VA_ARGS__};          \
+	static struct sensor_chan_spec _CONCAT(__channel_array_, name)[] = {                       \
+		FOR_EACH_NONEMPTY_TERM(SENSOR_CHAN_SPEC_PREP, (,), __VA_ARGS__)                    \
+	};                                                                                         \
 	static struct sensor_read_config _CONCAT(__sensor_read_config_, name) = {                  \
 		.sensor = DEVICE_DT_GET(dt_node),                                                  \
 		.is_streaming = false,                                                             \
@@ -703,6 +718,7 @@ struct sensor_read_config {
 		.max = ARRAY_SIZE(_CONCAT(__channel_array_, name)),                                \
 	};                                                                                         \
 	RTIO_IODEV_DEFINE(name, &__sensor_iodev_api, _CONCAT(&__sensor_read_config_, name))
+/* clang-format on */
 
 /**
  * @brief Define a stream instance of a sensor
