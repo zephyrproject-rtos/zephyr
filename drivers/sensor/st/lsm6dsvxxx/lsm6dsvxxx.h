@@ -25,7 +25,8 @@
 
 #define LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(bus) \
 	(DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lsm6dsv320x, bus) ||\
-	 DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lsm6dsv80x, bus))
+	 DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lsm6dsv80x, bus)  ||\
+	 DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_ism6hg256x, bus))
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_lsm6dsv320x)
 #include "lsm6dsv320x_reg.h"
@@ -35,6 +36,11 @@
 #if DT_HAS_COMPAT_STATUS_OKAY(st_lsm6dsv80x)
 #include "lsm6dsv80x_reg.h"
 #include <zephyr/dt-bindings/sensor/lsm6dsv80x.h>
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_ism6hg256x)
+#include "ism6hg256x_reg.h"
+#include <zephyr/dt-bindings/sensor/ism6hg256x.h>
 #endif
 
 #if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(spi)
