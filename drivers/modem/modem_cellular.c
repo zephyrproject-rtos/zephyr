@@ -187,6 +187,7 @@ struct modem_cellular_config {
 	struct gpio_dt_spec power_gpio;
 	struct gpio_dt_spec reset_gpio;
 	struct gpio_dt_spec wake_gpio;
+	struct gpio_dt_spec dtr_gpio;
 	uint16_t power_pulse_duration_ms;
 	uint16_t reset_pulse_duration_ms;
 	uint16_t startup_time_ms;
@@ -2196,6 +2197,7 @@ static int modem_cellular_init(const struct device *dev)
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)dev->data;
 	struct modem_cellular_config *config = (struct modem_cellular_config *)dev->config;
+	const struct gpio_dt_spec *dtr_gpio = NULL;
 
 	data->dev = dev;
 
@@ -2219,9 +2221,15 @@ static int modem_cellular_init(const struct device *dev)
 		gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_ACTIVE);
 	}
 
+	if (modem_cellular_gpio_is_enabled(&config->dtr_gpio)) {
+		gpio_pin_configure_dt(&config->dtr_gpio, GPIO_OUTPUT_INACTIVE);
+		dtr_gpio = &config->dtr_gpio;
+	}
+
 	{
 		const struct modem_backend_uart_config uart_backend_config = {
 			.uart = config->uart,
+			.dtr_gpio = dtr_gpio,
 			.receive_buf = data->uart_backend_receive_buf,
 			.receive_buf_size = ARRAY_SIZE(data->uart_backend_receive_buf),
 			.transmit_buf = data->uart_backend_transmit_buf,
@@ -2983,6 +2991,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
 		.wake_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_wake_gpios, {}),                   \
+		.dtr_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_dtr_gpios, {}),                     \
 		.power_pulse_duration_ms = (power_ms),                                             \
 		.reset_pulse_duration_ms = (reset_ms),                                             \
 		.startup_time_ms  = (startup_ms),                                                  \
