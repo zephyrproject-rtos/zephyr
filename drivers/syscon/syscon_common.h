@@ -18,8 +18,9 @@ extern "C" {
  * @param reg Pointer to the register address in question.
  * @param reg_size The size of the syscon register region.
  * @param reg_width The width of a single register (in bytes).
- * @return 0 if the register read is valid.
- * @return -EINVAL is the read is invalid.
+ *
+ * @retval 0 if the register read is valid.
+ * @retval -EINVAL if the read is invalid.
  */
 static inline int syscon_sanitize_reg(uint16_t *reg, size_t reg_size, uint8_t reg_width)
 {
