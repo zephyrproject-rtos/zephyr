@@ -25,6 +25,9 @@
 struct fixed_rate_clock_config {
 	uint32_t rate;
 	uint32_t system_clock; /* ifx_cat1_clock_block */
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_hp))
+	cy_stc_dpll_hp_config_t dpll_hp_config;
+#endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp0)) ||                                             \
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp1))
 	cy_stc_dpll_lp_config_t dpll_lp_config;
@@ -46,8 +49,13 @@ static void clock_startup_error(uint32_t error)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp0)) ||                                             \
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp1))
+#if defined(CONFIG_SOC_SERIES_PSC3)
 #define DPLL_LP0 SRSS_PLL_250M_0_PATH_NUM
 #define DPLL_LP1 SRSS_PLL_250M_1_PATH_NUM
+#elif defined(CONFIG_SOC_SERIES_PSE84)
+#define DPLL_LP0 SRSS_DPLL_LP_0_PATH_NUM
+#define DPLL_LP1 SRSS_DPLL_LP_1_PATH_NUM
+#endif
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp0)) ||                                             \
@@ -93,31 +101,9 @@ static void clk_dpll_lp_init(uint32_t dpll_lp, cy_stc_dpll_lp_config_t dpll_lp_c
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_hp))
-static void ifx_clk_dpll_hp0_init(void)
+static void clk_dpll_hp_init(cy_stc_dpll_hp_config_t dpll_hp_config)
 {
-#define CY_CFG_SYSCLK_PLL_ERROR 3
-
-	static cy_stc_dpll_hp_config_t dpll_hp_config = {
-		.pDiv = 0,
-		.nDiv = 15,
-		.kDiv = 1,
-		.nDivFract = 0,
-		.freqModeSel = CY_SYSCLK_DPLL_HP_CLK50MHZ_1US_CNT_VAL,
-		.ivrTrim = 0x8U,
-		.clkrSel = 0x1U,
-		.alphaCoarse = 0xCU,
-		.betaCoarse = 0x5U,
-		.flockThresh = 0x3U,
-		.flockWait = 0x6U,
-		.flockLkThres = 0x7U,
-		.flockLkWait = 0x4U,
-		.alphaExt = 0x14U,
-		.betaExt = 0x14U,
-		.lfEn = 0x1U,
-		.dcEn = 0x1U,
-		.outputMode = CY_SYSCLK_FLLPLL_OUTPUT_AUTO,
-	};
-	static cy_stc_pll_manual_config_t dpll_config = {
+	cy_stc_pll_manual_config_t dpll_config = {
 		.hpPllCfg = &dpll_hp_config,
 	};
 
@@ -183,7 +169,7 @@ static int fixed_rate_clk_init(const struct device *dev)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_hp))
 	case IFX_DPLL500:
-		ifx_clk_dpll_hp0_init();
+		clk_dpll_hp_init(config->dpll_hp_config);
 		SystemCoreClockUpdate();
 		break;
 #endif
@@ -194,8 +180,35 @@ static int fixed_rate_clk_init(const struct device *dev)
 	return 0;
 }
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_hp))
+#define DPLL_HP_INIT(n)                                                                            \
+	.dpll_hp_config = {                                                                        \
+		.pDiv = DT_INST_PROP_OR(n, div_p, 0),                                              \
+		.nDiv = DT_INST_PROP_OR(n, div_n, 0),                                              \
+		.kDiv = DT_INST_PROP_OR(n, div_k, 0),                                              \
+		.nDivFract = DT_INST_PROP_OR(n, fraction_div, 0),                                  \
+		.freqModeSel = ((cy_en_wait_mode_select_t)DT_INST_PROP_OR(n, freq_mode_sel, 0)),   \
+		.ivrTrim = 0x8U,                                                                   \
+		.clkrSel = 0x1U,                                                                   \
+		.alphaCoarse = 0xCU,                                                               \
+		.betaCoarse = 0x5U,                                                                \
+		.flockThresh = DT_INST_PROP_OR(n, flock_enable_threshold, 0),                      \
+		.flockWait = 0x6U,                                                                 \
+		.flockLkThres = 0x7U,                                                              \
+		.flockLkWait = 0x4U,                                                               \
+		.alphaExt = 0x14U,                                                                 \
+		.betaExt = DT_INST_PROP_OR(n, lf_beta_value, 0),                                   \
+		.lfEn = 0x1U,                                                                      \
+		.dcEn = 0x1U,                                                                      \
+		.outputMode = CY_SYSCLK_FLLPLL_OUTPUT_AUTO,                                        \
+	},
+#else
+#define DPLL_HP_INIT(n)
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp0)) ||                                             \
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp1))
+#if defined(CONFIG_SOC_SERIES_PSC3)
 #define DPLL_LP_INIT(n)                                                                            \
 	.dpll_lp_config = {                                                                        \
 		.feedbackDiv = DT_INST_PROP_OR(n, feedback_div, 0),                                \
@@ -229,6 +242,26 @@ static int fixed_rate_clk_init(const struct device *dev)
 		.kiAccSscg = 0x16U,                                                                \
 		.kpAccSscg = 0x14U,                                                                \
 	},
+#elif defined(CONFIG_SOC_SERIES_PSE84)
+#define DPLL_LP_INIT(n)                                                                            \
+	.dpll_lp_config = {                                                                        \
+		.feedbackDiv = DT_INST_PROP_OR(n, feedback_div, 0),                                \
+		.referenceDiv = DT_INST_PROP_OR(n, reference_div, 0),                              \
+		.outputDiv = DT_INST_PROP_OR(n, output_div, 0),                                    \
+		.pllDcoMode = DT_INST_PROP_OR(n, dco_mode_enable, false),                          \
+		.outputMode = CY_SYSCLK_FLLPLL_OUTPUT_AUTO,                                        \
+		.fracDiv = DT_INST_PROP_OR(n, fraction_div, 0),                                    \
+		.fracDitherEn = false,                                                             \
+		.fracEn = true,                                                                    \
+		.dcoCode = 0xFU,                                                                   \
+		.kiInt = 0xAU,                                                                     \
+		.kiFrac = 0xBU,                                                                    \
+		.kiSscg = 0x7U,                                                                    \
+		.kpInt = 0x8U,                                                                     \
+		.kpFrac = 0x9U,                                                                    \
+		.kpSscg = 0x7U,                                                                    \
+	},
+#endif
 #else
 #define DPLL_LP_INIT(n)
 #endif
@@ -237,6 +270,7 @@ static int fixed_rate_clk_init(const struct device *dev)
 	static const struct fixed_rate_clock_config fixed_rate_clock_config_##n = {                \
 		.rate = DT_INST_PROP(n, clock_frequency),                                          \
 		.system_clock = DT_INST_PROP(n, system_clock),                                     \
+		DPLL_HP_INIT(n)                                                                    \
 		DPLL_LP_INIT(n)                                                                    \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, fixed_rate_clk_init, NULL, NULL, &fixed_rate_clock_config_##n,    \
