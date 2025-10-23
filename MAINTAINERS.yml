@@ -4084,6 +4084,7 @@ OpenRISC Arch:
     - jhol
   files:
     - arch/openrisc/
+    - drivers/timer/*openrisc*
     - include/zephyr/arch/openrisc/
   labels:
     - "area: OpenRISC"
