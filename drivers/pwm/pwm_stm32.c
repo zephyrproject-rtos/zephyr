@@ -773,7 +773,7 @@ static void pwm_stm32_irq_config_func_##index(const struct device *dev)		\
 		.timer = (TIM_TypeDef *)DT_REG_ADDR(PWM(index)),	       \
 		.prescaler = DT_PROP(PWM(index), st_prescaler),		       \
 		.countermode = DT_PROP(PWM(index), st_countermode),	       \
-		.mastermode = DT_PROP(PWM(index), st_master_mode),	       \
+		.mastermode = CONCAT(LL_TIM_TRGO_, DT_STRING_TOKEN(PWM(index), st_mastermode)),	\
 		.pclken = pclken_##index,				       \
 		.pclk_len = DT_NUM_CLOCKS(PWM(index)),			       \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),		       \
