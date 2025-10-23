@@ -1,3 +1,4 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
@@ -469,6 +470,8 @@ class Pytest(Harness):
                 f'--device-serial={hardware.serial}',
                 f'--device-serial-baud={hardware.baud}'
             ])
+            for extra_serial in handler.get_more_serials_from_device(hardware):
+                command.append(f'--device-serial={extra_serial}')
 
         if hardware.flash_timeout:
             command.append(f'--flash-timeout={hardware.flash_timeout}')

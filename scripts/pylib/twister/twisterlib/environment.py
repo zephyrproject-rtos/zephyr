@@ -187,7 +187,7 @@ Artificially long but functional example:
                         before device handler open serial port and invoke runner.
                         """)
 
-    device.add_argument("--device-serial",
+    device.add_argument("--device-serial", action="append", default=[],
                         help="""Serial device for accessing the board
                         (e.g., /dev/ttyACM0)
                         """)
