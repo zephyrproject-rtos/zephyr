@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config RETAINED_MEM_SF32LB_RTC_BKP
+	bool "Sifli sf32lb rtc backup driver"
+	default y
+	depends on DT_HAS_SIFLI_SF32LB_RTC_BACKUP_ENABLED
+	help
+	  Enable driver for Sifli sf32lb rtc backup retained memory support.
