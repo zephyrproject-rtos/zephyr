@@ -75,6 +75,8 @@ from kconfiglib import Symbol, Choice, MENU, COMMENT, MenuNode, \
                        TRI_TO_STR, TYPE_TO_STR, \
                        standard_kconfig, standard_config_filename
 
+from config_utils import score_search_matches
+
 
 # If True, use GIF image data embedded in this file instead of separate GIF
 # files. See _load_images().
@@ -1842,12 +1844,11 @@ def _update_jump_to_matches(msglabel, search_string):
     _jump_to_tree.selection_set(())
 
     try:
-        # We could use re.IGNORECASE here instead of lower(), but this is
-        # faster for regexes like '.*debug$' (though the '.*' is redundant
-        # there). Those probably have bad interactions with re.search(), which
-        # matches anywhere in the string.
-        regex_searches = [re.compile(regex).search
-                          for regex in search_string.lower().split()]
+        scored_sc_nodes = score_search_matches(search_string, _sorted_sc_nodes())
+        scored_menu_comment_nodes = score_search_matches(search_string, _sorted_menu_comment_nodes())
+
+        _jump_to_matches = [node for node, _ in scored_sc_nodes + scored_menu_comment_nodes]
+
     except re.error as e:
         msg = "Bad regular expression"
         # re.error.msg was added in Python 3.5
@@ -1857,39 +1858,6 @@ def _update_jump_to_matches(msglabel, search_string):
         # Clear tree
         _jump_to_tree.set_children("")
         return
-
-    _jump_to_matches = []
-    add_match = _jump_to_matches.append
-
-    for node in _sorted_sc_nodes():
-        # Symbol/choice
-        sc = node.item
-
-        for search in regex_searches:
-            # Both the name and the prompt might be missing, since
-            # we're searching both symbols and choices
-
-            # Does the regex match either the symbol name or the
-            # prompt (if any)?
-            if not (sc.name and search(sc.name.lower()) or
-                    node.prompt and search(node.prompt[0].lower())):
-
-                # Give up on the first regex that doesn't match, to
-                # speed things up a bit when multiple regexes are
-                # entered
-                break
-
-        else:
-            add_match(node)
-
-    # Search menus and comments
-
-    for node in _sorted_menu_comment_nodes():
-        for search in regex_searches:
-            if not search(node.prompt[0].lower()):
-                break
-        else:
-            add_match(node)
 
     msglabel["text"] = "" if _jump_to_matches else "No matches"
 

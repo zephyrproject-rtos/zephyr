@@ -223,6 +223,8 @@ from kconfiglib import Symbol, Choice, MENU, COMMENT, MenuNode, \
                        TRI_TO_STR, TYPE_TO_STR, \
                        standard_kconfig, standard_config_filename
 
+from config_utils import score_search_matches
+
 
 #
 # Configuration variables
@@ -2077,54 +2079,13 @@ def _jump_to_dialog():
             prev_s = s
 
             try:
-                # We could use re.IGNORECASE here instead of lower(), but this
-                # is noticeably less jerky while inputting regexes like
-                # '.*debug$' (though the '.*' is redundant there). Those
-                # probably have bad interactions with re.search(), which
-                # matches anywhere in the string.
-                #
-                # It's not horrible either way. Just a bit smoother.
-                regex_searches = [re.compile(regex).search
-                                  for regex in s.lower().split()]
-
-                # No exception thrown, so the regexes are okay
+                # Use the scoring function for symbols and choices
                 bad_re = None
 
-                # List of matching nodes
-                matches = []
-                add_match = matches.append
+                scored_sc_nodes = score_search_matches(s, _sorted_sc_nodes())
+                scored_menu_comment_nodes = score_search_matches(s, _sorted_menu_comment_nodes())
 
-                # Search symbols and choices
-
-                for node in _sorted_sc_nodes():
-                    # Symbol/choice
-                    sc = node.item
-
-                    for search in regex_searches:
-                        # Both the name and the prompt might be missing, since
-                        # we're searching both symbols and choices
-
-                        # Does the regex match either the symbol name or the
-                        # prompt (if any)?
-                        if not (sc.name and search(sc.name.lower()) or
-                                node.prompt and search(node.prompt[0].lower())):
-
-                            # Give up on the first regex that doesn't match, to
-                            # speed things up a bit when multiple regexes are
-                            # entered
-                            break
-
-                    else:
-                        add_match(node)
-
-                # Search menus and comments
-
-                for node in _sorted_menu_comment_nodes():
-                    for search in regex_searches:
-                        if not search(node.prompt[0].lower()):
-                            break
-                    else:
-                        add_match(node)
+                matches = [node for node, _ in scored_sc_nodes + scored_menu_comment_nodes]
 
             except re.error as e:
                 # Bad regex. Remember the error message so we can show it.
