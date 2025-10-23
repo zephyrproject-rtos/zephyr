@@ -44,9 +44,9 @@
 		};
 
 		/* Partition 5: Binary FW image for the Airoc WLAN */
-		airoc_firmware: partition@e80000 {
+		airoc_firmware: partition@f80000 {
 			label = "4343WA1.bin";
-			reg = <0xe80000 DT_SIZE_K(512)>;
+			reg = <0xf80000 DT_SIZE_K(512)>;
 		};
 	};
 };
