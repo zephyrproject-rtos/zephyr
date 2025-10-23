@@ -9,3 +9,15 @@
 	status = "reserved";
 	interrupt-parent = <&cpuppr_clic>;
 };
+
+&timer134 {
+	interrupt-parent = <&cpuppr_clic>;
+};
+
+&dppic135 {
+	child-owned-channels = <0>;
+};
+
+&uart136 {
+	current-speed = <1000000>;
+};
