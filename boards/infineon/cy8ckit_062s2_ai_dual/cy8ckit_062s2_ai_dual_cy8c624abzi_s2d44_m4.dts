@@ -1,0 +1,99 @@
+/*
+ * Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
+ * an affiliate of Cypress Semiconductor Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <infineon/cat1a/mpns/CY8C624ABZI_S2D44.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "CY8CKIT-062S2-AI PSOC 6 AI Evaluation Kit (Dual Core, M4)";
+	compatible = "infineon,cy8ckit_062s2_ai_dual", "cypress,PSOC6";
+
+	cpus {
+		/delete-node/ cpu@0;
+	};
+
+	chosen {
+		zephyr,console = &uart5;
+		zephyr,shell-uart = &uart5;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	// M4 Flash: Remaining 1.5MB
+	flash_m4: flash@10080000 {
+		compatible = "soc-nv-flash";
+		reg = <0x10080000 DT_SIZE_K(1536)>;
+		write-block-size = <512>;
+		erase-block-size = <512>;
+	};
+
+	// M4 SRAM: Remaining 896KB (starts after shared)
+	sram_m4: memory@8021000 {
+		compatible = "mmio-sram";
+		reg = <0x08021000 DT_SIZE_K(896)>;
+	};
+
+	// Shared SRAM: Same 4KB for inter-core communication
+	sram_shared: memory@8020000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x08020000 DT_SIZE_K(4)>;
+		zephyr,memory-region = "SHARED_SRAM";
+	};
+
+	aliases {
+		led1 = &user_led1;
+		sw0 = &user_bt;
+		watchdog0 = &watchdog0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		user_led1: led_1 {
+			label = "LED_1";
+			gpios = <&gpio_prt5 4 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_bt: button_0 {
+			label = "SW_0";
+			gpios = <&gpio_prt5 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&gpio_prt5 {
+	status = "okay";
+};
+
+&gpio_prt10 {
+	status = "okay";
+};
+
+/* UART connected to KitProg3 */
+uart5: &scb5 {
+	compatible = "infineon,cat1-uart";
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&p5_1_scb5_uart_tx &p5_0_scb5_uart_rx>;
+	pinctrl-names = "default";
+};
+
+&p5_1_scb5_uart_tx {
+	drive-push-pull;
+};
+
+&p5_0_scb5_uart_rx {
+	input-enable;
+};
+
+&watchdog0 {
+	status = "okay";
+};
