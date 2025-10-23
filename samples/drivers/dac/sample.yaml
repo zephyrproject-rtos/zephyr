@@ -4,9 +4,22 @@ tests:
   sample.drivers.dac:
     tags: DAC
     depends_on: dac
-    filter: CONFIG_DAC_SAMPLE_RUN
+    filter: CONFIG_DAC_SAMPLE_RUN and not dt_alias_exists("second_uart")
     integration_platforms:
       - nucleo_l152re
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - Generating sawtooth signal at DAC channel ([0-9]*).
+  samples.dac.sec_uart:
+    tags: DAC
+    depends_on: dac
+    filter: CONFIG_DAC_SAMPLE_RUN and dt_alias_exists("second_uart")
+    integration_platforms:
+      - frdm_mcxa266
+      - frdm_mcxa346
+      - frdm_mcxa366
     harness: console
     harness_config:
       type: one_line
