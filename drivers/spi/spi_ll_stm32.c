@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/rtio/rtio.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 
@@ -538,11 +539,146 @@ static void spi_stm32_msg_start(const struct device *dev, bool is_rx_empty)
 #endif /* CONFIG_SPI_STM32_INTERRUPT */
 }
 
+#ifdef CONFIG_SPI_RTIO
+/* Forward declaration for RTIO handlers conveniance */
+static void spi_stm32_iodev_complete(const struct device *dev, int status);
+static int spi_stm32_configure(const struct device *dev,
+			       const struct spi_config *config,
+			       bool write);
+
+static void spi_stm32_iodev_msg_start(const struct device *dev, struct spi_config *config,
+				      const uint8_t *tx_buf, uint8_t *rx_buf, uint32_t buf_len)
+{
+	struct spi_stm32_data *data = dev->data;
+	uint32_t size = buf_len / (SPI_WORD_SIZE_GET(config->operation) / BITS_PER_BYTE);
+
+	const struct spi_buf current_tx = {.buf = NULL, .len = size};
+	const struct spi_buf current_rx = {.buf = NULL, .len = size};
+
+	data->ctx.current_tx = &current_tx;
+	data->ctx.current_rx = &current_rx;
+
+	data->ctx.tx_buf = tx_buf;
+	data->ctx.rx_buf = rx_buf;
+	data->ctx.tx_len = tx_buf != NULL ? size : 0;
+	data->ctx.rx_len = rx_buf != NULL ? size : 0;
+	data->ctx.tx_count = tx_buf != NULL ? 1 : 0;
+	data->ctx.rx_count = rx_buf != NULL ? 1 : 0;
+
+	data->ctx.sync_status = 0;
+
+#ifdef CONFIG_SPI_SLAVE
+	ctx->recv_frames = 0;
+#endif /* CONFIG_SPI_SLAVE */
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	const struct spi_stm32_config *cfg = dev->config;
+	SPI_TypeDef *spi = cfg->spi;
+
+	if (cfg->fifo_enabled && SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
+		LL_SPI_SetTransferSize(spi, size);
+	}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+
+	spi_stm32_msg_start(dev, rx_buf == NULL);
+}
+
+static void spi_stm32_iodev_start(const struct device *dev)
+{
+	struct spi_stm32_data *data = dev->data;
+	struct spi_rtio *rtio_ctx = data->rtio_ctx;
+	struct spi_dt_spec *spi_dt_spec = rtio_ctx->txn_curr->sqe.iodev->data;
+	struct spi_config *spi_config = &spi_dt_spec->config;
+	struct rtio_sqe *sqe = &rtio_ctx->txn_curr->sqe;
+
+	switch (sqe->op) {
+	case RTIO_OP_RX:
+		spi_stm32_iodev_msg_start(dev, spi_config, NULL, sqe->rx.buf, sqe->rx.buf_len);
+		break;
+	case RTIO_OP_TX:
+		spi_stm32_iodev_msg_start(dev, spi_config, sqe->tx.buf, NULL, sqe->tx.buf_len);
+		break;
+	case RTIO_OP_TINY_TX:
+		spi_stm32_iodev_msg_start(dev, spi_config, sqe->tiny_tx.buf, NULL,
+					  sqe->tiny_tx.buf_len);
+		break;
+	case RTIO_OP_TXRX:
+		spi_stm32_iodev_msg_start(dev, spi_config, sqe->txrx.tx_buf, sqe->txrx.rx_buf,
+					  sqe->txrx.buf_len);
+		break;
+	default:
+		LOG_ERR("Invalid op code %d for submission %p", sqe->op, (void *)sqe);
+		spi_stm32_iodev_complete(dev, -EINVAL);
+		break;
+	}
+}
+
+static inline int spi_stm32_iodev_prepare_start(const struct device *dev)
+{
+	struct spi_stm32_data *data = dev->data;
+	struct spi_rtio *rtio_ctx = data->rtio_ctx;
+	struct spi_dt_spec *spi_dt_spec = rtio_ctx->txn_curr->sqe.iodev->data;
+	struct spi_config *spi_config = &spi_dt_spec->config;
+	uint8_t op_code = rtio_ctx->txn_curr->sqe.op;
+	bool write = (op_code == RTIO_OP_TX) ||
+		     (op_code == RTIO_OP_TINY_TX) ||
+		     (op_code == RTIO_OP_TXRX);
+
+	return spi_stm32_configure(dev, spi_config, write);
+}
+
+static void spi_stm32_iodev_complete(const struct device *dev, int status)
+{
+	struct spi_stm32_data *data = dev->data;
+	struct spi_rtio *rtio_ctx = data->rtio_ctx;
+
+	if (status == 0 && (rtio_ctx->txn_curr->sqe.flags & RTIO_SQE_TRANSACTION) != 0) {
+		rtio_ctx->txn_curr = rtio_txn_next(rtio_ctx->txn_curr);
+		spi_stm32_iodev_start(dev);
+	} else {
+		spi_stm32_cs_control(dev, false);
+		while (spi_rtio_complete(rtio_ctx, status)) {
+			status = spi_stm32_iodev_prepare_start(dev);
+			if (status == 0) {
+				spi_stm32_iodev_start(dev);
+				break;
+			}
+
+			/* Clear chip select and loop to mark transfer completed with an error */
+			spi_stm32_cs_control(dev, false);
+		}
+	}
+}
+
+static void spi_stm32_iodev_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+{
+	struct spi_stm32_data *data = dev->data;
+	struct spi_rtio *rtio_ctx = data->rtio_ctx;
+	int err;
+
+	if (spi_rtio_submit(rtio_ctx, iodev_sqe)) {
+		err = spi_stm32_iodev_prepare_start(dev);
+		if (err == 0) {
+			spi_stm32_iodev_start(dev);
+		} else {
+			spi_stm32_iodev_complete(dev, err);
+		}
+	}
+}
+#endif /* CONFIG_SPI_RTIO */
+
 static void spi_stm32_complete(const struct device *dev, int status)
 {
 	const struct spi_stm32_config *cfg = dev->config;
 	SPI_TypeDef *spi = cfg->spi;
 	struct spi_stm32_data *data = dev->data;
+
+#ifdef CONFIG_SPI_RTIO
+	if (data->rtio_ctx->txn_head != NULL) {
+		spi_stm32_iodev_complete(dev, status);
+		return;
+	}
+#endif /* CONFIG_SPI_RTIO */
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	ll_func_disable_int_tx_empty(spi);
@@ -618,6 +754,15 @@ static void spi_stm32_isr(const struct device *dev)
 	SPI_TypeDef *spi = cfg->spi;
 	int err;
 
+#if defined(CONFIG_SPI_RTIO)
+	/* With RTIO, an interrupt can occur even though they
+	 * are all previously disabled. Ignore it then.
+	 */
+	if (ll_func_are_int_disabled(spi)) {
+		return;
+	}
+#endif /* CONFIG_SPI_RTIO */
+
 	/* Some spurious interrupts are triggered when SPI is not enabled; ignore them.
 	 * Do it only when fifo is enabled to leave non-fifo functionality untouched for now
 	 */
@@ -679,6 +824,7 @@ static int spi_stm32_configure(const struct device *dev,
 	uint32_t clock;
 	int br;
 
+#ifndef CONFIG_SPI_RTIO
 	if (spi_context_configured(&data->ctx, config)) {
 		if (config->operation & SPI_HALF_DUPLEX) {
 			if (write) {
@@ -689,6 +835,7 @@ static int spi_stm32_configure(const struct device *dev,
 		}
 		return 0;
 	}
+#endif /* CONFIG_SPI_RTIO */
 
 	if ((SPI_WORD_SIZE_GET(config->operation) != 8) &&
 	    (SPI_WORD_SIZE_GET(config->operation) != 16)) {
@@ -839,6 +986,8 @@ static int spi_stm32_release(const struct device *dev,
 	return 0;
 }
 
+#ifndef CONFIG_SPI_RTIO
+
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 static int32_t spi_stm32_count_bufset_frames(const struct spi_config *config,
 					     const struct spi_buf_set *bufs)
@@ -957,6 +1106,7 @@ static int spi_stm32_half_duplex_switch_to_receive(const struct spi_stm32_config
 
 	return 0;
 }
+#endif /* !CONFIG_SPI_RTIO */
 
 static int transceive(const struct device *dev,
 		      const struct spi_config *config,
@@ -966,9 +1116,7 @@ static int transceive(const struct device *dev,
 		      spi_callback_t cb,
 		      void *userdata)
 {
-	const struct spi_stm32_config *cfg = dev->config;
 	struct spi_stm32_data *data = dev->data;
-	SPI_TypeDef *spi = cfg->spi;
 	int ret;
 
 	if (tx_bufs == NULL && rx_bufs == NULL) {
@@ -982,6 +1130,12 @@ static int transceive(const struct device *dev,
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, config);
 
 	spi_stm32_pm_policy_state_lock_get(dev);
+
+#ifdef CONFIG_SPI_RTIO
+	ret = spi_rtio_transceive(data->rtio_ctx, config, tx_bufs, rx_bufs);
+#else /* CONFIG_SPI_RTIO */
+	const struct spi_stm32_config *cfg = dev->config;
+	SPI_TypeDef *spi = cfg->spi;
 
 	ret = spi_stm32_configure(dev, config, tx_bufs != NULL);
 	if (ret != 0) {
@@ -1050,6 +1204,8 @@ static int transceive(const struct device *dev,
 #endif /* CONFIG_SPI_STM32_INTERRUPT */
 
 end:
+#endif /* CONFIG_SPI_RTIO */
+
 	spi_context_release(&data->ctx, ret);
 
 	return ret;
@@ -1383,7 +1539,7 @@ static DEVICE_API(spi, api_funcs) = {
 	.transceive_async = spi_stm32_transceive_async,
 #endif
 #ifdef CONFIG_SPI_RTIO
-	.iodev_submit = spi_rtio_iodev_default_submit,
+	.iodev_submit = spi_stm32_iodev_submit,
 #endif
 	.release = spi_stm32_release,
 };
@@ -1507,6 +1663,10 @@ static int spi_stm32_init(const struct device *dev)
 
 #endif /* CONFIG_SPI_STM32_DMA */
 
+#ifdef CONFIG_SPI_RTIO
+	spi_rtio_init(data->rtio_ctx, dev);
+#endif /* CONFIG_SPI_RTIO */
+
 	return pm_device_driver_init(dev, spi_stm32_pm_action);
 }
 
@@ -1602,6 +1762,11 @@ static int spi_stm32_init(const struct device *dev)
 			   (.mssi_clocks = DT_INST_PROP(id, mssi_clock),))	\
 	};									\
 										\
+	IF_ENABLED(CONFIG_SPI_RTIO,						\
+		   (SPI_RTIO_DEFINE(spi_stm32_rtio_##id,			\
+				    CONFIG_SPI_STM32_RTIO_SQ_SIZE,		\
+				    CONFIG_SPI_STM32_RTIO_CQ_SIZE)))		\
+										\
 	static struct spi_stm32_data spi_stm32_dev_data_##id = {		\
 		SPI_CONTEXT_INIT_LOCK(spi_stm32_dev_data_##id, ctx),		\
 		SPI_CONTEXT_INIT_SYNC(spi_stm32_dev_data_##id, ctx),		\
@@ -1609,6 +1774,7 @@ static int spi_stm32_init(const struct device *dev)
 		SPI_DMA_CHANNEL(id, tx, TX, MEMORY, PERIPHERAL)			\
 		SPI_DMA_STATUS_SEM(id)						\
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(id), ctx)		\
+		IF_ENABLED(CONFIG_SPI_RTIO, (.rtio_ctx = &spi_stm32_rtio_##id,))\
 	};									\
 										\
 	PM_DEVICE_DT_INST_DEFINE(id, spi_stm32_pm_action);			\
