@@ -103,11 +103,19 @@ static int syscon_generic_get_size(const struct device *dev, size_t *size)
 	return 0;
 }
 
+static int syscon_generic_get_reg_width(const struct device *dev)
+{
+	const struct syscon_generic_config *config = dev->config;
+
+	return config->reg_width;
+}
+
 static DEVICE_API(syscon, syscon_generic_driver_api) = {
 	.read = syscon_generic_read_reg,
 	.write = syscon_generic_write_reg,
 	.get_base = syscon_generic_get_base,
 	.get_size = syscon_generic_get_size,
+	.get_reg_width = syscon_generic_get_reg_width,
 };
 
 static int syscon_generic_init(const struct device *dev)
