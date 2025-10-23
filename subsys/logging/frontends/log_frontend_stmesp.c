@@ -11,8 +11,8 @@
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log_msg.h>
 #include <zephyr/sys/cbprintf.h>
-#ifdef CONFIG_NRF_ETR
-#include <zephyr/drivers/misc/coresight/nrf_etr.h>
+#ifdef CONFIG_DEBUG_NRF_ETR
+#include <zephyr/drivers/debug/debug_nrf_etr.h>
 #endif
 
 /* Only 32 bit platforms supported. */
@@ -574,15 +574,16 @@ void log_frontend_simple_2(const void *source, uint32_t level, const char *fmt, 
 void log_frontend_panic(void)
 {
 	in_panic = true;
-#ifdef CONFIG_NRF_ETR
-	nrf_etr_flush();
+#ifdef CONFIG_DEBUG_NRF_ETR
+	debug_nrf_etr_flush();
 #endif
 }
 
 void log_frontend_init(void)
 {
-#if	defined(CONFIG_LOG_FRONTEND_STPESP_TURBO_SOURCE_PORT_ID) && !defined(CONFIG_NRF_ETR) && \
-	!defined(CONFIG_LOG_MSG_APPEND_RO_STRING_LOC)
+#if defined(CONFIG_LOG_FRONTEND_STPESP_TURBO_SOURCE_PORT_ID) \
+	&& !defined(CONFIG_DEBUG_NRF_ETR) \
+	&& !defined(CONFIG_LOG_MSG_APPEND_RO_STRING_LOC)
 	/* Send location of section with constant source data. It is used by the
 	 * application core to retrieve source names of log messages coming from
 	 * coprocessors (FLPR and PPR).

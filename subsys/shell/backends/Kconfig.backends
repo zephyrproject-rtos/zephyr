@@ -41,7 +41,7 @@ config SHELL_PROMPT_UART
 
 config SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
 	bool "Interrupt driven"
-	default y
+	default y if !UART_NATIVE_PTY
 	depends on SERIAL_SUPPORT_INTERRUPT
 
 config SHELL_ASYNC_API
@@ -288,8 +288,7 @@ config SHELL_BACKEND_MQTT
 	select DNS_RESOLVER
 	select HWINFO
 	select MQTT_LIB
-	select NET_MGMT
-	select NET_MGMT_EVENT
+	select NET_CONNECTION_MANAGER
 	help
 	  Enable MQTT backend.
 
@@ -329,6 +328,36 @@ config SHELL_MQTT_TX_BUF_SIZE
 	default 256
 	help
 	  Buffer size for the MQTT data transmission.
+
+config SHELL_MQTT_CONNECT_TIMEOUT_MS
+	int "MQTT connect timeout [ms]"
+	default 2000
+	help
+	  Time to await MQTT connect acknowledge in milliseconds.
+
+config SHELL_MQTT_WORK_DELAY_MS
+	int "MQTT work delay [ms]"
+	default 1000
+	help
+	  Period between MQTT work in milliseconds.
+
+config SHELL_MQTT_LISTEN_TIMEOUT_MS
+	int "MQTT listen timeout [ms]"
+	default 500
+	help
+	  Time to listen for incoming packets in milliseconds.
+
+config SHELL_MQTT_TOPIC_RX_ID
+	string "MQTT topic receive identifier"
+	default "/sh/rx"
+	help
+	  String used as receive identifier in the MQTT topic.
+
+config SHELL_MQTT_TOPIC_TX_ID
+	string "MQTT topic transmit identifier"
+	default "/sh/tx"
+	help
+	  String used as transmit identifier in the MQTT topic.
 
 module = SHELL_BACKEND_MQTT
 default-timeout = 100

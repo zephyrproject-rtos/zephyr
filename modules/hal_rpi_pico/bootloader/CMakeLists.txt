@@ -37,6 +37,7 @@ target_include_directories(boot_stage2 PUBLIC
   ${rp2040_dir}/pico_platform/include
   ${rp2040_dir}/hardware_regs/include
   ${common_dir}/pico_base_headers/include
+  ${rp2_common_dir}/pico_platform_common/include
   ${rp2_common_dir}/pico_platform_compiler/include
   ${rp2_common_dir}/pico_platform_sections/include
   ${rp2_common_dir}/pico_platform_panic/include
@@ -45,8 +46,8 @@ target_include_directories(boot_stage2 PUBLIC
 
 target_link_options(boot_stage2 PRIVATE
   "-nostartfiles"
-  "--specs=nosys.specs"
-  "LINKER:--script=${boot_stage_dir}/boot_stage2.ld"
+  "--specs=picolibc.specs"
+  "-T${boot_stage_dir}/boot_stage2.ld"
   )
 
 # The second stage bootloader is compiled without kconfig definitions.

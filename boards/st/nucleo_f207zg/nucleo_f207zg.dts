@@ -17,6 +17,7 @@
 	chosen {
 		zephyr,console = &usart3;
 		zephyr,shell-uart = &usart3;
+		zephyr,canbus = &can1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
@@ -153,12 +154,24 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 };
 
+&can1 {
+	pinctrl-0 = <&can1_rx_pd0 &can1_tx_pd1>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&can2 {
+	pinctrl-0 = <&can2_rx_pb5 &can2_tx_pb6>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &iwdg {
 	status = "okay";
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };

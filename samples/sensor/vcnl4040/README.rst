@@ -1,4 +1,4 @@
-.. zephyr:code-sample:: vcml4040
+.. zephyr:code-sample:: vcnl4040
    :name: VCNL4040 Proximity and Ambient Light Sensor
    :relevant-api: sensor_interface
 

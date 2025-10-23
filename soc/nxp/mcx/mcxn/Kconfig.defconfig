@@ -10,7 +10,7 @@ config MFD
 	default y if DT_HAS_NXP_LP_FLEXCOMM_ENABLED
 
 config NUM_IRQS
-	default 155
+	default 156
 
 config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT

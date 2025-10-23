@@ -1,0 +1,21 @@
+identifier: rp2040_geek
+name: Waveshare RP2040-GEEK
+type: mcu
+arch: arm
+flash: 4096
+ram: 264
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - clock
+  - counter
+  - display
+  - dma
+  - flash
+  - gpio
+  - hwinfo
+  - i2c
+  - usb
+  - watchdog
+  - zephyr_i2c

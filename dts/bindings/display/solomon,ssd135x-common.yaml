@@ -1,0 +1,79 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: SSD135x type display controller
+
+include: [mipi-dbi-spi-device.yaml, display-controller.yaml]
+
+properties:
+  display-offset:
+    type: int
+    required: true
+    description: Vertical offset by com from 0 ~ 127. Typically 128 - height.
+
+  start-line:
+    type: int
+    required: true
+    description: Start line of display RAM to be displayed by selecting a value from 0 to 127.
+      Typically 0.
+
+  multiplex-ratio:
+    type: int
+    required: true
+    description: Multiplex ratio from 16MUX to 128MUX, ranges from 15 to 127.
+      Typically same value as height - 1.
+
+  phase-length:
+    type: int
+    required: true
+    description: Phase 2 Period (7:4) and Phase 1 Period (3:0).
+
+  oscillator-freq:
+    type: int
+    required: true
+    description: Front clock divider (3:0) / oscillator frequency (7:4).
+      If you get weird scanlines, increase oscillator frequency and play with phase length values,
+      for example set this to 0xF1. Note this increases power consumption.
+
+  precharge-time:
+    type: int
+    required: true
+    description: Set 2nd precharge time for segments from 0 DCLK to 15 DCLK, 0 is invalid. A[3:0].
+      Typically 0x8.
+
+  precharge-voltage:
+    type: int
+    required: true
+    description: Set precharge voltage. A[4:0], from 0 (0.20 x VCC) to 0x1F (0.6 x VCC)
+
+  vcomh-voltage:
+    type: int
+    required: true
+    description: Set COM deselect voltage. A[2:0]. From 0.72xVCC to 0.86xVCC.
+
+  current-att:
+    type: int
+    required: true
+    description: Set Master current attenuation. A[3:0], from 1/16 to 16/16.
+
+  remap-value:
+    type: int
+    required: true
+    description: Remap register
+
+      Has multiple configurations (see each bit setting in the datasheet)
+      - A[0] HTiled or VTiled. Must be 0 for this driver.
+      - A[1] Invert segment order
+      - A[2] Invert ABC segment order
+      - A[4] Invert COM order
+      - A[5] Stripped odd/even display
+      - A[7:6] Set color format. Must be 0x1 for this driver. 0x0 Also works for SSD1351.
+
+  inversion-on:
+    type: boolean
+    description: Turn on display color inverting
+
+  column-offset:
+    type: int
+    default: 0
+    description: Some vertical displays may need a column address offset to work properly.

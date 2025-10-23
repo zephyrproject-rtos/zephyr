@@ -12,56 +12,61 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	 model = "Analog Devices MAX78002EVKIT";
-	 compatible = "adi,max78002evkit";
+	model = "Analog Devices MAX78002EVKIT";
+	compatible = "adi,max78002evkit";
 
-	 chosen {
-		 zephyr,console = &uart0;
-		 zephyr,shell-uart = &uart0;
-		 zephyr,sram = &sram2;
-		 zephyr,flash = &flash0;
-	 };
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram2;
+		zephyr,flash = &flash0;
+	};
 
-	 leds {
-		 compatible = "gpio-leds";
-		 led1: led_1 {
-			 gpios = <&gpio2 4 GPIO_ACTIVE_HIGH>;
-			 label = "Green LED";
-		 };
-		 led2: led_2 {
-			 gpios = <&gpio2 5 GPIO_ACTIVE_HIGH>;
-			 label = "Red LED";
-		 };
-	 };
+	leds {
+		compatible = "gpio-leds";
 
-	 buttons {
-		 compatible = "gpio-keys";
-		 pb1: pb1 {
-			 gpios = <&gpio2 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			 label = "SW2";
-			 zephyr,code = <INPUT_KEY_0>;
-		 };
-		 pb2: pb2 {
-			 gpios = <&gpio2 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			 label = "SW3";
-			 zephyr,code = <INPUT_KEY_1>;
-		 };
-		 pb_wakeup: pb_wakeup {
-			gpios = <&gpio3 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW
-				| MAX32_GPIO_VSEL_VDDIOH)>;
+		led1: led_1 {
+			gpios = <&gpio2 4 GPIO_ACTIVE_HIGH>;
+			label = "Green LED";
+		};
+
+		led2: led_2 {
+			gpios = <&gpio2 5 GPIO_ACTIVE_HIGH>;
+			label = "Red LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		pb1: pb1 {
+			gpios = <&gpio2 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW2";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		pb2: pb2 {
+			gpios = <&gpio2 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW3";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+
+		pb_wakeup: pb_wakeup {
+			gpios = <&gpio3 1
+				 (GPIO_PULL_UP | GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
 			label = "Wakeup";
 			zephyr,code = <INPUT_KEY_WAKEUP>;
 		};
-	 };
+	};
 
-	 /* These aliases are provided for compatibility with samples */
-	 aliases {
+	/* These aliases are provided for compatibility with samples */
+	aliases {
 		led0 = &led1;
 		led1 = &led2;
 		sw0 = &pb1;
 		sw1 = &pb2;
 		watchdog0 = &wdt0;
-	 };
+	};
 };
 
 &uart0 {

@@ -12,7 +12,7 @@
 };
 
 &pinctrl {
-	input_test: input_test{
+	input_test: input_test {
 		group1 {
 			pinmux = <RZT_PINMUX(PORT_15, 4, 4)>;
 			input-enable;

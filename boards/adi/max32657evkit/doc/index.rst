@@ -478,7 +478,7 @@ by non-secure. All others is going to be accessible by NS world.
   endif()
 
 
-As an alternative method (which recommended) user can configurate ownership peripheral by
+As an alternative method (which recommended) user can configure ownership peripheral by
 an cmake overlay file too without touching TF-M source files. For this path
 create ``s_ns_access_overlay.cmake`` file under your project root folder and put peripheral/memory
 you would like to be accessible by secure world.
@@ -572,4 +572,4 @@ References
    https://developer.arm.com/documentation/100935/0100/The-TrustZone-hardware-architecture-
 
 .. _Trusted Firmware M:
-   https://tf-m-user-guide.trustedfirmware.org/building/tfm_build_instruction.html
+   https://tf-m.docs.trustedfirmware.org/en/latest/building/tfm_build_instruction.html

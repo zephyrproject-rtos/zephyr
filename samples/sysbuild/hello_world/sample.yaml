@@ -6,11 +6,10 @@ sample:
 
 common:
   sysbuild: true
-  harness: console
+  harness: pytest
   harness_config:
-    type: multi_line
-    regex:
-      - "Hello world from .*"
+    pytest_dut_scope: session
+  timeout: 20
 
 tests:
   sample.sysbuild.hello_world.nrf5340dk_cpuapp_cpunet:
@@ -18,15 +17,13 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
     integration_platforms:
       - nrf5340dk/nrf5340/cpuapp
-    extra_args: SB_CONF_FILE=sysbuild/nrf5340dk_nrf5340_cpunet.conf
-
   sample.sysbuild.hello_world.nrf54h20dk_cpuapp_cpurad:
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
     integration_platforms:
       - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
-      - SB_CONF_FILE=sysbuild/nrf54h20dk_nrf54h20_cpurad.conf
+      - SB_CONFIG_REMOTE_NRF54H20_CPURAD_CORE=y
       - hello_world_CONFIG_SOC_NRF54H20_CPURAD_ENABLE=y
   sample.sysbuild.hello_world.nrf54h20dk_cpuapp_cpuppr:
     platform_allow:
@@ -34,8 +31,7 @@ tests:
     integration_platforms:
       - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
-
-      - SB_CONF_FILE=sysbuild/nrf54h20dk_nrf54h20_cpuppr.conf
+      - SB_CONFIG_REMOTE_NRF54H20_CPUPPR_CORE=y
       - hello_world_SNIPPET=nordic-ppr
   sample.sysbuild.hello_world.nrf54h20dk_cpuapp_cpuppr_xip:
     platform_allow:
@@ -43,19 +39,20 @@ tests:
     integration_platforms:
       - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
-
-      - SB_CONF_FILE=sysbuild/nrf54h20dk_nrf54h20_cpuppr_xip.conf
+      - SB_CONFIG_REMOTE_NRF54H20_CPUPPR_XIP_CORE=y
       - hello_world_SNIPPET=nordic-ppr-xip
-  sample.sysbuild.hello_world.nrf54l15dk_nrf54l15_cpuflpr:
+  sample.sysbuild.hello_world.nrf54l15_cpuflpr:
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
+      - bl54l15_dvk/nrf54l15/cpuapp
+      - bl54l15u_dvk/nrf54l15/cpuapp
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
+      - bl54l15_dvk/nrf54l15/cpuapp
+      - bl54l15u_dvk/nrf54l15/cpuapp
     extra_args:
-
-      - SB_CONF_FILE=sysbuild/nrf54l15dk_nrf54l15_cpuflpr.conf
       - hello_world_SNIPPET=nordic-flpr
   sample.sysbuild.hello_world.nrf54h20dk_cpuapp_cpuflpr:
     platform_allow:
@@ -63,8 +60,7 @@ tests:
     integration_platforms:
       - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
-
-      - SB_CONF_FILE=sysbuild/nrf54h20dk_nrf54h20_cpuflpr.conf
+      - SB_CONFIG_REMOTE_NRF54H20_CPUFLPR_CORE=y
       - hello_world_SNIPPET=nordic-flpr
   sample.sysbuild.hello_world.nrf54h20dk_cpuapp_cpuflpr_xip:
     platform_allow:
@@ -72,21 +68,5 @@ tests:
     integration_platforms:
       - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
-      - SB_CONF_FILE=sysbuild/nrf54h20dk_nrf54h20_cpuflpr_xip.conf
+      - SB_CONFIG_REMOTE_NRF54H20_CPUFLPR_XIP_CORE=y
       - hello_world_SNIPPET=nordic-flpr-xip
-  sample.sysbuild.hello_world.bl54l15_dvk_nrf54l15_cpuflpr:
-    platform_allow:
-      - bl54l15_dvk/nrf54l15/cpuapp
-    integration_platforms:
-      - bl54l15_dvk/nrf54l15/cpuapp
-    extra_args:
-      - SB_CONF_FILE=sysbuild/bl54l15_dvk_nrf54l15_cpuflpr.conf
-      - hello_world_SNIPPET=nordic-flpr
-  sample.sysbuild.hello_world.bl54l15u_dvk_nrf54l15_cpuflpr:
-    platform_allow:
-      - bl54l15u_dvk/nrf54l15/cpuapp
-    integration_platforms:
-      - bl54l15u_dvk/nrf54l15/cpuapp
-    extra_args:
-      - SB_CONF_FILE=sysbuild/bl54l15u_dvk_nrf54l15_cpuflpr.conf
-      - hello_world_SNIPPET=nordic-flpr

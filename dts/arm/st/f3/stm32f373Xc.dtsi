@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <mem.h>
 #include <st/f3/stm32f373.dtsi>
 
 / {
@@ -22,7 +21,7 @@
 		dma2: dma@40020400 {
 			compatible = "st,stm32-dma-v2bis";
 			reg = <0x40020400 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB1, 1U)>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 1)>;
 			interrupts = <56 0 57 0 58 0 59 0 60 0>;
 			status = "disabled";
 		};
@@ -30,7 +29,7 @@
 		dac2: dac@40009800 {
 			compatible = "st,stm32-dac";
 			reg = <0x40009800 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 26U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 26)>;
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};

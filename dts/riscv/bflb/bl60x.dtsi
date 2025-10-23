@@ -112,10 +112,9 @@
 			status = "okay";
 
 			gpio0: gpio@40000000 {
-				compatible = "bflb,gpio";
+				compatible = "bflb,bl60x_70x-gpio";
 				reg = <0x40000000 0x1000>;
 				#gpio-cells = <2>;
-				#bflb,pin-cells = <2>;
 				status = "disabled";
 
 				gpio-controller;
@@ -130,11 +129,11 @@
 			#clock-cells = <1>;
 			status = "okay";
 			clocks = <&clk_rc32m>, <&clk_crystal>, <&clk_root>, <&clk_bclk>,
-				<&clk_pll BL60X_PLL_192MHz>, <&clk_pll BL60X_PLL_160MHz>,
-				<&clk_pll BL60X_PLL_120MHz>, <&clk_pll BL60X_PLL_48MHz>;
+				 <&clk_pll BL60X_PLL_192MHz>, <&clk_pll BL60X_PLL_160MHz>,
+				 <&clk_pll BL60X_PLL_120MHz>, <&clk_pll BL60X_PLL_48MHz>;
 			clock-names = "rc32m", "crystal", "root", "bclk",
-				"pll_192", "pll_160",
-				"pll_120", "pll_48";
+				      "pll_192", "pll_160",
+				      "pll_120", "pll_48";
 		};
 
 		efuse: efuse@40007000 {
@@ -142,6 +141,12 @@
 			reg = <0x40007000 0x1000>;
 			status = "okay";
 			size = <128>;
+		};
+
+		cache: cache@40009000 {
+			reg = <0x40009000 DT_SIZE_K(4)>;
+			compatible = "bflb,l1c";
+			dcache-ways-disabled = <0>;
 		};
 
 		uart0: uart@4000a000 {
@@ -179,6 +184,16 @@
 			status = "disabled";
 
 			interrupts = <39 0>;
+			interrupt-parent = <&clic>;
+		};
+
+		dma0: dma@4000c000 {
+			compatible = "bflb,dma";
+			reg = <0x4000c000 0x1000>;
+			#dma-cells = <1>;
+			dma-channels = <4>;
+
+			interrupts = <31 0>;
 			interrupt-parent = <&clic>;
 		};
 

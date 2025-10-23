@@ -482,9 +482,19 @@ static int mcux_flexcan_set_mode(const struct device *dev, can_mode_t mode)
 
 			/* Transceiver Delay Compensation must be disabled in loopback mode */
 			if ((mode & CAN_MODE_LOOPBACK) != 0) {
+#if (defined(FSL_FEATURE_FLEXCAN_HAS_ENHANCED_BIT_TIMING_REG) && \
+	 FSL_FEATURE_FLEXCAN_HAS_ENHANCED_BIT_TIMING_REG)
+				base->ETDC &= ~(CAN_ETDC_ETDCEN_MASK);
+#else
 				base->FDCTRL &= ~(CAN_FDCTRL_TDCEN_MASK);
+#endif
 			} else {
+#if (defined(FSL_FEATURE_FLEXCAN_HAS_ENHANCED_BIT_TIMING_REG) && \
+	 FSL_FEATURE_FLEXCAN_HAS_ENHANCED_BIT_TIMING_REG)
+				base->ETDC |= CAN_ETDC_ETDCEN_MASK;
+#else
 				base->FDCTRL |= CAN_FDCTRL_TDCEN_MASK;
+#endif
 			}
 		} else {
 			/* Disable CAN FD mode */

@@ -33,6 +33,9 @@
 #define STM32_SRC_PLL3_R	(STM32_SRC_PLL3_Q + 1)
 /** Clock muxes */
 #define STM32_SRC_CKPER		(STM32_SRC_PLL3_R + 1)
+/** Bus clocks */
+#define STM32_SRC_TIMPCLK1	(STM32_SRC_CKPER + 1)
+#define STM32_SRC_TIMPCLK2	(STM32_SRC_TIMPCLK1 + 1)
 /** Others: Not yet supported */
 /* #define STM32_SRC_I2SCKIN	TBD */
 /* #define STM32_SRC_SPDIFRX	TBD */
@@ -129,5 +132,20 @@
 #define MCO_PRE_DIV_13 13
 #define MCO_PRE_DIV_14 14
 #define MCO_PRE_DIV_15 15
+
+/* MCO1 clock output */
+#define MCO1_SEL_HSI		0
+#define MCO1_SEL_LSE		1
+#define MCO1_SEL_HSE		2
+#define MCO1_SEL_PLL1QCLK	3
+#define MCO1_SEL_HSI48		4
+
+/* MCO2 clock output */
+#define MCO2_SEL_SYSCLK		0
+#define MCO2_SEL_PLL2PCLK	1
+#define MCO2_SEL_HSE		2
+#define MCO2_SEL_PLL1PCLK	3
+#define MCO2_SEL_CSI		4
+#define MCO2_SEL_LSI		5
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32H7_CLOCK_H_ */

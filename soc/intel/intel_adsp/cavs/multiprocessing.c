@@ -2,7 +2,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/kernel.h>
-#include <ksched.h>
 #include <cavs-idc.h>
 #include <adsp_memory.h>
 #include <adsp_shim.h>
@@ -201,6 +200,7 @@ __imr void soc_mp_init(void)
 
 int soc_adsp_halt_cpu(int id)
 {
+#if CONFIG_MP_MAX_NUM_CPUS > 1
 	unsigned int irq_mask;
 
 	if (id == 0 || id == arch_curr_cpu()->id) {
@@ -237,4 +237,7 @@ int soc_adsp_halt_cpu(int id)
 	while ((CAVS_SHIM.pwrsts & CAVS_PWRSTS_PDSPPGS(id))) {
 	}
 	return 0;
+#else
+	return -EINVAL;
+#endif
 }

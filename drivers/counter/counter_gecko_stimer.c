@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT silabs_gecko_stimer
-
 #include <errno.h>
 #include <stddef.h>
 #include <string.h>
@@ -21,7 +19,7 @@
 
 LOG_MODULE_REGISTER(counter_gecko, CONFIG_COUNTER_LOG_LEVEL);
 
-#define DT_RTC DT_COMPAT_GET_ANY_STATUS_OKAY(silabs_gecko_stimer)
+#define DT_RTC DT_CHOSEN(silabs_sleeptimer)
 
 #define STIMER_ALARM_NUM 2
 #define STIMER_MAX_VALUE 0xFFFFFFFFUL
@@ -273,7 +271,7 @@ static DEVICE_API(counter, counter_gecko_driver_api) = {
 	.get_top_value = counter_gecko_get_top_value,
 };
 
-BUILD_ASSERT((DT_INST_PROP(0, prescaler) > 0U) && (DT_INST_PROP(0, prescaler) <= 32768U));
+BUILD_ASSERT((DT_PROP(DT_RTC, prescaler) > 0U) && (DT_PROP(DT_RTC, prescaler) <= 32768U));
 
 static void counter_gecko_0_irq_config(void)
 {
@@ -281,22 +279,22 @@ static void counter_gecko_0_irq_config(void)
 	IRQ_DIRECT_CONNECT(DT_IRQ(DT_RTC, irq), DT_IRQ(DT_RTC, priority),
 			   CONCAT(DT_STRING_UPPER_TOKEN_BY_IDX(DT_RTC, interrupt_names, 0),
 			   _IRQHandler), 0);
-	irq_enable(DT_INST_IRQN(0));
+	irq_enable(DT_IRQN(DT_RTC));
 #endif
 }
 
 static const struct counter_gecko_config counter_gecko_0_config = {
 	.info = {
 			.max_top_value = STIMER_MAX_VALUE,
-			.freq = DT_INST_PROP(0, clock_frequency) / DT_INST_PROP(0, prescaler),
+			.freq = DT_PROP(DT_RTC, clock_frequency) / DT_PROP(DT_RTC, prescaler),
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP,
 			.channels = STIMER_ALARM_NUM,
 		},
 	.irq_config = counter_gecko_0_irq_config,
-	.prescaler = DT_INST_PROP(0, prescaler),
+	.prescaler = DT_PROP(DT_RTC, prescaler),
 };
 
 static struct counter_gecko_data counter_gecko_0_data;
 
-DEVICE_DT_INST_DEFINE(0, counter_gecko_init, NULL, &counter_gecko_0_data, &counter_gecko_0_config,
-		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &counter_gecko_driver_api);
+DEVICE_DT_DEFINE(DT_RTC, counter_gecko_init, NULL, &counter_gecko_0_data, &counter_gecko_0_config,
+		 POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &counter_gecko_driver_api);

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/{
+/ {
 	aliases {
 		sample-device = &uart135;
 	};
@@ -13,4 +13,8 @@
 &uart135 {
 	status = "okay";
 	memory-regions = <&cpuapp_dma_region>;
+};
+
+&fll16m {
+	status = "okay";
 };

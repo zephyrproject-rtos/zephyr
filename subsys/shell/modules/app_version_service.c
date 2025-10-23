@@ -29,10 +29,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_app,
 	SHELL_CMD(version, NULL, "Application version. (ex. \"1.2.3-unstable.5\")",
 		  cmd_app_version_string),
-	SHELL_CMD(version - extended, NULL,
+	SHELL_CMD(version-extended, NULL,
 		  "Application version extended. (ex. \"1.2.3-unstable.5+4\")",
 		  cmd_app_version_extended_string),
-	SHELL_CMD(build - version, NULL,
+	SHELL_CMD(build-version, NULL,
 		  "Application build version. (ex. \"v3.3.0-18-g2c85d9224fca\")",
 		  cmd_app_build_version),
 	SHELL_SUBCMD_SET_END /* Array terminated. */

@@ -25,11 +25,4 @@ config LV_Z_FLUSH_THREAD
 
 endif # LVGL
 
-if COUNTER_MCUX_LPC_RTC_1HZ
-
-config XTAL32K
-	default y
-
-endif # COUNTER_MCUX_LPC_RTC_1HZ
-
 endif # BOARD_FRDM_RW612

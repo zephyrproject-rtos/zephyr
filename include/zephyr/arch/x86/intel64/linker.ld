@@ -95,6 +95,8 @@ SECTIONS
 	*(.text)
 	*(.text.*)
 
+	#include <snippets-text-sections.ld>
+
 	#include <zephyr/linker/kobject-text.ld>
 
 	MMU_PAGE_ALIGN_PERM
@@ -188,6 +190,32 @@ SECTIONS
 #include <zephyr/linker/common-ram.ld>
 #include <zephyr/linker/cplusplus-ram.ld>
 #include <zephyr/arch/x86/pagetables.ld>
+
+#ifdef CONFIG_HW_SHADOW_STACK
+SECTION_PROLOGUE(.x86shadowstack,,)
+{
+    MMU_PAGE_ALIGN
+
+    __x86shadowstack_start = .;
+
+    *(.x86shadowstack)
+
+    MMU_PAGE_ALIGN
+
+} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+SECTION_PROLOGUE(.x86shadowstack.arr,,)
+{
+    MMU_PAGE_ALIGN
+
+    *(.x86shadowstack.arr*)
+
+    MMU_PAGE_ALIGN
+
+    __x86shadowstack_end = .;
+
+} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#endif
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.

@@ -6,17 +6,19 @@
 
 /**
  * @file
- * @brief Public API for SPI drivers and applications
+ * @ingroup spi_interface
+ * @brief Main header file for SPI (Serial Peripheral Interface) driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SPI_H_
 #define ZEPHYR_INCLUDE_DRIVERS_SPI_H_
 
 /**
- * @brief SPI Interface
- * @defgroup spi_interface SPI Interface
+ * @brief Interfaces for Serial Peripheral Interface (SPI)
+ *        controllers.
+ * @defgroup spi_interface SPI
  * @since 1.0
- * @version 1.0.0
+ * @version 1.1.0
  * @ingroup io_interfaces
  * @{
  */
@@ -240,19 +242,38 @@ extern "C" {
  *
  */
 struct spi_cs_control {
-	/**
-	 * GPIO devicetree specification of CS GPIO.
-	 * The device pointer can be set to NULL to fully inhibit CS control if
-	 * necessary. The GPIO flags GPIO_ACTIVE_LOW/GPIO_ACTIVE_HIGH should be
-	 * equivalent to SPI_CS_ACTIVE_HIGH/SPI_CS_ACTIVE_LOW options in struct
-	 * spi_config.
-	 */
-	struct gpio_dt_spec gpio;
-	/**
-	 * Delay in microseconds to wait before starting the
-	 * transmission and before releasing the CS line.
-	 */
-	uint32_t delay;
+	union {
+		struct {
+			/**
+			 * GPIO devicetree specification of CS GPIO.
+			 * The device pointer can be set to NULL to fully inhibit CS control if
+			 * necessary. The GPIO flags GPIO_ACTIVE_LOW/GPIO_ACTIVE_HIGH should be
+			 * equivalent to SPI_CS_ACTIVE_HIGH/SPI_CS_ACTIVE_LOW options in struct
+			 * spi_config.
+			 */
+			struct gpio_dt_spec gpio;
+			/**
+			 * Delay in microseconds to wait before starting the
+			 * transmission and before releasing the CS line.
+			 */
+			uint32_t delay;
+		};
+		struct {
+			/**
+			 * CS enable lead time, i.e. how long should the CS be asserted
+			 * before the first clock. Specified in nanoseconds.
+			 */
+			uint32_t setup_ns;
+			/**
+			 * CS enable lag time, i.e. how long should the CS be asserted
+			 * after the last clock, before the CS de-asserts.
+			 * Specified in nanoseconds.
+			 */
+			uint32_t hold_ns;
+		};
+	};
+	/* To keep track of which form of this struct is valid */
+	bool cs_is_gpio;
 };
 
 /**
@@ -308,6 +329,26 @@ struct spi_cs_control {
 #define SPI_CS_GPIOS_DT_SPEC_INST_GET(inst) \
 	SPI_CS_GPIOS_DT_SPEC_GET(DT_DRV_INST(inst))
 
+/** @cond INTERNAL_HIDDEN */
+#define SPI_CS_CONTROL_MAX_DELAY(node_id)			\
+	MAX(DT_PROP_OR(node_id, spi_cs_setup_delay_ns, 0),	\
+	    DT_PROP_OR(node_id, spi_cs_hold_delay_ns, 0))
+
+
+#define SPI_CS_CONTROL_INIT_GPIO(node_id, ...)						\
+	.gpio = SPI_CS_GPIOS_DT_SPEC_GET(node_id),					\
+	.delay = COND_CODE_1(IS_EMPTY(__VA_ARGS__),					\
+			(DIV_ROUND_UP(SPI_CS_CONTROL_MAX_DELAY(node_id), 1000)),	\
+			(__VA_ARGS__)),
+
+#define SPI_CS_CONTROL_INIT_NATIVE(node_id)						\
+	.setup_ns = DT_PROP_OR(node_id, spi_cs_setup_delay_ns, 0),			\
+	.hold_ns = DT_PROP_OR(node_id, spi_cs_hold_delay_ns, 0),
+
+#define SPI_DEPRECATE_DELAY_WARN							\
+	__WARN("Delay parameter in SPI DT macros is deprecated, use DT prop instead")
+/** @endcond */
+
 /**
  * @brief Initialize and get a pointer to a @p spi_cs_control from a
  *        devicetree node identifier
@@ -330,27 +371,34 @@ struct spi_cs_control {
  *
  * @code{.c}
  *     struct spi_cs_control ctrl =
- *             SPI_CS_CONTROL_INIT(DT_NODELABEL(spidev), 2);
+ *             SPI_CS_CONTROL_INIT(DT_NODELABEL(spidev));
  * @endcode
  *
- * This example is equivalent to:
+ * This example is roughly equivalent to:
  *
  * @code{.c}
  *     struct spi_cs_control ctrl = {
  *             .gpio = SPI_CS_GPIOS_DT_SPEC_GET(DT_NODELABEL(spidev)),
- *             .delay = 2,
+ *             .delay = DT_PROP(node_id, cs_delay_ns) / 1000,
+ *             .cs_is_gpio = true,
  *     };
  * @endcode
  *
+ * For non-gpio CS, the idea is similar but the lead and lag fields of the cs struct
+ * will be populated instead.
+ *
  * @param node_id Devicetree node identifier for a device on a SPI bus
- * @param delay_ The @p delay field to set in the @p spi_cs_control
+ *
  * @return a pointer to the @p spi_cs_control structure
  */
-#define SPI_CS_CONTROL_INIT(node_id, delay_)			  \
-	{							  \
-		.gpio = SPI_CS_GPIOS_DT_SPEC_GET(node_id),	  \
-		.delay = (delay_),				  \
-	}
+#define SPI_CS_CONTROL_INIT(node_id, ...)					\
+{										\
+	COND_CODE_0(IS_EMPTY(__VA_ARGS__), (SPI_DEPRECATE_DELAY_WARN), ())	\
+	COND_CODE_1(DT_SPI_DEV_HAS_CS_GPIOS(node_id),				\
+			(SPI_CS_CONTROL_INIT_GPIO(node_id, __VA_ARGS__)),	\
+			(SPI_CS_CONTROL_INIT_NATIVE(node_id)))			\
+	.cs_is_gpio = DT_SPI_DEV_HAS_CS_GPIOS(node_id),				\
+}
 
 /**
  * @brief Get a pointer to a @p spi_cs_control from a devicetree node
@@ -362,11 +410,11 @@ struct spi_cs_control {
  * this macro.
  *
  * @param inst Devicetree node instance number
- * @param delay_ The @p delay field to set in the @p spi_cs_control
+ *
  * @return a pointer to the @p spi_cs_control structure
  */
-#define SPI_CS_CONTROL_INIT_INST(inst, delay_)		\
-	SPI_CS_CONTROL_INIT(DT_DRV_INST(inst), delay_)
+#define SPI_CS_CONTROL_INIT_INST(inst)			\
+	SPI_CS_CONTROL_INIT(DT_DRV_INST(inst))
 
 /** @} */
 
@@ -418,7 +466,35 @@ struct spi_config {
 	 * if not used).
 	 */
 	struct spi_cs_control cs;
+	/**
+	 * @brief Delay between SPI words on SCK line in nanoseconds, if supported.
+	 * Value of zero will attempt to use half of the SCK period.
+	 */
+	uint16_t word_delay;
 };
+
+/** @cond INTERNAL_HIDDEN */
+/* converts from the special DT zero value to half of the frequency, for drivers usage mostly */
+static inline uint16_t spi_get_word_delay(const struct spi_config *cfg)
+{
+	uint32_t freq = cfg->frequency;
+
+	if (cfg->word_delay != 0) {
+		return cfg->word_delay;
+	}
+
+	if (freq == 0) {
+		return 0;
+	}
+
+	uint64_t period_ns = NSEC_PER_SEC / freq;
+
+	period_ns = MIN(period_ns, UINT16_MAX);
+	period_ns /= 2;
+
+	return (uint16_t)period_ns;
+}
+/** @endcond */
 
 /**
  * @brief Structure initializer for spi_config from devicetree
@@ -430,10 +506,8 @@ struct spi_config {
  * @param node_id Devicetree node identifier for the SPI device whose
  *                struct spi_config to create an initializer for
  * @param operation_ the desired @p operation field in the struct spi_config
- * @param delay_ the desired @p delay field in the struct spi_config's
- *               spi_cs_control, if there is one
  */
-#define SPI_CONFIG_DT(node_id, operation_, delay_)			\
+#define SPI_CONFIG_DT(node_id, operation_, ...)				\
 	{								\
 		.frequency = DT_PROP(node_id, spi_max_frequency),	\
 		.operation = (operation_) |				\
@@ -441,24 +515,25 @@ struct spi_config {
 			DT_PROP(node_id, frame_format) |			\
 			COND_CODE_1(DT_PROP(node_id, spi_cpol), SPI_MODE_CPOL, (0)) |	\
 			COND_CODE_1(DT_PROP(node_id, spi_cpha), SPI_MODE_CPHA, (0)) |	\
-			COND_CODE_1(DT_PROP(node_id, spi_hold_cs), SPI_HOLD_ON_CS, (0)),	\
+			COND_CODE_1(DT_PROP(node_id, spi_hold_cs), SPI_HOLD_ON_CS, (0))	| \
+			COND_CODE_1(DT_PROP(node_id, spi_lsb_first), SPI_TRANSFER_LSB, (0)) |	\
+			COND_CODE_1(DT_PROP(node_id, spi_cs_high), SPI_CS_ACTIVE_HIGH, (0)),	\
 		.slave = DT_REG_ADDR(node_id),				\
-		.cs = SPI_CS_CONTROL_INIT(node_id, delay_),		\
+		.cs = SPI_CS_CONTROL_INIT(node_id, __VA_ARGS__),	\
+		.word_delay = DT_PROP(node_id, spi_interframe_delay_ns),\
 	}
 
 /**
  * @brief Structure initializer for spi_config from devicetree instance
  *
  * This is equivalent to
- * <tt>SPI_CONFIG_DT(DT_DRV_INST(inst), operation_, delay_)</tt>.
+ * <tt>SPI_CONFIG_DT(DT_DRV_INST(inst), operation_)</tt>.
  *
  * @param inst Devicetree instance number
  * @param operation_ the desired @p operation field in the struct spi_config
- * @param delay_ the desired @p delay field in the struct spi_config's
- *               spi_cs_control, if there is one
  */
-#define SPI_CONFIG_DT_INST(inst, operation_, delay_)	\
-	SPI_CONFIG_DT(DT_DRV_INST(inst), operation_, delay_)
+#define SPI_CONFIG_DT_INST(inst, operation_, ...)		\
+	SPI_CONFIG_DT(DT_DRV_INST(inst), operation_, __VA_ARGS__)
 
 /**
  * @brief Complete SPI DT information
@@ -484,28 +559,24 @@ struct spi_dt_spec {
  * @param node_id Devicetree node identifier for the SPI device whose
  *                struct spi_dt_spec to create an initializer for
  * @param operation_ the desired @p operation field in the struct spi_config
- * @param delay_ the desired @p delay field in the struct spi_config's
- *               spi_cs_control, if there is one
  */
-#define SPI_DT_SPEC_GET(node_id, operation_, delay_)		     \
-	{							     \
-		.bus = DEVICE_DT_GET(DT_BUS(node_id)),		     \
-		.config = SPI_CONFIG_DT(node_id, operation_, delay_) \
+#define SPI_DT_SPEC_GET(node_id, operation_, ...)				\
+	{									\
+		.bus = DEVICE_DT_GET(DT_BUS(node_id)),				\
+		.config = SPI_CONFIG_DT(node_id, operation_, __VA_ARGS__),	\
 	}
 
 /**
  * @brief Structure initializer for spi_dt_spec from devicetree instance
  *
  * This is equivalent to
- * <tt>SPI_DT_SPEC_GET(DT_DRV_INST(inst), operation_, delay_)</tt>.
+ * <tt>SPI_DT_SPEC_GET(DT_DRV_INST(inst), operation_)</tt>.
  *
  * @param inst Devicetree instance number
  * @param operation_ the desired @p operation field in the struct spi_config
- * @param delay_ the desired @p delay field in the struct spi_config's
- *               spi_cs_control, if there is one
  */
-#define SPI_DT_SPEC_INST_GET(inst, operation_, delay_) \
-	SPI_DT_SPEC_GET(DT_DRV_INST(inst), operation_, delay_)
+#define SPI_DT_SPEC_INST_GET(inst, operation_, ...) \
+	SPI_DT_SPEC_GET(DT_DRV_INST(inst), operation_, __VA_ARGS__)
 
 /**
  * @brief Value that will never compare true with any valid overrun character
@@ -861,7 +932,7 @@ __subsystem struct spi_driver_api {
  */
 static inline bool spi_cs_is_gpio(const struct spi_config *config)
 {
-	return config->cs.gpio.port != NULL;
+	return config->cs.cs_is_gpio;
 }
 
 /**
@@ -1289,11 +1360,10 @@ extern const struct rtio_iodev_api spi_iodev_api;
  * @param name Symbolic name to use for defining the iodev
  * @param node_id Devicetree node identifier
  * @param operation_ SPI operational mode
- * @param delay_ Chip select delay in microseconds
  */
-#define SPI_DT_IODEV_DEFINE(name, node_id, operation_, delay_)			\
+#define SPI_DT_IODEV_DEFINE(name, node_id, operation_, ...)			\
 	const struct spi_dt_spec _spi_dt_spec_##name =				\
-		SPI_DT_SPEC_GET(node_id, operation_, delay_);			\
+		SPI_DT_SPEC_GET(node_id, operation_, __VA_ARGS__);		\
 	RTIO_IODEV_DEFINE(name, &spi_iodev_api, (void *)&_spi_dt_spec_##name)
 
 /**

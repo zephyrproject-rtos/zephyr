@@ -11,6 +11,7 @@ supported:
   - gpio
   - trng
   - watchdog
+  - hwinfo
   - dma
   - counter
   - pwm

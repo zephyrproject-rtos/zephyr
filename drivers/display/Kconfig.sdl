@@ -40,6 +40,9 @@ choice SDL_DISPLAY_DEFAULT_PIXEL_FORMAT
 	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_L_8
 		bool "Grayscale 8bit"
 
+	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_AL_88
+		bool "Grayscale 8bit with Alpha"
+
 endchoice
 
 config SDL_DISPLAY_ZOOM_PCT
@@ -81,12 +84,21 @@ config SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_1
 	default 0xcccccc
 	help
 	  The color of the odd cells in the transparency grid.
+	  Byte order: RGB_888
 
 config SDL_DISPLAY_TRANSPARENCY_GRID_CELL_COLOR_2
 	hex "Transparency grid cell color 2"
 	default 0xbbbbbb
 	help
 	  The color of the even cells in the transparency grid.
+	  Byte order: RGB_888
+
+config SDL_DISPLAY_COLOR_TINT
+	hex "Color filter applied on top of the display data"
+	default 0xffffff
+	help
+	  Can be used to simulate colored monochrome displays, like R8 (L8 + tint 0xff0000).
+	  Byte order: RGB_888
 
 config SDL_DISPLAY_THREAD_PRIORITY
 	int "SDL display thread priority"

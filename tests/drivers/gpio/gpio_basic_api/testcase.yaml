@@ -24,6 +24,11 @@ tests:
     extra_args: "DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840.overlay;\
                  boards/nrf52840dk_nrf52840_sense_edge.overlay"
 
+  drivers.gpio.nrf_sense_edge.nrf54l:
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+    extra_args: "EXTRA_DTC_OVERLAY_FILE=boards/nrf54l_sense_edge.overlay"
+
   drivers.gpio.mr_canhubk3_wkpu:
     platform_allow: mr_canhubk3
     extra_args: "DTC_OVERLAY_FILE=boards/mr_canhubk3_wkpu.overlay"
@@ -53,6 +58,8 @@ tests:
       - frdm_k64f
     platform_exclude:
       # below boards are customized
+      - frdm_mcxe247
+      - frdm_mcxe31b
       - mimxrt595_evk/mimxrt595s/cm33
       - mimxrt1020_evk
       - mimxrt1040_evk
@@ -61,6 +68,8 @@ tests:
       - mimxrt1060_evk@C/mimxrt1062/qspi
       - lpcxpresso55s69/lpc55s69/cpu0
       - lpcxpresso55s36
+      - frdm_mcxw23
+      - mcxw23_evk
   drivers.gpio.2pin_arduino_customized:
     min_flash: 34
     depends_on:
@@ -68,6 +77,7 @@ tests:
       - arduino_gpio
     filter: dt_compat_enabled("test-gpio-basic-api") and dt_compat_enabled("arduino-header-r3")
     platform_allow:
+      - frdm_mcxe31b
       - mimxrt595_evk/mimxrt595s/cm33
       - mimxrt1020_evk
       - mimxrt1040_evk
@@ -80,6 +90,8 @@ tests:
       - nucleo_h745zi_q/stm32h745xx/m7
       - nucleo_h745zi_q/stm32h745xx/m4
       - stm32mp257f_ev1/stm32mp257fxx/m33
+      - frdm_mcxw23
+      - mcxw23_evk
     integration_platforms:
       - mimxrt595_evk/mimxrt595s/cm33
   drivers.gpio.st_2pin_arduino:
@@ -121,3 +133,11 @@ tests:
       - nrf54h20dk/nrf54h20/cpurad
     extra_args:
       - DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpurad_gpiote0.overlay"
+  drivers.gpio.2pin_hsgpio:
+    min_flash: 34
+    filter: dt_compat_enabled("test-gpio-basic-api")
+    platform_allow:
+      - frdm_rw612
+    extra_args: "DTC_OVERLAY_FILE=boards/frdm_rw612_hsgpio.overlay"
+    harness_config:
+      fixture: hsgpio_loopback

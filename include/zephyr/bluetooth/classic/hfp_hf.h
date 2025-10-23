@@ -32,6 +32,77 @@ struct bt_hfp_hf;
 
 struct bt_hfp_hf_call;
 
+/** @brief The status of the call
+ *
+ *  Enumeration defining the various states a call can be in during
+ *  HFP communication between HF and AG.
+ */
+enum __packed bt_hfp_hf_call_status {
+	/** Call is active and ongoing */
+	BT_HFP_HF_CALL_STATUS_ACTIVE = 0,
+	/** Call is on hold */
+	BT_HFP_HF_CALL_STATUS_HELD = 1,
+	/** Outgoing call is being dialed */
+	BT_HFP_HF_CALL_STATUS_DIALING = 2,
+	/** Outgoing call is being alerted (ringing on remote end) */
+	BT_HFP_HF_CALL_STATUS_ALERTING = 3,
+	/** Incoming call has arrived */
+	BT_HFP_HF_CALL_STATUS_INCOMING = 4,
+	/** Incoming call is waiting (call waiting scenario) */
+	BT_HFP_HF_CALL_STATUS_WAITING = 5,
+	/** Call held by Response and Hold feature */
+	BT_HFP_HF_CALL_STATUS_INCOMING_HELD = 6
+};
+
+/** @brief The direction of the call
+ *
+ *  Enumeration defining whether the call was initiated by the HF
+ *  (outgoing) or by the remote party (incoming).
+ */
+enum __packed bt_hfp_hf_call_dir {
+	/** It is an outgoing call initiated by HF */
+	BT_HFP_HF_CALL_DIR_OUTGOING = 0,
+	/** It is an incoming call from remote party */
+	BT_HFP_HF_CALL_DIR_INCOMING = 1,
+};
+
+/** @brief The mode of the call
+ *
+ *  Enumeration defining the type of call being established,
+ *  whether voice, data, or fax transmission.
+ */
+enum __packed bt_hfp_hf_call_mode {
+	/** Voice call */
+	BT_HFP_HF_CALL_MODE_VOICE = 0,
+	/** Data call */
+	BT_HFP_HF_CALL_MODE_DATA = 1,
+	/** Fax transmission */
+	BT_HFP_HF_CALL_MODE_FAX = 2,
+};
+
+/** @brief The information of current call
+ *
+ *  Structure containing comprehensive information about a current call,
+ *  including its index, direction, status, mode, multiparty status,
+ *  phone number, and number type.
+ */
+struct bt_hfp_hf_current_call {
+	/** Call index identifier */
+	uint8_t index;
+	/** Call direction (incoming/outgoing) */
+	enum bt_hfp_hf_call_dir dir;
+	/** Current status of the call */
+	enum bt_hfp_hf_call_status status;
+	/** Call mode (voice/data/fax) */
+	enum bt_hfp_hf_call_mode mode;
+	/** True if call is part of a multiparty conference */
+	bool multiparty;
+	/** Phone number string, NULL if not available */
+	const char *number;
+	/** Phone number type format identifier */
+	uint8_t type;
+};
+
 /** @brief HFP profile application callback */
 struct bt_hfp_hf_cb {
 	/** HF connected callback to application
@@ -416,6 +487,20 @@ struct bt_hfp_hf_cb {
 	 */
 	void (*subscriber_number)(struct bt_hfp_hf *hf, const char *number, uint8_t type,
 				  uint8_t service);
+
+	/** Query list of current calls callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  result code `+CLCC: <idx>,<dir>,<status>,<mode>,<mprty>[,<number>,<type>]`
+	 *  is received from AG.
+	 *  If the request is failed or no active calls, the callback will not be called.
+	 *  If the @ref bt_hfp_hf_current_call::number is NULL, the
+	 *  @ref bt_hfp_hf_current_call::type shall be ignored.
+	 *
+	 *  @param hf HFP HF object.
+	 *  @param call Current call information.
+	 */
+	void (*query_call)(struct bt_hfp_hf *hf, struct bt_hfp_hf_current_call *call);
 };
 
 /** @brief Register HFP HF profile
@@ -951,6 +1036,18 @@ int bt_hfp_hf_enhanced_safety(struct bt_hfp_hf *hf, bool enable);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_hfp_hf_battery(struct bt_hfp_hf *hf, uint8_t level);
+
+/** @brief Handsfree HF query list of current calls
+ *
+ *  It allows HF to query list of current calls by sending `AT+CLCC` command.
+ *  If @kconfig{CONFIG_BT_HFP_HF_ECS} is not enabled,
+ *  the error `-ENOTSUP` will be returned if the function called.
+ *
+ *  @param hf HFP HF object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_query_list_of_current_calls(struct bt_hfp_hf *hf);
 
 #ifdef __cplusplus
 }

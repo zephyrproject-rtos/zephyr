@@ -6,12 +6,13 @@
 
 /*
  * Copyright (c) 2017 Intel Corporation
- * Copyright (c) 2018 Nordic Semiconductor ASA
+ * Copyright (c) 2018-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <errno.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -1175,10 +1176,12 @@ static void le_cs_config_created(struct bt_conn *conn,
 	const char *chsel_type_str[3] = {"Algorithm #3b", "Algorithm #3c", "Invalid"};
 	const char *ch3c_shape_str[3] = {"Hat shape", "X shape", "Invalid"};
 
-	uint8_t main_mode_idx = config->main_mode_type > 0 && config->main_mode_type < 4
-					? config->main_mode_type
+	uint8_t main_mode_type = BT_CONN_LE_CS_MODE_MAIN_MODE_PART(config->mode);
+	uint8_t sub_mode_type = BT_CONN_LE_CS_MODE_SUB_MODE_PART(config->mode);
+	uint8_t main_mode_idx = main_mode_type > 0 && main_mode_type < 4
+					? main_mode_type
 					: 4;
-	uint8_t sub_mode_idx = config->sub_mode_type < 4 ? config->sub_mode_type : 0;
+	uint8_t sub_mode_idx = sub_mode_type;
 	uint8_t role_idx = MIN(config->role, 2);
 	uint8_t rtt_type_idx = MIN(config->rtt_type, 7);
 	uint8_t phy_idx =
@@ -2239,9 +2242,10 @@ static int cmd_directed_adv(const struct shell *sh,
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_EXT_ADV)
-static bool adv_param_parse(size_t argc, char *argv[],
-			    struct bt_le_adv_param *param)
+static bool parse_and_set_adv_param(size_t argc, char *argv[], struct bt_le_adv_param *param)
 {
+	static uint8_t next_adv_sid = BT_GAP_SID_MIN;
+
 	memset(param, 0, sizeof(struct bt_le_adv_param));
 
 	if (!strcmp(argv[1], "conn-scan")) {
@@ -2310,7 +2314,7 @@ static bool adv_param_parse(size_t argc, char *argv[],
 	}
 
 	param->id = selected_id;
-	param->sid = 0;
+	param->sid = next_adv_sid++;
 	if (param->peer &&
 	    !(param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY)) {
 		param->interval_min = 0;
@@ -2318,6 +2322,10 @@ static bool adv_param_parse(size_t argc, char *argv[],
 	} else {
 		param->interval_min = BT_GAP_ADV_FAST_INT_MIN_2;
 		param->interval_max = BT_GAP_ADV_FAST_INT_MAX_2;
+	}
+
+	if (next_adv_sid > BT_GAP_SID_MAX) {
+		next_adv_sid = BT_GAP_SID_MIN;
 	}
 
 	return true;
@@ -2330,7 +2338,7 @@ static int cmd_adv_create(const struct shell *sh, size_t argc, char *argv[])
 	uint8_t adv_index;
 	int err;
 
-	if (!adv_param_parse(argc, argv, &param)) {
+	if (!parse_and_set_adv_param(argc, argv, &param)) {
 		shell_help(sh);
 		return -ENOEXEC;
 	}
@@ -2361,7 +2369,7 @@ static int cmd_adv_param(const struct shell *sh, size_t argc, char *argv[])
 	struct bt_le_adv_param param;
 	int err;
 
-	if (!adv_param_parse(argc, argv, &param)) {
+	if (!parse_and_set_adv_param(argc, argv, &param)) {
 		shell_help(sh);
 		return -ENOEXEC;
 	}
@@ -2646,7 +2654,7 @@ static int cmd_adv_info(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	shell_print(sh, "Advertiser[%d] %p", selected_adv, adv);
-	shell_print(sh, "Id: %d, TX power: %d dBm", info.id, info.tx_power);
+	shell_print(sh, "Id: %d, SID %u, TX power: %d dBm", info.id, info.sid, info.tx_power);
 	shell_print(sh, "Adv state: %d", info.ext_adv_state);
 	print_le_addr("Address", info.addr);
 
@@ -4413,6 +4421,15 @@ static void br_bond_deleted(const bt_addr_t *peer)
 }
 #endif /* CONFIG_BT_CLASSIC */
 
+#if defined(CONFIG_BT_APP_PASSKEY)
+static uint32_t app_passkey = BT_PASSKEY_RAND;
+
+static uint32_t auth_app_passkey(struct bt_conn *conn)
+{
+	return app_passkey;
+}
+#endif /* CONFIG_BT_APP_PASSKEY */
+
 static struct bt_conn_auth_cb auth_cb_display = {
 	.passkey_display = auth_passkey_display,
 #if defined(CONFIG_BT_PASSKEY_KEYPRESS)
@@ -4429,6 +4446,9 @@ static struct bt_conn_auth_cb auth_cb_display = {
 #if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
 	.pairing_accept = pairing_accept,
 #endif
+#if defined(CONFIG_BT_APP_PASSKEY)
+	.app_passkey = auth_app_passkey,
+#endif
 };
 
 static struct bt_conn_auth_cb auth_cb_display_yes_no = {
@@ -4437,6 +4457,9 @@ static struct bt_conn_auth_cb auth_cb_display_yes_no = {
 	.passkey_confirm = auth_passkey_confirm,
 #if defined(CONFIG_BT_CLASSIC)
 	.pincode_entry = auth_pincode_entry,
+#endif
+#if defined(CONFIG_BT_APP_PASSKEY)
+	.app_passkey = auth_app_passkey,
 #endif
 	.oob_data_request = NULL,
 	.cancel = auth_cancel,
@@ -4453,6 +4476,9 @@ static struct bt_conn_auth_cb auth_cb_input = {
 #if defined(CONFIG_BT_CLASSIC)
 	.pincode_entry = auth_pincode_entry,
 #endif
+#if defined(CONFIG_BT_APP_PASSKEY)
+	.app_passkey = auth_app_passkey,
+#endif
 	.oob_data_request = NULL,
 	.cancel = auth_cancel,
 	.pairing_confirm = auth_pairing_confirm,
@@ -4464,6 +4490,9 @@ static struct bt_conn_auth_cb auth_cb_input = {
 static struct bt_conn_auth_cb auth_cb_confirm = {
 #if defined(CONFIG_BT_CLASSIC)
 	.pincode_entry = auth_pincode_entry,
+#endif
+#if defined(CONFIG_BT_APP_PASSKEY)
+	.app_passkey = auth_app_passkey,
 #endif
 	.oob_data_request = NULL,
 	.cancel = auth_cancel,
@@ -4479,6 +4508,9 @@ static struct bt_conn_auth_cb auth_cb_all = {
 	.passkey_confirm = auth_passkey_confirm,
 #if defined(CONFIG_BT_CLASSIC)
 	.pincode_entry = auth_pincode_entry,
+#endif
+#if defined(CONFIG_BT_APP_PASSKEY)
+	.app_passkey = auth_app_passkey,
 #endif
 	.oob_data_request = auth_pairing_oob_data_request,
 	.cancel = auth_cancel,
@@ -4695,16 +4727,15 @@ static int cmd_fal_connect(const struct shell *sh, size_t argc, char *argv[])
 #endif /* CONFIG_BT_CENTRAL */
 #endif /* defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
 
-#if defined(CONFIG_BT_FIXED_PASSKEY)
-static int cmd_fixed_passkey(const struct shell *sh,
-			     size_t argc, char *argv[])
+#if defined(CONFIG_BT_APP_PASSKEY)
+static int cmd_app_passkey(const struct shell *sh,
+			    size_t argc, char *argv[])
 {
-	unsigned int passkey;
-	int err;
+	uint32_t passkey;
 
 	if (argc < 2) {
-		bt_passkey_set(BT_PASSKEY_INVALID);
-		shell_print(sh, "Fixed passkey cleared");
+		app_passkey = BT_PASSKEY_RAND;
+		shell_print(sh, "App passkey cleared");
 		return 0;
 	}
 
@@ -4714,14 +4745,12 @@ static int cmd_fixed_passkey(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	err = bt_passkey_set(passkey);
-	if (err) {
-		shell_print(sh, "Setting fixed passkey failed (err %d)", err);
-	}
+	app_passkey = passkey;
+	shell_print(sh, "App passkey set to %06u", passkey);
 
-	return err;
+	return 0;
 }
-#endif
+#endif /* CONFIG_BT_APP_PASSKEY */
 
 static int cmd_auth_passkey(const struct shell *sh,
 			    size_t argc, char *argv[])
@@ -5332,10 +5361,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      cmd_fal_connect, 2, 3),
 #endif /* CONFIG_BT_CENTRAL */
 #endif /* defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
-#if defined(CONFIG_BT_FIXED_PASSKEY)
-	SHELL_CMD_ARG(fixed-passkey, NULL, "[passkey]", cmd_fixed_passkey,
+#if defined(CONFIG_BT_APP_PASSKEY)
+	SHELL_CMD_ARG(app-passkey, NULL, "[passkey]", cmd_app_passkey,
 		      1, 1),
-#endif
+#endif /* CONFIG_BT_APP_PASSKEY */
 #endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC) */
 #endif /* CONFIG_BT_CONN */
 

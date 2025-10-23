@@ -23,7 +23,6 @@ from pathlib import Path
 import zephyr_module
 from twisterlib.constants import SUPPORTED_SIMS
 from twisterlib.coverage import supported_coverage_formats
-from twisterlib.error import TwisterRuntimeError
 from twisterlib.log_helper import log_command
 
 logger = logging.getLogger('twister')
@@ -818,14 +817,12 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
 
     parser.add_argument(
         "--west-flash", nargs='?', const=[],
-        help="""Uses west instead of ninja or make to flash when running with
-             --device-testing. Supports comma-separated argument list.
+        help="""Comma separated list of additional flags passed to west when
+            running with --device-testing.
 
         E.g "twister --device-testing --device-serial /dev/ttyACM0
                          --west-flash="--board-id=foobar,--erase"
         will translate to "west flash -- --board-id=foobar --erase"
-
-        NOTE: device-testing must be enabled to use this option.
         """
     )
     parser.add_argument(
@@ -836,8 +833,15 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
         E.g "twister --device-testing --device-serial /dev/ttyACM0
                          --west-flash --west-runner=pyocd"
         will translate to "west flash --runner pyocd"
-
-        NOTE: west-flash must be enabled to use this option.
+        """
+    )
+    parser.add_argument(
+        "--flash-command",
+        help="""Instead of 'west flash', uses a custom flash command to flash
+            when running with --device-testing. Supports comma-separated
+            argument list, the script is also passed a --build-dir flag with
+            the build directory as an argument, and a --board-id flag with the
+            board or probe id if available.
         """
     )
 
@@ -895,14 +899,6 @@ def parse_arguments(
 
     if options.device_serial_pty and os.name == "nt":  # OS is Windows
         logger.error("--device-serial-pty is not supported on Windows OS")
-        sys.exit(1)
-
-    if options.west_runner and options.west_flash is None:
-        logger.error("west-runner requires west-flash to be enabled")
-        sys.exit(1)
-
-    if options.west_flash and not options.device_testing:
-        logger.error("west-flash requires device-testing to be enabled")
         sys.exit(1)
 
     if not options.testsuite_root:
@@ -1195,11 +1191,8 @@ class TwisterEnv:
         toolchain_script = Path(ZEPHYR_BASE) / Path('cmake/verify-toolchain.cmake')
         result = self.run_cmake_script([toolchain_script, "FORMAT=json"])
 
-        try:
-            if result['returncode']:
-                raise TwisterRuntimeError(f"E: {result['returnmsg']}")
-        except Exception as e:
-            print(str(e))
+        if result['returncode'] != 0:
+            print(f"E: {result['returnmsg']}")
             sys.exit(2)
         self.toolchain = json.loads(result['stdout'])['ZEPHYR_TOOLCHAIN_VARIANT']
         logger.info(f"Using '{self.toolchain}' toolchain.")

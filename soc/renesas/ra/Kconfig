@@ -9,6 +9,47 @@ if SOC_FAMILY_RENESAS_RA
 config SERIES_SPECIFIC_SOC_INIT
 	bool "Use series specific initialize"
 
+config OUTPUT_RPD
+	bool "Build a Renesas Partition Data in rpd format"
+	depends on CPU_HAS_RENESAS_RA_IDAU
+	help
+	  Build a partition data zephyr/zephyr.rpd in the build directory.
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
+
+config CPU_HAS_RENESAS_RA_IDAU
+	bool
+	select CPU_HAS_TEE
+	help
+	  MCU implements the ARM Implementation-Defined Attribution Unit (IDAU).
+
 rsource "*/Kconfig"
+
+config SOC_RA_ENABLE_START_SECOND_CORE
+	bool "Allows the primary core to start the secondary core"
+	depends on (SOC_SERIES_RA8P1 && CPU_CORTEX_M85)
+	select SOC_LATE_INIT_HOOK
+	help
+	  Indicates the second core will be start in the soc_late_init_hook when enabled
+
+config SOC_RA_SECOND_CORE_BUILD
+	bool "Indicates the image is built for the secondary core"
+	help
+	  Indicates the image is built for the secondary core when enabled
+
+config SOC_RA_SKIP_CLOCK_INIT
+	bool "Skip clock frequency configuration in system initialization"
+	depends on SOC_RA_SECOND_CORE_BUILD
+	default y
+	help
+	  With this option, the CPU clock frequency is not set during system
+	  initialization.
+
+config RENESAS_RA_BATTERY_BACKUP_MANUAL_CONFIGURE
+	bool "VBAT switching manual"
+	default y
+	depends on DT_HAS_RENESAS_RA_BATTERY_BACKUP_ENABLED && $(dt_compat_any_has_prop,$(DT_COMPAT_RENESAS_RA_BATTERY_BACKUP),manual-configure)
+	help
+	  Enable if this SoC's battery backup domain allows switching to VBAT manually.
+	  Leave disabled if switching is automatic.
 
 endif # SOC_FAMILY_RENESAS_RA

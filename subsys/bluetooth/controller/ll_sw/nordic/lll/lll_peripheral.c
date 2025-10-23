@@ -73,7 +73,7 @@ void lll_periph_prepare(void *param)
 	int err;
 
 	err = lll_hfclock_on();
-	LL_ASSERT(err >= 0);
+	LL_ASSERT_ERR(err >= 0);
 
 	p = param;
 
@@ -82,7 +82,7 @@ void lll_periph_prepare(void *param)
 	/* Invoke common pipeline handling of prepare */
 	err = lll_prepare(lll_conn_peripheral_is_abort_cb, lll_conn_abort_cb,
 			  prepare_cb, 0U, param);
-	LL_ASSERT(!err || err == -EINPROGRESS);
+	LL_ASSERT_ERR(!err || err == -EINPROGRESS);
 }
 
 static int init_reset(void)
@@ -143,7 +143,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 					       lll->data_chan_count);
 #else /* !CONFIG_BT_CTLR_CHAN_SEL_2 */
 		data_chan_use = 0;
-		LL_ASSERT(0);
+		LL_ASSERT_DBG(0);
 #endif /* !CONFIG_BT_CTLR_CHAN_SEL_2 */
 	} else {
 		data_chan_use = lll_chan_sel_1(&lll->data_chan_use,
@@ -154,23 +154,20 @@ static int prepare_cb(struct lll_prepare_param *p)
 	}
 
 	/* Accumulate window widening */
-	lll->periph.window_widening_prepare_us +=
-	    lll->periph.window_widening_periodic_us * (lll->lazy_prepare + 1U);
-	if (lll->periph.window_widening_prepare_us >
-	    lll->periph.window_widening_max_us) {
-		lll->periph.window_widening_prepare_us =
-			lll->periph.window_widening_max_us;
+	lll->periph.window_widening_prepare_us += lll->periph.window_widening_periodic_us *
+						  lll->lazy_prepare;
+	if (lll->periph.window_widening_prepare_us > lll->periph.window_widening_max_us) {
+		lll->periph.window_widening_prepare_us = lll->periph.window_widening_max_us;
 	}
 
-	/* current window widening */
-	lll->periph.window_widening_event_us +=
-		lll->periph.window_widening_prepare_us;
-	lll->periph.window_widening_prepare_us = 0;
-	if (lll->periph.window_widening_event_us >
-	    lll->periph.window_widening_max_us) {
-		lll->periph.window_widening_event_us =
-			lll->periph.window_widening_max_us;
+	/* Current window widening */
+	lll->periph.window_widening_event_us += lll->periph.window_widening_prepare_us;
+	if (lll->periph.window_widening_event_us > lll->periph.window_widening_max_us) {
+		lll->periph.window_widening_event_us = lll->periph.window_widening_max_us;
 	}
+
+	/* Pre-increment window widening */
+	lll->periph.window_widening_prepare_us = lll->periph.window_widening_periodic_us;
 
 	/* current window size */
 	lll->periph.window_size_event_us +=
@@ -339,17 +336,26 @@ static int prepare_cb(struct lll_prepare_param *p)
 	overhead = lll_preempt_calc(ull, (TICKER_ID_CONN_BASE + lll->handle), ticks_at_event);
 	/* check if preempt to start has changed */
 	if (overhead) {
-		LL_ASSERT_OVERHEAD(overhead);
+		int err;
+
+		if (p->defer == 1U) {
+			/* We accept the overlap as previous event elected to continue */
+			err = 0;
+		} else {
+			LL_ASSERT_OVERHEAD(overhead);
+
+			err = -ECANCELED;
+		}
 
 		radio_isr_set(lll_isr_abort, lll);
 		radio_disable();
 
-		return -ECANCELED;
+		return err;
 	}
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 
 	ret = lll_prepare_done(lll);
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
 
 	DEBUG_RADIO_START_S(1);
 

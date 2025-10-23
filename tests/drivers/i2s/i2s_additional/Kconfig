@@ -75,6 +75,14 @@ config I2S_TEST_EIGHT_CHANNELS_UNSUPPORTED
 	  When set to 'y', test will check that i2s_configure() returns -EINVAL.
 	  When set to 'n', test will do the transmission.
 
+config I2S_TEST_EIGHT_CHANNELS_32B_48K_UNSUPPORTED
+	bool "Skip test with 8 channels, 32 bit word size and 48k sample rate"
+	depends on !I2S_TEST_EIGHT_CHANNELS_UNSUPPORTED
+	help
+	  Skip test that is challenging due to high data throughput.
+	  When set to 'y', test will be skipped.
+	  When set to 'n', test will do the transmission.
+
 config I2S_TEST_DATA_FORMAT_I2S_UNSUPPORTED
 	bool "I2S_FMT_DATA_FORMAT_I2S is not supported by the driver"
 	help

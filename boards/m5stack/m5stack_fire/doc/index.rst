@@ -5,6 +5,9 @@ Overview
 
 M5Stack Fire is an ESP32-based development board from M5Stack.
 
+Hardware
+********
+
 M5Stack Fire features the following integrated components:
 
 - ESP32-D0WDQ6 chip (240MHz dual core, 600 DMIPS, 520KB SRAM, Wi-Fi)
@@ -22,8 +25,16 @@ M5Stack Fire features the following integrated components:
 - Three physical buttons
 - LED strips
 
+.. include:: ../../../espressif/common/soc-esp32-features.rst
+   :start-after: espressif-soc-esp32-features
+
+Supported Features
+==================
+
+.. zephyr:board-supported-hw::
+
 Functional Description
-**********************
+======================
 
 The following table below describes the key components, interfaces, and controls
 of the M5Stack Core2 board.
@@ -45,8 +56,8 @@ of the M5Stack Core2 board.
 +------------------+------------------------------------------------------------------------+-----------+
 | Power Switch     | Power on/off button.                                                   | supported |
 +------------------+------------------------------------------------------------------------+-----------+
-| General purpose  | Three buttons on the front face of the device accesible using the GPIO | supported |
-| buttons          | interface.                                                             |           |
+| General purpose  | Three buttons on the front face of the device accessible using the     | supported |
+| buttons          | GPIO interface.                                                        |           |
 +------------------+------------------------------------------------------------------------+-----------+
 | LCD screen       | Built-in LCD TFT display \(`LCD-ILI9342C`_, 2", 320x240 px\)           | supported |
 |                  | controlled via SPI interface                                           |           |
@@ -69,83 +80,33 @@ of the M5Stack Core2 board.
 |                  | possibility to query current battery status.                           |           |
 +------------------+------------------------------------------------------------------------+-----------+
 
-Supported Features
-==================
+System Requirements
+*******************
 
-.. zephyr:board-supported-hw::
+.. include:: ../../../espressif/common/system-requirements.rst
+   :start-after: espressif-system-requirements
 
-Start Application Development
-*****************************
-
-Before powering up your M5Stack Fire, please make sure that the board is in good
-condition with no obvious signs of damage.
-
-System requirements
-===================
-
-Prerequisites
--------------
-
-Espressif HAL requires WiFi and Bluetooth binary blobs in order work. Run the command
-below to retrieve those files.
-
-.. code-block:: console
-
-   west blobs fetch hal_espressif
-
-.. note::
-
-   It is recommended running the command above after :file:`west update`.
-
-Building & Flashing
--------------------
+Programming and Debugging
+*************************
 
 .. zephyr:board-supported-runners::
 
-Build and flash applications as usual (see :ref:`build_an_application` and
-:ref:`application_run` for more details).
+.. include:: ../../../espressif/common/building-flashing.rst
+   :start-after: espressif-building-flashing
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: m5stack_fire/esp32/procpu
-   :goals: build
-
-The usual ``flash`` target will work with the ``m5stack_fire`` board
-configuration. Here is an example for the :zephyr:code-sample:`hello_world`
-application.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: m5stack_fire/esp32/procpu
-   :goals: flash
-
-The baud rate of 921600bps is set by default. If experiencing issues when flashing,
-try using different values by using ``--esp-baud-rate <BAUD>`` option during
-``west flash`` (e.g. ``west flash --esp-baud-rate 115200``).
-
-You can also open the serial monitor using the following command:
-
-.. code-block:: shell
-
-   west espressif monitor
-
-After the board has automatically reset and booted, you should see the following
-message in the monitor:
-
-.. code-block:: console
-
-   ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
-   Hello World! m5stack_fire
+.. include:: ../../../espressif/common/board-variants.rst
+   :start-after: espressif-board-variants
 
 Debugging
----------
+=========
 
 M5Stack Fire debugging is not supported due to pinout limitations.
 
 Related Documents
 *****************
 
-- `M5Stack-Fire schematic <https://m5stack-doc.oss-cn-shenzhen.aliyuncs.com/480/M5-Core-Schematic_20171206.pdf>`_ (PDF)
-- `M5Stack-Fire docs <https://docs.m5stack.com/en/core/fire_v2.7>`_
-- `ESP32 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ (PDF)
-- `ESP32 Hardware Reference <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/index.html>`_
+.. target-notes::
+
+.. _`M5Stack-Fire schematic`: https://m5stack-doc.oss-cn-shenzhen.aliyuncs.com/480/M5-Core-Schematic_20171206.pdf
+.. _`M5Stack-Fire docs`: https://docs.m5stack.com/en/core/fire_v2.7
+.. _`ESP32 Hardware Reference`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/index.html

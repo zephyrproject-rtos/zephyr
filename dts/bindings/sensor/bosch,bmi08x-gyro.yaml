@@ -60,3 +60,8 @@ properties:
     type: boolean
     description: |
       Enables data sync if defined. Must be set if bmi08x-accel data-sync is set as well.
+
+  fifo-watermark:
+    type: int
+    description: |
+      FIFO Watermark in number of frames. Ranges between 1 and 99

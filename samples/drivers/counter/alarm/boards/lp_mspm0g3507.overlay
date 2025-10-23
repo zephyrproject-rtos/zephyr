@@ -6,13 +6,13 @@
 
 / {
 	aliases {
-		counter = &counter0;
+		counter = &counterg0;
 	};
 };
 
 &timg0 {
 	status = "okay";
-	counter0: counter {
+	counterg0: counterg0 {
 		status = "okay";
 	};
 };

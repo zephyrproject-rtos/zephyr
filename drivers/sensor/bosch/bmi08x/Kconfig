@@ -11,6 +11,8 @@ menuconfig BMI08X
 		|| $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI08X_GYRO),i2c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI08X_ACCEL),spi) \
 		|| $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI08X_GYRO),spi)
+	select SPI_RTIO if SPI
+	select I2C_RTIO if I2C
 	help
 	  Enable Bosch BMI08X inertial measurement unit that provides acceleration
 	  and angular rate measurements.
@@ -19,7 +21,7 @@ if BMI08X
 
 choice BMI08X_ACCEL_TRIGGER_MODE
 	prompt "Accelerometer trigger mode"
-	default BMI08X_ACCEL_TRIGGER_GLOBAL_THREAD
+	default BMI08X_ACCEL_TRIGGER_NONE
 	help
 	  Specify the type of triggering to be used by the driver.
 
@@ -38,6 +40,13 @@ config BMI08X_ACCEL_TRIGGER_OWN_THREAD
 	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_BOSCH_BMI08X_ACCEL),int-gpios)
 	select BMI08X_ACCEL_TRIGGER
 endchoice
+
+config BMI08X_ACCEL_STREAM
+	bool "Accelerometer Streaming Mode (FIFO)"
+	depends on !BMI08X_ACCEL_TRIGGER
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_BOSCH_BMI08X_ACCEL),int-gpios)
+
 
 config BMI08X_ACCEL_TRIGGER
 	bool
@@ -59,7 +68,6 @@ config BMI08X_ACCEL_THREAD_STACK_SIZE
 choice BMI08X_GYRO_TRIGGER_MODE
 	prompt "Gyroscope trigger mode"
 	default BMI08X_GYRO_TRIGGER_NONE
-	default BMI08X_GYRO_TRIGGER_GLOBAL_THREAD
 	help
 	  Specify the type of triggering to be used by the driver.
 
@@ -74,6 +82,12 @@ config BMI08X_GYRO_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	select BMI08X_GYRO_TRIGGER
 endchoice
+
+config BMI08X_GYRO_STREAM
+	bool "Gyroscope Streaming Mode (FIFO)"
+	depends on !BMI08X_GYRO_TRIGGER
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_BOSCH_BMI08X_GYRO),int-gpios)
 
 config BMI08X_GYRO_TRIGGER
 	bool

@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/mdio.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/mdio.h>
@@ -36,6 +37,8 @@ LOG_MODULE_REGISTER(phy_adin, CONFIG_PHY_LOG_LEVEL);
 
 /* Software reset, CLK_25 disabled time*/
 #define ADIN1100_PHY_SFT_RESET_MS				25U
+#define ADIN1100_PHY_HRD_RESET_MS				70U
+#define ADIN1100_PHY_HRD_RESET_PULSE_WIDTH_US			16U
 
 /* PHYs autonegotiation complete timeout */
 #define ADIN2111_AN_COMPLETE_AWAIT_TIMEOUT_MS			3000U
@@ -90,6 +93,9 @@ LOG_MODULE_REGISTER(phy_adin, CONFIG_PHY_LOG_LEVEL);
 
 struct phy_adin2111_config {
 	const struct device *mdio;
+#if DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(adi_adin1100_phy, reset_gpios)
+	const struct gpio_dt_spec reset_gpio;
+#endif /* DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(adi_adin1100_phy, reset_gpios) */
 	uint8_t phy_addr;
 	bool led0_en;
 	bool led1_en;
@@ -352,6 +358,30 @@ static int phy_adin2111_reset(const struct device *dev)
 {
 	int ret;
 
+#if DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(adi_adin1100_phy, reset_gpios)
+	const struct phy_adin2111_config *config = dev->config;
+
+	if (config->reset_gpio.port != NULL) {
+		/* Assert reset (min. reset pulse width 10us) */
+		ret = gpio_pin_set_dt(&config->reset_gpio, 1);
+		if (ret < 0) {
+			return ret;
+		}
+		k_busy_wait(ADIN1100_PHY_HRD_RESET_PULSE_WIDTH_US);
+
+		/* Deassert reset */
+		ret = gpio_pin_set_dt(&config->reset_gpio, 0);
+		if (ret < 0) {
+			return ret;
+		}
+
+		k_msleep(ADIN1100_PHY_HRD_RESET_MS);
+
+		return 0;
+	}
+#endif /* DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(adi_adin1100_phy, reset_gpios) */
+
+	/* Perform software reset */
 	ret = phy_adin2111_c22_write(dev, MII_BMCR, MII_BMCR_RESET);
 	if (ret < 0) {
 		return ret;
@@ -365,7 +395,7 @@ static int phy_adin2111_reset(const struct device *dev)
 static void invoke_link_cb(const struct device *dev)
 {
 	struct phy_adin2111_data *const data = dev->data;
-	struct phy_link_state state;
+	struct phy_link_state state = data->state;
 
 	if (data->cb == NULL) {
 		return;
@@ -438,6 +468,15 @@ static int phy_adin2111_init(const struct device *dev)
 	data->dev = dev;
 	data->state.is_up = false;
 	data->state.speed = LINK_FULL_10BASE;
+
+#if DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(adi_adin1100_phy, reset_gpios)
+	if (cfg->reset_gpio.port != NULL) {
+		ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_INACTIVE);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+#endif /* DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(adi_adin1100_phy, reset_gpios) */
 
 	/*
 	 * For adin1100 and further mii stuff,
@@ -617,9 +656,17 @@ static DEVICE_API(ethphy, phy_adin2111_api) = {
 	.write = phy_adin2111_reg_write,
 };
 
+#if DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(adi_adin1100_phy, reset_gpios)
+#define RESET_GPIO(n) \
+		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),
+#else
+#define RESET_GPIO(n)
+#endif /* reset gpio */
+
 #define ADIN2111_PHY_INITIALIZE(n, model)						\
 	static const struct phy_adin2111_config phy_adin##model##_config_##n = {	\
 		.mdio = DEVICE_DT_GET(DT_INST_BUS(n)),					\
+		RESET_GPIO(n)								\
 		.phy_addr = DT_INST_REG_ADDR(n),					\
 		.led0_en = DT_INST_PROP(n, led0_en),					\
 		.led1_en = DT_INST_PROP(n, led1_en),					\

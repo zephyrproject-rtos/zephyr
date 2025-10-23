@@ -1,0 +1,53 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "nucleo_wba65ri.dts"
+
+/ {
+	chosen {
+		zephyr,code-partition = &slot0_ns_partition;
+	};
+
+	/* SRAM1 (node label sram0) last 64kByte are owned by TF-M */
+	memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(448 - 64)>;
+	};
+
+	/* SRAM2 (node label sram1) is owned by TF-M */
+	/delete-node/ memory@20070000;
+};
+
+
+&flash0 {
+	/delete-node/ partitions;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "bootstage";
+			reg = <0 DT_SIZE_K(48)>;
+		};
+
+		slot0_secure_partition: partition@c000 {
+			label = "image-secure";
+			reg = <0xc000 DT_SIZE_K(256)>;
+		};
+
+		slot0_ns_partition: partition@4c000 {
+			label = "image-non-secure";
+			reg = <0x4c000 DT_SIZE_K(512)>;
+		};
+
+		storage_partition: partition@cc000 {
+			label = "storage";
+			reg = <0xcc000 (DT_SIZE_M(2) - DT_SIZE_K(48 + 256 + 512))>;
+		};
+	};
+};

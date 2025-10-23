@@ -147,7 +147,7 @@ int icm4268x_trigger_init(const struct device *dev)
 #elif defined(CONFIG_ICM4268X_TRIGGER_GLOBAL_THREAD)
 	data->work.handler = icm4268x_work_handler;
 #endif
-	return gpio_pin_interrupt_configure_dt(&cfg->gpio_int1, GPIO_INT_EDGE_TO_ACTIVE);
+	return 0;
 }
 
 int icm4268x_trigger_enable_interrupt(const struct device *dev, struct icm4268x_cfg *new_cfg)

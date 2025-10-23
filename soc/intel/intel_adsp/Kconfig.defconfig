@@ -36,7 +36,7 @@ endif # XTENSA_RPO_CACHE
 config CONSOLE
 	def_bool y
 
-if CONSOLE
+if CONSOLE && !SIMULATOR_XTENSA
 config WINSTREAM_CONSOLE
 	def_bool y
 endif

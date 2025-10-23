@@ -11,6 +11,7 @@
 #include <zephyr/input/input.h>
 #include <zephyr/input/input_touch.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 
 LOG_MODULE_REGISTER(chsc5x, CONFIG_INPUT_LOG_LEVEL);
 
@@ -41,6 +42,7 @@ enum {
 #define CHSC5X_BASE_ADDR1         0x20
 #define CHSC5X_BASE_ADDR2         0x00
 #define CHSC5X_BASE_ADDR3         0x00
+#define CHSC5X_ADDRESS_MODE       0x00
 #define CHSC5X_ADDRESS_IC_TYPE    0x81
 #define CHSC5X_ADDRESS_TOUCH_DATA 0x2C
 #define CHSC5X_SIZE_TOUCH_DATA    7
@@ -137,15 +139,10 @@ static int chsc5x_chip_init(const struct device *dev)
 	return 0;
 }
 
-static int chsc5x_init(const struct device *dev)
+static int chsc5x_reset(const struct device *dev)
 {
 	const struct chsc5x_config *config = dev->config;
-	struct chsc5x_data *data = dev->data;
 	int ret;
-
-	data->dev = dev;
-
-	k_work_init(&data->work, chsc5x_work_handler);
 
 	if (config->reset_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->reset_gpio)) {
@@ -168,6 +165,63 @@ static int chsc5x_init(const struct device *dev)
 		}
 
 		k_msleep(1);
+	}
+
+	return 0;
+}
+
+#ifdef CONFIG_PM_DEVICE
+static int chsc5x_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct chsc5x_config *config = dev->config;
+	int ret;
+
+	if (config->reset_gpio.port == NULL) {
+		return -ENOTSUP;
+	}
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = chsc5x_reset(dev);
+		break;
+
+	case PM_DEVICE_ACTION_SUSPEND: {
+		const uint8_t write_buffer[] = {
+			CHSC5X_BASE_ADDR1,
+			CHSC5X_BASE_ADDR2,
+			CHSC5X_BASE_ADDR3,
+			CHSC5X_ADDRESS_MODE,
+			/* Fixed sequence with checksum */
+			0xF7, 0x16, 0x05, 0x00, 0x01, 0x00, 0x00, 0x00,
+			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0xE9,
+		};
+
+		ret = i2c_write_dt(&config->i2c, write_buffer, sizeof(write_buffer));
+		break;
+	}
+
+	default:
+		ret = -ENOTSUP;
+	}
+
+	return ret;
+}
+#endif /* CONFIG_PM_DEVICE */
+
+static int chsc5x_init(const struct device *dev)
+{
+	const struct chsc5x_config *config = dev->config;
+	struct chsc5x_data *data = dev->data;
+	int ret;
+
+	data->dev = dev;
+
+	k_work_init(&data->work, chsc5x_work_handler);
+
+	ret = chsc5x_reset(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to reset (%d)", ret);
+		return ret;
 	}
 
 	if (!gpio_is_ready_dt(&config->int_gpio)) {
@@ -199,6 +253,7 @@ static int chsc5x_init(const struct device *dev)
 };
 
 #define CHSC5X_DEFINE(index)                                                                       \
+	PM_DEVICE_DT_INST_DEFINE(inst, chsc5x_pm_action);                                          \
 	static const struct chsc5x_config chsc5x_config_##index = {                                \
 		.common = INPUT_TOUCH_DT_INST_COMMON_CONFIG_INIT(index),                           \
 		.i2c = I2C_DT_SPEC_INST_GET(index),                                                \
@@ -206,8 +261,8 @@ static int chsc5x_init(const struct device *dev)
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(index, reset_gpios, {0}),                   \
 	};                                                                                         \
 	static struct chsc5x_data chsc5x_data_##index;                                             \
-	DEVICE_DT_INST_DEFINE(index, chsc5x_init, NULL, &chsc5x_data_##index,                      \
-			      &chsc5x_config_##index, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,     \
-			      NULL);
+	DEVICE_DT_INST_DEFINE(index, chsc5x_init, PM_DEVICE_DT_INST_GET(inst),                     \
+			      &chsc5x_data_##index, &chsc5x_config_##index, POST_KERNEL,           \
+			      CONFIG_INPUT_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(CHSC5X_DEFINE)

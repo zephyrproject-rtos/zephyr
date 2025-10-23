@@ -79,6 +79,10 @@
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
+
+	lfxosc: lf_xosc {
+		compatible = "ti,cc23x0-lf-xosc";
+	};
 };
 
 &gpio0 {
@@ -144,4 +148,12 @@
 	pinctrl-0 = <&pwm6_default>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0_scl_default
+		     &i2c0_sda_default>;
+	clock-frequency = <100000>;
+	pinctrl-names = "default";
 };

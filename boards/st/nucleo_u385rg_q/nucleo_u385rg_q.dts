@@ -15,11 +15,12 @@
 	compatible = "st,stm32u385rg-nucleo-q";
 
 	chosen {
+		zephyr,canbus = &fdcan1;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &usart1;
+		zephyr,flash = &flash0;
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
-		zephyr,flash = &flash0;
-		zephyr,code-partition = &slot0_partition;
 	};
 
 	leds: leds {
@@ -106,6 +107,10 @@
 	status = "okay";
 };
 
+&clk_hsi48 {
+	status = "okay";
+};
+
 &clk_lse {
 	status = "okay";
 };
@@ -145,6 +150,12 @@
 	pinctrl-names = "default";
 };
 
+&fdcan1 {
+	pinctrl-0 = <&fdcan1_rx_pa11 &fdcan1_tx_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
@@ -181,5 +192,11 @@
 };
 
 &wwdg {
+	status = "okay";
+};
+
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
 	status = "okay";
 };

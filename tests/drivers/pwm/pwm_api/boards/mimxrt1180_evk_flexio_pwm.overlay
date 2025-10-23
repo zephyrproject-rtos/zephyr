@@ -6,7 +6,7 @@
 
 / {
 	aliases {
-		pwm-0 = &flexio2_pwm;
+		pwm-test = &flexio2_pwm;
 	};
 };
 
@@ -15,7 +15,7 @@
 };
 
 &pinctrl {
-	pinmux_flexio2_pwm_default: pinmux_flexio2_pwm_default  {
+	pinmux_flexio2_pwm_default: pinmux_flexio2_pwm_default {
 		group0 {
 			pinmux = <&iomuxc_gpio_ad_02_flexio2_d02>;
 			drive-strength = "normal";

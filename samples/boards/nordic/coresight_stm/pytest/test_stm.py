@@ -20,7 +20,7 @@ SB_CONFIG_APP_CPUPPR_RUN = None
 SB_CONFIG_APP_CPUFLPR_RUN = None
 
 # See definition of stm_m_id[] and stm_m_name[] in
-# https://github.com/zephyrproject-rtos/zephyr/blob/main/drivers/misc/coresight/nrf_etr.c
+# https://github.com/zephyrproject-rtos/zephyr/blob/main/drivers/debug/debug_nrf_etr.c
 STM_M_ID = {
     "sec": 33,
     "app": 34,
@@ -275,9 +275,9 @@ def test_STM_decoded(dut: DeviceAdapter):
 
     app_constraints = STMLimits(
         # all values in us
-        log_0_arg=1.8,
-        log_1_arg=2.1,
-        log_2_arg=2.0,
+        log_0_arg=0.6,
+        log_1_arg=0.6,
+        log_2_arg=2.1,
         log_3_arg=2.1,
         log_str=4.5,
         tracepoint=0.5,
@@ -286,35 +286,35 @@ def test_STM_decoded(dut: DeviceAdapter):
     )
     rad_constraints = STMLimits(
         # all values in us
-        log_0_arg=4.6,
-        log_1_arg=5.0,
-        log_2_arg=5.2,
-        log_3_arg=5.6,
-        log_str=6.3,
+        log_0_arg=5.6,
+        log_1_arg=5.8,
+        log_2_arg=6.1,
+        log_3_arg=6.4,
+        log_str=7.1,
         tracepoint=0.5,
         tracepoint_d32=0.5,
         tolerance=0.5,
     )
     ppr_constraints = STMLimits(
         # all values in us
-        log_0_arg=25.7,
-        log_1_arg=27.1,
-        log_2_arg=27.3,
-        log_3_arg=30.4,
-        log_str=65.7,
+        log_0_arg=2.3,
+        log_1_arg=2.0,
+        log_2_arg=26.9,
+        log_3_arg=27.5,
+        log_str=68.3,
         tracepoint=0.55,
         tracepoint_d32=0.25,
         tolerance=0.5,
     )
     flpr_constraints = STMLimits(
         # all values in us
-        log_0_arg=1.3,
-        log_1_arg=1.6,
-        log_2_arg=1.6,
-        log_3_arg=1.7,
+        log_0_arg=0.2,
+        log_1_arg=0.2,
+        log_2_arg=1.2,
+        log_3_arg=1.2,
         log_str=3.0,
-        tracepoint=0.5,
-        tracepoint_d32=0.5,
+        tracepoint=0.25,
+        tracepoint_d32=0.25,
         tolerance=0.5,
     )
 

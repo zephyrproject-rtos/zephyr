@@ -1,24 +1,28 @@
-/**
- * @file drivers/sensor.h
- *
- * @brief Public APIs for the sensor driver.
- */
-
 /*
- * Copyright (c) 2016 Intel Corporation
- *
- * SPDX-License-Identifier: Apache-2.0
- */
+* Copyright (c) 2016 Intel Corporation
+*
+* SPDX-License-Identifier: Apache-2.0
+*/
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_H_
 #define ZEPHYR_INCLUDE_DRIVERS_SENSOR_H_
 
 /**
- * @brief Sensor Interface
- * @defgroup sensor_interface Sensor Interface
+ * @file
+ * @ingroup sensor_interface
+ * @brief Main header file for sensor driver API.
+ */
+
+/**
+ * @brief Interfaces for sensors.
+ * @defgroup sensor_interface Sensor
  * @since 1.2
  * @version 1.0.0
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup sensor_interface_ext Device-specific Sensor API extensions
+ * @{
+ * @}
  */
 
 #include <errno.h>
@@ -96,6 +100,8 @@ enum sensor_channel {
 	SENSOR_CHAN_PROX,
 	/** Humidity, in percent. */
 	SENSOR_CHAN_HUMIDITY,
+	/** Ambient illuminance in visible spectrum, in lux. */
+	SENSOR_CHAN_AMBIENT_LIGHT,
 	/** Illuminance in visible spectrum, in lux. */
 	SENSOR_CHAN_LIGHT,
 	/** Illuminance in infra-red spectrum, in lux. */
@@ -126,6 +132,8 @@ enum sensor_channel {
 	SENSOR_CHAN_VOC,
 	/** Gas sensor resistance in ohms. */
 	SENSOR_CHAN_GAS_RES,
+	/** Flow rate in litres per minute */
+	SENSOR_CHAN_FLOW_RATE,
 
 	/** Voltage, in volts **/
 	SENSOR_CHAN_VOLTAGE,
@@ -275,6 +283,9 @@ enum sensor_trigger_type {
 
 	/** Trigger fires when a tilt is detected. */
 	SENSOR_TRIG_TILT,
+
+	/** Trigger fires when data overflows. */
+	SENSOR_TRIG_OVERFLOW,
 
 	/**
 	 * Number of all common sensor triggers.
@@ -478,15 +489,16 @@ static inline bool sensor_chan_spec_eq(struct sensor_chan_spec chan_spec0,
  */
 struct sensor_decoder_api {
 	/**
-	 * @brief Get the number of frames in the current buffer.
+	 * @brief Get the @p frame_count for a specified @p chan_spec from the @p buffer
 	 *
-	 * @param[in]  buffer The buffer provided on the @ref rtio context.
-	 * @param[in]  channel The channel to get the count for
-	 * @param[out] frame_count The number of frames on the buffer (at least 1)
-	 * @return 0 on success
-	 * @return -ENOTSUP if the channel/channel_idx aren't found
+	 * @param[in]  buffer      The buffer provided via the @ref rtio context
+	 * @param[in]  chan_spec   The channel specification to count
+	 * @param[out] frame_count The frame count for a specified @p chan_spec
+	 *
+	 * @retval 0       On success
+	 * @retval -EINVAL Invalid channel specification
 	 */
-	int (*get_frame_count)(const uint8_t *buffer, struct sensor_chan_spec channel,
+	int (*get_frame_count)(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
 			       uint16_t *frame_count);
 
 	/**
@@ -505,31 +517,30 @@ struct sensor_decoder_api {
 			     size_t *frame_size);
 
 	/**
-	 * @brief Decode up to @p max_count samples from the buffer
+	 * @brief Decode up to @p max_count frames specified by @p chan_spec from the @p buffer
 	 *
-	 * Decode samples of channel @ref sensor_channel across multiple frames. If there exist
-	 * multiple instances of the same channel, @p channel_index is used to differentiate them.
-	 * As an example, assume a sensor provides 2 distance measurements:
+	 * Sample showing the process of decoding at most `MAX_FRAMES` for each distance
+	 * sensor channel. The frame iterator is reset for each new channel to allow the
+	 * full history of each channel to be decoded.
 	 *
 	 * @code{.c}
-	 * // Decode the first channel instance of 'distance'
-	 * decoder->decode(buffer, SENSOR_CHAN_DISTANCE, 0, &fit, 5, out);
-	 * ...
-	 *
-	 * // Decode the second channel instance of 'distance'
-	 * decoder->decode(buffer, SENSOR_CHAN_DISTANCE, 1, &fit, 5, out);
+	 * for (int i = 0; i < NUM_DISTANCE_CHANNELS; i++) {
+	 *     fit = 0;
+	 *     decoder->decode(buffer, {SENSOR_CHAN_DISTANCE, i}, &fit, MAX_FRAMES, out);
+	 * }
 	 * @endcode
 	 *
-	 * @param[in]     buffer The buffer provided on the @ref rtio context
-	 * @param[in]     channel The channel to decode
-	 * @param[in,out] fit The current frame iterator
-	 * @param[in]     max_count The maximum number of channels to decode.
-	 * @param[out]    data_out The decoded data
-	 * @return 0 no more samples to decode
-	 * @return >0 the number of decoded frames
-	 * @return <0 on error
+	 * @param[in]     buffer      Buffer provided on the RTIO context
+	 * @param[in]     chan_spec   Channel specification to decode
+	 * @param[in,out] fit         Current frame iterator
+	 * @param[in]     max_count   Maximum number of frames to decode
+	 * @param[out]    data_out    Decoded data
+	 *
+	 * @return Number of frames that were decoded
+	 * @retval -EINVAL   Invalid parameters or unsupported channel
+	 * @retval -ENODATA  Requested data type not present in the frame
 	 */
-	int (*decode)(const uint8_t *buffer, struct sensor_chan_spec channel, uint32_t *fit,
+	int (*decode)(const uint8_t *buffer, struct sensor_chan_spec chan_spec, uint32_t *fit,
 		      uint16_t max_count, void *data_out);
 
 	/**
@@ -923,22 +934,23 @@ static inline int z_impl_sensor_channel_get(const struct device *dev,
  * Generic data structure used for encoding the sample timestamp and number of channels sampled.
  */
 struct __attribute__((__packed__)) sensor_data_generic_header {
-	/* The timestamp at which the data was collected from the sensor */
+	/** The timestamp at which the data was collected from the sensor */
 	uint64_t timestamp_ns;
 
 	/*
-	 * The number of channels present in the frame. This will be the true number of elements in
-	 * channel_info and in the q31 values that follow the header.
+	 ** The number of channels present in the frame.
+	 * This will be the true number of elements in channel_info and in the q31 values that
+	 * follow the header.
 	 */
 	uint32_t num_channels;
 
-	/* Shift value for all samples in the frame */
+	/** Shift value for all samples in the frame */
 	int8_t shift;
 
 	/* This padding is needed to make sure that the 'channels' field is aligned */
 	int8_t _padding[sizeof(struct sensor_chan_spec) - 1];
 
-	/* Channels present in the frame */
+	/** Channels present in the frame */
 	struct sensor_chan_spec channels[0];
 };
 
@@ -1022,11 +1034,12 @@ static inline int z_impl_sensor_get_decoder(const struct device *dev,
  * @return 0 on success
  * @return < 0 on error
  */
-__syscall int sensor_reconfigure_read_iodev(struct rtio_iodev *iodev, const struct device *sensor,
+__syscall int sensor_reconfigure_read_iodev(const struct rtio_iodev *iodev,
+					    const struct device *sensor,
 					    const struct sensor_chan_spec *channels,
 					    size_t num_channels);
 
-static inline int z_impl_sensor_reconfigure_read_iodev(struct rtio_iodev *iodev,
+static inline int z_impl_sensor_reconfigure_read_iodev(const struct rtio_iodev *iodev,
 						       const struct device *sensor,
 						       const struct sensor_chan_spec *channels,
 						       size_t num_channels)
@@ -1043,7 +1056,7 @@ static inline int z_impl_sensor_reconfigure_read_iodev(struct rtio_iodev *iodev,
 	return 0;
 }
 
-static inline int sensor_stream(struct rtio_iodev *iodev, struct rtio *ctx, void *userdata,
+static inline int sensor_stream(const struct rtio_iodev *iodev, struct rtio *ctx, void *userdata,
 				struct rtio_sqe **handle)
 {
 	if (IS_ENABLED(CONFIG_USERSPACE)) {
@@ -1080,7 +1093,7 @@ static inline int sensor_stream(struct rtio_iodev *iodev, struct rtio *ctx, void
  * @return 0 on success
  * @return < 0 on error
  */
-static inline int sensor_read(struct rtio_iodev *iodev, struct rtio *ctx, uint8_t *buf,
+static inline int sensor_read(const struct rtio_iodev *iodev, struct rtio *ctx, uint8_t *buf,
 			      size_t buf_len)
 {
 	if (IS_ENABLED(CONFIG_USERSPACE)) {
@@ -1122,7 +1135,7 @@ static inline int sensor_read(struct rtio_iodev *iodev, struct rtio *ctx, uint8_
  * @return 0 on success
  * @return < 0 on error
  */
-static inline int sensor_read_async_mempool(struct rtio_iodev *iodev, struct rtio *ctx,
+static inline int sensor_read_async_mempool(const struct rtio_iodev *iodev, struct rtio *ctx,
 					    void *userdata)
 {
 	if (IS_ENABLED(CONFIG_USERSPACE)) {

@@ -14,6 +14,7 @@ tests:
       - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nucleo_h723zg/stm32h723xx
       - ophelia4ev/nrf54l15/cpuapp
     integration_platforms:
       - qemu_cortex_m3
@@ -25,6 +26,14 @@ tests:
     extra_args:
       - DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840_ram.overlay"
       - EXTRA_CONF_FILE="boards/nrf52840dk_nrf52840_ram.conf"
+    tags:
+      - drivers
+      - retained_mem
+  drivers.retained_mem.api.buram:
+    platform_allow:
+      - slwrb4180b
+      - xg24_rb4187c
+      - xg29_rb4412a
     tags:
       - drivers
       - retained_mem

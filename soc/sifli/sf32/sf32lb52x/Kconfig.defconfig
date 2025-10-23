@@ -1,0 +1,25 @@
+# Copyright (c) 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_SF32LB52X
+
+DT_CHOSEN_Z_FLASH := zephyr,flash
+DT_CHOSEN_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH))
+DT_CHOSEN_FLASH_PARENT := $(dt_node_parent,$(DT_CHOSEN_FLASH_NODE))
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_node_reg_addr_by_name_hex,$(DT_CHOSEN_FLASH_PARENT),nor)
+
+config USE_DT_CODE_PARTITION
+	default y
+
+config CACHE_MANAGEMENT
+	default y
+
+config NUM_IRQS
+	default 100
+
+endif # SOC_SERIES_SF32LB52X

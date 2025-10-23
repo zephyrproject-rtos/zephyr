@@ -35,9 +35,11 @@ tests:
     extra_configs:
       - CONFIG_UART_WIDE_DATA=y
     arch_allow: arm
-    platform_allow: nucleo_h743zi
-    integration_platforms:
+    platform_allow:
       - nucleo_h743zi
+      - nucleo_h753zi
+    integration_platforms:
+      - nucleo_h753zi
   drivers.uart.async_api.nrf_uart:
     filter: CONFIG_SERIAL_SUPPORT_ASYNC
     harness: ztest
@@ -73,15 +75,19 @@ tests:
     extra_args:
       - platform:frdm_k82f/mk82f25615:"DTC_OVERLAY_FILE=nxp/dut_lpuart0_loopback.overlay"
       - platform:frdm_mcxa156/mcxa156:"DTC_OVERLAY_FILE=nxp/dut_lpuart1.overlay"
+      - platform:frdm_mcxe247/mcxe247:"DTC_OVERLAY_FILE=nxp/dut_lpuart1.overlay"
       - platform:frdm_mcxa153/mcxa153:"DTC_OVERLAY_FILE=nxp/dut_lpuart2_loopback.overlay;nxp/enable_edma0.overlay"
-      - platform:frdm_mcxa166/mcxa166:"DTC_OVERLAY_FILE=nxp/dut_lpuart3_loopback.overlay;nxp/enable_edma0.overlay"
-      - platform:frdm_mcxa276/mcxa276:"DTC_OVERLAY_FILE=nxp/dut_lpuart3_loopback.overlay;nxp/enable_edma0.overlay"
+      - platform:frdm_mcxa346/mcxa346:"DTC_OVERLAY_FILE=nxp/dut_lpuart3_loopback.overlay;nxp/enable_edma0.overlay"
+      - platform:frdm_mcxa266/mcxa266:"DTC_OVERLAY_FILE=nxp/dut_lpuart3_loopback.overlay;nxp/enable_edma0.overlay"
+      - platform:frdm_mcxa366/mcxa366:"DTC_OVERLAY_FILE=nxp/dut_lpuart3_loopback.overlay;nxp/enable_edma0.overlay"
       - platform:mimxrt1160_evk/mimxrt1166/cm4:"DTC_OVERLAY_FILE=nxp/dut_lpuart2_loopback.overlay"
       - platform:mimxrt1170_evk@A/mimxrt1176/cm4:"DTC_OVERLAY_FILE=nxp/dut_lpuart2_loopback.overlay"
       - platform:mimxrt1170_evk@B/mimxrt1176/cm4:"DTC_OVERLAY_FILE=nxp/dut_lpuart2_loopback.overlay"
       - platform:frdm_mcxn236/mcxn236:"DTC_OVERLAY_FILE=nxp/dut_flexcomm2_lpuart2.overlay"
       - platform:frdm_mcxn947/mcxn947/cpu0:"DTC_OVERLAY_FILE=nxp/dut_flexcomm2_lpuart2.overlay"
       - platform:frdm_mcxn947/mcxn947/cpu0/qspi:"DTC_OVERLAY_FILE=nxp/dut_flexcomm2_lpuart2.overlay"
+      - platform:frdm_mcxw72/mcxw727c/cpu0:"DTC_OVERLAY_FILE=nxp/dut_lpuart0_loopback.overlay"
+      - platform:frdm_mcxw71/mcxw716c:"DTC_OVERLAY_FILE=nxp/dut_lpuart0_loopback.overlay"
   drivers.uart.async_api.lpuart.rt_nocache:
     filter: CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_UART_MCUX_LPUART and CONFIG_CPU_HAS_DCACHE
     harness: ztest

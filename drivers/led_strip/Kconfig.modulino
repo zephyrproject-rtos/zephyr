@@ -1,10 +1,10 @@
 # Copyright (c) 2025 Google, LLC
 # SPDX-License-Identifier: Apache-2.0
 
-config MODULINO_SMARTLEDS
-	bool "Arduino Modulino smart LEDs"
+config MODULINO_PIXELS
+	bool "Arduino Modulino Pixels"
 	default y
-	depends on DT_HAS_ARDUINO_MODULINO_SMARTLEDS_ENABLED
+	depends on DT_HAS_ARDUINO_MODULINO_PIXELS_ENABLED
 	select I2C
 	help
-	  Enable driver Arduino Modulino smart LEDs.
+	  Enable driver Arduino Modulino Pixels.

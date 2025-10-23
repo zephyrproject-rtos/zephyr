@@ -1,9 +1,0 @@
-# SPARKFUN THING PLUS MGM240P board
-
-# Copyright (c) 2024 Daikin Comfort Technologies North America, Inc.
-# Copyright (c) 2022, Silicon Labs
-# SPDX-License-Identifier: Apache-2.0
-
-module = BOARD_SPARKFUN_THING_PLUS_MATTER_MGM240P
-module-str = Board Control
-source "subsys/logging/Kconfig.template.log_config"

@@ -3,11 +3,12 @@
 # used by ci/check_compliance
 # zephyr-keep-sorted-start
 clang-format>=15.0.0
-gitlint
+gitlint-core
 junitparser>=4.0.1
 lxml>=5.3.0
 pykwalify
 pylint>=3
+python-dotenv
 python-magic-bin; sys_platform == "win32"
 python-magic; sys_platform != "win32"
 ruff==0.11.11

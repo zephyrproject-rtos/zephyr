@@ -4,65 +4,77 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <nxp/mcx/MCXC242VLH-pinctrl.h>
 
 &pinctrl {
 	pinmux_lpuart0: pinmux_lpuart0 {
 		group0 {
 			pinmux = <LPUART0_RX_PTA1>,
-				<LPUART0_TX_PTA2>;
+				 <LPUART0_TX_PTA2>;
 			drive-strength = "low";
 			slew-rate = "slow";
 		};
 	};
+
 	pinmux_lpuart1: pinmux_lpuart1 {
 		group0 {
 			pinmux = <LPUART1_RX_PTE1>,
-				<LPUART1_TX_PTE0>;
+				 <LPUART1_TX_PTE0>;
 			drive-strength = "low";
 			slew-rate = "slow";
 		};
 	};
+
 	pinmux_uart2: pinmux_uart2 {
 		group0 {
 			pinmux = <UART2_RX_PTD2>,
-				<UART2_TX_PTD3>;
+				 <UART2_TX_PTD3>;
 			drive-strength = "low";
 			slew-rate = "slow";
 		};
 	};
+
 	pinmux_i2c1: pinmux_i2c1 {
 		group0 {
 			pinmux = <I2C1_SCL_PTD7>,
-				<I2C1_SDA_PTD6>;
+				 <I2C1_SDA_PTD6>;
 			drive-strength = "low";
 			drive-open-drain;
 			slew-rate = "fast";
 		};
 	};
+
 	pinmux_tpm1: pinmux_tpm1 {
 		group0 {
 			pinmux = <TPM1_CH0_PTA12>,
-				<TPM1_CH1_PTA13>;
+				 <TPM1_CH1_PTA13>;
 			drive-strength = "low";
 			slew-rate = "slow";
 		};
 	};
+
 	pinmux_tpm2: pinmux_tpm2 {
 		group0 {
 			pinmux = <TPM2_CH0_PTB18>,
-				<TPM2_CH1_PTB19>;
+				 <TPM2_CH1_PTB19>;
 			drive-strength = "low";
 			slew-rate = "slow";
 		};
 	};
+
 	pinmux_adc0: pinmux_adc0 {
 		group0 {
 			pinmux = <ADC0_SE0_PTE20>,
-				<ADC0_SE1_PTE16>;
+				 <ADC0_SE1_PTE16>;
 			drive-strength = "low";
 			slew-rate = "slow";
+		};
+	};
+	pinmux_cmp: pinmux_cmp {
+		group0 {
+			pinmux = <CMP0_IN0_PTC6>;
+			drive-strength = "high";
+			slew-rate = "fast";
 		};
 	};
 };

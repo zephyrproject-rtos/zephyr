@@ -1,6 +1,7 @@
 # Common architecture configuration options
 
 # Copyright (c) 2022, CSIRO.
+# Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 config SEMIHOST
@@ -74,3 +75,96 @@ config ARM_MPU
 	  Since this does not compromise User Mode, we make the skipping
 	  of full partitioning the default behavior for the ARMv8-M and ARMv8-R MPU
 	  driver.
+
+config ARM_PAC_PER_THREAD
+	bool "Set cryptographically secure PAC key per thread"
+	depends on ARM_PAC
+	depends on ENTROPY_DEVICE_RANDOM_GENERATOR || TIMER_RANDOM_GENERATOR
+	help
+	  Select this option to generate and use unique keys per thread to generate Pointer
+	  Authentication Code.
+	  Internally, sys_csrand_get() is used as part of arch_new_thread() to generate
+	  cryptographically secure random keys, which are saved in the thread's
+	  architecture-specific context. These keys are then loaded into the PAC key registers
+	  before switching to the thread during context switches.
+	  Applications can chose to have hardware based random keys generator by selecting the right
+	  generator from RNG_GENERATOR_CHOICE or by selecting TIMER_RANDOM_GENERATOR for testing
+	  with pseudo random keys.
+	  Note: GCC version 14.3 or higher is needed to support this option.
+
+config ARM_PAC
+	bool
+	help
+	  This option signifies that Pointer Authentication Code is enabled.
+
+config ARM_BTI
+	bool
+	help
+	  This option signifies that Branch Target Identification is enabled.
+
+choice ARM_PACBTI
+	prompt "Pointer Authentication and Branch Target Identification (PACBTI)"
+	default ARM_PACBTI_NONE
+	depends on ARMV8_1_M_MAINLINE
+	help
+	  Select a PACBTI configuration to enable the compiler to insert the required
+	  Pointer Authentication and Branch Target Identification (PACBTI) instructions.
+	  This also sets the necessary configuration options to enable PACBTI bits
+	  in hardware.
+
+config ARM_PACBTI_STANDARD
+	bool "Standard (PACRET + LEAF + BTI)"
+	select ARM_PAC
+	select ARM_BTI
+	help
+	  This option instructs the compiler to generate code with all branch protection features
+	  enabled at their standard level.
+
+config ARM_PACBTI_PACRET
+	bool "PACRET only"
+	select ARM_PAC
+	help
+	  This option instructs the compiler to generate code with return address signing for
+	  all functions that save the return address to memory.
+
+config ARM_PACBTI_PACRET_LEAF
+	bool "PACRET + Leaf"
+	select ARM_PAC
+	help
+	  This option instructs the compiler to generate code with return address signing for
+	  all functions that save the return address to memory and,
+	  also sign leaf functions even if they do not write the return address to memory.
+
+config ARM_PACBTI_BTI
+	bool "BTI only"
+	select ARM_BTI
+	help
+	  This option enables Branch Target Identification (BTI), which inserts special landing
+	  pad instructions at valid indirect branch targets. This option does not enable Pointer
+	  Authentication (PAC).
+
+config ARM_PACBTI_PACRET_BTI
+	bool "PACRET + BTI"
+	select ARM_PAC
+	select ARM_BTI
+	help
+	  This option instructs the compiler to generate code with return address signing for
+	  all functions that save the return address to memory and,
+	  add landing-pad instructions at the permitted targets of indirect branch instructions
+
+config ARM_PACBTI_PACRET_LEAF_BTI
+	bool "PACRET + Leaf + BTI"
+	select ARM_PAC
+	select ARM_BTI
+	help
+	  This option instructs the compiler to generate code with return address signing for
+	  all functions that save the return address to memory and,
+	  also sign leaf functions even if they do not write the return address to memory and,
+	  add landing-pad instructions at the permitted targets of indirect branch instructions
+
+config ARM_PACBTI_NONE
+	bool "None"
+	help
+	This option instructs the compiler to generate code without branch protection or return
+	address signing
+endchoice

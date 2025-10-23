@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Public header file for API allowing to save analog axis calibration data.
+ * @ingroup input_analog_axis
+ */
+
 #ifndef ZEPHYR_INCLUDE_INPUT_ANALOG_AXIS_SETTINGS_H_
 #define ZEPHYR_INCLUDE_INPUT_ANALOG_AXIS_SETTINGS_H_
 
@@ -18,7 +24,7 @@
 /**
  * @brief Save the calibration data.
  *
- * Save the calibration data permanently on the specifided device, requires
+ * Save the calibration data permanently on the specified device, requires
  * the @ref settings subsystem to be configured and initialized.
  *
  * @param dev Analog axis device.

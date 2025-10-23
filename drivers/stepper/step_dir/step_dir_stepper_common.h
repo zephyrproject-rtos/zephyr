@@ -29,6 +29,7 @@
 struct step_dir_stepper_common_config {
 	const struct gpio_dt_spec step_pin;
 	const struct gpio_dt_spec dir_pin;
+	uint32_t step_width_ns;
 	bool dual_edge;
 	const struct stepper_timing_source_api *timing_source;
 	const struct device *counter;
@@ -47,6 +48,7 @@ struct step_dir_stepper_common_config {
 		.step_pin = GPIO_DT_SPEC_GET(node_id, step_gpios),                                 \
 		.dir_pin = GPIO_DT_SPEC_GET(node_id, dir_gpios),                                   \
 		.dual_edge = DT_PROP_OR(node_id, dual_edge_step, false),                           \
+		.step_width_ns = DT_PROP(node_id, step_width_ns),                                  \
 		.counter = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(node_id, counter)),                    \
 		.invert_direction = DT_PROP(node_id, invert_direction),                            \
 		.timing_source = COND_CODE_1(DT_NODE_HAS_PROP(node_id, counter),                   \
@@ -71,14 +73,14 @@ struct step_dir_stepper_common_data {
 	struct k_spinlock lock;
 	enum stepper_direction direction;
 	enum stepper_run_mode run_mode;
-	int32_t actual_position;
 	uint64_t microstep_interval_ns;
-	int32_t step_count;
+	atomic_t actual_position;
+	atomic_t step_count;
 	stepper_event_callback_t callback;
 	void *event_cb_user_data;
 
 	struct k_work_delayable stepper_dwork;
-
+	atomic_t step_high;
 #ifdef CONFIG_STEP_DIR_STEPPER_COUNTER_TIMING
 	struct counter_top_cfg counter_top_cfg;
 	bool counter_running;

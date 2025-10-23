@@ -1,0 +1,16 @@
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: sama7d65_curiosity
+name: SAMA7D65 Curiosity Kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 128
+supported:
+  - i2c
+  - pinctrl
+  - shell
+  - uart
+vendor: microchip

@@ -5,6 +5,7 @@
  */
 
 #include "modem_backend_uart_async.h"
+#include "../modem_workqueue.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(modem_backend_uart_async, CONFIG_MODEM_MODULES_LOG_LEVEL);
@@ -58,7 +59,7 @@ static void modem_backend_uart_async_event_handler(const struct device *dev,
 	case UART_TX_DONE:
 		atomic_clear_bit(&backend->async.common.state,
 				 MODEM_BACKEND_UART_ASYNC_STATE_TRANSMITTING_BIT);
-		k_work_submit(&backend->transmit_idle_work);
+		modem_work_submit(&backend->transmit_idle_work);
 		break;
 
 	case UART_TX_ABORTED:
@@ -67,7 +68,7 @@ static void modem_backend_uart_async_event_handler(const struct device *dev,
 		}
 		atomic_clear_bit(&backend->async.common.state,
 				 MODEM_BACKEND_UART_ASYNC_STATE_TRANSMITTING_BIT);
-		k_work_submit(&backend->transmit_idle_work);
+		modem_work_submit(&backend->transmit_idle_work);
 
 		break;
 
@@ -127,7 +128,7 @@ static void modem_backend_uart_async_event_handler(const struct device *dev,
 		}
 
 		k_spin_unlock(&backend->async.receive_rb_lock, key);
-		k_work_schedule(&backend->receive_ready_work, K_NO_WAIT);
+		modem_work_schedule(&backend->receive_ready_work, K_NO_WAIT);
 		break;
 
 	case UART_RX_DISABLED:
@@ -144,7 +145,7 @@ static void modem_backend_uart_async_event_handler(const struct device *dev,
 	}
 
 	if (modem_backend_uart_async_is_uart_stopped(backend)) {
-		k_work_submit(&backend->async.common.rx_disabled_work);
+		modem_work_submit(&backend->async.common.rx_disabled_work);
 	}
 }
 
@@ -254,7 +255,7 @@ static int modem_backend_uart_async_receive(void *data, uint8_t *buf, size_t siz
 	k_spin_unlock(&backend->async.receive_rb_lock, key);
 
 	if (!empty) {
-		k_work_schedule(&backend->receive_ready_work, K_NO_WAIT);
+		modem_work_schedule(&backend->receive_ready_work, K_NO_WAIT);
 	}
 
 	return (int)received;

@@ -1148,12 +1148,12 @@ static void uart_ra_sci_b_eri_isr(const struct device *dev)
 
 #endif /* defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API) */
 
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
+
 #define EVENT_SCI_RXI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SCI, channel, _RXI))
 #define EVENT_SCI_TXI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SCI, channel, _TXI))
 #define EVENT_SCI_TEI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SCI, channel, _TEI))
 #define EVENT_SCI_ERI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SCI, channel, _ERI))
-
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
 
 #define UART_RA_SCI_B_IRQ_CONFIG_INIT(index)                                                       \
 	do {                                                                                       \
@@ -1165,6 +1165,11 @@ static void uart_ra_sci_b_eri_isr(const struct device *dev)
 			EVENT_SCI_TEI(DT_INST_PROP(index, channel));                               \
 		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), eri, irq)] =                    \
 			EVENT_SCI_ERI(DT_INST_PROP(index, channel));                               \
+                                                                                                   \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SCI_RXI(DT_INST_PROP(index, channel)));     \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SCI_TXI(DT_INST_PROP(index, channel)));     \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SCI_TEI(DT_INST_PROP(index, channel)));     \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SCI_ERI(DT_INST_PROP(index, channel)));     \
                                                                                                    \
 		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq),                       \
 			    DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, priority),                  \

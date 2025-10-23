@@ -4,7 +4,6 @@
  */
 
 #include <zephyr/kernel.h>
-#include <ksched.h>
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <zephyr/arch/common/exc_handle.h>
@@ -265,6 +264,14 @@ static void dump_regs(const struct arch_esf *esf)
 		esf->rsp, esf->rflags, esf->cs & 0xFFFFU, get_cr3(esf));
 
 	EXCEPTION_DUMP("RIP: 0x%016lx", esf->rip);
+#ifdef CONFIG_HW_SHADOW_STACK
+	{
+	uintptr_t ssp;
+
+		__asm__ volatile("rdsspq %0" : "=r"(ssp));
+		EXCEPTION_DUMP("SSP: 0x%016lx", ssp);
+	}
+#endif /* CONFIG_HW_SHADOW_STACK */
 }
 #else /* 32-bit */
 __pinned_func
@@ -278,6 +285,14 @@ static void dump_regs(const struct arch_esf *esf)
 		esf->cs & 0xFFFFU, get_cr3(esf));
 
 	EXCEPTION_DUMP("EIP: 0x%08x", esf->eip);
+#ifdef CONFIG_HW_SHADOW_STACK
+	{
+	uintptr_t ssp;
+
+		__asm__ volatile("rdsspd %0" : "=r"(ssp));
+		EXCEPTION_DUMP("SSP: 0x%08lx", ssp);
+	}
+#endif /* CONFIG_HW_SHADOW_STACK */
 }
 #endif /* CONFIG_X86_64 */
 
@@ -342,6 +357,9 @@ static void log_exception(uintptr_t vector, uintptr_t code)
 		break;
 	case IV_VIRT_EXCEPTION:
 		EXCEPTION_DUMP("Virtualization exception");
+		break;
+	case IV_CTRL_PROTECTION_EXCEPTION:
+		LOG_ERR("Control protection exception (code 0x%lx)", code);
 		break;
 	case IV_SECURITY_EXCEPTION:
 		EXCEPTION_DUMP("Security exception");

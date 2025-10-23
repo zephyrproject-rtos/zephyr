@@ -23,7 +23,7 @@
 /**
  * @brief MODBUS transport protocol API
  * @defgroup modbus MODBUS
- * @ingroup io_interfaces
+ * @ingroup connectivity
  * @{
  */
 
@@ -447,7 +447,7 @@ struct modbus_custom_fc {
 	uint8_t fc;
 	uint8_t excep_code;
 };
-/** @endcond INTERNAL_HIDDEN */
+/** INTERNAL_HIDDEN @endcond */
 
 /**
  * @brief Helper macro for initializing custom function code structs

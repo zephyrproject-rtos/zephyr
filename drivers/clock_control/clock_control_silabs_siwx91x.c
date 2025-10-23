@@ -84,7 +84,7 @@ static int siwx91x_clock_on(const struct device *dev, clock_control_subsys_t sys
 		RSI_CLK_GspiClkConfig(M4CLK, GSPI_INTF_PLL_CLK);
 		break;
 	case SIWX91X_CLK_QSPI:
-		RSI_CLK_Qspi2ClkConfig(M4CLK, QSPI_ULPREFCLK, 0, 0, 0);
+		RSI_CLK_Qspi2ClkConfig(M4CLK, QSPI_INTFPLLCLK, 0, 0, 1);
 		break;
 	case SIWX91X_CLK_RTC:
 		/* Already done in sl_calendar_init()*/
@@ -106,6 +106,9 @@ static int siwx91x_clock_on(const struct device *dev, clock_control_subsys_t sys
 		break;
 	case SIWX91X_ADC_CLK:
 		RSI_ADC_PowerControl(ADC_POWER_ON);
+		break;
+	case SIWX91X_CLK_GPDMA0:
+		RSI_CLK_PeripheralClkEnable(M4CLK, RPDMA_CLK, ENABLE_STATIC_CLK);
 		break;
 	default:
 		return -EINVAL;

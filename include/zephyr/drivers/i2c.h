@@ -1,20 +1,21 @@
-/**
- * @file
- *
- * @brief Public APIs for the I2C drivers.
- */
-
 /*
  * Copyright (c) 2015 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @ingroup i2c_interface
+ * @brief Main header file for I2C (Inter-Integrated Circuit) driver API.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_I2C_H_
 #define ZEPHYR_INCLUDE_DRIVERS_I2C_H_
 
 /**
- * @brief I2C Interface
- * @defgroup i2c_interface I2C Interface
+ * @brief Interfaces for Inter-Integrated Circuit (I2C) controllers.
+ * @defgroup i2c_interface I2C
  * @since 1.0
  * @version 1.0.0
  * @ingroup io_interfaces

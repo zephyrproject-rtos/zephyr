@@ -39,14 +39,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_0 {
 			gpios = <&porta 22 GPIO_ACTIVE_LOW>;
 			label = "Red LED";
 		};
+
 		green_led: led_1 {
 			gpios = <&porta 19 GPIO_ACTIVE_LOW>;
 			label = "Green LED";
 		};
+
 		blue_led: led_2 {
 			gpios = <&porta 23 GPIO_ACTIVE_LOW>;
 			label = "Blue LED";
@@ -55,14 +58,17 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		red_pwm_led: pwm_led_0 {
 			pwms = <&tcc0 0 PWM_MSEC(20)>;
 			label = "Red PWM LED";
 		};
+
 		green_pwm_led: pwm_led_1 {
 			pwms = <&tcc0 3 PWM_MSEC(20)>;
 			label = "Green PWM LED";
 		};
+
 		blue_pwm_led: pwm_led_2 {
 			pwms = <&tcc0 1 PWM_MSEC(20)>;
 			label = "Blue PWM LED";

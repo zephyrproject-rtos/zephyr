@@ -24,13 +24,15 @@ tests:
       - nucleo_f207zg
       - nucleo_f401re
       - nucleo_f429zi
-      - nucleo_wl55jc
+      - nucleo_h503rb
+      - nucleo_h753zi
       - nucleo_l073rz
       - nucleo_l152re
       - nucleo_u083rc
       - nucleo_u385rg_q
       - nucleo_wba55cg
       - nucleo_wb55rg
+      - nucleo_wl55jc
       - rpi_pico
       - sltb010a@0
       - mr_canhubk3
@@ -52,8 +54,9 @@ tests:
       - frdm_ke17z512
       - frdm_mcxn236
       - frdm_mcxa156
-      - frdm_mcxa166
-      - frdm_mcxa276
+      - frdm_mcxa346
+      - frdm_mcxa266
+      - frdm_mcxa366
       - max32655evkit/max32655/m4
       - max32662evkit
       - max32666evkit/max32666/cpu0
@@ -64,6 +67,7 @@ tests:
       - max32690evkit/max32690/m4
       - nrf5340dk/nrf5340/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpuppr
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - ophelia4ev/nrf54l15/cpuapp

@@ -7,6 +7,12 @@
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/pwm/ra_pwm.h>
 
+/ {
+	aliases {
+		pwm-test = &pwm2;
+	};
+};
+
 &pinctrl {
 	pwm2_default: pwm2_default {
 		group1 {

@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Baylibre, SAS
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_CC23X0
+	bool "TI SimpleLink CC23x0 I2C driver"
+	default y
+	depends on DT_HAS_TI_CC23X0_I2C_ENABLED
+	select PINCTRL
+	help
+	  Enable support for I2C on the TI SimpleLink CC23x0 series.

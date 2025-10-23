@@ -143,6 +143,10 @@ static bool br_sufficient_key_size(struct bt_conn *conn)
 	key_size = rp->key_size;
 	net_buf_unref(rsp);
 
+	if (conn->br.link_key) {
+		conn->br.link_key->enc_key_size = key_size;
+	}
+
 	LOG_DBG("Encryption key size is %u", key_size);
 
 	if (conn->sec_level == BT_SECURITY_L4) {
@@ -211,6 +215,12 @@ void bt_hci_synchronous_conn_complete(struct net_buf *buf)
 	}
 
 	sco_conn->handle = handle;
+	sco_conn->sco.air_mode = evt->air_mode;
+
+	if (sco_conn->sco.link_type != evt->link_type) {
+		LOG_WRN("link type mismatch %u != %u", sco_conn->sco.link_type, evt->link_type);
+		sco_conn->sco.link_type = evt->link_type;
+	}
 	bt_conn_set_state(sco_conn, BT_CONN_CONNECTED);
 	bt_conn_unref(sco_conn);
 }
@@ -699,6 +709,40 @@ void bt_hci_role_change(struct net_buf *buf)
 
 	bt_conn_unref(conn);
 }
+
+#if defined(CONFIG_BT_POWER_MODE_CONTROL)
+void bt_hci_link_mode_change(struct net_buf *buf)
+{
+	struct bt_hci_evt_mode_change *evt = (void *)buf->data;
+	uint16_t handle = sys_le16_to_cpu(evt->handle);
+	uint16_t interval = sys_le16_to_cpu(evt->interval);
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_BR);
+	if (!conn) {
+		LOG_ERR("Can't find conn for handle 0x%x", handle);
+		return;
+	}
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		LOG_ERR("Invalid state %d", conn->state);
+		bt_conn_unref(conn);
+		return;
+	}
+
+	if (evt->status) {
+		LOG_ERR("Error %d, type %d", evt->status, conn->type);
+		bt_conn_unref(conn);
+		return;
+	}
+
+	LOG_DBG("hdl 0x%x mode %d intervel %d", handle, evt->mode, interval);
+
+	conn->br.mode = evt->mode;
+	bt_conn_notify_mode_changed(conn, evt->mode, interval);
+	bt_conn_unref(conn);
+}
+#endif /* CONFIG_BT_POWER_MODE_CONTROL */
 
 static int read_ext_features(void)
 {

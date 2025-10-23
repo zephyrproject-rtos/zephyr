@@ -31,7 +31,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x48001000 0x400>;
-				clocks = <&rcc STM32_CLOCK(AHB1, 21U)>;
+				clocks = <&rcc STM32_CLOCK(AHB1, 21)>;
 			};
 		};
 
@@ -44,8 +44,8 @@
 		usart3: serial@40004800 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40004800 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 18U)>;
-			resets = <&rctl STM32_RESET(APB1, 18U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 18)>;
+			resets = <&rctl STM32_RESET(APB1, 18)>;
 			interrupts = <29 0>;
 			status = "disabled";
 		};
@@ -53,8 +53,8 @@
 		usart4: serial@40004c00 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40004c00 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 19U)>;
-			resets = <&rctl STM32_RESET(APB1, 19U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 19)>;
+			resets = <&rctl STM32_RESET(APB1, 19)>;
 			interrupts = <29 0>;
 			status = "disabled";
 		};
@@ -62,8 +62,9 @@
 		timers7: timers@40001400 {
 			compatible = "st,stm32-timers";
 			reg = <0x40001400 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 5U)>;
-			resets = <&rctl STM32_RESET(APB1, 5U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 5)>,
+				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
+			resets = <&rctl STM32_RESET(APB1, 5)>;
 			interrupts = <18 0>;
 			interrupt-names = "global";
 			st,prescaler = <0>;

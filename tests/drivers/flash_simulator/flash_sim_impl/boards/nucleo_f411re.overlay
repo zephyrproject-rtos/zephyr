@@ -5,7 +5,7 @@
  */
 
 / {
-	sram_2001C000:sram@2001C000 {
+	sram_2001C000: sram@2001C000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x2001C000 0x4000>;
 		zephyr,memory-region = "FlashSim";

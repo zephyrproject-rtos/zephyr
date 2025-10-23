@@ -40,6 +40,6 @@ static void configure_debug_interface(void)
 
 void soc_early_init_hook(void)
 {
-
 	configure_debug_interface();
+	soc_ecia_init(MCHP_MEC_ECIA_GIRQ_AGGR_ONLY_BM, MCHP_MEC_ECIA_GIRQ_DIRECT_CAP_BM, 0);
 }

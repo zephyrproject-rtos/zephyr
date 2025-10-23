@@ -9,6 +9,8 @@
 
 /**
  * @brief STM32 GPIO specific flags
+ * @defgroup gpio_interface_stm32 STM32 GPIO specific flags
+ * @ingroup gpio_interface_ext
  *
  * The driver flags are encoded in the 8 upper bits of @ref gpio_dt_flags_t as
  * follows:
@@ -16,7 +18,6 @@
  * - Bit 8: Configure a GPIO pin to power on the system after Poweroff.
  * - Bit 10..9: Configure the output speed of a GPIO pin.
  *
- * @ingroup gpio_interface
  * @{
  */
 

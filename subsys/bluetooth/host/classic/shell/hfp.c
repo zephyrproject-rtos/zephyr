@@ -86,6 +86,9 @@ static void hf_disconnected(struct bt_hfp_hf *hf)
 
 static void hf_sco_connected(struct bt_hfp_hf *hf, struct bt_conn *sco_conn)
 {
+	struct bt_conn_info info;
+	uint16_t handle;
+
 	bt_shell_print("HF SCO connected %p", sco_conn);
 
 	if (hf_sco_conn != NULL) {
@@ -94,6 +97,19 @@ static void hf_sco_connected(struct bt_hfp_hf *hf, struct bt_conn *sco_conn)
 	}
 
 	hf_sco_conn = bt_conn_ref(sco_conn);
+	if (bt_hci_get_conn_handle(sco_conn, &handle) < 0) {
+		bt_shell_warn("Failed to get SCO connection handle");
+		return;
+	}
+
+	if (bt_conn_get_info(sco_conn, &info) < 0) {
+		bt_shell_warn("Failed to get SCO connection info");
+		return;
+	}
+	bt_shell_print("HF SCO info:");
+	bt_shell_print("  SCO handle 0x%04X", handle);
+	bt_shell_print("  SCO air mode %u", info.sco.air_mode);
+	bt_shell_print("  SCO link type %u", info.sco.link_type);
 }
 
 static void hf_sco_disconnected(struct bt_conn *sco_conn, uint8_t reason)
@@ -283,6 +299,19 @@ void hf_subscriber_number(struct bt_hfp_hf *hf, const char *number, uint8_t type
 	bt_shell_print("Subscriber number %s, type %d, service %d", number, type, service);
 }
 
+#if defined(CONFIG_BT_HFP_HF_ECS)
+void hf_query_call(struct bt_hfp_hf *hf, struct bt_hfp_hf_current_call *call)
+{
+	if (call == NULL) {
+		return;
+	}
+
+	bt_shell_print("CLCC idx %d dir %d status %d mode %d mpty %d number %s type %d",
+		       call->index, call->dir, call->status, call->mode, call->multiparty,
+		       call->number != NULL ? call->number : "UNKNOWN", call->type);
+}
+#endif /* CONFIG_BT_HFP_HF_ECS */
+
 static struct bt_hfp_hf_cb hf_cb = {
 	.connected = hf_connected,
 	.disconnected = hf_disconnected,
@@ -332,6 +361,9 @@ static struct bt_hfp_hf_cb hf_cb = {
 #endif /* CONFIG_BT_HFP_HF_VOICE_RECG */
 	.request_phone_number = hf_request_phone_number,
 	.subscriber_number = hf_subscriber_number,
+#if defined(CONFIG_BT_HFP_HF_ECS)
+	.query_call = hf_query_call,
+#endif /* CONFIG_BT_HFP_HF_ECS */
 };
 
 static int cmd_reg_enable(const struct shell *sh, size_t argc, char **argv)
@@ -936,6 +968,20 @@ static int cmd_battery(const struct shell *sh, size_t argc, char **argv)
 }
 #endif /* CONFIG_BT_HFP_HF_HF_INDICATOR_BATTERY */
 
+#if defined(CONFIG_BT_HFP_HF_ECS)
+static int cmd_query_calls(const struct shell *sh, size_t argc, char **argv)
+{
+	int err;
+
+	err = bt_hfp_hf_query_list_of_current_calls(hfp_hf);
+	if (err != 0) {
+		shell_error(sh, "Failed to query list of current calls: %d", err);
+	}
+
+	return err;
+}
+#endif /* CONFIG_BT_HFP_HF_ECS */
+
 SHELL_STATIC_SUBCMD_SET_CREATE(hf_cmds,
 	SHELL_CMD_ARG(reg, NULL, HELP_NONE, cmd_reg_enable, 1, 0),
 	SHELL_CMD_ARG(connect, NULL, "<channel>", cmd_connect, 2, 0),
@@ -1001,6 +1047,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(hf_cmds,
 #if defined(CONFIG_BT_HFP_HF_HF_INDICATOR_BATTERY)
 	SHELL_CMD_ARG(battery, NULL, "<level>", cmd_battery, 2, 0),
 #endif /* CONFIG_BT_HFP_HF_HF_INDICATOR_BATTERY */
+#if defined(CONFIG_BT_HFP_HF_ECS)
+	SHELL_CMD_ARG(query_calls, NULL, HELP_NONE, cmd_query_calls, 1, 0),
+#endif /* */
 	SHELL_SUBCMD_SET_END
 );
 #endif /* CONFIG_BT_HFP_HF */
@@ -1064,6 +1113,9 @@ static void ag_disconnected(struct bt_hfp_ag *ag)
 
 static void ag_sco_connected(struct bt_hfp_ag *ag, struct bt_conn *sco_conn)
 {
+	struct bt_conn_info info;
+	uint16_t handle;
+
 	bt_shell_print("AG SCO connected %p", sco_conn);
 
 	if (hfp_ag_sco_conn != NULL) {
@@ -1072,6 +1124,19 @@ static void ag_sco_connected(struct bt_hfp_ag *ag, struct bt_conn *sco_conn)
 	}
 
 	hfp_ag_sco_conn = bt_conn_ref(sco_conn);
+	if (bt_hci_get_conn_handle(sco_conn, &handle) < 0) {
+		bt_shell_warn("Failed to get SCO connection handle");
+		return;
+	}
+
+	if (bt_conn_get_info(sco_conn, &info) < 0) {
+		bt_shell_warn("Failed to get SCO connection info");
+		return;
+	}
+	bt_shell_print("AG SCO info:");
+	bt_shell_print("  SCO handle 0x%04X", handle);
+	bt_shell_print("  SCO air mode %u", info.sco.air_mode);
+	bt_shell_print("  SCO link type %u", info.sco.link_type);
 }
 
 static void ag_sco_disconnected(struct bt_conn *sco_conn, uint8_t reason)

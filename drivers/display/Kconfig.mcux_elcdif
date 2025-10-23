@@ -36,6 +36,13 @@ config MCUX_ELCDIF_FB_SIZE
 	  4-bytes pixel format, e.g. ARGB8888. Applications should change this value
 	  according to the actual used resolution and format to optimize the heap size.
 
+config MCUX_ELCDIF_START_ON_INIT
+	bool "Start the ELCDIF display driver during initialization"
+	default y if MCUX_ELCDIF_FB_NUM != 0
+	help
+	  Optionally start the ELCDIF display driver from the initialization step,
+	  which can be required for some connected display controllers to function properly.
+
 config MCUX_ELCDIF_PXP
 	bool "Use PXP for display rotation"
 	depends on MCUX_PXP

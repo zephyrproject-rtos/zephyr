@@ -13,7 +13,7 @@ config SAMPLE_UNICAST
 	select BT_PAC_SNK_LOC
 	select BT_PAC_SRC
 	select BT_PAC_SRC_LOC
-	select BT_CTLR_PERIPHERAL_ISO if BT_CTLR
+	select BT_CTLR_PERIPHERAL_ISO if HAS_BT_CTLR
 	help
 	  If set to true, the sample will start advertising connectable for
 	  Broadcast Assistants.
@@ -27,8 +27,9 @@ config SAMPLE_BROADCAST
 	select BT_BAP_BROADCAST_SINK
 	select BT_PAC_SNK
 	select BT_PAC_SNK_LOC
-	select BT_PER_ADV_SYNC_TRANSFER_RECEIVER if !BT_CTLR || BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT
-	select BT_CTLR_SYNC_ISO if BT_CTLR
+	select BT_PER_ADV_SYNC_TRANSFER_RECEIVER if (!HAS_BT_CTLR || \
+						     BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT)
+	select BT_CTLR_SYNC_ISO if HAS_BT_CTLR
 	help
 	  If set to true, the sample will start advertising syncable audio streams
 

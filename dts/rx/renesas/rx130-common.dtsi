@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Renesas Electronics Corporation
+ * Copyright (c) 2024 - 2025 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,15 +22,33 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			compatible = "renesas,rx";
+			compatible = "renesas,rxv1";
 			device_type = "cpu";
 			reg = <0>;
+			cpu-power-states = <&idle &standby>;
 			status = "okay";
+		};
+
+		power-states {
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <300>;
+			};
+
+			standby: standby {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				min-residency-us = <3000>;
+				exit-latency-us = <500>;
+			};
 		};
 	};
 
 	icu: interrupt-controller@87000 {
 		#interrupt-cells = <2>;
+		#address-cells = <1>;
+		#size-cells = <1>;
 		compatible = "renesas,rx-icu";
 		interrupt-controller;
 		reg = <0x0087000 0xff>,
@@ -39,8 +57,27 @@
 		      <0x00872f0 0x02>,
 		      <0x0087500 0x0f>,
 		      <0x0087510 0x01>,
-		      <0x0087514 0x01>;
-		reg-names = "IR", "IER", "IPR", "FIR","IRQCR","IRQFLTE","IRQFLTC0";
+		      <0x0087514 0x01>,
+		      <0x0087580 0x01>,
+		      <0x0087581 0x01>,
+		      <0x0087582 0x01>;
+		reg-names = "IR", "IER", "IPR", "FIR", "IRQCR","IRQFLTE","IRQFLTC0", "NMISR",
+			    "NMIER", "NMICLR";
+
+		swint1: swint1@872e0 {
+			compatible = "renesas,rx-swint";
+			reg = <0x000872e0 0x01>;
+			interrupts = <27 14>;
+			interrupt-parent = <&icu>;
+			status = "okay";
+		};
+	};
+
+	dtc: rx-dtc@82400 {
+		compatible = "renesas,rx-dtc";
+		reg = <0x00082400 0x01>;
+		clocks = <&iclk MSTPA 28>;
+		status = "okay";
 	};
 
 	soc {
@@ -217,7 +254,7 @@
 			status = "disabled";
 		};
 
-		port_irq7: external-interrupt@87507  {
+		port_irq7: external-interrupt@87507 {
 			compatible = "renesas,rx-external-interrupt";
 			reg = <0x00087507 0x1>;
 			interrupts = <71 12>;
@@ -260,7 +297,7 @@
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "ODR1", "PCR", "DSCR";
 			pinmux = <&pinmux1>;
 			port-irqs = <&port_irq2 &port_irq3 &port_irq4
-			&port_irq5 &port_irq6 &port_irq7>;
+				     &port_irq5 &port_irq6 &port_irq7>;
 			port-irq-names = "port-irq2",
 					 "port-irq3",
 					 "port-irq4",
@@ -439,8 +476,8 @@
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "PCR", "DSCR";
 			pinmux = <&pinmuxd>;
 			port-irqs = <&port_irq0 &port_irq1 &port_irq2
-			&port_irq3 &port_irq4 &port_irq5
-			&port_irq6 &port_irq7>;
+				     &port_irq3 &port_irq4 &port_irq5
+				     &port_irq6 &port_irq7>;
 			port-irq-names = "port-irq0",
 					 "port-irq1",
 					 "port-irq2",
@@ -531,8 +568,9 @@
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x8A000 0x20>;
 			clocks = <&pclkb MSTPB 31>;
-			status = "disabled";
 			channel = <0>;
+			dtc = <&dtc>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -546,8 +584,9 @@
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x8A020 0x20>;
 			clocks = <&pclkb MSTPB 30>;
-			status = "disabled";
 			channel = <1>;
+			dtc = <&dtc>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -561,8 +600,9 @@
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x8A0A0 0x20>;
 			clocks = <&pclkb MSTPB 26>;
-			status = "disabled";
 			channel = <5>;
+			dtc = <&dtc>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -576,8 +616,9 @@
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x8A0C0 0x20>;
 			clocks = <&pclkb MSTPB 25>;
-			status = "disabled";
 			channel = <6>;
+			dtc = <&dtc>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -591,8 +632,9 @@
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x8A100 0x20>;
 			clocks = <&pclkb MSTPC 27>;
-			status = "disabled";
 			channel = <8>;
+			dtc = <&dtc>;
+			status = "disabled";
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -615,15 +657,15 @@
 				interrupt-names = "tgia", "tgib", "tgic", "tgid", "tgiv";
 				clocks = <&pclkb MSTPA 9>;
 				reg-names = "TCR", "TMDR", "TIOR", "TIER",
-				"TSR", "TGR", "TCNT", "NFCR";
-				reg =	<0x00088700 0x01>,
-					<0x00088701 0x01>,
-					<0x00088702 0x02>,
-					<0x00088704 0x01>,
-					<0x00088705 0x01>,
-					<0x00088708 0x8>,
-					<0x00088706 0x02>,
-					<0x00088690 0x01>;
+					    "TSR", "TGR", "TCNT", "NFCR";
+				reg = <0x00088700 0x01>,
+				      <0x00088701 0x01>,
+				      <0x00088702 0x02>,
+				      <0x00088704 0x01>,
+				      <0x00088705 0x01>,
+				      <0x00088708 0x8>,
+				      <0x00088706 0x02>,
+				      <0x00088690 0x01>;
 				bit-idx = <0>;
 
 				pwm {
@@ -640,16 +682,16 @@
 				interrupts = <121 1>, <122 1>, <123 1>;
 				interrupt-names = "tgia", "tgib", "tgiv";
 				clocks = <&pclkb MSTPA 9>;
-				reg =	<0x00088780 0x01>,
-					<0x00088781 0x01>,
-					<0x00088782 0x01>,
-					<0x00088784 0x01>,
-					<0x00088785 0x01>,
-					<0x00088788 0x4>,
-					<0x00088786 0x02>,
-					<0x00088691 0x01>;
+				reg = <0x00088780 0x01>,
+				      <0x00088781 0x01>,
+				      <0x00088782 0x01>,
+				      <0x00088784 0x01>,
+				      <0x00088785 0x01>,
+				      <0x00088788 0x4>,
+				      <0x00088786 0x02>,
+				      <0x00088691 0x01>;
 				reg-names = "TCR", "TMDR", "TIOR", "TIER",
-				"TSR", "TGR", "TCNT", "NFCR";
+					    "TSR", "TGR", "TCNT", "NFCR";
 				bit-idx = <1>;
 
 				pwm {
@@ -666,16 +708,16 @@
 				interrupts = <125 1>, <126 1>, <127 1>;
 				interrupt-names = "tgia", "tgib", "tgiv";
 				clocks = <&pclkb MSTPA 9>;
-				reg =	<0x00088800 0x01>,
-					<0x00088801 0x01>,
-					<0x00088802 0x01>,
-					<0x00088804 0x01>,
-					<0x00088805 0x01>,
-					<0x00088808 0x4>,
-					<0x00088806 0x02>,
-					<0x00088692 0x01>;
+				reg = <0x00088800 0x01>,
+				      <0x00088801 0x01>,
+				      <0x00088802 0x01>,
+				      <0x00088804 0x01>,
+				      <0x00088805 0x01>,
+				      <0x00088808 0x4>,
+				      <0x00088806 0x02>,
+				      <0x00088692 0x01>;
 				reg-names = "TCR", "TMDR", "TIOR", "TIER",
-				"TSR", "TGR", "TCNT", "NFCR";
+					    "TSR", "TGR", "TCNT", "NFCR";
 				bit-idx = <2>;
 
 				pwm {
@@ -692,16 +734,16 @@
 				interrupts = <129 1>, <130 1>, <131 1>, <132 1>, <133 1>;
 				interrupt-names = "tgia", "tgib", "tgic", "tgid", "tgiv";
 				clocks = <&pclkb MSTPA 9>;
-				reg =	<0x00088600 0x01>,
-					<0x00088602 0x01>,
-					<0x00088604 0x02>,
-					<0x00088608 0x01>,
-					<0x0008862c 0x1>,
-					<0x00088618 0x8>,
-					<0x00088610 0x02>,
-					<0x00088693 0x01>;
+				reg = <0x00088600 0x01>,
+				      <0x00088602 0x01>,
+				      <0x00088604 0x02>,
+				      <0x00088608 0x01>,
+				      <0x0008862c 0x1>,
+				      <0x00088618 0x8>,
+				      <0x00088610 0x02>,
+				      <0x00088693 0x01>;
 				reg-names = "TCR", "TMDR", "TIOR", "TIER",
-				"TSR", "TGR", "TCNT", "NFCR";
+					    "TSR", "TGR", "TCNT", "NFCR";
 				bit-idx = <6>;
 
 				pwm {
@@ -718,16 +760,16 @@
 				interrupts = <134 1>, <135 1>, <136 1>, <137 1>, <138 1>;
 				interrupt-names = "tgia", "tgib", "tgic", "tgid", "tgiv";
 				clocks = <&pclkb MSTPA 9>;
-				reg =	<0x00088601 0x01>,
-					<0x00088603 0x01>,
-					<0x00088606 0x02>,
-					<0x00088609 0x01>,
-					<0x0008862c 0x1>,
-					<0x0008861c 0x8>,
-					<0x00088612 0x02>,
-					<0x00088694 0x01>;
+				reg = <0x00088601 0x01>,
+				      <0x00088603 0x01>,
+				      <0x00088606 0x02>,
+				      <0x00088609 0x01>,
+				      <0x0008862c 0x1>,
+				      <0x0008861c 0x8>,
+				      <0x00088612 0x02>,
+				      <0x00088694 0x01>;
 				reg-names = "TCR", "TMDR", "TIOR", "TIER",
-				"TSR", "TGR", "TCNT", "NFCR";
+					    "TSR", "TGR", "TCNT", "NFCR";
 				bit-idx = <7>;
 
 				pwm {
@@ -811,11 +853,58 @@
 			status = "disabled";
 		};
 
+		adc: adc@89000 {
+			compatible = "renesas,rx-adc";
+			interrupts = <102 1>;
+			interrupt-names = "s12adi0";
+			reg = <0x00089000 0x100>;
+			#io-channel-cells = <1>;
+			channel-available-mask = <0xffff00ff>;
+			vref-mv = <3300>;
+			channel-count = <24>;
+			status = "disabled";
+		};
+
+		ctsu: ctsu@a0900 {
+			compatible = "renesas,rx-ctsu";
+			reg = < 0x000A0900 0x100 >;
+			clocks = <&pclkb MSTPD 10>;
+			interrupts = <60 1>, <61 1>, <62 1>;
+			interrupt-names = "ctsuwr", "ctsurd", "ctsufn";
+			status = "disabled";
+		};
+
+		lvd0: lvd@800e0 {
+			compatible = "renesas,rx-lvd";
+			reg = <0x000800E0 0x02>;
+			channel = <0>;
+			interrupts = <88 1>;
+			interrupt-names = "lvd";
+			status = "disabled";
+		};
+
+		lvd1: lvd@800e2 {
+			compatible = "renesas,rx-lvd";
+			reg = <0x000800E2 0x02>;
+			channel = <1>;
+			interrupts = <89 1>;
+			interrupt-names = "lvd";
+			lvd-support-cmpa;
+			status = "disabled";
+		};
+
 		ofsm: ofsm@ffffff80 {
 			compatible = "zephyr,memory-region";
 			reg = <0xFFFFFF80 0x0F>;
 			zephyr,memory-region = "OFSM";
 			status = "okay";
+		};
+
+		iwdt: watchdog@88030 {
+			compatible = "renesas,rx-iwdt";
+			reg = <0x00088030 0x10>;
+			clocks = <&iwdtlsclk 0 0>;
+			status = "disabled";
 		};
 	};
 };

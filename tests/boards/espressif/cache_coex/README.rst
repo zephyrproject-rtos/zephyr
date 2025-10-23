@@ -16,7 +16,7 @@ Supported Boards
 ****************
 - esp32_devkitc
 - esp32s2_saola
-- esp32s3_devkitm
+- esp32s3_devkitc
 
 Building and Running
 ********************

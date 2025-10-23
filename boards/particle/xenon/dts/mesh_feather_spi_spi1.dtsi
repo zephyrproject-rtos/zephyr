@@ -7,7 +7,8 @@
 /* Add SPI support on Particle Mesh via nRF52840 SPI1
  *
  * NOTE: This file is replicated in particle_{argon,xenon}.
- * Changes should be made in all instances. */
+ * Changes should be made in all instances.
+ */
 
 &pinctrl {
 	spi1_default: spi1_default {

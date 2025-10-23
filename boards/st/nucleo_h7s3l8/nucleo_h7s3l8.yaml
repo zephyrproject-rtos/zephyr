@@ -13,4 +13,7 @@ supported:
   - entropy
   - adc
   - octospi
+  - can
+  - canfd
+  - netif:eth
 vendor: st

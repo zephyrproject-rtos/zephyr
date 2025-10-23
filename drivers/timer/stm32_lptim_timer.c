@@ -28,23 +28,13 @@
 #error Only one LPTIM instance should be enabled
 #endif
 
+#if DT_INST_NUM_CLOCKS(0) <= 1
+#error "LPTIM source clock must be provided in Device Tree"
+#endif
+
 #define LPTIM (LPTIM_TypeDef *) DT_INST_REG_ADDR(0)
 
-#if DT_INST_NUM_CLOCKS(0) == 1
-#warning Kconfig for LPTIM source clock (LSI/LSE) is deprecated, use device tree.
-static const struct stm32_pclken lptim_clk[] = {
-	STM32_CLOCK_INFO(0, DT_DRV_INST(0)),
-	/* Use Kconfig to configure source clocks fields */
-	/* Fortunately, values are consistent across enabled series */
-#ifdef CONFIG_STM32_LPTIM_CLOCK_LSI
-	{.bus = STM32_SRC_LSI, .enr = LPTIM1_SEL(1)}
-#else
-	{.bus = STM32_SRC_LSE, .enr = LPTIM1_SEL(3)}
-#endif
-};
-#else
 static const struct stm32_pclken lptim_clk[] = STM32_DT_INST_CLOCKS(0);
-#endif
 
 static const struct device *const clk_ctrl = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 

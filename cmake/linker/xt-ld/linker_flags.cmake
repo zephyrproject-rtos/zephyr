@@ -19,11 +19,11 @@ check_set_linker_property(TARGET linker PROPERTY baremetal
 )
 
 check_set_linker_property(TARGET linker PROPERTY orphan_warning
-			  ${LINKERFLAGPREFIX},--orphan-handling=warn
+                          ${LINKERFLAGPREFIX},--orphan-handling=warn
 )
 
 check_set_linker_property(TARGET linker PROPERTY orphan_error
-			  ${LINKERFLAGPREFIX},--orphan-handling=error
+                          ${LINKERFLAGPREFIX},--orphan-handling=error
 )
 
 set_property(TARGET linker PROPERTY partial_linking "-r")
@@ -34,3 +34,5 @@ check_set_linker_property(TARGET linker PROPERTY sort_alignment
                           ${LINKERFLAGPREFIX},--sort-common=descending
                           ${LINKERFLAGPREFIX},--sort-section=alignment
 )
+
+set_property(TARGET linker PROPERTY undefined ${LINKERFLAGPREFIX},--undefined=)

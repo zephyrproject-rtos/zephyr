@@ -127,6 +127,8 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 		return -EINVAL;
 	}
 
+	k_busy_wait(1);
+
 	ret = MXC_SPI_SetDataSize(regs, SPI_WORD_SIZE_GET(config->operation));
 	if (ret) {
 		return -ENOTSUP;
@@ -153,6 +155,8 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 		return -EINVAL;
 	}
 #endif
+
+	k_busy_wait(1);
 
 	data->ctx.config = config;
 
@@ -201,6 +205,37 @@ static void spi_max32_setup(mxc_spi_regs_t *spi, mxc_spi_req_t *req, uint8_t dfs
 	MXC_SPI_ClearFlags(spi);
 }
 
+static void spi_cs_assert(const struct device *dev)
+{
+	const struct max32_spi_config *cfg = dev->config;
+	struct max32_spi_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
+
+	if (spi_cs_is_gpio(ctx->config)) {
+		MXC_SPI_HWSSControl(cfg->regs, false);
+		spi_context_cs_control(ctx, true);
+	} else {
+		MXC_SPI_HWSSControl(cfg->regs, true);
+		cfg->regs->ctrl0 = (cfg->regs->ctrl0 & ~MXC_F_SPI_CTRL0_START) |
+				      ADI_MAX32_SPI_CTRL0_SS_CTRL;
+	}
+}
+
+static void spi_cs_deassert(const struct device *dev)
+{
+	const struct max32_spi_config *cfg = dev->config;
+	struct max32_spi_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
+
+	if (spi_cs_is_gpio(ctx->config)) {
+		spi_context_cs_control(ctx, false);
+	} else {
+		cfg->regs->ctrl0 &= ~(MXC_F_SPI_CTRL0_START | ADI_MAX32_SPI_CTRL0_SS_CTRL |
+				      ADI_MAX32_SPI_CTRL_EN);
+		cfg->regs->ctrl0 |= ADI_MAX32_SPI_CTRL_EN;
+	}
+}
+
 #ifndef CONFIG_SPI_MAX32_INTERRUPT
 static int spi_max32_transceive_sync(mxc_spi_regs_t *spi, struct max32_spi_data *data,
 				     uint8_t dfs_shift)
@@ -224,14 +259,22 @@ static int spi_max32_transceive_sync(mxc_spi_regs_t *spi, struct max32_spi_data 
 				req->txCnt +=
 					MXC_SPI_WriteTXFIFO(spi, &req->txData[req->txCnt], remain);
 			}
-			if (!(spi->ctrl0 & MXC_F_SPI_CTRL0_START)) {
-				spi->ctrl0 |= MXC_F_SPI_CTRL0_START;
-			}
 		}
 
 		if (req->rxCnt < rx_len) {
 			req->rxCnt += MXC_SPI_ReadRXFIFO(spi, &req->rxData[req->rxCnt],
 							 rx_len - req->rxCnt);
+		}
+
+		if (!(spi->ctrl0 & MXC_F_SPI_CTRL0_START)) {
+			/* Transfer not started  */
+			if ((MXC_SPI_GetTXFIFOAvailable(spi) - MXC_SPI_FIFO_DEPTH) > 0) {
+				/* Data remaining in the TX FIFO, ensure TX started */
+				spi->ctrl0 |= MXC_F_SPI_CTRL0_START;
+			} else if (MXC_SPI_GetRXFIFOAvailable(spi) < (rx_len - req->rxCnt)) {
+				/* Not enough data into the RX FIFO */
+				spi->ctrl0 |= MXC_F_SPI_CTRL0_START;
+			}
 		}
 	} while ((req->txCnt < tx_len) || (req->rxCnt < rx_len));
 
@@ -303,7 +346,19 @@ static int spi_max32_transceive(const struct device *dev)
 		break;
 	}
 #else
-	data->req.txLen = len;
+	if ((ctx->config->operation & SPI_HALF_DUPLEX)
+#if defined(CONFIG_SPI_EXTENDED_MODES)
+		|| (ctx->config->operation & SPI_LINES_DUAL)
+		|| (ctx->config->operation & SPI_LINES_QUAD)
+		|| (ctx->config->operation & SPI_LINES_OCTAL)
+#endif
+		) {
+		/* Half duplex mode, tx should be set only if no rx */
+		data->req.txLen = ctx->tx_buf ? len : 0;
+	} else {
+		/* Full duplex mode, tx and rx can be set independently */
+		data->req.txLen = len;
+	}
 	data->req.txData = (uint8_t *)ctx->tx_buf;
 	data->req.rxLen = len;
 	data->req.rxData = ctx->rx_buf;
@@ -371,10 +426,6 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 	int ret = 0;
 	struct max32_spi_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
-#ifndef CONFIG_SPI_RTIO
-	const struct max32_spi_config *cfg = dev->config;
-	bool hw_cs_ctrl = true;
-#endif
 
 #ifndef CONFIG_SPI_MAX32_INTERRUPT
 	if (async) {
@@ -393,19 +444,8 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 
 	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, 1);
 
-	/* Check if CS GPIO exists */
-	if (spi_cs_is_gpio(config)) {
-		hw_cs_ctrl = false;
-	}
-	MXC_SPI_HWSSControl(cfg->regs, hw_cs_ctrl);
-
-	/* Assert the CS line if HW control disabled */
-	if (!hw_cs_ctrl) {
-		spi_context_cs_control(ctx, true);
-	} else {
-		cfg->regs->ctrl0 =
-			(cfg->regs->ctrl0 & ~MXC_F_SPI_CTRL0_START) | ADI_MAX32_SPI_CTRL0_SS_CTRL;
-	}
+	/* Assert the CS line */
+	spi_cs_assert(dev);
 
 #ifdef CONFIG_SPI_MAX32_INTERRUPT
 	do {
@@ -429,15 +469,9 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 
 #endif /* CONFIG_SPI_MAX32_INTERRUPT */
 
-	/* Deassert the CS line if hw control disabled */
-	if (!async) {
-		if (!hw_cs_ctrl) {
-			spi_context_cs_control(ctx, false);
-		} else {
-			cfg->regs->ctrl0 &= ~(MXC_F_SPI_CTRL0_START | ADI_MAX32_SPI_CTRL0_SS_CTRL |
-					      ADI_MAX32_SPI_CTRL_EN);
-			cfg->regs->ctrl0 |= ADI_MAX32_SPI_CTRL_EN;
-		}
+	/* Deassert the CS line if hold mode is not enabled */
+	if (!async && !(ctx->config->operation & SPI_HOLD_ON_CS)) {
+		spi_cs_deassert(dev);
 	}
 #else
 	/* Guard against unsupported word lengths here, as spi_configure is
@@ -569,8 +603,6 @@ static int transceive_dma(const struct device *dev, const struct spi_config *con
 	uint32_t len, word_count;
 	uint8_t dfs_shift;
 
-	bool hw_cs_ctrl = true;
-
 	spi_context_lock(ctx, async, cb, userdata, config);
 
 	MXC_SPI_ClearTXFIFO(spi);
@@ -601,18 +633,8 @@ static int transceive_dma(const struct device *dev, const struct spi_config *con
 
 	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, 1);
 
-	/* Check if CS GPIO exists */
-	if (spi_cs_is_gpio(config)) {
-		hw_cs_ctrl = false;
-	}
-	MXC_SPI_HWSSControl(cfg->regs, hw_cs_ctrl);
-
-	/* Assert the CS line if HW control disabled */
-	if (!hw_cs_ctrl) {
-		spi_context_cs_control(ctx, true);
-	} else {
-		spi->ctrl0 = (spi->ctrl0 & ~MXC_F_SPI_CTRL0_START) | ADI_MAX32_SPI_CTRL0_SS_CTRL;
-	}
+	/* Assert the CS line */
+	spi_cs_assert(dev);
 
 	MXC_SPI_SetSlave(cfg->regs, ctx->config->slave);
 
@@ -645,12 +667,12 @@ static int transceive_dma(const struct device *dev, const struct spi_config *con
 		spi->dma |= ADI_MAX32_SPI_DMA_TX_DMA_EN;
 		MXC_SPI_SetTXThreshold(spi, 2);
 
+		data->dma_stat = 0;
 		ret = spi_max32_tx_dma_load(dev, ctx->tx_buf, len, dfs_shift);
 		if (ret < 0) {
 			goto unlock;
 		}
 
-		data->dma_stat = 0;
 		MXC_SPI_StartTransmission(spi);
 		ret = spi_context_wait_for_completion(ctx);
 	} while (!ret && (spi_context_tx_on(ctx) || spi_context_rx_on(ctx)));
@@ -661,14 +683,8 @@ static int transceive_dma(const struct device *dev, const struct spi_config *con
 	}
 
 unlock:
-	/* Deassert the CS line if hw control disabled */
-	if (!hw_cs_ctrl) {
-		spi_context_cs_control(ctx, false);
-	} else {
-		spi->ctrl0 &= ~(MXC_F_SPI_CTRL0_START | ADI_MAX32_SPI_CTRL0_SS_CTRL |
-				ADI_MAX32_SPI_CTRL_EN);
-		spi->ctrl0 |= ADI_MAX32_SPI_CTRL_EN;
-	}
+	/* Deassert the CS line */
+	spi_cs_deassert(dev);
 
 	spi_context_release(ctx, ret);
 
@@ -708,26 +724,12 @@ static inline void spi_max32_iodev_prepare_start(const struct device *dev)
 	struct spi_rtio *rtio_ctx = data->rtio_ctx;
 	struct spi_dt_spec *spi_dt_spec = rtio_ctx->txn_curr->sqe.iodev->data;
 	struct spi_config *spi_config = &spi_dt_spec->config;
-	struct max32_spi_config *cfg = (struct max32_spi_config *)dev->config;
 	int ret;
-	bool hw_cs_ctrl = true;
 
 	ret = spi_configure(dev, spi_config);
 	__ASSERT(!ret, "%d", ret);
 
-	/* Check if CS GPIO exists */
-	if (spi_cs_is_gpio(spi_config)) {
-		hw_cs_ctrl = false;
-	}
-	MXC_SPI_HWSSControl(cfg->regs, hw_cs_ctrl);
-
-	/* Assert the CS line if HW control disabled */
-	if (!hw_cs_ctrl) {
-		spi_context_cs_control(&data->ctx, true);
-	} else {
-		cfg->regs->ctrl0 =
-			(cfg->regs->ctrl0 & ~MXC_F_SPI_CTRL0_START) | MXC_F_SPI_CTRL0_SS_CTRL;
-	};
+	spi_cs_assert(dev);
 }
 
 static void spi_max32_iodev_complete(const struct device *dev, int status)
@@ -739,16 +741,7 @@ static void spi_max32_iodev_complete(const struct device *dev, int status)
 		rtio_ctx->txn_curr = rtio_txn_next(rtio_ctx->txn_curr);
 		spi_max32_iodev_start(dev);
 	} else {
-		struct max32_spi_config *cfg = (struct max32_spi_config *)dev->config;
-		bool hw_cs_ctrl = true;
-
-		if (!hw_cs_ctrl) {
-			spi_context_cs_control(&data->ctx, false);
-		} else {
-			cfg->regs->ctrl0 &= ~(MXC_F_SPI_CTRL0_START | MXC_F_SPI_CTRL0_SS_CTRL |
-					      ADI_MAX32_SPI_CTRL_EN);
-			cfg->regs->ctrl0 |= ADI_MAX32_SPI_CTRL_EN;
-		}
+		spi_cs_deassert(dev);
 
 		if (spi_rtio_complete(rtio_ctx, status)) {
 			spi_max32_iodev_prepare_start(dev);
@@ -816,13 +809,7 @@ static void spi_max32_callback(mxc_spi_req_t *req, int error)
 	if (ctx->asynchronous && ((spi_context_tx_on(ctx) || spi_context_rx_on(ctx)))) {
 		k_work_submit(&data->async_work);
 	} else {
-		if (spi_cs_is_gpio(ctx->config)) {
-			spi_context_cs_control(ctx, false);
-		} else {
-			req->spi->ctrl0 &= ~(MXC_F_SPI_CTRL0_START | ADI_MAX32_SPI_CTRL0_SS_CTRL |
-					     ADI_MAX32_SPI_CTRL_EN);
-			req->spi->ctrl0 |= ADI_MAX32_SPI_CTRL_EN;
-		}
+		spi_cs_deassert(dev);
 		spi_context_complete(ctx, dev, error == E_NO_ERROR ? 0 : -EIO);
 	}
 #else
@@ -896,12 +883,17 @@ static void spi_max32_isr(const struct device *dev)
 static int api_release(const struct device *dev, const struct spi_config *config)
 {
 	struct max32_spi_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
 
 #ifndef CONFIG_SPI_RTIO
 	if (!spi_context_configured(&data->ctx, config)) {
 		return -EINVAL;
 	}
 #endif
+
+	if (ctx->config->operation & SPI_HOLD_ON_CS) {
+		spi_cs_deassert(dev);
+	}
 	spi_context_unlock_unconditionally(&data->ctx);
 	return 0;
 }

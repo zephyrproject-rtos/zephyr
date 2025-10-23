@@ -143,6 +143,11 @@ struct bt_goep_transport_rfcomm_server {
 	 *  This callback is called whenever a new incoming GOEP connection requires
 	 *  authorization.
 	 *
+	 *  Before returning the callback, @ref bt_goep::transport_ops should be initialized with
+	 *  valid address of type @ref bt_goep_transport_ops object. The field `mtu` of
+	 *  @ref bt_obex::rx could be passed with valid value. Or set it to zero, the mtu will be
+	 *  calculated according to @kconfig{CONFIG_BT_GOEP_RFCOMM_MTU}.
+	 *
 	 *  @warning It is the responsibility of the caller to zero out the parent of the GOEP
 	 *  object.
 	 *
@@ -184,10 +189,9 @@ int bt_goep_transport_rfcomm_server_register(struct bt_goep_transport_rfcomm_ser
  *  The GOEP object is passed (over an address of it) as second parameter, application should
  *  create transport dedicated GOEP object @ref bt_goep. Then pass to this API the location
  *  (address).
- *  Before calling the API, @ref bt_obex::client_ops and @ref bt_goep::transport_ops should
- *  be initialized with valid address of type @ref bt_obex_client_ops object and
- *  @ref bt_goep_transport_ops object. The field `mtu` of @ref bt_obex::rx could be passed with
- *  valid value. Or set it to zero, the mtu will be calculated according to
+ *  Before calling the API, @ref bt_goep::transport_ops should be initialized with valid address
+ *  of type @ref bt_goep_transport_ops object. The field `mtu` of @ref bt_obex::rx could be passed
+ *  with valid value. Or set it to zero, the mtu will be calculated according to
  *  @kconfig{CONFIG_BT_GOEP_RFCOMM_MTU}.
  *  The RFCOMM channel is passed as third parameter. It is the RFCOMM channel of RFCOMM server of
  *  peer device.
@@ -241,6 +245,11 @@ struct bt_goep_transport_l2cap_server {
 	 *  This callback is called whenever a new incoming GOEP connection requires
 	 *  authorization.
 	 *
+	 *  Before returning the callback, @ref bt_goep::transport_ops should be initialized with
+	 *  valid address of type @ref bt_goep_transport_ops object. The field `mtu` of
+	 *  @ref bt_obex::rx could be passed with valid value. Or set it to zero, the mtu will be
+	 *  calculated according to @kconfig{CONFIG_BT_GOEP_L2CAP_MTU}.
+	 *
 	 *  @warning It is the responsibility of the caller to zero out the parent of the GOEP
 	 *  object.
 	 *
@@ -286,10 +295,9 @@ int bt_goep_transport_l2cap_server_register(struct bt_goep_transport_l2cap_serve
  *  The GOEP object is passed (over an address of it) as second parameter, application should
  *  create transport dedicated GOEP object @ref bt_goep. Then pass to this API the location
  *  (address).
- *  Before calling the API, @ref bt_obex::client_ops and @ref bt_goep::transport_ops should
- *  be initialized with valid address of type @ref bt_obex_client_ops object and
- *  @ref bt_goep_transport_ops object. The field `mtu` of @ref bt_obex::rx could be passed with
- *  valid value. Or set it to zero, the mtu will be calculated according to
+ *  Before calling the API, @ref bt_goep::transport_ops should be initialized with valid address
+ *  of type @ref bt_goep_transport_ops object. The field `mtu` of @ref bt_obex::rx could be passed
+ *  with valid value. Or set it to zero, the mtu will be calculated according to
  *  @kconfig{CONFIG_BT_GOEP_L2CAP_MTU}.
  *  The L2CAP PSM is passed as third parameter. It is the RFCOMM channel of RFCOMM server of peer
  *  device.

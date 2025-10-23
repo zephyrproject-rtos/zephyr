@@ -10,24 +10,27 @@
 
 / {
 	soc {
-		gmac: ethernet@42000800 {
-			compatible = "atmel,sam0-gmac";
+		ethernet@42000800 {
+			compatible = "microchip,sam-ethernet-controller";
 			reg = <0x42000800 0x400>;
-			interrupts = <84 0>;
-			interrupt-names = "gmac";
-			status = "disabled";
 
-			num-queues = <1>;
-			local-mac-address = [00 00 00 00 00 00];
-		};
+			gmac: ethernet {
+				compatible = "atmel,sam0-gmac";
+				interrupts = <84 0>;
+				interrupt-names = "gmac";
+				status = "disabled";
 
-		mdio: mdio@42000800 {
-			compatible = "atmel,sam-mdio";
-			reg = <0x42000800 0x400>;
-			status = "disabled";
+				num-queues = <1>;
+				local-mac-address = [00 00 00 00 00 00];
+			};
 
-			#address-cells = <1>;
-			#size-cells = <0>;
+			mdio: mdio {
+				compatible = "atmel,sam-mdio";
+				status = "disabled";
+
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
 		};
 
 		can0: can@42000000 {

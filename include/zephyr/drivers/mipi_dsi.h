@@ -6,18 +6,19 @@
 
 /**
  * @file
- * @brief Public APIs for MIPI-DSI drivers
+ * @ingroup mipi_dsi_interface
+ * @brief Main header file for MIPI-DSI (Display Serial Interface) driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_MIPI_DSI_H_
 #define ZEPHYR_INCLUDE_DRIVERS_MIPI_DSI_H_
 
 /**
- * @brief MIPI-DSI driver APIs
- * @defgroup mipi_dsi_interface MIPI-DSI driver APIs
+ * @brief Interfaces for MIPI-DSI (Display Serial Interface).
+ * @defgroup mipi_dsi_interface MIPI-DSI
  * @since 3.1
- * @version 0.1.0
- * @ingroup io_interfaces
+ * @version 0.8.0
+ * @ingroup display_interface
  * @{
  */
 #include <errno.h>

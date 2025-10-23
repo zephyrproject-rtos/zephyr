@@ -250,7 +250,7 @@ board directory to a separate repository once it's working.)
 .. note::
 
   The board directory name does not need to match the name of the board.
-  Multiple boards can even defined be in one directory.
+  Multiple boards can even be defined in one directory.
 
 Your board directory should look like this:
 

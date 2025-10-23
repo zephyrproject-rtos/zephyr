@@ -26,7 +26,7 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 #if defined(CONFIG_COUNTER_NXP_MRT)
 	if ((uint32_t)sub_system == MCUX_MRT_CLK) {
 #if defined(CONFIG_SOC_FAMILY_LPC) || defined(CONFIG_SOC_SERIES_RW6XX) ||                          \
-	defined(CONFIG_SOC_FAMILY_MCXN)
+	defined(CONFIG_SOC_FAMILY_MCXN) || defined(CONFIG_SOC_SERIES_MCXW2XX)
 		CLOCK_EnableClock(kCLOCK_Mrt);
 #elif defined(CONFIG_SOC_FAMILY_NXP_IMXRT)
 		CLOCK_EnableClock(kCLOCK_Mrt0);
@@ -135,6 +135,59 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	CLOCK_EnableClock(kCLOCK_Rtc0);
 #endif /* CONFIG_SOC_FAMILY_MCXN */
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(rtc), okay) */
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(opamp0), okay)
+	if ((uint32_t)sub_system == MCUX_OPAMP0_CLK) {
+#if defined(CONFIG_SOC_FAMILY_MCXA)
+		CLOCK_EnableClock(kCLOCK_GateOPAMP0);
+#else
+		CLOCK_EnableClock(kCLOCK_Opamp0);
+#endif
+	}
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(opamp1), okay)
+	if ((uint32_t)sub_system == MCUX_OPAMP1_CLK) {
+#if defined(CONFIG_SOC_FAMILY_MCXA)
+		CLOCK_EnableClock(kCLOCK_GateOPAMP1);
+#else
+		CLOCK_EnableClock(kCLOCK_Opamp1);
+#endif
+	}
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(opamp2), okay)
+	if ((uint32_t)sub_system == MCUX_OPAMP2_CLK) {
+#if defined(CONFIG_SOC_FAMILY_MCXA)
+		CLOCK_EnableClock(kCLOCK_GateOPAMP2);
+#else
+		CLOCK_EnableClock(kCLOCK_Opamp2);
+#endif
+	}
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(opamp3), okay)
+	if ((uint32_t)sub_system == MCUX_OPAMP3_CLK) {
+#if defined(CONFIG_SOC_FAMILY_MCXA)
+		CLOCK_EnableClock(kCLOCK_GateOPAMP3);
+#else
+		CLOCK_EnableClock(kCLOCK_Opamp3);
+#endif
+	}
+#endif
+
+#ifdef CONFIG_SOC_FAMILY_MCXN
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(trng), okay)
+	if ((uint32_t)sub_system == MCUX_ELS_CLK) {
+		CLOCK_EnableClock(kCLOCK_Css);
+		SYSCON->REF_CLK_CTRL_SET = SYSCON_REF_CLK_CTRL_SET_TRNG_REFCLK_EN_SET_MASK;
+	}
+#endif
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(micfil))
+	CLOCK_EnableClock(kCLOCK_Micfil);
+#endif
 
 	return 0;
 }
@@ -571,6 +624,12 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		*rate = CLOCK_GetLpspiClkFreq(1);
 		break;
 #endif /* defined(CONFIG_SPI_NXP_LPSPI) */
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(micfil))
+	case MCUX_MICFIL_CLK:
+		*rate = CLOCK_GetMicfilClkFreq();
+		break;
+#endif
 	}
 
 	return 0;

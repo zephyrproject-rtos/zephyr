@@ -10,14 +10,16 @@
 #include <dt-bindings/gpio/gpio.h>
 #include "rsk_rx130_512kb-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	model = "Renesas RSK+RX130-512KB KIT";
-	compatible = "renesas,rsk_rx130_512kb","renesas,rxv1";
+	compatible = "renesas,rsk_rx130_512kb";
 
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &code_flash;
+		zephyr,flash-controller = &flash;
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;
 	};
@@ -50,6 +52,7 @@
 		led0 = &led1;
 		led1 = &led3;
 		sw0 = &sw1;
+		watchdog0 = &iwdt;
 	};
 };
 
@@ -70,12 +73,20 @@
 	status = "okay";
 };
 
+&iwdtlsclk {
+	status = "okay";
+};
+
 &cmt {
 	clock-frequency = <4000000>;
 	status = "okay";
 };
 
 &ioport3 {
+	status = "okay";
+};
+
+&ioportc {
 	status = "okay";
 };
 
@@ -111,6 +122,58 @@
 	clock-frequency = <DT_FREQ_K(400)>;
 };
 
+&ctsu {
+	pinctrl-0 = <&ctsu_default>;
+	pinctrl-names = "default";
+	max-num-sensors = <36>;
+	tscap-gpios = <&ioportc 4 0>;
+	status = "okay";
+
+	onboard_slider: touch_slider_0 {
+		component-type = "slider";
+		ssdiv = <1>;
+		so = <0x040>;
+		snum = <0x03>;
+		sdpa = <0x07>;
+		channels-num = <10>, <9>, <8>, <7>;
+		zephyr,code = <INPUT_ABS_THROTTLE>;
+		touch-count-threshold = <750>;
+
+		sld0 {
+			compatible = "renesas,rx-ctsu-slider";
+			status = "okay";
+		};
+	};
+
+	onboard_button_1: touch_button_1 {
+		component-type = "button";
+		ssdiv = <0x0>;
+		snum = <0x07>;
+		sdpa = <0x03>;
+		channels-num = <11>;
+		zephyr,code = <INPUT_KEY_1>;
+
+		button1 {
+			compatible = "renesas,rx-ctsu-button";
+			status = "okay";
+		};
+	};
+
+	onboard_button_2: touch_button_2 {
+		component-type = "button";
+		ssdiv = <0x0>;
+		snum = <0x07>;
+		sdpa = <0x03>;
+		channels-num = <12>;
+		zephyr,code = <INPUT_KEY_2>;
+
+		button2 {
+			compatible = "renesas,rx-ctsu-button";
+			status = "okay";
+		};
+	};
+};
+
 &port_irq1 {
 	status = "okay";
 };
@@ -123,4 +186,29 @@
 	pwm1: pwm {
 		status = "okay";
 	};
+};
+
+&data_flash {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0X0 DT_SIZE_K(8)>;
+		};
+	};
+};
+
+&adc {
+	pinctrl-0 = <&adc_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&iwdt {
+	window-start = <0x3000>;
+	window-end = <0x0300>;
+	status = "okay";
 };

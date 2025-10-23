@@ -18,16 +18,6 @@ struct lpspi_driver_data {
 	uint8_t lpspi_op_mode;
 };
 
-static inline uint8_t rx_fifo_cur_len(LPSPI_Type *base)
-{
-	return (base->FSR & LPSPI_FSR_RXCOUNT_MASK) >> LPSPI_FSR_RXCOUNT_SHIFT;
-}
-
-static inline uint8_t tx_fifo_cur_len(LPSPI_Type *base)
-{
-	return (base->FSR & LPSPI_FSR_TXCOUNT_MASK) >> LPSPI_FSR_TXCOUNT_SHIFT;
-}
-
 /* Reads a word from the RX fifo and handles writing it into the RX spi buf */
 static inline void lpspi_rx_word_write_bytes(const struct device *dev, size_t offset)
 {
@@ -371,7 +361,8 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 		goto error;
 	}
 
-	if (data->major_version < 2 && spi_cfg->operation & SPI_HOLD_ON_CS) {
+	if (data->major_version < 2 && spi_cfg->operation & SPI_HOLD_ON_CS &&
+	    !spi_cs_is_gpio(spi_cfg)) {
 		/* on this version of LPSPI, due to errata in design
 		 * CS must be deasserted in order to clock all words,
 		 * so HOLD_ON_CS flag cannot be supported.

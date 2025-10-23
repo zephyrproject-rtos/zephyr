@@ -21,7 +21,6 @@
 	pinctrl-names = "default";
 };
 
-
 &mco2 {
 	status = "okay";
 	clocks = <&rcc STM32_SRC_HSE MCO2_SEL(MCO_SEL_HSE)>;

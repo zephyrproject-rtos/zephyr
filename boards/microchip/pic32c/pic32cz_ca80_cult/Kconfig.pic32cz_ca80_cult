@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_PIC32CZ_CA80_CULT
+	select SOC_PIC32CZ8110CA80208

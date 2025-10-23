@@ -59,8 +59,8 @@ example:
    :shield: g1120b0mipi
    :goals: build
 
-.. include:: ../../../nxp/common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../../nxp/common/board-footer.rst.inc
+
 
 References
 **********

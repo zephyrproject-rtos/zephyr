@@ -13,7 +13,7 @@ config WS2812_STRIP_SPI
 	depends on DT_HAS_WORLDSEMI_WS2812_SPI_ENABLED
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_WORLDSEMI_WS2812_SPI),spi)
 	help
-	  Enable driver for WS2812 (and compatibles) LED strip using SPI.
+	  Enable driver for WS2812 (and compatible) LED strips using SPI.
 	  The SPI driver is portable, but requires significantly more
 	  memory (1 byte of overhead per bit of pixel data).
 
@@ -28,13 +28,24 @@ config WS2812_STRIP_SPI_FORCE_NOCACHE
 
 endif
 
+config WS2812_STRIP_UART
+	bool "WS2812 LED strip UART driver"
+	default y
+	depends on DT_HAS_WORLDSEMI_WS2812_UART_ENABLED
+	select SERIAL if $(dt_compat_on_bus,$(DT_COMPAT_WORLDSEMI_WS2812_UART),uart)
+	select UART_ASYNC_API
+	help
+	  Enable driver for WS2812 (and compatible) LED strips using UART.
+	  This method requires a high-speed UART and carefully crafted
+	  byte frames to meet the strict WS2812 timing protocol.
+
 config WS2812_STRIP_I2S
 	bool "WS2812 LED strip I2S driver"
 	default y
 	depends on DT_HAS_WORLDSEMI_WS2812_I2S_ENABLED
 	select I2S if $(dt_compat_on_bus,$(DT_COMPAT_WORLDSEMI_WS2812_I2S),i2s)
 	help
-	  Enable driver for WS2812 (and compatibles) LED strip using I2S.
+	  Enable driver for WS2812 (and compatible) LED strips using I2S.
 	  Uses the I2S peripheral, memory usage is 4 bytes per color,
 	  times the number of pixels. A few more for the start and end
 	  delay. The reset delay has a coarse resolution of ~20us.
@@ -46,9 +57,8 @@ config WS2812_STRIP_GPIO
 	default y
 	depends on DT_HAS_WORLDSEMI_WS2812_GPIO_ENABLED
 	depends on (SOC_SERIES_NRF91X || SOC_SERIES_NRF51X || SOC_SERIES_NRF52X || SOC_SERIES_NRF53X)
-	select LED_STRIP_RGB_SCRATCH
 	help
-	  Enable driver for WS2812 (and compatibles) LED strip directly
+	  Enable driver for WS2812 (and compatible) LED strips directly
 	  controlling with GPIO. The GPIO driver does bit-banging with inline
 	  assembly, and is not available on all SoCs.
 
@@ -109,5 +119,5 @@ config WS2812_STRIP_RPI_PICO_PIO
 	depends on DT_HAS_WORLDSEMI_WS2812_RPI_PICO_PIO_ENABLED
 	select PICOSDK_USE_PIO
 	help
-	  Enable driver for WS2812 (and compatibles) LED strip using
+	  Enable driver for WS2812 (and compatible) LED strips using
 	  the Raspberry Pi Pico's PIO.

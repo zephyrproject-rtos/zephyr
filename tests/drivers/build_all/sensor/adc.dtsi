@@ -7,7 +7,7 @@
  * Application overlay for ADC devices
  */
 
- #include <zephyr/dt-bindings/battery/battery.h>
+#include <zephyr/dt-bindings/battery/battery.h>
 
 test_adc_mcp9700a: mcp9700a {
 	status = "okay";
@@ -35,6 +35,14 @@ test_current: current_amp {
 	sense-gain-mult = <1>;
 	sense-gain-div = <1>;
 	zero-current-voltage-mv = <0>;
+};
+
+test_current_alt_gain: current_amp_alt_gain {
+	compatible = "current-sense-amplifier";
+	io-channels = <&adc0 0>;
+	sense-resistor-milli-ohms = <2>;
+	sense-gain-mult = <50>;
+	gain-extended-range = "ADC_GAIN_1_6";
 };
 
 test_composite_fuel_gauge: composite_fuel_gauge {
@@ -82,6 +90,18 @@ test_murata_ncp15wb473: murata-ncp15wb473 {
 	pullup-ohm = <0>;
 	pulldown-ohm = <10000>;
 	connected-positive;
+};
+
+test_omron_d6f_p0001: test-omron-d6f-p0001 {
+	status = "okay";
+	compatible = "omron,d6f-p0001";
+	io-channels = <&test_adc 0>;
+};
+
+test_omron_d6f_p0010: test-omron-d6f-p0010 {
+	status = "okay";
+	compatible = "omron,d6f-p0010";
+	io-channels = <&test_adc 0>;
 };
 
 test_tdk_ntcg163jf103ft1: tdk-ntcg163jf103ft1 {

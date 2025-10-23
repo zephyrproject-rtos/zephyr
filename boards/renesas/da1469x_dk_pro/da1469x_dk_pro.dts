@@ -6,6 +6,7 @@
 /dts-v1/;
 #include <renesas/smartbond/da14699.dtsi>
 #include "da1469x_dk_pro-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -29,6 +30,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_0 {
 			gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
 		};
@@ -36,6 +38,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "User (K1)";
 			gpios = <&gpio0 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -48,35 +51,81 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =
-			<0 0 &gpio1 9 0>,	/* A0 */
-			<1 0 &gpio0 25 0>,	/* A1 */
-			<2 0 &gpio0 8 0>,	/* A2 */
-			<3 0 &gpio0 9 0>,	/* A3 */
-			<4 0 &gpio1 13 0>,	/* A4 */
-			<5 0 &gpio1 12 0>,	/* A5 */
-			<6 0 &gpio1 2 0>,	/* D0 */
-			<7 0 &gpio1 3 0>,	/* D1 */
-			<8 0 &gpio1 4 0>,	/* D2 */
-			<9 0 &gpio1 5 0>,	/* D3 */
-			<10 0 &gpio1 7 0>,	/* D4 */
-			<11 0 &gpio1 8 0>,	/* D5 */
-			<12 0 &gpio0 17 0>,	/* D6 */
-			<13 0 &gpio0 18 0>,	/* D7 */
-			<14 0 &gpio0 19 0>,	/* D8 */
-			<15 0 &gpio0 20 0>,	/* D9 */
-			<16 0 &gpio0 21 0>,	/* D10 */
-			<17 0 &gpio0 24 0>,	/* D11 */
-			<18 0 &gpio0 26 0>,	/* D12 */
-			<19 0 &gpio0 27 0>,	/* D13 */
-			<20 0 &gpio0 28 0>,	/* D14 */
-			<21 0 &gpio0 29 0>;	/* D15 */
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &gpio1 9 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &gpio0 25 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &gpio0 8 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &gpio0 9 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &gpio1 13 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &gpio1 12 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &gpio1 2 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &gpio1 3 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &gpio1 4 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &gpio1 5 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &gpio1 7 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &gpio1 8 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &gpio0 17 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &gpio0 18 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &gpio0 19 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &gpio0 20 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &gpio0 21 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &gpio0 24 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &gpio0 26 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &gpio0 27 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &gpio0 28 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &gpio0 29 0>;
+	};
+
+	mikrobus_1_header: mikrobus-connector-1 {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<0 0 &gpio1 9 0>,	/* AN  */
+				<1 0 &gpio0 12 0>,	/* RST */
+				<2 0 &gpio0 20 0>,	/* CS   */
+				<3 0 &gpio0 21 0>,	/* SCK  */
+				<4 0 &gpio0 24 0>,	/* MISO */
+				<5 0 &gpio0 26 0>,	/* MOSI */
+							/* +3.3V */
+							/* GND */
+				<6 0 &gpio1 1 1>,	/* PWM  */
+				<7 0 &gpio0 27 0>,	/* INT  */
+				<8 0 &gpio0 28 0>,	/* RX   */
+				<9 0 &gpio0 29 0>,	/* TX   */
+				<10 0 &gpio0 30 0>,	/* SCL  */
+				<11 0 &gpio0 31 0>;	/* SDA  */
+							/* +5V */
+							/* GND */
+	};
+
+	mikrobus_2_header: mikrobus-connector-2 {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<0 0 &gpio0 25 0>,	/* AN  */
+				<1 0 &gpio0 12 0>,	/* RST */
+				<2 0 &gpio1 2 0>,	/* CS   */
+				<3 0 &gpio1 3 0>,	/* SCK  */
+				<4 0 &gpio1 4 0>,	/* MISO */
+				<5 0 &gpio1 5 0>,	/* MOSI */
+							/* +3.3V */
+							/* GND */
+				<6 0 &gpio1 6 0>,	/* PWM  */
+				<7 0 &gpio1 7 0>,	/* INT  */
+				<8 0 &gpio1 8 0>,	/* RX   */
+				<9 0 &gpio0 17 0>,	/* TX   */
+				<10 0 &gpio0 18 0>,	/* SCL  */
+				<11 0 &gpio0 19 0>;	/* SDA  */
+							/* +5V */
+							/* GND */
 	};
 
 	aliases {
 		led0 = &red_led;
 		watchdog0 = &wdog;
 		sw0 = &user_button;
+		rtc = &rtc;
 	};
 
 	sysclk: system-clock {
@@ -87,7 +136,7 @@
 };
 
 &flash0 {
-	reg = <0x16000000 DT_SIZE_M(1)>;
+	reg = <0x16000000 DT_SIZE_M(4)>;
 
 	partitions {
 		compatible = "fixed-partitions";
@@ -95,25 +144,33 @@
 		#size-cells = <1>;
 
 		/*
-		 * Flash area from 0x0000 to 0x2400 is reserved
-		 * for product header added by flasher.
+		 * By default, and due to executing from external flash memories, the I-cache
+		 * controller is employed so that no latencies are introduced.
+		 * Normally, the controller imposes that image's base address is aligned
+		 * to CACHE_FLASH_REG[FLASH_REGION_SIZE], which should reflect image's
+		 * size (should be configured on the fly at soc level based on the image size).
+		 * The controller should allow for a small offset, up to 0x1000 words,
+		 * in case image metadata should be appended.
+		 * The current scheme imposes that mcuboot should occupy up to 64kB which is the
+		 * minimum cacheable area and then slot0 and slot1 partition entries should follow
+		 * without gaps in between.
 		 */
 
 		boot_partition: partition@2400 {
 			label = "mcuboot";
-			reg = <0x000002400 0x00009c00>;
+			reg = <0x000002400 0x0000dc00>;
 		};
-		slot0_partition: partition@c000 {
+		slot0_partition: partition@10000 {
 			label = "image-0";
-			reg = <0x0000c000 0x00076000>;
+			reg = <0x00010000 DT_SIZE_K(512)>;
 		};
-		slot1_partition: partition@82000 {
+		slot1_partition: partition@90000 {
 			label = "image-1";
-			reg = <0x00082000 0x00076000>;
+			reg = <0x00090000 DT_SIZE_K(512)>;
 		};
-		storage_partition: partition@f8000 {
+		storage_partition: partition@110000 {
 			label = "storage";
-			reg = <0x000f8000 0x00008000>;
+			reg = <0x00110000 DT_SIZE_K(32)>;
 		};
 	};
 };
@@ -194,3 +251,11 @@ zephyr_udc0: &usbd {
 &bt_hci_da1469x {
 	status = "okay";
 };
+
+mikrobus_1_i2c: &i2c {};
+mikrobus_1_spi: &spi {};
+
+mikrobus_i2c: &mikrobus_1_i2c {};
+mikrobus_spi: &mikrobus_1_spi {};
+
+mikrobus_header: &mikrobus_1_header {};

@@ -6,6 +6,7 @@
 
 #include <zephyr/drivers/firmware/scmi/power.h>
 #include <string.h>
+#include <zephyr/kernel.h>
 
 DT_SCMI_PROTOCOL_DEFINE_NODEV(DT_INST(0, arm_scmi_power), NULL);
 
@@ -20,6 +21,7 @@ int scmi_power_state_get(uint32_t domain_id, uint32_t *power_state)
 	struct scmi_power_state_get_reply reply_buffer;
 	struct scmi_message msg, reply;
 	int ret;
+	bool use_polling;
 
 	/* sanity checks */
 	if (!proto || !power_state) {
@@ -39,7 +41,9 @@ int scmi_power_state_get(uint32_t domain_id, uint32_t *power_state)
 	reply.len = sizeof(reply_buffer);
 	reply.content = &reply_buffer;
 
-	ret = scmi_send_message(proto, &msg, &reply);
+	use_polling = k_is_pre_kernel();
+
+	ret = scmi_send_message(proto, &msg, &reply, use_polling);
 	if (ret < 0) {
 		return ret;
 	}
@@ -58,6 +62,7 @@ int scmi_power_state_set(struct scmi_power_state_config *cfg)
 	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_POWER_DOMAIN);
 	struct scmi_message msg, reply;
 	int status, ret;
+	bool use_polling;
 
 	/* sanity checks */
 	if (!proto || !cfg) {
@@ -82,14 +87,12 @@ int scmi_power_state_set(struct scmi_power_state_config *cfg)
 	reply.len = sizeof(status);
 	reply.content = &status;
 
-	ret = scmi_send_message(proto, &msg, &reply);
+	use_polling = k_is_pre_kernel();
+
+	ret = scmi_send_message(proto, &msg, &reply, use_polling);
 	if (ret < 0) {
 		return ret;
 	}
 
-	if (status != SCMI_SUCCESS) {
-		return scmi_status_to_errno(status);
-	}
-
-	return 0;
+	return scmi_status_to_errno(status);
 }

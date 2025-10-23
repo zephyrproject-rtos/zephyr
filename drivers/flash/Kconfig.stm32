@@ -49,9 +49,12 @@ config FLASH_STM32_WRITE_PROTECT_DISABLE_PREVENTION
 
 config FLASH_STM32_READOUT_PROTECTION
 	bool "Extended operation for flash readout protection control"
-	depends on SOC_SERIES_STM32F4X || SOC_SERIES_STM32L4X || \
-			   SOC_SERIES_STM32G4X || SOC_SERIES_STM32F7X || \
-			   SOC_SERIES_STM32H7X
+	depends on SOC_SERIES_STM32F4X || \
+		   SOC_SERIES_STM32F7X || \
+		   SOC_SERIES_STM32G0X || \
+		   SOC_SERIES_STM32G4X || \
+		   SOC_SERIES_STM32H7X || \
+		   SOC_SERIES_STM32L4X
 	select FLASH_HAS_EX_OP
 	default n
 	help
@@ -94,10 +97,9 @@ config FLASH_STM32_OPTION_BYTES
 
 config USE_MICROCHIP_QSPI_FLASH_WITH_STM32
 	bool "Include patch for Microchip qspi flash when running with stm32"
-	depends on DT_HAS_ST_STM32_QSPI_NOR_ENABLED
+	depends on FLASH_STM32_QSPI || FLASH_STM32_OSPI || FLASH_STM32_XSPI
 	help
-	  Set to use Microchip qspi flash memories which supports
-	  the Global Block Protection Unlock instruction (ULBPR - 98H),
-	  and write with SPI_NOR_CMD_PP_1_1_4 on 4 lines
+	  Set to use Microchip QSPI flash memories which use the PP_1_1_4 opcode
+	  (32H) for the PP_1_4_4 operation (usually 38H).
 
 endif # SOC_FLASH_STM32

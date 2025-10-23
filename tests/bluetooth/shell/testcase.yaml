@@ -72,7 +72,7 @@ tests:
     build_only: true
     extra_args: CONF_FILE="log.conf"
     tags: bluetooth
-  bluetooth.shell.bt_ctrl_dtm:
+  bluetooth.shell.bt_ctlr_dtm:
     build_only: true
     extra_args:
       - CONFIG_BT_CTLR_DTM_HCI=y
@@ -429,7 +429,7 @@ tests:
     extra_configs:
       - CONFIG_RING_BUFFER=n
       - CONFIG_USB_DEVICE_STACK=n
-      - CONFIG_USB_DEVICE_AUDIO=n
+      - CONFIG_USBD_AUDIO2_CLASS=n
   bluetooth.native_shell:
     build_only: true
     extra_args:
@@ -444,4 +444,10 @@ tests:
     build_only: true
     extra_configs:
       - CONFIG_BT_CCP_CALL_CONTROL_SERVER=n
+    tags: bluetooth
+  bluetooth.shell.audio.no_assert:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    extra_configs:
+      - CONFIG_ASSERT=n
     tags: bluetooth

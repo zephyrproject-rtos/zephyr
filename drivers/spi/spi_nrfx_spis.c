@@ -20,14 +20,6 @@ LOG_MODULE_REGISTER(spi_nrfx_spis, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_context.h"
 
-#if NRF_DT_INST_ANY_IS_FAST
-/* If fast instances are used then system managed device PM cannot be used because
- * it may call PM actions from locked context and fast SPIM PM actions can only be
- * called from a thread context.
- */
-BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED));
-#endif
-
 /*
  * Current factors requiring use of DT_NODELABEL:
  *
@@ -39,7 +31,6 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED));
 #define SPIS(idx) DT_NODELABEL(SPIS_NODE(idx))
 #define SPIS_PROP(idx, prop) DT_PROP(SPIS(idx), prop)
 #define SPIS_HAS_PROP(idx, prop) DT_NODE_HAS_PROP(SPIS(idx), prop)
-#define SPIS_IS_FAST(idx) NRF_DT_IS_FAST(SPIS(idx))
 
 #define SPIS_PINS_CROSS_DOMAIN(unused, prefix, idx, _)			\
 	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(SPIS(prefix##idx)),		\
@@ -596,9 +587,7 @@ static int spi_nrfx_init(const struct device *dev)
 	BUILD_ASSERT(!DT_NODE_HAS_PROP(SPIS(idx), wake_gpios) ||	       \
 		     !(DT_GPIO_FLAGS(SPIS(idx), wake_gpios) & GPIO_ACTIVE_LOW),\
 		     "WAKE line must be configured as active high");	       \
-	PM_DEVICE_DT_DEFINE(SPIS(idx), spi_nrfx_pm_action,		       \
-		COND_CODE_1(SPIS_IS_FAST(idx), (0),			       \
-			    (PM_DEVICE_ISR_SAFE)));			       \
+	PM_DEVICE_DT_DEFINE(SPIS(idx), spi_nrfx_pm_action, PM_DEVICE_ISR_SAFE);\
 	SPI_DEVICE_DT_DEFINE(SPIS(idx),					       \
 			    spi_nrfx_init,				       \
 			    PM_DEVICE_DT_GET(SPIS(idx)),		       \

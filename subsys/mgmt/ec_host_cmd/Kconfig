@@ -47,6 +47,14 @@ config EC_HOST_CMD_HANDLER_RX_BUFFER_SIZE
 	  avoid duplicating buffers. If multiple backends are used, the size has to be
 	  set by user to the largest one.
 
+config EC_HOST_CMD_HANDLER_BUFFER_ALIGN
+	int "Memory alignment for the tx/rx buffers"
+	default DCACHE_LINE_SIZE if (DCACHE_LINE_SIZE > 0) && EC_HOST_CMD_BACKEND_USB
+	default 4
+	help
+	  Some interfaces need a special memory alignment to work properly. Use that config
+	  to specify the alignment.
+
 config EC_HOST_CMD_HANDLER_PRIO
 	int "Priority of host command task"
 	default 13

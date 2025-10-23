@@ -1,12 +1,16 @@
 sample:
   name: ADC devicetree driver sample
+common:
+  tags:
+    - adc
+  depends_on: adc
+  filter: dt_node_has_prop("/zephyr,user","io-channels")
+
 tests:
   sample.drivers.adc.adc_dt:
-    tags:
-      - adc
-    depends_on: adc
     platform_allow:
       - nucleo_l073rz
+      - nucleo_h753zi
       - disco_l475_iot1
       - cc3220sf_launchxl
       - cc3235sf_launchxl
@@ -16,6 +20,7 @@ tests:
       - nrf51dk/nrf51822
       - nrf52840dk/nrf52840
       - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpuppr
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
@@ -37,12 +42,14 @@ tests:
       - mcx_n9xx_evk/mcxn947/cpu0
       - frdm_mcxc242
       - ucans32k1sic
-      - xg24_rb4187c
+      - slwrb4180a
+      - xg27_rb4194a
       - xg29_rb4412a
-      - raytac_an54l15q_db/nrf54l15/cpuapp
-      - frdm_mcxa166
-      - frdm_mcxa276
+      - frdm_mcxa346
+      - frdm_mcxa266
+      - frdm_mcxa366
       - s32k148_evb
+      - raytac_an54lq_db_15/nrf54l15/cpuapp
     integration_platforms:
       - nucleo_l073rz
       - nrf52840dk/nrf52840

@@ -6,15 +6,16 @@
 
 /**
  * @file
- * @brief Public API for display drivers and applications
+ * @ingroup display_interface
+ * @brief Main header file for display driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_DISPLAY_H_
 #define ZEPHYR_INCLUDE_DRIVERS_DISPLAY_H_
 
 /**
- * @brief Display Interface
- * @defgroup display_interface Display Interface
+ * @brief Interfaces for display controllers.
+ * @defgroup display_interface Display
  * @since 1.14
  * @version 0.8.0
  * @ingroup io_interfaces
@@ -68,6 +69,7 @@ enum display_pixel_format {
 	PIXEL_FORMAT_BGR_565		= BIT(5),
 	PIXEL_FORMAT_L_8		= BIT(6), /**< 8-bit Grayscale/Luminance, equivalent to */
 						  /**< GRAY, GREY, GRAY8, Y8, R8, etc...        */
+	PIXEL_FORMAT_AL_88		= BIT(7), /**< 8-bit Grayscale/Luminance with alpha */
 };
 
 /**
@@ -84,7 +86,8 @@ enum display_pixel_format {
 	(((fmt & PIXEL_FORMAT_ARGB_8888) >> 3) * 32U) +				\
 	(((fmt & PIXEL_FORMAT_RGB_565) >> 4) * 16U) +				\
 	(((fmt & PIXEL_FORMAT_BGR_565) >> 5) * 16U) +				\
-	(((fmt & PIXEL_FORMAT_L_8) >> 6) * 8U))
+	(((fmt & PIXEL_FORMAT_L_8) >> 6) * 8U) +				\
+	(((fmt & PIXEL_FORMAT_AL_88) >> 7) * 16U))
 
 /**
  * @brief Display screen information

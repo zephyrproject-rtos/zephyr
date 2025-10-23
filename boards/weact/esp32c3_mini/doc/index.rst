@@ -1,0 +1,83 @@
+.. zephyr:board:: weact_esp32c3_mini
+
+Overview
+********
+
+WeAct Studio ESP32-C3-Mini is a compact development board based on ESP32-C3FH4,
+featuring integrated Wi-Fi and Bluetooth® Low Energy connectivity.
+For more information, check `WeAct Studio ESP32-C3 Core Board`_.
+
+Hardware
+********
+
+ESP32-C3 is a single-core Wi-Fi and Bluetooth 5 (LE) microcontroller SoC,
+based on the open-source RISC-V architecture.
+
+The features include the following:
+
+- 32-bit core RISC-V microcontroller with a maximum clock speed of 160 MHz
+- 400 KB of internal RAM
+- 4 MB of internal flash (FH4 variant)
+- 802.11b/g/n/e/i
+- A Bluetooth LE subsystem that supports features of Bluetooth 5 and Bluetooth Mesh
+- Various peripherals:
+
+  - 12-bit ADC with up to 6 channels
+  - TWAI compatible with CAN bus 2.0
+  - Temperature sensor
+  - 3x SPI
+  - 1x I2S
+  - 1x I2C
+  - 2x UART
+  - LED PWM with up to 6 channels
+
+- Cryptographic hardware acceleration (RNG, ECC, RSA, SHA-2, AES)
+- USB Serial/JTAG for flashing and debugging
+- On-board blue LED (GPIO8)
+- Boot button (GPIO9)
+
+For more information, check the datasheet at `ESP32-C3 Datasheet`_ or the technical reference
+manual at `ESP32-C3 Technical Reference Manual`_.
+
+Supported Features
+==================
+
+.. zephyr:board-supported-hw::
+
+System Requirements
+*******************
+
+Espressif HAL requires WiFi and Bluetooth binary blobs in order work. Run the command
+below to retrieve those files.
+
+.. code-block:: console
+
+   west blobs fetch hal_espressif
+
+.. note::
+
+   It is recommended running the command above after :file:`west update`.
+
+Programming and Debugging
+*************************
+
+.. zephyr:board-supported-runners::
+
+.. include:: ../../../espressif/common/building-flashing.rst
+   :start-after: espressif-building-flashing
+
+Debugging
+=========
+
+.. include:: ../../../espressif/common/openocd-debugging.rst
+   :start-after: espressif-openocd-debugging
+
+References
+**********
+
+.. target-notes::
+
+.. _`WeAct Studio ESP32-C3 Core Board`: https://github.com/WeActStudio/WeActStudio.ESP32C3CoreBoard
+.. _`ESP32-C3 Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf
+.. _`ESP32-C3 Technical Reference Manual`: https://espressif.com/sites/default/files/documentation/esp32-c3_technical_reference_manual_en.pdf
+.. _`OpenOCD ESP32`: https://github.com/espressif/openocd-esp32/releases

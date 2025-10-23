@@ -34,6 +34,10 @@ config PINCTRL_DYNAMIC
 	  runtime. This can be useful, for example, to change the pins assigned to a
 	  peripheral at early boot stages depending on a certain input.
 
+config PINCTRL_KEEP_SLEEP_STATE
+	bool "Keep sleep state"
+	default y if PM || PM_DEVICE || DEVICE_DEINIT_SUPPORT
+
 source "drivers/pinctrl/Kconfig.b91"
 source "drivers/pinctrl/Kconfig.bflb"
 source "drivers/pinctrl/Kconfig.ambiq"
@@ -64,7 +68,7 @@ source "drivers/pinctrl/Kconfig.rv32m1"
 source "drivers/pinctrl/Kconfig.ifx_cat1"
 source "drivers/pinctrl/Kconfig.xlnx"
 source "drivers/pinctrl/Kconfig.xmc4xxx"
-source "drivers/pinctrl/Kconfig.nxp_s32"
+source "drivers/pinctrl/Kconfig.nxp_siul2"
 source "drivers/pinctrl/Kconfig.gecko"
 source "drivers/pinctrl/Kconfig.silabs_dbus"
 source "drivers/pinctrl/Kconfig.siwx91x"
@@ -83,6 +87,7 @@ source "drivers/pinctrl/Kconfig.sy1xx"
 source "drivers/pinctrl/Kconfig.realtek_rts5912"
 source "drivers/pinctrl/Kconfig.wch_20x_30x_afio"
 source "drivers/pinctrl/Kconfig.wch_00x_afio"
+source "drivers/pinctrl/Kconfig.sf32lb52x"
 
 rsource "renesas/Kconfig"
 

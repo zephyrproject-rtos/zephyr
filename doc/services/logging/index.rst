@@ -181,6 +181,11 @@ with function name. Hexdump messages are not prepended.
 :kconfig:option:`CONFIG_LOG_FUNC_NAME_PREFIX_DBG`: Prepend standard DEBUG log messages
 with function name. Hexdump messages are not prepended.
 
+:kconfig:option:`CONFIG_LOG_BACKEND_SHOW_TIMESTAMP`: Enables backend to print timestamps
+with log.
+
+:kconfig:option:`CONFIG_LOG_BACKEND_SHOW_LEVEL`: Enables backend to print levels with log.
+
 :kconfig:option:`CONFIG_LOG_BACKEND_SHOW_COLOR`: Enables coloring of errors (red)
 and warnings (yellow).
 

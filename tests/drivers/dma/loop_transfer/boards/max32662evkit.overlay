@@ -15,4 +15,4 @@
 	};
 };
 
-tst_dma0: &dma0 { };
+tst_dma0: &dma0 {};

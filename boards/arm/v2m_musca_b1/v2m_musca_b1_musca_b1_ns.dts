@@ -13,8 +13,7 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
-	aliases {
-	};
+	aliases {};
 
 	chosen {
 		zephyr,console = &uart1;

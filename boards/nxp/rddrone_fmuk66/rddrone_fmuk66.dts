@@ -47,10 +47,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		amber_led: led_0 {
 			gpios = <&gpiod 13 GPIO_ACTIVE_LOW>;
 			label = "LED_AMB";
 		};
+
 		green_led: led_1 {
 			gpios = <&gpiod 14 GPIO_ACTIVE_LOW>;
 			label = "LED_GRN";
@@ -63,9 +65,11 @@
 		red_pwm_led: red_pwm_led {
 			pwms = <&ftm3 1 15625000 PWM_POLARITY_INVERTED>;
 		};
+
 		blue_pwm_led: blue_pwm_led {
 			pwms = <&ftm3 4 15625000 PWM_POLARITY_INVERTED>;
 		};
+
 		green_pwm_led: green_pwm_led {
 			pwms = <&ftm3 5 15625000 PWM_POLARITY_INVERTED>;
 		};
@@ -150,7 +154,6 @@
 	clock-source = "fixed";
 };
 
-
 /* RGB LED powered by FlexTimer 3, and PWM headers for channel 5 and 6 */
 &ftm3 {
 	status = "okay";
@@ -230,7 +233,6 @@ zephyr_udc0: &usbotg {
 };
 
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -245,14 +247,17 @@ zephyr_udc0: &usbotg {
 			reg = <0x00000000 DT_SIZE_K(64)>;
 			read-only;
 		};
+
 		slot0_partition: partition@10000 {
 			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(932)>;
 		};
+
 		slot1_partition: partition@F9000 {
 			label = "image-1";
 			reg = <0x000F9000 DT_SIZE_K(932)>;
 		};
+
 		storage_partition: partition@1E2000 {
 			label = "storage";
 			reg = <0x001E2000 DT_SIZE_K(120)>;
@@ -273,6 +278,7 @@ zephyr_udc0: &usbotg {
 	status = "okay";
 	pinctrl-0 = <&mdio_default>;
 	pinctrl-names = "default";
+
 	phy: phy@0 {
 		compatible = "ethernet-phy";
 		reg = <0>;
@@ -348,7 +354,6 @@ zephyr_udc0: &usbotg {
 		   <&gpiob 9 GPIO_ACTIVE_LOW>;
 	clock-frequency = <DT_FREQ_M(1)>;
 
-
 	fxos8700: fxos8700@0 {
 		compatible = "nxp,fxos8700";
 		reg = <0>;
@@ -368,7 +373,6 @@ zephyr_udc0: &usbotg {
 		int2-gpios = <&gpioe 6 GPIO_ACTIVE_LOW>;
 		status = "okay";
 	};
-
 };
 
 /* external spi */

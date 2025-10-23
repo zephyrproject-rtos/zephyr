@@ -10,9 +10,6 @@ Overview
 Application demonstrating the BAP Unicast Client functionality. Scans for and
 connects to a BAP Unicast Server and establishes an audio stream.
 
-This sample can be found under
-:zephyr_file:`samples/bluetooth/bap_unicast_client` in the Zephyr tree.
-
 Check the :zephyr:code-sample-category:`bluetooth` samples for general information.
 
 Requirements

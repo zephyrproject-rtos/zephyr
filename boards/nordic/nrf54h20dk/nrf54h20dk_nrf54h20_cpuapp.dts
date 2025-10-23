@@ -18,7 +18,7 @@
 
 	chosen {
 		zephyr,console = &uart136;
-		zephyr,code-partition = &slot0_partition;
+		zephyr,code-partition = &cpuapp_slot0_partition;
 		zephyr,flash = &mram1x;
 		zephyr,sram = &cpuapp_data;
 		zephyr,shell-uart = &uart136;
@@ -42,6 +42,8 @@
 		sw3 = &button3;
 		ipc-to-cpusys = &cpuapp_cpusys_ipc;
 		watchdog0 = &wdt010;
+		mcuboot-button0 = &button0;
+		mcuboot-led0 = &led0;
 	};
 
 	buttons {
@@ -98,6 +100,7 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		/*
 		 * LEDs are connected to GPIO Port 9 - pins 0-3. There is no valid hardware
 		 * configuration to pass PWM signal on pis 0 and 1. First valid config is P9.2.
@@ -187,6 +190,8 @@ slot0_partition: &cpuapp_slot0_partition {
 	label = "image-0";
 };
 
+secondary_app_partition: &cpuapp_slot1_partition {};
+
 slot1_partition: &cpuapp_slot1_partition {
 	label = "image-1";
 };
@@ -258,27 +263,28 @@ slot3_partition: &cpurad_slot1_partition {
 };
 
 &gpio6 {
-	status = "okay";
+	status = "disabled";
 };
 
 &exmif {
 	pinctrl-0 = <&exmif_default>;
 	pinctrl-1 = <&exmif_sleep>;
 	pinctrl-names = "default", "sleep";
-	status = "okay";
+	status = "disabled";
 
 	mx25uw63: mx25uw6345g@0 {
 		compatible = "mxicy,mx25u", "jedec,mspi-nor";
 		status = "disabled";
 		reg = <0>;
 		jedec-id = [c2 84 37];
-		sfdp-bfp = [
-			e5 20 8a ff  ff ff ff 03  00 ff 00 ff  00 ff 00 ff
-			ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 10 d8
-			00 ff 00 ff  87 79 01 00  84 12 00 c4  cc 04 67 46
-			30 b0 30 b0  f4 bd d5 5c  00 00 00 ff  10 10 00 20
-			00 00 00 00  00 00 7c 23  48 00 00 00  00 00 88 88
-		];
+		sfdp-bfp = [e5 20 8a ff ff ff ff 03 00 ff 00 ff 00 ff 00 ff
+			    ee ff ff ff ff ff 00 ff ff ff 00 ff 0c 20 10 d8
+			    00 ff 00 ff 87 79 01 00 84 12 00 c4 cc 04 67 46
+			    30 b0 30 b0 f4 bd d5 5c 00 00 00 ff 10 10 00 20
+			    00 00 00 00 00 00 7c 23 48 00 00 00 00 00 88 88];
+		sfdp-ff05 = [00 ee c0 69 72 72 71 71 00 d8 f7 f6 00 0a 00 00
+			     14 45 98 80];
+		sfdp-ff84 = [43 06 0f 00 21 dc ff ff];
 		size = <67108864>;
 		has-dpd;
 		t-enter-dpd = <10000>;
@@ -328,16 +334,23 @@ zephyr_udc0: &usbhs {
 	status = "okay";
 };
 
-/* Trim this RAM block for making room on all run-time common S2RAM cpu context. */
+/* Trim this RAM block for power management related features. */
 &cpuapp_ram0 {
-	reg = <0x22000000 (DT_SIZE_K(32)-32)>;
-	ranges = <0x0 0x22000000 (0x8000-0x20)>;
+	reg = <0x22000000 (DT_SIZE_K(32) - 256)>;
+	ranges = <0x0 0x22000000 (0x8000 - 0x100)>;
 };
 
 / {
 	soc {
+		/* cache control functions - must be executed from local SRAM */
+		pm_ramfunc: cpuapp_s2ram@22007f00 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x22007f00 192>;
+			zephyr,memory-region = "PMLocalRamfunc";
+		};
+
 		/* run-time common S2RAM cpu context RAM */
-		pm_s2ram: cpuapp_s2ram@22007fe0  {
+		pm_s2ram: cpuapp_s2ram@22007fe0 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x22007fe0 32>;
 			zephyr,memory-region = "pm_s2ram_context";

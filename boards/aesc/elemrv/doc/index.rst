@@ -62,6 +62,22 @@ To evaluate the UART interface, build and run the following sample:
    :zephyr-app: samples/hello_world
    :goals: build
 
+GPIO
+====
+
+The GPIO (General-Purpose Input/Output) interface with tri-state pins is a digital interface that
+allows each pin to be configured as either an input or an output, with additional control for
+setting the direction of data flow.
+
+``gpio`` consists of a total of 12 individual pins.
+
+The Blinky sample provides a simple way to explore how a GPIO can be used to control an external LED.
+
+.. zephyr-app-commands::
+   :board: elemrv/elemrv_n
+   :zephyr-app: samples/basic/blinky
+   :goals: build
+
 .. _GitHub Project:
    https://github.com/aesc-silicon/elemrv
 

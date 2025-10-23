@@ -256,3 +256,30 @@ config OPENTHREAD_RCP_RESTORATION_MAX_COUNT
 	default 2
 	help
 	  The maximum number of attempts to restore the RCP connection.
+
+config OPENTHREAD_ROUTER_SELECTION_JITTER_OVERRIDE
+	bool "Override default router selection jitter"
+	depends on OPENTHREAD_FTD
+
+config OPENTHREAD_ROUTER_SELECTION_JITTER
+	int "OpenThread router selection jitter in seconds"
+	depends on OPENTHREAD_ROUTER_SELECTION_JITTER_OVERRIDE
+	default 120
+
+config OPENTHREAD_NET_DIAG_VENDOR_NAME
+	string "Vendor name populated in OpenThread network diagnostics TLV"
+	default "Zephyr"
+	help
+	  This value represents vendor name that will be exposed in network diagnostic TLV.
+
+config OPENTHREAD_NET_DIAG_VENDOR_MODEL
+	string "Vendor model populated in OpenThread network diagnostics TLV"
+	default "Zephyr-OpenThread"
+	help
+	  This value represents vendor model that will be exposed in network diagnostic TLV.
+
+config OPENTHREAD_NET_DIAG_VENDOR_SW_VERSION
+	string "Vendor software version populated in OpenThread network diagnostics TLV"
+	default "Zephyr-OT-v1.0"
+	help
+	  This value represents vendor software version that will be exposed in network diagnostic TLV.

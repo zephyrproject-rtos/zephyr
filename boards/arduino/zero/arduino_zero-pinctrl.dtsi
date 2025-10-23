@@ -43,6 +43,7 @@
 				 <PA10C_SERCOM0_PAD2>;
 		};
 	};
+
 	sercom5_uart_default: sercom5_uart_default {
 		group1 {
 			pinmux = <PB23D_SERCOM5_PAD3>,

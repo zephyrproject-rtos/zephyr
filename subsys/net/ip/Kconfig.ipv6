@@ -16,6 +16,7 @@ if NET_IPV6
 config NET_IF_MAX_IPV6_COUNT
 	int "Max number of IPv6 network interfaces in the system"
 	default NET_VLAN_COUNT if NET_VLAN && NET_VLAN_COUNT > 0
+	default 2 if NRF70_ENABLE_DUAL_VIF
 	default 2 if NET_LOOPBACK
 	default 1
 	help
@@ -222,8 +223,10 @@ config NET_IPV6_IID_EUI_64
 
 config NET_IPV6_IID_STABLE
 	bool "Generate stable IID [EXPERIMENTAL]"
-	select MBEDTLS
-	select MBEDTLS_MD
+	select PSA_CRYPTO
+	select PSA_WANT_KEY_TYPE_HMAC
+	select PSA_WANT_ALG_HMAC
+	select PSA_WANT_ALG_SHA_256
 	select EXPERIMENTAL
 	depends on !NET_6LO
 	help
@@ -244,8 +247,10 @@ endchoice
 
 config NET_IPV6_PE
 	bool "Privacy extension (RFC 8981) support [EXPERIMENTAL]"
-	select MBEDTLS
-	select MBEDTLS_MD
+	select PSA_CRYPTO
+	select PSA_WANT_KEY_TYPE_HMAC
+	select PSA_WANT_ALG_HMAC
+	select PSA_WANT_ALG_SHA_256
 	select EXPERIMENTAL
 	select NET_MGMT
 	select NET_MGMT_EVENT

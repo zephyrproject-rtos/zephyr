@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <mem.h>
+#include <freq.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 
 / {
@@ -27,18 +28,19 @@
 			compatible = "nxp,lpc-syscon";
 			reg = <0x40000000 0x4000>;
 			#clock-cells = <1>;
+
 			reset: reset {
 				compatible = "nxp,lpc-syscon-reset";
 				#reset-cells = <1>;
 			};
 		};
 
-		sram0:memory@20000000 {
+		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 			reg = <0x20000000 DT_SIZE_K(64)>;
 		};
 
-		sramx:memory@4000000 {
+		sramx: memory@4000000 {
 			compatible = "mmio-sram";
 			reg = <0x04000000 DT_SIZE_K(32)>;
 		};
@@ -54,6 +56,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x40001000 0x100>;
+
 			pinctrl: pinctrl {
 				compatible = "nxp,lpc-iocon-pinctrl";
 			};

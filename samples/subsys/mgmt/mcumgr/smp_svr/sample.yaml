@@ -8,7 +8,7 @@ tests:
   sample.mcumgr.smp_svr.bt:
     harness: bluetooth
     tags: bluetooth
-    extra_args: EXTRA_CONF_FILE="overlay-bt.conf"
+    extra_args: EXTRA_CONF_FILE="bt.conf"
     platform_allow:
       - nrf52dk/nrf52832
       - nrf52840dk/nrf52840
@@ -20,7 +20,7 @@ tests:
   sample.mcumgr.smp_svr.bt_static_svc:
     harness: bluetooth
     tags: bluetooth
-    extra_args: EXTRA_CONF_FILE="overlay-bt.conf"
+    extra_args: EXTRA_CONF_FILE="bt.conf"
     extra_configs:
       - CONFIG_MCUMGR_TRANSPORT_BT_DYNAMIC_SVC_REGISTRATION=n
     platform_allow:
@@ -30,16 +30,29 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
   sample.mcumgr.smp_svr.udp:
-    extra_args: EXTRA_CONF_FILE="overlay-udp.conf"
+    extra_args: EXTRA_CONF_FILE="udp.conf"
     platform_allow:
       - frdm_mcxn947/mcxn947/cpu0
       - mcx_n9xx_evk/mcxn947/cpu0
       - frdm_k64f
     integration_platforms:
       - frdm_k64f
+  sample.mcumgr.smp_svr.udp_dtls:
+    extra_args:
+      - EXTRA_CONF_FILE="udp_dtls.conf"
+      - CONFIG_IMG_MANAGER=n
+      - SB_CONFIG_BOOTLOADER_NONE=y
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    build_only: true
+  sample.mcumgr.smp_svr.udp.802154.subg:
+    extra_args: EXTRA_CONF_FILE="udp.conf;802154-subg.conf"
+    platform_allow: beagleconnect_freedom
   sample.mcumgr.smp_svr.cdc:
     extra_args:
-      - EXTRA_CONF_FILE="overlay-cdc.conf"
+      - EXTRA_CONF_FILE="cdc.conf"
       - DTC_OVERLAY_FILE="usb.overlay"
     platform_allow:
       - frdm_mcxn947/mcxn947/cpu0
@@ -55,7 +68,7 @@ tests:
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
   sample.mcumgr.smp_svr.serial:
-    extra_args: EXTRA_CONF_FILE="overlay-serial.conf"
+    extra_args: EXTRA_CONF_FILE="serial.conf"
     platform_allow:
       - frdm_k22f
       - frdm_k64f
@@ -93,13 +106,13 @@ tests:
       - mg100
     integration_platforms:
       - nrf52840dk/nrf52840
-  # In mcuboot_flags test overlay-serial.conf is used for convenience as it is the simplest
+  # In mcuboot_flags test serial.conf is used for convenience as it is the simplest
   # transport. Transport does not affect flags so it does not really matter which is selected,
   # flags should affect any transport the same way.
   sample.mcumgr.smp_svr.mcuboot_flags.direct_xip_withrevert:
-    extra_args: EXTRA_CONF_FILE="overlay-serial.conf"
-    extra_configs:
-      - CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT=y
+    extra_args:
+      - EXTRA_CONF_FILE="serial.conf"
+      - SB_CONFIG_MCUBOOT_MODE_DIRECT_XIP_WITH_REVERT=y
     platform_allow:
       - nrf52840dk/nrf52840
       - pinnacle_100_dvk
@@ -107,7 +120,7 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
   sample.mcumgr.smp_svr.serial-console:
-    extra_args: EXTRA_CONF_FILE="overlay-serial-console.conf"
+    extra_args: EXTRA_CONF_FILE="serial-console.conf"
     platform_allow:
       - nrf52840dk/nrf52840
       - pinnacle_100_dvk
@@ -115,7 +128,7 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
   sample.mcumgr.smp_svr.shell:
-    extra_args: EXTRA_CONF_FILE="overlay-shell.conf"
+    extra_args: EXTRA_CONF_FILE="shell.conf"
     platform_allow:
       - frdm_k22f
       - frdm_k64f
@@ -155,7 +168,7 @@ tests:
       - mimxrt1060_evk/mimxrt1062/qspi
       - mimxrt1064_evk
   sample.mcumgr.smp_svr.shell_mgmt:
-    extra_args: EXTRA_CONF_FILE="overlay-shell-mgmt.conf"
+    extra_args: EXTRA_CONF_FILE="shell-mgmt.conf"
     platform_allow:
       - nrf52840dk/nrf52840
       - pinnacle_100_dvk
@@ -163,7 +176,7 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
   sample.mcumgr.smp_svr.fs:
-    extra_args: EXTRA_CONF_FILE="overlay-fs.conf"
+    extra_args: EXTRA_CONF_FILE="fs.conf"
     platform_allow:
       - nrf52840dk/nrf52840
       - pinnacle_100_dvk
@@ -179,14 +192,14 @@ tests:
   sample.mcumgr.smp_svr.ram_load.serial:
     extra_args:
       - FILE_SUFFIX="ram_load"
-      - EXTRA_CONF_FILE="overlay-serial.conf"
+      - EXTRA_CONF_FILE="serial.conf"
     platform_allow:
       - nrf52840dk/nrf52840
       - mimxrt1050_evk/mimxrt1052/hyperflash
   sample.mcumgr.smp_svr.ram_load_revert.serial:
     extra_args:
       - FILE_SUFFIX="ram_load"
-      - EXTRA_CONF_FILE="overlay-serial.conf"
+      - EXTRA_CONF_FILE="serial.conf"
       - SB_CONFIG_MCUBOOT_MODE_RAM_LOAD_WITH_REVERT=y
       - smp_svr_CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE=y
     platform_allow:
@@ -196,7 +209,7 @@ tests:
   sample.mcumgr.smp_svr.ram_load.serial.fs.shell:
     extra_args:
       - FILE_SUFFIX="ram_load"
-      - EXTRA_CONF_FILE="overlay-serial.conf;overlay-fs.conf;overlay-shell.conf"
+      - EXTRA_CONF_FILE="serial.conf;fs.conf;shell.conf"
     platform_allow:
       - nrf52840dk/nrf52840
     integration_platforms:

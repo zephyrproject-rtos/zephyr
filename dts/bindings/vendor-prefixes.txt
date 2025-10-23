@@ -122,6 +122,7 @@ calaosystems	CALAO Systems SAS
 calxeda	Calxeda
 canaan	Canaan, Inc.
 caninos	Caninos Loucos Program
+canis	Canis Automotive Labs
 capella	Capella Microsystems, Inc
 cascoda	Cascoda, Ltd.
 catalyst	Catalyst Semiconductor, Inc.
@@ -151,6 +152,7 @@ cnxt	Conexant Systems, Inc.
 colorfly	Colorful GRP, Shenzhen Xueyushi Technology Ltd.
 compulab	CompuLab Ltd.
 contextualelectronics	Contextual Electronics
+coredevices	Core Devices LLC
 coreriver	CORERIVER Semiconductor Co.,Ltd.
 corpro	Chengdu Corpro Technology Co., Ltd.
 cortina	Cortina Systems, Inc.
@@ -201,6 +203,7 @@ eckelmann	Eckelmann AG
 edt	Emerging Display Technologies
 eeti	eGalax_eMPIA Technology Inc
 efinix	Efinix Inc
+egis	Egis Technology Inc
 einfochips	Einfochips
 elan	Elan Microelectronic Corp.
 electronut	Electronut Labs
@@ -208,6 +211,7 @@ element14	Element14 (A Premier Farnell Company)
 elgin	Elgin S/A.
 elida	Shenzhen Elida Technology Co., Ltd.
 elimo	Elimo Engineering Ltd.
+embedsky	Guangdong Embedsky Technology Co., Ltd.
 embest	Shenzhen Embest Technology Co., Ltd.
 emlid	Emlid, Ltd.
 emmicro	EM Microelectronic
@@ -246,6 +250,7 @@ festo	Festo SE & Co. KG
 fii	Foxconn Industrial Internet
 fintek	Feature Integration Technology Inc.
 firefly	Firefly
+fobe	FoBE Studio
 focaltech	FocalTech Systems Co.,Ltd
 franzininho	Franzininho
 frida	Shenzhen Frida LCD Co., Ltd.
@@ -284,6 +289,7 @@ hamamatsu	Hamamatsu Photonics K.K.
 hannstar	HannStar Display Corporation
 haoyu	Haoyu Microelectronic Co. Ltd.
 hardkernel	Hardkernel Co., Ltd
+hazard3	Hazard3 by Luke Wren
 heltec	Chengdu Heltec Automation Technology Co., Ltd.
 hideep	HiDeep Inc.
 himax	Himax Technologies, Inc.
@@ -489,6 +495,7 @@ okaya	Okaya Electric America, Inc.
 oki	Oki Electric Industry Co., Ltd.
 olimex	OLIMEX Ltd.
 olpc	One Laptop Per Child
+omron	OMRON Corporation
 onion	Onion Corporation
 onnn	ON Semiconductor Corp.
 ontat	On Tat Industrial Company
@@ -513,6 +520,7 @@ panasonic	Panasonic Corporation
 parade	Parade Technologies Inc.
 parallax	Parallax Inc.
 particle	Particle.io
+pcbcupid	PCB Cupid
 pda	Precision Design Associates, Inc.
 peacefair	Ningbo Peacefair Electronic Technology Co., Ltd
 peregrine	Peregrine Consultoria e Servicos
@@ -547,6 +555,7 @@ prt	Protonic Holland
 ptc	Princeton Technology Corp.
 pulsedlight	PulsedLight, Inc
 purism	Purism, SPC
+puya	Puya Semiconductor (Shanghai) Co., Ltd
 qca	Qualcomm Atheros, Inc.
 qcom	Qualcomm Technologies, Inc
 qemu	QEMU, a generic and open source machine emulator and virtualizer
@@ -595,6 +604,7 @@ sandisk	Sandisk Corporation
 satoz	Satoz International Co., Ltd
 sbs	Smart Battery System
 sc	Space Cubics Inc.
+scdz	Shenzhen Qiushi IoT Technology Co., Ltd.
 schindler	Schindler
 sciosense	Sciosense B.V.
 seagate	Seagate Technology PLC
@@ -617,6 +627,7 @@ si-en	Si-En Technology Ltd.
 si-linux	Silicon Linux Corporation
 siemens	Siemens AG
 sifive	SiFive, Inc.
+sifli	SiFli Technologies(Nanjing) Co., Ltd
 sigma	Sigma Designs, Inc.
 sii	Seiko Instruments, Inc.
 sil	Silicon Image
@@ -658,6 +669,7 @@ starfive	StarFive Technology Co. Ltd.
 starry	Starry Electronic Technology (ShenZhen) Co., LTD
 startek	Startek
 ste	ST-Ericsson
+steelseries	SteelSeries
 stericsson	ST-Ericsson
 summit	Summit microelectronics
 sunchip	Shenzhen Sunchip Technology Co., Ltd
@@ -685,6 +697,7 @@ thine	THine Electronics, Inc.
 thingyjp	thingy.jp
 ti	Texas Instruments
 tianma	Tianma Micro-electronics Co., Ltd.
+titanmec	Shenzhen Titan Micro Electronics Co., Ltd.
 tlm	Trusted Logic Mobility
 tmt	Tecon Microprocessor Technologies, LLC.
 topeet	Topeet
@@ -771,6 +784,7 @@ xiphera	Xiphera Ltd.
 xlnx	Xilinx
 xnano	Xnano
 xptek	Shenzhen Xptek Technology Co., Ltd
+xuantie	Alibaba Xuantie
 xunlong	Shenzhen Xunlong Software CO.,Limited
 xylon	Xylon
 yamaha	Yamaha Corporation

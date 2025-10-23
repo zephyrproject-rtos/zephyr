@@ -10,15 +10,16 @@
 
 &pinctrl {
 	uart0_default: uart0_default {
-		 group1 {
-			 pinmux = <UART0_TX_GPIO43>;
-			 output-high;
-		 };
-		 group2 {
-			 pinmux = <UART0_RX_GPIO44>;
-			 bias-pull-up;
-		 };
-	 };
+		group1 {
+			pinmux = <UART0_TX_GPIO43>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART0_RX_GPIO44>;
+			bias-pull-up;
+		};
+	};
 
 	i2c0_default: i2c0_default {
 		group1 {

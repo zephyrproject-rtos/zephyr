@@ -7,10 +7,12 @@
  */
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/sensor/iis3dwb.h>
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
- ***************************************/
+ **************************************
+ */
 
 test_spi_adxl362: adxl362@0 {
 	compatible = "adi,adxl362";
@@ -275,6 +277,7 @@ test_spi_bmi08x_accel: bmi08x@23 {
 	int2-conf-io = <0x17>;
 	accel-hz = "800";
 	accel-fs = <4>;
+	fifo-watermark = <1>;
 };
 
 test_spi_bmi08x_gyro: bmi08x@24 {
@@ -286,6 +289,7 @@ test_spi_bmi08x_gyro: bmi08x@24 {
 	int3-4-conf-io = <0x01>;
 	gyro-hz = "1000_116";
 	gyro-fs = <1000>;
+	fifo-watermark = <1>;
 };
 
 test_spi_tmag5170: tmag5170@25 {
@@ -402,7 +406,7 @@ test_spi_ilps22qs: ilps22qs@30 {
 	status = "okay";
 };
 
-test_spi_icm45686:icm45686@31 {
+test_spi_icm45686: icm45686@31 {
 	compatible = "invensense,icm45686";
 	reg = <0x31>;
 	spi-max-frequency = <0>;
@@ -436,9 +440,9 @@ test_spi_ad2s1210: ad2s1210@35 {
 	compatible = "adi,ad2s1210";
 	reg = <0x35>;
 	spi-max-frequency = <0>;
-	sample-gpios = <&test_gpio 0 (GPIO_ACTIVE_LOW)>;
-	mode-gpios = <&test_gpio 1 (GPIO_ACTIVE_HIGH)>, <&test_gpio 2 (GPIO_ACTIVE_HIGH)>;
-	reset-gpios = <&test_gpio 7 (GPIO_ACTIVE_LOW)>;
+	sample-gpios = <&test_gpio 0 GPIO_ACTIVE_LOW>;
+	mode-gpios = <&test_gpio 1 GPIO_ACTIVE_HIGH>, <&test_gpio 2 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&test_gpio 7 GPIO_ACTIVE_LOW>;
 	clock-frequency = <8192000>;
 };
 
@@ -462,7 +466,26 @@ test_spi_adxl366: adxl366@37 {
 
 test_spi_icm42686: icm42686@38 {
 	compatible = "invensense,icm42686", "invensense,icm4268x";
-	reg = <0x1a>;
+	reg = <0x38>;
 	spi-max-frequency = <24000000>;
 	int-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_iis3dwb: iis3dwb@39 {
+	compatible = "st,iis3dwb";
+	reg = <0x39>;
+	spi-max-frequency = <0>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+	range = <IIS3DWB_DT_FS_16G>;
+	odr = <IIS3DWB_DT_ODR_26k7Hz>;
+	filter = <IIS3DWB_DT_HP_ODR_DIV_800>;
+};
+
+test_spi_adxl345: adxl345@3a {
+	compatible = "adi,adxl345";
+	reg = <0x3a>;
+	spi-max-frequency = <0>;
+	int1-gpios = <&test_gpio 0 0>;
+	fifo-watermark = <1>;
 };

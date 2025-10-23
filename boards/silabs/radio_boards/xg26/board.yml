@@ -1,0 +1,16 @@
+boards:
+  - name: mgm260p_rb4350a
+    full_name: MGM260P 2.4 GHz +10 dBm Radio Board
+    vendor: silabs
+    socs:
+      - name: mgm260pd22vna
+  - name: xg26_rb4118a
+    full_name: EFR32xG26 2.4 GHz +10 dBm BGA136 Radio Board
+    vendor: silabs
+    socs:
+      - name: efr32mg26b510f3200il136
+  - name: xg26_rb4120a
+    full_name: EFR32xG26 2.4 GHz +10 dBm Radio Board
+    vendor: silabs
+    socs:
+      - name: efr32mg26b510f3200im68

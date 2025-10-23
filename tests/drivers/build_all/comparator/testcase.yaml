@@ -119,3 +119,14 @@ tests:
       - DTC_OVERLAY_FILE="mcux_acmp/mke15z7_mux_mux.dts"
     platform_allow:
       - frdm_ke15z
+  drivers.build_all.comparator.nxp_cmp.frdm_mcxc242:
+    extra_args:
+      - DTC_OVERLAY_FILE="nxp_cmp/frdm_mcxc242.dts"
+    platform_allow:
+      - frdm_mcxc242
+  drivers.build_all.comparator.renesas_lvd:
+    extra_args:
+      - DTC_OVERLAY_FILE="renesas_lvd/lvd.overlay"
+    platform_allow:
+      - ek_ra8m1
+      - ek_ra8p1/r7ka8p1kflcac/cm85

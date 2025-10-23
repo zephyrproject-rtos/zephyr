@@ -152,6 +152,10 @@ if(CONFIG_SENSOR_ASYNC_API)
   zephyr_iterable_section(NAME sensor_decoder_api KVMA RAM_REGION GROUP RODATA_REGION)
 endif()
 
+if(CONFIG_ADC_STREAM)
+  zephyr_iterable_section(NAME adc_decoder_api KVMA RAM_REGION GROUP RODATA_REGION)
+endif()
+
 if(CONFIG_MCUMGR)
   zephyr_iterable_section(NAME mcumgr_handler KVMA RAM_REGION GROUP RODATA_REGION)
 endif()
@@ -228,6 +232,13 @@ endif()
 
 if (CONFIG_NET_MGMT)
   zephyr_iterable_section(NAME net_mgmt_event_static_handler KVMA RAM_REGION GROUP RODATA_REGION)
+endif()
+
+if(CONFIG_NET_SOCKETS_SERVICE)
+  zephyr_iterable_section(NAME net_socket_service_desc
+                          KVMA RAM_REGION GROUP RODATA_REGION
+                          SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN}
+  )
 endif()
 
 if(CONFIG_INPUT)

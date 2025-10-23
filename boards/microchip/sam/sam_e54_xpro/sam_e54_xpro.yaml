@@ -10,7 +10,11 @@ toolchain:
 flash: 1024
 ram: 256
 supported:
+  - flash
+  - mcuboot
   - pinctrl
+  - pwm
+  - reset
   - shell
   - uart
 vendor: microchip

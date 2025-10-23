@@ -26,12 +26,6 @@ enum l2cap_conn_list_action {
 	BT_L2CAP_CHAN_DETACH,
 };
 
-#define BT_L2CAP_CID_BR_SIG             0x0001
-#define BT_L2CAP_CID_ATT                0x0004
-#define BT_L2CAP_CID_LE_SIG             0x0005
-#define BT_L2CAP_CID_SMP                0x0006
-#define BT_L2CAP_CID_BR_SMP             0x0007
-
 #define BT_L2CAP_PSM_RFCOMM             0x0003
 
 struct bt_l2cap_hdr {
@@ -164,19 +158,6 @@ struct bt_l2cap_ecred_reconf_rsp {
 	uint16_t result;
 } __packed;
 
-struct bt_l2cap_fixed_chan {
-	uint16_t		cid;
-	int (*accept)(struct bt_conn *conn, struct bt_l2cap_chan **chan);
-	bt_l2cap_chan_destroy_t destroy;
-};
-
-#define BT_L2CAP_CHANNEL_DEFINE(_name, _cid, _accept, _destroy)         \
-	const STRUCT_SECTION_ITERABLE(bt_l2cap_fixed_chan, _name) = {   \
-				.cid = _cid,                            \
-				.accept = _accept,                      \
-				.destroy = _destroy,                    \
-			}
-
 /* Notify L2CAP channels of a new connection */
 void bt_l2cap_connected(struct bt_conn *conn);
 
@@ -190,21 +171,7 @@ void bt_l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 /* Remove channel from the connection */
 void bt_l2cap_chan_remove(struct bt_conn *conn, struct bt_l2cap_chan *chan);
 
-/* Delete channel */
-void bt_l2cap_chan_del(struct bt_l2cap_chan *chan);
-
 const char *bt_l2cap_chan_state_str(bt_l2cap_chan_state_t state);
-
-#if defined(CONFIG_BT_L2CAP_LOG_LEVEL_DBG)
-void bt_l2cap_chan_set_state_debug(struct bt_l2cap_chan *chan,
-				   bt_l2cap_chan_state_t state,
-				   const char *func, int line);
-#define bt_l2cap_chan_set_state(_chan, _state) \
-	bt_l2cap_chan_set_state_debug(_chan, _state, __func__, __LINE__)
-#else
-void bt_l2cap_chan_set_state(struct bt_l2cap_chan *chan,
-			     bt_l2cap_chan_state_t state);
-#endif /* CONFIG_BT_L2CAP_LOG_LEVEL_DBG */
 
 /*
  * Notify L2CAP channels of a change in encryption state passing additionally
@@ -223,6 +190,12 @@ struct net_buf *bt_l2cap_create_pdu_timeout(struct net_buf_pool *pool,
 /* Send L2CAP PDU over a connection
  *
  * Buffer ownership is transferred to stack in case of success.
+ *
+ * The callback will always be invoked exactly once: After the
+ * Controller gives a Number of Completed Packets Event for the
+ * last L2CAP PDU of the buffer or after the channel is
+ * disconnected and the buffer may or may not have been sent in
+ * full, in which case the error code will be -ESHUTDOWN.
  */
 int bt_l2cap_send_pdu(struct bt_l2cap_le_chan *le_chan, struct net_buf *pdu,
 		      bt_conn_tx_cb_t cb, void *user_data);

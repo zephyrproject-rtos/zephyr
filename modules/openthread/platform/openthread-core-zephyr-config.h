@@ -211,10 +211,30 @@
  * in platform.
  *
  */
-#define OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE                                               \
-	((CONFIG_OPENTHREAD_CSL_RECEIVER &&                                                        \
-	  (OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_2)) ||                          \
-	 CONFIG_OPENTHREAD_WAKEUP_END_DEVICE)
+#ifdef CONFIG_OPENTHREAD_PLATFORM_USEC_TIMER
+#define OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE CONFIG_OPENTHREAD_PLATFORM_USEC_TIMER
+#else
+#define OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE 0
+#endif /* CONFIG_OPENTHREAD_PLATFORM_USEC_TIMER */
+
+/**
+ * @def OPENTHREAD_CONFIG_MAC_BEACON_PAYLOAD_PARSING_ENABLE
+ *
+ * Define to 1 if you want to enable MAC beacon payload parsing support.
+ *
+ */
+#ifdef CONFIG_OPENTHREAD_MAC_BEACON_PAYLOAD_PARSING
+#define OPENTHREAD_CONFIG_MAC_BEACON_PAYLOAD_PARSING_ENABLE                                        \
+	CONFIG_OPENTHREAD_MAC_BEACON_PAYLOAD_PARSING
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_NUM
+ *
+ * Set the number of OpenThread instances for static buffer allocation.
+ *
+ */
+#define OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_NUM CONFIG_OPENTHREAD_MULTIPLE_INSTANCE_NUM
 
 /* Zephyr does not use OpenThread's heap. mbedTLS will use heap memory allocated
  * by Zephyr. Here, we use some dummy values to prevent OpenThread warnings.
@@ -244,7 +264,13 @@
  * The number of short source address table entries.
  *
  */
+#ifndef RADIO_CONFIG_SRC_MATCH_SHORT_ENTRY_NUM
+#ifdef CONFIG_OPENTHREAD_MAX_CHILDREN
+#define RADIO_CONFIG_SRC_MATCH_SHORT_ENTRY_NUM CONFIG_OPENTHREAD_MAX_CHILDREN
+#else
 #define RADIO_CONFIG_SRC_MATCH_SHORT_ENTRY_NUM 0
+#endif
+#endif
 
 /**
  * @def OPENTHREAD_CONFIG_PLATFORM_INFO
@@ -283,7 +309,13 @@
  * The number of extended source address table entries.
  *
  */
+#ifndef RADIO_CONFIG_SRC_MATCH_EXT_ENTRY_NUM
+#ifdef CONFIG_OPENTHREAD_MAX_CHILDREN
+#define RADIO_CONFIG_SRC_MATCH_EXT_ENTRY_NUM CONFIG_OPENTHREAD_MAX_CHILDREN
+#else
 #define RADIO_CONFIG_SRC_MATCH_EXT_ENTRY_NUM 0
+#endif
+#endif
 
 /**
  * @def OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US
@@ -528,5 +560,10 @@
  *
  */
 #define OPENTHREAD_CONFIG_PSA_ITS_NVM_OFFSET ZEPHYR_PSA_OPENTHREAD_KEY_ID_RANGE_BEGIN
+
+#ifdef CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER
+#define OPENTHREAD_CONFIG_MULTICAST_DNS_PUBLIC_API_ENABLE 1
+#define OPENTHREAD_CONFIG_MULTICAST_DNS_AUTO_ENABLE_ON_INFRA_IF 1
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */
 
 #endif  /* OPENTHREAD_CORE_ZEPHYR_CONFIG_H_ */

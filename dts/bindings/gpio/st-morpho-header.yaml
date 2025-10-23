@@ -9,6 +9,9 @@ description: |
   any Nucleo board. They can be used to connect shields. All signals and power
   pins of the STM32 are available on the ST morpho connector.
 
+  Use ST_MORPHO_* constants in <zephyr/dt-bindings/gpio/st-morpho-header.h>
+  to refer to specific pins using convenient constant names.
+
 compatible: "st-morpho-header"
 
 include: [gpio-nexus.yaml, base.yaml]

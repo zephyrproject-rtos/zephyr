@@ -1682,7 +1682,6 @@ static uint8_t read_multiple_var(const void *cmd, uint16_t cmd_len,
 	const struct btp_gatt_read_multiple_var_cmd *cp = cmd;
 	uint16_t handles[5];
 	struct bt_conn *conn;
-	int i;
 
 	if ((cmd_len < sizeof(*cp)) ||
 	    (cmd_len != sizeof(*cp) + (cp->handles_count * sizeof(cp->handles[0])))) {
@@ -1693,7 +1692,7 @@ static uint8_t read_multiple_var(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(handles); i++) {
+	for (int i = 0; i < cp->handles_count; i++) {
 		handles[i] = sys_le16_to_cpu(cp->handles[i]);
 	}
 
@@ -1708,7 +1707,7 @@ static uint8_t read_multiple_var(const void *cmd, uint16_t cmd_len,
 	}
 
 	read_params.func = read_cb;
-	read_params.handle_count = i;
+	read_params.handle_count = cp->handles_count;
 	read_params.multiple.handles = handles; /* not used in read func */
 	read_params.multiple.variable = true;
 #if defined(CONFIG_BT_EATT)

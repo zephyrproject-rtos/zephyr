@@ -8,6 +8,7 @@ config SOC_SERIES_NRF54LX
 	select HAS_NRFX
 	select HAS_NORDIC_DRIVERS
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+	select NRF_PLATFORM_LUMOS
 
 config SOC_NRF54L_CPUAPP_COMMON
 	bool
@@ -22,6 +23,7 @@ config SOC_NRF54L_CPUAPP_COMMON
 	select HAS_HW_NRF_RADIO_IEEE802154
 	select HAS_POWEROFF
 	select HAS_NORDIC_RAM_CTRL
+	select HAS_SWO
 
 config SOC_NRF54L05_CPUAPP
 	select SOC_NRF54L_CPUAPP_COMMON
@@ -54,12 +56,6 @@ config SOC_NRF54LM20A_ENGA_CPUFLPR
 
 if SOC_SERIES_NRF54LX
 
-config SOC_NRF54LX_SKIP_CLOCK_CONFIG
-	bool "Skip clock frequency configuration in system initialization"
-	help
-	  With this option, the CPU clock frequency is not set during system initialization.
-	  The CPU runs with the default, hardware-selected frequency.
-
 config SOC_NRF54LX_DISABLE_FICR_TRIMCNF
 	bool "Disable trimming of the device"
 	default y if TRUSTED_EXECUTION_NONSECURE
@@ -74,14 +70,6 @@ config SOC_NRF54LX_SKIP_GLITCHDETECTOR_DISABLE
 	help
 	  With this option, the glitch detector is not disabled during system initialization.
 	  The CPU runs with the default state of glitch detector.
-
-config SOC_NRF_FORCE_CONSTLAT
-	bool "Force constant-latency mode"
-	help
-	  In constant latency mode the CPU wakeup latency and the PPI task response
-	  will be constant and kept at a minimum. This is secured by forcing a set
-	  of base resources on while in sleep. The advantage of having a constant
-	  and predictable latency will be at the cost of having increased power consumption.
 
 config SOC_NRF54L_ANOMALY_56_WORKAROUND
 	bool "Apply workaround 56 for nRF54L SoCs"

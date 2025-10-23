@@ -27,12 +27,12 @@ LOG_MODULE_REGISTER(counter_timer_stm32, CONFIG_COUNTER_LOG_LEVEL);
 #define TIMER_MAX_CH 4U
 
 /** Number of channels for timer by index. */
-#define NUM_CH(timx)					    \
-	(IS_TIM_CCX_INSTANCE(timx, TIM_CHANNEL_4) ? 4U :    \
-	 (IS_TIM_CCX_INSTANCE(timx, TIM_CHANNEL_3) ? 3U :   \
-	  (IS_TIM_CCX_INSTANCE(timx, TIM_CHANNEL_2) ? 2U :  \
-	   (IS_TIM_CCX_INSTANCE(timx, TIM_CHANNEL_1) ? 1U : \
-	    0))))
+#define NUM_CH(timx)				\
+	(IS_TIM_CC4_INSTANCE(timx) ? 4U :	\
+	 (IS_TIM_CC3_INSTANCE(timx) ? 3U :	\
+	  (IS_TIM_CC2_INSTANCE(timx) ? 2U :	\
+	   (IS_TIM_CC1_INSTANCE(timx) ? 1U :	\
+	    0U))))
 
 /** Channel to compare set function mapping. */
 static void(*const set_timer_compare[TIMER_MAX_CH])(TIM_TypeDef *,
@@ -104,7 +104,8 @@ struct counter_stm32_config {
 	struct counter_stm32_ch_data *ch_data;
 	TIM_TypeDef *timer;
 	uint32_t prescaler;
-	struct stm32_pclken pclken;
+	const struct stm32_pclken *pclken;
+	size_t pclk_len;
 	void (*irq_config_func)(const struct device *dev);
 	uint32_t irqn;
 	/* Reset controller device configuration */
@@ -363,135 +364,40 @@ static uint32_t counter_stm32_get_pending_int(const struct device *dev)
 	return !!pending;
 }
 
-/**
- * Obtain timer clock speed.
- *
- * @param pclken  Timer clock control subsystem.
- * @param tim_clk Where computed timer clock will be stored.
- *
- * @return 0 on success, error code otherwise.
- *
- * This function is ripped from the PWM driver; TODO handle code duplication.
- */
-static int counter_stm32_get_tim_clk(const struct stm32_pclken *pclken, uint32_t *tim_clk)
-{
-	int r;
-	const struct device *clk;
-	uint32_t bus_clk, apb_psc;
-
-	clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-
-	if (!device_is_ready(clk)) {
-		return -ENODEV;
-	}
-
-	r = clock_control_get_rate(clk, (clock_control_subsys_t)pclken,
-				   &bus_clk);
-	if (r < 0) {
-		return r;
-	}
-
-#if defined(CONFIG_SOC_SERIES_STM32WB0X)
-	/* Timers are clocked by SYSCLK on STM32WB0 */
-	apb_psc = 1;
-#elif defined(CONFIG_SOC_SERIES_STM32H7X)
-	if (pclken->bus == STM32_CLOCK_BUS_APB1) {
-		apb_psc = STM32_D2PPRE1;
-	} else {
-		apb_psc = STM32_D2PPRE2;
-	}
-#else
-	if (pclken->bus == STM32_CLOCK_BUS_APB1) {
-#if defined(CONFIG_SOC_SERIES_STM32MP1X)
-		apb_psc = (uint32_t)(READ_BIT(RCC->APB1DIVR, RCC_APB1DIVR_APB1DIV));
-#else
-		apb_psc = STM32_APB1_PRESCALER;
-#endif /* CONFIG_SOC_SERIES_STM32MP1X */
-	}
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f0_rcc)
-	else {
-#if defined(CONFIG_SOC_SERIES_STM32MP1X)
-		apb_psc = (uint32_t)(READ_BIT(RCC->APB2DIVR, RCC_APB2DIVR_APB2DIV));
-#else
-		apb_psc = STM32_APB2_PRESCALER;
-#endif /* CONFIG_SOC_SERIES_STM32MP1X */
-	}
-#endif /* ! st_stm32f0_rcc */
-#endif /* CONFIG_SOC_SERIES_STM32H7X */
-
-#if defined(RCC_DCKCFGR_TIMPRE) || defined(RCC_DCKCFGR1_TIMPRE) || \
-	defined(RCC_CFGR_TIMPRE)
-	/*
-	 * There are certain series (some F4, F7 and H7) that have the TIMPRE
-	 * bit to control the clock frequency of all the timers connected to
-	 * APB1 and APB2 domains.
-	 *
-	 * Up to a certain threshold value of APB{1,2} prescaler, timer clock
-	 * equals to HCLK. This threshold value depends on TIMPRE setting
-	 * (2 if TIMPRE=0, 4 if TIMPRE=1). Above threshold, timer clock is set
-	 * to a multiple of the APB domain clock PCLK{1,2} (2 if TIMPRE=0, 4 if
-	 * TIMPRE=1).
-	 */
-
-	if (LL_RCC_GetTIMPrescaler() == LL_RCC_TIM_PRESCALER_TWICE) {
-		/* TIMPRE = 0 */
-		if (apb_psc <= 2u) {
-			LL_RCC_ClocksTypeDef clocks;
-
-			LL_RCC_GetSystemClocksFreq(&clocks);
-			*tim_clk = clocks.HCLK_Frequency;
-		} else {
-			*tim_clk = bus_clk * 2u;
-		}
-	} else {
-		/* TIMPRE = 1 */
-		if (apb_psc <= 4u) {
-			LL_RCC_ClocksTypeDef clocks;
-
-			LL_RCC_GetSystemClocksFreq(&clocks);
-			*tim_clk = clocks.HCLK_Frequency;
-		} else {
-			*tim_clk = bus_clk * 4u;
-		}
-	}
-#else
-	/*
-	 * If the APB prescaler equals 1, the timer clock frequencies
-	 * are set to the same frequency as that of the APB domain.
-	 * Otherwise, they are set to twice (×2) the frequency of the
-	 * APB domain.
-	 */
-	if (apb_psc == 1u) {
-		*tim_clk = bus_clk;
-	} else {
-		*tim_clk = bus_clk * 2u;
-	}
-#endif
-
-	return 0;
-}
-
 static int counter_stm32_init_timer(const struct device *dev)
 {
 	const struct counter_stm32_config *cfg = dev->config;
 	struct counter_stm32_data *data = dev->data;
 	TIM_TypeDef *timer = cfg->timer;
-	LL_TIM_InitTypeDef init;
+	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	uint32_t tim_clk;
 	int r;
 
-	/* initialize clock and check its speed  */
-	r = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-			     (clock_control_subsys_t)&cfg->pclken);
+	/* Enable clock and store its speed */
+	r = clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]);
 	if (r < 0) {
 		LOG_ERR("Could not initialize clock (%d)", r);
 		return r;
 	}
-	r = counter_stm32_get_tim_clk(&cfg->pclken, &tim_clk);
-	if (r < 0) {
-		LOG_ERR("Could not obtain timer clock (%d)", r);
-		return r;
+
+	if (cfg->pclk_len > 1) {
+		/* Enable Timer clock source */
+		r = clock_control_configure(clk, (clock_control_subsys_t)&cfg->pclken[1], NULL);
+		if (r != 0) {
+			LOG_ERR("Could not configure clock (%d)", r);
+			return r;
+		}
+
+		r = clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[1], &tim_clk);
+		if (r < 0) {
+			LOG_ERR("Timer clock rate get error (%d)", r);
+			return r;
+		}
+	} else {
+		LOG_ERR("Timer clock source is not specified");
+		return -EINVAL;
 	}
+
 	data->freq = tim_clk / (cfg->prescaler + 1U);
 
 	if (!device_is_ready(cfg->reset.dev)) {
@@ -506,17 +412,27 @@ static int counter_stm32_init_timer(const struct device *dev)
 	cfg->irq_config_func(dev);
 
 	/* initialize timer */
-	LL_TIM_StructInit(&init);
+	LL_TIM_SetPrescaler(timer, cfg->prescaler);
+	LL_TIM_SetAutoReload(timer, counter_get_max_top_value(dev));
 
-	init.Prescaler = cfg->prescaler;
-	init.CounterMode = LL_TIM_COUNTERMODE_UP;
-	init.Autoreload = counter_get_max_top_value(dev);
-	init.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
-
-	if (LL_TIM_Init(timer, &init) != SUCCESS) {
-		LOG_ERR("Could not initialize timer");
-		return -EIO;
+	if (IS_TIM_COUNTER_MODE_SELECT_INSTANCE(timer)) {
+		LL_TIM_SetCounterMode(timer, LL_TIM_COUNTERMODE_UP);
 	}
+
+	if (IS_TIM_CLOCK_DIVISION_INSTANCE(timer)) {
+		LL_TIM_SetClockDivision(timer, LL_TIM_CLOCKDIVISION_DIV1);
+	}
+
+#ifdef IS_TIM_REPETITION_COUNTER_INSTANCE
+	if (IS_TIM_REPETITION_COUNTER_INSTANCE(timer)) {
+		LL_TIM_SetRepetitionCounter(timer, 0U);
+	}
+#endif
+
+	/* Generate an update event to reload the Prescaler
+	 * and the repetition counter value (if applicable) immediately
+	 */
+	LL_TIM_GenerateEvent_UPDATE(timer);
 
 	return 0;
 }
@@ -667,6 +583,9 @@ void counter_stm32_irq_handler(const struct device *dev)
 		(BUILD_ASSERT(0, "Timer has no 'cc' or 'global' interrupt!")))))  \
 	}									  \
 										  \
+	static const struct stm32_pclken pclken_##idx[] =			  \
+					STM32_DT_CLOCKS(TIMER(idx));		  \
+										  \
 	static const struct counter_stm32_config counter##idx##_config = {	  \
 		.info = {							  \
 			.max_top_value =					  \
@@ -678,10 +597,8 @@ void counter_stm32_irq_handler(const struct device *dev)
 		.ch_data = counter##idx##_ch_data,				  \
 		.timer = TIM(idx),						  \
 		.prescaler = DT_PROP(TIMER(idx), st_prescaler),			  \
-		.pclken = {							  \
-			.bus = DT_CLOCKS_CELL(TIMER(idx), bus),			  \
-			.enr = DT_CLOCKS_CELL(TIMER(idx), bits)			  \
-		},								  \
+		.pclken = pclken_##idx,						  \
+		.pclk_len = DT_NUM_CLOCKS(TIMER(idx)),				  \
 		.irq_config_func = counter_##idx##_stm32_irq_config,		  \
 		.irqn = DT_IRQN(TIMER(idx)),					  \
 		.reset = RESET_DT_SPEC_GET(TIMER(idx)),				  \

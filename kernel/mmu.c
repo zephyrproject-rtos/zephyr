@@ -19,6 +19,7 @@
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/timing/timing.h>
+#include <zephyr/arch/common/init.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -1176,7 +1177,7 @@ void z_mem_manage_init(void)
 	 * and the BSS pages can be brought into physical
 	 * memory to be cleared.
 	 */
-	z_bss_zero();
+	arch_bss_zero();
 #endif /* CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
 }
 
@@ -1502,7 +1503,7 @@ int k_mem_page_frame_evict(uintptr_t phys)
 		do_backing_store_page_out(location);
 	}
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
-	k_spin_unlock(&z_mm_lock, key);
+	key = k_spin_lock(&z_mm_lock);
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 	page_frame_free_locked(pf);
 out:

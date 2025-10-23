@@ -519,26 +519,62 @@ struct bt_conn_le_cs_fae_table {
 	int8_t *remote_fae_table;
 };
 
-/** Channel sounding main mode */
-enum bt_conn_le_cs_main_mode {
-	/** Mode-1 (RTT) */
-	BT_CONN_LE_CS_MAIN_MODE_1 = BT_HCI_OP_LE_CS_MAIN_MODE_1,
-	/** Mode-2 (PBR) */
-	BT_CONN_LE_CS_MAIN_MODE_2 = BT_HCI_OP_LE_CS_MAIN_MODE_2,
-	/** Mode-3 (RTT and PBR) */
-	BT_CONN_LE_CS_MAIN_MODE_3 = BT_HCI_OP_LE_CS_MAIN_MODE_3,
-};
+/** @brief Extract main mode part from @ref bt_conn_le_cs_mode
+ *
+ * @private
+ *
+ * @param x @ref bt_conn_le_cs_mode value
+ * @retval 1 Matches @ref BT_HCI_OP_LE_CS_MAIN_MODE_1 (0x01)
+ * @retval 2 Matches @ref BT_HCI_OP_LE_CS_MAIN_MODE_2 (0x02)
+ * @retval 3 Matches @ref BT_HCI_OP_LE_CS_MAIN_MODE_3 (0x03)
+ *
+ * @note Returned values match the HCI main mode values.
+ */
+#define BT_CONN_LE_CS_MODE_MAIN_MODE_PART(x) ((x) & 0x3)
 
-/** Channel sounding sub mode */
-enum bt_conn_le_cs_sub_mode {
-	/** Unused */
-	BT_CONN_LE_CS_SUB_MODE_UNUSED = BT_HCI_OP_LE_CS_SUB_MODE_UNUSED,
-	/** Mode-1 (RTT) */
-	BT_CONN_LE_CS_SUB_MODE_1 = BT_HCI_OP_LE_CS_SUB_MODE_1,
-	/** Mode-2 (PBR) */
-	BT_CONN_LE_CS_SUB_MODE_2 = BT_HCI_OP_LE_CS_SUB_MODE_2,
-	/** Mode-3 (RTT and PBR) */
-	BT_CONN_LE_CS_SUB_MODE_3 = BT_HCI_OP_LE_CS_SUB_MODE_3,
+/** @brief Extract sub-mode part from @ref bt_conn_le_cs_mode
+ *
+ * @private
+ *
+ * @param x @ref bt_conn_le_cs_mode value
+ * @retval 0 Internal encoding for @ref BT_HCI_OP_LE_CS_SUB_MODE_UNUSED (0xFF)
+ * @retval 1 Matches @ref BT_HCI_OP_LE_CS_SUB_MODE_1 (0x01)
+ * @retval 2 Matches @ref BT_HCI_OP_LE_CS_SUB_MODE_2 (0x02)
+ * @retval 3 Matches @ref BT_HCI_OP_LE_CS_SUB_MODE_3 (0x03)
+ *
+ * @note The value 0 encodes HCI 0xFF. This allows @ref bt_conn_le_cs_mode to
+ * fit in one byte. To obtain the HCI sub-mode value, use `(sub_mode == 0 ? 0xFF
+ * : sub_mode)`, where `sub_mode` is the value returned by this macro.
+ */
+#define BT_CONN_LE_CS_MODE_SUB_MODE_PART(x)  (((x) >> 4) & 0x3)
+
+/** @brief Channel sounding mode (main and sub-mode)
+ *
+ * Represents the combination of Channel Sounding (CS) main mode and sub-mode.
+ *
+ * @note The underlying numeric values are an internal encoding and are
+ * not stable API. Do not assume a direct concatenation of HCI values
+ * when inspecting the raw enum value.
+ *
+ * @sa BT_CONN_LE_CS_MODE_MAIN_MODE_PART
+ * @sa BT_CONN_LE_CS_MODE_SUB_MODE_PART
+ */
+enum bt_conn_le_cs_mode {
+	/** Main mode 1 (RTT), sub-mode: unused */
+	BT_CONN_LE_CS_MAIN_MODE_1_NO_SUB_MODE = BT_HCI_OP_LE_CS_MAIN_MODE_1,
+	/** Main mode 2 (PBR), sub-mode: unused */
+	BT_CONN_LE_CS_MAIN_MODE_2_NO_SUB_MODE = BT_HCI_OP_LE_CS_MAIN_MODE_2,
+	/** Main mode 3 (RTT and PBR), sub-mode: unused */
+	BT_CONN_LE_CS_MAIN_MODE_3_NO_SUB_MODE = BT_HCI_OP_LE_CS_MAIN_MODE_3,
+	/** Main mode 2 (PBR), sub-mode 1 (RTT) */
+	BT_CONN_LE_CS_MAIN_MODE_2_SUB_MODE_1 = BT_HCI_OP_LE_CS_MAIN_MODE_2 |
+					      (BT_HCI_OP_LE_CS_SUB_MODE_1 << 4),
+	/** Main mode 2 (PBR), sub-mode 3 (RTT and PBR) */
+	BT_CONN_LE_CS_MAIN_MODE_2_SUB_MODE_3 = BT_HCI_OP_LE_CS_MAIN_MODE_2 |
+					      (BT_HCI_OP_LE_CS_SUB_MODE_3 << 4),
+	/** Main mode 3 (RTT and PBR), sub-mode 2 (PBR) */
+	BT_CONN_LE_CS_MAIN_MODE_3_SUB_MODE_2 = BT_HCI_OP_LE_CS_MAIN_MODE_3 |
+					      (BT_HCI_OP_LE_CS_SUB_MODE_2 << 4),
 };
 
 /** Channel sounding role */
@@ -597,10 +633,8 @@ enum bt_conn_le_cs_ch3c_shape {
 struct bt_conn_le_cs_config {
 	/** CS configuration ID */
 	uint8_t id;
-	/** Main CS mode type */
-	enum bt_conn_le_cs_main_mode main_mode_type;
-	/** Sub CS mode type */
-	enum bt_conn_le_cs_sub_mode sub_mode_type;
+	/** CS main and sub mode */
+	enum bt_conn_le_cs_mode mode;
 	/** Minimum number of CS main mode steps to be executed before a submode step is executed */
 	uint8_t min_main_mode_steps;
 	/** Maximum number of CS main mode steps to be executed before a submode step is executed */
@@ -895,6 +929,12 @@ struct bt_conn_br_info {
 	const bt_addr_t *dst; /**< Destination (Remote) BR/EDR address */
 };
 
+/** SCO Connection Info Structure */
+struct bt_conn_sco_info {
+	uint8_t link_type; /**< SCO link type */
+	uint8_t air_mode;  /**< SCO air mode (codec type) */
+};
+
 enum {
 	BT_CONN_ROLE_CENTRAL = 0,
 	BT_CONN_ROLE_PERIPHERAL = 1,
@@ -961,6 +1001,8 @@ struct bt_conn_info {
 		struct bt_conn_le_info le;
 		/** BR/EDR Connection specific Info. */
 		struct bt_conn_br_info br;
+		/** SCO Connection specific Info. */
+		struct bt_conn_sco_info sco;
 	};
 	/** Connection state. */
 	enum bt_conn_state state;
@@ -1597,23 +1639,6 @@ int bt_conn_le_create_auto(const struct bt_conn_le_create_param *create_param,
  */
 int bt_conn_create_auto_stop(void);
 
-/** @brief Automatically connect to remote device if it's in range.
- *
- *  This function enables/disables automatic connection initiation.
- *  Every time the device loses the connection with peer, this connection
- *  will be re-established if connectable advertisement from peer is received.
- *
- *  @note Auto connect is disabled during explicit scanning.
- *
- *  @param addr Remote Bluetooth address.
- *  @param param If non-NULL, auto connect is enabled with the given
- *  parameters. If NULL, auto connect is disabled.
- *
- *  @return Zero on success or error code otherwise.
- */
-__deprecated int bt_le_set_auto_conn(const bt_addr_le_t *addr,
-				     const struct bt_le_conn_param *param);
-
 /** @brief Set security level for a connection.
  *
  *  This function enable security (encryption) for a connection. If the device
@@ -1835,9 +1860,8 @@ struct bt_conn_cb {
 	 *  start either a connectable advertiser or create a new connection
 	 *  this might fail because there are no free connection objects
 	 *  available.
-	 *  To avoid this issue it is recommended to either start connectable
-	 *  advertise or create a new connection using @ref k_work_submit or
-	 *  increase @kconfig{CONFIG_BT_MAX_CONN}.
+	 *  To avoid this issue, it's recommended to rely instead on @ref bt_conn_cb.recycled
+	 *  which notifies the application when a connection object has actually been freed.
 	 *
 	 *  @param conn Connection object.
 	 *  @param reason BT_HCI_ERR_* reason for the disconnection.
@@ -1849,12 +1873,13 @@ struct bt_conn_cb {
 	 * This callback notifies the application that it might be able to
 	 * allocate a connection object. No guarantee, first come, first serve.
 	 *
-	 * Use this to e.g. re-start connectable advertising or scanning.
+	 * The maximum number of simultaneous connections is configured
+	 * by @kconfig{CONFIG_BT_MAX_CONN}.
 	 *
-	 * Treat this callback as an ISR, as it originates from
-	 * @ref bt_conn_unref which is used by the BT stack. Making
-	 * Bluetooth API calls in this context is error-prone and strongly
-	 * discouraged.
+	 * This is the event to listen for to start a new connection or connectable advertiser,
+	 * both when the intention is to start it after the system is completely
+	 * finished with an earlier connection, and when the application wants to start
+	 * a connection for any reason but failed and is waiting for the right time to retry.
 	 */
 	void (*recycled)(void);
 
@@ -1944,6 +1969,18 @@ struct bt_conn_cb {
 	void (*remote_info_available)(struct bt_conn *conn,
 				      struct bt_conn_remote_info *remote_info);
 #endif /* defined(CONFIG_BT_REMOTE_INFO) */
+
+#if defined(CONFIG_BT_POWER_MODE_CONTROL)
+	/** @brief The connection mode change
+	 *
+	 *  This callback notifies the application that the sniff mode has changed
+	 *
+	 *  @param conn Connection object.
+	 *  @param mode Active/Sniff mode.
+	 *  @param interval Sniff interval.
+	 */
+	void (*br_mode_changed)(struct bt_conn *conn, uint8_t mode, uint16_t interval);
+#endif /* CONFIG_BT_POWER_MODE_CONTROL */
 
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
 	/** @brief The PHY of the connection has changed.
@@ -2355,8 +2392,8 @@ int bt_le_oob_get_sc_data(struct bt_conn *conn,
 			  const struct bt_le_oob_sc_data **oobd_remote);
 
 /**
- *  Special passkey value that can be used to disable a previously
- *  set fixed passkey.
+ *  DEPRECATED - use @ref BT_PASSKEY_RAND instead. Special passkey value that can be used to disable
+ *  a previously set fixed passkey.
  */
 #define BT_PASSKEY_INVALID 0xffffffff
 
@@ -2368,12 +2405,15 @@ int bt_le_oob_get_sc_data(struct bt_conn *conn,
  *  Sets a fixed passkey to be used for pairing. If set, the
  *  pairing_confirm() callback will be called for all incoming pairings.
  *
+ * @deprecated Use @ref BT_PASSKEY_RAND and the app_passkey callback from @ref bt_conn_auth_cb
+ *             instead.
+ *
  *  @param passkey A valid passkey (0 - 999999) or BT_PASSKEY_INVALID
  *                 to disable a previously set fixed passkey.
  *
  *  @return 0 on success or a negative error code on failure.
  */
-int bt_passkey_set(unsigned int passkey);
+__deprecated int bt_passkey_set(unsigned int passkey);
 
 /** Info Structure for OOB pairing */
 struct bt_conn_oob_info {
@@ -2438,6 +2478,13 @@ struct bt_conn_pairing_feat {
 	uint8_t resp_key_dist;
 };
 #endif /* CONFIG_BT_SMP_APP_PAIRING_ACCEPT */
+
+/**
+ * Special passkey value that can be used to generate a random passkey when using the
+ * app_passkey callback from @ref bt_conn_auth_cb.
+ *
+ */
+#define BT_PASSKEY_RAND 0xffffffff
 
 /** Authenticated pairing callback structure */
 struct bt_conn_auth_cb {
@@ -2638,6 +2685,30 @@ struct bt_conn_auth_cb {
 	 */
 	void (*pincode_entry)(struct bt_conn *conn, bool highsec);
 #endif
+
+#if defined(CONFIG_BT_APP_PASSKEY)
+	/** @brief Allow the application to provide a passkey for pairing.
+	 *
+	 *  If implemented, this callback allows the application to provide passkeys for pairing.
+	 *  The valid range of passkeys is 0 - 999999. The application shall return the passkey for
+	 *  pairing, or BT_PASSKEY_RAND to generate a random passkey. This callback is invoked only
+	 *  for the Passkey Entry method as defined in Core Specification Vol. 3, Part H. Which
+	 *  device in the pairing is showing the passkey depends on the IO capabilities of the
+	 *  device; see Table 2.8 of the Bluetooth Core Specification V6.0, Vol. 3, Part H for more
+	 *  details. For the purposes of this table, the device gains the "display" capability when
+	 *  this callback is non-NULL. This is irrespective of whether the callback returns a
+	 *  specified key or BT_PASSKEY_RAND.
+	 *
+	 *
+	 *  @note When using this callback, it is the responsibility of the application to use
+	 *        random and unique keys.
+	 *
+	 *  @param conn Connection where pairing is currently active.
+	 *  @return Passkey for pairing, or BT_PASSKEY_RAND for the Host to generate a random
+	 *          passkey.
+	 */
+	uint32_t (*app_passkey)(struct bt_conn *conn);
+#endif /* CONFIG_BT_APP_PASSKEY */
 };
 
 /** Authenticated pairing information callback structure */
@@ -2901,6 +2972,30 @@ int bt_conn_br_switch_role(const struct bt_conn *conn, uint8_t role);
  *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_BR connection.
  */
 int bt_conn_br_set_role_switch_enable(const struct bt_conn *conn, bool enable);
+
+#if defined(CONFIG_BT_POWER_MODE_CONTROL)
+/** @brief bluetooth conn check and enter sniff mode
+ *
+ *  This function is used to identify which ACL link connection is to
+ *  be placed in Sniff mode
+ *
+ *  @param conn bt_conn conn
+ *  @param min_interval Minimum sniff interval.
+ *  @param max_interval Maxmum sniff interval.
+ *  @param attempt Number of Baseband receive slots for sniff attempt.
+ *  @param timeout Number of Baseband receive slots for sniff timeout.
+ */
+int bt_conn_br_enter_sniff_mode(struct bt_conn *conn, uint16_t min_interval,
+				 uint16_t max_interval, uint16_t attempt, uint16_t timeout);
+
+/** @brief bluetooth conn check and exit sniff mode
+ *
+ *  @param conn bt_conn conn
+ *
+ *  @return  Zero for success, non-zero otherwise.
+ */
+int bt_conn_br_exit_sniff_mode(struct bt_conn *conn);
+#endif /* CONFIG_BT_POWER_MODE_CONTROL */
 
 #ifdef __cplusplus
 }

@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 #include <soc.h>
 #include <esp_memory_utils.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #ifdef SOC_GDMA_SUPPORTED
 #include <zephyr/drivers/dma.h>
@@ -25,6 +26,11 @@ LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 #include <zephyr/drivers/clock_control.h>
 #include "spi_context.h"
 #include "spi_esp32_spim.h"
+
+#if defined(CONFIG_SOC_SERIES_ESP32S2) && defined(CONFIG_ADC_ESP32_DMA) &&                         \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(spi3)) && DT_PROP(DT_NODELABEL(spi3), dma_enabled)
+#error "spi3 must not have dma-enabled if ADC_ESP32_DMA is enabled for ESP32-S2"
+#endif
 
 #define SPI_DMA_MAX_BUFFER_SIZE 4092
 
@@ -37,7 +43,7 @@ static bool spi_esp32_transfer_ongoing(struct spi_esp32_data *data)
 }
 
 static inline void spi_esp32_complete(const struct device *dev,
-				      struct spi_esp32_data *data,
+				      struct spi_esp32_data *data __maybe_unused,
 				      spi_dev_t *spi, int status)
 {
 #ifdef CONFIG_SPI_ESP32_INTERRUPT
@@ -163,7 +169,7 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 
 	/* clean up and prepare SPI hal */
 	for (size_t i = 0; i < ARRAY_SIZE(hal->hw->data_buf); ++i) {
-#ifdef CONFIG_SOC_SERIES_ESP32C6
+#if defined(CONFIG_SOC_SERIES_ESP32C6) || defined(CONFIG_SOC_SERIES_ESP32H2)
 		hal->hw->data_buf[i].val = 0;
 #else
 		hal->hw->data_buf[i] = 0;
@@ -177,7 +183,7 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 
 	/* keep cs line active until last transmission */
 	hal_trans->cs_keep_active =
-		(!ctx->num_cs_gpios &&
+		(UTIL_OR(IS_ENABLED(DT_SPI_CTX_HAS_NO_CS_GPIOS), (ctx->num_cs_gpios == 0)) &&
 		 (ctx->rx_count > 1 || ctx->tx_count > 1 || ctx->rx_len > transfer_len_frames ||
 		  ctx->tx_len > transfer_len_frames));
 
@@ -488,9 +494,10 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 	 * Workaround for ESP32S3 and ESP32Cx SoC's. This dummy transaction is needed
 	 * to sync CLK and software controlled CS when SPI is in mode 3
 	 */
-#if defined(CONFIG_SOC_SERIES_ESP32S3) || defined(CONFIG_SOC_SERIES_ESP32C2) ||                    \
-	defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32C6)
-	if (ctx->num_cs_gpios && (hal_dev->mode & (SPI_MODE_CPOL | SPI_MODE_CPHA))) {
+#if (defined(CONFIG_SOC_SERIES_ESP32S3) || defined(CONFIG_SOC_SERIES_ESP32C2) ||                   \
+	defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32C6)) &&               \
+	!defined(DT_SPI_CTX_HAS_NO_CS_GPIOS)
+	if ((ctx->num_cs_gpios != 0) && (hal_dev->mode & (SPI_MODE_CPOL | SPI_MODE_CPHA))) {
 		spi_esp32_transfer(dev);
 	}
 #endif

@@ -1,4 +1,4 @@
-# Copyright 2023-2024 NXP
+# Copyright 2023-2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -8,3 +8,27 @@ description: |
 compatible: "nxp,wifi"
 
 include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  wakeup-gpios:
+    type: phandle-array
+    description: |
+      WLAN wakeup host pin
+      This pin defaults to active low when consumed by the SDK card. The
+      property value should ensure the flags properly describ the signal
+      that is presendted to the driver.
+  pwr-gpios:
+    type: phandle-array
+    description: |
+      Power pin
+      This pin defaults to active high when consumed by the wlan cpu power.
+      The property value should ensure the flags properly describe the signal
+      that is presented to the driver.
+
+  sd-gpios:
+    type: phandle-array
+    description: |
+      SDIO Reset pin
+      This pin defaults to active high when consumed by the SD card. The
+      property value should ensure the flags properly describe the signal
+      that is presented to the driver.

@@ -38,3 +38,20 @@ properties:
       is the address is used to communicate with itself after a handoff by
       a secondary controller. This is only used if the controller is a primary
       controller.
+
+  od-thigh-min-ns:
+    type: int
+    default: 24
+    description: |
+      Minimum high clock pulse length (ns) in Open-Drain mode for pure bus.
+      The default value is from Section 4.3.11.2 & Table 49 of the I3C
+      Basic Specifiction v1.2 (16-Dec-2024).
+
+  od-tlow-min-ns:
+    type: int
+    default: 200
+    description: |
+      Minimum low clock pulse length (ns) in Open-Drain mode.
+      The default value is from Section 4.3.11.2 & Table 49 of the I3C
+      Basic Specifiction v1.2 (16-Dec-2024).
+      Specifiction.

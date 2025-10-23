@@ -153,9 +153,15 @@ source "drivers/watchdog/Kconfig.rts5912"
 
 source "drivers/watchdog/Kconfig.renesas_ra"
 
+source "drivers/watchdog/Kconfig.renesas_rx"
+
+source "drivers/watchdog/Kconfig.renesas_rz"
+
 source "drivers/watchdog/Kconfig.wch"
 
 source "drivers/watchdog/Kconfig.nxp_ewm"
+
+source "drivers/watchdog/Kconfig.sf32lb"
 
 source "drivers/watchdog/Kconfig.xilinx_wwdt"
 

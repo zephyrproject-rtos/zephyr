@@ -49,6 +49,7 @@ Nucleo F207ZG provides the following hardware components:
 - I2C (3)
 - SPI (3)
 - SDIO
+- CAN (2)
 - USB 2.0 OTG FS
 - DMA Controller
 - 10/100 Ethernet MAC with dedicated DMA
@@ -96,6 +97,8 @@ Default Zephyr Peripheral Mapping:
 - I2C1 SCL/SDA : PB8/PB9 (Arduino I2C)
 - SPI1 NSS/SCK/MISO/MOSI : PD14/PA5/PA6/PA7 (Arduino SPI)
 - ETH : PA1, PA2, PA7, PB13, PC1, PC4, PC5, PG11, PG13
+- CAN1 TX/RX : PD1/PD0
+- CAN2 TX/RX : PB6/PB5
 - USB_DM : PA11
 - USB_DP : PA12
 - USER_PB : PC13

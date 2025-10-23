@@ -145,6 +145,11 @@ static void iso_connected_cb(struct bt_iso_chan *chan)
 		    "Invalid BN 0x%02x", info.broadcaster.bn);
 	TEST_ASSERT(IN_RANGE(info.broadcaster.irc, BT_ISO_IRC_MIN, BT_ISO_IRC_MAX),
 		    "Invalid IRC 0x%02x", info.broadcaster.irc);
+	TEST_ASSERT(info.broadcaster.big_handle != 0xFF /* invalid BIG handle */,
+		    "Invalid BIG handle 0x%02x", info.broadcaster.big_handle);
+	TEST_ASSERT(
+		IN_RANGE(info.broadcaster.bis_number, BT_ISO_BIS_INDEX_MIN, BT_ISO_BIS_INDEX_MAX),
+		"Invalid BIS number 0x%02x", info.broadcaster.bis_number);
 
 	if (chan == default_chan) {
 		seq_num = 0U;

@@ -21,10 +21,12 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 			label = "Red LED";
 		};
+
 		led1: led_1 {
 			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 			label = "Green LED";
@@ -33,6 +35,7 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		button0: button_0 {
 			gpios = <&gpio0 16 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 0";
@@ -132,7 +135,6 @@ zephyr_udc0: &usbd {
 #include <../boards/common/usb/cdc_acm_serial.dtsi>
 
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -142,10 +144,12 @@ zephyr_udc0: &usbd {
 			label = "mcuboot";
 			reg = <0x00000000 0x0000C000>;
 		};
+
 		slot0_partition: partition@c000 {
 			label = "image-0";
 			reg = <0x0000C000 0x00076000>;
 		};
+
 		slot1_partition: partition@82000 {
 			label = "image-1";
 			reg = <0x00082000 0x00076000>;

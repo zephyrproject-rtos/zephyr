@@ -1457,7 +1457,7 @@ static uint8_t start(const void *cmd, uint16_t cmd_len,
 	LOG_DBG("");
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		LOG_INF("Loading stored settings\n");
+		LOG_INF("Loading stored settings");
 		settings_load();
 	}
 

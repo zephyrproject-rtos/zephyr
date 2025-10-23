@@ -4,156 +4,33 @@
 
 rsource "*/Kconfig"
 
-if SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
+if SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
 
-config SOC_GECKO_BURTC
+config SOC_GECKO_HAS_RADIO
 	bool
 	help
-	  Set if the Back-Up Real Time Counter (BURTC) HAL module is used.
+	  If enabled, indicates that the SoC has a Radio PHY.
 
-config SOC_GECKO_CORE
-	bool
-	default y
+config SOC_GECKO_USE_RAIL
+	bool "Use RAIL (Radio Abstraction Interface Layer)"
+	depends on SOC_GECKO_HAS_RADIO
 	help
-	  Set if the Core interrupt handling (CORE) HAL module is used.
+	  RAIL (Radio Abstraction Interface Layer) is a library needed to use the EFR radio
+	  hardware. This option enable the proper set of features to allow to properly compile
+	  with the RAIL blob.
 
-config SOC_SILABS_ACMP
-	bool
+config SOC_GECKO_CUSTOM_RADIO_PHY
+	bool "Use RAIL for custom radio phy packet sending and receiving"
+	depends on SOC_GECKO_HAS_RADIO
+	select SOC_GECKO_USE_RAIL
 	help
-	  Set if the Analog comparator (ACMP) HAL module is used.
+	  If enabled, RAIL can be used for user generated custom radio phy
+	  management, sending and receiving packets on radio phy. User has
+	  to provide the radio_config.c and radio_config.h files for the phy.
 
-config SOC_GECKO_ADC
-	bool
-	help
-	  Set if the Analog to Digital Converter (ADC) HAL module is used.
+endif # SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
 
-config SOC_GECKO_IADC
-	bool
-	help
-	  Set if the Incremental Analog to Digital Converter (IADC) HAL module is used.
-
-config SOC_GECKO_CRYOTIMER
-	bool
-	help
-	  Set if the Ultra Low Energy Timer/Counter (CRYOTIMER) HAL module is used.
-
-config SOC_GECKO_EMU
-	bool
-	help
-	  Set if the Energy Management Unit (EMU) HAL module is used.
-
-config SOC_GECKO_GPIO
-	bool
-	help
-	  Set if the General Purpose Input/Output (GPIO) HAL module is used.
-
-config SOC_GECKO_I2C
-	bool
-	help
-	  Set if the Inter-Integrated Circuit Interface (I2C) HAL module is used.
-
-config SOC_GECKO_LETIMER
-	bool
-	help
-	  Set if the Low Energy Timer (LETIMER) HAL module is used.
-
-config SOC_GECKO_LEUART
-	bool
-	help
-	  Set if the Low Energy Universal Asynchronous Receiver/Transmitter (LEUART)
-	  HAL module is used.
-
-config SOC_GECKO_LDMA
-	bool
-	help
-	  Set if the Linked Direct Memory Access (LDMA) HAL module is used.
-
-config SOC_GECKO_MSC
-	bool
-	help
-	  Set if the Memory System Controller (MSC) HAL module is used.
-
-config SOC_GECKO_PRS
-	bool
-	help
-	  Set if the Peripheral Reflex System (PRS) HAL module is used.
-
-config SOC_GECKO_RMU
-	bool
-	help
-	  Set if the Reset Management Unit (RMU) HAL module is used.
-
-config SOC_GECKO_RTC
-	bool
-	help
-	  Set if the Real Time Counter (RTC) HAL module is used.
-
-config SOC_GECKO_RTCC
-	bool
-	help
-	  Set if the Real Time Counter and Calendar (RTCC) HAL module is used.
-
-config SOC_GECKO_SE
-	bool
-	help
-	  Set if the Secure Element (SE) HAL module is used.
-
-config SOC_GECKO_TIMER
-	bool
-	help
-	  Set if the Timer/Counter (TIMER) HAL module is used.
-
-config SOC_GECKO_USART
-	bool
-	help
-	  Set if the Universal Synchronous Asynchronous Receiver/Transmitter (USART)
-	  HAL module is used.
-
-config SOC_GECKO_EUSART
-	bool
-	help
-	  Set if the Extended Universal Synchronous Asynchronous Receiver/Transmitter (EUSART)
-	  HAL module is used.
-
-config SOC_GECKO_WDOG
-	bool
-	help
-	  Set if the Watchdog Timer (WDOG) HAL module is used.
-
-config SOC_GECKO_TRNG
-	bool
-	help
-	  Set if the SoC has a True Random Number Generator (TRNG) module.
-
-config SOC_SILABS_SLEEPTIMER
-	bool
-	select SOC_GECKO_PRS
-	select SOC_GECKO_RTCC if SOC_FAMILY_SILABS_S2 && $(dt_nodelabel_enabled,rtcc0)
-	help
-	  Set if the Sleeptimer HAL module is used.
-
-config SOC_SILABS_HFXO_MANAGER
-	bool
-	default y if PM && $(dt_nodelabel_enabled,sysrtc0) && $(dt_nodelabel_enabled,hfxo)
-	help
-	  Set if the HFXO Manager HAL module is used.
-
-if PM
-
-config SOC_GECKO_PM_BACKEND_PMGR
-	bool
-	depends on SOC_GECKO_DEV_INIT
-	default y if SOC_FAMILY_SILABS_S2
-	help
-	  Implement PM using sl_power_manager service from Gecko SDK
-
-config SOC_GECKO_PM_BACKEND_EMU
-	bool
-	default y if !SOC_GECKO_PM_BACKEND_PMGR
-	help
-	  Implement PM using direct calls to EMU driver in emlib
-
-endif # PM
+if SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1
 
 config SOC_GECKO_EMU_DCDC
 	bool "SoC DC/DC regulator"
@@ -179,35 +56,6 @@ choice SOC_GECKO_EMU_DCDC_MODE
 	config SOC_GECKO_EMU_DCDC_MODE_BYPASS
 		bool "Bypass"
 endchoice
-
-config CRYPTO_ACC_GECKO_TRNG
-	bool
-	help
-	  Enable Entropy driver based on the CRYPTO_ACC module for Silicon Labs
-	  Gecko chips.
-
-config SOC_GECKO_DEV_INIT
-	bool
-	help
-	  Use the device initialization routines from the device_init service
-	  in Silicon Labs HAL. These routines initialize and tune HFXOs,
-	  configures DPLLs and manages the Energy Management Unit.
-
-	  Disabling these services may negatively impact counter and timer
-	  routines in Silabs SoCs.
-
-config COUNTER_GECKO_STIMER
-	bool
-	help
-	  Enable counter driver based on the Sleep Timer driver for Silicon Labs
-	  Gecko chips.
-
-config SOC_GECKO_CMU
-	bool
-	help
-	  Set if the clock management unit (CMU) is present in the SoC.
-
-if SOC_GECKO_CMU && (SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1)
 
 config CMU_NEED_LFXO
 	bool
@@ -262,8 +110,6 @@ config CMU_HFRCO_FREQ
 	  the bootloader already configured it properly or the device's default clock source should
 	  be used with it's default configuration.
 
-endif # SOC_GECKO_CMU
-
 config SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
 	bool
 	help
@@ -288,26 +134,4 @@ config SOC_GECKO_HAS_HFRCO_FREQRANGE
 	  If disabled, indicates that configuration of HFRCO frequency for corresponding SOC
 	  is not supported via this field. This is the case for e.g. efm32hg, efm32wg series.
 
-config SOC_GECKO_HAS_RADIO
-	bool
-	help
-	  If enabled, indicates that the SoC has a Radio PHY.
-
-config SOC_GECKO_USE_RAIL
-	bool "Use RAIL (Radio Abstraction Interface Layer)"
-	depends on SOC_GECKO_HAS_RADIO
-	help
-	  RAIL (Radio Abstraction Interface Layer) is a library needed to use the EFR radio
-	  hardware. This option enable the proper set of features to allow to properly compile
-	  with the RAIL blob.
-
-config SOC_GECKO_CUSTOM_RADIO_PHY
-	bool "Use RAIL for custom radio phy packet sending and receiving"
-	depends on SOC_GECKO_HAS_RADIO
-	select SOC_GECKO_USE_RAIL
-	help
-	  If enabled, RAIL can be used for user generated custom radio phy
-	  management, sending and receiving packets on radio phy. User has
-	  to provide the radio_config.c and radio_config.h files for the phy.
-
-endif # SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
+endif # SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1

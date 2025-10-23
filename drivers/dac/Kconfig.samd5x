@@ -1,4 +1,4 @@
-# Copyright(c) 2025 Daikin Comfort Technologies North America, Inc.
+# Copyright (c) 2025 Daikin Comfort Technologies North America, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 config DAC_SAMD5X

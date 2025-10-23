@@ -84,10 +84,12 @@
 		pinmux = <8 DIO8_T0_C0N>;
 		bias-disable;
 	};
+
 	pwm1_default: lgpt0_chan1_default {
 		pinmux = <3 DIO3_T0_C1N>;
 		bias-disable;
 	};
+
 	pwm2_default: lgpt0_chan2_default {
 		pinmux = <4 DIO4_T0_C2N>;
 		bias-disable;
@@ -98,10 +100,12 @@
 		pinmux = <16 DIO16_T1_C0N>;
 		bias-disable;
 	};
+
 	pwm4_default: lgpt1_chan1_default {
 		pinmux = <17 DIO17_T1_C1N>;
 		bias-disable;
 	};
+
 	pwm5_default: lgpt1_chan2_default {
 		pinmux = <14 DIO14_T1_C2N>;
 		bias-disable;
@@ -112,10 +116,12 @@
 		pinmux = <15 DIO15_T2_C0N>;
 		bias-disable;
 	};
+
 	pwm7_default: lgpt2_chan1_default {
 		pinmux = <2 DIO2_T2_C1N>;
 		bias-disable;
 	};
+
 	pwm8_default: lgpt2_chan2_default {
 		pinmux = <25 DIO25_T2_C2N>;
 		bias-disable;
@@ -126,12 +132,28 @@
 		pinmux = <10 DIO10_T3_C0N>;
 		bias-disable;
 	};
+
 	pwm10_default: lgpt3_chan1_default {
 		pinmux = <22 DIO22_T3_C1N>;
 		bias-disable;
 	};
+
 	pwm11_default: lgpt3_chan2_default {
 		pinmux = <23 DIO23_T3_C2N>;
 		bias-disable;
+	};
+
+	/* I2C0 */
+	i2c0_scl_default: i2c0_scl_default {
+		pinmux = <24 DIO24_I2C0_SCL>;
+		bias-pull-up;
+		drive-open-drain;
+		input-enable;
+	};
+	i2c0_sda_default: i2c0_sda_default {
+		pinmux = <0 DIO0_I2C0_SDA>;
+		bias-pull-up;
+		drive-open-drain;
+		input-enable;
 	};
 };

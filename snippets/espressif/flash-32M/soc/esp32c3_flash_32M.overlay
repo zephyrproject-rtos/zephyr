@@ -4,11 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/delete-node/ &flash0;
-
-#include <espressif/esp32c3/esp32c3_common.dtsi>
-#include <espressif/partitions_0x0_default_32M.dtsi>
+&flash0 {
+	/delete-node/ partitions;
+};
 
 &flash0 {
 	reg = <0x0 DT_SIZE_M(32)>;
 };
+
+#include <espressif/partitions_0x0_default_32M.dtsi>

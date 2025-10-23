@@ -7,6 +7,7 @@ tests:
       - esp32_devkitc/esp32/procpu
       - esp32c3_devkitm
       - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
       - esp32s2_saola
       - esp32s3_devkitm/esp32s3/procpu
   boards.esp32.rtc_clk.xtal:

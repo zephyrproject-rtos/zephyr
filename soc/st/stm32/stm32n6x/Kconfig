@@ -20,6 +20,20 @@ config SOC_SERIES_STM32N6X
 	select SOC_EARLY_INIT_HOOK
 	select TRUSTED_EXECUTION_SECURE
 	select BUILD_OUTPUT_BIN
+	# MPU_GAP_FILLING is default when !USERSPACE, select it in the other case as well.
+	select MPU_GAP_FILLING if USERSPACE
+	select CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS if USERSPACE && !XIP
+
+if SOC_SERIES_STM32N6X
 
 config STM32N6_BOOT_SERIAL
 	bool "Serial boot target (USB)"
+
+config STM32N6_NPU
+	bool "Neural-ART accelerator (NPU)"
+	select USE_STM32_HAL_RIF
+	select RESET
+	default y
+	depends on DT_HAS_ST_STM32_NPU_ENABLED
+
+endif # SOC_SERIES_STM32N6X

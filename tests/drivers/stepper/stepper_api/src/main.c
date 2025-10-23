@@ -72,6 +72,9 @@ static void *stepper_setup(void)
 			  &stepper_signal);
 
 	zassert_not_null(fixture.dev);
+	zassert_equal(
+		stepper_set_event_callback(fixture.dev, fixture.callback, (void *)fixture.dev), 0,
+		"Failed to set event callback");
 	(void)stepper_enable(fixture.dev);
 	return &fixture;
 }
@@ -125,64 +128,155 @@ ZTEST_F(stepper, test_actual_position)
 	zassert_equal(pos, 100u, "Actual position not set correctly");
 }
 
-ZTEST_F(stepper, test_target_position_w_fixed_step_interval)
+ZTEST_F(stepper, test_move_to_positive_step_count)
 {
 	int32_t pos = 10u;
+	int32_t actual_steps;
+	bool moving = false;
 	int ret;
 
 	ret = stepper_set_microstep_interval(fixture->dev, 100 * USEC_PER_SEC);
-
 	if (ret == -ENOSYS) {
 		ztest_test_skip();
 	}
-	/* Pass the function name as user data */
-	(void)stepper_set_event_callback(fixture->dev, fixture->callback, (void *)fixture->dev);
 
-	(void)stepper_move_to(fixture->dev, pos);
+	zassert_ok(stepper_move_to(fixture->dev, pos));
+	zassert_ok(stepper_is_moving(fixture->dev, &moving));
+	zassert_true(moving, "%s reported not moving after move_to", fixture->dev->name);
 
 	POLL_AND_CHECK_SIGNAL(
 		stepper_signal, stepper_event, STEPPER_EVENT_STEPS_COMPLETED,
 		K_MSEC(pos * (100 + CONFIG_STEPPER_TEST_TIMING_TIMEOUT_TOLERANCE_PCT)));
 
-	(void)stepper_get_actual_position(fixture->dev, &pos);
-	zassert_equal(pos, 10u, "Target position should be %d but is %d", 10u, pos);
+	zassert_ok(stepper_get_actual_position(fixture->dev, &actual_steps));
+	zassert_equal(pos, actual_steps, "Position should be %d but is %d", pos, actual_steps);
 	zassert_equal(user_data_received, fixture->dev, "User data not received");
+	zassert_ok(stepper_is_moving(fixture->dev, &moving));
+	zassert_false(moving, "%s reported moving even after completion of steps",
+		      fixture->dev->name);
+}
+
+ZTEST_F(stepper, test_move_to_negative_step_count)
+{
+	int32_t pos = -10;
+	int32_t actual_steps;
+	bool moving = false;
+	int ret;
+
+	ret = stepper_set_microstep_interval(fixture->dev, 100 * USEC_PER_SEC);
+	if (ret == -ENOSYS) {
+		ztest_test_skip();
+	}
+
+	zassert_ok(stepper_move_to(fixture->dev, pos));
+	zassert_ok(stepper_is_moving(fixture->dev, &moving));
+	zassert_true(moving, "%s reported not moving after move_to", fixture->dev->name);
+
+	POLL_AND_CHECK_SIGNAL(
+		stepper_signal, stepper_event, STEPPER_EVENT_STEPS_COMPLETED,
+		K_MSEC(-pos * (100 + CONFIG_STEPPER_TEST_TIMING_TIMEOUT_TOLERANCE_PCT)));
+
+	zassert_ok(stepper_get_actual_position(fixture->dev, &actual_steps));
+	zassert_equal(pos, actual_steps, "Position should be %d but is %d", pos, actual_steps);
+	zassert_ok(stepper_is_moving(fixture->dev, &moving));
+	zassert_false(moving, "%s reported moving even after completion of steps",
+		      fixture->dev->name);
 }
 
 ZTEST_F(stepper, test_move_by_positive_step_count)
 {
 	int32_t steps = 20;
+	int32_t actual_steps;
+	bool moving = false;
+	int ret;
 
-	(void)stepper_set_microstep_interval(fixture->dev, 100 * USEC_PER_SEC);
-	(void)stepper_set_event_callback(fixture->dev, fixture->callback, (void *)fixture->dev);
-	(void)stepper_move_by(fixture->dev, steps);
+	ret = stepper_set_microstep_interval(fixture->dev, 100 * USEC_PER_SEC);
+	if (ret == -ENOSYS) {
+		ztest_test_skip();
+	}
+
+	zassert_ok(stepper_move_by(fixture->dev, steps));
+	zassert_ok(stepper_is_moving(fixture->dev, &moving));
+	zassert_true(moving, "%s reported not moving after move_by", fixture->dev->name);
 
 	POLL_AND_CHECK_SIGNAL(
 		stepper_signal, stepper_event, STEPPER_EVENT_STEPS_COMPLETED,
 		K_MSEC(steps * (100 + CONFIG_STEPPER_TEST_TIMING_TIMEOUT_TOLERANCE_PCT)));
-	(void)stepper_get_actual_position(fixture->dev, &steps);
-	zassert_equal(steps, 20u, "Target position should be %d but is %d", 20u, steps);
+
+	zassert_ok(stepper_get_actual_position(fixture->dev, &actual_steps));
+	zassert_equal(steps, actual_steps, "Position should be %d but is %d", steps, actual_steps);
+	zassert_ok(stepper_is_moving(fixture->dev, &moving));
+	zassert_false(moving, "%s reported moving even after completion of steps",
+		      fixture->dev->name);
 }
 
 ZTEST_F(stepper, test_move_by_negative_step_count)
 {
 	int32_t steps = -20;
+	int32_t actual_steps;
+	bool moving = false;
+	int ret;
 
-	(void)stepper_set_microstep_interval(fixture->dev, 100 * USEC_PER_SEC);
-	(void)stepper_set_event_callback(fixture->dev, fixture->callback, (void *)fixture->dev);
-	(void)stepper_move_by(fixture->dev, steps);
+	ret = stepper_set_microstep_interval(fixture->dev, 100 * USEC_PER_SEC);
+	if (ret == -ENOSYS) {
+		ztest_test_skip();
+	}
+
+	zassert_ok(stepper_move_by(fixture->dev, steps));
+	zassert_ok(stepper_is_moving(fixture->dev, &moving));
+	zassert_true(moving, "%s reported not moving after move_by", fixture->dev->name);
 
 	POLL_AND_CHECK_SIGNAL(
 		stepper_signal, stepper_event, STEPPER_EVENT_STEPS_COMPLETED,
 		K_MSEC(-steps * (100 + CONFIG_STEPPER_TEST_TIMING_TIMEOUT_TOLERANCE_PCT)));
-	(void)stepper_get_actual_position(fixture->dev, &steps);
-	zassert_equal(steps, -20u, "Target position should be %d but is %d", -20u, steps);
+
+	zassert_ok(stepper_get_actual_position(fixture->dev, &actual_steps));
+	zassert_equal(steps, actual_steps, "Position should be %d but is %d", steps, actual_steps);
+	zassert_ok(stepper_is_moving(fixture->dev, &moving));
+	zassert_false(moving, "%s reported moving even after completion of steps",
+		      fixture->dev->name);
+}
+
+ZTEST_F(stepper, test_run_positive_direction)
+{
+	uint64_t step_interval = 20000000;
+	int32_t actual_steps = 0;
+	int ret;
+
+	ret = stepper_set_microstep_interval(fixture->dev, step_interval);
+	if (ret == -ENOSYS) {
+		ztest_test_skip();
+	}
+
+	zassert_ok(stepper_run(fixture->dev, STEPPER_DIRECTION_POSITIVE));
+	k_usleep(110000);
+
+	zassert_ok(stepper_get_actual_position(fixture->dev, &actual_steps));
+	zassert_true(IN_RANGE(actual_steps, 1, 6),
+		     "Current position should be between 1 and 6 but is %d", actual_steps);
+}
+
+ZTEST_F(stepper, test_run_negative_direction)
+{
+	uint64_t step_interval = 20000000;
+	int32_t actual_steps = 0;
+	int ret;
+
+	ret = stepper_set_microstep_interval(fixture->dev, step_interval);
+	if (ret == -ENOSYS) {
+		ztest_test_skip();
+	}
+
+	zassert_ok(stepper_run(fixture->dev, STEPPER_DIRECTION_NEGATIVE));
+	k_usleep(110000);
+
+	zassert_ok(stepper_get_actual_position(fixture->dev, &actual_steps));
+	zassert_true(IN_RANGE(actual_steps, -6, -1),
+		     "Current position should be between -6 and -1 but is %d", actual_steps);
 }
 
 ZTEST_F(stepper, test_stop)
 {
-	(void)stepper_set_event_callback(fixture->dev, fixture->callback, (void *)fixture->dev);
-
 	/* Run the stepper in positive direction */
 	(void)stepper_run(fixture->dev, STEPPER_DIRECTION_POSITIVE);
 
@@ -205,4 +299,30 @@ ZTEST_F(stepper, test_stop)
 	} else {
 		zassert_unreachable("Stepper stop failed");
 	}
+}
+
+ZTEST_F(stepper, test_move_zero_steps)
+{
+	bool moving;
+	int32_t pos = 0;
+	int32_t actual_steps;
+	int err;
+
+	err = stepper_set_microstep_interval(fixture->dev, 100 * USEC_PER_SEC);
+	if (err == -ENOSYS) {
+		ztest_test_skip();
+	}
+	zassert_ok(err, "Failed to set microstep interval");
+
+	zassert_ok(stepper_move_by(fixture->dev, pos));
+	POLL_AND_CHECK_SIGNAL(stepper_signal, stepper_event, STEPPER_EVENT_STEPS_COMPLETED,
+			      K_NO_WAIT);
+	zassert_ok(stepper_is_moving(fixture->dev, &moving));
+	zassert_false(moving, "%s reported moving even after completion of steps",
+		      fixture->dev->name);
+	zassert_ok(stepper_move_to(fixture->dev, pos));
+	POLL_AND_CHECK_SIGNAL(stepper_signal, stepper_event, STEPPER_EVENT_STEPS_COMPLETED,
+			      K_NO_WAIT);
+	zassert_ok(stepper_get_actual_position(fixture->dev, &actual_steps));
+	zassert_equal(pos, actual_steps, "Position should not have changed from %d", pos);
 }

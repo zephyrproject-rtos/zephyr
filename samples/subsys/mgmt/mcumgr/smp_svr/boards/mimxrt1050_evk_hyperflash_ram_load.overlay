@@ -44,7 +44,6 @@
 	sdram_split: sdram_split@80008000 {
 		reg = <0x80008000 (0x2000000 - DT_SIZE_K(32))>;
 	};
-
 };
 
 /* Reduce size of slot 0 to match slot 1 */

@@ -77,6 +77,9 @@ comment "hal_nxp module not available."
 comment "liblc3 module not available."
 	depends on !ZEPHYR_LIBLC3_MODULE
 
+comment "libsbc module not available."
+	depends on !ZEPHYR_LIBSBC_MODULE
+
 comment "LittleFS module not available."
 	depends on !ZEPHYR_LITTLEFS_MODULE
 
@@ -97,6 +100,9 @@ comment "Lz4 module not available."
 
 comment "loramac-node module not available."
 	depends on !ZEPHYR_LORAMAC_NODE_MODULE
+
+comment "LoRa Basics Modem module not available."
+	depends on !ZEPHYR_LORA_BASICS_MODEM_MODULE
 
 comment "CANopenNode module not available."
 	depends on !ZEPHYR_CANOPENNODE_MODULE

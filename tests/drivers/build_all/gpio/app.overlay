@@ -47,6 +47,26 @@
 				gpio-controller;
 			};
 
+			test_i2c_pca6408: pca6408@1 {
+				compatible = "nxp,pca6408";
+				reg = <0x01>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
+				int-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
+
+			test_i2c_pca6416: pca6416@2 {
+				compatible = "nxp,pca6416";
+				reg = <0x02>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				int-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
+
 			test_i2c_pcal6408a: pcal6408a@1 {
 				compatible = "nxp,pcal6408a";
 				reg = <0x01>;
@@ -612,8 +632,8 @@
 				#gpio-cells = <2>;
 				ngpios = <8>;
 				max22190-mode = <1>;
-				filter-wbes = <1 0 1 0  1 0 1 0>;
-				filter-fbps = <0 0 0 0  0 0 0 0>;
+				filter-wbes = <1 0 1 0 1 0 1 0>;
+				filter-fbps = <0 0 0 0 0 0 0 0>;
 				filter-delays = <50 100 400 800 1600 3200 12800 20000>;
 				drdy-gpios = <&test_gpio 0 0>;
 				fault-gpios = <&test_gpio 0 0>;
@@ -629,7 +649,7 @@
 				#gpio-cells = <2>;
 				ngpios = <8>;
 				max22190-mode = <1>;
-				filter-fbps = <0 0 0 0  0 0 0 0>;
+				filter-fbps = <0 0 0 0 0 0 0 0>;
 				filter-delays = <50 100 400 800 1600 3200 12800 20000>;
 				drdy-gpios = <&test_gpio 0 0>;
 				fault-gpios = <&test_gpio 0 0>;

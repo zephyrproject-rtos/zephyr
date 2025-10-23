@@ -1,0 +1,6 @@
+shield:
+  name: arducam_cu450_ov5640_dvp
+  full_name: Arducam CU450_OV5640 DVP interface camera module
+  vendor: ovti
+  supported_features:
+    - video

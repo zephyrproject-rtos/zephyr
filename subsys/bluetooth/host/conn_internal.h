@@ -155,6 +155,11 @@ struct bt_conn_br {
 	uint8_t			features[LMP_MAX_PAGES][8];
 
 	struct bt_keys_link_key	*link_key;
+
+#if defined(CONFIG_BT_POWER_MODE_CONTROL)
+	/* For power mode */
+	uint8_t mode;
+#endif /* CONFIG_BT_POWER_MODE_CONTROL */
 };
 
 struct bt_conn_sco {
@@ -167,6 +172,8 @@ struct bt_conn_sco {
 	uint16_t                pkt_type;
 	uint8_t                 dev_class[3];
 	uint8_t                 link_type;
+	/* Reference to BT_HCI_CODING_FORMAT_* */
+	uint8_t                 air_mode;
 };
 
 struct bt_conn_iso {
@@ -175,21 +182,6 @@ struct bt_conn_iso {
 
 	/* Reference to the struct bt_iso_chan */
 	struct bt_iso_chan      *chan;
-
-	union {
-		/* CIG ID */
-		uint8_t			cig_id;
-		/* BIG handle */
-		uint8_t			big_handle;
-	};
-
-	union {
-		/* CIS ID within the CIG */
-		uint8_t			cis_id;
-
-		/* BIS ID within the BIG*/
-		uint8_t			bis_id;
-	};
 
 	/** Stored information about the ISO stream */
 	struct bt_iso_info info;
@@ -207,11 +199,11 @@ struct bt_conn_tx {
 	void *user_data;
 };
 
-struct acl_data {
+struct bt_conn_rx {
 	/* Index into the bt_conn storage array */
 	uint8_t  index;
 
-	/** ACL connection handle */
+	/** Connection handle */
 	uint16_t handle;
 };
 
@@ -296,7 +288,12 @@ struct bt_conn {
 	 * Details about the returned net_buf when it is not NULL:
 	 *   - If the net_buf->len <= *length, then the net_buf has been removed
 	 *     from the tx_queue of the connection and the caller is now the
-	 *     owner of the only reference to the net_buf.
+	 *     owner of the only reference to the net_buf. The caller now has to
+	 *     invoke get_and_clear_cb to get the callback and user-data for the
+	 *     net_buf and is responsible for invoking the callback eventually
+	 *     after the Controller gives a Number of Completed Packets Event
+	 *     for this PDU or when the connection is disconnected, in which
+	 *     case the callback must be invoked with the error code -ESHUTDOWN.
 	 *   - Otherwise, the net_buf is still on the tx_queue of the connection,
 	 *     and the callback has incremented the reference count to account
 	 *     for it having a reference still.
@@ -324,7 +321,6 @@ struct bt_conn {
 	 * This will be used by the TX processor to then fetch HCI frags from it.
 	 */
 	sys_snode_t		_conn_ready;
-	atomic_t		_conn_ready_lock;
 
 	/* Holds the number of packets that have been sent to the controller but
 	 * not yet ACKd (by receiving an Number of Completed Packets). This
@@ -493,52 +489,47 @@ void bt_conn_role_changed(struct bt_conn *conn, uint8_t status);
 int bt_conn_le_conn_update(struct bt_conn *conn,
 			   const struct bt_le_conn_param *param);
 
-void notify_remote_info(struct bt_conn *conn);
+void bt_conn_notify_remote_info(struct bt_conn *conn);
 
-void notify_le_param_updated(struct bt_conn *conn);
+void bt_conn_notify_le_param_updated(struct bt_conn *conn);
 
-void notify_le_data_len_updated(struct bt_conn *conn);
+void bt_conn_notify_le_data_len_updated(struct bt_conn *conn);
 
-void notify_le_phy_updated(struct bt_conn *conn);
+void bt_conn_notify_le_phy_updated(struct bt_conn *conn);
 
-bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param);
+bool bt_conn_le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param);
 
-void notify_tx_power_report(struct bt_conn *conn,
-			    struct bt_conn_le_tx_power_report report);
+void bt_conn_notify_tx_power_report(struct bt_conn *conn, struct bt_conn_le_tx_power_report report);
 
-void notify_path_loss_threshold_report(struct bt_conn *conn,
-				       struct bt_conn_le_path_loss_threshold_report report);
+void bt_conn_notify_path_loss_threshold_report(struct bt_conn *conn,
+					       struct bt_conn_le_path_loss_threshold_report report);
 
-void notify_subrate_change(struct bt_conn *conn,
-			   struct bt_conn_le_subrate_changed params);
+void bt_conn_notify_subrate_change(struct bt_conn *conn, struct bt_conn_le_subrate_changed params);
 
-void notify_read_all_remote_feat_complete(struct bt_conn *conn,
-					  struct bt_conn_le_read_all_remote_feat_complete *params);
+void bt_conn_notify_read_all_remote_feat_complete(struct bt_conn *conn,
+					struct bt_conn_le_read_all_remote_feat_complete *params);
 
-void notify_frame_space_update_complete(struct bt_conn *conn,
-					struct bt_conn_le_frame_space_updated *params);
+void bt_conn_notify_frame_space_update_complete(struct bt_conn *conn,
+						struct bt_conn_le_frame_space_updated *params);
 
-void notify_remote_cs_capabilities(struct bt_conn *conn,
-				   uint8_t status,
-				   struct bt_conn_le_cs_capabilities *params);
+void bt_conn_notify_remote_cs_capabilities(struct bt_conn *conn, uint8_t status,
+					  struct bt_conn_le_cs_capabilities *params);
 
-void notify_remote_cs_fae_table(struct bt_conn *conn,
-				uint8_t status,
-				struct bt_conn_le_cs_fae_table *params);
+void bt_conn_notify_remote_cs_fae_table(struct bt_conn *conn, uint8_t status,
+					struct bt_conn_le_cs_fae_table *params);
 
-void notify_cs_config_created(struct bt_conn *conn,
-			      uint8_t status,
-			      struct bt_conn_le_cs_config *params);
+void bt_conn_notify_cs_config_created(struct bt_conn *conn, uint8_t status,
+				      struct bt_conn_le_cs_config *params);
 
-void notify_cs_config_removed(struct bt_conn *conn, uint8_t config_id);
+void bt_conn_notify_cs_config_removed(struct bt_conn *conn, uint8_t config_id);
 
-void notify_cs_subevent_result(struct bt_conn *conn, struct bt_conn_le_cs_subevent_result *result);
+void bt_conn_notify_cs_subevent_result(struct bt_conn *conn,
+				       struct bt_conn_le_cs_subevent_result *result);
 
-void notify_cs_security_enable_available(struct bt_conn *conn, uint8_t status);
+void bt_conn_notify_cs_security_enable_available(struct bt_conn *conn, uint8_t status);
 
-void notify_cs_procedure_enable_available(struct bt_conn *conn,
-					  uint8_t status,
-					  struct bt_conn_le_cs_procedure_enable_complete *params);
+void bt_conn_notify_cs_procedure_enable_available(struct bt_conn *conn, uint8_t status,
+					struct bt_conn_le_cs_procedure_enable_complete *params);
 
 /* If role specific LTK is present */
 bool bt_conn_ltk_present(const struct bt_conn *conn);
@@ -553,6 +544,11 @@ void bt_conn_identity_resolved(struct bt_conn *conn);
 /* Notify higher layers that connection security changed */
 void bt_conn_security_changed(struct bt_conn *conn, uint8_t hci_err,
 			      enum bt_security_err err);
+
+#if defined(CONFIG_BT_POWER_MODE_CONTROL)
+/* Notify higher layers that connection sniff mode changed */
+void bt_conn_notify_mode_changed(struct bt_conn *conn, uint8_t mode, uint16_t interval);
+#endif /* CONFIG_BT_POWER_MODE_CONTROL */
 
 /* Prepare a PDU to be sent over a connection */
 #if defined(CONFIG_NET_BUF_LOG)

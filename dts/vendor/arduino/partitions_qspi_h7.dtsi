@@ -1,0 +1,6 @@
+/*
+ * Copyright (c) 2025 Arduino SA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arduino/partitions_qspi_h7_r3.dtsi>

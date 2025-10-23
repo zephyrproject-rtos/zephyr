@@ -7,7 +7,6 @@
 #include <st/l4/stm32l4.dtsi>
 
 / {
-
 	clocks {
 		clk_hsi48: clk-hsi48 {
 			#clock-cells = <0>;
@@ -20,9 +19,8 @@
 	soc {
 		compatible = "st,stm32l412", "st,stm32l4", "simple-bus";
 
-
 		rng: rng@50060800 {
-			clocks = <&rcc STM32_CLOCK(AHB2, 18U)>,
+			clocks = <&rcc STM32_CLOCK(AHB2, 18)>,
 				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 		};
 
@@ -35,7 +33,7 @@
 			ram-size = <1024>;
 			maximum-speed = "full-speed";
 			phys = <&usb_fs_phy>;
-			clocks = <&rcc STM32_CLOCK(APB1, 26U)>,
+			clocks = <&rcc STM32_CLOCK(APB1, 26)>,
 				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 			status = "disabled";
 		};
@@ -45,7 +43,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40005800 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 22U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 22)>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <33 0>, <34 0>;
 			interrupt-names = "event", "error";
@@ -58,15 +56,15 @@
 			#size-cells = <0>;
 			reg = <0x40003800 0x400>;
 			interrupts = <36 5>;
-			clocks = <&rcc STM32_CLOCK(APB1, 14U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
 			status = "disabled";
 		};
 
 		usart3: serial@40004800 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40004800 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 18U)>;
-			resets = <&rctl STM32_RESET(APB1L, 18U)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 18)>;
+			resets = <&rctl STM32_RESET(APB1L, 18)>;
 			interrupts = <39 0>;
 			status = "disabled";
 		};

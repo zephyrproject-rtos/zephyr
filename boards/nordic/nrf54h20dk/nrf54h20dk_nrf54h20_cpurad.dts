@@ -85,6 +85,8 @@ slot0_partition: &cpurad_slot0_partition {
 	label = "image-0";
 };
 
+secondary_app_partition: &cpurad_slot1_partition {};
+
 slot1_partition: &cpurad_slot1_partition {
 	label = "image-1";
 };
@@ -115,4 +117,21 @@ slot1_partition: &cpurad_slot1_partition {
 
 zephyr_udc0: &usbhs {
 	status = "disabled";
+};
+
+/* Trim this RAM block for power management related features. */
+&cpurad_ram0 {
+	reg = <0x23000000 (DT_SIZE_K(192) - 192)>;
+	ranges = <0x0 0x23000000 (0x30000 - 0xC0)>;
+};
+
+/ {
+	soc {
+		/* cache control functions - must be executed from RAM */
+		pm_ramfunc: cpurad_s2ram@2302ff40 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x2302ff40 192>;
+			zephyr,memory-region = "PMLocalRamfunc";
+		};
+	};
 };

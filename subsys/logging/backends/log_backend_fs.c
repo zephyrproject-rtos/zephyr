@@ -367,7 +367,7 @@ static int allocate_new_file(struct fs_file_t *file)
 	 * is not exceeded.
 	 */
 	while ((file_ctr >= CONFIG_LOG_BACKEND_FS_FILES_LIMIT) ||
-	       ((stat.f_bfree * stat.f_frsize) <=
+	       ((stat.f_bfree * stat.f_frsize) <
 		CONFIG_LOG_BACKEND_FS_FILE_SIZE)) {
 
 		if (IS_ENABLED(CONFIG_LOG_BACKEND_FS_OVERWRITE)) {

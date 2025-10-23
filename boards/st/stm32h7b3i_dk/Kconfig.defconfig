@@ -16,9 +16,6 @@ config MEMC
 
 if LVGL
 
-config CACHE_MANAGEMENT
-	default y
-
 config LV_USE_DRAW_DMA2D
 	default y
 
@@ -34,8 +31,11 @@ config LV_Z_DOUBLE_VDB
 config LV_Z_FULL_REFRESH
 	default y
 
-config LV_Z_VDB_CUSTOM_SECTION
+config LV_Z_VDB_ZEPHYR_REGION
 	default y
+
+config LV_Z_VDB_ZEPHYR_REGION_NAME
+	default "SDRAM2"
 
 config LV_Z_FLUSH_THREAD
 	default y

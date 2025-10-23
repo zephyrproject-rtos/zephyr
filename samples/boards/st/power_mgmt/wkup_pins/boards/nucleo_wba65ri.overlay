@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		wkup-src = &user_button_1;
+	};
+};
+
+&pwr {
+	status = "okay";
+};

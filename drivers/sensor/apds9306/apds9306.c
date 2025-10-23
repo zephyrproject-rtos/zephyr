@@ -1,5 +1,7 @@
-/* Copyright (c) 2024 Daniel Kampert
- * Author: Daniel Kampert <DanielKampert@kampis-elektroecke.de>
+/*
+ * Copyright (c) 2024 Daniel Kampert <DanielKampert@kampis-elektroecke.de>
+ *
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/device.h>
@@ -128,7 +130,7 @@ static void apds9306_worker(struct k_work *p_work)
 	}
 
 	reg = APDS9306_REGISTER_ALS_DATA_0;
-	if (i2c_write_read_dt(&config->i2c, &reg, sizeof(reg), &buffer, sizeof(buffer)) < 0) {
+	if (i2c_write_read_dt(&config->i2c, &reg, sizeof(reg), buffer, sizeof(buffer)) < 0) {
 		return;
 	}
 
@@ -237,10 +239,13 @@ static int apds9306_attr_get(const struct device *dev, enum sensor_channel chann
 
 	if (attribute == SENSOR_ATTR_SAMPLING_FREQUENCY) {
 		value->val1 = data->measurement_period_idx;
+		value->val2 = 0;
 	} else if (attribute == SENSOR_ATTR_GAIN) {
 		value->val1 = data->gain_idx;
+		value->val2 = 0;
 	} else if (attribute == SENSOR_ATTR_RESOLUTION) {
 		value->val1 = data->resolution_idx;
+		value->val2 = 0;
 	} else {
 		return -ENOTSUP;
 	}

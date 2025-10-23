@@ -336,7 +336,7 @@ ZTEST(obj_core_stats_thread, test_obj_core_stats_thread_test)
 	/* Disable the stats (re-using query2 and query3) */
 
 	status = k_obj_core_stats_disable(K_OBJ_CORE(test_thread));
-	zassert_equal(status, 0, "Expected 0, got %llu\n", status);
+	zassert_equal(status, 0, "Expected 0, got %d\n", status);
 
 	k_sem_give(&wake_test_thread);
 	k_sem_take(&wake_main_thread, K_FOREVER);
@@ -351,7 +351,7 @@ ZTEST(obj_core_stats_thread, test_obj_core_stats_thread_test)
 	/* Enable the stats */
 
 	status = k_obj_core_stats_enable(K_OBJ_CORE(test_thread));
-	zassert_equal(status, 0, "Expected 0, got %llu\n", status);
+	zassert_equal(status, 0, "Expected 0, got %d\n", status);
 
 	k_sem_give(&wake_test_thread);
 	k_sem_take(&wake_main_thread, K_FOREVER);
@@ -440,14 +440,14 @@ static void test_mem_block_query(const char *str,
 		      "%s: Failed to get query stats (%d)\n", str, status);
 
 	zassert_equal(query.free_bytes, expected->free_bytes,
-		      "%s: Expected %u free bytes, got %u\n",
+		      "%s: Expected %zu free bytes, got %zu\n",
 		      str, expected->free_bytes, query.free_bytes);
 #ifdef CONFIG_SYS_MEM_BLOCKS_RUNTIME_STATS
 	zassert_equal(query.allocated_bytes, expected->allocated_bytes,
-		      "%s: Expected %u allocated bytes, got %u\n",
+		      "%s: Expected %zu allocated bytes, got %zu\n",
 		      str, expected->allocated_bytes, query.allocated_bytes);
 	zassert_equal(query.max_allocated_bytes, expected->max_allocated_bytes,
-		      "%s: Expected %u max_allocated bytes, got %d\n",
+		      "%s: Expected %zu max_allocated bytes, got %zu\n",
 		      str, expected->max_allocated_bytes,
 		      query.max_allocated_bytes);
 #endif
@@ -575,14 +575,14 @@ static void test_mem_slab_raw(const char *str, struct k_mem_slab_info *expected)
 		      "%s: Expected %u blocks, got %u\n",
 		      str, expected->num_blocks, raw.num_blocks);
 	zassert_equal(raw.block_size, expected->block_size,
-		      "%s: Expected block size=%u blocks, got %u\n",
+		      "%s: Expected block size=%zu blocks, got %zu\n",
 		      str, expected->block_size, raw.block_size);
 	zassert_equal(raw.num_used, expected->num_used,
-		      "%s: Expected %u used, got %d\n",
+		      "%s: Expected %u used, got %u\n",
 		      str, expected->num_used, raw.num_used);
 #ifdef CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION
 	zassert_equal(raw.max_used, expected->max_used,
-		      "%s: Expected max %u used, got %d\n",
+		      "%s: Expected max %u used, got %u\n",
 		      str, expected->max_used, raw.max_used);
 #endif
 }
@@ -599,13 +599,13 @@ static void test_mem_slab_query(const char *str,
 		      "%s: Failed to get query stats (%d)\n", str, status);
 
 	zassert_equal(query.free_bytes, expected->free_bytes,
-		      "%s: Expected %u free bytes, got %u\n",
+		      "%s: Expected %zu free bytes, got %zu\n",
 		      str, expected->free_bytes, query.free_bytes);
 	zassert_equal(query.allocated_bytes, expected->allocated_bytes,
-		      "%s: Expected %u allocated bytes, got %u\n",
+		      "%s: Expected %zu allocated bytes, got %zu\n",
 		      str, expected->allocated_bytes, query.allocated_bytes);
 	zassert_equal(query.max_allocated_bytes, expected->max_allocated_bytes,
-		      "%s: Expected %u max_allocated bytes, got %d\n",
+		      "%s: Expected %zu max_allocated bytes, got %zu\n",
 		      str, expected->max_allocated_bytes,
 		      query.max_allocated_bytes);
 }

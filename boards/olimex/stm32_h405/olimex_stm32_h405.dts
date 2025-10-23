@@ -23,6 +23,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led_1: led_1 {
 			gpios = <&gpioc 12 GPIO_ACTIVE_LOW>;
 			label = "LED1";
@@ -31,6 +32,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button {
 			label = "Key";
 			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
@@ -79,7 +81,7 @@
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };

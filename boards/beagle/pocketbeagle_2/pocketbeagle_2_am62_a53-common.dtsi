@@ -1,0 +1,104 @@
+/*
+ * Copyright (c) 2025 Ayush Singh, BeagleBoard.org Foundation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "pocketbeagle_2_am62_a53-pinctrl.dtsi"
+
+/ {
+	model = "BeagleBoard.org PocketBeagle 2";
+	compatible = "beagle,pocketbeagle_2_a53";
+
+	chosen {
+		zephyr,console = &main_uart6;
+		zephyr,shell-uart = &main_uart6;
+		zephyr,sram = &a53_ddr_section;
+	};
+
+	aliases {
+		led0 = &led1;
+		watchdog0 = &main_rti0;
+	};
+
+	ddr0: memory@80000000 {
+		device_type = "memory";
+		reg = <0x80000000 DT_SIZE_M(512)>;
+		#address-cells = <0x1>;
+		#size-cells = <0x1>;
+
+		/* Loading and starting code at RAM start will cause any calls to
+		 * Arm Trusted Firmware-A (TFA) to fail. This is because as described
+		 * in the docs [0], the first 2MiB is reserved for TFA.
+		 *
+		 * [0]: https://software-dl.ti.com/mcu-plus-sdk/esd/AM62X/latest/exports/docs/api_guide_am62x/MEMORY_MAP.html
+		 */
+		a53_ddr_section: memory@80200000 {
+			reg = <0x80200000 DT_SIZE_M(512 - 2)>;
+		};
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		led1: led_1 {
+			gpios = <&main_gpio0 6 GPIO_ACTIVE_HIGH>;
+			label = "LED 1";
+		};
+
+		led2: led_2 {
+			gpios = <&main_gpio0 5 GPIO_ACTIVE_HIGH>;
+			label = "LED 2";
+		};
+
+		led3: led_3 {
+			gpios = <&main_gpio0 4 GPIO_ACTIVE_HIGH>;
+			label = "LED 3";
+		};
+
+		led4: led_4 {
+			gpios = <&main_gpio0 3 GPIO_ACTIVE_HIGH>;
+			label = "LED 4";
+		};
+	};
+};
+
+&main_uart0 {
+	pinctrl-0 = <&P1_30_uart0_tx &P1_32_uart0_rx>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&main_uart5 {
+	pinctrl-0 = <&P2_07_E15_uart5_tx &P2_05_C15_uart5_rx>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&main_uart6 {
+	pinctrl-0 = <&main_uart6_rx_default &main_uart6_tx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&main_i2c2 {
+	pinctrl-0 = <&main_i2c2_sda_default &main_i2c2_scl_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&main_i2c3 {
+	pinctrl-0 = <&P2_09_A15_i2c3_scl &P2_11_B15_i2c3_sda>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&main_gpio0 {
+	pinctrl-0 = <&led_pins_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&main_rti0 {
+	status = "okay";
+};

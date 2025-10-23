@@ -1464,10 +1464,161 @@ static int tls_mbedtls_init(struct tls_context *context, bool is_server)
 	return 0;
 }
 
+static int tls_check_cert(struct tls_credential *cert)
+{
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
+	mbedtls_x509_crt cert_ctx;
+	int err;
+
+	mbedtls_x509_crt_init(&cert_ctx);
+
+	if (crt_is_pem(cert->buf, cert->len)) {
+		err = mbedtls_x509_crt_parse(&cert_ctx, cert->buf, cert->len);
+	} else {
+		/* For DER case, use the no copy version of the parsing function
+		 * to avoid unnecessary heap allocations.
+		 */
+		err = mbedtls_x509_crt_parse_der_nocopy(&cert_ctx, cert->buf,
+							cert->len);
+	}
+
+	if (err != 0) {
+		NET_ERR("Failed to parse %s on tag %d, err: -0x%x",
+			"certificate", cert->tag, -err);
+		return -EINVAL;
+	}
+
+	mbedtls_x509_crt_free(&cert_ctx);
+
+	return err;
+#else
+	NET_ERR("TLS with certificates disabled. "
+		"Reconfigure mbed TLS to support certificate based key exchange.");
+
+	return -ENOTSUP;
+#endif /* MBEDTLS_X509_CRT_PARSE_C */
+}
+
+static int tls_check_priv_key(struct tls_credential *priv_key)
+{
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
+	mbedtls_pk_context key_ctx;
+	int err;
+
+	mbedtls_pk_init(&key_ctx);
+
+	err = mbedtls_pk_parse_key(&key_ctx, priv_key->buf,
+				   priv_key->len, NULL, 0,
+				   tls_ctr_drbg_random, NULL);
+	if (err != 0) {
+		NET_ERR("Failed to parse %s on tag %d, err: -0x%x",
+			"private key", priv_key->tag, -err);
+		err = -EINVAL;
+	}
+
+	mbedtls_pk_free(&key_ctx);
+
+	return err;
+#else
+	NET_ERR("TLS with certificates disabled. "
+		"Reconfigure mbed TLS to support certificate based key exchange.");
+
+	return -ENOTSUP;
+#endif /* MBEDTLS_X509_CRT_PARSE_C */
+}
+
+static int tls_check_psk(struct tls_credential *psk)
+{
+#if defined(MBEDTLS_SSL_HANDSHAKE_WITH_PSK_ENABLED)
+	struct tls_credential *psk_id;
+
+	psk_id = credential_get(psk->tag, TLS_CREDENTIAL_PSK_ID);
+	if (psk_id == NULL) {
+		NET_ERR("No matching PSK ID found for tag %d", psk->tag);
+		return -EINVAL;
+	}
+
+	if (psk->len == 0 || psk_id->len == 0) {
+		NET_ERR("PSK or PSK ID empty on tag %d", psk->tag);
+		return -EINVAL;
+	}
+
+	return 0;
+#else
+	NET_ERR("TLS with PSK disabled. "
+		"Reconfigure mbed TLS to support PSK based key exchange.");
+
+	return -ENOTSUP;
+#endif
+}
+
+static int tls_check_credentials(const sec_tag_t *sec_tags, int sec_tag_count)
+{
+	int err = 0;
+
+	credentials_lock();
+
+	for (int i = 0; i < sec_tag_count; i++) {
+		sec_tag_t tag = sec_tags[i];
+		struct tls_credential *cred = NULL;
+		bool tag_found = false;
+
+		while ((cred = credential_next_get(tag, cred)) != NULL) {
+			tag_found = true;
+
+			switch (cred->type) {
+			case TLS_CREDENTIAL_CA_CERTIFICATE:
+				__fallthrough;
+			case TLS_CREDENTIAL_PUBLIC_CERTIFICATE:
+				err = tls_check_cert(cred);
+				if (err != 0) {
+					goto exit;
+				}
+
+				break;
+			case TLS_CREDENTIAL_PRIVATE_KEY:
+				err = tls_check_priv_key(cred);
+				if (err != 0) {
+					goto exit;
+				}
+
+				break;
+			case TLS_CREDENTIAL_PSK:
+				err = tls_check_psk(cred);
+				if (err != 0) {
+					goto exit;
+				}
+
+				break;
+			case TLS_CREDENTIAL_PSK_ID:
+				/* Ignore PSK ID - it will be verified together
+				 * with PSK.
+				 */
+				break;
+			default:
+				return -EINVAL;
+			}
+		}
+
+		/* If no credential is found with such a tag, report an error. */
+		if (!tag_found) {
+			NET_ERR("No TLS credential found with tag %d", tag);
+			err = -ENOENT;
+			goto exit;
+		}
+	}
+
+exit:
+	credentials_unlock();
+
+	return err;
+}
+
 static int tls_opt_sec_tag_list_set(struct tls_context *context,
 				    const void *optval, socklen_t optlen)
 {
 	int sec_tag_cnt;
+	int ret;
 
 	if (!optval) {
 		return -EINVAL;
@@ -1481,6 +1632,11 @@ static int tls_opt_sec_tag_list_set(struct tls_context *context,
 	if (sec_tag_cnt >
 		ARRAY_SIZE(context->options.sec_tag_list.sec_tags)) {
 		return -EINVAL;
+	}
+
+	ret = tls_check_credentials((const sec_tag_t *)optval, sec_tag_cnt);
+	if (ret < 0) {
+		return ret;
 	}
 
 	memcpy(context->options.sec_tag_list.sec_tags, optval, optlen);
@@ -1796,13 +1952,16 @@ static int tls_opt_dtls_peer_connection_id_value_get(struct tls_context *context
 #if defined(CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID)
 	int enabled = false;
 	int ret;
+	size_t optlen_local;
 
 	if (!context->is_initialized) {
 		return -ENOTCONN;
 	}
 
-	ret = mbedtls_ssl_get_peer_cid(&context->ssl, &enabled, optval, optlen);
-	if (!enabled) {
+	ret = mbedtls_ssl_get_peer_cid(&context->ssl, &enabled, optval, &optlen_local);
+	if (enabled) {
+		*optlen = optlen_local;
+	} else {
 		*optlen = 0;
 	}
 	return ret;

@@ -5,6 +5,7 @@ if(CONFIG_MODEM_MODULES)
 
 zephyr_library()
 
+zephyr_library_sources_ifdef(CONFIG_MODEM_DEDICATED_WORKQUEUE modem_workqueue.c)
 zephyr_library_sources_ifdef(CONFIG_MODEM_CHAT modem_chat.c)
 zephyr_library_sources_ifdef(CONFIG_MODEM_CMUX modem_cmux.c)
 zephyr_library_sources_ifdef(CONFIG_MODEM_PIPE modem_pipe.c)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 
 #include <nxp/nxp_rt1040.dtsi>
 #include "mimxrt1040_evk-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -20,6 +21,7 @@
 		pwm-0 = &flexpwm1_pwm3;
 		accel0 = &fxls8974;
 		mcuboot-button0 = &user_button;
+		rtc = &counter_rtc;
 	};
 
 	chosen {
@@ -50,7 +52,7 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<0  0 &gpio2 31 0>;	/* Pin 1, BL+ */
+		gpio-map = <0 0 &gpio2 31 0>;	/* Pin 1, BL+ */
 	};
 
 	/*
@@ -63,12 +65,13 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map =	<1  0 &gpio1 19 0>,	/* Pin 2, LCD touch RST */
-				<2  0 &gpio1 11 0>;	/* Pin 3, LCD touch INT */
+		gpio-map = <1 0 &gpio1 19 0>,	/* Pin 2, LCD touch RST */
+			   <2 0 &gpio1 11 0>;	/* Pin 3, LCD touch INT */
 	};
 
 	leds {
 		compatible = "gpio-leds";
+
 		green_led: led_0 {
 			gpios = <&gpio1 8 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
@@ -77,6 +80,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button: button_0 {
 			label = "User SW8";
 			gpios = <&gpio5 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
@@ -89,44 +93,46 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <0 0 &gpio1 14 0>,	/* A0 */
-			   <1 0 &gpio1 15 0>,	/* A1 */
-			   <2 0 &gpio1 20 0>,	/* A2 */
-			   <3 0 &gpio1 21 0>,	/* A3 */
-			   <4 0 &gpio1 22 0>,	/* A4 */
-			   <5 0 &gpio1 23 0>,	/* A5 */
-			   <6 0 &gpio3 1 0>,	/* D0 */
-			   <7 0 &gpio3 0 0>,	/* D1 */
-			   <8 0 &gpio1 11 0>,	/* D2 */
-			   <9 0 &gpio3 2 0>,	/* D3 */
-			   <10 0 &gpio1 9 0>,	/* D4 */
-			   <11 0 &gpio1 10 0>,	/* D5 */
-			   <12 0 &gpio1 18 0>,	/* D6 */
-			   <13 0 &gpio1 19 0>,	/* D7 */
-			   <14 0 &gpio2 30 0>,	/* D8 */
-			   <15 0 &gpio2 31 0>,	/* D9 */
-			   <16 0 &gpio3 13 0>,	/* D10 */
-			   <17 0 &gpio3 14 0>,	/* D11 */
-			   <18 0 &gpio3 15 0>,	/* D12 */
-			   <19 0 &gpio3 12 0>,	/* D13 */
-			   <20 0 &gpio1 17 0>,	/* D14 */
-			   <21 0 &gpio1 16 0>;	/* D15 */
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &gpio1 14 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &gpio1 15 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &gpio1 20 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &gpio1 21 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &gpio1 22 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &gpio1 23 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &gpio3 1 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &gpio3 0 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &gpio1 11 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &gpio3 2 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &gpio1 9 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &gpio1 10 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &gpio1 18 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &gpio1 19 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &gpio2 30 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &gpio2 31 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &gpio3 13 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &gpio3 14 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &gpio3 15 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &gpio3 12 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &gpio1 17 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &gpio1 16 0>;
 	};
 };
 
 &flexspi {
 	status = "okay";
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
+
 	/* Winbond external flash */
 	w25q64jvssiq: w25q64jvssiq@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <(DT_SIZE_M(8) * 8)>;
 		reg = <0>;
-		spi-max-frequency = <133000000>;
+		spi-max-frequency = <DT_FREQ_M(133)>;
 		status = "okay";
 		jedec-id = [ef 40 17];
-		erase-block-size = <4096>;
+		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <1>;
+
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
@@ -140,14 +146,17 @@
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
+
 			slot0_partition: partition@20000 {
 				label = "image-0";
 				reg = <0x00020000 DT_SIZE_M(3)>;
 			};
+
 			slot1_partition: partition@320000 {
 				label = "image-1";
 				reg = <0x00320000 DT_SIZE_M(3)>;
 			};
+
 			storage_partition: partition@620000 {
 				label = "storage";
 				reg = <0x00620000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
@@ -237,3 +246,7 @@ lpi2c3: &lpi2c3 {
 m2_hci_bt_uart: &lpuart3 {};
 
 m2_wifi_sdio: &usdhc1 {};
+
+&counter_rtc {
+	status = "okay";
+};

@@ -69,9 +69,10 @@ BUILD_ASSERT(CONFIG_NRF70_MAX_TX_AGGREGATION <= 15,
 	"Max TX aggregation is 15");
 BUILD_ASSERT(CONFIG_NRF70_RX_NUM_BUFS >= 1,
 	"At least one RX buffer is required");
+#ifndef CONFIG_NRF71_ON_IPC
 BUILD_ASSERT(RPU_PKTRAM_SIZE - TOTAL_RX_SIZE >= TOTAL_TX_SIZE,
 	"Packet RAM overflow: not enough memory for TX");
-
+#endif /* CONFIG_NRF71_ON_IPC */
 BUILD_ASSERT(CONFIG_NRF70_TX_MAX_DATA_SIZE >= MAX_TX_FRAME_SIZE,
 	"TX buffer size must be at least as big as the MTU and headroom");
 
@@ -503,12 +504,9 @@ void reg_change_callbk_fn(void *vif_ctx,
 }
 #endif /* !CONFIG_NRF70_RADIO_TEST */
 
-#ifdef CONFIG_NRF71_ON_IPC
-#define MAX_TX_PWR(label) DT_PROP(DT_NODELABEL(wifi), label) * 4
-#else
+#ifndef CONFIG_NRF71_ON_IPC
 /* DTS uses 1dBm as the unit for TX power, while the RPU uses 0.25dBm */
 #define MAX_TX_PWR(label) DT_PROP(DT_NODELABEL(nrf70), label) * 4
-#endif /* CONFIG_NRF71_ON_IPC */
 
 void configure_tx_pwr_settings(struct nrf_wifi_tx_pwr_ctrl_params *tx_pwr_ctrl_params,
 				struct nrf_wifi_tx_pwr_ceil_params *tx_pwr_ceil_params)
@@ -587,13 +585,34 @@ void configure_board_dep_params(struct nrf_wifi_board_params *board_params)
 	board_params->pcb_loss_5g_band3 = CONFIG_NRF70_PCB_LOSS_5G_BAND3;
 #endif /* CONFIG_NRF70_2_4G_ONLY */
 }
+#endif /* CONFIG_NRF71_ON_IPC */
+
+static enum op_band get_nrf_wifi_op_band(void)
+{
+	if (IS_ENABLED(CONFIG_NRF_WIFI_2G_BAND)) {
+		return BAND_24G;
+	}
+#ifdef CONFIG_NRF71_ON_IPC
+	if (IS_ENABLED(CONFIG_NRF_WIFI_5G_BAND)) {
+		return BAND_5G;
+	}
+
+	if (IS_ENABLED(CONFIG_NRF_WIFI_6G_BAND)) {
+		return BAND_6G;
+	}
+	if (IS_ENABLED(CONFIG_NRF_WIFI_DUAL_BAND)) {
+		return BAND_DUAL;
+	}
+#endif /* CONFIG_NRF71_ON_IPC */
+	return BAND_ALL;
+}
 
 enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv_priv_zep)
 {
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 	void *rpu_ctx = NULL;
-	enum op_band op_band = CONFIG_NRF_WIFI_OP_BAND;
+	enum op_band op_band = get_nrf_wifi_op_band();
 #ifdef CONFIG_NRF_WIFI_LOW_POWER
 	int sleep_type = -1;
 
@@ -606,7 +625,6 @@ enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv
 	struct nrf_wifi_tx_pwr_ctrl_params tx_pwr_ctrl_params;
 	struct nrf_wifi_tx_pwr_ceil_params tx_pwr_ceil_params;
 	struct nrf_wifi_board_params board_params;
-
 	unsigned int fw_ver = 0;
 
 #if defined(CONFIG_NRF70_SR_COEX_SLEEP_CTRL_GPIO_CTRL) && \
@@ -654,10 +672,12 @@ enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv
 		NRF_WIFI_UMAC_VER_MIN(fw_ver),
 		NRF_WIFI_UMAC_VER_EXTRA(fw_ver));
 
+#ifndef CONFIG_NRF71_ON_IPC
 	configure_tx_pwr_settings(&tx_pwr_ctrl_params,
 				  &tx_pwr_ceil_params);
 
 	configure_board_dep_params(&board_params);
+#endif /* CONFIG_NRF71_ON_IPC */
 
 #if defined(CONFIG_NRF70_SR_COEX_SLEEP_CTRL_GPIO_CTRL) && \
 	defined(CONFIG_NRF70_SYSTEM_MODE)
@@ -743,8 +763,28 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 	struct nrf_wifi_data_config_params data_config = { 0 };
 	struct rx_buf_pool_params rx_buf_pools[MAX_NUM_OF_RX_QUEUES];
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = dev->data;
+	static unsigned char fixed_vif_cnt;
 
+	if (fixed_vif_cnt >= MAX_NUM_VIFS) {
+		LOG_ERR("%s: Max number of VIFs reached", __func__);
+		return -ENOMEM;
+	}
+
+	/* Setup the linkage between the FMAC and the VIF contexts */
 	vif_ctx_zep->rpu_ctx_zep = &rpu_drv_priv_zep.rpu_ctx_zep;
+#ifndef CONFIG_NRF70_RADIO_TEST
+	k_work_init_delayable(&vif_ctx_zep->scan_timeout_work,
+			      nrf_wifi_scan_timeout_work);
+	k_work_init(&vif_ctx_zep->disp_scan_res_work,
+		    nrf_wifi_disp_scan_res_work_handler);
+
+	vif_ctx_zep->bss_max_idle_period = USHRT_MAX;
+#endif /* !CONFIG_NRF70_RADIO_TEST */
+
+	if (fixed_vif_cnt++ > 0) {
+		/* FMAC is already initialized for VIF-0 */
+		return 0;
+	}
 
 #ifdef CONFIG_NRF70_DATA_TX
 	data_config.aggregation = aggregation;
@@ -823,7 +863,6 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 
 	rpu_drv_priv_zep.fmac_priv = nrf_wifi_rt_fmac_init();
 #endif /* CONFIG_NRF70_RADIO_TEST */
-
 	if (rpu_drv_priv_zep.fmac_priv == NULL) {
 		LOG_ERR("%s: nrf_wifi_fmac_init failed",
 			__func__);
@@ -834,9 +873,14 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 	struct nrf_wifi_sys_fmac_priv *sys_fpriv = NULL;
 
 	sys_fpriv = wifi_fmac_priv(rpu_drv_priv_zep.fmac_priv);
+#ifdef CONFIG_NRF71_ON_IPC
+	/* TODO: Revisit this */
+	sys_fpriv->max_ampdu_len_per_token = 8192;
+#else
 	sys_fpriv->max_ampdu_len_per_token =
 		(RPU_PKTRAM_SIZE - (CONFIG_NRF70_RX_NUM_BUFS * CONFIG_NRF70_RX_MAX_DATA_SIZE)) /
 		CONFIG_NRF70_MAX_TX_TOKENS;
+#endif /* CONFIG_NRF71_ON_IPC */
 	/* Align to 4-byte */
 	sys_fpriv->max_ampdu_len_per_token &= ~0x3;
 
@@ -852,17 +896,10 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 		LOG_ERR("%s: nrf_wifi_fmac_dev_add_zep failed", __func__);
 		goto fmac_deinit;
 	}
-#else
-	k_work_init_delayable(&vif_ctx_zep->scan_timeout_work,
-			      nrf_wifi_scan_timeout_work);
-	k_work_init(&vif_ctx_zep->disp_scan_res_work,
-		    nrf_wifi_disp_scan_res_work_handler);
 #endif /* CONFIG_NRF70_RADIO_TEST */
 
 	k_mutex_init(&rpu_drv_priv_zep.rpu_ctx_zep.rpu_lock);
-#ifndef CONFIG_NRF70_RADIO_TEST
-	vif_ctx_zep->bss_max_idle_period = USHRT_MAX;
-#endif /* !CONFIG_NRF70_RADIO_TEST */
+
 	return 0;
 #ifdef CONFIG_NRF70_RADIO_TEST
 fmac_deinit:
@@ -971,14 +1008,21 @@ ETH_NET_DEVICE_DT_INST_DEFINE(0,
 		    nrf_wifi_drv_main_zep, /* init_fn */
 		    NULL, /* pm_action_cb */
 		    &rpu_drv_priv_zep.rpu_ctx_zep.vif_ctx_zep[0], /* data */
-#ifdef CONFIG_NRF70_STA_MODE
-		    &wpa_supp_ops, /* cfg */
-#else /* CONFIG_NRF70_STA_MODE */
 		    NULL, /* cfg */
-#endif /* !CONFIG_NRF70_STA_MODE */
 		    CONFIG_WIFI_INIT_PRIORITY, /* prio */
 		    &wifi_offload_ops, /* api */
 		    CONFIG_NRF_WIFI_IFACE_MTU); /*mtu */
+#ifdef CONFIG_NRF70_ENABLE_DUAL_VIF
+/* Register second interface */
+ETH_NET_DEVICE_DT_INST_DEFINE(1,
+		    nrf_wifi_drv_main_zep, /* init_fn */
+		    NULL, /* pm_action_cb */
+		    &rpu_drv_priv_zep.rpu_ctx_zep.vif_ctx_zep[1], /* data */
+		    NULL, /* cfg */
+		    CONFIG_WIFI_INIT_PRIORITY, /* prio */
+		    &wifi_offload_ops, /* api */
+		    CONFIG_NRF_WIFI_IFACE_MTU); /*mtu */
+#endif /* NRF70_ENABLE_DUAL_VIF */
 #else
 DEVICE_DT_INST_DEFINE(0,
 	      nrf_wifi_drv_main_zep, /* init_fn */

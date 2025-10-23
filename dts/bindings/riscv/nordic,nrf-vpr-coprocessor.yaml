@@ -30,3 +30,8 @@ properties:
     type: boolean
     description: |
       Enables setting VPR core's secure attribute to secure.
+
+  enable-dma-secure:
+    type: boolean
+    description: |
+      Enables setting VPR core's DMA secure attribute to secure.

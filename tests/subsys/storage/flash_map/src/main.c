@@ -39,7 +39,15 @@ ZTEST(flash_map, test_flash_area_disabled_device)
 	/* Test that attempting to open a disabled flash area fails */
 	rc = flash_area_open(FIXED_PARTITION_ID(disabled_a), &fa);
 	zassert_equal(rc, -ENOENT, "Open did not fail");
+	rc = flash_area_open(FIXED_PARTITION_ID(disabled_a_a), &fa);
+	zassert_equal(rc, -ENOENT, "Open did not fail");
+	rc = flash_area_open(FIXED_PARTITION_ID(disabled_a_b), &fa);
+	zassert_equal(rc, -ENOENT, "Open did not fail");
 	rc = flash_area_open(FIXED_PARTITION_ID(disabled_b), &fa);
+	zassert_equal(rc, -ENOENT, "Open did not fail");
+	rc = flash_area_open(FIXED_PARTITION_ID(disabled_b_a), &fa);
+	zassert_equal(rc, -ENOENT, "Open did not fail");
+	rc = flash_area_open(FIXED_PARTITION_ID(disabled_b_b), &fa);
 	zassert_equal(rc, -ENOENT, "Open did not fail");
 
 	/* Note lack of tests for FIXED_PARTITION(...) instantiation,
@@ -171,6 +179,44 @@ ZTEST(flash_map, test_fixed_partition_node_macros)
 	/* Taking by node and taking by label should give same device */
 	zassert_equal(FIXED_PARTITION_BY_NODE(DT_NODELABEL(SLOT1_PARTITION)),
 		      FIXED_PARTITION(SLOT1_PARTITION));
+#else
+	ztest_test_skip();
+#endif
+}
+
+ZTEST(flash_map, test_fixed_subpartition_node_macros)
+{
+	/* DTS node macros, for accessing fixed partitions, are only available
+	 * for DTS based partitions; custom flash map may define partition outside
+	 * of DTS definition, making the NODE macros fail to evaluate.
+	 */
+#if defined(CONFIG_TEST_FLASH_MAP_NODE_MACROS)
+	/* Test that both partitions and subpartitions exist */
+	zassert_true(FIXED_PARTITION_EXISTS(disabled_a));
+	zassert_true(FIXED_PARTITION_EXISTS(disabled_a_a));
+	zassert_true(FIXED_PARTITION_EXISTS(disabled_a_b));
+
+	/* Test that the subpartition offset is relative to the parent */
+	zassert_equal(FIXED_PARTITION_OFFSET(disabled_b),
+		      FIXED_PARTITION_OFFSET(disabled_b_a));
+	zassert_equal(FIXED_PARTITION_OFFSET(disabled_b) + 0x100,
+		      FIXED_PARTITION_OFFSET(disabled_b_b));
+	zassert_equal(FIXED_PARTITION_NODE_OFFSET(DT_NODELABEL(disabled_b)),
+		      FIXED_PARTITION_NODE_OFFSET(DT_NODELABEL(disabled_b_a)));
+	zassert_equal(
+		FIXED_PARTITION_NODE_OFFSET(DT_NODELABEL(disabled_b)) + 0x100,
+		FIXED_PARTITION_NODE_OFFSET(DT_NODELABEL(disabled_b_b)));
+
+	/* Test that the subpartition address is relative to the parent */
+	zassert_equal(FIXED_PARTITION_ADDRESS(disabled_b),
+		      FIXED_PARTITION_ADDRESS(disabled_b_a));
+	zassert_equal(FIXED_PARTITION_ADDRESS(disabled_b) + 0x100,
+		      FIXED_PARTITION_ADDRESS(disabled_b_b));
+	zassert_equal(FIXED_PARTITION_NODE_ADDRESS(DT_NODELABEL(disabled_b)),
+		      FIXED_PARTITION_NODE_ADDRESS(DT_NODELABEL(disabled_b_a)));
+	zassert_equal(
+		FIXED_PARTITION_NODE_ADDRESS(DT_NODELABEL(disabled_b)) + 0x100,
+		FIXED_PARTITION_NODE_ADDRESS(DT_NODELABEL(disabled_b_b)));
 #else
 	ztest_test_skip();
 #endif

@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief Extended public API for Phosense XBR818 10 GHz Radar
+ * @brief Header file for extended sensor API of XBR818 sensor
  *
  * This exposes 4 additional attributes used to configure the IC
  */
@@ -14,10 +14,20 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_XBR818_H_
 #define ZEPHYR_INCLUDE_DRIVERS_SENSOR_XBR818_H_
 
+/**
+ * @brief Phosense XBR818 10 GHz Radar
+ * @defgroup xbr818_interface XBR818
+ * @ingroup sensor_interface_ext
+ * @{
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/**
+ * @brief Custom sensor attributes for XBR818
+ */
 enum sensor_attribute_xbr818 {
 	/*!
 	 * Time of received activity before output is triggered, in seconds
@@ -40,5 +50,9 @@ enum sensor_attribute_xbr818 {
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_XBR818_H_ */

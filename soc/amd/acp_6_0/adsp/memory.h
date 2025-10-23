@@ -1,5 +1,5 @@
 /*
- * Copyright(c) 2022 AMD
+ * Copyright (c) 2022 AMD
  * SPDX-License-Identifier: Apache-2.0
  *
  * Author:      Basavaraj Hiregoudar <basavaraj.hiregoudar@amd.com>

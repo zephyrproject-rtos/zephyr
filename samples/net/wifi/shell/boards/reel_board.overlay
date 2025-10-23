@@ -24,20 +24,19 @@
 };
 
 &spi3 {
-	status = "ok";
+	status = "okay";
 	cs-gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&spi3_default_alt>;
 	pinctrl-1 = <&spi3_sleep_alt>;
 	pinctrl-names = "default", "sleep";
 
 	winc1500@0 {
-		status = "ok";
+		status = "okay";
 		compatible = "atmel,winc1500";
 		reg = <0x0>;
 		spi-max-frequency = <4000000>;
 		irq-gpios = <&gpio1 7 1>;
 		reset-gpios = <&gpio1 8 1>;
 		enable-gpios = <&gpio1 12 0>;
-
 	};
 };
