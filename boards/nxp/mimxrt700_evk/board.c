@@ -553,6 +553,21 @@ void board_early_init_hook(void)
 	POWER_ApplyPD();
 	otp_init(SystemCoreClock);
 #endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(co5300_zc143ac72mipi), okay)
+	POWER_DisablePD(kPDRUNCFG_SHUT_MEDIA_MAINCLK);
+	POWER_DisablePD(kPDRUNCFG_APD_LCDIF);
+	POWER_DisablePD(kPDRUNCFG_PPD_LCDIF);
+	POWER_ApplyPD();
+
+	CLOCK_EnableClock(kCLOCK_Lcdif);
+	RESET_ClearPeripheralReset(kLCDIF_RST_SHIFT_RSTn);
+
+
+	CLOCK_InitMainPfd(kCLOCK_Pfd2, 17);
+	CLOCK_SetClkDiv(kCLOCK_DivMediaMainClk, 2U);
+	CLOCK_AttachClk(kMAIN_PLL_PFD2_to_MEDIA_MAIN);
+#endif
 }
 
 static void GlikeyWriteEnable(GLIKEY_Type *base, uint8_t idx)
