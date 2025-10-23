@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_ST_LSM6DSV80X_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_ST_LSM6DSV80X_H_
+
+#include "lsm6dsvxxx.h"
+
+/* Accel High-g odr */
+#define LSM6DSV80X_HG_XL_ODR_OFF		0x0
+#define LSM6DSV80X_HG_XL_ODR_AT_480Hz		0x3
+#define LSM6DSV80X_HG_XL_ODR_AT_960Hz		0x4
+#define LSM6DSV80X_HG_XL_ODR_AT_1920Hz		0x5
+#define LSM6DSV80X_HG_XL_ODR_AT_3840Hz		0x6
+#define LSM6DSV80X_HG_XL_ODR_AT_7680Hz		0x7
+
+/* Accel range */
+#define LSM6DSV80X_DT_FS_2G			2
+#define LSM6DSV80X_DT_FS_4G			4
+#define LSM6DSV80X_DT_FS_8G			8
+#define LSM6DSV80X_DT_FS_16G			16
+#define LSM6DSV80X_DT_FS_32G			32
+#define LSM6DSV80X_DT_FS_64G			64
+#define LSM6DSV80X_DT_FS_80G			80
+
+/* Gyro range */
+#define LSM6DSV80X_DT_FS_250DPS			0x1
+#define LSM6DSV80X_DT_FS_500DPS			0x2
+#define LSM6DSV80X_DT_FS_1000DPS		0x3
+#define LSM6DSV80X_DT_FS_2000DPS		0x4
+#define LSM6DSV80X_DT_FS_4000DPS		0x5
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_ST_LSM6DSV80X_H_ */
