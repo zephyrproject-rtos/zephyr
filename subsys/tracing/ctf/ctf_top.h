@@ -11,6 +11,7 @@
 #include <string.h>
 #include <tracing_core.h>
 #include <ctf_map.h>
+#include <zephyr/kernel_structs.h>
 #include <zephyr/tracing/tracing_format.h>
 #include <zephyr/net/net_ip.h>
 
@@ -62,20 +63,18 @@ static inline uint64_t ctf_top_timestamp_get(void)
 }
 #endif /* CONFIG_TRACING_CTF_CONFIGURABLE_TIMESTAMP */
 
-#define CTF_EVENT(...)                                                                             \
+#define CTF_EVENT(event_id, ...)                                                                   \
 	{                                                                                          \
-		if (!is_tracing_enabled()) {                                                       \
-			return;                                                                    \
-		}                                                                                  \
 		int key = irq_lock();                                                              \
 		const uint16_t stream_id = 0;                                                      \
 		uint16_t packet_size = 0;                                                          \
 		const uint64_t tstamp = ctf_top_timestamp_get();                                   \
                                                                                                    \
+		const uint8_t cpu_id = CPU_ID;                                                     \
 		packet_size = 8 * (0 MAP(CTF_INTERNAL_FIELD_SIZE, stream_id, packet_size, tstamp,  \
-					 ##__VA_ARGS__));                                          \
+					 event_id, cpu_id, ##__VA_ARGS__));                        \
                                                                                                    \
-		CTF_GATHER_FIELDS(stream_id, packet_size, tstamp, __VA_ARGS__)                     \
+		CTF_GATHER_FIELDS(stream_id, packet_size, tstamp, event_id, cpu_id, ##__VA_ARGS__) \
 		irq_unlock(key);                                                                   \
 	}
 #else
