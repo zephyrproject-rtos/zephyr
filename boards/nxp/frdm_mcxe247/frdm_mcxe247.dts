@@ -21,6 +21,7 @@
 		led2 = &blue_led;
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
+		rtc = &counter_rtc;
 	};
 
 	chosen {
@@ -33,14 +34,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_0 {
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 			label = "Red LED";
 		};
+
 		green_led: led_1 {
 			gpios = <&gpiob 11 GPIO_ACTIVE_LOW>;
 			label = "Green LED";
 		};
+
 		blue_led: led_2 {
 			gpios = <&gpioc 12 GPIO_ACTIVE_LOW>;
 			label = "Blue LED";
@@ -49,11 +53,13 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_2: button_2 {
 			label = "User SW2";
 			gpios = <&gpioa 9 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_button_3: button_3 {
 			label = "User SW3";
 			gpios = <&gpioc 10 GPIO_ACTIVE_LOW>;
@@ -160,5 +166,13 @@
 };
 
 &edma {
+	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+};
+
+&counter_rtc {
 	status = "okay";
 };
