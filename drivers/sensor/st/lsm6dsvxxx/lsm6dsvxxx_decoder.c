@@ -6,6 +6,7 @@
  *
  * Datasheet:
  * https://www.st.com/resource/en/datasheet/lsm6dsv320x.pdf
+ * https://www.st.com/resource/en/datasheet/lsm6dsv80x.pdf
  */
 
 #include "lsm6dsvxxx.h"
