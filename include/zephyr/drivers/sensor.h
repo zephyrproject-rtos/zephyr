@@ -632,16 +632,36 @@ enum sensor_stream_data_opt {
 	SENSOR_STREAM_DATA_DROP = 2,
 };
 
+/**
+ * @brief Sensor Stream Trigger
+ *
+ * A sensor stream trigger is a unique identifier per sensor device describing
+ * a trigger and the options for what to do with the associated data.
+ * It possible to select a sensor channel specification to apply the options on.
+ *
+ */
 struct sensor_stream_trigger {
 	enum sensor_trigger_type trigger;
 	enum sensor_stream_data_opt opt;
 	struct sensor_chan_spec chan_spec;
 };
 
-#define SENSOR_STREAM_TRIGGER_PREP(_trigger, _opt)                                                 \
-	{                                                                                          \
-		.trigger = (_trigger), .opt = (_opt),                                              \
-	}
+/*
+ * Internal macro to generate SENSOR_STREAM_TRIGGER
+ */
+#define SENSOR_STREAM_TRIGGER(_trigger, _opt, ...)                                                 \
+	{.trigger = (_trigger),                                                                    \
+	 .opt = (_opt),                                                                            \
+	 .chan_spec = COND_CODE_1(IS_EMPTY(__VA_ARGS__), ({ SENSOR_CHAN_ALL, 0 }), (__VA_ARGS__)) }
+
+/*
+ * Each _item is a *parenthesized tuple*:
+ * (_trigger, _opt)  or  (_trigger, _opt, { chan, idx })
+ * Unpack it and forward to SENSOR_STREAM_TRIGGER.
+ */
+#define _SENSOR_STREAM_TRIGGER_PREP(_trigger, _opt, ...)                                           \
+	SENSOR_STREAM_TRIGGER(_trigger, _opt, __VA_ARGS__)
+#define SENSOR_STREAM_TRIGGER_PREP(_item) _SENSOR_STREAM_TRIGGER_PREP _item
 
 /*
  * Internal data structure used to store information about the IODevice for async reading and
@@ -703,8 +723,11 @@ struct sensor_read_config {
  * }
  * @endcode
  */
+/* clang-format off */
 #define SENSOR_DT_STREAM_IODEV(name, dt_node, ...)                                                 \
-	static struct sensor_stream_trigger _CONCAT(__trigger_array_, name)[] = {__VA_ARGS__};     \
+	static struct sensor_stream_trigger _CONCAT(__trigger_array_, name)[] = {                  \
+		FOR_EACH_NONEMPTY_TERM(SENSOR_STREAM_TRIGGER_PREP, (,), __VA_ARGS__)               \
+	};                                                                                         \
 	static struct sensor_read_config _CONCAT(__sensor_read_config_, name) = {                  \
 		.sensor = DEVICE_DT_GET(dt_node),                                                  \
 		.is_streaming = true,                                                              \
@@ -713,6 +736,7 @@ struct sensor_read_config {
 		.max = ARRAY_SIZE(_CONCAT(__trigger_array_, name)),                                \
 	};                                                                                         \
 	RTIO_IODEV_DEFINE(name, &__sensor_iodev_api, &_CONCAT(__sensor_read_config_, name))
+/* clang-format on */
 
 /* Used to submit an RTIO sqe to the sensor's iodev */
 typedef void (*sensor_submit_t)(const struct device *sensor, struct rtio_iodev_sqe *sqe);

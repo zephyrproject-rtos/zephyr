@@ -27,9 +27,9 @@ static const struct device *const sensors[] = {LISTIFY(10, ACCELEROMETER_DEVICE,
 #define ACCEL_IODEV_SYM(id) CONCAT(accel_iodev, id)
 #define ACCEL_IODEV_PTR(id, _) &ACCEL_IODEV_SYM(id)
 
-#define ACCEL_TRIGGERS                                   \
-	{SENSOR_TRIG_FIFO_FULL, SENSOR_STREAM_DATA_INCLUDE}, \
-	{SENSOR_TRIG_FIFO_WATERMARK, SENSOR_STREAM_DATA_INCLUDE}
+#define ACCEL_TRIGGERS                                                                             \
+	(SENSOR_TRIG_FIFO_FULL, SENSOR_STREAM_DATA_INCLUDE),                                       \
+		(SENSOR_TRIG_FIFO_WATERMARK, SENSOR_STREAM_DATA_INCLUDE)
 
 #define ACCEL_DEFINE_IODEV(id, _)         \
 	SENSOR_DT_STREAM_IODEV(               \

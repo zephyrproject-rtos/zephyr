@@ -25,9 +25,9 @@ static const struct device *const sensors[] = { LISTIFY(10, STREAMDEV_DEVICE, ()
 #define STREAM_IODEV_SYM(id) CONCAT(stream_iodev, id)
 #define STREAM_IODEV_PTR(id, _) &STREAM_IODEV_SYM(id)
 
-#define STREAM_TRIGGERS					   \
-	{ SENSOR_TRIG_FIFO_FULL, SENSOR_STREAM_DATA_NOP }, \
-	{ SENSOR_TRIG_FIFO_WATERMARK, SENSOR_STREAM_DATA_INCLUDE }
+#define STREAM_TRIGGERS                                                                            \
+	(SENSOR_TRIG_FIFO_FULL, SENSOR_STREAM_DATA_NOP),                                           \
+		(SENSOR_TRIG_FIFO_WATERMARK, SENSOR_STREAM_DATA_INCLUDE)
 
 #define STREAM_DEFINE_IODEV(id, _)    \
 	SENSOR_DT_STREAM_IODEV(	      \
