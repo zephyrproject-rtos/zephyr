@@ -41,6 +41,23 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 #define PHY_TI_DP83867_CFG3                    0x001e
 #define PHY_TI_DP83867_INT_EN                  BIT(7)
 
+#define PHY_TI_DP83867_PHYCR			0x0010
+#define PHY_TI_DP83867_FIFO_DEPTH_MASK		(BIT(14) | BIT(15))
+#define PHY_TI_DP83867_FIFO_DEPTH_SHIFT	14
+#define PHY_TI_DP83867_FIFO_DEPTH_3B		0x0
+#define PHY_TI_DP83867_FIFO_DEPTH_4B		0x1
+#define PHY_TI_DP83867_FIFO_DEPTH_6B		0x2
+#define PHY_TI_DP83867_FIFO_DEPTH_8B		0x3
+#define DP83867_CTRL				0x1f
+#define DP83867_SWRESET			BIT(15)
+#define DP83867_SWRESTART			BIT(14)
+#define DP83867_CFG4_REG			0x0031
+#define DP83867_CFG4_RX_STRAP_BIT		BIT(7)
+#define MMD_CTRL_ADDR				0x0D
+#define MMD_CTRL_DATA				0x0E
+#define DP83867_REGCR_FUNC_ADDR		(0x0 << 14)
+#define DP83867_REGCR_FUNC_DATA_NO_POSTINC	(0x1 << 14)
+
 #define DP83867_RGMIICTL1			0x32
 #define DP83867_RGMIIDCTL			0x86
 
@@ -77,6 +94,7 @@ struct ti_dp83867_config {
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 	const struct gpio_dt_spec interrupt_gpio;
 #endif
+	bool rxctrl_strap_quirk;
 };
 
 struct ti_dp83867_data {
@@ -118,6 +136,61 @@ static int phy_ti_dp83867_write(const struct device *dev, uint16_t reg_addr, uin
 	}
 
 	return 0;
+}
+
+static int phy_ti_dp83867_indirect_read(const struct device *dev, uint16_t reg_addr,
+					uint32_t *data)
+{
+	const struct ti_dp83867_config *config = dev->config;
+	int ret;
+
+	ret = mdio_write(config->mdio_dev, config->addr, MMD_CTRL_ADDR,
+			 DP83867_REGCR_FUNC_ADDR | DP83867_CTRL);
+
+	if (ret) {
+		return ret;
+	}
+
+	ret = mdio_write(config->mdio_dev, config->addr, MMD_CTRL_DATA, reg_addr);
+	if (ret) {
+		return ret;
+	}
+
+	ret = mdio_write(config->mdio_dev, config->addr, MMD_CTRL_ADDR,
+			 DP83867_REGCR_FUNC_DATA_NO_POSTINC | DP83867_CTRL);
+	if (ret) {
+		return ret;
+	}
+
+	ret = mdio_read(config->mdio_dev, config->addr, MMD_CTRL_DATA, (uint16_t *)data);
+	return ret;
+}
+
+static int phy_ti_dp83867_indirect_write(const struct device *dev, uint16_t reg_addr,
+					 uint32_t data)
+{
+	const struct ti_dp83867_config *config = dev->config;
+	int ret;
+
+	ret = mdio_write(config->mdio_dev, config->addr, MMD_CTRL_ADDR,
+			 DP83867_REGCR_FUNC_ADDR | DP83867_CTRL);
+	if (ret) {
+		return ret;
+	}
+
+	ret = mdio_write(config->mdio_dev, config->addr, MMD_CTRL_DATA, reg_addr);
+	if (ret) {
+		return ret;
+	}
+
+	ret = mdio_write(config->mdio_dev, config->addr, MMD_CTRL_ADDR,
+			 DP83867_REGCR_FUNC_DATA_NO_POSTINC | DP83867_CTRL);
+	if (ret) {
+		return ret;
+	}
+
+	ret = mdio_write(config->mdio_dev, config->addr, MMD_CTRL_DATA, (uint16_t)data);
+	return ret;
 }
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
@@ -290,10 +363,16 @@ static int phy_ti_dp83867_reset(const struct device *dev)
 	}
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios) */
 
-	/* Reset PHY using register */
-	ret = phy_ti_dp83867_write(dev, MII_BMCR, MII_BMCR_RESET);
+	ret = phy_ti_dp83867_write(dev, DP83867_CTRL, DP83867_SWRESET);
 	if (ret < 0) {
-		LOG_ERR("Error writing phy (%d) basic control register", config->addr);
+		LOG_ERR("Error writing phy (%d) control register", config->addr);
+		return ret;
+	}
+
+	ret = phy_ti_dp83867_write(dev, DP83867_CTRL, DP83867_SWRESTART);
+	if (ret) {
+		LOG_ERR("Error writing phy (%d) control register", config->addr);
+		return ret;
 	}
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 done:
@@ -459,6 +538,8 @@ static int phy_ti_dp83867_init(const struct device *dev)
 	struct ti_dp83867_data *data = dev->data;
 	int ret;
 	uint32_t rgmii_ctl_val = 0, rgmii_dctl_val = 0;
+	uint32_t cfg4_val = 0, phycr_val = 0;
+	uint8_t fifo_depth;
 
 	data->dev = dev;
 
@@ -483,8 +564,24 @@ static int phy_ti_dp83867_init(const struct device *dev)
 		return ret;
 	}
 
+	if (config->rxctrl_strap_quirk) {
+		/* Read the Strap quirk bit to configure it to 0 */
+		ret = phy_ti_dp83867_indirect_read(dev, DP83867_CFG4_REG, &cfg4_val);
+		if (ret) {
+			LOG_ERR("Error reading DP83867_CFG4");
+			return ret;
+		}
+
+		cfg4_val &= ~DP83867_CFG4_RX_STRAP_BIT;
+		ret = phy_ti_dp83867_indirect_write(dev, DP83867_CFG4_REG, cfg4_val);
+		if (ret) {
+			LOG_ERR("Error writing DP83867_CFG4");
+			return ret;
+		}
+	}
+
 	/* Read the RGMIICTL1 register to configure internal delay enable bits*/
-	ret = phy_ti_dp83867_read(dev, DP83867_RGMIICTL1, &rgmii_ctl_val);
+	ret = phy_ti_dp83867_indirect_read(dev, DP83867_RGMIICTL1, &rgmii_ctl_val);
 	if (ret) {
 		LOG_ERR("Error reading DP83867_RGMIICTL1");
 		return ret;
@@ -513,14 +610,14 @@ static int phy_ti_dp83867_init(const struct device *dev)
 	}
 
 	/* write updated delay enable configuration to PHY(DP83867_RGMIICTL1)*/
-	ret = phy_ti_dp83867_write(dev, DP83867_RGMIICTL1, rgmii_ctl_val);
+	ret = phy_ti_dp83867_indirect_write(dev, DP83867_RGMIICTL1, rgmii_ctl_val);
 	if (ret) {
 		LOG_ERR("Failed to write DP83867_RGMIICTL1");
 		return ret;
 	}
 
 	/* Read RGMIIDCTL the delay value control register*/
-	ret = phy_ti_dp83867_read(dev, DP83867_RGMIIDCTL, &rgmii_dctl_val);
+	ret = phy_ti_dp83867_indirect_read(dev, DP83867_RGMIIDCTL, &rgmii_dctl_val);
 	if (ret) {
 		LOG_ERR("Error reading DP83867_RGMIIDCTL");
 		return ret;
@@ -542,10 +639,25 @@ static int phy_ti_dp83867_init(const struct device *dev)
 	}
 
 	/* Write final delay values to PHY(DP83867_RGMIIDCTL) */
-	ret = phy_ti_dp83867_write(dev, DP83867_RGMIIDCTL, rgmii_dctl_val);
+	ret = phy_ti_dp83867_indirect_write(dev, DP83867_RGMIIDCTL, rgmii_dctl_val);
 	if (ret) {
 		LOG_ERR("Error writing DP83867_RGMIIDCTL");
 		return ret;
+	}
+
+	/* Verify fifo depth value */
+	ret = phy_ti_dp83867_read(dev, PHY_TI_DP83867_PHYCR, &phycr_val);
+	if (ret) {
+		LOG_ERR("Error reading DP83867_PHYCR");
+		return ret;
+	}
+
+	fifo_depth = (phycr_val & PHY_TI_DP83867_FIFO_DEPTH_MASK) >>
+					PHY_TI_DP83867_FIFO_DEPTH_SHIFT;
+	if (fifo_depth == PHY_TI_DP83867_FIFO_DEPTH_4B) {
+		LOG_INF("TX FIFO depth is set to 4 bytes/nibbles");
+	} else {
+		LOG_WRN("TX FIFO depth is not set to 4 bytes/nibbles (actual: %u)", fifo_depth);
 	}
 
 	k_work_init_delayable(&data->phy_monitor_work, phy_ti_dp83867_monitor_work_handler);
@@ -612,6 +724,7 @@ static DEVICE_API(ethphy, ti_dp83867_phy_api) = {
 							 DP83867_RGMII_RX_CLK_DELAY_INV),          \
 		.phy_iface = DT_INST_ENUM_IDX(n, ti_interface_type),                               \
 		.default_speeds = PHY_INST_GENERATE_DEFAULT_SPEEDS(n),				   \
+		.rxctrl_strap_quirk = DT_INST_PROP(n, ti_dp83867_rxctrl_strap_quirk),              \
 		RESET_GPIO(n) INTERRUPT_GPIO(n)};                                                  \
                                                                                                    \
 	static struct ti_dp83867_data ti_dp83867_##n##_data;                                       \
