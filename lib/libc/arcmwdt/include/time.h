@@ -9,7 +9,7 @@
 
 #include_next <time.h>
 
-#if defined(_POSIX_C_SOURCE)
+#if defined(_POSIX_C_SOURCE) || defined(CONFIG_POSIX_SYSTEM_INTERFACES)
 /*
  * POSIX requires time.h to define pid_t and clockid_t
  * https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/time.h.html
