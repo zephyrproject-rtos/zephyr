@@ -44,6 +44,9 @@ config SYSCON_SHELL
 	help
 	  Enable the SYSCON shell with SYSCON related commands.
 
+# zephyr-keep-sorted-start
 source "drivers/syscon/Kconfig.bflb_efuse"
+source "drivers/syscon/Kconfig.nxp_imx_ocotp"
+# zephyr-keep-sorted-stop
 
 endif # SYSCON

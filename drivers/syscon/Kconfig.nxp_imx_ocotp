@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+config SYSCON_IMX_OCOTP
+	bool "NXP i.MX on-chip OTP (OCOTP)"
+	default y
+	depends on DT_HAS_NXP_IMX_OCOTP_ENABLED
+	help
+	  OCOTP access via SYSCON API for NXP i.MX platforms.
