@@ -79,13 +79,15 @@ tests:
     tags:
       - shield
   sample.modules.lvgl.demos.rtklcdpar1s00001be:
-    platform_allow: ek_ra8p1/r7ka8p1kflcac/cm85
+    platform_allow:
+      - ek_ra8p1/r7ka8p1kflcac/cm85
+      - ek_ra8d2/r7ka8d2kflcac/cm85
     harness: console
     harness_config:
       fixture: fixture_display
     extra_args:
       - SHIELD=rtklcdpar1s00001be
-      - DTC_OVERLAY_FILE=rtklcdpar1s00001be.overlay
+      - EXTRA_DTC_OVERLAY_FILE=rtklcdpar1s00001be.overlay
     extra_configs:
       - CONFIG_LV_DEMO_MUSIC_LANDSCAPE=y
     tags:

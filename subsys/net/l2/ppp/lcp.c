@@ -59,6 +59,7 @@ static enum net_verdict lcp_handle(struct ppp_context *ctx,
 
 struct lcp_option_data {
 	bool auth_proto_present;
+	uint32_t async_ctrl_char_map;
 	uint16_t auth_proto;
 };
 
@@ -103,9 +104,28 @@ static int lcp_auth_proto_nack(struct ppp_fsm *fsm, struct net_pkt *ret_pkt,
 	return net_pkt_write_be16(ret_pkt, PPP_PAP);
 }
 
+static int lcp_async_ctrl_char_map_parse(struct ppp_fsm *fsm, struct net_pkt *pkt,
+				void *user_data)
+{
+	struct lcp_option_data *data = user_data;
+	int ret;
+
+	ret = net_pkt_read_be32(pkt, &data->async_ctrl_char_map);
+	if (ret < 0) {
+		/* Should not happen, is the pkt corrupt? */
+		return -EMSGSIZE;
+	}
+
+	NET_DBG("[LCP] Received Asynchronous Control Character Map %08x",
+		data->async_ctrl_char_map);
+	return 0;
+}
+
 static const struct ppp_peer_option_info lcp_peer_options[] = {
 	PPP_PEER_OPTION(LCP_OPTION_AUTH_PROTO, lcp_auth_proto_parse,
 			lcp_auth_proto_nack),
+	PPP_PEER_OPTION(LCP_OPTION_ASYNC_CTRL_CHAR_MAP, lcp_async_ctrl_char_map_parse,
+			NULL),
 };
 
 static int lcp_config_info_req(struct ppp_fsm *fsm,
@@ -117,6 +137,7 @@ static int lcp_config_info_req(struct ppp_fsm *fsm,
 					       lcp.fsm);
 	struct lcp_option_data data = {
 		.auth_proto_present = false,
+		.async_ctrl_char_map = 0xffffffff,
 	};
 	int ret;
 
@@ -130,6 +151,8 @@ static int lcp_config_info_req(struct ppp_fsm *fsm,
 	}
 
 	ctx->lcp.peer_options.auth_proto = data.auth_proto;
+	ctx->lcp.peer_options.async_map = data.async_ctrl_char_map;
+	NET_DBG("Asynchronous Control Character Map: %08X",  data.async_ctrl_char_map);
 
 	if (data.auth_proto_present) {
 		NET_DBG("Authentication protocol negotiated: %x (%s)",
@@ -157,6 +180,9 @@ static void lcp_lower_up(struct ppp_context *ctx)
 
 static void lcp_open(struct ppp_context *ctx)
 {
+	/* Reset peer async control character map */
+	ctx->lcp.peer_options.async_map = 0xffffffff;
+
 	ppp_fsm_open(&ctx->lcp.fsm);
 }
 

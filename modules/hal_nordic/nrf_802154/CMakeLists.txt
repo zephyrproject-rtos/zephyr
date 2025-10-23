@@ -44,8 +44,6 @@ target_compile_definitions(zephyr-802154-interface
     # Number of buffers in receive queue.
     NRF_802154_RX_BUFFERS=${CONFIG_NRF_802154_RX_BUFFERS}
 
-    NRF_802154_TX_STARTED_NOTIFY_ENABLED=1
-
     # ACK timeout
     NRF_802154_ACK_TIMEOUT_ENABLED=1
 
@@ -70,12 +68,20 @@ endif()
 
 if (CONFIG_NRF_802154_ENCRYPTION)
   target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_ENCRYPTION_ENABLED=1)
-  target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_SECURITY_WRITER_ENABLED=1)
-  target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_IE_WRITER_ENABLED=1)
 else ()
   target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_ENCRYPTION_ENABLED=0)
-  target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_SECURITY_WRITER_ENABLED=0)
+endif ()
+
+if (CONFIG_NRF_802154_IE_WRITER)
+  target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_IE_WRITER_ENABLED=1)
+else ()
   target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_IE_WRITER_ENABLED=0)
+endif ()
+
+if (CONFIG_NRF_802154_SECURITY_WRITER)
+  target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_SECURITY_WRITER_ENABLED=1)
+else ()
+  target_compile_definitions(zephyr-802154-interface INTERFACE NRF_802154_SECURITY_WRITER_ENABLED=0)
 endif()
 
 if (NOT CONFIG_IEEE802154_NRF5 AND NOT CONFIG_IEEE802154_NRF5_EXT_IRQ_MGMT AND CONFIG_NRF_802154_SL_OPENSOURCE)

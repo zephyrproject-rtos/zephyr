@@ -14,6 +14,10 @@ properties:
   interrupts:
     required: true
 
+  packet-data-limit:
+    required: true
+    const: 65536
+
   aux-reg-enable:
     type: boolean
     description: |
@@ -43,3 +47,20 @@ properties:
     description: |
       Number of entries in the RX FIFO above which the controller gets an RX
       interrupt. Maximum value is the RX FIFO depth - 1.
+
+  dma-transmit-data-level:
+    type: int
+    description: |
+      When in DMA mode, the transmit data level field controls the level at which a DMA request
+      is made by the transmit logic. A request to transmit is generated when the number of
+      valid data entries in the transmit FIFO is equal to or below this field value. Lower values
+      mean less frequent DMA triggers with larger bursts. Higher values mean fewer, smaller bursts
+      (lower latency, higher overhead). Range: 0-15
+
+  dma-receive-data-level:
+    type: int
+    description: |
+      When in DMA mode, the receive data level field controls the level at which a DMA request
+      is made by the receive logic. A request to receive is generated when the number of
+      valid data entries in the receive FIFO is greater than this value. Lower values mean
+      more frequent DMA triggers and higher values mean larger less frequent bursts. Range: 0-15

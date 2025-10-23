@@ -78,6 +78,20 @@
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
+
+	exp_header: exp-header {
+		compatible = "silabs,exp-header";
+		#gpio-cells = <2>;
+		gpio-map = <9 0 &gpioa 5 0>,
+			   <11 0 &gpiob 4 0>,
+			   <12 0 &gpiob 5 0>,
+			   <13 0 &gpioc 9 0>,
+			   <14 0 &gpiob 6 0>,
+			   <15 0 &gpioa 8 0>,
+			   <16 0 &gpioa 7 0>;
+		gpio-map-mask = <0xffffffff 0x0>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
+	};
 };
 
 &timer0 {
@@ -92,10 +106,6 @@
 
 &cpu0 {
 	clock-frequency = <78000000>;
-};
-
-&pstate_em3 {
-	status = "disabled";
 };
 
 &hfxo {
@@ -217,22 +227,22 @@
 			read-only;
 		};
 
-		/* Reserve 208 kB for the application in slot 0 */
+		/* Reserve 216 kB for the application in slot 0 */
 		slot0_partition: partition@c000 {
-			reg = <0x0000c000 DT_SIZE_K(208)>;
+			reg = <0x0000c000 DT_SIZE_K(216)>;
 			label = "image-0";
 		};
 
-		/* Reserve 208 kB for the application in slot 1 */
-		slot1_partition: partition@40000 {
-			reg = <0x00040000 DT_SIZE_K(208)>;
+		/* Reserve 216 kB for the application in slot 1 */
+		slot1_partition: partition@42000 {
+			reg = <0x00042000 DT_SIZE_K(216)>;
 			label = "image-1";
 		};
 
-		/* Reserve 32 kB for the scratch partition */
-		scratch_partition: partition@74000 {
-			reg = <0x00074000 DT_SIZE_K(32)>;
-			label = "image-scratch";
+		/* Reserve 32 kB for the storage partition */
+		storage_partition: partition@78000 {
+			reg = <0x00078000 DT_SIZE_K(32)>;
+			label = "storage";
 		};
 	};
 };

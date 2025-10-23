@@ -1,5 +1,5 @@
 #
-# Copyright 2023 NXP
+# Copyright 2023, 2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -22,4 +22,5 @@ supported:
   - i2c
   - pwm
   - spi
+  - rtc
 vendor: nxp

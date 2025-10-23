@@ -6,13 +6,11 @@
 Tests for cmakecache.py classes' methods
 """
 
-from unittest import mock
-import pytest
-
 from contextlib import nullcontext
+from unittest import mock
 
-from twisterlib.cmakecache import CMakeCacheEntry, CMakeCache
-
+import pytest
+from twisterlib.cmakecache import CMakeCache, CMakeCacheEntry
 
 TESTDATA_1 = [
     ('ON', True),

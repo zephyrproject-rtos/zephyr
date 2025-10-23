@@ -1,0 +1,53 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	qtmr4_timer0_default: qtmr4_timer0_default {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_00_qtimer4_timer0>;
+			drive-strength = "normal";
+			slew-rate = "fast";
+		};
+	};
+
+	qtmr5_timer0_default: qtmr5_timer0_default {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_04_qtimer5_timer0>;
+			drive-strength = "normal";
+			slew-rate = "fast";
+		};
+	};
+};
+
+/* To test this sample, connect
+ * GPIO_AD_00(J45-15) ---> GPIO_AD_04(J45-5)
+ */
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&qtmr4 0 0 PWM_POLARITY_NORMAL>, /* GPIO_AD_00, J45 pin 15, out */
+			<&qtmr5 0 0 PWM_POLARITY_NORMAL>; /*  GPIO_AD_04, J45 pin 5, in */
+	};
+};
+
+&qtmr4 {
+	compatible = "nxp,qtmr-pwm";
+	pinctrl-0 = <&qtmr4_timer0_default>;
+	pinctrl-names = "default";
+	#pwm-cells = <3>;
+	prescaler = <128>;
+	status = "okay";
+};
+
+&qtmr5 {
+	compatible = "nxp,qtmr-pwm";
+	pinctrl-0 = <&qtmr5_timer0_default>;
+	pinctrl-names = "default";
+	#pwm-cells = <3>;
+	prescaler = <128>;
+	status = "okay";
+};

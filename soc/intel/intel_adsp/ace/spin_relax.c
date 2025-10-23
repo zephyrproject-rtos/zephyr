@@ -9,13 +9,20 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/sys/util_macro.h>
 
+#include <zephyr/arch/xtensa/arch_inlines.h>
+
 #ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE_NUM_SPIN_RELAX_NOPS
 void arch_spin_relax(void)
 {
 	register uint32_t remaining = CONFIG_SOC_SERIES_INTEL_ADSP_ACE_NUM_SPIN_RELAX_NOPS;
 
+#if defined(CONFIG_SOC_SERIES_INTEL_ADSP_ACE_NUM_SPIN_RELAX_NOPS_ADD_CPU_ID)
+	remaining += arch_proc_id();
+#endif /* CONFIG_SOC_SERIES_INTEL_ADSP_ACE_NUM_SPIN_RELAX_NOPS_ADD_CPU_ID */
+
 	while (remaining > 0) {
-#if (CONFIG_SOC_SERIES_INTEL_ADSP_ACE_NUM_SPIN_RELAX_NOPS % 4) == 0
+#if !defined(CONFIG_SOC_SERIES_INTEL_ADSP_ACE_NUM_SPIN_RELAX_NOPS_ADD_CPU_ID) && \
+	(CONFIG_SOC_SERIES_INTEL_ADSP_ACE_NUM_SPIN_RELAX_NOPS % 4) == 0
 		remaining -= 4;
 
 		/*

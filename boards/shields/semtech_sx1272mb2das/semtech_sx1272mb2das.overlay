@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
 / {
 	aliases {
 		lora0 = &lora_semtech_sx1272mb2das;
@@ -13,19 +15,23 @@
 &arduino_spi {
 	status = "okay";
 
-	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>;	/* D10 */
+	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D10 GPIO_ACTIVE_LOW>;
 
 	lora_semtech_sx1272mb2das: lora@0 {
 		compatible = "semtech,sx1272";
 		reg = <0x0>;
 		spi-max-frequency = <3000000>;
 
-		reset-gpios = <&arduino_header 0 GPIO_ACTIVE_HIGH>;   /* A0 */
+		reset-gpios = <&arduino_header ARDUINO_HEADER_R3_A0 GPIO_ACTIVE_HIGH>;
 
-		dio-gpios = <&arduino_header 8 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,	   /* DIO0 is D2 */
-		            <&arduino_header 9 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,	   /* DIO1 is D3 */
-			    <&arduino_header 10 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,	   /* DIO2 is D4 */
-			    <&arduino_header 11 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;	   /* DIO3 is D5 */
+		dio-gpios = <&arduino_header ARDUINO_HEADER_R3_D2
+			     (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			    <&arduino_header ARDUINO_HEADER_R3_D3
+			     (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			    <&arduino_header ARDUINO_HEADER_R3_D4
+			     (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			    <&arduino_header ARDUINO_HEADER_R3_D5
+			     (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
 
 		power-amplifier-output = "rfo";
 	};

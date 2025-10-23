@@ -25,18 +25,22 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led_0: led_0 {
 			gpios = <&pioa 11 GPIO_ACTIVE_HIGH>;
 			label = "User LED";
 		};
+
 		led_1: led_1 {
 			gpios = <&pioa 12 GPIO_ACTIVE_HIGH>;
 			label = "User LED";
 		};
+
 		led_2: led_2 {
 			gpios = <&pioa 13 GPIO_ACTIVE_HIGH>;
 			label = "User LED";
 		};
+
 		led_3: led_3 {
 			gpios = <&pioa 14 GPIO_ACTIVE_HIGH>;
 			label = "User LED";
@@ -83,6 +87,7 @@
 	pinctrl-0 = <&twihs2_default>;
 	pinctrl-names = "default";
 	status = "okay";
+
 	akm09918c: akm09918c@c {
 		compatible = "asahi-kasei,akm09918c";
 		reg = <0xc>;
@@ -96,8 +101,8 @@
 	pinctrl-names = "default";
 	dmas = <&xdmac 0 DMA_PERID_SPI0_TX>, <&xdmac 1 DMA_PERID_SPI0_RX>;
 	dma-names = "tx", "rx";
-	cs-gpios =<&pioa 31 GPIO_ACTIVE_LOW>,
-				<&pioc 31 GPIO_ACTIVE_LOW>;
+	cs-gpios = <&pioa 31 GPIO_ACTIVE_LOW>,
+		   <&pioc 31 GPIO_ACTIVE_LOW>;
 	status = "okay";
 
 	icm42688: icm42688p@0 {
@@ -112,6 +117,7 @@
 		gyro-odr = <ICM42688_DT_GYRO_ODR_2000>;
 		gyro-fs = <ICM42688_DT_GYRO_FS_2000>;
 	};
+
 	spi_adc: adc@1 {
 		compatible = "ti,ads7052";
 		reg = <1>;
@@ -119,6 +125,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		spi-max-frequency = <24000000>;
+
 		channel@0 {
 			reg = <0>;
 			zephyr,gain = "ADC_GAIN_1";
@@ -184,7 +191,6 @@ zephyr_udc0: &usbhs {
 	pinctrl-names = "default";
 	status = "okay";
 };
-
 
 &xdmac {
 	status = "okay";

@@ -5,6 +5,7 @@ family:
     socs:
     - name: stm32c011xx
     - name: stm32c031xx
+    - name: stm32c051xx
     - name: stm32c071xx
     - name: stm32c091xx
     - name: stm32c092xx
@@ -104,6 +105,7 @@ family:
   - name: stm32h5x
     socs:
     - name: stm32h503xx
+    - name: stm32h523xx
     - name: stm32h533xx
     - name: stm32h562xx
     - name: stm32h563xx
@@ -123,6 +125,7 @@ family:
     - name: stm32h725xx
     - name: stm32h730xx
     - name: stm32h735xx
+    - name: stm32h742xx
     - name: stm32h743xx
     - name: stm32h745xx
       cpuclusters:
@@ -156,6 +159,7 @@ family:
     - name: stm32l072xx
     - name: stm32l073xx
     - name: stm32l081xx
+    - name: stm32l083xx
   - name: stm32l1x
     socs:
     - name: stm32l100xb

@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <adi/max32/max32657.dtsi>
+#include "max32658evkit_max32658_common.dtsi"
+
+/ {
+	 chosen {
+		 zephyr,sram = &secure_ram;
+		 zephyr,flash = &flash0;
+		 zephyr,code-partition = &slot0_partition;
+	 };
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		secure_ram: partition@30000000 {
+			label = "secure-memory";
+			reg = <0x30000000 DT_SIZE_K(256)>;
+		};
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		slot0_partition: partition@0 {
+			label = "image-0";
+			reg = <0x0 DT_SIZE_K(960)>;
+			read-only;
+		};
+
+		storage_partition: partition@f0000 {
+			label = "storage";
+			reg = <0xf0000 DT_SIZE_K(64)>;
+		};
+	};
+};
+
+&trng {
+	status = "okay";
+};

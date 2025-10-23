@@ -1,0 +1,379 @@
+/*
+ * Copyright (c) 2025 Ayush Singh, BeagleBoard.org Foundation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/ti-k3-pinctrl.h>
+
+&pinctrl {
+	main_uart6_rx_default: main_uart6_rx_default {
+		pinmux = <K3_PINMUX(0x001c, PIN_INPUT, MUX_MODE_3)>;
+	};
+
+	main_uart6_tx_default: main_uart6_tx_default {
+		pinmux = <K3_PINMUX(0x0020, PIN_OUTPUT, MUX_MODE_3)>;
+	};
+
+	main_i2c2_sda_default: main_i2c2_sda_default {
+		/* (K24) GPMC0_CSn3.I2C2_SDA */
+		pinmux = <K3_PINMUX(0x00b4, PIN_INPUT_PULLUP, MUX_MODE_1)>;
+	};
+
+	main_i2c2_scl_default: main_i2c2_scl_default {
+		/* (K22) GPMC0_CSn2.I2C2_SCL */
+		pinmux = <K3_PINMUX(0x00b0, PIN_INPUT_PULLUP, MUX_MODE_1)>;
+	};
+
+	led_pins_default: led-default-pins {
+		pinmux = <
+			  /* (F24) OSPI0_D3.GPIO0_6 */
+			  K3_PINMUX(0x0018, PIN_OUTPUT, MUX_MODE_7)
+			  /* (F25) OSPI0_D2.GPIO0_5 */
+			  K3_PINMUX(0x0014, PIN_OUTPUT, MUX_MODE_7)
+			  /* (G24) OSPI0_D1.GPIO0_4 */
+			  K3_PINMUX(0x0010, PIN_OUTPUT, MUX_MODE_7)
+			  /* (E25) OSPI0_D0.GPIO0_3 */
+			  K3_PINMUX(0x000c, PIN_OUTPUT, MUX_MODE_7)>;
+	};
+
+	P1_02_E18_gpio: P1-02-E18-gpio-pins {
+		/* (E18) MCASP0_AXR0.GPIO1_10 */
+		pinmux = <K3_PINMUX(0x01A0, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P1_02_AA19_gpio: P1-02-AA19-gpio-pins {
+		/* (AA19) RGMII2_TX_CTL.GPIO0_87 */
+		pinmux = <K3_PINMUX(0x0164, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P1_04_D20_gpio: P1-04-D20-gpio-pins {
+		/* (D20) MCASP0_AFSX.GPIO1_12 */
+		pinmux = <K3_PINMUX(0x01A8, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P1_04_Y18_gpio: P1-04-Y18-gpio-pins {
+		/* (Y18) RGMII2_TD0.GPIO0_89 */
+		pinmux = <K3_PINMUX(0x016C, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P1_06_E19_gpio: P1-06-E19-gpio-pins {
+		/* (E19) MCASP0_AFSR.GPIO1_13 */
+		pinmux = <K3_PINMUX(0x01AC, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P1_06_AD18_gpio: P1-06-AD18-gpio-pins {
+		/* (AD18) RGMII1_TD3.GPIO0_78 */
+		pinmux = <K3_PINMUX(0x0140, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P1_08_gpio: P1-08-gpio-pins {
+		/* (A20) MCASP0_ACLKR.GPIO1_14 */
+		pinmux = <K3_PINMUX(0x01B0, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P1_10_A18_gpio: P1-10-A18-gpio-pins {
+		/* (A18) EXT_REFCLK1.GPIO1_30 */
+		pinmux = <K3_PINMUX(0x01F0, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P1_10_B19_gpio: P1-10-B19-gpio-pins {
+		/* (B19) MCASP0_AXR3.GPIO1_7 */
+		pinmux = <K3_PINMUX(0x0194, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P1_12_A19_gpio: P1-12-A19-gpio-pins {
+		/* (A19) MCASP0_AXR2.GPIO1_8 */
+		pinmux = <K3_PINMUX(0x0198, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P1_12_AE18_gpio: P1-12-AE18-gpio-pins {
+		/* (AE18) RGMII1_TD2.GPIO0_77 */
+		pinmux = <K3_PINMUX(0x013C, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P1_19_gpio: P1-19-gpio-pins {
+		/* (AD22) RGMII2_RX_CTL.GPIO1_1 */
+		pinmux = <K3_PINMUX(0x017C, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P1_20_gpio: P1-20-gpio-pins {
+		/* (Y24) VOUT0_DATA5.GPIO0_50 */
+		pinmux = <K3_PINMUX(0x00CC, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P1_21_gpio: P1-21-gpio-pins {
+		/* (AE22) RGMII2_RD3.GPIO1_6 */
+		pinmux = <K3_PINMUX(0x0190, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P1_23_gpio: P1-23-gpio-pins {
+		/* (AC21) RGMII2_RD2.GPIO1_5 */
+		pinmux = <K3_PINMUX(0x018C, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P1_25_gpio: P1-25-gpio-pins {
+		/* (AB20) RGMII2_RD1.GPIO1_4 */
+		pinmux = <K3_PINMUX(0x0188, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P1_26_K24_gpio: P1-26-K24-gpio-pins {
+		/* (K24) GPMC0_CSn3.GPIO0_44 */
+		pinmux = <K3_PINMUX(0x00B4, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P1_27_gpio: P1-27-gpio-pins {
+		/* (AE23) RGMII2_RD0.GPIO1_3 */
+		pinmux = <K3_PINMUX(0x0184, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P1_28_K22_gpio: P1-28-K22-gpio-pins {
+		/* (K22) GPMC0_CSn2.GPIO0_43 */
+		pinmux = <K3_PINMUX(0x00B0, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P1_29_gpio: P1-29-gpio-pins {
+		/* (Y20) VOUT0_DE.GPIO0_62 */
+		pinmux = <K3_PINMUX(0x00FC, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P1_30_gpio: P1-30-gpio-pins {
+		/* (E14) UART0_TXD.GPIO1_21 */
+		pinmux = <K3_PINMUX(0x01CC, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P1_30_uart0_tx: P1-30-uart0-tx-pins {
+		/* (E14) UART0_TXD */
+		pinmux = <K3_PINMUX(0x01CC, PIN_OUTPUT, MUX_MODE_0)>;
+	};
+
+	P1_31_gpio: P1-31-gpio-pins {
+		/* (Y22) VOUT0_DATA14.GPIO0_59 */
+		pinmux = <K3_PINMUX(0x00F0, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P1_32_gpio: P1-32-gpio-pins {
+		/* (D14) UART0_RXD.GPIO1_20 */
+		pinmux = <K3_PINMUX(0x01C8, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P1_32_uart0_rx: P1-32-uart0-rx-pins {
+		/* (D14) UART0_RXD */
+		pinmux = <K3_PINMUX(0x01C8, PIN_INPUT, MUX_MODE_0)>;
+	};
+
+	P1_33_A17_gpio: P1-33-A17-gpio-pins {
+		/* (A17) I2C1_SDA.GPIO1_29 */
+		pinmux = <K3_PINMUX(0x01EC, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P1_33_A17_pwm: P1-33-A15-pwm-pins {
+		/* (A17) I2C1_SDA.EHRPWM2_B */
+		pinmux = <K3_PINMUX(0x01EC, PIN_INPUT, MUX_MODE_8)>;
+	};
+
+	P1_33_AA23_gpio: P1-33-AA23-gpio-pins {
+		/* (AA23) VOUT0_DATA11.GPIO0_56 */
+		pinmux = <K3_PINMUX(0x00E4, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P1_34_gpio: P1-34-gpio-pins {
+		/* (AD23) RGMII2_RXC.GPIO1_2 */
+		pinmux = <K3_PINMUX(0x0180, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P1_35_gpio: P1-35-gpio-pins {
+		/* (AE21) RGMII2_TXC.GPIO0_88 */
+		pinmux = <K3_PINMUX(0x0168, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P1_36_V20_gpio: P1-36-V20-gpio-pins {
+		/* (V20) VOUT0_DATA10.GPIO0_55 */
+		pinmux = <K3_PINMUX(0x00E0, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P1_36_B17_gpio: P1-36-B17-gpio-pins {
+		/* (B17) I2C1_SCL.GPIO1_28 */
+		pinmux = <K3_PINMUX(0x01E8, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_01_AD24_gpio: P2-01-AD24-gpio-pins {
+		/* (AD24) MDIO0_MDC.GPIO0_86 */
+		pinmux = <K3_PINMUX(0x0160, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_01_B20_gpio: P2-01-B20-gpio-pins {
+		/* (B20) MCASP0_ACLKX.GPIO1_11 */
+		pinmux = <K3_PINMUX(0x01A4, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_02_gpio: P2-02-gpio-pins {
+		/* (U22) VOUT0_DATA0.GPIO0_45 */
+		pinmux = <K3_PINMUX(0x00B8, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_03_AB22_gpio: P2-03-AB22-gpio-pins {
+		/* (AB22) MDIO0_MDIO.GPIO0_85 */
+		pinmux = <K3_PINMUX(0x015C, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_03_B18_gpio: P2-03-B18-gpio-pins {
+		/* (B18) MCASP0_AXR1.GPIO1_9 */
+		pinmux = <K3_PINMUX(0x019C, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_04_gpio: P2-04-gpio-pins {
+		/* (V24) VOUT0_DATA1.GPIO0_46 */
+		pinmux = <K3_PINMUX(0x00BC, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_05_C15_gpio: P2-05-C15-gpio-pins {
+		/* (C15) MCAN0_TX.GPIO1_24 */
+		pinmux = <K3_PINMUX(0x01D8, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_05_C15_uart5_rx: P2-05-C15-uart5-rx-pins {
+		/* (C15) MCAN0_TX.UART5_RXD */
+		pinmux = <K3_PINMUX(0x01D8, PIN_INPUT, MUX_MODE_1)>;
+	};
+
+	P2_06_gpio: P2-06-gpio-pins {
+		/* (W25) VOUT0_DATA2.GPIO0_47 */
+		pinmux = <K3_PINMUX(0x00C0, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_07_E15_gpio: P2-07-E15-gpio-pins {
+		/* (E15) MCAN0_RX.GPIO1_25 */
+		pinmux = <K3_PINMUX(0x01DC, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_07_E15_uart5_tx: P2-07-E15-uart5-tx-pins {
+		/* (E15) MCAN0_RX.UART5_TXD */
+		pinmux = <K3_PINMUX(0x01DC, PIN_INPUT, MUX_MODE_1)>;
+	};
+
+	P2_08_gpio: P2-08-gpio-pins {
+		/* (W24) VOUT0_DATA3.GPIO0_48 */
+		pinmux = <K3_PINMUX(0x00C4, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_09_A15_gpio: P2-09-A15-gpio-pins {
+		/* (A15) UART0_CTSn.GPIO1_22 */
+		pinmux = <K3_PINMUX(0x01D0, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_09_A15_i2c3_scl: P2-09-A15-i2c3-scl-pins {
+		/* (A15) UART0_CTSn.I2C3_SCL */
+		pinmux = <K3_PINMUX(0x01D0, PIN_INPUT_PULLUP, MUX_MODE_2)>;
+	};
+
+	P2_10_gpio: P2-10-gpio-pins {
+		/* (AD21) RGMII2_TD2.GPIO0_91 */
+		pinmux = <K3_PINMUX(0x0174, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_11_B15_gpio: P2-11-B15-gpio-pins {
+		/* (B15) UART0_RTSn.GPIO1_23 */
+		pinmux = <K3_PINMUX(0x01D4, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_11_B15_i2c3_sda: P2-11-B15-i2c3-sda-pins {
+		/* (B15) UART0_RTSn.I2C3_SDA */
+		pinmux = <K3_PINMUX(0x01D4, PIN_INPUT_PULLUP, MUX_MODE_2)>;
+	};
+
+	P2_17_gpio: P2-17-gpio-pins {
+		/* (AC24) VOUT0_PCLK.GPIO0_64 */
+		pinmux = <K3_PINMUX(0x0104, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_18_gpio: P2-18-gpio-pins {
+		/* (V21) VOUT0_DATA8.GPIO0_53 */
+		pinmux = <K3_PINMUX(0x00D8, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_19_gpio: P2-19-gpio-pins {
+		/* (AC20) RGMII2_TD3.GPIO1_0 */
+		pinmux = <K3_PINMUX(0x0178, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_20_gpio: P2-20-gpio-pins {
+		/* (Y25) VOUT0_DATA4.GPIO0_49 */
+		pinmux = <K3_PINMUX(0x00C8, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_22_gpio: P2-22-gpio-pins {
+		/* (AC25) VOUT0_VSYNC.GPIO0_63 */
+		pinmux = <K3_PINMUX(0x0100, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_24_gpio: P2-24-gpio-pins {
+		/* (Y23) VOUT0_DATA6.GPIO0_51 */
+		pinmux = <K3_PINMUX(0x00D0, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_25_gpio: P2-25-gpio-pins {
+		/* (B14) SPI0_D1.GPIO1_19 */
+		pinmux = <K3_PINMUX(0x01C4, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_27_gpio: P2-27-gpio-pins {
+		/* (B13) SPI0_D0.GPIO1_18 */
+		pinmux = <K3_PINMUX(0x01C0, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_28_gpio: P2-28-gpio-pins {
+		/* (AB24) VOUT0_HSYNC.GPIO0_61 */
+		pinmux = <K3_PINMUX(0x00F8, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_29_A14_gpio: P2-29-A14-gpio-pins {
+		/* (A14) SPI0_CLK.GPIO1_17 */
+		pinmux = <K3_PINMUX(0x01BC, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_29_M22_gpio: P2-29-M22-gpio-pins {
+		/* (M22) GPMC0_DIR.GPIO0_40 */
+		pinmux = <K3_PINMUX(0x00A4, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_30_gpio: P2-30-gpio-pins {
+		/* (AA24) VOUT0_DATA13.GPIO0_58 */
+		pinmux = <K3_PINMUX(0x00EC, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_31_A13_gpio: P2-31-A13-gpio-pins {
+		/* (A13) SPI0_CS0.GPIO1_15 */
+		pinmux = <K3_PINMUX(0x01B4, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_31_AA18_gpio: P2-31-AA18-gpio-pins {
+		/* (AA18) RGMII2_TD1.GPIO0_90 */
+		pinmux = <K3_PINMUX(0x0170, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_32_gpio: P2-32-gpio-pins {
+		/* (AB25) VOUT0_DATA12.GPIO0_57 */
+		pinmux = <K3_PINMUX(0x00E8, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_33_gpio: P2-33-gpio-pins {
+		/* (AA25) VOUT0_DATA7.GPIO0_52 */
+		pinmux = <K3_PINMUX(0x00D4, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_34_gpio: P2-34-gpio-pins {
+		/* (AA21) VOUT0_DATA15.GPIO0_60 */
+		pinmux = <K3_PINMUX(0x00F4, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_35_gpio: P2-35-gpio-pins {
+		/* (W21) VOUT0_DATA9.GPIO0_54 */
+		pinmux = <K3_PINMUX(0x00DC, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	P2_36_gpio: P2-36-gpio-pins {
+		/* (C13) SPI0_CS1.GPIO1_16 */
+		pinmux = <K3_PINMUX(0x01B8, PIN_INPUT, MUX_MODE_7)>;
+	};
+};

@@ -743,29 +743,38 @@ int adxl367_get_accel_data(const struct device *dev,
 }
 
 /**
- * @brief Reads the raw temperature of the device. If ADXL367_TEMP_EN is not
- *        set, use adxl367_temp_read_en() first to enable temperature reading.
+ * @brief Reads the raw temperature of the device.
  *
- * @param dev      - The device structure.
- * @param raw_temp - Raw value of temperature.
+ * If ADXL367_TEMP_EN is not set, use adxl367_temp_read_en() first to enable temperature reading.
+ * Optionally checks the data ready status before reading temperature.
+ *
+ * @param dev            - The device structure.
+ * @param raw_temp       - Raw value of temperature.
+ * @param check_data_rdy - If true, waits for data ready status before reading temperature.
+ *                         If false, reads temperature directly. Note: The DATA_READY bit is
+ *                         cleared when data is read; set this flag to false if temperature from
+ *                         the same sample frame is needed after performing an axis(x,y,z) read.
  *
  * @return 0 in case of success, negative error code otherwise.
  */
-int adxl367_get_temp_data(const struct device *dev, int16_t *raw_temp)
+int adxl367_get_temp_data(const struct device *dev, int16_t *raw_temp, bool check_data_rdy)
 {
 	int ret;
 	uint8_t temp[2] = { 0 };
-	uint8_t reg_data, nready = 1U;
 	struct adxl367_data *data = dev->data;
 
-	while (nready != 0) {
-		ret = data->hw_tf->read_reg(dev, ADXL367_STATUS, &reg_data);
-		if (ret != 0) {
-			return ret;
-		}
+	if (check_data_rdy) {
+		uint8_t reg_data, nready = 1U;
 
-		if ((reg_data & ADXL367_STATUS_DATA_RDY) != 0) {
-			nready = 0U;
+		while (nready != 0) {
+			ret = data->hw_tf->read_reg(dev, ADXL367_STATUS, &reg_data);
+			if (ret != 0) {
+				return ret;
+			}
+
+			if ((reg_data & ADXL367_STATUS_DATA_RDY) != 0) {
+				nready = 0U;
+			}
 		}
 	}
 
@@ -879,8 +888,14 @@ static int adxl367_sample_fetch(const struct device *dev,
 	if (ret != 0) {
 		return ret;
 	}
+	const struct adxl367_dev_config *cfg = dev->config;
+	bool check_temp_data_ready = false;
 
-	return adxl367_get_temp_data(dev, &data->temp_val);
+	if (cfg->temp_en) {
+		ret = adxl367_get_temp_data(dev, &data->temp_val, check_temp_data_ready);
+	}
+
+	return ret;
 }
 #ifdef CONFIG_SENSOR_ASYNC_API
 void adxl367_accel_convert(struct sensor_value *val, int16_t value,
@@ -1130,13 +1145,13 @@ static int adxl367_init(const struct device *dev)
 
 #define ADXL367_RTIO_DEFINE(inst, chipid)                                    \
 	SPI_DT_IODEV_DEFINE(adxl367_iodev_##inst##chipid, DT_DRV_INST(inst),     \
-						ADXL367_SPI_CFG, 0U);                        \
+						ADXL367_SPI_CFG);                        \
 	RTIO_DEFINE(adxl367_rtio_ctx_##inst##chipid, 8, 8);
 
 #define ADXL367_CONFIG_SPI(inst, chipid)					\
 	{								\
 		.bus_init = adxl367_spi_init,				\
-		.spi = SPI_DT_SPEC_INST_GET(inst, ADXL367_SPI_CFG, 0),		\
+		.spi = SPI_DT_SPEC_INST_GET(inst, ADXL367_SPI_CFG),		\
 		ADXL367_CONFIG(inst, chipid)					\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int1_gpios),	\
 		(ADXL367_CFG_IRQ(inst)), ())				\

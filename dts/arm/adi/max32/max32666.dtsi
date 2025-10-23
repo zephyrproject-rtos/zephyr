@@ -6,6 +6,7 @@
 
 #include <arm/armv7-m.dtsi>
 #include <adi/max32/max32xxx.dtsi>
+#include <zephyr/dt-bindings/dma/max32666_dma.h>
 
 &clk_ipo {
 	clock-frequency = <DT_FREQ_M(96)>;
@@ -180,6 +181,7 @@
 			reg = <0x400b6000 0x1000>;
 			interrupts = <66 0>;
 			status = "disabled";
+
 			mmc {
 				compatible = "zephyr,sdmmc-disk";
 				status = "disabled";
@@ -195,6 +197,7 @@
 			interrupts = <53 0>;
 			status = "disabled";
 			prescaler = <1>;
+
 			counter {
 				compatible = "adi,max32-wut";
 				status = "disabled";

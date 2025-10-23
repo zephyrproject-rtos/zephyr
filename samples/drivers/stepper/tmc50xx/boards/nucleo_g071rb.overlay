@@ -28,9 +28,9 @@
 
 			/* ADI TMC stallguard settings specific to TMC50XX */
 			activate-stallguard2;
-			stallguard-velocity-check-interval-ms=<1000>;
-			stallguard2-threshold=<30>;
-			stallguard-threshold-velocity=<200000>;
+			stallguard-velocity-check-interval-ms = <1000>;
+			stallguard2-threshold = <30>;
+			stallguard-threshold-velocity = <200000>;
 
 			/* ADI TMC ramp generator as well as current settings */
 			vstart = <1000>;

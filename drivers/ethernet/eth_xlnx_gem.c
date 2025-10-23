@@ -37,6 +37,12 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
+#if CONFIG_QEMU_TARGET ||\
+	DT_ANY_INST_HAS_BOOL_STATUS_OKAY(disable_rx_checksum_offload) ||\
+	DT_ANY_INST_HAS_BOOL_STATUS_OKAY(disable_tx_checksum_offload)
+#warning "xlnx_gem: at least one instance has checksum offloading to hardware disabled"
+#endif
+
 static int  eth_xlnx_gem_dev_init(const struct device *dev);
 static void eth_xlnx_gem_iface_init(struct net_if *iface);
 static void eth_xlnx_gem_isr(const struct device *dev);
@@ -136,11 +142,6 @@ static int eth_xlnx_gem_dev_init(const struct device *dev)
 #endif
 
 	/* AMBA AHB configuration options */
-	__ASSERT((dev_conf->amba_dbus_width == AMBA_AHB_DBUS_WIDTH_32BIT ||
-		 dev_conf->amba_dbus_width == AMBA_AHB_DBUS_WIDTH_64BIT ||
-		 dev_conf->amba_dbus_width == AMBA_AHB_DBUS_WIDTH_128BIT),
-		 "%s AMBA AHB bus width configuration is invalid",
-		 dev->name);
 	__ASSERT((dev_conf->ahb_burst_length == AHB_BURST_SINGLE ||
 		 dev_conf->ahb_burst_length == AHB_BURST_INCR4 ||
 		 dev_conf->ahb_burst_length == AHB_BURST_INCR8 ||
@@ -180,16 +181,6 @@ static int eth_xlnx_gem_dev_init(const struct device *dev)
 		 "%s TX buffer size %u is invalid, should be >64, "
 		 "must be 16380 bytes maximum.", dev->name,
 		 dev_conf->tx_buffer_size);
-
-	/* Checksum offloading limitations of the QEMU GEM implementation */
-#ifdef CONFIG_QEMU_TARGET
-	__ASSERT(!dev_conf->enable_rx_chksum_offload,
-		 "TCP/UDP/IP hardware checksum offloading is not "
-		 "supported by the QEMU GEM implementation");
-	__ASSERT(!dev_conf->enable_tx_chksum_offload,
-		 "TCP/UDP/IP hardware checksum offloading is not "
-		 "supported by the QEMU GEM implementation");
-#endif
 
 	/*
 	 * Initialization procedure as described in the Zynq-7000 TRM,
@@ -641,11 +632,11 @@ static enum ethernet_hw_caps eth_xlnx_gem_get_capabilities(
 		caps |= ETHERNET_LINK_10BASE;
 	}
 
-	if (dev_conf->enable_rx_chksum_offload) {
+	if (!dev_conf->disable_rx_chksum_offload) {
 		caps |= ETHERNET_HW_RX_CHKSUM_OFFLOAD;
 	}
 
-	if (dev_conf->enable_tx_chksum_offload) {
+	if (!dev_conf->disable_tx_chksum_offload) {
 		caps |= ETHERNET_HW_TX_CHKSUM_OFFLOAD;
 	}
 
@@ -682,7 +673,7 @@ static int eth_xlnx_gem_get_config(const struct device *dev,
 
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_RX_CHECKSUM_SUPPORT:
-		if (dev_conf->enable_rx_chksum_offload) {
+		if (!dev_conf->disable_rx_chksum_offload) {
 			config->chksum_support = ETHERNET_CHECKSUM_SUPPORT_IPV4_HEADER |
 						 ETHERNET_CHECKSUM_SUPPORT_IPV6_HEADER |
 						 ETHERNET_CHECKSUM_SUPPORT_TCP |
@@ -692,7 +683,7 @@ static int eth_xlnx_gem_get_config(const struct device *dev,
 		}
 		return 0;
 	case ETHERNET_CONFIG_TYPE_TX_CHECKSUM_SUPPORT:
-		if (dev_conf->enable_tx_chksum_offload) {
+		if (!dev_conf->disable_tx_chksum_offload) {
 			config->chksum_support = ETHERNET_CHECKSUM_SUPPORT_IPV4_HEADER |
 						 ETHERNET_CHECKSUM_SUPPORT_IPV6_HEADER |
 						 ETHERNET_CHECKSUM_SUPPORT_TCP |
@@ -950,6 +941,7 @@ static void eth_xlnx_gem_set_initial_nwcfg(const struct device *dev)
 {
 	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
 	uint32_t reg_val = 0;
+	uint32_t design_cfg5_reg_val;
 
 	if (dev_conf->ignore_ipg_rxer) {
 		/* [30]     ignore IPG rx_er */
@@ -975,7 +967,7 @@ static void eth_xlnx_gem_set_initial_nwcfg(const struct device *dev)
 		/* [25]     RX half duplex while TX enable */
 		reg_val |= ETH_XLNX_GEM_NWCFG_HDRXEN_BIT;
 	}
-	if (dev_conf->enable_rx_chksum_offload) {
+	if (!dev_conf->disable_rx_chksum_offload) {
 		/* [24]     enable RX IP/TCP/UDP checksum offload */
 		reg_val |= ETH_XLNX_GEM_NWCFG_RXCHKSUMEN_BIT;
 	}
@@ -983,10 +975,11 @@ static void eth_xlnx_gem_set_initial_nwcfg(const struct device *dev)
 		/* [23]     Do not copy pause Frames to memory */
 		reg_val |= ETH_XLNX_GEM_NWCFG_PAUSECOPYDI_BIT;
 	}
-	/* [22..21] Data bus width */
-	reg_val |= (((uint32_t)(dev_conf->amba_dbus_width) &
-		   ETH_XLNX_GEM_NWCFG_DBUSW_MASK) <<
-		   ETH_XLNX_GEM_NWCFG_DBUSW_SHIFT);
+	/* [22..21] Data bus width -> obtain from design_cfg5 register */
+	design_cfg5_reg_val = sys_read32(dev_conf->base_addr + ETH_XLNX_GEM_DESIGN_CFG5_OFFSET);
+	design_cfg5_reg_val >>= ETH_XLNX_GEM_DESIGN_CFG5_DBUSW_SHIFT;
+	design_cfg5_reg_val &= ETH_XLNX_GEM_NWCFG_DBUSW_MASK;
+	reg_val |= (design_cfg5_reg_val << ETH_XLNX_GEM_NWCFG_DBUSW_SHIFT);
 	/* [20..18] MDC clock divider */
 	reg_val |= (((uint32_t)dev_conf->mdc_divider &
 		   ETH_XLNX_GEM_NWCFG_MDC_MASK) <<
@@ -1153,7 +1146,7 @@ static void eth_xlnx_gem_set_initial_dmacr(const struct device *dev)
 	reg_val |= (((dev_conf->rx_buffer_size / 64) &
 		   ETH_XLNX_GEM_DMACR_RX_BUF_MASK) <<
 		   ETH_XLNX_GEM_DMACR_RX_BUF_SHIFT);
-	if (dev_conf->enable_tx_chksum_offload) {
+	if (!dev_conf->disable_tx_chksum_offload) {
 		/* [11] TX TCP/UDP/IP checksum offload to GEM */
 		reg_val |= ETH_XLNX_GEM_DMACR_TCP_CHKSUM_BIT;
 	}

@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: kit_pse84_eval
+  full_name: PSOC Edge E84 Evaluation Kit
+  vendor: infineon
+  socs:
+  - name: pse846gps2dbzc4a

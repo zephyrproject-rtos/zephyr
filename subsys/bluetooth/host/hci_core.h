@@ -130,10 +130,6 @@ enum {
 	BT_ADV_LIMITED,
 	/* Advertiser set is currently advertising in the controller. */
 	BT_ADV_ENABLED,
-	/* Advertiser should include name in advertising data */
-	BT_ADV_INCLUDE_NAME_AD,
-	/* Advertiser should include name in scan response data */
-	BT_ADV_INCLUDE_NAME_SD,
 	/* Advertiser set is connectable */
 	BT_ADV_CONNECTABLE,
 	/* Advertiser set is scannable */
@@ -144,10 +140,6 @@ enum {
 	 * the identity address instead.
 	 */
 	BT_ADV_USE_IDENTITY,
-	/* Advertiser has been configured to keep advertising after a connection
-	 * has been established as long as there are connections available.
-	 */
-	BT_ADV_PERSIST,
 	/* Advertiser has been temporarily disabled. */
 	BT_ADV_PAUSED,
 	/* Periodic Advertising has been enabled in the controller. */
@@ -175,6 +167,17 @@ struct bt_le_ext_adv {
 	/* Advertising handle */
 	uint8_t                 handle;
 
+#if defined(CONFIG_BT_EXT_ADV)
+	/* TX Power in use by the controller */
+	int8_t                    tx_power;
+
+	/* Advertising Set ID */
+	uint8_t                   sid;
+
+	/* Callbacks for the advertising set */
+	const struct bt_le_ext_adv_cb *cb;
+#endif /* defined(CONFIG_BT_EXT_ADV) */
+
 	/* Current local Random Address */
 	bt_addr_le_t            random_addr;
 
@@ -182,13 +185,6 @@ struct bt_le_ext_adv {
 	bt_addr_le_t            target_addr;
 
 	ATOMIC_DEFINE(flags, BT_ADV_NUM_FLAGS);
-
-#if defined(CONFIG_BT_EXT_ADV)
-	const struct bt_le_ext_adv_cb *cb;
-
-	/* TX Power in use by the controller */
-	int8_t                    tx_power;
-#endif /* defined(CONFIG_BT_EXT_ADV) */
 
 	struct k_work_delayable	lim_adv_timeout_work;
 
@@ -563,6 +559,9 @@ void bt_hci_remote_name_request_complete(struct net_buf *buf);
 void bt_hci_read_remote_features_complete(struct net_buf *buf);
 void bt_hci_read_remote_ext_features_complete(struct net_buf *buf);
 void bt_hci_role_change(struct net_buf *buf);
+#if defined(CONFIG_BT_POWER_MODE_CONTROL)
+void bt_hci_link_mode_change(struct net_buf *buf);
+#endif /* CONFIG_BT_POWER_MODE_CONTROL */
 void bt_hci_synchronous_conn_complete(struct net_buf *buf);
 
 void bt_hci_le_df_connection_iq_report(struct net_buf *buf);

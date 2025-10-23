@@ -1,0 +1,21 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: frdm_mcxa344
+name: NXP FRDM MCXA344
+type: mcu
+arch: arm
+ram: 48
+flash: 244
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - arduino_gpio
+  - flash
+  - gpio
+  - uart
+vendor: nxp

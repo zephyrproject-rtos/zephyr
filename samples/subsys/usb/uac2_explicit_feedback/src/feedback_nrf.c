@@ -84,8 +84,14 @@ static const nrfx_timer_t feedback_timer_instance =
  * Full-Speed isochronous feedback is Q10.10 unsigned integer left-justified in
  * the 24-bits so it has Q10.14 format. This sample application puts zeroes to
  * the 4 least significant bits (does not use the bits for extra precision).
+ *
+ * High-Speed isochronous feedback is Q12.13 unsigned integer aligned in the
+ * 32-bits so the binary point is located between second and third byte so it
+ * has Q16.16 format. This sample applications puts zeroes to the 3 least
+ * significant bits (does not use the bits for extra precision).
  */
-#define FEEDBACK_K		10
+#define FEEDBACK_FS_K		10
+#define FEEDBACK_HS_K		13
 #if defined(CONFIG_APP_USE_I2S_LRCLK_EDGES_COUNTER)
 #define FEEDBACK_P		1
 #else
@@ -93,11 +99,14 @@ static const nrfx_timer_t feedback_timer_instance =
 #endif
 
 #define FEEDBACK_FS_SHIFT	4
+#define FEEDBACK_HS_SHIFT	3
 
 static struct feedback_ctx {
 	uint32_t fb_value;
 	int32_t rel_sof_offset;
 	int32_t base_sof_offset;
+	uint32_t counts_per_sof;
+	bool high_speed;
 	union {
 		/* For edge counting */
 		struct {
@@ -190,7 +199,7 @@ struct feedback_ctx *feedback_init(void)
 
 	feedback_target_init();
 
-	feedback_reset_ctx(&fb_ctx);
+	feedback_reset_ctx(&fb_ctx, false);
 
 	if (IS_ENABLED(CONFIG_APP_USE_I2S_LRCLK_EDGES_COUNTER)) {
 		err = feedback_edge_counter_setup();
@@ -239,13 +248,31 @@ struct feedback_ctx *feedback_init(void)
 	return &fb_ctx;
 }
 
+static uint32_t nominal_feedback_value(struct feedback_ctx *ctx)
+{
+	if (ctx->high_speed) {
+		return (SAMPLE_RATE / 8000) << (FEEDBACK_HS_K + FEEDBACK_HS_SHIFT);
+	}
+
+	return (SAMPLE_RATE / 1000) << (FEEDBACK_FS_K + FEEDBACK_FS_SHIFT);
+}
+
+static uint32_t feedback_period(struct feedback_ctx *ctx)
+{
+	if (ctx->high_speed) {
+		return BIT(FEEDBACK_HS_K - FEEDBACK_P);
+	}
+
+	return BIT(FEEDBACK_FS_K - FEEDBACK_P);
+}
+
 static void update_sof_offset(struct feedback_ctx *ctx, uint32_t sof_cc,
 			      uint32_t framestart_cc)
 {
 	int sof_offset;
 
 	if (!IS_ENABLED(CONFIG_APP_USE_I2S_LRCLK_EDGES_COUNTER)) {
-		uint32_t clks_per_edge;
+		uint32_t nominator;
 
 		/* Convert timer clock (independent from both Audio clock and
 		 * USB host SOF clock) to fake sample clock shifted by P values.
@@ -255,18 +282,17 @@ static void update_sof_offset(struct feedback_ctx *ctx, uint32_t sof_cc,
 		 * when regulated and therefore the relative clock frequency
 		 * discrepancies are essentially negligible.
 		 */
-		clks_per_edge = sof_cc / (SAMPLES_PER_SOF << FEEDBACK_P);
-		sof_cc /= MAX(clks_per_edge, 1);
-		framestart_cc /= MAX(clks_per_edge, 1);
+		nominator = MIN(sof_cc, framestart_cc) * ctx->counts_per_sof;
+		sof_offset = nominator / MAX(sof_cc, 1);
+	} else {
+		sof_offset = framestart_cc;
 	}
 
 	/* /2 because we treat the middle as a turning point from being
 	 * "too late" to "too early".
 	 */
-	if (framestart_cc > (SAMPLES_PER_SOF << FEEDBACK_P)/2) {
-		sof_offset = framestart_cc - (SAMPLES_PER_SOF << FEEDBACK_P);
-	} else {
-		sof_offset = framestart_cc;
+	if (sof_offset > ctx->counts_per_sof/2) {
+		sof_offset -= ctx->counts_per_sof;
 	}
 
 	/* The heuristic above is not enough when the offset gets too large.
@@ -279,17 +305,17 @@ static void update_sof_offset(struct feedback_ctx *ctx, uint32_t sof_cc,
 
 		if (sof_offset >= 0) {
 			abs_diff = sof_offset - ctx->rel_sof_offset;
-			base_change = -(SAMPLES_PER_SOF << FEEDBACK_P);
+			base_change = -ctx->counts_per_sof;
 		} else {
 			abs_diff = ctx->rel_sof_offset - sof_offset;
-			base_change = SAMPLES_PER_SOF << FEEDBACK_P;
+			base_change = ctx->counts_per_sof;
 		}
 
 		/* Adjust base offset only if the change happened through the
 		 * outer bound. The actual changes should be significantly lower
 		 * than the threshold here.
 		 */
-		if (abs_diff > (SAMPLES_PER_SOF << FEEDBACK_P)/2) {
+		if (abs_diff > ctx->counts_per_sof/2) {
 			ctx->base_sof_offset += base_change;
 		}
 	}
@@ -297,8 +323,12 @@ static void update_sof_offset(struct feedback_ctx *ctx, uint32_t sof_cc,
 	ctx->rel_sof_offset = sof_offset;
 }
 
-static inline int32_t offset_to_correction(int32_t offset)
+static inline int32_t offset_to_correction(struct feedback_ctx *ctx, int32_t offset)
 {
+	if (ctx->high_speed) {
+		return -(offset / BIT(FEEDBACK_P)) * BIT(FEEDBACK_HS_SHIFT);
+	}
+
 	return -(offset / BIT(FEEDBACK_P)) * BIT(FEEDBACK_FS_SHIFT);
 }
 
@@ -320,39 +350,66 @@ static int32_t pi_update(struct feedback_ctx *ctx)
 	int32_t error = SP - PV;
 
 	/*
-	 * With above normalization at Full-Speed, when data received during
-	 * SOF n appears on I2S during SOF n+3, the Ziegler Nichols Ultimate
-	 * Gain is around 1.15 and the oscillation period is around 90 SOF.
-	 * (much nicer oscillations with 204.8 SOF period can be observed with
-	 * gain 0.5 when the delay is not n+3, but n+33 - surprisingly the
-	 * resulting PI coefficients after power of two rounding are the same).
+	 * With above normalization, when data received during SOF n appears on
+	 * I2S during SOF n+3, the Ziegler Nichols Ultimate Gain and oscillation
+	 * periods are as follows:
+	 *
+	 *   Full-Speed Linux:   Ku = 1.34   tu=77   [FS SOFs]
+	 *   Full-Speed Mac OS:  Ku = 0.173  tu=580  [FS SOFs]
+	 *   High-Speed Mac OS:  Ku = 0.895  tu=4516 [HS SOFs]
+	 *   High-Speed Windows: Ku = 0.515  tu=819  [HS SOFs]
+	 *
+	 * Linux and Mac OS oscillations were very neat, while Windows seems to
+	 * be averaging feedback value and therefore it is hard to get steady
+	 * oscillations without getting buffer uderrun.
 	 *
 	 * Ziegler-Nichols rule with applied stability margin of 2 results in:
-	 *   Kc = 0.22 * Ku = 0.22 * 1.15 = 0.253
-	 *   Ti = 0.83 * tu = 0.83 * 80 = 66.4
+	 *                    [FS Linux] [FS Mac] [HS Mac] [HS Windows]
+	 *   Kc = 0.22 * Ku    0.2948     0.0381   0.1969   0.1133
+	 *   Ti = 0.83 * tu    63.91      481.4    3748     647.9
 	 *
-	 * Converting the rules above to parallel PI gives:
-	 *   Kp = Kc = 0.253
-	 *   Ki = Kc/Ti = 0.254/66.4 ~= 0.0038253
-	 *
-	 * Because we want fixed-point optimized non-tunable implementation,
-	 * the parameters can be conveniently expressed with power of two:
-	 *   Kp ~= pow(2, -2) = 0.25    (divide by 4)
-	 *   Ki ~= pow(2, -8) = 0.0039  (divide by 256)
-	 *
-	 * This can be implemented as:
+	 * Converting the rules to work with following simple regulator:
 	 *   ctx->integrator += error;
-	 *   return (error + (ctx->integrator / 64)) / 4;
-	 * but unfortunately such regulator is pretty aggressive and keeps
-	 * oscillating rather quickly around the setpoint (within +-1 sample).
+	 *   return (error + (ctx->integrator / Ti)) / invKc;
 	 *
-	 * Manually tweaking the constants so the regulator output is shifted
-	 * down by 4 bits (i.e. change /64 to /2048 and /4 to /128) yields
-	 * really good results (the outcome is similar, even slightly better,
-	 * than using I2S LRCLK edge counting directly).
+	 * gives following parameters:
+	 *                    [FS Linux] [FS Mac] [HS Mac] [HS Windows]
+	 *   invKc = 1/Kc      3          26       5        8
+	 *   Ti                64         482      3748     648
+	 *
+	 * The respective regulators seem to give quarter-amplitude-damping on
+	 * respective hosts, but tuning from one host can get into oscillations
+	 * on another host. The regulation goal is to achieve a single set of
+	 * parameters to be used with all hosts, the only parameter difference
+	 * can be based on operating speed.
+	 *
+	 * After a number of tests with all the hosts, following parameters
+	 * were determined to result in nice no-overshoot response:
+	 *               [Full-Speed]    [High-Speed]
+	 *   invKc        128             128
+	 *   Ti           2048            16384
+	 *
+	 * The power-of-two parameters were arbitrarily chosen for rounding.
+	 * The 16384 = 2048 * 8 can be considered as unifying integration time.
+	 *
+	 * While the no-overshoot is also present with invKc as low as 32, such
+	 * regulator is pretty aggressive and keeps oscillating rather quickly
+	 * around the setpoint (within +-1 sample). Lowering the controller gain
+	 * (increasing invKc value) yields really good results (the outcome is
+	 * similar to using I2S LRCLK edge counting directly).
+	 *
+	 * The most challenging scenario is for the regulator to stabilize right
+	 * after startup when I2S consumes data faster than nominal sample rate
+	 * (48 kHz = 6 samples per SOF at High-Speed, 48 samples at Full-Speed)
+	 * according to host (I2S consuming data slower slower than nominal
+	 * sample rate is not problematic at all because buffer overrun does not
+	 * stop I2S streaming). This regulator should be able to stabilize for
+	 * any frequency that is within required USB SOF accuracy of 500 ppm,
+	 * i.e. when nominal sample rate is 48 kHz the real sample rate can be
+	 * anywhere in [47.976 kHz; 48.024 kHz] range.
 	 */
 	ctx->integrator += error;
-	return (error + (ctx->integrator / 2048)) / 128;
+	return (error + (ctx->integrator / (ctx->high_speed ? 16384 : 2048))) / 128;
 }
 
 void feedback_process(struct feedback_ctx *ctx)
@@ -374,17 +431,21 @@ void feedback_process(struct feedback_ctx *ctx)
 		ctx->fb_counter += sof_cc;
 		ctx->fb_periods++;
 
-		if (ctx->fb_periods == BIT(FEEDBACK_K - FEEDBACK_P)) {
+		if (ctx->fb_periods == feedback_period(ctx)) {
 
-			/* fb_counter holds Q10.10 value, left-justify it */
-			fb = ctx->fb_counter << FEEDBACK_FS_SHIFT;
+			if (ctx->high_speed) {
+				fb = ctx->fb_counter << FEEDBACK_HS_SHIFT;
+			} else {
+				/* fb_counter holds Q10.10 value, left-justify it */
+				fb = ctx->fb_counter << FEEDBACK_FS_SHIFT;
+			}
 
 			/* Align I2S FRAMESTART to USB SOF by adjusting reported
 			 * feedback value. This is endpoint specific correction
 			 * mentioned but not specified in USB 2.0 Specification.
 			 */
 			if (abs(offset) > BIT(FEEDBACK_P)) {
-				fb += offset_to_correction(offset);
+				fb += offset_to_correction(ctx, offset);
 			}
 
 			ctx->fb_value = fb;
@@ -392,22 +453,25 @@ void feedback_process(struct feedback_ctx *ctx)
 			ctx->fb_periods = 0;
 		}
 	} else {
+		const uint32_t zero_lsb_mask = ctx->high_speed ? 0x7 : 0xF;
+
 		/* Use PI controller to generate required feedback deviation
 		 * from nominal feedback value.
 		 */
-		fb = SAMPLES_PER_SOF << (FEEDBACK_K + FEEDBACK_FS_SHIFT);
+		fb = nominal_feedback_value(ctx);
 		/* Clear the additional LSB bits in feedback value, i.e. do not
 		 * use the optional extra resolution.
 		 */
-		fb += pi_update(ctx) & ~0xF;
+		fb += pi_update(ctx) & ~zero_lsb_mask;
 		ctx->fb_value = fb;
 	}
 }
 
-void feedback_reset_ctx(struct feedback_ctx *ctx)
+void feedback_reset_ctx(struct feedback_ctx *ctx, bool microframes)
 {
 	/* Reset feedback to nominal value */
-	ctx->fb_value = SAMPLES_PER_SOF << (FEEDBACK_K + FEEDBACK_FS_SHIFT);
+	ctx->high_speed = microframes;
+	ctx->fb_value = nominal_feedback_value(ctx);
 	if (IS_ENABLED(CONFIG_APP_USE_I2S_LRCLK_EDGES_COUNTER)) {
 		ctx->fb_counter = 0;
 		ctx->fb_periods = 0;
@@ -416,19 +480,28 @@ void feedback_reset_ctx(struct feedback_ctx *ctx)
 	}
 }
 
-void feedback_start(struct feedback_ctx *ctx, int i2s_blocks_queued)
+void feedback_start(struct feedback_ctx *ctx, int i2s_blocks_queued,
+		    bool microframes)
 {
+	ctx->high_speed = microframes;
+	ctx->fb_value = nominal_feedback_value(ctx);
+
+	if (microframes) {
+		ctx->counts_per_sof = (SAMPLE_RATE / 8000) << FEEDBACK_P;
+	} else {
+		ctx->counts_per_sof = (SAMPLE_RATE / 1000) << FEEDBACK_P;
+	}
+
 	/* I2S data was supposed to go out at SOF, but it is inevitably
 	 * delayed due to triggering I2S start by software. Set relative
 	 * SOF offset value in a way that ensures that values past "half
 	 * frame" are treated as "too late" instead of "too early"
 	 */
-	ctx->rel_sof_offset = (SAMPLES_PER_SOF << FEEDBACK_P) / 2;
+	ctx->rel_sof_offset = ctx->counts_per_sof / 2;
 	/* If there are more than 2 I2S blocks queued, use feedback regulator
 	 * to correct the situation.
 	 */
-	ctx->base_sof_offset = (i2s_blocks_queued - 2) *
-		(SAMPLES_PER_SOF << FEEDBACK_P);
+	ctx->base_sof_offset = (i2s_blocks_queued - 2) * ctx->counts_per_sof;
 }
 
 uint32_t feedback_value(struct feedback_ctx *ctx)

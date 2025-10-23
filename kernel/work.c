@@ -606,8 +606,8 @@ bool k_work_cancel_sync(struct k_work *work,
 static void work_timeout_handler(struct _timeout *record)
 {
 	struct k_work_q *queue = CONTAINER_OF(record, struct k_work_q, work_timeout_record);
-	struct k_work *work;
-	k_work_handler_t handler;
+	struct k_work *work = NULL;
+	k_work_handler_t handler = NULL;
 	const char *name;
 	const char *space = " ";
 
@@ -920,6 +920,11 @@ int k_work_queue_stop(struct k_work_q *queue, k_timeout_t timeout)
 	__ASSERT_NO_MSG(queue);
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work_queue, stop, queue, timeout);
+
+	if (z_is_thread_essential(&queue->thread)) {
+		return -ENOTSUP;
+	}
+
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	if (!flag_test(&queue->flags, K_WORK_QUEUE_STARTED_BIT)) {

@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_MICROCHIP_PIC32CZ_CA
+	select ARM
+	select MICROCHIP_PIC32C
+	select CPU_CORTEX_M7
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_VTOR
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_ICACHE
+	select CPU_HAS_DCACHE
+	select INIT_ARCH_HW_AT_BOOT
+	select HAS_SWO
+	select XIP
+	select HAS_POWEROFF

@@ -3,42 +3,41 @@ common:
     - adc
     - drivers
     - userspace
+  depends_on: adc
+  filter: dt_node_has_prop("/zephyr,user","io-channels")
+  min_flash: 40
+
 tests:
   drivers.adc:
-    depends_on: adc
-    min_flash: 40
     platform_exclude:
       - nucleo_u031r8
-      - panb511evb/nrf54l15/cpuapp
-      - panb511evb/nrf54l15/cpuapp/ns
+      - panb611evb/nrf54l15/cpuapp
+      - panb611evb/nrf54l15/cpuapp/ns
       - nrf54l15dk/nrf54l15/cpuapp/ns
       - nrf54l15dk/nrf54l10/cpuapp/ns
+      - nrf54lm20dk/nrf54lm20a/cpuapp/ns
       - bl54l15_dvk/nrf54l10/cpuapp/ns
       - bl54l15_dvk/nrf54l15/cpuapp/ns
       - bl54l15u_dvk/nrf54l15/cpuapp/ns
-      - raytac_an54l15q_db/nrf54l15/cpuapp/ns
+      - rpi_pico/rp2040/mcuboot
+      - rpi_pico/rp2040/w/mcuboot
+      - rpi_pico2/rp2350a/m33/mcuboot
+      - rpi_pico2/rp2350a/m33/w/mcuboot
+      - raytac_an54lq_db_15/nrf54l15/cpuapp/ns
   drivers.adc.b_u585i_iot02a_adc4:
     extra_args:
-      - DTC_OVERLAY_FILE="boards/b_u585i_iot02a_adc4.overlay"
-    platform_allow:
-      - b_u585i_iot02a
-  drivers.adc.nucleo_f103rb_dma:
-    extra_args:
-      - DTC_OVERLAY_FILE="boards/nucleo_f103rb_dma.overlay"
-      - EXTRA_CONF_FILE="overlay-dma-stm32.conf"
-    platform_allow:
-      - nucleo_f103rb
+      - platform:b_u585i_iot02a/stm32u585xx:DTC_OVERLAY_FILE="boards/b_u585i_iot02a_adc4.overlay"
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
   drivers.adc.dma_st_stm32:
-    extra_args:
-      - EXTRA_CONF_FILE="overlay-dma-stm32.conf"
     depends_on:
-      - adc
       - dma
-    min_flash: 40
     platform_allow:
       - b_u585i_iot02a
       - disco_l475_iot1
       - nucleo_f091rc
+      - nucleo_f103rb
       - nucleo_f207zg
       - nucleo_f401re
       - nucleo_f429zi
@@ -47,6 +46,7 @@ tests:
       - nucleo_g071rb
       - nucleo_g474re
       - nucleo_h743zi
+      - nucleo_h753zi
       - nucleo_l073rz
       - nucleo_l152re
       - nucleo_l476rg
@@ -60,6 +60,9 @@ tests:
       - stm32f3_disco
       - stm32h573i_dk
       - stm32u083c_dk
+    extra_args:
+      - EXTRA_CONF_FILE=overlay-dma-stm32.conf
+      - platform:nucleo_f103rb/stm32f103xb:DTC_OVERLAY_FILE="boards/nucleo_f103rb_dma.overlay"
     integration_platforms:
       - disco_l475_iot1
       - nucleo_l476rg
@@ -67,7 +70,6 @@ tests:
     extra_args:
       - EXTRA_CONF_FILE="overlay-dma-kinetis.conf"
     depends_on:
-      - adc
       - dma
     min_flash: 40
     platform_allow:
@@ -77,10 +79,40 @@ tests:
       - frdm_k82f
   drivers.adc.dma_espressif:
     extra_args:
-      - DTC_OVERLAY_FILE="boards/esp32s3_devkitc_procpu.overlay"
       - EXTRA_CONF_FILE="overlay-dma-esp32.conf"
     depends_on:
       - adc
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32c3_devkitm
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+      - esp32s2_devkitc
+      - esp32s3_devkitc/esp32s3/procpu
+  drivers.adc.dma_silabs:
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-dma-silabs.conf"
+    depends_on:
       - dma
     platform_allow:
-      - esp32s3_devkitc/esp32s3/procpu
+      - slwrb4180a
+      - sltb010a
+      - xg23_rb4210a
+      - xg24_rb4187c
+      - xg27_dk2602a
+      - bg29_rb4420a
+      - xg29_rb4412a
+  drivers.adc.dma_silabs_async:
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-dma-silabs.conf"
+      - CONFIG_ADC_ASYNC=y
+    depends_on:
+      - dma
+    platform_allow:
+      - slwrb4180a
+      - sltb010a
+      - xg23_rb4210a
+      - xg24_rb4187c
+      - xg27_dk2602a
+      - bg29_rb4420a
+      - xg29_rb4412a

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 NXP
+ * Copyright 2022-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,7 @@
 
 #if defined(CONFIG_CMSIS_RTOS_V2)
 #include <cmsis_rtos_v2_adapt.h>
+#include <soc_common.h>
 #endif
 
 /* Aliases for peripheral base addresses */

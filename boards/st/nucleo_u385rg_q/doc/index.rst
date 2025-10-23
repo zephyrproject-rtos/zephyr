@@ -187,6 +187,8 @@ Default Zephyr Peripheral Mapping:
 
 - DAC1_OUT1 : PA4
 - I2C1 SCL/SDA : PB6/PB7 (Arduino I2C)
+- FDCAN1_TX : PA12
+- FDCAN1_RX : PA11
 - LD4 : PA5
 - LPUART_1_TX : PA2
 - LPUART_1_RX : PA3
@@ -209,6 +211,13 @@ Serial Port
 
 Nucleo U385RG board has 4 U(S)ARTs, 1 LPUART. The Zephyr console output is assigned to
 USART1. Default settings are 115200 8N1.
+
+CAN
+---
+The STM32U385RG_Q does not have an onboard CAN transceiver. In
+order to use the CAN bus on the this board, an external CAN bus
+transceiver must be connected to ``PA11`` (``FDCAN1_RX``) and ``PA12``
+(``FDCAN1_TX``).
 
 
 Programming and Debugging

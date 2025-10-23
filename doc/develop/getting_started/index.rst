@@ -84,7 +84,7 @@ The current minimum required version for the main dependencies are:
          .. note::
 
             Due to the unavailability of ``gcc-multilib`` and ``g++-multilib`` on AArch64
-            (ARM64) systems, you may need to remove them from the list of packages to install.
+            (ARM64) systems, you may need to omit them from the list of packages to install.
 
       #. Verify the versions of the main dependencies installed on your system by entering:
 
@@ -171,7 +171,7 @@ The current minimum required version for the main dependencies are:
 
          .. code-block:: bat
 
-            winget install Kitware.CMake Ninja-build.Ninja oss-winget.gperf python Git.Git oss-winget.dtc wget 7zip.7zip
+            winget install Kitware.CMake Ninja-build.Ninja oss-winget.gperf Python.Python.3.12 Git.Git oss-winget.dtc wget 7zip.7zip
 
       #. Close the terminal window.
 
@@ -260,8 +260,7 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
 
             west zephyr-export
 
-      #. The Zephyr west extension command, ``west packages`` can be used to install Python
-         dependencies.
+      #. Install Python dependencies using ``west packages``.
 
          .. code-block:: bash
 
@@ -312,8 +311,7 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
 
             west zephyr-export
 
-      #. The Zephyr west extension command, ``west packages`` can be used to install Python
-         dependencies.
+      #. Install Python dependencies using ``west packages``.
 
          .. code-block:: bash
 
@@ -338,6 +336,15 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
                python -m venv zephyrproject\.venv
 
       #. Activate the virtual environment:
+
+         .. note::
+
+            Python's virtual environment activation in PowerShell requires
+            running a script itself, which needs to be allowed.
+
+            .. code-block:: powershell
+
+               Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
          .. tabs::
 
@@ -380,8 +387,7 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
 
             west zephyr-export
 
-      #. The Zephyr west extension command, ``west packages`` can be used to install Python
-         dependencies.
+      #. Install Python dependencies using ``west packages``.
 
          .. code-block:: bat
 

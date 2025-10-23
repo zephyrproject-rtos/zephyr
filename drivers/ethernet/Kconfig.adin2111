@@ -6,7 +6,6 @@ menuconfig ETH_ADIN2111
 	default y
 	depends on DT_HAS_ADI_ADIN2111_ENABLED || DT_HAS_ADI_ADIN1110_ENABLED
 	select SPI
-	select MDIO
 	imply CRC
 	help
 	  The ADIN2111 is a low power, 2-port 10BASE-T1L transceiver

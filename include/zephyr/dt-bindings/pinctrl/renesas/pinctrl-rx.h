@@ -24,6 +24,8 @@
 #define RX_PSEL_SCI_12    0xC
 #define RX_PSEL_TMR       0x5
 #define RX_PSEL_POE       0x7
+#define RX_PSEL_ADC       0x0
+#define RX_PSEL_LVD       0x0
 
 /* P0nPFS */
 #define RX_PSEL_P0nPFS_HIZ    0x0

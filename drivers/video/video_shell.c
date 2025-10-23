@@ -499,8 +499,6 @@ static int video_shell_print_caps(const struct shell *sh, const struct device *d
 	int ret;
 
 	shell_print(sh, "min vbuf count: %u", caps->min_vbuf_count);
-	shell_print(sh, "min line count: %u", caps->min_line_count);
-	shell_print(sh, "max line count: %u", caps->max_line_count);
 
 	for (size_t i = 0; caps->format_caps[i].pixelformat != 0; i++) {
 		ret = video_shell_print_format_cap(sh, dev, caps->type, &caps->format_caps[i], i);
@@ -651,7 +649,7 @@ static int video_shell_get_ctrl_by_name(struct video_ctrl_query *cq, char const 
 			return -ENOENT;
 		}
 
-		video_shell_convert_ctrl_name(name, ctrl_name, sizeof(ctrl_name));
+		video_shell_convert_ctrl_name(cq->name, ctrl_name, sizeof(ctrl_name));
 		if (strcmp(ctrl_name, name) == 0) {
 			break;
 		}

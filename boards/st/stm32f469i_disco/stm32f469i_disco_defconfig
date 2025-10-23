@@ -14,3 +14,9 @@ CONFIG_UART_CONSOLE=y
 
 # enable GPIO
 CONFIG_GPIO=y
+
+# Enable External Memory
+CONFIG_MEMC=y
+
+# Configure Display
+CONFIG_STM32_LTDC_ARGB8888=y

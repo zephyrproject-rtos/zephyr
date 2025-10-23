@@ -25,6 +25,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		user_led: led_0 {
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 			label = "User LED";
@@ -123,6 +124,7 @@
 		reg = <0>;
 		size = <DT_SIZE_M(64)>; /* 64 Mbits */
 		qspi-max-frequency = <40000000>;
+		cs-high-time = <2>; /* >= 50 ns */
 		status = "okay";
 		spi-bus-width = <4>;
 		writeoc = "PP_1_1_4";
@@ -131,6 +133,7 @@
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
+
 			storage_partition: partition@0 {
 				label = "storage";
 				reg = <0x00000000 DT_SIZE_M(64)>;

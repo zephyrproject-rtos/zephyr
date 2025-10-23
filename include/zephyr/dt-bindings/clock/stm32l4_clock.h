@@ -20,7 +20,7 @@
 #define STM32_PERIPH_BUS_MAX	STM32_CLOCK_BUS_APB2
 
 /** Domain clocks */
-/* RM0351/RM0432/RM0438, § Clock configuration register (RCC_CCIPRx) */
+/* RM0351/RM0432, § Clock configuration register (RCC_CCIPRx) */
 
 /** System clock */
 /* defined in stm32_common_clocks.h */
@@ -31,11 +31,21 @@
 #define STM32_SRC_MSI		(STM32_SRC_HSI48 + 1)
 /** Bus clock */
 #define STM32_SRC_PCLK		(STM32_SRC_MSI + 1)
+#define STM32_SRC_TIMPCLK1	(STM32_SRC_PCLK + 1)
+#define STM32_SRC_TIMPCLK2	(STM32_SRC_TIMPCLK1 + 1)
 /** PLL clock outputs */
-#define STM32_SRC_PLL_P		(STM32_SRC_PCLK + 1)
+#define STM32_SRC_PLL_P		(STM32_SRC_TIMPCLK2 + 1)
 #define STM32_SRC_PLL_Q		(STM32_SRC_PLL_P + 1)
 #define STM32_SRC_PLL_R		(STM32_SRC_PLL_Q + 1)
-/* TODO: PLLSAI clocks */
+/* PLLSAI1 clocks */
+#define STM32_SRC_PLLSAI1_P	(STM32_SRC_PLL_R + 1)
+#define STM32_SRC_PLLSAI1_Q	(STM32_SRC_PLLSAI1_P + 1)
+#define STM32_SRC_PLLSAI1_R	(STM32_SRC_PLLSAI1_Q + 1)
+/* PLLSAI2 clocks */
+#define STM32_SRC_PLLSAI2_P	(STM32_SRC_PLLSAI1_R + 1)
+#define STM32_SRC_PLLSAI2_Q	(STM32_SRC_PLLSAI2_P + 1)
+#define STM32_SRC_PLLSAI2_R	(STM32_SRC_PLLSAI2_Q + 1)
+#define STM32_SRC_PLLSAI2_DIVR	(STM32_SRC_PLLSAI2_R + 1)
 
 /** @brief RCC_CCIPR register offset */
 #define CCIPR_REG		0x88
@@ -70,8 +80,6 @@
 #define I2C4_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 0, CCIPR2_REG)
 #define DFSDM_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 2, CCIPR2_REG)
 #define ADFSDM_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 3, CCIPR2_REG)
-/* #define SAI1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 5, CCIPR2_REG) */
-/* #define SAI2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 8, CCIPR2_REG) */
 #define DSI_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 12, CCIPR2_REG)
 #define SDMMC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 14, CCIPR2_REG)
 #define OSPI_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 20, CCIPR2_REG)
@@ -80,5 +88,22 @@
 /** CFGR devices */
 #define MCO1_SEL(val)           STM32_DT_CLOCK_SELECT((val), 0xF, 24, CFGR_REG)
 #define MCO1_PRE(val)           STM32_DT_CLOCK_SELECT((val), 0x7, 28, CFGR_REG)
+
+/* MCO prescaler : division factor */
+#define MCO_PRE_DIV_1	0
+#define MCO_PRE_DIV_2	1
+#define MCO_PRE_DIV_4	2
+#define MCO_PRE_DIV_8	3
+#define MCO_PRE_DIV_16	4
+
+/* MCO clock output */
+#define MCO_SEL_SYSCLK	1
+#define MCO_SEL_MSI	2
+#define MCO_SEL_HSI16	3
+#define MCO_SEL_HSE	4
+#define MCO_SEL_PLLCLK	5
+#define MCO_SEL_LSI	6
+#define MCO_SEL_LSE	7
+#define MCO_SEL_HSI48	8
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32L4_CLOCK_H_ */

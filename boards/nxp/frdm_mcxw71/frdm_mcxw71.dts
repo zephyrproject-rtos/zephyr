@@ -7,6 +7,7 @@
 
 #include <nxp/nxp_mcxw71.dtsi>
 #include "frdm_mcxw71-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -18,6 +19,7 @@
 		blue-pwm-led = &blue_pwm_led;
 		green-pwm-led = &green_pwm_led;
 		red-pwm-led = &red_pwm_led;
+		rtc = &counter_rtc;
 	};
 
 	chosen {
@@ -35,6 +37,7 @@
 
 	user_led {
 		compatible = "gpio-leds";
+
 		blue_led: led {
 			gpios = <&gpioc 1 GPIO_ACTIVE_LOW>;
 		};
@@ -42,12 +45,15 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		blue_pwm_led: pwm_led_0 {
 			pwms = <&tpm0 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
+
 		green_pwm_led: pwm_led_1 {
 			pwms = <&tpm0 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
+
 		red_pwm_led: pwm_led_2 {
 			pwms = <&tpm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
@@ -55,6 +61,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_0: button_0 {
 			label = "User SW2";
 			gpios = <&gpioc 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -68,28 +75,28 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <0 0 &gpiod 1 0>,	/* A0 */
-			   <1 0 &gpiod 2 0>,	/* A1 */
-			   <2 0 &gpiod 3 0>,	/* A2 */
-			   <3 0 &gpioa 4 0>,	/* A3 */
-			   <4 0 &gpioc 3 0>,	/* A4 */
-			   <5 0 &gpioc 2 0>,	/* A5 */
-			   <6 0 &gpioa 16 0>,	/* D0 */
-			   <7 0 &gpioa 17 0>,	/* D1 */
-			   <8 0 &gpioc 4 0>,	/* D2 */
-			   <9 0 &gpioc 5 0>,	/* D3 */
-			   <10 0 &gpioa 19 0>,	/* D4 */
-			   <11 0 &gpioc 1 0>,	/* D5 */
-			   <12 0 &gpioa 20 0>,	/* D6 */
-			   <13 0 &gpioa 21 0>,	/* D7 */
-			   <14 0 &gpioc 4 0>,	/* D8 */
-			   <15 0 &gpioa 18 0>,	/* D9 */
-			   <16 0 &gpiob 0 0>,	/* D10 */
-			   <17 0 &gpiob 3 0>,	/* D11 */
-			   <18 0 &gpiob 1 0>,	/* D12 */
-			   <19 0 &gpiob 2 0>,	/* D13 */
-			   <20 0 &gpiob 4 0>,	/* D14 */
-			   <21 0 &gpiob 5 0>;	/* D15 */
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &gpiod 1 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &gpiod 2 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &gpiod 3 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &gpioa 4 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &gpioc 3 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &gpioc 2 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &gpioa 16 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &gpioa 17 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &gpioc 4 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &gpioc 5 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &gpioa 19 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &gpioc 1 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &gpioa 20 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &gpioa 21 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &gpioc 4 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &gpioa 18 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &gpiob 0 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &gpiob 3 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &gpiob 1 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &gpiob 2 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &gpiob 4 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &gpiob 5 0>;
 	};
 };
 
@@ -107,14 +114,14 @@
 
 &lpuart0 {
 	current-speed = <115200>;
-	status =  "okay";
+	status = "okay";
 	pinctrl-0 = <&pinmux_lpuart0>;
 	pinctrl-names = "default";
 };
 
 &lpuart1 {
 	current-speed = <115200>;
-	status =  "okay";
+	status = "okay";
 	pinctrl-0 = <&pinmux_lpuart1>;
 	pinctrl-names = "default";
 };
@@ -135,9 +142,6 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpspi1>;
 	pinctrl-names = "default";
-	pcs-sck-delay = <5>;
-	sck-pcs-delay = <5>;
-	transfer-delay = <125>;
 
 	mx25r6435fm2il0: flash@0 {
 		compatible = "jedec,spi-nor";
@@ -155,7 +159,10 @@
 		/* this is the default (reset) mode for this flash */
 		mxicy,mx25r-power-mode = "low-power";
 		/* 8 MHz for low power mode */
-		spi-max-frequency = <8000000>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
+		spi-cs-setup-delay-ns = <5>;
+		spi-cs-hold-delay-ns = <5>;
+		spi-interframe-delay-ns = <125>;
 	};
 };
 
@@ -172,12 +179,15 @@
 		boot_partition: partition@0 {
 			reg = <0x0 DT_SIZE_K(64)>;
 		};
+
 		slot0_partition: partition@10000 {
 			reg = <0x10000 DT_SIZE_K(424)>;
 		};
+
 		slot1_partition: partition@7A000 {
 			reg = <0x7A000 DT_SIZE_K(424)>;
 		};
+
 		storage_partition: partition@E4000 {
 			reg = <0xE4000 DT_SIZE_K(112)>;
 		};
@@ -185,6 +195,10 @@
 };
 
 &fmu {
+	status = "okay";
+};
+
+&edma {
 	status = "okay";
 };
 
@@ -220,5 +234,9 @@
 };
 
 &rtc {
+	status = "okay";
+};
+
+&counter_rtc {
 	status = "okay";
 };

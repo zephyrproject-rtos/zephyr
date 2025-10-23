@@ -1,0 +1,23 @@
+identifier: xg24_rb4186c
+name: EFR32xG24 2.4 GHz 10 dBm Radio Board (xG24-RB4186C, BRD4186C)
+type: mcu
+arch: arm
+ram: 256
+flash: 1536
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - bluetooth
+  - comparator
+  - counter
+  - dac
+  - dma
+  - entropy
+  - flash
+  - gpio
+  - pwm
+  - spi
+  - uart
+  - watchdog
+vendor: silabs

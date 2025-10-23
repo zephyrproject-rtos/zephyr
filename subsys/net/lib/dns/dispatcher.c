@@ -31,7 +31,7 @@ NET_BUF_POOL_DEFINE(dns_msg_pool, DNS_RESOLVER_BUF_CTR,
 
 static struct socket_dispatch_table {
 	struct dns_socket_dispatcher *ctx;
-} dispatch_table[CONFIG_ZVFS_OPEN_MAX];
+} dispatch_table[ZVFS_OPEN_SIZE];
 
 static int dns_dispatch(struct dns_socket_dispatcher *dispatcher,
 			int sock, struct sockaddr *addr, size_t addrlen,
@@ -125,7 +125,7 @@ static int recv_data(struct net_socket_service_event *pev)
 	socklen_t optlen = sizeof(int);
 	struct net_buf *dns_data = NULL;
 	struct sockaddr addr;
-	size_t addrlen;
+	socklen_t addrlen;
 	int family, sock_error;
 	int ret = 0, len;
 

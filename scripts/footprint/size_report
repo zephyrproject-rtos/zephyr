@@ -21,7 +21,7 @@ import json
 
 from packaging import version
 
-from colorama import init, Fore
+from colorama import init, Fore, Style
 
 from anytree import RenderTree, NodeMixin, findall_by_attr
 from anytree.exporter import DictExporter
@@ -131,7 +131,18 @@ def get_symbols(elf, addr_ranges):
     """
     rom_syms = dict()
     ram_syms = dict()
+    all_syms = dict()
     unassigned_syms = dict()
+
+    def entry(sym, loc, section):
+        """
+        Factor function for a symbol entry.
+        """
+        return {'name': sym.name,
+                'symbol': sym,
+                'section': section,
+                'loc': loc,
+                'mapped_files': set()}
 
     rom_addr_ranges = addr_ranges['rom']
     ram_addr_ranges = addr_ranges['ram']
@@ -144,40 +155,42 @@ def get_symbols(elf, addr_ranges):
                 if get_symbol_size(sym) == 0:
                     continue
 
-                found_sec = False
-                entry = {'name': sym.name,
-                         'symbol': sym,
-                         'mapped_files': set(),
-                         'section': None}
+                ram_sym = is_symbol_in_ranges(sym, ram_addr_ranges)
+                rom_sym = is_symbol_in_ranges(sym, rom_addr_ranges)
+
+                # Determine the location(s) for this symbol.
+                loc = []
+                if ram_sym:
+                    loc.append('ram')
+                if rom_sym:
+                    loc.append('rom')
 
                 # If symbol is in ROM area?
-                bound = is_symbol_in_ranges(sym, rom_addr_ranges)
-                if bound:
+                if rom_sym:
                     if sym.name not in rom_syms:
                         rom_syms[sym.name] = list()
-                    entry['section'] = bound['name']
-                    rom_syms[sym.name].append(entry)
-                    found_sec = True
+                    rom_syms[sym.name].append(entry(sym, loc, rom_sym['name']))
 
                 # If symbol is in RAM area?
-                bound = is_symbol_in_ranges(sym, ram_addr_ranges)
-                if bound:
+                if ram_sym:
                     if sym.name not in ram_syms:
                         ram_syms[sym.name] = list()
-                    entry['section'] = bound['name']
-                    ram_syms[sym.name].append(entry)
-                    found_sec = True
+                    ram_syms[sym.name].append(entry(sym, loc, ram_sym['name']))
 
-                if not found_sec:
+                # If symbol is in either area add to "all" list.
+                if ram_sym or rom_sym:
+                    if sym.name not in all_syms:
+                        all_syms[sym.name] = list()
+                    all_syms[sym.name].append(entry(sym, loc, ram_sym['name'] if ram_sym else rom_sym['name']))
+                else:
                     bound = is_symbol_in_ranges(sym, unassigned_addr_ranges)
-                    if bound:
-                        entry['section'] = bound['name']
                     if sym.name not in unassigned_syms:
                         unassigned_syms[sym.name] = list()
-                    unassigned_syms[sym.name].append(entry)
+                    unassigned_syms[sym.name].append(entry(sym, ["unassigned"], bound['name'] if bound else None))
 
     ret = {'rom': rom_syms,
            'ram': ram_syms,
+           'all': all_syms,
            'unassigned': unassigned_syms}
     return ret
 
@@ -206,6 +219,7 @@ def get_section_ranges(elf):
     rom_size = 0
     ram_size = 0
     unassigned_size = 0
+    total_size = 0
 
     xip = any(section.get_symbol_by_name('CONFIG_XIP')
               for section in elf.iter_sections('SHT_SYMTAB'))
@@ -223,6 +237,7 @@ def get_section_ranges(elf):
             # BSS and noinit sections
             ram_addr_ranges.append(bound)
             ram_size += size
+            total_size += size
             is_assigned = True
             print_section_info(section, "RAM bss section")
 
@@ -233,6 +248,7 @@ def get_section_ranges(elf):
                 # Text section
                 rom_addr_ranges.append(bound)
                 rom_size += size
+                total_size += size
                 is_assigned = True
                 print_section_info(section, "ROM txt section")
 
@@ -245,6 +261,7 @@ def get_section_ranges(elf):
                     rom_size += size
                 ram_addr_ranges.append(bound)
                 ram_size += size
+                total_size += size
                 is_assigned = True
                 print_section_info(section, "DATA r/w section")
 
@@ -252,6 +269,7 @@ def get_section_ranges(elf):
                 # Read only data
                 rom_addr_ranges.append(bound)
                 rom_size += size
+                total_size += size
                 is_assigned = True
                 print_section_info(section, "ROM r/o section")
 
@@ -265,7 +283,9 @@ def get_section_ranges(elf):
            'ram': ram_addr_ranges,
            'ram_total_size': ram_size,
            'unassigned': unassigned_addr_ranges,
-           'unassigned_total_size': unassigned_size}
+           'unassigned_total_size': unassigned_size,
+           'all': ram_addr_ranges + rom_addr_ranges,
+           'all_total_size': total_size}
     return ret
 
 
@@ -464,7 +484,7 @@ def do_address_range_matching(dwarfinfo, symbol_dict, processed):
             offset_map[die.offset] = die
 
         for die in cu_list[cu]['dies']:
-            if not die.tag == 'DW_TAG_subprogram':
+            if not (die.tag == 'DW_TAG_subprogram' or die.tag == 'DW_TAG_variable'):
                 continue
 
             path = None
@@ -507,16 +527,32 @@ def do_address_range_matching(dwarfinfo, symbol_dict, processed):
                 if low is None:
                     continue
 
-                for ums in unmapped_symbols:
-                    for one_sym in symbol_dict[ums]:
-                        symbol = one_sym['symbol']
-                        symaddr = symbol['st_value']
+                # Case 1: Match for a function (using a range)
+                if die.tag == 'DW_TAG_subprogram':
+                    for ums in unmapped_symbols:
+                        for one_sym in symbol_dict[ums]:
+                            symbol = one_sym['symbol']
+                            symaddr = symbol['st_value']
 
-                        if symaddr not in mapped_addresses:
-                            if low <= symaddr < high:
-                                one_sym['mapped_files'].add(path)
-                                mapped_addresses.add(symaddr)
-                                newly_mapped_syms.add(ums)
+                            if symaddr not in mapped_addresses:
+                                if low <= symaddr < high:
+                                    one_sym['mapped_files'].add(path)
+                                    mapped_addresses.add(symaddr)
+                                    newly_mapped_syms.add(ums)
+
+                # Case 2: Match for a variable (using a single address)
+                elif die.tag == 'DW_TAG_variable':
+                    for ums in unmapped_symbols:
+                        for one_sym in symbol_dict[ums]:
+                            symbol = one_sym['symbol']
+                            symaddr = symbol['st_value']
+
+                            if symaddr not in mapped_addresses:
+                                # We expect the 'high' value to be 'low + 1' for a variable
+                                if low == symaddr:
+                                    one_sym['mapped_files'].add(path)
+                                    mapped_addresses.add(symaddr)
+                                    newly_mapped_syms.add(ums)
 
     mapped_symbols = mapped_symbols.union(newly_mapped_syms)
     unmapped_symbols = unmapped_symbols.difference(newly_mapped_syms)
@@ -592,6 +628,7 @@ class TreeNode(NodeMixin):
             self.section = section
         if children:
             self.children = children
+        self.loc = []
 
     def __repr__(self):
         return self._name
@@ -635,7 +672,7 @@ def generate_any_tree(symbol_dict, total_size, path_prefix):
 
     # A set of helper function for building a simple tree with a path-like
     # hierarchy.
-    def _insert_one_elem(root, path, size, addr, section):
+    def _insert_one_elem(root, path, size, addr, section, loc):
         cur = None
         node = None
         parent = root
@@ -666,6 +703,7 @@ def generate_any_tree(symbol_dict, total_size, path_prefix):
             # Don't do it on file- and directory- level parent nodes.
             node.address = addr
             node.section = section
+            node.loc = loc
         else:
             # normally this shouldn't happen; just to detect data or logic errors.
             print(f"ERROR: no end node created for {root}, {path}, 0x{addr:08x}+{size}@{section}")
@@ -704,7 +742,7 @@ def generate_any_tree(symbol_dict, total_size, path_prefix):
                 else:
                     dest_node = node_no_paths
 
-                _insert_one_elem(dest_node, path, size, addr, section)
+                _insert_one_elem(dest_node, path, size, addr, section, symbol['loc'])
 
 
     if node_zephyr_base is not root:
@@ -748,10 +786,14 @@ def node_sort(items):
     return sorted(items, key=lambda item: item._name)
 
 
-def print_any_tree(root, total_size, depth):
+def print_any_tree(root, total_size, depth, header=None):
     """
     Print the symbol tree.
     """
+    if header:
+        print(f"{Fore.WHITE}{Style.BRIGHT}{header}")
+        print('-' * 110 + f"{Fore.RESET}{Style.RESET_ALL}")
+
     print('{:98s} {:>7s} {:>7s} {:11s} {:16s}'.format(
         Fore.YELLOW + "Path", "Size", "%", " Address", "Section" + Fore.RESET))
     print('=' * 138)
@@ -797,14 +839,16 @@ def parse_args():
                         help="Output path")
     parser.add_argument("-w", "--workspace", default=None,
                         help="Workspace path (Usually the same as WEST_TOPDIR)")
-    parser.add_argument("target", choices=['rom', 'ram', 'all'])
+    parser.add_argument("target", choices=['rom', 'ram', 'all'], nargs="+")
     parser.add_argument("-d", "--depth", dest="depth",
                         type=int, default=None,
                         help="How deep should we go into the tree",
                         metavar="DEPTH")
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="Print extra debugging information")
-    parser.add_argument("--json", help="store results in a JSON file.")
+    parser.add_argument("--json", help='Store results in the given JSON file ' + \
+                                       '(a "{target}" string in the filename will ' + \
+                                       'be replaced by "ram", "rom", or "all").')
     args = parser.parse_args()
 
 
@@ -820,12 +864,7 @@ def main():
     init()
 
     assert os.path.exists(args.kernel), "{0} does not exist.".format(args.kernel)
-    if args.target == 'ram':
-        targets = ['ram']
-    elif args.target == 'rom':
-        targets = ['rom']
-    elif args.target == 'all':
-        targets = ['rom', 'ram']
+    targets = args.target
 
     elf = ELFFile(open(args.kernel, "rb"))
     assert elf.has_dwarf_info(), "ELF file has no DWARF information"
@@ -834,17 +873,15 @@ def main():
     addr_ranges = get_section_ranges(elf)
     dwarfinfo = elf.get_dwarf_info()
 
+    symbols = get_symbols(elf, addr_ranges)
+    for sym in symbols['unassigned'].values():
+        for sym_entry in sym:
+            print(f"WARN: Symbol '{sym_entry['name']}' section '{sym_entry['section']}' "
+                    "is not in RAM or ROM.")
+
     for t in targets:
-
-        symbols = get_symbols(elf, addr_ranges)
-
-        for sym in symbols['unassigned'].values():
-            for sym_entry in sym:
-                print(f"WARN: Symbol '{sym_entry['name']}' section '{sym_entry['section']}' "
-                      "is not in RAM or ROM.")
-
         if args.json:
-            jsonout = args.json
+            jsonout = args.json.replace('{target}', t)
         else:
             jsonout = os.path.join(args.output, f'{t}.json')
 
@@ -870,7 +907,8 @@ def main():
 
             root = generate_any_tree(symbol_dict, symsize, common_path_prefix)
             if not args.quiet:
-                print_any_tree(root, symsize, args.depth)
+                header = f"{t.upper()} Report" if len(targets) > 1 else None
+                print_any_tree(root, symsize, args.depth, header)
 
             exporter = DictExporter(attriter=lambda attrs: [(k.lstrip('_'), v) for k, v in attrs])
             data = dict()

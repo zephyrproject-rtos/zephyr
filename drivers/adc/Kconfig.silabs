@@ -1,0 +1,42 @@
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_GECKO_ADC
+	bool "Gecko ADC driver"
+	default y
+	depends on DT_HAS_SILABS_GECKO_ADC_ENABLED
+	select SOC_GECKO_ADC
+	select ADC_CONFIGURABLE_INPUTS
+	help
+	  Enable the driver implementation for the Silabs GeckoEFM32 ADC
+
+config ADC_SILABS_IADC
+	bool "Silabs Incremental ADC driver"
+	default y
+	depends on DT_HAS_SILABS_IADC_ENABLED
+	select SILABS_SISDK_IADC
+	select ADC_CONFIGURABLE_INPUTS
+	help
+	  Enable the driver implementation for Silabs Incremental ADC
+
+if ADC_SILABS_IADC
+
+config ADC_SILABS_IADC_DMA
+	bool "Silabs IADC async DMA support"
+	depends on DMA
+	help
+	  Enable DMA support with the Silabs IADC driver.
+	  This allows ADC conversions to be performed (asynchronously or not)
+	  using DMA for improved performance.
+
+endif
+
+config ADC_SILABS_SIWX91X
+	bool "Silabs Siwx91x MCU ADC driver"
+	default y
+	depends on DT_HAS_SILABS_SIWX91X_ADC_ENABLED
+	select ADC_CONFIGURABLE_INPUTS
+	select PINCTRL
+	help
+	  Enable the driver implementation for the Silabs Siwx91x ADC

@@ -46,6 +46,11 @@ void z_soc_irq_enable(unsigned int irq)
 	/* First 32 IRQs are the Xtensa architectural vectors,  */
 	if (irq < 32) {
 		xtensa_irq_enable(irq);
+#if defined(CONFIG_SOC_MT8188)
+		if (irq < 25) {
+			*(volatile uint32_t*)(DT_REG_ADDR(DT_NODELABEL(intc2))) |= BIT(irq);
+		}
+#endif
 	} else {
 		const struct device *dev = irq_dev(&irq);
 
@@ -57,6 +62,11 @@ void z_soc_irq_disable(unsigned int irq)
 {
 	if (irq < 32) {
 		xtensa_irq_disable(irq);
+#if defined(CONFIG_SOC_MT8188)
+		if (irq < 25) {
+			*(volatile uint32_t*)(DT_REG_ADDR(DT_NODELABEL(intc2))) &= ~BIT(irq);
+		}
+#endif
 	} else {
 		const struct device *dev = irq_dev(&irq);
 

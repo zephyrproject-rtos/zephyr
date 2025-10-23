@@ -7,31 +7,45 @@
 #ifndef ZEPHYR_INCLUDE_MGMT_SERIAL_H_
 #define ZEPHYR_INCLUDE_MGMT_SERIAL_H_
 
+/**
+ * @brief This allows to use the MCUmgr SMP protocol over serial.
+ * @defgroup mcumgr_transport_serial Serial transport
+ * @ingroup mcumgr_transport
+ * @{
+ */
+
 #include <zephyr/types.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/** Serial packet header */
 #define MCUMGR_SERIAL_HDR_PKT       0x0609
+/** Serial fragment header */
 #define MCUMGR_SERIAL_HDR_FRAG      0x0414
+/** Maximum frame size */
 #define MCUMGR_SERIAL_MAX_FRAME     127
 
+/** First byte of packet header */
 #define MCUMGR_SERIAL_HDR_PKT_1     (MCUMGR_SERIAL_HDR_PKT >> 8)
+/** Second byte of packet header */
 #define MCUMGR_SERIAL_HDR_PKT_2     (MCUMGR_SERIAL_HDR_PKT & 0xff)
+/** First byte of fragment header */
 #define MCUMGR_SERIAL_HDR_FRAG_1    (MCUMGR_SERIAL_HDR_FRAG >> 8)
+/** Second byte of fragment header */
 #define MCUMGR_SERIAL_HDR_FRAG_2    (MCUMGR_SERIAL_HDR_FRAG & 0xff)
 
 /**
  * @brief Maintains state for an incoming mcumgr request packet.
  */
 struct mcumgr_serial_rx_ctxt {
-	/* Contains the partially- or fully-received mcumgr request.  Data
+	/** Contains the partially- or fully-received mcumgr request.  Data
 	 * stored in this buffer has already been base64-decoded.
 	 */
 	struct net_buf *nb;
 
-	/* Length of full packet, as read from header. */
+	/** Length of full packet, as read from header. */
 	uint16_t pkt_len;
 };
 
@@ -82,5 +96,9 @@ int mcumgr_serial_tx_pkt(const uint8_t *data, int len, mcumgr_serial_tx_cb cb);
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif

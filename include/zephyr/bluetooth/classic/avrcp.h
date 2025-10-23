@@ -141,6 +141,124 @@ typedef enum __packed {
 	BT_AVRCP_BUTTON_RELEASED = 1,
 } bt_avrcp_button_state_t;
 
+/**
+ * @brief AVRCP status and error codes.
+ *
+ * These status codes are used in AVRCP responses to indicate the result of a command.
+ */
+typedef enum __packed {
+	/** Invalid command.
+	 * Valid for Commands: All
+	 */
+	BT_AVRCP_STATUS_INVALID_COMMAND = 0x00,
+
+	/** Invalid parameter.
+	 * Valid for Commands: All
+	 */
+	BT_AVRCP_STATUS_INVALID_PARAMETER = 0x01,
+
+	/** Parameter content error.
+	 * Valid for Commands: All
+	 */
+	BT_AVRCP_STATUS_PARAMETER_CONTENT_ERROR = 0x02,
+
+	/** Internal error.
+	 * Valid for Commands: All
+	 */
+	BT_AVRCP_STATUS_INTERNAL_ERROR = 0x03,
+
+	/** Operation completed without error.
+	 * Valid for Commands: All except where the response CType is AV/C REJECTED
+	 */
+	BT_AVRCP_STATUS_OPERATION_COMPLETED = 0x04,
+
+	/** The UIDs on the device have changed.
+	 * Valid for Commands: All
+	 */
+	BT_AVRCP_STATUS_UID_CHANGED = 0x05,
+
+	/** The Direction parameter is invalid.
+	 * Valid for Commands: ChangePath
+	 */
+	BT_AVRCP_STATUS_INVALID_DIRECTION = 0x07,
+
+	/** The UID provided does not refer to a folder item.
+	 * Valid for Commands: ChangePath
+	 */
+	BT_AVRCP_STATUS_NOT_A_DIRECTORY = 0x08,
+
+	/** The UID provided does not refer to any currently valid item.
+	 * Valid for Commands: ChangePath, PlayItem, AddToNowPlaying, GetItemAttributes
+	 */
+	BT_AVRCP_STATUS_DOES_NOT_EXIST = 0x09,
+
+	/** Invalid scope.
+	 * Valid for Commands: GetFolderItems, PlayItem, AddToNowPlayer, GetItemAttributes,
+	 * GetTotalNumberOfItems
+	 */
+	BT_AVRCP_STATUS_INVALID_SCOPE = 0x0a,
+
+	/** Range out of bounds.
+	 * Valid for Commands: GetFolderItems
+	 */
+	BT_AVRCP_STATUS_RANGE_OUT_OF_BOUNDS = 0x0b,
+
+	/** Folder item is not playable.
+	 * Valid for Commands: Play Item, AddToNowPlaying
+	 */
+	BT_AVRCP_STATUS_FOLDER_ITEM_IS_NOT_PLAYABLE = 0x0c,
+
+	/** Media in use.
+	 * Valid for Commands: PlayItem, AddToNowPlaying
+	 */
+	BT_AVRCP_STATUS_MEDIA_IN_USE = 0x0d,
+
+	/** Now Playing List full.
+	 * Valid for Commands: AddToNowPlaying
+	 */
+	BT_AVRCP_STATUS_NOW_PLAYING_LIST_FULL = 0x0e,
+
+	/** Search not supported.
+	 * Valid for Commands: Search
+	 */
+	BT_AVRCP_STATUS_SEARCH_NOT_SUPPORTED = 0x0f,
+
+	/** Search in progress.
+	 * Valid for Commands: Search
+	 */
+	BT_AVRCP_STATUS_SEARCH_IN_PROGRESS = 0x10,
+
+	/** The specified Player Id does not refer to a valid player.
+	 * Valid for Commands: SetAddressedPlayer, SetBrowsedPlayer
+	 */
+	BT_AVRCP_STATUS_INVALID_PLAYER_ID = 0x11,
+
+	/** Player not browsable.
+	 * Valid for Commands: SetBrowsedPlayer
+	 */
+	BT_AVRCP_STATUS_PLAYER_NOT_BROWSABLE = 0x12,
+
+	/** Player not addressed.
+	 * Valid for Commands: Search, SetBrowsedPlayer
+	 */
+	BT_AVRCP_STATUS_PLAYER_NOT_ADDRESSED = 0x13,
+
+	/** No valid search results.
+	 * Valid for Commands: GetFolderItems
+	 */
+	BT_AVRCP_STATUS_NO_VALID_SEARCH_RESULTS = 0x14,
+
+	/** No available players.
+	 * Valid for Commands: ALL
+	 */
+	BT_AVRCP_STATUS_NO_AVAILABLE_PLAYERS = 0x15,
+
+	/** Addressed player changed.
+	 * Valid for Commands: All Register Notification commands
+	 */
+	BT_AVRCP_STATUS_ADDRESSED_PLAYER_CHANGED = 0x16,
+} bt_avrcp_status_t;
+
 /** @brief AVRCP CT structure */
 struct bt_avrcp_ct;
 /** @brief AVRCP TG structure */
@@ -159,21 +277,55 @@ struct bt_avrcp_subunit_info_rsp {
 };
 
 #define BT_AVRCP_PASSTHROUGH_GET_STATE(payload)                                                    \
-	((bt_avrcp_button_state_t)(FIELD_GET(BIT(7), ((payload)->byte0))))
+	((bt_avrcp_opid_t)(FIELD_GET(BIT(7), ((payload)->opid_state))))
 #define BT_AVRCP_PASSTHROUGH_GET_OPID(payload)                                                     \
-	((bt_avrcp_opid_t)(FIELD_GET(GENMASK(6, 0), ((payload)->byte0))))
+	((bt_avrcp_button_state_t)(FIELD_GET(GENMASK(6, 0), ((payload)->opid_state))))
+#define BT_AVRCP_PASSTHROUGH_SET_STATE_OPID(payload, state, opid)                                  \
+	(payload)->opid_state = FIELD_PREP(BIT(7), state) | FIELD_PREP(GENMASK(6, 0), opid)
+
+struct bt_avrcp_passthrough_opvu_data {
+	uint8_t company_id[BT_AVRCP_COMPANY_ID_SIZE];
+	uint16_t opid_vu;
+} __packed;
+
+struct bt_avrcp_passthrough_cmd {
+	uint8_t opid_state; /**< [7]: state_flag, [6:0]: opid */
+	uint8_t data_len;
+	struct bt_avrcp_passthrough_opvu_data data[0]; /**< opvu data */
+} __packed;
 
 struct bt_avrcp_passthrough_rsp {
-	uint8_t byte0; /**< [7]: state_flag, [6:0]: opid */
+	uint8_t opid_state; /**< [7]: state_flag, [6:0]: opid */
 	uint8_t data_len;
-	uint8_t data[];
-};
+	struct bt_avrcp_passthrough_opvu_data data[0]; /**< opvu data */
+} __packed;
 
 struct bt_avrcp_get_cap_rsp {
 	uint8_t cap_id;  /**< bt_avrcp_cap_t */
 	uint8_t cap_cnt; /**< number of items contained in *cap */
 	uint8_t cap[];   /**< 1 or 3 octets each depends on cap_id */
-};
+} __packed;
+
+/** @brief AVRCP Character Set IDs */
+typedef enum __packed {
+	BT_AVRCP_CHARSET_UTF8 = 0x006a,
+} bt_avrcp_charset_t;
+
+/** @brief get folder name (response) */
+struct bt_avrcp_folder_name {
+	uint16_t folder_name_len;
+	uint8_t folder_name[];
+} __packed;
+
+/** @brief Set browsed player response structure */
+struct bt_avrcp_set_browsed_player_rsp {
+	uint8_t status;                              /**< Status see bt_avrcp_status_t.*/
+	uint16_t uid_counter;                        /**< UID counter */
+	uint32_t num_items;                          /**< Number of items in the folder */
+	uint16_t charset_id;                         /**< Character set ID */
+	uint8_t folder_depth;                        /**< Folder depth */
+	struct bt_avrcp_folder_name folder_names[0]; /**< Folder names data */
+} __packed;
 
 struct bt_avrcp_ct_cb {
 	/** @brief An AVRCP CT connection has been established.
@@ -194,6 +346,25 @@ struct bt_avrcp_ct_cb {
 	 *  @param ct AVRCP CT connection object.
 	 */
 	void (*disconnected)(struct bt_avrcp_ct *ct);
+
+	/** @brief An AVRCP CT browsing connection has been established.
+	 *
+	 *  This callback notifies the application of an avrcp browsing connection,
+	 *  i.e., an AVCTP browsing L2CAP connection.
+	 *
+	 *  @param conn Connection object.
+	 *  @param ct AVRCP CT connection object.
+	 */
+	void (*browsing_connected)(struct bt_conn *conn, struct bt_avrcp_ct *ct);
+
+	/** @brief An AVRCP CT browsing connection has been disconnected.
+	 *
+	 *  This callback notifies the application that an avrcp browsing connection
+	 *  has been disconnected.
+	 *
+	 *  @param ct AVRCP CT connection object.
+	 */
+	void (*browsing_disconnected)(struct bt_avrcp_ct *ct);
 
 	/** @brief Callback function for bt_avrcp_get_cap().
 	 *
@@ -239,6 +410,19 @@ struct bt_avrcp_ct_cb {
 	 */
 	void (*passthrough_rsp)(struct bt_avrcp_ct *ct, uint8_t tid, bt_avrcp_rsp_t result,
 				const struct bt_avrcp_passthrough_rsp *rsp);
+
+	/** @brief Callback function for bt_avrcp_ct_set_browsed_player().
+	 *
+	 *  Called when the set browsed player process is completed.
+	 *
+	 *  @param ct AVRCP CT connection object.
+	 *  @param tid The transaction label of the response.
+	 *  @param buf The response buffer containing the set browsed player response data.
+	 *             The application can parse this payload according to the format defined in
+	 *             @ref bt_avrcp_set_browsed_player_rsp. Note that the data is encoded in
+	 *             big-endian format.
+	 */
+	void (*browsed_player_rsp)(struct bt_avrcp_ct *ct, uint8_t tid, struct net_buf *buf);
 };
 
 /** @brief Connect AVRCP.
@@ -263,6 +447,40 @@ int bt_avrcp_connect(struct bt_conn *conn);
  *  @return 0 in case of success or error code in case of error.
  */
 int bt_avrcp_disconnect(struct bt_conn *conn);
+
+/**
+ * @brief Allocate a net_buf for AVRCP PDU transmission, reserving headroom
+ *        for AVRCP, AVRCTP, L2CAP, and ACL headers.
+ *
+ * This function allocates a buffer from the specified pool and reserves
+ * sufficient headroom for protocol headers required by AVRCP over Bluetooth.
+ *
+ * @param pool The buffer pool to allocate from.
+ *
+ * @return A newly allocated net_buf with reserved headroom.
+ */
+struct net_buf *bt_avrcp_create_pdu(struct net_buf_pool *pool);
+
+/** @brief Connect AVRCP browsing channel.
+ *
+ *  This function is to be called after the AVRCP control channel is established.
+ *  The API is to be used to establish AVRCP browsing connection between devices.
+ *
+ *  @param conn Pointer to bt_conn structure.
+ *
+ *  @return 0 in case of success or error code in case of error.
+ */
+int bt_avrcp_browsing_connect(struct bt_conn *conn);
+
+/** @brief Disconnect AVRCP browsing channel.
+ *
+ *  This function close AVCTP browsing channel L2CAP connection.
+ *
+ *  @param conn Pointer to bt_conn structure.
+ *
+ *  @return 0 in case of success or error code in case of error.
+ */
+int bt_avrcp_browsing_disconnect(struct bt_conn *conn);
 
 /** @brief Register callback.
  *
@@ -326,6 +544,18 @@ int bt_avrcp_ct_get_subunit_info(struct bt_avrcp_ct *ct, uint8_t tid);
 int bt_avrcp_ct_passthrough(struct bt_avrcp_ct *ct, uint8_t tid, uint8_t opid, uint8_t state,
 			    const uint8_t *payload, uint8_t len);
 
+/** @brief Set browsed player.
+ *
+ *  This function sets the browsed player on the remote device.
+ *
+ *  @param ct The AVRCP CT instance.
+ *  @param tid The transaction label of the response, valid from 0 to 15.
+ *  @param player_id The player ID to be set as browsed player.
+ *
+ *  @return 0 in case of success or error code in case of error.
+ */
+int bt_avrcp_ct_set_browsed_player(struct bt_avrcp_ct *ct, uint8_t tid, uint16_t player_id);
+
 struct bt_avrcp_tg_cb {
 	/** @brief An AVRCP TG connection has been established.
 	 *
@@ -354,6 +584,57 @@ struct bt_avrcp_tg_cb {
 	 *  @param tg AVRCP TG connection object.
 	 */
 	void (*unit_info_req)(struct bt_avrcp_tg *tg, uint8_t tid);
+
+	/** @brief Subunit Info Request callback.
+	 *
+	 *  This callback is called whenever an AVRCP subunit info is requested.
+	 *
+	 *  @param tg AVRCP TG connection object.
+	 *  @param tid The transaction label of the request.
+	 */
+	void (*subunit_info_req)(struct bt_avrcp_tg *tg, uint8_t tid);
+
+	/** @brief An AVRCP TG browsing connection has been established.
+	 *
+	 *  This callback notifies the application of an avrcp browsing connection,
+	 *  i.e., an AVCTP browsing L2CAP connection.
+	 *
+	 *  @param conn Connection object.
+	 *  @param tg AVRCP TG connection object.
+	 */
+	void (*browsing_connected)(struct bt_conn *conn, struct bt_avrcp_tg *tg);
+
+	/** @brief An AVRCP TG browsing connection has been disconnected.
+	 *
+	 *  This callback notifies the application that an avrcp browsing connection
+	 *  has been disconnected.
+	 *
+	 *  @param tg AVRCP TG connection object.
+	 */
+	void (*browsing_disconnected)(struct bt_avrcp_tg *tg);
+
+	/** @brief Set browsed player request callback.
+	 *
+	 *  This callback is called whenever an AVRCP set browsed player request is received.
+	 *
+	 *  @param tg AVRCP TG connection object.
+	 *  @param tid The transaction label of the request.
+	 *  @param player_id The player ID to be set as browsed player.
+	 */
+	void (*set_browsed_player_req)(struct bt_avrcp_tg *tg, uint8_t tid, uint16_t player_id);
+
+	/** @brief Pass Through command request callback.
+	 *
+	 *  This callback is called whenever an AVRCP Pass Through command is request.
+	 *
+	 *  @param tg AVRCP TG connection object.
+	 *  @param tid The transaction label of the request.
+	 *  @param buf The buffer containing the PASS THROUGH command payload.
+	 *             The application can parse this payload according to the format defined
+	 *             in @ref bt_avrcp_passthrough_rsp. Note that the data is encoded
+	 *             in big-endian format.
+	 */
+	void (*passthrough_req)(struct bt_avrcp_tg *tg, uint8_t tid, struct net_buf *buf);
 };
 
 /** @brief Register callback.
@@ -378,6 +659,48 @@ int bt_avrcp_tg_register_cb(const struct bt_avrcp_tg_cb *cb);
  */
 int bt_avrcp_tg_send_unit_info_rsp(struct bt_avrcp_tg *tg, uint8_t tid,
 				   struct bt_avrcp_unit_info_rsp *rsp);
+
+/** @brief Send the subunit info response.
+ *
+ *  This function is called by the application to send the subunit info response.
+ *
+ *  @param tg The AVRCP TG instance.
+ *  @param tid The transaction label of the response, valid from 0 to 15.
+ *
+ *  @return 0 in case of success or error code in case of error.
+ */
+int bt_avrcp_tg_send_subunit_info_rsp(struct bt_avrcp_tg *tg, uint8_t tid);
+
+/** @brief Send the set browsed player response.
+ *
+ *  This function is called by the application to send the set browsed player response.
+ *
+ *  @param tg The AVRCP TG instance.
+ *  @param tid The transaction label of the response, valid from 0 to 15.
+ *  @param buf The response buffer containing the set browsed player response data.
+ *
+ *  @return 0 in case of success or error code in case of error.
+ */
+int bt_avrcp_tg_send_set_browsed_player_rsp(struct bt_avrcp_tg *tg, uint8_t tid,
+					    struct net_buf *buf);
+
+/** @brief Send AVRCP Pass Through response.
+ *
+ *  This function is called by the application to send the Pass Through response.
+ *
+ *  @param tg The AVRCP TG instance.
+ *  @param tid The transaction label of the response, valid from 0 to 15.
+ *  @param result The response code, see @ref bt_avrcp_rsp_t, can support
+ *                0x8(NOT_IMPLEMENTED), 0x9 (ACCEPTED), 0xA (REJECTED)
+ *  @param buf The buffer containing the PASS THROUGH command payload.
+ *             The application can construct this payload according to the format defined
+ *             in @ref bt_avrcp_passthrough_rsp. Note that the data is encoded
+ *             in big-endian format.
+ *
+ *  @return 0 in case of success or error code in case of error.
+ */
+int bt_avrcp_tg_send_passthrough_rsp(struct bt_avrcp_tg *tg, uint8_t tid, bt_avrcp_rsp_t result,
+				     struct net_buf *buf);
 #ifdef __cplusplus
 }
 #endif

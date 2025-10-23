@@ -6,16 +6,17 @@
  */
 
 /**
- * @file drivers/cellular.h
- * @brief Public cellular network API
+ * @file
+ * @ingroup cellular_interface
+ * @brief Main header file for cellular modem driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CELLULAR_H_
 #define ZEPHYR_INCLUDE_DRIVERS_CELLULAR_H_
 
 /**
- * @brief Cellular interface
- * @defgroup cellular_interface Cellular Interface
+ * @brief Interfaces for cellular modems.
+ * @defgroup cellular_interface Cellular
  * @ingroup io_interfaces
  * @{
  */
@@ -28,16 +29,44 @@
 extern "C" {
 #endif
 
-/** Cellular access technologies */
+/** Cellular access technologies (3GPP TS 27.007 AcT) */
 enum cellular_access_technology {
+	/** Global System for Mobile communications (2G, 3GPP Rel 99) */
 	CELLULAR_ACCESS_TECHNOLOGY_GSM = 0,
-	CELLULAR_ACCESS_TECHNOLOGY_GPRS,
-	CELLULAR_ACCESS_TECHNOLOGY_UMTS,
-	CELLULAR_ACCESS_TECHNOLOGY_EDGE,
-	CELLULAR_ACCESS_TECHNOLOGY_LTE,
-	CELLULAR_ACCESS_TECHNOLOGY_LTE_CAT_M1,
-	CELLULAR_ACCESS_TECHNOLOGY_LTE_CAT_M2,
-	CELLULAR_ACCESS_TECHNOLOGY_NB_IOT,
+	/** Bandwidth & Spectrum limited variant of GSM (2G, 3GPP Rel 99) */
+	CELLULAR_ACCESS_TECHNOLOGY_GSM_COMPACT = 1,
+	/** UMTS Terrestrial Radio Access Network (3G, 3GPP Rel 99) */
+	CELLULAR_ACCESS_TECHNOLOGY_UTRAN = 2,
+	/** GSM Enhanced General Packet Radio Service (2.5G, 3GPP Rel 99) */
+	CELLULAR_ACCESS_TECHNOLOGY_GSM_EGPRS = 3,
+	/** UTRAN with High Speed Downlink Packet Access (3.5G, 3GPP Rel 5) */
+	CELLULAR_ACCESS_TECHNOLOGY_UTRAN_HSDPA = 4,
+	/** UTRAN with High Speed Uplink Packet Access (3.75G, 3GPP Rel 6) */
+	CELLULAR_ACCESS_TECHNOLOGY_UTRAN_HSUPA = 5,
+	/** UTRAN with HSDPA and HSUDP (HSPA) (3.75G, 3GPP Rel 6) */
+	CELLULAR_ACCESS_TECHNOLOGY_UTRAN_HSDPA_HSUPA = 6,
+	/** Evolved UTRAN (4G, 3GPP Rel 8) */
+	CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN = 7,
+	/** Extended Coverage GSM for IoT (2G, 3GPP Rel 13) */
+	CELLULAR_ACCESS_TECHNOLOGY_EC_GSM_IOT = 8,
+	/** EUTRAN Narrowband-IoT (4G, 3GPP Rel 13) */
+	CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN_NB_S1 = 9,
+	/** LTE/E-UTRA connected to 5G Core Network (5G, 3GPP Rel 15) */
+	CELLULAR_ACCESS_TECHNOLOGY_E_UTRA_5G_CN = 10,
+	/** New Radio with 5G Core Network (5G, 3GPP Rel 15) */
+	CELLULAR_ACCESS_TECHNOLOGY_NR_5G_CN = 11,
+	/** Next Generation RAN (5G, 3GPP Rel 15) */
+	CELLULAR_ACCESS_TECHNOLOGY_NG_RAN = 12,
+	/** LTE/E-UTRA & NR dual connectivity (5G, 3GPP Rel 15) */
+	CELLULAR_ACCESS_TECHNOLOGY_E_UTRA_NR_DUAL = 13,
+	/** Narrowband-IoT over Satellite (4G, 3GPP Rel 17) */
+	CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN_NB_S1_SAT = 14,
+	/** LTE (wideband) over Satellite (4G, 3GPP Rel 17) */
+	CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN_WB_S1_SAT = 15,
+	/** Next Generation RAN over Satellite (5G, 3GPP Rel 17) */
+	CELLULAR_ACCESS_TECHNOLOGY_NG_RAN_SAT = 16,
+	/** Unknown access technology */
+	CELLULAR_ACCESS_TECHNOLOGY_UNKNOWN = 255,
 };
 
 /** Cellular network structure */
@@ -76,19 +105,42 @@ enum cellular_modem_info_type {
 	CELLULAR_MODEM_INFO_SIM_ICCID,
 };
 
+/** Cellular registration status (3GPP TS 27.007) */
 enum cellular_registration_status {
+	/** Not registered, not searching */
 	CELLULAR_REGISTRATION_NOT_REGISTERED = 0,
-	CELLULAR_REGISTRATION_REGISTERED_HOME,
-	CELLULAR_REGISTRATION_SEARCHING,
-	CELLULAR_REGISTRATION_DENIED,
-	CELLULAR_REGISTRATION_UNKNOWN,
-	CELLULAR_REGISTRATION_REGISTERED_ROAMING,
+	/** Registered, home network */
+	CELLULAR_REGISTRATION_REGISTERED_HOME = 1,
+	/** Not registered, searching for an operator */
+	CELLULAR_REGISTRATION_SEARCHING = 2,
+	/** Registration denied */
+	CELLULAR_REGISTRATION_DENIED = 3,
+	/** Unknown (e.g. out of coverage) */
+	CELLULAR_REGISTRATION_UNKNOWN = 4,
+	/** Registered, roaming */
+	CELLULAR_REGISTRATION_REGISTERED_ROAMING = 5,
+	/** Registered for "SMS only", home network */
+	CELLULAR_REGISTRATION_SMS_ONLY_HOME = 6,
+	/** Registered for "SMS only", roaming network */
+	CELLULAR_REGISTRATION_SMS_ONLY_ROAMING = 7,
+	/** Attached for emergency bearer services only */
+	CELLULAR_REGISTRATION_EMERGENCY_ONLY = 8,
+	/** Registered for "CSFB not preferred", home network */
+	CELLULAR_REGISTRATION_CSFB_NOT_PREFERRED_HOME = 9,
+	/** Registered for "CSFB not preferred", roaming network */
+	CELLULAR_REGISTRATION_CSFB_NOT_PREFERRED_ROAMING = 10,
+	/** Attached for access to "Restricted Local Operator Services" */
+	CELLULAR_REGISTRATION_RLOS = 11,
 };
 
 /** Events emitted asynchronously by a cellular driver */
 enum cellular_event {
 	/** One or more modem-info field changed (e.g. IMSI became available). */
 	CELLULAR_EVENT_MODEM_INFO_CHANGED = BIT(0),
+	/** Cellular network registration status changed */
+	CELLULAR_EVENT_REGISTRATION_STATUS_CHANGED = BIT(1),
+	/** Result of a communications link check to the modem */
+	CELLULAR_EVENT_MODEM_COMMS_CHECK_RESULT = BIT(2),
 };
 
 /* Opaque bit-mask large enough for all current & future events */
@@ -97,6 +149,16 @@ typedef uint32_t cellular_event_mask_t;
 /** Payload for @ref CELLULAR_EVENT_MODEM_INFO_CHANGED. */
 struct cellular_evt_modem_info {
 	enum cellular_modem_info_type field; /**< Which field changed */
+};
+
+/** Payload for @ref CELLULAR_EVENT_REGISTRATION_STATUS_CHANGED. */
+struct cellular_evt_registration_status {
+	enum cellular_registration_status status; /**< New registration status */
+};
+
+/** Payload for @ref CELLULAR_EVENT_MODEM_COMMS_CHECK_RESULT */
+struct cellular_evt_modem_comms_check_result {
+	bool success; /**< Communications to modem checked successfully */
 };
 
 /**

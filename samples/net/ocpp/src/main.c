@@ -5,6 +5,7 @@
  */
 
 #include <stdio.h>
+#include <time.h>
 
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_core.h>
@@ -12,7 +13,6 @@
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/sntp.h>
 #include <zephyr/net/ocpp.h>
-#include <zephyr/posix/time.h>
 #include <zephyr/random/random.h>
 #include <zephyr/zbus/zbus.h>
 
@@ -126,7 +126,7 @@ static int user_notify_cb(enum ocpp_notify_reason reason,
 
 			tid[idx] = k_thread_create(&tinfo[idx], cp_stk[idx],
 						   sizeof(cp_stk[idx]), ocpp_cp_entry,
-						   (void *)(idx + 1), idtag[idx],
+						   (void *)(uintptr_t)(idx + 1), idtag[idx],
 						   obs[idx], 7, 0, K_NO_WAIT);
 
 			return 0;
@@ -148,7 +148,7 @@ static int user_notify_cb(enum ocpp_notify_reason reason,
 static void ocpp_cp_entry(void *p1, void *p2, void *p3)
 {
 	int ret;
-	int idcon = (uint32_t)p1;
+	int idcon = (int)(uintptr_t)p1;
 	char *idtag = (char *)p2;
 	struct zbus_observer *obs = (struct zbus_observer *)p3;
 	ocpp_session_handle_t sh = NULL;
@@ -322,7 +322,7 @@ int main(void)
 
 		tid[i] = k_thread_create(&tinfo[i], cp_stk[i],
 					 sizeof(cp_stk[i]),
-					 ocpp_cp_entry, (void *)(i + 1),
+					 ocpp_cp_entry, (void *)(uintptr_t)(i + 1),
 					 idtag[i], obs[i], 7, 0, K_NO_WAIT);
 	}
 
@@ -339,7 +339,7 @@ int main(void)
 		k_sleep(K_SECONDS(1));
 	}
 
-	/* User could trigger remote start/stop transcation from CS server */
+	/* User could trigger remote start/stop transaction from CS server */
 	k_sleep(K_SECONDS(1200));
 
 	return 0;

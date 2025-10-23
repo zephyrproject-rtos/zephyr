@@ -18,6 +18,8 @@
 #include <zephyr/drivers/i3c.h>
 #endif
 
+#include "icm45686_bus.h"
+
 struct icm45686_encoded_payload {
 	union {
 		uint8_t buf[14];
@@ -80,7 +82,7 @@ struct icm45686_encoded_data {
 	struct icm45686_encoded_header header;
 	union {
 		struct icm45686_encoded_payload payload;
-		struct icm45686_encoded_fifo_payload fifo_payload;
+		FLEXIBLE_ARRAY_DECLARE(struct icm45686_encoded_fifo_payload, fifo_payload);
 	};
 };
 
@@ -89,7 +91,7 @@ struct icm45686_triggers {
 		const struct device *dev;
 		struct k_mutex lock;
 		struct {
-			struct sensor_trigger trigger;
+			const struct sensor_trigger *trigger;
 			sensor_trigger_handler_t handler;
 		} entry;
 #if defined(CONFIG_ICM45686_TRIGGER_OWN_THREAD)
@@ -105,7 +107,7 @@ struct icm45686_stream {
 	struct gpio_callback cb;
 	const struct device *dev;
 	struct rtio_iodev_sqe *iodev_sqe;
-	atomic_t in_progress;
+	atomic_t state;
 	struct {
 		struct {
 			bool drdy : 1;
@@ -124,7 +126,6 @@ struct icm45686_stream {
 	struct {
 		uint64_t timestamp;
 		uint8_t int_status;
-		uint16_t fifo_count;
 		struct {
 			bool drdy : 1;
 			bool fifo_ths : 1;
@@ -133,25 +134,8 @@ struct icm45686_stream {
 	} data;
 };
 
-enum icm45686_bus_type {
-	ICM45686_BUS_SPI,
-	ICM45686_BUS_I2C,
-	ICM45686_BUS_I3C,
-};
-
 struct icm45686_data {
-	struct {
-		struct rtio_iodev *iodev;
-		struct rtio *ctx;
-		enum icm45686_bus_type type;
-/** Required to support In-band Interrupts */
-#if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(invensense_icm45686, i3c)
-		struct {
-			struct i3c_device_desc *desc;
-			const struct i3c_device_id id;
-		} i3c;
-#endif
-	} rtio;
+	struct icm45686_bus bus;
 	/** Single-shot encoded data instance to support fetch/get API */
 	struct icm45686_encoded_data edata;
 #if defined(CONFIG_ICM45686_TRIGGER)
@@ -176,6 +160,7 @@ struct icm45686_config {
 			uint8_t lpf : 3;
 		} gyro;
 		uint16_t fifo_watermark;
+		bool fifo_watermark_equals : 1;
 	} settings;
 	struct gpio_dt_spec int_gpio;
 };

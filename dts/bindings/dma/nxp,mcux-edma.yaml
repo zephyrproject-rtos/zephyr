@@ -19,9 +19,17 @@ properties:
 
   dma-channels:
     required: true
+    description: |
+      Specifies the number of DMA channels supported by the controller.
+      This value is used to validate the channel number provided in the
+      DMA specifier.
 
   dma-requests:
     required: true
+    description: |
+      Indicates the maximum value of the DMA request sources (slots) index supported by
+      DMAMUX. This value is used to validate the request source index provided in the
+      DMA specifier.
 
   dmamux-reg-offset:
     type: int

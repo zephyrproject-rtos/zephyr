@@ -46,16 +46,13 @@ The STM32H7S7xx devices are a high-performance microcontrollers family (STM32H7
 Series) based on the high-performance Arm |reg| Cortex |reg|-M7 32-bit RISC core.
 They operate at a frequency of up to 500 MHz.
 
-- Core: ARM |reg| 32-bit Cortex |reg| -M7 CPU with TrustZone |reg| and FPU.
+- Core: ARM |reg| 32-bit Cortex |reg| -M7 CPU with FPU.
 - Performance benchmark:
 
   - 1284 DMPIS/MHz (Dhrystone 2.1)
 
 - Security
 
-  - Arm |reg| TrustZone |reg| with ARMv8-M mainline security extension
-  - Up to 8 configurable SAU regions
-  - TrustZone |reg| aware and securable peripherals
   - Flexible lifecycle scheme with secure debug authentication
   - Preconfigured immutable root of trust (ST-iROT)
   - SFI (secure firmware installation)
@@ -65,7 +62,6 @@ They operate at a frequency of up to 500 MHz.
   - Public key accelerator, DPA resistant
   - On-the-fly decryption of Octo-SPI external memories
   - HASH hardware accelerator
-  - True random number generator, NIST SP800-90B compliant
   - 96-bit unique ID
   - Active tampers
   - True Random Number Generator (RNG) NIST SP800-90B compliant
@@ -165,6 +161,8 @@ and a ST morpho connector. Board is configured as follows:
 - LD3 : PB7
 - I2C : PB8, PB9
 - SPI1 NSS/SCK/MISO/MOSI : PD14PA5/PA6/PB5 (Arduino SPI)
+- FDCAN1 RX/TX : PD0, PD1
+- ETH : A2, A7, B6, G4, G5, G6, G11, G12, G13
 
 System Clock
 ------------
@@ -184,6 +182,13 @@ Backup SRAM
 
 In order to test backup SRAM you may want to disconnect VBAT from VDD. You can
 do it by removing ``SB13`` jumper on the back side of the board.
+
+FDCAN
+-----
+
+The Nucleo H7S3L8 board does not have any onboard CAN transceiver. In order to
+use the FDCAN bus on this board, an external CAN bus transceiver must be
+connected to pins PD0 (RX) and PD1 (TX).
 
 Programming and Debugging
 *************************

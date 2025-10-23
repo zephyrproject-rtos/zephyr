@@ -9,8 +9,6 @@
 
 #include <limits.h>
 
-#include <zephyr/posix/posix_features.h>
-
 #if !defined(NAME_MAX) && defined(_XOPEN_SOURCE)
 #define NAME_MAX _XOPEN_NAME_MAX
 #endif

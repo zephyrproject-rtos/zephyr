@@ -108,10 +108,10 @@ void lll_scan_aux_prepare(void *param)
 	int err;
 
 	err = lll_hfclock_on();
-	LL_ASSERT(err >= 0);
+	LL_ASSERT_ERR(err >= 0);
 
 	err = lll_prepare(is_abort_cb, abort_cb, prepare_cb, 0, param);
-	LL_ASSERT(!err || err == -EINPROGRESS);
+	LL_ASSERT_ERR(!err || err == -EINPROGRESS);
 }
 
 uint8_t lll_scan_aux_setup(struct pdu_adv *pdu, uint8_t pdu_phy,
@@ -132,7 +132,7 @@ uint8_t lll_scan_aux_setup(struct pdu_adv *pdu, uint8_t pdu_phy,
 	uint32_t pdu_us;
 	uint8_t phy;
 
-	LL_ASSERT(pdu->type == PDU_ADV_TYPE_EXT_IND);
+	LL_ASSERT_DBG(pdu->type == PDU_ADV_TYPE_EXT_IND);
 
 	/* Get reference to extended header */
 	pri_com_hdr = (void *)&pdu->adv_ext_ind;
@@ -170,7 +170,8 @@ uint8_t lll_scan_aux_setup(struct pdu_adv *pdu, uint8_t pdu_phy,
 	/* No need to scan further if no aux_ptr filled */
 	aux_ptr = (void *)pri_dptr;
 	if (unlikely(!pri_hdr->aux_ptr || !PDU_ADV_AUX_PTR_OFFSET_GET(aux_ptr) ||
-		     (PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) > EXT_ADV_AUX_PHY_LE_CODED))) {
+		     (PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) > EXT_ADV_AUX_PHY_LE_CODED) ||
+		     (aux_ptr->chan_idx >= CHM_USED_COUNT_MAX))) {
 		return 0;
 	}
 
@@ -230,7 +231,7 @@ uint8_t lll_scan_aux_setup(struct pdu_adv *pdu, uint8_t pdu_phy,
 	}
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
-	LL_ASSERT(node_rx);
+	LL_ASSERT_DBG(node_rx);
 
 	/* Store the lll context, aux_ptr and start of PDU in footer */
 	ftr = &(node_rx->rx_ftr);
@@ -355,7 +356,8 @@ void lll_scan_aux_isr_aux_setup(void *param)
 	aux_start_us -= EVENT_JITTER_US;
 
 	start_us = radio_tmr_start_us(0, aux_start_us);
-	LL_ASSERT(start_us == (aux_start_us + 1U));
+	LL_ASSERT_MSG(start_us == (aux_start_us + 1U), "aux_offset %u us, start_us %u != %u",
+		      aux_offset_us, start_us, (aux_start_us + 1U));
 
 	/* Setup header complete timeout */
 	hcto = start_us;
@@ -497,7 +499,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 			    RADIO_PKT_CONF_PHY(lll_aux->phy));
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
-	LL_ASSERT(node_rx);
+	LL_ASSERT_DBG(node_rx);
 
 	radio_pkt_rx_set(node_rx->pdu);
 
@@ -614,12 +616,12 @@ sync_aux_prepare_done:
 
 		ret = mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_ULL_LOW, 1U,
 				     &mfy_after_cen_offset_get);
-		LL_ASSERT(!ret);
+		LL_ASSERT_ERR(!ret);
 	}
 #endif /* CONFIG_BT_CENTRAL && CONFIG_BT_CTLR_SCHED_ADVANCED */
 
 	ret = lll_prepare_done(lll_aux);
-	LL_ASSERT(!ret);
+	LL_ASSERT_ERR(!ret);
 
 	DEBUG_RADIO_START_O(1);
 
@@ -638,7 +640,7 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 	/* Auxiliary event shall not overlap as they are not periodically
 	 * scheduled.
 	 */
-	LL_ASSERT(next != curr);
+	LL_ASSERT_DBG(next != curr);
 
 	lll = ull_scan_lll_is_valid_get(next);
 	if (lll) {
@@ -672,10 +674,10 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	 * currently in preparation pipeline.
 	 */
 	err = lll_hfclock_off();
-	LL_ASSERT(err >= 0);
+	LL_ASSERT_ERR(err >= 0);
 
 	e = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_SCAN_AUX);
-	LL_ASSERT(e);
+	LL_ASSERT_ERR(e);
 
 #if defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
 	e->lll = param;
@@ -686,6 +688,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 static void isr_done(void *param)
 {
+	struct lll_scan *scan_lll = NULL;
 	struct lll_sync *lll;
 	uint8_t is_lll_scan;
 
@@ -693,6 +696,9 @@ static void isr_done(void *param)
 
 	if (param) {
 		lll = ull_scan_aux_lll_parent_get(param, &is_lll_scan);
+		if (is_lll_scan) {
+			scan_lll = (void *)lll;
+		}
 	} else {
 		lll = NULL;
 	}
@@ -705,7 +711,7 @@ static void isr_done(void *param)
 		 * generated thereafter by HCI as incomplete.
 		 */
 		node_rx = ull_pdu_rx_alloc();
-		LL_ASSERT(node_rx);
+		LL_ASSERT_ERR(node_rx);
 
 		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
 
@@ -719,11 +725,26 @@ static void isr_done(void *param)
 		struct event_done_extra *e;
 
 		e = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_SCAN_AUX);
-		LL_ASSERT(e);
+		LL_ASSERT_ERR(e);
 
 #if defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
 		e->lll = param;
 #endif /* CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
+	}
+
+	/* Lets tail chain the execution of LLL disable of any scan event in the pipeline if scan
+	 * role is to be stopped.
+	 * This is for the case of connection setup or the duration has expired.
+	 */
+	if ((scan_lll != NULL) && (scan_lll->is_stop != 0U)) {
+		static memq_link_t link;
+		static struct mayfly mfy = {0, 0, &link, NULL, lll_disable};
+		uint32_t ret;
+
+		mfy.param = scan_lll;
+
+		ret = mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_LLL, 1U, &mfy);
+		LL_ASSERT_ERR(!ret);
 	}
 
 	lll_isr_cleanup(param);
@@ -884,7 +905,7 @@ isr_rx_do_close:
 			struct node_rx_pdu *node_rx2;
 
 			node_rx2 = ull_pdu_rx_alloc();
-			LL_ASSERT(node_rx2);
+			LL_ASSERT_ERR(node_rx2);
 
 			node_rx2->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
 
@@ -916,6 +937,7 @@ isr_rx_do_close:
 			radio_isr_set(isr_done, lll->lll_aux);
 		}
 	}
+
 	radio_disable();
 }
 
@@ -1029,7 +1051,12 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		radio_pkt_tx_set(pdu_tx);
 
 		/* assert if radio packet ptr is not set and radio started tx */
-		LL_ASSERT(!radio_is_ready());
+		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+			LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u", __func__,
+				      lll_prof_latency_get());
+		} else {
+			LL_ASSERT_ERR(!radio_is_ready());
+		}
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 			lll_prof_cputime_capture();
@@ -1179,7 +1206,12 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		radio_pkt_tx_set(pdu_tx);
 
 		/* assert if radio packet ptr is not set and radio started tx */
-		LL_ASSERT(!radio_is_ready());
+		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+			LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u", __func__,
+				      lll_prof_latency_get());
+		} else {
+			LL_ASSERT_ERR(!radio_is_ready());
+		}
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 			lll_prof_cputime_capture();
@@ -1385,7 +1417,12 @@ static void isr_tx(struct lll_scan_aux *lll_aux, void *pdu_rx,
 	radio_pkt_rx_set(pdu_rx);
 
 	/* assert if radio packet ptr is not set and radio started rx */
-	LL_ASSERT(!radio_is_ready());
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u", __func__,
+			      lll_prof_latency_get());
+	} else {
+		LL_ASSERT_ERR(!radio_is_ready());
+	}
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_cputime_capture();
@@ -1447,7 +1484,7 @@ static void isr_tx_scan_req_ull_schedule(void *param)
 	struct node_rx_pdu *node_rx;
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
-	LL_ASSERT(node_rx);
+	LL_ASSERT_DBG(node_rx);
 
 	isr_tx(param, node_rx->pdu, isr_rx_ull_schedule, param);
 }
@@ -1461,7 +1498,7 @@ static void isr_tx_scan_req_lll_schedule(void *param)
 	lll = node_rx_adv->rx_ftr.param;
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
-	LL_ASSERT(node_rx);
+	LL_ASSERT_DBG(node_rx);
 
 	isr_tx(lll->lll_aux, node_rx->pdu, isr_rx_lll_schedule, param);
 }
@@ -1472,7 +1509,7 @@ static void isr_tx_connect_req(void *param)
 	struct node_rx_pdu *node_rx;
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
-	LL_ASSERT(node_rx);
+	LL_ASSERT_DBG(node_rx);
 
 	isr_tx(param, (void *)node_rx->pdu, isr_rx_connect_rsp, param);
 }
@@ -1522,7 +1559,7 @@ static void isr_rx_connect_rsp(void *param)
 	 * release it if failed to receive AUX_CONNECT_RSP PDU.
 	 */
 	rx = lll_aux->node_conn_rx;
-	LL_ASSERT(rx);
+	LL_ASSERT_DBG(rx);
 	lll_aux->node_conn_rx = NULL;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
@@ -1540,7 +1577,7 @@ static void isr_rx_connect_rsp(void *param)
 		pdu_tx = radio_pkt_scratch_get();
 
 		node_rx = ull_pdu_rx_alloc_peek(1);
-		LL_ASSERT(node_rx);
+		LL_ASSERT_DBG(node_rx);
 		pdu_rx = (void *)node_rx->pdu;
 
 		trx_done = isr_rx_connect_rsp_check(lll, pdu_tx, pdu_rx,
@@ -1623,7 +1660,7 @@ isr_rx_connect_rsp_do_close:
 
 		/* Send message to flush Auxiliary PDU list */
 		node_rx = ull_pdu_rx_alloc();
-		LL_ASSERT(node_rx);
+		LL_ASSERT_ERR(node_rx);
 
 		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
 
@@ -1676,7 +1713,7 @@ static void isr_early_abort(void *param)
 	struct event_done_extra *e;
 
 	e = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_SCAN_AUX);
-	LL_ASSERT(e);
+	LL_ASSERT_ERR(e);
 
 #if defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
 	e->lll = param;

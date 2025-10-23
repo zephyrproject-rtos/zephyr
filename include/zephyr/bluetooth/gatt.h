@@ -1897,6 +1897,9 @@ struct bt_gatt_read_params;
  *  When reading using by_uuid, `params->start_handle` is the attribute handle
  *  for this `data` item.
  *
+ *  If the received data length is invalid, the callback will called with the
+ *  error @ref BT_ATT_ERR_INVALID_PDU.
+ *
  *  @param conn Connection object.
  *  @param err ATT error code.
  *  @param params Read parameters used.
@@ -2005,6 +2008,8 @@ struct bt_gatt_read_params {
  *  The Response comes in callback @p params->func. The callback is run from
  *  the context specified by 'config BT_RECV_CONTEXT'.
  *  @p params must remain valid until start of callback.
+ *  If the received data length is invalid, the callback @p params->func will
+ *  called with the error @ref BT_ATT_ERR_INVALID_PDU.
  *
  *  @param conn Connection object.
  *  @param params Read parameters.

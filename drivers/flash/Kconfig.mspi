@@ -45,9 +45,28 @@ menuconfig FLASH_MSPI_NOR
 	select FLASH_MSPI
 	select FLASH_HAS_EXPLICIT_ERASE
 	select FLASH_JESD216
-	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_JEDEC_MSPI_NOR),reset-gpios)
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_JEDEC_MSPI_NOR),reset-gpios) \
+		    || $(dt_compat_any_has_prop,$(DT_COMPAT_JEDEC_MSPI_NOR),supply-gpios)
 
 if FLASH_MSPI_NOR
+
+config FLASH_MSPI_NOR_USE_SFDP
+	bool "Use Serial Flash Discoverable Parameters (SFDP)"
+	default $(dt_compat_any_has_prop,$(DT_COMPAT_JEDEC_MSPI_NOR),sfdp-bfp)
+	help
+	  Use information from SFDP for setting up flash command transfers
+	  and for configuring the flash chip.
+
+	  Currently, only build time processing of SFDP structures is supported,
+	  based on dts arrays provided as flash node properties like `sfdp-bfp`,
+	  `sfdp-ff05`, and `sfdp-ff84`. Depending on the IO mode used, some or
+	  all of these properties are required for building the flash driver.
+	  Data for these properties can be obtained with the `drivers/jesd216`
+	  sample. If a given SFDP table is not available in a flash chip,
+	  the related property can be defined as an empty array - this will
+	  prevent a related build assertion from failing and default values
+	  will be assigned to parameters that would otherwise be read from
+	  that SFDP table.
 
 config FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE
 	int "Page size to use for FLASH_LAYOUT feature"

@@ -1,0 +1,31 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		kpp = &kpp;
+	};
+};
+
+&pinctrl {
+	kpp_default: kpp_default {
+		group0 {
+			pinmux = <&iomuxc_gpio_sd_b1_00_kpp_row7
+				  &iomuxc_gpio_sd_b1_01_kpp_col7
+				  &iomuxc_gpio_sd_b1_02_kpp_row6
+				  &iomuxc_gpio_sd_b1_03_kpp_col6>;
+			drive-strength = "high";
+			bias-pull-up;
+			slew-rate = "fast";
+		};
+	};
+};
+
+&kpp {
+	pinctrl-0 = <&kpp_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

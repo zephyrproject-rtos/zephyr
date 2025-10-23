@@ -85,10 +85,11 @@ struct npf_test {
 
 /** @brief filter rule structure */
 struct npf_rule {
-	sys_snode_t node;               /**< Slist rule list node */
-	enum net_verdict result;	/**< result if all tests pass */
-	uint32_t nb_tests;		/**< number of tests for this rule */
-	struct npf_test *tests[];	/**< pointers to @ref npf_test instances */
+	sys_snode_t node;           /**< Slist rule list node */
+	enum net_verdict result;    /**< result if all tests pass */
+	enum net_priority priority; /**< priority in case of NET_CONTINUE */
+	uint32_t nb_tests;          /**< number of tests for this rule */
+	struct npf_test *tests[];   /**< pointers to @ref npf_test instances */
 };
 
 /** @brief Default rule list termination for accepting a packet */
@@ -240,6 +241,14 @@ bool npf_remove_all_rules(struct npf_rule_list *rules);
 		.result = (_result), \
 		.nb_tests = NUM_VA_ARGS_LESS_1(__VA_ARGS__) + 1, \
 		.tests = { FOR_EACH(Z_NPF_TEST_ADDR, (,), __VA_ARGS__) }, \
+	}
+
+#define NPF_PRIORITY(_name, _priority, ...)                                                        \
+	struct npf_rule _name = {                                                                  \
+		.result = NET_CONTINUE,                                                            \
+		.priority = (_priority),                                                           \
+		.nb_tests = NUM_VA_ARGS_LESS_1(__VA_ARGS__) + 1,                                   \
+		.tests = {FOR_EACH(Z_NPF_TEST_ADDR, (,), __VA_ARGS__)},                            \
 	}
 
 #define Z_NPF_TEST_ADDR(arg) &arg.test

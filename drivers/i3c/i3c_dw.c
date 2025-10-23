@@ -321,7 +321,9 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define I3C_BUS_I2C_FM_TLOW_MIN_NS  1300
 #define I3C_BUS_I2C_FMP_TLOW_MIN_NS 500
 #define I3C_BUS_THIGH_MAX_NS        41
+#define I3C_BUS_TCAS_PS             38400
 #define I3C_PERIOD_NS               1000000000ULL
+#define I3C_PERIOD_PS               I3C_PERIOD_NS * 1000ULL
 
 #define I3C_BUS_MAX_I3C_SCL_RATE     12900000
 #define I3C_BUS_TYP_I3C_SCL_RATE     12500000
@@ -360,13 +362,10 @@ struct dw_i3c_xfer {
 struct dw_i3c_config {
 	struct i3c_driver_config common;
 	const struct device *clock;
-	uint32_t regs;
 
-	/* Initial clk configuration */
-	/* Maximum OD high clk pulse length */
-	uint32_t od_thigh_max_ns;
-	/* Minimum OD low clk pulse length */
-	uint32_t od_tlow_min_ns;
+	/* Clock control subsys related struct */
+	clock_control_subsys_t clock_subsys;
+	uint32_t regs;
 
 	void (*irq_config_func)();
 
@@ -1411,32 +1410,58 @@ static int i3c_dw_irq(const struct device *dev)
 	return 0;
 }
 
-static int init_scl_timing(const struct device *dev)
+#ifdef CONFIG_I3C_CONTROLLER
+/**
+ * @brief Return true if any i2c device only supports fast mode
+ *
+ * @param dev_list Pointer to device list
+ *
+ * @retval true if any i2c device only supports fast mode
+ * @retval false if all devices support fast mode plus
+ */
+static bool i3c_any_i2c_fast_mode(const struct i3c_dev_list *dev_list)
+{
+	for (int i = 0; i < dev_list->num_i2c; i++) {
+		if (I3C_LVR_I2C_MODE(dev_list->i2c[i].lvr) == I3C_LVR_I2C_FM_MODE) {
+			return true;
+		}
+	}
+	return false;
+}
+#endif
+
+static int dw_i3c_init_scl_timing(const struct device *dev, struct i3c_config_controller *ctrl_cfg)
 {
 	const struct dw_i3c_config *config = dev->config;
 	uint32_t core_rate, scl_timing;
 #ifdef CONFIG_I3C_CONTROLLER
 	struct dw_i3c_data *data = dev->data;
-	uint32_t hcnt, lcnt;
+	uint32_t hcnt, lcnt, fmlcnt, fmplcnt, free_cnt;
 #endif /* CONFIG_I3C_CONTROLLER */
 
-	if (clock_control_get_rate(config->clock, NULL, &core_rate) != 0) {
+	if (clock_control_get_rate(config->clock, config->clock_subsys, &core_rate) != 0) {
 		LOG_ERR("%s: get clock rate failed", dev->name);
 		return -EINVAL;
 	}
+
 #ifdef CONFIG_I3C_CONTROLLER
+
+	__ASSERT((ctrl_cfg != NULL), "Controller configuration should not be NULL");
+
+	if (ctrl_cfg->scl_od_min.low_ns < I3C_OD_TLOW_MIN_NS) {
+		LOG_ERR("%s: Open Drain Low Period is out of range", dev->name);
+		return -EINVAL;
+	}
+
 	/* I3C_OD */
-	hcnt = DIV_ROUND_UP(config->od_thigh_max_ns * (uint64_t)core_rate, I3C_PERIOD_NS) - 1;
+	hcnt = DIV_ROUND_UP(ctrl_cfg->scl_od_min.high_ns * (uint64_t)core_rate, I3C_PERIOD_NS) - 1;
 	hcnt = CLAMP(hcnt, SCL_I3C_TIMING_CNT_MIN, SCL_I3C_TIMING_CNT_MAX);
 
-	lcnt = DIV_ROUND_UP(config->od_tlow_min_ns * (uint64_t)core_rate, I3C_PERIOD_NS);
+	lcnt = DIV_ROUND_UP(ctrl_cfg->scl_od_min.low_ns * (uint64_t)core_rate, I3C_PERIOD_NS);
 	lcnt = CLAMP(lcnt, SCL_I3C_TIMING_CNT_MIN, SCL_I3C_TIMING_CNT_MAX);
 
 	scl_timing = SCL_I3C_TIMING_HCNT(hcnt) | SCL_I3C_TIMING_LCNT(lcnt);
 	sys_write32(scl_timing, config->regs + SCL_I3C_OD_TIMING);
-
-	/* Set bus free timing to match tlow setting for OD clk config. */
-	sys_write32(BUS_I3C_MST_FREE(lcnt), config->regs + BUS_FREE_TIMING);
 
 	/* I3C_PP */
 	hcnt = DIV_ROUND_UP(I3C_BUS_THIGH_MAX_NS * (uint64_t)core_rate, I3C_PERIOD_NS) - 1;
@@ -1460,20 +1485,34 @@ static int init_scl_timing(const struct device *dev)
 	sys_write32(scl_timing, config->regs + SCL_EXT_LCNT_TIMING);
 
 	/* I2C FM+ */
-	lcnt = DIV_ROUND_UP(I3C_BUS_I2C_FMP_TLOW_MIN_NS * (uint64_t)core_rate, I3C_PERIOD_NS);
-	hcnt = DIV_ROUND_UP(core_rate, I3C_BUS_I2C_FM_PLUS_SCL_RATE) - lcnt;
-	scl_timing = SCL_I2C_FMP_TIMING_HCNT(hcnt) | SCL_I2C_FMP_TIMING_LCNT(lcnt);
+	fmplcnt = DIV_ROUND_UP(I3C_BUS_I2C_FMP_TLOW_MIN_NS * (uint64_t)core_rate, I3C_PERIOD_NS);
+	hcnt = DIV_ROUND_UP(core_rate, I3C_BUS_I2C_FM_PLUS_SCL_RATE) - fmplcnt;
+	scl_timing = SCL_I2C_FMP_TIMING_HCNT(hcnt) | SCL_I2C_FMP_TIMING_LCNT(fmplcnt);
 	sys_write32(scl_timing, config->regs + SCL_I2C_FMP_TIMING);
 
 	/* I2C FM */
-	lcnt = DIV_ROUND_UP(I3C_BUS_I2C_FM_TLOW_MIN_NS * (uint64_t)core_rate, I3C_PERIOD_NS);
-	hcnt = DIV_ROUND_UP(core_rate, I3C_BUS_I2C_FM_SCL_RATE) - lcnt;
-	scl_timing = SCL_I2C_FM_TIMING_HCNT(hcnt) | SCL_I2C_FM_TIMING_LCNT(lcnt);
+	fmlcnt = DIV_ROUND_UP(I3C_BUS_I2C_FM_TLOW_MIN_NS * (uint64_t)core_rate, I3C_PERIOD_NS);
+	hcnt = DIV_ROUND_UP(core_rate, I3C_BUS_I2C_FM_SCL_RATE) - fmlcnt;
+	scl_timing = SCL_I2C_FM_TIMING_HCNT(hcnt) | SCL_I2C_FM_TIMING_LCNT(fmlcnt);
 	sys_write32(scl_timing, config->regs + SCL_I2C_FM_TIMING);
 
 	if (data->mode != I3C_BUS_MODE_PURE) {
-		sys_write32(BUS_I3C_MST_FREE(lcnt), config->regs + BUS_FREE_TIMING);
+		/*
+		 * Mixed bus: Set bus free timing to match tLOW of I2C timing. If any i2c devices
+		 * only support fast mode, then it to the tLOW of that, otherwise set to the tLOW
+		 * of fast mode plus.
+		 */
+		sys_write32(BUS_I3C_MST_FREE(i3c_any_i2c_fast_mode(&config->common.dev_list)
+						     ? fmlcnt
+						     : fmplcnt),
+			    config->regs + BUS_FREE_TIMING);
 		sys_write32(sys_read32(config->regs + DEVICE_CTRL) | DEV_CTRL_I2C_SLAVE_PRESENT,
+			    config->regs + DEVICE_CTRL);
+	} else {
+		/* Pure bus: Set bus free timing to t_cas of 38.4ns */
+		free_cnt = DIV_ROUND_UP(I3C_BUS_TCAS_PS * (uint64_t)core_rate, I3C_PERIOD_PS);
+		sys_write32(BUS_I3C_MST_FREE(free_cnt), config->regs + BUS_FREE_TIMING);
+		sys_write32(sys_read32(config->regs + DEVICE_CTRL) & ~DEV_CTRL_I2C_SLAVE_PRESENT,
 			    config->regs + DEVICE_CTRL);
 	}
 #endif /* CONFIG_I3C_CONTROLLER */
@@ -1488,8 +1527,10 @@ static int init_scl_timing(const struct device *dev)
 		DIV_ROUND_UP(I3C_BUS_IDLE_TIME_NS * (uint64_t)core_rate, I3C_PERIOD_NS);
 	sys_write32(BUS_I3C_IDLE_TIME(scl_timing), config->regs + BUS_IDLE_TIMING);
 #endif /* CONFIG_I3C_TARGET */
+
 	return 0;
 }
+
 #ifdef CONFIG_I3C_CONTROLLER
 /**
  * Determine I3C bus mode from the i2c devices on the bus
@@ -1631,6 +1672,7 @@ static int set_controller_info(const struct device *dev)
 	return 0;
 }
 #endif /* CONFIG_I3C_CONTROLLER */
+
 static void enable_interrupts(const struct device *dev)
 {
 	const struct dw_i3c_config *config = dev->config;
@@ -2069,17 +2111,28 @@ static int dw_i3c_config_get(const struct device *dev, enum i3c_config_type type
  */
 static int dw_i3c_configure(const struct device *dev, enum i3c_config_type type, void *config)
 {
+#ifdef CONFIG_I3C_CONTROLLER
+	struct dw_i3c_data *data = dev->data;
+	int ret;
+#endif /* CONFIG_I3C_CONTROLLER */
 #ifdef CONFIG_I3C_TARGET
 	const struct dw_i3c_config *dev_config = dev->config;
 #endif /* CONFIG_I3C_TARGET */
 
 	if (type == I3C_CONFIG_CONTROLLER) {
-		/* struct i3c_config_controller *ctrl_cfg = config; */
-		/* TODO: somehow determine i3c rate? snps is complicated */
+#ifdef CONFIG_I3C_CONTROLLER
+		ret = dw_i3c_init_scl_timing(dev, config);
+		if (ret != 0) {
+			return ret;
+		}
+		(void)memcpy(&data->common.ctrl_config,
+			     config, sizeof(data->common.ctrl_config));
+#else
 		return -ENOTSUP;
+#endif /* CONFIG_I3C_CONTROLLER */
 	} else if (type == I3C_CONFIG_TARGET) {
 #ifdef CONFIG_I3C_TARGET
-		struct i3c_config_target *target_cfg = config;
+		struct i3c_config_target *target_cfg = (struct i3c_config_target *)config;
 		uint32_t val;
 
 		/* TODO: some how randomly generate pid */
@@ -2291,7 +2344,7 @@ static int dw_i3c_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = clock_control_on(config->clock, NULL);
+	ret = clock_control_on(config->clock, config->clock_subsys);
 	if (ret < 0) {
 		return ret;
 	}
@@ -2354,13 +2407,6 @@ static int dw_i3c_init(const struct device *dev)
 	__ASSERT_NO_MSG((IS_ENABLED(CONFIG_I3C_TARGET) && ctrl_config->is_secondary) ||
 			(IS_ENABLED(CONFIG_I3C_CONTROLLER) && !ctrl_config->is_secondary));
 
-	ret = init_scl_timing(dev);
-	if (ret != 0) {
-		return ret;
-	}
-
-	enable_interrupts(dev);
-
 	/* disable ibi */
 	sys_write32(IBI_REQ_REJECT_ALL, config->regs + IBI_SIR_REQ_REJECT);
 	sys_write32(IBI_REQ_REJECT_ALL, config->regs + IBI_MR_REQ_REJECT);
@@ -2373,14 +2419,26 @@ static int dw_i3c_init(const struct device *dev)
 	if (ret != 0) {
 		return ret;
 	}
-#endif /* CONFIG_I3C_CONTROLLER */
-	dw_i3c_enable_controller(config, true);
-#ifdef CONFIG_I3C_CONTROLLER
+
 	if (!(ctrl_config->is_secondary)) {
 		ret = set_controller_info(dev);
 		if (ret) {
 			return ret;
 		}
+	}
+#endif /* CONFIG_I3C_CONTROLLER */
+	dw_i3c_enable_controller(config, true);
+
+	ret = dw_i3c_init_scl_timing(dev, ctrl_config);
+	if (ret != 0) {
+		LOG_ERR("%s: Clock setting failed", dev->name);
+		return ret;
+	}
+
+	enable_interrupts(dev);
+
+#ifdef CONFIG_I3C_CONTROLLER
+	if (!(ctrl_config->is_secondary)) {
 		/* Perform bus initialization - skip if no I3C devices are known. */
 		if (config->common.dev_list.num_i3c > 0) {
 			ret = i3c_bus_init(dev, &config->common.dev_list);
@@ -2491,12 +2549,15 @@ static DEVICE_API(i3c, dw_i3c_api) = {
 		.common.ctrl_config.scl.i3c =                                                      \
 			DT_INST_PROP_OR(n, i3c_scl_hz, I3C_BUS_TYP_I3C_SCL_RATE),                  \
 		.common.ctrl_config.scl.i2c = DT_INST_PROP_OR(n, i2c_scl_hz, 0),                   \
+		.common.ctrl_config.scl_od_min.high_ns = DT_INST_PROP(n, od_thigh_min_ns),         \
+		.common.ctrl_config.scl_od_min.low_ns = DT_INST_PROP(n, od_tlow_min_ns),           \
 	};                                                                                         \
 	static const struct dw_i3c_config dw_i3c_cfg_##n = {                                       \
 		.regs = DT_INST_REG_ADDR(n),                                                       \
 		.clock = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                    \
-		.od_thigh_max_ns = DT_INST_PROP(n, od_thigh_max_ns),                               \
-		.od_tlow_min_ns = DT_INST_PROP(n, od_tlow_min_ns),                                 \
+		.clock_subsys = COND_CODE_1(DT_INST_PHA_HAS_CELL(n, clocks, clkid),                \
+				((clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, clkid)),           \
+				((clock_control_subsys_t)0)),                                      \
 		.irq_config_func = &i3c_dw_irq_config_##n,                                         \
 		IF_ENABLED(CONFIG_I3C_CONTROLLER,                                                  \
 			(.common.dev_list.i3c = dw_i3c_device_array_##n,                           \

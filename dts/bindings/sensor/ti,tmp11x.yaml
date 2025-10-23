@@ -60,3 +60,15 @@ properties:
       GPIO pin used for alert/interrupt functionality.
       Supported on TMP116, TMP117, and TMP119 devices.
       Alert pin functionality depends on Therm/alert modus.
+  store-attr-values:
+    type: boolean
+    description: |
+      Enable storage of sensor attribute values in EEPROM. On reset, the device
+      goes through a POR sequence that loads the values programmed in the
+      EEPROM into the respective register map locations.
+
+      The following values are supported by the sensor:
+      High limit register, low limit register, conversion cycle time, averaging
+      mode, conversion mode (continuous or shutdown mode), alert function mode
+      (alert or therm mode), alert polarity, and temperature offset (not
+      specified in datasheet).

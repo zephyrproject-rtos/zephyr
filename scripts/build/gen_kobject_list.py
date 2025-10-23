@@ -114,6 +114,8 @@ kobjects = OrderedDict([
     ("ztest_test_rule", ("CONFIG_ZTEST", True, False)),
     ("rtio", ("CONFIG_RTIO", False, False)),
     ("rtio_iodev", ("CONFIG_RTIO", False, False)),
+    ("rtio_pool", ("CONFIG_RTIO", False, False)),
+    ("adc_decoder_api", ("CONFIG_ADC_STREAM", True, False)),
     ("sensor_decoder_api", ("CONFIG_SENSOR_ASYNC_API", True, False))
 ])
 

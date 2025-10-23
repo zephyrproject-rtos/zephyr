@@ -44,3 +44,12 @@ config WDT_MCUX_RTWDOG
 	depends on DT_HAS_NXP_RTWDOG_ENABLED
 	help
 	  Enable the mcux rtwdog driver.
+
+config WDT_MCUX_COP
+	bool "MCUX COP driver"
+	default y
+	depends on DT_HAS_NXP_COP_ENABLED
+	select HAS_WDT_NO_CALLBACKS
+	select HAS_WDT_DISABLE_AT_BOOT
+	help
+	  Enable the mcux cop driver.

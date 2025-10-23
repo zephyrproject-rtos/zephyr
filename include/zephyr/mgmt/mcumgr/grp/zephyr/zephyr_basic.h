@@ -6,14 +6,23 @@
 #ifndef ZEPHYR_INCLUDE_ZEPHYR_MCUMGR_GRP_ZBASIC_H_
 #define ZEPHYR_INCLUDE_ZEPHYR_MCUMGR_GRP_ZBASIC_H_
 
+/**
+ * @brief MCUmgr Zephyr Basic Management API
+ * @defgroup mcumgr_zephyr_basic_mgmt Zephyr Basic Management
+ * @ingroup mcumgr_mgmt_api
+ * @{
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * Command IDs for zephyr basic management group.
+ * @name Command IDs for zephyr basic management group.
+ * @{
  */
-#define ZEPHYR_MGMT_GRP_BASIC_CMD_ERASE_STORAGE	0	/* Command to erase storage partition */
+#define ZEPHYR_MGMT_GRP_BASIC_CMD_ERASE_STORAGE 0 /**< Erase storage partition */
+/** @} */
 
 /**
  * Command result codes for statistics management group.
@@ -38,5 +47,9 @@ enum zephyr_basic_group_err_code_t {
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_ZEPHYR_MCUMGR_GRP_ZBASIC_H_ */

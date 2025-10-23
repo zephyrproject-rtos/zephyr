@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/devicetree.h>
-#include <zephyr/arch/arm/cortex_m/arm_mpu_mem_cfg.h>
+#include <zephyr/arch/arm/mpu/arm_mpu_mem_cfg.h>
 
 #define USBHS_BASE	DT_REG_ADDR_BY_NAME(DT_NODELABEL(usbhs), core)
 #define USBHS_SIZE	DT_REG_SIZE_BY_NAME(DT_NODELABEL(usbhs), core)

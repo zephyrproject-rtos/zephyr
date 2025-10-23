@@ -18,45 +18,26 @@
 
 	chosen {
 		zephyr,sram = &ddr;
-		zephyr,flash = &spi_flash;
+		zephyr,flash = &at25ql128a;
 		zephyr,console = &scif0;
 		zephyr,shell-uart = &scif0;
-		zephyr,code-partition= &slot0_partition;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
 	};
 
 	ddr: memory@40200000 {
-		compatible ="zephyr,memory-region", "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x40200000 (DT_SIZE_M(1024) - 0x200000)>;
 		zephyr,memory-region = "DDR";
 	};
 
 	sram: memory@1e000 {
-		compatible ="zephyr,memory-region", "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x1e000 DT_SIZE_K(72)>;
 		zephyr,memory-region = "SRAM";
-	};
-
-	spi_flash: memory@20020000 {
-		compatible = "mmio-sram";
-		reg = <0x20020000 (DT_SIZE_M(16) - 0x20000)>;
-
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			header: partition@0 {
-				label = "header";
-				reg = <0x00000000 0x200>;
-				read-only;
-			};
-
-			slot0_partition: partition@200 {
-				label = "image-0";
-				reg = <0x00000200 (DT_SIZE_M(16)- 0x20200)>;
-				read-only;
-			};
-		};
 	};
 
 };
@@ -66,4 +47,59 @@
 	pinctrl-0 = <&scif0_pins>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&adc {
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&spi0 {
+	pinctrl-0 = <&spi0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&spibsc {
+	status = "okay";
+
+	at25ql128a: qspi-nor-flash@20000000 {
+		compatible = "renesas,rz-qspi-spibsc";
+		reg = <0x20000000 DT_SIZE_M(16)>; /* 128 Mbits */
+		write-block-size = <1>;
+		erase-block-size = <4096>;
+		status = "okay";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			reserved: partition@0 {
+				reg = <0x00000000 0x20000>;
+				read-only;
+			};
+
+			header: partition@20000 {
+				label = "header";
+				reg = <0x00020000 0x200>;
+				read-only;
+			};
+
+			slot0_partition: partition@20200 {
+				label = "image-0";
+				reg = <0x00020200 (DT_SIZE_M(16) - 0x20200)>;
+				read-only;
+			};
+		};
+	};
 };

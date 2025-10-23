@@ -106,8 +106,10 @@ Ethernet
 --------
 
 NETC driver supports to manage the Physical Station Interface (PSI).
-The first ENET1 port could be enabled on M7 DDR platform.
+The first ENET1 port could be enabled on M7 DDR and A55 platforms.
 
+For A55 Core, NETC depends on GIC ITS, so need to make sure to allocate heap memory to
+be larger than 851968 byes by setting CONFIG_HEAP_MEM_POOL_SIZE.
 
 Programming and Debugging (A55)
 *******************************
@@ -414,8 +416,7 @@ while, for the ``imx95_evk/mimx9596/m7/ddr`` board, you should get the following
 .. _MCUX SDK release:
    https://mcuxpresso.nxp.com/
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _NXP website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-processors/i-mx-applications-processors/i-mx-9-processors/i-mx-95-applications-processor-family-high-performance-safety-enabled-platform-with-eiq-neutron-npu:iMX95

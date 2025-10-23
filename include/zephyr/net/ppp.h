@@ -597,6 +597,15 @@ struct net_if;
 
 /** @endcond */
 
+/**
+ * @brief Retrieve the PPP peers Asynchronous Control Character Map
+ *
+ * @param iface PPP network interface.
+ *
+ * @return uint32_t Current bitmask for the Asynchronous Control Character Map
+ */
+uint32_t ppp_peer_async_control_character_map(struct net_if *iface);
+
 /** Event emitted when PPP carrier is on */
 #define NET_EVENT_PPP_CARRIER_ON					\
 	(NET_PPP_EVENT | NET_EVENT_PPP_CMD_CARRIER_ON)

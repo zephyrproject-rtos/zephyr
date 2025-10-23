@@ -388,7 +388,7 @@ extern "C" {
  *
  * @return Nth argument.
  */
-#define GET_ARG_N(N, ...) Z_GET_ARG_##N(__VA_ARGS__)
+#define GET_ARG_N(N, ...) UTIL_CAT(Z_GET_ARG_, N)(__VA_ARGS__)
 
 /**
  * @brief Strips n first arguments from the argument list.
@@ -398,7 +398,7 @@ extern "C" {
  *
  * @return argument list without N first arguments.
  */
-#define GET_ARGS_LESS_N(N, ...) Z_GET_ARGS_LESS_##N(__VA_ARGS__)
+#define GET_ARGS_LESS_N(N, ...) UTIL_CAT(Z_GET_ARGS_LESS_, N)(__VA_ARGS__)
 
 /**
  * @brief Like <tt>a || b</tt>, but does evaluation and

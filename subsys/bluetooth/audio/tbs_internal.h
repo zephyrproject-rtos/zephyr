@@ -246,12 +246,12 @@ struct bt_tbs_call_cp_retrieve {
 
 struct bt_tbs_call_cp_originate {
 	uint8_t opcode;
-	uint8_t uri[0];
+	uint8_t uri[];
 } __packed;
 
 struct bt_tbs_call_cp_join {
 	uint8_t opcode;
-	uint8_t call_indexes[0];
+	uint8_t call_indexes[];
 } __packed;
 
 union bt_tbs_call_cp_t {
@@ -319,6 +319,11 @@ enum bt_tbs_client_flag {
 	BT_TBS_CLIENT_FLAG_NUM_FLAGS, /* keep as last */
 };
 
+/* TODO: The storage of calls, handles and parameters should be moved to the user of the TBS client
+ * (e.g. the CCP client). This allows for users to use the Zephyr CCP client with static allocation
+ * or implement their own CCP client or even other profile roles that use the TBS client without
+ * being restricted to static memory allocation
+ */
 struct bt_tbs_instance {
 	struct bt_tbs_client_call_state calls[CONFIG_BT_TBS_CLIENT_MAX_CALLS];
 

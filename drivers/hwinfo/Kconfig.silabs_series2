@@ -6,6 +6,6 @@ config HWINFO_SILABS_S2
 	default y
 	depends on SOC_FAMILY_SILABS_S2
 	select HWINFO_HAS_DRIVER
-	select SOC_GECKO_RMU
+	select SILABS_SISDK_RMU
 	help
 	  Enable Silabs Series 2 hwinfo driver.

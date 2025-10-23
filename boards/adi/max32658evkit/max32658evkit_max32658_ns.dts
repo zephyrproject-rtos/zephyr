@@ -1,0 +1,75 @@
+/*
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <adi/max32/max32657_ns.dtsi>
+#include "max32658evkit_max32658_common.dtsi"
+
+/ {
+	 chosen {
+		zephyr,sram = &non_secure_ram;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_ns_partition;
+	 };
+
+	 reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/* RAM split used by TFM */
+		secure_ram: partition@20000000 {
+			label = "secure-memory";
+			reg = <0x20000000 DT_SIZE_K(64)>;
+		};
+
+		non_secure_ram: partition@20010000 {
+			label = "non-secure-memory";
+			reg = <0x20010000 DT_SIZE_K(192)>;
+		};
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 DT_SIZE_K(64)>;
+			read-only;
+		};
+
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x10000 DT_SIZE_K(320)>;
+		};
+
+		slot0_ns_partition: partition@60000 {
+			label = "image-0-nonsecure";
+			reg = <0x60000 DT_SIZE_K(576)>;
+		};
+
+		/*
+		 * slot1_partition: partition@f0000 {
+		 *  label = "image-1";
+		 *	reg = <0xf0000 DT_SIZE_K(0)>;
+		 * };
+		 * slot1_ns_partition: partition@f0000 {
+		 *	label = "image-1-nonsecure";
+		 *	reg = <0xf0000 DT_SIZE_K(0)>;
+		 * };
+		 */
+
+		storage_partition: partition@f0000 {
+			label = "storage";
+			reg = <0xf0000 DT_SIZE_K(64)>;
+		};
+	};
+};

@@ -55,7 +55,7 @@
  * - line [ 5 : 8 ]
  * - port [ 9 : 13 ]
  *
- * @param port Port ('A'..'Q')
+ * @param port Port ('A'..'Q', 'Z')
  * @param line Pin (0..15)
  * @param mode Mode (ANALOG, GPIO_IN, ALTERNATE).
  */

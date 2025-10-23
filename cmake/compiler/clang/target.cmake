@@ -36,10 +36,6 @@ if(NOT "${ARCH}" STREQUAL "posix")
     include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_riscv.cmake)
   endif()
 
-  if(DEFINED CMAKE_C_COMPILER_TARGET)
-    set(clang_target_flag "--target=${CMAKE_C_COMPILER_TARGET}")
-  endif()
-
   foreach(file_name include/stddef.h)
     execute_process(
       COMMAND ${CMAKE_C_COMPILER} --print-file-name=${file_name}
@@ -99,21 +95,6 @@ if(NOT "${ARCH}" STREQUAL "posix")
       list(APPEND TOOLCHAIN_C_FLAGS --config=${picolibc_cfg})
     endif()
   endif()
-
-  # This libgcc code is partially duplicated in compiler/*/target.cmake
-  execute_process(
-    COMMAND ${CMAKE_C_COMPILER} ${clang_target_flag} ${TOOLCHAIN_C_FLAGS}
-            --print-libgcc-file-name
-    OUTPUT_VARIABLE RTLIB_FILE_NAME
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-
-  get_filename_component(RTLIB_DIR ${RTLIB_FILE_NAME} DIRECTORY)
-  get_filename_component(RTLIB_NAME_WITH_PREFIX ${RTLIB_FILE_NAME} NAME_WLE)
-  string(REPLACE lib "" RTLIB_NAME ${RTLIB_NAME_WITH_PREFIX})
-
-  set_property(TARGET linker PROPERTY lib_include_dir "-L${RTLIB_DIR}")
-  set_property(TARGET linker PROPERTY rt_library "-l${RTLIB_NAME}")
 
   list(APPEND CMAKE_REQUIRED_FLAGS -nostartfiles -nostdlib ${isystem_include_flags})
   string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")

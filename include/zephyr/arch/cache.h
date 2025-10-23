@@ -13,9 +13,8 @@
 #define ZEPHYR_INCLUDE_ARCH_CACHE_H_
 
 /**
- * @brief Cache Controller Interface
- * @defgroup cache_arch_interface Cache Controller Interface
- * @ingroup io_interfaces
+ * @defgroup arch-cache Architecture-specific cache controllers.
+ * @ingroup arch-interface
  * @{
  */
 
@@ -24,6 +23,9 @@
 #elif defined(CONFIG_XTENSA)
 #include <zephyr/arch/xtensa/cache.h>
 #endif
+
+#include <stddef.h>
+#include <stdbool.h>
 
 #if defined(CONFIG_DCACHE) || defined(__DOXYGEN__)
 

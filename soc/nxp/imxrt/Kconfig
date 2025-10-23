@@ -42,21 +42,25 @@ config BOOT_XSPI_NOR
 	bool "XPI serial NOR"
 	depends on DT_HAS_NXP_XSPI_ENABLED
 
+FLEXSPI_COMPAT := nxp,imx-flexspi
+
 config BOOT_FLEXSPI_NOR
 	bool "FlexSPI serial NOR"
-	depends on HAS_MCUX_FLEXSPI
+	depends on $(dt_has_compat,$(FLEXSPI_COMPAT))
 
 config BOOT_FLEXSPI_NAND
 	bool "FlexSPI serial NAND"
-	depends on HAS_MCUX_FLEXSPI
+	depends on $(dt_has_compat,$(FLEXSPI_COMPAT))
+
+SEMC_COMPAT := nxp,imx-semc
 
 config BOOT_SEMC_NOR
 	bool "SEMC parallel NOR"
-	depends on HAS_MCUX_SEMC
+	depends on $(dt_has_compat, $(SEMC_COMPAT))
 
 config BOOT_SEMC_NAND
 	bool "SEMC parallel NAND"
-	depends on HAS_MCUX_SEMC
+	depends on $(dt_has_compat, $(SEMC_COMPAT))
 
 endchoice # BOOT_DEVICE
 
@@ -144,7 +148,7 @@ config NXP_IMX_EXTERNAL_HYPERRAM
 
 config SECOND_CORE_MCUX
 	bool "Dual core operation on the RT11xx series"
-	depends on SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT118X
+	depends on SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT118X || SOC_SERIES_IMXRT7XX
 	help
 	  Indicates the second core will be enabled, and the part will run
 	  in dual core mode. Enables dual core operation on the RT11xx series,

@@ -6,21 +6,32 @@
  */
 
 #include <mem.h>
-#include <silabs/xg24/efr32mg24.dtsi>
+#include <silabs/xg24/mgm24.dtsi>
+#include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
 
 / {
 	soc {
-		compatible = "silabs,mgm240pb32vna", "silabs,efr32mg24", "silabs,xg24",
-			     "silabs,efr32", "simple-bus";
+		compatible = "silabs,mgm240pb32vna", "silabs,mgm24", "silabs,xg24", "silabs,efr32",
+			     "simple-bus";
 	};
+};
+
+&dcdc {
+	silabs,pfmx-peak-current-milliamp = <50>;
 };
 
 &flash0 {
 	reg = <0x08000000 DT_SIZE_K(1536)>;
 };
 
-&radio {
-	pa-voltage-mv = <3300>;
+&hfxo {
+	ctune = <140>;
+	precision = <50>;
+	status = "okay";
+};
+
+&lfrco {
+	precision-mode;
 };
 
 &sram0 {

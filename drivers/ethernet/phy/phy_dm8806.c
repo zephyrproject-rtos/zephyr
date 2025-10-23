@@ -146,7 +146,7 @@ static int phy_dm8806_write_reg(const struct device *dev, uint8_t phyad, uint8_t
 					repetition);
 				if (repetition >= CONFIG_PHY_DM8806_SMI_BUS_CHECK_REPETITION) {
 					LOG_ERR("Maximum number of PHY write repetition exceed.");
-					res = (-EIO);
+					res = -EIO;
 				}
 			} else {
 				break;
@@ -158,7 +158,7 @@ static int phy_dm8806_write_reg(const struct device *dev, uint8_t phyad, uint8_t
 		} else {
 			if (checksum_mismatch) {
 				LOG_ERR("Wrong checksum, during PHY write procedure.");
-				res = (-EIO);
+				res = -EIO;
 				break;
 			}
 		}
@@ -217,20 +217,18 @@ static int phy_dm8806_read_reg(const struct device *dev, uint8_t phyad, uint8_t 
 
 		if (CONFIG_PHY_DM8806_SMI_BUS_CHECK_REPETITION > 0) {
 			repetition++;
-			if (hw_checksum != sw_checksum) {
-				LOG_WRN("%d repeat of PHY read procedure due to checksum error.",
-					repetition);
-				if (repetition >= CONFIG_PHY_DM8806_SMI_BUS_CHECK_REPETITION) {
-					LOG_ERR("Maximum number of PHY read repetition exceed.");
-					res = (-EIO);
-				}
-			} else {
+			if (hw_checksum == sw_checksum) {
 				break;
+			}
+			LOG_WRN("%d repeat PHY read procedure due to checksum error.", repetition);
+			if (repetition >= CONFIG_PHY_DM8806_SMI_BUS_CHECK_REPETITION) {
+				LOG_ERR("Maximum number of PHY read repetition exceed.");
+				res = -EIO;
 			}
 		} else {
 			if (hw_checksum != sw_checksum) {
 				LOG_ERR("Wrong checksum, during PHY read procedure.");
-				res = (-EIO);
+				res = -EIO;
 				break;
 			}
 		}
@@ -257,6 +255,7 @@ static void phy_dm8806_thread_cb(const struct device *dev, struct phy_link_state
 	uint16_t data;
 	struct phy_dm8806_data *drv_data = dev->data;
 	const struct phy_dm8806_config *cfg = dev->config;
+	int res;
 
 	if (drv_data->link_speed_chenge_cb != NULL) {
 		drv_data->link_speed_chenge_cb(dev, state, cb_data);
@@ -264,9 +263,18 @@ static void phy_dm8806_thread_cb(const struct device *dev, struct phy_link_state
 	/* Clear the interrupt flag, by writing "1" to LNKCHG bit of Interrupt Status
 	 * Register (318h)
 	 */
-	mdio_read(cfg->mdio, DM8806_INT_STAT_PHY_ADDR, DM8806_INT_STAT_REG_ADDR, &data);
+	res = mdio_read(cfg->mdio, DM8806_INT_STAT_PHY_ADDR, DM8806_INT_STAT_REG_ADDR, &data);
+	if (res < 0) {
+		LOG_ERR("Failed to read regad: %d, error: %d", DM8806_INT_STAT_REG_ADDR, res);
+	}
+
 	data |= 0x1;
-	mdio_write(cfg->mdio, DM8806_INT_STAT_PHY_ADDR, DM8806_INT_STAT_REG_ADDR, data);
+
+	res = mdio_write(cfg->mdio, DM8806_INT_STAT_PHY_ADDR, DM8806_INT_STAT_REG_ADDR, data);
+	if (res < 0) {
+		LOG_ERR("Failed to write regad: %d, error: %d", DM8806_INT_STAT_REG_ADDR, res);
+	}
+
 	gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
 }
 
@@ -325,14 +333,14 @@ int phy_dm8806_init_interrupt(const struct device *dev)
 	 */
 	res = mdio_read(cfg->mdio, DM8806_INT_MASK_CTRL_PHY_ADDR, DM8806_INT_MASK_CTRL_REG_ADDR,
 			&data);
-	if (res) {
+	if (res < 0) {
 		LOG_ERR("Failed to read IRQ_LED_CONTROL, %i", res);
 		return res;
 	}
 	data |= 0x1;
 	res = mdio_write(cfg->mdio, DM8806_INT_MASK_CTRL_PHY_ADDR, DM8806_INT_MASK_CTRL_REG_ADDR,
 			 data);
-	if (res) {
+	if (res < 0) {
 		LOG_ERR("Failed to read IRQ_LED_CONTROL, %i", res);
 		return res;
 	}
@@ -342,14 +350,14 @@ int phy_dm8806_init_interrupt(const struct device *dev)
 	 */
 	res = mdio_read(cfg->mdio, DM8806_WOLL_CTRL_REG_PHY_ADDR, DM8806_WOLL_CTRL_REG_REG_ADDR,
 			&data);
-	if (res) {
+	if (res < 0) {
 		LOG_ERR("Failed to read IRQ_LED_CONTROL, %i", res);
 		return res;
 	}
 	data |= 0xF;
 	res = mdio_write(cfg->mdio, DM8806_WOLL_CTRL_REG_PHY_ADDR, DM8806_WOLL_CTRL_REG_REG_ADDR,
 			 data);
-	if (res) {
+	if (res < 0) {
 		LOG_ERR("Failed to read IRQ_LED_CONTROL, %i", res);
 		return res;
 	}
@@ -624,7 +632,7 @@ static int phy_dm8806_reg_read(const struct device *dev, uint16_t reg_addr, uint
 	const struct phy_dm8806_config *cfg = dev->config;
 
 	res = mdio_read(cfg->mdio, cfg->switch_addr, reg_addr, (uint16_t *)data);
-	if (res) {
+	if (res < 0) {
 		LOG_ERR("Failed to read data from DM8806");
 		return res;
 	}
@@ -637,7 +645,7 @@ static int phy_dm8806_reg_write(const struct device *dev, uint16_t reg_addr, uin
 	const struct phy_dm8806_config *cfg = dev->config;
 
 	res = mdio_write(cfg->mdio, cfg->switch_addr, reg_addr, data);
-	if (res) {
+	if (res < 0) {
 		LOG_ERR("Failed to write data to DM8806");
 		return res;
 	}

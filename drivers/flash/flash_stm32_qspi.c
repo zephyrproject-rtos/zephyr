@@ -188,6 +188,7 @@ struct flash_stm32_qspi_config {
 	irq_config_func_t irq_config;
 	size_t flash_size;
 	uint32_t max_frequency;
+	uint8_t cs_high_time;
 	const struct pinctrl_dev_config *pcfg;
 #if STM32_QSPI_RESET_GPIO
 	const struct gpio_dt_spec reset;
@@ -281,15 +282,14 @@ static inline int qspi_prepare_quad_program(const struct device *dev,
 
 	cmd->Instruction = dev_data->qspi_write_cmd;
 #if defined(CONFIG_USE_MICROCHIP_QSPI_FLASH_WITH_STM32)
-	/* Microchip qspi-NOR flash, does not follow the standard rules */
-	if (cmd->Instruction == SPI_NOR_CMD_PP_1_1_4) {
-		cmd->AddressMode = QSPI_ADDRESS_4_LINES;
+	/* Microchip QSPI-NOR flash uses the PP_1_1_4 opcode for the PP_1_4_4 operation */
+	if (cmd->Instruction == SPI_NOR_CMD_PP_1_4_4) {
+		cmd->Instruction = SPI_NOR_CMD_PP_1_1_4;
 	}
-#else
-	cmd->AddressMode = ((cmd->Instruction == SPI_NOR_CMD_PP_1_1_4)
+#endif /* CONFIG_USE_MICROCHIP_QSPI_FLASH_WITH_STM32 */
+	cmd->AddressMode = ((dev_data->qspi_write_cmd == SPI_NOR_CMD_PP_1_1_4)
 				? QSPI_ADDRESS_1_LINE
 				: QSPI_ADDRESS_4_LINES);
-#endif /* CONFIG_USE_MICROCHIP_QSPI_FLASH_WITH_STM32 */
 	cmd->DataMode = QSPI_DATA_4_LINES;
 	cmd->DummyCycles = 0;
 
@@ -454,17 +454,12 @@ static int qspi_write_unprotect(const struct device *dev)
 			.InstructionMode = QSPI_INSTRUCTION_1_LINE,
 	};
 
-	if (IS_ENABLED(DT_INST_PROP(0, requires_ulbpr))) {
-		ret = qspi_send_cmd(dev, &cmd_write_en);
-
-		if (ret != 0) {
-			return ret;
-		}
-
-		ret = qspi_send_cmd(dev, &cmd_unprotect);
+	ret = qspi_send_cmd(dev, &cmd_write_en);
+	if (ret != 0) {
+		return ret;
 	}
 
-	return ret;
+	return qspi_send_cmd(dev, &cmd_unprotect);
 }
 
 /*
@@ -1591,26 +1586,19 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	hdma.Init.MemInc = DMA_MINC_ENABLE;
 	hdma.Init.Mode = DMA_NORMAL;
 	hdma.Init.Priority = table_priority[dma_cfg.channel_priority];
+	hdma.Instance = STM32_DMA_GET_INSTANCE(dev_data->dma.reg, dev_data->dma.channel);
 #ifdef CONFIG_DMA_STM32_V1
 	/* TODO: Not tested in this configuration */
 	hdma.Init.Channel = dma_cfg.dma_slot;
-	hdma.Instance = __LL_DMA_GET_STREAM_INSTANCE(dev_data->dma.reg,
-						     dev_data->dma.channel);
 #else
 	hdma.Init.Request = dma_cfg.dma_slot;
-#ifdef CONFIG_DMAMUX_STM32
-	/* HAL expects a valid DMA channel (not a DMAMUX channel) */
-	hdma.Instance = __LL_DMA_GET_CHANNEL_INSTANCE(dev_data->dma.reg,
-						      dev_data->dma.channel);
-#else
-	hdma.Instance = __LL_DMA_GET_CHANNEL_INSTANCE(dev_data->dma.reg,
-						      dev_data->dma.channel-1);
-#endif
 #endif /* CONFIG_DMA_STM32_V1 */
 
 	/* Initialize DMA HAL */
 	__HAL_LINKDMA(&dev_data->hqspi, hdma, hdma);
-	HAL_DMA_Init(&hdma);
+	if (HAL_DMA_Init(&hdma) != HAL_OK) {
+		return -EIO;
+	}
 
 #endif /* STM32_QSPI_USE_DMA */
 
@@ -1640,9 +1628,9 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	dev_data->hqspi.Init.ClockPrescaler = prescaler;
 	/* Give a bit position from 0 to 31 to the HAL init minus 1 for the DCR1 reg */
 	dev_data->hqspi.Init.FlashSize = find_lsb_set(dev_cfg->flash_size) - 2;
-#if STM32_QSPI_DOUBLE_FLASH
 	dev_data->hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_HALFCYCLE;
-	dev_data->hqspi.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_3_CYCLE;
+	dev_data->hqspi.Init.ChipSelectHighTime = dev_cfg->cs_high_time - 1;
+#if STM32_QSPI_DOUBLE_FLASH
 	dev_data->hqspi.Init.DualFlash = QSPI_DUALFLASH_ENABLE;
 
 	/*
@@ -1657,7 +1645,9 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	dev_data->hqspi.Init.FlashID = QSPI_FLASH_ID_1;
 #endif /* STM32_QSPI_DOUBLE_FLASH */
 
-	HAL_QSPI_Init(&dev_data->hqspi);
+	if (HAL_QSPI_Init(&dev_data->hqspi) != HAL_OK) {
+		return -EIO;
+	}
 
 #if DT_NODE_HAS_PROP(DT_NODELABEL(quadspi), flash_id) && \
 	defined(QUADSPI_CR_FSEL)
@@ -1667,8 +1657,10 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	 */
 	uint8_t qspi_flash_id = DT_PROP(DT_NODELABEL(quadspi), flash_id);
 
-	HAL_QSPI_SetFlashID(&dev_data->hqspi,
-			    (qspi_flash_id - 1) << QUADSPI_CR_FSEL_Pos);
+	if (HAL_QSPI_SetFlashID(&dev_data->hqspi,
+				(qspi_flash_id - 1) << QUADSPI_CR_FSEL_Pos) != HAL_OK) {
+		return -EIO;
+	}
 #endif
 	/* Initialize semaphores */
 	k_sem_init(&dev_data->sem, 1, 1);
@@ -1748,12 +1740,14 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	}
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-	ret = qspi_write_unprotect(dev);
-	if (ret != 0) {
-		LOG_ERR("write unprotect failed: %d", ret);
-		return -ENODEV;
+	if (IS_ENABLED(DT_INST_PROP(0, requires_ulbpr))) {
+		ret = qspi_write_unprotect(dev);
+		if (ret != 0) {
+			LOG_ERR("write unprotect failed: %d", ret);
+			return -ENODEV;
+		}
+		LOG_DBG("Write Un-protected");
 	}
-	LOG_DBG("Write Un-protected");
 
 #ifdef CONFIG_STM32_MEMMAP
 	ret = stm32_qspi_set_memory_mapped(dev);
@@ -1828,6 +1822,7 @@ static const struct flash_stm32_qspi_config flash_stm32_qspi_cfg = {
 	.irq_config = flash_stm32_qspi_irq_config_func,
 	.flash_size = (DT_INST_PROP(0, size) / 8) << STM32_QSPI_DOUBLE_FLASH,
 	.max_frequency = DT_INST_PROP(0, qspi_max_frequency),
+	.cs_high_time = DT_INST_PROP(0, cs_high_time),
 	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(STM32_QSPI_NODE),
 #if STM32_QSPI_RESET_GPIO
 	.reset = GPIO_DT_SPEC_INST_GET(0, reset_gpios),

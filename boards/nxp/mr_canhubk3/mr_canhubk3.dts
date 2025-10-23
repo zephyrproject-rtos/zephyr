@@ -50,38 +50,47 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		user_led1_green: user_led1_green {
 			gpios = <&gpioa_h 11 GPIO_ACTIVE_LOW>;
 			label = "User RGB LED1 GREEN";
 		};
+
 		user_led1_blue: user_led1_blue {
 			gpios = <&gpioe_l 12 GPIO_ACTIVE_LOW>;
 			label = "User RGB LED1 BLUE";
 		};
+
 		user_led1_red: user_led1_red {
 			gpios = <&gpioe_l 14 GPIO_ACTIVE_LOW>;
 			label = "User RGB LED1 RED";
 		};
+
 		can_led0: can_led0 {
 			gpios = <&gpioc_h 2 GPIO_ACTIVE_LOW>;
 			label = "CAN LED0";
 		};
+
 		can_led1: can_led1 {
 			gpios = <&gpioe_l 5 GPIO_ACTIVE_LOW>;
 			label = "CAN LED1";
 		};
+
 		can_led2: can_led2 {
 			gpios = <&gpiod_h 4 GPIO_ACTIVE_LOW>;
 			label = "CAN LED2";
 		};
+
 		can_led3: can_led3 {
 			gpios = <&gpiob_h 8 GPIO_ACTIVE_LOW>;
 			label = "CAN LED3";
 		};
+
 		can_led4: can_led4 {
 			gpios = <&gpiob_h 10 GPIO_ACTIVE_LOW>;
 			label = "CAN LED4";
 		};
+
 		can_led5: can_led5 {
 			gpios = <&gpiod_h 15 GPIO_ACTIVE_LOW>;
 			label = "CAN LED5";
@@ -112,24 +121,23 @@
 		micro-ticks-per-rev = <685440000>;
 		status = "okay";
 		trgmux = <&trgmux>;
-		trgmux-io-config =
-		<0 TRGMUX_IP_OUTPUT_EMIOS0_CH5_9_IPP_IND_CH6 TRGMUX_IP_INPUT_LCU1_LC0_OUT_I2>,
-		<1 TRGMUX_IP_OUTPUT_EMIOS0_CH5_9_IPP_IND_CH7 TRGMUX_IP_INPUT_LCU1_LC0_OUT_I3>,
-		<2 TRGMUX_IP_OUTPUT_LCU1_0_INP_I0            TRGMUX_IP_INPUT_SIUL2_IN2>,
-		<3 TRGMUX_IP_OUTPUT_LCU1_0_INP_I1            TRGMUX_IP_INPUT_SIUL2_IN3>;
+		trgmux-io-config = <0 TRGMUX_IP_OUTPUT_EMIOS0_CH5_9_IPP_IND_CH6
+				    TRGMUX_IP_INPUT_LCU1_LC0_OUT_I2>,
+				   <1 TRGMUX_IP_OUTPUT_EMIOS0_CH5_9_IPP_IND_CH7
+				    TRGMUX_IP_INPUT_LCU1_LC0_OUT_I3>,
+				   <2 TRGMUX_IP_OUTPUT_LCU1_0_INP_I0 TRGMUX_IP_INPUT_SIUL2_IN2>,
+				   <3 TRGMUX_IP_OUTPUT_LCU1_0_INP_I1 TRGMUX_IP_INPUT_SIUL2_IN3>;
 		lcu = <&lcu1>;
-		lcu-input-idx =
-		<LCU_IP_IN_0 LCU_IP_IN_1
-		 LCU_IP_IN_2 LCU_IP_IN_3>;
-		lcu-mux-sel =
-		<LCU_IP_MUX_SEL_LU_IN_0 LCU_IP_MUX_SEL_LU_IN_1
-		 LCU_IP_MUX_SEL_LU_OUT_0 LCU_IP_MUX_SEL_LU_OUT_1>;
+		lcu-input-idx = <LCU_IP_IN_0 LCU_IP_IN_1
+				 LCU_IP_IN_2 LCU_IP_IN_3>;
+		lcu-mux-sel = <LCU_IP_MUX_SEL_LU_IN_0 LCU_IP_MUX_SEL_LU_IN_1
+			       LCU_IP_MUX_SEL_LU_OUT_0 LCU_IP_MUX_SEL_LU_OUT_1>;
 		lcu-output-filter-config =
-			/* LCU Out HW ID, Rise Filter, Fall Filter */
-			<0 5 5>, /* LCU O0 */
-			<1 5 5>, /* LCU O1 */
-			<2 2 2>, /* LCU O2 */
-			<3 2 2>; /* LCU O3 */
+					   /* LCU Out HW ID, Rise Filter, Fall Filter */
+					   <0 5 5>, /* LCU O0 */
+					   <1 5 5>, /* LCU O1 */
+					   <2 2 2>, /* LCU O2 */
+					   <3 2 2>; /* LCU O3 */
 		emios = <&emios0>;
 		/*
 		 * eMios channel numbers for qdec should be beyond the channel numbers
@@ -140,11 +148,13 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		user_button_1: button_0 {
 			label = "User SW1";
 			gpios = <&gpiod_l 15 GPIO_ACTIVE_HIGH>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
 		user_button_2: button_1 {
 			label = "User SW2";
 			gpios = <&gpioa_h 9 GPIO_ACTIVE_HIGH>;
@@ -614,7 +624,6 @@
 			prescaler = <1>;
 		};
 	};
-
 };
 
 &lcu1 {

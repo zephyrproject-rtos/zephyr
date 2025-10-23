@@ -1,0 +1,185 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/ra/ra8/r7ka8m2jflcac_cm85.dtsi>
+#include "ek_ra8m2.dtsi"
+
+/ {
+	model = "Renesas EK-RA8M2";
+	compatible = "renesas,ra8m2", "renesas,ra8";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &code_mram_cm85;
+		zephyr,flash-controller = &mram_ctrl;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &uart8;
+		zephyr,shell-uart = &uart8;
+		zephyr,canbus = &canfd1;
+		zephyr,crc = &crc;
+	};
+
+	aliases {
+		led0 = &led1;
+		sw0 = &button0;
+		sw1 = &button1;
+		watchdog0 = &wdt0;
+	};
+};
+
+&button0 {
+	status ="okay";
+};
+
+&button1 {
+	status ="okay";
+};
+
+&sci8 {
+	pinctrl-0 = <&sci8_default>;
+	pinctrl-names = "default";
+	interrupts = <0 1>, <1 1>, <2 1>, <3 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+
+	uart8: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&sci7 {
+	pinctrl-0 = <&sci7_default>;
+	pinctrl-names = "default";
+	interrupts = <4 1>, <5 1>, <6 1>, <7 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+
+	uart7: uart {
+		current-speed = <115200>;
+	};
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+	interrupts = <8 1>, <9 1>, <10 1>, <11 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+};
+
+&iic1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_M(1)>;
+	pinctrl-0 = <&iic1_default>;
+	pinctrl-names = "default";
+	interrupts = <12 1>, <13 1>, <14 1>, <15 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+};
+
+&canfd_global {
+	interrupts = <16 1>, <17 1>;
+	interrupt-names = "rxf", "glerr";
+	status = "okay";
+
+	canfd1 {
+		pinctrl-0 = <&canfd1_default>;
+		pinctrl-names = "default";
+		interrupts = <18 1>, <19 1>, <20 11>;
+		interrupt-names = "err", "tx", "rx";
+		phys = <&transceiver0>;
+		rx-max-filters = <16>;
+		status = "okay";
+	};
+};
+
+&pwm1 {
+	pinctrl-0 = <&pwm1_default>;
+	interrupts = <23 1>, <24 1>;
+	interrupt-names = "gtioca", "overflow";
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&port_irq12 {
+	interrupts = <25 1>;
+	status = "okay";
+};
+
+&port_irq13 {
+	interrupts = <26 1>;
+	status = "okay";
+};
+
+&ulpt0 {
+	interrupts = <27 1>;
+	interrupt-names = "ulpti";
+	status = "okay";
+
+	timer {
+		status = "okay";
+	};
+};
+
+&ulpt1 {
+	status = "okay";
+
+	timer {
+		status = "okay";
+	};
+};
+
+&crc {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&usbhs {
+	pinctrl-0 = <&usbhs_default>;
+	interrupts = <28 1>;
+	interrupt-names = "usbhs-ir";
+	status = "okay";
+
+	zephyr_udc0: udc {
+		status = "okay";
+	};
+};
+
+&code_mram_cm85 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 DT_SIZE_K(64)>;
+		};
+
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x10000 DT_SIZE_K(472)>;
+		};
+
+		slot1_partition: partition@86000 {
+			label = "image-1";
+			reg = <0x86000 DT_SIZE_K(472)>;
+		};
+
+		storage_partition: partition@fc000 {
+			label = "storage";
+			reg = <0xfc000 DT_SIZE_K(16)>;
+		};
+	};
+};
+
+mikrobus_serial: &uart7 {};
+
+mikrobus_spi: &spi1 {};

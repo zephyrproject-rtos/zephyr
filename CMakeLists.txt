@@ -226,6 +226,12 @@ get_property(ASM_OPTIMIZE_FOR_SPEED_FLAG TARGET asm PROPERTY optimization_speed)
 get_property(ASM_OPTIMIZE_FOR_SIZE_FLAG  TARGET asm PROPERTY optimization_size)
 get_property(ASM_OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG TARGET asm PROPERTY optimization_size_aggressive)
 
+get_property(LINKER_OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG TARGET linker PROPERTY no_optimization)
+get_property(LINKER_OPTIMIZE_FOR_DEBUG_FLAG TARGET linker PROPERTY optimization_debug)
+get_property(LINKER_OPTIMIZE_FOR_SPEED_FLAG TARGET linker PROPERTY optimization_speed)
+get_property(LINKER_OPTIMIZE_FOR_SIZE_FLAG  TARGET linker PROPERTY optimization_size)
+get_property(LINKER_OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG TARGET linker PROPERTY optimization_size_aggressive)
+
 # Let the assembler inherit the optimization flags of the compiler if it is
 # not set explicitly.
 if(NOT ASM_OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG)
@@ -244,23 +250,46 @@ if(NOT ASM_OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG)
   set(ASM_OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG ${COMPILER_OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG})
 endif()
 
+# Let the linker inherit the optimization flags of the compiler if it is
+# not set explicitly.
+if(NOT LINKER_OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG)
+  set(LINKER_OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG ${COMPILER_OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG})
+endif()
+if(NOT LINKER_OPTIMIZE_FOR_DEBUG_FLAG)
+  set(LINKER_OPTIMIZE_FOR_DEBUG_FLAG ${COMPILER_OPTIMIZE_FOR_DEBUG_FLAG})
+endif()
+if(NOT LINKER_OPTIMIZE_FOR_SPEED_FLAG)
+  set(LINKER_OPTIMIZE_FOR_SPEED_FLAG ${COMPILER_OPTIMIZE_FOR_SPEED_FLAG})
+endif()
+if(NOT LINKER_OPTIMIZE_FOR_SIZE_FLAG)
+  set(LINKER_OPTIMIZE_FOR_SIZE_FLAG ${COMPILER_OPTIMIZE_FOR_SIZE_FLAG})
+endif()
+if(NOT LINKER_OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG)
+  set(LINKER_OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG ${COMPILER_OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG})
+endif()
+
 # From kconfig choice, pick the actual OPTIMIZATION_FLAG to use.
 # Kconfig choice ensures only one of these CONFIG_*_OPTIMIZATIONS is set.
 if(CONFIG_NO_OPTIMIZATIONS)
   set(COMPILER_OPTIMIZATION_FLAG ${COMPILER_OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG})
   set(ASM_OPTIMIZATION_FLAG ${ASM_OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG})
+  set(LINKER_OPTIMIZATION_FLAG ${LINKER_OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG})
 elseif(CONFIG_DEBUG_OPTIMIZATIONS)
   set(COMPILER_OPTIMIZATION_FLAG ${COMPILER_OPTIMIZE_FOR_DEBUG_FLAG})
   set(ASM_OPTIMIZATION_FLAG ${ASM_OPTIMIZE_FOR_DEBUG_FLAG})
+  set(LINKER_OPTIMIZATION_FLAG ${LINKER_OPTIMIZE_FOR_DEBUG_FLAG})
 elseif(CONFIG_SPEED_OPTIMIZATIONS)
   set(COMPILER_OPTIMIZATION_FLAG ${COMPILER_OPTIMIZE_FOR_SPEED_FLAG})
   set(ASM_OPTIMIZATION_FLAG ${ASM_OPTIMIZE_FOR_SPEED_FLAG})
+  set(LINKER_OPTIMIZATION_FLAG ${LINKER_OPTIMIZE_FOR_SPEED_FLAG})
 elseif(CONFIG_SIZE_OPTIMIZATIONS)
   set(COMPILER_OPTIMIZATION_FLAG ${COMPILER_OPTIMIZE_FOR_SIZE_FLAG}) # Default in kconfig
   set(ASM_OPTIMIZATION_FLAG ${ASM_OPTIMIZE_FOR_SIZE_FLAG})
+  set(LINKER_OPTIMIZATION_FLAG ${LINKER_OPTIMIZE_FOR_SIZE_FLAG})
 elseif(CONFIG_SIZE_OPTIMIZATIONS_AGGRESSIVE)
   set(COMPILER_OPTIMIZATION_FLAG ${COMPILER_OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG})
   set(ASM_OPTIMIZATION_FLAG ${ASM_OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG})
+  set(LINKER_OPTIMIZATION_FLAG ${LINKER_OPTIMIZE_FOR_SIZE_AGGRESSIVE_FLAG})
 else()
   message(FATAL_ERROR
     "Unreachable code. Expected optimization level to have been chosen. See Kconfig.zephyr")
@@ -277,6 +306,9 @@ endif()
 zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:${ASM_OPTIMIZATION_FLAG}>)
 zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:${COMPILER_OPTIMIZATION_FLAG}>)
 zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:${COMPILER_OPTIMIZATION_FLAG}>)
+add_link_options(${LINKER_OPTIMIZATION_FLAG})
+compiler_simple_options(simple_options)
+toolchain_linker_add_compiler_options(${simple_options})
 
 if(CONFIG_LTO)
   zephyr_compile_options($<TARGET_PROPERTY:compiler,optimization_lto>)
@@ -442,6 +474,16 @@ if(DEFINED TOOLCHAIN_LD_FLAGS)
   zephyr_ld_options(${TOOLCHAIN_LD_FLAGS})
 endif()
 
+foreach(GROUPED_FLAGS IN LISTS TOOLCHAIN_GROUPED_LD_FLAGS)
+  if(DEFINED ${GROUPED_FLAGS})
+    zephyr_ld_options(NO_SPLIT ${${GROUPED_FLAGS}})
+  else()
+    message(FATAL_ERROR "Variable '${GROUPED_FLAGS}' is not defined, "
+      "please ensure the variable is defined and points to valid linker flags. "
+      "If '${GROUPED_FLAGS}' is a linker flags itself, then it must be placed in a list")
+  endif()
+endforeach()
+
 zephyr_link_libraries(PROPERTY base)
 
 zephyr_link_libraries_ifndef(CONFIG_LINKER_USE_RELAX PROPERTY no_relax)
@@ -535,6 +577,24 @@ zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,no_p
 # relocatable link into a static library
 zephyr_link_libraries_ifndef(CONFIG_NATIVE_LIBRARY
                              $<TARGET_PROPERTY:linker,no_position_independent>)
+
+if(CONFIG_INSTRUMENTATION)
+  # @Intent: Enable function instrumentation injection at compile time
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,func_instrumentation>>)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,func_instrumentation>>)
+
+  # @Intent: Enable function blocklist for the instrumentation subsystem
+  if(CONFIG_INSTRUMENTATION_EXCLUDE_FUNCTION_LIST)
+    zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,func_instrumentation_exclude_function_list>>)
+    zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,func_instrumentation_exclude_function_list>>)
+  endif()
+
+  # @Intent: Enable file blocklist for the instrumentation subsystem
+  if(CONFIG_INSTRUMENTATION_EXCLUDE_FILE_LIST)
+    zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,func_instrumentation_exclude_file_list>>)
+    zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,func_instrumentation_exclude_file_list>>)
+  endif()
+endif()
 
 # Allow the user to inject options when calling cmake, e.g.
 # 'cmake -DEXTRA_CFLAGS="-Werror -Wno-deprecated-declarations" ..'
@@ -1840,18 +1900,31 @@ endif()
 
 if(CONFIG_BUILD_OUTPUT_BIN AND CONFIG_BUILD_OUTPUT_UF2)
   if(CONFIG_BUILD_OUTPUT_UF2_USE_FLASH_BASE)
-    set(flash_addr "${CONFIG_FLASH_BASE_ADDRESS}")
+    set(code_address "${CONFIG_FLASH_BASE_ADDRESS}")
   else()
-    set(flash_addr "${CONFIG_FLASH_LOAD_OFFSET}")
+    set(code_address "${CONFIG_FLASH_LOAD_OFFSET}")
   endif()
 
   if(CONFIG_BUILD_OUTPUT_UF2_USE_FLASH_OFFSET)
     # Note, the `+ 0` in formula below avoids errors in cases where a Kconfig
     #       variable is undefined and thus expands to nothing.
-    math(EXPR flash_addr
-        "${flash_addr} + ${CONFIG_FLASH_LOAD_OFFSET} + 0"
+    math(EXPR code_address
+        "${code_address} + ${CONFIG_FLASH_LOAD_OFFSET} + 0"
          OUTPUT_FORMAT HEXADECIMAL
     )
+  endif()
+
+  # No-XIP images (such as ones for RP2350 with CONFIG_XIP=n)
+  # are typically loaded to RAM
+  if(NOT CONFIG_XIP)
+    if(CONFIG_BUILD_OUTPUT_ADJUST_LMA)
+      math(EXPR code_address
+          "${CONFIG_SRAM_BASE_ADDRESS} + ${CONFIG_BUILD_OUTPUT_ADJUST_LMA} + 0"
+          OUTPUT_FORMAT HEXADECIMAL
+      )
+    else()
+      set(code_address "${CONFIG_SRAM_BASE_ADDRESS}")
+    endif()
   endif()
 
   list(APPEND
@@ -1859,7 +1932,7 @@ if(CONFIG_BUILD_OUTPUT_BIN AND CONFIG_BUILD_OUTPUT_UF2)
     COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/uf2conv.py
             -c
             -f ${CONFIG_BUILD_OUTPUT_UF2_FAMILY_ID}
-            -b ${flash_addr}
+            -b ${code_address}
             -o ${KERNEL_UF2_NAME}
             ${KERNEL_BIN_NAME}
   )
@@ -2131,6 +2204,16 @@ if (CONFIG_BUILD_OUTPUT_VIF)
   include(${CMAKE_CURRENT_LIST_DIR}/cmake/vif.cmake)
 endif()
 
+get_property(post_build_patch_elf_commands
+  GLOBAL PROPERTY
+  post_build_patch_elf_commands
+  )
+
+list(PREPEND
+  post_build_commands
+  ${post_build_patch_elf_commands}
+  )
+
 get_property(extra_post_build_commands
   GLOBAL PROPERTY
   extra_post_build_commands
@@ -2370,6 +2453,9 @@ add_subdirectory_ifdef(
   CONFIG_MAKEFILE_EXPORTS
   cmake/makefile_exports
   )
+
+# Ask the compiler to set the lib_include_dir and rt_library properties
+compiler_set_linker_properties()
 
 toolchain_linker_finalize()
 

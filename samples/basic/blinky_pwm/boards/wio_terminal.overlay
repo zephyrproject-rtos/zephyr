@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/{
+/ {
 	aliases {
 		pwm-led0 = &pwm_led0;
 	};

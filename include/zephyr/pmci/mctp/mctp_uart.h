@@ -44,7 +44,7 @@ struct mctp_binding_uart {
 	uint8_t tx_buf[256];
 	int tx_res;
 
-	/** @endcond INTERNAL_HIDDEN */
+	/** INTERNAL_HIDDEN @endcond */
 };
 
 /**
@@ -59,7 +59,7 @@ void mctp_uart_start_rx(struct mctp_binding_uart *uart);
 /** @cond INTERNAL_HIDDEN */
 int mctp_uart_start(struct mctp_binding *binding);
 int mctp_uart_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt);
-/** @endcond INTERNAL_HIDDEN */
+/** INTERNAL_HIDDEN @endcond */
 
 /**
  * @brief Statically define a MCTP bus binding for a UART

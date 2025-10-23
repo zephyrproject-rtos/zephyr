@@ -8,7 +8,6 @@ Hardware Support
 
    arch/index.rst
    barriers/index.rst
-   cache/guide.rst
    cache/index.rst
    emulator/index.rst
    emulator/bus_emulators.rst

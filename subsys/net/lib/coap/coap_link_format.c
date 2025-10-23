@@ -418,7 +418,7 @@ int clear_more_flag(struct coap_packet *cpkt)
 
 int coap_well_known_core_get_len(struct coap_resource *resources,
 				 size_t resources_len,
-				 struct coap_packet *request,
+				 const struct coap_packet *request,
 				 struct coap_packet *response,
 				 uint8_t *data, uint16_t len)
 {

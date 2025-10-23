@@ -5,10 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 / {
 	clocks {
-
 		/* imo */
 		clk_imo: clk_imo {
 			#clock-cells = <0>;
@@ -142,5 +140,4 @@
 			status = "okay";
 		};
 	};
-
 };

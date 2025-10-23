@@ -394,6 +394,7 @@ our $Attribute	= qr{
 			__pure|
 			__noclone|
 			__deprecated|
+			__deprecated_version|
 			__read_mostly|
 			__ro_after_init|
 			__kprobes|
@@ -2569,6 +2570,11 @@ sub process {
 			}
 		}
 		if ($skipme) {
+			next;
+		}
+
+		# skip package-lock.json and package.json files specifically
+		if ($realfile =~ /package(-lock)?\.json$/) {
 			next;
 		}
 

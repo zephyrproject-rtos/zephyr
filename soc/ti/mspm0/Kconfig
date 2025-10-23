@@ -15,4 +15,8 @@ config MSPM0_PERIPH_STARTUP_DELAY
 	int
 	default 8
 
+config HWINFO
+	bool
+	default y if POWEROFF
+
 endif # SOC_FAMILY_TI_MSPM0

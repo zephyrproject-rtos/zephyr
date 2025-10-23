@@ -37,3 +37,12 @@ config ETH_W5500_TIMEOUT
 	  Given timeout in milliseconds. Maximum amount of time
 	  that the driver will wait from the IP stack to get
 	  a memory buffer before the Ethernet frame is dropped.
+
+config ETH_W5500_MONITOR_PERIOD
+	int "Monitor task execution period"
+	depends on ETH_W5500
+	default 500
+	help
+	  Monitor task execution period in milliseconds. The monitor task is
+	  periodically executed to detect and report any changes in the
+	  link status to the operating system.

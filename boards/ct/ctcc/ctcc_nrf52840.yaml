@@ -8,7 +8,7 @@ toolchain:
 supported:
   - ble
   - gpio
-  - usb_device
+  - usbd
   - watchdog
   - counter
 vendor: ct

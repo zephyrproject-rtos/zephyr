@@ -18,14 +18,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		red_led: led_1 {
 			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 			label = "RGB red channel";
 		};
+
 		green_led: led_2 {
 			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
 			label = "RGB green channel";
 		};
+
 		blue_led: led_3 {
 			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
 			label = "RGB blue channel";
@@ -61,8 +64,8 @@
 		led1 = &green_led;
 		led2 = &blue_led;
 		led3 = &mode_led;
-		sw0  = &button0;
-		rgb-pwm  = &pwm0;
+		sw0 = &button0;
+		rgb-pwm = &pwm0;
 		mode-pwm = &pwm1;
 		watchdog0 = &wdt0;
 		accel0 = &lis2dh12_accel;
@@ -101,7 +104,6 @@
 	pinctrl-names = "default", "sleep";
 };
 
-
 &i2c2 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
@@ -111,6 +113,7 @@
 	pinctrl-0 = <&i2c2_default>;
 	pinctrl-1 = <&i2c2_sleep>;
 	pinctrl-names = "default", "sleep";
+
 	bq27421@55 {
 		compatible = "ti,bq274xx";
 		reg = <0x55>;

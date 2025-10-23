@@ -258,7 +258,7 @@ static int adc_kb106x_init(const struct device *dev)
 		.adc = (struct adc_regs *)DT_INST_REG_ADDR(inst),                                  \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &adc_kb106x_init, NULL, &adc_kb106x_data_##inst,               \
+	DEVICE_DT_INST_DEFINE(inst, adc_kb106x_init, NULL, &adc_kb106x_data_##inst,                \
 			      &adc_kb106x_config_##inst, PRE_KERNEL_1,                             \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &adc_kb106x_api);
 

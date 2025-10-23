@@ -255,6 +255,12 @@ path to add is:
 
          /usr/local/LinkServer
 
+   .. group-tab:: macOS
+
+      .. code-block:: console
+
+         /Applications/LinkServer_<version>
+
    .. group-tab:: Windows
 
       .. code-block:: console
@@ -462,13 +468,13 @@ the runner on each invocation via ``--s32ds-path`` as shown below:
 
       .. code-block:: console
 
-         west debug --s32ds-path=/opt/NXP/S32DS.3.5
+         west debug --s32ds-path=/opt/NXP/S32DS.3.6
 
    .. group-tab:: Windows
 
       .. code-block:: console
 
-         west debug --s32ds-path=C:\NXP\S32DS.3.5
+         west debug --s32ds-path=C:\NXP\S32DS.3.6
 
 If multiple S32 debug probes are connected to the host via USB, the runner will
 ask the user to select one via command line prompt before continuing. The
@@ -490,6 +496,18 @@ afterwards detach the debug session:
 .. code-block:: console
 
    west debug --tool-opt='--batch'
+
+Requirements
+------------
+
+- **S32 Design Studio version**: 3.6.0 or newer.
+- **S32DebugProbe OS (firmware)**: 1.1.0 or newer.
+
+S32 Debug Probe OS Upgrade Procedure
+------------------------------------
+
+Refer to the “Reprogramming S32 Debug Probe Firmware Images” chapter
+in the `S32 Debug Probe User Guide`_ to upgrade the OS of the S32DebugProbe.
 
 .. _runner_probe_rs:
 
@@ -687,6 +705,9 @@ For more about the UF2 format and its tooling, see `USB Flashing Format (UF2)`_.
 
 .. _S32 Design Studio for S32 Platform Installation User Guide:
    https://www.nxp.com/webapp/Download?colCode=S32DSIG
+
+.. _S32 Debug Probe User Guide:
+   https://www.nxp.com/docs/en/user-guide/S32DBGUG.pdf
 
 .. _probe-rs Installation:
    https://probe.rs/docs/getting-started/installation/

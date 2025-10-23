@@ -96,10 +96,14 @@
 			#nordic,ficr-cells = <1>;
 		};
 
+#ifdef USE_NON_SECURE_ADDRESS_MAP
+		/* intentionally empty because UICR is hardware fixed to Secure */
+#else
 		uicr: uicr@ffd000 {
 			compatible = "nordic,nrf-uicr";
 			reg = <0xffd000 0x1000>;
 		};
+#endif
 
 		cpuapp_sram: memory@20000000 {
 			compatible = "mmio-sram";
@@ -117,10 +121,19 @@
 			ranges = <0x0 0x20067c00 DT_SIZE_K(96)>;
 		};
 
+#ifdef USE_NON_SECURE_ADDRESS_MAP
+		global_peripherals: peripheral@40000000 {
+			reg = <0x40000000 0x10000000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x40000000 0x10000000>;
+#else
 		global_peripherals: peripheral@50000000 {
+			reg = <0x50000000 0x10000000>;
 			ranges = <0x0 0x50000000 0x10000000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+#endif
 
 			dppic00: dppic@42000 {
 				compatible = "nordic,nrf-dppic";
@@ -211,7 +224,7 @@
 
 			usbhs: usbhs@5a000 {
 				compatible = "nordic,nrf-usbhs-nrf54l", "snps,dwc2";
-				reg = <0x5a000 0x1000>, <0x50020000 0x1a000>;
+				reg = <0x5a000 0x1000>, <0x20000 0x1a000>;
 				reg-names = "wrapper", "core";
 				interrupts = <90 NRF_DEFAULT_IRQ_PRIORITY>;
 				num-in-eps = <16>;
@@ -747,12 +760,16 @@
 				interrupts = <262 NRF_DEFAULT_IRQ_PRIORITY>;
 			};
 
+#ifdef USE_NON_SECURE_ADDRESS_MAP
+			/* intentionally empty because WDT30 is hardware fixed to Secure */
+#else
 			wdt30: watchdog@108000 {
 				compatible = "nordic,nrf-wdt";
 				reg = <0x108000 0x620>;
 				interrupts = <264 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
 			};
+#endif
 
 			wdt31: watchdog@109000 {
 				compatible = "nordic,nrf-wdt";
@@ -851,11 +868,20 @@
 			};
 		};
 
+		nrf_mpc: memory@50041000 {
+			compatible = "nordic,nrf-mpc";
+			reg = <0x50041000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			override-num = <5>;
+			override-granularity = <4096>;
+		};
+
 		cpuapp_ppb: cpuapp-ppb-bus {
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			cpuapp_nvic: interrupt-controller@e000e100  {
+			cpuapp_nvic: interrupt-controller@e000e100 {
 				#address-cells = <1>;
 				compatible = "arm,v8m-nvic";
 				reg = <0xe000e100 0xc00>;

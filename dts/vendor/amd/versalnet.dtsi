@@ -34,6 +34,7 @@
 			status = "disabled";
 			interrupts = <GIC_SPI 184 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			reg = <0xf1040000 0x10000>;
+
 			sdmmc {
 				compatible = "zephyr,sdmmc-disk";
 				disk-name = "sd0";
@@ -45,6 +46,7 @@
 			status = "disabled";
 			reg = <0xf1050000 0x10000>;
 			interrupts = <GIC_SPI 186 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+
 			mmc {
 				compatible = "zephyr,mmc-disk";
 				bus-width = <8>;

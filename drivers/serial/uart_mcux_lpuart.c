@@ -7,6 +7,9 @@
 
 #define DT_DRV_COMPAT nxp_lpuart
 
+#define LPUART_ASYNC_ENABLE \
+	IS_ENABLED(CONFIG_UART_ASYNC_API) && IS_ENABLED(CONFIG_UART_NXP_LPUART_ASYNC_API_SUPPORT)
+
 #include <errno.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
@@ -15,7 +18,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/drivers/pinctrl.h>
-#ifdef CONFIG_UART_ASYNC_API
+#if LPUART_ASYNC_ENABLE
 #include <zephyr/drivers/dma.h>
 #endif
 #include <zephyr/logging/log.h>
@@ -40,7 +43,7 @@ LOG_MODULE_REGISTER(uart_mcux_lpuart, LOG_LEVEL_ERR);
 #define LPUART_HAS_MCR 1
 #endif
 
-#if defined(CONFIG_UART_ASYNC_API) && defined(CONFIG_UART_INTERRUPT_DRIVEN)
+#if LPUART_ASYNC_ENABLE && defined(CONFIG_UART_INTERRUPT_DRIVEN)
 /* there are already going to be build errors, but at least this message will
  * be the first error from this driver making the reason clear
  */
@@ -48,13 +51,13 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_UART_EXCLUSIVE_API_CALLBACKS), ""
 		"LPUART must use exclusive api callbacks");
 #endif
 
-#ifdef CONFIG_UART_ASYNC_API
+#if LPUART_ASYNC_ENABLE
 struct lpuart_dma_config {
 	const struct device *dma_dev;
 	const uint32_t dma_channel;
 	struct dma_config dma_cfg;
 };
-#endif /* CONFIG_UART_ASYNC_API */
+#endif /* LPUART_ASYNC_ENABLE */
 
 struct mcux_lpuart_config {
 	LPUART_Type *base;
@@ -72,13 +75,13 @@ struct mcux_lpuart_config {
 #ifdef CONFIG_UART_MCUX_LPUART_ISR_SUPPORT
 	void (*irq_config_func)(const struct device *dev);
 #endif
-#ifdef CONFIG_UART_ASYNC_API
+#if LPUART_ASYNC_ENABLE
 	const struct lpuart_dma_config rx_dma_config;
 	const struct lpuart_dma_config tx_dma_config;
-#endif /* CONFIG_UART_ASYNC_API */
+#endif /* LPUART_ASYNC_ENABLE */
 };
 
-#ifdef CONFIG_UART_ASYNC_API
+#if LPUART_ASYNC_ENABLE
 struct mcux_lpuart_rx_dma_params {
 	struct dma_block_config active_dma_block;
 	uint8_t *buf;
@@ -126,7 +129,7 @@ struct mcux_lpuart_data {
 	bool tx_poll_stream_on;
 	bool tx_int_stream_on;
 #endif /* CONFIG_PM */
-#ifdef CONFIG_UART_ASYNC_API
+#if LPUART_ASYNC_ENABLE
 	struct mcux_lpuart_async_data async;
 #endif
 	struct uart_config uart_config;
@@ -423,7 +426,7 @@ static void mcux_lpuart_irq_callback_set(const struct device *dev,
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 
-#ifdef CONFIG_UART_ASYNC_API
+#if LPUART_ASYNC_ENABLE
 static inline void async_timer_start(struct k_work_delayable *work, size_t timeout_us)
 {
 	if ((timeout_us != SYS_FOREVER_US) && (timeout_us != 0)) {
@@ -906,7 +909,7 @@ static void mcux_lpuart_async_tx_timeout(struct k_work *work)
 	(void)mcux_lpuart_tx_abort(dev);
 }
 
-#endif /* CONFIG_UART_ASYNC_API */
+#endif /* LPUART_ASYNC_ENABLE */
 
 #if CONFIG_UART_MCUX_LPUART_ISR_SUPPORT
 
@@ -925,7 +928,7 @@ static inline void mcux_lpuart_irq_driven_isr(const struct device *dev,
 }
 #endif
 
-#ifdef CONFIG_UART_ASYNC_API
+#if LPUART_ASYNC_ENABLE
 static inline void mcux_lpuart_async_isr(struct mcux_lpuart_data *data,
 					      const struct mcux_lpuart_config *config,
 					      const uint32_t status) {
@@ -960,7 +963,7 @@ static void mcux_lpuart_isr(const struct device *dev)
 	}
 #endif /* CONFIG_PM */
 
-#if defined(CONFIG_UART_ASYNC_API) && defined(CONFIG_UART_INTERRUPT_DRIVEN)
+#if LPUART_ASYNC_ENABLE && defined(CONFIG_UART_INTERRUPT_DRIVEN)
 	if (data->api_type == LPUART_IRQ_DRIVEN) {
 		mcux_lpuart_irq_driven_isr(dev, data, config, status);
 	} else if (data->api_type == LPUART_ASYNC) {
@@ -968,7 +971,7 @@ static void mcux_lpuart_isr(const struct device *dev)
 	}
 #elif defined(CONFIG_UART_INTERRUPT_DRIVEN)
 	mcux_lpuart_irq_driven_isr(dev, data, config, status);
-#elif defined(CONFIG_UART_ASYNC_API)
+#elif LPUART_ASYNC_ENABLE
 	mcux_lpuart_async_isr(data, config, status);
 #endif /* API */
 }
@@ -1101,7 +1104,7 @@ static int mcux_lpuart_configure_basic(const struct device *dev, const struct ua
 	return 0;
 }
 
-#ifdef CONFIG_UART_ASYNC_API
+#if LPUART_ASYNC_ENABLE
 static int mcux_lpuart_configure_async(const struct device *dev)
 {
 	const struct mcux_lpuart_config *config = dev->config;
@@ -1401,14 +1404,14 @@ static DEVICE_API(uart, mcux_lpuart_driver_api) = {
 	.irq_update = mcux_lpuart_irq_update,
 	.irq_callback_set = mcux_lpuart_irq_callback_set,
 #endif
-#ifdef CONFIG_UART_ASYNC_API
+#if LPUART_ASYNC_ENABLE
 	.callback_set = mcux_lpuart_callback_set,
 	.tx = mcux_lpuart_tx,
 	.tx_abort = mcux_lpuart_tx_abort,
 	.rx_enable = mcux_lpuart_rx_enable,
 	.rx_buf_rsp = mcux_lpuart_rx_buf_rsp,
 	.rx_disable = mcux_lpuart_rx_disable,
-#endif /* CONFIG_UART_ASYNC_API */
+#endif /* LPUART_ASYNC_ENABLE */
 #ifdef CONFIG_UART_LINE_CTRL
 	.line_ctrl_set = mcux_lpuart_line_ctrl_set,
 	.line_ctrl_get = mcux_lpuart_line_ctrl_get,
@@ -1451,7 +1454,7 @@ static DEVICE_API(uart, mcux_lpuart_driver_api) = {
 #define MCUX_LPUART_IRQ_DEFINE(n)
 #endif /* CONFIG_UART_MCUX_LPUART_ISR_SUPPORT */
 
-#ifdef CONFIG_UART_ASYNC_API
+#if LPUART_ASYNC_ENABLE
 #define TX_DMA_CONFIG(id)								       \
 	.tx_dma_config = {								       \
 		.dma_dev =								       \
@@ -1502,7 +1505,7 @@ static DEVICE_API(uart, mcux_lpuart_driver_api) = {
 #else
 #define RX_DMA_CONFIG(n)
 #define TX_DMA_CONFIG(n)
-#endif /* CONFIG_UART_ASYNC_API */
+#endif /* LPUART_ASYNC_ENABLE */
 
 #define FLOW_CONTROL(n) \
 	DT_INST_PROP(n, hw_flow_control)   \

@@ -7,13 +7,15 @@ tests:
       "gpio-keys") and dt_compat_enabled("st,stm32-pwr")
     platform_allow:
       - nucleo_c092rc
+      - nucleo_f103rb
       - nucleo_g031k8
+      - nucleo_l152re
       - nucleo_l4r5zi
       - nucleo_u575zi_q
       - nucleo_u5a5zj_q
+      - nucleo_wba55cg
+      - nucleo_wba65ri
       - nucleo_wl55jc
-      - nucleo_f103rb
       - stm32l1_disco
-      - nucleo_l152re
     integration_platforms:
       - nucleo_l4r5zi

@@ -28,8 +28,7 @@
 	airoc_wifi_host_wake: airoc_wifi_host_wake {
 		/* Assign GPIO24 to SIO (GPIO) for use as an interrupt source */
 		group1 {
-			/* Lacking a specific SIO pin definition, use the RP2040_PINMUX macro */
-			pinmux = <RP2XXX_PINMUX(24, RP2_PINCTRL_GPIO_FUNC_SIO)>;
+			pinmux = <GPIO_P24>;
 			input-enable;
 		};
 	};
@@ -40,7 +39,7 @@
 
 	pio0_spi0: pio0_spi0 {
 		compatible = "raspberrypi,pico-spi-pio";
-		clocks = < &clocks RPI_PICO_CLKID_CLK_SYS >;
+		clocks = <&clocks RPI_PICO_CLKID_CLK_SYS>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 		cs-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
@@ -49,13 +48,14 @@
 		pinctrl-0 = <&pio0_spi0_default>;
 		pinctrl-names = "default";
 		status = "okay";
+
 		airoc-wifi@0 {
 			compatible = "infineon,airoc-wifi";
-			reg = < 0 >;
-			wifi-reg-on-gpios = < &gpio0 23 GPIO_ACTIVE_HIGH >;
-			bus-select-gpios = < &gpio0 24 GPIO_ACTIVE_HIGH >;
-			wifi-host-wake-gpios = < &gpio0 24 GPIO_ACTIVE_HIGH >;
-			spi-max-frequency = < 10000000 >;
+			reg = <0>;
+			wifi-reg-on-gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>;
+			bus-select-gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
+			wifi-host-wake-gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
+			spi-max-frequency = <10000000>;
 			spi-half-duplex;
 			spi-data-irq-shared;
 			pinctrl-0 = <&airoc_wifi_default>;

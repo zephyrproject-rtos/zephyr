@@ -9,6 +9,7 @@
 #include <adi/max32/max32690.dtsi>
 #include <adi/max32/max32690-pinctrl.dtsi>
 #include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/memory-controller/adi-max32-hpb.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
@@ -25,14 +26,17 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		blue_led: blue_led {
 			gpios = <&gpio2 1 GPIO_ACTIVE_HIGH>;
 			label = "LED1";
 		};
+
 		red_led: red_led {
 			gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
 			label = "LED2";
 		};
+
 		green_led: green_led {
 			gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
 			label = "LED3";
@@ -41,6 +45,7 @@
 
 	buttons {
 		compatible = "gpio-keys";
+
 		usr_btn: usr_btn {
 			gpios = <&gpio1 27 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
 			label = "S2";
@@ -58,30 +63,30 @@
 	arduino_header: connector {
 		compatible = "arduino-header-r3";
 		#gpio-cells = <2>;
-		gpio-map-mask = <0xffffffff 0xffffffc0>;
-		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <0 0 &gpio3 0 0>,	/* A0 */
-			   <1 0 &gpio3 1 0>,	/* A1 */
-			   <2 0 &gpio3 2 0>,	/* A2 */
-			   <3 0 &gpio3 3 0>,	/* A3 */
-			   <4 0 &gpio3 4 0>,	/* A4 */
-			   <5 0 &gpio3 5 0>,	/* A5 */
-			   <6 0 &gpio2 14 0>,	/* D0 */
-			   <7 0 &gpio2 16 0>,	/* D1 */
-			   <8 0 &gpio2 13 0>,	/* D2 */
-			   <9 0 &gpio2 15 0>,	/* D3 */
-			   <10 0 &gpio0 8 0>,	/* D4 */
-			   <11 0 &gpio0 7 0>,	/* D5 */
-			   <12 0 &gpio1 24 0>,	/* D6 */
-			   <13 0 &gpio1 25 0>,	/* D7 */
-			   <14 0 &gpio1 31 0>,	/* D8 */
-			   <15 0 &gpio1 30 0>,	/* D9 */
-			   <16 0 &gpio1 23 0>,	/* D10 */
-			   <17 0 &gpio1 29 0>,	/* D11 */
-			   <18 0 &gpio1 28 0>,	/* D12 */
-			   <19 0 &gpio1 26 0>,	/* D13 */
-			   <20 0 &gpio2 17 0>,	/* D14 */
-			   <21 0 &gpio2 18 0>;	/* D15 */
+		gpio-map-mask = <0xffffffff 0xfffffe00>;
+		gpio-map-pass-thru = <0 0x1ff>;
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &gpio3 0 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &gpio3 1 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &gpio3 2 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &gpio3 3 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &gpio3 4 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &gpio3 5 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &gpio2 14 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &gpio2 16 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &gpio2 13 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &gpio2 15 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &gpio0 8 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &gpio0 7 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &gpio1 24 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &gpio1 25 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &gpio1 31 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &gpio1 30 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &gpio1 23 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &gpio1 29 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &gpio1 28 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &gpio1 26 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &gpio2 17 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &gpio2 18 0>;
 	};
 
 	pmod_header: pmod-header {
@@ -165,6 +170,20 @@ arduino_serial: &uart1 {
 	current-speed = <115200>;
 };
 
+&i2c1a_scl_p2_18 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&i2c1a_sda_p2_17 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+arduino_i2c: &i2c1 {
+	status = "okay";
+	pinctrl-0 = <&i2c1a_sda_p2_17 &i2c1a_scl_p2_18>;
+	pinctrl-names = "default";
+};
+
 &spi1a_miso_p1_28 {
 	power-source = <MAX32_VSEL_VDDIOH>;
 };
@@ -240,8 +259,9 @@ pmod_spi: &spi4 {
 		status = "okay";
 
 		port1 {
-			local-mac-address = [ 00 E0 22 FE DA C9 ];
+			local-mac-address = [00 E0 22 FE DA C9];
 		};
+
 		mdio {
 			compatible = "adi,adin2111-mdio";
 			#address-cells = <1>;
@@ -262,9 +282,9 @@ pmod_spi: &spi4 {
 
 &hpb {
 	pinctrl-0 = <&hyp_cs0n_p1_11 &hyp_cs1n_p1_17 &hyp_rwds_p1_14
-				 &hyp_d0_p1_12 &hyp_d1_p1_15
-				 &hyp_d2_p1_19 &hyp_d3_p1_20 &hyp_d4_p1_13
-				 &hyp_d5_p1_16 &hyp_d6_p1_18 &hyp_d7_p1_21>;
+		     &hyp_d0_p1_12 &hyp_d1_p1_15
+		     &hyp_d2_p1_19 &hyp_d3_p1_20 &hyp_d4_p1_13
+		     &hyp_d5_p1_16 &hyp_d6_p1_18 &hyp_d7_p1_21>;
 	pinctrl-names = "default";
 	enable-emcc;
 
@@ -284,7 +304,7 @@ pmod_spi: &spi4 {
 		/* CR0 settings. Key setting is enabling 6-clock latency, since
 		 * HPB doesn't support 7-clock latency which is default
 		 */
-		config-regs =     <0x1000>;
+		config-regs = <0x1000>;
 		config-reg-vals = <0x801F>;
 	};
 
@@ -304,7 +324,7 @@ pmod_spi: &spi4 {
 		/* CR0 settings. Key setting is enabling 6-clock latency, since
 		 * HPB doesn't support 7-clock latency which is default
 		 */
-		config-regs =     <0x1000>;
+		config-regs = <0x1000>;
 		config-reg-vals = <0x801F>;
 	};
 };
@@ -319,12 +339,10 @@ pmod_spi: &spi4 {
 		reg = <0x08000000 DT_SIZE_M(8)>; /* 64 Mbits */
 		qspi-max-frequency = <60000000>;
 		jedec-id = [c2 37 25];
-		sfdp-bfp = [
-			e5 20 f1 ff   ff ff ff 03   44 eb 08 6b   08 3b 04 bb
-			fe ff ff ff   ff ff 00 ff   ff ff 44 eb   0c 20 0f 52
-			10 d8 00 ff   d3 49 c9 00   83 a6 04 c4   44 03 17 38
-			30 b0 30 b0   f7 bd d5 5c   4a 9e 29 ff   f0 d0 ff ff
-		];
+		sfdp-bfp = [e5 20 f1 ff ff ff ff 03 44 eb 08 6b 08 3b 04 bb
+			    fe ff ff ff ff ff 00 ff ff ff 44 eb 0c 20 0f 52
+			    10 d8 00 ff d3 49 c9 00 83 a6 04 c4 44 03 17 38
+			    30 b0 30 b0 f7 bd d5 5c 4a 9e 29 ff f0 d0 ff ff];
 		page-size = <4096>;
 		reset-cmd;
 		spi-bus-width = <4>;

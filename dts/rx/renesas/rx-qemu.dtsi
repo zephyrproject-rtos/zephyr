@@ -22,7 +22,7 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			compatible = "renesas,rx";
+			compatible = "renesas,rxv1";
 			device_type = "cpu";
 			reg = <0>;
 			status = "okay";
@@ -31,6 +31,8 @@
 
 	icu: interrupt-controller@87000 {
 		#interrupt-cells = <2>;
+		#address-cells = <1>;
+		#size-cells = <1>;
 		compatible = "renesas,rx-icu";
 		interrupt-controller;
 		reg = <0x0087000 0xff>,
@@ -39,8 +41,20 @@
 		      <0x00872f0 0x02>,
 		      <0x0087500 0x0f>,
 		      <0x0087510 0x01>,
-		      <0x0087514 0x01>;
-		reg-names = "IR", "IER", "IPR", "FIR","IRQCR","IRQFLTE","IRQFLTC0";
+		      <0x0087514 0x01>,
+		      <0x0087580 0x01>,
+		      <0x0087581 0x01>,
+		      <0x0087582 0x01>;
+		reg-names = "IR", "IER", "IPR", "FIR", "IRQCR", "IRQFLTE", "IRQFLTC0", "NMISR",
+			    "NMIER", "NMICLR";
+
+		swint1: swint1@872e0 {
+			compatible = "renesas,rx-swint";
+			reg = <0x000872e0 0x01>;
+			interrupts = <27 14>;
+			interrupt-parent = <&icu>;
+			status = "okay";
+		};
 	};
 
 	clocks: clocks {
@@ -65,7 +79,7 @@
 
 		loco: clock-loco {
 			compatible = "renesas,rx-cgc-root-clock";
-			clock-frequency =  <DT_FREQ_M(4)>;
+			clock-frequency = <DT_FREQ_M(4)>;
 			#clock-cells = <0>;
 			status = "okay";
 		};
@@ -97,7 +111,7 @@
 		pclkblock: pclkblock@80010 {
 			compatible = "renesas,rx-cgc-pclk-block";
 			reg = <0x00080010 4>, <0x00080014 4>, <0x00080018 4>,
-					<0x0008001C 4>;
+			      <0x0008001C 4>;
 			reg-names = "MSTPA", "MSTPB", "MSTPC", "MSTPD";
 			#clock-cells = <0>;
 			clocks = <&pll>;

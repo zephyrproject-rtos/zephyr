@@ -73,6 +73,7 @@ GTEXT(__soc_is_irq)
 #endif
 GTEXT(__soc_handle_irq)
 GTEXT(z_riscv_fault)
+GTEXT(z_irq_spurious)
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 GTEXT(__soc_save_context)
 GTEXT(__soc_restore_context)
@@ -331,6 +332,7 @@ no_fp:	/* increment _current->arch.exception_depth */
 	 * function (that needs to be implemented by each SOC). The result is
 	 * returned via register a0 (1: interrupt, 0 exception)
 	 */
+
 #ifdef CONFIG_RISCV_SOC_EXCEPTION_FROM_IRQ
 	jal ra, __soc_is_irq
 	bnez a0, is_interrupt
@@ -646,6 +648,7 @@ on_irq_stack:
 	 */
 	jal ra, __soc_handle_irq
 
+#if defined CONFIG_GEN_SW_ISR_TABLE
 	/*
 	 * Call corresponding registered function in _sw_isr_table.
 	 * (table is 2-word wide, we should shift index accordingly)
@@ -659,6 +662,12 @@ on_irq_stack:
 
 	/* Load ISR function address in register t1 */
 	lr t1, RV_REGSIZE(t0)
+#else
+	/* Load spurious interrupt function in case _sw_isr_table does not exist */
+	la t1, z_irq_spurious
+	/* NULL as parameter */
+	li a0, 0
+#endif
 
 	/* Call ISR function */
 	jalr ra, t1, 0

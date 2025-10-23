@@ -95,7 +95,7 @@ struct bt_spi_data {
 };
 
 static const struct spi_dt_spec bus = SPI_DT_SPEC_INST_GET(
-	0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) | SPI_LOCK_ON, 0);
+	0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) | SPI_LOCK_ON);
 
 static struct spi_buf spi_tx_buf;
 static struct spi_buf spi_rx_buf;
@@ -515,7 +515,11 @@ static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 	while (true) {
 
 		/* Wait for interrupt pin to be active */
-		k_sem_take(&sem_request, K_FOREVER);
+		ret = k_sem_take(&sem_request, K_FOREVER);
+		if (ret) {
+			LOG_DBG("Failed to take the semaphore. The RX thread exits.");
+			break;
+		}
 
 		LOG_DBG("");
 
@@ -619,9 +623,14 @@ static int bt_spi_send(const struct device *dev, struct net_buf *buf)
 		}
 	}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v1) */
+
+	if (ret != 0) {
+		return ret;
+	}
+
 	net_buf_unref(buf);
 
-	return ret;
+	return 0;
 }
 
 static int bt_spi_open(const struct device *dev, bt_hci_recv_t recv)
@@ -680,12 +689,39 @@ static int bt_spi_open(const struct device *dev, bt_hci_recv_t recv)
 	return 0;
 }
 
+static int bt_spi_close(const struct device *dev)
+{
+	struct bt_spi_data *hci = dev->data;
+	int ret;
+
+	gpio_pin_interrupt_configure_dt(&irq_gpio, GPIO_INT_DISABLE);
+
+	/* To exit the thread safely */
+	k_sem_reset(&sem_request);
+	ret = k_thread_join(&spi_rx_thread_data, K_MSEC(100));
+	if (ret) {
+		LOG_DBG("bt_spi_rx_thread is unable to exit");
+		return ret;
+	}
+
+	/* Reset the BLE controller */
+	gpio_pin_set_dt(&rst_gpio, 1);
+	k_sleep(K_MSEC(DT_INST_PROP_OR(0, reset_assert_duration_ms, 0)));
+	gpio_pin_set_dt(&rst_gpio, 0);
+
+	hci->recv = NULL;
+	LOG_DBG("Bluetooth disabled");
+
+	return 0;
+}
+
 static DEVICE_API(bt_hci, drv) = {
 #if defined(CONFIG_BT_BLUENRG_ACI) && !defined(CONFIG_BT_HCI_RAW)
 	.setup          = bt_spi_bluenrg_setup,
 #endif /* CONFIG_BT_BLUENRG_ACI && !CONFIG_BT_HCI_RAW */
 	.open		= bt_spi_open,
 	.send		= bt_spi_send,
+	.close		= bt_spi_close,
 };
 
 static int bt_spi_init(const struct device *dev)

@@ -222,20 +222,20 @@ struct bt_hci_evt_vs {
 	uint8_t  subevent;
 } __packed;
 
-#define BT_HCI_EVT_VS_FATAL_ERROR              0x02
-
 #define BT_HCI_EVT_VS_ERROR_DATA_TYPE_STACK_FRAME   0x01
 #define BT_HCI_EVT_VS_ERROR_DATA_TYPE_CTRL_ASSERT   0x02
 #define BT_HCI_EVT_VS_ERROR_DATA_TYPE_TRACE         0x03
-struct bt_hci_vs_fata_error_cpu_data_cortex_m {
+struct bt_hci_vs_fatal_error_cpu_data_cortex_m {
 	uint32_t a1;
 	uint32_t a2;
 	uint32_t a3;
 	uint32_t a4;
 	uint32_t ip;
 	uint32_t lr;
+	uint32_t pc;
 	uint32_t xpsr;
 } __packed;
+
 #define BT_HCI_EVT_VS_ERROR_CPU_TYPE_CORTEX_M  0x01
 struct bt_hci_vs_fatal_error_stack_frame {
 	uint32_t reason;

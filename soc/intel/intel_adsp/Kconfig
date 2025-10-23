@@ -11,6 +11,7 @@ config SOC_FAMILY_INTEL_ADSP
 	select ARCH_HAS_USERSPACE if XTENSA_MMU
 	imply XTENSA_MMU_DOUBLE_MAP
 	select CPU_CACHE_INCOHERENT
+	select IPC_SERVICE if DT_HAS_INTEL_ADSP_HOST_IPC_ENABLED
 
 if SOC_FAMILY_INTEL_ADSP
 
@@ -32,16 +33,27 @@ config INTEL_ADSP_SIM_NO_SECONDARY_CORE_FLOW
 
 endif # INTEL_ADSP_SIM
 
-DT_COMPAT_INTEL_ADSP_HOST_IPC := intel,adsp-host-ipc
-DT_COMPAT_INTEL_ADSP_IDC := intel,adsp-idc
+config INTEL_ADSP_FWREADY_MSG
+	bool "Send firmware ready message to host"
+	default y if INTEL_ADSP_SIM
+	help
+	  Send a firmware ready message to the host once the system is up
+	  and running.
 
 config INTEL_ADSP_IPC
 	bool "Driver for the host IPC interrupt delivery"
-	default $(dt_compat_enabled,$(DT_COMPAT_INTEL_ADSP_HOST_IPC)) if !SOF
-	default $(dt_compat_enabled,$(DT_COMPAT_INTEL_ADSP_IDC)) if !SOF
+	select DEPRECATED
 	help
-	  Driver for the host IPC interrupt delivery mechanism.
-	  Currently SOF has its own driver for this hardware.
+	  Deprecated config for IPC. Will be removed in the future.
+
+config INTEL_ADSP_IPC_OLD_INTERFACE
+	bool "Expose old interface for the IPC"
+	depends on IPC_SERVICE_BACKEND_INTEL_ADSP_HOST_IPC
+	default y
+	select INTEL_ADSP_IPC
+	help
+	  Expose the old IPC interface (intel_adsp_ipc_* functions) to
+	  maintain backward compatibility.
 
 config MEMORY_WIN_0_SIZE
 	int "Size of memory window 0"

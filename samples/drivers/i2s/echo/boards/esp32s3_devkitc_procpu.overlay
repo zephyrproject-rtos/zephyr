@@ -6,15 +6,10 @@
 
 &i2s0_default {
 	group1 {
-		pinmux = <I2S0_MCLK_GPIO42>,
-				<I2S0_O_WS_GPIO41>,
-				<I2S0_O_BCK_GPIO40>,
-				<I2S0_O_SD_GPIO39>;
-		output-enable;
-	};
-	group2 {
-		pinmux = <I2S0_I_SD_GPIO38>;
-		input-enable;
+		pinmux = <I2S0_O_WS_GPIO36>,
+			 <I2S0_O_BCK_GPIO37>,
+			 <I2S0_O_SD_GPIO38>,
+			 <I2S0_I_SD_GPIO41>;
 	};
 };
 

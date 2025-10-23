@@ -13,6 +13,7 @@
 #include <zephyr/net/conn_mgr/connectivity_wifi_mgmt.h>
 #include <airoc_wifi.h>
 #include <airoc_whd_hal_common.h>
+#include <whd_wlioctl.h>
 
 LOG_MODULE_REGISTER(infineon_airoc_wifi, CONFIG_WIFI_LOG_LEVEL);
 
@@ -83,7 +84,7 @@ static struct airoc_wifi_config airoc_wifi_config = {
 #if defined(CONFIG_AIROC_WIFI_BUS_SDIO)
 	.bus_dev.bus_sdio = DEVICE_DT_GET(DT_INST_PARENT(0)),
 #elif defined(CONFIG_AIROC_WIFI_BUS_SPI)
-	.bus_dev.bus_spi = SPI_DT_SPEC_GET(DT_DRV_INST(0), AIROC_WIFI_SPI_OPERATION, 0),
+	.bus_dev.bus_spi = SPI_DT_SPEC_GET(DT_DRV_INST(0), AIROC_WIFI_SPI_OPERATION),
 	.bus_select_gpio = GPIO_DT_SPEC_GET_OR(DT_DRV_INST(0), bus_select_gpios, {0}),
 #if defined(SPI_DATA_IRQ_SHARED)
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
@@ -258,7 +259,7 @@ static void scan_callback(whd_scan_result_t **result_ptr, void *user_data, whd_s
 		return;
 	}
 
-	/* We recived scan data so process it */
+	/* We received scan data so process it */
 	if ((result_ptr != NULL) && (*result_ptr != NULL)) {
 		memcpy(&whd_scan_result, *result_ptr, sizeof(whd_scan_result_t));
 		parse_scan_result(&whd_scan_result, &zephyr_scan_result);
@@ -811,6 +812,80 @@ static int airoc_mgmt_ap_disable(const struct device *dev)
 	return 0;
 }
 
+static int airoc_iface_status(const struct device *dev, struct wifi_iface_status *status)
+{
+	struct airoc_wifi_data *data = dev->data;
+	whd_result_t result;
+	wl_bss_info_t bss_info;
+	whd_security_t security_info = 0;
+	uint32_t wpa_data_rate_value = 0;
+	uint32_t join_status;
+
+	if (airoc_if == NULL) {
+		return -ENOTSUP;
+	}
+
+	status->iface_mode =
+		(data->is_ap_up ? WIFI_MODE_AP
+				: (data->is_sta_connected ? WIFI_MODE_INFRA : WIFI_MODE_UNKNOWN));
+
+	join_status = whd_wifi_is_ready_to_transceive(airoc_if);
+
+	if (join_status == WHD_SUCCESS) {
+		status->state = WIFI_STATE_COMPLETED;
+	} else if (join_status == WHD_JOIN_IN_PROGRESS) {
+		status->state = WIFI_STATE_ASSOCIATING;
+	} else if (join_status == WHD_NOT_KEYED) {
+		status->state = WIFI_STATE_AUTHENTICATING;
+	} else {
+		status->state = WIFI_STATE_DISCONNECTED;
+	}
+
+	result = whd_wifi_get_ap_info(airoc_if, &bss_info, &security_info);
+
+	if (result == WHD_SUCCESS) {
+		memcpy(&(status->bssid[0]), &(bss_info.BSSID), sizeof(whd_mac_t));
+
+		whd_wifi_get_channel(airoc_if, (int *)&status->channel);
+
+		status->band = (status->channel <= CH_MAX_2G_CHANNEL) ? WIFI_FREQ_BAND_2_4_GHZ
+								      : WIFI_FREQ_BAND_5_GHZ;
+
+		status->rssi = (int)bss_info.RSSI;
+
+		status->ssid_len = bss_info.SSID_len;
+		strncpy(status->ssid, bss_info.SSID, status->ssid_len);
+
+		status->security = convert_whd_security_to_zephyr(security_info);
+
+		status->beacon_interval = (unsigned short)bss_info.beacon_period;
+		status->dtim_period = (unsigned char)bss_info.dtim_period;
+
+		status->twt_capable = false;
+	}
+
+	whd_wifi_get_ioctl_value(airoc_if, WLC_GET_RATE, &wpa_data_rate_value);
+	status->current_phy_tx_rate = wpa_data_rate_value;
+
+	/* Unbelievably, this appears to be the only way to determine the phy mode with
+	 *  the whd SDK that we're currently using. Note that the logic below is only valid on
+	 *  devices that are limited to the 2.4Ghz band. Other versions of the SDK and chip
+	 * evidently allow one to obtain a phy_mode value directly from bss_info
+	 */
+	if (wpa_data_rate_value > 54) {
+		status->link_mode = WIFI_4;
+	} else if (wpa_data_rate_value == 6 || wpa_data_rate_value == 9 ||
+		   wpa_data_rate_value == 12 || wpa_data_rate_value == 18 ||
+		   wpa_data_rate_value == 24 || wpa_data_rate_value == 36 ||
+		   wpa_data_rate_value == 48 || wpa_data_rate_value == 54) {
+		status->link_mode = WIFI_3;
+	} else {
+		status->link_mode = WIFI_1;
+	}
+
+	return 0;
+}
+
 static int airoc_init(const struct device *dev)
 {
 	int ret;
@@ -864,6 +939,7 @@ static const struct wifi_mgmt_ops airoc_wifi_mgmt = {
 	.disconnect = airoc_mgmt_disconnect,
 	.ap_enable = airoc_mgmt_ap_enable,
 	.ap_disable = airoc_mgmt_ap_disable,
+	.iface_status = airoc_iface_status,
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 	.get_stats = airoc_mgmt_wifi_stats,
 #endif

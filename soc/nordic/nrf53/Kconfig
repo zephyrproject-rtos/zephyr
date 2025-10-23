@@ -210,69 +210,6 @@ config BOARD_ENABLE_CPUNET
 
 if !TRUSTED_EXECUTION_NONSECURE || BUILD_WITH_TFM
 
-config SOC_ENABLE_LFXO
-	bool "LFXO"
-	select DEPRECATED
-	help
-	  This option is deprecated, use DT instead. For this option to apply,
-	  make sure to select either "internal" or "external" in the
-	  load-capacitors property.
-
-	  Enable the low-frequency oscillator (LFXO) functionality on XL1 and
-	  XL2 pins.
-	  This option must be enabled if either application or network core is
-	  to use the LFXO. Otherwise, XL1 and XL2 pins will behave as regular
-	  GPIOs.
-
-choice SOC_LFXO_LOAD_CAPACITANCE
-	prompt "LFXO load capacitance"
-	depends on SOC_ENABLE_LFXO
-
-config SOC_LFXO_CAP_EXTERNAL
-	bool "Use external load capacitors"
-	select DEPRECATED
-	help
-	  This option is deprecated, use DT instead. Example configuration:
-
-	  &lfxo {
-	      load-capacitors = "external";
-	  };
-
-config SOC_LFXO_CAP_INT_6PF
-	bool "6 pF internal load capacitance"
-	select DEPRECATED
-	help
-	  This option is deprecated, use DT instead. Example configuration:
-
-	  &lfxo {
-	      load-capacitors = "internal";
-	      load-capacitance-picofarad = <6>;
-	  };
-
-config SOC_LFXO_CAP_INT_7PF
-	bool "7 pF internal load capacitance"
-	select DEPRECATED
-	help
-	  This option is deprecated, use DT instead. Example configuration:
-
-	  &lfxo {
-	      load-capacitors = "internal";
-	      load-capacitance-picofarad = <7>;
-	  };
-
-config SOC_LFXO_CAP_INT_9PF
-	bool "9 pF internal load capacitance"
-	select DEPRECATED
-	help
-	  This option is deprecated, use DT instead. Example configuration:
-
-	  &lfxo {
-	      load-capacitors = "internal";
-	      load-capacitance-picofarad = <9>;
-	  };
-
-endchoice
-
 choice SOC_HFXO_LOAD_CAPACITANCE
 	prompt "HFXO load capacitance"
 	default SOC_HFXO_CAP_DEFAULT

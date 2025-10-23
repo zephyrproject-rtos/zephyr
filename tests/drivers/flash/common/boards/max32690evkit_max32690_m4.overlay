@@ -17,7 +17,7 @@
 
 		storage_partition: partition@200000 {
 			label = "storage";
-			reg = <0x200000 DT_SIZE_K(1)>;
+			reg = <0x200000 DT_SIZE_M(1)>;
 		};
 	};
 };

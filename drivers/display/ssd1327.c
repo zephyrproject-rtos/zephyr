@@ -47,7 +47,7 @@ struct ssd1327_config {
 	uint8_t function_selection_b;
 	uint8_t precharge_voltage;
 	uint8_t vcomh_voltage;
-	uint8_t *grayscale_table;
+	const uint8_t *grayscale_table;
 	bool color_inversion;
 	uint8_t *conversion_buf;
 	size_t conversion_buf_size;
@@ -468,7 +468,7 @@ static DEVICE_API(display, ssd1327_driver_api) = {
 	static uint8_t conversion_buf##node_id[SSD1327_CONV_BUFFER_SIZE(node_id)];                 \
 	static struct ssd1327_data data##node_id;                                                  \
 	COND_CODE_1(DT_NODE_HAS_PROP(node_id, grayscale_table), (                                  \
-	static uint8_t ssd1327_grayscale_table_##node_id[SSD1327_SET_LUT_COUNT] =                  \
+	static const uint8_t ssd1327_grayscale_table_##node_id[SSD1327_SET_LUT_COUNT] =            \
 	DT_PROP(node_id, grayscale_table);), ())                                                   \
 	static const struct ssd1327_config config##node_id = {                                     \
 		.i2c = I2C_DT_SPEC_GET(node_id),                                                   \
@@ -499,7 +499,7 @@ static DEVICE_API(display, ssd1327_driver_api) = {
 	static uint8_t conversion_buf##node_id[SSD1327_CONV_BUFFER_SIZE(node_id)];                 \
 	static struct ssd1327_data data##node_id;                                                  \
 	COND_CODE_1(DT_NODE_HAS_PROP(node_id, grayscale_table), (                                  \
-	static uint8_t ssd1327_grayscale_table_##node_id[SSD1327_SET_LUT_COUNT] =                  \
+	static const uint8_t ssd1327_grayscale_table_##node_id[SSD1327_SET_LUT_COUNT] =            \
 	DT_PROP(node_id, grayscale_table);), ())                                                   \
 	static const struct ssd1327_config config##node_id = {                                     \
 		.mipi_dev = DEVICE_DT_GET(DT_PARENT(node_id)),                                     \

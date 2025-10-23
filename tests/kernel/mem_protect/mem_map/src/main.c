@@ -89,7 +89,7 @@ ZTEST(mem_map, test_k_mem_map_phys_bare_rw)
 			k_mem_region_align(&aligned_addr, &aligned_size, (uintptr_t)mapped_rw,
 					   BUF_SIZE, CONFIG_MMU_PAGE_SIZE);
 		zassert_equal(aligned_offset, BUF_OFFSET,
-			      "unexpected mapped_rw aligned offset: %u != %u", aligned_offset,
+			      "unexpected mapped_rw aligned offset: %zu != %u", aligned_offset,
 			      BUF_OFFSET);
 		sys_cache_data_flush_and_invd_range((void *)aligned_addr, aligned_size);
 	}
@@ -471,7 +471,7 @@ ZTEST(mem_map_api, test_k_mem_map_exhaustion)
 
 	printk("Mapped %zu pages\n", cnt);
 	zassert_equal(cnt, expected_cnt,
-		      "number of pages mapped: expected %u, got %u",
+		      "number of pages mapped: expected %zu, got %zu",
 		      expected_cnt, cnt);
 
 	free_mem_now = k_mem_free_get();
@@ -491,7 +491,7 @@ ZTEST(mem_map_api, test_k_mem_map_exhaustion)
 
 	printk("Unmapped %zu pages\n", cnt);
 	zassert_equal(cnt, expected_cnt,
-		      "number of pages unmapped: expected %u, got %u",
+		      "number of pages unmapped: expected %zu, got %zu",
 		      expected_cnt, cnt);
 
 	free_mem_now = k_mem_free_get();

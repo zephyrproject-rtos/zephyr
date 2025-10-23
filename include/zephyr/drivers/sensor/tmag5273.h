@@ -4,8 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for extended sensor API of TMAG5273 sensor
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_TMAG5273_H_
 #define ZEPHYR_INCLUDE_DRIVERS_SENSOR_TMAG5273_H_
+
+/**
+ * @brief Texas Instruments TMAG5273 Low-Power Linear 3D Hall-Effect Sensor
+ * @defgroup tmag5273_interface TMAG5273
+ * @ingroup sensor_interface_ext
+ * @{
+ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,16 +61,21 @@ enum tmag5273_attribute {
 };
 
 /**
- * Supported values
+ * @name Angle calculation modes
+ * @{
  */
-
-#define TMAG5273_ANGLE_CALC_NONE 0
-#define TMAG5273_ANGLE_CALC_XY   1
-#define TMAG5273_ANGLE_CALC_YZ   2
-#define TMAG5273_ANGLE_CALC_XZ   3
+#define TMAG5273_ANGLE_CALC_NONE 0 /**< No angle calculation */
+#define TMAG5273_ANGLE_CALC_XY   1 /**< X first, Y second */
+#define TMAG5273_ANGLE_CALC_YZ   2 /**< Y first, Z second */
+#define TMAG5273_ANGLE_CALC_XZ   3 /**< X first, Z second */
+/** @} */
 
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_TMAG5273_H_ */

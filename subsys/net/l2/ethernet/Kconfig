@@ -114,6 +114,7 @@ module-help = Enables core ARP code to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 endif # NET_ARP
 
+source "subsys/net/l2/ethernet/dsa/Kconfig"
 source "subsys/net/l2/ethernet/gptp/Kconfig"
 source "subsys/net/l2/ethernet/lldp/Kconfig"
 
@@ -172,5 +173,15 @@ config NET_ETHERNET_FORWARD_UNRECOGNISED_ETHERTYPE
 	  When enabled, the Ethernet L2 will forward even those frames for which
 	  it does not recognize the EtherType in the header. By default, such
 	  frames are dropped at the L2 processing.
+
+config NET_QBV
+	bool "Qbv support"
+	depends on PTP_CLOCK
+	help
+	  Enable Qbv support, Qbv is Enhancements for Scheduled Traffic (EST), one
+	  feature of TSN. It provides time "slots" for specific classes of traffic
+	  in a manner similar to TDM. Host (beyond standard) can select time/time
+	  gate during which a packet will be sent, granular control by software of
+	  packet transmission.
 
 endif # NET_L2_ETHERNET

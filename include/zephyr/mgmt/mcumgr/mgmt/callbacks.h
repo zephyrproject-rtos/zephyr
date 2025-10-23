@@ -36,8 +36,8 @@ extern "C" {
 #endif
 
 /**
- * @brief MCUmgr callback API
- * @defgroup mcumgr_callback_api MCUmgr callback API
+ * @brief MCUmgr Callback API
+ * @defgroup mcumgr_callback_api Callbacks
  * @ingroup mcumgr
  * @{
  */
@@ -136,13 +136,13 @@ enum smp_all_events {
  * MGMT event opcodes for base SMP command processing.
  */
 enum smp_group_events {
-	/** Callback when a command is received, data is mgmt_evt_op_cmd_arg(). */
+	/** Callback when a command is received, data is @ref mgmt_evt_op_cmd_arg. */
 	MGMT_EVT_OP_CMD_RECV			= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_SMP, 0),
 
-	/** Callback when a status is updated, data is mgmt_evt_op_cmd_arg(). */
+	/** Callback when a status is updated, data is @ref mgmt_evt_op_cmd_arg. */
 	MGMT_EVT_OP_CMD_STATUS			= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_SMP, 1),
 
-	/** Callback when a command has been processed, data is mgmt_evt_op_cmd_arg(). */
+	/** Callback when a command has been processed, data is @ref mgmt_evt_op_cmd_arg. */
 	MGMT_EVT_OP_CMD_DONE			= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_SMP, 2),
 
 	/** Used to enable all smp_group events. */
@@ -153,10 +153,10 @@ enum smp_group_events {
  * MGMT event opcodes for filesystem management group.
  */
 enum fs_mgmt_group_events {
-	/** Callback when a file has been accessed, data is fs_mgmt_file_access(). */
+	/** Callback when a file has been accessed, data is @ref fs_mgmt_file_access. */
 	MGMT_EVT_OP_FS_MGMT_FILE_ACCESS		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_FS, 0),
 
-	/** Callback when a file upload/download is finished, data is fs_mgmt_file_access(). */
+	/** Callback when a file upload/download is finished, data is @ref fs_mgmt_file_access. */
 	MGMT_EVT_OP_FS_MGMT_FILE_ACCESS_DONE	= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_FS, 1),
 
 	/** Used to enable all fs_mgmt_group events. */
@@ -167,7 +167,7 @@ enum fs_mgmt_group_events {
  * MGMT event opcodes for image management group.
  */
 enum img_mgmt_group_events {
-	/** Callback when a client sends a file upload chunk, data is img_mgmt_upload_check(). */
+	/** Callback when a client sends a file upload chunk, data is @ref img_mgmt_upload_check. */
 	MGMT_EVT_OP_IMG_MGMT_DFU_CHUNK			= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 0),
 
 	/** Callback when a DFU operation is stopped. */
@@ -179,7 +179,7 @@ enum img_mgmt_group_events {
 	/** Callback when a DFU operation has finished being transferred. */
 	MGMT_EVT_OP_IMG_MGMT_DFU_PENDING		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 3),
 
-	/** Callback when an image has been confirmed. data is img_mgmt_image_confirmed(). */
+	/** Callback when an image has been confirmed. data is @ref img_mgmt_image_confirmed. */
 	MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 4),
 
 	/** Callback when an image write command has finished writing to flash. */
@@ -187,19 +187,19 @@ enum img_mgmt_group_events {
 
 	/**
 	 * Callback when an image slot's state is encoded for a response, data is
-	 * img_mgmt_state_slot_encode().
+	 * @ref img_mgmt_state_slot_encode.
 	 */
 	MGMT_EVT_OP_IMG_MGMT_IMAGE_SLOT_STATE		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 6),
 
 	/**
 	 * Callback when a slot list command outputs fields for an image, data is
-	 * img_mgmt_slot_info_image().
+	 * @ref img_mgmt_slot_info_image.
 	 */
 	MGMT_EVT_OP_IMG_MGMT_SLOT_INFO_IMAGE		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 7),
 
 	/**
 	 * Callback when a slot list command outputs fields for a slot of an image, data is
-	 * img_mgmt_slot_info_slot().
+	 * @ref img_mgmt_slot_info_slot.
 	 */
 	MGMT_EVT_OP_IMG_MGMT_SLOT_INFO_SLOT		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 8),
 
@@ -211,19 +211,19 @@ enum img_mgmt_group_events {
  * MGMT event opcodes for operating system management group.
  */
 enum os_mgmt_group_events {
-	/** Callback when a reset command has been received, data is os_mgmt_reset_data(). */
+	/** Callback when a reset command has been received, data is @ref os_mgmt_reset_data. */
 	MGMT_EVT_OP_OS_MGMT_RESET		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 0),
 
-	/** Callback when an info command is processed, data is os_mgmt_info_check(). */
+	/** Callback when an info command is processed, data is @ref os_mgmt_info_check. */
 	MGMT_EVT_OP_OS_MGMT_INFO_CHECK		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 1),
 
-	/** Callback when an info command needs to output data, data is os_mgmt_info_append(). */
+	/** Callback when an info command needs to output data, data is @ref os_mgmt_info_append. */
 	MGMT_EVT_OP_OS_MGMT_INFO_APPEND		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 2),
 
 	/** Callback when a datetime get command has been received. */
 	MGMT_EVT_OP_OS_MGMT_DATETIME_GET	= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 3),
 
-	/** Callback when a datetime set command has been received, data is struct rtc_time(). */
+	/** Callback when a datetime set command has been received, data is @ref rtc_time. */
 	MGMT_EVT_OP_OS_MGMT_DATETIME_SET	= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 4),
 
 	/**

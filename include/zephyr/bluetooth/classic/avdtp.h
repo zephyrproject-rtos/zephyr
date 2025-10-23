@@ -15,6 +15,10 @@
 extern "C" {
 #endif
 
+#define AVDTP_VERSION_1_3 0x0103 /**< AVDTP version 1.3 value */
+
+#define AVDTP_VERSION AVDTP_VERSION_1_3 /**< AVDTP version used by Zephyr */
+
 /**
  * @brief AVDTP error code
  */
@@ -120,6 +124,14 @@ enum bt_avdtp_service_category {
 	BT_AVDTP_SERVICE_DELAY_REPORTING = 0x08,
 };
 
+/** @brief service category Recovery Capabilities type*/
+enum bt_avdtp_recovery_type {
+	/** Forbidden */
+	BT_AVDTP_RECOVERY_TYPE_FORBIDDEN = 0x00,
+	/** RFC2733 */
+	BT_ADVTP_RECOVERY_TYPE_RFC2733 = 0x01,
+};
+
 /** @brief AVDTP Stream End Point */
 struct bt_avdtp_sep {
 	/** Stream End Point information */
@@ -132,6 +144,12 @@ struct bt_avdtp_sep {
 	struct k_sem sem_lock;
 	/** avdtp session */
 	struct bt_avdtp *session;
+	/** endpoint becomes idle */
+	int (*endpoint_released)(struct bt_avdtp_sep *sep);
+	/** delay worker for disconnecting l2cap media channel */
+	struct k_work_delayable _delay_work;
+	/** delay_work_state */
+	uint8_t _delay_work_state;
 	/** SEP state */
 	uint8_t state;
 	/* Internally used list node */

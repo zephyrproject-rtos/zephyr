@@ -451,7 +451,7 @@ static void adc_nxp_s32_isr(const struct device *dev)
 				(PINCTRL_DT_INST_DEV_CONFIG_GET(n)), (NULL)),	\
 	};									\
 	DEVICE_DT_INST_DEFINE(n,						\
-			&adc_nxp_s32_init,					\
+			adc_nxp_s32_init,					\
 			NULL,							\
 			&adc_nxp_s32_data_##n,					\
 			&adc_nxp_s32_config_##n,				\

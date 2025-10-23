@@ -6,7 +6,7 @@ config WIFI_SILABS_SIWX91X
 	default y
 	depends on DT_HAS_SILABS_SIWX91X_WIFI_ENABLED
 	depends on NETWORKING
-	select WISECONNECT_NETWORK_STACK
+	select SILABS_SIWX91X_NWP
 	select EVENTS
 	select NET_L2_WIFI_MGMT
 	help

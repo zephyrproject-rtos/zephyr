@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/ppp.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/iterable_sections.h>
 
 #include "net_private.h"
@@ -343,6 +344,17 @@ static int ppp_enable(struct net_if *iface, bool state)
 	}
 
 	return ret;
+}
+
+uint32_t ppp_peer_async_control_character_map(struct net_if *iface)
+{
+	struct ppp_context *ctx;
+
+#ifndef CONFIG_ZTEST
+	__ASSERT(net_if_l2(iface) == &NET_L2_GET_NAME(PPP), "Not PPP L2");
+#endif /* !CONFIG_ZTEST */
+	ctx = net_if_l2_data(iface);
+	return ctx->lcp.peer_options.async_map;
 }
 
 NET_L2_INIT(PPP_L2, ppp_recv, ppp_send, ppp_enable, ppp_flags);

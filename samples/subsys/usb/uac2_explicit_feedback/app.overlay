@@ -11,6 +11,7 @@
 		compatible = "zephyr,uac2";
 		status = "okay";
 		full-speed;
+		high-speed;
 		audio-function = <AUDIO_FUNCTION_OTHER>;
 
 		uac_aclk: aclk {

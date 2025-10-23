@@ -1,0 +1,23 @@
+# Copyright (c) 2025 Antmicro
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ETH_VIRTIO_NET
+	bool "VIRTIO networking paravirtualization device driver"
+	default y
+	depends on DT_HAS_VIRTIO_NET_ENABLED
+	select VIRTIO
+
+if ETH_VIRTIO_NET
+
+config ETH_NIC_MODEL
+	string
+	default "virtio"
+	help
+	  Tells QEMU what network model to use. This value is given as
+	  a parameter to the -nic QEMU command line option.
+
+config ETH_VIRTIO_NET_RX_BUFFERS
+	int "VIRTIO network device receive buffers"
+	default 4
+
+endif

@@ -16,7 +16,7 @@
  * - Bit 8: Drive strength (0=1mA, 1=6mA)
  * - Bit 9: Debounce (0=OFF, 1=ON)
  *
- * @ingroup gpio_interface
+ * @ingroup gpio_interface_ext
  * @{
  */
 

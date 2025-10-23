@@ -9,12 +9,12 @@
 #include <zephyr/dt-bindings/pinctrl/esp32-gpio-sigmap.h>
 
 &pinctrl {
-
 	uart0_default: uart0_default {
 		group1 {
 			pinmux = <UART0_TX_GPIO1>;
 			output-high;
 		};
+
 		group2 {
 			pinmux = <UART0_RX_GPIO3>;
 			bias-pull-up;
@@ -27,6 +27,7 @@
 				 <SPIM2_SCLK_GPIO14>,
 				 <SPIM2_CSEL_GPIO15>;
 		};
+
 		group2 {
 			pinmux = <SPIM2_MOSI_GPIO13>;
 			output-low;
@@ -42,31 +43,19 @@
 
 	i2s0_default: i2s0_default {
 		group1 {
-			pinmux = <I2S0_O_WS_GPIO5>,
-				 <I2S0_O_BCK_GPIO6>,
-				 <I2S0_O_SD_GPIO7>,
-				 <I2S0_I_WS_GPIO15>,
-				 <I2S0_I_BCK_GPIO16>;
-			output-enable;
-		};
-		group2 {
-			pinmux = <I2S0_I_SD_GPIO17>;
-			input-enable;
+			pinmux = <I2S0_O_WS_GPIO34>,
+				 <I2S0_O_BCK_GPIO33>,
+				 <I2S0_O_SD_GPIO32>,
+				 <I2S0_I_SD_GPIO39>;
 		};
 	};
 
 	i2s1_default: i2s1_default {
 		group1 {
-			pinmux = <I2S1_O_WS_GPIO8>,
-				 <I2S1_O_BCK_GPIO3>,
-				 <I2S1_O_SD_GPIO9>,
-				 <I2S1_I_WS_GPIO10>,
-				 <I2S1_I_BCK_GPIO11>;
-			output-enable;
-		};
-		group2 {
-			pinmux = <I2S1_I_SD_GPIO12>;
-			input-enable;
+			pinmux = <I2S1_O_WS_GPIO17>,
+				 <I2S1_O_BCK_GPIO16>,
+				 <I2S1_O_SD_GPIO4>,
+				 <I2S1_I_SD_GPIO12>;
 		};
 	};
 };

@@ -21,9 +21,22 @@ extern "C" {
  * @{
  */
 
+/**
+ * @brief Retrieve the current flags of the standard logger backend interface
+ *
+ * @return A bitmask of the active flags defined at compilation time.
+ */
 static inline uint32_t log_backend_std_get_flags(void)
 {
-	uint32_t flags = (LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP);
+	uint32_t flags = 0;
+
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_SHOW_TIMESTAMP)) {
+		flags |= LOG_OUTPUT_FLAG_TIMESTAMP;
+	}
+
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_SHOW_LEVEL)) {
+		flags |= LOG_OUTPUT_FLAG_LEVEL;
+	}
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_SHOW_COLOR)) {
 		flags |= LOG_OUTPUT_FLAG_COLORS;

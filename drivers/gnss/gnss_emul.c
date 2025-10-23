@@ -35,10 +35,12 @@ struct gnss_emul_data {
 	struct k_sem lock;
 	int64_t resume_timestamp_ms;
 	int64_t fix_timestamp_ms;
+	int64_t boot_realtime_ms;
 	uint32_t fix_interval_ms;
 	enum gnss_navigation_mode nav_mode;
 	gnss_systems_t enabled_systems;
 	struct gnss_data data;
+	bool active;
 
 #ifdef CONFIG_GNSS_SATELLITES
 	struct gnss_satellite satellites[GNSS_EMUL_SUPPORTED_SYSTEMS_COUNT];
@@ -73,24 +75,6 @@ static void gnss_emul_update_fix_timestamp(const struct device *dev, bool resumi
 	}
 }
 
-static bool gnss_emul_fix_is_acquired(const struct device *dev)
-{
-	struct gnss_emul_data *data = dev->data;
-	int64_t time_since_resume;
-
-	time_since_resume = data->fix_timestamp_ms - data->resume_timestamp_ms;
-	return time_since_resume >= GNSS_EMUL_FIX_ACQUIRE_TIME_MS;
-}
-
-#ifdef CONFIG_PM_DEVICE
-static void gnss_emul_clear_fix_timestamp(const struct device *dev)
-{
-	struct gnss_emul_data *data = dev->data;
-
-	data->fix_timestamp_ms = 0;
-}
-#endif
-
 static void gnss_emul_schedule_work(const struct device *dev)
 {
 	struct gnss_emul_data *data = dev->data;
@@ -110,7 +94,7 @@ static bool gnss_emul_is_resumed(const struct device *dev)
 {
 	struct gnss_emul_data *data = dev->data;
 
-	return data->fix_timestamp_ms > 0;
+	return data->active;
 }
 
 static void gnss_emul_lock(const struct device *dev)
@@ -140,7 +124,7 @@ static int gnss_emul_set_fix_rate(const struct device *dev, uint32_t fix_interva
 	return 0;
 }
 
-static int gnss_emul_get_fix_rate(const struct device *dev, uint32_t *fix_interval_ms)
+int gnss_emul_get_fix_rate(const struct device *dev, uint32_t *fix_interval_ms)
 {
 	struct gnss_emul_data *data = dev->data;
 
@@ -161,8 +145,7 @@ static int gnss_emul_set_navigation_mode(const struct device *dev,
 	return 0;
 }
 
-static int gnss_emul_get_navigation_mode(const struct device *dev,
-					 enum gnss_navigation_mode *mode)
+int gnss_emul_get_navigation_mode(const struct device *dev, enum gnss_navigation_mode *mode)
 {
 	struct gnss_emul_data *data = dev->data;
 
@@ -182,49 +165,13 @@ static int gnss_emul_set_enabled_systems(const struct device *dev, gnss_systems_
 	return 0;
 }
 
-static int gnss_emul_get_enabled_systems(const struct device *dev, gnss_systems_t *systems)
+int gnss_emul_get_enabled_systems(const struct device *dev, gnss_systems_t *systems)
 {
 	struct gnss_emul_data *data = dev->data;
 
 	*systems = data->enabled_systems;
 	return 0;
 }
-
-#ifdef CONFIG_PM_DEVICE
-static void gnss_emul_resume(const struct device *dev)
-{
-	gnss_emul_update_fix_timestamp(dev, true);
-}
-
-static void gnss_emul_suspend(const struct device *dev)
-{
-	gnss_emul_clear_fix_timestamp(dev);
-}
-
-static int gnss_emul_pm_action(const struct device *dev, enum pm_device_action action)
-{
-	int ret = 0;
-
-	gnss_emul_lock(dev);
-
-	switch (action) {
-	case PM_DEVICE_ACTION_SUSPEND:
-		gnss_emul_suspend(dev);
-		break;
-
-	case PM_DEVICE_ACTION_RESUME:
-		gnss_emul_resume(dev);
-		break;
-
-	default:
-		ret = -ENOTSUP;
-		break;
-	}
-
-	gnss_emul_unlock(dev);
-	return ret;
-}
-#endif
 
 static int gnss_emul_api_set_fix_rate(const struct device *dev, uint32_t fix_interval_ms)
 {
@@ -346,11 +293,57 @@ static DEVICE_API(gnss, api) = {
 	.get_supported_systems = gnss_emul_api_get_supported_systems,
 };
 
-static void gnss_emul_clear_data(const struct device *dev)
+void gnss_emul_clear_data(const struct device *dev)
 {
 	struct gnss_emul_data *data = dev->data;
 
 	memset(&data->data, 0, sizeof(data->data));
+}
+
+static void gnss_emul_set_utc(const struct device *dev)
+{
+	struct gnss_emul_data *data = dev->data;
+	int64_t timestamp_realtime;
+	time_t timestamp;
+	struct tm datetime;
+	uint16_t millisecond;
+
+	timestamp_realtime = data->boot_realtime_ms + data->fix_timestamp_ms;
+	timestamp = (time_t)(timestamp_realtime / 1000);
+	gmtime_r(&timestamp, &datetime);
+
+	millisecond = (uint16_t)(timestamp_realtime % 1000) + (uint16_t)(datetime.tm_sec * 1000);
+
+	data->data.utc.hour = datetime.tm_hour;
+	data->data.utc.millisecond = millisecond;
+	data->data.utc.minute = datetime.tm_min;
+	data->data.utc.month = datetime.tm_mon + 1;
+	data->data.utc.month_day = datetime.tm_mday;
+	data->data.utc.century_year = datetime.tm_year % 100;
+}
+
+#ifdef CONFIG_GNSS_EMUL_MANUAL_UPDATE
+
+void gnss_emul_set_data(const struct device *dev, const struct navigation_data *nav,
+			const struct gnss_info *info, int64_t boot_realtime_ms)
+{
+	struct gnss_emul_data *data = dev->data;
+
+	data->data.nav_data = *nav;
+	data->data.info = *info;
+	data->boot_realtime_ms = boot_realtime_ms;
+	gnss_emul_set_utc(dev);
+}
+
+#else
+
+static bool gnss_emul_fix_is_acquired(const struct device *dev)
+{
+	struct gnss_emul_data *data = dev->data;
+	int64_t time_since_resume;
+
+	time_since_resume = data->fix_timestamp_ms - data->resume_timestamp_ms;
+	return time_since_resume >= GNSS_EMUL_FIX_ACQUIRE_TIME_MS;
 }
 
 static void gnss_emul_set_fix(const struct device *dev)
@@ -363,27 +356,6 @@ static void gnss_emul_set_fix(const struct device *dev)
 	data->data.info.fix_quality = GNSS_FIX_QUALITY_GNSS_SPS;
 }
 
-static void gnss_emul_set_utc(const struct device *dev)
-{
-	struct gnss_emul_data *data = dev->data;
-	time_t timestamp;
-	struct tm datetime;
-	uint16_t millisecond;
-
-	timestamp = (time_t)(data->fix_timestamp_ms / 1000);
-	gmtime_r(&timestamp, &datetime);
-
-	millisecond = (uint16_t)(data->fix_timestamp_ms % 1000)
-		    + (uint16_t)(datetime.tm_sec * 1000);
-
-	data->data.utc.hour = datetime.tm_hour;
-	data->data.utc.millisecond = millisecond;
-	data->data.utc.minute = datetime.tm_min;
-	data->data.utc.month = datetime.tm_mon + 1;
-	data->data.utc.month_day = datetime.tm_mday;
-	data->data.utc.century_year = datetime.tm_year % 100;
-}
-
 static void gnss_emul_set_nav_data(const struct device *dev)
 {
 	struct gnss_emul_data *data = dev->data;
@@ -394,6 +366,8 @@ static void gnss_emul_set_nav_data(const struct device *dev)
 	data->data.nav_data.speed = 0;
 	data->data.nav_data.altitude = 20000;
 }
+
+#endif /* CONFIG_GNSS_EMUL_MANUAL_UPDATE */
 
 #ifdef CONFIG_GNSS_SATELLITES
 static void gnss_emul_clear_satellites(const struct device *dev)
@@ -444,6 +418,11 @@ static void gnss_emul_work_handler(struct k_work *work)
 	struct gnss_emul_data *data = CONTAINER_OF(dwork, struct gnss_emul_data, data_dwork);
 	const struct device *dev = data->dev;
 
+#ifdef CONFIG_GNSS_EMUL_MANUAL_UPDATE
+	/* Tick the timestamp */
+	gnss_emul_set_utc(dev);
+#else
+	/* Automatically update internal state if not done manually */
 	if (!gnss_emul_fix_is_acquired(dev)) {
 		gnss_emul_clear_data(dev);
 	} else {
@@ -451,6 +430,7 @@ static void gnss_emul_work_handler(struct k_work *work)
 		gnss_emul_set_utc(dev);
 		gnss_emul_set_nav_data(dev);
 	}
+#endif /* CONFIG_GNSS_EMUL_MANUAL_UPDATE */
 
 	gnss_publish_data(dev, &data->data);
 
@@ -463,27 +443,57 @@ static void gnss_emul_work_handler(struct k_work *work)
 	gnss_emul_schedule_work(dev);
 }
 
-static void gnss_emul_init_data(const struct device *dev)
+static void gnss_emul_resume(const struct device *dev)
+{
+	struct gnss_emul_data *data = dev->data;
+
+	data->active = true;
+	gnss_emul_update_fix_timestamp(dev, true);
+	gnss_emul_schedule_work(dev);
+}
+
+static void gnss_emul_suspend(const struct device *dev)
+{
+	struct gnss_emul_data *data = dev->data;
+
+	data->active = false;
+	gnss_emul_cancel_work(dev);
+	gnss_emul_clear_data(dev);
+}
+
+static int gnss_emul_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	int ret = 0;
+
+	gnss_emul_lock(dev);
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		gnss_emul_suspend(dev);
+		break;
+
+	case PM_DEVICE_ACTION_RESUME:
+		gnss_emul_resume(dev);
+		break;
+
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	gnss_emul_unlock(dev);
+	return ret;
+}
+
+static int gnss_emul_init(const struct device *dev)
 {
 	struct gnss_emul_data *data = dev->data;
 
 	data->dev = dev;
 	k_sem_init(&data->lock, 1, 1);
 	k_work_init_delayable(&data->data_dwork, gnss_emul_work_handler);
-}
 
-static int gnss_emul_init(const struct device *dev)
-{
-	gnss_emul_init_data(dev);
-
-	if (pm_device_is_powered(dev)) {
-		gnss_emul_update_fix_timestamp(dev, true);
-		gnss_emul_schedule_work(dev);
-	} else {
-		pm_device_init_off(dev);
-	}
-
-	return pm_device_runtime_enable(dev);
+	return pm_device_driver_init(dev, gnss_emul_pm_action);
 }
 
 #define GNSS_EMUL_NAME(inst, name) _CONCAT(name, inst)

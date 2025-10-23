@@ -1946,8 +1946,9 @@ pin_config:
 			     (DT_INST_PROP(inst, clock_frequency) == I2C_BITRATE_FAST) ||          \
 			     (DT_INST_PROP(inst, clock_frequency) == I2C_BITRATE_FAST_PLUS),       \
 		     "Not support I2C bit rate value");                                            \
-	BUILD_ASSERT(!(DT_INST_PROP(inst, target_enable) && (inst > SMB_CHANNEL_C)),               \
-		     "Only instances 0~2 can enable target-enable");                               \
+	BUILD_ASSERT(!(DT_INST_PROP(inst, target_enable) &&                                        \
+		       (DT_INST_PROP(inst, port_num) > SMB_CHANNEL_C)),                            \
+		     "Only ports 0~2 support I2C target mode");                                    \
 	static const struct i2c_it51xxx_config i2c_it51xxx_cfg_##inst = {                          \
 		.i2cbase = DT_REG_ADDR_BY_IDX(DT_NODELABEL(i2cbase), 0),                           \
 		.i2cbase_mapping = DT_REG_ADDR_BY_IDX(DT_NODELABEL(i2cbase), 1),                   \

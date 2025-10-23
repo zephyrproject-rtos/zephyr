@@ -12,12 +12,27 @@ config FDTABLE
 
 config ZVFS_OPEN_MAX
 	int "Maximum number of open file descriptors"
-	default 16 if WIFI_NM_WPA_SUPPLICANT
-	default 16 if POSIX_API
-	default 4
+	default 0
 	help
 	  Maximum number of open file descriptors, this includes
-	  files, sockets, special devices, etc.
+	  files, sockets, special devices, etc. If subsystems
+	  specify ZVFS_OPEN_ADD_SIZE_* options, these will be added together
+	  and the sum will be compared to the ZVFS_OPEN_MAX value.
+	  If the sum is greater than the ZVFS_OPEN_MAX option (even if this
+	  has the default 0 value), then the actual file descriptor count will be
+	  rounded up to the sum of the individual requirements (unless the
+	  ZVFS_OPEN_IGNORE_MIN option is enabled). If the final value, after
+	  considering both this option as well as sum of the custom
+	  requirements, ends up being zero, then no file descriptors will be
+	  available.
+
+config ZVFS_OPEN_IGNORE_MIN
+	bool "Ignore the minimum fd count requirement"
+	help
+	  This option can be set to force setting a smaller file descriptor
+	  count than what's specified by enabled subsystems. This can be useful
+	  when optimizing memory usage and a more precise minimum fd count
+	  is known for a given application.
 
 config PRINTK_SYNC
 	bool "Serialize printk() calls"
@@ -136,5 +151,6 @@ config POWEROFF
 
 rsource "Kconfig.cbprintf"
 rsource "zvfs/Kconfig"
+rsource "cpu_load/Kconfig"
 
 endmenu

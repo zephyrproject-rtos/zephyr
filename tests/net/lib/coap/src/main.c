@@ -24,7 +24,6 @@ LOG_MODULE_REGISTER(net_test, LOG_LEVEL_DBG);
 #include "net_private.h"
 
 #define COAP_BUF_SIZE 128
-#define COAP_FIXED_HEADER_SIZE 4
 
 #define NUM_PENDINGS 3
 #define NUM_OBSERVERS 3

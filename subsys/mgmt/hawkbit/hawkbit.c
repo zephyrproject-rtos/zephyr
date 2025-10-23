@@ -910,7 +910,8 @@ int hawkbit_init(void)
 
 	image_ok = boot_is_img_confirmed();
 	LOG_INF("Current image is%s confirmed", image_ok ? "" : " not");
-	if (!image_ok) {
+
+	if (IS_ENABLED(CONFIG_HAWKBIT_CONFIRM_IMG_ON_INIT) && !image_ok) {
 		ret = boot_write_img_confirmed();
 		if (ret < 0) {
 			LOG_ERR("Failed to confirm current image: %d", ret);
@@ -918,10 +919,13 @@ int hawkbit_init(void)
 		}
 
 		LOG_DBG("Marked current image as OK");
-		ret = boot_erase_img_bank(flash_img_get_upload_slot());
-		if (ret < 0) {
-			LOG_ERR("Failed to erase second slot: %d", ret);
-			return ret;
+
+		if (IS_ENABLED(CONFIG_HAWKBIT_ERASE_SECOND_SLOT_ON_CONFIRM)) {
+			ret = boot_erase_img_bank(flash_img_get_upload_slot());
+			if (ret < 0) {
+				LOG_ERR("Failed to erase second slot: %d", ret);
+				return ret;
+			}
 		}
 
 		hawkbit_event_raise(HAWKBIT_EVENT_CONFIRMED_CURRENT_IMAGE);
@@ -1099,7 +1103,10 @@ static bool send_request(struct hawkbit_context *hb_context, enum hawkbit_http_r
 	static const char *const headers[] = {AUTH_HEADER_FULL, NULL};
 #endif /* CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME */
 #endif /* CONFIG_HAWKBIT_DDI_NO_SECURITY */
-
+#ifdef CONFIG_HAWKBIT_SAVE_PROGRESS
+	char header_range[RANGE_HEADER_SIZE] = {0};
+	char const *headers_range[] = {header_range, NULL};
+#endif
 	http_req.url = url_buffer;
 	http_req.host = HAWKBIT_SERVER_DOMAIN;
 	http_req.port = HAWKBIT_PORT;
@@ -1172,13 +1179,10 @@ static bool send_request(struct hawkbit_context *hb_context, enum hawkbit_http_r
 #ifdef CONFIG_HAWKBIT_SAVE_PROGRESS
 		hb_context->dl.downloaded_size = flash_img_bytes_written(&hb_context->flash_ctx);
 		if (IN_RANGE(hb_context->dl.downloaded_size, 1, hb_context->dl.file_size)) {
-			char header_range[RANGE_HEADER_SIZE] = {0};
-
 			snprintf(header_range, sizeof(header_range), "Range: bytes=%u-" HTTP_CRLF,
 				 hb_context->dl.downloaded_size);
-			const char *const headers_range[] = {header_range, NULL};
 
-			http_req.optional_headers = (const char **)headers_range;
+			http_req.optional_headers = headers_range;
 			LOG_DBG("optional header: %s", header_range);
 			LOG_INF("Resuming download from %d bytes", hb_context->dl.downloaded_size);
 		}
@@ -1209,6 +1213,11 @@ static bool send_request(struct hawkbit_context *hb_context, enum hawkbit_http_r
 void hawkbit_reboot(void)
 {
 	hawkbit_event_raise(HAWKBIT_EVENT_BEFORE_REBOOT);
+
+	if (IS_ENABLED(CONFIG_HAWKBIT_REBOOT_NONE)) {
+		return;
+	}
+
 	LOG_PANIC();
 	sys_reboot(IS_ENABLED(CONFIG_HAWKBIT_REBOOT_COLD) ? SYS_REBOOT_COLD : SYS_REBOOT_WARM);
 }

@@ -4,8 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for Renesas RA CTSU input driver.
+ * @ingroup renesas_ra_ctsu_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_ZEPHYR_INPUT_INPUT_RENESAS_RA_CTSU_H_
 #define ZEPHYR_INCLUDE_ZEPHYR_INPUT_INPUT_RENESAS_RA_CTSU_H_
+
+/**
+ * @defgroup renesas_ra_ctsu_interface Renesas RA CTSU
+ * @ingroup input_interface_ext
+ * @brief Renesas RA Capacitive Touch Sensor Unit
+ * @{
+ */
 
 #include <rm_touch.h>
 
@@ -13,7 +26,11 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Configuration data for the Renesas RA CTSU device
+ */
 struct renesas_ra_ctsu_touch_cfg {
+	/** FSP Touch instance */
 	struct st_touch_instance touch_instance;
 };
 
@@ -36,5 +53,7 @@ __syscall int renesas_ra_ctsu_group_configure(const struct device *dev,
 #endif
 
 #include <zephyr/syscalls/input_renesas_ra_ctsu.h>
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_ZEPHYR_INPUT_INPUT_RENESAS_RA_CTSU_H_ */

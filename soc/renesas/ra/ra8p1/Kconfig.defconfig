@@ -39,4 +39,12 @@ config DCACHE
 config CACHE_MANAGEMENT
 	default n
 
+if ETHOS_U
+
+choice ETHOS_U_NPU_CONFIG
+	default ETHOS_U55_256
+endchoice
+
+endif # ETHOS_U
+
 endif # SOC_SERIES_RA8P1

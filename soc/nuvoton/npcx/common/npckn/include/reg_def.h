@@ -309,6 +309,9 @@ struct uart_reg {
 #define NPCX_UMDSL_ETD                        4
 #define NPCX_UMDSL_ERD                        5
 
+#define NPCX_UFRS_CHAR_DATA_BIT_8 0
+#define NPCX_UFRS_CHAR_DATA_BIT_7 1
+
 #define NPCX_UFTSTS_TEMPTY_LVL                FIELD(0, 5)
 #define NPCX_UFTSTS_TEMPTY_LVL_STS            5
 #define NPCX_UFTSTS_TFIFO_EMPTY_STS           6
@@ -742,11 +745,15 @@ struct espi_reg {
 #define NPCX_VWSWIRQ_EDGE_IRQ            28
 #define NPCX_VWEVMS_WIRE                 FIELD(0, 4)
 #define NPCX_VWEVMS_VALID                FIELD(4, 4)
+#define NPCX_VWEVMS_INDEX                FIELD(8, 7)
+#define NPCX_VWEVMS_INDEX_EN             15
 #define NPCX_VWEVMS_IE                   18
+#define NPCX_VWEVMS_ENESPIRST            19
 #define NPCX_VWEVMS_WE                   20
 #define NPCX_VWEVSM_WIRE                 FIELD(0, 4)
 #define NPCX_VWEVSM_VALID                FIELD(4, 4)
 #define NPCX_VWEVSM_BIT_VALID(n)         (4+n)
+#define NPCX_VWEVSM_DIRTY                16
 #define NPCX_VWEVSM_HW_WIRE              FIELD(24, 4)
 #define NPCX_VWGPSM_INDEX_EN             15
 #define NPCX_OOBCTL_OOB_FREE             0
@@ -758,9 +765,12 @@ struct espi_reg {
 #define NPCX_FLASHCFG_FLASHREQSIZE       FIELD(13, 3)
 #define NPCX_FLASHCFG_FLCAPA             FIELD(16, 2)
 #define NPCX_FLASHCFG_TRGFLEBLKSIZE      FIELD(18, 8)
+#define NPCX_FLASHCFG_TRGRPMCSUPP        FIELD(26, 6)
 #define NPCX_FLASHCFG_FLREQSUP           FIELD(0, 3)
+#define NPCX_FLASHCFG2_RPMC1OP1CODE      FIELD(24, 8)
+#define NPCX_FLASHCFG2_RPMC1COUNT        FIELD(20, 4)
 #define NPCX_FLASHCTL_FLASH_NP_FREE      0
-#define NPCX_FLASHCTL_FLASH_TX_AVAIL     1
+#define NPCX_FLASHCTL_FLASH_ACC_TX_AVAIL 1
 #define NPCX_FLASHCTL_STRPHDR            2
 #define NPCX_FLASHCTL_DMATHRESH          FIELD(3, 2)
 #define NPCX_FLASHCTL_AMTSIZE            FIELD(5, 8)
@@ -1480,20 +1490,15 @@ struct ps2_reg {
 #define NPCX_PSCON_IDB                   FIELD(4, 3)
 #define NPCX_PSCON_WPUED                 7
 
-#define NPCX_PSOSIG_WDAT0                0
-#define NPCX_PSOSIG_WDAT1                1
-#define NPCX_PSOSIG_WDAT2                2
-#define NPCX_PSOSIG_CLK0                 3
-#define NPCX_PSOSIG_CLK1                 4
-#define NPCX_PSOSIG_CLK2                 5
-#define NPCX_PSOSIG_WDAT3                6
-#define NPCX_PSOSIG_CLK3                 7
-#define NPCX_PSOSIG_CLK(n)               (((n) < 3) ? ((n) + 3) : 7)
-#define NPCX_PSOSIG_WDAT(n)              (((n) < 3) ? ((n) + 0) : 6)
-#define NPCX_PSOSIG_CLK_MASK_ALL \
-					 (BIT(NPCX_PSOSIG_CLK0) | \
-					  BIT(NPCX_PSOSIG_CLK1) | \
-					  BIT(NPCX_PSOSIG_CLK2) | \
+#define NPCX_PSOSIG_WDAT2                1
+#define NPCX_PSOSIG_WDAT3                2
+#define NPCX_PSOSIG_CLK2                 4
+#define NPCX_PSOSIG_CLK3                 5
+#define NPCX_PSOSIG_CLK(n)               (((n) == 2) ? NPCX_PSOSIG_CLK2 : \
+						       NPCX_PSOSIG_CLK3)
+#define NPCX_PSOSIG_WDAT(n)              (((n) == 2) ? NPCX_PSOSIG_WDAT2 : \
+						       NPCX_PSOSIG_WDAT3)
+#define NPCX_PSOSIG_CLK_MASK_ALL         (BIT(NPCX_PSOSIG_CLK2) | \
 					  BIT(NPCX_PSOSIG_CLK3))
 
 #define NPCX_PSIEN_SOTIE                 0
@@ -1933,8 +1938,6 @@ struct gdma_reg {
 	volatile uint32_t CDST;
 	/* 0x018: Channel Current Transfer Count */
 	volatile uint32_t CTCNT;
-	/* 0x01C: Reserved */
-	volatile uint32_t reserved1;
 };
 
 /* DMA register fields */

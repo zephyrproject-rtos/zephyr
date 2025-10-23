@@ -5,15 +5,15 @@
 
 import argparse
 import difflib
-import itertools
 import sys
-from collections import Counter, defaultdict
+from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import jsonschema
 import list_hardware
-import pykwalify.core
 import yaml
+from jsonschema.exceptions import best_match
 from list_hardware import unique_paths
 
 try:
@@ -21,11 +21,13 @@ try:
 except ImportError:
     from yaml import SafeLoader
 
-BOARD_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'board-schema.yml')
+BOARD_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'board-schema.yaml')
 with open(BOARD_SCHEMA_PATH) as f:
     board_schema = yaml.load(f.read(), Loader=SafeLoader)
 
-BOARD_VALIDATOR = pykwalify.core.Core(schema_data=board_schema, source_data={})
+validator_class = jsonschema.validators.validator_for(board_schema)
+validator_class.check_schema(board_schema)
+board_validator = validator_class(board_schema)
 
 BOARD_YML = 'board.yml'
 
@@ -149,81 +151,6 @@ class Board:
         return node
 
 
-def board_key(board):
-    return board.name
-
-
-def find_arch2boards(args):
-    arch2board_set = find_arch2board_set(args)
-    return {arch: sorted(arch2board_set[arch], key=board_key)
-            for arch in arch2board_set}
-
-
-def find_boards(args):
-    return sorted(itertools.chain(*find_arch2board_set(args).values()),
-                  key=board_key)
-
-
-def find_arch2board_set(args):
-    arches = sorted(find_arches(args))
-    ret = defaultdict(set)
-
-    for root in unique_paths(args.board_roots):
-        for arch, boards in find_arch2board_set_in(root, arches, args.board_dir).items():
-            if args.board is not None:
-                ret[arch] |= {b for b in boards if b.name == args.board}
-            else:
-                ret[arch] |= boards
-
-    return ret
-
-
-def find_arches(args):
-    arch_set = set()
-
-    for root in unique_paths(args.arch_roots):
-        arch_set |= find_arches_in(root)
-
-    return arch_set
-
-
-def find_arches_in(root):
-    ret = set()
-    arch = root / 'arch'
-    common = arch / 'common'
-
-    if not arch.is_dir():
-        return ret
-
-    for maybe_arch in arch.iterdir():
-        if not maybe_arch.is_dir() or maybe_arch == common:
-            continue
-        ret.add(maybe_arch.name)
-
-    return ret
-
-
-def find_arch2board_set_in(root, arches, board_dir):
-    ret = defaultdict(set)
-    boards = root / 'boards'
-
-    for arch in arches:
-        if not (boards / arch).is_dir():
-            continue
-        for maybe_board in (boards / arch).iterdir():
-            if not maybe_board.is_dir():
-                continue
-            if board_dir and maybe_board not in board_dir:
-                continue
-            for maybe_defconfig in maybe_board.iterdir():
-                file_name = maybe_defconfig.name
-                if file_name.endswith('_defconfig') and not (maybe_board / BOARD_YML).is_file():
-                    board_name = file_name[:-len('_defconfig')]
-                    ret[arch].add(Board(board_name, maybe_board, 'v1', arch=arch))
-
-    return ret
-
-
 def load_v2_boards(board_name, board_yml, systems):
     boards = {}
     board_extensions = []
@@ -231,23 +158,14 @@ def load_v2_boards(board_name, board_yml, systems):
         with board_yml.open('r', encoding='utf-8') as f:
             b = yaml.load(f.read(), Loader=SafeLoader)
 
-        try:
-            BOARD_VALIDATOR.source = b
-            BOARD_VALIDATOR.validate()
-        except pykwalify.errors.SchemaError as e:
-            sys.exit(f'ERROR: Malformed "build" section in file: {board_yml.as_posix()}\n{e}')
-
-        mutual_exclusive = {'board', 'boards'}
-        if len(mutual_exclusive - b.keys()) < 1:
-            sys.exit(f'ERROR: Malformed content in file: {board_yml.as_posix()}\n'
-                     f'{mutual_exclusive} are mutual exclusive at this level.')
+        errors = list(board_validator.iter_errors(b))
+        if errors:
+            sys.exit('ERROR: Malformed board YAML file: '
+                     f'{board_yml.as_posix()}\n'
+                     f'{best_match(errors).message} in {best_match(errors).json_path}')
 
         board_array = b.get('boards', [b.get('board', None)])
         for board in board_array:
-            mutual_exclusive = {'name', 'extend'}
-            if len(mutual_exclusive - board.keys()) < 1:
-                sys.exit(f'ERROR: Malformed "board" section in file: {board_yml.as_posix()}\n'
-                         f'{mutual_exclusive} are mutual exclusive at this level.')
 
             # This is a extending an existing board, place in array to allow later processing.
             if 'extend' in board:
@@ -260,19 +178,6 @@ def load_v2_boards(board_name, board_yml, systems):
                 # Not the board we're looking for, ignore.
                 continue
 
-            board_revision = board.get('revision')
-            if board_revision is not None and board_revision.get('format') != 'custom':
-                if board_revision.get('default') is None:
-                    sys.exit(f'ERROR: Malformed "board" section in file: {board_yml.as_posix()}\n'
-                             "Cannot find required key 'default'. Path: '/board/revision.'")
-                if board_revision.get('revisions') is None:
-                    sys.exit(f'ERROR: Malformed "board" section in file: {board_yml.as_posix()}\n'
-                             "Cannot find required key 'revisions'. Path: '/board/revision.'")
-
-            mutual_exclusive = {'socs', 'variants'}
-            if len(mutual_exclusive - board.keys()) < 1:
-                sys.exit(f'ERROR: Malformed "board" section in file: {board_yml.as_posix()}\n'
-                         f'{mutual_exclusive} are mutual exclusive at this level.')
             socs = [Soc.from_soc(systems.get_soc(s['name']), s.get('variants', []))
                     for s in board.get('socs', {})]
 
@@ -445,37 +350,6 @@ def dump_v2_boards(args):
             print(f'{b.name}')
 
 
-def dump_boards(args):
-    arch2boards = find_arch2boards(args)
-    for arch, boards in arch2boards.items():
-        if args.fuzzy_match is not None:
-            close_boards = difflib.get_close_matches(args.fuzzy_match, [b.name for b in boards])
-            if not close_boards:
-                continue
-            boards = [b for b in boards if b.name in close_boards]
-        if args.cmakeformat is None:
-            print(f'{arch}:')
-        for board in boards:
-            if args.cmakeformat is not None:
-                info = args.cmakeformat.format(
-                    NAME='NAME;' + board.name,
-                    DIR='DIR;' + str(board.dir.as_posix()),
-                    HWM='HWM;' + board.hwm,
-                    VENDOR='VENDOR;NOTFOUND',
-                    REVISION_DEFAULT='REVISION_DEFAULT;NOTFOUND',
-                    REVISION_FORMAT='REVISION_FORMAT;NOTFOUND',
-                    REVISION_EXACT='REVISION_EXACT;NOTFOUND',
-                    REVISIONS='REVISIONS;NOTFOUND',
-                    VARIANT_DEFAULT='VARIANT_DEFAULT;NOTFOUND',
-                    SOCS='SOCS;',
-                    QUALIFIERS='QUALIFIERS;'
-                )
-                print(info)
-            else:
-                print(f'  {board.name}')
-
-
 if __name__ == '__main__':
     args = parse_args()
-    dump_boards(args)
     dump_v2_boards(args)

@@ -12,6 +12,7 @@ endif()
 zephyr_library_sources_ifdef(CONFIG_USERSPACE entropy_handlers.c)
 
 # zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_ENTROPY_AMBIQ_PUF_TRNG      entropy_ambiq_puf_trng.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_BRCM_IPROC_RNG200   entropy_iproc_rng200.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_BT_HCI              entropy_bt_hci.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_CC13XX_CC26XX_RNG   entropy_cc13xx_cc26xx.c)
@@ -30,6 +31,7 @@ zephyr_library_sources_ifdef(CONFIG_ENTROPY_NPCX_DRBG           entropy_npcx_drb
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_NRF5_RNG            entropy_nrf5.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_NRF_CRACEN_CTR_DRBG	entropy_nrf_cracen.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_NXP_ELE_TRNG        entropy_nxp_ele.c)
+zephyr_library_sources_ifdef(CONFIG_ENTROPY_NXP_ELS_TRNG        entropy_nxp_els_trng.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_PSA_CRYPTO_RNG      entropy_psa_crypto.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_RENESAS_RA          entropy_renesas_ra.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_RV32M1_TRNG         entropy_rv32m1_trng.c)

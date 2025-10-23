@@ -4,17 +4,108 @@
 menu "SiSDK configuration"
 	depends on HAS_SILABS_SISDK
 
+# Peripherals
+
+config SILABS_SISDK_ACMP
+	bool "Peripheral HAL for ACMP"
+
+config SILABS_SISDK_BURTC
+	bool "Peripheral HAL for BURTC"
+
+config SILABS_SISDK_CORE
+	bool "Peripheral HAL for CORE"
+
+config SILABS_SISDK_EMU
+	bool "Peripheral HAL for EMU"
+
+config SILABS_SISDK_EUSART
+	bool "Peripheral HAL for EUSART"
+
 config SILABS_SISDK_GPIO
 	bool "Peripheral HAL for GPIO"
+
+config SILABS_SISDK_I2C
+	bool "Peripheral HAL for I2C"
+
+config SILABS_SISDK_IADC
+	bool "Peripheral HAL for IADC"
+	select SILABS_SISDK_SYSTEM
+
+config SILABS_SISDK_LDMA
+	bool "Peripheral HAL for LDMA"
 
 config SILABS_SISDK_LETIMER
 	bool "Peripheral HAL for LETIMER"
 
+config SILABS_SISDK_MSC
+	bool "Peripheral HAL for MSC"
+
+config SILABS_SISDK_PRS
+	bool "Peripheral HAL for PRS"
+
+config SILABS_SISDK_RMU
+	bool "Peripheral HAL for RMU"
+
+config SILABS_SISDK_RTCC
+	bool "Peripheral HAL for RTCC"
+
+config SILABS_SISDK_SE
+	bool "Peripheral HAL for SE (Secure Engine)"
+
+config SILABS_SISDK_SYSTEM
+	bool "Peripheral HAL for SYSTEM (device info)"
+
 config SILABS_SISDK_TIMER
 	bool "Peripheral HAL for TIMER"
 
+config SILABS_SISDK_USART
+	bool "Peripheral HAL for USART"
+
 config SILABS_SISDK_VDAC
 	bool "Peripheral HAL for VDAC"
+
+config SILABS_SISDK_WDOG
+	bool "Peripheral HAL for WDOG"
+
+# Utilities
+
+config SILABS_SISDK_SLIST
+	bool
+
+# Services
+
+config SILABS_SISDK_CLOCK_MANAGER
+	bool "Clock Manager service"
+	help
+	  Set if the Clock Manager HAL module is used.
+
+config SILABS_SISDK_DEVICE_INIT
+	bool "Device Init service"
+	select SILABS_SISDK_EMU
+	help
+	  Use the device initialization routines from the device_init service
+	  in Silicon Labs HAL.
+
+config SILABS_SISDK_HFXO_MANAGER
+	bool "HFXO Manager service"
+	help
+	  Set if the HFXO Manager HAL module is used.
+
+config SILABS_SISDK_POWER_MANAGER
+	bool "Power Manager service"
+	select SILABS_SISDK_EMU
+	select SILABS_SISDK_SLIST
+	help
+	  Set if the Power Manager HAL module is used.
+
+config SILABS_SISDK_SLEEPTIMER
+	bool "Sleeptimer service"
+	select SILABS_SISDK_PRS
+	select SILABS_SISDK_RTCC if $(dt_nodelabel_enabled,rtcc0)
+	help
+	  Set if the Sleeptimer HAL module is used.
+
+# Radio
 
 config SILABS_SISDK_RAIL_PA_CURVE_HEADER
 	string "RAIL PA custom curve header file"
@@ -47,5 +138,9 @@ config SILABS_SISDK_RAIL_MULTIPROTOCOL
 	  Enable the Silicon Labs RAIL multiprotocol library, which provides
 	  coexistence and arbitration between multiple wireless protocols (for
 	  example, Bluetooth LE and a proprietary 2.4 GHz stack) on Gecko SoCs.
+
+config SILABS_SISDK_PROTOCOL_CRYPTO
+	bool
+	depends on SOC_GECKO_HAS_RADIO
 
 endmenu

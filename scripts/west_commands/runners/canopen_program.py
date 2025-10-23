@@ -44,11 +44,6 @@ PROGRAM_CTRL_RESET = 0x02
 PROGRAM_CTRL_CLEAR = 0x03
 PROGRAM_CTRL_ZEPHYR_CONFIRM = 0x80
 
-class ToggleAction(argparse.Action):
-    '''Toggle argument parser'''
-    def __call__(self, parser, namespace, values, option_string=None):
-        setattr(namespace, self.dest, not option_string.startswith('--no-'))
-
 class CANopenBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for CANopen.'''
     def __init__(self, cfg, dev_id, can_context=DEFAULT_CAN_CONTEXT,
@@ -99,9 +94,7 @@ class CANopenBinaryRunner(ZephyrBinaryRunner):
                             help=f'Python-CAN context to use (default: {DEFAULT_CAN_CONTEXT})')
         parser.add_argument('--program-number', type=int, default=DEFAULT_PROGRAM_NUMBER,
                             help=f'program number (default: {DEFAULT_PROGRAM_NUMBER})')
-        parser.add_argument('--confirm', '--no-confirm',
-                            dest='confirm', nargs=0,
-                            action=ToggleAction,
+        parser.add_argument('--confirm', action=argparse.BooleanOptionalAction,
                             help='confirm after starting? (default: yes)')
         parser.add_argument('--confirm-only', default=False, action='store_true',
                             help='confirm only, no program download (default: no)')

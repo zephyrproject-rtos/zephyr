@@ -102,6 +102,12 @@ int set_lvgl_rendering_cb(lv_display_t *display)
 		lv_display_add_event_cb(display, lvgl_rounder_cb, LV_EVENT_INVALIDATE_AREA,
 					display);
 		break;
+	case PIXEL_FORMAT_AL_88:
+		lv_display_set_color_format(display, LV_COLOR_FORMAT_AL88);
+		lv_display_set_flush_cb(display, lvgl_flush_cb_16bit);
+		lv_display_add_event_cb(display, lvgl_rounder_cb, LV_EVENT_INVALIDATE_AREA,
+					display);
+		break;
 	case PIXEL_FORMAT_MONO01:
 	case PIXEL_FORMAT_MONO10:
 		lv_display_set_color_format(display, LV_COLOR_FORMAT_I1);

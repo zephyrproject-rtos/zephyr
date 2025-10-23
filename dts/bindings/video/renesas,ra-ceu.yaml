@@ -1,0 +1,83 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA Capture Engine Unit Driver (ceu)
+
+compatible: "renesas,ra-ceu"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+    enum:
+      - "pclk"
+      - "cam-xclk"
+
+  swap-8bits:
+    type: boolean
+    description: Bytes may be swapped in 8-bit units
+
+  swap-16bits:
+    type: boolean
+    description: Bytes may be swapped in 16-bit units
+
+  swap-32bits:
+    type: boolean
+    description: Bytes may be swapped in 32-bit units
+
+  burst-transfer:
+    required: true
+    type: int
+    enum:
+      - 32  # Transfers data to the bus in 32-byte units
+      - 64  # Transfers data to the bus in 64-byte units
+      - 128 # Transfers data to the bus in 128-byte units
+      - 256 # Transfers data to the bus in 256-byte units
+    description: |
+      Specifies the data transfer unit size to the bus bridge module.
+
+child-binding:
+  child-binding:
+    include: video-interfaces.yaml
+
+    properties:
+      hsync-active:
+        required: true
+
+      vsync-active:
+        required: true
+
+      pclk-sample:
+        required: true
+
+      vsync-sample:
+        required: true
+        type: int
+        enum:
+          - 0 # Falling edge
+          - 1 # Rising edge
+        description: |
+          Sample on the falling or rising edge of the vsync signal.
+
+      hsync-sample:
+        required: true
+        type: int
+        enum:
+          - 0 # Falling edge
+          - 1 # Rising edge
+        description: |
+          Sample on the falling or rising edge of the hsync signal.
+
+      bus-width:
+        required: true
+        type: int
+        enum:
+          - 8   # Use 8 data lines for the parallel interface
+          - 16  # Use 16 data lines for the parallel interface

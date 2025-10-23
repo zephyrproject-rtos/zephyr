@@ -9,18 +9,29 @@
 #ifndef H_FS_MGMT_
 #define H_FS_MGMT_
 
+/**
+ * @brief MCUmgr File System Management API
+ * @defgroup mcumgr_fs_mgmt File System Management
+ * @ingroup mcumgr_mgmt_api
+ * @{
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * Command IDs for file system management group.
+ * @name Command IDs for File System Management group.
+ * @{
  */
-#define FS_MGMT_ID_FILE				0
-#define FS_MGMT_ID_STAT				1
-#define FS_MGMT_ID_HASH_CHECKSUM		2
-#define FS_MGMT_ID_SUPPORTED_HASH_CHECKSUM	3
-#define FS_MGMT_ID_OPENED_FILE			4
+#define FS_MGMT_ID_FILE                    0 /**< File download/upload */
+#define FS_MGMT_ID_STAT                    1 /**< File status */
+#define FS_MGMT_ID_HASH_CHECKSUM           2 /**< File hash/checksum */
+#define FS_MGMT_ID_SUPPORTED_HASH_CHECKSUM 3 /**< Supported file hash/checksum types */
+#define FS_MGMT_ID_OPENED_FILE             4 /**< File close */
+/**
+ * @}
+ */
 
 /**
  * Command result codes for file system management group.
@@ -87,5 +98,9 @@ enum fs_mgmt_err_code_t {
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif
