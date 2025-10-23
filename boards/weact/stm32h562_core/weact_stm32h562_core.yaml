@@ -1,5 +1,5 @@
-identifier: weact_stm32h5_core
-name: WeAct Studio STM32H5 Core Board
+identifier: weact_stm32h562_core
+name: WeAct Studio STM32H562 Core Board
 type: mcu
 arch: arm
 toolchain:

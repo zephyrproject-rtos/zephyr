@@ -70,3 +70,6 @@ set(scobc_module1_DEPRECATED
 set(raytac_an54l15q_db/nrf54l15/cpuapp_DEPRECATED
     raytac_an54lq_db_15/nrf54l15/cpuapp
 )
+set(weact_stm32h5_core_DEPRECATED
+    weact_stm32h562_core
+)
