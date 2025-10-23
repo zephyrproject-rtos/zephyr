@@ -195,6 +195,9 @@ config USE_STDC_LSM6DSV16X
 config USE_STDC_LSM6DSV320X
 	bool
 
+config USE_STDC_LSM6DSV80X
+	bool
+
 config USE_STDC_LSM9DS1
 	bool
 
