@@ -32,3 +32,21 @@ properties:
 
   dco-mode-enable:
     type: boolean
+
+  div-p:
+    type: int
+
+  div-n:
+    type: int
+
+  div-k:
+    type: int
+
+  freq-mode-sel:
+    type: int
+
+  flock-enable-threshold:
+    type: int
+
+  lf-beta-value:
+    type: int

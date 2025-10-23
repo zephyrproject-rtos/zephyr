@@ -35,8 +35,24 @@
 	dpll_hp: dpll_hp {
 		#clock-cells = <0>;
 		compatible = "infineon,fixed-clock";
-		clock-frequency = <100000000>;
+		clock-frequency = <0>;
 		system-clock = <IFX_DPLL500>;
+		status = "disabled";
+	};
+
+	dpll_lp0: dpll_lp0 {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-clock";
+		clock-frequency = <0>;
+		system-clock = <IFX_DPLL250_0>;
+		status = "disabled";
+	};
+
+	dpll_lp1: dpll_lp1 {
+		#clock-cells = <0>;
+		compatible = "infineon,fixed-clock";
+		clock-frequency = <0>;
+		system-clock = <IFX_DPLL250_1>;
 		status = "disabled";
 	};
 
