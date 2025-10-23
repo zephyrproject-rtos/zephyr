@@ -13,6 +13,7 @@ tests:
   flash.interface_test.build_only:
     harness: ztest
     build_only: true
-    filter: dt_label_with_parent_compat_enabled("slot1_partition", "fixed-partitions")
+    filter: CONFIG_FLASH_HAS_DRIVER_ENABLED and
+      dt_label_with_parent_compat_enabled("slot1_partition", "fixed-partitions")
     integration_platforms:
       - imx95_evk/mimx9596/m7
