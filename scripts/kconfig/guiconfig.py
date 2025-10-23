@@ -489,7 +489,7 @@ def _create_kconfig_tree_and_desc(parent):
     # Panedwindow and the Treeview. This code is shared between the main window
     # and the jump-to dialog.
 
-    panedwindow = ttk.Panedwindow(parent, orient=VERTICAL)
+    panedwindow = ttk.Panedwindow(parent, orient="vertical")
 
     tree_frame, tree = _create_kconfig_tree(panedwindow)
     desc_frame, desc = _create_kconfig_desc(panedwindow)
