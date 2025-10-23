@@ -23,8 +23,13 @@ volatile int *const attack_sp = &attack_stack[128];
 const int sysno = K_SYSCALL_K_UPTIME_TICKS;
 k_tid_t low_tid, hi_tid;
 
+struct k_timer timer;
+volatile ZTEST_BMEM uint64_t hi_thread_runs, test_completed;
+
 void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 {
+	test_completed = 1;
+	k_timer_stop(&timer);
 	ztest_test_pass();
 	k_thread_abort(low_tid);
 
@@ -34,6 +39,24 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 	 */
 	if (hi_tid) {
 		k_thread_abort(hi_tid);
+	}
+}
+
+static void timeout_handler(struct k_timer *timer)
+{
+	if (!test_completed) {
+
+		printf("hi_thread_runs: %lld\n", hi_thread_runs);
+		/* the timer times out after 120s,
+		 * by then hi_fn would have ran multiple times so
+		 * compare against a random number like 1000 to make sure that
+		 * hi_fn actually ran for a while
+		 */
+		if (hi_thread_runs > 1000) {
+			ztest_test_pass();
+		} else {
+			ztest_test_fail();
+		}
 	}
 }
 
@@ -79,11 +102,15 @@ void hi_fn(void *arg1, void *arg2, void *arg3)
 	while (1) {
 		attack_sp[-2] = (int)attack_entry;
 		k_msleep(1);
+		hi_thread_runs++;
 	}
 }
 
 ZTEST(arm_user_stack_test, test_arm_user_stack_corruption)
 {
+	k_timer_init(&timer, timeout_handler, NULL);
+	k_timer_start(&timer, K_SECONDS(120), K_NO_WAIT);
+
 	low_tid = k_thread_create(&th0, stk0, K_THREAD_STACK_SIZEOF(stk0), low_fn, NULL, NULL, NULL,
 				  2,
 #ifdef CONFIG_FPU_SHARING
