@@ -432,6 +432,16 @@ config PMP_STACK_GUARD_MIN_SIZE
 	  wiggle room to accommodate the eventual overflow exception
 	  stack usage.
 
+config ENABLE_DEFAULT_ROM_PMP
+	bool "Set static PMP entry for ROM region"
+	depends on RISCV_PMP
+	default n if MEM_ATTR
+	default y
+	help
+	  Controls the static PMP entry for the ROM region. It is enabled by
+	  default but automatically disabled when CONFIG_MEM_ATTR is set,
+	  to allow the memory attributes subsystem to manage the PMP region.
+
 # Implement the null pointer detection using the Physical Memory Protection
 # (PMP) Unit.
 config NULL_POINTER_EXCEPTION_DETECTION_PMP
