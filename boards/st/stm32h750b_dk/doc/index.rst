@@ -210,6 +210,22 @@ perform application upgrade, refer to `MCUboot design`_.
 To learn more about how to secure the application images stored in external Flash,
 refer to `MCUboot Encryption`_.
 
+Debugging
+---------
+
+You can debug the application in external flash using ``west`` and ``GDB``.
+
+After flashing MCUboot and the app, execute the following command:
+
+.. code-block:: console
+
+   $ west debugserver
+
+Then, open another terminal (don't forget to activate Zephyr's environment) and execute:
+
+.. code-block:: console
+
+   $ west attach
 
 .. _STM32H750B-DK website:
    https://www.st.com/en/evaluation-tools/stm32h750b-dk.html
