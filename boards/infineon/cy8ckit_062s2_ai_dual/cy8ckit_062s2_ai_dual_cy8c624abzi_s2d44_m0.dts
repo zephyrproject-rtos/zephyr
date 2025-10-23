@@ -1,0 +1,245 @@
+/*
+ * Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
+ * an affiliate of Cypress Semiconductor Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <infineon/cat1a/mpns/CY8C624ABZI_S2D44_M0.dtsi>
+#include <infineon/cat1a/system_clocks.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "CY8CKIT-062S2-AI PSOC 6 AI Evaluation Kit (Dual Core, M0)";
+	compatible = "infineon,cy8ckit_062s2_ai_dual", "cypress,PSOC6";
+
+	cpus {
+		/delete-node/ cpu@1;
+	};
+
+	chosen {
+		zephyr,console = &uart5;
+		zephyr,shell-uart = &uart5;
+		zephyr,sram = &sram_m0;
+		zephyr,flash = &flash_m0;
+		zephyr,bt-hci = &bt_hci_uart;
+	};
+
+	// M0 Flash: First 512KB
+	flash_m0: flash@10000000 {
+		compatible = "soc-nv-flash";
+		reg = <0x10000000 DT_SIZE_K(512)>;
+		write-block-size = <512>;
+		erase-block-size = <512>;
+	};
+
+	// M0 SRAM: First 128KB
+	sram_m0: memory@8000000 {
+		compatible = "mmio-sram";
+		reg = <0x08000000 DT_SIZE_K(128)>;
+	};
+
+	// Shared SRAM: 4KB for inter-core communication
+	sram_shared: memory@8020000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x08020000 DT_SIZE_K(4)>;
+		zephyr,memory-region = "SHARED_SRAM";
+	};
+
+	aliases {
+		led0 = &user_led0;
+		sw0 = &user_bt;
+		sdhc0 = &sdhc0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		user_led0: led_0 {
+			label = "LED_0";
+			gpios = <&gpio_prt5 3 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_bt: button_0 {
+			label = "SW_0";
+			gpios = <&gpio_prt5 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&fll0 {
+	status = "okay";
+	clock-frequency = <100000000>;
+};
+
+&clk_hf0 {
+	clock-div = <1>;
+	clocks = <&fll0>;
+};
+
+/* CM4 core clock = 100MHz
+ * &fll clock-frequency / &clk_hf0 clock-div / &clk_fast clock-div = 100MHz / 1 / 1 = 100MHz
+ */
+&clk_fast {
+	clock-div = <1>;
+};
+
+/* CM0+ core clock = 50MHz
+ * &fll clock-frequency / &clk_hf0 clock-div / &clk_slow clock-div = 100MHz / 1 / 2 = 50MHz
+ */
+&clk_slow {
+	clock-div = <2>;
+};
+
+/* PERI core clock = 100MHz
+ * &fll clock-frequency / &clk_hf0 clock-div / &clk_peri clock-div = 100MHz / 1 / 1 = 100MHz
+ */
+&clk_peri {
+	clock-div = <1>;
+};
+
+&gpio_prt5 {
+	status = "okay";
+};
+
+/* UART connected to KitProg3 */
+uart5: &scb5 {
+	compatible = "infineon,cat1-uart";
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&p5_1_scb5_uart_tx &p5_0_scb5_uart_rx>;
+	pinctrl-names = "default";
+};
+
+&p5_1_scb5_uart_tx {
+	drive-push-pull;
+};
+
+&p5_0_scb5_uart_rx {
+	input-enable;
+};
+
+uart2: &scb2 {
+	compatible = "infineon,cat1-uart";
+	status = "okay";
+
+	/* The UART bus speed (current_speed) for zephyr_bt_uart should be the same
+	 * as the default baudrate defined in CYW43xx firmware (default 115200).
+	 */
+	current-speed = <115200>;
+
+	/* HCI-UART pins */
+	pinctrl-0 = <&p3_1_scb2_uart_tx &p3_0_scb2_uart_rx &p3_2_scb2_uart_rts &p3_3_scb2_uart_cts>;
+	pinctrl-names = "default";
+
+	/* HW Flow control must be enabled for HCI H4 */
+	hw-flow-control;
+
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+
+		murata-1dx {
+			status = "okay";
+			compatible = "infineon,cyw43xxx-bt-hci";
+			bt-reg-on-gpios = <&gpio_prt3 4 (GPIO_ACTIVE_HIGH)>;
+
+			/* Configuration UART speeds for firmware download (fw-download-speed)
+			 * and HCI operation (hci-operation-speed).
+			 * If hci-operation-speed or fw-download-speed are not defined in
+			 * bt-hci{...} node, cyw43xx driver will use bus/current-speed as
+			 * default speed.
+			 */
+			fw-download-speed = <3000000>;
+		};
+	};
+};
+
+&p3_1_scb2_uart_tx {
+	drive-push-pull;
+};
+
+&p3_0_scb2_uart_rx {
+	input-enable;
+};
+
+&p3_2_scb2_uart_rts {
+	drive-push-pull;
+};
+
+&p3_3_scb2_uart_cts {
+	input-enable;
+};
+
+&sdhc0 {
+	status = "okay";
+
+	/* SDIO pins */
+	pinctrl-0 = <&p2_4_sdio_cmd &p2_5_sdio_clk &p2_0_sdio_data0
+			 &p2_1_sdio_data1 &p2_2_sdio_data2 &p2_3_sdio_data3>;
+	pinctrl-names = "default";
+
+	/* Wi-Fi configuration */
+	airoc-wifi {
+		status = "okay";
+		compatible = "infineon,airoc-wifi";
+
+		/* Wi-Fi control gpios */
+		wifi-reg-on-gpios	= <&gpio_prt2 6 GPIO_ACTIVE_HIGH>;
+		wifi-host-wake-gpios = <&gpio_prt4 1 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&gpio_prt4 {
+	status = "okay";
+};
+
+&gpio_prt2 {
+	status = "okay";
+};
+
+&gpio_prt3 {
+	status = "okay";
+};
+
+&pinctrl {
+	/* Configure pin control bias mode for SDIO */
+	p2_5_sdio_clk: p2_5_sdio_clk {
+		pinmux = <DT_CAT1_PINMUX(2, 5, HSIOM_SEL_ACT_14)>;
+		drive-push-pull;
+		input-enable;
+	};
+
+	p2_4_sdio_cmd: p2_4_sdio_cmd  {
+		pinmux = <DT_CAT1_PINMUX(2, 4, HSIOM_SEL_ACT_14)>;
+		drive-push-pull;
+		input-enable;
+	};
+
+	p2_0_sdio_data0: p2_0_sdio_data0 {
+		pinmux = <DT_CAT1_PINMUX(2, 0, HSIOM_SEL_ACT_14)>;
+		drive-push-pull;
+		input-enable;
+	};
+
+	p2_1_sdio_data1: p2_1_sdio_data1 {
+		pinmux = <DT_CAT1_PINMUX(2, 1, HSIOM_SEL_ACT_14)>;
+		drive-push-pull;
+		input-enable;
+	};
+
+	p2_2_sdio_data2: p2_2_sdio_data2 {
+		pinmux = <DT_CAT1_PINMUX(2, 2, HSIOM_SEL_ACT_14)>;
+		drive-push-pull;
+		input-enable;
+	};
+
+	p2_3_sdio_data3: p2_3_sdio_data3 {
+		pinmux = <DT_CAT1_PINMUX(2, 3, HSIOM_SEL_ACT_14)>;
+		drive-push-pull;
+		input-enable;
+	};
+};
