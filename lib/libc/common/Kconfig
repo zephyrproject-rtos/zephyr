@@ -114,22 +114,45 @@ config COMMON_LIBC_THRD
 	help
 	  Common implementation of C11 <threads.h> API.
 
+config COMMON_LIBC_FILEOPS
+	bool "Common C library file operations"
+	select ZVFS
+	select ZVFS_FDTABLE
+	select ZVFS_DEFAULT_FILE_VMETHODS
+	help
+	  Common implementations of most-used ISO C stdio.h functions
+	  for dealing with files, like fopen(), fwrite() and others.
+
+if COMMON_LIBC_FILEOPS
+
+config ZVFS_OPEN_ADD_SIZE_LIBC
+	int "Number of file descriptors for C library file operations"
+	default 0 if ZVFS_OPEN_ADD_SIZE_POSIX > 3
+	default 3
+	help
+	  Number of file descriptor table entries to reserve for libc file
+	  operations. This is how many files can be opened at once with
+	  fopen(). Since the ISO C and POSIX file APIs can cooperate,
+	  this can be set to zero if ZVFS_OPEN_ADD_SIZE_POSIX is already
+	  set to more than 3. The first three entries are reserved for
+	  stdin, stdout and stderr.
+
 config COMMON_LIBC_FOPEN
 	bool "Common C library fopen"
-	default y if ZVFS
+	default y
 	select ZVFS_DEFAULT_FILE_VMETHODS
 	help
 	  Common implementation of fopen().
 
 config COMMON_LIBC_FCLOSE
 	bool "Common C library fclose"
-	default y if ZVFS
+	default y
 	help
 	  Common implementation of fclose().
 
 config COMMON_LIBC_FEOF
 	bool "Common C library feof"
-	default y if ZVFS
+	default y
 	help
 	  Common implementation of feof().
 
@@ -141,43 +164,45 @@ config COMMON_LIBC_FERROR
 
 config COMMON_LIBC_FPUTC
 	bool "Common C library fputc"
-	default y if ZVFS
+	default y
 	help
 	  Common implementation of fputc().
 
 config COMMON_LIBC_FREAD
 	bool "Common C library fread"
-	default y if ZVFS
+	default y
 	help
 	  Common implementation of fread().
 
 config COMMON_LIBC_FSEEK
 	bool "Common C library fseek"
-	default y if ZVFS
+	default y
 	help
 	  Common implementation of fseek().
 
 config COMMON_LIBC_FTELL
 	bool "Common C library ftell"
-	default y if ZVFS
+	default y
 	help
 	  Common implementation of ftell().
 
 config COMMON_LIBC_FWRITE
 	bool "Common C library fwrite"
-	default y if ZVFS
+	default y
 	help
 	  Common implementation of fwrite().
-
-config COMMON_LIBC_RENAME
-	bool "Common C library rename"
-	default y if ZVFS
-	help
-	  Common implementation of rename().
 
 config COMMON_LIBC_REMOVE
 	bool "Common C library remove"
 	depends on !SEMIHOST
-	default y if ZVFS
+	default y
 	help
 	  Common implementation of remove().
+
+endif
+
+config COMMON_LIBC_RENAME
+	bool "Common C library rename"
+	default y
+	help
+	  Common implementation of rename().

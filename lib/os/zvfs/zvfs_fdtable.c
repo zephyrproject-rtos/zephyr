@@ -38,14 +38,18 @@ struct fd_entry {
 	uint32_t mode;
 };
 
-#if defined(CONFIG_POSIX_DEVICE_IO)
+#if defined(CONFIG_POSIX_DEVICE_IO) || defined(CONFIG_COMMON_LIBC_FILEOPS)
+#define STDIO
+#endif
+
+#ifdef STDIO
 static const struct fd_op_vtable stdinout_fd_op_vtable;
 
 BUILD_ASSERT(ZVFS_OPEN_SIZE >= 3, "ZVFS_OPEN_SIZE >= 3 for CONFIG_POSIX_DEVICE_IO");
-#endif /* defined(CONFIG_POSIX_DEVICE_IO) */
+#endif
 
 static struct fd_entry fdtable[ZVFS_OPEN_SIZE] = {
-#if defined(CONFIG_POSIX_DEVICE_IO)
+#ifdef STDIO
 	/*
 	 * Predefine entries for stdin/stdout/stderr.
 	 */
@@ -573,7 +577,7 @@ int zvfs_rename(const char *old, const char *newp)
 	return 0;
 }
 
-#if defined(CONFIG_POSIX_DEVICE_IO)
+#ifdef STDIO
 /*
  * fd operations for stdio/stdout/stderr
  */
