@@ -1,0 +1,9 @@
+tests:
+  usb.host.desc:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - qemu_cortex_m3
+    integration_platforms:
+      - native_sim
+    tags: usb
