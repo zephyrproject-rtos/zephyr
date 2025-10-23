@@ -937,6 +937,7 @@ static int _api_dev_config(const struct device *dev,
 		switch (cfg->data_rate) {
 		case MSPI_DATA_RATE_SINGLE:
 			break;
+#if defined(CONFIG_MSPI_DW_DDR)
 		case MSPI_DATA_RATE_DUAL:
 			dev_data->spi_ctrlr0 |= SPI_CTRLR0_INST_DDR_EN_BIT;
 			/* Also need to set DDR_EN bit */
@@ -944,6 +945,7 @@ static int _api_dev_config(const struct device *dev,
 		case MSPI_DATA_RATE_S_D_D:
 			dev_data->spi_ctrlr0 |= SPI_CTRLR0_SPI_DDR_EN_BIT;
 			break;
+#endif
 		default:
 			LOG_ERR("Data rate %d not supported",
 				cfg->data_rate);
@@ -1238,6 +1240,7 @@ static int start_next_packet(const struct device *dev)
 	write_spi_ctrlr0(dev, dev_data->spi_ctrlr0);
 	write_baudr(dev, dev_data->baudr);
 	write_rx_sample_dly(dev, dev_data->rx_sample_dly);
+#if defined(CONFIG_MSPI_DW_DDR)
 	if (dev_data->spi_ctrlr0 & (SPI_CTRLR0_SPI_DDR_EN_BIT |
 				    SPI_CTRLR0_INST_DDR_EN_BIT)) {
 		int txd = (CONFIG_MSPI_DW_TXD_MUL * dev_data->baudr) /
@@ -1247,6 +1250,7 @@ static int start_next_packet(const struct device *dev)
 	} else {
 		write_txd_drive_edge(dev, 0);
 	}
+#endif
 
 	if (xip_enabled) {
 		write_ssienr(dev, SSIENR_SSIC_EN_BIT);
