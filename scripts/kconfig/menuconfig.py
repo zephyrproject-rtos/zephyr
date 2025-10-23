@@ -1144,7 +1144,6 @@ def _jump_to(node):
     global _cur_menu
     global _shown
     global _sel_node_i
-    global _menu_scroll
     global _show_all
     global _parent_screen_rows
 
