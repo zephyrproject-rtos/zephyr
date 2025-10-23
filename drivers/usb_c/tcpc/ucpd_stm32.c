@@ -485,11 +485,6 @@ static int ucpd_cc_set_polarity(const struct device *dev,
 static int ucpd_set_rx_enable(const struct device *dev, bool enable)
 {
 	const struct tcpc_config *const config = dev->config;
-	uint32_t imr;
-	uint32_t cr;
-
-	imr = stm32_reg_read(&config->ucpd_port->IMR);
-	cr = stm32_reg_read(&config->ucpd_port->CR);
 
 	/*
 	 * USB PD receiver enable is controlled by the bit PHYRXEN in
@@ -498,15 +493,11 @@ static int ucpd_set_rx_enable(const struct device *dev, bool enable)
 	if (enable) {
 		/* Clear the RX alerts bits */
 		stm32_reg_write(&config->ucpd_port->ICR, UCPD_ICR_RX_INT_MASK);
-		imr |= UCPD_IMR_RX_INT_MASK;
-		cr |= UCPD_CR_PHYRXEN;
-		stm32_reg_write(&config->ucpd_port->IMR, imr);
-		stm32_reg_write(&config->ucpd_port->CR, cr);
+		stm32_reg_set_bits(&config->ucpd_port->IMR, UCPD_IMR_RX_INT_MASK);
+		stm32_reg_set_bits(&config->ucpd_port->CR, UCPD_CR_PHYRXEN);
 	} else {
-		imr &= ~UCPD_IMR_RX_INT_MASK;
-		cr &= ~UCPD_CR_PHYRXEN;
-		stm32_reg_write(&config->ucpd_port->CR, cr);
-		stm32_reg_write(&config->ucpd_port->IMR, imr);
+		stm32_reg_clear_bits(&config->ucpd_port->IMR, UCPD_IMR_RX_INT_MASK);
+		stm32_reg_clear_bits(&config->ucpd_port->CR, UCPD_CR_PHYRXEN);
 	}
 
 	return 0;
@@ -555,10 +546,6 @@ static void ucpd_start_transmit(const struct device *dev,
 	struct tcpc_data *data = dev->data;
 	const struct tcpc_config *const config = dev->config;
 	enum pd_packet_type type;
-	uint32_t cr;
-	uint32_t imr;
-
-	cr = stm32_reg_read(&config->ucpd_port->CR);
 
 	/* Select the correct tx descriptor */
 	data->ucpd_tx_active_buffer = &data->ucpd_tx_buffers[msg_type];
@@ -585,13 +572,10 @@ static void ucpd_start_transmit(const struct device *dev,
 		/* Enable interrupt for Hard Reset sent/discarded */
 		stm32_reg_write(&config->ucpd_port->ICR, UCPD_ICR_HRSTDISCCF | UCPD_ICR_HRSTSENTCF);
 
-		imr = stm32_reg_read(&config->ucpd_port->IMR);
-		imr |= UCPD_IMR_HRSTDISCIE | UCPD_IMR_HRSTSENTIE;
-		stm32_reg_write(&config->ucpd_port->IMR, imr);
-
+		stm32_reg_set_bits(&config->ucpd_port->IMR,
+				   UCPD_IMR_HRSTDISCIE | UCPD_IMR_HRSTSENTIE);
 		/* Initiate Hard Reset */
-		cr |= UCPD_CR_TXHRST;
-		stm32_reg_write(&config->ucpd_port->CR, cr);
+		stm32_reg_set_bits(&config->ucpd_port->CR, UCPD_CR_TXHRST);
 	} else if (type != PD_PACKET_MSG_INVALID) {
 		int msg_len = 0;
 		int mode;
@@ -628,9 +612,7 @@ static void ucpd_start_transmit(const struct device *dev,
 		LL_UCPD_WriteTxPaySize(config->ucpd_port, msg_len);
 
 		/* Set tx mode */
-		cr &= ~UCPD_CR_TXMODE_Msk;
-		cr |= mode;
-		stm32_reg_write(&config->ucpd_port->CR, cr);
+		stm32_reg_modify_bits(&config->ucpd_port->CR, UCPD_CR_TXMODE_Msk, mode);
 
 		/* Index into ordset enum for start of packet */
 		if (type <= PD_PACKET_CABLE_RESET) {
