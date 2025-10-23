@@ -164,8 +164,8 @@ function(zephyr_ld_options)
     target_ld_options(zephyr_interface INTERFACE ${ARGV})
 endfunction()
 
-# Getter function for extracting information from zephyr_interface. The
-# function supports filtering for specific compile languages, prefixes, and
+# Getter function for extracting information from a target. The function
+# supports filtering for specific compile languages, prefixes, and
 # different output formats.
 #
 # The result is always returned as a generator expression, so its actual
@@ -179,39 +179,64 @@ endfunction()
 #   - 'prop' is the CMake property to get from the target
 #
 # Options:
+#   - AS_STRING:
+#       Return the result as a string rather than a list. Equivalent to
+#       specifying DELIMITER " ".
 #  - DELIMITER <delimiter>:
 #       Specify the output delimiter to use for the list entries. Defaults to
 #       "$<SEMICOLON>".
+#  - GENEX:
+#       Use generator expressions to get the property entries at build time,
+#       for targets that are not yet fully configured.
+#       Cannot be used with LANG. Also, CMake will complain if the requested
+#       property includes $<COMPILE_OPTIONS:...> expressions.
 #  - LANG <C|CXX|ASM>:
 #       When set, the property value is filtered for $<COMPILE_LANGUAGE:lang>
 #       entries, and only those matching the given language are kept.
+#       Cannot be used with GENEX.
 #  - PREFIX <prefix>:
 #       Specify a prefix to use for each entry in the output list.
 #  - STRIP_PREFIX:
 #       Omit the prefix string, even if given by PREFIX.
+#  - TARGET <target>:
+#       Specify the target to get the property from. Defaults to
+#       "zephyr_interface".
 
 function(zephyr_get_property output)
-  set(options STRIP_PREFIX)
-  set(single_args DELIMITER LANG PREFIX PROPERTY)
+  set(options AS_STRING GENEX STRIP_PREFIX)
+  set(single_args DELIMITER LANG PREFIX PROPERTY TARGET)
   cmake_parse_arguments(args "${options}" "${single_args}" "" ${ARGN})
   zephyr_check_arguments_required_all(zephyr_get_property args PROPERTY)
   if(args_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR "zephyr_get_property() given unknown arguments: ${args_UNPARSED_ARGUMENTS}")
   endif()
+  set_ifndef(args_TARGET "zephyr_interface")
 
-  set_ifndef(args_DELIMITER "$<SEMICOLON>")
+  if(args_AS_STRING)
+    set(args_DELIMITER " ")
+  else()
+    set_ifndef(args_DELIMITER "$<SEMICOLON>")
+  endif()
 
   if(args_PREFIX AND NOT args_STRIP_PREFIX)
     set(maybe_prefix "${args_PREFIX}")
   endif()
 
-  get_property(flags TARGET zephyr_interface PROPERTY ${args_PROPERTY})
-  if(args_LANG)
-    process_flags(${args_LANG} flags output_list)
-  else()
-    set(output_list "${flags}")
+  if(args_LANG AND args_GENEX)
+    message(FATAL_ERROR "zephyr_get_property(): GENEX cannot be used with LANG.")
   endif()
-  string(REPLACE ";" "$<SEMICOLON>" genexp_output_list "${output_list}")
+
+  if(args_GENEX)
+    set(genexp_output_list "$<TARGET_PROPERTY:${args_TARGET},${args_PROPERTY}>")
+  else()
+    get_property(flags TARGET ${args_TARGET} PROPERTY ${args_PROPERTY})
+    if(args_LANG)
+      process_flags(${args_LANG} flags output_list)
+    else()
+      set(output_list "${flags}")
+    endif()
+    string(REPLACE ";" "$<SEMICOLON>" genexp_output_list "${output_list}")
+  endif()
 
   set(result_output_list "${maybe_prefix}$<JOIN:${genexp_output_list},${args_DELIMITER}${maybe_prefix}>")
   set(maybe_result_output_list "$<$<BOOL:${genexp_output_list}>:${result_output_list}>")
