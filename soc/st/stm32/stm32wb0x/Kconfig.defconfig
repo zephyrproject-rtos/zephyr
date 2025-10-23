@@ -10,6 +10,9 @@ config NUM_IRQS
 
 if BT
 
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 1152
+
 config BT_AUTO_PHY_UPDATE
 	default n
 
