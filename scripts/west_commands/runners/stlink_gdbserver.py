@@ -174,6 +174,7 @@ class STLinkGDBServerRunner(ZephyrBinaryRunner):
             extldr_path = cubeprg_path / "ExternalLoader" / self._external_loader
             if not extldr_path.exists():
                 raise RuntimeError(f"External loader {self._external_loader} does not exist")
+            gdbserver_cmd += ["--external-init"]
             gdbserver_cmd += ["--extload", str(extldr_path)]
 
         self.require(gdbserver_cmd[0])
