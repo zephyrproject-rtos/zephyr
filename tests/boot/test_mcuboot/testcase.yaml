@@ -55,6 +55,8 @@ tests:
       - esp32c6_devkitc/esp32c6/hpcore
       - esp8684_devkitm
       - stm32h750b_dk/stm32h750xx/ext_flash_app
+      - stm32h573i_dk
+      - stm32h573i_dk/stm32h573xx/ext_flash_app
       - sam_e54_xpro
     integration_platforms:
       - frdm_k64f
@@ -63,6 +65,8 @@ tests:
     platform_allow:
       - b_u585i_iot02a
       - stm32h750b_dk/stm32h750xx/ext_flash_app
+      - stm32h573i_dk
+      - stm32h573i_dk/stm32h573xx/ext_flash_app
     extra_configs:
       - CONFIG_ASSERT=y
   bootloader.mcuboot.swap_using_move:
@@ -72,6 +76,8 @@ tests:
       - nrf52840dk/nrf52840
       - nucleo_wba55cg
       - stm32h750b_dk/stm32h750xx/ext_flash_app
+      - stm32h573i_dk
+      - stm32h573i_dk/stm32h573xx/ext_flash_app
     integration_platforms:
       - frdm_k64f
       - nrf5340dk/nrf5340/cpuapp
