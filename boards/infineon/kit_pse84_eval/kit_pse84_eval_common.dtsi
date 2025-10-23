@@ -90,6 +90,3 @@ uart2: &scb2 {
 	status = "okay";
 };
 
-&dpll_hp {
-	status = "okay";
-};
