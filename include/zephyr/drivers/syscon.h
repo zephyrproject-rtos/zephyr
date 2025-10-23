@@ -72,8 +72,9 @@ __subsystem struct syscon_driver_api {
  *
  * @param dev The device to get the register size for.
  * @param addr Where to write the base address.
- * @return 0 When @a addr was written to.
- * @return -ENOSYS If the API or function isn't implemented.
+ *
+ * @retval 0 When @a addr was written to.
+ * @retval -ENOSYS If the API or function isn't implemented.
  */
 __syscall int syscon_get_base(const struct device *dev, uintptr_t *addr);
 
@@ -98,8 +99,8 @@ static inline int z_impl_syscon_get_base(const struct device *dev, uintptr_t *ad
  * @param reg The register offset
  * @param val The returned value read from the syscon register
  *
- * @return 0 on success.
- * @return -ENOSYS If the API or function isn't implemented.
+ * @retval 0 on success.
+ * @retval -ENOSYS If the API or function isn't implemented.
  */
 __syscall int syscon_read_reg(const struct device *dev, uint16_t reg, uint32_t *val);
 
@@ -124,8 +125,8 @@ static inline int z_impl_syscon_read_reg(const struct device *dev, uint16_t reg,
  * @param reg The register offset
  * @param val The value to be written in the register
  *
- * @return 0 on success.
- * @return -ENOSYS If the API or function isn't implemented.
+ * @retval 0 on success.
+ * @retval -ENOSYS If the API or function isn't implemented.
  */
 __syscall int syscon_write_reg(const struct device *dev, uint16_t reg, uint32_t val);
 
@@ -145,8 +146,9 @@ static inline int z_impl_syscon_write_reg(const struct device *dev, uint16_t reg
  *
  * @param dev The device to get the register size for.
  * @param size Pointer to write the size to.
- * @return 0 for success.
- * @return -ENOSYS If the API or function isn't implemented.
+ *
+ * @retval 0 on success.
+ * @retval -ENOSYS If the API or function isn't implemented.
  */
 __syscall int syscon_get_size(const struct device *dev, size_t *size);
 
