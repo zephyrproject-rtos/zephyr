@@ -11,6 +11,13 @@ config MSPI_DW
 
 if MSPI_DW
 
+config MSPI_DW_DDR
+	bool "Dual Data-Rate (DDR) capabilities"
+	default y
+	help
+	  Dual data rate is supported by some devices and requires specific
+	  registers to be enabled in the IP.
+
 config MSPI_DW_HANDLE_FIFOS_IN_SYSTEM_WORKQUEUE
 	bool "Handle FIFO in system workqueue"
 	depends on MULTITHREADING
@@ -23,6 +30,7 @@ config MSPI_DW_HANDLE_FIFOS_IN_SYSTEM_WORKQUEUE
 
 config MSPI_DW_TXD_DIV
 	int "Designware SSI TX Drive edge divisor"
+	depends on MSPI_DW_DDR
 	default 4
 	help
 	  Division factor to apply to calculated BAUDR value when writing it
@@ -31,6 +39,7 @@ config MSPI_DW_TXD_DIV
 
 config MSPI_DW_TXD_MUL
 	int "Designware SSI TX Drive edge multiplier"
+	depends on MSPI_DW_DDR
 	default 1
 	help
 	  Multiplication factor to apply to calculated BAUDR value when writing
