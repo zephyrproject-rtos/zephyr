@@ -70,7 +70,7 @@ static inline uint64_t ctf_timestamp_get(void)
 #endif /* CONFIG_TRACING_CTF_CONFIGURABLE_TIMER */
 
 
-#define CTF_EVENT(...)                                                                             \
+#define CTF_EVENT(event_id, ...)                                                                   \
 	{                                                                                          \
 		if (!is_tracing_enabled()) {                                                       \
 			return;                                                                    \
@@ -80,10 +80,11 @@ static inline uint64_t ctf_timestamp_get(void)
 		uint16_t packet_size = 0;                                                          \
 		const uint64_t tstamp = ctf_timestamp_get();                                       \
                                                                                                    \
-		packet_size = 8 * (0 MAP(CTF_INTERNAL_FIELD_SIZE, stream_id, packet_size, tstamp,  \
+		const uint8_t cpu_id = arch_curr_cpu()->id;                                        \
+		packet_size = 8 * (0 MAP(CTF_INTERNAL_FIELD_SIZE, stream_id, packet_size, tstamp, event_id, cpu_id,  \
 					 ##__VA_ARGS__));                                          \
                                                                                                    \
-		CTF_GATHER_FIELDS(stream_id, packet_size, tstamp, __VA_ARGS__)                     \
+		CTF_GATHER_FIELDS(stream_id, packet_size, tstamp, event_id, cpu_id, ##__VA_ARGS__) \
 		irq_unlock(key);                                                                   \
 	}
 #else
