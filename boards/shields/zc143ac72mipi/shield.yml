@@ -1,0 +1,6 @@
+shields:
+  - name: zc143ac72mipi
+    full_name: ZC143AC72 MIPI Display Shield
+    vendor: nxp
+    supported_features:
+      - display
