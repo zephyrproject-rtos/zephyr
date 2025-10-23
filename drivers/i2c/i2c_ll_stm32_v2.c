@@ -815,10 +815,8 @@ static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 	/* Commit configuration to I2C controller and start transfer */
 	stm32_reg_write(&regs->CR2, cr2);
 
-	cr1 |= stm32_reg_read(&regs->CR1);
-
 	/* Enable interrupts */
-	stm32_reg_write(&regs->CR1, cr1);
+	stm32_reg_set_bits(&regs->CR1, cr1);
 
 	/* Wait for transfer to finish */
 	return stm32_i2c_irq_msg_finish(dev, msg);
