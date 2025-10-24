@@ -1,0 +1,5 @@
+board:
+  name: versal2_apu
+  vendor: amd
+  socs:
+  - name: amd_versal2_apu
