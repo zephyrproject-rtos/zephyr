@@ -3,14 +3,6 @@
 
 if SOC_MIMX9596_M7
 
-DT_CHOSEN_Z_FLASH := zephyr,flash
-
-config FLASH_SIZE
-	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
-
-config FLASH_BASE_ADDRESS
-	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
-
 # multi-level interrupts
 config MULTI_LEVEL_INTERRUPTS
 	default y
