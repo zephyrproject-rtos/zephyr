@@ -11,7 +11,7 @@ pylint>=3
 python-dotenv
 python-magic-bin; sys_platform == "win32"
 python-magic; sys_platform != "win32"
-ruff==0.11.11
+ruff==0.14.2
 sphinx-lint
 unidiff
 vermin
