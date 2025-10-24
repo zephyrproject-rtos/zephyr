@@ -75,3 +75,8 @@ struct btp_tbs_set_signal_strength_cmd {
 	uint8_t index;
 	uint8_t strength;
 } __packed;
+
+#define BTP_TBS_TERMINATE_CALL			0x0b
+struct btp_tbs_terminate_call_cmd {
+	uint8_t index;
+} __packed;
