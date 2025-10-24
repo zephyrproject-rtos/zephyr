@@ -9,7 +9,6 @@
 
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
-#include <zephyr/logging/log.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,8 +28,6 @@ static inline uint32_t i2c_map_dt_bitrate(uint32_t bitrate)
 	case I2C_BITRATE_ULTRA:
 		return I2C_SPEED_ULTRA << I2C_SPEED_SHIFT;
 	}
-
-	LOG_ERR("Invalid I2C bit rate value");
 
 	return 0;
 }
