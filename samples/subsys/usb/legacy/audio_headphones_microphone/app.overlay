@@ -16,6 +16,7 @@
 		volume-min = <0xBA00>;
 		volume-res = <0x100>;
 	};
+
 	mic_0 {
 		compatible = "usb-audio-mic";
 		feature-mute;

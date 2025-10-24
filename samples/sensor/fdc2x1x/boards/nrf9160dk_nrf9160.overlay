@@ -6,6 +6,7 @@
 
 &i2c2 {
 	clock-frequency = <I2C_BITRATE_FAST>;
+
 	fdc2x1x@2A {
 		compatible = "ti,fdc2x1x";
 		reg = <0x2A>;

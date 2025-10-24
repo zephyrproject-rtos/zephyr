@@ -24,6 +24,7 @@
 
 &timers6 {
 	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -31,6 +32,7 @@
 
 &timers7 {
 	status = "okay";
+
 	counter {
 		status = "okay";
 	};
