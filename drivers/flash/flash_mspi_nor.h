@@ -114,6 +114,7 @@ struct flash_mspi_nor_data {
 	struct flash_mspi_nor_cmd_info cmd_info;
 	struct flash_mspi_nor_switch_info switch_info;
 	bool in_target_io_mode;
+	const struct mspi_dev_cfg *last_applied_cfg;
 };
 
 #ifdef __cplusplus
