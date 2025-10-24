@@ -100,7 +100,6 @@
 	};
 };
 
-
 &timer1 {
 	status = "okay";
 
