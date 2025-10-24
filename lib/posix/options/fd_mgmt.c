@@ -16,7 +16,6 @@
 /* prototypes for external, not-yet-public, functions in fdtable.c or fs.c */
 int zvfs_fcntl(int fd, int cmd, va_list arg);
 int zvfs_ftruncate(int fd, off_t length);
-off_t zvfs_lseek(int fd, off_t offset, int whence);
 
 int fcntl(int fd, int cmd, ...)
 {

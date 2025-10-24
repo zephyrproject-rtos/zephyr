@@ -12,10 +12,7 @@
 #include <zephyr/posix/poll.h>
 #include <zephyr/posix/unistd.h>
 #include <zephyr/posix/sys/select.h>
-
-/* prototypes for external, not-yet-public, functions in fdtable.c or fs.c */
-FILE *zvfs_fdopen(int fd, const char *mode);
-int zvfs_fileno(FILE *file);
+#include <zephyr/sys/zvfs_fd_file.h>
 
 static struct fd_op_vtable posix_op_vtable = {
 	.read = zvfs_read_vmeth,
