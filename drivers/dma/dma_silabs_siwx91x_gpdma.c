@@ -180,6 +180,23 @@ static int siwx91x_gpdma_desc_config(struct siwx19x_gpdma_data *data,
 		desc->chnlCtrlConfig.transSize = block->block_size;
 		if (block->dest_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) {
 			desc->chnlCtrlConfig.dstFifoMode = 1;
+			/* HACK: GPDMA does not support DMA_ADDR_ADJ_NO_CHANGE with a memory buffer.
+			 * This configuration is mainly used by SPI to ignore the received bytes.
+			 * The hack below disable the data transfer (in fact it reduce the length to
+			 * one byte). Fortunately, SPI only watch DMA Tx termination so the
+			 * early termination of the DMA Rx won't hurt.
+			 */
+			if (config->channel_direction == PERIPHERAL_TO_MEMORY) {
+				desc->chnlCtrlConfig.transSize = 1;
+				if (block->next_block &&
+				    block->next_block->dest_addr_adj != DMA_ADDR_ADJ_NO_CHANGE) {
+					/* ... however, it is not possible to receive a real buffer
+					 * after the hack described above
+					 */
+					LOG_ERR("Buffer interleaving is not supported");
+					goto free_desc;
+				}
+			}
 		}
 		if (block->source_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) {
 			desc->chnlCtrlConfig.srcFifoMode = 1;
