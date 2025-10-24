@@ -3,7 +3,7 @@
 Overview
 ********
 The MAX32655FTHR is a rapid development platform to help engineers quickly implement
-ultra low-power wireless solutions using MAX32655 Arm© Cortex®-M4F and Bluetooth® 5.2 Low Energy (LE).
+ultra low-power wireless solutions using MAX32655 Arm® Cortex®-M4F and Bluetooth® 5.2 Low Energy (LE).
 The board also includes the MAX20303 PMIC for battery and power management.
 The form factor is a small 0.9in x 2.6in dual-row header footprint that is compatible
 with Adafruit Feather Wing peripheral expansion boards. The board includes a variety of peripherals,
