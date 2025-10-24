@@ -70,7 +70,10 @@
 		 * created, based on it.
 		 */
 		flash0: flash@400000 {
+			compatible = "nxp,s32k3x-c40-flash";
 			reg = <0x00400000 DT_SIZE_K(4048)>;
+			erase-block-size = <0x2000>;           /* Min erase size is 8 KiB */
+			write-block-size = <8>;                /* Minimum programmable unit */
 			status = "disabled";
 		};
 

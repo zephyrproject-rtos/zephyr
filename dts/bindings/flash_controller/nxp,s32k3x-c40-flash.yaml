@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+title: NXP S32K3x C40 Internal Flash Controller
+
+description: |
+  On-chip C40 flash used in NXP S32K3x MCUs (e.g. S32K344).
+
+compatible: "nxp,s32k3x-c40-flash"
+
+# Inherit common SoC flash schema (reg/status, partitions, etc.)
+include: soc-nv-flash.yaml
+
+properties:
+  erase-block-size:
+    const: 8192
+    description: Minimum erase size for C40 is 8 KiB.
+
+  write-block-size:
+    const: 8
+    description: Smallest programmable unit is 8 bytes.
