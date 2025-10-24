@@ -124,14 +124,14 @@ static int perform_xfer(const struct device *dev, uint8_t cmd)
 		}
 	}
 
-	if (cfg) {
+	if (cfg && cfg != dev_data->last_applied_cfg) {
 		rc = mspi_dev_config(dev_config->bus, &dev_config->mspi_id,
 				     MSPI_DEVICE_CONFIG_IO_MODE, cfg);
 		if (rc < 0) {
 			LOG_ERR("%s: dev_config() failed: %d", __func__, rc);
 			return rc;
 		}
-
+		dev_data->last_applied_cfg = cfg;
 		dev_data->in_target_io_mode = mem_access;
 	}
 
@@ -262,6 +262,7 @@ static int acquire(const struct device *dev)
 			LOG_ERR("mspi_dev_config() failed: %d", rc);
 		} else {
 			if (dev_config->multiperipheral_bus) {
+				dev_data->last_applied_cfg = &dev_config->mspi_nor_cfg;
 				dev_data->in_target_io_mode = true;
 			}
 
@@ -867,9 +868,14 @@ static int switch_to_target_io_mode(const struct device *dev)
 		}
 	}
 
-	return mspi_dev_config(dev_config->bus, &dev_config->mspi_id,
+	rc = mspi_dev_config(dev_config->bus, &dev_config->mspi_id,
 			       NON_XIP_DEV_CFG_MASK,
 			       &dev_config->mspi_nor_cfg);
+	if (rc < 0) {
+		return rc;
+	}
+	dev_data->last_applied_cfg = &dev_config->mspi_nor_cfg;
+	return 0;
 }
 
 #if defined(WITH_SUPPLY_GPIO)
@@ -965,7 +971,7 @@ static int soft_reset(const struct device *dev)
 			LOG_ERR("%s: dev_config() failed: %d", __func__, rc);
 			return rc;
 		}
-
+		dev_data->last_applied_cfg = &dev_config->mspi_nor_cfg;
 		dev_data->in_target_io_mode = true;
 
 		rc = soft_reset_66_99(dev);
@@ -980,7 +986,7 @@ static int soft_reset(const struct device *dev)
 			LOG_ERR("%s: dev_config() failed: %d", __func__, rc);
 			return rc;
 		}
-
+		dev_data->last_applied_cfg = &dev_config->mspi_nor_init_cfg;
 		dev_data->in_target_io_mode = false;
 	}
 
@@ -1010,7 +1016,7 @@ static int flash_chip_init(const struct device *dev)
 		LOG_ERR("%s: dev_config() failed: %d", __func__, rc);
 		return rc;
 	}
-
+	dev_data->last_applied_cfg = &dev_config->mspi_nor_init_cfg;
 	dev_data->in_target_io_mode = false;
 
 #if defined(WITH_SUPPLY_GPIO)
