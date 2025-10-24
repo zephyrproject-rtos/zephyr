@@ -10,6 +10,7 @@
 		group1 {
 			pinmux = <PIO0_P18>, <PIO0_P19>;
 		};
+
 		group2 {
 			pinmux = <PIO0_P16>;
 			input-enable;
@@ -39,6 +40,7 @@
 			reg = <0>;
 			spi-max-frequency = <500000>;
 		};
+
 		fast@0 {
 			compatible = "test-spi-loopback-fast";
 			reg = <0>;
