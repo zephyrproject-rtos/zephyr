@@ -14,6 +14,14 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Map I2C bitrate from DT (in bps) to I2C interface encoding.
+ *
+ * @param bitrate I2C bitrate from DT (in bps)
+ *
+ * @retval bitrate I2C interface encoded bitrate.
+ * @retval 0 If given @p bitrate is not valid.
+ */
 static inline uint32_t i2c_map_dt_bitrate(uint32_t bitrate)
 {
 	switch (bitrate) {
