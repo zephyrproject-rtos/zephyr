@@ -61,7 +61,7 @@ SECTION_FUNC(TEXT, z_riscv_switch)
 	mv a0, s0
 #endif
 
-#if defined(CONFIG_PMP_STACK_GUARD)
+#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
 	/* Kernel mode has priority over user space for PMP usage. */
 	mv s0, a0
 	call z_riscv_pmp_kernelmode_enable
