@@ -71,6 +71,11 @@
 #error There is no flash device enabled or it is missing Kconfig options
 #endif
 
+#if DT_NODE_HAS_PROP(DT_BUS(TEST_AREA_DEV_NODE), packet_data_limit)
+#define CONTROLLER_PACKET_DATA_LIMIT  DT_PROP(DT_BUS(TEST_AREA_DEV_NODE), packet_data_limit)
+#define BUFFER_SIZE_OVER_PACKET_LIMIT CONTROLLER_PACKET_DATA_LIMIT + 1
+#endif
+
 static const struct device *const flash_dev = TEST_AREA_DEVICE;
 static struct flash_pages_info page_info;
 static uint8_t __aligned(4) expected[EXPECTED_SIZE];
@@ -332,6 +337,39 @@ ZTEST(flash_driver, test_flash_erase)
 	 * doesn't contain erase_value
 	 */
 	zassert_not_equal(expected[0], erase_value, "These values shall be different");
+}
+
+ZTEST(flash_driver, test_flash_write_read_over_the_packet_limit)
+{
+
+#if !defined(CONTROLLER_PACKET_DATA_LIMIT)
+	TC_PRINT("Given bus controller does not have 'packet_data_limit' property\n");
+	ztest_test_skip();
+#else
+	int rc;
+	const uint8_t pattern = 0xA1;
+	static uint8_t large_data_buf[BUFFER_SIZE_OVER_PACKET_LIMIT];
+
+	/* Flatten area corresponding to the size of two packets */
+	rc = flash_flatten(flash_dev, page_info.start_offset, 2 * CONTROLLER_PACKET_DATA_LIMIT);
+	zassert_equal(rc, 0, "Flash flatten failed: %d", rc);
+
+	/* Fill flash area with buffer size over the configured packet limit */
+	rc = flash_fill(flash_dev, pattern, page_info.start_offset, BUFFER_SIZE_OVER_PACKET_LIMIT);
+	zassert_equal(rc, 0, "Flash fill failed");
+
+	/* Read flash area with buffer size over the MSPI packet limit */
+	rc = flash_read(flash_dev, page_info.start_offset, large_data_buf,
+			BUFFER_SIZE_OVER_PACKET_LIMIT);
+	zassert_equal(rc, 0, "Flash read failed");
+
+	/* Compare read data to the pre-defined pattern */
+	for (int i = 0; i < BUFFER_SIZE_OVER_PACKET_LIMIT; i++) {
+		zassert_equal(large_data_buf[i], pattern,
+			      "large_data_buf[%u]=%x read, does not match written pattern %x", i,
+			      large_data_buf[i], pattern);
+	}
+#endif
 }
 
 ZTEST(flash_driver, test_supply_gpios_control)
