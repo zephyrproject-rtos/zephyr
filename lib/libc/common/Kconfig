@@ -139,6 +139,12 @@ config COMMON_LIBC_FSEEK
 	help
 	  Common implementation of fseek().
 
+config COMMON_LIBC_FTELL
+	bool "Common C library ftell"
+	default y if ZVFS
+	help
+	  Common implementation of ftell().
+
 config COMMON_LIBC_RENAME
 	bool "Common C library rename"
 	default y if ZVFS

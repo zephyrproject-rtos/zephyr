@@ -24,6 +24,7 @@ zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_FOPEN source/stdio/fopen.c)
 zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_FCLOSE source/stdio/fclose.c)
 zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_FSEEK source/stdio/fseek.c)
 zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_FPUTC source/stdio/fputc.c)
+zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_FTELL source/stdio/ftell.c)
 zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_RENAME source/stdio/rename.c)
 zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_REMOVE source/stdio/remove.c)
 
