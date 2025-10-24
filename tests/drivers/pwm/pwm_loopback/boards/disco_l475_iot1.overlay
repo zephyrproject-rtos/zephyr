@@ -18,6 +18,7 @@
 /* 32-Bit timers */
 &timers2 {
 	status = "okay";
+
 	pwm2: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim2_ch1_pa5>; /* CN1 D13 */
@@ -27,6 +28,7 @@
 
 &timers5 {
 	status = "okay";
+
 	pwm5: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim5_ch1_pa0>; /* CN3 D1 */
@@ -38,6 +40,7 @@
 &timers3 {
 	status = "okay";
 	st,prescaler = <255>;
+
 	pwm3: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim3_ch1_pa6>; /* CN1 D12 */
@@ -48,6 +51,7 @@
 &timers15 {
 	status = "okay";
 	st,prescaler = <255>;
+
 	pwm15: pwm {
 		status = "okay";
 		pinctrl-0 = <&tim15_ch1_pa2>; /* CN1 D10 */
