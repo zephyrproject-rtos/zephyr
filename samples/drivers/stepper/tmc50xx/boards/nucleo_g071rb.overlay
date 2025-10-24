@@ -9,6 +9,7 @@
 	pinctrl-names = "default";
 	cs-gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
 	status = "okay";
+
 	tmc50xx: tmc50xx@0 {
 		compatible = "adi,tmc50xx";
 		reg = <0>;

@@ -17,7 +17,6 @@
 #include "nsim_em.dtsi"
 
 / {
-
 	model = "nsim_sem_normal";
 	compatible = "snps,nsim_sem_normal";
 

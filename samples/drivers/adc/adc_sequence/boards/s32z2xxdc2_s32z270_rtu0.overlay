@@ -10,6 +10,7 @@
 	aliases {
 		adc0 = &sar_adc0;
 	};
+
 	zephyr,user {
 		io-channels = <&sar_adc0 3>, <&sar_adc0 4>, <&sar_adc0 5>, <&sar_adc0 6>;
 	};

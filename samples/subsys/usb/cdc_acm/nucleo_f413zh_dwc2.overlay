@@ -29,6 +29,7 @@ zephyr_udc0: &dwc2_fsotg0 {
 	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
 	pinctrl-names = "default";
 	status = "okay";
+
 	cdc_acm_uart0 {
 		compatible = "zephyr,cdc-acm-uart";
 	};
