@@ -138,6 +138,7 @@
 				reg = <0x24>;
 				status = "okay";
 				data-bits = <0x4>;
+
 				port {
 					hm01b0_ep_out: endpoint {
 						remote-endpoint-label = "";

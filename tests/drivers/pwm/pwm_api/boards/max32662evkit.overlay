@@ -16,6 +16,7 @@
 
 &timer0 {
 	status = "okay";
+
 	pwm0: pwm {
 		status = "okay";
 		pinctrl-0 = <&tmr0c_oa_p0_3>;

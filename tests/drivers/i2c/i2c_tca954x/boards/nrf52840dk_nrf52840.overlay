@@ -6,6 +6,7 @@
 
 &i2c0 {
 	status = "okay";
+
 	mux: tca9546a@77 {
 		compatible = "ti,tca9546a";
 		reg = <0x77>;

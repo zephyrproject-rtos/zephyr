@@ -21,6 +21,7 @@
 &i2c2 {
 	/* i2c2 is disabled by default because of pin conflict with can1 */
 	status = "okay";
+
 	eeprom1: eeprom@56 {
 		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x56>;

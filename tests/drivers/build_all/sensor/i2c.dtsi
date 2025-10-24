@@ -593,6 +593,7 @@ test_i2c_fdc2x1x: fdc2x1x@54 {
 	sd-gpios = <&test_gpio 0 0>;
 	deglitch = <5>;
 	fref = <43360>;
+
 	channel_0 {
 		rcount = <7499>;
 		settlecount = <48>;

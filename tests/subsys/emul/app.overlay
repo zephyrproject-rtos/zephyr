@@ -23,6 +23,7 @@
 		status = "okay";
 		scale = <1>;
 	};
+
 	emul_tester_b: driver@bb {
 		compatible = "vnd,emul-tester";
 		reg = <0xbb>;
