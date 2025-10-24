@@ -183,6 +183,22 @@ static int siwx91x_gpdma_desc_config(struct siwx19x_gpdma_data *data,
 		}
 		if (block->source_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) {
 			desc->chnlCtrlConfig.srcFifoMode = 1;
+			/* HACK: GPDMA does not support DMA_ADDR_ADJ_NO_CHANGE with a memory buffer.
+			 * So, instead of transferring the real data, we fill the peripheral with 0s
+			 * or 1s. It should be sufficient for most of the SPI usages. We hope the
+			 * users won't need any values other than 0x00 of 0xFF.
+			 */
+			if (config->channel_direction == MEMORY_TO_PERIPHERAL) {
+				desc->miscChnlCtrlConfig.memoryFillEn = 1;
+				if (*(uint8_t *)block->source_address == 0xFF) {
+					desc->miscChnlCtrlConfig.memoryOneFill = 1;
+				} else if (*(uint8_t *)block->source_address == 0x00) {
+					desc->miscChnlCtrlConfig.memoryOneFill = 0;
+				} else {
+					LOG_ERR("Only 0xFF and 0x00 are supported as input");
+					goto free_desc;
+				}
+			}
 		}
 
 
