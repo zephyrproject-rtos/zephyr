@@ -127,6 +127,12 @@ config COMMON_LIBC_FCLOSE
 	help
 	  Common implementation of fclose().
 
+config COMMON_LIBC_FEOF
+	bool "Common C library feof"
+	default y if ZVFS
+	help
+	  Common implementation of feof().
+
 config COMMON_LIBC_FPUTC
 	bool "Common C library fputc"
 	default y if ZVFS

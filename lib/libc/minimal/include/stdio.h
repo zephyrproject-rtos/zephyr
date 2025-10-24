@@ -78,6 +78,14 @@ FILE *fopen(const char *ZRESTRICT filename, const char *ZRESTRICT mode);
  * @return 0 on success; EOF with errno set on failure
  */
 int fclose(FILE *stream);
+/**
+ * @brief Test if stream has reached end-of-file.
+ *
+ * @param stream Stream to check
+ *
+ * @return 1 if file position indicator is at end of file; EOF with errno set otherwise
+ */
+int feof(FILE *stream);
 int fputc(int c, FILE *stream);
 /**
  * @brief Place file position indicator.
