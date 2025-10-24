@@ -145,62 +145,57 @@ static int siwx91x_gpdma_desc_config(struct siwx19x_gpdma_data *data,
 				     const RSI_GPDMA_DESC_T *xfer_cfg, uint32_t channel)
 {
 	int operation_width = config->source_data_size * config->source_burst_length;
-	const struct dma_block_config *block_addr = config->head_block;
-	RSI_GPDMA_DESC_T *cur_desc = NULL;
-	RSI_GPDMA_DESC_T *prev_desc = NULL;
+	const struct dma_block_config *block = config->head_block;
+	RSI_GPDMA_DESC_T *desc, *prev = NULL;
 	k_spinlock_key_t key;
 	int ret;
 
 	for (int i = 0; i < config->block_count; i++) {
-		if (!IS_ALIGNED(block_addr->source_address, config->source_burst_length) ||
-		    !IS_ALIGNED(block_addr->dest_address, config->dest_burst_length) ||
-		    !IS_ALIGNED(block_addr->block_size, operation_width)) {
+		if (!IS_ALIGNED(block->source_address, config->source_burst_length) ||
+		    !IS_ALIGNED(block->dest_address, config->dest_burst_length) ||
+		    !IS_ALIGNED(block->block_size, operation_width)) {
 			LOG_ERR("Buffer not aligned");
 			goto free_desc;
 		}
-		if (block_addr->block_size >= GPDMA_DESC_MAX_TRANSFER_SIZE) {
-			LOG_ERR("Buffer too large (%d bytes)", block_addr->block_size);
+		if (block->block_size >= GPDMA_DESC_MAX_TRANSFER_SIZE) {
+			LOG_ERR("Buffer too large (%d bytes)", block->block_size);
 			goto free_desc;
 		}
 
 		key = k_spin_lock(&data->desc_pool_lock);
-		ret = sys_mem_blocks_alloc(data->desc_pool, 1, (void **)&cur_desc);
+		ret = sys_mem_blocks_alloc(data->desc_pool, 1, (void **)&desc);
 		k_spin_unlock(&data->desc_pool_lock, key);
 		if (ret) {
 			goto free_desc;
 		}
 
-		memset(cur_desc, 0, 32);
-
+		memset(desc, 0, 32);
 		ret = RSI_GPDMA_BuildDescriptors(&data->hal_ctx, (RSI_GPDMA_DESC_T *)xfer_cfg,
-						 cur_desc, NULL);
+						 desc, NULL);
 		if (ret) {
 			goto free_desc;
 		}
-
-		cur_desc->src = (void *)block_addr->source_address;
-		cur_desc->dest = (void *)block_addr->dest_address;
-		cur_desc->chnlCtrlConfig.transSize = block_addr->block_size;
-
-		if (block_addr->dest_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) {
-			cur_desc->chnlCtrlConfig.dstFifoMode = 1;
+		desc->src = (void *)block->source_address;
+		desc->dest = (void *)block->dest_address;
+		desc->chnlCtrlConfig.transSize = block->block_size;
+		if (block->dest_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) {
+			desc->chnlCtrlConfig.dstFifoMode = 1;
 		}
-
-		if (block_addr->source_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) {
-			cur_desc->chnlCtrlConfig.srcFifoMode = 1;
+		if (block->source_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) {
+			desc->chnlCtrlConfig.srcFifoMode = 1;
 		}
 
 
-		if (prev_desc) {
-			prev_desc->pNextLink = (void *)cur_desc;
+		if (prev) {
+			prev->pNextLink = (void *)desc;
 		} else {
-			data->chan_info[channel].desc = cur_desc;
+			data->chan_info[channel].desc = desc;
 		}
-		prev_desc = cur_desc;
-		block_addr = block_addr->next_block;
+		prev = desc;
+		block = block->next_block;
 	}
 
-	if (block_addr != NULL) {
+	if (block != NULL) {
 		/* next_block address for last block must be null */
 		goto free_desc;
 	}
