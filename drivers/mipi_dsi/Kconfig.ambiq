@@ -6,6 +6,6 @@ config MIPI_DSI_AMBIQ
 	default y
 	depends on DT_HAS_AMBIQ_MIPI_DSI_ENABLED
 	select AMBIQ_HAL_USE_DSI
-	select AMBIQ_COMPONENT_USE_NEMASDK if SOC_SERIES_APOLLO5X
+	select AMBIQ_COMPONENT_USE_NEMADC
 	help
 	  AMBIQ MIPI DSI controller driver

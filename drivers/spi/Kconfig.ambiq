@@ -68,7 +68,7 @@ config SPI_AMBIQ_DCIF
 	depends on DT_HAS_AMBIQ_SPI_DCIF_ENABLED
 	select GPIO
 	select AMBIQ_HAL
-	select AMBIQ_COMPONENT_USE_NEMASDK
+	select AMBIQ_COMPONENT_USE_NEMADC
 	help
 	  Enable driver for Ambiq SPI/DSPI/QSPI in controller mode.
 

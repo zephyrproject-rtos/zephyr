@@ -9,12 +9,19 @@ config AMBIQ_COMPONENT_USE_BT
 	help
 	  Use Bluetooth component from Ambiq
 
-config AMBIQ_COMPONENT_USE_NEMASDK
+DT_CHOSEN_AMBIQ_GPU := ambiq,gpu
+
+config AMBIQ_COMPONENT_USE_NEMAGFX
+	bool
+	default y
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_AMBIQ_GPU))
+
+config AMBIQ_COMPONENT_USE_NEMADC
 	bool
 
-if AMBIQ_COMPONENT_USE_NEMASDK
+if AMBIQ_COMPONENT_USE_NEMAGFX
 
-config MAX_PENDING_COMMAND_LIST
+config NEMAGFX_MAX_PENDING_COMMAND_LIST
 	int "max value for pending command list"
 	default 100
 	range 10 200
@@ -47,21 +54,24 @@ config NEMAGFX_CPU_ONLY_HEAP_IN_DTCM
 	bool "Locate NemaGFX CPU only heap in DTCM"
 	default y
 
-
-config GPU_WAIT_IRQ_TIMEOUT_MS
+config NEMAGFX_WAIT_GPU_IRQ_TIMEOUT_MS
 	int "timeout value to wait for GPU complete IRQ, unit: ms"
-	default 500
-
-config DC_WAIT_VSYNC_TIMEOUT_MS
-	int "timeout value to wait for DC VSYNC IRQ, unit: ms"
 	default 500
 
 module = NEMAGFX
 module-str = nemagfx
 source "subsys/logging/Kconfig.template.log_config"
 
+endif #AMBIQ_COMPONENT_USE_NEMAGFX
+
+if AMBIQ_COMPONENT_USE_NEMADC
+
+config NEMADC_WAIT_DC_VSYNC_TIMEOUT_MS
+	int "timeout value to wait for DC VSYNC IRQ, unit: ms"
+	default 500
+
 module = NEMADC
 module-str = nemadc
 source "subsys/logging/Kconfig.template.log_config"
 
-endif #AMBIQ_COMPONENT_USE_NEMASDK
+endif #AMBIQ_COMPONENT_USE_NEMADC
