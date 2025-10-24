@@ -55,6 +55,9 @@ void soc_early_init_hook(void)
 	if (IS_ENABLED(CONFIG_PM)) {
 		sl_power_manager_init();
 	}
+	if (IS_ENABLED(CONFIG_SOC_GECKO_USE_RAIL)) {
+		rail_isr_installer();
+	}
 }
 
 #if defined(CONFIG_ARM_SECURE_FIRMWARE) && !defined(CONFIG_ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS)
@@ -114,9 +117,5 @@ void soc_prep_hook(void)
 
 	IRQ_DIRECT_CONNECT(SMU_SECURE_IRQn, 0, smu_fault, 0);
 	irq_enable(SMU_SECURE_IRQn);
-
-	if (IS_ENABLED(CONFIG_SOC_GECKO_USE_RAIL)) {
-		rail_isr_installer();
-	}
 #endif
 }
