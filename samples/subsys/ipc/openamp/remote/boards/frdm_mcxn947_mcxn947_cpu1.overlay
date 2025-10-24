@@ -16,6 +16,7 @@
 
 	/* Delete MBOX Driver node */
 	/delete-node/ mbox@b2000;
+
 	soc {
 		mailbox0: mailbox@400b2000 {
 			compatible = "nxp,lpc-mailbox";

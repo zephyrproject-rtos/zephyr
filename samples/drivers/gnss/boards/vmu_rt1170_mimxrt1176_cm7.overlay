@@ -8,6 +8,7 @@
 	aliases {
 		gnss = &gnss;
 	};
+
 	chosen {
 		zephyr,rtk-serial = &lpuart1;
 	};

@@ -16,5 +16,4 @@
 		zephyr,ipc_shm = &dram_m33s_m71_sh_mem;
 		zephyr,ipc = &mailbox_m33s_m71_for_m33s_as_master;
 	};
-
 };

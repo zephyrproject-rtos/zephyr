@@ -11,13 +11,13 @@
 };
 
 &pinctrl {
-
 	uart1_default: uart1_default {
 		group1 {
 			pinmux = <UART1_TX_GPIO5>,
 				 <UART1_RX_GPIO18>,
 				 <UART1_RTS_GPIO19>;
 		};
+
 		group2 {
 			pinmux = <UART1_CTS_GPIO23>;
 			bias-pull-up;
