@@ -302,7 +302,7 @@
 		status = "disabled";
 	};
 
-    /* MU4: MUB, Hifi4 to CPU0 */
+	/* MU4: MUB, Hifi4 to CPU0 */
 	mbox4_b: mbox@188000 {
 		#mbox-cells = <1>;
 

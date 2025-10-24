@@ -80,11 +80,9 @@
 		#interrupt-cells = <3>;
 		compatible = "simple-bus";
 		interrupt-parent = <&intc>;
-		interrupts = <
-			6 IRQ_TYPE_FIXED_LEVEL_HIGH 1
-			9 IRQ_TYPE_FIXED_LEVEL_HIGH 1
-			10 IRQ_TYPE_FIXED_LEVEL_HIGH 1
-		>;
+		interrupts = <6 IRQ_TYPE_FIXED_LEVEL_HIGH 1
+			      9 IRQ_TYPE_FIXED_LEVEL_HIGH 1
+			      10 IRQ_TYPE_FIXED_LEVEL_HIGH 1>;
 		interrupt-names = "reset_prep", "pcidev", "pmu2ioapic";
 		ranges;
 
