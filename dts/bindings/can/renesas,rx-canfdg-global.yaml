@@ -1,0 +1,25 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RX CANFD Gateway controller global
+
+compatible: "renesas,rx-canfdg-global"
+
+include: [base.yaml]
+
+properties:
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  dll-min-freq:
+    type: int
+    description: |
+      Specifies the Data Link Layer clock limit on this device: DLL clock frequency > dll-min-freq.
+
+  dll-max-freq:
+    type: int
+    description: |
+      Specifies the Data Link Layer clock limit on this device: DLL clock frequency <= dll-max-freq.
