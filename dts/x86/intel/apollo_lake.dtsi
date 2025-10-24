@@ -402,7 +402,6 @@
 
 			status = "okay";
 		};
-
 	};
 
 	gpio_n: gpio-north {
