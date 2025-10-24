@@ -44,7 +44,7 @@ zephyr_library_sources_ifdef(CONFIG_INPUT_XEC_KBD input_xec_kbd.c)
 zephyr_library_sources_ifdef(CONFIG_INPUT_XPT2046 input_xpt2046.c)
 # zephyr-keep-sorted-stop
 
-if (CONFIG_INPUT_SDL_TOUCH)
+if(CONFIG_INPUT_SDL_TOUCH)
   zephyr_library_sources(input_sdl_touch.c)
   target_sources(native_simulator INTERFACE input_sdl_touch_bottom.c)
 endif()

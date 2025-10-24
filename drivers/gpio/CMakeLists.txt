@@ -136,7 +136,7 @@ zephyr_library_sources_ifdef(CONFIG_GPIO_SHELL      gpio_shell.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   gpio_handlers.c)
 # zephyr-keep-sorted-stop
 
-if (CONFIG_GPIO_EMUL_SDL)
+if(CONFIG_GPIO_EMUL_SDL)
   zephyr_library_sources(gpio_emul_sdl.c)
   target_sources(native_simulator INTERFACE gpio_emul_sdl_bottom.c)
 endif()

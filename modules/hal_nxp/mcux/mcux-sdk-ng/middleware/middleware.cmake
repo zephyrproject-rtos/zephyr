@@ -36,7 +36,7 @@ if(CONFIG_UDC_DRIVER)
   zephyr_include_directories(${MCUX_SDK_NG_DIR}/middleware/usb/include)
 endif()
 
-if (CONFIG_UHC_DRIVER)
+if(CONFIG_UHC_DRIVER)
   zephyr_include_directories(middleware)
 
   set(CONFIG_MCUX_COMPONENT_middleware.usb.common_header ON)
