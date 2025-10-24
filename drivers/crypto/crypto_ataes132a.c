@@ -636,9 +636,9 @@ int ataes132a_aes_ecb_block(const struct device *dev,
 	param_buffer[1] = key_id;
 	param_buffer[2] = 0x0;
 	memcpy(param_buffer + 3, pkt->in_buf, buf_len);
-	/* If buf_len is less than 16,
-         * zero-pad the payload in param_buffer to a 16-byte block.
-         */
+	/* If buf_len is less than 16 bytes,
+	 * zero-pad the payload in param_buffer to a 16-byte block.
+	 */
 	if (buf_len < 16U) {
 		(void)memset(param_buffer + 3 + buf_len, 0x0, 16U - buf_len);
 	}
