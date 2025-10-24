@@ -18,9 +18,11 @@
 	/* Wire J22 3 <-> 5 and J22 4 <-> 6 */
 	encoder-emulate {
 		compatible = "gpio-leds";
+
 		phase_a: phase_a {
 			gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
 		};
+
 		phase_b: phase_b {
 			gpios = <&gpio1 24 GPIO_ACTIVE_HIGH>;
 		};
