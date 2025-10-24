@@ -18,10 +18,6 @@
 #include <stdbool.h>
 #include <zephyr/sys/atomic.h>
 
-#ifndef CONFIG_ARCH_POSIX
-#include <zephyr/net/net_ip.h>
-#include <zephyr/net/net_pkt.h>
-#endif
 #include <zephyr/net/lldp.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/net/net_if.h>
