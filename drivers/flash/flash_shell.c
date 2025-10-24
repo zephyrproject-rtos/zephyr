@@ -764,52 +764,50 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 	entry->subcmd = &dsub_device_name;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(flash_cmds,
-	SHELL_CMD_ARG(copy, &dsub_device_name,
-		"<src_device> <dst_device> <src_offset> <dst_offset> <size>",
-		cmd_copy, 5, 5),
-	SHELL_CMD_ARG(erase, &dsub_device_name,
-		"[<device>] <page address> [<size>]",
-		cmd_erase, 2, 2),
-	SHELL_CMD_ARG(read, &dsub_device_name,
-		"[<device>] <address> [<Dword count>]",
-		cmd_read, 2, 2),
-	SHELL_CMD_ARG(test, &dsub_device_name,
-		"[<device>] <address> <size> <repeat count>",
-		cmd_test, 4, 1),
-	SHELL_CMD_ARG(write, &dsub_device_name,
-		"[<device>] <address> <dword> [<dword>...]",
-		cmd_write, 3, BUF_ARRAY_CNT),
-	SHELL_CMD_ARG(load, &dsub_device_name,
-		"[<device>] <address> <size>",
-		cmd_load, 3, 1),
-	SHELL_CMD_ARG(page_info, &dsub_device_name,
-		"[<device>] <address>",
-		cmd_page_info, 2, 1),
+SHELL_SUBCMD_SET_CREATE(flash_cmds, (flash));
+
+SHELL_SUBCMD_ADD((flash), copy, &dsub_device_name,
+	"<src_device> <dst_device> <src_offset> <dst_offset> <size>",
+	cmd_copy, 5, 5);
+SHELL_SUBCMD_ADD((flash), erase, &dsub_device_name,
+	"[<device>] <page address> [<size>]",
+	cmd_erase, 2, 2);
+SHELL_SUBCMD_ADD((flash), read, &dsub_device_name,
+	"[<device>] <address> [<Dword count>]",
+	cmd_read, 2, 2);
+SHELL_SUBCMD_ADD((flash), test, &dsub_device_name,
+	"[<device>] <address> <size> <repeat count>",
+	cmd_test, 4, 1);
+SHELL_SUBCMD_ADD((flash), write, &dsub_device_name,
+	"[<device>] <address> <dword> [<dword>...]",
+	cmd_write, 3, BUF_ARRAY_CNT);
+SHELL_SUBCMD_ADD((flash), load, &dsub_device_name,
+	"[<device>] <address> <size>",
+	cmd_load, 3, 1);
+SHELL_SUBCMD_ADD((flash), page_info, &dsub_device_name,
+	"[<device>] <address>",
+	cmd_page_info, 2, 1);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(fixed_partitions)
-	SHELL_CMD_ARG(partitions, &dsub_device_name,
-		"",
-		cmd_partitions, 0, 0),
+SHELL_SUBCMD_ADD((flash), partitions, &dsub_device_name,
+	"",
+	cmd_partitions, 0, 0);
 #endif
 
 #ifdef CONFIG_FLASH_SHELL_TEST_COMMANDS
-	SHELL_CMD_ARG(read_test, &dsub_device_name,
-		"[<device>] <address> <size> <repeat count>",
-		cmd_read_test, 4, 1),
-	SHELL_CMD_ARG(write_test, &dsub_device_name,
-		"[<device>] <address> <size> <repeat count>",
-		cmd_write_test, 4, 1),
-	SHELL_CMD_ARG(erase_test, &dsub_device_name,
-		"[<device>] <address> <size> <repeat count>",
-		cmd_erase_test, 4, 1),
-	SHELL_CMD_ARG(erase_write_test, &dsub_device_name,
-		"[<device>] <address> <size> <repeat count>",
-		cmd_erase_write_test, 4, 1),
+SHELL_SUBCMD_ADD((flash), read_test, &dsub_device_name,
+	"[<device>] <address> <size> <repeat count>",
+	cmd_read_test, 4, 1);
+SHELL_SUBCMD_ADD((flash), write_test, &dsub_device_name,
+	"[<device>] <address> <size> <repeat count>",
+	cmd_write_test, 4, 1);
+SHELL_SUBCMD_ADD((flash), erase_test, &dsub_device_name,
+	"[<device>] <address> <size> <repeat count>",
+	cmd_erase_test, 4, 1);
+SHELL_SUBCMD_ADD((flash), erase_write_test, &dsub_device_name,
+	"[<device>] <address> <size> <repeat count>",
+	cmd_erase_write_test, 4, 1);
 #endif
-
-	SHELL_SUBCMD_SET_END
-);
 
 static int cmd_flash(const struct shell *sh, size_t argc, char **argv)
 {
