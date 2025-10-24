@@ -14,18 +14,22 @@
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(128)>;
 		};
+
 		slot0_partition: partition@20000 {
 			label = "image-0";
 			reg = <0x00020000 (DT_SIZE_M(3) + DT_SIZE_K(8))>;
 		};
+
 		large_partition: partition@322000 {
 			label = "large";
 			reg = <0x00322000 DT_SIZE_M(3)>;
 		};
+
 		medium_partition: partition@622000 {
 			label = "medium";
 			reg = <0x00622000 DT_SIZE_K(960)>;
 		};
+
 		small_partition: partition@712000 {
 			label = "small";
 			reg = <0x00712000 DT_SIZE_K(64)>;
