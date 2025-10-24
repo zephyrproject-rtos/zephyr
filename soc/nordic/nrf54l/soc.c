@@ -32,10 +32,14 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #include <hal/nrf_oscillators.h>
 #include <hal/nrf_power.h>
 #include <hal/nrf_regulators.h>
+#include <helpers/nrfx_gppi.h>
+#include <helpers/nrfx_gppi_lumos.h>
 #include <zephyr/dt-bindings/regulator/nrf5x.h>
 
 #define LFXO_NODE DT_NODELABEL(lfxo)
 #define HFXO_NODE DT_NODELABEL(hfxo)
+
+static nrfx_gppi_t gppi_instance;
 
 static inline void power_and_clock_configuration(void)
 {
@@ -145,6 +149,28 @@ static inline void power_and_clock_configuration(void)
 }
 #endif /* NRF_APPLICATION && !CONFIG_TRUSTED_EXECUTION_NONSECURE */
 
+void gppi_init(void)
+{
+	gppi_instance.routes = nrfx_gppi_routes_get();
+	gppi_instance.route_map = nrfx_gppi_route_map_get();
+	gppi_instance.nodes = nrfx_gppi_nodes_get();
+
+	nrfx_gppi_channel_init(NRFX_GPPI_NODE_DPPIC00, NRFX_BIT_MASK(DPPIC00_CH_NUM_SIZE));
+	nrfx_gppi_channel_init(NRFX_GPPI_NODE_DPPIC10, NRFX_BIT_MASK(DPPIC10_CH_NUM_SIZE));
+	nrfx_gppi_channel_init(NRFX_GPPI_NODE_DPPIC20, NRFX_BIT_MASK(DPPIC20_CH_NUM_SIZE));
+	nrfx_gppi_channel_init(NRFX_GPPI_NODE_DPPIC30, NRFX_BIT_MASK(DPPIC30_CH_NUM_SIZE));
+	nrfx_gppi_channel_init(NRFX_GPPI_NODE_PPIB00_10, NRFX_BIT_MASK(PPIB10_NTASKSEVENTS_SIZE));
+	nrfx_gppi_channel_init(NRFX_GPPI_NODE_PPIB11_21, NRFX_BIT_MASK(PPIB11_NTASKSEVENTS_SIZE));
+	nrfx_gppi_channel_init(NRFX_GPPI_NODE_PPIB01_20, NRFX_BIT_MASK(PPIB01_NTASKSEVENTS_SIZE));
+	nrfx_gppi_channel_init(NRFX_GPPI_NODE_PPIB22_30, NRFX_BIT_MASK(PPIB22_NTASKSEVENTS_SIZE));
+
+	nrfx_gppi_groups_init(NRFX_GPPI_NODE_DPPIC00, NRFX_BIT_MASK(DPPIC00_GROUP_NUM_SIZE));
+	nrfx_gppi_groups_init(NRFX_GPPI_NODE_DPPIC10, NRFX_BIT_MASK(DPPIC10_GROUP_NUM_SIZE));
+	nrfx_gppi_groups_init(NRFX_GPPI_NODE_DPPIC20, NRFX_BIT_MASK(DPPIC20_GROUP_NUM_SIZE));
+	nrfx_gppi_groups_init(NRFX_GPPI_NODE_DPPIC30, NRFX_BIT_MASK(DPPIC30_GROUP_NUM_SIZE));
+	nrfx_gppi_init(&gppi_instance);
+}
+
 int nordicsemi_nrf54l_init(void)
 {
 	/* Update the SystemCoreClock global variable with current core clock
@@ -158,6 +184,10 @@ int nordicsemi_nrf54l_init(void)
 	!defined(__ZEPHYR__)
 	power_and_clock_configuration();
 #endif
+
+	if (IS_ENABLED(CONFIG_NRFX_GPPI) && !IS_ENABLED(CONFIG_NRFX_GPPI_V1)) {
+		gppi_init();
+	}
 
 	return 0;
 }
