@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef BAP_UNICAST_SR_H
-#define BAP_UNICAST_SR_H
+#ifndef BAP_INTERNAL_H
+#define BAP_INTERNAL_H
 
 #include <stdbool.h>
 
@@ -16,4 +16,10 @@
  */
 bool bap_unicast_sr_has_connection(void);
 
-#endif /* BAP_UNICAST_SR_H */
+/**
+ * @brief Give the semaphore sem_conencted
+ *
+ */
+void bap_broadcast_snk_signal_connected(void);
+
+#endif /* BAP_INTERNAL_H */

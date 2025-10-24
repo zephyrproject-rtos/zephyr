@@ -29,7 +29,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
-#include "bap_unicast_sr.h"
+#include "bap_internal.h"
 
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
@@ -382,6 +382,8 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 	printk("Connected: %s\n", addr);
 	default_conn = bt_conn_ref(conn);
+
+	bap_broadcast_snk_signal_connected();
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)

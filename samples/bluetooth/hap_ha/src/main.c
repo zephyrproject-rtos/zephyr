@@ -245,5 +245,8 @@ int main(void)
 
 	k_work_init_delayable(&adv_work, adv_work_handler);
 	k_work_schedule(&adv_work, K_NO_WAIT);
+
+	start_broadcast_snk_thread();
+
 	return 0;
 }
