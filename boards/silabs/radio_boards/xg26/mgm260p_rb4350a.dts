@@ -198,7 +198,6 @@
 	status = "okay";
 };
 
-
 &eusart1 {
 	compatible = "silabs,eusart-spi";
 	#address-cells = <1>;

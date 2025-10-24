@@ -22,10 +22,9 @@
 	dram: memory@80000000 {
 		reg = <0x80000000 DT_SIZE_M(1)>;
 	};
-
 };
 
-&gpio3{
+&gpio3 {
 	status = "okay";
 };
 
@@ -50,6 +49,7 @@
 	read-watermark = <0x10>;
 	write-watermark = <0x80>;
 	status = "disabled";
+
 	mmc {
 		compatible = "zephyr,mmc-disk";
 		disk-name = "SD2";
@@ -70,6 +70,7 @@
 	read-watermark = <0x10>;
 	write-watermark = <0x80>;
 	status = "disabled";
+
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
 		disk-name = "SD";

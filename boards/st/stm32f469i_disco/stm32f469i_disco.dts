@@ -104,7 +104,7 @@
 	mul-n = <266>;
 	div-p = <2>;
 	div-r = <5>;
-	div-divr  = <2>;
+	div-divr = <2>;
 	clocks = <&clk_hse>;
 	status = "okay";
 };
@@ -263,6 +263,7 @@ zephyr_udc0: &usbotg_fs {
 	def-back-color-green = <0>;
 	def-back-color-blue = <0>;
 	status = "okay";
+
 	/* orisetech, otm8009a */
 	display-timings {
 		compatible = "zephyr,panel-timing";

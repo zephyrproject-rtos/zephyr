@@ -10,6 +10,7 @@
 #include <realtek/ec/rts5912-pinctrl.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/gpio/realtek-gpio.h>
+
 / {
 	model = "Realtek RTS5912 Evaluation Board";
 	compatible = "realtek,rts5912-evb";

@@ -67,8 +67,8 @@
 			   <9 0 &ioport8 9 0>,	/* TX   */
 			   <10 0 &ioport5 12 0>, /* SCL  */
 			   <11 0 &ioport5 11 0>; /* SDA  */
-			   /* +5V */
-			   /* GND */
+		/* +5V */
+		/* GND */
 	};
 
 	arducam_ffc_40pin_connector: arducam-ffc-40pin-connector {

@@ -150,6 +150,7 @@
 		drive-open-drain;
 		input-enable;
 	};
+
 	i2c0_sda_default: i2c0_sda_default {
 		pinmux = <0 DIO0_I2C0_SDA>;
 		bias-pull-up;
