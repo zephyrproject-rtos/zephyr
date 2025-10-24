@@ -27,7 +27,7 @@ programmer for the STM32 MCU, with a USB Virtual COM port bridge and the compreh
 Hardware
 ********
 
-- STM32N657X0H3Q Arm® Cortex®‑M55‑based microcontroller featuring ST Neural-ART Accelerator,
+- STM32N657X0H3Q Arm® Cortex®‑M55‑based microcontroller featuring ST Neural-ART Accelerator™,
   H264 encoder, NeoChrom 2.5D GPU, and 4.2 Mbytes of contiguous SRAM, in a VFBGA264 package
 - 5" LCD module with capacitive touch panel
 - USB Type-C® with USB 2.0 HS interface, dual‑role‑power (DRP)
@@ -72,6 +72,13 @@ Video
 STM32N6570-DK features a CSI camera module with a high-resolution 5‑Mpx CMOS RGB image sensor.
 This camera outputs images in RAW Bayer format which require signal processing to be displayed with
 real life colors. This Image Signal Processing could be done with a dedicated `STM32 ISP module`_.
+
+NPU
+===
+
+STM32N6570-DK also embeds the ST Neural-ART Accelerator |trade| as NPU engineered for power-efficient edge
+AI applications, such as the `Zephyr computer vision application`_ which is available as a separate
+Zephyr application.
 
 USB
 ===
@@ -389,3 +396,6 @@ To do so, it is advised to use Twister's hardware map feature with the following
 
 .. _STM32 ISP module:
    https://github.com/stm32-hotspot/zephyr-stm32-mw-isp
+
+.. _Zephyr computer vision application:
+   https://github.com/stm32-hotspot/zephyr-stm32n6-ai-people-detection
