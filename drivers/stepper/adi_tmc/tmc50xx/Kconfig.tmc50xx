@@ -12,6 +12,6 @@ if STEPPER_ADI_TMC50XX
 
 module = TMC50XX
 module-str = tmc50xx
-rsource "Kconfig.tmc_rampgen_template"
+source "drivers/stepper/adi_tmc/Kconfig.tmc_rampgen_template"
 
-endif # STEPPER_ADI_TMC51XX
+endif # STEPPER_ADI_TMC50XX
