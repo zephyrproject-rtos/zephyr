@@ -170,14 +170,10 @@ static int siwx91x_gpdma_desc_config(struct siwx19x_gpdma_data *data,
 			goto free_desc;
 		}
 
-		if (prev_desc == NULL) {
-			data->chan_info[channel].desc = cur_desc;
-		}
-
 		memset(cur_desc, 0, 32);
 
 		ret = RSI_GPDMA_BuildDescriptors(&data->hal_ctx, (RSI_GPDMA_DESC_T *)xfer_cfg,
-						 cur_desc, prev_desc);
+						 cur_desc, NULL);
 		if (ret) {
 			goto free_desc;
 		}
@@ -194,6 +190,12 @@ static int siwx91x_gpdma_desc_config(struct siwx19x_gpdma_data *data,
 			cur_desc->chnlCtrlConfig.srcFifoMode = 1;
 		}
 
+
+		if (prev_desc) {
+			prev_desc->pNextLink = (void *)cur_desc;
+		} else {
+			data->chan_info[channel].desc = cur_desc;
+		}
 		prev_desc = cur_desc;
 		block_addr = block_addr->next_block;
 	}
