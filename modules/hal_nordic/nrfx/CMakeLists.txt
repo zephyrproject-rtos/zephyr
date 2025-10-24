@@ -18,7 +18,13 @@ endif()
 set(INC_DIR ${NRFX_DIR}/drivers/include)
 set(SRC_DIR ${NRFX_DIR}/drivers/src)
 set(HELPERS_DIR ${NRFX_DIR}/helpers)
-set(BSP_DIR ${NRFX_DIR}/bsp/${CONFIG_SOC_NORDIC_BSP_NAME})
+
+if(DEFINED CONFIG_SOC_NORDIC_BSP_PATH_OVERRIDE)
+  set(BSP_DIR ${ZEPHYR_CURRENT_MODULE_DIR}/${CONFIG_SOC_NORDIC_BSP_PATH_OVERRIDE}/${CONFIG_SOC_NORDIC_BSP_NAME})
+else()
+  set(BSP_DIR ${NRFX_DIR}/bsp/${CONFIG_SOC_NORDIC_BSP_NAME})
+endif()
+
 set(MDK_DIR ${BSP_DIR}/mdk)
 
 zephyr_include_directories(${NRFX_DIR})
