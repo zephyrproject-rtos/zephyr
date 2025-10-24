@@ -264,7 +264,6 @@
 			bias-pull-up;
 		};
 	};
-
 };
 
 &pit64b0 {
