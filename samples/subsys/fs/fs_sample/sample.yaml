@@ -16,6 +16,9 @@ tests:
         - "Sector size"
         - "Memory Size"
         - "Disk mounted"
+    extra_args:
+      - platform:ek_ra8m1/r7fa8m1ahecbd:SHIELD=pmod_sd
+      - platform:ek_ra8p1/r7ka8p1kflcac/cm85:SHIELD=pmod_sd
   sample.filesystem.fat_fs.overlay:
     platform_allow: nrf52840_blip
   sample.filesystem.fat_fs.adafruit_2_8_tft_touch_v2:
