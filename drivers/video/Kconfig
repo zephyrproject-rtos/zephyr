@@ -91,4 +91,6 @@ source "drivers/video/Kconfig.stm32_venc"
 source "drivers/video/Kconfig.sw_generator"
 # zephyr-keep-sorted-stop
 
+source "drivers/video/Kconfig.ov5642"
+
 endif # VIDEO
