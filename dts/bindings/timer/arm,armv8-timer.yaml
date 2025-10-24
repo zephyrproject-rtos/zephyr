@@ -7,3 +7,5 @@ include: base.yaml
 properties:
   interrupts:
     required: true
+  clock-frequency:
+    type: int
