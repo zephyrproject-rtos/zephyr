@@ -995,7 +995,7 @@
 	};
 
 	flexcan0: can@d4000 {
-		compatible = "nxp,flexcan";
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
 		reg = <0xd4000 0x4000>;
 		interrupts = <62 0>;
 		interrupt-names = "common";
