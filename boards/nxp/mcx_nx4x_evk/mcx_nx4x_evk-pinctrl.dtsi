@@ -254,8 +254,8 @@
 	pinmux_micfil: pinmux_micfil {
 		group0 {
 			pinmux = <PDM0_CLK_PIO0_16>,
-				<PDM0_DATA0_PIO0_17>,
-				<PDM0_DATA1_PIO0_18>;
+				 <PDM0_DATA0_PIO0_17>,
+				 <PDM0_DATA1_PIO0_18>;
 			slew-rate = "fast";
 			drive-strength = "low";
 			input-enable;
