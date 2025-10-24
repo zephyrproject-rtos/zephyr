@@ -79,6 +79,7 @@
 					compatible = "adi,adin2111-phy";
 					status = "okay";
 				};
+
 				ethernet-phy@7 {
 					reg = <0x7>;
 					compatible = "davicom,dm8806-phy";
