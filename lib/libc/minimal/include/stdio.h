@@ -79,6 +79,15 @@ FILE *fopen(const char *ZRESTRICT filename, const char *ZRESTRICT mode);
  */
 int fclose(FILE *stream);
 int fputc(int c, FILE *stream);
+/**
+ * @brief Change name of file or directory.
+ *
+ * @param old Prior name
+ * @param newp New name
+ *
+ * @return 0 on success; -1 with errno set on failure
+ */
+int rename(const char *old, const char *newp);
 int remove(const char *path);
 #define putc(c, stream) fputc(c, stream)
 #define putchar(c) putc(c, stdout)

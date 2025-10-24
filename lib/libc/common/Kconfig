@@ -133,6 +133,12 @@ config COMMON_LIBC_FPUTC
 	help
 	  Common implementation of fputc().
 
+config COMMON_LIBC_RENAME
+	bool "Common C library rename"
+	default y if ZVFS
+	help
+	  Common implementation of rename().
+
 config COMMON_LIBC_REMOVE
 	bool "Common C library remove"
 	depends on !SEMIHOST
