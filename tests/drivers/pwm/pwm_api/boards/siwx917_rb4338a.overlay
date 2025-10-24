@@ -23,6 +23,7 @@
 &pwm {
 	pinctrl-0 = <&pwm_ch>;
 	pinctrl-names = "default";
+
 	pwm_channel1: pwm_channel1 {
 		pwms = <&pwm 0 1000000>;
 	};
