@@ -1,9 +1,10 @@
 # Copyright (c) 2023 IoT.bzh
+# Copyright (c) 2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_RCAR_GEN4
+if SOC_R8A779F0_R52 || SOC_R8A779F0_A55
 
 config NUM_IRQS
 	default 1216 #960 SPI + 256 LPI
 
-endif # SOC_SERIES_RCAR_GEN4
+endif # SOC_R8A779F0_R52 || SOC_R8A779F0_A55
