@@ -77,3 +77,18 @@ sequence:
           "post_flash_timeout":
             type: int
             required: false
+          "pre_script_arg":
+            type: seq
+            required: false
+            sequence:
+              - type: str
+          "post_script_arg":
+            type: seq
+            required: false
+            sequence:
+              - type: str
+          "post_flash_script_arg":
+            type: seq
+            required: false
+            sequence:
+              - type: str
