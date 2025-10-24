@@ -149,6 +149,28 @@
 	};
 };
 
+&gmac0 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_gmac0_default>;
+	phy-connection-type = "gmii";
+	phy-handle = <&gmac0_phy>;
+};
+
+&gmac0_mdio {
+	status = "okay";
+
+	pinctrl-0 = <&pinctrl_gmac0_mdio_default>;
+	pinctrl-names = "default";
+
+	gmac0_phy: ethernet-phy@7 {
+		compatible = "microchip,ksz9131";
+		status = "okay";
+		reg = <7>;
+		int-gpios = <&pioa 31 GPIO_ACTIVE_LOW>;
+	};
+};
+
 &gmac1 {
 	status = "okay";
 	pinctrl-names = "default";
@@ -179,6 +201,36 @@
 			pinmux = <PIN_PD16__FLEXCOM3_IO0>,
 				 <PIN_PD17__FLEXCOM3_IO1>;
 			bias-pull-up;
+		};
+	};
+
+	pinctrl_gmac0_default: gmac0_default {
+		group1 {
+			pinmux = <PIN_PA16__G0_TX0>,
+				 <PIN_PA17__G0_TX1>,
+				 <PIN_PA26__G0_TX2>,
+				 <PIN_PA27__G0_TX3>,
+				 <PIN_PA19__G0_RX0>,
+				 <PIN_PA20__G0_RX1>,
+				 <PIN_PA28__G0_RX2>,
+				 <PIN_PA29__G0_RX3>,
+				 <PIN_PA15__G0_TXEN>,
+				 <PIN_PA30__G0_RXCK>,
+				 <PIN_PA18__G0_RXDV>,
+				 <PIN_PA25__G0_125CK>;
+			bias-disable;
+		};
+
+		gmac0_txck_default {
+			pinmux = <PIN_PA24__G0_TXCK>;
+			bias-pull-up;
+		};
+	};
+
+	pinctrl_gmac0_mdio_default: gmac0_mdio_default {
+		group1 {
+			pinmux = <PIN_PA22__G0_MDC>,
+				 <PIN_PA23__G0_MDIO>;
 		};
 	};
 
