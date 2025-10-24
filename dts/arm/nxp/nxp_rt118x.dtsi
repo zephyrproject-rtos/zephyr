@@ -1488,10 +1488,10 @@
 		pre-div = <0>;
 		podf = <12>;
 		pll-clocks = <&anatop 0 0 0>,
-				<&anatop 0 0 32>,
-				<&anatop 0 0 1>,
-				<&anatop 0 0 768>,
-				<&anatop 0 0 1000>;
+			     <&anatop 0 0 32>,
+			     <&anatop 0 0 1>,
+			     <&anatop 0 0 768>,
+			     <&anatop 0 0 1000>;
 		pll-clock-names = "src", "lp", "pd", "num", "den";
 		pinmuxes = <&blkctrl_ns_aon 0x20 0x100>;
 		interrupts = <45 0>;
@@ -1515,10 +1515,10 @@
 		pre-div = <0>;
 		podf = <12>;
 		pll-clocks = <&anatop 0 0 0>,
-				<&anatop 0 0 32>,
-				<&anatop 0 0 1>,
-				<&anatop 0 0 768>,
-				<&anatop 0 0 1000>;
+			     <&anatop 0 0 32>,
+			     <&anatop 0 0 1>,
+			     <&anatop 0 0 768>,
+			     <&anatop 0 0 1000>;
 		pll-clock-names = "src", "lp", "pd", "num", "den";
 		pinmuxes = <&blkctrl_wakeup 0x38 0x100>;
 		interrupts = <198 0>;
@@ -1542,10 +1542,10 @@
 		pre-div = <0>;
 		podf = <12>;
 		pll-clocks = <&anatop 0 0 0>,
-				<&anatop 0 0 32>,
-				<&anatop 0 0 1>,
-				<&anatop 0 0 768>,
-				<&anatop 0 0 1000>;
+			     <&anatop 0 0 32>,
+			     <&anatop 0 0 1>,
+			     <&anatop 0 0 768>,
+			     <&anatop 0 0 1000>;
 		pll-clock-names = "src", "lp", "pd", "num", "den";
 		pinmuxes = <&blkctrl_wakeup 0x3c 0x100>;
 		interrupts = <199 0>;
@@ -1569,10 +1569,10 @@
 		pre-div = <0>;
 		podf = <12>;
 		pll-clocks = <&anatop 0 0 0>,
-				<&anatop 0 0 32>,
-				<&anatop 0 0 1>,
-				<&anatop 0 0 768>,
-				<&anatop 0 0 1000>;
+			     <&anatop 0 0 32>,
+			     <&anatop 0 0 1>,
+			     <&anatop 0 0 768>,
+			     <&anatop 0 0 1000>;
 		pll-clock-names = "src", "lp", "pd", "num", "den";
 		pinmuxes = <&blkctrl_wakeup 0x40 0x100>;
 		interrupts = <154 0>;
@@ -1613,6 +1613,7 @@
 		reg = <0x0 DT_SIZE_K(512)>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+
 		ocram1_available: memory@4000 {
 			/* OCRAM1 first 16K access is blocked by TRDC */
 			reg = <0x0 DT_SIZE_K(496)>;

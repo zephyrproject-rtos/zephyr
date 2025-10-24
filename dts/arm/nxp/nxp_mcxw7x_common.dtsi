@@ -48,6 +48,7 @@
 				power-state-name = "suspend-to-idle";
 				exit-latency-us = <10>;
 			};
+
 			deep_sleep: deep-sleep {
 				compatible = "zephyr,power-state";
 				power-state-name = "standby";
@@ -434,9 +435,9 @@
 		reg = <0x2000 0x140>;
 		clocks = <&scg SCG_K4_EDMA_CLK 0x410>;
 		interrupts = <2 0>, <3 0>, <4 0>, <5 0>,
-			<6 0>, <7 0>, <8 0>, <9 0>,
-			<10 0>, <11 0>, <12 0>, <13 0>,
-			<14 0>, <15 0>, <16 0>, <17 0>;
+			     <6 0>, <7 0>, <8 0>, <9 0>,
+			     <10 0>, <11 0>, <12 0>, <13 0>,
+			     <14 0>, <15 0>, <16 0>, <17 0>;
 		status = "disabled";
 	};
 
