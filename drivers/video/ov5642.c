@@ -760,9 +760,9 @@ static int ov5642_set_ctrl(const struct device *dev, uint32_t id)
 		return ov5642_set_ctrl_saturation(dev, ctrls->saturation.val);
 	case VIDEO_CID_HUE:
 		return ov5642_set_ctrl_hue(dev, ctrls->hue.val);
+	default:
+		return -ENOTSUP;
 	}
-
-	return -ENOTSUP;
 }
 
 static DEVICE_API(video, ov5642_driver_api) = {
