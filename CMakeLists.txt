@@ -737,6 +737,31 @@ zephyr_get(KERNEL_VERSION_CUSTOMIZATION SYSBUILD LOCAL)
 set_property(TARGET version_h PROPERTY KERNEL_VERSION_CUSTOMIZATION ${KERNEL_VERSION_CUSTOMIZATION})
 
 if(EXISTS ${APPLICATION_SOURCE_DIR}/VERSION)
+  # Since there is a VERSION file for the application, let's add a depndency for this file to the
+  # application's git index (assuming it is not a zephyr sample).
+  find_package(Git QUIET)
+  if(GIT_FOUND)
+    execute_process(
+      COMMAND ${GIT_EXECUTABLE} rev-parse --absolute-git-dir
+      WORKING_DIRECTORY ${APPLICATION_SOURCE_DIR}
+      OUTPUT_VARIABLE application_git_dir
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      ERROR_STRIP_TRAILING_WHITESPACE
+      ERROR_VARIABLE stderr
+      RESULT_VARIABLE return_code)
+    # If there is an error e.g. it is not a git repo, we just silently ignore it and continue
+    # without a dependency, this will be the case with freestanding applications.
+    if(NOT return_code)
+      if(NOT "${stderr}" STREQUAL "")
+        message(WARNING "APPLICATION_BUILD_VERSION: git rev-parse warned: ${stderr}")
+      endif()
+
+      if(NOT ${application_git_dir}/index STREQUAL ${ZEPHYR_GIT_INDEX})
+        set(application_git_file ${application_git_dir}/index)
+      endif()
+    endif()
+  endif()
+
   add_custom_command(
     OUTPUT ${PROJECT_BINARY_DIR}/include/generated/zephyr/app_version.h
     COMMAND ${CMAKE_COMMAND} -DZEPHYR_BASE=${ZEPHYR_BASE}
@@ -746,7 +771,7 @@ if(EXISTS ${APPLICATION_SOURCE_DIR}/VERSION)
       -DAPP_VERSION_CUSTOMIZATION="$<TARGET_PROPERTY:app_version_h,APP_VERSION_CUSTOMIZATION>"
       ${build_version_argument}
       -P ${ZEPHYR_BASE}/cmake/gen_version_h.cmake
-    DEPENDS ${APPLICATION_SOURCE_DIR}/VERSION ${git_dependency}
+    DEPENDS ${APPLICATION_SOURCE_DIR}/VERSION ${git_dependency} ${application_git_file}
     COMMAND_EXPAND_LISTS
   )
   add_custom_target(
