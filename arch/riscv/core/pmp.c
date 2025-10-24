@@ -58,6 +58,47 @@ LOG_MODULE_REGISTER(mpu);
 
 #define PMP_NONE 0
 
+/**
+ * @brief Decodes PMP configuration and address registers into a memory region's
+ * start/end addresses.
+ *
+ * @param cfg_byte The PMP configuration byte (pmpcfg_n).
+ * @param pmp_addr A pointer to the full array of PMP address registers (pmpaddr_n).
+ * @param index The current PMP entry index.
+ * @param start Pointer to where the calculated start address should be stored.
+ * @param end Pointer to where the calculated end address should be stored.
+ */
+static void pmp_decode_region(uint8_t cfg_byte,
+                              unsigned long *pmp_addr,
+                              unsigned int index,
+                              unsigned long *start,
+                              unsigned long *end)
+{
+	unsigned long tmp;
+	unsigned long pmp_addr_val = pmp_addr[index];
+	unsigned long pmp_prev_addr_val = (index == 0) ? 0 : pmp_addr[index - 1];
+
+	switch (cfg_byte & PMP_A) {
+	case PMP_TOR:
+		*start = (index == 0) ? 0 : (pmp_prev_addr_val << 2);
+		*end   = (pmp_addr_val << 2) - 1;
+		break;
+	case PMP_NA4:
+		*start = pmp_addr_val << 2;
+		*end   = *start + 3;
+		break;
+	case PMP_NAPOT:
+		tmp = (pmp_addr_val << 2) | 0x3;
+		*start = tmp & (tmp + 1);
+		*end   = tmp | (tmp + 1);
+		break;
+	default:
+		*start = 0;
+		*end   = 0;
+		break;
+	}
+}
+
 static void print_pmp_entries(unsigned int pmp_start, unsigned int pmp_end,
 			      unsigned long *pmp_addr, unsigned long *pmp_cfg,
 			      const char *banner)
@@ -67,27 +108,9 @@ static void print_pmp_entries(unsigned int pmp_start, unsigned int pmp_end,
 
 	LOG_DBG("PMP %s:", banner);
 	for (index = pmp_start; index < pmp_end; index++) {
-		unsigned long start, end, tmp;
+		unsigned long start, end;
 
-		switch (pmp_n_cfg[index] & PMP_A) {
-		case PMP_TOR:
-			start = (index == 0) ? 0 : (pmp_addr[index - 1] << 2);
-			end = (pmp_addr[index] << 2) - 1;
-			break;
-		case PMP_NA4:
-			start = pmp_addr[index] << 2;
-			end = start + 3;
-			break;
-		case PMP_NAPOT:
-			tmp = (pmp_addr[index] << 2) | 0x3;
-			start = tmp & (tmp + 1);
-			end   = tmp | (tmp + 1);
-			break;
-		default:
-			start = 0;
-			end = 0;
-			break;
-		}
+		pmp_decode_region(pmp_n_cfg[index], pmp_addr, index, &start, &end);
 
 		if (end == 0) {
 			LOG_DBG("%3d: "PR_ADDR" 0x%02x", index,
