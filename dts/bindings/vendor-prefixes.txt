@@ -713,6 +713,7 @@ tpk	TPK U.S.A. LLC
 tplink	TP-LINK Technologies Co., Ltd.
 tpo	TPO
 tq	TQ-Systems GmbH
+trenz	Trenz Electronic
 tronfy	Tronfy
 tronsmart	Tronsmart
 truly	Truly Semiconductors Limited
