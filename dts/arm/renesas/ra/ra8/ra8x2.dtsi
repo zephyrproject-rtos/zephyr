@@ -788,6 +788,52 @@
 			};
 		};
 
+		eswm: eswm@403c8000 {
+			compatible = "renesas,ra-eswm";
+			reg = <0x403c8000 0x19424>;
+			clocks = <&iclk 0 0>,
+				 <&pclka MSTPC 30>,
+				 <&eswclk 0 0>,
+				 <&eswphyclk 0 0>,
+				 <&ethphyclk MSTPC 28>;
+			clock-names = "gwcaclk", "pclk", "eswclk", "eswphyclk", "ethphyclk";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			eth0: ethernet_mac@403cb000 {
+				compatible = "renesas,ra-ethernet-rmac";
+				reg = <0x403cb000 0x530>;
+				channel = <0>;
+				status = "disabled";
+			};
+
+			eth1: ethernet_mac@403cd000 {
+				compatible = "renesas,ra-ethernet-rmac";
+				reg = <0x403cd000 0x530>;
+				channel = <1>;
+				status = "disabled";
+			};
+
+			mdio0: mdio@403cb000 {
+				compatible = "renesas,ra-mdio-rmac";
+				reg = <0x403cb000 0x530>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <0>;
+				status = "disabled";
+			};
+
+			mdio1: mdio@403cd000 {
+				compatible = "renesas,ra-mdio-rmac";
+				reg = <0x403cd000 0x530>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <1>;
+				status = "disabled";
+			};
+		};
+
 		ulpt0: ulpt@40220000 {
 			compatible = "renesas,ra-ulpt";
 			reg = <0x40220000 0x100>;
