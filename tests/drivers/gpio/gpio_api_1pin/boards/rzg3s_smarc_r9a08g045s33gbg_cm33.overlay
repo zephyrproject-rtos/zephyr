@@ -10,6 +10,7 @@
 
 	gpio-led {
 		compatible = "gpio-leds";
+
 		led_0: led_0 {
 			gpios = <&gpio13 1 0>;
 		};
