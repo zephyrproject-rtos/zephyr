@@ -101,7 +101,8 @@ menuconfig PTP_CLOCK_STM32_HAL
 	depends on SOC_SERIES_STM32F7X \
 		   || SOC_SERIES_STM32H5X \
 		   || SOC_SERIES_STM32H7X \
-		   || SOC_SERIES_STM32H7RSX
+		   || SOC_SERIES_STM32H7RSX \
+		   || SOC_SERIES_STM32N6X
 	help
 	  Enable STM32 PTP clock support.
 
