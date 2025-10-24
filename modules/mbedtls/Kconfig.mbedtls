@@ -522,6 +522,13 @@ config MBEDTLS_SSL_EXTENDED_MASTER_SECRET
 	  which ensures that master secrets are different for every
 	  connection and every session.
 
+# CONFIG_CSPRNG_AVAILABLE must automatically enable CONFIG_ENTROPY_GENERATOR.
+# But we're doing it here because this enablement should be gated by Mbed TLS
+# being also enabled in the build, otherwise this will result in entropy
+# drivers being enabled without anyone needing them.
+config CSPRNG_AVAILABLE
+	select ENTROPY_GENERATOR
+
 choice MBEDTLS_PSA_CRYPTO_RNG_SOURCE
 	prompt "Select random source for built-in PSA crypto"
 	depends on MBEDTLS_PSA_CRYPTO_C
@@ -530,12 +537,11 @@ choice MBEDTLS_PSA_CRYPTO_RNG_SOURCE
 	# CONFIG_CSPRNG_ENABLED cannot be used for this because it gets enabled by
 	# entropy drivers but these are gated by CONFIG_ENTROPY_GENERATOR which
 	# is disabled by default.
-	default MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG if CSPRNG_AVAILABLE
+	default MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG if CSPRNG_ENABLED
 	default MBEDTLS_PSA_CRYPTO_LEGACY_RNG
 
 config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
 	bool "Use a cryptographically secure driver as random source"
-	select ENTROPY_GENERATOR
 	help
 	  Use a cryptographically secure random generator to provide random data
 	  instead of legacy Mbed TLS modules. This has a smaller footprint
