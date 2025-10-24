@@ -60,7 +60,7 @@ if(("zephyr" STREQUAL ${ZEPHYR_TOOLCHAIN_VARIANT}) OR
    (Zephyr-sdk_FIND_REQUIRED))
 
   # No toolchain was specified, so inform user that we will be searching.
-  if (NOT Zephyr-sdk_FIND_QUIETLY AND
+  if(NOT Zephyr-sdk_FIND_QUIETLY AND
       NOT DEFINED ZEPHYR_SDK_INSTALL_DIR AND
       NOT DEFINED ZEPHYR_TOOLCHAIN_VARIANT)
     message(STATUS "ZEPHYR_TOOLCHAIN_VARIANT not set, trying to locate Zephyr SDK")
@@ -118,7 +118,7 @@ if(("zephyr" STREQUAL ${ZEPHYR_TOOLCHAIN_VARIANT}) OR
         cmake_path(GET dir PARENT_PATH dir)
         list(APPEND Zephyr-sdk ${version})
         list(APPEND Zephyr-sdk_DIRS ${dir})
-        if (NOT Zephyr-sdk_FIND_QUIETLY)
+        if(NOT Zephyr-sdk_FIND_QUIETLY)
           message(STATUS "Zephyr-sdk, version=${version}, dir=${dir}")
         endif()
       endforeach()
@@ -145,7 +145,7 @@ if(("zephyr" STREQUAL ${ZEPHYR_TOOLCHAIN_VARIANT}) OR
           # Then see if this version is compatible.
           find_package(Zephyr-sdk ${Zephyr-sdk_FIND_VERSION_COMPLETE} QUIET CONFIG PATHS ${zephyr_sdk_current_check_path} NO_DEFAULT_PATH)
 
-          if (${Zephyr-sdk_FOUND})
+          if(${Zephyr-sdk_FOUND})
             # A compatible version of the Zephyr SDK has been found which is the highest
             # supported version, exit.
             break()
@@ -153,7 +153,7 @@ if(("zephyr" STREQUAL ${ZEPHYR_TOOLCHAIN_VARIANT}) OR
         endif()
       endforeach()
 
-      if (NOT ${Zephyr-sdk_FOUND})
+      if(NOT ${Zephyr-sdk_FOUND})
         # This means no compatible Zephyr SDK versions were found, set the version
         # back to the minimum version so that it is displayed in the error text.
         find_package(Zephyr-sdk ${Zephyr-sdk_FIND_VERSION_COMPLETE} REQUIRED CONFIG PATHS ${zephyr_sdk_search_paths})
@@ -181,7 +181,7 @@ if(LOAD IN_LIST Zephyr-sdk_FIND_COMPONENTS)
   if(Zephyr-sdk_FOUND)
     include(${ZEPHYR_SDK_INSTALL_DIR}/cmake/zephyr/host-tools.cmake)
 
-    if (NOT Zephyr-sdk_FIND_QUIETLY)
+    if(NOT Zephyr-sdk_FIND_QUIETLY)
       message(STATUS "Found host-tools: zephyr ${SDK_VERSION} (${ZEPHYR_SDK_INSTALL_DIR})")
     endif()
   endif()

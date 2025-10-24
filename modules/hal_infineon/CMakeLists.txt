@@ -75,7 +75,7 @@ if(CONFIG_SOC_SERIES_PSC3)
 endif()
 
 ## Add Wi-Fi assets for AIROC devices
-if (CONFIG_WIFI_AIROC)
+if(CONFIG_WIFI_AIROC)
   add_subdirectory(whd-expansion)
 
   ## Add core-lib sources for CAT1 devices

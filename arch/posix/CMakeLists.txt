@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if (NOT CMAKE_HOST_UNIX OR CMAKE_HOST_APPLE)
+if(NOT CMAKE_HOST_UNIX OR CMAKE_HOST_APPLE)
   message(FATAL_ERROR "The POSIX architecture only works on Linux. If on Windows or macOS "
           "consider using a virtual machine to run a Linux guest.")
 endif()
@@ -43,14 +43,14 @@ if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/${CMAKE_HOST_SYSTEM_NAME}.${CMAKE_HOST_SYSTE
   # @Intent: Set necessary compiler & linker options for this specific host architecture & OS
   include(${CMAKE_HOST_SYSTEM_NAME}.${CMAKE_HOST_SYSTEM_PROCESSOR}.cmake)
 else() # Linux.x86_64
-  if (CONFIG_64BIT)
+  if(CONFIG_64BIT)
     # some gcc versions fail to build without -fPIC
     zephyr_compile_options(-m64 -fPIC)
     zephyr_link_libraries(-m64)
 
     target_link_options(native_simulator INTERFACE "-m64")
     target_compile_options(native_simulator INTERFACE "-m64")
-  else ()
+  else()
     zephyr_compile_options(-m32)
     zephyr_link_libraries(-m32)
 
@@ -64,7 +64,7 @@ else() # Linux.x86_64
     check_set_compiler_property(APPEND PROPERTY fpsse2 "SHELL:-msse2 -mfpmath=sse")
     zephyr_compile_options($<TARGET_PROPERTY:compiler,fpsse2>)
     target_compile_options(native_simulator INTERFACE "$<TARGET_PROPERTY:compiler,fpsse2>")
-  endif ()
+  endif()
 endif()
 
 zephyr_compile_options(
@@ -81,7 +81,7 @@ zephyr_ld_options(
   -Wl,--unresolved-symbols=ignore-all
 )
 
-if (NOT CONFIG_EXTERNAL_LIBC)
+if(NOT CONFIG_EXTERNAL_LIBC)
   # Get the *compiler* include path, that is where the *compiler* provided headers are (not the
   # default libC ones). This includes basic headers like stdint.h, stddef.h or float.h
   # We expect something like
@@ -106,7 +106,7 @@ if (NOT CONFIG_EXTERNAL_LIBC)
   )
 endif()
 
-if (CONFIG_COMPILER_WARNINGS_AS_ERRORS)
+if(CONFIG_COMPILER_WARNINGS_AS_ERRORS)
   target_compile_options(native_simulator INTERFACE $<TARGET_PROPERTY:compiler,warnings_as_errors>)
 endif()
 
@@ -126,7 +126,7 @@ if(CONFIG_COVERAGE)
   target_link_options(native_simulator INTERFACE $<TARGET_PROPERTY:linker,coverage>)
 endif()
 
-if (CONFIG_GPROF)
+if(CONFIG_GPROF)
   zephyr_compile_options($<TARGET_PROPERTY:compiler,gprof>)
   zephyr_link_libraries($<TARGET_PROPERTY:linker,gprof>)
 

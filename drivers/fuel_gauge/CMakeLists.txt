@@ -16,7 +16,7 @@ add_subdirectory_ifdef(CONFIG_FUEL_GAUGE_LTC2959	ltc2959)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE fuel_gauge_syscall_handlers.c)
 
-if (CONFIG_EMUL AND CONFIG_USERSPACE)
+if(CONFIG_EMUL AND CONFIG_USERSPACE)
   zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/emul_fuel_gauge.h)
   zephyr_library_sources(emul_fuel_gauge_syscall_handlers.c)
 endif()

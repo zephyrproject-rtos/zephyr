@@ -11,7 +11,7 @@ target_sources(app PRIVATE
 
 target_sources_ifdef(CONFIG_ENABLE_LC3 app PRIVATE src/lc3.c)
 
-if (CONFIG_USE_USB_AUDIO_OUTPUT)
+if(CONFIG_USE_USB_AUDIO_OUTPUT)
   include(${ZEPHYR_BASE}/samples/subsys/usb/common/common.cmake)
   target_sources(app PRIVATE src/usb.c)
 endif()

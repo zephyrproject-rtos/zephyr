@@ -130,7 +130,7 @@ if(CONFIG_COVERAGE)
   target_link_libraries(testbinary PRIVATE $<TARGET_PROPERTY:linker,coverage>)
 endif()
 
-if (CONFIG_COMPILER_WARNINGS_AS_ERRORS)
+if(CONFIG_COMPILER_WARNINGS_AS_ERRORS)
   target_compile_options(test_interface INTERFACE $<TARGET_PROPERTY:compiler,warnings_as_errors>)
 endif()
 
