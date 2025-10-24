@@ -15,7 +15,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
 
-#include "bap_unicast_sr.h"
+#include "bap_internal.h"
 #include "stream_rx.h"
 
 #define SEM_TIMEOUT                 K_SECONDS(60)
@@ -23,6 +23,11 @@
 #define ADV_TIMEOUT 				K_FOREVER
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 10 /* Set the timeout relative to interval */
 #define PA_SYNC_SKIP                10
+#define BAP_BRAODCAST_SNK_THREAD_STACK_SIZE 2048
+#define THREAD_PRIORITY 5
+
+K_THREAD_STACK_DEFINE(snk_thread_stack, BAP_BRAODCAST_SNK_THREAD_STACK_SIZE)
+struct k_thread snk_tid;
 
 /*Broadcast Sink Semaphores. */
 static K_SEM_DEFINE(sem_broadcast_sink_stopped, 0U, 1U);
@@ -41,6 +46,7 @@ static K_SEM_DEFINE(sem_stream_connected, 0U, CONFIG_BT_BAP_BROADCAST_SNK_STREAM
 static K_SEM_DEFINE(sem_stream_started, 0U, CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT);
 static K_SEM_DEFINE(sem_big_synced, 0U, 1U);
 
+
 /* Sample assumes that we only have a single Scan Delegator receive state */
 static const struct bt_bap_scan_delegator_recv_state *req_recv_state;
 static struct bt_bap_broadcast_sink *broadcast_sink;
@@ -51,6 +57,8 @@ static uint32_t broadcaster_broadcast_id;
 static volatile bool big_synced;
 static volatile bool base_received;
 static struct bt_bap_stream *bap_streams_p[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
+
+
 
 
 /**
@@ -747,6 +755,11 @@ static uint32_t select_bis_sync_bitfield(struct base_data *base_sg_data,
 	return result;
 }
 
+void bap_broadcast_snk_signal_connected(void)
+{
+	k_sem_give(&sem_connected);
+}
+
 static int bap_broadcast_sink_reset(void)
 
 {
@@ -831,15 +844,14 @@ void bap_broadcast_snk_thread(void *p1, void *p2, void *p3)
                 k_sleep(K_SECONDS(1));
                 continue;
             }
-            state = BROADCAST_SNK_STATE_PA_SYNC;
-            break;
+			state = BROADCAST_SNK_STATE_WAIT_BA;
+			break;
+
  
- 
-/*         case BROADCAST_SNK_STATE_WAIT_BA:
+		case BROADCAST_SNK_STATE_WAIT_BA:
 
 			if (!bap_unicast_sr_has_connection()) {
 				if (k_sem_take(&sem_connected, ADV_TIMEOUT) != 0) {
-					printk("No Broadcast Assistant found \n"); 
 					break;
 				}
 			}
@@ -849,7 +861,10 @@ void bap_broadcast_snk_thread(void *p1, void *p2, void *p3)
 				k_sem_reset(&sem_past_request);
 				k_sem_reset(&sem_disconnected);
 
-				printk("Waiting for PA sync request - 120 sec\n");
+				/* Wait for the PA request to determine if we
+				 * should start scanning, or wait for PAST
+				 */
+				printk("Waiting for PA sync\n");
 				err = k_sem_take(&sem_pa_request,
 							BROADCAST_ASSISTANT_TIMEOUT); 
 				if (err != 0) {
@@ -862,11 +877,8 @@ void bap_broadcast_snk_thread(void *p1, void *p2, void *p3)
 					state = BROADCAST_SNK_STATE_PA_SYNC;
 					break;  
 				}
-			} */
+			}
 
-
-			printk("NEXT STATE: BROADCAST_SNK_STATE_PA_SYNC\n");
-            state = BROADCAST_SNK_STATE_PA_SYNC;
             break;
  
         case BROADCAST_SNK_STATE_PA_SYNC:
@@ -981,28 +993,32 @@ void bap_broadcast_snk_thread(void *p1, void *p2, void *p3)
     }
 }
 
+void start_broadcast_snk_thread(void)
+{
+	k_thread_create(&snk_tid, snk_thread_stack, K_THREAD_STACK_SIZEOF(snk_thread_stack),
+		bap_broadcast_snk_thread, NULL, NULL, NULL,
+		5, 0, K_NO_WAIT);
+}
+
+
 int init_bap_broadcast_sink(void)
 {
 	printk("%s: initialise Scan delegator and callbacks for BAP Sink\n", __func__);
 	int err;
 
-	printk("here\n");
 	err = bt_bap_scan_delegator_register(&scan_delegator_cbs);
 	if (err) {
 		printk("Scan delegator register failed (err %d)\n", err);
 		return err;
 	}
-	printk("hopsi \n");
+
 	bt_bap_broadcast_sink_register_cb(&broadcast_sink_cbs);
-	printk("Æteren \n");
 	bt_le_per_adv_sync_cb_register(&bap_pa_sync_cb);
 
 	stream_rx_get_streams(bap_streams_p);
-	printk("listetyv \n");
 	for (size_t i = 0U; i < CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT; i++) {
 		bt_bap_stream_cb_register(bap_streams_p[i], &stream_ops);
 	}
-	printk("Prince \n");
 
 	return 0;
 }
