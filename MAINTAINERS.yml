@@ -5672,6 +5672,17 @@ Tracing:
   tests:
     - tracing
 
+Trenz Electronic Platforms:
+  status: maintained
+  maintainers:
+    - yashi
+  files:
+    - boards/trenz/
+  labels:
+    - "platform: Trenz Electronic"
+  description: >-
+    Trenz Electronic development boards.
+
 Twister:
   status: maintained
   maintainers:
