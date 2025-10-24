@@ -7,5 +7,6 @@ tests:
       - hifive_unleashed/fu540/u54
       - fvp_base_revc_2xaem/v8a/smp/ns
     tags: zbus
+    filter: not CONFIG_SMP
     integration_platforms:
       - native_sim
