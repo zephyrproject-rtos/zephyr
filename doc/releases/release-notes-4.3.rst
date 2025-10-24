@@ -91,7 +91,7 @@ Deprecated APIs and options
   :c:struct:`bt_hci_cp_vs_write_bd_addr` for setting the public Bluetooth device address.
 
 * :kconfig:option:`CONFIG_JWT_SIGN_RSA_LEGACY` is deprecated. Please switch to the
-  PSA Crypto API based alternative (i.e. :kconfig:option:`CONIFG_JWT_SIGN_RSA_PSA`).
+  PSA Crypto API based alternative (i.e. :kconfig:option:`CONFIG_JWT_SIGN_RSA_PSA`).
 
 New APIs and options
 ====================
