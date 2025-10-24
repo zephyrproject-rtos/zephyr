@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "posix_clock.h"
+
 #include <errno.h>
 #include <time.h>
 

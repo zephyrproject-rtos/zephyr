@@ -9,3 +9,8 @@ zephyr_library_sources(
     ocpp_j.c
     ocpp_wamp_rpc.c
 )
+
+zephyr_library_compile_definitions(
+    _POSIX_C_SOURCE=200809L
+    _XOPEN_SOURCE=700
+)

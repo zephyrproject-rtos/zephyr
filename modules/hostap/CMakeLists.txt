@@ -47,6 +47,8 @@ zephyr_library_compile_definitions(
   CONFIG_CTRL_IFACE_ZEPHYR
   CONFIG_SUITEB192
   CONFIG_SUITEB
+  _POSIX_C_SOURCE=200809L
+  _XOPEN_SOURCE=700
 )
 
 

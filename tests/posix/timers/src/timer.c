@@ -60,9 +60,9 @@ void test_timer(clockid_t clock_id, int sigev_notify)
 	LOG_DBG("Time remaining to fire %d secs and  %d nsecs", (int)value.it_value.tv_sec,
 		(int)value.it_value.tv_nsec);
 
-	clock_gettime(clock_id, &ts);
+	zassert_ok(clock_gettime(clock_id, &ts));
 	k_sleep(K_SECONDS(SECS_TO_SLEEP));
-	clock_gettime(clock_id, &te);
+	zassert_ok(clock_gettime(clock_id, &te));
 
 	if (te.tv_nsec >= ts.tv_nsec) {
 		secs_elapsed = te.tv_sec - ts.tv_sec;
@@ -94,12 +94,20 @@ ZTEST(posix_timers, test_CLOCK_REALTIME__SIGEV_THREAD)
 
 ZTEST(posix_timers, test_CLOCK_MONOTONIC__SIGEV_SIGNAL)
 {
+#if defined(_POSIX_MONOTONIC_CLOCK)
 	test_timer(CLOCK_MONOTONIC, SIGEV_SIGNAL);
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST(posix_timers, test_CLOCK_MONOTONIC__SIGEV_THREAD)
 {
+#if defined(_POSIX_MONOTONIC_CLOCK)
 	test_timer(CLOCK_MONOTONIC, SIGEV_THREAD);
+#else
+	ztest_test_skip();
+#endif
 }
 
 ZTEST(posix_timers, test_timer_overrun)
@@ -109,7 +117,7 @@ ZTEST(posix_timers, test_timer_overrun)
 
 	sig.sigev_notify = SIGEV_NONE;
 
-	zassert_ok(timer_create(CLOCK_MONOTONIC, &sig, &timerid));
+	zassert_ok(timer_create(CLOCK_REALTIME, &sig, &timerid));
 
 	/*Set the timer to expire every 500 milliseconds*/
 	value.it_interval.tv_sec = 0;

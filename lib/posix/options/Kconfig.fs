@@ -4,7 +4,6 @@
 
 menuconfig POSIX_FILE_SYSTEM
 	bool "POSIX file system API support"
-	default y if POSIX_SYSTEM_INTERFACES
 	select FILE_SYSTEM
 	select FDTABLE
 	help

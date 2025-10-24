@@ -24,7 +24,9 @@ LOG_MODULE_REGISTER(clock_test, LOG_LEVEL_DBG);
 static const struct timespec ref_ts = {1514821501, NSEC_PER_SEC / 2U};
 
 static const clockid_t clocks[] = {
+#if defined(_POSIX_MONOTONIC_CLOCK)
 	CLOCK_MONOTONIC,
+#endif
 	CLOCK_REALTIME,
 };
 
