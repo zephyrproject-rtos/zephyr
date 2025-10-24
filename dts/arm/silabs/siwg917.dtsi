@@ -446,7 +446,7 @@
 			interrupts = <11 0>;
 			interrupt-names = "adc0";
 			silabs,adc-sampling-rate = <100000>;
-			clocks = <&clock0 SIWX91X_ADC_CLK>;
+			clocks = <&clock0 SIWX91X_CLK_ADC>;
 			#io-channel-cells = <1>;
 			status = "disabled";
 		};
