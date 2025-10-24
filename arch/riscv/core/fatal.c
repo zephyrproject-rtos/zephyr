@@ -221,7 +221,7 @@ void z_riscv_fault(struct arch_esf *esf)
 	unsigned int reason = K_ERR_CPU_EXCEPTION;
 
 	if (bad_stack_pointer(esf)) {
-#ifdef CONFIG_PMP_STACK_GUARD
+#if defined(CONFIG_PMP_STACK_GUARD) && defined(CONFIG_MULTITHREADING)
 		/*
 		 * Remove the thread's PMP setting to prevent triggering a stack
 		 * overflow error again due to the previous configuration.
