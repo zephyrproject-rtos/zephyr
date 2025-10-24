@@ -25,6 +25,7 @@
 
 &flexio3 {
 	status = "okay";
+
 	flexio3_spi0: flexio3_spi0 {
 		compatible = "nxp,flexio-spi";
 		status = "okay";
@@ -36,6 +37,7 @@
 		sck-pin = <10>;
 		pinctrl-0 = <&pinmux_flexio3spi0>;
 		pinctrl-names = "default";
+
 		slow@0 {
 			status = "okay";
 			compatible = "test-spi-loopback-slow";
