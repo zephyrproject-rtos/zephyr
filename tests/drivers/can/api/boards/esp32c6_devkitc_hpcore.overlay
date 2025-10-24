@@ -21,6 +21,7 @@
 			pinmux = <TWAI0_RX_GPIO5>;
 			output-enable;	/* enable internal loopback */
 		};
+
 		group2 {
 			pinmux = <TWAI0_TX_GPIO5>;
 			input-enable;	/* enable internal loopback */
