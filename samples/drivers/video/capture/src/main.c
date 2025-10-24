@@ -19,7 +19,6 @@ LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 #error No camera chosen in devicetree. Missing "--shield" or "--snippet video-sw-generator" flag?
 #endif
 
-#if DT_HAS_CHOSEN(zephyr_display)
 static inline int app_setup_display(const struct device *const display_dev, const uint32_t pixfmt)
 {
 	struct display_capabilities capabilities;
@@ -85,7 +84,6 @@ static int app_display_frame(const struct device *const display_dev,
 
 	return display_write(display_dev, 0, vbuf->line_offset, &buf_desc, vbuf->buffer);
 }
-#endif
 
 static int app_setup_video_selection(const struct device *const video_dev,
 				     const struct video_format *const fmt)
@@ -340,6 +338,7 @@ static int app_setup_video_buffers(const struct device *const video_dev,
 int main(void)
 {
 	const struct device *const video_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_camera));
+	const struct device *const display_dev = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_display));
 	struct video_buffer *vbuf = &(struct video_buffer){};
 	struct video_format fmt = {
 		.type = VIDEO_BUF_TYPE_OUTPUT,
@@ -381,14 +380,12 @@ int main(void)
 		goto err;
 	}
 
-#if DT_HAS_CHOSEN(zephyr_display)
-	const struct device *const display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
-
-	ret = app_setup_display(display_dev, fmt.pixelformat);
-	if (ret < 0) {
-		goto err;
+	if (DT_HAS_CHOSEN(zephyr_display)) {
+		ret = app_setup_display(display_dev, fmt.pixelformat);
+		if (ret < 0) {
+			goto err;
+		}
 	}
-#endif
 
 	ret = app_setup_video_buffers(video_dev, &caps, &fmt);
 	if (ret < 0) {
@@ -414,12 +411,12 @@ int main(void)
 		LOG_INF("Got frame %u! size: %u; timestamp %u ms",
 			frame++, vbuf->bytesused, vbuf->timestamp);
 
-#if DT_HAS_CHOSEN(zephyr_display)
-		ret = app_display_frame(display_dev, vbuf, &fmt);
-		if (ret != 0) {
-			LOG_WRN("Failed to display this frame");
+		if (DT_HAS_CHOSEN(zephyr_display)) {
+			ret = app_display_frame(display_dev, vbuf, &fmt);
+			if (ret != 0) {
+				LOG_WRN("Failed to display this frame");
+			}
 		}
-#endif
 
 		ret = video_enqueue(video_dev, vbuf);
 		if (ret < 0) {
