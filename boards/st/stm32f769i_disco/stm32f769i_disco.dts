@@ -302,4 +302,5 @@ zephyr_udc0: &usbotg_hs {
 
 /* alias used by display shields */
 zephyr_mipi_dsi: &mipi_dsi {};
+
 zephyr_lcd_controller: &ltdc {};

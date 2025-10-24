@@ -49,7 +49,7 @@
 	pinmux_opamp0: pinmux_opamp0 {
 		group0 {
 			pinmux = <OPAMP0_DP0_PIO0_8>,
-					<OPAMP0_OUT_PIO1_9>;
+				 <OPAMP0_OUT_PIO1_9>;
 			slew-rate = "standard";
 			nxp,analog-mode;
 		};
