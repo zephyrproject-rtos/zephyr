@@ -359,8 +359,8 @@
 			regulator-max-microvolt = <1207000>;
 			regulator-initial-mode = <NXP_VREF_MODE_STANDBY>;
 			regulator-allowed-modes = <NXP_VREF_MODE_STANDBY
-						NXP_VREF_MODE_LOW_POWER
-						NXP_VREF_MODE_HIGH_POWER>;
+						   NXP_VREF_MODE_LOW_POWER
+						   NXP_VREF_MODE_HIGH_POWER>;
 		};
 	};
 };

@@ -5,7 +5,6 @@
  */
 
 &enet {
-
 	ptp {
 		status = "okay";
 	};

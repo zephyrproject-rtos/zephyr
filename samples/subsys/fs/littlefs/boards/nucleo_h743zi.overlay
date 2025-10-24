@@ -20,6 +20,7 @@
 / {
 	fstab {
 		compatible = "zephyr,fstab";
+
 		lfs1: lfs1 {
 			compatible = "zephyr,fstab,littlefs";
 			read-size = <32>;

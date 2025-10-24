@@ -14,6 +14,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
+
 		sample_button: sample_button {
 			gpios = <&gpio0 0 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
 		};

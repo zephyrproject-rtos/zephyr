@@ -6,6 +6,7 @@
 
 &i2c0 { /* SDA PTE25, SCL PTE24, ISW PTE26 */
 	status = "okay";
+
 	ds3231: ds3231@68 {
 		compatible = "maxim,ds3231";
 		reg = <0x68>;

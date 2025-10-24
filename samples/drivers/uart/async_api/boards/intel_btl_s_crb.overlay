@@ -7,9 +7,11 @@
 &uart0 {
 	status = "okay";
 };
+
 &uart0_dma {
 	status = "okay";
 };
+
 / {
 	chosen {
 		zephyr,console = &uart0;

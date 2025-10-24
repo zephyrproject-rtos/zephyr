@@ -41,6 +41,7 @@
 
 	scl-src = "DX1B";
 	sda-src = "DX0A";
+
 	eeprom1: eeprom@56 {
 		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x56>;
