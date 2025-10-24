@@ -4495,7 +4495,6 @@ STM32 Platforms:
     - FRASTM
     - gautierg-st
     - GeorgeCGV
-    - marwaiehm-st
     - mathieuchopstm
     - djiatsaf-st
     - etienne-lms
@@ -5725,10 +5724,8 @@ West:
   collaborators:
     - FRASTM
     - gautierg-st
-    - marwaiehm-st
     - asm5878
     - HoZHel
-    - benothmn-st
   files:
     - modules/Kconfig.stm32
   labels:
