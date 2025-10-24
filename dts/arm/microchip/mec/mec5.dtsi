@@ -194,7 +194,7 @@
 				gpio-controller;
 				interrupts = <1 2>;
 				girqs = <9 255>;
-				#gpio-cells=<2>;
+				#gpio-cells = <2>;
 			};
 
 			gpio_140_176: gpio@40081180 {
@@ -204,7 +204,7 @@
 				gpio-controller;
 				interrupts = <0 2>;
 				girqs = <8 255>;
-				#gpio-cells=<2>;
+				#gpio-cells = <2>;
 			};
 
 			gpio_200_236: gpio@40081200 {
@@ -214,7 +214,7 @@
 				gpio-controller;
 				interrupts = <4 2>;
 				girqs = <12 255>;
-				#gpio-cells=<2>;
+				#gpio-cells = <2>;
 			};
 
 			gpio_240_276: gpio@40081280 {
@@ -224,7 +224,7 @@
 				gpio-controller;
 				interrupts = <17 2>;
 				girqs = <26 255>;
-				#gpio-cells=<2>;
+				#gpio-cells = <2>;
 			};
 		};
 
