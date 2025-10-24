@@ -472,7 +472,7 @@ ZTEST(spi_loopback, test_spi_rx_half_start)
 
 ZTEST(spi_loopback, test_spi_rx_half_end)
 {
-	if (IS_ENABLED(CONFIG_SPI_STM32_DMA)) {
+	if (IS_ENABLED(CONFIG_SPI_STM32_DMA) || IS_ENABLED(CONFIG_DMA_SILABS_SIWX91X_GPDMA)) {
 		TC_PRINT("Skipped spi_rx_hald_end");
 		return;
 	}
@@ -494,7 +494,8 @@ ZTEST(spi_loopback, test_spi_rx_half_end)
 
 ZTEST(spi_loopback, test_spi_rx_every_4)
 {
-	if (IS_ENABLED(CONFIG_SPI_STM32_DMA) || IS_ENABLED(CONFIG_DSPI_MCUX_EDMA)) {
+	if (IS_ENABLED(CONFIG_SPI_STM32_DMA) || IS_ENABLED(CONFIG_DSPI_MCUX_EDMA) ||
+	    IS_ENABLED(CONFIG_DMA_SILABS_SIWX91X_GPDMA)) {
 		TC_PRINT("Skipped spi_rx_every_4");
 		return;
 	};
