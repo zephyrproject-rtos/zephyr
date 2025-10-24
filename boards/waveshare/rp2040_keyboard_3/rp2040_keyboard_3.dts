@@ -121,8 +121,8 @@
 			gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
 			chain-length = <3>;
 			color-mapping = <LED_COLOR_ID_GREEN
-				LED_COLOR_ID_RED
-				LED_COLOR_ID_BLUE>;
+					 LED_COLOR_ID_RED
+					 LED_COLOR_ID_BLUE>;
 			reset-delay = <280>;
 			frequency = <800000>;
 		};

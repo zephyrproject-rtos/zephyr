@@ -9,7 +9,6 @@
 #include "mck_ra8t2-pinctrl.dtsi"
 
 / {
-
 	leds {
 		compatible = "gpio-leds";
 

@@ -23,7 +23,6 @@
 	dram: memory@80000000 {
 		reg = <0x80000000 DT_SIZE_M(1)>;
 	};
-
 };
 
 &lpuart1 {
