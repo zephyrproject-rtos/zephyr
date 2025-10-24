@@ -1,0 +1,9 @@
+# Copyright (c) 2025, Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: versal2_apu
+  full_name: AMD Versal Gen 2 APU Development Board
+  vendor: amd
+  socs:
+  - name: amd_versal2_apu
