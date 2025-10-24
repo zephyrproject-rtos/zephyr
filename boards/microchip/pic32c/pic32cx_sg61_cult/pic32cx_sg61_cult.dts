@@ -65,14 +65,14 @@
 	clock-frequency = <48000000>;
 };
 
-&porta{
-	status="okay";
+&porta {
+	status = "okay";
 };
 
-&portb{
-	status="okay";
+&portb {
+	status = "okay";
 };
 
-&portc{
-	status="okay";
+&portc {
+	status = "okay";
 };
