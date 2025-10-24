@@ -44,9 +44,6 @@
 "./boards/microchip/mec172xevb_assy6906/support/mec172x_remote_flasher.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
 ]
-"./doc/_scripts/gen_devicetree_rest.py" = [
-    "SIM905",   # https://docs.astral.sh/ruff/rules/split-static-string
-]
 "./doc/_scripts/redirects.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
 ]
