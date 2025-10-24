@@ -4498,6 +4498,7 @@ STM32 Platforms:
     - mathieuchopstm
     - djiatsaf-st
     - etienne-lms
+    - juickar
   files:
     - boards/st/
     - drivers/*/*stm32*.c
@@ -5724,6 +5725,7 @@ West:
   collaborators:
     - FRASTM
     - gautierg-st
+    - juickar
     - asm5878
     - HoZHel
   files:
