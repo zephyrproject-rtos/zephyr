@@ -73,11 +73,9 @@ int uuid_generate_v4(struct uuid *out);
  * @param out The UUID where the result will be written.
  *
  * @retval 0 The UUID has been correctly generated and stored in @p out
- * @retval -EINVAL @p out is NULL
+ * @retval -EINVAL @p out is not acceptable
  * @retval -ENOMEM Memory allocation failed
- * @retval -ENOTSUP Required crypto algorithm (SHA-1) is not supported by the
- *                  PSA Crypto provider
- * @retval -EIO Generic error
+ * @retval -ENOTSUP mbedTLS returned an unrecognized error
  */
 int uuid_generate_v5(const struct uuid *ns, const void *data, size_t data_size,
 		     struct uuid *out);
