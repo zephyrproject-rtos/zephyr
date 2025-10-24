@@ -74,6 +74,7 @@
 				reg = <0x7>;
 				irq-frequency = <512>;
 			};
+
 			test_rx8130ce: rx8130ce-rtc@8 {
 				compatible = "epson,rx8130ce-rtc";
 				reg = <0x8>;

@@ -25,6 +25,7 @@
 	pinctrl-names = "default";
 
 	target-enable;
+
 	eeprom0: eeprom@52 {
 		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x52>;

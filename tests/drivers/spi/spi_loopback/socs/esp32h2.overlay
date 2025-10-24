@@ -10,13 +10,15 @@
 			pinmux = <SPIM2_MISO_GPIO10>;
 			output-enable; /* Enable internal loopback */
 		};
+
 		group2 {
 			pinmux = <SPIM2_MOSI_GPIO10>;
 			input-enable; /* Enable internal loopback */
 		};
+
 		group3 {
 			pinmux = <SPIM2_SCLK_GPIO11>,
-				<SPIM2_CSEL_GPIO12>;
+				 <SPIM2_CSEL_GPIO12>;
 		};
 	};
 };
@@ -27,6 +29,7 @@
 		reg = <0>;
 		spi-max-frequency = <500000>;
 	};
+
 	fast@0 {
 		compatible = "test-spi-loopback-fast";
 		reg = <0>;

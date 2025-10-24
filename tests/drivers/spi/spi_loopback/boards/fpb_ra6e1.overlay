@@ -6,11 +6,13 @@
 &spi1 {
 	rx-dtc;
 	tx-dtc;
+
 	slow@0 {
 		compatible = "test-spi-loopback-slow";
 		reg = <0>;
 		spi-max-frequency = <2000000>;
 	};
+
 	fast@0 {
 		compatible = "test-spi-loopback-fast";
 		reg = <0>;

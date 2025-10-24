@@ -14,7 +14,6 @@
 };
 
 &mspi1 {
-
 	compatible = "ambiq,mspi-controller";
 	pinctrl-0 = <&mspi1_default>;
 	pinctrl-1 = <&mspi1_sleep>;
@@ -32,7 +31,6 @@
 };
 
 &pinctrl {
-
 	mspi1_sleep: mspi1_sleep {
 		group1 {
 			pinmux = <GPIO_P51>,
@@ -50,7 +48,6 @@
 	};
 
 	mspi1_emul: mspi1_emul {
-
 		group1 {
 			pinmux = <MSPI1_0_P51>,
 				 <MSPI1_1_P52>,
