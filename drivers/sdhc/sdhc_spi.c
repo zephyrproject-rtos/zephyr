@@ -92,6 +92,7 @@ BUILD_ASSERT(sizeof(sdhc_ones) == 512, "0xFF array for SDHC must be 512 bytes");
 struct sdhc_spi_config {
 	const struct device *spi_dev;
 	const struct gpio_dt_spec pwr_gpio;
+	const struct gpio_dt_spec cd_gpio;
 	const uint32_t spi_max_freq;
 	uint32_t power_delay_ms;
 };
@@ -769,6 +770,13 @@ static int sdhc_spi_set_io(const struct device *dev, struct sdhc_io *ios)
 
 static int sdhc_spi_get_card_present(const struct device *dev)
 {
+	const struct sdhc_spi_config *config = dev->config;
+
+	/* If a CD pin is configured, use it for card detection */
+	if (config->cd_gpio.port) {
+		return gpio_pin_get_dt(&config->cd_gpio);
+	}
+
 	/* SPI has no card presence method, assume card is in slot */
 	return 1;
 }
@@ -806,6 +814,7 @@ static int sdhc_spi_init(const struct device *dev)
 	if (!device_is_ready(cfg->spi_dev)) {
 		return -ENODEV;
 	}
+
 	if (cfg->pwr_gpio.port) {
 		if (!gpio_is_ready_dt(&cfg->pwr_gpio)) {
 			return -ENODEV;
@@ -816,6 +825,20 @@ static int sdhc_spi_init(const struct device *dev)
 			return ret;
 		}
 	}
+
+	if (cfg->cd_gpio.port) {
+		if (!gpio_is_ready_dt(&cfg->cd_gpio)) {
+			LOG_ERR("Card detect GPIO device not ready");
+			return -ENODEV;
+		}
+
+		ret = gpio_pin_configure_dt(&cfg->cd_gpio, GPIO_INPUT);
+		if (ret < 0) {
+			LOG_ERR("Could not configure card-detect pin; (%d)", ret);
+			return ret;
+		}
+	}
+
 	data->power_mode = SDHC_POWER_OFF;
 	data->spi_cfg = &data->cfg_a;
 	data->spi_cfg->frequency = 0;
@@ -836,6 +859,7 @@ static DEVICE_API(sdhc, sdhc_spi_api) = {
 	const struct sdhc_spi_config sdhc_spi_config_##n = {			\
 		.spi_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),			\
 		.pwr_gpio = GPIO_DT_SPEC_INST_GET_OR(n, pwr_gpios, {0}),	\
+		.cd_gpio = GPIO_DT_SPEC_INST_GET_OR(n, cd_gpios, {0}),	\
 		.spi_max_freq = DT_INST_PROP(n, spi_max_frequency),		\
 		.power_delay_ms = DT_INST_PROP(n, power_delay_ms),		\
 	};									\
