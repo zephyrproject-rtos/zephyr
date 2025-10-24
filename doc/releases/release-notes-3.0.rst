@@ -290,7 +290,7 @@ Architectures
 
     * Converted inline assembler calls to using CMSIS provided functions for
       :c:func:`arm_core_mpu_enable` and :c:func:`arm_core_mpu_disable`.
-    * Replaced Kconfig `CONFIG_CPU_CORTEX_R` with `CONFIG_ARMV7_R` to enable
+    * Replaced Kconfig ``CONFIG_CPU_CORTEX_R`` with ``CONFIG_ARMV7_R`` to enable
       differentiation between v7 and v8 Cortex-R.
     * Updated the Cortex-R syscall behavior to match that of the Cortex-M.
 
@@ -574,7 +574,7 @@ Drivers and Sensors
 
 * PWM
 
-  * stm32: DT bindings: `st,prescaler` property was moved from pwm
+  * stm32: DT bindings: ``st,prescaler`` property was moved from pwm
     to parent timer node.
   * stm32: Implemented PWM capture API
   * Added driver for GigaDevice GD32 SoCs. Only PWM output is supported.
