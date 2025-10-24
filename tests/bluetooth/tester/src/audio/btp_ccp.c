@@ -1058,6 +1058,22 @@ static uint8_t tbs_set_signal_strength(const void *cmd, uint16_t cmd_len, void *
 	return BTP_STATUS_SUCCESS;
 }
 
+static uint8_t tbs_terminate_call(const void *cmd, uint16_t cmd_len, void *rsp,
+				  uint16_t *rsp_len)
+{
+	const struct btp_tbs_terminate_call_cmd *cp = cmd;
+	int err;
+
+	LOG_DBG("index=%u", cp->index);
+
+	err = bt_tbs_terminate(cp->index);
+	if (err != 0) {
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
 static bool btp_tbs_originate_call_cb(struct bt_conn *conn, uint8_t call_index, const char *uri)
 {
 	LOG_DBG("TBS Originate Call cb");
@@ -1126,6 +1142,11 @@ static const struct btp_handler tbs_handlers[] = {
 		.opcode = BTP_TBS_SET_SIGNAL_STRENGTH,
 		.expect_len = sizeof(struct btp_tbs_set_signal_strength_cmd),
 		.func = tbs_set_signal_strength,
+	},
+	{
+		.opcode = BTP_TBS_TERMINATE_CALL,
+		.expect_len = sizeof(struct btp_tbs_terminate_call_cmd),
+		.func = tbs_terminate_call
 	},
 };
 
