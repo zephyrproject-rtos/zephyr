@@ -20,12 +20,14 @@
 		mdm-uart-dsr-gpios = <&gpio0 25 0>;
 		mdm-uart-cts-gpios = <&gpio0 15 0>;
 		mdm-gpio6-gpios = <&gpio1 12 0>;
+
 		socket_offload: socket_offload {
 			compatible = "swir,hl7812-offload";
 			status = "okay";
 			/* optional properties for future: */
 			max-data-length = <512>;
 		};
+
 		gnss: hl_gnss {
 			compatible = "swir,hl7812-gnss";
 			pps-mode = "GNSS_PPS_MODE_DISABLED";

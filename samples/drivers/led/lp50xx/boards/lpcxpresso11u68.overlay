@@ -20,6 +20,7 @@
 					<LED_COLOR_ID_GREEN>,
 					<LED_COLOR_ID_BLUE>;
 		};
+
 		led_1 {
 			label = "LED LP5030 1";
 			index = <1>;
@@ -27,6 +28,7 @@
 					<LED_COLOR_ID_GREEN>,
 					<LED_COLOR_ID_BLUE>;
 		};
+
 		led_2 {
 			label = "LED LP5030 2";
 			index = <2>;
@@ -34,6 +36,7 @@
 					<LED_COLOR_ID_GREEN>,
 					<LED_COLOR_ID_BLUE>;
 		};
+
 		led_3 {
 			label = "LED LP5030 3";
 			index = <3>;
@@ -41,6 +44,7 @@
 					<LED_COLOR_ID_GREEN>,
 					<LED_COLOR_ID_BLUE>;
 		};
+
 		led_4 {
 			label = "LED LP5030 4";
 			index = <4>;
@@ -48,6 +52,7 @@
 					<LED_COLOR_ID_GREEN>,
 					<LED_COLOR_ID_BLUE>;
 		};
+
 		led_5 {
 			label = "LED LP5030 5";
 			index = <5>;
@@ -55,6 +60,7 @@
 					<LED_COLOR_ID_GREEN>,
 					<LED_COLOR_ID_BLUE>;
 		};
+
 		led_6 {
 			label = "LED LP5030 6";
 			index = <6>;
@@ -62,6 +68,7 @@
 					<LED_COLOR_ID_GREEN>,
 					<LED_COLOR_ID_BLUE>;
 		};
+
 		led_7 {
 			label = "LED LP5030 7";
 			index = <7>;
@@ -69,6 +76,7 @@
 					<LED_COLOR_ID_GREEN>,
 					<LED_COLOR_ID_BLUE>;
 		};
+
 		led_8 {
 			label = "LED LP5030 8";
 			index = <8>;
@@ -76,6 +84,7 @@
 					<LED_COLOR_ID_GREEN>,
 					<LED_COLOR_ID_BLUE>;
 		};
+
 		led_9 {
 			label = "LED LP5030 9";
 			index = <9>;
