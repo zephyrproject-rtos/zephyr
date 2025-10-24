@@ -384,6 +384,15 @@ int zvfs_unlink(const char *path);
  */
 int zvfs_rename(const char *old, const char *newp);
 
+/**
+ * @brief Change read/write position in file
+ *
+ * @param fd file descriptor index
+ * @param offset offset relative to whence
+ * @param whence mode of calculating final position from offset (see FS_SEEK_* in fs.h)
+ */
+off_t zvfs_lseek(int fd, off_t offset, int whence);
+
 #ifdef __cplusplus
 }
 #endif
