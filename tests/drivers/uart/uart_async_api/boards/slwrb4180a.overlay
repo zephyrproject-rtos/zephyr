@@ -22,18 +22,21 @@
 			drive-push-pull;
 			output-high;
 		};
+
 		group1 {
 			pins = <USART0_RX_PC1>;
 			input-enable;
 			silabs,input-filter;
 		};
 	};
+
 	usart1_default: usart1_default {
 		group0 {
 			pins = <USART1_TX_PA5>;
 			drive-push-pull;
 			output-high;
 		};
+
 		group1 {
 			pins = <USART1_RX_PA6>;
 			input-enable;
