@@ -5945,7 +5945,7 @@ West:
     - "area: Serialization"
 
 "West project: net-tools":
-  status: odd fixes
+  status: maintained
   maintainers:
     - jukkar
   collaborators:
