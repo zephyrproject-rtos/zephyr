@@ -499,23 +499,36 @@ class DevicetreeLintingCheck(ComplianceTest):
 
     def _parse_json_output(self, cmd, cwd=None):
         """Run command and parse single JSON output with issues array"""
-        result = subprocess.run(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            check=False,
-            text=True,
-            cwd=cwd or GIT_TOP
-        )
+        # Use a temporary file to handle large outputs (>64KB buffer limit)
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.json') as tmp_file:
+            tmp_path = tmp_file.name
 
-        if not result.stdout.strip():
-            return None
+        try:            # Write output to temp file to avoid buffer size limits
+            with open(tmp_path, 'w') as stdout_file:
+                _ = subprocess.run(
+                    cmd,
+                    stdout=stdout_file,
+                    stderr=subprocess.STDOUT,
+                    check=False,
+                    text=True,
+                    cwd=cwd or GIT_TOP
+                )
 
-        try:
-            json_data = json.loads(result.stdout)
-            return json_data
-        except json.JSONDecodeError as e:
-            raise RuntimeError(f"Failed to parse dts-linter JSON output: {e}")
+            with open(tmp_path, 'r') as f:
+                output = f.read()
+
+            if not output.strip():
+                return None
+
+            try:
+                json_data = json.loads(output)
+                return json_data
+            except json.JSONDecodeError as e:
+                raise RuntimeError(f"Failed to parse dts-linter JSON output: {e}")
+        finally:
+            # Clean up temp file
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
 
     def run(self):
         # Get changed DTS files
