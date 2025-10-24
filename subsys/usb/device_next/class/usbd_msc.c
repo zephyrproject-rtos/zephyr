@@ -62,8 +62,12 @@ struct CSW {
 
 #define MSC_NUM_BUFFERS UTIL_INC(IS_ENABLED(CONFIG_USBD_MSC_DOUBLE_BUFFERING))
 
+#if USBD_MAX_BULK_MPS > CONFIG_USBD_MSC_SCSI_BUFFER_SIZE
+#error "SCSI buffer must be at least USB bulk endpoint wMaxPacketSize"
+#endif
+
 UDC_BUF_POOL_DEFINE(msc_ep_pool, MSC_NUM_INSTANCES * (1 + MSC_NUM_BUFFERS),
-		    USBD_MAX_BULK_MPS, sizeof(struct udc_buf_info), NULL);
+		    0, sizeof(struct udc_buf_info), NULL);
 
 struct msc_event {
 	struct usbd_class_data *c_data;
@@ -124,22 +128,6 @@ struct msc_bot_ctx {
 	uint32_t transferred_data;
 	size_t scsi_bytes;
 };
-
-static struct net_buf *msc_buf_alloc(const uint8_t ep)
-{
-	struct net_buf *buf = NULL;
-	struct udc_buf_info *bi;
-
-	buf = net_buf_alloc(&msc_ep_pool, K_NO_WAIT);
-	if (!buf) {
-		return NULL;
-	}
-
-	bi = udc_get_buf_info(buf);
-	bi->ep = ep;
-
-	return buf;
-}
 
 static struct net_buf *msc_buf_alloc_data(const uint8_t ep, uint8_t *data, size_t len)
 {
@@ -334,6 +322,7 @@ static void msc_queue_cbw(struct usbd_class_data *const c_data)
 {
 	struct msc_bot_ctx *ctx = usbd_class_get_private(c_data);
 	struct net_buf *buf;
+	uint8_t *scsi_buf;
 	uint8_t ep;
 	int ret;
 
@@ -342,9 +331,13 @@ static void msc_queue_cbw(struct usbd_class_data *const c_data)
 		return;
 	}
 
+	__ASSERT(ctx->scsi_bufs_used == 0,
+		 "CBW can only be queued when SCSI buffers are free");
+
 	LOG_DBG("Queuing OUT");
 	ep = msc_get_bulk_out(c_data);
-	buf = msc_buf_alloc(ep);
+	scsi_buf = msc_alloc_scsi_buf(ctx);
+	buf = msc_buf_alloc_data(ep, scsi_buf, USBD_MAX_BULK_MPS);
 
 	/* The pool is large enough to support all allocations. Failing alloc
 	 * indicates either a memory leak or logic error.
@@ -355,6 +348,7 @@ static void msc_queue_cbw(struct usbd_class_data *const c_data)
 	if (ret) {
 		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
+		msc_free_scsi_buf(ctx, scsi_buf);
 		/* 6.6.2 Internal Device Error */
 		msc_stall_and_wait_for_recovery(ctx);
 	} else {
@@ -648,6 +642,7 @@ static void msc_handle_bulk_in(struct msc_bot_ctx *ctx,
 static void msc_send_csw(struct msc_bot_ctx *ctx)
 {
 	struct net_buf *buf;
+	uint8_t *scsi_buf;
 	uint8_t ep;
 	int ret;
 
@@ -657,20 +652,25 @@ static void msc_send_csw(struct msc_bot_ctx *ctx)
 		return;
 	}
 
+	__ASSERT(ctx->scsi_bufs_used == 0,
+		 "CSW can be sent only if SCSI buffers are free");
+
 	/* Convert dCSWDataResidue to LE, other fields are already set */
 	ctx->csw.dCSWDataResidue = sys_cpu_to_le32(ctx->csw.dCSWDataResidue);
 	ep = msc_get_bulk_in(ctx->class_node);
-	buf = msc_buf_alloc(ep);
+	scsi_buf = msc_alloc_scsi_buf(ctx);
+	memcpy(scsi_buf, &ctx->csw, sizeof(ctx->csw));
+	buf = msc_buf_alloc_data(ep, scsi_buf, sizeof(ctx->csw));
 	/* The pool is large enough to support all allocations. Failing alloc
 	 * indicates either a memory leak or logic error.
 	 */
 	__ASSERT_NO_MSG(buf);
 
-	net_buf_add_mem(buf, &ctx->csw, sizeof(ctx->csw));
 	ret = usbd_ep_enqueue(ctx->class_node, buf);
 	if (ret) {
 		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
+		msc_free_scsi_buf(ctx, scsi_buf);
 		/* 6.6.2 Internal Device Error */
 		msc_stall_and_wait_for_recovery(ctx);
 	} else {
