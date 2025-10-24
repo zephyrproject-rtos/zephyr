@@ -1,5 +1,5 @@
 /*
- * Copyright (c), 2025 tinyvision.io
+ * Copyright (c), 2025 tinyvision.ai
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,24 +12,26 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
+#include <zephyr/sys/util.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(nxp_sc18is606_gpio, CONFIG_GPIO_LOG_LEVEL);
 
 #include "spi/spi_sc18is606.h"
 
-#define SC18IS606_GPIO_MAX_PINS	3
+#define SC18IS606_GPIO_MAX_PINS 3
 
-#define SC18IS606_GPIO_WRITE	0xF4
-#define SC18IS606_GPIO_READ	0xF5
-#define SC18IS606_GPIO_ENABLE	0xF6
-#define SC18IS606_GPIO_CONF	0xF7
+#define SC18IS606_GPIO_WRITE  0xF4
+#define SC18IS606_GPIO_READ   0xF5
+#define SC18IS606_GPIO_ENABLE 0xF6
+#define SC18IS606_GPIO_CONF   0xF7
 
+#define SC18IS606_GPIO_CONF_INPUT      0x00
+#define SC18IS606_GPIO_CONF_PUSH_PULL  0x01
+#define SC18IS606_GPIO_CONF_OPEN_DRAIN 0x03
+#define SC18IS606_GPIO_CONF_MASK       0x03
 
-#define SC18IS606_GPIO_CONF_INPUT	0x00
-#define SC18IS606_GPIO_CONF_PUSH_PULL	0x01
-#define SC18IS606_GPIO_CONF_OPEN_DRAIN	0x03
-#define SC18IS606_GPIO_CONF_MASK	0x03
+#define SC18IS606_GPIO_ENABLE_MASK GENMASK(2, 0)
 
 struct gpio_sc18is606_config {
 	struct gpio_driver_config common;
@@ -40,26 +42,26 @@ struct gpio_sc18is606_config {
 struct gpio_sc18is606_data {
 	struct gpio_driver_data sc18is606_data;
 
-	/*current port state*/
+	/* current port state */
 	uint8_t output_state;
 
-	/*current port pin config*/
+	/* current port pin config */
 	uint8_t conf;
 };
 
-
-static int gpio_sc18is606_port_set_raw(const struct device *port,
-		uint8_t mask, uint8_t value, uint8_t toggle) {
+static int gpio_sc18is606_port_set_raw(const struct device *port, uint8_t mask, uint8_t value,
+				       uint8_t toggle)
+{
 	const struct gpio_sc18is606_config *cfg = port->config;
 	struct gpio_sc18is606_data *data = port->data;
 
-	uint8_t buf[]  = {
+	uint8_t buf[] = {
 		SC18IS606_GPIO_WRITE,
 		data->output_state,
 	};
 	int ret;
 
-	if(k_is_in_isr()) {
+	if (k_is_in_isr()) {
 		return -EWOULDBLOCK;
 	}
 
@@ -69,7 +71,7 @@ static int gpio_sc18is606_port_set_raw(const struct device *port,
 
 	ret = nxp_sc18is606_transfer(cfg->bridge, buf, sizeof(buf), NULL, 0, NULL);
 
-	if(ret < 0) {
+	if (ret < 0) {
 		LOG_ERR("Failed to write to GPIO (%d)", ret);
 		return ret;
 	}
@@ -80,11 +82,12 @@ static int gpio_sc18is606_port_set_raw(const struct device *port,
 }
 
 static int gpio_sc18is606_pin_configure(const struct device *port, gpio_pin_t pin,
-		gpio_flags_t flags)
+					gpio_flags_t flags)
 {
 	const struct gpio_sc18is606_config *cfg = port->config;
 	struct gpio_sc18is606_data *data = port->data;
 	uint8_t pin_conf;
+	uint8_t pin_enable;
 	int ret;
 
 	uint8_t buf[] = {
@@ -92,56 +95,69 @@ static int gpio_sc18is606_pin_configure(const struct device *port, gpio_pin_t pi
 		0x00,
 	};
 
-	if(pin >= SC18IS606_GPIO_MAX_PINS) {
+	uint8_t enable_buf[] = {
+		SC18IS606_GPIO_ENABLE,
+		0x00,
+	};
+
+	if (pin >= SC18IS606_GPIO_MAX_PINS) {
 		return -EINVAL;
 	}
 
-	if(flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) {
+	if (flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) {
 		return -ENOTSUP;
 	}
 
-	if(flags & GPIO_INPUT) {
+	if (flags & GPIO_INPUT) {
 		pin_conf = SC18IS606_GPIO_CONF_INPUT;
 	} else if (flags & GPIO_OUTPUT) {
 		if (flags & GPIO_SINGLE_ENDED) {
-			if(flags & GPIO_LINE_OPEN_DRAIN) {
+			if (flags & GPIO_LINE_OPEN_DRAIN) {
 				pin_conf = SC18IS606_GPIO_CONF_OPEN_DRAIN;
 			} else {
 				return -ENOTSUP;
 			}
-		} else  {
+		} else {
 			pin_conf = SC18IS606_GPIO_CONF_PUSH_PULL;
 		}
 	} else {
-		/*Impossible option*/
+		/* Impossible option */
 		return -ENOTSUP;
 	}
 
 	ret = nxp_sc18is606_claim(cfg->bridge);
-	if(ret < 0) {
+	if (ret < 0) {
 		LOG_ERR("Failed to claim the bridge (%d)", ret);
 		return ret;
 	}
 
-	data->conf |= pin_conf << (pin * 2);
+	pin_enable = FIELD_PREP(SC18IS606_GPIO_ENABLE_MASK, (1 << pin));
+
+	enable_buf[1] = pin_enable;
+
+	ret = nxp_sc18is606_transfer(cfg->bridge, enable_buf, sizeof(enable_buf), NULL, 0, NULL);
+	if (ret < 0) {
+		LOG_ERR("Failed to enable GPIO (%d)", ret);
+	}
+
+	data->conf &= ~(SC18IS606_GPIO_CONF_MASK << (pin * 2));
+	data->conf |= (pin_conf & SC18IS606_GPIO_CONF_MASK) << (pin * 2);
 	buf[1] = data->conf;
 
 	ret = nxp_sc18is606_transfer(cfg->bridge, buf, sizeof(buf), NULL, 0, NULL);
-	if(ret < 0) {
+	if (ret < 0) {
 		LOG_ERR("Failed to configure GPIO (%d)", ret);
 	}
 
-	if(ret == 0 && flags & GPIO_OUTPUT)  {
-		if(flags & GPIO_OUTPUT_INIT_HIGH) {
+	if (ret == 0 && flags & GPIO_OUTPUT) {
+		if (flags & GPIO_OUTPUT_INIT_HIGH) {
 			gpio_sc18is606_port_set_raw(port, BIT(pin), BIT(pin), 0);
-		}
-		if(flags & GPIO_OUTPUT_INIT_LOW) {
+		} else if (flags & GPIO_OUTPUT_INIT_LOW) {
 			gpio_sc18is606_port_set_raw(port, BIT(pin), 0, 0);
 		}
 	}
 
 	nxp_sc18is606_release(cfg->bridge);
-
 
 	return ret;
 }
@@ -150,19 +166,19 @@ static int gpio_sc18is606_port_get_raw(const struct device *port, gpio_port_valu
 {
 	const struct gpio_sc18is606_config *cfg = port->config;
 
-	uint8_t buf[] =  {
+	uint8_t buf[] = {
 		SC18IS606_GPIO_READ,
 	};
 	uint8_t data;
 	int ret;
 
-	if(k_is_in_isr()) {
+	if (k_is_in_isr()) {
 		return -EWOULDBLOCK;
 	}
 
 	ret = nxp_sc18is606_transfer(cfg->bridge, buf, sizeof(buf), &data, 1, NULL);
-	if(ret < 0) {
-		LOG_ERR("Failed to read GPIO state(%d)", ret);
+	if (ret < 0) {
+		LOG_ERR("Failed to read GPIO state (%d)", ret);
 		return ret;
 	}
 
@@ -171,9 +187,8 @@ static int gpio_sc18is606_port_get_raw(const struct device *port, gpio_port_valu
 	return 0;
 }
 
-static int gpio_sc18is606_port_set_masked_raw(const struct device *port,
-		gpio_port_pins_t mask,
-		gpio_port_value_t value)
+static int gpio_sc18is606_port_set_masked_raw(const struct device *port, gpio_port_pins_t mask,
+					      gpio_port_value_t value)
 {
 	return gpio_sc18is606_port_set_raw(port, (uint8_t)mask, (uint8_t)value, 0);
 }
@@ -196,14 +211,13 @@ static int gpio_sc18is606_init(const struct device *dev)
 {
 	const struct gpio_sc18is606_config *cfg = dev->config;
 
-	if(!device_is_ready(cfg->bridge)) {
+	if (!device_is_ready(cfg->bridge)) {
 		LOG_ERR("Parent device not ready");
 		return -ENODEV;
 	}
 
 	return 0;
 }
-
 
 static DEVICE_API(gpio, gpio_sc18is606_driver_api) = {
 	.pin_configure = gpio_sc18is606_pin_configure,
@@ -214,25 +228,25 @@ static DEVICE_API(gpio, gpio_sc18is606_driver_api) = {
 	.port_toggle_bits = gpio_sc18is606_port_toggle_bits,
 };
 
-
-#define CHECK_COMPAT(node)									\
+#define CHECK_COMPAT(node)                                                                         \
 	COND_CODE_1(DT_NODE_HAS_COMPAT(node, nxp_sc18is606_spi), (DEVICE_DT_GET(node)), ())
 
-#define GPIO_SC18IS606_SPI_SIBLING(n)								\	      DT_FOREACH_CHILD_STATUS_OKAY(DT_INST_PARENT(n), CHECK_COMPAT)
+#define GPIO_SC18IS606_SPI_SIBLING(n) DT_FOREACH_CHILD_STATUS_OKAY(DT_INST_PARENT(n), CHECK_COMPAT)
 
-#define GPIO_SC18IS606_DEFINE(inst)								\	      static const struct gpio_sc18is606_config gpio_sc18is606_config##inst = {		      \
-		.common = {									\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),			\
-		},										\
-		.bridge = GPIO_SC18IS606_SPI_SIBLING(inst),					\
-	};											\
-	static struct gpio_sc18is606_data gpio_sc18is606_data##inst = {				\
-		.conf = 0x00,									\
-	};											\
-												\
-	DEVICE_DT_INST_DEFINE(inst, gpio_sc18is606_init, NULL,					\
-			&gpio_sc18is606_data##inst, &gpio_sc18is606_config_##inst,		\
-			POST_KERNEL, CONFIG_GPIO_SC18IS606_INIT_PRIORITY,			\
-			&gpio_sc18is606_driver_api);
+#define GPIO_SC18IS606_DEFINE(inst)                                                                \
+	static const struct gpio_sc18is606_config gpio_sc18is606_config##inst = {                  \
+		.common =                                                                          \
+			{                                                                          \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),            \
+			},                                                                         \
+		.bridge = GPIO_SC18IS606_SPI_SIBLING(inst),                                        \
+	};                                                                                         \
+	static struct gpio_sc18is606_data gpio_sc18is606_data##inst = {                            \
+		.conf = 0x00,                                                                      \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, gpio_sc18is606_init, NULL, &gpio_sc18is606_data##inst,         \
+			      &gpio_sc18is606_config##inst, POST_KERNEL,                           \
+			      CONFIG_GPIO_SC18IS606_INIT_PRIORITY, &gpio_sc18is606_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_SC18IS606_DEFINE);

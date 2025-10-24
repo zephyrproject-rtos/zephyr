@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-description: GPIO Controller part for the SC18IS606 bridge
+description: GPIO Controller part for the SC18IS606 bridge.
 
 compatible: "nxp,sc18is606-gpio"
 
