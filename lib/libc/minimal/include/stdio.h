@@ -80,6 +80,17 @@ FILE *fopen(const char *ZRESTRICT filename, const char *ZRESTRICT mode);
 int fclose(FILE *stream);
 int fputc(int c, FILE *stream);
 /**
+ * @brief Place file position indicator.
+ *
+ * @param stream Stream to work on
+ * @param offset Offset from position specified by @a whence
+ * @param whence Reference for @a offset : SEEK_SET (beginning), SEEK_CUR (current position)
+ * or SEEK_END (end)
+ *
+ * @return 0 on success; EOF with errno set on failure
+ */
+int fseek(FILE *stream, long offset, int whence);
+/**
  * @brief Change name of file or directory.
  *
  * @param old Prior name
