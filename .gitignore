@@ -95,6 +95,7 @@ BoardYml.txt
 Checkpatch.txt
 ClangFormat.txt
 DevicetreeBindings.txt
+DevicetreeLinting.txt
 GitDiffCheck.txt
 Gitlint.txt
 Identity.txt
