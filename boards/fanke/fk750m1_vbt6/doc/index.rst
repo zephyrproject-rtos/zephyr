@@ -4,7 +4,7 @@ Overview
 ********
 
 The FK750M1-VBT6 core board by FANKE Technology Co., Ltd. is an advanced microcontroller
-platform based on the STMicroelectronics Arm® Cortex®-M7 core STM32H750VBT6 microcontroller.
+platform based on the STMicroelectronics Arm |reg| Cortex |reg|-M7 core STM32H750VBT6 microcontroller.
 This board is an ideal solution for developers looking to create high-performance
 applications, leveraging its robust capabilities and support for sophisticated display
 and image processing technologies.

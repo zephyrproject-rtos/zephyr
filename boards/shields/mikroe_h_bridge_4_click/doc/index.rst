@@ -6,7 +6,7 @@ MikroElektronika H Bridge 4 Click
 Overview
 ********
 
-H-Bridge 4 Click is a Click board™ that contains the AP1010AEN, which is a two channel H-Bridge
+H-Bridge 4 Click is a Click board |trade| that contains the AP1010AEN, which is a two channel H-Bridge
 motor driver compatible with a motor operating voltage up to 18V and can drive two DC motors or
 one stepper motor. The protection circuit has under voltage lockout circuit, thermal shutdown
 circuit, and overcurrent protection circuit, and overcurrent protection circuit can be disabled

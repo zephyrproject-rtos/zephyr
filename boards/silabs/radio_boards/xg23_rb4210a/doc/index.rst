@@ -5,7 +5,7 @@ Overview
 
 The EFR32ZG23 Radio Board is the radio board delivered with
 `xG23-PK6068A Website`_. It contains a Wireless System-On-Chip from the
-EFR32ZG23 family built on an ARM Cortex®-M33 processor with excellent low
+EFR32ZG23 family built on an ARM Cortex |reg|-M33 processor with excellent low
 power capabilities.
 
 The BRD4210A a.k.a. xG23-RB4210A radio board plugs into the Wireless Pro Kit
@@ -15,7 +15,7 @@ Hardware
 ********
 
 - EFR32ZG23B020F512IM48 SoC
-- CPU core: ARM Cortex®-M33 with FPU
+- CPU core: ARM Cortex |reg|-M33 with FPU
 - Flash memory: 512 kB
 - RAM: 64 kB
 - Transmit power: up to +20 dBm

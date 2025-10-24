@@ -6,7 +6,7 @@ MikroElektronika ETH Click
 Overview
 ********
 
-ETH Click is an accessory board in mikroBus™ form factor. It features `ENC28J60`_,
+ETH Click is an accessory board in mikroBus |trade| form factor. It features `ENC28J60`_,
 a 28-pin, 10BASE-T stand alone Ethernet Controller with an on-board MAC & PHY,
 8K Bytes of Buffer RAM and SPI serial interface.
 More information at `Eth Click Shield website`_.

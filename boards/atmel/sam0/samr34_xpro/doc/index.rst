@@ -4,8 +4,8 @@ Overview
 ********
 
 The SAM R34 Xplained Pro evaluation kit is ideal for evaluation and
-prototyping with the SAM R34 Cortex®-M0+ processor-based
-microcontrollers. The kit includes Atmel’s Embedded Debugger (EDBG),
+prototyping with the SAM R34 Cortex |reg|-M0+ processor-based
+microcontrollers. The kit includes Atmel's Embedded Debugger (EDBG),
 which provides a full debug interface without the need for additional
 hardware.
 

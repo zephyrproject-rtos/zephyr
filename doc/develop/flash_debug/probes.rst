@@ -110,7 +110,7 @@ MCU-Link CMSIS-DAP Onboard Debug Probe
 
 This is the default firmware installed on MCU-Link debug probes.  The CMSIS-DAP
 debug probes allow debugging from any compatible toolchain, including IAR
-EWARM, Keil MDK, NXP’s MCUXpresso IDE and MCUXpresso extension for VS Code. In
+EWARM, Keil MDK, NXP's MCUXpresso IDE and MCUXpresso extension for VS Code. In
 addition to debug probe functionality, the MCU-Link probes may also provide:
 
 1. SWO trace end point: this virtual device is used by MCUXpresso to retrieve
@@ -190,7 +190,7 @@ LPC-LINK2 CMSIS DAP Onboard Debug Probe
 =======================================
 
 The CMSIS-DAP debug probes allow debugging from any compatible toolchain,
-including IAR EWARM, Keil MDK, as well as NXP’s MCUXpresso IDE and
+including IAR EWARM, Keil MDK, as well as NXP's MCUXpresso IDE and
 MCUXpresso extension for VS Code.
 As well as providing debug probe functionality, the LPC-Link2 probes also
 provide:

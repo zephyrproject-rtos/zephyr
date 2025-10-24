@@ -18,7 +18,7 @@ Hardware
 ********
 
 - MGM260PD32VNA Module
-- CPU core: ARM Cortex®-M33 with FPU
+- CPU core: ARM Cortex |reg|-M33 with FPU
 - Flash memory: 3200 kB
 - RAM: 512 kB
 - Transmit power: up to +20 dBm

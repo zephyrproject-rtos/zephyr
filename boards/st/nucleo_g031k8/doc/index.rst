@@ -7,7 +7,7 @@ out new concepts and build prototypes by choosing from the various combinations 
 performance and power consumption features, provided by the STM32
 microcontroller.
 
-The Arduino™ Nano V3 connectivity support allows the easy expansion of the
+The Arduino |trade| Nano V3 connectivity support allows the easy expansion of the
 functionality of the STM32 Nucleo open development platform with a wide choice of
 specialized shields.
 

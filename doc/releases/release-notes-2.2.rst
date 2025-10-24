@@ -1226,7 +1226,7 @@ release:
 * :github:`8236` - DTS Debugging is difficult
 * :github:`7305` - CMake improvements to modularize gperf targets
 * :github:`6866` - build: requirements: No module named yaml and elftools
-* :github:`6562` - Question: Is QP™ Real-Time Frameworks/RTOS or libev supported in Zephyr? Or any plan?
+* :github:`6562` - Question: Is QP |trade| Real-Time Frameworks/RTOS or libev supported in Zephyr? Or any plan?
 * :github:`6521` - Scheduler needs spinlock-based synchronization
 * :github:`6496` - Question: Is dynamical module loader supported in Zephyr? Or any plan?
 * :github:`6389` - OpenThread: otPlatRandomGetTrue() implementation is not up to spec, may lead to security issues

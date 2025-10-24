@@ -4,12 +4,12 @@ Overview
 ********
 
 The NuMaker M5531 is an Internet of Things (IoT) application focused platform
-specially developed by Nuvoton. The NuMaker-M5531 is based on the NuMicro® M5531
-series MCU with ARM® -Cortex®-M55 core.
+specially developed by Nuvoton. The NuMaker-M5531 is based on the NuMicro |reg| M5531
+series MCU with ARM |reg| -Cortex |reg|-M55 core.
 
 Features
 ========
-- 32-bit Arm Cortex®-M55 M5531H2LJAE MCU
+- 32-bit Arm Cortex |reg|-M55 M5531H2LJAE MCU
 - Core clock up to 220 MHz
 - 2 MB embedded Dual Bank Flash and 1344 KB SRAM
 - 128 KB DTCM and 64 KB ITCM
@@ -73,7 +73,7 @@ VS Code Support
 Here is to go through VS Code instead of command line.
 
 Please install Nuvoton NuMicro Cortex-M Pack and follow getting start guide of this pack.
-This pack is a complete development toolkit for Nuvoton’s NuMicro Cortex-M microcontrollers
+This pack is a complete development toolkit for Nuvoton's NuMicro Cortex-M microcontrollers
 in Visual Studio Code.
 URL of this pack is
 https://marketplace.visualstudio.com/items?itemName=Nuvoton.nuvoton-numicro-cortex-m-pack

@@ -4,15 +4,15 @@ Overview
 ********
 
 The EK-RA8P1 is an Evaluation Kit for Renesas RA8P1 MCU Group which integrates multiple series of software-compatible
-Arm®-based 32-bit cores that share a common set of Renesas peripherals to facilitate design scalability and efficient
+Arm |reg|-based 32-bit cores that share a common set of Renesas peripherals to facilitate design scalability and efficient
 platform-based product development.
 
-The MCU in this series incorporates a high-performance Arm® Cortex®-M85 core running up to 1 GHz and Arm®
-Cortex®-M33 core running up to 250 MHz with the following features:
+The MCU in this series incorporates a high-performance Arm |reg| Cortex |reg|-M85 core running up to 1 GHz and Arm |reg|
+Cortex |reg|-M33 core running up to 250 MHz with the following features:
 
 - Up to 1 MB MRAM
 - 2 MB SRAM (256 KB of CM85 TCM RAM, 128 KB CM33 TCM RAM, 1664 KB of user SRAM)
-- Arm® Ethos™-U55 NPU
+- Arm |reg| Ethos |trade|-U55 NPU
 - Octal Serial Peripheral Interface (OSPI)
 - Layer 3 Ethernet Switch Module (ESWM), USBFS, USBHS, SD/MMC Host Interface
 - Graphics LCD Controller (GLCDC)

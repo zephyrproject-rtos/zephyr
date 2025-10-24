@@ -4,7 +4,7 @@ Overview
 ********
 
 ESP32-H2-DevKitM-1 is an entry-level development board based on the ESP32-H2-MINI-1 module,
-which integrates Bluetooth® Low Energy (LE) and IEEE 802.15.4 connectivity. It features
+which integrates Bluetooth |reg| Low Energy (LE) and IEEE 802.15.4 connectivity. It features
 the ESP32-H2 SoC — a 32-bit RISC-V core designed for low-power, secure wireless communication,
 supporting Bluetooth 5 (LE), Bluetooth Mesh, Thread, Matter, and Zigbee protocols.
 This module is ideal for a wide range of low-power IoT applications.

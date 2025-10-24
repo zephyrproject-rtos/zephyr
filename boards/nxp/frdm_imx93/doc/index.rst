@@ -9,8 +9,8 @@ small and low cost package. The FRDM-IMX93 board is an entry-level development
 board, which helps developers to get familiar with the processor before
 investing a large amount of resources in more specific designs.
 
-i.MX93 MPU is composed of one cluster of 2x Cortex®-A55 cores and a single
-Cortex®-M33 core. Zephyr RTOS is ported on Cortex®-A55 core.
+i.MX93 MPU is composed of one cluster of 2x Cortex |reg|-A55 cores and a single
+Cortex |reg|-M33 core. Zephyr RTOS is ported on Cortex |reg|-A55 core.
 
 Hardware
 ********

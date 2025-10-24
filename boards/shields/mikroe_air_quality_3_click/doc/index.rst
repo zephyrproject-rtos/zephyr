@@ -10,10 +10,10 @@ Overview
 equivalent CO2 levels and total volatile organic compounds (TVOC) concentration in the indoor
 environment.
 
-The Click board™ is equipped with the CCS811 state-of-the-art air quality sensor IC from ScioSense,
+The Click board |trade| is equipped with the CCS811 state-of-the-art air quality sensor IC from ScioSense,
 which has an integrated MCU and a specially designed metal oxide (MOX) gas sensor microplate,
 allowing for high reliability, fast cycle times and a significant reduction in the power
-consumption, compared to other MOX sensor-based devices. The Click board™ is also equipped with a
+consumption, compared to other MOX sensor-based devices. The Click board |trade| is also equipped with a
 temperature compensating element, which allows for increased measurement accuracy.
 
 .. figure:: images/mikroe_air_quality_3_click.webp

@@ -6,7 +6,7 @@ MikroElektronika ETH 3 Click
 Overview
 ********
 
-ETH 3 Click is an accessory board in mikroBus™ form factor. It features `LAN9250`_,
+ETH 3 Click is an accessory board in mikroBus |trade| form factor. It features `LAN9250`_,
 a 10/100Mbps BASE-T stand alone Ethernet Controller with an on-board MAC & PHY,
 16Kbyte FIFO Buffer and SPI serial interface.
 More information at `ETH 3 Click Shield website`_.

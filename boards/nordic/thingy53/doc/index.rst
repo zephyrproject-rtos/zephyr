@@ -7,7 +7,7 @@ Zephyr uses the ``thingy53/nrf5340`` board configuration for building
 for the Thingy:53 board. The board has the nRF5340 MCU processor, a set of
 environmental sensors, a pushbutton, and RGB LED.
 
-The nRF5340 is a dual-core SoC based on the Arm® Cortex®-M33 architecture, with:
+The nRF5340 is a dual-core SoC based on the Arm |reg| Cortex |reg|-M33 architecture, with:
 
 * a full-featured Arm Cortex-M33F core with DSP instructions, FPU, and
   Armv8-M Security Extension, running at up to 128 MHz, referred to as

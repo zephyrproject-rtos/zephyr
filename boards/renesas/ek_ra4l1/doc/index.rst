@@ -4,16 +4,16 @@ Overview
 ********
 
 The Renesas RA4L1 group of 32-bit microcontrollers (MCUs) uses the high-performance Arm
-Cortex®-M33 core. Share a common set of Renesas peripherals to facilitate design scalability
+Cortex |reg|-M33 core. Share a common set of Renesas peripherals to facilitate design scalability
 and efficient platform-based product development.
 
-The MCU in this series incorporates a high-performance Arm Cortex®-M33 core running up to
+The MCU in this series incorporates a high-performance Arm Cortex |reg|-M33 core running up to
 80 MHz with the following features:
 
 **MCU Native Pin Access**
 
 - R7FA4L1BD4CFP MCU (referred to as RA MCU)
-- 80 MHz, Arm® Cortex®-M33 core
+- 80 MHz, Arm |reg| Cortex |reg|-M33 core
 - 512 KB Code Flash, 64 KB SRAM
 - 100-pin LQFP package
 
@@ -41,8 +41,8 @@ The MCU in this series incorporates a high-performance Arm Cortex®-M33 core run
 
 - Five most popular ecosystems expansions
 
-	- 1 Seeed Grove® system (I3C) connector
-	- 1 Seeed Grove® system (I2C/Analog) connector
+	- 1 Seeed Grove |reg| system (I3C) connector
+	- 1 Seeed Grove |reg| system (I2C/Analog) connector
 	- 2 Digilent PmodTM (SPI, UART and I2C) connectors
 	- ArduinoTM (Uno R3) connector
 	- MikroElektronikaTM mikroBUS connector

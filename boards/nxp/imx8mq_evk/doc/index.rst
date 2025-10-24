@@ -4,8 +4,8 @@ Overview
 ********
 
 i.MX8MQ EVK board is based on NXP i.MX8MQ applications
-processor, composed of a quad Cortex®-A53 cluster and a single Cortex®-M4 core.
-Zephyr OS is ported to run on the Cortex®-M4 core.
+processor, composed of a quad Cortex |reg|-A53 cluster and a single Cortex |reg|-M4 core.
+Zephyr OS is ported to run on the Cortex |reg|-M4 core.
 
 - Board features:
 

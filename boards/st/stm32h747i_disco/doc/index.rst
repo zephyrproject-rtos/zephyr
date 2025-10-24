@@ -19,7 +19,7 @@ Additionally, the board features:
 
   - ST-LINK USB VBUS, USB OTG HS connector, or external sources
 
-- 4” capacitive touch LCD display module with MIPI® DSI interface
+- 4” capacitive touch LCD display module with MIPI |reg| DSI interface
 - Ethernet compliant with IEEE802.3-2002
 - USB OTG HS
 - Stereo speaker outputs

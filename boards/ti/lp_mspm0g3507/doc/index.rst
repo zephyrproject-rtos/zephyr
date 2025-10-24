@@ -4,7 +4,7 @@ Overview
 ********
 
 MSPM0G350x microcontrollers (MCUs) are part of the MSP highly integrated, ultra-low-power 32-bit MCU
-family based on the enhanced Arm® Cortex®-M0+ 32-bit core platform operating at up to 80-MHz frequency.
+family based on the enhanced Arm |reg| Cortex |reg|-M0+ 32-bit core platform operating at up to 80-MHz frequency.
 These cost-optimized MCUs offer high-performance analog peripheral integration, support extended temperature
 ranges from -40°C to 125°C, and operate with supply voltages ranging from 1.62 V to 3.6 V.
 

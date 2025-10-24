@@ -3,7 +3,7 @@
 Overview
 ********
 
-The Verdin iMX8M Mini is a System on Module based on the NXP® i.MX 8M Mini family of
+The Verdin iMX8M Mini is a System on Module based on the NXP |reg| i.MX 8M Mini family of
 embedded System on Chips (SoCs). The i.MX 8M Mini family consists of the i.MX 8M Mini Quad,
 i.MX 8M Mini QuadLite, i.MX 8M Mini Dual, i.MX 8M Mini DualLite, i.MX 8M Mini Solo, and i.MX
 8M Mini SoloLite. The top-tier i.MX 8M Mini Quad features four Cortex-A53 cores as the main
@@ -23,7 +23,7 @@ for time- and security-critical tasks.
   - Storage:
 
     - 4GB - 17GB eMMC
-    - 2KB I²C EEPROM
+    - 2KB I2C EEPROM
   - Wireless:
 
     - WiFi Dual-band 802.11 ac/a/b/g/n 2.4/5 GHz
@@ -41,8 +41,8 @@ for time- and security-critical tasks.
     - SPI
     - QSPI
     - UART
-    - I²C
-    - I²S
+    - I2C
+    - I2S
     - SD/SDIO/MMC
     - GPIOs
     - CAN

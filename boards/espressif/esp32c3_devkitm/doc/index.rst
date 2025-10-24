@@ -4,7 +4,7 @@ Overview
 ********
 
 ESP32-C3-DevKitM is an entry-level development board based on ESP32-C3-MINI-1,
-a module named for its small size. This board integrates complete Wi-Fi and Bluetooth® Low Energy functions.
+a module named for its small size. This board integrates complete Wi-Fi and Bluetooth |reg| Low Energy functions.
 For more information, check `ESP32-C3-DevKitM`_.
 
 Hardware

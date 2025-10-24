@@ -5,7 +5,7 @@ Overview
 
 The EFR32FG13P Flex Gecko 2.4 GHz and 915 MHz Radio Board is delivered as a
 `standalone Proprietary Wireless radio board`_. It contains a EFR32FG13P Wireless
-SoC built on an ARM Cortex®-M4F processor with excellent low power capabilities.
+SoC built on an ARM Cortex |reg|-M4F processor with excellent low power capabilities.
 
 The BRD4255A a.k.a. SLWRB4255A radio board plugs into the Wireless Starter Kit
 Mainboard BRD4001A and is supported as one of :ref:`silabs_radio_boards`.
@@ -14,7 +14,7 @@ Hardware
 ********
 
 - EFR32FG13P233F512GM48 Flex Gecko SoC
-- CPU core: ARM Cortex®-M4 with FPU
+- CPU core: ARM Cortex |reg|-M4 with FPU
 - Flash memory: 512 kB
 - RAM: 64 kB
 - Transmit power: up to 19 dBm

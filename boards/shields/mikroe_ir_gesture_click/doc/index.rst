@@ -15,7 +15,7 @@ the reflected light. An internal gesture engine deduces nearby objects' velocity
 distance (while canceling the ambient light). Various gestures can be implemented, from basic
 directional swipes (up, down, left, or right) to more complex combinations. Since the chip can work
 as a proximity sensor, the gesture engine can be configured to wake up automatically when a user's
-hand approaches. This Click board™ makes the perfect solution for developing applications based on
+hand approaches. This Click board |trade| makes the perfect solution for developing applications based on
 gesture detection, color and ambient light sensing, mechanical
 switch replacement, and more.
 

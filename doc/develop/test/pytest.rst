@@ -15,17 +15,17 @@ support complex functional testing for applications and libraries”* (`<https:/
 Python is known for its free libraries and ease of using it for scripting. In addition, pytest
 utilizes the concept of plugins and fixtures, increasing its expendability and reusability.
 A pytest plugin ``pytest-twister-harness`` was introduced to provide an integration between pytest
-and twister, allowing Zephyr’s community to utilize pytest functionality with keeping twister as
+and twister, allowing Zephyr's community to utilize pytest functionality with keeping twister as
 the main framework.
 
 Integration with twister
 ************************
 
 By default, there is nothing to be done to enable pytest support in twister. The plugin is
-developed as a part of Zephyr’s tree. To enable install-less operation, twister first extends
+developed as a part of Zephyr's tree. To enable install-less operation, twister first extends
 ``PYTHONPATH`` with path to this plugin, and then during pytest call, it appends the command with
 ``-p twister_harness.plugin`` argument. If one prefers to use the installed version of the plugin,
-they must add ``--allow-installed-plugin`` flag to twister’s call.
+they must add ``--allow-installed-plugin`` flag to twister's call.
 
 Pytest-based test suites are discovered the same way as other twister tests, i.e., by a presence
 of test/sample.yaml. Inside, a keyword ``harness`` tells twister how to handle a given test.

@@ -9,7 +9,7 @@ real-time response.
 
 The i.MX RT1050 provides various memory interfaces, including SDRAM, Raw NAND
 FLASH, NOR FLASH, SD/eMMC, Quad SPI, HyperBus and a wide range of other
-interfaces for connecting peripherals, such as WLAN, Bluetooth™, GPS, displays,
+interfaces for connecting peripherals, such as WLAN, Bluetooth |trade|, GPS, displays,
 and camera sensors. As with other i.MX processors, i.MX RT1050 also has rich
 audio and video features, including LCD display, basic 2D graphics, camera
 interface, SPDIF, and I2S audio interface.

@@ -116,7 +116,7 @@ cut 2.2.
   - 20x 32-bit backup register
   - Boot loader supporting USART, SPI, I2C
     and USB interfaces
-  - OTA (over the air) Bluetooth® Low Energy
+  - OTA (over the air) Bluetooth |reg| Low Energy
     and 802.15.4 update
   - Quad SPI memory interface with XIP
   - 1 Kbyte (128 double words) OTP

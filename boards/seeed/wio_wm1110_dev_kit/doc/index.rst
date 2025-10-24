@@ -4,8 +4,8 @@ Overview
 ********
 
 The Wio-WM1110 Dev Kit is based on the Wio-WM1110 Wireless Module. This module
-integrates a LoRa® transceiver and a multi-purpose radio front-end for geolocation.
-The LoRa® transceiver provides low-power network coverage, while GNSS (GPS/Beidou)
+integrates a LoRa |reg| transceiver and a multi-purpose radio front-end for geolocation.
+The LoRa |reg| transceiver provides low-power network coverage, while GNSS (GPS/Beidou)
 and Wi-Fi scanning offer location coverage while also providing connectivity options
 for a variety of peripherals.
 
@@ -36,10 +36,10 @@ For more information about Wio-WM1110 Wireless Module: `Wio-WM1110 Wireless Modu
 
 Nordic Semiconductor nRF52840 featuring:
 
-- ARM® Cortex®-M4 32-bit processor with FPU, 64 MHz
-- Bluetooth®5, IEEE 802.15.4-2006, 2.4 GHz transceiver
+- ARM |reg| Cortex |reg|-M4 32-bit processor with FPU, 64 MHz
+- Bluetooth |reg| 5, IEEE 802.15.4-2006, 2.4 GHz transceiver
 - 1 MB flash and 256 kB RAM
-- ARM® TrustZone® Cryptocell 310 security subsystem
+- ARM |reg| TrustZone |reg| Cryptocell 310 security subsystem
 - Secure boot
 
 For more information about Nordic Semiconductor nRF52840: `Nordic Semiconductor nRF52840 Product Page`_.

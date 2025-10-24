@@ -26,7 +26,7 @@ board:
 
   - ST-LINK USB VBUS, USB connector, or external sources
 
-- 4×24-segment LCD
+- 4x24-segment LCD
 - Three user LEDs
 - Reset push-button
 - User joystick
@@ -69,9 +69,9 @@ They operate at a frequency of up to 56 MHz.
 
   - 1.13 DMIPS/MHz (Drystone 2.1)
   - 134 CoreMark |reg| (2.4 CoreMark/MHz at 56 MHz)
-  - 407 ULPMark™-CP
-  - 143 ULPMark™-PP
-  - 19.7 ULPMark™-CM
+  - 407 ULPMark |trade|-CP
+  - 143 ULPMark |trade|-PP
+  - 19.7 ULPMark |trade|-CM
 
 - Memories:
 

@@ -20,7 +20,7 @@ Hardware
 - 1 user touch button and One user pushbutton
 - 4 user LEDs
 - 1 AT86RF233 IEEE 802.15.4 transceiver
-- 1 MPL115A2 I²C Barometric Pressure/Temperature Sensor
+- 1 MPL115A2 I2C Barometric Pressure/Temperature Sensor
 - 1 VCNL4010 Proximity/Light Sensor
 - 1 CC2D33S Advanced Humidity Temperature Sensor
 - 1 NCP18WF104J03RB NTC Temperature Sensor

@@ -2,7 +2,7 @@
 
 Overview
 ********
-The STM32 Nucleo-64 development board with STM32L152RE MCU, supports Arduino™ and ST morpho connectivity.
+The STM32 Nucleo-64 development board with STM32L152RE MCU, supports Arduino |trade| and ST morpho connectivity.
 
 The STM32 Nucleo board provides an affordable, and flexible way for users to try out new concepts,
 and build prototypes with the STM32 microcontroller, choosing from the various

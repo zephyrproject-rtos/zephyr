@@ -4,12 +4,12 @@ Overview
 ********
 
 The NuMaker PFM M467 is an Internet of Things (IoT) application focused platform
-specially developed by Nuvoton. The PFM-M467 is based on the NuMicro® M467
-Ethernet series MCU with ARM® -Cortex®-M4F core.
+specially developed by Nuvoton. The PFM-M467 is based on the NuMicro |reg| M467
+Ethernet series MCU with ARM |reg| -Cortex |reg|-M4F core.
 
 Features:
 =========
-- 32-bit Arm Cortex®-M4 M467HJHAE MCU
+- 32-bit Arm Cortex |reg|-M4 M467HJHAE MCU
 - Core clock up to 200 MHz
 - 1024 KB embedded Dual Bank Flash and 512 KB SRAM
 - Ethernet (IP101GR) for network application
@@ -75,7 +75,7 @@ VS Code Support
 Here is to go through VS Code instead of command line.
 
 Please install Nuvoton NuMicro Cortex-M Pack and follow getting start guide of this pack.
-This pack is a complete development toolkit for Nuvoton’s NuMicro Cortex-M microcontrollers
+This pack is a complete development toolkit for Nuvoton's NuMicro Cortex-M microcontrollers
 in Visual Studio Code.
 URL of this pack is
 https://marketplace.visualstudio.com/items?itemName=Nuvoton.nuvoton-numicro-cortex-m-pack

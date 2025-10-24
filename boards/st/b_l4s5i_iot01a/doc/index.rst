@@ -16,7 +16,7 @@ some highlights of the B_L4S5I_IOT01A Discovery kit:
     - Mass storage
     - Debug port
 
-- ARDUINO ® Uno V3  and Pmod TM expansion connector
+- ARDUINO  |reg| Uno V3  and Pmod TM expansion connector
 - 4 LEDs (2 for user, wifi, BLE)
 - 2 push-buttons (user and reset)
 - USB OTG FS with micro-AB connector
@@ -27,8 +27,8 @@ some highlights of the B_L4S5I_IOT01A Discovery kit:
 - High-performance 3-axis magnetometer
 - 3D accelerometer and 3D gyroscope
 - 64-Mbit Quad-SPI Flash memory
-- Bluetooth ® 4.1 module
-- 802.11 b/g/n compliant Wi‐Fi ® module
+- Bluetooth  |reg| 4.1 module
+- 802.11 b/g/n compliant Wi‐Fi  |reg| module
 - MCU current ammeter with 4 ranges and auto-calibration
 
 - Flexible power supply options:

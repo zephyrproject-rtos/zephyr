@@ -5,13 +5,13 @@ Overview
 
 The EFR32xG24 Explorer Kit (xG24-EK2703A) contains
 a Wireless System-On-Chip from the EFR32MG24 family built on an
-ARM Cortex®-M33 processor with excellent low power capabilities.
+ARM Cortex |reg|-M33 processor with excellent low power capabilities.
 
 Hardware
 ********
 
 - EFR32MG24B210F1536IM48-B Mighty Gecko SoC
-- CPU core: ARM Cortex®-M33 with FPU
+- CPU core: ARM Cortex |reg|-M33 with FPU
 - Flash memory: 1536 kB
 - RAM: 256 kB
 - Transmit power: up to +10 dBm

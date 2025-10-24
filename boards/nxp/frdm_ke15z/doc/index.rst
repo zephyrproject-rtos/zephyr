@@ -15,7 +15,7 @@ Hardware
 - MKE15Z256VLL7 MCU (up to 72 MHz, 256 KB flash memory, 32 KB RAM)
 - OpenSDA Debug Circuit with a virtual serial port
 - Touch electrodes in the self-capacitive mode
-- Compatible with FRDM-TOUCH, FRDM-MC-LVBLDC, and Arduino® boards
+- Compatible with FRDM-TOUCH, FRDM-MC-LVBLDC, and Arduino |reg| boards
 - User Components such as Reset; RGB LED and two user buttons
 - 6-axis FXOS8700CQ digital accelerometer and magnetometer
 

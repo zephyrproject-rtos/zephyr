@@ -7,7 +7,7 @@ The NUCLEO-H755ZI-Q board, based on the MB1363 reference board, provides an affo
 flexible way for users to try out new concepts and build prototypes on the STM32H755ZIT6
 microcontroller.
 
-The ST Zio connector, which extends the ARDUINO® Uno V3 connectivity, and
+The ST Zio connector, which extends the ARDUINO |reg| Uno V3 connectivity, and
 the ST morpho headers provide an easy means of expanding the functionality of the Nucleo
 open development platform with a wide choice of specialized shields.
 The NUCLEO-H755ZI-Q board does not require any separate probe as it integrates

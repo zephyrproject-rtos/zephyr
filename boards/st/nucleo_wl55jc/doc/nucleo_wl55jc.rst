@@ -9,10 +9,10 @@ Series microcontroller, choosing from the various combinations of performance,
 power consumption, and features.
 
 - STM32WL55JC microcontroller multiprotocol LPWAN dual-core 32-bit
-  (Arm® Cortex®-M4/M0+ at 48 MHz) in UFBGA73 package featuring:
+  (Arm |reg| Cortex |reg|-M4/M0+ at 48 MHz) in UFBGA73 package featuring:
 
   - Ultra-low-power MCU
-  - RF transceiver (150 MHz to 960 MHz frequency range) supporting LoRa®,
+  - RF transceiver (150 MHz to 960 MHz frequency range) supporting LoRa |reg|,
     (G)FSK, (G)MSK, and BPSK modulations
   - 256-Kbyte Flash memory and 64-Kbyte SRAM
 
@@ -45,33 +45,33 @@ Hardware
 
 The STM32WL55JC long-range wireless and ultra-low-power devices embed a powerful
 and ultra-low-power LPWAN-compliant radio solution, enabling the following
-modulations: LoRa®, (G)FSK, (G)MSK, and BPSK
+modulations: LoRa |reg|, (G)FSK, (G)MSK, and BPSK
 It provides the following hardware capabilities:
 
 - Radio
 
   - Frequency range: 150 MHz to 960 MHz
-  - Modulation: LoRa®, (G)FSK, (G)MSK and BPSK
-  - RX sensitivity: –123 dBm for 2-FSK(at 1.2 Kbit/s), –148 dBm for LoRa®
+  - Modulation: LoRa |reg|, (G)FSK, (G)MSK and BPSK
+  - RX sensitivity: -123 dBm for 2-FSK(at 1.2 Kbit/s), -148 dBm for LoRa |reg|
     (at 10.4 kHz, spreading factor 12)
   - Transmitter high output power, programmable up to +22 dBm
   - Transmitter low output power, programmable up to +15 dBm
   - Compliant with the following radio frequency regulations such as
     ETSI EN 300 220, EN 300 113, EN 301 166, FCC CFR 47 Part 15, 24, 90, 101
     and the Japanese ARIB STD-T30, T-67, T-108
-  - Compatible with standardized or proprietary protocols such as LoRaWAN®,
-    Sigfox™, W-MBus and more (fully open wireless system-on-chip)
+  - Compatible with standardized or proprietary protocols such as LoRaWAN |reg|,
+    Sigfox |trade|, W-MBus and more (fully open wireless system-on-chip)
 
 - Core
 
-  - 32-bit Arm® Cortex®-M4 CPU
+  - 32-bit Arm |reg| Cortex |reg|-M4 CPU
 
     - Adaptive real-time accelerator (ART Accelerator) allowing 0-wait-state
       execution from Flash memory, frequency up to 48 MHz, MPU
       and DSP instructions
     - 1.25 DMIPS/MHz (Dhrystone 2.1)
 
-  - 32-bit Arm®Cortex®-M0+ CPU
+  - 32-bit Arm |reg| Cortex |reg|-M0+ CPU
 
     - Frequency up to 48 MHz, MPU
     - 0.95 DMIPS/MHz (Dhrystone 2.1)
@@ -127,7 +127,7 @@ It provides the following hardware capabilities:
 
 - System peripherals
 
-  - Mailbox and semaphores for communication between Cortex®-M4 and Cortex®-M0+
+  - Mailbox and semaphores for communication between Cortex |reg|-M4 and Cortex |reg|-M0+
     firmware
 
 - Controllers
@@ -137,7 +137,7 @@ It provides the following hardware capabilities:
   - 2x USART (ISO 7816, IrDA, SPI)
   - 1x LPUART (low-power)
   - 2x SPI 16 Mbit/s (1 over 2 supporting I2S)
-  - 3x I2C (SMBus/PMBus™)
+  - 3x I2C (SMBus/PMBus |trade|)
   - 2x 16-bit 1-channel timer
   - 1x 16-bit 4-channel timer (supporting motor control)
   - 1x 32-bit 4-channel timer

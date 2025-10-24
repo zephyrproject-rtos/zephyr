@@ -4,14 +4,14 @@ Overview
 ********
 
 The Nucleo WB55RG board is a multi-protocol wireless and ultra-low-power device
-embedding a powerful and ultra-low-power radio compliant with the Bluetooth®
+embedding a powerful and ultra-low-power radio compliant with the Bluetooth |reg|
 Low Energy (BLE) SIG specification v5.0 and with IEEE 802.15.4-2011.
 
 
 - STM32 microcontroller in VFQFPN68 package
-- 2.4 GHz RF transceiver supporting Bluetooth® specification v5.0 and
+- 2.4 GHz RF transceiver supporting Bluetooth |reg| specification v5.0 and
   IEEE 802.15.4-2011 PHY and MAC
-- Dedicated Arm® 32-bit Cortex® M0+ CPU for real-time Radio layer
+- Dedicated Arm |reg| 32-bit Cortex |reg| M0+ CPU for real-time Radio layer
 - Three user LEDs
 - Board connector: USB user with Micro-B
 - Two types of extension resources:
@@ -40,7 +40,7 @@ provides the following hardware capabilities:
 - Radio:
 
   - 2.4GHz
-  - RF transceiver supporting Bluetooth® 5 specification, IEEE 802.15.4-2011 PHY and MAC,
+  - RF transceiver supporting Bluetooth |reg| 5 specification, IEEE 802.15.4-2011 PHY and MAC,
     supporting Thread and ZigBee|reg| 3.0
   - RX Sensitivity: -96 dBm (Bluetooth|reg| Low Energy at 1 Mbps), -100 dBm (802.15.4)
   - Programmable output power up to +6 dBm with 1 dB steps

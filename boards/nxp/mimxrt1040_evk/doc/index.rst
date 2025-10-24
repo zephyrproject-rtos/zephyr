@@ -6,7 +6,7 @@ Overview
 i.MX RT1040 crossover MCUs add additional flexibility with new packages and an
 extended temperature range up to 125° C. The i.MX RT1040 MCU has a compact
 9x9 mm package, as well as the 11x11 mm package that supports implementing a
-2-layer PCB design. The i.MX RT1040 MCUs run on the Arm® Cortex®-M7 core at
+2-layer PCB design. The i.MX RT1040 MCUs run on the Arm |reg| Cortex |reg|-M7 core at
 600 MHz.
 
 Hardware

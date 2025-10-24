@@ -4,20 +4,20 @@ Overview
 ********
 
 The Renesas RA4M2 group of 32-bit microcontrollers (MCUs) uses the high-performance Arm
-Cortex®-M33 core. In concert with the secure crypto engine, it offers secure element
+Cortex |reg|-M33 core. In concert with the secure crypto engine, it offers secure element
 functionality. The RA4M2 is built on a highly efficient 40nm process, built on FreeRTOS—and
 is expandable to use other RTOSes and middleware. The RA4M2 is suitable for IoT applications
 requiring vast communication options, future proof security, large embedded RAM, and low
-active power consumption down to 81µA/MHz running the CoreMark® algorithm from Flash.
+active power consumption down to 81µA/MHz running the CoreMark |reg| algorithm from Flash.
 
-The MCU in this series incorporates a high-performance Arm Cortex®-M33 core running up to
+The MCU in this series incorporates a high-performance Arm Cortex |reg|-M33 core running up to
 100 MHz with the following features:
 
 **Renesas RA4M2 Microcontroller Group**
 
 - R7FA4M2AD3CFP
 - 100-pin LQFP package
-- 100 MHz Arm® Cortex®-M33 core
+- 100 MHz Arm |reg| Cortex |reg|-M33 core
 - 512 kB Code Flash, 128 KB SRAM
 - Native pin access through 4 x 28-pin male headers
 - MCU current measurement points for precision current consumption measurement
@@ -49,8 +49,8 @@ The MCU in this series incorporates a high-performance Arm Cortex®-M33 core run
 
 - Five most popular ecosystems expansions
 
-	- 2 Seeed Grove® system (I2C/Analog) connectors
-	- SparkFun® Qwiic® connector
+	- 2 Seeed Grove |reg| system (I2C/Analog) connectors
+	- SparkFun |reg| Qwiic |reg| connector
 	- 2 Digilent PmodTM (SPI and UART) connectors
 	- ArduinoTM (Uno R3) connector
 	- MikroElektronikaTM mikroBUS connector

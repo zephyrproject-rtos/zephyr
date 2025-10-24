@@ -7,7 +7,7 @@ The UPD301C Basic Sink Application Example Evaluation Kit (EV11L78A)
 is a low-cost evaluation platform for Microchip's UPD301C Standalone
 Programmable USB Power Delivery (PD) Controller. This RoHS-compliant
 evaluation platform comes in a small form factor and adheres to the
-USB Type-C™ Connector Specification and USB PD 3.0 specification.
+USB Type-C |trade| Connector Specification and USB PD 3.0 specification.
 
 Hardware
 ********
@@ -36,7 +36,7 @@ SPI Port
 The SAMD20 MCU has 6 SERCOM based SPIs. One of the SPIs (SERCOM0)
 is internally connected between the SAMD20 core and the UPD350.
 
-I²C Port
+I2C Port
 ========
 
 The SAMD20 MCU has 6 SERCOM based I2Cs. One of the I2Cs (SERCOM3)

@@ -5,7 +5,7 @@ Overview
 
 The EFR32ZG28 Radio Board is the radio board delivered with
 `xG28-PK6025A Website`_. It contains a Wireless System-On-Chip from the
-EFR32ZG28 family built on an ARM Cortex®-M33 processor with excellent low
+EFR32ZG28 family built on an ARM Cortex |reg|-M33 processor with excellent low
 power capabilities.
 
 The BRD4401C a.k.a. xG28-RB4401C radio board plugs into the Wireless Pro Kit
@@ -15,7 +15,7 @@ Hardware
 ********
 
 - EFR32ZG28B322F1024IM68 SoC
-- CPU core: ARM Cortex®-M33 with FPU
+- CPU core: ARM Cortex |reg|-M33 with FPU
 - Flash memory: 1024 kB
 - RAM: 256 kB
 - Transmit power: up to +20 dBm

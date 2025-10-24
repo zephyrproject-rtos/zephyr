@@ -4,12 +4,12 @@ Overview
 ********
 
 The NuMaker M3334KI is a microcontroller platform with comprehensive peripheral integration
-specially developed by Nuvoton. The NuMaker-M3334KI is based on the NuMicro® M3331
-series MCU with ARM® -Cortex®-M33 core.
+specially developed by Nuvoton. The NuMaker-M3334KI is based on the NuMicro |reg| M3331
+series MCU with ARM |reg| -Cortex |reg|-M33 core.
 
 Features:
 =========
-- 32-bit Arm Cortex®-M33 M3334KIGAE MCU
+- 32-bit Arm Cortex |reg|-M33 M3334KIGAE MCU
 - Core clock up to 180 MHz
 - 512 KB embedded Dual Bank Flash and 320 KB SRAM
 - USB 2.0 Full-Speed OTG / Device
@@ -72,7 +72,7 @@ VS Code Support
 Here is to go through VS Code instead of command line.
 
 Please install Nuvoton NuMicro Cortex-M Pack and follow getting start guide of this pack.
-This pack is a complete development toolkit for Nuvoton’s NuMicro Cortex-M microcontrollers
+This pack is a complete development toolkit for Nuvoton's NuMicro Cortex-M microcontrollers
 in Visual Studio Code.
 URL of this pack is
 https://marketplace.visualstudio.com/items?itemName=Nuvoton.nuvoton-numicro-cortex-m-pack

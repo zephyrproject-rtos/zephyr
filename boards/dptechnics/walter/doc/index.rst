@@ -34,7 +34,7 @@ Sequans Monarch 2 GM02SP modem:
 Inputs & outputs:
 
 - 24 GPIO pins for application use
-- UART, SPI, I²C, CAN, I²S, and SD available on any of the GPIO pins
+- UART, SPI, I2C, CAN, I2S, and SD available on any of the GPIO pins
 - ADC, DAC, and PWM integrated in ESP32-S3
 - 3.3 V software-controllable output
 - USB Type-C connector for flashing and debugging

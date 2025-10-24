@@ -1109,7 +1109,7 @@ release:
 * :github:`38688` - bt_gatt_unsubscribe does not remove subscription from internal list/returning BT_GATT_ITER_STOP causes bt_gatt_subscribe to return -ENOMEM / -12
 * :github:`38675` - DTS binding create devicetree_unfixed.h build error at v2.7.0
 * :github:`38673` - DNS-SD library does not support ``_services._dns-sd._udp.local`` meta-query for service enumeration
-* :github:`38668` -  ESP32‘s I2S
+* :github:`38668` -  ESP32's I2S
 * :github:`38667` - ST LSM6DSO polling mode does not work on nRF52dk_nrf52832
 * :github:`38655` - Failing Tests for Regulator API
 * :github:`38653` - drivers: modem: gsm_ppp: Add support for Quectel modems

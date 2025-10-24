@@ -3,7 +3,7 @@
 Overview
 ********
 
-The Verdin iMX8M Plus is a Computer on Module (CoM) developed by Toradex. It is based on the NXP®
+The Verdin iMX8M Plus is a Computer on Module (CoM) developed by Toradex. It is based on the NXP |reg|
 i.MX 8M Plus family of processors (or System on Chips - SoCs).
 
 The Verdin iMX8M Plus family consists of:
@@ -28,8 +28,8 @@ Quoting NXP:
    industrial automation with high reliability. It is built to meet the needs of Smart Home,
    Building, City and Industry 4.0 applications.
 
-The Verdin iMX8M Plus integrates a total of 4 Arm Cortex™-A53 CPUs, operating at 1.6 GHz, alongside
-a single Arm Cortex™-M7F microcontroller operating at 800 MHz.
+The Verdin iMX8M Plus integrates a total of 4 Arm Cortex |trade|-A53 CPUs, operating at 1.6 GHz, alongside
+a single Arm Cortex |trade|-M7F microcontroller operating at 800 MHz.
 
 Regarding the Cortex-A53 cluster, it employs the ARMv8-A architecture as a mid-range and
 energy-efficient processor. With four cores in this cluster, each core is equipped with its own L1
@@ -39,7 +39,7 @@ cores support both real-time trace through the ETM system and static debugging v
 Furthermore, the platform features support for real-time trace capabilities, achieved through ARM's
 CoreSight ETM modules, and also enables cross-triggering by utilizing CTI and CTM modules.
 
-The Arm® Cortex®-M7 microcontroller is indicated for Real-time control, combining high-performance
+The Arm |reg| Cortex |reg|-M7 microcontroller is indicated for Real-time control, combining high-performance
 with a minimal interrupt latency. It stands out for its compatibility with existing Cortex-M profile
 processors. The microcontroller employs an efficient in-order super-scalar pipeline, allowing
 dual-issued instructions such as load/load and load/store pairs, thanks to its multiple memory
@@ -52,9 +52,9 @@ components including ETM and CTI, dedicated to facilitating debug and trace func
 Hardware
 ********
 
-- SoC name: NXP® i.MX 8M Plus
-- CPU Type:	4x Arm Cortex™-A53 (1.6 GHz)
-- Microcontroller:	1x Arm Cortex™-M7F (800 MHz)
+- SoC name: NXP |reg| i.MX 8M Plus
+- CPU Type:	4x Arm Cortex |trade|-A53 (1.6 GHz)
+- Microcontroller:	1x Arm Cortex |trade|-M7F (800 MHz)
 
 - Memory:
 

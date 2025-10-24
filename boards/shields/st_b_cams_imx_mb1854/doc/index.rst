@@ -10,7 +10,7 @@ The B-CAMS-IMX camera module provides a compelling hardware set to
 handle multiple computer vision scenarios and use cases. It features
 a high-resolution 5‑Mpx RGB CMOS image sensor, an inertial motion unit,
 and a Time‑of‑Flight sensor. It can be used with any STM32 boards featuring
-a MIPI CSI-2® interface with a 22‑pin FFC connector to enable full-featured
+a MIPI CSI-2 |reg| interface with a 22‑pin FFC connector to enable full-featured
 computer vision on STM32 microcontrollers and microprocessors easily.
 
 .. figure:: st_b_cams_imx.webp

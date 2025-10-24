@@ -30,12 +30,12 @@ Hardware
 
     - Internal High-Speed 100MHz Oscillator
     - Internal Low-Power 7.3728MHz and Ultra-Low-Power 80kHz Oscillators
-    - 16MHz–32MHz Oscillator, 32.768kHz Oscillator(External Crystal Required)
+    - 16MHz-32MHz Oscillator, 32.768kHz Oscillator(External Crystal Required)
     - External Clock Input for CPU, LPUART, LPTMR
 
   - Power Management Maximizes Uptime for Battery Applications
 
-    - 59.8μA/MHz ACTIVE at 0.9V up to 12MHz(CoreMark®)
+    - 59.8μA/MHz ACTIVE at 0.9V up to 12MHz(CoreMark |reg|)
     - 56.6μA/MHz ACTIVE at 1.1V up to 100MHz(While(1))
     - 3.09μA Full Memory Retention Power in BACKUPMode at VDD = 1.8V
     - 350nA Ultra-Low-Power RTC at
@@ -67,7 +67,7 @@ Hardware
   - UART0 and LPUART0 Interface Is Selectable through On-Board Jumpers
   - All GPIOs Signals Accessed through 0.1in Headers
   - 12 Analog Inputs Accessed through 0.1in Headers with Optional Filtering
-  - 10-Pin Arm® Cortex® SWD Connector
+  - 10-Pin Arm |reg| Cortex |reg| SWD Connector
   - Board Power Provided by USB Port
   - On-Board, 3.3V LDO Regulator
   - Test Loops Provided to Supply Optional VCORE Power Externally
@@ -245,10 +245,10 @@ UART Interface
 **************
 
 The EV kit provides a USB-to-UART bridge chip (the FTDI FT230XS-R). This bridge eliminates
-the requirement for a physical RS-232 COM port. Instead, the IC’s UART access is through
-the Micro USB type-B connector (CN1). The USB-to-UART bridge can be connected to the IC’s UART0 or
+the requirement for a physical RS-232 COM port. Instead, the IC's UART access is through
+the Micro USB type-B connector (CN1). The USB-to-UART bridge can be connected to the IC's UART0 or
 LPUART0 with jumpers JP10 (RX0) and JP11 (TX0). Virtual COM port drivers and guides for
-installing Windows® drivers are available on the FTDI Chip website.
+installing Windows |reg| drivers are available on the FTDI Chip website.
 
 
 Boot Loader

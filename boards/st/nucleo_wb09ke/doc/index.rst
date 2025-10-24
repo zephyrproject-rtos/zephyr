@@ -5,7 +5,7 @@ Overview
 
 The Nucleo WB09KE board is a Bluetooth |reg| Low Energy wireless and ultra-low-power
 board featuring an ARM Cortex |reg|-M0+ based STM32WB09KEV MCU, embedding a
-powerful and ultra-low-power radio compliant with the Bluetooth® Low Energy
+powerful and ultra-low-power radio compliant with the Bluetooth |reg| Low Energy
 SIG specification v5.4.
 
 More information about the board can be found on the `Nucleo WB09KE webpage`_.

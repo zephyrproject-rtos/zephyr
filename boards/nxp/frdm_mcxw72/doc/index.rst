@@ -5,7 +5,7 @@ Overview
 
 The FRDM-MCXW72
 
-The MCX W72x family features a 96 MHz Arm® Cortex®-M33 core coupled with a
+The MCX W72x family features a 96 MHz Arm |reg| Cortex |reg|-M33 core coupled with a
 multiprotocol radio subsystem supporting Matter, Thread, Zigbee and
 Bluetooth LE. The independent radio subsystem, with a dedicated core and
 memory, offloads the main CPU, preserving it for the primary application and

@@ -188,9 +188,9 @@ Partition grouping
    The *gen_app_partitions.py* script scans all the
    generated archives and outputs linker scripts to ensure that
    application partitions are properly grouped and aligned for the
-   target’s memory protection hardware.
+   target's memory protection hardware.
 
-Then *cpp* is used to combine linker script fragments from the target’s
+Then *cpp* is used to combine linker script fragments from the target's
 architecture/SoC, the kernel tree, optionally the partition output if
 memory protection is enabled, and any other fragments selected during
 the configuration process, into a *linker.cmd* file. The compiled

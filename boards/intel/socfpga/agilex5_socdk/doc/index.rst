@@ -1,23 +1,23 @@
 .. _intel_socfpga_agilex5_socdk:
 
-Intel® Agilex™ 5 SoC FPGA Development Kit
-#########################################
+Intel |reg| Agilex |trade| 5 SoC FPGA Development Kit
+#####################################################
 
 Overview
 ********
 
-The Intel® Agilex™ 5 SoC FPGA Development Kit offers a complete design
+The Intel |reg| Agilex |trade| 5 SoC FPGA Development Kit offers a complete design
 environment that includes both hardware and software for developing
-Intel® Agilex™ 5 E-Series based FPGA designs. This kit is recommended for
+Intel |reg| Agilex |trade| 5 E-Series based FPGA designs. This kit is recommended for
 developing custom ARM* processor-based SoC designs and ideal for intelligent
 applications at the edge, embedded and more.
 
 Hardware
 ********
 
-The Intel® Agilex™ 5 Development Kit supports the following physical features:
+The Intel |reg| Agilex |trade| 5 Development Kit supports the following physical features:
 
-- Intel® Agilex™ 5 E-Series FPGA, 50K-656K LEs integrated with
+- Intel |reg| Agilex |trade| 5 E-Series FPGA, 50K-656K LEs integrated with
   multi-core ARM processors of Dual-core A55 and Dual-core A76
 - On-board 8 GB DDR5 memory
 - On-board JTAG Intel FPGA Download Cable II
@@ -25,7 +25,7 @@ The Intel® Agilex™ 5 Development Kit supports the following physical features
 
 Supported Features
 ==================
-The Intel® Agilex™ 5 SoC Development Kit configuration supports the following
+The Intel |reg| Agilex |trade| 5 SoC Development Kit configuration supports the following
 hardware features:
 
 +-----------+------------+---------------------------------------------+
@@ -69,7 +69,7 @@ SD Card or QSPI Flash or NAND in ATF BL2.
 
 Debugging
 =========
-The Intel® Agilex™ 5 SoC Development Kit includes one JTAG connector on
+The Intel |reg| Agilex |trade| 5 SoC Development Kit includes one JTAG connector on
 board, connect it to Intel USB blaster download cables for debugging.
 
 Zephyr applications running on the Cortex-A55/A76 core can be tested by
@@ -77,4 +77,4 @@ observing UART console output.
 
 References
 ==========
-`Intel® Agilex™ 5 FPGA and SoC FPGA <https://www.intel.in/content/www/in/en/products/details/fpga/agilex/5.html>`_
+`Intel |reg| Agilex |trade| 5 FPGA and SoC FPGA <https://www.intel.in/content/www/in/en/products/details/fpga/agilex/5.html>`_

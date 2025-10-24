@@ -3,8 +3,8 @@
 Overview
 ********
 
-The Renesas RA6E1 group uses the high-performance Arm® Cortex®-M33 core with
-TrustZone®. The RA6E1 is suitable for entry IoT applications requiring streamlined
+The Renesas RA6E1 group uses the high-performance Arm |reg| Cortex |reg|-M33 core with
+TrustZone |reg|. The RA6E1 is suitable for entry IoT applications requiring streamlined
 feature and connectivity integration including Ethernet, and unprecedented performance
 with 790.75 CoreMark, which are 3.95CoreMark / Mhz.
 

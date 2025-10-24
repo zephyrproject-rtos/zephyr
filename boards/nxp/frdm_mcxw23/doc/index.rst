@@ -15,7 +15,7 @@ the MCX W23 wireless MCU.
 Hardware
 ********
 
-- MCXW23 Arm® Cortex®-M33 microcontroller running at up to 32 MHz
+- MCXW23 Arm |reg| Cortex |reg|-M33 microcontroller running at up to 32 MHz
 - 1 MB flash and 128 KB SRAM on-chip
 - 40HVQFN package
 - On-board MCU-Link debugger with CMSIS-DAP

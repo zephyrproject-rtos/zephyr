@@ -4,7 +4,7 @@ Overview
 ********
 
 The Renesas RA6M2 microcontroller is the entry point to the Renesas RA6 product series
-for applications that require a high-performance Arm® Cortex®-M4 core at a very attractive
+for applications that require a high-performance Arm |reg| Cortex |reg|-M4 core at a very attractive
 price point. The RA6M2 is suitable for IoT applications requiring security, large embedded
 RAM and low power consumption.
 

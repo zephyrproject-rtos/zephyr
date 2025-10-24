@@ -7,8 +7,8 @@ Overview
 ********
 
 96Boards Avenger96 board is based on ST Microelectronics STM32MP157A
-multi-core processor, composed of a dual Cortex®-A7 and a single Cortex®-M4
-core. Zephyr OS is ported to run on the Cortex®-M4 core.
+multi-core processor, composed of a dual Cortex |reg|-A7 and a single Cortex |reg|-M4
+core. Zephyr OS is ported to run on the Cortex |reg|-M4 core.
 
 - Board features:
 
@@ -55,15 +55,15 @@ The STM32MP157A SoC provides the following hardware capabilities:
 
 - Core:
 
-  - 32-bit dual-core Arm® Cortex®-A7
+  - 32-bit dual-core Arm |reg| Cortex |reg|-A7
 
     - L1 32-Kbyte I / 32-Kbyte D for each core
     - 256-Kbyte unified level 2 cache
-    - Arm® NEON™
+    - Arm |reg| NEON |trade|
 
-  - 32-bit Arm® Cortex®-M4 with FPU/MPU
+  - 32-bit Arm |reg| Cortex |reg|-M4 with FPU/MPU
 
-    - Up to 209 MHz (Up to 703 CoreMark®)
+    - Up to 209 MHz (Up to 703 CoreMark |reg|)
 
 - Memories:
 
@@ -78,7 +78,7 @@ The STM32MP157A SoC provides the following hardware capabilities:
   - Internal oscillators: 64 MHz HSI oscillator, 4 MHz CSI oscillator, 32 kHz
     LSI oscillator
   - External oscillators: 8-48 MHz HSE oscillator, 32.768 kHz LSE oscillator
-  - 6 × PLLs with fractional mode
+  - 6 x PLLs with fractional mode
 
 - General-purpose input/outputs:
 
@@ -90,52 +90,52 @@ The STM32MP157A SoC provides the following hardware capabilities:
 
 - Communication peripherals:
 
-  - 6 × I2C FM+ (1 Mbit/s, SMBus/PMBus)
-  - 4 × UART + 4 × USART (12.5 Mbit/s, ISO7816 interface, LIN, IrDA, SPI slave)
-  - 6 × SPI (50 Mbit/s, including 3 with full duplex I2S audio class accuracy)
-  - 4 × SAI (stereo audio: I2S, PDM, SPDIF Tx)
+  - 6 x I2C FM+ (1 Mbit/s, SMBus/PMBus)
+  - 4 x UART + 4 x USART (12.5 Mbit/s, ISO7816 interface, LIN, IrDA, SPI slave)
+  - 6 x SPI (50 Mbit/s, including 3 with full duplex I2S audio class accuracy)
+  - 4 x SAI (stereo audio: I2S, PDM, SPDIF Tx)
   - SPDIF Rx with 4 inputs
   - HDMI-CEC interface
   - MDIO Slave interface
-  - 3 × SDMMC up to 8-bit (SD / e•MMC™ / SDIO)
-  - 2 × CAN controllers supporting CAN FD protocol, TTCAN capability
-  - 2 × USB 2.0 high-speed Host+ 1 × USB 2.0 full-speed OTG simultaneously
+  - 3 x SDMMC up to 8-bit (SD / e•MMC |trade| / SDIO)
+  - 2 x CAN controllers supporting CAN FD protocol, TTCAN capability
+  - 2 x USB 2.0 high-speed Host+ 1 x USB 2.0 full-speed OTG simultaneously
   - 10/100M or Gigabit Ethernet GMAC (IEEE 1588v2 hardware, MII/RMII/GMII/RGMI)
   - 8- to 14-bit camera interface up to 140 Mbyte/s
   - 6 analog peripherals
-  - 2 × ADCs with 16-bit max. resolution.
-  - 1 × temperature sensor
-  - 2 × 12-bit D/A converters (1 MHz)
-  - 1 × digital filters for sigma delta modulator (DFSDM) with 8 channels/6
+  - 2 x ADCs with 16-bit max. resolution.
+  - 1 x temperature sensor
+  - 2 x 12-bit D/A converters (1 MHz)
+  - 1 x digital filters for sigma delta modulator (DFSDM) with 8 channels/6
     filters
   - Internal or external ADC/DAC reference VREF+
 
 - Graphics:
 
-  - 3D GPU: Vivante® - OpenGL® ES 2.0
-  - LCD-TFT controller, up to 24-bit // RGB888, up to WXGA (1366 × 768) @60 fps
-  - MIPI® DSI 2 data lanes up to 1 GHz each
+  - 3D GPU: Vivante |reg| - OpenGL |reg| ES 2.0
+  - LCD-TFT controller, up to 24-bit // RGB888, up to WXGA (1366 x 768) @60 fps
+  - MIPI |reg| DSI 2 data lanes up to 1 GHz each
 
 - Timers:
 
-  - 2 × 32-bit timers with up to 4 IC/OC/PWM or pulse counter and quadrature
+  - 2 x 32-bit timers with up to 4 IC/OC/PWM or pulse counter and quadrature
     (incremental) encoder input
-  - 2 × 16-bit advanced motor control timers
-  - 10 × 16-bit general-purpose timers (including 2 basic timers without PWM)
-  - 5 × 16-bit low-power timers
+  - 2 x 16-bit advanced motor control timers
+  - 10 x 16-bit general-purpose timers (including 2 basic timers without PWM)
+  - 5 x 16-bit low-power timers
   - RTC with sub-second accuracy and hardware calendar
-  - 2 × 4 Cortex®-A7 system timers (secure, non-secure, virtual, hypervisor)
-  - 1 × SysTick Cortex®-M4 timer
+  - 2 x 4 Cortex |reg|-A7 system timers (secure, non-secure, virtual, hypervisor)
+  - 1 x SysTick Cortex |reg|-M4 timer
 
 - Hardware acceleration:
 
   - HASH (MD5, SHA-1, SHA224, SHA256), HMAC
-  - 2 × true random number generator (3 oscillators each)
-  - 2 × CRC calculation unit
+  - 2 x true random number generator (3 oscillators each)
+  - 2 x CRC calculation unit
 
 - Debug mode:
 
-  - Arm® CoreSight™ trace and debug: SWD and JTAG interfaces
+  - Arm |reg| CoreSight |trade| trace and debug: SWD and JTAG interfaces
   - 8-Kbyte embedded trace buffer
   - 3072-bit fuses including 96-bit unique ID, up to 1184-bit available for user
 
@@ -183,7 +183,7 @@ Default Zephyr Peripheral Mapping:
 System Clock
 ------------
 
-The Cortex®-M4 Core is configured to run at a 209 MHz clock speed. This value
+The Cortex |reg|-M4 Core is configured to run at a 209 MHz clock speed. This value
 must match the configured mlhclk_ck frequency.
 
 Serial Port
@@ -191,7 +191,7 @@ Serial Port
 
 96Boards Avenger96 board has 3 U(S)ARTs. The Zephyr console output is assigned
 by default to the RAM console to be dumped by the Linux Remoteproc Framework
-on Cortex®-A7 core. Alternatively, Zephyr console output can be assigned to
+on Cortex |reg|-A7 core. Alternatively, Zephyr console output can be assigned to
 UART7 which is disabled by default. UART console can be enabled through
 board's devicetree and 96b_avenger96_defconfig board file (or prj.conf
 project files), and will disable existing RAM console output. Default UART
@@ -200,18 +200,18 @@ console settings are 115200 8N1.
 Programming and Debugging
 *************************
 
-The STM32MP157A doesn't have QSPI flash for the Cortex®-M4  and it needs to be
-started by the Cortex®-A7 core. The Cortex®-A7 core is responsible to load the
-Cortex®-M4 binary application into the RAM, and get the Cortex®-M4 out of reset.
-The Cortex®-A7 can perform these steps at bootloader level or after the Linux
+The STM32MP157A doesn't have QSPI flash for the Cortex |reg|-M4  and it needs to be
+started by the Cortex |reg|-A7 core. The Cortex |reg|-A7 core is responsible to load the
+Cortex |reg|-M4 binary application into the RAM, and get the Cortex |reg|-M4 out of reset.
+The Cortex |reg|-A7 can perform these steps at bootloader level or after the Linux
 system has booted.
 
-The Cortex®-M4 can use up to 2 different RAMs. The program pointer starts at
+The Cortex |reg|-M4 can use up to 2 different RAMs. The program pointer starts at
 address 0x00000000 (RETRAM), the vector table should be loaded at this address
-These are the memory mappings for Cortex®-A7 and Cortex®-M4:
+These are the memory mappings for Cortex |reg|-A7 and Cortex |reg|-M4:
 
 +------------+-----------------------+------------------------+----------------+
-| Region     | Cortex®-A7            | Cortex®-M4             | Size           |
+| Region     | Cortex |reg|-A7       | Cortex |reg|-M4        | Size           |
 +============+=======================+========================+================+
 | RETRAM     | 0x38000000-0x3800FFFF | 0x00000000-0x0000FFFF  | 64KB           |
 +------------+-----------------------+------------------------+----------------+
@@ -229,7 +229,7 @@ Debugging
 
 You can debug an application using OpenOCD and GDB. The Solution proposed below
 is based on the Linux STM32MP1 SDK OpenOCD and is available only for a Linux
-environment. The firmware must first be loaded by the Cortex®-A7. Developer
+environment. The firmware must first be loaded by the Cortex |reg|-A7. Developer
 then attaches the debugger to the running Zephyr using OpenOCD.
 
 Prerequisite

@@ -4,7 +4,7 @@ Overview
 ********
 
 The EFM32 Happy Gecko Starter Kit SLSTK3400A contains a MCU from the
-EFM32HG family built on ARM® Cortex®-M0+ processor with excellent low
+EFM32HG family built on ARM |reg| Cortex |reg|-M0+ processor with excellent low
 power capabilities.
 
 Hardware

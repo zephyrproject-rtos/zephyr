@@ -4,8 +4,8 @@ Overview
 ********
 
 The SAM C21N Xplained Pro evaluation kit is ideal for evaluation and
-prototyping with the SAM C21N Cortex®-M0+ processor-based
-microcontrollers. The kit includes Atmel’s Embedded Debugger (EDBG),
+prototyping with the SAM C21N Cortex |reg|-M0+ processor-based
+microcontrollers. The kit includes Atmel's Embedded Debugger (EDBG),
 which provides a full debug interface without the need for additional
 hardware.
 
@@ -18,7 +18,7 @@ Hardware
 - One yellow user LED
 - One mechanical user push button
 - One reset button
-- One QTouch® button
+- One QTouch |reg| button
 - On-board USB based EDBG unit with serial console
 - Two CAN transceivers
 

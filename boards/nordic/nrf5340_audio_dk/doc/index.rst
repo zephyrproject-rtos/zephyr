@@ -4,9 +4,9 @@ Overview
 ********
 
 The nRF5340 Audio DK (PCA10121) is designed for showcasing, developing and experimenting
-with Bluetooth® LE Audio.
+with Bluetooth |reg| LE Audio.
 
-You can use this board for developing LE-Audio-compatible applications that support Auracast™,
+You can use this board for developing LE-Audio-compatible applications that support Auracast |trade|,
 connected isochronous streams (CIS) and broadcast isochronous streams (BIS),
 and offer support for acting as a audio source, audio sink and source + sink.
 
@@ -18,7 +18,7 @@ Hardware
 
 The nRF5340 Audio DK comes with the following hardware features:
 
-* nRF5340 dual-core SoC based on the Arm® Cortex®-M33 architecture
+* nRF5340 dual-core SoC based on the Arm |reg| Cortex |reg|-M33 architecture
 * CS47L63 Low-Power Audio DSP with mono differential headphone driver
 * nPM1100 Ultra-small form-factor Power Management IC
 * On-board digital microphone

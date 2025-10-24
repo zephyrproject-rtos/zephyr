@@ -45,7 +45,7 @@ Hardware
     - USB 2.0 Hi-Speed Device Interface with PHY
     - 16 Pulse Train Generators
     - Six 32-bit Timers with 8mA Hi-Drive
-    - 1-Wire® Master
+    - 1-Wire |reg| Master
 
   - Trust Protection Unit (TPU) for IP/Data and Security
 
@@ -59,7 +59,7 @@ Hardware
    - Micro-SD Card Interface
    - USB 2.0 Full-Speed Device Interface
    - MAX11261 6-Channel, 24-Bit, 16ksps, ADC
-   - Adafruit® Feather Board Compatible
+   - Adafruit |reg| Feather Board Compatible
 
 Supported Features
 ==================

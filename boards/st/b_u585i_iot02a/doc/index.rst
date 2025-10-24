@@ -11,7 +11,7 @@ some highlights of the B_U585I_IOT02A Discovery kit:
 - STM32U585AII6Q microcontroller featuring 2 Mbyte of Flash memory, 786 Kbytes of RAM in UFBGA169 package
 - 512-Mbit octal-SPI Flash memory, 64-Mbit octal-SPI PSRAM, 256-Kbit I2C EEPROM
 - USB FS, Sink and Source power, 2.5 W power capability
-- 802.11 b/g/n compliant Wi-Fi® module from MXCHIP
+- 802.11 b/g/n compliant Wi-Fi |reg| module from MXCHIP
 - Bluetooth Low Energy from STMicroelectronics
 - MEMS sensors from STMicroelectronics
 

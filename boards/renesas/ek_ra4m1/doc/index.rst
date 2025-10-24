@@ -3,17 +3,17 @@
 Overview
 ********
 
-The MCU integrates multiple series of software- and pin-compatible Arm®-based 32-bit
+The MCU integrates multiple series of software- and pin-compatible Arm |reg|-based 32-bit
 cores that share a common set of Renesas peripherals to facilitate design scalability
 and efficient platform-based product development.
-The MCU provides an optimal combination of low-power, high-performance Arm Cortex®-M4 core
+The MCU provides an optimal combination of low-power, high-performance Arm Cortex |reg|-M4 core
 running up to 48 MHz with the following features:
 
 **Renesas RA4M1 Microcontroller Group**
 
 - R7FA4M1AB3CFP
 - 100-pin LQFP package
-- 48 MHz Arm® Cortex®-M4 core with Floating Point Unit (FPU)
+- 48 MHz Arm |reg| Cortex |reg|-M4 core with Floating Point Unit (FPU)
 - 32 KB SRAM
 - 256 KB code flash memory
 - 8 KB data flash memory
@@ -21,7 +21,7 @@ running up to 48 MHz with the following features:
 **Connectivity**
 
 - A Device USB connector for the Main MCU
-- SEGGER J-Link® On-Board (OB) interface for debugging and programming of the RA4M1 MCU. A
+- SEGGER J-Link |reg| On-Board (OB) interface for debugging and programming of the RA4M1 MCU. A
   10pin JTAG/SWD interface is also provided for connecting optional external debuggers and
   programmers.
 - Two PMOD connectors, allowing use of appropriate PMOD compliant peripheral plug-in modules for

@@ -3,13 +3,13 @@
 Overview
 ********
 
-The Renesas RA6M4 group uses the high-performance Arm® Cortex®-M33
-core with TrustZone®. Secure element functionality providing better
+The Renesas RA6M4 group uses the high-performance Arm |reg| Cortex |reg|-M33
+core with TrustZone |reg|. Secure element functionality providing better
 performance, unlimited secure key storage, key management, and lower
 BOM cost, as well as the integrated Ethernet MAC with individual DMA
 ensures high data throughput. The RA6M4 is suitable for IoT applications
 requiring Ethernet, future proof security, large embedded RAM, and low
-active power consumption down to 99uA/MHz running the CoreMark®
+active power consumption down to 99uA/MHz running the CoreMark |reg|
 algorithm from Flash.
 
 The key features of the EK-RA6M4 board are categorized in three groups as follow:

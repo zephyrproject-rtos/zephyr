@@ -16,7 +16,7 @@ is important to note that all the information in this section applies only to
 
 There are no limitations whatsoever (except perhaps license compatibility) in
 the support for binary blobs in forks or third-party distributions of Zephyr. In
-fact, Zephyr’s build system supports arbitrary use cases related to blobs. This
+fact, Zephyr's build system supports arbitrary use cases related to blobs. This
 includes linking against libraries, flashing images to targets, etc. Users are
 therefore free to create Zephyr-based downstream software which uses binary
 blobs if they cannot meet the requirements described in this page.
@@ -58,7 +58,7 @@ corresponding :file:`module.yml` file. A specification for a blob must contain:
 - An abstract description of the blob itself
 - Version information
 - A reference to vendor-provided documentation
-- The blob’s :ref:`type <bin-blobs-types>`, which must be one of the allowed types
+- The blob's :ref:`type <bin-blobs-types>`, which must be one of the allowed types
 - A checksum for the blob, which ``west blobs`` checks after downloading.
   This is required for reproducibility and to allow bisecting issues as blobs
   change using Git and west

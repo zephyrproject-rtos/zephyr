@@ -11,7 +11,7 @@ Hardware
 
 The main hardware features are:
 
-- ESP32-S3FN8 low-power MCU-based SoC (dual-core Xtensa® 32-bit LX7 microprocessor, five stage pipeline rack Structure, main frequency up to 240 MHz).
+- ESP32-S3FN8 low-power MCU-based SoC (dual-core Xtensa |reg| 32-bit LX7 microprocessor, five stage pipeline rack Structure, main frequency up to 240 MHz).
 - Semtech SX1262 LoRa node chip
 - Type-C USB interface with a complete voltage regulator, ESD protection, short circuit protection, RF shielding, and other protection measures (note: you need an USB-A to USB-C cable if you want to power-up the board from USB).
 - Onboard SH1.25-2 battery interface, integrated lithium battery management system (charge and discharge management, overcharge protection, battery power detection, USB / battery power automatic switching).

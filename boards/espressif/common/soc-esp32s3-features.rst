@@ -6,8 +6,8 @@ ESP32-S3 Features
 =================
 
 ESP32-S3 is a low-power MCU-based system on a chip (SoC) with integrated 2.4 GHz Wi-Fi
-and Bluetooth® Low Energy (Bluetooth LE). It consists of high-performance dual-core microprocessor
-(Xtensa® 32-bit LX7), a low power coprocessor, a Wi-Fi baseband, a Bluetooth LE baseband,
+and Bluetooth |reg| Low Energy (Bluetooth LE). It consists of high-performance dual-core microprocessor
+(Xtensa |reg| 32-bit LX7), a low power coprocessor, a Wi-Fi baseband, a Bluetooth LE baseband,
 RF module, and numerous peripherals.
 
 ESP32-S3 SoC includes the following features:
@@ -36,7 +36,7 @@ Digital interfaces:
 - 2x MCPWM
 - 1x SDIO host controller with 2 slots
 - General DMA controller (GDMA), with 5 transmit channels and 5 receive channels
-- 1x TWAI® controller, compatible with ISO 11898-1 (CAN Specification 2.0)
+- 1x TWAI |reg| controller, compatible with ISO 11898-1 (CAN Specification 2.0)
 - Addressable RGB LED, driven by GPIO38.
 
 Analog interfaces:

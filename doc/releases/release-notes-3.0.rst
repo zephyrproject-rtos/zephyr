@@ -1074,7 +1074,7 @@ release:
 * :github:`41024` - SPI Loopback test fails to build on iMX RT EVKs
 * :github:`41017` - USB string descriptors can be re-ordered causing corruption and out-of-bounds-write
 * :github:`41016` - i2c_sam0.c i2c_sam0_transfer operations do not execute a STOP
-* :github:`41012` - irq_enable() doesn’t support enabling NVIC IRQ number more than 127
+* :github:`41012` - irq_enable() doesn't support enabling NVIC IRQ number more than 127
 * :github:`40999` - Unable to boot smp_svr sample image as documentation suggests, or sign
 * :github:`40974` - Xtensa High priority interrupts cannot be masked during initialization
 * :github:`40965` - Halt on receipt of Google Cloud IoT Core MQTT message sized 648+ bytes

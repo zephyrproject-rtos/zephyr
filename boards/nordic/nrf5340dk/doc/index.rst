@@ -6,7 +6,7 @@ Overview
 The nRF5340 DK (PCA10095) is a single-board development kit for evaluation
 and development on the Nordic nRF5340 System-on-Chip (SoC).
 
-The nRF5340 is a dual-core SoC based on the Arm® Cortex®-M33 architecture, with:
+The nRF5340 is a dual-core SoC based on the Arm |reg| Cortex |reg|-M33 architecture, with:
 
 * a full-featured Arm Cortex-M33F core with DSP instructions, FPU, and
   Armv8-M Security Extension, running at up to 128 MHz, referred to as

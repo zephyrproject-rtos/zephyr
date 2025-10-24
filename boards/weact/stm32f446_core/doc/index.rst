@@ -75,7 +75,7 @@ OnBoard Features
 - 32.768kHz LSE crystal oscillator
 - MicroSD card slot (SDIO interface)
 - SWD debug header (3.3V, GND, SWCLK, SWDIO)
-- 30×2 pin headers exposing GPIO pins
+- 30x2 pin headers exposing GPIO pins
 
 Clock Sources
 -------------

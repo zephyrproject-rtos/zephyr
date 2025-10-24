@@ -19,7 +19,7 @@ Hardware
 - External debug probe option
 - Tri-color LED, target reset, ISP & interrupt/user buttons for easy testing of
   software functionality
-- Expansion options based on Arduino UNO and PMOD™, plus additional expansion
+- Expansion options based on Arduino UNO and PMOD |trade|, plus additional expansion
   port pins
 - FTDI UART Connector
 
