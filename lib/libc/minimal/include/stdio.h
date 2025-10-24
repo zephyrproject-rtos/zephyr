@@ -91,6 +91,14 @@ int fputc(int c, FILE *stream);
  */
 int fseek(FILE *stream, long offset, int whence);
 /**
+ * @brief Get current value of file position indicator.
+ *
+ * @param stream Stream to check
+ *
+ * @return Current value of file position indicator on success; -1 with errno set otherwise
+ */
+long ftell(FILE *stream);
+/**
  * @brief Change name of file or directory.
  *
  * @param old Prior name
