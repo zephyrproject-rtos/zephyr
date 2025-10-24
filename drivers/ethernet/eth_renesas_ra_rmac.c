@@ -25,6 +25,14 @@ LOG_MODULE_REGISTER(eth_renesas_ra, CONFIG_ETHERNET_LOG_LEVEL);
 /* At this time , HAL only support single descriptor, set fixed buffer length */
 #define ETH_BUF_SIZE (1536)
 
+#if defined(CONFIG_NOCACHE_MEMORY)
+#define __eth_renesas_desc __nocache __aligned(32)
+#define __eth_renesas_buf  __nocache __aligned(32)
+#else /* CONFIG_NOCACHE_MEMORY */
+#define __eth_renesas_desc
+#define __eth_renesas_buf
+#endif /* CONFIG_NOCACHE_MEMORY */
+
 #define ETHPHYCLK_25MHZ MHZ(25)
 #define ETHPHYCLK_50MHZ MHZ(50)
 
@@ -592,16 +600,20 @@ DEVICE_DT_INST_DEFINE(0, renesas_ra_eswm_init, NULL, &eswm_data, &eswm_config, P
 							: ETH_PHY_REF_CLK_INTERNAL
 
 /* Buffers declare */
-#define ETH_TX_BUF_DECLARE(idx, n)     static uint8_t eth##n##_tx_buf##idx[ETH_BUF_SIZE];
-#define ETH_RX_BUF_DECLARE(idx, n)     static uint8_t eth##n##_rx_buf##idx[ETH_BUF_SIZE];
+#define ETH_TX_BUF_DECLARE(idx, n)                                                                 \
+	static uint8_t eth##n##_tx_buf##idx[ETH_BUF_SIZE] __eth_renesas_buf;
+#define ETH_RX_BUF_DECLARE(idx, n)                                                                 \
+	static uint8_t eth##n##_rx_buf##idx[ETH_BUF_SIZE] __eth_renesas_buf;
 #define ETH_TX_BUF_PTR_DECLARE(idx, n) (uint8_t *)&eth##n##_tx_buf##idx[0]
 #define ETH_RX_BUF_PTR_DECLARE(idx, n) (uint8_t *)&eth##n##_rx_buf##idx[0]
 
 /* Descriptors declare */
 #define ETH_TX_DESC_DECLARE(idx, n)                                                                \
-	static layer3_switch_descriptor_t eth##n##_tx_desc_array##idx[ETH_TX_BUF_NUM(n)];
+	static layer3_switch_descriptor_t                                                          \
+		eth##n##_tx_desc_array##idx[ETH_TX_BUF_NUM(n)] __eth_renesas_desc;
 #define ETH_RX_DESC_DECLARE(idx, n)                                                                \
-	static layer3_switch_descriptor_t eth##n##_rx_desc_array##idx[ETH_RX_BUF_NUM(n)];
+	static layer3_switch_descriptor_t                                                          \
+		eth##n##_rx_desc_array##idx[ETH_RX_BUF_NUM(n)] __eth_renesas_desc;
 
 /* Queues declare */
 #define ETH_TX_QUEUE_DECLARE(idx, n)                                                               \
@@ -651,8 +663,8 @@ DEVICE_DT_INST_DEFINE(0, renesas_ra_eswm_init, NULL, &eswm_data, &eswm_config, P
 #else /* CONFIG_ETH_RENESAS_RA_USE_ZERO_COPY */
 #define ETH_RENESAS_RA_DATA_BUF_MODE ETHER_ZEROCOPY_DISABLE
 #define ETH_RENESAS_RA_DATA_BUF_DECLARE(n)                                                         \
-	static uint8_t eth##n##_rx_frame[ETH_BUF_SIZE];                                            \
-	static uint8_t eth##n##_tx_frame[ETH_BUF_SIZE];
+	static uint8_t eth##n##_rx_frame[ETH_BUF_SIZE] __eth_renesas_buf;			   \
+	static uint8_t eth##n##_tx_frame[ETH_BUF_SIZE] __eth_renesas_buf;
 #define ETH_RENESAS_RA_DATA_BUF_PROP_DECLARE(n)                                                    \
 	.rx_frame = eth##n##_rx_frame, .tx_frame = eth##n##_tx_frame
 #endif /* CONFIG_ETH_RENESAS_RA_USE_ZERO_COPY */
