@@ -30,7 +30,7 @@
 struct bt_a2dp *default_a2dp;
 static uint8_t a2dp_sink_sdp_registered;
 static uint8_t a2dp_source_sdp_registered;
-static uint8_t a2dp_initied;
+static bool a2dp_cb_registered;
 BT_A2DP_SBC_SINK_EP_DEFAULT(sink_sbc_endpoint);
 BT_A2DP_SBC_SOURCE_EP_DEFAULT(source_sbc_endpoint);
 struct bt_a2dp_codec_ie peer_sbc_capabilities;
@@ -523,12 +523,22 @@ static struct bt_a2dp_cb a2dp_cb = {
 #endif
 };
 
+static int check_cb_registration(const struct shell *sh)
+{
+	if (!a2dp_cb_registered) {
+		shell_print(sh, "need to register a2dp connection callbacks");
+		return -EIO;
+	}
+
+	return 0;
+}
+
 static int cmd_register_cb(const struct shell *sh, int32_t argc, char *argv[])
 {
 	int err = -1;
 
-	if (a2dp_initied == 0) {
-		a2dp_initied = 1;
+	if (!a2dp_cb_registered) {
+		a2dp_cb_registered = true;
 
 		err = bt_a2dp_register_cb(&a2dp_cb);
 		if (!err) {
@@ -549,8 +559,7 @@ static int cmd_register_ep(const struct shell *sh, int32_t argc, char *argv[])
 	const char *type;
 	const char *action;
 
-	if (a2dp_initied == 0) {
-		shell_print(sh, "need to register a2dp connection callbacks");
+	if (check_cb_registration(sh) != 0) {
 		return -ENOEXEC;
 	}
 
@@ -597,8 +606,7 @@ static int cmd_register_ep(const struct shell *sh, int32_t argc, char *argv[])
 
 static int cmd_connect(const struct shell *sh, int32_t argc, char *argv[])
 {
-	if (a2dp_initied == 0) {
-		shell_print(sh, "need to register a2dp connection callbacks");
+	if (check_cb_registration(sh) != 0) {
 		return -ENOEXEC;
 	}
 
@@ -616,8 +624,7 @@ static int cmd_connect(const struct shell *sh, int32_t argc, char *argv[])
 
 static int cmd_disconnect(const struct shell *sh, int32_t argc, char *argv[])
 {
-	if (a2dp_initied == 0) {
-		shell_print(sh, "need to register a2dp connection callbacks");
+	if (check_cb_registration(sh) != 0) {
 		return -ENOEXEC;
 	}
 
@@ -650,8 +657,7 @@ static int cmd_configure(const struct shell *sh, int32_t argc, char *argv[])
 {
 	int err;
 
-	if (a2dp_initied == 0) {
-		shell_print(sh, "need to register a2dp connection callbacks");
+	if (check_cb_registration(sh) != 0) {
 		return -ENOEXEC;
 	}
 
@@ -682,8 +688,7 @@ static int cmd_configure(const struct shell *sh, int32_t argc, char *argv[])
 
 static int cmd_reconfigure(const struct shell *sh, int32_t argc, char *argv[])
 {
-	if (a2dp_initied == 0) {
-		shell_print(sh, "need to register a2dp connection callbacks");
+	if (check_cb_registration(sh) != 0) {
 		return -ENOEXEC;
 	}
 
@@ -720,8 +725,7 @@ static int cmd_get_peer_eps(const struct shell *sh, int32_t argc, char *argv[])
 {
 	int err = 0;
 
-	if (a2dp_initied == 0) {
-		shell_print(sh, "need to register a2dp connection callbacks");
+	if (check_cb_registration(sh) != 0) {
 		return -ENOEXEC;
 	}
 
@@ -746,8 +750,7 @@ static int cmd_get_peer_eps(const struct shell *sh, int32_t argc, char *argv[])
 
 static int cmd_establish(const struct shell *sh, int32_t argc, char *argv[])
 {
-	if (a2dp_initied == 0) {
-		shell_print(sh, "need to register a2dp connection callbacks");
+	if (check_cb_registration(sh) != 0) {
 		return -ENOEXEC;
 	}
 
@@ -759,8 +762,7 @@ static int cmd_establish(const struct shell *sh, int32_t argc, char *argv[])
 
 static int cmd_release(const struct shell *sh, int32_t argc, char *argv[])
 {
-	if (a2dp_initied == 0) {
-		shell_print(sh, "need to register a2dp connection callbacks");
+	if (check_cb_registration(sh) != 0) {
 		return -ENOEXEC;
 	}
 
@@ -772,8 +774,7 @@ static int cmd_release(const struct shell *sh, int32_t argc, char *argv[])
 
 static int cmd_start(const struct shell *sh, int32_t argc, char *argv[])
 {
-	if (a2dp_initied == 0) {
-		shell_print(sh, "need to register a2dp connection callbacks");
+	if (check_cb_registration(sh) != 0) {
 		return -ENOEXEC;
 	}
 
@@ -785,8 +786,7 @@ static int cmd_start(const struct shell *sh, int32_t argc, char *argv[])
 
 static int cmd_suspend(const struct shell *sh, int32_t argc, char *argv[])
 {
-	if (a2dp_initied == 0) {
-		shell_print(sh, "need to register a2dp connection callbacks");
+	if (check_cb_registration(sh) != 0) {
 		return -ENOEXEC;
 	}
 
@@ -798,8 +798,7 @@ static int cmd_suspend(const struct shell *sh, int32_t argc, char *argv[])
 
 static int cmd_abort(const struct shell *sh, int32_t argc, char *argv[])
 {
-	if (a2dp_initied == 0) {
-		shell_print(sh, "need to register a2dp connection callbacks");
+	if (check_cb_registration(sh) != 0) {
 		return -ENOEXEC;
 	}
 
@@ -815,8 +814,7 @@ static int cmd_send_media(const struct shell *sh, int32_t argc, char *argv[])
 	struct net_buf *buf;
 	int ret;
 
-	if (a2dp_initied == 0) {
-		shell_print(sh, "need to register a2dp connection callbacks");
+	if (check_cb_registration(sh) != 0) {
 		return -ENOEXEC;
 	}
 
@@ -847,8 +845,7 @@ static int cmd_send_delay_report(const struct shell *sh, int32_t argc, char *arg
 {
 	int err;
 
-	if (a2dp_initied == 0) {
-		shell_print(sh, "need to register a2dp connection callbacks");
+	if (check_cb_registration(sh) != 0) {
 		return -ENOEXEC;
 	}
 
@@ -863,8 +860,7 @@ static int cmd_send_delay_report(const struct shell *sh, int32_t argc, char *arg
 
 static int cmd_get_config(const struct shell *sh, int32_t argc, char *argv[])
 {
-	if (a2dp_initied == 0) {
-		shell_print(sh, "need to register a2dp connection callbacks");
+	if (check_cb_registration(sh) != 0) {
 		return -ENOEXEC;
 	}
 
