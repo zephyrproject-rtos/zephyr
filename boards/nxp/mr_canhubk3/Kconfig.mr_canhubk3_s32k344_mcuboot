@@ -1,0 +1,9 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MR_CANHUBK3_S32K344_MCUBOOT
+        bool "MR-CANHUBK3 (MCUboot variant)"
+        select SOC_S32K344
+        select SOC_PART_NUMBER_PS32K344EHVPBS
+        # App will XIP from internal flash when chainloaded by MCUboot
+        select XIP

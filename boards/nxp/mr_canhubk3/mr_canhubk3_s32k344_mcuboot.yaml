@@ -1,0 +1,13 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: mr_canhubk3/s32k344/mcuboot
+name: NXP MR-CANHUBK3 (S32K344, MCUboot)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 320
+flash: 4096
+vendor: nxp
+extends: mr_canhubk3
