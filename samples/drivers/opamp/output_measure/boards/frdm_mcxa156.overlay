@@ -19,8 +19,8 @@
 	enable-measure-output;
 	functional-mode = "differential";
 	programmable-gain = "OPAMP_GAIN_1",
-			"OPAMP_GAIN_2",
-			"OPAMP_GAIN_4";
+			    "OPAMP_GAIN_2",
+			    "OPAMP_GAIN_4";
 };
 
 &lpadc0 {

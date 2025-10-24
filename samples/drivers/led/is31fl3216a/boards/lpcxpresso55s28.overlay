@@ -8,6 +8,7 @@
 
 &flexcomm4 {
 	status = "okay";
+
 	is31fl3216a@74 {
 		compatible = "issi,is31fl3216a";
 		reg = <0x74>;
