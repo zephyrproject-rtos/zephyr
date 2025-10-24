@@ -76,7 +76,7 @@
 
 	nwp: nwp {
 		compatible = "silabs,siwx91x-nwp";
-		power-profile = "high-performance";
+		power-profile = "deep-sleep-with-ram-retention";
 		stack-size = <10240>;
 		interrupt-parent = <&nvic>;
 		interrupts = <30 0>, <74 0>;
