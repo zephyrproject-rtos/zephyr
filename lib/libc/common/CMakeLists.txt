@@ -23,6 +23,7 @@ zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_FILEOPS source/stdio/fileptr_to_
 zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_FOPEN source/stdio/fopen.c)
 zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_FCLOSE source/stdio/fclose.c)
 zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_FPUTC source/stdio/fputc.c)
+zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_RENAME source/stdio/rename.c)
 zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_REMOVE source/stdio/remove.c)
 
 # Prevent compiler from optimizing calloc into an infinite recursive call

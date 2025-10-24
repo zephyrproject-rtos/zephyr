@@ -116,16 +116,6 @@ struct dirent *readdir(DIR *dirp)
 }
 
 /**
- * @brief Rename a file.
- *
- * See IEEE 1003.1
- */
-int rename(const char *old, const char *new)
-{
-	return zvfs_rename(old, new);
-}
-
-/**
  * @brief Remove a directory entry.
  *
  * See IEEE 1003.1
