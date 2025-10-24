@@ -109,7 +109,9 @@ static inline rng_sample_t ll_rng_read_rand_data(RNG_TypeDef *RNGx)
 	 * Raw register access is performed because STM32CubeWB0 v1.0.0
 	 * package is lacking the LL function to clear IRQ flags.
 	 */
-	WRITE_REG(RNG->IRQ_SR, RNG_IRQ_SR_FF_FULL_IRQ);
+	if (LL_RNG_GetFfFullIrq(RNGx)) {
+		SET_BIT(RNGx->IRQ_SR, RNG_IRQ_SR_FF_FULL_IRQ);
+	}
 
 	return rnd;
 #elif defined(CONFIG_SOC_SERIES_STM32WB0X)
