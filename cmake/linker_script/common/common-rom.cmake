@@ -15,7 +15,7 @@ zephyr_iterable_section(NAME device NUMERIC KVMA RAM_REGION GROUP RODATA_REGION)
 
 if(CONFIG_GEN_SW_ISR_TABLE AND NOT CONFIG_SRAM_SW_ISR_TABLE)
   # ld align has been changed to subalign to provide identical behavior scatter vs. ld.
-  zephyr_linker_section(NAME sw_isr_table KVMA FLASH GROUP RODATA_REGION SUBALIGN ${CONFIG_ARCH_SW_ISR_TABLE_ALIGN} NOINPUT)
+  zephyr_linker_section(NAME sw_isr_table KVMA FLASH GROUP RODATA_REGION NOINPUT)
   zephyr_linker_section_configure(
     SECTION sw_isr_table
     INPUT ".gnu.linkonce.sw_isr_table*"
@@ -197,7 +197,7 @@ zephyr_linker_section(NAME zephyr_dbg_info KVMA RAM_REGION GROUP RODATA_REGION N
 zephyr_linker_section_configure(SECTION zephyr_dbg_info INPUT ".dbg_thread_info" KEEP)
 
 if(CONFIG_SYMTAB)
-  zephyr_linker_section(NAME symtab KVMA FLASH GROUP RODATA_REGION SUBALIGN 4 NOINPUT)
+  zephyr_linker_section(NAME symtab KVMA FLASH GROUP RODATA_REGION NOINPUT)
   zephyr_linker_section_configure(SECTION symtab INPUT ".gnu.linkonce.symtab*")
 endif()
 
@@ -237,7 +237,6 @@ endif()
 if(CONFIG_NET_SOCKETS_SERVICE)
   zephyr_iterable_section(NAME net_socket_service_desc
                           KVMA RAM_REGION GROUP RODATA_REGION
-                          SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN}
   )
 endif()
 
