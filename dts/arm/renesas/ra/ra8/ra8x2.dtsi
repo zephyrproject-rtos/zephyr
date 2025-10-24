@@ -68,7 +68,7 @@
 			#size-cells = <1>;
 			status = "okay";
 
-			battery_backup: battery-backup@3b0{
+			battery_backup: battery-backup@3b0 {
 				compatible = "renesas,ra-battery-backup";
 				reg = <0x3b0 0x2>, <0x3d0 0x4>,
 				      <0xa84 0x1>, <0xa88 0x1>,
@@ -83,7 +83,7 @@
 					    "vbtbpsr", "vbtadsr",
 					    "vbtadcr1", "vbtadcr2",
 					    "vbtictlr", "vbtictlr2",
-					    "vbtimonr" , "vbtbkrn";
+					    "vbtimonr", "vbtbkrn";
 				manual-configure;
 				status = "disabled";
 			};
