@@ -237,7 +237,7 @@ static bool set_pmp_entry(unsigned int *index_p, uint8_t perm,
 	return ok;
 }
 
-#ifdef CONFIG_PMP_STACK_GUARD
+#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
 static inline bool set_pmp_mprv_catchall(unsigned int *index_p,
 					 unsigned long *pmp_addr, unsigned long *pmp_cfg,
 					 unsigned int index_limit)
@@ -265,7 +265,7 @@ static inline bool set_pmp_mprv_catchall(unsigned int *index_p,
 
 	return ok;
 }
-#endif /* CONFIG_PMP_STACK_GUARD */
+#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC */
 
 /**
  * @brief Write a range of PMP entries to corresponding PMP registers
@@ -513,7 +513,7 @@ void z_riscv_pmp_init(void)
 /**
  * @Brief Initialize the per-thread PMP register copy with global values.
  */
-#if (defined(CONFIG_PMP_STACK_GUARD) && defined(CONFIG_MULTITHREADING)) || defined(CONFIG_USERSPACE)
+#if defined(CONFIG_PMP_KERNEL_MODE_DYNAMIC) || defined(CONFIG_USERSPACE)
 static inline unsigned int z_riscv_pmp_thread_init(unsigned long *pmp_addr,
 						   unsigned long *pmp_cfg,
 						   unsigned int index_limit)
@@ -535,9 +535,7 @@ static inline unsigned int z_riscv_pmp_thread_init(unsigned long *pmp_addr,
 }
 #endif
 
-#ifdef CONFIG_PMP_STACK_GUARD
-
-#ifdef CONFIG_MULTITHREADING
+#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
 /**
  * @brief Prepare the PMP kernelmode content for given thread.
  *
@@ -546,6 +544,8 @@ static inline unsigned int z_riscv_pmp_thread_init(unsigned long *pmp_addr,
 void z_riscv_pmp_kernelmode_prepare(struct k_thread *thread)
 {
 	unsigned int index = z_riscv_pmp_thread_init(PMP_M_MODE(thread));
+
+#if defined(CONFIG_PMP_STACK_GUARD) && defined(CONFIG_MULTITHREADING)
 	uintptr_t stack_bottom;
 
 	/* make the bottom addresses of our stack inaccessible */
@@ -560,6 +560,8 @@ void z_riscv_pmp_kernelmode_prepare(struct k_thread *thread)
 	set_pmp_entry(&index, PMP_NONE,
 		      stack_bottom, Z_RISCV_STACK_GUARD_SIZE,
 		      PMP_M_MODE(thread));
+#endif /* CONFIG_PMP_STACK_GUARD */
+
 	set_pmp_mprv_catchall(&index, PMP_M_MODE(thread));
 
 	/* remember how many entries we use */
@@ -595,8 +597,6 @@ void z_riscv_pmp_kernelmode_enable(struct k_thread *thread)
 	csr_set(mstatus, MSTATUS_MPRV);
 }
 
-#endif /* CONFIG_MULTITHREADING */
-
 /**
  * @brief Remove PMP kernel mode content to actual PMP registers
  */
@@ -627,8 +627,7 @@ void z_riscv_pmp_kernelmode_disable(void)
 		dump_pmp_regs("catch all register dump");
 	}
 }
-
-#endif /* CONFIG_PMP_STACK_GUARD */
+#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC */
 
 #ifdef CONFIG_USERSPACE
 
@@ -731,7 +730,7 @@ void z_riscv_pmp_usermode_enable(struct k_thread *thread)
 		resync_pmp_domain(thread, domain);
 	}
 
-#ifdef CONFIG_PMP_STACK_GUARD
+#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
 	/* Make sure m-mode PMP usage is disabled before we reprogram it */
 	csr_clear(mstatus, MSTATUS_MPRV);
 #endif

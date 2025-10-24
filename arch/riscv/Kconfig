@@ -414,6 +414,7 @@ endif #RISCV_PMP
 config PMP_STACK_GUARD
 	def_bool y
 	depends on HW_STACK_PROTECTION
+	select PMP_KERNEL_MODE_DYNAMIC if MULTITHREADING
 
 config PMP_STACK_GUARD_MIN_SIZE
 	int "Stack Guard area size"
@@ -429,6 +430,12 @@ config PMP_STACK_GUARD_MIN_SIZE
 	  catch any sudden jump in stack pointer decrement, plus some
 	  wiggle room to accommodate the eventual overflow exception
 	  stack usage.
+
+config PMP_KERNEL_MODE_DYNAMIC
+	bool
+	help
+	  Enable this to dynamically reconfigure and activate PMP entries for
+	  Machine mode when switching between kernel (ISR, syscall) and threads.
 
 # Implement the null pointer detection using the Physical Memory Protection
 # (PMP) Unit.
