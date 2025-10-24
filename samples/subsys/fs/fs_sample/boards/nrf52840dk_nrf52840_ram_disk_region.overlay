@@ -11,7 +11,6 @@
 /delete-node/ &sram0;
 
 / {
-
 	soc {
 		/* This is defined based on dts and dtsi files for
 		 * nrf52840 SoC; because we are not able to just
@@ -25,6 +24,7 @@
 			compatible = "mmio-sram";
 			reg = <0x20000000 DT_SIZE_K(192)>;
 		};
+
 		/* The second one is 64kiB region taken out of SRAM,
 		 * labeled here ram_disk, label can be anything,
 		 * used later in disk definition.
