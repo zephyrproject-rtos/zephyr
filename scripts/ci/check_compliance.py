@@ -497,6 +497,23 @@ class DevicetreeLintingCheck(ComplianceTest):
     name = "DevicetreeLinting"
     doc = "See https://docs.zephyrproject.org/latest/contribute/style/devicetree.html for more details."
 
+    def ensure_npx(self) -> bool:
+        try:
+            # --no prevents npx from fetching from registry
+            subprocess.run(
+                ["npx", "--no", 'dts-linter', "--", "--version"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=True,
+                text=True
+            )
+            return True
+        except subprocess.CalledProcessError:
+            return False
+        except FileNotFoundError:
+            # npx itself not installed
+            return False
+
     def _parse_json_output(self, cmd, cwd=None):
         """Run command and parse single JSON output with issues array"""
         result = subprocess.run(
@@ -524,6 +541,11 @@ class DevicetreeLintingCheck(ComplianceTest):
             if file.endswith((".dts", ".dtsi", ".overlay"))
         ]
 
+        if not self.ensure_npx():
+            self.skip(
+                'dts-linter not installed. To run this check, '
+                'install Node.js and then run [npm ci] command inside ZEPHYR_BASE'
+            )
         if not dts_files:
             self.skip('No DTS')
 
@@ -574,7 +596,7 @@ class DevicetreeLintingCheck(ComplianceTest):
                     self.failure(f"dts-linter found issues:\n{stderr_output}")
                 else:
                     self.failure("dts-linter failed with no output. "
-                                "Make sure you install Node.JS and then run npm ci inside ZEPHYR_BASE")
+                                "Make sure you install Node.js and then run npm ci inside ZEPHYR_BASE")
             except RuntimeError as ex:
                 self.failure(f"{ex}")
 
