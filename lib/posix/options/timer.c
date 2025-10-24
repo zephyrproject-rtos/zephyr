@@ -16,6 +16,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/clock.h>
 #include <pthread.h>
 
 #define ACTIVE 1
@@ -121,6 +122,18 @@ int timer_create(clockid_t clockid, struct sigevent *evp, timer_t *timerid)
 	const k_timeout_t alloc_timeout = K_MSEC(CONFIG_TIMER_CREATE_WAIT);
 
 	if (evp == NULL || timerid == NULL) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	switch (clockid) {
+	case CLOCK_REALTIME:
+		break;
+#ifdef _POSIX_MONOTONIC_CLOCK
+	case CLOCK_MONOTONIC:
+		break;
+#endif
+	default:
 		errno = EINVAL;
 		return -1;
 	}

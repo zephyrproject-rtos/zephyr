@@ -27,6 +27,8 @@ config POSIX_THREAD_CPUTIME
 
 config POSIX_MONOTONIC_CLOCK
 	bool "POSIX Monotonic clock support"
+	# TODO: move this to the XSI_ADVANCED_REALTIME option when it is created
+	default y
 	help
 	  This enables CLOCK_MONOTONIC.
 
@@ -36,6 +38,8 @@ config POSIX_MONOTONIC_CLOCK
 
 config POSIX_CPUTIME
 	bool "POSIX per-process CPU-time clocks"
+	# TODO: move this to the XSI_ADVANCED_REALTIME option when it is created
+	default y
 	help
 	  This enables CLOCK_PROCESS_CPUTIME_ID.
 

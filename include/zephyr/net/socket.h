@@ -1279,21 +1279,26 @@ struct socket_op_vtable {
  * native_sim pulls in those from the host rather than Zephyr's.
  */
 #if defined(CONFIG_POSIX_NETWORKING)
-#if !defined(ZEPHYR_INCLUDE_POSIX_ARPA_INET_H_)
+
+/*
+ * Note: this is required to avoid globally defining _POSIX_C_SOURCE and _XOPEN_SOURCE. The
+ * dependency loop should be fixed with #97050 or adjacent PRs.
+ */
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+#undef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 700
+
+#include <sys/stat.h>
 #include <arpa/inet.h>
-#endif
-#if !defined(ZEPHYR_INCLUDE_POSIX_NETDB_H_)
 #include <netdb.h>
-#endif
-#if !defined(ZEPHYR_INCLUDE_POSIX_UNISTD_H_)
 #include <unistd.h>
-#endif
-#if !defined(ZEPHYR_INCLUDE_POSIX_POLL_H_)
 #include <poll.h>
-#endif
-#if !defined(ZEPHYR_INCLUDE_POSIX_SYS_SOCKET_H_)
 #include <sys/socket.h>
-#endif
+
+#undef _POSIX_C_SOURCE
+#undef _XOPEN_SOURCE
+
 #endif /* CONFIG_POSIX_NETWORKING */
 
 #endif /* ZEPHYR_INCLUDE_NET_SOCKET_H_ */

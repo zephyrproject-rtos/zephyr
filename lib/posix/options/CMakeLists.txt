@@ -5,14 +5,9 @@ set(XOPEN_VERSION 700)
 set(GEN_DIR ${ZEPHYR_BINARY_DIR}/include/generated)
 
 if(CONFIG_POSIX_SYSTEM_INTERFACES)
-  zephyr_compile_definitions(-D_POSIX_C_SOURCE=${POSIX_VERSION})
   zephyr_compile_options("SHELL: $<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,imacros> ${ZEPHYR_BASE}/include/zephyr/posix/posix_features.h>")
   zephyr_compile_options("SHELL: $<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,imacros> ${ZEPHYR_BASE}/include/zephyr/posix/posix_features.h>")
 endif()
-if (CONFIG_XSI)
-  zephyr_compile_definitions(-D_XOPEN_SOURCE=${XOPEN_VERSION})
-endif()
-
 
 zephyr_syscall_header_ifdef(CONFIG_POSIX_CLOCK_SELECTION posix_clock.h)
 zephyr_syscall_header_ifdef(CONFIG_POSIX_TIMERS posix_clock.h)
@@ -166,3 +161,6 @@ zephyr_library_include_directories(
 )
 
 zephyr_library_property(ALLOW_EMPTY TRUE)
+
+zephyr_library_compile_options(-U_POSIX_C_SOURCE -D_POSIX_C_SOURCE=200809L)
+zephyr_library_compile_options_ifdef(CONFIG_XSI -U_XOPEN_SOURCE -D_XOPEN_SOURCE=700)

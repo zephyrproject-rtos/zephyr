@@ -22,6 +22,12 @@
 extern "C" {
 #endif
 
+#if !defined(_SOCKLEN_T_DECLARED) && !defined(__socklen_t_defined)
+typedef uint32_t socklen_t;
+#define _SOCKLEN_T_DECLARED
+#define __socklen_t_defined
+#endif
+
 struct linger {
 	int  l_onoff;
 	int  l_linger;

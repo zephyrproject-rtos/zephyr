@@ -8,6 +8,7 @@
 #ifndef ZEPHYR_LIB_POSIX_POSIX_CLOCK_H_
 #define ZEPHYR_LIB_POSIX_POSIX_CLOCK_H_
 
+#include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <time.h>
@@ -58,6 +59,21 @@ static inline bool tp_diff_in_range_ns(const struct timespec *a, const struct ti
 }
 
 uint32_t timespec_to_timeoutms(int clock_id, const struct timespec *abstime);
+
+/* Convert a POSIX clock (cast to int) to a sys_clock identifier */
+static inline int sys_clock_from_clockid(int clock_id)
+{
+	switch (clock_id) {
+	case (int)CLOCK_REALTIME:
+		return SYS_CLOCK_REALTIME;
+#if defined(_POSIX_MONOTONIC_CLOCK)
+	case (int)CLOCK_MONOTONIC:
+		return SYS_CLOCK_MONOTONIC;
+#endif
+	default:
+		return -EINVAL;
+	}
+}
 
 /** INTERNAL_HIDDEN @endcond */
 

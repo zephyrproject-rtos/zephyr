@@ -13,6 +13,7 @@
 #include <zephyr/fs/fs.h>
 #include <zephyr/posix/sys/confstr.h>
 #include <zephyr/posix/sys/sysconf.h>
+#include <zephyr/toolchain.h>
 
 #include "posix_features.h"
 
