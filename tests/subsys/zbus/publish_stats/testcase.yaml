@@ -1,5 +1,6 @@
 tests:
   message_bus.zbus.publish_stats:
     tags: zbus
+    filter: not CONFIG_SMP
     integration_platforms:
       - native_sim
