@@ -6,7 +6,7 @@ find_package(BabbleSim)
 
 zephyr_library()
 
-if (CONFIG_BOARD_NRF54L15BSIM_NRF54L15_CPUFLPR)
+if(CONFIG_BOARD_NRF54L15BSIM_NRF54L15_CPUFLPR)
 	message(FATAL_ERROR "Targeting the nrf54l15bsim/nrf54l15/cpuflpr core is not yet supported")
 endif()
 
@@ -45,7 +45,7 @@ target_sources(native_simulator INTERFACE
 	common/trace_hook.c
 )
 
-if (CONFIG_IPC_SERVICE AND CONFIG_BOARD_NRF5340BSIM_NRF5340_CPUAPP)
+if(CONFIG_IPC_SERVICE AND CONFIG_BOARD_NRF5340BSIM_NRF5340_CPUAPP)
 	zephyr_library_sources(
 		ipc_backend.c
 	)

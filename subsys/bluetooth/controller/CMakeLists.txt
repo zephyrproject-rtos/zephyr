@@ -82,7 +82,7 @@ if(CONFIG_BT_CONN)
     CONFIG_BT_CTLR_PHY
     ll_sw/ull_llcp_phy.c
     )
-  if (CONFIG_BT_CTLR_PERIPHERAL_ISO OR
+  if(CONFIG_BT_CTLR_PERIPHERAL_ISO OR
       CONFIG_BT_CTLR_CENTRAL_ISO)
     zephyr_library_sources(
       ll_sw/ull_llcp_cc.c
@@ -98,7 +98,7 @@ if(CONFIG_BT_CONN)
     ll_sw/ull_llcp_chmu.c
     ll_sw/ull_llcp_remote.c
     )
-    if (CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER OR
+    if(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER OR
         CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
       zephyr_library_sources(
         ll_sw/ull_llcp_past.c
