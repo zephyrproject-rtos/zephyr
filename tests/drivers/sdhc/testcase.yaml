@@ -14,3 +14,29 @@ tests:
       - mimxrt1064_evk
     platform_exclude:
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
+  drivers.sdhc.sdhc_api.renesas_ra_sci_b_spi:
+    depends_on: spi
+    harness: ztest
+    harness_config:
+      fixture: fixture_sdhc
+    filter: dt_alias_exists("sdhc0") and dt_compat_enabled("zephyr,sdhc-spi-slot")
+      and dt_compat_enabled("renesas,ra-spi-sci-b")
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/${BOARD}_sci_b_spi.overlay"
+    integration_platforms:
+      - ek_ra8m1
+    platform_allow:
+      - ek_ra8m1
+      - ek_ra8d1
+      - mck_ra8t1
+  drivers.sdhc.sdhc_spi.renesas_ra_sci_b_spi_ra8x2:
+    depends_on: spi
+    harness: ztest
+    harness_config:
+      fixture: fixture_sdhc
+    filter: dt_alias_exists("sdhc0") and dt_compat_enabled("zephyr,sdhc-spi-slot")
+      and dt_compat_enabled("renesas,ra-spi-sci-b")
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/${BOARD}${NORMALIZED_BOARD_QUALIFIERS}_sci_b_spi.overlay"
+    platform_allow:
+      - ek_ra8p1/r7ka8p1kflcac/cm85

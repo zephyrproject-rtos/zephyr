@@ -374,3 +374,49 @@ tests:
     platform_allow:
       - frdm_mcxn947/mcxn947/cpu0
       - mimxrt1050_evk/mimxrt1052/hyperflash
+  drivers.spi.loopback.renesas_sci_b_spi:
+    filter: dt_compat_enabled("renesas,ra-spi-sci-b")
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/${BOARD}_sci_b_spi.overlay"
+      - CONF_FILE="prj.conf" # to exclude "boards/${BOARD}.overlay"
+    integration_platforms:
+      - ek_ra8m1
+    platform_allow:
+      - ek_ra8m1
+      - ek_ra8d1
+      - mck_ra8t1
+  drivers.spi.loopback.renesas_sci_b_spi.no_async:
+    filter: dt_compat_enabled("renesas,ra-spi-sci-b")
+    extra_configs:
+      - CONFIG_SPI_ASYNC=n
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/${BOARD}_sci_b_spi.overlay"
+      - CONF_FILE="prj.conf" # to exclude "boards/${BOARD}.overlay"
+    integration_platforms:
+      - ek_ra8m1
+    platform_allow:
+      - ek_ra8m1
+      - ek_ra8d1
+      - mck_ra8t1
+  drivers.spi.loopback.renesas_sci_b_spi_ra8x2:
+    filter: dt_compat_enabled("renesas,ra-spi-sci-b")
+    integration_platforms:
+      - ek_ra8p1/r7ka8p1kflcac/cm85
+    platform_allow:
+      - ek_ra8p1/r7ka8p1kflcac/cm85
+      - mck_ra8t2/r7ka8t2lfecac/cm85
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/${BOARD}${NORMALIZED_BOARD_QUALIFIERS}_sci_b_spi.overlay"
+      - CONF_FILE="prj.conf" # to exclude "boards/${BOARD}${NORMALIZED_BOARD_QUALIFIERS}.overlay"
+  drivers.spi.loopback.renesas_sci_b_spi_ra8x2.no_async:
+    filter: dt_compat_enabled("renesas,ra-spi-sci-b")
+    integration_platforms:
+      - ek_ra8p1/r7ka8p1kflcac/cm85
+    platform_allow:
+      - ek_ra8p1/r7ka8p1kflcac/cm85
+      - mck_ra8t2/r7ka8t2lfecac/cm85
+    extra_configs:
+      - CONFIG_SPI_ASYNC=n
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/${BOARD}${NORMALIZED_BOARD_QUALIFIERS}_sci_b_spi.overlay"
+      - CONF_FILE="prj.conf" # to exclude "boards/${BOARD}${NORMALIZED_BOARD_QUALIFIERS}.overlay"
