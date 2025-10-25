@@ -1,0 +1,22 @@
+identifier: doit_esp32_devkit_v1/esp32/procpu
+name: DOIT ESP32-Devkit-V1 PROCPU
+vendor: others
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - dac
+  - gpio
+  - i2c
+  - i2s
+  - watchdog
+  - uart
+  - nvs
+  - pwm
+  - dac
+  - spi
+  - counter
+  - entropy
+  - input
