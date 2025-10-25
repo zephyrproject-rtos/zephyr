@@ -16,6 +16,15 @@ manifest:
       remote: upstream
       groups:
         - optional
+    - name: dtsh
+      description: Devicetree shell
+      # To be replaced by SHA when available.
+      revision: zephyr
+      path: modules/tools/dtsh
+      remote: upstream
+      west-commands: scripts/west-commands.yml
+      groups:
+        - optional
     - name: lz4
       revision: 11b8a1e22fa651b524494e55d22b69d3d9cebcfd
       path: modules/lib/lz4
