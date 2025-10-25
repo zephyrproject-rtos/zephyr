@@ -23,6 +23,7 @@
 		zephyr,code-partition = &code;
 		zephyr,console = &usart1;
 		zephyr,shell-uart = &usart1;
+		zephyr,bt-hci = &mailbox;
 	};
 
 	buttons {
@@ -134,5 +135,9 @@
 };
 
 &wdt {
+	status = "okay";
+};
+
+&mailbox {
 	status = "okay";
 };
