@@ -2,5 +2,5 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_AI_WB2_12F
+config BOARD_AI_WB2_12F_KIT
 	select SOC_BL602C00Q2I

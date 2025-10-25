@@ -1,4 +1,4 @@
-.. zephyr:board:: ai_wb2_12f
+.. zephyr:board:: ai_wb2_12f_kit
 
 Overview
 ********
@@ -27,7 +27,7 @@ For more information about the Bouffalo Lab BL-60x MCU:
 - `Bouffalo Lab BL60x MCU Website`_
 - `Bouffalo Lab BL60x MCU Datasheet`_
 - `Bouffalo Lab Development Zone`_
-- `ai_wb2_12f Schematics`_
+- `ai_wb2_12f_kit Schematics`_
 - `The RISC-V BL602 Book`_
 
 Supported Features
@@ -43,7 +43,7 @@ The WB2 (BL602) Development Board is configured to run at max speed (192MHz).
 Serial Port
 ===========
 
-The ``ai_wb2_12f`` board uses UART0 as default serial port.  It is connected
+The ``ai_wb2_12f_kit`` board uses UART0 as default serial port.  It is connected
 to USB Serial converter and port is used for both program and console.
 
 
@@ -58,7 +58,7 @@ application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: ai_wb2_12f
+      :board: ai_wb2_12f_kit
       :goals: build flash
 
 #. Run your favorite terminal program to listen for output. Under Linux the
@@ -81,9 +81,9 @@ application:
    .. code-block:: console
 
       *** Booting Zephyr OS build v4.1.0 ***
-      Hello World! ai_wb2_12f/bl602c00q2i
+      Hello World! ai_wb2_12f_kit/bl602c00q2i
 
-Congratulations, you have ``ai_wb2_12f`` configured and running Zephyr.
+Congratulations, you have ``ai_wb2_12f_kit`` configured and running Zephyr.
 
 
 .. _Bouffalo Lab BL60x MCU Website:
@@ -95,7 +95,7 @@ Congratulations, you have ``ai_wb2_12f`` configured and running Zephyr.
 .. _Bouffalo Lab Development Zone:
 	https://dev.bouffalolab.com/home?id=guest
 
-.. _ai_wb2_12f Schematics:
+.. _ai_wb2_12f_kit Schematics:
    https://docs.ai-thinker.com/en/wb2
 
 .. _The RISC-V BL602 Book:
