@@ -3844,7 +3844,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_twt_ops,
 		" The total number of '0, 1, ..., x' is session_num\n"
 		"[-i, --iface=<interface index>] : Interface index.\n",
 		cmd_wifi_btwt_setup,
-		13, 2),
+		13, 12),
 	SHELL_CMD_ARG(teardown, NULL, " Teardown a TWT flow:\n"
 		"<negotiation_type, 0: Individual, 1: Broadcast, 2: Wake TBTT>\n"
 		"<setup_cmd: 0: Request, 1: Suggest, 2: Demand>\n"
