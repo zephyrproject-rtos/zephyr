@@ -77,9 +77,21 @@ The :ref:`lwm2m_interface` protocol includes support for firmware update via
 connect to an LwM2M server using DTLS. A :zephyr:code-sample:`lwm2m-client` sample is
 available but it does not demonstrate the firmware update feature.
 
+mender-mcu
+==========
+
+`mender-mcu`_ enables robust firmware updates on resource-constrained devices by
+integrating with Zephyr. It implements an Update Module interface and provides
+a default Update Module that integrates with MCUboot to provide A/B updates.
+This allows microcontroller units (MCUs) to perform atomic, fail-safe OTA
+updates with automatic rollback on failure.
+
+See :ref:`external_module_mender_mcu` for integration details and examples.
+
 .. _MCUboot bootloader: https://mcuboot.com/
 .. _Golioth: https://golioth.io/
 .. _Golioth Firmware SDK repository: https://github.com/golioth/golioth-firmware-sdk/tree/main/examples/zephyr/fw_update
 .. _Golioth OTA documentation: https://docs.golioth.io/device-management/ota
 .. _Eclipse hawkBit: https://www.eclipse.org/hawkbit/
 .. _UpdateHub: https://updatehub.io/
+.. _mender-mcu: https://github.com/mendersoftware/mender-mcu
