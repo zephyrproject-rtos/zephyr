@@ -154,7 +154,6 @@
 				clock-div = <0>;
 				#clock-cells = <0>;
 			};
-
 		};
 
 		pcc: pcc@40065000 {
@@ -223,6 +222,7 @@
 			compatible = "nxp,enet";
 			reg = <0x40079000 0x620>;
 			clocks = <&core_clk>;
+
 			enet_mac: ethernet {
 				compatible = "nxp,enet-mac";
 				interrupts = <73 0>, <74 0>, <75 0>;
@@ -232,12 +232,14 @@
 				phy-connection-type = "rmii";
 				status = "disabled";
 			};
+
 			enet_mdio: mdio {
 				compatible = "nxp,enet-mdio";
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
 			};
+
 			enet_ptp_clock: ptp_clock {
 				compatible = "nxp,enet-ptp-clock";
 				interrupts = <72 0>;
@@ -259,8 +261,8 @@
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
 			reg = <0x40024000 0x1000>;
 			interrupts = <78 0>, <79 0>, <80 0>, <81 0>, <82 0>;
-			interrupt-names = "ored-warning-bus-off", "error",
-				"wake-up", "mb-0-15", "mb-16-31";
+			interrupt-names = "ored-warning-bus-off", "error", "wake-up",
+					  "mb-0-15", "mb-16-31";
 			clocks = <&scg KINETIS_SCG_CORESYS_CLK>;
 			clk-source = <0>;
 			status = "disabled";
@@ -576,15 +578,20 @@
 			reg = <0x4003d000 0x1000>;
 			interrupts = <46 0>, <47 0>;
 			interrupt-names = "alarm", "seconds";
-			clock-source = "LPO";
-			clock-frequency = <1000>;
-			prescaler = <1000>;
+			clock-frequency = <32768>;
+			prescaler = <32768>;
 			status = "disabled";
+
+			counter_rtc: counter-rtc {
+				compatible = "zephyr,rtc-counter";
+				alarms-count = <1>;
+				status = "disabled";
+			};
 		};
 
 		sai0: sai@40054000 {
 			compatible = "nxp,mcux-i2s";
-			reg = < 0x40054000 0x1000>;
+			reg = <0x40054000 0x1000>;
 			clocks = <&scg KINETIS_SCG_BUS_CLK>;
 			interrupts = <70 0>, <71 0>;
 			dmas = <&edma 6 60>, <&edma 7 61>;
@@ -599,7 +606,7 @@
 
 		sai1: sai@40055000 {
 			compatible = "nxp,mcux-i2s";
-			reg = < 0x40055000 0x1000>;
+			reg = <0x40055000 0x1000>;
 			clocks = <&scg KINETIS_SCG_BUS_CLK>;
 			interrupts = <55 0>, <56 0>;
 			dmas = <&edma 8 12>, <&edma 9 13>;

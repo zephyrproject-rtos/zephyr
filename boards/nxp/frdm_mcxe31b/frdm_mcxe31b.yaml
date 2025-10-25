@@ -13,4 +13,5 @@ toolchain:
 supported:
   - arduino_gpio
   - gpio
+  - rtc
 vendor: nxp
