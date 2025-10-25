@@ -5155,6 +5155,64 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
 	return bt_att_send(conn, buf);
 }
 
+int bt_gatt_send_read_response(struct bt_conn *conn, const void *data, uint16_t length)
+{
+	struct net_buf *buf;
+
+	__ASSERT(conn, "invalid connection\n");
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+#if defined(CONFIG_BT_EATT)
+	if (bt_eatt_count(conn) > 0) {
+		LOG_WRN("EATT active: async response not supported");
+		return -ENOTSUP;
+	}
+#endif
+
+	buf = bt_att_create_pdu(conn, BT_ATT_OP_READ_RSP, length);
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	if (data && length) {
+		net_buf_add_mem(buf, data, length);
+	}
+
+	LOG_DBG("conn %p len %u", conn, length);
+
+	return bt_att_send(conn, buf);
+}
+
+int bt_gatt_send_write_response(struct bt_conn *conn)
+{
+	struct net_buf *buf;
+
+	__ASSERT(conn, "invalid connection\n");
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+#if defined(CONFIG_BT_EATT)
+	if (bt_eatt_count(conn) > 0) {
+		LOG_WRN("EATT active: async write response not supported");
+		return -ENOTSUP;
+	}
+#endif
+
+	buf = bt_att_create_pdu(conn, BT_ATT_OP_WRITE_RSP, 0);
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+		LOG_DBG("conn %p", conn);
+
+	return bt_att_send(conn, buf);
+}
+
 static int gatt_exec_encode(struct net_buf *buf, size_t len, void *user_data)
 {
 	struct bt_att_exec_write_req *req;

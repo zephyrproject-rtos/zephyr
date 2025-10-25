@@ -156,6 +156,11 @@ struct bt_gatt_attr;
  *  @note The GATT server propagates the return value from this
  *  method back to the remote client.
  *
+ *  @note If this function returns ``-EINPROGRESS``, the read operation
+ *  is deferred and the application must later send the response
+ *  using @ref bt_gatt_send_read_response(). Deferred responses
+ *  are only supported when Enhanced ATT (EATT) is not active.
+ *
  *  @param conn   The connection that is requesting to read.
  *                NULL if local.
  *  @param attr   The attribute that's being read
@@ -198,6 +203,11 @@ typedef ssize_t (*bt_gatt_attr_read_func_t)(struct bt_conn *conn,
  *
  *  @note The GATT server propagates the return value from this
  *  method back to the remote client.
+ *
+ *  @note If this function returns ``-EINPROGRESS``, the write operation
+ *  is deferred and the application must later send the response
+ *  using @ref bt_gatt_send_write_response(). Deferred responses
+ *  are only supported when Enhanced ATT (EATT) is not active.
  *
  *  @param conn   The connection that is requesting to write
  *  @param attr   The attribute that's being written
@@ -2024,6 +2034,25 @@ struct bt_gatt_read_params {
  */
 int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params);
 
+/** @brief Send a deferred Read Response
+ *
+ *  Used when an attribute read was deferred (attr->read returned
+ *  -EINPROGRESS). The application later provides the
+ *  response value via this API.
+ *
+ *  @param conn   Connection object.
+ *  @param data   Pointer to the attribute value buffer.
+ *  @param length Length of the attribute value.
+ *
+ *  @retval 0 Successfully queued response.
+ *
+ *  @retval -ENOTCONN The connection is not established.
+ *  @retval -EINVAL Invalid parameters.
+ *  @retval -ENOMEM Out of memory.
+ *  @retval -ENOTSUP EATT active and deferred responses not supported.
+ */
+int bt_gatt_send_read_response(struct bt_conn *conn, const void *data, uint16_t length);
+
 struct bt_gatt_write_params;
 
 /** @typedef bt_gatt_write_func_t
@@ -2072,6 +2101,24 @@ struct bt_gatt_write_params {
  *  by @kconfig{CONFIG_BT_ATT_TX_COUNT}.
  */
 int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params);
+
+/**
+ * @brief Send a deferred Write Response
+ *
+ * Used when an attribute write was deferred (attr->write returned
+ * -EINPROGRESS). The application later
+ * responds using this API once the write has been processed.
+ *
+ * @param conn   Connection object.
+ *
+ * @retval 0 Successfully queued response.
+ *
+ * @retval -ENOTCONN The connection is not established.
+ * @retval -EINVAL Invalid parameters.
+ * @retval -ENOMEM Out of memory.
+ * @retval -ENOTSUP EATT active and deferred responses not supported.
+ */
+int bt_gatt_send_write_response(struct bt_conn *conn);
 
 /** @brief Write Attribute Value by handle without response with callback.
  *
