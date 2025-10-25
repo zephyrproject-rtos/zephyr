@@ -96,6 +96,16 @@ config CLOCK_CONTROL_INIT_PRIORITY
 	default 1
 	depends on CLOCK_CONTROL
 
+if STM32_BOOTLOADER
+
+config RETAINED_MEM_INIT_PRIORITY
+	default 1
+
+config RETENTION_INIT_PRIORITY
+	default 2
+
+endif
+
 # Get flash configuration for NS image from dts flash partition
 config USE_DT_CODE_PARTITION
 	default y if TRUSTED_EXECUTION_NONSECURE

@@ -38,6 +38,21 @@ config STM32_BACKUP_SRAM_INIT_PRIORITY
 	help
 	  STM32 Backup SRAM device initialization priority.
 
+config STM32_BOOTLOADER
+	bool "STM32 Bootloader Support"
+	default y
+	depends on RETENTION_BOOT_MODE && DT_HAS_ST_STM32_BOOTLOADER_ENABLED
+	help
+	  Enable support for jumping into the STM32 bootloader when the
+	  bootmode is set.
+
+config STM32_BOOTLOADER_INIT_PRIORITY
+	int "STM32 bootloader check init priority"
+	default 3
+	help
+	  STM32 bootloader check initialization priority (must be higher than init
+	  priorities for retention/retained memory drivers).
+
 config STM32_ENABLE_DEBUG_SLEEP_STOP
 	bool "Allow debugger attach in stop/sleep Mode"
 	help

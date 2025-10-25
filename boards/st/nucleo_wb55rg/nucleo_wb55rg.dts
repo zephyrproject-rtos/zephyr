@@ -10,12 +10,18 @@
 #include "arduino_r3_connector.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
+
+&sram0 {
+	reg = <0x20000000 (DT_SIZE_K(192) - 4)>;
+};
+
 / {
 	model = "STMicroelectronics STM32WB55RG-NUCLEO board";
 	compatible = "st,stm32wb55rg-nucleo";
 
 	chosen {
 		zephyr,console = &usart1;
+		zephyr,boot-mode = &boot_mode;
 		zephyr,shell-uart = &usart1;
 		zephyr,bt-mon-uart = &lpuart1;
 		zephyr,bt-c2h-uart = &lpuart1;
@@ -23,6 +29,27 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 	};
+
+	sram_ret@2002fffc {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x2002fffc 0x4>;
+		zephyr,memory-region = "RetainedMem";
+		status = "okay";
+
+		retainedmem {
+			compatible = "zephyr,retained-ram";
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_mode: retention@0 {
+				compatible = "zephyr,retention";
+				status = "okay";
+				reg = <0x0 0x1>;
+			};
+		};
+	};
+
 
 	leds: leds {
 		compatible = "gpio-leds";

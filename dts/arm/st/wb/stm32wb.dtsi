@@ -145,6 +145,12 @@
 	};
 
 	soc {
+		rom_bootloader: rom_bootloader@1fff0000 {
+			compatible = "st,stm32-bootloader";
+			reg = <0x1fff0000 DT_SIZE_K(28)>;
+			status = "okay";
+		};
+
 		flash: flash-controller@58004000 {
 			compatible = "st,stm32-flash-controller", "st,stm32wb-flash-controller";
 			reg = <0x58004000 0x400>;

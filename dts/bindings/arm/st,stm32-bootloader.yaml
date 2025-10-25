@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Peter Johanson
+# SPDX-License-Identifier: Apache-2.0
+
+description: ST STM32 ROM Bootloader Details
+
+compatible: "st,stm32-bootloader"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
