@@ -14,6 +14,8 @@ menuconfig ETH_STM32_HAL
 	select HWINFO
 	select ETH_DSA_SUPPORT_DEPRECATED
 	select PINCTRL
+	select FUSE
+	select NVMEM
 	imply CRC
 	help
 	  Enable STM32 HAL based Ethernet driver. It is available for
