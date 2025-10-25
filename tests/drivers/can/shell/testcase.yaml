@@ -1,5 +1,6 @@
 tests:
   drivers.can.shell:
+    filter: dt_chosen_enabled("zephyr,canbus") and not dt_compat_enabled("xlnx,canfd-2.0")
     integration_platforms:
       - native_sim
       - native_sim/native/64

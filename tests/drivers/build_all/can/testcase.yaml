@@ -10,16 +10,20 @@ tests:
       - arduino_gpio
     extra_args: SHIELD=dfrobot_can_bus_v2_0
     platform_allow: frdm_k64f
+    filter: not dt_compat_enabled("xlnx,canfd-2.0")
   drivers.can.build_all.tcan4x5x:
     depends_on:
       - arduino_spi
       - arduino_gpio
     extra_args: SHIELD=tcan4550evm
     platform_allow: frdm_k64f
+    filter: not dt_compat_enabled("xlnx,canfd-2.0")
   drivers.can.build_all.mcp251xfd:
     extra_args: SHIELD=mikroe_mcp2518fd_click
     platform_allow: lpcxpresso55s28
+    filter: not dt_compat_enabled("xlnx,canfd-2.0")
   drivers.can.build_all.native_linux:
     platform_allow:
       - native_sim
       - native_sim/native/64
+    filter: not dt_compat_enabled("xlnx,canfd-2.0")
