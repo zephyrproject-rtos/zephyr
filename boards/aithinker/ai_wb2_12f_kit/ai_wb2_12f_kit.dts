@@ -1,0 +1,62 @@
+/*
+ * Copyright (c) 2024-2025 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "ai_wb2_12f.dtsi"
+#include "ai_wb2_12f_kit-pinctrl.dtsi"
+
+/ {
+	model = "Ai-Thinker WB2-12F development board";
+
+	aliases {
+		led0 = &blue_led;
+		sw0 = &button_0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		blue_led: led_0 {
+			gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+			label = "Blue - LED0";
+		};
+
+		green_led: led_1 {
+			gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
+			label = "Green - LED1";
+		};
+
+		red_led: led_2 {
+			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+			label = "Red - LED2";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button_0: sw0 {
+			gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+};
+
+&spi0 {
+	status = "okay";
+
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+};
