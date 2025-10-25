@@ -15,6 +15,10 @@ config BOOTLOADER_MCUBOOT
 config MAIN_STACK_SIZE
 	default 2048
 
+config KERNEL_ENTRY
+	default "__appcpu_start" if SOC_ENABLE_APPCPU
+	default "__start" if !SOC_ENABLE_APPCPU
+
 if SMP
 
 config SCHED_IPI_SUPPORTED
