@@ -15,7 +15,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(clock_control_nrf2, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
-#define SHIM_DEFAULT_PRESCALER AUDIOPLL_DIV_12
+#define SHIM_DEFAULT_PRESCALER 12
 
 BUILD_ASSERT(
 	DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
@@ -32,6 +32,25 @@ struct shim_data {
 	struct k_sem evt_sem;
 	nrfs_audiopll_evt_type_t evt;
 };
+
+static enum audiopll_prescaler_div get_prescaler_div(uint8_t divider)
+{
+	switch (divider) {
+	case 0:
+		return AUDIOPLL_DIV_DISABLED;
+	case 6:
+		return AUDIOPLL_DIV_6;
+	case 8:
+		return AUDIOPLL_DIV_8;
+	case 12:
+		return AUDIOPLL_DIV_12;
+	case 16:
+		return AUDIOPLL_DIV_16;
+	default:
+		__ASSERT(divider <= 4, "invalid audiopll divider");
+		return (enum audiopll_prescaler_div)divider;
+	}
+}
 
 static int shim_nrfs_request_enable(const struct device *dev)
 {
@@ -103,30 +122,19 @@ static const struct onoff_transitions shim_mgr_transitions = {
 /*
  * Formula:
  *
- *   frequency = ((4 + (freq_fraction * 2^-16)) * 32000000) / 12
+ *   frequency = ((4 + (freq_fraction * 2^-16)) * 32000000) / PRESCALER_DIV
  *
- * Simplified linear approximation:
+ * Solving for freq_fraction:
  *
- *   frequency = 10666666 + (((13333292 - 10666666) / 65535) * freq_fraction)
- *   frequency = 10666666 + ((2666626 / 65535) * freq_fraction)
- *   frequency = ((10666666 * 65535) + (2666626 * freq_fraction)) / 65535
- *   frequency = (699039956310 + (2666626 * freq_fraction)) / 65535
- *
- * Isolate freq_fraction:
- *
- *   frequency = (699039956310 + (2666626 * freq_fraction)) / 65535
- *   frequency * 65535 = 699039956310 + (2666626 * freq_fraction)
- *   (frequency * 65535) - 699039956310 = 2666626 * freq_fraction
- *   freq_fraction = ((frequency * 65535) - 699039956310) / 2666626
+ *   freq_fraction = (32 * PRESCALER_DIV * frequency) / 15625 - 262144
  */
-static uint16_t shim_frequency_to_freq_fraction(uint32_t frequency)
+static uint16_t shim_frequency_to_freq_fraction(uint32_t frequency, uint8_t prescaler_div)
 {
 	uint64_t freq_fraction;
 
 	freq_fraction = frequency;
-	freq_fraction *= 65535;
-	freq_fraction -= 699039956310;
-	freq_fraction = DIV_ROUND_CLOSEST(freq_fraction, 2666626);
+	freq_fraction *= 32 * prescaler_div;
+	freq_fraction = DIV_ROUND_CLOSEST(freq_fraction, 15625) - 262144;
 
 	return (uint16_t)freq_fraction;
 }
@@ -256,13 +264,14 @@ static int shim_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = shim_nrfs_request_prescaler_sync(dev, SHIM_DEFAULT_PRESCALER);
+	ret = shim_nrfs_request_prescaler_sync(dev, get_prescaler_div(SHIM_DEFAULT_PRESCALER));
 	if (ret) {
 		LOG_ERR("failed to set prescaler divider");
 		return ret;
 	}
 
-	freq_fraction = shim_frequency_to_freq_fraction(DT_INST_PROP(0, frequency));
+	freq_fraction =
+		shim_frequency_to_freq_fraction(DT_INST_PROP(0, frequency), SHIM_DEFAULT_PRESCALER);
 
 	LOG_DBG("requesting freq_fraction %u for frequency %uHz",
 		freq_fraction,
