@@ -135,40 +135,6 @@ static inline void z_riscv_pmp_read_config(unsigned long *pmp_cfg, size_t pmp_cf
 }
 
 /**
- * @brief Writes the PMP configuration CSRs (pmpcfgX) based on architecture and slot count.
- *
- * This helper function abstracts the logic required to write the correct Control and Status
- * Registers (CSRs)—pmpcfg0, pmpcfg1, etc.—by accounting for whether the system is 32-bit or
- * 64-bit and the total number of PMP slots configured. It handles the different register
- * packing schemes between RV32 and RV64.
- *
- * @param pmp_cfg Pointer to the array containing the PMP configuration values to be written
- * to the CSRs.
- * @param pmp_cfg_size The size of the pmp_cfg array, measured in unsigned long entries.
- */
-static inline void z_riscv_pmp_write_config(unsigned long *pmp_cfg, size_t pmp_cfg_size)
-{
-	__ASSERT(pmp_cfg_size == (size_t)(CONFIG_PMP_SLOTS / PMPCFG_STRIDE),
-		 "Invalid PMP config array size");
-
-#ifdef CONFIG_64BIT
-	/* RV64: pmpcfg0 holds entries 0-7; pmpcfg2 holds entries 8-15. */
-	csr_write(pmpcfg0, pmp_cfg[0]);
-#if CONFIG_PMP_SLOTS > 8
-	csr_write(pmpcfg2, pmp_cfg[1]);
-#endif
-#else
-	/* RV32: Each pmpcfg register holds 4 entries. */
-	csr_write(pmpcfg0, pmp_cfg[0]);
-	csr_write(pmpcfg1, pmp_cfg[1]);
-#if CONFIG_PMP_SLOTS > 8
-	csr_write(pmpcfg2, pmp_cfg[2]);
-	csr_write(pmpcfg3, pmp_cfg[3]);
-#endif
-#endif
-}
-
-/**
  * @brief Reads the PMP address CSRs (pmpaddrX) for all configured slots.
  *
  * This helper function abstracts the iterative logic required to read the
