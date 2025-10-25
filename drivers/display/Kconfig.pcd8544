@@ -1,0 +1,12 @@
+# PCD8544 display controller configuration options
+
+# Copyright (c) 2025 LACOMBE Quentin <quentlace2g@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config PCD8544
+	bool "PCD8544 LCD display controller driver"
+	default y
+	depends on DT_HAS_PHILIPS_PCD8544_ENABLED
+	select MIPI_DBI
+	help
+	  Enable PCD8544 display controller driver
