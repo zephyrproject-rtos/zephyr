@@ -4,6 +4,8 @@ type: mcu
 arch: riscv
 toolchain:
   - zephyr
+  - andes
+  - andes-clang
   - cross-compile
 ram: 384
 supported:
