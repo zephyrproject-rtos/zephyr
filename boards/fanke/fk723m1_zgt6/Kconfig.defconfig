@@ -7,7 +7,7 @@
 
 if BOARD_FK723M1_ZGT6
 
-config SDMMC_STM32_CLOCK_CHECK
+configdefault SDMMC_STM32_CLOCK_CHECK
 	default n
 
 endif # BOARD_FK723M1_ZGT6

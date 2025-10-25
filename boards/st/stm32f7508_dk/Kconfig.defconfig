@@ -5,12 +5,8 @@
 
 if BOARD_STM32F7508_DK
 
-if NETWORKING
-
-config NET_L2_ETHERNET
+configdefault NET_L2_ETHERNET
 	default y
-
-endif # NETWORKING
 
 if DISPLAY
 
@@ -23,8 +19,5 @@ endif # DISPLAY
 
 config INPUT
 	default y if LVGL
-
-config DISK_DRIVER_SDMMC
-	default y if DISK_DRIVERS
 
 endif # BOARD_STM32F7508_DK
