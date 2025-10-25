@@ -27,6 +27,12 @@ app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-ticker_expire_info.conf com
 app=tests/bsim/bluetooth/ll/bis conf_file=prj_vs_dp.conf compile
 
 app=tests/bsim/bluetooth/ll/edtt/hci_test_app \
+  conf_file=prj_dut.conf compile
+app=tests/bsim/bluetooth/ll/edtt/hci_test_app \
+  conf_file=prj_tst.conf compile
+app=tests/bsim/bluetooth/ll/edtt/gatt_test_app \
+  conf_file=prj.conf compile
+app=tests/bsim/bluetooth/ll/edtt/hci_test_app \
   conf_file=prj_dut_llcp.conf compile
 app=tests/bsim/bluetooth/ll/edtt/hci_test_app \
   conf_file=prj_tst_llcp.conf compile
@@ -35,5 +41,7 @@ app=tests/bsim/bluetooth/ll/edtt/gatt_test_app \
 
 app=tests/bsim/bluetooth/ll/multiple_id compile
 app=tests/bsim/bluetooth/ll/throughput compile
+
+app=tests/bsim/bluetooth/ll/conn_param conf_file=prj-ll_sw_llcp_legacy.conf compile
 
 wait_for_background_jobs
