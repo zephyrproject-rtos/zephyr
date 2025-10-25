@@ -47,6 +47,7 @@ _IGNORE_COMPATIBLES = frozenset([
         # device controller, the logical connection is established after USB
         # device support is enabled.
         "zephyr,cdc-acm-uart",
+        "zephyr,cp210x-uart",
         ])
 
 # The offset of the init pointer in "struct device", in number of pointers.
