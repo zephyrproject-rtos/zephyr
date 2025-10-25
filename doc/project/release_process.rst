@@ -241,31 +241,6 @@ Release Milestones
 Releases
 *********
 
-The following syntax should be used for releases and tags in Git:
-
-- Release [Major].[Minor].[Patch Level]
-- Release Candidate [Major].[Minor].[Patch Level]-rc[RC Number]
-- Tagging:
-
-  - v[Major].[Minor].[Patch Level]-rc[RC Number]
-  - v[Major].[Minor].[Patch Level]
-  - v[Major].[Minor].99 - A tag applied to main branch to signify that work on
-    v[Major].[Minor+1] has started. For example, v1.7.99 will be tagged at the
-    start of v1.8 process. The tag corresponds to
-    VERSION_MAJOR/VERSION_MINOR/PATCHLEVEL macros as defined for a
-    work-in-progress main branch version. Presence of this tag allows generation of
-    sensible output for "git describe" on main branch, as typically used for
-    automated builds and CI tools.
-
-
-.. figure:: release_flow.png
-    :align: center
-    :alt: Releases
-    :figclass: align-center
-    :width: 80%
-
-    Zephyr Code and Releases
-
 .. _release_process_lts:
 
 Long Term Support (LTS)
@@ -478,6 +453,32 @@ created.
 
 Tagging
 =======
+
+
+The following syntax should be used for releases and tags in Git:
+
+- Release [Major].[Minor].[Patch Level]
+- Release Candidate [Major].[Minor].[Patch Level]-rc[RC Number]
+- Tagging:
+
+  - v[Major].[Minor].[Patch Level]-rc[RC Number]
+  - v[Major].[Minor].[Patch Level]
+  - v[Major].[Minor].99 - A tag applied to main branch to signify that work on
+    v[Major].[Minor+1] has started. For example, v1.7.99 will be tagged at the
+    start of v1.8 process. The tag corresponds to
+    VERSION_MAJOR/VERSION_MINOR/PATCHLEVEL macros as defined for a
+    work-in-progress main branch version. Presence of this tag allows generation of
+    sensible output for "git describe" on main branch, as typically used for
+    automated builds and CI tools.
+
+
+.. figure:: release_flow.png
+    :align: center
+    :alt: Releases
+    :figclass: align-center
+    :width: 80%
+
+    Zephyr Code and Releases
 
 The final release and each release candidate shall be tagged using the following
 steps:
