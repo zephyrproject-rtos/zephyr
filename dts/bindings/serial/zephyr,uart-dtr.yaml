@@ -1,0 +1,47 @@
+description: |
+  DTR output for a UART.
+
+  This driver wraps an existing UART device and adds DTR (Data Terminal Ready) functionality
+  which follows the runtime power state.
+
+  When UART is powered, the DTR signal is asserted (logical high),
+  and when the UART is powered down, the DTR signal is de-asserted (logical low).
+  This allows a remote end to detect whether the UART is powered or not and manage
+  its own power state accordingly.
+
+  The driver acts as a child node of the actual UART. The application should use the DTR UART device
+  which will manage the DTR signal and forward all UART operations to the parent UART.
+
+  Example where DTR state follows the runtime power state of another device that uses UART:
+  &uart1 {
+          zephyr,pm-device-runtime-auto;
+          dtr_uart: dtr_uart {
+                  compatible = "zephyr,uart-dtr";
+                  dtr-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+                  zephyr,pm-device-runtime-auto;
+
+                  modem: modem {
+                          /* Can be any device that uses UART and supports PM_DEVICE_RUNTIME */
+                          zephyr,pm-device-runtime-auto;
+                  };
+          };
+  };
+
+  In the example above, zephyr,pm-device-runtime-auto is used to enable runtime power
+  management for devices when they are initialized.
+  DTR GPIO is typically active low but this depends on the HW design.
+
+
+compatible: "zephyr,uart-dtr"
+
+include: base.yaml
+
+on-bus: uart
+bus: uart
+
+properties:
+  dtr-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      DTR (Data Terminal Ready) GPIO pin.
