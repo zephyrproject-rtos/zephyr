@@ -45,3 +45,27 @@ char const *nrfx_error_string_get(nrfx_err_t code)
 		default: return "unknown";
 	}
 }
+
+char const *nrfx_new_error_string_get(int code)
+{
+#define NRFX_NEW_ERROR_STRING_CASE(code)                                                           \
+	case code:                                                                                 \
+		return #code
+	switch (-code) {
+		NRFX_NEW_ERROR_STRING_CASE(0);
+		NRFX_NEW_ERROR_STRING_CASE(ECANCELED);
+		NRFX_NEW_ERROR_STRING_CASE(ENOMEM);
+		NRFX_NEW_ERROR_STRING_CASE(ENOTSUP);
+		NRFX_NEW_ERROR_STRING_CASE(EINVAL);
+		NRFX_NEW_ERROR_STRING_CASE(EINPROGRESS);
+		NRFX_NEW_ERROR_STRING_CASE(E2BIG);
+		NRFX_NEW_ERROR_STRING_CASE(ETIMEDOUT);
+		NRFX_NEW_ERROR_STRING_CASE(EPERM);
+		NRFX_NEW_ERROR_STRING_CASE(EFAULT);
+		NRFX_NEW_ERROR_STRING_CASE(EACCES);
+		NRFX_NEW_ERROR_STRING_CASE(EBUSY);
+		NRFX_NEW_ERROR_STRING_CASE(EALREADY);
+	default:
+		return "unknown";
+	}
+}
