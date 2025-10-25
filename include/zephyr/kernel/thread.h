@@ -140,6 +140,13 @@ struct _thread_base {
 typedef struct _thread_base _thread_base_t;
 
 #if defined(CONFIG_THREAD_STACK_INFO)
+
+#if defined(CONFIG_THREAD_RUNTIME_STACK_SAFETY)
+struct _thread_stack_usage {
+	size_t unused_threshold; /* Threshold below which to trigger hook */
+};
+#endif
+
 /* Contains the stack information of a thread */
 struct _thread_stack_info {
 	/* Stack start - Represents the start address of the thread-writable
@@ -171,6 +178,10 @@ struct _thread_stack_info {
 		size_t sz;
 	} mapped;
 #endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
+
+#if defined(CONFIG_THREAD_RUNTIME_STACK_SAFETY)
+	struct _thread_stack_usage usage;
+#endif
 };
 
 typedef struct _thread_stack_info _thread_stack_info_t;
