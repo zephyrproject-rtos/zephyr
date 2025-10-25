@@ -6,9 +6,9 @@
 
 #include <zephyr/drivers/sensor.h>
 
-#define ACCEL_TRIGGERS						\
-	{ SENSOR_TRIG_DRDY, SENSOR_STREAM_DATA_INCLUDE },	\
-	{ SENSOR_TRIG_TAP, SENSOR_STREAM_DATA_NOP }
+#define ACCEL_TRIGGERS                                                                             \
+	(SENSOR_TRIG_DRDY, SENSOR_STREAM_DATA_INCLUDE), (SENSOR_TRIG_TAP, SENSOR_STREAM_DATA_NOP)
+
 #define ACCEL_ALIAS(id) DT_ALIAS(CONCAT(accel, id))
 #define ACCEL_IODEV_SYM(id) CONCAT(accel_iodev, id)
 #define ACCEL_IODEV_PTR(id) &ACCEL_IODEV_SYM(id)
