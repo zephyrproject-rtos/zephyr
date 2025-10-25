@@ -806,7 +806,7 @@ static int sys_clock_driver_init(void)
 	alloc_mask &= ~BIT(WRAP_CH);
 
 	nrf_rtc_event_t evt = NRF_RTC_CHANNEL_EVENT_ADDR(WRAP_CH);
-	nrfx_err_t result;
+	int result;
 	nrf_ppi_channel_t ch;
 
 	nrfy_rtc_event_enable(RTC, NRF_RTC_CHANNEL_INT_MASK(WRAP_CH));
@@ -818,8 +818,8 @@ static int sys_clock_driver_init(void)
 	task_addr = nrfy_rtc_task_address_get(RTC, NRF_RTC_TASK_CLEAR);
 
 	result = nrfx_ppi_channel_alloc(&ch);
-	if (result != NRFX_SUCCESS) {
-		return -ENODEV;
+	if (result != 0) {
+		return result;
 	}
 	(void)nrfx_ppi_channel_assign(ch, evt_addr, task_addr);
 	(void)nrfx_ppi_channel_enable(ch);
