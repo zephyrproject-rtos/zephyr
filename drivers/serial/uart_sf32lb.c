@@ -9,17 +9,55 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+
 #include <zephyr/drivers/clock_control/sf32lb.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
+#ifdef CONFIG_UART_ASYNC_API
+#include <zephyr/drivers/dma/sf32lb.h>
+#include <zephyr/drivers/dma.h>
+#endif
 
 #include <register.h>
+
+LOG_MODULE_REGISTER(sf32lb_uart, CONFIG_UART_LOG_LEVEL);
+
+#ifdef CONFIG_UART_ASYNC_API
+struct sf32lb_uart_async_tx {
+	const uint8_t *buf;
+	size_t len;
+	struct dma_block_config dma_blk;
+	int32_t timeout;
+	struct k_work_delayable timeout_work;
+};
+
+struct sf32lb_uart_async_rx {
+	uint8_t *buf;
+	size_t len;
+	uint8_t *next_buf;
+	size_t next_len;
+	size_t offset;
+	size_t counter;
+	int32_t timeout;
+	struct k_work_delayable timeout_work;
+};
+
+struct sf32lb_uart_async_data {
+	const struct device *uart_dev;
+	struct sf32lb_uart_async_tx tx;
+	struct sf32lb_uart_async_rx rx;
+	uart_callback_t cb;
+	void *user_data;
+};
+#endif /* CONFIG_UART_ASYNC_API */
 
 #define UART_CR1   offsetof(USART_TypeDef, CR1)
 #define UART_CR2   offsetof(USART_TypeDef, CR2)
 #define UART_CR3   offsetof(USART_TypeDef, CR3)
 #define UART_BRR   offsetof(USART_TypeDef, BRR)
+#define UART_RQR   offsetof(USART_TypeDef, RQR)
 #define UART_ISR   offsetof(USART_TypeDef, ISR)
 #define UART_ICR   offsetof(USART_TypeDef, ICR)
 #define UART_RDR   offsetof(USART_TypeDef, RDR)
@@ -42,6 +80,9 @@ struct uart_sf32lb_data {
 	uart_irq_callback_user_data_t irq_callback;
 	void *cb_data;
 #endif
+#ifdef CONFIG_UART_ASYNC_API
+	struct sf32lb_uart_async_data async;
+#endif
 };
 
 struct uart_sf32lb_config {
@@ -52,6 +93,10 @@ struct uart_sf32lb_config {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(const struct device *dev);
 #endif
+#ifdef CONFIG_UART_ASYNC_API
+	struct sf32lb_dma_dt_spec tx_dma;
+	struct sf32lb_dma_dt_spec rx_dma;
+#endif /* CONFIG_UART_ASYNC_API */
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -351,6 +396,404 @@ static void uart_sf32lb_irq_rx_disable(const struct device *dev)
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
+#ifdef CONFIG_UART_ASYNC_API
+static inline void uart_sf32lb_async_timer_start(struct k_work_delayable *work, size_t timeout)
+{
+	if ((timeout != SYS_FOREVER_US) && (timeout != 0)) {
+		LOG_DBG("Async timer started for %d us", timeout);
+		k_work_reschedule(work, K_USEC(timeout));
+	}
+}
+
+static void uart_sf32lb_dma_tx_done(const struct device *dma_dev, void *user_data, uint32_t channel,
+				    int status)
+{
+	const struct device *uart_dev = user_data;
+	struct uart_sf32lb_data *data = uart_dev->data;
+	struct uart_event evt = {0};
+	unsigned int key = irq_lock();
+
+	k_work_cancel_delayable(&data->async.tx.timeout_work);
+
+	evt.type = UART_TX_DONE;
+	evt.data.tx.buf = data->async.tx.buf;
+	evt.data.tx.len = data->async.tx.len;
+	if (data->async.cb) {
+		data->async.cb(uart_dev, &evt, data->async.user_data);
+	}
+
+	/* Reset TX Buffer */
+	data->async.tx.buf = NULL;
+	data->async.tx.len = 0U;
+
+	irq_unlock(key);
+}
+
+static void uart_sf32lb_dma_rx_done(const struct device *dma_dev, void *user_data, uint32_t channel,
+				    int status)
+{
+	const struct device *uart_dev = user_data;
+	struct uart_sf32lb_data *data = uart_dev->data;
+	struct uart_event evt = {0};
+	unsigned int key = irq_lock();
+
+	/* Notify RX_RDY */
+	evt.type = UART_RX_RDY;
+	evt.data.rx.buf = data->async.rx.buf;
+	evt.data.rx.len = data->async.rx.len;
+	evt.data.rx.offset = 0;
+	if (data->async.cb && evt.data.rx.len) {
+		data->async.cb(uart_dev, &evt, data->async.user_data);
+	}
+
+	/* Release current buffer */
+	evt.type = UART_RX_BUF_RELEASED;
+	evt.data.rx_buf.buf = data->async.rx.buf;
+	if (data->async.cb) {
+		data->async.cb(uart_dev, &evt, data->async.user_data);
+	}
+
+	/* Load next buffer and request another */
+	data->async.rx.buf = data->async.rx.next_buf;
+	data->async.rx.len = data->async.rx.next_len;
+	data->async.rx.next_buf = NULL;
+	data->async.rx.next_len = 0U;
+	evt.type = UART_RX_BUF_REQUEST;
+	if (data->async.cb) {
+		data->async.cb(uart_dev, &evt, data->async.user_data);
+	}
+
+	/* Notify RX_DISABLED when there is no buffer */
+	if (!data->async.rx.buf) {
+		evt.type = UART_RX_DISABLED;
+		if (data->async.cb) {
+			data->async.cb(uart_dev, &evt, data->async.user_data);
+		}
+	}
+
+	irq_unlock(key);
+}
+
+static int uart_async_sf32lb_callback_set(const struct device *dev, uart_callback_t callback,
+					  void *user_data)
+{
+	struct uart_sf32lb_data *data = dev->data;
+
+	data->async.cb = callback;
+	data->async.user_data = user_data;
+
+	return 0;
+}
+
+static int uart_async_sf32lb_rx_enable(const struct device *dev, uint8_t *buf, size_t len,
+				       int32_t timeout)
+{
+	const struct uart_sf32lb_config *config = dev->config;
+	struct uart_sf32lb_data *data = dev->data;
+	struct dma_config dma_cfg = {0};
+	struct dma_block_config dma_blk = {0};
+	struct dma_status dma_stat;
+	int err = 0;
+	struct uart_event evt = {0};
+
+	if (config->rx_dma.channel == 0xFF) {
+		LOG_ERR("Rx DMA channel is not configured");
+		return -ENOTSUP;
+	}
+
+	err = sf32lb_dma_get_status_dt(&config->rx_dma, &dma_stat);
+	if (err) {
+		LOG_ERR("Unable to get Rx status (%d)", err);
+		return err;
+	}
+
+	if (dma_stat.busy) {
+		LOG_ERR("Rx DMA Channel is busy");
+		return -EBUSY;
+	}
+
+	unsigned int key = irq_lock();
+
+	data->async.rx.buf = buf;
+	data->async.rx.len = len;
+	data->async.rx.timeout = timeout;
+
+	sf32lb_dma_config_init_dt(&config->rx_dma, &dma_cfg);
+
+	dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
+	dma_cfg.dma_callback = uart_sf32lb_dma_rx_done;
+	dma_cfg.user_data = (void *)dev;
+	dma_cfg.block_count = 1U;
+	dma_cfg.source_data_size = 1U;
+	dma_cfg.dest_data_size = 1U;
+
+	dma_cfg.head_block = &dma_blk;
+	dma_blk.block_size = len;
+	dma_blk.source_address = (uint32_t)(config->base + UART_RDR);
+	dma_blk.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+	dma_blk.dest_address = (uint32_t)data->async.rx.buf;
+	dma_blk.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+
+	err = sf32lb_dma_config_dt(&config->rx_dma, &dma_cfg);
+	if (err) {
+		LOG_ERR("Error configuring Rx DMA (%d)", err);
+		goto unlock;
+	}
+
+	err = sf32lb_dma_start_dt(&config->rx_dma);
+	if (err) {
+		LOG_ERR("Error starting Rx DMA (%d)", err);
+		goto unlock;
+	}
+
+	sys_set_bit(config->base + UART_CR3, USART_CR3_DMAR_Pos);
+	sys_set_bit(config->base + UART_RQR, USART_RQR_RXFRQ_Pos);
+
+	/* Request next buffer */
+	evt.type = UART_RX_BUF_REQUEST;
+	if (data->async.cb) {
+		data->async.cb(dev, &evt, data->async.user_data);
+	}
+	uart_sf32lb_async_timer_start(&data->async.rx.timeout_work, timeout);
+
+unlock:
+	irq_unlock(key);
+	return err;
+}
+
+static int uart_async_sf32lb_rx_buf_rsp(const struct device *dev, uint8_t *buf, size_t len)
+{
+	struct uart_sf32lb_data *data = dev->data;
+
+	data->async.rx.next_buf = buf;
+	data->async.rx.next_len = len;
+
+	return 0;
+}
+
+static int uart_async_sf32lb_rx_disable(const struct device *dev)
+{
+	const struct uart_sf32lb_config *config = dev->config;
+	struct uart_sf32lb_data *data = dev->data;
+	unsigned int key = irq_lock();
+	int err = 0;
+	struct uart_event evt = {0};
+
+	k_work_cancel_delayable(&data->async.rx.timeout_work);
+
+	if (!data->async.rx.len) {
+		err = -EINVAL;
+		goto unlock;
+	}
+
+	sys_clear_bit(config->base + UART_CR3, USART_CR3_DMAR_Pos);
+
+	err = sf32lb_dma_stop_dt(&config->rx_dma);
+	if (err) {
+		LOG_ERR("Error stopping Rx DMA (%d)", err);
+		goto unlock;
+	}
+
+	/* If any bytes have been received notify RX_RDY */
+	evt.type = UART_RX_RDY;
+	evt.data.rx.buf = data->async.rx.buf;
+	evt.data.rx.len = data->async.rx.counter - data->async.rx.offset;
+	evt.data.rx.offset = data->async.rx.offset;
+
+	if (data->async.cb && evt.data.rx.len) {
+		data->async.cb(data->async.uart_dev, &evt, data->async.user_data);
+	}
+
+	data->async.rx.offset = 0;
+	data->async.rx.counter = 0;
+
+	/* Release current buffer */
+	evt.type = UART_RX_BUF_RELEASED;
+	evt.data.rx_buf.buf = data->async.rx.buf;
+
+	if (data->async.cb) {
+		data->async.cb(dev, &evt, data->async.user_data);
+	}
+
+	data->async.rx.len = 0U;
+	data->async.rx.buf = NULL;
+
+	/* Release next buffer */
+	if (data->async.rx.next_len) {
+		evt.type = UART_RX_BUF_RELEASED;
+		evt.data.rx_buf.buf = data->async.rx.next_buf;
+		if (data->async.cb) {
+			data->async.cb(dev, &evt, data->async.user_data);
+		}
+
+		data->async.rx.next_len = 0U;
+		data->async.rx.next_buf = NULL;
+	}
+
+	/* Notify UART_RX_DISABLED */
+	evt.type = UART_RX_DISABLED;
+	if (data->async.cb) {
+		data->async.cb(dev, &evt, data->async.user_data);
+	}
+
+unlock:
+	irq_unlock(key);
+	return err;
+}
+
+static int uart_async_sf32lb_tx(const struct device *dev, const uint8_t *buf, size_t len,
+				int32_t timeout)
+{
+	const struct uart_sf32lb_config *config = dev->config;
+	struct uart_sf32lb_data *data = dev->data;
+	struct dma_config dma_cfg = {0};
+	struct dma_block_config dma_blk = {0};
+	struct dma_status dma_status = {0};
+	int err = 0;
+
+	unsigned int key = irq_lock();
+
+	if (config->tx_dma.channel == 0xFF) {
+		LOG_ERR("Tx DMA channel is not configured");
+		err = -ENOTSUP;
+		goto unlock;
+	}
+
+	err = sf32lb_dma_get_status_dt(&config->tx_dma, &dma_status);
+	if (err) {
+		LOG_ERR("Unable to get Tx status (%d)", err);
+		goto unlock;
+	}
+
+	if (dma_status.busy) {
+		LOG_ERR("Tx DMA Channel is busy");
+		err = -EBUSY;
+		goto unlock;
+	}
+
+	data->async.tx.buf = buf;
+	data->async.tx.len = len;
+
+	sf32lb_dma_config_init_dt(&config->tx_dma, &dma_cfg);
+
+	dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
+	dma_cfg.dma_callback = uart_sf32lb_dma_tx_done;
+	dma_cfg.user_data = (void *)dev;
+	dma_cfg.block_count = 1U;
+	dma_cfg.source_data_size = 1U;
+	dma_cfg.dest_data_size = 1U;
+
+	dma_cfg.head_block = &dma_blk;
+	dma_blk.block_size = len;
+	dma_blk.source_address = (uint32_t)buf;
+	dma_blk.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+	dma_blk.dest_address = (uint32_t)(config->base + UART_TDR);
+	dma_blk.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+
+	err = sf32lb_dma_config_dt(&config->tx_dma, &dma_cfg);
+	if (err) {
+		LOG_ERR("Error configuring Tx DMA (%d)", err);
+		goto unlock;
+	}
+
+	uart_sf32lb_async_timer_start(&data->async.tx.timeout_work, timeout);
+
+	err = sf32lb_dma_start_dt(&config->tx_dma);
+	if (err) {
+		LOG_ERR("Error starting Tx DMA (%d)", err);
+		goto unlock;
+	}
+	/* Clear the TC flag in the ICR register */
+	sys_write32(USART_ICR_TCCF, config->base + UART_ICR);
+
+	sys_set_bit(config->base + UART_CR3, USART_CR3_DMAT_Pos);
+
+unlock:
+	irq_unlock(key);
+
+	return err;
+}
+
+static int uart_async_sf32lb_tx_abort(const struct device *dev)
+{
+	const struct uart_sf32lb_config *config = dev->config;
+	struct uart_sf32lb_data *data = dev->data;
+	struct uart_event evt = {0};
+	int err;
+	unsigned int key = irq_lock();
+
+	k_work_cancel_delayable(&data->async.tx.timeout_work);
+
+	sys_clear_bit(config->base + UART_CR3, USART_CR3_DMAT_Pos);
+
+	err = sf32lb_dma_stop_dt(&config->tx_dma);
+	if (err) {
+		LOG_ERR("Error stopping Tx DMA (%d)", err);
+		goto unlock;
+	}
+
+	evt.type = UART_TX_ABORTED;
+	evt.data.tx.buf = data->async.tx.buf;
+	evt.data.tx.len = data->async.tx.len;
+
+	if (data->async.cb) {
+		data->async.cb(dev, &evt, data->async.user_data);
+	}
+
+unlock:
+	irq_unlock(key);
+	return err;
+}
+
+static void uart_sf32lb_async_tx_timeout(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct sf32lb_uart_async_tx *tx =
+		CONTAINER_OF(dwork, struct sf32lb_uart_async_tx, timeout_work);
+	struct sf32lb_uart_async_data *async = CONTAINER_OF(tx, struct sf32lb_uart_async_data, tx);
+	struct uart_sf32lb_data *data = CONTAINER_OF(async, struct uart_sf32lb_data, async);
+
+	uart_async_sf32lb_tx_abort(data->async.uart_dev);
+}
+
+static void uart_sf32lb_async_rx_timeout(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct sf32lb_uart_async_rx *rx =
+		CONTAINER_OF(dwork, struct sf32lb_uart_async_rx, timeout_work);
+	struct sf32lb_uart_async_data *async = CONTAINER_OF(rx, struct sf32lb_uart_async_data, rx);
+	struct uart_sf32lb_data *data = CONTAINER_OF(async, struct uart_sf32lb_data, async);
+	const struct uart_sf32lb_config *config = data->async.uart_dev->config;
+	struct dma_status dma_stat;
+	uint32_t total_rx;
+
+	unsigned int key = irq_lock();
+
+	sf32lb_dma_get_status_dt(&config->rx_dma, &dma_stat);
+
+	k_work_cancel_delayable(&data->async.rx.timeout_work);
+
+	irq_unlock(key);
+
+	total_rx = async->rx.len - dma_stat.pending_length;
+
+	if (total_rx > async->rx.offset) {
+		async->rx.counter = total_rx - async->rx.offset;
+		struct uart_event rdy_event = {
+			.type = UART_RX_RDY,
+			.data.rx.buf = async->rx.buf,
+			.data.rx.len = async->rx.counter,
+			.data.rx.offset = async->rx.offset,
+		};
+		if (data->async.cb) {
+			data->async.cb(async->uart_dev, &rdy_event, data->async.user_data);
+		}
+	}
+	async->rx.offset += async->rx.counter;
+	async->rx.counter = 0;
+}
+#endif /* CONFIG_UART_ASYNC_API */
+
 static const struct uart_driver_api uart_sf32lb_api = {
 	.poll_in = uart_sf32lb_poll_in,
 	.poll_out = uart_sf32lb_poll_out,
@@ -371,11 +814,22 @@ static const struct uart_driver_api uart_sf32lb_api = {
 	.irq_update = uart_sf32lb_irq_update,
 	.irq_callback_set = uart_sf32lb_irq_callback_set,
 #endif
+#ifdef CONFIG_UART_ASYNC_API
+	.callback_set = uart_async_sf32lb_callback_set,
+	.rx_enable = uart_async_sf32lb_rx_enable,
+	.rx_buf_rsp = uart_async_sf32lb_rx_buf_rsp,
+	.rx_disable = uart_async_sf32lb_rx_disable,
+	.tx = uart_async_sf32lb_tx,
+	.tx_abort = uart_async_sf32lb_tx_abort,
+#endif
 };
 
 static int uart_sf32lb_init(const struct device *dev)
 {
 	const struct uart_sf32lb_config *config = dev->config;
+#ifdef CONFIG_UART_ASYNC_API
+	struct uart_sf32lb_data *data = dev->data;
+#endif
 	int ret;
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
@@ -403,44 +857,58 @@ static int uart_sf32lb_init(const struct device *dev)
 	config->irq_config_func(dev);
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
+#ifdef CONFIG_UART_ASYNC_API
+	data->async.uart_dev = dev;
+	k_work_init_delayable(&data->async.tx.timeout_work, uart_sf32lb_async_tx_timeout);
+	k_work_init_delayable(&data->async.rx.timeout_work, uart_sf32lb_async_rx_timeout);
+	data->async.rx.len = 0;
+	data->async.rx.offset = 0;
+#endif
+
 	return 0;
 }
 
-#define SF32LB_UART_DEFINE(index)                                                                  \
-	PINCTRL_DT_INST_DEFINE(index);                                                             \
-	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,                                                   \
-	(static void uart_sf32lb_irq_config_func_##index(const struct device *dev)                 \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(index), DT_INST_IRQ(index, priority), uart_sf32lb_isr,    \
-			    DEVICE_DT_INST_GET(index), 0);                                         \
-		irq_enable(DT_INST_IRQN(index));                                                   \
-	}));                                                                                       \
-                                                                                                   \
-	static const struct uart_sf32lb_config uart_sf32lb_cfg_##index = {                         \
-		.base = DT_INST_REG_ADDR(index),                                                   \
-		.clock = SF32LB_CLOCK_DT_INST_SPEC_GET_OR(index, {}),                              \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
-		.uart_cfg =                                                                        \
-			{                                                                          \
-				.baudrate = DT_INST_PROP(index, current_speed),                    \
-				.parity =                                                          \
-					DT_INST_ENUM_IDX_OR(index, parity, UART_CFG_PARITY_NONE),  \
-				.stop_bits = DT_INST_ENUM_IDX_OR(index, stop_bits,                 \
-								 UART_CFG_STOP_BITS_1),            \
-				.data_bits = DT_INST_ENUM_IDX_OR(index, data_bits,                 \
-								 UART_CFG_DATA_BITS_8),            \
-				.flow_ctrl = DT_INST_PROP(index, hw_flow_control)                  \
-						     ? UART_CFG_FLOW_CTRL_RTS_CTS                  \
-						     : UART_CFG_FLOW_CTRL_NONE,                    \
-			},                                                                         \
-		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,                                           \
-			(.irq_config_func = uart_sf32lb_irq_config_func_##index,))                 \
-	};                                                                                         \
-                                                                                                   \
-	static struct uart_sf32lb_data uart_sf32lb_data_##index;                                   \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(index, uart_sf32lb_init, NULL,                                       \
-		&uart_sf32lb_data_##index, &uart_sf32lb_cfg_##index, PRE_KERNEL_1,                 \
-		CONFIG_SERIAL_INIT_PRIORITY, &uart_sf32lb_api);
+#if CONFIG_UART_ASYNC_API
+#define SF32LB_UART_DMA_INIT(n)                                                                    \
+	.tx_dma = SF32LB_DMA_DT_INST_SPEC_GET(n), .rx_dma = SF32LB_DMA_DT_INST_SPEC_GET(n),
+#else
+#define SF32LB_UART_DMA_INIT(n)
+#endif
+#define SF32LB_UART_DEFINE(index)                                                                 \
+	PINCTRL_DT_INST_DEFINE(index);                                                            \
+	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,                                                  \
+	(static void uart_sf32lb_irq_config_func_##index(const struct device *dev)                \
+	{                                                                                         \
+		IRQ_CONNECT(DT_INST_IRQN(index), DT_INST_IRQ(index, priority), uart_sf32lb_isr,   \
+			    DEVICE_DT_INST_GET(index), 0);                                        \
+		irq_enable(DT_INST_IRQN(index));                                                  \
+	}));                                                                                      \
+                                                                                                  \
+	static const struct uart_sf32lb_config uart_sf32lb_cfg_##index = {                        \
+		.base = DT_INST_REG_ADDR(index),                                                  \
+		.clock = SF32LB_CLOCK_DT_INST_SPEC_GET_OR(index, {}),                             \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                    \
+		.uart_cfg =                                                                       \
+			{                                                                         \
+				.baudrate = DT_INST_PROP(index, current_speed),                   \
+				.parity =                                                         \
+					DT_INST_ENUM_IDX_OR(index, parity, UART_CFG_PARITY_NONE), \
+				.stop_bits = DT_INST_ENUM_IDX_OR(index, stop_bits,                \
+								 UART_CFG_STOP_BITS_1),           \
+				.data_bits = DT_INST_ENUM_IDX_OR(index, data_bits,                \
+								 UART_CFG_DATA_BITS_8),           \
+				.flow_ctrl = DT_INST_PROP(index, hw_flow_control)                 \
+						     ? UART_CFG_FLOW_CTRL_RTS_CTS                 \
+						     : UART_CFG_FLOW_CTRL_NONE,                   \
+			},                                                                        \
+		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,                                          \
+			(.irq_config_func = uart_sf32lb_irq_config_func_##index,))                \
+				   SF32LB_UART_DMA_INIT(index)};                                  \
+                                                                                                  \
+	static struct uart_sf32lb_data uart_sf32lb_data_##index;                                  \
+                                                                                                  \
+	DEVICE_DT_INST_DEFINE(index, uart_sf32lb_init, NULL, &uart_sf32lb_data_##index,           \
+			      &uart_sf32lb_cfg_##index, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,\
+			      &uart_sf32lb_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SF32LB_UART_DEFINE)
