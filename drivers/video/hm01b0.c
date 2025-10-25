@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT himax_hm01b0
 
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video-controls.h>
 #include <zephyr/drivers/video.h>
@@ -15,6 +16,7 @@
 #include <zephyr/sys/util.h>
 
 #include "video_device.h"
+#include "video_ctrls.h"
 #include "video_common.h"
 
 LOG_MODULE_REGISTER(hm01b0, CONFIG_VIDEO_LOG_LEVEL);
@@ -26,6 +28,7 @@ LOG_MODULE_REGISTER(hm01b0, CONFIG_VIDEO_LOG_LEVEL);
 #define HM01B0_REG8(addr)             ((addr) | VIDEO_REG_ADDR16_DATA8)
 #define HM01B0_REG16(addr)            ((addr) | VIDEO_REG_ADDR16_DATA16_BE)
 #define HM01B0_CCI_ID                 HM01B0_REG16(0x0000)
+#define HM01B0_CCI_IMG_ORIENTATION    HM01B0_REG8(0x0101)
 #define HM01B0_CCI_STS                HM01B0_REG8(0x0100)
 #define HM01B0_CCI_RESET              HM01B0_REG8(0x0103)
 #define HM01B0_CCI_GRP_PARAM_HOLD     HM01B0_REG8(0x0104)
@@ -39,6 +42,9 @@ LOG_MODULE_REGISTER(hm01b0, CONFIG_VIDEO_LOG_LEVEL);
 #define HM01B0_CCI_BIT_CONTROL        HM01B0_REG8(0x3059)
 #define HM01B0_CCI_OSC_CLOCK_DIV      HM01B0_REG8(0x3060)
 
+#define HM01B0_SET_HMIRROR(r, x)      ((r & 0xFE) | ((x & 1) << 0))
+#define HM01B0_SET_VMIRROR(r, x)      ((r & 0xFD) | ((x & 1) << 1))
+
 #define HM01B0_CTRL_VAL(data_bits) \
 	((data_bits) == 8 ? 0x02 : \
 	(data_bits) == 4 ? 0x42 : \
@@ -48,6 +54,15 @@ enum hm01b0_resolution {
 	RESOLUTION_160x120,
 	RESOLUTION_320x240,
 	RESOLUTION_320x320,
+	RESOLUTION_164x122,
+	RESOLUTION_326x244,
+	RESOLUTION_326x324,
+	RESOLUTION_164x122_Y4,
+	RESOLUTION_326x244_Y4,
+	RESOLUTION_326x324_Y4,
+	RESOLUTION_164x122_BAYER,
+	RESOLUTION_326x244_BAYER,
+	RESOLUTION_326x324_BAYER,
 };
 
 struct video_reg hm01b0_160x120_regs[] = {
@@ -81,16 +96,38 @@ struct video_reg *hm01b0_init_regs[] = {
 	[RESOLUTION_160x120] = hm01b0_160x120_regs,
 	[RESOLUTION_320x240] = hm01b0_320x240_regs,
 	[RESOLUTION_320x320] = hm01b0_320x320_regs,
+	[RESOLUTION_164x122] = hm01b0_160x120_regs,
+	[RESOLUTION_326x244] = hm01b0_320x240_regs,
+	[RESOLUTION_326x324] = hm01b0_320x320_regs,
+	[RESOLUTION_164x122_Y4] = hm01b0_160x120_regs,
+	[RESOLUTION_326x244_Y4] = hm01b0_320x240_regs,
+	[RESOLUTION_326x324_Y4] = hm01b0_320x320_regs,
+	[RESOLUTION_164x122_BAYER] = hm01b0_160x120_regs,
+	[RESOLUTION_326x244_BAYER] = hm01b0_320x240_regs,
+	[RESOLUTION_326x324_BAYER] = hm01b0_320x320_regs,
+};
+
+struct hm01b0_ctrls {
+	struct video_ctrl hflip;
+	struct video_ctrl vflip;
 };
 
 struct hm01b0_data {
+	struct hm01b0_ctrls ctrls;
 	struct video_format fmt;
+	uint16_t cur_frmrate;
 };
 
 struct hm01b0_config {
 	const struct i2c_dt_spec i2c;
 	const uint8_t data_bits;
 	const uint8_t ctrl_val;
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+	struct gpio_dt_spec reset;
+#endif
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(pwdn_gpios)
+	struct gpio_dt_spec pwdn;
+#endif
 };
 
 #define HM01B0_VIDEO_FORMAT_CAP(width, height, format)                                             \
@@ -108,6 +145,15 @@ static const struct video_format_cap hm01b0_fmts[] = {
 	HM01B0_VIDEO_FORMAT_CAP(160, 120, VIDEO_PIX_FMT_GREY),
 	HM01B0_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_GREY),
 	HM01B0_VIDEO_FORMAT_CAP(320, 320, VIDEO_PIX_FMT_GREY),
+	HM01B0_VIDEO_FORMAT_CAP(164, 122, VIDEO_PIX_FMT_GREY),
+	HM01B0_VIDEO_FORMAT_CAP(326, 244, VIDEO_PIX_FMT_GREY),
+	HM01B0_VIDEO_FORMAT_CAP(326, 324, VIDEO_PIX_FMT_GREY),
+	HM01B0_VIDEO_FORMAT_CAP(164, 122, VIDEO_PIX_FMT_Y4),
+	HM01B0_VIDEO_FORMAT_CAP(326, 324, VIDEO_PIX_FMT_Y4),
+	HM01B0_VIDEO_FORMAT_CAP(326, 244, VIDEO_PIX_FMT_Y4),
+	HM01B0_VIDEO_FORMAT_CAP(164, 122, VIDEO_PIX_FMT_SBGGR8),
+	HM01B0_VIDEO_FORMAT_CAP(326, 324, VIDEO_PIX_FMT_SBGGR8),
+	HM01B0_VIDEO_FORMAT_CAP(326, 244, VIDEO_PIX_FMT_SBGGR8),
 	{0},
 };
 
@@ -239,11 +285,145 @@ static int hm01b0_soft_reset(const struct device *dev)
 	return ret;
 }
 
+static int hm01b0_set_frmival(const struct device *dev, struct video_frmival *frmival)
+{
+	const struct hm01b0_config *config = dev->config;
+	struct video_format fmt;
+	struct hm01b0_data *drv_data = dev->data;
+	int ret;
+
+	uint32_t osc_div = 0;
+	bool highres = false;
+
+	ret = hm01b0_get_fmt(dev, &fmt);
+	if (ret < 0) {
+		LOG_ERR("Can not get format!");
+		return ret;
+	}
+
+	if (fmt.width == 320) {
+		highres = true;
+	}
+
+
+	if (frmival->numerator <= 15) {
+		osc_div = highres ? 0x01 : 0x00;
+	} else if (frmival->numerator <= 30) {
+		osc_div = highres ? 0x02 : 0x01;
+	} else if (frmival->numerator <= 60) {
+		osc_div = highres ? 0x03 : 0x02;
+	} else {
+		/* Set to the max possible FPS at this resolution. */
+		osc_div = 3;
+	}
+
+	osc_div |= 0x8;
+
+	ret = video_write_cci_reg(&config->i2c, HM01B0_CCI_OSC_CLOCK_DIV, osc_div);
+	if (ret < 0) {
+		LOG_ERR("Failed to write OSC_CLK_DIV = %x reg (%d)", osc_div, ret);
+		return ret;
+	}
+
+	/* GRP_PARAM_HOLD */
+	ret = video_write_cci_reg(&config->i2c, HM01B0_CCI_GRP_PARAM_HOLD, 0x01);
+	if (ret < 0) {
+		LOG_ERR("Failed to write GRP_PARAM_HOLD reg (%d)", ret);
+		return ret;
+	}
+
+
+	drv_data->cur_frmrate = frmival->numerator;
+
+	LOG_DBG("FrameRate selected: %d", frmival->numerator);
+	LOG_DBG("HIRES Selected: %d", highres);
+	LOG_DBG("OSC DIV: %d", osc_div);
+
+	return 0;
+}
+
+static int hm01b0_get_frmival(const struct device *dev, struct video_frmival *frmival)
+{
+	struct hm01b0_data *drv_data = dev->data;
+
+	frmival->numerator = drv_data->cur_frmrate;
+	frmival->denominator = 1;
+
+	return 0;
+}
+
+static int hm01b0_init_controls(const struct device *dev)
+{
+	int ret;
+	struct hm01b0_data *drv_data = dev->data;
+	struct hm01b0_ctrls *ctrls = &drv_data->ctrls;
+
+	ret = video_init_ctrl(&ctrls->hflip, dev, VIDEO_CID_HFLIP,
+			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
+	if (ret) {
+		return ret;
+	}
+
+	return video_init_ctrl(&ctrls->vflip, dev, VIDEO_CID_VFLIP,
+			       (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
+}
+
+static int hm01b0_set_ctrl(const struct device *dev, uint32_t id)
+{
+	const struct hm01b0_config *config = dev->config;
+	struct hm01b0_data *drv_data = dev->data;
+	struct hm01b0_ctrls *ctrls = &drv_data->ctrls;
+
+	int ret;
+	uint32_t data;
+
+	switch (id) {
+	case VIDEO_CID_HFLIP:
+		ret = video_read_cci_reg(&config->i2c, HM01B0_CCI_IMG_ORIENTATION, &data);
+		if (ret < 0) {
+			return ret;
+		}
+		ret = video_write_cci_reg(&config->i2c, HM01B0_CCI_IMG_ORIENTATION,
+					  HM01B0_SET_HMIRROR(data, ctrls->hflip.val));
+		if (ret < 0) {
+			return ret;
+		}
+		ret = video_write_cci_reg(&config->i2c, HM01B0_CCI_GRP_PARAM_HOLD, 0x01);
+		if (ret < 0) {
+			return ret;
+		}
+		break;
+	case VIDEO_CID_VFLIP:
+		ret = video_read_cci_reg(&config->i2c, HM01B0_CCI_IMG_ORIENTATION, &data);
+		if (ret < 0) {
+			return ret;
+		}
+		ret = video_write_cci_reg(&config->i2c, HM01B0_CCI_IMG_ORIENTATION,
+					  HM01B0_SET_VMIRROR(data, ctrls->vflip.val));
+		if (ret < 0) {
+			return ret;
+		}
+		ret = video_write_cci_reg(&config->i2c, HM01B0_CCI_GRP_PARAM_HOLD, 0x01);
+		if (ret < 0) {
+			return ret;
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+
 static DEVICE_API(video, hm01b0_driver_api) = {
 	.set_format = hm01b0_set_fmt,
 	.get_format = hm01b0_get_fmt,
+	.set_ctrl = hm01b0_set_ctrl,
 	.set_stream = hm01b0_set_stream,
 	.get_caps = hm01b0_get_caps,
+	.set_frmival = hm01b0_set_frmival,
+	.get_frmival = hm01b0_get_frmival,
 };
 
 static bool hm01b0_check_connection(const struct device *dev)
@@ -261,10 +441,84 @@ static bool hm01b0_check_connection(const struct device *dev)
 	return (model_id == HM01B0_ID);
 }
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(pwdn_gpios) || DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+static bool hm01b0_try_reset_pwdn_pins(const struct device *dev, uint8_t iter)
+{
+	const struct hm01b0_config *config = dev->config;
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(pwdn_gpios)
+	gpio_pin_set_dt(&config->pwdn, iter >> 1);
+#else
+	if (iter >> 1) {
+		return false; /* cut iterations in half if not defined */
+	}
+#endif
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+	gpio_pin_set_dt(&config->reset, iter & 1);
+#else
+	if (iter & 1) {
+		return false; /* cut iterations in half if not defined */
+	}
+#endif
+	/* lets try a couple of iterations before we punt */
+	uint8_t retry_count = 3;
+
+	while (retry_count) {
+		k_sleep(K_MSEC(10));
+		if (hm01b0_check_connection(dev)) {
+			LOG_INF("Reset/pwdn pins valid:%u", retry_count);
+			return true;
+		}
+		retry_count--;
+	}
+	return false;
+}
+#endif
+
 static int hm01b0_init(const struct device *dev)
 {
+	const struct hm01b0_config __maybe_unused *config = dev->config;
 	int ret;
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(pwdn_gpios) || DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(pwdn_gpios)
+	/* Power up camera module */
+	if (config->pwdn.port != NULL) {
+		if (!gpio_is_ready_dt(&config->pwdn)) {
+			return -ENODEV;
+		}
+		ret = gpio_pin_configure_dt(&config->pwdn, GPIO_OUTPUT_ACTIVE);
+		if (ret < 0) {
+			LOG_ERR("Could not clear power down pin: %d", ret);
+			return ret;
+		}
+	}
+#endif
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+	/* Reset camera module */
+	if (config->reset.port != NULL) {
+		if (!gpio_is_ready_dt(&config->reset)) {
+			return -ENODEV;
+		}
+		ret = gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_ACTIVE);
+		if (ret < 0) {
+			LOG_ERR("Could not set reset pin: %d", ret);
+			return ret;
+		}
+	}
+#endif
+	bool found_id = false;
+
+	for (uint8_t iter = 0; iter < 4; iter++) {
+		found_id = hm01b0_try_reset_pwdn_pins(dev, iter);
+		if (found_id) {
+			break;
+		}
+	}
+#endif
+
+
+	LOG_INF("hm01b0_init check connection");
 	if (!hm01b0_check_connection(dev)) {
 		LOG_ERR("%s is not ready", dev->name);
 		return -ENODEV;
@@ -289,19 +543,35 @@ static int hm01b0_init(const struct device *dev)
 		return ret;
 	}
 
-	return 0;
+
+	/* Initialize controls */
+	return hm01b0_init_controls(dev);
 }
 
-#define HM01B0_INIT(inst)                                                                          \
-	const struct hm01b0_config hm01b0_config_##inst = {                                        \
-		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.data_bits = DT_INST_PROP(inst, data_bits),                                        \
-		.ctrl_val = HM01B0_CTRL_VAL(DT_INST_PROP(inst, data_bits)),                        \
-	};                                                                                         \
-	struct hm01b0_data hm01b0_data_##inst;                                                     \
-	DEVICE_DT_INST_DEFINE(inst, &hm01b0_init, NULL, &hm01b0_data_##inst,                       \
-			      &hm01b0_config_##inst, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,      \
-			      &hm01b0_driver_api);                                                 \
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+#define HM01B0_RESET_GPIO(inst) .reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {}),
+#else
+#define HM01B0_RESET_GPIO(inst)
+#endif
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(pwdn_gpios)
+#define HM01B0_PWDN_GPIO(inst) .pwdn = GPIO_DT_SPEC_INST_GET_OR(inst, pwdn_gpios, {}),
+#else
+#define HM01B0_PWDN_GPIO(inst)
+#endif
+
+#define HM01B0_INIT(inst)                                                                       \
+	const struct hm01b0_config hm01b0_config_##inst = {                                     \
+		.i2c = I2C_DT_SPEC_INST_GET(inst),                                              \
+		.data_bits = DT_INST_PROP(inst, data_bits),                                     \
+		.ctrl_val = HM01B0_CTRL_VAL(DT_INST_PROP(inst, data_bits)),                     \
+		HM01B0_RESET_GPIO(inst)								\
+		HM01B0_PWDN_GPIO(inst)								\
+	};                                                                                      \
+	struct hm01b0_data hm01b0_data_##inst;                                                  \
+	DEVICE_DT_INST_DEFINE(inst, &hm01b0_init, NULL, &hm01b0_data_##inst,                    \
+			      &hm01b0_config_##inst, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,   \
+			      &hm01b0_driver_api);                                              \
 	VIDEO_DEVICE_DEFINE(hm01b0_##inst, DEVICE_DT_INST_GET(inst), NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(HM01B0_INIT)
