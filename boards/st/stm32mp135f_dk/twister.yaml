@@ -9,6 +9,6 @@ supported:
   - gpio
   - uart
   - shell
-ram: 256
-flash: 256
+ram: 262144
+flash: 262144
 vendor: st
