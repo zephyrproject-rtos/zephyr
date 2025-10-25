@@ -11,14 +11,13 @@
 };
 
 /* 44.27KHz (0.38% Error) */
-&pllsai{
+&pllsai {
 	div-m = <4>;
 	mul-n = <119>;
-	div-p = <2>;
 	div-q = <7>;
-	div-r = <2>;
 	div-divq = <3>;
-	div-divr = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
 };
 
 &sai1_b {
