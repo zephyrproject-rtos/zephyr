@@ -9,12 +9,10 @@ companies, and individuals from the community.
 
 A time-based release process enables the Zephyr project to provide users with a
 balance of the latest technologies and features and excellent overall quality. A
-roughly 4-month release cycle allows the project to coordinate development of
+roughly 6-month release cycle allows the project to coordinate development of
 the features that have actually been implemented, allowing the project to
 maintain the quality of the overall release without delays because of one or two
 features that are not ready yet.
-
-The Zephyr release model was loosely based on the Linux kernel model:
 
 - Release tagging procedure:
 
@@ -23,12 +21,12 @@ The Zephyr release model was loosely based on the Linux kernel model:
 - Each release period will consist of a development phase followed by a
   stabilization phase. Release candidates will be tagged during the
   stabilization phase. During the stabilization phase, only stabilization
-  changes such as bug fixes and documentation will be merged unless granted a
-  special exemption by the Technical Steering Committee.
+  changes such as bug fixes and documentation enhancements will be merged
+  unless granted a special exemption by the Technical Steering Committee.
 
   - Development phase: all changes are considered and merged, subject to
-    approval from the respective maintainers.
-  - Stabilisation phase: the release manager creates a vN-rc1 tag and the tree
+    approval from the respective maintainers and following the merge criteria.
+  - Stabilisation phase: the release managers creates a vN-rc1 tag and the tree
     enters the stabilization phase
   - CI sees the tag, builds and runs tests; Test teams analyse the report from the
     build and test run and give an ACK/NAK to the build
@@ -108,14 +106,6 @@ Merge Criteria
   * Integration Tests (Via twister) on emulation/simulation platforms
   * Simulated Bluetooth Tests
 
-* Planned
-
-  * Footprint
-  * Code coverage
-  * Coding Guidelines
-  * Static Analysis (Coverity)
-  * Documentation coverage (APIs)
-
 Development Phase
 *****************
 
@@ -138,8 +128,8 @@ Stabilization Phase
 *******************
 
 Over the next weeks and depending on the release milestone, only stabilization,
-cosmetic changes, tests, bug and doc fixes are allowed (See :ref:`table
-<release_milestones>` below).
+cosmetic changes, tests, bug and documentation fixes and enhancements are
+allowed (See :ref:`table <release_milestones>` below).
 
 On occasion, more significant changes and new features will be allowed, but such
 occasions are rare and require a TSC approval and a justification. As a general
