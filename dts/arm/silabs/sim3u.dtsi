@@ -113,6 +113,16 @@
 			status = "disabled";
 		};
 
+		spi2: spi@40006000 {
+			compatible = "silabs,si32-spi";
+			reg = <0x40006000 0x1000>;
+			interrupts = <31 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&clk_apb>;
+			status = "disabled";
+		};
+
 		gpio0: gpio@4002a0a0 {
 			compatible = "silabs,si32-gpio";
 			gpio-controller;
