@@ -6,6 +6,10 @@ zephyr_library_compile_definitions_ifdef(
   )
 
 zephyr_library_sources_ifdef(CONFIG_NET_CONFIG_SETTINGS init.c)
+zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/ip)
+zephyr_library_include_directories_ifdef(CONFIG_FILE_SYSTEM_LITTLEFS
+  ${ZEPHYR_BASE}/../modules/fs/littlefs
+)
 
 if(CONFIG_NET_CONFIG_SETTINGS)
   zephyr_library_sources_ifdef(
