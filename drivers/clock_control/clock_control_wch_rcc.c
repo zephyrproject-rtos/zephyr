@@ -35,6 +35,7 @@
 #define WCH_RCC_SRC_IS_HSI 1
 #endif
 
+#if defined(CONFIG_DT_HAS_WCH_CH32V20X_30X_PLL_CLOCK_ENABLED)
 #if defined(CONFIG_SOC_CH32V307)
 /* TODO: Entry 13 is 6.5x (fractional multiple currently unsupported without
  * changes to RCC config datatype)
@@ -42,6 +43,7 @@
 static const uint8_t pllmul_lut[] = {18, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 0, 15, 16};
 #else
 static const uint8_t pllmul_lut[] = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 18};
+#endif
 #endif
 
 struct clock_control_wch_rcc_config {
@@ -165,7 +167,7 @@ static int clock_control_wch_rcc_init(const struct device *dev)
 		} else if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSI)) {
 			RCC->CFGR0 &= ~RCC_PLLSRC;
 		}
-
+#if defined(RCC_PLLMULL)
 		uint8_t pllmul = 0x0; /* Default Reset Value */
 
 		for (size_t i = 0; i < ARRAY_SIZE(pllmul_lut); i++) {
@@ -175,6 +177,7 @@ static int clock_control_wch_rcc_init(const struct device *dev)
 		}
 		RCC->CFGR0 &= ~RCC_PLLMULL;
 		RCC->CFGR0 |= WCH_RCC_PLLMUL_VAL(pllmul);
+#endif
 		RCC->CTLR |= RCC_PLLON;
 		while ((RCC->CTLR & RCC_PLLRDY) == 0) {
 		}
