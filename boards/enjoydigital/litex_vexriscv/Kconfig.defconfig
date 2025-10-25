@@ -3,11 +3,10 @@
 
 if BOARD_LITEX_VEXRISCV
 
-if NETWORKING
-
-config NET_L2_ETHERNET
+configdefault NET_L2_ETHERNET
 	default y
 
-endif # NETWORKING
+configdefault SDHC_LITEX_LITESDCARD_NO_COHERENT_DMA
+	default y
 
 endif # BOARD_LITEX_VEXRISCV
