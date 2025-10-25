@@ -58,8 +58,6 @@ static void unpack(const char *desc, struct out_buffer *buf,
 }
 
 #define TEST_PACKAGING(flags, fmt, ...) do { \
-	int must_runtime = CBPRINTF_MUST_RUNTIME_PACKAGE(flags, fmt, __VA_ARGS__); \
-	zassert_equal(must_runtime, !Z_C_GENERIC); \
 	snprintfcb(compare_buf, sizeof(compare_buf), fmt, __VA_ARGS__); \
 	printk("-----------------------------------------\n"); \
 	printk("%s\n", compare_buf); \
@@ -683,14 +681,6 @@ ZTEST(cbprintf_package, test_cbprintf_ro_rw_loc_const_char_ptr)
 
 static void cbprintf_rw_loc_const_char_ptr(bool keep_ro_str)
 {
-	/* Test requires that static packaging is applied. Runtime packaging
-	 * cannot be tricked because it checks pointers against read only
-	 * section.
-	 */
-	if (Z_C_GENERIC == 0) {
-		ztest_test_skip();
-	}
-
 	int slen, slen2;
 	int clen, clen2;
 	static const char test_str[] = "test %s %d %s";
@@ -777,10 +767,6 @@ ZTEST(cbprintf_package, test_cbprintf_rw_loc_const_char_ptr)
 ZTEST(cbprintf_package, test_cbprintf_must_runtime_package)
 {
 	int rv;
-
-	if (Z_C_GENERIC == 0) {
-		ztest_test_skip();
-	}
 
 	rv = CBPRINTF_MUST_RUNTIME_PACKAGE(0, "test");
 	zassert_equal(rv, 0);
@@ -1006,7 +992,6 @@ static void *print_size_and_alignment_info(void)
 	printk("alignof: int=%zu long=%zu ptr=%zu long long=%zu double=%zu long double=%zu\n",
 	       __alignof__(int), __alignof__(long), __alignof__(void *), __alignof__(long long),
 	       __alignof__(double), __alignof__(long double));
-	printk("%s C11 _Generic\n", Z_C_GENERIC ? "With" : "Without");
 #endif
 
 	return NULL;
