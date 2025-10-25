@@ -1080,7 +1080,14 @@ static int spi_stm32_half_duplex_switch_to_receive(const struct spi_stm32_config
 		if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
 			LL_SPI_StartMasterTransfer(spi);
 			while (!LL_SPI_IsActiveMasterTransfer(spi)) {
-				/* NOP */
+				/*
+				 * Check for the race condition where the transfer completes
+				 * before this loop is entered. If EOT is set, the transfer
+				 * is done and we can break.
+				 */
+				if (LL_SPI_IsActiveFlag_EOT(spi)) {
+					break;
+				}
 			}
 		}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
