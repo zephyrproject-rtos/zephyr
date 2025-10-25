@@ -163,3 +163,40 @@ ZTEST(k_pipe_concurrency, test_partial_write)
 		"failed t read from pipe");
 	k_thread_join(tid, K_FOREVER);
 }
+
+static void thread_read_write(void *arg1, void *arg2, void *arg3)
+{
+	uint8_t tmp[DUMMY_DATA_SIZE];
+	struct k_pipe *input = (struct k_pipe *)arg1;
+	struct k_pipe *output = (struct k_pipe *)arg2;
+
+	zassert_true(k_pipe_read(input, tmp, sizeof(tmp), K_FOREVER) == sizeof(tmp),
+	      "Failed to read from pipe");
+	zassert_true(k_pipe_write(output, tmp, sizeof(tmp), K_FOREVER) == sizeof(tmp),
+	      "Failed to write to pipe");
+}
+
+ZTEST(k_pipe_concurrency, test_zero_size_pipe_read_write)
+{
+	k_tid_t tid;
+	struct k_pipe input_pipe;
+	struct k_pipe output_pipe;
+	uint8_t input[DUMMY_DATA_SIZE];
+	uint8_t output[DUMMY_DATA_SIZE];
+
+	sys_rand_get(input, sizeof(input));
+	k_pipe_init(&input_pipe, NULL, 0);
+	k_pipe_init(&output_pipe, NULL, 0);
+
+	tid = k_thread_create(&thread, stack, K_THREAD_STACK_SIZEOF(stack),
+		thread_read_write, &input_pipe, &output_pipe, NULL, K_PRIO_COOP(0), 0, K_NO_WAIT);
+
+	zassert_true(sizeof(input) == k_pipe_write(&input_pipe, input, sizeof(input), K_FOREVER),
+	      "Failed to write to pipe");
+	zassert_true(sizeof(output) == k_pipe_read(&output_pipe, output, sizeof(output), K_FOREVER),
+	      "Failed to read from pipe");
+	zassert_true(memcmp(input, output, sizeof(input)) == 0,
+	      "Unexpected data received from pipe");
+
+	k_thread_join(tid, K_FOREVER);
+}
