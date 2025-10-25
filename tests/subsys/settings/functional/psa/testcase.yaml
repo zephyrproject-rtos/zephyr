@@ -1,0 +1,8 @@
+tests:
+  settings.functional.psa-its:
+    filter: CONFIG_TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
+    tags:
+      - settings
+      - trusted-firmware-m
+    extra_args:
+      - CONFIG_SETTINGS_TFM_ITS=y
