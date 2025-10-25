@@ -537,6 +537,9 @@ const union mpsc_pbuf_generic *mpsc_pbuf_claim(struct mpsc_pbuf_buffer *buffer)
 {
 	union mpsc_pbuf_generic *item;
 	bool cont;
+#ifdef CONFIG_MULTITHREADING
+	bool need_post = false;
+#endif
 
 	do {
 		uint32_t a;
@@ -562,6 +565,9 @@ const union mpsc_pbuf_generic *mpsc_pbuf_claim(struct mpsc_pbuf_buffer *buffer)
 				      idx_inc(buffer, buffer->tmp_rd_idx, inc);
 				rd_idx_inc(buffer, inc);
 				cont = true;
+#ifdef CONFIG_MULTITHREADING
+				need_post = true;
+#endif
 			} else {
 				item->hdr.busy = 1;
 				buffer->tmp_rd_idx =
@@ -576,6 +582,11 @@ const union mpsc_pbuf_generic *mpsc_pbuf_claim(struct mpsc_pbuf_buffer *buffer)
 		k_spin_unlock(&buffer->lock, key);
 	} while (cont);
 
+#ifdef CONFIG_MULTITHREADING
+	if (need_post && item == NULL) {
+		k_sem_give(&buffer->sem);
+	}
+#endif
 	return item;
 }
 
