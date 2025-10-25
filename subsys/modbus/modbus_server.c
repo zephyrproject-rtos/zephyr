@@ -91,6 +91,23 @@ static void mbs_exception_rsp(struct modbus_context *ctx, uint8_t excep_code)
 	ctx->tx_adu.length = 1;
 }
 
+static int mbs_prepare_regs(struct modbus_context *ctx, uint8_t fc, uint16_t addr, uint16_t qty)
+{
+	int err;
+
+	if (ctx->mbs_user_cb->prepare_regs == NULL) {
+		return 0;
+	}
+
+	err = ctx->mbs_user_cb->prepare_regs(fc, addr, qty);
+	if (err != 0) {
+		LOG_INF("register prepare failed for fc: %d", fc);
+		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_ADDR);
+	}
+
+	return err;
+}
+
 /*
  * FC 01 (0x01) Read Coils
  *
@@ -134,6 +151,12 @@ static bool mbs_fc01_coil_read(struct modbus_context *ctx)
 	if (coil_qty == 0 || coil_qty > coils_limit) {
 		LOG_ERR("Number of coils limit exceeded");
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
+		return true;
+	}
+
+	/* Prepare registers */
+	err = mbs_prepare_regs(ctx, MODBUS_FC01_COIL_RD, coil_addr, coil_qty);
+	if (err != 0) {
 		return true;
 	}
 
@@ -233,6 +256,12 @@ static bool mbs_fc02_di_read(struct modbus_context *ctx)
 	if (di_qty == 0 || di_qty > di_limit) {
 		LOG_ERR("Number of inputs limit exceeded");
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
+		return true;
+	}
+
+	/* Prepare registers */
+	err = mbs_prepare_regs(ctx, MODBUS_FC02_DI_RD, di_addr, di_qty);
+	if (err != 0) {
 		return true;
 	}
 
@@ -353,6 +382,12 @@ static bool mbs_fc03_hreg_read(struct modbus_context *ctx)
 		}
 	}
 
+	/* Prepare registers */
+	err = mbs_prepare_regs(ctx, MODBUS_FC03_HOLDING_REG_RD, reg_addr, reg_qty);
+	if (err != 0) {
+		return true;
+	}
+
 	/* Number of data bytes + byte count. */
 	ctx->tx_adu.length = num_bytes + 1;
 	/* Set number of data bytes in response message. */
@@ -463,6 +498,13 @@ static bool mbs_fc04_inreg_read(struct modbus_context *ctx)
 			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
 			return true;
 		}
+
+	}
+
+	/* Prepare registers */
+	err = mbs_prepare_regs(ctx, MODBUS_FC04_IN_REG_RD, reg_addr, reg_qty);
+	if (err != 0) {
+		return true;
 	}
 
 	/* Number of data bytes + byte count. */
@@ -550,6 +592,12 @@ static bool mbs_fc05_coil_write(struct modbus_context *ctx)
 	coil_addr = sys_get_be16(&ctx->rx_adu.data[0]);
 	coil_val = sys_get_be16(&ctx->rx_adu.data[2]);
 
+	/* Prepare registers */
+	err = mbs_prepare_regs(ctx, MODBUS_FC05_COIL_WR, coil_addr, 1);
+	if (err != 0) {
+		return true;
+	}
+
 	/* See if coil needs to be OFF? */
 	if (coil_val == MODBUS_COIL_OFF_CODE) {
 		coil_state = false;
@@ -606,6 +654,12 @@ static bool mbs_fc06_hreg_write(struct modbus_context *ctx)
 
 	reg_addr = sys_get_be16(&ctx->rx_adu.data[0]);
 	reg_val = sys_get_be16(&ctx->rx_adu.data[2]);
+
+	/* Prepare registers */
+	err = mbs_prepare_regs(ctx, MODBUS_FC06_HOLDING_REG_WR, reg_addr, 1);
+	if (err != 0) {
+		return true;
+	}
 
 	err = ctx->mbs_user_cb->holding_reg_wr(reg_addr, reg_val);
 
@@ -767,6 +821,12 @@ static bool mbs_fc15_coils_write(struct modbus_context *ctx)
 		return true;
 	}
 
+	/* Prepare registers */
+	err = mbs_prepare_regs(ctx, MODBUS_FC15_COILS_WR, coil_addr, coil_qty);
+	if (err != 0) {
+		return true;
+	}
+
 	coil_cntr = 0;
 	/* The 1st coil data byte is 6th element in payload */
 	data_ix = 5;
@@ -883,6 +943,12 @@ static bool mbs_fc16_hregs_write(struct modbus_context *ctx)
 	if ((num_bytes / reg_qty) != sizeof(uint16_t)) {
 		LOG_ERR("Mismatch in the number of registers");
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
+		return true;
+	}
+
+	/* Prepare registers */
+	err = mbs_prepare_regs(ctx, MODBUS_FC16_HOLDING_REGS_WR, reg_addr, reg_qty);
+	if (err != 0) {
 		return true;
 	}
 
