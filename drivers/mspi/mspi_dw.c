@@ -59,7 +59,7 @@ struct mspi_dw_data {
 	enum mspi_cpp_mode xip_cpp;
 #endif
 
-	uint16_t dummy_bytes;
+	uint32_t dummy_bytes;
 	uint8_t bytes_to_discard;
 	uint8_t bytes_per_frame_exp;
 	bool standard_spi;
@@ -317,7 +317,7 @@ static bool tx_dummy_bytes(const struct device *dev, bool *repeat)
 	uint8_t fifo_room = dev_config->max_queued_dummy_bytes
 			  - FIELD_GET(TXFLR_TXTFL_MASK, read_txflr(dev));
 	uint8_t rx_fifo_items = FIELD_GET(RXFLR_RXTFL_MASK, read_rxflr(dev));
-	uint16_t dummy_bytes = dev_data->dummy_bytes;
+	uint32_t dummy_bytes = dev_data->dummy_bytes;
 	const uint8_t dummy_val = 0;
 
 	/* Subtract the number of items that are already stored in the RX
