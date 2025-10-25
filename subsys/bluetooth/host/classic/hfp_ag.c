@@ -1402,6 +1402,33 @@ static void hfp_ag_sco_disconnected(struct bt_sco_chan *chan, uint8_t reason)
 	}
 }
 
+static int hfp_ag_set_voice_setting(struct bt_hfp_ag *ag)
+{
+	uint16_t air_coding_fmt;
+
+	switch (ag->selected_codec_id) {
+	case BT_HFP_AG_CODEC_CVSD:
+		air_coding_fmt = BT_HCI_VOICE_SETTING_AIR_CODING_FMT_CVSD;
+		break;
+#if defined(CONFIG_BT_HFP_AG_CODEC_NEG)
+	case BT_HFP_AG_CODEC_MSBC:
+	case BT_HFP_AG_CODEC_LC3_SWB:
+		air_coding_fmt = BT_HCI_VOICE_SETTING_AIR_CODING_FMT_TRANSPARENT;
+		break;
+#endif /* CONFIG_BT_HFP_AG_CODEC_NEG */
+	default:
+		LOG_ERR("Unsupported codec ID %u", ag->selected_codec_id);
+		return -EINVAL;
+	}
+
+	ag->sco_chan.voice_setting = BT_HCI_VOICE_SETTINGS(
+		air_coding_fmt, BT_HCI_VOICE_SETTING_PCM_BIT_POS_DEFAULT,
+		BT_HCI_VOICE_SETTING_SAMPLE_SIZE_16_BITS,
+		BT_HCI_VOICE_SETTING_DATA_FMT_2_COMPLEMENT, BT_HCI_VOICE_SETTING_CODING_FMT_LINEAR);
+
+	return 0;
+}
+
 static struct bt_conn *bt_hfp_ag_create_sco(struct bt_hfp_ag *ag)
 {
 	static const struct bt_sco_chan_ops ops = {
@@ -1412,7 +1439,15 @@ static struct bt_conn *bt_hfp_ag_create_sco(struct bt_hfp_ag *ag)
 	LOG_DBG("");
 
 	if (ag->sco_conn == NULL) {
+		int err;
+
 		ag->sco_chan.ops = &ops;
+
+		err = hfp_ag_set_voice_setting(ag);
+		if (err < 0) {
+			LOG_ERR("Fail to set voice setting :(%d)", err);
+			return NULL;
+		}
 
 		/* create SCO connection*/
 		ag->sco_conn = bt_conn_create_sco(&ag->acl_conn->br.dst, &ag->sco_chan);
