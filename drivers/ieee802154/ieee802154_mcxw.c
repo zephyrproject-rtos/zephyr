@@ -21,6 +21,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/init.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/random/random.h>
 
 #if defined(CONFIG_NET_L2_OPENTHREAD)
 #include <zephyr/net/openthread.h>
@@ -63,6 +65,10 @@ static uint16_t rf_compute_csl_phase(uint32_t aTimeUs);
 #define stop_csl_receiver()
 #endif /* CONFIG_IEEE802154_CSL_ENDPOINT */
 
+#define THREAD_MAC_KEY "thread/mac"
+#define THREAD_MAC_LEN 8
+static uint8_t thread_mac[THREAD_MAC_LEN];
+
 static volatile uint32_t sun_rx_mode = RX_ON_IDLE_START;
 
 /* Private functions */
@@ -81,6 +87,11 @@ static uint8_t ot_phy_ctx = (uint8_t)(-1);
 
 static struct mcxw_context mcxw_ctx;
 
+static int thread_mac_settings_set(const char *name, size_t len,
+                                   settings_read_cb read_cb, void *cb_arg);
+
+SETTINGS_STATIC_HANDLER_DEFINE(thread_mac, "thread", NULL, thread_mac_settings_set, NULL, NULL);
+
 /**
  * Stub function used for controlling low power mode
  */
@@ -95,14 +106,85 @@ WEAK void app_disallow_device_to_slepp(void)
 {
 }
 
+static int thread_mac_settings_set(const char *name, size_t len,
+                                   settings_read_cb read_cb, void *cb_arg)
+{
+    if (strcmp(name, "mac") == 0)
+    {
+        if (len == THREAD_MAC_LEN)
+        {
+            ssize_t bytes_read = read_cb(cb_arg, thread_mac, len);
+            if ((bytes_read < 0) || (bytes_read != THREAD_MAC_LEN))
+            {
+                /* Incomplete read */
+				return -EIO;
+            }
+			/* Success */
+            return 0;
+        }
+		/* Incorrect size or invalid MAC address */
+        return -EINVAL;
+    }
+
+	/* Unrecognized key */
+    return 0;
+}
+
 void mcxw_get_eui64(uint8_t *eui64)
 {
+    int ret;
+    bool is_all_zero = true;
+    bool is_all_ff   = true;
+    bool force_regenerate = false;
+
 	__ASSERT_NO_MSG(eui64);
 
-	/* PLATFORM_GetIeee802_15_4Addr(); */
-	sys_rand_get(eui64, sizeof(mcxw_ctx.mac));
+    /* Initialize thread_mac to ensure clean state */
+    memset(thread_mac, 0, THREAD_MAC_LEN);
 
-	eui64[0] = (eui64[0] & ~0x01) | 0x02;
+    ret = settings_subsys_init();
+    if (ret != 0)
+    {
+        force_regenerate = true;
+    }
+    else
+    {
+        settings_load();
+
+		/* Check if loaded MAC is valid */
+        for (int i = 0; i < THREAD_MAC_LEN; i++)
+        {
+            if (thread_mac[i] != 0x00)
+            {
+                is_all_zero = false;
+            }
+            if (thread_mac[i] != 0xFF)
+            {
+                is_all_ff = false;
+            }
+        }
+
+        /* Invalid if: all zeros, all 0xFF, or multicast (bit 0 = 1) */
+        if (is_all_zero || is_all_ff || (thread_mac[0] & 0x01) != 0)
+        {
+            force_regenerate = true;
+        }
+    }
+
+    if (force_regenerate)
+    {
+        /* Generate new random MAC */
+        sys_rand_get(thread_mac, THREAD_MAC_LEN);
+
+        /* Ensure locally administered (bit 1) and unicast (bit 0 = 0) */
+        thread_mac[0] = (thread_mac[0] & ~0x01) | 0x02;
+
+        /* Try to save - continue even if save fails */
+        settings_save_one(THREAD_MAC_KEY, thread_mac, THREAD_MAC_LEN);
+    }
+
+    /* Always provide a valid address */
+    memcpy(eui64, thread_mac, THREAD_MAC_LEN);
 }
 
 static int mcxw_set_pan_id(const struct device *dev, uint16_t aPanId)
