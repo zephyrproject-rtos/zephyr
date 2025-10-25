@@ -178,4 +178,11 @@ config WIFI_SILABS_SIWX91X_ENABLE_INSTANT_SCAN
 # This device supports filtering scan results for only one SSID.
 config WIFI_MGMT_SCAN_SSID_FILT_MAX
 	default 1
+
+config WIFI_SIWX91X_HIGH_THROUGHPUT
+	bool "high throughput"
+	help
+	  Enable this option to improve the throughput performance of the SiWx91x
+	  series. This feature provides enhanced data transfer capabilities and
+	  improved network performance.
 endif
