@@ -112,7 +112,8 @@ static void print_pmp_entries(unsigned int pmp_start, unsigned int pmp_end,
  * @param pmp_cfg Pointer to the array where the CSR contents will be stored.
  * @param pmp_cfg_size The size of the pmp_cfg array, measured in unsigned long entries.
  */
-static inline void z_riscv_pmp_read_config(unsigned long *pmp_cfg, size_t pmp_cfg_size)
+IF_DISABLED(CONFIG_ZTEST, (static inline)) void z_riscv_pmp_read_config(unsigned long *pmp_cfg,
+								      size_t pmp_cfg_size)
 {
 	__ASSERT(pmp_cfg_size == (size_t)(CONFIG_PMP_SLOTS / PMPCFG_STRIDE),
 		 "Invalid PMP config array size");
@@ -412,6 +413,19 @@ static unsigned long global_pmp_last_addr;
 
 /* End of global PMP entry range */
 static unsigned int global_pmp_end_index;
+
+void z_riscv_pmp_clear_all(void)
+{
+	/*
+	 * Ensure we are in M-mode and that memory accesses use M-mode privileges
+	 * (MPRV=0). We also set MPP to M-mode to establish a predictable prior privilege level.
+	 */
+	csr_clear(mstatus, MSTATUS_MPRV);
+	csr_set(mstatus, MSTATUS_MPP);
+
+	extern void z_riscv_clear_all_pmp_entries(void);
+	z_riscv_clear_all_pmp_entries();
+}
 
 /**
  * @Brief Initialize the PMP with global entries on each CPU
