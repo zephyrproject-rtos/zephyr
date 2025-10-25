@@ -133,16 +133,11 @@
 				reset-gpios = <&test_gpio 0 0>;
 			};
 
-			test_i2c_hm01b0: hm01b0@24 {
-				compatible = "himax,hm01b0";
-				reg = <0x24>;
-				status = "okay";
-				data-bits = <0x4>;
-				port {
-					hm01b0_ep_out: endpoint {
-						remote-endpoint-label = "";
-					};
-				};
+			test_i2c_ov7675: ov7675@21 {
+				compatible = "ovti,ov7675";
+				reg = <0x21>;
+        reset-gpios = <&test_gpio 0 0>;
+        pwdn-gpios = <&test_gpio 1 0>;
 			};
 		};
 
