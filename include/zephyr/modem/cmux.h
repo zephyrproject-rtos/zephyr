@@ -54,6 +54,30 @@ typedef void (*modem_cmux_callback)(struct modem_cmux *cmux, enum modem_cmux_eve
 				    void *user_data);
 
 /**
+ * @brief Contains CMUX instance configuration data
+ */
+struct modem_cmux_config {
+	/** Invoked when event occurs */
+	modem_cmux_callback callback;
+	/** Free to use pointer passed to event handler when invoked */
+	void *user_data;
+	/** Receive buffer */
+	uint8_t *receive_buf;
+	/** Size of receive buffer in bytes [127, ...] */
+	uint16_t receive_buf_size;
+	/** Transmit buffer */
+	uint8_t *transmit_buf;
+	/** Size of transmit buffer in bytes [149, ...] */
+	uint16_t transmit_buf_size;
+	/** Enable runtime power management */
+	bool enable_runtime_power_management;
+	/** Close pipe on power save */
+	bool close_pipe_on_power_save;
+	/** Idle timeout for power save */
+	k_timeout_t idle_timeout;
+};
+
+/**
  * @cond INTERNAL_HIDDEN
  */
 
@@ -72,6 +96,10 @@ enum modem_cmux_state {
 	MODEM_CMUX_STATE_DISCONNECTED = 0,
 	MODEM_CMUX_STATE_CONNECTING,
 	MODEM_CMUX_STATE_CONNECTED,
+	MODEM_CMUX_STATE_ENTER_POWERSAVE,
+	MODEM_CMUX_STATE_POWERSAVE,
+	MODEM_CMUX_STATE_CONFIRM_POWERSAVE,
+	MODEM_CMUX_STATE_WAKEUP,
 	MODEM_CMUX_STATE_DISCONNECTING,
 };
 
@@ -144,10 +172,6 @@ struct modem_cmux {
 	/* Bus pipe */
 	struct modem_pipe *pipe;
 
-	/* Event handler */
-	modem_cmux_callback callback;
-	void *user_data;
-
 	/* DLCI channel contexts */
 	sys_slist_t dlcis;
 
@@ -162,10 +186,6 @@ struct modem_cmux {
 
 	/* Receive state*/
 	enum modem_cmux_receive_state receive_state;
-
-	/* Receive buffer */
-	uint8_t *receive_buf;
-	uint16_t receive_buf_size;
 	uint16_t receive_buf_len;
 
 	uint8_t work_buf[MODEM_CMUX_WORK_BUFFER_SIZE];
@@ -184,38 +204,24 @@ struct modem_cmux {
 	struct k_work_delayable transmit_work;
 	struct k_work_delayable connect_work;
 	struct k_work_delayable disconnect_work;
+	struct k_work_delayable runtime_pm_work;
 
 	/* Synchronize actions */
 	struct k_event event;
+	k_timepoint_t t3_timepoint;
+	k_timepoint_t idle_timepoint;
 
 	/* Statistics */
 #if CONFIG_MODEM_STATS
 	struct modem_stats_buffer receive_buf_stats;
 	struct modem_stats_buffer transmit_buf_stats;
 #endif
+	struct modem_cmux_config config;
 };
 
 /**
  * @endcond
  */
-
-/**
- * @brief Contains CMUX instance configuration data
- */
-struct modem_cmux_config {
-	/** Invoked when event occurs */
-	modem_cmux_callback callback;
-	/** Free to use pointer passed to event handler when invoked */
-	void *user_data;
-	/** Receive buffer */
-	uint8_t *receive_buf;
-	/** Size of receive buffer in bytes [127, ...] */
-	uint16_t receive_buf_size;
-	/** Transmit buffer */
-	uint8_t *transmit_buf;
-	/** Size of transmit buffer in bytes [149, ...] */
-	uint16_t transmit_buf_size;
-};
 
 /**
  * @brief Initialize CMUX instance
