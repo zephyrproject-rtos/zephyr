@@ -8,7 +8,7 @@ description: |
 
 compatible: "silabs,series2-radio"
 
-include: [base.yaml]
+include: [base.yaml, ble-radio.yaml]
 
 properties:
   reg:
@@ -56,3 +56,12 @@ properties:
       property is not set, no sub-GHz PA is enabled.
     enum:
       - highest
+
+  ble-tx-high-power-supported:
+    type: boolean
+    description: |
+      If set, indicates that the radio hardware supports high TX power settings.
+      This is a vendor-specific capability that enables transmission beyond
+      standard power levels (typically >10 dBm).
+      This property should be treated as read-only and should not be overridden;
+      the correct value is provided for your target's SoC already.
