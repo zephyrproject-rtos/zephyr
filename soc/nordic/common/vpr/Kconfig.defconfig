@@ -1,9 +1,6 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-config RISCV_MCAUSE_EXCEPTION_MASK
-	default 0xFFF
-
 config RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
 	default 16
 
