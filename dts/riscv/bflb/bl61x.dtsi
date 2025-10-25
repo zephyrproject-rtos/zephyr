@@ -209,6 +209,17 @@
 			size = <512>;
 		};
 
+		usbd: usbd@20072000 {
+			compatible = "bflb,bl61x-udc";
+			reg = <0x20072000 0x1000>;
+			num-bidir-endpoints = <5>;
+			maximum-speed = "high-speed";
+			status = "disabled";
+
+			interrupts = <37 2>;
+			interrupt-parent = <&clic>;
+		};
+
 		sram0: memory@62fc0000 {
 			compatible = "mmio-sram";
 			reg = <0x62FC0000 DT_SIZE_K(320)>;
