@@ -30,6 +30,13 @@ config USBD_MSC_SCSI_BUFFER_SIZE
 	  Buffer size must be able to hold at least one sector. All LUNs within
 	  single instance share the SCSI buffer.
 
+config USBD_MSC_DOUBLE_BUFFERING
+	bool "SCSI double buffering"
+	default y
+	help
+	  Allocate two SCSI buffers instead of one to increase throughput by
+	  using one buffer by disk subsystem and one by USB at the same time.
+
 module = USBD_MSC
 module-str = usbd msc
 default-count = 1
