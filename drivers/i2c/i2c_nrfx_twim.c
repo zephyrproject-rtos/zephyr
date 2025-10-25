@@ -32,6 +32,7 @@ struct i2c_nrfx_twim_data {
 	struct k_sem transfer_sync;
 	struct k_sem completion_sync;
 	volatile nrfx_err_t res;
+	uint8_t *buf_ptr;
 };
 
 int i2c_nrfx_twim_exclusive_access_acquire(const struct device *dev, k_timeout_t timeout)
@@ -69,6 +70,7 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 	uint16_t msg_buf_size = dev_config->msg_buf_size;
 	uint8_t *buf;
 	uint16_t buf_len;
+	uint8_t *dma_buf;
 
 	(void)i2c_nrfx_twim_exclusive_access_acquire(dev, K_FOREVER);
 
@@ -133,6 +135,23 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 			buf = msg_buf;
 			buf_len = msg_buf_used;
 		}
+
+		if (msgs[i].flags & I2C_MSG_READ) {
+			ret = dmm_buffer_in_prepare(dev_config->mem_reg, buf, buf_len,
+							(void **)&dma_buf);
+		} else {
+			ret = dmm_buffer_out_prepare(dev_config->mem_reg, buf, buf_len,
+							(void **)&dma_buf);
+		}
+
+		if (ret < 0) {
+			LOG_ERR("Failed to prepare buffer: %d", ret);
+			return ret;
+		}
+
+		dev_data->buf_ptr = buf;
+		buf = dma_buf;
+
 		ret = i2c_nrfx_twim_msg_transfer(dev, msgs[i].flags, buf, buf_len, addr);
 		if (ret < 0) {
 			break;
@@ -198,6 +217,23 @@ static void event_handler(nrfx_twim_evt_t const *p_event, void *p_context)
 
 	switch (p_event->type) {
 	case NRFX_TWIM_EVT_DONE:
+		const struct i2c_nrfx_twim_common_config *config = dev->config;
+		int ret = 0;
+
+		if (p_event->xfer_desc.type == NRFX_TWIM_XFER_TX) {
+			ret = dmm_buffer_out_release(config->mem_reg,
+				(void **)&p_event->xfer_desc.p_primary_buf);
+		} else {
+			ret = dmm_buffer_in_release(config->mem_reg, dev_data->buf_ptr,
+				p_event->xfer_desc.primary_length,
+				p_event->xfer_desc.p_primary_buf);
+		}
+
+		if (ret < 0) {
+			dev_data->res = NRFX_ERROR_INTERNAL;
+			break;
+		}
+
 		dev_data->res = NRFX_SUCCESS;
 		break;
 	case NRFX_TWIM_EVT_ADDRESS_NACK:
@@ -283,6 +319,7 @@ static DEVICE_API(i2c, i2c_nrfx_twim_driver_api) = {
 			(.msg_buf = twim_##idx##_msg_buf,))		       \
 		.max_transfer_size = BIT_MASK(				       \
 				DT_PROP(I2C(idx), easydma_maxcnt_bits)),       \
+		.mem_reg = DMM_DEV_TO_REG(I2C(idx)),			       \
 	};								       \
 	PM_DEVICE_DT_DEFINE(I2C(idx), twim_nrfx_pm_action,                     \
 			I2C_PM_ISR_SAFE(idx));                                 \
@@ -302,78 +339,7 @@ static DEVICE_API(i2c, i2c_nrfx_twim_driver_api) = {
 			DT_PHANDLE(I2C(idx), memory_regions)))))),	       \
 		())
 
-#ifdef CONFIG_HAS_HW_NRF_TWIM0
-I2C_NRFX_TWIM_DEVICE(0);
-#endif
+#define COND_I2C_NRF_TWIM_DEVICE(unused, prefix, i, _) \
+	IF_ENABLED(CONFIG_HAS_HW_NRF_TWIM##prefix##i, (I2C_NRFX_TWIM_DEVICE(prefix##i);))
 
-#ifdef CONFIG_HAS_HW_NRF_TWIM1
-I2C_NRFX_TWIM_DEVICE(1);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM2
-I2C_NRFX_TWIM_DEVICE(2);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM3
-I2C_NRFX_TWIM_DEVICE(3);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM20
-I2C_NRFX_TWIM_DEVICE(20);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM21
-I2C_NRFX_TWIM_DEVICE(21);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM22
-I2C_NRFX_TWIM_DEVICE(22);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM23
-I2C_NRFX_TWIM_DEVICE(23);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM24
-I2C_NRFX_TWIM_DEVICE(24);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM30
-I2C_NRFX_TWIM_DEVICE(30);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM120
-I2C_NRFX_TWIM_DEVICE(120);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM130
-I2C_NRFX_TWIM_DEVICE(130);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM131
-I2C_NRFX_TWIM_DEVICE(131);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM132
-I2C_NRFX_TWIM_DEVICE(132);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM133
-I2C_NRFX_TWIM_DEVICE(133);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM134
-I2C_NRFX_TWIM_DEVICE(134);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM135
-I2C_NRFX_TWIM_DEVICE(135);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM136
-I2C_NRFX_TWIM_DEVICE(136);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIM137
-I2C_NRFX_TWIM_DEVICE(137);
-#endif
+NRFX_FOREACH_PRESENT(TWIM, COND_I2C_NRF_TWIM_DEVICE, (), ())
