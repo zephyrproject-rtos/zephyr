@@ -14,6 +14,9 @@
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/debug/cpu_load.h>
+#include <zephyr/sys/atomic.h>
+
+static atomic_t tracing_state = ATOMIC_INIT(0x01);
 
 static void _get_thread_name(struct k_thread *thread,
 			     ctf_bounded_string_t *name)
@@ -946,4 +949,14 @@ void sys_port_trace_gpio_fire_callbacks_enter(sys_slist_t *list, const struct de
 void sys_port_trace_gpio_fire_callback(const struct device *port, struct gpio_callback *cb)
 {
 	ctf_top_gpio_fire_callback((uint32_t)(uintptr_t)port, (uint32_t)(uintptr_t)cb);
+}
+
+void sys_trace_set_state_ctf(bool state)
+{
+	(void)atomic_set(&tracing_state, state);
+}
+
+bool ctf_trace_is_enabled(void)
+{
+	return atomic_get(&tracing_state);
 }
