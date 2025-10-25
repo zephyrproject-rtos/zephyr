@@ -490,7 +490,7 @@ static int mbox_mhuv3_doorbell_last_tx_done(const struct device *dev,
 		return -EINVAL;
 	}
 
-	bool done = !(sys_test_bit((mem_addr_t)&cfg->pbx->dbcw[chan->ch_idx].st, chan->doorbell));
+	bool done = !sys_io_test_bit((mem_addr_t)&cfg->pbx->dbcw[chan->ch_idx].st, chan->doorbell);
 
 	if (done) {
 		struct mbox_mhuv3_data *data = dev->data;
@@ -538,7 +538,7 @@ static int mbox_mhuv3_doorbell_send_data(const struct device *dev,
 	}
 
 	K_SPINLOCK(&ext->pending_lock) {
-		if (sys_test_bit((mem_addr_t)&ext->pending_db[chan->ch_idx], chan->doorbell)) {
+		if (sys_io_test_bit((mem_addr_t)&ext->pending_db[chan->ch_idx], chan->doorbell)) {
 			ret = -EBUSY;
 		} else {
 			sys_set_bit((mem_addr_t)&ext->pending_db[chan->ch_idx], chan->doorbell);
