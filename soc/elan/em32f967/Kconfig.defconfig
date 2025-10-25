@@ -1,0 +1,15 @@
+if SOC_EM32F967
+
+config NUM_IRQS
+	default 64
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 60000000
+
+config BUILD_OUTPUT_BIN
+	default y
+
+config BUILD_OUTPUT_HEX
+	default y
+
+endif # SOC_EM32F967
