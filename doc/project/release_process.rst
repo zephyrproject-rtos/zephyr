@@ -9,33 +9,15 @@ companies, and individuals from the community.
 
 A time-based release process enables the Zephyr project to provide users with a
 balance of the latest technologies and features and excellent overall quality. A
-roughly 4-month release cycle allows the project to coordinate development of
+roughly 6-month release cycle allows the project to coordinate development of
 the features that have actually been implemented, allowing the project to
 maintain the quality of the overall release without delays because of one or two
 features that are not ready yet.
 
-The Zephyr release model was loosely based on the Linux kernel model:
+Each release period will consist of a development phase followed by a
+stabilization phase. Release candidates will be created during the stabilization
+phase.
 
-- Release tagging procedure:
-
-  - linear mode on main branch,
-  - release branches for maintenance after release tagging.
-- Each release period will consist of a development phase followed by a
-  stabilization phase. Release candidates will be tagged during the
-  stabilization phase. During the stabilization phase, only stabilization
-  changes such as bug fixes and documentation will be merged unless granted a
-  special exemption by the Technical Steering Committee.
-
-  - Development phase: all changes are considered and merged, subject to
-    approval from the respective maintainers.
-  - Stabilisation phase: the release manager creates a vN-rc1 tag and the tree
-    enters the stabilization phase
-  - CI sees the tag, builds and runs tests; Test teams analyse the report from the
-    build and test run and give an ACK/NAK to the build
-  - The release owner, with test teams and any other needed input, determines if the
-    release candidate is a go for release
-  - If it is a go for a release, the release owner lays a tag release vN at the
-    same point
 
 .. figure:: release_cycle.svg
     :align: center
@@ -51,6 +33,47 @@ The Zephyr release model was loosely based on the Linux kernel model:
     `Official GitHub Wiki <https://github.com/zephyrproject-rtos/zephyr/wiki/Release-Management>`_.
     Information on previous releases can be found :ref:`here <zephyr_release_notes>`.
 
+
+Development Phase
+*****************
+
+A relatively straightforward discipline is followed with regard to the merging
+of patches for each release.  At the beginning of each development cycle, the
+main branch is said to be open for development.  At that time, code which is deemed to be
+sufficiently stable (and which is accepted by the maintainers and the wide community) is
+merged into the mainline tree.  The bulk of changes for a new development cycle
+(and all of the major changes) will be merged during this time.
+
+The development phase lasts for approximately five months.  At the end of this time,
+the release owner will declare that the development phase is over and releases the first
+of the release candidates.  For the codebase release which is destined to be
+3.1.0, for example, the release which happens at the end of the development phase
+will be called 3.1.0-rc1.  The -rc1 release is the signal that the time to merge
+new features has passed, and that the time to stabilize the next release of the
+code base has begun.
+
+Stabilization Phase
+*******************
+
+Over the following weeks and depending on the release milestone, only stabilization,
+cosmetic updates, bug fixes, documentation improvements, and new tests for
+existing features are permitted. (See :ref:`table <release_milestones>` below).
+
+On occasion, more significant changes and new features will be allowed, but such
+occasions are rare and require a TSC approval and a justification. As a general
+rule, if you miss submitting your code during the development phase for a given
+feature, the best thing to do is to wait for the next development cycle. (An
+occasional exception is made for drivers for previously unsupported hardware; if
+they do not touch any other in-tree code, they cannot cause regressions and
+should be safe to add at any time).
+
+As fixes make their way into the mainline, the patch rate will slow over time.
+The mainline release owner releases new -rc drops once or twice a week; a normal
+series will get up to somewhere between -rc4 and -rc6 before the code base is
+considered to be sufficiently stable and the release criteria have been achieved
+at which point the final 3.1.0 release is made.
+
+At that point, the whole process starts over again.
 
 .. _merge_criteria:
 
@@ -108,54 +131,6 @@ Merge Criteria
   * Integration Tests (Via twister) on emulation/simulation platforms
   * Simulated Bluetooth Tests
 
-* Planned
-
-  * Footprint
-  * Code coverage
-  * Coding Guidelines
-  * Static Analysis (Coverity)
-  * Documentation coverage (APIs)
-
-Development Phase
-*****************
-
-A relatively straightforward discipline is followed with regard to the merging
-of patches for each release.  At the beginning of each development cycle, the
-main branch is said to be open for development.  At that time, code which is deemed to be
-sufficiently stable (and which is accepted by the maintainers and the wide community) is
-merged into the mainline tree.  The bulk of changes for a new development cycle
-(and all of the major changes) will be merged during this time.
-
-The development phase lasts for approximately five months.  At the end of this time,
-the release owner will declare that the development phase is over and releases the first
-of the release candidates.  For the codebase release which is destined to be
-3.1.0, for example, the release which happens at the end of the development phase
-will be called 3.1.0-rc1.  The -rc1 release is the signal that the time to merge
-new features has passed, and that the time to stabilize the next release of the
-code base has begun.
-
-Stabilization Phase
-*******************
-
-Over the next weeks and depending on the release milestone, only stabilization,
-cosmetic changes, tests, bug and doc fixes are allowed (See :ref:`table
-<release_milestones>` below).
-
-On occasion, more significant changes and new features will be allowed, but such
-occasions are rare and require a TSC approval and a justification. As a general
-rule, if you miss submitting your code during the development phase for a given
-feature, the best thing to do is to wait for the next development cycle. (An
-occasional exception is made for drivers for previously unsupported hardware; if
-they do not touch any other in-tree code, they cannot cause regressions and
-should be safe to add at any time).
-
-As fixes make their way into the mainline, the patch rate will slow over time.
-The mainline release owner releases new -rc drops once or twice a week; a normal
-series will get up to somewhere between -rc4 and -rc6 before the code base is
-considered to be sufficiently stable and the release criteria have been achieved
-at which point the final 3.1.0 release is made.
-
-At that point, the whole process starts over again.
 
 .. _release_quality_criteria:
 
@@ -242,8 +217,9 @@ Release Milestones
      - Release Manager
    * - T-3W
      - Feature Freeze (RC1)
-     - No new features after RC1, ONLY stabilization and cosmetic changes, bug and doc
-       fixes are allowed. New tests for existing features are also allowed.
+     - After RC1, no new features may be introduced. Only stabilization,
+       cosmetic updates, bug fixes, documentation improvements, and new tests
+       for existing features are permitted.
      - Release Engineering
    * - T-2W
      - 2nd Release Candidate
@@ -251,7 +227,8 @@ Release Milestones
      - Release Manager
    * - T-1W
      - Hard Freeze (RC3)
-     - Only blocker bug fixes after RC3, documentation and changes to release notes are allowed.
+     - Only blocker bug fixes after RC3, documentation improvements and changes
+       to release notes are allowed.
        Release notes need to be complete by this checkpoint. Release Criteria is
        met.
      - Release Manager
