@@ -49,9 +49,9 @@
 		};
 	};
 
-	/* System data RAM accessible over AXI bus: AXI SRAM1 in CD domain */
+	/* System data RAM accessible over AXI bus: AXI SRAM1 to AXI SRAM4 in CD domain */
 	sram0: memory@24000000 {
-		reg = <0x24000000 DT_SIZE_K(128)>;
+		reg = <0x24000000 DT_SIZE_K(456)>;
 		compatible = "zephyr,memory-region", "mmio-sram";
 		zephyr,memory-region = "SRAM0";
 	};
