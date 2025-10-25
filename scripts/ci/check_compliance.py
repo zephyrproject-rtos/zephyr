@@ -1859,7 +1859,7 @@ class CMakeStyle(ComplianceTest):
     def run(self):
         # Loop through added/modified files
         for fname in get_files(filter="d"):
-            if fname.endswith(".cmake") or fname == "CMakeLists.txt":
+            if fname.endswith(".cmake") or fname.endswith("CMakeLists.txt"):
                 self.check_style(fname)
 
     def check_style(self, fname):
