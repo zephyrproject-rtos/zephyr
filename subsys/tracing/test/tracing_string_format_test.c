@@ -15,7 +15,7 @@ void sys_trace_k_thread_switched_out(void)
 {
 	struct k_thread *thread;
 
-	thread = k_current_get();
+	thread = k_sched_current_thread_query();
 	TRACING_STRING("%s: %p\n", __func__, thread);
 }
 
@@ -23,7 +23,7 @@ void sys_trace_k_thread_switched_in(void)
 {
 	struct k_thread *thread;
 
-	thread = k_current_get();
+	thread = k_sched_current_thread_query();
 	TRACING_STRING("%s: %p\n", __func__, thread);
 }
 
