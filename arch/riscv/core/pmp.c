@@ -15,7 +15,7 @@
  * cycles on corresponding CSR registers. Relevant CSR registers are always
  * written in batch from their shadow copy in RAM for better efficiency.
  *
- * In the stackguard case we keep an m-mode copy for each thread. Each user
+ * In the kernel mode case we keep an m-mode copy for each thread. Each user
  * mode threads also has a u-mode copy. This makes faster context switching
  * as precomputed content just have to be written to actual registers with
  * no additional processing.
@@ -31,6 +31,8 @@
 #include <pmp.h>
 #include <zephyr/arch/arch_interface.h>
 #include <zephyr/arch/riscv/csr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-riscv.h>
+#include <zephyr/mem_mgmt/mem_attr.h>
 
 #define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -54,6 +56,45 @@ LOG_MODULE_REGISTER(mpu);
 
 #define PMP_NONE 0
 
+/**
+ * @brief Decodes PMP configuration and address registers into a memory region's
+ * start/end addresses.
+ *
+ * @param cfg_byte The PMP configuration byte (pmpcfg_n).
+ * @param pmp_addr A pointer to the full array of PMP address registers (pmpaddr_n).
+ * @param index The current PMP entry index.
+ * @param start Pointer to where the calculated start address should be stored.
+ * @param end Pointer to where the calculated end address should be stored.
+ */
+IF_DISABLED(CONFIG_ZTEST, (static))
+void pmp_decode_region(uint8_t cfg_byte, unsigned long *pmp_addr, unsigned int index,
+		       unsigned long *start, unsigned long *end)
+{
+	unsigned long tmp;
+	unsigned long pmp_addr_val = pmp_addr[index];
+	unsigned long pmp_prev_addr_val = (index == 0) ? 0 : pmp_addr[index - 1];
+
+	switch (cfg_byte & PMP_A) {
+	case PMP_TOR:
+		*start = (index == 0) ? 0 : (pmp_prev_addr_val << 2);
+		*end   = (pmp_addr_val << 2) - 1;
+		break;
+	case PMP_NA4:
+		*start = pmp_addr_val << 2;
+		*end   = *start + 3;
+		break;
+	case PMP_NAPOT:
+		tmp = (pmp_addr_val << 2) | 0x3;
+		*start = tmp & (tmp + 1);
+		*end   = tmp | (tmp + 1);
+		break;
+	default:
+		*start = 0;
+		*end   = 0;
+		break;
+	}
+}
+
 static void print_pmp_entries(unsigned int pmp_start, unsigned int pmp_end,
 			      unsigned long *pmp_addr, unsigned long *pmp_cfg,
 			      const char *banner)
@@ -63,27 +104,9 @@ static void print_pmp_entries(unsigned int pmp_start, unsigned int pmp_end,
 
 	LOG_DBG("PMP %s:", banner);
 	for (index = pmp_start; index < pmp_end; index++) {
-		unsigned long start, end, tmp;
+		unsigned long start, end;
 
-		switch (pmp_n_cfg[index] & PMP_A) {
-		case PMP_TOR:
-			start = (index == 0) ? 0 : (pmp_addr[index - 1] << 2);
-			end = (pmp_addr[index] << 2) - 1;
-			break;
-		case PMP_NA4:
-			start = pmp_addr[index] << 2;
-			end = start + 3;
-			break;
-		case PMP_NAPOT:
-			tmp = (pmp_addr[index] << 2) | 0x3;
-			start = tmp & (tmp + 1);
-			end   = tmp | (tmp + 1);
-			break;
-		default:
-			start = 0;
-			end = 0;
-			break;
-		}
+		pmp_decode_region(pmp_n_cfg[index], pmp_addr, index, &start, &end);
 
 		if (end == 0) {
 			LOG_DBG("%3d: "PR_ADDR" 0x%02x", index,
@@ -112,7 +135,8 @@ static void print_pmp_entries(unsigned int pmp_start, unsigned int pmp_end,
  * @param pmp_cfg Pointer to the array where the CSR contents will be stored.
  * @param pmp_cfg_size The size of the pmp_cfg array, measured in unsigned long entries.
  */
-static inline void z_riscv_pmp_read_config(unsigned long *pmp_cfg, size_t pmp_cfg_size)
+IF_DISABLED(CONFIG_ZTEST, (static inline))
+void z_riscv_pmp_read_config(unsigned long *pmp_cfg, size_t pmp_cfg_size)
 {
 	__ASSERT(pmp_cfg_size == (size_t)(CONFIG_PMP_SLOTS / PMPCFG_STRIDE),
 		 "Invalid PMP config array size");
@@ -178,7 +202,8 @@ static inline void z_riscv_pmp_write_config(unsigned long *pmp_cfg, size_t pmp_c
  * @param pmp_addr Pointer to the array where the CSR contents will be stored.
  * @param pmp_addr_size The size of the pmp_addr array, measured in unsigned long entries.
  */
-static inline void z_riscv_pmp_read_addr(unsigned long *pmp_addr, size_t pmp_addr_size)
+IF_DISABLED(CONFIG_ZTEST, (static inline))
+void z_riscv_pmp_read_addr(unsigned long *pmp_addr, size_t pmp_addr_size)
 {
 	__ASSERT(pmp_addr_size == (size_t)(CONFIG_PMP_SLOTS), "PMP address array size mismatch");
 
@@ -270,7 +295,7 @@ static bool set_pmp_entry(unsigned int *index_p, uint8_t perm,
 	return ok;
 }
 
-#ifdef CONFIG_PMP_STACK_GUARD
+#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
 static inline bool set_pmp_mprv_catchall(unsigned int *index_p,
 					 unsigned long *pmp_addr, unsigned long *pmp_cfg,
 					 unsigned int index_limit)
@@ -298,7 +323,7 @@ static inline bool set_pmp_mprv_catchall(unsigned int *index_p,
 
 	return ok;
 }
-#endif /* CONFIG_PMP_STACK_GUARD */
+#endif /* #ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC */
 
 /**
  * @brief Write a range of PMP entries to corresponding PMP registers
@@ -382,6 +407,49 @@ static void write_pmp_entries(unsigned int start, unsigned int end,
 				  pmp_addr, pmp_cfg);
 }
 
+#ifdef CONFIG_MEM_ATTR
+/**
+ * @brief Install PMP entries from devicetree mem-attr regions.
+ *
+ * Iterates over devicetree-provided memory-attr regions and programs PMP
+ * via set_pmp_entry(). Ordering matters because PMP checks entries from lowest
+ * to highest index and uses the first entry that matches the address.
+ *
+ * @param index_p Location of the current PMP slot index to use. This index
+ *                will be updated according to the number of slots used.
+ * @param pmp_addr Array of pmpaddr values (starting at entry 0).
+ * @param pmp_cfg Array of pmpcfg values (starting at entry 0).
+ * @param index_limit Index value representing the size of the provided arrays.
+ * @return Number of PMP slots consumed by installed mem-attr regions.
+ */
+static unsigned int set_pmp_mem_attr(unsigned int *index_p,
+				     unsigned long *pmp_addr, unsigned long *pmp_cfg,
+				     unsigned int index_limit)
+{
+	const struct mem_attr_region_t *region;
+	unsigned int entry_cnt = *index_p;
+	size_t num_regions;
+
+	num_regions = mem_attr_get_regions(&region);
+
+	for (size_t idx = 0; idx < num_regions; ++idx) {
+
+		uint8_t perm = DT_MEM_RISCV_TO_PMP_PERM(region[idx].dt_attr);
+
+		if (perm) {
+			set_pmp_entry(index_p, perm,
+				(uintptr_t)(region[idx].dt_addr),
+				(size_t)(region[idx].dt_size),
+				pmp_addr, pmp_cfg, index_limit);
+		}
+	}
+
+	entry_cnt = *index_p - entry_cnt;
+
+	return entry_cnt;
+}
+#endif /* CONFIG_MEM_ATTR */
+
 /**
  * @brief Abstract the last 3 arguments to set_pmp_entry() and
  *        write_pmp_entries( for m-mode.
@@ -419,7 +487,7 @@ static unsigned int global_pmp_end_index;
 void z_riscv_pmp_init(void)
 {
 	unsigned long pmp_addr[CONFIG_PMP_SLOTS];
-	unsigned long pmp_cfg[CONFIG_PMP_SLOTS / PMPCFG_STRIDE];
+	unsigned long pmp_cfg[CONFIG_PMP_SLOTS / PMPCFG_STRIDE] = {0};
 	unsigned int index = 0;
 
 #ifdef CONFIG_NULL_POINTER_EXCEPTION_DETECTION_PMP
@@ -450,23 +518,6 @@ void z_riscv_pmp_init(void)
 		      (uintptr_t)z_interrupt_stacks[_current_cpu->id],
 		      Z_RISCV_STACK_GUARD_SIZE,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
-
-	/*
-	 * This early, the kernel init code uses the IRQ stack and we want to
-	 * safeguard it as soon as possible. But we need a temporary default
-	 * "catch all" PMP entry for MPRV to work. Later on, this entry will
-	 * be set for each thread by z_riscv_pmp_stackguard_prepare().
-	 */
-	set_pmp_mprv_catchall(&index, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
-
-	 /* Write those entries to PMP regs. */
-	write_pmp_entries(0, index, true, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
-
-	/* Activate our non-locked PMP entries for m-mode */
-	csr_set(mstatus, MSTATUS_MPRV);
-
-	/* And forget about that last entry as we won't need it later */
-	index--;
 #else
 	/* Without multithreading setup stack guards for IRQ and main stacks */
 	set_pmp_entry(&index, PMP_NONE | PMP_L,
@@ -479,11 +530,30 @@ void z_riscv_pmp_init(void)
 		      Z_RISCV_STACK_GUARD_SIZE,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 
+#endif /* CONFIG_MULTITHREADING */
+#endif
+
+#ifdef CONFIG_MEM_ATTR
+	unsigned int attr_cnt = set_pmp_mem_attr(&index, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+
+	/*
+	 * This early, we want to protect unlock PMP entries as soon as
+	 * possible. But we need a temporary default "catch all" PMP entry for
+	 * MPRV to work. Later on, this entry will be set for each thread by
+	 * z_riscv_pmp_kernelmode_prepare().
+	 */
+	set_pmp_mprv_catchall(&index, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+
 	/* Write those entries to PMP regs. */
 	write_pmp_entries(0, index, true, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
-#endif /* CONFIG_MULTITHREADING */
+
+	/* Activate our non-locked PMP entries for m-mode */
+	csr_set(mstatus, MSTATUS_MPRV);
+
+	/* And forget about that tempory entries as we won't need it later */
+	index -= attr_cnt + 1;
 #else
-	 /* Write those entries to PMP regs. */
+	/* Write those entries to PMP regs. */
 	write_pmp_entries(0, index, true, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 #endif
 
@@ -518,7 +588,7 @@ void z_riscv_pmp_init(void)
 /**
  * @Brief Initialize the per-thread PMP register copy with global values.
  */
-#if (defined(CONFIG_PMP_STACK_GUARD) && defined(CONFIG_MULTITHREADING)) || defined(CONFIG_USERSPACE)
+#if defined(CONFIG_PMP_KERNEL_MODE_DYNAMIC) || defined(CONFIG_USERSPACE)
 static inline unsigned int z_riscv_pmp_thread_init(unsigned long *pmp_addr,
 						   unsigned long *pmp_cfg,
 						   unsigned int index_limit)
@@ -540,17 +610,17 @@ static inline unsigned int z_riscv_pmp_thread_init(unsigned long *pmp_addr,
 }
 #endif
 
-#ifdef CONFIG_PMP_STACK_GUARD
-
-#ifdef CONFIG_MULTITHREADING
+#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
 /**
- * @brief Prepare the PMP stackguard content for given thread.
+ * @brief Prepare the PMP kernelmode content for given thread.
  *
  * This is called once during new thread creation.
  */
-void z_riscv_pmp_stackguard_prepare(struct k_thread *thread)
+void z_riscv_pmp_kernelmode_prepare(struct k_thread *thread)
 {
 	unsigned int index = z_riscv_pmp_thread_init(PMP_M_MODE(thread));
+
+#if (defined(CONFIG_PMP_STACK_GUARD) && defined(CONFIG_MULTITHREADING))
 	uintptr_t stack_bottom;
 
 	/* make the bottom addresses of our stack inaccessible */
@@ -565,6 +635,12 @@ void z_riscv_pmp_stackguard_prepare(struct k_thread *thread)
 	set_pmp_entry(&index, PMP_NONE,
 		      stack_bottom, Z_RISCV_STACK_GUARD_SIZE,
 		      PMP_M_MODE(thread));
+#endif /* CONFIG_PMP_STACK_GUARD */
+
+#ifdef CONFIG_MEM_ATTR
+	set_pmp_mem_attr(&index, PMP_M_MODE(thread));
+#endif /* CONFIG_MEM_ATTR */
+
 	set_pmp_mprv_catchall(&index, PMP_M_MODE(thread));
 
 	/* remember how many entries we use */
@@ -572,13 +648,13 @@ void z_riscv_pmp_stackguard_prepare(struct k_thread *thread)
 }
 
 /**
- * @brief Write PMP stackguard content to actual PMP registers
+ * @brief Write PMP kernel mode content to actual PMP registers
  *
  * This is called on every context switch.
  */
-void z_riscv_pmp_stackguard_enable(struct k_thread *thread)
+void z_riscv_pmp_kernelmode_enable(struct k_thread *thread)
 {
-	LOG_DBG("pmp_stackguard_enable for thread %p", thread);
+	LOG_DBG("pmp_kernelmode_enable for thread %p", thread);
 
 	/*
 	 * Disable (non-locked) PMP entries for m-mode while we update them.
@@ -600,12 +676,10 @@ void z_riscv_pmp_stackguard_enable(struct k_thread *thread)
 	csr_set(mstatus, MSTATUS_MPRV);
 }
 
-#endif /* CONFIG_MULTITHREADING */
-
 /**
- * @brief Remove PMP stackguard content to actual PMP registers
+ * @brief Remove PMP kernel mode content to actual PMP registers
  */
-void z_riscv_pmp_stackguard_disable(void)
+void z_riscv_pmp_kernelmode_disable(void)
 {
 
 	unsigned long pmp_addr[CONFIG_PMP_SLOTS];
@@ -632,8 +706,7 @@ void z_riscv_pmp_stackguard_disable(void)
 		dump_pmp_regs("catch all register dump");
 	}
 }
-
-#endif /* CONFIG_PMP_STACK_GUARD */
+#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC */
 
 #ifdef CONFIG_USERSPACE
 
@@ -699,8 +772,34 @@ static void resync_pmp_domain(struct k_thread *thread,
 			continue;
 		}
 
-		ok = set_pmp_entry(&index, part->attr.pmp_attr,
-				   part->start, part->size, PMP_U_MODE(thread));
+#ifdef CONFIG_MEM_ATTR
+		const struct mem_attr_region_t *region;
+		uint8_t attr_mask = PMP_R | PMP_W | PMP_X;
+
+		for (int idx = 0; idx < mem_attr_get_regions(&region); idx++) {
+			uintptr_t dt_start = (uintptr_t)(region[idx].dt_addr);
+			uintptr_t dt_end = dt_start + (size_t)(region[idx].dt_size);
+			bool covered = false;
+
+			/* No overlap at all, skip this memory region */
+			if ((part->start + part->size) <= dt_start || part->start >= dt_end) {
+				continue;
+			}
+
+			covered = part->start >= dt_start && (part->start + part->size) <= dt_end;
+			__ASSERT(covered, "No allowed partition partially overlaps memory region");
+
+			attr_mask = DT_MEM_RISCV_TO_PMP_PERM(region[idx].dt_attr);
+			break;
+		}
+
+		ok = set_pmp_entry(&index, part->attr.pmp_attr & attr_mask, part->start, part->size,
+				   PMP_U_MODE(thread));
+#else
+		ok = set_pmp_entry(&index, part->attr.pmp_attr, part->start, part->size,
+				   PMP_U_MODE(thread));
+#endif
+
 		__ASSERT(ok,
 			 "no PMP slot left for %d remaining partitions in domain %p",
 			 remaining_partitions + 1, domain);
@@ -736,7 +835,7 @@ void z_riscv_pmp_usermode_enable(struct k_thread *thread)
 		resync_pmp_domain(thread, domain);
 	}
 
-#ifdef CONFIG_PMP_STACK_GUARD
+#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
 	/* Make sure m-mode PMP usage is disabled before we reprogram it */
 	csr_clear(mstatus, MSTATUS_MPRV);
 #endif
