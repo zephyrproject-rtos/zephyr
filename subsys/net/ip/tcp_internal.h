@@ -354,15 +354,19 @@ static inline int net_tcp_update_recv_wnd(struct net_context *context,
  * @brief Close and delete the TCP connection for the net_context
  *
  * @param context Network context
+ * @param force_close If true, close the connection immediately. This is
+ * used e.g., when network interface goes down and we cannot wait for proper
+ * connection close procedure as we cannot send any packets anymore.
  *
  * @return 0 on success, < 0 on error
  */
 #if defined(CONFIG_NET_NATIVE_TCP)
-int net_tcp_put(struct net_context *context);
+int net_tcp_put(struct net_context *context, bool force_close);
 #else
-static inline int net_tcp_put(struct net_context *context)
+static inline int net_tcp_put(struct net_context *context, bool force_close)
 {
 	ARG_UNUSED(context);
+	ARG_UNUSED(force_close);
 
 	return -EPROTONOSUPPORT;
 }
@@ -487,6 +491,24 @@ void net_tcp_conn_accepted(struct net_context *child_ctx);
 static inline void net_tcp_conn_accepted(struct net_context *child_ctx)
 {
 	ARG_UNUSED(child_ctx);
+}
+#endif
+
+/**
+ * @brief Close and unref all TCP context bound to an network interface.
+ *
+ * @details This releases all the TCP contexts that are bound to a specific
+ * network interface. It is not possible to send or receive data via those
+ * contexts after this call.
+ *
+ * @param iface The network interface to use to find out the bound contexts.
+ */
+#if defined(CONFIG_NET_NATIVE_TCP)
+void net_tcp_close_all_for_iface(struct net_if *iface);
+#else
+static inline void net_tcp_close_all_for_iface(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
 }
 #endif
 

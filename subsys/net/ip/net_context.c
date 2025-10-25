@@ -650,7 +650,7 @@ int net_context_get(sa_family_t family, enum net_sock_type type, uint16_t proto,
 		    !net_if_is_ip_offloaded(net_if_get_default()) &&
 		    proto == IPPROTO_TCP) {
 			/* Free the TCP context that we allocated earlier */
-			net_tcp_put(&contexts[i]);
+			net_tcp_put(&contexts[i], false);
 		}
 
 		return ret;
@@ -735,7 +735,7 @@ int net_context_put(struct net_context *context)
 	context->send_cb = NULL;
 
 	/* net_tcp_put() will handle decrementing refcount on stack's behalf */
-	net_tcp_put(context);
+	net_tcp_put(context, false);
 
 	/* Decrement refcount on user app's behalf */
 	net_context_unref(context);
