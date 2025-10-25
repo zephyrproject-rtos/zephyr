@@ -1,6 +1,6 @@
 # Watchdog configuration options
 
-# Copyright (c) 2018, NXP
+# Copyright (c) 2018,2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config WDT_MCUX_WDOG
@@ -53,3 +53,10 @@ config WDT_MCUX_COP
 	select HAS_WDT_DISABLE_AT_BOOT
 	help
 	  Enable the mcux cop driver.
+
+config WDT_MCUX_SWT
+	bool "MCUX SWT (Software watchdog) driver"
+	default y
+	depends on DT_HAS_NXP_SWT_ENABLED
+	help
+	  Enable the mcux swt driver.
