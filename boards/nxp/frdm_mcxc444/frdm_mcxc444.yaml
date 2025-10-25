@@ -23,6 +23,7 @@ supported:
   - pwm
   - usb_device
   - usbd
+  - dma
 testing:
   ignore_tags:
     - net
