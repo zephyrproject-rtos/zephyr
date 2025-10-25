@@ -44,9 +44,11 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,sram = &cpuapp_sram;
 		zephyr,flash = &cpuapp_rram;
+		zephyr,flash-controller = &rram_controller;
 		zephyr,console = &uart20;
 		zephyr,shell-uart = &uart20;
 		nordic,rpc-uart = &uart20;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	aliases {
