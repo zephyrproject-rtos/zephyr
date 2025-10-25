@@ -264,20 +264,20 @@ void start_broadcast_adv(struct bt_le_ext_adv *adv)
 		return;
 	}
 
-	if (info.ext_adv_state == BT_LE_EXT_ADV_STATE_DISABLED) {
-		/* Start extended advertising */
-		err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
-		if (err != 0) {
-			FAIL("Failed to start extended advertising: %d\n", err);
-			return;
-		}
-	}
-
 	if (info.per_adv_state == BT_LE_PER_ADV_STATE_DISABLED) {
 		/* Enable Periodic Advertising */
 		err = bt_le_per_adv_start(adv);
 		if (err != 0) {
 			FAIL("Failed to enable periodic advertising: %d\n", err);
+			return;
+		}
+	}
+
+	if (info.ext_adv_state == BT_LE_EXT_ADV_STATE_DISABLED) {
+		/* Start extended advertising */
+		err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
+		if (err != 0) {
+			FAIL("Failed to start extended advertising: %d\n", err);
 			return;
 		}
 	}
