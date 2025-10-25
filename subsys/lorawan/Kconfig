@@ -6,7 +6,6 @@
 menuconfig LORAWAN
 	bool "LoRaWAN support [EXPERIMENTAL]"
 	depends on LORA
-	depends on SYSTEM_WORKQUEUE_STACK_SIZE >= 2048
 	select REQUIRES_FULL_LIBC
 	select HAS_SEMTECH_LORAMAC
 	imply HAS_SEMTECH_SOFT_SE
@@ -15,6 +14,10 @@ menuconfig LORAWAN
 	  This option enables LoRaWAN support.
 
 if LORAWAN
+
+config SYSTEM_WORKQUEUE_STACK_MIN_SIZE_LORAWAN
+	int "System workqueue stack size for lorawan"
+	default 2048
 
 module = LORAWAN
 module-str = lorawan
