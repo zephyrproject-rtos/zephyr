@@ -47,7 +47,7 @@ static void cap_initiator_test_unicast_stop_fixture_init(
 		BT_AUDIO_LOCATION_MONO_AUDIO, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
 	for (size_t i = 0U; i < ARRAY_SIZE(fixture->conns); i++) {
-		test_conn_init(&fixture->conns[i]);
+		test_conn_init(&fixture->conns[i], i);
 	}
 
 	for (size_t i = 0U; i < ARRAY_SIZE(fixture->eps); i++) {
