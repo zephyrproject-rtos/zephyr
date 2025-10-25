@@ -35,6 +35,12 @@
 #define ST7796S_CMD_CSCON	0xF0 /* Command set control */
 
 #define ST7796S_CONTROL_16BIT 0x5 /* Sets control interface to 16 bit mode */
+
+#define ST7796S_MADCTL_MY  BIT(7) /* Set row address order */
+#define ST7796S_MADCTL_MX  BIT(6) /* Set column address order */
+#define ST7796S_MADCTL_MV  BIT(5) /* Set row/column exchange */
+#define ST7796S_MADCTL_ML  BIT(4) /* Set vertical refresh order */
+#define ST7796S_MADCTL_MH  BIT(2) /* Set horizontal refresh order */
 #define ST7796S_MADCTL_BGR BIT(3) /* Sets BGR color mode */
 
 
