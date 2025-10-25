@@ -268,7 +268,7 @@ static int rts5912_hash_begin_session(const struct device *dev, struct hash_ctx 
 		rts5912_sha256_start(dev);
 		break;
 	default:
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	return 0;

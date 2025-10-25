@@ -713,7 +713,7 @@ static int do_ccm_encrypt_mac(struct cipher_ctx *ctx,
 
 	if (aead_op->ad != NULL || aead_op->ad_len != 0U) {
 		LOG_ERR("Associated data is not supported.");
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	ataes132a_aes_ccm_encrypt(dev, key_id, &mac_mode,
@@ -758,7 +758,7 @@ static int do_ccm_decrypt_auth(struct cipher_ctx *ctx,
 
 	if (aead_op->ad != NULL || aead_op->ad_len != 0U) {
 		LOG_ERR("Associated data is not supported.");
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	/* Normal Decryption Mode will only decrypt host generated packets */
@@ -835,18 +835,18 @@ static int ataes132a_session_setup(const struct device *dev,
 
 	if (algo != CRYPTO_CIPHER_ALGO_AES) {
 		LOG_ERR("ATAES132A unsupported algorithm");
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	/*ATAES132A support I2C polling only*/
 	if (!(ctx->flags & CAP_SYNC_OPS)) {
 		LOG_ERR("Async not supported by this driver");
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	if (ctx->keylen != ATAES132A_AES_KEY_SIZE) {
 		LOG_ERR("ATAES132A unsupported key size");
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	if (op_type == CRYPTO_CIPHER_OP_ENCRYPT) {
@@ -859,7 +859,7 @@ static int ataes132a_session_setup(const struct device *dev,
 			break;
 		default:
 			LOG_ERR("ATAES132A unsupported mode");
-			return -EINVAL;
+			return -ENOTSUP;
 		}
 	} else {
 		switch (mode) {
@@ -871,7 +871,7 @@ static int ataes132a_session_setup(const struct device *dev,
 			break;
 		default:
 			LOG_ERR("ATAES132A unsupported mode");
-			return -EINVAL;
+			return -ENOTSUP;
 		}
 	}
 
