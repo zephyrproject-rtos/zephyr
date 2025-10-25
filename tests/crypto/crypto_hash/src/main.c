@@ -157,21 +157,22 @@ ZTEST_USER(crypto_hash, test_hash)
 
 	ctx.flags = CAP_SYNC_OPS | CAP_SEPARATE_IO_BUFS;
 
-	ret = hash_begin_session(dev, &ctx, CRYPTO_HASH_ALGO_SHA256);
-	zassert_true(ret == 0, "Failed to init sha256 session");
-
 #define TEST_HASH(_i) \
 	do { \
-		uint8_t out_buf[32] = {0};	\
-		struct hash_pkt pkt = {			\
-			.in_buf = test ## _i,		\
-			.in_len = sizeof(test ## _i),	\
-			.out_buf = out_buf,		\
-		};					\
-		ret = hash_compute(&ctx, &pkt);		\
+		uint8_t out_buf[32] = {0};					\
+		struct hash_pkt pkt = {						\
+			.in_buf = test ## _i,					\
+			.in_len = sizeof(test ## _i),				\
+			.out_buf = out_buf,					\
+		};								\
+		ret = hash_begin_session(dev, &ctx, CRYPTO_HASH_ALGO_SHA256);	\
+		zassert_true(ret == 0, "Failed to init hash session");		\
+		ret = hash_compute(&ctx, &pkt);					\
 		zassert_true(ret == 0, "Failed to compute hash for test " #_i); \
-		ret = memcmp(pkt.out_buf, sha256_results[_i - 1], 32); \
+		ret = memcmp(pkt.out_buf, sha256_results[_i - 1], 32);		\
 		zassert_true(ret == 0, "Failed to compute hash for test " #_i); \
+		ret = hash_free_session(dev, &ctx);				\
+		zassert_true(ret == 0,  "Failed to free hash session");		\
 	} while (0)
 
 
