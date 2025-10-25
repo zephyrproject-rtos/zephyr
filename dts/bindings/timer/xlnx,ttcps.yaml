@@ -1,4 +1,4 @@
-description: Xilinx ZynqMP PS TTC timer
+description: Xilinx PS Triple-Timer Counter
 
 compatible: "xlnx,ttcps"
 
