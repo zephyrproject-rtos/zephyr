@@ -66,6 +66,9 @@ family:
     - name: cys0644abzi_s2d44
     - name: cy8c624abzi_s2d44a0
     - name: cy8c624abzi_s2d44
+      cpuclusters:
+      - name: m0
+      - name: m4
     - name: cy8c624aazi_s2d44
     - name: cy8c624afni_s2d43
     - name: cy8c624abzi_s2d04

@@ -11,7 +11,8 @@ config NUM_IRQS
 	default 168 if CPU_CORTEX_M4
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 100000000
+	default 50000000 if CPU_CORTEX_M0PLUS
+	default 100000000 if CPU_CORTEX_M4
 
 config BUILD_OUTPUT_HEX
 	default y

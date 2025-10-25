@@ -5,11 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <arm/armv7-m.dtsi>
+#include <arm/armv6-m.dtsi>
 #include "../psoc6_02/psoc6_02.124-bga.dtsi"
 
-#define PSOC6_02_DEFAULT_IRQ_PRIORITY 6
+#define PSOC6_02_DEFAULT_IRQ_PRIORITY 3
 
 &nvic {
-	arm,num-irq-priority-bits = <3>;
+	arm,num-irq-priority-bits = <2>;
 };
