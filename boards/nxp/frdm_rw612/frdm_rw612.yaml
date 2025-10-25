@@ -32,3 +32,5 @@ supported:
   - adc
   - dac
   - netif:eth
+  - netif:openthread
+vendor: nxp
