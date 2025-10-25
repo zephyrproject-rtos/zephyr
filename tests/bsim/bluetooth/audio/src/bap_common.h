@@ -117,5 +117,7 @@ static inline bool valid_metadata_type(uint8_t type, uint8_t len)
 		return false;
 	}
 }
-
+bool bap_stream_is_streaming(const struct bt_bap_stream *bap_stream);
+bool cap_stream_is_streaming(const struct bt_cap_stream *cap_stream);
+bool audio_test_stream_is_streaming(const struct audio_test_stream *test_stream);
 #endif /* ZEPHYR_TEST_BSIM_BT_AUDIO_TEST_COMMON_ */
