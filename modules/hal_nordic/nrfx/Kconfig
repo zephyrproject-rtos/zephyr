@@ -252,17 +252,7 @@ config NRFX_GRTC
 	depends on $(dt_nodelabel_exists,grtc)
 
 config NRFX_I2S
-	bool
-
-config NRFX_I2S0
-	bool "I2S0 driver instance"
-	depends on $(dt_nodelabel_exists,i2s0)
-	select NRFX_I2S
-
-config NRFX_I2S20
-	bool "I2S20 driver instance"
-	depends on $(dt_nodelabel_exists,i2s20)
-	select NRFX_I2S
+	bool "I2S driver"
 
 config NRFX_IPC
 	bool "IPC driver"
