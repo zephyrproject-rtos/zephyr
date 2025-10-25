@@ -577,8 +577,8 @@ class RimageSigner(Signer):
         # Non-SOF build does not have extended manifest data for
         # rimage to process, which might result in rimage error.
         # So skip it when not doing SOF builds.
-        is_sof_build = build_conf.getboolean('CONFIG_SOF')
-        if not is_sof_build:
+        rimage_schema = build_conf.get('CONFIG_RIMAGE_SIGNING_SCHEMA', None)
+        if rimage_schema is None:
             no_manifest = True
             self.generate_uuid_registry()
 
