@@ -11,7 +11,7 @@ tests:
       - native_sim
       - native_sim/native/64
     platform_exclude:
-      - ai_m62_12f
+      - ai_m62_12f_kit
 
   drivers.display.build.rk055hdmipi4ma0:
     platform_allow:
@@ -21,4 +21,4 @@ tests:
 
   drivers.display.build.bflb_dbi:
     platform_allow:
-      - ai_m62_12f
+      - ai_m62_12f_kit

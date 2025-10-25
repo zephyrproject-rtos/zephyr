@@ -1,4 +1,4 @@
-.. zephyr:board:: ai_m62_12f
+.. zephyr:board:: ai_m62_12f_kit
 
 Overview
 ********
@@ -12,11 +12,11 @@ memory, with a maximum dominant frequency of 320M.
 Hardware
 ********
 
-For more information about the Bouffalo Lab BL-60x MCU:
+For more information about the Bouffalo Lab BL-61x MCU:
 
 - `Bouffalo Lab BL61x MCU Datasheet`_
 - `Bouffalo Lab Development Zone`_
-- `ai_m62_12f Schematics`_
+- `ai_m62_12f_kit Schematics`_
 
 Supported Features
 ==================
@@ -26,12 +26,13 @@ Supported Features
 System Clock
 ============
 
-The WB2 (BL602) Development Board is configured to run at max speed (192MHz).
+The M62 (BL616) Development Board is configured to run at maximum speed (320MHz)
+and can be overclocked to 480 MHz.
 
 Serial Port
 ===========
 
-The ``ai_m62_12f`` board uses UART0 as default serial port.  It is connected
+The ``ai_m62_12f_kit`` board uses UART0 as default serial port.  It is connected
 to USB Serial converter and port is used for both program and console.
 
 
@@ -46,7 +47,7 @@ application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: ai_m62_12f
+      :board: ai_m62_12f_kit
       :goals: build flash
 
 #. Run your favorite terminal program to listen for output. Under Linux the
@@ -69,9 +70,9 @@ application:
    .. code-block:: console
 
       *** Booting Zephyr OS build v4.2.0 ***
-      Hello World! ai_m62_12f/bl616c50q2i
+      Hello World! ai_m62_12f_kit/bl616c50q2i
 
-Congratulations, you have ``ai_m62_12f`` configured and running Zephyr.
+Congratulations, you have ``ai_m62_12f_kit`` configured and running Zephyr.
 
 
 .. _Bouffalo Lab BL61x MCU Datasheet:
@@ -80,5 +81,5 @@ Congratulations, you have ``ai_m62_12f`` configured and running Zephyr.
 .. _Bouffalo Lab Development Zone:
 	https://dev.bouffalolab.com/home?id=guest
 
-.. _ai_m62_12f Schematics:
+.. _ai_m62_12f_kit Schematics:
    https://docs.ai-thinker.com/en/ai_m62/
