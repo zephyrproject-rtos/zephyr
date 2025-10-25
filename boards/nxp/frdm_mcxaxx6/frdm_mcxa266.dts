@@ -18,6 +18,10 @@
 	aliases {
 		ambient-temp0 = &p3t1755;
 	};
+
+	chosen {
+		zephyr,entropy = &trng;
+	};
 };
 
 &cpu0 {
@@ -38,4 +42,8 @@
 		reg = <0x48 0x0236 0x152a0090>;
 		status = "okay";
 	};
+};
+
+&flexio0 {
+	status = "okay";
 };
