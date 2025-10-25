@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(net_ppp, LOG_LEVEL);
 #include <zephyr/sys/crc.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/random/random.h>
-#include <zephyr/posix/net/if_arp.h>
+#include <net/if_arp.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/capture.h>
 

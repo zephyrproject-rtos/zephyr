@@ -7,3 +7,4 @@ project(xsi_system_logging)
 target_sources(app PRIVATE src/main.c)
 
 target_compile_options(app PRIVATE -U_POSIX_C_SOURCE -D_POSIX_C_SOURCE=200809L)
+target_compile_options(app PRIVATE -U_XOPEN_SOURCE -D_XOPEN_SOURCE=700)

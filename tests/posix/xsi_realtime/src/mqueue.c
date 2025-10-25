@@ -35,7 +35,7 @@ static void *sender_thread(void *p1)
 	struct timespec curtime;
 
 	mqd = mq_open(queue, O_WRONLY);
-	clock_gettime(CLOCK_MONOTONIC, &curtime);
+	zassert_ok(clock_gettime(CLOCK_REALTIME, &curtime));
 	curtime.tv_sec += 1;
 	zassert_false(mq_timedsend(mqd, send_data, MESSAGE_SIZE, 0, &curtime),
 		      "Not able to send message in timer");
@@ -51,7 +51,7 @@ static void *receiver_thread(void *p1)
 	struct timespec curtime;
 
 	mqd = mq_open(queue, O_RDONLY);
-	clock_gettime(CLOCK_MONOTONIC, &curtime);
+	zassert_ok(clock_gettime(CLOCK_REALTIME, &curtime));
 	curtime.tv_sec += 1;
 	mq_timedreceive(mqd, rec_data, MESSAGE_SIZE, 0, &curtime);
 	zassert_false(strcmp(rec_data, send_data), "Error in data reception. exp: %s act: %s",

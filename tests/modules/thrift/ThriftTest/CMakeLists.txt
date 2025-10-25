@@ -55,3 +55,5 @@ generate_inc_file_for_target(
     ${ZEPHYR_BASE}/samples/modules/thrift/hello/qemu-key.pem
     ${gen_dir}/qemu_key.pem.inc
     )
+
+target_compile_options(app PRIVATE -U_POSIX_C_SOURCE -D_POSIX_C_SOURCE=200809L)

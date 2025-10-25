@@ -7,3 +7,5 @@ project(ocpp)
 
 include(${ZEPHYR_BASE}/samples/net/common/common.cmake)
 target_sources(app PRIVATE src/main.c)
+
+target_compile_options(app PRIVATE -U_POSIX_C_SOURCE -D_POSIX_C_SOURCE=200809L)
