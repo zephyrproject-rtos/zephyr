@@ -1,0 +1,9 @@
+/ {
+	dma: dma {
+		compatible = "zephyr,dma-emul";
+		#dma-cells = <1>;
+		dma-channels = <8>;
+		stack-size = <4096>;
+		status = "okay";
+	};
+};

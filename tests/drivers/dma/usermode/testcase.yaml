@@ -1,0 +1,7 @@
+tests:
+  drivers.dma.usermode:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    tags:
+      - drivers
+      - userspace
+      - dma

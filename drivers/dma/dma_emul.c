@@ -176,7 +176,7 @@ static const char *dma_emul_block_config_to_string(const struct dma_block_config
 		 "\n\tflow_control_mode: %u"
 		 "\n\t_reserved: %u"
 		 "\n}",
-		 (void *)cfg->source_address, (void *)cfg->dest_address,
+		 (void *)(uintptr_t)cfg->source_address, (void *)(uintptr_t)cfg->dest_address,
 		 cfg->source_gather_interval, cfg->dest_scatter_interval, cfg->dest_scatter_count,
 		 cfg->source_gather_count, cfg->block_size, cfg->next_block, cfg->source_gather_en,
 		 cfg->dest_scatter_en, cfg->source_addr_adj, cfg->dest_addr_adj,
