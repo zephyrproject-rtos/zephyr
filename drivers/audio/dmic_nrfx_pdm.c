@@ -21,7 +21,6 @@ LOG_MODULE_REGISTER(dmic_nrfx_pdm, CONFIG_AUDIO_DMIC_LOG_LEVEL);
 
 #if CONFIG_SOC_SERIES_NRF54HX
 #define DMIC_NRFX_CLOCK_FREQ MHZ(16)
-#define DMIC_NRFX_CLOCK_FACTOR 8192
 #define DMIC_NRFX_AUDIO_CLOCK_FREQ DT_PROP_OR(NODE_AUDIOPLL, frequency, 0)
 #elif DT_NODE_HAS_STATUS_OKAY(NODE_AUDIO_AUXPLL)
 #define AUXPLL_FREQUENCY_SETTING DT_PROP(NODE_AUDIO_AUXPLL, nordic_frequency)
@@ -35,7 +34,6 @@ BUILD_ASSERT((AUXPLL_FREQUENCY_SETTING == NRF_AUXPLL_FREQ_DIV_AUDIO_48K) ||
 
 #else
 #define DMIC_NRFX_CLOCK_FREQ MHZ(32)
-#define DMIC_NRFX_CLOCK_FACTOR 4096
 #define DMIC_NRFX_AUDIO_CLOCK_FREQ DT_PROP_OR(DT_NODELABEL(aclk), clock_frequency, \
 				   DT_PROP_OR(DT_NODELABEL(clock), hfclkaudio_frequency, 0))
 #endif
@@ -206,220 +204,6 @@ static void event_handler(const struct device *dev, const nrfx_pdm_evt_t *evt)
 	}
 }
 
-static bool is_in_freq_range(uint32_t freq, const struct dmic_cfg *pdm_cfg)
-{
-	return freq >= pdm_cfg->io.min_pdm_clk_freq && freq <= pdm_cfg->io.max_pdm_clk_freq;
-}
-
-static bool is_better(uint32_t freq,
-		      uint8_t ratio,
-		      uint32_t req_rate,
-		      uint32_t *best_diff,
-		      uint32_t *best_rate,
-		      uint32_t *best_freq)
-{
-	uint32_t act_rate = freq / ratio;
-	uint32_t diff = act_rate >= req_rate ? (act_rate - req_rate)
-					     : (req_rate - act_rate);
-
-	LOG_DBG("Freq %u, ratio %u, act_rate %u", freq, ratio, act_rate);
-
-	if (diff < *best_diff) {
-		*best_diff = diff;
-		*best_rate = act_rate;
-		*best_freq = freq;
-		return true;
-	}
-
-	return false;
-}
-
-static bool check_pdm_frequencies(const struct dmic_nrfx_pdm_drv_cfg *drv_cfg,
-				  nrfx_pdm_config_t *config,
-				  const struct dmic_cfg *pdm_cfg,
-				  uint8_t ratio,
-				  uint32_t *best_diff,
-				  uint32_t *best_rate,
-				  uint32_t *best_freq)
-{
-	uint32_t req_rate = pdm_cfg->streams[0].pcm_rate;
-	bool better_found = false;
-	const uint32_t src_freq =
-		(NRF_PDM_HAS_SELECTABLE_CLOCK && drv_cfg->clk_src == ACLK)
-		? DMIC_NRFX_AUDIO_CLOCK_FREQ
-		: DMIC_NRFX_CLOCK_FREQ;
-#if NRF_PDM_HAS_PRESCALER
-	uint32_t req_freq = req_rate * ratio;
-	uint32_t prescaler = src_freq / req_freq;
-	uint32_t act_freq = src_freq / prescaler;
-
-	if (is_in_freq_range(act_freq, pdm_cfg) &&
-	    is_better(act_freq, ratio, req_rate, best_diff, best_rate, best_freq)) {
-		config->prescaler = prescaler;
-
-		better_found = true;
-	}
-
-	/* Stop if an exact rate match is found. */
-	if (*best_diff == 0) {
-		return true;
-	}
-
-	/* Prescaler value is rounded down by default,
-	 * thus value rounded up should be checked as well.
-	 */
-	prescaler += 1;
-	act_freq  = src_freq / prescaler;
-
-	if (is_in_freq_range(act_freq, pdm_cfg) &&
-	    is_better(act_freq, ratio, req_rate, best_diff, best_rate, best_freq)) {
-		config->prescaler = prescaler;
-
-		better_found = true;
-	}
-#else
-	if (IS_ENABLED(CONFIG_SOC_SERIES_NRF53X) || IS_ENABLED(CONFIG_SOC_SERIES_NRF54HX)) {
-		uint32_t req_freq = req_rate * ratio;
-		/* As specified in the nRF5340 PS:
-		 *
-		 * PDMCLKCTRL = 4096 * floor(f_pdm * 1048576 /
-		 *                           (f_source + f_pdm / 2))
-		 * f_actual = f_source / floor(1048576 * 4096 / PDMCLKCTRL)
-		 */
-		uint32_t clk_factor = (uint32_t)((req_freq * 1048576ULL) /
-						 (src_freq + req_freq / 2));
-		uint32_t act_freq = src_freq / (1048576 / clk_factor);
-
-		if (is_in_freq_range(act_freq, pdm_cfg) &&
-		    is_better(act_freq, ratio, req_rate, best_diff, best_rate, best_freq)) {
-			config->clock_freq = clk_factor * DMIC_NRFX_CLOCK_FACTOR;
-
-			better_found = true;
-		}
-	} else { /* -> !IS_ENABLED(CONFIG_SOC_SERIES_NRF53X)) */
-		static const struct {
-			uint32_t       freq_val;
-			nrf_pdm_freq_t freq_enum;
-		} freqs[] = {
-			{ 1000000, NRF_PDM_FREQ_1000K },
-			{ 1032000, NRF_PDM_FREQ_1032K },
-			{ 1067000, NRF_PDM_FREQ_1067K },
-#if defined(PDM_PDMCLKCTRL_FREQ_1231K)
-			{ 1231000, NRF_PDM_FREQ_1231K },
-#endif
-#if defined(PDM_PDMCLKCTRL_FREQ_1280K)
-			{ 1280000, NRF_PDM_FREQ_1280K },
-#endif
-#if defined(PDM_PDMCLKCTRL_FREQ_1333K)
-			{ 1333000, NRF_PDM_FREQ_1333K }
-#endif
-		};
-
-		for (int i = 0; i < ARRAY_SIZE(freqs); ++i) {
-			uint32_t freq_val = freqs[i].freq_val;
-
-			if (freq_val < pdm_cfg->io.min_pdm_clk_freq) {
-				continue;
-			}
-			if (freq_val > pdm_cfg->io.max_pdm_clk_freq) {
-				break;
-			}
-
-			if (is_better(freq_val, ratio, req_rate,
-				      best_diff, best_rate, best_freq)) {
-				config->clock_freq = freqs[i].freq_enum;
-
-				/* Stop if an exact rate match is found. */
-				if (*best_diff == 0) {
-					return true;
-				}
-
-				better_found = true;
-			}
-
-			/* Since frequencies are in ascending order, stop
-			 * checking next ones for the current ratio after
-			 * resulting PCM rate goes above the one requested.
-			 */
-			if ((freq_val / ratio) > req_rate) {
-				break;
-			}
-		}
-	}
-#endif /* NRF_PDM_HAS_PRESCALER */
-
-	return better_found;
-}
-
-/* Finds clock settings that give the PCM output rate closest to that requested,
- * taking into account the hardware limitations.
- */
-static bool find_suitable_clock(const struct dmic_nrfx_pdm_drv_cfg *drv_cfg,
-				nrfx_pdm_config_t *config,
-				const struct dmic_cfg *pdm_cfg)
-{
-	uint32_t best_diff = UINT32_MAX;
-	uint32_t best_rate;
-	uint32_t best_freq;
-
-#if NRF_PDM_HAS_RATIO_CONFIG
-	static const struct {
-		uint8_t         ratio_val;
-		nrf_pdm_ratio_t ratio_enum;
-	} ratios[] = {
-#if defined(PDM_RATIO_RATIO_Ratio32)
-		{ 32, NRF_PDM_RATIO_32X },
-#endif
-#if defined(PDM_RATIO_RATIO_Ratio48)
-		{ 48, NRF_PDM_RATIO_48X },
-#endif
-#if defined(PDM_RATIO_RATIO_Ratio50)
-		{ 50, NRF_PDM_RATIO_50X },
-#endif
-		{ 64, NRF_PDM_RATIO_64X },
-		{ 80, NRF_PDM_RATIO_80X },
-#if defined(PDM_RATIO_RATIO_Ratio96)
-		{ 96, NRF_PDM_RATIO_96X },
-#endif
-#if defined(PDM_RATIO_RATIO_Ratio100)
-		{ 100, NRF_PDM_RATIO_100X },
-#endif
-#if defined(PDM_RATIO_RATIO_Ratio128)
-		{ 128, NRF_PDM_RATIO_128X }
-#endif
-	};
-
-	for (int r = 0; best_diff != 0 && r < ARRAY_SIZE(ratios); ++r) {
-		uint8_t ratio = ratios[r].ratio_val;
-
-		if (check_pdm_frequencies(drv_cfg, config, pdm_cfg, ratio,
-					  &best_diff, &best_rate, &best_freq)) {
-			config->ratio = ratios[r].ratio_enum;
-
-			/* Look no further if a configuration giving the exact
-			 * PCM rate is found.
-			 */
-			if (best_diff == 0) {
-				break;
-			}
-		}
-	}
-#else
-	uint8_t ratio = 64;
-
-	(void)check_pdm_frequencies(drv_cfg, config, pdm_cfg, ratio,
-				    &best_diff, &best_rate, &best_freq);
-#endif
-
-	if (best_diff == UINT32_MAX) {
-		return false;
-	}
-
-	LOG_INF("PDM clock frequency: %u, actual PCM rate: %u",
-		best_freq, best_rate);
-	return true;
-}
-
 static int dmic_nrfx_pdm_configure(const struct device *dev,
 				   struct dmic_cfg *config)
 {
@@ -503,7 +287,16 @@ static int dmic_nrfx_pdm_configure(const struct device *dev,
 			 ? NRF_PDM_MCLKSRC_ACLK
 			 : NRF_PDM_MCLKSRC_PCLK32M;
 #endif
-	if (!find_suitable_clock(drv_cfg, &nrfx_cfg, config)) {
+	nrfx_pdm_output_t output_config = {
+		.base_clock_freq = (NRF_PDM_HAS_SELECTABLE_CLOCK && drv_cfg->clk_src == ACLK)
+					? DMIC_NRFX_AUDIO_CLOCK_FREQ
+					: DMIC_NRFX_CLOCK_FREQ,
+		.sampling_rate = config->streams[0].pcm_rate,
+		.output_freq_min = config->io.min_pdm_clk_freq,
+		.output_freq_max = config->io.max_pdm_clk_freq
+	};
+
+	if (nrfx_pdm_prescalers_calc(&output_config, &nrfx_cfg.prescalers) != NRFX_SUCCESS) {
 		LOG_ERR("Cannot find suitable PDM clock configuration.");
 		return -EINVAL;
 	}
