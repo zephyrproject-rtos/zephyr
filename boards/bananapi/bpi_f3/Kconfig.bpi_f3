@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Junhui Liu <junhui@pigmoral.tech>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_BPI_F3
+	select SOC_K1_N308
