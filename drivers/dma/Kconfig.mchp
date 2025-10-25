@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_MCHP_DMAC_G1
+	bool "Microchip G1 DMA driver"
+	default y
+	depends on DT_HAS_MICROCHIP_DMAC_G1_DMA_ENABLED && !DMA_64BIT
+	help
+	  Enables the G1 DMA driver support for Microchip MCUs.

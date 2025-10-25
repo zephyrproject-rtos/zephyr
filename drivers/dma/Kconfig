@@ -66,6 +66,8 @@ source "drivers/dma/Kconfig.ifx_cat1"
 
 source "drivers/dma/Kconfig.intel_lpss"
 
+source "drivers/dma/Kconfig.mchp"
+
 source "drivers/dma/Kconfig.mcux_pxp"
 
 source "drivers/dma/Kconfig.max32"
