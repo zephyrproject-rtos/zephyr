@@ -19,6 +19,7 @@
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(bmp581, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -405,11 +406,16 @@ static int bmp581_sample_fetch(const struct device *dev, enum sensor_channel cha
 
 	ret = bmp581_reg_read_rtio(&conf->bus, BMP5_REG_TEMP_DATA_XLSB, data, 6);
 	if (ret == BMP5_OK) {
-		/* convert raw sensor data to sensor_value. Shift the decimal part by 1 decimal
-		 * place to compensate for the conversion in sensor_value_to_double()
+		/* convert raw sensor data to sensor_value.
+		 * BMP581 temperature data is 24-bit signed with LSB = 1/65536 °C
 		 */
-		drv->last_sample.temperature.val1 = data[2];
-		drv->last_sample.temperature.val2 = (data[1] << 8 | data[0]) * 10;
+		uint32_t raw_temp = ((uint32_t)data[2] << 16) | ((uint16_t)data[1] << 8) | data[0];
+		int32_t raw_temp_signed = sign_extend(raw_temp, 23);
+
+		/* Convert raw temperature: LSB = 1/65536 °C, val2 in millionths */
+		drv->last_sample.temperature.val1 = raw_temp_signed / 65536;
+		drv->last_sample.temperature.val2 =
+			((int64_t)(raw_temp_signed % 65536) * 1000000) / 65536;
 
 		if (drv->osr_odr_press_config.press_en == BMP5_ENABLE) {
 			/* convert raw sensor data to sensor_value. Shift the decimal part by
@@ -417,7 +423,8 @@ static int bmp581_sample_fetch(const struct device *dev, enum sensor_channel cha
 			 * sensor_value_to_double()
 			 */
 			uint32_t raw_pressure = (uint32_t)((uint32_t)(data[5] << 16) |
-							   (uint16_t)(data[4] << 8) | data[3]) >> 6;
+							   (uint16_t)(data[4] << 8) | data[3]) >>
+						6;
 			drv->last_sample.pressure.val1 = raw_pressure / 1000;
 			drv->last_sample.pressure.val2 = (raw_pressure % 1000) * 1000;
 		} else {
