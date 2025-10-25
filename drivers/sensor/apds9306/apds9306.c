@@ -34,10 +34,10 @@
 #define APDS9306_REGISTER_ALS_THRES_LOW_2 0x26
 #define APDS9306_REGISTER_ALS_THRES_VAR   0x27
 
-#define ADPS9306_BIT_ALS_EN               BIT(0x01)
-#define ADPS9306_BIT_ALS_DATA_STATUS      BIT(0x03)
+#define APDS9306_BIT_ALS_EN               BIT(0x01)
+#define APDS9306_BIT_ALS_DATA_STATUS      BIT(0x03)
 #define APDS9306_BIT_SW_RESET             BIT(0x04)
-#define ADPS9306_BIT_ALS_INTERRUPT_STATUS BIT(0x03)
+#define APDS9306_BIT_ALS_INTERRUPT_STATUS BIT(0x03)
 #define APDS9306_BIT_POWER_ON_STATUS      BIT(0x05)
 
 #define APDS_9306_065_CHIP_ID 0xB3
@@ -74,6 +74,7 @@ struct apds9306_data {
 	uint8_t resolution_idx; /* This field holds the index of the current sampling */
 				/*  resolution.*/
 	uint8_t chip_id;
+	struct k_work_delayable dwork;
 };
 
 struct apds9306_config {
@@ -83,17 +84,12 @@ struct apds9306_config {
 	uint8_t gain_idx;
 };
 
-struct apds9306_worker_item_t {
-	struct k_work_delayable dwork;
-	const struct device *dev;
-} apds9306_worker_item;
-
 static int apds9306_enable(const struct device *dev)
 {
 	const struct apds9306_config *config = dev->config;
 
 	return i2c_reg_update_byte_dt(&config->i2c, APDS9306_REGISTER_MAIN_CTRL,
-				      ADPS9306_BIT_ALS_EN, ADPS9306_BIT_ALS_EN);
+				      APDS9306_BIT_ALS_EN, APDS9306_BIT_ALS_EN);
 }
 
 static int apds9306_standby(const struct device *dev)
@@ -101,7 +97,7 @@ static int apds9306_standby(const struct device *dev)
 	const struct apds9306_config *config = dev->config;
 
 	return i2c_reg_update_byte_dt(&config->i2c, APDS9306_REGISTER_MAIN_CTRL,
-				      ADPS9306_BIT_ALS_EN, 0x00);
+				      APDS9306_BIT_ALS_EN, 0x00);
 }
 
 static void apds9306_worker(struct k_work *p_work)
@@ -109,8 +105,7 @@ static void apds9306_worker(struct k_work *p_work)
 	uint8_t buffer[3];
 	uint8_t reg;
 	struct k_work_delayable *dwork = k_work_delayable_from_work(p_work);
-	struct apds9306_worker_item_t *item =
-		CONTAINER_OF(dwork, struct apds9306_worker_item_t, dwork);
+	struct apds9306_data *item = CONTAINER_OF(dwork, struct apds9306_data, dwork);
 	struct apds9306_data *data = item->dev->data;
 	const struct apds9306_config *config = item->dev->config;
 
@@ -119,7 +114,7 @@ static void apds9306_worker(struct k_work *p_work)
 		return;
 	}
 
-	if (!(buffer[0] & ADPS9306_BIT_ALS_DATA_STATUS)) {
+	if (!(buffer[0] & APDS9306_BIT_ALS_DATA_STATUS)) {
 		LOG_DBG("No data ready!");
 		return;
 	}
@@ -274,12 +269,10 @@ static int apds9306_sample_fetch(const struct device *dev, enum sensor_channel c
 	LOG_DBG("Wait for %d ms", delay);
 
 	/* We add a bit more delay to cover the startup time etc. */
-	if (!k_work_delayable_is_pending(&apds9306_worker_item.dwork)) {
+	if (!k_work_delayable_is_pending(&data->dwork)) {
 		LOG_DBG("Schedule new work");
 
-		apds9306_worker_item.dev = dev;
-		k_work_init_delayable(&apds9306_worker_item.dwork, apds9306_worker);
-		k_work_schedule(&apds9306_worker_item.dwork, K_MSEC(delay + 100));
+		k_work_schedule(&data->dwork, K_MSEC(delay + 100));
 	} else {
 		LOG_DBG("Work pending. Wait for completion.");
 	}
@@ -387,6 +380,9 @@ static int apds9306_init(const struct device *dev)
 	if (i2c_reg_write_byte_dt(&config->i2c, APDS9306_REGISTER_ALS_GAIN, data->gain_idx)) {
 		return -EFAULT;
 	}
+
+	data->worker_item.dev = dev;
+	k_work_init_delayable(&data->worker_item.dwork, apds9306_worker);
 
 	LOG_DBG("APDS9306 initialization successful!");
 
