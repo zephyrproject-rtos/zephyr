@@ -9,3 +9,4 @@ tests:
     build_only: true
     platform_allow:
       - native_sim
+      - native_sim/native/64

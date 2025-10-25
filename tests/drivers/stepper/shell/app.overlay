@@ -5,8 +5,13 @@
  */
 
 / {
-	fake_stepper: fake_stepper {
-		compatible = "zephyr,fake-stepper";
+	fake_stepper_driver: fake_stepper_driver {
+		compatible = "zephyr,fake-stepper-driver";
+		status = "okay";
+	};
+
+	fake_stepper_controller: fake_stepper_controller {
+		compatible = "zephyr,fake-stepper-controller";
 		status = "okay";
 	};
 };
