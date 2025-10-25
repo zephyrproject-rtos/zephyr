@@ -1469,6 +1469,7 @@ exclude = [
     "./scripts/west_commands/robot.py",
     "./scripts/west_commands/run_common.py",
     "./scripts/west_commands/run_tests.py",
+    "./scripts/west_commands/monitor.py",
     "./scripts/west_commands/runners/__init__.py",
     "./scripts/west_commands/runners/blackmagicprobe.py",
     "./scripts/west_commands/runners/bossac.py",
