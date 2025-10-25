@@ -90,6 +90,7 @@ struct pwm_stm32_config {
 	TIM_TypeDef *timer;
 	uint32_t prescaler;
 	uint32_t countermode;
+	uint32_t deadtime;
 	const struct stm32_pclken *pclken;
 	size_t pclk_len;
 	const struct pinctrl_dev_config *pcfg;
@@ -700,8 +701,14 @@ static int pwm_stm32_init(const struct device *dev)
 #endif
 
 #if !defined(CONFIG_SOC_SERIES_STM32L0X) && !defined(CONFIG_SOC_SERIES_STM32L1X)
-	/* enable outputs and counter */
+	/* initialize break, deadtime, enable outputs and counter */
 	if (IS_TIM_BREAK_INSTANCE(timer)) {
+		LL_TIM_BDTR_InitTypeDef bdtr_init;
+
+		LL_TIM_BDTR_StructInit(&bdtr_init);
+		bdtr_init.DeadTime = cfg->deadtime;
+		LL_TIM_BDTR_Init(cfg->timer, &bdtr_init);
+
 		LL_TIM_EnableAllOutputs(timer);
 	}
 #endif
@@ -766,6 +773,7 @@ static void pwm_stm32_irq_config_func_##index(const struct device *dev)		\
 		.timer = (TIM_TypeDef *)DT_REG_ADDR(PWM(index)),	       \
 		.prescaler = DT_PROP(PWM(index), st_prescaler),		       \
 		.countermode = DT_PROP(PWM(index), st_countermode),	       \
+		.deadtime = DT_PROP_OR(PWM(index), st_deadtime, 0),	       \
 		.pclken = pclken_##index,				       \
 		.pclk_len = DT_NUM_CLOCKS(PWM(index)),			       \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),		       \
