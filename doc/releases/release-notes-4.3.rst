@@ -152,6 +152,10 @@ New APIs and options
     * :kconfig:option:`CONFIG_BT_AUTO_PHY_CENTRAL_2M`
     * :kconfig:option:`CONFIG_BT_AUTO_PHY_CENTRAL_CODED`
 
+  * Services
+
+    * Introduced Alert Notification Service (ANS) :kconfig:option:`CONFIG_BT_ANS`
+
 * CPUFreq
 
   * Introduced experimental dynamic CPU frequency scaling subsystem
