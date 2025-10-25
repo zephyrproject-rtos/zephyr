@@ -3,3 +3,9 @@ tests:
     min_ram: 16
     tags:
       - net_buf
+  libraries.net_buf.large_buf:
+    min_ram: 32
+    extra_configs:
+      - CONFIG_NET_BUF_LARGE_SIZE=y
+    tags:
+      - net_buf
