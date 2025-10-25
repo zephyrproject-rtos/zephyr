@@ -21,7 +21,7 @@
 zephyr_get(BSIM_COMPONENTS_PATH)
 zephyr_get(BSIM_OUT_PATH)
 
-if ((DEFINED WEST) AND (NOT DEFINED BSIM_COMPONENTS_PATH) AND (NOT DEFINED BSIM_OUT_PATH))
+if((DEFINED WEST) AND (NOT DEFINED BSIM_COMPONENTS_PATH) AND (NOT DEFINED BSIM_OUT_PATH))
   # Let's ask west for the bsim_project existence and its path
   execute_process(COMMAND ${WEST}
     status babblesim_base
@@ -33,7 +33,7 @@ if ((DEFINED WEST) AND (NOT DEFINED BSIM_COMPONENTS_PATH) AND (NOT DEFINED BSIM_
     OUTPUT_VARIABLE BSIM_BASE_PATH
     ERROR_QUIET
     RESULT_VARIABLE ret_val2)
-  if (NOT (${ret_val1} OR ${ret_val2}))
+  if(NOT (${ret_val1} OR ${ret_val2}))
     string(STRIP ${BSIM_BASE_PATH} BSIM_COMPONENTS_PATH)
     get_filename_component(BSIM_OUT_PATH ${BSIM_COMPONENTS_PATH}/.. ABSOLUTE)
   endif()
@@ -42,7 +42,7 @@ endif()
 message(STATUS "Using BSIM from BSIM_COMPONENTS_PATH=${BSIM_COMPONENTS_PATH}\
  BSIM_OUT_PATH=${BSIM_OUT_PATH}")
 
-if ((NOT DEFINED BSIM_COMPONENTS_PATH) OR (NOT DEFINED BSIM_OUT_PATH))
+if((NOT DEFINED BSIM_COMPONENTS_PATH) OR (NOT DEFINED BSIM_OUT_PATH))
   message(FATAL_ERROR "This board requires the BabbleSim simulator. Please either\n\
   a) Enable the west babblesim group with\n\
      west config manifest.group-filter +babblesim && west update\n\
@@ -79,7 +79,7 @@ endfunction(bsim_handle_not_built_error)
 # Do NOT use it outside of this module. It uses variables internal to it
 function(bsim_check_build_version bs_comp req_comp_ver)
   set(version_file ${BSIM_OUT_PATH}/lib/${bs_comp}.version)
-  if (EXISTS ${version_file})
+  if(EXISTS ${version_file})
     file(READ ${version_file} found_version)
     string(STRIP ${found_version} found_version)
   else()
@@ -87,7 +87,7 @@ function(bsim_check_build_version bs_comp req_comp_ver)
     bsim_handle_not_built_error()
   endif()
 
-  if (found_version VERSION_LESS req_comp_ver)
+  if(found_version VERSION_LESS req_comp_ver)
     message(WARNING
             "Built ${bs_comp} version = ${found_version} < ${req_comp_ver} (required version)")
     bsim_handle_not_built_error()

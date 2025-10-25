@@ -23,7 +23,7 @@ if(CONFIG_NXP_RW6XX_BOOT_HEADER)
 	endif()
 
 	# Set TX power limit
-	if (CONFIG_WIFI_NXP)
+	if(CONFIG_WIFI_NXP)
 		zephyr_include_directories(
 			tx_pwr_limits
 		)

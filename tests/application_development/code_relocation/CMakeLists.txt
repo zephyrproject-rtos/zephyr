@@ -9,7 +9,7 @@ project(code_relocation)
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
 
-if (CONFIG_BOARD_QEMU_XTENSA)
+if(CONFIG_BOARD_QEMU_XTENSA)
     set(RAM_PHDR PHDR sram0_phdr)
     set(SRAM2_PHDR PHDR sram2_phdr)
 endif()
@@ -41,7 +41,7 @@ zephyr_code_relocate(FILES src/test_file3.c LOCATION SRAM2_BSS)
 # (this and test_file2.c in RAM) should work fine.
 zephyr_code_relocate(FILES ${ZEPHYR_BASE}/kernel/sem.c ${RAM_PHDR} LOCATION RAM NOKEEP)
 
-if (CONFIG_RELOCATE_TO_ITCM)
+if(CONFIG_RELOCATE_TO_ITCM)
 zephyr_code_relocate(FILES ${ZEPHYR_BASE}/lib/libc/minimal/source/string/string.c
 	LOCATION ITCM_TEXT)
 endif()

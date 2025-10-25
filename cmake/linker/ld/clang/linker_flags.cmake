@@ -1,5 +1,5 @@
 # The coverage linker flag is specific for clang.
-if (CONFIG_COVERAGE_NATIVE_GCOV)
+if(CONFIG_COVERAGE_NATIVE_GCOV)
   set_property(TARGET linker PROPERTY coverage --coverage)
 elseif(CONFIG_COVERAGE_NATIVE_SOURCE)
   set_property(TARGET linker PROPERTY coverage -fprofile-instr-generate -fcoverage-mapping)

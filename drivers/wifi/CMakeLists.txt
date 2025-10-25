@@ -3,7 +3,7 @@
 zephyr_library()
 zephyr_library_property(ALLOW_EMPTY TRUE)
 
-if (CONFIG_BUILD_ONLY_NO_BLOBS)
+if(CONFIG_BUILD_ONLY_NO_BLOBS)
   message(WARNING "
   ---------------------------------------------------------------------------
   Building only the Wi-Fi driver without binary blobs and patches.
