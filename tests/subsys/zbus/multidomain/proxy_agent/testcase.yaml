@@ -1,0 +1,12 @@
+tests:
+  message_bus.zbus.multidomain.proxy_agent:
+    platform_exclude:
+      - m2gl025_miv
+      - mps3/corstone300/fvp
+      - mps3/corstone310/fvp
+      - mps4/corstone315/fvp
+      - mps4/corstone320/fvp
+    tags: zbus
+    timeout: 180
+    integration_platforms:
+      - native_sim
