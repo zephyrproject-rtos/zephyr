@@ -460,6 +460,17 @@ config RISCV_IMPRECISE_FPU_STATE_TRACKING
 	  the floating-point register state imprecisely by reporting the state to be
 	  dirty even when it has not been modified. This option reflects that.
 
+config RISCV_SMRNMI_ENABLE_NMI_DELIVERY
+	bool "NMI delivery on SMRNMI hardware (MNSTATUS.NMIE=1)"
+	select RISCV_ISA_EXT_ZICSR
+	help
+	  Set MNSTATUS.NMIE bit to 1 during boot to enable NMI delivery on
+	  RISC-V hardware implementing the SMRNMI extension.
+
+	  This option only enables NMI delivery. It does not provide RNMI
+	  handlers or mnret instruction support. Proper RNMI handlers must
+	  be implemented in SoC-specific code to handle NMI events.
+
 endmenu
 
 config MAIN_STACK_SIZE
