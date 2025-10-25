@@ -189,7 +189,7 @@ Artificially long but functional example:
              "argument is not passed, then the first simulator is selected.")
 
 
-    device.add_argument("--device-serial",
+    device.add_argument("--device-serial", action="append", default=[],
                         help="""Serial device for accessing the board
                         (e.g., /dev/ttyACM0)
                         """)
