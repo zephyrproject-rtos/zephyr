@@ -3,22 +3,22 @@
 Overview
 ********
 
-NUCLEO-WBA55CG is a Bluetooth® Low Energy wireless and ultra-low-power board
-embedding a powerful and ultra-low-power radio compliant with the Bluetooth®
+NUCLEO-WBA55CG is a Bluetooth |reg| Low Energy wireless and ultra-low-power board
+embedding a powerful and ultra-low-power radio compliant with the Bluetooth |reg|
 Low Energy SIG specification v5.3.
 
-The ARDUINO® Uno V3 connectivity support and the ST morpho headers allow the
+The ARDUINO |reg| Uno V3 connectivity support and the ST morpho headers allow the
 easy expansion of the functionality of the STM32 Nucleo open development
 platform with a wide choice of specialized shields.
 
-- Ultra-low-power wireless STM32WBA55CG microcontroller based on the Arm®
-  Cortex®‑M33 core, featuring 1 Mbyte of flash memory and 128 Kbytes of SRAM in
+- Ultra-low-power wireless STM32WBA55CG microcontroller based on the Arm |reg|
+  Cortex |reg|‑M33 core, featuring 1 Mbyte of flash memory and 128 Kbytes of SRAM in
   a UFQFPN48 package
 
 - MCU RF board (MB1863):
 
-  - 2.4 GHz RF transceiver supporting Bluetooth® specification v5.3
-  - Arm® Cortex® M33 CPU with TrustZone®, MPU, DSP, and FPU
+  - 2.4 GHz RF transceiver supporting Bluetooth |reg| specification v5.3
+  - Arm |reg| Cortex |reg| M33 CPU with TrustZone |reg|, MPU, DSP, and FPU
   - Integrated PCB antenna
 
 - Three user LEDs
@@ -27,7 +27,7 @@ platform with a wide choice of specialized shields.
 - Board connectors:
 
   - USB Micro-B
-  - ARDUINO® Uno V3 expansion connector
+  - ARDUINO |reg| Uno V3 expansion connector
   - ST morpho headers for full access to all STM32 I/Os
 
 - Flexible power-supply options: ST-LINK USB VBUS or external sources
@@ -38,7 +38,7 @@ Hardware
 ********
 
 The STM32WBA55xx multiprotocol wireless and ultralow power devices embed a
-powerful and ultralow power radio compliant with the Bluetooth® SIG Low Energy
+powerful and ultralow power radio compliant with the Bluetooth |reg| SIG Low Energy
 specification 5.3. They contain a high-performance Arm Cortex-M33 32-bit RISC
 core. They operate at a frequency of up to 100 MHz.
 
@@ -47,9 +47,9 @@ core. They operate at a frequency of up to 100 MHz.
 - Ultra low power radio:
 
   - 2.4 GHz radio
-  - RF transceiver supporting Bluetooth® Low Energy 5.3 specification
+  - RF transceiver supporting Bluetooth |reg| Low Energy 5.3 specification
   - Proprietary protocols
-  - RX sensitivity: -96 dBm (Bluetooth® Low Energy at 1 Mbps)
+  - RX sensitivity: -96 dBm (Bluetooth |reg| Low Energy at 1 Mbps)
   - Programmable output power, up to +10 dBm with 1 dB steps
   - Integrated balun to reduce BOM
   - Suitable for systems requiring compliance with radio frequency regulations
@@ -67,15 +67,15 @@ core. They operate at a frequency of up to 100 MHz.
   - 45 µA/MHz Run mode at 3.3 V
   - Radio: Rx 7.4 mA / Tx at 0 dBm 10.6 mA
 
-- Core: Arm® 32-bit Cortex®-M33 CPU with TrustZone®, MPU, DSP, and FPU
-- ART Accelerator™: 8-Kbyte instruction cache allowing 0-wait-state execution
+- Core: Arm |reg| 32-bit Cortex |reg|-M33 CPU with TrustZone |reg|, MPU, DSP, and FPU
+- ART Accelerator |trade|: 8-Kbyte instruction cache allowing 0-wait-state execution
   from flash memory (frequency up to 100 MHz, 150 DMIPS)
 - Power management: embedded regulator LDO supporting voltage scaling
 
 - Benchmarks:
 
   - 1.5 DMIPS/MHz (Drystone 2.1)
-  - 407 CoreMark® (4.07 CoreMark/MHz)
+  - 407 CoreMark |reg| (4.07 CoreMark/MHz)
 
 - Clock sources:
 
@@ -99,7 +99,7 @@ core. They operate at a frequency of up to 100 MHz.
 
   - Three UARTs (ISO 7816, IrDA, modem)
   - Two SPIs
-  - Two I2C Fm+ (1 Mbit/s), SMBus/PMBus®
+  - Two I2C Fm+ (1 Mbit/s), SMBus/PMBus |reg|
 
 - System peripherals:
 
@@ -115,7 +115,7 @@ core. They operate at a frequency of up to 100 MHz.
 
 - Security and cryptography:
 
-  - Arm® TrustZone® and securable I/Os, memories, and peripherals
+  - Arm |reg| TrustZone |reg| and securable I/Os, memories, and peripherals
   - Flexible life cycle scheme with RDP and password protected debug
   - Root of trust thanks to unique boot entry and secure hide protection area (HDP)
   - SFI (secure firmware installation) thanks to embedded RSS (root secure services)

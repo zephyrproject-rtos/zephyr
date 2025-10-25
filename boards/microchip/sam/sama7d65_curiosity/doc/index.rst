@@ -71,7 +71,7 @@ EV63J76A provides the following hardware components:
 - Expansion
 
   - Raspberry Pi 40-pin GPIO connector
-  - Two mikroBUS™ connectors
+  - Two mikroBUS |trade| connectors
   - Two PIOBU/System headers
 
 - Power management

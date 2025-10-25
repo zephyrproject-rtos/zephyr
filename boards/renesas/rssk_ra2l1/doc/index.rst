@@ -40,7 +40,7 @@ The main functions of the RA2L1 Cap Touch CPU board are as follows:
 
    - R7FA2L1AB2DFP
    - 100-pin LFQFP package
-   - 48MHz Arm Cortex®-M23 Core with built-in Arm® MPU (Armv8-M architecture)
+   - 48MHz Arm Cortex |reg|-M23 Core with built-in Arm |reg| MPU (Armv8-M architecture)
    - 32KB SRAM
    - 256KB code flash memory
    - 8KB data flash memory

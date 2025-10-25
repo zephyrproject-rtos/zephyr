@@ -7,8 +7,8 @@ Overview
 ********
 
 PHYTEC phyBOARD-Lyra AM62x board is based on TI Sitara applications
-processor, composed of a quad Cortex®-A53 cluster and a single Cortex®-M4 core.
-Zephyr OS is ported to run on the Cortex®-A53 core.
+processor, composed of a quad Cortex |reg|-A53 cluster and a single Cortex |reg|-M4 core.
+Zephyr OS is ported to run on the Cortex |reg|-A53 core.
 
 - Board features:
 

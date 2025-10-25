@@ -4,7 +4,7 @@ Overview
 ********
 
 The FK743M5-XIH6 core board by FANKE Technology Co., Ltd. is an advanced microcontroller
-platform based on the STMicroelectronics Arm® Cortex®-M7 core STM32H743XIH6 microcontroller.
+platform based on the STMicroelectronics Arm |reg| Cortex |reg|-M7 core STM32H743XIH6 microcontroller.
 This board is an ideal solution for developers looking to create high-performance
 applications, leveraging its robust capabilities and support for sophisticated display
 and image processing technologies.

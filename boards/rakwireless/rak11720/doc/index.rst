@@ -2,7 +2,7 @@
 
 The RAK11720 is a WisBlock Core module for RAK WisBlock.
 It is based on the powerful ultra-low power Apollo3 Blue SoC (AMA3B1KK-KBR-B0)
-from Ambiq together with a Semtech SX1262 LoRa® transceiver.
+from Ambiq together with a Semtech SX1262 LoRa |reg| transceiver.
 
 The AMA3B1KK-KBR-B0 has an integrated Bluetooth Low Energy transceiver
 that enhances the communication capabilities. The RAK11720 stamp module
@@ -19,7 +19,7 @@ supply and programming/debug interface is the base to plug a
 RAK11722 (WisBlock Core module with the RAK11720) in.
 
 - Apollo3 Blue SoC with up to 96 MHz operating frequency
-- ARM® Cortex® M4F core
+- ARM |reg| Cortex |reg| M4F core
 - 16 kB 2-way Associative/Direct-Mapped Cache per core
 - Up to 1 MB of flash memory for code/data
 - Up to 384 KB of low leakage / low power RAM for code/data

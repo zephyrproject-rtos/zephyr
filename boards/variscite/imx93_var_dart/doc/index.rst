@@ -4,17 +4,17 @@ Overview
 ********
 
 The DART-MX93 offers a high-performance processing for a low-power System-on-Module.
-The product is based on the i.MX 93 family which represents NXP’s latest power-optimized
+The product is based on the i.MX 93 family which represents NXP's latest power-optimized
 processors for smart home, building control, contactless HMI, IoT edge, and Industrial
 applications.
 
-The i.MX 93 includes powerful dual Arm® Cortex®-A55 processors with speeds up to 1.7 GHz
-integrated with a NPU that accelerates machine learning inference. A general-purpose Arm®
-Cortex®-M33 running up to 250 MHz is for real-time and low-power processing. Robust control
+The i.MX 93 includes powerful dual Arm |reg| Cortex |reg|-A55 processors with speeds up to 1.7 GHz
+integrated with a NPU that accelerates machine learning inference. A general-purpose Arm |reg|
+Cortex |reg|-M33 running up to 250 MHz is for real-time and low-power processing. Robust control
 networks are possible via CAN-FD interface. Also, dual 1 Gbps Ethernet controllers, one
 supporting Time Sensitive Networking (TSN), drive gateway applications with low latency.
 
-Zephyr OS is ported to run on either the Cortex®-A55 or the Cortex®-M33.
+Zephyr OS is ported to run on either the Cortex |reg|-A55 or the Cortex |reg|-M33.
 
 Specs Summary
 *************
@@ -22,8 +22,8 @@ Specs Summary
   - CPU
 
     - NXP i.MX 93:
-    - 2x Cortex®-A55 @ 1.7GHz
-    - 1x Cortex®-M33 @ 250 MHz
+    - 2x Cortex |reg|-A55 @ 1.7GHz
+    - 1x Cortex |reg|-M33 @ 250 MHz
     - 1x Ethos-U65 microNPU 0.5 TOPS
   - Memory
 

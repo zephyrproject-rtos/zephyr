@@ -3,7 +3,7 @@
 Overview
 ********
 
-LILYGO® TTGO T7 Mini32 V1.5 ia an IoT mini development board
+LILYGO |reg| TTGO T7 Mini32 V1.5 ia an IoT mini development board
 based on the Espressif ESP32-WROVER-E module.
 
 It features the following integrated components:

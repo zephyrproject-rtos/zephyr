@@ -19,7 +19,7 @@ Hardware
 ********
 
 - EFR32MG22C224F512IM40 SoC
-- CPU core: ARM Cortex®-M33 with FPU, DSP and TrustZone
+- CPU core: ARM Cortex |reg|-M33 with FPU, DSP and TrustZone
 - Memory: 512 kB Flash, 32 kB RAM
 - Transmit power: up to +6 dBm
 - Operation frequency: 2.4 GHz

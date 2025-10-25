@@ -3,13 +3,13 @@
 Overview
 ********
 
-BeagleV®-Fire is a revolutionary single-board computer (SBC) powered by the Microchip’s
-PolarFire® MPFS025T 5x core RISC-V System on Chip (SoC) with FPGA fabric. BeagleV®-Fire opens up new
+BeagleV |reg|-Fire is a revolutionary single-board computer (SBC) powered by the Microchip's
+PolarFire |reg| MPFS025T 5x core RISC-V System on Chip (SoC) with FPGA fabric. BeagleV |reg|-Fire opens up new
 horizons for developers, tinkerers, and the open-source community to explore the vast potential of
 RISC-V architecture and FPGA technology. It has the same P8 & P9 cape header pins as BeagleBone
-Black allowing you to stack your favorite BeagleBone cape on top to expand it’s capability.
+Black allowing you to stack your favorite BeagleBone cape on top to expand it's capability.
 Built around the powerful and energy-efficient RISC-V instruction set architecture (ISA) along with
-its versatile FPGA fabric, BeagleV®-Fire SBC offers unparalleled opportunities for developers,
+its versatile FPGA fabric, BeagleV |reg|-Fire SBC offers unparalleled opportunities for developers,
 hobbyists, and researchers to explore and experiment with RISC-V technology.
 
 Building

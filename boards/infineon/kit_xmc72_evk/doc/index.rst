@@ -5,8 +5,8 @@ Overview
 
 The XMC7200 evaluation kit enables you to evaluate and develop your applications using the XMC7200D
 microcontroller(hereafter called “XMC7200D”). The XMC7200D is designed for industrial applications
-and it is a true programmable embedded system-on-chip, integrating up to two 350-MHz Arm® Cortex®-M7
-as the primary application processor, a 100-MHz Arm® Cortex®-M0+ that supports the following:
+and it is a true programmable embedded system-on-chip, integrating up to two 350-MHz Arm |reg| Cortex |reg|-M7
+as the primary application processor, a 100-MHz Arm |reg| Cortex |reg|-M0+ that supports the following:
 
 - Low-power operations
 - Up to 8 MB flash and 1 MB SRAM
@@ -16,8 +16,8 @@ as the primary application processor, a 100-MHz Arm® Cortex®-M0+ that supports
 - Programmable analog and digital peripherals that allow faster time-to-market
 
 The evaluation board has a M.2 interface connector for interfacing radio modules-based on
-AIROC™ Wi-Fi & Bluetooth combos, SMIF dual header compatible with Digilent Pmod for interfacing
-HYPERBUS™ memories, and headers compatible with Arduino for interfacing Arduino shields.
+AIROC |trade| Wi-Fi & Bluetooth combos, SMIF dual header compatible with Digilent Pmod for interfacing
+HYPERBUS |trade| memories, and headers compatible with Arduino for interfacing Arduino shields.
 In addition, the board features an onboard programmer/debugger(KitProg3), a 512-Mbit QSPI NOR flash,
 CAN FD transceiver, Gigabit Ethernet PHY transceiver with RJ45 connector interface, a micro-B
 connector for USB device interface, three user LEDs, one potentiometer, and two push buttons.
@@ -34,13 +34,13 @@ For more information about XMC7200D and KIT_XMC72_EVK:
 Kit Features
 =============
 
-- Evaluation board for XMC7200D-E272K8384 in BGA package with 272 pins, dual-core Arm®Cortex® M7 CPUs running at 350-MHz and an Arm® Cortex® M0+ CPU running at 100-MHz
+- Evaluation board for XMC7200D-E272K8384 in BGA package with 272 pins, dual-core Arm |reg| Cortex |reg|-M7 CPUs running at 350-MHz and an Arm |reg| Cortex |reg|-M0+ CPU running at 100-MHz
 - Full-system approach on the board, featuring Gigabit Ethernet PHY and connector, CAN FD transceiver, user LEDs, buttons, and potentiometer
-- M.2 interface connector for interfacing radio modules based on AIROC™ Wi-Fi & Bluetooth®combos (currently not - supported)
+- M.2 interface connector for interfacing radio modules based on AIROC |trade| Wi-Fi & Bluetooth |reg| combos (currently not - supported)
 - Headers compatible with Arduino for interfacing Arduino shields
-- Fully compatible with ModusToolbox™ v3.0
+- Fully compatible with ModusToolbox |trade| v3.0
 - KitProg3 on-board SWD programmer/debugger, USB-UART, and USB-I2C bridge functionality through USB connector
-- Digilent dual PMOD SMIF header for interfacing HYPERBUS™ memories (currently not supported)
+- Digilent dual PMOD SMIF header for interfacing HYPERBUS |trade| memories (currently not supported)
 - A 512-Mbit external QSPI NOR flash
 - Evaluation board supports operating voltages from 3.3 V to 5.0 V for XMC7200D
 

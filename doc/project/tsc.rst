@@ -131,7 +131,7 @@ As noted under Section 8b of the Project Charter, voting rights for a
 representative who misses three consecutive meetings are subject to suspension
 and suspended representatives do not count towards the quorum requirement.
 
-A representative’s suspension will end and voting rights be restored at the start
+A representative's suspension will end and voting rights be restored at the start
 of the next attended meeting. The TSC enforces the suspension policy for voting
 members who miss three consecutive TSC weekly meetings.
 

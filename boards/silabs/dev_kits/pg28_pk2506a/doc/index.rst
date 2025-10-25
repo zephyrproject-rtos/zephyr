@@ -5,13 +5,13 @@ Overview
 
 The EFM32PG28 Pearl Gecko Board dev kit contains
 a System-On-Chip from the EFM32PG28 family built on an
-ARM Cortex®-M33 processor with excellent low power capabilities.
+ARM Cortex |reg|-M33 processor with excellent low power capabilities.
 
 Hardware
 ********
 
 - EFM32PG28B310F1024IM68 Pearl Gecko SoC
-- CPU core: ARM Cortex®-M33
+- CPU core: ARM Cortex |reg|-M33
 - Flash memory: 1024 kB
 - RAM: 256 kB
 - Key features:

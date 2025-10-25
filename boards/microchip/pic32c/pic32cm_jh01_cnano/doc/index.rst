@@ -12,7 +12,7 @@ Hardware
 ********
 
 - PIC32CM5164JH01048 MCU
-- Arm® Cortex®-M0+ based MCU
+- Arm |reg| Cortex |reg|-M0+ based MCU
 - One yellow user LED
 - One mechanical user switch
 - One user touch button

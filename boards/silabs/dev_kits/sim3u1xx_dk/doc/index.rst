@@ -9,7 +9,7 @@ Hardware
 ********
 
 - Silicon Labs SiM3U167-B-GM SoC
-- CPU core: ARM Cortex®-M3
+- CPU core: ARM Cortex |reg|-M3
 - Flash memory: 256 kB
 - RAM: 32 kB
 - IO:

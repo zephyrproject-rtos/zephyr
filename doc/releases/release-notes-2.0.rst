@@ -819,7 +819,7 @@ release:
 * :github:`17559` - Assertion failed: zephyr toolchain variant invalid
 * :github:`17557` - samples/net/wifi fails to build on cc3220sf_launchxl
 * :github:`17555` - CONFIG_LOG doesn't work on x86_64 due to no working backends
-* :github:`17554` - pyocd flash does not support the -b option for board ID so that the sanitycheck script can’t specified the board ID to flash when the host connected with multiple boards.
+* :github:`17554` - pyocd flash does not support the -b option for board ID so that the sanitycheck script can't specified the board ID to flash when the host connected with multiple boards.
 * :github:`17550` - SimpleLink WiFi host driver should revert back to using static memory model
 * :github:`17547` - incorrect documentation for debugging nsim_em / nsim_sem
 * :github:`17543` - dtc version 1.4.5 with ubuntu 18.04 and zephyr sdk-0.10.1

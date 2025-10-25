@@ -14,9 +14,9 @@ The breakout board footprint allows RAK3172 stamp module pins to be transferred 
 It is designed to easy access to the pins on the board and simplify the evaluation of the RAK3172
 module.
 
-- RAK3172 STM32WLE5CC Module with LPWAN single-core Cortex®-M4 at 48 MHz
+- RAK3172 STM32WLE5CC Module with LPWAN single-core Cortex |reg|-M4 at 48 MHz
 - 256-Kbyte Flash memory and 64-Kbyte SRAM
-- RF transceiver LoRa® modulations
+- RF transceiver LoRa |reg| modulations
 - Hardware encryption AES256-bit and a True random number generator
 - SMA connectors for the LORA antenna
 - I/O ports:

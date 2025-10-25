@@ -10,7 +10,7 @@ Here are some highlights of the Nucleo F303K8 board:
 - STM32 microcontroller in LQFP32 package
 - one type of extension resources:
 
-- Arduino™ Nano V3 connectivity support
+- Arduino |trade| Nano V3 connectivity support
 
 - On-board ST-LINK/V2-1 debugger/programmer with SWD connector
 - Flexible board power supply:

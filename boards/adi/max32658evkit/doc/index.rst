@@ -4,9 +4,9 @@ Overview
 ********
 
 The MAX32658 microcontroller (MCU) is an advanced system-on-chip (SoC)
-featuring an Arm® Cortex®-M33 core with single-precision floating point unit (FPU)
+featuring an Arm |reg| Cortex |reg|-M33 core with single-precision floating point unit (FPU)
 with digital signal processing (DSP) instructions, large flash and SRAM memories,
-and the latest generation Bluetooth® 5.4 Low Energy (LE) radio.
+and the latest generation Bluetooth |reg| 5.4 Low Energy (LE) radio.
 The nano-power modes increase battery life substantially.
 
 The MAX32658 is qualified to operate at a temperature range of -20°C to +85°C.
@@ -25,7 +25,7 @@ Hardware
 
 - MAX32658 MCU:
 
-  - Arm Cortex-M33 CPU with TrustZone® and FPU
+  - Arm Cortex-M33 CPU with TrustZone |reg| and FPU
   - Single 1.8V Supply
   - 50MHz Low Power Oscillator
   - External Crystal Support

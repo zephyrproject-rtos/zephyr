@@ -4,7 +4,7 @@ Overview
 ********
 
 The Renesas RA6M1 microcontroller is the entry point to the Renesas RA6 product
-series for applications that require a high-performance Arm® Cortex®-M4 core at
+series for applications that require a high-performance Arm |reg| Cortex |reg|-M4 core at
 a very attractive price point. The RA6M1 is built on a highly efficient 40nm process
 and is supported by an open and flexible ecosystem concept—the Flexible Software
 Package (FSP), built on FreeRTOS—and is expandable to use other RTOSes and middleware.
@@ -17,7 +17,7 @@ The key features of the EK-RA6M1 board are categorized in three groups as follow
 
 - R7FA6M1AD3CFP
 - 100-pin LQFP package
-- 120 MHz Arm® Cortex®-M4 core with Floating Point Unit (FPU)
+- 120 MHz Arm |reg| Cortex |reg|-M4 core with Floating Point Unit (FPU)
 - 256 KB SRAM
 - 512 KB code flash memory
 - 8 KB data flash memory
@@ -25,7 +25,7 @@ The key features of the EK-RA6M1 board are categorized in three groups as follow
 **Connectivity**
 
 - A Device USB connector for the Main MCU
-- S124 MCU-based SEGGER J-Link® On-Board interface for debugging and programming of the
+- S124 MCU-based SEGGER J-Link |reg| On-Board interface for debugging and programming of the
   RA6M1 MCU. A 10-pin JTAG/SWD interface is also provided for connecting optional external
   debuggers and programmers.
 - Two PMOD connectors, allowing use of appropriate PMOD compliant peripheral plug-in modules for

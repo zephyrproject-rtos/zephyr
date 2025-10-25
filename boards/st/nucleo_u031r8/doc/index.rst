@@ -62,9 +62,9 @@ They operate at a frequency of up to 56 MHz.
 
   - 1.13 DMIPS/MHz (Drystone 2.1)
   - 134 CoreMark |reg| (2.4 CoreMark/MHz at 56 MHz)
-  - 430 ULPMark™-CP
-  - 167 ULPMark™-PP
-  - 20.3 ULPMark™-CM
+  - 430 ULPMark |trade|-CP
+  - 167 ULPMark |trade|-PP
+  - 20.3 ULPMark |trade|-CM
 
 - Memories:
 

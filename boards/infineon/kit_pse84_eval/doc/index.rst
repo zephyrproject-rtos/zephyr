@@ -2,34 +2,34 @@
 
 Overview
 ********
-The PSOC™ Edge E84 Evaluation Kit (KIT_PSE84_EVAL) enables applications to use the PSOC™ Edge E84 Series
+The PSOC |trade| Edge E84 Evaluation Kit (KIT_PSE84_EVAL) enables applications to use the PSOC |trade| Edge E84 Series
 Microcontroller (MCU) together with multiple on-board multimedia, Machine Learning (ML),
 and connectivity features including custom MIPI-DSI displays, audio interfaces,
-and AIROC™ Wi-Fi and Bluetooth® combo-based connectivity modules.
+and AIROC |trade| Wi-Fi and Bluetooth |reg| combo-based connectivity modules.
 
-The PSOC™ Edge E84 MCUs are based on high-performance Arm® Cortex®-M55 including Helium DSP support,
-an Ethos™-U55 NPU, and a low-power Arm® Cortex®-M33 paired with Infineon's ultra-low power NNLite
+The PSOC |trade| Edge E84 MCUs are based on high-performance Arm |reg| Cortex |reg|-M55 including Helium DSP support,
+an Ethos |trade|-U55 NPU, and a low-power Arm |reg| Cortex |reg|-M33 paired with Infineon's ultra-low power NNLite
 hardware accelerator. They integrate 2.5D graphics accelerators and display interfaces, while
 featuring always-on acoustic activity and wake-word detection, efficient HMI operations, and
 extended battery life.
 
-The evaluation kit carries a PSOC™ Edge E84 MCU on a SODIMM-based detachable SOM board connected to
+The evaluation kit carries a PSOC |trade| Edge E84 MCU on a SODIMM-based detachable SOM board connected to
 the baseboard. The MCU SOM also has 128 MB of QSP| Flash, 1GB of Octal Flash, 128MB of Octal RAM,
-PSOC™ 4000T as CAPSENSE™ co-processor, and onboard AIROC™ Wi-Fi and Bluetooth® combo.
+PSOC |trade| 4000T as CAPSENSE |trade| co-processor, and onboard AIROC |trade| Wi-Fi and Bluetooth |reg| combo.
 
 Hardware
 ********
-For more information about the PSOC™ Edge E84 MCUs and the PSOC™ Edge E84 Evaluation Kit:
+For more information about the PSOC |trade| Edge E84 MCUs and the PSOC |trade| Edge E84 Evaluation Kit:
 
-- `PSOC™ Edge E84 Arm® Cortex® Multicore SoC Website`_
-- `PSOC™ Edge E84 Evaluation Kit Website`_
+- `PSOC |trade| Edge E84 Arm |reg| Cortex |reg| Multicore SoC Website`_
+- `PSOC |trade| Edge E84 Evaluation Kit Website`_
 
 Kit Features:
 =============
 
-- Cortex®-M55 CPU with Helium™ DSP
-- Advanced ML with Arm Ethos™-U55 NPU
-- Low-Power Cortex®-M33
+- Cortex |reg|-M55 CPU with Helium |trade| DSP
+- Advanced ML with Arm Ethos |trade|-U55 NPU
+- Low-Power Cortex |reg|-M33
 - NNLite ultra-low power NPU
 - Analog and Digital Microphones
 - State-of-the-Art Secured Enclave
@@ -38,8 +38,8 @@ Kit Features:
 Kit Contents:
 =============
 
-- PSOC™ Edge E84 base board
-- PSOC™ Edge E84 SOM module
+- PSOC |trade| Edge E84 base board
+- PSOC |trade| Edge E84 SOM module
 - 4.3in capacitive touch display and USB camera module
 - USB Type C to Type-C cable
 - Two proximity sensor wires
@@ -65,7 +65,7 @@ The KIT-PSE84-EVAL includes an onboard programmer/debugger (`KitProg3`_) to prov
 flash programming, and serial communication over USB. Flash and debug commands use OpenOCD and
 require a custom Infineon OpenOCD version, that supports KitProg3, to be installed.
 
-Please refer to the `ModusToolbox™ software installation guide`_ to install the
+Please refer to the `ModusToolbox |trade| software installation guide`_ to install the
 Infineon OpenOCD and Edge Protect Security Suite (edgeprotecttools).
 
 Flashing
@@ -122,21 +122,21 @@ perform other standard GDB debugging on the PSOC E84 CM33 core.
 References
 **********
 
-- `PSOC™ Edge E84 Arm® Cortex® Multicore SoC Website`_
+- `PSOC |trade| Edge E84 Arm |reg| Cortex |reg| Multicore SoC Website`_
 
-.. _PSOC™ Edge E84 Arm® Cortex® Multicore SoC Website:
+.. _PSOC |trade| Edge E84 Arm |reg| Cortex |reg| Multicore SoC Website:
     https://www.infineon.com/products/microcontroller/32-bit-psoc-arm-cortex/32-bit-psoc-edge-arm/psoc-edge-e84#Overview
 
-.. _PSOC™ Edge E84 Evaluation Kit Website:
+.. _PSOC |trade| Edge E84 Evaluation Kit Website:
     https://www.infineon.com/evaluation-board/KIT-PSE84-EVAL
 
 .. _kit_pse84_eval User Manual Website:
     https://www.infineon.com/assets/row/public/documents/30/44/infineon-kit-pse84-eval-qsg-usermanual-en.pdf
 
-.. _ModusToolbox™:
+.. _ModusToolbox |trade|:
     https://softwaretools.infineon.com/tools/com.ifx.tb.tool.modustoolboxsetup
 
-.. _ModusToolbox™ software installation guide:
+.. _ModusToolbox |trade| software installation guide:
     https://www.Infineon.com/ModusToolboxInstallguide
 
 .. _KitProg3:

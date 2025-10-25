@@ -4,7 +4,7 @@ Overview
 ********
 
 The Portenta C33 is a powerful System-on-Module based on the Renesas RA6M5
-microcontroller group, which utilizes the high-performance Arm® Cortex®-M33
+microcontroller group, which utilizes the high-performance Arm |reg| Cortex |reg|-M33
 core. The Portenta C33 shares the same form factor as the Portenta H7 and is
 backward compatible with it, making it fully compatible with all Portenta
 family shields and carriers through its High-Density connectors.

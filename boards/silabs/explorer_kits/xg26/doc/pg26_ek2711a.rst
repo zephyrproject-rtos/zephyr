@@ -17,7 +17,7 @@ Hardware
 ********
 
 - EFM32PG26B500F3200IM68 MCU
-- CPU core: ARM Cortex®-M33 with FPU
+- CPU core: ARM Cortex |reg|-M33 with FPU
 - Flash memory: 3200 kB
 - RAM: 512 kB
 - Operation frequency: 2.4 GHz

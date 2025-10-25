@@ -29,8 +29,8 @@ and an U.FL external antenna connector. It is based on a standard XIAO 14 pin
 pinout.
 
 ESP32-S3 is a low-power MCU-based system on a chip (SoC) with integrated 2.4 GHz Wi-Fi
-and Bluetooth® Low Energy (Bluetooth LE). It consists of high-performance dual-core microprocessor
-(Xtensa® 32-bit LX7), a low power coprocessor, a Wi-Fi baseband, a Bluetooth LE baseband,
+and Bluetooth |reg| Low Energy (Bluetooth LE). It consists of high-performance dual-core microprocessor
+(Xtensa |reg| 32-bit LX7), a low power coprocessor, a Wi-Fi baseband, a Bluetooth LE baseband,
 RF module, and numerous peripherals.
 
 Additionally, Sense variant integrates a OV2640 camera sensor, microphone and sdcard slot.

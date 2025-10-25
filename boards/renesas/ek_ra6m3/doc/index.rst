@@ -3,7 +3,7 @@
 Overview
 ********
 
-The Renesas RA6M3 group uses the high-performance Arm® Cortex®-M4 core and
+The Renesas RA6M3 group uses the high-performance Arm |reg| Cortex |reg|-M4 core and
 offers a TFT controller with 2D accelerator and JPEG decoder. The RA6M3 is
 suitable for IoT applications requiring TFT, Ethernet, security, large
 embedded RAM, and USB High Speed (HS).

@@ -11,7 +11,7 @@ some highlights of the Nucleo F446ZE board:
 - STM32F446 microcontroller in QFP144 package
 - Two types of extension resources:
 
-  - ST zio support for Arduino™ Uno V3 connectivity (A0 to A5, D0 to D15) and additional signals exposing a wide range of peripherals
+  - ST zio support for Arduino |trade| Uno V3 connectivity (A0 to A5, D0 to D15) and additional signals exposing a wide range of peripherals
   - ST morpho extension pin headers for full access to all STM32 I/Os
 
 - On-board ST-LINK/V2-1 debugger/programmer with SWD connector

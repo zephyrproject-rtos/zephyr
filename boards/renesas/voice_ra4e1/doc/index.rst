@@ -10,13 +10,13 @@ facilitate the development of additional partner projects. The kit design to use
 48pin package as the core logic device, with QSPI flash, OPAMP and power devices chosen from the
 Renesas product portfolio.
 
-The MCU in this series incorporates a high-performance Arm Cortex®-M33 core running up to
+The MCU in this series incorporates a high-performance Arm Cortex |reg|-M33 core running up to
 100 MHz with the following features:
 
 **MCU Native Pin Access**
 
 - R7FA4E10D2CNE MCU (referred to as RA MCU)
-- 100 MHz, Arm® Cortex®-M33 core
+- 100 MHz, Arm |reg| Cortex |reg|-M33 core
 - 512 KB Code Flash, 8 KB Data Flash, 128 KB SRAM
 - 48 pins, LQFP package
 - MCU current measurement point for precision current consumption measurement

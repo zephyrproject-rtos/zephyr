@@ -17,7 +17,7 @@ the STM32H573I-DK Discovery board:
 - Octo-SPI interface connected to 512Mbit Octo-SPI NORFlash memory device (MX25LM51245GXDI00 from MACRONIX)
 - 10/100-Mbit Ethernet,
 - microSD  |trade|
-- A Wi‑Fi® add-on board
+- A Wi‑Fi |reg| add-on board
 - Board connectors
 
   - STMod+ expansion connector with fan-out expansion board for Wi‑Fi |reg|, Grove and mikroBUS |trade| compatible connectors

@@ -3,7 +3,7 @@
 Overview
 ********
 The MAX32666EVKIT provides a platform for evaluating the capabilities of the MAX32665 and MAX32666
-high-efficiency Arm® microcontrollers and audio DSP for wearable and hearable device applications.
+high-efficiency Arm |reg| microcontrollers and audio DSP for wearable and hearable device applications.
 
 The Zephyr port is running on the MAX32666 MCU.
 
@@ -74,7 +74,7 @@ Hardware
   - Micro SD Card Interface
   - Select GPIOs Accessed Through a 0.1in Header
   - Access to the 8 Analog Inputs Through a 0.1in Header
-  - Arm® or SWD JTAG 20-Pin Header
+  - Arm |reg| or SWD JTAG 20-Pin Header
   - 1-Wire RJ11 Port
   - Can Be Solely Sourced by a Coin Cell Battery
   - Board Power Provided by Either USB Port
@@ -273,7 +273,7 @@ pass the ``--erase`` option when executing ``west flash``.
    This board uses OpenOCD as the default debug interface. You can also use
    a Segger J-Link with Segger's native tooling by overriding the runner,
    appending ``--runner jlink`` to your ``west`` command(s). The J-Link should
-   be connected to the standard 20-pin connector (J7) or a Cortex® 10-pin connector (J6).
+   be connected to the standard 20-pin connector (J7) or a Cortex |reg| 10-pin connector (J6).
 
 Debugging
 =========

@@ -1,7 +1,7 @@
 .. _p3t1755dp_ard_i3c_shield:
 
-P3T1755DP Arduino® Shield Evaluation Board
-##########################################
+P3T1755DP Arduino |reg| Shield Evaluation Board
+###############################################
 
 Overview
 ********
@@ -20,7 +20,7 @@ The temperature register always stores a 12 bit two's complement data,
 giving a temperature resolution of 0.0625 °C. P3T1755DP can be configured
 for different operation conditions: continuous conversion, one-shot mode
 or shutdown mode. The device supports 2-wire serial I3C (up to 12.5 MHz)
-and I²C (up to 3.4 MHz) as communication interface.
+and I2C (up to 3.4 MHz) as communication interface.
 
 For more information about P3T1755DP-ARD see these NXP documents:
 

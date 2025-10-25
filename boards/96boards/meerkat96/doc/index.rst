@@ -7,8 +7,8 @@ Overview
 ********
 
 96Boards Meerkat96 board is based on NXP i.MX7 Hybrid multi-core processor,
-composed of a dual Cortex®-A7 and a single Cortex®-M4 core.
-Zephyr OS is ported to run on the Cortex®-M4 core.
+composed of a dual Cortex |reg|-A7 and a single Cortex |reg|-M4 core.
+Zephyr OS is ported to run on the Cortex |reg|-M4 core.
 
 - Board features:
 

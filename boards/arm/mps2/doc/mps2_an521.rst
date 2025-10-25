@@ -371,7 +371,7 @@ Security components
 - Secure and Non-secure peripherals via the Peripheral Protection Controller
   (PPC). Peripherals can be assigned as secure or non-secure accessible
 - Secure boot
-- Secure `AMBA®`_ interconnect
+- Secure `AMBA |reg|`_ interconnect
 
 Serial Configuration Controller (SCC)
 =====================================
@@ -570,5 +570,5 @@ serial port:
 .. _IDAU:
    https://developer.arm.com/documentation/100690/latest/Attribution-units--SAU-and-IDAU-
 
-.. _AMBA®:
+.. _AMBA |reg|:
    https://developer.arm.com/products/architecture/system-architectures/amba

@@ -97,5 +97,5 @@ Refer to the detailed overview about :ref:`application_debugging`.
 References
 **********
 
-1.`Programmer’s Reference Manual for ARC HS
+1.`Programmer's Reference Manual for ARC HS
    <https://www.synopsys.com/dw/doc.php/iip/dwc_arc_hs4xd/latest/doc/ARC_V2_PublicProgrammers_Reference.pdf>`_

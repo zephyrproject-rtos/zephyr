@@ -5,7 +5,7 @@ Overview
 
 The EFR32FG1 Flex Gecko 2.4 GHz and 868 MHz Radio Board is delivered as part of
 `SLWSTK6061B Proprietary Wireless Starter Kit`_. It contains a EFR32FG1 Wireless
-SoC built on an ARM Cortex®-M4F processor with excellent low power capabilities.
+SoC built on an ARM Cortex |reg|-M4F processor with excellent low power capabilities.
 
 The BRD4250B a.k.a. SLWRB4250B radio board plugs into the Wireless Starter Kit
 Mainboard BRD4001A and is supported as one of :ref:`silabs_radio_boards`.
@@ -14,7 +14,7 @@ Hardware
 ********
 
 - EFR32FG1P133F256GM48 Flex Gecko SoC
-- CPU core: ARM Cortex®-M4 with FPU
+- CPU core: ARM Cortex |reg|-M4 with FPU
 - Flash memory: 256 kB
 - RAM: 32 kB
 - Transmit power: up to +13 dBm

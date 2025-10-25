@@ -35,7 +35,7 @@ For example:
 
     Known limitations:
 
-    - The IAR Toolchain uses ``ilink`` for linking and depends on Zephyr’s CMAKE_LINKER_GENERATOR. ``ilink`` is incompatible with Zephyr’s linker script template, which works with GNU ld.
+    - The IAR Toolchain uses ``ilink`` for linking and depends on Zephyr's CMAKE_LINKER_GENERATOR. ``ilink`` is incompatible with Zephyr's linker script template, which works with GNU ld.
 
     - The GNU Assembler distributed with the Zephyr SDK is used for ``.S-files``.
 

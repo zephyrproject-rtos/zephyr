@@ -7,7 +7,7 @@ Hardware
 
 The Ambiq Apollo2 SoC provides the following hardware features:
 
-- ARM® Cortex® M4F core with a Floating Point Unit
+- ARM |reg| Cortex |reg| M4F core with a Floating Point Unit
 - Up to 48 MHz operating frequency
 - 16 kB 2-way Associative Cache
 - Up to 1 MB of flash memory for code/data

@@ -3,7 +3,7 @@
 Overview
 ********
 
-The EK-RA8D1 is an Evaluation Kit for Renesas RA8D1 MCU Group which are the industry’s first 32-bit
+The EK-RA8D1 is an Evaluation Kit for Renesas RA8D1 MCU Group which are the industry's first 32-bit
 graphics-enabled MCUs based on the Arm Cortex-M85 (CM85) core, delivering breakthrough performance
 of over 3000 Coremark points at 480 MHz and superior graphics capabilities that enable high-resolution
 displays and Vision AI applications.

@@ -61,7 +61,7 @@ Hardware
 
 X-NUCLEO-IDB05A1 provides a SPBTLE-RF chip with the following key features:
 
- - Bluetooth Low Energy FCC and IC certified module based on Bluetooth ® SMART
+ - Bluetooth Low Energy FCC and IC certified module based on Bluetooth  |reg| SMART
    4.1 network processor BlueNRG-MS
  - Integrated Balun (BALF-NRG-01D3)
  - Chip antenna

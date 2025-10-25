@@ -7,7 +7,7 @@ Wi-Fi credentials Library
    :local:
    :depth: 2
 
-The Wi-Fi credentials library provides means to load and store Wi-Fi® network credentials.
+The Wi-Fi credentials library provides means to load and store Wi-Fi |reg| network credentials.
 
 Overview
 ********

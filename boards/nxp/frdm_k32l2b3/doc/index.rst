@@ -14,7 +14,7 @@ Hardware
 - Full-speed USB port with micro A/B connector for device functionality.
 - NXP FXOS8700CQ digital sensor, 3D accelerometer (±2g/±4g/±8g) + 3D magnetometer.
 - On-board segment LCD.
-- Form factor compatible with Arduino® Rev3 pin layout.
+- Form factor compatible with Arduino |reg| Rev3 pin layout.
 - OpenSDA debug interface.
 
 For more information about the K32L2B31VLH0A SoC and FRDM-K32L2B3 board:

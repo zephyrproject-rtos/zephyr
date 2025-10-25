@@ -106,7 +106,7 @@ Interface (NPPI) which supports the following three procedures:
 
 * Device Key Refresh procedure: Used to change the device key of the Target node without a need to
   reconfigure the node.
-* Node Address Refresh procedure: Used to change the node’s device key and unicast address.
+* Node Address Refresh procedure: Used to change the node's device key and unicast address.
 * Node Composition Refresh procedure: Used to change the device key of the node, and to add or
   delete models or features of the node.
 

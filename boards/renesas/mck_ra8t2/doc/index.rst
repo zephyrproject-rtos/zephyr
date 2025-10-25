@@ -4,11 +4,11 @@ Overview
 ********
 
 The MCK-RA8T2 is an Motor Control Kit for Renesas RA8T2 MCU Group which integrates multiple series of software-compatible
-Arm®-based 32-bit cores that share a common set of Renesas peripherals to facilitate design scalability and efficient
+Arm |reg|-based 32-bit cores that share a common set of Renesas peripherals to facilitate design scalability and efficient
 platform-based product development.
 
-The MCU in this series incorporates a high-performance Arm® Cortex®-M85 core running up to 1 GHz and Arm®
-Cortex®-M33 core running up to 250 MHz with the following features:
+The MCU in this series incorporates a high-performance Arm |reg| Cortex |reg|-M85 core running up to 1 GHz and Arm |reg|
+Cortex |reg|-M33 core running up to 250 MHz with the following features:
 
 - Up to 1 MB MRAM
 - 2 MB SRAM (256 KB of CM85 TCM RAM, 128 KB CM33 TCM RAM, 1664 KB of user SRAM)
@@ -29,7 +29,7 @@ The specifications of the CPU board are shown below:
 
 **MCU specifications**
 
-- A high-performance RA8T2 MCU featuring an Arm® Cortex®-M85 core running up to 1 GHz and an Arm® Cortex®-M33 core
+- A high-performance RA8T2 MCU featuring an Arm |reg| Cortex |reg|-M85 core running up to 1 GHz and an Arm |reg| Cortex |reg|-M33 core
   running up to 250 MHz, offered in a 289-pin BGA package.
 - MRAM/SRAM size: 1MB/2MB
 - MCU input clock: 24MHz (Generate with external crystal oscillator)

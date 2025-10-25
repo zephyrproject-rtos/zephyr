@@ -104,8 +104,8 @@ References
 
 .. target-notes::
 
-1. (ID050815) ARM® Cortex®-A Series - Programmer’s Guide for ARMv8-A
-2. (ID070919) Arm® Architecture Reference Manual - Armv8, for Armv8-A architecture profile
+1. (ID050815) ARM |reg| Cortex |reg|-A Series - Programmer's Guide for ARMv8-A
+2. (ID070919) Arm |reg| Architecture Reference Manual - Armv8, for Armv8-A architecture profile
 3. (ARM DAI 0527A) Application Note Bare-metal Boot Code for ARMv8-A Processors
 4. AArch64 Exception and Interrupt Handling
 5. Fundamentals of ARMv8-A

@@ -5,13 +5,13 @@ Overview
 
 The MGM240P Mighty Sparkfun Think Plus Matter contains
 a Wireless System-On-Chip from the EFR32MG24 family built on an
-ARM Cortex®-M33F processor with excellent low power capabilities.
+ARM Cortex |reg|-M33F processor with excellent low power capabilities.
 
 Hardware
 ********
 
 - Based on the Series 2 EFR32MG24 SoC
-- CPU core: 32-bit ARM® Cortex®-M33 core at 39 MHz
+- CPU core: 32-bit ARM |reg| Cortex |reg|-M33 core at 39 MHz
 - Flash memory: 1536 kB
 - RAM: 256 kB
 - Supports Multiple 802.15.4 Wireless Protocols (Zigbee and OpenThread)

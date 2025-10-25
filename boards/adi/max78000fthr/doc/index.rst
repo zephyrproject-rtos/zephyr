@@ -3,7 +3,7 @@
 Overview
 ********
 The MAX78000FTHR is a rapid development platform to help engineers quickly implement ultra low-power, artificial
-intelligence (AI) solutions using the MAX78000 Arm® Cortex®-M4F processor with an integrated Convolutional Neural Network
+intelligence (AI) solutions using the MAX78000 Arm |reg| Cortex |reg|-M4F processor with an integrated Convolutional Neural Network
 accelerator. The board also includes the MAX20303 PMIC for battery and power management. The form factor is 0.9in x 2.6in
 dual-row header footprint that is compatible with Adafruit Feather Wing peripheral expansion boards. The board includes a
 variety of peripherals, such as a CMOS VGA image sensor, digital microphone, low-power stereo audio CODEC, 1MB QSPI

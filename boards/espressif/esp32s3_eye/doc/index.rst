@@ -63,7 +63,7 @@ Components on the ESP32-S3-EYE-MB Main Board
      - Power regulator that converts a 5 V supply into a 3.3 V output for the module.
    * - 5
      - Digital Microphone
-     - The digital I2S MEMS microphone features 61 dB SNR and –26 dBFS sensitivity, working at 3.3 V.
+     - The digital I2S MEMS microphone features 61 dB SNR and -26 dBFS sensitivity, working at 3.3 V.
    * - 6
      - FPC Connector
      - Connects the main board and the sub board.
@@ -87,7 +87,7 @@ Components on the ESP32-S3-EYE-MB Main Board
      - A Micro-USB port used for 5 V power supply to the board, as well as for communication with the chip via GPIO19 and GPIO20.
    * - 13
      - Battery Soldering Points
-     - Used for soldering a battery socket to connect an external Li-ion battery that can serve as an alternative power supply to the board. If you use an external battery, make sure it has built-in protection circuit and fuse. The recommended specifications of the battery: capacity > 1000 mAh, output voltage 3.7 V, input voltage 4.2 V – 5 V.
+     - Used for soldering a battery socket to connect an external Li-ion battery that can serve as an alternative power supply to the board. If you use an external battery, make sure it has built-in protection circuit and fuse. The recommended specifications of the battery: capacity > 1000 mAh, output voltage 3.7 V, input voltage 4.2 V - 5 V.
    * - 14
      - Battery Charger Chip
      - 1 A linear Li-ion battery charger (ME4054BM5G-N) in ThinSOT package. The power source for charging is the **USB Port**.

@@ -5,7 +5,7 @@ Overview
 The BL5340 Development Kit provides support for the Ezurio
 BL5340 module which is powered by a dual-core Nordic Semiconductor
 nRF5340 ARM Cortex-M33F CPU. The nRF5340 inside the BL5340 module is a
-dual-core SoC based on the Arm® Cortex®-M33 architecture, with:
+dual-core SoC based on the Arm |reg| Cortex |reg|-M33 architecture, with:
 
 * a full-featured Arm Cortex-M33F core with DSP instructions, FPU, and
   Armv8-M Security Extension, running at up to 128 MHz, referred to as

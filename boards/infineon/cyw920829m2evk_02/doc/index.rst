@@ -3,15 +3,15 @@
 Overview
 ********
 
-The AIROC™ CYW20829 Bluetooth® LE MCU Evaluation Kit (CYW920829M2EVK-02) with its included on-board
+The AIROC |trade| CYW20829 Bluetooth |reg| LE MCU Evaluation Kit (CYW920829M2EVK-02) with its included on-board
 peripherals enables evaluation, prototyping, and development of a wide array of
-Bluetooth® Low Energy applications, all on Infineon's low power, high performance AIROC™ CYW20829.
-The AIROC™ CYW20829's robust RF performance and 10 dBm TX output power without an external power
-amplifier (PA). This provides enough link budget for the entire spectrum of Bluetooth® LE use cases
+Bluetooth |reg| Low Energy applications, all on Infineon's low power, high performance AIROC |trade| CYW20829.
+The AIROC |trade| CYW20829's robust RF performance and 10 dBm TX output power without an external power
+amplifier (PA). This provides enough link budget for the entire spectrum of Bluetooth |reg| LE use cases
 including industrial IoT applications, smart home, asset tracking, beacons and sensors, and
 medical devices.
 
-The system features Dual Arm® Cortex® - M33s for powering the MCU and Bluetooth subsystem with
+The system features Dual Arm |reg| Cortex |reg| - M33s for powering the MCU and Bluetooth subsystem with
 programmable and reconfigurable analog and digital blocks. In addition, on the kit, there is a
 suite of on-board peripherals including six-axis inertial measurement unit (IMU), thermistor,
 analog mic, user programmable buttons (2), LEDs (2), and RGB LED. There is also extensive GPIO
@@ -28,7 +28,7 @@ For more information about the CYW20829 SoC and CYW920829M2EVK-02 board:
 Kit Features:
 =============
 
-- AIROC™ CYW20829 Bluetooth® LE MCU in 56 pin QFN package
+- AIROC |trade| CYW20829 Bluetooth |reg| LE MCU in 56 pin QFN package
 - Arduino compatible headers for hardware expansion
 - On-board sensors - 6-axis IMU, Thermistor, Infineon analog microphone,
   and Infineon digital microphone
@@ -52,7 +52,7 @@ Supported Features
 System Clock
 ============
 
-The AIROC™ CYW20829 Bluetooth®  MCU SoC is configured to use the internal IMO+FLL as a source for
+The AIROC |trade| CYW20829 Bluetooth |reg|  MCU SoC is configured to use the internal IMO+FLL as a source for
 the system clock. Other sources for the system clock are provided in the SOC, depending on your
 system requirements.
 
@@ -148,8 +148,8 @@ perform other standard GDB debugging on the CYW20829 CM33 core.
 Operate in SECURE Lifecycle Stage
 *********************************
 
-The device lifecycle stage (LCS) is a key aspect of the security of the AIROC™
-CYW20829 Bluetooth® MCU. The lifecycle stages follow a strict, irreversible progression dictated by
+The device lifecycle stage (LCS) is a key aspect of the security of the AIROC |trade|
+CYW20829 Bluetooth |reg| MCU. The lifecycle stages follow a strict, irreversible progression dictated by
 the programming of the eFuse bits (changing the value from "0" to "1"). This system is used to
 protect the device's data and code at the level required by the user.
 SECURE is the lifecycle stage of a secured device.

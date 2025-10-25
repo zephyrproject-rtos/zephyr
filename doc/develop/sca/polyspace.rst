@@ -3,7 +3,7 @@
 Polyspace support
 #################
 
-`Polyspace® <https://mathworks.com/products/polyspace.html>`__ is
+`Polyspace |reg| <https://mathworks.com/products/polyspace.html>`__ is
 a commercial static code analysis tool from MathWorks, which is certified
 for use in highest safety contexts. It can check compliance to coding
 guidelines like MISRA C and CERT C, find CWEs, detect bugs and calculate

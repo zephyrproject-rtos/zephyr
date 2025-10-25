@@ -21,8 +21,8 @@ Features:
 - 1‑Gbit/s Ethernet (RGMII)
 - Two USB 2.0 high speed
 - USB 3.0 SuperSpeed PD (DRP/DRD)
-- Wi‑Fi® 802.11b/g/n
-- Bluetooth® LE
+- Wi‑Fi |reg| 802.11b/g/n
+- Bluetooth |reg| LE
 - Four user LEDs
 - Two user, one tamper, and one reset push-buttons
 - Wake-up button

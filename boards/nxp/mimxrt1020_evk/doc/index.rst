@@ -5,8 +5,8 @@ Overview
 
 The i.MX RT1020 expands the i.MX RT crossover processor families by providing
 high-performance feature set in low-cost LQFP packages, further simplifying
-board design and layout for customers. The i.MX RT1020 runs on the Arm®
-Cortex®-M7 core at 500 MHz.
+board design and layout for customers. The i.MX RT1020 runs on the Arm |reg|
+Cortex |reg|-M7 core at 500 MHz.
 
 Hardware
 ********

@@ -84,7 +84,7 @@ The table below provides description in the following manner:
 +------------------+-------------------------------------------------------------------------+
 | 0R               | Zero-ohm resistor intended as a placeholder for a current shunt, can    |
 |                  | be desoldered or replaced with a current shunt to facilitate the        |
-|                  | measurement of ESP32’s current consumption in different modes.          |
+|                  | measurement of ESP32's current consumption in different modes.          |
 +------------------+-------------------------------------------------------------------------+
 | ESP32-WROVER-E   | This ESP32 module features 64-Mbit PSRAM for flexible extended          |
 | module           | storage and data processing capabilities.                               |
@@ -94,7 +94,7 @@ The table below provides description in the following manner:
 +------------------+-------------------------------------------------------------------------+
 | UART             | Serial port. The serial TX/RX signals of FT2232 and ESP32 are broken    |
 |                  | out to the inward and outward sides of JP2 respectively. By default,    |
-|                  | these pairs of pins are connected with jumpers. To use ESP32’s serial   |
+|                  | these pairs of pins are connected with jumpers. To use ESP32's serial   |
 |                  | interface, remove the jumpers and connect another external serial       |
 |                  | device to the respective pins.                                          |
 +------------------+-------------------------------------------------------------------------+

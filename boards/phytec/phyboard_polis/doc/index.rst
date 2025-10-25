@@ -42,7 +42,7 @@ the phyCORE-i.MX 8M Mini/Nano.
   - Interfaces:
     - 1x RS232 / RS485
     - 2x UART
-    - 3x I²C
+    - 3x I2C
     - 2x SPI
     - Up to 4x PWM
     - 4x SAI

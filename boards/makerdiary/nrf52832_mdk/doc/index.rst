@@ -4,7 +4,7 @@ Overview
 ********
 
 The nrf52832_mdk board is a fully open-source, versatile single board
-development kit for Bluetooth® low energy, ANT and 2.4GHz proprietary
+development kit for Bluetooth |reg| low energy, ANT and 2.4GHz proprietary
 applications using the nRF52832 SoC.
 
 The kit gives access to 24 I/Os and interfaces via headers and has a

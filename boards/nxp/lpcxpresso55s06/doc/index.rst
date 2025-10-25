@@ -4,8 +4,8 @@ Overview
 ********
 
 The LPCXpresso55S06 board provides the ideal platform for evaluation
-of the LPC55S0x/LPC550x MCU family, based on the Arm® Cortex®-M33
-architecture. Arduino® UNO compatible shield connectors are included,
+of the LPC55S0x/LPC550x MCU family, based on the Arm |reg| Cortex |reg|-M33
+architecture. Arduino |reg| UNO compatible shield connectors are included,
 with additional expansion ports around the Arduino footprint, along
 with a PMod/host interface port and MikroElektronika Click module
 site.
@@ -13,7 +13,7 @@ site.
 Hardware
 ********
 
-- LPC55S06 Arm® Cortex®-M33 microcontroller running at up to 96 MHz
+- LPC55S06 Arm |reg| Cortex |reg|-M33 microcontroller running at up to 96 MHz
 - 256 KB flash and 96 KB SRAM on-chip
 - LPC-Link2 debug high speed USB probe with VCOM port
 - MikroElektronika Click expansion option

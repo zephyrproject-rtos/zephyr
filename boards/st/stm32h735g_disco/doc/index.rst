@@ -4,7 +4,7 @@ Overview
 ********
 
 The STM32H735G-DK Discovery kit is a complete demonstration and development
-platform for Arm® Cortex®-M7 core-based STM32H735IGK6U microcontroller, with
+platform for Arm |reg| Cortex |reg|-M7 core-based STM32H735IGK6U microcontroller, with
 1 Mbyte of Flash memory and 564 Kbytes of SRAM.
 
 The STM32H735G-DK Discovery kit is used as a reference design for user
@@ -13,10 +13,10 @@ the application development.
 
 The full range of hardware features available on the board helps users to enhance
 their application development by an evaluation of all the peripherals (such as
-USB OTG FS, Ethernet, microSD™ card, USART, CAN FD, SAI audio DAC stereo with
-audio jack input and output, MEMS digital microphone, HyperRAM™,
+USB OTG FS, Ethernet, microSD |trade| card, USART, CAN FD, SAI audio DAC stereo with
+audio jack input and output, MEMS digital microphone, HyperRAM |trade|,
 Octo-SPI Flash memory, RGB interface LCD with capacitive touch panel, and others).
-ARDUINO® Uno V3, Pmod™ and STMod+ connectors provide easy connection to extension
+ARDUINO |reg| Uno V3, Pmod |trade| and STMod+ connectors provide easy connection to extension
 shields or daughterboards for specific applications.
 
 STLINK-V3E is integrated into the board, as the embedded in-circuit debugger and

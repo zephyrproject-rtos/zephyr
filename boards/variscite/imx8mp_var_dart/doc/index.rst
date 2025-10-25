@@ -5,11 +5,11 @@ Overview
 
 Variscite's DART-MX8M-PLUS System on Module (SoM) is based on the i.MX 8M Plus family,
 which is a set of NXP products built to achieve both high performance and low power
-consumption and relies on a powerful, fully coherent core complex based on a quad Cortex®-A53
-cluster and Cortex®-M7 low-power coprocessor, audio digital signal processor, machine learning
+consumption and relies on a powerful, fully coherent core complex based on a quad Cortex |reg|-A53
+cluster and Cortex |reg|-M7 low-power coprocessor, audio digital signal processor, machine learning
 and graphics accelerators.
 
-Zephyr OS is ported to run on either the Cortex®-A53 or the Cortex®-M7.
+Zephyr OS is ported to run on either the Cortex |reg|-A53 or the Cortex |reg|-M7.
 
 Specs Summary
 *************
@@ -17,8 +17,8 @@ Specs Summary
   - CPU
 
     - NXP i.MX8M Plus:
-    - Up to 4x Cortex®-A53 @ 1.8GHz
-    - 1x Cortex®-M7 @ 800 MHz
+    - Up to 4x Cortex |reg|-A53 @ 1.8GHz
+    - 1x Cortex |reg|-M7 @ 800 MHz
     - 1x NPU 2.3 TOPS
   - Memory
 
@@ -26,8 +26,8 @@ Specs Summary
     - 8-bit up to 128GB eMMC boot and storage
   - GPU
 
-    - 3D: Vivante™ GC7000UltraLite (2 shaders) OpenGL ES 3.0, OpenCL1.2, Vulkan
-    - 2D: Vivante™ GC520L
+    - 3D: Vivante |trade| GC7000UltraLite (2 shaders) OpenGL ES 3.0, OpenCL1.2, Vulkan
+    - 2D: Vivante |trade| GC520L
   - NPU (Neural Processing Unit)
 
     - 2.3 TOPS Neural Network performance
@@ -43,7 +43,7 @@ Specs Summary
     - Bluetooth/BLE 5.4
   - Camera
 
-    - Up to 2x MIPI CSI – CMOS Serial camera Interface 4 lanes
+    - Up to 2x MIPI CSI - CMOS Serial camera Interface 4 lanes
     - 375 Mpixel/s HDR ISP (Image Sensor Processor)
   - Audio
 

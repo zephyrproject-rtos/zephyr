@@ -7,7 +7,7 @@ The Micro Bit (also referred to as BBC Micro Bit, stylized as micro:bit) is an
 ARM-based embedded system designed by the BBC for use in computer education in
 the UK.
 
-The board is 4 cm × 5 cm and has an ARM Cortex-M0 processor, accelerometer and
+The board is 4 cm x 5 cm and has an ARM Cortex-M0 processor, accelerometer and
 magnetometer sensors, Bluetooth and USB connectivity, a display consisting of
 25 LEDs, two programmable buttons, and can be powered by either USB or an
 external battery pack. The device inputs and outputs are through five ring

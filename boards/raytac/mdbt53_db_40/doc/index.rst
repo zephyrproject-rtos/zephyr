@@ -9,7 +9,7 @@ of the module's pins to 2.54mm pin headers. It is convenient for developers to v
 the modules are connected to other peripheral devices or sensors as a tool for software development.
 
 The nRF5340 inside the MDBT53-1M module is a
-dual-core SoC based on the Arm® Cortex®-M33 architecture, with:
+dual-core SoC based on the Arm |reg| Cortex |reg|-M33 architecture, with:
 
 * a full-featured Arm Cortex-M33F core with DSP instructions, FPU, and
   Armv8-M Security Extension, running at up to 128 MHz, referred to as
@@ -49,7 +49,7 @@ Hardware
 - Module Demo Board build by MDBT53-1M
 - Nordic nRF5340 SoC Solution
 - A recommended 3rd-party module by Nordic Semiconductor.
-- Dual-core Arm® Cortex® M33
+- Dual-core Arm |reg| Cortex |reg| M33
 - 1MB/256KB Flash Memory; 512kB/ 64kB RAM
 - Supports BT5 Long Range Features
 - Bluetooth specification v5.2
@@ -60,7 +60,7 @@ Hardware
 - 48 GPIO
 - Chip Antenna
 - Interfaces: SPI, UART, I2C, I2S, PWM, ADC, NFC, and USB
-- Highly flexible multiprotocol SoC ideally suited for Bluetooth® Low Energy, ANT+, Zigbee, Thread (802.15.4) ultra low-power wireless applications.
+- Highly flexible multiprotocol SoC ideally suited for Bluetooth |reg| Low Energy, ANT+, Zigbee, Thread (802.15.4) ultra low-power wireless applications.
 - 4 User LEDs
 - 4 User buttons
 - 1 Mini USB connector for power supply

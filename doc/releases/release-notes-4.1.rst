@@ -545,8 +545,8 @@ New shields
   * :ref:`Adafruit Adalogger Featherwing Shield <adafruit_adalogger_featherwing_shield>`
   * :ref:`Adafruit AW9523 GPIO Expander and LED Driver <adafruit_aw9523>`
   * :ref:`MikroElektronika ETH 3 Click <mikroe_eth3_click>`
-  * :ref:`P3T1755DP Arduino® Shield Evaluation Board <p3t1755dp_ard_i2c_shield>`
-  * :ref:`P3T1755DP Arduino® Shield Evaluation Board <p3t1755dp_ard_i3c_shield>`
+  * :ref:`P3T1755DP Arduino |reg| Shield Evaluation Board <p3t1755dp_ard_i2c_shield>`
+  * :ref:`P3T1755DP Arduino |reg| Shield Evaluation Board <p3t1755dp_ard_i3c_shield>`
   * :ref:`Digilent Pmod SD <pmod_sd>`
   * :ref:`Renesas DA14531 Pmod Board <renesas_us159_da14531evz_shield>`
   * :ref:`RTKMIPILCDB00000BE MIPI Display <rtkmipilcdb00000be>`

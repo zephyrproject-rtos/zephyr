@@ -6,7 +6,7 @@ Hardware
 ********
 
 - Apollo4 Plus SoC with upto 192 MHz operating frequency
-- ARM® Cortex® M4F core
+- ARM |reg| Cortex |reg| M4F core
 - 64 kB 2-way Associative/Direct-Mapped Cache per core
 - Up to 2 MB of non-volatile memory (NVM) for code/data
 - Up to 2.75 MB of low leakage / low power RAM for code/data

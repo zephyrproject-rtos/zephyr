@@ -15,7 +15,7 @@ Hardware
 ********
 
 - EFR32MG24B220F1536IM48 Mighty Gecko SoC
-- CPU core: ARM Cortex®-M33 with FPU
+- CPU core: ARM Cortex |reg|-M33 with FPU
 - Flash memory: 1536 kB
 - RAM: 256 kB
 - Transmit power: up to +20 dBm

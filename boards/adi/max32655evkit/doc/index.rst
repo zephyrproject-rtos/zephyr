@@ -4,9 +4,9 @@ Overview
 ********
 The MAX32655 evaluation kit (EV kit) provides a platform for evaluation capabilities
 of the MAX32655 microcontroller, which is an advanced system-on-chip (SoC).
-It features an Arm® Cortex®-M4F CPU for efficient computation of complex functions and
+It features an Arm |reg| Cortex |reg|-M4F CPU for efficient computation of complex functions and
 algorithms, integrated power management (SIMO), and the newest generation
-Bluetooth® 5.0 Low Energy (Bluetooth LE), long-range radio for wearable and hearable device applications.
+Bluetooth |reg| 5.0 Low Energy (Bluetooth LE), long-range radio for wearable and hearable device applications.
 
 The Zephyr port is running on the MAX32655 MCU.
 
@@ -50,7 +50,7 @@ Hardware
     - Up to 8-Input, 10-Bit Sigma-Delta ADC 7.8ksps
     - Up to Four Micro-Power Comparators
     - Timers: Up to Two Four 32-Bit, Two LP, TwoWatchdog Timers
-    - 1-Wire® Master
+    - 1-Wire |reg| Master
     - Up to Four Pulse Train (PWM) Engines
     - RTC with Wake-Up Timer
     - Up to 52 GPIOs

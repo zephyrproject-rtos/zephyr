@@ -4,7 +4,7 @@ Overview
 ********
 
 The 32L4R9IDISCOVERY Discovery kit is a complete demonstration and development platform
-for STMicroelectronics Arm® Cortex®-M4 core-based STM32L4R9AI microcontroller.
+for STMicroelectronics Arm |reg| Cortex |reg|-M4 core-based STM32L4R9AI microcontroller.
 
 Leveraging the innovative ultra-low-power oriented features, 640 Kbytes of embedded RAM,
 graphics performance (Chrom-ART Accelerator), and DSI controller offered by the STM32L4R9AI,

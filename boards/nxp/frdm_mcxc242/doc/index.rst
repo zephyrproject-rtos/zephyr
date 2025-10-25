@@ -5,7 +5,7 @@ Overview
 
 FRDM-MCXC242 is a compact and scalable development board for rapid
 prototyping of MCX C242 MCU. It offers industry standard headers
-for easy access to the MCU’s I/Os, integrated open-standard serial
+for easy access to the MCU's I/Os, integrated open-standard serial
 interfaces and on-board MCU-Link debugger.
 The MCXC is a general purpose ultra-low-power MCU family,
 providing additional memory, communications and analog peripheral.

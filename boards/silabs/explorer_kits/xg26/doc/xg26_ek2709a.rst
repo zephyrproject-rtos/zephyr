@@ -18,7 +18,7 @@ Hardware
 ********
 
 - EFR32MG26B510F3200IM48 SoC
-- CPU core: ARM Cortex®-M33 with FPU
+- CPU core: ARM Cortex |reg|-M33 with FPU
 - Flash memory: 3200 kB
 - RAM: 512 kB
 - Transmit power: up to +10 dBm

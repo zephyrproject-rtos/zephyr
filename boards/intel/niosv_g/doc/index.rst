@@ -6,31 +6,31 @@ INTEL FPGA niosv_g
 Overview
 ********
 
-niosv_g board is based on Intel FPGA Design Store Nios® V/g Hello World Example Design system and this complete system is consisted of following IP blocks:
+niosv_g board is based on Intel FPGA Design Store Nios |reg| V/g Hello World Example Design system and this complete system is consisted of following IP blocks:
 
 .. code-block:: console
 
-	Nios® V/g Processor Intel® FPGA IP
-	JTAG UART Intel® FPGA IP
-	On-Chip Memory Intel® FPGA IP
+	Nios |reg| V/g Processor Intel |reg| FPGA IP
+	JTAG UART Intel |reg| FPGA IP
+	On-Chip Memory Intel |reg| FPGA IP
 
-Nios® V/g hello world example design system
-===========================================
+Nios |reg| V/g hello world example design system
+================================================
 
-Prebuilt Nios® V/g hello world example design system is available in Intel FPGA Design store.
+Prebuilt Nios |reg| V/g hello world example design system is available in Intel FPGA Design store.
 - https://www.intel.com/content/www/us/en/support/programmable/support-resources/design-examples/design-store.html?s=Newest
 
-For example, Arria10 Nios® V/g processor example design system prebuilt files can be downloaded from following link.
+For example, Arria10 Nios |reg| V/g processor example design system prebuilt files can be downloaded from following link.
 - https://www.intel.com/content/www/us/en/design-example/776196/intel-arria-10-fpga-hello-world-design-on-nios-v-g-processor.html
 
 ready_to_test/top.sof file is the prebuilt SRAM Object File for hello world example design system after the downloaded PAR files extracted successfully.
 
-Create Nios® V/g processor example design system in FPGA
-========================================================
+Create Nios |reg| V/g processor example design system in FPGA
+=============================================================
 
-Please use Intel Quartus Programmer tool to program Nios® V/g processor based system into the FPGA and execute application.
+Please use Intel Quartus Programmer tool to program Nios |reg| V/g processor based system into the FPGA and execute application.
 
-In order to create the Nios® V/g processor inside the FPGA device, please download the generated .sof file onto the board with the following command.
+In order to create the Nios |reg| V/g processor inside the FPGA device, please download the generated .sof file onto the board with the following command.
 
 .. code-block:: console
 
@@ -41,7 +41,7 @@ In order to create the Nios® V/g processor inside the FPGA device, please downl
 	Note:
 	-c 1 is referring to JTAG cable number connected to the Host Computer.
 	@1 is referring to device index on the JTAG Chain and may differ for your board.
-	top.sof is referring to Nios® V/m processor based system SRAM Object File.
+	top.sof is referring to Nios |reg| V/m processor based system SRAM Object File.
 
 Download Zephyr elf file and run application
 ============================================
@@ -52,7 +52,7 @@ To download the Zephyr Executable and Linkable Format .elf file, please use the 
 
 	niosv-download -g <elf file>
 
-Use the JTAG UART terminal to print the stdout and stderr of the Nios® V/g processor system.
+Use the JTAG UART terminal to print the stdout and stderr of the Nios |reg| V/g processor system.
 
 .. code-block:: console
 

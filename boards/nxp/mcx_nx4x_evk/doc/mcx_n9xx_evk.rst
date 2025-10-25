@@ -4,7 +4,7 @@ Overview
 ********
 
 MCX-N9XX-EVK is a full featured evaluation kit for prototyping of MCX N94 / N54
-MCUs. They offer industry standard headers for access to the MCU’s I/Os,
+MCUs. They offer industry standard headers for access to the MCU's I/Os,
 integrated open-standard serial interfaces and an on-board MCU-Link debugger
 with power measurement capability.  MCX N Series are high-performance, low-power
 microcontrollers with intelligent peripherals and accelerators providing
