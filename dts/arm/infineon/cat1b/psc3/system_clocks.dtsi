@@ -46,14 +46,29 @@
 			compatible = "infineon,fixed-clock";
 			clock-frequency = <96000000>;
 			system-clock = <IFX_FLL>;
-			status = "okay";
+			status = "disabled";
+		};
+
+		dpll_lp0: dpll_lp0 {
+			#clock-cells = <0>;
+			compatible = "infineon,fixed-clock";
+			clock-frequency = <0>;
+			system-clock = <IFX_DPLL250_0>;
+			status = "disabled";
+		};
+
+		dpll_lp1: dpll_lp1 {
+			#clock-cells = <0>;
+			compatible = "infineon,fixed-clock";
+			clock-frequency = <0>;
+			system-clock = <IFX_DPLL250_1>;
+			status = "disabled";
 		};
 
 		/* path mux0 */
 		path_mux0: path_mux0 {
 			#clock-cells = <0>;
 			compatible = "infineon,fixed-factor-clock";
-			clocks = <&clk_iho>;
 			system-clock = <IFX_PATHMUX>;
 			instance = <0>;
 			source-path = <IFX_CAT1_CLKPATH_IN_IHO>;
@@ -64,7 +79,6 @@
 		path_mux1: path_mux1 {
 			#clock-cells = <0>;
 			compatible = "infineon,fixed-factor-clock";
-			clocks = <&clk_iho>;
 			system-clock = <IFX_PATHMUX>;
 			instance = <1>;
 			source-path = <IFX_CAT1_CLKPATH_IN_IHO>;
@@ -75,7 +89,6 @@
 		path_mux2: path_mux2 {
 			#clock-cells = <0>;
 			compatible = "infineon,fixed-factor-clock";
-			clocks = <&clk_iho>;
 			system-clock = <IFX_PATHMUX>;
 			instance = <2>;
 			source-path = <IFX_CAT1_CLKPATH_IN_IHO>;
@@ -86,7 +99,6 @@
 		path_mux3: path_mux3 {
 			#clock-cells = <0>;
 			compatible = "infineon,fixed-factor-clock";
-			clocks = <&clk_iho>;
 			system-clock = <IFX_PATHMUX>;
 			instance = <3>;
 			source-path = <IFX_CAT1_CLKPATH_IN_IHO>;
@@ -98,9 +110,9 @@
 			#clock-cells = <0>;
 			compatible = "infineon,fixed-factor-clock";
 			clock-div = <IFX_CLK_HF_NO_DIVIDE>;
-			clocks = <&path_mux1>;
 			system-clock = <IFX_HF>;
 			instance = <0>;
+			source-path = <IFX_CLK_HF_IN_CLKPATH0>;
 			status = "disabled";
 		};
 
@@ -109,9 +121,9 @@
 			#clock-cells = <0>;
 			compatible = "infineon,fixed-factor-clock";
 			clock-div = <IFX_CLK_HF_NO_DIVIDE>;
-			clocks = <&path_mux1>;
 			system-clock = <IFX_HF>;
 			instance = <1>;
+			source-path = <IFX_CLK_HF_IN_CLKPATH0>;
 			status = "disabled";
 		};
 
@@ -120,9 +132,9 @@
 			#clock-cells = <0>;
 			compatible = "infineon,fixed-factor-clock";
 			clock-div = <IFX_CLK_HF_NO_DIVIDE>;
-			clocks = <&path_mux0>;
 			system-clock = <IFX_HF>;
 			instance = <2>;
+			source-path = <IFX_CLK_HF_IN_CLKPATH0>;
 			status = "disabled";
 		};
 
@@ -131,9 +143,9 @@
 			#clock-cells = <0>;
 			compatible = "infineon,fixed-factor-clock";
 			clock-div = <IFX_CLK_HF_NO_DIVIDE>;
-			clocks = <&path_mux2>;
 			system-clock = <IFX_HF>;
 			instance = <3>;
+			source-path = <IFX_CLK_HF_IN_CLKPATH0>;
 			status = "disabled";
 		};
 
@@ -142,9 +154,9 @@
 			#clock-cells = <0>;
 			compatible = "infineon,fixed-factor-clock";
 			clock-div = <IFX_CLK_HF_NO_DIVIDE>;
-			clocks = <&path_mux0>;
 			system-clock = <IFX_HF>;
 			instance = <4>;
+			source-path = <IFX_CLK_HF_IN_CLKPATH0>;
 			status = "disabled";
 		};
 	};
