@@ -21,14 +21,17 @@ struct flash_mspi_nor_quirks {
 };
 
 /* Extend this macro when adding new flash chip with quirks */
-#define FLASH_MSPI_QUIRKS_GET(node)						\
-	COND_CODE_1(DT_NODE_HAS_COMPAT_STATUS(node, mxicy_mx25r, okay),		\
-		    (&flash_quirks_mxicy_mx25r),				\
-	(COND_CODE_1(DT_NODE_HAS_COMPAT_STATUS(node, mxicy_mx25u, okay),	\
-		    (&flash_quirks_mxicy_mx25u),				\
-		    (NULL))))
+#define FLASH_QUIRKS(inst) \
+	DT_INST_ENUM_HAS_VALUE(inst, chip_family, mxicy_mx25r) ? \
+		&flash_quirks_mxicy_mx25r : \
+	DT_INST_ENUM_HAS_VALUE(inst, chip_family, mxicy_mx25um) || \
+	DT_INST_ENUM_HAS_VALUE(inst, chip_family, mxicy_mx25uw) || \
+	DT_INST_ENUM_HAS_VALUE(inst, chip_family, mxicy_mx66um) || \
+	DT_INST_ENUM_HAS_VALUE(inst, chip_family, mxicy_mx66uw) ? \
+		&flash_quirks_mxicy_mx25um : \
+	NULL
 
-#if DT_HAS_COMPAT_STATUS_OKAY(mxicy_mx25r)
+/* ---- Macronix MX25R ---- */
 
 #define MXICY_MX25R_LH_MASK BIT(1)
 #define MXICY_MX25R_QE_MASK BIT(6)
@@ -115,15 +118,13 @@ static inline int mxicy_mx25r_post_switch_mode(const struct device *dev)
 	return 0;
 }
 
-struct flash_mspi_nor_quirks flash_quirks_mxicy_mx25r = {
+__unused struct flash_mspi_nor_quirks flash_quirks_mxicy_mx25r = {
 	.post_switch_mode = mxicy_mx25r_post_switch_mode,
 };
 
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(mxicy_mx25r) */
+/* ---- Macronix MX25UM, MX25UW, MX66UM, MX66UW ---- */
 
-#if DT_HAS_COMPAT_STATUS_OKAY(mxicy_mx25u)
-
-static inline int mxicy_mx25u_post_switch_mode(const struct device *dev)
+static inline int mxicy_mx25um_post_switch_mode(const struct device *dev)
 {
 	const struct flash_mspi_nor_config *dev_config = dev->config;
 	struct flash_mspi_nor_data *dev_data = dev->data;
@@ -162,7 +163,7 @@ static inline int mxicy_mx25u_post_switch_mode(const struct device *dev)
 	return perform_xfer(dev, SPI_NOR_CMD_WR_CFGREG2, false);
 }
 
-static int mxicy_mx25u_pre_init(const struct device *dev)
+static int mxicy_mx25um_pre_init(const struct device *dev)
 {
 	const struct flash_mspi_nor_config *dev_config = dev->config;
 	struct flash_mspi_nor_data *dev_data = dev->data;
@@ -204,11 +205,9 @@ static int mxicy_mx25u_pre_init(const struct device *dev)
 	return 0;
 }
 
-struct flash_mspi_nor_quirks flash_quirks_mxicy_mx25u = {
-	.pre_init = mxicy_mx25u_pre_init,
-	.post_switch_mode = mxicy_mx25u_post_switch_mode,
+__unused struct flash_mspi_nor_quirks flash_quirks_mxicy_mx25um = {
+	.pre_init = mxicy_mx25um_pre_init,
+	.post_switch_mode = mxicy_mx25um_post_switch_mode,
 };
-
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(mxicy_mx25u) */
 
 #endif /*__FLASH_MSPI_NOR_QUIRKS_H__*/
