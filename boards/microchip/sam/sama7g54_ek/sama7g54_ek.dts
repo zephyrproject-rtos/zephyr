@@ -13,7 +13,7 @@
 #include <zephyr/dt-bindings/gpio/microchip-sam-gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
-#include <microchip/sam/sama7g5.dtsi>
+#include <microchip/sam/sama7/sama7g5/sama7g54.dtsi>
 
 / {
 	model = "SAMA7G54-EK board";
