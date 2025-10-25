@@ -9,12 +9,10 @@ companies, and individuals from the community.
 
 A time-based release process enables the Zephyr project to provide users with a
 balance of the latest technologies and features and excellent overall quality. A
-roughly 4-month release cycle allows the project to coordinate development of
+roughly 6-month release cycle allows the project to coordinate development of
 the features that have actually been implemented, allowing the project to
 maintain the quality of the overall release without delays because of one or two
 features that are not ready yet.
-
-The Zephyr release model was loosely based on the Linux kernel model:
 
 - Release tagging procedure:
 
@@ -23,12 +21,12 @@ The Zephyr release model was loosely based on the Linux kernel model:
 - Each release period will consist of a development phase followed by a
   stabilization phase. Release candidates will be tagged during the
   stabilization phase. During the stabilization phase, only stabilization
-  changes such as bug fixes and documentation will be merged unless granted a
-  special exemption by the Technical Steering Committee.
+  changes such as bug fixes and documentation enhancements will be merged
+  unless granted a special exemption by the Technical Steering Committee.
 
   - Development phase: all changes are considered and merged, subject to
-    approval from the respective maintainers.
-  - Stabilisation phase: the release manager creates a vN-rc1 tag and the tree
+    approval from the respective maintainers and following the merge criteria.
+  - Stabilisation phase: the release managers creates a vN-rc1 tag and the tree
     enters the stabilization phase
   - CI sees the tag, builds and runs tests; Test teams analyse the report from the
     build and test run and give an ACK/NAK to the build
@@ -50,6 +48,63 @@ The Zephyr release model was loosely based on the Linux kernel model:
     The milestones for the current major version can be found on the
     `Official GitHub Wiki <https://github.com/zephyrproject-rtos/zephyr/wiki/Release-Management>`_.
     Information on previous releases can be found :ref:`here <zephyr_release_notes>`.
+
+
+.. _merge_criteria:
+
+Merge Criteria
+**************
+
+.. figure:: img/img_release_activity.png
+      :width: 663px
+      :align: center
+      :alt: Release Activity
+
+* All :ref:`pr_requirements` must be met.
+* Minimal of 2 approvals, including an approval by the designated assignee.
+* Pull requests should be reviewed by at least a maintainer or collaborator of
+  each affected area; Unless the changes to a given area are considered trivial
+  enough, in which case approvals by other affected subsystems
+  maintainers/collaborators would suffice.
+* Four eye principle on the organisation level. We already require at least 2
+  approvals (basic four eye principle), however, such reviews and approvals
+  might be unintentionally biased in the case where the submitter is from the
+  same organisation as the approvers. To allow for project wide review and
+  approvals, the merge criteria is extended with the guidelines below:
+
+  * Changes or additions to common and shared code shall have approvals from
+    different organisations (at least one approval from an
+    organisation different than the submitters').
+    Common and shared code is defined as anything that does not fall under
+    :file:`soc`, :file:`boards` and :file:`drivers/*/*`.
+  * Changes or additions to hardware support (driver, SoC, boards) shall at
+    least have the merger be from a different organisation. This applies only
+    to implementation of an API supporting vendor specific hardware and not the
+    APIs.
+  * Release engineers may make exceptions for areas with contributions primarily
+    coming from one organisation and where reviews from other organisations are
+    not possible, however, merges shall be completed by a person from a different
+    organisation. In such cases, the minimum review period of at least 2 days
+    shall be strictly followed to allow for additional reviews.
+  * Release engineers shall not merge code changes originating and reviewed
+    only by their own organisation. To be able to merge such changes, at least
+    one review shall be from a different organisation.
+
+* A minimum review period of 2 business days, 4 hours for trivial changes (see
+  :ref:`review_time`).
+* Hotfixes can be merged at any time after CI has passed and are excluded from
+  most of the conditions listed above.
+* All required checks are passing:
+
+  * Device Tree
+  * Documentation
+  * Code linters (Gitlint, Pylint, Ruff, Sphinx, etc.)
+  * Identity/Emails
+  * Kconfig
+  * License checks
+  * Checkpatch (Coding Style)
+  * Integration Tests (Via twister) on emulation/simulation platforms
+  * Simulated Bluetooth Tests
 
 Development Phase
 *****************
@@ -73,8 +128,8 @@ Stabilization Phase
 *******************
 
 Over the next weeks and depending on the release milestone, only stabilization,
-cosmetic changes, tests, bug and doc fixes are allowed (See :ref:`table
-<release_milestones>` below).
+cosmetic changes, tests, bug and documentation fixes and enhancements are
+allowed (See :ref:`table <release_milestones>` below).
 
 On occasion, more significant changes and new features will be allowed, but such
 occasions are rare and require a TSC approval and a justification. As a general
