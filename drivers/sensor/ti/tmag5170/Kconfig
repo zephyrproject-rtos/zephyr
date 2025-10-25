@@ -1,6 +1,7 @@
 # Texas Instruments TMAG5170 high-precision, linear 3D Hall-effect sensor with SPI bus interface
 
 # Copyright (c) 2023 Michal Morsisko
+# Copyright (c) 2025 Christoph Jans
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig TMAG5170
@@ -47,6 +48,12 @@ config TMAG5170_CRC
 	select CRC
 	help
 	  Verify CRC of RX data and append CRC to TX data
+
+config TMAG5170_SPI_WORD_SIZE
+	int "SPI word size"
+	default 32
+	help
+	  Set the SPI word size to one of the supported values (8, 16, 32).
 
 config TMAG5170_TRIGGER
 	bool
