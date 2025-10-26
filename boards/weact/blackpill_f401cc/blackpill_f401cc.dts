@@ -10,7 +10,7 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "WeAct Studio Black Pill V3.0 Board";
+	model = "WeAct Studio Black Pill V1.2 Board";
 	compatible = "weact,blackpill-f401ce";
 
 	chosen {
