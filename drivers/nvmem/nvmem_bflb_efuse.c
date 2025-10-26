@@ -6,11 +6,11 @@
 
 #define DT_DRV_COMPAT bflb_efuse
 
-#include <zephyr/drivers/syscon.h>
 #include <zephyr/kernel.h>
-
+#include <zephyr/drivers/nvmem.h>
+#include <zephyr/device.h>
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(efuse_bflb, CONFIG_SYSCON_LOG_LEVEL);
+#include <string.h>
 
 #include <bflb_soc.h>
 #include <hbn_reg.h>
@@ -18,12 +18,17 @@ LOG_MODULE_REGISTER(efuse_bflb, CONFIG_SYSCON_LOG_LEVEL);
 #include <extra_defines.h>
 #include <zephyr/drivers/clock_control/clock_control_bflb_common.h>
 
-struct efuse_bflb_data {
+#define LOG_LEVEL CONFIG_NVMEM_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(nvmem_bflb_efuse);
+
+struct nvmem_bflb_efuse_data {
 	uint8_t cache[DT_INST_PROP(0, size)];
 	bool cached;
+	struct nvmem_info live_info;
 };
 
-struct efuse_bflb_config {
+struct nvmem_bflb_efuse_config {
 	uintptr_t addr;
 	size_t size;
 };
@@ -41,7 +46,7 @@ static void efuse_bflb_clock_delay_32M_ms(uint32_t ms)
 static uint32_t efuse_bflb_is_pds_busy(const struct device *dev)
 {
 	uint32_t tmp;
-	const struct efuse_bflb_config *config = dev->config;
+	const struct nvmem_bflb_efuse_config *config = dev->config;
 
 	tmp = sys_read32(config->addr + EF_CTRL_EF_IF_CTRL_0_OFFSET);
 	if (tmp & EF_CTRL_EF_IF_0_BUSY_MSK) {
@@ -50,16 +55,9 @@ static uint32_t efuse_bflb_is_pds_busy(const struct device *dev)
 	return 0;
 }
 
-/* /!\ only use when running on 32Mhz Oscillator Clock
- * (system_set_root_clock(0);
- * system_set_root_clock_dividers(0, 0);
- * sys_write32(32 * 1000 * 1000, CORECLOCKREGISTER);)
- * Only Use with IRQs off
- * returns 0 when error
- */
 static void efuse_bflb_efuse_read(const struct device *dev)
 {
-	const struct efuse_bflb_config *config = dev->config;
+	const struct nvmem_bflb_efuse_config *config = dev->config;
 	uint32_t tmp;
 	uint32_t *pefuse_start = (uint32_t *)(config->addr);
 	uint32_t timeout = 0;
@@ -70,7 +68,7 @@ static void efuse_bflb_efuse_read(const struct device *dev)
 	} while (timeout < EF_CTRL_DFT_TIMEOUT_VAL && efuse_bflb_is_pds_busy(dev) > 0);
 
 	/* do a 'ahb clock' setup */
-	tmp =	EF_CTRL_EFUSE_CTRL_PROTECT
+	tmp =  EF_CTRL_EFUSE_CTRL_PROTECT
 		| (EF_CTRL_OP_MODE_AUTO << EF_CTRL_EF_IF_0_MANUAL_EN_POS)
 		| (EF_CTRL_PARA_DFT << EF_CTRL_EF_IF_0_CYC_MODIFY_POS)
 #if defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X)
@@ -92,7 +90,7 @@ static void efuse_bflb_efuse_read(const struct device *dev)
 
 	/* Load efuse region0 */
 	/* not ahb clock setup */
-	tmp =	EF_CTRL_EFUSE_CTRL_PROTECT
+	tmp =  EF_CTRL_EFUSE_CTRL_PROTECT
 		| (EF_CTRL_OP_MODE_AUTO << EF_CTRL_EF_IF_0_MANUAL_EN_POS)
 		| (EF_CTRL_PARA_DFT << EF_CTRL_EF_IF_0_CYC_MODIFY_POS)
 #if defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X)
@@ -106,7 +104,7 @@ static void efuse_bflb_efuse_read(const struct device *dev)
 	sys_write32(tmp, config->addr + EF_CTRL_EF_IF_CTRL_0_OFFSET);
 
 	/* trigger read */
-	tmp =	EF_CTRL_EFUSE_CTRL_PROTECT
+	tmp =  EF_CTRL_EFUSE_CTRL_PROTECT
 		| (EF_CTRL_OP_MODE_AUTO << EF_CTRL_EF_IF_0_MANUAL_EN_POS)
 		| (EF_CTRL_PARA_DFT << EF_CTRL_EF_IF_0_CYC_MODIFY_POS)
 #if defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X)
@@ -128,7 +126,7 @@ static void efuse_bflb_efuse_read(const struct device *dev)
 		!(tmp & EF_CTRL_EF_IF_0_AUTOLOAD_DONE_MSK));
 
 	/* do a 'ahb clock' setup */
-	tmp =	EF_CTRL_EFUSE_CTRL_PROTECT
+	tmp =  EF_CTRL_EFUSE_CTRL_PROTECT
 		| (EF_CTRL_OP_MODE_AUTO << EF_CTRL_EF_IF_0_MANUAL_EN_POS)
 		| (EF_CTRL_PARA_DFT << EF_CTRL_EF_IF_0_CYC_MODIFY_POS)
 #if defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X)
@@ -145,8 +143,8 @@ static void efuse_bflb_efuse_read(const struct device *dev)
 
 static void efuse_bflb_cache(const struct device *dev)
 {
-	struct efuse_bflb_data *data = dev->data;
-	const struct efuse_bflb_config *config = dev->config;
+	struct nvmem_bflb_efuse_data *data = dev->data;
+	const struct nvmem_bflb_efuse_config *config = dev->config;
 	uint32_t tmp;
 	uint8_t old_clock_root;
 	uint32_t key;
@@ -159,7 +157,7 @@ static void efuse_bflb_cache(const struct device *dev)
 	clock_bflb_settle();
 
 	efuse_bflb_efuse_read(dev);
-	/* reads *must* be 32-bits aligned AND does not work with the method memcpy uses */
+	/* reads must be 32-bits aligned AND does not work with the method memcpy uses */
 	for (int i = 0; i < config->size / sizeof(uint32_t); i++) {
 		tmp = sys_read32(config->addr + i * 4);
 		data->cache[i * sizeof(uint32_t) + 3] = (tmp & 0xFF000000U) >> 24;
@@ -175,11 +173,22 @@ static void efuse_bflb_cache(const struct device *dev)
 	irq_unlock(key);
 }
 
-static int efuse_bflb_read(const struct device *dev, uint16_t reg, uint32_t *val)
+static int nvmem_bflb_efuse_read(const struct device *dev, off_t offset,
+                                 void *buf, size_t len)
 {
-	struct efuse_bflb_data *data = dev->data;
+	struct nvmem_bflb_efuse_data *data = dev->data;
+	const struct nvmem_bflb_efuse_config *config = dev->config;
 
-	if (!val) {
+	if (!buf) {
+		return -EINVAL;
+	}
+
+	if (!len) {
+		return 0;
+	}
+
+	if ((offset + len) > (off_t)config->size) {
+		LOG_WRN("attempt to read past device boundary");
 		return -EINVAL;
 	}
 
@@ -187,42 +196,58 @@ static int efuse_bflb_read(const struct device *dev, uint16_t reg, uint32_t *val
 		efuse_bflb_cache(dev);
 	}
 
-	*val = *((uint32_t *)&data->cache[reg]);
+	memcpy(buf, &data->cache[offset], len);
 	return 0;
 }
 
-static int efuse_bflb_size(const struct device *dev, size_t *size)
+static int nvmem_bflb_efuse_write(const struct device *dev, off_t offset,
+				const void *buf, size_t len)
 {
-	const struct efuse_bflb_config *config = dev->config;
+	ARG_UNUSED(dev);
+	ARG_UNUSED(offset);
+	ARG_UNUSED(buf);
+	ARG_UNUSED(len);
 
-	*size = config->size;
-	return 0;
+	/* Efuse is read-only from nvmem API perspective */
+	return -EROFS;
 }
 
-static int efuse_bflb_get_base(const struct device *dev, uintptr_t *addr)
+static size_t nvmem_bflb_efuse_get_size(const struct device *dev)
 {
-	struct efuse_bflb_data *data = dev->data;
-
-	*addr = (uintptr_t)data->cache;
-	return 0;
+	const struct nvmem_bflb_efuse_config *config = dev->config;
+	return config->size;
 }
 
-static DEVICE_API(syscon, efuse_bflb_api) = {
-	.read = efuse_bflb_read,
-	.get_size = efuse_bflb_size,
-	.get_base = efuse_bflb_get_base,
+static const struct nvmem_info *nvmem_bflb_efuse_get_info(const struct device *dev)
+{
+	struct nvmem_bflb_efuse_data *data = dev->data;
+	return &data->live_info;
+}
+
+static DEVICE_API(nvmem, nvmem_bflb_efuse_api) = {
+	.read = nvmem_bflb_efuse_read,
+	.write = nvmem_bflb_efuse_write,
+	.get_size = nvmem_bflb_efuse_get_size,
+	.get_info = nvmem_bflb_efuse_get_info,
 };
 
-static const struct efuse_bflb_config efuse_config = {
-	.addr = DT_INST_REG_ADDR(0),
-	.size = DT_INST_PROP(0, size),
-};
+#define NVMEM_BFLB_EFUSE_DEFINE(inst)								\
+	static struct nvmem_bflb_efuse_data _CONCAT(nvmem_bflb_efuse_data, inst) = {		\
+		.cached = false,								\
+		.cache = {0},									\
+		.live_info = {									\
+			.type = NVMEM_TYPE_OTP,							\
+			.read_only = true,							\
+		},										\
+	};											\
+												\
+	static const struct nvmem_bflb_efuse_config _CONCAT(nvmem_bflb_efuse_cfg, inst) = {	\
+		.addr = DT_INST_REG_ADDR(inst),							\
+		.size = DT_INST_PROP(inst, size),						\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &_CONCAT(nvmem_bflb_efuse_data, inst),		\
+			&_CONCAT(nvmem_bflb_efuse_cfg, inst), POST_KERNEL,			\
+			CONFIG_NVMEM_MODEL_INIT_PRIORITY, &nvmem_bflb_efuse_api)
 
-static struct efuse_bflb_data efuse_data = {
-	.cached = false,
-	.cache = {0},
-};
-
-
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, &efuse_data, &efuse_config, POST_KERNEL,
-		      CONFIG_SYSCON_INIT_PRIORITY, &efuse_bflb_api);
+DT_INST_FOREACH_STATUS_OKAY(NVMEM_BFLB_EFUSE_DEFINE);
