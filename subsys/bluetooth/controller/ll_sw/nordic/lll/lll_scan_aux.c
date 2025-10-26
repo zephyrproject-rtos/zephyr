@@ -355,17 +355,70 @@ void lll_scan_aux_isr_aux_setup(void *param)
 	aux_start_us -= window_widening_us;
 	aux_start_us -= EVENT_JITTER_US;
 
-	start_us = radio_tmr_start_us(0, aux_start_us);
-	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-		lll_prof_cputime_capture();
+	/* NOTE: For slower CPUs, LLL execution context will introduce Radio ISR latency beyond
+	 *       the threshold to meet hard realtime deadline to setup auxiliary PDU reception.
+	 *       Detect the latency and gracefully close the radio event. If there is consecutive
+	 *       failure, then lets catch it in an assertion check.
+	 */
+	const uint8_t latency_skip_max = 3U;
+	static uint8_t latency_skip_countdown = latency_skip_max;
 
-		LL_ASSERT_MSG((start_us == (aux_start_us + 1U)),
-			      "%s: Radio ISR latency: %u us, CPU usage: %u"
-			      " aux_offset %u us, start_us %u != %u",
-			      __func__, lll_prof_latency_get(), lll_prof_cputime_get(),
-			      aux_offset_us, start_us, (aux_start_us + 1U));
-	} else {
-		LL_ASSERT_ERR(start_us == (aux_start_us + 1U));
+	/* Setup radio for hard realtime auxiliary PDU reception */
+	start_us = radio_tmr_start_us(0, aux_start_us);
+	if (start_us != (aux_start_us + 1U)) {
+		/* Failed to setup radio at the required hard realtime deadline, lets have assertion
+		 * check if we fail consecutively.
+		 */
+		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) && (latency_skip_countdown != 0U)) {
+			latency_skip_countdown--;
+
+			/* Gracefully close the radio event */
+			if (lll_aux) {
+				/* Auxiliary channel radio event done */
+				radio_isr_set(isr_done, lll_aux);
+			} else {
+				struct node_rx_pdu *node_rx2;
+
+				node_rx2 = ull_pdu_rx_alloc();
+				LL_ASSERT_ERR(node_rx2);
+
+				node_rx2->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
+
+				/* Use LLL scan context pointer which will be resolved to LLL aux
+				 * context in the `ull_scan_aux_release` function in ULL execution
+				 * context.
+				 * As ULL execution context is the one assigning the `lll->lll_aux`,
+				 * if it has not been assigned then `ull_scan_aux_release` will not
+				 * dereference it, but under race, if ULL execution did assign one,
+				 * it will free it.
+				 */
+				node_rx2->rx_ftr.param = lll;
+				node_rx2->rx_ftr.lll_aux = lll->lll_aux;
+
+				ull_rx_put_sched(node_rx2->hdr.link, node_rx2);
+
+				/* Go back to resuming primary channel scanning */
+				radio_isr_set(lll_scan_isr_resume, lll);
+			}
+
+			radio_disable();
+
+			return;
+		} else if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+			/* If profiling is enabled, lets be verbose */
+			lll_prof_cputime_capture();
+
+			LL_ASSERT_MSG(false,
+				      "%s: Radio ISR latency: %u us, CPU usage: %u"
+				      " aux_offset %u us, start_us %u != %u",
+				      __func__, lll_prof_latency_get(), lll_prof_cputime_get(),
+				      aux_offset_us, start_us, (aux_start_us + 1U));
+		} else {
+			LL_ASSERT_ERR(false);
+		}
+	} else if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
+		/* Radio has been setup successfully at the required hard realtime deadline */
+		latency_skip_countdown = latency_skip_max;
 	}
 
 	/* Setup header complete timeout */
