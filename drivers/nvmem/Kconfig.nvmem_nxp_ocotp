@@ -1,0 +1,23 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config NVMEM_NXP_OCOTP
+	bool "NXP On-Chip OTP controller driver"
+	default y
+	depends on DT_HAS_NXP_OCOTP_ENABLED
+	help
+	  NXP On-Chip OTP controller as a FUSE provider.
+
+config NVMEM_NXP_OCOTP_WRITE_ENABLE
+	bool "Enable programming of OCOTP fuses"
+	depends on NVMEM_NXP_OCOTP
+	default n
+	help
+	  Allow programming OCOTP via the NVMEM API. Disabled by default so the
+	  provider behaves as read-only unless a platform explicitly opts into
+	  write capability. When disabled, nvmem_write() on this provider returns
+	  -EROFS.
+
+if NVMEM_NXP_OCOTP_WRITE_ENABLE
+	comment "DANGER: OCOTP fuse programming is destructive and irreversible; enable only for provisioning in a controlled environment. Do NOT enable for production builds."
+endif
