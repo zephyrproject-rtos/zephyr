@@ -22,5 +22,6 @@ config NVMEM_MODEL_INIT_PRIORITY
 
 rsource "Kconfig.nvmem_nxp_ocotp"
 rsource "Kconfig.nvmem_lpc11u6x"
+rsource "Kconfig.nvmem_fm25xxx"
 
 endif # NVMEM_MODEL
