@@ -21,5 +21,6 @@ config NVMEM_MODEL_INIT_PRIORITY
 	  NVMEM device driver initialization priority.
 
 rsource "Kconfig.nvmem_nxp_ocotp"
+rsource "Kconfig.nvmem_lpc11u6x"
 
 endif # NVMEM_MODEL
