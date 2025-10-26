@@ -9,7 +9,7 @@
 #include <zephyr/drivers/stepper.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/stepper/stepper_drv84xx.h>
-#include "../step_dir/step_dir_stepper_common.h"
+#include <step_dir_stepper_common.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(drv84xx, CONFIG_STEPPER_LOG_LEVEL);

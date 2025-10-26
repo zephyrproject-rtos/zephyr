@@ -1,6 +1,8 @@
 # Copyright (c) 2024 Fabian Blatz <fabianblatz@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
+comment "Stepper Step-Dir Common"
+
 config STEP_DIR_STEPPER
 	bool
 	help
@@ -17,6 +19,6 @@ config STEP_DIR_STEPPER_COUNTER_TIMING
 
 module = STEP_DIR
 module-str = step_dir
-rsource "../Kconfig.stepper_event_template"
+source "drivers/stepper/Kconfig.stepper_event_template"
 
 endif # STEP_DIR_STEPPER
