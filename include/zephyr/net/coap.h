@@ -697,7 +697,7 @@ bool coap_packet_is_request(const struct coap_packet *cpkt);
  * @param addr Peer address
  * @param addr_len Peer address length
  *
- * @retval >= 0 in case of success.
+ * @retval >=0 in case of success.
  * @retval -ENOTSUP in case of invalid request code.
  * @retval -EPERM in case resource handler is not implemented.
  * @retval -ENOENT in case the resource is not found.
@@ -720,7 +720,7 @@ int coap_handle_request_len(struct coap_packet *cpkt,
  * @param addr Peer address
  * @param addr_len Peer address length
  *
- * @retval >= 0 in case of success.
+ * @retval >=0 in case of success.
  * @retval -ENOTSUP in case of invalid request code.
  * @retval -EPERM in case resource handler is not implemented.
  * @retval -ENOENT in case the resource is not found.
