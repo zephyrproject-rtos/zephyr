@@ -277,6 +277,10 @@ static int max30101_init(const struct device *dev)
 		data->total_channels++;
 	}
 
+	for (int i = 0; i < MAX30101_MAX_NUM_CHANNELS; i++) {
+		LOG_DBG("map[%d] = [%d][%d][%d]", i, data->map[i][0], data->map[i][1], data->map[i][2]);
+	}
+
 	return 0;
 }
 
