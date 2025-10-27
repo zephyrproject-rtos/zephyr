@@ -15,9 +15,11 @@ config SOC_SERIES_AM261X_R5F
 	select SOC_SERIES_AM261X
 
 config SOC_AM261X_R5F0_0
+	bool
 	select SOC_SERIES_AM261X_R5F
 
 config SOC_AM261X_R5F0_1
+	bool
 	select SOC_SERIES_AM261X_R5F
 
 config SOC_AM2612_R5F

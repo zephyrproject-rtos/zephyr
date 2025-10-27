@@ -1,0 +1,6 @@
+board:
+  name: am261x_lp
+  full_name: AM261x LaunchPad
+  vendor: ti
+  socs:
+  - name: am2612
