@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/mgmt/mcumgr/smp/smp.h>
 #include <zephyr/mgmt/mcumgr/transport/smp.h>
 #include <zcbor_encode.h>
 

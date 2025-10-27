@@ -160,22 +160,6 @@ void img_mgmt_release_lock(void)
 #endif
 }
 
-#if defined(CONFIG_MCUMGR_GRP_IMG_SLOT_INFO_HOOKS)
-static bool img_mgmt_reset_zse(struct smp_streamer *ctxt)
-{
-	zcbor_state_t *zse = ctxt->writer->zs;
-
-	/* Because there is already data in the buffer, it must be cleared first */
-	net_buf_reset(ctxt->writer->nb);
-	ctxt->writer->nb->len = sizeof(struct smp_hdr);
-	zcbor_new_encode_state(zse, ARRAY_SIZE(ctxt->writer->zs),
-			       ctxt->writer->nb->data + sizeof(struct smp_hdr),
-			       net_buf_tailroom(ctxt->writer->nb), 0);
-
-	return zcbor_map_start_encode(zse, CONFIG_MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES);
-}
-#endif
-
 #if defined(CONFIG_MCUMGR_GRP_IMG_TOO_LARGE_SYSBUILD)
 static bool img_mgmt_slot_max_size(size_t *area_sizes, zcbor_state_t *zse)
 {
@@ -627,7 +611,7 @@ static int img_mgmt_slot_info(struct smp_streamer *ctxt)
 					return err_rc;
 				}
 
-				ok = img_mgmt_reset_zse(ctxt) &&
+				ok = smp_mgmt_reset_zse(ctxt) &&
 				     smp_add_cmd_err(zse, err_group, (uint16_t)err_rc);
 
 				goto finish;
@@ -675,7 +659,7 @@ static int img_mgmt_slot_info(struct smp_streamer *ctxt)
 					return err_rc;
 				}
 
-				ok = img_mgmt_reset_zse(ctxt) &&
+				ok = smp_mgmt_reset_zse(ctxt) &&
 				     smp_add_cmd_err(zse, err_group, (uint16_t)err_rc);
 
 				goto finish;
