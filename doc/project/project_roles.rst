@@ -149,20 +149,6 @@ in addition to those listed for Contributors and Collaborators:
 Maintainer approval of pull requests are counted toward the minimum
 required approvals needed to merge a PR. Other criteria for merging may apply.
 
-Role Retirement
-###############
-
-* Individuals elected to the following Project roles, including, Maintainer,
-  Release Engineering Team member, Release Manager, but are no longer engaged
-  in the project as described by the rights and responsibilities of that role,
-  may be requested by the TSC to retire from the role they are elected.
-* Such a request needs to be raised as a motion in the TSC and be
-  approved by the TSC voting members.
-  By approval of the TSC the individual is considered to be retired
-  from the role they have been elected.
-* The above applies to elected TSC Project roles that may be defined
-  in addition.
-
 
 Teams and Supporting Activities
 ###############################
@@ -294,6 +280,17 @@ Roles / Permissions
 
     ================ =================== =========== ================ =========== =========== ============
 
+Role Retirement
+###############
+
+Individuals approved by the TSC or representatives of the TSC to fill a project
+role who are no longer actively fulfilling the rights and responsibilities
+associated with their role may be requested by the TSC to retire from that role.
+
+Retirements of inactive maintainers or collaborators are reflected by removing the
+individual's GitHub user name from the relevant sections of the
+:ref:`maintainers_file` in the Zephyr repository and may be initiated by the
+TSC, representatives of the TSC or by the individuals themselves.
 
 .. _maintainers_file:
 
