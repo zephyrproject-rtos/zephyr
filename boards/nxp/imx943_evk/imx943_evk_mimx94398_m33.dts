@@ -143,3 +143,7 @@
 	zephyr,random-mac-address;
 	status = "disabled";
 };
+
+&gpt_hw_timer1 {
+	status = "okay";
+};
