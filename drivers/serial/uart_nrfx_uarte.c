@@ -187,8 +187,8 @@ struct uarte_async_rx_cbwt {
 	uint8_t *anomaly_byte_dst;
 	uint8_t anomaly_byte;
 #endif
+	nrfx_gppi_handle_t ppi_h;
 	uint8_t bounce_idx;
-	uint8_t ppi_ch;
 	bool in_irq;
 	bool discard_fifo;
 };
@@ -1609,18 +1609,17 @@ static int cbwt_uarte_async_init(const struct device *dev)
 						NRF_UARTE_INT_RXTO_MASK;
 	uint32_t evt = nrf_uarte_event_address_get(cfg->uarte_regs, NRF_UARTE_EVENT_RXDRDY);
 	uint32_t tsk = nrf_timer_task_address_get(cfg->timer_regs, NRF_TIMER_TASK_COUNT);
-	nrfx_err_t ret;
+	int ret;
 
 	nrf_timer_mode_set(cfg->timer_regs, NRF_TIMER_MODE_COUNTER);
 	nrf_timer_bit_width_set(cfg->timer_regs, NRF_TIMER_BIT_WIDTH_32);
 
-	ret = nrfx_gppi_channel_alloc(&cbwt_data->ppi_ch);
-	if (ret != NRFX_SUCCESS) {
-		return -ENOMEM;
+	ret = nrfx_gppi_conn_alloc(evt, tsk, &cbwt_data->ppi_h);
+	if (ret < 0) {
+		return ret;
 	}
 
-	nrfx_gppi_channel_endpoints_setup(cbwt_data->ppi_ch, evt, tsk);
-	nrfx_gppi_channels_enable(BIT(cbwt_data->ppi_ch));
+	nrfx_gppi_conn_enable(cbwt_data->ppi_h);
 
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	cbwt_data->bounce_buf_swap_len = cfg->bounce_buf_swap_len;
