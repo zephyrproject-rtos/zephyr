@@ -34,8 +34,8 @@ tests:
     extra_configs:
       - CONFIG_VIDEO_ENCODER_H264=y
     extra_args:
-      - EXTRA_DTC_OVERLAY_FILE="app_h264enc.overlay"
-      - SHIELD=st_b_cams_imx_mb1854
+      - platform:stm32n6570_dk/stm32n657xx/sb:EXTRA_DTC_OVERLAY_FILE="app_h264enc.overlay"
+      - platform:stm32n6570_dk/stm32n657xx/sb:SHIELD=st_b_cams_imx_mb1854
     filter: dt_chosen_enabled("zephyr,camera")
     integration_platforms:
       - stm32n6570_dk/stm32n657xx/sb
@@ -46,8 +46,8 @@ tests:
     extra_configs:
       - CONFIG_VIDEO_ENCODER_JPEG=y
     extra_args:
-      - EXTRA_DTC_OVERLAY_FILE="app_jpegenc.overlay"
-      - SHIELD=st_b_cams_imx_mb1854
+      - platform:stm32n6570_dk/stm32n657xx/sb:EXTRA_DTC_OVERLAY_FILE="app_jpegenc.overlay"
+      - platform:stm32n6570_dk/stm32n657xx/sb:SHIELD=st_b_cams_imx_mb1854
     filter: dt_chosen_enabled("zephyr,camera")
     integration_platforms:
       - stm32n6570_dk/stm32n657xx/sb
