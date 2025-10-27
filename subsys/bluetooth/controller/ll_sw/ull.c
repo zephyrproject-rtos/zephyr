@@ -2005,11 +2005,21 @@ void ull_ticker_status_give(uint32_t status, void *param)
 uint32_t ull_ticker_status_take(uint32_t ret, uint32_t volatile *ret_cb)
 {
 	if ((ret == TICKER_STATUS_BUSY) || (*ret_cb != TICKER_STATUS_BUSY)) {
+		/* lll_prepare_done() will disable ULL_LOW execution context when inside a Radio
+		 * event. Hence, force enable ULL_LOW execution context here so that ticker
+		 * operation be processed.
+		 */
+		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) &&
+		    (CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)) {
+			mayfly_enable(TICKER_USER_ID_THREAD, TICKER_USER_ID_ULL_LOW, 1U);
+		}
+
 		/* Operation is either pending of completed via callback
 		 * prior to this function call. Take the semaphore and wait,
 		 * or take it to balance take/give counting.
 		 */
 		k_sem_take(&sem_ticker_api_cb, K_FOREVER);
+
 		return *ret_cb;
 	}
 
