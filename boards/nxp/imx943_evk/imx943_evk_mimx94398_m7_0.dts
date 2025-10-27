@@ -46,3 +46,7 @@
 	pinctrl-0 = <&lpuart11_default>;
 	pinctrl-names = "default";
 };
+
+&gpt_hw_timer2 {
+	status = "okay";
+};
