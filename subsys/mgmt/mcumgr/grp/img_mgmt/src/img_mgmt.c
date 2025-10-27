@@ -345,6 +345,7 @@ int img_mgmt_read_info(int image_slot, struct image_version *ver, uint8_t *hash,
 				return rc;
 			}
 		}
+		data_off += IMAGE_SHA_LEN;
 	}
 
 	if (!hash_found) {
