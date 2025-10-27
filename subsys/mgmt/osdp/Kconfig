@@ -74,7 +74,7 @@ config OSDP_SKIP_MARK_BYTE
 
 config OSDP_SC_ENABLED
 	bool "OSDP Secure Channel"
-	depends on CSPRNG_AVAILABLE
+	depends on ENTROPY_NODE_ENABLED
 	default y
 	select CRYPTO
 	select CRYPTO_MBEDTLS_SHIM

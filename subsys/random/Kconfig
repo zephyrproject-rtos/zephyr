@@ -77,7 +77,7 @@ endchoice # RNG_GENERATOR_CHOICE
 
 
 DT_CHOSEN_Z_ENTROPY := zephyr,entropy
-config CSPRNG_AVAILABLE
+config ENTROPY_NODE_ENABLED
 	bool
 	default y if $(dt_chosen_enabled,$(DT_CHOSEN_Z_ENTROPY))
 	help
@@ -85,7 +85,7 @@ config CSPRNG_AVAILABLE
 	  CS random values. For this to be enabled, there must be the "zephyr,entropy"
 	  chosen property defined in the devicetree. This means that there is an
 	  HW entropy generator that can be used for this purpose.
-	  Once CONFIG_CSPRNG_AVAILABLE is set, then CONFIG_ENTROPY_GENERATOR can
+	  Once CONFIG_ENTROPY_NODE_ENABLED is set, then CONFIG_ENTROPY_GENERATOR can
 	  be enabled to enable the platform specific entropy driver.
 
 #
