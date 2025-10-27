@@ -37,8 +37,9 @@ int main(void)
 	LOG_INF("nrfx_gpiote sample on %s", CONFIG_BOARD);
 
 	nrfx_err_t err;
+	int rv;
 	uint8_t in_channel, out_channel;
-	uint8_t ppi_channel;
+	nrfx_gppi_handle_t ppi_handle;
 	const nrfx_gpiote_t gpiote = NRFX_GPIOTE_INSTANCE(GPIOTE_INST);
 
 	/* Connect GPIOTE instance IRQ to irq handler */
@@ -116,23 +117,20 @@ int main(void)
 
 	LOG_INF("nrfx_gpiote initialized");
 
-	/* Allocate a (D)PPI channel. */
-	err = nrfx_gppi_channel_alloc(&ppi_channel);
-	if (err != NRFX_SUCCESS) {
-		LOG_ERR("nrfx_gppi_channel_alloc error: 0x%08X", err);
-		return 0;
-	}
-
 	/* Configure endpoints of the channel so that the input pin event is
 	 * connected with the output pin OUT task. This means that each time
 	 * the button is pressed, the LED pin will be toggled.
 	 */
-	nrfx_gppi_channel_endpoints_setup(ppi_channel,
-		nrfx_gpiote_in_event_address_get(&gpiote, INPUT_PIN),
-		nrfx_gpiote_out_task_address_get(&gpiote, OUTPUT_PIN));
+	rv = nrfx_gppi_conn_alloc(nrfx_gpiote_in_event_address_get(&gpiote, INPUT_PIN),
+				   nrfx_gpiote_out_task_address_get(&gpiote, OUTPUT_PIN),
+				   &ppi_handle);
+	if (rv < 0) {
+		LOG_ERR("nrfx_gppi_conn_alloc error: 0x%08X", rv);
+		return 0;
+	}
 
 	/* Enable the channel. */
-	nrfx_gppi_channels_enable(BIT(ppi_channel));
+	nrfx_gppi_conn_enable(ppi_handle);
 
 	LOG_INF("(D)PPI configured, leaving main()");
 	return 0;
