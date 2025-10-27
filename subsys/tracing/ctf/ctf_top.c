@@ -1010,7 +1010,7 @@ void sys_trace_socket_accept_enter(int sock)
 	ctf_top_socket_accept_enter(sock);
 }
 
-void sys_trace_socket_accept_exit(int sock, const struct sockaddr *addr, const size_t *addrlen,
+void sys_trace_socket_accept_exit(int sock, const struct sockaddr *addr, const uint32_t *addrlen,
 				  int ret)
 {
 	ctf_net_bounded_string_t addr_str = {"unknown"};
