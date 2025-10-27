@@ -17,8 +17,12 @@ config MCUX_CORE_SUFFIX
 config NUM_IRQS
 	default 405
 
+config CORTEX_M_SYSTICK
+	default n if MCUX_GPT_TIMER
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
+	default 32768 if MCUX_GPT_TIMER
 
 choice CACHE_TYPE
 	default EXTERNAL_CACHE
@@ -34,6 +38,12 @@ if PM
 
 config IDLE_STACK_SIZE
 	default 640
+
+config MCUX_GPT_TIMER
+	default y
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1024
 
 endif
 
