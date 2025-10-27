@@ -91,6 +91,18 @@ config ENTROPY_NODE_ENABLED
 	  CONFIG_ENTROPY_NODE_ENABLED is set works fine, it might not be the desired
 	  effect for all the scenarios because then the driver will effectively be
 	  enabled even if there is no usage of it.
+	  The only workaround for these problems to tentatively enable
+	  CONFIG_CSPRNG_NEEDED and check the "return value" on CONFIG_CSPRNG_ENABLED.
+
+config CSPRNG_NEEDED
+	bool "Use CSPRNG if possible on the current platform"
+	select ENTROPY_GENERATOR if ENTROPY_NODE_ENABLED
+	help
+	  If a DT node exists for an entropy generator (i.e. CONFIG_ENTROPY_NODE_ENABLED
+	  is set) then enable this symbol and check the "result" in CONFIG_CSPRNG_ENABLED
+	  to see if the corresponding driver was really enabled in the build.
+	  This will ensure that (a) there really is a entropy driver for this platform and
+	  (b) it will only get enabled when there is someone needing it.
 
 #
 # Implied dependency on a cryptographically secure entropy source when
