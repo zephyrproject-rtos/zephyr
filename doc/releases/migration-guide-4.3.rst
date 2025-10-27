@@ -472,6 +472,18 @@ Modules
 * The TinyCrypt library was removed as the upstream version is no longer maintained.
   PSA Crypto API is now the recommended cryptographic library for Zephyr.
 
+MCUboot
+=======
+
+* The default operating mode for MCUboot has been changed to swap using offset, this provides
+  faster swap updates needed less overhead and reduces the flash endurance cycles required to
+  perform an update, the previous default was swap using move. If a board was optimised for swap
+  using move by having a primary slot that was one sector larger than the secondary then this
+  needs to change to have the secondary slot one sector larger than the primary (for optimised
+  usage, it is still supported to have both slots the same number of sectors). Alternatively, the
+  previous swap using move mode can be selected in sysbuild by using
+  :kconfig:option:`SB_CONFIG_MCUBOOT_MODE_SWAP_USING_MOVE`.
+
 Silabs
 ======
 
@@ -524,6 +536,11 @@ Trusted Firmware-M
       that S and NS images are unconfirmed by default, and the application is responsible for
       confirming them with ``psa_fwu_accept()``. Otherwise, the images will roll back on the next
       reboot.
+
+* Support for automatically downloading MCUboot and ethos by CMake in a build has been removed,
+  the in-tree versions of these modules will be used instead. To use custom versions, create a
+  :ref:`west manifest <west-manifest-files>` which pulls in the desired versions of these
+  repositories instead.
 
 Architectures
 *************
