@@ -153,7 +153,7 @@
 };
 
 &fircdiv1_clk {
-	clock-div = <1>;
+	clock-div = <8>;
 };
 
 &fircdiv2_clk {
@@ -265,6 +265,10 @@
 };
 
 &crc {
+	status = "okay";
+};
+
+&ftm0 {
 	status = "okay";
 };
 
