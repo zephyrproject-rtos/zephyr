@@ -85,16 +85,8 @@ mapping:
       llext-edk:
         type: map
         mapping:
-          cflags:
-            type: seq
-            sequence:
-              - type: str
           file:
             type: str
-          include-dirs:
-            type: seq
-            sequence:
-              - type: str
           remove-cflags:
             type: seq
             sequence:
