@@ -5,12 +5,12 @@ Overview
 
 The WeAct Studio STM32WB55 Core Board is a compact multi-protocol wireless and
 ultra-low-power development board embedding a powerful radio compliant with the
-Bluetooth|reg| Low Energy (BLE) SIG specification v5.0 and with IEEE 802.15.4-2011.
+Bluetooth |reg| Low Energy (BLE) SIG specification v5.0 and with IEEE 802.15.4-2011.
 
 - STM32WB55CGU6 microcontroller in UFQFPN48 package
-- 2.4 GHz RF transceiver supporting Bluetooth|reg| specification v5.0 and
+- 2.4 GHz RF transceiver supporting Bluetooth |reg| specification v5.0 and
   IEEE 802.15.4-2011 PHY and MAC
-- Dedicated Arm|reg| 32-bit Cortex|reg| M0+ CPU for real-time Radio layer
+- Dedicated Arm |reg| 32-bit Cortex |reg| M0+ CPU for real-time Radio layer
 - One user LED (Blue)
 - One BOOT button
 - One RESET button
@@ -34,13 +34,13 @@ provides the following hardware capabilities:
 - Radio:
 
   - 2.4GHz
-  - RF transceiver supporting Bluetooth|reg| 5 specification, IEEE 802.15.4-2011 PHY and MAC,
-    supporting Thread and ZigBee|reg| 3.0
-  - RX Sensitivity: -96 dBm (Bluetooth|reg| Low Energy at 1 Mbps), -100 dBm (802.15.4)
+  - RF transceiver supporting Bluetooth |reg| 5 specification, IEEE 802.15.4-2011 PHY and MAC,
+    supporting Thread and ZigBee |reg| 3.0
+  - RX Sensitivity: -96 dBm (Bluetooth |reg| Low Energy at 1 Mbps), -100 dBm (802.15.4)
   - Programmable output power up to +6 dBm with 1 dB steps
   - Integrated balun to reduce BOM
   - Support for 2 Mbps
-  - Dedicated Arm|reg| 32-bit Cortex|reg| M0+ CPU for real-time Radio layer
+  - Dedicated Arm |reg| 32-bit Cortex |reg| M0+ CPU for real-time Radio layer
   - Accurate RSSI to enable power control
 
 - Clock Sources:
