@@ -7,7 +7,7 @@
 
 /dts-v1/;
 
-#include <qemu/virt-riscv32.dtsi>
+#include <qemu/virt-riscv32e.dtsi>
 
 / {
 	chosen {
