@@ -321,6 +321,7 @@
 			reg = <0x40013000 0x400>;
 			interrupts = <34 5>;
 			clocks = <&rcc STM32_CLOCK(APB2, 12)>;
+			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
 
@@ -331,6 +332,7 @@
 			reg = <0x40003800 0x400>;
 			interrupts = <35 5>;
 			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
+			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
 
@@ -341,6 +343,7 @@
 			reg = <0x58010000 0x400>;
 			interrupts = <44 5>;
 			clocks = <&rcc STM32_CLOCK(APB3, 0)>;
+			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 			use-subghzspi-nss;
 

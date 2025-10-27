@@ -352,6 +352,7 @@
 			reg = <0x40013000 0x400>;
 			interrupts = <59 5>;
 			clocks = <&rcc STM32_CLOCK(APB2, 12)>;
+			st,spi-data-width = "full-4-to-32-bit";
 			status = "disabled";
 		};
 
@@ -362,6 +363,7 @@
 			reg = <0x40003800 0x400>;
 			interrupts = <60 5>;
 			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
+			st,spi-data-width = "full-4-to-32-bit";
 			status = "disabled";
 		};
 
@@ -372,6 +374,7 @@
 			reg = <0x46002000 0x400>;
 			interrupts = <99 5>;
 			clocks = <&rcc STM32_CLOCK(APB3, 5)>;
+			st,spi-data-width = "limited-8-16-bit";
 			status = "disabled";
 		};
 
