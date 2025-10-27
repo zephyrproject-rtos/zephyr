@@ -169,3 +169,9 @@ temp_sensor: &tsen {
 &mailbox {
 	status = "okay";
 };
+
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+};
