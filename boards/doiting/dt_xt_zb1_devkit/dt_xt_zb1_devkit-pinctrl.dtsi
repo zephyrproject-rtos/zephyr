@@ -31,4 +31,14 @@
 			input-schmitt-enable;
 		};
 	};
+
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <GPIO7_SPI_SCLK>,
+				 <GPIO8_SPI_MOSI>,
+				 <GPIO9_SPI_MISO>;
+			bias-pull-up;
+			input-schmitt-enable;
+		};
+	};
 };
