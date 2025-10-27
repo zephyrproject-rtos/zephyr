@@ -14,7 +14,7 @@ featuring always-on acoustic activity and wake-word detection, efficient HMI ope
 extended battery life.
 
 The evaluation kit carries a PSOC |trade| Edge E84 MCU on a SODIMM-based detachable SOM board connected to
-the baseboard. The MCU SOM also has 128 MB of QSP| Flash, 1GB of Octal Flash, 128MB of Octal RAM,
+the baseboard. The MCU SOM also has 128 MB of QSPI Flash, 1GB of Octal Flash, 128MB of Octal RAM,
 PSOC |trade| 4000T as CAPSENSE |trade| co-processor, and onboard AIROC |trade| Wi-Fi and Bluetooth |reg| combo.
 
 Hardware
