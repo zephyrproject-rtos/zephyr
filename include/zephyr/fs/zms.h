@@ -132,7 +132,7 @@ int zms_clear(struct zms_fs *fs);
  * to be written or 0.
  * When a rewrite of the same data already stored is attempted, nothing is written to flash,
  * thus 0 is returned. On error, returns negative value of error codes defined in `errno.h`.
- * @retval Number of bytes written (`len` or 0) on success.
+ * @return Number of bytes written (`len` or 0) on success.
  * @retval -EACCES if ZMS is still not initialized.
  * @retval -ENXIO if there is a device error.
  * @retval -EIO if there is a memory read/write error.
@@ -166,7 +166,7 @@ int zms_delete(struct zms_fs *fs, zms_id_t id);
  * @return Number of bytes read. On success, it will be equal to the number of bytes requested
  * to be read or less than that if the stored data has a smaller size than the requested one.
  * On error, returns negative value of error codes defined in `errno.h`.
- * @retval Number of bytes read (> 0) on success.
+ * @return Number of bytes read (> 0) on success.
  * @retval -EACCES if ZMS is still not initialized.
  * @retval -EIO if there is a memory read/write error.
  * @retval -ENOENT if there is no entry with the given `id`.
@@ -187,7 +187,7 @@ ssize_t zms_read(struct zms_fs *fs, zms_id_t id, void *data, size_t len);
  * to be read. When the return value is larger than the number of bytes requested to read this
  * indicates not all bytes were read, and more data is available. On error, returns negative
  * value of error codes defined in `errno.h`.
- * @retval Number of bytes read (> 0) on success.
+ * @return Number of bytes read (> 0) on success.
  * @retval -EACCES if ZMS is still not initialized.
  * @retval -EIO if there is a memory read/write error.
  * @retval -ENOENT if there is no entry with the given `id` and history counter.
@@ -203,7 +203,7 @@ ssize_t zms_read_hist(struct zms_fs *fs, zms_id_t id, void *data, size_t len, ui
  *
  * @return Data length contained in the ATE. On success, it will be equal to the number of bytes
  * in the ATE. On error, returns negative value of error codes defined in `errno.h`.
- * @retval Length of the entry with the given `id` (> 0) on success.
+ * @return Length of the entry with the given `id` (> 0) on success.
  * @retval -EACCES if ZMS is still not initialized.
  * @retval -EIO if there is a memory read/write error.
  * @retval -ENOENT if there is no entry with the given id.
@@ -220,7 +220,7 @@ ssize_t zms_get_data_length(struct zms_fs *fs, zms_id_t id);
  * still be written to the file system.
  * Calculating the free space is a time-consuming operation, especially on SPI flash.
  * On error, returns negative value of error codes defined in `errno.h`.
- * @retval Number of free bytes (>= 0) on success.
+ * @return Number of free bytes (>= 0) on success.
  * @retval -EACCES if ZMS is still not initialized.
  * @retval -EIO if there is a memory read/write error.
  * @retval -EINVAL if `fs` is NULL.
