@@ -152,7 +152,7 @@ int tp_poll(struct mqtt_sn_client *client)
 	return recvfrom_data.sz;
 }
 
-#define NUM_TEST_CLIENTS 15
+#define NUM_TEST_CLIENTS 16
 static ZTEST_BMEM struct mqtt_sn_client mqtt_clients[NUM_TEST_CLIENTS];
 static ZTEST_BMEM struct mqtt_sn_client *mqtt_client;
 
@@ -754,6 +754,26 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_will_message_update)
 	err = input(mqtt_client, msg_data_response, sizeof(msg_data_response), &gw_addr);
 	zassert_ok(err, "unexpected error %d", err);
 	err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(1));
+}
+
+/*
+ * Make sure the client rejects messages with truncated addresses.
+ */
+static ZTEST(mqtt_sn_client, test_mqtt_sn_large_address)
+{
+	int err;
+	static const uint8_t ping_request[] = {2, 0x16};
+	static const uint8_t large_addr_data[CONFIG_MQTT_SN_LIB_MAX_ADDR_SIZE + 1] = {0};
+	static const struct mqtt_sn_data large_addr = {
+		.data = large_addr_data,
+		.size = sizeof(large_addr_data),
+	};
+
+	mqtt_sn_connect_no_will(mqtt_client);
+	err = k_sem_take(&mqtt_sn_tx_sem, K_NO_WAIT);
+
+	err = input(mqtt_client, ping_request, sizeof(ping_request), &large_addr);
+	zassert_equal(err, -ENOBUFS, "unexpected error %d", err);
 }
 
 ZTEST_SUITE(mqtt_sn_client, NULL, NULL, setup, cleanup, NULL);
