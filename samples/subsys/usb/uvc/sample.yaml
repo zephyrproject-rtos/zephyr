@@ -37,6 +37,8 @@ tests:
       - EXTRA_DTC_OVERLAY_FILE="app_h264enc.overlay"
       - SHIELD=st_b_cams_imx_mb1854
     filter: dt_chosen_enabled("zephyr,camera")
+    platform_allow:
+      - stm32n6570_dk/stm32n657xx/sb
     integration_platforms:
       - stm32n6570_dk/stm32n657xx/sb
   sample.subsys.usb.uvc.encoder.jpeg:
@@ -49,5 +51,7 @@ tests:
       - EXTRA_DTC_OVERLAY_FILE="app_jpegenc.overlay"
       - SHIELD=st_b_cams_imx_mb1854
     filter: dt_chosen_enabled("zephyr,camera")
+    platform_allow:
+      - stm32n6570_dk/stm32n657xx/sb
     integration_platforms:
       - stm32n6570_dk/stm32n657xx/sb
