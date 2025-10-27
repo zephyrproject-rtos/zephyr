@@ -1909,8 +1909,12 @@ int mqtt_sn_input(struct mqtt_sn_client *client)
 	if (next_frame_size <= 0) {
 		return next_frame_size;
 	}
-
 	if (next_frame_size > client->rx.size) {
+		return -ENOBUFS;
+	}
+	if (rx_addr.size > sizeof(addr)) {
+		LOG_DBG("Received packet has an address larger than "
+			"CONFIG_MQTT_SN_LIB_MAX_ADDR_SIZE");
 		return -ENOBUFS;
 	}
 
