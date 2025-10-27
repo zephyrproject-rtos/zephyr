@@ -204,6 +204,26 @@
 			status = "disabled";
 		};
 
+		spi1: spi@50095000 {
+			compatible = "sifli,sf32lb-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x50095000 0x1000>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_SPI1>;
+			interrupts = <60 0>;
+			status = "disabled";
+		};
+
+		spi2: spi@50096000 {
+			compatible = "sifli,sf32lb-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x50096000 0x1000>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_SPI2>;
+			interrupts = <75 0>;
+			status = "disabled";
+		};
+
 		i2c1: i2c@5009c000 {
 			compatible = "sifli,sf32lb-i2c";
 			reg = <0x5009c000 0x1000>;
