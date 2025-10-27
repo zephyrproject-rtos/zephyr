@@ -156,6 +156,13 @@ set(build_info_file ${PROJECT_BINARY_DIR}/../build_info.yml)
 yaml_load(FILE ${build_info_file} NAME build_info)
 
 yaml_get(llext_edk_cflags NAME build_info KEY cmake llext-edk cflags)
+yaml_get(llext_remove_cflags NAME build_info KEY cmake llext-edk remove-cflags)
+yaml_get(llext_append_cflags NAME build_info KEY cmake llext-edk append-cflags)
+foreach(item IN_LIST ${llext_remove_cflags})
+  list(FILTER llext_edk_cflags EXCLUDE REGEX "^${item}$")
+endforeach()
+list(APPEND llext_edk_cflags ${llext_append_cflags})
+
 yaml_get(llext_edk_file NAME build_info KEY cmake llext-edk file)
 yaml_get(INTERFACE_INCLUDE_DIRECTORIES NAME build_info KEY cmake llext-edk include-dirs)
 yaml_get(APPLICATION_SOURCE_DIR NAME build_info KEY cmake application source-dir)
