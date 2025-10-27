@@ -1295,6 +1295,15 @@ New Samples
 Libraries / Subsystems
 **********************
 
+* Firmware
+
+  * SCMI
+
+    * Added :kconfig:option:`ARM_SCMI_CHAN_SEM_TIMEOUT_USEC` to allow configuring the channel semaphore timeout.
+    * Use :c:func:`scmi_status_to_errno` directly for checking the returned command status code.
+    * Added new parameter to :c:func:`scmi_send_message` allowing users to specify if they want to use polling or not.
+    * [NXP] Various additions related to the NXP-specific CPU protocol.
+
 * Logging:
 
   * Added hybrid rate-limited logging macros to prevent log flooding when messages are generated frequently.
