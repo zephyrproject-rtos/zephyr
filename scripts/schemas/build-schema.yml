@@ -95,6 +95,14 @@ mapping:
             type: seq
             sequence:
               - type: str
+          remove-cflags:
+            type: seq
+            sequence:
+              - type: str
+          append-cflags:
+            type: seq
+            sequence:
+              - type: str
       sysbuild:
         type: bool
       toolchain:
