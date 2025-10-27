@@ -410,7 +410,7 @@ static inline int dai_config_set(const struct device *dev,
  * @param dev Pointer to the device structure for the driver instance
  * @param cfg Pointer to the config structure to be filled by the instance
  * @param dir Stream direction: RX or TX as defined by DAI_DIR_*
- * @retval 0 if success, negative if invalid parameters or DAI un-configured
+ * @return 0 if success, negative if invalid parameters or DAI un-configured
  */
 static inline int dai_config_get(const struct device *dev,
 				 struct dai_config *cfg,
@@ -428,7 +428,7 @@ static inline int dai_config_get(const struct device *dev,
  * @param dir Stream direction: RX or TX as defined by DAI_DIR_*
  * @param stream_id Stream id: some drivers may have stream specific
  *        properties, this id specifies the stream.
- * @retval Pointer to the structure containing properties,
+ * @return Pointer to the structure containing properties,
  *         or NULL if error or no properties
  */
 static inline const struct dai_properties *dai_get_properties(const struct device *dev,
@@ -565,7 +565,7 @@ static inline int dai_ts_get(const struct device *dev, struct dai_ts_cfg *cfg,
  *
  * @retval 0 If successful.
  * @retval -ENOSYS If the configuration update operation is not implemented.
- * @retval Negative errno code if failure.
+ * @retval <0 Negative errno code if failure.
  */
 static inline int dai_config_update(const struct device *dev,
 									const void *bespoke_cfg,

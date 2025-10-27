@@ -90,7 +90,7 @@ __subsystem struct retained_mem_driver_api {
  *
  * @param dev		Retained memory device to use.
  *
- * @retval		Positive value indicating size in bytes on success, else negative errno
+ * @return		Positive value indicating size in bytes on success, else negative errno
  *			code.
  */
 __syscall ssize_t retained_mem_size(const struct device *dev);
@@ -110,7 +110,7 @@ static inline ssize_t z_impl_retained_mem_size(const struct device *dev)
  * @param buffer	Buffer to store read data in.
  * @param size		Size of data to read.
  *
- * @retval		0 on success else negative errno code.
+ * @return		0 on success else negative errno code.
  */
 __syscall int retained_mem_read(const struct device *dev, off_t offset, uint8_t *buffer,
 				size_t size);
@@ -144,7 +144,7 @@ static inline int z_impl_retained_mem_read(const struct device *dev, off_t offse
  * @param buffer	Data to write.
  * @param size		Size of data to be written.
  *
- * @retval		0 on success else negative errno code.
+ * @return		0 on success else negative errno code.
  */
 __syscall int retained_mem_write(const struct device *dev, off_t offset, const uint8_t *buffer,
 				 size_t size);
@@ -174,7 +174,7 @@ static inline int z_impl_retained_mem_write(const struct device *dev, off_t offs
  *
  * @param dev		Retained memory device to use.
  *
- * @retval		0 on success else negative errno code.
+ * @return		0 on success else negative errno code.
  */
 __syscall int retained_mem_clear(const struct device *dev);
 
