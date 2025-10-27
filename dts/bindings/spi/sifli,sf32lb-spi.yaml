@@ -1,0 +1,25 @@
+# Copyright (c) 2025, Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  SiFLI SPI controller for SF32LB family of MCUs.
+
+compatible: "sifli,sf32lb-spi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
