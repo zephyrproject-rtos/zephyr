@@ -24,4 +24,19 @@
 			input-enable;
 		};
 	};
+
+	spi1_default: spi1_default {
+		group1 {
+			pinmux = <PA24_SPI1_DIO>, <PA28_SPI1_CLK>, <PA29_SPI1_CS>;
+			input-enable;
+			input-schmitt-enable;
+		};
+
+		group2 {
+			pinmux = <PA25_SPI1_DI>;
+			input-enable;
+			input-schmitt-enable;
+			bias-pull-down;
+		};
+	};
 };
