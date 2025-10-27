@@ -141,8 +141,8 @@ docutils==0.21.2 \
     #   sphinx-rtd-theme
     #   sphinx-tabs
     #   sphinx-togglebutton
-doxmlparser==1.14.0 \
-    --hash=sha256:1037dcc4aadf908feb2d908685159972bb2975322fbe2b120f5cac5a938f0b14
+doxmlparser==1.15.0 \
+    --hash=sha256:a5107dbc96577c1078377790df9332d91845ce0f07c93b3fa393023195a4fe34
     # via -r requirements.in
 exceptiongroup==1.3.0 ; python_full_version < '3.11' \
     --hash=sha256:4d111e6e0c13d0644cad6ddaa7ed0261a0b36971f6d23e7ec9b4b9097da78a10 \
@@ -443,9 +443,9 @@ python-dateutil==2.9.0.post0 \
     --hash=sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3 \
     --hash=sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427
     # via pykwalify
-python-dotenv==1.1.1 \
-    --hash=sha256:31f23644fe2602f88ff55e1f5c79ba497e01224ee7737937930c448e4d0e24dc \
-    --hash=sha256:a8a6399716257f45be6a007360200409fce5cda2661e3dec71d23dc15f6189ab
+python-dotenv==1.2.1 \
+    --hash=sha256:42667e897e16ab0d66954af0e60a9caa94f0fd4ecf3aaf6d2d260eec1aa36ad6 \
+    --hash=sha256:b81ee9561e9ca4004139c6cbba3a238c32b03e4894671e181b671e8cb8425d61
     # via -r requirements.in
 pyyaml==6.0.3 \
     --hash=sha256:00c4bdeba853cc34e7dd471f16b4114f4162dc03e6b7afcc2128711f0eca823c \
