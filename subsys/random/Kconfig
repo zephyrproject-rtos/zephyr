@@ -114,6 +114,8 @@ config CSPRNG_ENABLED
 	default y
 	depends on ENTROPY_HAS_DRIVER
 	help
+	  Helper to confirm that there is an hardware entropy unit enabled in the build
+	  that can be used to provide CS random values.
 
 
 choice CSPRNG_GENERATOR_CHOICE
