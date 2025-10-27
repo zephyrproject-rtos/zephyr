@@ -982,7 +982,7 @@ static inline int i2c_transfer_cb_dt(const struct i2c_dt_spec *spec,
  * @param userdata Userdata passed to callback.
  *
  * @retval 0 if successful
- * @retval negative on error.
+ * @retval <0 negative on error.
  */
 static inline int i2c_write_read_cb(const struct device *dev, struct i2c_msg *msgs,
 				 uint8_t num_msgs, uint16_t addr, const void *write_buf,

@@ -283,8 +283,8 @@ __subsystem struct sdhc_driver_api {
  *
  * @param dev: SD host controller device
  * @retval 0 reset succeeded
- * @retval -ETIMEDOUT: controller reset timed out
- * @retval -EIO: reset failed
+ * @retval -ETIMEDOUT controller reset timed out
+ * @retval -EIO reset failed
  */
 __syscall int sdhc_hw_reset(const struct device *dev);
 
@@ -311,7 +311,7 @@ static inline int z_impl_sdhc_hw_reset(const struct device *dev)
  * @retval 0 command was sent successfully
  * @retval -ETIMEDOUT command timed out while sending
  * @retval -ENOTSUP host controller does not support command
- * @retval -EIO: I/O error
+ * @retval -EIO I/O error
  */
 __syscall int sdhc_request(const struct device *dev, struct sdhc_command *cmd,
 			   struct sdhc_data *data);
@@ -387,9 +387,9 @@ static inline int z_impl_sdhc_card_present(const struct device *dev)
  * allows an application to request the SD host controller to tune the card.
  * @param dev: SDHC device
  * @retval 0 tuning succeeded, card is ready for commands
- * @retval -ETIMEDOUT: tuning failed after timeout
- * @retval -ENOTSUP: controller does not support tuning
- * @retval -EIO: I/O error while tuning
+ * @retval -ETIMEDOUT tuning failed after timeout
+ * @retval -ENOTSUP controller does not support tuning
+ * @retval -EIO I/O error while tuning
  */
 __syscall int sdhc_execute_tuning(const struct device *dev);
 
@@ -466,8 +466,8 @@ static inline int z_impl_sdhc_get_host_props(const struct device *dev,
  *        indicating which interrupts should produce a callback
  * @param user_data: parameter that will be passed to callback function
  * @retval 0 interrupts were enabled, and callback was installed
- * @retval -ENOTSUP: controller does not support this function
- * @retval -EIO: I/O error
+ * @retval -ENOTSUP controller does not support this function
+ * @retval -EIO I/O error
  */
 __syscall int sdhc_enable_interrupt(const struct device *dev,
 				    sdhc_interrupt_cb_t callback,
@@ -495,8 +495,8 @@ static inline int z_impl_sdhc_enable_interrupt(const struct device *dev,
  * @param sources: bitmask of @ref sdhc_interrupt_source values
  *        indicating which interrupts should be disabled.
  * @retval 0 interrupts were disabled
- * @retval -ENOTSUP: controller does not support this function
- * @retval -EIO: I/O error
+ * @retval -ENOTSUP controller does not support this function
+ * @retval -EIO I/O error
  */
 __syscall int sdhc_disable_interrupt(const struct device *dev, int sources);
 
