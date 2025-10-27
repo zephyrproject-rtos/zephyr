@@ -434,6 +434,10 @@ static int ipc_pm_action(const struct device *dev, enum pm_device_action action)
 		if (devdata->resume_fn) {
 			ret = devdata->resume_fn(dev, devdata->resume_fn_args);
 		}
+		/* Clear tx_ack_pending to ensure driver is operational after resume.
+		 * Structure now contains function pointers, so memset() cannot be used.
+		 */
+		devdata->tx_ack_pending = false;
 		break;
 	default:
 		/* Return as default value when given PM action is not supported */
