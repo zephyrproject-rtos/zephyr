@@ -46,6 +46,34 @@ static char *get_ip_str(const struct net_sockaddr *sa, char *s, size_t maxlen)
 	return s;
 }
 
+static int get_multicast_ttl(struct mqtt_sn_transport_udp *udp, int *ttl, net_socklen_t *ttl_len)
+{
+	if (udp->bcaddr.sa_family == NET_AF_INET && IS_ENABLED(CONFIG_NET_IPV4)) {
+		return zsock_getsockopt(udp->sock, NET_IPPROTO_IP, ZSOCK_IP_MULTICAST_TTL, ttl,
+					ttl_len);
+	} else if (udp->bcaddr.sa_family == NET_AF_INET6 && IS_ENABLED(CONFIG_NET_IPV6)) {
+		return zsock_getsockopt(udp->sock, NET_IPPROTO_IPV6, ZSOCK_IPV6_MULTICAST_HOPS, ttl,
+					ttl_len);
+	}
+
+	LOG_ERR("Unknown AF");
+	return -EINVAL;
+}
+
+static int set_multicast_ttl(struct mqtt_sn_transport_udp *udp, int *ttl, net_socklen_t ttl_len)
+{
+	if (udp->bcaddr.sa_family == NET_AF_INET && IS_ENABLED(CONFIG_NET_IPV4)) {
+		return zsock_setsockopt(udp->sock, NET_IPPROTO_IP, ZSOCK_IP_MULTICAST_TTL, ttl,
+					ttl_len);
+	} else if (udp->bcaddr.sa_family == NET_AF_INET6 && IS_ENABLED(CONFIG_NET_IPV6)) {
+		return zsock_setsockopt(udp->sock, NET_IPPROTO_IPV6, ZSOCK_IPV6_MULTICAST_HOPS, ttl,
+					ttl_len);
+	}
+
+	LOG_ERR("Unknown AF");
+	return -EINVAL;
+}
+
 static int tp_udp_init(struct mqtt_sn_transport *transport)
 {
 	struct mqtt_sn_transport_udp *udp = UDP_TRANSPORT(transport);
@@ -160,18 +188,7 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 	}
 
 	optval = CONFIG_MQTT_SN_LIB_BROADCAST_RADIUS;
-	if (udp->bcaddr.sa_family == NET_AF_INET && IS_ENABLED(CONFIG_NET_IPV4)) {
-		err = zsock_setsockopt(udp->sock, NET_IPPROTO_IP,
-				       ZSOCK_IP_MULTICAST_TTL, &optval,
-				       sizeof(optval));
-	} else if (udp->bcaddr.sa_family == NET_AF_INET6 && IS_ENABLED(CONFIG_NET_IPV6)) {
-		err = zsock_setsockopt(udp->sock, NET_IPPROTO_IPV6,
-				       ZSOCK_IPV6_MULTICAST_HOPS, &optval,
-				       sizeof(optval));
-	} else {
-		LOG_ERR("Unknown AF");
-		return -EINVAL;
-	}
+	err = set_multicast_ttl(udp, &optval, sizeof(optval));
 	if (err < 0) {
 		return -errno;
 	}
@@ -195,28 +212,16 @@ static int tp_udp_sendto(struct mqtt_sn_client *client, void *buf, size_t sz, co
 	net_socklen_t ttl_len;
 
 	if (dest_addr == NULL) {
-		int level, optname;
-
 		LOG_HEXDUMP_DBG(buf, sz, "Sending Broadcast UDP packet");
 
 		/* Set ttl if requested value does not match existing*/
-		if (udp->bcaddr.sa_family == NET_AF_INET && IS_ENABLED(CONFIG_NET_IPV4)) {
-			level = NET_IPPROTO_IP;
-			optname = ZSOCK_IP_MULTICAST_TTL;
-		} else if (udp->bcaddr.sa_family == NET_AF_INET6 && IS_ENABLED(CONFIG_NET_IPV6)) {
-			level = NET_IPPROTO_IPV6;
-			optname = ZSOCK_IPV6_MULTICAST_HOPS;
-		} else {
-			LOG_ERR("Unknown AF");
-			return -EINVAL;
-		}
-		rc = zsock_getsockopt(udp->sock, level, optname, &ttl, &ttl_len);
+		rc = get_multicast_ttl(udp, &ttl, &ttl_len);
 		if (rc < 0) {
 			return -errno;
 		}
 		if (ttl != addrlen) {
 			ttl = addrlen;
-			rc = zsock_setsockopt(udp->sock, level, optname, &ttl, sizeof(ttl));
+			rc = set_multicast_ttl(udp, &ttl, sizeof(ttl));
 			if (rc < 0) {
 				return -errno;
 			}
