@@ -12,7 +12,7 @@ Here are some highlights of the Nucleo H563ZI board:
   SRAM in LQFP144 package
 - Board connectors:
 
-  - USB Type-C |trade| Sink device FS
+  - USB Type-C |reg| Sink device FS
   - Ethernet RJ45 connector compliant with IEEE-802.3-2002 (depending on STM32 support)
   - ST Zio expansion connector including Arduino Uno V3 connectivity (CN7, CN8, CN9, CN10)
   - ST morpho extension connector (CN11, CN12)

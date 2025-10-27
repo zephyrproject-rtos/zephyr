@@ -25,7 +25,7 @@ board:
 
 - Three users LEDs
 - Two push-buttons: USER and RESET
-- USB Type-C |trade| Sink device FS
+- USB Type-C |reg| Sink device FS
 
 Hardware
 ********

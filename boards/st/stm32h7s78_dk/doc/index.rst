@@ -9,7 +9,7 @@ STM32H7S7L8H6H microcontroller. Here are some highlights of the STM32H7S78-DK Di
 
 
 - STM32H7S7L8H6H microcontroller featuring 64Kbytes of Flash memory and 620 Kbytes of SRAM in 225-pin TFBGA package
-- USB Type-C |trade| Host and device with USB power-delivery controller
+- USB Type-C |reg| Host and device with USB power-delivery controller
 - SAI Audio DAC stereo with one audio jacks for input/output,
 - ST MEMS digital microphone with PDM interface
 - Octo-SPI interface connected to 512Mbit Octo-SPI NORFlash memory device (MX66UW1G45GXD100 from MACRONIX)
