@@ -7,8 +7,6 @@
 #include <stdlib.h>
 #include <zephyr/logging/log.h>
 #include "feedback.h"
-
-#include <nrfx_dppi.h>
 #include <nrfx_timer.h>
 #include <helpers/nrfx_gppi.h>
 
@@ -78,9 +76,10 @@ static struct feedback_ctx {
 
 struct feedback_ctx *feedback_init(void)
 {
+	int rv;
 	nrfx_err_t err;
-	uint8_t usbd_sof_gppi_channel;
-	uint8_t i2s_framestart_gppi_channel;
+	nrfx_gppi_handle_t usbd_sof_gppi_handle;
+	nrfx_gppi_handle_t i2s_framestart_gppi_handle;
 	const nrfx_timer_config_t cfg = {
 		.frequency = NRFX_MHZ_TO_HZ(16UL),
 		.mode = NRF_TIMER_MODE_TIMER,
@@ -88,6 +87,11 @@ struct feedback_ctx *feedback_init(void)
 		.interrupt_priority = NRFX_TIMER_DEFAULT_CONFIG_IRQ_PRIORITY,
 		.p_context = NULL,
 	};
+	uint32_t tsk1 = nrfx_timer_capture_task_address_get(&feedback_timer_instance,
+							    FEEDBACK_TIMER_USBD_SOF_CAPTURE);
+	uint32_t tsk2 = nrfx_timer_task_address_get(&feedback_timer_instance, NRF_TIMER_TASK_CLEAR);
+	uint32_t tsk3 = nrfx_timer_capture_task_address_get(&feedback_timer_instance,
+							    FEEDBACK_TIMER_I2S_FRAMESTART_CAPTURE);
 
 	feedback_target_init();
 
@@ -100,35 +104,23 @@ struct feedback_ctx *feedback_init(void)
 	}
 
 	/* Subscribe TIMER CAPTURE task to USBD SOF event */
-	err = nrfx_gppi_channel_alloc(&usbd_sof_gppi_channel);
-	if (err != NRFX_SUCCESS) {
-		LOG_ERR("gppi_channel_alloc failed with: %d\n", err);
+	rv = nrfx_gppi_conn_alloc(USB_SOF_EVENT_ADDRESS, tsk1, &usbd_sof_gppi_handle);
+	if (rv < 0) {
+		LOG_ERR("gppi_channel_alloc failed with: %d\n", rv);
 		return &fb_ctx;
 	}
 
-	nrfx_gppi_channel_endpoints_setup(usbd_sof_gppi_channel,
-		USB_SOF_EVENT_ADDRESS,
-		nrfx_timer_capture_task_address_get(&feedback_timer_instance,
-			FEEDBACK_TIMER_USBD_SOF_CAPTURE));
-	nrfx_gppi_fork_endpoint_setup(usbd_sof_gppi_channel,
-		nrfx_timer_task_address_get(&feedback_timer_instance,
-			NRF_TIMER_TASK_CLEAR));
-
-	nrfx_gppi_channels_enable(BIT(usbd_sof_gppi_channel));
+	nrfx_gppi_ep_attach(tsk2, usbd_sof_gppi_handle);
+	nrfx_gppi_conn_enable(usbd_sof_gppi_handle);
 
 	/* Subscribe TIMER CAPTURE task to I2S FRAMESTART event */
-	err = nrfx_gppi_channel_alloc(&i2s_framestart_gppi_channel);
-	if (err != NRFX_SUCCESS) {
-		LOG_ERR("gppi_channel_alloc failed with: %d\n", err);
+	rv = nrfx_gppi_conn_alloc(I2S_FRAMESTART_EVENT_ADDRESS, tsk3, &i2s_framestart_gppi_handle);
+	if (rv < 0) {
+		LOG_ERR("gppi_conn_alloc failed with: %d\n", rv);
 		return &fb_ctx;
 	}
 
-	nrfx_gppi_channel_endpoints_setup(i2s_framestart_gppi_channel,
-		I2S_FRAMESTART_EVENT_ADDRESS,
-		nrfx_timer_capture_task_address_get(&feedback_timer_instance,
-			FEEDBACK_TIMER_I2S_FRAMESTART_CAPTURE));
-
-	nrfx_gppi_channels_enable(BIT(i2s_framestart_gppi_channel));
+	nrfx_gppi_conn_enable(i2s_framestart_gppi_handle);
 
 	/* Enable feedback timer */
 	nrfx_timer_enable(&feedback_timer_instance);
