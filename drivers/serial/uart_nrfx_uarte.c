@@ -604,7 +604,7 @@ static int uarte_nrfx_configure(const struct device *dev,
 	struct uarte_nrfx_data *data = dev->data;
 	nrf_uarte_config_t uarte_cfg;
 
-#if defined(UARTE_CONFIG_STOP_Msk)
+#if NRF_UARTE_HAS_STOP_MODES
 	switch (cfg->stop_bits) {
 	case UART_CFG_STOP_BITS_1:
 		uarte_cfg.stop = NRF_UARTE_STOP_ONE;
@@ -636,7 +636,7 @@ static int uarte_nrfx_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-#if defined(UARTE_CONFIG_PARITYTYPE_Msk)
+#if NRF_UARTE_HAS_PARITY_TYPES
 	uarte_cfg.paritytype = NRF_UARTE_PARITYTYPE_EVEN;
 #endif
 	switch (cfg->parity) {
@@ -646,7 +646,7 @@ static int uarte_nrfx_configure(const struct device *dev,
 	case UART_CFG_PARITY_EVEN:
 		uarte_cfg.parity = NRF_UARTE_PARITY_INCLUDED;
 		break;
-#if defined(UARTE_CONFIG_PARITYTYPE_Msk)
+#if NRF_UARTE_HAS_PARITY_TYPES
 	case UART_CFG_PARITY_ODD:
 		uarte_cfg.parity = NRF_UARTE_PARITY_INCLUDED;
 		uarte_cfg.paritytype = NRF_UARTE_PARITYTYPE_ODD;

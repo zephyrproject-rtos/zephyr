@@ -28,10 +28,10 @@ BUILD_ASSERT((NRF_SAADC_AIN0 == NRFX_ANALOG_EXTERNAL_AIN0) &&
 	     (NRF_SAADC_AIN5 == NRFX_ANALOG_EXTERNAL_AIN5) &&
 	     (NRF_SAADC_AIN6 == NRFX_ANALOG_EXTERNAL_AIN6) &&
 	     (NRF_SAADC_AIN7 == NRFX_ANALOG_EXTERNAL_AIN7) &&
-#if defined(SAADC_CH_PSELP_PSELP_VDDHDIV5)
+#if NRF_SAADC_HAS_INPUT_VDDHDIV5
 	     (NRF_SAADC_VDDHDIV5 == NRFX_ANALOG_INTERNAL_VDDHDIV5) &&
 #endif
-#if defined(SAADC_CH_PSELP_PSELP_VDD)
+#if NRF_SAADC_HAS_INPUT_VDD
 	     (NRF_SAADC_VDD == NRFX_ANALOG_INTERNAL_VDD) &&
 #endif
 	     1,
@@ -121,42 +121,42 @@ static int gain_set(nrf_saadc_channel_config_t *ch_cfg, enum adc_gain gain)
 {
 #if NRF_SAADC_HAS_CH_GAIN
 	switch (gain) {
-#if defined(SAADC_CH_CONFIG_GAIN_Gain1_6)
+#if NRF_SAADC_HAS_GAIN_1_6
 	case ADC_GAIN_1_6:
 		ch_cfg->gain = NRF_SAADC_GAIN1_6;
 		break;
 #endif
-#if defined(SAADC_CH_CONFIG_GAIN_Gain1_5)
+#if NRF_SAADC_HAS_GAIN_1_5
 	case ADC_GAIN_1_5:
 		ch_cfg->gain = NRF_SAADC_GAIN1_5;
 		break;
 #endif
-#if defined(SAADC_CH_CONFIG_GAIN_Gain1_4) || defined(SAADC_CH_CONFIG_GAIN_Gain2_8)
+#if NRF_SAADC_HAS_GAIN_1_4
 	case ADC_GAIN_1_4:
 		ch_cfg->gain = NRF_SAADC_GAIN1_4;
 		break;
 #endif
-#if defined(SAADC_CH_CONFIG_GAIN_Gain2_7)
+#if NRF_SAADC_HAS_GAIN_2_7
 	case ADC_GAIN_2_7:
 		ch_cfg->gain = NRF_SAADC_GAIN2_7;
 		break;
 #endif
-#if defined(SAADC_CH_CONFIG_GAIN_Gain1_3) || defined(SAADC_CH_CONFIG_GAIN_Gain2_6)
+#if NRF_SAADC_HAS_GAIN_1_3
 	case ADC_GAIN_1_3:
 		ch_cfg->gain = NRF_SAADC_GAIN1_3;
 		break;
 #endif
-#if defined(SAADC_CH_CONFIG_GAIN_Gain2_5)
+#if NRF_SAADC_HAS_GAIN_2_5
 	case ADC_GAIN_2_5:
 		ch_cfg->gain = NRF_SAADC_GAIN2_5;
 		break;
 #endif
-#if defined(SAADC_CH_CONFIG_GAIN_Gain1_2) || defined(SAADC_CH_CONFIG_GAIN_Gain2_4)
+#if NRF_SAADC_HAS_GAIN_1_2
 	case ADC_GAIN_1_2:
 		ch_cfg->gain = NRF_SAADC_GAIN1_2;
 		break;
 #endif
-#if defined(SAADC_CH_CONFIG_GAIN_Gain2_3)
+#if NRF_SAADC_HAS_GAIN_2_3
 	case ADC_GAIN_2_3:
 		ch_cfg->gain = NRF_SAADC_GAIN2_3;
 		break;
@@ -167,7 +167,7 @@ static int gain_set(nrf_saadc_channel_config_t *ch_cfg, enum adc_gain gain)
 	case ADC_GAIN_2:
 		ch_cfg->gain = NRF_SAADC_GAIN2;
 		break;
-#if defined(SAADC_CH_CONFIG_GAIN_Gain4)
+#if NRF_SAADC_HAS_GAIN_4
 	case ADC_GAIN_4:
 		ch_cfg->gain = NRF_SAADC_GAIN4;
 		break;
@@ -175,7 +175,7 @@ static int gain_set(nrf_saadc_channel_config_t *ch_cfg, enum adc_gain gain)
 	default:
 #else
 	if (gain != ADC_GAIN_1) {
-#endif /* defined(NRF_SAADC_HAS_CH_GAIN) */
+#endif /* NRF_SAADC_HAS_CH_GAIN */
 		LOG_ERR("Selected ADC gain is not valid");
 		return -EINVAL;
 	}
@@ -186,17 +186,17 @@ static int gain_set(nrf_saadc_channel_config_t *ch_cfg, enum adc_gain gain)
 static int reference_set(nrf_saadc_channel_config_t *ch_cfg, enum adc_reference reference)
 {
 	switch (reference) {
-#if defined(SAADC_CH_CONFIG_REFSEL_Internal)
+#if NRF_SAADC_HAS_REFERENCE_INTERNAL
 	case ADC_REF_INTERNAL:
 		ch_cfg->reference = NRF_SAADC_REFERENCE_INTERNAL;
 		break;
 #endif
-#if defined(SAADC_CH_CONFIG_REFSEL_VDD1_4)
+#if NRF_SAADC_HAS_REFERENCE_VDD4
 	case ADC_REF_VDD_1_4:
 		ch_cfg->reference = NRF_SAADC_REFERENCE_VDD4;
 		break;
 #endif
-#if defined(SAADC_CH_CONFIG_REFSEL_External)
+#if NRF_SAADC_HAS_REFERENCE_EXTERNAL
 	case ADC_REF_EXTERNAL0:
 		ch_cfg->reference = NRF_SAADC_REFERENCE_EXTERNAL;
 		break;
