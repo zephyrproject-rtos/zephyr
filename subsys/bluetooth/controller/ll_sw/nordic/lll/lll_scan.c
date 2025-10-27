@@ -525,8 +525,10 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 	}
 #endif /* CONFIG_BT_CENTRAL && CONFIG_BT_CTLR_SCHED_ADVANCED */
 
-	ret = lll_prepare_done(lll);
-	LL_ASSERT_ERR(!ret);
+	if (!is_resume) {
+		ret = lll_prepare_done(lll);
+		LL_ASSERT_ERR(!ret);
+	}
 
 	DEBUG_RADIO_START_O(1);
 
