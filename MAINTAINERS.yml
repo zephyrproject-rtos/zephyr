@@ -10,20 +10,22 @@
 #         One of the following:
 #
 #         * maintained:
-#             The area has a Maintainer (approved by the TSC) who
-#             looks after the area.
+#             The area has at least one active Maintainer responsible for its
+#             upkeep and development.
 #
 #         * odd fixes:
-#            The area gets odd fixes and may have collaborators.
+#             The area receives occasional fixes and may have contributors or
+#             collaborators providing minimal maintenance.
 #
 #         * obsolete:
-#             Old code. Something being marked obsolete generally means it has
-#             been replaced by something better that you should be using
-#             instead.
+#             The area contains deprecated or legacy code that has been
+#             superseded by newer implementations.  Use of this code is
+#             discouraged in favor of the recommended replacements.
 #
 #     maintainers:
 #         List of GitHub handles for the people who maintain the area. Usually,
-#         there's only one maintainer.
+#         there's only one maintainer but depending on the area, there may be
+#         multiple maintainers sharing the responsibility.
 #
 #     collaborators (not to be confused with the GitHub collaborator role):
 #         Very involved contributors, who know the area well and contribute
@@ -131,11 +133,20 @@
 #
 # Changes to MAINTAINERS.yml need to be approved as follows:
 #
-#     * Changing the 'maintainers' for an area needs approval from the
-#       Technical Steering Committee
+#     * Adding a new area requires approval from the TSC or its representatives
+#       responsible for the maintainer file.
 #
-#     * Changing the 'collaborators' lines requires the maintainer and
-#       collaborators of that area to agree (or vote on it)
+#     * Changing the 'maintainers' for an area requires approval from the
+#       TSC or its representatives responsible for the maintainer file.
+#
+#     * Changing the 'collaborators' lines requires approval of the maintainers
+#       of that area.
+#
+# Notes:
+#
+# Approval from the TSC is delegated to a list of TSC respresentatives
+# who are listed as the 'maintainers' of the MAINTA"INERS file. See MAINTAINER
+# file section below for details.
 
 # Areas are sorted by name
 
@@ -3324,7 +3335,12 @@ MAINTAINERS file:
   labels:
     - "area: MAINTAINER File"
   description: >-
-    Zephyr Maintainers File
+    Zephyr Maintainers File and related scripts.
+
+    The maintainers of this area are appointed by the TSC and are responsible for
+    "approving individual sub-projects and designated maintainers" as per the
+    Zephyr Governance Document. In this context "sub-projects" refer to areas
+    in the MAINTAINERS file.
 
 MCU Manager:
   status: maintained

@@ -300,51 +300,40 @@ Roles / Permissions
 MAINTAINERS File
 ################
 
-Generic guidelines for deciding and filling in the Maintainers' list
+The following guidelines apply to the structure, scope, and maintenance of the
+MAINTAINERS file.
 
-* We should keep the granularity of code maintainership at a manageable level
-* We should be looking for maintainers for areas of code that
-  are orphaned (i.e. without an explicit maintainer)
+- The MAINTAINERS file shall have designated individuals responsible for the
+  accuracy, structure, and upkeep of the file, in accordance with the Zephyr
+  Project Charter. These individuals shall be appointed by the TSC.
+- The granularity of maintainership should remain practical and manageable.
+- The TSC, in collaboration with existing maintainers and contributors, should
+  actively identify and encourage contributors to step up as maintainers for
+  orphaned areas of the codebase and should facilitate the assignment of
+  maintainers to those components.
+- Unmaintained areas shall be clearly marked as such in the MAINTAINERS file.
+- Updates to the MAINTAINERS file should:
 
-  * Un-maintained areas should be indicated clearly in the MAINTAINERS file
+  - Generally be included as standalone commits when introducing new files or
+    directories.
+  - For major structural changes, including the addition of new areas and new
+    maintainers, should be submitted as separate pull requests, requiring
+    approval by the file’s maintainers. Such activities might be the result of
+    splitting existing large areas into smaller ones or merging smaller areas.
 
-* All submitted pull requests should have an assignee
-* We Introduce an area/subsystem hierarchy to address the above point
+Guidelines for assigning maintainers to different areas of the codebase:
 
-  * Parent-area maintainer should be acting as default substitute/fallback
-    assignee for un-maintained sub-areas
-  * Area maintainer gets precedence over parent-area maintainer
+Architectures, core components, subsystems, samples, and tests:
+  Each area shall have an explicitly assigned maintainer.
 
-* Pull requests may be re-assigned if this is needed or more appropriate
+Boards (including related samples and tests) and SoCs (including DTS definitions)
+  Each board and SoC should have an explicitly assigned maintainer through a
+  platform area covering the boards, SoCs, and their related components and
+  drivers.
 
-  * Re-assigned by original assignee
-
-* In general, updates to the MAINTAINERS file should be
-  in a standalone commit alongside other changes introducing new files and
-  directories to the tree.
-* Major changes to the file, including the addition of new areas with new maintainers
-  should come in as standalone pull requests and require TSC review.
-* If additional review by the TSC is required, the maintainers of the file
-  should send the requested changes to the TSC and give members of the TSC two
-  (2) days to object to any of the changes to maintainership of areas or the
-  addition of new maintainers or areas.
-* Path, collaborator and name changes do not require a review by the TSC.
-* Addition of new areas without a maintainer do not require review by the TSC.
-* The MAINTAINERS file itself shall have a maintainer
-* Architectures, core components, sub-systems, samples, tests
-
-  * Each area shall have an explicit maintainer
-
-* Boards (incl relevant samples, tests), SoCs (incl DTS)
-  * May have a maintainer, shall have a higher-level platform maintainer
-* Drivers
-
-  * Shall have a driver-area (and API) maintainer
-  * Could have individual driver implementation
-    maintainers but preferably collaborator/contributors
-  * In the above case, platform-specific PRs may be
-    re-assigned to respective collaborator/contributor of driver
-    implementation
-
+Drivers / Backends
+  The area of the API level Shall have a maintainer and specific driver
+  implementations or backends shall be covered through a platform area covering
+  the driver implementation.
 
 .. _Zephyr Contributor Badge form: https://forms.gle/oCw9iAPLhUsHTapc8
