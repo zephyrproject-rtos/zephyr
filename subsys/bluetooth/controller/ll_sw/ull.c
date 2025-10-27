@@ -2003,7 +2003,13 @@ uint32_t ull_ticker_status_take(uint32_t ret, uint32_t volatile *ret_cb)
 		 * prior to this function call. Take the semaphore and wait,
 		 * or take it to balance take/give counting.
 		 */
+		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) &&
+		    (CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)) {
+			mayfly_enable(TICKER_USER_ID_LLL, TICKER_USER_ID_ULL_LOW, 1U);
+		}
+
 		k_sem_take(&sem_ticker_api_cb, K_FOREVER);
+
 		return *ret_cb;
 	}
 
