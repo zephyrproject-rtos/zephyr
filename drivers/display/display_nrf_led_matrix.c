@@ -13,9 +13,7 @@
 #include <hal/nrf_pwm.h>
 #endif
 #include <nrfx_gpiote.h>
-#ifdef PPI_PRESENT
-#include <nrfx_ppi.h>
-#endif
+#include <helpers/nrfx_gppi.h>
 #include <nrf_peripherals.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
@@ -438,20 +436,11 @@ static int instance_init(const struct device *dev)
 	nrf_pwm_shorts_set(dev_config->pwm, NRF_PWM_SHORT_SEQEND0_STOP_MASK);
 #else
 	nrfx_err_t err;
-	nrf_ppi_channel_t ppi_ch;
+	nrfx_gppi_handle_t ppi_handle;
+	int rv;
 
 	for (int i = 0; i < GROUP_SIZE; ++i) {
 		uint8_t *gpiote_ch = &dev_data->gpiote_ch[i];
-
-		err = nrfx_ppi_channel_alloc(&ppi_ch);
-		if (err != NRFX_SUCCESS) {
-			LOG_ERR("Failed to allocate PPI channel.");
-			/* Do not bother with freeing resources allocated
-			 * so far. The application needs to be reconfigured
-			 * anyway.
-			 */
-			return -ENOMEM;
-		}
 
 		err = nrfx_gpiote_channel_alloc(&dev_config->gpiote, gpiote_ch);
 		if (err != NRFX_SUCCESS) {
@@ -463,12 +452,21 @@ static int instance_init(const struct device *dev)
 			return -ENOMEM;
 		}
 
-		nrf_ppi_channel_endpoint_setup(NRF_PPI, ppi_ch,
+		rv = nrfx_gppi_conn_alloc(
 			nrf_timer_event_address_get(dev_config->timer,
 				nrf_timer_compare_event_get(1 + i)),
 			nrf_gpiote_event_address_get(dev_config->gpiote.p_reg,
-				nrf_gpiote_out_task_get(*gpiote_ch)));
-		nrf_ppi_channel_enable(NRF_PPI, ppi_ch);
+				nrf_gpiote_out_task_get(*gpiote_ch)),
+			&ppi_handle);
+		if (rv < 0) {
+			LOG_ERR("Failed to allocate PPI channel.");
+			/* Do not bother with freeing resources allocated
+			 * so far. The application needs to be reconfigured
+			 * anyway.
+			 */
+			return rv;
+		}
+		nrfx_gppi_conn_enable(ppi_handle);
 	}
 #endif /* USE_PWM */
 
