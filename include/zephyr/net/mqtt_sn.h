@@ -199,8 +199,7 @@ struct mqtt_sn_transport {
 	/**
 	 * @brief Will be called by the library when it wants to receive a message.
 	 *
-	 * Implementations should follow recvfrom conventions with the exception
-	 * of a NULL src_addr being a broadcast message.
+	 * Implementations should follow recvfrom conventions.
 	 */
 	ssize_t (*recvfrom)(struct mqtt_sn_client *client, void *rx_buf, size_t rx_len,
 			    void *src_addr, size_t *addrlen);
