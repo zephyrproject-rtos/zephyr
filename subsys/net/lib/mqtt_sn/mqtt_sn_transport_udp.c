@@ -241,19 +241,19 @@ static ssize_t tp_udp_recvfrom(struct mqtt_sn_client *client, void *buffer, size
 			       void *src_addr, size_t *addrlen)
 {
 	struct mqtt_sn_transport_udp *udp = UDP_TRANSPORT(client->transport);
-	int rc;
+	ssize_t ret;
 	net_socklen_t addrlen_local = *addrlen;
 
-	rc = zsock_recvfrom(udp->sock, buffer, length, 0, src_addr, &addrlen_local);
-	LOG_DBG("recv %d", rc);
-	if (rc < 0) {
+	ret = zsock_recvfrom(udp->sock, buffer, length, 0, src_addr, &addrlen_local);
+	LOG_DBG("recv %zd", ret);
+	if (ret < 0) {
 		return -errno;
 	}
 	*addrlen = addrlen_local;
 
-	LOG_HEXDUMP_DBG(buffer, rc, "recv");
+	LOG_HEXDUMP_DBG(buffer, ret, "recv");
 
-	return rc;
+	return ret;
 }
 
 static int tp_udp_poll(struct mqtt_sn_client *client)
