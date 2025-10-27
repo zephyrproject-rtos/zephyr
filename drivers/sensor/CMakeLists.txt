@@ -76,6 +76,7 @@ add_subdirectory_ifdef(CONFIG_XBR818 xbr818)
 add_subdirectory_ifdef(CONFIG_TACH_ENE_KB1200 ene_tach_kb1200)
 add_subdirectory_ifdef(CONFIG_TACH_GPIO tach_gpio)
 add_subdirectory_ifdef(CONFIG_MB7040 mb7040)
+add_subdirectory_ifdef(CONFIG_RV3032_TEMP rv3032_temp)
 
 zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/sensor.h)
 
