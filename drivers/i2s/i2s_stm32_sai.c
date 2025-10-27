@@ -594,7 +594,7 @@ static int i2s_stm32_sai_configure(const struct device *dev, enum i2s_dir dir,
 #endif
 
 	if (cfg->mclk_div == (enum mclk_divider)MCLK_NO_DIV) {
-		hsai->Init.NoDivider = SAI_MASTERDIVIDER_DISABLED;
+		hsai->Init.NoDivider = SAI_MASTERDIVIDER_DISABLE;
 	} else {
 		hsai->Init.NoDivider = SAI_MASTERDIVIDER_ENABLE;
 
