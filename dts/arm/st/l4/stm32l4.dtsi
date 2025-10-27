@@ -291,6 +291,7 @@
 			reg = <0x40013000 0x400>;
 			interrupts = <35 5>;
 			clocks = <&rcc STM32_CLOCK(APB2, 12)>;
+			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
 
