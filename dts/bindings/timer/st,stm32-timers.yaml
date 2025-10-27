@@ -46,3 +46,32 @@ properties:
                                                down.
 
       If absent, then STM32_TIM_COUNTERMODE_UP is used (reset state).
+
+  st,mastermode:
+    type: string
+    default: RESET
+    enum:
+      - RESET
+      - ENABLE
+      - UPDATE
+      - CC1IF
+      - OC1REFC
+      - OC2REFC
+      - OC3REFC
+      - OC4REFC
+    description: |
+      Sets the master mode.
+      Only available for timer instances with master function.
+
+      For details refer to the reference manual of your device.
+
+      Use constants defined in dt-bindings/timer/stm32-timer.h.
+
+      * RESET   - Update event is used as trigger output (TRGO).
+      * ENABLE  - Uses counter enable signal as trigger output (TRGO).
+      * UPDATE  - Uses update event as trigger output (TRGO).
+      * CC1IF   - Uses CC1IF flag as pulse source for TRGO outout.
+      * OC1REFC - OC1REFC signal is used as trigger output (TRGO).
+      * OC2REFC - OC2REFC signal is used as trigger output (TRGO).
+      * OC3REFC - OC3REFC signal is used as trigger output (TRGO).
+      * OC4REFC - OC4REFC signal is used as trigger output (TRGO).

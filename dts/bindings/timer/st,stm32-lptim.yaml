@@ -19,6 +19,7 @@ include:
       - resets
       - st,prescaler
       - st,countermode
+      - st,mastermode
 
 properties:
   st,prescaler:
