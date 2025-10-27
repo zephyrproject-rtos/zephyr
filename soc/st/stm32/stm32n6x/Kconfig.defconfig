@@ -5,7 +5,8 @@
 
 if SOC_SERIES_STM32N6X
 
-rsource "Kconfig.defconfig.stm32n6*"
+configdefault NUM_IRQS
+	default 194      # Should be 195!
 
 DT_STM32_CPU_CLOCK_PATH := $(dt_nodelabel_path,cpusw)
 DT_STM32_CPU_CLOCK_FREQ := $(dt_node_int_prop_int,$(DT_STM32_CPU_CLOCK_PATH),clock-frequency)

@@ -5,7 +5,9 @@
 
 if SOC_SERIES_STM32L5X
 
-rsource "Kconfig.defconfig.stm32l5*"
+configdefault NUM_IRQS
+	default 108 if SOC_STM32L552XX
+	default 109 if SOC_STM32L562XX
 
 config ICACHE
 	default y

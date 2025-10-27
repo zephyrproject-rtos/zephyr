@@ -7,6 +7,22 @@
 
 if SOC_SERIES_STM32F3X
 
-rsource "Kconfig.defconfig.stm32f3*"
+configdefault NUM_IRQS
+        default 85 if SOC_STM32F303XE
+        default 82 if SOC_STM32F302X8 || \
+                      SOC_STM32F302XC || \
+                      SOC_STM32F303X8 || \
+                      SOC_STM32F303XB || \
+                      SOC_STM32F303XC || \
+                      SOC_STM32F334X8 || \
+                      SOC_STM32F373XC
+
+# TODO: review if/why this is necessary?
+configdefault CPU_HAS_ARM_MPU
+        default y if SOC_STM32F302XC || \
+                     SOC_STM32F303XB || \
+                     SOC_STM32F303XC || \
+                     SOC_STM32F303XE || \
+                     SOC_STM32F373XC
 
 endif # SOC_SERIES_STM32F3X

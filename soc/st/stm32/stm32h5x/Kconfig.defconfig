@@ -5,7 +5,12 @@
 
 if SOC_SERIES_STM32H5X
 
-rsource "Kconfig.defconfig.stm32h5*"
+configdefault NUM_IRQS
+	default 134 if SOC_STM32H503XX
+	default 133 if SOC_STM32H523XX || SOC_STM32H533XX
+	default 131 if SOC_STM32H562XX || \
+		       SOC_STM32H563XX || \
+		       SOC_STM32H573XX
 
 config ICACHE
 	default y

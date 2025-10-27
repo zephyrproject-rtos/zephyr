@@ -7,7 +7,18 @@
 
 if SOC_SERIES_STM32G0X
 
-rsource "Kconfig.defconfig.stm32g0*"
+configdefault NUM_IRQS
+	default 29 if SOC_STM32G030XX || SOC_STM32G050XX
+	default 30 if SOC_STM32G031XX || SOC_STM32G051XX || SOC_STM32G070XX || SOC_STM32G0B0XX
+	default 31 if SOC_STM32G071XX || SOC_STM32G0B1XX
+	default 32 if SOC_STM32G041XX || SOC_STM32G061XX || SOC_STM32G081XX || SOC_STM32G0C1XX
+
+if CAN_STM32_FDCAN
+
+configdefault SHARED_INTERRUPTS
+        default y if $(dt_nodelabel_enabled,fdcan1) && $(dt_nodelabel_enabled,fdcan2)
+
+endif # CAN_STM32_FDCAN
 
 if UART_STM32
 

@@ -8,7 +8,32 @@
 
 if SOC_SERIES_STM32H7X
 
-rsource "Kconfig.defconfig.stm32h7*"
+configdefault NUM_IRQS
+	default 163 if SOC_STM32H723XX || \
+		       SOC_STM32H725XX || \
+		       SOC_STM32H730XX || \
+		       SOC_STM32H730XXQ || \
+		       SOC_STM32H735XX
+	default 150 if SOC_STM32H742XX || \
+		       SOC_STM32H743XX || \
+		       SOC_STM32H745XX_M7 || SOC_STM32H745XX_M4 || \
+		       SOC_STM32H747XX_M7 || SOC_STM32H747XX_M4 || \
+		       SOC_STM32H750XX || \
+		       SOC_STM32H753XX || \
+		       SOC_STM32H755XX_M7 || SOC_STM32H755XX_M4 || \
+		       SOC_STM32H757XX_M7 || SOC_STM32H757XX_M4
+	default 155 if SOC_STM32H7A3XX || \
+		       SOC_STM32H7A3XXQ || \
+		       SOC_STM32H7B0XX || \
+		       SOC_STM32H7B0XXQ || \
+		       SOC_STM32H7B3XX || \
+		       SOC_STM32H7B3XXQ
+
+configdefault STM32H7_DUAL_CORE
+	default y if SOC_STM32H745XX_M7 || SOC_STM32H745XX_M4 || \
+		     SOC_STM32H747XX_M7 || SOC_STM32H747XX_M4 || \
+		     SOC_STM32H755XX_M7 || SOC_STM32H755XX_M4 || \
+		     SOC_STM32H757XX_M7 || SOC_STM32H757XX_M4
 
 config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT
