@@ -229,6 +229,26 @@
 			status = "disabled";
 		};
 
+		spi1: spi@50095000 {
+			compatible = "sifli,sf32lb-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x50095000 0x1000>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_SPI1>;
+			interrupts = <60 0>;
+			status = "disabled";
+		};
+
+		spi2: spi@50096000 {
+			compatible = "sifli,sf32lb-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x50096000 0x1000>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_SPI2>;
+			interrupts = <75 0>;
+			status = "disabled";
+		};
+
 		gpioa: gpio@500a0000 {
 			compatible = "sifli,sf32lb-gpio-parent";
 			reg = <0x500a0000 0x1000>;
