@@ -275,6 +275,11 @@ New APIs and options
     * :kconfig:option:`CONFIG_HAWKBIT_CONFIRM_IMG_ON_INIT`
     * :kconfig:option:`CONFIG_HAWKBIT_ERASE_SECOND_SLOT_ON_CONFIRM`
 
+  * MCUmgr
+
+    * :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UDP_DTLS`
+    * :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_SLOT`
+
 * Modem
 
   * :kconfig:option:`CONFIG_MODEM_DEDICATED_WORKQUEUE`
