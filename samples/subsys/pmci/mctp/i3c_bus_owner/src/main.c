@@ -20,6 +20,13 @@ LOG_MODULE_REGISTER(mctp_i3c_gpio_bus_owner);
 
 MCTP_I3C_CONTROLLER_DT_DEFINE(mctp_i3c_ctrl, DT_NODELABEL(mctp_i3c));
 
+
+int main(void)
+{
+
+}
+
+#ifdef NOTDEFINED
 static void rx_message(uint8_t eid, bool tag_owner, uint8_t msg_tag, void *data, void *msg,
 		       size_t len)
 {
@@ -42,13 +49,15 @@ int main(void)
 	while (true) {
 		for (int i = 0; i < mctp_i3c_ctrl.num_endpoints; i++) {
 
-			LOG_INF("sending message \"ping\" to endpoint %d",
+			LOG_INF("sending message \"ping\" to endpoint %u",
 				mctp_i3c_ctrl.endpoint_ids[i]);
 			rc = mctp_message_tx(mctp_ctx, mctp_i3c_ctrl.endpoint_ids[i], false,
 					0, "ping", sizeof("ping"));
 			if (rc != 0) {
-				LOG_WRN("Failed to send message \"ping\" to endpoint %d,"
-					" errno %d\n", mctp_i3c_ctrl.endpoint_ids[i], rc);
+				LOG_WRN("Failed to send message \"ping\" to i3c pid %llx, endpoint %u,"
+					" errno %d\n", mctp_i3c_ctrl.endpoint_pids[i].pid,
+					mctp_i3c_ctrl.endpoint_ids[i],
+					rc);
 			}
 
 			k_msleep(500);
@@ -57,3 +66,4 @@ int main(void)
 
 	return 0;
 }
+#endif

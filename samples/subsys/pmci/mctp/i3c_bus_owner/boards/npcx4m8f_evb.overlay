@@ -8,6 +8,12 @@
 	i3c-od-scl-hz = <1500000>;
 
 	bcr = <0x67>;
+
+	mctp_endpoint0: mctp_endpoint0@00ABCD00000011 {
+		compatible = "zephyr,mctp-i3c-endpoint";
+		reg = <0x00 0xABCD 0x00000011>;
+		status = "okay";
+	};
 };
 
 &pcc {
@@ -23,7 +29,8 @@
 	mctp_i3c: mctp_i3c {
 		compatible = "zephyr,mctp-i3c-controller";
 		i3c = <&i3c0>;
-		endpoint-ids = <11>, <12>;
-		endpoint-addrs = <70>, <71>;
+		endpoints = <1>;
+		endpoint-pids = <0x00 0xABCD 0x0000000011>;
+		endpoint-ids = <70>;
 	};
 };

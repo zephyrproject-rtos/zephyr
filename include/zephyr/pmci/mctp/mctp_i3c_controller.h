@@ -25,8 +25,8 @@
 struct mctp_binding_i3c_controller;
 
 struct mctp_i3c_endpoint {
-	struct i3c_device_desc i3c_device;
 	struct mctp_binding_i3c_controller *binding;
+	uint32_t index;
 };
 
 /** @endcond INTERNAL_HIDDEN */
@@ -48,7 +48,8 @@ struct mctp_binding_i3c_controller {
 
 	const size_t num_endpoints;
 	const uint8_t *endpoint_ids;
-	const uint8_t *endpoint_addrs;
+	const struct i3c_device_id *endpoint_pids;
+	struct i3c_device_desc **endpoint_descs;
 	struct mctp_i3c_endpoint *endpoints;
 
 	/** @endcond INTERNAL_HIDDEN */
@@ -58,11 +59,20 @@ struct mctp_binding_i3c_controller {
 int mctp_i3c_controller_start(struct mctp_binding *binding);
 int mctp_i3c_controller_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt);
 
+#define MCTP_I3C_PID(_idx, _node_id, ...)                                                      \
+	{                                                                                      \
+		.pid =  (((uint64_t)DT_PROP_BY_IDX(_node_id, endpoint_pids, _idx*2) << 32)     \
+		       | (DT_PROP_BY_IDX(_node_id, endpoint_pids, _idx*2+1)))                  \
+	}
+
 #define MCTP_I3C_CONTROLLER_DEFINE_IDS(_node_id, _name)                                        \
 	const uint8_t _name##_endpoint_ids[] = DT_PROP(_node_id, endpoint_ids);
 
-#define MCTP_I3C_CONTROLLER_DEFINE_I3C_ADDRESSES(_node_id, _name)                              \
-	const uint8_t _name##_endpoint_addrs[] = DT_PROP(_node_id, endpoint_addrs);
+#define MCTP_I3C_CONTROLLER_DEFINE_I3C_PIDS(_node_id, _name)                                   \
+	const struct i3c_device_id _name##_endpoint_pids[] = {                                 \
+		LISTIFY(DT_PROP(_node_id, endpoints),                                          \
+			MCTP_I3C_PID, (,), _node_id)                                           \
+	}
 
 #define MCTP_I3C_CONTROLLER_DEFINE_I3C_ENDPOINTS(_node_id, _name)                              \
 	struct mctp_i3c_endpoint \
@@ -83,7 +93,7 @@ int mctp_i3c_controller_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt
 #define MCTP_I3C_CONTROLLER_DT_DEFINE(_name, _node_id)                                        \
 	MCTP_I3C_CONTROLLER_DEFINE_IDS(_node_id, _name);                                      \
 	MCTP_I3C_CONTROLLER_DEFINE_I3C_ENDPOINTS(_node_id, _name);                            \
-	MCTP_I3C_CONTROLLER_DEFINE_I3C_ADDRESSES(_node_id, _name);                            \
+	MCTP_I3C_CONTROLLER_DEFINE_I3C_PIDS(_node_id, _name);                                 \
 	struct mctp_binding_i3c_controller _name = {                                          \
 		.binding = {                                                                  \
 			.name = STRINGIFY(_name), .version = 1,                               \
@@ -94,7 +104,7 @@ int mctp_i3c_controller_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt
 		.i3c = DEVICE_DT_GET(DT_PHANDLE(_node_id, i3c)),                              \
 		.num_endpoints = DT_PROP_LEN(_node_id, endpoint_ids),                         \
 		.endpoint_ids = _name##_endpoint_ids,                                         \
-		.endpoint_addrs = _name##_endpoint_addrs,                                     \
+		.endpoint_pids = _name##_endpoint_pids,                                     \
 		.endpoints = _name##_endpoints,                                               \
 	};
 

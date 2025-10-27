@@ -12,13 +12,21 @@ properties:
     description: |
       I3C controller that is used as an MCTP bus.
 
+  endpoints:
+    type: int
+    description: |
+      Number of MCTP endpoints supported by the I3C controller
+
   endpoint-ids:
     type: array
     description: |
-      Set of matching MCTP endpoint ids
+      MCTP endpoint ids, length must match the number of endpoints
 
-  endpoint-addrs:
+  endpoint-pids:
     type: array
     description: |
-      I3C addresses of endpoints
+      I3C provisional ids of endpoints, an array of 2 32bit values. The length of
+      which must match the described number of endpoints. The value must contain
+      a valid i3c provisional id. An associated dts node with this provisional id
+      must exist so that the I3C device handle may be obtained using it.
 
