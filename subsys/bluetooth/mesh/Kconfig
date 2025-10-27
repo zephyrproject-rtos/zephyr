@@ -72,7 +72,8 @@ if BT_MESH_ADV_LEGACY
 
 config BT_MESH_ADV_STACK_SIZE
 	int "Mesh advertiser thread stack size"
-	default 1024 if BT_HOST_CRYPTO
+	default 1800 if BT_MESH_PROVISIONER
+	default 1536 if BT_MESH_PROXY
 	default 776 if BT_MESH_PRIV_BEACONS
 	default 768
 	help
@@ -142,8 +143,8 @@ if BT_MESH_WORKQ_MESH
 
 config BT_MESH_ADV_STACK_SIZE
 	int "Mesh extended advertiser thread stack size"
+	default 2048 if BT_MESH_PROVISIONER
 	default 1536 if BT_MESH_PROXY
-	default 1024 if BT_HOST_CRYPTO
 	default 776 if BT_MESH_PRIV_BEACONS
 	default 768
 	help
