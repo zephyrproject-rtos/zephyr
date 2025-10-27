@@ -12,11 +12,13 @@
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)
 {
+#if !defined(CONFIG_BT_EXT_ADV)
 	char addr_str[BT_ADDR_LE_STR_LEN];
 
 	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
 	printk("Device found: %s (RSSI %d), type %u, AD data len %u\n",
 	       addr_str, rssi, type, ad->len);
+#endif /* !CONFIG_BT_EXT_ADV */
 }
 
 #if defined(CONFIG_BT_EXT_ADV)
@@ -91,7 +93,7 @@ static int scan_start(void)
 	/* 30 ms continuous active scanning with duplicate filtering. */
 	struct bt_le_scan_param scan_param = {
 		.type       = BT_LE_SCAN_TYPE_ACTIVE,
-		.options    = BT_LE_SCAN_OPT_FILTER_DUPLICATE,
+		.options    = BT_LE_SCAN_OPT_NONE,
 		.interval   = BT_GAP_SCAN_FAST_INTERVAL_MIN,
 		.window     = BT_GAP_SCAN_FAST_WINDOW,
 	};
@@ -124,6 +126,25 @@ scan_start_retry:
 	return 0;
 }
 
+static struct k_work_delayable scan_stop_work;
+
+static void scan_stop_timeout(struct k_work *work)
+{
+	int err;
+
+	printk("Stopping scanning...\n");
+	err = bt_le_scan_stop();
+	if (err) {
+		printk("Stop scanning failed (err %d)\n", err);
+		return;
+	}
+	printk("Stopped scanning...\n");
+
+	(void)scan_start();
+
+	k_work_schedule(&scan_stop_work, K_SECONDS(5));
+}
+
 int observer_start(void)
 {
 	int err;
@@ -137,6 +158,9 @@ int observer_start(void)
 	if (err != 0) {
 		return err;
 	}
+
+	k_work_init_delayable(&scan_stop_work, scan_stop_timeout);
+	k_work_schedule(&scan_stop_work, K_MSEC(0));
 
 	return 0;
 }
