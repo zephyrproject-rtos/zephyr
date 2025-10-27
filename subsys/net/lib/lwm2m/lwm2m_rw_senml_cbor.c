@@ -346,19 +346,19 @@ static int put_begin_ri(struct lwm2m_output_context *out, struct lwm2m_obj_path 
 
 static int put_name_nth_ri(struct lwm2m_output_context *out, struct lwm2m_obj_path *path)
 {
-	int ret = 0;
 	struct cbor_out_fmt_data *fd = LWM2M_OFD_CBOR(out);
 	struct record *record = GET_CBOR_FD_REC(fd);
 
 	/* With the first ri the resource name (and ri name) are already in place*/
-	if (path->res_inst_id > 0) {
-		ret = put_begin_ri(out, path);
-	} else if (record && record->record_t_present) {
-		/* Name need to be add for each time serialized record */
-		ret = put_begin_r(out, path);
+	if (record == NULL || !record->record_t_present) {
+		return 0;
+	}
+	/* Name need to be add for each time serialized record */
+	if (path->level == LWM2M_PATH_LEVEL_RESOURCE_INST) {
+		return put_begin_ri(out, path);
 	}
 
-	return ret;
+	return put_begin_r(out, path);
 }
 
 static int put_value(struct lwm2m_output_context *out, struct lwm2m_obj_path *path, int64_t value)
