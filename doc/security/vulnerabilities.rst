@@ -1838,6 +1838,9 @@ This has been fixed in main for v4.0.0
 - `PR 81370 fix for 3.7
   <https://github.com/zephyrproject-rtos/zephyr/pull/81370>`_
 
+CVE-2025
+========
+
 :cve:`2025-1673`
 ----------------
 
