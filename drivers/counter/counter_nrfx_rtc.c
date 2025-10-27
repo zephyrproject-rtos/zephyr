@@ -11,11 +11,7 @@
 #endif
 #include <haly/nrfy_rtc.h>
 #include <zephyr/sys/atomic.h>
-#ifdef DPPI_PRESENT
-#include <nrfx_dppi.h>
-#else
-#include <nrfx_ppi.h>
-#endif
+#include <helpers/nrfx_gppi.h>
 
 #define LOG_MODULE_NAME counter_rtc
 #include <zephyr/logging/log.h>
@@ -58,7 +54,7 @@ struct counter_nrfx_data {
 	/* Store channel interrupt pending and CC adjusted flags. */
 	atomic_t ipend_adj;
 #if CONFIG_COUNTER_RTC_WITH_PPI_WRAP
-	uint8_t ppi_ch;
+	nrfx_gppi_handle_t ppi_handle;
 #endif
 };
 
@@ -379,41 +375,21 @@ static int ppi_setup(const struct device *dev, uint8_t chan)
 	struct counter_nrfx_data *data = dev->data;
 	NRF_RTC_Type *rtc = nrfx_config->rtc;
 	nrf_rtc_event_t evt = NRF_RTC_CHANNEL_EVENT_ADDR(chan);
-	nrfx_err_t result;
+	uint32_t eep = nrf_rtc_event_address_get(rtc, evt);
+	uint32_t tep = nrfy_rtc_task_address_get(rtc, NRF_RTC_TASK_CLEAR);
+	int err;
 
 	if (!nrfx_config->use_ppi) {
 		return 0;
 	}
 
 	nrfy_rtc_event_enable(rtc, NRF_RTC_CHANNEL_INT_MASK(chan));
-#ifdef DPPI_PRESENT
-	nrfx_dppi_t dppi = NRFX_DPPI_INSTANCE(0);
-
-	result = nrfx_dppi_channel_alloc(&dppi, &data->ppi_ch);
-	if (result != NRFX_SUCCESS) {
-		ERR("Failed to allocate PPI channel.");
-		return -ENODEV;
+	err = nrfx_gppi_conn_alloc(eep, tep, &data->ppi_handle);
+	if (err < 0) {
+		return err;
 	}
-
-	nrfy_rtc_subscribe_set(rtc, NRF_RTC_TASK_CLEAR, data->ppi_ch);
-	nrfy_rtc_publish_set(rtc, evt, data->ppi_ch);
-	(void)nrfx_dppi_channel_enable(&dppi, data->ppi_ch);
-#else /* DPPI_PRESENT */
-	uint32_t evt_addr;
-	uint32_t task_addr;
-
-	evt_addr = nrfy_rtc_event_address_get(rtc, evt);
-	task_addr = nrfy_rtc_task_address_get(rtc, NRF_RTC_TASK_CLEAR);
-
-	result = nrfx_ppi_channel_alloc(&data->ppi_ch);
-	if (result != NRFX_SUCCESS) {
-		ERR("Failed to allocate PPI channel.");
-		return -ENODEV;
-	}
-	(void)nrfx_ppi_channel_assign(data->ppi_ch, evt_addr, task_addr);
-	(void)nrfx_ppi_channel_enable(data->ppi_ch);
+	nrfx_gppi_conn_enable(data->ppi_handle);
 #endif
-#endif /* CONFIG_COUNTER_RTC_WITH_PPI_WRAP */
 	return 0;
 }
 
@@ -422,25 +398,17 @@ static void ppi_free(const struct device *dev, uint8_t chan)
 #if CONFIG_COUNTER_RTC_WITH_PPI_WRAP
 	const struct counter_nrfx_config *nrfx_config = dev->config;
 	struct counter_nrfx_data *data = dev->data;
-	uint8_t ppi_ch = data->ppi_ch;
 	NRF_RTC_Type *rtc = nrfx_config->rtc;
+	nrf_rtc_event_t evt = NRF_RTC_CHANNEL_EVENT_ADDR(chan);
+	uint32_t eep = nrf_rtc_event_address_get(rtc, evt);
+	uint32_t tep = nrfy_rtc_task_address_get(rtc, NRF_RTC_TASK_CLEAR);
 
 	if (!nrfx_config->use_ppi) {
 		return;
 	}
 	nrfy_rtc_event_disable(rtc, NRF_RTC_CHANNEL_INT_MASK(chan));
-#ifdef DPPI_PRESENT
-	nrf_rtc_event_t evt = NRF_RTC_CHANNEL_EVENT_ADDR(chan);
-	nrfx_dppi_t dppi = NRFX_DPPI_INSTANCE(0);
-
-	(void)nrfx_dppi_channel_disable(&dppi, ppi_ch);
-	nrfy_rtc_subscribe_clear(rtc, NRF_RTC_TASK_CLEAR);
-	nrfy_rtc_publish_clear(rtc, evt);
-	(void)nrfx_dppi_channel_free(&dppi, ppi_ch);
-#else /* DPPI_PRESENT */
-	(void)nrfx_ppi_channel_disable(ppi_ch);
-	(void)nrfx_ppi_channel_free(ppi_ch);
-#endif
+	nrfx_gppi_conn_disable(data->ppi_handle);
+	nrfx_gppi_conn_free(eep, tep, data->ppi_handle);
 #endif
 }
 
