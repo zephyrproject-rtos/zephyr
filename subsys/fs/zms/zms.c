@@ -1813,6 +1813,42 @@ ssize_t zms_get_data_length(struct zms_fs *fs, zms_id_t id)
 	return rc;
 }
 
+/**
+ * @brief Helper to calculate free space in some actual or would-be sector
+ *
+ * @param fs Pointer to file system
+ * @param data_wra Data write address offset within the sector
+ * @param ate_wra ATE write address offset within the sector
+ *
+ * @retval Number of free bytes as a signed integer, to match the return type
+ * of zms_calc_free_space() and zms_active_sector_free_space()
+ */
+static ssize_t zms_free_space(struct zms_fs *fs, uint32_t data_wra, uint32_t ate_wra)
+{
+	ssize_t free_space;
+
+	if (ate_wra < 2 * fs->ate_size) {
+		/* zms_write() requires this space to be reserved for a delete ATE.
+		 * This means that the active sector will not accept any more data.
+		 */
+		return 0;
+	}
+
+	/* initial value: available space for data at the top of the sector */
+	free_space = ate_wra - data_wra - fs->ate_size;
+
+	if (free_space < 0) {
+		/* not enough room for an ATE */
+		return 0;
+	}
+	if (free_space < ZMS_DATA_IN_ATE_SIZE) {
+		/* more data can be stored inside an ATE */
+		return ZMS_DATA_IN_ATE_SIZE;
+	}
+
+	return free_space;
+}
+
 ssize_t zms_calc_free_space(struct zms_fs *fs)
 {
 	int rc;
@@ -1946,7 +1982,7 @@ ssize_t zms_active_sector_free_space(struct zms_fs *fs)
 		return -EACCES;
 	}
 
-	return fs->ate_wra - fs->data_wra - fs->ate_size;
+	return zms_free_space(fs, SECTOR_OFFSET(fs->data_wra), SECTOR_OFFSET(fs->ate_wra));
 }
 
 int zms_sector_use_next(struct zms_fs *fs)
