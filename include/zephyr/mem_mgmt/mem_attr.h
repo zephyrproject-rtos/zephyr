@@ -72,7 +72,7 @@ struct mem_attr_region_t {
  *
  * @param region Pointer to pointer to the list of memory regions.
  *
- * @retval Number of memory regions returned in the parameter.
+ * @return Number of memory regions returned in the parameter.
  */
 size_t mem_attr_get_regions(const struct mem_attr_region_t **region);
 
