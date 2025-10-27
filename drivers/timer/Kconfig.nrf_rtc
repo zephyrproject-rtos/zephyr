@@ -9,7 +9,7 @@ config NRF_RTC_TIMER
 	depends on SOC_COMPATIBLE_NRF
 	select TICKLESS_CAPABLE
 	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
-	select NRFX_PPI if SOC_NRF52832
+	select NRFX_GPPI if SOC_NRF52832
 	depends on !$(dt_nodelabel_enabled,rtc1)
 	help
 	  This module implements a kernel device driver for the nRF Real Time
