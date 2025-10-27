@@ -1852,7 +1852,6 @@ static ssize_t zms_free_space(struct zms_fs *fs, uint32_t data_wra, uint32_t ate
 ssize_t zms_calc_free_space(struct zms_fs *fs)
 {
 	int rc;
-	int previous_sector_num = ZMS_INVALID_SECTOR_NUM;
 	int prev_found = 0;
 	int sec_closed;
 	struct zms_ate step_ate;
@@ -1860,10 +1859,11 @@ ssize_t zms_calc_free_space(struct zms_fs *fs)
 	struct zms_ate empty_ate;
 	struct zms_ate close_ate;
 	uint64_t step_addr;
-	uint64_t wlk_addr;
 	uint64_t step_prev_addr;
-	uint64_t wlk_prev_addr;
-	uint64_t data_wra = 0U;
+	uint64_t close_addr;
+	uint32_t remaining_sectors;
+	uint32_t data_wra;
+	uint32_t ate_wra;
 	uint8_t current_cycle;
 	ssize_t free_space = 0;
 
@@ -1872,73 +1872,70 @@ ssize_t zms_calc_free_space(struct zms_fs *fs)
 		return -EINVAL;
 	}
 
-	const uint32_t second_to_last_offset = (2 * fs->ate_size);
-
 	if (!fs->ready) {
 		LOG_ERR("zms not initialized");
 		return -EACCES;
 	}
 
-	/*
-	 * There is always a closing ATE , an empty ATE, a GC_done ATE and a reserved ATE for
-	 * deletion in each sector.
-	 * And there is always one reserved Sector for garbage collection operations
-	 */
-	free_space = (fs->sector_count - 1) * (fs->sector_size - 4 * fs->ate_size);
-
 	step_addr = fs->ate_wra;
-
-	do {
-		step_prev_addr = step_addr;
-		rc = zms_prev_ate(fs, &step_addr, &step_ate);
-		if (rc) {
-			return rc;
-		}
-
-		/* When changing the sector let's get the new cycle counter */
-		rc = zms_get_cycle_on_sector_change(fs, step_prev_addr, previous_sector_num,
-						    &current_cycle);
-		if (rc) {
-			return rc;
-		}
-		previous_sector_num = SECTOR_NUM(step_prev_addr);
-
-		/* Invalid and deleted ATEs are free spaces.
-		 * Header ATEs are already retrieved from free space
-		 */
-		if (!zms_ate_valid_different_sector(fs, &step_ate, current_cycle) ||
-		    (step_ate.id == ZMS_HEAD_ID) || (step_ate.len == 0)) {
-			continue;
-		}
-
-		wlk_addr = step_addr;
-		/* Try to find if there is a previous valid ATE with same ID */
-		prev_found = zms_find_ate_with_id(fs, step_ate.id, wlk_addr, step_addr, &wlk_ate,
-						  &wlk_prev_addr);
-		if (prev_found < 0) {
-			return prev_found;
-		}
-
-		/* If no previous ATE is found, then this is a valid ATE that cannot be
-		 * Garbage Collected
-		 */
-		if (!prev_found || (wlk_prev_addr == step_prev_addr)) {
-			if (step_ate.len > ZMS_DATA_IN_ATE_SIZE) {
-				free_space -= zms_al_size(fs, step_ate.len);
-			}
-			free_space -= fs->ate_size;
-		}
-	} while (step_addr != fs->ate_wra);
-
-	/* we must keep the sector_cycle before we start looking into special cases */
 	current_cycle = fs->sector_cycle;
+	/* there is always one reserved sector for garbage collection */
+	remaining_sectors = fs->sector_count - 1;
 
-	/* Let's look now for special cases where some sectors have only ATEs with
-	 * small data size.
-	 */
+	while (1) {
+		/* Count entries in the current sector as if it were garbage-collected.
+		 * Initialize data_wra and ate_wra as they would be in an empty sector
+		 * (with bottom space reserved for empty ATE, close ATE, and GC_done ATE).
+		 */
+		data_wra = 0;
+		ate_wra = fs->sector_size - 4 * fs->ate_size;
 
-	for (int i = 0; i < fs->sector_count; i++) {
-		step_addr = zms_close_ate_addr(fs, ((uint64_t)i << ADDR_SECT_SHIFT));
+		for (close_addr = zms_close_ate_addr(fs, step_addr); step_addr < close_addr;
+		     step_addr += fs->ate_size) {
+			rc = zms_flash_ate_rd(fs, step_addr, &step_ate);
+			if (rc) {
+				return rc;
+			}
+
+			/* Invalid and deleted ATEs are free spaces.
+			 * Header ATEs are already retrieved from free space
+			 */
+			if (!zms_ate_valid_different_sector(fs, &step_ate, current_cycle) ||
+			    (step_ate.id == ZMS_HEAD_ID) || (step_ate.len == 0)) {
+				continue;
+			}
+
+			/* Search for a more recent, valid ATE with the same ID */
+			prev_found = zms_find_ate_with_id(fs, step_ate.id, fs->ate_wra, step_addr,
+							  &wlk_ate, &step_prev_addr);
+			if (prev_found < 0) {
+				return prev_found;
+			}
+
+			if (!prev_found) {
+				/* this item would not have been garbage collected */
+				if (step_ate.len > ZMS_DATA_IN_ATE_SIZE) {
+					data_wra += zms_al_size(fs, step_ate.len);
+				}
+				ate_wra -= fs->ate_size;
+			}
+		}
+
+		/* reached end of sector */
+		free_space += zms_free_space(fs, data_wra, ate_wra);
+
+		remaining_sectors--;
+		if (remaining_sectors == 0) {
+			/* explored all sectors */
+			return free_space;
+		}
+
+		/* jump to previous sector */
+		if (SECTOR_NUM(step_addr) == 0U) {
+			step_addr += ((uint64_t)(fs->sector_count - 1) << ADDR_SECT_SHIFT);
+		} else {
+			step_addr -= (1ULL << ADDR_SECT_SHIFT);
+		}
 
 		/* verify if the sector is closed */
 		sec_closed = zms_validate_closed_sector(fs, step_addr, &empty_ate, &close_ate);
@@ -1946,28 +1943,16 @@ ssize_t zms_calc_free_space(struct zms_fs *fs)
 			return sec_closed;
 		}
 
-		/* If the sector is closed and its offset is pointing to a position less than the
-		 * 3rd to last ATE position in a sector, it means that we need to leave the second
-		 * to last ATE empty.
+		/* If closed, then update step_addr to point to the last ATE in this sector.
+		 * Otherwise, this sector is empty and step_addr points to its close ATE.
 		 */
-		if ((sec_closed == 1) && (close_ate.offset <= second_to_last_offset)) {
-			free_space -= fs->ate_size;
-		} else if (!sec_closed) {
-			/* sector is open, let's recover the last ATE */
-			fs->sector_cycle = empty_ate.cycle_cnt;
-			rc = zms_recover_last_ate(fs, &step_addr, &data_wra);
-			if (rc) {
-				return rc;
-			}
-			if (SECTOR_OFFSET(step_addr) <= second_to_last_offset) {
-				free_space -= fs->ate_size;
-			}
+		if (sec_closed == 1) {
+			step_addr &= ADDR_SECT_MASK;
+			step_addr += close_ate.offset;
+			/* When changing the sector let's get the new cycle counter */
+			current_cycle = close_ate.cycle_cnt;
 		}
 	}
-	/* restore sector cycle */
-	fs->sector_cycle = current_cycle;
-
-	return free_space;
 }
 
 ssize_t zms_active_sector_free_space(struct zms_fs *fs)
