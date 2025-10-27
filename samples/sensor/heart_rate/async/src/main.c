@@ -174,7 +174,6 @@ int main(void)
 			if (rc != 0) {
 				continue;
 			}
-
 			data[i].fit = 0;
 			data[i].frame = (struct sensor_q31_data *)malloc(base_size + data[i].size * frame_size);
 			rc = decoder->decode(buf, chan_list[i], &data[i].fit, data[i].size, data[i].frame);
@@ -184,8 +183,19 @@ int main(void)
 			}
 		}
 
-		for (size_t i = 0; i < data[0].size; i++) {
+		uint16_t max = 0;
+		for (size_t i = 0; i < ARRAY_SIZE(chan_list); i++) {
+			if (data[i].size > max) {
+				max = data[i].size;
+			}
+		}
+
+		for (size_t i = 0; i < max; i++) {
 			for (size_t j = 0; j < ARRAY_SIZE(chan_list); j++) {
+				if (data[j].size == 0) {
+					continue;
+				}
+
 				LOG_INF("(%02d/%02d)[%-*s]: %" PRIsensor_q31_data, i + 1, data[j].size, channel_width, channel_names[j],
 				PRIsensor_q31_data_arg(*data[j].frame, i));
 			}

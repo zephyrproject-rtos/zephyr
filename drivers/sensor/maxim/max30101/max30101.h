@@ -168,15 +168,13 @@ struct max30101_reading {
 		/* Set if `watermark` interrupt must be watched */
 		uint8_t irq_watermark: 1;
 
+		/* Select `drdy` channels to be included/dropped */
 #if CONFIG_MAX30101_DIE_TEMPERATURE
-		/* Select `drdy` channels to be included/dropped */
 		uint8_t data_rdy_incl: 4;
-		uint8_t data_rdy_drop: 4;
 #else
-		/* Select `drdy` channels to be included/dropped */
 		uint8_t data_rdy_incl: 3;
-		uint8_t data_rdy_drop: 3;
 #endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
+		uint8_t data_rdy_drop: 3;
 		/* Set if `drdy` interrupt must be watched */
 		uint8_t irq_data_rdy: 1;
 	} __attribute__((__packed__));

@@ -11,20 +11,86 @@
 
 LOG_MODULE_REGISTER(MAX30101_STREAM, CONFIG_SENSOR_LOG_LEVEL);
 
+void max30101_stream_config(const struct device *dev, struct sensor_stream_trigger *trigger, uint8_t *include, uint8_t *drop)
+{
+	struct max30101_data *data = dev->data;
+	uint8_t led_chan;
+
+	if (trigger->chan_spec.chan_type != SENSOR_CHAN_ALL) {
+		switch (trigger->chan_spec.chan_type)
+		{
+		case SENSOR_CHAN_RED:
+			led_chan = MAX30101_LED_CHANNEL_RED;
+			break;
+
+		case SENSOR_CHAN_IR:
+			led_chan = MAX30101_LED_CHANNEL_IR;
+			break;
+
+		case SENSOR_CHAN_GREEN:
+			led_chan = MAX30101_LED_CHANNEL_GREEN;
+			break;
+
+#if CONFIG_MAX30101_DIE_TEMPERATURE
+		case SENSOR_CHAN_DIE_TEMP:
+			if (trigger->opt == SENSOR_STREAM_DATA_INCLUDE) {
+				*include = 0b1000;
+			}
+
+			if (trigger->opt == SENSOR_STREAM_DATA_DROP) {
+				*drop = 0b1000;
+			}
+			return;
+#endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
+		
+		default:
+			LOG_ERR("Unsupported channel type: %d", trigger->chan_spec.chan_type);
+			return;
+		}
+
+		if (trigger->opt == SENSOR_STREAM_DATA_INCLUDE) {
+			*include = 1 << data->map[led_chan][trigger->chan_spec.chan_idx];
+		}
+
+		if (trigger->opt == SENSOR_STREAM_DATA_DROP) {
+			*drop = 1 << data->map[led_chan][trigger->chan_spec.chan_idx];
+		}
+	} else {
+#if CONFIG_MAX30101_DIE_TEMPERATURE
+		*include = (trigger->opt == SENSOR_STREAM_DATA_INCLUDE) ? 0b1111 : 0;
+#else
+		*include = (trigger->opt == SENSOR_STREAM_DATA_INCLUDE) ? 0b111 : 0;
+#endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
+		*drop = (trigger->opt == SENSOR_STREAM_DATA_DROP) ? 0b111 : 0;
+	}
+}
+
 void max30101_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
 	struct max30101_data *data = dev->data;
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
 	struct max30101_stream_config stream_cfg = {0};
+	uint8_t include, drop;
 
 //	LOG_WRN("max30101_submit_stream");
 	for (size_t i = 0; i < cfg->count; i++) {
 		if (cfg->triggers[i].trigger == SENSOR_TRIG_DATA_READY) {
 			stream_cfg.irq_data_rdy |= 1;
+			max30101_stream_config(dev, &cfg->triggers[i], &include, &drop);
+			stream_cfg.data_rdy_incl |= include;
+			stream_cfg.data_rdy_drop |= drop;
+			LOG_WRN("(%d) MAX30101 DRDY trigger [%d](%d) -> [0x%X][0x%X][0x%X]", i, cfg->triggers[i].chan_spec.chan_type, cfg->triggers[i].chan_spec.chan_idx, stream_cfg.data_rdy_incl, stream_cfg.data_rdy_drop, (uint8_t)(stream_cfg.data_rdy_incl & ~stream_cfg.data_rdy_drop));
 		} else if (cfg->triggers[i].trigger == SENSOR_TRIG_FIFO_WATERMARK) {
 			stream_cfg.irq_watermark = (cfg->triggers[i].opt == SENSOR_STREAM_DATA_INCLUDE)? 3 : 1;
+			stream_cfg.irq_watermark |= 1;
+			max30101_stream_config(dev, &cfg->triggers[i], &include, &drop);
+			stream_cfg.watermark_incl |= include;
+			stream_cfg.watermark_drop |= drop;
+			LOG_WRN("(%d) MAX30101 WATERMARK trigger [%d](%d) -> [0x%X][0x%X][0x%X]", i, cfg->triggers[i].chan_spec.chan_type, cfg->triggers[i].chan_spec.chan_idx, stream_cfg.watermark_incl, stream_cfg.watermark_drop, (uint8_t)(stream_cfg.watermark_incl & ~stream_cfg.watermark_drop));
 		} else if (cfg->triggers[i].trigger == SENSOR_TRIG_OVERFLOW) {
 			if (cfg->triggers[i].opt != SENSOR_STREAM_DATA_NOP) {
+				LOG_ERR("MAX30101 OVERFLOW trigger only support SENSOR_STREAM_DATA_NOP");
+				return;
 				LOG_ERR("MAX30101 OVERFLOW trigger only support SENSOR_STREAM_DATA_NOP");
 				return;
 			}
@@ -38,6 +104,8 @@ void max30101_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iod
 	if (stream_cfg.irq_data_rdy != data->stream_cfg.irq_data_rdy) {
 		/* enable/disable drdy events */
 		data->stream_cfg.irq_data_rdy = stream_cfg.irq_data_rdy;
+		data->stream_cfg.data_rdy_incl = stream_cfg.data_rdy_incl;
+		data->stream_cfg.data_rdy_drop = stream_cfg.data_rdy_drop;
 		uint8_t enable = (data->stream_cfg.irq_data_rdy) ? 0xFF : 0;
 
 		if (max30101_config_interruption(dev, MAX30101_REG_INT_EN1, MAX30101_INT_PPG_MASK, enable)) {
@@ -60,6 +128,8 @@ void max30101_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iod
 	if (stream_cfg.irq_watermark != data->stream_cfg.irq_watermark) {
 		/* enable/disable the FIFO */
 		data->stream_cfg.irq_watermark = stream_cfg.irq_watermark;
+		data->stream_cfg.watermark_incl = stream_cfg.watermark_incl;
+		data->stream_cfg.watermark_drop = stream_cfg.watermark_drop;
 		uint8_t enable = (data->stream_cfg.irq_watermark) ? 0xFF : 0;
 
 		if (max30101_config_interruption(dev, MAX30101_REG_INT_EN1, MAX30101_INT_FULL_MASK, enable)) {
@@ -116,7 +186,7 @@ static void max30101_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe,
 	struct max30101_data *data = dev->data;
 	struct sensor_read_config *read_config;
 
-//	LOG_WRN("max30101_read_fifo_cb");
+	LOG_WRN("max30101_read_fifo_cb");
 	if (result) { /* reads failed → finish the original op with error */
 		LOG_ERR("FIFO read failed");
 		rtio_iodev_sqe_err(data->streaming_sqe, result);
@@ -166,8 +236,8 @@ static void max30101_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe,
 	// 	edata->header.fifo_info[1], edata->header.fifo_info[2], count);
 	// edata = (struct max30101_encoded_data *)buf;
 //	LOG_INF("edata Timestamp: [%lld]", edata->header.timestamp);
-//	LOG_WRN("FIFO: [0x%02X][0x%02X][0x%02X](%d)", edata->header.fifo_info[0],
-//		edata->header.fifo_info[1], edata->header.fifo_info[2], count);
+	LOG_DBG("FIFO: [0x%02X][0x%02X][0x%02X](%d)", edata->header.fifo_info[0],
+		edata->header.fifo_info[1], edata->header.fifo_info[2], count);
 
 	edata->header.reading_count = count;
 
@@ -178,10 +248,36 @@ static void max30101_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe,
 	edata->has_temp = 0;
 
 	/* Drop data */
-	if (!(data->stream_cfg.irq_watermark & 0x02)) {
-		edata->has_red = 0;
-		edata->has_ir = 0;
-		edata->has_green = 0;
+	uint8_t keep = (data->stream_cfg.watermark_incl & ~data->stream_cfg.watermark_drop);
+	if (data->stream_cfg.watermark_drop) {
+		int index = 0;
+		for (int slot_chan = 0; slot_chan < MAX30101_MAX_NUM_CHANNELS; slot_chan++) {
+			for (int j = 0; j < data->num_channels[index]; j++) {
+				LOG_INF("(%d) Dropping channel[%d][%d]: [%d](0x%02X)", slot_chan, index, j, data->map[index][j], keep);
+				if (!(keep & BIT(data->map[index][j]))) {
+					LOG_ERR("Drop channel[%d](%d): [%d]", index, j, data->map[index][j]);
+					switch (index)
+					{
+					case MAX30101_LED_CHANNEL_RED:
+						edata->has_red--;
+						break;
+
+					case MAX30101_LED_CHANNEL_IR:
+						edata->has_ir--;
+						break;
+					
+					case MAX30101_LED_CHANNEL_GREEN:
+						edata->has_green--;
+						break;
+					
+					default:
+						LOG_ERR("Unsupported channel index %d", index);
+						break;
+					}
+				}
+			}
+			index++;
+		}
 	}
 
 	uint8_t *read_data = (uint8_t *)&edata->reading[0].raw;
@@ -232,19 +328,6 @@ static void max30101_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe,
 	__ASSERT_NO_MSG(read_config != NULL);
 	__ASSERT_NO_MSG(read_config->is_streaming == true);
 
-	/* parse the configuration in search for any configured trigger */
-	struct sensor_stream_trigger *data_rdy = NULL, *watermark = NULL, *overflow = NULL;
-
-	for (int i = 0; i < read_config->count; ++i) {
-		if (read_config->triggers[i].trigger == SENSOR_TRIG_DATA_READY) {
-			data_rdy = &read_config->triggers[i];
-		} else if (read_config->triggers[i].trigger == SENSOR_TRIG_FIFO_WATERMARK) {
-			watermark = &read_config->triggers[i];
-		} else if (read_config->triggers[i].trigger == SENSOR_TRIG_OVERFLOW) {
-			overflow = &read_config->triggers[i];
-		}
-	}
-
 	/* flush completion */
 	struct rtio_cqe *cqe;
 	int res = 0;
@@ -270,19 +353,23 @@ static void max30101_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe,
 
 	struct max30101_encoded_data *edata;
 	bool rdy_event = false, watermark_event = false, overflow_event = false;
+	bool rig_data = (data->stream_cfg.data_rdy_incl & ~data->stream_cfg.data_rdy_drop) & 0b111;
 
-	if (data_rdy != NULL) {
-		rdy_event = (data_rdy->opt != SENSOR_STREAM_DATA_NOP) && ((data->status[0] & MAX30101_INT_PPG_MASK) != 0);
+	if (data->stream_cfg.irq_data_rdy) {
+		rdy_event = ((data->stream_cfg.data_rdy_incl & ~data->stream_cfg.data_rdy_drop) != 0) && ((data->status[0] & MAX30101_INT_PPG_MASK) != 0);
 #if CONFIG_MAX30101_DIE_TEMPERATURE
+		uint8_t temp = data->temp_available;
 		data->temp_available |= !!(data->status[1] & MAX30101_INT_TEMP_MASK);
+		LOG_DBG("Temperature available: [%d]", data->temp_available - temp);
 #endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
 	}
 
-	if (watermark != NULL) {
-		watermark_event = (watermark->opt != SENSOR_STREAM_DATA_NOP) && ((data->status[0] & MAX30101_INT_FULL_MASK) != 0);
+	if (data->stream_cfg.irq_watermark) {
+		LOG_INF("Watermark: [%d][%ld]", (data->stream_cfg.watermark_incl & ~data->stream_cfg.watermark_drop), (data->status[0] & MAX30101_INT_FULL_MASK));
+		watermark_event = ((data->stream_cfg.watermark_incl & ~data->stream_cfg.watermark_drop) != 0) && ((data->status[0] & MAX30101_INT_FULL_MASK) != 0);
 	}
 
-	if (overflow != NULL) {
+	if (data->stream_cfg.irq_overflow) {
 		overflow_event = !!(data->status[0] & MAX30101_INT_ALC_OVF_MASK);
 	}
 
@@ -310,9 +397,9 @@ static void max30101_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe,
 	edata->has_watermark = watermark_event;
 	edata->has_overflow = overflow_event;
 
-//	LOG_DBG("Flags: [%d][%d][%d]", rdy_event, watermark_event, overflow_event);
+	LOG_ERR("Flags: [%d][%d][%d]", rdy_event, watermark_event, overflow_event);
 	/* If we're not interested in the data, just complete the request */
-	if (!rdy_event && !watermark_event && !overflow_event) {
+	if (!rdy_event && !watermark_event) {
 //		LOG_ERR("max30101_read_status_cb NOP");
 		/* complete request with ok */
 		data->streaming_sqe = NULL;
@@ -335,99 +422,7 @@ static void max30101_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe,
 		return;
 	}
 
-	if (rdy_event) {
-		edata->header.reading_count = 1;
-
-		/* Check if the requested channels are supported */
-		const struct sensor_chan_spec all_channel[] = {{.chan_type=SENSOR_CHAN_ALL, .chan_idx=0}};
-		uint8_t data_channel = max30101_encode_channels(data, edata, all_channel, ARRAY_SIZE(all_channel));
-
-		if (!!data_channel) {
-			uint8_t reg_addr = MAX30101_REG_FIFO_DATA;
-			uint8_t *read_data = (uint8_t *)&edata->reading[0].raw;
-
-			/* Defined if the value should be dropped */
-			bool keep = (data_rdy->opt != SENSOR_STREAM_DATA_DROP);
-			edata->has_red &= keep;
-			edata->has_ir &= keep;
-			edata->has_green &= keep;
-
-			write_addr = rtio_sqe_acquire(data->rtio_ctx);
-			read_reg = rtio_sqe_acquire(data->rtio_ctx);
-			// Is check acquired not NULL, necessary ?
-			acquirable -= 2;
-
-			rtio_sqe_prep_tiny_write(write_addr, data->iodev, RTIO_PRIO_NORM,
-						&reg_addr, 1, NULL);
-			write_addr->flags = RTIO_SQE_TRANSACTION;
-
-			rtio_sqe_prep_read(read_reg, data->iodev, RTIO_PRIO_NORM, read_data,
-					max30101_sample_bytes[data_channel], NULL);
-			read_reg->flags = RTIO_SQE_CHAINED;
-			read_reg->iodev_flags |= RTIO_IODEV_I2C_RESTART | RTIO_IODEV_I2C_STOP;
-
-//			LOG_ERR("max30101_read_status_cb PPG");
-#if CONFIG_MAX30101_DIE_TEMPERATURE
-			if (data->temp_available && (edata->has_temp)) {
-				data->temp_available = false;
-				reg_addr = MAX30101_REG_TINT;
-				read_data = (uint8_t *)&edata->die_temp;
-				uint8_t enable_buf[] = {MAX30101_REG_TEMP_CFG, 1};
-
-				if (acquirable < 3) {
-					LOG_ERR("TEMP Not enough sqes available: [%d/%d]", 3, acquirable);
-					rtio_iodev_sqe_err(data->streaming_sqe, -ENOMEM);
-					return;
-				}
-
-				write_addr = rtio_sqe_acquire(data->rtio_ctx);
-				read_reg = rtio_sqe_acquire(data->rtio_ctx);
-				// Is check acquired not NULL, necessary ?
-				acquirable -= 2;
-
-				rtio_sqe_prep_tiny_write(write_addr, data->iodev, RTIO_PRIO_NORM,
-							&reg_addr, 1, NULL);
-				write_addr->flags = RTIO_SQE_TRANSACTION;
-
-				rtio_sqe_prep_read(read_reg, data->iodev, RTIO_PRIO_NORM, read_data,
-						2, NULL);
-				read_reg->flags = RTIO_SQE_CHAINED;
-				read_reg->iodev_flags |= RTIO_IODEV_I2C_RESTART | RTIO_IODEV_I2C_STOP;
-
-				struct rtio_sqe *write_en = rtio_sqe_acquire(data->rtio_ctx);
-				// Is check acquired not NULL, necessary ?
-				acquirable -= 1;
-
-				rtio_sqe_prep_tiny_write(write_en, data->iodev, RTIO_PRIO_NORM,
-						enable_buf, ARRAY_SIZE(enable_buf), NULL);
-				write_en->flags = RTIO_SQE_CHAINED;
-				write_en->iodev_flags |= RTIO_IODEV_I2C_RESTART | RTIO_IODEV_I2C_STOP;
-
-//				LOG_ERR("max30101_read_status_cb TEMP");
-			} else {
-				edata->has_temp = 0;
-			}
-#endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
-		} else {
-			edata->header.reading_count = 0;
-			edata->has_red = 0;
-			edata->has_ir = 0;
-			edata->has_green = 0;
-			edata->has_temp = 0;
-		}
-
-		complete_op = rtio_sqe_acquire(data->rtio_ctx);
-		if (complete_op == NULL) {
-			rtio_iodev_sqe_err(data->streaming_sqe, -ENOMEM);
-			rtio_sqe_drop_all(data->rtio_ctx);
-			return;
-		}
-
-//		LOG_ERR("max30101_read_status_cb complete_op");
-		rtio_sqe_prep_callback_no_cqe(complete_op, max30101_complete_op_cb, (void *)dev, data->streaming_sqe);
-		rtio_submit(data->rtio_ctx, 0);
-	}
-
+	/* WATERMARK event is higher priority than DATA_RDY */
 	if (watermark_event) {
 		uint8_t reg_addr = MAX30101_REG_FIFO_WR;
 		uint8_t *read_data = (uint8_t *)&edata->header.fifo_info;
@@ -447,7 +442,7 @@ static void max30101_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe,
 		read_reg->flags = RTIO_SQE_CHAINED;
 		read_reg->iodev_flags |= RTIO_IODEV_I2C_RESTART | RTIO_IODEV_I2C_STOP;
 
-//		LOG_ERR("max30101_read_status_cb FIFO");
+		LOG_ERR("max30101_read_status_cb FIFO");
 		complete_op = rtio_sqe_acquire(data->rtio_ctx);
 		if (complete_op == NULL) {
 			rtio_iodev_sqe_err(data->streaming_sqe, -ENOMEM);
@@ -458,6 +453,103 @@ static void max30101_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe,
 //		LOG_ERR("max30101_read_status_cb complete_op");
 		rtio_sqe_prep_callback_no_cqe(complete_op, max30101_read_fifo_cb, (void *)dev, data->streaming_sqe);
 		rtio_submit(data->rtio_ctx, 0);
+
+		return;
+	}
+
+	if (rdy_event) {
+		edata->header.reading_count = 1;
+
+		/* Check if the requested channels are supported */
+		const struct sensor_chan_spec all_channel[] = {{.chan_type=SENSOR_CHAN_ALL, .chan_idx=0}};
+		uint8_t data_channel = max30101_encode_channels(data, edata, all_channel, ARRAY_SIZE(all_channel));
+
+		if (!!data_channel && rig_data) {
+			uint8_t reg_addr = MAX30101_REG_FIFO_DATA;
+			uint8_t *read_data = (uint8_t *)&edata->reading[0].raw;
+
+			/* Defined if the value should be dropped */
+			bool keep = 1; //(data_rdy->opt != SENSOR_STREAM_DATA_DROP);
+			edata->has_red &= keep;
+			edata->has_ir &= keep;
+			edata->has_green &= keep;
+
+			write_addr = rtio_sqe_acquire(data->rtio_ctx);
+			read_reg = rtio_sqe_acquire(data->rtio_ctx);
+			// Is check acquired not NULL, necessary ?
+			acquirable -= 2;
+
+			rtio_sqe_prep_tiny_write(write_addr, data->iodev, RTIO_PRIO_NORM,
+						&reg_addr, 1, NULL);
+			write_addr->flags = RTIO_SQE_TRANSACTION;
+
+			rtio_sqe_prep_read(read_reg, data->iodev, RTIO_PRIO_NORM, read_data,
+					max30101_sample_bytes[data_channel], NULL);
+			read_reg->flags = RTIO_SQE_CHAINED;
+			read_reg->iodev_flags |= RTIO_IODEV_I2C_RESTART | RTIO_IODEV_I2C_STOP;
+			LOG_ERR("max30101_read_status_cb PPG");
+		} else {
+			edata->header.reading_count = 0;
+			edata->has_red = 0;
+			edata->has_ir = 0;
+			edata->has_green = 0;
+		}
+
+#if CONFIG_MAX30101_DIE_TEMPERATURE
+		if (data->temp_available && (edata->has_temp)) {
+			data->temp_available = false;
+			edata->header.reading_count = 1;
+			uint8_t reg_addr = MAX30101_REG_TINT;
+			uint8_t *read_data = (uint8_t *)&edata->die_temp;
+			uint8_t enable_buf[] = {MAX30101_REG_TEMP_CFG, 1};
+
+			if (acquirable < 3) {
+				LOG_ERR("TEMP Not enough sqes available: [%d/%d]", 3, acquirable);
+				rtio_iodev_sqe_err(data->streaming_sqe, -ENOMEM);
+				return;
+			}
+
+			write_addr = rtio_sqe_acquire(data->rtio_ctx);
+			read_reg = rtio_sqe_acquire(data->rtio_ctx);
+			// Is check acquired not NULL, necessary ?
+			acquirable -= 2;
+
+			rtio_sqe_prep_tiny_write(write_addr, data->iodev, RTIO_PRIO_NORM,
+						&reg_addr, 1, NULL);
+			write_addr->flags = RTIO_SQE_TRANSACTION;
+
+			rtio_sqe_prep_read(read_reg, data->iodev, RTIO_PRIO_NORM, read_data,
+					2, NULL);
+			read_reg->flags = RTIO_SQE_CHAINED;
+			read_reg->iodev_flags |= RTIO_IODEV_I2C_RESTART | RTIO_IODEV_I2C_STOP;
+
+			struct rtio_sqe *write_en = rtio_sqe_acquire(data->rtio_ctx);
+			// Is check acquired not NULL, necessary ?
+			acquirable -= 1;
+
+			rtio_sqe_prep_tiny_write(write_en, data->iodev, RTIO_PRIO_NORM,
+					enable_buf, ARRAY_SIZE(enable_buf), NULL);
+			write_en->flags = RTIO_SQE_CHAINED;
+			write_en->iodev_flags |= RTIO_IODEV_I2C_RESTART | RTIO_IODEV_I2C_STOP;
+
+			LOG_ERR("max30101_read_status_cb TEMP");
+		} else {
+			edata->has_temp = 0;
+		}
+#endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
+
+		complete_op = rtio_sqe_acquire(data->rtio_ctx);
+		if (complete_op == NULL) {
+			rtio_iodev_sqe_err(data->streaming_sqe, -ENOMEM);
+			rtio_sqe_drop_all(data->rtio_ctx);
+			return;
+		}
+
+//		LOG_ERR("max30101_read_status_cb complete_op");
+		rtio_sqe_prep_callback_no_cqe(complete_op, max30101_complete_op_cb, (void *)dev, data->streaming_sqe);
+		rtio_submit(data->rtio_ctx, 0);
+
+		return;
 	}
 }
 
