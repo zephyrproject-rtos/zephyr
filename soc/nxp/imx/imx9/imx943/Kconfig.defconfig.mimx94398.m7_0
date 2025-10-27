@@ -17,8 +17,12 @@ config MCUX_CORE_SUFFIX
 config NUM_IRQS
 	default 238
 
+config CORTEX_M_SYSTICK
+	default n if MCUX_GPT_TIMER
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
+	default 32768 if MCUX_GPT_TIMER
 
 config ETH_NXP_IMX_MSGINTR
 	default 2
@@ -36,6 +40,12 @@ config PM_S2RAM
 
 config HAS_PM_S2RAM_CUSTOM_MARKING
 	default y
+
+config MCUX_GPT_TIMER
+	default y
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1024
 
 endif
 
