@@ -1,0 +1,23 @@
+# Texas Instruments AM261x MCU series
+#
+# Copyright (c) 2025 Texas Instruments Incorporated
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_AM261X_R5F
+	select ARM
+	select CPU_CORTEX_R5
+	select CPU_HAS_ARM_MPU
+	select VIM
+	select ARM_CUSTOM_INTERRUPT_CONTROLLER
+	select SOC_EARLY_INIT_HOOK
+	select UART_NS16550_ACCESS_WORD_ONLY if UART_NS16550
+
+config SOC_PART_NUMBER
+	default "AM2612" if SOC_AM261X_R5F0_0 || SOC_AM261X_R5F0_1
+
+config CORTEX_R_BOOT_ADDRESS
+	hex "Cortex-R Boot Address"
+	default 0x0
+	help
+	  This option specifies the boot address for the Cortex-R core
