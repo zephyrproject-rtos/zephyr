@@ -19,4 +19,11 @@ config SMF_INITIAL_TRANSITION
 	help
 	   If y, then each state can have an initial transition to a sub-state
 
+config SMF_LCA_SIBLING_SHORTCUT
+	depends on SMF_ANCESTOR_SUPPORT
+	bool "Fast path for sibiling states transitions"
+	help
+	   If y, regardless of nesting depth, transitions speed between sibling
+	   states (same parent) are depth-independent
+
 endif # SMF
