@@ -259,7 +259,7 @@ struct uarte_async_rx {
 	int32_t timeout_slab; /* rx_timeout divided by RX_TIMEOUT_DIV */
 	int32_t timeout_left; /* Current time left until user callback */
 	union {
-		uint8_t ppi;
+		nrfx_gppi_handle_t ppi;
 		uint32_t cnt;
 	} cnt;
 	/* Flag to ensure that RX timeout won't be executed during ENDRX ISR */
@@ -311,7 +311,7 @@ struct uarte_nrfx_data {
 	atomic_val_t poll_out_lock;
 	atomic_t flags;
 #ifdef UARTE_ENHANCED_POLL_OUT
-	uint8_t ppi_ch_endtx;
+	nrfx_gppi_handle_t ppi_h_endtx;
 #endif
 };
 
@@ -1083,15 +1083,14 @@ static int uarte_nrfx_rx_counting_init(const struct device *dev)
 
 		nrfx_timer_clear(&data->timer);
 
-		ret = nrfx_gppi_channel_alloc(&data->async->rx.cnt.ppi);
-		if (ret != NRFX_SUCCESS) {
+		ret = nrfx_gppi_conn_alloc(evt_addr, tsk_addr, &data->async->rx.cnt.ppi);
+		if (ret < 0) {
 			LOG_ERR("Failed to allocate PPI Channel");
 			nrfx_timer_uninit(&data->timer);
-			return -EINVAL;
+			return ret;
 		}
 
-		nrfx_gppi_channel_endpoints_setup(data->async->rx.cnt.ppi, evt_addr, tsk_addr);
-		nrfx_gppi_channels_enable(BIT(data->async->rx.cnt.ppi));
+		nrfx_gppi_conn_enable(data->async->rx.cnt.ppi);
 	} else {
 		nrf_uarte_int_enable(uarte, NRF_UARTE_INT_RXDRDY_MASK);
 	}
@@ -3141,18 +3140,17 @@ static DEVICE_API(uart, uart_nrfx_uarte_driver_api) = {
 static int endtx_stoptx_ppi_init(NRF_UARTE_Type *uarte,
 				 struct uarte_nrfx_data *data)
 {
-	nrfx_err_t ret;
+	int ret;
 
-	ret = nrfx_gppi_channel_alloc(&data->ppi_ch_endtx);
-	if (ret != NRFX_SUCCESS) {
+	ret = nrfx_gppi_conn_alloc(
+		nrf_uarte_event_address_get(uarte, NRF_UARTE_EVENT_ENDTX),
+		nrf_uarte_task_address_get(uarte, NRF_UARTE_TASK_STOPTX), &data->ppi_h_endtx);
+	if (ret < 0) {
 		LOG_ERR("Failed to allocate PPI Channel");
-		return -EIO;
+		return ret;
 	}
 
-	nrfx_gppi_channel_endpoints_setup(data->ppi_ch_endtx,
-		nrf_uarte_event_address_get(uarte, NRF_UARTE_EVENT_ENDTX),
-		nrf_uarte_task_address_get(uarte, NRF_UARTE_TASK_STOPTX));
-	nrfx_gppi_channels_enable(BIT(data->ppi_ch_endtx));
+	nrfx_gppi_conn_enable(data->ppi_h_endtx);
 
 	return 0;
 }
