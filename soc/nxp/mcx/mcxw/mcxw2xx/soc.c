@@ -102,6 +102,13 @@ __weak void clock_init(void)
 	PMC->OSTIMERr &= ~PMC_OSTIMER_OSTIMERCLKSEL_MASK;
 	PMC->OSTIMERr |= OSTIMERCLKSEL_FRO_1MHz << PMC_OSTIMER_OSTIMERCLKSEL_SHIFT;
 #endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(iap), nxp_iap_fmc55, okay)
+	/* kCLOCK_Sysctl must be enabled for FLASH_CacheClear,
+	 * FLASH_CacheSpeculationControl and FLASH_CheckECC to have an effect.
+	 */
+	CLOCK_EnableClock(kCLOCK_Sysctl);
+#endif
 }
 
 #ifdef CONFIG_SOC_RESET_HOOK
