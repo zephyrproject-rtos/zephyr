@@ -136,36 +136,31 @@ typedef struct mdio_config_transfer {
 static inline int mdio_transfer(gmac_registers_t *regs, mdio_config_transfer_t *cfg)
 {
 	int timeout = MDIO_MCHP_OP_TIMEOUT;
-	int result = MDIO_MCHP_ESUCCESS;
 
 	/* Evaluate the register value to be set */
 	uint32_t reg_val = (cfg->c45 ? 0U : GMAC_MAN_CLTTO_Msk) | GMAC_MAN_OP(cfg->op) |
 			   GMAC_MAN_WTN(0x02) | GMAC_MAN_PHYA(cfg->prtad) |
 			   GMAC_MAN_REGA(cfg->regad) | GMAC_MAN_DATA(cfg->data_in);
 
-	do {
-		/* Set the value in the register */
-		regs->GMAC_MAN = reg_val;
+	/* Set the value in the register */
+	regs->GMAC_MAN = reg_val;
 
-		/* Wait until done */
-		while ((regs->GMAC_NSR & GMAC_NSR_IDLE_Msk) == 0) {
-			if (timeout-- == 0U) {
-				LOG_ERR("transfer timedout");
-
-				result = -ETIMEDOUT;
-				break;
-			}
-
-			k_sleep(K_MSEC(5));
+	/* Wait until done */
+	while ((regs->GMAC_NSR & GMAC_NSR_IDLE_Msk) == 0) {
+		if (timeout-- == 0U) {
+			LOG_ERR("transfer timedout");
+			return -ETIMEDOUT;
 		}
 
-		/* Copy the value in case of read operation */
-		if ((cfg->data_out) != NULL) {
-			*(cfg->data_out) = regs->GMAC_MAN & GMAC_MAN_DATA_Msk;
-		}
-	} while (0);
+		k_sleep(K_MSEC(5));
+	}
 
-	return result;
+	/* Copy the value in case of read operation */
+	if ((cfg->data_out) != NULL) {
+		*(cfg->data_out) = regs->GMAC_MAN & GMAC_MAN_DATA_Msk;
+	}
+
+	return MDIO_MCHP_ESUCCESS;
 }
 
 /**
