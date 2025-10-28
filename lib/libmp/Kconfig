@@ -28,3 +28,6 @@ config MP_PLUGIN_ZVID
 
 config MP_PLUGIN_ZDISP
     bool "Enable zdisp plugin"
+
+config MP_PLUGIN_ZAUD
+    bool "Enable zaud plugin"

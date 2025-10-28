@@ -21,6 +21,10 @@
 #include <src/plugins/zvid/mp_zvid_property.h>
 #endif
 
+#if CONFIG_MP_PLUGIN_ZAUD
+#include <src/plugins/zaud/mp_zaud_property.h>
+#endif
+
 /**
  * mp_init:
  *

@@ -48,6 +48,14 @@ if (CONFIG_MP)
         )
     endif()
 
+    if (CONFIG_MP_PLUGIN_ZAUD)
+        message("Including zaud plugin")
+        file(GLOB_RECURSE PLUGIN_ZAUD_SOURCE_FILES ${MP_PLUGIN_DIR}/zaud/*.c)
+        zephyr_library_sources(
+            ${PLUGIN_ZAUD_SOURCE_FILES}
+        )
+    endif()
+
     zephyr_linker_sources(DATA_SECTIONS ${MP_CORE_DIR}/mp_zephyr.ld)
 
     zephyr_iterable_section(NAME MpElementFactory GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT})
