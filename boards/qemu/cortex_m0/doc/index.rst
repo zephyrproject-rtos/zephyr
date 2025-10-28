@@ -20,21 +20,7 @@ Hardware
 Supported Features
 ==================
 
-The following hardware features are supported:
-
-+--------------+------------+----------------------+
-| Interface    | Controller | Driver/Component     |
-+==============+============+======================+
-| NVIC         | on-chip    | nested vectored      |
-|              |            | interrupt controller |
-+--------------+------------+----------------------+
-| nRF          | on-chip    | serial port          |
-| UART         |            |                      |
-+--------------+------------+----------------------+
-| nRF TIMER    | on-chip    | system clock         |
-+--------------+------------+----------------------+
-
-The kernel currently does not support other hardware features on this platform.
+.. zephyr:board-supported-hw::
 
 Devices
 ========
