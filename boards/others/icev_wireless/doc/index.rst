@@ -13,7 +13,7 @@ Hardware
 This board combines an Espressif ESP32-C3-MINI-1 (which includes 4MB of flash in the module) with a
 Lattice iCE40UP5k-SG48 FPGA to allow WiFi and Bluetooth control of the FPGA. ESP32 and FPGA I/O is
 mostly uncommitted except for the pins used for SPI communication between ESP32 and FPGA. Several
-of the ESP32C3 GPIO pins are available for additonal interfaces such as serial, ADC, I2C, etc.
+of the ESP32C3 GPIO pins are available for additional interfaces such as serial, ADC, I2C, etc.
 
 For details on ESP32-C3 hardware please refer to the following resources:
 

@@ -57,7 +57,7 @@ The specifications of the CPU board are shown below:
 
 This product has the onboard debugger circuit, J-Link On-Board (hereinafter called “J-Link-OB”). When you write a
 program, open the JP3 and connect the USB connector(CN13) on CPU board to PC with USB cable. J-Link-OB operates as debugger equivalent to J-Link.
-If connecting from flash programing tool (e.g. J-Flash Lite by SEGGER), set the type of debugger (tool) to “J-Link”
+If connecting from flash programming tool (e.g. J-Flash Lite by SEGGER), set the type of debugger (tool) to “J-Link”
 
 Hardware
 ********
