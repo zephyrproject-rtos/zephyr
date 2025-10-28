@@ -52,4 +52,12 @@ if(CONFIG_MP)
             ${PLUGIN_ZVID_SOURCE_FILES}
         )
     endif()
+
+    if(CONFIG_MP_PLUGIN_ZDISP)
+        message("Including zdisp plugin")
+        file(GLOB_RECURSE PLUGIN_ZDISP_SOURCE_FILES ${MP_PLUGIN_DIR}/zdisp/*.c)
+        zephyr_library_sources(
+            ${PLUGIN_ZDISP_SOURCE_FILES}
+        )
+    endif()
 endif()

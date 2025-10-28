@@ -26,4 +26,9 @@
 #include <src/plugins/zvid/mp_zvid_transform.h>
 #endif
 
+#if CONFIG_MP_PLUGIN_ZDISP
+#include <src/plugins/zdisp/mp_zdisp_property.h>
+#include <src/plugins/zdisp/mp_zdisp_sink.h>
+#endif
+
 #endif /* __MP_H__ */
