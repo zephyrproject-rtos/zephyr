@@ -1,0 +1,19 @@
+# Copyright (c) 2025 Ayush Singh, BeagleBoard.org
+# SPDX-License-Identifier: Apache-2.0
+
+description: RMPSG UART device
+
+compatible: "rpmsg-uart"
+
+include: [base.yaml]
+
+properties:
+  ipc-shm:
+    type: phandle
+    description:
+      OpenAMP subsystem to determine the base address and size of the
+      shared memory (SHM) usable for interprocess-communication (IPC).
+
+  ipc:
+    type: phandle
+    description: OpenAMP inter-process communication (IPC) device.
