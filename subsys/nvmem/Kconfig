@@ -11,6 +11,15 @@ config NVMEM_EEPROM
 	default y
 	depends on EEPROM
 
+config NVMEM_GENERIC_PROVIDER
+	bool "NVMEM support for generic NVMEM provider"
+	default y
+	depends on NVMEM_MODEL
+	help
+	  Enable a generic NVMEM provider driver API so providers (EEPROM, FUSE, etc.)
+	  can expose a single interface. The NVMEM core will prefer this API if present
+	  and fall back to class-specific providers (EEPROM/FUSE) for compatibility.
+
 module = NVMEM
 module-str = nvmem
 source "subsys/logging/Kconfig.template.log_config"
