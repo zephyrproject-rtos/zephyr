@@ -39,18 +39,7 @@ IRQ and FIQ.
 Supported Features
 ******************
 
-The board configuration supports,
-
-+-----------+------------+-----------------------+
-| Interface | Controller | Driver/Component      |
-+===========+============+=======================+
-| UART      | on-chip    | serial port-polling,  |
-|           |            | serial port-interrupt |
-+-----------+------------+-----------------------+
-| I2C       | on-chip    | i2c-polling           |
-+-----------+------------+-----------------------+
-
-Other hardwares features are currently not supported.
+.. zephyr:board-supported-hw::
 
 Running Zephyr
 **************
