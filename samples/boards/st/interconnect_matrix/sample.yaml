@@ -1,0 +1,16 @@
+sample:
+  name: STM32 interconnect matrix
+tests:
+  sample.boards.stm32.interconnect_matrix:
+    depends_on: pwm
+    tags:
+      - drivers
+      - pwm
+    filter: dt_compat_enabled("st,stm32-timers")
+    platform_allow:
+      - nucleo_g070rb
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "TRGO event will be generated every.*"
