@@ -28,4 +28,11 @@ config MP_THREAD_DEFAULT_PRIORITY
 config MP_CAPSFILTER
 	bool "Capsfilter support"
 
+menu "Media Pipe plugins"
+
+config MP_PLUGIN_ZVID
+	bool "Zvid plugin support"
+
+endmenu
+
 endif # MP
