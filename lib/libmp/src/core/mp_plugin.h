@@ -28,6 +28,11 @@ enum mp_element_factory_id {
 	MP_PIPELINE_ELEM = 0,
 	/** Capsfilter */
 	MP_CAPS_FILTER_ELEM,
+	/* Video plugin elements */
+	/**  Video source */
+	MP_ZVID_SRC_ELEM,
+	/**  Video transform */
+	MP_ZVID_TRANSFORM_ELEM,
 	/** Last item for counter only */
 	MP_ELEM_COUNT,
 };
@@ -37,6 +42,8 @@ enum mp_element_factory_id {
  *
  */
 enum mp_plugin_id {
+	/** Video plugin */
+	MP_ZVID_PLUGIN = 0,
 	/** Last item for counter only */
 	MP_PLUGIN_COUNT,
 };
