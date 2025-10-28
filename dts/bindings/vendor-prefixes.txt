@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2025 liuchangjie liucj1228@outlook.com
+# SPDX-License-Identifier: Apache-2.0
 # Device tree binding vendor prefix registry. Keep this list in
 # alphabetical order.
 #
@@ -377,6 +379,7 @@ laird	Laird PLC
 lamobo	Ketai Huajie Technology Co., Ltd.
 lantiq	Lantiq Semiconductor
 lattice	Lattice Semiconductor
+lckfb	Shenzhen JLC Technology Group Co., Ltd.
 leadtek	Shenzhen Leadtek Technology Co., Ltd.
 leez	Leez
 lego	LEGO Systems A/S
