@@ -34,3 +34,19 @@ properties:
       - full-4-to-32-bit: supports data width from 4 to 32 bits
       - full-4-to-16-bit: supports data width from 4 to 16 bits
       - limited-8-16-bit: supports only 8 and 16-bit data widths
+
+  st,soft-nss:
+    type: boolean
+    description: |
+      Force operation in "Soft NSS" mode without CS/NSS pin.
+
+      This is useful in situations where the SPI interface
+      is connected to a single controller or peripheral and
+      does not require CS/NSS for proper operation.
+
+      This property is overridden by the `cs-gpios` property:
+      if provided, SPI instance also operates in "Soft NSS"
+      mode, but GPIO CS pins are used during transactions.
+
+      If neither this property nor `cs-gpios` are provided,
+      the SPI instance operates in "Hard NSS" mode.
