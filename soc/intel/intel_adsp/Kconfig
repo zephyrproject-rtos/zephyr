@@ -22,16 +22,6 @@ config INTEL_ADSP_SIM
 	help
 	  Running this SoC family in a simulator.
 
-if INTEL_ADSP_SIM
-
-config INTEL_ADSP_SIM_NO_SECONDARY_CORE_FLOW
-	bool "No secondary core flow."
-	help
-	  Select if simulator doesn't use the normal secondary core flow
-	  to initialise secondary clocks.
-
-endif # INTEL_ADSP_SIM
-
 config INTEL_ADSP_FWREADY_MSG
 	bool "Send firmware ready message to host"
 	default y if INTEL_ADSP_SIM
