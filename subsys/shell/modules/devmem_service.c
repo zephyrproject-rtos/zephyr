@@ -60,38 +60,16 @@ static int memory_dump(const struct shell *sh, mem_addr_t phys_addr, size_t size
 				break;
 			case 16:
 				value = sys_le16_to_cpu(sys_read16(addr + data_offset));
-				hex_data[data_offset] = (uint8_t)value;
-				value >>= 8;
-				hex_data[data_offset + 1] = (uint8_t)value;
+				sys_put_le16(value, &hex_data[data_offset]);
 				break;
 			case 32:
 				value = sys_le32_to_cpu(sys_read32(addr + data_offset));
-				hex_data[data_offset] = (uint8_t)value;
-				value >>= 8;
-				hex_data[data_offset + 1] = (uint8_t)value;
-				value >>= 8;
-				hex_data[data_offset + 2] = (uint8_t)value;
-				value >>= 8;
-				hex_data[data_offset + 3] = (uint8_t)value;
+				sys_put_le32(value, &hex_data[data_offset]);
 				break;
 #ifdef CONFIG_64BIT
 			case 64:
 				value = sys_le64_to_cpu(sys_read64(addr + data_offset));
-				hex_data[data_offset] = (uint8_t)value;
-				value >>= 8;
-				hex_data[data_offset + 1] = (uint8_t)value;
-				value >>= 8;
-				hex_data[data_offset + 2] = (uint8_t)value;
-				value >>= 8;
-				hex_data[data_offset + 3] = (uint8_t)value;
-				value >>= 8;
-				hex_data[data_offset + 4] = (uint8_t)value;
-				value >>= 8;
-				hex_data[data_offset + 5] = (uint8_t)value;
-				value >>= 8;
-				hex_data[data_offset + 6] = (uint8_t)value;
-				value >>= 8;
-				hex_data[data_offset + 7] = (uint8_t)value;
+				sys_put_le64(value, &hex_data[data_offset]);
 				break;
 #endif /* CONFIG_64BIT */
 			default:
