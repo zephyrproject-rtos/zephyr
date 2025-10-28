@@ -5,11 +5,14 @@ description: SiFli SF32LB RTC
 
 compatible: "sifli,sf32lb-rtc"
 
-include: base.yaml
+include: [base.yaml, sifli-sf32lb-cfg.yaml]
 
 properties:
   reg:
     required: true
 
   interrupts:
+    required: true
+
+  sifli,cfg:
     required: true
