@@ -538,7 +538,7 @@ config WIFI_FIXED_MAC_ADDRESS
 	help
 	  This option overrides the MAC address read from OTP. It is strictly for testing purposes only.
 
-choice
+choice WIFI_MAC_ADDRESS
 	prompt "Wi-Fi MAC address type"
 	default WIFI_FIXED_MAC_ADDRESS_ENABLED if WIFI_FIXED_MAC_ADDRESS != ""
 	default WIFI_OTP_MAC_ADDRESS
