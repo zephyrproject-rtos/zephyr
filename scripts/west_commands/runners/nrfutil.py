@@ -5,12 +5,10 @@
 '''Runner for flashing with nrfutil.'''
 
 import json
-import shlex
 import subprocess
 import sys
 from pathlib import Path
 
-from runners.core import _DRY_RUN
 from runners.nrf_common import NrfBinaryRunner
 
 
@@ -70,14 +68,10 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
         jout_all = []
 
         cmd = ['nrfutil', '--json', 'device'] + args
+        self._log_cmd(cmd)
 
-        escaped = ' '.join(shlex.quote(s) for s in cmd)
-        if _DRY_RUN or (self.dry_run):
-            self.logger.info(escaped)
-            if not force:
-                return {}
-        else:
-            self.logger.debug(escaped)
+        if self.dry_run and not force:
+            return {}
 
         with subprocess.Popen(cmd, stdout=subprocess.PIPE) as p:
             for line in iter(p.stdout.readline, b''):
