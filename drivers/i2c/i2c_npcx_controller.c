@@ -98,6 +98,16 @@ LOG_MODULE_REGISTER(i2c_npcx, CONFIG_I2C_LOG_LEVEL);
 #define I2C_RECOVER_SDA_RETRY    3
 
 #define NPCX_SMBADDR_SAEN NPCX_SMBADDR1_SAEN /* All the SAEN in SMBADDR is bit_7 */
+/*
+ * After the last ACK/NACK bit, add a delay that is slightly longer than half of I2C clock cycle
+ * before sending STOP condition.
+ */
+/* 5 us (half I2C clock at 100 KHz) + 1 us (for safety) */
+#define NPCX_I2C_ISSUE_STOP_DELAY_100K_NS 6000
+/* 1.25 us (half I2C clock at 400 KHz) + 1 us (for safety) */
+#define NPCX_I2C_ISSUE_STOP_DELAY_400K_NS 2250
+/* 0.5 us (half I2C clock at 1 MHz) + 1 us (for safety) */
+#define NPCX_I2C_ISSUE_STOP_DELAY_1M_NS   1500
 
 /* Supported I2C bus frequency */
 enum npcx_i2c_freq {
@@ -729,12 +739,21 @@ int npcx_i2c_ctrl_configure(const struct device *i2c_dev, uint32_t dev_config)
 	switch (I2C_SPEED_GET(dev_config)) {
 	case I2C_SPEED_STANDARD:
 		data->bus_freq = NPCX_I2C_BUS_SPEED_100KHZ;
+#if defined(CONFIG_I2C_NPCX_INVALID_STOP_WORKAROUND)
+		data->stop_dealy_cycle_time = k_ns_to_cyc_near32(NPCX_I2C_ISSUE_STOP_DELAY_100K_NS);
+#endif
 		break;
 	case I2C_SPEED_FAST:
 		data->bus_freq = NPCX_I2C_BUS_SPEED_400KHZ;
+#if defined(CONFIG_I2C_NPCX_INVALID_STOP_WORKAROUND)
+		data->stop_dealy_cycle_time = k_ns_to_cyc_near32(NPCX_I2C_ISSUE_STOP_DELAY_400K_NS);
+#endif
 		break;
 	case I2C_SPEED_FAST_PLUS:
 		data->bus_freq = NPCX_I2C_BUS_SPEED_1MHZ;
+#if defined(CONFIG_I2C_NPCX_INVALID_STOP_WORKAROUND)
+		data->stop_dealy_cycle_time = k_ns_to_cyc_near32(NPCX_I2C_ISSUE_STOP_DELAY_1M_NS);
+#endif
 		break;
 	default:
 		return -ERANGE;
