@@ -29,4 +29,8 @@
 #include <src/plugins/zdisp/mp_zdisp_property.h>
 #endif
 
+#if CONFIG_MP_PLUGIN_ZAUD
+#include <src/plugins/zaud/mp_zaud_property.h>
+#endif
+
 #endif /* __MP_H__ */

@@ -36,6 +36,13 @@ enum mp_element_factory_id {
 	/* Display plugin elements */
 	/** Display sink */
 	MP_ZDISP_SINK_ELEM,
+	/* Audio plugin elements */
+	/** DMIC source */
+	MP_ZAUD_DMIC_SRC_ELEM,
+	/** DMIC gain */
+	MP_ZAUD_GAIN_ELEM,
+	/** I2S codec sink */
+	MP_ZAUD_I2S_CODEC_SINK_ELEM,
 	/** Last item for counter only */
 	MP_ELEM_COUNT,
 };
@@ -49,6 +56,8 @@ enum mp_plugin_id {
 	MP_ZVID_PLUGIN = 0,
 	/** Display plugin */
 	MP_ZDISP_PLUGIN,
+	/** Audio plugin */
+	MP_ZAUD_PLUGIN,
 	/** Last item for counter only */
 	MP_PLUGIN_COUNT,
 };
