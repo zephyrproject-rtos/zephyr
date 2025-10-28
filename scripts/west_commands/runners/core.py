@@ -318,6 +318,7 @@ class RunnerCaps:
     hide_load_files: bool = False
     rtt: bool = False  # This capability exists separately from the rtt command
                        # to allow other commands to use the rtt address
+    dry_run: bool = False
 
     def __post_init__(self):
         if self.mult_dev_ids and not self.dev_id:
@@ -632,6 +633,10 @@ class ZephyrBinaryRunner(abc.ABC):
         else:
             parser.add_argument('--rtt-address', help=argparse.SUPPRESS)
 
+        parser.add_argument('--dry-run', action='store_true',
+                            help=('''Print all the commands without actually
+                            executing them''' if caps.dry_run else argparse.SUPPRESS))
+
         # Runner-specific options.
         cls.do_add_parser(parser)
 
@@ -678,6 +683,8 @@ class ZephyrBinaryRunner(abc.ABC):
             _missing_cap(cls, '--file-type')
         if args.rtt_address and not caps.rtt:
             _missing_cap(cls, '--rtt-address')
+        if args.dry_run and not caps.dry_run:
+            _missing_cap(cls, '--dry-run')
 
         ret = cls.do_create(cfg, args)
         if args.erase:
