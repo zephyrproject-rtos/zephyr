@@ -1445,3 +1445,8 @@ test_i2c_wsen_pdms_25131308XXX05: wsen_pdms_25131308XXX05@c0 {
 	reg = <0xc0>;
 	sensor-type = <4>;
 };
+
+test_i2c_stcc4: stcc4@c1 {
+	compatible = "sensirion,stcc4";
+	reg = <0xc1>;
+};
