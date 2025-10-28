@@ -8,27 +8,43 @@ config SOC_SERIES_INTEL_ADSP_ACE
 	help
 	  Intel ADSP ACE
 
+config SOC_SERIES_INTEL_ADSP_ACE15
+	bool
+
 config SOC_INTEL_ACE15_MTPM
 	bool
 	select SOC_SERIES_INTEL_ADSP_ACE
+	select SOC_SERIES_INTEL_ADSP_ACE15
 	help
 	  ACE 1.5 Meteor Lake PCH M
+
+config SOC_SERIES_INTEL_ADSP_ACE20
+	bool
 
 config SOC_INTEL_ACE20_LNL
 	bool
 	select SOC_SERIES_INTEL_ADSP_ACE
+	select SOC_SERIES_INTEL_ADSP_ACE20
 	help
 	  ACE 2.0 Lunar Lake PCH
+
+config SOC_SERIES_INTEL_ADSP_ACE30
+	bool
 
 config SOC_INTEL_ACE30
 	bool
 	select SOC_SERIES_INTEL_ADSP_ACE
+	select SOC_SERIES_INTEL_ADSP_ACE30
 	help
 	  ACE 3.0 Panther Lake PCH
+
+config SOC_SERIES_INTEL_ADSP_ACE40
+	bool
 
 config SOC_INTEL_ACE40
 	bool
 	select SOC_SERIES_INTEL_ADSP_ACE
+	select SOC_SERIES_INTEL_ADSP_ACE40
 	help
 	  ACE 4.0 Nova Lake PCH
 
