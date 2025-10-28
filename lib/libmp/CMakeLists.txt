@@ -60,4 +60,12 @@ if(CONFIG_MP)
             ${PLUGIN_ZDISP_SOURCE_FILES}
         )
     endif()
+
+    if(CONFIG_MP_PLUGIN_ZAUD)
+        message("Including zaud plugin")
+        file(GLOB_RECURSE PLUGIN_ZAUD_SOURCE_FILES ${MP_PLUGIN_DIR}/zaud/*.c)
+        zephyr_library_sources(
+            ${PLUGIN_ZAUD_SOURCE_FILES}
+        )
+    endif()
 endif()
