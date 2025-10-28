@@ -11,6 +11,7 @@
 #include <dt-bindings/clock/bflb_bl61x_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	#address-cells = <1>;
@@ -167,6 +168,28 @@
 			interrupts = <45 1>;
 			interrupt-parent = <&clic>;
 			status = "disabled";
+		};
+
+		i2c0: i2c@2000a300 {
+			compatible = "bflb,i2c";
+			reg = <0x2000a300 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			interrupts = <48 1>;
+			interrupt-parent = <&clic>;
+		};
+
+		i2c1: i2c@2000a900 {
+			compatible = "bflb,i2c";
+			reg = <0x2000a900 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			interrupts = <55 1>;
+			interrupt-parent = <&clic>;
 		};
 
 		flashctrl: flash-controller@2000b000 {
