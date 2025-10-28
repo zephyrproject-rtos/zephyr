@@ -4,7 +4,7 @@ Overview
 ********
 
 WeAct Studio ESP32-C3-Mini is a compact development board based on ESP32-C3FH4,
-featuring integrated Wi-Fi and Bluetooth® Low Energy connectivity.
+featuring integrated Wi-Fi and Bluetooth |reg| Low Energy connectivity.
 For more information, check `WeAct Studio ESP32-C3 Core Board`_.
 
 Hardware

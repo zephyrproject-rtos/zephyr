@@ -8,7 +8,7 @@ Overview
 
 RTC 18 Click shield is built around the Micro Crystal **RV-3032-C7** temperature-compensated
 real-time clock (RTC) module.
-The module offers I²C communication, integrated timekeeping with leap year support, alarm and
+The module offers I2C communication, integrated timekeeping with leap year support, alarm and
 interrupt features, and a battery backup switchover circuit.
 
 The RTC is designed for high accuracy (≈ ±0.22 s/day) and extremely low power consumption, allowing

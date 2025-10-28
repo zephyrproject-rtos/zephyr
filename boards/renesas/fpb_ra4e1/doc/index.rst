@@ -3,18 +3,18 @@
 Overview
 ********
 
-The Renesas RA4E1 Group delivers up to 100 MHz of CPU performance using an Arm® Cortex®-M33 core
+The Renesas RA4E1 Group delivers up to 100 MHz of CPU performance using an Arm |reg| Cortex |reg|-M33 core
 with 512 KB code flash memory, 8 KB of data flash memory, and 128 KB of SRAM. RA4E1 MCUs
 offer leading-performance. The RA4E1 Group offers a wide set of peripherals, including
 USB 2.0 Full-Speed, Quad SPI, and advanced analog.
 
-The MCU in this series incorporates a high-performance Arm Cortex®-M33 core running up to
+The MCU in this series incorporates a high-performance Arm Cortex |reg|-M33 core running up to
 100 MHz with the following features:
 
 **MCU Native Pin Access**
 
 - R7FA4E10D2CFM MCU (referred to as RA MCU)
-- 100 MHz, Arm® Cortex®-M33 core
+- 100 MHz, Arm |reg| Cortex |reg|-M33 core
 - 512 KB Code Flash, 8 KB Data Flash, 128 KB SRAM
 - 64 pins, LQFP package
 - Native pin access through 2 x 50-pin male headers (not fitted)

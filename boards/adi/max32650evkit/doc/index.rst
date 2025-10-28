@@ -45,7 +45,7 @@ Hardware
     - USB 2.0 Hi-Speed Device Interface with PHY
     - 16 Pulse Train Generators
     - Six 32-bit Timers with 8mA Hi-Drive
-    - 1-Wire® Master
+    - 1-Wire |reg| Master
 
   - Trust Protection Unit (TPU) for IP/Data and Security
 

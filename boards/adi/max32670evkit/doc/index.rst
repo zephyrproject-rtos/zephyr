@@ -6,7 +6,7 @@ The MAX32670 evaluation kit (EV kit) provides a platform for evaluation capabili
 of the MAX32670. The MAX32670 is an ultra-low-power, cost-effective, highly reliable
 32-bit microcontroller that enables designs with complex sensor processing without
 compromising battery life. It combines a flexible and versatile power management unit
-with the powerful Arm® Cortex®-M4 core with floating point unit (FPU).
+with the powerful Arm |reg| Cortex |reg|-M4 core with floating point unit (FPU).
 The MAX32670 also offers legacy designs an easy and cost optimal upgradepath
 from 8-bit or 16-bit microcontrollers.
 

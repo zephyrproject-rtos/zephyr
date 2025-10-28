@@ -4,8 +4,8 @@ Overview
 ********
 The MAX32690 evaluation kit (EV kit) provides a platform for evaluating the capabilities
 of the MAX32690 microcontroller, which is an advanced system-on-chip (SoC).
-It features an Arm® Cortex®-M4F CPU for efficient computation of complex functions and
-algorithms, and the latest generation Bluetooth® 5 Low Energy (Bluetooth LE) radio designed
+It features an Arm |reg| Cortex |reg|-M4F CPU for efficient computation of complex functions and
+algorithms, and the latest generation Bluetooth |reg| 5 Low Energy (Bluetooth LE) radio designed
 for wearable and hearable fitness devices, portable and wearable wireless medical devices,
 industrial sensors/networks, internet of things (IoT), and asset tracking.
 

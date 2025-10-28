@@ -4,7 +4,7 @@ Overview
 ********
 
 The LPCXpresso55S28 development board provides the ideal platform for evaluation
-of and development with the LPC552x/S2x MCU based on the Arm® Cortex®-M33
+of and development with the LPC552x/S2x MCU based on the Arm |reg| Cortex |reg|-M33
 architecture. The board includes a high-performance onboard debug probe, audio
 subsystem and accelerometer, with several options for adding off-the-shelf
 add-on boards for networking, sensors, displays, and other interfaces.
@@ -12,7 +12,7 @@ add-on boards for networking, sensors, displays, and other interfaces.
 Hardware
 ********
 
-- LPC55S28 Arm® Cortex®-M33 microcontroller running at up to 150 MHz
+- LPC55S28 Arm |reg| Cortex |reg|-M33 microcontroller running at up to 150 MHz
 - 512 KB flash and 256 KB SRAM on-chip
 - Onboard, high-speed USB, Link2 debug probe with CMSIS-DAP and SEGGER J-Link
   protocol options

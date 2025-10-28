@@ -25,13 +25,13 @@ board:
 
 - Three users LEDs
 - Two push-buttons: USER and RESET
-- USB Type-C ™ Sink device FS
+- USB Type-C |trade| Sink device FS
 
 Hardware
 ********
 
 The STM32U5A5xx devices are an ultra-low-power microcontrollers family (STM32U5
-Series) based on the high-performance Arm® Cortex®-M33 32-bit RISC core.
+Series) based on the high-performance Arm |reg| Cortex |reg|-M33 32-bit RISC core.
 They operate at a frequency of up to 160 MHz.
 
 - Includes ST state-of-the-art patented technology
@@ -53,7 +53,7 @@ They operate at a frequency of up to 160 MHz.
 
 - Core:
 
-  - Arm® 32-bit Cortex®-M33 CPU with TrustZone®, MPU, DSP,
+  - Arm |reg| 32-bit Cortex |reg|-M33 CPU with TrustZone |reg|, MPU, DSP,
     and FPU ART Accelerator
   - 32-Kbyte ICACHE allowing 0-wait-state execution from flash and external
     memories: frequency up to 160 MHz, 240 DMIPS
@@ -67,11 +67,11 @@ They operate at a frequency of up to 160 MHz.
 - Benchmarks:
 
   - 1.5 DMIPS/MHz (Drystone 2.1)
-  - 655 CoreMark® (4.09 CoreMark®/MHz)
-  - 369 ULPMark™-CP
-  - 89 ULPMark™-PP
-  - 47.2 ULPMark™-CM
-  - 120000 SecureMark™-TLS
+  - 655 CoreMark |reg| (4.09 CoreMark |reg|/MHz)
+  - 369 ULPMark |trade|-CP
+  - 89 ULPMark |trade|-PP
+  - 47.2 ULPMark |trade|-CM
+  - 120000 SecureMark |trade|-TLS
 
 - Memories:
 
@@ -90,7 +90,7 @@ They operate at a frequency of up to 160 MHz.
   - 16-Kbyte DCACHE2
   - Chrom-ART Accelerator (DMA2D) for smoothmotion and transparency effects
   - Chrom-GRC (GFXMMU) allowing up to 20 % of graphic resources optimization
-  - MIPI® DSI host controller with two DSI lanes running at up to 500 Mbit/s each
+  - MIPI |reg| DSI host controller with two DSI lanes running at up to 500 Mbit/s each
   - LCD-TFT controller (LTDC)
   - Digital camera interface
 
@@ -113,7 +113,7 @@ They operate at a frequency of up to 160 MHz.
 - Security and cryptography:
 
   - SESIP3 and PSA Level 3 Certified Assurance Target
-  - Arm® TrustZone® and securable I/Os, memories, and peripherals
+  - Arm |reg| TrustZone |reg| and securable I/Os, memories, and peripherals
   - Flexible life cycle scheme with RDP andpassword-protected debug
   - Root of trust thanks to unique boot entry and secure hide-protection area (HDP)
   - Secure firmware installation (SFI) thanks to embedded root secure services (RSS)
@@ -137,10 +137,10 @@ They operate at a frequency of up to 160 MHz.
 
 - Up to 25 communication peripherals:
 
-  - 1 USB Type-C®/USB power delivery controller
+  - 1 USB Type-C |reg|/USB power delivery controller
   - 1 USB OTG high-speed with embedded PHY
   - 2 SAIs (serial audio interface)
-  - 6 I2C FM+(1 Mbit/s), SMBus/PMBus™
+  - 6 I2C FM+(1 Mbit/s), SMBus/PMBus |trade|
   - 7 USARTs (ISO 7816, LIN, IrDA, modem)
   - 3 SPIs (6x SPIs with OCTOSPI/HSPI)
   - 1 CAN FD controller

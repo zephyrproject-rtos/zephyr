@@ -19,7 +19,7 @@ The model also supports the SAR Transmitter and SAR Receiver get and set message
 
 The SAR Configuration Server model does not have an API of its own, but relies on a
 :ref:`bluetooth_mesh_sar_cfg_cli` to control it.  The SAR Configuration Server model only accepts
-messages encrypted with the node’s device key.
+messages encrypted with the node's device key.
 
 If present, the SAR Configuration Server model must only be instantiated on the primary element.
 

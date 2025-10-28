@@ -1039,7 +1039,7 @@ release:
 * :github:`31726` - RISC-V MIV SoC clock rate is specified 100x too slow
 * :github:`31721` - tests: nrf: posix: portability.posix.common.tls.newlib fails on nrf9160dk_nrf9160
 * :github:`31704` - tests/bluetooth/init/bluetooth.init.test_ctlr_tiny Fails to build on nrf52dk_nrf52832
-* :github:`31696` - UP² Celeron version (not the Atom one) has no console
+* :github:`31696` - UP |sup2| Celeron version (not the Atom one) has no console
 * :github:`31693` - Bluetooth: controller: Compilation error when Encryption support is disabled
 * :github:`31684` - intel_adsp_cavs15: Cannot download firmware of kernel testcases
 * :github:`31681` - [Coverity CID :216796] Uninitialized scalar variable in tests/subsys/power/power_mgmt/src/main.c
@@ -1108,7 +1108,7 @@ release:
 * :github:`31531` - STM32 can driver don't set prescaler
 * :github:`31528` - introduction of demand paging support causing qemu failures on x86_64, qemu_x86_64_nokpti
 * :github:`31524` - littlefs: Too small heap for file cache.
-* :github:`31517` - UP² broken (git bisect findings inside)
+* :github:`31517` - UP |sup2| broken (git bisect findings inside)
 * :github:`31511` - AArch32 exception exit routine behaves incorrectly on fatal exceptions
 * :github:`31510` - Some drivers return invalid z_timer_cycle_get_32() value
 * :github:`31508` - up_squared:  tests/kernel/sched/deadline/ failed.

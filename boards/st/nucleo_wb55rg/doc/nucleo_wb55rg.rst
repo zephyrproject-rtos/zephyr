@@ -4,14 +4,14 @@ Overview
 ********
 
 The Nucleo WB55RG board is a multi-protocol wireless and ultra-low-power device
-embedding a powerful and ultra-low-power radio compliant with the Bluetooth®
+embedding a powerful and ultra-low-power radio compliant with the Bluetooth |reg|
 Low Energy (BLE) SIG specification v5.0 and with IEEE 802.15.4-2011.
 
 
 - STM32 microcontroller in VFQFPN68 package
-- 2.4 GHz RF transceiver supporting Bluetooth® specification v5.0 and
+- 2.4 GHz RF transceiver supporting Bluetooth |reg| specification v5.0 and
   IEEE 802.15.4-2011 PHY and MAC
-- Dedicated Arm® 32-bit Cortex® M0+ CPU for real-time Radio layer
+- Dedicated Arm |reg| 32-bit Cortex |reg| M0+ CPU for real-time Radio layer
 - Three user LEDs
 - Board connector: USB user with Micro-B
 - Two types of extension resources:
@@ -40,13 +40,13 @@ provides the following hardware capabilities:
 - Radio:
 
   - 2.4GHz
-  - RF transceiver supporting Bluetooth® 5 specification, IEEE 802.15.4-2011 PHY and MAC,
-    supporting Thread and ZigBee|reg| 3.0
-  - RX Sensitivity: -96 dBm (Bluetooth|reg| Low Energy at 1 Mbps), -100 dBm (802.15.4)
+  - RF transceiver supporting Bluetooth |reg| 5 specification, IEEE 802.15.4-2011 PHY and MAC,
+    supporting Thread and ZigBee |reg| 3.0
+  - RX Sensitivity: -96 dBm (Bluetooth |reg| Low Energy at 1 Mbps), -100 dBm (802.15.4)
   - Programmable output power up to +6 dBm with 1 dB steps
   - Integrated balun to reduce BOM
   - Support for 2 Mbps
-  - Dedicated Arm|reg| 32-bit Cortex|reg| M0 + CPU for real-time Radio layer
+  - Dedicated Arm |reg| 32-bit Cortex |reg| M0 + CPU for real-time Radio layer
   - Accurate RSSI to enable power control
   - Suitable for systems requiring compliance with radio frequency regulations
     ETSI EN 300 328, EN 300 440, FCC CFR47 Part 15 and ARIB STD-T66
@@ -91,7 +91,7 @@ provides the following hardware capabilities:
 - System peripherals
 
   - Inter processor communication controller (IPCC) for communication with
-    Bluetooth|reg| Low Energy and 802.15.4
+    Bluetooth |reg| Low Energy and 802.15.4
   - HW semaphores for resources sharing between CPUs
   - 2x DMA controllers (7x channels each) supporting ADC, SPI, I2C, USART,
     QSPI, SAI, AES, Timers
@@ -114,7 +114,7 @@ provides the following hardware capabilities:
 - Security and ID
 
  - 3x hardware encryption AES maximum 256-bit for the application,
-   the Bluetooth|reg| Low Energy and IEEE802.15.4
+   the Bluetooth |reg| Low Energy and IEEE802.15.4
  - Customer key storage / key manager services
  - HW public key authority (PKA)
  - Cryptographic algorithms: RSA, Diffie-Helman, ECC over GF(p)
@@ -123,7 +123,7 @@ provides the following hardware capabilities:
  - CRC calculation unit
  - 96-bit unique ID
  - 64-bit unique ID. Possibility to derive 802.15.5 64-bit and
-   Bluetooth|reg| Low Energy 48-bit EUI
+   Bluetooth |reg| Low Energy 48-bit EUI
 
 - Up to 72 fast I/Os, 70 of them 5 V-tolerant
 - Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell |trade|

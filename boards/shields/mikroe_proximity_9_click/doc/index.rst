@@ -8,7 +8,7 @@ Overview
 
 `Proximity 9 Click`_ is a very accurate and reliable proximity sensing (PS) and ambient light
 sensing (ALS) device, equipped with the VCNL4040, an integrated PS and ALS sensor which features the
-Filtron™ technology
+Filtron |trade| technology
 
 The 940nm IRED emitter, along with the low noise analog front end, and the PS/ALS photo-sensitive
 elements, is integrated on the VCNL4040 IC, ensuring very accurate and reliable measurements. The

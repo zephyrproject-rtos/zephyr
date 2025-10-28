@@ -505,7 +505,7 @@ For details, see: `Uboot-HS4x/HS4xD-Command-Reference
 Supported peripheral
 ====================
 
-The following list indicates the state of HS4x/HS4xD Development Kit peripherals’ support
+The following list indicates the state of HS4x/HS4xD Development Kit peripherals' support
 
 +------------+---------+
 | Peripheral | Support |

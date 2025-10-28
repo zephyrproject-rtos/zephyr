@@ -12,7 +12,7 @@ The Bridge Configuration Server model was introduced in the Bluetooth Mesh Proto
 version 1.1, and is used for supporting and configuring the Subnet Bridge feature.
 
 The Bridge Configuration Server model relies on a :ref:`bluetooth_mesh_models_brg_cfg_cli` to
-configure it. The Bridge Configuration Server model only accepts messages encrypted with the node’s
+configure it. The Bridge Configuration Server model only accepts messages encrypted with the node's
 device key.
 
 If present, the Bridge Configuration Server model must be instantiated on the primary element.

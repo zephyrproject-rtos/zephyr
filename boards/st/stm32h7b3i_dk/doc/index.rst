@@ -4,7 +4,7 @@ Overview
 ********
 
 The STM32H7B3I-DK Discovery kit is a complete demonstration and development
-platform for STMicroelectronics Arm® Cortex®-M7 core-based STM32H7B3LIH6QU
+platform for STMicroelectronics Arm |reg| Cortex |reg|-M7 core-based STM32H7B3LIH6QU
 microcontroller.
 
 The STM32H7B3I-DK Discovery kit is used as a reference design for user
@@ -15,7 +15,7 @@ The full range of hardware features available on the board helps users enhance
 their application development by an evaluation of almost all peripherals (such as
 USB OTG_HS, microSD, USART, FDCAN, audio DAC stereo with audio jack input and output,
 camera, SDRAM, Octo-SPI Flash memory and RGB interface LCD with capacitive touch
-panel). ARDUINO® Uno V3 connectors provide easy connection to extension shields or
+panel). ARDUINO |reg| Uno V3 connectors provide easy connection to extension shields or
 daughterboards for specific applications.
 
 Important board features include:
@@ -83,7 +83,7 @@ The STM32H7B3I Discovery kit provides the following hardware components:
 - LCD-TFT Controller with XGA resolution
 - Chrom-ART graphical hardware Accelerator (DMA2D)
 - Hardware JPEG Codec
-- Chrom-GRC™ (GFXMMU)
+- Chrom-GRC |trade| (GFXMMU)
 
 More information about STM32H7B3 can be found here:
 

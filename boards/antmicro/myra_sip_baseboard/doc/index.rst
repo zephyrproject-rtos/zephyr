@@ -72,18 +72,18 @@ Myra SiP provides the following hardware:
     - 3x I2C Fast Mode Plus (1 Mbit/s) with 20 mA current sink, SMBus/PMBus support
     - 5x USART/UART (ISO 7816, LIN, IrDA, modem control)
     - 1x LPUART
-    - 3x SPI interfaces (2x with multiplexed half-duplex I²S)
+    - 3x SPI interfaces (2x with multiplexed half-duplex I2S)
     - 1x SAI (serial audio interface)
     - USB 2.0 full-speed with LPM and BCD support
     - IRTIM (infrared interface)
-    - USB Type-C™ / USB Power Delivery (UCPD)
+    - USB Type-C |trade| / USB Power Delivery (UCPD)
   - Other Peripherals:
 
     - 16-channel DMA controller
     - True Random Number Generator (RNG)
     - CRC calculation unit, 96-bit unique ID
-    - Development support: SWD, JTAG, Embedded Trace Macrocell™
-    - ECOPACK2® compliant packages
+    - Development support: SWD, JTAG, Embedded Trace Macrocell |trade|
+    - ECOPACK2 |reg| compliant packages
 
 - **128 KB Fujitsu MB85RS1MT FRAM**: Local storage for data logging, allowing non-volatile memory storage.
 

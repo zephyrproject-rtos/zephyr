@@ -5,14 +5,14 @@ Overview
 
 `Seeed Studio XIAO nRF54L15`_ is a compact, high-performance development board featuring the cutting-edge
 Nordic nRF54L15 chip. This next-generation SoC integrates an ultra-low power multiprotocol 2.4 GHz
-radio and an MCU with a 128 MHz Arm® Cortex®-M33 processor and an Arm® Cortex®-M0+ for advanced
+radio and an MCU with a 128 MHz Arm |reg| Cortex |reg|-M33 processor and an Arm |reg| Cortex |reg|-M0+ for advanced
 power management. It offers scalable memory up to 1.5 MB NVM and 256 KB RAM.
 Designed for exceptional ultra-low power consumption, it significantly extends battery life.
-Its robust radio supports Bluetooth® 6.0 (including Channel Sounding), Matter, Thread, Zigbee,
+Its robust radio supports Bluetooth |reg| 6.0 (including Channel Sounding), Matter, Thread, Zigbee,
 and a high-throughput 2.4 GHz proprietary mode (up to 4 Mbps).
 
 The board includes a comprehensive set of peripherals, an integrated 128 MHz RISC-V coprocessor,
-and advanced security features like TrustZone® isolation and cryptographic engine protection.
+and advanced security features like TrustZone |reg| isolation and cryptographic engine protection.
 With built-in lithium battery management, XIAO nRF54L15 is ideal for compact, secure,
 and energy-efficient IoT solutions such as smart wearables, industrial sensors, and advanced human-machine interfaces.
 
@@ -20,14 +20,14 @@ and energy-efficient IoT solutions such as smart wearables, industrial sensors, 
 Hardware
 ********
 
-- 128 MHz Arm® Cortex®-M33 processor
+- 128 MHz Arm |reg| Cortex |reg|-M33 processor
 - Scalable memory configurations up to 1.5 MB NVM and up to 256 KB RAM
 - Multiprotocol 2.4 GHz radio supporting Bluetooth Low Energy, 802.15.4-2020,
   and 2.4 GHz proprietary modes (up to 4 Mbps)
 - Comprehensive set of peripherals including new Global RTC available in System OFF,
   14-bit ADC, and high-speed serial interfaces
 - 128 MHz RISC-V coprocessor
-- Advanced security including TrustZone® isolation, tamper detection,
+- Advanced security including TrustZone |reg| isolation, tamper detection,
   and cryptographic engine side-channel leakage protection
 
 

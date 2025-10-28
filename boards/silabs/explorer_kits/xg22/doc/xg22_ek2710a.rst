@@ -5,13 +5,13 @@ Overview
 
 The EFR32xG22E Explorer Kit (xG22-EK2710A) contains
 a Wireless System-On-Chip from the EFR32MG22 family built on an
-ARM Cortex®-M33 processor with excellent low power capabilities.
+ARM Cortex |reg|-M33 processor with excellent low power capabilities.
 
 Hardware
 ********
 
 - EFR32MG22E224F512IM40 Mighty Gecko SoC
-- CPU core: ARM Cortex®-M33 with FPU
+- CPU core: ARM Cortex |reg|-M33 with FPU
 - Flash memory: 512 kB
 - RAM: 32 kB
 - Transmit power: up to +6 dBm

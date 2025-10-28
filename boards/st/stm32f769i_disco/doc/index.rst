@@ -15,7 +15,7 @@ and high-speed connectivity features. Important board features include:
   - ST LINK/V2-1
   - USB HS connector
   - 5 V from RJ45 (Power Over Ethernet)
-  - 5 V from Arduino™ or external connector
+  - 5 V from Arduino |trade| or external connector
   - USB charger
 
 - 4-inch capacitive touch LCD display with MIPI-DSI connector

@@ -19,7 +19,7 @@ Hardware
 ********
 
 The Toradex Verdin AM62 is a System on Module (SoM) based on the Texas Instruments AM62x family of
-processors. It features up to four Arm® Cortex®-A53 cores, a Cortex®-M4F real-time core, and
+processors. It features up to four Arm |reg| Cortex |reg|-A53 cores, a Cortex |reg|-M4F real-time core, and
 dedicated peripherals such as PRU cores.
 
 Zephyr is ported to run on the M4F core. The following listed hardware specifications are used:

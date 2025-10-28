@@ -521,8 +521,8 @@ Boards & SoC Support
   * Alientek STM32L475 Pandora
   * Arduino GIGA R1 Wi-Fi
   * BeagleConnect Freedom
-  * Infineon PSoC™ 6 BLE Prototyping Kit (CY8CPROTO-063-BLE)
-  * Infineon PSoC™ 6 Wi-Fi BT Prototyping Kit (CY8CPROTO-062-4343W)
+  * Infineon PSoC |trade| 6 BLE Prototyping Kit (CY8CPROTO-063-BLE)
+  * Infineon PSoC |trade| 6 Wi-Fi BT Prototyping Kit (CY8CPROTO-062-4343W)
   * Infineon XMC4700 Relax Kit
   * MXChip AZ3166 IoT DevKit
   * Nordic Semiconductor nRF9161 DK
@@ -551,7 +551,7 @@ Boards & SoC Support
 
 * Added support for these RISC-V boards:
 
-  * Intel FPGA Nios® V/m
+  * Intel FPGA Nios |reg| V/m
   * ITE IT82XX2 EV-Board
 
 * Added support for these X86 boards:

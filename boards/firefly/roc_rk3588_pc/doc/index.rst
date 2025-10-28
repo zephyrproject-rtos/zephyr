@@ -7,7 +7,7 @@ The ROC-RK3588-PC is an Octa-Core 64-Bit Mini Computer powered by Rockchip RK358
 It features M.2 PCIe3.0 interface for NVMe SSD expansion and provides rich interfaces including HDMI 2.1, DP1.4.
 Supporting WiFi 6 wireless transmission and Gigabit Ethernet, it enables high-speed network connectivity.
 
-RK3588 octa-core 64-bit processor (4×Cortex-A76+4×Cortex-A55), with 8nm lithography process,
+RK3588 octa-core 64-bit processor (4xCortex-A76+4xCortex-A55), with 8nm lithography process,
 has frequency up to 2.4GHz. Integrated with ARM Mali-G610 MP4 quad-core GPU and built-in AI accelerator NPU,
 it provides 6Tops computing power. Zephyr OS is ported to run on it.
 

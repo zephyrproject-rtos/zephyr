@@ -4,7 +4,7 @@ Overview
 ********
 
 MSPM0Lx22x microcontrollers (MCUs) are part of the highly integrated, ultra-low-power 32-bit MSPM0 MCU
-family based on the Arm® Cortex®-M0+ 32-bit core platform, operating at up to 32MHz frequency. These
+family based on the Arm |reg| Cortex |reg|-M0+ 32-bit core platform, operating at up to 32MHz frequency. These
 MCUs offer a blend of cost optimization and design flexibility for applications requiring 128KB to 256KB of
 flash memory in small packages (down to 4mm x 4mm) or high pin count packages (up to 80 pins). These
 devices include a VBAT backup island, an optional segmented LCD controller (on MSPM0L222x), cybersecurity

@@ -3,10 +3,10 @@
 Overview
 ********
 
-The Arduino™ Opta® is a secure micro Programmable Logic Controller (PLC)
+The Arduino |trade| Opta |reg| is a secure micro Programmable Logic Controller (PLC)
 with Industrial Internet of Things (IoT) capabilities.
 
-Developed in partnership with Finder®, this device supports both the Arduino
+Developed in partnership with Finder |reg|, this device supports both the Arduino
 programming language and standard IEC-61131-3 PLC programming languages,
 such as Ladder Diagram (LD), Sequential Function Chart (SFC),
 Function Block Diagram (FBD), Structured Text (ST), and Instruction List (IL),

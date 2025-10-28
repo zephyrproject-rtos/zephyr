@@ -18,7 +18,7 @@ RuuviTag's have the following physical features:
 * Nordic Semiconductor nRF52832 System-on-Chip
 * STMicroelectronics LIS2DH12 accelerometer
 * Bosch BME 280 temperature + relative air humidity + air pressure sensor
-* NFC™-A tag antenna
+* NFC |trade|-A tag antenna
 * 1000mAh CR2477 battery
 * 2 buttons
 * 1 Green LED

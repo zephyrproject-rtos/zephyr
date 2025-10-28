@@ -6,7 +6,7 @@ MikroElektronika 3D Hall 3 Click
 Overview
 ********
 
-`3D Hall 3 Click`_ is a very accurate, magnetic field sensing Click board™, used to measure the
+`3D Hall 3 Click`_ is a very accurate, magnetic field sensing Click board |trade|, used to measure the
 intensity of the magnetic field across three perpendicular axes.
 
 It is equipped with the LIS2MDL, a low power 3D magnetic sensor. This IC has a separate Hall sensing
@@ -26,7 +26,7 @@ Requirements
 ************
 
 This shield can only be used with a board that provides a mikroBUS |trade| socket and defines a
-``mikrobus_i2c`` node label for the mikroBUS™ I2C interface. See :ref:`shields` for more details.
+``mikrobus_i2c`` node label for the mikroBUS |trade| I2C interface. See :ref:`shields` for more details.
 
 Programming
 ***********

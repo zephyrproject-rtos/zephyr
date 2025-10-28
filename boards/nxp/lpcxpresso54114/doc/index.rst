@@ -19,12 +19,12 @@ Hardware
 - External debug probe option
 - Tri-color LED, target Reset, ISP & interrupt/user buttons for easy testing of
   software functionality
-- Expansion options based on Arduino UNO and Pmod™, plus additional expansion
+- Expansion options based on Arduino UNO and Pmod |trade|, plus additional expansion
   port pins
 - On-board 1.8 V and 3.3 V regulators plus external power supply option
 - 8 Mb Macronix MX25R SPI flash
 - Built-in MCU power consumption and supply voltage measurement
-- UART, I²C and SPI port bridging from LPC54114 target to USB via the on-board
+- UART, I2C and SPI port bridging from LPC54114 target to USB via the on-board
   debug probe
 - FTDI UART connector
 

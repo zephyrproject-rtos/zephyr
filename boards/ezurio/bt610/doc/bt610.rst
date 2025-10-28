@@ -3,7 +3,7 @@
 Overview
 ********
 
-The Sentrius™ BT610 Sensor is a battery powered, Bluetooth v5 Long Range
+The Sentrius |trade| BT610 Sensor is a battery powered, Bluetooth v5 Long Range
 integrated sensor platform that uses a Nordic Semiconductor nRF52840 ARM
 Cortex-M4F CPU.
 

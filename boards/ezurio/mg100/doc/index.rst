@@ -2,10 +2,10 @@
 
 Overview
 ********
-The Sentrius™ MG100 Gateway offers a compact, out of box Bluetooth to low power cellular gateway
+The Sentrius |trade| MG100 Gateway offers a compact, out of box Bluetooth to low power cellular gateway
 solution.
 
-Based on the Pinnacle 100 socket modem, the Sentrius™ MG100 gateway captures data from any
+Based on the Pinnacle 100 socket modem, the Sentrius |trade| MG100 gateway captures data from any
 Bluetooth 5 modules or devices and sends it to the cloud via a global low power cellular
 (LTE-M/NB-IoT) connection. The MG100 seamlessly incorporates a powerful Cortex M4F controller,
 full Bluetooth 5 connectivity, and dual-mode LTE-M/NB-IoT capabilities. The MG100 has full regulatory
@@ -14,7 +14,7 @@ and network certifications and End Device carrier approvals.
 Develop your application directly on the integrated Cortex M4F microcontroller using Zephyr RTOS,
 enabling your application development with a secure, open source RTOS with more than just kernel
 services. Remotely debug your fleet of devices with the `Memfault Platform`_. Take advantage of the
-Zephyr community and Ezurio’s `Canvas Software Suite`_ to accelerate your development.
+Zephyr community and Ezurio's `Canvas Software Suite`_ to accelerate your development.
 covering all aspects of the product's capabilities and hardware interfaces. The MG100 also delivers
 complete antenna flexibility with internal or external antenna options available, and the optional
 battery backup provides uninterrupted reporting of remote Bluetooth sensor data.

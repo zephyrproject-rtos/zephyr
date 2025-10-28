@@ -5,7 +5,7 @@ Overview
 
 The Raytac AN7002Q-DB-5340 is a single-board development kit for evaluation and development on
 the nRF7002, a Wi-Fi companion IC to Raytac's MDBT53 module host processor.
-It is certified for the Wi-Fi Alliance® `Wi-Fi Certification program`_ in the
+It is certified for the Wi-Fi Alliance |reg| `Wi-Fi Certification program`_ in the
 Connectivity, Security, and Optimization categories. See `UG Wi-Fi certification`_ for detailed
 information.
 
@@ -13,7 +13,7 @@ The nRF7002 is an IEEE 802.11ax (Wi-Fi 6) compliant solution that implements the
 layer and Medium Access Control (MAC) layer protocols. It implements the nRF Wi-Fi driver
 software on the nRF5340 host processor communicating over the QSPI bus.
 
-The nRF5340 host is a dual-core SoC based on the Arm® Cortex®-M33 architecture.
+The nRF5340 host is a dual-core SoC based on the Arm |reg| Cortex |reg|-M33 architecture.
 It has the following features:
 
 * A full-featured Arm Cortex-M33F core with DSP instructions, FPU, and Armv8-M Security Extension,

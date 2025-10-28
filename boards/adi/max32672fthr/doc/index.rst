@@ -3,9 +3,9 @@
 Overview
 ********
 The MAX32672FTHR is a rapid development platform that helps engineers quickly implement complex
-sensor solutions using the MAX32672 Arm® Cortex®-M4. The board also includes the MAX8819 PMIC for
+sensor solutions using the MAX32672 Arm |reg| Cortex |reg|-M4. The board also includes the MAX8819 PMIC for
 battery and power management. The form factor is a small, 0.9in by 2.6in, dual row header footprint
-that is compatible with Adafruit® FeatherWing peripheral expansion boards. The board includes
+that is compatible with Adafruit |reg| FeatherWing peripheral expansion boards. The board includes
 an OLED display, a RGB indicator LED, and a user pushbutton. The MAX32672FTHR provides
 a power-optimized flexible platform for quick proof-ofconcepts and early software development
 to enhance time to market.
@@ -40,12 +40,12 @@ Hardware
 
     - Internal High-Speed 100MHz Oscillator
     - Internal Low-Power 7.3728MHz and Ultra-Low-Power 80kHz Oscillators
-    - 16MHz–32MHz Oscillator, 32.768kHz Oscillator(External Crystal Required)
+    - 16MHz-32MHz Oscillator, 32.768kHz Oscillator(External Crystal Required)
     - External Clock Input for CPU, LPUART, LPTMR
 
   - Power Management Maximizes Uptime for Battery Applications
 
-    - 59.8μA/MHz ACTIVE at 0.9V up to 12MHz(CoreMark®)
+    - 59.8μA/MHz ACTIVE at 0.9V up to 12MHz(CoreMark |reg|)
     - 56.6μA/MHz ACTIVE at 1.1V up to 100MHz(While(1))
     - 3.09μA Full Memory Retention Power in BACKUPMode at VDD = 1.8V
     - 350nA Ultra-Low-Power RTC at

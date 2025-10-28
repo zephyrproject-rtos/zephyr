@@ -5,7 +5,7 @@ Overview
 
 The `EFR32xG24 +10 dBm Radio Board`_ is the radio board delivered with the
 `EFR32xG24 Pro Kit +10 dBm`_, and is also available standalone. It contains a Wireless
-System-On-Chip from the EFR32MG24 family built on an ARM Cortex®-M33 processor with excellent low
+System-On-Chip from the EFR32MG24 family built on an ARM Cortex |reg|-M33 processor with excellent low
 power capabilities.
 
 The radio board plugs into the Wireless Pro Kit Mainboard BRD4002A and is supported in Zephyr as one
@@ -20,7 +20,7 @@ Hardware
 ********
 
 - EFR32MG24B210F1536IM48 Mighty Gecko SoC
-- CPU core: ARM Cortex®-M33 with FPU
+- CPU core: ARM Cortex |reg|-M33 with FPU
 - Flash memory: 1536 kB
 - RAM: 256 kB
 - Transmit power: up to +10 dBm

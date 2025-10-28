@@ -12,7 +12,7 @@ i.MX8 platforms.
 
 This shield can be used with the NXP S32K148-Q176 evaluation board by plugging
 into the common expansion connector, through which the ADTJA1101-RMII connects
-the RMII interfaces of the S32K148 directly to NXP’s 100BASE-T1 Ethernet PHY
+the RMII interfaces of the S32K148 directly to NXP's 100BASE-T1 Ethernet PHY
 TJA1101.
 
 .. figure:: img/adtja1101-rmii.webp

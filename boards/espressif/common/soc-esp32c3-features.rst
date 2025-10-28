@@ -24,7 +24,7 @@ The features include the following:
 - Various peripherals:
 
   - Full-speed USB Serial/JTAG controller
-  - TWAI® compatible with CAN bus 2.0
+  - TWAI |reg| compatible with CAN bus 2.0
   - General DMA controller (GDMA)
   - 2x 12-bit SAR ADC with up to 6 channels
   - 3x SPI

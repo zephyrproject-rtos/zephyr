@@ -3,10 +3,10 @@
 Overview
 ********
 
-The EFR32BG13 Blue Gecko Bluetooth® Low Energy Radio Board is one of the two
+The EFR32BG13 Blue Gecko Bluetooth |reg| Low Energy Radio Board is one of the two
 radio boards delivered with `SLWSTK6020B Bluetooth SoC Starter Kit`_. It
 contains a Wireless System-On-Chip from the EFR32BG13 family built on an
-ARM Cortex®-M4F processor with excellent low power capabilities.
+ARM Cortex |reg|-M4F processor with excellent low power capabilities.
 
 The BRD4104A a.k.a. SLWRB4104A radio board plugs into the Wireless Starter Kit
 Mainboard BRD4001A and is supported as one of :ref:`silabs_radio_boards`.
@@ -15,7 +15,7 @@ Hardware
 ********
 
 - EFR32BG13P632F512GM48 Blue Gecko SoC
-- CPU core: ARM Cortex®-M4 with FPU
+- CPU core: ARM Cortex |reg|-M4 with FPU
 - Flash memory: 512 kB
 - RAM: 64 kB
 - Transmit power: up to +10 dBm

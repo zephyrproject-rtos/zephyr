@@ -3,14 +3,14 @@
 Overview
 ********
 The PSOC 62S4 Pioneer kit has a CY8C62x4 MCU, which is an ultra-low-power PSOC device specifically designed for battery-operated analog
-sensing applications. It includes a 150-MHz Arm® Cortex®-M4 CPU as the primary application processor, a 100-MHz Arm® Cortex®-M0+ CPU that
+sensing applications. It includes a 150-MHz Arm |reg| Cortex |reg|-M4 CPU as the primary application processor, a 100-MHz Arm |reg| Cortex |reg|-M0+ CPU that
 supports low-power operations, up to 256 KB Flash and 128 KB SRAM, programmable analog sensing,
-CapSense™ touch-sensing, and programmable digital peripherals.
+CapSense |trade| touch-sensing, and programmable digital peripherals.
 
 The board features an onboard
 programmer/debugger (KitProg3), a 512-Mbit Quad SPI NOR flash, a micro-B connector for USB device
-interface, a thermistor, an ambient light sensor, a 5-segment CapSense™ slider, two CapSense™ buttons, two
-user LEDs, and a push button. The board supports operating voltages from 1.8 V to 3.3 V for PSoC™ 6 MCU.
+interface, a thermistor, an ambient light sensor, a 5-segment CapSense |trade| slider, two CapSense |trade| buttons, two
+user LEDs, and a push button. The board supports operating voltages from 1.8 V to 3.3 V for PSoC |trade| 6 MCU.
 
 Hardware
 ********

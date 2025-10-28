@@ -19,11 +19,11 @@ This STM32WLEJC SOC is powered by ARM Cortex-M4 core and integrates Semtech
 SX126X LoRa IP to support (G)FSK, BPSK, (G)MSK, and LoRa modulations.
 
 - LoRa-E5 STM32WLE5JC Module with STM32WLE5JC multiprotocol LPWAN single-core
-  32-bit microcontroller (Arm® Cortex®-M4 at 48 MHz) in 28-pin SMD package
+  32-bit microcontroller (Arm |reg| Cortex |reg|-M4 at 48 MHz) in 28-pin SMD package
   featuring:
 
   - Ultra-low-power MCU
-  - RF transceiver (150 MHz to 960 MHz frequency range) supporting LoRa®,
+  - RF transceiver (150 MHz to 960 MHz frequency range) supporting LoRa |reg|,
     (G)FSK, (G)MSK, and BPSK modulations
   - 256-Kbyte Flash memory and 64-Kbyte SRAM
   - Hardware encryption AES256-bit and a True random number generator
@@ -49,7 +49,7 @@ SX126X LoRa IP to support (G)FSK, BPSK, (G)MSK, and LoRa modulations.
 - Comprehensive free software libraries and examples available with the
   STM32CubeWL MCU Package
 - Support of a wide choice of Integrated Development Environments (IDEs)
-  including IAR Embedded Workbench®, MDK-ARM, and STM32CubeIDE
+  including IAR Embedded Workbench |reg|, MDK-ARM, and STM32CubeIDE
 - Suitable for rapid prototyping of end nodes based on LoRaWAN, Sigfox, wM-Bus,
   and many other proprietary protocols
 

@@ -11,7 +11,7 @@ TSC projects generally will involve *Maintainers*, *Collaborators*, and
 
 **Maintainer**: lead Collaborators on an area identified by the TSC (e.g.
 Architecture, code subsystems, etc.). Maintainers shall also serve as the
-area’s representative on the TSC as needed. Maintainers may become voting
+area's representative on the TSC as needed. Maintainers may become voting
 members of the TSC under the guidelines stated in the project Charter.
 
 **Collaborator**: A highly involved Contributor in one or more areas.
@@ -43,11 +43,11 @@ Contributors are granted the following rights and responsibilities:
 * Right to participate in the feature development process.
 * Responsibility to abide by decisions, once made. They are welcome to
   provide new, relevant information to reopen decisions.
-* Responsibility for issues and bugs introduced by one’s own contributions.
+* Responsibility for issues and bugs introduced by one's own contributions.
 * Responsibility to respect the rules of the community.
 * Responsibility to provide constructive advice whenever participating in
   discussions and in the review of contributions.
-* Responsibility to follow the project’s code of conduct
+* Responsibility to follow the project's code of conduct
   (https://github.com/zephyrproject-rtos/zephyr/blob/main/CODE_OF_CONDUCT.md)
 
 Contributors are initially only given `Read
@@ -242,7 +242,7 @@ Joining the Release Engineering team
   Nominees may become members of the team by approval of the
   existing TSC voting members.
 * To ensure a functional Release Engineering team the TSC shall
-  periodically review the team’s followed processes,
+  periodically review the team's followed processes,
   the appropriate size, and the membership
   composition (ensure, for example, that team members are
   geographically distributed across multiple locations and

@@ -4,7 +4,7 @@ Overview
 ********
 
 The LPCXpresso55S69 development board provides the ideal platform for evaluation
-of and development with the LPC55S6x MCU based on the Arm® Cortex®-M33
+of and development with the LPC55S6x MCU based on the Arm |reg| Cortex |reg|-M33
 architecture. The board includes a high performance onboard debug probe, audio
 subsystem, and accelerometer, with several options for adding off-the-shelf
 add-on boards for networking, sensors, displays, and other interfaces.

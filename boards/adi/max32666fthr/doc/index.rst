@@ -3,7 +3,7 @@
 Overview
 ********
 The MAX32666FTHR board is a rapid development platform to help engineers quickly implement battery
-optimized Bluetooth® 5 solutions with the MAX32666 Arm® Cortex®-M4 processor with FPU. The board
+optimized Bluetooth |reg| 5 solutions with the MAX32666 Arm |reg| Cortex |reg|-M4 processor with FPU. The board
 also includes the MAX1555 1-Cell Li+ battery charger for battery management. The form factor is
 a small 0.9in by 2.0in dualrow header footprint that is compatible with breadboards and
 off-the-shelf peripheral expansion boards. The board also includes a variety of peripherals,

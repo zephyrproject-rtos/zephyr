@@ -216,7 +216,7 @@ release:
 * :github:`18935` - [Zephyr 1.14] drivers: flash: spi_nor: Problematic write with page boundaries
 * :github:`18961` - [Coverity CID :203912]Error handling issues in /samples/net/sockets/coap_client/src/coap-client.c
 * :github:`19015` - Bluetooth: Mesh: Node doesn't respond to "All Proxies" address
-* :github:`19038` - [zephyr branch 1.14 and master -stm32-netusb]:errors when i view RNDIS Device‘s properties on Windows 10
+* :github:`19038` - [zephyr branch 1.14 and master -stm32-netusb]:errors when i view RNDIS Device's properties on Windows 10
 * :github:`19059` - i2c_ll_stm32_v2: nack on write is not handled correctly
 * :github:`19103` - zsock_accept_ctx blocks even when O_NONBLOCK is specified
 * :github:`19165` - zephyr_file generates bad links on branches
@@ -1284,7 +1284,7 @@ release:
 * :github:`14627` - USB HID device only detected after replugging
 * :github:`14623` - sanitycheck error when trying to run specific test
 * :github:`14622` - net: IPv6: malformed packet in fragmented echo reply
-* :github:`14612` - samples/net/sockets/echo_async_select doesn’t work for qemu_x86 target
+* :github:`14612` - samples/net/sockets/echo_async_select doesn't work for qemu_x86 target
 * :github:`14609` - mimxrt1050_evk Fatal fault in thread tests/kernel/mem_protect/stackprot Fatal fault in thread
 * :github:`14608` - Promiscuous mode net sample cannot be build
 * :github:`14606` - mimxrt1050_evk tests/kernel/fp_sharing kernel.fp_sharing fails
@@ -1528,7 +1528,7 @@ release:
 * :github:`13541` - sanitycheck errors when device-testing frdm_k64f
 * :github:`13536` - test: tests/kernel/mem_slab/mslab_threadsafe fails sporadically on nrf52
 * :github:`13522` - BT SUBSCRIBE to characteristic for Indication or WRITE to value results in kernel crash
-* :github:`13515` - samples/net/sockets/echo doesn’t link with CONFIG_NO_OPTIMIZATIONS=y
+* :github:`13515` - samples/net/sockets/echo doesn't link with CONFIG_NO_OPTIMIZATIONS=y
 * :github:`13514` - #stm32 creating #gpio #interrupts on 2+ pins with the same pin number failes
 * :github:`13502` - tests/benchmarks/timing_info: Output only consist of Delay Boot Banner
 * :github:`13489` - frdm_k64f test/net/tcp bus fault after test ends

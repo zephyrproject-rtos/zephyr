@@ -6,7 +6,7 @@ Overview
 The EFR32MG21 Mighty Gecko Radio Board is one of the two
 radio boards delivered with `EFR32-SLWSTK6006A Website`_. It features a
 Wireless System-On-Chip (SoC) from the EFR32MG21 family, built on an
-ARM Cortex®-M33F processor, offering exceptional low-power performance.
+ARM Cortex |reg|-M33F processor, offering exceptional low-power performance.
 
 The SLWRB4180B radio board is designed to connect seamlessly with
 the Wireless Starter Kit Mainboards BRD4001A and BRD4002A
@@ -15,7 +15,7 @@ Hardware
 ********
 
 - EFR32MG21A020F1024IM32 Mighty Gecko SoC
-- CPU core: ARM Cortex®-M33 with FPU
+- CPU core: ARM Cortex |reg|-M33 with FPU
 - Flash memory: 1024 kB
 - RAM: 96 kB
 - Transmit power: up to +20 dBm

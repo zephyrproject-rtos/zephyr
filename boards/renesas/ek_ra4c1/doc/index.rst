@@ -13,14 +13,14 @@ the architecture of the kit) as follows:
 **Renesas RA4C1 Microcontroller Group**
 
 - R7FA4C1BD3CFP MCU (referred to as RA MCU)
-- 80 MHz, Arm® Cortex®-M33 core
+- 80 MHz, Arm |reg| Cortex |reg|-M33 core
 - 512 KB Code Flash, 96 KB SRAM
 - 100 pins, LQFP package
 - Native pin access through 3 x 26-pin headers (not populated)
 - Tamper Detection embedded into J4
 - Segment LCD Board Interface
 - MCU current measurement points for precision current consumption measurement
-- Multiple clock sources – RA MCU oscillator and sub-clock oscillator crystals,
+- Multiple clock sources - RA MCU oscillator and sub-clock oscillator crystals,
   providing precision 8.000 MHz and 32,768 Hz reference clocks. Additional low-precision
   clocks are available internal to the RA MCU
 
@@ -47,10 +47,10 @@ the architecture of the kit) as follows:
 
 - Five most popular ecosystems expansions
 
-   - Two Seeed Grove® system (I2C/Analog) connectors (not populated)
-   - SparkFun® Qwiic® connector (not populated)
+   - Two Seeed Grove |reg| system (I2C/Analog) connectors (not populated)
+   - SparkFun |reg| Qwiic |reg| connector (not populated)
    - Two Digilent PmodTM (SPI, UART and I2C) connectors
-   - Arduino™ (UNO R3) connector
+   - Arduino |trade| (UNO R3) connector
    - MikroElektronikaTM mikroBUS connector (not populated)
 
 - MCU boot configuration jumper

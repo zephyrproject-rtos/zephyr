@@ -30,9 +30,9 @@ some highlights of the Nucleo L412RB board:
 
     - External SMPS experimentation dedicated connector
     - Micro-AB or Mini-AB USB connector for the ST-LINK
-    - MIPI® debug connector
+    - MIPI |reg| debug connector
 
-  - Arm® Mbed Enabled |trade| compliant
+  - Arm |reg| Mbed Enabled |trade| compliant
 
 More information about the board can be found at the `Nucleo L412RB-P website`_.
 
@@ -66,8 +66,8 @@ Nucleo L412RB-P provides the following hardware components:
 
 - Energy benchmark
 
-  - 442 ULPMark-CP®
-  - 165 ULPMark-PP®
+  - 442 ULPMark-CP |reg|
+  - 165 ULPMark-PP |reg|
 
 - Clock Sources:
 

@@ -3,7 +3,7 @@
 Overview
 ********
 
-The DesignWare® ARC® EM Software Development Platform (SDP) is a flexible platform
+The DesignWare |reg| ARC |reg| EM Software Development Platform (SDP) is a flexible platform
 for rapid software development on ARC EM processor-based subsystems. It is intended
 to accelerate software development and debug of ARC EM processors and subsystems for
 a wide range of ultra-low power embedded applications such as IoT, sensor fusion,

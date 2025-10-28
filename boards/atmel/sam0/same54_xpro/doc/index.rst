@@ -4,8 +4,8 @@ Overview
 ********
 
 The `SAM E54 Xplained Pro Evaluation Kit`_ is ideal for evaluation and
-prototyping with the SAM E54 Cortex®-M4F processor-based
-microcontrollers. The kit includes Atmel’s Embedded Debugger (EDBG),
+prototyping with the SAM E54 Cortex |reg|-M4F processor-based
+microcontrollers. The kit includes Atmel's Embedded Debugger (EDBG),
 which provides a full debug interface without the need for additional
 hardware.
 
@@ -20,10 +20,10 @@ Hardware
 - One mechanical user push button
 - One reset button
 - On-board USB based EDBG unit with serial console
-- One QTouch® PTC button
+- One QTouch |reg| PTC button
 - 32 MiB QSPI Flash
-- ATECC508 CryptoAuthentication™  device
-- AT24MAC402 serial EEPROM with EUI-48™ MAC address
+- ATECC508 CryptoAuthentication |trade|  device
+- AT24MAC402 serial EEPROM with EUI-48 |trade| MAC address
 - Ethernet
 
    - RJ45 connector with built-in magnetics

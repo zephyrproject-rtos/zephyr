@@ -6,7 +6,7 @@ The MAX32660 evaluation system offers a compact development platform that
 provides access to all the features of the MAX32660 in a tiny, easy to
 use board. A MAX32625PICO-based debug adapter comes attached to the main
 board. It can be snapped free when programming is complete. The debug
-module supports an optional 10-pin Arm® Cortex® debug connector for DAPLink
+module supports an optional 10-pin Arm |reg| Cortex |reg| debug connector for DAPLink
 functionality. Combined measurements are 0.65in x 2.2in, while the main board
 alone measures 0.65in x 0.95in. External connections terminate in a dual-row
 header footprint compatible with both thru-hole and SMT applications. This
@@ -81,8 +81,8 @@ Programming and Debugging
 Flashing
 ========
 
-An Arm® debug access port (DAP) provides an external interface for debugging during application
-development. The DAP is a standard Arm CoreSight® serial wire debug port, uses a two-pin serial
+An Arm |reg| debug access port (DAP) provides an external interface for debugging during application
+development. The DAP is a standard Arm CoreSight |reg| serial wire debug port, uses a two-pin serial
 interface (SWDCLK and SWDIO), and is accessed through 10-pin header (J4).
 
 Once the debug probe is connected to your host computer, then you can simply run the

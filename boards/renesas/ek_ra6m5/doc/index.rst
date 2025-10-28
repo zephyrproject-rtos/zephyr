@@ -3,10 +3,10 @@
 Overview
 ********
 
-The Renesas RA6M5 group uses the high-performance Arm® Cortex®-M33 core with
-TrustZone®. The RA6M5 is suitable for IoT applications requiring Ethernet, future
+The Renesas RA6M5 group uses the high-performance Arm |reg| Cortex |reg|-M33 core with
+TrustZone |reg|. The RA6M5 is suitable for IoT applications requiring Ethernet, future
 proof security, large embedded RAM, and low active power consumption down
-to 107uA/MHz running the CoreMark® algorithm from Flash.
+to 107uA/MHz running the CoreMark |reg| algorithm from Flash.
 
 The key features of the EK-RA6M5 board are categorized in three groups as follow:
 

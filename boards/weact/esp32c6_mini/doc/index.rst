@@ -44,7 +44,7 @@ Digital interfaces:
 - 1x I2S
 - 1x Pulse counter
 - 1x USB Serial/JTAG controller
-- 1x TWAI® controllers, compatible with ISO 11898-1 (CAN Specification 2.0)
+- 1x TWAI |reg| controllers, compatible with ISO 11898-1 (CAN Specification 2.0)
 - 1x SDIO 2.0 slave controller
 - LED PWM controller, up to 6 channels
 - 1x Motor control PWM (MCPWM)

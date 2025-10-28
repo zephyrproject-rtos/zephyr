@@ -2420,7 +2420,7 @@ Addressed issues
 * :github:`46158` - frdm_k64f：failed to run test case tests/subsys/modbus/modbus.rtu/server_setup_low_none
 * :github:`46157` - ACRN: some cases still failed because of the log missing
 * :github:`46124` - stm32g071 ADC drivers apply errata during sampling config
-* :github:`46117` - Kernel events can’t be manipulated without race conditions
+* :github:`46117` - Kernel events can't be manipulated without race conditions
 * :github:`46100` - lib: posix: support for perror()
 * :github:`46099` - libc: minimal: add strerror() function
 * :github:`46075` - BT HCI Raw on STM32WB55RG

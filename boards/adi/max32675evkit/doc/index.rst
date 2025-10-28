@@ -21,7 +21,7 @@ Hardware
     - 384KB Internal Flash
     - 160KB SRAM
     - 128kB ECC Enabled
-    - 44.1μA/MHz ACTIVE Mode at 0.9V up to 12MHzCoremark®
+    - 44.1μA/MHz ACTIVE Mode at 0.9V up to 12MHzCoremark |reg|
     - 64.5μA/MHz ACTIVE Mode at 1.1V up to 100MHzCoremark
     - 2.84μA Full Memory Retention Current in BACKUPMode at VDDIO = 3.3V
     - Ultra-Low-Power Analog Peripherals
@@ -263,7 +263,7 @@ Detailed Description of Hardware
 
 HART Interface
 **************
-The HART circuitry acts as a secondary master with the ability to connect to an existing 4mA–20mA
+The HART circuitry acts as a secondary master with the ability to connect to an existing 4mA-20mA
 current loop and communicates with HART-enabled devices. Connection to a capacitance coupled loop
 through JH8 and a transformer loop is through JH9. HART communication to the MAX32675 is through
 the USB connector CN1.
@@ -271,8 +271,8 @@ the USB connector CN1.
 USB-to-HART Interface
 *********************
 The EV kit provides a USB-to-HART bridge chip, FTDI FT231. This bridge eliminates the requirement
-for a physical RS-232 COM port. Instead, the IC’s HART access is through the Micro-USB type-B
-connector, CN1. Virtual COM port drivers and guides for installing Windows® drivers are available
+for a physical RS-232 COM port. Instead, the IC's HART access is through the Micro-USB type-B
+connector, CN1. Virtual COM port drivers and guides for installing Windows |reg| drivers are available
 at the FTDI chip website.
 
 Power Supply
@@ -302,10 +302,10 @@ This is selected by jumpers JP25 and JP26.
 UART Interface
 **************
 The EV kit provides a USB-to-UART bridge chip (the FTDI FT230XS-R). This bridge eliminates
-the requirement for a physical RS-232 COM port. Instead, the IC’s UART access is through
-the Micro USB type-B connector (CN1). The USB-to-UART bridge can be connected to the IC’s UART0
+the requirement for a physical RS-232 COM port. Instead, the IC's UART access is through
+the Micro USB type-B connector (CN1). The USB-to-UART bridge can be connected to the IC's UART0
 or LPUART0 with jumpers JP10 (RX0) and JP11 (TX0). Virtual COM port drivers and guides for
-installing Windows® drivers are available on the FTDI Chip website.
+installing Windows |reg| drivers are available on the FTDI Chip website.
 
 Boot Loader
 ***********
@@ -318,8 +318,8 @@ spaced headers JH1, JH2, JH3, and JH4.
 
 Analog Input Access
 *******************
-Analog inputs (AIN0–AIN3) can be accessed differentially from SMA connectors J2 and J3 or
-separately from TP10, TP12, TP15, and TP16, respectively. Analog inputs (AIN4–AIN11) can be
+Analog inputs (AIN0-AIN3) can be accessed differentially from SMA connectors J2 and J3 or
+separately from TP10, TP12, TP15, and TP16, respectively. Analog inputs (AIN4-AIN11) can be
 accessed through 0.1in spaced headers JH5 and JH6.
 
 I2C Pullups

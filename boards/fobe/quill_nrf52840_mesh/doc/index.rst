@@ -4,7 +4,7 @@ Overview
 ********
 
 The FoBE Quill nRF52840 Mesh is a development kit featuring the nRF52840 SoC and an integrated
-SX1262 LoRa® transceiver.
+SX1262 LoRa |reg| transceiver.
 
 For more details see the `FoBE Quill nRF52840 Mesh`_ documentation page.
 
@@ -15,7 +15,7 @@ The FoBE Quill nRF52840 Mesh is a compact and versatile development platform for
 It combines Nordic's high-end multiprotocol SoC, the nRF52840, with Semtech's ultra-low-power
 sub-GHz radio transceiver, the SX1262 (packaged using SiP technology).
 Designed for IoT applications, it offers a comprehensive wireless connectivity solution,
-supporting protocols such as Bluetooth 5, Thread, Zigbee, IEEE 802.15.4, and LoRa®.
+supporting protocols such as Bluetooth 5, Thread, Zigbee, IEEE 802.15.4, and LoRa |reg|.
 
 This development board is feature-rich, including a battery charger,
 dedicated power path management, an ultra-low quiescent current DC-DC converter,

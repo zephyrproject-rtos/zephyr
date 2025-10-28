@@ -4,11 +4,11 @@ Overview
 ********
 
 The EK-RA8M2 is an Evaluation Kit for Renesas RA8M2 MCU Group which integrates multiple series of software-compatible
-Arm®-based 32-bit cores that share a common set of Renesas peripherals to facilitate design scalability and efficient
+Arm |reg|-based 32-bit cores that share a common set of Renesas peripherals to facilitate design scalability and efficient
 platform-based product development.
 
-The MCU in this series incorporates a high-performance Arm® Cortex®-M85 core running up to 1 GHz and Arm®
-Cortex®-M33 core running up to 250 MHz with the following features:
+The MCU in this series incorporates a high-performance Arm |reg| Cortex |reg|-M85 core running up to 1 GHz and Arm |reg|
+Cortex |reg|-M33 core running up to 250 MHz with the following features:
 
 - Up to 1 MB MRAM
 - 2 MB SRAM (256 KB of CM85 TCM RAM, 128 KB CM33 TCM RAM, 1664 KB of user SRAM)
@@ -19,7 +19,7 @@ Cortex®-M33 core running up to 250 MHz with the following features:
 
 **MCU Native Pin Access**
 
-- 1 GHz Arm® Cortex®-M85 core and 250 MHz Arm® Cortex®-M33 core based RA8M2 MCU 289 pins, BGA package
+- 1 GHz Arm |reg| Cortex |reg|-M85 core and 250 MHz Arm |reg| Cortex |reg|-M33 core based RA8M2 MCU 289 pins, BGA package
 - 1 MB MRAM, 2 MB SRAM with ECC
 - Native pin access through 5 x 20-pin, and 3 x 40-pin headers (not populated)
 - MCU current measurement points for precision current consumption measurement
@@ -52,10 +52,10 @@ Cortex®-M33 core running up to 250 MHz with the following features:
 
 - Five most popular ecosystems expansions
 
-  - Two Seeed Grove® system (I2C/I3C/Analog) connectors (not populated)
-  - SparkFun® Qwiic® connector (not populated)
+  - Two Seeed Grove |reg| system (I2C/I3C/Analog) connectors (not populated)
+  - SparkFun |reg| Qwiic |reg| connector (not populated)
   - Two Digilent PmodTM (SPI, UART, and I2C) connectors
-  - Arduino™ (UNO R3) connector
+  - Arduino |trade| (UNO R3) connector
   - MikroElektronikaTM mikroBUS connector (not populated)
 
 - MCU boot configuration jumper

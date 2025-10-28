@@ -13,7 +13,7 @@ Hardware
 
 The board features:
   - 8 to 52V power supply
-  - SWD Pins for use as STLink (Pin header) and TC2030-IDC 6-Pin Tag-Connect Plug-of-Nails™ Connector
+  - SWD Pins for use as STLink (Pin header) and TC2030-IDC 6-Pin Tag-Connect Plug-of-Nails |trade| Connector
   - Crystal for HS 25MHz
   - Crystal for RTC 32.768KHz
   - 1 UART serial for debug

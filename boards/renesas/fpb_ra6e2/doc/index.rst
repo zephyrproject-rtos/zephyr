@@ -4,7 +4,7 @@ Overview
 ********
 
 The FPB-RA6E2, a Fast Prototyping Board for RA6E2 MCU Group, based on
-the 200 MHz Arm® Cortex®-M33 core with TrustZone, enables users to
+the 200 MHz Arm |reg| Cortex |reg|-M33 core with TrustZone, enables users to
 seamlessly evaluate the features of the RA6E2 MCU group and develop
 embedded systems applications using Flexible Software Package (FSP)
 and e2 studio IDE. The users can use rich on-board features along with

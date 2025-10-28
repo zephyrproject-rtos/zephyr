@@ -4,7 +4,7 @@ Overview
 ********
 
 Orthosie-I-EV is an entry-level development board based on Orthosie-I,
-a module named for its small size. This board integrates ESP32-C3 - complete Wi-Fi and Bluetooth® Low Energy functions.
+a module named for its small size. This board integrates ESP32-C3 - complete Wi-Fi and Bluetooth |reg| Low Energy functions.
 For more information, check `Orthosie-I Website`_.
 
 Hardware

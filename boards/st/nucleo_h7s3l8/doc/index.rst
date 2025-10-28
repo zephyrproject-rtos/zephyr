@@ -7,7 +7,7 @@ The STM32 Nucleo-144 board provides an affordable and flexible way for users
 to try out new concepts and build prototypes by choosing from the various combinations
 of performance and power consumption features, provided by the STM32 microcontroller.
 
-The ST Zio connector, which extends the ARDUINO® Uno V3 connectivity, and
+The ST Zio connector, which extends the ARDUINO |reg| Uno V3 connectivity, and
 the ST morpho headers provide an easy means of expanding the functionality of the Nucleo
 open development platform with a wide choice of specialized shields.
 The STM32 Nucleo-144 board does not require any separate probe as it integrates
@@ -26,7 +26,7 @@ Key Features
 - 32.768 kHz crystal oscillator
 - Board connectors:
 
- - USB with Micro-AB or USB Type-C®
+ - USB with Micro-AB or USB Type-C |reg|
  - Ethernet RJ45
  - MIPI20 compatible connector with trace signals
 

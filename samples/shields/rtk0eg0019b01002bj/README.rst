@@ -71,7 +71,7 @@ Touch shield and would like to tune configuration parameters manually themselves
 Requirements
 ------------
 
-- `e² studio`_ with Renesas QE Capacitive Touch plugin installed: recommended 2025-04.1 version
+- `e |sup2| studio`_ with Renesas QE Capacitive Touch plugin installed: recommended 2025-04.1 version
 - `RA Flexible Software Package`_: recommended FSP v5.8.0 or newer
 
 Building and flashing with generated tuning code
@@ -109,7 +109,7 @@ References
 .. _Using QE and FSP to Develop Capacitive Touch Applications:
    https://www.renesas.com/en/document/apn/using-qe-and-fsp-develop-capacitive-touch-applications?r=1170071
 
-.. _e² studio:
+.. _e |sup2| studio:
    https://www.renesas.com/en/software-tool/e-studio
 
 .. _RA Flexible Software Package:

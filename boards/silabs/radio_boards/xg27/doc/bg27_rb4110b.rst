@@ -14,7 +14,7 @@ Hardware
 ********
 
 - EFR32BG27C320F768GJ39 SoC
-- CPU core: ARM Cortex®-M33 with FPU, DSP and TrustZone
+- CPU core: ARM Cortex |reg|-M33 with FPU, DSP and TrustZone
 - Memory: 768 kB Flash, 64 kB RAM
 - Transmit power: up to +4 dBm
 - Operation frequency: 2.4 GHz

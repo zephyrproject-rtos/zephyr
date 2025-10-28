@@ -6,9 +6,9 @@ Overview
 The new i.MX RT700 CPU architecture is composed of a high-performance main-compute subsystem,
 a secondary “always-on” sense-compute subsystem and specialized coprocessors.
 
-The main-compute subsystem has a primary Arm® Cortex®-M33 running at 325 MHz, with an integrated
-Cadence® Tensilica® HiFi 4 DSP for more demanding DSP and audio processing tasks.
-The sense-compute subsystem has a second Arm® Cortex®-M33 and an integrated Cadence® Tensilica®
+The main-compute subsystem has a primary Arm |reg| Cortex |reg|-M33 running at 325 MHz, with an integrated
+Cadence |reg| Tensilica |reg| HiFi 4 DSP for more demanding DSP and audio processing tasks.
+The sense-compute subsystem has a second Arm |reg| Cortex |reg|-M33 and an integrated Cadence |reg| Tensilica |reg|
 HiFi 1 DSP. This removes the need for an external sensor hub, reducing system design complexity,
 footprint and BOM costs.
 
@@ -17,7 +17,7 @@ which is capable of processing up to eight 32x16 MACs per instruction cycle. It 
 high-performance numerical tasks such as audio and image processing and supports both fixed-point and
 floating-point operations.
 
-The i.MX RT700 also features NXP’s eIQ Neutron NPU, enabled with the eIQ machine learning software
+The i.MX RT700 also features NXP's eIQ Neutron NPU, enabled with the eIQ machine learning software
 development environment.
 
 Hardware
@@ -36,7 +36,7 @@ Hardware
 - Two SD/eMMC memory card interfaces—one supporting eMMC 5.0 with HS400/DDR operation
 - USB high-speed host/device controller with on-chip PHY
 - A digital microphone interface supporting up to 8 channels
-- Serial peripherals (UART/I²C/I3C/SPI/HSPI/SAI)
+- Serial peripherals (UART/I2C/I3C/SPI/HSPI/SAI)
 - 2.5D GPU with vector graphics acceleration and frame buffer compression
 - EZH-V using RISC-V core with additional SIMD/DSP instructions
 - Full openVG 1.1 support

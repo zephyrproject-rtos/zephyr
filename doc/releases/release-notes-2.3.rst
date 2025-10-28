@@ -1322,7 +1322,7 @@ release:
 * :github:`19144` - arch/x86: CONFIG_BOOT_TIME_MEASUREMENT broken
 * :github:`19075` - k_delayed_work_submit() does not handle long delays correctly
 * :github:`19067` - non-overlapping MPU gap-filling needs to be optional
-* :github:`19038` - [zephyr branch 1.14 and master -stm32-netusb]:errors when i view RNDIS Device‘s properties on Windows 10
+* :github:`19038` - [zephyr branch 1.14 and master -stm32-netusb]:errors when i view RNDIS Device's properties on Windows 10
 * :github:`18956` - memory protection for x86 dependent on XIP
 * :github:`18940` - Counter External Trigger
 * :github:`18808` - Docs for gpmrb board incorrectly refer to up_squared board

@@ -879,7 +879,7 @@ This has been fixed in main for v2.6.0
 Bluetooth: Possible to overwrite an existing bond during keys
 distribution phase when the identity address of the bond is known
 
-During the distribution of the identity address information we don’t
+During the distribution of the identity address information we don't
 check for an existing bond with the same identity address.This means
 that a duplicate entry will be created in RAM while the newest entry
 will overwrite the existing one in persistent storage.

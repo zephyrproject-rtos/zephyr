@@ -8,7 +8,7 @@ new concepts and build prototypes by choosing from the various combinations of p
 and power consumption features, provided by the STM32 microcontroller. For the compatible boards,
 the internal or external SMPS significantly reduces power consumption in Run mode.
 
-The ST Zio connector, which extends the ARDUINO® Uno V3 connectivity, and the ST morpho headers
+The ST Zio connector, which extends the ARDUINO |reg| Uno V3 connectivity, and the ST morpho headers
 provide an easy means of expanding the functionality of the Nucleo open development platform with
 a wide choice of specialized shields.
 
@@ -42,10 +42,10 @@ Hardware
   - USB Device only, USB OTG full speed, or SNK/UFP (full-speed or high-speed mode)
   - Board connectors:
 
-    - ARDUINO® Uno V3 connector or ST Zio expansion connector including ARDUINO® Uno V3
+    - ARDUINO |reg| Uno V3 connector or ST Zio expansion connector including ARDUINO |reg| Uno V3
     - Camera module FPC
     - MIPI20 compatible connector with trace signals
-    - USB with Micro-AB or USB Type-C®
+    - USB with Micro-AB or USB Type-C |reg|
     - Ethernet RJ45
 
   - On-board ST-LINK (STLINK/V2-1, STLINK-V3E, or STLINK-V3EC) debugger/programmer with

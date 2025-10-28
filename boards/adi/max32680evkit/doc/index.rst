@@ -9,7 +9,7 @@ which is an advanced system-on-chip (SoC)
 designed for industrial and medical sensors. Power regulation
 and management is provided by a single-inductor
 multiple-output (SIMO) buck regulator system and contains
-the latest generation Bluetooth® 5.2 Low Energy
+the latest generation Bluetooth |reg| 5.2 Low Energy
 (LE) radio.
 
 The Zephyr port is running on the MAX32680 MCU.
@@ -46,14 +46,14 @@ Hardware
     - 12-Bit DAC
     - On-Die Temperature Sensor
     - Digital Peripherals: Two SPI, Two I2C, up to FourUART, and up to 36 GPIOs
-    - Timers: Six 32-Bit Timers, Two Watchdog Timers,Two Pulse Trains, 1-Wire® Master
+    - Timers: Six 32-Bit Timers, Two Watchdog Timers,Two Pulse Trains, 1-Wire |reg| Master
 
   - Power Management Maximizes Battery Life
 
     - 2.0V to 3.6V Supply Voltage Range
     - Integrated SIMO Power Regulator
     - Dynamic Voltage Scaling (DVS)
-    - 23.8μA/MHz ACTIVE Mode Current at 3.0VCoremark®
+    - 23.8μA/MHz ACTIVE Mode Current at 3.0VCoremark |reg|
     - 4.4μA at 3.0V Retention Current for 32KB SRAM
     - Selectable SRAM Retention in Low-Power Modes
 

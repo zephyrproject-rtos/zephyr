@@ -5,7 +5,7 @@ Overview
 The STM32MP135 Discovery kit (STM32MP135F-DK) leverages the capabilities of the
 1 GHz STM32MP135 microprocessors to allow users to develop applications easily with Zephyr RTOS.
 
-It includes an ST-LINK embedded debug tool, LEDs, push-buttons, two 10/100 Mbit/s Ethernet (RMII) connectors, one USB Type-C |reg| connector, four USB Host Type-A connectors, and one microSD™ connector.
+It includes an ST-LINK embedded debug tool, LEDs, push-buttons, two 10/100 Mbit/s Ethernet (RMII) connectors, one USB Type-C |reg| connector, four USB Host Type-A connectors, and one microSD |trade| connector.
 
 To expand the functionality of the STM32MP135 Discovery kit, one GPIO expansion connector is also available for third-party shields.
 
@@ -26,7 +26,7 @@ Zephyr OS is ported to run on the Cortex |reg|-A7 core.
 - USB Host 4-port hub
 - USB Type-C |reg| DRP based on an STM32G0 device
 - 4 user LEDs
-- 4 push-buttons (2× user, tamper, and reset)
+- 4 push-buttons (2x user, tamper, and reset)
 - 1 wake-up button
 - Board connectors:
 
@@ -35,7 +35,7 @@ Zephyr OS is ported to run on the Cortex |reg|-A7 core.
   - 4x USB Type-A
   - USB Micro-B
   - USB Type-C |reg|
-  - microSD™ card holder
+  - microSD |trade| card holder
   - GPIO expansion
   - 5 V / 3 A USB Type-C |reg| power supply input (charger not provided)
   - VBAT for power backup

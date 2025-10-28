@@ -4,12 +4,12 @@ Overview
 ********
 
 The NuMaker M2L31KI is an Internet of Things (IoT) application focused platform
-specially developed by Nuvoton. The NuMaker-M2L31KI is based on the NuMicro® M2L31
-series MCU with ARM® -Cortex®-M23 core.
+specially developed by Nuvoton. The NuMaker-M2L31KI is based on the NuMicro |reg| M2L31
+series MCU with ARM |reg| -Cortex |reg|-M23 core.
 
 Features:
 =========
-- 32-bit Arm Cortex®-M23 M2L31KIDAE MCU
+- 32-bit Arm Cortex |reg|-M23 M2L31KIDAE MCU
 - Core clock up to 72 MHz
 - 512 KB embedded Dual Bank Flash and 168 KB SRAM
 - USB 2.0 Full-Speed OTG / Device
@@ -72,7 +72,7 @@ VS Code Support
 Here is to go through VS Code instead of command line.
 
 Please install Nuvoton NuMicro Cortex-M Pack and follow getting start guide of this pack.
-This pack is a complete development toolkit for Nuvoton’s NuMicro Cortex-M microcontrollers
+This pack is a complete development toolkit for Nuvoton's NuMicro Cortex-M microcontrollers
 in Visual Studio Code.
 URL of this pack is
 https://marketplace.visualstudio.com/items?itemName=Nuvoton.nuvoton-numicro-cortex-m-pack

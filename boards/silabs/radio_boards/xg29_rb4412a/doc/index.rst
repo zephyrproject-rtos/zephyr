@@ -9,7 +9,7 @@ Hardware
 ********
 
 - EFR32MG29B140F1024IM40 SoC
-- CPU core: ARM Cortex®-M33 with FPU
+- CPU core: ARM Cortex |reg|-M33 with FPU
 - Flash memory: 1024 kB
 - RAM: 256 kB
 - Transmit power: up to +8 dBm

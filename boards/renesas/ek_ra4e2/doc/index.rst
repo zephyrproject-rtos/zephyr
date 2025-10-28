@@ -3,19 +3,19 @@
 Overview
 ********
 
-The RA4E2 Group delivers up to 100 MHz of CPU performance using an Arm® Cortex®-M33 core
+The RA4E2 Group delivers up to 100 MHz of CPU performance using an Arm |reg| Cortex |reg|-M33 core
 with 128 KB of code flash memory, 4 KB of data flash memory, and 40 KB of SRAM. RA4E2 MCUs
 offer high-performance and optimized peripheral functions along with the smallest package
 options, including space-saving 36-pin BGA and 32-pin QFN packages. The RA4E2
 Group offers a wide set of peripherals, including USB Full Speed, CANFD, I3C, and ADC.
 
-The MCU in this series incorporates a high-performance Arm Cortex®-M33 core running up to
+The MCU in this series incorporates a high-performance Arm Cortex |reg|-M33 core running up to
 100 MHz with the following features:
 
 **MCU Native Pin Access**
 
 - R7FA4E2B93CFM MCU (referred to as RA MCU)
-- 100 MHz, Arm® Cortex®-M33 core
+- 100 MHz, Arm |reg| Cortex |reg|-M33 core
 - 128 kB Code Flash, 40 kB SRAM
 - 64 pins, LQFP package
 - Native pin access through 2 x 14-pin and 1 x 40-pin male headers
@@ -48,8 +48,8 @@ The MCU in this series incorporates a high-performance Arm Cortex®-M33 core run
 
 - Five most popular ecosystems expansions
 
-	- 2 Seeed Grove® system (I3C/Analog) connectors
-	- SparkFun® Qwiic® connector
+	- 2 Seeed Grove |reg| system (I3C/Analog) connectors
+	- SparkFun |reg| Qwiic |reg| connector
 	- 2 Digilent PmodTM (SPI and UART) connectors
 	- ArduinoTM (Uno R3) connector
 	- MikroElektronikaTM mikroBUS connector

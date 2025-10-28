@@ -4,7 +4,7 @@ Overview
 ********
 
 The EFR32MG12 Mighty Gecko Radio Board contains a Wireless System-On-Chip
-from the EFR32MG12 family built on an ARM Cortex®-M4F processor with excellent
+from the EFR32MG12 family built on an ARM Cortex |reg|-M4F processor with excellent
 low power capabilities.
 
 The BRD4170A a.k.a. SLWRB4170A radio board plugs into the Wireless Starter Kit
@@ -14,7 +14,7 @@ Hardware
 ********
 
 - EFR32MG12P433F1024GM68 Mighty Gecko SoC
-- CPU core: ARM Cortex®-M4 with FPU
+- CPU core: ARM Cortex |reg|-M4 with FPU
 - Flash memory: 1024 kB
 - RAM: 256 kB
 - Transmit power: up to +19 dBm

@@ -10,7 +10,7 @@ The i.MX RT1062 doubles the On-Chip SRAM to 1MB while keeping pin-to-pin
 compatibility with i.MX RT1050. This series introduces additional features
 ideal for real-time applications such as High-Speed GPIO, CAN FD, and
 synchronous parallel NAND/NOR/PSRAM controller. The i.MX RT1062 runs on the
-Arm® Cortex-M7® core up to 600 MHz.
+Arm |reg| Cortex-M7 |reg| core up to 600 MHz.
 
 Hardware
 ********

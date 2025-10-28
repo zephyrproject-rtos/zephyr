@@ -52,9 +52,9 @@ The STM32L4R5ZI SoC provides the following hardware IPs:
   rotary touch sensors
 - Advanced graphics features
 
-  - Chrom-ART Accelerator™ (DMA2D) for enhanced graphic content creation
-  - Chrom-GRC™ (GFXMMU) allowing up to 20% of graphic resources optimization
-  - MIPI® DSI Host controller with two DSI lanes running at up to 500
+  - Chrom-ART Accelerator |trade| (DMA2D) for enhanced graphic content creation
+  - Chrom-GRC |trade| (GFXMMU) allowing up to 20% of graphic resources optimization
+  - MIPI |reg| DSI Host controller with two DSI lanes running at up to 500
     Mbits/s each
   - LCD-TFT controller
 

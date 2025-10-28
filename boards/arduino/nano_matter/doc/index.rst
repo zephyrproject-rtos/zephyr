@@ -7,18 +7,18 @@ The Nano Matter merges the well-known Arduino way of making complex technology m
 powerful MGM240S from Silicon Labs, to bring Matter closer to the maker world, in one of the
 smallest form factors in the market.
 
-It enables 802.15.4 (Thread®) and Bluetooth® Low Energy connectivity, to interact with Matter-compatible devices
+It enables 802.15.4 (Thread |reg|) and Bluetooth |reg| Low Energy connectivity, to interact with Matter-compatible devices
 with a user-friendly software layer ready for quick prototyping.
 
 The Nano Matter features a compact and efficient architecture powered by the
-MGM240S (32-bit Arm® Cortex®-M33) from Silicon Labs, a high-performance wireless module optimized for
+MGM240S (32-bit Arm |reg| Cortex |reg|-M33) from Silicon Labs, a high-performance wireless module optimized for
 the needs of battery and line-powered IoT devices for 2.4 GHz mesh networks.
 
 Hardware
 ********
 
 - MGM240SD22VNA2 Mighty Gecko SiP
-- CPU core: ARM Cortex®-M33 with FPU
+- CPU core: ARM Cortex |reg|-M33 with FPU
 - Flash memory: 1536 kB
 - RAM: 256 kB
 - Transmit power: up to +20 dBm

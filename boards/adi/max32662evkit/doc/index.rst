@@ -28,13 +28,13 @@ Hardware
     - Internal High-Speed 100MHz
     - Internal Low-Power 7.3728MHz
     - Ultra-Low-Power 80kHz
-    - 16MHz–32MHz (External Crystal Required)
+    - 16MHz-32MHz (External Crystal Required)
     - 32.768kHz (External Crystal Required)
     - External Clock Inputs for CPU and Low-PowerTimer
 
   - Power Management Maximizes Uptime for Battery Applications
 
-    - 50μA/MHz at 0.9V up to 12MHz (CoreMark®) inACTIVE Mode
+    - 50μA/MHz at 0.9V up to 12MHz (CoreMark |reg|) inACTIVE Mode
     - 44μA/MHz at 1.1V up to 100MHz (While(1)) inACTIVE Mode
     - 2.15μA Full Memory Retention Current in BACKUPMode at VDDIO = 1.8V
     - 2.4μA Full Memory Retention Current in BACKUPMode at VDDIO = 3.3V
@@ -174,8 +174,8 @@ Programming and Debugging
 Flashing
 ========
 
-An Arm® debug access port (DAP) provides an external interface for debugging during application
-development. The DAP is a standard Arm CoreSight® serial wire debug port, uses a two-pin serial
+An Arm |reg| debug access port (DAP) provides an external interface for debugging during application
+development. The DAP is a standard Arm CoreSight |reg| serial wire debug port, uses a two-pin serial
 interface (SWDCLK and SWDIO), and is accessed through 10-pin header (J3). Logic levels are set
 to V_AUX (1V8 or 3V3), which is determined by the shunt placement on JP11. In addition,
 the UART1A port can also be accessed through J3.

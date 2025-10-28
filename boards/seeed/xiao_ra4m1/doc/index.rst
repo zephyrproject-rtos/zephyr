@@ -3,10 +3,10 @@
 Overview
 ********
 
-The XIAO RA4M1 integrates Renesas' RA4M1 chip (32-bit ARM® Cortex®-M4 MCU up to 48 MHz) into the
+The XIAO RA4M1 integrates Renesas' RA4M1 chip (32-bit ARM |reg| Cortex |reg|-M4 MCU up to 48 MHz) into the
 classic XIAO form factor. This development board offers 256KB Flash, 32KB SRAM, 8KB EEPROM, a USB
 2.0 connector, reset and boot buttons, 3 LEDs, a 14-bit A/D converter, a 12-bit D/A converter, and a
-CAN BUS interface. With onboard charging circuitry and low-power modes (as low as 45μA), it’s ideal
+CAN BUS interface. With onboard charging circuitry and low-power modes (as low as 45μA), it's ideal
 for battery-powered applications. Sharing the same 32-bit RA4M1 microcontroller as the Arduino Uno
 R4, it's natively compatible with Arduino IDE and the extensive XIAO accessories, making it the
 perfect starting point for electronics projects.
@@ -15,7 +15,7 @@ perfect starting point for electronics projects.
 
 - R7FA4M1AB3CNE
 - 48-pin LQFP package
-- 48 MHz Arm® Cortex®-M4 core with Floating Point Unit (FPU)
+- 48 MHz Arm |reg| Cortex |reg|-M4 core with Floating Point Unit (FPU)
 - 32 KB SRAM
 - 256 KB code flash memory
 - 8 KB data flash memory

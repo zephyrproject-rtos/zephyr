@@ -10,10 +10,10 @@ Hardware
 
 - Broadcom BCM2712 2.4GHz quad-core 64-bit Arm Cortex-A76 CPU, with cryptography extensions, 512KB per-core L2 caches and a 2MB shared L3 cache
 - VideoCore VII GPU, supporting OpenGL ES 3.1, Vulkan 1.2
-- Dual 4Kp60 HDMI® display output with HDR support
+- Dual 4Kp60 HDMI |reg| display output with HDR support
 - 4Kp60 HEVC decoder
 - LPDDR4X-4267 SDRAM (4GB and 8GB SKUs available at launch)
-- Dual-band 802.11ac Wi-Fi®
+- Dual-band 802.11ac Wi-Fi |reg|
 - Bluetooth 5.0 / Bluetooth Low Energy (BLE)
 - microSD card slot, with support for high-speed SDR104 mode
 - 2 x USB 3.0 ports, supporting simultaneous 5Gbps operation

@@ -4,7 +4,7 @@ Overview
 ********
 
 The Arduino Zero is a maker-friendly development board with
-Atmel’s Embedded Debugger (EDBG), which provides a full
+Atmel's Embedded Debugger (EDBG), which provides a full
 debug interface without the need for additional hardware.
 
 Hardware

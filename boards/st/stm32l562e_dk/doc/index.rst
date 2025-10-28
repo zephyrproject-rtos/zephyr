@@ -11,7 +11,7 @@ the STM32L562E-DK Discovery board:
 
 - STM32L562QEI6QU microcontroller featuring 512 Kbytes of Flash memory and 256 Kbytes of SRAM in BGA132 package
 - 1.54" 240 x 240 pixel-262K color TFT LCD module with parallel interface and touch-control panel
-- USB Type-C |trade| Sink device FS
+- USB Type-C |reg| Sink device FS
 - On-board energy meter: 300 nA to 150 mA measurement range with a dedicated USB interface
 - SAI Audio CODEC
 - MEMS digital microphones

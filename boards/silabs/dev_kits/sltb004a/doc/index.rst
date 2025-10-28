@@ -4,14 +4,14 @@ Overview
 ********
 
 The EFR32MG12 Thunderboard (a.k.a Thunderboard Sense 2) contains an MCU
-from the EFR32MG12 family built on ARM® Cortex®-M4F processor with low
+from the EFR32MG12 family built on ARM |reg| Cortex |reg|-M4F processor with low
 power capabilities.
 
 Hardware
 ********
 
 - EFR32MG12 Mighty Gecko Wireless SoC with 38.4 MHz operating frequency
-- ARM® Cortex® M4 core with 256 kB RAM and 1024 kB Flash
+- ARM |reg| Cortex |reg| M4 core with 256 kB RAM and 1024 kB Flash
 - Macronix ultra low power 8-Mbit SPI flash (MX25R8035F)
 - 2.4 GHz ceramic antenna for wireless transmission
 - Silicon Labs Si7021 relative humidity and temperature sensor

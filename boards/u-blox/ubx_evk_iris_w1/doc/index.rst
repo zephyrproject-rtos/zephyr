@@ -15,8 +15,8 @@ button, Boot button, and two user-configurable buttons. Current sense resistors 
 accurate current measurement within the module.
 
 For flexible use, GPIO signals are accessible through headers and are complemented by four
-mikroBUS™ standard slots for convenient utilization of Click boards™. Each Click board can be
-seamlessly plugged into an available mikroBUS™ slot to facilitate effortless hardware expansion with
+mikroBUS |trade| standard slots for convenient utilization of Click boards |trade|. Each Click board can be
+seamlessly plugged into an available mikroBUS |trade| slot to facilitate effortless hardware expansion with
 a variety of standardized compact add-on boards. Click boards are designed to accommodate a
 diverse range of electronic modules, including sensors, transceivers, displays, encoders, motor
 drivers, connection ports, and more. For further information about the Click boards, visit the MIKROE
@@ -53,7 +53,7 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
-Basic functionality like UART (default on FC3), GPIOs (I²C, SPI), and the on-board RGB LEDs is supported.
+Basic functionality like UART (default on FC3), GPIOs (I2C, SPI), and the on-board RGB LEDs is supported.
 
 Programming and Debugging
 *************************

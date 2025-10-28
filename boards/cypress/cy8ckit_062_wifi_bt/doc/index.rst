@@ -23,19 +23,19 @@ enables the CM4 core.
 1. USB PD output voltage availability indicator (LED7)
 2. Battery charging indicator (LED6)
 3. KitProg2 USB Type-C connector (J10)
-4. Cypress EZ-PD™ CCG3 Type-C Port Controller with PD (CYPD3125-40LQXI, U3)
+4. Cypress EZ-PD |trade| CCG3 Type-C Port Controller with PD (CYPD3125-40LQXI, U3)
 5. KitProg2 programming mode selection button (SW3)
 6. KitProg2 I/O header (J6)1
 7. KitProg2 programming/custom application header (J7)1
 8. External power supply connector (J9)
 9. PSOC 6 user button (SW2)
 10. KitProg2 application selection button (SW4)
-11. Digilent® Pmod™ compatible I/O header (J14)1
+11. Digilent |reg| Pmod |trade| compatible I/O header (J14)1
 12. Power LED (LED4)
 13. KitProg2 status LEDs (LED1, LED2, and LED3)
 14. PSOC 6 reset button (SW1)
 15. PSOC 6 I/O header (J18, J19 and J20)
-16. Arduino™ Uno R3 compatible power header (J1)
+16. Arduino |trade| Uno R3 compatible power header (J1)
 17. PSOC 6 debug and trace header (J12)
 18. Arduino Uno R3 compatible PSOC 6 I/O header (J2, J3 and J4)
 19. PSOC 6 program and debug header (J11)

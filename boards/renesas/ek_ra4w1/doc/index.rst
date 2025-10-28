@@ -3,9 +3,9 @@
 Overview
 ********
 
-The Renesas RA4W1 is the first Bluetooth® 5.0 Low Energy fully compliant with 2Mbit High-Throughput
+The Renesas RA4W1 is the first Bluetooth |reg| 5.0 Low Energy fully compliant with 2Mbit High-Throughput
 (HT) and Long Range support in a single chip MCU of Renesas RA4  product series for IoT applications
-that require a high-performance Arm® Cortex®-M4 core at a very attractive price point. The RA4W1 MCU
+that require a high-performance Arm |reg| Cortex |reg|-M4 core at a very attractive price point. The RA4W1 MCU
 has full function support for Bluetooth 5.0 Low Energy long-range and mesh networking, and provides
 excellent reception performance. RA4W1 is geared towards IoT application requiring Security, large
 embedded RAM and low power consumption.
@@ -53,8 +53,8 @@ embedded RAM and low power consumption.
 
 - Connector for an on-board emulator: USB Micro-B
 - Connector for a USB serial-conversion interface: USB Micro-B
-- Pmod™ connector: Angle type, 12 pins
-- Arduino™ UNO connectors
+- Pmod |trade| connector: Angle type, 12 pins
+- Arduino |trade| UNO connectors
 
 - Emulator reset switch: DIP switch x 1
 

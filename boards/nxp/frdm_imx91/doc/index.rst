@@ -14,7 +14,7 @@ Hardware
 
 - i.MX 91 applications processor
 
-  - The i.MX 91 Applications Processor features an Arm Cortex®-A55 core
+  - The i.MX 91 Applications Processor features an Arm Cortex |reg|-A55 core
     that can operate at speeds of up to 1.4 GHz.
 - RAM: 2GB LPDDR4
 - Storage:

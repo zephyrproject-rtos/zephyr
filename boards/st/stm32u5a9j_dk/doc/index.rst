@@ -4,20 +4,20 @@ Overview
 ********
 
 The STM32U5A9J-DK Discovery kit is a complete demonstration and development
-platform for the STM32U5A9NJH6Q microcontroller, featuring an Arm® Cortex®-M33
-core with Arm® TrustZone®.
+platform for the STM32U5A9NJH6Q microcontroller, featuring an Arm |reg| Cortex |reg|-M33
+core with Arm |reg| TrustZone |reg|.
 
 Leveraging the innovative ultra-low-power oriented features, 2.5 Mbytes of
 embedded SRAM, 4 Mbytes of embedded flash memory, and rich graphics features,
 the STM32U5A9J-DK Discovery kit enables users to easily prototype applications
 with state-of-the-art energy efficiency, as well as providing stunning and
 optimized graphics rendering with the support of the 2.5D NeoChrom Accelerator,
-Chrom-ART Accelerator, and Chrom-GRC™ MMU.
+Chrom-ART Accelerator, and Chrom-GRC |trade| MMU.
 
 The full range of hardware features available on the board helps users to
 enhance their application development by an evaluation of all the peripherals
-such as a 2.47-inch RGB 480x480 pixels TFT round LCD module with MIPI DSI®
-interface and capacitive touch panel, USB Type-C® HS, Octo-SPI flash memory
+such as a 2.47-inch RGB 480x480 pixels TFT round LCD module with MIPI DSI |reg|
+interface and capacitive touch panel, USB Type-C |reg| HS, Octo-SPI flash memory
 device, Hexadeca-SPI PSRAM memory device, eMMC flash memory device,
 Time-of-Flight and gesture detection sensor, temperature sensor, and two 2.54 mm
 pitch double-row flexible expansion connectors for easy prototyping with

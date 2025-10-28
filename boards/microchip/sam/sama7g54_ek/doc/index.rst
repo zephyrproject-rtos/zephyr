@@ -19,7 +19,7 @@ SHA, RSA and ECC.
 
 The SAMA7G54-EK board itself features connectors and expansion headers for easy
 customization and quick access to leading edge embedded features such as MIKROE
-Click boards™ and Raspberry Pi expansion header plus MIPI CSI camera.
+Click boards |trade| and Raspberry Pi expansion header plus MIPI CSI camera.
 
 Hardware
 ********
@@ -38,7 +38,7 @@ Hardware
 - S/PDIF RX and TX ports
 - 4 digital microphone ports
 - 40-pin Raspberry Pi expansion header
-- 2 mikroBUS™ connectors
+- 2 mikroBUS |trade| connectors
 - USB powered
 
 Supported Features

@@ -3,7 +3,7 @@
 Overview
 ********
 
-The Sentrius™ BT510 Sensor is a battery powered, Bluetooth v5 Long Range integrated sensor that uses a Nordic Semiconductor nRF52840 ARM Cortex-M4F CPU.
+The Sentrius |trade| BT510 Sensor is a battery powered, Bluetooth v5 Long Range integrated sensor that uses a Nordic Semiconductor nRF52840 ARM Cortex-M4F CPU.
 
 The sensor has the following features:
 

@@ -17,9 +17,9 @@ module.
 
 The main hardware features are:
 
-- RAK3112 based on Espressif ESP32-S3, dual-core Xtensa® LX7 CPU up to 240 MHz
-- Semtech SX1262 for LoRa® modulations
-- Integrated 2.4 GHz Wi-Fi (802.11 b/g/n) and Bluetooth® LE 5
+- RAK3112 based on Espressif ESP32-S3, dual-core Xtensa |reg| LX7 CPU up to 240 MHz
+- Semtech SX1262 for LoRa |reg| modulations
+- Integrated 2.4 GHz Wi-Fi (802.11 b/g/n) and Bluetooth |reg| LE 5
 - 512 KB of SRAM and 384 KB of ROM on the chip
 - IPEX connectors for the antennas
 - I/O ports:

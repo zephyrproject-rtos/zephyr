@@ -17,7 +17,7 @@ Pico-Pi IO Board
 ================
 - S1 - On/Off (MX7_ONOFF signal)
 - Board to board connector : Edison compatible connector (70 configurable pins)
-- mikroBUS expansion connector ADC, GPIO, I²C, PWM, SPI, UART)
+- mikroBUS expansion connector ADC, GPIO, I2C, PWM, SPI, UART)
 - 10-pin needle JTAG Connector
 - Debug USB exposing One UART
 - MIPI DSI 1 lane Connector

@@ -34,7 +34,7 @@ X-NUCLEO-IKS01A2 provides the following key features:
  - LPS22HB MEMS pressure sensor, 260-1260 hPa absolute digital output barometer
  - HTS221: capacitive digital relative humidity and temperature
  - DIL24 socket for additional MEMS adapters and other sensors
- - I²C sensor hub features on LSM6DSL available
+ - I2C sensor hub features on LSM6DSL available
  - Equipped with Arduino UNO R3 connector
  - RoHS compliant
 

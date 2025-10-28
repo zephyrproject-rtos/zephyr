@@ -18,7 +18,7 @@ Hardware
   * Crystal for HFXO (38.4 MHz)
   * Crystal for LFXO (32768 Hz)
 
-* CPU core: ARM Cortex®-M33 with FPU
+* CPU core: ARM Cortex |reg|-M33 with FPU
 * Flash memory: 512 kB
 * RAM: 32 kB
 * Transmit power: up to +8 dBm

@@ -1,20 +1,20 @@
 .. _cyclonev_socdk:
 
-Intel® Cyclone® V SoC Development Kit
-#####################################
+Intel |reg| Cyclone |reg| V SoC Development Kit
+###############################################
 
 Overview
 ********
 
 
-The Zephyr kernel is supported on the Intel® Cyclone® V SoC Development Kit,
+The Zephyr kernel is supported on the Intel |reg| Cyclone |reg| V SoC Development Kit,
 using its Hard Processor System (HPS) CPU.
 
 .. figure:: img/cyclonev_socdk.jpg
    :align: center
-   :alt: Intel's Cyclone® V SoC FPGA DevKit
+   :alt: Intel's Cyclone |reg| V SoC FPGA DevKit
 
-   Intel®'s Cyclone® V SoC FPGA DevKit  (Credit: Intel®)
+   Intel |reg|'s Cyclone |reg| V SoC FPGA DevKit  (Credit: Intel |reg|)
 
 Hardware
 ********
@@ -22,7 +22,7 @@ Hardware
 Jumpers and DIP Switch settings
 ===============================
 
-Recommended board settings are the same as the GSRD for Cyclone® V
+Recommended board settings are the same as the GSRD for Cyclone |reg| V
 SoC Development Board.
 
 There are two sets of switches on the back of the board. Of particular
@@ -54,8 +54,8 @@ Refer to the development kit user manual for specifics about jumpers and switche
 Necessary Software
 ==================
 
-You will need the Intel® Quartus® Prime SDK in order to work with this device. The
-`Intel® Quartus® Prime Lite Edition <https://www.intel.com/content/www/us/en/software-kit/684215/intel-quartus-prime-lite-edition-design-software-version-21-1-for-linux.html>`_
+You will need the Intel |reg| Quartus |reg| Prime SDK in order to work with this device. The
+`Intel |reg| Quartus |reg| Prime Lite Edition <https://www.intel.com/content/www/us/en/software-kit/684215/intel-quartus-prime-lite-edition-design-software-version-21-1-for-linux.html>`_
 for Linux may be obtained without charge.
 
 For your convenience using the SDK tools (such as ``quartus_pgm``),
@@ -109,18 +109,18 @@ The Golden System Reference Design (GSRD) provides a set of essential hardware
 and software system components that can be used as a starting point for various
 custom user designs.
 
-The Zephyr support for Cyclone® V SoC Development Kit is based on GSRD hardware.
-Please refer to `Intel® Cyclone® V SoC GSRD <https://rocketboards.org/foswiki/Documentation/CycloneVSoCGSRD>`_
+The Zephyr support for Cyclone |reg| V SoC Development Kit is based on GSRD hardware.
+Please refer to `Intel |reg| Cyclone |reg| V SoC GSRD <https://rocketboards.org/foswiki/Documentation/CycloneVSoCGSRD>`_
 
-The hardware use for this release is based on Intel® Quartus® version 21.1
+The hardware use for this release is based on Intel |reg| Quartus |reg| version 21.1
 the hardware files can be found `here <https://releases.rocketboards.org/release/2018.05/gsrd/hw/cv_soc_devkit_ghrd.tar.gz>`_
 
 The directory "cv_soc_devkit_ghrd" contains the necessary files to create
-a Intel® Quartus® project:
+a Intel |reg| Quartus |reg| project:
 
 * ghrd_top.v : top level Verilog (HDL) file for the GSRD
-* soc_system.qpf : Quartus® Prime Project File
-* soc_system.qsf : Quartus® Prime Settings File
+* soc_system.qpf : Quartus |reg| Prime Project File
+* soc_system.qsf : Quartus |reg| Prime Settings File
 * soc_system.qsys : Platform Designer file (contains the SoC system)
 * soc_system.sopcinfo : SOPC Information file contains details about modules instantiated in the project, parameter names and values.
 * soc_system_timing.sdc : Synopsys Design Constraint FILE.
@@ -137,8 +137,8 @@ configuration file soc_system.sof:
 This system is composed by the HPS, ARM Cortex-A9. In this example the UART, timer,
 USB, I2C, DDR memory are exposed. Please double check the peripheral you intend to
 use have its corresponding driver support.
-You can find more information of the Cyclone® V SoC Devkit GSRD in RocketBoards
-or consult the "Cyclone® V Hard Processor System Technical Reference Manual"
+You can find more information of the Cyclone |reg| V SoC Devkit GSRD in RocketBoards
+or consult the "Cyclone |reg| V Hard Processor System Technical Reference Manual"
 
 
 Console Output
@@ -192,7 +192,7 @@ This files should be located in :zephyr_file:`boards/intel/socfpga_std/cyclonev_
 * tmp_appli_debug_cmd.gdb : GDB helper file to load the zephyr.elf file while debugging
 * openocd.cfg : sources configuration files for OpenOCD
 * download_all.gdb : GDB helper file to load the preloader
-* u-boot-spl : Cyclone® V SoC DevKit GSRD preloader (copied from GSRD: cv_soc_devkit_ghrd.tar.gz)
+* u-boot-spl : Cyclone |reg| V SoC DevKit GSRD preloader (copied from GSRD: cv_soc_devkit_ghrd.tar.gz)
 
 The following image shows the expected output (UART) after executing "west flash" using
 the "hello world" sample design:
@@ -201,12 +201,12 @@ the "hello world" sample design:
    :align: center
    :alt: UART output after "west flash" example
 
-   UART output after "west flash" example (Credit: Intel®)
+   UART output after "west flash" example (Credit: Intel |reg|)
 
 Debugging
 =========
 
-The Zephyr SDK includes a GDB server which can be used to debug a Cyclone® V
+The Zephyr SDK includes a GDB server which can be used to debug a Cyclone |reg| V
 SoC Development Kit board.
 You can either debug a running image that was flashed onto the device in User
 Flash Memory (UFM), or load an image over the JTAG using GDB.
@@ -326,7 +326,7 @@ You will see output similar to the following:
 
 Try other examples
 ==================
-There are varios examples that can be downloaded to the Cyclone® V SoC FPGA
+There are varios examples that can be downloaded to the Cyclone |reg| V SoC FPGA
 Development Kit Board. Try to ``blink`` an LED from the HPS side of the chip:
 
 .. zephyr-app-commands::
@@ -338,7 +338,7 @@ Development Kit Board. Try to ``blink`` an LED from the HPS side of the chip:
    :align: center
    :alt: HPS LED0 blinking example
 
-   HPS LED0 blinking example (Credit: Intel®)
+   HPS LED0 blinking example (Credit: Intel |reg|)
 
 Try writing characters to the LCD display connected to the i2c bus:
 
@@ -351,9 +351,9 @@ Try writing characters to the LCD display connected to the i2c bus:
 References
 **********
 
-* `Cyclone® V Hard Processor System Technical Reference Manual <https://www.intel.com/content/dam/www/programmable/us/en/pdfs/literature/hb/cyclone-v/cv_54001.pdf>`_
-* `Cyclone® V SoC Development Kit and Intel® SoC FPGA Embedded Development Suite <https://www.intel.com/content/www/us/en/products/details/fpga/development-kits/cyclone/v-sx.html>`_
-* `Cyclone® V SoC GSRD in RocketBoards.org <https://rocketboards.org/foswiki/Documentation/CycloneVSoCGSRD>`_
-* `Intel® FPGA Software Download Center <https://www.intel.com/content/www/us/en/collections/products/fpga/software/downloads.html>`_
+* `Cyclone |reg| V Hard Processor System Technical Reference Manual <https://www.intel.com/content/dam/www/programmable/us/en/pdfs/literature/hb/cyclone-v/cv_54001.pdf>`_
+* `Cyclone |reg| V SoC Development Kit and Intel |reg| SoC FPGA Embedded Development Suite <https://www.intel.com/content/www/us/en/products/details/fpga/development-kits/cyclone/v-sx.html>`_
+* `Cyclone |reg| V SoC GSRD in RocketBoards.org <https://rocketboards.org/foswiki/Documentation/CycloneVSoCGSRD>`_
+* `Intel |reg| FPGA Software Download Center <https://www.intel.com/content/www/us/en/collections/products/fpga/software/downloads.html>`_
 * `Embedded Peripherals IP User Guide <https://www.altera.com/content/dam/altera-www/global/en_US/pdfs/literature/ug/ug_embedded_ip.pdf>`_
 * `Quartus II Scripting Reference Manual <https://www.altera.com/content/dam/altera-www/global/en_US/pdfs/literature/manual/tclscriptrefmnl.pdf>`_

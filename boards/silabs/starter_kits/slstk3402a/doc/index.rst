@@ -4,7 +4,7 @@ Overview
 ********
 
 The EFM32 Pearl Gecko 12 Starter Kit SLSTK3402A contains an MCU from the
-EFM32PG family built on an ARM® Cortex®-M4F processor with excellent low
+EFM32PG family built on an ARM |reg| Cortex |reg|-M4F processor with excellent low
 power capabilities.
 
 Hardware
@@ -36,8 +36,8 @@ EFM32 Jade Gecko SoC
 
 The EFM32 Pearl Gecko Starter Kit SLSTK3402A can also be used to evaluate
 the EFM32 Jade Gecko SoC (EFM32JG12). The only difference between the Pearl
-Gecko and the Jade Gecko is their core. The Pearl Gecko contains an ARM®
-Cortex®-M4F core, and the Jade Gecko an ARM® Cortex®-M3 core. Other features
+Gecko and the Jade Gecko is their core. The Pearl Gecko contains an ARM |reg|
+Cortex |reg|-M4F core, and the Jade Gecko an ARM |reg| Cortex |reg|-M3 core. Other features
 such as memory and peripherals are the same.
 
 Code that is built for the Jade Gecko also runs on an equivalent Pearl Gecko.

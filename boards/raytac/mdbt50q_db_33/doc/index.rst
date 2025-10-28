@@ -34,13 +34,13 @@ Hardware
 - BT5.2&BT5.1&BT5 Bluetooth Specification Certified
 - Supports BT5 Long Range Features
 - Certifications: FCC, IC, CE, Telec(MIC), KC, SRRC, NCC, RCM, WPC
-- 32-bit ARM® Cortex™ M4F CPU
+- 32-bit ARM |reg| Cortex |trade| M4F CPU
 - 512kB Flash Memory/128kB RAM
 - RoHs & Reach Compliant.
 - 42 GPIO
 - Chip Antenna
 - Interfaces: SPI, UART, I2C, I2S, PWM, ADC, NFC, and USB
-- Highly flexible multiprotocol SoC ideally suited for Bluetooth® Low Energy, ANT+, Zigbee, Thread (802.15.4) ultra low-power wireless applications.
+- Highly flexible multiprotocol SoC ideally suited for Bluetooth |reg| Low Energy, ANT+, Zigbee, Thread (802.15.4) ultra low-power wireless applications.
 - 3 User LEDs
 - 4 User buttons
 - 1 Mini USB connector for power supply and USB communication

@@ -773,7 +773,7 @@ release:
 * :github:`19059` - i2c\_ll\_stm32\_v2: nack on write is not handled correctly
 * :github:`19051` - [Zephyr v2.0.0 nrf52840] Unable to reconnect to recently bonded peripheral
 * :github:`19039` - Bluetooth: Qualification test case GATT/SR/UNS/BI-02-C fails
-* :github:`19038` - [zephyr branch 1.14 and master -stm32-netusb]:errors when i view RNDIS Device‘s properties on Windows 10
+* :github:`19038` - [zephyr branch 1.14 and master -stm32-netusb]:errors when i view RNDIS Device's properties on Windows 10
 * :github:`19034` - sanitycheck fail with ninja option with single-core machine
 * :github:`19031` - nrfx\_clock.c functions are not available with CONFIG\_NRFX\_CLOCK
 * :github:`19015` - Bluetooth: Mesh: Node doesn't respond to "All Proxies" address

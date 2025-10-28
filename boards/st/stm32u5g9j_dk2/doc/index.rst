@@ -12,7 +12,7 @@ embedded SRAM, 4 Mbytes of embedded flash memory, and rich graphics features,
 the STM32U5G9J-DK2 Discovery kit enables users to prototype applications
 with state-of-the-art energy efficiency, as well as providing stunning and
 optimized graphics rendering with the support of a 2.5D Neo-Chrom accelerator,
-chrom-ART Accelerator, and Chrom-GRC™ MMU.
+chrom-ART Accelerator, and Chrom-GRC |trade| MMU.
 
 The STM32U5G9J-DK2 Discovery kit integrates a full range of hardware features
 that help the user evaluate all the peripherals, such as a 5" RGB 800x480 pixels

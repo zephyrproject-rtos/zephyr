@@ -2,41 +2,41 @@
 
 Overview
 ********
-The PSOC™ Edge E84 AI kit enables evaluation and development of applications using the PSOC™ Edge
+The PSOC |trade| Edge E84 AI kit enables evaluation and development of applications using the PSOC |trade| Edge
 E84 Series Microcontroller (MCU) and a multitude of on-board multimedia, Machine Learning (ML), and
 connectivity features like Raspberry Pi compatible MIPI-DSI displays, analog and digital microphones
-for audio interfaces, and AIROC™ CYW55513IUBGT base Wi-Fi & Bluetooth combo Murata Type2FY
-connectivity module.  The kit also has 512-Mbit Quad-SPI NOR Flash and 128-Mbit Octal-SPI HYPERRAM™.
+for audio interfaces, and AIROC |trade| CYW55513IUBGT base Wi-Fi & Bluetooth combo Murata Type2FY
+connectivity module.  The kit also has 512-Mbit Quad-SPI NOR Flash and 128-Mbit Octal-SPI HYPERRAM |trade|.
 The board features an on-board programmer/debugger (KitProg3), JTAG/SWD debug headers, expansion I/O
 header, USB-C connectors, 6-axis IMU sensor, 3-axis magnetometer, barometric pressure sensor,
 humidity sensor, RADAR sensor, user LEDs, and a user buttor.  The MCU power domain and perihporal
 power domain supports operating voltages of 1.8V and 3.3V.
 
-PSOC™ E84 MCU is an ultra-low-power PSOC™ device specifically designed for ML, wearables and IoT
+PSOC |trade| E84 MCU is an ultra-low-power PSOC |trade| device specifically designed for ML, wearables and IoT
 products like smart thermostats, smart locks, smart home appliances and industrial HMI.
 
-PSOC™ E84 MCU is a true programmable embedded system-on-chip with dual CPUs, integrating a 400 MHz
-Arm® Cortex®-M55 as the primary application processor, a 200 MHz Arm® Cortex®-M33 that supports
-low-power operations, and a 400 MHz Arm® Ethos-U55 as a neural net companion processor, graphics and
+PSOC |trade| E84 MCU is a true programmable embedded system-on-chip with dual CPUs, integrating a 400 MHz
+Arm |reg| Cortex |reg|-M55 as the primary application processor, a 200 MHz Arm |reg| Cortex |reg|-M33 that supports
+low-power operations, and a 400 MHz Arm |reg| Ethos-U55 as a neural net companion processor, graphics and
 audio block, DSP capability, security enclave with crypto accelerators and protection units,
-high-performance memory expansion capability (QSPI, and Octal HYPERRAM™), low-power analog subsystem
+high-performance memory expansion capability (QSPI, and Octal HYPERRAM |trade|), low-power analog subsystem
 with high performance analog-to-digital conversion and low-power comparators, on-board IoT
 connectivity module , communication channels, programmable analog and digital blocks that allow
 higher flexibility, in-field tuning of the design, and faster time-to-market.
 
 Hardware
 ********
-For more information about the PSOC™ Edge E84 MCUs and the PSOC™ Edge E84 AI Kit:
+For more information about the PSOC |trade| Edge E84 MCUs and the PSOC |trade| Edge E84 AI Kit:
 
-- `PSOC™ Edge Arm® Cortex® Multicore SoC Website`_
-- `PSOC™ Edge E84 AI Kit Website`_
+- `PSOC |trade| Edge Arm |reg| Cortex |reg| Multicore SoC Website`_
+- `PSOC |trade| Edge E84 AI Kit Website`_
 
 Kit Features:
 =============
 
-- Cortex®-M55 CPU with Helium™ DSP
-- Advanced ML with Arm Ethos™-U55 NPU
-- Low-Power Cortex®-M33
+- Cortex |reg|-M55 CPU with Helium |trade| DSP
+- Advanced ML with Arm Ethos |trade|-U55 NPU
+- Low-Power Cortex |reg|-M33
 - NNLite ultra-low power NPU
 - Analog and Digital Microphones
 - State-of-the-Art Secured Enclave
@@ -45,7 +45,7 @@ Kit Features:
 Kit Contents:
 =============
 
-- PSOC™ Edge E84 AI board
+- PSOC |trade| Edge E84 AI board
 - OV7675 DVP camera module
 
 Supported Features
@@ -67,7 +67,7 @@ The KIT-PSE84-AI includes an onboard programmer/debugger (`KitProg3`_) to provid
 flash programming, and serial communication over USB. Flash and debug commands use OpenOCD and
 require a custom Infineon OpenOCD version, that supports KitProg3, to be installed.
 
-Please refer to the `ModusToolbox™ software installation guide`_ to install the
+Please refer to the `ModusToolbox |trade| software installation guide`_ to install the
 Infineon OpenOCD and Edge Protect Security Suite (edgeprotecttools).
 
 Flashing
@@ -124,21 +124,21 @@ perform other standard GDB debugging on the PSOC E84 CM33 core.
 References
 **********
 
-- `PSOC™ Edge Arm® Cortex® Multicore SoC Website`_
+- `PSOC |trade| Edge Arm |reg| Cortex |reg| Multicore SoC Website`_
 
-.. _PSOC™ Edge Arm® Cortex® Multicore SoC Website:
+.. _PSOC |trade| Edge Arm |reg| Cortex |reg| Multicore SoC Website:
     https://www.infineon.com/products/microcontroller/32-bit-psoc-arm-cortex/32-bit-psoc-edge-arm/psoc-edge-e84#Overview
 
-.. _PSOC™ Edge E84 AI Kit Website:
+.. _PSOC |trade| Edge E84 AI Kit Website:
     https://www.infineon.com/evaluation-board/KIT-PSE84-AI
 
 .. _kit_pse84_ai User Manual Website:
     https://www.infineon.com/assets/row/public/documents/30/44/infineon-kit-pse84-ai-user-guide-usermanual-en.pdf
 
-.. _ModusToolbox™:
+.. _ModusToolbox |trade|:
     https://softwaretools.infineon.com/tools/com.ifx.tb.tool.modustoolboxsetup
 
-.. _ModusToolbox™ software installation guide:
+.. _ModusToolbox |trade| software installation guide:
     https://www.Infineon.com/ModusToolboxInstallguide
 
 .. _KitProg3:
