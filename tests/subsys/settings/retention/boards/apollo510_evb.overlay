@@ -1,7 +1,7 @@
 / {
-	sram@2027F000 {
+	sram@201FF000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x2027F000 DT_SIZE_K(4)>;
+		reg = <0x201FF000 DT_SIZE_K(4)>;
 		zephyr,memory-region = "RetainedMem";
 		status = "okay";
 
@@ -25,5 +25,5 @@
 };
 
 &sram0 {
-	reg = <0x20080000 0x1FF000>;
+	reg = <SSRAM_BASE_ADDR 0x17F000>;
 };

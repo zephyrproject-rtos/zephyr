@@ -5,9 +5,9 @@
  */
 
 / {
-		sram@2027F000 {
+		sram@201FF000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x2027F000 0x1000>;
+		reg = <0x201FF000 0x1000>;
 		zephyr,memory-region = "RetainedMem";
 		status = "okay";
 
@@ -33,9 +33,9 @@
 
 &sram0 {
 	/* Shrink SRAM size to avoid overlap with retained memory region:
-	 * 2048 - 4 = 2044KB = 0x1FF000
+	 * 1536 - 4 = 1532KB = 0x17F000
 	 */
-	reg = <0x20080000 0x1FF000>;
+	reg = <SSRAM_BASE_ADDR 0x17F000>;
 };
 
 /delete-node/ &boot_partition;
