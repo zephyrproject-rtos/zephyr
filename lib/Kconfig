@@ -34,4 +34,7 @@ source "lib/utils/Kconfig"
 source "lib/uuid/Kconfig"
 
 source "lib/min_heap/Kconfig"
+
+source "lib/libmp/Kconfig"
+
 endmenu
