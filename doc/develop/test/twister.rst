@@ -666,7 +666,11 @@ filter: <expression>
             }
 
     Twister will first evaluate the expression to find if a "limited" cmake call, i.e. using package_helper cmake script,
-    can be done. Existence of "dt_*" entries indicates devicetree is needed.
+    can be done.
+
+    Existence of "dt_*" entries indicates devicetree is needed. Refer to :ref:`twister_dt_filter_expressions`
+    for detailed description of the different DT expressions available.
+
     Existence of "CONFIG*" entries indicates kconfig is needed.
     If there are no other types of entries in the expression a filtration can be done without creating a complete build system.
     If there are entries of other types a full cmake is required.
@@ -804,6 +808,119 @@ To load arguments from a file, add ``+`` before the file name, e.g.,
 line break instead of white spaces.
 
 Most everyday users will run with no arguments.
+
+.. _twister_dt_filter_expressions:
+
+Devicetree Filtering Expressions
+================================
+
+Expressions starting with "dt_*" are used to filter boards based on specific
+devicetree properties, such as compatibles, aliases, node labels, node
+properties, chosen nodes, etc. when selecting test scenarios.
+
+.. note::
+
+   The source code for these expressions can be found at
+   :zephyr_file:`scripts/pylib/twister/expr_parser.py`.
+
+Expressions
+-----------
+
+``dt_compat_enabled(compat)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Purpose:**
+   Checks if any DT node with the specified compatible string (``compat``) is enabled.
+
+**Parameters:**
+   - ``compat``: The compatible string to match.
+
+``dt_alias_exists(alias)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Purpose:**
+   Checks if any DT node with the specified alias exists and is enabled.
+
+**Parameters:**
+   - ``alias``: The alias (defined in ``aliases`` node) to match.
+
+``dt_enabled_alias_with_parent_compat(alias, compat)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Purpose:**
+   Checks if the DT has an enabled alias node whose parent has the specified compatible string.
+   Useful for nodes like ``gpio-leds`` child nodes, which may not have their own compatible.
+
+**Parameters:**
+   - ``alias``: The alias (defined in ``aliases`` node) to match.
+   - ``compat``: The parent node’s compatible string to match.
+
+``dt_label_with_parent_compat_enabled(label, compat)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Purpose:**
+   Checks if a DT node with the specified label exists, is enabled, and its parent has the
+   specified compatible string.
+
+**Parameters:**
+   - ``label``: The node label to match.
+   - ``compat``: The parent node’s compatible string to match.
+
+``dt_chosen_enabled(chosen)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Purpose:**
+   Checks if a DT chosen property with the specified name exists and the node assigned to it
+   is enabled.
+
+**Parameters:**
+   - ``chosen``: The name of the chosen property.
+
+``dt_nodelabel_enabled(label)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Purpose:**
+   Checks if a DT node with the specified label exists and is enabled.
+
+**Parameters:**
+   - ``label``: The node label to match.
+
+``dt_nodelabel_prop_enabled(label, prop)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Purpose:**
+   Checks if a DT node with the specified label exists, is enabled, and has the specified property
+   with a non-empty value.
+
+**Parameters:**
+   - ``label``: The node label to match.
+   - ``prop``: The node's property to check.
+
+``dt_node_has_prop(node_id, prop)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Purpose:**
+   Checks if a DT node (specified by alias or path) has the specified property, regardless of its
+   status. Useful for nodes that do not have a status, like ``zephyr,user`` node.
+
+**Parameters:**
+   - ``node_id``: The node alias (defined in ``aliases`` node) or node path to match.
+   - ``prop``: The node's property to check.
+
+Usage
+-----
+
+These expressions are used in Twister’s test scenarios filtering logic to select boards that match
+specific DT conditions. For example:
+
+.. code-block:: yaml
+
+   tests:
+     - test: my_test
+       filter: dt_compat_enabled("my-compat-string")
+
+The test scenario ``my_test`` will only build for boards where a DT node with ``my-compat-string``
+is enabled.
 
 .. _twister_harnesses:
 
