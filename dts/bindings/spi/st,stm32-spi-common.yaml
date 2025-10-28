@@ -34,3 +34,19 @@ properties:
       - full-4-to-32-bit: supports data width from 4 to 32 bits
       - full-4-to-16-bit: supports data width from 4 to 16 bits
       - limited-8-16-bit: supports only 8 and 16-bit data widths
+
+  st,soft-nss:
+    type: boolean
+    description: |
+      Use soft NSS for this interface.  In general, SPI peripheral
+      devices are configured to use a particular pin (CS) to know
+      they are selected for use on a shared SPI bus. But some
+      boards are hard-wired for direct SPI communication between
+      a controller and a peripheral, and do not actually have a
+      pin to use. ST SPI interfaces support a "soft NSS" mode to
+      handle this situation.  This mechanism only applies when no
+      cs-gpios property is present (cs-gpios actually implies
+      "soft NSS" mode because the CS is managed by Zephyr).  If
+      cs-gpios is not present, and this property is also not
+      present, then the interface will be configured for ST's
+      "hard NSS" mode.
