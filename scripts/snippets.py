@@ -18,26 +18,26 @@ from collections import defaultdict, UserDict
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 from typing import Dict, Iterable, List, Set
+from jsonschema.exceptions import best_match
 import argparse
 import logging
 import os
-import pykwalify.core
-import pykwalify.errors
 import re
 import sys
-import textwrap
 import yaml
 import platform
+import jsonschema
 
 # Marker type for an 'append:' configuration. Maps variables
 # to the list of values to append to them.
 Appends = Dict[str, List[str]]
+BoardRevisionAppends = Dict[str, Dict[str, List[str]]]
 
 def _new_append():
     return defaultdict(list)
 
 def _new_board2appends():
-    return defaultdict(_new_append)
+    return defaultdict(lambda: defaultdict(_new_append))
 
 @dataclass
 class Snippet:
@@ -46,11 +46,11 @@ class Snippet:
 
     name: str
     appends: Appends = field(default_factory=_new_append)
-    board2appends: Dict[str, Appends] = field(default_factory=_new_board2appends)
+    board2appends: Dict[str, BoardRevisionAppends] = field(default_factory=_new_board2appends)
 
     def process_data(self, pathobj: Path, snippet_data: dict, sysbuild: bool):
         '''Process the data in a snippet.yml file, after it is loaded into a
-        python object and validated by pykwalify.'''
+        python object and validated by jsonschema.'''
         def append_value(variable, value):
             if variable in ('SB_EXTRA_CONF_FILE', 'EXTRA_DTC_OVERLAY_FILE', 'EXTRA_CONF_FILE'):
                 path = pathobj.parent / value
@@ -69,10 +69,16 @@ class Snippet:
             if board.startswith('/') and not board.endswith('/'):
                 _err(f"snippet file {pathobj}: board {board} starts with '/', so "
                      "it must end with '/' to use a regular expression")
+            for revision, appenddata in settings.get('revisions', {}).items():
+                for variable, value in appenddata.get('append', {}).items():
+                    if (sysbuild is True and variable[0:3] == 'SB_') or \
+                    (sysbuild is False and variable[0:3] != 'SB_'):
+                        self.board2appends[board][revision][variable].append(
+                            append_value(variable, value))
             for variable, value in settings.get('append', {}).items():
                 if (sysbuild is True and variable[0:3] == 'SB_') or \
                 (sysbuild is False and variable[0:3] != 'SB_'):
-                    self.board2appends[board][variable].append(
+                    self.board2appends[board][""][variable].append(
                         append_value(variable, value))
 
 class Snippets(UserDict):
@@ -168,7 +174,18 @@ if("${{BOARD}}${{BOARD_QUALIFIERS}}" MATCHES "^{board_re}$")''')
             self.print(f'''\
 # Appends for board '{board}'
 if("${{BOARD}}${{BOARD_QUALIFIERS}}" STREQUAL "{board}")''')
-        self.print_appends(appends, 1)
+
+        # Output board variables first then board revision variables
+        self.print_appends(appends[""], 1)
+
+        for revision in appends:
+            if revision != "":
+                self.print(f'''\
+  # Appends for revision '{revision}'
+  if("${{BOARD_REVISION}}" STREQUAL "{revision}")''')
+                self.print_appends(appends[revision], 2)
+                self.print('  endif()')
+
         self.print('endif()')
 
     def print_appends(self, appends: Appends, indent: int):
@@ -181,9 +198,9 @@ if("${{BOARD}}${{BOARD_QUALIFIERS}}" STREQUAL "{board}")''')
         kwargs['file'] = self.out_file
         print(*args, **kwargs)
 
-# Name of the file containing the pykwalify schema for snippet.yml
+# Name of the file containing the jsonschema schema for snippet.yml
 # files.
-SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'snippet-schema.yml')
+SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'snippet-schema.yaml')
 with open(SCHEMA_PATH, 'r') as f:
     SNIPPET_SCHEMA = yaml.safe_load(f.read())
 
@@ -221,10 +238,6 @@ def parse_args():
     return parser.parse_args()
 
 def setup_logging():
-    # Silence validation errors from pykwalify, which are logged at
-    # logging.ERROR level. We want to handle those ourselves as
-    # needed.
-    logging.getLogger('pykwalify').setLevel(logging.CRITICAL)
     logging.basicConfig(level=logging.INFO,
                         format='  %(name)s: %(message)s')
 
@@ -296,17 +309,15 @@ def load_snippet_yml(snippet_yml: Path) -> dict:
         except yaml.scanner.ScannerError:
             _err(f'snippets file {snippet_yml} is invalid YAML')
 
-    def pykwalify_err(e):
-        return f'''\
-invalid {SNIPPET_YML} file: {snippet_yml}
-{textwrap.indent(e.msg, '  ')}
-'''
+    validator_class = jsonschema.validators.validator_for(SNIPPET_SCHEMA)
+    validator_class.check_schema(SNIPPET_SCHEMA)
+    snippet_validator = validator_class(SNIPPET_SCHEMA)
+    errors = list(snippet_validator.iter_errors(snippet_data))
 
-    try:
-        pykwalify.core.Core(source_data=snippet_data,
-                            schema_data=SNIPPET_SCHEMA).validate()
-    except pykwalify.errors.PyKwalifyException as e:
-        _err(pykwalify_err(e))
+    if errors:
+        sys.exit('ERROR: Malformed snippet YAML file: '
+                 f'{snippet_yml.as_posix()}\n'
+                 f'{best_match(errors).message} in {best_match(errors).json_path}')
 
     name = snippet_data['name']
     if not SNIPPET_NAME_RE.fullmatch(name):
