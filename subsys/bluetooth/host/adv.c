@@ -34,6 +34,7 @@
 #include "hci_core.h"
 #include "id.h"
 #include "scan.h"
+#include "adv.h"
 
 #define LOG_LEVEL CONFIG_BT_HCI_CORE_LOG_LEVEL
 LOG_MODULE_REGISTER(bt_adv);
@@ -247,12 +248,15 @@ void bt_le_ext_adv_foreach(void (*func)(struct bt_le_ext_adv *adv, void *data),
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 }
 
+static void clear_ext_adv_instance(struct bt_le_ext_adv *adv, void *data)
+{
+	bt_le_lim_adv_cancel_timeout(adv);
+	memset(adv, 0, sizeof(*adv));
+}
+
 void bt_adv_reset_adv_pool(void)
 {
-#if defined(CONFIG_BT_EXT_ADV)
-	(void)memset(&adv_pool, 0, sizeof(adv_pool));
-#endif /* defined(CONFIG_BT_EXT_ADV) */
-
+	bt_le_ext_adv_foreach(clear_ext_adv_instance, NULL);
 	(void)memset(&bt_dev.adv, 0, sizeof(bt_dev.adv));
 }
 
