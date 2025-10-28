@@ -27,12 +27,6 @@ config SPI_STM32_DMA
 	  Enable the SPI DMA mode for SPI instances
 	  that enable dma channels in their device tree node.
 
-config SPI_STM32_USE_HW_SS
-	bool "STM32 Hardware Slave Select support"
-	default y
-	help
-	  Use Slave Select pin instead of software Slave Select.
-
 config SPI_STM32_ERRATA_BUSY
 	bool
 	default y

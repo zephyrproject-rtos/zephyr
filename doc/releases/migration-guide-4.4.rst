@@ -710,6 +710,11 @@ STM32
   .. note:: This change aligns STM32 platforms' behavior with the generic Zephyr one. Previous
             implementation wasn't product-ready so this shouldn't cause much trouble.
 
+* The Kconfig option ``CONFIG_SPI_STM32_USE_HW_SS`` has been removed. SPI operation mode
+  is now selected automatically based on devicetree configuration: instances with either of
+  the ``cs-gpios`` or new ``st,soft-nss`` property operate in "Soft NSS" mode, while all other
+  instances operate in "Hard NSS" mode.
+
 USB
 ===
 
