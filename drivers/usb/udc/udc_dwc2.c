@@ -2325,6 +2325,8 @@ static int udc_dwc2_disable(const struct device *dev)
 	struct net_buf *buf;
 	int err;
 
+	sys_clear_bits((mem_addr_t)&base->gintmsk, USB_DWC2_GINTSTS_USBSUSP);
+	cancel_hibernation_request(priv);
 	LOG_DBG("Disable device %p", dev);
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
