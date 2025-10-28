@@ -96,37 +96,9 @@ For more information about the Verdin iMX8M Plus and the i.MX 8M Plus SoC refer 
 Supported Features
 ==================
 
-The Zephyr verdin_imx8mp_m7 board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | GPIO output                         |
-|           |            | GPIO input                          |
-+-----------+------------+-------------------------------------+
-
-The default configuration can be found in the defconfig file:
-
-- :zephyr_file:`boards/toradex/verdin_imx8mp/verdin_imx8mp_mimx8ml8_m7_defconfig`, if you choose to use
-  the ITCM memory.
-
-- :zephyr_file:`boards/toradex/verdin_imx8mp/verdin_imx8mp_mimx8ml8_m7_ddr_defconfig`, if you choose to use
-  the DDR memory.
+.. zephyr:board-supported-hw::
 
 It is recommended to disable peripherals used by the M7 core on the Linux host.
-
-Other hardware features are not currently supported by the port.
 
 Connections and IOs
 ===================
