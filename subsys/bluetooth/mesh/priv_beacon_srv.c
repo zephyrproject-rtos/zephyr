@@ -151,13 +151,14 @@ static int handle_node_id_get(const struct bt_mesh_model *mod,
 			      struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
-	uint8_t node_id, status;
+	enum bt_mesh_feat_state node_id;
 	uint16_t net_idx;
+	uint8_t status;
 
 	net_idx = net_buf_simple_pull_le16(buf) & 0xfff;
 
-	status = bt_mesh_subnet_priv_node_id_get(net_idx, (enum bt_mesh_feat_state *)&node_id);
-	node_id_status_rsp(mod, ctx, status, net_idx, node_id);
+	status = bt_mesh_subnet_priv_node_id_get(net_idx, &node_id);
+	node_id_status_rsp(mod, ctx, status, net_idx, (uint8_t)node_id);
 
 	return 0;
 }
