@@ -22,3 +22,6 @@ config MP_THREAD_STACK_SIZE
 config MP_THREAD_DEFAULT_PRIORITY
     int "Priority of a thread"
     default 5
+
+config MP_PLUGIN_ZVID
+    bool "Enable zvid plugin"
