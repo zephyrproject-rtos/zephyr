@@ -144,15 +144,6 @@ extern void lp_sram_init(void);
 
 __imr void boot_core0(void)
 {
-#if defined(CONFIG_INTEL_ADSP_SIM_NO_SECONDARY_CORE_FLOW)
-	int prid;
-
-	prid = arch_proc_id();
-	if (prid != 0) {
-		((void (*)(void))DSPCS.bootctl[prid].baddr)();
-	}
-#endif
-
 	cpu_early_init();
 
 #ifdef CONFIG_ADSP_DISABLE_L2CACHE_AT_BOOT
