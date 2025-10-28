@@ -39,8 +39,13 @@ static struct bt_a2dp_ep peer_sbc_endpoint = {
 };
 static struct bt_a2dp_ep *found_peer_sbc_endpoint;
 static struct bt_a2dp_ep *registered_sbc_endpoint;
-static struct bt_a2dp_stream sbc_stream;
+struct bt_a2dp_stream sbc_stream;
 static struct bt_a2dp_stream_ops stream_ops;
+BT_A2DP_SBC_EP_CFG_DEFAULT(sbc_cfg_default, A2DP_SBC_SAMP_FREQ_44100);
+
+extern void a2dp_audio_sbc_configure(struct bt_a2dp_codec_cfg *config);
+extern void a2dp_audio_sbc_stream_started(void);
+extern void a2dp_audio_sbc_stream_suspended(void);
 
 #if defined(CONFIG_BT_A2DP_SOURCE)
 static uint8_t media_data[] = {
@@ -413,6 +418,9 @@ static void app_suspend_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 static void stream_configured(struct bt_a2dp_stream *stream)
 {
 	bt_shell_print("stream configured");
+#ifdef CONFIG_BT_A2DP_SOURCE_SBC_AUDIO_SHELL
+	a2dp_audio_sbc_configure(&sbc_cfg_default);
+#endif
 }
 
 static void stream_established(struct bt_a2dp_stream *stream)
@@ -423,16 +431,25 @@ static void stream_established(struct bt_a2dp_stream *stream)
 static void stream_released(struct bt_a2dp_stream *stream)
 {
 	bt_shell_print("stream released");
+#ifdef CONFIG_BT_A2DP_SOURCE_SBC_AUDIO_SHELL
+	a2dp_audio_sbc_stream_suspended();
+#endif
 }
 
 static void stream_started(struct bt_a2dp_stream *stream)
 {
 	bt_shell_print("stream started");
+#ifdef CONFIG_BT_A2DP_SOURCE_SBC_AUDIO_SHELL
+	a2dp_audio_sbc_stream_started();
+#endif
 }
 
 static void stream_suspended(struct bt_a2dp_stream *stream)
 {
 	bt_shell_print("stream suspended");
+#ifdef CONFIG_BT_A2DP_SOURCE_SBC_AUDIO_SHELL
+	a2dp_audio_sbc_stream_suspended();
+#endif
 }
 
 #if defined(CONFIG_BT_A2DP_SINK)
@@ -695,7 +712,6 @@ static struct bt_a2dp_stream_ops stream_ops = {
 #endif
 };
 
-BT_A2DP_SBC_EP_CFG_DEFAULT(sbc_cfg_default, A2DP_SBC_SAMP_FREQ_44100);
 static int cmd_configure(const struct shell *sh, int32_t argc, char *argv[])
 {
 	int err;
