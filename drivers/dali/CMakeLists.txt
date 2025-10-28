@@ -4,4 +4,5 @@
 zephyr_library()
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_DALI_PWM      dali_pwm.c)
+zephyr_library_sources_ifdef(CONFIG_DALI_SHELL    dali_shell.c)
 # zephyr-keep-sorted-stop

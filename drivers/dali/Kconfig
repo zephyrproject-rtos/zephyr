@@ -13,6 +13,14 @@ menuconfig DALI
 
 if DALI
 
+config DALI_SHELL
+	bool "DALI shell"
+	depends on SHELL
+	help
+	  Enable DALI Shell.
+
+	  The DALI shell provides a 'dali' command with a 'transmit' subcommand.
+
 source "drivers/dali/Kconfig.pwm"
 
 module = DALI_LOW_LEVEL
