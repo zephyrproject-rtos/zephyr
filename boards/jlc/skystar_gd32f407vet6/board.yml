@@ -1,0 +1,6 @@
+board:
+  name: skystar_gd32f407vet6
+  full_name: skystar_gd32f407vet6
+  vendor: jlc
+  socs:
+    - name: gd32f407

@@ -352,6 +352,7 @@ jedec	JEDEC Solid State Technology Association
 jesurun	Shenzhen Jesurun Electronics Business Dept.
 jhd	Shenzhen Jinghua Displays Electronics Co., Ltd.
 jianda	Jiandangjing Technology Co., Ltd.
+jlc	Shenzhen JLC Technology Group Co., Ltd.
 kam	Kamstrup A/S
 karo	Ka-Ro electronics GmbH
 keithkoep	Keith & Koep GmbH
