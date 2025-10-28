@@ -95,7 +95,7 @@ static int memory_dump(const struct shell *sh, mem_addr_t phys_addr, size_t size
 				break;
 #endif /* CONFIG_64BIT */
 			default:
-				shell_fprintf(sh, SHELL_NORMAL, "Incorrect data width\n");
+				shell_print(sh, "Incorrect data width");
 				return -EINVAL;
 			}
 		}
@@ -285,13 +285,13 @@ static int memory_read(const struct shell *sh, mem_addr_t addr, uint8_t width)
 		break;
 #endif /* CONFIG_64BIT */
 	default:
-		shell_fprintf(sh, SHELL_NORMAL, "Incorrect data width\n");
+		shell_print(sh, "Incorrect data width");
 		err = -EINVAL;
 		break;
 	}
 
 	if (err == 0) {
-		shell_fprintf(sh, SHELL_NORMAL, "Read value 0x%llx\n", value);
+		shell_print(sh, "Read value 0x%llx", value);
 	}
 
 	return err;
@@ -317,7 +317,7 @@ static int memory_write(const struct shell *sh, mem_addr_t addr, uint8_t width, 
 		break;
 #endif /* CONFIG_64BIT */
 	default:
-		shell_fprintf(sh, SHELL_NORMAL, "Incorrect data width\n");
+		shell_print(sh, "Incorrect data width");
 		err = -EINVAL;
 		break;
 	}
@@ -348,7 +348,7 @@ static int cmd_devmem(const struct shell *sh, size_t argc, char **argv)
 		width = strtoul(argv[2], NULL, 10);
 	}
 
-	shell_fprintf(sh, SHELL_NORMAL, "Using data width %d\n", width);
+	shell_print(sh, "Using data width %d", width);
 
 	if (argc <= 3) {
 		return memory_read(sh, addr, width);
@@ -360,7 +360,7 @@ static int cmd_devmem(const struct shell *sh, size_t argc, char **argv)
 
 	value = (uint64_t)strtoull(argv[3], NULL, 16);
 
-	shell_fprintf(sh, SHELL_NORMAL, "Writing value 0x%llx\n", value);
+	shell_print(sh, "Writing value 0x%llx", value);
 
 	return memory_write(sh, addr, width, value);
 }
