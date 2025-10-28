@@ -1,6 +1,6 @@
 board:
   name: kit_psc3m5_evk
-  full_name: PSOC Control C3M5 Evaluation Kit
+  full_name: PSOC™ Control C3M5 Evaluation Kit
   vendor: infineon
   socs:
   - name: psc3m5fds2afq1
