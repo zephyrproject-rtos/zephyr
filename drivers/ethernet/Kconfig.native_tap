@@ -6,7 +6,6 @@
 menuconfig ETH_NATIVE_TAP
 	bool "Native TAP Ethernet driver"
 	depends on ARCH_POSIX
-	select ETH_NATIVE_POSIX_BACKWARDS_COMPAT_MENU
 	help
 	  Enable native_sim TAP ethernet driver. Note, this driver is run inside
 	  a process in your host system.
@@ -15,7 +14,9 @@ if ETH_NATIVE_TAP
 
 config ETH_NATIVE_TAP_INTERFACE_COUNT
 	int "Number of network interfaces created"
-	default ETH_NATIVE_POSIX_INTERFACE_COUNT
+	default NET_GPTP_NUM_PORTS if NET_GPTP
+	default PTP_NUM_PORTS if PTP
+	default 1
 	range 1 32
 	help
 	  By default only one network interface is created. It is possible
@@ -25,7 +26,7 @@ config ETH_NATIVE_TAP_INTERFACE_COUNT
 
 config ETH_NATIVE_TAP_DRV_NAME
 	string "Ethernet driver name"
-	default ETH_NATIVE_POSIX_DRV_NAME
+	default "zeth"
 	help
 	  This option sets the driver name and name of the network interface
 	  in your host system. If there are multiple network interfaces defined,
@@ -34,13 +35,13 @@ config ETH_NATIVE_TAP_DRV_NAME
 
 config ETH_NATIVE_TAP_DEV_NAME
 	string "Host ethernet TUN/TAP device name"
-	default ETH_NATIVE_POSIX_DEV_NAME
+	default "/dev/net/tun"
 	help
 	  This option sets the TUN/TAP device name in your host system.
 
 config ETH_NATIVE_TAP_PTP_CLOCK
 	bool "PTP clock driver support"
-	default ETH_NATIVE_POSIX_PTP_CLOCK
+	default y if NET_GPTP || PTP
 	select PTP_CLOCK
 	depends on NET_GPTP || PTP
 	help
@@ -49,13 +50,12 @@ config ETH_NATIVE_TAP_PTP_CLOCK
 config ETH_NATIVE_TAP_RANDOM_MAC
 	bool "Random MAC address"
 	depends on ENTROPY_GENERATOR
-	default ETH_NATIVE_POSIX_RANDOM_MAC
+	default y
 	help
 	  Generate a random MAC address dynamically.
 
 config ETH_NATIVE_TAP_VLAN_TAG_STRIP
 	bool "Strip VLAN tag from Rx frames"
-	default ETH_NATIVE_POSIX_VLAN_TAG_STRIP
 	depends on NET_VLAN
 	help
 	  Native TAP ethernet driver will strip of VLAN tag from
@@ -64,7 +64,7 @@ config ETH_NATIVE_TAP_VLAN_TAG_STRIP
 
 config ETH_NATIVE_TAP_MAC_ADDR
 	string "MAC address for the interface"
-	default ETH_NATIVE_POSIX_MAC_ADDR
+	default ""
 	depends on !ETH_NATIVE_TAP_RANDOM_MAC
 	help
 	  Specify a MAC address for the ethernet interface in the form of
@@ -75,7 +75,8 @@ config ETH_NATIVE_TAP_MAC_ADDR
 
 config ETH_NATIVE_TAP_RX_TIMEOUT
 	int "Ethernet RX timeout"
-	default ETH_NATIVE_POSIX_RX_TIMEOUT
+	default 1 if NET_GPTP
+	default 50
 	range 1 100
 	help
 	  Native TAP ethernet driver repeatedly checks for new data.
@@ -83,77 +84,3 @@ config ETH_NATIVE_TAP_RX_TIMEOUT
 	  available.
 
 endif # ETH_NATIVE_TAP
-
-
-config ETH_NATIVE_POSIX
-	bool "Native POSIX Ethernet driver (deprecated)"
-	depends on ARCH_POSIX
-	select DEPRECATED
-	select ETH_NATIVE_TAP
-	select ETH_NATIVE_POSIX_BACKWARDS_COMPAT_MENU
-	help
-	  Deprecated, use ETH_NATIVE_TAP instead
-
-menuconfig ETH_NATIVE_POSIX_BACKWARDS_COMPAT_MENU
-	bool "Native POSIX Ethernet driver options (deprecated)"
-	depends on ARCH_POSIX
-
-if ETH_NATIVE_POSIX_BACKWARDS_COMPAT_MENU
-
-config ETH_NATIVE_POSIX_INTERFACE_COUNT
-	int "Number of network interfaces created (deprecated)"
-	default NET_GPTP_NUM_PORTS if NET_GPTP
-	default PTP_NUM_PORTS if PTP
-	default 1
-	range 1 32
-	help
-	  Deprecated, use ETH_NATIVE_TAP_INTERFACE_COUNT instead
-
-config ETH_NATIVE_POSIX_DRV_NAME
-	string "Ethernet driver name (deprecated)"
-	default "zeth"
-	help
-	  Deprecated, use ETH_NATIVE_TAP_DRV_NAME instead
-
-config ETH_NATIVE_POSIX_DEV_NAME
-	string "Host ethernet TUN/TAP device name (deprecated)"
-	default "/dev/net/tun"
-	help
-	  Deprecated, use ETH_NATIVE_TAP_DEV_NAME instead
-
-config ETH_NATIVE_POSIX_PTP_CLOCK
-	bool "PTP clock driver support (deprecated)"
-	default y if NET_GPTP || PTP
-	depends on NET_GPTP || PTP
-	help
-	  Deprecated, use ETH_NATIVE_TAP_PTP_CLOCK instead
-
-config ETH_NATIVE_POSIX_RANDOM_MAC
-	bool "Random MAC address (deprecated)"
-	depends on ENTROPY_GENERATOR
-	default y
-	help
-	  Deprecated, use ETH_NATIVE_TAP_RANDOM_MAC instead
-
-config ETH_NATIVE_POSIX_VLAN_TAG_STRIP
-	bool "Strip VLAN tag from Rx frames (deprecated)"
-	depends on NET_VLAN
-	help
-	  Deprecated, use ETH_NATIVE_TAP_VLAN_TAG_STRIP instead
-
-config ETH_NATIVE_POSIX_MAC_ADDR
-	string "MAC address for the interface (deprecated)"
-	default ""
-	depends on !ETH_NATIVE_POSIX_RANDOM_MAC
-	help
-	  Deprecated, use ETH_NATIVE_TAP_MAC_ADDR instead
-
-config ETH_NATIVE_POSIX_RX_TIMEOUT
-	int "Ethernet RX timeout (deprecated)"
-	default 1 if NET_GPTP
-	default 50
-	range 1 100
-	help
-	  Deprecated, use ETH_NATIVE_TAP_DEV_NAME instead
-
-endif # ETH_NATIVE_POSIX_BACKWARDS_COMPAT
