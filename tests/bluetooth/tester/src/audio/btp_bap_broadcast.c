@@ -1162,6 +1162,8 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 		bt_addr_le_copy(&broadcaster->address, &recv_state->addr);
 	}
 
+	broadcast_source_to_sync = broadcaster;
+
 	broadcaster->sink_recv_state = recv_state;
 
 	btp_send_pas_sync_req_ev(conn, recv_state->src_id, recv_state->adv_sid,
@@ -1380,20 +1382,6 @@ uint8_t btp_bap_broadcast_sink_sync(const void *cmd, uint16_t cmd_len, void *rsp
 
 	LOG_DBG("");
 
-	broadcaster = remote_broadcaster_find(&cp->address, broadcast_id);
-	if (broadcaster == NULL) {
-		broadcaster = remote_broadcaster_alloc();
-		if (broadcaster == NULL) {
-			LOG_ERR("Failed to allocate broadcast source");
-			return BTP_STATUS_FAILED;
-		}
-
-		broadcaster->broadcast_id = broadcast_id;
-		bt_addr_le_copy(&broadcaster->address, &cp->address);
-	}
-
-	broadcast_source_to_sync = broadcaster;
-
 	if (IS_ENABLED(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER) && cp->past_avail) {
 		/* The Broadcast Assistant supports PAST transfer, and it has found
 		 * a Broadcaster for us. Let's sync to the Broadcaster PA with the PAST.
@@ -1421,7 +1409,22 @@ uint8_t btp_bap_broadcast_sink_sync(const void *cmd, uint16_t cmd_len, void *rsp
 		create_params.sid = cp->advertiser_sid;
 		create_params.skip = cp->skip;
 		create_params.timeout = cp->sync_timeout;
+
 		err = tester_gap_padv_create_sync(&create_params);
+
+		broadcaster = remote_broadcaster_find(&cp->address, broadcast_id);
+		if (broadcaster == NULL) {
+			broadcaster = remote_broadcaster_alloc();
+			if (broadcaster == NULL) {
+				LOG_ERR("Failed to allocate broadcast source");
+				return BTP_STATUS_FAILED;
+			}
+
+			broadcaster->broadcast_id = broadcast_id;
+			bt_addr_le_copy(&broadcaster->address, &cp->address);
+		}
+
+		broadcast_source_to_sync = broadcaster;
 	}
 
 	if (err != 0) {
