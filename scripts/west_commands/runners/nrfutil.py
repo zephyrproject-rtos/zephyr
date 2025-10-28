@@ -37,7 +37,7 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return NrfBinaryRunner._capabilities(mult_dev_ids=True)
+        return NrfBinaryRunner._capabilities(mult_dev_ids=True, dry_run=True)
 
     @classmethod
     def dev_id_help(cls) -> str:
@@ -65,10 +65,6 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
         parser.add_argument('--ext-mem-config-file', required=False,
                             dest='ext_mem_config_file',
                             help='path to an JSON file with external memory configuration')
-        parser.add_argument('--dry-run', required=False,
-                            action='store_true',
-                            help='''Generate all the commands without actually
-                            executing them''')
 
     def _exec(self, args, force=False):
         jout_all = []
