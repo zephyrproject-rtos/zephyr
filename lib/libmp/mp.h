@@ -21,4 +21,8 @@
 #include <src/core/mp_element_factory.h>
 #include <src/core/mp_pipeline.h>
 
+#if CONFIG_MP_PLUGIN_ZVID
+#include <src/plugins/zvid/mp_zvid_property.h>
+#endif
+
 #endif /* __MP_H__ */
