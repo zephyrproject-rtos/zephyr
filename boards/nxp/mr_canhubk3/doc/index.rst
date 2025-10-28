@@ -296,6 +296,75 @@ For example, to erase and verify flash content:
 
    west flash -r trace32 --startup-args elfFile=build/zephyr/zephyr.elf loadTo=flash eraseFlash=yes verifyFlash=yes
 
+MCUboot (sysbuild)
+========
+
+This board supports MCUboot chain-loading using Zephyr’s sysbuild.
+
+The command below builds MCUboot and the application together.
+It also generated .hex output files for convenience in flashing.
+
+.. code-block:: console
+
+west build -p -b mr_canhubk3/s32k344/mcuboot --sysbuild
+-s zephyr/samples/drivers/flash_shell
+-d build/sys_mcuboot
+-- 
+-Dmcuboot_CONFIG_BUILD_OUTPUT_HEX=y
+-Dflash_shell_CONFIG_BUILD_OUTPUT_HEX=y
+
+The resulting artifacts are:
+
+    MCUboot: build/sys_mcuboot/mcuboot/zephyr/zephyr.hex
+
+    App (unsigned): build/sys_mcuboot/flash_shell/zephyr/zephyr.hex
+
+Signing the application
+-----------------------
+
+Preferred (sysbuild)
+Pass your key to sysbuild so it signs during the build. For example:
+
+.. code-block:: console
+
+ west build -p -b mr_canhubk3/s32k344/mcuboot --sysbuild \
+   -s zephyr/samples/drivers/flash_shell \
+   -d build/sys_mcuboot \
+   -- \
+   -DSB_CONFIG_BOOT_SIGNATURE_TYPE_RSA=y \
+   -DSB_CONFIG_BOOT_SIGNATURE_KEY_FILE="$PWD/bootloader/mcuboot/root-rsa-2048.pem" \
+
+The signed image will be at:
+build/sys_mcuboot/flash_shell/zephyr/zephyr.signed.bin
+
+Flashing
+--------
+
+    Flash MCUboot:
+
+    .. code-block:: console
+
+    west flash -d build/sys_mcuboot/mcuboot -r jlink
+
+    Flash the signed application to the primary slot (image-0).
+    With J-Link Commander, for example:
+
+    .. code-block:: text
+
+    loadbin build/sys_mcuboot/flash_shell/zephyr/zephyr.signed.bin, 0x00422000
+    r
+    g
+
+Troubleshooting
+---------------
+
+    If MCUboot prints “Image in the primary slot is not valid” or stalls after
+    “Jumping to the first image slot”, the app was likely signed with a 512-byte header.
+    Re-sign with --header-size 0x400 and re-flash.
+
+    Do not add an IVT to MCUboot-chainloaded applications;
+    it’s only emitted for standalone/XIP images or MCUboot itself.
+
 Debugging
 =========
 
