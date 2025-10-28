@@ -1,3 +1,5 @@
+.. _kconfig_traceconfig:
+
 Tracing values to their source
 ##############################
 

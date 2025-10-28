@@ -33,6 +33,47 @@ We are pleased to announce the release of Zephyr version 4.3.0.
 
 Major enhancements with this release include:
 
+**USB Device "Next" stack is now the default**
+  The new :ref:`USB device stack <usb_device_stack_next>`, built on the modern UDC (USB Device
+  Controller) API, replaces the legacy stack and brings support for multiple simultaneous
+  controllers, runtime configuration, and overall better architecture.
+  The legacy stack is now deprecated and will be removed in Zephyr 4.5.
+
+**CPU load and dynamic frequency scaling subsystems**
+  A new experimental :ref:`CPU frequency <cpu_freq>` scaling subsystem enables dynamic,
+  policy-driven, clock adjustments to balance power consumption and performance.
+  Alongside it, a new :ref:`cpu_load` subsystem allows to obtain CPU usage metrics based on
+  scheduler statistics, which can be used to drive the frequency scaling policy.
+
+**Instrumentation Subsystem**
+  A new :zephyr:code-sample:`instrumentation subsystem <instrumentation>` simplifies tracing and
+  profiling of Zephyr applications by leveraging compiler-managed function instrumentation, allowing
+  to record call-graph traces and statistical profiles at runtime.
+
+**OCPP 1.6 library**
+  A new :ref:`OCPP (Open Charge Point Protocol) <ocpp_interface>` library enables EV charging
+  station development with Zephyr. The library implements OCPP 1.6 Charge Point functionality
+  over WebSocket, supporting core profile operations including authorization, transaction
+  management, and meter value reporting for communication with Central System servers.
+
+**Twister Display Harness**
+  Twister can now :ref:`validate on-target display output <twister_display_capture_harness>` by
+  capturing frames from a USB video camera and matching them against pre-recorded visual
+  "fingerprints".
+
+**Developer Experience Improvements**
+  Several new tools have been introduced to help with common development and troubleshooting tasks:
+
+  - :ref:`dtdoctor` to help diagnose Devicetree build errors.
+  - :ref:`traceconfig <kconfig_traceconfig>` build target to help understand where Kconfig symbols
+    come from and their final values.
+  - :ref:`Interactive footprint charts <footprint_tools_plot>` to visualize RAM/ROM usage of an
+    application.
+
+**Expanded Board Support**
+  Support for 105 :ref:`new boards <boards_added_in_zephyr_4_3>` and 39
+  :ref:`new shields <shields_added_in_zephyr_4_3>` has been added in this release.
+
 An overview of the changes required or recommended when migrating your application from Zephyr
 v4.2.0 to Zephyr v4.3.0 can be found in the separate :ref:`migration guide<migration_4.3>`.
 
@@ -379,6 +420,8 @@ New APIs and options
 
 .. zephyr-keep-sorted-stop
 
+.. _boards_added_in_zephyr_4_3:
+
 New Boards
 **********
 
@@ -609,6 +652,8 @@ New Boards
    * :zephyr:board:`weact_stm32g030_core` (``weact_stm32g030_core``)
    * :zephyr:board:`weact_stm32wb55_core` (``weact_stm32wb55_core``)
    * :zephyr:board:`weact_esp32s3_b` (``weact_esp32s3_b``)
+
+.. _shields_added_in_zephyr_4_3:
 
 New Shields
 ***********
