@@ -23,4 +23,13 @@
 			bias-high-impedance;
 		};
 	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <GPIO0_I2C0_SCL>,
+				 <GPIO1_I2C0_SDA>;
+			bias-pull-up;
+			input-schmitt-enable;
+		};
+	};
 };
