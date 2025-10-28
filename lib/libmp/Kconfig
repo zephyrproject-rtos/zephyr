@@ -33,6 +33,9 @@ menu "Media Pipe plugins"
 config MP_PLUGIN_ZVID
 	bool "Zvid plugin support"
 
+config MP_PLUGIN_ZDISP
+	bool "Zdisp plugin support"
+
 endmenu
 
 endif # MP
