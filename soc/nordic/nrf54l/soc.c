@@ -20,8 +20,7 @@
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/cache.h>
-#include <soc/nrfx_coredep.h>
-#include <system_nrf54l.h>
+#include <lib/nrfx_coredep.h>
 #include <soc.h>
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
