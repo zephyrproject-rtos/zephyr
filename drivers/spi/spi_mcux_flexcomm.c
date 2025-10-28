@@ -659,8 +659,8 @@ static int transceive_dma(const struct device *dev,
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
 	SPI_Type *base = config->base;
-	int ret;
 	uint8_t word_size = (uint8_t)SPI_WORD_SIZE_GET(spi_cfg->operation);
+	int ret = 0;
 
 	if (word_size > SPI_MAX_DATA_WIDTH) {
 		LOG_ERR("Word size %d is greater than %d", word_size, SPI_MAX_DATA_WIDTH);
@@ -671,14 +671,20 @@ static int transceive_dma(const struct device *dev,
 
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, spi_cfg);
 
+	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+
+	if ((data->ctx.tx_count + data->ctx.rx_count) == 0) {
+		/* no data to transfer */
+		ret = 0;
+		goto out;
+	}
+
 	data->word_size_bits = word_size;
 	data->word_size_bytes = (word_size > 8) ? (sizeof(uint16_t)) : (sizeof(uint8_t));
 	ret = spi_mcux_configure(dev, spi_cfg);
 	if (ret) {
 		goto out;
 	}
-
-	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
 	spi_context_cs_control(&data->ctx, true);
 
