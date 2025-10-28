@@ -17,7 +17,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <hal/nrf_power.h>
-#include <soc/nrfx_coredep.h>
+#include <lib/nrfx_coredep.h>
 #include <zephyr/logging/log.h>
 
 #include <cmsis_core.h>
