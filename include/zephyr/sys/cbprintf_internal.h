@@ -562,7 +562,7 @@ extern "C" {
 #else
 #define Z_CONSTIFY(v) ({ \
 	__auto_type _uv = (v); \
-	__typeof__(_uv) const _cv = _uv; \
+	const __typeof__(_uv) _cv = _uv; \
 	_cv; \
 })
 #define Z_CBPRINTF_ARG_SIZE(v) ({\
