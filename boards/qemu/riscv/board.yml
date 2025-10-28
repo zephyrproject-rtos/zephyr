@@ -1,0 +1,12 @@
+board:
+  name: qemu_riscv
+  full_name: QEMU Emulation for RISCV
+  vendor: qemu
+  socs:
+    - name: qemu_virt_riscv32
+      variants:
+        - name: smp
+    - name: qemu_virt_riscv32e
+    - name: qemu_virt_riscv64
+      variants:
+        - name: smp
