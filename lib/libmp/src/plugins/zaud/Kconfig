@@ -1,0 +1,20 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config MP_PLUGIN_ZAUD
+	bool "Zaud plugin support"
+
+if MP_PLUGIN_ZAUD
+
+config ZAUD_BUFFER_POOL_SZ_MAX
+	int "Size of the largest buffer in the buffer pool"
+	default 98304
+
+config ZAUD_BUFFER_POOL_NUM_MAX
+	int "Number of maximum sized buffers in the buffer pool"
+	default 10
+
+endif # MP_PLUGIN_ZAUD
