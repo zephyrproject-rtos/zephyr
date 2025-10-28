@@ -194,19 +194,19 @@ static inline void trigger_irq(int irq)
 #if XCHAL_NUM_INTERRUPTS > 32
 	switch (irq >> 5) {
 	case 0:
-		z_xt_set_intset(1 << irq);
+		z_xt_set_intset(1 << (irq & 0x1f));
 		break;
 	case 1:
-		z_xt_set_intset1(1 << irq);
+		z_xt_set_intset1(1 << (irq & 0x1f));
 		break;
 #if XCHAL_NUM_INTERRUPTS > 64
 	case 2:
-		z_xt_set_intset2(1 << irq);
+		z_xt_set_intset2(1 << (irq & 0x1f));
 		break;
 #endif
 #if XCHAL_NUM_INTERRUPTS > 96
 	case 3:
-		z_xt_set_intset3(1 << irq);
+		z_xt_set_intset3(1 << (irq & 0x1f));
 		break;
 #endif
 	default:
