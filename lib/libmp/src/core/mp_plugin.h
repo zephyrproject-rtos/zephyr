@@ -33,6 +33,9 @@ enum mp_element_factory_id {
 	MP_ZVID_SRC_ELEM,
 	/**  Video transform */
 	MP_ZVID_TRANSFORM_ELEM,
+	/* Display plugin elements */
+	/** Display sink */
+	MP_ZDISP_SINK_ELEM,
 	/** Last item for counter only */
 	MP_ELEM_COUNT,
 };
@@ -44,6 +47,8 @@ enum mp_element_factory_id {
 enum mp_plugin_id {
 	/** Video plugin */
 	MP_ZVID_PLUGIN = 0,
+	/** Display plugin */
+	MP_ZDISP_PLUGIN,
 	/** Last item for counter only */
 	MP_PLUGIN_COUNT,
 };
