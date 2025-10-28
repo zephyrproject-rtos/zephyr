@@ -153,6 +153,7 @@ struct smp_transport {
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_FORWARD_TREE
 	const struct device *const dev;
+	uint8_t user_data[64];
 #endif
 };
 

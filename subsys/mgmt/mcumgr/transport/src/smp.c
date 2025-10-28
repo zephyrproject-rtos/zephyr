@@ -266,6 +266,10 @@ void smp_client_transport_register(struct smp_client_transport_entry *entry)
 WEAK void
 smp_rx_req(struct smp_transport *smpt, struct net_buf *nb)
 {
+#if defined(CONFIG_MCUMGR_TRANSPORT_FORWARD_TREE)
+	memcpy(smpt->user_data, net_buf_user_data((void *)nb), nb->user_data_size);
+#endif
+
 	k_fifo_put(&smpt->fifo, nb);
 	k_work_submit_to_queue(&smp_work_queue, &smpt->work);
 }
