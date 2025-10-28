@@ -16,7 +16,7 @@
 #include <zephyr/init.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/dt-bindings/regulator/nrf5x.h>
-#include <soc/nrfx_coredep.h>
+#include <lib/nrfx_coredep.h>
 #include <zephyr/logging/log.h>
 #include <nrfx.h>
 #include <hal/nrf_power.h>
