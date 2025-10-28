@@ -9,6 +9,7 @@ cmake_minimum_required(VERSION 3.20.0)
 if(CONFIG_MP)
     set(MP_BASE_DIR ${CMAKE_CURRENT_LIST_DIR})
     set(MP_CORE_DIR ${MP_BASE_DIR}/src/core)
+    set(MP_PLUGIN_DIR ${MP_BASE_DIR}/src/plugins)
 
     message("Building MediaPipe library")
 
@@ -43,4 +44,12 @@ if(CONFIG_MP)
         ${MP_CORE_SOURCE_FILES}
     )
 
+    # Plugins
+    if(CONFIG_MP_PLUGIN_ZVID)
+        message("Including zvid plugin")
+        file(GLOB_RECURSE PLUGIN_ZVID_SOURCE_FILES ${MP_PLUGIN_DIR}/zvid/*.c)
+        zephyr_library_sources(
+            ${PLUGIN_ZVID_SOURCE_FILES}
+        )
+    endif()
 endif()
