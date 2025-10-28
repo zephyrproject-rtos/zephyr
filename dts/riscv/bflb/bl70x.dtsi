@@ -9,6 +9,7 @@
 #include <dt-bindings/pinctrl/bflb-common-pinctrl.h>
 #include <dt-bindings/pinctrl/bl70x-pinctrl.h>
 #include <dt-bindings/clock/bflb_bl70x_clock.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	#address-cells = <1>;
@@ -168,6 +169,17 @@
 			interrupts = <46 0>;
 			interrupt-parent = <&clic>;
 			status = "disabled";
+		};
+
+		i2c0: i2c@4000a300 {
+			compatible = "bflb,i2c";
+			reg = <0x4000a300 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			interrupts = <48 0>;
+			interrupt-parent = <&clic>;
 		};
 
 		flashctrl: flash-controller@4000b000 {
