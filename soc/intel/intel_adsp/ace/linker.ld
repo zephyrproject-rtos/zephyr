@@ -3,7 +3,7 @@
  */
 
 #include <zephyr/linker/devicetree_regions.h>
-#include <ace-link.ld>
+#include <linker/ace-link-mirrored.ld>
 
 MEMORY
 {
