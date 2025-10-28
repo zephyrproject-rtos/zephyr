@@ -14,7 +14,8 @@
 #include <soc.h>
 #include <dmm.h>
 #ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
-#include <nrfx_ppi.h>
+#include <hal/nrf_ppi.h>
+#include <helpers/nrfx_gppi.h>
 #endif
 #ifdef CONFIG_SOC_NRF5340_CPUAPP
 #include <hal/nrf_clock.h>
@@ -66,7 +67,7 @@ struct spi_nrfx_data {
 #endif
 #ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
 	bool    anomaly_58_workaround_active;
-	uint8_t ppi_ch;
+	nrfx_gppi_handle_t ppi_h;
 	uint8_t gpiote_ch;
 #endif
 };
@@ -270,7 +271,7 @@ static void anomaly_58_workaround_setup(const struct device *dev)
 	struct spi_nrfx_data *dev_data = dev->data;
 	const struct spi_nrfx_config *dev_config = dev->config;
 	NRF_SPIM_Type *spim = dev_config->spim.p_reg;
-	uint32_t ppi_ch = dev_data->ppi_ch;
+	uint32_t ppi_ch = dev_data->ppi_h;
 	uint32_t gpiote_ch = dev_data->gpiote_ch;
 	uint32_t eep = (uint32_t)&gpiote.p_reg->EVENTS_IN[gpiote_ch];
 	uint32_t tep = (uint32_t)&spim->TASKS_STOP;
@@ -294,7 +295,7 @@ static void anomaly_58_workaround_setup(const struct device *dev)
 
 static void anomaly_58_workaround_clear(struct spi_nrfx_data *dev_data)
 {
-	uint32_t ppi_ch = dev_data->ppi_ch;
+	uint32_t ppi_ch = dev_data->ppi_h;
 	uint32_t gpiote_ch = dev_data->gpiote_ch;
 
 	if (dev_data->anomaly_58_workaround_active) {
@@ -310,14 +311,15 @@ static int anomaly_58_workaround_init(const struct device *dev)
 	struct spi_nrfx_data *dev_data = dev->data;
 	const struct spi_nrfx_config *dev_config = dev->config;
 	nrfx_err_t err_code;
+	int rv;
 
 	dev_data->anomaly_58_workaround_active = false;
 
 	if (dev_config->anomaly_58_workaround) {
-		err_code = nrfx_ppi_channel_alloc(&dev_data->ppi_ch);
-		if (err_code != NRFX_SUCCESS) {
+		rv = nrfx_gppi_domain_conn_alloc(0, 0, &dev_data->ppi_h);
+		if (rv < 0) {
 			LOG_ERR("Failed to allocate PPI channel");
-			return -ENODEV;
+			return rv;
 		}
 
 		err_code = nrfx_gpiote_channel_alloc(&gpiote, &dev_data->gpiote_ch);
@@ -326,7 +328,7 @@ static int anomaly_58_workaround_init(const struct device *dev)
 			return -ENODEV;
 		}
 		LOG_DBG("PAN 58 workaround enabled for %s: ppi %u, gpiote %u",
-			dev->name, dev_data->ppi_ch, dev_data->gpiote_ch);
+			dev->name, dev_data->ppi_h, dev_data->gpiote_ch);
 	}
 
 	return 0;

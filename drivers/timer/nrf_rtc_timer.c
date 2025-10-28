@@ -23,7 +23,7 @@
 #define CUSTOM_COUNTER_BIT_WIDTH 1
 #define WRAP_CH 0
 #define SYS_CLOCK_CH 1
-#include "nrfx_ppi.h"
+#include "helpers/nrfx_gppi.h"
 #else
 #define CUSTOM_COUNTER_BIT_WIDTH 0
 #define SYS_CLOCK_CH 0
@@ -806,8 +806,8 @@ static int sys_clock_driver_init(void)
 	alloc_mask &= ~BIT(WRAP_CH);
 
 	nrf_rtc_event_t evt = NRF_RTC_CHANNEL_EVENT_ADDR(WRAP_CH);
-	nrfx_err_t result;
-	nrf_ppi_channel_t ch;
+	int result;
+	nrfx_gppi_handle_t handle;
 
 	nrfy_rtc_event_enable(RTC, NRF_RTC_CHANNEL_INT_MASK(WRAP_CH));
 	nrfy_rtc_cc_set(RTC, WRAP_CH, COUNTER_MAX);
@@ -817,12 +817,11 @@ static int sys_clock_driver_init(void)
 	evt_addr = nrfy_rtc_event_address_get(RTC, evt);
 	task_addr = nrfy_rtc_task_address_get(RTC, NRF_RTC_TASK_CLEAR);
 
-	result = nrfx_ppi_channel_alloc(&ch);
-	if (result != NRFX_SUCCESS) {
-		return -ENODEV;
+	result = nrfx_gppi_conn_alloc(evt_addr, task_addr, &handle);
+	if (result < 0) {
+		return result;
 	}
-	(void)nrfx_ppi_channel_assign(ch, evt_addr, task_addr);
-	(void)nrfx_ppi_channel_enable(ch);
+	nrfx_gppi_conn_enable(handle);
 #endif
 	return 0;
 }
