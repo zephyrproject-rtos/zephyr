@@ -36,6 +36,9 @@ config MP_PLUGIN_ZVID
 config MP_PLUGIN_ZDISP
 	bool "Zdisp plugin support"
 
+config MP_PLUGIN_ZAUD
+	bool "Zaud plugin support"
+
 endmenu
 
 endif # MP
