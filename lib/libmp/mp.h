@@ -23,4 +23,13 @@
 #include <src/core/mp_transform_client.h>
 #endif
 
+#if CONFIG_MP_PLUGIN_ZVID
+#include <src/plugins/zvid/mp_zvid_property.h>
+#include <src/plugins/zvid/mp_zvid_src.h>
+#include <src/plugins/zvid/mp_zvid_transform.h>
+#if CONFIG_MP_RPC
+#include <src/plugins/zvid/mp_zvid_transform_client.h>
+#endif
+#endif
+
 #endif /* __MP_H__ */
