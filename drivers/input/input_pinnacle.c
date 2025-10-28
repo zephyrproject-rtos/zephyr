@@ -761,6 +761,22 @@ static int pinnacle_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	/* Clear CC */
+	rc = pinnacle_write(dev, PINNACLE_REG_STATUS1, 0);
+	if (rc < 0) {
+		LOG_ERR("Failed to clear CC from STATUS1 register (%d)", rc);
+		return rc;
+	}
+
+	k_usleep(50);
+	/* Datasheet: RESET bit is read-only, reality: write 1 for software reset */
+	rc = pinnacle_write(dev, PINNACLE_REG_SYS_CONFIG1, PINNACLE_SYS_CONFIG1_RESET);
+
+	if (rc < 0) {
+		LOG_ERR("Failed to write reset to SYS_CONFIG1 (%d)", rc);
+		return rc;
+	}
+
 	/* Wait until the calibration is completed (SW_CC is asserted) */
 	ret = WAIT_FOR(pinnacle_read(dev, PINNACLE_REG_STATUS1, &value) == 0 &&
 		       (value & PINNACLE_STATUS1_SW_CC) == PINNACLE_STATUS1_SW_CC,
@@ -768,7 +784,7 @@ static int pinnacle_init(const struct device *dev)
 		       PINNACLE_CALIBRATION_AWAIT_DELAY_POLL_US,
 		       k_sleep(K_USEC(PINNACLE_CALIBRATION_AWAIT_DELAY_POLL_US)));
 	if (!ret) {
-		LOG_ERR("Failed to wait for calibration complition");
+		LOG_ERR("Failed to wait for calibration completion");
 		return -EIO;
 	}
 
