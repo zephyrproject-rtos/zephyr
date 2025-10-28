@@ -316,7 +316,7 @@ static void hfclk_start(void)
 		hf_start_tstamp = k_uptime_get();
 	}
 
-	nrfx_clock_hfclk_start();
+	nrfx_clock_start(NRF_CLOCK_DOMAIN_HFCLK);
 }
 
 static void hfclk_stop(void)
@@ -325,7 +325,7 @@ static void hfclk_stop(void)
 		hf_stop_tstamp = k_uptime_get();
 	}
 
-	nrfx_clock_hfclk_stop();
+	nrfx_clock_stop(NRF_CLOCK_DOMAIN_HFCLK);
 }
 
 #if NRF_CLOCK_HAS_HFCLK24M
