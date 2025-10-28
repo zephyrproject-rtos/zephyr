@@ -488,6 +488,9 @@ class ZephyrBinaryRunner(abc.ABC):
         self.logger = logging.getLogger(f'runners.{self.name()}')
         '''logging.Logger for this instance.'''
 
+        self.dry_run = _DRY_RUN
+        '''log commands instead of executing them. Can be set by subclasses'''
+
     @staticmethod
     def get_runners() -> list[type['ZephyrBinaryRunner']]:
         '''Get a list of all currently defined runner classes.'''
@@ -860,7 +863,7 @@ class ZephyrBinaryRunner(abc.ABC):
 
     def _log_cmd(self, cmd: list[str]):
         escaped = ' '.join(shlex.quote(s) for s in cmd)
-        if not _DRY_RUN:
+        if not self.dry_run:
             self.logger.debug(escaped)
         else:
             self.logger.info(escaped)
@@ -873,7 +876,7 @@ class ZephyrBinaryRunner(abc.ABC):
         using subprocess directly, to keep accurate debug logs.
         '''
         self._log_cmd(cmd)
-        if _DRY_RUN:
+        if self.dry_run:
             return 0
         return subprocess.call(cmd, **kwargs)
 
@@ -885,7 +888,7 @@ class ZephyrBinaryRunner(abc.ABC):
         using subprocess directly, to keep accurate debug logs.
         '''
         self._log_cmd(cmd)
-        if _DRY_RUN:
+        if self.dry_run:
             return
         subprocess.check_call(cmd, **kwargs)
 
@@ -897,7 +900,7 @@ class ZephyrBinaryRunner(abc.ABC):
         using subprocess directly, to keep accurate debug logs.
         '''
         self._log_cmd(cmd)
-        if _DRY_RUN:
+        if self.dry_run:
             return b''
         return subprocess.check_output(cmd, **kwargs)
 
@@ -918,7 +921,7 @@ class ZephyrBinaryRunner(abc.ABC):
             preexec = os.setsid # type: ignore
 
         self._log_cmd(cmd)
-        if _DRY_RUN:
+        if self.dry_run:
             return _DebugDummyPopen()  # type: ignore
 
         return subprocess.Popen(cmd, creationflags=cflags, preexec_fn=preexec, **kwargs)
