@@ -1,0 +1,24 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# Kconfig file for libMP
+
+module = LIBMP
+module-str = libmp
+source "subsys/logging/Kconfig.template.log_config"
+
+config MP
+    bool "Enable MP core"
+
+config MP_THREADS_NUM
+    int "Maximum number of threads could be used"
+    range 0 255
+    default 3
+
+config MP_THREAD_STACK_SIZE
+    int "Stack size of a thread"
+    default 1024
+
+config MP_THREAD_DEFAULT_PRIORITY
+    int "Priority of a thread"
+    default 5
