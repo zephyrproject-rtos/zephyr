@@ -85,7 +85,7 @@ class Application:
         try:
             start_time = time.time()
             self.camera.initialize()
-            for name, plugin in self.active_plugins.items():  # noqa: B007
+            for _, plugin in self.active_plugins.items():
                 plugin.initialize()
             while True:
                 ret, frame = self.camera.get_frame()
