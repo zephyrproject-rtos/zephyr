@@ -81,8 +81,8 @@ struct spi_nrfx_config {
 #ifdef CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
 	bool anomaly_58_workaround;
 #endif
+	nrfx_gpiote_t *wake_gpiote;
 	uint32_t wake_pin;
-	nrfx_gpiote_t wake_gpiote;
 	void *mem_reg;
 };
 
@@ -510,7 +510,7 @@ static int transceive(const struct device *dev,
 		dev_data->busy = true;
 
 		if (dev_config->wake_pin != WAKE_PIN_NOT_USED) {
-			error = spi_nrfx_wake_request(&dev_config->wake_gpiote,
+			error = spi_nrfx_wake_request(dev_config->wake_gpiote,
 						      dev_config->wake_pin);
 			if (error == -ETIMEDOUT) {
 				LOG_WRN("Waiting for WAKE acknowledgment timed out");
@@ -683,7 +683,7 @@ static int spi_nrfx_init(const struct device *dev)
 	(void)pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_SLEEP);
 
 	if (dev_config->wake_pin != WAKE_PIN_NOT_USED) {
-		err = spi_nrfx_wake_init(&dev_config->wake_gpiote, dev_config->wake_pin);
+		err = spi_nrfx_wake_init(dev_config->wake_gpiote, dev_config->wake_pin);
 		if (err == -ENODEV) {
 			LOG_ERR("Failed to allocate GPIOTE channel for WAKE");
 			return err;
@@ -782,17 +782,19 @@ static int spi_nrfx_deinit(const struct device *dev)
 			.orc    = SPIM_PROP(idx, overrun_character),	       \
 			SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)		       \
 		},							       \
-		.irq_connect = irq_connect##idx,			       \
-		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPIM(idx)),		       \
-		.max_chunk_len = BIT_MASK(SPIM_PROP(idx, easydma_maxcnt_bits)),\
+		.irq_connect = irq_connect##inst,			       \
+		.max_chunk_len = BIT_MASK(				       \
+			DT_INST_PROP(inst, easydma_maxcnt_bits)),	       \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		       \
 		COND_CODE_1(CONFIG_SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58,     \
 			(.anomaly_58_workaround =			       \
 				SPIM_PROP(idx, anomaly_58_workaround),),       \
 			())						       \
-		.wake_pin = NRF_DT_GPIOS_TO_PSEL_OR(SPIM(idx), wake_gpios,     \
+		.wake_gpiote = WAKE_GPIOTE_NODE(DT_DRV_INST(inst)),	       \
+		.wake_pin = NRF_DT_GPIOS_TO_PSEL_OR(DT_DRV_INST(inst),	       \
+						    wake_gpios,		       \
 						    WAKE_PIN_NOT_USED),	       \
-		.wake_gpiote = WAKE_GPIOTE_INSTANCE(SPIM(idx)),		       \
-		.mem_reg = DMM_DEV_TO_REG(SPIM(idx)),			       \
+		.mem_reg = DMM_DEV_TO_REG(DT_DRV_INST(inst)),		       \
 	};								       \
 	BUILD_ASSERT(!SPIM_HAS_PROP(idx, wake_gpios) ||			       \
 		     !(DT_GPIO_FLAGS(SPIM(idx), wake_gpios) & GPIO_ACTIVE_LOW),\

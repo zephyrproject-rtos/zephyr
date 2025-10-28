@@ -31,8 +31,8 @@ struct spi_nrfx_config {
 	nrfx_spi_config_t def_config;
 	void (*irq_connect)(void);
 	const struct pinctrl_dev_config *pcfg;
+	nrfx_gpiote_t *wake_gpiote;
 	uint32_t wake_pin;
-	nrfx_gpiote_t wake_gpiote;
 };
 
 static void event_handler(const nrfx_spi_evt_t *p_event, void *p_context);
@@ -241,7 +241,7 @@ static int transceive(const struct device *dev,
 		dev_data->busy = true;
 
 		if (dev_config->wake_pin != WAKE_PIN_NOT_USED) {
-			error = spi_nrfx_wake_request(&dev_config->wake_gpiote,
+			error = spi_nrfx_wake_request(dev_config->wake_gpiote,
 						      dev_config->wake_pin);
 			if (error == -ETIMEDOUT) {
 				LOG_WRN("Waiting for WAKE acknowledgment timed out");
@@ -395,7 +395,7 @@ static int spi_nrfx_init(const struct device *dev)
 	}
 
 	if (dev_config->wake_pin != WAKE_PIN_NOT_USED) {
-		err = spi_nrfx_wake_init(&dev_config->wake_gpiote, dev_config->wake_pin);
+		err = spi_nrfx_wake_init(dev_config->wake_gpiote, dev_config->wake_pin);
 		if (err == -ENODEV) {
 			LOG_ERR("Failed to allocate GPIOTE channel for WAKE");
 			return err;
@@ -458,9 +458,9 @@ static int spi_nrfx_init(const struct device *dev)
 		},							       \
 		.irq_connect = irq_connect##idx,			       \
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPI(idx)),		       \
+		.wake_gpiote = WAKE_GPIOTE_NODE(SPI(idx)),		       \
 		.wake_pin = NRF_DT_GPIOS_TO_PSEL_OR(SPI(idx), wake_gpios,      \
 						    WAKE_PIN_NOT_USED),	       \
-		.wake_gpiote = WAKE_GPIOTE_INSTANCE(SPI(idx)),		       \
 	};								       \
 	BUILD_ASSERT(!DT_NODE_HAS_PROP(SPI(idx), wake_gpios) ||		       \
 		     !(DT_GPIO_FLAGS(SPI(idx), wake_gpios) & GPIO_ACTIVE_LOW), \
