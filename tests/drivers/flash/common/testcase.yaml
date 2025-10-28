@@ -38,6 +38,13 @@ tests:
       - CONFIG_TEST_DRIVER_FLASH_SIZE=8388608
     integration_platforms:
       - nrf52840dk/nrf52840
+  drivers.flash.common.nrf_qspi_nor.qer_none:
+    build_only: true
+    platform_allow: nrf52840dk/nrf52840
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/nrf52840dk_qer_none.overlay
+    integration_platforms:
+      - nrf52840dk/nrf52840
   drivers.flash.common.nrf_qspi_nor_4B_addr:
     platform_allow: nrf52840dk/nrf52840
     extra_configs:
