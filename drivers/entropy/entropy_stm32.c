@@ -328,9 +328,14 @@ static int recover_seed_error(RNG_TypeDef *rng)
 {
 	ll_rng_clear_seis(rng);
 
+#if !defined(CONFIG_SOC_SERIES_STM32WB0X)
+	/* After a noise source error is detected, 12 words must be read from the RNG_DR register
+	 * and discarded to restart the entropy generation.
+	 */
 	for (int i = 0; i < 12; ++i) {
 		(void)ll_rng_read_rand_data(rng);
 	}
+#endif /* !CONFIG_SOC_SERIES_STM32WB0X */
 
 	if (ll_rng_is_active_seis(rng) != 0) {
 		return -EIO;
@@ -446,7 +451,7 @@ static uint16_t generate_from_isr(uint8_t *buf, uint16_t len)
 		ret = random_sample_get(&rnd_sample);
 #if !IRQLESS_TRNG
 		NVIC_ClearPendingIRQ(IRQN);
-#endif /* IRQLESS_TRNG */
+#endif /* !IRQLESS_TRNG */
 
 		if (ret < 0) {
 			continue;
