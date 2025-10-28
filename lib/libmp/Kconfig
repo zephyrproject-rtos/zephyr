@@ -36,6 +36,8 @@ config MP_PLUGIN_ZVID
 config MP_PLUGIN_ZDISP
 	bool "Zdisp plugin support"
 
+source "lib/libmp/src/plugins/zaud/Kconfig"
+
 endmenu
 
 endif # MP
