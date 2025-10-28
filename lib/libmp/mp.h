@@ -25,4 +25,8 @@
 #include <src/plugins/zvid/mp_zvid_property.h>
 #endif
 
+#if CONFIG_MP_PLUGIN_ZVID
+#include <src/plugins/zvid/mp_zvid_property.h>
+#endif
+
 #endif /* __MP_H__ */
