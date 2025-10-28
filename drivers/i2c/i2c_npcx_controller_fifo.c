@@ -134,6 +134,20 @@ static inline int i2c_ctrl_fifo_rx_occupied(const struct device *dev)
 	return inst->SMBRXF_STS & 0x3f;
 }
 
+void i2c_ctrl_stop(const struct device *dev)
+{
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
+	struct i2c_ctrl_data *const data = dev->data;
+	uint32_t delay_cycle = data->stop_dealy_cycle_time;
+	uint32_t delay_start = k_cycle_get_32();
+
+	while (k_cycle_get_32() - delay_start < delay_cycle) {
+		arch_nop();
+	}
+
+	inst->SMBCTL1 |= BIT(NPCX_SMBCTL1_STOP);
+}
+
 /* I2C controller `FIFO` interrupt functions */
 void i2c_ctrl_handle_write_int_event(const struct device *dev)
 {
