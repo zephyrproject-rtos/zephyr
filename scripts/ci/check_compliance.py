@@ -510,7 +510,7 @@ class DevicetreeLintingCheck(ComplianceTest):
             return True
         except subprocess.CalledProcessError:
             return False
-        except FileNotFoundError:
+        except (FileNotFoundError, PermissionError):
             # npx itself not installed
             return False
 
