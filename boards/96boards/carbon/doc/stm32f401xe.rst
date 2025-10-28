@@ -73,35 +73,7 @@ More information about STM32F401RE can be found here:
 Supported Features
 ==================
 
-The Zephyr ``96b_carbon/stm32f401xe`` board configuration supports the following
-hardware features:
-
-+------------+------------+-------------------------------------+
-| Interface  | Controller | Driver/Component                    |
-+============+============+=====================================+
-| NVIC       | on-chip    | nested vector interrupt controller  |
-+------------+------------+-------------------------------------+
-| SYSTICK    | on-chip    | system clock                        |
-+------------+------------+-------------------------------------+
-| UART       | on-chip    | serial port                         |
-+------------+------------+-------------------------------------+
-| GPIO       | on-chip    | gpio                                |
-+------------+------------+-------------------------------------+
-| PINMUX     | on-chip    | pinmux                              |
-+------------+------------+-------------------------------------+
-| FLASH      | on-chip    | flash                               |
-+------------+------------+-------------------------------------+
-| SPI        | on-chip    | spi                                 |
-+------------+------------+-------------------------------------+
-| I2C        | on-chip    | i2c                                 |
-+------------+------------+-------------------------------------+
-| USB OTG FS | on-chip    | USB device                          |
-+------------+------------+-------------------------------------+
-
-More details about the board can be found at `96Boards website`_.
-
-The default configuration can be found in
-:zephyr_file:`boards/96boards/carbon/96b_carbon_stm32f401xe_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -369,9 +341,6 @@ STM32F401RET using an SWD scan.
 
 .. _AN2606:
    https://www.st.com/content/ccc/resource/technical/document/application_note/b9/9b/16/3a/12/1e/40/0c/CD00167594.pdf/files/CD00167594.pdf/jcr:content/translations/en.CD00167594.pdf
-
-.. _96Boards website:
-   http://www.96boards.org/documentation
 
 .. _STM32F401RE on www.st.com:
    https://www.st.com/en/microcontrollers/stm32f401re.html
