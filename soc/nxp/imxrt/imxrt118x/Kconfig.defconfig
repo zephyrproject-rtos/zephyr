@@ -42,4 +42,7 @@ choice CACHE_TYPE
 	default EXTERNAL_CACHE if SOC_MIMXRT1189_CM33
 endchoice
 
+config PTP_CLOCK_NXP_NETC_CLK_DIV
+	default 1
+
 endif # SOC_SERIES_IMXRT118X
