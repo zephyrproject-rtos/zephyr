@@ -233,7 +233,7 @@ env:
 .. _twister_tests_long_version:
 
 Tests
-******
+*****
 
 Tests are detected by the presence of a ``testcase.yaml`` or a ``sample.yaml``
 files in the application's project directory. This test application
@@ -1352,7 +1352,7 @@ reports for each run with detailed FAIL/PASS results.
 
 
 Executing tests on a single device
-===================================
+==================================
 
 To use this feature on a single connected device, run twister with
 the following new options:
@@ -1625,7 +1625,7 @@ Would result in calling ``./custom_flash_script.py
 --flag "complex, argument"``.
 
 Fixtures
-+++++++++
+--------
 
 Some tests require additional setup or special wiring specific to the test.
 Running the tests without this setup or test fixture may fail. A test scenario can
@@ -1663,7 +1663,7 @@ fixture name by a ``:``. Only the fixture name is matched against the fixtures
 requested by test scenarios.
 
 Notes
-+++++
+-----
 
 It may be useful to annotate board descriptions in the hardware map file
 with additional information.  Use the ``notes`` keyword to do this.  For
@@ -1686,7 +1686,7 @@ example:
       serial: null
 
 Overriding Board Identifier
-+++++++++++++++++++++++++++
+---------------------------
 
 When (re-)generated the hardware map file will contain an ``id`` keyword
 that serves as the argument to ``--board-id`` when flashing.  In some
@@ -1705,7 +1705,7 @@ using an external J-Link probe.  The ``probe_id`` keyword overrides the
       serial: null
 
 Using Single Board For Multiple Variants
-++++++++++++++++++++++++++++++++++++++++
+----------------------------------------
 
   The ``platform`` attribute can be a list of names or a string
   with names separated by spaces. This allows to run tests for
@@ -1724,7 +1724,7 @@ Using Single Board For Multiple Variants
       serial: /dev/ttyACM1
 
 Quarantine
-++++++++++
+----------
 
 Twister allows user to provide configuration files defining a list of tests or
 platforms to be put under quarantine. Such tests will be skipped and marked
