@@ -35,6 +35,14 @@ static int cmd_wrsr(const struct device *dev, uint8_t op_code,
 
 #include "flash_mspi_nor_quirks.h"
 
+static bool in_octal_io(const struct device *dev)
+{
+	struct flash_mspi_nor_data *dev_data = dev->data;
+
+	return dev_data->last_applied_cfg &&
+		dev_data->last_applied_cfg->io_mode == MSPI_IO_MODE_OCTAL;
+}
+
 static void set_up_xfer(const struct device *dev, enum mspi_xfer_direction dir)
 {
 	const struct flash_mspi_nor_config *dev_config = dev->config;
@@ -86,7 +94,7 @@ static int perform_xfer(const struct device *dev, uint8_t cmd)
 	int rc;
 
 	if (dev_data->cmd_info.cmd_extension != CMD_EXTENSION_NONE &&
-	    dev_data->in_target_io_mode) {
+	    in_octal_io(dev)) {
 		dev_data->xfer.cmd_length = 2;
 		dev_data->packet.cmd = get_extended_command(dev, cmd);
 	} else {
@@ -107,7 +115,7 @@ static int perform_xfer(const struct device *dev, uint8_t cmd)
 		/* For commands accessing the flash memory (read and program),
 		 * ensure that the target IO mode is active.
 		 */
-		if (!dev_data->in_target_io_mode) {
+		if (!in_octal_io(dev)) {
 			cfg = &dev_config->mspi_nor_cfg;
 		}
 	} else {
@@ -123,7 +131,6 @@ static int perform_xfer(const struct device *dev, uint8_t cmd)
 			return rc;
 		}
 		dev_data->last_applied_cfg = cfg;
-		dev_data->in_target_io_mode = mem_access;
 	}
 
 	rc = mspi_transceive(dev_config->bus, &dev_config->mspi_id,
@@ -142,7 +149,7 @@ static int cmd_rdsr(const struct device *dev, uint8_t op_code, uint8_t *sr)
 	int rc;
 
 	set_up_xfer(dev, MSPI_RX);
-	if (dev_data->in_target_io_mode) {
+	if (in_octal_io(dev)) {
 		dev_data->xfer.rx_dummy    = dev_data->cmd_info.rdsr_dummy;
 		dev_data->xfer.addr_length = dev_data->cmd_info.rdsr_addr_4
 					   ? 4 : 0;
@@ -254,7 +261,6 @@ static int acquire(const struct device *dev)
 		} else {
 			if (dev_config->multiperipheral_bus) {
 				dev_data->last_applied_cfg = &dev_config->mspi_nor_cfg;
-				dev_data->in_target_io_mode = true;
 			}
 
 			return 0;
@@ -546,7 +552,7 @@ static int sfdp_read(const struct device *dev, off_t addr, void *dest,
 	int rc;
 
 	set_up_xfer(dev, MSPI_RX);
-	if (dev_data->in_target_io_mode) {
+	if (in_octal_io(dev)) {
 		dev_data->xfer.rx_dummy    = dev_data->cmd_info.sfdp_dummy_20
 					   ? 20 : 8;
 		dev_data->xfer.addr_length = dev_data->cmd_info.sfdp_addr_4
@@ -572,7 +578,7 @@ static int read_jedec_id(const struct device *dev, uint8_t *id)
 	int rc;
 
 	set_up_xfer(dev, MSPI_RX);
-	if (dev_data->in_target_io_mode) {
+	if (in_octal_io(dev)) {
 		dev_data->xfer.rx_dummy    = dev_data->cmd_info.rdid_dummy;
 		dev_data->xfer.addr_length = dev_data->cmd_info.rdid_addr_4
 					   ? 4 : 0;
@@ -963,7 +969,6 @@ static int soft_reset(const struct device *dev)
 			return rc;
 		}
 		dev_data->last_applied_cfg = &dev_config->mspi_nor_cfg;
-		dev_data->in_target_io_mode = true;
 
 		rc = soft_reset_66_99(dev);
 		if (rc < 0) {
@@ -978,7 +983,6 @@ static int soft_reset(const struct device *dev)
 			return rc;
 		}
 		dev_data->last_applied_cfg = &dev_config->mspi_control_cfg;
-		dev_data->in_target_io_mode = false;
 	}
 
 	rc = soft_reset_66_99(dev);
@@ -1011,7 +1015,6 @@ static int flash_chip_init(const struct device *dev)
 		LOG_ERR("%s: dev_config() failed: %d", __func__, rc);
 		return rc;
 	}
-	dev_data->in_target_io_mode = false;
 
 #if defined(WITH_SUPPLY_GPIO)
 	if (dev_config->supply.port) {
@@ -1110,8 +1113,6 @@ static int flash_chip_init(const struct device *dev)
 		return rc;
 	}
 	dev_data->chip_initialized = true;
-
-	dev_data->in_target_io_mode = true;
 
 	if (IS_ENABLED(CONFIG_FLASH_MSPI_NOR_USE_SFDP)) {
 		/* Read the SFDP signature to test if communication with
