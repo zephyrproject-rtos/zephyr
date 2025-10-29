@@ -84,6 +84,28 @@ int mram_no_latency_cancel_or_release(struct onoff_client *cli);
  */
 int mram_no_latency_sync_release(void);
 
+#if defined(CONFIG_SOC_NRF54H20_CPURAD)
+/**
+ * @brief Enable the internal switch for automatically requesting MRAM without
+ * latency.
+ *
+ * @retval 0 on successful request.
+ * @retval -EIO if MRAM latency service returned error.
+ * @retval -EAGAIN if request was not completed on time.
+ */
+int mram_no_latency_internal_switch_enable(void);
+
+/**
+ * @brief Disable the internal switch for automatically requesting MRAM without
+ * latency.
+ *
+ * @retval 0 on successful request.
+ * @retval -EIO if MRAM latency service returned error.
+ * @retval -EAGAIN if request was not completed on time.
+ */
+int mram_no_latency_internal_switch_disable(void);
+#endif /* CONFIG_SOC_NRF54H20_CPURAD */
+
 #ifdef __cplusplus
 }
 #endif
