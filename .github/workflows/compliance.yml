@@ -66,9 +66,10 @@ jobs:
         node-version: "lts/*"
         cache: npm
         check-latest: true
+        cache-dependency-path: ./scripts/ci/package-lock.json
 
     - name: Install Node dependencies
-      run: npm ci
+      run: npm --prefix ./scripts/ci ci
 
     - name: Run Compliance Tests
       continue-on-error: true
