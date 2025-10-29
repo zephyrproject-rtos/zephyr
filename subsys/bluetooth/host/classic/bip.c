@@ -417,6 +417,12 @@ static void bip_client_connect(struct bt_obex_client *client, uint8_t rsp_code, 
 	}
 }
 
+static void bip_clinet_clear_pending_request(struct bt_bip_client *client)
+{
+	client->_rsp_cb = NULL;
+	client->_req_type = NULL;
+}
+
 static void bip_client_disconnect(struct bt_obex_client *client, uint8_t rsp_code,
 				  struct net_buf *buf)
 {
@@ -438,7 +444,7 @@ static void bip_client_disconnect(struct bt_obex_client *client, uint8_t rsp_cod
 
 		sys_slist_find_and_remove(&c->_bip->_clients, &c->_node);
 
-		c->_rsp_cb = NULL;
+		bip_clinet_clear_pending_request(c);
 	} else {
 		atomic_set(&c->_state, BT_BIP_STATE_CONNECTED);
 	}
@@ -459,7 +465,7 @@ static void bip_client_put(struct bt_obex_client *client, uint8_t rsp_code, stru
 	}
 
 	if (rsp_code != BT_OBEX_RSP_CODE_CONTINUE) {
-		c->_rsp_cb = NULL;
+		bip_clinet_clear_pending_request(c);
 	}
 }
 
@@ -474,7 +480,7 @@ static void bip_client_get(struct bt_obex_client *client, uint8_t rsp_code, stru
 	}
 
 	if (rsp_code != BT_OBEX_RSP_CODE_CONTINUE) {
-		c->_rsp_cb = NULL;
+		bip_clinet_clear_pending_request(c);
 	}
 }
 
@@ -488,7 +494,7 @@ static void bip_client_abort(struct bt_obex_client *client, uint8_t rsp_code, st
 	}
 
 	if (rsp_code == BT_OBEX_RSP_CODE_SUCCESS) {
-		c->_rsp_cb = NULL;
+		bip_clinet_clear_pending_request(c);
 		return;
 	}
 
@@ -1733,7 +1739,8 @@ int bt_bip_abort_rsp(struct bt_bip_server *server, uint8_t rsp_code, struct net_
 }
 
 static int bip_client_get_req_cb(struct bt_bip_client *client, const char *type,
-				 struct net_buf *buf, bool is_get, bt_bip_client_cb_t *cb)
+				 struct net_buf *buf, bool is_get, bt_bip_client_cb_t *cb,
+				 const char **req_type)
 {
 	const uint8_t *type_data;
 	uint16_t len;
@@ -1792,6 +1799,9 @@ static int bip_client_get_req_cb(struct bt_bip_client *client, const char *type,
 			continue;
 		}
 
+		if (req_type != NULL) {
+			*req_type = bip_functions[i].type;
+		}
 		break;
 	}
 
@@ -1809,6 +1819,8 @@ static int bip_get_or_put(struct bt_bip_client *client, bool is_get, const char 
 	int err;
 	bt_bip_client_cb_t cb;
 	bt_bip_client_cb_t old_cb;
+	const char *req_type;
+	const char *old_req_type;
 
 	if (client == NULL || buf == NULL) {
 		return -EINVAL;
@@ -1820,9 +1832,10 @@ static int bip_get_or_put(struct bt_bip_client *client, bool is_get, const char 
 	}
 
 	old_cb = client->_rsp_cb;
+	old_req_type = client->_req_type;
 
 	if (client->_rsp_cb == NULL || bt_obex_has_header(buf, BT_OBEX_HEADER_ID_TYPE)) {
-		err = bip_client_get_req_cb(client, type, buf, is_get, &cb);
+		err = bip_client_get_req_cb(client, type, buf, is_get, &cb, &req_type);
 		if (err != 0) {
 			LOG_ERR("Invalid request %d", err);
 			return err;
@@ -1834,6 +1847,13 @@ static int bip_get_or_put(struct bt_bip_client *client, bool is_get, const char 
 		}
 
 		client->_rsp_cb = cb;
+		client->_req_type = req_type;
+	}
+
+	if (client->_req_type != NULL && strcmp(client->_req_type, type) != 0) {
+		LOG_ERR("Invalid request type %s != %s", client->_req_type, type);
+		err = -EINVAL;
+		goto failed;
 	}
 
 	if (bt_obex_has_header(buf, BT_OBEX_HEADER_ID_CONN_ID)) {
@@ -1852,6 +1872,7 @@ static int bip_get_or_put(struct bt_bip_client *client, bool is_get, const char 
 failed:
 	if (err != 0) {
 		client->_rsp_cb = old_cb;
+		client->_req_type = old_req_type;
 		LOG_ERR("Failed to send get/put req %d", err);
 	}
 
