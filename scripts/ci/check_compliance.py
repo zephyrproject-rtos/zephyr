@@ -504,7 +504,7 @@ class DevicetreeLintingCheck(ComplianceTest):
         try:
             # --no prevents npx from fetching from registry
             subprocess.run(
-                [self.NPX_EXECUTABLE, "--no", 'dts-linter', "--", "--version"],
+                [self.NPX_EXECUTABLE, "--prefix", "./scripts/ci", "--no", 'dts-linter', "--", "--version"],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
                 check=True,
@@ -560,9 +560,9 @@ class DevicetreeLintingCheck(ComplianceTest):
             temp_patch_files.append(temp_patch)
 
             cmd = [
-                "npx", "--no", "dts-linter", "--",
-                "--outputFormat", "json",
-                "--format",
+                "npx", "--prefix", "./scripts/ci", "--no",
+                "dts-linter", "--", "--outputFormat",
+                "json", "--format",
                 "--patchFile", temp_patch,
             ]
             for file in batch:
