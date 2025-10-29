@@ -1,0 +1,25 @@
+# Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+config USBH_CDC_ECM
+	bool "USB host CDC ECM class driver"
+	depends on USB_HOST_STACK
+	depends on NET_L2_ETHERNET
+	help
+	  USB host class driver for CDC Ethernet Control Model (ECM) devices.
+
+if USBH_CDC_ECM
+
+config USBH_CDC_ECM_INSTANCES_COUNT
+	int "Number of CDC ECM class instances"
+	default 1
+	range 1 4
+	help
+	  Number of USB host CDC ECM class driver instances.
+	  Each instance can bind to one connected ECM device.
+
+module = USBH_CDC_ECM
+module-str = usbh_cdc_ecm
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # USBH_CDC_ECM
