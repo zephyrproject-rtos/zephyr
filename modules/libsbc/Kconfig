@@ -4,12 +4,7 @@
 config ZEPHYR_LIBSBC_MODULE
 	bool
 
-config LIBSBC_ENCODER
-	bool "libsbc encoder Support"
+config LIBSBC
+	bool "libsbc Support"
 	help
-	  This option enables the Android SBC encoder library for Bluetooth A2DP
-
-config LIBSBC_DECODER
-	bool "libsbc decoder Support"
-	help
-	  This option enables the Android SBC decoder library for Bluetooth A2DP
+	  This option enables Low Complexity Subband Codec (SBC)
