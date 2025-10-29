@@ -23,9 +23,10 @@ extern char _shared_heap_end[];
 #define MEM_MAP_SYM_C(sym)  ((uint32_t)(uintptr_t)sym##_c)
 #define MEM_MAP_SYM_UC(sym) ((uint32_t)(uintptr_t)sym##_uc)
 
-#define MEM_MAP_CONST_C(val) ((uint32_t)RPO_SET((uintptr_t)(val), CONFIG_XTENSA_CACHED_REGION))
+#define MEM_MAP_CONST_C(val) ((uint32_t)RPO_SET((uintptr_t)(val), CONFIG_INTEL_ADSP_CACHED_REGION))
 
-#define MEM_MAP_CONST_UC(val) ((uint32_t)RPO_SET((uintptr_t)(val), CONFIG_XTENSA_UNCACHED_REGION))
+#define MEM_MAP_CONST_UC(val) \
+	((uint32_t)RPO_SET((uintptr_t)(val), CONFIG_INTEL_ADSP_UNCACHED_REGION))
 
 #define MEM_MAP_SYM_REGION(sym_start, sym_end, region_attrs, region_name)                          \
 	{                                                                                          \
