@@ -50,7 +50,8 @@ typedef void (*modem_pipe_api_callback)(struct modem_pipe *pipe, enum modem_pipe
 
 typedef int (*modem_pipe_api_open)(void *data);
 
-typedef int (*modem_pipe_api_transmit)(void *data, const uint8_t *buf, size_t size);
+typedef int (*modem_pipe_api_transmit)(void *data, const uint8_t *buf, size_t size,
+				       const uint8_t *extra_buf, size_t extra_size);
 
 typedef int (*modem_pipe_api_receive)(void *data, uint8_t *buf, size_t size);
 
@@ -131,6 +132,8 @@ void modem_pipe_attach(struct modem_pipe *pipe, modem_pipe_api_callback callback
  * @param pipe Pipe to transmit through
  * @param buf Data to transmit
  * @param size Number of bytes to transmit
+ * @param extra_buf Optional second buffer to transmit
+ * @param extra_size Number of bytes in @a extra_buf
  *
  * @retval Number of bytes placed in pipe
  * @retval -EPERM if pipe is closed
@@ -138,7 +141,26 @@ void modem_pipe_attach(struct modem_pipe *pipe, modem_pipe_api_callback callback
  *
  * @warning This call must be non-blocking
  */
-int modem_pipe_transmit(struct modem_pipe *pipe, const uint8_t *buf, size_t size);
+int modem_pipe_transmit_double(struct modem_pipe *pipe, const uint8_t *buf, size_t size,
+			       const uint8_t *extra_buf, size_t extra_size);
+
+/**
+ * @brief Transmit data through pipe
+ *
+ * @param pipe Pipe to transmit through
+ * @param buf Data to transmit
+ * @param size Number of bytes to transmit
+ *
+ * @retval Number of bytes placed in pipe
+ * @retval -EPERM if pipe is closed
+ * @retval -errno code on error
+ *
+ * @warning This call must be non-blocking
+ */
+static inline int modem_pipe_transmit(struct modem_pipe *pipe, const uint8_t *buf, size_t size)
+{
+	return modem_pipe_transmit_double(pipe, buf, size, NULL, 0);
+}
 
 /**
  * @brief Receive data through pipe
