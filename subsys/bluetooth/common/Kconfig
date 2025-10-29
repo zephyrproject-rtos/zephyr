@@ -121,7 +121,8 @@ config BT_BUF_EVT_RX_SIZE
 config BT_BUF_EVT_RX_COUNT
 	int "Number of HCI Event buffers"
 	default 20 if (BT_MESH && !(BT_BUF_EVT_DISCARDABLE_COUNT > 0))
-	default 10
+	default 8 if BT_HCI_RAW
+	default 4
 	range 2 $(UINT8_MAX)
 	help
 	  Number of buffers available for incoming HCI events from the
