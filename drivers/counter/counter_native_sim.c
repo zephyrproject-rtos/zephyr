@@ -4,13 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/devicetree.h>
-#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_native_posix_counter)
-#define DT_DRV_COMPAT zephyr_native_posix_counter
-#warning "zephyr,native-posix-counter is deprecated in favor of zephyr,native-sim-counter"
-#else
 #define DT_DRV_COMPAT zephyr_native_sim_counter
-#endif
 
 #include <string.h>
 #include <zephyr/device.h>
