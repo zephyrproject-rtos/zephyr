@@ -87,18 +87,22 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
             cmd_flash.extend(['--port', self.device])
 
         if self.erase is True:
-            cmd_erase = cmd_flash + ['erase-flash']
+            cmd_erase = cmd_flash + ['erase_flash']
             self.check_call(cmd_erase)
 
         if self.no_stub is True:
             cmd_flash.extend(['--no-stub'])
+        
         cmd_flash.extend(['--baud', self.baud])
-        cmd_flash.extend(['--before', 'default-reset'])
+        cmd_flash.extend(['--before', 'default_reset'])
+        
         if self.reset:
-            cmd_flash.extend(['--after', 'hard-reset', 'write-flash', '-u'])
-        cmd_flash.extend(['--flash-mode', self.flash_mode])
-        cmd_flash.extend(['--flash-freq', self.flash_freq])
-        cmd_flash.extend(['--flash-size', self.flash_size])
+            cmd_flash.extend(['--after', 'hard_reset'])
+        
+        cmd_flash.extend(['write_flash'])
+        cmd_flash.extend(['--flash_mode', self.flash_mode])
+        cmd_flash.extend(['--flash_freq', self.flash_freq])
+        cmd_flash.extend(['--flash_size', self.flash_size])
 
         if self.encrypt:
             cmd_flash.extend(['--encrypt'])

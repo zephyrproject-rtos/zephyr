@@ -39,9 +39,9 @@ if((CONFIG_ESP_SIMPLE_BOOT OR CONFIG_MCUBOOT) AND NOT CONFIG_SOC_ESP32C6_LPCORE)
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND esptool
       ARGS --chip ${CONFIG_SOC} elf2image ${ELF2IMAGE_ARG}
-      --flash-mode dio
-      --flash-freq ${CONFIG_ESPTOOLPY_FLASHFREQ}
-      --flash-size ${esptoolpy_flashsize}MB
+      --flash_mode dio
+      --flash_freq ${CONFIG_ESPTOOLPY_FLASHFREQ}
+      --flash_size ${esptoolpy_flashsize}MB
       -o ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_BIN_NAME}
       ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME})
   endif()
