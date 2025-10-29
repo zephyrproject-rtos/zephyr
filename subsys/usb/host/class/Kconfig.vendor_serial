@@ -1,0 +1,40 @@
+#
+# Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config USBH_VENDOR_SERIAL
+	bool "USB Host Vendor Serial Class Support"
+	depends on USB_HOST_STACK
+	depends on SERIAL
+	select UART_ASYNC_API
+	select SERIAL_SUPPORT_ASYNC
+	help
+	  USB host class driver for vendor-specific serial devices
+	  that use bulk endpoints for data transfer. Targets modem
+	  devices such as the Quectel EG916Q which expose vendor-class
+	  interfaces for AT/PPP communication.
+
+	  Exposes the Zephyr UART async API so that higher-level
+	  subsystems (modem, PPP) can use the device transparently.
+
+if USBH_VENDOR_SERIAL
+
+config USBH_VENDOR_SERIAL_INSTANCES_COUNT
+	int "Number of USB host vendor serial instances"
+	default 1
+	range 1 4
+	help
+	  Maximum number of vendor serial devices that can be
+	  connected simultaneously.
+
+config USBH_VENDOR_SERIAL_LOG_LEVEL
+	int
+	default 4
+
+module = USBH_VENDOR_SERIAL
+module-str = USB Host Vendor Serial
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # USBH_VENDOR_SERIAL
