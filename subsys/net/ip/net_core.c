@@ -366,6 +366,8 @@ static inline bool process_multicast(struct net_pkt *pkt)
 
 int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 {
+	struct net_if *iface;
+	int family;
 	int status;
 	int ret;
 
@@ -439,18 +441,27 @@ int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 	}
 #endif
 
+	/* The pkt might contain garbage already after the call to
+	 * net_if_try_send_data(), so do not use pkt after that call.
+	 * Remember the iface and family for statistics update.
+	 */
+	if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
+		iface = net_pkt_iface(pkt);
+		family = net_pkt_family(pkt);
+	}
+
 	if (net_if_try_send_data(net_pkt_iface(pkt), pkt, timeout) == NET_DROP) {
 		ret = -EIO;
 		goto err;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
-		switch (net_pkt_family(pkt)) {
+		switch (family) {
 		case AF_INET:
-			net_stats_update_ipv4_sent(net_pkt_iface(pkt));
+			net_stats_update_ipv4_sent(iface);
 			break;
 		case AF_INET6:
-			net_stats_update_ipv6_sent(net_pkt_iface(pkt));
+			net_stats_update_ipv6_sent(iface);
 			break;
 		}
 	}
