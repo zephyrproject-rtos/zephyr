@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,3 +23,8 @@ void soc_reset_hook(void)
 	SystemInit();
 }
 #endif
+
+void enable_ecc(uint32_t mask)
+{
+	SYSCON->RAM_CTRL = mask;
+}

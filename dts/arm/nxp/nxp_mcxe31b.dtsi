@@ -52,3 +52,18 @@
 };
 
 #include <nxp/nxp_mcxe31x_common.dtsi>
+
+&eim0_channel0 {
+	start-address = <0x20408000>;
+	size = <DT_SIZE_K(160)>;
+};
+
+&eim0_channel14 {
+	start-address = <0x20008000>;
+	size = <DT_SIZE_K(32)>;
+};
+
+&eim0_channel15 {
+	start-address = <0x20010000>;
+	size = <DT_SIZE_K(32)>;
+};

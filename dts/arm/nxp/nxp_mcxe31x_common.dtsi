@@ -152,10 +152,94 @@
 		status = "disabled";
 	};
 
-	eim: eim@258000 {
+	eim0: eim@258000 {
 		compatible = "nxp,eim";
 		reg = <0x258000 0x8a4>;
 		status = "disabled";
+
+		eim0_channel0: channel0 {
+			channel-id = <0>;
+			erm-channel-id = <0>;
+			status = "disabled";
+		};
+
+		eim0_channel1: channel1 {
+			channel-id = <1>;
+			erm-channel-id = <1>;
+			status = "disabled";
+		};
+
+		eim0_channel2: channel2 {
+			channel-id = <2>;
+			erm-channel-id = <16>;
+			status = "disabled";
+		};
+
+		eim0_channel3: channel3 {
+			channel-id = <3>;
+			erm-channel-id = <2>;
+			status = "disabled";
+		};
+
+		eim0_channel4: channel4 {
+			channel-id = <4>;
+			erm-channel-id = <3>;
+			status = "disabled";
+		};
+
+		eim0_channel5: channel5 {
+			channel-id = <5>;
+			erm-channel-id = <4>;
+			status = "disabled";
+		};
+
+		eim0_channel6: channel6 {
+			channel-id = <6>;
+			erm-channel-id = <5>;
+			status = "disabled";
+		};
+
+		eim0_channel7: channel7 {
+			channel-id = <7>;
+			erm-channel-id = <5>;
+			status = "disabled";
+		};
+
+		eim0_channel13: channel13 {
+			channel-id = <13>;
+			erm-channel-id = <10>;
+			status = "disabled";
+		};
+
+		eim0_channel14: channel14 {
+			channel-id = <14>;
+			erm-channel-id = <11>;
+			status = "disabled";
+		};
+
+		eim0_channel15: channel15 {
+			channel-id = <15>;
+			erm-channel-id = <12>;
+			status = "disabled";
+		};
+
+		eim0_channel16: channel16 {
+			channel-id = <16>;
+			erm-channel-id = <13>;
+			status = "disabled";
+		};
+
+		eim0_channel17: channel17 {
+			channel-id = <17>;
+			erm-channel-id = <14>;
+			status = "disabled";
+		};
+
+		eim0_channel18: channel18 {
+			channel-id = <18>;
+			erm-channel-id = <15>;
+			status = "disabled";
+		};
 	};
 
 	emac: emac@480000 {
@@ -187,11 +271,12 @@
 		status = "disabled";
 	};
 
-	erm: erm@25c000 {
+	erm0: erm@25c000 {
 		compatible = "nxp,erm";
 		reg = <0x25c000 0x258>;
 		interrupts = <36 0>, <37 0>;
 		interrupt-names = "erm-0", "erm-1";
+		channels = <0 1 2 3 4 5 10 11 12 13 14 15 16 17 18 19>;
 		status = "disabled";
 	};
 
