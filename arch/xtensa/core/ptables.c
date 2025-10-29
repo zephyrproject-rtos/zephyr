@@ -242,11 +242,7 @@ static const struct xtensa_mmu_range mmu_zephyr_ranges[] = {
 		/* This includes .data, .bss and various kobject sections. */
 		.start = (uint32_t)_image_ram_start,
 		.end   = (uint32_t)_image_ram_end,
-#ifdef CONFIG_XTENSA_RPO_CACHE
-		.attrs = XTENSA_MMU_PERM_W,
-#else
 		.attrs = XTENSA_MMU_PERM_W | XTENSA_MMU_CACHED_WB,
-#endif
 		.name = "data",
 	},
 #if K_HEAP_MEM_POOL_SIZE > 0
@@ -254,11 +250,7 @@ static const struct xtensa_mmu_range mmu_zephyr_ranges[] = {
 	{
 		.start = (uint32_t)_heap_start,
 		.end   = (uint32_t)_heap_end,
-#ifdef CONFIG_XTENSA_RPO_CACHE
-		.attrs = XTENSA_MMU_PERM_W,
-#else
 		.attrs = XTENSA_MMU_PERM_W | XTENSA_MMU_CACHED_WB,
-#endif
 		.name = "heap",
 	},
 #endif
