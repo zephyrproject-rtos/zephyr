@@ -9,6 +9,12 @@ config INTEL_ADSP_CAVS
 
 rsource "Kconfig.defconfig.cavs*"
 
+config INTEL_ADSP_CACHED_REGION
+	default 5
+
+config INTEL_ADSP_UNCACHED_REGION
+	default 4
+
 config DMA_INTEL_ADSP_GPDMA
 	default y
 	depends on DMA

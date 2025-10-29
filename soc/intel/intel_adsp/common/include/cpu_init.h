@@ -45,15 +45,15 @@
  */
 #define _REGION_ATTR(r)						\
 	((r) == 0 ? 2 :						\
-	 ((r) == CONFIG_XTENSA_CACHED_REGION ? 4 :		\
-	  ((r) == CONFIG_XTENSA_UNCACHED_REGION ? 2 : 15)))
+	 ((r) == CONFIG_INTEL_ADSP_CACHED_REGION ? 4 :		\
+	  ((r) == CONFIG_INTEL_ADSP_UNCACHED_REGION ? 2 : 15)))
 
 #define _SET_ONE_TLB(region) do {				\
 	uint32_t attr = _REGION_ATTR(region);			\
 	if (XCHAL_HAVE_XLT_CACHEATTR) {				\
 		attr |= addr; /* RPO with translation */	\
 	}							\
-	if (region != CONFIG_XTENSA_CACHED_REGION) {		\
+	if (region != CONFIG_INTEL_ADSP_CACHED_REGION) {	\
 		__asm__ volatile("wdtlb %0, %1; witlb %0, %1"	\
 				 :: "r"(attr), "r"(addr));	\
 	} else {						\
