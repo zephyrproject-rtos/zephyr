@@ -4,8 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+&timers1 {
+	st,prescaler = <99>;
+	status = "okay";
+
+	counter {
+		status = "okay";
+	};
+};
+
 &timers2 {
 	st,prescaler = <99>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -13,6 +24,8 @@
 
 &timers3 {
 	st,prescaler = <99>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -20,6 +33,8 @@
 
 &timers4 {
 	st,prescaler = <99>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -27,6 +42,8 @@
 
 &timers5 {
 	st,prescaler = <99>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -34,6 +51,8 @@
 
 &timers6 {
 	st,prescaler = <99>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -41,6 +60,17 @@
 
 &timers7 {
 	st,prescaler = <99>;
+	status = "okay";
+
+	counter {
+		status = "okay";
+	};
+};
+
+&timers8 {
+	st,prescaler = <99>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -48,6 +78,8 @@
 
 &timers9 {
 	st,prescaler = <99>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -55,6 +87,8 @@
 
 &timers10 {
 	st,prescaler = <99>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -62,6 +96,8 @@
 
 &timers11 {
 	st,prescaler = <99>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -69,6 +105,8 @@
 
 &timers12 {
 	st,prescaler = <99>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -76,6 +114,8 @@
 
 &timers13 {
 	st,prescaler = <99>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -83,6 +123,8 @@
 
 &timers14 {
 	st,prescaler = <99>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -90,6 +132,8 @@
 
 &timers15 {
 	st,prescaler = <99>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -97,6 +141,8 @@
 
 &timers16 {
 	st,prescaler = <99>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -104,6 +150,8 @@
 
 &timers17 {
 	st,prescaler = <99>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
@@ -111,6 +159,8 @@
 
 &timers18 {
 	st,prescaler = <99>;
+	status = "okay";
+
 	counter {
 		status = "okay";
 	};
