@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Linumiz GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config USBH_CDC_ECM_CLASS
+	bool "USB Host CDC ECM Class implementation"
+	default y
+	depends on NET_L2_ETHERNET
+	depends on DT_HAS_ZEPHYR_USBH_CDC_ECM_ENABLED
+	help
+	  USB Host CDC Ethernet Control Model (ECM) implementation.
+	  Supports communication with CDC ECM-compliant USB Ethernet devices.
+
+if USBH_CDC_ECM_CLASS
+
+module = USBH_CDC_ECM
+module-str = "usbh cdc_ecm"
+default-count = 1
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # USBH_CDC_ECM_CLASS
