@@ -972,6 +972,7 @@
 		compatible = "nxp,stm";
 		reg = <0x274000 0x68>;
 		interrupts = <39 0>;
+		clocks = <&mc_cgm MCUX_STM0_CLK>;
 		status = "disabled";
 	};
 
@@ -979,6 +980,7 @@
 		compatible = "nxp,stm";
 		reg = <0x474000 0x68>;
 		interrupts = <40 0>;
+		clocks = <&mc_cgm MCUX_STM1_CLK>;
 		status = "disabled";
 	};
 

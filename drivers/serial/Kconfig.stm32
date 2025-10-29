@@ -39,8 +39,8 @@ if UART_STM32U5_ERRATA_DMAT_AFFECTED
 
 choice UART_STM32U5_ERRATA_DMAT
 	prompt "Workaround for DMAT errata on selected devices"
-	default UART_STM32U5_ERRATA_DMAT_LOWPOWER if PM
 	default UART_STM32U5_ERRATA_DMAT_NOCLEAR if !PM
+	default UART_STM32U5_ERRATA_DMAT_LOWPOWER
 	help
 	  Handles erratum "USART does not generate DMA requests after
 	  setting/clearing DMAT bit" as described in the errata sheets:
@@ -59,6 +59,7 @@ config UART_STM32U5_ERRATA_DMAT_LOWPOWER
 
 config UART_STM32U5_ERRATA_DMAT_NOCLEAR
 	bool "Do not clear DMAT"
+	depends on !POWEROFF # DMAT must be clear to enter LL_PWR_SHUTDOWN_MODE
 	help
 	  This option keeps DMAT bit set. This may cause additional power
 	  consumption in STOP low-power modes.

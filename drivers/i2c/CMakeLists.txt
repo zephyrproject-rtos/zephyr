@@ -48,14 +48,25 @@ zephyr_library_sources_ifdef(CONFIG_I2C_MCHP_MSS	i2c_mchp_mss.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_MCUX		i2c_mcux.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_MCUX_FLEXCOMM	i2c_mcux_flexcomm.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_NIOS2		i2c_nios2.c)
-zephyr_library_sources_ifdef(CONFIG_I2C_NPCX		i2c_npcx_controller.c)
-zephyr_library_sources_ifdef(CONFIG_I2C_NPCX		i2c_npcx_port.c)
+
+zephyr_library_sources_ifdef(CONFIG_I2C_NPCX_DMA_DRIVEN
+	i2c_npcx_controller.c
+	i2c_npcx_controller_dma.c
+	i2c_npcx_port.c
+	)
+zephyr_library_sources_ifdef(CONFIG_I2C_NPCX_FIFO_DRIVEN
+	i2c_npcx_controller.c
+	i2c_npcx_controller_fifo.c
+	i2c_npcx_port.c
+	)
+
 zephyr_library_sources_ifdef(CONFIG_I2C_NRFX_TWIS	i2c_nrfx_twis.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_NUMAKER		i2c_numaker.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_NXP_II2C	i2c_nxp_ii2c.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_OMAP		i2c_omap.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_RCAR		i2c_rcar.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_RENESAS_RA_IIC	i2c_renesas_ra_iic.c)
+zephyr_library_sources_ifdef(CONFIG_I2C_RENESAS_RA_SCI	i2c_renesas_ra_sci.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_RENESAS_RA_SCI_B	i2c_renesas_ra_sci_b.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_RENESAS_RX_RIIC i2c_renesas_rx_riic.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_RENESAS_RZ_IIC i2c_renesas_rz_riic.c)

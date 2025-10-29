@@ -437,13 +437,10 @@ static int settings_mgmt_save(struct smp_streamer *ctxt)
 	zcbor_state_t *zse = ctxt->writer->zs;
 	zcbor_state_t *zsd = ctxt->reader->zs;
 	bool ok = true;
-	struct zcbor_string data = {0};
 	size_t decoded;
 	struct zcbor_string key = {0};
 	bool name_found = false;
-	bool val_found = false;
 	bool save_subtree = false;
-	bool save_one = false;
 
 #ifdef CONFIG_MCUMGR_GRP_SETTINGS_BUFFER_TYPE_HEAP
 	char *key_name = NULL;
@@ -453,7 +450,6 @@ static int settings_mgmt_save(struct smp_streamer *ctxt)
 
 	struct zcbor_map_decode_key_val settings_save_decode[] = {
 		ZCBOR_MAP_DECODE_KEY_DECODER("name", zcbor_tstr_decode, &key),
-		ZCBOR_MAP_DECODE_KEY_DECODER("val", zcbor_bstr_decode, &data),
 	};
 
 	ok = zcbor_map_decode_bulk(zsd, settings_save_decode, ARRAY_SIZE(settings_save_decode),
@@ -465,18 +461,14 @@ static int settings_mgmt_save(struct smp_streamer *ctxt)
 
 	name_found = zcbor_map_decode_bulk_key_found(settings_save_decode,
 						     ARRAY_SIZE(settings_save_decode), "name");
-	val_found = zcbor_map_decode_bulk_key_found(settings_save_decode,
-						    ARRAY_SIZE(settings_save_decode), "val");
 
-	if ((name_found && key.len == 0) || (val_found && data.len == 0)) {
+	if (name_found && key.len == 0) {
 		return MGMT_ERR_EINVAL;
-	} else if (name_found && val_found) {
-		save_one = true;
 	} else if (name_found) {
 		save_subtree = true;
 	}
 
-	if (save_one || save_subtree) {
+	if (save_subtree) {
 		if (key.len >= CONFIG_MCUMGR_GRP_SETTINGS_NAME_LEN) {
 			ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_SETTINGS,
 					     SETTINGS_MGMT_ERR_KEY_TOO_LONG);
@@ -499,8 +491,6 @@ static int settings_mgmt_save(struct smp_streamer *ctxt)
 		struct settings_mgmt_access settings_access_data = {
 			.access = SETTINGS_ACCESS_SAVE,
 			.name = name_found ? key_name : NULL,
-			.val = val_found ? data.value : NULL,
-			.val_length = val_found ? &data.len : NULL,
 		};
 
 		enum mgmt_cb_return status;
@@ -524,9 +514,7 @@ static int settings_mgmt_save(struct smp_streamer *ctxt)
 		}
 	}
 
-	if (save_one) {
-		rc = settings_save_one(key_name, data.value, data.len);
-	} else if (save_subtree) {
+	if (save_subtree) {
 		rc = settings_save_subtree(key_name);
 	} else {
 		rc = settings_save();

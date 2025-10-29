@@ -84,6 +84,13 @@ void alternate_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p1);
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
+	/*
+	 * Padding buffer to absorb the intentional overflow inside the thread stack.
+	 * This prevents writes from crossing the thread stack boundary into the next
+	 * MPU-protected region. Required to make the test independent of compiler-
+	 * specific stack frame layouts.
+	 */
+	volatile __unused char overflow_guard_area[32] = "Forcing Initialization!";
 
 	TC_PRINT("Starts %s\n", __func__);
 	check_input(__func__,

@@ -277,6 +277,7 @@ test_spi_bmi08x_accel: bmi08x@23 {
 	int2-conf-io = <0x17>;
 	accel-hz = "800";
 	accel-fs = <4>;
+	fifo-watermark = <1>;
 };
 
 test_spi_bmi08x_gyro: bmi08x@24 {
@@ -288,6 +289,7 @@ test_spi_bmi08x_gyro: bmi08x@24 {
 	int3-4-conf-io = <0x01>;
 	gyro-hz = "1000_116";
 	gyro-fs = <1000>;
+	fifo-watermark = <1>;
 };
 
 test_spi_tmag5170: tmag5170@25 {

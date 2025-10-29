@@ -61,8 +61,8 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <CSI_IO0  0 &gpioo 5  0>,
-			   <CSI_IO1  0 &gpioa 0  0>;
+		gpio-map = <CSI_IO0 0 &gpioo 5 0>,
+			   <CSI_IO1 0 &gpioa 0 0>;
 	};
 };
 
@@ -170,6 +170,7 @@
 &adc1 {
 	clocks = <&rcc STM32_CLOCK(AHB1, 5)>,
 		 <&rcc STM32_SRC_CKPER ADC12_SEL(1)>;
+	clock-names = "adcx", "adc_ker";
 	pinctrl-0 = <&adc1_inp10_pa9 &adc1_inp11_pa10>; /* Arduino A1 & A2 */
 	pinctrl-names = "default";
 	vref-mv = <1800>;

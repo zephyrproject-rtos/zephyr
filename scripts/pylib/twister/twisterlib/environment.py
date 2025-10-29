@@ -172,27 +172,29 @@ Artificially long but functional example:
         help="Only build and run emulation platforms")
 
     run_group_option.add_argument(
-        "--device-testing", action="store_true",
-        help="Test on device directly. Specify the serial device to "
-             "use with the --device-serial option.")
-
-    run_group_option.add_argument("--generate-hardware-map",
-                        help="""Probe serial devices connected to this platform
-                        and create a hardware map file to be used with
-                        --device-testing
-                        """)
-
-    run_group_option.add_argument(
         "--simulation", dest="sim_name", choices=SUPPORTED_SIMS,
         help="Selects which simulation to use. Must match one of the names defined in the board's "
              "manifest. If multiple simulator are specified in the selected board and this "
              "argument is not passed, then the first simulator is selected.")
 
+    run_group_option.add_argument(
+        "--device-testing", action="store_true",
+        help="Test on device directly. Specify the serial device to "
+             "use with the --device-serial option.")
+
+    parser.add_argument("--pre-script",
+                        help="""specify a pre script. This will be executed
+                        before device handler open serial port and invoke runner.
+                        """)
 
     device.add_argument("--device-serial",
                         help="""Serial device for accessing the board
                         (e.g., /dev/ttyACM0)
                         """)
+
+    parser.add_argument(
+        "--device-serial-baud", action="store", default=None,
+        help="Serial device baud rate (default 115200)")
 
     device.add_argument("--device-serial-pty",
                         help="""Script for controlling pseudoterminal.
@@ -203,18 +205,30 @@ Artificially long but functional example:
                         --device-serial-pty <script>
                         """)
 
+    run_group_option.add_argument("--generate-hardware-map",
+                        help="""Probe serial devices connected to this platform
+                        and create a hardware map file to be used with
+                        --device-testing
+                        """)
+
     device.add_argument("--hardware-map",
                         help="""Load hardware map from a file. This will be used
                         for testing on hardware that is listed in the file.
                         """)
 
-    parser.add_argument("--device-flash-timeout", type=int, default=60,
-                        help="""Set timeout for the device flash operation in seconds.
+    parser.add_argument("--persistent-hardware-map", action='store_true',
+                        help="""With --generate-hardware-map, tries to use
+                        persistent names for serial devices on platforms
+                        that support this feature (currently only Linux).
                         """)
 
     parser.add_argument("--device-flash-with-test", action="store_true",
                         help="""Add a test case timeout to the flash operation timeout
                         when flash operation also executes test case on the platform.
+                        """)
+
+    parser.add_argument("--device-flash-timeout", type=int, default=60,
+                        help="""Set timeout for the device flash operation in seconds.
                         """)
 
     parser.add_argument("--flash-before", action="store_true", default=False,
@@ -223,6 +237,130 @@ Artificially long but functional example:
                         and serial console, or use soft-USB, where flash must come first.
                         Also, it skips reading remaining logs from the old image run.
                         """)
+
+    parser.add_argument(
+        "--flash-command",
+        help="""Instead of 'west flash', uses a custom flash command to flash
+            when running with --device-testing. Supports comma-separated
+            argument list, the script is also passed a --build-dir flag with
+            the build directory as an argument, and a --board-id flag with the
+            board or probe id if available.
+        """
+    )
+
+    parser.add_argument(
+        "--west-flash", nargs='?', const=[],
+        help="""Comma separated list of additional flags passed to west when
+            running with --device-testing.
+
+        E.g "twister --device-testing --device-serial /dev/ttyACM0
+                         --west-flash="--board-id=foobar,--erase"
+        will translate to "west flash -- --board-id=foobar --erase"
+        """
+    )
+
+    parser.add_argument(
+        "--west-runner",
+        help="""Uses the specified west runner instead of default when running
+             with --west-flash.
+
+        E.g "twister --device-testing --device-serial /dev/ttyACM0
+                         --west-flash --west-runner=pyocd"
+        will translate to "west flash --runner pyocd"
+        """
+    )
+
+    parser.add_argument(
+        "-a", "--arch", action="append",
+        help="Arch filter for testing. Takes precedence over --platform. "
+             "If unspecified, test all arches. Multiple invocations "
+             "are treated as a logical 'or' relationship")
+
+    parser.add_argument(
+            "--vendor", action="append", default=[],
+            help="Vendor filter for testing")
+
+    parser.add_argument(
+        "-p", "--platform", action="append", default=[],
+        help="Platform filter for testing. This option may be used multiple "
+             "times. Test suites will only be built/run on the platforms "
+             "specified. If this option is not used, then platforms marked "
+             "as default in the platform metadata file will be chosen "
+             "to build and test. ")
+
+    parser.add_argument("-P", "--exclude-platform", action="append", default=[],
+            help="""Exclude platforms and do not build or run any tests
+            on those platforms. This option can be called multiple times.
+            """
+            )
+
+    parser.add_argument(
+        "--platform-pattern", action="append", default=[],
+        help="""Platform regular expression filter for testing. This option may be used multiple
+        times. Test suites will only be built/run on the platforms
+        matching the specified patterns. If this option is not used, then platforms marked
+        as default in the platform metadata file will be chosen
+        to build and test.
+        """)
+
+    parser.add_argument(
+        "--test-pattern", action="append",
+        help="""Run only the tests matching the specified pattern. The pattern
+        can include regular expressions.
+        """)
+
+    parser.add_argument(
+        "--filter", choices=['buildable', 'runnable'],
+        default='runnable' if "--device-testing" in sys.argv else 'buildable',
+        help="""Filter tests to be built and executed. By default everything is
+        built and if a test is runnable (emulation or a connected device), it
+        is run. This option allows for example to only build tests that can
+        actually be run. Runnable is a subset of buildable.""")
+
+    parser.add_argument(
+        "-t", "--tag", action="append",
+        help="Specify tags to restrict which tests to run by tag value. "
+             "Default is to not do any tag filtering. Multiple invocations "
+             "are treated as a logical 'or' relationship.")
+
+    parser.add_argument("-e", "--exclude-tag", action="append",
+                        help="Specify tags of tests that should not run. "
+                             "Default is to run all tests with all tags.")
+
+    test_xor_subtest.add_argument(
+        "-s", "--test", "--scenario", action="append", type = norm_path,
+        help="""Run only the specified test suite scenario. These are named by
+        'path/relative/to/Zephyr/base/section.subsection_in_testcase_yaml',
+        or just 'section.subsection' identifier. With '--testsuite-root' option
+        the scenario will be found faster.
+        """)
+
+    test_xor_subtest.add_argument(
+        "--sub-test", action="append",
+        help="""Recursively find sub-test functions (test cases) and run the entire
+        test scenario (section.subsection) where they were found, including all sibling test
+        functions. Sub-tests are named by:
+        'section.subsection_in_testcase_yaml.ztest_suite.ztest_without_test_prefix'.
+        Example_1: 'kernel.fifo.fifo_api_1cpu.fifo_loop' where 'kernel.fifo' is a test scenario
+        name (section.subsection) and 'fifo_api_1cpu.fifo_loop' is a Ztest 'suite_name.test_name'.
+        Example_2: 'debug.coredump.logging_backend' is a standalone test scenario name.
+        Note: This selection mechanism works only for Ztest suite and test function names in
+        the source files which are not generated by macro-substitutions.
+        Note: With --no-detailed-test-id use only Ztest names without scenario name.
+        """)
+
+    parser.add_argument(
+        "-K", "--force-platform", action="store_true",
+        help="""Force testing on selected platforms,
+        even if they are excluded in the test configuration (testcase.yaml)."""
+    )
+
+    parser.add_argument("--ignore-platform-key", action="store_true",
+                        help="Do not filter based on platform key")
+
+    parser.add_argument("--level", action="store",
+        help="Test level to be used. By default, no levels are used for filtering "
+             "and do the selection based on existing filters.")
 
     test_or_build.add_argument(
         "-b",
@@ -251,34 +389,6 @@ Artificially long but functional example:
         help="""Globally adjust tests timeouts by specified multiplier. The resulting test
         timeout would be multiplication of test timeout value, board-level timeout multiplier
         and global timeout multiplier (this parameter)""")
-
-    parser.add_argument(
-        "--test-pattern", action="append",
-        help="""Run only the tests matching the specified pattern. The pattern
-        can include regular expressions.
-        """)
-
-    test_xor_subtest.add_argument(
-        "-s", "--test", "--scenario", action="append", type = norm_path,
-        help="""Run only the specified test suite scenario. These are named by
-        'path/relative/to/Zephyr/base/section.subsection_in_testcase_yaml',
-        or just 'section.subsection' identifier. With '--testsuite-root' option
-        the scenario will be found faster.
-        """)
-
-    test_xor_subtest.add_argument(
-        "--sub-test", action="append",
-        help="""Recursively find sub-test functions (test cases) and run the entire
-        test scenario (section.subsection) where they were found, including all sibling test
-        functions. Sub-tests are named by:
-        'section.subsection_in_testcase_yaml.ztest_suite.ztest_without_test_prefix'.
-        Example_1: 'kernel.fifo.fifo_api_1cpu.fifo_loop' where 'kernel.fifo' is a test scenario
-        name (section.subsection) and 'fifo_api_1cpu.fifo_loop' is a Ztest 'suite_name.test_name'.
-        Example_2: 'debug.coredump.logging_backend' is a standalone test scenario name.
-        Note: This selection mechanism works only for Ztest suite and test function names in
-        the source files which are not generated by macro-substitutions.
-        Note: With --no-detailed-test-id use only Ztest names without scenario name.
-        """)
 
     parser.add_argument(
         "--pytest-args", action="append",
@@ -328,12 +438,6 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
         "--allow-installed-plugin", action="store_true", default=None,
         help="Allow to use pytest plugin installed by pip for pytest tests."
     )
-
-    parser.add_argument(
-        "-a", "--arch", action="append",
-        help="Arch filter for testing. Takes precedence over --platform. "
-             "If unspecified, test all arches. Multiple invocations "
-             "are treated as a logical 'or' relationship")
 
     parser.add_argument(
         "-B", "--subset",
@@ -415,23 +519,11 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
         help="Path to file with plans and test configurations."
     )
 
-    parser.add_argument("--level", action="store",
-        help="Test level to be used. By default, no levels are used for filtering "
-             "and do the selection based on existing filters.")
-
-    parser.add_argument(
-        "--device-serial-baud", action="store", default=None,
-        help="Serial device baud rate (default 115200)")
-
     parser.add_argument(
         "--disable-suite-name-check", action="store_true", default=False,
         help="Disable extended test suite name verification at the beginning "
              "of Ztest test. This option could be useful for tests or "
              "platforms, which from some reasons cannot print early logs.")
-
-    parser.add_argument("-e", "--exclude-tag", action="append",
-                        help="Specify tags of tests that should not run. "
-                             "Default is to run all tests with all tags.")
 
     parser.add_argument(
         "--enable-lsan", action="store_true",
@@ -448,14 +540,6 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
         to provide better error diagnostics. This option only works with host
         binaries such as those generated for the native_sim configuration.
         """)
-
-    parser.add_argument(
-        "--filter", choices=['buildable', 'runnable'],
-        default='runnable' if "--device-testing" in sys.argv else 'buildable',
-        help="""Filter tests to be built and executed. By default everything is
-        built and if a test is runnable (emulation or a connected device), it
-        is run. This option allows for example to only build tests that can
-        actually be run. Runnable is a subset of buildable.""")
 
     parser.add_argument("--force-color", action="store_true",
                         help="Always output ANSI color escape sequences "
@@ -545,19 +629,10 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
         help="Upon test failure, print relevant log data to stdout "
              "instead of just a path to it.")
 
-    parser.add_argument("--ignore-platform-key", action="store_true",
-                        help="Do not filter based on platform key")
-
     parser.add_argument(
         "-j", "--jobs", type=int,
         help="Number of jobs for building, defaults to number of CPU threads, "
              "overcommitted by factor 2 when --build-only.")
-
-    parser.add_argument(
-        "-K", "--force-platform", action="store_true",
-        help="""Force testing on selected platforms,
-        even if they are excluded in the test configuration (testcase.yaml)."""
-    )
 
     parser.add_argument(
         "-l", "--all", action="store_true",
@@ -654,47 +729,10 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
     parser.add_argument("--report-filtered", action="store_true",
                         help="Include filtered tests in the reports.")
 
-    parser.add_argument("-P", "--exclude-platform", action="append", default=[],
-            help="""Exclude platforms and do not build or run any tests
-            on those platforms. This option can be called multiple times.
-            """
-            )
-
-    parser.add_argument("--persistent-hardware-map", action='store_true',
-                        help="""With --generate-hardware-map, tries to use
-                        persistent names for serial devices on platforms
-                        that support this feature (currently only Linux).
-                        """)
-
-    parser.add_argument(
-            "--vendor", action="append", default=[],
-            help="Vendor filter for testing")
-
-    parser.add_argument(
-        "-p", "--platform", action="append", default=[],
-        help="Platform filter for testing. This option may be used multiple "
-             "times. Test suites will only be built/run on the platforms "
-             "specified. If this option is not used, then platforms marked "
-             "as default in the platform metadata file will be chosen "
-             "to build and test. ")
-    parser.add_argument(
-        "--platform-pattern", action="append", default=[],
-        help="""Platform regular expression filter for testing. This option may be used multiple
-        times. Test suites will only be built/run on the platforms
-        matching the specified patterns. If this option is not used, then platforms marked
-        as default in the platform metadata file will be chosen
-        to build and test.
-        """)
-
     parser.add_argument(
         "--platform-reports", action="store_true",
         help="""Create individual reports for each platform.
         """)
-
-    parser.add_argument("--pre-script",
-                        help="""specify a pre script. This will be executed
-                        before device handler open serial port and invoke runner.
-                        """)
 
     parser.add_argument(
         "--quarantine-list",
@@ -777,12 +815,6 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
              "example on Windows OS. This option can be used only with "
              "'--ninja' argument (to use Ninja build generator).")
 
-    parser.add_argument(
-        "-t", "--tag", action="append",
-        help="Specify tags to restrict which tests to run by tag value. "
-             "Default is to not do any tag filtering. Multiple invocations "
-             "are treated as a logical 'or' relationship.")
-
     parser.add_argument("--timestamps",
                         action="store_true",
                         help="Print all messages with time stamps.")
@@ -814,36 +846,6 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
 
     parser.add_argument("-W", "--disable-warnings-as-errors", action="store_true",
                         help="Do not treat warning conditions as errors.")
-
-    parser.add_argument(
-        "--west-flash", nargs='?', const=[],
-        help="""Comma separated list of additional flags passed to west when
-            running with --device-testing.
-
-        E.g "twister --device-testing --device-serial /dev/ttyACM0
-                         --west-flash="--board-id=foobar,--erase"
-        will translate to "west flash -- --board-id=foobar --erase"
-        """
-    )
-    parser.add_argument(
-        "--west-runner",
-        help="""Uses the specified west runner instead of default when running
-             with --west-flash.
-
-        E.g "twister --device-testing --device-serial /dev/ttyACM0
-                         --west-flash --west-runner=pyocd"
-        will translate to "west flash --runner pyocd"
-        """
-    )
-    parser.add_argument(
-        "--flash-command",
-        help="""Instead of 'west flash', uses a custom flash command to flash
-            when running with --device-testing. Supports comma-separated
-            argument list, the script is also passed a --build-dir flag with
-            the build directory as an argument, and a --board-id flag with the
-            board or probe id if available.
-        """
-    )
 
     parser.add_argument(
         "-X", "--fixture", action="append", default=[],

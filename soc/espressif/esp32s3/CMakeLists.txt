@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if (CONFIG_SOC_ESP32S3_APPCPU)
+if(CONFIG_SOC_ESP32S3_APPCPU)
 
   zephyr_sources(
     soc_appcpu.c

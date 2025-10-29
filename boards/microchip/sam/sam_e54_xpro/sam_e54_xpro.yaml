@@ -10,6 +10,10 @@ toolchain:
 flash: 1024
 ram: 256
 supported:
+  - clock_control
+  - flash
+  - gpio
+  - mcuboot
   - pinctrl
   - pwm
   - reset

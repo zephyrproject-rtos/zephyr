@@ -188,3 +188,9 @@
 		status = "disabled";
 	};
 };
+
+&tpm2 {
+	status = "okay";
+};
+
+display_i2c: &lpi2c1 {};

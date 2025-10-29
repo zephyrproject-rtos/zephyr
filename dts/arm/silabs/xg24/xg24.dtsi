@@ -15,6 +15,7 @@
 
 / {
 	chosen {
+		silabs,sleeptimer = &sysrtc0;
 		zephyr,entropy = &se;
 		zephyr,flash-controller = &msc;
 	};
@@ -494,8 +495,8 @@
 			status = "disabled";
 		};
 
-		sysrtc0: stimer0: sysrtc@500a8000 {
-			compatible = "silabs,gecko-stimer";
+		sysrtc0: sysrtc@500a8000 {
+			compatible = "silabs,sysrtc";
 			reg = <0x500a8000 0x4000>;
 			clock-frequency = <32768>;
 			clocks = <&cmu CLOCK_SYSRTC0 CLOCK_BRANCH_SYSRTCCLK>;

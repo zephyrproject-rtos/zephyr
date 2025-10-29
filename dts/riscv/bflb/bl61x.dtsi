@@ -195,6 +195,13 @@
 			reg = <0x20010000 DT_SIZE_K(4)>;
 		};
 
+		memc: memc@20052000 {
+			compatible = "bflb,bl61x-psram";
+			reg = <0x20052000 DT_SIZE_K(4)>;
+			clock-divider = <1>;
+			status = "okay";
+		};
+
 		efuse: efuse@20056000 {
 			compatible = "bflb,efuse";
 			reg = <0x20056000 0x1000>;
@@ -211,6 +218,13 @@
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x63010000 DT_SIZE_K(160)>;
 			zephyr,memory-region = "ITCM";
+		};
+
+		psram: memory@a8000000 {
+			compatible = "zephyr,memory-region";
+			reg = <0xa8000000 DT_SIZE_M(128)>;
+			zephyr,memory-region = "PSRAM";
+			status = "disabled";
 		};
 	};
 };

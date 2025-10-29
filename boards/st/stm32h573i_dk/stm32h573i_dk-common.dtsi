@@ -1,0 +1,411 @@
+/*
+ * Copyright (c) 2023 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/h5/stm32h573Xi.dtsi>
+#include <st/h5/stm32h573iikxq-pinctrl.dtsi>
+#include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/memory-controller/stm32-fmc-nor-psram.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+
+/ {
+	model = "STMicroelectronics STM32H573I DISCOVERY KIT board";
+	compatible = "st,stm32h573i-dk";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram1;
+		zephyr,canbus = &fdcan1;
+		zephyr,display = &st7789v;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		green_led_0: led_1 {
+			gpios = <&gpioi 9 GPIO_ACTIVE_LOW>;
+			label = "User LD1";
+		};
+
+		orange_led_0: led_2 {
+			gpios = <&gpioi 8 GPIO_ACTIVE_LOW>;
+			label = "User LD2";
+		};
+
+		red_led_0: led_3 {
+			gpios = <&gpiof 1 GPIO_ACTIVE_LOW>;
+			label = "User LD3";
+		};
+
+		blue_led_0: led_4 {
+			gpios = <&gpiof 4 GPIO_ACTIVE_LOW>;
+			label = "User LD4";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button: button {
+			label = "User";
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	lcd_bl_ctrl {
+		compatible = "regulator-fixed";
+		regulator-name = "LCD Backlight Driver";
+		enable-gpios = <&gpioi 3 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+
+	aliases {
+		led0 = &blue_led_0;
+		sw0 = &user_button;
+		watchdog0 = &iwdg;
+		die-temp0 = &die_temp;
+		die-temp1 = &digi_die_temp;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
+	};
+
+	ext_flash_mem: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_M(64)>;
+		zephyr,memory-region = "EXT_FLASH";
+		/* DT_MEM_ARM_MPU_EXTMEM and DT_MEM_ARM_MPU_FLASH cause MPU issues */
+		zephyr,memory-attr = <DT_MEM_ARM_MPU_IO>;
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&ft3267>;
+		display = <&st7789v>;
+		invert-y;
+	};
+};
+
+&fmc {
+	pinctrl-0 = <&fmc_a0_pf0 &fmc_ne1_pc7 &fmc_nwe_pd5 &fmc_noe_pd4
+		     &fmc_d0_pd14 &fmc_d1_pd15 &fmc_d2_pd0 &fmc_d3_pd1
+		     &fmc_d4_pe7 &fmc_d5_pe8 &fmc_d6_pe9 &fmc_d7_pe10
+		     &fmc_d8_pe11 &fmc_d9_pe12 &fmc_d10_pe13 &fmc_d11_pe14
+		     &fmc_d12_pe15 &fmc_d13_pd8 &fmc_d14_pd9 &fmc_d15_pd10>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	sram {
+		compatible = "st,stm32-fmc-nor-psram";
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		bank@0 {
+			reg = <STM32_FMC_NORSRAM_BANK1>;
+			st,control = <STM32_FMC_DATA_ADDRESS_MUX_DISABLE
+				      STM32_FMC_MEMORY_TYPE_SRAM
+				      STM32_FMC_NORSRAM_MEM_BUS_WIDTH_16
+				      STM32_FMC_BURST_ACCESS_MODE_DISABLE
+				      STM32_FMC_WAIT_SIGNAL_POLARITY_LOW
+				      STM32_FMC_WAIT_TIMING_BEFORE_WS
+				      STM32_FMC_WRITE_OPERATION_ENABLE
+				      STM32_FMC_WAIT_SIGNAL_DISABLE
+				      STM32_FMC_EXTENDED_MODE_DISABLE
+				      STM32_FMC_ASYNCHRONOUS_WAIT_DISABLE
+				      STM32_FMC_WRITE_BURST_DISABLE
+				      STM32_FMC_CONTINUOUS_CLOCK_SYNC_ONLY
+				      STM32_FMC_WRITE_FIFO_DISABLE
+				      STM32_FMC_PAGE_SIZE_NONE>;
+			st,timing = <1 1 32 0 2 2 STM32_FMC_ACCESS_MODE_A>;
+
+			fmc-mipi-dbi {
+				compatible = "st,stm32-fmc-mipi-dbi";
+				reset-gpios = <&gpioh 13 GPIO_ACTIVE_LOW>;
+				power-gpios = <&gpioc 6 GPIO_ACTIVE_LOW>;
+				register-select-pin = <0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				st7789v: lcd-panel@0 {
+					compatible = "sitronix,st7789v";
+					reg = <0>;
+					mipi-mode = "MIPI_DBI_MODE_8080_BUS_16_BIT";
+					/* A write cycle should be 68ns */
+					mipi-max-frequency = <14705882>;
+					width = <240>;
+					height = <240>;
+					x-offset = <0>;
+					y-offset = <0>;
+					vcom = <0x1F>;
+					gctrl = <0x35>;
+					vdvs = <0x20>;
+					mdac = <0x00>;
+					gamma = <0x01>;
+					colmod = <0x05>;
+					lcm = <0x2c>;
+					porch-param = [0c 0c 00 33 33];
+					cmd2en-param = [5a 69 02 00];
+					pwctrl1-param = [a4 a1];
+					pvgam-param = [D0 08 11 08 0C 15 39 33 50 36 13 14 29 2D];
+					nvgam-param = [D0 08 10 08 06 06 39 44 51 0B 16 14 2F 31];
+					ram-param = [00 F0];
+					rgb-param = [40 02 14];
+				};
+			};
+		};
+	};
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(25)>;
+	hse-bypass; /* X3 is a 25MHz oscillator on PH0 */
+	status = "okay";
+};
+
+&pll {
+	div-m = <5>;
+	mul-n = <96>;
+	div-p = <2>;
+	div-q = <6>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(240)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <2>;
+	apb2-prescaler = <1>;
+	apb3-prescaler = <1>;
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
+};
+
+&i2c4 {
+	pinctrl-0 = <&i2c4_scl_pb8 &i2c4_sda_pb9>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
+
+	ft3267: ft3267@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		int-gpios = <&gpiog 7 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpiog 3 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb11>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&timers2 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm2: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim2_ch4_pa3>;
+		pinctrl-names = "default";
+	};
+};
+
+&timers3 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm3: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim3_ch2_pb5>;
+		pinctrl-names = "default";
+	};
+};
+
+&aes {
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+&mac {
+	status = "okay";
+	pinctrl-0 = <&eth_rxd0_pc4
+		     &eth_rxd1_pc5
+		     &eth_ref_clk_pa1
+		     &eth_crs_dv_pa7
+		     &eth_tx_en_pg11
+		     &eth_txd0_pg13
+		     &eth_txd1_pg12>;
+	pinctrl-names = "default";
+	phy-connection-type = "rmii";
+	phy-handle = <&eth_phy>;
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
+	pinctrl-names = "default";
+
+	eth_phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0x00>;
+	};
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB3, 21)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&gpdma1 {
+	status = "okay";
+};
+
+&gpdma2 {
+	status = "okay";
+};
+
+&dac1 {
+	/* only 2 output channels : out1 on pa4 or out2 on pa5 */
+	pinctrl-0 = <&dac1_out1_pa4>;  /* Arduino A1 */
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&adc1 {
+	clocks = <&rcc STM32_CLOCK(AHB2, 10)>,
+		 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
+	clock-names = "adcx", "adc_ker";
+	pinctrl-0 = <&adc1_inp6_pf12>; /* Arduino A5 */
+	pinctrl-names = "default";
+	st,adc-clock-source = "ASYNC";
+	st,adc-prescaler = <6>;
+	status = "okay";
+};
+
+&spi2 {
+	pinctrl-0 = <&spi2_nss_pa3 &spi2_sck_pi1
+		     &spi2_miso_pi2 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&fdcan1 {
+	clocks = <&rcc STM32_CLOCK(APB1_2, 9)>,
+		 <&rcc STM32_SRC_PLL1_Q FDCAN_SEL(1)>;
+	pinctrl-0 = <&fdcan1_rx_pa11 &fdcan1_tx_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&xspi1 {
+	pinctrl-0 = <&octospi1_io0_pb1 &octospi1_io1_pd12
+		     &octospi1_io2_pc2 &octospi1_io3_pd13
+		     &octospi1_io4_ph2 &octospi1_io5_ph3
+		     &octospi1_io6_pg9 &octospi1_io7_pc0
+		     &octospi1_clk_pf10 &octospi1_ncs_pg6
+		     &octospi1_dqs_pb2>;
+	pinctrl-names = "default";
+
+	status = "okay";
+
+	ext_flash_ctrl: xspi-flash-controller@0 {
+		compatible = "st,stm32-xspi-nor";
+		reg = <0>;
+		size = <DT_SIZE_M(512)>; /* 512 Mbits */
+		ospi-max-frequency = <DT_FREQ_M(50)>;
+		spi-bus-width = <XSPI_OCTO_MODE>;
+		data-rate = <XSPI_DTR_TRANSFER>;
+		four-byte-opcodes;
+		status = "okay";
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(64)>; /* Ext Flash mem-mapped to 0x90000000 */
+
+		ext_flash: mx25lm51245: ext-flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(64)>;
+			write-block-size = <1>;
+			erase-block-size = <DT_SIZE_K(4)>;
+		};
+	};
+};
+
+&sdmmc1 {
+	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
+		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
+		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+	pinctrl-names = "default";
+	cd-gpios = <&gpioh 14 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	disk-name = "SD";
+	status = "okay";
+};
+
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&die_temp {
+	status = "okay";
+};
+
+&digi_die_temp {
+	status = "okay";
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
+};

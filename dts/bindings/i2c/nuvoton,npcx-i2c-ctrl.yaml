@@ -20,3 +20,8 @@ properties:
 
         For example the WUI mapping on SMB 4 module would be
            smb-wui = <&wui_smb4>;
+  dma-driven:
+    type: boolean
+    description: |
+        If true, the I2C controller has a dedicated DMA controller for data transfer.
+        If false, it will use FIFO.

@@ -20,6 +20,11 @@ if SILABS_SIWX91X_NWP
 config SYS_CLOCK_TICKS_PER_SEC
 	default 1024
 
+# Wiseconnect needs more than 1024 bytes of main stack size to initialize
+# (especially with PM)
+configdefault MAIN_STACK_SIZE
+	default 2048
+
 config NUM_PREEMPT_PRIORITIES
 	default 56
 

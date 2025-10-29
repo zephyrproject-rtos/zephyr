@@ -7,10 +7,6 @@ if SOC_SERIES_NRF53X
 
 rsource "Kconfig.defconfig.nrf53*"
 
-# If the kernel has timer support, enable the timer
-config NRF_RTC_TIMER
-	default y if SYS_CLOCK_EXISTS
-
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_nodelabel_int_prop,rtc1,clock-frequency)
 

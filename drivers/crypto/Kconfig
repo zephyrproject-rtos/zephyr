@@ -25,6 +25,9 @@ config CRYPTO_MBEDTLS_SHIM
 	bool "MbedTLS shim driver [EXPERIMENTAL]"
 	select MBEDTLS
 	select MBEDTLS_ENABLE_HEAP
+	select MBEDTLS_SHA224
+	select MBEDTLS_SHA256
+	select MBEDTLS_SHA384
 	select MBEDTLS_SHA512
 	select MBEDTLS_CIPHER_AES_ENABLED
 	select EXPERIMENTAL
@@ -60,5 +63,6 @@ source "drivers/crypto/Kconfig.si32"
 source "drivers/crypto/Kconfig.smartbond"
 source "drivers/crypto/Kconfig.cc23x0"
 source "drivers/crypto/Kconfig.rts5912"
+source "drivers/crypto/Kconfig.esp32"
 
 endif # CRYPTO

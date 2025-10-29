@@ -518,7 +518,7 @@ By default one ready UART of this type is setup in DTS, but any number can be en
 Normally these UARTs are connected to new pseudoterminals PTYs, i.e. :file:`/dev/pts{<nbr>}`,
 but it is also possible to map one of them to the executable's ``stdin`` and ``stdout``.
 This can be done in two ways, either with the command line option ``--<uart_name>_stdinout``
-(where ``<uart_name>`` is the UART DTS node name), or, for the first PTY UART instance by chosing
+(where ``<uart_name>`` is the UART DTS node name), or, for the first PTY UART instance by choosing
 :kconfig:option:`CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT` instead of the default
 :kconfig:option:`CONFIG_UART_NATIVE_PTY_0_ON_OWN_PTY`.
 For interactive use with the :ref:`shell_api`, it is recommended to choose the PTY option.

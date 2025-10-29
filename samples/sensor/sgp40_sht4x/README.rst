@@ -62,6 +62,6 @@ Sample Output
         SHT4X: 23.66 Temp. [C] ; 32.16 RH [%] -- SGP40: 30541 Gas [a.u.]
         SHT4X: 23.63 Temp. [C] ; 30.83 RH [%] -- SGP40: 30522 Gas [a.u.]
 
-The datasheet states that the raw sensor signal for the SGP40 ist proportional
+The datasheet states that the raw sensor signal for the SGP40 is proportional
 to the logarithm of the sensors resistance, hence it is labeled as [a.u.]
 (arbitrary units) in the example.

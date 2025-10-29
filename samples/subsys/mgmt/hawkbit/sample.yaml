@@ -7,9 +7,12 @@ common:
   platform_allow:
     - frdm_k64f
     - stm32h573i_dk
+    - stm32h573i_dk/stm32h573xx/ext_flash_app
+    - stm32h750b_dk/stm32h750xx/ext_flash_app
   integration_platforms:
     - frdm_k64f
     - stm32h573i_dk
+    - stm32h573i_dk/stm32h573xx/ext_flash_app
 sample:
   description: hawkBit Firmware Over-the-Air (FOTA)
   name: hawkbit

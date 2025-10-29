@@ -1,0 +1,25 @@
+# Copyright (c) 2025, Prevas A/S
+# SPDX-License-Identifier: Apache-2.0
+
+title: Tachometer sensor using GPIO.
+
+description: |
+  This tachometer sensor uses GPIO interrupts to measure the duration of one
+  pulse to calculate the RPM.
+
+compatible: "zephyr,tach-gpio"
+
+include: tach.yaml
+
+properties:
+  gpios:
+    type: phandle-array
+    description: GPIO used to measure pulses.
+
+  timeout-ms:
+    type: int
+    default: 1000
+    description: |
+      Milliseconds to wait for a complete pulse.
+      Default is 1 s. This allows reading down to about 120 RPM (not 60
+      because the measurement might start right after a pulse start).

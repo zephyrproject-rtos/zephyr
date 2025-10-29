@@ -1,0 +1,33 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP i.MX LCDIFV3 (LCD Interface v3) controller
+
+compatible: "nxp,imx-lcdifv3"
+
+include: [base.yaml, display-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pixel-format:
+    type: string
+    required: true
+    enum:
+      - "rgb-565"
+      - "rgb-888"
+      - "argb-8888"
+    description:
+      Display pixel format.
+
+  media-axi-clk-rate:
+    type: int
+    required: true
+
+  media-apb-clk-rate:
+    type: int
+    required: true

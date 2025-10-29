@@ -343,12 +343,10 @@ config RISCV_HART_MASK
 	  such that we can extract the bits that start from 0.
 
 config EXTRA_EXCEPTION_INFO
-	bool "Collect extra exception info"
-	depends on EXCEPTION_DEBUG
+	bool "Collect extra exception info [DEPRECATED]"
+	select DEPRECATED
 	help
-	  This option enables the collection of extra information, such as
-	  register state, when a fault occurs. This information can be useful
-	  to collect for post-mortem analysis and debug of issues.
+	  This option is deprecated and should be replaced with CONFIG_EXCEPTION_DEBUG.
 
 config RISCV_PMP
 	bool "RISC-V PMP Support"

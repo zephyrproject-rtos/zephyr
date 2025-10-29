@@ -47,14 +47,10 @@ if(CONFIG_SOC_FAMILY_INFINEON_EDGE)
   zephyr_include_directories(${edge_dir}/devices/include)
 
   zephyr_library_sources(${edge_dir}/system_edge.c)
-  if(CONFIG_BOARD_KIT_PSE84_EVAL_PSE846GPS2DBZC4A_M33)
-    zephyr_library_sources_ifdef(CONFIG_CPU_CORTEX_M33
-      ${edge_dir}/COMPONENT_CM33/COMPONENT_SECURE_DEVICE/s_system_pse84.c)
-    zephyr_include_directories(${edge_dir}/COMPONENT_CM33/COMPONENT_SECURE_DEVICE)
-  else()
-    zephyr_library_sources_ifdef(CONFIG_CPU_CORTEX_M33
-      ${edge_dir}/COMPONENT_CM33/COMPONENT_NON_SECURE_DEVICE/ns_system_pse84.c)
-  endif()
-    zephyr_library_sources_ifdef(CONFIG_CPU_CORTEX_M55
-      ${edge_dir}/COMPONENT_CM55/COMPONENT_NON_SECURE_DEVICE/ns_system_pse84.c)
+  zephyr_library_sources_ifdef(CONFIG_CPU_CORTEX_M33
+    ${edge_dir}/COMPONENT_CM33/COMPONENT_SECURE_DEVICE/s_system_pse84.c)
+  zephyr_include_directories_ifdef(CONFIG_CPU_CORTEX_M33
+    ${edge_dir}/COMPONENT_CM33/COMPONENT_SECURE_DEVICE)
+  zephyr_library_sources_ifdef(CONFIG_CPU_CORTEX_M55
+    ${edge_dir}/COMPONENT_CM55/COMPONENT_NON_SECURE_DEVICE/ns_system_pse84.c)
 endif()

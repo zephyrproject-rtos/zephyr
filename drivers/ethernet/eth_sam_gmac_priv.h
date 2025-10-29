@@ -30,8 +30,12 @@
 #define GMAC_QUEUE_NUM                  DT_INST_PROP(0, num_queues)
 #define GMAC_PRIORITY_QUEUE_NUM         (GMAC_QUEUE_NUM - 1)
 #if (GMAC_PRIORITY_QUEUE_NUM >= 1)
+#ifdef CONFIG_SOC_SAMA7G54
+/* Do not check the queue numbers due to they are different for GMAC0 (6) and GMAC1 (2) */
+#else
 BUILD_ASSERT(ARRAY_SIZE(GMAC->GMAC_TBQBAPQ) + 1 == GMAC_QUEUE_NUM,
 	     "GMAC_QUEUE_NUM doesn't match soc header");
+#endif
 #endif
 /** Number of priority queues used */
 #define GMAC_ACTIVE_QUEUE_NUM           (CONFIG_ETH_SAM_GMAC_QUEUES)
@@ -160,8 +164,12 @@ BUILD_ASSERT(ARRAY_SIZE(GMAC->GMAC_TBQBAPQ) + 1 == GMAC_QUEUE_NUM,
 		(GMAC_IER_RCOMP | GMAC_INT_RX_ERR_BITS | \
 		 GMAC_IER_TCOMP | GMAC_INT_TX_ERR_BITS | GMAC_IER_HRESP)
 
+#ifdef GMAC_IERPQ_ROVR
 #define GMAC_INTPQ_RX_ERR_BITS \
 		(GMAC_IERPQ_RXUBR | GMAC_IERPQ_ROVR)
+#else
+#define GMAC_INTPQ_RX_ERR_BITS GMAC_IERPQ_RXUBR
+#endif
 #define GMAC_INTPQ_TX_ERR_BITS \
 		(GMAC_IERPQ_RLEX | GMAC_IERPQ_TFC)
 #define GMAC_INTPQ_EN_FLAGS \

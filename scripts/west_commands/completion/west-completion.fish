@@ -161,26 +161,37 @@ function __zephyr_west_complete_help
                         "update" "update projects described in west manifest" \
                         "list" "print information about projects" \
                         "manifest" "manage the west manifest" \
+                        "compare" "compare project status against the manifest" \
                         "diff" '"git diff" for one or more projects' \
                         "status" '"git status" for one or more projects' \
                         "forall" "run a command in one or more local projects" \
+                        "grep" "run grep or a grep-like tool in one or more local projects" \
+                        "help" "get help for west or a command" \
                         "config" "get or set config file values" \
-                        "topdir" "print the top level directory of the workspace" \
-                        "help" "get help for west or a command"
+                        "topdir" "print the top level directory of the workspace"
     set -l nb_builtin_cmds (count $builtin_cmds)
 
     set -l ext_cmds "completion" "display shell completion scripts" \
                     "boards" "display information about supported boards" \
+                    "shields" "display list of supported shields" \
                     "build" "compile a Zephyr application" \
+                    "twister" "west twister wrapper" \
                     "sign" "sign a Zephyr binary for bootloader chain-loading" \
                     "flash" "flash and run a binary on a board" \
                     "debug" "flash and interactively debug a Zephyr application" \
                     "debugserver" "connect to board and launch a debug server" \
                     "attach" "interactively debug a board" \
+                    "rtt" "open an rtt shell" \
                     "zephyr-export" "export Zephyr installation as a CMake config package" \
                     "spdx" "create SPDX bill of materials" \
                     "blobs" "work with binary blobs" \
-                    "sdk" "manage SDKs"
+                    "bindesc" "work with Binary Descriptors" \
+                    "robot" "run RobotFramework test suites" \
+                    "simulate" "simulate board" \
+                    "sdk" "manage SDKs" \
+                    "packages" "manage packages for Zephyr" \
+                    "patch" "manage patches for Zephyr modules" \
+                    "gtags" "create a GNU global tags file for the current workspace"
     set -l nb_ext_cmds (count $ext_cmds)
 
     if __zephyr_west_check_if_in_workspace

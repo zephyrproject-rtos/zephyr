@@ -49,7 +49,6 @@ config RV32E_CPU
 config RV64I_CPU
 	bool "RISCV64 CPU ISA"
 	select RISCV_ISA_RV64I
-	select 64BIT
 
 endchoice
 
@@ -62,11 +61,12 @@ config NO_FPU
 
 config SINGLE_PRECISION_FPU
 	bool "Single precision FPU"
-	select CPU_HAS_FPU
+	select RISCV_ISA_EXT_F
 
 config DOUBLE_PRECISION_FPU
 	bool "Double precision FPU"
-	select CPU_HAS_FPU_DOUBLE_PRECISION
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D
 
 endchoice
 

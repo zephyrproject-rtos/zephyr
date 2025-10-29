@@ -139,7 +139,7 @@ manifest:
       groups:
         - tools
     - name: fatfs
-      revision: 18ad3932f7f18b59abf99cb2f8a6cd5d6746cfe0
+      revision: f4ead3bf4a6dab3a07d7b5f5315795c073db568d
       path: modules/fs/fatfs
       groups:
         - fs
@@ -169,7 +169,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 78fb21d5bcd88adcc787fff9591da6975c80c5eb
+      revision: 2927aae9bfca44208032ae93f2e61ff819e21feb
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -180,12 +180,12 @@ manifest:
       groups:
         - hal
     - name: hal_gigadevice
-      revision: 2994b7dde8b0b0fa9b9c0ccb13474b6a486cddc3
+      revision: ee0e31302c21b2a465dc303b3ced8c606c2167c8
       path: modules/hal/gigadevice
       groups:
         - hal
     - name: hal_infineon
-      revision: 58ce131beba8ad94e58837b7d0f5e31a7894790a
+      revision: f3c571f772209b5970bdd1806da641244b5c4c38
       path: modules/hal/infineon
       groups:
         - hal
@@ -195,7 +195,7 @@ manifest:
       groups:
         - hal
     - name: hal_microchip
-      revision: ac9c1231020d29aa0285a4e63b66f465b3942eed
+      revision: 89754d87258945ceb1cff8ecee0ddd8852396ae8
       path: modules/hal/microchip
       groups:
         - hal
@@ -210,7 +210,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 6adb4c509dc86d5702f48b952f209b7c91270250
+      revision: cf8f1631e862528ee044850bcc70273975b90771
       path: modules/hal/nxp
       groups:
         - hal
@@ -226,7 +226,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 8c5505d957db35816f3f2ddc93f6805fd648a90c
+      revision: 62136a8ff8a2e644b72f0dc902d33b397991cace
       groups:
         - hal
     - name: hal_rpi_pico
@@ -240,7 +240,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 971c39bee2a1bcd2a31caf78606820059a585157
+      revision: 5d75cba8a1b0e9a747ae387d9ffbb1bf7cd8c529
       path: modules/hal/silabs
       groups:
         - hal
@@ -275,18 +275,18 @@ manifest:
       groups:
         - hal
     - name: hal_wurthelektronik
-      revision: e3e2797b224fc48fdef1bc3e5a12a7c73108bba2
+      revision: 7c1297ea071d03289112eb24e789c89c7095c0a2
       path: modules/hal/wurthelektronik
       groups:
         - hal
     - name: hal_xtensa
-      revision: ba3f1ce6b066c3e40a8e6cad3fba0068ecfcd4ba
+      revision: 3cc9e3a9360be5c96c956dce84064b85439b6769
       path: modules/hal/xtensa
       groups:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 3ec675be30c25b56cc0e7dbd5bd931a87d32937e
+      revision: cf05f33f594de6b62840a3b0dd435f10467a2e4c
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
@@ -316,12 +316,12 @@ manifest:
       revision: b03edc8e6282a963cd312cd0b409eb5ce263ea75
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: 2994b29fcae7e1d7fc6b8f38d9f922032ee90e6e
+      revision: f4c0283ca55fc4085815d4793a26e19f20be2f97
       path: modules/crypto/mbedtls
       groups:
         - crypto
     - name: mcuboot
-      revision: b192716c969ad358bb3a1db60c898212f3275c55
+      revision: 96576b341ee19f1c3af6622256b0d4f3d408e1e3
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -334,7 +334,7 @@ manifest:
       revision: 7307ce399b81ddcb3c3a5dc862c52d4754328d38
       path: modules/lib/nanopb
     - name: net-tools
-      revision: 2750d71e28e48865a6fd8a10413f978bb216c59e
+      revision: 64d7acc661ae2772282570f21beab85d02f2f35c
       path: tools/net-tools
       groups:
         - tools
@@ -352,12 +352,12 @@ manifest:
       path: modules/lib/openthread
     - name: percepio
       path: modules/debug/percepio
-      revision: 49e6dc202aa38c2a3edbafcc2dab85dec6aee973
+      revision: 132ed87d617578a6cb70a2443f43e117c315e0f0
       groups:
         - debug
     - name: picolibc
       path: modules/lib/picolibc
-      revision: 560946f26db075c296beea5b39d99e6de43c9010
+      revision: ca8b6ebba5226a75545e57a140443168a26ba664
     - name: segger
       revision: 9f08435a79d41133d7046b7c59d1b25929eda450
       path: modules/debug/segger
@@ -369,7 +369,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 62ad723311da2cac938e2ae88bafe9e815b3b248
+      revision: 94691a2ed0d9a2802b3419eaa91958329c36871b
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

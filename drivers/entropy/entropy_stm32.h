@@ -5,6 +5,7 @@
  */
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <stm32_bitops.h>
 #include <stm32_ll_rng.h>
 
 /**
@@ -109,7 +110,7 @@ static inline rng_sample_t ll_rng_read_rand_data(RNG_TypeDef *RNGx)
 	 * Raw register access is performed because STM32CubeWB0 v1.0.0
 	 * package is lacking the LL function to clear IRQ flags.
 	 */
-	WRITE_REG(RNG->IRQ_SR, RNG_IRQ_SR_FF_FULL_IRQ);
+	stm32_reg_write(&RNGx->IRQ_SR, RNG_IRQ_SR_FF_FULL_IRQ);
 
 	return rnd;
 #elif defined(CONFIG_SOC_SERIES_STM32WB0X)

@@ -160,6 +160,19 @@ static int mc_cgm_clock_control_on(const struct device *dev, clock_control_subsy
 	}
 #endif /* defined(CONFIG_I2C_MCUX_LPI2C) */
 
+#if defined(CONFIG_COUNTER_MCUX_STM)
+	switch ((uint32_t)sub_system) {
+	case MCUX_STM0_CLK:
+		CLOCK_EnableClock(kCLOCK_Stm0);
+		break;
+	case MCUX_STM1_CLK:
+		CLOCK_EnableClock(kCLOCK_Stm1);
+		break;
+	default:
+		break;
+	}
+#endif /* defined(CONFIG_COUNTER_MCUX_STM) */
+
 	return 0;
 }
 
@@ -237,6 +250,15 @@ static int mc_cgm_get_subsys_rate(const struct device *dev, clock_control_subsys
 		*rate = CLOCK_GetFlexcanPeClkFreq(5);
 		break;
 #endif /* defined(CONFIG_CAN_MCUX_FLEXCAN) */
+
+#if defined(CONFIG_COUNTER_MCUX_STM)
+	case MCUX_STM0_CLK:
+		*rate = CLOCK_GetStmClkFreq(0);
+		break;
+	case MCUX_STM1_CLK:
+		*rate = CLOCK_GetStmClkFreq(1);
+		break;
+#endif /* defined(CONFIG_COUNTER_MCUX_STM) */
 	}
 	return 0;
 }
@@ -297,6 +319,14 @@ static int mc_cgm_init(const struct device *dev)
 #endif
 	CLOCK_CommonTriggerClkMux0DivUpdate();
 	CLOCK_ProgressiveClockFrequencySwitch(kPLL_PHI0_CLK_to_MUX0, &pcfs_config);
+#if defined(CONFIG_COUNTER_MCUX_STM)
+	CLOCK_SetClkDiv(kCLOCK_DivStm0Clk, NXP_PLL_MUX_1_DC_0_DIV);
+	CLOCK_AttachClk(kAIPS_PLAT_CLK_to_STM0);
+#if defined(FSL_FEATURE_SOC_STM_COUNT) && (FSL_FEATURE_SOC_STM_COUNT == 2U)
+	CLOCK_SetClkDiv(kCLOCK_DivStm1Clk, NXP_PLL_MUX_2_DC_0_DIV);
+	CLOCK_AttachClk(kAIPS_PLAT_CLK_to_STM1);
+#endif /* FSL_FEATURE_SOC_STM_COUNT == 2U */
+#endif /* defined(CONFIG_COUNTER_MCUX_STM) */
 #endif
 
 	/* Set SystemCoreClock variable. */

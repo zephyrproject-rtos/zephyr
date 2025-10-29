@@ -51,6 +51,13 @@ properties:
         PLLx multiplication factor for VCO
         Valid range: 4 - 512
 
+  div-p:
+    type: int
+    required: true
+    description: |
+        PLLx DIVP division factor
+        Valid range: 1 - 128
+
   div-q:
     type: int
     description: |

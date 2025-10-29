@@ -110,6 +110,12 @@
 		};
 	};
 
+	media_blk_ctrl: mediamix@4ac10000 {
+		compatible = "nxp,imx93-mediamix";
+		reg = <0x4ac10000 0x1000>;
+		status = "disabled";
+	};
+
 	wdog3: watchdog@42490000 {
 		compatible = "nxp,wdog32";
 		reg = <0x42490000 0x1000>;
@@ -131,6 +137,29 @@
 		clocks = <&lpo_clk>;
 		clk-source = <1>;
 		clk-divider = <256>;
+		status = "disabled";
+	};
+
+	lcdif: display-controller@4ae30000 {
+		compatible = "nxp,imx-lcdifv3";
+		reg = <0x4ae30000 0x10000>;
+		interrupts = <GIC_SPI 176 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_MEDIA_DISP_PIX_CLK 0 0>,
+			 <&ccm IMX_CCM_MEDIA_AXI_CLK 0 0>,
+			 <&ccm IMX_CCM_MEDIA_APB_CLK 0 0>;
+		status = "disabled";
+	};
+
+	mipi_dsi: dsi@4ae10000 {
+		compatible = "nxp,mipi-dsi-dwc";
+		reg = <0x4ae10000 0x10000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		interrupts = <GIC_SPI 177 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_MIPI_PHY_CFG_CLK 0 0>;
+		nxp,dc = <&lcdif>;
 		status = "disabled";
 	};
 

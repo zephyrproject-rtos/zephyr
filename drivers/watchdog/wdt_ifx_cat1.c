@@ -1,9 +1,11 @@
 /*
- * Copyright 2023 Cypress Semiconductor Corporation (an Infineon company) or
- * an affiliate of Cypress Semiconductor Corporation
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/* Watchdog timer driver for the Infineon MCU family. */
 
 #define DT_DRV_COMPAT infineon_cat1_watchdog
 
@@ -19,13 +21,9 @@ LOG_MODULE_REGISTER(wdt_infineon_cat1, CONFIG_WDT_LOG_LEVEL);
 #define IFX_CAT1_WDT_IS_IRQ_EN DT_NODE_HAS_PROP(DT_DRV_INST(0), interrupts)
 
 typedef struct {
-	/* Minimum period in milliseconds that can be represented with this
-	 * many ignored bits
-	 */
+	/* Minimum period in milliseconds that can be represented with this many ignored bits */
 	uint32_t min_period_ms;
-	/* Timeout threshold in milliseconds from which to round up to
-	 * the minimum period
-	 */
+	/* Timeout threshold in milliseconds from which to round up to the minimum period */
 	uint32_t round_threshold_ms;
 } wdt_ignore_bits_data_t;
 
@@ -39,9 +37,11 @@ typedef struct {
 
 #if defined(SRSS_NUM_WDT_A_BITS)
 #define IFX_WDT_MATCH_BITS (SRSS_NUM_WDT_A_BITS)
-#elif defined(COMPONENT_CAT1A)
+#elif defined(COMPONENT_CAT1A) || defined(COMPONENT_CAT1C)
 #if defined(CY_IP_MXS40SRSS) && (CY_IP_MXS40SRSS_VERSION < 2)
 #define IFX_WDT_MATCH_BITS (16)
+#else
+#define IFX_WDT_MATCH_BITS (32)
 #endif
 #elif defined(COMPONENT_CAT1B)
 #define IFX_WDT_MATCH_BITS (16)
@@ -55,26 +55,30 @@ typedef struct {
  * Max WDT Reset Period = 3 * (2^IFX_WDT_MATCH_BITS) * CLK_DURATION
  */
 #if defined(CY_IP_MXS40SRSS)
+#if (CY_IP_MXS40SRSS_VERSION >= 2)
+#define IFX_WDT_MAX_TIMEOUT_MS 131073812
+#else
 /* ILO, PILO, BAK all run at 32768 Hz - Period is ~0.030518 ms */
 #define IFX_WDT_MAX_TIMEOUT_MS  6000
 #define IFX_WDT_MAX_IGNORE_BITS 12
 /* ILO Frequency = 32768 Hz, ILO Period = 1 / 32768 Hz = .030518 ms */
 static const wdt_ignore_bits_data_t ifx_wdt_ignore_data[] = {
-	{4000, 3001}, /*  0 bit(s): min period: 4000ms, max period: 6000ms, round up from 3001+ms */
-	{2000, 1501}, /*  1 bit(s): min period: 2000ms, max period: 3000ms, round up from 1501+ms */
-	{1000, 751},  /*  2 bit(s): min period: 1000ms, max period: 1500ms, round up from 751+ms */
-	{500, 376},   /*  3 bit(s): min period:  500ms, max period:  750ms, round up from 376+ms */
-	{250, 188},   /*  4 bit(s): min period:  250ms, max period:  375ms, round up from 188+ms */
-	{125, 94},    /*  5 bit(s): min period:  125ms, max period:  187ms, round up from 94+ms */
-	{63, 47},     /*  6 bit(s): min period:   63ms, max period:   93ms, round up from 47+ms */
-	{32, 24},     /*  7 bit(s): min period:   32ms, max period:   46ms, round up from 24+ms */
-	{16, 12},     /*  8 bit(s): min period:   16ms, max period:   23ms, round up from 12+ms */
-	{8, 6},       /*  9 bit(s): min period: 8ms, max period:   11ms, round up from 6+ms */
+	{4000, 3001}, /* 0 bit(s): min period: 4000ms, max period: 6000ms, round up from 3001+ms */
+	{2000, 1501}, /* 1 bit(s): min period: 2000ms, max period: 3000ms, round up from 1501+ms */
+	{1000, 751},  /* 2 bit(s): min period: 1000ms, max period: 1500ms, round up from 751+ms */
+	{500, 376},   /* 3 bit(s): min period: 500ms, max period: 750ms, round up from 376+ms */
+	{250, 188},   /* 4 bit(s): min period: 250ms, max period: 375ms, round up from 188+ms */
+	{125, 94},    /* 5 bit(s): min period: 125ms, max period: 187ms, round up from 94+ms */
+	{63, 47},     /* 6 bit(s): min period: 63ms, max period: 93ms, round up from 47+ms */
+	{32, 24},     /* 7 bit(s): min period: 32ms, max period: 46ms, round up from 24+ms */
+	{16, 12},     /* 8 bit(s): min period: 16ms, max period: 23ms, round up from 12+ms */
+	{8, 6},       /* 9 bit(s): min period: 8ms, max period: 11ms, round up from 6+ms */
 	{4, 3},       /* 10 bit(s): min period: 4ms, max period: 5ms, round up from 3+ms */
 	{2, 2},       /* 11 bit(s): min period: 2ms, max period: 2ms, round up from 2+ms */
 	{1, 1},       /* 12 bit(s): min period: 1ms, max period: 1ms, round up from 1+ms */
 };
-#elif defined(CY_IP_MXS40SSRSS) && (IFX_WDT_MATCH_BITS == 22)
+#endif
+#elif (defined(CY_IP_MXS40SSRSS) || defined(CY_IP_MXS22SRSS)) && (IFX_WDT_MATCH_BITS == 22)
 /* ILO Frequency = 32768 Hz, ILO Period = 1 / 32768 Hz = .030518 ms */
 #define IFX_WDT_MAX_TIMEOUT_MS  384000
 #define IFX_WDT_MAX_IGNORE_BITS (IFX_WDT_MATCH_BITS - 4)
@@ -83,21 +87,21 @@ static const wdt_ignore_bits_data_t ifx_wdt_ignore_data[] = {
 	{256000, 192001},
 	/* 1 bit(s): min period: 128000ms, max period: 192000ms, round up from 96001+ms */
 	{128000, 96001},
-	/* 2 bit(s): min period:  64000ms, max period:  96000ms, round up from 48001+ms */
+	/* 2 bit(s): min period: 64000ms, max period: 96000ms, round up from 48001+ms */
 	{64000, 48001},
-	/* 3 bit(s): min period:  32000ms, max period:  48000ms, round up from 24001+ms */
+	/* 3 bit(s): min period: 32000ms, max period: 48000ms, round up from 24001+ms */
 	{32000, 24001},
-	/* 4 bit(s): min period:  16000ms, max period:  24000ms, round up from 12001+ms */
+	/* 4 bit(s): min period: 16000ms, max period: 24000ms, round up from 12001+ms */
 	{16000, 12001},
-	/* 5 bit(s): min period:8000ms, max period:  12000ms, round up from 6001+ms */
+	/* 5 bit(s): min period: 8000ms, max period: 12000ms, round up from 6001+ms */
 	{8000, 6001},
-	/* 6 bit(s): min period:4000ms, max period:6000ms, round up from 3001+ms */
+	/* 6 bit(s): min period: 4000ms, max period: 6000ms, round up from 3001+ms */
 	{4000, 3001},
-	/*  7 bit(s): min period:2000ms, max period:3000ms, round up from 1501+ms */
+	/* 7 bit(s): min period: 2000ms, max period: 3000ms, round up from 1501+ms */
 	{2000, 1501},
-	/*  8 bit(s): min period:1000ms, max period:1500ms, round up from 751+ms */
+	/* 8 bit(s): min period: 1000ms, max period: 1500ms, round up from 751+ms */
 	{1000, 751},
-	/*  9 bit(s): min period: 500ms, max period: 750ms, round up from 376+ms */
+	/* 9 bit(s): min period: 500ms, max period: 750ms, round up from 376+ms */
 	{500, 376},
 	/* 10 bit(s): min period: 250ms, max period: 375ms, round up from 188+ms */
 	{250, 188},
@@ -182,6 +186,8 @@ static const wdt_ignore_bits_data_t ifx_wdt_ignore_data[] = {
 	/* 28 bit(s): min period: 1ms, max period: 1ms, round up from 1+ms */
 	{1, 1},
 };
+#else
+#error "Device not supported"
 #endif
 
 struct ifx_cat1_wdt_data {
@@ -191,7 +197,7 @@ struct ifx_cat1_wdt_data {
 	uint32_t wdt_ignore_bits;
 #ifdef IFX_CAT1_WDT_IS_IRQ_EN
 	wdt_callback_t callback;
-#endif /* IFX_CAT1_WDT_IS_IRQ_EN */
+#endif
 	uint32_t timeout;
 	bool timeout_installed;
 };
@@ -234,7 +240,7 @@ static void ifx_cat1_wdt_isr_handler(const struct device *dev)
 	}
 	Cy_WDT_MaskInterrupt();
 }
-#endif /* IFX_CAT1_WDT_IS_IRQ_EN */
+#endif
 
 static int ifx_cat1_wdt_setup(const struct device *dev, uint8_t options)
 {
@@ -242,10 +248,12 @@ static int ifx_cat1_wdt_setup(const struct device *dev, uint8_t options)
 
 	/* Initialize the WDT */
 	if ((dev_data->timeout == 0) || (dev_data->timeout > IFX_WDT_MAX_TIMEOUT_MS)) {
+		LOG_ERR("Invalid timeout");
 		return -ENOTSUP;
 	}
 
 	if (dev_data->wdt_initialized) {
+		LOG_ERR("Already initialized");
 		return -EBUSY;
 	}
 
@@ -274,7 +282,8 @@ static int ifx_cat1_wdt_setup(const struct device *dev, uint8_t options)
 #endif
 
 #if defined(COMPONENT_CAT1) && (CY_WDT_DRV_VERSION_MAJOR > 1) && (CY_WDT_DRV_VERSION_MINOR > 6)
-	/* Reset counter every time - large current counts in WDT can cause problems on some boards
+	/* Reset counter every time
+	 * Large current counts in WDT can cause problems on some boards
 	 */
 	Cy_WDT_ResetCounter();
 	/* Twice, as reading back after 1 reset gives same value as before single reset */
@@ -285,6 +294,7 @@ static int ifx_cat1_wdt_setup(const struct device *dev, uint8_t options)
 						 dev_data->wdt_ignore_bits));
 #endif
 
+	ifx_wdt_unlock();
 	Cy_WDT_Enable();
 	ifx_wdt_lock();
 
@@ -299,7 +309,7 @@ static int ifx_cat1_wdt_setup(const struct device *dev, uint8_t options)
 		Cy_WDT_UnmaskInterrupt();
 		irq_enable(DT_INST_IRQN(0));
 	}
-#endif /* IFX_CAT1_WDT_IS_IRQ_EN */
+#endif
 
 	return 0;
 }
@@ -311,7 +321,7 @@ static int ifx_cat1_wdt_disable(const struct device *dev)
 #ifdef IFX_CAT1_WDT_IS_IRQ_EN
 	Cy_WDT_MaskInterrupt();
 	irq_disable(DT_INST_IRQN(0));
-#endif /* IFX_CAT1_WDT_IS_IRQ_EN */
+#endif
 
 	ifx_wdt_unlock();
 	Cy_WDT_Disable();
@@ -331,8 +341,8 @@ static int ifx_cat1_wdt_install_timeout(const struct device *dev, const struct w
 		return -ENOMEM;
 	}
 
-	if (cfg->flags) {
-		LOG_WRN("Watchdog behavior is not configurable.");
+	if (cfg->flags && cfg->flags != WDT_FLAG_RESET_SOC) {
+		LOG_WRN("Watchdog config flags not supported");
 	}
 
 	if (cfg->callback) {
@@ -340,10 +350,10 @@ static int ifx_cat1_wdt_install_timeout(const struct device *dev, const struct w
 		LOG_WRN("Interrupt is not configured, can't set a callback.");
 #else
 		dev_data->callback = cfg->callback;
-#endif /* IFX_CAT1_WDT_IS_IRQ_EN */
+#endif
 	}
 
-	/* window watchdog not supported */
+	/* Window watchdog not supported */
 	if (cfg->window.min != 0U || cfg->window.max == 0U) {
 		return -EINVAL;
 	}
@@ -364,8 +374,8 @@ static int ifx_cat1_wdt_feed(const struct device *dev, int channel_id)
 
 	ifx_wdt_unlock();
 	Cy_WDT_ClearWatchdog(); /* Clear to prevent reset from WDT */
-	Cy_WDT_SetMatch(
-		ifx_wdt_timeout_to_match(data->wdt_rounded_timeout_ms, data->wdt_ignore_bits));
+	Cy_WDT_SetMatch(ifx_wdt_timeout_to_match(data->wdt_rounded_timeout_ms,
+						 data->wdt_ignore_bits));
 	ifx_wdt_lock();
 
 	return 0;
@@ -373,11 +383,16 @@ static int ifx_cat1_wdt_feed(const struct device *dev, int channel_id)
 
 static int ifx_cat1_wdt_init(const struct device *dev)
 {
+	struct ifx_cat1_wdt_data *data = dev->data;
 #ifdef IFX_CAT1_WDT_IS_IRQ_EN
 	/* Connect WDT interrupt to ISR */
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), ifx_cat1_wdt_isr_handler,
 		    DEVICE_DT_INST_GET(0), 0);
-#endif /* IFX_CAT1_WDT_IS_IRQ_EN */
+#endif
+
+	data->wdt_initialized = false;
+	data->wdt_initial_timeout_ms = 0;
+	data->wdt_rounded_timeout_ms = 0;
 
 	return 0;
 }

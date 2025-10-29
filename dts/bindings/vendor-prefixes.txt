@@ -152,6 +152,7 @@ cnxt	Conexant Systems, Inc.
 colorfly	Colorful GRP, Shenzhen Xueyushi Technology Ltd.
 compulab	CompuLab Ltd.
 contextualelectronics	Contextual Electronics
+coredevices	Core Devices LLC
 coreriver	CORERIVER Semiconductor Co.,Ltd.
 corpro	Chengdu Corpro Technology Co., Ltd.
 cortina	Cortina Systems, Inc.
@@ -696,6 +697,7 @@ thine	THine Electronics, Inc.
 thingyjp	thingy.jp
 ti	Texas Instruments
 tianma	Tianma Micro-electronics Co., Ltd.
+titanmec	Shenzhen Titan Micro Electronics Co., Ltd.
 tlm	Trusted Logic Mobility
 tmt	Tecon Microprocessor Technologies, LLC.
 topeet	Topeet

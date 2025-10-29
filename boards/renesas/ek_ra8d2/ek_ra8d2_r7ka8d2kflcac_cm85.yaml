@@ -1,0 +1,12 @@
+identifier: ek_ra8d2/r7ka8d2kflcac/cm85
+name: Renesas EK-RA8D2
+type: mcu
+arch: arm
+ram: 1664
+flash: 1024
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+vendor: renesas

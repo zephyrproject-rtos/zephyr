@@ -10,6 +10,7 @@
 #include <hal/nrf_tdm.h>
 #include <haly/nrfy_gpio.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/dt-bindings/clock/nrf-auxpll.h>
 #include <zephyr/drivers/i2s.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
@@ -47,11 +48,13 @@ LOG_MODULE_REGISTER(tdm_nrf, CONFIG_I2S_LOG_LEVEL);
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(audiopll))
 #define NODE_ACLK      DT_NODELABEL(audiopll)
 #define ACLK_FREQUENCY DT_PROP_OR(NODE_ACLK, frequency, 0)
-
-static const struct device *audiopll = DEVICE_DT_GET(NODE_ACLK);
-static const struct nrf_clock_spec aclk_spec = {
-	.frequency = ACLK_FREQUENCY,
-};
+#elif DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(audio_auxpll))
+#define NODE_AUDIO_AUXPLL     DT_NODELABEL(audio_auxpll)
+#define ACLK_NORDIC_FREQUENCY DT_PROP(NODE_AUDIO_AUXPLL, nordic_frequency)
+BUILD_ASSERT((ACLK_NORDIC_FREQUENCY == NRF_AUXPLL_FREQ_DIV_AUDIO_48K) ||
+	     (ACLK_NORDIC_FREQUENCY == NRF_AUXPLL_FREQ_DIV_AUDIO_44K1),
+	     "Unsupported Audio AUXPLL frequency selection for TDM");
+#define ACLK_FREQUENCY CLOCK_CONTROL_NRF_AUXPLL_GET_FREQ(NODE_AUDIO_AUXPLL)
 #elif DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aclk))
 #define NODE_ACLK      DT_NODELABEL(aclk)
 #define ACLK_FREQUENCY DT_PROP_OR(NODE_ACLK, clock_frequency, 0)
@@ -107,7 +110,10 @@ struct tdm_drv_cfg {
 };
 
 struct tdm_drv_data {
-#if CONFIG_CLOCK_CONTROL_NRF
+#if CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL || DT_NODE_HAS_STATUS_OKAY(NODE_AUDIO_AUXPLL)
+	const struct device *audiopll;
+	struct nrf_clock_spec aclk_spec;
+#elif CONFIG_CLOCK_CONTROL_NRF
 	struct onoff_manager *clk_mgr;
 #endif
 	struct onoff_client clk_cli;
@@ -132,8 +138,10 @@ static int audio_clock_request(struct tdm_drv_data *drv_data)
 {
 #if DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRF
 	return onoff_request(drv_data->clk_mgr, &drv_data->clk_cli);
-#elif DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL
-	return nrf_clock_control_request(audiopll, &aclk_spec, &drv_data->clk_cli);
+#elif (DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL) || \
+	  DT_NODE_HAS_STATUS_OKAY(NODE_AUDIO_AUXPLL)
+	return nrf_clock_control_request(drv_data->audiopll, &drv_data->aclk_spec,
+					 &drv_data->clk_cli);
 #else
 	(void)drv_data;
 
@@ -145,10 +153,9 @@ static int audio_clock_release(struct tdm_drv_data *drv_data)
 {
 #if DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRF
 	return onoff_release(drv_data->clk_mgr);
-#elif DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL
-	(void)drv_data;
-
-	return nrf_clock_control_release(audiopll, &aclk_spec);
+#elif (DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL) || \
+	  DT_NODE_HAS_STATUS_OKAY(NODE_AUDIO_AUXPLL)
+	return nrf_clock_control_release(drv_data->audiopll, &drv_data->aclk_spec);
 #else
 	(void)drv_data;
 
@@ -1120,6 +1127,16 @@ static void clock_manager_init(const struct device *dev)
 	subsys = CLOCK_CONTROL_NRF_SUBSYS_HFAUDIO;
 	drv_data->clk_mgr = z_nrf_clock_control_get_onoff(subsys);
 	__ASSERT_NO_MSG(drv_data->clk_mgr != NULL);
+#elif DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL
+	struct tdm_drv_data *drv_data = dev->data;
+
+	drv_data->audiopll = DEVICE_DT_GET(NODE_ACLK);
+	drv_data->aclk_spec.frequency = ACLK_FREQUENCY;
+#elif DT_NODE_HAS_STATUS_OKAY(NODE_AUDIO_AUXPLL)
+	struct tdm_drv_data *drv_data = dev->data;
+
+	drv_data->audiopll = DEVICE_DT_GET(NODE_AUDIO_AUXPLL);
+	drv_data->aclk_spec.frequency = ACLK_FREQUENCY;
 #else
 	(void)dev;
 #endif
@@ -1194,9 +1211,10 @@ static DEVICE_API(i2s, tdm_nrf_drv_api) = {
 		clock_manager_init(dev);                                                           \
 		return 0;                                                                          \
 	}                                                                                          \
-	BUILD_ASSERT((TDM_SCK_CLK_SRC(idx) != ACLK && TDM_MCK_CLK_SRC(idx) != ACLK) ||             \
-			     DT_NODE_HAS_STATUS_OKAY(NODE_ACLK),                                   \
-		     "Clock source ACLK requires the audiopll node.");                             \
+	BUILD_ASSERT((TDM_SCK_CLK_SRC(idx) != ACLK && TDM_MCK_CLK_SRC(idx) != ACLK) || \
+			     (DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) || \
+			      DT_NODE_HAS_STATUS_OKAY(NODE_AUDIO_AUXPLL)), \
+		     "Clock source ACLK requires the audiopll/audio_auxpll node."); \
 	NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(TDM(idx));                                   \
 	DEVICE_DT_DEFINE(TDM(idx), tdm_nrf_init##idx, NULL, &tdm_nrf_data##idx, &tdm_nrf_cfg##idx, \
 			 POST_KERNEL, CONFIG_I2S_INIT_PRIORITY, &tdm_nrf_drv_api);

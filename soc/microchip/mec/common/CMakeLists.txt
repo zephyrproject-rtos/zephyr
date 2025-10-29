@@ -9,11 +9,11 @@ zephyr_library_sources_ifdef(CONFIG_HAS_MEC5_HAL
   soc_cmn_init.c
 )
 
-if (DEFINED CONFIG_MCHP_HEADER_VERBOSE_OUTPUT)
+if(DEFINED CONFIG_MCHP_HEADER_VERBOSE_OUTPUT)
     set(MCHP_HEADER_VERBOSE_OPTION "-v")
 endif()
 
-if (DEFINED CONFIG_MCHP_MEC_UNSIGNED_HEADER)
+if(DEFINED CONFIG_MCHP_MEC_UNSIGNED_HEADER)
   set(MCHP_MEC_BIN_NAME ${CONFIG_KERNEL_BIN_NAME}.mchp.bin)
   set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
     COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/soc/microchip/mec/common/spigen/mec_spi_gen.py

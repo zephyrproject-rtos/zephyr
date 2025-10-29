@@ -117,6 +117,7 @@
 			compatible = "st,stm32-adc";
 			reg = <0x40012100 0x050>;
 			clocks = <&rcc STM32_CLOCK(APB2, 9)>;
+			clock-names = "adcx";
 			interrupts = <18 0>;
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
@@ -135,6 +136,7 @@
 			compatible = "st,stm32-adc";
 			reg = <0x40012200 0x050>;
 			clocks = <&rcc STM32_CLOCK(APB2, 10)>;
+			clock-names = "adcx";
 			interrupts = <18 0>;
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
@@ -178,7 +180,7 @@
 			reg = <0x40015804 0x20>;
 			clocks = <&rcc STM32_CLOCK(APB2, 22)>;
 			dmas = <&dma2 1 0 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-					   STM32_DMA_16BITS) 0>;
+				STM32_DMA_16BITS) 0>;
 			status = "disabled";
 		};
 
@@ -189,7 +191,7 @@
 			reg = <0x40015824 0x20>;
 			clocks = <&rcc STM32_CLOCK(APB2, 22)>;
 			dmas = <&dma2 5 0 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-					   STM32_DMA_16BITS) 0>;
+				STM32_DMA_16BITS) 0>;
 			status = "disabled";
 		};
 	};

@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT st_stm32_digi_temp
 
+#include <stm32_bitops.h>
 #include <zephyr/device.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
@@ -54,7 +55,7 @@ static void stm32_digi_temp_isr(const struct device *dev)
 	DTS_TypeDef *dts = cfg->base;
 
 	/* Clear interrupt */
-	SET_BIT(dts->ICIFR, DTS_ICIFR_TS1_CITEF);
+	stm32_reg_set_bits(&dts->ICIFR, DTS_ICIFR_TS1_CITEF);
 
 	/* Give semaphore */
 	k_sem_give(&data->sem_isr);
@@ -73,19 +74,19 @@ static int stm32_digi_temp_sample_fetch(const struct device *dev, enum sensor_ch
 	k_mutex_lock(&data->mutex, K_FOREVER);
 
 	/* Wait for the sensor to be ready (~40µS delay after enabling it) */
-	while (READ_BIT(dts->SR, DTS_SR_TS1_RDY) == 0) {
+	while (stm32_reg_read_bits(&dts->SR, DTS_SR_TS1_RDY) == 0) {
 		k_yield();
 	}
 
 	/* Trigger a measurement */
-	SET_BIT(dts->CFGR1, DTS_CFGR1_TS1_START);
-	CLEAR_BIT(dts->CFGR1, DTS_CFGR1_TS1_START);
+	stm32_reg_set_bits(&dts->CFGR1, DTS_CFGR1_TS1_START);
+	stm32_reg_clear_bits(&dts->CFGR1, DTS_CFGR1_TS1_START);
 
 	/* Wait for interrupt */
 	k_sem_take(&data->sem_isr, K_FOREVER);
 
 	/* Read value */
-	data->raw = READ_REG(dts->DR);
+	data->raw = stm32_reg_read(&dts->DR);
 
 	k_mutex_unlock(&data->mutex);
 
@@ -119,20 +120,20 @@ static void stm32_digi_temp_configure(const struct device *dev)
 	 * Allowed values are between 0 and 127.
 	 */
 	clk_div = MIN(DIV_ROUND_UP(data->pclk_freq, ONE_MHZ), 127);
-	MODIFY_REG(dts->CFGR1, DTS_CFGR1_HSREF_CLK_DIV_Msk,
-		   clk_div << DTS_CFGR1_HSREF_CLK_DIV_Pos);
+	stm32_reg_modify_bits(&dts->CFGR1, DTS_CFGR1_HSREF_CLK_DIV_Msk,
+			      clk_div << DTS_CFGR1_HSREF_CLK_DIV_Pos);
 
 	/* Select PCLK as reference clock */
-	MODIFY_REG(dts->CFGR1, DTS_CFGR1_REFCLK_SEL_Msk,
-		   0 << DTS_CFGR1_REFCLK_SEL_Pos);
+	stm32_reg_modify_bits(&dts->CFGR1, DTS_CFGR1_REFCLK_SEL_Msk,
+			      0 << DTS_CFGR1_REFCLK_SEL_Pos);
 
 	/* Select trigger */
-	MODIFY_REG(dts->CFGR1, DTS_CFGR1_TS1_INTRIG_SEL_Msk,
-		   0 << DTS_CFGR1_TS1_INTRIG_SEL_Pos);
+	stm32_reg_modify_bits(&dts->CFGR1, DTS_CFGR1_TS1_INTRIG_SEL_Msk,
+			      0 << DTS_CFGR1_TS1_INTRIG_SEL_Pos);
 
 	/* Set sampling time */
-	MODIFY_REG(dts->CFGR1, DTS_CFGR1_TS1_SMP_TIME_Msk,
-		   SAMPLING_TIME << DTS_CFGR1_TS1_SMP_TIME_Pos);
+	stm32_reg_modify_bits(&dts->CFGR1, DTS_CFGR1_TS1_SMP_TIME_Msk,
+			      SAMPLING_TIME << DTS_CFGR1_TS1_SMP_TIME_Pos);
 }
 
 static void stm32_digi_temp_enable(const struct device *dev)
@@ -141,10 +142,10 @@ static void stm32_digi_temp_enable(const struct device *dev)
 	DTS_TypeDef *dts = cfg->base;
 
 	/* Enable the sensor */
-	SET_BIT(dts->CFGR1, DTS_CFGR1_TS1_EN);
+	stm32_reg_set_bits(&dts->CFGR1, DTS_CFGR1_TS1_EN);
 
 	/* Enable interrupt */
-	SET_BIT(dts->ITENR, DTS_ITENR_TS1_ITEEN);
+	stm32_reg_set_bits(&dts->ITENR, DTS_ITENR_TS1_ITEEN);
 }
 
 #ifdef CONFIG_PM_DEVICE
@@ -154,10 +155,10 @@ static void stm32_digi_temp_disable(const struct device *dev)
 	DTS_TypeDef *dts = cfg->base;
 
 	/* Disable interrupt */
-	CLEAR_BIT(dts->ITENR, DTS_ITENR_TS1_ITEEN);
+	stm32_reg_clear_bits(&dts->ITENR, DTS_ITENR_TS1_ITEEN);
 
 	/* Disable the sensor */
-	CLEAR_BIT(dts->CFGR1, DTS_CFGR1_TS1_EN);
+	stm32_reg_clear_bits(&dts->CFGR1, DTS_CFGR1_TS1_EN);
 }
 #endif
 

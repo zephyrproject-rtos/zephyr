@@ -1,0 +1,32 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/ipc_service/static_vrings.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	ipc {
+		ipc0: ipc0 {
+			compatible = "zephyr,ipc-openamp-static-vrings";
+			memory-region = <&dram_m33s_m71_ipc0>;
+			mboxes = <&mu_m33s_m71_for_m33s 0>, <&mu_m33s_m71_for_m33s 1>;
+			mbox-names = "rx", "tx";
+			role = "remote";
+			status = "okay";
+		};
+
+		ipc1: ipc1 {
+			compatible = "zephyr,ipc-openamp-static-vrings";
+			memory-region = <&dram_m33s_m71_ipc1>;
+			mboxes = <&mu_m33s_m71_for_m33s 2>, <&mu_m33s_m71_for_m33s 3>;
+			mbox-names = "rx", "tx";
+			role = "remote";
+			zephyr,priority = <1 PRIO_COOP>;
+			zephyr,buffer-size = <128>;
+			status = "okay";
+		};
+	};
+};

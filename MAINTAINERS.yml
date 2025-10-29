@@ -762,6 +762,8 @@ Build system:
     - scripts/schemas/soc-schema.yaml
     - scripts/list_shields.py
     - scripts/snippets.py
+  files-exclude:
+    - doc/build/dts/
   labels:
     - "area: Build System"
   tests:
@@ -1274,6 +1276,7 @@ Documentation Infrastructure:
     - martinjaeger
     - str4t0m
   files:
+    - boards/shields/canis_canpico/
     - boards/shields/mcp2515/
     - boards/shields/tcan4550evm/
     - doc/connectivity/canbus/
@@ -4305,6 +4308,11 @@ Realtek EC Platforms:
   status: maintained
   maintainers:
     - JasonLin-RealTek
+  collaborators:
+    - elmo9999
+    - benson0715
+    - JhanBoChao-Realtek
+    - Titan-Realtek
   files:
     - boards/realtek/
     - drivers/*/*rts5912*
@@ -5944,7 +5952,7 @@ West:
     - "area: Serialization"
 
 "West project: net-tools":
-  status: odd fixes
+  status: maintained
   maintainers:
     - jukkar
   collaborators:

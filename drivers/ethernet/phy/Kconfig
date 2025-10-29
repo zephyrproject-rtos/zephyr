@@ -56,6 +56,15 @@ config PHY_MICROCHIP_KSZ8081
 	help
 	  Enable Microchip KSZ8081 Ethernet PHY Driver
 
+config PHY_MICROCHIP_KSZ9131
+	bool "Microchip KSZ9131 PHY Driver"
+	default y
+	depends on DT_HAS_MICROCHIP_KSZ9131_ENABLED
+	select MDIO
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_MICROCHIP_KSZ9131),int-gpios)
+	help
+	  Enable Microchip KSZ9131 Ethernet PHY Driver
+
 config PHY_MICROCHIP_VSC8541
 	bool "Microchip VSC8541 PHY Driver"
 	default y

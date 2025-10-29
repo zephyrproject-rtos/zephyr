@@ -31,7 +31,7 @@ zephyr_interface_library_named(mbedTLS)
         MBEDTLS_CONFIG_FILE="${CONFIG_MBEDTLS_CFG_FILE}"
     )
 
-    if (CONFIG_BUILD_WITH_TFM)
+    if(CONFIG_BUILD_WITH_TFM)
       target_include_directories(mbedTLS INTERFACE
         $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/api_ns/interface/include
       )
@@ -44,7 +44,7 @@ zephyr_interface_library_named(mbedTLS)
         include
     )
 
-    if (CONFIG_MBEDTLS_PSA_P256M_DRIVER_RAW)
+    if(CONFIG_MBEDTLS_PSA_P256M_DRIVER_RAW)
       target_include_directories(mbedTLS INTERFACE
         ${ZEPHYR_CURRENT_MODULE_DIR}/3rdparty/p256-m/p256-m
       )
@@ -131,13 +131,13 @@ zephyr_interface_library_named(mbedTLS)
       # to speed
       set_property(SOURCE ${ZEPHYR_CURRENT_MODULE_DIR}/library/bignum_core.c APPEND PROPERTY COMPILE_OPTIONS
           "${COMPILER_OPTIMIZE_FOR_SPEED_FLAG}")
-    endif ()
+    endif()
 
     zephyr_library_link_libraries(mbedTLS)
 
     zephyr_library_named(mbedTLSCrypto)
 
-    if (CONFIG_MBEDTLS_PSA_CRYPTO_C)
+    if(CONFIG_MBEDTLS_PSA_CRYPTO_C)
       list(APPEND crypto_source
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_aead.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_cipher.c
@@ -231,7 +231,7 @@ zephyr_interface_library_named(mbedTLS)
       mbedTLS
     )
 
-elseif (CONFIG_MBEDTLS_LIBRARY)
+elseif(CONFIG_MBEDTLS_LIBRARY)
 
   # NB: CONFIG_MBEDTLS_LIBRARY is not regression tested and is
   # therefore susceptible to bit rot
@@ -253,8 +253,8 @@ else()
   # included the required directories for mbedtls in their projects.
 endif()
 
-if (CONFIG_MBEDTLS_TLS_VERSION_1_2 OR CONFIG_MBEDTLS_TLS_VERSION_1_3)
-  if (NOT CONFIG_MBEDTLS_HAVE_TIME_DATE)
+if(CONFIG_MBEDTLS_TLS_VERSION_1_2 OR CONFIG_MBEDTLS_TLS_VERSION_1_3)
+  if(NOT CONFIG_MBEDTLS_HAVE_TIME_DATE)
     message(WARNING "
     The option CONFIG_MBEDTLS_HAVE_TIME_DATE is required for proper
     certificate validation. If it is not enabled, certificates will

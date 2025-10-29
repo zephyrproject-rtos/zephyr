@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&gpdma0 {
+&gpdma {
 	status = "okay";
 };
 
-tst_dma0: &gpdma0 { };
+tst_dma0: &gpdma { };

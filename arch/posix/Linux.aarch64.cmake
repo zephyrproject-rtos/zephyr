@@ -14,8 +14,8 @@ execute_process(
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
-if (CONFIG_64BIT)
-  if (${WORDSIZE} STREQUAL "32")
+if(CONFIG_64BIT)
+  if(${WORDSIZE} STREQUAL "32")
     message(FATAL_ERROR
       "CONFIG_64BIT=y but this Aarch64 machine has a 32-bit userspace.\n"
       "If you were targeting native_sim/native/64, target native_sim instead.\n"
@@ -23,12 +23,12 @@ if (CONFIG_64BIT)
     )
   endif()
   zephyr_compile_options(-fPIC)
-else ()
-  if (${WORDSIZE} STREQUAL "64")
+else()
+  if(${WORDSIZE} STREQUAL "64")
     message(FATAL_ERROR
       "CONFIG_64BIT=n but this Aarch64 machine has a 64-bit userspace.\n"
       "If you were targeting native_sim, target native_sim/native/64 instead.\n"
       "Otherwise, be sure to define CONFIG_64BIT appropriately.\n"
     )
   endif()
-endif ()
+endif()

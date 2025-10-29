@@ -282,11 +282,8 @@ static void ot_bbr_multicast_listener_handler(void *context,
 	memcpy(recv_addr.s6_addr, address->mFields.m32, sizeof(otIp6Address));
 
 	if (event == OT_BACKBONE_ROUTER_MULTICAST_LISTENER_ADDED) {
-		entry = net_route_mcast_lookup(&recv_addr);
-		if (entry == NULL) {
-			entry = net_route_mcast_add(ot_context->iface, &recv_addr,
-						    NUM_BITS(struct in6_addr));
-		}
+		entry = net_route_mcast_add(ot_context->iface, &recv_addr,
+					    NUM_BITS(struct in6_addr));
 		if (entry != NULL) {
 			/*
 			 * No need to perform mcast_lookup explicitly as it's already done in
@@ -466,14 +463,15 @@ static bool openthread_border_router_can_forward_multicast(struct net_pkt *pkt)
 	}
 
 	if (net_ipv6_is_addr_mcast_raw(hdr->dst)) {
+		/* A secondary BBR should not forward onto an external iface
+		 * or from external network.
+		 */
+		if (otBackboneRouterGetState(instance) == OT_BACKBONE_ROUTER_STATE_SECONDARY ||
+		    otBackboneRouterGetState(instance) == OT_BACKBONE_ROUTER_STATE_DISABLED) {
+			return false;
+		}
 		/* AIL to Thread network message */
 		if (net_pkt_orig_iface(pkt) == ail_iface_ptr) {
-			if (otBackboneRouterGetState(instance) ==
-			    OT_BACKBONE_ROUTER_STATE_SECONDARY ||
-			    otBackboneRouterGetState(instance) ==
-			    OT_BACKBONE_ROUTER_STATE_DISABLED) {
-				return false;
-			}
 			if (openthread_border_router_has_multicast_listener(hdr->dst)) {
 				return true;
 			}
@@ -507,6 +505,10 @@ static bool openthread_border_router_check_unicast_packet_forwarding_policy(stru
 
 	hdr = (struct net_ipv6_hdr *)net_pkt_get_data(pkt, &ipv6_access);
 	if (hdr == NULL) {
+		return false;
+	}
+
+	if (net_ipv6_is_addr_mcast_raw(hdr->dst)) {
 		return false;
 	}
 
@@ -594,8 +596,8 @@ static void openthread_border_router_add_route_to_multicast_groups(void)
 
 	ARRAY_FOR_EACH(mcast_group_idx, i) {
 
-		net_ipv6_addr_create(&addr, (0xff << 8) | mcast_group_idx[i], 0, 0, 0, 0, 0, 0, 1);
-		entry = net_route_mcast_add(ail_iface_ptr, &addr, NUM_BITS(struct in6_addr));
+		net_ipv6_addr_create(&addr, (0xff << 8) | mcast_group_idx[i], 0, 0, 0, 0, 0, 0, 0);
+		entry = net_route_mcast_add(ail_iface_ptr, &addr, 16);
 		if (entry != NULL) {
 			mcast_addr = net_if_ipv6_maddr_add(ail_iface_ptr,
 							   (const struct in6_addr *)&addr);

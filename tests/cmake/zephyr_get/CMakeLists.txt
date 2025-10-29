@@ -596,7 +596,7 @@ run_suite(
   test_snippets_scope
 )
 
-if (NOT CMAKE_SCRIPT_MODE_FILE AND NOT SYSBUILD)
+if(NOT CMAKE_SCRIPT_MODE_FILE AND NOT SYSBUILD)
   # Re-run this testsuite in plain script mode
   execute_process(COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_LIST_FILE})
 endif()

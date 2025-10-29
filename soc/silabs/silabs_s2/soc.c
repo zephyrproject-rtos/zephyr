@@ -55,6 +55,9 @@ void soc_early_init_hook(void)
 	if (IS_ENABLED(CONFIG_PM)) {
 		sl_power_manager_init();
 	}
+	if (IS_ENABLED(CONFIG_SOC_GECKO_USE_RAIL)) {
+		rail_isr_installer();
+	}
 }
 
 #if defined(CONFIG_ARM_SECURE_FIRMWARE) && !defined(CONFIG_ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS)
@@ -92,10 +95,15 @@ void soc_prep_hook(void)
 	CMU_S->CLKEN1_SET = CMU_CLKEN1_SMU;
 #endif
 	SMU->PPUSATD0_CLR = _SMU_PPUSATD0_MASK;
-#if defined(SEMAILBOX_PRESENT)
+#if defined(SEMAILBOX_PRESENT) && defined(SMU_PPUSATD1_SEMAILBOX)
 	SMU->PPUSATD1_CLR = (_SMU_PPUSATD1_MASK & (~SMU_PPUSATD1_SMU & ~SMU_PPUSATD1_SEMAILBOX));
 #else
 	SMU->PPUSATD1_CLR = (_SMU_PPUSATD1_MASK & ~SMU_PPUSATD1_SMU);
+#endif
+#if defined(SEMAILBOX_PRESENT) && defined(SMU_PPUSATD2_SEMAILBOX)
+	SMU->PPUSATD2_CLR = (_SMU_PPUSATD2_MASK & ~SMU_PPUSATD2_SEMAILBOX);
+#elif defined(_SMU_PPUSATD2_MASK)
+	SMU->PPUSATD2_CLR = _SMU_PPUSATD2_MASK;
 #endif
 
 	SAU->CTRL = SAU_CTRL_ALLNS_Msk;
@@ -109,9 +117,5 @@ void soc_prep_hook(void)
 
 	IRQ_DIRECT_CONNECT(SMU_SECURE_IRQn, 0, smu_fault, 0);
 	irq_enable(SMU_SECURE_IRQn);
-
-	if (IS_ENABLED(CONFIG_SOC_GECKO_USE_RAIL)) {
-		rail_isr_installer();
-	}
 #endif
 }

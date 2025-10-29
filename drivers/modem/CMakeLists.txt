@@ -27,7 +27,7 @@ if(CONFIG_MODEM_WNCM14A2A)
 	zephyr_library_sources(wncm14a2a.c)
 endif()
 
-if (CONFIG_MODEM_HL7800)
+if(CONFIG_MODEM_HL7800)
   zephyr_library_sources(hl7800.c)
 endif()
 

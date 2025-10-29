@@ -221,14 +221,18 @@ class ConvertCodeSampleNode(SphinxTransform):
             json_ld = nodes.raw(
                 "",
                 f"""<script type="application/ld+json">
-                {json.dumps({
-                    "@context": "http://schema.org",
-                    "@type": "SoftwareSourceCode",
-                    "name": node['name'],
-                    "description": node.children[0].astext(),
-                    "codeSampleType": "full",
-                    "codeRepository": gh_link_get_url(self.app, self.env.docname)
-                })}
+                {
+                    json.dumps(
+                        {
+                            "@context": "http://schema.org",
+                            "@type": "SoftwareSourceCode",
+                            "name": node['name'],
+                            "description": node.children[0].astext(),
+                            "codeSampleType": "full",
+                            "codeRepository": gh_link_get_url(self.app, self.env.docname),
+                        }
+                    )
+                }
                 </script>""",
                 format="html",
             )

@@ -414,6 +414,34 @@ typedef int (*i2c_target_buf_read_requested_cb_t)(
  */
 typedef int (*i2c_target_stop_cb_t)(struct i2c_target_config *config);
 
+/**
+ * @brief I2C error reasons.
+ *
+ * Values that correspond to events or errors responsible for stopping
+ * an I2C transfer.
+ */
+enum i2c_error_reason {
+	I2C_ERROR_TIMEOUT = 0,	/* Timeout error         */
+	I2C_ERROR_ARBITRATION,	/* Bus arbitration size  */
+	I2C_ERROR_SIZE,		/* Bad frame size        */
+	I2C_ERROR_DMA,		/* DMA transfer error    */
+	I2C_ERROR_GENERIC,	/* Any other bus error   */
+};
+
+/** @brief Function called when an error is detected on the I2C bus
+ * while acting as a target.
+ *
+ * This function is invoked by the controller when a bus error,
+ * arbitration lost, or other critical error is detected during
+ * a transaction addressed to this device.
+ *
+ * @param config the configuration structure associated with the
+ * device to which the operation is addressed.
+ * @param error_code an integer code identifying the error type.
+ */
+typedef void (*i2c_target_error_cb_t)(struct i2c_target_config *config,
+				      enum i2c_error_reason error_code);
+
 /** @brief Structure providing callbacks to be implemented for devices
  * that supports the I2C target API.
  *
@@ -430,6 +458,7 @@ struct i2c_target_callbacks {
 	i2c_target_buf_read_requested_cb_t buf_read_requested;
 #endif
 	i2c_target_stop_cb_t stop;
+	i2c_target_error_cb_t error;
 };
 
 /** @brief Structure describing a device that supports the I2C

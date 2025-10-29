@@ -515,7 +515,7 @@ void __weak z_early_rand_get(uint8_t *buf, size_t length)
 		state = state + k_cycle_get_32();
 		state = state * 2862933555777941757ULL + 3037000493ULL;
 		val = (uint32_t)(state >> 32);
-		rc = MIN(length, sizeof(val));
+		rc = min(length, sizeof(val));
 		arch_early_memcpy((void *)buf, &val, rc);
 
 		length -= rc;

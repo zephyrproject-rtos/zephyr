@@ -138,6 +138,8 @@ source "drivers/adc/Kconfig.ifx_cat1"
 
 source "drivers/adc/Kconfig.ifx_hppass_sar"
 
+source "drivers/adc/Kconfig.ifx_autanalog_sar"
+
 source "drivers/adc/Kconfig.smartbond"
 
 source "drivers/adc/Kconfig.tla202x"
@@ -173,6 +175,8 @@ source "drivers/adc/Kconfig.ad7124"
 source "drivers/adc/Kconfig.ad405x"
 
 source "drivers/adc/Kconfig.ad4130"
+
+source "drivers/adc/Kconfig.ad4170"
 
 source "drivers/adc/Kconfig.rts5912"
 

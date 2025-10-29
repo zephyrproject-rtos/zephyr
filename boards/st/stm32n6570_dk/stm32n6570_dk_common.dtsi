@@ -241,6 +241,7 @@
 &adc1 {
 	clocks = <&rcc STM32_CLOCK(AHB1, 5)>,
 		 <&rcc STM32_SRC_CKPER ADC12_SEL(1)>;
+	clock-names = "adcx", "adc_ker";
 	pinctrl-0 = <&adc1_inp10_pa9 &adc1_inp11_pa10>; /* Arduino A1 & A2 */
 	pinctrl-names = "default";
 	vref-mv = <1800>;
@@ -534,10 +535,10 @@ csi_interface: &dcmipp {
 	};
 };
 
-&venc {
+zephyr_h264enc: &venc {
 	status = "okay";
 };
 
-&jpeg {
+zephyr_jpegenc: &jpeg {
 	status = "okay";
 };

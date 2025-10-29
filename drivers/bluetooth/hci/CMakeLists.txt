@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if (CONFIG_BUILD_ONLY_NO_BLOBS)
+if(CONFIG_BUILD_ONLY_NO_BLOBS)
   message(WARNING "
   ---------------------------------------------------------------------------
   Building only the Bluetooth driver without binary blobs and patches.

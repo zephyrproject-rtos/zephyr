@@ -68,6 +68,10 @@ Boards
   external NOR flash. This change currently prevents upgrade from older Zephyr release images to
   Zephyr 4.3 release images. More details in the TF-M migration and release notes.
 
+* nucleo_h753zi: the flash layout was updated and firmware upgrade may fail due to layout
+  incompatibility with the previous layout. The new layout includes storage partition enlarged to
+  2 sectors, scratch partition removed and all flash partitions reordered for better structure.
+
 * mimxrt11x0: renamed lpadc1 to lpadc2 and renamed lpadc0 to lpadc1.
 
 * NXP ``frdm_mcxa166`` is renamed to ``frdm_mcxa346``.
@@ -96,6 +100,11 @@ ADC
 * ``iadc_gecko.c`` driver is replaced by ``adc_silabs_iadc.c``.
   :dtcompatible:`silabs,gecko-iadc` is replaced by :dtcompatible:`silabs,iadc`.
 
+* :dtcompatible:`st,stm32-adc` and its derivatives now require the ``clock-names`` property to be
+  defined and to match the number of clocks in the ``clocks`` property. The expected clock names are
+  ``adcx`` for the register clock, ``adc-ker`` for the kernel source clock, and ``adc-pre`` to set
+  the ADC prescaler (for series where it is located in the RCC registers).
+
 Clock Control
 =============
 
@@ -103,6 +112,11 @@ Clock Control
   always taken from the ``clock-frequency`` property of ``&clk_hse`` DT node, but only if the node
   is enabled (otherwise, the symbol is not defined). This change should only affect STM32 MPU-based
   platforms and aligns them with existing practice from STM32 MCU platforms.
+
+* :dtcompatible:`st,stm32f1-rcc` and :dtcompatible:`st,stm32f3-rcc` do not exist anymore. Therefore
+  ``adc-prescaler``, ``adc12-prescaler`` and ``adc34-prescaler`` properties are no longer defined
+  either. They are replaced by adding the prescaler as an additional clock in the ADC ``clocks``
+  property.
 
 Comparator
 ==========
@@ -175,6 +189,12 @@ Stepper
 
 * :dtcompatible:`zephyr,gpio-stepper` has been replaced by :dtcompatible:`zephyr,h-bridge-stepper`.
 
+USB
+===
+
+* The USB Video Class was configuring the framerate and format of the source video device.
+  This is now to be done by the application after the host selected the format (:github:`93192`).
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
@@ -189,10 +209,13 @@ Bluetooth
 Bluetooth Controller
 ====================
 
-* The following Kconfig option have been renamed:
+* The following have been renamed:
 
     * :kconfig:option:`CONFIG_BT_CTRL_ADV_ADI_IN_SCAN_RSP` to
       :kconfig:option:`CONFIG_BT_CTLR_ADV_ADI_IN_SCAN_RSP`
+    * :c:struct:`bt_hci_vs_fata_error_cpu_data_cortex_m` to
+      :c:struct:`bt_hci_vs_fatal_error_cpu_data_cortex_m` and now contains the program counter
+      value.
 
    * :c:func:`bt_ctlr_set_public_addr` is deprecated. To set the public Bluetooth device address,
      sending a vendor specific HCI command with :c:struct:`bt_hci_cp_vs_write_bd_addr` can be used.
@@ -390,6 +413,21 @@ MCUmgr
   :kconfig:option:`CONFIG_MCUMGR_GRP_FS_HASH_SHA256` automatically enables Mbed TLS and its
   PSA Crypto implementation if TF-M is not enabled in the build.
 
+Mbed TLS
+========
+
+* In order to improve the 1:1 matching between Zephyr Kconfig and Mbed TLS build symbols, the
+  following Kconfigs were renamed:
+
+  * :kconfig:option:`CONFIG_MBEDTLS_MD` -> :kconfig:option:`CONFIG_MBEDTLS_MD_C`
+  * :kconfig:option:`CONFIG_MBEDTLS_LMS` -> :kconfig:option:`CONFIG_MBEDTLS_LMS_C`
+  * :kconfig:option:`CONFIG_MBEDTLS_TLS_VERSION_1_2` -> :kconfig:option:`CONFIG_MBEDTLS_SSL_PROTO_TLS1_2`
+  * :kconfig:option:`CONFIG_MBEDTLS_DTLS` -> :kconfig:option:`CONFIG_MBEDTLS_SSL_PROTO_DTLS`
+  * :kconfig:option:`CONFIG_MBEDTLS_TLS_VERSION_1_3` -> :kconfig:option:`CONFIG_MBEDTLS_SSL_PROTO_TLS1_3`
+  * :kconfig:option:`CONFIG_MBEDTLS_TLS_SESSION_TICKETS` -> :kconfig:option:`CONFIG_MBEDTLS_SSL_SESSION_TICKETS`
+  * :kconfig:option:`CONFIG_MBEDTLS_CTR_DRBG_ENABLED` -> :kconfig:option:`CONFIG_MBEDTLS_CTR_DRBG_C`
+  * :kconfig:option:`CONFIG_MBEDTLS_HMAC_DRBG_ENABLED` -> :kconfig:option:`CONFIG_MBEDTLS_HMAC_DRBG_C`
+
 RTIO
 ====
 
@@ -465,6 +503,27 @@ LED Strip
 =========
 
 * Renamed ``arduino,modulino-smartleds`` to :dtcompatible:`arduino,modulino-pixels`
+
+Trusted Firmware-M
+==================
+
+* The signing process for BL2 (MCUboot) was updated. The boards that run using
+  TF-M NS and require BL2 must have their flash layout with the flash controller
+  information. This will ensure that when signing the hex/bin files all the
+  details will be present in the S and NS images. The image now has the details
+  to allow the FWU state machine be correct and allow FOTA.
+  (:github:`94470`)
+
+    * The ``--align`` parameter was fixed to 1. Now, it's set to the flash DT ``write_block_size``
+      property, but still provides 1 as a fallback for specific vendors.
+    * The ``--max-sectors`` value is now calculated based on the number of images, taking into
+      consideration the largest image size.
+    * The ``--confirm`` option now confirms both S and NS HEX images, ensuring that any image
+      that runs is valid for production and development.
+    * S and NS BIN images are now available. These are the correct images to be used in FOTA. Note
+      that S and NS images are unconfirmed by default, and the application is responsible for
+      confirming them with ``psa_fwu_accept()``. Otherwise, the images will roll back on the next
+      reboot.
 
 Architectures
 *************

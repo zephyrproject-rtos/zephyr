@@ -21,6 +21,7 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/logging/log.h>
 
+#include <stm32_bitops.h>
 #include <stm32_ll_i3c.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_rcc.h>
@@ -1207,13 +1208,13 @@ static int i3c_stm32_transfer_begin(const struct device *dev)
 
 	/* Prepare all control words for all messages on the transfer */
 	for (size_t i = 0; i < curr_msg->num_msgs; i++) {
-		WRITE_REG(data->control_fifo[i],
-			  ((curr_msg->target_addr << I3C_CR_ADD_Pos) |
-			   i3c_stm32_curr_msg_control_get_len(dev) |
-			   i3c_stm32_curr_msg_control_get_dir(dev) | curr_msg->msg_type |
-			   i3c_stm32_curr_msg_control_get_end(dev)) &
-				  (I3C_CR_ADD | I3C_CR_DCNT | I3C_CR_RNW | I3C_CR_MTYPE |
-				   I3C_CR_MEND));
+		stm32_reg_write(&data->control_fifo[i],
+				((curr_msg->target_addr << I3C_CR_ADD_Pos) |
+				 i3c_stm32_curr_msg_control_get_len(dev) |
+				 i3c_stm32_curr_msg_control_get_dir(dev) | curr_msg->msg_type |
+				 i3c_stm32_curr_msg_control_get_end(dev)) &
+				(I3C_CR_ADD | I3C_CR_DCNT | I3C_CR_RNW | I3C_CR_MTYPE |
+				 I3C_CR_MEND));
 
 		i3c_stm32_curr_msg_control_next(dev);
 	}
@@ -1293,7 +1294,7 @@ static int i3c_stm32_i3c_transfer(const struct device *dev, struct i3c_device_de
 #ifdef CONFIG_I3C_STM32_DMA
 	/* Fill the num_xfer for each message from the status FIFO */
 	for (size_t i = 0; i < num_msgs; i++) {
-		msgs[i].num_xfer = READ_BIT(data->status_fifo[i], I3C_SR_XDCNT);
+		msgs[i].num_xfer = stm32_reg_read_bits(&data->status_fifo[i], I3C_SR_XDCNT);
 	}
 
 	k_heap_free(&stm32_i3c_fifo_heap, data->control_fifo);

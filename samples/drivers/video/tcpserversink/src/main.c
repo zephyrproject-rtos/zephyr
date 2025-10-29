@@ -131,7 +131,10 @@ int configure_encoder(void)
 	}
 
 	buffer->type = VIDEO_BUF_TYPE_OUTPUT;
-	video_enqueue(encoder_dev, buffer);
+	if (video_enqueue(encoder_dev, buffer)) {
+		LOG_ERR("Unable to enqueue encoder output buf");
+		return -1;
+	}
 
 	/* Set input format */
 	if (strcmp(CONFIG_VIDEO_PIXEL_FORMAT, "")) {
@@ -165,12 +168,16 @@ int encode_frame(struct video_buffer *in, struct video_buffer **out)
 	int ret;
 
 	in->type = VIDEO_BUF_TYPE_INPUT;
-	video_enqueue(encoder_dev, in);
+	ret = video_enqueue(encoder_dev, in);
+	if (ret) {
+		LOG_ERR("Unable to enqueue encoder input buf");
+		return ret;
+	}
 
 	(*out)->type = VIDEO_BUF_TYPE_OUTPUT;
 	ret = video_dequeue(encoder_dev, out, K_FOREVER);
 	if (ret) {
-		LOG_ERR("Unable to dequeue encoder buf");
+		LOG_ERR("Unable to dequeue encoder output buf");
 		return ret;
 	}
 
@@ -422,7 +429,11 @@ int main(void)
 
 		/* Enqueue Buffers */
 		for (i = 0; i < ARRAY_SIZE(buffers); i++) {
-			video_enqueue(video_dev, buffers[i]);
+			ret = video_enqueue(video_dev, buffers[i]);
+			if (ret) {
+				LOG_ERR("Unable to enqueue video buf");
+				return 0;
+			}
 		}
 
 		/* Start video capture */
@@ -452,7 +463,12 @@ int main(void)
 			ret = sendall(client, vbuf_out->buffer, vbuf_out->bytesused);
 
 			vbuf_out->type = VIDEO_BUF_TYPE_OUTPUT;
-			video_enqueue(encoder_dev, vbuf_out);
+			ret = video_enqueue(encoder_dev, vbuf_out);
+			if (ret) {
+				LOG_ERR("Unable to enqueue encoder output buf");
+				return 0;
+			}
+
 #else
 			LOG_INF("Sending frame %d", i++);
 			/* Send video buffer to TCP client */
@@ -465,7 +481,11 @@ int main(void)
 			}
 
 			vbuf->type = VIDEO_BUF_TYPE_INPUT;
-			(void)video_enqueue(video_dev, vbuf);
+			ret = video_enqueue(video_dev, vbuf);
+			if (ret) {
+				LOG_ERR("Unable to enqueue video buf");
+				return 0;
+			}
 		} while (!ret);
 
 		/* stop capture */

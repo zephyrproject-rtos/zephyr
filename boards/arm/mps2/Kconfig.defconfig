@@ -14,6 +14,9 @@ endif # SERIAL
 config ZTEST_STACK_SIZE
 	default 4096 if ZTEST
 
+config ISR_STACK_SIZE
+	default 4096
+
 if COVERAGE_GCOV
 
 config MAIN_STACK_SIZE
@@ -23,9 +26,6 @@ config IDLE_STACK_SIZE
 	default 4096
 
 config PRIVILEGED_STACK_SIZE
-	default 4096
-
-config ISR_STACK_SIZE
 	default 4096
 
 config TEST_EXTRA_STACK_SIZE
@@ -45,6 +45,10 @@ choice NULL_POINTER_EXCEPTION_DETECTION
 	default NULL_POINTER_EXCEPTION_DETECTION_NONE if QEMU_TARGET
 
 endchoice
+
+# Get flash configuration for NS image from dts flash partition
+config USE_DT_CODE_PARTITION
+	default y if TRUSTED_EXECUTION_NONSECURE
 
 # By default, if we build for a Non-Secure version of the board,
 # force building with TF-M as the Secure Execution Environment.

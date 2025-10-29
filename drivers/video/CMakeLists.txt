@@ -28,5 +28,6 @@ zephyr_library_sources_ifdef(CONFIG_VIDEO_ST_MIPID02	video_st_mipid02.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_STM32_DCMIPP	video_stm32_dcmipp.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_RENESAS_RA_CEU video_renesas_ra_ceu.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_STM32_JPEG	video_stm32_jpeg.c)
+zephyr_library_sources_ifdef(CONFIG_VIDEO_HIMAX_HM01B0  hm01b0.c)
 
 zephyr_linker_sources(DATA_SECTIONS video.ld)

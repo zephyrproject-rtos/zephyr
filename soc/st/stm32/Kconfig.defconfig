@@ -55,6 +55,11 @@ DT_FLASH_PARENT_IS_XSPI := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_C
 DT_FLASH_PARENT_IS_OSPI := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_COMPAT_OSPI))
 DT_FLASH_PARENT_IS_QSPI := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_COMPAT_QSPI))
 
+DT_CHOSEN_Z_FLASH_CTRL := zephyr,flash-controller
+DT_COMPAT_XSPI_NOR_CTRL := st,stm32-xspi-nor
+DT_CHOSEN_FLASH_CTRL_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH_CTRL))
+DT_FLASH_CTRL_IS_XSPI_NOR  := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_CTRL_NODE),$(DT_COMPAT_XSPI_NOR_CTRL))
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default "$(DT_STM32WB0_TIMER_FREQ)" if STM32WB0_RADIO_TIMER
 	default "$(DT_STM32_RCC_CLOCK_FREQ)" if "$(dt_nodelabel_enabled,rcc)"
@@ -104,7 +109,7 @@ config FLASH_BASE_ADDRESS
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
 config STM32_APP_IN_EXT_FLASH
-	default $(DT_FLASH_PARENT_IS_XSPI)
+	default $(DT_FLASH_PARENT_IS_XSPI) || $(DT_FLASH_CTRL_IS_XSPI_NOR)
 
 # The XSPI PSRAM driver creates a SMH region with attribute SMH_REG_ATTR_EXTERNAL (2)
 # If applicable set the LTDC / VIDEO_BUFFER SMH attribute to SMH_REG_ATTR_EXTERNAL (2)
