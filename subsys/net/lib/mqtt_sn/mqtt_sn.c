@@ -127,8 +127,8 @@ static int encode_and_send(struct mqtt_sn_client *client, struct mqtt_sn_param *
 	}
 
 	if (broadcast_radius) {
-		err = client->transport->sendto(client, client->tx.data, client->tx.len, NULL,
-						broadcast_radius);
+		err = client->transport->sendto(client->transport, client->tx.data, client->tx.len,
+						NULL, broadcast_radius);
 	} else {
 		struct mqtt_sn_gateway *gw;
 
@@ -138,8 +138,8 @@ static int encode_and_send(struct mqtt_sn_client *client, struct mqtt_sn_param *
 			err = -ENXIO;
 			goto end;
 		}
-		err = client->transport->sendto(client, client->tx.data, client->tx.len, gw->addr,
-						gw->addr_len);
+		err = client->transport->sendto(client->transport, client->tx.data, client->tx.len,
+						gw->addr, gw->addr_len);
 	}
 
 end:
@@ -1894,7 +1894,7 @@ int mqtt_sn_input(struct mqtt_sn_client *client)
 	}
 
 	if (client->transport->poll) {
-		next_frame_size = client->transport->poll(client);
+		next_frame_size = client->transport->poll(client->transport);
 		if (next_frame_size <= 0) {
 			return next_frame_size;
 		}
@@ -1902,8 +1902,9 @@ int mqtt_sn_input(struct mqtt_sn_client *client)
 
 	net_buf_simple_reset(&client->rx);
 
-	next_frame_size = client->transport->recvfrom(client, client->rx.data, client->rx.size,
-						      (void *)rx_addr.data, &rx_addr.size);
+	next_frame_size =
+		client->transport->recvfrom(client->transport, client->rx.data, client->rx.size,
+					    (void *)rx_addr.data, &rx_addr.size);
 	if (next_frame_size <= 0) {
 		return next_frame_size;
 	}
