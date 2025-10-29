@@ -1521,7 +1521,7 @@ static int udc_stm32_driver_init0(const struct device *dev)
 			ep_cfg_in[i].caps.bulk = 1;
 			ep_cfg_in[i].caps.interrupt = 1;
 			ep_cfg_in[i].caps.iso = 1;
-			ep_cfg_in[i].caps.mps = 1023;
+			ep_cfg_in[i].caps.mps = cfg->ep_mps;
 		}
 
 		ep_cfg_in[i].addr = USB_EP_DIR_IN | i;
