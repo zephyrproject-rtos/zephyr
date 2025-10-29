@@ -204,7 +204,7 @@ struct settings_handler_static {
 };
 
 /**
- * Define a static handler for settings items
+ * Define a static handler for settings items with priority
  *
  * @param _hname handler name
  * @param _tree subtree name
@@ -230,7 +230,21 @@ struct settings_handler_static {
 		.h_export = _export,					     \
 	}
 
-/* Handlers without commit priority are set to priority O */
+/**
+ * Define a static handler for settings items
+ *
+ * @param _hname handler name
+ * @param _tree subtree name
+ * @param _get get routine (can be NULL)
+ * @param _set set routine (can be NULL)
+ * @param _commit commit routine (can be NULL)
+ * @param _export export routine (can be NULL)
+ *
+ * Sets the commit priority of the defined handler to O.
+ *
+ * This creates a variable _hname prepended by settings_handler_.
+ *
+ */
 #define SETTINGS_STATIC_HANDLER_DEFINE(_hname, _tree, _get, _set, _commit,   \
 				       _export)				     \
 	SETTINGS_STATIC_HANDLER_DEFINE_WITH_CPRIO(_hname, _tree, _get, _set, \
