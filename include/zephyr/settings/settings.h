@@ -70,53 +70,54 @@ typedef ssize_t (*settings_read_cb)(void *cb_arg, void *data, size_t len);
  */
 struct settings_handler {
 
+	/** Name of subtree. */
 	const char *name;
-	/**< Name of subtree. */
 
+	/** Priority of commit, lower value is higher priority */
 	int cprio;
-	/**< Priority of commit, lower value is higher priority */
 
-	int (*h_get)(const char *key, char *val, int val_len_max);
-	/**< Get values handler of settings items identified by keyword names.
+	/**
+	 * @brief Get values handler of settings items identified by keyword names.
 	 *
-	 * Parameters:
-	 *  - key[in] the name with skipped part that was used as name in
-	 *    handler registration
-	 *  - val[out] buffer to receive value.
-	 *  - val_len_max[in] size of that buffer.
+	 * @param[in] key The name with skipped part that was used as name in
+	 *   handler registration
+	 * @param[out] val Buffer to receive value.
+	 * @param[in] val_len_max Size of that buffer.
 	 *
-	 * Return: length of data read on success, negative on failure.
+	 * @return Length of data read on success, negative on failure.
 	 */
+	int (*h_get)(const char *key, char *val, int val_len_max);
 
+	/**
+	 * @brief Set value handler of settings items identified by keyword names.
+	 *
+	 * @param[in] key The name with skipped part that was used as name in
+	 *   handler registration
+	 * @param[in] len the Size of the data found in the backend.
+	 * @param[in] read_cb Function provided to read the data from the backend.
+	 * @param[in] cb_arg Arguments for the read function provided by the
+	 *   backend.
+	 *
+	 * @return 0 on success, non-zero on failure.
+	 */
 	int (*h_set)(const char *key, size_t len, settings_read_cb read_cb,
 		     void *cb_arg);
-	/**< Set value handler of settings items identified by keyword names.
-	 *
-	 * Parameters:
-	 *  - key[in] the name with skipped part that was used as name in
-	 *    handler registration
-	 *  - len[in] the size of the data found in the backend.
-	 *  - read_cb[in] function provided to read the data from the backend.
-	 *  - cb_arg[in] arguments for the read function provided by the
-	 *    backend.
-	 *
-	 *  Return: 0 on success, non-zero on failure.
-	 */
 
-	int (*h_commit)(void);
-	/**< This handler gets called after settings has been loaded in full.
+	/**
+	 * @brief This handler gets called after settings has been loaded in full.
+	 *
 	 * User might use it to apply setting to the application.
 	 *
-	 * Return: 0 on success, non-zero on failure.
+	 * @return 0 on success, non-zero on failure.
 	 */
+	int (*h_commit)(void);
 
-	int (*h_export)(int (*export_func)(const char *name, const void *val,
-					   size_t val_len));
-	/**< This gets called to dump all current settings items.
+	/**
+	 * @brief This gets called to dump all current settings items.
 	 *
 	 * This happens when @ref settings_save tries to save the settings.
-	 * Parameters:
-	 *  - export_func: the pointer to the internal function which appends
+	 *
+	 * @param[in] export_func The pointer to the internal function which appends
 	 *   a single key-value pair to persisted settings. Don't store
 	 *   duplicated value. The name is subtree/key string, val is the string
 	 *   with value.
@@ -125,11 +126,13 @@ struct settings_handler {
 	 * only one keyword at one call - what will impose limit to get/set
 	 * values using full subtree/key name.
 	 *
-	 * Return: 0 on success, non-zero on failure.
+	 * @return 0 on success, non-zero on failure.
 	 */
+	int (*h_export)(int (*export_func)(const char *name, const void *val,
+					   size_t val_len));
 
+	/** Linked list node info for module internal usage. */
 	sys_snode_t node;
-	/**< Linked list node info for module internal usage. */
 };
 
 /**
@@ -138,62 +141,66 @@ struct settings_handler {
  * These are registered using a call to SETTINGS_STATIC_HANDLER_DEFINE().
  */
 struct settings_handler_static {
-
+	/** Name of subtree. */
 	const char *name;
-	/**< Name of subtree. */
 
+	/** Priority of commit, lower value is higher priority */
 	int cprio;
-	/**< Priority of commit, lower value is higher priority */
 
-	int (*h_get)(const char *key, char *val, int val_len_max);
-	/**< Get values handler of settings items identified by keyword names.
+	/**
+	 * @brief Get values handler of settings items identified by keyword names.
 	 *
-	 * Parameters:
-	 *  - key[in] the name with skipped part that was used as name in
-	 *    handler registration
-	 *  - val[out] buffer to receive value.
-	 *  - val_len_max[in] size of that buffer.
+	 * @param[in] key The name with skipped part that was used as name in
+	 *   handler registration
+	 * @param[out] val Buffer to receive value.
+	 * @param[in] val_len_max Size of that buffer.
 	 *
-	 * Return: length of data read on success, negative on failure.
+	 * @return Length of data read on success, negative on failure.
 	 */
+	int (*h_get)(const char *key, char *val, int val_len_max);
 
+	/**
+	 * @brief Set value handler of settings items identified by keyword names.
+	 *
+	 * @param[in] key The name with skipped part that was used as name in
+	 *  handler registration
+	 * @param[in] len The size of the data found in the backend.
+	 * @param[in] read_cb Function provided to read the data from the backend.
+	 * @param[in] cb_arg Arguments for the read function provided by the
+	 *   backend.
+	 *
+	 * @return 0 on success, non-zero on failure.
+	 */
 	int (*h_set)(const char *key, size_t len, settings_read_cb read_cb,
 		     void *cb_arg);
-	/**< Set value handler of settings items identified by keyword names.
-	 *
-	 * Parameters:
-	 *  - key[in] the name with skipped part that was used as name in
-	 *    handler registration
-	 *  - len[in] the size of the data found in the backend.
-	 *  - read_cb[in] function provided to read the data from the backend.
-	 *  - cb_arg[in] arguments for the read function provided by the
-	 *    backend.
-	 *
-	 * Return: 0 on success, non-zero on failure.
-	 */
 
-	int (*h_commit)(void);
-	/**< This handler gets called after settings has been loaded in full.
+	/**
+	 * @brief This handler gets called after settings has been loaded in full.
+	 *
 	 * User might use it to apply setting to the application.
+	 *
+	 * @return 0 on success, non-zero on failure.
 	 */
+	int (*h_commit)(void);
 
-	int (*h_export)(int (*export_func)(const char *name, const void *val,
-					   size_t val_len));
-	/**< This gets called to dump all current settings items.
+	/**
+	 * @brief This gets called to dump all current settings items.
 	 *
 	 * This happens when @ref settings_save tries to save the settings.
-	 * Parameters:
-	 *  - export_func: the pointer to the internal function which appends
-	 *   a single key-value pair to persisted settings. Don't store
-	 *   duplicated value. The name is subtree/key string, val is the string
-	 *   with value.
+	 *
+	 * @param[in] export_func The pointer to the internal function which appends
+	 * a single key-value pair to persisted settings. Don't store
+	 * duplicated value. The name is subtree/key string, val is the string
+	 * with value.
 	 *
 	 * @remarks The User might limit a implementations of handler to serving
 	 * only one keyword at one call - what will impose limit to get/set
 	 * values using full subtree/key name.
 	 *
-	 * Return: 0 on success, non-zero on failure.
+	 * @return 0 on success, non-zero on failure.
 	 */
+	int (*h_export)(int (*export_func)(const char *name, const void *val,
+					   size_t val_len));
 };
 
 /**
@@ -444,11 +451,11 @@ struct settings_store_itf;
  * Backend handler node for storage handling.
  */
 struct settings_store {
+	/** Linked list node info for internal usage. */
 	sys_snode_t cs_next;
-	/**< Linked list node info for internal usage. */
 
+	/** Backend handler structure. */
 	const struct settings_store_itf *cs_itf;
-	/**< Backend handler structure. */
 };
 
 /**
@@ -482,13 +489,11 @@ struct settings_load_arg {
  * Destinations are registered using a call to @ref settings_dst_register.
  */
 struct settings_store_itf {
-	int (*csi_load)(struct settings_store *cs,
-			const struct settings_load_arg *arg);
-	/**< Loads values from storage limited to subtree defined by subtree.
+	/**
+	 * @brief Loads values from storage limited to subtree defined by subtree.
 	 *
-	 * Parameters:
-	 *  - cs[in] - Corresponding backend handler node,
-	 *  - arg[in] - Structure that holds additional data for data loading.
+	 * @param[in] cs Corresponding backend handler node,
+	 * @param[in] arg Structure that holds additional data for data loading.
 	 *
 	 * @note
 	 * Backend is expected not to provide duplicates of the entities.
@@ -496,56 +501,61 @@ struct settings_store_itf {
 	 * really delete old keys, it has to filter out old entities and call
 	 * load callback only on the final entity.
 	 */
+	int (*csi_load)(struct settings_store *cs,
+			const struct settings_load_arg *arg);
 
+	/**
+	 * @brief Loads one value from storage that corresponds to the key defined by name.
+	 *
+	 * @param[in] cs Corresponding backend handler node.
+	 * @param[in] name Key in string format.
+	 * @param[in] buf Buffer where data should be copied.
+	 * @param[in] buf_len Length of buf.
+	 */
 	ssize_t (*csi_load_one)(struct settings_store *cs, const char *name,
 				char *buf, size_t buf_len);
-	/**< Loads one value from storage that corresponds to the key defined by name.
-	 *
-	 * Parameters:
-	 *  - cs[in] - Corresponding backend handler node.
-	 *  - name[in] - Key in string format.
-	 *  - buf[in] - Buffer where data should be copied.
-	 *  - buf_len[in] - Length of buf.
-	 */
 
-	ssize_t (*csi_get_val_len)(struct settings_store *cs, const char *name);
-	/**< Gets the value's length associated to the Key defined by name.
+	/**
+	 * @brief Gets the value's length associated to the Key defined by name.
+	 *
 	 * It returns 0 if the Key/Value doesn't exist.
 	 *
-	 * Parameters:
-	 *  - cs[in] - Corresponding backend handler node.
-	 *  - name[in] - Key in string format.
-	 */
-
-	int (*csi_save_start)(struct settings_store *cs);
-	/**< Handler called before an export operation.
+	 * @param[in] cs Corresponding backend handler node.
+	 * @param[in] name Key in string format.
 	 *
-	 * Parameters:
-	 *  - cs[in] - Corresponding backend handler node
+	 * @return 0 if the Key/Value doesn't exist
 	 */
+	ssize_t (*csi_get_val_len)(struct settings_store *cs, const char *name);
 
+	/**
+	 * @brief Handler called before an export operation.
+	 *
+	 * @param[in] cs Corresponding backend handler node
+	 */
+	int (*csi_save_start)(struct settings_store *cs);
+
+	/**
+	 * @brief Save a single key-value pair to storage.
+	 *
+	 * @param[in] cs Corresponding backend handler node
+	 * @param[in] name Key in string format
+	 * @param[in] value Binary value
+	 * @param[in] val_len Length of value in bytes.
+	 */
 	int (*csi_save)(struct settings_store *cs, const char *name,
 			const char *value, size_t val_len);
-	/**< Save a single key-value pair to storage.
-	 *
-	 * Parameters:
-	 *  - cs[in] - Corresponding backend handler node
-	 *  - name[in] - Key in string format
-	 *  - value[in] - Binary value
-	 *  - val_len[in] - Length of value in bytes.
-	 */
 
+	/**
+	 * @brief Handler called after an export operation.
+	 *
+	 * @param[in] cs Corresponding backend handler node
+	 */
 	int (*csi_save_end)(struct settings_store *cs);
-	/**< Handler called after an export operation.
-	 *
-	 * Parameters:
-	 *  - cs[in] - Corresponding backend handler node
-	 */
 
-	/**< Get pointer to the storage instance used by the backend.
+	/**
+	 * @brief Get pointer to the storage instance used by the backend.
 	 *
-	 * Parameters:
-	 *  - cs[in] - Corresponding backend handler node
+	 * @param[in] cs Corresponding backend handler node
 	 */
 	void *(*csi_storage_get)(struct settings_store *cs);
 };
@@ -625,11 +635,11 @@ int settings_call_set_handler(const char *name,
  * settings_name_steq("bt/btmesh/iv", "bt/", &next) returns 0, next=NULL
  * settings_name_steq("bt/btmesh/iv", "bta", &next) returns 0, next=NULL
  *
- * REMARK: This routine could be simplified if the settings_handler names
+ * @remark This routine could be simplified if the settings_handler names
  * would include a separator at the end.
  *
- * @return 0: no match
- *         1: match, next can be used to check if match is full
+ * @retval 0 no match
+ * @retval 1 match, next can be used to check if match is full
  */
 int settings_name_steq(const char *name, const char *key, const char **next);
 
