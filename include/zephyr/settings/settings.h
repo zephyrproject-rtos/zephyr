@@ -18,7 +18,6 @@
 extern "C" {
 #endif
 
-
 /**
  * @defgroup file_system_storage File System Storage
  * @ingroup os_services
@@ -34,11 +33,11 @@ extern "C" {
  * @{
  */
 
-#define SETTINGS_MAX_DIR_DEPTH	8	/* max depth of settings tree */
-#define SETTINGS_MAX_NAME_LEN	(8 * SETTINGS_MAX_DIR_DEPTH)
-#define SETTINGS_MAX_VAL_LEN	256
-#define SETTINGS_NAME_SEPARATOR	'/'
-#define SETTINGS_NAME_END '='
+#define SETTINGS_MAX_DIR_DEPTH  8 /* max depth of settings tree */
+#define SETTINGS_MAX_NAME_LEN   (8 * SETTINGS_MAX_DIR_DEPTH)
+#define SETTINGS_MAX_VAL_LEN    256
+#define SETTINGS_NAME_SEPARATOR '/'
+#define SETTINGS_NAME_END       '='
 
 /* place for settings additions:
  * up to 7 separators, '=', '\0'
@@ -100,8 +99,7 @@ struct settings_handler {
 	 *
 	 * @return 0 on success, non-zero on failure.
 	 */
-	int (*h_set)(const char *key, size_t len, settings_read_cb read_cb,
-		     void *cb_arg);
+	int (*h_set)(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg);
 
 	/**
 	 * @brief This handler gets called after settings has been loaded in full.
@@ -128,8 +126,7 @@ struct settings_handler {
 	 *
 	 * @return 0 on success, non-zero on failure.
 	 */
-	int (*h_export)(int (*export_func)(const char *name, const void *val,
-					   size_t val_len));
+	int (*h_export)(int (*export_func)(const char *name, const void *val, size_t val_len));
 
 	/** Linked list node info for module internal usage. */
 	sys_snode_t node;
@@ -171,8 +168,7 @@ struct settings_handler_static {
 	 *
 	 * @return 0 on success, non-zero on failure.
 	 */
-	int (*h_set)(const char *key, size_t len, settings_read_cb read_cb,
-		     void *cb_arg);
+	int (*h_set)(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg);
 
 	/**
 	 * @brief This handler gets called after settings has been loaded in full.
@@ -199,8 +195,7 @@ struct settings_handler_static {
 	 *
 	 * @return 0 on success, non-zero on failure.
 	 */
-	int (*h_export)(int (*export_func)(const char *name, const void *val,
-					   size_t val_len));
+	int (*h_export)(int (*export_func)(const char *name, const void *val, size_t val_len));
 };
 
 /**
@@ -218,16 +213,15 @@ struct settings_handler_static {
  *
  */
 
-#define SETTINGS_STATIC_HANDLER_DEFINE_WITH_CPRIO(_hname, _tree, _get, _set, \
-						  _commit, _export, _cprio)  \
-	const STRUCT_SECTION_ITERABLE(settings_handler_static,		     \
-				      settings_handler_ ## _hname) = {       \
-		.name = _tree,						     \
-		.cprio = _cprio,					     \
-		.h_get = _get,						     \
-		.h_set = _set,						     \
-		.h_commit = _commit,					     \
-		.h_export = _export,					     \
+#define SETTINGS_STATIC_HANDLER_DEFINE_WITH_CPRIO(_hname, _tree, _get, _set, _commit, _export,     \
+						  _cprio)                                          \
+	const STRUCT_SECTION_ITERABLE(settings_handler_static, settings_handler_##_hname) = {      \
+		.name = _tree,                                                                     \
+		.cprio = _cprio,                                                                   \
+		.h_get = _get,                                                                     \
+		.h_set = _set,                                                                     \
+		.h_commit = _commit,                                                               \
+		.h_export = _export,                                                               \
 	}
 
 /**
@@ -245,10 +239,8 @@ struct settings_handler_static {
  * This creates a variable _hname prepended by settings_handler_.
  *
  */
-#define SETTINGS_STATIC_HANDLER_DEFINE(_hname, _tree, _get, _set, _commit,   \
-				       _export)				     \
-	SETTINGS_STATIC_HANDLER_DEFINE_WITH_CPRIO(_hname, _tree, _get, _set, \
-		_commit, _export, 0)
+#define SETTINGS_STATIC_HANDLER_DEFINE(_hname, _tree, _get, _set, _commit, _export)                \
+	SETTINGS_STATIC_HANDLER_DEFINE_WITH_CPRIO(_hname, _tree, _get, _set, _commit, _export, 0)
 
 /**
  * Initialization of settings and backend
@@ -270,8 +262,7 @@ int settings_subsys_init(void);
  *
  * @return 0 on success, non-zero on failure.
  */
-int settings_register_with_cprio(struct settings_handler *cf,
-				 int cprio);
+int settings_register_with_cprio(struct settings_handler *cf, int cprio);
 
 /**
  * Register a handler for settings items stored in RAM with
@@ -336,12 +327,8 @@ ssize_t settings_get_val_len(const char *key);
  *
  * @return When nonzero value is returned, further subtree searching is stopped.
  */
-typedef int (*settings_load_direct_cb)(
-	const char      *key,
-	size_t           len,
-	settings_read_cb read_cb,
-	void            *cb_arg,
-	void            *param);
+typedef int (*settings_load_direct_cb)(const char *key, size_t len, settings_read_cb read_cb,
+				       void *cb_arg, void *param);
 
 /**
  * Load limited set of serialized items using given callback.
@@ -360,10 +347,7 @@ typedef int (*settings_load_direct_cb)(
  *                        function is called.
  * @return 0 on success, non-zero on failure.
  */
-int settings_load_subtree_direct(
-	const char             *subtree,
-	settings_load_direct_cb cb,
-	void                   *param);
+int settings_load_subtree_direct(const char *subtree, settings_load_direct_cb cb, void *param);
 
 /**
  * Save currently running serialized items. All serialized items which are
@@ -448,7 +432,6 @@ int settings_save_subtree_or_single_without_modification(const char *name,
  * @} settings
  */
 
-
 /**
  * @defgroup settings_backend Settings backend interface
  * @ingroup settings
@@ -515,8 +498,7 @@ struct settings_store_itf {
 	 * really delete old keys, it has to filter out old entities and call
 	 * load callback only on the final entity.
 	 */
-	int (*csi_load)(struct settings_store *cs,
-			const struct settings_load_arg *arg);
+	int (*csi_load)(struct settings_store *cs, const struct settings_load_arg *arg);
 
 	/**
 	 * @brief Loads one value from storage that corresponds to the key defined by name.
@@ -526,8 +508,8 @@ struct settings_store_itf {
 	 * @param[in] buf Buffer where data should be copied.
 	 * @param[in] buf_len Length of buf.
 	 */
-	ssize_t (*csi_load_one)(struct settings_store *cs, const char *name,
-				char *buf, size_t buf_len);
+	ssize_t (*csi_load_one)(struct settings_store *cs, const char *name, char *buf,
+				size_t buf_len);
 
 	/**
 	 * @brief Gets the value's length associated to the Key defined by name.
@@ -556,8 +538,8 @@ struct settings_store_itf {
 	 * @param[in] value Binary value
 	 * @param[in] val_len Length of value in bytes.
 	 */
-	int (*csi_save)(struct settings_store *cs, const char *name,
-			const char *value, size_t val_len);
+	int (*csi_save)(struct settings_store *cs, const char *name, const char *value,
+			size_t val_len);
 
 	/**
 	 * @brief Handler called after an export operation.
@@ -590,7 +572,6 @@ void settings_src_register(struct settings_store *cs);
  */
 void settings_dst_register(struct settings_store *cs);
 
-
 /*
  * API for handler lookup
  */
@@ -603,8 +584,7 @@ void settings_dst_register(struct settings_store *cs);
  *
  * @return settings_handler_static on success, NULL on failure.
  */
-struct settings_handler_static *settings_parse_and_lookup(const char *name,
-							  const char **next);
+struct settings_handler_static *settings_parse_and_lookup(const char *name, const char **next);
 
 /**
  * Calls settings handler.
@@ -619,11 +599,8 @@ struct settings_handler_static *settings_parse_and_lookup(const char *name,
  *
  * @return 0 or negative error code
  */
-int settings_call_set_handler(const char *name,
-			      size_t len,
-			      settings_read_cb read_cb,
-			      void *read_cb_arg,
-			      const struct settings_load_arg *load_arg);
+int settings_call_set_handler(const char *name, size_t len, settings_read_cb read_cb,
+			      void *read_cb_arg, const struct settings_load_arg *load_arg);
 /**
  * @}
  */
