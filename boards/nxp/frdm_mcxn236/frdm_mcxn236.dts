@@ -26,6 +26,7 @@
 		zephyr,console = &flexcomm4_lpuart4;
 		zephyr,shell-uart = &flexcomm4_lpuart4;
 		zephyr,canbus = &flexcan1;
+		zephyr,edac = &erm0;
 	};
 
 	aliases {
@@ -158,6 +159,30 @@
 };
 
 &edma0 {
+	status = "okay";
+};
+
+&eim0 {
+	status = "okay";
+};
+
+&eim0_channel0 {
+	status = "okay";
+};
+
+&eim0_channel2 {
+	status = "okay";
+};
+
+&eim0_channel3 {
+	status = "okay";
+};
+
+&eim0_channel4 {
+	status = "okay";
+};
+
+&erm0 {
 	status = "okay";
 };
 
