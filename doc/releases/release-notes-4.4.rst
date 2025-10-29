@@ -59,6 +59,9 @@ API Changes
     * Removed as these are architectural features:
 
       * :kconfig:option:`CONFIG_XTENSA_MMU_DOUBLE_MAP`
+      * :kconfig:option:`CONFIG_XTENSA_RPO_CACHE`
+      * :kconfig:option:`CONFIG_XTENSA_CACHED_REGION`
+      * :kconfig:option:`CONFIG_XTENSA_UNCACHED_REGION`
 
 Removed APIs and options
 ========================
