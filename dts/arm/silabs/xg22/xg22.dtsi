@@ -554,6 +554,8 @@
 			compatible = "silabs,eusart-uart";
 			reg = <0x5a030000 0x4000>;
 			clocks = <&cmu CLOCK_EUART0 CLOCK_BRANCH_EUART0CLK>;
+			interrupt-names = "rx", "tx";
+			interrupts = <62 2>, <63 2>;
 			status = "disabled";
 		};
 
