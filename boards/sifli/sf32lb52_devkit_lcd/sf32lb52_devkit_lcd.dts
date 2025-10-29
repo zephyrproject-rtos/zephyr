@@ -24,6 +24,7 @@
 		zephyr,code-partition = &code;
 		zephyr,console = &usart1;
 		zephyr,shell-uart = &usart1;
+		zephyr,entropy = &trng;
 	};
 
 	buttons {
@@ -151,5 +152,9 @@
 };
 
 temp_sensor: &tsen {
+	status = "okay";
+};
+
+&trng {
 	status = "okay";
 };
