@@ -414,7 +414,7 @@ in the Secure world, and ideally has robust software running that can protect as
 a wide range of possible software attacks (`1`_).
 
 MPC (Memory Protection Controller) and PPC (Peripheral Protection Controller) are allow to
-protect memory and peripheral. Incase of need peripheral and flash ownership can be updated in
+protect memory and peripheral. In case of need peripheral and flash ownership can be updated in
 <zephyr_path>../modules/tee/tf-m/trusted-firmware-m/platform/ext/target/adi/max32657/s_ns_access.cmake`
 file by updating cmake flags to ON/OFF.
 

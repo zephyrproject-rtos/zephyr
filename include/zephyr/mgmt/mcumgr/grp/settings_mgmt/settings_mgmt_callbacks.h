@@ -59,13 +59,12 @@ struct settings_mgmt_access {
 #endif
 
 	/**
-	 * Data provided by the user (only set for SETTINGS_ACCESS_WRITE and SETTINGS_ACCESS_SAVE)
+	 * Data provided by the user (only set for SETTINGS_ACCESS_WRITE)
 	 */
 	const uint8_t *val;
 
 	/**
-	 * Length of data provided by the user (only set for SETTINGS_ACCESS_WRITE and
-	 * SETTINGS_ACCESS_SAVE)
+	 * Length of data provided by the user (only set for SETTINGS_ACCESS_WRITE)
 	 */
 	const size_t *val_length;
 };

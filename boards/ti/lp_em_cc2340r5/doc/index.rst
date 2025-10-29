@@ -86,7 +86,7 @@ Programming and Debugging
 The LP_EM_CC2340R5 requires an external debug probe such as the LP-XDS110 or
 LP-XDS110ET.
 
-Alternativly a J-Link could be used on the J4 header, in combination with a 3.3V
+Alternatively a J-Link could be used on the J4 header, in combination with a 3.3V
 power supply over the pinheader.
 Debugging and flashing is currently only tested using a J-Link on the J4 header.
 

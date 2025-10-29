@@ -57,7 +57,7 @@ struct map {
 #define INST_SPI_SHELL_DEVICE_AS_SPI_DEV(node_id)                                                  \
 	{                                                                                          \
 		.name = DEVICE_DT_NAME(node_id),                                                   \
-		.spec = SPI_DT_SPEC_GET(node_id, 0, 0),                                            \
+		.spec = SPI_DT_SPEC_GET(node_id, 0),                                               \
 	},
 
 #define INST_SPI_SHELL_DEVICE_AS_SPI_DEV_AS_SPI_BUS(dev)                                           \

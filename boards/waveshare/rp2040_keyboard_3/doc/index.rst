@@ -6,7 +6,7 @@ Overview
 The `Waveshare 3-Key Shortcut Keyboard Development Board`_ is based on the RP2040 microcontroller
 from Raspberry Pi Ltd. It has three keys with the default values "CTRL", "C" and "V". The board
 is equipped with two USB type C connectors. There are two versions of the keyboard, where the
-diffence is in the housing (plastic or metal). This board definition can be used with both versions.
+difference is in the housing (plastic or metal). This board definition can be used with both versions.
 
 
 Hardware

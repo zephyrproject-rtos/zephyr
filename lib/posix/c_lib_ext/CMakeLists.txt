@@ -2,7 +2,7 @@
 
 zephyr_include_directories(getopt)
 
-if (CONFIG_TC_PROVIDES_POSIX_C_LIB_EXT)
+if(CONFIG_TC_PROVIDES_POSIX_C_LIB_EXT)
   return()
 endif()
 

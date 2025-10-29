@@ -266,7 +266,7 @@ Load and Run M7 Zephyr Image by using Linux remoteproc
 
 Prepare device tree:
 
-The device tree must inlcude CM7 dts node with compatible string "fsl,imx8mn-cm7",
+The device tree must include CM7 dts node with compatible string "fsl,imx8mn-cm7",
 and also need to reserve M4 DDR memory if using DDR code and sys address, and also
 need to put "m4_reserved" in the list of memory-region property of the cm7 node.
 

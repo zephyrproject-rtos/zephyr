@@ -738,6 +738,14 @@
 			status = "disabled";
 		};
 
+		sdram: sdram-controller@40003c00 {
+			compatible = "renesas,ra-sdram";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003c00 0x54>;
+			status = "disabled";
+		};
+
 		port_irq0: external-interrupt@40006000 {
 			compatible = "renesas,ra-external-interrupt";
 			reg = <0x40006000 0x1>;

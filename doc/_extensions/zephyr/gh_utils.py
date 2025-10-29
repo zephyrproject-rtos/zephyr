@@ -50,8 +50,8 @@ sys.path.insert(0, str(Path(__file__).parents[3] / "scripts"))
 
 from get_maintainer import Maintainers
 
-ZEPHYR_BASE : Final[str] = Path(__file__).parents[3]
-MAINTAINERS : Final[Maintainers] = Maintainers(filename=f"{ZEPHYR_BASE}/MAINTAINERS.yml")
+ZEPHYR_BASE: Final[str] = Path(__file__).parents[3]
+MAINTAINERS: Final[Maintainers] = Maintainers(filename=f"{ZEPHYR_BASE}/MAINTAINERS.yml")
 
 
 __version__ = "0.1.0"
@@ -140,15 +140,8 @@ def gh_link_get_open_issue_url(app: Sphinx, pagename: str, sha1: str) -> str | N
     form_data = {
         "template": "001_bug_report.yml",
         "title": f"doc: Documentation issue in '{pagename}'",
-        "labels": [
-            "bug",
-            "area: Documentation"
-        ],
-        "env": (
-            f"- Page: {pagename}\n"
-            f"- Version: {app.config.gh_link_version}\n"
-            f"- SHA-1: {sha1}"
-        ),
+        "labels": ["bug", "area: Documentation"],
+        "env": (f"- Page: {pagename}\n- Version: {app.config.gh_link_version}\n- SHA-1: {sha1}"),
         "context": (
             "This issue was reported from the online documentation page using the "
             "'Report an issue' button."
@@ -213,7 +206,7 @@ def git_info_filter(app: Sphinx, pagename) -> tuple[str, str] | None:
             .decode("utf-8")
             .strip()
         )
-        if not date_and_sha1: # added but not committed
+        if not date_and_sha1:  # added but not committed
             return None
         date, sha1 = date_and_sha1.split(" ", 1)
         date_object = datetime.fromtimestamp(int(date))
@@ -224,6 +217,7 @@ def git_info_filter(app: Sphinx, pagename) -> tuple[str, str] | None:
         return (date, sha1)
     except subprocess.CalledProcessError:
         return None
+
 
 def add_jinja_filter(app: Sphinx):
     if app.builder.format != "html":

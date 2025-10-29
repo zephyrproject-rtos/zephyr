@@ -6,6 +6,8 @@ menu "WiSeConnect configuration"
 
 config SILABS_SISDK_SLEEPTIMER
 	bool "Sleeptimer service"
+	select SRAM_VECTOR_TABLE
+	select CODE_DATA_RELOCATION_SRAM
 	help
 	  Set if the Sleeptimer HAL module is used.
 

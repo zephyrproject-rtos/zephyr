@@ -44,9 +44,6 @@
 "./boards/microchip/mec172xevb_assy6906/support/mec172x_remote_flasher.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
 ]
-"./doc/_scripts/gen_devicetree_rest.py" = [
-    "SIM905",   # https://docs.astral.sh/ruff/rules/split-static-string
-]
 "./doc/_scripts/redirects.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
 ]
@@ -1225,19 +1222,6 @@ exclude = [
     "./arch/xtensa/core/gen_zsr.py",
     "./arch/xtensa/core/xtensa_intgen.py",
     "./boards/microchip/mec172xevb_assy6906/support/mec172x_remote_flasher.py",
-    "./doc/_extensions/zephyr/api_overview.py",
-    "./doc/_extensions/zephyr/application.py",
-    "./doc/_extensions/zephyr/domain/__init__.py",
-    "./doc/_extensions/zephyr/doxybridge.py",
-    "./doc/_extensions/zephyr/doxyrunner.py",
-    "./doc/_extensions/zephyr/doxytooltip/__init__.py",
-    "./doc/_extensions/zephyr/dtcompatible-role.py",
-    "./doc/_extensions/zephyr/external_content.py",
-    "./doc/_extensions/zephyr/gh_utils.py",
-    "./doc/_extensions/zephyr/html_redirects.py",
-    "./doc/_extensions/zephyr/kconfig/__init__.py",
-    "./doc/_extensions/zephyr/link-roles.py",
-    "./doc/_scripts/gen_boards_catalog.py",
     "./doc/_scripts/gen_devicetree_rest.py",
     "./doc/_scripts/redirects.py",
     "./doc/conf.py",

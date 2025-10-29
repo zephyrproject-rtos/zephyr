@@ -23,7 +23,7 @@ For example:
 		};
 	};
 
-Make sure the aliase are in devicetree, then build and run with:
+Make sure the aliases are in devicetree, then build and run with:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/adc/adc_stream

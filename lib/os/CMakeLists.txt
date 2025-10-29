@@ -56,7 +56,7 @@ if(NOT CONFIG_PICOLIBC)
   zephyr_sources(cbprintf.c)
 endif()
 
-if (CONFIG_ASSERT OR CONFIG_ASSERT_VERBOSE)
+if(CONFIG_ASSERT OR CONFIG_ASSERT_VERBOSE)
 zephyr_sources(assert.c)
 endif()
 

@@ -36,6 +36,6 @@ endif()
 zephyr_library_include_directories(src src/btp src/audio/btp)
 add_subdirectory_ifdef(CONFIG_BT_AUDIO src/audio)
 
-if (CONFIG_BT_CLASSIC)
+if(CONFIG_BT_CLASSIC)
     target_sources(app PRIVATE src/btp_sdp.c)
 endif()

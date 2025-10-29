@@ -22,19 +22,19 @@ add_library(uut STATIC
   ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_chmu.c
 )
 
-if (CONFIG_BT_CTLR_PHY)
+if(CONFIG_BT_CTLR_PHY)
   target_sources(uut PRIVATE
 	  ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_phy.c
 	  )
 endif()
 
-if (CONFIG_BT_CTLR_LE_ENC)
+if(CONFIG_BT_CTLR_LE_ENC)
   target_sources(uut PRIVATE
 	  ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_enc.c
 	  )
 endif()
 
-if (CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER OR CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+if(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER OR CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
   target_sources(uut PRIVATE
     ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_past.c
 	  )

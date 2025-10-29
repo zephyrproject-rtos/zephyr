@@ -76,7 +76,7 @@
 
 	nwp: nwp {
 		compatible = "silabs,siwx91x-nwp";
-		power-profile = "high-performance";
+		power-profile = "deep-sleep-with-ram-retention";
 		stack-size = <10240>;
 		interrupt-parent = <&nvic>;
 		interrupts = <30 0>, <74 0>;
@@ -361,6 +361,8 @@
 			clocks = <&clock0 SIWX91X_CLK_PWM>;
 			#pwm-cells = <2>;
 			silabs,ch-prescaler = <64 64 64 64>;
+			power-domains = <&siwx91x_soc_pd>;
+			zephyr,pm-device-runtime-auto;
 			status = "disabled";
 		};
 

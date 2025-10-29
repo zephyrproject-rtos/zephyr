@@ -17,7 +17,7 @@ Hardware
 - 2 Mbyte of Flash memory and 786 Kbytes of RAM
 - 2 RGB user LEDs
 - One 13x8 LED Matrix
-- Internal UART and SPI busses connected to the QRB2210
+- Internal UART and SPI buses connected to the QRB2210
 - Built-in CMSIS-DAP debug adapter (through QRB2210)
 
 Supported Features

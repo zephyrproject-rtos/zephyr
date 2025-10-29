@@ -1,7 +1,7 @@
 # Copyright (c) 2019 Intel Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-if (CMAKE_C_COMPILER_ID STREQUAL "Clang"
+if(CMAKE_C_COMPILER_ID STREQUAL "Clang"
   OR CMAKE_C_COMPILER_ID STREQUAL "IntelLLVM")
   # We rely on GAS for assembling, so don't use the integrated assembler
   zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:-no-integrated-as>)

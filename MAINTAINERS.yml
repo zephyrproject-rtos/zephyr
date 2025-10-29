@@ -762,6 +762,8 @@ Build system:
     - scripts/schemas/soc-schema.yaml
     - scripts/list_shields.py
     - scripts/snippets.py
+  files-exclude:
+    - doc/build/dts/
   labels:
     - "area: Build System"
   tests:
