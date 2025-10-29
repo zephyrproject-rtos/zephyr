@@ -384,7 +384,7 @@ static int dma_sf32lb_init(const struct device *dev)
 {
 	const struct dma_sf32lb_config *config = dev->config;
 
-	if (!sf3232lb_clock_is_ready_dt(&config->clock)) {
+	if (!sf32lb_clock_is_ready_dt(&config->clock)) {
 		return -ENODEV;
 	}
 
