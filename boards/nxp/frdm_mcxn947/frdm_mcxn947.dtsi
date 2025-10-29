@@ -21,6 +21,10 @@
 		mcuboot-button0 = &user_button_2;
 	};
 
+	chosen {
+		zephyr,edac = &erm0;
+	};
+
 	leds {
 		compatible = "gpio-leds";
 
@@ -128,6 +132,38 @@
 		gpio-map = <DVP_20PIN_PEN 0 &gpio1 19 0>,
 			   <DVP_20PIN_PDN 0 &gpio1 18 0>;
 	};
+};
+
+&eim0 {
+	status = "okay";
+};
+
+&eim0_channel0 {
+	status = "okay";
+};
+
+&eim0_channel2 {
+	status = "okay";
+};
+
+&eim0_channel3 {
+	status = "okay";
+};
+
+&eim0_channel4 {
+	status = "okay";
+};
+
+&eim0_channel5 {
+	status = "okay";
+};
+
+&eim0_channel6 {
+	status = "okay";
+};
+
+&erm0 {
+	status = "okay";
 };
 
 &flexcomm1_lpspi1 {
