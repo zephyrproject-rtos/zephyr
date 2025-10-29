@@ -14,6 +14,7 @@
 #include <hal/nrf_gpio.h>
 #include <hal/nrf_rtc.h>
 #include <hal/nrf_timer.h>
+#include <gpiote_nrfx.h>
 
 #include <zephyr/logging/log.h>
 
@@ -62,7 +63,7 @@ struct pwm_config {
 		NRF_RTC_Type *rtc;
 		NRF_TIMER_Type *timer;
 	};
-	nrfx_gpiote_t gpiote[PWM_0_MAP_SIZE];
+	nrfx_gpiote_t * gpiote[PWM_0_MAP_SIZE];
 	uint8_t psel_ch[PWM_0_MAP_SIZE];
 	uint8_t initially_inverted;
 	uint8_t map_size;
@@ -163,7 +164,7 @@ static int pwm_nrf_sw_set_cycles(const struct device *dev, uint32_t channel,
 		}
 	}
 
-	gpiote = config->gpiote[channel].p_reg;
+	gpiote = config->gpiote[channel]->p_reg;
 	psel_ch = config->psel_ch[channel];
 	gpiote_ch = data->gpiote_ch[channel];
 	ppi_chs = data->ppi_ch[channel];
@@ -351,7 +352,7 @@ static int pwm_nrf_sw_init(const struct device *dev)
 	NRF_RTC_Type *rtc = pwm_config_rtc(config);
 
 	for (uint32_t i = 0; i < config->map_size; i++) {
-		nrfx_err_t err;
+		int err;
 
 		/* Allocate resources. */
 		for (uint32_t j = 0; j < PPI_PER_CH; j++) {
@@ -365,14 +366,14 @@ static int pwm_nrf_sw_init(const struct device *dev)
 			}
 		}
 
-		err = nrfx_gpiote_channel_alloc(&config->gpiote[i],
+		err = nrfx_gpiote_channel_alloc(config->gpiote[i],
 						&data->gpiote_ch[i]);
-		if (err != NRFX_SUCCESS) {
+		if (err < 0) {
 			/* Do not free allocated resource. It is a fatal condition,
 			 * system requires reconfiguration.
 			 */
 			LOG_ERR("Failed to allocate GPIOTE channel");
-			return -ENOMEM;
+			return err;
 		}
 
 		/* Set initial state of the output pins. */
@@ -410,7 +411,8 @@ static int pwm_nrf_sw_init(const struct device *dev)
 	 ? BIT(_idx) : 0) |
 
 #define GPIOTE_AND_COMMA(_node_id, _prop, _idx) \
-	NRFX_GPIOTE_INSTANCE(NRF_DT_GPIOTE_INST_BY_IDX(_node_id, _prop, _idx)),
+	&GPIOTE_NRFX_INST_BY_NODE(DT_PHANDLE(DT_GPIO_CTLR_BY_IDX(_node_id, _prop, _idx), \
+				     gpiote_instance))
 
 static const struct pwm_config pwm_nrf_sw_0_config = {
 	COND_CODE_1(USE_RTC, (.rtc), (.timer)) = GENERATOR_ADDR,
