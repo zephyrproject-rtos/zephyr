@@ -70,6 +70,11 @@ config NET_PMTU
 	default y
 	depends on NET_IPV6_PMTU || NET_IPV4_PMTU
 
+config NET_PMTU_DPLPMTUD
+	bool
+	default y
+	depends on NET_IPV6_PMTU_DPLPMTUD || NET_IPV4_PMTU_DPLPMTUD
+
 if NET_PMTU
 
 module = NET_PMTU

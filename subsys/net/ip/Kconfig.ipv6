@@ -137,6 +137,21 @@ config NET_IPV6_PMTU_DESTINATION_CACHE_ENTRIES
 	help
 	  How many PMTU entries we can track for each destination address.
 
+config NET_IPV6_PMTU_PTB
+	bool "IPv6 PMTU Discovery using ICMP messages"
+	default y
+	depends on NET_IPV6_PMTU
+	help
+	  Enables IPv6 Path MTU Discovery using
+	  ICMPv6 Packet Too Big messages (see RFC 8201).
+
+config NET_IPV6_PMTU_DPLPMTUD
+	bool "IPv6 PMTU Discovery using datagram messages"
+	depends on NET_UDP
+	depends on NET_IPV6_PMTU
+	help
+	  Enables IPv6 Datagram Packetization Layer Path MTU Discovery (see RFC 8899)
+
 config NET_INITIAL_HOP_LIMIT
 	int "Initial IPv6 hop limit value for unicast packets"
 	default 64

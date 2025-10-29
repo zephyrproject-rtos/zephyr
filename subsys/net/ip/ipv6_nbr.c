@@ -2941,7 +2941,7 @@ drop:
 }
 #endif /* CONFIG_NET_IPV6_ND */
 
-#if defined(CONFIG_NET_IPV6_PMTU)
+#if defined(CONFIG_NET_IPV6_PMTU_PTB)
 /* Packet format described in RFC 4443 ch 3.2. Packet Too Big Message */
 static enum net_verdict handle_ptb_input(struct net_icmp_ctx *ctx,
 					 struct net_pkt *pkt,
@@ -3040,7 +3040,7 @@ silent_drop:
 	net_pkt_cursor_restore(pkt, &backup);
 	return NET_CONTINUE;
 }
-#endif /* CONFIG_NET_IPV6_PMTU */
+#endif /* CONFIG_NET_IPV6_PMTU_PTB */
 
 #if defined(CONFIG_NET_IPV6_NBR_CACHE)
 static struct net_icmp_ctx ns_ctx;
@@ -3051,9 +3051,9 @@ static struct net_icmp_ctx na_ctx;
 static struct net_icmp_ctx ra_ctx;
 #endif /* CONFIG_NET_IPV6_ND */
 
-#if defined(CONFIG_NET_IPV6_PMTU)
+#if defined(CONFIG_NET_IPV6_PMTU_PTB)
 static struct net_icmp_ctx ptb_ctx;
-#endif /* CONFIG_NET_IPV6_PMTU */
+#endif /* CONFIG_NET_IPV6_PMTU_PTB */
 
 #if defined(CONFIG_NET_TEST) && defined(CONFIG_NET_IPV6_NBR_CACHE)
 /* Check if the NS reply timer is pending and cancel it if so.
@@ -3105,7 +3105,7 @@ void net_ipv6_nbr_init(void)
 			      ipv6_nd_reachable_timeout);
 #endif
 
-#if defined(CONFIG_NET_IPV6_PMTU)
+#if defined(CONFIG_NET_IPV6_PMTU_PTB)
 	ret = net_icmp_init_ctx(&ptb_ctx, NET_AF_INET6, NET_ICMPV6_PACKET_TOO_BIG, 0,
 				handle_ptb_input);
 	if (ret < 0) {
