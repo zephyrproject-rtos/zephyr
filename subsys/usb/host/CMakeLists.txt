@@ -24,4 +24,9 @@ zephyr_library_sources_ifdef(
   usbip.c
 )
 
+zephyr_library_sources_ifdef(
+  CONFIG_USBH_SERIAL
+  class/usbh_serial.c
+)
+
 zephyr_linker_sources(DATA_SECTIONS usbh_data.ld)

@@ -1,0 +1,27 @@
+#
+# Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config USBH_SERIAL
+	bool "USB Host Vendor-Specific Serial Support"
+	depends on USB_HOST_STACK
+	select SERIAL_SUPPORT_ASYNC
+	help
+	  Support for vendor-specific USB serial devices (GSM modems, etc.)
+	  similar to Linux's option driver. Matches interfaces with
+	  bInterfaceClass=0xFF and provides bulk endpoint communication.
+
+if USBH_SERIAL
+
+config USBH_SERIAL_LOG_LEVEL
+	int
+	default 4
+
+module = USBH_SERIAL
+module-str = USB Host Serial
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # USBH_SERIAL
+
