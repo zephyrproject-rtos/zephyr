@@ -171,16 +171,6 @@ static ALWAYS_INLINE void xtensa_vecbase_lock(void)
 	__asm__ volatile("wsr.vecbase %0; rsync" : : "r" (vecbase | 1));
 }
 
-#if defined(CONFIG_ARCH_HAS_COHERENCE) || defined(__DOXYGEN__)
-/** Implementation of @ref arch_mem_coherent. */
-static inline bool arch_mem_coherent(void *ptr)
-{
-	size_t addr = (size_t) ptr;
-
-	return (addr >> 29) == CONFIG_XTENSA_UNCACHED_REGION;
-}
-#endif
-
 #if defined(CONFIG_XTENSA_MMU) || defined(__DOXYGEN__)
 /**
  * @brief Perform additional steps after MMU initialization.
