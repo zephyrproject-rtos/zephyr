@@ -14,6 +14,7 @@
 #include <hal/nrf_gpio.h>
 #include <hal/nrf_rtc.h>
 #include <hal/nrf_timer.h>
+#include <gpiote_nrfx.h>
 
 #include <zephyr/logging/log.h>
 
@@ -62,7 +63,7 @@ struct pwm_config {
 		NRF_RTC_Type *rtc;
 		NRF_TIMER_Type *timer;
 	};
-	nrfx_gpiote_t gpiote[PWM_0_MAP_SIZE];
+	nrfx_gpiote_t *gpiote[PWM_0_MAP_SIZE];
 	uint8_t psel_ch[PWM_0_MAP_SIZE];
 	uint8_t initially_inverted;
 	uint8_t map_size;
@@ -164,7 +165,7 @@ static int pwm_nrf_sw_set_cycles(const struct device *dev, uint32_t channel,
 		}
 	}
 
-	gpiote = config->gpiote[channel].p_reg;
+	gpiote = config->gpiote[channel]->p_reg;
 	psel_ch = config->psel_ch[channel];
 	gpiote_ch = data->gpiote_ch[channel];
 	ppi_chs = data->ppi_h[channel];
@@ -348,7 +349,6 @@ static int pwm_nrf_sw_init(const struct device *dev)
 	NRF_RTC_Type *rtc = pwm_config_rtc(config);
 
 	for (uint32_t i = 0; i < config->map_size; i++) {
-		nrfx_err_t err;
 		uint32_t src_d = nrfx_gppi_domain_id_get(USE_RTC ? (uint32_t)rtc : (uint32_t)timer);
 		uint32_t dst_d = nrfx_gppi_domain_id_get((uint32_t)config->gpiote[i].p_reg);
 		int rv;
@@ -373,14 +373,13 @@ static int pwm_nrf_sw_init(const struct device *dev)
 		}
 		nrfx_gppi_channels_disable(src_d, data->ppi_ch_mask[i]);
 
-		err = nrfx_gpiote_channel_alloc(&config->gpiote[i],
-						&data->gpiote_ch[i]);
-		if (err != NRFX_SUCCESS) {
+		rv  = nrfx_gpiote_channel_alloc(config->gpiote[i], &data->gpiote_ch[i]);
+		if (rv < 0) {
 			/* Do not free allocated resource. It is a fatal condition,
 			 * system requires reconfiguration.
 			 */
 			LOG_ERR("Failed to allocate GPIOTE channel");
-			return -ENOMEM;
+			return rv;
 		}
 
 		/* Set initial state of the output pins. */
@@ -418,7 +417,7 @@ static int pwm_nrf_sw_init(const struct device *dev)
 	 ? BIT(_idx) : 0) |
 
 #define GPIOTE_AND_COMMA(_node_id, _prop, _idx) \
-	NRFX_GPIOTE_INSTANCE(NRF_DT_GPIOTE_INST_BY_IDX(_node_id, _prop, _idx)),
+	&GPIOTE_NRFX_INST_BY_NODE(NRF_DT_GPIOTE_NODE_BY_IDX(_node_id, _prop, _idx))
 
 static const struct pwm_config pwm_nrf_sw_0_config = {
 	COND_CODE_1(USE_RTC, (.rtc), (.timer)) = GENERATOR_ADDR,
