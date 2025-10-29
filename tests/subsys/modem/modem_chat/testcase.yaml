@@ -10,6 +10,9 @@ common:
     - native_sim
 tests:
   modem.modem_chat: {}
+  modem.modem_chat.single_byte:
+    extra_configs:
+      - CONFIG_MODEM_MOCK_BACKEND_LIMIT=1
   modem.modem_chat.workq:
     extra_configs:
       - CONFIG_MODEM_DEDICATED_WORKQUEUE=y
