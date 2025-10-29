@@ -345,9 +345,6 @@ static int esp32_tx(const struct device *dev, enum ieee802154_tx_mode tx_mode, s
 
 	err = k_sem_take(&data->tx_wait, K_MSEC(IEEE802154_ESP32_TX_TIMEOUT_MS));
 
-	/* set the radio back to RX mode as quickly as possible */
-	ieee802154_receive();
-
 	if (err != 0) {
 		LOG_ERR("TX timeout");
 	} else {
@@ -359,36 +356,26 @@ static int esp32_tx(const struct device *dev, enum ieee802154_tx_mode tx_mode, s
 
 static int esp32_start(const struct device *dev)
 {
-	struct ieee802154_esp32_data *data = dev->data;
+	ARG_UNUSED(dev);
 
-	if (data->is_started) {
-		return 0;
-	} else if (esp_ieee802154_enable() == 0) {
-		esp_ieee802154_set_promiscuous(false);
-		esp_ieee802154_set_rx_when_idle(true);
-
-		/* ToDo: check if this is necessary */
-		esp_ieee802154_receive();
-
-		data->is_started = true;
-		return 0;
+	if (esp_ieee802154_receive() != 0) {
+		LOG_ERR("Failed to start radio");
+		return -EIO;
 	}
 
-	return -EIO;
+	return 0;
 }
 
 static int esp32_stop(const struct device *dev)
 {
-	struct ieee802154_esp32_data *data = dev->data;
+	ARG_UNUSED(dev);
 
-	if (!data->is_started) {
-		return 0;
-	} else if (esp_ieee802154_disable() == 0) {
-		data->is_started = false;
-		return 0;
+	if (esp_ieee802154_sleep() != 0) {
+		LOG_ERR("Failed to stop radio");
+		return -EIO;
 	}
 
-	return -EIO;
+	return 0;
 }
 
 /* override weak function in components/ieee802154/esp_ieee802154.c of ESP-IDF */
@@ -469,6 +456,15 @@ static int esp32_init(const struct device *dev)
 
 	k_sem_init(&data->cca_wait, 0, 1);
 	k_sem_init(&data->tx_wait, 0, 1);
+
+	if (esp_ieee802154_enable() != 0) {
+		LOG_ERR("IEEE 802154 enabling failed!");
+		return -EIO;
+	}
+
+	/* Default radio settings */
+	esp_ieee802154_set_promiscuous(false);
+	esp_ieee802154_set_rx_when_idle(true);
 
 	LOG_INF("IEEE 802154 radio initialized");
 
