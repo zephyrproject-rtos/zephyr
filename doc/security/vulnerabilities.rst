@@ -2013,6 +2013,11 @@ Under embargo until 2025-11-10
 
 Under embargo until 2025-11-24
 
+:cve:`2025-9558`
+----------------
+
+Under embargo until 2025-11-24
+
 :cve:`2025-12035`
 -----------------
 
