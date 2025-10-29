@@ -11,13 +11,7 @@
  * This entropy source should only be used for testing.
  */
 
-#include <zephyr/devicetree.h>
-#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_native_posix_rng)
-#define DT_DRV_COMPAT zephyr_native_posix_rng
-#warning "zephyr,native-posix-rng is deprecated in favor of zephyr,native-sim-rng"
-#else
 #define DT_DRV_COMPAT zephyr_native_sim_rng
-#endif
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/entropy.h>
