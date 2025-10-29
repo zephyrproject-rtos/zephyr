@@ -1088,17 +1088,6 @@
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
-"./tests/drivers/can/host/pytest/can_shell.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM401",   # https://docs.astral.sh/ruff/rules/if-else-block-instead-of-dict-get
-    "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
-    "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
-    "UP045",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation-optional
-]
-"./tests/drivers/can/host/pytest/test_can.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP039",    # https://docs.astral.sh/ruff/rules/unnecessary-class-parentheses
-]
 "./tests/kernel/timer/timer_behavior/pytest/saleae_logic2.py" = [
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
@@ -1481,9 +1470,6 @@ exclude = [
     "./tests/boot/with_mcumgr/pytest/test_downgrade_prevention.py",
     "./tests/boot/with_mcumgr/pytest/test_upgrade.py",
     "./tests/boot/with_mcumgr/pytest/west_sign_wrapper.py",
-    "./tests/drivers/can/host/pytest/can_shell.py",
-    "./tests/drivers/can/host/pytest/conftest.py",
-    "./tests/drivers/can/host/pytest/test_can.py",
     "./tests/kernel/timer/timer_behavior/pytest/saleae_logic2.py",
     "./tests/kernel/timer/timer_behavior/pytest/test_timer.py",
     "./tests/lib/devicetree/memory_region_flags/pytest/test_memory_region_flags.py",
