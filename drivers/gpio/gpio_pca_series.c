@@ -558,6 +558,9 @@ static inline int gpio_pca_series_reg_cache_read(const struct device *dev,
  * @return int 0        if success
  *             -EINVAL  if invalid arguments
  *             -EACCES  if register is uncacheable
+ *
+ * @note the buffer must be little-endian, the same as I2C register layout,
+ *       regardless of host machine endianness.
  */
 static inline int gpio_pca_series_reg_cache_update(const struct device *dev,
 						   enum gpio_pca_series_reg_type reg_type,
@@ -1664,23 +1667,12 @@ static void gpio_pca_series_interrupt_handler_standard(const struct device *dev,
 	int_fall = gpio_pca_series_reg_cache_mini_get(dev)->int_fall;
 #endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
 
-	/** check if any interrupt enabled */
-	if ((!int_rise) && (!int_fall)) {
-		goto out;
-	}
-
 	/** read current input value, and clear status if reg is present */
 	ret = gpio_pca_series_reg_read(dev, PCA_REG_TYPE_1B_INPUT_PORT, (uint8_t *)&input);
 	if (ret) {
 		goto out;
 	}
 	input = sys_le32_to_cpu(input);
-	/** compare input to input_old to get transitioned_pins */
-	transitioned_pins = input_old ^ input;
-
-	/** Mask gpio transactions with rising/falling edge interrupt config */
-	int_status = (int_rise & transitioned_pins & input)
-				| (int_fall & transitioned_pins & (~input));
 
 	/** update current input to cache */
 #ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
@@ -1691,6 +1683,18 @@ static void gpio_pca_series_interrupt_handler_standard(const struct device *dev,
 #else
 	gpio_pca_series_reg_cache_mini_get(dev)->input_old = input;
 #endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
+
+	/** check if any interrupt enabled */
+	if ((!int_rise) && (!int_fall)) {
+		goto out;
+	}
+
+	/** compare input to input_old to get transitioned_pins */
+	transitioned_pins = input_old ^ input;
+
+	/** Mask gpio transactions with rising/falling edge interrupt config */
+	int_status = (int_rise & transitioned_pins & input)
+				| (int_fall & transitioned_pins & (~input));
 
 out:
 	k_sem_give(&data->lock);
@@ -2253,12 +2257,12 @@ const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pca9555 = {
 #define GPIO_PCA_PART_CFG_PCA_PART_NO_PCA6416 (&gpio_pca_series_part_cfg_pca6416)
 
 const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pca6416 = {
-	.port_no = GPIO_PCA_PORT_NO_PCA_PART_NO_PCA6408,
-	.flags = GPIO_PCA_FLAG_PCA_PART_NO_PCA6408,
+	.port_no = GPIO_PCA_PORT_NO_PCA_PART_NO_PCA6416,
+	.flags = GPIO_PCA_FLAG_PCA_PART_NO_PCA6416,
 	.regs = gpio_pca_series_reg_pca9539,
 #ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
 # ifdef GPIO_NXP_PCA_SERIES_DEBUG
-	.cache_size = GPIO_PCA_GET_CACHE_SIZE_BY_PART_NO(PCA_PART_NO_PCA6408),
+	.cache_size = GPIO_PCA_GET_CACHE_SIZE_BY_PART_NO(PCA_PART_NO_PCA6416),
 # endif /* GPIO_NXP_PCA_SERIES_DEBUG */
 	.cache_map = gpio_pca_series_cache_map_pca953x,
 #endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
