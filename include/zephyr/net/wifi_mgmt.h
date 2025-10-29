@@ -723,6 +723,16 @@ struct wifi_connect_req_params {
 	uint8_t ignore_broadcast_ssid;
 	/** Parameter used for frequency band */
 	enum wifi_frequency_bandwidths bandwidth;
+
+	/** Full domain name to verify in the server certificate */
+	const uint8_t *server_cert_domain_exact;
+	/** Length of the server_cert_domain_exact string, maximum 128 bytes */
+	uint8_t server_cert_domain_exact_len;
+
+	/** Domain name suffix to verify in the server certificate */
+	const uint8_t *server_cert_domain_suffix;
+	/** Length of the server_cert_domain_suffix string, maximum 64 bytes */
+	uint8_t server_cert_domain_suffix_len;
 };
 
 /** @brief Wi-Fi disconnect reason codes. To be overlaid on top of \ref wifi_status
