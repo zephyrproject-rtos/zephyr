@@ -2008,6 +2008,11 @@ This has been fixed in main for v4.2.0
 
 Under embargo until 2025-11-10
 
+:cve:`2025-9557`
+----------------
+
+Under embargo until 2025-11-24
+
 :cve:`2025-12035`
 -----------------
 
