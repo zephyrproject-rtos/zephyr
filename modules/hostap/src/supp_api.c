@@ -969,6 +969,22 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				goto out;
 			}
 
+			if (params->server_cert_domain_exact_len > 0) {
+				if (!wpa_cli_cmd_v("set_network %d domain_match \"%s\"",
+						   resp.network_id,
+						   params->server_cert_domain_exact)) {
+					goto out;
+				}
+			}
+
+			if (params->server_cert_domain_suffix_len > 0) {
+				if (!wpa_cli_cmd_v("set_network %d domain_suffix_match \"%s\"",
+						   resp.network_id,
+						   params->server_cert_domain_suffix)) {
+					goto out;
+				}
+			}
+
 			if (false == ((params->security == WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2 ||
 			    params->security == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2) &&
 			    (!params->verify_peer_cert))) {
