@@ -59,9 +59,14 @@
 		};
 	};
 
-	sram0: memory@20000000 {
+	sram1: memory@20000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		zephyr,memory-region = "SRAM0";
+		zephyr,memory-region = "SRAM1";
+	};
+
+	sram2: memory@20080000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "SRAM2";
 	};
 
 	clocks {
@@ -602,3 +607,6 @@
 &nvic {
 	arm,num-irq-priority-bits = <2>;
 };
+
+/* Define deprecated sram0 node label for compatibility until it is removed */
+sram0: &sram1 {};

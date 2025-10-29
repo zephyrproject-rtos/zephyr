@@ -34,6 +34,10 @@ Kernel
 Boards
 ******
 
+* Node label ``sram0`` is deprecated in STM32U0xx SoCs in favor to label ``sram1`` that better
+  match the wording used to refer to this internal memory in the SoCs reference manuals and
+  litterature. The label is still defined but will be removed in the future.
+
 Device Drivers and Devicetree
 *****************************
 

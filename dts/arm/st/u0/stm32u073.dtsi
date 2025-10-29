@@ -72,16 +72,6 @@
 		};
 	};
 
-	sram1: memory@20000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		zephyr,memory-region = "SRAM1";
-	};
-
-	sram2: memory@20008000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		zephyr,memory-region = "SRAM2";
-	};
-
 	usb_fs_phy: usbphy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
