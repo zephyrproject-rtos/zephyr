@@ -32,12 +32,13 @@ extern "C" {
 #ifdef CONFIG_RING_BUFFER_LARGE
 typedef uint32_t ring_buf_idx_t;
 #define RING_BUFFER_MAX_SIZE (UINT32_MAX / 2)
+#define RING_BUFFER_SIZE_ASSERT_MSG "Size too big"
 #else
 typedef uint16_t ring_buf_idx_t;
 #define RING_BUFFER_MAX_SIZE (UINT16_MAX / 2)
+#define RING_BUFFER_SIZE_ASSERT_MSG "Size too big, please enable CONFIG_RING_BUFFER_LARGE"
 #endif
 
-#define RING_BUFFER_SIZE_ASSERT_MSG "Size too big"
 
 struct ring_buf_index { ring_buf_idx_t head, tail, base; };
 
