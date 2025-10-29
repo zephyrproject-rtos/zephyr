@@ -43,7 +43,7 @@ For an example of a metric in use, see the :ref:`on_demand <on_demand_policy>` p
 P-state Drivers
 ***************
 
-A SoC supporting the CPU Freq subsystem must implement a P-state driver that implements
+A SoC supporting the CPU Frequency Scaling subsystem must implement a P-state driver that implements
 :c:func:`cpu_freq_pstate_set` which applies the passed in ``p_state`` to
 the CPU when called.
 
@@ -61,8 +61,9 @@ undergo a P-state transition, then all other CPUs will also undergo the same P-s
 This can be overridden by the SoC by enabling the :kconfig:option:`CONFIG_CPU_FREQ_PER_CPU_SCALING`
 configuration option to allow each CPU to be clocked independently.
 
-The SoC supporting CPU Freq must uphold Zephyr's requirement that the system timer remains constant
-over the lifetime of the program. See :ref:`Kernel Timing <kernel_timing>` for more information.
+The SoC supporting CPU Frequency Scaling must uphold Zephyr's requirement that the system timer
+frequency remains steady over the lifetime of the program. See :ref:`Kernel Timing <kernel_timing>`
+for more information.
 
 The CPU Frequency Scaling subsystem runs as a handler function to a ``k_timer``, which means it runs
 in interrupt context (IRQ). The SoC P-state driver must ensure that its implementation of
