@@ -21,8 +21,9 @@
  * no additional processing.
  *
  * Thread-specific m-mode and u-mode PMP entries start from the PMP slot
- * indicated by global_pmp_end_index. Lower slots are used by global entries
- * which are never modified.
+ * indicated by global_pmp_m_end_index and global_pmp_u_end_index,
+ * respectively. Lower slots are used by global entries which are never
+ * modified.
  */
 
 #include <zephyr/kernel.h>
@@ -402,16 +403,18 @@ static void write_pmp_entries(unsigned int start, unsigned int end,
 
 /*
  * Stores the initial values of the pmpcfg CSRs, covering all global
- * m-mode PMP entries. This array is sized to hold all pmpcfg registers
- * necessary for CONFIG_PMP_SLOTS. It is used to seed the per-thread
- * PMP configuration copies. Locked entries aren't modifiable but
- * we could have non-locked entries here too.
+ * m-mode and u-mode PMP entries. This array is sized to hold all pmpcfg
+ * registers necessary for CONFIG_PMP_SLOTS. It is used to seed the
+ * per-thread PMP configuration copies. Locked entries aren't modifiable
+ * but we could have non-locked entries here too.
  */
 static unsigned long global_pmp_cfg[CONFIG_PMP_SLOTS / PMPCFG_STRIDE];
-static unsigned long global_pmp_last_addr;
+static unsigned long global_pmp_m_last_addr;
+static unsigned long global_pmp_u_last_addr;
 
 /* End of global PMP entry range */
-static unsigned int global_pmp_end_index;
+static unsigned int global_pmp_m_end_index;
+static unsigned int global_pmp_u_end_index;
 
 /**
  * @Brief Initialize the PMP with global entries on each CPU
@@ -498,17 +501,19 @@ void z_riscv_pmp_init(void)
 #endif
 
 	/* Make sure secondary CPUs produced the same values */
-	if (global_pmp_end_index != 0) {
-		__ASSERT(global_pmp_end_index == index, "");
+	if (global_pmp_m_end_index != 0) {
+		__ASSERT(global_pmp_m_end_index == index, "");
 		__ASSERT(global_pmp_cfg[index / PMPCFG_STRIDE] == pmp_cfg[index / PMPCFG_STRIDE],
 			 "");
-		__ASSERT(global_pmp_last_addr == pmp_addr[index - 1], "");
+		__ASSERT(global_pmp_m_last_addr == pmp_addr[index - 1], "");
 	}
 #endif
 
 	memcpy(global_pmp_cfg, pmp_cfg, sizeof(pmp_cfg));
-	global_pmp_last_addr = pmp_addr[index - 1];
-	global_pmp_end_index = index;
+	global_pmp_m_last_addr = pmp_addr[index - 1];
+	global_pmp_m_end_index = index;
+	global_pmp_u_last_addr = pmp_addr[index - 1];
+	global_pmp_u_end_index = index;
 
 	if (PMP_DEBUG_DUMP) {
 		dump_pmp_regs("initial register dump");
@@ -534,9 +539,14 @@ static inline unsigned int z_riscv_pmp_thread_init(unsigned long *pmp_addr,
 	 * Retrieve the pmpaddr value matching the last global PMP slot.
 	 * This is so that set_pmp_entry() can safely attempt TOR with it.
 	 */
-	pmp_addr[global_pmp_end_index - 1] = global_pmp_last_addr;
+#ifdef CONFIG_USERSPACE
+	pmp_addr[global_pmp_u_end_index - 1] = global_pmp_u_last_addr;
+	return global_pmp_u_end_index;
+#else
+	pmp_addr[global_pmp_m_end_index - 1] = global_pmp_m_last_addr;
+	return global_pmp_m_end_index;
+#endif /*CONFIG_USERSPACE */
 
-	return global_pmp_end_index;
 }
 #endif
 
@@ -590,7 +600,7 @@ void z_riscv_pmp_kernelmode_enable(struct k_thread *thread)
 	csr_clear(mstatus, MSTATUS_MPRV | MSTATUS_MPP);
 
 	/* Write our m-mode MPP entries */
-	write_pmp_entries(global_pmp_end_index, thread->arch.m_mode_pmp_end_index,
+	write_pmp_entries(global_pmp_m_end_index, thread->arch.m_mode_pmp_end_index,
 			  false /* no need to clear to the end */,
 			  PMP_M_MODE(thread));
 
@@ -610,10 +620,10 @@ void z_riscv_pmp_kernelmode_disable(void)
 
 	unsigned long pmp_addr[CONFIG_PMP_SLOTS];
 	unsigned long pmp_cfg[CONFIG_PMP_SLOTS / PMPCFG_STRIDE];
-	unsigned int index = global_pmp_end_index;
+	unsigned int index = global_pmp_m_end_index;
 
 	/* Retrieve the pmpaddr value matching the last global PMP slot. */
-	pmp_addr[global_pmp_end_index - 1] = global_pmp_last_addr;
+	pmp_addr[global_pmp_m_end_index - 1] = global_pmp_m_last_addr;
 
 	/* Disable (non-locked) PMP entries for m-mode while we update them. */
 	csr_clear(mstatus, MSTATUS_MPRV);
@@ -625,7 +635,7 @@ void z_riscv_pmp_kernelmode_disable(void)
 	set_pmp_mprv_catchall(&index, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 
 	/* Write "catch all" entry and clear unlocked entries to PMP regs. */
-	write_pmp_entries(global_pmp_end_index, index,
+	write_pmp_entries(global_pmp_m_end_index, index,
 			  true, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 
 	if (PMP_DEBUG_DUMP) {
@@ -741,7 +751,7 @@ void z_riscv_pmp_usermode_enable(struct k_thread *thread)
 #endif
 
 	/* Write our u-mode MPP entries */
-	write_pmp_entries(global_pmp_end_index, thread->arch.u_mode_pmp_end_index,
+	write_pmp_entries(global_pmp_u_end_index, thread->arch.u_mode_pmp_end_index,
 			  true /* must clear to the end */,
 			  PMP_U_MODE(thread));
 
@@ -755,7 +765,7 @@ int arch_mem_domain_max_partitions_get(void)
 	int available_pmp_slots = CONFIG_PMP_SLOTS;
 
 	/* remove those slots dedicated to global entries */
-	available_pmp_slots -= global_pmp_end_index;
+	available_pmp_slots -= global_pmp_u_end_index;
 
 	/*
 	 * User thread stack mapping:
