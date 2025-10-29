@@ -105,6 +105,14 @@
 			status = "disabled";
 		};
 
+		trng: trng@5000f000 {
+			compatible = "sifli,sf32lb-trng";
+			reg = <0x5000f000 0x1000>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_TRNG>;
+			interrupts = <69 0>;
+			status = "disabled";
+		};
+
 		mpi1: memory-controller@50041000 {
 			/*
 			 * configure compatible depending on memory type, choices:
