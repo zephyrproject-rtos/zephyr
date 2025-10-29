@@ -120,6 +120,10 @@ otError otPlatUdpClose(otUdpSocket *aUdpSocket)
 		}
 	}
 
+	VerifyOrExit(net_socket_service_register(&handle_udp_receive, sockfd_udp,
+						 ARRAY_SIZE(sockfd_udp), NULL) == 0,
+						 error = OT_ERROR_FAILED);
+
 exit:
 	return error;
 }
