@@ -1628,6 +1628,11 @@ void bt_gatt_cb_register(struct bt_gatt_cb *cb)
 	sys_slist_append(&callback_list, &cb->node);
 }
 
+void bt_gatt_cb_unregister(struct bt_gatt_cb *cb)
+{
+	sys_slist_find_and_remove(&callback_list, &cb->node);
+}
+
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB)
 static void db_changed(void)
 {
