@@ -18,7 +18,7 @@
 #define ATOMCTL_WB_RCW	BIT(4) /* RCW Transaction for Writeback Cacheable Memory */
 #define ATOMCTL_VALUE (ATOMCTL_BY_RCW | ATOMCTL_WT_RCW | ATOMCTL_WB_RCW)
 
-#ifdef CONFIG_ADSP_MEMORY_IS_MIRRORED
+#ifdef CONFIG_INTEL_ADSP_MEMORY_IS_MIRRORED
 
 /* Utility to generate an unrolled and optimal[1] code sequence to set
  * the RPO TLB registers (contra the HAL cacheattr macros, which
@@ -75,7 +75,7 @@
 		FOR_EACH(_SET_ONE_TLB, (;), 0, 1, 2, 3, 4, 5, 6, 7);	\
 	} while (0)
 
-#endif /* CONFIG_ADSP_MEMORY_IS_MIRRORED */
+#endif /* CONFIG_INTEL_ADSP_MEMORY_IS_MIRRORED */
 
 /* Low-level CPU initialization.  Call this immediately after entering
  * C code to initialize the cache, protection and synchronization
@@ -140,9 +140,9 @@ static ALWAYS_INLINE void cpu_early_init(void)
 	 * Let use the default configuration and properly configure the
 	 * MMU when running from RAM.
 	 */
-#if defined(CONFIG_ADSP_MEMORY_IS_MIRRORED) && !defined(CONFIG_MMU)
+#if defined(CONFIG_INTEL_ADSP_MEMORY_IS_MIRRORED) && !defined(CONFIG_MMU)
 	SET_RPO_TLB();
-#endif /* CONFIG_ADSP_MEMORY_IS_MIRRORED && !CONFIG_MMU */
+#endif /* CONFIG_INTEL_ADSP_MEMORY_IS_MIRRORED && !CONFIG_MMU */
 
 
 	/* Initialize ATOMCTL: Hardware defaults for S32C1I use

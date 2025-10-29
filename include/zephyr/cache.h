@@ -539,6 +539,30 @@ static ALWAYS_INLINE void sys_cache_flush(void *addr, size_t size)
 }
 #endif
 
+#if defined(CONFIG_CACHE_CAN_SAY_MEM_COHERENCE) || defined(__DOXYGEN__)
+/**
+ * @brief Detect memory coherence type
+ *
+ * This function returns true if the byte pointed to lies within
+ * "coherence regions" (typically implemented with uncached memory) and
+ * can safely be used in multiprocessor code without explicit flush or
+ * invalidate operations.
+ *
+ * @note The result is for only the single byte at the specified
+ * address, this API is not required to check region boundaries or to
+ * expect aligned pointers.  The expectation is that the code above
+ * will have queried the appropriate address(es).
+ *
+ * @param ptr Pointer to be checked.
+ *
+ * @return True is pointer is in any coherence regions, false otherwise.
+ */
+static ALWAYS_INLINE bool sys_cache_is_mem_coherent(void *ptr)
+{
+	return cache_is_mem_coherent(ptr);
+}
+#endif /* CONFIG_CACHE_CAN_SAY_MEM_COHERENCE */
+
 #include <zephyr/syscalls/cache.h>
 #ifdef __cplusplus
 }

@@ -335,6 +335,14 @@ static ALWAYS_INLINE void arch_cache_init(void)
 {
 }
 
+#if defined(CONFIG_CACHE_CAN_SAY_MEM_COHERENCE)
+static ALWAYS_INLINE bool arch_mem_coherent(void *ptr)
+{
+	size_t addr = (size_t) ptr;
+
+	return (addr >> 29) == CONFIG_XTENSA_UNCACHED_REGION;
+}
+#endif
 
 #ifdef __cplusplus
 } /* extern "C" */
