@@ -221,3 +221,8 @@ Trusted Firmware-M
 
 Architectures
 *************
+
+* Renamed ``CONFIG_ARCH_HAS_COHERENCE`` to :kconfig:option:`CONFIG_CACHE_CAN_SAY_MEM_COHERENCE` as
+  the feature is cache related so move it under cache.
+
+  * Use :c:func:`sys_cache_is_mem_coherent` instead of :c:func:`arch_mem_coherent`.
