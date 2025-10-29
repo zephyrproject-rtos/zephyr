@@ -157,6 +157,12 @@ config COMMON_LIBC_FTELL
 	help
 	  Common implementation of ftell().
 
+config COMMON_LIBC_FWRITE
+	bool "Common C library fwrite"
+	default y if ZVFS
+	help
+	  Common implementation of fwrite().
+
 config COMMON_LIBC_RENAME
 	bool "Common C library rename"
 	default y if ZVFS

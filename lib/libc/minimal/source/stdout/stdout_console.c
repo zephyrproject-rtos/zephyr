@@ -102,13 +102,6 @@ static inline size_t z_vrfy_zephyr_fwrite(const void *ZRESTRICT ptr,
 #include <zephyr/syscalls/zephyr_fwrite_mrsh.c>
 #endif
 
-size_t fwrite(const void *ZRESTRICT ptr, size_t size, size_t nitems,
-			  FILE *ZRESTRICT stream)
-{
-	return zephyr_fwrite(ptr, size, nitems, stream);
-}
-
-
 int puts(const char *s)
 {
 	if (fputs(s, stdout) == EOF) {
