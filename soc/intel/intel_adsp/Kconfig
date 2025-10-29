@@ -9,6 +9,8 @@ config SOC_FAMILY_INTEL_ADSP
 	select CPU_HAS_DCACHE
 	select CPU_HAS_ICACHE
 	select CPU_CACHE_INCOHERENT
+	select CACHE_CAN_SAY_MEM_COHERENCE
+	select SOC_HAS_CACHE_FUNCTIONS
 	select IPC_SERVICE if DT_HAS_INTEL_ADSP_HOST_IPC_ENABLED
 
 if SOC_FAMILY_INTEL_ADSP
@@ -154,5 +156,19 @@ config INTEL_ADSP_MEMORY_IS_MIRRORED
 	  at different addressed. Accessing one set of addressed is via CPU cache
 	  while the other is direct to memory. Selected by SoCs using this type of
 	  memory mapping.
+
+config INTEL_ADSP_CACHED_REGION
+	int "Cached RPO mapping"
+	range 0 7
+	help
+	  This specifies which 512M region (0-7, as defined by the Xtensa
+	  Region Protection Option) contains the "cached" mapping.
+
+config INTEL_ADSP_UNCACHED_REGION
+	int "Uncached RPO mapping"
+	range 0 7
+	help
+	  As for INTEL_ADSP_CACHED_REGION, this specifies which 512M
+	  region (0-7) contains the "uncached" mapping.
 
 endif # SOC_FAMILY_INTEL_ADSP
