@@ -1,7 +1,9 @@
 # SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
+RISCV_ISA_BASE_PROP := riscv,isa-base
+
 config BOARD_QEMU_RISCV
-	select SOC_QEMU_VIRT_RISCV32 if BOARD_QEMU_RISCV_QEMU_VIRT_RISCV32 || BOARD_QEMU_RISCV_QEMU_VIRT_RISCV32_SMP
-	select SOC_QEMU_VIRT_RISCV32E if BOARD_QEMU_RISCV_QEMU_VIRT_RISCV32E
-	select SOC_QEMU_VIRT_RISCV64 if BOARD_QEMU_RISCV_QEMU_VIRT_RISCV64 || BOARD_QEMU_RISCV_QEMU_VIRT_RISCV64_SMP
+	select SOC_QEMU_VIRT_RISCV32 if $(dt_node_str_prop_equals,/cpus/cpu@0,$(RISCV_ISA_BASE_PROP),rv32i)
+	select SOC_QEMU_VIRT_RISCV32E if $(dt_node_str_prop_equals,/cpus/cpu@0,$(RISCV_ISA_BASE_PROP),rv32e)
+	select SOC_QEMU_VIRT_RISCV64 if $(dt_node_str_prop_equals,/cpus/cpu@0,$(RISCV_ISA_BASE_PROP),rv64i)
