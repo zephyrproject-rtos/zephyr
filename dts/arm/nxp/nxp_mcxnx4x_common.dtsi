@@ -182,6 +182,84 @@
 		nxp,kinetis-port = <&portf>;
 	};
 
+	eim0: eim@5b000 {
+		compatible = "nxp,eim";
+		status = "disabled";
+		reg = <0x5b000 0x1000>;
+		resets = <&reset NXP_SYSCON_RESET(3, 24)>;
+
+		eim0_channel0: channel0 {
+			channel-id = <0>;
+			erm-channel-id = <0>;
+			size = <DT_SIZE_K(96)>;
+			start-address = <0x4000000>;
+			ecc-enable = <0x2>;
+			status = "disabled";
+		};
+
+		eim0_channel1: channel1 {
+			channel-id = <1>;
+			erm-channel-id = <1>;
+			size = <DT_SIZE_K(32)>;
+			start-address = <0x20000000>;
+			ecc-enable = <0x1>;
+			status = "disabled";
+		};
+
+		eim0_channel2: channel2 {
+			channel-id = <2>;
+			erm-channel-id = <2>;
+			size = <DT_SIZE_K(32)>;
+			start-address = <0x20008000>;
+			ecc-enable = <0x2>;
+			status = "disabled";
+		};
+
+		eim0_channel3: channel3 {
+			channel-id = <3>;
+			erm-channel-id = <3>;
+			size = <DT_SIZE_K(64)>;
+			start-address = <0x20010000>;
+			ecc-enable = <0x4>;
+			status = "disabled";
+		};
+
+		eim0_channel4: channel4 {
+			channel-id = <4>;
+			erm-channel-id = <4>;
+			size = <DT_SIZE_K(64)>;
+			start-address = <0x20020000>;
+			ecc-enable = <0x4>;
+			status = "disabled";
+		};
+
+		eim0_channel5: channel5 {
+			channel-id = <5>;
+			erm-channel-id = <5>;
+			size = <DT_SIZE_K(64)>;
+			start-address = <0x20030000>;
+			ecc-enable = <0x8>;
+			status = "disabled";
+		};
+
+		eim0_channel6: channel6 {
+			channel-id = <6>;
+			erm-channel-id = <6>;
+			size = <DT_SIZE_K(64)>;
+			start-address = <0x20040000>;
+			ecc-enable = <0x8>;
+			status = "disabled";
+		};
+	};
+
+	erm0: erm@5c000 {
+		compatible = "nxp,erm";
+		status = "disabled";
+		reg = <0x5c000 0x1000>;
+		interrupts = <136 0>, <137 0>;
+		channels = <0 1 2 3 4 5 6 7 8 9>;
+	};
+
 	flexcomm0: flexcomm@92000 {
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x92000 0x1000>;

@@ -218,6 +218,32 @@
 			status = "disabled";
 		};
 
+		erm0: erm@40018000 {
+			compatible = "nxp,erm";
+			reg = <0x40018000 0x114>;
+			interrupts = <44 0>, <45 0>;
+			channels = <0 1>;
+			status = "disabled";
+		};
+
+		eim0: eim@40019000 {
+			compatible = "nxp,eim";
+			reg = <0x40019000 0x208>;
+			status = "disabled";
+
+			eim0_channel0: channel0 {
+				channel-id = <0>;
+				erm-channel-id = <0>;
+				status = "disabled";
+			};
+
+			eim0_channel1: channel1 {
+				channel-id = <1>;
+				erm-channel-id = <1>;
+				status = "disabled";
+			};
+		};
+
 		enet: ethernet@40079000 {
 			compatible = "nxp,enet";
 			reg = <0x40079000 0x620>;
