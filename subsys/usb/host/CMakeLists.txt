@@ -33,6 +33,15 @@ zephyr_library_sources_ifdef(
   class/usbh_hub.c
 )
 
+zephyr_library_include_directories_ifdef(
+  CONFIG_USBH_CDC_ECM
+  ${ZEPHYR_BASE}/drivers/ethernet
+)
+zephyr_library_sources_ifdef(
+  CONFIG_USBH_CDC_ECM
+  class/usbh_cdc_ecm.c
+)
+
 zephyr_library_sources_ifdef(
   CONFIG_USBIP
   usbip.c
