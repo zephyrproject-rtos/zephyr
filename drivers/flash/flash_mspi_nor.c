@@ -43,6 +43,18 @@ static bool in_octal_io(const struct device *dev)
 		dev_data->last_applied_cfg->io_mode == MSPI_IO_MODE_OCTAL;
 }
 
+static bool is_quad_enable_needed(const struct mspi_dev_cfg *cfg)
+{
+	return cfg && (cfg->io_mode == MSPI_IO_MODE_QUAD_1_1_4 ||
+		cfg->io_mode == MSPI_IO_MODE_QUAD_1_4_4);
+}
+
+static bool is_octal_enable_needed(const struct mspi_dev_cfg *cfg)
+{
+	return cfg && (cfg->io_mode == MSPI_IO_MODE_OCTAL_1_1_8 ||
+		cfg->io_mode == MSPI_IO_MODE_OCTAL_1_8_8);
+}
+
 static void set_up_xfer(const struct device *dev, enum mspi_xfer_direction dir)
 {
 	const struct flash_mspi_nor_config *dev_config = dev->config;
@@ -89,8 +101,6 @@ static int perform_xfer(const struct device *dev, uint8_t cmd)
 	const struct flash_mspi_nor_config *dev_config = dev->config;
 	struct flash_mspi_nor_data *dev_data = dev->data;
 	const struct mspi_dev_cfg *cfg = NULL;
-	bool mem_access = (cmd == dev_data->cmd_info.read_cmd ||
-		cmd == dev_data->cmd_info.pp_cmd);
 	int rc;
 
 	if (dev_data->cmd_info.cmd_extension != CMD_EXTENSION_NONE &&
@@ -102,25 +112,21 @@ static int perform_xfer(const struct device *dev, uint8_t cmd)
 		dev_data->packet.cmd = cmd;
 	}
 
-	if (!dev_data->chip_initialized ||
-		dev_config->multi_io_cmd ||
-		dev_config->mspi_nor_cfg.io_mode == MSPI_IO_MODE_SINGLE) {
-		/* Commands before chip is initialized manually apply a MSPI config
-		 * which all flash chips support by JEDEC standard. Do not switch
-		 * to device tree config yet.
-		 * If multiple IO lines are used in all the transfer phases
-		 * there's no need to switch the IO mode.
-		 */
-	} else if (mem_access) {
-		/* For commands accessing the flash memory (read and program),
-		 * ensure that the target IO mode is active.
-		 */
-		if (!in_octal_io(dev)) {
-			cfg = &dev_config->mspi_nor_cfg;
+	/* Commands before chip is initialized manually apply a MSPI config
+	 * which all flash chips support by JEDEC standard. Do not switch
+	 * to device tree config yet.
+	 * If multiple IO lines are used in all the transfer phases
+	 * there's no need to switch the IO mode.
+	 */
+	if (dev_data->chip_initialized && !dev_config->multi_io_cmd) {
+		if (cmd == dev_data->cmd_info.read_cmd) {
+			cfg = dev_data->read_cfg;
+		} else if (cmd == dev_data->cmd_info.pp_cmd) {
+			cfg = dev_data->write_cfg;
+		} else {
+			/* For all other commands, use control command config */
+			cfg = &dev_config->mspi_control_cfg;
 		}
-	} else {
-		/* For all other commands, use control command config */
-		cfg = &dev_config->mspi_control_cfg;
 	}
 
 	if (cfg && cfg != dev_data->last_applied_cfg) {
@@ -824,12 +830,11 @@ static int switch_to_target_io_mode(const struct device *dev)
 {
 	const struct flash_mspi_nor_config *dev_config = dev->config;
 	struct flash_mspi_nor_data *dev_data = dev->data;
-	enum mspi_io_mode io_mode = dev_config->mspi_nor_cfg.io_mode;
 	int rc = 0;
 
 	if (dev_data->switch_info.quad_enable_req != JESD216_DW15_QER_VAL_NONE) {
-		bool quad_needed = io_mode == MSPI_IO_MODE_QUAD_1_1_4 ||
-				   io_mode == MSPI_IO_MODE_QUAD_1_4_4;
+		bool quad_needed = is_quad_enable_needed(dev_data->read_cfg) ||
+				   is_quad_enable_needed(dev_data->write_cfg);
 
 		rc = quad_enable_set(dev, quad_needed);
 		if (rc < 0) {
@@ -839,8 +844,8 @@ static int switch_to_target_io_mode(const struct device *dev)
 	}
 
 	if (dev_data->switch_info.octal_enable_req != OCTAL_ENABLE_REQ_NONE) {
-		bool octal_needed = io_mode == MSPI_IO_MODE_OCTAL_1_1_8 ||
-				    io_mode == MSPI_IO_MODE_OCTAL_1_8_8;
+		bool octal_needed = is_octal_enable_needed(dev_data->read_cfg) ||
+				    is_octal_enable_needed(dev_data->write_cfg);
 
 		rc = octal_enable_set(dev, octal_needed);
 		if (rc < 0) {
@@ -1089,6 +1094,33 @@ static int flash_chip_init(const struct device *dev)
 		}
 	}
 
+	/* If read/write commands and frequency do not match the default
+	 * MSPI device configuration, store new ones for those commands
+	 * specifically.
+	 */
+	if (dev_config->read_io_mode == dev_config->mspi_nor_cfg.io_mode &&
+		dev_config->read_freq == dev_config->mspi_nor_cfg.freq) {
+		dev_data->read_cfg = &dev_config->mspi_nor_cfg;
+	} else {
+		memcpy(&dev_data->mspi_dev_read_cfg, &dev_config->mspi_nor_cfg,
+			sizeof(dev_config->mspi_nor_cfg));
+		dev_data->mspi_dev_read_cfg.io_mode = dev_config->read_io_mode;
+		dev_data->mspi_dev_read_cfg.freq = dev_config->read_freq;
+		dev_data->read_cfg = &dev_data->mspi_dev_read_cfg;
+	}
+
+	if (dev_config->write_io_mode == dev_config->mspi_nor_cfg.io_mode &&
+		dev_config->write_freq == dev_config->mspi_nor_cfg.freq) {
+		dev_data->write_cfg = &dev_config->mspi_nor_cfg;
+	} else {
+		memcpy(&dev_data->mspi_dev_write_cfg, &dev_config->mspi_nor_cfg,
+			sizeof(dev_config->mspi_nor_cfg));
+		dev_data->mspi_dev_write_cfg.io_mode = dev_config->write_io_mode;
+		dev_data->mspi_dev_write_cfg.freq = dev_config->write_freq;
+		dev_data->write_cfg = &dev_data->mspi_dev_write_cfg;
+	}
+
+
 	if (dev_config->jedec_id_specified) {
 		rc = read_jedec_id(dev, id);
 		if (rc < 0) {
@@ -1263,10 +1295,12 @@ static DEVICE_API(flash, drv_api) = {
 #endif
 };
 
+#define FLASH_MSPI_MAX_FREQ(inst) DT_INST_PROP(inst, mspi_max_frequency)
+
 #define FLASH_CONTROL_CMD_CONFIG(inst)					\
 {									\
 	.ce_num = DT_INST_PROP_OR(inst, mspi_hardware_ce_num, 0),	\
-	.freq = DT_INST_PROP(inst, mspi_max_frequency),			\
+	.freq = FLASH_MSPI_MAX_FREQ(inst),				\
 	.io_mode = MSPI_IO_MODE_SINGLE,					\
 	.data_rate = MSPI_DATA_RATE_SINGLE,				\
 	.cpp = MSPI_CPP_MODE_0,						\
@@ -1350,6 +1384,14 @@ BUILD_ASSERT((FLASH_SIZE(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) == 0, \
 		.default_erase_types = DEFAULT_ERASE_TYPES(inst),		\
 		.default_cmd_info = DEFAULT_CMD_INFO(inst),			\
 		.default_switch_info = DEFAULT_SWITCH_INFO(inst),		\
+		.read_freq = DT_INST_PROP_OR(inst, read_frequency,		\
+			FLASH_MSPI_MAX_FREQ(inst)),				\
+		.read_io_mode = DT_INST_ENUM_IDX_OR(inst, read_io_mode,		\
+			DT_INST_ENUM_IDX(inst, mspi_io_mode)),			\
+		.write_freq = DT_INST_PROP_OR(inst, write_frequency,		\
+			FLASH_MSPI_MAX_FREQ(inst)),				\
+		.write_io_mode = DT_INST_ENUM_IDX_OR(inst, write_io_mode,	\
+			DT_INST_ENUM_IDX(inst, mspi_io_mode)),			\
 		.jedec_id_specified = DT_INST_NODE_HAS_PROP(inst, jedec_id),    \
 		.rx_dummy_specified = DT_INST_NODE_HAS_PROP(inst, rx_dummy),    \
 		.multiperipheral_bus = DT_PROP(DT_INST_BUS(inst),		\

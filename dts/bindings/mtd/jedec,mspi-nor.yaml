@@ -21,6 +21,62 @@ include:
       - t-exit-dpd
 
 properties:
+  read-frequency:
+    type: int
+    description: |
+      Clock frequency of device to configure in Hz for read
+      command, when reads are desired to be in a different
+      frequency than the rest of the commands.
+
+  read-io-mode:
+    type: string
+    enum:
+      - "MSPI_IO_MODE_SINGLE"
+      - "MSPI_IO_MODE_DUAL"
+      - "MSPI_IO_MODE_DUAL_1_1_2"
+      - "MSPI_IO_MODE_DUAL_1_2_2"
+      - "MSPI_IO_MODE_QUAD"
+      - "MSPI_IO_MODE_QUAD_1_1_4"
+      - "MSPI_IO_MODE_QUAD_1_4_4"
+      - "MSPI_IO_MODE_OCTAL"
+      - "MSPI_IO_MODE_OCTAL_1_1_8"
+      - "MSPI_IO_MODE_OCTAL_1_8_8"
+      - "MSPI_IO_MODE_HEX"
+      - "MSPI_IO_MODE_HEX_8_8_16"
+      - "MSPI_IO_MODE_HEX_8_16_16"
+    description: |
+      MSPI I/O mode setting for read command when desired to
+      be different from base device `mspi-io-mode` for the rest
+      of the commands.
+
+  write-frequency:
+    type: int
+    description: |
+      Clock frequency of device to configure in Hz for write
+      command, when write are desired to be in a different
+      frequency than the rest of the commands.
+
+  write-io-mode:
+    type: string
+    enum:
+      - "MSPI_IO_MODE_SINGLE"
+      - "MSPI_IO_MODE_DUAL"
+      - "MSPI_IO_MODE_DUAL_1_1_2"
+      - "MSPI_IO_MODE_DUAL_1_2_2"
+      - "MSPI_IO_MODE_QUAD"
+      - "MSPI_IO_MODE_QUAD_1_1_4"
+      - "MSPI_IO_MODE_QUAD_1_4_4"
+      - "MSPI_IO_MODE_OCTAL"
+      - "MSPI_IO_MODE_OCTAL_1_1_8"
+      - "MSPI_IO_MODE_OCTAL_1_8_8"
+      - "MSPI_IO_MODE_HEX"
+      - "MSPI_IO_MODE_HEX_8_8_16"
+      - "MSPI_IO_MODE_HEX_8_16_16"
+    description: |
+      MSPI I/O mode setting for write command when desired to
+      be different from base device `mspi-io-mode` for the rest
+      of the commands.
+
   reset-gpios:
     type: phandle-array
     description: |
