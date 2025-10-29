@@ -58,8 +58,6 @@ int puts(const char *s);
 
 int fputc(int c, FILE *stream);
 int fputs(const char *ZRESTRICT s, FILE *ZRESTRICT stream);
-size_t fwrite(const void *ZRESTRICT ptr, size_t size, size_t nitems,
-	      FILE *ZRESTRICT stream);
 /**
  * @brief Open file with given name and mode.
  *
@@ -98,6 +96,17 @@ int fputc(int c, FILE *stream);
  * @return Number of elements successfully read; EOF with errno set otherwise
  */
 size_t fread(void *ZRESTRICT ptr, size_t size, size_t nmemb, FILE *ZRESTRICT stream);
+/**
+ * @brief Write data to stream.
+ *
+ * @param ptr Array of elements to write
+ * @param size Size of each element in the array
+ * @param nmemb Number of elements in the array
+ * @param stream Output stream
+ *
+ * @return Number of elements successfully written
+ */
+size_t fwrite(const void *ZRESTRICT ptr, size_t size, size_t nmemb, FILE *ZRESTRICT stream);
 /**
  * @brief Place file position indicator.
  *
