@@ -157,11 +157,11 @@
 };
 
 /*
- * MCXW23 EVK board uses OS timer as the kernel timer
- * In case we need to switch to SYSTICK timer, then
- * replace &os_timer with &systick
+ * MCXW23 EVK board uses SYSTICK timer as the kernel timer.
+ * In case we need to switch to OS timer, then
+ * replace &systick with &os_timer
  */
-&os_timer {
+&systick {
 	status = "okay";
 };
 
