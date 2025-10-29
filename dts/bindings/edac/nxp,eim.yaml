@@ -1,0 +1,32 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP Error Injection Module
+
+compatible: "nxp,eim"
+
+include: [reset-device.yaml, base.yaml]
+
+child-binding:
+  properties:
+    channel-id:
+      required: true
+      type: int
+
+    erm-channel-id:
+      type: int
+      description: erm channel id for current eim channel.
+
+    size:
+      required: true
+      type: int
+      description: size of the memory channel.
+
+    start-address:
+      required: true
+      type: int
+      description: start address of the memory channel.
+
+    ecc-enable:
+      type: int
+      description: ecc enable magic number for the memory channel.
