@@ -589,6 +589,11 @@ int nrf_grtc_timer_clock_driver_init(void)
 {
 	return sys_clock_driver_init();
 }
+
+int nrf_grtc_timer_post_init(void)
+{
+	return grtc_post_init();
+}
 #else
 SYS_INIT(sys_clock_driver_init, EARLY, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
 SYS_INIT(grtc_post_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

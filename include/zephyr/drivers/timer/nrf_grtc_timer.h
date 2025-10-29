@@ -209,6 +209,15 @@ uint64_t z_nrf_grtc_timer_startup_value_get(void);
  */
 int nrf_grtc_timer_clock_driver_init(void);
 
+/**
+ * @brief Perform second-stage initialization of the GRTC from an application-
+ *        defined function.
+ *
+ * @retval 0 on success.
+ * @retval -errno Negative error code on failure.
+ */
+int nrf_grtc_timer_post_init(void);
+
 #ifdef __cplusplus
 }
 #endif
