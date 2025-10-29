@@ -558,6 +558,16 @@ int spi_dw_init(const struct device *dev)
 	pinctrl_apply_state(info->pcfg, PINCTRL_STATE_DEFAULT);
 #endif
 
+#if defined(CONFIG_CLOCK_CONTROL)
+	if (info->clk_dev) {
+		err = clock_control_on(info->clk_dev, info->clk_id);
+		if (err < 0) {
+			LOG_ERR("Failed to enable the clock");
+			return err;
+		}
+	}
+#endif
+
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 
 	info->config_func();
@@ -649,6 +659,15 @@ COND_CODE_1(IS_EQ(DT_NUM_IRQS(DT_DRV_INST(inst)), 1),              \
 		(SPI_CFG_IRQS_MULTIPLE_ERR_LINES(inst)))))	   \
 }
 
+#if defined(CONFIG_CLOCK_CONTROL)
+#define CLOCK_DW_CONFIG(n)                                                             \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(0, clocks),                                   \
+		   (.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                  \
+		    .clk_id = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, clkid),))
+#else
+#define CLOCK_DW_CONFIG(n)
+#endif
+
 #define SPI_DW_INIT(inst)                                                                   \
 	IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_INST_DEFINE(inst);))                         \
 	SPI_DW_IRQ_HANDLER(inst);                                                           \
@@ -679,6 +698,7 @@ COND_CODE_1(IS_EQ(DT_NUM_IRQS(DT_DRV_INST(inst)), 1),              \
 			.set_bit_func = reg_set_bit,                                        \
 			.clear_bit_func = reg_clear_bit,                                    \
 			.test_bit_func = reg_test_bit,))                                    \
+		CLOCK_DW_CONFIG(inst)                                                      \
 	};                                                                                  \
 	SPI_DEVICE_DT_INST_DEFINE(inst,                                                     \
 		spi_dw_init,                                                                \
