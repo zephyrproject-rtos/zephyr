@@ -42,6 +42,7 @@ Security Vulnerability Related
 ******************************
 The following CVEs are addressed by this release:
 
+* :cve:`2025-9408`: Under embargo until 2025-11-10
 * :cve:`2025-12035`: Under embargo until 2025-12-13
 
 More detailed information can be found in:
