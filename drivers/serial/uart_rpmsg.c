@@ -13,6 +13,8 @@
 
 #define DT_DRV_COMPAT rpmsg_uart
 
+#define RX_BUF_SIZE CONFIG_UART_RPMSG_RX_BUF_SIZE
+
 struct uart_rpmsg_config {
 	size_t shm_size;
 	const metal_phys_addr_t shm_physmap;
@@ -26,6 +28,10 @@ struct uart_rpmsg_data {
 	metal_phys_addr_t rsc_tab_physmap;
 	struct metal_io_region rsc_io_data;
 	struct rpmsg_virtio_device rvdev;
+
+	uint8_t rx_rb_buf[RX_BUF_SIZE];
+	struct ring_buf rx_rb;
+	struct k_spinlock rx_lock;
 };
 
 static void platform_ipm_callback(const struct device *dev, void *context, uint32_t id,
@@ -133,13 +139,30 @@ failed:
 static int rpmsg_recv_tty_callback(struct rpmsg_endpoint *ept, void *data, size_t len, uint32_t src,
 				   void *priv)
 {
+	k_spinlock_key_t key;
+	struct uart_rpmsg_data *priv_data = priv;
+
 	ARG_UNUSED(ept);
-	ARG_UNUSED(data);
-	ARG_UNUSED(len);
 	ARG_UNUSED(src);
-	ARG_UNUSED(priv);
+
+	key = k_spin_lock(&priv_data->rx_lock);
+	ring_buf_put(&priv_data->rx_rb, data, len);
+	k_spin_unlock(&priv_data->rx_lock, key);
 
 	return RPMSG_SUCCESS;
+}
+
+static int uart_rpmsg_poll_in(const struct device *dev, unsigned char *p_char)
+{
+	struct uart_rpmsg_data *data = dev->data;
+	k_spinlock_key_t key;
+	uint32_t read;
+
+	key = k_spin_lock(&data->rx_lock);
+	read = ring_buf_get(&data->rx_rb, p_char, 1);
+	k_spin_unlock(&data->rx_lock, key);
+
+	return (read > 0) ? 0 : 1;
 }
 
 static void uart_rpmsg_poll_out(const struct device *dev, unsigned char c)
@@ -151,6 +174,7 @@ static void uart_rpmsg_poll_out(const struct device *dev, unsigned char c)
 }
 
 static DEVICE_API(uart, uart_rpmsg_driver_api) = {
+	.poll_in = uart_rpmsg_poll_in,
 	.poll_out = uart_rpmsg_poll_out,
 };
 
@@ -171,6 +195,9 @@ static int uart_rpmsg_init(const struct device *dev)
 		return ret;
 	}
 
+	ring_buf_init(&data->rx_rb, sizeof(data->rx_rb_buf), data->rx_rb_buf);
+
+	data->tty_ept.priv = data;
 	return rpmsg_create_ept(&data->tty_ept, rpdev, "rpmsg-tty", RPMSG_ADDR_ANY, RPMSG_ADDR_ANY,
 				rpmsg_recv_tty_callback, NULL);
 }
