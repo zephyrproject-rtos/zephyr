@@ -75,7 +75,7 @@ struct flash_mspi_nor_config {
 	uint16_t page_size;
 	struct mspi_dev_id mspi_id;
 	struct mspi_dev_cfg mspi_nor_cfg;
-	struct mspi_dev_cfg mspi_nor_init_cfg;
+	struct mspi_dev_cfg mspi_control_cfg;
 #if defined(CONFIG_MSPI_XIP)
 	struct mspi_xip_cfg xip_cfg;
 #endif
@@ -115,6 +115,7 @@ struct flash_mspi_nor_data {
 	struct flash_mspi_nor_switch_info switch_info;
 	bool in_target_io_mode;
 	const struct mspi_dev_cfg *last_applied_cfg;
+	bool chip_initialized;
 };
 
 #ifdef __cplusplus
