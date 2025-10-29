@@ -734,6 +734,7 @@ config NUM_MBOX_ASYNC_MSGS
 
 config EVENTS
 	bool "Event objects"
+	depends on MULTITHREADING
 	help
 	  This option enables event objects. Threads may wait on event
 	  objects for specific events, but both threads and ISRs may deliver
