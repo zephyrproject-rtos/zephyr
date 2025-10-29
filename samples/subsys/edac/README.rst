@@ -63,8 +63,8 @@ Injection help can be received with:
    inject - Inject ECC error commands
             edac inject <subcommands>
    Subcommands:
-     addr          :Get / Set physical address
-     mask          :Get / Set address mask
+     param1        :Get / Set injection param 1
+     param2        :Get / Set injection param 2
      trigger       :Trigger injection
      error_type    :Get / Set injection error type
      disable_nmi   :Disable NMI
@@ -111,8 +111,8 @@ following devmem commands:
    Using data width 32
    Read value 0xabcd
 
-We should get the following message on screen indicating an IBECC event:
+We should get the following message on screen indicating an ECC event:
 
 .. code-block:: none
 
-   Got notification about IBECC event
+   Got notification about ECC event
