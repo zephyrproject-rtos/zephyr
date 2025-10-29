@@ -11,6 +11,8 @@ from itertools import chain
 from pathlib import Path
 
 from west.commands import WestCommand
+from west.util import quote_sh_list
+
 from zephyr_ext_common import ZEPHYR_BASE
 
 sys.path.append(os.fspath(Path(__file__).parent.parent))
