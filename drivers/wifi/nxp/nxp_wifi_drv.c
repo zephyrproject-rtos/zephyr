@@ -2116,7 +2116,7 @@ static int nxp_wifi_dev_init(const struct device *dev)
 #if (DT_INST_PROP(0, wakeup_source))
 	NXP_ENABLE_WAKEUP_SIGNAL(IMU_IRQ_N);
 #endif /* DT_INST_PROP */
-#elif defined(CONFIG_NXP_IW610)
+#else
 #ifdef CONFIG_PM_DEVICE
 #if DT_NODE_HAS_PROP(DT_DRV_INST(0), wakeup_gpios)
 	int err = 0;
