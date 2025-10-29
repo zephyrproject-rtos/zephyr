@@ -28,7 +28,7 @@ static struct msg_send_data {
 	int ret;
 	const void *dest_addr;
 	size_t addrlen;
-	struct mqtt_sn_client *client;
+	struct mqtt_sn_transport *transport;
 } msg_send_data;
 
 struct k_sem mqtt_sn_tx_sem;
@@ -40,8 +40,8 @@ int mqtt_sn_data_cmp(struct mqtt_sn_data data1, struct mqtt_sn_data data2)
 	return data1.size == data2.size && strncmp(data1.data, data2.data, data1.size);
 }
 
-static int msg_sendto(struct mqtt_sn_client *client, void *buf, size_t sz, const void *dest_addr,
-		      size_t addrlen)
+static int msg_sendto(struct mqtt_sn_transport *transport, void *buf, size_t sz,
+		      const void *dest_addr, size_t addrlen)
 {
 	zassert_not_null(buf);
 	zassert_true(sz <= sizeof(msg_send_data.msg_data),
@@ -49,7 +49,7 @@ static int msg_sendto(struct mqtt_sn_client *client, void *buf, size_t sz, const
 
 	msg_send_data.called++;
 	msg_send_data.msg_sz = sz;
-	msg_send_data.client = client;
+	msg_send_data.transport = transport;
 	msg_send_data.dest_addr = dest_addr;
 	msg_send_data.addrlen = addrlen;
 
@@ -133,7 +133,7 @@ static struct {
 	size_t addrlen;
 } recvfrom_data;
 
-static ssize_t tp_recvfrom(struct mqtt_sn_client *client, void *buffer, size_t length,
+static ssize_t tp_recvfrom(struct mqtt_sn_transport *transport, void *buffer, size_t length,
 			   void *src_addr, size_t *addrlen)
 {
 	if (recvfrom_data.data && recvfrom_data.sz > 0 && length >= recvfrom_data.sz) {
@@ -148,7 +148,7 @@ static ssize_t tp_recvfrom(struct mqtt_sn_client *client, void *buffer, size_t l
 	return recvfrom_data.sz;
 }
 
-int tp_poll(struct mqtt_sn_client *client)
+int tp_poll(struct mqtt_sn_transport *transport)
 {
 	return recvfrom_data.sz;
 }
