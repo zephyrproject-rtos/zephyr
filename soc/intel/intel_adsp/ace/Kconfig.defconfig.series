@@ -9,9 +9,10 @@ config SMP
 config POWER_DOMAIN
 	default y
 
-# MTL leaves the upper mapping in the same spot as cAVS, but moves the
-# lower one inexplicably.
-config XTENSA_UNCACHED_REGION
+config INTEL_ADSP_CACHED_REGION
+	default 5
+
+config INTEL_ADSP_UNCACHED_REGION
 	default 2
 
 # Parameters for gen_isr_tables.py:
