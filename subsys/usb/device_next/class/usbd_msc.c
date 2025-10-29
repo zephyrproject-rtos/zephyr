@@ -416,11 +416,11 @@ static void msc_process_write(struct msc_bot_ctx *ctx,
 			__ASSERT(tmp <= ctx->scsi_bytes,
 				 "Processed more data than requested");
 			if (tmp == 0) {
-				LOG_WRN("SCSI handler didn't process %zu bytes",
+				LOG_WRN("SCSI handler didn't process %d bytes",
 					ctx->scsi_bytes);
 				ctx->scsi_bytes = 0;
 			} else {
-				LOG_DBG("SCSI processed %zu out of %zu bytes",
+				LOG_DBG("SCSI processed %d out of %d bytes",
 					tmp, ctx->scsi_bytes);
 			}
 
