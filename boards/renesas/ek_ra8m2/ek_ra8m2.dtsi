@@ -76,6 +76,18 @@
 	};
 };
 
+/* In ek_ra8m2, phy chip use xtal as clock source
+ * so internal phy clock is not required.
+ */
+&clocks {
+	phyxtal: phy-xtal {
+		compatible = "fixed-clock";
+		clock-frequency = <DT_FREQ_M(25)>;
+		#clock-cells = <0x0>;
+		status = "okay";
+	};
+};
+
 &xtal {
 	clock-frequency = <DT_FREQ_M(24)>;
 	mosel = <0>;
@@ -135,6 +147,28 @@
 	status = "okay";
 };
 
+&eswclk {
+	clocks = <&pllp>;
+	div = <4>;
+	status = "okay";
+};
+
+&eswphyclk {
+	clocks = <&pllp>;
+	div = <2>;
+	status = "okay";
+};
+
+&ethphyclk {
+	clocks = <&pllr>;
+	div = <16>;
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
 &ioport0 {
 	status = "okay";
 };
@@ -148,6 +182,10 @@
 };
 
 &ioport4 {
+	status = "okay";
+};
+
+&ioport5 {
 	status = "okay";
 };
 
