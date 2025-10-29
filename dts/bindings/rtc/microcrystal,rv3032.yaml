@@ -7,7 +7,6 @@ compatible: "microcrystal,rv3032"
 
 include:
   - name: rtc-device.yaml
-  - name: i2c-device.yaml
 
 properties:
   clkout-frequency:
@@ -67,8 +66,3 @@ properties:
         - 4500: TCM=11. Internal charge-pump ~4.5 V, only valid in LSM.
       Note: In LSM, the 1.75/3.0/4.5 V levels are only generated when VDD > VTH:LSM
       (typ. 2.0 V, max 2.2 V).
-
-  int-gpios:
-    type: phandle-array
-    description: |
-      GPIO connected to the RV3032 INT interrupt output. This signal is open-drain, active low.
