@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/instrumentation/instrumentation.h>
 
 #define SLEEPTIME 10
 #define STACKSIZE 1024
