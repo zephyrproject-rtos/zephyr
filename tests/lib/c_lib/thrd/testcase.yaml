@@ -10,13 +10,6 @@ common:
     - arch
     - simulation
 tests:
-  libraries.libc.c11_threads.minimal:
-    tags: minimal_libc
-    filter: CONFIG_MINIMAL_LIBC_SUPPORTED
-    extra_configs:
-      - CONFIG_MINIMAL_LIBC=y
-      - CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS=y
-      - CONFIG_MINIMAL_LIBC_RAND=y
   libraries.libc.c11_threads.picolibc:
     filter: CONFIG_PICOLIBC_SUPPORTED
     tags: picolibc
