@@ -765,7 +765,7 @@ static void eusart_isr(const struct device *dev)
 #ifdef CONFIG_UART_SILABS_EUSART_ASYNC
 	const struct eusart_config *config = dev->config;
 	EUSART_TypeDef *eusart = config->eusart;
-	uint32_t flags = EUSART_IntGet(eusart);
+	uint32_t flags = EUSART_IntGetEnabled(eusart);
 	struct dma_status stat;
 #endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -981,6 +981,10 @@ static int eusart_configure(const struct device *dev, const struct uart_config *
 
 	if (cfg->parity == UART_CFG_PARITY_MARK || cfg->parity == UART_CFG_PARITY_SPACE) {
 		return -ENOSYS;
+	}
+
+	if (cfg->parity > UART_CFG_PARITY_SPACE) {
+		return -EINVAL;
 	}
 
 	if (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_DTR_DSR ||
