@@ -13,6 +13,7 @@
 #define ZEPHYR_INCLUDE_USB_CLASS_USBD_UVC_H
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/video.h>
 
 /**
  * @brief USB Video Class (UVC) device API
