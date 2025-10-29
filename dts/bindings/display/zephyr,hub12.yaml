@@ -11,6 +11,10 @@ description: |
   plus additional GPIO pins for row address selection (PA, PB),
   output enable (PE), and data latching (PLAT).
 
+  Supports horizontal chaining of multiple 32x16 panels by increasing the width
+  property. For example, width=64 chains two panels horizontally, width=96 chains
+  three panels, etc.
+
   See:
   - https://www.auselectronicsdirect.com.au/assets/files/TA0094%20and%20TA0095%20user%20manual.pdf
   - https://www.researchgate.net/publication/377952697_Light_Emitting_Diode_LED_Matrix_Display_Board#pf7
@@ -45,11 +49,8 @@ properties:
   width:
     type: int
     required: true
-    enum:
-      - 32
     description: |
-      Display width in pixels. Must match the physical hardware panel.
-      Currently only single 32-pixel wide panels are supported.
+      Display width in pixels. Must be a multiple of 32 for horizontal chaining.
 
   height:
     type: int
