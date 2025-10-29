@@ -1,5 +1,5 @@
-identifier: qemu_riscv/qemu_virt_riscv32e
-name: QEMU Emulation for RISC-V (RV32E) 32-bit
+identifier: qemu_riscv/qemu_virt_riscv/rv32
+name: QEMU Emulation for RISC-V 32-bit
 type: qemu
 simulation:
   - name: qemu

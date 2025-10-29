@@ -7,8 +7,8 @@ common:
     - posix
   integration_platforms:
     - qemu_cortex_a53/qemu_cortex_a53/smp
-    - qemu_riscv64/qemu_virt_riscv64/smp
-    - qemu_riscv32/qemu_virt_riscv32/smp
+    - qemu_riscv/qemu_virt_riscv/rv64/smp
+    - qemu_riscv/qemu_virt_riscv/rv32/smp
     - qemu_x86_64
   harness: console
   harness_config:

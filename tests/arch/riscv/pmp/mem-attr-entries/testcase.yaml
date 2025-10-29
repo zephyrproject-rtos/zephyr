@@ -1,8 +1,8 @@
 common:
   platform_allow:
-    - qemu_riscv32
-    - qemu_riscv32e
-    - qemu_riscv64
+    - qemu_riscv/qemu_virt_riscv/rv32
+    - qemu_riscv/qemu_virt_riscv/rv32e
+    - qemu_riscv/qemu_virt_riscv/rv64
   filter: CONFIG_RISCV_PMP
 
 tests:

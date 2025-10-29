@@ -177,12 +177,12 @@ ZTEST(log_blocking, test_blocking)
 	 * This is a workaround for a possible bug in the testing subsys:
 	 * - comment-out ztest_test_fail() below
 	 * - run with:
-	 *   west build -p auto -b qemu_riscv64 -t run \
+	 *   west build -p auto -b qemu_riscv/qemu_virt_riscv/rv64 -t run \
 	 *     -T tests/subsys/logging/log_blocking/logging.blocking.rate.stalled
 	 * - observe "Assertion failed at..."
 	 * - technically, testsuite should pass. Since ZTEST_EXPECT_FAIL() is set. Never gets there.
 	 * - run with:
-	 *   twister -i -p qemu_riscv64 -T tests/subsys/logging/log_blocking/
+	 *   twister -i -p qemu_riscv/qemu_virt_riscv/rv64 -T tests/subsys/logging/log_blocking/
 	 * - observe "..FAILED : Timeout"
 	 * - possible conclusions:
 	 *   - test thread has not properly longjumped?

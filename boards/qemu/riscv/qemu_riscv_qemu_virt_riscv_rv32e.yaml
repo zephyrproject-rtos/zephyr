@@ -1,5 +1,5 @@
-identifier: qemu_riscv/qemu_virt_riscv32/smp
-name: QEMU Emulation for RISC-V 32-bit SMP
+identifier: qemu_riscv/qemu_virt_riscv/rv32e
+name: QEMU Emulation for RISC-V (RV32E) 32-bit
 type: qemu
 simulation:
   - name: qemu
@@ -8,7 +8,6 @@ toolchain:
   - zephyr
 supported:
   - netif
-  - smp
 ram: 262144
 flash: 32768
 testing:

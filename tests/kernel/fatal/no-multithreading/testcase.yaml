@@ -4,9 +4,9 @@ common:
     - qemu_arc/qemu_arc_em
     - qemu_arc/qemu_arc_hs
     - qemu_arc/qemu_arc_hs6x
-    - qemu_riscv32
-    - qemu_riscv32e
-    - qemu_riscv64
+    - qemu_riscv/qemu_virt_riscv/rv32
+    - qemu_riscv/qemu_virt_riscv/rv32e
+    - qemu_riscv/qemu_virt_riscv/rv64
     - nsim/nsim_em
     - nsim/nsim_em7d_v22
     - nsim/nsim_hs

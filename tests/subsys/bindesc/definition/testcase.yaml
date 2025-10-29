@@ -16,9 +16,15 @@ tests:
       - qemu_arc/qemu_arc_hs
       - qemu_arc/qemu_arc_hs5x
       - qemu_arc/qemu_arc_hs6x
-      - qemu_riscv32
-      - qemu_riscv32e
-      - qemu_riscv64
+      - qemu_riscv/qemu_virt_riscv/rv32
+      - qemu_riscv/qemu_virt_riscv/rv32e
+      - qemu_riscv/qemu_virt_riscv/rv64
+  bindesc.define.c99:
+    extra_configs:
+      - CONFIG_STD_C99=y
+  bindesc.define.c11:
+    extra_configs:
+      - CONFIG_STD_C11=y
   bindesc.define.c17:
     extra_configs:
       - CONFIG_STD_C17=y

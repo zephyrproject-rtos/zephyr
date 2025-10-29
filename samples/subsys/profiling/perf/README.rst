@@ -18,7 +18,7 @@ Usage example
 
   .. zephyr-app-commands::
      :zephyr-app: samples/subsys/profiling/perf
-     :board: qemu_riscv64
+     :board: qemu_riscv//rv64
      :goals: run
      :compact:
 

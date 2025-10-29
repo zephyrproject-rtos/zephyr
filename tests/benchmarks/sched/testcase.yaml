@@ -8,7 +8,7 @@ tests:
     integration_platforms:
       - mps2/an385
       - qemu_x86
-      - qemu_riscv64/qemu_virt_riscv64/smp
+      - qemu_riscv/qemu_virt_riscv/rv64/smp
     slow: true
     harness: console
     harness_config:

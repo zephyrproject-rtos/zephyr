@@ -9,8 +9,8 @@ common:
     - qemu_cortex_a53
     - qemu_x86
     - qemu_x86_64
-    - qemu_riscv32
-    - qemu_riscv64
+    - qemu_riscv/qemu_virt_riscv/rv32
+    - qemu_riscv/qemu_virt_riscv/rv64
     - qemu_xtensa/dc233c/mmu
   extra_configs:
     - CONFIG_QEMU_ICOUNT=n

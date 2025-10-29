@@ -10,7 +10,7 @@ Get the Toolchain and QEMU
 
 The minimum version of the `Zephyr SDK tools
 <https://github.com/zephyrproject-rtos/sdk-ng/releases>`_
-with toolchain and QEMU support for the RISCV64 architecture is v0.10.2.
+with toolchain and QEMU support for the RISCV architecture is v0.10.2.
 Please see the :ref:`installation instructions <install-required-tools>`
 for more details.
 
@@ -33,21 +33,21 @@ emulated environment. For example, with the :zephyr:code-sample:`synchronization
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
    :host-os: unix
-   :board: qemu_riscv/qemu_virt_riscv32
+   :board: qemu_riscv//rv32
    :goals: run
 
 
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
    :host-os: unix
-   :board: qemu_riscv/qemu_virt_riscv32e
+   :board: qemu_riscv//rv32e
    :goals: run
 
 
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
    :host-os: unix
-   :board: qemu_riscv/qemu_virt_riscv64
+   :board: qemu_riscv//rv64
    :goals: run
 
 This will build an image with the synchronization sample app, boot it using
@@ -56,16 +56,16 @@ QEMU, and display the following console output:
 .. code-block:: console
 
         ***** BOOTING ZEPHYR OS v1.8.99 - BUILD: Jun 27 2017 13:09:26 *****
-        threadA: Hello World from riscv64!
-        threadB: Hello World from riscv64!
-        threadA: Hello World from riscv64!
-        threadB: Hello World from riscv64!
-        threadA: Hello World from riscv64!
-        threadB: Hello World from riscv64!
-        threadA: Hello World from riscv64!
-        threadB: Hello World from riscv64!
-        threadA: Hello World from riscv64!
-        threadB: Hello World from riscv64!
+        threadA: Hello World from riscv!
+        threadB: Hello World from riscv!
+        threadA: Hello World from riscv!
+        threadB: Hello World from riscv!
+        threadA: Hello World from riscv!
+        threadB: Hello World from riscv!
+        threadA: Hello World from riscv!
+        threadB: Hello World from riscv!
+        threadA: Hello World from riscv!
+        threadB: Hello World from riscv!
 
 Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
 

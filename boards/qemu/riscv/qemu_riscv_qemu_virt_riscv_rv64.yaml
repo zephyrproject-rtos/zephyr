@@ -1,5 +1,5 @@
-identifier: qemu_riscv/qemu_virt_riscv64/smp
-name: QEMU Emulation for RISC-V 64-bit SMP
+identifier: qemu_riscv/qemu_virt_riscv/rv64
+name: QEMU Emulation for RISC-V 64-bit
 type: qemu
 simulation:
   - name: qemu
@@ -8,7 +8,6 @@ toolchain:
   - zephyr
 supported:
   - netif
-  - smp
 ram: 262144
 flash: 32768
 testing:

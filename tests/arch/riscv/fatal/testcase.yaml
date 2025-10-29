@@ -6,7 +6,7 @@ common:
     - kernel
     - riscv
   platform_allow:
-    - qemu_riscv64
+    - qemu_riscv/qemu_virt_riscv/rv64
 tests:
   arch.riscv64.fatal.panic_sp:
     extra_configs:
