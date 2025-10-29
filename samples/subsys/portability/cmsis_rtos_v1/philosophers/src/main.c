@@ -69,7 +69,7 @@
 /***************************************/
 osSemaphoreId forks[NUM_PHIL];
 
-#define fork(x) (forks[x])
+#define philosopher_fork(x) (forks[x])
 
 /*
  * CMSIS limits the stack size, but qemu_x86_64, qemu_xtensa (all),
@@ -149,11 +149,11 @@ void philosopher(void const *id)
 
 	/* Djkstra's solution: always pick up the lowest numbered fork first */
 	if (is_last_philosopher(my_id)) {
-		fork1 = fork(0);
-		fork2 = fork(my_id);
+		fork1 = philosopher_fork(0);
+		fork2 = philosopher_fork(my_id);
 	} else {
-		fork1 = fork(my_id);
-		fork2 = fork(my_id + 1);
+		fork1 = philosopher_fork(my_id);
+		fork2 = philosopher_fork(my_id + 1);
 	}
 
 	while (1) {
