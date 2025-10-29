@@ -27,6 +27,9 @@ extern "C" {
 #elif defined(CONFIG_ARCH_CACHE)
 #include <zephyr/arch/cache.h>
 
+#elif defined(CONFIG_SOC_CACHE)
+#include <soc_cache.h>
+
 #endif
 
 /**

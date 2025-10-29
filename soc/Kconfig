@@ -40,3 +40,9 @@ config SOC_HAS_RUNTIME_NUM_CPUS
 	help
 	  Should be selected if SoC handles determining the number of CPUs
 	  at runtime.
+
+config SOC_HAS_CACHE_FUNCTIONS
+	bool
+	help
+	  Should be selected if SoC provides custom method for cache related
+	  operations.
