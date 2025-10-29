@@ -8,3 +8,13 @@ config PTP_CLOCK_NXP_NETC
 	depends on ETH_NXP_IMX_NETC
 	help
 	  Enable NXP NETC PTP clock support.
+
+if PTP_CLOCK_NXP_NETC
+
+config PTP_CLOCK_NXP_NETC_CLK_DIV
+	int
+	default 2
+	help
+	  NXP NETC PTP reference clock division.
+
+endif # PTP_CLOCK_NXP_NETC

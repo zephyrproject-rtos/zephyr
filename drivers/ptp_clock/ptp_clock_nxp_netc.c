@@ -103,7 +103,7 @@ static int ptp_clock_nxp_netc_init(const struct device *dev)
 	if (ret) {
 		return ret;
 	}
-	ptp_config->refClkHz = netc_ref_pll_rate/2;
+	ptp_config->refClkHz = netc_ref_pll_rate / CONFIG_PTP_CLOCK_NXP_NETC_CLK_DIV;
 	ptp_config->entryNum = 0U;
 	ptp_config->defaultPpb = 0U;
 	ptp_config->clockSelect = kNETC_TimerSystemClk;
