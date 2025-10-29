@@ -28,8 +28,6 @@ static void cpu_freq_next_pstate(void)
 	/* Get next performance state */
 	const struct pstate *pstate_next;
 
-	cpu_freq_policy_reset();
-
 	ret = cpu_freq_policy_select_pstate(&pstate_next);
 	if (ret) {
 		LOG_ERR("Failed to get pstate: %d", ret);
