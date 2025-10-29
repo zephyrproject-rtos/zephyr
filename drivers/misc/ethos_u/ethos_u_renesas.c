@@ -55,21 +55,6 @@ static int ethos_u_renesas_ra_init(const struct device *dev)
 		return err;
 	}
 
-	if ((((0 == R_SYSTEM->PGCSAR_b.NONSEC2) && FSP_PRIV_TZ_USE_SECURE_REGS) ||
-	     ((1 == R_SYSTEM->PGCSAR_b.NONSEC2) && BSP_TZ_NONSECURE_BUILD)) &&
-	    (0 != R_SYSTEM->PDCTRNPU)) {
-		/* Turn on NPU power domain */
-		R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_OM_LPC_BATT);
-		FSP_HARDWARE_REGISTER_WAIT((R_SYSTEM->PDCTRNPU & (R_SYSTEM_PDCTRNPU_PDCSF_Msk |
-								  R_SYSTEM_PDCTRGD_PDPGSF_Msk)),
-					   R_SYSTEM_PDCTRGD_PDPGSF_Msk);
-		R_SYSTEM->PDCTRNPU = 0;
-		FSP_HARDWARE_REGISTER_WAIT((R_SYSTEM->PDCTRNPU & (R_SYSTEM_PDCTRNPU_PDCSF_Msk |
-								  R_SYSTEM_PDCTRGD_PDPGSF_Msk)),
-					   0);
-		R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_OM_LPC_BATT);
-	}
-
 	LOG_DBG("Ethos-U DTS info. base_address=0x%p, secure_enable=%u, privilege_enable=%u",
 		ethosu_dts_info.base_addr, ethosu_dts_info.secure_enable,
 		ethosu_dts_info.privilege_enable);
