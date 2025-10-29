@@ -1159,6 +1159,14 @@ config ARCH_CACHE
 	help
 	  Integrated on-core cache controller
 
+config SOC_CACHE
+	bool "SoC specific cache controller"
+	depends on SOC_HAS_CACHE_FUNCTIONS
+	help
+	  SoC specific cache controller.
+
+	  This requires soc_cache.h file to exist in search path.
+
 config EXTERNAL_CACHE
 	bool "External cache controller"
 	help
