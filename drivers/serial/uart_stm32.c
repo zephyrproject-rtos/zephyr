@@ -1962,7 +1962,9 @@ static void uart_stm32_async_rx_timeout(struct k_work *work)
 	 */
 	unsigned int key = irq_lock();
 
-	if (data->dma_rx.counter == data->dma_rx.buffer_length) {
+	/* When cyclic DMA is used, do not disable the RX on timeout */
+	if (data->dma_rx.dma_cfg.cyclic == 0 &&
+	    data->dma_rx.counter == data->dma_rx.buffer_length) {
 		uart_stm32_async_rx_disable(dev);
 	} else {
 		uart_stm32_dma_rx_flush(dev, STM32_ASYNC_STATUS_TIMEOUT);
