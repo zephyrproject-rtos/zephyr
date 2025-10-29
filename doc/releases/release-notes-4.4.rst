@@ -56,6 +56,12 @@ Deprecated APIs and options
 New APIs and options
 ====================
 
+* Bluetooth
+
+  * Host
+
+    * :c:func:`bt_gatt_cb_unregister` Added an API to unregister GATT callback handlers.
+
 ..
   Link to new APIs here, in a group if you think it's necessary, no need to get
   fancy just list the link, that should contain the documentation. If you feel
