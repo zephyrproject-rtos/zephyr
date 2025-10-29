@@ -21,6 +21,7 @@
 		zephyr,shell-uart = &uart8;
 		zephyr,canbus = &canfd1;
 		zephyr,crc = &crc;
+		zephyr,entropy = &trng;
 	};
 
 	aliases {
@@ -183,3 +184,39 @@
 mikrobus_serial: &uart7 {};
 
 mikrobus_spi: &spi1 {};
+
+&eswm {
+	interrupts = <29 1>;
+	interrupt-names = "gwdi";
+	status = "okay";
+};
+
+&eth0 {
+	phy-connection-type = "rgmii";
+	local-mac-address = [74 90 50 01 02 05];
+	phy-clock = <&phyxtal>;
+	phy-clock-type = "xtal";
+	phy-handle = <&phy0>;
+	pinctrl-0 = <&eth0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&mdio0 {
+	pinctrl-0 = <&mdio0_default>;
+	pinctrl-names = "default";
+	phy-connection-type = "rgmii";
+	status = "okay";
+
+	phy0: phy@0 {
+		compatible = "maxlinear,gpy111";
+		maxlinear,interface-type = "rgmii";
+		maxlinear,rx-internal-delay = "rx_skew_1n5";
+		reg = <0>;
+		int-gpios = <&ioportc 13 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&ioport5 14 GPIO_ACTIVE_LOW>;
+		reset-assert-duration-us = <2000>;
+		reset-deassertion-timeout-ms = <300>;
+		status = "okay";
+	};
+};

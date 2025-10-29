@@ -95,11 +95,37 @@
 	status = "okay";
 };
 
+&eswclk {
+	clocks = <&pllp>;
+	div = <4>;
+	status = "okay";
+};
+
+&eswphyclk {
+	clocks = <&pllp>;
+	div = <2>;
+	status = "okay";
+};
+
+&ethphyclk {
+	clocks = <&pllr>;
+	div = <16>;
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
 &ioport5 {
 	status = "okay";
 };
 
 &ioport6 {
+	status = "okay";
+};
+
+&ioport7 {
 	status = "okay";
 };
 

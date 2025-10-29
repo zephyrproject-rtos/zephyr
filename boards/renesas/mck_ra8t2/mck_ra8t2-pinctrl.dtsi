@@ -67,6 +67,61 @@
 		};
 	};
 
+	mdio0_default: mdio0_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_ETH_MII, 7, 8)>, /* MDC */
+				<RA_PSEL(RA_PSEL_ETH_MII, 7, 9)>; /* MDIO */
+			drive-strength = "medium";
+		};
+	};
+
+	ethphyclk_default: ethphyclk_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_ETHPHYCLK, 7, 6)>; /* PHY_REF */
+			drive-strength = "high";
+		};
+	};
+
+	eth0_default: eth0_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_ETH_MII, 4, 2)>, /* MII_LINKSTA */
+				<RA_PSEL(RA_PSEL_ETH_MII, 7, 5)>, /* MII_TX_EN */
+				<RA_PSEL(RA_PSEL_ETH_MII, 11, 1)>, /* MII_TX_CLK */
+				<RA_PSEL(RA_PSEL_ETH_MII, 11, 0)>, /* MII_TXD0 */
+				<RA_PSEL(RA_PSEL_ETH_MII, 11, 2)>, /* MII_TXD1 */
+				<RA_PSEL(RA_PSEL_ETH_MII, 11, 3)>, /* MII_TXD2 */
+				<RA_PSEL(RA_PSEL_ETH_MII, 11, 4)>, /* MII_TXD3 */
+				<RA_PSEL(RA_PSEL_ETH_MII, 7, 4)>, /* MII_RX_ER */
+				<RA_PSEL(RA_PSEL_ETH_MII, 4, 5)>, /* MII_RX_DV */
+				<RA_PSEL(RA_PSEL_ETH_MII, 7, 3)>, /* MII_RX_CLK */
+				<RA_PSEL(RA_PSEL_ETH_MII, 7, 2)>, /* MII_RXD0 */
+				<RA_PSEL(RA_PSEL_ETH_MII, 7, 1)>, /* MII_RXD1 */
+				<RA_PSEL(RA_PSEL_ETH_MII, 7, 0)>, /* MII_RXD2 */
+				<RA_PSEL(RA_PSEL_ETH_MII, 4, 6)>; /* MII_RXD3 */
+			drive-strength = "high";
+		};
+	};
+
+	eth1_default: eth1_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_ETH_MII, 5, 11)>, /* MII_LINKSTA */
+				<RA_PSEL(RA_PSEL_ETH_MII, 3, 10)>, /* MII_TX_EN */
+				<RA_PSEL(RA_PSEL_ETH_MII, 3, 11)>, /* MII_TX_CLK */
+				<RA_PSEL(RA_PSEL_ETH_MII, 3, 7)>, /* MII_TXD0 */
+				<RA_PSEL(RA_PSEL_ETH_MII, 3, 6)>, /* MII_TXD1 */
+				<RA_PSEL(RA_PSEL_ETH_MII, 3, 5)>, /* MII_TXD2 */
+				<RA_PSEL(RA_PSEL_ETH_MII, 3, 4)>, /* MII_TXD3 */
+				<RA_PSEL(RA_PSEL_ETH_MII, 3, 12)>, /* MII_RX_ER */
+				<RA_PSEL(RA_PSEL_ETH_MII, 2, 6)>, /* MII_RX_DV */
+				<RA_PSEL(RA_PSEL_ETH_MII, 9, 5)>, /* MII_RX_CLK */
+				<RA_PSEL(RA_PSEL_ETH_MII, 9, 6)>, /* MII_RXD0 */
+				<RA_PSEL(RA_PSEL_ETH_MII, 9, 7)>, /* MII_RXD1 */
+				<RA_PSEL(RA_PSEL_ETH_MII, 9, 8)>, /* MII_RXD2 */
+				<RA_PSEL(RA_PSEL_ETH_MII, 9, 9)>; /* MII_RXD3 */
+			drive-strength = "high";
+		};
+	};
+
 	/omit-if-no-ref/ acmphs_ivref0: acmphs_ivref0 {
 		group1 {
 			/* IVREF0 */

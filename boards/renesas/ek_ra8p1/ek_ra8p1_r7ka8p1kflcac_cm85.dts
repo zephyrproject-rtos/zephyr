@@ -20,6 +20,7 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &uart8;
 		zephyr,shell-uart = &uart8;
+		zephyr,entropy = &trng;
 	};
 
 	aliases {
@@ -180,3 +181,39 @@ arducam_ffc_40pin_i2c: &iic1 {};
 arducam_ffc_40pin_dvp_interface: &ceu {};
 
 arducam_ffc_40pin_dvp_xclk: &cam_clock {};
+
+&eswm {
+	interrupts = <24 1>;
+	interrupt-names = "gwdi";
+	status = "okay";
+};
+
+&eth1 {
+	phy-connection-type = "rgmii";
+	local-mac-address = [74 90 50 01 02 03];
+	phy-clock = <&phyxtal>;
+	phy-clock-type = "xtal";
+	phy-handle = <&phy0>;
+	pinctrl-0 = <&eth1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&mdio1 {
+	pinctrl-0 = <&mdio1_default>;
+	pinctrl-names = "default";
+	phy-connection-type = "rgmii";
+	status = "okay";
+
+	phy0: phy@0 {
+		compatible = "maxlinear,gpy111";
+		maxlinear,interface-type = "rgmii";
+		maxlinear,rx-internal-delay = "rx_skew_1n5";
+		reg = <0>;
+		int-gpios = <&ioport1 7 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&ioport7 8 GPIO_ACTIVE_LOW>;
+		reset-assert-duration-us = <2000>;
+		reset-deassertion-timeout-ms = <300>;
+		status = "okay";
+	};
+};
