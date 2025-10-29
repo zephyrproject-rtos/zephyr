@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/usb/udc.h>
 #include <usb_dwc2_hw.h>
 
@@ -45,6 +46,8 @@ struct udc_dwc2_config {
 	struct usb_dwc2_reg *const base;
 	/* Pointer to pin control configuration or NULL */
 	struct pinctrl_dev_config *const pcfg;
+	const struct device *clk_dev;
+	const clock_control_subsys_t clk_id;
 	/* Pointer to vendor quirks or NULL */
 	const struct dwc2_vendor_quirks *const quirks;
 	void (*make_thread)(const struct device *dev);
