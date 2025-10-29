@@ -33,7 +33,9 @@ static inline void zephyr_retained_mem_ram_lock_take(const struct device *dev)
 #ifdef CONFIG_RETAINED_MEM_MUTEXES
 	struct zephyr_retained_mem_ram_data *data = dev->data;
 
-	k_mutex_lock(&data->lock, K_FOREVER);
+	if (!k_is_pre_kernel()) {
+		k_mutex_lock(&data->lock, K_FOREVER);
+	}
 #else
 	ARG_UNUSED(dev);
 #endif
@@ -44,7 +46,9 @@ static inline void zephyr_retained_mem_ram_lock_release(const struct device *dev
 #ifdef CONFIG_RETAINED_MEM_MUTEXES
 	struct zephyr_retained_mem_ram_data *data = dev->data;
 
-	k_mutex_unlock(&data->lock);
+	if (!k_is_pre_kernel()) {
+		k_mutex_unlock(&data->lock);
+	}
 #else
 	ARG_UNUSED(dev);
 #endif
