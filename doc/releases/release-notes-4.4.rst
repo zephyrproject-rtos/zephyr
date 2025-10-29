@@ -64,6 +64,10 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w)
 
+* Flash
+
+  * :dtcompatible:`jedec,mspi-nor` now allows MSPI configuration of read, write and
+    control commands separately via devicetree.
 
 .. zephyr-keep-sorted-stop
 
