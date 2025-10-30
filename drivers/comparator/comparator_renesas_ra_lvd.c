@@ -70,7 +70,7 @@ static int lvd_renesas_ra_set_trigger(const struct device *dev, enum comparator_
 	struct lvd_renesas_ra_data *data = dev->data;
 	bool trigger_set = trigger != COMPARATOR_TRIGGER_NONE;
 	bool reset = config->action == LVD_ACTION_RESET;
-	lvd_voltage_slope_t voltage_slope;
+	lvd_voltage_slope_t voltage_slope = LVD_VOLTAGE_SLOPE_BOTH;
 	fsp_err_t fsp_err;
 
 	if (config->action == LVD_ACTION_NONE) {
