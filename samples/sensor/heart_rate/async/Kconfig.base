@@ -7,16 +7,21 @@
 # Sample sensor channels
 config SAMPLE_CHANNEL_RED
     bool
+    depends on SAMPLE_CHANNEL_RED_ENABLE
 
 config SAMPLE_CHANNEL_IR
     bool
+    depends on SAMPLE_CHANNEL_IR_ENABLE
 
 config SAMPLE_CHANNEL_GREEN
     bool
+    depends on SAMPLE_CHANNEL_GREEN_ENABLE
 
 config SAMPLE_CHANNEL_DIE_TEMP
     bool
+    depends on SAMPLE_CHANNEL_DIE_TEMP_ENABLE
 
+if SAMPLE_STREAM
 # Sample sensor triggers opt DATA READY
 config SAMPLE_TRIG_DATA_READY_NOP
     bool
@@ -247,3 +252,4 @@ config SAMPLE_TRIG_OVERFLOW_DROP_CHAN_DIE_TEMP
 config SAMPLE_TRIGGER_OVERFLOW_DROP_CHAN
     bool
     select SAMPLE_TRIG_OVERFLOW_DROP
+endif # SAMPLE_STREAM

@@ -21,23 +21,16 @@ LOG_MODULE_REGISTER(stream_hr, LOG_LEVEL_INF);
 LOG_MODULE_REGISTER(async_hr, LOG_LEVEL_INF);
 #endif /* CONFIG_SAMPLE_STREAM */
 
-#define CHAN_X(_, chan, name, idx) name,
-const char *channel_names[] = {SENSOR_AVAILABLE_CHANNEL(CHAN_X)};
-#undef CHAN_X
-#define CHAN_X(_, chan, name, idx) (struct sensor_chan_spec){SENSOR_CHAN_##chan, idx},
-const struct sensor_chan_spec chan_list[] = {SENSOR_AVAILABLE_CHANNEL(CHAN_X)};
-#undef CHAN_X
-
 #if CONFIG_SAMPLE_STREAM
 #define NUM_SENSORS 1
-#define TRIG_X(trig, opt, ...) (SENSOR_TRIG_##trig, OPT_FROM_TOKEN(opt) \
+#define TRIG_X(_trig, _opt, ...) (SENSOR_TRIG_##_trig, OPT_FROM_TOKEN(_opt) \
 	COND_CODE_1(IS_EMPTY(__VA_ARGS__), (), (, { __VA_ARGS__ }))),
-SENSOR_DT_STREAM_IODEV(iodev, DT_CHOSEN(heart_rate_sensor), TRIGGER_LIST);
+SENSOR_DT_STREAM_IODEV(iodev, DT_CHOSEN(heart_rate_sensor), TRIGGER_LIST(TRIGGER_OPT));
 #undef TRIG_X
 RTIO_DEFINE_WITH_MEMPOOL(ctx, NUM_SENSORS, NUM_SENSORS, NUM_SENSORS*20, 256, sizeof(void *));
 struct rtio_sqe *handle;
 #else
-#define CHAN_X(_, chan, name, idx) (SENSOR_CHAN_##chan, idx),
+#define CHAN_X(_, _chan, _idx) (SENSOR_CHAN_##_chan, _idx),
 SENSOR_DT_READ_IODEV(iodev, DT_CHOSEN(heart_rate_sensor), SENSOR_AVAILABLE_CHANNEL(CHAN_X));
 #undef CHAN_X
 RTIO_DEFINE(ctx, 1, 1);
@@ -51,6 +44,13 @@ struct sensor_async_data {
 
 #include <zephyr/drivers/gpio.h>
 const struct gpio_dt_spec sensor_ctrl = GPIO_DT_SPEC_GET(DT_PATH(zephyr_user), ctrl_gpios);
+
+static inline size_t max_size(const size_t *arr, size_t n) {
+    size_t max = 0;
+    for (size_t i = 0; i < n; ++i)
+        if (arr[i] > max) max = arr[i];
+    return max;
+}
 
 static const struct device *check_heart_rate_device(void)
 {
@@ -97,6 +97,7 @@ static const struct device *check_heart_rate_device(void)
 int main(void)
 {
 	const struct device *dev = check_heart_rate_device();
+	size_t channel_width = max_size(channel_widths, ARRAY_SIZE(channel_widths)) - 1;
 
 	if (dev == NULL) {
 		return 0;
@@ -131,6 +132,7 @@ int main(void)
 
 #if CONFIG_SAMPLE_STREAM
 	struct rtio_cqe *cqe;
+	size_t trigger_width = max_size(trigger_widths, ARRAY_SIZE(trigger_widths)) - 1;
 
 	/* Start the streams */
 	LOG_INF("Device (%s): start stream", dev->name);
@@ -157,6 +159,11 @@ int main(void)
 		}
 
 		rtio_cqe_release(&ctx, cqe);
+
+		for (size_t i = 0; i < ARRAY_SIZE(trigger_list); i++) {
+			rc = decoder->has_trigger(buf, trigger_list[i]);
+			LOG_INF("Trigger (%d)[%-*s]: [%s]", i, trigger_width, trigger_names[i], rc? "X" : " ");
+		}
 #else
 		uint8_t buf[128];
 		rc = sensor_read(&iodev, &ctx, buf, 128);
@@ -171,15 +178,26 @@ int main(void)
 			data[i].size = 0;
 			rc = decoder->get_frame_count(buf, chan_list[i], &data[i].size);
 
-			if (rc != 0) {
+			if (rc == -ENODATA) {
 				continue;
 			}
+
+			if (rc != 0) {
+				LOG_ERR("sensor_get_frame_count(%s) failed: [%d]", channel_names[i], rc);
+				return rc;
+			}
+
 			data[i].fit = 0;
 			data[i].frame = (struct sensor_q31_data *)malloc(base_size + data[i].size * frame_size);
 			rc = decoder->decode(buf, chan_list[i], &data[i].fit, data[i].size, data[i].frame);
 
-			if (rc <= 0) {
+			if (rc == -ENODATA) {
 				continue;
+			}
+
+			if (rc < 0) {
+				LOG_ERR("decoder->decode(%s) failed: [%d]", channel_names[i], rc);
+				return rc;
 			}
 		}
 
@@ -192,11 +210,11 @@ int main(void)
 
 		for (size_t i = 0; i < max; i++) {
 			for (size_t j = 0; j < ARRAY_SIZE(chan_list); j++) {
-				if (data[j].size == 0) {
+				if (i >= data[j].size) {
 					continue;
 				}
 
-				LOG_INF("(%02d/%02d)[%-*s]: %" PRIsensor_q31_data, i + 1, data[j].size, channel_width, channel_names[j],
+				LOG_INF("(%02d/%02d)[%-*s](%d): %" PRIsensor_q31_data, i + 1, data[j].size, channel_width, channel_names[j], chan_list[j].chan_idx,
 				PRIsensor_q31_data_arg(*data[j].frame, i));
 			}
 		}

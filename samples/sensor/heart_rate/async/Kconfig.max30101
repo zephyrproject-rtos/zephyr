@@ -11,14 +11,84 @@ config MAX30101_SAMPLE_FEATURES
     bool
     depends on DT_HAS_MAXIM_MAX30101_ENABLED
     depends on $(dt_chosen_has_compat,$(DT_CHOSEN_HR),$(DT_COMPAT_MAX30101))
-    select SAMPLE_CHANNEL_RED if $(dt_nodelabel_array_prop_has_val,$(dt_chosen_label,$(DT_CHOSEN_HR)),$(DT_ARRAY_PROP_SLOT),1)
-    select SAMPLE_CHANNEL_IR if $(dt_nodelabel_array_prop_has_val,$(dt_chosen_label,$(DT_CHOSEN_HR)),$(DT_ARRAY_PROP_SLOT),2)
-    select SAMPLE_CHANNEL_GREEN if $(dt_nodelabel_array_prop_has_val,$(dt_chosen_label,$(DT_CHOSEN_HR)),$(DT_ARRAY_PROP_SLOT),3)
-    select SAMPLE_CHANNEL_DIE_TEMP if MAX30101_DIE_TEMPERATURE
+    imply SAMPLE_CHANNEL_RED if $(dt_nodelabel_array_prop_has_val,$(dt_chosen_label,$(DT_CHOSEN_HR)),$(DT_ARRAY_PROP_SLOT),1)
+    imply SAMPLE_CHANNEL_IR if $(dt_nodelabel_array_prop_has_val,$(dt_chosen_label,$(DT_CHOSEN_HR)),$(DT_ARRAY_PROP_SLOT),2)
+    imply SAMPLE_CHANNEL_GREEN if $(dt_nodelabel_array_prop_has_val,$(dt_chosen_label,$(DT_CHOSEN_HR)),$(DT_ARRAY_PROP_SLOT),3)
+    imply SAMPLE_CHANNEL_DIE_TEMP if MAX30101_DIE_TEMPERATURE
     select SAMPLE_TRIG_DATA_READY_INCLUDE if MAX30101_TRIGGER && !SAMPLE_STREAM_BURST
     select SAMPLE_TRIG_DATA_READY_INCLUDE_CHAN_DIE_TEMP if MAX30101_TRIGGER && (SAMPLE_STREAM_BURST && MAX30101_DIE_TEMPERATURE)
     select SAMPLE_TRIG_FIFO_WATERMARK_INCLUDE if MAX30101_TRIGGER && SAMPLE_STREAM_BURST
-    select SAMPLE_TRIG_FIFO_WATERMARK_DROP if MAX30101_TRIGGER && SAMPLE_STREAM_BURST
-    select SAMPLE_TRIG_FIFO_WATERMARK_DROP_CHAN_RED if MAX30101_TRIGGER && SAMPLE_STREAM_BURST
     select SAMPLE_TRIG_OVERFLOW_NOP if MAX30101_TRIGGER
     imply SAMPLE_STREAM if MAX30101_STREAM
+
+if MAX30101_SAMPLE_FEATURES
+
+config MAX30101_SLOT0_VAL_$(dt_node_array_prop_int,$(dt_nodelabel_path,$(dt_chosen_label,$(DT_CHOSEN_HR))),$(DT_ARRAY_PROP_SLOT),0)
+    bool
+    default y
+
+config MAX30101_SLOT1_VAL_$(dt_node_array_prop_int,$(dt_nodelabel_path,$(dt_chosen_label,$(DT_CHOSEN_HR))),$(DT_ARRAY_PROP_SLOT),1)
+    bool
+    default y
+
+config MAX30101_SLOT2_VAL_$(dt_node_array_prop_int,$(dt_nodelabel_path,$(dt_chosen_label,$(DT_CHOSEN_HR))),$(DT_ARRAY_PROP_SLOT),2)
+    bool
+    default y
+
+if SAMPLE_CHANNEL_RED
+
+config SAMPLE_CHANNEL_RED_0
+    bool
+    default y if MAX30101_SLOT0_VAL_1 || MAX30101_SLOT1_VAL_1 || MAX30101_SLOT2_VAL_1
+
+config SAMPLE_CHANNEL_RED_1
+    bool
+    default y if (MAX30101_SLOT0_VAL_1 && (MAX30101_SLOT1_VAL_1 || MAX30101_SLOT2_VAL_1)) || (MAX30101_SLOT1_VAL_1 && MAX30101_SLOT2_VAL_1)
+
+config SAMPLE_CHANNEL_RED_2
+    bool
+    default y if MAX30101_SLOT0_VAL_1 && MAX30101_SLOT1_VAL_1 && MAX30101_SLOT2_VAL_1
+
+endif # SAMPLE_CHANNEL_RED
+
+if SAMPLE_CHANNEL_IR
+
+config SAMPLE_CHANNEL_IR_0
+    bool
+    default y if MAX30101_SLOT0_VAL_2 || MAX30101_SLOT1_VAL_2 || MAX30101_SLOT2_VAL_2
+
+config SAMPLE_CHANNEL_IR_1
+    bool
+    default y if (MAX30101_SLOT0_VAL_2 && (MAX30101_SLOT1_VAL_2 || MAX30101_SLOT2_VAL_2)) || (MAX30101_SLOT1_VAL_2 && MAX30101_SLOT2_VAL_2)
+
+config SAMPLE_CHANNEL_IR_2
+    bool
+    default y if MAX30101_SLOT0_VAL_2 && MAX30101_SLOT1_VAL_2 && MAX30101_SLOT2_VAL_2
+
+endif # SAMPLE_CHANNEL_IR
+
+if SAMPLE_CHANNEL_GREEN
+
+config SAMPLE_CHANNEL_GREEN_0
+    bool
+    default y if MAX30101_SLOT0_VAL_3 || MAX30101_SLOT1_VAL_3 || MAX30101_SLOT2_VAL_3
+
+config SAMPLE_CHANNEL_GREEN_1
+    bool
+    default y if (MAX30101_SLOT0_VAL_3 && (MAX30101_SLOT1_VAL_3 || MAX30101_SLOT2_VAL_3)) || (MAX30101_SLOT1_VAL_3 && MAX30101_SLOT2_VAL_3)
+
+config SAMPLE_CHANNEL_GREEN_2
+    bool
+    default y if MAX30101_SLOT0_VAL_3 && MAX30101_SLOT1_VAL_3 && MAX30101_SLOT2_VAL_3
+
+endif # SAMPLE_CHANNEL_GREEN
+
+if SAMPLE_CHANNEL_DIE_TEMP
+
+config SAMPLE_CHANNEL_DIE_TEMP_0
+    bool
+    default y
+
+endif # SAMPLE_CHANNEL_DIE_TEMP
+
+endif # MAX30101_SAMPLE_FEATURES
