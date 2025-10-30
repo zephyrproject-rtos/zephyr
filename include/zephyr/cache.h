@@ -449,7 +449,7 @@ static ALWAYS_INLINE size_t sys_cache_instr_line_size_get(void)
  */
 static ALWAYS_INLINE bool sys_cache_is_ptr_cached(void *ptr)
 {
-#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_CACHE_DOUBLEMAP)
+#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_CACHE_HAS_MIRRORED_MEMORY_REGIONS)
 	return cache_is_ptr_cached(ptr);
 #else
 	ARG_UNUSED(ptr);
@@ -473,7 +473,7 @@ static ALWAYS_INLINE bool sys_cache_is_ptr_cached(void *ptr)
  */
 static ALWAYS_INLINE bool sys_cache_is_ptr_uncached(void *ptr)
 {
-#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_CACHE_DOUBLEMAP)
+#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_CACHE_HAS_MIRRORED_MEMORY_REGIONS)
 	return cache_is_ptr_uncached(ptr);
 #else
 	ARG_UNUSED(ptr);
@@ -492,8 +492,8 @@ static ALWAYS_INLINE bool sys_cache_is_ptr_uncached(void *ptr)
  * the current CPU if they exist, and writes will go first into the
  * cache and be written back later.
  *
- * @note This API returns the same pointer if CONFIG_CACHE_DOUBLEMAP is not
- * enabled.
+ * @note This API returns the same pointer if
+ * CONFIG_CACHE_HAS_MIRRORED_MEMORY_REGIONS is not enabled.
  *
  * @see arch_uncached_ptr()
  *
@@ -502,7 +502,7 @@ static ALWAYS_INLINE bool sys_cache_is_ptr_uncached(void *ptr)
  */
 static ALWAYS_INLINE void __sparse_cache *sys_cache_cached_ptr_get(void *ptr)
 {
-#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_CACHE_DOUBLEMAP)
+#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_CACHE_HAS_MIRRORED_MEMORY_REGIONS)
 	return cache_cached_ptr(ptr);
 #else
 	return (__sparse_force void __sparse_cache *)ptr;
@@ -517,8 +517,8 @@ static ALWAYS_INLINE void __sparse_cache *sys_cache_cached_ptr_get(void *ptr)
  * refer to the same memory while bypassing the L1 data cache.  Data
  * in the L1 cache will not be inspected nor modified by the access.
  *
- * @note This API returns the same pointer if CONFIG_CACHE_DOUBLEMAP is not
- * enabled.
+ * @note This API returns the same pointer if
+ * CONFIG_CACHE_HAS_MIRRORED_MEMORY_REGIONS is not enabled.
  *
  * @see arch_cached_ptr()
  *
@@ -527,7 +527,7 @@ static ALWAYS_INLINE void __sparse_cache *sys_cache_cached_ptr_get(void *ptr)
  */
 static ALWAYS_INLINE void *sys_cache_uncached_ptr_get(void __sparse_cache *ptr)
 {
-#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_CACHE_DOUBLEMAP)
+#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_CACHE_HAS_MIRRORED_MEMORY_REGIONS)
 	return cache_uncached_ptr(ptr);
 #else
 	return (__sparse_force void *)ptr;

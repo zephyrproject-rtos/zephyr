@@ -47,7 +47,7 @@ extern "C" {
 
 #endif /* CONFIG_ICACHE */
 
-#if defined(CONFIG_CACHE_DOUBLEMAP)
+#if defined(CONFIG_CACHE_HAS_MIRRORED_MEMORY_REGIONS)
 /**
  * @brief Test if a pointer is in cached region.
  *
