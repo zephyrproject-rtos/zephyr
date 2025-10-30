@@ -4,6 +4,9 @@ tests:
   sample.drivers.uart.async_api:
     integration_platforms:
       - nrf52840dk/nrf52840
+    platform_exclude:
+      - cy8ckit_062s4
+      - cy8ckit_062s2_ai
     tags:
       - serial
       - uart

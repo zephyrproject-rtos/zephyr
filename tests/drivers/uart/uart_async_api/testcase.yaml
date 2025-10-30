@@ -3,6 +3,8 @@ common:
     - stamp_c3
     - wio_terminal
     - xiao_esp32c3
+    - cy8ckit_062s4
+    - cy8ckit_062s2_ai
   tags:
     - drivers
     - uart
