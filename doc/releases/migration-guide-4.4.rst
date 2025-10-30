@@ -196,6 +196,11 @@ Modem HL78XX
 Other subsystems
 ****************
 
+* Cache
+
+  * Use :kconfig:option:`CONFIG_CACHE_HAS_MIRRORED_MEMORY_REGIONS` instead of
+    :kconfig:option:`CONFIG_CACHE_DOUBLEMAP` as the former is more descriptive of the feature.
+
 JWT
 ===
 

@@ -1078,10 +1078,22 @@ config ICACHE
 	help
 	  This option enables the support for the instruction cache (i-cache).
 
+config CACHE_HAS_MIRRORED_MEMORY_REGIONS
+	bool "Mirrored memory region(s) for both cached and uncached access"
+	depends on CPU_CACHE_INCOHERENT
+	help
+	  Enable this if hardware has mirrored memory regions at different
+	  addressed when accessing one would go through cache, but accessing
+	  the other would go to memory directly. A pointer can be cheaply
+	  converted to cached or uncached access.
+
+	  This applies to intra-CPU multiprocessing incoherence and makes only
+	  sense when MP_MAX_NUM_CPUS > 1.
+
 config CACHE_DOUBLEMAP
 	bool "Cache double-mapping support"
-	depends on CPU_CACHE_INCOHERENT
-	default y
+	select CACHE_HAS_MIRRORED_MEMORY_REGIONS
+	select DEPRECATED
 	help
 	  Double-mapping behavior where a pointer can be cheaply converted to
 	  point to the same cached/uncached memory at different locations.
