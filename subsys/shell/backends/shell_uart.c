@@ -455,7 +455,7 @@ static int async_read(struct shell_uart_async *sh_uart,
 
 	memcpy(data, buf, blen);
 #endif
-	bool buf_available = uart_async_rx_data_consume(async_rx, sh_cnt);
+	bool buf_available = uart_async_rx_data_consume(async_rx, blen);
 	*cnt = sh_cnt;
 
 	if (sh_uart->pending_rx_req && buf_available) {
