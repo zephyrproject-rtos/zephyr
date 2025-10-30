@@ -77,6 +77,36 @@ BUILD_ASSERT(sizeof(struct image_header) == IMAGE_HEADER_SIZE,
 #elif FIXED_PARTITION_EXISTS(slot5_partition) &&			\
 	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot5_partition)
 #define ACTIVE_IMAGE_IS 2
+#elif FIXED_PARTITION_EXISTS(slot6_partition) &&			\
+	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot6_partition)
+#define ACTIVE_IMAGE_IS 3
+#elif FIXED_PARTITION_EXISTS(slot7_partition) &&			\
+	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot7_partition)
+#define ACTIVE_IMAGE_IS 3
+#elif FIXED_PARTITION_EXISTS(slot8_partition) &&			\
+	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot8_partition)
+#define ACTIVE_IMAGE_IS 4
+#elif FIXED_PARTITION_EXISTS(slot9_partition) &&			\
+	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot9_partition)
+#define ACTIVE_IMAGE_IS 4
+#elif FIXED_PARTITION_EXISTS(slot10_partition) &&			\
+	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot10_partition)
+#define ACTIVE_IMAGE_IS 5
+#elif FIXED_PARTITION_EXISTS(slot11_partition) &&			\
+	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot11_partition)
+#define ACTIVE_IMAGE_IS 5
+#elif FIXED_PARTITION_EXISTS(slot12_partition) &&			\
+	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot12_partition)
+#define ACTIVE_IMAGE_IS 6
+#elif FIXED_PARTITION_EXISTS(slot13_partition) &&			\
+	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot13_partition)
+#define ACTIVE_IMAGE_IS 6
+#elif FIXED_PARTITION_EXISTS(slot14_partition) &&			\
+	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot14_partition)
+#define ACTIVE_IMAGE_IS 7
+#elif FIXED_PARTITION_EXISTS(slot15_partition) &&			\
+	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot15_partition)
+#define ACTIVE_IMAGE_IS 7
 #else
 #define ACTIVE_IMAGE_IS 0
 #endif
