@@ -7,7 +7,6 @@ menuconfig DISPLAY_MCUX_LCDIFV3
 	default y
 	depends on DT_HAS_NXP_IMX_LCDIFV3_ENABLED
 	depends on CLOCK_CONTROL
-	select INIT_VIDEO_PLL
 	help
 	  Enable support for mcux LCDIFV3 driver.
 

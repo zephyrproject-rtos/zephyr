@@ -175,6 +175,12 @@
 			#io-channel-cells = <1>;
 			clocks = <&ccm IMX_CCM_SAR_ADC1_CLK 0x0 0>;
 		};
+
+		video_pll: videopll@44481400 {
+			compatible = "nxp,imx93-video-pll";
+			reg = <0x44481400 0x1000>;
+			status = "disabled";
+		};
 	};
 };
 
