@@ -2856,11 +2856,6 @@ static int bt_hfp_ag_outgoing_call(struct bt_hfp_ag *ag, const char *number, uin
 		return -ENAMETOOLONG;
 	}
 
-	hfp_ag_lock(ag);
-	(void)strcpy(ag->last_number, number);
-	ag->type = type;
-	hfp_ag_unlock(ag);
-
 	call = get_call_from_number(ag, number, type);
 	if (call) {
 		return -EBUSY;
@@ -2956,11 +2951,27 @@ static int bt_hfp_ag_atd_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 
 static int bt_hfp_ag_bldn_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 {
+	int err;
+	char number[CONFIG_BT_HFP_AG_PHONE_NUMBER_MAX_LEN + 1];
+
 	if (!is_char(buf, '\r')) {
 		return -ENOTSUP;
 	}
 
-	return bt_hfp_ag_outgoing_call(ag, ag->last_number, ag->type);
+	if ((bt_ag == NULL) || (bt_ag->redial == NULL)) {
+		return -ENOTSUP;
+	}
+
+	memset(number, 0, sizeof(number));
+	err = bt_ag->redial(ag, number);
+	if (err != 0) {
+		return err;
+	}
+
+	/* Add null-terminated to avoid unexpected issue. */
+	number[CONFIG_BT_HFP_AG_PHONE_NUMBER_MAX_LEN] = '\0';
+
+	return bt_hfp_ag_outgoing_call(ag, number, 0);
 }
 
 static int bt_hfp_ag_clip_handler(struct bt_hfp_ag *ag, struct net_buf *buf)

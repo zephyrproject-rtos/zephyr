@@ -197,6 +197,30 @@ struct bt_hfp_ag_cb {
 	 */
 	int (*number_call)(struct bt_hfp_ag *ag, const char *number);
 
+	/** HF last number redial request Callback
+	 *
+	 *  If this callback is provided it will be called whenever a
+	 *  last number redial request is received from HF via `AT+BLDN` command.
+	 *  When the callback is triggered, the application needs to provide
+	 *  the last dialed phone number.
+	 *  If the callback is invalid, the last number redial from HF
+	 *  cannot be supported.
+	 *
+	 *  The application should:
+	 *  1. Retrieve the last dialed phone number from its call history
+	 *  2. Copy the phone number to the provided buffer
+	 *
+	 *  @param ag HFP AG object.
+	 *  @param number Buffer to store the last dialed phone number.
+	 *                The buffer size is @kconfig{BT_HFP_AG_PHONE_NUMBER_MAX_LEN} + 1,
+	 *                and should be null-terminated.
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 *          If successful, the AG will proceed with the call setup procedure.
+	 *          If error, an ERROR response will be sent to HF.
+	 */
+	int (*redial)(struct bt_hfp_ag *ag, char number[CONFIG_BT_HFP_AG_PHONE_NUMBER_MAX_LEN + 1]);
+
 	/** HF outgoing Callback
 	 *
 	 *  If this callback is provided it will be called whenever a
