@@ -830,6 +830,8 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 	callbk_fns.event_get_wiphy = nrf_wifi_wpa_supp_event_get_wiphy;
 	callbk_fns.mgmt_rx_callbk_fn = nrf_wifi_wpa_supp_event_mgmt_rx_callbk_fn;
 	callbk_fns.get_conn_info_callbk_fn = nrf_wifi_supp_event_proc_get_conn_info;
+	callbk_fns.roc_callbk_fn = nrf_wifi_supp_event_remain_on_channel;
+	callbk_fns.roc_cancel_callbk_fn = nrf_wifi_supp_event_roc_cancel_complete;
 #endif /* CONFIG_NRF70_STA_MODE */
 
 	/* The OSAL layer needs to be initialized before any other initialization
@@ -950,6 +952,8 @@ static const struct zep_wpa_supp_dev_ops wpa_supp_ops = {
 	.get_conn_info = nrf_wifi_supp_get_conn_info,
 	.set_country = nrf_wifi_supp_set_country,
 	.get_country = nrf_wifi_supp_get_country,
+	.remain_on_channel = nrf_wifi_supp_remain_on_channel,
+	.cancel_remain_on_channel = nrf_wifi_supp_cancel_remain_on_channel,
 #ifdef CONFIG_NRF70_AP_MODE
 	.init_ap = nrf_wifi_wpa_supp_init_ap,
 	.start_ap = nrf_wifi_wpa_supp_start_ap,
