@@ -303,7 +303,7 @@ static void ble_isr_installer(void)
 
 static void rng_get_random(void *num, size_t size)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
+	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
 	int res;
 
 	/* try to allocate from pool */
