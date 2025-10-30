@@ -1,5 +1,6 @@
 common:
   tags:
+    - fdtable
     - filesystem
     - littlefs
   platform_allow:

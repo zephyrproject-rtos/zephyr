@@ -14,3 +14,4 @@ tests:
       - testing
       - pytest
       - shell
+      - fdtable

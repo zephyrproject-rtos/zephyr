@@ -6,7 +6,9 @@ tests:
       - native_sim
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="fatfs_fstab.overlay"
-    tags: filesystem
+    tags:
+      - filesystem
+      - fdtable
     harness: console
     harness_config:
       type: one_line

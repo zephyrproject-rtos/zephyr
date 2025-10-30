@@ -5,6 +5,7 @@ common:
   tags:
     - shell
     - filesystem
+    - fdtable
   harness: keyboard
 tests:
   sample.filesystem.shell:

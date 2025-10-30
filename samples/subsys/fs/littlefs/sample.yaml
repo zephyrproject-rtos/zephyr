@@ -2,6 +2,7 @@ sample:
   name: littlefs filesystem sample
 common:
   tags:
+    - fdtable
     - filesystem
     - littefs
 tests:

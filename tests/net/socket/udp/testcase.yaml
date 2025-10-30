@@ -1,6 +1,7 @@
 common:
   depends_on: netif
   tags:
+    - fdtable
     - net
     - socket
     - udp

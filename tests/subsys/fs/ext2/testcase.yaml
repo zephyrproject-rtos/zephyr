@@ -1,5 +1,7 @@
 common:
-  tags: filesystem
+  tags:
+    - fdtable
+    - filesystem
 tests:
   filesystem.ext2.default:
     platform_allow:

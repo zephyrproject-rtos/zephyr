@@ -2,6 +2,7 @@ common:
   tags:
     - filesystem
     - fatfs
+    - fdtable
   modules:
     - fatfs
 tests:

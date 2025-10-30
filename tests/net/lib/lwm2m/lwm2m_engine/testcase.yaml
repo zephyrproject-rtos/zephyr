@@ -3,6 +3,7 @@ tests:
     platform_key:
       - simulation
     tags:
+      - fdtable
       - lwm2m
       - net
     integration_platforms:

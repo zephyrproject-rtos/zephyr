@@ -5,6 +5,7 @@ common:
   harness: net
   platform_allow: qemu_x86
   tags:
+    - fdtable
     - net
     - socket
   filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC

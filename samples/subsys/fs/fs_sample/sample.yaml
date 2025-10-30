@@ -1,7 +1,9 @@
 sample:
   name: Filesystems sample
 common:
-  tags: filesystem
+  tags:
+    - filesystem
+    - fdtable
   modules:
     - fatfs
 tests:

@@ -3,6 +3,7 @@ common:
     - littlefs
     - fatfs
     - filesystem
+    - fdtable
   modules:
     - fatfs
     - littlefs

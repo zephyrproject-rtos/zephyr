@@ -2,6 +2,7 @@ common:
   depends_on: netif
   min_ram: 21
   tags:
+    - fdtable
     - net
     - socket
     - userspace

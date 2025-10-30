@@ -1,5 +1,6 @@
 common:
   tags:
+    - fdtable
     - net
     - zperf
   platform_exclude:
