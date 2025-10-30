@@ -176,8 +176,8 @@ Alignment
 
 As mentioned in :c:func:`sys_cache_data_invd_range()` and associated functions,
 buffers should be aligned to the cache line size. This can be accomplished by
-using ``__aligned``:
+using ``__dcacheline_aligned``:
 
 .. code-block:: c
 
-  uint8_t buffer[BUF_SIZE] __aligned(CONFIG_DCACHE_LINE_SIZE);
+  uint8_t buffer[BUF_SIZE] __dcacheline_aligned;
