@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <errno.h>
 #include <string.h>
-#include <fnmatch.h>
+#include <zephyr/posix/fnmatch.h>
 #include "coverage.h"
 #include <zephyr/arch/common/semihost.h>
 #include <sys/types.h>

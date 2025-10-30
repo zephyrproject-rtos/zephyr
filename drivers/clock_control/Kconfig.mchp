@@ -16,11 +16,37 @@ config CLOCK_CONTROL_MCHP_SAM_D5X_E5X
 
 if CLOCK_CONTROL_MCHP_COMMON
 
+config CLOCK_CONTROL_MCHP_CONFIG_BOOTUP
+	bool "Bootup clock configuration"
+	default y
+	help
+	  This option enables bootup clock configuration from device tree node.
+
+config CLOCK_CONTROL_MCHP_CONFIG_RUNTIME
+	bool "Runtime clock configuration"
+	default y
+	help
+	  This option enables runtime clock configuration using API.
+
+config CLOCK_CONTROL_MCHP_ASYNC_ON
+	bool "Async clock on"
+	default n
+	help
+	  This option enables async on API.
+
 config CLOCK_CONTROL_MCHP_GET_RATE
 	bool "Get clock rate"
 	default y
 	help
 	  Enable support for retrieving the clock rate. This may increase
+	  code size, depending on the depth of clock source hierarchy.
+
+config CLOCK_CONTROL_MCHP_SET_RATE
+	bool "Set clock rate"
+	default n
+	depends on CLOCK_CONTROL_MCHP_GET_RATE
+	help
+	  This option enables set rate API. This may increase
 	  code size, depending on the depth of clock source hierarchy.
 
 endif # CLOCK_CONTROL_MCHP_COMMON

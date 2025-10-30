@@ -158,6 +158,14 @@
 				channel = <0>;
 				status = "disabled";
 			};
+
+			i2c {
+				compatible = "renesas,ra-i2c-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <0>;
+				status = "disabled";
+			};
 		};
 
 		sci1: sci@40070020 {
@@ -170,6 +178,14 @@
 
 			uart {
 				compatible = "renesas,ra-sci-uart";
+				channel = <1>;
+				status = "disabled";
+			};
+
+			i2c {
+				compatible = "renesas,ra-i2c-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
 				channel = <1>;
 				status = "disabled";
 			};
@@ -188,6 +204,14 @@
 				channel = <2>;
 				status = "disabled";
 			};
+
+			i2c {
+				compatible = "renesas,ra-i2c-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <2>;
+				status = "disabled";
+			};
 		};
 
 		sci3: sci@40070060 {
@@ -203,6 +227,14 @@
 				channel = <3>;
 				status = "disabled";
 			};
+
+			i2c {
+				compatible = "renesas,ra-i2c-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <3>;
+				status = "disabled";
+			};
 		};
 
 		sci9: sci@40070120 {
@@ -215,6 +247,14 @@
 
 			uart {
 				compatible = "renesas,ra-sci-uart";
+				channel = <9>;
+				status = "disabled";
+			};
+
+			i2c {
+				compatible = "renesas,ra-i2c-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
 				channel = <9>;
 				status = "disabled";
 			};
@@ -254,10 +294,13 @@
 			status = "disabled";
 		};
 
-		flash-controller@407e0000 {
+		flash: flash-controller@407e0000 {
+			compatible = "renesas,ra-flash-lp-controller";
 			reg = <0x407e0000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			interrupts = <30 1>;
+			interrupt-names = "frdyi";
 		};
 
 		agt0: agt@40084000 {

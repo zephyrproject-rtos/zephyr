@@ -61,6 +61,12 @@ When :kconfig:option:`CONFIG_TFM_BL2` is set to ``y``, TF-M uses a secure bootlo
 is validated by the bootloader during updates using the corresponding public
 key, which is stored inside the secure bootloader firmware image.
 
+During the signing procedure, all HEX files are marked as ``confirmed``,
+whereas all BIN files remain ``unconfirmed``. This guarantees that any image
+flashed into a device possesses the required properties for compatibility
+with the `PSA Certified Firmware Update API`_. The corresponding BIN file
+can then be used as the payload in the Firmware Update procedure.
+
 By default, ``<tfm-dir>/bl2/ext/mcuboot/root-rsa-3072.pem`` is used to sign secure
 images, and ``<tfm-dir>/bl2/ext/mcuboot/root-rsa-3072_1.pem`` is used to sign
 non-secure images. These default .pem keys can (and **should**) be overridden
@@ -94,6 +100,8 @@ hex file can then be flashed to your development board or run in QEMU.
 
 .. _PSA Certified Level 1:
   https://www.psacertified.org/security-certification/psa-certified-level-1/
+.. _PSA Certified Firmware Update API:
+  https://arm-software.github.io/psa-api/fwu/
 
 Custom CMake arguments
 ======================

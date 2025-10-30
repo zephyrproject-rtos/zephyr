@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	sdhc1_default: sdhc1_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_SDHI, 2, 5)>, /* SDCD */
+				<RA_PSEL(RA_PSEL_SDHI, 2, 2)>, /* SDCMD */
+				<RA_PSEL(RA_PSEL_SDHI, 3, 13)>, /* SDDATA0 */
+				<RA_PSEL(RA_PSEL_SDHI, 3, 14)>, /* SDDATA1 */
+				<RA_PSEL(RA_PSEL_SDHI, 4, 4)>, /* SDDATA2 */
+				<RA_PSEL(RA_PSEL_SDHI, 8, 11)>, /* SDDATA3 */
+				<RA_PSEL(RA_PSEL_SDHI, 2, 4)>; /* SDWP */
+			drive-strength = "high";
+		};
+
+		group2 {
+			psels = <RA_PSEL(RA_PSEL_SDHI, 2, 3)>; /* SDCLK */
+			drive-strength = "highspeed-high";
+		};
+	};
+};
+
+&sdhc1 {
+	pinctrl-0 = <&sdhc1_default>;
+	pinctrl-names = "default";
+	interrupt-names = "accs", "card", "dma-req";
+	interrupts = <95 1>, <94 1>, <93 1>;
+	status = "okay";
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
+};

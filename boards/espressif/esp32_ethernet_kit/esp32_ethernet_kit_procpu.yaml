@@ -11,4 +11,5 @@ supported:
   - nvs
   - pwm
   - i2s
+  - crypto
 vendor: espressif

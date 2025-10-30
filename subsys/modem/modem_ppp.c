@@ -51,14 +51,25 @@ static uint16_t modem_ppp_ppp_protocol(struct net_pkt *pkt)
 	return 0;
 }
 
-static bool modem_ppp_needs_escape(uint8_t byte)
+static bool modem_ppp_needs_escape(uint32_t async_map, uint8_t byte)
 {
-	return (byte == MODEM_PPP_CODE_DELIMITER) || (byte == MODEM_PPP_CODE_ESCAPE) ||
-	       (byte < MODEM_PPP_VALUE_ESCAPE);
+	uint32_t byte_bit;
+
+	if ((byte == MODEM_PPP_CODE_DELIMITER) || (byte == MODEM_PPP_CODE_ESCAPE)) {
+		/* Always escaped */
+		return true;
+	} else if (byte >= MODEM_PPP_VALUE_ESCAPE) {
+		/* Never escaped */
+		return false;
+	}
+	byte_bit = BIT(byte);
+	/* Escaped if required by the async control character map */
+	return byte_bit & async_map;
 }
 
 static uint32_t modem_ppp_wrap(struct modem_ppp *ppp, uint8_t *buffer, uint32_t available)
 {
+	uint32_t async_map = ppp_peer_async_control_character_map(ppp->iface);
 	uint32_t offset = 0;
 	uint32_t remaining;
 	uint16_t protocol;
@@ -111,12 +122,12 @@ static uint32_t modem_ppp_wrap(struct modem_ppp *ppp, uint8_t *buffer, uint32_t 
 			ppp->tx_pkt_fcs = modem_ppp_fcs_update(ppp->tx_pkt_fcs, upper);
 			ppp->tx_pkt_fcs = modem_ppp_fcs_update(ppp->tx_pkt_fcs, lower);
 			/* Push protocol bytes (with required escaping) */
-			if (modem_ppp_needs_escape(upper)) {
+			if (modem_ppp_needs_escape(async_map, upper)) {
 				buffer[offset++] = MODEM_PPP_CODE_ESCAPE;
 				upper ^= MODEM_PPP_VALUE_ESCAPE;
 			}
 			buffer[offset++] = upper;
-			if (modem_ppp_needs_escape(lower)) {
+			if (modem_ppp_needs_escape(async_map, lower)) {
 				buffer[offset++] = MODEM_PPP_CODE_ESCAPE;
 				lower ^= MODEM_PPP_VALUE_ESCAPE;
 			}
@@ -135,8 +146,8 @@ static uint32_t modem_ppp_wrap(struct modem_ppp *ppp, uint8_t *buffer, uint32_t 
 				(void)net_pkt_read_u8(ppp->tx_pkt, &byte);
 				/* FCS is computed without the escape/modification */
 				ppp->tx_pkt_fcs = modem_ppp_fcs_update(ppp->tx_pkt_fcs, byte);
-				/* Push encoded bytes into buffer */
-				if (modem_ppp_needs_escape(byte)) {
+				/* Push encoded bytes into buffer*/
+				if (modem_ppp_needs_escape(async_map, byte)) {
 					buffer[offset++] = MODEM_PPP_CODE_ESCAPE;
 					byte ^= MODEM_PPP_VALUE_ESCAPE;
 					remaining--;
@@ -157,12 +168,12 @@ static uint32_t modem_ppp_wrap(struct modem_ppp *ppp, uint8_t *buffer, uint32_t 
 			ppp->tx_pkt_fcs = modem_ppp_fcs_final(ppp->tx_pkt_fcs);
 			lower = (ppp->tx_pkt_fcs >> 0) & 0xFF;
 			upper = (ppp->tx_pkt_fcs >> 8) & 0xFF;
-			if (modem_ppp_needs_escape(lower)) {
+			if (modem_ppp_needs_escape(async_map, lower)) {
 				buffer[offset++] = MODEM_PPP_CODE_ESCAPE;
 				lower ^= MODEM_PPP_VALUE_ESCAPE;
 			}
 			buffer[offset++] = lower;
-			if (modem_ppp_needs_escape(upper)) {
+			if (modem_ppp_needs_escape(async_map, upper)) {
 				buffer[offset++] = MODEM_PPP_CODE_ESCAPE;
 				upper ^= MODEM_PPP_VALUE_ESCAPE;
 			}

@@ -170,12 +170,12 @@ zephyr_include_directories(
   ${SERVICE_DIR}/udelay/inc
   ${SECURITY_DIR}/sl_component/sl_protocol_crypto/src
   ${SECURITY_DIR}/sl_component/sli_crypto/inc
+  ${SECURITY_DIR}/sl_component/sli_psec_osal/inc
   ${BOARD_DIR}
 )
 
 zephyr_compile_definitions(
   ${SILABS_DEVICE_PART_NUMBER}
-  SL_CODE_COMPONENT_CLOCK_MANAGER=clock_manager
   SL_CODE_COMPONENT_DEVICE_PERIPHERAL=peripheral
   SL_CODE_COMPONENT_HAL_COMMON=hal_common
   SL_CODE_COMPONENT_SYSTEM=system
@@ -184,10 +184,6 @@ zephyr_compile_definitions(
 zephyr_library_sources(
   ${DEVICE_DIR}/SiliconLabs/${SILABS_DEVICE_FAMILY}/Source/system_${CONFIG_SOC_SERIES}.c
   ${EMLIB_DIR}/src/em_system.c
-  ${SERVICE_DIR}/clock_manager/src/sl_clock_manager.c
-  ${SERVICE_DIR}/clock_manager/src/sl_clock_manager_hal_s2.c
-  ${SERVICE_DIR}/clock_manager/src/sl_clock_manager_init.c
-  ${SERVICE_DIR}/clock_manager/src/sl_clock_manager_init_hal_s2.c
   ${SERVICE_DIR}/device_manager/devices/sl_device_peripheral_hal_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}.c
   ${SERVICE_DIR}/device_manager/src/sl_device_clock.c
   ${SERVICE_DIR}/device_manager/src/sl_device_gpio.c
@@ -202,7 +198,7 @@ if(NOT SILABS_DEVICE_FAMILY_NUMBER EQUAL "21")
 endif()
 
 # Sleeptimer
-if(CONFIG_SOC_SILABS_SLEEPTIMER)
+if(CONFIG_SILABS_SISDK_SLEEPTIMER)
   zephyr_library_sources(
     ${PERIPHERAL_DIR}/src/sl_hal_sysrtc.c
     ${SERVICE_DIR}/sleeptimer/src/sl_sleeptimer_hal_rtcc.c
@@ -216,24 +212,37 @@ if(CONFIG_SOC_SILABS_SLEEPTIMER)
   )
 endif()
 
+# Clock Manager
+if(CONFIG_SILABS_SISDK_CLOCK_MANAGER)
+  zephyr_library_sources(
+    ${EMLIB_DIR}/src/em_cmu.c
+    ${SERVICE_DIR}/clock_manager/src/sl_clock_manager.c
+    ${SERVICE_DIR}/clock_manager/src/sl_clock_manager_hal_s2.c
+    ${SERVICE_DIR}/clock_manager/src/sl_clock_manager_init.c
+    ${SERVICE_DIR}/clock_manager/src/sl_clock_manager_init_hal_s2.c
+  )
+  zephyr_compile_definitions(
+    SL_CODE_COMPONENT_CLOCK_MANAGER=clock_manager
+  )
+endif()
+
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_SYSTEM         ${PERIPHERAL_DIR}/src/sl_hal_system.c)
 
 #Keep em_iadc.c for compatibility for now. Not used anymore.
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_IADC         ${EMLIB_DIR}/src/em_iadc.c)
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_IADC         ${PERIPHERAL_DIR}/src/sl_hal_iadc.c)
 
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_BURTC        ${EMLIB_DIR}/src/em_burtc.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_CMU          ${EMLIB_DIR}/src/em_cmu.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_BURTC     ${EMLIB_DIR}/src/em_burtc.c)
 
 # Device Init
-if(CONFIG_SOC_GECKO_DEV_INIT)
+if(CONFIG_SILABS_SISDK_DEVICE_INIT)
   zephyr_library_sources_ifdef(CONFIG_DT_HAS_SILABS_SERIES2_DCDC_ENABLED
     ${SERVICE_DIR}/device_init/src/sl_device_init_dcdc_s2.c
   )
 endif()
 
 # Power Manager
-if(CONFIG_SOC_GECKO_PM_BACKEND_PMGR)
+if(CONFIG_SILABS_SISDK_POWER_MANAGER)
   zephyr_library_sources(
     ${SERVICE_DIR}/power_manager/src/common/sl_power_manager_common.c
     ${SERVICE_DIR}/power_manager/src/common/sl_power_manager_em4.c
@@ -244,13 +253,13 @@ if(CONFIG_SOC_GECKO_PM_BACKEND_PMGR)
     SL_CATALOG_POWER_MANAGER_PRESENT
     SL_CODE_COMPONENT_POWER_MANAGER=power_manager
   )
-  zephyr_compile_definitions_ifdef(CONFIG_SOC_GECKO_RTCC
+  zephyr_compile_definitions_ifdef(CONFIG_SILABS_SISDK_RTCC
     SL_CATALOG_POWER_MANAGER_DEEPSLEEP_BLOCKING_HFXO_RESTORE_PRESENT
   )
 endif()
 
 # HFXO Manager
-if(CONFIG_SOC_SILABS_HFXO_MANAGER)
+if(CONFIG_SILABS_SISDK_HFXO_MANAGER)
   zephyr_library_sources(
     ${SERVICE_DIR}/hfxo_manager/src/sl_hfxo_manager.c
     ${SERVICE_DIR}/hfxo_manager/src/sl_hfxo_manager_hal_s2.c
@@ -260,19 +269,19 @@ if(CONFIG_SOC_SILABS_HFXO_MANAGER)
   )
 endif()
 
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_DEV_INIT     ${COMMON_DIR}/src/sl_slist.c)
-if(CONFIG_SOC_GECKO_CORE)
-  zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_CORE
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_SLIST ${COMMON_DIR}/src/sl_slist.c)
+
+if(CONFIG_SILABS_SISDK_CORE)
+  zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_CORE
     ${COMMON_DIR}/src/sl_core_cortexm.c
   )
   zephyr_compile_definitions(
     SL_CODE_COMPONENT_CORE=core
   )
 endif()
-zephyr_library_sources_ifdef(CONFIG_SOC_SILABS_ACMP        ${EMLIB_DIR}/src/em_acmp.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_CRYOTIMER    ${EMLIB_DIR}/src/em_cryotimer.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_EMU          ${EMLIB_DIR}/src/em_emu.c)
-if(CONFIG_SOC_GECKO_GPIO)
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_ACMP      ${EMLIB_DIR}/src/em_acmp.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_EMU       ${EMLIB_DIR}/src/em_emu.c)
+if(CONFIG_SILABS_SISDK_GPIO)
   zephyr_library_sources(
     ${EMLIB_DIR}/src/em_gpio.c
     ${DRIVER_DIR}/gpio/src/sl_gpio.c
@@ -306,33 +315,31 @@ zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_LETIMER   ${PERIPHERAL_DIR}/src
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_TIMER     ${PERIPHERAL_DIR}/src/sl_hal_timer.c)
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_VDAC      ${PERIPHERAL_DIR}/src/sl_hal_vdac.c)
 
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_LDMA         ${EMDRV_DIR}/dmadrv/src/dmadrv.c)
-
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_I2C          ${EMLIB_DIR}/src/em_i2c.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_LEUART       ${EMLIB_DIR}/src/em_leuart.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_MSC          ${EMLIB_DIR}/src/em_msc.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_LDMA         ${EMLIB_DIR}/src/em_ldma.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_PRS          ${EMLIB_DIR}/src/em_prs.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_RMU          ${EMLIB_DIR}/src/em_rmu.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_RTC          ${EMLIB_DIR}/src/em_rtc.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_RTCC         ${EMLIB_DIR}/src/em_rtcc.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_EUSART       ${EMLIB_DIR}/src/em_eusart.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_USART        ${EMLIB_DIR}/src/em_usart.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_WDOG         ${EMLIB_DIR}/src/em_wdog.c)
-
-zephyr_include_directories_ifdef(CONFIG_SOC_GECKO_SE
-  ${SECURITY_DIR}/sl_component/se_manager/src
-  ${SECURITY_DIR}/sl_component/se_manager/inc
-  ${SECURITY_DIR}/sl_component/sli_psec_osal/inc
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_LDMA
+  ${EMDRV_DIR}/dmadrv/src/dmadrv.c
+  ${EMLIB_DIR}/src/em_ldma.c
 )
 
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_SE
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_MSC       ${EMLIB_DIR}/src/em_msc.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_PRS       ${EMLIB_DIR}/src/em_prs.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_RMU       ${EMLIB_DIR}/src/em_rmu.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_RTCC      ${EMLIB_DIR}/src/em_rtcc.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_EUSART    ${EMLIB_DIR}/src/em_eusart.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_USART     ${EMLIB_DIR}/src/em_usart.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_WDOG      ${EMLIB_DIR}/src/em_wdog.c)
+
+zephyr_include_directories_ifdef(CONFIG_SILABS_SISDK_SE
+  ${SECURITY_DIR}/sl_component/se_manager/src
+  ${SECURITY_DIR}/sl_component/se_manager/inc
+)
+
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_SE
   ${SECURITY_DIR}/sl_component/se_manager/src/sl_se_manager.c
   ${SECURITY_DIR}/sl_component/se_manager/src/sl_se_manager_util.c
   ${SECURITY_DIR}/sl_component/se_manager/src/sli_se_manager_mailbox.c
 )
 
-zephyr_compile_definitions_ifdef(CONFIG_SOC_GECKO_SE
+zephyr_compile_definitions_ifdef(CONFIG_SILABS_SISDK_SE
   SL_CODE_COMPONENT_SE_MANAGER=se_manager
   SL_CODE_COMPONENT_PSEC_OSAL=psec_osal
 )

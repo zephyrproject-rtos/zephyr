@@ -500,8 +500,7 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 
 			is_chan_connected = false;
 			SYS_SLIST_FOR_EACH_CONTAINER(&cig->cis_channels, cis_chan, node) {
-				if (cis_chan->state == BT_ISO_STATE_CONNECTED ||
-				    cis_chan->state == BT_ISO_STATE_CONNECTING) {
+				if (cis_chan->state != BT_ISO_STATE_DISCONNECTED) {
 					is_chan_connected = true;
 					break;
 				}

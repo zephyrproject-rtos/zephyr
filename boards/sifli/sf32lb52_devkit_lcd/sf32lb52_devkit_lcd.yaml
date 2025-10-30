@@ -13,4 +13,5 @@ supported:
   - uart
   - gpio
   - watchdog
+  - audio-codec
 vendor: sifli

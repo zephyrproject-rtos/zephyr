@@ -5,8 +5,9 @@
  */
 
 #if LINKER_ZEPHYR_FINAL && defined(CONFIG_ISR_TABLES_LOCAL_DECLARATION)
-INCLUDE isr_tables_vt.ld
 KEEP(*(.vectors.__start))
+. = ALIGN(CONFIG_ARCH_IRQ_VECTOR_TABLE_ALIGN);
+INCLUDE isr_tables_vt.ld
 #else
 KEEP(*(.vectors.*))
 #endif

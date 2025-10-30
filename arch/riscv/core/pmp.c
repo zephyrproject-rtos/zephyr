@@ -422,12 +422,6 @@ void z_riscv_pmp_init(void)
 	unsigned long pmp_cfg[CONFIG_PMP_SLOTS / PMPCFG_STRIDE];
 	unsigned int index = 0;
 
-	/* The read-only area is always there for every mode */
-	set_pmp_entry(&index, PMP_R | PMP_X | PMP_L,
-		      (uintptr_t)__rom_region_start,
-		      (size_t)__rom_region_size,
-		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
-
 #ifdef CONFIG_NULL_POINTER_EXCEPTION_DETECTION_PMP
 	/*
 	 * Use a PMP slot to make region (starting at address 0x0) inaccessible
@@ -438,6 +432,12 @@ void z_riscv_pmp_init(void)
 		      CONFIG_NULL_POINTER_EXCEPTION_REGION_SIZE,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 #endif
+
+	/* The read-only area is always there for every mode */
+	set_pmp_entry(&index, PMP_R | PMP_X | PMP_L,
+		      (uintptr_t)__rom_region_start,
+		      (size_t)__rom_region_size,
+		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 
 #ifdef CONFIG_PMP_STACK_GUARD
 #ifdef CONFIG_MULTITHREADING

@@ -1,0 +1,16 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: frdm_mcxe31b
+name: NXP FRDM MCXE31B
+type: mcu
+arch: arm
+ram: 288
+flash: 4096
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - arduino_gpio
+  - gpio
+vendor: nxp

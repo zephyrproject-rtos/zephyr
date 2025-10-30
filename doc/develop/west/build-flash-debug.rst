@@ -395,10 +395,23 @@ You can :ref:`configure <west-config-cmd>` ``west build`` using these options.
        west whenever it needs to create or locate a build folder. The currently
        available arguments are:
 
+         - ``west_topdir``: The absolute path to the west workspace, as
+           returned by the ``west_topdir`` command
          - ``board``: The board name
-         - ``source_dir``: The relative path from the current working directory
-           to the source directory. If the current working directory is inside
-           the source directory this will be set to an empty string.
+         - ``source_dir``: Path to the CMake source directory, relative to the
+           current working directory. If the current working directory is
+           inside the source directory, this is an empty string. If no source
+           directory is specified, it defaults to current working directory.
+           E.g. if ``west build ../app`` is run from ``<west_topdir>/app1``,
+           ``source_dir`` resolves to ``../app`` (which is the relative path
+           to the current working dir).
+         - ``source_dir_workspace``: Path to the source directory, relative to
+           ``west_topdir`` (if it is inside the workspace). Otherwise, it is
+           relative to the filesystem root (``/`` on Unix, respectively
+           ``C:/`` on Windows).
+           E.g. if ``west build ../app`` is run from ``<west_topdir>/app1``,
+           ``source_dir`` resolves to ``app`` (which is the relative path to
+           the west workspace dir).
          - ``app``: The name of the source directory.
    * - ``build.generator``
      - String, default ``Ninja``. The `CMake Generator`_ to use to create a

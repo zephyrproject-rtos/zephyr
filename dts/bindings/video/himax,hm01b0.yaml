@@ -1,0 +1,41 @@
+#
+# Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+    Himax HM01B0 video sensor.
+
+    Example of node configuration:
+
+    &i2c0 {
+      status = "okay";
+      hm01b0: hm01b0@24 {
+        compatible = "himax,hm01b0";
+        reg = <0x24>;
+        status = "okay";
+        data-bits = <0x4>;
+        port {
+          hm01b0_ep_out: endpoint {
+            remote-endpoint-label = "video_pio_dma_ep_in";
+          };
+        };
+      };
+    };
+
+compatible: "himax,hm01b0"
+properties:
+  data-bits:
+    type: int
+    default: 1
+    description: |
+      Camera output data width. 1/4/8 bits.
+      The default output data width value is 1, pixel value is serialised.
+    enum: [1, 4, 8]
+
+include: i2c-device.yaml
+
+child-binding:
+  child-binding:
+    include: video-interfaces.yaml

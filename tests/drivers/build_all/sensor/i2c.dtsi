@@ -787,6 +787,7 @@ test_i2c_bmi08x_accel: bmi08x@6d {
 	int2-conf-io = <0x17>;
 	accel-hz = "800";
 	accel-fs = <4>;
+	fifo-watermark = <1>;
 };
 
 test_i2c_bmi08x_gyro: bmi08x@6e {
@@ -797,6 +798,7 @@ test_i2c_bmi08x_gyro: bmi08x@6e {
 	int3-4-conf-io = <0x01>;
 	gyro-hz = "1000_116";
 	gyro-fs = <1000>;
+	fifo-watermark = <1>;
 };
 
 test_i2c_ist8310: ist8310@6f {
@@ -1430,4 +1432,15 @@ test_i2c_hdc302x: hdc302x@be {
 	compatible = "ti,hdc302x";
 	reg = <0xbe>;
 	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_veml6046: veml6046@bf {
+	compatible = "vishay,veml6046";
+	reg = <0xbf>;
+};
+
+test_i2c_wsen_pdms_25131308XXX05: wsen_pdms_25131308XXX05@c0 {
+	compatible = "we,wsen-pdms-25131308XXX05";
+	reg = <0xc0>;
+	sensor-type = <4>;
 };

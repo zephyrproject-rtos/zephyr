@@ -60,6 +60,16 @@ jobs:
         west config manifest.group-filter -- +ci,-optional
         west update -o=--depth=1 -n 2>&1 1> west.update.log || west update -o=--depth=1 -n 2>&1 1> west.update2.log
 
+    - name: Setup Node.js
+      uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+      with:
+        node-version: "lts/*"
+        cache: npm
+        check-latest: true
+
+    - name: Install Node dependencies
+      run: npm ci
+
     - name: Run Compliance Tests
       continue-on-error: true
       id: compliance
@@ -85,6 +95,14 @@ jobs:
       with:
         name: compliance.xml
         path: compliance.xml
+
+    - name: Upload dts linter patch
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      continue-on-error: true
+      if: hashFiles('dts_linter.patch') != ''
+      with:
+        name: dts_linter.patch
+        path: dts_linter.patch
 
     - name: check-warns
       run: |

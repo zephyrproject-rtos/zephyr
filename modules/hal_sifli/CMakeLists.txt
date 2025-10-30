@@ -49,7 +49,7 @@ if(CONFIG_HAS_SIFLI_HAL)
       CONFIG_USE_SIFLI_HAL_ATIM ${ZEPHYR_HAL_SIFLI_MODULE_DIR}/hal/src/bf0_hal_tim_ex.c
     )
     zephyr_library_sources_ifdef(
-      CONFIG_USE_SIFLI_HAL_AUDCODEC ${ZEPHYR_HAL_SIFLI_MODULE_DIR}/hal/src/bf0_hal_audcodec.c
+      CONFIG_USE_SIFLI_HAL_AUDCODEC ${ZEPHYR_HAL_SIFLI_MODULE_DIR}/hal/src/bf0_hal_audcodec_m.c
     )
     zephyr_library_sources_ifdef(
       CONFIG_USE_SIFLI_HAL_AUDPRC ${ZEPHYR_HAL_SIFLI_MODULE_DIR}/hal/src/bf0_hal_audprc.c

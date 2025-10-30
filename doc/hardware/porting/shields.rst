@@ -8,6 +8,293 @@ to extend its features and services for easier and modularized prototyping.
 In Zephyr, the shield feature provides Zephyr-formatted shield
 descriptions for easier compatibility with applications.
 
+Shield activation
+*****************
+
+Activate support for one or more shields by adding the matching ``--shield`` arguments
+to the west command:
+
+  .. zephyr-app-commands::
+     :app: your_app
+     :board: your_board
+     :shield: x_nucleo_idb05a1,x_nucleo_iks01a1
+     :goals: build
+
+
+Alternatively, it could be set by default in a project's CMakeLists.txt:
+
+.. code-block:: cmake
+
+	set(SHIELD x_nucleo_iks01a1)
+
+
+Shield interfaces
+*****************
+
+A shield is defined by two key characteristics:
+
+#. **Physical connectors** - the mechanical interface
+#. **Electrical signals** - what each pin actually does
+
+The connection between a shield and a board happens through Devicetree files:
+
+- Board side: The board's devicetree file uses a :ref:`GPIO nexus node <gpio-nexus-node>` to map
+  connector pins to the microcontroller's actual GPIO pins. It also defines labels for buses exposed
+  through the connector (like ``arduino_i2c``, ``arduino_spi``, ``arduino_uart``).
+
+- Shield side: The shield's .overlay file references these same labels to describe how its
+  components connect to the board.
+
+At build time, the board's devicetree and the shield's overlay are combined to create a complete
+picture of the hardware setup.
+
+For example, let's say you have a board with an Arduino connector but no built-in accelerometer.
+You can add one using an Arduino shield:
+
+#. The board's Devicetree defines an ``arduino_i2c`` label: it is the I2C bus made available on the
+   Arduino connector
+
+#. The accelerometer shield's overlay file also references ``arduino_i2c`` to indicate it uses that
+   same I2C bus. If it needs to use GPIO pins from the connector, it references the GPIO nexus node
+   defined by the board's Devicetree (e.g. ``arduino_header``).
+
+When you then build for this board with this shield, Zephyr automatically "wires them" together.
+
+.. note::
+
+   Some boards and shields may only support a limited set of features of a shield hardware
+   interface. Refer to their documentation for more details.
+
+
+Arduino MKR
+-----------
+
+This is the form factor of the Arduino MKR boards.
+
+.. figure:: ../../../boards/arduino/mkrzero/doc/img/arduino_mkrzero.jpg
+   :align: center
+   :width: 200px
+   :alt: Arduino MKR Zero
+
+   Arduino MKR Zero, an example of a board with the Arduino MKR shield interface
+
+Relevant devicetree node labels:
+
+- ``arduino_mkr_header`` See :dtcompatible:`arduino-mkr-header` for details on GPIO pin definitions
+  and includes for use in devicetree files.
+- ``arduino_mkr_i2c``
+- ``arduino_mkr_spi``
+- ``arduino_mkr_serial``
+
+
+Arduino Nano
+------------
+
+This is the form factor of the Arduino Nano boards.
+
+.. figure:: ../../../boards/arduino/nano_33_iot/doc/img/nano_33_iot.jpg
+   :align: center
+   :width: 300px
+   :alt: Arduino Nano 33 IOT
+
+   Arduino Nano 33 IOT, an example of a board with the Arduino Nano shield interface
+
+Relevant devicetree node labels:
+
+- ``arduino_nano_header`` See :dtcompatible:`arduino-nano-header` for details on GPIO pin definitions
+  and includes for use in devicetree files.
+- ``arduino_nano_i2c``
+- ``arduino_nano_spi``
+- ``arduino_nano_serial``
+
+
+Arduino Uno R3
+--------------
+
+This is the form factor of the Arduino Uno R3 board.
+
+.. figure:: ../../../boards/shields/mcp2515/doc/keyestudio_can_bus_ks0411.jpg
+   :align: center
+   :width: 300px
+   :alt: Keyestudio CAN-BUS Shield (KS0411)
+
+   Keyestudio CAN-BUS, an example of an Arduino shield (Credit: Keyestudio)
+
+Relevant devicetree node labels:
+
+- ``arduino_header`` See :dtcompatible:`arduino-header-r3` for details on GPIO pin definitions
+  and includes for use in devicetree files.
+- ``arduino_adc`` See :dtcompatible:`arduino,uno-adc`
+- ``arduino_pwm`` See :dtcompatible:`arduino-header-pwm`
+- ``arduino_serial``
+- ``arduino_i2c``
+- ``arduino_spi``
+
+For technical details, see `Arduino Uno R3 pinout`_.
+
+
+Camera and display connectors
+-----------------------------
+
+These describe connections to cameras and displays (strictly speaking not shields).
+
+- :dtcompatible:`arducam,dvp-20pin-connector`
+- :dtcompatible:`nxp,cam-44pins-connector`
+- :dtcompatible:`nxp,parallel-lcd-connector`
+- :dtcompatible:`raspberrypi,csi-connector`
+- :dtcompatible:`weact,dcmi-camera-connector`
+
+
+Feather
+-------
+
+This is the form factor of the Adafruit Feather series of boards.
+Shields intended for Feather boards are called Featherwings.
+
+.. figure:: ../../../boards/shields/adafruit_adalogger_featherwing/doc/adafruit_adalogger_featherwing.webp
+   :align: center
+   :width: 300px
+   :alt: Adafruit Adalogger Featherwing Shield
+
+   Adafruit Adalogger, an example of a Featherwing (Credit: Adafruit)
+
+Relevant devicetree node labels:
+
+- ``feather_header`` See :dtcompatible:`adafruit-feather-header` for GPIO pin definitions.
+- ``feather_adc``
+- ``feather_i2c``
+- ``feather_serial``
+- ``feather_spi``
+
+
+Microbit
+--------
+
+This is for the edge connector of the Microbit boards.
+
+.. figure::  ../../../boards/bbc/microbit_v2/doc/img/bbc_microbit2.jpg
+   :align: center
+   :width: 500px
+   :alt: Microbit V2 board
+
+   Microbit V2 board uses the Microbit shield interface
+
+See :dtcompatible:`microbit,edge-connector` for GPIO pin definitions and
+links to technical requirements.
+
+
+mikroBUS |trade|
+----------------
+
+This is an interface standard for add-on boards, developed by Mikroe.
+
+.. figure:: ../../../boards/shields/mikroe_3d_hall_3_click/doc/images/mikroe_3d_hall_3_click.webp
+   :align: center
+   :alt: 3D Hall 3 Click
+   :height: 300px
+
+   3D Hall 3 Click, an example of a mikroBUS |trade| shield
+
+Relevant devicetree node labels:
+
+- ``mikrobus_header`` See :dtcompatible:`mikro-bus` for GPIO pin definitions and links to
+  technical specifications.
+- ``mikrobus_adc``
+- ``mikrobus_i2c``
+- ``mikrobus_spi``
+- ``mikrobus_serial``
+
+Note that boards with several mikroBUS |trade| connectors might define for
+example ``mikrobus_2_spi``.
+
+
+Pico
+----
+
+This is the form factor of the Raspberry Pi Pico boards.
+
+.. figure::  ../../../boards/shields/waveshare_ups/doc/waveshare_pico_ups_b.jpg
+   :align: center
+   :width: 300px
+   :alt: Waveshare Pico UPS-B shield
+
+   Waveshare Pico UPS-B, an example of a Pico shield
+
+Relevant devicetree node labels:
+
+- ``pico_header`` See :dtcompatible:`raspberrypi,pico-header` for GPIO pin definitions.
+- ``pico_i2c0``
+- ``pico_i2c1``
+- ``pico_serial``
+- ``pico_spi``
+
+
+ST Morpho
+---------
+
+Development boards from ST Microelectronics often uses the ST Morpho shield interface.
+
+.. figure:: ../../../boards/shields/x_nucleo_gfx01m2/doc/x_nucleo_gfx01m2.webp
+   :align: center
+   :width: 300px
+   :alt: X-NUCLEO-GFX01M2
+
+   X-NUCLEO-GFX01M2, an example of an ST Morpho shield
+
+Relevant devicetree node labels:
+
+- ``st_morpho_header``  See :dtcompatible:`st-morpho-header` for details on GPIO pin definitions
+  and includes for use in devicetree files.
+- ``st_morpho_lcd_spi``
+- ``st_morpho_flash_spi``
+
+
+Xiao
+----
+
+This is the form factor of the Seeeduino XIAO boards.
+
+.. figure:: ../../../boards/shields/seeed_xiao_expansion_board/doc/img/seeed_xiao_expansion_board.webp
+     :align: center
+     :width: 300px
+     :alt: Seeed Studio XIAO Expansion Board
+
+     Seeed Studio XIAO Expansion Board, an example of a Xiao shield (Credit: Seeed Studio)
+
+Relevant devicetree node labels:
+
+- ``xiao_d`` See :dtcompatible:`seeed,xiao-gpio` for GPIO pin definitions.
+- ``xiao_spi``
+- ``xiao_i2c``
+- ``xiao_serial``
+- ``xiao_adc``
+- ``xiao_dac``
+
+
+zephyr_i2c / Stemma QT / Quiic
+------------------------------
+
+These are four-pin I2C connectors. SparkFun calls these connectors "Qwiic", and Adafruit
+calls them "Stemma QT". The I2C connectors have four pins; GND, +3.3 Volt, I2C data and I2C
+clock. The most common physical connector is the 1.0 mm pitch JST-SH.
+
+Due to the different brand names, the interface is labeled "zephyr_i2c".
+
+.. figure::  ../../../boards/shields/adafruit_vcnl4040/doc/adafruit_vcnl4040.webp
+   :align: center
+   :width: 200px
+   :alt: Adafruit VCNL4040 Shield
+
+   Adafruit VCNL4040, an example of a zephyr_i2c shield (Credit: Adafruit)
+
+See :dtcompatible:`stemma-qt-connector` and :dtcompatible:`grove-header` for descriptions
+and links to further details.
+
+Relevant devicetree node labels:
+
+- ``zephyr_i2c``
+
+
 .. _shield_porting_guide:
 
 Shield porting and configuration
@@ -134,24 +421,6 @@ board or board revision overriding files to a shield, as follows:
        └── <board>.conf
 
 
-Shield activation
-*****************
-
-Activate support for one or more shields by adding the matching ``--shield`` arguments
-to the west command:
-
-  .. zephyr-app-commands::
-     :app: your_app
-     :shield: x_nucleo_idb05a1,x_nucleo_iks01a1
-     :goals: build
-
-
-Alternatively, it could be set by default in a project's CMakeLists.txt:
-
-.. code-block:: cmake
-
-	set(SHIELD x_nucleo_iks01a1)
-
 Shield variants
 ***************
 
@@ -187,6 +456,8 @@ revision:
        └── <shield_v2>
            ├── <board>.overlay
            └── <board>.defconfig
+
+.. _gpio-nexus-node:
 
 GPIO nexus nodes
 ****************
@@ -254,3 +525,7 @@ bits of the flags are copied over, so the SOC GPIO reference becomes
 ``<&gpiob 4 1>`` as intended.
 
 See `nexus node`_ for more information about this capability.
+
+
+.. _Arduino Uno R3 pinout:
+  https://docs.arduino.cc/resources/pinouts/A000066-full-pinout.pdf

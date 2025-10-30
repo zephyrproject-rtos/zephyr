@@ -12,6 +12,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 
 #include <driverlib/clkctl.h>
 #include <inc/hw_lgpt.h>
@@ -23,11 +25,14 @@
 
 LOG_MODULE_REGISTER(counter_cc23x0_lgpt, CONFIG_COUNTER_LOG_LEVEL);
 
+#define LGPT_CLK_PRESCALE(pres) (((pres) + 1) << 8)
+
 static void counter_cc23x0_lgpt_isr(const struct device *dev);
 
 struct counter_cc23x0_lgpt_config {
 	struct counter_config_info counter_info;
 	uint32_t base;
+	uint32_t clk_idx;
 	uint32_t prescale;
 };
 
@@ -35,6 +40,22 @@ struct counter_cc23x0_lgpt_data {
 	struct counter_alarm_cfg alarm_cfg[3];
 	struct counter_top_cfg target_cfg;
 };
+
+static inline void lgpt_cc23x0_pm_policy_state_lock_get(void)
+{
+#ifdef CONFIG_PM_DEVICE
+	pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+#endif
+}
+
+static inline void lgpt_cc23x0_pm_policy_state_lock_put(void)
+{
+#ifdef CONFIG_PM_DEVICE
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+#endif
+}
 
 static int counter_cc23x0_lgpt_get_value(const struct device *dev, uint32_t *ticks)
 {
@@ -221,6 +242,8 @@ static int counter_cc23x0_lgpt_start(const struct device *dev)
 {
 	const struct counter_cc23x0_lgpt_config *config = dev->config;
 
+	lgpt_cc23x0_pm_policy_state_lock_get();
+
 	LOG_DBG("[START] LGPT base[%x]\n", config->base);
 
 	HWREG(config->base + LGPT_O_CTL) = LGPT_CTL_MODE_UP_PER;
@@ -240,8 +263,40 @@ static int counter_cc23x0_lgpt_stop(const struct device *dev)
 	/* Set to 0 to stop timer */
 	HWREG(config->base + LGPT_O_STARTCFG) = 0x0;
 
+	lgpt_cc23x0_pm_policy_state_lock_put();
+
 	return 0;
 }
+
+static void counter_cc23x0_lgpt_init_common(const struct device *dev)
+{
+	const struct counter_cc23x0_lgpt_config *config = dev->config;
+
+	HWREG(config->base + LGPT_O_TGT) = config->counter_info.max_top_value;
+	HWREG(config->base + LGPT_O_PRECFG) = LGPT_CLK_PRESCALE(config->prescale);
+	HWREG(EVTSVT_BASE + EVTSVT_O_LGPTSYNCSEL) = EVTSVT_LGPTSYNCSEL_PUBID_SYSTIM0;
+}
+
+#ifdef CONFIG_PM_DEVICE
+
+static int lgpt_cc23x0_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct counter_cc23x0_lgpt_config *config = dev->config;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		CLKCTLDisable(CLKCTL_BASE, config->clk_idx);
+		return 0;
+	case PM_DEVICE_ACTION_RESUME:
+		CLKCTLEnable(CLKCTL_BASE, config->clk_idx);
+		counter_cc23x0_lgpt_init_common(dev);
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+
+#endif /* CONFIG_PM_DEVICE */
 
 static DEVICE_API(counter, cc23x0_lgpt_api) = {
 	.start = counter_cc23x0_lgpt_start,
@@ -255,48 +310,51 @@ static DEVICE_API(counter, cc23x0_lgpt_api) = {
 	.get_freq = counter_cc23x0_lgpt_get_freq,
 };
 
-#define LGPT_CLK_PRESCALE(pres) ((pres + 1) << 8)
-
-#define LGPT_CC23X0_INIT_FUNC(inst)                                                                \
-	static int counter_cc23x0_lgpt_init##inst(const struct device *dev)                        \
-	{                                                                                          \
-		const struct counter_cc23x0_lgpt_config *config = dev->config;                     \
-                                                                                                   \
-		CLKCTLEnable(CLKCTL_BASE, CLKCTL_LGPT##inst);                                      \
-                                                                                                   \
-		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),                       \
-			    counter_cc23x0_lgpt_isr, DEVICE_DT_INST_GET(inst), 0);                 \
-                                                                                                   \
-		irq_enable(DT_INST_IRQN(inst));                                                    \
-                                                                                                   \
-		HWREG(config->base + LGPT_O_TGT) = config->counter_info.max_top_value;             \
-                                                                                                   \
-		HWREG(config->base + LGPT_O_PRECFG) = LGPT_CLK_PRESCALE(config->prescale);         \
-                                                                                                   \
-		HWREG(EVTSVT_BASE + EVTSVT_O_LGPTSYNCSEL) = EVTSVT_LGPTSYNCSEL_PUBID_SYSTIM0;      \
-                                                                                                   \
-		return 0;                                                                          \
+#define LGPT_CC23X0_INIT_FUNC(inst)								\
+	static int counter_cc23x0_lgpt_init##inst(const struct device *dev)			\
+	{											\
+		const struct counter_cc23x0_lgpt_config *config = dev->config;			\
+												\
+		CLKCTLEnable(CLKCTL_BASE, config->clk_idx);					\
+												\
+		IRQ_CONNECT(DT_INST_IRQN(inst),							\
+			    DT_INST_IRQ(inst, priority),					\
+			    counter_cc23x0_lgpt_isr,						\
+			    DEVICE_DT_INST_GET(inst),						\
+			    0);									\
+												\
+		irq_enable(DT_INST_IRQN(inst));							\
+												\
+		counter_cc23x0_lgpt_init_common(dev);						\
+												\
+		return 0;									\
 	}
 
-#define CC23X0_LGPT_INIT(inst)                                                                     \
-                                                                                                   \
-	LGPT_CC23X0_INIT_FUNC(inst);                                                               \
-                                                                                                   \
-	static const struct counter_cc23x0_lgpt_config cc23x0_lgpt_config_##inst = {               \
-		.counter_info =                                                                    \
-			{                                                                          \
-				.max_top_value = DT_INST_PROP(inst, max_top_value),                \
-				.flags = COUNTER_CONFIG_INFO_COUNT_UP,                             \
-				.channels = 3,                                                     \
-			},                                                                         \
-		.base = DT_INST_REG_ADDR(inst),                                                    \
-		.prescale = DT_INST_PROP(inst, clk_prescale),                                      \
-	};                                                                                         \
-                                                                                                   \
-	static struct counter_cc23x0_lgpt_data cc23x0_lgpt_data_##inst;                            \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, &counter_cc23x0_lgpt_init##inst, NULL,                         \
-			      &cc23x0_lgpt_data_##inst, &cc23x0_lgpt_config_##inst, POST_KERNEL,   \
-			      CONFIG_COUNTER_INIT_PRIORITY, &cc23x0_lgpt_api);
+#define CC23X0_LGPT_INIT(inst)									\
+												\
+	LGPT_CC23X0_INIT_FUNC(inst);								\
+	PM_DEVICE_DT_INST_DEFINE(inst, lgpt_cc23x0_pm_action);					\
+												\
+	static const struct counter_cc23x0_lgpt_config cc23x0_lgpt_config_##inst = {		\
+		.counter_info = {								\
+			.max_top_value = DT_INST_PROP(inst, max_top_value),			\
+			.flags = COUNTER_CONFIG_INFO_COUNT_UP,					\
+			.channels = 3,								\
+		},										\
+		.base = DT_INST_REG_ADDR(inst),							\
+		.clk_idx = CLKCTL_LGPT##inst,							\
+		.prescale = DT_INST_PROP(inst, clk_prescale),					\
+	};											\
+												\
+	static struct counter_cc23x0_lgpt_data cc23x0_lgpt_data_##inst;				\
+												\
+	DEVICE_DT_INST_DEFINE(inst,								\
+			      &counter_cc23x0_lgpt_init##inst,					\
+			      PM_DEVICE_DT_INST_GET(inst),					\
+			      &cc23x0_lgpt_data_##inst,						\
+			      &cc23x0_lgpt_config_##inst,					\
+			      POST_KERNEL,							\
+			      CONFIG_COUNTER_INIT_PRIORITY,					\
+			      &cc23x0_lgpt_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CC23X0_LGPT_INIT);

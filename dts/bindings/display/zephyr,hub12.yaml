@@ -1,0 +1,61 @@
+# Copyright (c) 2025 Siratul Islam <sirat4757@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  HUB12 interface monochrome LED matrix display controller.
+
+  HUB12 is a standard interface for controlling monochrome LED matrix panels
+  using shift registers. It works with any panel implementing the HUB12 protocol.
+
+  This driver uses SPI for serial data transfer to the shift registers,
+  plus additional GPIO pins for row address selection (PA, PB),
+  output enable (PE), and data latching (PLAT).
+
+  See:
+  - https://www.auselectronicsdirect.com.au/assets/files/TA0094%20and%20TA0095%20user%20manual.pdf
+  - https://www.researchgate.net/publication/377952697_Light_Emitting_Diode_LED_Matrix_Display_Board#pf7
+  - https://buildcircuits.com/blogs/scoreduino-modules/exploring-led-display-interfaces-from-hub75-to-spi-and-beyond
+  - https://www.iled.com/class/INNOVAEditor/assets/YeniDatasheets/2120-2124p10tekrenk.pdf
+
+compatible: "zephyr,hub12"
+
+include: [spi-device.yaml, display-controller.yaml]
+
+properties:
+  pa-gpios:
+    type: phandle-array
+    required: true
+    description: Row address bit 0
+
+  pb-gpios:
+    type: phandle-array
+    required: true
+    description: Row address bit 1
+
+  pe-gpios:
+    type: phandle-array
+    required: true
+    description: Output enable control
+
+  plat-gpios:
+    type: phandle-array
+    required: true
+    description: Shift register latch
+
+  width:
+    type: int
+    required: true
+    enum:
+      - 32
+    description: |
+      Display width in pixels. Must match the physical hardware panel.
+      Currently only single 32-pixel wide panels are supported.
+
+  height:
+    type: int
+    required: true
+    enum:
+      - 16
+    description: |
+      Display height in pixels. Must match the physical hardware panel.
+      Standard HUB12 P10 panels are 16 pixels tall.

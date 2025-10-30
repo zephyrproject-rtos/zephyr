@@ -74,7 +74,11 @@ ZTEST(after_flash_gpio_config_trigger, test_gpio_config_twice_trigger)
 	zassert_between_inclusive(cb_cnt, 0, 1, "Got %d interrupts", cb_cnt);
 
 	ret = gpio_pin_interrupt_configure(dev_in, PIN_IN, GPIO_INT_DISABLE);
-	zassert_ok(ret, "interrupt disabling failed");
+	if (ret == -ENOTSUP) {
+		TC_PRINT("GPIO_INT_DISABLE not supported.\n");
+	} else {
+		zassert_ok(ret, "interrupt disabling failed");
+	}
 
 	gpio_remove_callback(dev_in, &drv_data->gpio_cb);
 }
@@ -129,7 +133,11 @@ ZTEST(after_flash_gpio_config_trigger, test_gpio_config_trigger)
 	zassert_between_inclusive(cb_cnt, 0, 1, "Got %d interrupts", cb_cnt);
 
 	ret = gpio_pin_interrupt_configure(dev_in, PIN_IN, GPIO_INT_DISABLE);
-	zassert_ok(ret, "interrupt disabling failed");
+	if (ret == -ENOTSUP) {
+		TC_PRINT("GPIO_INT_DISABLE not supported.\n");
+	} else {
+		zassert_ok(ret, "interrupt disabling failed");
+	}
 
 	gpio_remove_callback(dev_in, &drv_data->gpio_cb);
 }

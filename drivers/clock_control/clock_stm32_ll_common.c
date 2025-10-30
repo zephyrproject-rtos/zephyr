@@ -6,6 +6,7 @@
  */
 
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_rcc.h>
@@ -75,12 +76,12 @@
 #endif
 
 #if defined(RCC_PLLCFGR_PLLPEN)
-#define RCC_PLLP_ENABLE() SET_BIT(RCC->PLLCFGR, RCC_PLLCFGR_PLLPEN)
+#define RCC_PLLP_ENABLE() stm32_reg_set_bits(&RCC->PLLCFGR, RCC_PLLCFGR_PLLPEN)
 #else
 #define RCC_PLLP_ENABLE()
 #endif /* RCC_PLLCFGR_PLLPEN */
 #if defined(RCC_PLLCFGR_PLLQEN)
-#define RCC_PLLQ_ENABLE() SET_BIT(RCC->PLLCFGR, RCC_PLLCFGR_PLLQEN)
+#define RCC_PLLQ_ENABLE() stm32_reg_set_bits(&RCC->PLLCFGR, RCC_PLLCFGR_PLLQEN)
 #else
 #define RCC_PLLQ_ENABLE()
 #endif /* RCC_PLLCFGR_PLLQEN */
@@ -820,11 +821,11 @@ static void set_up_plls(void)
 #if defined(STM32_PLL_ENABLED)
 
 #if defined(STM32_SRC_PLL_P) && STM32_PLL_P_ENABLED
-	MODIFY_REG(RCC->PLLCFGR, RCC_PLLCFGR_PLLP, pllp(STM32_PLL_P_DIVISOR));
+	stm32_reg_modify_bits(&RCC->PLLCFGR, RCC_PLLCFGR_PLLP, pllp(STM32_PLL_P_DIVISOR));
 	RCC_PLLP_ENABLE();
 #endif
 #if defined(STM32_SRC_PLL_Q) && STM32_PLL_Q_ENABLED
-	MODIFY_REG(RCC->PLLCFGR, RCC_PLLCFGR_PLLQ, pllq(STM32_PLL_Q_DIVISOR));
+	stm32_reg_modify_bits(&RCC->PLLCFGR, RCC_PLLCFGR_PLLQ, pllq(STM32_PLL_Q_DIVISOR));
 	RCC_PLLQ_ENABLE();
 #endif
 
@@ -1141,15 +1142,6 @@ int stm32_clock_control_init(const struct device *dev)
 #endif
 #if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), ahb4_prescaler)
 	LL_RCC_SetAHB4Prescaler(ahb_prescaler(STM32_AHB4_PRESCALER));
-#endif
-#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), adc_prescaler)
-	LL_RCC_SetADCClockSource(adc12_prescaler(STM32_ADC_PRESCALER));
-#endif
-#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), adc12_prescaler)
-	LL_RCC_SetADCClockSource(adc12_prescaler(STM32_ADC12_PRESCALER));
-#endif
-#if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), adc34_prescaler)
-	LL_RCC_SetADCClockSource(adc34_prescaler(STM32_ADC34_PRESCALER));
 #endif
 #if defined(RCC_DCKCFGR_TIMPRE) || defined(RCC_DCKCFGR1_TIMPRE)
 	if (IS_ENABLED(STM32_TIMER_PRESCALER)) {

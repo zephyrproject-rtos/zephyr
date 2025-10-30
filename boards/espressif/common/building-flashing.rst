@@ -2,7 +2,7 @@
 
 .. espressif-building-flashing
 
-Simple boot
+Simple Boot
 ===========
 
 The board could be loaded using the single binary image, without 2nd stage bootloader.
@@ -12,7 +12,7 @@ It is the default option when building the application without additional config
 
    Simple boot does not provide any security features nor OTA updates.
 
-MCUboot bootloader
+MCUboot Bootloader
 ==================
 
 User may choose to use MCUboot bootloader instead. In that case the bootloader
@@ -74,7 +74,7 @@ Zephyr build. Output is structured by the domain subdirectories:
 
 For more information about the system build please read the :ref:`sysbuild` documentation.
 
-Manual build
+Manual Build
 ============
 
 During the development cycle, it is intended to build & flash as quickly possible.
@@ -117,3 +117,5 @@ message in the monitor:
 
    ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
    Hello World! <board>
+
+.. _`Zephyr Support Status`: https://developer.espressif.com/software/zephyr-support-status/

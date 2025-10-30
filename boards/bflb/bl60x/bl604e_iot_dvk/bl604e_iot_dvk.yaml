@@ -17,4 +17,5 @@ supported:
   - gpio
   - pinctrl
   - uart
+  - dma
 vendor: bflb

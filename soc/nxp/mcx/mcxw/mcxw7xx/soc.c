@@ -238,6 +238,10 @@ void soc_early_init_hook(void)
 	/* Smart power switch initialization */
 	vbat_init();
 
+	if (IS_ENABLED(CONFIG_PM)) {
+		nxp_mcxw7x_power_init();
+	}
+
 	/* restore interrupt state */
 	irq_unlock(oldLevel);
 

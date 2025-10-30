@@ -94,7 +94,7 @@ static const struct device *const devices[] = {
 	DEVS_FOR_DT_COMPAT(st_stm32_rtc)
 #endif
 #ifdef CONFIG_COUNTER_GECKO_STIMER
-	DEVS_FOR_DT_COMPAT(silabs_gecko_stimer)
+	DEVICE_DT_GET(DT_CHOSEN(silabs_sleeptimer)),
 #endif
 #ifdef CONFIG_COUNTER_NXP_PIT
 	DEVS_FOR_DT_COMPAT(nxp_pit_channel)
@@ -131,6 +131,9 @@ static const struct device *const devices[] = {
 #endif
 #ifdef CONFIG_COUNTER_MCUX_FTM
 	DEVS_FOR_DT_COMPAT(nxp_ftm)
+#endif
+#ifdef CONFIG_COUNTER_MCUX_STM
+	DEVS_FOR_DT_COMPAT(nxp_stm)
 #endif
 #ifdef CONFIG_COUNTER_RENESAS_RZ_GTM
 	DEVS_FOR_DT_COMPAT(renesas_rz_gtm_counter)

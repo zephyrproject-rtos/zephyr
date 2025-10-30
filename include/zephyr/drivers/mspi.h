@@ -126,6 +126,8 @@ enum mspi_bus_event {
 	MSPI_BUS_RESET              = 0,
 	MSPI_BUS_ERROR              = 1,
 	MSPI_BUS_XFER_COMPLETE      = 2,
+	/** @brief When a request or xfer has timed out */
+	MSPI_BUS_TIMEOUT            = 3,
 	MSPI_BUS_EVENT_MAX,
 };
 
@@ -139,6 +141,7 @@ enum mspi_bus_event_cb_mask {
 	MSPI_BUS_RESET_CB           = BIT(0),
 	MSPI_BUS_ERROR_CB           = BIT(1),
 	MSPI_BUS_XFER_COMPLETE_CB   = BIT(2),
+	MSPI_BUS_TIMEOUT_CB         = BIT(3),
 };
 
 /**

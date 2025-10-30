@@ -1,0 +1,115 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_NXP_MC_CGM_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_NXP_MC_CGM_H_
+
+/* Define a set of macros related to NXP mc_cgm IP configuration parameter */
+#define NXP_PLL_MAXIDOCHANGE   DT_PROP(DT_NODELABEL(mc_cgm), max_ido_change)
+#define NXP_PLL_STEPDURATION   DT_PROP(DT_NODELABEL(mc_cgm), step_duration)
+#define NXP_PLL_CLKSRCFREQ     DT_PROP(DT_NODELABEL(mc_cgm), clk_src_freq)
+#define NXP_PLL_MUX_0_DC_0_DIV DT_PROP(DT_NODELABEL(mc_cgm), mux_0_dc_0_div)
+#define NXP_PLL_MUX_0_DC_1_DIV DT_PROP(DT_NODELABEL(mc_cgm), mux_0_dc_1_div)
+#define NXP_PLL_MUX_0_DC_2_DIV DT_PROP(DT_NODELABEL(mc_cgm), mux_0_dc_2_div)
+#define NXP_PLL_MUX_0_DC_3_DIV DT_PROP(DT_NODELABEL(mc_cgm), mux_0_dc_3_div)
+#define NXP_PLL_MUX_0_DC_4_DIV DT_PROP(DT_NODELABEL(mc_cgm), mux_0_dc_4_div)
+#define NXP_PLL_MUX_0_DC_5_DIV DT_PROP(DT_NODELABEL(mc_cgm), mux_0_dc_5_div)
+#define NXP_PLL_MUX_0_DC_6_DIV DT_PROP(DT_NODELABEL(mc_cgm), mux_0_dc_6_div)
+#define NXP_PLL_MUX_1_DC_0_DIV DT_PROP(DT_NODELABEL(mc_cgm), mux_1_dc_0_div)
+#define NXP_PLL_MUX_2_DC_0_DIV DT_PROP(DT_NODELABEL(mc_cgm), mux_2_dc_0_div)
+
+/* Note- clock identifiers in this file must be unique,
+ * as the driver uses them in a switch case
+ */
+
+#define MCUX_MC_CGM_CLK_ID(high, low) ((high << 8) | (low))
+
+/* These IDs are used within SOC macros, and thus cannot be defined
+ * using the standard MCUX_MC_CGM_CLK_ID form
+ */
+/* --------------------- System layer clock --------------------- */
+#define MCUX_CORESYS_CLK  MCUX_MC_CGM_CLK_ID(0x00, 0x00)
+#define MCUX_AIPSPLAT_CLK MCUX_MC_CGM_CLK_ID(0x01, 0x00)
+#define MCUX_AIPSSLOW_CLK MCUX_MC_CGM_CLK_ID(0x02, 0x00)
+#define MCUX_HSE_CLK      MCUX_MC_CGM_CLK_ID(0x03, 0x00)
+#define MCUX_DCM_CLK      MCUX_MC_CGM_CLK_ID(0x04, 0x00)
+#define MCUX_LBIST_CLK    MCUX_MC_CGM_CLK_ID(0x05, 0x00)
+#define MCUX_QSPI_CLK     MCUX_MC_CGM_CLK_ID(0x06, 0x00)
+
+/* --------------------- MC_CGM clock --------------------- */
+#define MCUX_FIRC_CLK    MCUX_MC_CGM_CLK_ID(0x10, 0x00)
+#define MCUX_SIRC_CLK    MCUX_MC_CGM_CLK_ID(0x11, 0x00)
+#define MCUX_FXOSC_CLK   MCUX_MC_CGM_CLK_ID(0x12, 0x00)
+#define MCUX_SXOSC_CLK   MCUX_MC_CGM_CLK_ID(0x13, 0x00)
+#define MCUX_PLLPHI0_CLK MCUX_MC_CGM_CLK_ID(0x14, 0x00)
+#define MCUX_PLLPHI1_CLK MCUX_MC_CGM_CLK_ID(0x14, 0x01)
+
+/* --------------------- Peripheral clock --------------------- */
+#define MCUX_ADC0_CLK MCUX_MC_CGM_CLK_ID(0x20, 0x00)
+#define MCUX_ADC1_CLK MCUX_MC_CGM_CLK_ID(0x20, 0x01)
+#define MCUX_ADC2_CLK MCUX_MC_CGM_CLK_ID(0x20, 0x02)
+
+#define MCUX_BCTU_CLK MCUX_MC_CGM_CLK_ID(0x21, 0x00)
+
+#define MCUX_CMP0_CLK MCUX_MC_CGM_CLK_ID(0x22, 0x00)
+#define MCUX_CMP1_CLK MCUX_MC_CGM_CLK_ID(0x22, 0x01)
+#define MCUX_CMP2_CLK MCUX_MC_CGM_CLK_ID(0x22, 0x02)
+
+#define MCUX_EMIOS_CLK MCUX_MC_CGM_CLK_ID(0x23, 0x00)
+
+#define MCUX_FLEXCAN0_CLK MCUX_MC_CGM_CLK_ID(0x24, 0x00)
+#define MCUX_FLEXCAN1_CLK MCUX_MC_CGM_CLK_ID(0x24, 0x01)
+#define MCUX_FLEXCAN2_CLK MCUX_MC_CGM_CLK_ID(0x24, 0x02)
+#define MCUX_FLEXCAN3_CLK MCUX_MC_CGM_CLK_ID(0x24, 0x03)
+#define MCUX_FLEXCAN4_CLK MCUX_MC_CGM_CLK_ID(0x24, 0x04)
+#define MCUX_FLEXCAN5_CLK MCUX_MC_CGM_CLK_ID(0x24, 0x05)
+
+#define MCUX_FLEXIO_CLK MCUX_MC_CGM_CLK_ID(0x25, 0x00)
+
+#define MCUX_LPI2C0_CLK MCUX_MC_CGM_CLK_ID(0x26, 0x00)
+#define MCUX_LPI2C1_CLK MCUX_MC_CGM_CLK_ID(0x26, 0x01)
+
+#define MCUX_LPSPI0_CLK MCUX_MC_CGM_CLK_ID(0x27, 0x00)
+#define MCUX_LPSPI1_CLK MCUX_MC_CGM_CLK_ID(0x27, 0x01)
+#define MCUX_LPSPI2_CLK MCUX_MC_CGM_CLK_ID(0x27, 0x02)
+#define MCUX_LPSPI3_CLK MCUX_MC_CGM_CLK_ID(0x27, 0x03)
+#define MCUX_LPSPI4_CLK MCUX_MC_CGM_CLK_ID(0x27, 0x04)
+#define MCUX_LPSPI5_CLK MCUX_MC_CGM_CLK_ID(0x27, 0x05)
+
+#define MCUX_LPUART0_CLK  MCUX_MC_CGM_CLK_ID(0x28, 0x00)
+#define MCUX_LPUART1_CLK  MCUX_MC_CGM_CLK_ID(0x28, 0x01)
+#define MCUX_LPUART2_CLK  MCUX_MC_CGM_CLK_ID(0x28, 0x02)
+#define MCUX_LPUART3_CLK  MCUX_MC_CGM_CLK_ID(0x28, 0x03)
+#define MCUX_LPUART4_CLK  MCUX_MC_CGM_CLK_ID(0x28, 0x04)
+#define MCUX_LPUART5_CLK  MCUX_MC_CGM_CLK_ID(0x28, 0x05)
+#define MCUX_LPUART6_CLK  MCUX_MC_CGM_CLK_ID(0x28, 0x06)
+#define MCUX_LPUART7_CLK  MCUX_MC_CGM_CLK_ID(0x28, 0x07)
+#define MCUX_LPUART8_CLK  MCUX_MC_CGM_CLK_ID(0x28, 0x08)
+#define MCUX_LPUART9_CLK  MCUX_MC_CGM_CLK_ID(0x28, 0x09)
+#define MCUX_LPUART10_CLK MCUX_MC_CGM_CLK_ID(0x28, 0x0A)
+#define MCUX_LPUART11_CLK MCUX_MC_CGM_CLK_ID(0x28, 0x0B)
+#define MCUX_LPUART12_CLK MCUX_MC_CGM_CLK_ID(0x28, 0x0C)
+#define MCUX_LPUART13_CLK MCUX_MC_CGM_CLK_ID(0x28, 0x0D)
+#define MCUX_LPUART14_CLK MCUX_MC_CGM_CLK_ID(0x28, 0x0E)
+#define MCUX_LPUART15_CLK MCUX_MC_CGM_CLK_ID(0x28, 0x0F)
+
+#define MCUX_PIT0_CLK MCUX_MC_CGM_CLK_ID(0x29, 0x00)
+#define MCUX_PIT1_CLK MCUX_MC_CGM_CLK_ID(0x29, 0x01)
+#define MCUX_PIT2_CLK MCUX_MC_CGM_CLK_ID(0x29, 0x02)
+
+#define MCUX_SAI0_CLK MCUX_MC_CGM_CLK_ID(0x2A, 0x00)
+#define MCUX_SAI1_CLK MCUX_MC_CGM_CLK_ID(0x2A, 0x01)
+
+#define MCUX_STM0_CLK MCUX_MC_CGM_CLK_ID(0x2B, 0x00)
+#define MCUX_STM1_CLK MCUX_MC_CGM_CLK_ID(0x2B, 0x01)
+
+/* --------------------- Partition 2 clock --------------------- */
+#define MCUX_QSPISF_CLK MCUX_MC_CGM_CLK_ID(0x2C, 0x00)
+#define MCUX_EMACRX_CLK MCUX_MC_CGM_CLK_ID(0x2C, 0x01)
+#define MCUX_EMACTX_CLK MCUX_MC_CGM_CLK_ID(0x2C, 0x02)
+#define MCUX_EMACTS_CLK MCUX_MC_CGM_CLK_ID(0x2C, 0x03)
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_NXP_MC_CGM_H_ */

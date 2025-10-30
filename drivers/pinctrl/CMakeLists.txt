@@ -61,7 +61,7 @@ zephyr_library_sources_ifdef(CONFIG_PINCTRL_SF32LB52X pinctrl_sf32lb52x.c)
 
 add_subdirectory(renesas)
 
-if (CONFIG_PINCTRL_BFLB)
+if(CONFIG_PINCTRL_BFLB)
   zephyr_library_sources(pinctrl_bflb.c)
   zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_BL60X pinctrl_bflb_bl60x_70x.c)
   zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_BL61X pinctrl_bflb_bl61x.c)

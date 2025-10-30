@@ -53,7 +53,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
 
     def __init__(self, cfg, family, softreset, pinreset, dev_id, erase=False,
                  erase_mode=None, ext_erase_mode=None, reset=True,
-                 tool_opt=None, force=False, recover=False):
+                 tool_opt=None, force=False, recover=False, dry_run=False):
         super().__init__(cfg)
         self.hex_ = cfg.hex_file
         # The old --nrf-family options takes upper-case family names
@@ -67,6 +67,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         self.reset = bool(reset)
         self.force = force
         self.recover = bool(recover)
+        self.dry_run = bool(dry_run)
 
         self.tool_opt = []
         if tool_opt is not None:
@@ -118,7 +119,6 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                             choices=['none', 'ranges', 'all'],
                             help='Select the type of erase operation for the '
                                  'external non-volatile memory')
-
         parser.set_defaults(reset=True)
 
     @classmethod
@@ -139,7 +139,10 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                 self.dev_id = [d.lstrip("0") for d in dev_id]
                 return
         if not dev_id or "*" in dev_id:
-            dev_id = self.get_board_snr(dev_id or "*")
+            if not self.dry_run:
+                dev_id = self.get_board_snr(dev_id or "*")
+            else:
+                dev_id = "DEVICEID" # for a dry run
         self.dev_id = dev_id.lstrip("0")
 
     @abc.abstractmethod
@@ -357,10 +360,13 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
             if not self.erase and regtool_generated_uicr:
                 self.exec_op('erase', core=core, kind='uicr')
         else:
+            erase_mode = self._get_erase_mode(self.erase_mode)
             if self.erase:
                 erase_arg = 'ERASE_ALL'
+            elif self.erase_mode:
+                erase_arg = erase_mode
             elif self.family == 'nrf54l':
-                erase_arg = self._get_erase_mode(self.erase_mode) or 'ERASE_NONE'
+                erase_arg = 'ERASE_NONE'
             else:
                 erase_arg = 'ERASE_RANGES_TOUCHED_BY_FIRMWARE'
 
@@ -478,10 +484,6 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
                                'exclusive.')
 
         self.ensure_family()
-
-        if self.family != 'nrf54l' and self.erase_mode:
-            raise RuntimeError('Option --erase-mode can only be used with the '
-                               'nRF54L family.')
 
         self.ensure_output('hex')
         if IntelHex is None:

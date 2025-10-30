@@ -337,6 +337,7 @@ Arduino Platforms:
     - boards/arduino/
     - boards/shields/arduino_*/
     - drivers/*/*modulino*
+    - dts/vendor/arduino/
 
 Base OS:
   status: maintained
@@ -761,6 +762,8 @@ Build system:
     - scripts/schemas/soc-schema.yaml
     - scripts/list_shields.py
     - scripts/snippets.py
+  files-exclude:
+    - doc/build/dts/
   labels:
     - "area: Build System"
   tests:
@@ -855,8 +858,6 @@ CPU Frequency Scaling:
     - seankyer
   files:
     - include/zephyr/cpu_freq/
-    - include/zephyr/cpu_load/
-    - subsys/cpu_load/
     - subsys/cpu_freq/
     - dts/bindings/p_state/
   labels:
@@ -1275,6 +1276,7 @@ Documentation Infrastructure:
     - martinjaeger
     - str4t0m
   files:
+    - boards/shields/canis_canpico/
     - boards/shields/mcp2515/
     - boards/shields/tcan4550evm/
     - doc/connectivity/canbus/
@@ -4306,6 +4308,11 @@ Realtek EC Platforms:
   status: maintained
   maintainers:
     - JasonLin-RealTek
+  collaborators:
+    - elmo9999
+    - benson0715
+    - JhanBoChao-Realtek
+    - Titan-Realtek
   files:
     - boards/realtek/
     - drivers/*/*rts5912*
@@ -4883,10 +4890,13 @@ TI SimpleLink Platforms:
   status: maintained
   maintainers:
     - vaishnavachath
+  collaborators:
+    - bogdanovs
   files:
     - boards/ti/cc*/
     - boards/ti/msp*/
     - drivers/*/*cc13*
+    - drivers/*/*cc23*
     - drivers/*/*cc25*
     - drivers/*/*cc26*
     - drivers/*/*cc32*
@@ -5942,7 +5952,7 @@ West:
     - "area: Serialization"
 
 "West project: net-tools":
-  status: odd fixes
+  status: maintained
   maintainers:
     - jukkar
   collaborators:
@@ -6100,10 +6110,7 @@ West:
     - thrift
 
 "West project: trusted-firmware-a":
-  status: maintained
-  maintainers:
-    - povergoing
-    - sgrrzhf
+  status: odd fixes
   collaborators:
     - wearyzen
     - ithinuel

@@ -554,5 +554,19 @@
 				status = "disabled";
 			};
 		};
+
+		sha: sha@3ff03000 {
+			compatible = "espressif,esp32-sha";
+			reg = <0x3ff03000 0x100>;
+			clocks = <&clock ESP32_SHA_MODULE>;
+			status = "okay";
+		};
+
+		aes: aes@3ff01000 {
+			compatible = "espressif,esp32-aes";
+			reg = <0x3ff01000 0x1000>;
+			clocks = <&clock ESP32_AES_MODULE>;
+			status = "okay";
+		};
 	};
 };

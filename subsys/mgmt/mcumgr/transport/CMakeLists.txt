@@ -32,7 +32,7 @@ zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_DUMMY
   src/smp_dummy.c
 )
 
-if (CONFIG_MCUMGR_TRANSPORT_SHELL OR CONFIG_MCUMGR_TRANSPORT_UART)
+if(CONFIG_MCUMGR_TRANSPORT_SHELL OR CONFIG_MCUMGR_TRANSPORT_UART)
   zephyr_library_sources(src/serial_util.c)
 endif()
 

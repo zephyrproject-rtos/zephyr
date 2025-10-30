@@ -285,12 +285,21 @@
 			#gpio-cells = <2>;
 		};
 
-		adc0: adc@52e80000 {
-			compatible = "infineon,autanalog-sar-adc";
-			reg = <0x52e80000 0xf20>;
+		autanalog: analog@52e00000 {
+			reg = <0x52e00000 0x100000>;
 			interrupts = <57 4>;
-			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <1>;
 			#io-channel-cells = <1>;
+			ranges;
+
+			adc0: adc0@80000 {
+				compatible = "infineon,autanalog-sar-adc";
+				/* Offset within AutAnalog subsystem */
+				reg = <0x80000 0xf20>;
+				status = "disabled";
+				#io-channel-cells = <1>;
+			};
 		};
 
 		ipc0: ipc@522a0000 {
@@ -1091,7 +1100,7 @@
 			compatible = "infineon,cat1-sdhc-sdio";
 			reg = <0x54810000 0x2000>;
 			interrupts = <155 4>, /* SDIO wakeup interrupt for mxsdhc */
-			<154 6>; /* Consolidated interrupt for mxsdhc */
+				     <154 6>; /* Consolidated interrupt for mxsdhc */
 			status = "disabled";
 		};
 
@@ -1099,7 +1108,7 @@
 			compatible = "infineon,cat1-sdhc-sdio";
 			reg = <0x54820000 0x2000>;
 			interrupts = <157 4>, /* SDIO wakeup interrupt for mxsdhc */
-			<156 6>; /* Consolidated interrupt for mxsdhc */
+				     <156 6>; /* Consolidated interrupt for mxsdhc */
 			status = "disabled";
 		};
 	};

@@ -13,6 +13,7 @@
 #include <zephyr/arch/common/ffs.h>
 #include <zephyr/sys/util.h>
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
@@ -1139,9 +1140,8 @@ static bool stm32_ospi_is_memorymap(const struct device *dev)
 {
 	struct flash_stm32_ospi_data *dev_data = dev->data;
 
-	return ((READ_BIT(dev_data->hospi.Instance->CR,
-			  OCTOSPI_CR_FMODE) == OCTOSPI_CR_FMODE) ?
-			  true : false);
+	return stm32_reg_read_bits(&dev_data->hospi.Instance->CR, OCTOSPI_CR_FMODE) ==
+	       OCTOSPI_CR_FMODE;
 }
 
 static int stm32_ospi_abort(const struct device *dev)

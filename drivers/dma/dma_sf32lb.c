@@ -44,6 +44,7 @@ LOG_MODULE_REGISTER(dma_sf32lb, CONFIG_DMA_LOG_LEVEL);
 #define DMAC_CSELR2    offsetof(DMAC_TypeDef, CSELR2)
 
 #define DMAC_ISR_TCIF(n) (DMAC_ISR_TCIF1_Msk << (n * 4U))
+#define DMAC_ISR_HTIF(n) (DMAC_ISR_HTIF1_Msk << (n * 4U))
 
 #define DMAC_IFCR_ALL(n)                                                                           \
 	((DMAC_IFCR_CGIF1_Msk | DMAC_IFCR_CTCIF1_Msk | DMAC_IFCR_CHTIF1_Msk |                      \
@@ -51,6 +52,7 @@ LOG_MODULE_REGISTER(dma_sf32lb, CONFIG_DMA_LOG_LEVEL);
 	 << (n * 4U))
 #define DMAC_IFCR_CTCIF(n) (DMAC_IFCR_CTCIF1_Msk << (n * 4U))
 #define DMAC_IFCR_CTEIF(n) (DMAC_IFCR_CTEIF1_Msk << (n * 4U))
+#define DMAC_IFCR_CTHIF(n) (DMAC_IFCR_CHTIF1_Msk << (n * 4U))
 
 #define DMAC_CCRX_PSIZE(n) FIELD_PREP(DMAC_CCR1_PSIZE_Msk, LOG2CEIL(n))
 #define DMAC_CCRX_MSIZE(n) FIELD_PREP(DMAC_CCR1_MSIZE_Msk, LOG2CEIL(n))
@@ -89,6 +91,8 @@ static void dma_sf32lb_isr(const struct device *dev, uint8_t channel)
 	isr = sys_read32(config->dmac + DMAC_ISR);
 	if ((isr & DMAC_ISR_TCIF(channel)) != 0U) {
 		status = DMA_STATUS_COMPLETE;
+	} else if ((isr & DMAC_ISR_HTIF(channel)) != 0U) {
+		status = DMA_STATUS_BLOCK;
 	} else {
 		status = -EIO;
 	}
@@ -180,6 +184,14 @@ static int dma_sf32lb_config(const struct device *dev, uint32_t channel,
 		  DMAC_CCR1_MEM2MEM_Msk);
 
 	ccrx |= FIELD_PREP(DMAC_CCR1_PL_Msk, config_dma->channel_priority);
+
+	if (config_dma->head_block->dest_reload_en || config_dma->head_block->source_reload_en) {
+		ccrx |= DMAC_CCR1_CIRC;
+	}
+
+	if (config_dma->complete_callback_en) {
+		ccrx |= DMAC_CCR1_HTIE;
+	}
 
 	switch (config_dma->channel_direction) {
 	case MEMORY_TO_MEMORY:
@@ -313,6 +325,7 @@ static int dma_sf32lb_start(const struct device *dev, uint32_t channel)
 
 	ccrx = sys_read32(config->dmac + DMAC_CCRX(channel));
 	if ((ccrx & DMAC_CCR1_EN) != 0U) {
+		LOG_ERR("start not possible with DMA enabled");
 		return 0;
 	}
 

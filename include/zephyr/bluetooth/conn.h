@@ -1970,6 +1970,18 @@ struct bt_conn_cb {
 				      struct bt_conn_remote_info *remote_info);
 #endif /* defined(CONFIG_BT_REMOTE_INFO) */
 
+#if defined(CONFIG_BT_POWER_MODE_CONTROL)
+	/** @brief The connection mode change
+	 *
+	 *  This callback notifies the application that the sniff mode has changed
+	 *
+	 *  @param conn Connection object.
+	 *  @param mode Active/Sniff mode.
+	 *  @param interval Sniff interval.
+	 */
+	void (*br_mode_changed)(struct bt_conn *conn, uint8_t mode, uint16_t interval);
+#endif /* CONFIG_BT_POWER_MODE_CONTROL */
+
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
 	/** @brief The PHY of the connection has changed.
 	 *
@@ -2380,8 +2392,8 @@ int bt_le_oob_get_sc_data(struct bt_conn *conn,
 			  const struct bt_le_oob_sc_data **oobd_remote);
 
 /**
- *  Special passkey value that can be used to disable a previously
- *  set fixed passkey.
+ *  DEPRECATED - use @ref BT_PASSKEY_RAND instead. Special passkey value that can be used to disable
+ *  a previously set fixed passkey.
  */
 #define BT_PASSKEY_INVALID 0xffffffff
 
@@ -2393,12 +2405,15 @@ int bt_le_oob_get_sc_data(struct bt_conn *conn,
  *  Sets a fixed passkey to be used for pairing. If set, the
  *  pairing_confirm() callback will be called for all incoming pairings.
  *
+ * @deprecated Use @ref BT_PASSKEY_RAND and the app_passkey callback from @ref bt_conn_auth_cb
+ *             instead.
+ *
  *  @param passkey A valid passkey (0 - 999999) or BT_PASSKEY_INVALID
  *                 to disable a previously set fixed passkey.
  *
  *  @return 0 on success or a negative error code on failure.
  */
-int bt_passkey_set(unsigned int passkey);
+__deprecated int bt_passkey_set(unsigned int passkey);
 
 /** Info Structure for OOB pairing */
 struct bt_conn_oob_info {
@@ -2463,6 +2478,13 @@ struct bt_conn_pairing_feat {
 	uint8_t resp_key_dist;
 };
 #endif /* CONFIG_BT_SMP_APP_PAIRING_ACCEPT */
+
+/**
+ * Special passkey value that can be used to generate a random passkey when using the
+ * app_passkey callback from @ref bt_conn_auth_cb.
+ *
+ */
+#define BT_PASSKEY_RAND 0xffffffff
 
 /** Authenticated pairing callback structure */
 struct bt_conn_auth_cb {
@@ -2663,6 +2685,30 @@ struct bt_conn_auth_cb {
 	 */
 	void (*pincode_entry)(struct bt_conn *conn, bool highsec);
 #endif
+
+#if defined(CONFIG_BT_APP_PASSKEY)
+	/** @brief Allow the application to provide a passkey for pairing.
+	 *
+	 *  If implemented, this callback allows the application to provide passkeys for pairing.
+	 *  The valid range of passkeys is 0 - 999999. The application shall return the passkey for
+	 *  pairing, or BT_PASSKEY_RAND to generate a random passkey. This callback is invoked only
+	 *  for the Passkey Entry method as defined in Core Specification Vol. 3, Part H. Which
+	 *  device in the pairing is showing the passkey depends on the IO capabilities of the
+	 *  device; see Table 2.8 of the Bluetooth Core Specification V6.0, Vol. 3, Part H for more
+	 *  details. For the purposes of this table, the device gains the "display" capability when
+	 *  this callback is non-NULL. This is irrespective of whether the callback returns a
+	 *  specified key or BT_PASSKEY_RAND.
+	 *
+	 *
+	 *  @note When using this callback, it is the responsibility of the application to use
+	 *        random and unique keys.
+	 *
+	 *  @param conn Connection where pairing is currently active.
+	 *  @return Passkey for pairing, or BT_PASSKEY_RAND for the Host to generate a random
+	 *          passkey.
+	 */
+	uint32_t (*app_passkey)(struct bt_conn *conn);
+#endif /* CONFIG_BT_APP_PASSKEY */
 };
 
 /** Authenticated pairing information callback structure */
@@ -2926,6 +2972,30 @@ int bt_conn_br_switch_role(const struct bt_conn *conn, uint8_t role);
  *  @return -EINVAL @p conn is not a valid @ref BT_CONN_TYPE_BR connection.
  */
 int bt_conn_br_set_role_switch_enable(const struct bt_conn *conn, bool enable);
+
+#if defined(CONFIG_BT_POWER_MODE_CONTROL)
+/** @brief bluetooth conn check and enter sniff mode
+ *
+ *  This function is used to identify which ACL link connection is to
+ *  be placed in Sniff mode
+ *
+ *  @param conn bt_conn conn
+ *  @param min_interval Minimum sniff interval.
+ *  @param max_interval Maxmum sniff interval.
+ *  @param attempt Number of Baseband receive slots for sniff attempt.
+ *  @param timeout Number of Baseband receive slots for sniff timeout.
+ */
+int bt_conn_br_enter_sniff_mode(struct bt_conn *conn, uint16_t min_interval,
+				 uint16_t max_interval, uint16_t attempt, uint16_t timeout);
+
+/** @brief bluetooth conn check and exit sniff mode
+ *
+ *  @param conn bt_conn conn
+ *
+ *  @return  Zero for success, non-zero otherwise.
+ */
+int bt_conn_br_exit_sniff_mode(struct bt_conn *conn);
+#endif /* CONFIG_BT_POWER_MODE_CONTROL */
 
 #ifdef __cplusplus
 }

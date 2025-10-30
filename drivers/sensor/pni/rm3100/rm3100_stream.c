@@ -183,13 +183,6 @@ static void rm3100_gpio_callback(const struct device *gpio_dev,
 	rm3100_stream_get_data(dev);
 }
 
-static inline bool settings_changed(const struct rm3100_stream *a,
-				    const struct rm3100_stream *b)
-{
-	return (a->settings.enabled.drdy != b->settings.enabled.drdy) ||
-	       (a->settings.opt.drdy != b->settings.opt.drdy);
-}
-
 void rm3100_stream_submit(const struct device *dev,
 			  struct rtio_iodev_sqe *iodev_sqe)
 {

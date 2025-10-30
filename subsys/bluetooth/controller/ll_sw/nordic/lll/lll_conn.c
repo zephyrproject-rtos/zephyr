@@ -189,7 +189,7 @@ int lll_conn_central_is_abort_cb(void *next, void *curr,
 		return -EBUSY;
 	}
 
-	LL_ASSERT(trx_busy_iteration < CENTRAL_TRX_BUSY_ITERATION_MAX);
+	LL_ASSERT_DBG(trx_busy_iteration < CENTRAL_TRX_BUSY_ITERATION_MAX);
 
 	return -ECANCELED;
 }
@@ -223,7 +223,7 @@ int lll_conn_peripheral_is_abort_cb(void *next, void *curr,
 		return -EBUSY;
 	}
 
-	LL_ASSERT(trx_busy_iteration < PERIPHERAL_TRX_BUSY_ITERATION_MAX);
+	LL_ASSERT_DBG(trx_busy_iteration < PERIPHERAL_TRX_BUSY_ITERATION_MAX);
 
 	return -ECANCELED;
 }
@@ -268,7 +268,7 @@ void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	 * currently in preparation pipeline.
 	 */
 	err = lll_hfclock_off();
-	LL_ASSERT(err >= 0);
+	LL_ASSERT_ERR(err >= 0);
 
 	/* Get reference to LLL connection context */
 	lll = prepare_param->param;
@@ -290,7 +290,7 @@ void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 	/* Extra done event, to check supervision timeout */
 	e = ull_event_done_extra_get();
-	LL_ASSERT(e);
+	LL_ASSERT_ERR(e);
 
 	e->type = EVENT_DONE_EXTRA_TYPE_CONN;
 	e->trx_cnt = 0U;
@@ -364,7 +364,7 @@ void lll_conn_isr_rx(void *param)
 	lll = param;
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
-	LL_ASSERT(node_rx);
+	LL_ASSERT_DBG(node_rx);
 
 	pdu_data_rx = (void *)node_rx->pdu;
 
@@ -385,7 +385,7 @@ void lll_conn_isr_rx(void *param)
 				LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u",
 					      __func__, lll_prof_latency_get());
 			} else {
-				LL_ASSERT(!radio_is_ready());
+				LL_ASSERT_ERR(!radio_is_ready());
 			}
 
 			goto lll_conn_isr_rx_exit;
@@ -475,7 +475,7 @@ void lll_conn_isr_rx(void *param)
 				LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u",
 					      __func__, lll_prof_latency_get());
 			} else {
-				LL_ASSERT(!radio_is_ready());
+				LL_ASSERT_ERR(!radio_is_ready());
 			}
 
 			/* Restore state if last transmitted was empty PDU */
@@ -538,7 +538,7 @@ void lll_conn_isr_rx(void *param)
 		LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u", __func__,
 			      lll_prof_latency_get());
 	} else {
-		LL_ASSERT(!radio_is_ready());
+		LL_ASSERT_ERR(!radio_is_ready());
 	}
 
 #if defined(CONFIG_BT_CTLR_TX_DEFER)
@@ -570,7 +570,7 @@ lll_conn_isr_rx_exit:
 	is_ull_rx = 0U;
 
 	if (tx_release) {
-		LL_ASSERT(lll->handle != 0xFFFF);
+		LL_ASSERT_DBG(lll->handle != 0xFFFF);
 
 		ull_conn_lll_ack_enqueue(lll->handle, tx_release);
 
@@ -736,12 +736,12 @@ void lll_conn_isr_tx(void *param)
 		LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u", __func__,
 			      lll_prof_latency_get());
 	} else {
-		LL_ASSERT(!radio_is_ready());
+		LL_ASSERT_ERR(!radio_is_ready());
 	}
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
 	pdu_tx = get_last_tx_pdu(lll);
-	LL_ASSERT(pdu_tx);
+	LL_ASSERT_DBG(pdu_tx);
 
 	if (pdu_tx->cp) {
 		cte_len = CTE_LEN_US(pdu_tx->octet3.cte_info.time);
@@ -836,7 +836,7 @@ void lll_conn_rx_pkt_set(struct lll_conn *lll)
 	uint8_t phy;
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
-	LL_ASSERT(node_rx);
+	LL_ASSERT_DBG(node_rx);
 
 	/* In case of ISR latencies, if packet pointer has not been set on time
 	 * then we do not want to check uninitialized length in rx buffer that
@@ -1041,7 +1041,7 @@ static void isr_done(void *param)
 	lll_isr_status_reset();
 
 	e = ull_event_done_extra_get();
-	LL_ASSERT(e);
+	LL_ASSERT_ERR(e);
 
 	e->type = EVENT_DONE_EXTRA_TYPE_CONN;
 	e->trx_cnt = trx_cnt;
@@ -1182,7 +1182,7 @@ static inline int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 
 				FORCE_MD_CNT_SET();
 			} else {
-				LL_ASSERT(0);
+				LL_ASSERT_DBG(0);
 			}
 
 			if (IS_ENABLED(CONFIG_BT_CENTRAL) && !lll->role &&
@@ -1209,7 +1209,7 @@ static inline int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 				uint32_t done;
 
 				done = radio_ccm_is_done();
-				LL_ASSERT(done);
+				LL_ASSERT_ERR(done);
 
 				bool mic_failure = !radio_ccm_mic_is_valid();
 

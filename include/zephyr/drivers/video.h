@@ -983,6 +983,45 @@ int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t l
 int video_estimate_fmt_size(struct video_format *fmt);
 
 /**
+ * @brief Set compose rectangle (if applicable) prior to setting format
+ *
+ * Some devices expose compose capabilities, allowing them to apply a transformation
+ * (downscale / upscale) to the frame. For those devices, it is necessary to set the
+ * compose rectangle before being able to apply the frame format (which must have the
+ * same width / height as the compose rectangle width / height).
+ * In order to allow non-compose aware application to be able to control such devices,
+ * introduce a helper which, if available, will apply the compose rectangle prior to
+ * setting the format.
+ *
+ * @param dev Pointer to the video device struct to set format
+ * @param fmt Pointer to a video format struct.
+ *
+ * @retval 0 Is successful.
+ * @retval -EINVAL If parameters are invalid.
+ * @retval -ENOTSUP If format is not supported.
+ * @retval -EIO General input / output error.
+ */
+int video_set_compose_format(const struct device *dev, struct video_format *fmt);
+
+/**
+ * @brief Transfer a buffer between 2 video device
+ *
+ * Helper function which dequeues a buffer from a source device and enqueues it into a
+ * sink device, changing its buffer type between the two.
+ *
+ * @param src		Video device from where buffer is dequeued (source)
+ * @param sink		Video device into which the buffer is queued (sink)
+ * @param src_type	Video buffer type on the source device
+ * @param sink_type	Video buffer type on the sink device
+ * @param timeout	Timeout to be applied on dequeue
+ *
+ * @return 0 on success, otherwise a negative errno code
+ */
+int video_transfer_buffer(const struct device *src, const struct device *sink,
+			  enum video_buf_type src_type, enum video_buf_type sink_type,
+			  k_timeout_t timeout);
+
+/**
  * @defgroup video_pixel_formats Video pixel formats
  * The '|' characters separate the pixels or logical blocks, and spaces separate the bytes.
  * The uppercase letter represents the most significant bit.

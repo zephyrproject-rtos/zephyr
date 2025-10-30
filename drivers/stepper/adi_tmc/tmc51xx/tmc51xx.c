@@ -9,8 +9,8 @@
 #include <zephyr/drivers/stepper.h>
 
 #include <adi_tmc_bus.h>
+#include <adi_tmc5xxx_common.h>
 #include "tmc51xx.h"
-#include "../adi_tmc5xxx_common.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(tmc51xx, CONFIG_STEPPER_LOG_LEVEL);

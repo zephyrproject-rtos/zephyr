@@ -907,6 +907,13 @@ void stm32_sdmmc_get_card_cid(const struct device *dev, uint32_t cid[4])
 	memcpy(cid, &priv->hsd.CID, sizeof(priv->hsd.CID));
 }
 
+void stm32_sdmmc_get_card_csd(const struct device *dev, uint32_t csd[4])
+{
+	const struct stm32_sdmmc_priv *priv = dev->data;
+
+	memcpy(csd, &priv->hsd.CSD, sizeof(priv->hsd.CSD));
+}
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(0))
 
 #if STM32_SDMMC_USE_DMA

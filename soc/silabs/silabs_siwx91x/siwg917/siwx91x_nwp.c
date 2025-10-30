@@ -163,11 +163,13 @@ static void siwx91x_configure_sta_mode(sl_si91x_boot_configuration_t *boot_confi
 		boot_config->coex_mode = SL_SI91X_WLAN_BLE_MODE;
 	} else if (wifi_enabled) {
 		boot_config->coex_mode = SL_SI91X_WLAN_ONLY_MODE;
+	} else if (bt_enabled) {
+		boot_config->coex_mode = SL_SI91X_BLE_MODE;
 	} else {
 		/*
 		 * Even if neither WiFi or BLE is used we have to specify a Coex mode
 		 */
-		boot_config->coex_mode = SL_SI91X_BLE_MODE;
+		boot_config->coex_mode = SL_SI91X_WLAN_ONLY_MODE;
 	}
 
 #ifdef CONFIG_WIFI_SILABS_SIWX91X

@@ -42,7 +42,7 @@ set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
 
 target_sources_ifdef(CONFIG_NET_SAMPLE_WEBSOCKET_SERVICE app PRIVATE src/ws.c)
 
-if (CONFIG_USB_DEVICE_STACK_NEXT)
+if(CONFIG_USB_DEVICE_STACK_NEXT)
   include(${ZEPHYR_BASE}/samples/subsys/usb/common/common.cmake)
 endif()
 

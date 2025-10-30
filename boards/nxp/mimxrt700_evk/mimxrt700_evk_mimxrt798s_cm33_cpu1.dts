@@ -20,6 +20,7 @@
 		sw0 = &user_button_1;
 		ambient-temp0 = &p3t1755;
 		rtc = &rtc1;
+		sram-ext = &psram;
 	};
 
 	chosen {
@@ -113,4 +114,24 @@
 
 &mbox1_b {
 	status = "okay";
+};
+
+&xspi2 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_xspi2>;
+	pinctrl-names = "default";
+	byte-order = <3>;
+	ahb-buffer-write-flush;
+	ahb-prefetch;
+	enable-ahb-write;
+
+	psram: memory-controller@0 {
+		status = "okay";
+		compatible = "nxp,xspi-psram";
+		device-name = "w958d6nbkx4l";
+		size = <DT_SIZE_M(32)>;
+		reg = <0>;
+		enable-differential-clk;
+		sample-clk-source = <3>;
+	};
 };

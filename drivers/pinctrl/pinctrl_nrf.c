@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/drivers/pinctrl.h>
-#include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/atomic.h>
 
 #include <hal/nrf_gpio.h>
@@ -111,75 +110,23 @@ static const nrf_gpio_pin_drive_t drive_modes[NRF_DRIVE_COUNT] = {
 #define NRF_PSEL_TDM(reg, line) ((NRF_TDM_Type *)reg)->PSEL.line
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_gpio_pad_group)
-#define GPIO_HAS_PAD_GROUP 1
-#else
-#define GPIO_HAS_PAD_GROUP 0
-#endif
+#if NRF_GPIO_HAS_RETENTION_SETCLEAR
 
-#if GPIO_HAS_PAD_GROUP
-
-#define GPIO_PAD_GROUP_GET_OR_NULL(idx, _) \
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(_CONCAT(gpio_pad_group, idx)))
-
-static const struct device *const pad_groups[] = {
-	LISTIFY(10, GPIO_PAD_GROUP_GET_OR_NULL, (,))
-};
-
-static atomic_t pad_group_masks[ARRAY_SIZE(pad_groups)];
-
-static int pad_group_request_pin(uint16_t pin_number)
+static void port_pin_retain_set(uint16_t pin_number, bool enable)
 {
-	uint8_t port_number = NRF_GET_PORT(pin_number);
-	uint8_t port_pin_number = NRF_GET_PORT_PIN(pin_number);
-	const struct device *pad_group = pad_groups[port_number];
-	atomic_t *pad_group_mask = &pad_group_masks[port_number];
-
-	if (atomic_test_and_set_bit(pad_group_mask, port_pin_number)) {
-		/* already requested */
-		return 0;
+	if (enable) {
+		nrf_gpio_pin_retain_enable(pin_number);
+	} else {
+		nrf_gpio_pin_retain_disable(pin_number);
 	}
-
-	if (pm_device_runtime_get(pad_group)) {
-		atomic_clear_bit(pad_group_mask, port_pin_number);
-		return -EIO;
-	}
-
-	return 0;
-}
-
-static int pad_group_release_pin(uint16_t pin_number)
-{
-	uint8_t port_number = NRF_GET_PORT(pin_number);
-	uint8_t port_pin_number = NRF_GET_PORT_PIN(pin_number);
-	const struct device *pad_group = pad_groups[port_number];
-	atomic_t *pad_group_mask = &pad_group_masks[port_number];
-
-	if (!atomic_test_and_clear_bit(pad_group_mask, port_pin_number)) {
-		/* already released */
-		return 0;
-	}
-
-	if (pm_device_runtime_put(pad_group)) {
-		atomic_set_bit(pad_group_mask, port_pin_number);
-		return -EIO;
-	}
-
-	return 0;
 }
 
 #else
 
-static int pad_group_request_pin(uint16_t pin_number)
+static void port_pin_retain_set(uint16_t pin_number, bool enable)
 {
 	ARG_UNUSED(pin_number);
-	return 0;
-}
-
-static int pad_group_release_pin(uint16_t pin_number)
-{
-	ARG_UNUSED(pin_number);
-	return 0;
+	ARG_UNUSED(enable);
 }
 
 #endif
@@ -539,6 +486,19 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			input = NRF_GPIO_PIN_INPUT_DISCONNECT;
 			break;
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_exmif) */
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_qspi_v2)
+		/* No PSEL for QSPI_V2, pins only controlled by CTRLSEL */
+		case NRF_FUN_QSPI_SCK:
+		case NRF_FUN_QSPI_CSN:
+		case NRF_FUN_QSPI_IO0:
+		case NRF_FUN_QSPI_IO1:
+		case NRF_FUN_QSPI_IO2:
+		case NRF_FUN_QSPI_IO3:
+			nrf_gpio_pin_control_select(psel, NRF_GPIO_PIN_SEL_QSPI);
+			dir = NRF_GPIO_PIN_DIR_OUTPUT;
+			input = NRF_GPIO_PIN_INPUT_CONNECT;
+			break;
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_qspi_v2) */
 #if defined(NRF_PSEL_TWIS)
 		case NRF_FUN_TWIS_SCL:
 			NRF_PSEL_TWIS(reg, SCL) = psel;
@@ -577,7 +537,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			uint32_t pin = psel;
 
 			/* enable pin */
-			pad_group_request_pin(pin);
+			port_pin_retain_set(pin, false);
 
 			if (write != NO_WRITE) {
 				nrf_gpio_pin_write(pin, write);
@@ -595,7 +555,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 
 			if (NRF_GET_LP(pins[i]) == NRF_LP_ENABLE) {
 				/* disable pin and pin clock */
-				pad_group_release_pin(pin);
+				port_pin_retain_set(pin, true);
 				port_pin_clock_set(pin, false);
 			} else {
 				/* configure pin clock */

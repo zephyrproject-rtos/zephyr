@@ -164,6 +164,11 @@
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>;
 
 			test_spi_mcp3204: mcp3204@0 {
@@ -397,6 +402,27 @@
 				analog-clock-prescaler = <0>;
 				boost-current-bias = <0>;
 				irq-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_ad4170: ad4170@21 {
+				compatible = "adi,ad4170-adc";
+				reg = <0x21>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_ad4190: ad4190@22 {
+				compatible = "adi,ad4190-adc";
+				reg = <0x22>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_ad4195: ad4195@23 {
+				compatible = "adi,ad4195-adc";
+				reg = <0x23>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
 			};
 		};
 	};

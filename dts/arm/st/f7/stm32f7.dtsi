@@ -2,6 +2,7 @@
  * Copyright (c) 2018 Yurii Hamann
  * Copyright (c) 2019 Centaur Analytics, Inc
  * Copyright (c) 2024 STMicroelectronics
+ * Copyright (c) 2025 Mario Paja
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -155,7 +156,7 @@
 			compatible = "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
-			#address-cells = <1>;
+			#address-cells = <0>;
 			reg = <0x40013c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 14)>;
 			num-lines = <32>;
@@ -812,6 +813,7 @@
 			compatible = "st,stm32f4-adc", "st,stm32-adc";
 			reg = <0x40012000 0x50>;
 			clocks = <&rcc STM32_CLOCK(APB2, 8)>;
+			clock-names = "adcx";
 			interrupts = <18 0>;
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
@@ -830,6 +832,7 @@
 			compatible = "st,stm32f4-adc", "st,stm32-adc";
 			reg = <0x40012100 0x50>;
 			clocks = <&rcc STM32_CLOCK(APB2, 9)>;
+			clock-names = "adcx";
 			interrupts = <18 0>;
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
@@ -848,6 +851,7 @@
 			compatible = "st,stm32f4-adc", "st,stm32-adc";
 			reg = <0x40012200 0x50>;
 			clocks = <&rcc STM32_CLOCK(APB2, 10)>;
+			clock-names = "adcx";
 			interrupts = <18 0>;
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
@@ -984,6 +988,28 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		i2c = <&i2c3>;
+		status = "disabled";
+	};
+
+	sai1_a: sai1@40015804 {
+		compatible = "st,stm32-sai";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x40015804 0x20>;
+		clocks = <&rcc STM32_CLOCK(APB2, 22)>;
+		dmas = <&dma2 1 0 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
+				   STM32_DMA_16BITS) 0>;
+		status = "disabled";
+	};
+
+	sai1_b: sai1@40015824 {
+		compatible = "st,stm32-sai";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x40015824 0x20>;
+		clocks = <&rcc STM32_CLOCK(APB2, 22)>;
+		dmas = <&dma2 5 0 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
+				   STM32_DMA_16BITS) 0>;
 		status = "disabled";
 	};
 };

@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2025 Mario Paja
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2s-tx = &sai1_b;
+	};
+};
+
+/* 44.27KHz (0.38% Error) */
+&pllsai {
+	div-m = <4>;
+	mul-n = <119>;
+	div-q = <7>;
+	div-divq = <3>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&sai1_b {
+	pinctrl-0 = <&sai1_mclk_b_pf7 &sai1_sd_b_pe3 &sai1_fs_b_pf9 &sai1_sck_b_pf8>;
+	pinctrl-names = "default";
+	status = "okay";
+	mclk-enable;
+	mclk-divider = "div-256";
+	dma-names = "tx";
+};
+
+&dma2 {
+	status = "okay";
+};

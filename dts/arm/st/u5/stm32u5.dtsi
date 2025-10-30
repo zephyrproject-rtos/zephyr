@@ -195,7 +195,7 @@
 			compatible = "st,stm32g0-exti", "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
-			#address-cells = <1>;
+			#address-cells = <0>;
 			reg = <0x46022000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB3, 1)>;
 			num-lines = <32>;
@@ -816,6 +816,7 @@
 			reg = <0x42028000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 10)>,
 				 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
+			clock-names = "adcx", "adc_ker";
 			interrupts = <37 0>;
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(14, 0x00)
@@ -838,6 +839,7 @@
 			reg = <0x46021000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB3, 5)>,
 				 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
+			clock-names = "adcx", "adc_ker";
 			interrupts = <113 0>;
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)

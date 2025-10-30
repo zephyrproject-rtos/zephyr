@@ -155,6 +155,11 @@ struct bt_conn_br {
 	uint8_t			features[LMP_MAX_PAGES][8];
 
 	struct bt_keys_link_key	*link_key;
+
+#if defined(CONFIG_BT_POWER_MODE_CONTROL)
+	/* For power mode */
+	uint8_t mode;
+#endif /* CONFIG_BT_POWER_MODE_CONTROL */
 };
 
 struct bt_conn_sco {
@@ -368,6 +373,38 @@ static inline void *closure_data(void *storage)
 	return ((struct closure *)storage)->data;
 }
 
+#if defined(CONFIG_BT_CLASSIC)
+static inline bool bt_conn_is_br(const struct bt_conn *conn)
+{
+	return conn->type == BT_CONN_TYPE_BR;
+}
+#else
+#define bt_conn_is_br(conn) (false)
+#endif
+
+static inline bool bt_conn_is_le(const struct bt_conn *conn)
+{
+	return conn->type == BT_CONN_TYPE_LE;
+}
+
+#if defined(CONFIG_BT_ISO)
+static inline bool bt_conn_is_iso(const struct bt_conn *conn)
+{
+	return conn->type == BT_CONN_TYPE_ISO;
+}
+#else
+#define bt_conn_is_iso(conn) (false)
+#endif
+
+#if defined(CONFIG_BT_CLASSIC)
+static inline bool bt_conn_is_sco(const struct bt_conn *conn)
+{
+	return conn->type == BT_CONN_TYPE_SCO;
+}
+#else
+#define bt_conn_is_sco(conn) (false)
+#endif
+
 void bt_conn_tx_notify(struct bt_conn *conn, bool wait_for_completion);
 
 void bt_conn_reset_rx_state(struct bt_conn *conn);
@@ -447,8 +484,7 @@ static inline bool bt_conn_is_handle_valid(struct bt_conn *conn)
 		return true;
 	case BT_CONN_INITIATING:
 		/* ISO connection handle assigned at connect state */
-		if (IS_ENABLED(CONFIG_BT_ISO) &&
-		    conn->type == BT_CONN_TYPE_ISO) {
+		if (bt_conn_is_iso(conn)) {
 			return true;
 		}
 	__fallthrough;
@@ -539,6 +575,11 @@ void bt_conn_identity_resolved(struct bt_conn *conn);
 /* Notify higher layers that connection security changed */
 void bt_conn_security_changed(struct bt_conn *conn, uint8_t hci_err,
 			      enum bt_security_err err);
+
+#if defined(CONFIG_BT_POWER_MODE_CONTROL)
+/* Notify higher layers that connection sniff mode changed */
+void bt_conn_notify_mode_changed(struct bt_conn *conn, uint8_t mode, uint16_t interval);
+#endif /* CONFIG_BT_POWER_MODE_CONTROL */
 
 /* Prepare a PDU to be sent over a connection */
 #if defined(CONFIG_NET_BUF_LOG)

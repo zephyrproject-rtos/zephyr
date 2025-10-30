@@ -166,6 +166,13 @@
 			status = "disabled";
 		};
 
+		audcodec: audio-codec@50088000 {
+			compatible = "sifli,sf32lb-audcodec";
+			reg = <0x50088000 0x400>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_AUDCODEC>;
+			status = "disabled";
+		};
+
 		wdt: watchdog@50094000 {
 			compatible = "sifli,sf32lb-wdt";
 			reg = <0x50094000 0x1000>;

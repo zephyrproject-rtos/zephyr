@@ -87,6 +87,77 @@ family:
           - name: mgm240pb32vnn
           - name: mgm240sa22vna
           - name: mgm240sd22vna
+      - name: efm32pg26
+        socs:
+          - name: efm32pg26b101f512il136
+          - name: efm32pg26b101f512im68
+          - name: efm32pg26b301f1024il136
+          - name: efm32pg26b301f1024im68
+          - name: efm32pg26b301f2048il136
+          - name: efm32pg26b301f2048im68
+          - name: efm32pg26b500f3200il136
+          - name: efm32pg26b500f3200im48
+          - name: efm32pg26b500f3200im68
+          - name: efm32pg26b501f3200il136
+          - name: efm32pg26b501f3200im48
+          - name: efm32pg26b501f3200im68
+      - name: efr32bg26
+        socs:
+          - name: efr32bg26b311f1024il136
+          - name: efr32bg26b311f1024im68
+          - name: efr32bg26b311f2048il136
+          - name: efr32bg26b311f2048im48
+          - name: efr32bg26b311f2048im68
+          - name: efr32bg26b321f1024im68
+          - name: efr32bg26b321f2048im48
+          - name: efr32bg26b321f2048im68
+          - name: efr32bg26b410f3200im48
+          - name: efr32bg26b411f3200im48
+          - name: efr32bg26b420f3200im48
+          - name: efr32bg26b421f3200im48
+          - name: efr32bg26b510f3200il136
+          - name: efr32bg26b510f3200im48
+          - name: efr32bg26b510f3200im68
+          - name: efr32bg26b511f3200il136
+          - name: efr32bg26b511f3200im48
+          - name: efr32bg26b511f3200im68
+      - name: efr32mg26
+        socs:
+          - name: efr32mg26b521f3200im68
+          - name: efr32mg26b521f3200im48
+          - name: efr32mg26b520f3200im68
+          - name: efr32mg26b520f3200im48
+          - name: efr32mg26b511f3200im68
+          - name: efr32mg26b511f3200im48
+          - name: efr32mg26b511f3200il136
+          - name: efr32mg26b510f3200im68
+          - name: efr32mg26b510f3200im48
+          - name: efr32mg26b510f3200il136
+          - name: efr32mg26b421f3200im68
+          - name: efr32mg26b421f3200im48
+          - name: efr32mg26b420f3200im68
+          - name: efr32mg26b420f3200im48
+          - name: efr32mg26b411f3200im68
+          - name: efr32mg26b411f3200im48
+          - name: efr32mg26b410f3200im68
+          - name: efr32mg26b410f3200im48
+          - name: efr32mg26b311f3200il136
+          - name: efr32mg26b221f3200im48
+          - name: efr32mg26b221f2048im68
+          - name: efr32mg26b211f3200im48
+          - name: efr32mg26b211f2048im68
+      - name: bgm26
+        socs:
+          - name: bgm260pb22vna
+          - name: bgm260pb32vna
+      - name: mgm26
+        socs:
+          - name: mgm260pb22vna
+          - name: mgm260pb32vna
+          - name: mgm260pb32vnn
+          - name: mgm260pd22vna
+          - name: mgm260pd32vna
+          - name: mgm260pd32vnn
       - name: efr32bg27
         socs:
           - name: efr32bg27c140f768im32

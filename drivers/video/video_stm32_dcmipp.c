@@ -6,6 +6,7 @@
 
 #include <errno.h>
 
+#include <stm32_bitops.h>
 #include <zephyr/kernel.h>
 #include <zephyr/irq.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
@@ -161,13 +162,13 @@ static void stm32_dcmipp_set_next_buffer_addr(struct stm32_dcmipp_pipe_data *pip
 	/* TODO - the HAL is missing a SetMemoryAddress for auxiliary addresses */
 	/* Update main buffer address */
 	if (pipe->id == DCMIPP_PIPE0) {
-		WRITE_REG(dcmipp->hdcmipp.Instance->P0PPM0AR1, (uint32_t)plane);
+		stm32_reg_write(&dcmipp->hdcmipp.Instance->P0PPM0AR1, (uint32_t)plane);
 	}
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 	else if (pipe->id == DCMIPP_PIPE1) {
-		WRITE_REG(dcmipp->hdcmipp.Instance->P1PPM0AR1, (uint32_t)plane);
+		stm32_reg_write(&dcmipp->hdcmipp.Instance->P1PPM0AR1, (uint32_t)plane);
 	} else {
-		WRITE_REG(dcmipp->hdcmipp.Instance->P2PPM0AR1, (uint32_t)plane);
+		stm32_reg_write(&dcmipp->hdcmipp.Instance->P2PPM0AR1, (uint32_t)plane);
 	}
 
 	if (pipe->id != DCMIPP_PIPE1) {
@@ -178,13 +179,13 @@ static void stm32_dcmipp_set_next_buffer_addr(struct stm32_dcmipp_pipe_data *pip
 		/* Y plane has 8 bit per pixel, next plane is located at off + width * height */
 		plane += VIDEO_FMT_PLANAR_Y_PLANE_SIZE(fmt);
 
-		WRITE_REG(dcmipp->hdcmipp.Instance->P1PPM1AR1, (uint32_t)plane);
+		stm32_reg_write(&dcmipp->hdcmipp.Instance->P1PPM1AR1, (uint32_t)plane);
 
 		if (VIDEO_FMT_IS_PLANAR(fmt)) {
 			/* In case of YUV420 / YVU420, U plane has half width / half height */
 			plane += VIDEO_FMT_PLANAR_Y_PLANE_SIZE(fmt) / 4;
 
-			WRITE_REG(dcmipp->hdcmipp.Instance->P1PPM2AR1, (uint32_t)plane);
+			stm32_reg_write(&dcmipp->hdcmipp.Instance->P1PPM2AR1, (uint32_t)plane);
 		}
 	}
 #endif
@@ -252,13 +253,13 @@ void HAL_DCMIPP_PIPE_VsyncEventCallback(DCMIPP_HandleTypeDef *hdcmipp, uint32_t 
 		 */
 		pipe->state = STM32_DCMIPP_WAIT_FOR_BUFFER;
 		if (Pipe == DCMIPP_PIPE0) {
-			CLEAR_BIT(hdcmipp->Instance->P0FCTCR, DCMIPP_P0FCTCR_CPTREQ);
+			stm32_reg_clear_bits(&hdcmipp->Instance->P0FCTCR, DCMIPP_P0FCTCR_CPTREQ);
 		}
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 		else if (Pipe == DCMIPP_PIPE1) {
-			CLEAR_BIT(hdcmipp->Instance->P1FCTCR, DCMIPP_P1FCTCR_CPTREQ);
+			stm32_reg_clear_bits(&hdcmipp->Instance->P1FCTCR, DCMIPP_P1FCTCR_CPTREQ);
 		} else if (Pipe == DCMIPP_PIPE2) {
-			CLEAR_BIT(hdcmipp->Instance->P2FCTCR, DCMIPP_P2FCTCR_CPTREQ);
+			stm32_reg_clear_bits(&hdcmipp->Instance->P2FCTCR, DCMIPP_P2FCTCR_CPTREQ);
 		}
 #endif
 		return;
@@ -1298,13 +1299,16 @@ static int stm32_dcmipp_enqueue(const struct device *dev, struct video_buffer *v
 		pipe->next = vbuf;
 		stm32_dcmipp_set_next_buffer_addr(pipe);
 		if (pipe->id == DCMIPP_PIPE0) {
-			SET_BIT(dcmipp->hdcmipp.Instance->P0FCTCR, DCMIPP_P0FCTCR_CPTREQ);
+			stm32_reg_set_bits(&dcmipp->hdcmipp.Instance->P0FCTCR,
+					   DCMIPP_P0FCTCR_CPTREQ);
 		}
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 		else if (pipe->id == DCMIPP_PIPE1) {
-			SET_BIT(dcmipp->hdcmipp.Instance->P1FCTCR, DCMIPP_P1FCTCR_CPTREQ);
+			stm32_reg_set_bits(&dcmipp->hdcmipp.Instance->P1FCTCR,
+					   DCMIPP_P1FCTCR_CPTREQ);
 		} else if (pipe->id == DCMIPP_PIPE2) {
-			SET_BIT(dcmipp->hdcmipp.Instance->P2FCTCR, DCMIPP_P2FCTCR_CPTREQ);
+			stm32_reg_set_bits(&dcmipp->hdcmipp.Instance->P2FCTCR,
+					   DCMIPP_P2FCTCR_CPTREQ);
 		}
 #endif
 		pipe->state = STM32_DCMIPP_RUNNING;
@@ -1331,22 +1335,98 @@ static int stm32_dcmipp_dequeue(const struct device *dev, struct video_buffer **
 }
 
 /*
- * TODO: caps aren't yet handled hence give back straight the caps given by the
- * source.  Normally this should be the intersection of what the source produces
- * vs what the DCMIPP can input (for pipe0) and, for pipe 1 and 2, for a given
- * input format, generate caps based on capabilities, color conversion, decimation
- * etc
+ * For MAIN / AUX pipe, it is necessary that the pitch is a multiple of 16 bytes.
+ * Give here the multiple in number of pixels, which depends on the format chosen
  */
+#define DCMIPP_CEIL_DIV_ROUND_UP_MUL(val, div, mul)						\
+		((((val) + (div) - 1) / (div) + (mul) - 1) / (mul) * (mul))
+
+#define DCMIPP_CEIL_DIV(val, div)								\
+		(((val) + (div) - 1) / (div))
+
+static const struct video_format_cap stm32_dcmipp_dump_fmt[] = {
+	{
+		.pixelformat = VIDEO_FOURCC_FROM_STR(CONFIG_VIDEO_STM32_DCMIPP_SENSOR_PIXEL_FORMAT),
+		.width_min = CONFIG_VIDEO_STM32_DCMIPP_SENSOR_WIDTH,
+		.width_max = CONFIG_VIDEO_STM32_DCMIPP_SENSOR_WIDTH,
+		.height_min = CONFIG_VIDEO_STM32_DCMIPP_SENSOR_HEIGHT,
+		.height_max = CONFIG_VIDEO_STM32_DCMIPP_SENSOR_HEIGHT,
+		.width_step = 1, .height_step = 1,
+	},
+	{0},
+};
+
+#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
+#define DCMIPP_VIDEO_FORMAT_CAP(format, pixmul)	{						\
+	.pixelformat = VIDEO_PIX_FMT_##format,							\
+	.width_min = DCMIPP_CEIL_DIV_ROUND_UP_MUL(CONFIG_VIDEO_STM32_DCMIPP_SENSOR_WIDTH,	\
+						  STM32_DCMIPP_MAX_PIPE_SCALE_FACTOR,		\
+						  pixmul),					\
+	.width_max = CONFIG_VIDEO_STM32_DCMIPP_SENSOR_WIDTH / (pixmul) * (pixmul),		\
+	.height_min = DCMIPP_CEIL_DIV(CONFIG_VIDEO_STM32_DCMIPP_SENSOR_HEIGHT,			\
+				      STM32_DCMIPP_MAX_PIPE_SCALE_FACTOR),			\
+	.height_max = CONFIG_VIDEO_STM32_DCMIPP_SENSOR_HEIGHT,					\
+	.width_step = pixmul, .height_step = 1,							\
+}
+
+static const struct video_format_cap stm32_dcmipp_main_fmts[] = {
+	DCMIPP_VIDEO_FORMAT_CAP(RGB565, 8),
+	DCMIPP_VIDEO_FORMAT_CAP(YUYV, 8),
+	DCMIPP_VIDEO_FORMAT_CAP(YVYU, 8),
+	DCMIPP_VIDEO_FORMAT_CAP(GREY, 16),
+	DCMIPP_VIDEO_FORMAT_CAP(RGB24, 16),
+	DCMIPP_VIDEO_FORMAT_CAP(BGR24, 16),
+	DCMIPP_VIDEO_FORMAT_CAP(ARGB32, 4),
+	DCMIPP_VIDEO_FORMAT_CAP(ABGR32, 4),
+	DCMIPP_VIDEO_FORMAT_CAP(RGBA32, 4),
+	DCMIPP_VIDEO_FORMAT_CAP(BGRA32, 4),
+	DCMIPP_VIDEO_FORMAT_CAP(NV12, 16),
+	DCMIPP_VIDEO_FORMAT_CAP(NV21, 16),
+	DCMIPP_VIDEO_FORMAT_CAP(NV16, 16),
+	DCMIPP_VIDEO_FORMAT_CAP(NV61, 16),
+	DCMIPP_VIDEO_FORMAT_CAP(YUV420, 16),
+	DCMIPP_VIDEO_FORMAT_CAP(YVU420, 16),
+	{0},
+};
+
+static const struct video_format_cap stm32_dcmipp_aux_fmts[] = {
+	DCMIPP_VIDEO_FORMAT_CAP(RGB565, 8),
+	DCMIPP_VIDEO_FORMAT_CAP(YUYV, 8),
+	DCMIPP_VIDEO_FORMAT_CAP(YVYU, 8),
+	DCMIPP_VIDEO_FORMAT_CAP(GREY, 16),
+	DCMIPP_VIDEO_FORMAT_CAP(RGB24, 16),
+	DCMIPP_VIDEO_FORMAT_CAP(BGR24, 16),
+	DCMIPP_VIDEO_FORMAT_CAP(ARGB32, 4),
+	DCMIPP_VIDEO_FORMAT_CAP(ABGR32, 4),
+	DCMIPP_VIDEO_FORMAT_CAP(RGBA32, 4),
+	DCMIPP_VIDEO_FORMAT_CAP(BGRA32, 4),
+	{0},
+};
+#endif
+
 static int stm32_dcmipp_get_caps(const struct device *dev, struct video_caps *caps)
 {
-	const struct stm32_dcmipp_config *config = dev->config;
-	int ret;
+	struct stm32_dcmipp_pipe_data *pipe = dev->data;
 
-	ret = video_get_caps(config->source_dev, caps);
+	switch (pipe->id) {
+	case DCMIPP_PIPE0:
+		caps->format_caps = stm32_dcmipp_dump_fmt;
+		break;
+#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
+	case DCMIPP_PIPE1:
+		caps->format_caps = stm32_dcmipp_main_fmts;
+		break;
+	case DCMIPP_PIPE2:
+		caps->format_caps = stm32_dcmipp_aux_fmts;
+		break;
+#endif
+	default:
+		CODE_UNREACHABLE;
+	}
 
 	caps->min_vbuf_count = 1;
 
-	return ret;
+	return 0;
 }
 
 static int stm32_dcmipp_get_frmival(const struct device *dev, struct video_frmival *frmival)

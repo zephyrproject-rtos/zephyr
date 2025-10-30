@@ -9,8 +9,7 @@
 
 #define DT_DRV_COMPAT andestech_qspi_nor_xip
 
-#include "soc_v5.h"
-
+#include <andes_csr.h>
 #include <errno.h>
 #include <string.h>
 #include <zephyr/kernel.h>
