@@ -19,11 +19,22 @@
 #include <hal/nrf_power.h>
 #include <lib/nrfx_coredep.h>
 #include <zephyr/logging/log.h>
+#include <helpers/nrfx_gppi.h>
 
 #include <cmsis_core.h>
 
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
+
+void gppi_init(void)
+{
+	static nrfx_gppi_t gppi_instance;
+
+	gppi_instance.ch_mask = BIT_MASK(PPI_CH_NUM) & ~NRFX_PPI_CHANNELS_USED;
+	gppi_instance.group_mask = BIT_MASK(PPI_GROUP_NUM) & ~NRFX_PPI_GROUPS_USED;
+
+	nrfx_gppi_init(&gppi_instance);
+}
 
 static int nordicsemi_nrf52_init(void)
 {
@@ -40,6 +51,10 @@ static int nordicsemi_nrf52_init(void)
 	DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nordic_nrf52x_regulator_hv)))
 	nrf_power_dcdcen_vddh_set(NRF_POWER, true);
 #endif
+
+	if (IS_ENABLED(CONFIG_NRFX_GPPI) && !IS_ENABLED(CONFIG_NRFX_GPPI_V1)) {
+		gppi_init();
+	}
 
 	return 0;
 }

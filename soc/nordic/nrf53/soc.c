@@ -477,6 +477,17 @@ static int rtc_pretick_init(void)
 }
 #endif /* CONFIG_SOC_NRF53_RTC_PRETICK */
 
+BUILD_ASSERT(DPPIC_CH_NUM == 32);
+void gppi_init(void)
+{
+	static nrfx_gppi_t gppi_instance;
+
+	gppi_instance.ch_mask = UINT32_MAX & ~NRFX_DPPI_CHANNELS_USED;
+	gppi_instance.group_mask = BIT_MASK(DPPIC_GROUP_NUM) & ~NRFX_DPPI_GROUPS_USED;
+
+	nrfx_gppi_init(&gppi_instance);
+}
+
 void soc_early_init_hook(void)
 {
 #if defined(CONFIG_SOC_NRF5340_CPUAPP) && defined(CONFIG_NRF_ENABLE_CACHE)
@@ -557,6 +568,10 @@ void soc_early_init_hook(void)
 	__ASSERT_NO_MSG(err == 0);
 	(void)err;
 #endif
+
+	if (IS_ENABLED(CONFIG_NRFX_GPPI) && !IS_ENABLED(CONFIG_NRFX_GPPI_V1)) {
+		gppi_init();
+	}
 }
 
 void soc_late_init_hook(void)

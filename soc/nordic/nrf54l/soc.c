@@ -37,8 +37,6 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #define LFXO_NODE DT_NODELABEL(lfxo)
 #define HFXO_NODE DT_NODELABEL(hfxo)
 
-static nrfx_gppi_t gppi_instance;
-
 static inline void power_and_clock_configuration(void)
 {
 /* NRF_REGULATORS and NRF_OSCILLATORS are configured to be secure
@@ -154,6 +152,8 @@ static inline void power_and_clock_configuration(void)
 #if defined(CONFIG_NRFX_GPPI) && !defined(CONFIG_NRFX_GPPI_V1)
 void gppi_init(void)
 {
+	static nrfx_gppi_t gppi_instance;
+
 	gppi_instance.routes = nrfx_gppi_routes_get();
 	gppi_instance.route_map = nrfx_gppi_route_map_get();
 	gppi_instance.nodes = nrfx_gppi_nodes_get();

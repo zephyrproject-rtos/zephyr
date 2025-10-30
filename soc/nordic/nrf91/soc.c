@@ -16,11 +16,22 @@
 #include <zephyr/init.h>
 #include <lib/nrfx_coredep.h>
 #include <zephyr/logging/log.h>
+#include <helpers/nrfx_gppi.h>
 
 #include <cmsis_core.h>
 
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
+
+void gppi_init(void)
+{
+	static nrfx_gppi_t gppi_instance;
+
+	gppi_instance.ch_mask = BIT_MASK(DPPIC_CH_NUM) & ~NRFX_DPPI_CHANNELS_USED;
+	gppi_instance.group_mask = BIT_MASK(DPPIC_GROUP_NUM) & ~NRFX_DPPI_GROUPS_USED;
+
+	nrfx_gppi_init(&gppi_instance);
+}
 
 static int nordicsemi_nrf91_init(void)
 {
@@ -28,6 +39,10 @@ static int nordicsemi_nrf91_init(void)
 	/* Enable the instruction cache */
 	NRF_NVMC->ICACHECNF = NVMC_ICACHECNF_CACHEEN_Msk;
 #endif
+
+	if (IS_ENABLED(CONFIG_NRFX_GPPI) && !IS_ENABLED(CONFIG_NRFX_GPPI_V1)) {
+		gppi_init();
+	}
 
 	return 0;
 }
