@@ -431,7 +431,7 @@ config NRFX_PWM133
 	select NRFX_PWM
 
 config NRFX_QDEC
-	bool
+	bool "QDEC driver"
 
 config NRFX_QDEC0
 	bool "QDEC0 driver instance"
