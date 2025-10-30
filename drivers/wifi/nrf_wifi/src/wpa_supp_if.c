@@ -1986,6 +1986,147 @@ void nrf_wifi_supp_event_proc_get_conn_info(void *if_priv,
 	k_sem_give(&wait_for_event_sem);
 }
 
+void nrf_wifi_supp_event_remain_on_channel(void *if_priv,
+				      struct nrf_wifi_event_remain_on_channel *roc_complete,
+				      unsigned int event_len)
+{
+	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
+
+	if (!if_priv) {
+		LOG_ERR("%s: Missing interface context", __func__);
+		return;
+	}
+
+	vif_ctx_zep = if_priv;
+
+	if (!roc_complete) {
+		LOG_ERR("%s: Missing ROC complete event data", __func__);
+		return;
+	}
+
+	LOG_DBG("%s: ROC complete on freq %d, dur %d, vif_idx %d",
+		    __func__, roc_complete->frequency,
+		    roc_complete->dur, vif_ctx_zep->vif_idx);
+
+	if (vif_ctx_zep->supp_drv_if_ctx && vif_ctx_zep->supp_callbk_fns.roc_complete) {
+		vif_ctx_zep->supp_callbk_fns.roc_complete(vif_ctx_zep->supp_drv_if_ctx,
+				roc_complete->frequency,
+				roc_complete->dur);
+	}
+}
+
+void nrf_wifi_supp_event_roc_cancel_complete(void *if_priv,
+					     struct nrf_wifi_event_remain_on_channel
+					     *roc_cancel_complete,
+					     unsigned int event_len)
+{
+	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
+
+	if (!if_priv) {
+		LOG_ERR("%s: Missing interface context", __func__);
+		return;
+	}
+
+	vif_ctx_zep = if_priv;
+
+	if (!roc_cancel_complete) {
+		LOG_ERR("%s: Missing ROC cancel complete event data", __func__);
+		return;
+	}
+
+	LOG_DBG("%s: ROC cancel complete on freq %d, vif_idx %d",
+		    __func__, roc_cancel_complete->frequency,
+		    vif_ctx_zep->vif_idx);
+
+	if (vif_ctx_zep->supp_drv_if_ctx && vif_ctx_zep->supp_callbk_fns.roc_cancel_complete) {
+		vif_ctx_zep->supp_callbk_fns.roc_cancel_complete(vif_ctx_zep->supp_drv_if_ctx,
+				roc_cancel_complete->frequency);
+	}
+}
+
+int nrf_wifi_supp_remain_on_channel(void *if_priv, unsigned int freq,
+									unsigned int duration)
+{
+	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
+#ifdef NRF70_P2P_MODE
+	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
+	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
+	struct remain_on_channel_info roc_info;
+
+	if (!if_priv) {
+		LOG_ERR("%s: Invalid params", __func__);
+		return -1;
+	}
+
+	vif_ctx_zep = if_priv;
+	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
+	if (!rpu_ctx_zep) {
+		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		return -1;
+	}
+
+	k_mutex_lock(&vif_ctx_zep->vif_lock, K_FOREVER);
+	if (!rpu_ctx_zep->rpu_ctx) {
+		LOG_DBG("%s: RPU context not initialized", __func__);
+		goto out;
+	}
+
+	memset(&roc_info, 0, sizeof(roc_info));
+	roc_info.nrf_wifi_freq_params.frequency = freq;
+	roc_info.nrf_wifi_freq_params.channel_width = NRF_WIFI_CHAN_WIDTH_20;
+	roc_info.nrf_wifi_freq_params.center_frequency1 = freq;
+	roc_info.nrf_wifi_freq_params.center_frequency2 = 0;
+	roc_info.nrf_wifi_freq_params.channel_type = NRF_WIFI_CHAN_HT20;
+	roc_info.dur = duration;
+
+	status = nrf_wifi_sys_fmac_p2p_roc_start(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx,
+						 &roc_info);
+	if (status != NRF_WIFI_STATUS_SUCCESS) {
+		LOG_ERR("%s: nrf_wifi_fmac_remain_on_channel failed", __func__);
+		goto out;
+	}
+out:
+	k_mutex_unlock(&vif_ctx_zep->vif_lock);
+#endif /* NRF70_P2P_MODE */
+	return status;
+}
+
+int nrf_wifi_supp_cancel_remain_on_channel(void *if_priv)
+{
+	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
+#ifdef NRF70_P2P_MODE
+	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
+	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
+
+	if (!if_priv) {
+		LOG_ERR("%s: Invalid params", __func__);
+		return -1;
+	}
+
+	vif_ctx_zep = if_priv;
+	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
+	if (!rpu_ctx_zep) {
+		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		return -1;
+	}
+
+	k_mutex_lock(&vif_ctx_zep->vif_lock, K_FOREVER);
+	if (!rpu_ctx_zep->rpu_ctx) {
+		LOG_DBG("%s: RPU context not initialized", __func__);
+		goto out;
+	}
+
+	status = nrf_wifi_sys_fmac_p2p_roc_stop(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx, 0);
+	if (status != NRF_WIFI_STATUS_SUCCESS) {
+		LOG_ERR("%s: nrf_wifi_fmac_cancel_remain_on_channel failed", __func__);
+		goto out;
+	}
+out:
+	k_mutex_unlock(&vif_ctx_zep->vif_lock);
+#endif /* NRF70_P2P_MODE */
+	return status;
+}
+
 #ifdef CONFIG_NRF70_AP_MODE
 static int nrf_wifi_vif_state_change(struct nrf_wifi_vif_ctx_zep *vif_ctx_zep,
 	enum nrf_wifi_fmac_if_op_state state)
