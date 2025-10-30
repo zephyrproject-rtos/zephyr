@@ -5,8 +5,290 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DIV_16_BIT   1
+#define DIV_16_5_BIT 2
+#define DIV_24_5_BIT 3
+
+#include <dt-bindings/clock/ifx_clock_source_def.h>
+
 / {
 	clocks {
+		/* Internal main oscillator (IMO) */
+		clk_imo: clk_imo {
+			#clock-cells = <0>;
+			compatible = "infineon,cat2-fixed-clock";
+			clock-frequency = <24000000>; /* 24 MHz */
+			clock-block = <IFX_CAT2_CLOCK_BLOCK_IMO>;
+			clock-instance = <0>;
+			status = "okay";
+		};
 
+	 /* Internal low-speed oscillator (ILO) */
+		clk_ilo: clk_ilo {
+			#clock-cells = <0>;
+			compatible = "infineon,cat2-fixed-clock";
+			clock-frequency = <40000>; /* 40 kHz */
+			clock-block = <IFX_CAT2_CLOCK_BLOCK_ILO>;
+			clock-instance = <0>;
+			status = "okay";
+		};
+
+	 /* External clock (EXTCLK) */
+		clk_extclk: clk_extclk {
+			#clock-cells = <0>;
+			compatible = "infineon,cat2-fixed-clock";
+			clock-frequency = <48000000>; /* 48 MHz external input */
+			clock-block = <IFX_CAT2_CLOCK_BLOCK_EXT>;
+			clock-instance = <0>;
+			status = "disabled";
+		};
+
+	    /* Watch crystal oscillator (WCO) */
+		clk_wco: clk_wco {
+			#clock-cells = <0>;
+			compatible = "infineon,cat2-fixed-clock";
+			clock-frequency = <32000>; /* 32 kHz */
+			clock-block = <IFX_CAT2_CLOCK_BLOCK_WCO>;
+			clock-instance = <0>;
+			status = "disabled";
+		};
+
+		hf_clk_sel0: hf_clk_sel0 {
+			#clock-cells = <0>;
+			compatible = "infineon,cat2-fixed-factor-clock";
+			clocks = <&clk_imo>;
+			clock-block = <IFX_CAT2_BLOCK_HFCLK_SEL>;
+			clock-instance = <0>;
+			status = "disabled";
+		};
+
+		hf_clk_sel1: hf_clk_sel1 {
+			#clock-cells = <0>;
+			compatible = "infineon,cat2-fixed-factor-clock";
+			clocks = <&clk_extclk>;
+			clock-block = <IFX_CAT2_BLOCK_HFCLK_SEL>;
+			clock-instance = <1>;
+			status = "disabled";
+		};
+
+		pump_sel0: pump_sel0 {
+			#clock-cells = <0>;
+			compatible = "infineon,cat2-fixed-factor-clock";
+			clocks = <&clk_imo>;
+			clock-block = <IFX_CAT2_BLOCK_PUMP_SEL>;
+			clock-instance = <0>;
+			status = "disabled";
+		};
+
+		wdt_clk_en0: wdt_clk_en0 {
+			#clock-cells = <0>;
+			compatible = "infineon,cat2-fixed-factor-clock";
+			clocks = <&clk_imo>;
+			clock-block = <IFX_CAT2_BLOCK_WDT_CLKEN>;
+			clock-instance = <0>;
+			status = "disabled";
+		};
+
+		clk_hf0: clk_hf0 {
+			#clock-cells = <0>;
+			compatible = "infineon,cat2-fixed-factor-clock";
+			clocks = <&hf_clk_sel0>;
+			clock-divider = <IFX_CAT2_CLKHF_NO_DIVIDE>;
+			clock-block = <IFX_CAT2_CLOCK_BLOCK_HF>;
+			clock-instance = <0>;
+			status = "disabled";
+		};
+
+		clk_hf1: clk_hf1 {
+			#clock-cells = <0>;
+			compatible = "infineon,cat2-fixed-factor-clock";
+			clocks = <&hf_clk_sel1>;
+			clock-divider = <IFX_CAT2_CLKHF_NO_DIVIDE>;
+			clock-block = <IFX_CAT2_CLOCK_BLOCK_HF>;
+			clock-instance = <1>;
+			status = "disabled";
+		};
+	};
+
+	peri0: peri0 {
+		peri0_group0_16bit_0: peri0_group0_16bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,cat2-peri-div";
+			clk-dst = [00 00];
+			div-type = <DIV_16_BIT>;
+			div-num = <0>;
+			div-value = <1>;
+			status = "disabled";
+		};
+
+		peri0_group1_16bit_0: peri0_group1_16bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,cat2-peri-div";
+			clk-dst = [00 01];
+			div-type = <DIV_16_BIT>;
+			div-num = <0>;
+			div-value = <1>;
+			status = "disabled";
+		};
+
+		peri0_group2_16bit_0: peri0_group2_16bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,cat2-peri-div";
+			clk-dst = [00 02];
+			div-type = <DIV_16_BIT>;
+			div-num = <0>;
+			div-value = <1>;
+			status = "disabled";
+		};
+
+		peri0_group3_16bit_0: peri0_group3_16bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,cat2-peri-div";
+			clk-dst = [00 03];
+			div-type = <DIV_16_BIT>;
+			div-num = <0>;
+			div-value = <1>;
+			status = "disabled";
+		};
+
+		peri0_group4_16bit_0: peri0_group4_16bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,cat2-peri-div";
+			clk-dst = [00 04];
+			div-type = <DIV_16_BIT>;
+			div-num = <0>;
+			div-value = <1>;
+			status = "disabled";
+		};
+
+		peri0_group5_16bit_0: peri0_group5_16bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,cat2-peri-div";
+			clk-dst = [00 05];
+			div-type = <DIV_16_BIT>;
+			div-num = <0>;
+			div-value = <1>;
+			status = "disabled";
+		};
+
+		peri0_group6_16bit_0: peri0_group6_16bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,cat2-peri-div";
+			clk-dst = [00 06];
+			div-type = <DIV_16_BIT>;
+			div-num = <0>;
+			div-value = <1>;
+			status = "disabled";
+		};
+
+		peri0_group7_16bit_0: peri0_group7_16bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,cat2-peri-div";
+			clk-dst = [00 07];
+			div-type = <DIV_16_BIT>;
+			div-num = <0>;
+			div-value = <1>;
+			status = "disabled";
+		};
+
+		peri0_group8_16bit_0: peri0_group8_16bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,cat2-peri-div";
+			clk-dst = [00 08];
+			div-type = <DIV_16_BIT>;
+			div-num = <0>;
+			div-value = <1>;
+			status = "disabled";
+		};
+
+		peri0_group9_16bit_0: peri0_group9_16bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,cat2-peri-div";
+			clk-dst = [00 09];
+			div-type = <DIV_16_BIT>;
+			div-num = <0>;
+			div-value = <1>;
+			status = "disabled";
+		};
+
+		peri0_group10_16bit_0: peri0_group10_16bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,cat2-peri-div";
+			clk-dst = [00 0A];
+			div-type = <DIV_16_BIT>;
+			div-num = <0>;
+			div-value = <1>;
+			status = "disabled";
+		};
+
+		peri0_group11_16bit_0: peri0_group11_16bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,cat2-peri-div";
+			clk-dst = [00 0B];
+			div-type = <DIV_16_BIT>;
+			div-num = <0>;
+			div-value = <1>;
+			status = "disabled";
+		};
+
+		peri0_group4_16_5bit_0: peri0_group4_16_5bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,cat2-peri-div";
+			clk-dst = [00 04];
+			div-type = <DIV_16_5_BIT>;
+			div-num = <0>;
+			div-value = <1>;
+			status = "disabled";
+		};
+
+		peri0_group4_16_5bit_1: peri0_group4_16_5bit_1 {
+			#clock-cells = <0>;
+			compatible = "infineon,cat2-peri-div";
+			clk-dst = [00 04];
+			div-type = <DIV_16_5_BIT>;
+			div-num = <1>;
+			div-value = <1>;
+			status = "disabled";
+		};
+
+		peri0_group4_16_5bit_2: peri0_group4_16_5bit_2 {
+			#clock-cells = <0>;
+			compatible = "infineon,cat2-peri-div";
+			clk-dst = [00 04];
+			div-type = <DIV_16_5_BIT>;
+			div-num = <2>;
+			div-value = <1>;
+			status = "disabled";
+		};
+
+		peri0_group4_16_5bit_3: peri0_group4_16_5bit_3 {
+			#clock-cells = <0>;
+			compatible = "infineon,cat2-peri-div";
+			clk-dst = [00 04];
+			div-type = <DIV_16_5_BIT>;
+			div-num = <3>;
+			div-value = <1>;
+			status = "disabled";
+		};
+
+		peri0_group4_16_5bit_4: peri0_group4_16_5bit_4 {
+			#clock-cells = <0>;
+			compatible = "infineon,cat2-peri-div";
+			clk-dst = [00 04];
+			div-type = <DIV_16_5_BIT>;
+			div-num = <4>;
+			div-value = <1>;
+			status = "disabled";
+		};
+
+		peri0_group4_24_5bit_0: peri0_group4_24_5bit_0 {
+			#clock-cells = <0>;
+			compatible = "infineon,cat2-peri-div";
+			clk-dst = [00 04];
+			div-type = <DIV_24_5_BIT>;
+			div-num = <0>;
+			div-value = <1>;
+			status = "disabled";
+		};
 	};
 };

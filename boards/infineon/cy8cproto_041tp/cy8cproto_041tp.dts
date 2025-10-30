@@ -18,3 +18,17 @@
 		zephyr,flash = &flash0;
 	};
 };
+
+&peri0_group0_16bit_0 {
+	status = "okay";
+	scb-block = <0>;
+	div-value = <12>;
+};
+
+&hf_clk_sel0 {
+	status = "okay";
+};
+
+&clk_hf0 {
+	status = "okay";
+};
