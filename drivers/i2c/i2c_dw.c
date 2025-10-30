@@ -1294,6 +1294,11 @@ static int i2c_dw_initialize(const struct device *dev)
 	uint32_t reg_base = get_regs(dev);
 
 	clear_bit_enable_en(reg_base);
+	/*
+	 * depending on the IP configuration, we may have to disable block mode in
+	 * controller mode
+	 */
+	clear_bit_enable_block(reg_base);
 
 	/* verify that we have a valid DesignWare register first */
 	if (read_comp_type(reg_base) != I2C_DW_MAGIC_KEY) {
