@@ -245,10 +245,6 @@ struct bt_hfp_ag {
 	/* ongoing calls work */
 	struct k_work_delayable ongoing_call_work;
 
-	/* last dialing number and type */
-	char last_number[CONFIG_BT_HFP_AG_PHONE_NUMBER_MAX_LEN + 1];
-	uint8_t type;
-
 	/* SCO Connection Object */
 	struct bt_sco_chan sco_chan;
 
