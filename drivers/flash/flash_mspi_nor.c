@@ -644,6 +644,67 @@ static int api_read_jedec_id(const struct device *dev, uint8_t *id)
 }
 #endif /* CONFIG_FLASH_JESD216_API  */
 
+#if defined(CONFIG_FLASH_EX_OP_ENABLED)
+static int ex_op_cmd_read(const struct device *dev,
+	const struct flash_ex_op_cmd_read_in *in,
+	struct flash_ex_op_cmd_read_out *out)
+{
+	struct flash_mspi_nor_data *dev_data = dev->data;
+	int rc = 0;
+
+	rc = acquire(dev);
+	if (rc < 0) {
+		return rc;
+	}
+
+	set_up_xfer(dev, MSPI_RX);
+	dev_data->packet.data_buf = in->read_buffer;
+	dev_data->packet.num_bytes = in->buffer_len;
+	rc = perform_xfer(dev, in->cmd);
+	out->read_len = (rc < 0) ? 0 : in->buffer_len;
+
+	release(dev);
+
+	return rc;
+}
+
+static int ex_op_cmd_write(const struct device *dev,
+	const struct flash_ex_op_cmd_write_in *in,
+	struct flash_ex_op_cmd_write_out *out)
+{
+	struct flash_mspi_nor_data *dev_data = dev->data;
+	int rc = 0;
+
+	rc = acquire(dev);
+	if (rc < 0) {
+		return rc;
+	}
+
+	set_up_xfer(dev, MSPI_TX);
+	dev_data->packet.data_buf = in->write_buffer;
+	dev_data->packet.num_bytes = in->buffer_len;
+	rc = perform_xfer(dev, in->cmd);
+	out->write_len = (rc < 0) ? 0 : in->buffer_len;
+
+	release(dev);
+
+	return rc;
+}
+
+static int api_ex_op(const struct device *dev,
+	uint16_t code, const uintptr_t in, void *out)
+{
+	switch (code) {
+	case FLASH_EX_OP_CMD_READ:
+		return ex_op_cmd_read(dev, (const struct flash_ex_op_cmd_read_in *)in, out);
+	case FLASH_EX_OP_CMD_WRITE:
+		return ex_op_cmd_write(dev, (const struct flash_ex_op_cmd_write_in *)in, out);
+	default:
+		return -ENOTSUP;
+	};
+}
+#endif /* CONFIG_FLASH_EX_OP_ENABLED */
+
 static int dev_pm_action_cb(const struct device *dev,
 			    enum pm_device_action action)
 {
@@ -1258,6 +1319,9 @@ static DEVICE_API(flash, drv_api) = {
 #if defined(CONFIG_FLASH_JESD216_API)
 	.sfdp_read = api_sfdp_read,
 	.read_jedec_id = api_read_jedec_id,
+#endif
+#if defined(CONFIG_FLASH_EX_OP_ENABLED)
+	.ex_op = api_ex_op,
 #endif
 };
 
