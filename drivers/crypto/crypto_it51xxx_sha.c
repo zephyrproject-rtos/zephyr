@@ -183,11 +183,17 @@ static int it51xxx_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt, bool
 		}
 
 		/*
-		 * Since input data (big-endian) are copied 1byte by 1byte to
-		 * it51xxx memory (little-endian), so the bit length needs to
-		 * be transformed into big-endian format and then write to memory.
+		 * SHA-256 requires the message length (in bits) as a 64-bit big-endian
+		 * integer in the final 8 bytes (words 14 and 15). The message is stored
+		 * in little-endian memory, so conversion is necessary.
 		 */
-		chip_ctx.w_sha[15] = sys_cpu_to_be32(chip_ctx.total_len * 8);
+		uint64_t bit_len = (uint64_t)chip_ctx.total_len * 8;
+
+		/* Word 14: Most Significant 32 bits */
+		chip_ctx.w_sha[14] = sys_cpu_to_be32((uint32_t)(bit_len >> 32));
+
+		/* Word 15: Least Significant 32 bits */
+		chip_ctx.w_sha[15] = sys_cpu_to_be32((uint32_t)(bit_len & 0xFFFFFFFFUL));
 
 		/* HW automatically load 64Bytes data from DLM */
 		sys_write8(IT51XXX_SHAEXEC_64_BYTE, IT51XXX_SHAECR);
