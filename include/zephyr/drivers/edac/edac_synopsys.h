@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_EDAC_SYNOPSYS_H_
-#define ZEPHYR_DRIVERS_EDAC_SYNOPSYS_H_
+#ifndef ZEPHYR_DRIVERS_EDAC_EDAC_SYNOPSYS_H_
+#define ZEPHYR_DRIVERS_EDAC_EDAC_SYNOPSYS_H_
 
 #include <stdint.h>
 
@@ -50,4 +50,4 @@ struct edac_synopsys_callback_data {
 	uint8_t uncorr_err_syndrome_ecc;
 };
 
-#endif /* ZEPHYR_DRIVERS_EDAC_SYNOPSYS_H_ */
+#endif /* ZEPHYR_DRIVERS_EDAC_EDAC_SYNOPSYS_H_ */
