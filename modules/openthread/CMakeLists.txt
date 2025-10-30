@@ -1,6 +1,12 @@
 if(CONFIG_OPENTHREAD)
 if(CONFIG_OPENTHREAD_SOURCES)
 
+if(CONFIG_OPENTHREAD_CRYPTO_PSA AND NOT CONFIG_BUILD_WITH_TFM)
+  if(CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS AND CONFIG_SETTINGS_NONE)
+    message(FATAL_ERROR "No backend selected for Secure Storage.")
+  endif()
+endif()
+
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
 macro(kconfig_to_ot_option kconfig_option ot_config description)
