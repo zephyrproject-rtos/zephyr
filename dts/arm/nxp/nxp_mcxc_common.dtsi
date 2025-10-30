@@ -117,7 +117,7 @@
 			reg = <0x40047000 0x8>;
 			status = "disabled";
 			clk-source = <0>;
-			timeout-cycles = <32>;
+			timeout-cycles = <1024>;
 		};
 
 		porta: pinmux@40049000 {
