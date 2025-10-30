@@ -881,8 +881,7 @@ attention needed and it will be ready for merge sooner than later:
    is green
 
 #. If you get request for changes and submit a change to address them, make
-   sure you click the "Re-request review" button on the GitHub UI to notify
-   those who asked for the changes
+   sure to notify those who asked for the changes
 
 Identifying Contribution Origin
 ===============================
