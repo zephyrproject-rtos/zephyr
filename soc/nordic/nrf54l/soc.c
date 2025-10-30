@@ -23,6 +23,8 @@
 #include <soc/nrfx_coredep.h>
 #include <system_nrf54l.h>
 #include <soc.h>
+#include <helpers/nrfx_gppi.h>
+#include <soc/interconnect/nrfx_gppi_lumos.h>
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 #if (defined(NRF_APPLICATION) && !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)) || \
@@ -144,6 +146,8 @@ static inline void power_and_clock_configuration(void)
 
 }
 #endif /* NRF_APPLICATION && !CONFIG_TRUSTED_EXECUTION_NONSECURE */
+
+	static nrfx_gppi_t gppi_instance;
 
 int nordicsemi_nrf54l_init(void)
 {
