@@ -707,6 +707,8 @@ static int phy_mc_ksz8081_init(const struct device *dev)
 
 	data->flags |= KSZ8081_INITIALIZED;
 
+	k_work_reschedule(&data->phy_monitor_work, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
+
 	return 0;
 }
 
