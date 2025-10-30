@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -96,6 +96,10 @@
 &sim {
 	pllfll-select = <KINETIS_SIM_PLLFLLSEL_MCGPLLCLK>;
 	er32k-select = <KINETIS_SIM_ER32KSEL_OSC32KCLK>;
+};
+
+&cop {
+	status = "okay";
 };
 
 &cpu0 {
