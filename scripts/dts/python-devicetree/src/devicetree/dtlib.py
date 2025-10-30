@@ -21,7 +21,7 @@ import string
 import sys
 import textwrap
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any, NamedTuple, NoReturn, Optional, Union
+from typing import TYPE_CHECKING, Any, NamedTuple, NoReturn, Optional
 
 # NOTE: tests/test_dtlib.py is the test suite for this library.
 
@@ -737,7 +737,7 @@ class _FileStackElt(NamedTuple):
     contents: str
     pos: int
 
-_TokVal = Union[int, str]
+_TokVal = int | str
 
 class _Token(NamedTuple):
     id: int
@@ -795,8 +795,8 @@ class DT:
     # Public interface
     #
 
-    def __init__(self, filename: Optional[str], include_path: Iterable[str] = (),
-                 force: bool = False, base_dir: Optional[str] = None):
+    def __init__(self, filename: str | None, include_path: Iterable[str] = (),
+                 force: bool = False, base_dir: str | None = None):
         """
         Parses a DTS file to create a DT instance. Raises OSError if 'filename'
         can't be opened, and DTError for any parse errors.
@@ -821,7 +821,7 @@ class DT:
         """
         # Remember to update __deepcopy__() if you change this.
 
-        self._root: Optional[Node] = None
+        self._root: Node | None = None
         self.alias2node: dict[str, Node] = {}
         self.label2node: dict[str, Node] = {}
         self.label2prop: dict[str, Property] = {}
@@ -1094,7 +1094,7 @@ class DT:
         self._filestack: list[_FileStackElt] = []
 
         self._lexer_state: int = _DEFAULT
-        self._saved_token: Optional[_Token] = None
+        self._saved_token: _Token | None = None
 
         self._lineno: int = 1
 
@@ -2089,7 +2089,7 @@ class DT:
 # Public functions
 #
 
-def to_num(data: bytes, length: Optional[int] = None,
+def to_num(data: bytes, length: int | None = None,
            signed: bool = False) -> int:
     """
     Converts the 'bytes' array 'data' to a number. The value is expected to be
