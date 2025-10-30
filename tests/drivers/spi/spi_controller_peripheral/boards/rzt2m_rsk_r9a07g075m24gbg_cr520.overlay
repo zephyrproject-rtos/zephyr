@@ -4,7 +4,6 @@
  */
 
 &pinctrl {
-
 	/omit-if-no-ref/ spi2_pins: spi2 {
 		spi2-pinmux {
 			pinmux = <RZT_PINMUX(PORT_18, 4, 3)>, /* CK2 */

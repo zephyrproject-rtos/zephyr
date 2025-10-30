@@ -46,7 +46,7 @@
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
 		gpio-map = <0 0 &gpio0 17 0>,
-			<1 0 &gpio0 16 0>;
+			   <1 0 &gpio0 16 0>;
 	};
 };
 
@@ -126,8 +126,8 @@ zephyr_i2c: &i2c0 {
 			gpios = <&gpio0 27 GPIO_ACTIVE_HIGH>;
 			chain-length = <1>;
 			color-mapping = <LED_COLOR_ID_GREEN
-				LED_COLOR_ID_RED
-				LED_COLOR_ID_BLUE>;
+					 LED_COLOR_ID_RED
+					 LED_COLOR_ID_BLUE>;
 			reset-delay = <280>;
 			frequency = <800000>;
 		};

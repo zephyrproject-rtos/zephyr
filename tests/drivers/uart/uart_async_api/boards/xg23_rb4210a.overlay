@@ -23,6 +23,7 @@
 			drive-push-pull;
 			output-high;
 		};
+
 		group1 {
 			pins = <EUSART1_RX_PC2>; /* WPK EXP6 (PC2) */
 			input-enable;
@@ -36,6 +37,7 @@
 			drive-push-pull;
 			output-high;
 		};
+
 		group1 {
 			pins = <USART0_RX_PA9>;
 			input-enable;

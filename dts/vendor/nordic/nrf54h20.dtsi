@@ -136,6 +136,7 @@
 				min-residency-us = <700>;
 				exit-latency-us = <5>;
 			};
+
 			idle_cache_disabled: idle_cache_disabled {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";

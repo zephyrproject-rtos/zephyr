@@ -21,7 +21,6 @@
 	/delete-node/ memory@20070000;
 };
 
-
 &flash0 {
 	/delete-node/ partitions;
 

@@ -8,7 +8,7 @@
  * Be sure we don't overlap the reserved byte for storing the boot-mode
  */
 &sram0 {
-	reg = <0x20000004 ((DT_SIZE_K(520)) - 4)>;
+	reg = <0x20000004 (DT_SIZE_K(520) - 4)>;
 };
 
 / {

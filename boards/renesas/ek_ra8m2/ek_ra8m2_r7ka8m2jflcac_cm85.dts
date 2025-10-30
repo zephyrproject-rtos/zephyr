@@ -32,11 +32,11 @@
 };
 
 &button0 {
-	status ="okay";
+	status = "okay";
 };
 
 &button1 {
-	status ="okay";
+	status = "okay";
 };
 
 &sci8 {

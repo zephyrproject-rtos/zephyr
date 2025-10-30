@@ -7,7 +7,6 @@
 #include <dt-bindings/pinctrl/rpi-pico-rp2040-pinctrl.h>
 
 &pinctrl {
-
 	adc_default: adc_default {
 		group1 {
 			pinmux = <ADC_CH0_P26>, <ADC_CH1_P27>, <ADC_CH2_P28>, <ADC_CH3_P29>;
