@@ -2028,6 +2028,21 @@ static int cmd_ag_hf_indicator(const struct shell *sh, size_t argc, char **argv)
 }
 #endif /* CONFIG_BT_HFP_HF_HF_INDICATORS */
 
+static int cmd_ag_last_number(const struct shell *sh, size_t argc, char **argv)
+{
+	int err;
+	uint8_t type;
+
+	type = (uint8_t)strtoul(argv[2], NULL, 0);
+
+	err = bt_hfp_ag_last_number(hfp_ag, argv[1], type);
+	if (err != 0) {
+		shell_error(sh, "Failed to set last number: %d", err);
+	}
+
+	return err;
+}
+
 #define HELP_AG_TEXTUAL_REPRESENTATION          \
 	"<[R-ready][S-send][P-processing]> "        \
 	"<id> <type> <operation> <text string>"
@@ -2081,6 +2096,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(ag_cmds,
 	SHELL_CMD_ARG(hf_indicator, NULL, "<indicator> <enable/disable>", cmd_ag_hf_indicator, 3,
 		      0),
 #endif /* CONFIG_BT_HFP_HF_HF_INDICATORS */
+	SHELL_CMD_ARG(last_number, NULL, "<number> <type>", cmd_ag_last_number, 3, 0),
 	SHELL_SUBCMD_SET_END
 );
 #endif /* CONFIG_BT_HFP_AG */
