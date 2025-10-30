@@ -472,6 +472,10 @@ os_mgmt_mcumgr_params(struct smp_streamer *ctxt)
 	     zcbor_uint32_put(zse, CONFIG_MCUMGR_TRANSPORT_NETBUF_SIZE)	&&
 	     zcbor_tstr_put_lit(zse, "buf_count")		&&
 	     zcbor_uint32_put(zse, CONFIG_MCUMGR_TRANSPORT_NETBUF_COUNT);
+#ifdef CONFIG_MCUMGR_GRP_OS_MCUMGR_PARAMS_ROLE
+	ok &= zcbor_tstr_put_lit(zse, "inst_role")		&&
+	      zcbor_uint32_put(zse, CONFIG_MCUMGR_GRP_OS_MCUMGR_PARAMS_ROLE_VALUE);
+#endif
 
 	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
 }

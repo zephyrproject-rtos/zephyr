@@ -166,6 +166,17 @@ config MCUMGR_GRP_OS_DATETIME_HOOK
 config MCUMGR_GRP_OS_MCUMGR_PARAMS
 	bool "MCUMGR Parameters retrieval command"
 
+config MCUMGR_GRP_OS_MCUMGR_PARAMS_ROLE
+	bool "MCUMGR Parameter Role in response"
+	depends on MCUMGR_GRP_OS_MCUMGR_PARAMS
+
+config MCUMGR_GRP_OS_MCUMGR_PARAMS_ROLE_VALUE
+	int "MCUMGR Parameter Role value"
+	default 0
+	depends on MCUMGR_GRP_OS_MCUMGR_PARAMS_ROLE
+	help
+	  Value for `inst_role` field in response to MCUmgr Parameters request.
+
 config MCUMGR_GRP_OS_INFO
 	bool "Support for info command"
 	help
