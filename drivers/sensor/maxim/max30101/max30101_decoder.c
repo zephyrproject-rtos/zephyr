@@ -8,7 +8,7 @@
 
 #include "max30101.h"
 
-LOG_MODULE_DECLARE(MAX30101, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_REGISTER(MAX30101_DECODE, CONFIG_SENSOR_LOG_LEVEL);
 
 static int max30101_decoder_get_frame_count(const uint8_t *buffer,
 					    struct sensor_chan_spec chan_spec,

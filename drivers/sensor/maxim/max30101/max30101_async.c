@@ -10,7 +10,7 @@
 
 #include "max30101.h"
 
-LOG_MODULE_DECLARE(MAX30101, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_REGISTER(MAX30101_ASYNC, CONFIG_SENSOR_LOG_LEVEL);
 
 uint8_t max30101_encode_channels(const struct max30101_data *data, struct max30101_encoded_data *edata, const struct sensor_chan_spec *channels, size_t num_channels)
 {

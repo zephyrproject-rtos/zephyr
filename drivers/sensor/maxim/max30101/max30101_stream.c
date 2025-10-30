@@ -9,7 +9,7 @@
 
 #include "max30101.h"
 
-LOG_MODULE_DECLARE(MAX30101, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_REGISTER(MAX30101_STREAM, CONFIG_SENSOR_LOG_LEVEL);
 
 void max30101_stream_config(const struct device *dev, struct sensor_stream_trigger *trigger, uint8_t *include, uint8_t *drop)
 {
