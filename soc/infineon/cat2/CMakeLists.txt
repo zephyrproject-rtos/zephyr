@@ -5,3 +5,4 @@
 
 add_subdirectory(${SOC_SERIES})
 zephyr_compile_definitions($<UPPER_CASE:${CONFIG_SOC}>_${CONFIG_SOC_PART_NUMBER})
+zephyr_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/common)

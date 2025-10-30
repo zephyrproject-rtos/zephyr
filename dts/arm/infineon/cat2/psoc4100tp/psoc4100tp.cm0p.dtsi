@@ -19,6 +19,20 @@
 			clock-frequency = <48000000>;
 		};
 	};
+
+	soc {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/* Pinctrl node for Infineon CAT2 SoC */
+		pinctrl0: pinctrl@40310000 {
+			compatible = "infineon,catx-pinctrl";
+			reg = <0x40310000 0x1000>;
+			status = "okay";
+		};
+	};
 };
 
 &nvic {
