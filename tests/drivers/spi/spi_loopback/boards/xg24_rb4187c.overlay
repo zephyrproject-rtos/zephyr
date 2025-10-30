@@ -13,6 +13,7 @@
 			drive-push-pull;
 			output-high;
 		};
+
 		group1 {
 			pins = <EUSART1_RX_PC2>;
 			input-enable;
@@ -30,14 +31,16 @@
 	pinctrl-names = "default";
 	status = "okay";
 	cs-gpios = <&gpioc 0 GPIO_ACTIVE_LOW>;
+
 	slow@0 {
 		compatible = "test-spi-loopback-slow";
 		reg = <0>;
 		spi-max-frequency = <500000>;
 	};
-	fast@1 {
+
+	fast@0 {
 		compatible = "test-spi-loopback-fast";
-		reg = <1>;
+		reg = <0>;
 		spi-max-frequency = <10000000>;
 	};
 };
