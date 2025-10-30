@@ -2909,25 +2909,43 @@ static int bt_hfp_ag_atd_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 {
 	int err;
 	char *number = NULL;
+	uint8_t *data;
 	bool is_memory_dial = false;
-
-	if (buf->data[buf->len - 1] != '\r') {
-		return -ENOTSUP;
-	}
+	uint16_t len;
 
 	if (is_char(buf, '>')) {
 		is_memory_dial = true;
 	}
 
-	if ((buf->len - 1) > CONFIG_BT_HFP_AG_PHONE_NUMBER_MAX_LEN) {
+	len = sizeof(uint8_t) + sizeof(uint8_t);
+	if (buf->len <= len) {
+		LOG_WRN("Short packet");
+		return -EINVAL;
+	}
+
+	len = buf->len - len;
+	data = net_buf_pull_mem(buf, len);
+
+	if (!is_char(buf, ';')) {
+		LOG_WRN("Missing semicolon character");
+		return -ENOTSUP;
+	}
+
+	if (!is_char(buf, '\r')) {
+		LOG_WRN("Missing enter character");
+		return -ENOTSUP;
+	}
+
+	/* Change the `;` to `\0` */
+	data[len] = 0;
+
+	if (len > CONFIG_BT_HFP_AG_PHONE_NUMBER_MAX_LEN) {
 		return -ENAMETOOLONG;
 	}
 
-	buf->data[buf->len - 1] = '\0';
-
 	if (is_memory_dial) {
-		if (bt_ag && bt_ag->memory_dial) {
-			err = bt_ag->memory_dial(ag, &buf->data[0], &number);
+		if ((bt_ag != NULL) && (bt_ag->memory_dial != NULL)) {
+			err = bt_ag->memory_dial(ag, data, &number);
 			if ((err != 0) || (number == NULL)) {
 				return -ENOTSUP;
 			}
@@ -2935,10 +2953,10 @@ static int bt_hfp_ag_atd_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 			return -ENOTSUP;
 		}
 	} else {
-		number = &buf->data[0];
-		if (bt_ag && bt_ag->number_call) {
-			err = bt_ag->number_call(ag, &buf->data[0]);
-			if (err) {
+		number = (char *)data;
+		if ((bt_ag != NULL) && (bt_ag->number_call != NULL)) {
+			err = bt_ag->number_call(ag, number);
+			if (err != 0) {
 				return err;
 			}
 		} else {
