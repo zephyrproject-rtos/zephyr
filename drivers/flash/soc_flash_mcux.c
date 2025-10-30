@@ -124,7 +124,7 @@ static void clear_flash_caches(void)
 {
 	FLASH_CacheClear();
 }
-#elif
+#else
 static void clear_flash_caches(void)
 {
 	volatile uint32_t *const smscm_ocmdr0 = (volatile uint32_t *)0x40015400;
