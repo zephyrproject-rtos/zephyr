@@ -124,3 +124,7 @@
 &wifi0 {
 	status = "okay";
 };
+
+&nwp {
+	front-end-switch-gpios;
+};
