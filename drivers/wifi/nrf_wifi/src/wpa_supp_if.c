@@ -1435,6 +1435,10 @@ int nrf_wifi_nl80211_send_mlme(void *if_priv, const u8 *data,
 		goto out;
 	}
 
+	if (vif_ctx_zep->if_type == NRF_WIFI_IFTYPE_STATION) {
+		offchanok = 1;
+	}
+
 	if (offchanok) {
 		mgmt_tx_info->nrf_wifi_flags |= NRF_WIFI_CMD_FRAME_OFFCHANNEL_TX_OK;
 	}
