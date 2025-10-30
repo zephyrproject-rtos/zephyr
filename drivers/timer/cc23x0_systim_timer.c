@@ -111,10 +111,10 @@ void systim_isr(const void *arg)
 	/* Get current value as early as possible */
 	uint32_t current_systim_count = HWREG(SYSTIM_BASE + SYSTIM_O_TIME1U);
 	uint32_t elapsed_ticks = sys_clock_elapsed_ticks(current_systim_count, last_systim_count);
+	last_systim_count = current_systim_count;
 	k_spin_unlock(&lock, key);
 	sys_clock_announce(elapsed_ticks);
 
-	last_systim_count = current_systim_count;
 
 	/* Do not re-arm systim. Zephyr will do so through sys_clock_set_timeout */
 }
