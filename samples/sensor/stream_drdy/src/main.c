@@ -102,10 +102,10 @@ static int print_accels_stream(const struct device *dev, struct rtio_iodev *iode
 		frame_count = xl_count;
 
 		/* If a tap has occurred lets print it out */
-		if (decoder->has_trigger(buf, SENSOR_TRIG_TAP)) {
+		if (decoder->has_trigger(buf, SENSOR_TRIG_TAP),
+		    (struct sensor_chan_spec){SENSOR_CHAN_ALL, 0}) {
 			printk("Tap! Sensor %s\n", dev->name);
 		}
-
 
 		int8_t c = 0;
 

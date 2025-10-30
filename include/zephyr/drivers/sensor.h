@@ -556,13 +556,15 @@ struct sensor_decoder_api {
 		      uint16_t max_count, void *data_out);
 
 	/**
-	 * @brief Check if the given trigger type is present
+	 * @brief Check if the given trigger type is present for the given channel_spec
 	 *
 	 * @param[in] buffer The buffer provided on the @ref rtio context
 	 * @param[in] trigger The trigger type in question
+	 * @param[in] chan_spec The channel specification in question
 	 * @return Whether the trigger is present in the buffer
 	 */
-	bool (*has_trigger)(const uint8_t *buffer, enum sensor_trigger_type trigger);
+	bool (*has_trigger)(const uint8_t *buffer, enum sensor_trigger_type trigger,
+			    struct sensor_chan_spec chan_spec);
 };
 
 /**

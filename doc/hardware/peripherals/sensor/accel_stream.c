@@ -84,7 +84,7 @@ int main(void)
 		}
 
 		/* If a tap has occurred lets print it out */
-		if (decoder->has_trigger(buf, SENSOR_TRIG_TAP)) {
+		if (decoder->has_trigger(buf, SENSOR_TRIG_TAP), {SENSOR_CHAN_ACCEL_XYZ, 0}) {
 			printk("Tap! Sensor %s\n", dev->name);
 		}
 
