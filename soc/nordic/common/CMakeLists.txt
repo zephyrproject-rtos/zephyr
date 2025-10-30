@@ -31,6 +31,10 @@ if(CONFIG_HAS_NORDIC_DMM)
   zephyr_library_sources(dmm.c)
 endif()
 
+if(CONFIG_NRFX_GPPI AND NOT CONFIG_NRFX_GPPI_V1)
+  zephyr_library_sources(gppi_init.c)
+endif()
+
 if(CONFIG_TFM_PARTITION_PLATFORM)
   zephyr_library_sources(soc_secure.c)
   zephyr_library_include_directories(
