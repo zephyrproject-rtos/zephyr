@@ -103,8 +103,8 @@ static int crc_set_config(const struct device *dev, struct crc_ctx *ctx)
 	err = RP_CRC_Reconfigure(&data->ctrl, crc_cfg);
 
 	if (err != FSP_SUCCESS) {
+		data->flag_crc_updated = false;
 		ctx->state = CRC_STATE_IDLE;
-		crc_unlock(dev);
 		return -EINVAL;
 	}
 
@@ -158,9 +158,20 @@ static int crc_renesas_ra_update(const struct device *dev, struct crc_ctx *ctx, 
 
 		err = R_CRC_Calculate(&data->ctrl, &data->input_data, &ctx->result);
 		if (err != FSP_SUCCESS) {
+			data->flag_crc_updated = false;
 			ctx->state = CRC_STATE_IDLE;
 			crc_unlock(dev);
 			return -EINVAL;
+		}
+
+		/*
+		 * After the hardware calculation for CRC8 and CRC16,
+		 * ctx->result should be explicitly masked to the correct bit width
+		 */
+		if (ctx->type == CRC8) {
+			ctx->result &= 0xFF;
+		} else {
+			ctx->result &= 0xFFFF;
 		}
 		break;
 	}
@@ -179,6 +190,7 @@ static int crc_renesas_ra_update(const struct device *dev, struct crc_ctx *ctx, 
 
 		err = R_CRC_Calculate(&data->ctrl, &data->input_data, &ctx->result);
 		if (err != FSP_SUCCESS) {
+			data->flag_crc_updated = false;
 			ctx->state = CRC_STATE_IDLE;
 			crc_unlock(dev);
 			return -EINVAL;
