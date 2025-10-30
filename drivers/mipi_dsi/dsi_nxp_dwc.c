@@ -69,7 +69,7 @@ static int dsi_dwc_attach(const struct device *dev, uint8_t channel,
 
 	DSI_SetDpiConfig(base, &dpi_config, mdev->data_lanes);
 
-#if CONFIG_SOC_MIMX9352_A55
+#if defined(CONFIG_SOC_MIMX9352_A55) || defined(CONFIG_SOC_MIMX9352_M33)
 	uint32_t phyByteClkFreq_Hz = config->data_rate_clock * mdev->data_lanes / 8;
 
 	DSI_SetCommandModeConfig(base, &command_config, phyByteClkFreq_Hz);
@@ -118,7 +118,7 @@ static int dsi_dwc_attach(const struct device *dev, uint8_t channel,
 	DSI_ConfigDphy(base, config->dphy_ref_frequency, config->data_rate_clock);
 #endif
 
-#if CONFIG_SOC_MIMX9352_A55
+#if defined(CONFIG_SOC_MIMX9352_A55) || defined(CONFIG_SOC_MIMX9352_M33)
 	BLK_CTRL_MEDIAMIX->MIPI.DSI = MEDIAMIX_BLK_CTRL_DSI_updatepll(1) |
 				      MEDIAMIX_BLK_CTRL_DSI_HSFREQRANGE(phy_hsfreqrange) |
 				      MEDIAMIX_BLK_CTRL_DSI_CLKSEL(1) |

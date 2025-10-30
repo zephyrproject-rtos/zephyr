@@ -1,0 +1,90 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/display/panel.h>
+
+/ {
+	chosen {
+		zephyr,display = &lcdif;
+	};
+};
+
+&media_blk_ctrl {
+	status = "okay";
+};
+
+&video_pll {
+	compatible = "nxp,imx93-video-pll";
+	rdiv = <1>;
+	mfi = <121>;
+	mfn = <0>;
+	mfd = <1>;
+	odiv = <6>;
+	pll-frequency = <484000000>;
+	status = "okay";
+};
+
+&zephyr_lcdif {
+	width = <1080>;
+	height = <1920>;
+	pixel-format = "argb-8888";
+	media-axi-clk-rate = <400000000>;
+	media-apb-clk-rate = <133333334>;
+	status = "okay";
+
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		hsync-len = <2>;
+		hfront-porch = <20>;
+		hback-porch = <34>;
+		vsync-len = <2>;
+		vfront-porch = <10>;
+		vback-porch = <4>;
+		de-active = <0>;
+		pixelclk-active = <0>;
+		hsync-active = <1>;
+		vsync-active = <1>;
+		clock-frequency = <121000000>;
+	};
+};
+
+&zephyr_mipi_dsi {
+	nxp,dc = <&lcdif>;
+	dpi-color-coding = "24-bit";
+	dpi-video-mode = "non-burst-sync-pulse";
+	dphy-ref-frequency = <24000000>;
+	data-rate-clock = <726000000>;
+	status = "okay";
+
+	rm67199_panel@0 {
+		compatible = "raydium,rm67199";
+		reg = <0>;
+		bl-gpios = <&gpio_exp0 10 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio_exp0 9 GPIO_ACTIVE_HIGH>;
+		data-lanes = <4>;
+		pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
+		status = "okay";
+	};
+};
+
+&display_i2c {
+	status = "okay";
+
+	mfd0: adp5585@34 {
+		compatible = "adi,adp5585";
+		reg = <0x34>;
+		status = "okay";
+
+		gpio_exp0: adp5585_gpio {
+			compatible = "adi,adp5585-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <13>;
+			gpio-reserved-ranges = <5 3>;
+			status = "okay";
+		};
+	};
+};

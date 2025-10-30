@@ -1,0 +1,6 @@
+shield:
+  name: nxp_mx8_dsi_oled1a
+  full_name: NXP MX8-DSI-OLED1A
+  vendor: nxp
+  supported_features:
+    - display
