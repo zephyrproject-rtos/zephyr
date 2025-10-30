@@ -6,7 +6,7 @@ Hardware
 ********
 
 - Apollo3 Blue Plus SoC with up to 96 MHz operating frequency
-- ARM® Cortex® M4F core
+- ARM® Cortex®-M4F core
 - 16 kB 2-way Associative/Direct-Mapped Cache per core
 - Up to 2 MB of flash memory for code/data
 - Up to 768 KB of low leakage / low power RAM for code/data

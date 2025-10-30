@@ -11,7 +11,7 @@ Low Energy (BLE) SIG specification v5.0 and with IEEE 802.15.4-2011.
 - STM32 microcontroller in VFQFPN68 package
 - 2.4 GHz RF transceiver supporting Bluetooth® specification v5.0 and
   IEEE 802.15.4-2011 PHY and MAC
-- Dedicated Arm® 32-bit Cortex® M0+ CPU for real-time Radio layer
+- Dedicated Arm® 32-bit Cortex®-M0+ CPU for real-time Radio layer
 - Three user LEDs
 - Board connector: USB user with Micro-B
 - Two types of extension resources:

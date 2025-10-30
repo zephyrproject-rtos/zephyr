@@ -11,7 +11,7 @@ amplifier (PA). This provides enough link budget for the entire spectrum of Blue
 including industrial IoT applications, smart home, asset tracking, beacons and sensors, and
 medical devices.
 
-The system features Dual Arm® Cortex® - M33s for powering the MCU and Bluetooth subsystem with
+The system features Dual Arm® Cortex®-M33s for powering the MCU and Bluetooth subsystem with
 programmable and reconfigurable analog and digital blocks. In addition, on the kit, there is a
 suite of on-board peripherals including six-axis inertial measurement unit (IMU), thermistor,
 analog mic, user programmable buttons (2), LEDs (2), and RGB LED. There is also extensive GPIO
