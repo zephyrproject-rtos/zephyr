@@ -107,10 +107,6 @@
 #define STM32_FLASH_PRESCALER	STM32_CORE_PRESCALER
 #endif
 
-#define STM32_ADC_PRESCALER	DT_PROP(DT_NODELABEL(rcc), adc_prescaler)
-#define STM32_ADC12_PRESCALER	DT_PROP(DT_NODELABEL(rcc), adc12_prescaler)
-#define STM32_ADC34_PRESCALER	DT_PROP(DT_NODELABEL(rcc), adc34_prescaler)
-
 #define STM32_TIMER_PRESCALER	DT_PROP(DT_NODELABEL(rcc), timpre)
 
 /** STM2H7RS specific RCC dividers */
@@ -861,7 +857,7 @@ struct stm32_pclken {
  * @param clock Clock bit field value.
  */
 #define STM32_DT_CLKSEL_MASK_GET(clock) \
-	(((clock) >> STM32_DT_CLKSEL_MASK_SHIFT) & STM32_DT_CLKSEL_MASK_MASK)
+	BIT_MASK((((clock) >> STM32_DT_CLKSEL_WIDTH_SHIFT) & STM32_DT_CLKSEL_WIDTH_MASK) + 1)
 
 /**
  * @brief Obtain value field from clock source selection configuration.

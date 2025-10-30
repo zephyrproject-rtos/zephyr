@@ -5,7 +5,11 @@
  */
 
 #include <mem.h>
+#include <dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/clock/imx943_clock.h>
+#include <zephyr/dt-bindings/ethernet/dsa_tag_proto.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 / {
 	cpus {
@@ -58,6 +62,56 @@
 	};
 
 	soc {
+		mu10_a: mbox@42430000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x42430000 DT_SIZE_K(64)>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mu10_b: mbox@42440000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x42440000 DT_SIZE_K(64)>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		lpi2c3: i2c@42530000 {
+			compatible = "nxp,lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x42530000 0x4000>;
+			interrupts = <67 0>;
+			clocks = <&scmi_clk IMX943_CLK_LPI2C3>;
+			status = "disabled";
+		};
+
+		lpi2c4: i2c@42540000 {
+			compatible = "nxp,lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x42540000 0x4000>;
+			interrupts = <68 0>;
+			clocks = <&scmi_clk IMX943_CLK_LPI2C4>;
+			status = "disabled";
+		};
+
+		mu11_a: mbox@42730000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x42730000 DT_SIZE_K(64)>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mu11_b: mbox@42740000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x42740000 DT_SIZE_K(64)>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
 		lpuart3: serial@42570000 {
 			compatible = "nxp,imx-lpuart", "nxp,lpuart";
 			reg = <0x42570000 DT_SIZE_K(64)>;
@@ -106,6 +160,50 @@
 			status = "disabled";
 		};
 
+		lpi2c5: i2c@426b0000 {
+			compatible = "nxp,lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x426b0000 0x4000>;
+			interrupts = <108 0>;
+			clocks = <&scmi_clk IMX943_CLK_LPI2C5>;
+			status = "disabled";
+		};
+
+		lpi2c6: i2c@426c0000 {
+			compatible = "nxp,lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x426c0000 0x4000>;
+			interrupts = <109 0>;
+			clocks = <&scmi_clk IMX943_CLK_LPI2C6>;
+			status = "disabled";
+		};
+
+		lpi2c7: i2c@426d0000 {
+			compatible = "nxp,lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x426d0000 0x4000>;
+			interrupts = <110 0>;
+			clocks = <&scmi_clk IMX943_CLK_LPI2C7>;
+			status = "disabled";
+		};
+
+		lpi2c8: i2c@426e0000 {
+			compatible = "nxp,lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x426e0000 0x4000>;
+			interrupts = <111 0>;
+			clocks = <&scmi_clk IMX943_CLK_LPI2C8>;
+			status = "disabled";
+		};
+
 		lpuart9: serial@42a50000 {
 			compatible = "nxp,imx-lpuart", "nxp,lpuart";
 			reg = <0x42a50000 DT_SIZE_K(64)>;
@@ -135,6 +233,104 @@
 			reg = <0x42a80000 DT_SIZE_K(64)>;
 			interrupts = <83 3>;
 			clocks = <&scmi_clk IMX943_CLK_LPUART12>;
+			status = "disabled";
+		};
+
+		mu12_a: mbox@42ab0000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x42ab0000 DT_SIZE_K(64)>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mu12_b: mbox@42ac0000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x42ac0000 DT_SIZE_K(64)>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mu13_a: mbox@42ad0000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x42ad0000 DT_SIZE_K(64)>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mu13_b: mbox@42ae0000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x42ae0000 DT_SIZE_K(64)>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mu14_a: mbox@42af0000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x42af0000 DT_SIZE_K(64)>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mu14_b: mbox@42b00000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x42b00000 DT_SIZE_K(64)>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mu15_a: mbox@42b10000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x42b10000 DT_SIZE_K(64)>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mu15_b: mbox@42b20000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x42b20000 DT_SIZE_K(64)>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mu16_a: mbox@42b30000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x42b30000 DT_SIZE_K(64)>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mu16_b: mbox@42b40000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x42b40000 DT_SIZE_K(64)>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mu17_a: mbox@42b50000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x42b50000 DT_SIZE_K(64)>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mu17_b: mbox@42b60000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x42b60000 DT_SIZE_K(64)>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mu_m70_m71_for_m71: mbox@42b70000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x42b70000 DT_SIZE_K(64)>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mu_m70_m71_for_m70: mbox@42b80000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x42b80000 DT_SIZE_K(64)>;
+			#mbox-cells = <1>;
 			status = "disabled";
 		};
 
@@ -231,6 +427,28 @@
 			status = "disabled";
 		};
 
+		lpi2c1: i2c@44340000 {
+			compatible = "nxp,lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44340000 0x4000>;
+			interrupts = <15 0>;
+			clocks = <&scmi_clk IMX943_CLK_LPI2C1>;
+			status = "disabled";
+		};
+
+		lpi2c2: i2c@44350000 {
+			compatible = "nxp,lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44350000 0x4000>;
+			interrupts = <16 0>;
+			clocks = <&scmi_clk IMX943_CLK_LPI2C2>;
+			status = "disabled";
+		};
+
 		lpuart1: serial@44380000 {
 			compatible = "nxp,imx-lpuart", "nxp,lpuart";
 			reg = <0x44380000 DT_SIZE_K(64)>;
@@ -281,26 +499,18 @@
 			status = "disabled";
 		};
 
-		netc: ethernet@4ca00000 {
-			reg = <0x4ca00000 0x500000>;
+		netc: ethernet {
+			compatible = "nxp,imx-netc";
 			interrupts = <294 0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges;
-			status = "disabled";
-
-			emdio: mdio@4cde0000 {
-				compatible = "nxp,imx-netc-emdio";
-				reg = <0x4cde0000 0x10000>;
-				clocks = <&scmi_clk IMX943_CLK_ENET>;
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-			};
 
 			enetc_psi0: ethernet@4cc80000 {
 				compatible = "nxp,imx-netc-psi";
-				reg = <0x4cc80000 0x10000>;
+				reg = <0x4cc80000 0x10000>,
+				      <0x4cb00000 0x1000>;
+				reg-names = "port", "pfconfig";
 				mac-index = <0>;
 				si-index = <0>;
 				status = "disabled";
@@ -308,7 +518,9 @@
 
 			enetc_psi1: ethernet@4ccc0000 {
 				compatible = "nxp,imx-netc-psi";
-				reg = <0x4ccc0000 0x10000>;
+				reg = <0x4ccc0000 0x10000>,
+				      <0x4cb40000 0x1000>;
+				reg-names = "port", "pfconfig";
 				mac-index = <1>;
 				si-index = <1>;
 				status = "disabled";
@@ -316,9 +528,23 @@
 
 			enetc_psi2: ethernet@4cd00000 {
 				compatible = "nxp,imx-netc-psi";
-				reg = <0x4cd00000 0x10000>;
+				reg = <0x4cd00000 0x10000>,
+				      <0x4cb80000 0x1000>;
+				reg-names = "port", "pfconfig";
 				mac-index = <2>;
 				si-index = <2>;
+				status = "disabled";
+			};
+
+			/* Internal port */
+			enetc_psi3: ethernet@4cd40000 {
+				compatible = "nxp,imx-netc-psi";
+				reg = <0x4cd40000 0x10000>,
+				      <0x4ca00000 0x1000>;
+				reg-names = "port", "pfconfig";
+				mac-index = <3>;
+				si-index = <3>;
+				phy-connection-type = "internal";
 				status = "disabled";
 			};
 
@@ -342,7 +568,181 @@
 				clocks = <&scmi_clk IMX943_CLK_ENET>;
 				status = "disabled";
 			};
+
+			emdio: mdio@4cde0000 {
+				compatible = "nxp,imx-netc-emdio";
+				reg = <0x4cde0000 0x10000>,
+					<0x4cbc0000 0x40000>;
+				reg-names = "basic", "pfconfig";
+				clocks = <&scmi_clk IMX943_CLK_ENET>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			netc_switch: switch@4cc00000 {
+				compatible = "nxp,netc-switch";
+				reg = <0x4cc00000 0x40000>,
+				      <0x4ca02000 0x1000>;
+				reg-names = "base", "pfconfig";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				switch_port0: switch_port@0 {
+					compatible = "zephyr,dsa-port";
+					reg = <0>;
+					status = "disabled";
+				};
+
+				switch_port1: switch_port@1 {
+					compatible = "zephyr,dsa-port";
+					reg = <1>;
+					status = "disabled";
+				};
+
+				/* Parallel interface is muxed with enetc_psi0. */
+				switch_port2: switch_port@2 {
+					compatible = "zephyr,dsa-port";
+					reg = <2>;
+					status = "disabled";
+				};
+
+				/* Internal port */
+				switch_port3: switch_port@3 {
+					compatible = "zephyr,dsa-port";
+					reg = <3>;
+					ethernet = <&enetc_psi3>;
+					phy-connection-type = "internal";
+					dsa-tag-protocol = <DSA_TAG_PROTO_NETC>;
+					status = "disabled";
+				};
+			};
 		};
+
+		mu_m33s_secure_m71_for_m71: mbox@4d120000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x4d120000 DT_SIZE_K(64)>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mu_m33s_secure_m71_for_m33s: mbox@4d130000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x4d130000 DT_SIZE_K(64)>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mu_m33s_m71_for_m71: mbox@4d140000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x4d140000 DT_SIZE_K(64)>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mu_m33s_m71_for_m33s: mbox@4d150000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x4d150000 DT_SIZE_K(64)>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mu_m33s_secure_m70_for_m70: mbox@4d160000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x4d160000 DT_SIZE_K(64)>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mu_m33s_secure_m70_for_m33s: mbox@4d170000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x4d170000 DT_SIZE_K(64)>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mu_m33s_m70_for_m70: mbox@4d180000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x4d180000 DT_SIZE_K(64)>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mu_m33s_m70_for_m33s: mbox@4d190000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x4d190000 DT_SIZE_K(64)>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+	};
+	/* Define memory regions for IPC between m33s and m71 */
+	dram_m33s_m71_ipc0: memory0@87000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x87000000 DT_SIZE_K(16)>;
+		zephyr,memory-region="DRAM_M33S_M71_IPC0";
+		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE))>;
+	};
+
+	dram_m33s_m71_ipc1: memory1@87004000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x87004000 DT_SIZE_K(16)>;
+		zephyr,memory-region="DRAM_M33S_M71_IPC1";
+		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE))>;
+	};
+
+	/* Define memory regions for IPC between m70 and m71 */
+	dram_m70_m71_ipc0: memory2@87008000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x87008000 DT_SIZE_K(16)>;
+		zephyr,memory-region="DRAM_M70_M71_IPC0";
+		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE))>;
+	};
+
+	dram_m70_m71_ipc1: memory3@8700c000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x8700c000 DT_SIZE_K(16)>;
+		zephyr,memory-region="DRAM_M70_M71_IPC1";
+		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE))>;
+	};
+
+	/* Define memory regions for IPC between m33s and m70 */
+	dram_m33s_m70_ipc0: memory4@87010000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x87010000 DT_SIZE_K(16)>;
+		zephyr,memory-region="DRAM_M33S_M70_IPC0";
+		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE))>;
+	};
+
+	dram_m33s_m70_ipc1: memory5@87014000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x87014000 DT_SIZE_K(16)>;
+		zephyr,memory-region="DRAM_M33S_M70_IPC1";
+		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE))>;
+	};
+
+	/* Define memory regions for IPC between m33s and m71 */
+	dram_m33s_m71_sh_mem: memory@87000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x87000000 DT_SIZE_K(32)>;
+		zephyr,memory-region="DRAM_M33S_M71_SH_MEM";
+		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE))>;
+	};
+
+	/* Define memory regions for IPC between m70 and m71 */
+	dram_m70_m71_sh_mem: memory@87008000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x87008000 DT_SIZE_K(32)>;
+		zephyr,memory-region="DRAM_M70_M71_SH_MEM";
+		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE))>;
+	};
+
+	/* Define memory regions for IPC between m33s and m70 */
+	dram_m33s_m70_sh_mem: memory@87010000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x87010000 DT_SIZE_K(32)>;
+		zephyr,memory-region="DRAM_M33S_M70_SH_MEM";
+		zephyr,memory-attr = <(DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE))>;
 	};
 };
 

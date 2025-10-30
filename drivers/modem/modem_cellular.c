@@ -2133,7 +2133,6 @@ static DEVICE_API(cellular, modem_cellular_api) = {
 	.set_callback = modem_cellular_set_callback,
 };
 
-#ifdef CONFIG_PM_DEVICE
 static int modem_cellular_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)dev->data;
@@ -2157,7 +2156,6 @@ static int modem_cellular_pm_action(const struct device *dev, enum pm_device_act
 
 	return ret;
 }
-#endif /* CONFIG_PM_DEVICE */
 
 static void net_mgmt_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 				   struct net_if *iface)
@@ -2311,13 +2309,7 @@ static int modem_cellular_init(const struct device *dev)
 
 	modem_cellular_init_apn(data);
 
-#ifndef CONFIG_PM_DEVICE
-	modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_RESUME);
-#else
-	pm_device_init_suspended(dev);
-#endif /* CONFIG_PM_DEVICE */
-
-	return 0;
+	return pm_device_driver_init(dev, modem_cellular_pm_action);
 }
 
 /*
@@ -3009,8 +3001,8 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, modem_cellular_init, PM_DEVICE_DT_INST_GET(inst),              \
 			      &MODEM_CELLULAR_INST_NAME(data, inst),                               \
-			      &MODEM_CELLULAR_INST_NAME(config, inst), POST_KERNEL, 99,            \
-			      &modem_cellular_api);
+			      &MODEM_CELLULAR_INST_NAME(config, inst), POST_KERNEL,                \
+			      CONFIG_MODEM_CELLULAR_INIT_PRIORITY, &modem_cellular_api);
 
 #define MODEM_CELLULAR_DEVICE_QUECTEL_BG9X(inst)                                                   \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);   \

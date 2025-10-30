@@ -18,3 +18,4 @@ supported:
   - i2c
   - i2s
   - netif:openthread
+  - crypto

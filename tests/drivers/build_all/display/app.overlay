@@ -512,6 +512,19 @@
 					vfront-porch = <50>;
 				};
 			};
+
+			test_co5300: co5300@7 {
+				status = "okay";
+				compatible = "raydium,rm67162";
+				reg = <0x7>;
+				reset-gpios = <&test_gpio 0 0>;
+				bl-gpios = <&test_gpio 0 0>;
+				te-gpios = <&test_gpio 0 0>;
+				data-lanes = <1>;
+				width = <466>;
+				height = <466>;
+				pixel-format = <0>;
+			};
 		};
 
 		test_spi: spi@33334444 {

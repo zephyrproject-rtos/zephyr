@@ -1740,7 +1740,9 @@ int supplicant_reg_domain(const struct device *dev,
 		}
 
 		if (IS_ENABLED(CONFIG_WIFI_NM_HOSTAPD_AP)) {
-			if (!hostapd_ap_reg_domain(dev, reg_domain)) {
+			const struct device *dev2 = net_if_get_device(net_if_get_wifi_sap());
+
+			if (!hostapd_ap_reg_domain(dev2, reg_domain)) {
 				goto out;
 			}
 		}

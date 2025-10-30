@@ -36,6 +36,7 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include "net_private.h"
 #include "ipv4.h"
 #include "ipv6.h"
+#include "tcp_internal.h"
 
 #include "net_stats.h"
 
@@ -5761,6 +5762,7 @@ static void notify_iface_up(struct net_if *iface)
 
 static void notify_iface_down(struct net_if *iface)
 {
+	net_tcp_close_all_for_iface(iface);
 	net_if_flag_clear(iface, NET_IF_RUNNING);
 	net_mgmt_event_notify(NET_EVENT_IF_DOWN, iface);
 	net_virtual_disable(iface);

@@ -35,6 +35,7 @@ menuconfig I2S_STM32_SAI
 	select USE_STM32_HAL_DMA
 	select USE_STM32_HAL_DMA_EX
 	select USE_STM32_HAL_SAI
+	select USE_STM32_HAL_SAI_EX if SOC_SERIES_STM32F4X
 	help
 	  Enable SAI support on the STM32 family of processors.
 

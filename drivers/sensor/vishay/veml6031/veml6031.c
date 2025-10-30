@@ -58,33 +58,6 @@ LOG_MODULE_REGISTER(VEML6031, CONFIG_SENSOR_LOG_LEVEL);
 #define VEML6031_CMDCODE_ALS_INT    0x17
 
 /*
- * ALS integration time struct.
- */
-struct veml6031_it_data {
-	enum veml6031_it num;
-	uint8_t val;
-	int us;
-};
-
-/*
- * ALS integration time setting values.
- *
- * The enumerators of <tt>enum veml6031_it</tt> provide
- * indices into this array to get the related value for the
- * ALS_IT configuration bits.
- */
-static const struct veml6031_it_data veml6031_it_values[] = {
-	{VEML6031_IT_3_125, 0x00, 3125}, /*   3.125 - 0b0000 */
-	{VEML6031_IT_6_25, 0x01, 6250},  /*   6.25  - 0b0001 */
-	{VEML6031_IT_12_5, 0x02, 12500}, /*  12.5   - 0b0010 */
-	{VEML6031_IT_25, 0x03, 25000},   /*  25     - 0b0011 */
-	{VEML6031_IT_50, 0x04, 50000},   /*  50     - 0b0100 */
-	{VEML6031_IT_100, 0x05, 100000}, /* 100     - 0b0101 */
-	{VEML6031_IT_200, 0x06, 200000}, /* 200     - 0b0110 */
-	{VEML6031_IT_400, 0x07, 400000}, /* 400     - 0b0111 */
-};
-
-/*
  * Resolution matrix for values to convert between data provided
  * by the sensor ("counts") and lux.
  *
@@ -93,7 +66,7 @@ static const struct veml6031_it_data veml6031_it_values[] = {
  * and <tt>enum veml6031_als_it</tt> are used for indices into this matrix.
  */
 static const float
-	veml6031_resolution[VEML6031_DIV4_COUNT][VEML6031_GAIN_COUNT][VEML6031_IT_COUNT] = {
+	veml6031_resolution[VEML6031_DIV4_COUNT][VEML60XX_GAIN_COUNT][VEML60XX_IT_COUNT] = {
 		/*3.125ms   6.25ms   12.5ms     25ms     50ms    100ms    200ms     400ms IT */
 		/* size 4/4 */
 		{
@@ -131,9 +104,9 @@ struct veml6031_data {
 	uint8_t ir_sd;           /* ALS and IR channel shutdown */
 	uint8_t cal;             /* Power on ready */
 	enum veml6031_div4 div4; /* effective photodiode size */
-	enum veml6031_gain gain; /* gain selection */
-	enum veml6031_it itim;   /* ALS integration time */
-	enum veml6031_pers pers; /* ALS persistens protect */
+	enum veml60xx_gain gain; /* gain selection */
+	enum veml60xx_it itim;   /* ALS integration time */
+	enum veml60xx_pers pers; /* ALS persistence protect */
 	uint16_t thresh_high;
 	uint16_t thresh_low;
 	uint16_t als_data;
@@ -142,30 +115,15 @@ struct veml6031_data {
 	uint32_t int_flags;
 };
 
-static bool veml6031_gain_in_range(int32_t gain)
-{
-	return (gain >= VEML6031_GAIN_1) && (gain <= VEML6031_GAIN_0_5);
-}
-
-static bool veml6031_itim_in_range(int32_t itim)
-{
-	return (itim >= VEML6031_IT_3_125) && (itim <= VEML6031_IT_400);
-}
-
 static bool veml6031_div4_in_range(int32_t div4)
 {
 	return (div4 >= VEML6031_SIZE_4_4) && (div4 <= VEML6031_SIZE_1_4);
 }
 
-static bool veml6031_pers_in_range(int32_t pers)
-{
-	return (pers >= VEML6031_PERS_1) && (pers <= VEML6031_PERS_8);
-}
-
 static void veml6031_sleep_by_integration_time(const struct veml6031_data *data)
 {
-	if (veml6031_itim_in_range(data->itim)) {
-		k_sleep(K_USEC(veml6031_it_values[data->itim].us));
+	if (veml60xx_it_in_range(data->itim)) {
+		k_sleep(K_USEC(veml60xx_it_values[data->itim].us));
 	} else {
 		LOG_WRN_ONCE("Wrong settings: itim:%d. Most likely an application bug!",
 			     data->itim);
@@ -174,28 +132,8 @@ static void veml6031_sleep_by_integration_time(const struct veml6031_data *data)
 
 static int veml6031_check_settings(const struct veml6031_data *data)
 {
-	return veml6031_div4_in_range(data->div4) && veml6031_gain_in_range(data->gain) &&
-	       veml6031_itim_in_range(data->itim);
-}
-
-static int veml6031_check_gain(const struct sensor_value *val)
-{
-	return veml6031_gain_in_range(val->val1);
-}
-
-static int veml6031_check_it(const struct sensor_value *val)
-{
-	return veml6031_itim_in_range(val->val1);
-}
-
-static int veml6031_check_div4(const struct sensor_value *val)
-{
-	return veml6031_div4_in_range(val->val1);
-}
-
-static int veml6031_check_pers(const struct sensor_value *val)
-{
-	return veml6031_pers_in_range(val->val1);
+	return veml6031_div4_in_range(data->div4) && veml60xx_gain_in_range(data->gain) &&
+	       veml60xx_it_in_range(data->itim);
 }
 
 static int veml6031_read(const struct device *dev, uint8_t cmd, uint8_t *data)
@@ -368,29 +306,29 @@ static int veml6031_attr_set(const struct device *dev, enum sensor_channel chan,
 	/* SENSOR_ATTR_.*_THRESH are not in enum sensor_attribute_veml6031 */
 	switch ((int)attr) {
 	case SENSOR_ATTR_VEML6031_IT:
-		if (veml6031_check_it(val)) {
-			data->itim = (enum veml6031_it)val->val1;
+		if (veml60xx_it_in_range(val->val1)) {
+			data->itim = (enum veml60xx_it)val->val1;
 		} else {
 			return -EINVAL;
 		}
 		break;
 	case SENSOR_ATTR_VEML6031_DIV4:
-		if (veml6031_check_div4(val)) {
+		if (veml6031_div4_in_range(val->val1)) {
 			data->div4 = (enum veml6031_div4)val->val1;
 		} else {
 			return -EINVAL;
 		}
 		break;
 	case SENSOR_ATTR_VEML6031_GAIN:
-		if (veml6031_check_gain(val)) {
-			data->gain = (enum veml6031_gain)val->val1;
+		if (veml60xx_gain_in_range(val->val1)) {
+			data->gain = (enum veml60xx_gain)val->val1;
 		} else {
 			return -EINVAL;
 		}
 		break;
 	case SENSOR_ATTR_VEML6031_PERS:
-		if (veml6031_check_pers(val)) {
-			data->pers = (enum veml6031_pers)val->val1;
+		if (veml60xx_pers_in_range(val->val1)) {
+			data->pers = (enum veml60xx_pers)val->val1;
 		} else {
 			return -EINVAL;
 		}
@@ -651,9 +589,9 @@ static DEVICE_API(sensor, veml6031_api) = {
 	static struct veml6031_data veml6031_data_##n = {.trig = 1,                                \
 							 .af = 1,                                  \
 							 .div4 = VEML6031_SIZE_4_4,                \
-							 .gain = VEML6031_GAIN_1,                  \
-							 .itim = VEML6031_IT_100,                  \
-							 .pers = VEML6031_PERS_1,                  \
+							 .gain = VEML60XX_GAIN_1,                  \
+							 .itim = VEML60XX_IT_100,                  \
+							 .pers = VEML60XX_PERS_1,                  \
 							 .thresh_high = 0xFFFF};                   \
                                                                                                    \
 	static const struct veml6031_config veml6031_config_##n = {                                \

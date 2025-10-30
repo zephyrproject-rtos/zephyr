@@ -14,7 +14,7 @@
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 #define MSEC_TO_CYCLES(msec)  (int)(((uint64_t)(msec) * \
-				     (uint64_t)CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) / \
+				     (uint64_t)sys_clock_hw_cycles_per_sec()) / \
 				    (uint64_t)MSEC_PER_SEC)
 
 struct k_thread worker_threads[NUM_THREADS];

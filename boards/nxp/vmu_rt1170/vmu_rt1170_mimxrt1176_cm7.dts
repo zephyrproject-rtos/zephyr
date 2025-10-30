@@ -255,15 +255,15 @@
 
 &lpspi1 {
 	status = "okay";
-	pcs-sck-delay = <50>;
-	sck-pcs-delay = <50>;
-	transfer-delay = <50>;
 
 	icm42686_0: icm42686p0@0 {
 		compatible = "invensense,icm42686", "invensense,icm4268x";
 		reg = <0>;
 		int-gpios = <&gpio3 19 GPIO_ACTIVE_HIGH>;
 		spi-max-frequency = <DT_FREQ_M(24)>;
+		spi-cs-setup-delay-ns = <50>;
+		spi-cs-hold-delay-ns = <50>;
+		spi-interframe-delay-ns = <50>;
 		accel-pwr-mode = <ICM42686_DT_ACCEL_LN>;
 		accel-odr = <ICM42686_DT_ACCEL_ODR_1000>;
 		accel-fs = <ICM42686_DT_ACCEL_FS_16>;
@@ -283,15 +283,15 @@
 
 &lpspi2 {
 	status = "okay";
-	pcs-sck-delay = <50>;
-	sck-pcs-delay = <50>;
-	transfer-delay = <50>;
 
 	icm42688_0: icm42688p0@0 {
 		compatible = "invensense,icm42688", "invensense,icm4268x";
 		reg = <0>;
 		int-gpios = <&gpio2 7 GPIO_ACTIVE_HIGH>;
 		spi-max-frequency = <DT_FREQ_M(24)>;
+		spi-cs-setup-delay-ns = <50>;
+		spi-cs-hold-delay-ns = <50>;
+		spi-interframe-delay-ns = <50>;
 		accel-pwr-mode = <ICM42688_DT_ACCEL_LN>;
 		accel-odr = <ICM42688_DT_ACCEL_ODR_1000>;
 		accel-fs = <ICM42688_DT_ACCEL_FS_16>;

@@ -72,68 +72,92 @@ struct instr_record {
 /**
  * @brief Checks if tracing feature is available.
  *
+ * @return true if tracing is supported, false otherwise.
  */
 bool instr_tracing_supported(void);
 
 /**
  * @brief Checks if profiling feature is available.
  *
+ * @return true if profiling is available, false otherwise.
  */
 bool instr_profiling_supported(void);
 
 /**
  * @brief Checks if subsystem is ready to be initialized. Must called be before
  *        instr_init().
+ *
+ * @return true if subsystem is ready to be initialized, false otherwise.
  */
 bool instr_fundamentals_initialized(void);
 
 /**
  * @brief Performs initialisation required by the system.
+ *
+ * @return always returns 0.
  */
 int instr_init(void);
 
 /**
  * @brief Tells if instrumentation subsystem is properly initialized.
+ *
+ * @return true if instrumentation is initialized, false otherwise.
  */
 bool instr_initialized(void);
 
 /**
  * @brief Tells if instrumentation is enabled, i.e. can be turned on.
+ *
+ * @return true if instrumentation is enabled, false otherwise.
  */
 bool instr_enabled(void);
 
 /**
  * @brief Enables instrumentation.
+ *
+ * @return always returns 0.
  */
 int instr_enable(void);
 
 /**
  * @brief Disables instrumentation.
+ *
+ * @return always returns 0.
  */
 int instr_disable(void);
 
 /**
  * @brief Turns on instrumentation (start recording events).
+ *
+ * @return always returns 0.
  */
 int instr_turn_on(void);
 
 /**
  * @brief Turns off instrumentation (stop recording events).
+ *
+ * @return always returns 0.
  */
 int instr_turn_off(void);
 
 /**
  * @brief Tells if instrumentation is turned on.
+ *
+ * @return true if instrumentation is turned on, false otherwise.
  */
 bool instr_turned_on(void);
 
 /**
  * @brief Tells if instrumentation can collect traces.
+ *
+ * @return true if instrumentation can collect traces, false otherwise.
  */
 bool instr_trace_enabled(void);
 
 /**
  * @brief Tells if instrumentation can collect profile info.
+ *
+ * @return true if instrumentation can collect profile info, false otherwise.
  */
 bool instr_profile_enabled(void);
 

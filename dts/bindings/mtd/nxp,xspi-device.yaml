@@ -1,6 +1,30 @@
-# Copyright 2024 NXP
+# Copyright 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP XSPI device
 
-include: [spi-device.yaml, "jedec,jesd216.yaml"]
+include: [base.yaml]
+
+properties:
+  device-name:
+    type: string
+    description: Memory device name.
+
+  size:
+    type: int
+    required: true
+    description: Total memory size in bytes.
+
+  enable-differential-clk:
+    type: boolean
+    description: Enable differential clock pad.
+
+  sample-clk-source:
+    type: int
+    default: 3
+    enum: [1, 2, 3, 5, 9]
+    description: Sample clock source.
+
+  enable-dqs-latency:
+    type: boolean
+    description: Enable DQS latency.

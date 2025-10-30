@@ -10,7 +10,7 @@ Android's context hub enables the use of nanoapps. A single nanoapp has 3 entry 
 `chre_api/chre/nanoapp.h`_:
 
 * A ``nanoappStart`` function used to notify the nanoapp that it is now active.
-* A ``nanoappHandleEvent`` function used to notify the nanoapp tha an event of interest took place.
+* A ``nanoappHandleEvent`` function used to notify the nanoapp that an event of interest took place.
 * A ``nanoappEnd`` function used to notify the nanoapp that it is now deactivated.
 
 The CHRE connects to several frameworks called Platform Abstraction Layers (PAL)s. Note that

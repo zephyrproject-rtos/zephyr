@@ -12,7 +12,7 @@
 #
 
 
-if(CONFIG_BOARD_MPS3_CORSTONE300_AN547 OR CONFIG_BOARD_MPS3_CORSTONE300_AN547_NS)
+if(CONFIG_BOARD_MPS3_CORSTONE300_AN547)
   set(SUPPORTED_EMU_PLATFORMS qemu)
 
   # QEMU settings
@@ -56,7 +56,7 @@ endif()
 
 board_set_debugger_ifnset(qemu)
 
-if (CONFIG_BUILD_WITH_TFM)
+if(CONFIG_BUILD_WITH_TFM)
   # Override the binary used by qemu, to use the combined
   # TF-M (Secure) & Zephyr (Non Secure) image (when running
   # in-tree tests).

@@ -4,12 +4,16 @@
 
 if SOC_SERIES_MCXW2XX
 
+config CORTEX_M_SYSTICK
+	default n if MCUX_OS_TIMER
+
 config NUM_IRQS
 	default 63
 
 DT_SYSCLK_PATH := $(dt_nodelabel_path,sysclk)
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 1000000 if MCUX_OS_TIMER
 	default $(dt_node_int_prop_int,$(DT_SYSCLK_PATH),clock-frequency) if CORTEX_M_SYSTICK
 
 # Set to the minimal size of data which can be written.

@@ -37,4 +37,5 @@ tests:
     extra_args:
       - CONFIG_BUILD_ONLY_NO_BLOBS=y
     platform_allow:
+      - esp32c6_devkitc/esp32c6/hpcore
       - esp32h2_devkitm

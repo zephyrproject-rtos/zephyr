@@ -8,7 +8,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/cpu_freq/policy.h>
 #include <zephyr/cpu_freq/cpu_freq.h>
-#include <zephyr/cpu_load/cpu_load.h>
+#include <zephyr/sys/cpu_load.h>
 
 LOG_MODULE_REGISTER(cpu_freq_policy_on_demand, CONFIG_CPU_FREQ_LOG_LEVEL);
 

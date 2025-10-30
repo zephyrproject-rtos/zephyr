@@ -19,6 +19,7 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/sys/__assert.h>
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <stm32_cache.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/clock_control.h>
@@ -239,12 +240,10 @@ static inline int uart_stm32_set_baudrate(const struct device *dev, uint32_t bau
 #endif
 				      baud_rate);
 		/* Check BRR is greater than or equal to 0x300 */
-		__ASSERT(LL_LPUART_ReadReg(usart, BRR) >= 0x300U,
-			 "BaudRateReg >= 0x300");
+		__ASSERT(stm32_reg_read(&usart->BRR) >= 0x300U, "BaudRateReg >= 0x300");
 
 		/* Check BRR is lower than or equal to 0xFFFFF */
-		__ASSERT(LL_LPUART_ReadReg(usart, BRR) < 0x000FFFFFU,
-			 "BaudRateReg < 0xFFFF");
+		__ASSERT(stm32_reg_read(&usart->BRR) < 0x000FFFFFU, "BaudRateReg < 0xFFFF");
 	} else {
 #endif /* HAS_LPUART */
 #ifdef USART_CR1_OVER8
@@ -272,8 +271,7 @@ static inline int uart_stm32_set_baudrate(const struct device *dev, uint32_t bau
 #endif
 				     baud_rate);
 		/* Check BRR is greater than or equal to 16d */
-		__ASSERT(LL_USART_ReadReg(usart, BRR) >= 16,
-			 "BaudRateReg >= 16");
+		__ASSERT(stm32_reg_read(&usart->BRR) >= 16, "BaudRateReg >= 16");
 
 #if HAS_LPUART
 	}
@@ -1510,7 +1508,10 @@ static inline void uart_stm32_dma_rx_enable(const struct device *dev)
 
 static inline void uart_stm32_dma_rx_disable(const struct device *dev)
 {
+	const struct uart_stm32_config *config = dev->config;
 	struct uart_stm32_data *data = dev->data;
+
+	LL_USART_DisableDMAReq_RX(config->usart);
 
 	data->dma_rx.enabled = false;
 }
@@ -1674,6 +1675,15 @@ static int uart_stm32_async_tx(const struct device *dev,
 	struct uart_stm32_data *data = dev->data;
 	__maybe_unused unsigned int key;
 	int ret;
+
+#if defined(CONFIG_PM_DEVICE)
+	enum pm_device_state state;
+
+	(void)pm_device_state_get(dev, &state);
+	if (state != PM_DEVICE_STATE_ACTIVE) {
+		return -ECANCELED;
+	}
+#endif
 
 	/* Check size of singl character (1 or 2 bytes) */
 	const int char_size = (IS_ENABLED(CONFIG_UART_WIDE_DATA) &&

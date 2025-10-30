@@ -200,7 +200,7 @@ if(CONFIG_SILABS_SIWX91X_NWP)
   zephyr_include_directories(.)
 endif() # CONFIG_SILABS_SIWX91X_NWP
 
-if(CONFIG_SOC_SILABS_SLEEPTIMER)
+if(CONFIG_SILABS_SISDK_SLEEPTIMER)
   zephyr_include_directories(
     ${SISDK_DIR}/platform/service/sleeptimer/inc
     ${SISDK_DIR}/platform/service/sleeptimer/src
@@ -216,7 +216,14 @@ if(CONFIG_SOC_SILABS_SLEEPTIMER)
     SL_CODE_COMPONENT_SLEEPTIMER=sleeptimer
     SL_CODE_COMPONENT_HAL_SYSRTC=hal_sysrtc
   )
-endif() # CONFIG_SOC_SILABS_SLEEPTIMER
+  zephyr_code_relocate(FILES
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/service/sleeptimer/src/sl_sleeptimer_hal_si91x_sysrtc.c
+    ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_sysrtc.c
+    ${SISDK_DIR}/platform/service/sleeptimer/src/sl_sleeptimer.c
+    ${ZEPHYR_BASE}/arch/arm/core/cortex_m/isr_wrapper.c
+    LOCATION RAM
+  )
+endif() # CONFIG_SILABS_SISDK_SLEEPTIMER
 
 if(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
   zephyr_library_sources(
@@ -246,9 +253,6 @@ if(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/core/chip/src/rsi_deepsleep_soc.c
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/service/power_manager/src/sl_si91x_power_manager.c
   ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/service/power_manager/src/sli_si91x_power_manager.c
-  ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/service/sleeptimer/src/sl_sleeptimer_hal_si91x_sysrtc.c
-  ${WISECONNECT_DIR}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/rsi_sysrtc.c
-  ${SISDK_DIR}/platform/service/sleeptimer/src/sl_sleeptimer.c
   ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ahb_interface/src/rsi_hal_mcu_m4_ram.c
   ${WISECONNECT_DIR}/components/device/silabs/si91x/wireless/ahb_interface/src/rsi_hal_mcu_m4_rom.c
   ${ZEPHYR_BASE}/drivers/gpio/*.c

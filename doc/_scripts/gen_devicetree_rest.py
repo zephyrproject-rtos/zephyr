@@ -29,7 +29,7 @@ UNKNOWN_VENDOR = 'Unknown vendor'
 ZEPHYR_BASE = Path(__file__).parents[2]
 
 # Base properties that have documentation in 'dt-important-props'.
-DETAILS_IN_IMPORTANT_PROPS = set('compatible label reg status interrupts'.split())
+DETAILS_IN_IMPORTANT_PROPS = {'compatible', 'label', 'reg', 'status', 'interrupts'}
 
 logger = logging.getLogger('gen_devicetree_rest')
 
@@ -505,6 +505,8 @@ def make_sidebar(compatible, vendor_name, vendor_ref_target, driver_path=None):
         "",
         f"   :Name: ``{compatible}``",
         f"   :Vendor: :ref:`{vendor_name} <{vendor_ref_target}>`",
+        f"   :Used in: :zephyr:board-catalog:`List of boards <#compatibles={compatible}>` using",
+        "               this compatible",
     ]
     if driver_path:
         lines.append(f"   :Driver: :zephyr_file:`{driver_path}`")

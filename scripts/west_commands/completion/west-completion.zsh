@@ -16,10 +16,11 @@ _west_cmds() {
   'manifest[manage the west manifest]'
   'diff["git diff" for one or more projects]'
   'status["git status" for one or more projects]'
+  'grep["run grep or a grep-like tool in one or more local projects]'
   'forall[run a command in one or more local projects]'
+  'help[get help for west or a command]'
   'config[get or set config file values]'
   'topdir[print the top level directory of the workspace]'
-  'help[get help for west or a command]'
   )
 
   local -a zephyr_ext_cmds=(
@@ -32,10 +33,16 @@ _west_cmds() {
   'debug[flash and interactively debug a Zephyr application]'
   'debugserver[connect to board and launch a debug server]'
   'attach[interactively debug a board]'
+  'rtt[open an rtt shell]'
   'zephyr-export[export Zephyr installation as a CMake config package]'
   'spdx[create SPDX bill of materials]'
   'blobs[work with binary blobs]'
+  'bindesc[work with Binary Descriptors]'
+  'robot[run RobotFramework test suites]'
   'sdk[manage SDKs]'
+  'packages[manage packages for Zephyr]'
+  'patch[manage patches for Zephyr modules]'
+  'gtags[create a GNU global tags file for the current workspace]'
   )
 
   local -a all_cmds=(${builtin_cmds} ${zephyr_ext_cmds})

@@ -15,6 +15,8 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/logging/log.h>
 #include "clock_update.h"
@@ -440,6 +442,9 @@ static void i2s_siwx91x_dma_rx_callback(const struct device *dma_dev, void *user
 
 rx_disable:
 	i2s_siwx91x_stream_disable(stream, dma_dev);
+	if (stream->state == I2S_STATE_READY && stream->last_block) {
+		pm_device_runtime_put_async(i2s_dev, K_NO_WAIT);
+	}
 }
 
 static void i2s_siwx91x_dma_tx_callback(const struct device *dma_dev, void *user_data,
@@ -506,6 +511,9 @@ static void i2s_siwx91x_dma_tx_callback(const struct device *dma_dev, void *user
 
 tx_disable:
 	i2s_siwx91x_stream_disable(stream, dma_dev);
+	if (stream->state == I2S_STATE_READY && stream->last_block) {
+		pm_device_runtime_put_async(i2s_dev, K_NO_WAIT);
+	}
 }
 
 static int i2s_siwx91x_param_config(const struct device *dev, enum i2s_dir dir)
@@ -746,7 +754,13 @@ static int i2s_siwx91x_trigger(const struct device *dev, enum i2s_dir dir, enum 
 
 	switch (cmd) {
 	case I2S_TRIGGER_START:
+		ret = pm_device_runtime_get(dev);
+		if (ret < 0) {
+			return ret;
+		}
+
 		if (stream->state != I2S_STATE_READY) {
+			pm_device_runtime_put_async(dev, K_NO_WAIT);
 			return -EIO;
 		}
 
@@ -754,11 +768,13 @@ static int i2s_siwx91x_trigger(const struct device *dev, enum i2s_dir dir, enum 
 
 		ret = i2s_siwx91x_param_config(dev, dir);
 		if (ret < 0) {
+			pm_device_runtime_put_async(dev, K_NO_WAIT);
 			return ret;
 		}
 
 		ret = i2s_siwx91x_dma_channel_alloc(dev, dir);
 		if (ret < 0) {
+			pm_device_runtime_put_async(dev, K_NO_WAIT);
 			return ret;
 		}
 
@@ -770,6 +786,7 @@ static int i2s_siwx91x_trigger(const struct device *dev, enum i2s_dir dir, enum 
 
 		ret = stream->stream_start(stream, dev);
 		if (ret < 0) {
+			pm_device_runtime_put_async(dev, K_NO_WAIT);
 			return ret;
 		}
 
@@ -815,6 +832,7 @@ static int i2s_siwx91x_trigger(const struct device *dev, enum i2s_dir dir, enum 
 		i2s_siwx91x_stream_disable(stream, stream->dma_dev);
 		stream->queue_drop(stream);
 		stream->state = I2S_STATE_READY;
+		pm_device_runtime_put_async(dev, K_NO_WAIT);
 		break;
 
 	case I2S_TRIGGER_PREPARE:
@@ -833,31 +851,53 @@ static int i2s_siwx91x_trigger(const struct device *dev, enum i2s_dir dir, enum 
 	return 0;
 }
 
-static int i2s_siwx91x_init(const struct device *dev)
+static int i2s_siwx91x_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct i2s_siwx91x_config *cfg = dev->config;
-	struct i2s_siwx91x_data *data = dev->data;
 	int ret;
 
-	ret = clock_control_on(cfg->clock_dev, cfg->clock_subsys_peripheral);
-	if (ret) {
-		return ret;
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		ret = clock_control_on(cfg->clock_dev, cfg->clock_subsys_peripheral);
+		if (ret < 0 && ret != -EALREADY) {
+			return ret;
+		}
+
+		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0 && ret != -ENOENT) {
+			return ret;
+		}
+
+		cfg->reg->I2S_IER_b.IEN = 1;
+		cfg->reg->I2S_IRER_b.RXEN = 0;
+		cfg->reg->I2S_ITER_b.TXEN = 0;
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		ret = clock_control_off(cfg->clock_dev, cfg->clock_subsys_peripheral);
+		if (ret < 0 && ret != -EALREADY) {
+			return ret;
+		}
+		break;
+	default:
+		return -ENOTSUP;
 	}
 
-	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-	if (ret) {
-		return ret;
-	}
+	return 0;
+}
 
-	cfg->reg->I2S_IER_b.IEN = 1;
-	cfg->reg->I2S_IRER_b.RXEN = 0;
-	cfg->reg->I2S_ITER_b.TXEN = 0;
+static int i2s_siwx91x_init(const struct device *dev)
+{
+	struct i2s_siwx91x_data *data = dev->data;
 
 	k_sem_init(&data->rx.sem, 0, CONFIG_I2S_SILABS_SIWX91X_RX_BLOCK_COUNT);
 	k_sem_init(&data->tx.sem, CONFIG_I2S_SILABS_SIWX91X_TX_BLOCK_COUNT,
 		   CONFIG_I2S_SILABS_SIWX91X_TX_BLOCK_COUNT);
 
-	return ret;
+	return pm_device_driver_init(dev, i2s_siwx91x_pm_action);
 }
 
 static DEVICE_API(i2s, i2s_siwx91x_driver_api) = {
@@ -903,8 +943,9 @@ static DEVICE_API(i2s, i2s_siwx91x_driver_api) = {
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
 		.channel_group = DT_INST_PROP(inst, silabs_channel_group),                         \
 	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, &i2s_siwx91x_init, NULL, &i2s_data_##inst, &i2s_config_##inst, \
-			      POST_KERNEL, CONFIG_I2S_INIT_PRIORITY, &i2s_siwx91x_driver_api);
+	PM_DEVICE_DT_INST_DEFINE(inst, i2s_siwx91x_pm_action);                                     \
+	DEVICE_DT_INST_DEFINE(inst, &i2s_siwx91x_init, PM_DEVICE_DT_INST_GET(inst),                \
+			      &i2s_data_##inst, &i2s_config_##inst, POST_KERNEL,                   \
+			      CONFIG_I2S_INIT_PRIORITY, &i2s_siwx91x_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SIWX91X_I2S_INIT)

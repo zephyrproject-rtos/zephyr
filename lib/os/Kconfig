@@ -151,5 +151,6 @@ config POWEROFF
 
 rsource "Kconfig.cbprintf"
 rsource "zvfs/Kconfig"
+rsource "cpu_load/Kconfig"
 
 endmenu

@@ -34,7 +34,7 @@
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
-#if defined(CONFIG_SOC_SILABS_HFXO_MANAGER)
+#if defined(CONFIG_SILABS_SISDK_HFXO_MANAGER)
 Z_ISR_DECLARE_DIRECT(DT_IRQ(DT_NODELABEL(hfxo), irq), 0, sl_hfxo_manager_irq_handler);
 #endif
 
@@ -48,12 +48,15 @@ void soc_early_init_hook(void)
 	}
 	sl_clock_manager_init();
 
-	if (IS_ENABLED(CONFIG_SOC_SILABS_HFXO_MANAGER)) {
+	if (IS_ENABLED(CONFIG_SILABS_SISDK_HFXO_MANAGER)) {
 		sl_hfxo_manager_init_hardware();
 		sl_hfxo_manager_init();
 	}
 	if (IS_ENABLED(CONFIG_PM)) {
 		sl_power_manager_init();
+	}
+	if (IS_ENABLED(CONFIG_SOC_GECKO_USE_RAIL)) {
+		rail_isr_installer();
 	}
 }
 
@@ -92,10 +95,15 @@ void soc_prep_hook(void)
 	CMU_S->CLKEN1_SET = CMU_CLKEN1_SMU;
 #endif
 	SMU->PPUSATD0_CLR = _SMU_PPUSATD0_MASK;
-#if defined(SEMAILBOX_PRESENT)
+#if defined(SEMAILBOX_PRESENT) && defined(SMU_PPUSATD1_SEMAILBOX)
 	SMU->PPUSATD1_CLR = (_SMU_PPUSATD1_MASK & (~SMU_PPUSATD1_SMU & ~SMU_PPUSATD1_SEMAILBOX));
 #else
 	SMU->PPUSATD1_CLR = (_SMU_PPUSATD1_MASK & ~SMU_PPUSATD1_SMU);
+#endif
+#if defined(SEMAILBOX_PRESENT) && defined(SMU_PPUSATD2_SEMAILBOX)
+	SMU->PPUSATD2_CLR = (_SMU_PPUSATD2_MASK & ~SMU_PPUSATD2_SEMAILBOX);
+#elif defined(_SMU_PPUSATD2_MASK)
+	SMU->PPUSATD2_CLR = _SMU_PPUSATD2_MASK;
 #endif
 
 	SAU->CTRL = SAU_CTRL_ALLNS_Msk;
@@ -109,9 +117,5 @@ void soc_prep_hook(void)
 
 	IRQ_DIRECT_CONNECT(SMU_SECURE_IRQn, 0, smu_fault, 0);
 	irq_enable(SMU_SECURE_IRQn);
-
-	if (IS_ENABLED(CONFIG_SOC_GECKO_USE_RAIL)) {
-		rail_isr_installer();
-	}
 #endif
 }

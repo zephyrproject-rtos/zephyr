@@ -1,0 +1,23 @@
+identifier: xg26_rb4118a
+name: EFR32xG26 2.4 GHz +10 dBm BGA136 Radio Board (xG26-RB4118A, BRD4118A)
+type: mcu
+arch: arm
+ram: 512
+flash: 3200
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - comparator
+  - counter
+  - dac
+  - dma
+  - entropy
+  - flash
+  - gpio
+  - pwm
+  - spi
+  - uart
+  - watchdog
+vendor: silabs

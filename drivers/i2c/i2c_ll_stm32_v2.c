@@ -14,6 +14,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <stm32_cache.h>
 #include <stm32_ll_i2c.h>
 #include <errno.h>
@@ -480,7 +481,7 @@ void i2c_stm32_event(const struct device *dev)
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *regs = cfg->i2c;
-	uint32_t isr = LL_I2C_ReadReg(regs, ISR);
+	uint32_t isr = stm32_reg_read(&regs->ISR);
 
 #if defined(CONFIG_I2C_TARGET)
 	if (data->slave_attached && !data->master_active) {
@@ -514,7 +515,7 @@ void i2c_stm32_event(const struct device *dev)
 		/* Transfer complete with reload flag set means more data shall be transferred
 		 * in same direction (No RESTART or STOP)
 		 */
-		uint32_t cr2 = LL_I2C_ReadReg(regs, CR2);
+		uint32_t cr2 = stm32_reg_read(&regs->CR2);
 #ifdef CONFIG_I2C_STM32_V2_DMA
 		/* Get number of bytes bytes transferred by DMA */
 		uint32_t xfer_len = (cr2 & I2C_CR2_NBYTES_Msk) >> I2C_CR2_NBYTES_Pos;
@@ -535,7 +536,7 @@ void i2c_stm32_event(const struct device *dev)
 			 * remaining in current message
 			 * Keep RELOAD mode and set NBYTES to 255 again
 			 */
-			LL_I2C_WriteReg(regs, CR2, cr2);
+			stm32_reg_write(&regs->CR2, cr2);
 		} else {
 			/* Data for a single transfer remains in buffer, set its length and
 			 * - If more messages follow and transfer direction for next message is
@@ -550,7 +551,7 @@ void i2c_stm32_event(const struct device *dev)
 				/* Disable reload mode, expect I2C_ISR_TC next */
 				cr2 &= ~I2C_CR2_RELOAD;
 			}
-			LL_I2C_WriteReg(regs, CR2, cr2);
+			stm32_reg_write(&regs->CR2, cr2);
 		}
 
 	} else if ((isr & I2C_ISR_TXIS) != 0U) {
@@ -577,6 +578,11 @@ void i2c_stm32_event(const struct device *dev)
 		__ASSERT_NO_MSG(0);
 	}
 
+	/* Make a dummy read from ISR to ensure we don't return before
+	 * i2c controller had a chance to clear its interrupt flags due
+	 * to bus delays
+	 */
+	(void)LL_I2C_ReadReg(regs, ISR);
 	return;
 
 irq_xfer_completed:
@@ -593,15 +599,22 @@ int i2c_stm32_error(const struct device *dev)
 	I2C_TypeDef *i2c = cfg->i2c;
 
 #if defined(CONFIG_I2C_TARGET)
-	if (data->slave_attached && !data->master_active) {
-		/* No need for a slave error function right now. */
-		return 0;
+	i2c_target_error_cb_t error_cb = NULL;
+
+	if (data->slave_attached && !data->master_active &&
+	    data->slave_cfg != NULL && data->slave_cfg->callbacks != NULL) {
+		error_cb = data->slave_cfg->callbacks->error;
 	}
 #endif
 
 	if (LL_I2C_IsActiveFlag_ARLO(i2c)) {
 		LL_I2C_ClearFlag_ARLO(i2c);
 		data->current.is_arlo = 1U;
+#if defined(CONFIG_I2C_TARGET)
+		if (error_cb != NULL) {
+			error_cb(data->slave_cfg, I2C_ERROR_ARBITRATION);
+		}
+#endif
 		goto end;
 	}
 
@@ -613,6 +626,12 @@ int i2c_stm32_error(const struct device *dev)
 	if (LL_I2C_IsActiveFlag_BERR(i2c)) {
 		LL_I2C_ClearFlag_BERR(i2c);
 		data->current.is_err = 1U;
+#if defined(CONFIG_I2C_TARGET)
+		if (error_cb != NULL) {
+			error_cb(data->slave_cfg, I2C_ERROR_GENERIC);
+		}
+#endif
+		goto end;
 	}
 
 #if defined(CONFIG_SMBUS_STM32_SMBALERT)
@@ -627,6 +646,11 @@ int i2c_stm32_error(const struct device *dev)
 
 	return 0;
 end:
+#if defined(CONFIG_I2C_TARGET)
+	if (data->slave_attached && !data->master_active) {
+		return -EIO;
+	}
+#endif
 	i2c_stm32_disable_transfer_interrupts(dev);
 	/* Wakeup thread */
 	k_sem_give(&data->device_sync_sem);
@@ -723,8 +747,8 @@ static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 	/* Enable I2C peripheral if not already done */
 	LL_I2C_Enable(regs);
 
-	uint32_t cr2 = LL_I2C_ReadReg(regs, CR2);
-	uint32_t isr = LL_I2C_ReadReg(regs, ISR);
+	uint32_t cr2 = stm32_reg_read(&regs->CR2);
+	uint32_t isr = stm32_reg_read(&regs->ISR);
 
 	/* Clear fields in CR2 which will be filled in later in function */
 	cr2 &= ~(I2C_CR2_RELOAD | I2C_CR2_AUTOEND | I2C_CR2_NBYTES_Msk | I2C_CR2_SADD_Msk |
@@ -812,12 +836,10 @@ static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 #endif /* CONFIG_I2C_STM32_V2_DMA */
 
 	/* Commit configuration to I2C controller and start transfer */
-	LL_I2C_WriteReg(regs, CR2, cr2);
-
-	cr1 |= LL_I2C_ReadReg(regs, CR1);
+	stm32_reg_write(&regs->CR2, cr2);
 
 	/* Enable interrupts */
-	LL_I2C_WriteReg(regs, CR1, cr1);
+	stm32_reg_set_bits(&regs->CR1, cr1);
 
 	/* Wait for transfer to finish */
 	return stm32_i2c_irq_msg_finish(dev, msg);

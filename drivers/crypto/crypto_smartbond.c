@@ -384,7 +384,7 @@ static int crypto_smartbond_hash_set_algo(enum hash_algo algo)
 						(0x1 << AES_HASH_CRYPTO_CTRL_REG_CRYPTO_ALG_Pos));
 		break;
 	default:
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	return 0;

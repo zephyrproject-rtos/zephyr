@@ -9,7 +9,7 @@ config SPI_SILABS_EUSART
 	default y
 	depends on DT_HAS_SILABS_EUSART_SPI_ENABLED
 	depends on GPIO
-	select SOC_GECKO_EUSART
+	select SILABS_SISDK_EUSART
 	select PINCTRL if SOC_FAMILY_SILABS_S2
 	help
 	  Enable the EUSART SPI driver

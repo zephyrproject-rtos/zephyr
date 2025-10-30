@@ -21,10 +21,10 @@ properties:
     required: true
 
   io-channel-map-mask:
-    type: compound
+    type: array
 
   io-channel-map-pass-thru:
-    type: compound
+    type: array
 
   "#io-channel-cells":
     type: int

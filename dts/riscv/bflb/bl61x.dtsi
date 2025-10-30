@@ -180,9 +180,26 @@
 			interrupt-parent = <&clic>;
 		};
 
+		dma0: dma@2000c000 {
+			compatible = "bflb,dma";
+			reg = <0x2000c000 0x1000>;
+			#dma-cells = <1>;
+			dma-channels = <4>;
+
+			interrupts = <31 1>;
+			interrupt-parent = <&clic>;
+		};
+
 		retram: memory@20010000 {
 			compatible = "mmio-sram";
 			reg = <0x20010000 DT_SIZE_K(4)>;
+		};
+
+		memc: memc@20052000 {
+			compatible = "bflb,bl61x-psram";
+			reg = <0x20052000 DT_SIZE_K(4)>;
+			clock-divider = <1>;
+			status = "okay";
 		};
 
 		efuse: efuse@20056000 {
@@ -201,6 +218,13 @@
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x63010000 DT_SIZE_K(160)>;
 			zephyr,memory-region = "ITCM";
+		};
+
+		psram: memory@a8000000 {
+			compatible = "zephyr,memory-region";
+			reg = <0xa8000000 DT_SIZE_M(128)>;
+			zephyr,memory-region = "PSRAM";
+			status = "disabled";
 		};
 	};
 };

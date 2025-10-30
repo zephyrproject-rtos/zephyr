@@ -469,7 +469,7 @@ end_hw_reset:
 		return err;
 	}
 
-	if (!config->port0_push_pull) {
+	if (config->port0_push_pull) {
 		/* Configure port0 to push-pull mode */
 		err = i2c_reg_update_byte_dt(&config->i2c, AW9523B_REG_CTL, AW9523B_GPOMD, 0xFF);
 		if (err) {

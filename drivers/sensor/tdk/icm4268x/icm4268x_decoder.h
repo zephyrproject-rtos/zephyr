@@ -18,7 +18,7 @@ struct icm4268x_decoder_header {
 	uint8_t accel_fs: 3;
 	uint8_t variant: 1;
 	struct alignment axis_align[3];
-} __attribute__((__packed__));
+};
 
 struct icm4268x_fifo_data {
 	struct icm4268x_decoder_header header;
@@ -28,7 +28,7 @@ struct icm4268x_fifo_data {
 	uint16_t fifo_count: 11;
 	uint16_t padding1: 5;
 	uint16_t rtc_freq;
-} __attribute__((__packed__));
+};
 
 struct icm4268x_encoded_data {
 	struct icm4268x_decoder_header header;

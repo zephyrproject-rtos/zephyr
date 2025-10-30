@@ -33,9 +33,9 @@
 #include <string.h>
 
 static struct net_mgmt_event_callback ail_net_event_connection_cb;
-static struct net_mgmt_event_callback ail_net_event_address_cb;
+static struct net_mgmt_event_callback ail_net_event_ipv6_addr_cb;
 #if defined(CONFIG_NET_IPV4)
-static struct net_mgmt_event_callback ail_net_event_ipv4_addr_add_cb;
+static struct net_mgmt_event_callback ail_net_event_ipv4_addr_cb;
 #endif /* CONFIG_NET_IPV4 */
 static uint32_t ail_iface_index;
 static struct net_if *ail_iface_ptr;
@@ -234,15 +234,14 @@ static void ail_connection_handler(struct net_mgmt_event_callback *cb, uint64_t 
 	mdns_plat_monitor_interface(iface);
 }
 
-static void ail_address_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
+static void ail_ipv6_address_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 				      struct net_if *iface)
 {
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
 		return;
 	}
 
-	if ((mgmt_event & (NET_EVENT_IPV6_ADDR_ADD | NET_EVENT_IPV6_ADDR_DEL |
-			   NET_EVENT_IPV4_ADDR_ADD | NET_EVENT_IPV4_ADDR_DEL)) != mgmt_event) {
+	if ((mgmt_event & (NET_EVENT_IPV6_ADDR_ADD | NET_EVENT_IPV6_ADDR_DEL)) != mgmt_event) {
 		return;
 	}
 
@@ -257,13 +256,15 @@ static void ail_ipv4_address_event_handler(struct net_mgmt_event_callback *cb, u
 		return;
 	}
 
-	if (mgmt_event != NET_EVENT_IPV4_ADDR_ADD) {
+	if ((mgmt_event & (NET_EVENT_IPV4_ADDR_ADD | NET_EVENT_IPV4_ADDR_DEL)) != mgmt_event) {
 		return;
 	}
 
-	struct openthread_context *ot_context = openthread_get_default_context();
+	if (mgmt_event == NET_EVENT_IPV4_ADDR_ADD) {
+		struct openthread_context *ot_context = openthread_get_default_context();
 
-	openthread_start_border_router_services(ot_context->iface, iface);
+		openthread_start_border_router_services(ot_context->iface, iface);
+	}
 
 	mdns_plat_monitor_interface(iface);
 }
@@ -281,11 +282,8 @@ static void ot_bbr_multicast_listener_handler(void *context,
 	memcpy(recv_addr.s6_addr, address->mFields.m32, sizeof(otIp6Address));
 
 	if (event == OT_BACKBONE_ROUTER_MULTICAST_LISTENER_ADDED) {
-		entry = net_route_mcast_lookup(&recv_addr);
-		if (entry == NULL) {
-			entry = net_route_mcast_add(ot_context->iface, &recv_addr,
-						    NUM_BITS(struct in6_addr));
-		}
+		entry = net_route_mcast_add(ot_context->iface, &recv_addr,
+					    NUM_BITS(struct in6_addr));
 		if (entry != NULL) {
 			/*
 			 * No need to perform mcast_lookup explicitly as it's already done in
@@ -318,15 +316,14 @@ void openthread_border_router_init(struct openthread_context *ot_ctx)
 	net_mgmt_init_event_callback(&ail_net_event_connection_cb, ail_connection_handler,
 				     NET_EVENT_IF_UP | NET_EVENT_IF_DOWN);
 	net_mgmt_add_event_callback(&ail_net_event_connection_cb);
-	net_mgmt_init_event_callback(&ail_net_event_address_cb, ail_address_event_handler,
-				     NET_EVENT_IPV6_ADDR_ADD | NET_EVENT_IPV6_ADDR_DEL |
-				     NET_EVENT_IPV4_ADDR_ADD | NET_EVENT_IPV4_ADDR_DEL);
-	net_mgmt_add_event_callback(&ail_net_event_address_cb);
+	net_mgmt_init_event_callback(&ail_net_event_ipv6_addr_cb, ail_ipv6_address_event_handler,
+				     NET_EVENT_IPV6_ADDR_ADD | NET_EVENT_IPV6_ADDR_DEL);
+	net_mgmt_add_event_callback(&ail_net_event_ipv6_addr_cb);
 #if defined(CONFIG_NET_IPV4)
-	net_mgmt_init_event_callback(&ail_net_event_ipv4_addr_add_cb,
+	net_mgmt_init_event_callback(&ail_net_event_ipv4_addr_cb,
 				     ail_ipv4_address_event_handler,
 				     NET_EVENT_IPV4_ADDR_ADD);
-	net_mgmt_add_event_callback(&ail_net_event_ipv4_addr_add_cb);
+	net_mgmt_add_event_callback(&ail_net_event_ipv4_addr_cb);
 #endif /* CONFIG_NET_IPV4 */
 	openthread_set_bbr_multicast_listener_cb(ot_bbr_multicast_listener_handler, (void *)ot_ctx);
 	(void)infra_if_start_icmp6_listener();
@@ -466,14 +463,15 @@ static bool openthread_border_router_can_forward_multicast(struct net_pkt *pkt)
 	}
 
 	if (net_ipv6_is_addr_mcast_raw(hdr->dst)) {
+		/* A secondary BBR should not forward onto an external iface
+		 * or from external network.
+		 */
+		if (otBackboneRouterGetState(instance) == OT_BACKBONE_ROUTER_STATE_SECONDARY ||
+		    otBackboneRouterGetState(instance) == OT_BACKBONE_ROUTER_STATE_DISABLED) {
+			return false;
+		}
 		/* AIL to Thread network message */
 		if (net_pkt_orig_iface(pkt) == ail_iface_ptr) {
-			if (otBackboneRouterGetState(instance) ==
-			    OT_BACKBONE_ROUTER_STATE_SECONDARY ||
-			    otBackboneRouterGetState(instance) ==
-			    OT_BACKBONE_ROUTER_STATE_DISABLED) {
-				return false;
-			}
 			if (openthread_border_router_has_multicast_listener(hdr->dst)) {
 				return true;
 			}
@@ -507,6 +505,10 @@ static bool openthread_border_router_check_unicast_packet_forwarding_policy(stru
 
 	hdr = (struct net_ipv6_hdr *)net_pkt_get_data(pkt, &ipv6_access);
 	if (hdr == NULL) {
+		return false;
+	}
+
+	if (net_ipv6_is_addr_mcast_raw(hdr->dst)) {
 		return false;
 	}
 
@@ -594,8 +596,8 @@ static void openthread_border_router_add_route_to_multicast_groups(void)
 
 	ARRAY_FOR_EACH(mcast_group_idx, i) {
 
-		net_ipv6_addr_create(&addr, (0xff << 8) | mcast_group_idx[i], 0, 0, 0, 0, 0, 0, 1);
-		entry = net_route_mcast_add(ail_iface_ptr, &addr, NUM_BITS(struct in6_addr));
+		net_ipv6_addr_create(&addr, (0xff << 8) | mcast_group_idx[i], 0, 0, 0, 0, 0, 0, 0);
+		entry = net_route_mcast_add(ail_iface_ptr, &addr, 16);
 		if (entry != NULL) {
 			mcast_addr = net_if_ipv6_maddr_add(ail_iface_ptr,
 							   (const struct in6_addr *)&addr);

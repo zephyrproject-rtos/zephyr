@@ -55,6 +55,12 @@ config MSPI_TIMING
 	  Enables mspi_timing_config calls in device drivers for those
 	  controllers that need this to proper function at high frequencies.
 
+config MSPI_DMA
+	bool "DMA support"
+	help
+	  Enables DMA capabilities, depending on the driver and hardware it
+	  runs on.
+
 module = MSPI
 module-str = mspi
 source "subsys/logging/Kconfig.template.log_config"

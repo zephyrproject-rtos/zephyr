@@ -9,3 +9,7 @@
 		sample-clock = &cpuapp_hsfll;
 	};
 };
+
+&cpuapp_hsfll {
+	status = "okay";
+};

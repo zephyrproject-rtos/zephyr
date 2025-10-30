@@ -15,7 +15,7 @@ void sys_trace_k_thread_switched_out(void)
 {
 	struct k_thread *thread;
 
-	thread = k_current_get();
+	thread = k_sched_current_thread_query();
 	TRACING_STRING("%s: %p\n", __func__, thread);
 }
 
@@ -23,7 +23,7 @@ void sys_trace_k_thread_switched_in(void)
 {
 	struct k_thread *thread;
 
-	thread = k_current_get();
+	thread = k_sched_current_thread_query();
 	TRACING_STRING("%s: %p\n", __func__, thread);
 }
 
@@ -243,14 +243,13 @@ void sys_trace_k_condvar_signal_exit(struct k_condvar *condvar, int ret)
 	TRACING_STRING("%s: %p\n", __func__, condvar);
 }
 
-void sys_trace_k_condvar_wait_enter(struct k_condvar *condvar, struct k_mutex *mutex,
-				    k_timeout_t timeout)
+void sys_trace_k_condvar_wait_enter(struct k_condvar *condvar, k_timeout_t timeout)
 {
 	TRACING_STRING("%s: %p\n", __func__, condvar);
 }
 
-void sys_trace_k_condvar_wait_exit(struct k_condvar *condvar, struct k_mutex *mutex,
-				   k_timeout_t timeout, int ret)
+void sys_trace_k_condvar_wait_exit(struct k_condvar *condvar, k_timeout_t timeout,
+				   int ret)
 {
 	TRACING_STRING("%s: %p\n", __func__, condvar);
 }

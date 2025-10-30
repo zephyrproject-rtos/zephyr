@@ -51,7 +51,7 @@
 			compatible = "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
-			#address-cells = <1>;
+			#address-cells = <0>;
 			reg = <0x46230000 DT_SIZE_K(1)>;
 			num-lines = <77>;
 			interrupts = <17 0>, <18 0>, <19 0>, <20 0>,

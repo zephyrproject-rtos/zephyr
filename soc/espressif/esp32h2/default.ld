@@ -422,6 +422,8 @@ SECTIONS
     *libzephyr.a:esp_cache.*(.literal .literal.* .text .text.*)
     *libzephyr.a:cache_utils.*(.literal .text .literal.* .text.*)
 
+    *libcoexist.a:(.coexiram .coexiram.* .coexsleepiram .coexsleepiram.*)
+
     *libble_app.a:(.high_perf_code_iram1 .high_perf_code_iram1.*)
     *libble_app.a:(.bt_iram_text .bt_iram_text.*)
 

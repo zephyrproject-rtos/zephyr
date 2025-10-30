@@ -8,12 +8,12 @@ common:
   harness: ztest
 
 tests:
-  sample.ipc.ipc_sessions.nrf5340dk:
+  test.ipc.ipc_sessions.nrf5340dk:
     platform_allow:
       - nrf5340dk/nrf5340/cpuapp
     integration_platforms:
       - nrf5340dk/nrf5340/cpuapp
-  sample.ipc.ipc_sessions.nrf54h20dk_cpuapp_cpurad:
+  test.ipc.ipc_sessions.nrf54h20dk_cpuapp_cpurad:
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
     integration_platforms:
@@ -21,7 +21,7 @@ tests:
     extra_args:
       - CONFIG_IPC_TEST_SKIP_CORE_RESET=y
       - CONFIG_SOC_NRF54H20_CPURAD_ENABLE=y
-  sample.ipc.ipc_sessions.nrf54h20dk_cpuapp_cpuppr:
+  test.ipc.ipc_sessions.nrf54h20dk_cpuapp_cpuppr:
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
     integration_platforms:
@@ -29,7 +29,7 @@ tests:
     extra_args:
       - FILE_SUFFIX=cpuppr
       - ipc_sessions_SNIPPET=nordic-ppr
-  sample.ipc.ipc_sessions.nrf54h20dk_cpuapp_no_unbound_cpuppr:
+  test.ipc.ipc_sessions.nrf54h20dk_cpuapp_no_unbound_cpuppr:
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
     integration_platforms:
@@ -39,7 +39,7 @@ tests:
       - ipc_sessions_SNIPPET=nordic-ppr
       - CONFIG_IPC_TEST_SKIP_UNBOUND=y
       - CONFIG_IPC_SERVICE_BACKEND_ICMSG_V1=y
-  sample.ipc.ipc_sessions.nrf54h20dk_cpuapp_cpuppr_no_unbound:
+  test.ipc.ipc_sessions.nrf54h20dk_cpuapp_cpuppr_no_unbound:
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
     integration_platforms:

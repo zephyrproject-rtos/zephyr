@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-if (CONFIG_INTEL_ADSP_SIM)
+if(CONFIG_INTEL_ADSP_SIM)
   set(SUPPORTED_EMU_PLATFORMS acesim)
 endif()
 

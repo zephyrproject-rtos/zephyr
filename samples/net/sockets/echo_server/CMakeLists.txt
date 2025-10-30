@@ -22,7 +22,7 @@ target_sources(                     app PRIVATE src/echo-server.c)
 target_sources_ifdef(CONFIG_NET_UDP app PRIVATE src/udp.c)
 target_sources_ifdef(CONFIG_NET_TCP app PRIVATE src/tcp.c)
 
-if (CONFIG_USB_DEVICE_STACK_NEXT)
+if(CONFIG_USB_DEVICE_STACK_NEXT)
   target_sources(app PRIVATE src/usb.c)
   include(${ZEPHYR_BASE}/samples/subsys/usb/common/common.cmake)
 endif()

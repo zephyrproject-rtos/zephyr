@@ -489,15 +489,16 @@ static inline bool sensor_chan_spec_eq(struct sensor_chan_spec chan_spec0,
  */
 struct sensor_decoder_api {
 	/**
-	 * @brief Get the number of frames in the current buffer.
+	 * @brief Get the @p frame_count for a specified @p chan_spec from the @p buffer
 	 *
-	 * @param[in]  buffer The buffer provided on the @ref rtio context.
-	 * @param[in]  channel The channel to get the count for
-	 * @param[out] frame_count The number of frames on the buffer (at least 1)
-	 * @return 0 on success
-	 * @return -ENOTSUP if the channel/channel_idx aren't found
+	 * @param[in]  buffer      The buffer provided via the @ref rtio context
+	 * @param[in]  chan_spec   The channel specification to count
+	 * @param[out] frame_count The frame count for a specified @p chan_spec
+	 *
+	 * @retval 0       On success
+	 * @retval -EINVAL Invalid channel specification
 	 */
-	int (*get_frame_count)(const uint8_t *buffer, struct sensor_chan_spec channel,
+	int (*get_frame_count)(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
 			       uint16_t *frame_count);
 
 	/**

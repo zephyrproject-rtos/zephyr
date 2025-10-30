@@ -8,7 +8,7 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/arch/arm/mpu/arm_mpu.h>
 
-#include <zephyr/arch/arm/cortex_m/arm_mpu_mem_cfg.h>
+#include <zephyr/arch/arm/mpu/arm_mpu_mem_cfg.h>
 
 static const struct arm_mpu_region mpu_regions[] = {
 	/* Use first region to prevent speculative access in entire memory space */

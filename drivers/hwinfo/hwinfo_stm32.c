@@ -5,6 +5,7 @@
  */
 
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <stm32_ll_utils.h>
 #include <stm32_ll_rcc.h>
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
@@ -77,8 +78,8 @@ int z_impl_hwinfo_get_device_eui64(uint8_t *buffer)
 {
 	struct stm32_eui64 dev_eui64;
 
-	dev_eui64.id[0] = sys_cpu_to_be32(READ_REG(*((uint32_t *)UID64_BASE + 1U)));
-	dev_eui64.id[1] = sys_cpu_to_be32(READ_REG(*((uint32_t *)UID64_BASE)));
+	dev_eui64.id[0] = sys_cpu_to_be32(sys_read32(UID64_BASE + sizeof(uint32_t)));
+	dev_eui64.id[1] = sys_cpu_to_be32(sys_read32(UID64_BASE));
 
 	memcpy(buffer, dev_eui64.id, sizeof(dev_eui64));
 

@@ -999,7 +999,18 @@ static void state_collect(const struct shell *sh)
 							sizeof(buf), &count);
 			if (count) {
 				z_flag_cmd_ctx_set(sh, true);
+				/** Unlock the shell mutex before calling the bypass function,
+				 * allowing shell APIs (e.g. shell_print()) to be used inside it.
+				 * Since these APIs require the mutex to be unlocked,
+				 * we temporarily leave the shell context and transfer control
+				 * to the bypass function.
+				 */
+				z_shell_unlock(sh);
 				bypass(sh, buf, count);
+				/* After returning, we're back in the shell context — re-acquire
+				 * the shell mutex on the shell thread.
+				 */
+				z_shell_lock(sh);
 				z_flag_cmd_ctx_set(sh, false);
 				/* Check if bypass mode ended. */
 				if (!(volatile shell_bypass_cb_t *)sh->ctx->bypass) {

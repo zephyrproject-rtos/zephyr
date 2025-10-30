@@ -5,8 +5,8 @@ identifier: mps3/corstone300/fvp/ns
 name: Arm MPS3-Corstone300-FVP_ns
 type: mcu
 arch: arm
-ram: 2048
-flash: 512
+ram: 1920
+flash: 3072
 toolchain:
   - gnuarmemb
   - zephyr

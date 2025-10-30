@@ -14,6 +14,7 @@
 #include <zephyr/init.h>
 #include <zephyr/cache.h>
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_rcc.h>
@@ -47,7 +48,7 @@ static int stm32h7_m4_wakeup(void)
 	LL_AHB4_GRP1_EnableClock(LL_AHB4_GRP1_PERIPH_HSEM);
 	LL_APB4_GRP1_EnableClock(LL_APB4_GRP1_PERIPH_SYSCFG);
 
-	if (READ_BIT(SYSCFG->UR1, SYSCFG_UR1_BCM4)) {
+	if (stm32_reg_read_bits(&SYSCFG->UR1, SYSCFG_UR1_BCM4) != 0) {
 		/**
 		 * Cortex-M4 has been started by hardware.
 		 * Its `soc_early_init_hook()` will stall boot until
@@ -148,7 +149,7 @@ void soc_early_init_hook(void)
 	 * Applicable only to RevY (REV_ID 0x1003)
 	 */
 	if (LL_DBGMCU_GetRevisionID() == 0x1003) {
-		MODIFY_REG(GPV->AXI_TARG7_FN_MOD, 0x1, 0x1);
+		stm32_reg_set_bits(&GPV->AXI_TARG7_FN_MOD, 0x1);
 	}
 }
 

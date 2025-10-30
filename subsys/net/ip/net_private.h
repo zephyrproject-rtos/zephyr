@@ -15,6 +15,7 @@
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/icmp.h>
+#include <zephyr/net/net_core.h>
 
 #ifdef CONFIG_NET_MGMT_EVENT_INFO
 
@@ -212,8 +213,8 @@ extern int net_tc_tx_thread_priority(int tc);
 extern int net_tc_rx_thread_priority(int tc);
 static inline bool net_tc_tx_is_immediate(int tc, int prio)
 {
-	ARG_UNUSED(tc);
-	bool high_prio = (prio >= NET_PRIORITY_CA);
+	ARG_UNUSED(prio);
+	bool high_prio = (tc == NET_TC_TX_EFFECTIVE_COUNT - 1);
 	bool skipping = IS_ENABLED(CONFIG_NET_TC_TX_SKIP_FOR_HIGH_PRIO);
 	bool no_queues = (0 == NET_TC_TX_COUNT);
 
@@ -221,8 +222,8 @@ static inline bool net_tc_tx_is_immediate(int tc, int prio)
 }
 static inline bool net_tc_rx_is_immediate(int tc, int prio)
 {
-	ARG_UNUSED(tc);
-	bool high_prio = (prio >= NET_PRIORITY_CA);
+	ARG_UNUSED(prio);
+	bool high_prio = (tc == NET_TC_RX_EFFECTIVE_COUNT - 1);
 	bool skipping = IS_ENABLED(CONFIG_NET_TC_RX_SKIP_FOR_HIGH_PRIO);
 	bool no_queues = (0 == NET_TC_RX_COUNT);
 

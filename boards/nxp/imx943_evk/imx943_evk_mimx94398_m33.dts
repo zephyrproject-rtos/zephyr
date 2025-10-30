@@ -14,7 +14,6 @@
 	compatible = "nxp,imx943_evk";
 
 	chosen {
-		/* TCM */
 		zephyr,flash = &itcm;
 		zephyr,sram = &dtcm;
 
@@ -105,6 +104,13 @@
 	pinctrl-0 = <&lpi2c6_default>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&lpuart3 {
+	status = "disabled";
+	current-speed = <115200>;
+	pinctrl-0 = <&lpuart3_default>;
+	pinctrl-names = "default";
 };
 
 &lpuart8 {

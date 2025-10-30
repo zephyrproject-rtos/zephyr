@@ -65,22 +65,22 @@ function(eclipse_cdt4_generator_amendment _param_defs)
 ##   4 - work mode: "C and CXX includes, defines in .settings with project defines - [EXPERIMENTAL]"
 #
 message("   Eclipse CDT4 generator amendment mode:")
-if (${_param_defs} EQUAL 1)
+if(${_param_defs} EQUAL 1)
   set(_work_mode "C and CXX includes, defines in .cproject without __cplusplus")
   message("   ${_work_mode}")
   message("   with project includes and defines")
-elseif (${_param_defs} EQUAL 2)
+elseif(${_param_defs} EQUAL 2)
   set(_work_mode "C and CXX includes, defines in .cproject with __cplusplus")
   message("   ${_work_mode}")
   message("   with project includes and defines")
-#elseif (${_param_defs} EQUAL 3)
+#elseif(${_param_defs} EQUAL 3)
 #  set(_work_mode "C and CXX includes, defines in .settings - [EXPERIMENTAL]")
 #  message("   ${_work_mode}")
 #  message("   without project defines")
-#elseif (${_param_defs} EQUAL 4)
+#elseif(${_param_defs} EQUAL 4)
 #  set(_work_mode "C and CXX includes, defines in .settings with project defines - [EXPERIMENTAL]")
 #  message("   ${_work_mode}")
-elseif (${_param_defs} EQUAL 5)
+elseif(${_param_defs} EQUAL 5)
   set(_work_mode "C and CXX includes, defines in Eclipse with project defines")
   message("   ${_work_mode}")
 else(${_param_defs} EQUAL 1)
@@ -99,7 +99,7 @@ foreach( d ${_int_comp_def} )
   file(APPEND ${OUTPUT_FILE} "#define ${CMAKE_MATCH_1} ${CMAKE_MATCH_2}\n")
 endforeach()
 
-if (${_work_mode} STREQUAL "C and CXX includes, defines in Eclipse with project defines")
+if(${_work_mode} STREQUAL "C and CXX includes, defines in Eclipse with project defines")
   message("")
   message("   -------------------------------------------------------------------------")
   message("   Add the following two command line parameters:")
@@ -112,7 +112,7 @@ if (${_work_mode} STREQUAL "C and CXX includes, defines in Eclipse with project 
   message("")
 endif()
 
-if ( (${_work_mode} STREQUAL "C and CXX includes, defines in .settings - [EXPERIMENTAL]") OR
+if( (${_work_mode} STREQUAL "C and CXX includes, defines in .settings - [EXPERIMENTAL]") OR
      (${_work_mode} STREQUAL "C and CXX includes, defines in .settings with project defines - [EXPERIMENTAL]") )
 
   set(OUTPUT_FILE ${CMAKE_BINARY_DIR}/.settings/language.settings.xml)
@@ -124,11 +124,11 @@ if ( (${_work_mode} STREQUAL "C and CXX includes, defines in .settings - [EXPERI
   file(APPEND ${OUTPUT_FILE} "\t\t\t<provider copy-of=\"extension\" id=\"org.eclipse.cdt.ui.UserLanguageSettingsProvider\"/>\n")
   file(APPEND ${OUTPUT_FILE} "\t\t\t<provider-reference id=\"org.eclipse.cdt.core.ReferencedProjectsLanguageSettingsProvider\" ref=\"shared-provider\"/>\n")
   file(APPEND ${OUTPUT_FILE} "\t\t\t<provider-reference id=\"org.eclipse.cdt.core.PathEntryScannerInfoLanguageSettingsProvider\" ref=\"shared-provider\"/>\n")
-  if (${_work_mode} STREQUAL "C and CXX includes, defines in .settings with project defines - [EXPERIMENTAL]")
+  if(${_work_mode} STREQUAL "C and CXX includes, defines in .settings with project defines - [EXPERIMENTAL]")
     file(APPEND ${OUTPUT_FILE} "\t\t\t<provider class=\"org.eclipse.cdt.managedbuilder.language.settings.providers.GCCBuiltinSpecsDetector\" console=\"false\" id=\"org.eclipse.cdt.managedbuilder.core.GCCBuiltinSpecsDetector\" keep-relative-paths=\"false\" name=\"Zephyr autoconf and SDK Compiler Settings\" parameter=\"${CROSS_COMPILE}\${COMMAND} \${FLAGS} -imacros ${CMAKE_BINARY_DIR}/zephyr/include/generated/zephyr/cmake_intdef.h -imacros ${AUTOCONF_H} -E -P -v -dD &quot;\${INPUTS}&quot;\" store-entries-with-project=\"true\">\n")
-  else ()
+  else()
     file(APPEND ${OUTPUT_FILE} "\t\t\t<provider class=\"org.eclipse.cdt.managedbuilder.language.settings.providers.GCCBuiltinSpecsDetector\" console=\"false\" id=\"org.eclipse.cdt.managedbuilder.core.GCCBuiltinSpecsDetector\" keep-relative-paths=\"false\" name=\"Zephyr autoconf and SDK Compiler Settings\" parameter=\"${CROSS_COMPILE}\${COMMAND} \${FLAGS} -E -P -v -dD &quot;\${INPUTS}&quot;\" store-entries-with-project=\"true\">\n")
-  endif ()
+  endif()
   file(APPEND ${OUTPUT_FILE} "\t\t\t\t<language-scope id=\"org.eclipse.cdt.core.gcc\"/>\n")
   file(APPEND ${OUTPUT_FILE} "\t\t\t\t<language-scope id=\"org.eclipse.cdt.core.g++\"/>\n")
   file(APPEND ${OUTPUT_FILE} "\t\t\t</provider>\n")
@@ -136,16 +136,16 @@ if ( (${_work_mode} STREQUAL "C and CXX includes, defines in .settings - [EXPERI
   file(APPEND ${OUTPUT_FILE} "\t</configuration>\n")
   file(APPEND ${OUTPUT_FILE} "</project>\n")
 
-endif ()
+endif()
 
-if ( (${_work_mode} STREQUAL "C and CXX includes, defines in .cproject without __cplusplus") OR
+if( (${_work_mode} STREQUAL "C and CXX includes, defines in .cproject without __cplusplus") OR
      (${_work_mode} STREQUAL "C and CXX includes, defines in .cproject with __cplusplus") OR
      (${_work_mode} STREQUAL "C and CXX includes, defines in .settings - [EXPERIMENTAL]") )
 
-  if ( (${_work_mode} STREQUAL "C and CXX includes, defines in .cproject without __cplusplus") OR
+  if( (${_work_mode} STREQUAL "C and CXX includes, defines in .cproject without __cplusplus") OR
        (${_work_mode} STREQUAL "C and CXX includes, defines in .cproject with __cplusplus") )
 
-    if (${_work_mode} STREQUAL "C and CXX includes, defines in .cproject without __cplusplus")
+    if(${_work_mode} STREQUAL "C and CXX includes, defines in .cproject without __cplusplus")
       # Delete __cplusplus define
       set(TEMP_VAR "${CMAKE_EXTRA_GENERATOR_CXX_SYSTEM_DEFINED_MACROS}")
       STRING(REGEX REPLACE "__cplusplus;.*;" "" TEMP_VAR "${TEMP_VAR}")
@@ -155,15 +155,15 @@ if ( (${_work_mode} STREQUAL "C and CXX includes, defines in .cproject without _
   else()
 
     # Wiping C compiler system defined macros and include directories
-    if (CMAKE_C_COMPILER_ID MATCHES GNU)
+    if(CMAKE_C_COMPILER_ID MATCHES GNU)
       set(CMAKE_EXTRA_GENERATOR_C_SYSTEM_INCLUDE_DIRS "" CACHE INTERNAL "C compiler system include directories")
       set(CMAKE_EXTRA_GENERATOR_C_SYSTEM_DEFINED_MACROS "" CACHE INTERNAL "C compiler system defined macros")
-    endif ()
+    endif()
     # Wiping CXX compiler system defined macros and include directories
-    if ("${CMAKE_CXX_COMPILER_ID}" MATCHES GNU)
+    if("${CMAKE_CXX_COMPILER_ID}" MATCHES GNU)
       set(CMAKE_EXTRA_GENERATOR_CXX_SYSTEM_INCLUDE_DIRS "" CACHE INTERNAL "CXX compiler system include directories")
       set(CMAKE_EXTRA_GENERATOR_CXX_SYSTEM_DEFINED_MACROS "" CACHE INTERNAL "CXX compiler system defined macros")
-    endif ()
+    endif()
 
   endif()
 
@@ -171,9 +171,9 @@ if ( (${_work_mode} STREQUAL "C and CXX includes, defines in .cproject without _
   set (_resultDefines "${CMAKE_EXTRA_GENERATOR_C_SYSTEM_DEFINED_MACROS}")
   foreach( d ${_int_comp_def} )
     string(REGEX MATCH "^#define +([A-Za-z_][A-Za-z0-9_]*) *(.*) *$" _dummy "${d}")
-    if (NOT ("${CMAKE_MATCH_1}" STREQUAL "") )
+    if(NOT ("${CMAKE_MATCH_1}" STREQUAL "") )
       list(APPEND _resultDefines "${CMAKE_MATCH_1}")
-      if ("${CMAKE_MATCH_2}" STREQUAL "")
+      if("${CMAKE_MATCH_2}" STREQUAL "")
         list(APPEND _resultDefines "")
       else()
         list(APPEND _resultDefines "${CMAKE_MATCH_2}")
@@ -186,9 +186,9 @@ if ( (${_work_mode} STREQUAL "C and CXX includes, defines in .cproject without _
   set (_resultDefines "${CMAKE_EXTRA_GENERATOR_C_SYSTEM_DEFINED_MACROS}")
   foreach( d ${_auto_conf} )
     string(REGEX MATCH "^#define +([A-Za-z_][A-Za-z0-9_]*) *(.*) *$" _dummy "${d}")
-    if (NOT ("${CMAKE_MATCH_1}" STREQUAL "") )
+    if(NOT ("${CMAKE_MATCH_1}" STREQUAL "") )
       list(APPEND _resultDefines "${CMAKE_MATCH_1}")
-      if ("${CMAKE_MATCH_2}" STREQUAL "")
+      if("${CMAKE_MATCH_2}" STREQUAL "")
         list(APPEND _resultDefines " ")
       else()
         list(APPEND _resultDefines "${CMAKE_MATCH_2}")

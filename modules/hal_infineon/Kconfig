@@ -24,6 +24,11 @@ config USE_INFINEON_HPPASS_ANALOG
 	help
 	  Enable Infineon HPPASS Analog PDL library support
 
+config USE_INFINEON_AUTANALOG_SAR_ADC
+	bool
+	help
+	  Enable AutAnalog SAR ADC HAL module driver for Infineon devices
+
 config USE_INFINEON_DMA
 	bool
 	help

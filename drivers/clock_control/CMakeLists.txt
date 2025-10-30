@@ -40,6 +40,7 @@ zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_SI32_AHB            clock_cont
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_SI32_APB            clock_control_si32_apb.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_SMARTBOND           clock_control_smartbond.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_NUMAKER_SCC         clock_control_numaker_scc.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_NXP_MC_CGM          clock_control_nxp_mc_cgm.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_NXP_S32             clock_control_nxp_s32.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_RENESAS_RA_CGC      clock_control_renesas_ra_cgc.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_RENESAS_RA_SUBCLK   clock_control_renesas_ra_cgc_subclk.c)

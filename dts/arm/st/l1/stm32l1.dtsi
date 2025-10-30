@@ -265,6 +265,7 @@
 			reg = <0x40012400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 9)>,
 				 <&rcc STM32_SRC_HSI NO_SEL>;
+			clock-names = "adcx", "adc_ker";
 			interrupts = <18 0>;
 			#io-channel-cells = <1>;
 			resolutions = <STM32_ADC_RES(12, 0x00)
@@ -291,7 +292,7 @@
 			compatible = "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
-			#address-cells = <1>;
+			#address-cells = <0>;
 			reg = <0x40010400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 0)>;
 			num-lines = <32>;

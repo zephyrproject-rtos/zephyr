@@ -20,6 +20,7 @@ supported:
   - input
   - can
   - dma
+  - crypto
 testing:
   ignore_tags:
     - bluetooth

@@ -4,8 +4,7 @@
 config AUDIO_CODEC_SF32LB
 	bool "sf32lb codec driver support"
 	select USE_SIFLI_HAL
-	select USE_SIFLI_HAL_DMA
-	select USE_SIFLI_HAL_AUDCODEC
+	select DMA
 	default y
 	depends on SOC_SERIES_SF32LB52X
 

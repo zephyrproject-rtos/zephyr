@@ -183,7 +183,7 @@ zephyr_i2c: &i2c0 {
 	status = "okay";
 };
 
-&stimer0 {
+&sysrtc0 {
 	status = "okay";
 };
 

@@ -16,6 +16,7 @@
 #include <errno.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
@@ -1017,7 +1018,7 @@ static bool stm32_xspi_is_memorymap(const struct device *dev)
 {
 	struct flash_stm32_xspi_data *dev_data = dev->data;
 
-	return READ_BIT(dev_data->hxspi.Instance->CR, XSPI_CR_FMODE) == XSPI_CR_FMODE;
+	return stm32_reg_read_bits(&dev_data->hxspi.Instance->CR, XSPI_CR_FMODE) == XSPI_CR_FMODE;
 }
 #endif
 

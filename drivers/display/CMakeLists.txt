@@ -2,6 +2,7 @@
 
 zephyr_library()
 zephyr_library_sources_ifdef(CONFIG_DISPLAY_MCUX_ELCDIF	display_mcux_elcdif.c)
+zephyr_library_sources_ifdef(CONFIG_DISPLAY_MCUX_LCDIFV3	display_mcux_lcdifv3.c)
 zephyr_library_sources_ifdef(CONFIG_DISPLAY_NRF_LED_MATRIX display_nrf_led_matrix.c)
 zephyr_library_sources_ifdef(CONFIG_DUMMY_DISPLAY	display_dummy.c)
 zephyr_library_sources_ifdef(CONFIG_INTEL_MULTIBOOTFB_DISPLAY	display_intel_multibootfb.c)
@@ -32,8 +33,10 @@ zephyr_library_sources_ifdef(CONFIG_ST7789V		display_st7789v.c)
 zephyr_library_sources_ifdef(CONFIG_ST7735R		display_st7735r.c)
 zephyr_library_sources_ifdef(CONFIG_ST7796S		display_st7796s.c)
 zephyr_library_sources_ifdef(CONFIG_STM32_LTDC		display_stm32_ltdc.c)
+zephyr_library_sources_ifdef(CONFIG_WAVESHARE_7INCH_DSI_LCD_C  display_waveshare_dsi_lcd.c)
 zephyr_library_sources_ifdef(CONFIG_RM68200		display_rm68200.c)
 zephyr_library_sources_ifdef(CONFIG_RM67162		display_rm67162.c)
+zephyr_library_sources_ifdef(CONFIG_HUB12		display_hub12.c)
 zephyr_library_sources_ifdef(CONFIG_HX8379C		display_hx8379c.c)
 zephyr_library_sources_ifdef(CONFIG_HX8394		display_hx8394.c)
 zephyr_library_sources_ifdef(CONFIG_GC9X01X		display_gc9x01x.c)
@@ -44,13 +47,14 @@ zephyr_library_sources_ifdef(CONFIG_RENESAS_RA_GLCDC		display_renesas_ra.c)
 zephyr_library_sources_ifdef(CONFIG_ILI9806E_DSI		display_ili9806e_dsi.c)
 zephyr_library_sources_ifdef(CONFIG_ST7701 display_st7701.c)
 zephyr_library_sources_ifdef(CONFIG_LPM013M126 display_lpm013m126.c)
+zephyr_library_sources_ifdef(CONFIG_CO5300 display_co5300.c)
 
 zephyr_library_sources_ifdef(CONFIG_MICROBIT_DISPLAY
 	mb_display.c
 	mb_font.c
 )
 
-if (CONFIG_SDL_DISPLAY)
+if(CONFIG_SDL_DISPLAY)
 	zephyr_library_sources(display_sdl.c)
 	target_sources(native_simulator INTERFACE display_sdl_bottom.c)
 endif()
