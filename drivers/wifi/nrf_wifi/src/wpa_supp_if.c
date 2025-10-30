@@ -1702,7 +1702,7 @@ int nrf_wifi_supp_register_frame(void *if_priv,
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 	struct nrf_wifi_umac_mgmt_frame_info frame_info;
 
-	if (!if_priv || !match || !match_len) {
+	if (!if_priv) {
 		LOG_ERR("%s: Invalid parameters", __func__);
 		return -1;
 	}
@@ -1723,8 +1723,14 @@ int nrf_wifi_supp_register_frame(void *if_priv,
 	memset(&frame_info, 0, sizeof(frame_info));
 
 	frame_info.frame_type = type;
-	frame_info.frame_match.frame_match_len = match_len;
-	memcpy(frame_info.frame_match.frame_match, match, match_len);
+	if (match_len > 0) {
+		if (!match) {
+			LOG_ERR("%s: Invalid match parameters", __func__);
+			goto out;
+		}
+		frame_info.frame_match.frame_match_len = match_len;
+		memcpy(frame_info.frame_match.frame_match, match, match_len);
+	}
 
 	status = nrf_wifi_sys_fmac_register_frame(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx,
 			&frame_info);
