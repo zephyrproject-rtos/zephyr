@@ -1,0 +1,10 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config RM67199
+	bool "RM67199 display controller driver"
+	default y
+	select MIPI_DSI
+	depends on DT_HAS_RAYDIUM_RM67199_ENABLED
+	help
+	  Enable driver for RM67199 display controller.
