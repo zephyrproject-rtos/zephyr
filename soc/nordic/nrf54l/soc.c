@@ -145,6 +145,8 @@ static inline void power_and_clock_configuration(void)
 }
 #endif /* NRF_APPLICATION && !CONFIG_TRUSTED_EXECUTION_NONSECURE */
 
+	static nrfx_gppi_t gppi_instance;
+
 int nordicsemi_nrf54l_init(void)
 {
 	/* Update the SystemCoreClock global variable with current core clock
