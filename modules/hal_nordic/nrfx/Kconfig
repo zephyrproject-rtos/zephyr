@@ -345,7 +345,7 @@ config NRFX_PWM
 	bool
 
 config NRFX_QDEC
-	bool
+	bool "QDEC driver"
 
 config NRFX_QSPI
 	bool "QSPI driver"
