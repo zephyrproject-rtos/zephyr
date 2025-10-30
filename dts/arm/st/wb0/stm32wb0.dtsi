@@ -43,7 +43,7 @@
 				power-state-name = "suspend-to-ram";
 				substate-id = <0>;
 
-				/* One milisecond seems reasonable for now. */
+				/* One millisecond seems reasonable for now. */
 				min-residency-us = <1000>;
 
 				/* exit-latency-us property is not needed
