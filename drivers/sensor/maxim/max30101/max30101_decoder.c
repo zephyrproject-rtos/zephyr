@@ -38,11 +38,13 @@ static int max30101_decoder_get_frame_count(const uint8_t *buffer,
 #if CONFIG_MAX30101_DIE_TEMPERATURE
 	case SENSOR_CHAN_DIE_TEMP:
 		*frame_count = edata->has_temp ? 1 : 0;
-		break;
+		return (!*frame_count)? -ENODATA : 0;
 #endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
 	default:
 		return -ENOTSUP;
 	}
+
+//	LOG_INF("(%d) [%d]: [%d](%d) frames", chan_spec.chan_idx, chan_spec.chan_type, *frame_count, edata->header.reading_count);
 
 #if CONFIG_MAX30101_STREAM
 	*frame_count *= edata->header.reading_count;
@@ -85,11 +87,6 @@ static int max30101_decoder_decode(const uint8_t *buffer, struct sensor_chan_spe
 	uint32_t sample_period = max30101_sample_period_ns[config->sample_period] * config->decimation;
 	out->header.base_timestamp_ns = edata->header.timestamp - (edata->header.reading_count - 1) * sample_period;
 	out->header.reading_count = 0;
-//	LOG_WRN("Out decode: (%d)(%d)[%d]|(%d)[%d]|(%lld)[%lld]",
-//		max30101_sample_period_ns[config->sample_period],
-//		config->decimation, sample_period,
-//		(edata->header.reading_count - 1), sample_period * (edata->header.reading_count - 1),
-//		edata->header.timestamp, out->header.base_timestamp_ns);
 
 	switch (chan_spec.chan_type) {
 	case SENSOR_CHAN_RED:
