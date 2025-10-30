@@ -59,3 +59,14 @@
 &dsi_panel {
 	mipi-dsi = <&mipi_dsi>;
 };
+
+&video_pll {
+	compatible = "nxp,imx93-video-pll";
+	rdiv = <1>;
+	mfi = <200>;
+	mfn = <0>;
+	mfd = <1>;
+	odiv = <12>;
+	pll-frequency = <400000000>;
+	status = "okay";
+};
