@@ -155,7 +155,7 @@ Connectivity
    - **MXCHIP EMW3080** (802.11 b/g/n compliant Wi-Fi module)
    - **ST25DV64K** dynamic NFC/RFID tag IC with 64-Kbit EEPROM
      (`st25dv64k datasheet`_)
-   - USB Type-C|trade| connector (power supply and data)
+   - USB Type-C |reg| connector (power supply and data)
    - STDC14 programming connector for **STLINK-V3MINI**
      (`stlink-v3mini`_)
    - microSD card socket
