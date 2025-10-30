@@ -81,6 +81,10 @@
 		interrupt-parent = <&nvic>;
 		interrupts = <30 0>, <74 0>;
 		interrupt-names = "nwp_stack", "nwp_irq";
+		antenna-selection = "ext-gpios";
+		support-1p8v;
+		enable-xtal-correction;
+		qspi-80mhz-clk;
 		status = "okay";
 
 		bt_hci0: bt_hci {
