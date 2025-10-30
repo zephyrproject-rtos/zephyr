@@ -5428,3 +5428,37 @@ failed:
 	bt_ag_send_ok_code(ag);
 	return err;
 }
+
+int bt_hfp_ag_last_number(struct bt_hfp_ag *ag, const char *number, uint8_t type)
+{
+	size_t len;
+
+	LOG_DBG("");
+
+	if ((ag == NULL) || (number == NULL)) {
+		return -EINVAL;
+	}
+
+	hfp_ag_lock(ag);
+	if (ag->state != BT_HFP_CONNECTED) {
+		hfp_ag_unlock(ag);
+		return -ENOTCONN;
+	}
+	hfp_ag_unlock(ag);
+
+	len = strlen(number);
+	if (len == 0) {
+		return -ENOTSUP;
+	}
+
+	if (len >= sizeof(ag->last_number)) {
+		return -ENAMETOOLONG;
+	}
+
+	hfp_ag_lock(ag);
+	(void)strcpy(ag->last_number, number);
+	ag->type = type;
+	hfp_ag_unlock(ag);
+
+	return 0;
+}
