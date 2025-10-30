@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/infineon/cat2/mpns/cy8c4147azq_t495.dtsi>
+#include <arm/infineon/cat2/psoc4100tp/system_clocks.dtsi>
+
+/ {
+	model = "CY8CPROTO-041TP Development Board";
+	compatible = "infineon,cy8cproto-041tp", "infineon,psoc4100tp";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
