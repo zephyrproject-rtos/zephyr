@@ -11,7 +11,7 @@ module on other boards as HCI layer (Specifically B-U585I-IOT02A Development boa
 
 STM32WB5MMG supports the following features:
 
-- Bluetooth module in SiP-LGA86 package
+- Bluetooth |reg| module in SiP-LGA86 package
 - Integrated chip antenna
 - Bluetooth |reg| Low Energy 5.4, Zigbee |reg| 3.0, OpenThread certified
   Dynamic and static concurrent modes
@@ -159,10 +159,10 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
-Bluetooth and compatibility with STM32WB Copro Wireless Binaries
-================================================================
+Bluetooth |reg| and compatibility with STM32WB Copro Wireless Binaries
+======================================================================
 
-To operate bluetooth on STM32WB5MMG, Cortex-M0 core should be flashed with
+To operate Bluetooth |reg| on STM32WB5MMG, Cortex-M0 core should be flashed with
 a valid STM32WB Coprocessor binaries (either 'Full stack' or 'HCI Layer').
 These binaries are delivered in STM32WB Cube packages, under
 ``Projects/STM32WB_Copro_Wireless_Binaries/STM32WB5x/``
@@ -251,8 +251,8 @@ Then build and flash the application for the STM32WB5MMG module.
    :goals: build flash
 
 Next, reverse back the buttons to default mode (SW4 on ON and SW5
-on OFF) mode. In this case we will upload the Bluetooth sample on the
-main microcontroller.Then, build the bluetooth
+on OFF) mode. In this case we will upload the Bluetooth |reg| sample on the
+main microcontroller. Then, build the Bluetooth |reg|
 :zephyr_file:`samples/bluetooth/observer` demo application for
 B-U585I-IOT02A board:
 
