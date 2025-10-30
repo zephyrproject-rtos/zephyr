@@ -3289,7 +3289,7 @@ int bt_hfp_hf_number_call(struct bt_hfp_hf *hf, const char *number)
 
 	hf_call_state_update(call, BT_HFP_HF_CALL_STATE_OUTGOING);
 
-	err = hfp_hf_send_cmd(hf, NULL, atd_finish, "ATD%s", number);
+	err = hfp_hf_send_cmd(hf, NULL, atd_finish, "ATD%s;", number);
 	if (err < 0) {
 		LOG_ERR("Fail to start phone number call on %p", hf);
 	}
@@ -3323,7 +3323,7 @@ int bt_hfp_hf_memory_dial(struct bt_hfp_hf *hf, const char *location)
 
 	hf_call_state_update(call, BT_HFP_HF_CALL_STATE_OUTGOING);
 
-	err = hfp_hf_send_cmd(hf, NULL, atd_finish, "ATD>%s", location);
+	err = hfp_hf_send_cmd(hf, NULL, atd_finish, "ATD>%s;", location);
 	if (err < 0) {
 		LOG_ERR("Fail to last number re-Dial on %p", hf);
 	}

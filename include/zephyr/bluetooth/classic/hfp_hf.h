@@ -705,7 +705,7 @@ int bt_hfp_hf_query_respond_hold_status(struct bt_hfp_hf *hf);
  *
  *  Initiate outgoing voice calls by providing the destination phone
  *  number to the AG.
- *  Send the ATDdd…dd command to start phone number call.
+ *  Send the ATDdd...dd; command to start phone number call.
  *  The result of the command will be notified through the callback
  *  `dialing`.
  *
@@ -720,7 +720,7 @@ int bt_hfp_hf_number_call(struct bt_hfp_hf *hf, const char *number);
  *
  *  Initiate outgoing voice calls using the memory dialing feature
  *  of the AG.
- *  Send the ATD>Nan... command to start memory dialing.
+ *  Send the ATD>nnn...; command to start memory dialing.
  *  The result of the command will be notified through the callback
  *  `dialing`.
  *
