@@ -16,15 +16,43 @@ config SAMPLE_FEATURES
     default y if $(dt_chosen_enabled,$(DT_CHOSEN_HR))
     select MAX30101_SAMPLE_FEATURES
 
+# Sample channels
+config SAMPLE_CHANNEL_MAX_INDEX
+    int "Maximum index of channels"
+    range 1 2147483647
+    default 3
+    help
+      Defines the maximum index of channels. Must be at least 1.
+
+config SAMPLE_CHANNEL_RED_ENABLE
+    bool "Enable red channel"
+    default y
+
+config SAMPLE_CHANNEL_IR_ENABLE
+    bool "Enable IR channel"
+    default y
+
+config SAMPLE_CHANNEL_GREEN_ENABLE
+    bool "Enable green channel"
+    default y
+
+config SAMPLE_CHANNEL_DIE_TEMP_ENABLE
+    bool "Enable die temperature channel"
+    default y
+
 # Sample stream
 config SAMPLE_STREAM_ENABLE
     bool "Enable asynchronous sensor stream API"
 
-config SAMPLE_STREAM_BURST
-    bool "Enable burst read"
-
 config SAMPLE_STREAM
     bool
     depends on SAMPLE_STREAM_ENABLE
+
+if SAMPLE_STREAM
+
+config SAMPLE_STREAM_BURST
+    bool "Enable burst read"
+
+endif # SAMPLE_STREAM
 
 source "Kconfig.zephyr"
