@@ -41,3 +41,14 @@ struct btp_csis_get_member_rsi_rp {
 struct btp_csis_sirk_set_type_cmd {
 	uint8_t type;
 } __packed;
+
+#define BTP_CSIS_SET_SIRK 0x05
+struct btp_csis_set_sirk_cmd {
+	uint8_t sirk[BT_CSIP_SIRK_SIZE];
+} __packed;
+
+#define BTP_CSIS_SET_SET_SIZE 0x06
+struct btp_csis_set_set_size_cmd {
+	uint8_t set_size;
+	uint8_t rank;
+} __packed;
