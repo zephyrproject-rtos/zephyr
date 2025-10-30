@@ -44,6 +44,7 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 {
 	struct mqtt_sn_transport_udp *udp = UDP_TRANSPORT(transport);
 	int err;
+	int errno_backup;
 	struct sockaddr addrm;
 	int optval;
 	struct net_if *iface;
@@ -107,8 +108,9 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 
 	err = zsock_bind(udp->sock, &addrm, sizeof(addrm));
 	if (err) {
-		LOG_ERR("Error during bind: %d", errno);
-		return errno;
+		errno_backup = errno;
+		LOG_ERR("Error during bind: %d", errno_backup);
+		return errno_backup;
 	}
 
 	if (udp->bcaddr.sa_family == AF_INET && IS_ENABLED(CONFIG_NET_IPV4)) {
@@ -212,12 +214,14 @@ static ssize_t tp_udp_recvfrom(struct mqtt_sn_client *client, void *buffer, size
 {
 	struct mqtt_sn_transport_udp *udp = UDP_TRANSPORT(client->transport);
 	ssize_t ret;
+	int errno_backup;
 	socklen_t addrlen_local = *addrlen;
 
 	ret = zsock_recvfrom(udp->sock, buffer, length, 0, src_addr, &addrlen_local);
+	errno_backup = errno;
 	LOG_DBG("recv %zd", ret);
 	if (ret < 0) {
-		return -errno;
+		return -errno_backup;
 	}
 	*addrlen = addrlen_local;
 
