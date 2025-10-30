@@ -11,6 +11,7 @@
 #include <soc.h>
 
 #include <nrfx_gpiote.h>
+#include <gpiote_nrfx.h>
 
 #include "util/mem.h"
 
@@ -66,8 +67,8 @@ BUILD_ASSERT(!HAL_RADIO_GPIO_LNA_OFFSET_MISSING,
 #endif	/* FEM_NODE */
 
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN) || defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
-static const nrfx_gpiote_t gpiote_palna = NRFX_GPIOTE_INSTANCE(
-	NRF_DT_GPIOTE_INST(FEM_NODE, HAL_RADIO_GPIO_PA_PROP));
+static nrfx_gpiote_t * const gpiote_palna =
+	&GPIOTE_NRFX_INST_BY_NODE(NRF_DT_GPIOTE_NODE(FEM_NODE, HAL_RADIO_GPIO_PA_PROP));
 static uint8_t gpiote_ch_palna;
 
 BUILD_ASSERT(NRF_DT_GPIOTE_INST(FEM_NODE, HAL_RADIO_GPIO_PA_PROP) ==
@@ -77,8 +78,8 @@ BUILD_ASSERT(NRF_DT_GPIOTE_INST(FEM_NODE, HAL_RADIO_GPIO_PA_PROP) ==
 #endif
 
 #if defined(HAL_RADIO_FEM_IS_NRF21540)
-static const nrfx_gpiote_t gpiote_pdn = NRFX_GPIOTE_INSTANCE(
-	NRF_DT_GPIOTE_INST(FEM_NODE, pdn_gpios));
+static nrfx_gpiote_t * const gpiote_pdn =
+	&GPIOTE_NRFX_INST_BY_NODE(NRF_DT_GPIOTE_NODE(FEM_NODE, pdn_gpios));
 static uint8_t gpiote_ch_pdn;
 #endif
 
@@ -1930,13 +1931,13 @@ uint32_t radio_tmr_sample_get(void)
 int radio_gpio_pa_lna_init(void)
 {
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN) || defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
-	if (nrfx_gpiote_channel_alloc(&gpiote_palna, &gpiote_ch_palna) != NRFX_SUCCESS) {
+	if (nrfx_gpiote_channel_alloc(gpiote_palna, &gpiote_ch_palna) != NRFX_SUCCESS) {
 		return -ENOMEM;
 	}
 #endif
 
 #if defined(NRF_GPIO_PDN_PIN)
-	if (nrfx_gpiote_channel_alloc(&gpiote_pdn, &gpiote_ch_pdn) != NRFX_SUCCESS) {
+	if (nrfx_gpiote_channel_alloc(gpiote_pdn, &gpiote_ch_pdn) != NRFX_SUCCESS) {
 		return -ENOMEM;
 	}
 #endif
@@ -1947,18 +1948,18 @@ int radio_gpio_pa_lna_init(void)
 void radio_gpio_pa_lna_deinit(void)
 {
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN) || defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
-	(void)nrfx_gpiote_channel_free(&gpiote_palna, gpiote_ch_palna);
+	(void)nrfx_gpiote_channel_free(gpiote_palna, gpiote_ch_palna);
 #endif
 
 #if defined(NRF_GPIO_PDN_PIN)
-	(void)nrfx_gpiote_channel_free(&gpiote_pdn, gpiote_ch_pdn);
+	(void)nrfx_gpiote_channel_free(gpiote_pdn, gpiote_ch_pdn);
 #endif
 }
 
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
 void radio_gpio_pa_setup(void)
 {
-	gpiote_palna.p_reg->CONFIG[gpiote_ch_palna] =
+	gpiote_palna->p_reg->CONFIG[gpiote_ch_palna] =
 		(GPIOTE_CONFIG_MODE_Task <<
 		 GPIOTE_CONFIG_MODE_Pos) |
 		(NRF_GPIO_PA_PSEL <<
@@ -1978,7 +1979,7 @@ void radio_gpio_pa_setup(void)
 #if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 void radio_gpio_lna_setup(void)
 {
-	gpiote_palna.p_reg->CONFIG[gpiote_ch_palna] =
+	gpiote_palna->p_reg->CONFIG[gpiote_ch_palna] =
 		(GPIOTE_CONFIG_MODE_Task <<
 		 GPIOTE_CONFIG_MODE_Pos) |
 		(NRF_GPIO_LNA_PSEL <<
@@ -1998,7 +1999,7 @@ void radio_gpio_pdn_setup(void)
 {
 	/* Note: the pdn-gpios property is optional. */
 #if defined(NRF_GPIO_PDN)
-	gpiote_pdn.p_reg->CONFIG[gpiote_ch_pdn] =
+	gpiote_pdn->p_reg->CONFIG[gpiote_ch_pdn] =
 		(GPIOTE_CONFIG_MODE_Task <<
 		 GPIOTE_CONFIG_MODE_Pos) |
 		(NRF_GPIO_PDN_PSEL <<
@@ -2052,12 +2053,12 @@ void radio_gpio_pa_lna_disable(void)
 					   BIT(HAL_DISABLE_PALNA_PPI) |
 					   BIT(HAL_ENABLE_FEM_PPI) |
 					   BIT(HAL_DISABLE_FEM_PPI));
-	gpiote_palna.p_reg->CONFIG[gpiote_ch_palna] = 0;
-	gpiote_pdn.p_reg->CONFIG[gpiote_ch_pdn] = 0;
+	gpiote_palna->p_reg->CONFIG[gpiote_ch_palna] = 0;
+	gpiote_pdn->p_reg->CONFIG[gpiote_ch_pdn] = 0;
 #else
 	hal_radio_nrf_ppi_channels_disable(BIT(HAL_ENABLE_PALNA_PPI) |
 					   BIT(HAL_DISABLE_PALNA_PPI));
-	gpiote_palna.p_reg->CONFIG[gpiote_ch_palna] = 0;
+	gpiote_palna->p_reg->CONFIG[gpiote_ch_palna] = 0;
 #endif
 }
 #endif /* HAL_RADIO_GPIO_HAVE_PA_PIN || HAL_RADIO_GPIO_HAVE_LNA_PIN */
