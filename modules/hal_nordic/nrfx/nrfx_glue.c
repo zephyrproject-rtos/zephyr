@@ -10,7 +10,7 @@
 
 void nrfx_isr(const void *irq_handler)
 {
-	((nrfx_irq_handler_t)irq_handler)();
+	((nrfx_irq_handler_t)irq_handler)(NULL);
 }
 
 void nrfx_busy_wait(uint32_t usec_to_wait)
