@@ -567,12 +567,13 @@ static inline int dwc2_hal_get_config(struct usb_dwc2_reg *const dwc2,
 	 uhc_dwc2_constant_config_t *const cfg)
 {
 	uint32_t gsnpsid = sys_read32((mem_addr_t)&dwc2->gsnpsid);
+	uint32_t ghwcfg1 = sys_read32((mem_addr_t)&dwc2->ghwcfg1);
 	uint32_t ghwcfg2 = sys_read32((mem_addr_t)&dwc2->ghwcfg2);
 	uint32_t ghwcfg3 = sys_read32((mem_addr_t)&dwc2->ghwcfg3);
 	uint32_t ghwcfg4 = sys_read32((mem_addr_t)&dwc2->ghwcfg4);
 
-	LOG_DBG("GSNPSID=%08Xh, GHWCFG2=%08Xh, GHWCFG3=%08Xh, GHWCFG4=%08Xh",
-			gsnpsid, ghwcfg2, ghwcfg3, ghwcfg4);
+	LOG_DBG("GSNPSID=%08Xh, GHWCFG1=%08Xh, GHWCFG2=%08Xh, GHWCFG3=%08Xh, GHWCFG4=%08Xh",
+		gsnpsid, ghwcfg1, ghwcfg2, ghwcfg3, ghwcfg4);
 
 	/* Check Synopsis ID register, failed if controller clock/power is not enabled */
 	__ASSERT((gsnpsid == USB_DWC2_GSNPSID_REV_5_00A),
@@ -935,9 +936,16 @@ static inline void uhc_dwc2_set_defaults(const struct device *dev)
 	const struct uhc_dwc2_config *const config = dev->config;
 	struct usb_dwc2_reg *const dwc2 = config->base;
 	struct uhc_dwc2_data_s *priv = uhc_get_private(dev);
+	uint32_t reg;
 
 	/* Disable Global Interrupt */
 	sys_clear_bits((mem_addr_t)&dwc2->gahbcfg, USB_DWC2_GAHBCFG_GLBINTRMASK);
+
+	/* Disable dual-role protocols (SRP, HNP) */
+	reg = sys_read32((mem_addr_t)&dwc2->gusbcfg);
+	reg &= ~USB_DWC2_GUSBCFG_HNPCAP;
+	reg &= ~USB_DWC2_GUSBCFG_SRPCAP;
+	sys_write32(reg, (mem_addr_t)&dwc2->gusbcfg);
 
 	/* Enable Host mode */
 	sys_set_bits((mem_addr_t)&dwc2->gusbcfg, USB_DWC2_GUSBCFG_FORCEHSTMODE);
@@ -974,12 +982,12 @@ static inline void uhc_dwc2_set_defaults(const struct device *dev)
 	sys_set_bits((mem_addr_t)&dwc2->gahbcfg, USB_DWC2_GAHBCFG_GLBINTRMASK);
 }
 
+/* 1.4 Contorller Initialization */
 static int uhc_dwc2_init_controller(const struct device *dev)
 {
 	const struct uhc_dwc2_config *const config = dev->config;
 	struct uhc_dwc2_data_s *priv = uhc_get_private(dev);
 	struct usb_dwc2_reg *const dwc2 = config->base;
-
 	int ret;
 
 	/* Get hardware configuration */
@@ -1016,21 +1024,38 @@ static int uhc_dwc2_init_controller(const struct device *dev)
 	    }
 	}
 
-	/*
-	 * TODO: As soon as the refactoring is complete, DWC2 will of course be configured
-	 * in host mode.
-	 */
-	sys_set_bits((mem_addr_t)&dwc2->gusbcfg, USB_DWC2_GUSBCFG_FORCEDEVMODE);
-	k_msleep(25);
-	sys_set_bits((mem_addr_t)&dwc2->gintmsk,
-		USB_DWC2_GINTSTS_OEPINT | USB_DWC2_GINTSTS_IEPINT |
-		USB_DWC2_GINTSTS_ENUMDONE | USB_DWC2_GINTSTS_USBRST |
-		USB_DWC2_GINTSTS_WKUPINT | USB_DWC2_GINTSTS_USBSUSP |
-		USB_DWC2_GINTSTS_PRTINT | USB_DWC2_GINTSTS_HCHINT |
-		USB_DWC2_GINTSTS_GOUTNAKEFF);
-	sys_clear_bits((mem_addr_t)&dwc2->dctl, USB_DWC2_DCTL_SFTDISCON);
-
 	return ret;
+}
+
+/* 3.1 Host Initialization */
+static int uhc_dwc2_init_host(const struct device *dev)
+{
+	const struct uhc_dwc2_config *const config = dev->config;
+	const uint32_t base = (uintptr_t)config->base;
+	uint32_t reg;
+
+	LOG_WRN("HCFG=0x%08x HFIR=0x%08x",
+		sys_read32(base + USB_DWC2_HCFG), sys_read32(base + USB_DWC2_HFIR));
+
+	/* 1. Enable port interrupts */
+	reg = sys_read32(base + USB_DWC2_GINTMSK);
+	reg |= USB_DWC2_GINTSTS_PRTINT;
+	sys_write32(reg, base + USB_DWC2_GINTMSK);
+
+	/* 2. Configure host full/high speed support */
+	reg = sys_read32(base + USB_DWC2_HCFG);
+	/* Enable support for HighSpeed */
+	reg &= ~USB_DWC2_HCFG_FSLSSUPP;
+	sys_write32(reg, base + USB_DWC2_HCFG);
+
+	/* 3. Enable the port power */
+	reg = sys_read32(base + USB_DWC2_HPRT);
+	reg |= USB_DWC2_HPRT_PRTPWR;
+	sys_write32(reg, base + USB_DWC2_HPRT);
+
+	/* 4. Continue the initialization in the PRTCONNDET interrupt */
+
+	return 0;
 }
 
 static uhc_port_event_t uhc_dwc2_decode_hprt(const struct device *dev,
@@ -2516,6 +2541,11 @@ static int uhc_dwc2_enable(const struct device *dev)
 	}
 
 	ret = uhc_dwc2_init_controller(dev);
+	if (ret) {
+		return ret;
+	}
+
+	ret = uhc_dwc2_init_host(dev);
 	if (ret) {
 		return ret;
 	}
