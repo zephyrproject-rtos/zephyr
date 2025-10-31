@@ -32,7 +32,6 @@
 				power-state-name = "suspend-to-idle";
 				min-residency-us = <100000000>;
 			};
-
 		};
 	};
 
@@ -532,6 +531,8 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			lcnt-offset = <35>;
+			hcnt-offset = <35>;
 		};
 
 		i2c_1: i2c@4000d200 {
@@ -543,6 +544,8 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			lcnt-offset = <35>;
+			hcnt-offset = <35>;
 		};
 
 		i2c_2: i2c@4000d400 {
@@ -554,6 +557,8 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			lcnt-offset = <35>;
+			hcnt-offset = <35>;
 		};
 
 		i2c_3: i2c@4000d600 {
@@ -565,6 +570,8 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			lcnt-offset = <35>;
+			hcnt-offset = <35>;
 		};
 
 		i2c_4: i2c@4000d800 {
@@ -576,6 +583,8 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			lcnt-offset = <35>;
+			hcnt-offset = <35>;
 		};
 
 		i2c_5: i2c@4000da00 {
@@ -587,6 +596,8 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			lcnt-offset = <35>;
+			hcnt-offset = <35>;
 		};
 
 		i2c_6: i2c@4000dc00 {
@@ -598,6 +609,8 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			lcnt-offset = <35>;
+			hcnt-offset = <35>;
 		};
 
 		i2c_7: i2c@4000de00 {
@@ -609,6 +622,8 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			lcnt-offset = <35>;
+			hcnt-offset = <35>;
 		};
 
 		sha0: crypto@40000000 {
