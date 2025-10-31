@@ -351,6 +351,8 @@ zephyr_udc0: &usb2 {};
 	bl-ctrl-gpios = <&gpiog 15 GPIO_ACTIVE_HIGH>;
 	ext-sdram = <&psram>;
 
+	ext-sdram = <&psram>;
+
 	status = "okay";
 
 	width = <800>;
