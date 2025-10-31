@@ -99,9 +99,16 @@ class STLinkGDBServerRunner(ZephyrBinaryRunner):
     @classmethod
     def do_add_parser(cls, parser: argparse.ArgumentParser):
         # Expose a subset of the ST-LINK GDB server arguments
-        parser.add_argument(
-            "--swd", action='store_true', default=True, help="Enable SWD debug mode"
+        swd_group = parser.add_mutually_exclusive_group()
+        swd_group.add_argument(
+            "--swd",
+            dest='swd',
+            action='store_true',
+            help="Enable SWD debug mode (default: %(default)s)\nUse --no-swd to disable.",
         )
+        swd_group.add_argument("--no-swd", dest='swd', action='store_false', help=argparse.SUPPRESS)
+        parser.set_defaults(swd=True)
+
         parser.add_argument("--apid", type=int, default=0, help="Target DAP ID")
         parser.add_argument(
             "--port-number",
