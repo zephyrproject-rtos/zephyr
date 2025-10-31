@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	#address-cells = <1>;
@@ -152,6 +153,16 @@
 				      "wifipll_360",
 				      "aupll_div1", "aupll_div2",
 				      "root", "bclk", "flash";
+		};
+
+		adc0: adc@20002000 {
+			compatible = "bflb,adc";
+			reg = <0x20002000 0x400 0x2000F000 0x1000>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+
+			interrupts = <41 1>;
+			interrupt-parent = <&clic>;
 		};
 
 		uart0: uart@2000a000 {

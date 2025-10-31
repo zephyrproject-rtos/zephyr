@@ -10,6 +10,7 @@
 #include <dt-bindings/pinctrl/bl70x-pinctrl.h>
 #include <dt-bindings/clock/bflb_bl70x_clock.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	#address-cells = <1>;
@@ -140,6 +141,16 @@
 			clock-names = "rc32m", "crystal", "root", "bclk",
 				      "dll_144", "dll_96",
 				      "dll_120", "dll_57";
+		};
+
+		adc0: adc@40002000 {
+			compatible = "bflb,adc";
+			reg = <0x40002000 0x1000 0x4000F000 0x1000>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+
+			interrupts = <41 0>;
+			interrupt-parent = <&clic>;
 		};
 
 		efuse: efuse@40007000 {
