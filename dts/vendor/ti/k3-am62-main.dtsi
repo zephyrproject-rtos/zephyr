@@ -160,4 +160,32 @@
 		clock-frequency = <DT_FREQ_M(25)>;
 		status = "disabled";
 	};
+
+	main_spi0: spi@20100000 {
+		compatible = "ti,omap-mcspi";
+		reg = <0x20100000 0x400>;
+		clock-frequency = <DT_FREQ_M(50)>;
+		ti,spi-num-cs = <4>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	main_spi1: spi@20110000 {
+		compatible = "ti,omap-mcspi";
+		reg = <0x20110000 0x400>;
+		clock-frequency = <DT_FREQ_M(50)>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	main_spi2: spi@20120000 {
+		compatible = "ti,omap-mcspi";
+		reg = <0x20120000 0x400>;
+		clock-frequency = <DT_FREQ_M(50)>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
 };
