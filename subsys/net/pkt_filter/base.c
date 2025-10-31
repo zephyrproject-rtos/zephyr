@@ -137,14 +137,46 @@ static enum net_verdict lock_evaluate(struct npf_rule_list *rules, struct net_pk
 
 bool net_pkt_filter_send_ok(struct net_pkt *pkt)
 {
-	enum net_verdict result = lock_evaluate(&npf_send_rules, pkt);
+	enum net_verdict result;
+
+	STRUCT_SECTION_FOREACH(net_pkt_send_priority_rules, rule) {
+		NET_ASSERT(rule->result == NET_CONTINUE);
+		if (apply_tests(rule, pkt) == true) {
+			net_pkt_set_priority(pkt, rule->priority);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(net_pkt_send_rules, rule) {
+		NET_ASSERT(rule->result != NET_CONTINUE);
+		if (apply_tests(rule, pkt) == true) {
+			return rule->result == NET_OK;
+		}
+	}
+
+	result = lock_evaluate(&npf_send_rules, pkt);
 
 	return result == NET_OK;
 }
 
 bool net_pkt_filter_recv_ok(struct net_pkt *pkt)
 {
-	enum net_verdict result = lock_evaluate(&npf_recv_rules, pkt);
+	enum net_verdict result;
+
+	STRUCT_SECTION_FOREACH(net_pkt_recv_priority_rules, rule) {
+		NET_ASSERT(rule->result == NET_CONTINUE);
+		if (apply_tests(rule, pkt) == true) {
+			net_pkt_set_priority(pkt, rule->priority);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(net_pkt_recv_rules, rule) {
+		NET_ASSERT(rule->result != NET_CONTINUE);
+		if (apply_tests(rule, pkt) == true) {
+			return rule->result == NET_OK;
+		}
+	}
+
+	result = lock_evaluate(&npf_recv_rules, pkt);
 
 	return result == NET_OK;
 }
@@ -152,7 +184,23 @@ bool net_pkt_filter_recv_ok(struct net_pkt *pkt)
 #ifdef CONFIG_NET_PKT_FILTER_LOCAL_IN_HOOK
 bool net_pkt_filter_local_in_recv_ok(struct net_pkt *pkt)
 {
-	enum net_verdict result = lock_evaluate(&npf_local_in_recv_rules, pkt);
+	enum net_verdict result;
+
+	STRUCT_SECTION_FOREACH(net_pkt_local_in_recv_priority_rules, rule) {
+		NET_ASSERT(rule->result == NET_CONTINUE);
+		if (apply_tests(rule, pkt) == true) {
+			net_pkt_set_priority(pkt, rule->priority);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(net_pkt_local_in_recv_rules, rule) {
+		NET_ASSERT(rule->result != NET_CONTINUE);
+		if (apply_tests(rule, pkt) == true) {
+			return rule->result == NET_OK;
+		}
+	}
+
+	result = lock_evaluate(&npf_local_in_recv_rules, pkt);
 
 	return result == NET_OK;
 }
@@ -161,14 +209,50 @@ bool net_pkt_filter_local_in_recv_ok(struct net_pkt *pkt)
 #if defined(CONFIG_NET_PKT_FILTER_IPV4_HOOK) || defined(CONFIG_NET_PKT_FILTER_IPV6_HOOK)
 bool net_pkt_filter_ip_recv_ok(struct net_pkt *pkt)
 {
-	struct npf_rule_list *rules = get_ip_rules(net_pkt_family(pkt));
+	uint8_t family = net_pkt_family(pkt);
+	struct npf_rule_list *rules = get_ip_rules(family);
+	enum net_verdict result;
+
+	if (family == PF_INET && IS_ENABLED(CONFIG_NET_PKT_FILTER_IPV4_HOOK)) {
+
+		STRUCT_SECTION_FOREACH(net_pkt_ip_v4_recv_priority_rules, rule) {
+			NET_ASSERT(rule->result == NET_CONTINUE);
+			if (apply_tests(rule, pkt) == true) {
+				net_pkt_set_priority(pkt, rule->priority);
+			}
+		}
+
+		STRUCT_SECTION_FOREACH(net_pkt_ip_v4_recv_rules, rule) {
+			NET_ASSERT(rule->result != NET_CONTINUE);
+			if (apply_tests(rule, pkt) == true) {
+				return rule->result == NET_OK;
+			}
+		}
+
+	} else if (family == PF_INET6 && IS_ENABLED(CONFIG_NET_PKT_FILTER_IPV6_HOOK)) {
+
+		STRUCT_SECTION_FOREACH(net_pkt_ip_v6_recv_priority_rules, rule) {
+			NET_ASSERT(rule->result == NET_CONTINUE);
+			if (apply_tests(rule, pkt) == true) {
+				net_pkt_set_priority(pkt, rule->priority);
+			}
+		}
+
+		STRUCT_SECTION_FOREACH(net_pkt_ip_v6_recv_rules, rule) {
+			NET_ASSERT(rule->result != NET_CONTINUE);
+			if (apply_tests(rule, pkt) == true) {
+				return rule->result == NET_OK;
+			}
+		}
+
+	}
 
 	if (!rules) {
 		NET_DBG("no rules");
 		return true;
 	}
 
-	enum net_verdict result = lock_evaluate(rules, pkt);
+	result = lock_evaluate(rules, pkt);
 
 	return result == NET_OK;
 }
