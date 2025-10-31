@@ -6,7 +6,7 @@
 
 #include <errno.h>
 #include <stdio.h>
-#include <zephyr/fs/fs.h>
+#include <zephyr/sys/fdtable.h>
 #include <zephyr/sys/util_macro.h>
 
 /**
@@ -24,12 +24,5 @@ int remove(const char *path)
 		return -1;
 	}
 
-	int ret = fs_unlink(path);
-
-	if (ret < 0) {
-		errno = -ret;
-		return -1;
-	}
-
-	return 0;
+	return zvfs_unlink(path);
 }
