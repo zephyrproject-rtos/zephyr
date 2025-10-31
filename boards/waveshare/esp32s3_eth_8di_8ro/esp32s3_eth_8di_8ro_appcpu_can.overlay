@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2025 Benjamin Schilling <benjamin.schilling33@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "esp32s3_eth_8di_8ro_can-pinctrl.dtsi"
+
+/ {
+	model = "ESP32-S3-ETH-8DI-8RO-C APPCPU";
+	compatible = "waveshare,esp32-s3-eth-8di-8ro-c";
+};
+
+&twai {
+	status = "okay";
+	pinctrl-0 = <&twai_default>;
+	pinctrl-names = "default";
+
+	can-transceiver {
+		max-bitrate = <1000000>;
+	};
+};

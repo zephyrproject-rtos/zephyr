@@ -1,0 +1,13 @@
+board:
+  name: esp32s3_eth_8di_8ro
+  full_name: ESP32-S3-ETH-8DI-8RO
+  vendor: waveshare
+  socs:
+  - name: esp32s3
+  revision:
+    format: "custom"
+    default: ""
+    exact: true
+    revisions:
+      - name: ""
+      - name: "can"

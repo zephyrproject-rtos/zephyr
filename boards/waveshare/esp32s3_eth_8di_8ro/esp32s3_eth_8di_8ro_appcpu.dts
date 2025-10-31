@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2025 Benjamin Schilling <benjamin.schilling33@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "esp32s3_eth_8di_8ro-base.dtsi"
+#include "esp32s3_eth_8di_8ro-base-pinctrl.dtsi"
+
+/ {
+	model = "ESP32-S3-ETH-8DI-8RO APPCPU";
+	compatible = "waveshare,esp32-s3-eth-8di-8ro";
+
+	aliases {
+		uart-0 = &uart0;
+		uart-1 = &uart1;
+		watchdog0 = &wdt0;
+		di1 = &di1;
+		di2 = &di2;
+		di3 = &di3;
+		di4 = &di4;
+		di5 = &di5;
+		di6 = &di6;
+		di7 = &di7;
+		di8 = &di8;
+		led-strip = &led_strip;
+		boot-btn = &boot_btn;
+		buzzer = &buzzer;
+		usb-serial = &usb_serial;
+		eth-w5500 = &eth_w5500;
+		i2c0 = &i2c0;
+		rtc = &rtc;
+		tca = &tca;
+		sdhc1 = &sdhc1;
+	};
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
+		zephyr,sdhc = &sdhc1;
+	};
+};
+
+&uart1 {
+	status = "okay";
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+	compatible = "espressif,esp32-uart";
+	hw-rs485-hd-mode;
+	current-speed = <9600>;
+
+	modbus0 {
+		compatible = "zephyr,modbus-serial";
+	};
+};
