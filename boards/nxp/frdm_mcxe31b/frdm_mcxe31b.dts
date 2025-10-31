@@ -21,6 +21,7 @@
 		led1 = &green_led;
 		led2 = &blue_led;
 		sw0 = &user_button;
+		watchdog0 = &swt_0;
 	};
 
 	chosen {
@@ -164,4 +165,8 @@
 	mux-0-dc-4-div = <4>;
 	mux-0-dc-5-div = <4>;
 	mux-0-dc-6-div = <1>;
+};
+
+&swt_0 {
+	status = "okay";
 };
