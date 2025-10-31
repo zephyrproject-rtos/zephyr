@@ -458,6 +458,15 @@ struct net_buf *hci_vs_err_stack_frame(unsigned int reason, const struct arch_es
 struct net_buf *hci_vs_err_trace(const char *file, uint32_t line, uint64_t pc);
 struct net_buf *hci_vs_err_assert(const char *file, uint32_t line);
 
+/**
+ * @brief Run @ref BT_HCI_OP_VS_WRITE_BD_ADDR vendor specific command
+ *
+ * @param bdaddr Public Bluetooth address to write
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int hci_vs_write_bd_addr(bt_addr_t bdaddr);
+
 #ifdef __cplusplus
 }
 #endif
