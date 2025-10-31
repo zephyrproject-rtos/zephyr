@@ -245,9 +245,13 @@ struct max30101_encoded_data {
 		uint8_t has_green: 2;
 		/* Set if `temp` has data */
 		uint8_t has_temp: 1;
+		/* Reserved */
+		uint8_t reserved: 1;
 #if CONFIG_MAX30101_STREAM
-		/* Set if `drdy` interrupt has triggered */
+		/* Set if data `drdy` interrupt has triggered */
 		uint8_t has_data_rdy: 1;
+		/* Set if temperature `drdy` interrupt has triggered */
+		uint8_t has_temp_rdy: 1;
 		/* Set if `watermark` interrupt has triggered */
 		uint8_t has_watermark: 1;
 		/* Set if `overflow` interrupt has triggered */

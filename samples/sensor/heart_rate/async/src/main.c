@@ -161,7 +161,7 @@ int main(void)
 		rtio_cqe_release(&ctx, cqe);
 
 		for (size_t i = 0; i < ARRAY_SIZE(trigger_list); i++) {
-			rc = decoder->has_trigger(buf, trigger_list[i]);
+			rc = decoder->has_trigger(buf, trigger_list[i], (struct sensor_chan_spec) {SENSOR_CHAN_ALL, 0});
 			LOG_INF("Trigger (%d)[%-*s]: [%s]", i, trigger_width, trigger_names[i], rc? "X" : " ");
 		}
 #else
