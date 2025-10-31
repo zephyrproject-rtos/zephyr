@@ -181,26 +181,6 @@
 	pinctrl-names = "default";
 };
 
-&sercom7 {
-	status = "okay";
-	compatible = "microchip,sercom-g1-i2c";
-	#address-cells = <1>;
-	#size-cells = <0>;
-
-	clock-frequency = <I2C_BITRATE_FAST>;
-
-	pinctrl-0 = <&sercom7_i2c_default>;
-	pinctrl-names = "default";
-
-	dmas = <&dmac 10 0x12>, <&dmac 11 0x13>;
-	dma-names = "rx", "tx";
-
-	eeprom: eeprom@5e {
-		compatible = "microchip,at24mac402";
-		reg = <0x5e>;
-	};
-};
-
 &tcc0 {
 	compatible = "microchip,tcc-g1-pwm";
 	status = "okay";
@@ -219,7 +199,6 @@
 	pinctrl-0 = <&gmac_rmii>;
 	pinctrl-names = "default";
 
-	mac-eeprom = <&eeprom>;
 	phy-handle = <&phy>;
 };
 
