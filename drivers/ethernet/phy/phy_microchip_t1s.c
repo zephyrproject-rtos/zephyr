@@ -19,12 +19,13 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 /* Support: Microchip Phys:
  * lan8650/1 Rev.B0/B1 Internal PHYs
- * lan8670/1/2 Rev.C1/C2 PHYs
+ * lan8670/1/2 Rev.C1/C2/D0 PHYs
  */
 /* Both Rev.B0 and B1 clause 22 PHYID's are same due to B1 chip limitation */
 #define PHY_ID_LAN865X_REVB  0x0007C1B3
 #define PHY_ID_LAN867X_REVC1 0x0007C164
 #define PHY_ID_LAN867X_REVC2 0x0007C165
+#define PHY_ID_LAN867X_REVD0 0x0007C166
 
 /* Configuration param registers */
 #define LAN865X_REG_CFGPARAM_ADDR    0x00D8
@@ -78,6 +79,22 @@ static lan865x_config lan865x_revb_config[] = {
 	{.address = 0x00B6, .value = 0x1720}, {.address = 0x00B7, .value = 0x0027},
 	{.address = 0x00B8, .value = 0x0509}, {.address = 0x00B9, .value = 0x0E13},
 	{.address = 0x00BA, .value = 0x1C25}, {.address = 0x00BB, .value = 0x002B},
+};
+
+/* LAN867x Rev.D0 configuration parameters from AN1699
+ * As per the Configuration Application Note AN1699 published in the below link,
+ * https://www.microchip.com/en-us/application-notes/an1699
+ * Revision G (DS60001699G - October 2025)
+ */
+static const lan865x_config lan867x_revd0_config[] = {
+	{.address = 0x0037, .value = 0x0800},
+	{.address = 0x008A, .value = 0xBFC0},
+	{.address = 0x0118, .value = 0x029C},
+	{.address = 0x00D6, .value = 0x1001},
+	{.address = 0x0082, .value = 0x001C},
+	{.address = 0x00FD, .value = 0x0C0B},
+	{.address = 0x00FD, .value = 0x8C07},
+	{.address = 0x0091, .value = 0x9660},
 };
 
 struct mc_t1s_plca_config {
@@ -426,6 +443,22 @@ static int phy_mc_lan867x_revc_config_init(const struct device *dev)
 	return 0;
 }
 
+static int phy_mc_lan867x_revd0_config_init(const struct device *dev)
+{
+	int ret;
+
+	for (int i = 0; i < ARRAY_SIZE(lan867x_revd0_config); i++) {
+		ret = phy_mc_t1s_c45_write(dev, MDIO_MMD_VENDOR_SPECIFIC2,
+					   lan867x_revd0_config[i].address,
+					   lan867x_revd0_config[i].value);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
 static int lan86xx_config_collision_detection(const struct device *dev, bool plca_enable)
 {
 	uint16_t val;
@@ -521,21 +554,21 @@ static int phy_mc_t1s_init(const struct device *dev)
 	case PHY_ID_LAN867X_REVC1:
 	case PHY_ID_LAN867X_REVC2:
 		ret = phy_mc_lan867x_revc_config_init(dev);
-		if (ret) {
-			LOG_ERR("PHY initial configuration error: %d\n", ret);
-			return ret;
-		}
 		break;
 	case PHY_ID_LAN865X_REVB:
 		ret = phy_mc_lan865x_revb_config_init(dev);
-		if (ret) {
-			LOG_ERR("PHY initial configuration error: %d\n", ret);
-			return ret;
-		}
+		break;
+	case PHY_ID_LAN867X_REVD0:
+		ret = phy_mc_lan867x_revd0_config_init(dev);
 		break;
 	default:
 		LOG_ERR("Unsupported PHY ID: %x\n", data->phy_id);
 		return -ENODEV;
+	}
+
+	if (ret < 0) {
+		LOG_ERR("PHY initial configuration error: %d\n", ret);
+		return ret;
 	}
 
 	ret = phy_mc_t1s_set_dt_plca(dev);
