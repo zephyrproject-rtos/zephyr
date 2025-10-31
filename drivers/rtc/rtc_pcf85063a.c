@@ -84,7 +84,7 @@ static int pcf85063a_set_time(const struct device *dev, const struct rtc_time *t
 {
 	const struct pcf85063a_config *config = dev->config;
 	int ret;
-	uint8_t raw_time[7];
+	uint8_t raw_time[8];
 
 	if (timeptr->tm_year < PCF85063A_YEARS_OFFSET ||
 	    timeptr->tm_year > PCF85063A_YEARS_OFFSET + 99) {
@@ -96,16 +96,16 @@ static int pcf85063a_set_time(const struct device *dev, const struct rtc_time *t
 		return -EINVAL;
 	}
 
-	raw_time[0] = bin2bcd(timeptr->tm_sec);
-	raw_time[1] = bin2bcd(timeptr->tm_min);
-	raw_time[2] = bin2bcd(timeptr->tm_hour);
-	raw_time[3] = bin2bcd(timeptr->tm_mday);
-	raw_time[4] = timeptr->tm_wday;
-	raw_time[5] = bin2bcd((timeptr->tm_mon + PCF85063A_MONTHS_OFFSET));
-	raw_time[6] = bin2bcd(timeptr->tm_year - PCF85063A_YEARS_OFFSET);
+	raw_time[0] = PCF85063A_TIME_DATE_REGISTER;
+	raw_time[1] = bin2bcd(timeptr->tm_sec);
+	raw_time[2] = bin2bcd(timeptr->tm_min);
+	raw_time[3] = bin2bcd(timeptr->tm_hour);
+	raw_time[4] = bin2bcd(timeptr->tm_mday);
+	raw_time[5] = timeptr->tm_wday;
+	raw_time[6] = bin2bcd((timeptr->tm_mon + PCF85063A_MONTHS_OFFSET));
+	raw_time[7] = bin2bcd(timeptr->tm_year - PCF85063A_YEARS_OFFSET);
 
-	ret = i2c_burst_write_dt(&config->i2c, PCF85063A_TIME_DATE_REGISTER, raw_time,
-				 sizeof(raw_time));
+	ret = i2c_write_dt(&config->i2c, raw_time, sizeof(raw_time));
 	if (ret) {
 		LOG_ERR("Error when setting time: %i", ret);
 		return ret;
@@ -193,7 +193,7 @@ static int pcf85063a_alarm_set_time(const struct device *dev, uint16_t id, uint1
 				    const struct rtc_time *timeptr)
 {
 	const struct pcf85063a_config *config = dev->config;
-	uint8_t regs[5]; /* seconds, minutes, hours, day, weekday (0Bh..0Fh) */
+	uint8_t regs[6]; /* seconds, minutes, hours, day, weekday (0Bh..0Fh) */
 	int ret;
 
 	if (id != 0) {
@@ -206,42 +206,44 @@ static int pcf85063a_alarm_set_time(const struct device *dev, uint16_t id, uint1
 		return -EINVAL;
 	}
 
+	regs[0] = PCF85063A_ALARM_REGISTER;
+
 	/* Seconds alarm (AEN_S bit7 == 1 => disabled, 0 => enabled) */
 	if (mask & RTC_ALARM_TIME_MASK_SECOND) {
-		regs[0] = bin2bcd(timeptr->tm_sec) & PCF85063A_SECONDS_MASK;
-	} else {
-		regs[0] = BIT(7);
-	}
-
-	/* Minute alarm */
-	if (mask & RTC_ALARM_TIME_MASK_MINUTE) {
-		regs[1] = bin2bcd(timeptr->tm_min) & PCF85063A_MINUTES_MASK;
+		regs[1] = bin2bcd(timeptr->tm_sec) & PCF85063A_SECONDS_MASK;
 	} else {
 		regs[1] = BIT(7);
 	}
 
-	/* Hour alarm (assume 24-hour mode) */
-	if (mask & RTC_ALARM_TIME_MASK_HOUR) {
-		regs[2] = bin2bcd(timeptr->tm_hour) & PCF85063A_HOURS_MASK;
+	/* Minute alarm */
+	if (mask & RTC_ALARM_TIME_MASK_MINUTE) {
+		regs[2] = bin2bcd(timeptr->tm_min) & PCF85063A_MINUTES_MASK;
 	} else {
 		regs[2] = BIT(7);
 	}
 
-	/* Day (month day) alarm */
-	if (mask & RTC_ALARM_TIME_MASK_MONTHDAY) {
-		regs[3] = bin2bcd(timeptr->tm_mday) & PCF85063A_DAYS_MASK;
+	/* Hour alarm (assume 24-hour mode) */
+	if (mask & RTC_ALARM_TIME_MASK_HOUR) {
+		regs[3] = bin2bcd(timeptr->tm_hour) & PCF85063A_HOURS_MASK;
 	} else {
 		regs[3] = BIT(7);
 	}
 
-	/* Weekday alarm */
-	if (mask & RTC_ALARM_TIME_MASK_WEEKDAY) {
-		regs[4] = bin2bcd(timeptr->tm_wday) & PCF85063A_WEEKDAYS_MASK;
+	/* Day (month day) alarm */
+	if (mask & RTC_ALARM_TIME_MASK_MONTHDAY) {
+		regs[4] = bin2bcd(timeptr->tm_mday) & PCF85063A_DAYS_MASK;
 	} else {
 		regs[4] = BIT(7);
 	}
 
-	ret = i2c_burst_write_dt(&config->i2c, PCF85063A_ALARM_REGISTER, regs, sizeof(regs));
+	/* Weekday alarm */
+	if (mask & RTC_ALARM_TIME_MASK_WEEKDAY) {
+		regs[5] = bin2bcd(timeptr->tm_wday) & PCF85063A_WEEKDAYS_MASK;
+	} else {
+		regs[5] = BIT(7);
+	}
+
+	ret = i2c_write_dt(&config->i2c, regs, sizeof(regs));
 	if (ret) {
 		LOG_ERR("Error when setting alarm: %i", ret);
 		return ret;
