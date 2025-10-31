@@ -74,7 +74,6 @@ typedef enum {
 	UHC_PORT_EVENT_OVERCURRENT,
 } uhc_port_event_t;
 
-
 const char *uhc_port_event_str[] = {
 	"None",
 	"Connection",
@@ -187,6 +186,8 @@ typedef struct {
 	bool bufferdma;
 	/* FIFO depth in WORDs */
 	uint16_t fifodepth;
+	/* OTG mode */
+	uint16_t otgmode;
 	/* TODO: Port context and callback? */
 } uhc_dwc2_constant_config_t;
 
@@ -271,7 +272,7 @@ typedef enum {
 /**
  * @brief Object representing a buffer of a pipe's sindle or multi buffer implementation
  */
-typedef struct {
+struct uhc_dwc2_dma_buffer {
 	/* Pointer to the transfer associated with the buffer */
 	struct uhc_transfer *xfer;
 	union {
@@ -296,9 +297,9 @@ typedef struct {
 		};
 		uint32_t val;
 	} status_flags;
-} dma_buffer_t;
+};
 
-struct pipe_obj_s {
+struct uhc_dwc2_pipe {
 	/* XFER queuing related */
 	sys_dlist_t xfer_pending_list;
 
@@ -307,7 +308,7 @@ struct pipe_obj_s {
 	int num_xfer_done;
 
 	/* Single-buffer control */
-	dma_buffer_t *buffer;
+	struct uhc_dwc2_dma_buffer buffer;
 
 	/* HAL related */
 	uhc_dwc2_channel_t *chan_obj;
@@ -327,9 +328,6 @@ struct pipe_obj_s {
 		uint32_t val;
 	} flags;
 };
-
-typedef struct pipe_obj_s pipe_t;
-typedef pipe_t *pipe_hdl_t;
 
 typedef struct {
 	uint16_t top;
@@ -386,8 +384,8 @@ struct uhc_dwc2_data_s {
 	uint8_t num_pipes_queued;
 
 	/* TODO: Dynamic pipe allocation on enqueue? */
-	pipe_t pipe;
-	pipe_hdl_t ctrl_pipe_hdl;
+	struct uhc_dwc2_pipe pipe;
+	struct uhc_dwc2_pipe *ctrl_pipe;
 };
 
 /* Host channel registers address */
@@ -641,6 +639,7 @@ static inline int dwc2_hal_get_config(struct usb_dwc2_reg *const dwc2,
 	cfg->fsphytype = usb_dwc2_get_ghwcfg2_fsphytype(ghwcfg2);
 	cfg->phydatawidth = usb_dwc2_get_ghwcfg4_phydatawidth(ghwcfg4);
 	cfg->numchannels = usb_dwc2_get_ghwcfg2_numhstchnl(ghwcfg2) + 1U;
+	cfg->otgmode = usb_dwc2_get_ghwcfg2_otgmode(ghwcfg2);
 
 	LOG_DBG("PHY interface type: FSPHYTYPE %u, HSPHYTYPE %u, DATAWIDTH %u",
 		cfg->fsphytype,
@@ -791,8 +790,6 @@ static inline void dwc2_hal_port_enable(const struct device *dev, struct usb_dwc
 #define USB_DWC2_HPRT_PRTOVRCURRCHNG          BIT(5)
 #define USB_DWC2_HPRT_PRTCONNDET              BIT(1)
 
-#define CORE_INTRS_EN_MSK   (USB_DWC2_GINTSTS_DISCONNINT)
-
 /* Interrupts that pertain to core events */
 #define CORE_EVENTS_INTRS_MSK (USB_DWC2_GINTSTS_DISCONNINT | \
 							   USB_DWC2_GINTSTS_HCHINT)
@@ -931,66 +928,17 @@ static inline int uhc_dwc2_config_phy(const struct device *dev)
 	return ret;
 }
 
-static inline void uhc_dwc2_set_defaults(const struct device *dev)
-{
-	const struct uhc_dwc2_config *const config = dev->config;
-	struct usb_dwc2_reg *const dwc2 = config->base;
-	struct uhc_dwc2_data_s *priv = uhc_get_private(dev);
-	uint32_t reg;
-
-	/* Disable Global Interrupt */
-	sys_clear_bits((mem_addr_t)&dwc2->gahbcfg, USB_DWC2_GAHBCFG_GLBINTRMASK);
-
-	/* Disable dual-role protocols (SRP, HNP) */
-	reg = sys_read32((mem_addr_t)&dwc2->gusbcfg);
-	reg &= ~USB_DWC2_GUSBCFG_HNPCAP;
-	reg &= ~USB_DWC2_GUSBCFG_SRPCAP;
-	sys_write32(reg, (mem_addr_t)&dwc2->gusbcfg);
-
-	/* Enable Host mode */
-	sys_set_bits((mem_addr_t)&dwc2->gusbcfg, USB_DWC2_GUSBCFG_FORCEHSTMODE);
-	/* Wait until core is in host mode */
-	while ((sys_read32((mem_addr_t)&dwc2->gintsts) & USB_DWC2_GINTSTS_CURMOD) != 1) {
-	}
-
-	/* TODO: Set AHB burst mode for some ECO only for ESP32S2 */
-	/* Make config quirk? */
-
-	/* TODO: Disable HNP and SRP capabilities */
-	/* Also move to quirk? */
-
-	sys_clear_bits((mem_addr_t)&dwc2->gintmsk, 0xFFFFFFFFUL);
-
-	sys_set_bits((mem_addr_t)&dwc2->gintmsk, CORE_INTRS_EN_MSK);
-
-	/* Clear status */
-	uint32_t core_intrs = sys_read32((mem_addr_t)&dwc2->gintsts);
-	sys_write32(core_intrs, (mem_addr_t)&dwc2->gintsts);
-
-	/* Configure AHB */
-	uint32_t gahbcfg = sys_read32((mem_addr_t)&dwc2->gahbcfg);
-	gahbcfg |= USB_DWC2_GAHBCFG_NPTXFEMPLVL;
-	gahbcfg &= ~USB_DWC2_GAHBCFG_HBSTLEN_MASK;
-	gahbcfg |= (USB_DWC2_GAHBCFG_HBSTLEN_INCR16 << USB_DWC2_GAHBCFG_HBSTLEN_POS);
-	sys_write32(gahbcfg, (mem_addr_t)&dwc2->gahbcfg);
-
-	if (priv->const_cfg.bufferdma) {
-		sys_set_bits((mem_addr_t)&dwc2->gahbcfg, USB_DWC2_GAHBCFG_DMAEN);
-	}
-
-	/* Enable Global Interrupt */
-	sys_set_bits((mem_addr_t)&dwc2->gahbcfg, USB_DWC2_GAHBCFG_GLBINTRMASK);
-}
-
 /* 1.4 Contorller Initialization */
 static int uhc_dwc2_init_controller(const struct device *dev)
 {
 	const struct uhc_dwc2_config *const config = dev->config;
 	struct uhc_dwc2_data_s *priv = uhc_get_private(dev);
 	struct usb_dwc2_reg *const dwc2 = config->base;
+	const uint32_t base = (uintptr_t)config->base;
 	int ret;
+	uint32_t reg;
 
-	/* Get hardware configuration */
+	/* 1. Get hardware configuration */
 	ret = dwc2_hal_get_config(dwc2, &priv->const_cfg);
 	if (ret) {
 		LOG_ERR("Failed to get DWC2 core parameters: %d", ret);
@@ -1007,8 +955,58 @@ static int uhc_dwc2_init_controller(const struct device *dev)
 		return ret;
 	}
 
-	/* Set defaults */
-	uhc_dwc2_set_defaults(dev);
+	/* 2. Program some GAHBCFG fields */
+	reg = sys_read32(base + USB_DWC2_GAHBCFG);
+	/* Configure the DMA mode */
+	if (priv->const_cfg.bufferdma) {
+		reg |= USB_DWC2_GAHBCFG_DMAEN;
+	}
+	/* AHB burst length */
+	reg &= ~USB_DWC2_GAHBCFG_HBSTLEN_MASK;
+	reg |= (USB_DWC2_GAHBCFG_HBSTLEN_INCR16 << USB_DWC2_GAHBCFG_HBSTLEN_POS);
+	/* Enable Global Interrupt for AHB events */
+	reg |= USB_DWC2_GAHBCFG_GLBINTRMASK;
+	/* Configure the FIFO empty level */
+	reg |= USB_DWC2_GAHBCFG_NPTXFEMPLVL;
+	sys_write32(reg, base + USB_DWC2_GAHBCFG);
+
+	/* 3. Disable the RX FIFO Level interrupt */
+	reg = sys_read32(base + USB_DWC2_GINTMSK);
+	reg &= ~USB_DWC2_GINTSTS_RXFLVL;
+	sys_write32(reg, base + USB_DWC2_GINTMSK);
+
+	/* 4. TODO: handle cases where ServIntFlow is set */
+
+	/* 5. Configure GUSBCFG */
+	reg = sys_read32((mem_addr_t)&dwc2->gusbcfg);
+	/* Disable Host Negotiation Protocol to rely on Type-C instead */
+	reg &= ~USB_DWC2_GUSBCFG_HNPCAP;
+	/* TODO: use devicetree to configure SRP on/off */
+	reg &= ~USB_DWC2_GUSBCFG_SRPCAP;
+	/* TODO: PHY configs */
+	/* TODO: time-out config */
+	/* TODO: time-out config */
+	sys_write32(reg, (mem_addr_t)&dwc2->gusbcfg);
+
+	/* Enable Host mode */
+	sys_set_bits((mem_addr_t)&dwc2->gusbcfg, USB_DWC2_GUSBCFG_FORCEHSTMODE);
+	/* Wait until core is in host mode */
+	while ((sys_read32((mem_addr_t)&dwc2->gintsts) & USB_DWC2_GINTSTS_CURMOD) != 1) {
+	}
+
+	/* TODO: Set AHB burst mode for some ECO only for ESP32S2 */
+	/* Make config quirk? */
+
+	/* 6. Enable selected interrupts */
+	reg = sys_read32(base + USB_DWC2_GINTMSK);
+	reg |= USB_DWC2_GINTSTS_DISCONNINT;
+	reg |= USB_DWC2_GINTSTS_MODEMIS;
+	/* Ignore USB_DWC2_GINTSTS_OTGINT interrupts: role switching is from Type-C */
+	sys_write32(reg, base + USB_DWC2_GINTMSK);
+
+	/* Clear status */
+	uint32_t core_intrs = sys_read32((mem_addr_t)&dwc2->gintsts);
+	sys_write32(core_intrs, (mem_addr_t)&dwc2->gintsts);
 
 	/* Update the port state and flags */
 	priv->dynamic.port_state = UHC_PORT_STATE_NOT_POWERED;
@@ -1324,7 +1322,7 @@ dwc2_hal_chan_event_t uhc_dwc2_hal_chan_decode_intr(uhc_dwc2_channel_t *chan_obj
 	return chan_event;
 }
 
-struct uhc_transfer *pipe_get_next_xfer(pipe_t *pipe)
+struct uhc_transfer *pipe_get_next_xfer(struct uhc_dwc2_pipe *pipe)
 {
 	struct uhc_transfer *xfer;
 	sys_dnode_t *node = sys_dlist_peek_head(&pipe->xfer_pending_list);
@@ -1340,9 +1338,9 @@ static inline uint16_t calc_packet_count(const uint16_t size, const uint8_t mps)
 	}
 }
 
-static inline bool _buffer_check_done(pipe_t *pipe)
+static inline bool _buffer_check_done(struct uhc_dwc2_pipe *pipe)
 {
-	dma_buffer_t *buffer = pipe->buffer;
+	struct uhc_dwc2_dma_buffer *buffer = &pipe->buffer;
 	/* Only control transfers need to be continued */
 	if (pipe->ep_char.type != UHC_DWC2_XFER_TYPE_CTRL) {
 		return true;
@@ -1351,7 +1349,7 @@ static inline bool _buffer_check_done(pipe_t *pipe)
 	return (buffer->flags.ctrl.cur_stg == 2);
 }
 
-static inline void _buffer_fill_ctrl(dma_buffer_t *buffer, struct uhc_transfer *const xfer)
+static inline void _buffer_fill_ctrl(struct uhc_dwc2_dma_buffer *buffer, struct uhc_transfer *const xfer)
 {
 	/* Get information about the control transfer by analyzing the setup packet */
 	const struct usb_setup_packet *setup_pkt = (const struct usb_setup_packet *)xfer->setup_pkt;
@@ -1377,7 +1375,7 @@ static inline void _buffer_fill_ctrl(dma_buffer_t *buffer, struct uhc_transfer *
 	/* TODO Sync data from cache to memory. For OUT and CTRL transfers */
 }
 
-static void IRAM_ATTR _buffer_fill(pipe_t *pipe)
+static void IRAM_ATTR _buffer_fill(struct uhc_dwc2_pipe *pipe)
 {
 	struct uhc_transfer * xfer = pipe_get_next_xfer(pipe);
 	pipe->num_xfer_pending--;
@@ -1386,7 +1384,7 @@ static void IRAM_ATTR _buffer_fill(pipe_t *pipe)
 
 	switch (pipe->ep_char.type) {
 		case UHC_DWC2_XFER_TYPE_CTRL: {
-				_buffer_fill_ctrl(pipe->buffer, xfer);
+				_buffer_fill_ctrl(&pipe->buffer, xfer);
 				break;
 				}
 		default: {
@@ -1407,10 +1405,10 @@ static inline ctrl_stage_t cal_next_pid(ctrl_stage_t pid, uint8_t pkt_count)
 	}
 }
 
-static void IRAM_ATTR _buffer_exec_proceed(pipe_t *pipe)
+static void IRAM_ATTR _buffer_exec_proceed(struct uhc_dwc2_pipe *pipe)
 {
-	dma_buffer_t *buffer_exec = pipe->buffer;
-	struct uhc_transfer *const xfer = pipe->buffer->xfer;
+	struct uhc_dwc2_dma_buffer *buffer_exec = &pipe->buffer;
+	struct uhc_transfer *const xfer = pipe->buffer.xfer;
 	const struct usb_dwc2_host_chan *const chan_regs = pipe->chan_obj->regs;
 
 	__ASSERT(buffer_exec != NULL,
@@ -1489,15 +1487,15 @@ static void IRAM_ATTR _buffer_exec_proceed(pipe_t *pipe)
 	sys_write32(hcchar, (mem_addr_t)&chan_regs->hcchar);
 }
 
-static inline void _buffer_done(pipe_t *pipe, pipe_event_t pipe_event, bool canceled)
+static inline void _buffer_done(struct uhc_dwc2_pipe *pipe, pipe_event_t pipe_event, bool canceled)
 {
-	dma_buffer_t *buffer_done = pipe->buffer;
+	struct uhc_dwc2_dma_buffer *buffer_done = &pipe->buffer;
 	buffer_done->status_flags.executing = 0;
 	buffer_done->status_flags.was_canceled = canceled;
 	buffer_done->status_flags.pipe_event = pipe_event;
 }
 
-static inline bool _buffer_can_fill(pipe_t *pipe)
+static inline bool _buffer_can_fill(struct uhc_dwc2_pipe *pipe)
 {
 	/* We can only fill if there are pending XFRs and at least one unfilled buffer */
 	return (pipe->num_xfer_pending > 0);
@@ -1505,7 +1503,7 @@ static inline bool _buffer_can_fill(pipe_t *pipe)
 	/* TODO: Double buffering scheme? */
 }
 
-static inline bool _buffer_can_exec(pipe_t *pipe)
+static inline bool _buffer_can_exec(struct uhc_dwc2_pipe *pipe)
 {
 	/* TODO: Double buffering scheme? */
 	/* For one buffer we can execute it always */
@@ -1520,7 +1518,7 @@ static inline bool _buffer_can_exec(pipe_t *pipe)
  * @param pipe The pipe associated with the channel
  * @param chan_obj The channel object
  */
-static pipe_event_t uhc_dwc2_decode_chan(pipe_t* pipe, uhc_dwc2_channel_t *chan_obj)
+static pipe_event_t uhc_dwc2_decode_chan(struct uhc_dwc2_pipe *pipe, uhc_dwc2_channel_t *chan_obj)
 {
 	dwc2_hal_chan_event_t chan_event = uhc_dwc2_hal_chan_decode_intr(chan_obj);
 	pipe_event_t pipe_event = PIPE_EVENT_NONE;
@@ -1576,9 +1574,9 @@ static pipe_event_t uhc_dwc2_decode_chan(pipe_t* pipe, uhc_dwc2_channel_t *chan_
 	return pipe_event;
 }
 
-static IRAM_ATTR void _buffer_exec(pipe_t *pipe)
+static IRAM_ATTR void _buffer_exec(struct uhc_dwc2_pipe *pipe)
 {
-	dma_buffer_t *buffer_exec = pipe->buffer;
+	struct uhc_dwc2_dma_buffer *buffer_exec = &pipe->buffer;
 	struct uhc_transfer *const xfer = (struct uhc_transfer *)buffer_exec->xfer;
 	const struct usb_dwc2_host_chan *const chan_regs = pipe->chan_obj->regs;
 
@@ -1629,7 +1627,7 @@ static void uhc_dwc2_isr_handler(const struct device *dev)
 		/* Channel event. Cycle through each pending channel */
 		uhc_dwc2_channel_t *chan_obj = uhc_dwc2_get_chan_pending_intr(dev);
 		while (chan_obj != NULL) {
-			pipe_t *pipe = (pipe_t*) uhc_dwc2_chan_get_context(chan_obj);
+			struct uhc_dwc2_pipe *pipe = (void *)uhc_dwc2_chan_get_context(chan_obj);
 			pipe_event_t pipe_event = uhc_dwc2_decode_chan(pipe, chan_obj);
 			if (pipe_event != PIPE_EVENT_NONE) {
 				pipe->last_event = pipe_event;
@@ -2043,33 +2041,6 @@ static inline void uhc_dwc2_chan_free(const struct device *dev, uhc_dwc2_channel
 }
 
 /**
- * @brief Allocate one DMA buffer block for a pipe.
- *
- * @param[in] type The type of USB transfer.
- *
- * @return Pointer to the allocated DMA buffer block, or NULL on failure.
- */
-static dma_buffer_t *dma_buffer_block_alloc(usb_transfer_type_t type)
-{
-	(void) type;
-	/* Buffer DMA mode needs only one simple buffer for now */
-	dma_buffer_t *buffer = k_malloc(sizeof(dma_buffer_t));
-	return buffer;
-}
-
-/**
- * @brief Free a DMA buffer block.
- *
- * @param[in] buffer Pointer to the DMA buffer block to be freed.
- */
-static void dma_buffer_block_free(dma_buffer_t *buffer)
-{
-	if (buffer) {
-		k_free(buffer);
-	}
-}
-
-/**
  * @brief Allocate a pipe and its resources.
  *
  * @note Pipe holds the underlying channel object and the DMA buffer for transfer purposes.
@@ -2078,21 +2049,19 @@ static void dma_buffer_block_free(dma_buffer_t *buffer)
  *
  * @param[in] dev Pointer to the device structure.
  * @param[in] pipe_config Pointer to the pipe configuration structure.
- * @param[out] pipe_hdl Pointer to the pipe handle to be filled.
+ * @param[out] pipe_ptr Pointer to the pipe to be filled.
  */
 static inline int uhc_dwc2_pipe_alloc(const struct device *dev,
-		const uhc_pipe_config_t *pipe_config, pipe_hdl_t *pipe_hdl)
+		const uhc_pipe_config_t *pipe_config, struct uhc_dwc2_pipe **pipe_ptr)
 {
 	struct uhc_dwc2_data_s *priv = uhc_get_private(dev);
-
+	uhc_dwc2_channel_t *chan_obj;
+	struct uhc_dwc2_pipe *pipe = &priv->pipe;
 	int ret;
 
-	/* TODO: Allocate the pipe and it's resources */
-	pipe_t *pipe = &priv->pipe;
-
-	uhc_dwc2_channel_t *chan_obj = k_malloc(sizeof(uhc_dwc2_channel_t));
-	if (pipe == NULL || chan_obj == NULL) {
-		LOG_ERR("Failed to allocate pipe or channel object");
+	chan_obj = k_malloc(sizeof(uhc_dwc2_channel_t));
+	if (chan_obj == NULL) {
+		LOG_ERR("Failed to allocate channel object");
 		ret = -ENOMEM;
 		goto err;
 	}
@@ -2111,14 +2080,6 @@ static inline int uhc_dwc2_pipe_alloc(const struct device *dev,
 	uhc_dwc2_speed_t port_speed = UHC_DWC2_SPEED_FULL;
 	bool is_default = true;
 	int pipe_idx = 0;
-
-	pipe->buffer = dma_buffer_block_alloc(type);
-
-	if (pipe->buffer == NULL) {
-		LOG_ERR("Failed to allocate pipe buffer");
-		ret = -ENOMEM;
-		goto err;
-	}
 
 	uhc_dwc2_pipe_set_ep_char(pipe_config, type, is_default, pipe_idx, port_speed, &ep_char);
 	memcpy(&pipe->ep_char, &ep_char, sizeof(uhc_dwc2_ep_char_t));
@@ -2150,12 +2111,9 @@ static inline int uhc_dwc2_pipe_alloc(const struct device *dev,
 
 	/* TODO: exit critical section */
 
-	*pipe_hdl = (pipe_hdl_t)pipe;
+	*pipe_ptr = pipe;
 	return 0;
 err:
-	if (pipe->buffer) {
-		dma_buffer_block_free(pipe->buffer);
-	}
 	if (chan_obj) {
 		k_free(chan_obj);
 	}
@@ -2167,10 +2125,9 @@ err:
  *
  * @param dev Pointer to the device structure.
  */
-static inline int uhc_dwc2_pipe_free(const struct device *dev, pipe_hdl_t pipe_hdl)
+static inline int uhc_dwc2_pipe_free(const struct device *dev, struct uhc_dwc2_pipe *pipe)
 {
 	struct uhc_dwc2_data_s *priv = uhc_get_private(dev);
-	pipe_t *pipe = (pipe_t *)pipe_hdl;
 
 	if (pipe->num_xfer_pending && pipe->flags.has_xfer) {
 		LOG_ERR("Unable to free pipe with pending XFERs");
@@ -2178,7 +2135,6 @@ static inline int uhc_dwc2_pipe_free(const struct device *dev, pipe_hdl_t pipe_h
 	}
 
 	uhc_dwc2_chan_free(dev, pipe->chan_obj);
-	dma_buffer_block_free(pipe->buffer);
 
 	/* TODO: Remove the pipe from the list of idle pipes in the port object */
 	priv->num_pipes_idle--;
@@ -2224,19 +2180,19 @@ static inline void uhc_dwc2_handle_port_events(const struct device *dev)
 			}
 
 			/* Allocate the Pipe for the EP0 Control Endpoint */
-			pipe_hdl_t ctrl_pipe_hdl;
+			struct uhc_dwc2_pipe *ctrl_pipe;
 			uhc_pipe_config_t pipe_config = {
 				.dev_speed = speed,
 				.dev_addr = 0,
 			};
 
-			ret = uhc_dwc2_pipe_alloc(dev, &pipe_config, &ctrl_pipe_hdl);
+			ret = uhc_dwc2_pipe_alloc(dev, &pipe_config, &ctrl_pipe);
 			if (ret) {
 				LOG_ERR("Failed to initialize channels: %d", ret);
 				break;
 			}
 			/* Save the control pipe handle in the private data */
-			priv->ctrl_pipe_hdl = ctrl_pipe_hdl;
+			priv->ctrl_pipe = ctrl_pipe;
 			/* Notify the higher logic about the new device */
 			uhc_dwc2_submit_new_device(dev, speed);
 			break;
@@ -2262,8 +2218,8 @@ static inline void uhc_dwc2_handle_port_events(const struct device *dev)
 			/* TODO: exit critical section */
 
 			if (port_has_device) {
-				uhc_dwc2_pipe_free(dev, priv->ctrl_pipe_hdl);
-				priv->ctrl_pipe_hdl = NULL;
+				uhc_dwc2_pipe_free(dev, priv->ctrl_pipe);
+				priv->ctrl_pipe = NULL;
 				uhc_dwc2_submit_dev_gone(dev);
 			}
 			/* Recover the port */
@@ -2287,23 +2243,23 @@ static inline void uhc_dwc2_handle_pipe_events(const struct device *dev)
 	struct uhc_dwc2_data_s *priv = uhc_get_private(dev);
 
 	/* TODO: support more than CTRL pipe */
-	pipe_t* pipe = &priv->pipe;
+	struct uhc_dwc2_pipe *pipe = &priv->pipe;
 
 	LOG_DBG("Pipe event: %s", uhc_pipe_event_str[pipe->last_event]);
 
 	if (pipe->last_event == PIPE_EVENT_XFER_DONE) {
 		/* XFER transfer is done, process the transfer and release the pipe buffer */
-		struct uhc_transfer *const xfer = (struct uhc_transfer *)pipe->buffer->xfer;
+		struct uhc_transfer *const xfer = (struct uhc_transfer *)pipe->buffer.xfer;
 
 		if (xfer->buf != NULL && xfer->buf->len) {
-			LOG_HEXDUMP_WRN(xfer->buf->data, xfer->buf->len, "data");
+			LOG_HEXDUMP_DBG(xfer->buf->data, xfer->buf->len, "data");
 		}
 
 		/* TODO: Refactor the address setting logic. */
 		/* To configure the channel, we need to get the dev addr from higher logic */
-		if (pipe->buffer->flags.ctrl.set_addr) {
-			pipe->buffer->flags.ctrl.set_addr = 0;
-			pipe->ep_char.dev_addr = pipe->buffer->flags.ctrl.new_addr;
+		if (pipe->buffer.flags.ctrl.set_addr) {
+			pipe->buffer.flags.ctrl.set_addr = 0;
+			pipe->ep_char.dev_addr = pipe->buffer.flags.ctrl.new_addr;
 			/* Set the new device address in the channel */
 			sys_set_bits((mem_addr_t)&pipe->chan_obj->regs->hcchar,
 							(pipe->ep_char.dev_addr << USB_DWC2_HCCHAR0_DEVADDR_POS));
@@ -2353,12 +2309,11 @@ static inline void uhc_dwc2_thread_handler(void *const arg)
 }
 
 static inline int uhc_dwc2_submit_ctrl_xfer(const struct device *dev,
-				pipe_hdl_t pipe_hdl, struct uhc_transfer *const xfer)
+				struct uhc_dwc2_pipe *pipe, struct uhc_transfer *const xfer)
 {
-	pipe_t *pipe = (pipe_t *)pipe_hdl;
 	struct uhc_dwc2_data_s *priv = uhc_get_private(dev);
 
-	LOG_HEXDUMP_WRN(xfer->setup_pkt, 8, "setup");
+	LOG_HEXDUMP_DBG(xfer->setup_pkt, 8, "setup");
 
 	LOG_DBG("endpoint=%02Xh, mps=%d, interval=%d, start_frame=%d, stage=%d, no_status=%d",
 		xfer->ep, xfer->mps, xfer->interval, xfer->start_frame, xfer->stage, xfer->no_status);
@@ -2453,7 +2408,7 @@ static int uhc_dwc2_enqueue(const struct device *dev,
 
 	int ret;
 	if (USB_EP_GET_IDX(xfer->ep) == 0) {
-		ret = uhc_dwc2_submit_ctrl_xfer(dev, priv->ctrl_pipe_hdl, xfer);
+		ret = uhc_dwc2_submit_ctrl_xfer(dev, priv->ctrl_pipe, xfer);
 		if (ret) {
 			LOG_ERR("Failed to submit xfer: %d", ret);
 			return ret;
@@ -2480,7 +2435,7 @@ static int uhc_dwc2_preinit(const struct device *dev)
 
 	/* Initialize the private data structure */
 	memset(priv, 0, sizeof(struct uhc_dwc2_data_s));
-	priv->ctrl_pipe_hdl = NULL;
+	priv->ctrl_pipe = NULL;
 	k_mutex_init(&priv->mutex);
 	k_event_init(&priv->drv_evt);
 
