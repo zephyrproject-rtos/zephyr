@@ -82,6 +82,10 @@ mapping:
             type: seq
             sequence:
               - type: str
+          pre-user-files:
+            type: seq
+            sequence:
+              - type: str
       llext-edk:
         type: map
         mapping:

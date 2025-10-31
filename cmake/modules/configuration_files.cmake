@@ -12,6 +12,7 @@
 #
 # - CONF_FILE:              List of Kconfig fragments
 # - EXTRA_CONF_FILE:        List of additional Kconfig fragments
+# - PRE_CONF_FILE:          List of additional Kconfig fragments to merge before CONF_FILE
 # - DTC_OVERLAY_FILE:       List of devicetree overlay files
 # - EXTRA_DTC_OVERLAY_FILE  List of additional devicetree overlay files
 # - DTS_EXTRA_CPPFLAGS      List of additional devicetree preprocessor defines
@@ -93,6 +94,7 @@ DTC_OVERLAY_FILE=\"dts1.overlay dts2.overlay\"")
 zephyr_boilerplate_watch(DTC_OVERLAY_FILE)
 
 zephyr_get(EXTRA_CONF_FILE SYSBUILD LOCAL VAR EXTRA_CONF_FILE OVERLAY_CONFIG MERGE REVERSE)
+zephyr_get(PRE_CONF_FILE SYSBUILD LOCAL VAR PRE_CONF_FILE MERGE REVERSE)
 zephyr_get(EXTRA_DTC_OVERLAY_FILE SYSBUILD LOCAL MERGE REVERSE)
 zephyr_get(DTS_EXTRA_CPPFLAGS SYSBUILD LOCAL MERGE REVERSE)
 build_info(application source-dir VALUE ${APPLICATION_SOURCE_DIR})
