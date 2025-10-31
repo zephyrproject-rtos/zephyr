@@ -486,7 +486,7 @@ static inline bool led_is_ready_dt(const struct led_dt_spec *spec)
 #define LED_DT_SPEC_GET(node_id)                                               \
 	{                                                                      \
 		.dev = DEVICE_DT_GET(DT_PARENT(node_id)),                      \
-		.index = DT_NODE_CHILD_IDX(node_id),                           \
+		.index = DT_PROP_OR(node_id, index, DT_NODE_CHILD_IDX(node_id)),         \
 	}
 
 /**
