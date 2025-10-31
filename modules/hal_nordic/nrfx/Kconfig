@@ -342,7 +342,7 @@ config NRFX_PPIB30
 	select NRFX_PPIB
 
 config NRFX_PWM
-	bool
+	bool "PWM driver"
 
 config NRFX_QDEC
 	bool "QDEC driver"
