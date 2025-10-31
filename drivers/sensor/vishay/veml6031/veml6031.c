@@ -169,8 +169,9 @@ static int veml6031_read16(const struct device *dev, uint8_t cmd, uint8_t *data)
 static int veml6031_write16(const struct device *dev, uint8_t cmd, uint8_t *data)
 {
 	const struct veml6031_config *conf = dev->config;
+	uint8_t buf[3] = {cmd, data[0], data[1]};
 
-	return i2c_burst_write_dt(&conf->bus, cmd, data, 2);
+	return i2c_write_dt(&conf->bus, buf, sizeof(buf));
 }
 
 static int veml6031_write_conf(const struct device *dev)
