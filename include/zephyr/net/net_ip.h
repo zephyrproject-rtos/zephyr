@@ -82,6 +82,7 @@ enum net_ip_protocol_secure {
 	NET_IPPROTO_TLS_1_3 = 259,     /**< TLS 1.3 protocol */
 	NET_IPPROTO_DTLS_1_0 = 272,    /**< DTLS 1.0 protocol */
 	NET_IPPROTO_DTLS_1_2 = 273,    /**< DTLS 1.2 protocol */
+	NET_IPPROTO_QUIC = 511,        /**< QUIC protocol     */
 };
 
 /** Socket type */

@@ -689,6 +689,8 @@ static inline int services_init(void)
 
 	net_coap_init();
 
+	net_quic_init();
+
 	net_shell_init();
 
 	return status;
