@@ -1,0 +1,6 @@
+board:
+  name: esp32s3_poe_eth_8di_8ro
+  full_name: ESP32-S3-POE-ETH-8DI-8RO
+  vendor: waveshare
+  socs:
+  - name: esp32s3
