@@ -703,11 +703,7 @@ def get_traces_in_trace_event_format(tmpdir, elf, demangle, verbose=False):
     named_thread_list = []
     for trace in ge:
         event_type, func, tid, cpu, _, ts, tn = trace.values()
-
-        # Use 4 LSB in tid (address) as the final thread ID just to ease
-        # displaying it in Perfetto. Hardly there will be a collision.
         tid = int(tid, 0)
-        tid = tid & 0xFFFF
 
         # Set phase type according with the Event
         if event_type == "entry":
