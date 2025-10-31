@@ -1465,6 +1465,8 @@ enum wifi_p2p_op {
 	 *  or specific MAC address to query a single peer
 	 */
 	WIFI_P2P_PEER,
+	/** P2P connect to peer */
+	WIFI_P2P_CONNECT,
 };
 
 /** Wi-Fi P2P discovery type */
@@ -1475,6 +1477,16 @@ enum wifi_p2p_discovery_type {
 	WIFI_P2P_FIND_ONLY_SOCIAL,
 	/** Progressive - scan through all channels one at a time */
 	WIFI_P2P_FIND_PROGRESSIVE,
+};
+
+/** Wi-Fi P2P connection method */
+enum wifi_p2p_connection_method {
+	/** Push Button Configuration */
+	WIFI_P2P_METHOD_PBC = 0,
+	/** Display PIN (device displays PIN for peer to enter) */
+	WIFI_P2P_METHOD_DISPLAY,
+	/** Keypad PIN (user enters PIN on device) */
+	WIFI_P2P_METHOD_KEYPAD,
 };
 
 /** Maximum number of P2P peers that can be returned in a single query */
@@ -1496,6 +1508,20 @@ struct wifi_p2p_params {
 	struct wifi_p2p_device_info *peers;
 	/** Actual number of peers returned */
 	uint16_t peer_count;
+	/** Connect specific parameters */
+	struct {
+		/** Connection method */
+		enum wifi_p2p_connection_method method;
+		/** PIN for display/keypad methods (8 digits)
+		 * - For DISPLAY: Leave empty, PIN will be generated and returned
+		 * - For KEYPAD: Provide the PIN to use for connection
+		 */
+		char pin[WIFI_WPS_PIN_MAX_LEN + 1];
+		/** GO intent (0-15, higher values indicate higher willingness to be GO) */
+		uint8_t go_intent;
+		/** Frequency in MHz (0 = not specified, use default) */
+		unsigned int freq;
+	} connect;
 };
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
 
