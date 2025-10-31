@@ -14,6 +14,7 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/spi/spi.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	#address-cells = <1>;
@@ -138,6 +139,16 @@
 			clock-names = "rc32m", "crystal", "root", "bclk",
 				      "pll_192", "pll_160",
 				      "pll_120", "pll_48";
+		};
+
+		adc0: adc@40002000 {
+			compatible = "bflb,adc";
+			reg = <0x40002000 0x1000 0x4000F000 0x1000>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+
+			interrupts = <41 0>;
+			interrupt-parent = <&clic>;
 		};
 
 		efuse: efuse@40007000 {
