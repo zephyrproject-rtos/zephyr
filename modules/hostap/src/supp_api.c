@@ -2852,6 +2852,95 @@ int supplicant_p2p_oper(const struct device *dev, struct wifi_p2p_params *params
 		break;
 	}
 
+	case WIFI_P2P_CONNECT: {
+		char addr_str[18];
+		const char *method_str = "";
+		char freq_str[32] = "";
+		const char *join_str = "";
+
+		if (params == NULL) {
+			wpa_printf(MSG_ERROR, "P2P connect params are NULL");
+			return -EINVAL;
+		}
+
+		snprintk(addr_str, sizeof(addr_str), "%02x:%02x:%02x:%02x:%02x:%02x",
+			 params->peer_addr[0], params->peer_addr[1], params->peer_addr[2],
+			 params->peer_addr[3], params->peer_addr[4], params->peer_addr[5]);
+
+		/* Add frequency parameter if specified */
+		if (params->connect.freq > 0) {
+			snprintk(freq_str, sizeof(freq_str), " freq=%u", params->connect.freq);
+		}
+
+		/* Add join parameter if specified */
+		if (params->connect.join) {
+			join_str = " join";
+		}
+
+		switch (params->connect.method) {
+		case WIFI_P2P_METHOD_PBC:
+			method_str = "pbc";
+			snprintk(cmd_buf, sizeof(cmd_buf), "P2P_CONNECT %s %s go_intent=%d%s%s",
+				 addr_str, method_str, params->connect.go_intent, freq_str,
+				 join_str);
+			break;
+		case WIFI_P2P_METHOD_DISPLAY:
+			method_str = "pin";
+			snprintk(cmd_buf, sizeof(cmd_buf), "P2P_CONNECT %s %s go_intent=%d%s%s",
+				 addr_str, method_str, params->connect.go_intent, freq_str,
+				 join_str);
+			break;
+		case WIFI_P2P_METHOD_KEYPAD:
+			method_str = "keypad";
+			if (params->connect.pin[0] == '\0') {
+				wpa_printf(MSG_ERROR, "PIN required for keypad method");
+				return -EINVAL;
+			}
+			snprintk(cmd_buf, sizeof(cmd_buf), "P2P_CONNECT %s %s %s go_intent=%d%s%s",
+				 addr_str, method_str, params->connect.pin,
+				 params->connect.go_intent, freq_str, join_str);
+			break;
+		default:
+			wpa_printf(MSG_ERROR, "Unknown P2P connection method: %d",
+				   params->connect.method);
+			return -EINVAL;
+		}
+
+		ret = zephyr_wpa_cli_cmd_resp_noprint(wpa_s->ctrl_conn, cmd_buf, resp_buf);
+		if (ret < 0) {
+			wpa_printf(MSG_ERROR, "P2P_CONNECT command failed: %d", ret);
+			return -EIO;
+		}
+		if (strncmp(resp_buf, "FAIL", 4) == 0) {
+			wpa_printf(MSG_ERROR, "P2P connect failed: %s", resp_buf);
+			return -ENODEV;
+		}
+
+		/* For DISPLAY method, capture the generated PIN from response */
+		if (params->connect.method == WIFI_P2P_METHOD_DISPLAY) {
+			size_t len = 0;
+			char *pos = resp_buf;
+
+			while (*pos == ' ' || *pos == '\t' || *pos == '\n') {
+				pos++;
+			}
+
+			while (*pos != '\0' && *pos != '\n' && *pos != ' ' &&
+			       len < WIFI_WPS_PIN_MAX_LEN) {
+				params->connect.pin[len++] = *pos++;
+			}
+			params->connect.pin[len] = '\0';
+
+			if (params->connect.pin[0] == '\0') {
+				wpa_printf(MSG_ERROR, "P2P connect: No PIN returned");
+				return -ENODEV;
+			}
+		}
+
+		ret = 0;
+		break;
+	}
+
 	default:
 		wpa_printf(MSG_ERROR, "Unknown P2P operation: %d", params->oper);
 		ret = -EINVAL;
