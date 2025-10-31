@@ -30,11 +30,11 @@ struct gnss_rtk_data_callback {
 };
 
 #if CONFIG_GNSS_RTK
-#define GNSS_RTK_DATA_CALLBACK_DEFINE(_dev, _callback)						   \
-	static const STRUCT_SECTION_ITERABLE(gnss_rtk_data_callback,				   \
-					     _gnss_rtk_data_callback__##_callback) = {		   \
-		.dev = _dev,									   \
-		.callback = _callback,								   \
+#define GNSS_RTK_DATA_CALLBACK_DEFINE(_dev, _callback)                                             \
+	static const STRUCT_SECTION_ITERABLE(gnss_rtk_data_callback,                               \
+					     _CONCAT(_gnss_rtk_data_callback_, __COUNTER__)) = {   \
+		.dev = _dev,                                                                       \
+		.callback = _callback,                                                             \
 	}
 #else
 #define GNSS_RTK_DATA_CALLBACK_DEFINE(_dev, _callback)
