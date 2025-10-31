@@ -115,16 +115,17 @@ static inline int ssd1320_write_bus_cmd_i2c(const struct device *dev, const uint
 					    const uint8_t *data, size_t len)
 {
 	const struct ssd1320_config *config = dev->config;
-	static uint8_t buf[SSD1320_MAXIMUM_CMD_LENGTH];
+	static uint8_t buf[SSD1320_MAXIMUM_CMD_LENGTH + 1];
 
 	if (len > SSD1320_MAXIMUM_CMD_LENGTH - 1) {
 		return -EINVAL;
 	}
 
-	buf[0] = cmd;
-	memcpy(&(buf[1]), data, len);
+	buf[0] = SSD1320_CONTROL_ALL_BYTES_CMD;
+	buf[1] = cmd;
+	memcpy(&(buf[2]), data, len);
 
-	return i2c_burst_write_dt(&config->i2c, SSD1320_CONTROL_ALL_BYTES_CMD, buf, len + 1);
+	return i2c_write_dt(&config->i2c, buf, len + 2);
 }
 
 static inline int ssd1320_set_hardware_config(const struct device *dev)
