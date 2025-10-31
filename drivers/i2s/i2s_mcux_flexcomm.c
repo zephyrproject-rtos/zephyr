@@ -61,7 +61,7 @@ struct i2s_mcux_data {
 	 */
 	struct i2s_mcux_q_entry tx_in_msgs[CONFIG_I2S_MCUX_FLEXCOMM_TX_BLOCK_COUNT];
 	void *tx_out_msgs[CONFIG_I2S_MCUX_FLEXCOMM_TX_BLOCK_COUNT];
-	struct dma_block_config tx_dma_block;
+	struct dma_block_config tx_dma_blocks[NUM_DMA_BLOCKS];
 };
 
 static int i2s_mcux_flexcomm_cfg_convert(uint32_t base_frequency,
@@ -417,8 +417,8 @@ static void i2s_mcux_config_dma_blocks(const struct device *dev,
 		memset(blk_cfg, 0, sizeof(dev_data->rx_dma_blocks));
 	} else {
 		stream = &dev_data->tx;
-		blk_cfg = &dev_data->tx_dma_block;
-		memset(blk_cfg, 0, sizeof(dev_data->tx_dma_block));
+		blk_cfg = &dev_data->tx_dma_blocks[0];
+		memset(blk_cfg, 0, sizeof(dev_data->tx_dma_blocks));
 	}
 
 	stream->dma_cfg.head_block = blk_cfg;
@@ -441,7 +441,15 @@ static void i2s_mcux_config_dma_blocks(const struct device *dev,
 		blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
 		blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 		blk_cfg->source_address = (uint32_t)queue_entry->mem_block;
-		blk_cfg->block_size = queue_entry->size;
+		blk_cfg->block_size = (uint32_t)queue_entry->size;
+		blk_cfg->next_block = &dev_data->tx_dma_blocks[1];
+		blk_cfg->source_reload_en = 1;
+
+		blk_cfg = &dev_data->tx_dma_blocks[1];
+		blk_cfg->dest_address = (uint32_t)&base->FIFOWR;
+		blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+		blk_cfg->source_address = (uint32_t)((queue_entry + 1)->mem_block);
+		blk_cfg->block_size = (uint32_t)((queue_entry + 1)->size);
 	}
 
 	stream->dma_cfg.user_data = (void *)dev;
@@ -500,18 +508,24 @@ static void i2s_mcux_dma_tx_callback(const struct device *dma_dev, void *arg,
 		/* get the next buffer from queue */
 		ret = k_msgq_get(&stream->in_queue, &queue_entry, K_NO_WAIT);
 		if (ret == 0) {
+			const struct i2s_mcux_config *cfg = dev->config;
+			I2S_Type *base = cfg->base;
+
 			/* config the DMA */
-			i2s_mcux_config_dma_blocks(dev, I2S_DIR_TX,
-						   &queue_entry);
 			k_msgq_put(&stream->out_queue, &queue_entry.mem_block, K_NO_WAIT);
+			dma_reload(stream->dev_dma, stream->channel,
+				   (uint32_t)queue_entry.mem_block,
+				   (uint32_t)&base->FIFOWR,
+				   queue_entry.size);
+
 			dma_start(stream->dev_dma, stream->channel);
 		}
 
-		if (ret || status < 0) {
+		if (!(k_msgq_num_used_get(&stream->out_queue)) || status < 0) {
 			/*
 			 * DMA encountered an error (status < 0)
 			 * or
-			 * No buffers in input queue
+			 * No buffers in output queue
 			 */
 			LOG_DBG("DMA status %08x channel %u k_msgq_get ret %d",
 				status, channel, ret);
@@ -605,23 +619,31 @@ static int i2s_mcux_tx_stream_start(const struct device *dev)
 	struct i2s_mcux_data *dev_data = dev->data;
 	struct stream *stream = &dev_data->tx;
 	I2S_Type *base = cfg->base;
-	struct i2s_mcux_q_entry queue_entry;
+	struct i2s_mcux_q_entry queue_entry[NUM_DMA_BLOCKS] = { 0 };
 
-	/* retrieve buffer from input queue */
-	ret = k_msgq_get(&stream->in_queue, &queue_entry, K_NO_WAIT);
-	if (ret != 0) {
-		LOG_ERR("No buffer in input queue to start transmission");
-		return ret;
+	for (int i = 0;
+	     i < NUM_DMA_BLOCKS && k_msgq_num_used_get(&stream->in_queue);
+	     i++) {
+		/* retrieve buffer from input queue */
+		ret = k_msgq_get(&stream->in_queue, &queue_entry[i], K_NO_WAIT);
+		if (ret != 0) {
+			LOG_ERR("No buffer in input queue to start transmission");
+			return ret;
+		}
 	}
 
-	i2s_mcux_config_dma_blocks(dev, I2S_DIR_TX,
-				   &queue_entry);
+	i2s_mcux_config_dma_blocks(dev, I2S_DIR_TX, queue_entry);
 
-	/* put buffer in output queue */
-	ret = k_msgq_put(&stream->out_queue, &queue_entry.mem_block, K_NO_WAIT);
-	if (ret != 0) {
-		LOG_ERR("failed to put buffer in output queue");
-		return ret;
+	for (int i = 0; i < NUM_DMA_BLOCKS; i++) {
+		if (queue_entry[i].mem_block == NULL) {
+			break;
+		}
+		/* put buffer in output queue */
+		ret = k_msgq_put(&stream->out_queue, &queue_entry[i].mem_block, K_NO_WAIT);
+		if (ret != 0) {
+			LOG_ERR("failed to put buffer in output queue");
+			return ret;
+		}
 	}
 
 	/* Enable TX DMA */
@@ -941,7 +963,8 @@ static int i2s_mcux_init(const struct device *dev)
 		.dma_cfg = {					\
 			.channel_direction = MEMORY_TO_PERIPHERAL,	\
 			.dma_callback = i2s_mcux_dma_tx_callback,	\
-			.block_count = 1,		\
+			.complete_callback_en = true,			\
+			.block_count = NUM_DMA_BLOCKS,		\
 		}							\
 	},								\
 	.rx = {						\
