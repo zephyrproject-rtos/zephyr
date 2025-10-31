@@ -71,24 +71,12 @@ LOG_MODULE_REGISTER(cirrus_cs43l22);
 #define SPEAKER_A_MUTE    (1 << 4)
 
 #define cs43l22_write(_i2c, _reg, _value) \
-	cs43l22_write_masked(_i2c, _reg, _value, 0xff)
+	i2c_reg_write_byte_dt(_i2c, _reg, _value)
 
 static inline int cs43l22_write_masked(const struct i2c_dt_spec *i2c, uint8_t reg,
 				       uint8_t value, uint8_t mask)
 {
-	int ret;
-	uint8_t actual_value = 0;
-
-	if (mask != 0xff) {
-		ret = i2c_burst_read_dt(i2c, reg, &actual_value, 1);
-		if (ret) {
-			LOG_ERR("Unable to get actual register value [%02X]", reg);
-			return ret;
-		}
-	}
-	actual_value = (actual_value & ~mask) | (value & mask);
-
-	return i2c_burst_write_dt(i2c, reg, &actual_value, 1);
+	return i2c_reg_update_byte_dt(i2c, reg, mask, value);
 }
 
 #define cs43l22_soft_power_down(_i2c) cs43l22_write(_i2c, REG_POWER_CTL_1, 0x01)
