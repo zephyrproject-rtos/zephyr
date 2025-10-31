@@ -350,7 +350,7 @@ static int pwm_nrf_sw_init(const struct device *dev)
 
 	for (uint32_t i = 0; i < config->map_size; i++) {
 		uint32_t src_d = nrfx_gppi_domain_id_get(USE_RTC ? (uint32_t)rtc : (uint32_t)timer);
-		uint32_t dst_d = nrfx_gppi_domain_id_get((uint32_t)config->gpiote[i].p_reg);
+		uint32_t dst_d = nrfx_gppi_domain_id_get((uint32_t)config->gpiote[i]->p_reg);
 		int rv;
 
 		/* Allocate resources. */
