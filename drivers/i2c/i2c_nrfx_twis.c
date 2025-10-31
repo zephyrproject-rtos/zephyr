@@ -16,26 +16,10 @@
 
 #define DT_DRV_COMPAT nordic_nrf_twis
 
-#define SHIM_NRF_TWIS_NODE(id) \
-	DT_NODELABEL(_CONCAT(i2c, id))
+#define SHIM_NRF_TWIS_HAS_MEMORY_REGIONS(id) DT_NODE_HAS_PROP(DT_DRV_INST(id), memory_regions)
 
-#define SHIM_NRF_TWIS_DEVICE_GET(id) \
-	DEVICE_DT_GET(SHIM_NRF_TWIS_NODE(id))
-
-#define SHIM_NRF_TWIS_IRQ_HANDLER(id) \
-	_CONCAT_3(nrfx_twis_, id, _irq_handler)
-
-#define SHIM_NRF_TWIS_IRQN(id) \
-	DT_IRQN(SHIM_NRF_TWIS_NODE(id))
-
-#define SHIM_NRF_TWIS_IRQ_PRIO(id) \
-	DT_IRQ(SHIM_NRF_TWIS_NODE(id), priority)
-
-#define SHIM_NRF_TWIS_HAS_MEMORY_REGIONS(id) \
-	DT_NODE_HAS_PROP(SHIM_NRF_TWIS_NODE(id), memory_regions)
-
-#define SHIM_NRF_TWIS_LINKER_REGION_NAME(id) \
-	LINKER_DT_NODE_REGION_NAME(DT_PHANDLE(SHIM_NRF_TWIS_NODE(id), memory_regions))
+#define SHIM_NRF_TWIS_LINKER_REGION_NAME(id)                                                       \
+	LINKER_DT_NODE_REGION_NAME(DT_PHANDLE(DT_DRV_INST(id), memory_regions))
 
 #define SHIM_NRF_TWIS_BUF_ATTR_SECTION(id) \
 	__attribute__((__section__(SHIM_NRF_TWIS_LINKER_REGION_NAME(id))))
@@ -53,14 +37,14 @@
 LOG_MODULE_REGISTER(i2c_nrfx_twis, CONFIG_I2C_LOG_LEVEL);
 
 struct shim_nrf_twis_config {
-	nrfx_twis_t twis;
-	void (*irq_connect)(void);
-	void (*event_handler)(nrfx_twis_evt_t const *event);
+	void (*pre_init)(void);
+	void (*event_handler)(nrfx_twis_event_t const *event);
 	const struct pinctrl_dev_config *pcfg;
 	uint8_t *buf;
 };
 
 struct shim_nrf_twis_data {
+	nrfx_twis_t twis;
 	struct i2c_target_config *target_config;
 	bool enabled;
 };
@@ -105,7 +89,7 @@ static void shim_nrf_twis_enable(const struct device *dev)
 	}
 
 	(void)pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
-	nrfx_twis_enable(&dev_config->twis);
+	nrfx_twis_enable(&dev_data->twis);
 	dev_data->enabled = true;
 }
 
@@ -119,7 +103,7 @@ static void shim_nrf_twis_disable(const struct device *dev)
 	}
 
 	dev_data->enabled = false;
-	nrfx_twis_disable(&dev_config->twis);
+	nrfx_twis_disable(&dev_data->twis);
 	(void)pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_SLEEP);
 }
 
@@ -129,10 +113,10 @@ static void shim_nrf_twis_handle_read_req(const struct device *dev)
 	const struct shim_nrf_twis_config *dev_config = dev->config;
 	struct i2c_target_config *target_config = dev_data->target_config;
 	const struct i2c_target_callbacks *callbacks = target_config->callbacks;
-	const nrfx_twis_t *twis = &dev_config->twis;
+	nrfx_twis_t *twis = &dev_data->twis;
 	uint8_t *buf;
 	uint32_t buf_size;
-	nrfx_err_t err;
+	int err;
 
 	if (callbacks->buf_read_requested(target_config, &buf, &buf_size)) {
 		LOG_ERR("no buffer provided");
@@ -147,7 +131,7 @@ static void shim_nrf_twis_handle_read_req(const struct device *dev)
 	memcpy(dev_config->buf, buf, buf_size);
 
 	err = nrfx_twis_tx_prepare(twis, dev_config->buf, buf_size);
-	if (err != NRFX_SUCCESS) {
+	if (err < 0) {
 		LOG_ERR("tx prepare failed");
 		return;
 	}
@@ -155,12 +139,13 @@ static void shim_nrf_twis_handle_read_req(const struct device *dev)
 
 static void shim_nrf_twis_handle_write_req(const struct device *dev)
 {
+	struct shim_nrf_twis_data *dev_data = dev->data;
 	const struct shim_nrf_twis_config *dev_config = dev->config;
-	const nrfx_twis_t *twis = &dev_config->twis;
-	nrfx_err_t err;
+	nrfx_twis_t *twis = &dev_data->twis;
+	int err;
 
 	err = nrfx_twis_rx_prepare(twis, dev_config->buf, SHIM_NRF_TWIS_BUF_SIZE);
-	if (err != NRFX_SUCCESS) {
+	if (err < 0) {
 		LOG_ERR("rx prepare failed");
 		return;
 	}
@@ -172,13 +157,12 @@ static void shim_nrf_twis_handle_write_done(const struct device *dev)
 	const struct shim_nrf_twis_config *dev_config = dev->config;
 	struct i2c_target_config *target_config = dev_data->target_config;
 	const struct i2c_target_callbacks *callbacks = target_config->callbacks;
-	const nrfx_twis_t *twis = &dev_config->twis;
+	nrfx_twis_t *twis = &dev_data->twis;
 
 	callbacks->buf_write_received(target_config, dev_config->buf, nrfx_twis_rx_amount(twis));
 }
 
-static void shim_nrf_twis_event_handler(const struct device *dev,
-					nrfx_twis_evt_t const *event)
+static void shim_nrf_twis_event_handler(const struct device *dev, nrfx_twis_event_t const *event)
 {
 	switch (event->type) {
 	case NRFX_TWIS_EVT_READ_REQ:
@@ -223,9 +207,8 @@ static int shim_nrf_twis_target_register(const struct device *dev,
 					 struct i2c_target_config *target_config)
 {
 	struct shim_nrf_twis_data *dev_data = dev->data;
-	const struct shim_nrf_twis_config *dev_config = dev->config;
-	const nrfx_twis_t *twis = &dev_config->twis;
-	nrfx_err_t err;
+	nrfx_twis_t *twis = &dev_data->twis;
+	int err;
 	const nrfx_twis_config_t config = {
 		.addr = {
 			target_config->address,
@@ -242,7 +225,7 @@ static int shim_nrf_twis_target_register(const struct device *dev,
 	shim_nrf_twis_disable(dev);
 
 	err = nrfx_twis_reconfigure(twis, &config);
-	if (err != NRFX_SUCCESS) {
+	if (err < 0) {
 		return -ENODEV;
 	}
 
@@ -276,26 +259,26 @@ const struct i2c_driver_api shim_nrf_twis_api = {
 
 static int shim_nrf_twis_init(const struct device *dev)
 {
+	struct shim_nrf_twis_data *dev_data = dev->data;
 	const struct shim_nrf_twis_config *dev_config = dev->config;
-	nrfx_err_t err;
+	int err;
 	const nrfx_twis_config_t config = {
 		.skip_gpio_cfg = true,
 		.skip_psel_cfg = true,
 	};
 
-	err = nrfx_twis_init(&dev_config->twis, &config, dev_config->event_handler);
-	if (err != NRFX_SUCCESS) {
+	dev_config->pre_init();
+	err = nrfx_twis_init(&dev_data->twis, &config, dev_config->event_handler);
+	if (err < 0) {
 		return -ENODEV;
 	}
 
-	dev_config->irq_connect();
 	return pm_device_driver_init(dev, shim_nrf_twis_pm_action_cb);
 }
 
 #ifdef CONFIG_DEVICE_DEINIT_SUPPORT
 static int shim_nrf_twis_deinit(const struct device *dev)
 {
-	const struct shim_nrf_twis_config *dev_config = dev->config;
 	struct shim_nrf_twis_data *dev_data = dev->data;
 
 	if (dev_data->target_config != NULL) {
@@ -318,7 +301,7 @@ static int shim_nrf_twis_deinit(const struct device *dev)
 #endif
 
 	/* Uninit device hardware */
-	nrfx_twis_uninit(&dev_config->twis);
+	nrfx_twis_uninit(&dev_data->twis);
 	return 0;
 }
 #endif
@@ -326,120 +309,38 @@ static int shim_nrf_twis_deinit(const struct device *dev)
 #define SHIM_NRF_TWIS_NAME(id, name) \
 	_CONCAT_4(shim_nrf_twis_, name, _, id)
 
-#define SHIM_NRF_TWIS_DEVICE_DEFINE(id)								\
-	NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(SHIM_NRF_TWIS_NODE(id));			\
-	static void SHIM_NRF_TWIS_NAME(id, irq_connect)(void)					\
-	{											\
-		IRQ_CONNECT(									\
-			SHIM_NRF_TWIS_IRQN(id),							\
-			SHIM_NRF_TWIS_IRQ_PRIO(id),						\
-			nrfx_isr,								\
-			SHIM_NRF_TWIS_IRQ_HANDLER(id),						\
-			0									\
-		);										\
-	}											\
-												\
-	static void SHIM_NRF_TWIS_NAME(id, event_handler)(nrfx_twis_evt_t const *event)		\
-	{											\
-		shim_nrf_twis_event_handler(SHIM_NRF_TWIS_DEVICE_GET(id), event);		\
-	}											\
-												\
-	static struct shim_nrf_twis_data SHIM_NRF_TWIS_NAME(id, data);				\
-												\
-	PINCTRL_DT_DEFINE(SHIM_NRF_TWIS_NODE(id));						\
-												\
-	static uint8_t SHIM_NRF_TWIS_NAME(id, buf)						\
-		[SHIM_NRF_TWIS_BUF_SIZE] SHIM_NRF_TWIS_BUF_ATTR(id);				\
-												\
-	static const struct shim_nrf_twis_config SHIM_NRF_TWIS_NAME(id, config) = {		\
-		.twis = NRFX_TWIS_INSTANCE(id),							\
-		.irq_connect = SHIM_NRF_TWIS_NAME(id, irq_connect),				\
-		.event_handler = SHIM_NRF_TWIS_NAME(id, event_handler),				\
-		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SHIM_NRF_TWIS_NODE(id)),			\
-		.buf = SHIM_NRF_TWIS_NAME(id, buf),						\
-	};											\
-												\
-	PM_DEVICE_DT_DEFINE(									\
-		SHIM_NRF_TWIS_NODE(id),								\
-		shim_nrf_twis_pm_action_cb,							\
-	);											\
-												\
-	DEVICE_DT_DEINIT_DEFINE(								\
-		SHIM_NRF_TWIS_NODE(id),								\
-		shim_nrf_twis_init,								\
-		shim_nrf_twis_deinit,								\
-		PM_DEVICE_DT_GET(SHIM_NRF_TWIS_NODE(id)),					\
-		&SHIM_NRF_TWIS_NAME(id, data),							\
-		&SHIM_NRF_TWIS_NAME(id, config),						\
-		POST_KERNEL,									\
-		CONFIG_I2C_INIT_PRIORITY,							\
-		&shim_nrf_twis_api								\
-	);
+#define SHIM_NRF_TWIS_DEVICE_DEFINE(id)                                                            \
+	static struct shim_nrf_twis_data SHIM_NRF_TWIS_NAME(id, data);                             \
+	NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(DT_DRV_INST(id));                            \
+	static void SHIM_NRF_TWIS_NAME(id, pre_init)(void)                                         \
+	{                                                                                          \
+		SHIM_NRF_TWIS_NAME(id, data).twis.p_reg = (NRF_TWIS_Type *)DT_INST_REG_ADDR(id);   \
+		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), nrfx_twis_irq_handler,    \
+			    &SHIM_NRF_TWIS_NAME(id, data).twis, 0);                                \
+	}                                                                                          \
+                                                                                                   \
+	static void SHIM_NRF_TWIS_NAME(id, event_handler)(nrfx_twis_event_t const *event)          \
+	{                                                                                          \
+		shim_nrf_twis_event_handler(DEVICE_DT_INST_GET(id), event);                        \
+	}                                                                                          \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(id);                                                                \
+                                                                                                   \
+	static uint8_t SHIM_NRF_TWIS_NAME(id,                                                      \
+					  buf)[SHIM_NRF_TWIS_BUF_SIZE] SHIM_NRF_TWIS_BUF_ATTR(id); \
+                                                                                                   \
+	static const struct shim_nrf_twis_config SHIM_NRF_TWIS_NAME(id, config) = {                \
+		.pre_init = SHIM_NRF_TWIS_NAME(id, pre_init),                                      \
+		.event_handler = SHIM_NRF_TWIS_NAME(id, event_handler),                            \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),                                        \
+		.buf = SHIM_NRF_TWIS_NAME(id, buf),                                                \
+	};                                                                                         \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(id, shim_nrf_twis_pm_action_cb,);                                 \
+                                                                                                   \
+	DEVICE_DT_INST_DEINIT_DEFINE(id, shim_nrf_twis_init, shim_nrf_twis_deinit,                 \
+				     PM_DEVICE_DT_INST_GET(id), &SHIM_NRF_TWIS_NAME(id, data),     \
+				     &SHIM_NRF_TWIS_NAME(id, config), POST_KERNEL,                 \
+				     CONFIG_I2C_INIT_PRIORITY, &shim_nrf_twis_api);
 
-#ifdef CONFIG_HAS_HW_NRF_TWIS0
-SHIM_NRF_TWIS_DEVICE_DEFINE(0);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIS1
-SHIM_NRF_TWIS_DEVICE_DEFINE(1);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIS2
-SHIM_NRF_TWIS_DEVICE_DEFINE(2);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIS3
-SHIM_NRF_TWIS_DEVICE_DEFINE(3);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIS20
-SHIM_NRF_TWIS_DEVICE_DEFINE(20);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIS21
-SHIM_NRF_TWIS_DEVICE_DEFINE(21);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIS22
-SHIM_NRF_TWIS_DEVICE_DEFINE(22);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIS23
-SHIM_NRF_TWIS_DEVICE_DEFINE(23);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIS24
-SHIM_NRF_TWIS_DEVICE_DEFINE(24);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIS30
-SHIM_NRF_TWIS_DEVICE_DEFINE(30);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIS130
-SHIM_NRF_TWIS_DEVICE_DEFINE(130);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIS131
-SHIM_NRF_TWIS_DEVICE_DEFINE(131);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIS133
-SHIM_NRF_TWIS_DEVICE_DEFINE(133);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIS134
-SHIM_NRF_TWIS_DEVICE_DEFINE(134);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIS135
-SHIM_NRF_TWIS_DEVICE_DEFINE(135);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIS136
-SHIM_NRF_TWIS_DEVICE_DEFINE(136);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_TWIS137
-SHIM_NRF_TWIS_DEVICE_DEFINE(137);
-#endif
+DT_INST_FOREACH_STATUS_OKAY(SHIM_NRF_TWIS_DEVICE_DEFINE)

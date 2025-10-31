@@ -6,9 +6,7 @@
 
 #include "adc_context.h"
 #include <nrfx_saadc.h>
-#include <zephyr/dt-bindings/adc/nrf-saadc-v3.h>
-#include <zephyr/dt-bindings/adc/nrf-saadc-nrf54l.h>
-#include <zephyr/dt-bindings/adc/nrf-saadc-haltium.h>
+#include <zephyr/dt-bindings/adc/nrf-saadc.h>
 #include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
@@ -22,91 +20,22 @@ LOG_MODULE_REGISTER(adc_nrfx_saadc, CONFIG_ADC_LOG_LEVEL);
 
 #define DT_DRV_COMPAT nordic_nrf_saadc
 
-#if (NRF_SAADC_HAS_AIN_AS_PIN)
-
-#if defined(CONFIG_NRF_PLATFORM_HALTIUM)
-static const uint32_t saadc_psels[NRF_SAADC_AIN13 + 1] = {
-	[NRF_SAADC_AIN0] = NRF_PIN_PORT_TO_PIN_NUMBER(0U, 1),
-	[NRF_SAADC_AIN1] = NRF_PIN_PORT_TO_PIN_NUMBER(1U, 1),
-	[NRF_SAADC_AIN2] = NRF_PIN_PORT_TO_PIN_NUMBER(2U, 1),
-	[NRF_SAADC_AIN3] = NRF_PIN_PORT_TO_PIN_NUMBER(3U, 1),
-	[NRF_SAADC_AIN4] = NRF_PIN_PORT_TO_PIN_NUMBER(4U, 1),
-	[NRF_SAADC_AIN5] = NRF_PIN_PORT_TO_PIN_NUMBER(5U, 1),
-	[NRF_SAADC_AIN6] = NRF_PIN_PORT_TO_PIN_NUMBER(6U, 1),
-	[NRF_SAADC_AIN7] = NRF_PIN_PORT_TO_PIN_NUMBER(7U, 1),
-	[NRF_SAADC_AIN8] = NRF_PIN_PORT_TO_PIN_NUMBER(0U, 9),
-	[NRF_SAADC_AIN9] = NRF_PIN_PORT_TO_PIN_NUMBER(1U, 9),
-	[NRF_SAADC_AIN10] = NRF_PIN_PORT_TO_PIN_NUMBER(2U, 9),
-	[NRF_SAADC_AIN11] = NRF_PIN_PORT_TO_PIN_NUMBER(3U, 9),
-	[NRF_SAADC_AIN12] = NRF_PIN_PORT_TO_PIN_NUMBER(4U, 9),
-	[NRF_SAADC_AIN13] = NRF_PIN_PORT_TO_PIN_NUMBER(5U, 9),
-};
-#elif defined(CONFIG_SOC_NRF54L05) || defined(CONFIG_SOC_NRF54L10) || defined(CONFIG_SOC_NRF54L15)
-static const uint32_t saadc_psels[NRF_SAADC_DVDD + 1] = {
-	[NRF_SAADC_AIN0] = NRF_PIN_PORT_TO_PIN_NUMBER(4U, 1),
-	[NRF_SAADC_AIN1] = NRF_PIN_PORT_TO_PIN_NUMBER(5U, 1),
-	[NRF_SAADC_AIN2] = NRF_PIN_PORT_TO_PIN_NUMBER(6U, 1),
-	[NRF_SAADC_AIN3] = NRF_PIN_PORT_TO_PIN_NUMBER(7U, 1),
-	[NRF_SAADC_AIN4] = NRF_PIN_PORT_TO_PIN_NUMBER(11U, 1),
-	[NRF_SAADC_AIN5] = NRF_PIN_PORT_TO_PIN_NUMBER(12U, 1),
-	[NRF_SAADC_AIN6] = NRF_PIN_PORT_TO_PIN_NUMBER(13U, 1),
-	[NRF_SAADC_AIN7] = NRF_PIN_PORT_TO_PIN_NUMBER(14U, 1),
-	[NRF_SAADC_VDD]  = NRF_SAADC_INPUT_VDD,
-	[NRF_SAADC_AVDD] = NRF_SAADC_INPUT_AVDD,
-	[NRF_SAADC_DVDD] = NRF_SAADC_INPUT_DVDD,
-};
-#elif defined(NRF54LM20A_ENGA_XXAA)
-static const uint32_t saadc_psels[NRF_SAADC_DVDD + 1] = {
-	[NRF_SAADC_AIN0] = NRF_PIN_PORT_TO_PIN_NUMBER(0U, 1),
-	[NRF_SAADC_AIN1] = NRF_PIN_PORT_TO_PIN_NUMBER(31U, 1),
-	[NRF_SAADC_AIN2] = NRF_PIN_PORT_TO_PIN_NUMBER(30U, 1),
-	[NRF_SAADC_AIN3] = NRF_PIN_PORT_TO_PIN_NUMBER(29U, 1),
-	[NRF_SAADC_AIN4] = NRF_PIN_PORT_TO_PIN_NUMBER(6U, 1),
-	[NRF_SAADC_AIN5] = NRF_PIN_PORT_TO_PIN_NUMBER(5U, 1),
-	[NRF_SAADC_AIN6] = NRF_PIN_PORT_TO_PIN_NUMBER(4U, 1),
-	[NRF_SAADC_AIN7] = NRF_PIN_PORT_TO_PIN_NUMBER(3U, 1),
-	[NRF_SAADC_VDD]  = NRF_SAADC_INPUT_VDD,
-	[NRF_SAADC_AVDD] = NRF_SAADC_INPUT_AVDD,
-	[NRF_SAADC_DVDD] = NRF_SAADC_INPUT_DVDD,
-};
-#elif defined(NRF54LV10A_ENGA_XXAA)
-static const uint32_t saadc_psels[NRF_SAADC_AIN7 + 1] = {
-	[NRF_SAADC_AIN0] = NRF_PIN_PORT_TO_PIN_NUMBER(0U, 1),
-	[NRF_SAADC_AIN1] = NRF_PIN_PORT_TO_PIN_NUMBER(1U, 1),
-	[NRF_SAADC_AIN2] = NRF_PIN_PORT_TO_PIN_NUMBER(2U, 1),
-	[NRF_SAADC_AIN3] = NRF_PIN_PORT_TO_PIN_NUMBER(3U, 1),
-	[NRF_SAADC_AIN4] = NRF_PIN_PORT_TO_PIN_NUMBER(7U, 1),
-	[NRF_SAADC_AIN5] = NRF_PIN_PORT_TO_PIN_NUMBER(10U, 1),
-	[NRF_SAADC_AIN6] = NRF_PIN_PORT_TO_PIN_NUMBER(11U, 1),
-	[NRF_SAADC_AIN7] = NRF_PIN_PORT_TO_PIN_NUMBER(12U, 1),
-};
-#elif defined(NRF54LS05B_ENGA_XXAA)
-static const uint32_t saadc_psels[NRF_SAADC_AIN3 + 1] = {
-	[NRF_SAADC_AIN0] = NRF_PIN_PORT_TO_PIN_NUMBER(4U, 1),
-	[NRF_SAADC_AIN1] = NRF_PIN_PORT_TO_PIN_NUMBER(5U, 1),
-	[NRF_SAADC_AIN2] = NRF_PIN_PORT_TO_PIN_NUMBER(6U, 1),
-	[NRF_SAADC_AIN3] = NRF_PIN_PORT_TO_PIN_NUMBER(7U, 1),
-};
+BUILD_ASSERT((NRF_SAADC_AIN0 == NRFX_ANALOG_EXTERNAL_AIN0) &&
+	     (NRF_SAADC_AIN1 == NRFX_ANALOG_EXTERNAL_AIN1) &&
+	     (NRF_SAADC_AIN2 == NRFX_ANALOG_EXTERNAL_AIN2) &&
+	     (NRF_SAADC_AIN3 == NRFX_ANALOG_EXTERNAL_AIN3) &&
+	     (NRF_SAADC_AIN4 == NRFX_ANALOG_EXTERNAL_AIN4) &&
+	     (NRF_SAADC_AIN5 == NRFX_ANALOG_EXTERNAL_AIN5) &&
+	     (NRF_SAADC_AIN6 == NRFX_ANALOG_EXTERNAL_AIN6) &&
+	     (NRF_SAADC_AIN7 == NRFX_ANALOG_EXTERNAL_AIN7) &&
+#if NRF_SAADC_HAS_INPUT_VDDHDIV5
+	     (NRF_SAADC_VDDHDIV5 == NRFX_ANALOG_INTERNAL_VDDHDIV5) &&
 #endif
-
-#else
-BUILD_ASSERT((NRF_SAADC_AIN0 == NRF_SAADC_INPUT_AIN0) &&
-	     (NRF_SAADC_AIN1 == NRF_SAADC_INPUT_AIN1) &&
-	     (NRF_SAADC_AIN2 == NRF_SAADC_INPUT_AIN2) &&
-	     (NRF_SAADC_AIN3 == NRF_SAADC_INPUT_AIN3) &&
-	     (NRF_SAADC_AIN4 == NRF_SAADC_INPUT_AIN4) &&
-	     (NRF_SAADC_AIN5 == NRF_SAADC_INPUT_AIN5) &&
-	     (NRF_SAADC_AIN6 == NRF_SAADC_INPUT_AIN6) &&
-	     (NRF_SAADC_AIN7 == NRF_SAADC_INPUT_AIN7) &&
-#if defined(SAADC_CH_PSELP_PSELP_VDDHDIV5)
-	     (NRF_SAADC_VDDHDIV5 == NRF_SAADC_INPUT_VDDHDIV5) &&
-#endif
-#if defined(SAADC_CH_PSELP_PSELP_VDD)
-	     (NRF_SAADC_VDD == NRF_SAADC_INPUT_VDD) &&
+#if NRF_SAADC_HAS_INPUT_VDD
+	     (NRF_SAADC_VDD == NRFX_ANALOG_INTERNAL_VDD) &&
 #endif
 	     1,
-	     "Definitions from nrf-adc.h do not match those from nrf_saadc.h");
-#endif
+	     "Definitions from nrf-saadc.h do not match those from nrfx_analog_common.h");
 
 struct driver_data {
 	struct adc_context ctx;
@@ -188,96 +117,46 @@ static int acq_time_set(nrf_saadc_channel_config_t *ch_cfg, uint16_t acquisition
 	return 0;
 }
 
-static int input_assign(nrf_saadc_input_t *pin_p,
-			nrf_saadc_input_t *pin_n,
-			const struct adc_channel_cfg *channel_cfg)
-{
-#if (NRF_SAADC_HAS_AIN_AS_PIN)
-	if (channel_cfg->input_positive > ARRAY_SIZE(saadc_psels) ||
-	    channel_cfg->input_positive < NRF_SAADC_AIN0) {
-		LOG_ERR("Invalid analog positive input number: %d", channel_cfg->input_positive);
-		return -EINVAL;
-	}
-
-	*pin_p = saadc_psels[channel_cfg->input_positive];
-
-#if NRF_GPIO_HAS_RETENTION_SETCLEAR
-	nrf_gpio_pin_retain_disable(saadc_psels[channel_cfg->input_positive]);
-#endif
-
-	if (channel_cfg->differential) {
-		if (channel_cfg->input_negative > ARRAY_SIZE(saadc_psels) ||
-		    (IS_ENABLED(CONFIG_NRF_PLATFORM_HALTIUM) &&
-		     (channel_cfg->input_positive > NRF_SAADC_AIN7) !=
-		     (channel_cfg->input_negative > NRF_SAADC_AIN7))) {
-			LOG_ERR("Invalid analog negative input number: %d",
-				channel_cfg->input_negative);
-			return -EINVAL;
-		}
-		*pin_n = channel_cfg->input_negative == NRF_SAADC_GND ?
-			 NRF_SAADC_INPUT_DISABLED :
-			 saadc_psels[channel_cfg->input_negative];
-
-#if NRF_GPIO_HAS_RETENTION_SETCLEAR
-		if (channel_cfg->input_negative != NRF_SAADC_GND) {
-			nrf_gpio_pin_retain_disable(saadc_psels[channel_cfg->input_negative]);
-		}
-#endif
-	} else {
-		*pin_n = NRF_SAADC_INPUT_DISABLED;
-	}
-#else
-	*pin_p = channel_cfg->input_positive;
-	*pin_n = (channel_cfg->differential && (channel_cfg->input_negative != NRF_SAADC_GND))
-			 ? channel_cfg->input_negative
-			 : NRF_SAADC_INPUT_DISABLED;
-#endif
-	LOG_DBG("ADC positive input: %d", *pin_p);
-	LOG_DBG("ADC negative input: %d", *pin_n);
-
-	return 0;
-}
-
 static int gain_set(nrf_saadc_channel_config_t *ch_cfg, enum adc_gain gain)
 {
 #if NRF_SAADC_HAS_CH_GAIN
 	switch (gain) {
-#if defined(SAADC_CH_CONFIG_GAIN_Gain1_6)
+#if NRF_SAADC_HAS_GAIN_1_6
 	case ADC_GAIN_1_6:
 		ch_cfg->gain = NRF_SAADC_GAIN1_6;
 		break;
 #endif
-#if defined(SAADC_CH_CONFIG_GAIN_Gain1_5)
+#if NRF_SAADC_HAS_GAIN_1_5
 	case ADC_GAIN_1_5:
 		ch_cfg->gain = NRF_SAADC_GAIN1_5;
 		break;
 #endif
-#if defined(SAADC_CH_CONFIG_GAIN_Gain1_4) || defined(SAADC_CH_CONFIG_GAIN_Gain2_8)
+#if NRF_SAADC_HAS_GAIN_1_4
 	case ADC_GAIN_1_4:
 		ch_cfg->gain = NRF_SAADC_GAIN1_4;
 		break;
 #endif
-#if defined(SAADC_CH_CONFIG_GAIN_Gain2_7)
+#if NRF_SAADC_HAS_GAIN_2_7
 	case ADC_GAIN_2_7:
 		ch_cfg->gain = NRF_SAADC_GAIN2_7;
 		break;
 #endif
-#if defined(SAADC_CH_CONFIG_GAIN_Gain1_3) || defined(SAADC_CH_CONFIG_GAIN_Gain2_6)
+#if NRF_SAADC_HAS_GAIN_1_3
 	case ADC_GAIN_1_3:
 		ch_cfg->gain = NRF_SAADC_GAIN1_3;
 		break;
 #endif
-#if defined(SAADC_CH_CONFIG_GAIN_Gain2_5)
+#if NRF_SAADC_HAS_GAIN_2_5
 	case ADC_GAIN_2_5:
 		ch_cfg->gain = NRF_SAADC_GAIN2_5;
 		break;
 #endif
-#if defined(SAADC_CH_CONFIG_GAIN_Gain1_2) || defined(SAADC_CH_CONFIG_GAIN_Gain2_4)
+#if NRF_SAADC_HAS_GAIN_1_2
 	case ADC_GAIN_1_2:
 		ch_cfg->gain = NRF_SAADC_GAIN1_2;
 		break;
 #endif
-#if defined(SAADC_CH_CONFIG_GAIN_Gain2_3)
+#if NRF_SAADC_HAS_GAIN_2_3
 	case ADC_GAIN_2_3:
 		ch_cfg->gain = NRF_SAADC_GAIN2_3;
 		break;
@@ -288,7 +167,7 @@ static int gain_set(nrf_saadc_channel_config_t *ch_cfg, enum adc_gain gain)
 	case ADC_GAIN_2:
 		ch_cfg->gain = NRF_SAADC_GAIN2;
 		break;
-#if defined(SAADC_CH_CONFIG_GAIN_Gain4)
+#if NRF_SAADC_HAS_GAIN_4
 	case ADC_GAIN_4:
 		ch_cfg->gain = NRF_SAADC_GAIN4;
 		break;
@@ -296,7 +175,7 @@ static int gain_set(nrf_saadc_channel_config_t *ch_cfg, enum adc_gain gain)
 	default:
 #else
 	if (gain != ADC_GAIN_1) {
-#endif /* defined(NRF_SAADC_HAS_CH_GAIN) */
+#endif /* NRF_SAADC_HAS_CH_GAIN */
 		LOG_ERR("Selected ADC gain is not valid");
 		return -EINVAL;
 	}
@@ -307,17 +186,17 @@ static int gain_set(nrf_saadc_channel_config_t *ch_cfg, enum adc_gain gain)
 static int reference_set(nrf_saadc_channel_config_t *ch_cfg, enum adc_reference reference)
 {
 	switch (reference) {
-#if defined(SAADC_CH_CONFIG_REFSEL_Internal)
+#if NRF_SAADC_HAS_REFERENCE_INTERNAL
 	case ADC_REF_INTERNAL:
 		ch_cfg->reference = NRF_SAADC_REFERENCE_INTERNAL;
 		break;
 #endif
-#if defined(SAADC_CH_CONFIG_REFSEL_VDD1_4)
+#if NRF_SAADC_HAS_REFERENCE_VDD4
 	case ADC_REF_VDD_1_4:
 		ch_cfg->reference = NRF_SAADC_REFERENCE_VDD4;
 		break;
 #endif
-#if defined(SAADC_CH_CONFIG_REFSEL_External)
+#if NRF_SAADC_HAS_REFERENCE_EXTERNAL
 	case ADC_REF_EXTERNAL0:
 		ch_cfg->reference = NRF_SAADC_REFERENCE_EXTERNAL;
 		break;
@@ -347,6 +226,11 @@ static int adc_nrfx_channel_setup(const struct device *dev,
 #endif
 		},
 		.channel_index = channel_cfg->channel_id,
+		.pin_p = channel_cfg->input_positive,
+		.pin_n = (channel_cfg->differential &&
+			  (channel_cfg->input_negative != NRF_SAADC_GND))
+				 ? channel_cfg->input_negative
+				 : NRF_SAADC_AIN_DISABLED,
 	};
 
 	if (channel_cfg->channel_id >= SAADC_CH_NUM) {
@@ -355,11 +239,6 @@ static int adc_nrfx_channel_setup(const struct device *dev,
 	}
 
 	ch_cfg = &cfg.channel_config;
-
-	err = input_assign(&cfg.pin_p, &cfg.pin_n, channel_cfg);
-	if (err != 0) {
-		return err;
-	}
 
 	err = gain_set(ch_cfg, channel_cfg->gain);
 	if (err != 0) {
@@ -394,11 +273,11 @@ static int adc_nrfx_channel_setup(const struct device *dev,
 		m_data.divide_single_ended_value &= ~BIT(channel_cfg->channel_id);
 	}
 
-	nrfx_err_t ret = nrfx_saadc_channel_config(&cfg);
+	err = nrfx_saadc_channel_config(&cfg);
 
-	if (ret != NRFX_SUCCESS) {
-		LOG_ERR("Cannot configure channel %d: 0x%08x", channel_cfg->channel_id, ret);
-		return -EINVAL;
+	if (err != 0) {
+		LOG_ERR("Cannot configure channel %d: %d", channel_cfg->channel_id, err);
+		return err;
 	}
 
 	return 0;
@@ -409,10 +288,10 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	if (ctx->sequence.calibrate) {
 		nrfx_saadc_offset_calibrate(event_handler);
 	} else {
-		nrfx_err_t ret = nrfx_saadc_mode_trigger();
+		int ret = nrfx_saadc_mode_trigger();
 
-		if (ret != NRFX_SUCCESS) {
-			LOG_ERR("Cannot start sampling: 0x%08x", ret);
+		if (ret != 0) {
+			LOG_ERR("Cannot start sampling: %d", ret);
 			adc_context_complete(ctx, -EIO);
 		}
 	}
@@ -437,10 +316,9 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repe
 			return;
 		}
 
-		nrfx_err_t nrfx_err =
-			nrfx_saadc_buffer_set(samples_buffer, m_data.active_channel_cnt);
-		if (nrfx_err != NRFX_SUCCESS) {
-			LOG_ERR("Failed to set buffer: 0x%08x", nrfx_err);
+		error = nrfx_saadc_buffer_set(samples_buffer, m_data.active_channel_cnt);
+		if (error != 0) {
+			LOG_ERR("Failed to set buffer: %d", error);
 			adc_context_complete(ctx, -EIO);
 		}
 	}
@@ -451,10 +329,10 @@ static inline void adc_context_enable_timer(struct adc_context *ctx)
 	if (!m_data.internal_timer_enabled) {
 		k_timer_start(&m_data.timer, K_NO_WAIT, K_USEC(ctx->options.interval_us));
 	} else {
-		nrfx_err_t ret = nrfx_saadc_mode_trigger();
+		int ret = nrfx_saadc_mode_trigger();
 
-		if (ret != NRFX_SUCCESS) {
-			LOG_ERR("Cannot start sampling: 0x%08x", ret);
+		if (ret != 0) {
+			LOG_ERR("Cannot start sampling: %d", ret);
 			adc_context_complete(&m_data.ctx, -EIO);
 		}
 	}
@@ -624,7 +502,6 @@ static inline uint16_t interval_to_cc(uint16_t interval_us)
 static int start_read(const struct device *dev,
 		      const struct adc_sequence *sequence)
 {
-	nrfx_err_t nrfx_err;
 	int error;
 	uint32_t selected_channels = sequence->channels;
 	nrf_saadc_resolution_t resolution;
@@ -682,21 +559,21 @@ static int start_read(const struct device *dev,
 
 		m_data.internal_timer_enabled = true;
 
-		nrfx_err = nrfx_saadc_advanced_mode_set(selected_channels, resolution, &adv_config,
-							event_handler);
+		error = nrfx_saadc_advanced_mode_set(selected_channels, resolution, &adv_config,
+						     event_handler);
 	} else {
 		m_data.internal_timer_enabled = false;
 
-		nrfx_err = nrfx_saadc_simple_mode_set(selected_channels, resolution, oversampling,
-						      event_handler);
+		error = nrfx_saadc_simple_mode_set(selected_channels, resolution, oversampling,
+						   event_handler);
 	}
 
-	if (nrfx_err != NRFX_SUCCESS) {
-		return -EINVAL;
+	if (error != 0) {
+		return error;
 	}
 
 	error = check_buffer_size(sequence, active_channel_cnt);
-	if (error) {
+	if (error != 0) {
 		return error;
 	}
 
@@ -717,14 +594,13 @@ static int start_read(const struct device *dev,
 	/* Buffer is filled in chunks, each chunk composed of number of samples equal to number
 	 * of active channels. Buffer pointer is advanced and reloaded after each chunk.
 	 */
-	nrfx_err = nrfx_saadc_buffer_set(
-		samples_buffer,
-		(m_data.internal_timer_enabled
-			 ? (1 + sequence->options->extra_samplings)
-			 : active_channel_cnt));
-	if (nrfx_err != NRFX_SUCCESS) {
-		LOG_ERR("Failed to set buffer: 0x%08x", nrfx_err);
-		return -EINVAL;
+	error = nrfx_saadc_buffer_set(samples_buffer,
+				      (m_data.internal_timer_enabled
+				      ? (1 + sequence->options->extra_samplings)
+				      : active_channel_cnt));
+	if (error != 0) {
+		LOG_ERR("Failed to set buffer: %d", error);
+		return error;
 	}
 
 	adc_context_start_read(&m_data.ctx, sequence);
@@ -772,7 +648,7 @@ static int adc_nrfx_read_async(const struct device *dev,
 
 static void event_handler(const nrfx_saadc_evt_t *event)
 {
-	nrfx_err_t err;
+	int err;
 
 	if (event->type == NRFX_SAADC_EVT_DONE) {
 		dmm_buffer_in_release(
@@ -791,8 +667,8 @@ static void event_handler(const nrfx_saadc_evt_t *event)
 		adc_context_on_sampling_done(&m_data.ctx, DEVICE_DT_INST_GET(0));
 	} else if (event->type == NRFX_SAADC_EVT_CALIBRATEDONE) {
 		err = nrfx_saadc_mode_trigger();
-		if (err != NRFX_SUCCESS) {
-			LOG_ERR("Cannot start sampling: 0x%08x", err);
+		if (err != 0) {
+			LOG_ERR("Cannot start sampling: %d", err);
 			adc_context_complete(&m_data.ctx, -EIO);
 		}
 	} else if (event->type == NRFX_SAADC_EVT_FINISHED) {
@@ -809,13 +685,13 @@ static int saadc_pm_handler(const struct device *dev, enum pm_device_action acti
 
 static int init_saadc(const struct device *dev)
 {
-	nrfx_err_t err;
+	int err;
 
 	k_timer_init(&m_data.timer, external_timer_expired_handler, NULL);
 
 	/* The priority value passed here is ignored (see nrfx_glue.h). */
 	err = nrfx_saadc_init(0);
-	if (err != NRFX_SUCCESS) {
+	if (err != 0) {
 		LOG_ERR("Failed to initialize device: %s", dev->name);
 		return -EIO;
 	}
@@ -833,37 +709,8 @@ static DEVICE_API(adc, adc_nrfx_driver_api) = {
 #ifdef CONFIG_ADC_ASYNC
 	.read_async    = adc_nrfx_read_async,
 #endif
-#if defined(NRF54LV10A_ENGA_XXAA)
-	.ref_internal  = 1300,
-#elif defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
-	.ref_internal  = 900,
-#elif defined(CONFIG_NRF_PLATFORM_HALTIUM)
-	.ref_internal  = 1024,
-#else
-	.ref_internal  = 600,
-#endif
+	.ref_internal  = NRFX_SAADC_REF_INTERNAL_VALUE,
 };
-
-#if defined(CONFIG_NRF_PLATFORM_HALTIUM)
-/* AIN8-AIN14 inputs are on 3v3 GPIO port and they cannot be mixed with other
- * analog inputs (from 1v8 ports) in differential mode.
- */
-#define CH_IS_3V3(val) (val >= NRF_SAADC_AIN8)
-
-#define MIXED_3V3_1V8_INPUTS(node)					\
-	(DT_NODE_HAS_PROP(node, zephyr_input_negative) &&		\
-	 (CH_IS_3V3(DT_PROP_OR(node, zephyr_input_negative, 0)) !=	\
-	  CH_IS_3V3(DT_PROP_OR(node, zephyr_input_positive, 0))))
-#else
-#define MIXED_3V3_1V8_INPUTS(node) false
-#endif
-
-#define VALIDATE_CHANNEL_CONFIG(node)					\
-	BUILD_ASSERT(MIXED_3V3_1V8_INPUTS(node) == false,		\
-		     "1v8 inputs cannot be mixed with 3v3 inputs");
-
-/* Validate configuration of all channels. */
-DT_FOREACH_CHILD(DT_DRV_INST(0), VALIDATE_CHANNEL_CONFIG)
 
 NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(DT_DRV_INST(0));
 

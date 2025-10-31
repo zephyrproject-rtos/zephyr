@@ -200,7 +200,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 7858281d843468fe53c829995fb63f45a227387a
+      revision: 564e754139944286208f3eac122781cec4262392
       path: modules/hal/nordic
       groups:
         - hal
@@ -321,7 +321,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: f3cc9476e233364031e9ab842290392f260fba82
+      revision: c11e845e2483917d7478ba1a7a3591a9f4e8d4a2
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -339,7 +339,7 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: 26ed181181eed53e400db8f63fa83c566a05d971
+      revision: 5eec7aca321735f5fc8e3e7c79e162f0e9810b16
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
       revision: a39e9b155830461c9d1cf587afb151b894369b91
@@ -380,7 +380,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 04aa7243e04946b5422b124bea9c0675ab6b120f
+      revision: c2f9edc77f72838e7d6f5f9c0b95e4318ddfced1
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

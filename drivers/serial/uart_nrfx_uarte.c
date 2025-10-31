@@ -187,8 +187,8 @@ struct uarte_async_rx_cbwt {
 	uint8_t *anomaly_byte_dst;
 	uint8_t anomaly_byte;
 #endif
+	nrfx_gppi_handle_t ppi_h;
 	uint8_t bounce_idx;
-	uint8_t ppi_ch;
 	bool in_irq;
 	bool discard_fifo;
 };
@@ -217,7 +217,7 @@ struct uarte_async_rx {
 	int32_t timeout_slab; /* rx_timeout divided by RX_TIMEOUT_DIV */
 	int32_t timeout_left; /* Current time left until user callback */
 	union {
-		uint8_t ppi;
+		nrfx_gppi_handle_t ppi;
 		uint32_t cnt;
 	} cnt;
 	/* Flag to ensure that RX timeout won't be executed during ENDRX ISR */
@@ -264,11 +264,12 @@ struct uarte_nrfx_data {
 #endif
 #ifdef UARTE_ANY_ASYNC
 	struct uarte_async_cb *async;
+	nrfx_timer_t timer;
 #endif
 	atomic_val_t poll_out_lock;
 	atomic_t flags;
 #ifdef UARTE_ENHANCED_POLL_OUT
-	uint8_t ppi_ch_endtx;
+	nrfx_gppi_handle_t ppi_h_endtx;
 #endif
 };
 
@@ -388,7 +389,6 @@ struct uarte_nrfx_config {
 	size_t bounce_buf_swap_len;
 	struct uarte_async_rx_cbwt *cbwt_data;
 #endif
-	nrfx_timer_t timer;
 	uint8_t *tx_cache;
 	uint8_t *rx_flush_buf;
 #endif
@@ -457,7 +457,7 @@ static void uarte_disable_locked(const struct device *dev, uint32_t dis_mask)
 
 #if defined(UARTE_ANY_ASYNC) && !defined(CONFIG_UART_NRFX_UARTE_ENHANCED_RX)
 	if (data->async && HW_RX_COUNTING_ENABLED(config)) {
-		nrfx_timer_disable(&config->timer);
+		nrfx_timer_disable(&data->timer);
 		/* Timer/counter value is reset when disabled. */
 		data->async->rx.total_byte_cnt = 0;
 		data->async->rx.total_user_byte_cnt = 0;
@@ -604,7 +604,7 @@ static int uarte_nrfx_configure(const struct device *dev,
 	struct uarte_nrfx_data *data = dev->data;
 	nrf_uarte_config_t uarte_cfg;
 
-#if defined(UARTE_CONFIG_STOP_Msk)
+#if NRF_UARTE_HAS_STOP_MODES
 	switch (cfg->stop_bits) {
 	case UART_CFG_STOP_BITS_1:
 		uarte_cfg.stop = NRF_UARTE_STOP_ONE;
@@ -636,7 +636,7 @@ static int uarte_nrfx_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-#if defined(UARTE_CONFIG_PARITYTYPE_Msk)
+#if NRF_UARTE_HAS_PARITY_TYPES
 	uarte_cfg.paritytype = NRF_UARTE_PARITYTYPE_EVEN;
 #endif
 	switch (cfg->parity) {
@@ -646,7 +646,7 @@ static int uarte_nrfx_configure(const struct device *dev,
 	case UART_CFG_PARITY_EVEN:
 		uarte_cfg.parity = NRF_UARTE_PARITY_INCLUDED;
 		break;
-#if defined(UARTE_CONFIG_PARITYTYPE_Msk)
+#if NRF_UARTE_HAS_PARITY_TYPES
 	case UART_CFG_PARITY_ODD:
 		uarte_cfg.parity = NRF_UARTE_PARITY_INCLUDED;
 		uarte_cfg.paritytype = NRF_UARTE_PARITYTYPE_ODD;
@@ -765,7 +765,7 @@ static void uarte_periph_enable(const struct device *dev)
 #ifdef UARTE_ANY_ASYNC
 	if (data->async) {
 		if (HW_RX_COUNTING_ENABLED(config)) {
-			const nrfx_timer_t *timer = &config->timer;
+			nrfx_timer_t *timer = &data->timer;
 
 			nrfx_timer_enable(timer);
 
@@ -954,31 +954,30 @@ static int uarte_nrfx_rx_counting_init(const struct device *dev)
 
 	if (HW_RX_COUNTING_ENABLED(cfg)) {
 		nrfx_timer_config_t tmr_config = NRFX_TIMER_DEFAULT_CONFIG(
-						NRF_TIMER_BASE_FREQUENCY_GET(cfg->timer.p_reg));
+						NRF_TIMER_BASE_FREQUENCY_GET(data->timer.p_reg));
 		uint32_t evt_addr = nrf_uarte_event_address_get(uarte, NRF_UARTE_EVENT_RXDRDY);
-		uint32_t tsk_addr = nrfx_timer_task_address_get(&cfg->timer, NRF_TIMER_TASK_COUNT);
+		uint32_t tsk_addr = nrfx_timer_task_address_get(&data->timer, NRF_TIMER_TASK_COUNT);
 
 		tmr_config.mode = NRF_TIMER_MODE_COUNTER;
 		tmr_config.bit_width = NRF_TIMER_BIT_WIDTH_32;
-		ret = nrfx_timer_init(&cfg->timer,
+		ret = nrfx_timer_init(&data->timer,
 				      &tmr_config,
 				      timer_handler);
-		if (ret != NRFX_SUCCESS) {
+		if (ret != 0) {
 			LOG_ERR("Timer already initialized");
 			return -EINVAL;
 		}
 
-		nrfx_timer_clear(&cfg->timer);
+		nrfx_timer_clear(&data->timer);
 
-		ret = nrfx_gppi_channel_alloc(&data->async->rx.cnt.ppi);
-		if (ret != NRFX_SUCCESS) {
+		ret = nrfx_gppi_conn_alloc(evt_addr, tsk_addr, &data->async->rx.cnt.ppi);
+		if (ret < 0) {
 			LOG_ERR("Failed to allocate PPI Channel");
-			nrfx_timer_uninit(&cfg->timer);
-			return -EINVAL;
+			nrfx_timer_uninit(&data->timer);
+			return ret;
 		}
 
-		nrfx_gppi_channel_endpoints_setup(data->async->rx.cnt.ppi, evt_addr, tsk_addr);
-		nrfx_gppi_channels_enable(BIT(data->async->rx.cnt.ppi));
+		nrfx_gppi_conn_enable(data->async->rx.cnt.ppi);
 	} else {
 		nrf_uarte_int_enable(uarte, NRF_UARTE_INT_RXDRDY_MASK);
 	}
@@ -1609,18 +1608,17 @@ static int cbwt_uarte_async_init(const struct device *dev)
 						NRF_UARTE_INT_RXTO_MASK;
 	uint32_t evt = nrf_uarte_event_address_get(cfg->uarte_regs, NRF_UARTE_EVENT_RXDRDY);
 	uint32_t tsk = nrf_timer_task_address_get(cfg->timer_regs, NRF_TIMER_TASK_COUNT);
-	nrfx_err_t ret;
+	int ret;
 
 	nrf_timer_mode_set(cfg->timer_regs, NRF_TIMER_MODE_COUNTER);
 	nrf_timer_bit_width_set(cfg->timer_regs, NRF_TIMER_BIT_WIDTH_32);
 
-	ret = nrfx_gppi_channel_alloc(&cbwt_data->ppi_ch);
-	if (ret != NRFX_SUCCESS) {
-		return -ENOMEM;
+	ret = nrfx_gppi_conn_alloc(evt, tsk, &cbwt_data->ppi_h);
+	if (ret < 0) {
+		return ret;
 	}
 
-	nrfx_gppi_channel_endpoints_setup(cbwt_data->ppi_ch, evt, tsk);
-	nrfx_gppi_channels_enable(BIT(cbwt_data->ppi_ch));
+	nrfx_gppi_conn_enable(cbwt_data->ppi_h);
 
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	cbwt_data->bounce_buf_swap_len = cfg->bounce_buf_swap_len;
@@ -2117,7 +2115,7 @@ static void rx_timeout(struct k_timer *timer)
 			      NRF_UARTE_INT_ENDRX_MASK);
 
 	if (HW_RX_COUNTING_ENABLED(cfg)) {
-		read = nrfx_timer_capture(&cfg->timer, 0);
+		read = nrfx_timer_capture(&data->timer, 0);
 	} else {
 		read = async_rx->cnt.cnt;
 	}
@@ -3001,18 +2999,17 @@ static DEVICE_API(uart, uart_nrfx_uarte_driver_api) = {
 static int endtx_stoptx_ppi_init(NRF_UARTE_Type *uarte,
 				 struct uarte_nrfx_data *data)
 {
-	nrfx_err_t ret;
+	int ret;
 
-	ret = nrfx_gppi_channel_alloc(&data->ppi_ch_endtx);
-	if (ret != NRFX_SUCCESS) {
+	ret = nrfx_gppi_conn_alloc(
+		nrf_uarte_event_address_get(uarte, NRF_UARTE_EVENT_ENDTX),
+		nrf_uarte_task_address_get(uarte, NRF_UARTE_TASK_STOPTX), &data->ppi_h_endtx);
+	if (ret < 0) {
 		LOG_ERR("Failed to allocate PPI Channel");
-		return -EIO;
+		return ret;
 	}
 
-	nrfx_gppi_channel_endpoints_setup(data->ppi_ch_endtx,
-		nrf_uarte_event_address_get(uarte, NRF_UARTE_EVENT_ENDTX),
-		nrf_uarte_task_address_get(uarte, NRF_UARTE_TASK_STOPTX));
-	nrfx_gppi_channels_enable(BIT(data->ppi_ch_endtx));
+	nrfx_gppi_conn_enable(data->ppi_h_endtx);
 
 	return 0;
 }
@@ -3091,7 +3088,7 @@ static void uarte_pm_suspend(const struct device *dev)
 
 #if !defined(CONFIG_UART_NRFX_UARTE_ENHANCED_RX)
 		if (data->async && HW_RX_COUNTING_ENABLED(cfg)) {
-			nrfx_timer_disable(&cfg->timer);
+			nrfx_timer_disable(&data->timer);
 			/* Timer/counter value is reset when disabled. */
 			data->async->rx.total_byte_cnt = 0;
 			data->async->rx.total_user_byte_cnt = 0;
@@ -3413,6 +3410,9 @@ static int uarte_instance_deinit(const struct device *dev)
 				(.uart_config = UARTE_CONFIG(idx),))	       \
 		IF_ENABLED(CONFIG_UART_##idx##_ASYNC,			       \
 			    (.async = &uarte##idx##_async,))		       \
+		IF_ENABLED(CONFIG_UART_##idx##_NRF_HW_ASYNC,		       \
+			    (.timer = NRFX_TIMER_INSTANCE(NRF_TIMER_INST_GET(  \
+				CONFIG_UART_##idx##_NRF_HW_ASYNC_TIMER)),))    \
 		IF_ENABLED(CONFIG_UART_##idx##_INTERRUPT_DRIVEN,	       \
 			    (.int_driven = &uarte##idx##_int_driven,))	       \
 	};								       \
@@ -3454,9 +3454,6 @@ static int uarte_instance_deinit(const struct device *dev)
 				 .rx_flush_buf = uarte##idx##_flush_buf,))     \
 		IF_ENABLED(CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER,     \
 			(UARTE_COUNT_BYTES_WITH_TIMER_CONFIG(idx)))	       \
-		IF_ENABLED(CONFIG_UART_##idx##_NRF_HW_ASYNC,		       \
-			(.timer = NRFX_TIMER_INSTANCE(			       \
-				CONFIG_UART_##idx##_NRF_HW_ASYNC_TIMER),))     \
 	};								       \
 	UARTE_DIRECT_ISR_DECLARE(idx)					       \
 	static int uarte_##idx##_init(const struct device *dev)		       \
