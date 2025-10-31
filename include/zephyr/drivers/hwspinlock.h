@@ -73,7 +73,7 @@ struct hwspinlock_dt_spec {
  */
 #define HWSPINLOCK_CTX_INITIALIZER                                                                 \
 	{                                                                                          \
-		.lock = {0},                                                                       \
+		.lock = {},                                                                        \
 	}
 
 /**
