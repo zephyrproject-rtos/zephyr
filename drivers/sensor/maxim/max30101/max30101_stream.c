@@ -310,8 +310,10 @@ static void max30101_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe,
 	edata->header.reading_count = count;
 
 	/* Check if the requested channels are supported */
+	uint8_t has_temp = edata->has_temp;
 	const struct sensor_chan_spec all_channel[] = {{.chan_type=SENSOR_CHAN_ALL, .chan_idx=0}};
 	uint8_t data_channel = max30101_encode_channels(data, edata, all_channel, ARRAY_SIZE(all_channel));
+	edata->has_temp = has_temp;
 
 	/* Drop data */
 	uint8_t keep = (data->stream_cfg.watermark_incl & ~data->stream_cfg.watermark_drop);
@@ -393,7 +395,7 @@ static void max30101_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe,
 	struct max30101_encoded_data *edata;
 	bool rdy_event = false, temp_event = false, watermark_event = false, overflow_event = false;
 	uint8_t proc_data_rdy = (data->stream_cfg.data_rdy_incl | data->stream_cfg.data_rdy_drop) & ~data->stream_cfg.data_rdy_nop;
-//	LOG_INF("Status: [0x%02X][0x%02X]", data->status[0], data->status[1]);
+//	LOG_INF("Status: [0x%02X][0x%02X](0x%02X)", data->status[0], data->status[1], proc_data_rdy);
 
 	if (data->stream_cfg.irq_data_rdy) {
 		rdy_event = (proc_data_rdy != 0) && ((data->status[0] & MAX30101_INT_PPG_MASK) != 0);
@@ -435,10 +437,10 @@ static void max30101_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe,
 	edata->has_watermark = watermark_event;
 	edata->has_overflow = overflow_event;
 #if CONFIG_MAX30101_DIE_TEMPERATURE
-	edata->has_data_rdy |= temp_event;
+	edata->has_temp_rdy = temp_event;
 #endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
 
-//	LOG_ERR("Flags: (%d)[%d][%d][%d]", temp_event, rdy_event, watermark_event, overflow_event);
+//	LOG_ERR("Flags: (%d)(%d)[%d][%d][%d]", data->temp_available, temp_event, rdy_event, watermark_event, overflow_event);
 	/* If we're not interested in the data, just complete the request */
 	if (!rdy_event && !watermark_event) {
 //		LOG_ERR("max30101_read_status_cb NOP");

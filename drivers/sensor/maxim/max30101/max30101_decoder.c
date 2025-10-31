@@ -156,16 +156,47 @@ static int max30101_decoder_decode(const uint8_t *buffer, struct sensor_chan_spe
 }
 
 #if CONFIG_MAX30101_STREAM
-static bool max30101_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger)
+static bool max30101_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger, struct sensor_chan_spec chan_spec)
 {
 	struct max30101_encoded_data *edata = (struct max30101_encoded_data *)buffer;
 	bool has_trigger = false;
+//	LOG_DBG("has_temp_rdy: %d, has_data_rdy: %d, has_watermark: %d, has_overflow: %d", edata->has_temp_rdy, edata->has_data_rdy, edata->has_watermark, edata->has_overflow);
 
 	switch (trigger)
 	{
 	case SENSOR_TRIG_DATA_READY:
-		has_trigger = edata->has_data_rdy;
-		edata->has_data_rdy = 0;
+		switch (chan_spec.chan_type)
+		{
+		case SENSOR_CHAN_ALL:
+#if CONFIG_MAX30101_DIE_TEMPERATURE
+			has_trigger = edata->has_data_rdy || edata->has_temp_rdy;
+			edata->has_temp_rdy = 0;
+#else
+			has_trigger = edata->has_data_rdy;
+#endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
+			edata->has_data_rdy = 0;
+			break;
+
+		case SENSOR_CHAN_DIE_TEMP:
+#if CONFIG_MAX30101_DIE_TEMPERATURE
+			has_trigger = edata->has_temp_rdy;
+			edata->has_temp_rdy = 0;
+			break;
+#else
+			return false;
+#endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
+
+		case SENSOR_CHAN_RED:
+		case SENSOR_CHAN_IR:
+		case SENSOR_CHAN_GREEN:
+			has_trigger = edata->has_data_rdy;
+			edata->has_data_rdy = 0;
+			break;
+		
+		default:
+			LOG_ERR("Unsupported channel type %d", chan_spec.chan_type);
+			return false;
+		}
 		break;
 	case SENSOR_TRIG_FIFO_WATERMARK:
 		has_trigger = edata->has_watermark;
