@@ -183,14 +183,6 @@ config ARM64_EXCEPTION_STACK_TRACE
 	help
 	  Internal config to enable runtime stack traces on fatal exceptions.
 
-config ARCH_HAS_STACKWALK
-	bool
-	default y
-	depends on FRAME_POINTER
-	help
-	  Internal config to indicate that the arch_stack_walk() API is implemented
-	  and it can be enabled.
-
 config ARM64_SAFE_EXCEPTION_STACK_SIZE
 	int "The stack size of the safe exception stack"
 	default 4096
@@ -220,6 +212,14 @@ config ARM64_STACK_PROTECTION
 	  by preceding all stack areas with a fixed guard region.
 
 if CPU_CORTEX_A
+
+config ARCH_HAS_STACKWALK
+	bool
+	default y
+	depends on FRAME_POINTER
+	help
+	  Internal config to indicate that the arch_stack_walk() API is implemented
+	  and it can be enabled.
 
 config ARMV8_A_NS
 	bool "ARMv8-A Normal World (Non-Secure world of Trustzone)"
