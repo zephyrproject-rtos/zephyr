@@ -141,7 +141,7 @@ Hints:
   endif()
 endforeach()
 
-if(HWMv2 AND NOT EXISTS ${BOARD_DIR}/board.yml)
+if(NOT EXISTS ${BOARD_DIR}/board.yml)
   message(WARNING "BOARD_DIR: ${BOARD_DIR} has been moved or deleted. "
                   "Trying to find new location."
   )
@@ -180,7 +180,7 @@ if(NOT BOARD_DIR)
   endif()
 endif()
 
-set(format_str "{NAME}\;{DIR}\;{HWM}\;")
+set(format_str "{NAME}\;{DIR}\;")
 set(format_str "${format_str}{REVISION_FORMAT}\;{REVISION_DEFAULT}\;{REVISION_EXACT}\;")
 set(format_str "${format_str}{REVISIONS}\;{SOCS}\;{QUALIFIERS}")
 
@@ -197,7 +197,7 @@ endif()
 
 if(NOT "${ret_board}" STREQUAL "")
   string(STRIP "${ret_board}" ret_board)
-  set(single_val "NAME;HWM;REVISION_FORMAT;REVISION_DEFAULT;REVISION_EXACT")
+  set(single_val "NAME;REVISION_FORMAT;REVISION_DEFAULT;REVISION_EXACT")
   set(multi_val  "DIR;REVISIONS;SOCS;QUALIFIERS")
   cmake_parse_arguments(LIST_BOARD "" "${single_val}" "${multi_val}" ${ret_board})
   list(GET LIST_BOARD_DIR 0 BOARD_DIR)
@@ -210,12 +210,12 @@ if(NOT "${ret_board}" STREQUAL "")
   # Create two CMake variables identifying the hw model.
   # CMake variable: HWM=v2
   # CMake variable: HWMv2=True
-  set(HWM       ${LIST_BOARD_HWM} CACHE INTERNAL "Zephyr hardware model version")
-  set(HWM${HWM} True   CACHE INTERNAL "Zephyr hardware model")
+  set(HWM v2 CACHE INTERNAL "Zephyr hardware model version")
+  set(HWMv2 True CACHE INTERNAL "Zephyr hardware model")
 elseif(BOARD_DIR)
   message(FATAL_ERROR "Error finding board: ${BOARD} in ${BOARD_DIR}.\n"
           "This indicates the board has been removed, renamed, or placed at a new location.\n"
-	  "Please run a pristine build."
+          "Please run a pristine build."
   )
 else()
   message("No board named '${BOARD}' found. Did you mean:\n")
