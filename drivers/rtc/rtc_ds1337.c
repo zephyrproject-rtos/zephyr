@@ -247,7 +247,7 @@ static void ds1337_irq_handler(const struct device *port, struct gpio_callback *
 static int ds1337_set_time(const struct device *dev, const struct rtc_time *timeptr)
 {
 	const struct ds1337_config *config = dev->config;
-	uint8_t regs[7];
+	uint8_t regs[8];
 	int err;
 
 	if ((timeptr == NULL) || !rtc_utils_validate_rtc_time(timeptr, DS1337_RTC_TIME_MASK)) {
@@ -256,23 +256,24 @@ static int ds1337_set_time(const struct device *dev, const struct rtc_time *time
 
 	ds1337_lock_sem(dev);
 
-	regs[0] = bin2bcd(timeptr->tm_sec) & DS1337_SECONDS_MASK;
-	regs[1] = bin2bcd(timeptr->tm_min) & DS1337_MINUTES_MASK;
-	regs[2] = bin2bcd(timeptr->tm_hour) & DS1337_HOURS_MASK;
-	regs[3] = bin2bcd(timeptr->tm_wday - DS1337_DAY_OFFSET) & DS1337_DAY_MASK;
-	regs[4] = bin2bcd(timeptr->tm_mday) & DS1337_DATE_MASK;
-	regs[5] = bin2bcd(timeptr->tm_mon - DS1337_MONTH_OFFSET) & DS1337_MONTH_MASK;
+	regs[0] = DS1337_SECONDS_REG;
+	regs[1] = bin2bcd(timeptr->tm_sec) & DS1337_SECONDS_MASK;
+	regs[2] = bin2bcd(timeptr->tm_min) & DS1337_MINUTES_MASK;
+	regs[3] = bin2bcd(timeptr->tm_hour) & DS1337_HOURS_MASK;
+	regs[4] = bin2bcd(timeptr->tm_wday - DS1337_DAY_OFFSET) & DS1337_DAY_MASK;
+	regs[5] = bin2bcd(timeptr->tm_mday) & DS1337_DATE_MASK;
+	regs[6] = bin2bcd(timeptr->tm_mon - DS1337_MONTH_OFFSET) & DS1337_MONTH_MASK;
 
 	/* Determine which century we're in */
 	if (timeptr->tm_year >= DS1337_TM_YEAR_2000) {
-		regs[5] |= DS1337_CENTURY_MASK;
-		regs[6] = bin2bcd(timeptr->tm_year - DS1337_TM_YEAR_2000) & DS1337_YEAR_MASK;
+		regs[6] |= DS1337_CENTURY_MASK;
+		regs[7] = bin2bcd(timeptr->tm_year - DS1337_TM_YEAR_2000) & DS1337_YEAR_MASK;
 	} else {
-		regs[6] = bin2bcd(timeptr->tm_year) & DS1337_YEAR_MASK;
+		regs[7] = bin2bcd(timeptr->tm_year) & DS1337_YEAR_MASK;
 	}
 
 	/* Set new time */
-	err = i2c_burst_write_dt(&config->i2c, DS1337_SECONDS_REG, regs, sizeof(regs));
+	err = i2c_write_dt(&config->i2c, regs, sizeof(regs));
 	if (err) {
 		goto out_unlock;
 	}
@@ -373,8 +374,7 @@ static int ds1337_alarm_set_time(const struct device *dev, uint16_t id, uint16_t
 				 const struct rtc_time *timeptr)
 {
 	const struct ds1337_config *config = dev->config;
-	uint8_t regs[4];
-	uint8_t reg_addr;
+	uint8_t regs[5];
 	uint8_t reg_offset;
 	int err;
 
@@ -399,43 +399,42 @@ static int ds1337_alarm_set_time(const struct device *dev, uint16_t id, uint16_t
 	}
 
 	if (mask & RTC_ALARM_TIME_MASK_SECOND) {
-		regs[0] = bin2bcd(timeptr->tm_sec) & DS1337_ALARM_SECONDS_MASK;
-	} else {
-		regs[0] = DS1337_ALARM_DISABLE_MASK;
-	}
-
-	if (mask & RTC_ALARM_TIME_MASK_MINUTE) {
-		regs[1] = bin2bcd(timeptr->tm_min) & DS1337_ALARM_MINUTES_MASK;
+		regs[1] = bin2bcd(timeptr->tm_sec) & DS1337_ALARM_SECONDS_MASK;
 	} else {
 		regs[1] = DS1337_ALARM_DISABLE_MASK;
 	}
 
-	if (mask & RTC_ALARM_TIME_MASK_HOUR) {
-		regs[2] = bin2bcd(timeptr->tm_hour) & DS1337_ALARM_HOURS_MASK;
+	if (mask & RTC_ALARM_TIME_MASK_MINUTE) {
+		regs[2] = bin2bcd(timeptr->tm_min) & DS1337_ALARM_MINUTES_MASK;
 	} else {
 		regs[2] = DS1337_ALARM_DISABLE_MASK;
 	}
 
-	if (mask & RTC_ALARM_TIME_MASK_MONTHDAY) {
-		regs[3] = bin2bcd(timeptr->tm_mday) & DS1337_ALARM_DATE_MASK;
-	} else if (mask & RTC_ALARM_TIME_MASK_WEEKDAY) {
-		regs[3] = bin2bcd(timeptr->tm_wday - DS1337_DAY_OFFSET) & DS1337_ALARM_DAY_MASK;
-		regs[3] |= DS1337_DY_DT_MASK;
+	if (mask & RTC_ALARM_TIME_MASK_HOUR) {
+		regs[3] = bin2bcd(timeptr->tm_hour) & DS1337_ALARM_HOURS_MASK;
 	} else {
 		regs[3] = DS1337_ALARM_DISABLE_MASK;
 	}
 
+	if (mask & RTC_ALARM_TIME_MASK_MONTHDAY) {
+		regs[4] = bin2bcd(timeptr->tm_mday) & DS1337_ALARM_DATE_MASK;
+	} else if (mask & RTC_ALARM_TIME_MASK_WEEKDAY) {
+		regs[4] = bin2bcd(timeptr->tm_wday - DS1337_DAY_OFFSET) & DS1337_ALARM_DAY_MASK;
+		regs[4] |= DS1337_DY_DT_MASK;
+	} else {
+		regs[4] = DS1337_ALARM_DISABLE_MASK;
+	}
+
 	/* Update alarm registers */
 	if (id == DS1337_ALARM_1_ID) {
-		reg_addr = DS1337_ALARM_1_SECONDS_REG;
+		regs[0] = DS1337_ALARM_1_SECONDS_REG;
 		reg_offset = 0;
 	} else {
-		reg_addr = DS1337_ALARM_2_MINUTES_REG;
+		regs[1] = DS1337_ALARM_2_MINUTES_REG;
 		reg_offset = 1;
 	}
 
-	err = i2c_burst_write_dt(&config->i2c, reg_addr, &regs[reg_offset],
-				 sizeof(regs) - reg_offset);
+	err = i2c_write_dt(&config->i2c, &regs[reg_offset], sizeof(regs) - reg_offset);
 	if (err) {
 		return err;
 	}

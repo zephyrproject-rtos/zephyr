@@ -108,7 +108,7 @@ static void bq32002_unlock_sem(const struct device *dev)
 static int bq32002_set_irq_frequency(const struct device *dev)
 {
 	const struct bq32002_config *config = dev->config;
-	uint8_t sf_regs[3];
+	uint8_t sf_regs[4];
 	uint8_t cfg1_val;
 	uint8_t cfg2_val;
 	int err;
@@ -136,11 +136,11 @@ static int bq32002_set_irq_frequency(const struct device *dev)
 
 	/* Update FTF value if frequency output enabled */
 	if (cfg1_val & BQ32002_FREQ_TEST_MASK) {
-		sf_regs[0] = BQ32002_SF_KEY_1;
-		sf_regs[1] = BQ32002_SF_KEY_2;
-		sf_regs[2] = cfg2_val;
-		err = i2c_burst_write_dt(&config->i2c, BQ32002_SF_KEY_1_REG, sf_regs,
-					 sizeof(sf_regs));
+		sf_regs[0] = BQ32002_SF_KEY_1_REG;
+		sf_regs[1] = BQ32002_SF_KEY_1;
+		sf_regs[2] = BQ32002_SF_KEY_2;
+		sf_regs[3] = cfg2_val;
+		err = i2c_write_dt(&config->i2c, sf_regs, sizeof(sf_regs));
 		if (err) {
 			return err;
 		}
@@ -153,7 +153,7 @@ static int bq32002_set_time(const struct device *dev, const struct rtc_time *tim
 {
 	const struct bq32002_config *config = dev->config;
 	int err;
-	uint8_t regs[7];
+	uint8_t regs[8];
 
 	if ((timeptr == NULL) || !rtc_utils_validate_rtc_time(timeptr, BQ32002_RTC_TIME_MASK)) {
 		return -EINVAL;
@@ -162,23 +162,24 @@ static int bq32002_set_time(const struct device *dev, const struct rtc_time *tim
 	bq32002_lock_sem(dev);
 
 	/* Update the registers */
-	regs[0] = bin2bcd(timeptr->tm_sec) & BQ32002_SECONDS_MASK;
-	regs[1] = bin2bcd(timeptr->tm_min) & BQ32002_MINUTES_MASK; /* Clear oscillator fail flag */
-	regs[2] = (bin2bcd(timeptr->tm_hour) & BQ32002_HOURS_MASK) | BQ32002_CENT_EN_MASK;
-	regs[3] = bin2bcd(timeptr->tm_wday - BQ32002_DAY_OFFSET) & BQ32002_DAY_MASK;
-	regs[4] = bin2bcd(timeptr->tm_mday) & BQ32002_DATE_MASK;
-	regs[5] = bin2bcd(timeptr->tm_mon - BQ32002_MONTH_OFFSET) & BQ32002_MONTH_MASK;
+	regs[0] = BQ32002_SECONDS_REG;
+	regs[1] = bin2bcd(timeptr->tm_sec) & BQ32002_SECONDS_MASK;
+	regs[2] = bin2bcd(timeptr->tm_min) & BQ32002_MINUTES_MASK; /* Clear oscillator fail flag */
+	regs[3] = (bin2bcd(timeptr->tm_hour) & BQ32002_HOURS_MASK) | BQ32002_CENT_EN_MASK;
+	regs[4] = bin2bcd(timeptr->tm_wday - BQ32002_DAY_OFFSET) & BQ32002_DAY_MASK;
+	regs[5] = bin2bcd(timeptr->tm_mday) & BQ32002_DATE_MASK;
+	regs[6] = bin2bcd(timeptr->tm_mon - BQ32002_MONTH_OFFSET) & BQ32002_MONTH_MASK;
 
 	/* Determine which century we're in */
 	if (timeptr->tm_year >= BQ32002_TM_YEAR_2000) {
-		regs[2] |= BQ32002_CENT_MASK;
-		regs[6] = bin2bcd(timeptr->tm_year - BQ32002_TM_YEAR_2000) & BQ32002_YEAR_MASK;
+		regs[3] |= BQ32002_CENT_MASK;
+		regs[7] = bin2bcd(timeptr->tm_year - BQ32002_TM_YEAR_2000) & BQ32002_YEAR_MASK;
 	} else {
-		regs[6] = bin2bcd(timeptr->tm_year) & BQ32002_YEAR_MASK;
+		regs[7] = bin2bcd(timeptr->tm_year) & BQ32002_YEAR_MASK;
 	}
 
 	/* Write new time to the chip */
-	err = i2c_burst_write_dt(&config->i2c, BQ32002_SECONDS_REG, regs, sizeof(regs));
+	err = i2c_write_dt(&config->i2c, regs, sizeof(regs));
 
 	bq32002_unlock_sem(dev);
 
