@@ -80,7 +80,7 @@ static void *test_setup(void)
 	};
 	int ret;
 
-	zassert_equal(NRFX_SUCCESS, nrfx_twis_init(&twis, &config, i2s_slave_handler),
+	zassert_equal(0, nrfx_twis_init(&twis, &config, i2s_slave_handler),
 		      "TWIS initialization failed");
 
 	PINCTRL_DT_DEFINE(NODE_TWIS);
