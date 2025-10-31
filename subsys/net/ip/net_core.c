@@ -84,7 +84,6 @@ static inline enum net_verdict process_data(struct net_pkt *pkt)
 
 	if (!net_pkt_is_l2_processed(pkt)) {
 		ret = net_if_recv_data(net_pkt_iface(pkt), pkt);
-		net_pkt_set_l2_processed(pkt, true);
 		if (ret != NET_CONTINUE) {
 			if (ret == NET_DROP) {
 				NET_DBG("Packet %p discarded by L2", pkt);
@@ -95,6 +94,8 @@ static inline enum net_verdict process_data(struct net_pkt *pkt)
 			return ret;
 		}
 	}
+
+	net_pkt_set_l2_processed(pkt, true);
 
 	/* L2 has modified the buffer starting point, it is easier
 	 * to re-initialize the cursor rather than updating it.
