@@ -253,6 +253,12 @@ static int usbip_handle_submit(struct usbip_dev_ctx *const dev_ctx,
 
 	ep = cmd->hdr.ep;
 	if (cmd->submit.length != 0) {
+		if (cmd->submit.length > USBIP_MAX_PKT_SIZE) {
+			LOG_ERR("Buffer size %u too small, requested length %zu",
+				USBIP_MAX_PKT_SIZE, cmd->submit.length);
+			return -ENOMEM;
+		}
+
 		buf = net_buf_alloc(&usbip_pool, K_NO_WAIT);
 		if (buf == NULL) {
 			LOG_ERR("Failed to allocate net_buf");
