@@ -1,0 +1,23 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bouffalolab ADC
+
+compatible: "bflb,adc"
+
+include: [adc-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input
