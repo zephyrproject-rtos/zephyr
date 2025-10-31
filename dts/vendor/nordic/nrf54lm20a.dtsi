@@ -805,6 +805,13 @@
                 status = "disabled";
             };
 
+			xo24m: xo24m@10e000 {
+				compatible = "nordic,nrf-clock-xo24m";
+				reg = <0x10e000 0x1000>;
+				interrupts = <270 NRF_DEFAULT_IRQ_PRIORITY>;
+				status = "disabled";
+			};
+
 			power: power@10e000 {
 				compatible = "nordic,nrf-power";
 				reg = <0x10e000 0x1000>;
