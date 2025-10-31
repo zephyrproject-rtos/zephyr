@@ -1,0 +1,11 @@
+sample:
+  description: workq demo
+  name: workq demo
+common:
+  tags:
+    - workq
+tests:
+  sample.kernel.workq:
+    build_only: true
+    integration_platforms:
+      - native_sim
