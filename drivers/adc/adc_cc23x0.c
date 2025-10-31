@@ -400,7 +400,7 @@ static int adc_cc23x0_calc_clk_cfg(uint32_t acq_time_ns, uint8_t *clk_div, uint1
 	/* Iterate through each divider */
 	ARRAY_FOR_EACH(clk_dividers, i) {
 		divider = clk_dividers[i];
-		clock_period_ns = 1.0E9 * divider / TI_CC23X0_DT_CPU_CLK_FREQ_HZ;
+		clock_period_ns = 1.0E9 * divider / TI_CC23X0_CC27XX_DT_CPU_CLK_FREQ_HZ;
 
 		/* Calculate the number of cycles needed to meet or exceed acq_time_ns */
 		cycles = DIV_ROUND_UP(acq_time_ns, clock_period_ns);
@@ -597,37 +597,37 @@ static DEVICE_API(adc, adc_lpf3_driver_api) = {
 };
 
 #ifdef CONFIG_ADC_CC23X0_DMA_DRIVEN
-#define ADC_CC23X0_DMA_INIT(n)                                                                     \
-	.dma_dev = DEVICE_DT_GET(TI_CC23X0_DT_INST_DMA_CTLR(n, dma)),                              \
-	.dma_channel = TI_CC23X0_DT_INST_DMA_CHANNEL(n, dma),                                      \
-	.dma_trigsrc = TI_CC23X0_DT_INST_DMA_TRIGSRC(n, dma),
+#define ADC_CC23X0_DMA_INIT(n)                                                                 \
+	.dma_dev = DEVICE_DT_GET(TI_CC23X0_CC27XX_DT_INST_DMA_CTLR(n, dma)),                       \
+	.dma_channel = TI_CC23X0_CC27XX_DT_INST_DMA_CHANNEL(n, dma),                               \
+	.dma_trigsrc = TI_CC23X0_CC27XX_DT_INST_DMA_TRIGSRC(n, dma),
 #else
 #define ADC_CC23X0_DMA_INIT(n)
 #endif
 
-#define CC23X0_ADC_INIT(n)                                                                         \
+#define CC23X0_ADC_INIT(n)                                                                     \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	PM_DEVICE_DT_INST_DEFINE(n, adc_cc23x0_pm_action);                                         \
-                                                                                                   \
+                                                                                               \
 	static void adc_cc23x0_cfg_func_##n(void)                                                  \
 	{                                                                                          \
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), adc_cc23x0_isr,             \
 			    DEVICE_DT_INST_GET(n), 0);                                             \
 		irq_enable(DT_INST_IRQN(n));                                                       \
 	}                                                                                          \
-                                                                                                   \
+                                                                                               \
 	static const struct adc_cc23x0_config adc_cc23x0_config_##n = {                            \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
 		.irq_cfg_func = adc_cc23x0_cfg_func_##n,                                           \
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		ADC_CC23X0_DMA_INIT(n)};                                                           \
-                                                                                                   \
+                                                                                               \
 	static struct adc_cc23x0_data adc_cc23x0_data_##n = {                                      \
 		ADC_CONTEXT_INIT_TIMER(adc_cc23x0_data_##n, ctx),                                  \
 		ADC_CONTEXT_INIT_LOCK(adc_cc23x0_data_##n, ctx),                                   \
 		ADC_CONTEXT_INIT_SYNC(adc_cc23x0_data_##n, ctx),                                   \
 	};                                                                                         \
-                                                                                                   \
+                                                                                                \
 	DEVICE_DT_INST_DEFINE(n, &adc_cc23x0_init, PM_DEVICE_DT_INST_GET(n), &adc_cc23x0_data_##n, \
 			      &adc_cc23x0_config_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,       \
 			      &adc_cc23x0_driver_api);

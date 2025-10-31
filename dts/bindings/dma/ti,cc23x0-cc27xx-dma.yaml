@@ -1,9 +1,9 @@
 # Copyright (c) 2024 BayLibre, SAS
 # SPDX-License-Identifier: Apache-2.0
 
-description: TI CC23X0 DMA controller
+description: TI CC23X0_CC27XX DMA controller
 
-compatible: "ti,cc23x0-dma"
+compatible: "ti,cc23x0-cc27xx-dma"
 
 include: dma-controller.yaml
 

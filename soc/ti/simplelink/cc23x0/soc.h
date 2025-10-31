@@ -10,6 +10,6 @@
 
 #include "cmsis/cc23x0r5.h"
 #include "cmsis/device.h"
-#include "ti_cc23x0_dt.h"
+#include "../cc23x0_cc27xx/ti_cc23x0_cc27xx_dt.h"
 
 #endif /* TI_SIMPLELINK_CC23X0_SOC_H_ */

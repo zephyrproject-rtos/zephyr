@@ -995,6 +995,16 @@ static int uart_cc23x0_pm_action(const struct device *dev, enum pm_device_action
                                                                                                    \
 		return pm_device_driver_init(dev, uart_cc23x0_pm_action);                          \
 	}
+#ifdef CONFIG_UART_CC23X0_DMA_DRIVEN
+#define UART_CC23X0_DMA_INIT(n)						\
+	.dma_dev = DEVICE_DT_GET(TI_CC23X0_CC27XX_DT_INST_DMA_CTLR(n, tx)),	\
+	.dma_channel_tx = TI_CC23X0_CC27XX_DT_INST_DMA_CHANNEL(n, tx),		\
+	.dma_trigsrc_tx = TI_CC23X0_CC27XX_DT_INST_DMA_TRIGSRC(n, tx),		\
+	.dma_channel_rx = TI_CC23X0_CC27XX_DT_INST_DMA_CHANNEL(n, rx),		\
+	.dma_trigsrc_rx = TI_CC23X0_CC27XX_DT_INST_DMA_TRIGSRC(n, rx),
+#else
+#define UART_CC23X0_DMA_INIT(n)
+#endif /* CONFIG_UART_CC23X0_DMA_DRIVEN */
 
 #define UART_CC23X0_INIT(n)                                                                        \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \

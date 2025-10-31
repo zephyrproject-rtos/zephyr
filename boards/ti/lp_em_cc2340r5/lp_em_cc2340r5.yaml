@@ -12,4 +12,5 @@ supported:
   - uart
   - adc
   - pwm
+  - dma
 vendor: ti
