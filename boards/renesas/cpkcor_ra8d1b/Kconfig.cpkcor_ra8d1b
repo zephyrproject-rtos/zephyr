@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Jisheng Zhang <jszhang@kernel.org>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CPKCOR_RA8D1B
+	select SOC_R7FA8D1BHECBD
