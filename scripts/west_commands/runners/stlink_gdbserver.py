@@ -112,11 +112,22 @@ class STLinkGDBServerRunner(ZephyrBinaryRunner):
             default=STLINK_GDB_SERVER_DEFAULT_PORT,
             help="Port number for GDB client",
         )
+        parser.add_argument(
+            "--external-init",
+            action='store_true',
+            help="Run Init() from external loader after reset",
+        )
 
     @classmethod
     def do_create(cls, cfg: RunnerConfig, args: argparse.Namespace) -> "STLinkGDBServerRunner":
         return STLinkGDBServerRunner(
-            cfg, args.swd, args.apid, args.dev_id, args.port_number, args.extload
+            cfg,
+            args.swd,
+            args.apid,
+            args.dev_id,
+            args.port_number,
+            args.extload,
+            args.external_init,
         )
 
     def __init__(
@@ -127,6 +138,7 @@ class STLinkGDBServerRunner(ZephyrBinaryRunner):
         stlink_serial: str | None,
         gdb_port: int,
         external_loader: str | None,
+        external_init: bool,
     ):
         super().__init__(cfg)
         self.ensure_output('elf')
@@ -136,6 +148,7 @@ class STLinkGDBServerRunner(ZephyrBinaryRunner):
         self._stlink_serial = stlink_serial
         self._ap_id = ap_id
         self._external_loader = external_loader
+        self._do_external_init = external_init
 
     def do_run(self, command: str, **kwargs):
         if command in ["attach", "debug", "debugserver"]:
@@ -177,7 +190,9 @@ class STLinkGDBServerRunner(ZephyrBinaryRunner):
             extldr_path = cubeprg_path / "ExternalLoader" / self._external_loader
             if not extldr_path.exists():
                 raise RuntimeError(f"External loader {self._external_loader} does not exist")
-            gdbserver_cmd += ["--external-init"]
+
+            if self._do_external_init:
+                gdbserver_cmd += ["--external-init"]
             gdbserver_cmd += ["--extload", str(extldr_path)]
 
         self.require(gdbserver_cmd[0])
