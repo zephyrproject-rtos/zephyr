@@ -151,7 +151,11 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 	}
 
 	if (xfer->err == 0 && cmd->submit.length != 0) {
-		ret.submit.actual_length = htonl(buf->len);
+		if (USB_EP_DIR_IS_IN(xfer->ep)) {
+			ret.submit.actual_length = htonl(buf->len);
+		} else {
+			ret.submit.actual_length = htonl(cmd->submit.length);
+		}
 	}
 
 
@@ -166,7 +170,7 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 		goto usbip_req_cb_error;
 	}
 
-	if (ret.submit.actual_length != 0) {
+	if (USB_EP_DIR_IS_IN(xfer->ep) && ret.submit.actual_length != 0) {
 		LOG_INF("Send RET_SUBMIT transfer_buffer len %u", buf->len);
 		err = zsock_send(dev_ctx->connfd, buf->data, buf->len, 0);
 		if (err != buf->len) {
