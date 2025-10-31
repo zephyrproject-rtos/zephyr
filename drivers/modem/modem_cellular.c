@@ -42,6 +42,8 @@ LOG_MODULE_REGISTER(modem_cellular, CONFIG_MODEM_LOG_LEVEL);
 #define MODEM_CELLULAR_MAX_APN_CMDS          (2)
 #define MODEM_CELLULAR_APN_BUF_SIZE          (64)
 
+#define MODEM_CELLULAR_MAX_SCRIPT_FAILURES   (3)
+
 /* Magic constants */
 #define CSQ_RSSI_UNKNOWN		     (99)
 #define CESQ_RSRP_UNKNOWN		     (255)
@@ -135,6 +137,7 @@ struct modem_cellular_data {
 	uint8_t *chat_delimiter;
 	uint8_t *chat_filter;
 	uint8_t *chat_argv[32];
+	uint8_t script_failure_counter;
 
 	/* Status */
 	enum cellular_registration_status registration_status_gsm;
@@ -1299,6 +1302,25 @@ static void modem_cellular_run_apn_script_event_handler(struct modem_cellular_da
 	}
 }
 
+static void modem_cellular_script_failed(struct modem_cellular_data *data)
+{
+	data->script_failure_counter++;
+}
+
+static void modem_cellular_script_success(struct modem_cellular_data *data)
+{
+	data->script_failure_counter = 0;
+}
+
+static bool modem_cellular_is_script_retry_exceeded(struct modem_cellular_data *data)
+{
+	if (data->script_failure_counter >= MODEM_CELLULAR_MAX_SCRIPT_FAILURES) {
+		data->script_failure_counter = 0;
+		return true;
+	}
+	return false;
+}
+
 static int modem_cellular_on_run_dial_script_state_enter(struct modem_cellular_data *data)
 {
 	modem_cellular_start_timer(data, K_NO_WAIT);
@@ -1317,9 +1339,16 @@ static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_d
 		modem_chat_run_script_async(&data->chat, config->dial_chat_script);
 		break;
 	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
-		modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		modem_cellular_script_failed(data);
+		if (modem_cellular_is_script_retry_exceeded(data)) {
+			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_IDLE);
+			modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_RESUME);
+		} else {
+			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		}
 		break;
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
+		modem_cellular_script_success(data);
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_REGISTERED);
 		break;
 
@@ -1359,8 +1388,18 @@ static void modem_cellular_await_registered_event_handler(struct modem_cellular_
 
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
-	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
+		modem_cellular_script_success(data);
 		modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		break;
+
+	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
+		modem_cellular_script_failed(data);
+		if (modem_cellular_is_script_retry_exceeded(data)) {
+			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_IDLE);
+			modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_RESUME);
+		} else {
+			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		}
 		break;
 
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
@@ -1405,10 +1444,23 @@ static void modem_cellular_carrier_on_event_handler(struct modem_cellular_data *
 
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
-	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
-		result.success = evt == MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS;
-
+		modem_cellular_script_success(data);
 		modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		result.success = true;
+		modem_cellular_emit_event(data, CELLULAR_EVENT_MODEM_COMMS_CHECK_RESULT, &result);
+		break;
+
+	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
+		modem_cellular_script_failed(data);
+		if (modem_cellular_is_script_retry_exceeded(data)) {
+			net_if_carrier_off(modem_ppp_get_iface(data->ppp));
+			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_IDLE);
+			modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_RESUME);
+			LOG_WRN("Maximum script failures reached, restarting modem");
+		} else {
+			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		}
+		result.success = false;
 		modem_cellular_emit_event(data, CELLULAR_EVENT_MODEM_COMMS_CHECK_RESULT, &result);
 		break;
 
