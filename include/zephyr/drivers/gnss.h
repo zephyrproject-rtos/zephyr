@@ -424,11 +424,11 @@ static inline int z_impl_gnss_get_latest_timepulse(const struct device *dev,
  * @param _callback The callback function
  */
 #if CONFIG_GNSS
-#define GNSS_DATA_CALLBACK_DEFINE(_dev, _callback)                                              \
-	static const STRUCT_SECTION_ITERABLE(gnss_data_callback,                                \
-					     _gnss_data_callback__##_callback) = {              \
-		.dev = _dev,                                                                    \
-		.callback = _callback,                                                          \
+#define GNSS_DATA_CALLBACK_DEFINE(_dev, _callback)                                                 \
+	static const STRUCT_SECTION_ITERABLE(gnss_data_callback,                                   \
+					     _CONCAT(_gnss_data_callback_, __COUNTER__)) = {       \
+		.dev = _dev,                                                                       \
+		.callback = _callback,                                                             \
 	}
 #else
 #define GNSS_DATA_CALLBACK_DEFINE(_dev, _callback)
@@ -441,11 +441,11 @@ static inline int z_impl_gnss_get_latest_timepulse(const struct device *dev,
  * @param _callback The callback function
  */
 #if CONFIG_GNSS_SATELLITES
-#define GNSS_SATELLITES_CALLBACK_DEFINE(_dev, _callback)                                        \
-	static const STRUCT_SECTION_ITERABLE(gnss_satellites_callback,                          \
-					     _gnss_satellites_callback__##_callback) = {        \
-		.dev = _dev,                                                                    \
-		.callback = _callback,                                                          \
+#define GNSS_SATELLITES_CALLBACK_DEFINE(_dev, _callback)                                           \
+	static const STRUCT_SECTION_ITERABLE(gnss_satellites_callback,                             \
+					     _CONCAT(_gnss_satellites_callback_, __COUNTER__)) = { \
+		.dev = _dev,                                                                       \
+		.callback = _callback,                                                             \
 	}
 #else
 #define GNSS_SATELLITES_CALLBACK_DEFINE(_dev, _callback)
