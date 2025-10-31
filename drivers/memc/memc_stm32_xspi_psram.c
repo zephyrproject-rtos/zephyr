@@ -215,7 +215,7 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 {
 	const struct memc_stm32_xspi_psram_config *dev_cfg = dev->config;
 	struct memc_stm32_xspi_psram_data *dev_data = dev->data;
-	XSPI_HandleTypeDef hxspi = dev_data->hxspi;
+	XSPI_HandleTypeDef *hxspi = &dev_data->hxspi;
 	uint32_t ahb_clock_freq;
 	XSPIM_CfgTypeDef cfg = {0};
 	XSPI_RegularCmdTypeDef cmd = {0};
@@ -287,10 +287,10 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	hxspi.Init.ClockPrescaler = prescaler;
-	hxspi.Init.MemorySize = find_msb_set(dev_cfg->memory_size) - 2;
+	hxspi->Init.ClockPrescaler = prescaler;
+	hxspi->Init.MemorySize = find_msb_set(dev_cfg->memory_size) - 2;
 
-	if (HAL_XSPI_Init(&hxspi) != HAL_OK) {
+	if (HAL_XSPI_Init(hxspi) != HAL_OK) {
 		LOG_ERR("XSPI Init failed");
 		return -EIO;
 	}
@@ -298,13 +298,13 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 	cfg.nCSOverride = HAL_XSPI_CSSEL_OVR_NCS1;
 	cfg.IOPort = HAL_XSPIM_IOPORT_1;
 
-	if (HAL_XSPIM_Config(&hxspi, &cfg, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+	if (HAL_XSPIM_Config(hxspi, &cfg, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
 		LOG_ERR("XSPIMgr Init failed");
 		return -EIO;
 	}
 
 	/* Configure AP memory registers */
-	ret = ap_memory_configure(&hxspi);
+	ret = ap_memory_configure(hxspi);
 	if (ret != 0) {
 		LOG_ERR("AP memory configuration failed");
 		return -EIO;
@@ -329,7 +329,7 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 	cmd.DummyCycles = DUMMY_CLK_CYCLES_WRITE;
 	cmd.DQSMode = HAL_XSPI_DQS_ENABLE;
 
-	if (HAL_XSPI_Command(&hxspi, &cmd, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+	if (HAL_XSPI_Command(hxspi, &cmd, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
 		return -EIO;
 	}
 
@@ -337,7 +337,7 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 	cmd.Instruction = BURST_READ_CMD;
 	cmd.DummyCycles = DUMMY_CLK_CYCLES_READ;
 
-	if (HAL_XSPI_Command(&hxspi, &cmd, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+	if (HAL_XSPI_Command(hxspi, &cmd, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
 		return -EIO;
 	}
 
@@ -350,12 +350,12 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 	mem_mapped_cfg.NoPrefetchAXI = HAL_XSPI_AXI_PREFETCH_DISABLE;
 #endif
 
-	if (HAL_XSPI_MemoryMapped(&hxspi, &mem_mapped_cfg) != HAL_OK) {
+	if (HAL_XSPI_MemoryMapped(hxspi, &mem_mapped_cfg) != HAL_OK) {
 		return -EIO;
 	}
 
 #if defined(XSPI_CR_NOPREF)
-	stm32_reg_modify_bits(&hxspi.Instance->CR, XSPI_CR_NOPREF,
+	stm32_reg_modify_bits(&hxspi->Instance->CR, XSPI_CR_NOPREF,
 			      HAL_XSPI_AUTOMATIC_PREFETCH_DISABLE);
 #endif
 
