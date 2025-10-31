@@ -116,7 +116,7 @@ struct am1805_data {
 static int am1805_set_time(const struct device *dev, const struct rtc_time *tm)
 {
 	int err;
-	uint8_t regs[7];
+	uint8_t regs[8];
 
 	struct am1805_data *data = dev->data;
 	const struct am1805_config *config = dev->config;
@@ -135,15 +135,16 @@ static int am1805_set_time(const struct device *dev, const struct rtc_time *tm)
 			tm->tm_year, tm->tm_mon, tm->tm_mday, tm->tm_wday, tm->tm_hour, tm->tm_min,
 			tm->tm_sec);
 
-	regs[0] = bin2bcd(tm->tm_sec) & SECONDS_BITS;
-	regs[1] = bin2bcd(tm->tm_min) & MINUTES_BITS;
-	regs[2] = bin2bcd(tm->tm_hour) & HOURS_BITS;
-	regs[3] = bin2bcd(tm->tm_mday) & DATE_BITS;
-	regs[4] = bin2bcd(tm->tm_mon) & MONTHS_BITS;
-	regs[5] = bin2bcd(tm->tm_year) & YEAR_BITS;
-	regs[6] = bin2bcd(tm->tm_wday) & WEEKDAY_BITS;
+	regs[0] = REG_SECONDS_ADDR;
+	regs[1] = bin2bcd(tm->tm_sec) & SECONDS_BITS;
+	regs[2] = bin2bcd(tm->tm_min) & MINUTES_BITS;
+	regs[3] = bin2bcd(tm->tm_hour) & HOURS_BITS;
+	regs[4] = bin2bcd(tm->tm_mday) & DATE_BITS;
+	regs[5] = bin2bcd(tm->tm_mon) & MONTHS_BITS;
+	regs[6] = bin2bcd(tm->tm_year) & YEAR_BITS;
+	regs[7] = bin2bcd(tm->tm_wday) & WEEKDAY_BITS;
 
-	err = i2c_burst_write_dt(&config->int_i2c, REG_SECONDS_ADDR, regs, sizeof(regs));
+	err = i2c_write_dt(&config->int_i2c, regs, sizeof(regs));
 	if (err != 0) {
 		goto unlock;
 	}
@@ -361,7 +362,7 @@ static int am1805_alarm_set_time(const struct device *dev, uint16_t id, uint16_t
 		const struct rtc_time *timeptr)
 {
 	int err;
-	uint8_t regs[6];
+	uint8_t regs[7];
 
 	struct am1805_data *data = dev->data;
 	const struct am1805_config *config = dev->config;
@@ -405,19 +406,20 @@ static int am1805_alarm_set_time(const struct device *dev, uint16_t id, uint16_t
 		goto unlock;
 	}
 
-	regs[0] = bin2bcd(timeptr->tm_sec) & SECONDS_BITS;
-	regs[1] = bin2bcd(timeptr->tm_min) & MINUTES_BITS;
-	regs[2] = bin2bcd(timeptr->tm_hour) & HOURS_BITS;
-	regs[3] = bin2bcd(timeptr->tm_mday) & DATE_BITS;
-	regs[4] = bin2bcd(timeptr->tm_mon) & MONTHS_BITS;
-	regs[5] = bin2bcd(timeptr->tm_wday) & WEEKDAY_BITS;
+	regs[0] = REG_ALM_SECONDS_ADDR;
+	regs[1] = bin2bcd(timeptr->tm_sec) & SECONDS_BITS;
+	regs[2] = bin2bcd(timeptr->tm_min) & MINUTES_BITS;
+	regs[3] = bin2bcd(timeptr->tm_hour) & HOURS_BITS;
+	regs[4] = bin2bcd(timeptr->tm_mday) & DATE_BITS;
+	regs[5] = bin2bcd(timeptr->tm_mon) & MONTHS_BITS;
+	regs[6] = bin2bcd(timeptr->tm_wday) & WEEKDAY_BITS;
 
 	LOG_DBG("set alarm: second = %d, min = %d, hour = %d, mday = %d, month = %d,"
 			"wday = %d,  mask = 0x%04x",
 			timeptr->tm_sec, timeptr->tm_min, timeptr->tm_hour, timeptr->tm_mday,
 			timeptr->tm_mon, timeptr->tm_wday, mask);
 
-	err = i2c_burst_write_dt(&config->int_i2c, REG_ALM_SECONDS_ADDR, regs, sizeof(regs));
+	err = i2c_write_dt(&config->int_i2c, regs, sizeof(regs));
 	if (err != 0) {
 		goto unlock;
 	}
