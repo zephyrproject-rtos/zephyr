@@ -254,6 +254,7 @@ config BT_NXP
 	default y
 	depends on DT_HAS_NXP_HCI_BLE_ENABLED
 	select BT_HCI_SETUP
+	select CRC if BT_HCI_SET_PUBLIC_ADDR
 	help
 	  NXP HCI bluetooth interface
 
