@@ -295,8 +295,12 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 		return -EIO;
 	}
 
-	cfg.nCSOverride = HAL_XSPI_CSSEL_OVR_NCS1;
-	cfg.IOPort = HAL_XSPIM_IOPORT_1;
+	if (hxspi->Instance == XSPI1) {
+		cfg.IOPort = HAL_XSPIM_IOPORT_1;
+	} else if (hxspi->Instance == XSPI2) {
+		cfg.IOPort = HAL_XSPIM_IOPORT_2;
+	}
+	cfg.nCSOverride = HAL_XSPI_CSSEL_OVR_DISABLED;
 
 	if (HAL_XSPIM_Config(hxspi, &cfg, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
 		LOG_ERR("XSPIMgr Init failed");
