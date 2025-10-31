@@ -31,7 +31,7 @@ description: |
 
     Currently supported "compatible" properties for the FEM node are:
 
-      - generic-fem-two-ctrl-pins
+      - radio-fem-two-ctrl-pins
       - nordic,nrf21540-fem
 
     Refer to the bindings for these compatibles for more information
