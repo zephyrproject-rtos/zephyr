@@ -179,30 +179,6 @@ static int _check_fd(int fd)
 	return 0;
 }
 
-#ifdef CONFIG_ZTEST
-bool fdtable_fd_is_initialized(int fd)
-{
-	struct k_mutex ref_lock;
-	struct k_condvar ref_cond;
-
-	if (fd < 0 || fd >= ARRAY_SIZE(fdtable)) {
-		return false;
-	}
-
-	ref_lock = (struct k_mutex)Z_MUTEX_INITIALIZER(fdtable[fd].lock);
-	if (memcmp(&ref_lock, &fdtable[fd].lock, sizeof(ref_lock)) != 0) {
-		return false;
-	}
-
-	ref_cond = (struct k_condvar)Z_CONDVAR_INITIALIZER(fdtable[fd].cond);
-	if (memcmp(&ref_cond, &fdtable[fd].cond, sizeof(ref_cond)) != 0) {
-		return false;
-	}
-
-	return true;
-}
-#endif /* CONFIG_ZTEST */
-
 void *zvfs_get_fd_obj(int fd, const struct fd_op_vtable *vtable, int err)
 {
 	struct fd_entry *entry;
