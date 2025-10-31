@@ -32,6 +32,7 @@
 		color-mapping = <LED_COLOR_ID_BLUE
 				 LED_COLOR_ID_GREEN
 				 LED_COLOR_ID_RED>;
+		/* NOTE: optional LED strip on PA7, keep disabled by default */
 		status = "disabled";
 	};
 
@@ -176,6 +177,7 @@ zephyr_udc0: &usb {
 		gpios = <1 GPIO_ACTIVE_HIGH>;
 		gpio-hog;
 		output-high;
+		/* NOTE: only assert when the external LED strip is used */
 		status = "disabled";
 	};
 };

@@ -70,14 +70,6 @@
 	};
 };
 
-&clk_lsi {
-	status = "disabled";
-};
-
-&clk_hsi48 {
-	status = "disabled";
-};
-
 &clk_hse {
 	clock-frequency = <DT_FREQ_M(24)>;
 	status = "okay";
