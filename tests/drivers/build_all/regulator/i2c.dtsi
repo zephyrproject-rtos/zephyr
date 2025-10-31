@@ -200,3 +200,8 @@ npm1304@9 {
 		LDO2 {};
 	};
 };
+
+tps55287@a {
+	compatible = "ti,tps55287";
+	reg = <0xa>;
+};
