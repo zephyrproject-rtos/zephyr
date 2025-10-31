@@ -467,51 +467,51 @@ static void max30101_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe,
 	struct rtio_sqe *complete_op;
 	uint32_t acquirable = rtio_sqe_acquirable(data->rtio_ctx);
 
-	/* WATERMARK event is higher priority than DATA_RDY */
-	if (watermark_event) {
 #if CONFIG_MAX30101_DIE_TEMPERATURE
-		if (data->temp_available && (proc_data_rdy & 0b1000) && edata->has_temp) {
-			data->temp_available = false;
-			edata->header.reading_count = 1;
-			uint8_t reg_addr = MAX30101_REG_TINT;
-			uint8_t *read_data = (uint8_t *)&edata->die_temp;
-			uint8_t enable_buf[] = {MAX30101_REG_TEMP_CFG, 1};
+	if (data->temp_available && (proc_data_rdy & 0b1000) && edata->has_temp) {
+		data->temp_available = false;
+		edata->header.reading_count = 1;
+		uint8_t reg_addr = MAX30101_REG_TINT;
+		uint8_t *read_data = (uint8_t *)&edata->die_temp;
+		uint8_t enable_buf[] = {MAX30101_REG_TEMP_CFG, 1};
 
-			if (acquirable < 3) {
-				LOG_ERR("TEMP Not enough sqes available TEMP: [%d/%d]", 3, acquirable);
-				rtio_iodev_sqe_err(data->streaming_sqe, -ENOMEM);
-				return;
-			}
+		if (acquirable < 3) {
+			LOG_ERR("TEMP Not enough sqes available TEMP: [%d/%d]", 3, acquirable);
+			rtio_iodev_sqe_err(data->streaming_sqe, -ENOMEM);
+			return;
+		}
 
-			write_addr = rtio_sqe_acquire(data->rtio_ctx);
-			read_reg = rtio_sqe_acquire(data->rtio_ctx);
-			// Is check acquired not NULL, necessary ?
-			acquirable -= 2;
+		write_addr = rtio_sqe_acquire(data->rtio_ctx);
+		read_reg = rtio_sqe_acquire(data->rtio_ctx);
+		// Is check acquired not NULL, necessary ?
+		acquirable -= 2;
 
-			rtio_sqe_prep_tiny_write(write_addr, data->iodev, RTIO_PRIO_NORM,
-						&reg_addr, 1, NULL);
-			write_addr->flags = RTIO_SQE_TRANSACTION;
+		rtio_sqe_prep_tiny_write(write_addr, data->iodev, RTIO_PRIO_NORM,
+					&reg_addr, 1, NULL);
+		write_addr->flags = RTIO_SQE_TRANSACTION;
 
-			rtio_sqe_prep_read(read_reg, data->iodev, RTIO_PRIO_NORM, read_data,
-					2, NULL);
-			read_reg->flags = RTIO_SQE_CHAINED;
-			read_reg->iodev_flags |= RTIO_IODEV_I2C_RESTART | RTIO_IODEV_I2C_STOP;
+		rtio_sqe_prep_read(read_reg, data->iodev, RTIO_PRIO_NORM, read_data,
+				2, NULL);
+		read_reg->flags = RTIO_SQE_CHAINED;
+		read_reg->iodev_flags |= RTIO_IODEV_I2C_RESTART | RTIO_IODEV_I2C_STOP;
 
-			struct rtio_sqe *write_en = rtio_sqe_acquire(data->rtio_ctx);
-			// Is check acquired not NULL, necessary ?
-			acquirable -= 1;
+		struct rtio_sqe *write_en = rtio_sqe_acquire(data->rtio_ctx);
+		// Is check acquired not NULL, necessary ?
+		acquirable -= 1;
 
-			rtio_sqe_prep_tiny_write(write_en, data->iodev, RTIO_PRIO_NORM,
-					enable_buf, ARRAY_SIZE(enable_buf), NULL);
-			write_en->flags = RTIO_SQE_CHAINED;
-			write_en->iodev_flags |= RTIO_IODEV_I2C_RESTART | RTIO_IODEV_I2C_STOP;
+		rtio_sqe_prep_tiny_write(write_en, data->iodev, RTIO_PRIO_NORM,
+				enable_buf, ARRAY_SIZE(enable_buf), NULL);
+		write_en->flags = RTIO_SQE_CHAINED;
+		write_en->iodev_flags |= RTIO_IODEV_I2C_RESTART | RTIO_IODEV_I2C_STOP;
 
 //			LOG_ERR("max30101_read_status_cb TEMP");
-		} else {
-			edata->has_temp = 0;
-		}
+	} else {
+		edata->has_temp = 0;
+	}
 #endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
 
+	/* WATERMARK event is higher priority than DATA_RDY */
+	if (watermark_event) {
 		if (acquirable < 3) {
 			LOG_ERR("FIFO Not enough sqes available: [%d/%d]", 3, acquirable);
 			rtio_iodev_sqe_err(data->streaming_sqe, -ENOMEM);
@@ -563,105 +563,62 @@ static void max30101_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe,
 		return;
 	}
 
-	if (rdy_event) {
+	if (rdy_event && !!data_channel && (proc_data_rdy & 0b111)) {
 		edata->header.reading_count = 1;
-
-		if (!!data_channel && (proc_data_rdy & 0b111)) {
-			if (acquirable < 2) {
-				LOG_ERR("DATA Not enough sqes available TEMP: [%d/%d]", 2, acquirable);
-				rtio_iodev_sqe_err(data->streaming_sqe, -ENOMEM);
-				return;
-			}
-
-			uint8_t reg_addr = MAX30101_REG_FIFO_DATA;
-			uint8_t *read_data = (uint8_t *)&edata->reading[0].raw;
-
-			/* Drop data */
-			uint8_t keep = data->stream_cfg.data_rdy_incl & ~data->stream_cfg.data_rdy_drop;
-			if (keep != 0b111) {
-				max30101_drop_data(data, edata, keep);
-			}
-
-			write_addr = rtio_sqe_acquire(data->rtio_ctx);
-			read_reg = rtio_sqe_acquire(data->rtio_ctx);
-			// Is check acquired not NULL, necessary ?
-			acquirable -= 2;
-
-			rtio_sqe_prep_tiny_write(write_addr, data->iodev, RTIO_PRIO_NORM,
-						&reg_addr, 1, NULL);
-			write_addr->flags = RTIO_SQE_TRANSACTION;
-
-			rtio_sqe_prep_read(read_reg, data->iodev, RTIO_PRIO_NORM, read_data,
-					max30101_sample_bytes[data_channel], NULL);
-			read_reg->flags = RTIO_SQE_CHAINED;
-			read_reg->iodev_flags |= RTIO_IODEV_I2C_RESTART | RTIO_IODEV_I2C_STOP;
-//			LOG_ERR("max30101_read_status_cb PPG");
-		} else {
-			edata->header.reading_count = 0;
-			edata->has_red = 0;
-			edata->has_ir = 0;
-			edata->has_green = 0;
-		}
-
-#if CONFIG_MAX30101_DIE_TEMPERATURE
-		if (data->temp_available && (proc_data_rdy & 0b1000) && (edata->has_temp)) {
-			data->temp_available = false;
-			edata->header.reading_count = 1;
-			uint8_t reg_addr = MAX30101_REG_TINT;
-			uint8_t *read_data = (uint8_t *)&edata->die_temp;
-			uint8_t enable_buf[] = {MAX30101_REG_TEMP_CFG, 1};
-
-			if (acquirable < 3) {
-				LOG_ERR("TEMP Not enough sqes available: [%d/%d]", 3, acquirable);
-				rtio_iodev_sqe_err(data->streaming_sqe, -ENOMEM);
-				rtio_sqe_drop_all(data->rtio_ctx);
-
-				return;
-			}
-
-			write_addr = rtio_sqe_acquire(data->rtio_ctx);
-			read_reg = rtio_sqe_acquire(data->rtio_ctx);
-			// Is check acquired not NULL, necessary ?
-			acquirable -= 2;
-
-			rtio_sqe_prep_tiny_write(write_addr, data->iodev, RTIO_PRIO_NORM,
-						&reg_addr, 1, NULL);
-			write_addr->flags = RTIO_SQE_TRANSACTION;
-
-			rtio_sqe_prep_read(read_reg, data->iodev, RTIO_PRIO_NORM, read_data,
-					2, NULL);
-			read_reg->flags = RTIO_SQE_CHAINED;
-			read_reg->iodev_flags |= RTIO_IODEV_I2C_RESTART | RTIO_IODEV_I2C_STOP;
-
-			struct rtio_sqe *write_en = rtio_sqe_acquire(data->rtio_ctx);
-			// Is check acquired not NULL, necessary ?
-			acquirable -= 1;
-
-			rtio_sqe_prep_tiny_write(write_en, data->iodev, RTIO_PRIO_NORM,
-					enable_buf, ARRAY_SIZE(enable_buf), NULL);
-			write_en->flags = RTIO_SQE_CHAINED;
-			write_en->iodev_flags |= RTIO_IODEV_I2C_RESTART | RTIO_IODEV_I2C_STOP;
-
-//			LOG_ERR("max30101_read_status_cb TEMP");
-		} else {
-			edata->has_temp = 0;
-		}
-#endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
-
-		complete_op = rtio_sqe_acquire(data->rtio_ctx);
-		if (complete_op == NULL) {
+		if (acquirable < 2) {
+			LOG_ERR("DATA Not enough sqes available: [%d/%d]", 3, acquirable);
 			rtio_iodev_sqe_err(data->streaming_sqe, -ENOMEM);
-			rtio_sqe_drop_all(data->rtio_ctx);
+
+			if (!!edata->header.reading_count && edata->has_temp) {
+				rtio_sqe_drop_all(data->rtio_ctx);
+			}
 
 			return;
 		}
 
-//		LOG_ERR("max30101_read_status_cb complete_op");
-		rtio_sqe_prep_callback_no_cqe(complete_op, max30101_complete_op_cb, (void *)dev, data->streaming_sqe);
-		rtio_submit(data->rtio_ctx, 0);
+		uint8_t reg_addr = MAX30101_REG_FIFO_DATA;
+		uint8_t *read_data = (uint8_t *)&edata->reading[0].raw;
+
+		/* Drop data */
+		uint8_t keep = data->stream_cfg.data_rdy_incl & ~data->stream_cfg.data_rdy_drop;
+		if (keep != 0b111) {
+			max30101_drop_data(data, edata, keep);
+		}
+
+		write_addr = rtio_sqe_acquire(data->rtio_ctx);
+		read_reg = rtio_sqe_acquire(data->rtio_ctx);
+		// Is check acquired not NULL, necessary ?
+		acquirable -= 2;
+
+		rtio_sqe_prep_tiny_write(write_addr, data->iodev, RTIO_PRIO_NORM,
+					&reg_addr, 1, NULL);
+		write_addr->flags = RTIO_SQE_TRANSACTION;
+
+		rtio_sqe_prep_read(read_reg, data->iodev, RTIO_PRIO_NORM, read_data,
+				max30101_sample_bytes[data_channel], NULL);
+		read_reg->flags = RTIO_SQE_CHAINED;
+		read_reg->iodev_flags |= RTIO_IODEV_I2C_RESTART | RTIO_IODEV_I2C_STOP;
+//			LOG_ERR("max30101_read_status_cb PPG");
+
+	} else {
+		edata->has_red = 0;
+		edata->has_ir = 0;
+		edata->has_green = 0;
+	}
+
+	complete_op = rtio_sqe_acquire(data->rtio_ctx);
+	if (complete_op == NULL) {
+		rtio_iodev_sqe_err(data->streaming_sqe, -ENOMEM);
+		rtio_sqe_drop_all(data->rtio_ctx);
 
 		return;
 	}
+
+//		LOG_ERR("max30101_read_status_cb complete_op");
+	rtio_sqe_prep_callback_no_cqe(complete_op, max30101_complete_op_cb, (void *)dev, data->streaming_sqe);
+	rtio_submit(data->rtio_ctx, 0);
+
+	return;
 }
 
 /*
