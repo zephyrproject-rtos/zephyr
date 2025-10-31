@@ -169,7 +169,7 @@ static int mdio_setup_c45_indirect_access(const struct device *dev, uint16_t dev
 	int ret;
 
 	ret = mdio_write(cfg->mdio, cfg->phy_addr, MII_MMD_ACR, devad);
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -196,7 +196,7 @@ static int phy_mc_t1s_c45_read(const struct device *dev, uint8_t devad, uint16_t
 
 	/* Read C45 registers using C22 indirect access registers */
 	ret = mdio_setup_c45_indirect_access(dev, devad, reg);
-	if (ret) {
+	if (ret < 0) {
 		mdio_bus_disable(cfg->mdio);
 		return ret;
 	}
@@ -223,7 +223,7 @@ static int phy_mc_t1s_c45_write(const struct device *dev, uint8_t devad, uint16_
 
 	/* Write C45 registers using C22 indirect access registers */
 	ret = mdio_setup_c45_indirect_access(dev, devad, reg);
-	if (ret) {
+	if (ret < 0) {
 		mdio_bus_disable(cfg->mdio);
 		return ret;
 	}
@@ -244,7 +244,7 @@ static int phy_mc_t1s_get_link(const struct device *dev, struct phy_link_state *
 	int ret;
 
 	ret = phy_mc_t1s_read(dev, MII_BMSR, &value);
-	if (ret) {
+	if (ret < 0) {
 		LOG_ERR("Failed MII_BMSR register read: %d\n", ret);
 		return ret;
 	}
@@ -307,13 +307,13 @@ static int lan865x_indirect_read(const struct device *dev, uint16_t addr, uint16
 	int ret;
 
 	ret = phy_mc_t1s_c45_write(dev, MDIO_MMD_VENDOR_SPECIFIC2, LAN865X_REG_CFGPARAM_ADDR, addr);
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 
 	ret = phy_mc_t1s_c45_write(dev, MDIO_MMD_VENDOR_SPECIFIC2, LAN865X_REG_CFGPARAM_CTRL,
 				   LAN865X_CFGPARAM_READ_ENABLE);
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -327,7 +327,7 @@ static int lan865x_calculate_offset(const struct device *dev, uint16_t address, 
 	int ret;
 
 	ret = lan865x_indirect_read(dev, address, &value);
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -360,13 +360,13 @@ static int lan865x_calculate_update_cfgparams(const struct device *dev)
 
 	/* Calculate offset1 */
 	ret = lan865x_calculate_offset(dev, 0x04, &offset1);
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 
 	/* Calculate offset2 */
 	ret = lan865x_calculate_offset(dev, 0x08, &offset2);
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -399,7 +399,7 @@ static int phy_mc_lan865x_revb_config_init(const struct device *dev)
 	int ret;
 
 	ret = lan865x_calculate_update_cfgparams(dev);
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -408,7 +408,7 @@ static int phy_mc_lan865x_revb_config_init(const struct device *dev)
 		ret = phy_mc_t1s_c45_write(dev, MDIO_MMD_VENDOR_SPECIFIC2,
 					   lan865x_revb_config[i].address,
 					   lan865x_revb_config[i].value);
-		if (ret) {
+		if (ret < 0) {
 			return ret;
 		}
 	}
@@ -430,7 +430,7 @@ static int phy_mc_lan867x_revc_config_init(const struct device *dev)
 	int ret;
 
 	ret = lan865x_calculate_update_cfgparams(dev);
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -438,7 +438,7 @@ static int phy_mc_lan867x_revc_config_init(const struct device *dev)
 		ret = phy_mc_t1s_c45_write(dev, MDIO_MMD_VENDOR_SPECIFIC2,
 					   lan865x_revb_config[i].address,
 					   lan865x_revb_config[i].value);
-		if (ret) {
+		if (ret < 0) {
 			return ret;
 		}
 
@@ -503,7 +503,7 @@ static int lan86xx_config_collision_detection(const struct device *dev, bool plc
 	int ret;
 
 	ret = phy_mc_t1s_c45_read(dev, MDIO_MMD_VENDOR_SPECIFIC2, LAN86XX_REG_COL_DET_CTRL0, &val);
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -526,7 +526,7 @@ static int phy_mc_t1s_id(const struct device *dev, uint32_t *phy_id)
 	int ret;
 
 	ret = phy_mc_t1s_read(dev, MII_PHYID1R, &value);
-	if (ret) {
+	if (ret < 0) {
 		LOG_ERR("Failed MII_PHYID1R register read: %d\n", ret);
 		return ret;
 	}
@@ -534,7 +534,7 @@ static int phy_mc_t1s_id(const struct device *dev, uint32_t *phy_id)
 	*phy_id = value << 16;
 
 	ret = phy_mc_t1s_read(dev, MII_PHYID2R, &value);
-	if (ret) {
+	if (ret < 0) {
 		LOG_ERR("Failed MII_PHYID2R register read: %d\n", ret);
 		return ret;
 	}
@@ -558,7 +558,7 @@ static int phy_mc_t1s_set_plca_cfg(const struct device *dev, struct phy_plca_cfg
 	}
 
 	ret = genphy_set_plca_cfg(dev, plca_cfg);
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -592,7 +592,7 @@ static int phy_mc_t1s_init(const struct device *dev)
 	data->dev = dev;
 
 	ret = phy_mc_t1s_id(dev, &data->phy_id);
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -618,7 +618,7 @@ static int phy_mc_t1s_init(const struct device *dev)
 	}
 
 	ret = phy_mc_t1s_set_dt_plca(dev);
-	if (ret) {
+	if (ret < 0) {
 		return ret;
 	}
 
