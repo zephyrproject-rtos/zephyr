@@ -95,6 +95,7 @@ static void mctp_usb_reset_rx_state(struct mctp_binding_usb *usb)
 {
 	if (usb->rx_pkt != NULL) {
 		mctp_pktbuf_free(usb->rx_pkt);
+		usb->rx_pkt = NULL;
 	}
 
 	usb->rx_data_idx = 0;
@@ -201,8 +202,8 @@ static void mctp_usb_class_out_work(struct k_work *work)
 	/* Process the MCTP data */
 	struct mctp_binding_usb *usb = (struct mctp_binding_usb *)ctx->inst->mctp_binding;
 
-	LOG_DBG("size=%d", ctx->out_net_buf->len);
-	LOG_HEXDUMP_DBG(buf, ctx->out_net_buf->len, "buf = ");
+	LOG_DBG("size=%d", buf_size);
+	LOG_HEXDUMP_DBG(ctx->out_buf, buf_size, "buf = ");
 
 	for (int i = 0; i < buf_size; i++) {
 		switch (usb->rx_state) {
@@ -262,6 +263,8 @@ static void mctp_usb_class_out_work(struct k_work *work)
 			if (usb->rx_data_idx == usb->rx_pkt->end) {
 				LOG_DBG("Packet complete");
 				mctp_bus_rx(&usb->binding, usb->rx_pkt);
+				/* Explicitly set rx_pkt to NULL since it is not guaranteed */
+				usb->rx_pkt = NULL;
 				mctp_usb_reset_rx_state(usb);
 			}
 
@@ -354,7 +357,7 @@ static int mctp_usb_class_init(struct usbd_class_data *const c_data)
 	ctx->class_data = c_data;
 	ctx->state = 0;
 
-	/* Share USB class data with the binding so that the binding */
+	/* Share USB class data with the MCTP USB binding */
 	ctx->inst->mctp_binding->usb_class_data = c_data;
 
 	k_work_init(&ctx->out_work, mctp_usb_class_out_work);
