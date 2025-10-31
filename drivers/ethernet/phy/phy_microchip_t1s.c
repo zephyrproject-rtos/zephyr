@@ -40,6 +40,17 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define LAN86XX_COL_DET_MASK      0x8000
 #define LAN86XX_REG_COL_DET_CTRL0 0x0087
 
+/* LAN8670/1/2 Rev.D0 Link Status Selection Register */
+#define LAN867X_REG_LINK_STATUS_CTRL	0x0012
+#define LINK_STATUS_CONFIGURATION	GENMASK(12, 11)
+#define LINK_STATUS_SEMAPHORE		BIT(0)
+
+/* Link Status Configuration */
+#define LINK_STATUS_CONFIG_PLCA_STATUS	0x1
+#define LINK_STATUS_CONFIG_SEMAPHORE	0x2
+
+#define LINK_STATUS_SEMAPHORE_SET	0x1
+
 /* Structure holding configuration register address and value */
 typedef struct {
 	uint32_t address;
@@ -443,6 +454,28 @@ static int phy_mc_lan867x_revc_config_init(const struct device *dev)
 	return 0;
 }
 
+static int phy_mc_lan867x_revd0_link_status_selection(const struct device *dev, bool plca_enabled)
+{
+	uint16_t value;
+
+	if (plca_enabled) {
+		/* 0x1 - When PLCA is enabled: link status reflects plca_status.
+		 */
+		value = FIELD_PREP(LINK_STATUS_CONFIGURATION, LINK_STATUS_CONFIG_PLCA_STATUS);
+	} else {
+		/* 0x2 - Link status is controlled by the value written into the
+		 * LINK_STATUS_SEMAPHORE bit written. Here the link semaphore
+		 * bit is written with 0x1 to set the link always active in
+		 * CSMA/CD mode as it doesn't support autoneg.
+		 */
+		value = FIELD_PREP(LINK_STATUS_CONFIGURATION, LINK_STATUS_CONFIG_SEMAPHORE) |
+			FIELD_PREP(LINK_STATUS_SEMAPHORE, LINK_STATUS_SEMAPHORE_SET);
+	}
+
+	return phy_mc_t1s_c45_write(dev, MDIO_MMD_VENDOR_SPECIFIC2, LAN867X_REG_LINK_STATUS_CTRL,
+				    value);
+}
+
 static int phy_mc_lan867x_revd0_config_init(const struct device *dev)
 {
 	int ret;
@@ -456,7 +489,11 @@ static int phy_mc_lan867x_revd0_config_init(const struct device *dev)
 		}
 	}
 
-	return 0;
+	/* Initially the PHY will be in CSMA/CD mode by default. So it is
+	 * required to set the link always active as it doesn't support
+	 * autoneg.
+	 */
+	return phy_mc_lan867x_revd0_link_status_selection(dev, false);
 }
 
 static int lan86xx_config_collision_detection(const struct device *dev, bool plca_enable)
@@ -509,7 +546,16 @@ static int phy_mc_t1s_id(const struct device *dev, uint32_t *phy_id)
 
 static int phy_mc_t1s_set_plca_cfg(const struct device *dev, struct phy_plca_cfg *plca_cfg)
 {
+	struct mc_t1s_data *data = dev->data;
 	int ret;
+
+	/* Link status selection must be configured for LAN8670/1/2 Rev.D0 */
+	if (data->phy_id == PHY_ID_LAN867X_REVD0) {
+		ret = phy_mc_lan867x_revd0_link_status_selection(dev, plca_cfg->enable);
+		if (ret < 0) {
+			return ret;
+		}
+	}
 
 	ret = genphy_set_plca_cfg(dev, plca_cfg);
 	if (ret) {
