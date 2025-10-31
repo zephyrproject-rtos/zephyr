@@ -17,7 +17,7 @@ description: |
     (Though if you do specify a pin, you must also specify its
     corresponding settle-time-us property.)
 
-compatible: "generic-fem-two-ctrl-pins"
+compatible: "radio-fem-two-ctrl-pins"
 
 include: base.yaml
 
