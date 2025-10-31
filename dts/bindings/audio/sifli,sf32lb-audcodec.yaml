@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  This binding describes the Sifli SF32LB audio codec.
+  Sifli SF32LB audio codec.
 
 compatible: "sifli,sf32lb-audcodec"
 

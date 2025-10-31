@@ -29,42 +29,74 @@ LOG_MODULE_REGISTER(siflicodec, CONFIG_AUDIO_CODEC_LOG_LEVEL);
 #define AUDCODEC_MIN_VOLUME         -36
 #define AUDCODEC_MAX_VOLUME         54
 
-typedef enum AUDIO_PLL_STATE_TAG
-{
+/* hardware gain of volume, The maximum gain should be tested
+ * to prevent the speaker from burning out.
+ */
+#define VOLUME_0_GAIN	-55
+#define VOLUME_1_GAIN	-34
+#define VOLUME_2_GAIN	-32
+#define VOLUME_3_GAIN	-30
+#define VOLUME_4_GAIN	-28
+#define VOLUME_5_GAIN	-26
+#define VOLUME_6_GAIN	-24
+#define VOLUME_7_GAIN	-22
+#define VOLUME_8_GAIN	-20
+#define VOLUME_9_GAIN	-17
+#define VOLUME_10_GAIN	-14
+#define VOLUME_11_GAIN	-11
+#define VOLUME_12_GAIN	-10
+#define VOLUME_13_GAIN	-8
+#define VOLUME_14_GAIN	-6
+#define VOLUME_15_GAIN	-2
+
+typedef enum {
 	AUDIO_PLL_CLOSED,
 	AUDIO_PLL_OPEN,
 	AUDIO_PLL_ENABLE,
-} AUDIO_PLL_STATE;
+} audio_pll_state_t;
 
 struct sf32lb_audcodec_data {
 	sf32lb_codec_hw_config_t	hw_config;
 	audio_codec_tx_done_callback_t	tx_done;
 	audio_codec_rx_done_callback_t	rx_done;
-	void 		*tx_cb_user_data;
-	void 		*rx_cb_user_data;
-	uint8_t		*tx_buf;
-	uint8_t		*tx_write_ptr;
-	uint8_t		*rx_buf;
-	uint32_t	tx_half_dma_size;
-	uint32_t	rx_half_dma_size;
-	uint8_t		tx_enable;
-	uint8_t		rx_enable;
-	uint8_t		last_volume;
-	AUDIO_PLL_STATE	pll_state;
-	uint32_t	pll_samplerate;
+	void				*tx_cb_user_data;
+	void				*rx_cb_user_data;
+	uint8_t				*tx_buf;
+	uint8_t				*tx_write_ptr;
+	uint8_t				*rx_buf;
+	uint32_t			tx_half_dma_size;
+	uint32_t			rx_half_dma_size;
+	uint8_t				tx_enable;
+	uint8_t				rx_enable;
+	uint8_t				last_volume;
+	audio_pll_state_t		pll_state;
+	uint32_t			pll_samplerate;
 };
 
 struct sf32lb_codec_driver_config {
-	sf32lb_codec_reg_t 		*reg;
-	struct sf32lb_dma_dt_spec 	dma_tx;
-	struct sf32lb_dma_dt_spec 	dma_rx;
-	struct sf32lb_clock_dt_spec 	clock;
-	//struct gpio_dt_spec pa_gpio;
+	sf32lb_codec_reg_t		*reg;
+	struct sf32lb_dma_dt_spec	dma_tx;
+	struct sf32lb_dma_dt_spec	dma_rx;
+	struct sf32lb_clock_dt_spec	clock;
 };
 
-static const int volume_level_to_dac_gain[16] = {
-	-55, -34, -32, -30, -28, -26, -24, -22,
-	-20, -17, -14, -11, -10, -8, -6, -2
+static const int hardware_gain_of_volume[16] = {
+	VOLUME_0_GAIN,
+	VOLUME_1_GAIN,
+	VOLUME_2_GAIN,
+	VOLUME_3_GAIN,
+	VOLUME_4_GAIN,
+	VOLUME_5_GAIN,
+	VOLUME_6_GAIN,
+	VOLUME_7_GAIN,
+	VOLUME_8_GAIN,
+	VOLUME_9_GAIN,
+	VOLUME_10_GAIN,
+	VOLUME_11_GAIN,
+	VOLUME_12_GAIN,
+	VOLUME_13_GAIN,
+	VOLUME_14_GAIN,
+	VOLUME_15_GAIN
 };
 
 #if AVDD_V18_ENABLE
@@ -96,32 +128,32 @@ static const sf32lb_codec_dac_clk_t codec_dac_clk_config[9] = {
 
 const sf32lb_codec_adc_clk_t codec_adc_clk_config[9] = {
 #if CODEC_CLK_USING_PLL
-	  {48000, 1, 5, 0, 1, 1, 5, 0},
-	  {32000, 1, 5, 1, 1, 1, 5, 0},
-	  {24000, 1, 10, 0, 1, 0, 5, 2},
-	  {16000, 1, 10, 1, 1, 0, 5, 2},
-	  {12000, 1, 10, 2, 1, 0, 5, 2},
-	  {8000, 1, 10, 3, 1, 0, 5, 2},
+	{48000, 1, 5, 0, 1, 1, 5, 0},
+	{32000, 1, 5, 1, 1, 1, 5, 0},
+	{24000, 1, 10, 0, 1, 0, 5, 2},
+	{16000, 1, 10, 1, 1, 0, 5, 2},
+	{12000, 1, 10, 2, 1, 0, 5, 2},
+	{8000, 1, 10, 3, 1, 0, 5, 2},
 #else
-	  {48000, 0, 5, 0, 0, 1, 5, 0},
-	  {32000, 0, 5, 1, 0, 1, 5, 0},
-	  {24000, 0, 10, 0, 0, 0, 5, 2},
-	  {16000, 0, 10, 1, 0, 0, 5, 2},
-	  {12000, 0, 10, 2, 0, 0, 5, 2},
-	  {8000, 0, 10, 3, 0, 0, 5, 2},
+	{48000, 0, 5, 0, 0, 1, 5, 0},
+	{32000, 0, 5, 1, 0, 1, 5, 0},
+	{24000, 0, 10, 0, 0, 0, 5, 2},
+	{16000, 0, 10, 1, 0, 0, 5, 2},
+	{12000, 0, 10, 2, 0, 0, 5, 2},
+	{8000, 0, 10, 3, 0, 0, 5, 2},
 #endif
-	  {44100, 1, 5, 0, 1, 1, 5, 1},
-	  {22050, 1, 5, 2, 1, 1, 5, 1},
-	  {11025, 1, 10, 2, 1, 0, 5, 3},
+	{44100, 1, 5, 0, 1, 1, 5, 1},
+	{22050, 1, 5, 2, 1, 1, 5, 1},
+	{11025, 1, 10, 2, 1, 0, 5, 3},
 };
 
-typedef struct pll_vco {
+struct pll_vco_t {
 	uint32_t freq;
 	uint32_t vco_value;
 	uint32_t target_cnt;
-} pll_vco_t;
+};
 
-pll_vco_t g_pll_vco_tab[2] = {
+struct pll_vco_t g_pll_vco_tab[2] = {
 	{48, 0, 2001},
 	{44, 0, 1834},
 };
@@ -159,7 +191,7 @@ static int config_dac_path(sf32lb_codec_reg_t *reg, uint16_t bypass)
 			| (0xFF << AUDCODEC_DAC_CH1_DEBUG_DATA_OUT_Pos);
 	}
 
-    return 0;
+	return 0;
 }
 
 static void config_analog_dac_path(sf32lb_codec_reg_t *reg, const sf32lb_codec_dac_clk_t *clk)
@@ -210,11 +242,9 @@ static void config_analog_adc_path(sf32lb_codec_reg_t *reg, const sf32lb_codec_a
 	reg->ADC_ANA_CFG &= ~AUDCODEC_ADC_ANA_CFG_MICBIAS_CHOP_EN;
 	/* delay 2ms*/
 	k_busy_wait(2000);
-#if 1
+
 	reg->BG_CFG0 &= ~AUDCODEC_BG_CFG0_EN_SMPL; /* noise pop */
-#else
-	reg->BG_CFG0 |= AUDCODEC_BG_CFG0_EN_SMPL; /* noise pop */
-#endif
+
 	/* adc1 and adc2 clock */
 	reg->PLL_CFG6 = (0 << AUDCODEC_PLL_CFG6_SEL_TST_CLK_Pos) |
 	(0 << AUDCODEC_PLL_CFG6_EN_TST_CLK_Pos) |
@@ -232,12 +262,9 @@ static void config_analog_adc_path(sf32lb_codec_reg_t *reg, const sf32lb_codec_a
 	(1 << AUDCODEC_PLL_CFG6_EN_CLK_ADC0_Pos) |
 	(clk->sel_clk_adc_source << AUDCODEC_PLL_CFG6_SEL_CLK_ADC_SOURCE_Pos);
 
-
-	{
 	reg->PLL_CFG2  &= ~AUDCODEC_PLL_CFG2_RSTB;
 	k_busy_wait(1000);
 	reg->PLL_CFG2  |= AUDCODEC_PLL_CFG2_RSTB;
-	}
 
 	reg->ADC1_CFG1 &= ~AUDCODEC_ADC1_CFG1_DIFF_EN;
 	/* reg->ADC1_CFG1 |= AUDCODEC_ADC1_CFG1_DIFF_EN; */
@@ -257,7 +284,7 @@ static void config_analog_adc_path(sf32lb_codec_reg_t *reg, const sf32lb_codec_a
 	reg->ADC1_CFG2 &= ~AUDCODEC_ADC1_CFG2_RSTB;
 
 	reg->ADC1_CFG1 &= ~AUDCODEC_ADC1_CFG1_VREF_SEL;
-	reg->ADC1_CFG1 |= (2  << AUDCODEC_ADC1_CFG1_VREF_SEL_Pos) ;
+	reg->ADC1_CFG1 |= (2 << AUDCODEC_ADC1_CFG1_VREF_SEL_Pos);
 
 	reg->ADC2_CFG1 &= ~AUDCODEC_ADC2_CFG1_FSP;
 	reg->ADC2_CFG1 |= (clk->fsp << AUDCODEC_ADC2_CFG1_FSP_Pos);
@@ -272,7 +299,7 @@ static void config_analog_adc_path(sf32lb_codec_reg_t *reg, const sf32lb_codec_a
 	reg->ADC2_CFG2 &= ~AUDCODEC_ADC2_CFG2_RSTB;
 
 	reg->ADC2_CFG2 &= ~AUDCODEC_ADC2_CFG1_VREF_SEL;
-	reg->ADC2_CFG2 |= (2  << AUDCODEC_ADC2_CFG1_VREF_SEL_Pos) ;
+	reg->ADC2_CFG2 |= (2 << AUDCODEC_ADC2_CFG1_VREF_SEL_Pos);
 	/* wait 20ms */
 	k_sleep(K_MSEC(20));
 	/* reg->BG_CFG0  |= AUDCODEC_BG_CFG0_EN_SMPL; */
@@ -383,8 +410,8 @@ static inline void clear_adc_channel(sf32lb_codec_reg_t *reg)
 {
 	reg->ADC_CH0_CFG &= (~AUDCODEC_ADC_CH0_CFG_ENABLE);
 	reg->ADC_CH1_CFG &= (~AUDCODEC_ADC_CH1_CFG_ENABLE);
-        reg->ADC_CFG |= AUDCODEC_ADC_CFG_PATH_RESET;
-        reg->ADC_CFG &= ~AUDCODEC_ADC_CFG_PATH_RESET;
+	reg->ADC_CFG |= AUDCODEC_ADC_CFG_PATH_RESET;
+	reg->ADC_CFG &= ~AUDCODEC_ADC_CFG_PATH_RESET;
 }
 
 static inline void disable_adc(sf32lb_codec_reg_t *reg)
@@ -457,7 +484,7 @@ static void config_dac_path_volume(sf32lb_codec_reg_t *reg, int channel, int vol
 
 void mute_dac_path(sf32lb_codec_reg_t *reg, int mute)
 {
-	static int fine_vol_0, fine_vol_1; ///todo jiqunli
+	static int fine_vol_0, fine_vol_1;
 
 	if (mute) {
 		fine_vol_0 = GET_REG_VAL(reg->DAC_CH0_CFG,
@@ -600,13 +627,10 @@ static void pll_turn_on(sf32lb_codec_reg_t *reg)
 		| (0 << AUDCODEC_BG_CFG0_SET_VC_Pos);
 
 	/* turn on BG sample clock */
-#if 1 /* avoid noise */
-	reg->BG_CFG1 = 0;
-	reg->BG_CFG2 = 0;
-#else
-	reg->BG_CFG1 = 48000;
-	reg->BG_CFG2 = 48000000;
-#endif
+
+	/* avoid noise */
+	reg->BG_CFG1 = 0; /* 48000 */
+	reg->BG_CFG2 = 0; /* 48000000 */
 
 	k_busy_wait(100);
 
@@ -943,7 +967,7 @@ static void sf32lb_codec_set_dac_volume(const struct device *dev, uint8_t volume
 		volume = 15;
 	}
 
-	int gain = volume_level_to_dac_gain[volume];
+	int gain = hardware_gain_of_volume[volume];
 
 	if (gain > AUDCODEC_MAX_VOLUME) {
 		gain = AUDCODEC_MAX_VOLUME;
@@ -1106,7 +1130,7 @@ void dma_tx_callback(const struct device *dev_dma, void *user_data,
 	struct sf32lb_audcodec_data *data = dev->data;
 
 	if (status == DMA_STATUS_BLOCK) {
-		/* half DMA finished, update poiter of DMA circle buffer for writting new data */
+		/* half DMA finished, update poiter of DMA circle buffer for writing new data */
 		sys_write32((uint32_t)data->tx_buf, (uintptr_t)&data->tx_write_ptr);
 
 		if (data->tx_done) {
@@ -1186,8 +1210,8 @@ static int codec_start(const struct device *dev, audio_dai_dir_t dir)
 		key = irq_lock();
 
 		val = cfg->reg->ADC_CH0_CFG;
-	        val &= ~AUDCODEC_ADC_CH0_CFG_DMA_EN_Msk;
-	        val |= AUDCODEC_ADC_CH0_CFG_DMA_EN;
+		val &= ~AUDCODEC_ADC_CH0_CFG_DMA_EN_Msk;
+		val |= AUDCODEC_ADC_CH0_CFG_DMA_EN;
 		cfg->reg->ADC_CH0_CFG = val;
 
 		irq_unlock(key);
@@ -1212,8 +1236,8 @@ static int codec_start(const struct device *dev, audio_dai_dir_t dir)
 		key = irq_lock();
 
 		val = cfg->reg->DAC_CH0_CFG;
-	        val &= ~AUDCODEC_DAC_CH0_CFG_DMA_EN_Msk;
-	        val |= AUDCODEC_DAC_CH0_CFG_DMA_EN;
+		val &= ~AUDCODEC_DAC_CH0_CFG_DMA_EN_Msk;
+		val |= AUDCODEC_DAC_CH0_CFG_DMA_EN;
 		cfg->reg->DAC_CH0_CFG = val;
 
 		irq_unlock(key);
@@ -1226,7 +1250,7 @@ static int codec_start(const struct device *dev, audio_dai_dir_t dir)
 
 	/* speech echo cancellation algorithm requires a fixed delay time between ADC and DAC,
 	 * enable at last.
-	*/
+	 */
 	if (start_tx) {
 		data->tx_enable = 1;
 		cfg->reg->CFG |= AUDCODEC_CFG_DAC_ENABLE;
@@ -1311,7 +1335,7 @@ static int codec_driver_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (!sf3232lb_clock_is_ready_dt(&cfg->clock)) {
+	if (!sf32lb_clock_is_ready_dt(&cfg->clock)) {
 		return -ENODEV;
 	}
 
@@ -1388,7 +1412,7 @@ static const struct audio_codec_api codec_driver_api = {
 
 #define SF32LB_AUDIO_CODEC_DEFINE(n)                                           \
 	static const struct sf32lb_codec_driver_config config##n = {           \
-		.reg = (sf32lb_codec_reg_t *)DT_INST_REG_ADDR_BY_IDX(n, 0),      \
+		.reg = (sf32lb_codec_reg_t *)DT_INST_REG_ADDR_BY_IDX(n, 0),    \
 		.dma_tx = SF32LB_DMA_DT_INST_SPEC_GET_BY_NAME(n, tx),          \
 		.dma_rx = SF32LB_DMA_DT_INST_SPEC_GET_BY_NAME(n, rx),          \
 		.clock = SF32LB_CLOCK_DT_INST_SPEC_GET(n),                     \

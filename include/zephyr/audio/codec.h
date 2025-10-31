@@ -19,7 +19,7 @@
  *
  * @defgroup audio_codec_interface Audio Codec Interface
  * @since 1.13
- * @version 0.1.0
+ * @version 0.2.0
  * @ingroup audio_interface
  * @{
  */
@@ -505,8 +505,8 @@ static inline int audio_codec_write(const struct device *dev, uint8_t *data, siz
 /**
  * @brief Register a callback function for codec one frame data tx/rx done.
  *
- * The callback will be called from a dma isr, It is currently up to the caller.
- * ensure that the callback does not overflow the stack.
+ * The callback will be called from a dma isr, It is currently up to the caller
+ * to ensure that the callback does not overflow the stack.
  *
  * @param dev Pointer to the audio codec device
  * @param tx_cb The function that should be called when an DMA frame transmitted

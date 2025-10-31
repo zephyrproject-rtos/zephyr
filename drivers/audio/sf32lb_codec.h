@@ -13,59 +13,58 @@
 #define GET_REG_VAL(reg, mask, offset)        ((((uint32_t)(reg)) & (mask)) >> (offset))
 
 /* registers of audio codec, dot not change the order */
-typedef struct
-{
-    __IO uint32_t ID;
-    __IO uint32_t CFG;
-    __IO uint32_t IRQ;
-    __IO uint32_t IRQ_MSK;
-    __IO uint32_t DAC_CFG;
-    __IO uint32_t ADC_CFG;
-    __IO uint32_t APB_STAT;
-    __IO uint32_t RSVD5;
-    __IO uint32_t ADC_CH0_CFG;
-    __IO uint32_t ADC_CH1_CFG;
-    __IO uint32_t RSVD4[2];
-    __IO uint32_t DAC_CH0_CFG;
-    __IO uint32_t DAC_CH0_CFG_EXT;
-    __IO uint32_t DAC_CH1_CFG;
-    __IO uint32_t DAC_CH1_CFG_EXT;
-    __IO uint32_t ADC_CH0_ENTRY;
-    __IO uint32_t ADC_CH1_ENTRY;
-    __IO uint32_t RSVD3[2];
-    __IO uint32_t DAC_CH0_ENTRY;
-    __IO uint32_t DAC_CH1_ENTRY;
-    __IO uint32_t DAC_CH0_DEBUG;
-    __IO uint32_t DAC_CH1_DEBUG;
-    __IO uint32_t DAC_CH0_DC;
-    __IO uint32_t DAC_CH1_DC;
-    __IO uint32_t RSVD2[2];
-    __IO uint32_t COMMON_CFG;
-    __IO uint32_t BG_CFG0;
-    __IO uint32_t BG_CFG1;
-    __IO uint32_t BG_CFG2;
-    __IO uint32_t REFGEN_CFG;
-    __IO uint32_t PLL_CFG0;
-    __IO uint32_t PLL_CFG1;
-    __IO uint32_t PLL_CFG2;
-    __IO uint32_t PLL_CFG3;
-    __IO uint32_t PLL_CFG4;
-    __IO uint32_t PLL_CFG5;
-    __IO uint32_t PLL_CFG6;
-    __IO uint32_t PLL_STAT;
-    __IO uint32_t PLL_CAL_CFG;
-    __IO uint32_t PLL_CAL_RESULT;
-    __IO uint32_t ADC_ANA_CFG;
-    __IO uint32_t ADC1_CFG1;
-    __IO uint32_t ADC1_CFG2;
-    __IO uint32_t ADC2_CFG1;
-    __IO uint32_t ADC2_CFG2;
-    __IO uint32_t DAC1_CFG;
-    __IO uint32_t DAC2_CFG;
-    __IO uint32_t RSVD1[2];
-    __IO uint32_t RESERVED_IN0;
-    __IO uint32_t RESERVED_IN1;
-    __IO uint32_t RESERVED_OUT;
+typedef volatile struct {
+	uint32_t ID;
+	uint32_t CFG;
+	uint32_t IRQ;
+	uint32_t IRQ_MSK;
+	uint32_t DAC_CFG;
+	uint32_t ADC_CFG;
+	uint32_t APB_STAT;
+	uint32_t RSVD5;
+	uint32_t ADC_CH0_CFG;
+	uint32_t ADC_CH1_CFG;
+	uint32_t RSVD4[2];
+	uint32_t DAC_CH0_CFG;
+	uint32_t DAC_CH0_CFG_EXT;
+	uint32_t DAC_CH1_CFG;
+	uint32_t DAC_CH1_CFG_EXT;
+	uint32_t ADC_CH0_ENTRY;
+	uint32_t ADC_CH1_ENTRY;
+	uint32_t RSVD3[2];
+	uint32_t DAC_CH0_ENTRY;
+	uint32_t DAC_CH1_ENTRY;
+	uint32_t DAC_CH0_DEBUG;
+	uint32_t DAC_CH1_DEBUG;
+	uint32_t DAC_CH0_DC;
+	uint32_t DAC_CH1_DC;
+	uint32_t RSVD2[2];
+	uint32_t COMMON_CFG;
+	uint32_t BG_CFG0;
+	uint32_t BG_CFG1;
+	uint32_t BG_CFG2;
+	uint32_t REFGEN_CFG;
+	uint32_t PLL_CFG0;
+	uint32_t PLL_CFG1;
+	uint32_t PLL_CFG2;
+	uint32_t PLL_CFG3;
+	uint32_t PLL_CFG4;
+	uint32_t PLL_CFG5;
+	uint32_t PLL_CFG6;
+	uint32_t PLL_STAT;
+	uint32_t PLL_CAL_CFG;
+	uint32_t PLL_CAL_RESULT;
+	uint32_t ADC_ANA_CFG;
+	uint32_t ADC1_CFG1;
+	uint32_t ADC1_CFG2;
+	uint32_t ADC2_CFG1;
+	uint32_t ADC2_CFG2;
+	uint32_t DAC1_CFG;
+	uint32_t DAC2_CFG;
+	uint32_t RSVD1[2];
+	uint32_t RESERVED_IN0;
+	uint32_t RESERVED_IN1;
+	uint32_t RESERVED_OUT;
 } sf32lb_codec_reg_t;
 
 
@@ -346,10 +345,12 @@ typedef struct
 #define AUDCODEC_DAC_CH0_CFG_EXT_RAMP_MODE_Msk  (0x1UL << AUDCODEC_DAC_CH0_CFG_EXT_RAMP_MODE_Pos)
 #define AUDCODEC_DAC_CH0_CFG_EXT_RAMP_MODE  AUDCODEC_DAC_CH0_CFG_EXT_RAMP_MODE_Msk
 #define AUDCODEC_DAC_CH0_CFG_EXT_ZERO_ADJUST_EN_Pos  (2U)
-#define AUDCODEC_DAC_CH0_CFG_EXT_ZERO_ADJUST_EN_Msk  (0x1UL << AUDCODEC_DAC_CH0_CFG_EXT_ZERO_ADJUST_EN_Pos)
+#define AUDCODEC_DAC_CH0_CFG_EXT_ZERO_ADJUST_EN_Msk \
+		(0x1UL << AUDCODEC_DAC_CH0_CFG_EXT_ZERO_ADJUST_EN_Pos)
 #define AUDCODEC_DAC_CH0_CFG_EXT_ZERO_ADJUST_EN  AUDCODEC_DAC_CH0_CFG_EXT_ZERO_ADJUST_EN_Msk
 #define AUDCODEC_DAC_CH0_CFG_EXT_RAMP_INTERVAL_Pos  (3U)
-#define AUDCODEC_DAC_CH0_CFG_EXT_RAMP_INTERVAL_Msk  (0xFUL << AUDCODEC_DAC_CH0_CFG_EXT_RAMP_INTERVAL_Pos)
+#define AUDCODEC_DAC_CH0_CFG_EXT_RAMP_INTERVAL_Msk  \
+		(0xFUL << AUDCODEC_DAC_CH0_CFG_EXT_RAMP_INTERVAL_Pos)
 #define AUDCODEC_DAC_CH0_CFG_EXT_RAMP_INTERVAL  AUDCODEC_DAC_CH0_CFG_EXT_RAMP_INTERVAL_Msk
 #define AUDCODEC_DAC_CH0_CFG_EXT_RAMP_STAT_Pos  (7U)
 #define AUDCODEC_DAC_CH0_CFG_EXT_RAMP_STAT_Msk  (0x3UL << AUDCODEC_DAC_CH0_CFG_EXT_RAMP_STAT_Pos)
@@ -401,10 +402,14 @@ typedef struct
 #define AUDCODEC_DAC_CH1_CFG_EXT_RAMP_MODE_Msk  (0x1UL << AUDCODEC_DAC_CH1_CFG_EXT_RAMP_MODE_Pos)
 #define AUDCODEC_DAC_CH1_CFG_EXT_RAMP_MODE  AUDCODEC_DAC_CH1_CFG_EXT_RAMP_MODE_Msk
 #define AUDCODEC_DAC_CH1_CFG_EXT_ZERO_ADJUST_EN_Pos  (2U)
-#define AUDCODEC_DAC_CH1_CFG_EXT_ZERO_ADJUST_EN_Msk  (0x1UL << AUDCODEC_DAC_CH1_CFG_EXT_ZERO_ADJUST_EN_Pos)
+#define AUDCODEC_DAC_CH1_CFG_EXT_ZERO_ADJUST_EN_Msk \
+				(0x1UL << AUDCODEC_DAC_CH1_CFG_EXT_ZERO_ADJUST_EN_Pos)
+
 #define AUDCODEC_DAC_CH1_CFG_EXT_ZERO_ADJUST_EN  AUDCODEC_DAC_CH1_CFG_EXT_ZERO_ADJUST_EN_Msk
 #define AUDCODEC_DAC_CH1_CFG_EXT_RAMP_INTERVAL_Pos  (3U)
-#define AUDCODEC_DAC_CH1_CFG_EXT_RAMP_INTERVAL_Msk  (0xFUL << AUDCODEC_DAC_CH1_CFG_EXT_RAMP_INTERVAL_Pos)
+#define AUDCODEC_DAC_CH1_CFG_EXT_RAMP_INTERVAL_Msk \
+				(0xFUL << AUDCODEC_DAC_CH1_CFG_EXT_RAMP_INTERVAL_Pos)
+
 #define AUDCODEC_DAC_CH1_CFG_EXT_RAMP_INTERVAL  AUDCODEC_DAC_CH1_CFG_EXT_RAMP_INTERVAL_Msk
 #define AUDCODEC_DAC_CH1_CFG_EXT_RAMP_STAT_Pos  (7U)
 #define AUDCODEC_DAC_CH1_CFG_EXT_RAMP_STAT_Msk  (0x3UL << AUDCODEC_DAC_CH1_CFG_EXT_RAMP_STAT_Pos)
@@ -668,7 +673,9 @@ typedef struct
 #define AUDCODEC_PLL_CFG4_SEL_CLK_DAC_Msk  (0x1UL << AUDCODEC_PLL_CFG4_SEL_CLK_DAC_Pos)
 #define AUDCODEC_PLL_CFG4_SEL_CLK_DAC   AUDCODEC_PLL_CFG4_SEL_CLK_DAC_Msk
 #define AUDCODEC_PLL_CFG4_SEL_CLK_DAC_SOURCE_Pos  (13U)
-#define AUDCODEC_PLL_CFG4_SEL_CLK_DAC_SOURCE_Msk  (0x3UL << AUDCODEC_PLL_CFG4_SEL_CLK_DAC_SOURCE_Pos)
+#define AUDCODEC_PLL_CFG4_SEL_CLK_DAC_SOURCE_Msk \
+				(0x3UL << AUDCODEC_PLL_CFG4_SEL_CLK_DAC_SOURCE_Pos)
+
 #define AUDCODEC_PLL_CFG4_SEL_CLK_DAC_SOURCE  AUDCODEC_PLL_CFG4_SEL_CLK_DAC_SOURCE_Msk
 #define AUDCODEC_PLL_CFG4_SEL_CLK_DIG_Pos  (15U)
 #define AUDCODEC_PLL_CFG4_SEL_CLK_DIG_Msk  (0x1UL << AUDCODEC_PLL_CFG4_SEL_CLK_DIG_Pos)
@@ -694,19 +701,29 @@ typedef struct
 #define AUDCODEC_PLL_CFG5_EN_CLK_CHOP_BG_Msk  (0x1UL << AUDCODEC_PLL_CFG5_EN_CLK_CHOP_BG_Pos)
 #define AUDCODEC_PLL_CFG5_EN_CLK_CHOP_BG  AUDCODEC_PLL_CFG5_EN_CLK_CHOP_BG_Msk
 #define AUDCODEC_PLL_CFG5_DIVB_CLK_CHOP_REFGEN_Pos  (8U)
-#define AUDCODEC_PLL_CFG5_DIVB_CLK_CHOP_REFGEN_Msk  (0x3UL << AUDCODEC_PLL_CFG5_DIVB_CLK_CHOP_REFGEN_Pos)
+#define AUDCODEC_PLL_CFG5_DIVB_CLK_CHOP_REFGEN_Msk \
+				(0x3UL << AUDCODEC_PLL_CFG5_DIVB_CLK_CHOP_REFGEN_Pos)
+
 #define AUDCODEC_PLL_CFG5_DIVB_CLK_CHOP_REFGEN  AUDCODEC_PLL_CFG5_DIVB_CLK_CHOP_REFGEN_Msk
 #define AUDCODEC_PLL_CFG5_DIVA_CLK_CHOP_REFGEN_Pos  (10U)
-#define AUDCODEC_PLL_CFG5_DIVA_CLK_CHOP_REFGEN_Msk  (0x1FUL << AUDCODEC_PLL_CFG5_DIVA_CLK_CHOP_REFGEN_Pos)
+#define AUDCODEC_PLL_CFG5_DIVA_CLK_CHOP_REFGEN_Msk \
+					(0x1FUL << AUDCODEC_PLL_CFG5_DIVA_CLK_CHOP_REFGEN_Pos)
+
 #define AUDCODEC_PLL_CFG5_DIVA_CLK_CHOP_REFGEN  AUDCODEC_PLL_CFG5_DIVA_CLK_CHOP_REFGEN_Msk
 #define AUDCODEC_PLL_CFG5_EN_CLK_CHOP_REFGEN_Pos  (15U)
-#define AUDCODEC_PLL_CFG5_EN_CLK_CHOP_REFGEN_Msk  (0x1UL << AUDCODEC_PLL_CFG5_EN_CLK_CHOP_REFGEN_Pos)
+#define AUDCODEC_PLL_CFG5_EN_CLK_CHOP_REFGEN_Msk \
+					(0x1UL << AUDCODEC_PLL_CFG5_EN_CLK_CHOP_REFGEN_Pos)
+
 #define AUDCODEC_PLL_CFG5_EN_CLK_CHOP_REFGEN  AUDCODEC_PLL_CFG5_EN_CLK_CHOP_REFGEN_Msk
 #define AUDCODEC_PLL_CFG5_DIVB_CLK_CHOP_DAC2_Pos  (16U)
-#define AUDCODEC_PLL_CFG5_DIVB_CLK_CHOP_DAC2_Msk  (0x3UL << AUDCODEC_PLL_CFG5_DIVB_CLK_CHOP_DAC2_Pos)
+#define AUDCODEC_PLL_CFG5_DIVB_CLK_CHOP_DAC2_Msk \
+					(0x3UL << AUDCODEC_PLL_CFG5_DIVB_CLK_CHOP_DAC2_Pos)
+
 #define AUDCODEC_PLL_CFG5_DIVB_CLK_CHOP_DAC2  AUDCODEC_PLL_CFG5_DIVB_CLK_CHOP_DAC2_Msk
 #define AUDCODEC_PLL_CFG5_DIVA_CLK_CHOP_DAC2_Pos  (18U)
-#define AUDCODEC_PLL_CFG5_DIVA_CLK_CHOP_DAC2_Msk  (0x7UL << AUDCODEC_PLL_CFG5_DIVA_CLK_CHOP_DAC2_Pos)
+#define AUDCODEC_PLL_CFG5_DIVA_CLK_CHOP_DAC2_Msk \
+					(0x7UL << AUDCODEC_PLL_CFG5_DIVA_CLK_CHOP_DAC2_Pos)
+
 #define AUDCODEC_PLL_CFG5_DIVA_CLK_CHOP_DAC2  AUDCODEC_PLL_CFG5_DIVA_CLK_CHOP_DAC2_Msk
 #define AUDCODEC_PLL_CFG5_EN_CLK_CHOP_DAC2_Pos  (21U)
 #define AUDCODEC_PLL_CFG5_EN_CLK_CHOP_DAC2_Msk  (0x1UL << AUDCODEC_PLL_CFG5_EN_CLK_CHOP_DAC2_Pos)
@@ -732,10 +749,13 @@ typedef struct
 #define AUDCODEC_PLL_CFG6_EN_CLK_RCCAL_Msk  (0x1UL << AUDCODEC_PLL_CFG6_EN_CLK_RCCAL_Pos)
 #define AUDCODEC_PLL_CFG6_EN_CLK_RCCAL  AUDCODEC_PLL_CFG6_EN_CLK_RCCAL_Msk
 #define AUDCODEC_PLL_CFG6_SEL_CLK_CHOP_MICBIAS_Pos  (6U)
-#define AUDCODEC_PLL_CFG6_SEL_CLK_CHOP_MICBIAS_Msk  (0x3UL << AUDCODEC_PLL_CFG6_SEL_CLK_CHOP_MICBIAS_Pos)
+#define AUDCODEC_PLL_CFG6_SEL_CLK_CHOP_MICBIAS_Msk \
+					(0x3UL << AUDCODEC_PLL_CFG6_SEL_CLK_CHOP_MICBIAS_Pos)
 #define AUDCODEC_PLL_CFG6_SEL_CLK_CHOP_MICBIAS  AUDCODEC_PLL_CFG6_SEL_CLK_CHOP_MICBIAS_Msk
 #define AUDCODEC_PLL_CFG6_EN_CLK_CHOP_MICBIAS_Pos  (8U)
-#define AUDCODEC_PLL_CFG6_EN_CLK_CHOP_MICBIAS_Msk  (0x1UL << AUDCODEC_PLL_CFG6_EN_CLK_CHOP_MICBIAS_Pos)
+#define AUDCODEC_PLL_CFG6_EN_CLK_CHOP_MICBIAS_Msk \
+					(0x1UL << AUDCODEC_PLL_CFG6_EN_CLK_CHOP_MICBIAS_Pos)
+
 #define AUDCODEC_PLL_CFG6_EN_CLK_CHOP_MICBIAS  AUDCODEC_PLL_CFG6_EN_CLK_CHOP_MICBIAS_Msk
 #define AUDCODEC_PLL_CFG6_SEL_CLK_ADC2_Pos  (9U)
 #define AUDCODEC_PLL_CFG6_SEL_CLK_ADC2_Msk  (0x1UL << AUDCODEC_PLL_CFG6_SEL_CLK_ADC2_Pos)
@@ -765,7 +785,9 @@ typedef struct
 #define AUDCODEC_PLL_CFG6_EN_CLK_ADC0_Msk  (0x1UL << AUDCODEC_PLL_CFG6_EN_CLK_ADC0_Pos)
 #define AUDCODEC_PLL_CFG6_EN_CLK_ADC0   AUDCODEC_PLL_CFG6_EN_CLK_ADC0_Msk
 #define AUDCODEC_PLL_CFG6_SEL_CLK_ADC_SOURCE_Pos  (24U)
-#define AUDCODEC_PLL_CFG6_SEL_CLK_ADC_SOURCE_Msk  (0x3UL << AUDCODEC_PLL_CFG6_SEL_CLK_ADC_SOURCE_Pos)
+#define AUDCODEC_PLL_CFG6_SEL_CLK_ADC_SOURCE_Msk \
+					(0x3UL << AUDCODEC_PLL_CFG6_SEL_CLK_ADC_SOURCE_Pos)
+
 #define AUDCODEC_PLL_CFG6_SEL_CLK_ADC_SOURCE  AUDCODEC_PLL_CFG6_SEL_CLK_ADC_SOURCE_Msk
 
 /*************** Bit definition for AUDCODEC_PLL_STAT register ****************/
@@ -800,7 +822,8 @@ typedef struct
 
 /************** Bit definition for AUDCODEC_ADC_ANA_CFG register **************/
 #define AUDCODEC_ADC_ANA_CFG_MICBIAS_CHOP_EN_Pos  (0U)
-#define AUDCODEC_ADC_ANA_CFG_MICBIAS_CHOP_EN_Msk  (0x1UL << AUDCODEC_ADC_ANA_CFG_MICBIAS_CHOP_EN_Pos)
+#define AUDCODEC_ADC_ANA_CFG_MICBIAS_CHOP_EN_Msk \
+					(0x1UL << AUDCODEC_ADC_ANA_CFG_MICBIAS_CHOP_EN_Pos)
 #define AUDCODEC_ADC_ANA_CFG_MICBIAS_CHOP_EN  AUDCODEC_ADC_ANA_CFG_MICBIAS_CHOP_EN_Msk
 #define AUDCODEC_ADC_ANA_CFG_MICBIAS_EN_Pos  (1U)
 #define AUDCODEC_ADC_ANA_CFG_MICBIAS_EN_Msk  (0x1UL << AUDCODEC_ADC_ANA_CFG_MICBIAS_EN_Pos)
@@ -1019,62 +1042,52 @@ typedef struct
 #define AUDCODEC_RESERVED_OUT_STAT1_Msk  (0xFFUL << AUDCODEC_RESERVED_OUT_STAT1_Pos)
 #define AUDCODEC_RESERVED_OUT_STAT1     AUDCODEC_RESERVED_OUT_STAT1_Msk
 
-typedef struct
-{
-    uint32_t  samplerate;
-    uint8_t   clk_src_sel; /*!< 0:xtal 48M 1:PLL 44.1M */
-    uint8_t   clk_div;
-    uint8_t   osr_sel;  /*!< 0:100 1:150 2:300 4:64 5:128 6:256 */  //hp  dac_cfg
-    uint16_t  sinc_gain;  //hp  dac_ch0_cfg
-    uint8_t   sel_clk_dac_source; /*!< 0:xtal 48M 1:PLL  */
-    uint8_t   diva_clk_dac;
-    uint8_t   diva_clk_chop_dac;
-    uint8_t   divb_clk_chop_dac;  // lp pll_cfg4
-    uint8_t   diva_clk_chop_bg;
-    uint8_t   diva_clk_chop_refgen;  // lp  pll_cfg5
-    uint8_t   sel_clk_dac;
+typedef struct {
+	uint32_t  samplerate;
+	uint8_t   clk_src_sel; /* 0:xtal 48M 1:PLL 44.1M */
+	uint8_t   clk_div;
+	uint8_t   osr_sel;  /* 0:100 1:150 2:300 4:64 5:128 6:256 */
+	uint16_t  sinc_gain;
+	uint8_t   sel_clk_dac_source; /* 0:xtal 48M 1:PLL */
+	uint8_t   diva_clk_dac;
+	uint8_t   diva_clk_chop_dac;
+	uint8_t   divb_clk_chop_dac;
+	uint8_t   diva_clk_chop_bg;
+	uint8_t   diva_clk_chop_refgen;
+	uint8_t   sel_clk_dac;
 } sf32lb_codec_dac_clk_t;
 
-typedef struct
-{
-    uint32_t  samplerate;
-    uint8_t   clk_src_sel; /*!< 0:xtal 48M 1:PLL 44.1M */
-    uint8_t   clk_div;
-    uint8_t   osr_sel;  /*!< 0:200 1:300 2:400 3:600 */  //lp  adc_cfg
-    uint8_t   sel_clk_adc_source; /*!< 0:xtal 48M 1:PLL  */
-    uint8_t   sel_clk_adc;
-    uint8_t   diva_clk_adc; //lp pll_cfg6
-    uint8_t   fsp; //ADC1_CFG1
+typedef struct {
+	uint32_t  samplerate;
+	uint8_t   clk_src_sel; /*0:xtal 48M 1:PLL 44.1M */
+	uint8_t   clk_div;
+	uint8_t   osr_sel;  /* 0:200 1:300 2:400 3:600 */
+	uint8_t   sel_clk_adc_source; /* 0:xtal 48M 1:PLL  */
+	uint8_t   sel_clk_adc;
+	uint8_t   diva_clk_adc; /* lp pll_cfg6 */
+	uint8_t   fsp;
 } sf32lb_codec_adc_clk_t;
 
-typedef struct
-{
-    uint8_t     opmode;  /*!<   0:audprc tx to audcode  1: mem tx to audcodec  */
-    const sf32lb_codec_dac_clk_t *dac_clk;
+typedef struct {
+	uint8_t	opmode;  /* 0:audprc tx to audcode; 1: mem tx to audcodec */
+	const sf32lb_codec_dac_clk_t *dac_clk;
 } sf32lb_codec_dac_cfg_t;
 
-typedef struct
-{
-    uint8_t     opmode;
-    const sf32lb_codec_adc_clk_t *adc_clk;
+typedef struct {
+	uint8_t     opmode;
+	const sf32lb_codec_adc_clk_t *adc_clk;
 } sf32lb_codec_adc_cfg_t;
 
-typedef struct
-{
-    uint16_t    en_dly_sel;           /*!<   codec enable delay count  */
-    uint8_t     samplerate_index;
-    sf32lb_codec_dac_cfg_t dac_cfg;    /*!<   dac AUDCODEC DAC PATH configure  */
-    sf32lb_codec_adc_cfg_t adc_cfg;    /*!<   dac AUDCODEC ADC PATH configure  */
+typedef struct {
+	uint16_t	en_dly_sel;	/* codec enable delay count */
+	uint8_t		samplerate_index;
+	sf32lb_codec_dac_cfg_t dac_cfg; /* dac AUDCODEC DAC PATH configure */
+	sf32lb_codec_adc_cfg_t adc_cfg; /* dac AUDCODEC ADC PATH configure */
 } sf32lb_codec_hw_config_t;
-
 
 #ifdef __cplusplus
 }
 #endif
-
-/**
- * @}
- */
 
 #endif /* ZEPHYR_INCLUDE_AUDIO_SF32LB_CODEC_H_ */
 
