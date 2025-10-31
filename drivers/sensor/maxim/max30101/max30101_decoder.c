@@ -114,6 +114,7 @@ static int max30101_decoder_decode(const uint8_t *buffer, struct sensor_chan_spe
 	case SENSOR_CHAN_DIE_TEMP:
 		if (edata->has_temp) {
 			out->readings[0].timestamp_delta = 0;
+			out->readings[out->header.reading_count].timestamp_delta = (edata->header.reading_count - 1) * sample_period;
 			out->readings[0].temperature = (edata->die_temp[0] << MAX30101_TEMP_FRAC_SHIFT) | (edata->die_temp[1] & 0x0f);
 			out->shift = MAX30101_ASYNC_RESOLUTION - MAX30101_TEMP_FRAC_SHIFT;
 			out->header.reading_count++;
@@ -134,15 +135,17 @@ static int max30101_decoder_decode(const uint8_t *buffer, struct sensor_chan_spe
 		return -EINVAL;
 	}
 
+	const uint8_t *read_data = (uint8_t *)&edata->reading[0].raw;
 #if CONFIG_MAX30101_STREAM
 	int max_frame = *fit + (max_count > edata->header.reading_count) ? edata->header.reading_count : max_count;
 	for (out->header.reading_count = 0; out->header.reading_count < max_frame; out->header.reading_count++) {
 #endif /* CONFIG_MAX30101_STREAM */
-	uint8_t index = MAX30101_BYTES_PER_CHANNEL * data->map[led_chan][chan_spec.chan_idx];
+//	uint8_t index = MAX30101_BYTES_PER_CHANNEL * data->map[led_chan][chan_spec.chan_idx];
+	uint8_t index = max30101_sample_bytes[data->total_channels] * (*fit) + max30101_sample_bytes[data->map[led_chan][chan_spec.chan_idx]];
 	out->readings[out->header.reading_count].timestamp_delta = (*fit) * sample_period;
-	out->readings[out->header.reading_count].value = (edata->reading[*fit].raw[index] << 16) | (edata->reading[*fit].raw[index + 1] << 8) | (edata->reading[*fit].raw[index + 2]);
+//	out->readings[out->header.reading_count].value = (edata->reading[*fit].raw[index] << 16) | (edata->reading[*fit].raw[index + 1] << 8) | (edata->reading[*fit].raw[index + 2]);
+	out->readings[out->header.reading_count].value = (read_data[index] << 16) | (read_data[index + 1] << 8) | (read_data[index + 2]);
 	out->readings[out->header.reading_count].value = (out->readings[out->header.reading_count].value & MAX30101_FIFO_DATA_MASK) >> config->data_shift;
-//	LOG_DBG("(%d)Out decode: [%d](%d)", out->header.reading_count, out->readings[out->header.reading_count].value, *fit);
 	out->shift = MAX30101_ASYNC_RESOLUTION - MAX30101_LIGHT_SHIFT;
 	(*fit)++;
 #if CONFIG_MAX30101_STREAM
