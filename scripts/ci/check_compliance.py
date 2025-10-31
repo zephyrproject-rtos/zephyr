@@ -1595,6 +1595,7 @@ flagged.
         "SHIFT",
         "SINGLE_APPLICATION_SLOT",  # Used in sysbuild for MCUboot configuration
         "SINGLE_APPLICATION_SLOT_RAM_LOAD",  # Used in sysbuild for MCUboot configuration
+        "SOC_NORDIC_BSP_PATH_OVERRIDE",  # Used in modules/hal_nordic/nrfx/CMakeLists.txt
         "SOC_SDKNG_UNSUPPORTED",  # Used in modules/hal_nxp/mcux/CMakeLists.txt
         "SOC_SERIES_",  # Used as regex in scripts/utils/board_v1_to_v2.py
         "SOC_WATCH",  # Issue 13749
