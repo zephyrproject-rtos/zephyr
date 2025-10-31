@@ -103,6 +103,10 @@
 	status = "okay";
 };
 
+&lfclk {
+	status = "okay";
+};
+
 &spi00 {
 	status = "okay";
 
