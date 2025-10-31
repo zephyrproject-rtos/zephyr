@@ -26,7 +26,7 @@
 #include <zephyr/net/wifi_mgmt.h>
 #endif /* CONFIG_NET_L2_WIFI_MGMT */
 
-#define DEFAULT_NET_EVENT_INFO_SIZE 32
+#define DEFAULT_NET_EVENT_INFO_SIZE CONFIG_NET_MGMT_EVENT_INFO_DEFAULT_DATA_SIZE
 /* NOTE: Update this union with all *big* event info structs */
 union net_mgmt_events {
 #if defined(CONFIG_NET_DHCPV4)
