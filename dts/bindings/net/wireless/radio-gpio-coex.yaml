@@ -13,7 +13,7 @@ description: |
     transceiver begins their transmission. This is specified by the
     grant-delay-us property.
 
-compatible: "gpio-radio-coex"
+compatible: "radio-gpio-coex"
 
 include: base.yaml
 
