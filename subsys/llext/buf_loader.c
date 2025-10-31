@@ -36,3 +36,10 @@ void *llext_buf_peek(struct llext_loader *l, size_t pos)
 
 	return (void *)(buf_l->buf + pos);
 }
+
+size_t llext_buf_get_size(struct llext_loader *l)
+{
+	struct llext_buf_loader *buf_l = CONTAINER_OF(l, struct llext_buf_loader, loader);
+
+	return buf_l->len;
+}

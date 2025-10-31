@@ -19,7 +19,21 @@ if(CONFIG_LLEXT)
   zephyr_library_sources_ifdef(CONFIG_LLEXT_SHELL shell.c)
   zephyr_library_sources_ifdef(CONFIG_LLEXT_EXPERIMENTAL llext_experimental.c)
 
+  if(CONFIG_LLEXT_COMPRESSION_NONE)
+    # weak bindings in llext_load.c suffice
+  else()
+    zephyr_library_sources(llext_decompress.c)
+  endif()
+
   if(CONFIG_RISCV AND CONFIG_USERSPACE)
     message(WARNING "Running LLEXT extensions from user-space threads on RISC-V is not supported!")
   endif()
+
+  if(CONFIG_LLEXT_COMPRESSION_LZ4_USE_SYSTEM_HEAP)
+    # no custom memory API needed
+  else()
+    # allow access to custom memory allocators
+    zephyr_library_compile_definitions(LZ4F_STATIC_LINKING_ONLY)
+  endif()
+
 endif()
