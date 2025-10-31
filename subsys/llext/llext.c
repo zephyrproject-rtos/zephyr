@@ -244,6 +244,16 @@ int llext_unload(struct llext **ext)
 	llext_free_regions(tmp);
 	llext_free(tmp->sym_tab.syms);
 	llext_free(tmp->exp_tab.syms);
+#if !defined(CONFIG_LLEXT_COMPRESSION_NONE)
+	if (tmp->decompressed_storage) {
+		/* this is where the extension used to live */
+		llext_free(tmp->decompressed_storage);
+	}
+	if (tmp->decompression_loader) {
+		/* loader is single-use */
+		llext_free(tmp->decompression_loader);
+	}
+#endif
 	llext_free(tmp);
 
 	return 0;
