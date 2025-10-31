@@ -217,7 +217,6 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 	struct memc_stm32_xspi_psram_data *dev_data = dev->data;
 	XSPI_HandleTypeDef *hxspi = &dev_data->hxspi;
 	uint32_t ahb_clock_freq;
-	XSPIM_CfgTypeDef cfg = {0};
 	XSPI_RegularCmdTypeDef cmd = {0};
 	XSPI_MemoryMappedTypeDef mem_mapped_cfg = {0};
 	uint32_t prescaler = STM32_XSPI_CLOCK_PRESCALER_MIN;
@@ -295,16 +294,24 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 		return -EIO;
 	}
 
-	if (hxspi->Instance == XSPI1) {
-		cfg.IOPort = HAL_XSPIM_IOPORT_1;
-	} else if (hxspi->Instance == XSPI2) {
-		cfg.IOPort = HAL_XSPIM_IOPORT_2;
-	}
-	cfg.nCSOverride = HAL_XSPI_CSSEL_OVR_DISABLED;
+	if (!IS_ENABLED(CONFIG_STM32_APP_IN_EXT_FLASH)) {
+		/*
+		 * Do not configure the XSPIManager if running on the ext flash
+		 * since this includes stopping each XSPI instance during configuration
+		 */
+		XSPIM_CfgTypeDef cfg = {0};
 
-	if (HAL_XSPIM_Config(hxspi, &cfg, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
-		LOG_ERR("XSPIMgr Init failed");
-		return -EIO;
+		if (hxspi->Instance == XSPI1) {
+			cfg.IOPort = HAL_XSPIM_IOPORT_1;
+		} else if (hxspi->Instance == XSPI2) {
+			cfg.IOPort = HAL_XSPIM_IOPORT_2;
+		}
+		cfg.nCSOverride = HAL_XSPI_CSSEL_OVR_DISABLED;
+
+		if (HAL_XSPIM_Config(hxspi, &cfg, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+			LOG_ERR("XSPIMgr Init failed");
+			return -EIO;
+		}
 	}
 
 	/* Configure AP memory registers */
