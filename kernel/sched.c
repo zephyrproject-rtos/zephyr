@@ -862,7 +862,7 @@ void *z_get_next_switch_handle(void *interrupted)
 	K_SPINLOCK(&_sched_spinlock) {
 		struct k_thread *old_thread = _current, *new_thread;
 
-		__ASSERT(old_thread->switch_handle == NULL,
+		__ASSERT(old_thread->switch_handle == NULL || is_thread_dummy(old_thread),
 			"old thread handle should be null.");
 
 		new_thread = next_up();
