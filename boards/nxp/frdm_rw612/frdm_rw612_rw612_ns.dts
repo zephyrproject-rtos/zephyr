@@ -56,6 +56,11 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		slot0_partition: partition@08020000 {
+			label = "image-0";
+			reg = <0x00020000 DT_SIZE_K(640)>;
+		};
+
 		slot0_ns_partition: partition@080C0000 {
 			label = "image-0-non-secure";
 			reg = <0x080C0000 DT_SIZE_M(3)>;
