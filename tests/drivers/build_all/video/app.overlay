@@ -142,6 +142,18 @@
 					hm01b0_ep_out: endpoint {
 						remote-endpoint-label = "";
 					};
+			};
+
+			test_i2c_hm0360: hm0360@24 {
+				compatible = "himax,hm0360";
+				reg = <0x24>;
+				status = "okay";
+				reset-gpios = <&test_gpio 0 0>;
+        pwrdn-gpios = <&test_gpio 1 0>;
+
+				port {
+					hm0360_ep_out: endpoint {
+						remote-endpoint-label = "";
 				};
 			};
 		};
