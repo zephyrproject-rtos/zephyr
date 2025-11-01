@@ -355,6 +355,9 @@ void lll_scan_aux_isr_aux_setup(void *param)
 	aux_start_us -= window_widening_us;
 	aux_start_us -= EVENT_JITTER_US;
 
+	/* +1 us radio_tmr_start_us compensation */
+	aux_start_us -= 1U;
+
 	/* NOTE: For slower CPUs, LLL execution context will introduce Radio ISR latency beyond
 	 *       the threshold to meet hard realtime deadline to setup auxiliary PDU reception.
 	 *       Detect the latency and gracefully close the radio event. If there is consecutive
