@@ -45,6 +45,9 @@ if(CONFIG_BUILD_WITH_TFM)
     )
 endif()
 
-add_subdirectory(${SOC_SERIES})
+if(CONFIG_SOC_NORDIC_BSP_NAME STREQUAL "stable")
+  add_subdirectory(${SOC_SERIES})
+endif()
+
 add_subdirectory(common)
 add_subdirectory_ifdef(CONFIG_NRF_IRONSIDE ironside)
