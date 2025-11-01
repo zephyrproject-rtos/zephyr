@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "fsl_romapi_otp.h"
+#include <zephyr/drivers/nvmem.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/sensor.h>
@@ -33,6 +33,7 @@ struct nxp_pmc_tmpsns_config {
 	const struct device *adc;
 	struct adc_sequence adc_seq;
 	struct adc_channel_cfg ch_cfg;
+	struct nvmem_cell cell;
 };
 
 struct nxp_pmc_tmpsns_data {
@@ -185,12 +186,25 @@ static int nxp_pmc_tmpsns_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = otp_fuse_read(CONFIG_NXP_PMC_TMPSNS_CALIBRATION_OTP_FUSE_INDEX,
-			&data->pmc_tmpsns_calibration);
-	if (ret) {
-		LOG_ERR("Failed to get calibration value form FUSE.");
-		return -ENOTSUP;
+	if (!nvmem_cell_is_ready(&config->cell)) {
+		LOG_ERR("NVMEM cell not ready");
+		return -ENODEV;
 	}
+
+	if (config->cell.size < 1) {
+		LOG_ERR("NVMEM cell too small for calibration");
+		return -EINVAL;
+	}
+
+	uint8_t calib = 0;
+
+	ret = nvmem_read(config->cell.dev, config->cell.offset, &calib, config->cell.size);
+	if (ret) {
+		LOG_ERR("Failed to read calibration from nvmem: %d", ret);
+		return ret;
+	}
+
+	data->pmc_tmpsns_calibration = calib; /* store in 32-bit, use low 8 bits */
 
 	return 0;
 }
@@ -214,6 +228,7 @@ static DEVICE_API(sensor, nxp_pmc_tmpsns_api) = {
 		},										\
 		.ch_cfg = ADC_CHANNEL_CFG_DT(DT_CHILD(DT_INST_IO_CHANNELS_CTLR(inst),		\
 				 UTIL_CAT(channel_, DT_INST_IO_CHANNELS_INPUT(inst)))),		\
+		.cell = NVMEM_CELL_INST_GET_BY_NAME(inst, tmpsns_calib),			\
 	};											\
 												\
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, nxp_pmc_tmpsns_init, NULL,				\

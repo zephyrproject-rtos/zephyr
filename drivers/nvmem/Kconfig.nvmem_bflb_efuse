@@ -1,0 +1,9 @@
+# Copyright (c) 2024-2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+config NVMEM_BFLB_EFUSE
+    bool "Bouffalolab EFUSEs as NVMEM (OTP) provider"
+    default y
+    depends on DT_HAS_BFLB_EFUSE_ENABLED
+    help
+      Enable Bouffalolab EFUSE region as an NVMEM provider.

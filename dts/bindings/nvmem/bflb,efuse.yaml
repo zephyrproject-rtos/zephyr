@@ -1,0 +1,18 @@
+# Copyright (c) 2024-2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+title: Bouffalolab EFUSE (NVMEM provider)
+
+description: |
+  Bouffalolab EFUSE region exposed as an NVMEM provider. Treats EFUSE
+  as read-only OTP memory; writes are not supported through the NVMEM API.
+
+compatible: "bflb,efuse"
+
+include:
+  - nvmem-provider.yaml
+  - base.yaml
+
+properties:
+  reg:
+    required: true

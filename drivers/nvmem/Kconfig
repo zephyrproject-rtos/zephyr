@@ -1,0 +1,28 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# Because CONFIG_NVMEM is used in nvmem subsystem,
+# it is temporarily called CONFIG_NVMEM_MODEL
+menuconfig NVMEM_MODEL
+	bool "Non-Volatile Memory (NVMEM) Driver Support"
+	help
+	  Non-Volatile Memory (NVMEM) driver configuration options.
+
+if NVMEM_MODEL
+
+module = NVMEM_MODEL
+module-str = nvmem_model
+source "subsys/logging/Kconfig.template.log_config"
+
+config NVMEM_MODEL_INIT_PRIORITY
+	int "NVMEM init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  NVMEM device driver initialization priority.
+
+rsource "Kconfig.nvmem_nxp_ocotp"
+rsource "Kconfig.nvmem_lpc11u6x"
+rsource "Kconfig.nvmem_fm25xxx"
+rsource "Kconfig.nvmem_bflb_efuse"
+
+endif # NVMEM_MODEL

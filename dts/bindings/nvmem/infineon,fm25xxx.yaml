@@ -1,0 +1,14 @@
+# Copyright (c) 2025 Luna Pes <zephyr@orangemurker.com>
+# SPDX-License-Identifier: Apache-2.0
+
+title: Infineon FM25XXX SPI FRAM (NVMEM provider)
+
+description: |
+  Infineon FM25XXX family of SPI-attached FRAM devices exposed as
+  an NVMEM provider. Uses the common NVMEM provider schema.
+
+compatible: "infineon,fm25xxx"
+
+include:
+  - nvmem-provider.yaml
+  - spi-device.yaml

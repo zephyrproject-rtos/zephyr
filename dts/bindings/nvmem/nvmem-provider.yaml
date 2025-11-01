@@ -1,0 +1,20 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+title: NVMEM (Non-Volatile Memory) Provider
+
+description: |
+  Common constraints for NVMEM providers.
+
+properties:
+  size:
+    type: int
+    description: |
+      Total NVMEM device size in bytes
+
+  read-only:
+    type: boolean
+    description: |
+      Indicates that the entire device is read-only. When set,
+      the provider driver should report read_only at runtime
+      and reject write attempts.
