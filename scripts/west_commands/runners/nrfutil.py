@@ -5,12 +5,10 @@
 '''Runner for flashing with nrfutil.'''
 
 import json
-import shlex
 import subprocess
 import sys
 from pathlib import Path
 
-from runners.core import _DRY_RUN
 from runners.nrf_common import NrfBinaryRunner
 
 
@@ -37,7 +35,7 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return NrfBinaryRunner._capabilities(mult_dev_ids=True)
+        return NrfBinaryRunner._capabilities(mult_dev_ids=True, dry_run=True)
 
     @classmethod
     def dev_id_help(cls) -> str:
@@ -65,23 +63,15 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
         parser.add_argument('--ext-mem-config-file', required=False,
                             dest='ext_mem_config_file',
                             help='path to an JSON file with external memory configuration')
-        parser.add_argument('--dry-run', required=False,
-                            action='store_true',
-                            help='''Generate all the commands without actually
-                            executing them''')
 
     def _exec(self, args, force=False):
         jout_all = []
 
         cmd = ['nrfutil', '--json', 'device'] + args
+        self._log_cmd(cmd)
 
-        escaped = ' '.join(shlex.quote(s) for s in cmd)
-        if _DRY_RUN or (self.dry_run):
-            self.logger.info(escaped)
-            if not force:
-                return {}
-        else:
-            self.logger.debug(escaped)
+        if self.dry_run and not force:
+            return {}
 
         with subprocess.Popen(cmd, stdout=subprocess.PIPE) as p:
             for line in iter(p.stdout.readline, b''):
