@@ -12,6 +12,17 @@
 
 LOG_MODULE_REGISTER(cpu_freq, CONFIG_CPU_FREQ_LOG_LEVEL);
 
+/* Build-time validation: require performance_states node with at least one child */
+#define PSTATE_ROOT DT_PATH(performance_states)
+#define CPU_FREQ_COUNT_OKAY_CHILD(_node_id) + 1
+enum { CPU_FREQ_PSTATE_COUNT = 0 DT_FOREACH_CHILD_STATUS_OKAY(PSTATE_ROOT,
+		CPU_FREQ_COUNT_OKAY_CHILD) };
+
+BUILD_ASSERT(DT_NODE_EXISTS(PSTATE_ROOT),
+	"cpu_freq: performance_states node missing in devicetree");
+BUILD_ASSERT(CPU_FREQ_PSTATE_COUNT > 0,
+	"cpu_freq: No P-states defined in devicetree");
+
 #if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
 
 static struct k_ipi_work cpu_freq_work;
