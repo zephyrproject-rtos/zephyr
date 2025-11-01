@@ -50,7 +50,7 @@ config INTEL_ADSP_TIMER
 config DYNAMIC_INTERRUPTS
 	default y
 
-if LOG
+if LOG && !SOF
 
 config LOG_BACKEND_ADSP
 	default y
