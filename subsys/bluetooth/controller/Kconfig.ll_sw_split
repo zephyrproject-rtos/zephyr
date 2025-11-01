@@ -907,7 +907,6 @@ config BT_CTLR_ULL_LOW_PRIO
 
 config BT_CTLR_LOW_LAT
 	bool "Low latency non-negotiating event preemption"
-	select BT_CTLR_LOW_LAT_ULL_DONE
 	default y if SOC_SERIES_NRF51X
 	help
 	  Use low latency non-negotiating event preemption. This reduces
@@ -916,15 +915,15 @@ config BT_CTLR_LOW_LAT
 	  radio state switches.
 
 config BT_CTLR_LOW_LAT_ULL
-	prompt "Low latency ULL"
-	bool
+	bool "Low latency ULL"
+	default y if BT_CTLR_LOW_LAT
 	help
 	  Low latency ULL implementation that uses tailchaining instead of while
 	  loop to demux rx messages from LLL.
 
 config BT_CTLR_LOW_LAT_ULL_DONE
-	prompt "Low latency ULL prepare dequeue"
-	bool
+	bool "Low latency ULL prepare dequeue"
+	default y if BT_CTLR_LOW_LAT
 	help
 	  Done events be processed and dequeued in ULL context.
 
