@@ -509,7 +509,7 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 	LL_DMA_Init(dma, dma_stm32_id_to_stream(id), &DMA_InitStruct);
 
 	/* Enable transfer complete ISR if in non-cyclic mode or a callback is requested */
-	if (!stream->cyclic || stream->dma_callback != NULL) {
+	if (!stream->cyclic && stream->dma_callback != NULL) {
 		LL_DMA_EnableIT_TC(dma, dma_stm32_id_to_stream(id));
 	}
 
@@ -632,6 +632,7 @@ DMA_STM32_EXPORT_API int dma_stm32_stop(const struct device *dev, uint32_t id)
 
 	/* Repeated stop : return now if channel is already stopped */
 	if (!stm32_dma_is_enabled_stream(dma, id)) {
+		stream->busy = false;
 		return 0;
 	}
 
