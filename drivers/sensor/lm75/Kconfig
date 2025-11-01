@@ -50,4 +50,15 @@ config LM75_TRIGGER_THREAD_PRIO
 
 endif # LM75_TRIGGER
 
+config LM75_12BIT
+	bool "12-bit temperature resolution"
+	help
+	  Enable this option if your LM75-compatible sensor outputs
+	  12-bit temperature data.
+
+	  Standard LM75 sensors use 9-bit resolution, but some variants
+	  support 12-bit resolution with different
+	  data formatting. This option adjusts the conversion logic
+	  accordingly.
+
 endif # LM75
