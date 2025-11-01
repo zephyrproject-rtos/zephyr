@@ -490,7 +490,7 @@ void __z_pthread_cleanup_pop(int execute);
  * @retval 0 Success
  * @retval ESRCH Thread does not exist
  * @retval EINVAL Name buffer is NULL
- * @retval Negative value if kernel function error
+ * @retval <0 Negative value if kernel function error
  *
  */
 int pthread_setname_np(pthread_t thread, const char *name);
@@ -508,7 +508,7 @@ int pthread_setname_np(pthread_t thread, const char *name);
  * @retval 0 Success
  * @retval ESRCH Thread does not exist
  * @retval EINVAL Name buffer is NULL
- * @retval Negative value if kernel function error
+ * @retval <0 negative value if kernel function error
  */
 int pthread_getname_np(pthread_t thread, char *name, size_t len);
 

@@ -140,7 +140,7 @@ static inline uint32_t spsc_pbuf_capacity(struct spsc_pbuf *pb)
  *				bytes of data (one is reserved for written
  *				messages length).
  * @param flags			Option flags. See @ref SPSC_PBUF_FLAGS.
- * @retval struct spsc_pbuf*	Pointer to the created buffer. The pointer
+ * @return struct spsc_pbuf*	Pointer to the created buffer. The pointer
  *				points to the same address as buf.
  * @retval NULL			Invalid buffer alignment.
  */
@@ -186,7 +186,7 @@ int spsc_pbuf_write(struct spsc_pbuf *pb, const char *buf, uint16_t len);
  *			buffer without applying wrap padding is performed.
  * @param[out] buf	Location where buffer address is written on successful allocation.
  *
- * @retval non-negative Amount of space that got allocated. Can be equal or smaller than %p len.
+ * @return non-negative amount of space that got allocated. Can be equal or smaller than %p len.
  * @retval -EINVAL if @p len is forbidden.
  */
 int spsc_pbuf_alloc(struct spsc_pbuf *pb, uint16_t len, char **buf);
@@ -236,7 +236,7 @@ int spsc_pbuf_read(struct spsc_pbuf *pb, char *buf, uint16_t len);
  *                      It is 32 bit word aligned and points to the continuous memory.
  *
  * @retval 0 No packets in the buffer.
- * @retval positive packet length.
+ * @return positive packet length.
  */
 uint16_t spsc_pbuf_claim(struct spsc_pbuf *pb, char **buf);
 
@@ -259,7 +259,7 @@ void spsc_pbuf_free(struct spsc_pbuf *pb, uint16_t len);
  * @param pb	A packet buffer.
  *
  * @retval -ENOTSUP	Feature not enabled.
- * @retval non-negative	Maximum utilization.
+ * @return non-negative	Maximum utilization.
  */
 int spsc_pbuf_get_utilization(struct spsc_pbuf *pb);
 /**

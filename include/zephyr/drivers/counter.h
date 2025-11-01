@@ -377,7 +377,7 @@ static inline uint32_t z_impl_counter_get_max_top_value(const struct device *dev
  * @param dev Pointer to the device structure for the driver instance.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval <0 Negative errno code if failure.
  */
 __syscall int counter_start(const struct device *dev);
 
@@ -414,7 +414,7 @@ static inline int z_impl_counter_stop(const struct device *dev)
  * @param ticks Pointer to where to store the current counter value
  *
  * @retval 0 If successful.
- * @retval Negative error code on failure getting the counter value
+ * @retval <0 Negative error code on failure getting the counter value
  */
 __syscall int counter_get_value(const struct device *dev, uint32_t *ticks);
 
@@ -433,7 +433,7 @@ static inline int z_impl_counter_get_value(const struct device *dev,
  * @param ticks Pointer to where to store the current counter value
  *
  * @retval 0 If successful.
- * @retval Negative error code on failure getting the counter value
+ * @retval <0 Negative error code on failure getting the counter value
  */
 __syscall int counter_get_value_64(const struct device *dev, uint64_t *ticks);
 

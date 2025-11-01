@@ -2596,7 +2596,7 @@ void i3c_sec_handoffed(struct k_work *work);
  *
  * This allocates memory from a mem slab for a i3c_device_desc
  *
- * @retval Pointer to allocated i3c_device_desc
+ * @return Pointer to allocated i3c_device_desc
  * @retval NULL if no mem slabs available
  */
 struct i3c_device_desc *i3c_device_desc_alloc(void);

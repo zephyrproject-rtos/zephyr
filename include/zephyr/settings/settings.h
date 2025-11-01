@@ -682,9 +682,9 @@ int settings_runtime_commit(const char *name);
  * It might pointer to: `struct nvs_fs`, `struct fcb` or string witch file name
  * depends on settings backend type used.
  *
- * @retval Pointer to which reference to the storage object can be stored.
+ * @return Pointer to which reference to the storage object can be stored.
  *
- * @retval 0 on success, negative error code on failure.
+ * @return 0 on success, negative error code on failure.
  */
 int settings_storage_get(void **storage);
 

@@ -271,7 +271,7 @@ int coap_service_stop(const struct coap_service *service);
  * @param service Pointer to CoAP service
  * @retval 1 if the service is running
  * @retval 0 if the service is stopped
- * @retval negative in case of an error.
+ * @retval <0 negative in case of an error.
  */
 int coap_service_is_running(const struct coap_service *service);
 

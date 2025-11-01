@@ -1049,7 +1049,7 @@ static inline uint32_t rtio_sqe_acquirable(struct rtio *r)
  * @param iodev_sqe Submission queue entry
  *
  * @retval NULL if current sqe is last in transaction
- * @retval struct rtio_sqe * if available
+ * @return struct rtio_sqe * if available
  */
 static inline struct rtio_iodev_sqe *rtio_txn_next(const struct rtio_iodev_sqe *iodev_sqe)
 {
@@ -1067,7 +1067,7 @@ static inline struct rtio_iodev_sqe *rtio_txn_next(const struct rtio_iodev_sqe *
  * @param iodev_sqe Submission queue entry
  *
  * @retval NULL if current sqe is last in chain
- * @retval struct rtio_sqe * if available
+ * @return struct rtio_sqe * if available
  */
 static inline struct rtio_iodev_sqe *rtio_chain_next(const struct rtio_iodev_sqe *iodev_sqe)
 {
@@ -1084,7 +1084,7 @@ static inline struct rtio_iodev_sqe *rtio_chain_next(const struct rtio_iodev_sqe
  * @param iodev_sqe Submission queue entry
  *
  * @retval NULL if current sqe is last in chain
- * @retval struct rtio_iodev_sqe * if available
+ * @return struct rtio_iodev_sqe * if available
  */
 static inline struct rtio_iodev_sqe *rtio_iodev_sqe_next(const struct rtio_iodev_sqe *iodev_sqe)
 {

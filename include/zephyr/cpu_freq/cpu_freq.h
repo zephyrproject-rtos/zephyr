@@ -38,7 +38,7 @@ extern "C" {
  * @param state Pointer to performance state.
  *
  *
- * @retval 0 if request received successfully, -errno in case of failure.
+ * @return 0 if request received successfully, -errno in case of failure.
  */
 int cpu_freq_pstate_set(const struct pstate *state);
 

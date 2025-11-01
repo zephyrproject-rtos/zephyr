@@ -420,7 +420,7 @@ typedef int (*cbvprintf_external_formatter_func)(cbprintf_cb out, void *ctx,
  * @param ... arguments corresponding to the conversion specifications found
  * within @p format.
  *
- * @retval nonegative the number of bytes successfully stored at @p packaged.
+ * @retval >=0 the number of bytes successfully stored at @p packaged.
  * This will not exceed @p len.
  * @retval -EINVAL if @p format is not acceptable
  * @retval -EFAULT if @p packaged alignment is not acceptable
@@ -462,7 +462,7 @@ int cbprintf_package(void *packaged,
  * @param ap captured stack arguments corresponding to the conversion
  * specifications found within @p format.
  *
- * @retval nonegative the number of bytes successfully stored at @p packaged.
+ * @retval >=0 the number of bytes successfully stored at @p packaged.
  * This will not exceed @p len.
  * @retval -EINVAL if @p format is not acceptable
  * @retval -ENOSPC if @p packaged was not null and the space required to store
@@ -505,7 +505,7 @@ int cbvprintf_package(void *packaged,
  *
  * @param strl_len Number of elements in @p strl array.
  *
- * @retval Positive output package size.
+ * @retval >=0 output package size.
  * @retval -ENOSPC if @p packaged was not null and the space required to store
  * exceed @p len.
  */
@@ -569,7 +569,7 @@ static inline int z_cbprintf_cpy(const void *buf, size_t len, void *ctx)
  *
  * @param strl_len Number of elements in @p strl array.
  *
- * @retval Positive Output package size.
+ * @retval >=0 Output package size.
  * @retval -ENOSPC if @p packaged was not null and the space required to store
  * exceed @p len.
  */
@@ -615,7 +615,7 @@ static inline int cbprintf_package_copy(void *in_packaged,
  * @param len must be set to the number of bytes available at @p packaged. Not
  * used if @p packaged is null.
  *
- * @retval nonegative the number of bytes successfully stored at @p packaged.
+ * @retval >=0 the number of bytes successfully stored at @p packaged.
  * This will not exceed @p len. If @p packaged is null, calculated length.
  * @retval -ENOSPC if @p packaged was not null and the space required to store
  * exceed @p len.
