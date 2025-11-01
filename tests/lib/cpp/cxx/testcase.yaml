@@ -78,3 +78,14 @@ tests:
     build_only: true
     extra_configs:
       - CONFIG_STD_CPP23=y
+  # Verify struct _cpu_arch struct _thread_arch are compatible with C++ when
+  # specific configs are enabled.
+  cpp.main.empty_struct_size:
+    build_only: true
+    integration_platforms:
+      - qemu_riscv32
+      - qemu_riscv64
+    extra_configs:
+      - CONFIG_USERSPACE=n
+      - CONFIG_SMP=n
+      - CONFIG_FPU_SHARING=n
