@@ -19,10 +19,6 @@
 
 include_guard(GLOBAL)
 
-if(NOT HWMv2)
-  return()
-endif()
-
 # Internal helper function for creation of Kconfig files.
 function(kconfig_gen bin_dir file dirs comment)
   set(kconfig_header "# Load ${comment} descriptions.\n")
@@ -47,7 +43,7 @@ list(TRANSFORM SOC_ROOT PREPEND "--soc-root=" OUTPUT_VARIABLE soc_root_args)
 execute_process(COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/list_hardware.py
                 ${arch_root_args} ${soc_root_args}
                 --archs --socs
-                --cmakeformat={TYPE}\;{NAME}\;{DIR}\;{HWM}
+                --cmakeformat={TYPE}\;{NAME}\;{DIR}
                 OUTPUT_VARIABLE ret_hw
                 ERROR_VARIABLE err_hw
                 RESULT_VARIABLE ret_val
@@ -73,7 +69,7 @@ while(TRUE)
     string(TOUPPER "${ARCH_V2_NAME}" ARCH_V2_NAME_UPPER)
     set(ARCH_V2_${ARCH_V2_NAME_UPPER}_DIR ${ARCH_V2_DIR})
   elseif(HWM_TYPE MATCHES "^soc|^series|^family")
-    cmake_parse_arguments(SOC_V2 "" "NAME;HWM" "DIR" ${line})
+    cmake_parse_arguments(SOC_V2 "" "NAME" "DIR" ${line})
 
     list(APPEND kconfig_soc_source_dir "${SOC_V2_DIR}")
     string(TOUPPER "${SOC_V2_NAME}" SOC_V2_NAME_UPPER)
@@ -112,6 +108,5 @@ kconfig_gen("boards" "Kconfig.sysbuild"  "${BOARD_DIRECTORIES}"       "Sysbuild 
 # Clear variables created by cmake_parse_arguments
 unset(SOC_V2_NAME)
 unset(SOC_V2_DIR)
-unset(SOC_V2_HWM)
 unset(ARCH_V2_NAME)
 unset(ARCH_V2_DIR)
