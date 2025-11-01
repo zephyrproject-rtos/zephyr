@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Fabian Blatz <fabianblatz@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+comment "GPIO Stepper Controllers"
+
+rsource "common/Kconfig"
+rsource "Kconfig.gpio_step_dir"
+rsource "Kconfig.h_bridge"
