@@ -15,7 +15,7 @@
 #include <zephyr/drivers/reset.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/sys/ring_buffer.h>
+#include <zephyr/sys/fifo.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
@@ -345,7 +345,7 @@ DT_INST_FOREACH_STATUS_OKAY(STM32_TSC_INIT)
 
 struct input_tsc_keys_data {
 	uint32_t buffer[CONFIG_INPUT_STM32_TSC_KEYS_BUFFER_WORD_SIZE];
-	struct ring_buf rb;
+	struct fifo fifo;
 	bool expect_release;
 	struct k_timer sampling_timer;
 };
@@ -372,12 +372,11 @@ static void input_tsc_callback_handler(uint32_t count_value, void *user_data)
 		(const struct input_tsc_keys_config *)dev->config;
 	struct input_tsc_keys_data *data = (struct input_tsc_keys_data *)dev->data;
 
-	if (ring_buf_item_space_get(&data->rb) == 0) {
+	if (fifo_full(&data->fifo)) {
 		uint32_t oldest_point;
 		int32_t slope;
 
-		(void)ring_buf_get(&data->rb, (uint8_t *)&oldest_point, sizeof(oldest_point));
-
+		fifo_get(&data->fifo, &oldest_point);
 		slope = count_value - oldest_point;
 		if (slope < -config->noise_threshold && !data->expect_release) {
 			data->expect_release = true;
@@ -387,8 +386,7 @@ static void input_tsc_callback_handler(uint32_t count_value, void *user_data)
 			input_report_key(dev, config->zephyr_code, 0, false, K_NO_WAIT);
 		}
 	}
-
-	(void)ring_buf_put(&data->rb, (uint8_t *)&count_value, sizeof(count_value));
+	fifo_put(&data->fifo, &count_value);
 }
 
 static int input_tsc_keys_init(const struct device *dev)
@@ -401,8 +399,8 @@ static int input_tsc_keys_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ring_buf_item_init(&data->rb, CONFIG_INPUT_STM32_TSC_KEYS_BUFFER_WORD_SIZE, data->buffer);
-
+	fifo_init(&data->fifo, data->buffer, sizeof(uint32_t),
+		  CONFIG_INPUT_STM32_TSC_KEYS_BUFFER_WORD_SIZE);
 	uint8_t group_index = 0;
 
 	int ret = get_group_index(config->tsc_dev, config->group, &group_index);
