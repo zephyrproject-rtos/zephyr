@@ -302,6 +302,16 @@ void smf_set_state(struct smf_ctx *const ctx, const struct smf_state *new_state)
 #ifdef CONFIG_SMF_ANCESTOR_SUPPORT
 	const struct smf_state *topmost;
 
+#ifdef CONFIG_SMF_LCA_SIBLING_SHORTCUT
+	if (ctx->sibling == SMF_LCA_SIBLING_ENABLE) {
+		topmost = ctx->executing->parent;
+		/* Only states can flag when to use the sibiling transition */
+		ctx->sibling = SMF_LCA_SIBLING_DISABLE;
+
+		goto lca_sibling;
+	}
+#endif /* CONFIG_SMF_LCA_SIBLING_SHORTCUT */
+
 	if (is_descendant_of(ctx->executing, new_state)) {
 		/* new state is a parent of where we are now*/
 		topmost = new_state;
@@ -312,6 +322,10 @@ void smf_set_state(struct smf_ctx *const ctx, const struct smf_state *new_state)
 		/* not directly related, find LCA */
 		topmost = get_lca_of(ctx->executing, new_state);
 	}
+
+#ifdef CONFIG_SMF_LCA_SIBLING_SHORTCUT
+lca_sibling:
+#endif /* CONFIG_SMF_LCA_SIBLING_SHORTCUT */
 
 	internal->is_exit = true;
 	internal->new_state = true;

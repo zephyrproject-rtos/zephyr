@@ -66,6 +66,14 @@ enum smf_state_result {
 };
 
 /**
+ * @brief enum for enabling/disabling get_lca_sibling_of function
+ */
+enum smf_lca_sibling_status {
+	SMF_LCA_SIBLING_DISABLE,
+	SMF_LCA_SIBLING_ENABLE,
+};
+
+/**
  * @brief Function pointer that implements a entry and exit actions
  *        of a state
  *
@@ -127,6 +135,14 @@ struct smf_ctx {
 #ifdef CONFIG_SMF_ANCESTOR_SUPPORT
 	/** Currently executing state (which may be a parent) */
 	const struct smf_state *executing;
+#ifdef CONFIG_SMF_LCA_SIBLING_SHORTCUT
+	/**
+	 * When dest and source states share a common parent,
+	 * execute fast transition. This value must be set to SMF_LCA_SIBLING_ENABLE
+	 * within the state before calling to smf_set_state function.
+	 */
+	uint32_t sibling;
+#endif /* CONFIG_SMF_LCA_SIBLING_SHORTCUT */
 #endif /* CONFIG_SMF_ANCESTOR_SUPPORT */
 	/**
 	 * This value is set by the set_terminate function and
