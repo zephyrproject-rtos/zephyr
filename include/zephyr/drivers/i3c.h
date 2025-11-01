@@ -1108,6 +1108,12 @@ struct i3c_device_desc {
 	 * Only available if @kconfig{CONFIG_I3C_USE_IBI} is set.
 	 */
 	i3c_target_ibi_cb_t ibi_cb;
+
+	/**
+	 * Private callback associated data.
+	 * Only available if @kconfig{CONFIG_I3C_USE_IBI} is set.
+	 */
+	void *ibi_cb_data;
 #endif /* CONFIG_I3C_USE_IBI */
 };
 

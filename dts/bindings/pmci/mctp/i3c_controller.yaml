@@ -1,0 +1,32 @@
+# Copyright (c) 2025 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  A configuration for MCTP bindings to an I3C controller.
+
+compatible: "zephyr,mctp-i3c-controller"
+
+properties:
+  i3c:
+    type: phandle
+    description: |
+      I3C controller that is used as an MCTP bus.
+
+  endpoints:
+    type: int
+    description: |
+      Number of MCTP endpoints supported by the I3C controller
+
+  endpoint-ids:
+    type: array
+    description: |
+      MCTP endpoint ids, length must match the number of endpoints
+
+  endpoint-pids:
+    type: array
+    description: |
+      I3C provisional ids of endpoints, an array of 2 32bit values. The length of
+      which must match the described number of endpoints. The value must contain
+      a valid i3c provisional id. An associated dts node with this provisional id
+      must exist so that the I3C device handle may be obtained using it.
+
