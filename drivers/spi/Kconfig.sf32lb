@@ -1,0 +1,9 @@
+# Copyright (c) 2025, Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_SF32LB
+	bool "SPI Driver for SF32LB family of MCUs"
+	default y
+	depends on DT_HAS_SIFLI_SF32LB_SPI_ENABLED
+	help
+	  Enable SPI driver for SF32LB MCUs
