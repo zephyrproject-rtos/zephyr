@@ -185,6 +185,7 @@ config BT_SILABS_SIWX91X
 	depends on DT_HAS_SILABS_SIWX91X_BT_HCI_ENABLED
 	select SILABS_SIWX91X_NWP
 	select ENTROPY_GENERATOR
+	select BT_HCI_SETUP
 	help
 	  Use Silicon Labs Wiseconnect 3.x Bluetooth library to connect to the controller.
 
