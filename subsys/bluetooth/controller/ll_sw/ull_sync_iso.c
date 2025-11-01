@@ -189,6 +189,7 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 
 	/* Initialize sync LLL context */
 	lll = &sync_iso->lll;
+	lll->is_lll_stop = 0U;
 	lll->lazy_prepare = 0U;
 	lll->latency_prepare = 0U;
 	lll->latency_event = 0U;
@@ -308,8 +309,9 @@ uint8_t ll_big_sync_terminate(uint8_t big_handle, void **rx)
 	/* Do a blocking mayfly call to LLL context for flushing any outstanding
 	 * operations.
 	 */
-	sync_iso->flush_sem = &sem;
 	k_sem_init(&sem, 0, 1);
+	sync_iso->flush_sem = &sem;
+
 	mfy.param = &sync_iso->lll;
 
 	ret = mayfly_enqueue(TICKER_USER_ID_THREAD, TICKER_USER_ID_LLL, 0, &mfy);
@@ -798,15 +800,25 @@ void ull_sync_iso_done(struct node_rx_event_done *done)
 	sync_iso = CONTAINER_OF(done->param, struct ll_sync_iso_set, ull);
 	lll = &sync_iso->lll;
 
+	/* Sync is lost, ignore all stale done for events in LLL pipeline */
+	if (lll->is_lll_stop != 0U) {
+		return;
+	}
+
 	/* Events elapsed used in timeout checks below */
 	latency_event = lll->latency_event;
 
 	/* Check for establishmet failure */
 	if (done->extra.estab_failed) {
+		/* Flag events in LLL pipeline to stop */
+		LL_ASSERT_DBG(lll->is_lll_stop == 0U);
+		lll->is_lll_stop = 1U;
+
 		/* Stop Sync ISO Ticker directly. Establishment failure has been
 		 * notified.
 		 */
 		stop_ticker(sync_iso, NULL);
+
 		return;
 	}
 
@@ -898,11 +910,16 @@ void ull_sync_iso_done_terminate(struct node_rx_event_done *done)
 	sync_iso = CONTAINER_OF(done->param, struct ll_sync_iso_set, ull);
 	lll = &sync_iso->lll;
 
+	/* Flag events in LLL pipeline to stop */
+	LL_ASSERT_DBG(lll->is_lll_stop == 0U);
+	lll->is_lll_stop = 1U;
+
 	/* Populate the Sync Lost which will be enqueued in disabled_cb */
 	rx = (void *)&sync_iso->node_rx_lost;
 	rx->hdr.handle = sync_iso_handle_get(sync_iso);
 	rx->hdr.type = NODE_RX_TYPE_SYNC_ISO_LOST;
 	rx->rx_ftr.param = sync_iso;
+
 	*((uint8_t *)rx->pdu) = lll->term_reason;
 
 	/* Stop Sync ISO Ticker */
@@ -990,6 +1007,10 @@ static uint16_t sync_iso_stream_handle_get(struct lll_sync_iso_stream *stream)
 static void timeout_cleanup(struct ll_sync_iso_set *sync_iso)
 {
 	struct node_rx_pdu *rx;
+
+	/* Flag events in LLL pipeline to stop */
+	LL_ASSERT_DBG(sync_iso->lll.is_lll_stop == 0U);
+	sync_iso->lll.is_lll_stop = 1U;
 
 	/* Populate the Sync Lost which will be enqueued in disabled_cb */
 	rx = (void *)&sync_iso->node_rx_lost;

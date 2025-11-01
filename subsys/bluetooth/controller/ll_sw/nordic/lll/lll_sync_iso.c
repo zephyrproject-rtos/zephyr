@@ -281,6 +281,15 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 
 	lll = p->param;
 
+	/* Check if stopped (on disconnection between prepare and preempt)
+	 */
+	if (unlikely(lll->is_lll_stop != 0U)) {
+		radio_isr_set(lll_isr_early_abort, lll);
+		radio_disable();
+
+		return 0;
+	}
+
 	/* Calculate the current event counter value */
 	event_counter = (lll->payload_count / lll->bn) - 1U;
 
