@@ -1,0 +1,5 @@
+description: Intel XScale PXA UART
+
+compatible: "intel,xscale-uart"
+
+include: ns16550.yaml
