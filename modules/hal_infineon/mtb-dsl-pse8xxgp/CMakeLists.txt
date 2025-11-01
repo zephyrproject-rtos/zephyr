@@ -53,7 +53,6 @@ endif()
 
 if(CONFIG_USE_INFINEON_DMA OR CONFIG_USE_INFINEON_SMIF)
   zephyr_library_sources(${pdl_drv_dir}/source/cy_dma.c)
-  zephyr_library_sources(${pdl_drv_dir}/source/cy_dmac.c)
 endif()
 
 zephyr_library_sources(${pdl_drv_dir}/source/cy_syspm_v4.c)
