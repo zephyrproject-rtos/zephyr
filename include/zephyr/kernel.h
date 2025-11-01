@@ -698,6 +698,16 @@ __syscall k_tid_t k_sched_current_thread_query(void);
  * @return true if invoked before post-kernel initialization
  * @return false if invoked during/after post-kernel initialization
  */
+#if defined(__XCC__) || defined(__XT_CLANG__)
+/* For some unknown reasons only knew to Cadence engineers,
+ * the Cadence toolchain will always read z_sys_boot_kernel
+ * at the beginning instead of after k_is_user_context() is
+ * called and returns false. So it would always result in
+ * access violation if this is called in user mode. Forcing
+ * no optimization seems to fix that. So force it here.
+ */
+__no_optimization
+#endif
 static inline bool k_is_pre_kernel(void)
 {
 	extern bool z_sys_post_kernel; /* in init.c */
