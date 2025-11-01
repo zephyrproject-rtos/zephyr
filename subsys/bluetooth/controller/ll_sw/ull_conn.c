@@ -33,6 +33,7 @@
 
 #include "lll.h"
 #include "lll_clock.h"
+#include "lll_chan.h"
 #include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
@@ -1314,6 +1315,22 @@ void ull_conn_done(struct node_rx_event_done *done)
 		}
 	}
 #endif /* CONFIG_BT_CTLR_CONN_RSSI_EVENT */
+
+	if (lll_chan_metrics_is_notify()) {
+		struct node_rx_pdu *rx;
+
+		rx = ll_pdu_rx_alloc();
+		if (rx) {
+			(void)lll_chan_metrics_notify_clear();
+
+			/* Prepare the rx packet structure */
+			rx->hdr.type = NODE_RX_TYPE_CHAN_METRICS;
+			rx->hdr.handle = NODE_RX_HANDLE_INVALID;
+
+			/* enqueue chan metrics structure into queue */
+			ll_rx_put_sched(rx->hdr.link, rx);
+		}
+	}
 
 	/* check if latency needs update */
 	lazy = 0U;

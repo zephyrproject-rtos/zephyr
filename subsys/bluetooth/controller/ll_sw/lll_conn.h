@@ -92,12 +92,20 @@ struct lll_conn {
 			uint8_t initiated:1;
 			uint8_t cancelled:1;
 			uint8_t forced:1;
+
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+			uint8_t chan_curr;
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
 		};
 
 		struct {
 			uint8_t initiated:1;
 			uint8_t cancelled:1;
 			uint8_t forced:1;
+
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+			uint8_t chan_curr;
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
 		} central;
 
 #if defined(CONFIG_BT_PERIPHERAL)
@@ -110,6 +118,11 @@ struct lll_conn {
 #if defined(CONFIG_BT_CTLR_PHY)
 			uint8_t phy_rx_event:3;
 #endif /* CONFIG_BT_CTLR_PHY */
+
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+			uint8_t chan_curr;
+			uint8_t chan_prev;
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
 
 			uint32_t window_widening_periodic_us;
 			uint32_t window_widening_max_us;
