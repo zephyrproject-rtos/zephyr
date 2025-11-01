@@ -381,13 +381,12 @@ static int memc_mspi_aps6404l_init(const struct device *psram)
 
 #define MSPI_DEVICE_CONFIG_SERIAL(n)                                                              \
 	{                                                                                         \
-		.ce_num             = DT_INST_PROP(n, mspi_hardware_ce_num),                      \
+		.ce                 = MSPI_DEVICE_CE_DT_INST(n),                                  \
 		.freq               = 12000000,                                                   \
 		.io_mode            = MSPI_IO_MODE_SINGLE,                                        \
 		.data_rate          = MSPI_DATA_RATE_SINGLE,                                      \
 		.cpp                = MSPI_CPP_MODE_0,                                            \
 		.endian             = MSPI_XFER_LITTLE_ENDIAN,                                    \
-		.ce_polarity        = MSPI_CE_ACTIVE_LOW,                                         \
 		.dqs_enable         = false,                                                      \
 		.rx_dummy           = 8,                                                          \
 		.tx_dummy           = 0,                                                          \
@@ -396,18 +395,17 @@ static int memc_mspi_aps6404l_init(const struct device *psram)
 		.cmd_length         = 1,                                                          \
 		.addr_length        = 3,                                                          \
 		.mem_boundary       = 1024,                                                       \
-		.time_to_break      = 8,                                                          \
+		.ce_timing          = MSPI_DEVICE_CE_TIMING_DT_INST(n),                           \
 	}
 
 #define MSPI_DEVICE_CONFIG_QUAD(n)                                                                \
 	{                                                                                         \
-		.ce_num             = DT_INST_PROP(n, mspi_hardware_ce_num),                      \
+		.ce                 = MSPI_DEVICE_CE_DT_INST(n),                                  \
 		.freq               = 24000000,                                                   \
 		.io_mode            = MSPI_IO_MODE_SINGLE,                                        \
 		.data_rate          = MSPI_DATA_RATE_SINGLE,                                      \
 		.cpp                = MSPI_CPP_MODE_0,                                            \
 		.endian             = MSPI_XFER_LITTLE_ENDIAN,                                    \
-		.ce_polarity        = MSPI_CE_ACTIVE_LOW,                                         \
 		.dqs_enable         = false,                                                      \
 		.rx_dummy           = 6,                                                          \
 		.tx_dummy           = 0,                                                          \
@@ -416,7 +414,7 @@ static int memc_mspi_aps6404l_init(const struct device *psram)
 		.cmd_length         = 1,                                                          \
 		.addr_length        = 3,                                                          \
 		.mem_boundary       = 1024,                                                       \
-		.time_to_break      = 4,                                                          \
+		.ce_timing          = MSPI_DEVICE_CE_TIMING_DT_INST(n),                           \
 	}
 
 #define MSPI_TIMING_CONFIG(n)                                                                     \

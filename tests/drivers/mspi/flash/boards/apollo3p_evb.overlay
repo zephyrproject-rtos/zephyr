@@ -43,7 +43,8 @@
 		rx-dummy = <8>;
 		tx-dummy = <0>;
 		xip-config = <1 0 0 0>;
-		ce-break-config = <0 0>;
+		memory-boundary = <1024>;
+		mspi-ce-max-active = <3>;
 		ambiq,timing-config-mask = <3>;
 		ambiq,timing-config = <0 8 0 0 0 0 0 0>;
 	};
