@@ -109,6 +109,16 @@ struct zbus_channel {
 
 	/** Mutable channel data struct. */
 	struct zbus_channel_data *data;
+
+#if defined(CONFIG_ZBUS_MULTIDOMAIN) || defined(__DOXYGEN__)
+
+	/** Indicates if the channel is a shadow channel.
+	 * A shadow channel is a channel that should not be used directly, but rather
+	 * shadows another channel, usually one that is defined in another domain.
+	 */
+	bool is_shadow_channel;
+
+#endif /* CONFIG_ZBUS_MULTIDOMAIN */
 };
 
 /**
@@ -275,7 +285,7 @@ struct zbus_channel_observation {
 #define _ZBUS_MESSAGE_NAME(_name) _CONCAT(_zbus_message_, _name)
 
 /* clang-format off */
-#define _ZBUS_CHAN_DEFINE(_name, _id, _type, _validator, _user_data)                               \
+#define _ZBUS_CHAN_DEFINE(_name, _id, _type, _validator, _user_data, _is_shadow)                   \
 	static struct zbus_channel_data _CONCAT(_zbus_chan_data_, _name) = {                       \
 		.observers_start_idx = -1,                                                         \
 		.observers_end_idx = -1,                                                           \
@@ -295,6 +305,7 @@ struct zbus_channel_observation {
 		.user_data = _user_data,                                                           \
 		.validator = _validator,                                                           \
 		.data = &_CONCAT(_zbus_chan_data_, _name),                                         \
+		IF_ENABLED(CONFIG_ZBUS_MULTIDOMAIN, (.is_shadow_channel = _is_shadow,))            \
 		IF_ENABLED(ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION,                             \
 			   (.msg_subscriber_pool = &_zbus_msg_subscribers_pool,))                  \
 	}
@@ -388,11 +399,45 @@ struct zbus_channel_observation {
  */
 #define ZBUS_CHAN_DEFINE(_name, _type, _validator, _user_data, _observers, _init_val)              \
 	static _type _ZBUS_MESSAGE_NAME(_name) = _init_val;                                        \
-	_ZBUS_CHAN_DEFINE(_name, ZBUS_CHAN_ID_INVALID, _type, _validator, _user_data);             \
+	_ZBUS_CHAN_DEFINE(_name, ZBUS_CHAN_ID_INVALID, _type, _validator, _user_data, false);      \
 	/* Extern declaration of observers */                                                      \
 	ZBUS_OBS_DECLARE(_observers);                                                              \
 	/* Create all channel observations from observers list */                                  \
 	FOR_EACH_FIXED_ARG_NONEMPTY_TERM(_ZBUS_CHAN_OBSERVATION, (;), _name, _observers)
+
+#if defined(CONFIG_ZBUS_MULTIDOMAIN) || defined(__DOXYGEN__)
+
+/**
+ * @brief Zbus shadow channel definition.
+ *
+ * This macro defines a shadow channel.
+ * Similar to ZBUS_CHAN_DEFINE, but defines the channel with the
+ * is_shadow_channel flag set to true, blocking the channel from
+ * being published to normally.
+ *
+ * @param _name The channel's name.
+ * @param _type The Message type. It must be a struct or union.
+ * @param _validator The validator function.
+ * @param _user_data A pointer to the user data.
+ *
+ * @see struct zbus_channel
+ * @param _observers The observers list. The sequence indicates the priority of the observer. The
+ * first the highest priority.
+ * @param _init_val The message initialization.
+ *
+ * @note This macro is used to define shadow channels in a multi-domain setup.
+ * Shadow channels are used to represent channels that are defined in another domain, allowing
+ * the current domain to observe them without directly publishing to them.
+ */
+#define ZBUS_SHADOW_CHAN_DEFINE(_name, _type, _validator, _user_data, _observers, _init_val)       \
+	static _type _ZBUS_MESSAGE_NAME(_name) = _init_val;                                        \
+	_ZBUS_CHAN_DEFINE(_name, ZBUS_CHAN_ID_INVALID, _type, _validator, _user_data, true);       \
+	/* Extern declaration of observers */                                                      \
+	ZBUS_OBS_DECLARE(_observers);                                                              \
+	/* Create all channel observations from observers list */                                  \
+	FOR_EACH_FIXED_ARG_NONEMPTY_TERM(_ZBUS_CHAN_OBSERVATION, (;), _name, _observers)
+
+#endif /* CONFIG_ZBUS_MULTIDOMAIN */
 
 /**
  * @brief Zbus channel definition with numeric identifier.
@@ -412,11 +457,132 @@ struct zbus_channel_observation {
  */
 #define ZBUS_CHAN_DEFINE_WITH_ID(_name, _id, _type, _validator, _user_data, _observers, _init_val) \
 	static _type _ZBUS_MESSAGE_NAME(_name) = _init_val;                                        \
-	_ZBUS_CHAN_DEFINE(_name, _id, _type, _validator, _user_data);                              \
+	_ZBUS_CHAN_DEFINE(_name, _id, _type, _validator, _user_data, false);                       \
 	/* Extern declaration of observers */                                                      \
 	ZBUS_OBS_DECLARE(_observers);                                                              \
 	/* Create all channel observations from observers list */                                  \
 	FOR_EACH_FIXED_ARG_NONEMPTY_TERM(_ZBUS_CHAN_OBSERVATION, (;), _name, _observers)
+
+#if defined(CONFIG_ZBUS_MULTIDOMAIN) || defined(__DOXYGEN__)
+
+/**
+ * @brief Zbus shadow channel definition.
+ *
+ * This macro defines a shadow channel.
+ * Similar to ZBUS_CHAN_DEFINE, but defines the channel with the
+ * is_shadow_channel flag set to true, blocking the channel from
+ * being published to normally.
+ *
+ * @param _name The channel's name.
+ * @param _id The channel's unique numeric identifier.
+ * @param _type The Message type. It must be a struct or union.
+ * @param _validator The validator function.
+ * @param _user_data A pointer to the user data.
+ *
+ * @see struct zbus_channel
+ * @param _observers The observers list. The sequence indicates the priority of the observer. The
+ * first the highest priority.
+ * @param _init_val The message initialization.
+ *
+ * @note This macro is used to define shadow channels in a multi-domain setup.
+ * Shadow channels are used to represent channels that are defined in another domain, allowing
+ * the current domain to observe them without directly publishing to them.
+ */
+#define ZBUS_SHADOW_CHAN_DEFINE_WITH_ID(_name, _id, _type, _validator, _user_data, _observers,     \
+					_init_val)                                                 \
+	static _type _ZBUS_MESSAGE_NAME(_name) = _init_val;                                        \
+	_ZBUS_CHAN_DEFINE(_name, _id, _type, _validator, _user_data, true);                        \
+	/* Extern declaration of observers */                                                      \
+	ZBUS_OBS_DECLARE(_observers);                                                              \
+	/* Create all channel observations from observers list */                                  \
+	FOR_EACH_FIXED_ARG_NONEMPTY_TERM(_ZBUS_CHAN_OBSERVATION, (;), _name, _observers)
+
+/**
+ * @brief Macro to check if a channel is a shadow channel.
+ *
+ * @param _chan The channel to check.
+ * @return true if the channel is a shadow channel, false otherwise.
+ */
+#define ZBUS_CHANNEL_IS_SHADOW(_chan) ((_chan)->is_shadow_channel)
+
+/**
+ * @brief Macro to check if a channel is a master channel.
+ *
+ * @param _chan The channel to check.
+ * @return true if the channel is a master channel, false if it is a shadow channel.
+ */
+#define ZBUS_CHANNEL_IS_MASTER(_chan) (!(_chan)->is_shadow_channel)
+
+/**
+ * @brief Zbus multi-domain channel definition.
+ *
+ * This macro defines a channel that can be either a master or a shadow channel based on the
+ * is_master and is_included flags. If is_master is true, it defines a normal channel, otherwise
+ * it defines a shadow channel. If is_included is false, the channel will not be defined at all.
+ * Intended usage is in a shared header in multi-domain setups where the channel is defined in
+ * one domain and shadowed in others, using device specific defines to control the inclusion
+ * and master status.
+ *
+ * @param _name The channel's name.
+ * @param _type The Message type. It must be a struct or union.
+ * @param _validator The validator function.
+ * @param _user_data A pointer to the user data.
+ * @param _observers The observers list. The sequence indicates the priority of the observer. The
+ * first the highest priority.
+ * @param _init_val The message initialization.
+ * @param _is_master Indicates if this is the master channel (true) or a shadow channel (false).
+ * @param _is_included Indicates if the channel should be included in this device (true) or not
+ * (false).
+ *
+ * @note This macro is used to define channels in a multi-domain setup where the channel can be
+ * either a master channel or a shadow channel, depending on the device configuration.
+ */
+#define ZBUS_MULTIDOMAIN_CHAN_DEFINE(_name, _type, _validator, _user_data, _observers, _init_val,  \
+				     _is_master, _is_included)                                     \
+	COND_CODE_1(_is_included,                                                                  \
+		(COND_CODE_1(_is_master,                                                           \
+			(ZBUS_CHAN_DEFINE(_name, _type, _validator, _user_data, _observers,	   \
+					  _init_val)),                                             \
+			(ZBUS_SHADOW_CHAN_DEFINE(_name, _type, _validator, _user_data, _observers, \
+						 _init_val)))),                                    \
+		(/* Channel not included on this device - no definition*/))
+
+/**
+ * @brief Zbus multi-domain channel definition with ID.
+ *
+ * This macro defines a channel that can be either a master or a shadow channel based on the
+ * is_master and is_included flags. If is_master is true, it defines a normal channel with a unique
+ * ID, otherwise it defines a shadow channel with the same ID. If is_included is false, the channel
+ * will not be defined at all. Intended usage is in a shared header in multi-domain setups where the
+ * channel is defined in one domain and shadowed in others, using device specific defines to control
+ * the inclusion and master status.
+ *
+ * @param _name The channel's name.
+ * @param _id The channel's unique numeric identifier.
+ * @param _type The Message type. It must be a struct or union.
+ * @param _validator The validator function.
+ * @param _user_data A pointer to the user data.
+ * @param _observers The observers list. The sequence indicates the priority of the observer. The
+ * first the highest priority.
+ * @param _init_val The message initialization.
+ * @param _is_master Indicates if this is the master channel (true) or a shadow channel (false).
+ * @param _is_included Indicates if the channel should be included in this device (true) or not
+ * (false).
+ *
+ * @note This macro is used to define channels in a multi-domain setup where the channel can be
+ * either a master channel or a shadow channel, depending on the device configuration.
+ */
+#define ZBUS_MULTIDOMAIN_CHAN_DEFINE_WITH_ID(_name, _id, _type, _validator, _user_data,            \
+					     _observers, _init_val, _is_master, _is_included)      \
+	COND_CODE_1(_is_included,                                                                  \
+		(COND_CODE_1(_is_master,                                                           \
+			(ZBUS_CHAN_DEFINE_WITH_ID(_name, _id, _type, _validator, _user_data,       \
+						  _observers, _init_val)),                         \
+			(ZBUS_SHADOW_CHAN_DEFINE_WITH_ID(_name, _id, _type, _validator, _user_data,\
+							 _observers, _init_val)))),                \
+		(/* Channel not included on this device - no definition*/))
+
+#endif /* CONFIG_ZBUS_MULTIDOMAIN */
 
 /**
  * @brief Initialize a message.
@@ -575,8 +741,45 @@ struct zbus_channel_observation {
  * @retval -EFAULT A parameter is incorrect, the notification could not be sent to one or more
  * observer, or the function context is invalid (inside an ISR). The function only returns this
  * value when the @kconfig{CONFIG_ZBUS_ASSERT_MOCK} is enabled.
+ * @retval -EPERM Attempt to publish a shadow channel. Shadow channels can only be published to
+ * via the zbus_chan_pub_shadow function. The function only returns this value when the
+ * @kconfig{CONFIG_ZBUS_MULTIDOMAIN} is enabled.
  */
 int zbus_chan_pub(const struct zbus_channel *chan, const void *msg, k_timeout_t timeout);
+
+#if defined(CONFIG_ZBUS_MULTIDOMAIN)
+
+/** @cond INTERNAL_HIDDEN */
+
+/**
+ * @brief Publish to a shadow channel
+ *
+ * This routine publishes a message to a shadow channel.
+ *
+ * @param chan The channel's reference.
+ * @param msg Reference to the message where the publish function copies the channel's
+ * message data from.
+ * @param timeout Waiting period to publish the channel,
+ *                or one of the special values K_NO_WAIT and K_FOREVER.
+ *
+ * @retval 0 Channel published.
+ * @retval -ENOMSG The message is invalid based on the validator function or some of the
+ * observers could not receive the notification.
+ * @retval -EBUSY The channel is busy.
+ * @retval -EAGAIN Waiting period timed out.
+ * @retval -EFAULT A parameter is incorrect, the notification could not be sent to one or more
+ * observer, or the function context is invalid (inside an ISR). The function only returns this
+ * value when the @kconfig{CONFIG_ZBUS_ASSERT_MOCK} is enabled.
+ *
+ * @note This function is used to publish messages to shadow channels in a multi-domain setup,
+ * and should not be used by application logic directly. It is intended for internal use to
+ * handle shadow channels.
+ */
+int zbus_chan_pub_shadow(const struct zbus_channel *chan, const void *msg, k_timeout_t timeout);
+
+/** @endcond */
+
+#endif /* CONFIG_ZBUS_MULTIDOMAIN */
 
 /**
  * @brief Read a channel
@@ -687,6 +890,20 @@ static inline const char *zbus_chan_name(const struct zbus_channel *chan)
  * @retval chan Channel pointer with ID @a channel_id otherwise.
  */
 const struct zbus_channel *zbus_chan_from_id(uint32_t channel_id);
+
+#endif
+
+#if defined(CONFIG_ZBUS_CHANNEL_NAME) || defined(__DOXYGEN__)
+
+/**
+ * @brief Retrieve a zbus channel from its name string
+ *
+ * @param name Name of the channel to retrieve.
+ *
+ * @retval NULL If channel with name @a name does not exist.
+ * @retval chan Channel pointer with name @a name otherwise.
+ */
+const struct zbus_channel *zbus_chan_from_name(const char *name);
 
 #endif
 

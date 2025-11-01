@@ -1,0 +1,26 @@
+tests:
+  message_bus.zbus.multidomain.ipc_backend:
+    platform_exclude:
+      - mps3/corstone300/fvp
+      - mps3/corstone310/fvp
+      - mps4/corstone315/fvp
+      - mps4/corstone320/fvp
+    tags: zbus
+    integration_platforms:
+      - native_sim
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - ".* ACK callback not set, dropping ACK"
+        - ".* Failed to process received ACK: -1"
+        - ".* Received message with invalid CRC, dropping"
+        - ".* Unknown message type: 99"
+        - ".* No receive callback set for IPC endpoint ipc_ept_test_agent"
+        - ".* Received empty data on IPC endpoint"
+        - ".* Invalid message size: expected .*, got .*"
+        - ".* Failed to process received message on IPC endpoint ipc_ept_test_agent: -1"
+        - ".* Failed to send ACK message: -1"
+        - ".* Failed to send ACK for message 3: -1"
+        - ".* IPC error: Test error on endpoint ipc_ept_test_agent"
