@@ -110,6 +110,12 @@ static int ataes132a_send_command(const struct device *dev, uint8_t opcode,
 	burst_read_i2c(&cfg->i2c, ATAES_COMMAND_MEM_ADDR, data->command_buffer, 64);
 
 	count = data->command_buffer[0];
+	/* validate count: at least 3 bytes (1 for count, 2 for CRC) */
+	if (count < 3) {
+		LOG_ERR("invalid packet received: count=%d"
+			" , expects count>=3", count);
+		return -EINVAL;
+	}
 
 	/* Calculate and validate response CRC */
 	ataes132a_atmel_crc(data->command_buffer, count - 2, crc);
@@ -130,7 +136,11 @@ static int ataes132a_send_command(const struct device *dev, uint8_t opcode,
 		burst_read_i2c(&cfg->i2c, ATAES_COMMAND_MEM_ADDR, data->command_buffer, 64);
 
 		count = data->command_buffer[0];
-
+		if (count < 3) {
+			LOG_ERR("invalid packet received: count=%d"
+				" , expects count>=3", count);
+			return -EINVAL;
+		}
 		ataes132a_atmel_crc(data->command_buffer, count -  2, crc);
 		retry_count++;
 
