@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 Alexandre Rey
+ * Copyright 2025 NXP
  *
  * Based on wdt_mcux_rtwdog.c, which is:
  * Copyright 2024, NXP
@@ -107,10 +108,8 @@ static int mcux_cop_install_timeout(const struct device *dev, const struct wdt_t
 	const struct mcux_cop_config *config = dev->config;
 	struct mcux_cop_data *data = dev->data;
 
-	if (cfg != NULL) {
-		LOG_ERR("Watchdog only configurable via Device Tree, cfg parameter must be NULL");
-		return -ENOTSUP;
-	}
+	/* Watchdog only configurable via Device Tree, cfg parameter does not make sense here. */
+	ARG_UNUSED(cfg);
 
 	COP_GetDefaultConfig(&data->cop_config);
 
