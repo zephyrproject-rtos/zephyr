@@ -230,6 +230,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			interrupts = <49 0>;
+			sifli,cfg = <&cfg>;
 			status = "disabled";
 
 			backup-registers@30 {
