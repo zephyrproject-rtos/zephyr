@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_PDL_INFINEON_CAT2
+	bool "Infineon CAT2 UART driver (PDL)"
+	default y
+	depends on DT_HAS_INFINEON_CAT2_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select USE_INFINEON_UART
+	select PINCTRL
+	help
+	This option enables the UART driver for Infineon CAT2 PDL family.

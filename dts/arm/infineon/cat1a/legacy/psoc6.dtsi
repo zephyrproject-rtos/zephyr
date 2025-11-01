@@ -67,7 +67,7 @@
 
 	soc {
 		pinctrl@40310000 {
-			compatible = "infineon,cat1-pinctrl";
+			compatible = "infineon,catx-pinctrl";
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x40310000 0x40310000 0x2024>;

@@ -5,7 +5,8 @@
 if(CONFIG_HAS_XMCLIB
   OR CONFIG_SOC_FAMILY_PSOC6_LEGACY
   OR CONFIG_SOC_FAMILY_INFINEON_CAT1
-  OR CONFIG_SOC_FAMILY_INFINEON_EDGE)
+  OR CONFIG_SOC_FAMILY_INFINEON_EDGE
+  OR CONFIG_SOC_FAMILY_INFINEON_CAT2)
 
   zephyr_library_named(modules_hal_infineon)
   zephyr_library_compile_options($<TARGET_PROPERTY:compiler,warning_no_array_bounds>)
@@ -92,4 +93,18 @@ endif()
 
 if(CONFIG_BT_PSOC6_BLESS)
   add_subdirectory(bless)
+endif()
+
+if(CONFIG_SOC_FAMILY_INFINEON_CAT2)
+  ## Add core-lib sources for CAT2 devices
+  add_subdirectory(core-lib)
+
+  ## Add mtb-pdl-cat2 sources for CAT2 devices
+  add_subdirectory(mtb-pdl-cat2)
+
+  ## Add mtb-template-cat2 sources for CAT2 devices
+  add_subdirectory(mtb-template-cat2)
+
+  ## Add abstraction-rtos sources
+  add_subdirectory(abstraction-rtos)
 endif()

@@ -1,0 +1,20 @@
+# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon Serial Communication Blocks (SCB) node
+
+compatible: "infineon,cat2-scb"
+
+include: [base.yaml, "infineon,system-interrupts.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    description: Required for non-cat2 devices
+
+  system-interrupts:
+    description: Required for cat2 devices

@@ -93,7 +93,7 @@
 
 	soc {
 		pinctrl: pinctrl@40400000 {
-			compatible = "infineon,cat1-pinctrl";
+			compatible = "infineon,catx-pinctrl";
 			reg = <0x40400000 0x20000>;
 		};
 

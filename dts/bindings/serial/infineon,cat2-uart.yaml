@@ -1,0 +1,253 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon CAT2 UART
+
+compatible: "infineon,cat2-uart"
+
+include:
+  - name: uart-controller.yaml
+  - name: pinctrl-device.yaml
+  - name: "infineon,cat2-scb.yaml"
+  - name: "infineon,system-interrupts.yaml"
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    description: Required for non-cat2 devices
+
+  system-interrupts:
+    description: Required for cat2 devices
+
+  pinctrl-0:
+    description: |
+      PORT pin configuration for TX, RX, RTS, CTS signals.
+      We expect that the phandles will reference pinctrl nodes. These
+      nodes will have a nodelabel that matches the Infineon SoC Pinctrl
+      defines and be of the form p<port>_<pin><peripheral inst>_<signal>.
+
+      Examples
+         use TX, RX
+         pinctrl-0 = <&p5_1_scb5_uart_tx &p5_0_scb5_uart_rx>;
+
+         use RX only
+         pinctrl-0 = <&p5_0_scb5_uart_rx>;
+
+         use TX, RX, RTS, CTS
+         pinctrl-0 = <&p3_1_scb2_uart_tx &p3_0_scb2_uart_rx
+                      &p3_2_scb2_uart_rts &p3_3_scb2_uart_cts>;
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  stop-bits:
+    description: |
+      Sets the number of stop bits. Defaults to standard of 1 if not specified.
+    default: "1"
+
+  data-bits:
+    description: |
+      Sets the number of data bits. Defaults to standard of 8 if not specified.
+    default: 8
+
+  uart-mode:
+    description: |
+      Sets uart mode. Defaults to standard uart operation.
+    type: int
+    enum:
+      - 0  #CY_SCB_UART_STANDARD
+      - 1  #CY_SCB_UART_SMARTCARD
+      - 2  #CY_SCB_UART_IRDA
+    default: 0
+
+  multi-proc-mode:
+    description: |
+      Enables the UART operation in Multi-Processor mode which requires
+      dataWidth to be 9 bits (the 9th bit is used to indicate address byte).
+    type: boolean
+
+  smart-card-ron:
+    description: |
+      Enables retransmission of the frame placed in the TX FIFO when
+      NACK is received in SmartCard mode (for Standard and IrDA , this parameter
+      is ignored)
+    type: boolean
+
+  irda-invert-rx:
+    description: |
+      Inverts the IrDA RX input
+    type: boolean
+
+  irda-en-lowpowrx:
+    description: |
+      Enables the low-power receive for IrDA mode.
+      Note that the transmission must be disabled if this mode is enabled.
+    type: boolean
+
+  oversample:
+    description: |
+      Oversample factor for SPI.
+    type: int
+    default: 8
+
+  en_msb_first:
+    description: |
+      Enables the hardware to shift out the data element MSB first, otherwise,
+      LSB first
+    type: boolean
+
+  data_width:
+    description: |
+      The width of UART data (valid range is 5 to 9)
+    type: int
+    default: 8
+
+  uart_parity:
+    description: |
+      Configures the UART parity
+    type: int
+    enum:
+      - 0  #CY_SCB_UART_PARITY_NONE
+      - 2  #CY_SCB_UART_PARITY_EVEN
+      - 3  #CY_SCB_UART_PARITY_ODD
+    default: 0
+
+  uart-stopbits:
+    description: |
+      Specifies the number of stop bits in the UART transaction, in half-bit
+      increments
+    type: int
+    enum:
+      - 2  #CY_SCB_UART_STOP_BITS_1
+      - 3  #CY_SCB_UART_STOP_BITS_1_5
+      - 4  #CY_SCB_UART_STOP_BITS_2
+      - 5  #CY_SCB_UART_STOP_BITS_2_5
+      - 6  #CY_SCB_UART_STOP_BITS_3
+      - 7  #CY_SCB_UART_STOP_BITS_3_5
+      - 8  #CY_SCB_UART_STOP_BITS_4
+    default: 2
+
+  en-input-filter:
+    description: |
+      nables a digital 3-tap median filter (2 out of 3 voting) to be applied
+      to the input of the RX FIFO to filter glitches on the line (for IrDA,
+      this parameter is ignored)
+    type: boolean
+
+  breakwidth:
+    description: |
+      Specifies the number of bits to detect a break condition.
+
+      \note For the PSOC 4000S, PSOC 4100S, PSOC 4100S Plus, and PSOC 4500S
+      series, the actual break width may be up to one bit less than the
+      specified break width. For example, if the value of the breakWidth is
+      11, the actual break width will be from 10 to 11 bits.
+    type: int
+    default: 11
+
+  drop-on-Frame-err:
+    description: |
+     Enables the hardware to drop data in the RX FIFO when a frame error is detected
+    type: boolean
+
+  drop-on-parity-err:
+    description: |
+      Sets if  the SPI will drop data when there is a parity error.
+      \note Only applicable for PSOC 4100S Max.
+    type: boolean
+
+  break-lvl:
+    description: |
+      Specifies the low or high level pulse detection for break condition.
+
+      \note Only applicable for PSOC 4100S Max.
+    type: boolean
+
+  rx-addrs:
+    description: |
+      If Multi Processor mode is enabled, this is the address of the RX
+      FIFO. If the address matches, data is accepted into the FIFO. If
+      it does not match, the data is ignored.
+    type: int
+    default: 0
+
+  rx-addrs-mask:
+    description: |
+      This is the address mask for the Multi Processor address. 1 indicates
+      that the incoming address must match the corresponding bit in the slave
+      address. A 0 in the mask indicates that the incoming address does
+      not need to match.
+    type: int
+    default: 0
+
+  accept-addr-in-fifo:
+    description: |
+      true - the slave address is accepted in the RX FIFO, false - the slave
+      addresses are not accepted in the RX FIFO
+    type: boolean
+
+  enable-cts:
+    description: |
+      Enables the usage of the CTS input signal for the transmitter. The
+      transmitter waits for CTS to be active before sending data
+    type: boolean
+
+  cts-polarity:
+    description: |
+      Sets the CTS Polarity
+    type: int
+    enum:
+      - 0  #CY_SCB_UART_ACTIVE_LOW
+      - 1  #CY_SCB_UART_ACTIVE_HIGH
+    default: 0
+
+  rts-rx-fifo-lvl:
+    description: |
+      When the RX FIFO has fewer entries than rtsRxFifoLevel, the
+      RTS signal is active (note to disable RTS, set this field to zero)
+    type: int
+    default: 0
+
+  rts-polarity:
+    description: |
+      Sets the RTS Polarity
+    type: int
+    enum:
+      - 0  #CY_SCB_UART_ACTIVE_LOW
+      - 1  #CY_SCB_UART_ACTIVE_HIGH
+    default: 0
+
+  rx-fifo-trig-lvl:
+    description: |
+      When there are more entries in the RX FIFO then this level
+      the RX trigger output goes high. This output can be connected
+      to a DMA channel through a trigger mux.
+      Also, it controls the \ref CY_SCB_SPI_RX_TRIGGER interrupt source.
+    type: int
+    default: 7
+
+  rx-fifo-int-en-mask:
+    description: |
+      Bits set in this mask will allow events to cause an interrupt
+      (See \ref group_scb_spi_macros_rx_fifo_status for the set of constant)
+    type: int
+    default: 0
+
+  tx-fifo-trig-lvl:
+    description: |
+      Bits set in this mask allow events to cause an interrupt
+      (See \ref group_scb_spi_macros_tx_fifo_status for the set of constants)
+    type: int
+    default: 0
+
+  tx-fifo-int-en-mask:
+    description: |
+       Bits set in this mask allow events to cause an interrupt
+       (See \ref group_scb_spi_macros_tx_fifo_status for the set of constants)
+    type: int
+    default: 0
