@@ -14,6 +14,7 @@
 #include <zephyr/bluetooth/audio/pacs.h>
 #include <zephyr/bluetooth/audio/csip.h>
 #include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/services/ias.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
@@ -46,7 +47,9 @@ static uint8_t csis_rsi_addata[BT_CSIP_RSI_SIZE];
 /* TODO: Expand with BAP data */
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-	BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL)),
+	BT_DATA_BYTES(BT_DATA_UUID16_ALL,
+	BT_UUID_16_ENCODE(BT_UUID_BASS_VAL),
+	BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL)),
 #if defined(CONFIG_BT_CSIP_SET_MEMBER)
 	BT_DATA(BT_DATA_CSIS_RSI, csis_rsi_addata, ARRAY_SIZE(csis_rsi_addata)),
 #endif /* CONFIG_BT_CSIP_SET_MEMBER */
@@ -173,6 +176,11 @@ int main(void)
 	if (err != 0) {
 		printk("BAP Unicast Server init failed (err %d)\n", err);
 		return 0;
+	}
+
+	err = init_bap_sink();
+	if (err != 0) {
+		printk("BAP broadcast sink init failed (err %d)\n", err);
 	}
 
 	if (IS_ENABLED(CONFIG_HAP_HA_HEARING_AID_BINAURAL)) {
