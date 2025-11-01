@@ -333,6 +333,10 @@ New APIs and options
      :kconfig:option:`HAS_PM_S2RAM_CUSTOM_MARKING` and refactored to be promptless. This option
      is now selected by SoCs if they need it for their "suspend-to-ram" implementations.
 
+* SPI
+
+   * :c:func:`spi_acquire`
+
 * Settings
 
    * :kconfig:option:`CONFIG_SETTINGS_TFM_ITS`
