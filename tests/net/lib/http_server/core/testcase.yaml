@@ -3,6 +3,7 @@ common:
   min_ram: 80
   min_flash: 200
   tags:
+    - fdtable
     - http
     - net
     - server

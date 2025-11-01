@@ -8,6 +8,7 @@ common:
   timeout: 600
   slow: true
   tags:
+    - fdtable
     - pytest
     - mcuboot
     - mcumgr

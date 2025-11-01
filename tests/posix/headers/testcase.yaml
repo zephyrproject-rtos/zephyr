@@ -1,6 +1,7 @@
 common:
   filter: not CONFIG_NATIVE_LIBC
   tags:
+    - fdtable
     - posix
   min_ram: 32
   # 1 tier0 platform per supported architecture

@@ -3,7 +3,9 @@ sample:
   name: sntp_client
 common:
   harness: net
-  tags: net
+  tags:
+    - fdtable
+    - net
 tests:
   sample.net.sockets.sntp_client:
     platform_allow:

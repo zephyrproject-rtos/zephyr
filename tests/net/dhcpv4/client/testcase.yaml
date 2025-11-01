@@ -3,6 +3,7 @@ common:
   tags:
     - net
     - dhcpv4
+    - fdtable
 tests:
   net.dhcpv4_client:
     extra_configs:

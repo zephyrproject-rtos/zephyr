@@ -1,6 +1,7 @@
 common:
   tags:
     - dns
+    - fdtable
     - net
   depends_on: netif
 tests:

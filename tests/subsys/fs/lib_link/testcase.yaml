@@ -1,5 +1,7 @@
 tests:
   filesystem.lib_link:
-    tags: filesystem
+    tags:
+      - fdtable
+      - filesystem
     integration_platforms:
       - native_sim

@@ -3,6 +3,7 @@ common:
     - net
     - http
     - http_client
+    - fdtable
   min_ram: 32
   depends_on: netif
 sample:

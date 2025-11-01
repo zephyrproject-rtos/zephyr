@@ -4,6 +4,7 @@ common:
   tags:
     - net
     - dns
+    - fdtable
 sample:
   description: DNS resolver, mDNS and LLMNR responder
   name: DNS resolver and responder sample application
