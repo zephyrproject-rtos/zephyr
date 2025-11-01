@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/sys/mutex.h>
 #include <zephyr/ztest_assert.h>
 
-#include <zephyr/posix/fcntl.h>
+#include <fcntl.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_ip.h>

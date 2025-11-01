@@ -7,12 +7,17 @@
 
 #include "posix_clock.h"
 
-#include <zephyr/kernel.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <mqueue.h>
+#include <pthread.h>
+#include <signal.h>
 #include <string.h>
+#include <time.h>
+#include <sys/stat.h>
+
+#include <zephyr/kernel.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/posix/mqueue.h>
-#include <zephyr/posix/pthread.h>
 
 #define SIGEV_MASK (SIGEV_NONE | SIGEV_SIGNAL | SIGEV_THREAD)
 
