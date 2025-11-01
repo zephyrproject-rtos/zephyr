@@ -76,18 +76,17 @@ static int lan9250_wait_ready(const struct device *dev, uint16_t address, uint32
 			      uint32_t expected, uint32_t m_second)
 {
 	uint32_t tmp;
-	int wait_time = 0;
+	k_timepoint_t end = sys_timepoint_calc(K_MSEC(m_second));
 
 	while (true) {
 		lan9250_read_sys_reg(dev, address, &tmp);
-		wait_time++;
-		k_busy_wait(USEC_PER_MSEC * 1U);
 		if ((tmp & mask) == expected) {
 			return 0;
-		} else if (wait_time == m_second) {
-			LOG_ERR("NOT READY");
+		}
+		if (sys_timepoint_expired(end)) {
 			return -EIO;
 		}
+		k_busy_wait(USEC_PER_MSEC * 1U);
 	}
 }
 
@@ -129,17 +128,17 @@ static int lan9250_wait_mac_ready(const struct device *dev, uint8_t address, uin
 				  uint32_t expected, uint32_t m_second)
 {
 	uint32_t tmp;
-	int wait_time = 0;
+	k_timepoint_t end = sys_timepoint_calc(K_MSEC(m_second));
 
 	while (true) {
 		lan9250_read_mac_reg(dev, address, &tmp);
-		wait_time++;
-		k_msleep(1);
 		if ((tmp & mask) == expected) {
 			return 0;
-		} else if (wait_time == m_second) {
+		}
+		if (sys_timepoint_expired(end)) {
 			return -EIO;
 		}
+		k_msleep(1);
 	}
 }
 
@@ -236,15 +235,19 @@ static int lan9250_hw_cfg_check(const struct device *dev)
 
 static int lan9250_sw_reset(const struct device *dev)
 {
-	lan9250_write_sys_reg(dev, LAN9250_RESET_CTL,
-			      LAN9250_RESET_CTL_HMAC_RST | LAN9250_RESET_CTL_PHY_RST |
-			      LAN9250_RESET_CTL_DIGITAL_RST);
+	int ret;
+
+	ret = lan9250_write_sys_reg(dev, LAN9250_RESET_CTL,
+				    LAN9250_RESET_CTL_HMAC_RST |
+				    LAN9250_RESET_CTL_PHY_RST |
+				    LAN9250_RESET_CTL_DIGITAL_RST);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Wait until LAN9250 SPI bus is ready */
-	lan9250_wait_ready(dev, LAN9250_BYTE_TEST, BOTR_MASK, LAN9250_BYTE_TEST_DEFAULT,
-			   LAN9250_RESET_TIMEOUT);
-
-	return 0;
+	return lan9250_wait_ready(dev, LAN9250_BYTE_TEST, BOTR_MASK,
+				  LAN9250_BYTE_TEST_DEFAULT, LAN9250_RESET_TIMEOUT);
 }
 
 static int lan9250_configure(const struct device *dev)
@@ -655,6 +658,7 @@ static const struct ethernet_api api_funcs = {
 
 static int lan9250_init(const struct device *dev)
 {
+	int ret;
 	const struct lan9250_config *config = dev->config;
 	struct lan9250_runtime *context = dev->data;
 
@@ -684,10 +688,12 @@ static int lan9250_init(const struct device *dev)
 
 	gpio_pin_interrupt_configure_dt(&config->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
 
-	/* Wait until LAN9250 SPI bus is ready */
-	lan9250_wait_ready(dev, LAN9250_BYTE_TEST, BOTR_MASK, LAN9250_BYTE_TEST_DEFAULT,
-			   LAN9250_RESET_TIMEOUT);
-	lan9250_sw_reset(dev);
+	/* Reset and wait for ready on the LAN9250 SPI device */
+	ret = lan9250_sw_reset(dev);
+	if (ret < 0) {
+		LOG_ERR("Reset failed");
+		return ret;
+	}
 	lan9250_configure(dev);
 	lan9250_set_macaddr(dev);
 
