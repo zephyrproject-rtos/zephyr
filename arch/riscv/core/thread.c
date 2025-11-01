@@ -89,18 +89,18 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		/* Supervisor thread */
 		stack_init->mepc = (unsigned long)z_thread_entry;
 
-#if defined(CONFIG_PMP_STACK_GUARD)
+#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
 		/* Enable PMP in mstatus.MPRV mode for RISC-V machine mode
 		 * if thread is supervisor thread.
 		 */
 		stack_init->mstatus |= MSTATUS_MPRV;
-#endif /* CONFIG_PMP_STACK_GUARD */
+#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC */
 	}
 
-#if defined(CONFIG_PMP_STACK_GUARD)
-	/* Setup PMP regions of PMP stack guard of thread. */
-	z_riscv_pmp_stackguard_prepare(thread);
-#endif /* CONFIG_PMP_STACK_GUARD */
+#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
+	/* Setup PMP regions of kernel mode configuration of thread. */
+	z_riscv_pmp_kernelmode_prepare(thread);
+#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC */
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 	stack_init->soc_context = soc_esf_init;
@@ -176,9 +176,9 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	csr_write(mstatus, status);
 	csr_write(mepc, z_thread_entry);
 
-#ifdef CONFIG_PMP_STACK_GUARD
-	/* reconfigure as the kernel mode stack will be different */
-	z_riscv_pmp_stackguard_prepare(_current);
+#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
+	/* reconfigure as the kernel mode configuration will be different */
+	z_riscv_pmp_kernelmode_prepare(_current);
 #endif
 
 	/* Set up Physical Memory Protection */
