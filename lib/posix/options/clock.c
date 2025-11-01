@@ -9,8 +9,8 @@
 #include <time.h>
 
 #include <zephyr/kernel.h>
-#include <zephyr/posix/sys/time.h>
-#include <zephyr/posix/unistd.h>
+#include <sys/time.h>
+#include <unistd.h>
 #include <zephyr/sys/clock.h>
 
 int clock_gettime(clockid_t clock_id, struct timespec *ts)
@@ -119,9 +119,15 @@ int nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
 int clock_getcpuclockid(pid_t pid, clockid_t *clock_id)
 {
 	/* We don't allow any process ID but our own.  */
-	if (pid != 0 && pid != getpid()) {
+	if (pid != 0) {
 		return EPERM;
 	}
+
+#ifdef CONFIG_POSIX_MULTI_PROCESS
+	if (pid != getpid()) {
+		return EPERM;
+	}
+#endif
 
 	*clock_id = CLOCK_PROCESS_CPUTIME_ID;
 

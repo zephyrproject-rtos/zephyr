@@ -6,8 +6,8 @@
 
 #include <cstring>
 #include <zephyr/net/tls_credentials.h>
-#include <zephyr/posix/sys/socket.h>
-#include <zephyr/posix/unistd.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
 #include <thrift/thrift_export.h>
 #include <thrift/transport/TSSLServerSocket.h>
