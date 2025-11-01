@@ -4749,6 +4749,7 @@ State machine framework:
   collaborators:
     - keith-zephyr
     - glenn-andrews
+    - vlad-kulikov
   files:
     - doc/services/smf/
     - include/zephyr/smf.h
