@@ -185,6 +185,10 @@
 	pinctrl-names = "default";
 };
 
+&edma4_2 {
+	status = "disabled";
+};
+
 &gpio1 {
 	status = "okay";
 };
@@ -206,6 +210,12 @@
 	pinctrl-names = "default";
 	phys = <&can_phy0>;
 	status = "okay";
+};
+
+&sai3_2 {
+	status = "disabled";
+	pinctrl-0 = <&sai3_default>;
+	pinctrl-names = "default";
 };
 
 &usdhc1 {
