@@ -1,0 +1,14 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip GMAC MDIO binding
+
+compatible: "microchip,gmac-g1-mdio"
+
+include:
+  - name: mdio-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  clocks:
+    type: phandle-array
