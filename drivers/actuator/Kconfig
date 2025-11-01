@@ -17,4 +17,8 @@ config ACTUATOR_INIT_PRIORITY
 	help
 	  Actuator device driver initialization priority.
 
+# zephyr-keep-sorted-start
+rsource "Kconfig.fake"
+# zephyr-keep-sorted-stop
+
 endif # ACTUATOR
