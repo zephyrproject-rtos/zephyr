@@ -260,7 +260,6 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	uint32_t ticks_at_event;
 	uint32_t ticks_at_start;
 	uint16_t stream_handle;
-	uint64_t payload_count;
 	uint16_t event_counter;
 	uint8_t access_addr[4];
 	uint16_t data_chan_id;
@@ -277,10 +276,17 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 
 	lll = p->param;
 
-	payload_count = lll->payload_count - (lll->latency_event + 1U) * lll->bn;
+	/* Check if stopped (on disconnection between prepare and preempt)
+	 */
+	if (unlikely(lll->is_lll_stop != 0U)) {
+		radio_isr_set(lll_isr_early_abort, lll);
+		radio_disable();
+
+		return 0;
+	}
 
 	/* Calculate the current event counter value */
-	event_counter = (payload_count / lll->bn) + lll->latency_event;
+	event_counter = (lll->payload_count / lll->bn) - 1U;
 
 	/* Initialize to mandatory parameter values */
 	lll->bis_curr = 1U;
@@ -502,6 +508,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	/* Encryption */
 	if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) &&
 	    lll->enc) {
+		uint64_t payload_count;
 		uint8_t pkt_flags;
 
 		payload_count = lll->payload_count - lll->bn;
@@ -1955,6 +1962,11 @@ static void isr_rx_lll_done(void *param)
 
 	lll = param;
 
+	/* Gracefully flush pipelined event on terminate received */
+	if (unlikely(lll->is_lll_stop != 0U)) {
+		goto isr_done_cleanup;
+	}
+
 	/* Catchup with ISO event latencies */
 	latency_event = lll->latency_event;
 
@@ -2045,6 +2057,9 @@ static void isr_rx_lll_done(void *param)
 
 	/* Check if BIG terminate procedure received */
 	if (lll->term_reason) {
+		LL_ASSERT_DBG(lll->is_lll_stop == 0U);
+		lll->is_lll_stop = 1U;
+
 		e->type = EVENT_DONE_EXTRA_TYPE_SYNC_ISO_TERMINATE;
 
 		goto isr_done_cleanup;
