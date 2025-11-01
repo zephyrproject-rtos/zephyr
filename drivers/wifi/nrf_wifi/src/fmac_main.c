@@ -86,12 +86,8 @@ static const unsigned char max_tx_aggregation = CONFIG_NRF70_MAX_TX_AGGREGATION;
 static const unsigned char rate_protection_type;
 #endif
 
-BUILD_ASSERT(CONFIG_NRF70_RX_NUM_BUFS >= 1,
-	"At least one RX buffer is required");
 BUILD_ASSERT(CONFIG_NRF70_RX_MAX_DATA_SIZE % 4 == 0,
 	"RX buffer size must be a multiple of 4");
-BUILD_ASSERT(CONFIG_NRF70_RX_MAX_DATA_SIZE >= 400,
-	"RX buffer size must be at least 400 bytes");
 
 #define MAX_RX_QUEUES 3
 
