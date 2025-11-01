@@ -147,6 +147,32 @@ void gnss_ubx_common_satellite_callback(struct modem_ubx *ubx, const struct ubx_
 }
 #endif
 
+#if CONFIG_GNSS_VELNED
+void gnss_ubx_common_velned_callback(struct modem_ubx *ubx, const struct ubx_frame *frame,
+				     size_t len, void *user_data)
+{
+	if (len < UBX_FRAME_SZ(sizeof(struct ubx_nav_velned))) {
+		return;
+	}
+
+	const struct ubx_nav_velned *velned =
+		(const struct ubx_nav_velned *)frame->payload_and_checksum;
+	struct gnss_ubx_common_data *data = user_data;
+	const struct device *dev = data->gnss;
+
+	data->velned.velocity_n = velned->vel_n;
+	data->velned.velocity_e = velned->vel_e;
+	data->velned.velocity_d = velned->vel_d;
+	data->velned.speed = velned->speed;
+	data->velned.ground_speed = velned->ground_speed;
+	data->velned.heading = velned->heading;
+	data->velned.speed_acc = velned->speed_acc;
+	data->velned.heading_acc = velned->heading_acc;
+
+	gnss_publish_velned(dev, &data->velned);
+}
+#endif
+
 void gnss_ubx_common_init(struct gnss_ubx_common_data *data,
 			 const struct gnss_ubx_common_config *config)
 {
@@ -154,5 +180,15 @@ void gnss_ubx_common_init(struct gnss_ubx_common_data *data,
 #if CONFIG_GNSS_SATELLITES
 	data->satellites.data = config->satellites.buf;
 	data->satellites.size = config->satellites.size;
+#endif
+#if CONFIG_GNSS_VELNED
+	data->velned.velocity_n = 0;
+	data->velned.velocity_e = 0;
+	data->velned.velocity_d = 0;
+	data->velned.speed = 0;
+	data->velned.ground_speed = 0;
+	data->velned.heading = 0;
+	data->velned.speed_acc = 0;
+	data->velned.heading_acc = 0;
 #endif
 }
