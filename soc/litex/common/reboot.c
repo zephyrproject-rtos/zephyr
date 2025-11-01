@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Vogl Electronic GmbH
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Vogl Electronic GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
