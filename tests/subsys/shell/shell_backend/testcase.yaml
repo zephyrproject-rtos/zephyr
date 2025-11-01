@@ -7,4 +7,4 @@ tests:
     filter: ( CONFIG_SHELL )
     platform_allow:
       - qemu_x86
-      - qemu_riscv32
+      - qemu_riscv/qemu_virt_riscv/rv32

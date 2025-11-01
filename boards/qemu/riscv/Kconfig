@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_QEMU_RISCV
+	select QEMU_TARGET
+	select HAS_COVERAGE_SUPPORT

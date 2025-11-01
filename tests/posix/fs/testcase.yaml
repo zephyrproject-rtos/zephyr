@@ -13,7 +13,7 @@ common:
     - simulation
   integration_platforms:
     - qemu_x86
-    - qemu_riscv64
+    - qemu_riscv/qemu_virt_riscv/rv64
 tests:
   portability.posix.fs: {}
   portability.posix.fs.minimal:

@@ -35,7 +35,7 @@ ZTEST(intc_plic, test_hart_context_mapping)
 	extern const uint32_t plic_hart_contexts_0[];
 
 	if (!IS_ENABLED(CONFIG_TEST_INTC_PLIC_ALT_MAPPING)) {
-		/* Based on the default qemu_riscv64 devicetree */
+		/* Based on the default qemu_riscv/qemu_virt_riscv/rv64 devicetree */
 		zassert_equal(plic_hart_contexts_0[0], 0);
 		zassert_equal(plic_hart_contexts_0[1], 2);
 		zassert_equal(plic_hart_contexts_0[2], 4);

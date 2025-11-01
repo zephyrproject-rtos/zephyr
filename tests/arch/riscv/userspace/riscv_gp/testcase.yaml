@@ -5,7 +5,7 @@ common:
     - kernel
     - riscv
   platform_allow:
-    - qemu_riscv64/qemu_virt_riscv64/smp
+    - qemu_riscv/qemu_virt_riscv/rv64/smp
 tests:
   arch.riscv64.riscv_gp.relative_addressing:
     extra_configs:

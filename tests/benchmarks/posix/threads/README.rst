@@ -13,7 +13,7 @@ Sample output of the benchmark::
 
     *** Booting Zephyr OS build v4.0.0-1410-gfca33facee37 ***
     ASSERT: y
-    BOARD: qemu_riscv64
+    BOARD: qemu_riscv
     NUM_CPUS: 1
     TEST_DELAY_US: 0
     TEST_DURATION_S: 5

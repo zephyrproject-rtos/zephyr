@@ -1,0 +1,11 @@
+board:
+  name: qemu_riscv
+  full_name: QEMU Emulation for RISCV
+  vendor: qemu
+  socs:
+    - name: qemu_virt_riscv
+      variants:
+        - name: smp
+          cpucluster: rv32
+        - name: smp
+          cpucluster: rv64

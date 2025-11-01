@@ -17,17 +17,17 @@ This configuration can be built and executed on QEMU as follows:
 .. zephyr-app-commands::
    :zephyr-app: samples/cpp/hello_world
    :host-os: unix
-   :board: qemu_riscv32
+   :board: qemu_riscv//rv32
    :goals: run
    :compact:
 
-To build for another board, change "qemu_riscv32" above to that board's name.
+To build for another board, change "qemu_riscv//rv32" above to that board's name.
 
 Sample Output
 =============
 
 .. code-block:: console
 
-    Hello C++, world! qemu_riscv32
+    Hello C++, world! qemu_riscv
 
 Exit QEMU by pressing :kbd:`CTRL+C`
