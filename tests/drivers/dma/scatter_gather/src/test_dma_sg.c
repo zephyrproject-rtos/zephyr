@@ -50,9 +50,8 @@ static void dma_sg_callback(const struct device *dma_dev, void *user_data,
 	}
 }
 
-static int test_sg(void)
+static int test_sg(const struct device *dma)
 {
-	const struct device *dma;
 	static int chan_id;
 
 	TC_PRINT("DMA memory to memory transfer started\n");
@@ -66,7 +65,6 @@ static int test_sg(void)
 
 	memset(rx_data, 0, sizeof(rx_data));
 
-	dma = DEVICE_DT_GET(DT_ALIAS(dma0));
 	if (!device_is_ready(dma)) {
 		TC_PRINT("dma controller device is not ready\n");
 		return TC_FAIL;
@@ -153,8 +151,14 @@ static int test_sg(void)
 	return TC_PASS;
 }
 
-/* export test cases */
-ZTEST(dma_m2m_sg, test_dma_m2m_sg)
-{
-	zassert_true((test_sg() == TC_PASS));
-}
+#define DMA_NAME(i, _) test_dma##i
+#define DMA_LIST       LISTIFY(CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS, DMA_NAME, (,))
+
+#define TEST_SG(dma_name)                                                                          \
+	ZTEST(dma_m2m_sg, test_##dma_name##_m2m_loop)                                              \
+	{                                                                                          \
+		const struct device *dma = DEVICE_DT_GET(DT_NODELABEL(dma_name));                  \
+		zassert_true((test_sg(dma) == TC_PASS));                                           \
+	}
+
+FOR_EACH(TEST_SG, (), DMA_LIST)
