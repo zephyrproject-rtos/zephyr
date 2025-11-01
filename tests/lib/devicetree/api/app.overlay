@@ -677,6 +677,77 @@
 			};
 		};
 
+		test_children_on_bus: controller@77778888 {
+			compatible = "vnd,controller";
+			reg = <0x77778888 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			test_child_on_bus_a: test-child-a@0 {
+				compatible = "vnd,device";
+				reg = <0>;
+				status = "okay";
+			};
+
+			test_child_on_bus_b: test-child-b@1 {
+				compatible = "vnd,device";
+				reg = <1>;
+				status = "okay";
+			};
+
+			test_child_on_bus_c: test-child-c@2 {
+				compatible = "vnd,device";
+				reg = <2>;
+				status = "disabled";
+			};
+
+			test_child_on_bus_d: test-child-on-bus-d {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				test_child_dd: test-child-dd@3 {
+					compatible = "vnd,device";
+					reg = <3>;
+					status = "okay";
+				};
+
+				test_child_ee: test-child-ee@4 {
+					compatible = "vnd,device";
+					reg = <4>;
+					status = "disabled";
+				};
+			};
+
+			test_child_on_bus_ext: test-child-on-bus-ext@5 {
+				compatible = "vnd,device-extender";
+				reg = <5>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				test_child_a_on_ext: test-child-a-on-ext@0 {
+					compatible = "vnd,device";
+					reg = <0>;
+					status = "okay";
+				};
+
+				test_child_b_on_ext: test-child-b-on-ext@1 {
+					compatible = "vnd,device";
+					reg = <1>;
+					status = "disabled";
+				};
+			};
+
+			controller_dev_setting_a: setting-a {
+				compatible = "vnd,controller-device-setting";
+				val1 = <1>;
+			};
+
+			controller_dev_setting_b: setting-b {
+				compatible = "vnd,controller-device-setting";
+				val1 = <2>;
+			};
+		};
+
 		test-ranges {
 			#address-cells = <2>;
 			#size-cells = <1>;
