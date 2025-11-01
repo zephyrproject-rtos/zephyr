@@ -12,11 +12,3 @@ config NATIVE_SIM_TIMER
 	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
 	help
 	  This module implements a kernel device driver for the native_sim HW timer model
-
-config NATIVE_POSIX_TIMER
-	bool "(POSIX) native_sim/posix timer driver (deprecated)"
-	select NATIVE_SIM_TIMER
-	select DEPRECATED
-	depends on BOARD_NATIVE_SIM
-	help
-	  Deprecated option. Replaced by NATIVE_SIM_TIMER
