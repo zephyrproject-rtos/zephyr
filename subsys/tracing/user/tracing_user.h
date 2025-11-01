@@ -31,6 +31,7 @@ void sys_trace_isr_exit_user(void);
 void sys_trace_idle_user(void);
 void sys_trace_sys_init_enter_user(const struct init_entry *entry, int level);
 void sys_trace_sys_init_exit_user(const struct init_entry *entry, int level, int result);
+void sys_trace_set_state_user(bool state);
 
 void sys_trace_thread_create(struct k_thread *thread);
 void sys_trace_thread_abort(struct k_thread *thread);
@@ -49,6 +50,7 @@ void sys_trace_idle(void);
 void sys_trace_idle_exit(void);
 void sys_trace_sys_init_enter(const struct init_entry *entry, int level);
 void sys_trace_sys_init_exit(const struct init_entry *entry, int level, int result);
+void _sys_trace_set_state(bool state);
 
 struct gpio_callback;
 typedef uint8_t gpio_pin_t;
@@ -502,6 +504,8 @@ void sys_trace_gpio_fire_callback_user(const struct device *port, struct gpio_ca
 	sys_trace_gpio_fire_callbacks_enter_user(list, port, pins)
 #define sys_port_trace_gpio_fire_callback(port, callback) \
 	sys_trace_gpio_fire_callback_user(port, callback)
+
+#define sys_trace_set_state(state) _sys_trace_set_state(state)
 
 #ifdef __cplusplus
 }

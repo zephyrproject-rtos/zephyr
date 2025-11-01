@@ -14,6 +14,9 @@
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/debug/cpu_load.h>
+#include <zephyr/sys/atomic.h>
+
+static atomic_t tracing_state = ATOMIC_INIT(true);
 
 static void _get_thread_name(struct k_thread *thread, ctf_bounded_string_t *name)
 {
@@ -1593,4 +1596,14 @@ void sys_trace_k_event_wait_blocking(struct k_event *event, uint32_t events, uin
 void sys_trace_k_event_wait_exit(struct k_event *event, uint32_t events, int ret)
 {
 	ctf_top_event_wait_exit((uint32_t)(uintptr_t)event, events, (int32_t)ret);
+}
+
+void sys_trace_set_state_ctf(bool state)
+{
+	(void)atomic_set(&tracing_state, state);
+}
+
+bool ctf_trace_is_enabled(void)
+{
+	return atomic_get(&tracing_state);
 }

@@ -2702,6 +2702,12 @@ void sys_trace_idle_exit(void);
  */
 #define sys_trace_sys_init_exit(entry, level, result)
 
+/**
+ * @brief Enable/Disable Tracing
+ * @param state A boolean value either true or false
+ */
+#define sys_trace_set_state(state)
+
 /** @} */ /* end of subsys_tracing_apis */
 
 /** @} */ /* end of subsys_tracing */

@@ -703,6 +703,7 @@ void sys_trace_k_event_wait_enter(struct k_event *event, uint32_t events, unsign
 void sys_trace_k_event_wait_blocking(struct k_event *event, uint32_t events, unsigned int options,
 				     k_timeout_t timeout);
 void sys_trace_k_event_wait_exit(struct k_event *event, uint32_t events, uint32_t ret);
+void _sys_trace_set_state(bool state);
 
 #define sys_port_trace_socket_init(sock, family, type, proto)
 #define sys_port_trace_socket_close_enter(sock)
@@ -781,5 +782,5 @@ void sys_trace_k_event_wait_exit(struct k_event *event, uint32_t events, uint32_
 #define sys_port_trace_gpio_get_pending_int_exit(dev, ret)
 #define sys_port_trace_gpio_fire_callbacks_enter(list, port, pins)
 #define sys_port_trace_gpio_fire_callback(port, cb)
-
+#define sys_trace_set_state(state) _sys_trace_set_state(state)
 #endif /* ZEPHYR_TRACE_TEST_H */

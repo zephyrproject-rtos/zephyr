@@ -584,3 +584,8 @@ void sys_trace_k_event_wait_exit(struct k_event *event, uint32_t events, uint32_
 {
 	TRACING_STRING("%s: %p wait exit\n", __func__, event);
 }
+
+void _sys_trace_set_state(bool state)
+{
+	TRACING_STRING("%s: %d state\n", __func__, state);
+}

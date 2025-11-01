@@ -858,6 +858,7 @@ void sys_trace_named_event(const char *name, uint32_t arg0, uint32_t arg1);
 #define sys_port_trace_gpio_get_pending_int_exit(dev, ret)
 #define sys_port_trace_gpio_fire_callbacks_enter(list, port, pins)
 #define sys_port_trace_gpio_fire_callback(port, cb)
+#define sys_trace_set_state(state)
 
 #ifdef __cplusplus
 }

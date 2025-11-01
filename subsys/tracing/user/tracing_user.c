@@ -75,6 +75,7 @@ void __weak sys_trace_gpio_fire_callbacks_enter_user(sys_slist_t *list, const st
 						     gpio_pin_t pins) {}
 void __weak sys_trace_gpio_fire_callback_user(const struct device *port,
 					      struct gpio_callback *callback) {}
+void __weak sys_trace_set_state_user(bool state) {}
 
 void sys_trace_thread_create(struct k_thread *thread)
 {
@@ -313,4 +314,9 @@ void sys_trace_gpio_fire_callbacks_enter(sys_slist_t *list, const struct device 
 void sys_trace_gpio_fire_callback(const struct device *port, struct gpio_callback *callback)
 {
 	sys_trace_gpio_fire_callback_user(port, callback);
+}
+
+void _sys_trace_set_state(bool state)
+{
+	sys_trace_set_state_user(state);
 }
