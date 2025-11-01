@@ -39,7 +39,8 @@ int arch_dcache_invd_range(void *addr_in, size_t size)
 	__asm__ volatile (
 		"fence\n"
 	);
-	for (uintptr_t i = addr; i < addr + size; i += CONFIG_DCACHE_LINE_SIZE) {
+	for (uintptr_t i = addr; i < ROUND_UP(addr + size, CONFIG_DCACHE_LINE_SIZE);
+	     i += CONFIG_DCACHE_LINE_SIZE) {
 		arch_cache_invalidate_dcache_line(i);
 	}
 	__asm__ volatile (
@@ -83,7 +84,8 @@ int arch_icache_invd_range(void *addr_in, size_t size)
 		"fence\n"
 		"fence.i\n"
 	);
-	for (uintptr_t i = addr; i < addr + size; i += CONFIG_ICACHE_LINE_SIZE) {
+	for (uintptr_t i = addr; i < ROUND_UP(addr + size, CONFIG_ICACHE_LINE_SIZE);
+	     i += CONFIG_ICACHE_LINE_SIZE) {
 		arch_cache_invalidate_icache_line(i);
 	}
 	__asm__ volatile (
@@ -125,7 +127,8 @@ int arch_dcache_flush_range(void *addr_in, size_t size)
 	__asm__ volatile (
 		"fence\n"
 	);
-	for (uintptr_t i = addr; i < addr + size; i += CONFIG_DCACHE_LINE_SIZE) {
+	for (uintptr_t i = addr; i < ROUND_UP(addr + size, CONFIG_DCACHE_LINE_SIZE);
+	     i += CONFIG_DCACHE_LINE_SIZE) {
 		arch_cache_clean_dcache_line(i);
 	}
 	__asm__ volatile (
@@ -166,7 +169,8 @@ int arch_dcache_flush_and_invd_range(void *addr_in, size_t size)
 	__asm__ volatile (
 		"fence\n"
 	);
-	for (uintptr_t i = addr; i < addr + size; i += CONFIG_DCACHE_LINE_SIZE) {
+	for (uintptr_t i = addr; i < ROUND_UP(addr + size, CONFIG_DCACHE_LINE_SIZE);
+	     i += CONFIG_DCACHE_LINE_SIZE) {
 		arch_cache_clean_invalidate_dcache_line(i);
 	}
 	__asm__ volatile (
