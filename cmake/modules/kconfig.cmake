@@ -91,6 +91,12 @@ if(EXTRA_CONF_FILE)
   build_info(kconfig extra-user-files PATH ${EXTRA_CONF_FILE_AS_LIST})
 endif()
 
+if(PRE_CONF_FILE)
+  string(CONFIGURE "${PRE_CONF_FILE}" PRE_CONF_FILE_EXPANDED)
+  string(REPLACE " " ";" PRE_CONF_FILE_AS_LIST "${PRE_CONF_FILE_EXPANDED}")
+  build_info(kconfig pre-user-files PATH ${PRE_CONF_FILE_AS_LIST})
+endif()
+
 zephyr_file(CONF_FILES ${BOARD_EXTENSION_DIRS} KCONF board_extension_conf_files SUFFIX ${FILE_SUFFIX})
 
 # DTS_ROOT_BINDINGS is a semicolon separated list, this causes
@@ -286,6 +292,7 @@ set(
   ${BOARD_DEFCONFIG}
   ${BOARD_REVISION_CONFIG}
   ${board_extension_conf_files}
+  ${PRE_CONF_FILE_AS_LIST}
   ${CONF_FILE_AS_LIST}
   ${shield_conf_files}
   ${EXTRA_CONF_FILE_AS_LIST}
