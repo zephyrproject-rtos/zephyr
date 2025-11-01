@@ -1,0 +1,382 @@
+<!-- Tailwind CSS with prefix configuration -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+   tailwind.config = {
+      prefix: "z-",
+   };
+</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<!-- <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"> -->
+
+<style>
+   #zephyr-project-documentation>h1 {
+      display: none !important;
+   }
+
+   .wy-breadcrumbs-aside a.fa,
+   .rst-current-version span.fa {
+      font-family: inherit;
+      font-weight: inherit;
+   }
+
+   .rst-content hr {
+      margin: 24px 0 !important;
+   }
+
+   .card {
+      // background-color: #161b22;
+      // border: 1px solid #30363d;
+      // transition: transform 0.3s ease, box-shadow 0.3s ease;
+   }
+
+   .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+      border-color: #2f81f7;
+   }
+
+   .persona-card {
+      // background-color: #161b22;
+      // border: 1px solid #30363d;
+   }
+
+   .btn-primary {
+      background-color: #2f81f7;
+      color: white;
+      transition: background-color 0.3s ease;
+   }
+
+   .btn-primary:hover {
+      background-color: #58a6ff;
+   }
+
+   .section-title {
+      border-bottom: 2px solid #2f81f7;
+      padding-bottom: 0.5rem;
+      display: inline-block;
+   }
+
+   main ul {
+      margin-bottom: 0px !important;
+   }
+
+   main ul li {
+      margin-left: 0 !important;
+      list-style: none !important;
+   }
+
+   main ul li>* {
+      margin-bottom: 0px !important;
+   }
+
+   main h1,
+   main h2,
+   main h3 {
+      margin-bottom: 0px !important;
+      border-left: none !important;
+   }
+
+   main a {
+      color: var(--navbar-level-1-color) !important;
+   }
+
+   a:hover {
+      text-decoration: none !important;
+   }
+</style>
+
+<!-- Main Content -->
+<main class="z-container z-mx-auto z-pt-2">
+   <p>
+      <strong>Welcome to the Zephyr Project’s documentation for the main tree under development</strong>
+      (version 4.2.99).
+   </p>
+   <!-- Hero Section -->
+   <!-- <section class="z-text-center z-max-w-4xl z-mx-auto">
+           <h1 class="z-text-4xl md:z-text-6xl z-font-extrabold z-text-white z-tracking-tight">
+               Build the Future of <span class="gradient-text">Connected Devices</span>
+           </h1>
+           <p class="z-mt-6 z-text-lg z-text-gray-400">
+               Welcome to the developer center for the Zephyr RTOS. Find the resources you need based on your role and goals.
+           </p>
+       </section> -->
+
+   <!-- Getting Started Section -->
+   <section class="z-mb-10 z-pt-12">
+      <!-- <h2 class="z-text-3xl z-font-bold z-text-white z-text-center z-mb-10 section-title z-mx-auto">Getting Started</h2> -->
+
+      <div class="z-grid z-grid-cols-1 md:z-grid-cols-2 lg:z-grid-cols-3 z-gap-10">
+         <!-- Card 1: Introduction -->
+         <a href="introduction/index.html"
+            class="card z-rounded-lg z-p-6 z-block z-bg-[var(--navbar-background-color)]">
+            <div
+               class="z-flex z-items-center z-justify-center z-bg-blue-900/90 z-h-16 z-w-16 z-rounded-lg z-mb-4 z--mt-12">
+               <i class="fas fa-book-open z-text-3xl z-text-blue-300"></i>
+            </div>
+            <h3 class="z-text-xl z-font-bold z-text-white z-mb-2">What is Zephyr?</h3>
+            <p class="z-text-[var(--navbar-level-1-color)] z-mt-2 z-font-thin">Discover the core concepts, features, and
+               architecture.</p>
+         </a>
+
+         <!-- Card 2: Blinky -->
+         <a href="develop/getting_started/index.html"
+            class="card z-rounded-lg z-p-6 z-block z-bg-[var(--navbar-background-color)]">
+            <div
+               class="z-flex z-items-center z-justify-center z-bg-green-900/90 z-h-16 z-w-16 z-rounded-lg z-mb-4 z--mt-12">
+               <i class="fas fa-lightbulb z-text-3xl z-text-green-300"></i>
+            </div>
+            <h3 class="z-text-xl z-font-bold z-text-white z-mb-2">Getting Started</h3>
+            <p class="z-text-[var(--navbar-level-1-color)] z-mt-2 z-font-thin">
+               A step-by-step guide to setup your environment &amp; blink your first LED.
+            </p>
+         </a>
+
+         <!-- Card 3: Setup Environment -->
+         <!-- <a href="#" class="card z-rounded-lg z-p-6 z-block z-bg-[var(--navbar-background-color)]">
+                   <div class="z-flex z-items-center z-justify-center z-bg-purple-900/50 z-h-16 z-w-16 z-rounded-lg z-mb-4">
+                       <i class="fas fa-terminal z-text-2xl z-text-purple-300"></i>
+                   </div>
+                   <h3 class="z-text-xl z-font-bold z-text-white z-mb-2">Setup Environment</h3>
+                   <p class="z-text-gray-400">Install the SDK and tools for your operating system.</p>
+               </a> -->
+
+         <!-- Card 4: Supported Hardware -->
+         <a href="boards/index.html" class="card z-rounded-lg z-p-6 z-block z-bg-[var(--navbar-background-color)]">
+            <div
+               class="z-flex z-items-center z-justify-center z-bg-yellow-900/90 z-h-16 z-w-16 z-rounded-lg z-mb-4 z--mt-12">
+               <i class="fas fa-microchip z-text-3xl z-text-yellow-300"></i>
+            </div>
+            <h3 class="z-text-xl z-font-bold z-text-white z-mb-2">Supported Hardware</h3>
+            <p class="z-text-[var(--navbar-level-1-color)] z-mt-2 z-font-thin">Browse 1,000+ supported boards and shields.</p>
+         </a>
+      </div>
+   </section>
+
+   <!-- Persona Pathways Section -->
+   <section class="z-mt-12 md:z-mt-0">
+      <div class="z-text-center z-mb-16">
+         <h2 class="z-text-3xl z-font-bold">Choose Your Learning Path</h2>
+         <p class="z-text-gray-400 z-mt-2">Find documentation tailored to your role.</p>
+      </div>
+
+      <div class="z-grid z-grid-cols-1 md:z-grid-cols-3 md:z-gap-4 z-gap-12">
+         <!-- Path 1: Application Developer -->
+         <div
+            class="z-relative z-pt-8 z-px-6 z-pb-8 z-rounded-xl persona-card z-flex z-flex-col z-bg-[var(--navbar-background-color)]">
+            <div class="z-absolute z--top-6 z-left-8 z-bg-sky-500 z-p-4 z-rounded-xl z-shadow-lg">
+               <span class="z-text-white z-text-3xl font-mono z-text-center z-px-1">{ }</span>
+            </div>
+            <div class="z-mt-8">
+               <h3 class="z-text-xl z-font-bold z-text-white">Application Developer</h3>
+               <p class="z-text-[var(--navbar-level-1-color)] z-mt-2 z-font-thin">Build software with Zephyr APIs.</p>
+            </div>
+            <ul class="z-mt-6 z-space-y-1 z-text-gray-300 z-flex-grow">
+               <li>
+                  <a href="#" class="z-flex z-items-center hover:z-text-white z-transition-colors z-group"><i
+                        class="fa-solid fa-chevron-right z-text-xs z-text-sky-400 z-mr-3"></i><span
+                        class="group-hover:z-translate-x-1 z-transition-transform">Application architecture</span></a>
+               </li>
+               <li>
+                  <a href="#" class="z-flex z-items-center hover:z-text-white z-transition-colors z-group"><i
+                        class="fa-solid fa-chevron-right z-text-xs z-text-sky-400 z-mr-3"></i><span
+                        class="group-hover:z-translate-x-1 z-transition-transform">RTOS Kernel</span></a>
+               </li>
+               <li>
+                  <a href="#" class="z-flex z-items-center hover:z-text-white z-transition-colors z-group"><i
+                        class="fa-solid fa-chevron-right z-text-xs z-text-sky-400 z-mr-3"></i><span
+                        class="group-hover:z-translate-x-1 z-transition-transform">Services</span></a>
+               </li>
+               <li>
+                  <a href="#" class="z-flex z-items-center hover:z-text-white z-transition-colors z-group"><i
+                        class="fa-solid fa-chevron-right z-text-xs z-text-sky-400 z-mr-3"></i><span
+                        class="group-hover:z-translate-x-1 z-transition-transform">Building &amp; debugging</span></a>
+               </li>
+               <li>
+                  <a href="#" class="z-flex z-items-center hover:z-text-white z-transition-colors z-group"><i
+                        class="fa-solid fa-chevron-right z-text-xs z-text-sky-400 z-mr-3"></i><span
+                        class="group-hover:z-translate-x-1 z-transition-transform">Code samples</span></a>
+               </li>
+            </ul>
+         </div>
+
+         <!-- Path 2: Hardware Engineer -->
+         <div
+            class="z-relative z-pt-8 z-px-6 z-pb-8 z-rounded-xl persona-card z-flex z-flex-col z-bg-[var(--navbar-background-color)]">
+            <div class="z-absolute z--top-6 z-left-8 z-bg-violet-500 z-p-4 z-rounded-xl z-shadow-lg">
+               <i class="fa-solid fa-microchip z-text-white z-text-3xl fa-fw"></i>
+            </div>
+            <div class="z-mt-8">
+               <h3 class="z-text-xl z-font-bold z-text-white">Hardware Engineer</h3>
+               <p class="z-text-[var(--navbar-level-1-color)] z-mt-2 z-font-thin">Porting Zephyr to new hardware.</p>
+            </div>
+            <ul class="z-mt-6 z-space-y-1 z-text-gray-300 z-flex-grow">
+               <li>
+                  <a href="hardware/porting/board_porting.html"
+                     class="z-flex z-items-center hover:z-text-white z-transition-colors z-group"><i
+                        class="fa-solid fa-chevron-right z-text-xs z-text-violet-400 z-mr-3"></i><span
+                        class="group-hover:z-translate-x-1 z-transition-transform">Board Porting Guide</span></a>
+               </li>
+               <li>
+                  <a href="kernel/drivers/index.html"
+                     class="z-flex z-items-center hover:z-text-white z-transition-colors z-group"><i
+                        class="fa-solid fa-chevron-right z-text-xs z-text-violet-400 z-mr-3"></i><span
+                        class="group-hover:z-translate-x-1 z-transition-transform">Device Driver Model</span></a>
+               </li>
+               <li>
+                  <a href="services/pm/index.html"
+                     class="z-flex z-items-center hover:z-text-white z-transition-colors z-group"><i
+                        class="fa-solid fa-chevron-right z-text-xs z-text-violet-400 z-mr-3"></i><span
+                        class="group-hover:z-translate-x-1 z-transition-transform">Power Management</span></a>
+               </li>
+               <li>
+                  <a href="build/dts/index.html"
+                     class="z-flex z-items-center hover:z-text-white z-transition-colors z-group"><i
+                        class="fa-solid fa-chevron-right z-text-xs z-text-violet-400 z-mr-3"></i><span
+                        class="group-hover:z-translate-x-1 z-transition-transform">DeviceTree Guide</span></a>
+               </li>
+            </ul>
+         </div>
+
+         <!-- Path 3: Product Maker -->
+         <div
+            class="z-relative z-pt-8 z-px-6 z-pb-8 z-rounded-xl persona-card z-flex z-flex-col z-bg-[var(--navbar-background-color)]">
+            <div class="z-absolute z--top-6 z-left-8 z-bg-emerald-500 z-p-4 z-rounded-xl z-shadow-lg">
+               <i class="fa-solid fa-rocket z-text-white z-text-3xl fa-fw"></i>
+            </div>
+            <div class="z-mt-8">
+               <h3 class="z-text-xl z-font-bold z-text-white">Product Maker</h3>
+               <p class="z-text-[var(--navbar-level-1-color)] z-mt-2 z-font-thin">Considerations for using Zephyr in your product.</p>
+            </div>
+            <ul class="z-mt-6 z-space-y-1 z-text-gray-300 z-flex-grow">
+               <li>
+                  <a href="#" class="z-flex z-items-center hover:z-text-white z-transition-colors z-group"><i
+                        class="fa-solid fa-chevron-right z-text-xs z-text-emerald-400 z-mr-3"></i><span
+                        class="group-hover:z-translate-x-1 z-transition-transform">Licensing</span></a>
+               </li>
+               <li>
+                  <a href="#" class="z-flex z-items-center hover:z-text-white z-transition-colors z-group"><i
+                        class="fa-solid fa-chevron-right z-text-xs z-text-emerald-400 z-mr-3"></i><span
+                        class="group-hover:z-translate-x-1 z-transition-transform">Security</span></a>
+               </li>
+               <li>
+                  <a href="#" class="z-flex z-items-center hover:z-text-white z-transition-colors z-group"><i
+                        class="fa-solid fa-chevron-right z-text-xs z-text-emerald-400 z-mr-3"></i><span
+                        class="group-hover:z-translate-x-1 z-transition-transform">Safety</span></a>
+               </li>
+               <li>
+                  <a href="#" class="z-flex z-items-center hover:z-text-white z-transition-colors z-group"><i
+                        class="fa-solid fa-chevron-right z-text-xs z-text-emerald-400 z-mr-3"></i><span
+                        class="group-hover:z-translate-x-1 z-transition-transform">Long-term Support</span></a>
+               </li>
+               <li>
+                  <a href="https://www.zephyrproject.org/products-running-zephyr/"
+                     class="z-flex z-items-center hover:z-text-white z-transition-colors z-group"><i
+                        class="fa-solid fa-chevron-right z-text-xs z-text-emerald-400 z-mr-3"></i><span
+                        class="group-hover:z-translate-x-1 z-transition-transform">Product Showcase</span></a>
+               </li>
+            </ul>
+         </div>
+      </div>
+   </section>
+
+   <!-- Enhanced Reference Section -->
+   <section class="z-py-16">
+      <div class="z-text-center z-mb-12">
+         <h2 class="z-text-4xl z-font-bold z-mb-4">Core Reference</h2>
+         <p class="z-text-gray-400 z-text-lg">Essential resources for in-depth information</p>
+      </div>
+
+      <div class="z-grid z-grid-cols-1 md:z-grid-cols-2 lg:z-grid-cols-3 z-gap-6">
+         <a href="/doxygen/html/index.html"
+            class="group z-bg-zephyr-card z-border z-border-zephyr-border z-rounded-xl z-p-6 card-hover z-bg-[var(--navbar-background-color)] z-border-0">
+            <div class="z-flex z-items-center z-mb-4">
+               <div class="z-w-12 z-h-12 z-bg-blue-500/20 z-rounded-lg z-flex z-items-center z-justify-center z-mr-4">
+                  <i class="fas fa-book z-text-blue-400 z-text-xl"></i>
+               </div>
+               <div>
+                  <h3 class="z-text-xl z-font-bold">API Reference</h3>
+                  <p class="z-text-[var(--navbar-level-1-color)] z-text-sm z-font-thin">Complete C API docs</p>
+               </div>
+            </div>
+            <div class="z-text-end z-items-center z-text-blue-400 group-hover:z-translate-x-2 z-transition-transform z-mt-6">
+               <span>Browse APIs</span>
+               <i class="fas fa-arrow-right z-ml-2"></i>
+            </div>
+         </a>
+
+         <a href="/kconfig.html"
+            class="group z-bg-zephyr-card z-border z-border-zephyr-border z-rounded-xl z-p-6 card-hover z-bg-[var(--navbar-background-color)] z-border-0">
+            <div class="z-flex z-items-center z-mb-4">
+               <div class="z-w-12 z-h-12 z-bg-green-500/20 z-rounded-lg z-flex z-items-center z-justify-center z-mr-4">
+                  <i class="fas fa-sliders z-text-green-400 z-text-xl"></i>
+               </div>
+               <div>
+                  <h3 class="z-text-xl z-font-bold">Kconfig</h3>
+                  <p class="z-text-[var(--navbar-level-1-color)] z-text-sm z-font-thin">Configuration system</p>
+               </div>
+            </div>
+            <div class="z-text-end z-items-center z-text-green-400 group-hover:z-translate-x-2 z-transition-transform z-mt-6">
+               <span>View Options</span>
+               <i class="fas fa-arrow-right z-ml-2"></i>
+            </div>
+         </a>
+
+         <a href="/build/dts/api/bindings.html"
+            class="group z-bg-zephyr-card z-border z-border-zephyr-border z-rounded-xl z-p-6 card-hover z-bg-[var(--navbar-background-color)] z-border-0">
+            <div class="z-flex z-items-center z-mb-4">
+               <div class="z-w-12 z-h-12 z-bg-purple-500/20 z-rounded-lg z-flex z-items-center z-justify-center z-mr-4">
+                  <i class="fas fa-sitemap z-text-purple-400 z-text-xl"></i>
+               </div>
+               <div>
+                  <h3 class="z-text-xl z-font-bold">DeviceTree</h3>
+                  <p class="z-text-[var(--navbar-level-1-color)] z-text-sm z-font-thin">Hardware bindings</p>
+               </div>
+            </div>
+            <div class="z-text-end z-items-center z-text-purple-400 group-hover:z-translate-x-2 z-transition-transform z-mt-6">
+               <span>View Bindings</span>
+               <i class="fas fa-arrow-right z-ml-2"></i>
+            </div>
+         </a>
+
+         <a href="/build/dts/api/bindings.html"
+            class="group z-bg-zephyr-card z-border z-border-zephyr-border z-rounded-xl z-p-6 card-hover z-bg-[var(--navbar-background-color)] z-border-0">
+            <div class="z-flex z-items-center z-mb-4">
+               <div class="z-w-12 z-h-12 z-bg-red-500/20 z-rounded-lg z-flex z-items-center z-justify-center z-mr-4">
+                  <!-- <i class="fas fa-project-diagram z-text-purple-400 z-text-xl"></i> -->
+                  <i class="fas fa-w z-text-red-400 z-text-xl"></i>
+               </div>
+               <div>
+                  <h3 class="z-text-xl z-font-bold">West Projects</h3>
+                  <p class="z-text-[var(--navbar-level-1-color)] z-text-sm z-font-thin">Available projects</p>
+               </div>
+            </div>
+            <div class="z-text-end z-items-center z-text-red-400 group-hover:z-translate-x-2 z-transition-transform z-mt-6">
+               <span>View projects</span>
+               <i class="fas fa-arrow-right z-ml-2"></i>
+            </div>
+         </a>
+
+         <!-- Glossary -->
+
+         <a href="/build/dts/api/bindings.html"
+            class="group z-bg-zephyr-card z-border z-border-zephyr-border z-rounded-xl z-p-6 card-hover z-bg-[var(--navbar-background-color)] z-border-0">
+            <div class="z-flex z-items-center z-mb-4">
+               <div class="z-w-12 z-h-12 z-bg-orange-500/20 z-rounded-lg z-flex z-items-center z-justify-center z-mr-4">
+                  <!-- <i class="fas fa-project-diagram z-text-purple-400 z-text-xl"></i> -->
+                  <i class="fas fa-spell-check z-text-orange-400 z-text-xl"></i>
+               </div>
+               <div>
+                  <h3 class="z-text-xl z-font-bold">Glossary</h3>
+                  <p class="z-text-[var(--navbar-level-1-color)] z-text-sm z-font-thin">Key terms definitions</p>
+               </div>
+            </div>
+            <div class="z-text-end z-items-center z-text-orange-400 group-hover:z-translate-x-2 z-transition-transform z-mt-6">
+               <span>Look up terms</span>
+               <i class="fas fa-arrow-right z-ml-2"></i>
+            </div>
+         </a>
+      </div>
+   </section>
+</main>
