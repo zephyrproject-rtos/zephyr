@@ -8,6 +8,7 @@
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;
 		zephyr,sram = &sram1;
+		zephyr,canbus = &can0;
 	};
 };
 
