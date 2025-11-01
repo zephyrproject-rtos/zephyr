@@ -153,8 +153,7 @@ static struct btp_bap_broadcast_remote_source *remote_broadcaster_find(const bt_
 {
 	for (size_t i = 0; i < ARRAY_SIZE(remote_broadcast_sources); i++) {
 		struct btp_bap_broadcast_remote_source *broadcaster = &remote_broadcast_sources[i];
-
-		if (broadcaster->broadcast_id == broadcast_id &&
+		if (broadcaster->broadcast_id == broadcast_id ||
 		    bt_addr_le_cmp(addr, &broadcaster->address) == 0) {
 			return broadcaster;
 		}
