@@ -296,12 +296,48 @@ config SHELL_LOG_BACKEND_CUSTOM
 	  It allows to provide custom implementation of multiplexing logging messages
 	  with shell data.
 
+if SHELL_LOG_BACKEND
+
+config SHELL_LOG_OUTPUT_TIMESTAMP
+	bool "Log output timestamp"
+	default y
+	help
+	  Enable timestamp in log output.
+
 config SHELL_LOG_FORMAT_TIMESTAMP
 	bool "Format timestamp"
 	default y
-	depends on SHELL_LOG_BACKEND
 	help
 	  Enable timestamp formatting.
+
+config SHELL_LOG_OUTPUT_LEVEL
+	bool "Log output level"
+	default y
+	help
+	  Enable log level in log output.
+
+config SHELL_LOG_OUTPUT_CRLF_NONE
+	bool "Log output CRLF none"
+	help
+	  Do not modify CRLF characters in log output.
+
+config SHELL_LOG_OUTPUT_CRLF_LFONLY
+	bool "Log output CRLF LF only"
+	help
+	  Convert CRLF to LF in log output.
+
+config SHELL_LOG_OUTPUT_THREAD
+	bool "Log output thread"
+	default y
+	help
+	  Enable logging thread id or name
+
+config SHELL_LOG_OUTPUT_SKIP_SOURCE
+	bool "Log output skip source"
+	help
+	  Skip outputting source in log output.
+
+endif # SHELL_LOG_BACKEND
 
 config SHELL_AUTOSTART
 	bool "Auto-start shell at boot"
