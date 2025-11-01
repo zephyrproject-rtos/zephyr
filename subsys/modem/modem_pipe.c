@@ -62,9 +62,10 @@ static int pipe_call_open(struct modem_pipe *pipe)
 	return pipe->api->open(pipe->data);
 }
 
-static int pipe_call_transmit(struct modem_pipe *pipe, const uint8_t *buf, size_t size)
+static int pipe_call_transmit(struct modem_pipe *pipe, const uint8_t *buf, size_t size,
+			      const uint8_t *extra_buf, size_t extra_size)
 {
-	return pipe->api->transmit(pipe->data, buf, size);
+	return pipe->api->transmit(pipe->data, buf, size, extra_buf, extra_size);
 }
 
 static int pipe_call_receive(struct modem_pipe *pipe, uint8_t *buf, size_t size)
@@ -133,14 +134,15 @@ void modem_pipe_attach(struct modem_pipe *pipe, modem_pipe_api_callback callback
 	}
 }
 
-int modem_pipe_transmit(struct modem_pipe *pipe, const uint8_t *buf, size_t size)
+int modem_pipe_transmit_double(struct modem_pipe *pipe, const uint8_t *buf, size_t size,
+			const uint8_t *extra_buf, size_t extra_size)
 {
 	if (!pipe_test_events(pipe, PIPE_EVENT_OPENED_BIT)) {
 		return -EPERM;
 	}
 
 	pipe_clear_events(pipe, PIPE_EVENT_TRANSMIT_IDLE_BIT);
-	return pipe_call_transmit(pipe, buf, size);
+	return pipe_call_transmit(pipe, buf, size, extra_buf, extra_size);
 }
 
 int modem_pipe_receive(struct modem_pipe *pipe, uint8_t *buf, size_t size)

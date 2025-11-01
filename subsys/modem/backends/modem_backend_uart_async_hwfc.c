@@ -259,11 +259,15 @@ static uint32_t get_transmit_buf_size(const struct modem_backend_uart *backend)
 	return backend->async.common.transmit_buf_size;
 }
 
-static int modem_backend_uart_async_hwfc_transmit(void *data, const uint8_t *buf, size_t size)
+static int modem_backend_uart_async_hwfc_transmit(void *data, const uint8_t *buf, size_t size,
+						  const uint8_t *extra_buf, size_t extra_size)
 {
 	struct modem_backend_uart *backend = (struct modem_backend_uart *)data;
 	bool transmitting;
+	uint32_t tx_buf_size = get_transmit_buf_size(backend);
+	uint32_t extra_bytes_to_transmit;
 	uint32_t bytes_to_transmit;
+	uint32_t total_transmit;
 	int ret;
 
 	transmitting = atomic_test_and_set_bit(&backend->async.common.state,
@@ -273,25 +277,29 @@ static int modem_backend_uart_async_hwfc_transmit(void *data, const uint8_t *buf
 	}
 
 	/* Determine amount of bytes to transmit */
-	bytes_to_transmit = MIN(size, get_transmit_buf_size(backend));
+	bytes_to_transmit = MIN(size, tx_buf_size);
+	extra_bytes_to_transmit = MIN(extra_size, tx_buf_size - bytes_to_transmit);
+	total_transmit = bytes_to_transmit + extra_bytes_to_transmit;
 
 	/* Copy buf to transmit buffer which is passed to UART */
 	memcpy(backend->async.common.transmit_buf, buf, bytes_to_transmit);
+	memcpy(backend->async.common.transmit_buf + bytes_to_transmit, extra_buf,
+	       extra_bytes_to_transmit);
 
-	ret = uart_tx(backend->uart, backend->async.common.transmit_buf, bytes_to_transmit,
+	ret = uart_tx(backend->uart, backend->async.common.transmit_buf, total_transmit,
 		      CONFIG_MODEM_BACKEND_UART_ASYNC_TRANSMIT_TIMEOUT_MS * 1000L);
 
 #if CONFIG_MODEM_STATS
-	advertise_transmit_buf_stats(backend, bytes_to_transmit);
+	advertise_transmit_buf_stats(backend, total_transmit);
 #endif
 
 	if (ret != 0) {
 		LOG_ERR("Failed to %s %u bytes. (%d)",
-			"start async transmit for", bytes_to_transmit, ret);
+			"start async transmit for", total_transmit, ret);
 		return ret;
 	}
 
-	return (int)bytes_to_transmit;
+	return (int)total_transmit;
 }
 
 static int modem_backend_uart_async_hwfc_receive(void *data, uint8_t *buf, size_t size)

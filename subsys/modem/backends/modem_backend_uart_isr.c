@@ -166,7 +166,8 @@ static bool modem_backend_uart_isr_transmit_buf_above_limit(struct modem_backend
 	return backend->isr.transmit_buf_put_limit < get_transmit_buf_length(backend);
 }
 
-static int modem_backend_uart_isr_transmit(void *data, const uint8_t *buf, size_t size)
+static int modem_backend_uart_isr_transmit(void *data, const uint8_t *buf, size_t size,
+					   const uint8_t *extra_buf, size_t extra_size)
 {
 	struct modem_backend_uart *backend = (struct modem_backend_uart *)data;
 	int written;
@@ -177,6 +178,9 @@ static int modem_backend_uart_isr_transmit(void *data, const uint8_t *buf, size_
 
 	uart_irq_tx_disable(backend->uart);
 	written = ring_buf_put(&backend->isr.transmit_rb, buf, size);
+	if (extra_size > 0) {
+		written += ring_buf_put(&backend->isr.transmit_rb, extra_buf, extra_size);
+	}
 	uart_irq_tx_enable(backend->uart);
 
 	/* Update transmit buf capacity tracker */
