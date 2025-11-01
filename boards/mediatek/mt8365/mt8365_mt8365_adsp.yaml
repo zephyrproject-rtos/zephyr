@@ -1,0 +1,11 @@
+identifier: mt8365/mt8365/adsp
+name: Mediatek mt8365 Audio DSP
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+testing:
+  only_tags:
+    - kernel
+    - sof
+vendor: mediatek
