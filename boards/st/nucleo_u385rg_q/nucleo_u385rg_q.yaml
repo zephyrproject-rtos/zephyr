@@ -20,5 +20,7 @@ supported:
   - usb_device
   - usbd
   - watchdog
+  - pwm
+  - counter
 ram: 256
 flash: 1024
