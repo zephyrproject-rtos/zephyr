@@ -1,0 +1,12 @@
+common:
+  tags:
+    - lin
+    - drivers
+tests:
+  drivers.lin.api:
+    depends_on: lin
+  drivers.lin.api.skeleton:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="lin_skeleton.overlay"
+    platform_allow:
+      - native_sim/native/64
