@@ -158,12 +158,18 @@ bool npf_remove_all_rules(struct npf_rule_list *rules);
 #define npf_remove_recv_rule(rule) npf_remove_rule(&npf_recv_rules, rule)
 #define npf_remove_all_send_rules() npf_remove_all_rules(&npf_send_rules)
 #define npf_remove_all_recv_rules() npf_remove_all_rules(&npf_recv_rules)
+#define NPF_RULE_REGISTER_RECV(verdict, ...) /* Coming soon ... */
+#define NPF_PRIORITY_REGISTER_RECV(priority, ...) /* Coming soon ... */
+#define NPF_RULE_REGISTER_SEND(verdict, ...) /* Coming soon ... */
+#define NPF_PRIORITY_REGISTER_SEND(priority, ...) /* Coming soon ... */
 
 #ifdef CONFIG_NET_PKT_FILTER_LOCAL_IN_HOOK
 #define npf_insert_local_in_recv_rule(rule) npf_insert_rule(&npf_local_in_recv_rules, rule)
 #define npf_append_local_in_recv_rule(rule) npf_append_rule(&npf_local_in_recv_rules, rule)
 #define npf_remove_local_in_recv_rule(rule) npf_remove_rule(&npf_local_in_recv_rules, rule)
 #define npf_remove_all_local_in_recv_rules() npf_remove_all_rules(&npf_local_in_recv_rules)
+#define NPF_RULE_REGISTER_LOCAL_IN_RECV(verdict, ...) /* Coming soon ... */
+#define NPF_PRIORITY_REGISTER_LOCAL_IN_RECV(priority, ...) /* Coming soon ... */
 #endif /* CONFIG_NET_PKT_FILTER_LOCAL_IN_HOOK */
 
 #ifdef CONFIG_NET_PKT_FILTER_IPV4_HOOK
@@ -171,6 +177,8 @@ bool npf_remove_all_rules(struct npf_rule_list *rules);
 #define npf_append_ipv4_recv_rule(rule) npf_append_rule(&npf_ipv4_recv_rules, rule)
 #define npf_remove_ipv4_recv_rule(rule) npf_remove_rule(&npf_ipv4_recv_rules, rule)
 #define npf_remove_all_ipv4_recv_rules() npf_remove_all_rules(&npf_ipv4_recv_rules)
+#define NPF_RULE_REGISTER_IPV4_RECV(verdict, ...) /* Coming soon ... */
+#define NPF_PRIORITY_REGISTER_IPV4_RECV(priority, ...) /* Coming soon ... */
 #endif /* CONFIG_NET_PKT_FILTER_IPV4_HOOK */
 
 #ifdef CONFIG_NET_PKT_FILTER_IPV6_HOOK
@@ -178,6 +186,8 @@ bool npf_remove_all_rules(struct npf_rule_list *rules);
 #define npf_append_ipv6_recv_rule(rule) npf_append_rule(&npf_ipv6_recv_rules, rule)
 #define npf_remove_ipv6_recv_rule(rule) npf_remove_rule(&npf_ipv6_recv_rules, rule)
 #define npf_remove_all_ipv6_recv_rules() npf_remove_all_rules(&npf_ipv6_recv_rules)
+#define NPF_RULE_REGISTER_IPV6_RECV(verdict, ...) /* Coming soon ... */
+#define NPF_PRIORITY_REGISTER_IPV6_RECV(priority, ...) /* Coming soon ... */
 #endif /* CONFIG_NET_PKT_FILTER_IPV6_HOOK */
 
 /** @endcond */
