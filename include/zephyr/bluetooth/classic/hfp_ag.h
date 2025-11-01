@@ -855,6 +855,18 @@ int bt_hfp_ag_hf_indicator(struct bt_hfp_ag *ag, enum hfp_ag_hf_indicators indic
 int bt_hfp_ag_ongoing_calls(struct bt_hfp_ag *ag, struct bt_hfp_ag_ongoing_call *calls,
 			    size_t count);
 
+/** @brief Set the phone number of last dialed call
+ *
+ *  It is used to set the phone number of last call.
+ *
+ *  @param ag HFP AG object.
+ *  @param number The last dialed phone number.
+ *  @param type The type of the number.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_ag_last_number(struct bt_hfp_ag *ag, const char *number, uint8_t type);
+
 #ifdef __cplusplus
 }
 #endif
