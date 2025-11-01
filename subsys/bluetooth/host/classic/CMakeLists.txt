@@ -10,6 +10,7 @@ zephyr_library_sources_ifdef(CONFIG_BT_AVDTP            avdtp.c)
 zephyr_library_sources_ifdef(CONFIG_BT_AVRCP            avrcp.c)
 zephyr_library_sources_ifdef(CONFIG_BT_AVCTP            avctp.c)
 zephyr_library_sources_ifdef(CONFIG_BT_RFCOMM           rfcomm.c)
+zephyr_library_sources_ifdef(CONFIG_BT_BIP              bip.c)
 
 zephyr_library_sources_ifdef(
   CONFIG_BT_CLASSIC
@@ -43,3 +44,7 @@ zephyr_library_sources_ifdef(
   CONFIG_BT_DID
   did.c
   )
+
+if(CONFIG_BT_AVRCP_CT_COVER_ART OR CONFIG_BT_AVRCP_TG_COVER_ART)
+  zephyr_library_sources(avrcp_cover_art.c)
+endif()
