@@ -45,6 +45,10 @@ function(add_prebuilt_library lib_name prebuilt_path)
   endif()
 endfunction()
 
+zephyr_compile_definitions(
+  SLI_CODE_CLASSIFICATION_DISABLE
+)
+
 if(CONFIG_SOC_GECKO_HAS_RADIO)
   zephyr_include_directories_ifdef(CONFIG_SOC_FAMILY_SILABS_S2
     ${RADIO_DIR}/rail_lib/chip/efr32/efr32xg2x
