@@ -17,3 +17,12 @@ config LPS22HB_SAMPLING_RATE
 	help
 	  Sensor output data rate expressed in samples per second.
 	  Data rates supported by the chip are 1, 10, 25, 50, 75.
+
+config EMUL_LPS22HB
+	bool "Emulate a st LPS22HB sensor"
+	default y
+	depends on EMUL
+	depends on LPS22HB
+	
+	help
+	  This is an emulator for the st LPS22HB sensor.
