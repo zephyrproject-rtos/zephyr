@@ -168,17 +168,27 @@ endif()
 
 dt_nodelabel(uicr_path NODELABEL "uicr")
 if(DEFINED uicr_path)
-  dt_prop(nfct_pins_as_gpios PATH ${uicr_path} PROPERTY "nfct-pins-as-gpios")
-  if(${nfct_pins_as_gpios})
-    zephyr_library_compile_definitions(
-      NRF_CONFIG_NFCT_PINS_AS_GPIOS
-    )
+  dt_prop(uicr_nfct_pins_as_gpios PATH ${uicr_path} PROPERTY "nfct-pins-as-gpios")
+  if(${uicr_nfct_pins_as_gpios})
+    set(nfct_pins_as_gpios True)
   endif()
-
   dt_prop(gpio_as_nreset PATH ${uicr_path} PROPERTY "gpio-as-nreset")
-  if(${gpio_as_nreset})
-    zephyr_library_compile_definitions(CONFIG_GPIO_AS_PINRESET)
+endif()
+
+dt_nodelabel(nfct_path NODELABEL "nfct")
+if(DEFINED nfct_path)
+  dt_prop(nfct_nfct_pins_as_gpios PATH ${nfct_path} PROPERTY "nfct-pins-as-gpios")
+  if(${nfct_nfct_pins_as_gpios})
+    set(nfct_pins_as_gpios True)
   endif()
+endif()
+
+if(${nfct_pins_as_gpios})
+  zephyr_library_compile_definitions(NRF_CONFIG_NFCT_PINS_AS_GPIOS)
+endif()
+
+if(${gpio_as_nreset})
+  zephyr_library_compile_definitions(CONFIG_GPIO_AS_PINRESET)
 endif()
 
 if(CONFIG_SOC_NRF54L_CPUAPP_COMMON)
