@@ -19,7 +19,7 @@
 #include <hal/nrf_spu.h>
 #include <hal/nrf_memconf.h>
 #include <hal/nrf_nfct.h>
-#include <soc/nrfx_coredep.h>
+#include <lib/nrfx_coredep.h>
 #include <soc_lrcconf.h>
 #include <dmm.h>
 
