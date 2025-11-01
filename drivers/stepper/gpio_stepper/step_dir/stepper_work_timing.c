@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "step_dir_stepper_timing_source.h"
-#include "step_dir_stepper_common.h"
+#include <stepper_timing_source.h>
+#include <step_dir_stepper_common.h>
 
 static k_timeout_t stepper_movement_delay(const struct device *dev)
 {

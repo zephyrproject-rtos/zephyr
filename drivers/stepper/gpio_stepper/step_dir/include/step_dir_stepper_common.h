@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVER_STEPPER_STEP_DIR_STEPPER_COMMON_H_
-#define ZEPHYR_DRIVER_STEPPER_STEP_DIR_STEPPER_COMMON_H_
+#ifndef ZEPHYR_DRIVER_STEPPER_GPIO_STEPPER_STEP_DIR_STEPPER_COMMON_H_
+#define ZEPHYR_DRIVER_STEPPER_GPIO_STEPPER_STEP_DIR_STEPPER_COMMON_H_
 
 /**
  * @brief Stepper Driver APIs
@@ -19,7 +19,7 @@
 #include <zephyr/drivers/stepper.h>
 #include <zephyr/drivers/counter.h>
 
-#include "step_dir_stepper_timing_source.h"
+#include "stepper_timing_source.h"
 
 /**
  * @brief Common step direction stepper config.
@@ -236,4 +236,4 @@ void stepper_trigger_callback(const struct device *dev, enum stepper_event event
 
 /** @} */
 
-#endif /* ZEPHYR_DRIVER_STEPPER_STEP_DIR_STEPPER_COMMON_H_ */
+#endif /* ZEPHYR_DRIVER_STEPPER_GPIO_STEPPER_STEP_DIR_STEPPER_COMMON_H_ */

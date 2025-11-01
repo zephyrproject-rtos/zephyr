@@ -4,7 +4,7 @@
  */
 
 #include <zephyr/drivers/counter.h>
-#include "step_dir_stepper_common.h"
+#include <step_dir_stepper_common.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(step_dir_stepper);
