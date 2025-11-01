@@ -99,8 +99,8 @@ static enum clock_control_status clock_control_sf32lb_rcc_get_status(const struc
 	const struct clock_control_sf32lb_rcc_config *config = dev->config;
 	uint16_t id = *(uint16_t *)sys;
 
-	if (sys_test_bit(config->base + FIELD_GET(SF32LB_CLOCK_OFFSET_MSK, id),
-			 FIELD_GET(SF32LB_CLOCK_BIT_MSK, id)) != 0) {
+	if (sys_io_test_bit(config->base + FIELD_GET(SF32LB_CLOCK_OFFSET_MSK, id),
+			    FIELD_GET(SF32LB_CLOCK_BIT_MSK, id)) != 0) {
 		return CLOCK_CONTROL_STATUS_ON;
 	}
 

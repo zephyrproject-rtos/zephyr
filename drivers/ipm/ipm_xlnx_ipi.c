@@ -94,7 +94,7 @@ static void xlnx_mailbox_rx_isr(const struct device *dev)
 		}
 
 		remote_ipi_ch_bit = cdev_conf->remote_ipi_ch_bit;
-		if (!sys_test_bit(config->host_ipi_reg + IPI_ISR, remote_ipi_ch_bit)) {
+		if (!sys_io_test_bit(config->host_ipi_reg + IPI_ISR, remote_ipi_ch_bit)) {
 			continue;
 		}
 
@@ -138,7 +138,8 @@ static int xlnx_ipi_send(const struct device *ipmdev, int wait, uint32_t id, con
 
 	obs_bit = 0;
 	do {
-		obs_bit = sys_test_bit(config->host_ipi_reg + IPI_OBS, config->remote_ipi_ch_bit);
+		obs_bit = sys_io_test_bit(config->host_ipi_reg + IPI_OBS,
+					  config->remote_ipi_ch_bit);
 	} while (obs_bit && wait);
 
 	return 0;
@@ -175,7 +176,7 @@ static int xlnx_ipi_set_enabled(const struct device *ipmdev, int enable)
 	}
 
 	/* If IPI channel bit in IPI Mask Register is not set, then interrupt is enabled */
-	if (!sys_test_bit(config->host_ipi_reg + IPI_IMR, config->remote_ipi_ch_bit)) {
+	if (!sys_io_test_bit(config->host_ipi_reg + IPI_IMR, config->remote_ipi_ch_bit)) {
 		data->enabled = enable;
 		return 0;
 	}

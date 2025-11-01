@@ -32,7 +32,7 @@ static int clock_control_sf32lb_hxt48_on(const struct device *dev, clock_control
 	val |= HPSYS_AON_ACR_HXT48_REQ;
 	sys_write32(val, config->aon + HPSYS_AON_ACR);
 
-	while (sys_test_bit(config->aon + HPSYS_AON_ACR, HPSYS_AON_ACR_HXT48_RDY_Pos) == 0U) {
+	while (sys_io_test_bit(config->aon + HPSYS_AON_ACR, HPSYS_AON_ACR_HXT48_RDY_Pos) == 0) {
 	}
 
 	return 0;
@@ -59,7 +59,7 @@ static enum clock_control_status clock_control_sf32lb_hxt48_get_status(const str
 
 	ARG_UNUSED(sys);
 
-	if (sys_test_bit(config->aon + HPSYS_AON_ACR, HPSYS_AON_ACR_HXT48_RDY_Pos) != 0U) {
+	if (sys_io_test_bit(config->aon + HPSYS_AON_ACR, HPSYS_AON_ACR_HXT48_RDY_Pos) != 0) {
 		return CLOCK_CONTROL_STATUS_ON;
 	}
 
