@@ -26,4 +26,8 @@ config GETOPT_LONG
 	  for other threads by extending function getopt_state_get in
 	  getopt_common.c file.
 
+module = GETOPT
+module-str = getopt
+source "subsys/logging/Kconfig.template.log_config"
+
 endif # POSIX_C_LIB_EXT

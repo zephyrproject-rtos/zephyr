@@ -12,6 +12,11 @@ zephyr_library_sources(
   getentropy.c
   getopt/getopt.c
   getopt/getopt_common.c
+  getopt/getsubopt.c
+  stpcpy.c
+  strcasecmp.c
+  strdup.c
+  strnlen.c
 )
 
 zephyr_library_sources_ifdef(CONFIG_GETOPT_LONG getopt/getopt_long.c)
