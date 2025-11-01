@@ -14,8 +14,54 @@ config FLASH_BASE_ADDRESS
 config MCUX_CORE_SUFFIX
 	default "_cm33_core1" if SOC_MIMX94398_M33
 
+# Multi-level interrupts
+# Some interrupts(e.g. dma interrupts) depend on irqsteer.
+# So enable Multi-level interrupts
+config MULTI_LEVEL_INTERRUPTS
+	default y
+	depends on GEN_ISR_TABLES
+
+config 1ST_LEVEL_INTERRUPT_BITS
+	default 9
+
+config MAX_IRQ_PER_AGGREGATOR
+	default 64
+
+config 2ND_LEVEL_INTERRUPTS
+	default y
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 407
+
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 6
+
+config 2ND_LEVEL_INTERRUPT_BITS
+	default 9
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 224
+
+config 2ND_LVL_INTR_01_OFFSET
+	default 225
+
+config 2ND_LVL_INTR_02_OFFSET
+	default 226
+
+config 2ND_LVL_INTR_03_OFFSET
+	default 227
+
+config 2ND_LVL_INTR_04_OFFSET
+	default 228
+
+config 2ND_LVL_INTR_05_OFFSET
+	default 229
+
+config 3RD_LEVEL_INTERRUPTS
+	default n
+
 config NUM_IRQS
-	default 405
+	default 791
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
