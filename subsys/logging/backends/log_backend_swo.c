@@ -50,8 +50,8 @@ PINCTRL_DT_DEFINE(DT_NODELABEL(itm));
 	((CONFIG_LOG_BACKEND_SWO_REF_FREQ_HZ + (CONFIG_LOG_BACKEND_SWO_FREQ_HZ / 2)) / \
 		CONFIG_LOG_BACKEND_SWO_FREQ_HZ)
 
-#if SWO_FREQ_DIV > 0xFFFF
-#error CONFIG_LOG_BACKEND_SWO_FREQ_HZ is too low. SWO clock divider is 16-bit. \
+#if SWO_FREQ_DIV > 0x1FFF
+#error CONFIG_LOG_BACKEND_SWO_FREQ_HZ is too low. SWO clock divider is 13-bit. \
 	Minimum supported SWO clock frequency is \
 	[Reference Clock Frequency]/2^16.
 #endif
