@@ -541,12 +541,20 @@ void can_max32_rx_handler(const struct device *dev)
 void can_max32_tx_handler(const struct device *dev, int status)
 {
 	struct max32_can_data *dev_data = dev->data;
-	can_tx_callback_t callback = dev_data->tx_callback.function;
+	can_tx_callback_t callback;
+	void *user_data;
+	unsigned int key;
 
-	if (callback != NULL) {
-		callback(dev, status, dev_data->tx_callback.user_data);
+	key = irq_lock();
+	if (dev_data->tx_callback.function != NULL) {
+		callback = dev_data->tx_callback.function;
+		user_data = dev_data->tx_callback.user_data;
 		dev_data->tx_callback.function = NULL;
 		dev_data->tx_callback.user_data = NULL;
+		irq_unlock(key);
+		callback(dev, status, user_data);
+	} else {
+		irq_unlock(key);
 	}
 
 	k_sem_give(&dev_data->tx_sem); /* to allow next tx request */

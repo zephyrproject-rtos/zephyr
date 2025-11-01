@@ -313,16 +313,24 @@ const int mcp2515_set_mode_int(const struct device *dev, uint8_t mcp2515_mode)
 static void mcp2515_tx_done(const struct device *dev, uint8_t tx_idx, int status)
 {
 	struct mcp2515_data *dev_data = dev->data;
-	can_tx_callback_t callback = dev_data->tx_cb[tx_idx].cb;
+	can_tx_callback_t callback;
+	void *cb_arg;
+	unsigned int key;
 
-	if (callback != NULL) {
-		callback(dev, status, dev_data->tx_cb[tx_idx].cb_arg);
+	key = irq_lock();
+	if (dev_data->tx_cb[tx_idx].cb != NULL) {
+		callback = dev_data->tx_cb[tx_idx].cb;
+		cb_arg = dev_data->tx_cb[tx_idx].cb_arg;
 		dev_data->tx_cb[tx_idx].cb = NULL;
+		irq_unlock(key);
+		callback(dev, status, cb_arg);
 
 		k_mutex_lock(&dev_data->mutex, K_FOREVER);
 		dev_data->tx_busy_map &= ~BIT(tx_idx);
 		k_mutex_unlock(&dev_data->mutex);
 		k_sem_give(&dev_data->tx_sem);
+	} else {
+		irq_unlock(key);
 	}
 }
 

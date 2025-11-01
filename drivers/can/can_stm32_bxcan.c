@@ -79,11 +79,19 @@ static struct k_mutex filter_mutex;
 static void can_stm32_signal_tx_complete(const struct device *dev, struct can_stm32_mailbox *mb,
 					 int status)
 {
-	can_tx_callback_t callback = mb->tx_callback;
+	can_tx_callback_t callback;
+	void *callback_arg;
+	unsigned int key;
 
-	if (callback != NULL) {
-		callback(dev, status, mb->callback_arg);
+	key = irq_lock();
+	if (mb->tx_callback != NULL) {
+		callback = mb->tx_callback;
+		callback_arg = mb->callback_arg;
 		mb->tx_callback = NULL;
+		irq_unlock(key);
+		callback(dev, status, callback_arg);
+	} else {
+		irq_unlock(key);
 	}
 }
 

@@ -96,13 +96,18 @@ static void can_sja1000_tx_done(const struct device *dev, int status)
 	struct can_sja1000_data *data = dev->data;
 	can_tx_callback_t callback = data->tx_callback;
 	void *user_data = data->tx_user_data;
+	unsigned int key;
 
+	key = irq_lock();
 	if (callback != NULL) {
 		data->tx_callback = NULL;
+		data->tx_user_data = NULL;
+		k_sem_give(&data->tx_idle);
+		irq_unlock(key);
 		callback(dev, status, user_data);
+	} else {
+		irq_unlock(key);
 	}
-
-	k_sem_give(&data->tx_idle);
 }
 
 int can_sja1000_set_timing(const struct device *dev, const struct can_timing *timing)
