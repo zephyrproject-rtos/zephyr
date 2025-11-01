@@ -4493,10 +4493,10 @@ STM32 Platforms:
     - FRASTM
     - gautierg-st
     - GeorgeCGV
-    - marwaiehm-st
     - mathieuchopstm
     - djiatsaf-st
     - etienne-lms
+    - juickar
   files:
     - boards/st/
     - drivers/*/*stm32*.c
@@ -5723,10 +5723,12 @@ West:
   collaborators:
     - FRASTM
     - gautierg-st
-    - marwaiehm-st
+    - etienne-lms
+    - mathieuchopstm
+    - juickar
+    - djiatsaf
     - asm5878
     - HoZHel
-    - benothmn-st
   files:
     - modules/Kconfig.stm32
   labels:
