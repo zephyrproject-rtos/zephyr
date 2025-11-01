@@ -178,6 +178,11 @@ New APIs and options
     * :kconfig:option:`CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_AL_88`
     * :kconfig:option:`CONFIG_SDL_DISPLAY_COLOR_TINT`
 
+* Flash
+
+  * :dtcompatible:`jedec,mspi-nor` now allows configuration of read, write and
+   control commands separately via devicetree.
+
 * Haptics
 
   * :kconfig:option:`CONFIG_HAPTICS_SHELL`
