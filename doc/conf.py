@@ -271,6 +271,7 @@ doxyrunner_projects = {
         "outdir_var": "DOXY_OUT",
     },
 }
+os.environ["DOXYGEN_SITEMAP_URL"] = f"{html_baseurl}doxygen/html"
 
 # -- Options for zephyr.doxybridge plugin ---------------------------------
 
