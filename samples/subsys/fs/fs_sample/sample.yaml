@@ -16,6 +16,9 @@ tests:
         - "Sector size"
         - "Memory Size"
         - "Disk mounted"
+    extra_args:
+      - platform:ek_ra8m1/r7fa8m1ahecbd:SHIELD=pmod_sd
+      - platform:ek_ra8p1/r7ka8p1kflcac/cm85:SHIELD=pmod_sd
   sample.filesystem.fat_fs.overlay:
     platform_allow: nrf52840_blip
   sample.filesystem.fat_fs.adafruit_2_8_tft_touch_v2:
@@ -87,3 +90,39 @@ tests:
     platform_allow: stm32f746g_disco
     extra_args:
       - FILE_SUFFIX=dma
+  sample.filesystem.fat_fs.sdhc_spi.renesas_sci_b_spi:
+    depends_on: spi
+    filter: dt_compat_enabled("zephyr,sdhc-spi-slot") and dt_compat_enabled("renesas,ra-spi-sci-b")
+    harness: console
+    harness_config:
+      fixture: fixture_sdhc
+      type: multi_line
+      regex:
+        - "Block count"
+        - "Sector size"
+        - "Memory Size"
+        - "Disk mounted"
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/${BOARD}_sci_b_spi.overlay"
+    integration_platforms:
+      - ek_ra8m1
+    platform_allow:
+      - ek_ra8m1
+      - ek_ra8d1
+      - mck_ra8t1
+  sample.filesystem.fat_fs.sdhc_spi.renesas_sci_b_spi_ra8x2:
+    depends_on: spi
+    filter: dt_compat_enabled("zephyr,sdhc-spi-slot") and dt_compat_enabled("renesas,ra-spi-sci-b")
+    harness: console
+    harness_config:
+      fixture: fixture_sdhc
+      type: multi_line
+      regex:
+        - "Block count"
+        - "Sector size"
+        - "Memory Size"
+        - "Disk mounted"
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/${BOARD}${NORMALIZED_BOARD_QUALIFIERS}_sci_b_spi.overlay"
+    platform_allow:
+      - ek_ra8p1/r7ka8p1kflcac/cm85

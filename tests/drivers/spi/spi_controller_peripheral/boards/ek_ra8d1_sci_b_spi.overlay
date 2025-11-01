@@ -1,0 +1,74 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	/* Set CAM_OL_L switch to high */
+	sci4_spi_default: sci4_spi_default {
+		group1 {
+			/* MISO MOSI SCK */
+			psels = <RA_PSEL(RA_PSEL_SCI_4, 7, 15)>,
+				<RA_PSEL(RA_PSEL_SCI_4, 4, 15)>,
+				<RA_PSEL(RA_PSEL_SCI_4, 7, 8)>;
+			drive-strength = "high";
+		};
+	};
+
+	/* Set SW1-1 (PMOD1) to low and SW1-7 (SDRAM) to high */
+	sci0_spi_default: sci0_spi_default {
+		group1 {
+			/* MISO MOSI SCK SSL */
+			psels = <RA_PSEL(RA_PSEL_SCI_0, 6, 10)>,
+				<RA_PSEL(RA_PSEL_SCI_0, 6, 9)>,
+				<RA_PSEL(RA_PSEL_SCI_0, 6, 11)>,
+				<RA_PSEL(RA_PSEL_SCI_0, 6, 9)>;
+			drive-strength = "high";
+		};
+	};
+};
+
+&ioport7 {
+	status = "okay";
+};
+
+&sci4 {
+	pinctrl-0 = <&sci4_spi_default>;
+	pinctrl-names = "default";
+
+	uart {
+		status = "disabled";
+	};
+
+	i2c {
+		status = "disabled";
+	};
+
+	spi {
+		cs-gpios = <&ioport7 0x6 GPIO_ACTIVE_LOW>;
+		status = "okay";
+
+		dut_spi_dt: test-spi-dev@0 {
+			compatible = "vnd,spi-device";
+			reg = <0>;
+			spi-max-frequency = <1000000>;
+		};
+	};
+};
+
+&sci0 {
+	pinctrl-0 = <&sci0_spi_default>;
+	pinctrl-names = "default";
+
+	dut_spis: spi {
+		status = "okay";
+	};
+
+	i2c {
+		status = "disabled";
+	};
+
+	uart {
+		status = "disabled";
+	};
+};
