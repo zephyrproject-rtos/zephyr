@@ -1,0 +1,62 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "mr_canhubk3.dts"
+
+/ {
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+		zephyr,flash = &flash0;
+	};
+};
+
+&flash0 {
+	/* Replace any board-default partitions with the MCUboot layout */
+	/delete-node/ partitions;
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		ivt_header: partition@0 {
+			label = "ivt-header";
+			reg = <0x00000000 0x00000100>;
+		};
+
+		/* pad up to the 8 KiB sector boundary at 0x2000 */
+		ivt_pad: partition@100 {
+			label = "ivt_pad";
+			reg = <0x00000100 0x00001F00>;
+		};
+
+		/* MCUboot @ 0x2000 (128 KiB here; adjust if you use 64 KiB) */
+		mcuboot: partition@2000 {
+			label = "mcuboot";
+			reg = <0x00002000 0x00020000>;
+		};
+
+		/* Primary image (slot 0) */
+		slot0_partition: partition@22000 {
+			label = "image-0";
+			reg = <0x00022000 0x001C0000>;
+		};
+
+		/* Secondary image (slot 1) — start right after slot0 ends */
+		slot1_partition: partition@1E2000 {
+			label = "image-1";
+			reg = <0x001E2000 0x001C0000>;
+		};
+
+		/* Scratch (swap) area */
+		scratch_partition: partition@3A2000 {
+			label = "image-scratch";
+			reg = <0x003A2000 0x00040000>;
+		};
+	};
+};
