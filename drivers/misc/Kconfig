@@ -23,5 +23,6 @@ source "drivers/misc/nxp_rtxxx_dsp_ctrl/Kconfig"
 source "drivers/misc/stm32n6_axisram/Kconfig"
 source "drivers/misc/nxp_inputmux/Kconfig"
 source "drivers/misc/nxp_imx93_mediamix/Kconfig"
+source "drivers/misc/max2221x/Kconfig"
 
 endmenu
