@@ -516,6 +516,22 @@ LED Strip
 
 * Renamed ``arduino,modulino-smartleds`` to :dtcompatible:`arduino,modulino-pixels`
 
+OpenThread
+==========
+
+* Kconfigs renaming:
+  - ``CONFIG_OPENTHREAD_MBEDTLS_CHOICE`` to
+    :kconfig:option:`CONFIG_OPENTHREAD_SECURITY_DEFAULT_CONFIG`
+  - ``CONFIG_CUSTOM_OPENTHREAD_SECURITY`` to
+    :kconfig:option:`CONFIG_OPENTHREAD_SECURITY_CUSTOM`
+
+* In builds without TF-M :kconfig:option:`CONFIG_OPENTHREAD_CRYPTO_PSA` selects
+  :kconfig:option:`CONFIG_SECURE_STORAGE` in order to have a PSA ITS available.
+  This requires the backend for Secure Storage (Settings, ZMS or a custom one)
+  to be configured.
+
+* :kconfig:option:`CONFIG_OPENTHREAD_CRYPTO_PSA` is now enabled by default.
+
 Trusted Firmware-M
 ==================
 
