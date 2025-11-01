@@ -200,6 +200,34 @@ request that they create an :ref:`RFC proposal <rfcs>`.
 
 .. _`Codecov`: https://app.codecov.io/gh/zephyrproject-rtos/zephyr
 
+Handling Serial Dependency Between PRs
+======================================
+
+When PRs have serial dependencies, e.g. PR C depends on PR B, which depends on PR A,
+follow this process to ensure code compiles and tests pass at each stage:
+
+- Submit All PRs Together
+
+   - Open PRs A, B, and C simultaneously.
+   - Mark only PR A as "Ready for Review."
+
+- Include Dependencies in Each PR
+
+   - In PR B, include the commits from PR A.
+   - In PR C, include the commits from both PR A and PR B.
+
+- Propagate Changes
+
+   Any updates to PR A must be manually propagated to PR B, and then from PR B to PR C.
+   This ensures PR C always reflects the latest state of all dependencies.
+
+- Review and Merge Process
+
+   PR A will be reviewed first. PR C’s tests (either in-tree ones or newly added) are used
+   to validate the combined functionality of A, B, and C.
+   Once PR A is merged, repeat the process for PR B (mark it as "Ready for Review" and use
+   PR C for validation).
+
 Workflow Suggestions That Help Reviewers
 ========================================
 
