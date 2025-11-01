@@ -317,6 +317,7 @@ int usbd_disable(struct usbd_context *const uds_ctx)
 		return -EALREADY;
 	}
 
+	k_sched_lock();
 	usbd_device_lock(uds_ctx);
 
 	ret = usbd_config_set(uds_ctx, 0);
@@ -332,6 +333,7 @@ int usbd_disable(struct usbd_context *const uds_ctx)
 	uds_ctx->status.enabled = false;
 
 	usbd_device_unlock(uds_ctx);
+	k_sched_unlock();
 
 	return ret;
 }
