@@ -29,6 +29,20 @@ enum mclk_divider {
 	MCLK_DIV_512
 };
 
+static const uint32_t dma_priority[] = {
+#if defined(CONFIG_DMA_STM32_V1) || defined(CONFIG_DMA_STM32_V2)
+	DMA_PRIORITY_LOW,
+	DMA_PRIORITY_MEDIUM,
+	DMA_PRIORITY_HIGH,
+	DMA_PRIORITY_VERY_HIGH,
+#else
+	DMA_LOW_PRIORITY_LOW_WEIGHT,
+	DMA_LOW_PRIORITY_MID_WEIGHT,
+	DMA_LOW_PRIORITY_HIGH_WEIGHT,
+	DMA_HIGH_PRIORITY,
+#endif
+};
+
 struct queue_item {
 	void *buffer;
 	size_t size;
@@ -289,6 +303,7 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 	hdma->Init.Request = dma_cfg.dma_slot;
 #endif
 	hdma->Init.Mode = DMA_NORMAL;
+	hdma->Init.Priority = dma_priority[dma_cfg.channel_priority];
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32L4X) ||                  \
 	defined(CONFIG_SOC_SERIES_STM32G4X) || defined(CONFIG_SOC_SERIES_STM32L5X) ||              \
@@ -296,14 +311,12 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 
 	hdma->Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
 	hdma->Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
-	hdma->Init.Priority = DMA_PRIORITY_HIGH;
 	hdma->Init.PeriphInc = DMA_PINC_DISABLE;
 	hdma->Init.MemInc = DMA_MINC_ENABLE;
 #else
 	hdma->Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
 	hdma->Init.SrcDataWidth = DMA_SRC_DATAWIDTH_HALFWORD;
 	hdma->Init.DestDataWidth = DMA_DEST_DATAWIDTH_HALFWORD;
-	hdma->Init.Priority = DMA_HIGH_PRIORITY;
 	hdma->Init.SrcBurstLength = 1;
 	hdma->Init.DestBurstLength = 1;
 	hdma->Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT0;
@@ -835,6 +848,8 @@ static DEVICE_API(i2s, i2s_stm32_driver_api) = {
 				.dma_slot = STM32_DMA_SLOT(index, dir, slot),                      \
 				.channel_direction = src_dev##_TO_##dest_dev,                      \
 				.dma_callback = dma_callback,                                      \
+				.channel_priority = STM32_DMA_CONFIG_PRIORITY(                     \
+					STM32_DMA_CHANNEL_CONFIG(index, dir)),                     \
 			},                                                                         \
 		.stream_start = stream_start,                                                      \
 		.queue_drop = queue_drop,                                                          \
