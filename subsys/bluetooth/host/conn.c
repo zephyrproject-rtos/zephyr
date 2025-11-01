@@ -666,6 +666,12 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 		goto error_return;
 	}
 
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN)) {
+		LOG_WRN("Dropping buffer since HCI is not open");
+		err = -EHOSTDOWN;
+		goto error_return;
+	}
+
 	LOG_DBG("conn %p buf %p len %zu buf->len %u cb %p ud %p",
 		conn, buf, len, buf->len, cb, ud);
 
