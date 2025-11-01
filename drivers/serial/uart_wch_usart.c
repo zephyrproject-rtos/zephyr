@@ -187,7 +187,7 @@ static int usart_wch_irq_tx_ready(const struct device *dev)
 	const struct usart_wch_config *config = dev->config;
 	USART_TypeDef *regs = config->regs;
 
-	return (regs->STATR & USART_STATR_TXE) > 0;
+	return (regs->STATR & USART_STATR_TXE) != 0 && (regs->CTLR1 & USART_CTLR1_TXEIE) != 0;
 }
 
 static void usart_wch_irq_rx_enable(const struct device *dev)
