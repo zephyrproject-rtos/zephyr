@@ -37,3 +37,22 @@ tests:
     filter: CONFIG_PICOLIBC_SUPPORTED
     extra_configs:
       - CONFIG_PICOLIBC=y
+  portability.posix.net.hostname.dynamic:
+    extra_configs:
+      - CONFIG_NET_HOSTNAME_ENABLE=y
+      - CONFIG_NET_HOSTNAME_DYNAMIC=y
+  portability.posix.net.hostname.unique:
+    extra_configs:
+      - CONFIG_NET_HOSTNAME_ENABLE=y
+      - CONFIG_NET_HOSTNAME_UNIQUE=y
+      - CONFIG_NET_HOSTNAME_UNIQUE_UPDATE=y
+  portability.posix.net.hostname.dynamic.minimal_libc:
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+      - CONFIG_NET_HOSTNAME_ENABLE=y
+      - CONFIG_NET_HOSTNAME_DYNAMIC=y
+  portability.posix.net.hostname.unique_update:
+    extra_configs:
+      - CONFIG_POSIX_API=y
+      - CONFIG_NET_HOSTNAME_UNIQUE_UPDATE=y
+      - CONFIG_NET_HOSTNAME_UNIQUE=y
