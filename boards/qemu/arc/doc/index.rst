@@ -25,19 +25,7 @@ Hardware
 Supported Features
 ==================
 
-The following hardware features are supported:
-
-+--------------+------------+----------------------+
-| Interface    | Controller | Driver/Component     |
-+==============+============+======================+
-| ARCv2 INTC   | on-chip    | interrupt controller |
-+--------------+------------+----------------------+
-| DW UART      | on-chip    | serial port          |
-+--------------+------------+----------------------+
-| ARC TIMER0   | on-chip    | system clock         |
-+--------------+------------+----------------------+
-
-The kernel currently does not support other hardware features on this platform.
+.. zephyr:board-supported-hw::
 
 Devices
 ========

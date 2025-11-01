@@ -43,23 +43,7 @@ the M4F core and the following listed hardware specifications are used:
 Supported Features
 ==================
 
-The phyboard_electra/am6442/m4 configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| PINCTRL   | on-chip    | pinctrl                             |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not currently supported by the port.
+.. zephyr:board-supported-hw::
 
 Devices
 ========
