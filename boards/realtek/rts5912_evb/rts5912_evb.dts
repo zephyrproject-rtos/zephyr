@@ -95,3 +95,9 @@
 		     &espi_clk_gpio009 &espi_reset_gpio020>;
 	pinctrl-names = "default";
 };
+
+&spim {
+	status = "okay";
+	pinctrl-0 = < &spim_mosi_gpio096>;
+	pinctrl-names = "default";
+}

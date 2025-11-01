@@ -776,6 +776,28 @@
 	};
 
 	/* SPIC PINCTRL SETTING END */
+	/* SPIM PINCTRL SETTING START */
+	/omit-if-no-ref/ spim_cs0_gpio095: spim_cs0_gpio095 {
+			pinmux = <REALTEK_RTS5912_PINMUX(95, FUNC1)>;
+			input-enable;
+			input-schmitt-enable;
+	};
+	/omit-if-no-ref/ spim_mosi_gpio096: spim_mosi_gpio096 {
+			pinmux = <REALTEK_RTS5912_PINMUX(96, FUNC1)>;
+			input-enable;
+			input-schmitt-enable;
+	};
+	/omit-if-no-ref/ spim_miso_gpio097: spim_miso_gpio097 {
+			pinmux = <REALTEK_RTS5912_PINMUX(97, FUNC1)>;
+			input-enable;
+			input-schmitt-enable;
+	};
+	/omit-if-no-ref/ spim_clk_gpio099: spim_clk_gpio099 {
+			pinmux = <REALTEK_RTS5912_PINMUX(99, FUNC1)>;
+			input-enable;
+			input-schmitt-enable;
+	};
+	/* SPIM PINCTRL SETTING END */
 	/* TACHO PINCTRL SETTING START */
 	/omit-if-no-ref/ tacho0_gpio052: tacho0_gpio052 {
 		pinmux = <REALTEK_RTS5912_PINMUX(52, FUNC1)>;
