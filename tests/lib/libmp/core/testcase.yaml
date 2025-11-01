@@ -1,0 +1,9 @@
+tests:
+  libmp.core:
+    platform_allow:
+      - mimxrt1170_evk/mimxrt1176/cm7
+      - native_sim
+    integration_platforms:
+      - native_sim
+    tags:
+      - libmp
