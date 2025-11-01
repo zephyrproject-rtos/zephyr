@@ -29,9 +29,11 @@ family:
     - name: designstart_fpga_cortex_m3
 - name: arm64
   series:
-  - name: fvp_aemv8a
+  - name: fvp_aem
     socs:
-    - name: fvp_base_revc_2xaemv8a
+    - name: v8a
+    - name: v9a
+    - name: a320
   - name: fvp_aemv8r
     socs:
     - name: fvp_aemv8r_aarch64

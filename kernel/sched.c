@@ -862,7 +862,7 @@ void *z_get_next_switch_handle(void *interrupted)
 	K_SPINLOCK(&_sched_spinlock) {
 		struct k_thread *old_thread = _current, *new_thread;
 
-		__ASSERT(old_thread->switch_handle == NULL,
+		__ASSERT(old_thread->switch_handle == NULL || is_thread_dummy(old_thread),
 			"old thread handle should be null.");
 
 		new_thread = next_up();
@@ -1322,10 +1322,11 @@ static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state
 		 * handle for any threads spinning in join() (this can
 		 * never be used, as our thread is flagged dead, but
 		 * it must not be NULL otherwise join can deadlock).
+		 * Use 1 as a clearly invalid but non-NULL value.
 		 */
 		if (dummify && !IS_ENABLED(CONFIG_ARCH_POSIX)) {
 #ifdef CONFIG_USE_SWITCH
-			_current->switch_handle = _current;
+			_current->switch_handle = (void *)1;
 #endif
 			z_dummy_thread_init(&_thread_dummy);
 
