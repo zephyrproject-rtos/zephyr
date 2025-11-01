@@ -18,9 +18,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uart_mcumgr, CONFIG_MCUMGR_TRANSPORT_LOG_LEVEL);
 
-static const struct device *const uart_mcumgr_dev =
-	DEVICE_DT_GET(DT_CHOSEN(zephyr_uart_mcumgr));
-
 /** Callback to execute when a valid fragment has been received. */
 static uart_mcumgr_recv_fn *uart_mcumgr_recv_cb;
 
@@ -43,7 +40,7 @@ uint8_t async_buffer[CONFIG_MCUMGR_TRANSPORT_UART_ASYNC_BUFS]
 static int async_current;
 #endif
 
-static struct uart_mcumgr_rx_buf *uart_mcumgr_alloc_rx_buf(void)
+static struct uart_mcumgr_rx_buf *uart_mcumgr_alloc_rx_buf(const struct device *const dev)
 {
 	struct uart_mcumgr_rx_buf *rx_buf;
 	void *block;
@@ -56,6 +53,9 @@ static struct uart_mcumgr_rx_buf *uart_mcumgr_alloc_rx_buf(void)
 
 	rx_buf = block;
 	rx_buf->length = 0;
+#if defined(CONFIG_MCUMGR_TRANSPORT_FORWARD_TREE)
+	rx_buf->dev = dev;
+#endif
 	return rx_buf;
 }
 
@@ -71,26 +71,26 @@ void uart_mcumgr_free_rx_buf(struct uart_mcumgr_rx_buf *rx_buf)
 /**
  * Reads a chunk of received data from the UART.
  */
-static int uart_mcumgr_read_chunk(void *buf, int capacity)
+static int uart_mcumgr_read_chunk(const struct device *const dev, void *buf, int capacity)
 {
-	if (!uart_irq_rx_ready(uart_mcumgr_dev)) {
+	if (!uart_irq_rx_ready(dev)) {
 		return 0;
 	}
 
-	return uart_fifo_read(uart_mcumgr_dev, buf, capacity);
+	return uart_fifo_read(dev, buf, capacity);
 }
 #endif
 
 /**
  * Processes a single incoming byte.
  */
-static struct uart_mcumgr_rx_buf *uart_mcumgr_rx_byte(uint8_t byte)
+static struct uart_mcumgr_rx_buf *uart_mcumgr_rx_byte(const struct device *const dev, uint8_t byte)
 {
 	struct uart_mcumgr_rx_buf *rx_buf;
 
 	if (!uart_mcumgr_ignoring) {
 		if (uart_mcumgr_cur_buf == NULL) {
-			uart_mcumgr_cur_buf = uart_mcumgr_alloc_rx_buf();
+			uart_mcumgr_cur_buf = uart_mcumgr_alloc_rx_buf(dev);
 			if (uart_mcumgr_cur_buf == NULL) {
 				LOG_WRN("Insufficient buffers, fragment dropped");
 				uart_mcumgr_ignoring = true;
@@ -124,7 +124,7 @@ static struct uart_mcumgr_rx_buf *uart_mcumgr_rx_byte(uint8_t byte)
 }
 
 #if defined(CONFIG_MCUMGR_TRANSPORT_UART_ASYNC)
-static void uart_mcumgr_async(const struct device *dev, struct uart_event *evt, void *user_data)
+static void uart_mcumgr_async(const struct device *const dev, struct uart_event *evt, void *user_data)
 {
 	struct uart_mcumgr_rx_buf *rx_buf;
 	uint8_t *p;
@@ -141,7 +141,7 @@ static void uart_mcumgr_async(const struct device *dev, struct uart_event *evt, 
 		p = &evt->data.rx.buf[evt->data.rx.offset];
 
 		for (int i = 0; i < len; i++) {
-			rx_buf = uart_mcumgr_rx_byte(p[i]);
+			rx_buf = uart_mcumgr_rx_byte(dev, p[i]);
 			if (rx_buf != NULL) {
 				uart_mcumgr_recv_cb(rx_buf);
 			}
@@ -172,26 +172,25 @@ static void uart_mcumgr_async(const struct device *dev, struct uart_event *evt, 
 /**
  * ISR that is called when UART bytes are received.
  */
-static void uart_mcumgr_isr(const struct device *unused, void *user_data)
+static void uart_mcumgr_isr(const struct device *const dev, void *user_data)
 {
 	struct uart_mcumgr_rx_buf *rx_buf;
 	uint8_t buf[32];
 	int chunk_len;
 	int i;
 
-	ARG_UNUSED(unused);
 	ARG_UNUSED(user_data);
 
-	while (uart_irq_update(uart_mcumgr_dev) &&
-	       uart_irq_is_pending(uart_mcumgr_dev)) {
+	while (uart_irq_update(dev) &&
+	       uart_irq_is_pending(dev)) {
 
-		chunk_len = uart_mcumgr_read_chunk(buf, sizeof(buf));
+		chunk_len = uart_mcumgr_read_chunk(dev, buf, sizeof(buf));
 		if (chunk_len == 0) {
 			continue;
 		}
 
 		for (i = 0; i < chunk_len; i++) {
-			rx_buf = uart_mcumgr_rx_byte(buf[i]);
+			rx_buf = uart_mcumgr_rx_byte(dev, buf[i]);
 			if (rx_buf != NULL) {
 				uart_mcumgr_recv_cb(rx_buf);
 			}
@@ -203,48 +202,48 @@ static void uart_mcumgr_isr(const struct device *unused, void *user_data)
 /**
  * Sends raw data over the UART.
  */
-static int uart_mcumgr_send_raw(const void *data, int len)
+static int uart_mcumgr_send_raw(const struct device *const dev, const void *data, int len)
 {
 	const uint8_t *u8p;
 
 	u8p = data;
 	while (len--) {
-		uart_poll_out(uart_mcumgr_dev, *u8p++);
+		uart_poll_out(dev, *u8p++);
 	}
 
 	return 0;
 }
 
-int uart_mcumgr_send(const uint8_t *data, int len)
+int uart_mcumgr_send(const struct device *const dev, const uint8_t *data, int len)
 {
-	return mcumgr_serial_tx_pkt(data, len, uart_mcumgr_send_raw);
+	return mcumgr_serial_tx_pkt(dev, data, len, uart_mcumgr_send_raw);
 }
 
 
 #if defined(CONFIG_MCUMGR_TRANSPORT_UART_ASYNC)
-static void uart_mcumgr_setup(const struct device *uart)
+static void uart_mcumgr_setup(const struct device *const dev)
 {
-	uart_callback_set(uart, uart_mcumgr_async, NULL);
+	uart_callback_set(dev, uart_mcumgr_async, NULL);
 
-	uart_rx_enable(uart, async_buffer[0], sizeof(async_buffer[0]), 0);
+	uart_rx_enable(dev, async_buffer[0], sizeof(async_buffer[0]), 0);
 }
 #else
-static void uart_mcumgr_setup(const struct device *uart)
+static void uart_mcumgr_setup(const struct device *const dev)
 {
-	uart_irq_rx_disable(uart);
-	uart_irq_tx_disable(uart);
+	uart_irq_rx_disable(dev);
+	uart_irq_tx_disable(dev);
 
-	uart_irq_callback_set(uart, uart_mcumgr_isr);
+	uart_irq_callback_set(dev, uart_mcumgr_isr);
 
-	uart_irq_rx_enable(uart);
+	uart_irq_rx_enable(dev);
 }
 #endif
 
-void uart_mcumgr_register(uart_mcumgr_recv_fn *cb)
+void uart_mcumgr_register(const struct device *const dev, uart_mcumgr_recv_fn *cb)
 {
 	uart_mcumgr_recv_cb = cb;
 
-	if (device_is_ready(uart_mcumgr_dev)) {
-		uart_mcumgr_setup(uart_mcumgr_dev);
+	if (device_is_ready(dev)) {
+		uart_mcumgr_setup(dev);
 	}
 }
