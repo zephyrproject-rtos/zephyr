@@ -2,11 +2,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: ai_m62_12f
-name: Ai-Thinker M62-12F development board
+identifier: ai_wb2_12f_kit
+name: Ai-Thinker WB2-12F development board
 type: mcu
 arch: riscv
-ram: 480
+ram: 64
 toolchain:
   - zephyr
 testing:
