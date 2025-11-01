@@ -187,6 +187,9 @@ static int mc_cgm_get_subsys_rate(const struct device *dev, clock_control_subsys
 	uint32_t clock_name = (uint32_t)sub_system;
 
 	switch (clock_name) {
+	case MCUX_SIRC_CLK:
+		*rate = CLOCK_SIRC_CLK_FREQ;
+		break;
 #if defined(CONFIG_UART_MCUX_LPUART)
 	case MCUX_LPUART0_CLK:
 	case MCUX_LPUART8_CLK:

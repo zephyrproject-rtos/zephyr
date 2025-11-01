@@ -21,6 +21,7 @@
 		led1 = &green_led;
 		led2 = &blue_led;
 		sw0 = &user_button;
+		watchdog0 = &swt_0;
 	};
 
 	chosen {
@@ -171,4 +172,8 @@
 &stm_0 {
 	status = "okay";
 	prescaler = <1>;
+};
+
+&swt_0 {
+	status = "okay";
 };
