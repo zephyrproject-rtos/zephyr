@@ -157,6 +157,7 @@ These commands will generate something similar to the output below::
     ========================================================================================
                                                                   21652
 
+.. _footprint_tools_plot:
 
 Build Targets: ram_plot/rom_plot
 ================================
