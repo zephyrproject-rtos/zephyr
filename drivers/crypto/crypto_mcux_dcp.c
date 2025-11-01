@@ -11,21 +11,38 @@ LOG_MODULE_REGISTER(mcux_dcp, CONFIG_CRYPTO_LOG_LEVEL);
 
 #include <errno.h>
 #include <string.h>
-#include <zephyr/kernel.h>
 #include <zephyr/cache.h>
 #include <zephyr/crypto/crypto.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/sem.h>
 #include <zephyr/sys/util.h>
 
 #include <fsl_dcp.h>
 
-#define CRYPTO_DCP_CIPHER_CAPS		(CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS |\
-					CAP_SYNC_OPS | CAP_NO_IV_PREFIX)
-#define CRYPTO_DCP_HASH_CAPS		(CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS)
+enum {
+	CRYPTO_DCP_CIPHER_CAPS =
+		(CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | CAP_NO_IV_PREFIX),
+	CRYPTO_DCP_HASH_CAPS = (CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS),
+#if DCP_USE_DCACHE
+#if (CONFIG_DCACHE_LINE_SIZE != 0)
+	DCACHE_LINE_SIZE_BYTES = CONFIG_DCACHE_LINE_SIZE,
+#else
+	DCACHE_LINE_SIZE_BYTES = DT_PROP_OR(_CPU, d_cache_line_size, 0),
+#endif
+	DCACHE_ALIGNMENT_BITS = DCACHE_LINE_SIZE_BYTES * 8,
+	BUF_SIZE = 32,
+#endif
+};
 
 struct crypto_dcp_session {
 	dcp_handle_t handle;
 	dcp_hash_ctx_t hash_ctx;
-	bool in_use;
+	volatile bool in_use;
+#if DCP_USE_DCACHE
+	uint8_t aes_out_buf[MAX(BUF_SIZE, DCACHE_LINE_SIZE_BYTES)]
+		__aligned(DCACHE_LINE_SIZE_BYTES);
+	uint8_t aes_cbc_iv_buf[MAX(16, DCACHE_LINE_SIZE_BYTES)] __aligned(DCACHE_LINE_SIZE_BYTES);
+#endif
 };
 
 struct crypto_dcp_config {
@@ -35,6 +52,9 @@ struct crypto_dcp_config {
 struct crypto_dcp_data {
 	struct crypto_dcp_session sessions[CONFIG_CRYPTO_MCUX_DCP_MAX_SESSION];
 };
+
+static SYS_SEM_DEFINE(dcp_sem, CONFIG_CRYPTO_MCUX_DCP_MAX_SESSION,
+		      CONFIG_CRYPTO_MCUX_DCP_MAX_SESSION);
 
 /* Helper function to convert common FSL error status codes to errno codes */
 static inline int fsl_to_errno(status_t status)
@@ -55,6 +75,10 @@ static struct crypto_dcp_session *get_session(const struct device *dev)
 {
 	struct crypto_dcp_data *data = dev->data;
 
+	if (sys_sem_take(&dcp_sem, K_FOREVER) != 0) { /* TODO: find proper timeout */
+		return NULL;
+	}
+
 	for (size_t i = 0; i < CONFIG_CRYPTO_MCUX_DCP_MAX_SESSION; ++i) {
 		if (!data->sessions[i].in_use) {
 			data->sessions[i].in_use = true;
@@ -69,6 +93,8 @@ static struct crypto_dcp_session *get_session(const struct device *dev)
 static inline void free_session(struct crypto_dcp_session *session)
 {
 	session->in_use = false;
+
+	sys_sem_give(&dcp_sem);
 }
 
 static int crypto_dcp_query_hw_caps(const struct device *dev)
@@ -82,33 +108,51 @@ static int crypto_dcp_aes_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt 
 {
 	const struct crypto_dcp_config *cfg = ctx->device->config;
 	struct crypto_dcp_session *session = ctx->drv_sessn_state;
-	status_t status;
-	size_t iv_bytes;
-	uint8_t *p_iv, iv_loc[16];
+	const size_t iv_bytes = ((ctx->flags & CAP_NO_IV_PREFIX) == 0U) ? 16 : 0;
 
-	if ((ctx->flags & CAP_NO_IV_PREFIX) == 0U) {
-		/* Prefix IV to ciphertext, which is default behavior of Zephyr
-		 * crypto API, unless CAP_NO_IV_PREFIX is requested.
-		 */
-		iv_bytes = 16U;
-		memcpy(pkt->out_buf, iv, 16U);
-		p_iv = iv;
+#if DCP_USE_DCACHE
+	uint8_t *p_iv = session->aes_cbc_iv_buf;
+
+	const size_t out_lines = pkt->out_buf_max / DCACHE_LINE_SIZE_BYTES +
+				 ((pkt->out_buf_max % DCACHE_LINE_SIZE_BYTES) ? 1 : 0);
+	const size_t p_out_size = out_lines * DCACHE_LINE_SIZE_BYTES;
+	uint8_t *p_out;
+
+	if (p_out_size <= sizeof(session->aes_out_buf)) {
+		p_out = session->aes_out_buf;
 	} else {
-		iv_bytes = 0U;
-		memcpy(iv_loc, iv, 16U);
-		p_iv = iv_loc;
+		LOG_DBG("allocating %d bytes on the stack", p_out_size);
+		p_out = __builtin_alloca_with_align(p_out_size, DCACHE_ALIGNMENT_BITS);
 	}
 
-	sys_cache_data_disable();
-	status = DCP_AES_EncryptCbc(cfg->base, &session->handle, pkt->in_buf,
-				    pkt->out_buf + iv_bytes, pkt->in_len, p_iv);
-	sys_cache_data_enable();
+	if (p_out == NULL) {
+		LOG_ERR("ENOMEM");
+		return -ENOMEM;
+	}
 
+	memcpy(p_iv, iv, 16U);
+
+	sys_cache_data_flush_range(pkt->in_buf, pkt->in_len);
+	sys_cache_data_flush_range(p_iv, 16);
+	sys_cache_data_invd_range(p_out, p_out_size);
+#else
+	uint8_t *p_out = pkt->out_buf;
+	uint8_t *p_iv = iv;
+#endif
+
+	memcpy(pkt->out_buf, iv, iv_bytes);
+
+	const status_t status = DCP_AES_EncryptCbc(cfg->base, &session->handle, pkt->in_buf, p_out,
+						   pkt->in_len, p_iv);
 	if (status != kStatus_Success) {
 		return fsl_to_errno(status);
 	}
 
 	pkt->out_len = pkt->in_len + iv_bytes;
+
+#if DCP_USE_DCACHE
+	memcpy(pkt->out_buf + iv_bytes, p_out, pkt->out_len - iv_bytes);
+#endif
 
 	return 0;
 }
@@ -117,69 +161,137 @@ static int crypto_dcp_aes_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt 
 {
 	const struct crypto_dcp_config *cfg = ctx->device->config;
 	struct crypto_dcp_session *session = ctx->drv_sessn_state;
-	status_t status;
-	size_t iv_bytes;
-	uint8_t *p_iv, iv_loc[16];
+	const size_t iv_bytes = ((ctx->flags & CAP_NO_IV_PREFIX) == 0U) ? 16 : 0;
 
-	if ((ctx->flags & CAP_NO_IV_PREFIX) == 0U) {
-		iv_bytes = 16U;
-		p_iv = iv;
+#if DCP_USE_DCACHE
+	uint8_t *p_iv = session->aes_cbc_iv_buf;
+
+	const size_t out_lines = pkt->out_buf_max / DCACHE_LINE_SIZE_BYTES +
+				 ((pkt->out_buf_max % DCACHE_LINE_SIZE_BYTES) ? 1 : 0);
+	const size_t p_out_size = out_lines * DCACHE_LINE_SIZE_BYTES;
+	uint8_t *p_out;
+
+	if (p_out_size <= sizeof(session->aes_out_buf)) {
+		p_out = session->aes_out_buf;
 	} else {
-		iv_bytes = 0U;
-		memcpy(iv_loc, iv, 16U);
-		p_iv = iv_loc;
+		LOG_DBG("allocating %d bytes on the stack", p_out_size);
+		p_out = __builtin_alloca_with_align(p_out_size, DCACHE_ALIGNMENT_BITS);
 	}
 
-	sys_cache_data_disable();
-	status = DCP_AES_DecryptCbc(cfg->base, &session->handle, pkt->in_buf + iv_bytes,
-				    pkt->out_buf, pkt->in_len, p_iv);
-	sys_cache_data_enable();
+	if (p_out == NULL) {
+		LOG_ERR("ENOMEM");
+		return -ENOMEM;
+	}
 
+	memcpy(p_iv, iv, 16U);
+
+	sys_cache_data_flush_range(pkt->in_buf, pkt->in_len);
+	sys_cache_data_flush_range(p_iv, 16);
+	sys_cache_data_invd_range(p_out, p_out_size);
+#else
+	uint8_t *p_iv = iv;
+	uint8_t *p_out = pkt->out_buf;
+#endif
+
+	const status_t status = DCP_AES_DecryptCbc(
+		cfg->base, &session->handle, pkt->in_buf + iv_bytes, p_out, pkt->in_len, p_iv);
 	if (status != kStatus_Success) {
 		return fsl_to_errno(status);
 	}
 
 	pkt->out_len = pkt->in_len - iv_bytes;
 
+#if DCP_USE_DCACHE
+	memcpy(pkt->out_buf, p_out, pkt->out_len);
+#endif
+
 	return 0;
 }
 
 static int crypto_dcp_aes_ecb_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 {
-	const struct crypto_dcp_config *cfg = ctx->device->config;
 	struct crypto_dcp_session *session = ctx->drv_sessn_state;
-	status_t status;
 
-	sys_cache_data_disable();
-	status = DCP_AES_EncryptEcb(cfg->base, &session->handle, pkt->in_buf, pkt->out_buf,
-				    pkt->in_len);
-	sys_cache_data_enable();
+#if DCP_USE_DCACHE
+	const size_t out_lines = pkt->out_buf_max / DCACHE_LINE_SIZE_BYTES +
+				 ((pkt->out_buf_max % DCACHE_LINE_SIZE_BYTES) ? 1 : 0);
+	const size_t p_out_size = out_lines * DCACHE_LINE_SIZE_BYTES;
+	uint8_t *p_out;
 
+	if (p_out_size <= sizeof(session->aes_out_buf)) {
+		p_out = session->aes_out_buf;
+	} else {
+		LOG_WRN("allocating %d bytes in the stack", p_out_size);
+		p_out = __builtin_alloca_with_align(p_out_size, DCACHE_ALIGNMENT_BITS);
+	}
+
+	if (p_out == NULL) {
+		LOG_ERR("ENOMEM");
+		return -ENOMEM;
+	}
+
+	sys_cache_data_flush_range(pkt->in_buf, pkt->in_len);
+	sys_cache_data_invd_range(p_out, p_out_size);
+#else
+	uint8_t *p_out = pkt->out_buf;
+#endif
+
+	const struct crypto_dcp_config *cfg = ctx->device->config;
+	const status_t status =
+		DCP_AES_EncryptEcb(cfg->base, &session->handle, pkt->in_buf, p_out, pkt->in_len);
 	if (status != kStatus_Success) {
 		return fsl_to_errno(status);
 	}
 
 	pkt->out_len = pkt->in_len;
+
+#if DCP_USE_DCACHE
+	memcpy(pkt->out_buf, p_out, pkt->out_len);
+#endif
 
 	return 0;
 }
 
 static int crypto_dcp_aes_ecb_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 {
-	const struct crypto_dcp_config *cfg = ctx->device->config;
 	struct crypto_dcp_session *session = ctx->drv_sessn_state;
-	status_t status;
 
-	sys_cache_data_disable();
-	status = DCP_AES_DecryptEcb(cfg->base, &session->handle, pkt->in_buf, pkt->out_buf,
-				    pkt->in_len);
-	sys_cache_data_enable();
+#if DCP_USE_DCACHE
+	const size_t out_lines = pkt->out_buf_max / DCACHE_LINE_SIZE_BYTES +
+				 ((pkt->out_buf_max % DCACHE_LINE_SIZE_BYTES) ? 1 : 0);
+	const size_t p_out_size = out_lines * DCACHE_LINE_SIZE_BYTES;
+	uint8_t *p_out;
 
+	if (p_out_size <= sizeof(session->aes_out_buf)) {
+		p_out = session->aes_out_buf;
+	} else {
+		LOG_WRN("allocating %d bytes in the stack", p_out_size);
+		p_out = __builtin_alloca_with_align(p_out_size, DCACHE_ALIGNMENT_BITS);
+	}
+
+	if (p_out == NULL) {
+		LOG_ERR("ENOMEM");
+		return -ENOMEM;
+	}
+
+	sys_cache_data_flush_range(pkt->in_buf, pkt->in_len);
+	sys_cache_data_invd_range(p_out, p_out_size);
+#else
+	uint8_t *p_out = pkt->out_buf;
+#endif
+
+	const struct crypto_dcp_config *cfg = ctx->device->config;
+	const status_t status =
+		DCP_AES_DecryptEcb(cfg->base, &session->handle, pkt->in_buf, p_out, pkt->in_len);
 	if (status != kStatus_Success) {
 		return fsl_to_errno(status);
 	}
 
 	pkt->out_len = pkt->in_len;
+
+#if DCP_USE_DCACHE
+	memcpy(pkt->out_buf, p_out, pkt->out_len);
+#endif
 
 	return 0;
 }
@@ -190,7 +302,6 @@ static int crypto_dcp_cipher_begin_session(const struct device *dev, struct ciph
 {
 	const struct crypto_dcp_config *cfg = dev->config;
 	struct crypto_dcp_session *session;
-	status_t status;
 
 	if (algo != CRYPTO_CIPHER_ALGO_AES ||
 	    (mode != CRYPTO_CIPHER_MODE_CBC && mode != CRYPTO_CIPHER_MODE_ECB)) {
@@ -222,7 +333,8 @@ static int crypto_dcp_cipher_begin_session(const struct device *dev, struct ciph
 
 	ctx->drv_sessn_state = session;
 
-	status = DCP_AES_SetKey(cfg->base, &session->handle, ctx->key.bit_stream, ctx->keylen);
+	const status_t status =
+		DCP_AES_SetKey(cfg->base, &session->handle, ctx->key.bit_stream, ctx->keylen);
 	if (status != kStatus_Success) {
 		free_session(session);
 		return fsl_to_errno(status);
@@ -271,7 +383,6 @@ static int crypto_dcp_hash_begin_session(const struct device *dev, struct hash_c
 {
 	const struct crypto_dcp_config *cfg = dev->config;
 	struct crypto_dcp_session *session;
-	status_t status;
 
 	if (algo != CRYPTO_HASH_ALGO_SHA256) {
 		return -ENOTSUP;
@@ -286,7 +397,8 @@ static int crypto_dcp_hash_begin_session(const struct device *dev, struct hash_c
 		return -ENOSPC;
 	}
 
-	status = DCP_HASH_Init(cfg->base, &session->handle, &session->hash_ctx, kDCP_Sha256);
+	const status_t status =
+		DCP_HASH_Init(cfg->base, &session->handle, &session->hash_ctx, kDCP_Sha256);
 	if (status != kStatus_Success) {
 		free_session(session);
 		return fsl_to_errno(status);
@@ -339,13 +451,13 @@ static DEVICE_API(crypto, crypto_dcp_api) = {
 	.hash_free_session = crypto_dcp_hash_free_session,
 };
 
-#define CRYPTO_DCP_DEFINE(inst)									\
-	static const struct crypto_dcp_config crypto_dcp_config_##inst = {			\
-		.base = (DCP_Type *)DT_INST_REG_ADDR(inst),					\
-	};											\
-	static struct crypto_dcp_data crypto_dcp_data_##inst;					\
-	DEVICE_DT_INST_DEFINE(inst, crypto_dcp_init, NULL,					\
-			      &crypto_dcp_data_##inst, &crypto_dcp_config_##inst,		\
-			      POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY, &crypto_dcp_api);
+#define CRYPTO_DCP_DEFINE(inst)                                                                    \
+	static const struct crypto_dcp_config crypto_dcp_config_##inst = {                         \
+		.base = (DCP_Type *)DT_INST_REG_ADDR(inst),                                        \
+	};                                                                                         \
+	static struct crypto_dcp_data crypto_dcp_data_##inst;                                      \
+	DEVICE_DT_INST_DEFINE(inst, crypto_dcp_init, NULL, &crypto_dcp_data_##inst,                \
+			      &crypto_dcp_config_##inst, POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY, \
+			      &crypto_dcp_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CRYPTO_DCP_DEFINE)
