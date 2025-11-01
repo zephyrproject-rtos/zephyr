@@ -30,6 +30,8 @@
 
 /* Used on devices that have no explicit erase */
 #define LITTLEFS_DEFAULT_BLOCK_SIZE     4096
+/* Rounded up from minimal block size for littlefs working */
+#define LITTLEFS_MINIMUM_BLOCK_SIZE     128
 
 /* note: one of the next options have to be enabled, at least */
 BUILD_ASSERT(IS_ENABLED(CONFIG_FS_LITTLEFS_BLK_DEV) ||
@@ -784,6 +786,12 @@ static int littlefs_init_cfg(struct fs_littlefs *fs, int flags)
 	if (block_size == 0) {
 		__ASSERT_NO_MSG(block_size != 0);
 		return -EINVAL;
+	}
+
+	if (block_size < LITTLEFS_MINIMUM_BLOCK_SIZE) {
+		LOG_WRN("LittleFS block_size of %d smaller than required minimum %d, rounding up.",
+			block_size, LITTLEFS_MINIMUM_BLOCK_SIZE);
+		block_size = LITTLEFS_MINIMUM_BLOCK_SIZE;
 	}
 
 	int32_t block_cycles = lcp->block_cycles;
