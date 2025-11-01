@@ -113,7 +113,7 @@
 
 /*
  * needs to be configured, so the leds don't generate an error,
- * but does not interfer with the A53-Core
+ * but does not interfere with the A53-Core
  */
 &gpio1 {
 	status = "okay";

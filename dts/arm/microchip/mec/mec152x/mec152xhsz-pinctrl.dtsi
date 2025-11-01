@@ -532,7 +532,7 @@
 	/* MEC152x QMSPI Port 2 can be external pins named gpspi_xxx or
 	 * for the MEC1727 variant internal pins named int_spi_xxx.
 	 * The MEC1527 variant includes a SST25PF040 512 KB SPI flash
-	 * in the package conntected to the int_spi_xxx pins.
+	 * in the package connected to the int_spi_xxx pins.
 	 */
 	/omit-if-no-ref/ gpspi_cs_n_gpio024: gpspi_cs_n_gpio024 {
 		pinmux = <MCHP_XEC_PINMUX(024, MCHP_AF1)>;
