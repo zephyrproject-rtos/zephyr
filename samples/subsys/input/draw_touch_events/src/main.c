@@ -70,7 +70,15 @@ static void clear_screen(void)
 
 	for (x = 0; x < WIDTH; x += CROSS_DIM) {
 		for (y = 0; y < HEIGHT; y += CROSS_DIM) {
-			display_write(display_dev, x, y, &buf_desc, buffer_cross_empty);
+			struct display_buffer_descriptor ddesc = buf_desc;
+			uint16_t rem_w = WIDTH - x;
+			uint16_t rem_h = HEIGHT - y;
+
+			ddesc.width = MIN(buf_desc.width, rem_w);
+			ddesc.height = MIN(buf_desc.height, rem_h);
+			ddesc.buf_size = ddesc.width * ddesc.height * BPP;
+
+			display_write(display_dev, x, y, &ddesc, buffer_cross_empty);
 		}
 	}
 }
