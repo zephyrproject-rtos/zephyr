@@ -4149,6 +4149,7 @@ static struct bt_hfp_hf *hfp_hf_create(struct bt_conn *conn)
 
 	/* Set the supported features*/
 	hf->hf_features = BT_HFP_HF_SUPPORTED_FEATURES;
+	hf->hf_features |= BT_FEAT_SC(bt_dev.features) ? BT_HFP_HF_FEATURE_ESCO_S4 : 0;
 
 	/* Set supported codec ids */
 	hf->hf_codec_ids = BT_HFP_HF_SUPPORTED_CODEC_IDS;
