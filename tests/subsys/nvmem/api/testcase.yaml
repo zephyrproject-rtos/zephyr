@@ -11,3 +11,9 @@ tests:
       - CONFIG_EEPROM=y
     extra_dtc_overlay_files:
       - eeprom.overlay
+  nvmem.api.flash:
+    extra_configs:
+      - CONFIG_FLASH=y
+      - CONFIG_NVMEM_FLASH_WRITE=y
+    extra_dtc_overlay_files:
+      - flash.overlay
