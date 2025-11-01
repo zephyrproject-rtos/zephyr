@@ -120,6 +120,7 @@ static void bap_broadcast_assistant_recv_state_cb(
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
 	char bad_code[BT_ISO_BROADCAST_CODE_SIZE * 2 + 1];
+	struct bt_le_ext_adv_info info;
 
 	if (err != 0) {
 		FAIL("BASS recv state read failed (%d)\n", err);
@@ -179,8 +180,16 @@ static void bap_broadcast_assistant_recv_state_cb(
 
 #if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER)
 	if (state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
-		err = bt_le_per_adv_sync_transfer(g_pa_sync, conn,
-						  BT_UUID_BASS_VAL);
+		uint8_t past_flags = BT_BAP_PAST_FLAG_NO_MATCH_ADV_EXT_IND;
+
+		bt_le_per_adv_sync_get_info(g_pa_sync, &info);
+		uint8_t src_id = info.sid;
+
+
+		err = bt_le_per_adv_sync_transfer(g_pa_sync,
+				conn,
+				BT_BAP_PAST_SERVICE_DATA(past_flags, src_id));
+
 		if (err != 0) {
 			FAIL("Could not transfer periodic adv sync: %d\n", err);
 			return;
