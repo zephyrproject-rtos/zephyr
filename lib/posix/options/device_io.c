@@ -14,12 +14,15 @@
 #include <zephyr/posix/sys/select.h>
 
 /* prototypes for external, not-yet-public, functions in fdtable.c or fs.c */
-int zvfs_close(int fd);
 FILE *zvfs_fdopen(int fd, const char *mode);
 int zvfs_fileno(FILE *file);
-int zvfs_open(const char *name, int flags, int mode);
-ssize_t zvfs_read(int fd, void *buf, size_t sz, size_t *from_offset);
-ssize_t zvfs_write(int fd, const void *buf, size_t sz, size_t *from_offset);
+
+static struct fd_op_vtable posix_op_vtable = {
+	.read = zvfs_read_vmeth,
+	.write = zvfs_write_vmeth,
+	.close = zvfs_close_vmeth,
+	.ioctl = zvfs_ioctl_vmeth,
+};
 
 void FD_CLR(int fd, struct zvfs_fd_set *fdset)
 {
@@ -59,6 +62,30 @@ int fileno(FILE *file)
 	return zvfs_fileno(file);
 }
 
+static int posix_mode_to_zephyr(int mf)
+{
+	int mode = (mf & O_CREAT) ? FS_O_CREATE : 0;
+
+	mode |= (mf & O_APPEND) ? FS_O_APPEND : 0;
+	mode |= (mf & O_TRUNC) ? FS_O_TRUNC : 0;
+
+	switch (mf & O_ACCMODE) {
+	case O_RDONLY:
+		mode |= FS_O_READ;
+		break;
+	case O_WRONLY:
+		mode |= FS_O_WRITE;
+		break;
+	case O_RDWR:
+		mode |= FS_O_RDWR;
+		break;
+	default:
+		break;
+	}
+
+	return mode;
+}
+
 int open(const char *name, int flags, ...)
 {
 	int mode = 0;
@@ -69,9 +96,11 @@ int open(const char *name, int flags, ...)
 		mode = va_arg(args, int);
 		va_end(args);
 	}
+	int zflags = posix_mode_to_zephyr(flags);
 
-	return zvfs_open(name, flags, mode);
+	return zvfs_open(name, zflags, &posix_op_vtable);
 }
+
 #ifdef CONFIG_POSIX_DEVICE_IO_ALIAS_OPEN
 FUNC_ALIAS(open, _open, int);
 #endif
