@@ -78,6 +78,7 @@ source "drivers/ethernet/Kconfig.lan9250"
 source "drivers/ethernet/Kconfig.sy1xx_mac"
 source "drivers/ethernet/Kconfig.xilinx_axienet"
 source "drivers/ethernet/Kconfig.virtio_net"
+source "drivers/ethernet/Kconfig.xilinx_axi_ethernet_lite"
 
 source "drivers/ethernet/eth_nxp_enet_qos/Kconfig"
 
