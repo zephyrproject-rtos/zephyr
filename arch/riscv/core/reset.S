@@ -9,6 +9,7 @@
 #include <zephyr/linker/sections.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/offsets.h>
+#include <zephyr/arch/riscv/csr.h>
 #include "asm_macros.inc"
 
 /* exports */
@@ -81,6 +82,10 @@ aa_loop:
 	la sp, z_interrupt_stacks
 	li t0, __z_interrupt_stack_SIZEOF
 	add sp, sp, t0
+
+#ifdef CONFIG_RISCV_SMRNMI_ENABLE_NMI_DELIVERY
+	csrs CSR_MNSTATUS, MNSTATUS_NMIE
+#endif
 
 #ifdef CONFIG_WDOG_INIT
 	call _WdogInit
