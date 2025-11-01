@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config ACTUATOR
+	bool "Actuator device driver support"
+	select EXPERIMENTAL
+
+if ACTUATOR
+
+module = ACTUATOR
+module-str = actuator
+source "subsys/logging/Kconfig.template.log_config"
+
+config ACTUATOR_INIT_PRIORITY
+	int "Actuator init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  Actuator device driver initialization priority.
+
+endif # ACTUATOR
