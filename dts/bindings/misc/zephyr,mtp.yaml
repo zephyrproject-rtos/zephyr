@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Mohamed ElShahawi <ExtremeGTX@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Expose stored files over USB MTP (Media Transfer Protocol)
+
+compatible: "zephyr,mtp"
+
+include: base.yaml
+
+properties:
+  fstab-entry:
+    type: phandle
+    required: true
+    description: |
+      phandle of the fstab entry to be exposed over MTP.
