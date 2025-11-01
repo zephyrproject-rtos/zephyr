@@ -14,6 +14,13 @@
 		};
 	};
 
+	sercom7_i2c_default: sercom7_i2c_default {
+		group1 {
+			pinmux = <PD8C_SERCOM7_PAD0>,
+				 <PD9C_SERCOM7_PAD1>;
+		};
+	};
+
 	tcc0_pwm_default: tcc0_pwm_default {
 		group1 {
 			pinmux = <PC18F_TCC0_WO2>;
