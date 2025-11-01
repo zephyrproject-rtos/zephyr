@@ -242,6 +242,11 @@ New APIs and options
   * :kconfig:option:`CONFIG_LV_Z_VDB_ZEPHYR_REGION`
   * :kconfig:option:`CONFIG_LV_Z_VDB_ZEPHYR_REGION_NAME`
 
+* LoRa/LoRaWAN
+
+   * Alternate backend available with :kconfig:option:`CONFIG_LORA_MODULE_BACKEND_LORA_BASICS_MODEM` (LoRa only)
+   * :c:func:`lora_airtime`
+
 * Logging:
 
   * :kconfig:option:`CONFIG_LOG_BACKEND_SWO_SYNC_PACKETS`
