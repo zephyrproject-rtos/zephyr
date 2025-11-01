@@ -256,6 +256,7 @@ static uint32_t get_hclk_frequency(void)
 
 #if !defined(CONFIG_CPU_CORTEX_M4)
 
+__unused
 static int32_t prepare_regulator_voltage_scale(void)
 {
 	/* Make sure to put the CPU in highest Voltage scale during clock configuration */
@@ -271,6 +272,7 @@ static int32_t prepare_regulator_voltage_scale(void)
 	return 0;
 }
 
+__unused
 static int32_t optimize_regulator_voltage_scale(uint32_t sysclk_freq)
 {
 
@@ -680,10 +682,36 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 	return 0;
 }
 
+static enum clock_control_status stm32_clock_control_get_status(const struct device *dev,
+								clock_control_subsys_t sub_system)
+{
+	struct stm32_pclken *pclken = (struct stm32_pclken *)sub_system;
+
+	ARG_UNUSED(dev);
+
+	if (IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX) == true) {
+		/* Gated clocks */
+		if ((sys_read32(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus) & pclken->enr)
+			== pclken->enr) {
+			return CLOCK_CONTROL_STATUS_ON;
+		} else {
+			return CLOCK_CONTROL_STATUS_OFF;
+		}
+	} else {
+		/* Domain clock sources */
+		if (enabled_clock(pclken->bus) == 0) {
+			return CLOCK_CONTROL_STATUS_ON;
+		} else {
+			return CLOCK_CONTROL_STATUS_OFF;
+		}
+	}
+}
+
 static DEVICE_API(clock_control, stm32_clock_control_api) = {
 	.on = stm32_clock_control_on,
 	.off = stm32_clock_control_off,
 	.get_rate = stm32_clock_control_get_subsys_rate,
+	.get_status = stm32_clock_control_get_status,
 	.configure = stm32_clock_control_configure,
 };
 
@@ -1025,6 +1053,8 @@ int stm32_clock_control_init(const struct device *dev)
 {
 	int r = 0;
 
+#if !defined(CONFIG_STM32_APP_IN_EXT_FLASH)
+
 #if defined(CONFIG_CPU_CORTEX_M7)
 	uint32_t old_hclk_freq;
 	uint32_t new_hclk_freq;
@@ -1146,6 +1176,11 @@ int stm32_clock_control_init(const struct device *dev)
 
 	/* Update CMSIS variable */
 	SystemCoreClock = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+	
+#else  /* defined(CONFIG_STM32_APP_IN_EXT_FLASH) */
+	/* Calculate SysClock based on RCC register config and clk_hse clock-frequency */
+	SystemCoreClock = HAL_RCC_GetSysClockFreq();
+#endif /* defined(CONFIG_STM32_APP_IN_EXT_FLASH) */
 
 	return r;
 }
