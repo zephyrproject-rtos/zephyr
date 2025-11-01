@@ -61,6 +61,9 @@ enum os_mgmt_err_code_t {
 
 	/** Query was recognized but there is no valid value for the response. */
 	OS_MGMT_ERR_QUERY_RESPONSE_VALUE_NOT_VALID,
+
+	/** Heap statistic fetch failed. */
+	OS_MGMT_ERR_HEAP_STATS_FETCH_FAILED,
 };
 
 /**
