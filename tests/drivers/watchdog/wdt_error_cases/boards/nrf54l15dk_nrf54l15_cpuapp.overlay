@@ -4,6 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	resources {
+		compatible = "test-wdt-error-cases";
+		opt-pause-in-sleep;
+		opt-pause-halted-by-dbg;
+	};
+};
+
 &wdt31 {
 	status = "okay";
 };
