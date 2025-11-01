@@ -1,0 +1,96 @@
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+#include <arm/armv8-m.dtsi>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33";
+			reg = <0>;
+			d-cache-line-size = <32>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+	};
+
+	clocks {
+		clk_sys: clk_sys {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(260)>;
+		};
+	};
+
+	soc {
+		sram0: memory@10003020 {
+			compatible = "mmio-sram";
+			reg = <0x10003020 0x00074000>;
+		};
+
+		ram_image2_entry: memory@10003000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x10003000 0x20>;
+			zephyr,memory-region = "KM4_IMG2_ENTRY";
+		};
+
+		pinctrl: pinctrl@48000400 {
+			compatible = "realtek,ameba-pinctrl";
+			reg = <0x48000400 0x200>;
+		};
+
+		loguart: serial@48012000 {
+			compatible = "realtek,ameba-loguart";
+			reg = <0x48012000 0x100>;
+			interrupts = <3 0>;
+			current-speed = <1500000>;
+			status = "disabled";
+		};
+
+		spic: flash-controller@48080000 {
+			compatible = "realtek,ameba-flash-controller";
+			reg = <0x48080000 0x200>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			flash0: flash@E000020 {
+				compatible = "soc-nv-flash";
+				erase-block-size = <DT_SIZE_K(4)>;
+				write-block-size = <4>;
+			};
+		};
+
+		gpioa: gpio@48014000 {
+			compatible = "realtek,ameba-gpio";
+			reg = <0x48014000 0x400>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <4 0>;
+			status = "disabled";
+		};
+
+		gpiob: gpio@48014400 {
+			compatible = "realtek,ameba-gpio";
+			reg = <0x48014400 0x400>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <8 0>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
