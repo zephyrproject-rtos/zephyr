@@ -81,9 +81,8 @@ Package can be created using two methods:
   package.
 * static - types of arguments are detected at compile time by the preprocessor
   and package is created as simple assignments to a provided memory. This method
-  is significantly faster than runtime (more than 15 times) but has following
-  limitations: requires ``_Generic`` keyword (C11 feature) to be supported by
-  the compiler and cannot distinguish between ``%p`` and ``%s`` if char pointer
+  is significantly faster than runtime (more than 15 times) but has a
+  significant limitation: it cannot distinguish between ``%p`` and ``%s`` if char pointer
   is used. It treats all (unsigned) char pointers as ``%s`` thus it will attempt
   to append string to a package. It can be handled correctly during conversion
   from **transient** package to **self-contained** package using
@@ -174,7 +173,6 @@ formatting since address changes whenever package is copied.
 Limitations and recommendations
 ===============================
 
-* C11 ``_Generic`` support is required by the compiler to use static (fast) packaging.
 * It is recommended to cast any character pointer used with ``%p`` format specifier to
   other pointer type (e.g. ``void *``). If format string is not accessible then only
   static packaging is possible and it will append all detected strings. Character pointer
