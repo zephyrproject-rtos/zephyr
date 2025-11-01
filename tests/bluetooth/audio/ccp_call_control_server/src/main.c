@@ -20,9 +20,8 @@
 #include <zephyr/fff.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
-
-#include <ztest_test.h>
-#include <ztest_assert.h>
+#include <zephyr/ztest_test.h>
+#include <zephyr/ztest_assert.h>
 
 DEFINE_FFF_GLOBALS;
 
