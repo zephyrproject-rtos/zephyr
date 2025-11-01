@@ -18,4 +18,5 @@ supported:
   - pinctrl
   - uart
   - dma
+  - spi
 vendor: bflb
