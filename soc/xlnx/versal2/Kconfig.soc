@@ -13,8 +13,15 @@ config SOC_AMD_VERSAL2_RPU
 	help
 	  AMD Versal Gen 2 RPU
 
+config SOC_AMD_VERSAL2_APU
+	bool
+	select SOC_AMD_VERSAL2
+	help
+	  AMD Versal Gen 2 APU
+
 config SOC_FAMILY
 	default "amd_versal2" if SOC_AMD_VERSAL2
 
 config SOC
 	default "amd_versal2_rpu" if SOC_AMD_VERSAL2_RPU
+	default "amd_versal2_apu" if SOC_AMD_VERSAL2_APU
