@@ -804,6 +804,14 @@ config NET_HEADERS_ALWAYS_CONTIGUOUS
 	  NET_BUF_FIXED_DATA_SIZE enabled and NET_BUF_DATA_SIZE of 128 for
 	  instance.
 
+config NET_LINK_ADDR_CUSTOM_LENGTH
+	int "Size of custom link layer address length"
+	default 0
+	help
+	  This option allows to define custom link layer address length
+	  if your link layer technology is not supported directly.
+	  As a default, custom link layer address length is not used.
+
 # If we are running network tests found in tests/net, then the NET_TEST is
 # set and in that case we default to Dummy L2 layer as typically the tests
 # use that by default.
