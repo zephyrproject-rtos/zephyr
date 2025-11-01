@@ -364,6 +364,9 @@ void lll_scan_aux_isr_aux_setup(void *param)
 	LL_ASSERT(aux_start_us > window_widening_us);
 	aux_start_us -= window_widening_us;
 
+	/* +1 us radio_tmr_start_us compensation */
+	aux_start_us -= 1U;
+
 	start_us = radio_tmr_start_us(0, aux_start_us);
 	LL_ASSERT_MSG(start_us == (aux_start_us + 1U),
 		      "aa_us %u us, aux_offset %u us, start_us %u != %u",
