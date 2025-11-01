@@ -380,6 +380,7 @@ static int ppi_setup(const struct device *dev, uint8_t chan)
 	NRF_RTC_Type *rtc = nrfx_config->rtc;
 	nrf_rtc_event_t evt = NRF_RTC_CHANNEL_EVENT_ADDR(chan);
 	nrfx_err_t result;
+	int ret;
 
 	if (!nrfx_config->use_ppi) {
 		return 0;
@@ -405,10 +406,10 @@ static int ppi_setup(const struct device *dev, uint8_t chan)
 	evt_addr = nrfy_rtc_event_address_get(rtc, evt);
 	task_addr = nrfy_rtc_task_address_get(rtc, NRF_RTC_TASK_CLEAR);
 
-	result = nrfx_ppi_channel_alloc(&data->ppi_ch);
-	if (result != NRFX_SUCCESS) {
+	ret = nrfx_ppi_channel_alloc(&data->ppi_ch);
+	if (ret != 0) {
 		ERR("Failed to allocate PPI channel.");
-		return -ENODEV;
+		return ret;
 	}
 	(void)nrfx_ppi_channel_assign(data->ppi_ch, evt_addr, task_addr);
 	(void)nrfx_ppi_channel_enable(data->ppi_ch);

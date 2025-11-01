@@ -27,7 +27,7 @@ struct i2c_nrfx_twi_data {
 	uint32_t dev_config;
 	struct k_sem transfer_sync;
 	struct k_sem completion_sync;
-	volatile nrfx_err_t res;
+	volatile int res;
 };
 
 /* Enforce dev_config matches the same offset as the common structure,
@@ -109,16 +109,16 @@ static void event_handler(nrfx_twi_evt_t const *p_event, void *p_context)
 
 	switch (p_event->type) {
 	case NRFX_TWI_EVT_DONE:
-		dev_data->res = NRFX_SUCCESS;
+		dev_data->res = 0;
 		break;
 	case NRFX_TWI_EVT_ADDRESS_NACK:
-		dev_data->res = NRFX_ERROR_DRV_TWI_ERR_ANACK;
+		dev_data->res = -EIO;
 		break;
 	case NRFX_TWI_EVT_DATA_NACK:
-		dev_data->res = NRFX_ERROR_DRV_TWI_ERR_DNACK;
+		dev_data->res = -EAGAIN;
 		break;
 	default:
-		dev_data->res = NRFX_ERROR_INTERNAL;
+		dev_data->res = -ECANCELED;
 		break;
 	}
 
