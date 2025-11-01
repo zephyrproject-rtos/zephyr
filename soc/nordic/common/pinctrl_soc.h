@@ -70,7 +70,8 @@ typedef uint32_t pinctrl_soc_pin_t;
 	 (DT_PROP(node_id, nordic_drive_mode) << NRF_DRIVE_POS) |	       \
 	 ((NRF_LP_ENABLE * DT_PROP(node_id, low_power_enable)) << NRF_LP_POS) |\
 	 (DT_PROP(node_id, nordic_invert) << NRF_INVERT_POS) |		       \
-	 Z_GET_CLOCKPIN_ENABLE(node_id, prop, idx, p_node_id)),
+	 Z_GET_CLOCKPIN_ENABLE(node_id, prop, idx, p_node_id) |		       \
+	 ((DT_PROP_OR(node_id, slew_rate, 0) & NRF_BIAS_MSK) << NRF_BIAS_POS)),
 
 /**
  * @brief Utility macro to initialize state pins contained in a given property.
@@ -89,6 +90,13 @@ typedef uint32_t pinctrl_soc_pin_t;
  * @param pincfg Pin configuration bit field.
  */
 #define NRF_GET_FUN(pincfg) (((pincfg) >> NRF_FUN_POS) & NRF_FUN_MSK)
+
+/**
+ * @brief Utility macro to obtain port and pin combination.
+ *
+ * @param pincfg Pin configuration bit field.
+ */
+#define NRF_GET_BIAS(pincfg) (((pincfg) >> NRF_BIAS_POS) & NRF_BIAS_MSK)
 
 /**
  * @brief Utility macro to obtain pin clockpin enable flag.
