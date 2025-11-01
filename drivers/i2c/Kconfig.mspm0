@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2024 Texas Instruments
+
+config I2C_MSPM0
+	bool "MSPM0 I2C driver"
+	default y
+	depends on DT_HAS_TI_MSPM0_I2C_ENABLED
+	select USE_MSPM0_DL_I2C
+	select PINCTRL
+	help
+	  This option enables the TI MSPM0 I2C driver.
+
+config I2C_SCL_LOW_TIMEOUT
+	int "I2C SCL Timeout"
+	default 0
+	help
+	  Timeout in milliseconds that reflects acceptable
+	  cumulative low period in a transaction.
+	  0 means that the driver will use the K_FOREVER value,
+	  waiting as long as necessary.
