@@ -64,7 +64,7 @@ struct ds1307_data {
 static int ds1307_set_time(const struct device *dev, const struct rtc_time *tm)
 {
 	int err;
-	uint8_t regs[7];
+	uint8_t regs[8];
 
 	struct ds1307_data *data = dev->data;
 	const struct ds1307_config *config = dev->config;
@@ -76,15 +76,16 @@ static int ds1307_set_time(const struct device *dev, const struct rtc_time *tm)
 		tm->tm_year, tm->tm_mon, tm->tm_mday, tm->tm_wday, tm->tm_hour, tm->tm_min,
 		tm->tm_sec);
 
-	regs[0] = bin2bcd(tm->tm_sec) & SECONDS_BITS;
-	regs[1] = bin2bcd(tm->tm_min);
-	regs[2] = bin2bcd(tm->tm_hour);
-	regs[3] = bin2bcd(tm->tm_wday);
-	regs[4] = bin2bcd(tm->tm_mday);
-	regs[5] = bin2bcd(tm->tm_mon);
-	regs[6] = bin2bcd((tm->tm_year % 100));
+	regs[0] = DS1307_REG_SECONDS;
+	regs[1] = bin2bcd(tm->tm_sec) & SECONDS_BITS;
+	regs[2] = bin2bcd(tm->tm_min);
+	regs[3] = bin2bcd(tm->tm_hour);
+	regs[4] = bin2bcd(tm->tm_wday);
+	regs[5] = bin2bcd(tm->tm_mday);
+	regs[6] = bin2bcd(tm->tm_mon);
+	regs[7] = bin2bcd((tm->tm_year % 100));
 
-	err = i2c_burst_write_dt(&config->i2c_bus, DS1307_REG_SECONDS, regs, sizeof(regs));
+	err = i2c_write_dt(&config->i2c_bus, regs, sizeof(regs));
 
 	k_spin_unlock(&data->lock, key);
 
