@@ -622,6 +622,15 @@ static inline const char *bt_gatt_err_to_str(int gatt_err)
  */
 void bt_gatt_cb_register(struct bt_gatt_cb *cb);
 
+/** @brief Unregister GATT callbacks.
+ *
+ *  Unregister callbacks for monitoring the state of GATT. The callback
+ *  struct should be one that was previously registered.
+ *
+ *  @param cb Callback struct.
+ */
+void bt_gatt_cb_unregister(struct bt_gatt_cb *cb);
+
 /** @brief Register GATT authorization callbacks.
  *
  *  Register callbacks to perform application-specific authorization of GATT
