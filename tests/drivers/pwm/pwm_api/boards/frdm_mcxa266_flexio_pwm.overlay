@@ -1,0 +1,38 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		pwm-test = &flexio_pwm;
+	};
+};
+
+&pinctrl {
+	pinmux_flexio_pwm: pinmux_flexio_pwm {
+		group0 {
+			pinmux = <FLEXIO0_D16_P2_8>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+};
+
+&flexio0 {
+	status = "okay";
+
+	flexio_pwm: flexio_pwm {
+		compatible = "nxp,flexio-pwm";
+		#pwm-cells = <3>;
+		status = "okay";
+		pinctrl-0 = <&pinmux_flexio_pwm>;
+		pinctrl-names = "default";
+
+		pwm_0 {
+			pin-id = <16>;
+			prescaler = <1>;
+		};
+	};
+};
