@@ -31,6 +31,8 @@
 
 LOG_MODULE_REGISTER(siwx91x_nwp);
 
+#define NWP_NODE DT_NODELABEL(nwp)
+
 BUILD_ASSERT(DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(195) ||
 	     DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(255) ||
 	     DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(319));
@@ -147,13 +149,46 @@ static void siwx91x_apply_sram_config(sl_si91x_boot_configuration_t *boot_config
 	}
 }
 
+static void siwx91x_apply_nwp_config(sl_si91x_boot_configuration_t *boot_config)
+{
+	uint32_t ext_feat = 0;
+
+#if DT_NODE_HAS_PROP(NWP_NODE, front_end_internal_switch)
+	ext_feat |= SL_SI91X_EXT_FEAT_FRONT_END_INTERNAL_SWITCH;
+#elif DT_NODE_HAS_PROP(NWP_NODE, front_end_switch_gpios)
+	ext_feat |= SL_SI91X_EXT_FEAT_FRONT_END_SWITCH_PINS_ULP_GPIO_4_5_0;
+#endif
+
+#if DT_NODE_HAS_PROP(NWP_NODE, rtc_from_host)
+	boot_config->custom_feature_bit_map |= SL_SI91X_CUSTOM_FEAT_RTC_FROM_HOST;
+#endif
+
+#if DT_NODE_HAS_PROP(NWP_NODE, support_1p8v)
+	boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_1P8V_SUPPORT;
+#endif
+
+#if DT_NODE_HAS_PROP(NWP_NODE, disable_xtal_correction)
+	boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_DISABLE_XTAL_CORRECTION;
+#endif
+
+#if DT_NODE_HAS_PROP(NWP_NODE, nwp_qspi_80mhz_clk)
+	boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_NWP_QSPI_80MHZ_CLK_ENABLE;
+#endif
+
+	boot_config->ext_custom_feature_bit_map |= ext_feat;
+}
+
 static void siwx91x_configure_sta_mode(sl_si91x_boot_configuration_t *boot_config)
 {
 	const bool wifi_enabled = IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X);
 	const bool bt_enabled = IS_ENABLED(CONFIG_BT_SILABS_SIWX91X);
 
 	boot_config->oper_mode = SL_SI91X_CLIENT_MODE;
+	boot_config->feature_bit_map |= SL_SI91X_FEAT_SECURITY_OPEN;
 
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_FEAT_SECURITY_PSK)) {
+		boot_config->feature_bit_map |= SL_SI91X_FEAT_SECURITY_PSK;
+	}
 	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_ROAMING_USE_DEAUTH)) {
 		boot_config->custom_feature_bit_map |=
 			SL_SI91X_CUSTOM_FEAT_ROAM_WITH_DEAUTH_OR_NULL_DATA;
@@ -174,9 +209,9 @@ static void siwx91x_configure_sta_mode(sl_si91x_boot_configuration_t *boot_confi
 
 #ifdef CONFIG_WIFI_SILABS_SIWX91X
 	boot_config->ext_tcp_ip_feature_bit_map = SL_SI91X_CONFIG_FEAT_EXTENSION_VALID;
-	boot_config->ext_custom_feature_bit_map |=
-		SL_SI91X_EXT_FEAT_IEEE_80211W |
-		SL_SI91X_EXT_FEAT_FRONT_END_SWITCH_PINS_ULP_GPIO_4_5_0;
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_MFP)) {
+		boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_IEEE_80211W;
+	}
 	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_ENHANCED_MAX_PSP)) {
 		boot_config->config_feature_bit_map = SL_SI91X_ENABLE_ENHANCED_MAX_PSP;
 	}
@@ -316,20 +351,11 @@ static int siwx91x_get_nwp_config(const struct device *dev,
 		.band = SL_SI91X_WIFI_BAND_2_4GHZ,
 		.boot_option = LOAD_NWP_FW,
 		.boot_config = {
-			.feature_bit_map = SL_SI91X_FEAT_SECURITY_OPEN | SL_SI91X_FEAT_WPS_DISABLE |
-					   SL_SI91X_FEAT_SECURITY_PSK | SL_SI91X_FEAT_AGGREGATION |
-					   SL_SI91X_FEAT_HIDE_PSK_CREDENTIALS,
+			.feature_bit_map = SL_SI91X_FEAT_WPS_DISABLE | SL_SI91X_FEAT_AGGREGATION,
 			.tcp_ip_feature_bit_map = SL_SI91X_TCP_IP_FEAT_EXTENSION_VALID,
 			.custom_feature_bit_map = SL_SI91X_CUSTOM_FEAT_EXTENSION_VALID |
-						  SL_SI91X_CUSTOM_FEAT_ASYNC_CONNECTION_STATUS |
-						  SL_SI91X_CUSTOM_FEAT_RTC_FROM_HOST,
-			.ext_custom_feature_bit_map =
-				SL_SI91X_EXT_FEAT_XTAL_CLK | SL_SI91X_EXT_FEAT_1P8V_SUPPORT |
-				SL_SI91X_EXT_FEAT_DISABLE_XTAL_CORRECTION |
-				SL_SI91X_EXT_FEAT_NWP_QSPI_80MHZ_CLK_ENABLE |
-				SL_SI91X_EXT_FEAT_FRONT_END_SWITCH_PINS_ULP_GPIO_4_5_0 |
-				SL_SI91X_EXT_FEAT_FRONT_END_INTERNAL_SWITCH |
-				SL_SI91X_EXT_FEAT_XTAL_CLK,
+						  SL_SI91X_CUSTOM_FEAT_ASYNC_CONNECTION_STATUS,
+			.ext_custom_feature_bit_map = SL_SI91X_EXT_FEAT_XTAL_CLK,
 		}
 	};
 
@@ -344,8 +370,12 @@ static int siwx91x_get_nwp_config(const struct device *dev,
 		return -EINVAL;
 	}
 
+	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_FEAT_HIDE_PSK_CREDENTIALS)) {
+		boot_config->feature_bit_map |= SL_SI91X_FEAT_HIDE_PSK_CREDENTIALS;
+	}
 	siwx91x_store_country_code(dev, DEFAULT_COUNTRY_CODE);
 	siwx91x_apply_sram_config(boot_config);
+	siwx91x_apply_nwp_config(boot_config);
 
 	switch (wifi_oper_mode) {
 	case WIFI_STA_MODE:

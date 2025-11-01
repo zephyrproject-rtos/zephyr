@@ -31,3 +31,51 @@ properties:
       - deep-sleep-without-ram-retention
       - deep-sleep-with-ram-retention
     required: true
+
+  rtc-from-host:
+    type: boolean
+    description: |
+      Enables Real-Time Clock (RTC) synchronization from the host system.
+      When enabled, the NWP uses the host's RTC for timekeeping and certificate
+      validation timing.
+      Enable this when the host MCU provides a valid RTC source.
+
+  support-1p8v:
+    type: boolean
+    description: |
+      Enables 1.8 V operation support for the NWP power domain.
+      Enable this if the board powers the NWP with 1.8 V instead of 3.3 V.
+
+  disable-xtal-correction:
+    type: boolean
+    description: |
+      Disables automatic 40 MHz XTAL frequency correction.
+      Enable this for calibration applications, or when using a custom XTAL
+      (part number other than 8Y40070013) to avoid automatic compensation.
+
+  nwp-qspi-80mhz-clk:
+    type: boolean
+    description: |
+      Enables 80 MHz QSPI clock mode for the NWP flash interface to improve
+      throughput. Enable this if the external flash device supports 80 MHz
+      operation; otherwise, keep it disabled.
+
+  front-end-internal-switch:
+    type: boolean
+    description: |
+      Selects the internal front-end switch configuration.
+      When enabled, the NWP uses its on-chip RF switch and ignores external GPIO
+      control signals. Use this on hardware designs that do not include an
+      external RF switch circuit.
+      This corresponds to BIT(30) – SL_SI91X_EXT_FEAT_FRONT_END_INTERNAL_SWITCH.
+      Mutually exclusive with 'front-end-switch-gpios'.
+
+  front-end-switch-gpios:
+    type: boolean
+    description: |
+      Enables front-end switching using external ULP GPIOs (4, 5, and 0).
+      When enabled, the NWP drives ULP_GPIO4/5/0 as ANT_SEL control lines for
+      the external RF switch. Use this on boards with an external front-end
+      switch network.
+      This corresponds to BIT(29) – SL_SI91X_EXT_FEAT_FRONT_END_SWITCH_PINS_ULP_GPIO_4_5_0.
+      Mutually exclusive with 'front-end-internal-switch'.
