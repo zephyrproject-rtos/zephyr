@@ -687,7 +687,9 @@ static void dma_tx_callback(const struct device *dma_dev, void *arg,
 	return;
 
 tx_disable:
-	tx_stream_disable(stream, dev);
+	if ((stream->cfg.options & I2S_OPT_BIT_CLK_GATED) != 0) {
+		tx_stream_disable(stream, dev);
+	}
 }
 
 static uint32_t i2s_stm32_irq_count;
