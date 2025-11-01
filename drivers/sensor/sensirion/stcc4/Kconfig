@@ -1,0 +1,12 @@
+# STCC4 sensor configuration options.
+
+# Copyright (c) 2025, Sensirion AG
+# SPDX-License-Identifier: Apache-2.0
+
+config STCC4
+	bool "STCC4 Sensor"
+	default y
+	depends on DT_HAS_SENSIRION_STCC4_ENABLED
+	select I2C
+	help
+	  Enable driver for STCC4 Sensor
