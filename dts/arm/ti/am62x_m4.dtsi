@@ -92,9 +92,9 @@
 		status = "disabled";
 	};
 
-	gpio0: gpio@4201000 {
+	gpio0: gpio@4201010 {
 		compatible = "ti,davinci-gpio";
-		reg = <0x4201000 0x100>;
+		reg = <0x4201010 0x28>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <24>;
