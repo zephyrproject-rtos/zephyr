@@ -9,4 +9,4 @@ config PHY_MICROCHIP_T1S
 	select PHY_OA_TC14_PLCA_LIB
 	help
 	  Enable Microchip's LAN8650/1 Rev.B0/B1 Internal PHYs and
-	  LAN8670/1/2 Rev.C1/C2 PHYs Driver.
+	  LAN8670/1/2 Rev.C1/C2/D0 PHYs Driver.
