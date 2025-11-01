@@ -3,11 +3,7 @@
 
 if BOARD_LITEX_VEXRISCV
 
-if NETWORKING
-
-config NET_L2_ETHERNET
+configdefault NET_L2_ETHERNET
 	default y
-
-endif # NETWORKING
 
 endif # BOARD_LITEX_VEXRISCV

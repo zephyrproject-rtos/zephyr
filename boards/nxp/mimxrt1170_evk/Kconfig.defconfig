@@ -34,11 +34,7 @@ config IMX_USDHC_DAT3_PWR_TOGGLE
 
 endif # DISK_DRIVERS
 
-if NETWORKING
-
-config NET_L2_ETHERNET
-	default y if DT_HAS_NXP_ENET_ENABLED && NETWORKING
-
-endif # NETWORKING
+configdefault NET_L2_ETHERNET
+	default y if DT_HAS_NXP_ENET_ENABLED
 
 endif

@@ -17,14 +17,10 @@ config MCG_VDIV0
 config MCG_FCRDIV
 	default 1
 
-if NETWORKING
-
-config NET_L2_ETHERNET
+configdefault NET_L2_ETHERNET
 	default y
 
-config ETH_NXP_ENET_RMII_EXT_CLK
+configdefault ETH_NXP_ENET_RMII_EXT_CLK
 	default y
-
-endif # NETWORKING
 
 endif # BOARD_IP_K66F
