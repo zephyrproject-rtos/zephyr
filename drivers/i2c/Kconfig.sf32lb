@@ -1,0 +1,9 @@
+# Copyright (c) 2025, Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_SF32LB
+	bool "SiFli SF32LB I2C driver"
+	default y
+	depends on DT_HAS_SIFLI_SF32LB_I2C_ENABLED
+	help
+	  Enable I2C driver for SiFli SF32LB.
