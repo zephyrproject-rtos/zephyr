@@ -38,6 +38,13 @@ config IMX_USDHC_DMA_BUFFER_SIZE
 	help
 	  Size of USDHC ADMA descriptor buffer in bytes
 
+config IMX_USDHC_DMA_SCATTER_GATHER
+	bool "Scatter-Gather DMA mode"
+	depends on HEAP_MEM_POOL_SIZE > 0
+	help
+	  Enable Scatter-Gather DMA mode. Proper HEAP_MEM_POOL_SIZE should be
+	  configured for dynamic scatter gather list allocation.
+
 endif # IMX_USDHC_DMA_SUPPORT
 
 
