@@ -429,6 +429,14 @@
 	sys_trace_k_timer_status_sync_blocking(timer)
 #define sys_port_trace_k_timer_status_sync_exit(timer, result)                                     \
 	sys_trace_k_timer_status_sync_exit(timer, result)
+#define sys_port_trace_k_timer_expiry_enter(timer)                                                 \
+	sys_trace_k_timer_expiry_enter(timer)
+#define sys_port_trace_k_timer_expiry_exit(timer)                                                  \
+	sys_trace_k_timer_expiry_exit(timer)
+#define sys_port_trace_k_timer_stop_fn_expiry_enter(timer)					   \
+	sys_trace_k_timer_stop_fn_expiry_enter(timer)
+#define sys_port_trace_k_timer_stop_fn_expiry_exit(timer)					   \
+	sys_trace_k_timer_stop_fn_expiry_exit(timer)
 
 #define sys_port_trace_k_event_init(event) sys_trace_k_event_init(event)
 #define sys_port_trace_k_event_post_enter(event, events, events_mask)   \
@@ -694,6 +702,10 @@ void sys_trace_k_timer_start(struct k_timer *timer, k_timeout_t duration, k_time
 void sys_trace_k_timer_stop(struct k_timer *timer);
 void sys_trace_k_timer_status_sync_blocking(struct k_timer *timer);
 void sys_trace_k_timer_status_sync_exit(struct k_timer *timer, uint32_t result);
+void sys_trace_k_timer_expiry_enter(struct k_timer *timer);
+void sys_trace_k_timer_expiry_exit(struct k_timer *timer);
+void sys_trace_k_timer_stop_fn_expiry_enter(struct k_timer *timer);
+void sys_trace_k_timer_stop_fn_expiry_exit(struct k_timer *timer);
 
 void sys_trace_k_event_init(struct k_event *event);
 void sys_trace_k_event_post_enter(struct k_event *event, uint32_t events, uint32_t events_mask);
