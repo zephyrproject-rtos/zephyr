@@ -72,7 +72,8 @@ if BT_MESH_ADV_LEGACY
 
 config BT_MESH_ADV_STACK_SIZE
 	int "Mesh advertiser thread stack size"
-	default 1024 if BT_HOST_CRYPTO
+	default 1800 if BT_MESH_PROVISIONER
+	default 1536 if BT_MESH_PROXY
 	default 776 if BT_MESH_PRIV_BEACONS
 	default 768
 	help
@@ -142,8 +143,8 @@ if BT_MESH_WORKQ_MESH
 
 config BT_MESH_ADV_STACK_SIZE
 	int "Mesh extended advertiser thread stack size"
+	default 2048 if BT_MESH_PROVISIONER
 	default 1536 if BT_MESH_PROXY
-	default 1024 if BT_HOST_CRYPTO
 	default 776 if BT_MESH_PRIV_BEACONS
 	default 768
 	help
@@ -359,6 +360,17 @@ config BT_MESH_ECDH_P256_HMAC_SHA256_AES_CCM
 config BT_MESH_OOB_AUTH_REQUIRED
 	bool "OOB authentication mandates to use HMAC SHA256"
 	depends on BT_MESH_ECDH_P256_HMAC_SHA256_AES_CCM
+
+config BT_MESH_REDUCED_MAX_OOB_SIZE
+	bool "Reduced maximum OOB authentication size support"
+	depends on BT_MESH_PROV
+	help
+	  The initial maximum OOB authentication size was 8 bytes. The API was designed
+	  accordingly. Later, the maximum OOB authentication size was increased to 32 bytes.
+	  Related API for OOB output\input was changed and became incompatible with the previous one.
+	  Enable this option to enable the previous API and support the initial
+	  maximum OOB authentication size. Option is intended for backward compatibility.
+	  Not recommended for new designs.
 
 config BT_MESH_PROVISIONER
 	bool "Provisioner support"

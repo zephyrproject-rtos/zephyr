@@ -172,8 +172,12 @@ static bool prov_check_method(struct bt_mesh_dev_capabilities *caps)
 				return false;
 			}
 		} else {
+#if defined CONFIG_BT_MESH_REDUCED_MAX_OOB_SIZE
 			if (!bt_mesh_prov->output_number) {
-				LOG_WRN("Not support output number");
+#else
+			if (!bt_mesh_prov->output_numeric) {
+#endif
+				LOG_WRN("Not support output numeric");
 				return false;
 			}
 		}
