@@ -6,18 +6,10 @@
 
 / {
 	chosen {
-		/* Switch to flexcomm0_lpuart0(P0_16,P0_17), since default console
+		/* Switch to flexcomm2_lpuart2(P4_2,P4_3), since default console
 		 * pins are duplicated with camera header pins
 		 */
-		zephyr,console = &flexcomm0_lpuart0;
-		zephyr,shell-uart = &flexcomm0_lpuart0;
+		zephyr,console = &flexcomm2_lpuart2;
+		zephyr,shell-uart = &flexcomm2_lpuart2;
 	};
-};
-
-&flexcomm0 {
-	status = "okay";
-};
-
-&flexcomm0_lpuart0 {
-	status = "okay";
 };
