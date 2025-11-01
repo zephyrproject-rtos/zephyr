@@ -161,6 +161,13 @@
 			#size-cells = <1>;
 		};
 
+		ocotp: ocotp@401f4000 {
+			compatible = "nxp,imx-ocotp";
+			reg = <0x401f4000 0x4000>;
+			size = <192>;
+			status = "okay";
+		};
+
 		/* GPT1 is used for the hardware timer, not as a standard counter */
 		gpt_hw_timer: gpt@401ec000 {
 			compatible = "nxp,gpt-hw-timer";
