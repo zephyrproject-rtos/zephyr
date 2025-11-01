@@ -330,10 +330,6 @@ static void avctp_tx_processor(struct k_work *item)
 		goto failed;
 	}
 
-	if (net_buf_tailroom(buf) < chunk_size) {
-		LOG_WRN("Not enough tailroom for AVCTP payload (len: %d)", chunk_size);
-		goto failed;
-	}
 	net_buf_pull_mem(buf, chunk_size);
 
 	user_data->sent_len += chunk_size;
