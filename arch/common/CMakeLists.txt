@@ -97,6 +97,7 @@ if(DEFINED CONFIG_ARCH_SUPPORTS_ROM_OFFSET)
   zephyr_linker_sources(ROM_START SORT_KEY 0x0 rom_start_offset.ld)
   # Handled in ld.cmake
 endif()
+zephyr_linker_sources(SECTIONS SORT_KEY $ k_entry.ld)
 
 
 # isr_tables is a normal CMake library and not a zephyr_library because it

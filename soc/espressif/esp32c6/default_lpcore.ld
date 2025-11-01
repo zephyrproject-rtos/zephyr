@@ -28,7 +28,7 @@ _ram_len = _aligned_coproc_mem - _vector_table_len - ULP_SHARED_MEM_SIZE;
 _shared_mem_org = ULP_SHARED_MEM_ADDR;
 _shared_mem_len = ULP_SHARED_MEM_SIZE;
 
-ENTRY(reset_vector)
+ENTRY(CONFIG_KERNEL_ENTRY)
 
 MEMORY
 {

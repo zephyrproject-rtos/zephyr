@@ -75,7 +75,7 @@ MEMORY
 }
 
 /*  Default entry point:  */
-ENTRY(__appcpu_start)
+ENTRY(CONFIG_KERNEL_ENTRY)
 
 /* Heap size calculations for APPCPU */
 _heap_sentry = DRAM_RESERVED_START;
