@@ -84,6 +84,9 @@ struct lll_sync_iso {
 	uint8_t chm_chan_map[PDU_CHANNEL_MAP_SIZE];
 	uint8_t chm_chan_count:6;
 
+	/* Flag to stop events in LLL pipeline */
+	uint8_t is_lll_stop:1;
+
 #if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
 	uint8_t is_lll_resume:1;
 	uint32_t ready_us;
