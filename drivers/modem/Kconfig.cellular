@@ -38,6 +38,9 @@ config MODEM_CELLULAR
 	  include power management and more complex device specific
 	  features.
 
+	  This driver does not support PSM/eDRX modes because these can be
+	  achieved only when using off-load modem drivers for battery devices.
+
 if MODEM_CELLULAR
 
 config MODEM_CELLULAR_INIT_PRIORITY
