@@ -17,6 +17,42 @@
 #define SCMI_POWER_STATE_SET_FLAGS_ASYNC BIT(0)
 
 /**
+ * @name SCMI power domain state parameters
+ * @{
+ */
+
+/** Power state type field bit shift */
+#define SCMI_POWER_STATE_TYPE_SHIFT	30U
+
+/** Power state ID field mask */
+#define SCMI_POWER_STATE_ID_MASK	(BIT(28) - 1)
+
+/**
+ * @brief Construct SCMI power state parameter
+ *
+ * @param type Power state type
+ * @param id   Power state ID
+ */
+#define SCMI_POWER_STATE_PARAM(type, id) \
+	((((type) & BIT(0)) << SCMI_POWER_STATE_TYPE_SHIFT) | \
+	 ((id) & SCMI_POWER_STATE_ID_MASK))
+
+/** @} */
+
+/**
+ * @name SCMI power domain generic states
+ * @{
+ */
+
+/** Power domain is in ON state */
+#define SCMI_POWER_STATE_GENERIC_ON	SCMI_POWER_STATE_PARAM(0, 0)
+
+/** Power domain is in OFF state */
+#define SCMI_POWER_STATE_GENERIC_OFF	SCMI_POWER_STATE_PARAM(1, 0)
+
+/** @} */
+
+/**
  * @struct scmi_power_state_config
  *
  * @brief Describes the parameters for the POWER_STATE_SET
