@@ -5,10 +5,11 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
-#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/sys/printk.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/printk.h>
 #include <zephyr/zbus/zbus.h>
 LOG_MODULE_REGISTER(zbus, CONFIG_ZBUS_LOG_LEVEL);
 
@@ -103,6 +104,39 @@ int _zbus_init(void)
 }
 SYS_INIT(_zbus_init, APPLICATION, CONFIG_ZBUS_CHANNELS_SYS_INIT_PRIORITY);
 
+#if defined(CONFIG_ZBUS_ASYNC_LISTENER)
+void async_listener_work_handler(struct k_work *item)
+{
+	struct zbus_async_listener_work *async_listener =
+		CONTAINER_OF(item, struct zbus_async_listener_work, work);
+
+	__ASSERT(async_listener != NULL, "async_listener required");
+	__ASSERT(async_listener->callback != NULL, "callback required");
+	__ASSERT(async_listener->queue != NULL, "queue required");
+	__ASSERT(async_listener->message_fifo != NULL, "async listener message_fifo is required");
+
+	while (k_fifo_is_empty(async_listener->message_fifo) == 0) {
+
+		struct net_buf *buf = k_fifo_get(async_listener->message_fifo,
+						 K_MSEC(CONFIG_ZBUS_ASYNC_LISTENER_EXEC_TIMEOUT));
+		__ASSERT(buf != NULL, "buf element required");
+
+		if (buf == NULL) {
+			LOG_ERR("Could not retrieve message from async listener fifo");
+			return;
+		}
+
+		struct zbus_channel **chan = ((struct zbus_channel **)net_buf_user_data(buf));
+
+		__ASSERT_NO_MSG(*chan != NULL);
+
+		async_listener->callback(*chan, net_buf_remove_mem(buf, zbus_chan_msg_size(*chan)));
+
+		net_buf_unref(buf);
+	}
+}
+#endif /* CONFIG_ZBUS_ASYNC_LISTENER */
+
 #if defined(CONFIG_ZBUS_CHANNEL_ID)
 
 const struct zbus_channel *zbus_chan_from_id(uint32_t channel_id)
@@ -134,6 +168,7 @@ static inline int _zbus_notify_observer(const struct zbus_channel *chan,
 	case ZBUS_OBSERVER_SUBSCRIBER_TYPE: {
 		return k_msgq_put(obs->queue, &chan, sys_timepoint_timeout(end_time));
 	}
+
 #if defined(CONFIG_ZBUS_MSG_SUBSCRIBER)
 	case ZBUS_OBSERVER_MSG_SUBSCRIBER_TYPE: {
 		struct net_buf *cloned_buf = net_buf_clone(buf, sys_timepoint_timeout(end_time));
@@ -148,6 +183,29 @@ static inline int _zbus_notify_observer(const struct zbus_channel *chan,
 	}
 #endif /* CONFIG_ZBUS_MSG_SUBSCRIBER */
 
+#if defined(CONFIG_ZBUS_ASYNC_LISTENER)
+	case ZBUS_OBSERVER_ASYNC_LISTENER_TYPE: {
+		struct net_buf *cloned_buf = net_buf_clone(buf, sys_timepoint_timeout(end_time));
+
+		if (cloned_buf == NULL) {
+			return -ENOMEM;
+		}
+
+		struct zbus_async_listener_work *async_listener =
+			CONTAINER_OF(obs->work, struct zbus_async_listener_work, work);
+
+		k_fifo_put(async_listener->message_fifo, cloned_buf);
+
+		int ret;
+
+		ret = k_work_submit_to_queue(async_listener->queue, obs->work);
+		if (ret < 0) {
+			return ret;
+		}
+
+		break;
+	}
+#endif /* CONFIG_ZBUS_ASYNC_LISTENER */
 	default:
 		_ZBUS_ASSERT(false, "Unreachable");
 	}
