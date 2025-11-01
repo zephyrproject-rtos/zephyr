@@ -359,6 +359,9 @@ void lll_scan_aux_isr_aux_setup(void *param)
 	LL_ASSERT_ERR(aux_start_us > window_widening_us);
 	aux_start_us -= window_widening_us;
 
+	/* +1 us radio_tmr_start_us compensation */
+	aux_start_us -= 1U;
+
 	start_us = radio_tmr_start_us(0, aux_start_us);
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		uint32_t aa_us;
