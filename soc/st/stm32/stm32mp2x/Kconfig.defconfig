@@ -5,6 +5,7 @@
 
 if SOC_SERIES_STM32MP2X
 
-rsource "Kconfig.defconfig.stm32mp2*"
+configdefault NUM_IRQS
+	default 320 if SOC_STM32MP2X_M33 # Could be 294!
 
 endif # SOC_SERIES_STM32MP2X

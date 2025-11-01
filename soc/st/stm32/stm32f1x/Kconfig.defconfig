@@ -7,7 +7,15 @@
 
 if SOC_SERIES_STM32F1X
 
-rsource "Kconfig.defconfig.stm32f1*"
+configdefault NUM_IRQS
+        default 43 if SOC_STM32F103X8 || \
+		      SOC_STM32F103XB
+        default 56 if SOC_STM32F100XB
+        default 60 if SOC_STM32F103XE
+        default 61 if SOC_STM32F100XE
+        default 68 if SOC_STM32F105XB || \
+		      SOC_STM32F105XC || \
+		      SOC_STM32F107XC
 
 # adjust the fallback because of the LSI oscaillator characteristics
 config TASK_WDT_HW_FALLBACK_DELAY

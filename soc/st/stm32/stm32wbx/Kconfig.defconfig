@@ -5,7 +5,8 @@
 
 if SOC_SERIES_STM32WBX
 
-rsource "Kconfig.defconfig.stm32wb*"
+configdefault NUM_IRQS
+	default 63
 
 config BT_USER_PHY_UPDATE
 	default y if BT
