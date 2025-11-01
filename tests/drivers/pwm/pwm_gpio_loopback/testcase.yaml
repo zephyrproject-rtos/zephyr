@@ -31,3 +31,5 @@ tests:
   drivers.pwm.gpio_loopback.ifx:
     platform_allow:
       - cyw920829m2evk_02
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
