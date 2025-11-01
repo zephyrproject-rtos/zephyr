@@ -186,6 +186,11 @@ static int ti_adc_channel_setup(const struct device *dev, const struct adc_chann
 		return -EINVAL;
 	}
 
+	if (chan_cfg->reference != ADC_REF_VDD_1) {
+		LOG_ERR("Invalid channel reference");
+		return -EINVAL;
+	}
+
 	if (chan_cfg->gain != ADC_GAIN_1) {
 		LOG_ERR("Gain must be 1x");
 		return -EINVAL;
@@ -370,13 +375,15 @@ static void ti_adc_isr(const struct device *dev)
 
 #define CHAN_PROP_LIST(n, prop) {DT_INST_FOREACH_CHILD_SEP_VARGS(n, EXPLICIT_CHAN_PROP, (,), prop)}
 
+static DEVICE_API(adc, ti_adc_driver_api) = {
+	.channel_setup = ti_adc_channel_setup,
+	.read = ti_adc_read,
+#ifdef CONFIG_ADC_ASYNC
+	.read_async = ti_adc_read_async,
+#endif /* CONFIG_ADC_ASYNC */
+};
+
 #define TI_ADC_INIT(n)                                                                             \
-	static DEVICE_API(adc, ti_adc_driver_api_##n) = {                                          \
-		.channel_setup = ti_adc_channel_setup,                                             \
-		.read = ti_adc_read,                                                               \
-		.ref_internal = DT_INST_PROP(n, ti_vrefp),                                         \
-		IF_ENABLED(CONFIG_ADC_ASYNC, (.read_async = ti_adc_read_async,)) };                \
-                                                                                                   \
 	static void ti_adc_irq_setup_##n(const struct device *dev)                                 \
 	{                                                                                          \
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), ti_adc_isr,                 \
@@ -400,6 +407,6 @@ static void ti_adc_isr(const struct device *dev)
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, ti_adc_init, NULL, &ti_adc_data_##n, &ti_adc_cfg_##n,             \
-			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, &ti_adc_driver_api_##n);
+			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, &ti_adc_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TI_ADC_INIT)
