@@ -1,0 +1,6 @@
+# Copyright (c) 2019-2024 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_32F967_DV
+	select SOC_EM32F967

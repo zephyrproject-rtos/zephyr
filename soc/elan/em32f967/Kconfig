@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Elan Microelectronics Corps.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_EM32F967
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_HAS_ARM_MPU
+
