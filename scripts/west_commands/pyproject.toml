@@ -4,3 +4,6 @@ mypy_path = "."
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
+
+[tool.ruff]
+extend = "../../.ruff.toml"
