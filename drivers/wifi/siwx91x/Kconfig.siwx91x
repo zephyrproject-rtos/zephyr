@@ -14,6 +14,18 @@ config WIFI_SILABS_SIWX91X
 
 if WIFI_SILABS_SIWX91X
 
+config WIFI_SILABS_SIWX91X_MFP
+	bool "802.11w Management Frame Protection (MFP) support"
+	default y
+	help
+	  Enable IEEE 802.11w Management Frame Protection (MFP) for secure
+	  handling of management frames.
+
+	  Note:
+	    - Required for WPA3-Personal and WPA3-Transition modes.
+	    - Disabling this frees memory used by MFP, improving TCP throughput
+	      by about 10–12% (≈1–2 Mbps).
+
 config WIFI_SILABS_SIWX91X_ENHANCED_MAX_PSP
 	bool "Enhanced Max PSP Support"
 	default y
