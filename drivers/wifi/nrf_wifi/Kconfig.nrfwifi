@@ -448,6 +448,8 @@ config NRF70_BAND_UNII_4_UPPER_EDGE_BACKOFF_HE
 
 config NRF70_RX_NUM_BUFS
 	int "Number of RX buffers"
+	range 3 256
+	default 6 if !NRF70_DATA_TX
 	default 48
 
 config NRF70_MAX_TX_AGGREGATION
@@ -465,6 +467,8 @@ config NRF70_TX_MAX_DATA_SIZE
 
 config NRF70_RX_MAX_DATA_SIZE
 	int "Maximum size of RX data"
+	range 400 65536
+	default 1000 if !NRF70_DATA_TX
 	default 1600
 
 config NRF70_TX_DONE_WQ_ENABLED
