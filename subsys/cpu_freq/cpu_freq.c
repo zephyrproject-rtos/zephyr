@@ -28,8 +28,6 @@ static void cpu_freq_next_pstate(void)
 	/* Get next performance state */
 	const struct pstate *pstate_next;
 
-	cpu_freq_policy_reset();
-
 	ret = cpu_freq_policy_select_pstate(&pstate_next);
 	if (ret) {
 		LOG_ERR("Failed to get pstate: %d", ret);
@@ -70,11 +68,9 @@ static void cpu_freq_timer_handler(struct k_timer *timer)
 	 */
 
 	target_cpus = (num_cpus == 32U) ? 0xFFFFFFFF : (1U << num_cpus) - 1U;
-	target_cpus ^= (1U << _current_cpu->id),
+	target_cpus ^= (1U << _current_cpu->id);
 
-	ret = k_ipi_work_add(&cpu_freq_work,
-			     target_cpus ^ (1U << _current_cpu->id),
-			     cpu_freq_ipi_handler);
+	ret = k_ipi_work_add(&cpu_freq_work, target_cpus, cpu_freq_ipi_handler);
 
 	if (ret != 0) {
 		/*
