@@ -1,0 +1,17 @@
+# Copyright (c) 2025 LACOMBE Quentin <quentlace2g@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+title: Philips PCD8544 LCD display controller
+
+description: |
+   Philips PCD8544 is LCD display controller that support LCD monochrome display
+   with a resolution of 84x48 pixels. Used in old Nokia 5110 phone.
+
+compatible: "philips,pcd8544"
+
+include: [mipi-dbi-spi-device.yaml, display-controller.yaml]
+
+properties:
+  bias:
+    type: int
+    description: Bias value for LCD panel
