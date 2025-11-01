@@ -7,6 +7,10 @@
  */
 
 #include <zephyr/dt-bindings/sensor/lsm6dsv16x.h>
+#include <zephyr/dt-bindings/sensor/lsm6dsv32x.h>
+#include <zephyr/dt-bindings/sensor/lsm6dsv320x.h>
+#include <zephyr/dt-bindings/sensor/lsm6dsv80x.h>
+#include <zephyr/dt-bindings/sensor/ism6hg256x.h>
 #include <zephyr/dt-bindings/sensor/lsm6dso.h>
 #include <zephyr/dt-bindings/sensor/lsm6dso16is.h>
 #include <zephyr/dt-bindings/sensor/lps22hh.h>
@@ -755,9 +759,9 @@ test_i2c_lsm6dsv16x: lsm6dsv16x@69 {
 	int1-gpios = <&test_gpio 0 0>;
 	int2-gpios = <&test_gpio 0 0>;
 	accel-range = <LSM6DSV16X_DT_FS_8G>;
-	accel-odr = <LSM6DSV16X_DT_ODR_AT_60Hz>;
+	accel-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
 	gyro-range = <LSM6DSV16X_DT_FS_2000DPS>;
-	gyro-odr = <LSM6DSV16X_DT_ODR_AT_60Hz>;
+	gyro-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
 };
 
 test_i2c_mcp9600: mcp9600@6a {
@@ -1443,4 +1447,37 @@ test_i2c_wsen_pdms_25131308XXX05: wsen_pdms_25131308XXX05@c0 {
 	compatible = "we,wsen-pdms-25131308XXX05";
 	reg = <0xc0>;
 	sensor-type = <4>;
+};
+
+test_i2c_lsm6dsv320x: lsm6dsv320x@c1 {
+	compatible = "st,lsm6dsv320x";
+	reg = <0xc1>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+	accel-range = <LSM6DSV320X_DT_FS_8G>;
+	accel-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
+	gyro-range = <LSM6DSV320X_DT_FS_2000DPS>;
+	gyro-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
+};
+
+test_i2c_lsm6dsv80x: lsm6dsv80x@c2 {
+	compatible = "st,lsm6dsv80x";
+	reg = <0xc2>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+	accel-range = <LSM6DSV80X_DT_FS_8G>;
+	accel-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
+	gyro-range = <LSM6DSV80X_DT_FS_2000DPS>;
+	gyro-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
+};
+
+test_i2c_ism6hg256x: ism6hg256x@c3 {
+	compatible = "st,ism6hg256x";
+	reg = <0xc3>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+	accel-range = <LSM6DSV80X_DT_FS_8G>;
+	accel-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
+	gyro-range = <LSM6DSV80X_DT_FS_2000DPS>;
+	gyro-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
 };

@@ -82,9 +82,9 @@ static void lsm6dsv16x_config_fifo(const struct device *dev, struct trigger_conf
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&config->ctx;
 	uint8_t fifo_wtm = 0;
 	lsm6dsv16x_pin_int_route_t pin_int = { 0 };
-	lsm6dsv16x_fifo_xl_batch_t xl_batch = LSM6DSV16X_DT_XL_NOT_BATCHED;
-	lsm6dsv16x_fifo_gy_batch_t gy_batch = LSM6DSV16X_DT_GY_NOT_BATCHED;
-	lsm6dsv16x_fifo_temp_batch_t temp_batch = LSM6DSV16X_DT_TEMP_NOT_BATCHED;
+	lsm6dsv16x_fifo_xl_batch_t xl_batch = LSM6DSVXXX_DT_XL_NOT_BATCHED;
+	lsm6dsv16x_fifo_gy_batch_t gy_batch = LSM6DSVXXX_DT_GY_NOT_BATCHED;
+	lsm6dsv16x_fifo_temp_batch_t temp_batch = LSM6DSVXXX_DT_TEMP_NOT_BATCHED;
 	lsm6dsv16x_fifo_mode_t fifo_mode = LSM6DSV16X_BYPASS_MODE;
 	lsm6dsv16x_sflp_data_rate_t sflp_odr = LSM6DSV16X_SFLP_120Hz;
 	lsm6dsv16x_fifo_sflp_raw_t sflp_fifo = { 0 };
@@ -107,15 +107,15 @@ static void lsm6dsv16x_config_fifo(const struct device *dev, struct trigger_conf
 		fifo_mode = LSM6DSV16X_STREAM_MODE;
 		fifo_wtm = config->fifo_wtm;
 
-		if (config->sflp_fifo_en & LSM6DSV16X_DT_SFLP_FIFO_GAME_ROTATION) {
+		if (config->sflp_fifo_en & LSM6DSVXXX_DT_SFLP_FIFO_GAME_ROTATION) {
 			sflp_fifo.game_rotation = 1;
 		}
 
-		if (config->sflp_fifo_en & LSM6DSV16X_DT_SFLP_FIFO_GRAVITY) {
+		if (config->sflp_fifo_en & LSM6DSVXXX_DT_SFLP_FIFO_GRAVITY) {
 			sflp_fifo.gravity = 1;
 		}
 
-		if (config->sflp_fifo_en & LSM6DSV16X_DT_SFLP_FIFO_GBIAS) {
+		if (config->sflp_fifo_en & LSM6DSVXXX_DT_SFLP_FIFO_GBIAS) {
 			sflp_fifo.gbias = 1;
 		}
 
@@ -151,34 +151,34 @@ static void lsm6dsv16x_config_fifo(const struct device *dev, struct trigger_conf
 	 * make the SFLP gbias setting effective. Then restore it to saved values.
 	 */
 	switch (sflp_odr) {
-	case LSM6DSV16X_DT_SFLP_ODR_AT_480Hz:
-		lsm6dsv16x_accel_set_odr_raw(dev, LSM6DSV16X_DT_ODR_AT_480Hz);
-		lsm6dsv16x_gyro_set_odr_raw(dev, LSM6DSV16X_DT_ODR_AT_480Hz);
+	case LSM6DSVXXX_DT_SFLP_ODR_AT_480Hz:
+		lsm6dsv16x_accel_set_odr_raw(dev, LSM6DSVXXX_DT_ODR_AT_480Hz);
+		lsm6dsv16x_gyro_set_odr_raw(dev, LSM6DSVXXX_DT_ODR_AT_480Hz);
 		break;
 
-	case LSM6DSV16X_DT_SFLP_ODR_AT_240Hz:
-		lsm6dsv16x_accel_set_odr_raw(dev, LSM6DSV16X_DT_ODR_AT_240Hz);
-		lsm6dsv16x_gyro_set_odr_raw(dev, LSM6DSV16X_DT_ODR_AT_240Hz);
+	case LSM6DSVXXX_DT_SFLP_ODR_AT_240Hz:
+		lsm6dsv16x_accel_set_odr_raw(dev, LSM6DSVXXX_DT_ODR_AT_240Hz);
+		lsm6dsv16x_gyro_set_odr_raw(dev, LSM6DSVXXX_DT_ODR_AT_240Hz);
 		break;
 
-	case LSM6DSV16X_DT_SFLP_ODR_AT_120Hz:
-		lsm6dsv16x_accel_set_odr_raw(dev, LSM6DSV16X_DT_ODR_AT_120Hz);
-		lsm6dsv16x_gyro_set_odr_raw(dev, LSM6DSV16X_DT_ODR_AT_120Hz);
+	case LSM6DSVXXX_DT_SFLP_ODR_AT_120Hz:
+		lsm6dsv16x_accel_set_odr_raw(dev, LSM6DSVXXX_DT_ODR_AT_120Hz);
+		lsm6dsv16x_gyro_set_odr_raw(dev, LSM6DSVXXX_DT_ODR_AT_120Hz);
 		break;
 
-	case LSM6DSV16X_DT_SFLP_ODR_AT_60Hz:
-		lsm6dsv16x_accel_set_odr_raw(dev, LSM6DSV16X_DT_ODR_AT_60Hz);
-		lsm6dsv16x_gyro_set_odr_raw(dev, LSM6DSV16X_DT_ODR_AT_60Hz);
+	case LSM6DSVXXX_DT_SFLP_ODR_AT_60Hz:
+		lsm6dsv16x_accel_set_odr_raw(dev, LSM6DSVXXX_DT_ODR_AT_60Hz);
+		lsm6dsv16x_gyro_set_odr_raw(dev, LSM6DSVXXX_DT_ODR_AT_60Hz);
 		break;
 
-	case LSM6DSV16X_DT_SFLP_ODR_AT_30Hz:
-		lsm6dsv16x_accel_set_odr_raw(dev, LSM6DSV16X_DT_ODR_AT_30Hz);
-		lsm6dsv16x_gyro_set_odr_raw(dev, LSM6DSV16X_DT_ODR_AT_30Hz);
+	case LSM6DSVXXX_DT_SFLP_ODR_AT_30Hz:
+		lsm6dsv16x_accel_set_odr_raw(dev, LSM6DSVXXX_DT_ODR_AT_30Hz);
+		lsm6dsv16x_gyro_set_odr_raw(dev, LSM6DSVXXX_DT_ODR_AT_30Hz);
 		break;
 
-	case LSM6DSV16X_DT_SFLP_ODR_AT_15Hz:
-		lsm6dsv16x_accel_set_odr_raw(dev, LSM6DSV16X_DT_ODR_AT_15Hz);
-		lsm6dsv16x_gyro_set_odr_raw(dev, LSM6DSV16X_DT_ODR_AT_15Hz);
+	case LSM6DSVXXX_DT_SFLP_ODR_AT_15Hz:
+		lsm6dsv16x_accel_set_odr_raw(dev, LSM6DSVXXX_DT_ODR_AT_15Hz);
+		lsm6dsv16x_gyro_set_odr_raw(dev, LSM6DSVXXX_DT_ODR_AT_15Hz);
 		break;
 	}
 
