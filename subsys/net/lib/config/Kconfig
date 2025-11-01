@@ -13,14 +13,29 @@ menuconfig NET_CONFIG_SETTINGS
 	bool "Set network settings for applications"
 	select NET_MGMT
 	select NET_MGMT_EVENT
+	select EXPERIMENTAL
 	help
 	  Allow IP addresses to be set in config file for
 	  networking client/server sample applications, or
 	  some link-layer dedicated settings like the channel.
 	  Beware this is not meant to be used for proper
 	  provisioning but quick sampling/testing.
+	  The experimental status is added because this version
+	  starts to use Yaml file based configuration.
 
 if NET_CONFIG_SETTINGS
+
+config HEAP_MEM_POOL_ADD_SIZE_NET_CONFIG
+	int "Amount of heap needed for storing user configuration data"
+	default 1024
+	depends on SETTINGS
+
+config NET_CONFIG_SETTINGS_SHELL_ACCESS
+	bool "Configure options via shell"
+	select SETTINGS
+	help
+	  If this is set, then user is able to use "net config" shell to
+	  update the default options. This requires settings db.
 
 config NET_CONFIG_AUTO_INIT
 	bool "Init networking support automatically during device startup"

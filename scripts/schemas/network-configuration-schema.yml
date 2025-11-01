@@ -1,0 +1,224 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2025 Nordic Semiconductor ASA
+#
+# A JSON schema for basic validation of the network configuration yaml file.
+
+$id: "https://zephyrproject.org/schemas/zephyr/network"
+$schema: "https://json-schema.org/draft/2020-12/schema"
+
+title: "Zephyr Network Configuration Schema"
+description: Schema for validating Zephyr network configuration metadata files
+type: object
+properties:
+  networking:
+    type: object
+    properties:
+      config_format_hash:
+        type: string
+        description: Hash for the configuration data (internal)
+      interfaces:
+        description: List of network interfaces
+        type: array
+        items:
+          type: object
+          properties:
+            bind_to: {}
+            name:
+              description: Network interface name to bind to
+              type: string
+              # CONFIG_NET_INTERFACE_NAME_LEN
+              maxLength: 15
+              minLength: 2
+            device_name:
+              description: Device name to bind to
+              type: string
+            set_name:
+              description: New name of the network interface
+              type: string
+              # CONFIG_NET_INTERFACE_NAME_LEN
+              maxLength: 15
+              minLength: 2
+            set_default:
+              description: Set this interface as a default one
+              type: boolean
+            flags:
+              description: Network interface flags to set
+              type: array
+              items:
+                type: string
+                maxLength: 32
+            ipv6:
+              description: IPv6 configuration
+              type: object
+              properties:
+                status:
+                  description: Is IPv6 enabled for this interface
+                  type: boolean
+                ipv6_addresses:
+                  description: Static IPv6 addresses for this interface
+                  type: array
+                  items:
+                    type: string
+                    # INET6_ADDRSTRLEN + prefix len (like "/128")
+                    maxLength: 50
+                ipv6_multicast_addresses:
+                  description: Multicast IPv6 addresses for this interface
+                  type: array
+                  items:
+                    type: string
+                    # NET_IPV6_ADDR_STR_LEN
+                    maxLength: 40
+                prefixes:
+                  description: IPv6 prefixes for this interface
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      address:
+                        description: IPv6 prefix
+                        type: string
+                        # NET_IPV6_ADDR_STR_LEN
+                        maxLength: 40
+                      len:
+                        description: IPv6 prefix length
+                        type: integer
+                      lifetime:
+                        description: IPv6 prefix lifetime (in sec)
+                        type: integer
+                    required:
+                      - address
+                      - len
+                      - lifetime
+                hop_limit:
+                  description: IPv6 hop limit
+                  type: integer
+                multicast_hop_limit:
+                  description: IPv6 multicast hop limit
+                  type: integer
+                dhcpv6:
+                  description: DHCPv6 configuration
+                  type: object
+                  properties:
+                    status:
+                      description: Is DHCPv6 enabled for this interface
+                      type: boolean
+                    do_request_address:
+                      description: Set request address flag
+                      type: boolean
+                    do_request_prefix:
+                      description: Set request prefix flag
+                      type: boolean
+            ipv4:
+              description: IPv4 configuration
+              type: object
+              properties:
+                status:
+                  description: Is IPv4 enabled for this interface
+                  type: boolean
+                ipv4_addresses:
+                  description: Static IPv4 addresses for this interface
+                  type: array
+                  items:
+                    type: string
+                    # INET_ADDRSTRLEN + netmask len (like "/24")
+                    maxLength: 19
+                ipv4_multicast_addresses:
+                  description: Multicast IPv4 addresses for this interface
+                  type: array
+                  items:
+                    type: string
+                    # INET_ADDRSTRLEN
+                    maxLength: 16
+                gateway:
+                  description: IPv4 gateway to use
+                  type: string
+                  # INET_ADDRSTRLEN
+                  maxLength: 16
+                time_to_live:
+                  description: IPv4 time-to-live
+                  type: integer
+                multicast_time_to_live:
+                  description: IPv4 multicast time-to-live
+                  type: integer
+                dhcpv4:
+                  description: DHCPv4 configuration
+                  type: object
+                  properties:
+                    status:
+                      description: Is DHCPv4 enabled for this interface
+                      type: boolean
+                dhcpv4_server:
+                  type: object
+                  properties:
+                    status:
+                      description: Is DHCPv4 server enabled for this interface
+                      type: boolean
+                    base_address:
+                      description: Set base address for the DHCPv4 server
+                      type: string
+                      # INET_ADDRSTRLEN
+                      maxLength: 16
+                ipv4_autoconf:
+                  description: IPv4 autoconfiguration
+                  type: object
+                  properties:
+                    status:
+                      description: Is IPv4 auto configuration enabled for this interface
+                      type: boolean
+            vlan:
+              description: Virtual LAN configuration
+              type: object
+              properties:
+                status:
+                  description: Is VLAN enabled for this interface
+                  type: boolean
+                tag:
+                  description: VLAN tag for this interface
+                  type: integer
+              required:
+                - tag
+      ieee_802_15_4:
+        type: object
+        properties:
+          status:
+            description: Is IEEE 802.15.4 enabled
+            type: boolean
+          bind_to: {}
+          pan_id:
+            type: integer
+          channel:
+            type: integer
+          tx_power:
+            type: integer
+          security_key_mode:
+            type: integer
+          security_level:
+            type: integer
+          ack_required:
+            type: boolean
+          security_key:
+            type: array
+            items:
+              type: integer
+        required:
+          - pan_id
+          - channel
+      sntp:
+        type: object
+        properties:
+          status:
+            description: Is SNTP enabled
+            type: boolean
+          server:
+            description: SNTP server address
+            type: string
+            # INET6_ADDRSTRLEN
+            maxLength: 46
+          timeout:
+            description: Request timeout in sec
+            type: integer
+          bind_to: {}
+        required:
+          - server
+additionalProperties: false
