@@ -472,10 +472,11 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 
 	/* TODO: disallow sending sync commands from syswq altogether */
 
-	/* Since the commands are now processed in the syswq, we cannot suspend
-	 * and wait. We have to send the command from the current context.
+	/* If the commands are processed in the syswq and we are on the
+	 * syswq, then we cannot suspend and wait. We have to send the
+	 * command from the current context.
 	 */
-	if (k_current_get() == &k_sys_work_q.thread) {
+	if (!IS_ENABLED(CONFIG_BT_TX_PROCESSOR_THREAD) && k_current_get() == &k_sys_work_q.thread) {
 		/* drain the command queue until we get to send the command of interest. */
 		struct net_buf *cmd = NULL;
 
@@ -5032,8 +5033,34 @@ static void tx_processor(struct k_work *item)
 
 static K_WORK_DEFINE(tx_work, tx_processor);
 
+#if defined(CONFIG_BT_TX_PROCESSOR_THREAD)
+static K_THREAD_STACK_DEFINE(bt_tx_processor_stack, CONFIG_BT_TX_PROCESSOR_STACK_SIZE);
+static struct k_work_q bt_tx_processor_workq;
+
+__maybe_unused static int bt_tx_processor_init(void)
+{
+	struct k_work_queue_config cfg = {};
+
+	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+		cfg.name = "bt_tx_processor";
+	}
+
+	k_work_queue_start(&bt_tx_processor_workq, bt_tx_processor_stack,
+			   K_THREAD_STACK_SIZEOF(bt_tx_processor_stack),
+			   CONFIG_BT_TX_PROCESSOR_THREAD_PRIO, &cfg);
+
+	return 0;
+}
+
+SYS_INIT(bt_tx_processor_init, POST_KERNEL, 999);
+#endif /* CONFIG_BT_TX_PROCESSOR_THREAD */
+
 void bt_tx_irq_raise(void)
 {
 	LOG_DBG("kick TX");
+#if defined(CONFIG_BT_TX_PROCESSOR_THREAD)
+	k_work_submit_to_queue(&bt_tx_processor_workq, &tx_work);
+#else
 	k_work_submit(&tx_work);
+#endif
 }
