@@ -165,6 +165,35 @@ static DEVICE_API(counter, mcux_ftm_driver_api) = {
 	.get_freq = mcux_ftm_get_freq,
 };
 
+#define FTM_IRQ_CONNECT_IDX(idx, node_id)	\
+	do {	\
+		IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq),	\
+			DT_IRQ_BY_IDX(node_id, idx, priority),	\
+				mcux_ftm_isr, DEVICE_DT_GET(node_id), 0);	\
+		irq_enable(DT_IRQ_BY_IDX(node_id, idx, irq));	\
+	} while (0)
+
+#define FTM_CONFIG_FUNC(n)	\
+	static void mcux_ftm_irq_config_##n(const struct device *dev)	\
+	{	\
+		ARG_UNUSED(dev);	\
+		COND_CODE_1(	\
+			IS_EQ(DT_NUM_IRQS(DT_DRV_INST(n)), 1),	\
+			(/* single IRQ */	\
+				IRQ_CONNECT(DT_INST_IRQN(n),	\
+						DT_INST_IRQ(n, priority),	\
+						mcux_ftm_isr,	\
+						DEVICE_DT_INST_GET(n), 0);	\
+				irq_enable(DT_INST_IRQN(n));	\
+			),	\
+			(/* multiple IRQs */	\
+				LISTIFY(DT_NUM_IRQS(DT_DRV_INST(n)),	\
+						FTM_IRQ_CONNECT_IDX,	\
+						(;),	\
+						DT_DRV_INST(n));	\
+			));	\
+	}
+
 #define TO_FTM_PRESCALE_DIVIDE(val) _DO_CONCAT(kFTM_Prescale_Divide_, val)
 
 #define COUNTER_MCUX_FTM_DEVICE_INIT(n)                                                            \
@@ -187,12 +216,7 @@ static DEVICE_API(counter, mcux_ftm_driver_api) = {
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, mcux_ftm_init, NULL, &mcux_ftm_data_##n, &mcux_ftm_config_##n,    \
 			      POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY, &mcux_ftm_driver_api);    \
-                                                                                                   \
-	static void mcux_ftm_irq_config_##n(const struct device *dev)                              \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), mcux_ftm_isr,               \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-	}
+        \
+	FTM_CONFIG_FUNC(n)
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_MCUX_FTM_DEVICE_INIT)

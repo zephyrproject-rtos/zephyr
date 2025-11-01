@@ -16,7 +16,7 @@
 
 #define ASSERT_ASYNC_CLK_DIV_VALID(val, str) \
 	BUILD_ASSERT(val == 0 || val == 1 || val == 2 || val == 4 ||	\
-		     val == 8 || val == 16 || val == 2 || val == 64, str)
+		     val == 8 || val == 16 || val == 32 || val == 64, str)
 
 #define kSCG_AsyncClkDivBy0 kSCG_AsyncClkDisable
 
