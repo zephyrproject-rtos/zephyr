@@ -81,6 +81,9 @@ struct lll_sync_iso {
 	uint8_t payload_count_max;
 	uint8_t payload_tail;
 
+	/* Flag to stop events in LLL pipeline */
+	uint8_t is_lll_stop:1;
+
 	/* Last scheduled subevent and its access address sync */
 	uint32_t aa_se;
 	uint8_t se;
