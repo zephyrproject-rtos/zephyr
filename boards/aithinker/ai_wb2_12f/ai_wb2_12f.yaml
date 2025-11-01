@@ -18,4 +18,5 @@ supported:
   - pinctrl
   - uart
   - dma
+  - flash
 vendor: bflb
