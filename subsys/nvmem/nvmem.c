@@ -5,6 +5,7 @@
  */
 
 #include <errno.h>
+#include <zephyr/drivers/nvmem.h>
 #include <zephyr/drivers/eeprom.h>
 #include <zephyr/nvmem.h>
 #include <zephyr/sys/__assert.h>
@@ -15,6 +16,10 @@ int nvmem_cell_read(const struct nvmem_cell *cell, void *buf, off_t off, size_t 
 
 	if (off < 0 || cell->size < off + len) {
 		return -EINVAL;
+	}
+
+	if (IS_ENABLED(CONFIG_NVMEM_GENERIC_PROVIDER) && DEVICE_API_IS(nvmem, cell->dev)) {
+		return nvmem_read(cell->dev, cell->offset + off, buf, len);
 	}
 
 	if (IS_ENABLED(CONFIG_NVMEM_EEPROM) && DEVICE_API_IS(eeprom, cell->dev)) {
@@ -34,6 +39,10 @@ int nvmem_cell_write(const struct nvmem_cell *cell, const void *buf, off_t off, 
 
 	if (cell->read_only) {
 		return -EROFS;
+	}
+
+	if (IS_ENABLED(CONFIG_NVMEM_GENERIC_PROVIDER) && DEVICE_API_IS(nvmem, cell->dev)) {
+		return nvmem_write(cell->dev, cell->offset + off, buf, len);
 	}
 
 	if (IS_ENABLED(CONFIG_NVMEM_EEPROM) && DEVICE_API_IS(eeprom, cell->dev)) {

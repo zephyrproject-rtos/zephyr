@@ -5,7 +5,9 @@ description: NXP PMC temperature sensor (PMC-TMPSNS)
 
 compatible: "nxp,pmc-tmpsns"
 
-include: sensor-device.yaml
+include:
+  - sensor-device.yaml
+  - nvmem-consumer.yaml
 
 properties:
   io-channels:

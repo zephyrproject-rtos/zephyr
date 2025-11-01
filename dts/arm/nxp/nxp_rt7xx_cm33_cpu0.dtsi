@@ -1118,9 +1118,39 @@
 		status = "disabled";
 	};
 
+	/*
+	 * OCOTP efuse provider (accessed via ROM API):
+	 * - The ROM API tree pointer is given in 'rom-api-tree-addr'.
+	 * - For NXP ocotp driver, the nvmem fixed-layout 'reg' entries
+	 *   are interpreted as byte offsets into the efuse memory.
+	 *   For example, 0x134 (308) == efuse word index 77 (308 / 4 == 77).
+	 *   The driver will read the containing 32-bit word and extract
+	 *   the requested byte(s).
+	 */
+	ocotp: efuse {
+		compatible = "nxp,ocotp";
+		rom-api-tree-addr = <0x1303fc00>;
+		ocotp-driver-ptr-idx = <12>;
+		read-only;
+
+		nvmem-layout {
+			compatible = "fixed-layout";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			tmpsns_calib: tmpsns-calib@134 {
+				reg = <0x134 0x1>;
+				#nvmem-cell-cells = <0>;
+				read-only;
+			};
+		};
+	};
+
 	pmc_tmpsns: pmc-tmpsns {
 		compatible = "nxp,pmc-tmpsns";
 		status = "disabled";
+		nvmem-cells = <&tmpsns_calib>;
+		nvmem-cell-names = "tmpsns-calib";
 	};
 };
 

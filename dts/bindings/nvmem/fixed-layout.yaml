@@ -43,4 +43,7 @@ child-binding:
 
     read-only:
       type: boolean
-      description: Set this property if the cell is read-only.
+      description: |
+        Set this property if the cell is read-only. For efuse/OTP
+        devices, cells should normally be marked read-only to avoid
+        accidental writes.
