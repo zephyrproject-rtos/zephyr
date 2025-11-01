@@ -142,13 +142,13 @@
 		dma-channels = <32>;
 		dma-requests = <128>;
 		interrupts = <4 0>, <5 0>, <6 0>, <7 0>,
-			<8 0>, <9 0>, <10 0>, <11 0>,
-			<12 0>, <13 0>, <14 0>, <15 0>,
-			<16 0>, <17 0>, <18 0>, <19 0>,
-			<20 0>, <21 0>, <22 0>, <23 0>,
-			<24 0>, <25 0>, <26 0>, <27 0>,
-			<28 0>, <29 0>, <30 0>, <31 0>,
-			<32 0>, <33 0>, <34 0>, <35 0>;
+			     <8 0>, <9 0>, <10 0>, <11 0>,
+			     <12 0>, <13 0>, <14 0>, <15 0>,
+			     <16 0>, <17 0>, <18 0>, <19 0>,
+			     <20 0>, <21 0>, <22 0>, <23 0>,
+			     <24 0>, <25 0>, <26 0>, <27 0>,
+			     <28 0>, <29 0>, <30 0>, <31 0>,
+			     <32 0>, <33 0>, <34 0>, <35 0>;
 		status = "disabled";
 	};
 
@@ -169,9 +169,9 @@
 		compatible = "nxp,emios";
 		reg = <0x88000 0x338>;
 		interrupts = <61 0>, <62 0>, <63 0>, <64 0>,
-			<65 0>, <66 0>;
+			     <65 0>, <66 0>;
 		interrupt-names = "emios0-2", "emios0-3", "emios0-4",
-			"emios0-5", "emios0-6", "emios0-7";
+				  "emios0-5", "emios0-6", "emios0-7";
 		status = "disabled";
 	};
 
@@ -676,17 +676,26 @@
 		status = "disabled";
 	};
 
-	quadspi_ardb: @68000000 {
-		compatible = "nxp,";
+	quadspi_ardb: quadspi_ardb@68000000 {
+		compatible = "nxp,quadspi_ardb";
 		reg = <0x68000000 0x21c>;
 		status = "disabled";
 	};
 
 	rtc: rtc@288000 {
-		compatible = "nxp,rtc";
+		compatible = "nxp,rtc-jdp";
 		reg = <0x288000 0x34>;
 		interrupts = <102 0>;
+		clock-frequency = <32000>;
+		clock-source = <1>;
+		prescaler = <16384>;
 		status = "disabled";
+
+		counter_rtc: counter-rtc {
+			compatible = "zephyr,rtc-counter";
+			alarms-count = <2>;
+			status = "disabled";
+		};
 	};
 
 	sai_0: sai@36c000 {
@@ -749,12 +758,12 @@
 			reg-names = "pgpdo", "mscr";
 			interrupt-parent = <&eirq0>;
 			interrupts = <0 0>, <1 1>, <2 2>, <3 3>, <4 4>,
-				<5 5>, <6 6>, <7 7>, <8 16>, <9 17>,
-				<10 18>, <11 19>, <12 20>, <13 21>,
-				<14 22>, <15 23>;
+				     <5 5>, <6 6>, <7 7>, <8 16>, <9 17>,
+				     <10 18>, <11 19>, <12 20>, <13 21>,
+				     <14 22>, <15 23>;
 			nxp,wkpu = <&wkpu>;
 			nxp,wkpu-interrupts = <1 9>, <2 4>, <6 19>,
-				<8 27>, <9 25>, <13 8>, <15 24>;
+					      <8 27>, <9 25>, <13 8>, <15 24>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <16>;
@@ -767,10 +776,10 @@
 			reg-names = "pgpdo", "mscr";
 			interrupt-parent = <&eirq0>;
 			interrupts = <0 4>, <2 0>, <3 1>, <4 2>,
-				<5 3>, <9 5>, <12 6>, <14 7>;
+				     <5 3>, <9 5>, <12 6>, <14 7>;
 			nxp,wkpu = <&wkpu>;
 			nxp,wkpu-interrupts = <0 35>, <4 63>, <9 38>,
-				<10 39>, <14 41>;
+					      <10 39>, <14 41>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <16>;
@@ -783,11 +792,11 @@
 			reg-names = "pgpdo", "mscr";
 			interrupt-parent = <&eirq0>;
 			interrupts = <0 8>, <1 9>, <2 10>, <3 11>, <4 12>,
-				<5 13>, <8 14>, <9 15>, <10 24>, <11 25>,
-				<12 26>, <13 27>, <14 28>, <15 29>;
+				     <5 13>, <8 14>, <9 15>, <10 24>, <11 25>,
+				     <12 26>, <13 27>, <14 28>, <15 29>;
 			nxp,wkpu = <&wkpu>;
 			nxp,wkpu-interrupts = <0 11>, <2 12>, <8 29>,
-				<9 21>, <11 20>, <12 16>, <13 15>, <15 37>;
+					      <9 21>, <11 20>, <12 16>, <13 15>, <15 37>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <16>;
@@ -801,10 +810,10 @@
 			reg-names = "pgpdo", "mscr";
 			interrupt-parent = <&eirq0>;
 			interrupts = <0 30>, <1 31>, <5 8>, <6 9>, <7 10>,
-				<8 11>, <9 12>, <10 13>, <12 14>, <15 15>;
+				     <8 11>, <9 12>, <10 13>, <12 14>, <15 15>;
 			nxp,wkpu = <&wkpu>;
 			nxp,wkpu-interrupts = <0 17>, <1 18>, <3 42>,
-				<5 43>, <7 44>, <10 45>, <12 46>;
+					      <5 43>, <7 44>, <10 45>, <12 46>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <16>;
@@ -817,9 +826,9 @@
 			reg-names = "pgpdo", "mscr";
 			interrupt-parent = <&eirq0>;
 			interrupts = <0 1>, <1 1>, <2 2>, <3 3>, <4 4>,
-				<5 5>, <6 6>, <7 7>, <8 16>, <9 17>,
-				<10 18>, <11 19>, <12 20>, <13 21>,
-				<14 22>, <15 23>;
+				     <5 5>, <6 6>, <7 7>, <8 16>, <9 17>,
+				     <10 18>, <11 19>, <12 20>, <13 21>,
+				     <14 22>, <15 23>;
 			nxp,wkpu = <&wkpu>;
 			nxp,wkpu-interrupts = <6 7>, <7 6>, <9 14>, <11 22>;
 			gpio-controller;
@@ -834,10 +843,10 @@
 			reg-names = "pgpdo", "mscr";
 			interrupt-parent = <&eirq0>;
 			interrupts = <4 16>, <5 17>, <7 18>, <8 19>,
-				<9 20>, <10 21>, <11 22>, <13 23>;
+				     <9 20>, <10 21>, <11 22>, <13 23>;
 			nxp,wkpu = <&wkpu>;
 			nxp,wkpu-interrupts = <2 40>, <4 47>, <7 48>,
-				<8 50>, <9 49>, <10 52>, <13 51>, <15 53>;
+					      <8 50>, <9 49>, <10 52>, <13 51>, <15 53>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <16>;
@@ -850,12 +859,12 @@
 			reg-names = "pgpdo", "mscr";
 			interrupt-parent = <&eirq0>;
 			interrupts = <0 8>, <1 9>, <2 10>, <3 11>, <4 12>,
-				<5 13>, <6 14>, <7 15>, <8 24>,
-				<9 25>, <10 26>, <11 27>, <12 28>,
-				<13 29>, <14 30>, <15 31>;
+				     <5 13>, <6 14>, <7 15>, <8 24>,
+				     <9 25>, <10 26>, <11 27>, <12 28>,
+				     <13 29>, <14 30>, <15 31>;
 			nxp,wkpu = <&wkpu>;
 			nxp,wkpu-interrupts = <0 10>, <2 13>, <3 5>,
-				<4 26>, <13 28>;
+					      <4 26>, <13 28>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <16>;
@@ -868,10 +877,10 @@
 			reg-names = "pgpdo", "mscr";
 			interrupt-parent = <&eirq0>;
 			interrupts = <1 24>, <4 25>, <5 26>, <6 27>,
-				<7 28>, <8 29>, <11 30>, <12 31>;
+				     <7 28>, <8 29>, <11 30>, <12 31>;
 			nxp,wkpu = <&wkpu>;
 			nxp,wkpu-interrupts = <4 58>, <7 54>, <11 55>,
-				<13 56>, <15 57>;
+					      <13 56>, <15 57>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <16>;
@@ -884,12 +893,12 @@
 			reg-names = "pgpdo", "mscr";
 			interrupt-parent = <&eirq0>;
 			interrupts = <0 0>, <1 1>, <2 2>, <3 3>,
-				<4 4>, <5 5>, <6 6>, <8 7>,
-				<9 8>, <10 9>, <11 10>, <12 11>,
-				<13 12>, <14 13>, <15 14>;
+				     <4 4>, <5 5>, <6 6>, <8 7>,
+				     <9 8>, <10 9>, <11 10>, <12 11>,
+				     <13 12>, <14 13>, <15 14>;
 			nxp,wkpu = <&wkpu>;
 			nxp,wkpu-interrupts = <0 30>, <2 31>, <5 36>,
-				<6 33>, <11 32>, <14 34>;
+					      <6 33>, <11 32>, <14 34>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <16>;
@@ -904,7 +913,7 @@
 			interrupts = <0 15>;
 			nxp,wkpu = <&wkpu>;
 			nxp,wkpu-interrupts = <0 23>, <2 59>, <5 60>,
-				<7 61>, <9 62>;
+					      <7 61>, <9 62>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <16>;
@@ -917,9 +926,9 @@
 			reg-names = "pgpdo", "mscr";
 			interrupt-parent = <&eirq0>;
 			interrupts = <0 0>, <1 1>, <2 2>, <3 3>,
-				<4 4>, <5 5>, <6 6>, <7 7>,
-				<8 16>, <9 17>, <10 18>, <11 19>,
-				<12 20>, <13 21>, <14 22>, <15 23>;
+				     <4 4>, <5 5>, <6 6>, <7 7>,
+				     <8 16>, <9 17>, <10 18>, <11 19>,
+				     <12 20>, <13 21>, <14 22>, <15 23>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <16>;
@@ -942,9 +951,9 @@
 			reg-names = "pgpdo", "mscr";
 			interrupt-parent = <&eirq0>;
 			interrupts = <0 8>, <1 9>, <2 10>, <3 11>,
-				<4 12>, <5 13>, <6 14>, <7 15>,
-				<8 24>, <9 25>, <10 26>, <11 27>,
-				<12 28>, <13 29>, <14 30>, <15 31>;
+				     <4 12>, <5 13>, <6 14>, <7 15>,
+				     <8 24>, <9 25>, <10 26>, <11 27>,
+				     <12 28>, <13 29>, <14 30>, <15 31>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <16>;
