@@ -1,0 +1,59 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <renesas/rcar/gen4/rcar_gen4_v4h_cr52.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/clock/r8a779g0_cpg_mssr.h>
+
+/ {
+	soc {
+		pfc: pin-controller@e6050000 {
+			compatible = "renesas,rcar-pfc";
+			reg = <0xe6050000 0x1d8>, <0xe6050800 0x1d8>,
+			      <0xe6058000 0x1d8>, <0xe6058800 0x1d8>,
+			      <0xe6060000 0x1d8>, <0xe6060800 0x1d8>,
+			      <0xe6061000 0x1d8>, <0xe6061800 0x1d8>,
+			      <0xe6068000 0x1d8>, <0xe6078000 0x0e8>;
+		};
+
+		/* Using domain 0 */
+		cpg: clock-controller@e6150000 {
+			compatible = "renesas,r8a779g0-cpg-mssr";
+			reg = <0xe6150000 0x2e78>;
+			#clock-cells = <2>;
+		};
+
+		gpio0: gpio@e6050000 {
+			compatible = "renesas,rcar-gpio";
+			reg = <0xe6050000 0x1D8>;
+			#gpio-cells = <2>;
+			gpio-controller;
+			interrupts = <GIC_SPI 822 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 915>;
+			status = "disabled";
+		};
+
+		gpio1: gpio@e6050800 {
+			compatible = "renesas,rcar-gpio";
+			reg = <0xe6050800 0x1D8>;
+			#gpio-cells = <2>;
+			gpio-controller;
+			interrupts = <GIC_SPI 822 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 916>;
+			status = "disabled";
+		};
+
+		hscif0: serial@e6540000 {
+			interrupts = <GIC_SPI 246 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 514>, <&cpg CPG_CORE R8A779G0_CLK_SASYNCPERD1>;
+		};
+
+		hscif1: serial@e6550000 {
+			interrupts = <GIC_SPI 247 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 515>, <&cpg CPG_CORE R8A779G0_CLK_SASYNCPERD1>;
+		};
+	};
+};
