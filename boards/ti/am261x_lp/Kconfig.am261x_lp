@@ -1,0 +1,23 @@
+# TI AM261X LaunchPad board
+#
+# Copyright (c) 2025 Texas Instruments Incorporated
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_AM261X_LP
+	bool "Board AM261X LP Selecting"
+	select SOC_SERIES_AM261X_R5F
+
+config BOARD_AM261X_LP_AM2612_R5F0_0
+	bool "TI AM261X LaunchPad For Core R5F0_0"
+	select BOARD_AM261X_LP
+	select SOC_AM261X_R5F0_0
+	help
+	  Build for TI AM261X LaunchPad with R5F Core 0
+
+config BOARD_AM261X_LP_AM2612_R5F0_1
+	bool "TI AM261X LaunchPad For Core R5F0_1"
+	select BOARD_AM261X_LP
+	select SOC_AM261X_R5F0_1
+	help
+	  Build for TI AM261X LaunchPad with R5F Core 1
