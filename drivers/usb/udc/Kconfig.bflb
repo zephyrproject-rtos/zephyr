@@ -1,0 +1,22 @@
+# Copyright (c) 2024-2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_BFLB_BL61X
+	bool "BL61x USB device controller driver"
+	select UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT
+	imply UDC_WORKQUEUE
+	default y
+	depends on DT_HAS_BFLB_BL61X_UDC_ENABLED
+	help
+	  Bouffalolab BL61x USB device controller driver
+
+if UDC_BFLB_BL61X
+
+config UDC_BFLB_BL61X_EVENT_COUNT
+	int "Number or blocks in event slab"
+	range 8 32
+	default 16
+	help
+	  Number of blocks in slab for internal endpoint events.
+
+endif # UDC_BFLB_BL61X
