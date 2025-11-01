@@ -25,6 +25,15 @@
 
 #define SCMI_CPU_IRQ_WAKE_NUM	22U
 
+/** CPU vector flag: Boot address (cold boot/reset) */
+#define SCMI_CPU_VEC_FLAGS_BOOT    BIT(29)
+
+/** CPU vector flag: Start address (warm start) */
+#define SCMI_CPU_VEC_FLAGS_START   BIT(30)
+
+/** CPU vector flag: Resume address (exit from suspend) */
+#define SCMI_CPU_VEC_FLAGS_RESUME  BIT(31)
+
 /**
  * @struct scmi_cpu_sleep_mode_config
  *
@@ -64,6 +73,30 @@ struct scmi_cpu_irq_mask_config {
 	uint32_t mask_idx;
 	uint32_t num_mask;
 	uint32_t mask[SCMI_CPU_IRQ_WAKE_NUM];
+};
+
+/**
+ * @struct scmi_cpu_vector_config
+ *
+ * @brief Describes the parameters for the CPU_RESET_VECTOR_SET command
+ */
+struct scmi_cpu_vector_config {
+	uint32_t cpu_id;
+	uint32_t flags;
+	uint32_t vector_low;
+	uint32_t vector_high;
+};
+
+/**
+ * @struct scmi_cpu_info
+ *
+ * @brief Describes the parameters for the CPU_INFO_GET command
+ */
+struct scmi_cpu_info {
+	uint32_t run_mode;
+	uint32_t sleep_mode;
+	uint32_t vector_low;
+	uint32_t vector_high;
 };
 
 /**
@@ -117,4 +150,25 @@ int scmi_cpu_pd_lpm_set(struct scmi_cpu_pd_lpm_config *cfg);
  * @retval negative errno if failure
  */
 int scmi_cpu_set_irq_mask(struct scmi_cpu_irq_mask_config *cfg);
+
+/**
+ * @brief Send the CPU_RESET_VECTOR_SET command and get its reply
+ *
+ * @param cfg pointer to structure containing configuration to be set
+ *
+ * @retval 0 if successful
+ * @retval negative errno if failure
+ */
+int scmi_cpu_reset_vector(struct scmi_cpu_vector_config *cfg);
+
+/**
+ * @brief Send the CPU_INFO_GET command and get its reply
+ *
+ * @param cpu_id CPU ID to query (input)
+ * @param cfg pointer to structure to receive CPU information (output)
+ *
+ * @retval 0 if successful
+ * @retval negative errno if failure
+ */
+int scmi_cpu_info_get(uint32_t cpu_id, struct scmi_cpu_info *cfg);
 #endif /* _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_CPU_H_ */
