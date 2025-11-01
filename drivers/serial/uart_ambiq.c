@@ -130,7 +130,9 @@ static void uart_ambiq_pm_policy_state_lock_put(const struct device *dev)
 
 static int uart_ambiq_configure(const struct device *dev, const struct uart_config *cfg)
 {
+#ifdef CONFIG_SOC_SERIES_APOLLO5X
 	const struct uart_ambiq_config *config = dev->config;
+#endif
 	struct uart_ambiq_data *data = dev->data;
 
 	data->hal_cfg.eTXFifoLevel = AM_HAL_UART_FIFO_LEVEL_16;
@@ -190,6 +192,7 @@ static int uart_ambiq_configure(const struct device *dev, const struct uart_conf
 		return -ENOTSUP;
 	}
 
+#ifdef CONFIG_SOC_SERIES_APOLLO5X
 	switch (config->clk_src) {
 	case 0:
 		data->hal_cfg.eClockSrc = AM_HAL_UART_CLOCK_SRC_HFRC;
@@ -200,6 +203,7 @@ static int uart_ambiq_configure(const struct device *dev, const struct uart_conf
 	default:
 		return -EINVAL;
 	}
+#endif
 
 	if (am_hal_uart_configure(data->uart_handler, &data->hal_cfg) != AM_HAL_STATUS_SUCCESS) {
 		return -EINVAL;
@@ -288,6 +292,7 @@ static int uart_ambiq_err_check(const struct device *dev)
 	const struct uart_ambiq_config *cfg = dev->config;
 	int errors = 0;
 
+#if defined(CONFIG_SOC_SERIES_APOLLO5X)
 	if (UARTn(cfg->inst_idx)->RSR & AM_HAL_UART_RSR_OESTAT) {
 		errors |= UART_ERROR_OVERRUN;
 	}
@@ -303,6 +308,23 @@ static int uart_ambiq_err_check(const struct device *dev)
 	if (UARTn(cfg->inst_idx)->RSR & AM_HAL_UART_RSR_FESTAT) {
 		errors |= UART_ERROR_FRAMING;
 	}
+#elif defined(CONFIG_SOC_SERIES_APOLLO4X)
+	if (UARTn(cfg->inst_idx)->RSR & UART0_RSR_OESTAT_Msk) {
+		errors |= UART_ERROR_OVERRUN;
+	}
+
+	if (UARTn(cfg->inst_idx)->RSR & UART0_RSR_BESTAT_Msk) {
+		errors |= UART_BREAK;
+	}
+
+	if (UARTn(cfg->inst_idx)->RSR & UART0_RSR_PESTAT_Msk) {
+		errors |= UART_ERROR_PARITY;
+	}
+
+	if (UARTn(cfg->inst_idx)->RSR & UART0_RSR_FESTAT_Msk) {
+		errors |= UART_ERROR_FRAMING;
+	}
+#endif
 
 	return errors;
 }
