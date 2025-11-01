@@ -45,7 +45,7 @@ static void coredump_impl_dump(const struct device *dev)
 
 			/* Invoke callback to allow consumer to fill array with desired data */
 			data->dump_callback(start_address, size);
-			coredump_memory_dump(start_address, start_address + size);
+			coredump_buffer_output((uint8_t *)start_address, size);
 		}
 	} else { /* COREDUMP_TYPE_MEMCPY */
 		/*
