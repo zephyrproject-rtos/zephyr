@@ -42,6 +42,7 @@
 #include "btp_ots.h"
 #include "btp_pbp.h"
 #include "btp_sdp.h"
+#include "btp_rfcomm.h"
 
 #define BTP_MTU 1024
 #define BTP_DATA_MAX_SIZE (BTP_MTU - sizeof(struct btp_hdr))
@@ -83,8 +84,9 @@
 #define BTP_SERVICE_ID_OTS      0x1d
 #define BTP_SERVICE_ID_PBP      0x1e
 #define BTP_SERVICE_ID_SDP      0x1f
+#define BTP_SERVICE_ID_RFCOMM   0x20
 
-#define BTP_SERVICE_ID_MAX	BTP_SERVICE_ID_SDP
+#define BTP_SERVICE_ID_MAX	BTP_SERVICE_ID_RFCOMM
 
 #define BTP_STATUS_SUCCESS	0x00
 #define BTP_STATUS_FAILED	0x01
