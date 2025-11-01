@@ -1,0 +1,116 @@
+/*
+ * Copyright (c) 2025 Hubert Miś
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/led/led.h>
+
+&spi1 {
+	status = "okay";
+
+	sct2024@0 {
+		compatible = "sct,sct2024";
+		status = "okay";
+
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+		la-gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
+		oe-gpios = <&gpio1 4 GPIO_ACTIVE_LOW>;
+
+		led_0 {
+			label = "LED 0";
+			index = <0>;
+		};
+
+		led_1 {
+			label = "LED 1";
+			index = <1>;
+		};
+
+		led_2 {
+			label = "LED 2";
+			index = <2>;
+		};
+
+		led_3 {
+			label = "LED 3";
+			index = <3>;
+		};
+
+		led_4 {
+			label = "LED 4";
+			index = <4>;
+		};
+
+		led_5 {
+			label = "LED 5";
+			index = <5>;
+		};
+
+		led_6 {
+			label = "LED 6";
+			index = <6>;
+		};
+
+		led_7 {
+			label = "LED 7";
+			index = <7>;
+		};
+
+		led_8 {
+			label = "LED 8";
+			index = <8>;
+		};
+
+		led_9 {
+			label = "LED 9";
+			index = <9>;
+		};
+
+		led_10 {
+			label = "LED 10";
+			index = <10>;
+		};
+
+		led_11 {
+			label = "LED 11";
+			index = <11>;
+		};
+
+		led_12 {
+			label = "LED 12";
+			index = <12>;
+		};
+
+		led_13 {
+			label = "LED 13";
+			index = <13>;
+		};
+
+		led_14 {
+			label = "LED 14";
+			index = <14>;
+		};
+
+		led_15 {
+			label = "LED 15";
+			index = <15>;
+		};
+	};
+};
+
+&spi1_default {
+	group1 {
+		psels = <NRF_PSEL(SPIM_SCK, 1, 1)>,
+			<NRF_PSEL(SPIM_MOSI, 1, 2)>;
+	};
+};
+
+&spi1_sleep {
+	group1 {
+		psels = <NRF_PSEL(SPIM_SCK, 1, 1)>,
+			<NRF_PSEL(SPIM_MOSI, 1, 2)>;
+		low-power-enable;
+	};
+};
