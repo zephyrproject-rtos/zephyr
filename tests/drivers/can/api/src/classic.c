@@ -32,6 +32,7 @@ static void tx_std_callback_1(const struct device *dev, int error, void *user_da
 	zassert_equal(frame->id, TEST_CAN_STD_ID_1, "ID does not match");
 }
 
+#ifndef CONFIG_CAN_XILINX_CANFD
 /**
  * @brief Standard (11-bit) CAN ID transmit callback 2.
  *
@@ -212,6 +213,7 @@ static void rx_ext_mask_callback_2(const struct device *dev, struct can_frame *f
 
 	k_sem_give(&rx_callback_sem);
 }
+#endif
 
 /**
  * @brief Send a CAN test frame with asserts.
@@ -294,6 +296,7 @@ static inline int add_rx_filter(const struct device *dev,
 	return filter_id;
 }
 
+#ifndef CONFIG_CAN_XILINX_CANFD
 /**
  * @brief Perform a send/receive test with a set of CAN ID filters and CAN frames.
  *
@@ -426,6 +429,7 @@ static void send_receive_rtr(const struct can_filter *filter,
 
 	can_remove_rx_filter(can_dev, filter_id);
 }
+#endif
 
 /**
  * @brief Test getting the CAN core clock rate.
@@ -612,6 +616,7 @@ ZTEST_USER(can_classic, test_send_and_forget)
 	send_test_frame(can_dev, &test_std_frame_1);
 }
 
+#ifndef CONFIG_CAN_XILINX_CANFD
 /**
  * @brief Test adding basic filters.
  *
@@ -791,6 +796,7 @@ ZTEST_USER(can_classic, test_receive_timeout)
 
 	can_remove_rx_filter(can_dev, filter_id);
 }
+#endif
 
 /**
  * @brief Test that transmit callback function is called.
@@ -883,6 +889,7 @@ ZTEST(can_classic, test_send_ext_id_dlc_of_range)
 	send_invalid_frame(can_dev, &frame);
 }
 
+#ifndef CONFIG_CAN_XILINX_CANFD
 /**
  * @brief Test send/receive with standard (11-bit) CAN IDs.
  */
@@ -1078,6 +1085,7 @@ ZTEST(can_classic, test_send_receive_wrong_id)
 
 	can_remove_rx_filter(can_dev, filter_id);
 }
+#endif
 
 /**
  * @brief Test that frames with invalid Data Length Code (DLC) are rejected.
@@ -1110,6 +1118,7 @@ ZTEST_USER(can_classic, test_send_fd_format)
 	zassert_equal(err, -ENOTSUP, "sent a CAN FD format frame in non-FD mode");
 }
 
+#ifndef CONFIG_CAN_XILINX_CANFD
 /**
  * @brief Test CAN controller bus recovery.
  *
@@ -1160,6 +1169,7 @@ ZTEST_USER(can_classic, test_recover)
 		zassert_equal(err, -ENOSYS, "wrong error return code (err %d)", err);
 	}
 }
+#endif
 
 /**
  * @brief Test retrieving the state of the CAN controller.
@@ -1183,6 +1193,7 @@ ZTEST_USER(can_classic, test_get_state)
 	zassert_equal(err, 0, "failed to get CAN state + error counters (err %d)", err);
 }
 
+#ifndef CONFIG_CAN_XILINX_CANFD
 /**
  * @brief Test that CAN RX filters are preserved through CAN controller mode changes.
  */
@@ -1297,6 +1308,7 @@ ZTEST_USER(can_classic, test_filters_added_while_stopped)
 
 	can_remove_rx_filter(can_dev, filter_id);
 }
+#endif
 
 /**
  * @brief Test stopping is not allowed while stopped.
@@ -1328,6 +1340,7 @@ ZTEST_USER(can_classic, test_start_while_started)
 	zassert_equal(err, -EALREADY, "wrong error return code (err %d)", err);
 }
 
+#ifndef CONFIG_CAN_XILINX_CANFD
 /**
  * @brief Test recover is not allowed while started.
  */
@@ -1353,6 +1366,7 @@ ZTEST_USER(can_classic, test_recover_while_stopped)
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
 }
+#endif
 
 /**
  * @brief Test sending is not allowed while stopped.

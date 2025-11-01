@@ -7,6 +7,7 @@ tests:
       - isotp
     depends_on: can
     filter: dt_chosen_enabled("zephyr,canbus") and not dt_compat_enabled("kvaser,pcican")
+      and not dt_compat_enabled("xlnx,canfd-2.0")
     extra_configs:
       - CONFIG_SAMPLE_LOOPBACK_MODE=y
     harness: console
