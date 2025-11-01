@@ -10,6 +10,7 @@ menuconfig MAX30101
 	default y
 	depends on DT_HAS_MAXIM_MAX30101_ENABLED
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_MAXIM_MAX30101),i2c)
+	select RTIO_WORKQ if SENSOR_ASYNC_API
 
 if MAX30101
 
@@ -38,6 +39,16 @@ config MAX30101_TRIGGER_OWN_THREAD
 	select MAX30101_TRIGGER
 
 endchoice
+
+config MAX30101_STREAM
+	bool "Asynchronous data streaming"
+	default y
+	depends on SENSOR_ASYNC_API
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_MAXIM_MAX30101),irq-gpios)
+	select MAX30101_TRIGGER
+	select I2C_RTIO
+	help
+	  Use this configuration option to enable streaming sensor data via RTIO.
 
 config MAX30101_TRIGGER
 	bool

@@ -690,8 +690,13 @@ static int lsm6dsv16x_decoder_get_size_info(struct sensor_chan_spec chan_spec, s
 	}
 }
 
-static bool lsm6dsv16x_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger)
+static bool lsm6dsv16x_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger,
+					   struct sensor_chan_spec chan_spec)
 {
+	ARG_UNUSED(buffer);
+	ARG_UNUSED(trigger);
+	ARG_UNUSED(chan_spec);
+
 	return false;
 }
 

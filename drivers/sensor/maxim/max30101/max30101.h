@@ -8,6 +8,13 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
 
+#if CONFIG_SENSOR_ASYNC_API
+#include <zephyr/rtio/rtio.h>
+#if CONFIG_MAX30101_STREAM
+#include <zephyr/rtio/regmap.h>
+#endif /* CONFIG_MAX30101_STREAM */
+#endif
+
 #define MAX30101_REG_INT_STS1		0x00
 #define MAX30101_REG_INT_STS2		0x01
 #define MAX30101_REG_INT_EN1		0x02
@@ -80,6 +87,17 @@ enum max30101_callback_idx {
 #define MAX30101_SENSOR_PPG_CHANNEL_MAX SENSOR_CHAN_GREEN
 #endif
 
+#if CONFIG_SENSOR_ASYNC_API
+#define MAX30101_ASYNC_RESOLUTION 31
+#define MAX30101_LIGHT_SHIFT      0
+#define MAX30101_TEMP_FRAC_MASK   GENMASK(MAX30101_TEMP_FRAC_SHIFT - 1, 0)
+
+static const uint32_t max30101_sample_period_ns[8] = {
+	20000000, 10000000, 5000000, 2500000,
+	1250000, 1000000, 625000, 312500,
+};
+#endif /* CONFIG_SENSOR_ASYNC_API */
+
 enum max30101_mode {
 	MAX30101_MODE_HEART_RATE = 2,
 	MAX30101_MODE_SPO2 = 3,
@@ -87,6 +105,7 @@ enum max30101_mode {
 };
 
 static const uint8_t max30101_mode_convert[3] = {7, 2, 3};
+static const uint8_t max30101_sample_bytes[4] = {0, 3, 6, 9};
 
 enum max30101_slot {
 	MAX30101_SLOT_DISABLED = 0,
@@ -127,29 +146,142 @@ struct max30101_config {
 	uint8_t data_shift;
 #if CONFIG_MAX30101_TRIGGER
 	const struct gpio_dt_spec irq_gpio;
-#endif
+#if CONFIG_MAX30101_STREAM
+	uint8_t sample_period;
+	uint8_t decimation;
+#endif /* CONFIG_MAX30101_STREAM */
+#endif /* CONFIG_MAX30101_TRIGGER */
 };
 
+struct max30101_reading {
+	uint8_t raw[MAX30101_BYTES_PER_CHANNEL * MAX30101_MAX_NUM_CHANNELS];
+};
+
+#if CONFIG_MAX30101_STREAM
+	struct max30101_stream_config {
+		/* Set if `overflow` interrupt must be watched */
+		uint8_t irq_overflow: 1;
+
+		/* Set if `watermark` interrupt must be watched */
+		uint8_t irq_watermark: 1;
+		/* Select `watermark` channels to be included/dropped/nopped */
+		uint8_t watermark_drop: 3;
+		uint8_t watermark_incl: 3;
+		uint8_t watermark_nop: 3;
+		uint8_t reserved_watermark: 1;
+
+		/* Set if `drdy` interrupt must be watched */
+		uint8_t irq_data_rdy: 1;
+		uint8_t data_rdy_drop: 3;
+		/* Select `drdy` channels to be included/dropped */
+#if CONFIG_MAX30101_DIE_TEMPERATURE
+		uint8_t data_rdy_incl: 4;
+		uint8_t data_rdy_nop: 4;
+#else
+		uint8_t data_rdy_incl: 3;
+		uint8_t data_rdy_nop: 3;
+#endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
+	} __attribute__((__packed__));
+#endif /* CONFIG_MAX30101_STREAM */
+
 struct max30101_data {
-	uint32_t raw[MAX30101_MAX_NUM_CHANNELS];
-	uint8_t map[MAX30101_MAX_NUM_CHANNELS][MAX30101_MAX_NUM_CHANNELS];
-	uint8_t num_channels[MAX30101_MAX_NUM_CHANNELS];
-	uint8_t total_channels;
+	struct max30101_reading reading;
 #if CONFIG_MAX30101_DIE_TEMPERATURE
 	uint8_t die_temp[2];
 #endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
+	uint8_t map[MAX30101_MAX_NUM_CHANNELS][MAX30101_MAX_NUM_CHANNELS];
+	uint8_t num_channels[MAX30101_MAX_NUM_CHANNELS];
+	uint8_t total_channels;
 #if CONFIG_MAX30101_TRIGGER
 	const struct device *dev;
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t trigger_handler[MAX30101_SUPPORTED_INTERRUPTS];
 	const struct sensor_trigger *trigger[MAX30101_SUPPORTED_INTERRUPTS];
 	struct k_work cb_work;
+#if CONFIG_MAX30101_STREAM
+	struct rtio *rtio_ctx;
+	struct rtio_iodev *iodev;
+	rtio_bus_type bus_type;
+	struct rtio_iodev_sqe *streaming_sqe;
+
+	uint64_t timestamp;
+	struct max30101_stream_config stream_cfg;
+#if CONFIG_MAX30101_DIE_TEMPERATURE
+	bool temp_available;
+	uint8_t status[2];
+#else
+	uint8_t status[1];
+#endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
+#endif /* CONFIG_MAX30101_STREAM */
 #endif
 };
 
 #ifdef CONFIG_MAX30101_TRIGGER
+int max30101_start_temperature_measurement(const struct device *dev);
+
 int max30101_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			 sensor_trigger_handler_t handler);
 
 int max30101_init_interrupts(const struct device *dev);
 #endif
+
+#if CONFIG_SENSOR_ASYNC_API
+struct max30101_decoder_header {
+	uint64_t timestamp;
+#if CONFIG_MAX30101_STREAM
+	uint8_t fifo_info[3]; /* [0]: Write ptr, [1]: overflow counter, [2]: Read ptr */
+	uint8_t reading_count;
+#endif /* CONFIG_MAX30101_STREAM */
+} __attribute__((__packed__));
+
+struct max30101_encoded_data {
+	struct max30101_decoder_header header;
+	struct {
+		/* Set if `red` has data (0-3 values) */
+		uint8_t has_red: 2;
+		/* Set if `ir` has data  (0-3 values) */
+		uint8_t has_ir: 2;
+		/* Set if `green` has data (0-3 values) */
+		uint8_t has_green: 2;
+		/* Set if `temp` has data */
+		uint8_t has_temp: 1;
+		/* Reserved */
+		uint8_t reserved: 1;
+#if CONFIG_MAX30101_STREAM
+		/* Set if data `drdy` interrupt has triggered */
+		uint8_t has_data_rdy: 1;
+		/* Set if temperature `drdy` interrupt has triggered */
+		uint8_t has_temp_rdy: 1;
+		/* Set if `watermark` interrupt has triggered */
+		uint8_t has_watermark: 1;
+		/* Set if `overflow` interrupt has triggered */
+		uint8_t has_overflow: 1;
+#endif /* CONFIG_MAX30101_STREAM */
+	} __attribute__((__packed__));
+	const struct device *sensor;
+#if CONFIG_MAX30101_DIE_TEMPERATURE
+	uint8_t die_temp[2];
+#endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
+	struct max30101_reading reading[1];
+};
+
+#if CONFIG_MAX30101_DIE_TEMPERATURE
+int max30101_read_sample(const struct device *dev, struct max30101_reading *reading, uint8_t *temp);
+#else
+int max30101_read_sample(const struct device *dev, struct max30101_reading *reading);
+#endif /* CONFIG_MAX30101_DIE_TEMPERATURE */
+
+void max30101_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
+
+int max30101_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder);
+
+#if CONFIG_MAX30101_STREAM
+int max30101_config_interruption(const struct device *dev, uint8_t reg, uint8_t mask, uint8_t enable);
+
+uint8_t max30101_encode_channels(const struct max30101_data *data, struct max30101_encoded_data *edata, const struct sensor_chan_spec *channels, size_t num_channels);
+
+void max30101_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
+
+void max30101_stream_irq_handler(const struct device *dev);
+#endif /* CONFIG_MAX30101_STREAM */
+#endif /* CONFIG_SENSOR_ASYNC_API */

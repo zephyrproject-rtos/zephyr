@@ -6,7 +6,7 @@
 
 #include <zephyr/drivers/sensor.h>
 
-#define TEMP_CHANNEL {SENSOR_CHAN_AMBIENT_TEMP, 0}
+#define TEMP_CHANNEL (SENSOR_CHAN_AMBIENT_TEMP, 0)
 
 const struct device *const temp0 = DEVICE_DT_GET(DT_ALIAS(temp0));
 

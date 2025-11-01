@@ -194,8 +194,10 @@ static int paa3905_decoder_decode(const uint8_t *buffer,
 	return -1;
 }
 
-static bool paa3905_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger)
+static bool paa3905_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger,
+					struct sensor_chan_spec chan_spec)
 {
+	ARG_UNUSED(chan_spec);
 	struct paa3905_encoded_data *edata = (struct paa3905_encoded_data *)buffer;
 
 	switch (trigger) {
