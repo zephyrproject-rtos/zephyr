@@ -1,0 +1,6 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config ACTUATOR_SHELL
+	bool "Actuator shell commands"
+	depends on SHELL

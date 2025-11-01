@@ -19,6 +19,7 @@ config ACTUATOR_INIT_PRIORITY
 
 # zephyr-keep-sorted-start
 rsource "Kconfig.fake"
+rsource "Kconfig.shell"
 # zephyr-keep-sorted-stop
 
 endif # ACTUATOR
