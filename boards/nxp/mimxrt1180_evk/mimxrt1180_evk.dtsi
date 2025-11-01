@@ -95,6 +95,10 @@
 	status = "okay";
 };
 
+&enetc_ptp_clock {
+	status = "okay";
+};
+
 &switch {
 	status = "okay";
 };

@@ -722,6 +722,13 @@
 			status = "disabled";
 		};
 
+		enetc_ptp_clock: ptp_clock@60b80000 {
+			compatible = "nxp,netc-ptp-clock";
+			reg = <0x60b80000 0x10000>;
+			clocks = <&ccm IMX_CCM_NETC_CLK 0x0 0>;
+			status = "disabled";
+		};
+
 		switch: dsa@60a00000 {
 			compatible = "nxp,netc-switch";
 			reg = <0x60a00000 0x10000>,
