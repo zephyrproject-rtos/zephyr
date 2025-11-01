@@ -9,6 +9,7 @@
 #define ZEPHYR_DRIVERS_SENSOR_APDS9960_APDS9960_H_
 
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
 
 #define APDS9960_ENABLE_REG		0x80
 #define APDS9960_ENABLE_GEN		BIT(6)
@@ -227,12 +228,26 @@ struct apds9960_config {
 	uint8_t pled_boost;
 };
 
+/* apds9960 specific channels */
+enum sensor_channel_apds9960 {
+	SENSOR_CHAN_APDS9960_GESTURE = SENSOR_CHAN_PRIV_START,
+};
+
+enum apds9960_gesture {
+	APDS9960_GESTURE_NONE,
+	APDS9960_GESTURE_UP,
+	APDS9960_GESTURE_DOWN,
+	APDS9960_GESTURE_LEFT,
+	APDS9960_GESTURE_RIGHT,
+};
+
 struct apds9960_data {
 	struct gpio_callback gpio_cb;
 	struct k_work work;
 	const struct device *dev;
 	uint16_t sample_crgb[4];
 	uint8_t pdata;
+	enum apds9960_gesture gesture;
 
 #ifdef CONFIG_APDS9960_TRIGGER
 	sensor_trigger_handler_t p_th_handler;
