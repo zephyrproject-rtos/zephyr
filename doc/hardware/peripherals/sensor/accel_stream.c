@@ -6,9 +6,9 @@
 
 #include <zephyr/drivers/sensor.h>
 
-#define ACCEL_TRIGGERS						\
-	{ SENSOR_TRIG_DRDY, SENSOR_STREAM_DATA_INCLUDE },	\
-	{ SENSOR_TRIG_TAP, SENSOR_STREAM_DATA_NOP }
+#define ACCEL_TRIGGERS                                                                             \
+	(SENSOR_TRIG_DRDY, SENSOR_STREAM_DATA_INCLUDE), (SENSOR_TRIG_TAP, SENSOR_STREAM_DATA_NOP)
+
 #define ACCEL_ALIAS(id) DT_ALIAS(CONCAT(accel, id))
 #define ACCEL_IODEV_SYM(id) CONCAT(accel_iodev, id)
 #define ACCEL_IODEV_PTR(id) &ACCEL_IODEV_SYM(id)
@@ -84,7 +84,7 @@ int main(void)
 		}
 
 		/* If a tap has occurred lets print it out */
-		if (decoder->has_trigger(buf, SENSOR_TRIG_TAP)) {
+		if (decoder->has_trigger(buf, SENSOR_TRIG_TAP), {SENSOR_CHAN_ACCEL_XYZ, 0}) {
 			printk("Tap! Sensor %s\n", dev->name);
 		}
 
