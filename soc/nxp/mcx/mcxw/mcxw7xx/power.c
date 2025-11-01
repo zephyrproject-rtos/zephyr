@@ -69,11 +69,13 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 	case PM_STATE_SUSPEND_TO_IDLE:
 		cmc_power_domain_config_t config;
 
+#if CONFIG_NXP_NBU == 0
 		/* Set NBU into Sleep Mode */
 		RFMC->RF2P4GHZ_CTRL = (RFMC->RF2P4GHZ_CTRL &
 				       (~RFMC_RF2P4GHZ_CTRL_LP_MODE_MASK)) |
 				       RFMC_RF2P4GHZ_CTRL_LP_MODE(0x1);
 		RFMC->RF2P4GHZ_CTRL |= RFMC_RF2P4GHZ_CTRL_LP_ENTER_MASK;
+#endif /* CONFIG_NXP_NBU == 0 */
 
 		/* Set MAIN_CORE and MAIN_WAKE power domain into sleep mode. */
 		config.clock_mode  = kCMC_GateAllSystemClocksEnterLowPowerMode;
@@ -86,10 +88,12 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		/* Enable CORE VDD Voltage scaling. */
 		SPC_EnableLowPowerModeCoreVDDInternalVoltageScaling(MCXW7_SPC_ADDR, true);
 
+#if CONFIG_NXP_NBU == 0
 		/* Set NBU into Deep Sleep Mode */
 		RFMC->RF2P4GHZ_CTRL = (RFMC->RF2P4GHZ_CTRL & (~RFMC_RF2P4GHZ_CTRL_LP_MODE_MASK)) |
 				       RFMC_RF2P4GHZ_CTRL_LP_MODE(0x3);
 		RFMC->RF2P4GHZ_CTRL |= RFMC_RF2P4GHZ_CTRL_LP_ENTER_MASK;
+#endif /* CONFIG_NXP_NBU == 0 */
 
 		/* Set MAIN_CORE and MAIN_WAKE power domain into Deep Sleep Mode. */
 		config.clock_mode  = kCMC_GateAllSystemClocksEnterLowPowerMode;
