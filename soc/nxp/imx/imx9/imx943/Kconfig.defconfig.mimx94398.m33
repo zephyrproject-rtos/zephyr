@@ -37,4 +37,7 @@ config IDLE_STACK_SIZE
 
 endif
 
+config DMA_TCD_QUEUE_SIZE
+	default 4
+
 endif # SOC_MIMX94398_M33
