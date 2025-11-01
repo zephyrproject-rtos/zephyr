@@ -46,3 +46,12 @@ properties:
                                                down.
 
       If absent, then STM32_TIM_COUNTERMODE_UP is used (reset state).
+
+  st,deadtime:
+    type: int
+    default: 0
+    description: |
+      Sets the dead-time configuration in the Break and Dead-Time register (BDTR)
+      for the associated timer to prevent shoot-through currents in bridge
+      circuits.
+      Valid range [0 ... 255].
