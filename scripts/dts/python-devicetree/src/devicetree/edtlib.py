@@ -1,5 +1,6 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # Copyright (c) 2019 Linaro Limited
+# Copyright 2025 NXP
 # SPDX-License-Identifier: BSD-3-Clause
 
 # Tip: You can view just the documentation with 'pydoc3 devicetree.edtlib'
@@ -1361,6 +1362,12 @@ class Node:
                 # works the same way in Zephyr as it does elsewhere.
                 binding = None
 
+                # Collect all available bindings for this compatible for warning purposes
+                available_bindings = []
+                for (binding_compat, binding_bus), candidate_binding in self.edt._compat2binding.items():
+                    if binding_compat == compat:
+                        available_bindings.append((binding_bus, candidate_binding.path))
+
                 for bus in on_buses:
                     if (compat, bus) in self.edt._compat2binding:
                         binding = self.edt._compat2binding[compat, bus]
@@ -1370,6 +1377,24 @@ class Node:
                     if (compat, None) in self.edt._compat2binding:
                         binding = self.edt._compat2binding[compat, None]
                     else:
+                        # No matching binding found - emit warning if bindings exist for other buses
+                        if available_bindings:
+                            current_bus = on_buses[0] if on_buses else "none"
+
+                            # Format available bus information for the warning
+                            available_bus_info = []
+                            for bus, binding_path in available_bindings:
+                                bus_name = bus if bus is not None else "any"
+                                # Get relative path for cleaner output
+                                rel_path = os.path.relpath(binding_path) if binding_path else "unknown"
+                                available_bus_info.append(f"'{bus_name}' (from {rel_path})")
+
+                            _LOG.warning(
+                                f"Node '{self.path}' with compatible '{compat}' "
+                                f"is on bus '{current_bus}', but available bindings expect: "
+                                f"{', '.join(available_bus_info)}. "
+                                f"No binding will be applied to this node."
+                            )
                         continue
 
                 self._binding = binding
