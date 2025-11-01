@@ -17,8 +17,6 @@ properties:
     description: |
       Selects opamp functional mode.
 
-      The op-amp operates with feedback, which is the most common configuration:
-
       a) inverting Mode
 
       - Input signal applied to inverting (-) terminal
