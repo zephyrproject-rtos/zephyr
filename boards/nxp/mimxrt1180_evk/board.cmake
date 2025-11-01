@@ -14,7 +14,7 @@ elseif(CONFIG_SOC_MIMXRT1189_CM7)
 # Note: Only support run cm7 image when debugging due to default boot core on board is cm33 core
 board_runner_args(linkserver  "--device=MIMXRT1189xxxxx:MIMXRT1180-EVK")
 board_runner_args(linkserver "--core=cm7")
-board_runner_args(jlink "--device=MIMXRT1189xxx8_M7" "--speed=4000" "--no-reset" "--tool-opt=-jlinkscriptfile jlinkscript/evkmimxrt1180_cm7.jlinkscript" "--tool-opt=-ir")
+board_runner_args(jlink "--device=MIMXRT1189xxx8_M7" "--speed=4000" "--no-reset" "--tool-opt=-jlinkscriptfile jlinkscript/evkmimxrt1180_cm7.jlinkscript")
 endif()
 
 include(${ZEPHYR_BASE}/boards/common/linkserver.board.cmake)
