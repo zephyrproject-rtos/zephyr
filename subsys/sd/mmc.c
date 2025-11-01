@@ -102,9 +102,10 @@ int mmc_card_init(struct sd_card *card)
 {
 	int ret = 0;
 	uint32_t ocr_arg = 0U;
-	/* Keep CSDs on stack for reduced RAM usage */
+	/* Keep CSDs/CID on stack for reduced RAM usage */
 	struct sd_csd card_csd = {0};
 	struct mmc_ext_csd card_ext_csd = {0};
+	uint32_t cid[4] = {0};
 
 	/* SPI is not supported for MMC */
 	if (card->host_props.is_spi) {
@@ -132,7 +133,7 @@ int mmc_card_init(struct sd_card *card)
 	}
 
 	/* CMD2 */
-	ret = card_read_cid(card);
+	ret = card_read_cid(card, cid);
 	if (ret) {
 		return ret;
 	}
