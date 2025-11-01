@@ -29,6 +29,7 @@ from queue import Empty, Queue
 import psutil
 from twisterlib.environment import ZEPHYR_BASE, strip_ansi_sequences
 from twisterlib.error import TwisterException
+from twisterlib.hardwaremap import DUT
 from twisterlib.platform import Platform
 from twisterlib.statuses import TwisterStatus
 
@@ -105,6 +106,7 @@ class Handler:
 
         self.args = []
         self.terminated = False
+        self.duts: list[DUT] = []
 
     def get_test_timeout(self):
         return math.ceil(self.instance.testsuite.timeout *
@@ -507,10 +509,10 @@ class DeviceHandler(Handler):
             for d in duts:
                 d.lock.release()
 
-    def device_is_available(self, instance):
+    def device_is_available(self, instance) -> DUT | None:
         device = instance.platform.name
         fixture = instance.testsuite.harness_config.get("fixture")
-        duts_found = []
+        duts_found: list[DUT] = []
 
         for d in self.duts:
             if fixture and fixture not in map(lambda f: f.split(sep=':')[0], d.fixtures):
@@ -540,7 +542,7 @@ class DeviceHandler(Handler):
 
         return None
 
-    def make_dut_available(self, dut):
+    def make_dut_available(self, dut: DUT) -> None:
         if self.instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
             dut.failures_increment()
         logger.debug(f"Release DUT:{dut.platform}, Id:{dut.id}, "
@@ -688,8 +690,15 @@ class DeviceHandler(Handler):
 
         self.make_dut_available(dut)
 
+    def get_more_serials_from_device(self, hardware: DUT) -> list[str]:
+        serials = set()
+        dut_shared_hw = [_d for _d in self.duts if _d.id == hardware.id]
+        for d in dut_shared_hw:
+            if d.serial and d.serial != hardware.serial:
+                serials.add(d.serial)
+        return list(serials)
 
-    def get_hardware(self):
+    def get_hardware(self) -> DUT | None:
         hardware = None
         try:
             hardware = self.device_is_available(self.instance)
@@ -697,7 +706,7 @@ class DeviceHandler(Handler):
             while not hardware:
                 time.sleep(1)
                 in_waiting += 1
-                if in_waiting%60 == 0:
+                if in_waiting % 60 == 0:
                     logger.debug(f"Waiting for a DUT to run {self.instance.name}")
                 hardware = self.device_is_available(self.instance)
         except TwisterException as error:
