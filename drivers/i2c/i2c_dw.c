@@ -607,6 +607,15 @@ static void i2c_dw_isr(const struct device *port)
 				}
 			}
 		}
+
+		if (intr_stat.bits.stop_det) {
+			read_clr_stop_det(reg_base);
+			dw->state = I2C_DW_STATE_READY;
+			dw->read_in_progress = false;
+			if (slave_cb->stop) {
+				slave_cb->stop(dw->slave_cfg);
+			}
+		}
 #endif
 	}
 
@@ -1157,8 +1166,6 @@ static void i2c_dw_slave_read_clear_intr_bits(const struct device *dev)
 	union ic_interrupt_register intr_stat;
 	uint32_t reg_base = get_regs(dev);
 
-	const struct i2c_target_callbacks *slave_cb = dw->slave_cfg->callbacks;
-
 	intr_stat.raw = read_intr_stat(reg_base);
 
 	if (intr_stat.bits.tx_abrt) {
@@ -1189,15 +1196,6 @@ static void i2c_dw_slave_read_clear_intr_bits(const struct device *dev)
 	if (intr_stat.bits.activity) {
 		read_clr_activity(reg_base);
 		dw->state = I2C_DW_STATE_READY;
-	}
-
-	if (intr_stat.bits.stop_det) {
-		read_clr_stop_det(reg_base);
-		dw->state = I2C_DW_STATE_READY;
-		dw->read_in_progress = false;
-		if (slave_cb->stop) {
-			slave_cb->stop(dw->slave_cfg);
-		}
 	}
 
 	if (intr_stat.bits.start_det) {
