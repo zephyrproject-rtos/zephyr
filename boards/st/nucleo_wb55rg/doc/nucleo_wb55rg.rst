@@ -32,7 +32,7 @@ Hardware
 ********
 
 STM32WB55RG is an ultra-low-power dual core Arm Cortex-M4 MCU 64 MHz,Cortex-M0 32MHz
-with 1 Mbyte of Flash memory, Bluetooth 5, 802.15.4, USB, LCD, AES-256 SoC and
+with 1 Mbyte of Flash memory, Bluetooth |reg| 5, 802.15.4, USB, LCD, AES-256 SoC and
 provides the following hardware capabilities:
 
 - Ultra-low-power with FlexPowerControl (down to 600 nA Standby mode with RTC and 32KB RAM)
@@ -140,10 +140,10 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
-Bluetooth and compatibility with STM32WB Copro Wireless Binaries
-================================================================
+Bluetooth |reg| and compatibility with STM32WB Copro Wireless Binaries
+======================================================================
 
-To operate bluetooth on Nucleo WB55RG, Cortex-M0 core should be flashed with
+To operate Bluetooth |reg| on Nucleo WB55RG, Cortex-M0 core should be flashed with
 a valid STM32WB Coprocessor binaries (either 'Full stack' or 'HCI Layer').
 These binaries are delivered in STM32WB Cube packages, under
 ``Projects/STM32WB_Copro_Wireless_Binaries/STM32WB5x/``

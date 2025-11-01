@@ -27,7 +27,7 @@ STM32 Flight Controller Unit provides the following hardware components:
 - 2 User LEDS
 - USART/UART (1)
 - I2C (1)
-- Bluetooth LE over SPI
+- Bluetooth |reg| Low Energy over SPI
 
 More information about the STM32 Flight Controller Unit
 can be found in these documents:
