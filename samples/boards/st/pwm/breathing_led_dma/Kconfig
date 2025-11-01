@@ -1,0 +1,16 @@
+#
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "Breathing Led sample application"
+
+config PRIMARY_BREATH_CHANNEL
+	int "Timer channel for the primary led on this board"
+	default 0
+
+config SECONDARY_BREATH_CHANNEL
+	int "Timer channel for the secondary breath output on this board"
+	default 0
+
+source "Kconfig.zephyr"
