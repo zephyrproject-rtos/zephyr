@@ -35,6 +35,7 @@ BUILD_ASSERT(DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(195) ||
 	     DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(255) ||
 	     DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) == KB(319));
 
+
 struct siwx91x_nwp_data {
 	char current_country_code[WIFI_COUNTRY_CODE_LEN];
 };
@@ -175,8 +176,10 @@ static void siwx91x_configure_sta_mode(sl_si91x_boot_configuration_t *boot_confi
 #ifdef CONFIG_WIFI_SILABS_SIWX91X
 	boot_config->ext_tcp_ip_feature_bit_map = SL_SI91X_CONFIG_FEAT_EXTENSION_VALID;
 	boot_config->ext_custom_feature_bit_map |=
-		SL_SI91X_EXT_FEAT_IEEE_80211W |
 		SL_SI91X_EXT_FEAT_FRONT_END_SWITCH_PINS_ULP_GPIO_4_5_0;
+	if (!IS_ENABLED(CONFIG_WIFI_SIWX91X_HIGH_THROUGHPUT)) {
+		boot_config->ext_custom_feature_bit_map |= SL_SI91X_EXT_FEAT_IEEE_80211W;
+	}
 	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_ENHANCED_MAX_PSP)) {
 		boot_config->config_feature_bit_map = SL_SI91X_ENABLE_ENHANCED_MAX_PSP;
 	}
@@ -320,17 +323,29 @@ static int siwx91x_get_nwp_config(const struct device *dev,
 					   SL_SI91X_FEAT_SECURITY_PSK | SL_SI91X_FEAT_AGGREGATION |
 					   SL_SI91X_FEAT_HIDE_PSK_CREDENTIALS,
 			.tcp_ip_feature_bit_map = SL_SI91X_TCP_IP_FEAT_EXTENSION_VALID,
-			.custom_feature_bit_map = SL_SI91X_CUSTOM_FEAT_EXTENSION_VALID |
-						  SL_SI91X_CUSTOM_FEAT_ASYNC_CONNECTION_STATUS |
-						  SL_SI91X_CUSTOM_FEAT_RTC_FROM_HOST,
+			.custom_feature_bit_map =
+				IS_ENABLED(CONFIG_WIFI_SIWX91X_HIGH_THROUGHPUT)
+					? (SL_SI91X_CUSTOM_FEAT_SOC_CLK_CONFIG_160MHZ |
+					   SL_SI91X_CUSTOM_FEAT_EXTENSION_VALID)
+					: (SL_SI91X_CUSTOM_FEAT_EXTENSION_VALID |
+					   SL_SI91X_CUSTOM_FEAT_ASYNC_CONNECTION_STATUS |
+					   SL_SI91X_CUSTOM_FEAT_RTC_FROM_HOST),
 			.ext_custom_feature_bit_map =
-				SL_SI91X_EXT_FEAT_XTAL_CLK | SL_SI91X_EXT_FEAT_1P8V_SUPPORT |
-				SL_SI91X_EXT_FEAT_DISABLE_XTAL_CORRECTION |
-				SL_SI91X_EXT_FEAT_NWP_QSPI_80MHZ_CLK_ENABLE |
-				SL_SI91X_EXT_FEAT_FRONT_END_SWITCH_PINS_ULP_GPIO_4_5_0 |
-				SL_SI91X_EXT_FEAT_FRONT_END_INTERNAL_SWITCH |
-				SL_SI91X_EXT_FEAT_XTAL_CLK,
-		}
+				IS_ENABLED(CONFIG_WIFI_SIWX91X_HIGH_THROUGHPUT)
+					? SL_SI91X_EXT_FEAT_FRONT_END_SWITCH_PINS_ULP_GPIO_4_5_0
+					: (SL_SI91X_EXT_FEAT_XTAL_CLK |
+					   SL_SI91X_EXT_FEAT_1P8V_SUPPORT |
+					   SL_SI91X_EXT_FEAT_DISABLE_XTAL_CORRECTION |
+					   SL_SI91X_EXT_FEAT_NWP_QSPI_80MHZ_CLK_ENABLE |
+					   SL_SI91X_EXT_FEAT_FRONT_END_SWITCH_PINS_ULP_GPIO_4_5_0 |
+					   SL_SI91X_EXT_FEAT_FRONT_END_INTERNAL_SWITCH |
+					   SL_SI91X_EXT_FEAT_XTAL_CLK),
+		},
+	#if IS_ENABLED(CONFIG_WIFI_SIWX91X_HIGH_THROUGHPUT)
+		.ta_pool = {.tx_ratio_in_buffer_pool = 1,
+					.rx_ratio_in_buffer_pool = 1,
+					.global_ratio_in_buffer_pool = 1}
+	#endif
 	};
 
 	sl_si91x_boot_configuration_t *boot_config = &default_config.boot_config;
