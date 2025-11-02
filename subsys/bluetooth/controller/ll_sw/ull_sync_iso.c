@@ -88,7 +88,8 @@ static struct ll_iso_rx_test_mode
 static void *stream_free;
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
-static struct ticker_ext ll_sync_iso_ticker_ext[CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET];
+static struct ticker_ext normal_ticker_ext[CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET];
+static struct ticker_ext resume_ticker_ext[CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET];
 #endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 
 uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
@@ -742,9 +743,9 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
-	ll_sync_iso_ticker_ext[index].ticks_slot_window =
+	normal_ticker_ext[index].ticks_slot_window =
 		HAL_TICKER_US_TO_TICKS(jitter_us + slot_us);
-	ll_sync_iso_ticker_ext[index].is_jitter_in_window = 1U;
+	normal_ticker_ext[index].is_jitter_in_window = 1U;
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	ret = ticker_start_ext(
@@ -763,7 +764,7 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 			   ticker_start_op_cb, (void *)__LINE__
 #if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
 			   ,
-			   &ll_sync_iso_ticker_ext[index]
+			   &normal_ticker_ext[index]
 #endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 			   );
 	LL_ASSERT_ERR((ret == TICKER_STATUS_SUCCESS) ||
@@ -1050,6 +1051,29 @@ static void timeout_cleanup(struct ll_sync_iso_set *sync_iso)
 	stop_ticker(sync_iso, ticker_stop_op_cb);
 }
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+static void ticker_resume_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+			     uint32_t remainder, uint16_t lazy, uint8_t force,
+			     void *param)
+{
+	/* TODO: Add implementation to place ULL time reservation for subsequent BIS spacing */
+}
+
+static void ticker_op_start_cb(uint32_t status, void *param)
+{
+	ARG_UNUSED(status);
+	ARG_UNUSED(param);
+
+	/* FIXME: Handle the skipped ULL scheduling of the subevent used to reserve time.
+	 *
+	 *  This assertion check will fail, i.e. ULL scheduled reception of AUX_ADV_IND PDU can
+	 *  cause the ULL time reservation for subevent to be skipped.
+	 *
+	 *  LL_ASSERT_ERR(status == TICKER_STATUS_SUCCESS);
+	 */
+}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param)
@@ -1085,6 +1109,47 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL, 0U,
 			     &mfy_lll_prepare);
 	LL_ASSERT_ERR(!ret);
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+	if (lll->num_bis > 1U) {
+		uint32_t bis_offset;
+		uint32_t jitter_us;
+		uint32_t slot_us;
+		uint8_t index;
+
+		bis_offset = lll->bis_spacing;
+
+		/* TODO: below is for sequential packing, interleaved packing need to be
+		 *       implemented in future.
+		 */
+		jitter_us = lll->sub_interval * lll->bn * (lll->irc - 1U);
+
+		slot_us = HAL_TICKER_TICKS_TO_US(sync_iso->ull.ticks_slot);
+
+		index = ARRAY_INDEX(ll_sync_iso, sync_iso);
+
+		resume_ticker_ext[index].ticks_slot_window =
+			HAL_TICKER_US_TO_TICKS(jitter_us + slot_us);
+		resume_ticker_ext[index].is_jitter_in_window = 1U;
+
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+		resume_ticker_ext[index].expire_info_id = TICKER_NULL;
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+
+		ret = ticker_start_ext(
+				   TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+				   (TICKER_ID_SCAN_SYNC_ISO_RESUME_BASE + index),
+				   p.ticks_at_expire, HAL_TICKER_US_TO_TICKS(bis_offset),
+				   TICKER_NULL_PERIOD, TICKER_NULL_REMAINDER,
+				   TICKER_NULL_LAZY, sync_iso->ull.ticks_slot,
+				   ticker_resume_cb, lll, ticker_op_start_cb,
+				   (void *)__LINE__,
+				   &resume_ticker_ext[index]
+				  );
+		LL_ASSERT_ERR((ret == TICKER_STATUS_SUCCESS) ||
+			      (ret == TICKER_STATUS_BUSY));
+	}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 
 	DEBUG_RADIO_PREPARE_O(1);
 }
