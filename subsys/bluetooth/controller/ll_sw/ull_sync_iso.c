@@ -1180,6 +1180,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		resume_ticker_ext[index].ticks_slot_window =
 			HAL_TICKER_US_TO_TICKS(jitter_us + slot_us);
 		resume_ticker_ext[index].is_jitter_in_window = 1U;
+		resume_ticker_ext[index].unforce = 1U;
 
 #if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 		resume_ticker_ext[index].expire_info_id = TICKER_NULL;
