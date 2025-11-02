@@ -568,6 +568,7 @@ if(CONFIG_BUILD_WITH_TFM)
   set(S_NS_SIGNED_CONFIRMED_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns_confirmed_signed.hex)
   set(S_NS_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns.hex)
   set(S_NS_SIGNED_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns_signed.hex)
+  set(S_NS_SIGNED_BIN_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns_signed.bin)
   set(NS_SIGNED_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/zephyr_ns_signed.hex)
   set(S_SIGNED_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_signed.hex)
   set(NS_SIGNED_BIN_FILE ${CMAKE_BINARY_DIR}/zephyr/zephyr_ns_signed.bin)
@@ -627,6 +628,8 @@ if(CONFIG_BUILD_WITH_TFM)
         $<$<BOOL:${CONFIG_TFM_BL1}>:$<TARGET_PROPERTY:tfm,BL2_SIGNED_HEX_FILE>>
         $<$<NOT:$<BOOL:${CONFIG_TFM_BL1}>>:$<TARGET_PROPERTY:tfm,BL2_HEX_FILE>>
         ${S_NS_SIGNED_HEX_FILE}
+
+      COMMAND ${CMAKE_OBJCOPY} --input-target=ihex --output-target=binary ${S_NS_SIGNED_HEX_FILE} ${S_NS_SIGNED_BIN_FILE}
     )
 
     set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts
