@@ -565,7 +565,6 @@ if(CONFIG_BUILD_WITH_TFM)
 
   set(MERGED_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_merged.hex)
   set(MERGED_BIN_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_merged.bin)
-  set(S_NS_CONFIRMED_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns_confirmed.hex)
   set(S_NS_SIGNED_CONFIRMED_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns_confirmed_signed.hex)
   set(S_NS_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns.hex)
   set(S_NS_SIGNED_HEX_FILE ${CMAKE_BINARY_DIR}/zephyr/tfm_s_zephyr_ns_signed.hex)
@@ -600,14 +599,14 @@ if(CONFIG_BUILD_WITH_TFM)
   elseif(CONFIG_TFM_MCUBOOT_IMAGE_NUMBER STREQUAL "1")
     tfm_sign(sign_cmd_s_ns_confirm_hex SUFFIX "S_NS"
       HEADER TRAILER CONFIRM MAX_SECTORS ${S_NS_MAX_SECTORS}
-      INPUT_FILE ${S_NS_CONFIRMED_HEX_FILE} OUTPUT_FILE ${S_NS_SIGNED_CONFIRMED_HEX_FILE})
+      INPUT_FILE ${S_NS_HEX_FILE} OUTPUT_FILE ${S_NS_SIGNED_CONFIRMED_HEX_FILE})
     tfm_sign(sign_cmd_s_ns_hex SUFFIX "S_NS"
       HEADER TRAILER MAX_SECTORS ${S_NS_MAX_SECTORS}
       INPUT_FILE ${S_NS_HEX_FILE} OUTPUT_FILE ${S_NS_SIGNED_HEX_FILE})
 
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
-        -o ${S_NS_CONFIRMED_HEX_FILE}
+        -o ${S_NS_HEX_FILE}
         $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE>
         ${NS_HEX_APP_FILE}
 
@@ -621,11 +620,6 @@ if(CONFIG_BUILD_WITH_TFM)
     )
 
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-      COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
-        -o ${S_NS_HEX_FILE}
-        $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE>
-        ${NS_HEX_APP_FILE}
-
       COMMAND ${sign_cmd_s_ns_hex}
 
       COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
@@ -636,7 +630,6 @@ if(CONFIG_BUILD_WITH_TFM)
     )
 
     set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts
-      ${S_NS_CONFIRMED_HEX_FILE}
       ${S_NS_SIGNED_CONFIRMED_HEX_FILE}
       ${S_NS_HEX_FILE}
       ${S_NS_SIGNED_HEX_FILE}
