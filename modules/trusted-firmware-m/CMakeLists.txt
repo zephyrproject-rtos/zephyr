@@ -319,8 +319,8 @@ if(CONFIG_BUILD_WITH_TFM)
     # number of parallel jobs to 1.
     set(PARALLEL_JOBS -j 1)
   else()
-	# Leave PARALLEL_JOBS unset and use the default number of
-	# threads. Which is num_cores+2 on Ninja and MAKEFLAGS with Make.
+    # Leave PARALLEL_JOBS unset and use the default number of
+    # threads. Which is num_cores+2 on Ninja and MAKEFLAGS with Make.
   endif()
 
   set(tfm_image_info MAP "name: tfm, source-dir: ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}")
