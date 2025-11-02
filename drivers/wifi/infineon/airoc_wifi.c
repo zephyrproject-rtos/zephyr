@@ -549,12 +549,19 @@ static int airoc_mgmt_scan(const struct device *dev, struct wifi_scan_params *pa
 	return 0;
 }
 
+static bool is_invalid_security(int security, uint8_t psk_length)
+{
+	return ((security == WIFI_SECURITY_TYPE_NONE) && (psk_length > 0));
+}
+
 static int airoc_mgmt_connect(const struct device *dev, struct wifi_connect_req_params *params)
 {
 	struct airoc_wifi_data *data = (struct airoc_wifi_data *)dev->data;
 	int ret = 0;
 	whd_scan_result_t scan_result;
 	whd_scan_result_t usr_result = {0};
+	/* Try to scan ssid to define security */
+	whd_scan_result_t tmp_result = {0};
 
 	if (k_sem_take(&data->sema_common, K_MSEC(AIROC_WIFI_WAIT_SEMA_MS)) != 0) {
 		return -EAGAIN;
@@ -574,13 +581,13 @@ static int airoc_mgmt_connect(const struct device *dev, struct wifi_connect_req_
 
 	usr_result.SSID.length = params->ssid_length;
 	memcpy(usr_result.SSID.value, params->ssid, params->ssid_length);
+	usr_result.security = convert_zephyr_security_to_whd(params->security);
 
-	if ((params->security == WIFI_SECURITY_TYPE_NONE) && (params->psk_length > 0)) {
-		/* Try to scan ssid to define security */
+	if (is_invalid_security(params->security, params->psk_length)) {
 
 		if (whd_wifi_scan(airoc_sta_if, WHD_SCAN_TYPE_ACTIVE, WHD_BSS_TYPE_ANY, NULL, NULL,
 				  NULL, NULL, airoc_wifi_scan_cb_search, &scan_result,
-				  &(usr_result)) != WHD_SUCCESS) {
+				  &(tmp_result)) != WHD_SUCCESS) {
 			LOG_ERR("Failed start scan");
 			ret = -EAGAIN;
 			goto error;
@@ -593,8 +600,10 @@ static int airoc_mgmt_connect(const struct device *dev, struct wifi_connect_req_
 			goto error;
 		}
 	} else {
-		/* Get security from user, convert it to  */
-		usr_result.security = convert_zephyr_security_to_whd(params->security);
+		/* Fallback to user input */
+		if (tmp_result.security == WHD_SECURITY_UNKNOWN) {
+			usr_result.security = tmp_result.security;
+		}
 	}
 
 	if (usr_result.security == WHD_SECURITY_UNKNOWN) {
