@@ -618,16 +618,12 @@ if(CONFIG_BUILD_WITH_TFM)
         $<$<BOOL:${CONFIG_TFM_BL1}>:$<TARGET_PROPERTY:tfm,BL2_SIGNED_HEX_FILE>>
         $<$<NOT:$<BOOL:${CONFIG_TFM_BL1}>>:$<TARGET_PROPERTY:tfm,BL2_HEX_FILE>>
         ${S_NS_SIGNED_CONFIRMED_HEX_FILE}
+
+      COMMAND ${CMAKE_OBJCOPY} --input-target=ihex --output-target=binary ${MERGED_HEX_FILE} ${MERGED_BIN_FILE}
     )
 
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND ${sign_cmd_s_ns_hex}
-
-      COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
-        -o ${MERGED_BIN_FILE} --output-bin
-        $<$<BOOL:${CONFIG_TFM_BL1}>:$<TARGET_PROPERTY:tfm,BL2_SIGNED_HEX_FILE>>
-        $<$<NOT:$<BOOL:${CONFIG_TFM_BL1}>>:$<TARGET_PROPERTY:tfm,BL2_HEX_FILE>>
-        ${S_NS_SIGNED_HEX_FILE}
 
       COMMAND ${CMAKE_OBJCOPY} --input-target=ihex --output-target=binary ${S_NS_SIGNED_HEX_FILE} ${S_NS_SIGNED_BIN_FILE}
     )
@@ -636,6 +632,7 @@ if(CONFIG_BUILD_WITH_TFM)
       ${S_NS_SIGNED_CONFIRMED_HEX_FILE}
       ${S_NS_HEX_FILE}
       ${S_NS_SIGNED_HEX_FILE}
+      ${S_NS_SIGNED_BIN_FILE}
       ${MERGED_HEX_FILE}
       ${MERGED_BIN_FILE}
     )
