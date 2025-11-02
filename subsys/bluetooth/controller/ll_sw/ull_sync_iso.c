@@ -603,7 +603,8 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	sync_iso_offset_us -= EVENT_JITTER_US;
 	sync_iso_offset_us -= ready_delay_us;
 
-	interval_us -= lll->window_widening_periodic_us;
+	lll->window_widening_prepare_us = lll->window_widening_periodic_us;
+	interval_us -= lll->window_widening_prepare_us;
 
 	/* Calculate ISO Receiver BIG event timings */
 
@@ -685,7 +686,7 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	if (ticks_diff & BIT(HAL_TICKER_CNTR_MSBIT)) {
 		sync_iso_offset_us += interval_us -
 			lll->window_widening_periodic_us;
-		lll->window_widening_event_us +=
+		lll->window_widening_prepare_us +=
 			lll->window_widening_periodic_us;
 		lll->payload_count += lll->bn;
 	}
