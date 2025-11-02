@@ -52,6 +52,7 @@
 		sdhc0 = &sdmmc1;
 		watchdog0 = &iwdg;
 		die-temp0 = &die_temp;
+		ambient-temp0 = &stts22h_temperature;
 		volt-sensor0 = &vref1;
 		volt-sensor1 = &vbat4;
 	};
@@ -140,6 +141,20 @@
 	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c3 {
+	pinctrl-0 = <&i2c3_scl_ph7 &i2c3_sda_ph8>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	stts22h_temperature: stts22h@3f {
+		compatible = "st,stts22h";
+		reg = <0x3f>;
+		int-gpios = <&gpiof 2 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
 };
 
 &i2c6 {
