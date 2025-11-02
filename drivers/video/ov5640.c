@@ -141,7 +141,7 @@ struct ov5640_config {
 	bool vsync_active;
 };
 
-struct ov5640_mipi_frmrate_config {
+struct ov5640_frmrate_config {
 	uint8_t frmrate;
 	uint8_t pllCtrl1;
 	uint8_t pllCtrl2;
@@ -153,7 +153,7 @@ struct ov5640_mode_config {
 	uint16_t height;
 	uint16_t array_size_res_params;
 	const struct video_reg16 *res_params;
-	const struct ov5640_mipi_frmrate_config *mipi_frmrate_config;
+	const struct ov5640_frmrate_config *frmrate_config;
 	uint16_t max_frmrate;
 	uint16_t def_frmrate;
 };
@@ -500,16 +500,16 @@ static const struct video_reg16 csi2_hd_res_params[] = {
 	{0x380f, 0xe4}, {0x3810, 0x00}, {0x3811, 0x10}, {0x3812, 0x00}, {0x3813, 0x04},
 	{0x3814, 0x31}, {0x3815, 0x31}, {0x3824, 0x04}, {0x460c, 0x20}};
 
-static const struct ov5640_mipi_frmrate_config mipi_hd_frmrate_params[] = {
+static const struct ov5640_frmrate_config csi2_hd_frmrate_params[] = {
 	{15, 0x21, 0x2A, 24000000}, {30, 0x21, 0x54, 48000000}, {60, 0x11, 0x54, 96000000}};
 
-static const struct ov5640_mipi_frmrate_config mipi_vga_frmrate_params[] = {
+static const struct ov5640_frmrate_config csi2_vga_frmrate_params[] = {
 	{15, 0x22, 0x38, 24000000}, {30, 0x14, 0x38, 24000000}, {60, 0x14, 0x70, 48000000}};
 
-static const struct ov5640_mipi_frmrate_config mipi_qvga_frmrate_params[] = {
+static const struct ov5640_frmrate_config csi2_qvga_frmrate_params[] = {
 	{15, 0x22, 0x30, 24000000}, {30, 0x14, 0x30, 24000000}, {60, 0x14, 0x60, 48000000}};
 
-static const struct ov5640_mipi_frmrate_config mipi_qqvga_frmrate_params[] = {
+static const struct ov5640_frmrate_config csi2_qqvga_frmrate_params[] = {
 	{15, 0x22, 0x30, 24000000}, {30, 0x14, 0x30, 24000000}, {60, 0x14, 0x60, 48000000}};
 
 static const struct ov5640_mode_config csi2_modes[] = {
@@ -518,7 +518,7 @@ static const struct ov5640_mode_config csi2_modes[] = {
 		.height = 120,
 		.array_size_res_params = ARRAY_SIZE(csi2_qqvga_res_params),
 		.res_params = csi2_qqvga_res_params,
-		.mipi_frmrate_config = mipi_qqvga_frmrate_params,
+		.frmrate_config = csi2_qqvga_frmrate_params,
 		.max_frmrate = OV5640_60_FPS,
 		.def_frmrate = OV5640_30_FPS,
 	},
@@ -527,7 +527,7 @@ static const struct ov5640_mode_config csi2_modes[] = {
 		.height = 240,
 		.array_size_res_params = ARRAY_SIZE(csi2_qvga_res_params),
 		.res_params = csi2_qvga_res_params,
-		.mipi_frmrate_config = mipi_qvga_frmrate_params,
+		.frmrate_config = csi2_qvga_frmrate_params,
 		.max_frmrate = OV5640_60_FPS,
 		.def_frmrate = OV5640_30_FPS,
 	},
@@ -536,7 +536,7 @@ static const struct ov5640_mode_config csi2_modes[] = {
 		.height = 480,
 		.array_size_res_params = ARRAY_SIZE(csi2_vga_res_params),
 		.res_params = csi2_vga_res_params,
-		.mipi_frmrate_config = mipi_vga_frmrate_params,
+		.frmrate_config = csi2_vga_frmrate_params,
 		.max_frmrate = OV5640_60_FPS,
 		.def_frmrate = OV5640_30_FPS,
 	},
@@ -545,7 +545,7 @@ static const struct ov5640_mode_config csi2_modes[] = {
 		.height = 720,
 		.array_size_res_params = ARRAY_SIZE(csi2_hd_res_params),
 		.res_params = csi2_hd_res_params,
-		.mipi_frmrate_config = mipi_hd_frmrate_params,
+		.frmrate_config = csi2_hd_frmrate_params,
 		.max_frmrate = OV5640_60_FPS,
 		.def_frmrate = OV5640_30_FPS,
 	}};
@@ -689,8 +689,8 @@ static int ov5640_set_frmival(const struct device *dev, struct video_frmival *fr
 	}
 
 	struct video_reg16 frmrate_params[] = {
-		{SC_PLL_CTRL1_REG, drv_data->cur_mode->mipi_frmrate_config[ind].pllCtrl1},
-		{SC_PLL_CTRL2_REG, drv_data->cur_mode->mipi_frmrate_config[ind].pllCtrl2},
+		{SC_PLL_CTRL1_REG, drv_data->cur_mode->frmrate_config[ind].pllCtrl1},
+		{SC_PLL_CTRL2_REG, drv_data->cur_mode->frmrate_config[ind].pllCtrl2},
 		{PCLK_PERIOD_REG, 0x0a}};
 
 	ret = video_write_cci_multiregs16(&cfg->i2c, frmrate_params, ARRAY_SIZE(frmrate_params));
@@ -710,7 +710,7 @@ static int ov5640_set_frmival(const struct device *dev, struct video_frmival *fr
 	drv_data->cur_frmrate = best_match;
 
 	/* Update pixerate control */
-	drv_data->ctrls.pixel_rate.val64 = drv_data->cur_mode->mipi_frmrate_config[ind].pixelrate;
+	drv_data->ctrls.pixel_rate.val64 = drv_data->cur_mode->frmrate_config[ind].pixelrate;
 
 	frmival->numerator = 1;
 	frmival->denominator = best_match;
@@ -1219,11 +1219,11 @@ static int ov5640_init_controls(const struct device *dev)
 	return video_init_ctrl(
 		&ctrls->pixel_rate, dev, VIDEO_CID_PIXEL_RATE,
 		(struct video_ctrl_range){
-			.min64 = mipi_qqvga_frmrate_params[0].pixelrate,
-			.max64 = mipi_hd_frmrate_params[ARRAY_SIZE(mipi_hd_frmrate_params) - 1]
+			.min64 = csi2_qqvga_frmrate_params[0].pixelrate,
+			.max64 = csi2_hd_frmrate_params[ARRAY_SIZE(csi2_hd_frmrate_params) - 1]
 					 .pixelrate,
 			.step64 = 1,
-			.def64 = mipi_hd_frmrate_params[1].pixelrate});
+			.def64 = csi2_hd_frmrate_params[1].pixelrate});
 }
 
 static int ov5640_init(const struct device *dev)
