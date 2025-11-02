@@ -385,6 +385,16 @@ struct lll_sync_iso_stream *ull_sync_iso_lll_stream_get(uint16_t handle)
 	return ull_sync_iso_stream_get(handle);
 }
 
+uint32_t ull_sync_iso_lll_ticks_slot_get(struct lll_sync_iso *lll)
+{
+	struct ll_sync_iso_set *sync_iso;
+
+	/* Get reference to ULL context */
+	sync_iso = HDR_LLL2ULL(lll);
+
+	return sync_iso->ull.ticks_slot;
+}
+
 void ull_sync_iso_stream_release(struct ll_sync_iso_set *sync_iso)
 {
 	struct lll_sync_iso *lll;
