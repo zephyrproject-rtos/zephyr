@@ -136,6 +136,29 @@ DMA
   too broadly defined in access and impossible to implement the syscall parameter verification step
   in another.
 
+Ethernet
+========
+
+* The :dtcompatible:`microchip,vsc8541` PHY driver now expects the reset-gpios entry to specify
+  the GPIO_ACTIVE_LOW flag when the reset is being used as active low. Previously the active-low
+  nature was hard-coded into the driver. (:github:`91726`).
+
+* CRC checksum generation offloading to hardware is now explicitly disabled rather then explicitly
+  enabled in the Xilinx GEM Ethernet driver (:dtcompatible:`xlnx,gem`). By default, offloading is
+  now enabled by default to improve performance, however, offloading is always disabled for QEMU
+  targets due to the checksum generation in hardware not being emulated regardless of whether it
+  is explicitly disabled via the devicetree or not. (:github:`95435`)
+
+    * Replaced devicetree property ``rx-checksum-offload`` which enabled RX checksum offloading
+      ``disable-rx-checksum-offload`` which now actively disables it.
+    * Replaced devicetree property ``tx-checksum-offload`` which enabled TX checksum offloading
+      ``disable-tx-checksum-offload`` which now actively disables it.
+
+* The Xilinx GEM Ethernet driver (:dtcompatible:`xlnx,gem`) now obtains the AMBA AHB data bus
+  width matching the current target SoC (either Zynq-7000 or ZynqMP) from a design configuration
+  register at run-time, making the devicetree property ``amba-ahb-dbus-width`` obsolete, which
+  has therefore been removed.
+
 MFD
 ===
 
@@ -265,29 +288,6 @@ Bluetooth Host
   available when :kconfig:option:`CONFIG_BT_APP_PASSKEY` is enabled. The application can return the
   passkey for pairing, or :c:macro:`BT_PASSKEY_RAND` for the Host to generate a random passkey
   instead.
-
-Ethernet
-========
-
-* The :dtcompatible:`microchip,vsc8541` PHY driver now expects the reset-gpios entry to specify
-  the GPIO_ACTIVE_LOW flag when the reset is being used as active low. Previously the active-low
-  nature was hard-coded into the driver. (:github:`91726`).
-
-* CRC checksum generation offloading to hardware is now explicitly disabled rather then explicitly
-  enabled in the Xilinx GEM Ethernet driver (:dtcompatible:`xlnx,gem`). By default, offloading is
-  now enabled by default to improve performance, however, offloading is always disabled for QEMU
-  targets due to the checksum generation in hardware not being emulated regardless of whether it
-  is explicitly disabled via the devicetree or not. (:github:`95435`)
-
-    * Replaced devicetree property ``rx-checksum-offload`` which enabled RX checksum offloading
-      ``disable-rx-checksum-offload`` which now actively disables it.
-    * Replaced devicetree property ``tx-checksum-offload`` which enabled TX checksum offloading
-      ``disable-tx-checksum-offload`` which now actively disables it.
-
-* The Xilinx GEM Ethernet driver (:dtcompatible:`xlnx,gem`) now obtains the AMBA AHB data bus
-  width matching the current target SoC (either Zynq-7000 or ZynqMP) from a design configuration
-  register at run-time, making the devicetree property ``amba-ahb-dbus-width`` obsolete, which
-  has therefore been removed.
 
 Power management
 ****************
