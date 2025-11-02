@@ -71,6 +71,11 @@ LOG_MODULE_REGISTER(video_ov5640, CONFIG_VIDEO_LOG_LEVEL);
 #define BLC_CTRL04_REG 0x4004
 #define BLC_CTRL05_REG 0x4005
 
+#define POLARITY_CTRL_REG 0x4740
+#define POLARITY_PCLK_HIGH	BIT(5)
+#define POLARITY_HSYNC_HIGH	BIT(1)
+#define POLARITY_VSYNC_LOW	BIT(0)
+
 #define AWB_CTRL00_REG 0x5180
 #define AWB_CTRL01_REG 0x5181
 #define AWB_CTRL02_REG 0x5182
@@ -132,6 +137,9 @@ struct ov5640_config {
 	int bus_type;
 	int bus_width;
 	int data_shift;
+	bool pclk_sample;
+	bool hsync_active;
+	bool vsync_active;
 };
 
 struct ov5640_mipi_frmrate_config {
@@ -391,7 +399,6 @@ static const struct video_reg16 init_params_common[] = {
 };
 
 static const struct video_reg16 init_params_dvp[] = {
-	{0x4740, 0x21},
 	{0x4050, 0x6e},
 	{0x4051, 0x8f},
 	{0x3017, 0xff},
@@ -1353,6 +1360,16 @@ static int ov5640_init(const struct device *dev)
 			LOG_ERR("Unable to set DVP data order");
 			return -EIO;
 		}
+
+		/* Set DVP polarity */
+		ret = video_write_cci_reg(&cfg->i2c, OV5640_REG8(POLARITY_CTRL_REG),
+					  (cfg->pclk_sample ? POLARITY_PCLK_HIGH : 0) |
+					  (cfg->hsync_active ? POLARITY_HSYNC_HIGH : 0) |
+					  (cfg->vsync_active ? 0 : POLARITY_VSYNC_LOW));
+		if (ret) {
+			LOG_ERR("Unable to set DVP polarity");
+			return -EIO;
+		}
 	} else {
 		/* Set virtual channel */
 		ret = video_modify_cci_reg(&cfg->i2c, OV5640_REG8(0x4814), 3U << 6,
@@ -1409,6 +1426,9 @@ static int ov5640_init(const struct device *dev)
 		.bus_type = OV5640_EP_PROP_OR(n, bus_type, VIDEO_BUS_TYPE_CSI2_DPHY),              \
 		.bus_width = OV5640_EP_PROP_OR(n, bus_width, 10),                                  \
 		.data_shift = OV5640_EP_PROP_OR(n, data_shift, 0),                                 \
+		.pclk_sample = OV5640_EP_PROP_OR(n, pclk_sample, 0),                               \
+		.hsync_active = OV5640_EP_PROP_OR(n, hsync_active, 0),                             \
+		.vsync_active = OV5640_EP_PROP_OR(n, vsync_active, 0),                             \
 		OV5640_GET_RESET_GPIO(n)                                                           \
 		OV5640_GET_POWERDOWN_GPIO(n)                                                       \
 	};                                                                                         \
