@@ -181,6 +181,17 @@
 			interrupt-parent = <&clic>;
 		};
 
+		dbi0: dbi@2000a800 {
+			compatible = "bflb,dbi";
+			reg = <0x2000a800 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			interrupts = <18 1>;
+			interrupt-parent = <&clic>;
+		};
+
 		i2c1: i2c@2000a900 {
 			compatible = "bflb,i2c";
 			reg = <0x2000a900 0x100>;
