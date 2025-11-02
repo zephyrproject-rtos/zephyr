@@ -5930,10 +5930,14 @@ void *k_heap_realloc(struct k_heap *h, void *ptr, size_t bytes, k_timeout_t time
  */
 void k_heap_free(struct k_heap *h, void *mem) __attribute_nonnull(1);
 
-/* Hand-calculated minimum heap sizes needed to return a successful
- * 1-byte allocation.  See details in lib/os/heap.[ch]
+/* Minimum heap sizes needed to return a successful 1-byte allocation.
+ * Assumes a chunk aligned (8 byte) memory buffer.
  */
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+#define Z_HEAP_MIN_SIZE ((sizeof(void *) > 4) ? 80 : 52)
+#else
 #define Z_HEAP_MIN_SIZE ((sizeof(void *) > 4) ? 56 : 44)
+#endif /* CONFIG_SYS_HEAP_RUNTIME_STATS */
 
 /**
  * @brief Define a static k_heap in the specified linker section
