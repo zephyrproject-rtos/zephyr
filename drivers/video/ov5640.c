@@ -404,7 +404,6 @@ static const struct video_reg16 init_params_dvp[] = {
 	{0x3017, 0xff},
 	{0x3018, 0xff},
 	{0x302c, 0x02},
-	{SYS_ROOT_DIV_REG, 0x01},
 	{0x3630, 0x2e},
 	{0x3a18, 0x00},
 	{0x3a19, 0xf8},
@@ -417,10 +416,6 @@ static const struct video_reg16 init_params_dvp[] = {
 	{0x3c09, 0x1c},
 	{0x3c0a, 0x9c},
 	{0x3c0b, 0x40},
-	{SC_PLL_CTRL0_REG, 0x1a},
-	{SC_PLL_CTRL1_REG, 0x11},
-	{SC_PLL_CTRL2_REG, 0x64},
-	{SC_PLL_CTRL3_REG, 0x13},
 	{0x3038, 0x00},
 	{0x3039, 0x00},
 	{HZ5060_CTRL01_REG, 0xb4},
@@ -580,12 +575,17 @@ static const struct video_reg16 dvp_480x272_res_params[] = {
 	{0x3814, 0x31}, {0x3815, 0x31}, {0x4602, 0x01}, {0x4603, 0xe0}, {0x4604, 0x01},
 	{0x4605, 0x10}};
 
+static const struct ov5640_frmrate_config dvp_frmrate_params[] = {
+	/* pixelrate is not used in DVP mode and 60fps is not supported */
+	{15, 0x21, 0x64, 0}, {30, 0x11, 0x64, 0}, {60, 0x11, 0x64, 0}};
+
 static const struct ov5640_mode_config dvp_modes[] = {
 	{
 		.width = 160,
 		.height = 120,
 		.array_size_res_params = ARRAY_SIZE(dvp_160x120_res_params),
 		.res_params = dvp_160x120_res_params,
+		.frmrate_config = dvp_frmrate_params,
 		.max_frmrate = OV5640_30_FPS,
 		.def_frmrate = OV5640_30_FPS,
 	},
@@ -594,6 +594,7 @@ static const struct ov5640_mode_config dvp_modes[] = {
 		.height = 240,
 		.array_size_res_params = ARRAY_SIZE(dvp_320x240_res_params),
 		.res_params = dvp_320x240_res_params,
+		.frmrate_config = dvp_frmrate_params,
 		.max_frmrate = OV5640_30_FPS,
 		.def_frmrate = OV5640_30_FPS,
 	},
@@ -602,6 +603,7 @@ static const struct ov5640_mode_config dvp_modes[] = {
 		.height = 272,
 		.array_size_res_params = ARRAY_SIZE(dvp_480x272_res_params),
 		.res_params = dvp_480x272_res_params,
+		.frmrate_config = dvp_frmrate_params,
 		.max_frmrate = OV5640_30_FPS,
 		.def_frmrate = OV5640_30_FPS,
 	}};
@@ -672,10 +674,6 @@ static int ov5640_set_frmival(const struct device *dev, struct video_frmival *fr
 	int ret;
 	uint8_t i, ind = 0;
 	uint32_t desired_frmrate, best_match = ov5640_frame_rates[ind];
-
-	if (ov5640_is_dvp(dev)) {
-		return -ENOTSUP;
-	}
 
 	desired_frmrate = DIV_ROUND_CLOSEST(frmival->denominator, frmival->numerator);
 
@@ -794,7 +792,11 @@ static int ov5640_set_fmt(const struct device *dev, struct video_format *fmt)
 	}
 
 	if (ov5640_is_dvp(dev)) {
-		return ov5640_set_fmt_dvp(cfg);
+		ret = ov5640_set_fmt_dvp(cfg);
+		if (ret) {
+			LOG_ERR("Unable to set DVP specific format");
+			return ret;
+		}
 	}
 
 	/* Set frame rate */
@@ -1094,10 +1096,6 @@ static int ov5640_get_frmival(const struct device *dev, struct video_frmival *fr
 {
 	struct ov5640_data *drv_data = dev->data;
 
-	if (ov5640_is_dvp(dev)) {
-		return -ENOTSUP;
-	}
-
 	frmival->numerator = 1;
 	frmival->denominator = drv_data->cur_frmrate;
 
@@ -1106,21 +1104,27 @@ static int ov5640_get_frmival(const struct device *dev, struct video_frmival *fr
 
 static int ov5640_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
+	const struct ov5640_mode_config *modes;
+	size_t array_size_modes;
 	uint8_t i = 0;
 
 	if (ov5640_is_dvp(dev)) {
-		return -ENOTSUP;
+		modes = dvp_modes;
+		array_size_modes = ARRAY_SIZE(dvp_modes);
+	} else {
+		modes = csi2_modes;
+		array_size_modes = ARRAY_SIZE(csi2_modes);
 	}
 
-	for (i = 0; i < ARRAY_SIZE(csi2_modes); i++) {
-		if (fie->format->width == csi2_modes[i].width &&
-		    fie->format->height == csi2_modes[i].height) {
+	for (i = 0; i < array_size_modes; i++) {
+		if (fie->format->width == modes[i].width &&
+		    fie->format->height == modes[i].height) {
 			break;
 		}
 	}
 
-	if (i == ARRAY_SIZE(csi2_modes) || fie->index >= ARRAY_SIZE(ov5640_frame_rates) ||
-	    ov5640_frame_rates[fie->index] > csi2_modes[i].max_frmrate) {
+	if (i == array_size_modes || fie->index >= ARRAY_SIZE(ov5640_frame_rates) ||
+	    ov5640_frame_rates[fie->index] > modes[i].max_frmrate) {
 		return -EINVAL;
 	}
 
