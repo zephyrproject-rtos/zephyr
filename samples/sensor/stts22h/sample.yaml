@@ -1,0 +1,11 @@
+sample:
+  name: STTS22H temperature sensor
+tests:
+  sample.sensor.stts22h:
+    depends_on:
+      - i2c
+    filter: dt_compat_enabled("st,stts22h")
+    tags:
+      - sensors
+    integration_platforms:
+      - stm32u5g9j_dk1
