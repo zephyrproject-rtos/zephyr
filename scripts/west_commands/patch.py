@@ -391,7 +391,7 @@ class Patch(WestCommand):
             self.dbg(f"patching {mod}... ", end="")
             apply_cmd += patch_path
             apply_cmd_list.extend([patch_path])
-            proc = subprocess.run(apply_cmd_list, cwd=mod_path)
+            proc = subprocess.run(apply_cmd_list, capture_output=True, cwd=mod_path)
             if proc.returncode:
                 self.dbg("FAIL")
                 self.err(proc.stderr)
