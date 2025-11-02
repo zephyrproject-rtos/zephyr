@@ -9,5 +9,6 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE actuator_handlers.c)
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_ACTUATOR_FAKE actuator_fake.c)
+zephyr_library_sources_ifdef(CONFIG_ACTUATOR_SERVO_PWM actuator_servo_pwm.c)
 zephyr_library_sources_ifdef(CONFIG_ACTUATOR_SHELL actuator_shell.c)
 # zephyr-keep-sorted-stop
