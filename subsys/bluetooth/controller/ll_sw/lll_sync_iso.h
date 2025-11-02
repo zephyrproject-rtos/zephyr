@@ -124,5 +124,6 @@ void lll_sync_iso_flush(uint8_t handle, struct lll_sync_iso *lll);
 
 extern uint8_t ull_sync_iso_lll_index_get(struct lll_sync_iso *lll);
 extern struct lll_sync_iso_stream *ull_sync_iso_lll_stream_get(uint16_t handle);
+extern uint32_t ull_sync_iso_lll_ticks_slot_get(struct lll_sync_iso *lll);
 extern void ll_iso_rx_put(memq_link_t *link, void *rx);
 extern void ll_rx_sched(void);
