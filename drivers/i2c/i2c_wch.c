@@ -274,7 +274,7 @@ static int wch_i2c_configure_timing(I2C_TypeDef *regs, uint32_t clock_rate,
 	uint16_t freq_range = (uint16_t)(clock_rate / 1000000);
 	uint16_t clock_config;
 
-#ifndef CONFIG_SOC_CH32V003
+#ifdef I2C_RTR_TRISE
 	uint16_t trise;
 
 	switch (speed) {
