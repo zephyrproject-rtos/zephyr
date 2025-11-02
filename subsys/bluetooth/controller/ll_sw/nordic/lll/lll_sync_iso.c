@@ -7,9 +7,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <soc.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/util.h>
 #include <zephyr/bluetooth/hci_types.h>
 
 #include "hal/cpu.h"
@@ -37,8 +35,6 @@
 #include "lll_internal.h"
 #include "lll_tim_internal.h"
 #include "lll_prof_internal.h"
-
-#include "ll_feat.h"
 
 #include "hal/debug.h"
 
@@ -325,10 +321,10 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	const bool is_sequential_packing = (lll->bis_spacing >= (lll->sub_interval * lll->nse));
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+	uint8_t skipped_bis;
 	uint8_t skipped;
 
 	if (p->ticks_drift != 0U) {
-		uint8_t skipped_bis;
 		uint32_t drift_us;
 
 		/* FIXME: Add implementation to support interleaved packing BIG event drift and
@@ -405,6 +401,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 		p->remainder = HAL_TICKER_REMAINDER(drift_us);
 #endif /* CONFIG_BT_TICKER_REMAINDER_SUPPORT */
 	} else {
+		skipped_bis = 0U;
 		skipped = 0U;
 	}
 #endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
@@ -470,8 +467,10 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 		}
 
 		/* Calculate the radio channel to use for subevent */
-		while (skipped != 0U) {
-			skipped--;
+		uint8_t skip = skipped;
+
+		while (skip != 0U) {
+			skip--;
 
 			data_chan_use = lll_chan_iso_subevent(data_chan_id,
 						lll->data_chan_map,
