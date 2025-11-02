@@ -151,18 +151,19 @@ static int create_prepare_cb(struct lll_prepare_param *p)
 	lll->latency_prepare = 0U;
 
 	/* Accumulate window widening */
-	lll->window_widening_prepare_us += lll->window_widening_periodic_us *
-					   (lll->lazy_prepare + 1U);
+	lll->window_widening_prepare_us += lll->window_widening_periodic_us * lll->lazy_prepare;
 	if (lll->window_widening_prepare_us > lll->window_widening_max_us) {
 		lll->window_widening_prepare_us = lll->window_widening_max_us;
 	}
 
 	/* Current window widening */
 	lll->window_widening_event_us += lll->window_widening_prepare_us;
-	lll->window_widening_prepare_us = 0U;
 	if (lll->window_widening_event_us > lll->window_widening_max_us) {
 		lll->window_widening_event_us =	lll->window_widening_max_us;
 	}
+
+	/* Pre-increment window widening */
+	lll->window_widening_prepare_us = lll->window_widening_periodic_us;
 
 	/* Initialize trx chain count, retained across resume. */
 	trx_cnt = 0U;
@@ -210,18 +211,19 @@ static int prepare_cb(struct lll_prepare_param *p)
 	lll->latency_prepare = 0U;
 
 	/* Accumulate window widening */
-	lll->window_widening_prepare_us += lll->window_widening_periodic_us *
-					   (lll->lazy_prepare + 1U);
+	lll->window_widening_prepare_us += lll->window_widening_periodic_us * lll->lazy_prepare;
 	if (lll->window_widening_prepare_us > lll->window_widening_max_us) {
 		lll->window_widening_prepare_us = lll->window_widening_max_us;
 	}
 
 	/* Current window widening */
 	lll->window_widening_event_us += lll->window_widening_prepare_us;
-	lll->window_widening_prepare_us = 0U;
 	if (lll->window_widening_event_us > lll->window_widening_max_us) {
 		lll->window_widening_event_us =	lll->window_widening_max_us;
 	}
+
+	/* Pre-increment window widening */
+	lll->window_widening_prepare_us = lll->window_widening_periodic_us;
 
 	/* Initialize trx chain count, retained across resume. */
 	trx_cnt = 0U;
@@ -263,7 +265,6 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	uint32_t ticks_at_event;
 	uint32_t ticks_at_start;
 	uint16_t stream_handle;
-	uint64_t payload_count;
 	uint16_t event_counter;
 	uint8_t access_addr[4];
 	uint16_t data_chan_id;
@@ -280,10 +281,8 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 
 	lll = p->param;
 
-	payload_count = lll->payload_count - (lll->latency_event + 1U) * lll->bn;
-
 	/* Calculate the current event counter value */
-	event_counter = (payload_count / lll->bn) + lll->latency_event;
+	event_counter = (lll->payload_count / lll->bn) - 1U;
 
 	/* Initialize to mandatory parameter values */
 	lll->bis_curr = 1U;
@@ -499,6 +498,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	/* Encryption */
 	if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) &&
 	    lll->enc) {
+		uint64_t payload_count;
 		uint8_t pkt_flags;
 
 		payload_count = lll->payload_count - lll->bn;

@@ -424,18 +424,19 @@ static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx)
 	lll = p->param;
 
 	/* Accumulate window widening */
-	lll->window_widening_prepare_us += lll->window_widening_periodic_us *
-					   (lll->lazy_prepare + 1U);
+	lll->window_widening_prepare_us += lll->window_widening_periodic_us * lll->lazy_prepare;
 	if (lll->window_widening_prepare_us > lll->window_widening_max_us) {
 		lll->window_widening_prepare_us = lll->window_widening_max_us;
 	}
 
 	/* Current window widening */
 	lll->window_widening_event_us += lll->window_widening_prepare_us;
-	lll->window_widening_prepare_us = 0;
 	if (lll->window_widening_event_us > lll->window_widening_max_us) {
 		lll->window_widening_event_us =	lll->window_widening_max_us;
 	}
+
+	/* Pre-increment window widening */
+	lll->window_widening_prepare_us = lll->window_widening_periodic_us;
 
 	/* Reset chain PDU being scheduled by lll_sync context */
 	lll->is_aux_sched = 0U;
