@@ -1307,6 +1307,18 @@ static int ov5640_init(const struct device *dev)
 
 	k_sleep(K_MSEC(20));
 
+	/* Check sensor chip id */
+	ret = video_read_cci_reg(&cfg->i2c, OV5640_REG16(CHIP_ID_REG), &chip_id);
+	if (ret) {
+		LOG_ERR("Unable to read sensor chip ID, ret = %d", ret);
+		return -ENODEV;
+	}
+
+	if (chip_id != CHIP_ID_VAL) {
+		LOG_ERR("Wrong chip ID: %04x (expected %04x)", chip_id, CHIP_ID_VAL);
+		return -ENODEV;
+	}
+
 	/* Reset all registers */
 	ret = video_write_cci_reg(&cfg->i2c, OV5640_REG8(SCCB_SYS_CTRL1_REG), 0x11);
 	if (ret) {
@@ -1374,18 +1386,6 @@ static int ov5640_init(const struct device *dev)
 			LOG_ERR("Unable to set virtual channel");
 			return -EIO;
 		}
-	}
-
-	/* Check sensor chip id */
-	ret = video_read_cci_reg(&cfg->i2c, OV5640_REG16(CHIP_ID_REG), &chip_id);
-	if (ret) {
-		LOG_ERR("Unable to read sensor chip ID, ret = %d", ret);
-		return -ENODEV;
-	}
-
-	if (chip_id != CHIP_ID_VAL) {
-		LOG_ERR("Wrong chip ID: %04x (expected %04x)", chip_id, CHIP_ID_VAL);
-		return -ENODEV;
 	}
 
 	/* Set default format */
