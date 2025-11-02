@@ -1,0 +1,17 @@
+# Copyright (c) 2025 Immo Birnbaum
+# SPDX-License-Identifier: Apache-2.0
+
+title: Xilinx GEM Ethernet Controller node
+
+compatible: "xlnx,gem-controller"
+
+description: |
+  This specifies the parent node of each instance of the Xilinx
+  GEM Ethernet controller, with separate MAC and MDIO nodes
+  contained as child nodes.
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
