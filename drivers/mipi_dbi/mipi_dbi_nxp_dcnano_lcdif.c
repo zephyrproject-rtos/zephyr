@@ -226,7 +226,7 @@ static int mipi_dbi_dcnano_lcdif_write_display(const struct device *dev,
 		bytes_per_pixel = 2U;
 		break;
 	default:
-		LOG_ERR("Bus tyoe not supported.");
+		LOG_ERR("Bus type not supported.");
 		ret = -ENODEV;
 		break;
 	}
