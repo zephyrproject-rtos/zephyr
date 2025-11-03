@@ -620,6 +620,126 @@ ZTEST(icmp_tests, test_offload_icmpv6_echo_request)
 #endif
 #endif /* CONFIG_NET_OFFLOADING_SUPPORT */
 
+/* Need to have both IPv4/IPv6 for those */
+#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_IPV6)
+static K_SEM_DEFINE(test_req_sem, 0, 1);
+
+static int icmp_request_handler(struct net_icmp_ctx *ctx,
+				struct net_pkt *pkt,
+				struct net_icmp_ip_hdr *hdr,
+				struct net_icmp_hdr *icmp_hdr,
+				void *user_data)
+{
+	k_sem_give(&test_req_sem);
+
+	return 0;
+}
+
+ZTEST(icmp_tests, test_malformed_icmpv6_echo_request_on_ipv4)
+{
+	struct in_addr dst4 = { 0 };
+	const struct in_addr *src4;
+	struct net_icmp_ctx ctx;
+	struct net_if *iface;
+	struct net_pkt *pkt;
+	int ret;
+
+	k_sem_reset(&test_req_sem);
+
+	ret = net_icmp_init_ctx(&ctx, AF_INET6, NET_ICMPV6_ECHO_REQUEST, 0,
+				icmp_request_handler);
+	zassert_equal(ret, 0, "Cannot init ICMP (%d)", ret);
+
+	memcpy(&dst4, &recv_addr_4, sizeof(recv_addr_4));
+
+	/* Prepare malformed NET_ICMPV6_ECHO_REQUEST on IPv4 packet */
+	iface = net_if_ipv4_select_src_iface(&dst4);
+	zassert_not_null(iface, "NULL iface");
+
+	src4 = net_if_ipv4_select_src_addr(iface, &dst4);
+	zassert_not_null(src4, "NULL addr");
+
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(struct net_icmpv4_echo_req),
+					AF_INET, IPPROTO_ICMP, K_MSEC(100));
+	zassert_not_null(pkt, "NULL pkt");
+
+	if (net_ipv4_create(pkt, src4, &dst4) != 0 ||
+	    net_icmpv4_create(pkt, NET_ICMPV6_ECHO_REQUEST, 0) != 0) {
+		net_pkt_unref(pkt);
+		zassert_true(false, "Failed to create ICMP packet");
+	}
+
+	net_pkt_cursor_init(pkt);
+	net_ipv4_finalize(pkt, IPPROTO_ICMP);
+
+	if (net_send_data(pkt) != 0) {
+		net_pkt_unref(pkt);
+		zassert_true(false, "Failed to send packet");
+	}
+
+	ret = k_sem_take(&test_req_sem, K_MSEC(100));
+	if (ret != -EAGAIN) {
+		(void)net_icmp_cleanup_ctx(&ctx);
+		zassert_true(false, "ICMP request shouldn't be processed");
+	}
+
+	ret = net_icmp_cleanup_ctx(&ctx);
+	zassert_equal(ret, 0, "Cannot cleanup ICMP (%d)", ret);
+}
+
+ZTEST(icmp_tests, test_malformed_icmpv4_echo_request_on_ipv6)
+{
+	struct in6_addr dst6 = { 0 };
+	const struct in6_addr *src6;
+	struct net_icmp_ctx ctx;
+	struct net_if *iface;
+	struct net_pkt *pkt;
+	int ret;
+
+	k_sem_reset(&test_req_sem);
+
+	ret = net_icmp_init_ctx(&ctx, AF_INET, NET_ICMPV4_ECHO_REQUEST, 0,
+				icmp_request_handler);
+	zassert_equal(ret, 0, "Cannot init ICMP (%d)", ret);
+
+	memcpy(&dst6, &recv_addr_6, sizeof(recv_addr_6));
+
+	/* Prepare malformed NET_ICMPV4_ECHO_REQUEST on IPv6 packet */
+	iface = net_if_ipv6_select_src_iface(&dst6);
+	zassert_not_null(iface, "NULL iface");
+
+	src6 = net_if_ipv6_select_src_addr(iface, &dst6);
+	zassert_not_null(src6, "NULL addr");
+
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(struct net_icmpv6_echo_req),
+					AF_INET6, IPPROTO_ICMPV6, K_MSEC(100));
+	zassert_not_null(pkt, "NULL pkt");
+
+	if (net_ipv6_create(pkt, src6, &dst6) != 0 ||
+	    net_icmpv6_create(pkt, NET_ICMPV4_ECHO_REQUEST, 0) != 0) {
+		net_pkt_unref(pkt);
+		zassert_true(false, "Failed to create ICMP packet");
+	}
+
+	net_pkt_cursor_init(pkt);
+	net_ipv6_finalize(pkt, IPPROTO_ICMPV6);
+
+	if (net_send_data(pkt) != 0) {
+		net_pkt_unref(pkt);
+		zassert_true(false, "Failed to send packet");
+	}
+
+	ret = k_sem_take(&test_req_sem, K_MSEC(100));
+	if (ret != -EAGAIN) {
+		(void)net_icmp_cleanup_ctx(&ctx);
+		zassert_true(false, "ICMP request shouldn't be processed");
+	}
+
+	ret = net_icmp_cleanup_ctx(&ctx);
+	zassert_equal(ret, 0, "Cannot cleanup ICMP (%d)", ret);
+}
+#endif /* defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_IPV6) */
+
 static void *setup(void)
 {
 	if (IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)) {
