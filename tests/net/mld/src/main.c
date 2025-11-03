@@ -557,7 +557,7 @@ static void test_catch_query(void)
 
 	is_query_received = false;
 
-	ret = net_icmp_init_ctx(&ctx, NET_ICMPV6_MLD_QUERY,
+	ret = net_icmp_init_ctx(&ctx, AF_INET6, NET_ICMPV6_MLD_QUERY,
 				0, handle_mld_query);
 	zassert_equal(ret, 0, "Cannot register %s handler (%d)",
 		      STRINGIFY(NET_ICMPV6_MLD_QUERY), ret);
