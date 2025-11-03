@@ -312,6 +312,10 @@ Networking
   ``size_t`` which meant that the size could be either 32 bit or 64 bit depending on system
   configuration.
 
+* :c:func:`net_icmp_init_ctx` API has changed, it now accepts an additional ``family`` argument
+  to indicate what packet family the context should work with. For ICMPv4 contexts, use ``AF_INET``,
+  for ICMPv6 contexts use ``AF_INET6``.
+
 .. zephyr-keep-sorted-start re(^\w)
 
 CoAP
