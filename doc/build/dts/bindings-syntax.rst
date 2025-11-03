@@ -62,6 +62,13 @@ like this:
    # bindings.
    on-bus: spi
 
+   examples:
+     # You can put a sample node here showing how to use the binding.
+     # - |
+     #  ...
+     # or
+     # - ...
+
    foo-cells:
      # "Specifier" cell names for the 'foo' domain go here; example 'foo'
      # values are 'gpio', 'pwm', and 'dma'. See below for more information.
@@ -677,6 +684,31 @@ nodes, even though they have the same compatible:
 Only ``sensor@79`` can have a ``use-clock-stretching`` property. The
 bus-sensitive logic ignores :file:`manufacturer,sensor-i2c.yaml` when searching
 for a binding for ``sensor@0``.
+
+.. _dt-bindings-examples:
+
+Examples
+********
+
+If you feel you want to provide a minimal example for your binding, you can use
+it like this:
+
+.. code-block:: yaml
+
+   description: ...
+
+   properties:
+    ...
+
+   examples:
+     - |
+       leds {
+         compatible = "gpio-leds";
+
+         uled: led {
+         gpios = <&gpioe 12 GPIO_ACTIVE_HIGH>;
+         };
+       };
 
 .. _dt-bindings-cells:
 
