@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+SOC_DT_VREGMAIN_PATH := $(dt_nodelabel_path,vregmain)
+SOC_DT_VREGMAIN_HAS_INITIAL_MODE := $(dt_node_has_prop,$(SOC_DT_VREGMAIN_PATH),regulator-initial-mode)
+SOC_DT_VREGMAIN_INITIAL_MODE := $(dt_node_int_prop_int,$(SOC_DT_VREGMAIN_PATH),regulator-initial-mode)
+
+config SOC_VREGMAIN_INITIAL_MODE
+	int "Initial mode of VREGMAIN volage regulator"
+	default $(SOC_DT_VREGMAIN_INITIAL_MODE) if $(SOC_DT_VREGMAIN_HAS_INITIAL_MODE)
+	default 1

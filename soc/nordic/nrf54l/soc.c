@@ -133,10 +133,9 @@ static inline void power_and_clock_configuration(void)
 	nrf_oscillators_hfxo_cap_set(NRF_OSCILLATORS, false, 0);
 #endif
 
-#if (DT_PROP(DT_NODELABEL(vregmain), regulator_initial_mode) == NRF5X_REG_MODE_DCDC)
+#if CONFIG_SOC_VREGMAIN_INITIAL_MODE == NRF5X_REG_MODE_DCDC
 	nrf_regulators_vreg_enable_set(NRF_REGULATORS, NRF_REGULATORS_VREG_MAIN, true);
 #endif
-
 }
 #endif /* NRF_APPLICATION && !CONFIG_TRUSTED_EXECUTION_NONSECURE */
 
