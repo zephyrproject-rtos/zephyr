@@ -229,7 +229,6 @@ int ism330dhcx_trigger_set_with_data(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	// Handle the FIFO Watermark trigger type
 	if (trig->type == SENSOR_TRIG_FIFO_WATERMARK) {
 		ism330dhcx->handler_fifo_wtm = handler;
 		ism330dhcx->trig_fifo_wtm = trig;
@@ -240,6 +239,93 @@ int ism330dhcx_trigger_set_with_data(const struct device *dev,
 }
 
 /**
+ * ism330dhcx_handle_fifo_interrupt - handle the fifo wtm event
+ * read data and call handler if registered any
+ */
+static void ism330dhcx_handle_fifo_interrupt(struct ism330dhcx_data *ism330dhcx, const struct device *dev){
+	ism330dhcx_fifo_status2_t fifo_status;
+
+	if (ism330dhcx_fifo_status_get(ism330dhcx->ctx, &fifo_status) < 0) {
+		LOG_DBG("failed reading fifo status reg");
+		return;
+	}
+
+	/* Check if the FIFO Watermark Interrupt Active bit is set */
+	if ((fifo_status.fifo_wtm_ia) && (ism330dhcx->handler_fifo_wtm != NULL)) {
+
+		ism330dhcx_fifo_tag_t tag;
+		uint8_t raw_data[6];
+		int16_t buffer[1024];
+		uint16_t num_samples_in_fifo = 0;
+		
+		if (ism330dhcx_fifo_data_level_get(ism330dhcx->ctx, &num_samples_in_fifo) < 0) {
+			LOG_WRN("Failed to get FIFO data level");
+			num_samples_in_fifo = 0;
+		}
+		
+		for (int i = 0; i < num_samples_in_fifo; i++) {
+			/* Read the 1-byte TAG */
+			if (ism330dhcx_fifo_sensor_tag_get(ism330dhcx->ctx, &tag) < 0) {
+				LOG_WRN("Failed to get FIFO tag on sample %d", i);
+				break;
+			}
+			/* Read the 6-byte DATA */
+			if (ism330dhcx_fifo_out_raw_get(ism330dhcx->ctx, raw_data) < 0) {
+				LOG_WRN("Failed to get FIFO data on sample %d", i);
+				break; 
+			}
+			int16_t x_raw, y_raw, z_raw;
+
+			/* Convert raw_data to x, y, z int16_t values */
+			x_raw = (int16_t)(raw_data[1] << 8 | raw_data[0]);
+			y_raw = (int16_t)(raw_data[3] << 8 | raw_data[2]);
+			z_raw = (int16_t)(raw_data[5] << 8 | raw_data[4]);
+
+			/* Store the raw values into buffer */
+			buffer[i*3 + 0] = x_raw;
+			buffer[i*3 + 1] = y_raw;
+			buffer[i*3 + 2] = z_raw;
+		}
+		
+		ism330dhcx->handler_fifo_wtm(dev, ism330dhcx->trig_fifo_wtm, buffer, num_samples_in_fifo*3);
+	}
+}
+
+/**
+ * ism330dhcx_handle_drdy_interrupt - handle the drdy event
+ * read data and call handler if registered any
+ */
+static void ism330dhcx_handle_drdy_interrupt(struct ism330dhcx_data *ism330dhcx, const struct device *dev){
+	ism330dhcx_status_reg_t status;
+
+	while (1) {
+		if (ism330dhcx_status_reg_get(ism330dhcx->ctx, &status) < 0) {
+			LOG_DBG("failed reading status reg");
+			return;
+		}
+
+		if ((status.xlda == 0) && (status.gda == 0)
+#if defined(CONFIG_ISM330DHCX_ENABLE_TEMP)
+					&& (status.tda == 0)
+#endif
+					) {
+			break;
+		}
+		if ((status.xlda) && (ism330dhcx->handler_drdy_acc != NULL)) {
+			ism330dhcx->handler_drdy_acc(dev, ism330dhcx->trig_drdy_acc);
+		}
+		if ((status.gda) && (ism330dhcx->handler_drdy_gyr != NULL)) {
+			ism330dhcx->handler_drdy_gyr(dev, ism330dhcx->trig_drdy_gyr);
+		}
+#if defined(CONFIG_ISM330DHCX_ENABLE_TEMP)
+		if ((status.tda) && (ism330dhcx->handler_drdy_temp != NULL)) {
+			ism330dhcx->handler_drdy_temp(dev, ism330dhcx->trig_drdy_temp);
+		}
+#endif
+	}
+}
+
+/**
  * ism330dhcx_handle_interrupt - handle the fifo/drdy event
  * read data and call handler if registered any
  */
@@ -247,82 +333,17 @@ static void ism330dhcx_handle_interrupt(const struct device *dev)
 {
 	struct ism330dhcx_data *ism330dhcx = dev->data;
 	const struct ism330dhcx_config *cfg = dev->config;
-	ism330dhcx_status_reg_t status;
 	ism330dhcx_fifo_status2_t fifo_status;
 
 	if (ism330dhcx_fifo_status_get(ism330dhcx->ctx, &fifo_status) < 0) {
         LOG_DBG("failed reading fifo status reg");
     }
 
-	/* Check if the FIFO Watermark Interrupt Active bit is set */
 	if ((fifo_status.fifo_wtm_ia) && (ism330dhcx->handler_fifo_wtm != NULL)) {
-
-		ism330dhcx_fifo_tag_t tag;
-    	uint8_t raw_data[6];
-		int16_t buffer[1024];
-		uint16_t num_samples_in_fifo = 0;
-		
-		if (ism330dhcx_fifo_data_level_get(ism330dhcx->ctx, &num_samples_in_fifo) < 0) {
-            LOG_WRN("Failed to get FIFO data level");
-            num_samples_in_fifo = 0;
-        }
-		
-        for (int i = 0; i < num_samples_in_fifo; i++) {
-            // Read the 1-byte TAG
-            if (ism330dhcx_fifo_sensor_tag_get(ism330dhcx->ctx, &tag) < 0) {
-                LOG_WRN("Failed to get FIFO tag on sample %d", i);
-                break;
-            }
-            // Read the 6-byte DATA
-            if (ism330dhcx_fifo_out_raw_get(ism330dhcx->ctx, raw_data) < 0) {
-                LOG_WRN("Failed to get FIFO data on sample %d", i);
-                break; 
-            }
-			int16_t x_raw, y_raw, z_raw;
-
-			// Convert raw_data to x, y, z int16_t values
-			x_raw = (int16_t)(raw_data[1] << 8 | raw_data[0]);
-			y_raw = (int16_t)(raw_data[3] << 8 | raw_data[2]);
-			z_raw = (int16_t)(raw_data[5] << 8 | raw_data[4]);
-
-			// Store the raw values into buffer
-			buffer[i*3 + 0] = x_raw;
-			buffer[i*3 + 1] = y_raw;
-			buffer[i*3 + 2] = z_raw;
-        }
-        
-		ism330dhcx->handler_fifo_wtm(dev, ism330dhcx->trig_fifo_wtm, buffer, num_samples_in_fifo * 3);
-
+		ism330dhcx_handle_fifo_interrupt(ism330dhcx, dev);
     } else {
-		while (1) {
-			if (ism330dhcx_status_reg_get(ism330dhcx->ctx, &status) < 0) {
-				LOG_DBG("failed reading status reg");
-				return;
-			}
-
-			if ((status.xlda == 0) && (status.gda == 0)
-	#if defined(CONFIG_ISM330DHCX_ENABLE_TEMP)
-						&& (status.tda == 0)
-	#endif
-						) {
-				break;
-			}
-
-			if ((status.xlda) && (ism330dhcx->handler_drdy_acc != NULL)) {
-				ism330dhcx->handler_drdy_acc(dev, ism330dhcx->trig_drdy_acc);
-			}
-
-			if ((status.gda) && (ism330dhcx->handler_drdy_gyr != NULL)) {
-				ism330dhcx->handler_drdy_gyr(dev, ism330dhcx->trig_drdy_gyr);
-			}
-
-	#if defined(CONFIG_ISM330DHCX_ENABLE_TEMP)
-			if ((status.tda) && (ism330dhcx->handler_drdy_temp != NULL)) {
-				ism330dhcx->handler_drdy_temp(dev, ism330dhcx->trig_drdy_temp);
-			}
-	#endif
-		}
-}
+		ism330dhcx_handle_drdy_interrupt(ism330dhcx, dev);
+	}
 
 	gpio_pin_interrupt_configure_dt(&cfg->drdy_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 }
