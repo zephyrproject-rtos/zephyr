@@ -282,7 +282,7 @@ ZTEST(wifi, test_2_icmp)
 	gw_addr_4 = net_if_ipv4_get_gw(wifi_ctx.iface);
 	zassert_not_equal(gw_addr_4.s_addr, 0, "Gateway address is not set");
 
-	ret = net_icmp_init_ctx(&icmp_ctx, NET_ICMPV4_ECHO_REPLY, 0, icmp_event);
+	ret = net_icmp_init_ctx(&icmp_ctx, AF_INET, NET_ICMPV4_ECHO_REPLY, 0, icmp_event);
 	zassert_equal(ret, 0, "Cannot init ICMP (%d)", ret);
 
 	dst4.sin_family = AF_INET;

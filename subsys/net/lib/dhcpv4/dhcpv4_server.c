@@ -879,7 +879,7 @@ out:
 
 static int dhcpv4_server_probing_init(struct dhcpv4_server_ctx *ctx)
 {
-	return net_icmp_init_ctx(&ctx->probe_ctx.icmp_ctx,
+	return net_icmp_init_ctx(&ctx->probe_ctx.icmp_ctx, AF_INET,
 				 NET_ICMPV4_ECHO_REPLY, 0,
 				 echo_reply_handler);
 }
