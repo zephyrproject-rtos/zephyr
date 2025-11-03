@@ -890,6 +890,33 @@ static int esp32_wifi_dev_init(const struct device *dev)
 	return 0;
 }
 
+static int esp32_wifi_set_config(const struct device *dev, enum ethernet_config_type type,
+				 const struct ethernet_config *config)
+{
+	struct esp32_wifi_runtime *dev_data = dev->data;
+
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
+		esp_wifi_set_mode(ESP32_WIFI_MODE_STA);
+
+		esp_err_t ret = esp_wifi_set_mac(WIFI_IF_STA, config->mac_address.addr);
+
+		if (ret == ESP_OK) {
+			memcpy(dev_data->mac_addr, config->mac_address.addr, 6);
+			net_if_set_link_addr(esp32_wifi_iface, dev_data->mac_addr,
+					     sizeof(dev_data->mac_addr), NET_LINK_ETHERNET);
+		} else {
+			printk("Failed to set mac address: %d\n", ret);
+		}
+
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static const struct wifi_mgmt_ops esp32_wifi_mgmt = {
 	.scan		   = esp32_wifi_scan,
 	.connect	   = esp32_wifi_connect,
@@ -904,6 +931,7 @@ static const struct wifi_mgmt_ops esp32_wifi_mgmt = {
 
 static const struct net_wifi_mgmt_offload esp32_api = {
 	.wifi_iface.iface_api.init	  = esp32_wifi_init,
+	.wifi_iface.set_config = esp32_wifi_set_config,
 	.wifi_iface.send = esp32_wifi_send,
 	.wifi_mgmt_api = &esp32_wifi_mgmt,
 };
