@@ -96,15 +96,19 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 	 * program-accessible data (not to string tables, for example).
 	 */
 	if (region->sh_flags & SHF_ALLOC) {
-		if (IS_ENABLED(CONFIG_ARM_MPU) || IS_ENABLED(CONFIG_ARC_MPU)) {
-			/* On ARM with an MPU, regions must be sized and
-			 * aligned to the same power of two (larger than 32).
+		if (IS_ENABLED(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)) {
+			/* Some MPU architectures (ARMv7-M, older ARC) require regions
+			 * to be sized and aligned to the same power of two.
 			 */
 			uintptr_t block_sz = MAX(MAX(region_alloc, region_align), LLEXT_PAGE_SIZE);
 
 			block_sz = 1 << LOG2CEIL(block_sz); /* align to next power of two */
 			region_alloc = block_sz;
 			region_align = block_sz;
+		} else if (IS_ENABLED(CONFIG_ARM_MPU) || IS_ENABLED(CONFIG_ARC_MPU)) {
+			/* ARMv8-M and newer ARC MPUs use 32-byte alignment. */
+			region_alloc = ROUND_UP(region_alloc, LLEXT_PAGE_SIZE);
+			region_align = MAX(region_align, LLEXT_PAGE_SIZE);
 		} else if (IS_ENABLED(CONFIG_MMU)) {
 			/* MMU targets map memory in page-sized chunks. Round
 			 * the region to multiples of those.
