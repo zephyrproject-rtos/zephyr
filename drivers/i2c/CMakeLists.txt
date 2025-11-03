@@ -48,6 +48,7 @@ zephyr_library_sources_ifdef(CONFIG_I2C_MCHP_MSS i2c_mchp_mss.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_MCHP_SERCOM_G1 i2c_mchp_sercom_g1.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_MCUX i2c_mcux.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_MCUX_FLEXCOMM i2c_mcux_flexcomm.c)
+zephyr_library_sources_ifdef(CONFIG_I2C_MSPM0 i2c_mspm0.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_NIOS2 i2c_nios2.c)
 
 zephyr_library_sources_ifdef(CONFIG_I2C_NPCX_DMA_DRIVEN
