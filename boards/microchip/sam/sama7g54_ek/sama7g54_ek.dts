@@ -405,6 +405,10 @@
 	};
 };
 
+&sha {
+	status = "okay";
+};
+
 &trng {
 	status = "okay";
 };
