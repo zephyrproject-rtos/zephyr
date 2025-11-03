@@ -162,8 +162,7 @@ static void shim_nrf_twis_handle_write_done(const struct device *dev)
 	callbacks->buf_write_received(target_config, dev_config->buf, nrfx_twis_rx_amount(twis));
 }
 
-static void shim_nrf_twis_event_handler(const struct device *dev,
-					nrfx_twis_event_t const *event)
+static void shim_nrf_twis_event_handler(const struct device *dev, nrfx_twis_event_t const *event)
 {
 	switch (event->type) {
 	case NRFX_TWIS_EVT_READ_REQ:
