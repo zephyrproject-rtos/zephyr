@@ -24,11 +24,11 @@
 #define ONE_SECOND_ALIGNED	\
 	(uint32_t)(k_ticks_to_ms_floor64(k_ms_to_ticks_ceil32(ONE_SECOND) + _TICK_ALIGN))
 
-#if defined(CONFIG_SOC_XILINX_ZYNQMP)
+#if defined(CONFIG_SOC_XILINX_ZYNQMP) || defined(CONFIG_SOC_VERSAL_RPU)
 /*
- * The Xilinx QEMU, used to emulate the Xilinx ZynqMP platform, is particularly
- * unstable in terms of timing. The tick margin of at least 5 is necessary to
- * allow this test to pass with a reasonable repeatability.
+ * The Xilinx QEMU, used to emulate the Xilinx ZynqMP and Versal platforms,
+ * is particularly unstable in terms of timing. The tick margin of at least 5
+ * is necessary to allow this test to pass with a reasonable repeatability.
  */
 #define TICK_MARGIN		5
 #else
