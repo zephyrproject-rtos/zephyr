@@ -12,7 +12,6 @@
 
 #include <zephyr/net/http/service.h>
 #include <zephyr/net/socket.h>
-#include <zephyr/posix/sys/eventfd.h>
 #include <zephyr/ztest.h>
 
 #define BUFFER_SIZE                    1024
