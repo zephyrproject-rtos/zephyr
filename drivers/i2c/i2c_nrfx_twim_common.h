@@ -38,7 +38,7 @@ extern "C" {
  * no longer ISR safe. This macro let's us check if we will be requesting/releasing
  * power domains and determines PM device ISR safety value.
  */
-#define I2C_PM_ISR_SAFE(idx)									\
+#define I2C_PM_ISR_SAFE(idx)                                                                       \
 	COND_CODE_1(										\
 		UTIL_AND(									\
 			IS_ENABLED(CONFIG_PM_DEVICE_POWER_DOMAIN),				\

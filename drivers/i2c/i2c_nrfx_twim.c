@@ -262,10 +262,10 @@ static DEVICE_API(i2c, i2c_nrfx_twim_driver_api) = {
 	BUILD_ASSERT(I2C_FREQUENCY(DT_DRV_INST(idx)) != I2C_NRFX_TWIM_INVALID_FREQUENCY,           \
 		     "Wrong I2C " #idx " frequency setting in dts");                               \
 	static struct i2c_nrfx_twim_data twim_##idx##_data;                                        \
-	static struct i2c_nrfx_twim_common_config twim_##idx##z_config; \
+	static struct i2c_nrfx_twim_common_config twim_##idx##z_config;                            \
 	static void pre_init##idx(void)                                                            \
 	{                                                                                          \
-		twim_##idx##z_config.twim = &twim_##idx##_data.twim; \
+		twim_##idx##z_config.twim = &twim_##idx##_data.twim;                               \
 		twim_##idx##_data.twim.p_twim = (NRF_TWIM_Type *)DT_INST_REG_ADDR(idx);            \
 		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority), nrfx_twim_irq_handler,  \
 			    &twim_##idx##_data.twim, 0);                                           \
@@ -286,24 +286,17 @@ static DEVICE_API(i2c, i2c_nrfx_twim_driver_api) = {
 		.pre_init = pre_init##idx,                                                         \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                       \
 		IF_ENABLED(USES_MSG_BUF(idx),				       \
-			(.msg_buf = twim_##idx##_msg_buf,))		       \
-		.max_transfer_size = BIT_MASK(				       \
-				DT_INST_PROP(idx, easydma_maxcnt_bits)),       \
-	};								       \
-	PM_DEVICE_DT_INST_DEFINE(idx, twim_nrfx_pm_action,                     \
-			I2C_PM_ISR_SAFE(idx));                                 \
-	I2C_DEVICE_DT_INST_DEINIT_DEFINE(idx,				       \
-		      i2c_nrfx_twim_init,				       \
-		      i2c_nrfx_twim_deinit,				       \
-		      PM_DEVICE_DT_INST_GET(idx),			       \
-		      &twim_##idx##_data,				       \
-		      &twim_##idx##z_config,				       \
-		      POST_KERNEL,					       \
-		      CONFIG_I2C_INIT_PRIORITY,				       \
-		      &i2c_nrfx_twim_driver_api)
+			(.msg_buf = twim_##idx##_msg_buf,)) .max_transfer_size =   \
+						 BIT_MASK(DT_INST_PROP(idx, easydma_maxcnt_bits)), \
+	};                                                                                         \
+	PM_DEVICE_DT_INST_DEFINE(idx, twim_nrfx_pm_action, I2C_PM_ISR_SAFE(idx));                  \
+	I2C_DEVICE_DT_INST_DEINIT_DEFINE(idx, i2c_nrfx_twim_init, i2c_nrfx_twim_deinit,            \
+					 PM_DEVICE_DT_INST_GET(idx), &twim_##idx##_data,           \
+					 &twim_##idx##z_config, POST_KERNEL,                       \
+					 CONFIG_I2C_INIT_PRIORITY, &i2c_nrfx_twim_driver_api)
 
 #define I2C_MEMORY_SECTION(idx)                                                                    \
-	COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(idx), prop),		       \
+	COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(idx), memory_regions),		       \
 		(__attribute__((__section__(LINKER_DT_NODE_REGION_NAME(	       \
 			DT_PHANDLE(DT_DRV_INST(idx), memory_regions)))))),     \
 		())

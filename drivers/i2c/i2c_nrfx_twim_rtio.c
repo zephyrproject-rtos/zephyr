@@ -293,7 +293,7 @@ static int i2c_nrfx_twim_rtio_deinit(const struct device *dev)
 						      },                                           \
 				   .ctx = &_i2c##idx##_twim_rtio,                                  \
 	};                                                                                         \
-	PM_DEVICE_DT_INST_DEFINE(idx, twim_nrfx_pm_action, I2C_PM_ISR_SAFE(idx));                    \
+	PM_DEVICE_DT_INST_DEFINE(idx, twim_nrfx_pm_action, I2C_PM_ISR_SAFE(idx));                  \
 	I2C_DEVICE_DT_INST_DEINIT_DEFINE(idx, i2c_nrfx_twim_rtio_init, i2c_nrfx_twim_rtio_deinit,  \
 					 PM_DEVICE_DT_INST_GET(idx), &twim_##idx##z_data,          \
 					 &twim_##idx##z_config, POST_KERNEL,                       \

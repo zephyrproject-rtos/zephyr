@@ -162,8 +162,7 @@ static void shim_nrf_twis_handle_write_done(const struct device *dev)
 	callbacks->buf_write_received(target_config, dev_config->buf, nrfx_twis_rx_amount(twis));
 }
 
-static void shim_nrf_twis_event_handler(const struct device *dev,
-					nrfx_twis_event_t const *event)
+static void shim_nrf_twis_event_handler(const struct device *dev, nrfx_twis_event_t const *event)
 {
 	switch (event->type) {
 	case NRFX_TWIS_EVT_READ_REQ:
@@ -318,7 +317,7 @@ static int shim_nrf_twis_deinit(const struct device *dev)
 			    &SHIM_NRF_TWIS_NAME(id, data).twis, 0);                                \
 	}                                                                                          \
                                                                                                    \
-	static void SHIM_NRF_TWIS_NAME(id, event_handler)(nrfx_twis_event_t const *event)            \
+	static void SHIM_NRF_TWIS_NAME(id, event_handler)(nrfx_twis_event_t const *event)          \
 	{                                                                                          \
 		shim_nrf_twis_event_handler(DEVICE_DT_INST_GET(id), event);                        \
 	}                                                                                          \
