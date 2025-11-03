@@ -89,7 +89,7 @@ static inline void power_and_clock_configuration(void)
 	nrf_oscillators_lfxo_cap_set(NRF_OSCILLATORS, (nrf_oscillators_lfxo_cap_t)0);
 #endif
 
-#if DT_ENUM_HAS_VALUE(HFXO_NODE, load_capacitors, internal)
+#if CONFIG_SOC_HFXO_LOAD_CAPS_INTERNAL
 	uint32_t xosc32mtrim = NRF_FICR->XOSC32MTRIM;
 	/* The SLOPE field is in the two's complement form, hence this special
 	 * handling. Ideally, it would result in just one SBFX instruction for
@@ -112,7 +112,7 @@ static inline void power_and_clock_configuration(void)
 	 * holding any value between 4.0 pF and 17.0 pF in 0.25 pF steps.
 	 */
 
-	uint32_t hfxo_intcap_femto_f = DT_PROP(HFXO_NODE, load_capacitance_femtofarad);
+	uint32_t hfxo_intcap_femto_f = CONFIG_SOC_HFXO_INTERNAL_LOAD_CAP;
 
 	/* Capacitance value passed to the formula is in femto Farads to
 	 * avoid floating point data type. Hence, offset_m needs to be multiplied by 1000.
@@ -129,8 +129,7 @@ static inline void power_and_clock_configuration(void)
 	}
 
 	nrf_oscillators_hfxo_cap_set(NRF_OSCILLATORS, true, hfxo_intcap);
-
-#elif DT_ENUM_HAS_VALUE(HFXO_NODE, load_capacitors, external)
+#else
 	nrf_oscillators_hfxo_cap_set(NRF_OSCILLATORS, false, 0);
 #endif
 

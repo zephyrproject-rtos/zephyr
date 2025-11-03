@@ -36,3 +36,46 @@ config SOC_LFXO_INTERNAL_LOAD_CAP
 endif # SOC_LFXO_LOAD_CAPS_INTERNAL
 
 endif # SOC_HAS_LFXO
+
+SOC_DT_HFXO_PATH := $(dt_nodelabel_path,hfxo)
+SOC_DT_HFXO_ENABLED := $(dt_path_enabled,$(SOC_DT_HFXO_PATH))
+SOC_DT_HFXO_HAS_STARTUP_TIME := $(dt_node_has_prop,$(SOC_DT_HFXO_PATH),startup-time-us)
+SOC_DT_HFXO_STARTUP_TIME := $(dt_node_int_prop_int,$(SOC_DT_HFXO_PATH),startup-time-us)
+SOC_DT_HFXO_LOAD_CAPS_EXTERNAL := $(dt_node_str_prop_equals,$(SOC_DT_HFXO_PATH),load-capacitors,external)
+SOC_DT_HFXO_HAS_LOAD_CAP := $(dt_node_has_prop,$(SOC_DT_HFXO_PATH),load-capacitance-femtofarad)
+SOC_DT_HFXO_LOAD_CAP := $(dt_node_int_prop_int,$(SOC_DT_HFXO_PATH),load-capacitance-femtofarad)
+
+config SOC_HAS_HFXO
+	bool "SoC has HFXO available"
+	default $(SOC_DT_HFXO_ENABLED)
+
+if SOC_HAS_HFXO
+
+config SOC_HFXO_STARTUP_TIME
+	int "Startup time of HFXO in microseconds"
+	default $(SOC_DT_HFXO_STARTUP_TIME) if $(SOC_DT_HFXO_HAS_STARTUP_TIME)
+	default 1650
+
+choice SOC_HFXO_LOAD_CAPS
+	prompt "HFXO load capacitor selection"
+	default SOC_HFXO_LOAD_CAPS_EXTERNAL if $(SOC_DT_HFXO_LOAD_CAPS_EXTERNAL)
+	default SOC_HFXO_LOAD_CAPS_INTERNAL
+
+config SOC_HFXO_LOAD_CAPS_EXTERNAL
+	bool "Use external load capacitors for HFXO"
+
+config SOC_HFXO_LOAD_CAPS_INTERNAL
+	bool "Use internal load capacitors for HFXO"
+
+endchoice # SOC_HFXO_LOAD_CAPS
+
+if SOC_HFXO_LOAD_CAPS_INTERNAL
+
+config SOC_HFXO_INTERNAL_LOAD_CAP
+	int "Internal load capacitance for HFXO"
+	default $(SOC_DT_HFXO_LOAD_CAP) if $(SOC_DT_HFXO_HAS_LOAD_CAP)
+	default 15000
+
+endif # SOC_HFXO_LOAD_CAPS_INTERNAL
+
+endif # SOC_HAS_HFXO
