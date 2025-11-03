@@ -2861,6 +2861,7 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_me310g1_shutdown_chat_script,
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf91_slm)
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(nordic_nrf91_slm_init_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT", allow_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=1", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG=1", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", ok_match),
@@ -2878,7 +2879,7 @@ MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf91_slm_init_chat_script, nordic_nrf91_slm_ini
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(nordic_nrf91_slm_dial_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT#XPPP=1", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT#XCMUX=2", ok_match));
 
