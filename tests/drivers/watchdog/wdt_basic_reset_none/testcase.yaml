@@ -33,15 +33,31 @@ tests:
     extra_configs:
       - CONFIG_TEST_WDT_MAX_WINDOW_TIME=254
       - CONFIG_TEST_WDT_SLEEP_TIME=68
-  drivers.watchdog.reset_none_ewm_ke1xz:
+  drivers.watchdog.reset_none_ewm_no_wdog:
     filter: dt_compat_enabled("nxp,ewm")
     platform_allow:
+      - frdm_ke15z
       - frdm_ke17z
+      - frdm_mcxe247
     integration_platforms:
       - frdm_ke17z
+      - frdm_mcxe247
     extra_args:
       - EXTRA_CONF_FILE="app_ewm.conf"
-      - DTC_OVERLAY_FILE="boards/frdm_ke1xz.overlay"
+      - DTC_OVERLAY_FILE="boards/app_ewm_no_wdog.overlay"
+    extra_configs:
+      - CONFIG_TEST_WDT_MAX_WINDOW_TIME=254
+      - CONFIG_TEST_WDT_SLEEP_TIME=68
+  drivers.watchdog.reset_none_ewm_11xx:
+    filter: dt_compat_enabled("nxp,ewm")
+    platform_allow:
+      - mimxrt1170_evk@A/mimxrt1176/cm7
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+    integration_platforms:
+      - mimxrt1170_evk@A/mimxrt1176/cm7
+    extra_args:
+      - EXTRA_CONF_FILE="app_ewm.conf"
+      - DTC_OVERLAY_FILE="boards/nxp_rt11xx.overlay"
     extra_configs:
       - CONFIG_TEST_WDT_MAX_WINDOW_TIME=254
       - CONFIG_TEST_WDT_SLEEP_TIME=68
