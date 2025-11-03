@@ -3,6 +3,7 @@
 /*
  * Copyright (c) 2015-2016 Intel Corporation
  * Copyright (c) 2025 Nordic Semiconductor ASA
+ * Copyright (c) 2025 Xiaomi Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
