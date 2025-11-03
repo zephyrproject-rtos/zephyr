@@ -70,6 +70,20 @@ QSPI
   Sample shifting is configurable now and disabled by default.
   (:github:`98999`).
 
+Radio
+=====
+
+* The following devicetree bindings have been renamed for consistency with the ``radio-`` prefix:
+
+  * :dtcompatible:`generic-fem-two-ctrl-pins` is now :dtcompatible:`radio-fem-two-ctrl-pins`
+  * :dtcompatible:`gpio-radio-coex` is now :dtcompatible:`radio-gpio-coex`
+
+* A new :dtcompatible:`radio.yaml` base binding has been introduced for generic radio hardware
+  capabilities. The ``tx-high-power-supported`` property has been renamed to
+  ``radio-tx-high-power-supported`` for consistency.
+
+* Device trees and overlays using the old compatible strings must be updated to use the new names.
+
 STM32
 =====
 
