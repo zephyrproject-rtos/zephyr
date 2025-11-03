@@ -652,8 +652,8 @@ static int cmd_spp_connect_by_channel(const struct shell *sh, size_t argc, char 
 
 	err = spp_parse_rfcomm_channel(argv[1], &channel);
 	if (err < 0) {
-		shell_error("SPP: invalid RFCOMM channel '%s' (expected %u-%u, decimal)", argv[1],
-			    (unsigned int)SPP_RFCOMM_CHANNEL_MIN,
+		shell_error(sh, "SPP: invalid RFCOMM channel '%s' (expected %u-%u, decimal)",
+			    argv[1], (unsigned int)SPP_RFCOMM_CHANNEL_MIN,
 			    (unsigned int)SPP_RFCOMM_CHANNEL_MAX);
 		return -EINVAL;
 	}
