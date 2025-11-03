@@ -261,3 +261,7 @@
 &crc {
 	status = "okay";
 };
+
+&wdog {
+	status = "okay";
+};
