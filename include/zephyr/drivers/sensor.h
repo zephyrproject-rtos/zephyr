@@ -890,7 +890,7 @@ static inline int sensor_trigger_set(const struct device *dev,
  */
 static inline int sensor_trigger_set_with_data(const struct device *dev,
 				     const struct sensor_trigger *trig,
-				     sensor_trigger_handler_with_data_t handler) // DEN
+				     sensor_trigger_handler_with_data_t handler)
 {
 	const struct sensor_driver_api *api =
 		(const struct sensor_driver_api *)dev->api;
