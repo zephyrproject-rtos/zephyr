@@ -177,6 +177,21 @@ should see the following message in the terminal:
    *** Booting Zephyr OS build v4.2.0-2105-g9da1d56da9e7 ***
    Hello World! mcxw23_evk/mcxw236
 
+Power Management
+================
+
+When Power Management is enabled, OSTIMER is used as OS tick timer.
+Add device tree overlay file to the main directory of your application
+to enable OSTIMER.
+
+.. code-block:: devicetree
+
+   &os_timer {
+       status = "okay";
+   };
+
+Limitation: Wakeup pin can't be used as wakeup source in Standby mode.
+
 .. include:: ../../common/board-footer.rst.inc
 
 .. _MCXW23 SoC Website:

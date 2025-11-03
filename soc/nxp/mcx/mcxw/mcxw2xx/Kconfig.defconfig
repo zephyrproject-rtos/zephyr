@@ -4,6 +4,9 @@
 
 if SOC_SERIES_MCXW2XX
 
+config MCUX_OS_TIMER
+	default y if PM
+
 config CORTEX_M_SYSTICK
 	default n if MCUX_OS_TIMER
 
@@ -13,8 +16,13 @@ config NUM_IRQS
 DT_SYSCLK_PATH := $(dt_nodelabel_path,sysclk)
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 1000000 if MCUX_OS_TIMER
+	default 32768   if MCUX_OS_TIMER && PM
+	default 1000000 if MCUX_OS_TIMER && !PM
 	default $(dt_node_int_prop_int,$(DT_SYSCLK_PATH),clock-frequency) if CORTEX_M_SYSTICK
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 512  if MCUX_OS_TIMER && PM
+	default 1000 if MCUX_OS_TIMER && !PM
 
 # Set to the minimal size of data which can be written.
 config FLASH_FILL_BUFFER_SIZE
@@ -35,5 +43,36 @@ config MAIN_STACK_SIZE
 	default 2048
 
 endif # BT
+
+if PM
+
+# Enable PM_DEVICE for Suspend mode and Standby mode,
+# because some devices can't work in these modes.
+config PM_DEVICE
+	default y if "$(dt_nodelabel_enabled,standby)" || "$(dt_nodelabel_enabled,suspend)"
+
+config PM_POLICY_DEVICE_CONSTRAINTS
+	default y if PM_DEVICE
+
+config IDLE_STACK_SIZE
+	default 640
+
+config TICKLESS_KERNEL
+	default y if PM
+
+if BT
+choice PM_POLICY
+	default PM_POLICY_CUSTOM
+endchoice
+endif # BT
+
+endif # PM
+
+if PM_DEVICE
+
+config POWER_DOMAIN
+	default y
+
+endif # PM_DEVICE
 
 endif # SOC_SERIES_MCXW2XX
