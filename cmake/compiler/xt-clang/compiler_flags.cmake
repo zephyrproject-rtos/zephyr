@@ -28,3 +28,11 @@ set_compiler_property(PROPERTY warning_shadow_variables)
 check_set_compiler_property(APPEND PROPERTY warning_extended
                             -Wno-unknown-warning-option
 )
+
+# xt-clang sometimes complains about functions being unused
+# though it is clearly being used. And GCC in Zephyr SDK
+# does not complain about them. So skip the unused function
+# warnings.
+check_set_compiler_property(APPEND PROPERTY warning_extended
+                            -Wno-unused-function
+)
