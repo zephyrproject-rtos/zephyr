@@ -18,3 +18,9 @@ tests:
     platform_allow:
       - frdm_rw612
       - rd_rw612_bga
+  sample.net.openthread.border_router.esp32_wifi_openthread_rcp_host:
+    build_only: true
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-ot-rcp-host-wifi-esp32.conf"
+    platform_allow:
+      - esp32s3_devkitc/esp32s3/procpu
