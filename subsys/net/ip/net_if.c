@@ -114,9 +114,6 @@ static sys_slist_t mcast_monitor_callbacks;
 #endif
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP_THREAD)
-#if !defined(CONFIG_NET_PKT_TIMESTAMP_STACK_SIZE)
-#define CONFIG_NET_PKT_TIMESTAMP_STACK_SIZE 1024
-#endif
 
 K_KERNEL_STACK_DEFINE(tx_ts_stack, CONFIG_NET_PKT_TIMESTAMP_STACK_SIZE);
 K_FIFO_DEFINE(tx_ts_queue);
