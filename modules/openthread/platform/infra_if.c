@@ -237,11 +237,14 @@ otError infra_if_start_icmp6_listener(void)
 {
 	otError error = OT_ERROR_NONE;
 
-	VerifyOrExit(net_icmp_init_ctx(&ra_ctx, NET_ICMPV6_RA, 0, handle_icmp6_input) == 0,
+	VerifyOrExit(net_icmp_init_ctx(&ra_ctx, AF_INET6, NET_ICMPV6_RA, 0,
+				       handle_icmp6_input) == 0,
 		     error = OT_ERROR_FAILED);
-	VerifyOrExit(net_icmp_init_ctx(&rs_ctx, NET_ICMPV6_RS, 0, handle_icmp6_input) == 0,
+	VerifyOrExit(net_icmp_init_ctx(&rs_ctx, AF_INET6, NET_ICMPV6_RS, 0,
+				       handle_icmp6_input) == 0,
 		     error = OT_ERROR_FAILED);
-	VerifyOrExit(net_icmp_init_ctx(&na_ctx, NET_ICMPV6_NA, 0, handle_icmp6_input) == 0,
+	VerifyOrExit(net_icmp_init_ctx(&na_ctx, AF_INET6, NET_ICMPV6_NA, 0,
+				       handle_icmp6_input) == 0,
 		     error = OT_ERROR_FAILED);
 
 exit:

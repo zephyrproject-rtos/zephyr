@@ -786,7 +786,7 @@ static void send_ping(const struct shell *sh,
 	struct net_icmp_ctx ctx;
 	int ret;
 
-	ret = net_icmp_init_ctx(&ctx, NET_ICMPV6_ECHO_REPLY, 0, ping_handler);
+	ret = net_icmp_init_ctx(&ctx, AF_INET6, NET_ICMPV6_ECHO_REPLY, 0, ping_handler);
 	if (ret < 0) {
 		shell_fprintf(sh, SHELL_WARNING, "Cannot send ping (%d)\n", ret);
 		return;
