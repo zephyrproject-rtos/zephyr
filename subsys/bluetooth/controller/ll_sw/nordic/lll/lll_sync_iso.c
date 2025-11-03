@@ -31,6 +31,7 @@
 #include "lll_vendor.h"
 #include "lll_clock.h"
 #include "lll_chan.h"
+#include "lll_scan.h"
 #include "lll_sync_iso.h"
 
 #include "lll_internal.h"
@@ -701,6 +702,25 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 		struct lll_sync_iso *lll = curr;
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+		struct lll_scan_aux *aux_lll;
+		struct lll_scan *scan_lll;
+
+		scan_lll = ull_scan_lll_is_valid_get(next);
+		if (scan_lll) {
+			/* Do not abort current periodic sync event as next
+			 * event is a scan event.
+			 */
+			return 0;
+		}
+
+		aux_lll = ull_scan_aux_lll_is_valid_get(next);
+		if (aux_lll) {
+			/* Do not abort current periodic sync event as next
+			 * event is a scan aux event.
+			 */
+			return 0;
+		}
+
 		*resume_cb = resume_prepare_cb;
 
 		lll->ready_us = radio_tmr_ready_restore();
