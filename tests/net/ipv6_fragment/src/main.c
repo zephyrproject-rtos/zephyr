@@ -2299,7 +2299,7 @@ ZTEST(net_ipv6_fragment, test_recv_ipv6_fragment)
 	int ret;
 	struct net_icmp_ctx ctx;
 
-	ret = net_icmp_init_ctx(&ctx, NET_ICMPV6_ECHO_REPLY,
+	ret = net_icmp_init_ctx(&ctx, AF_INET6, NET_ICMPV6_ECHO_REPLY,
 				0, handle_ipv6_echo_reply);
 	zassert_equal(ret, 0, "Cannot register %s handler (%d)",
 		      STRINGIFY(NET_ICMPV6_ECHO_REPLY), ret);
