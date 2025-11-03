@@ -399,13 +399,13 @@ static int pwm_nrfx_init(const struct device *dev)
 #define PWM_MEM_REGION(inst)     DT_PHANDLE(DT_DRV_INST(inst), memory_regions)
 
 #define PWM_MEMORY_SECTION(inst)					      \
-	COND_CODE_1(DT_NODE_HAS_PROP(inst, memory_regions),		      \
+	COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(inst), memory_regions),		      \
 		(__attribute__((__section__(LINKER_DT_NODE_REGION_NAME(	      \
 			PWM_MEM_REGION(inst)))))),			      \
 		())
 
 #define PWM_GET_MEM_ATTR(inst)						      \
-	COND_CODE_1(DT_NODE_HAS_PROP(inst, memory_regions),		      \
+	COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(inst), memory_regions),		      \
 		(DT_PROP_OR(PWM_MEM_REGION(inst), zephyr_memory_attr, 0)), (0))
 
 #define PWM_NRFX_DEFINE(inst)							     \
