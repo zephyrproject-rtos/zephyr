@@ -51,7 +51,7 @@ static void tach_gpio_cb(const struct device *port, struct gpio_callback *cb, gp
 	pulse_us = k_ticks_to_us_floor32(ticks - data->start_ticks);
 	data->rpm = pulse_us > 0 ? (us_per_min / pulse_us) / config->pulses_per_round : -ERANGE;
 
-	LOG_DBG("rpm: %u, pulse: %d us", data->rpm, pulse_us);
+	LOG_DBG("rpm: %d, pulse: %d us", data->rpm, pulse_us);
 
 	k_sem_give(&data->data_ready);
 }
