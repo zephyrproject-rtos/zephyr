@@ -43,9 +43,9 @@ extern "C" {
 typedef uint8_t i2s_fmt_t;
 
 /** Data Format bit field position. */
-#define I2S_FMT_DATA_FORMAT_SHIFT           0
+#define I2S_FMT_DATA_FORMAT_SHIFT 0
 /** Data Format bit field mask. */
-#define I2S_FMT_DATA_FORMAT_MASK            (0x7 << I2S_FMT_DATA_FORMAT_SHIFT)
+#define I2S_FMT_DATA_FORMAT_MASK  (0x7 << I2S_FMT_DATA_FORMAT_SHIFT)
 
 /** @brief Standard I2S Data Format.
  *
@@ -64,7 +64,7 @@ typedef uint8_t i2s_fmt_t;
  *        -'---'---'---'---'---'---'---'---'---'---'---'---'---'---'---'---'---'
  *             | Left channel                  | Right channel                 |
  */
-#define I2S_FMT_DATA_FORMAT_I2S             (0 << I2S_FMT_DATA_FORMAT_SHIFT)
+#define I2S_FMT_DATA_FORMAT_I2S (0 << I2S_FMT_DATA_FORMAT_SHIFT)
 
 /** @brief PCM Short Frame Sync Data Format.
  *
@@ -83,7 +83,7 @@ typedef uint8_t i2s_fmt_t;
  *         -'---'---'---'---'---'---'---'---'---'---'---'---'---'---'---'---'---
  *              | Word 1            | Word 2            | Word 3  |  Word n |
  */
-#define I2S_FMT_DATA_FORMAT_PCM_SHORT       (1 << I2S_FMT_DATA_FORMAT_SHIFT)
+#define I2S_FMT_DATA_FORMAT_PCM_SHORT (1 << I2S_FMT_DATA_FORMAT_SHIFT)
 
 /** @brief PCM Long Frame Sync Data Format.
  *
@@ -103,7 +103,7 @@ typedef uint8_t i2s_fmt_t;
  *         -'---'---'---'---'---'---'---'---'---'---'---'---'---'---'---'---'---
  *              | Word 1            | Word 2            | Word 3  |  Word n |
  */
-#define I2S_FMT_DATA_FORMAT_PCM_LONG        (2 << I2S_FMT_DATA_FORMAT_SHIFT)
+#define I2S_FMT_DATA_FORMAT_PCM_LONG (2 << I2S_FMT_DATA_FORMAT_SHIFT)
 
 /**
  * @brief Left Justified Data Format.
@@ -124,7 +124,7 @@ typedef uint8_t i2s_fmt_t;
  *         ---'---'---'---'---'---'---'---'---'---'---'---'---'---'---'---'---'-
  *            | Left channel                  | Right channel                 |
  */
-#define I2S_FMT_DATA_FORMAT_LEFT_JUSTIFIED  (3 << I2S_FMT_DATA_FORMAT_SHIFT)
+#define I2S_FMT_DATA_FORMAT_LEFT_JUSTIFIED (3 << I2S_FMT_DATA_FORMAT_SHIFT)
 
 /**
  * @brief Right Justified Data Format.
@@ -148,53 +148,53 @@ typedef uint8_t i2s_fmt_t;
 #define I2S_FMT_DATA_FORMAT_RIGHT_JUSTIFIED (4 << I2S_FMT_DATA_FORMAT_SHIFT)
 
 /** Send MSB first */
-#define I2S_FMT_DATA_ORDER_MSB              (0 << 3)
+#define I2S_FMT_DATA_ORDER_MSB (0 << 3)
 /** Send LSB first */
-#define I2S_FMT_DATA_ORDER_LSB              BIT(3)
+#define I2S_FMT_DATA_ORDER_LSB BIT(3)
 /** Invert bit ordering, send LSB first */
-#define I2S_FMT_DATA_ORDER_INV              I2S_FMT_DATA_ORDER_LSB
+#define I2S_FMT_DATA_ORDER_INV I2S_FMT_DATA_ORDER_LSB
 
 /** Data Format bit field position. */
-#define I2S_FMT_CLK_FORMAT_SHIFT           4
+#define I2S_FMT_CLK_FORMAT_SHIFT 4
 /** Data Format bit field mask. */
-#define I2S_FMT_CLK_FORMAT_MASK            (0x3 << I2S_FMT_CLK_FORMAT_SHIFT)
+#define I2S_FMT_CLK_FORMAT_MASK  (0x3 << I2S_FMT_CLK_FORMAT_SHIFT)
 
 /** Invert bit clock */
-#define I2S_FMT_BIT_CLK_INV                 BIT(4)
+#define I2S_FMT_BIT_CLK_INV   BIT(4)
 /** Invert frame clock */
-#define I2S_FMT_FRAME_CLK_INV               BIT(5)
+#define I2S_FMT_FRAME_CLK_INV BIT(5)
 
 /** Normal Frame, Normal Bit Clk */
-#define I2S_FMT_CLK_NF_NB		(0 << I2S_FMT_CLK_FORMAT_SHIFT)
+#define I2S_FMT_CLK_NF_NB (0 << I2S_FMT_CLK_FORMAT_SHIFT)
 /** Normal Frame, Inverted Bit Clk */
-#define I2S_FMT_CLK_NF_IB		(1 << I2S_FMT_CLK_FORMAT_SHIFT)
+#define I2S_FMT_CLK_NF_IB (1 << I2S_FMT_CLK_FORMAT_SHIFT)
 /** Inverted Frame, Normal Bit Clk */
-#define I2S_FMT_CLK_IF_NB		(2 << I2S_FMT_CLK_FORMAT_SHIFT)
+#define I2S_FMT_CLK_IF_NB (2 << I2S_FMT_CLK_FORMAT_SHIFT)
 /** Inverted Frame, Inverted Bit Clk */
-#define I2S_FMT_CLK_IF_IB		(3 << I2S_FMT_CLK_FORMAT_SHIFT)
+#define I2S_FMT_CLK_IF_IB (3 << I2S_FMT_CLK_FORMAT_SHIFT)
 
 /** I2S configuration options */
 typedef uint8_t i2s_opt_t;
 
 /** Run bit clock continuously */
-#define I2S_OPT_BIT_CLK_CONT                (0 << 0)
+#define I2S_OPT_BIT_CLK_CONT     (0 << 0)
 /** Run bit clock when sending data only */
-#define I2S_OPT_BIT_CLK_GATED               BIT(0)
+#define I2S_OPT_BIT_CLK_GATED    BIT(0)
 /** I2S driver is bit clock master */
-#define I2S_OPT_BIT_CLK_MASTER              (0 << 1)
+#define I2S_OPT_BIT_CLK_MASTER   (0 << 1)
 /** I2S driver is bit clock slave */
-#define I2S_OPT_BIT_CLK_SLAVE               BIT(1)
+#define I2S_OPT_BIT_CLK_SLAVE    BIT(1)
 /** I2S driver is frame clock master */
-#define I2S_OPT_FRAME_CLK_MASTER            (0 << 2)
+#define I2S_OPT_FRAME_CLK_MASTER (0 << 2)
 /** I2S driver is frame clock slave */
-#define I2S_OPT_FRAME_CLK_SLAVE             BIT(2)
+#define I2S_OPT_FRAME_CLK_SLAVE  BIT(2)
 
 /** @brief Loop back mode.
  *
  * In loop back mode RX input will be connected internally to TX output.
  * This is used primarily for testing.
  */
-#define I2S_OPT_LOOPBACK                    BIT(7)
+#define I2S_OPT_LOOPBACK BIT(7)
 
 /** @brief Ping pong mode
  *
@@ -204,7 +204,7 @@ typedef uint8_t i2s_opt_t;
  * So, in this mode, 2 sets of buffers fixed in size are used. Static Arrays
  * are used to achieve this and hence they are never freed.
  */
-#define I2S_OPT_PINGPONG                    BIT(6)
+#define I2S_OPT_PINGPONG BIT(6)
 
 /**
  * @brief I2C Direction
@@ -322,14 +322,11 @@ struct i2s_config {
  * For internal use only, skip these in public documentation.
  */
 __subsystem struct i2s_driver_api {
-	int (*configure)(const struct device *dev, enum i2s_dir dir,
-			 const struct i2s_config *cfg);
-	const struct i2s_config *(*config_get)(const struct device *dev,
-				  enum i2s_dir dir);
+	int (*configure)(const struct device *dev, enum i2s_dir dir, const struct i2s_config *cfg);
+	const struct i2s_config *(*config_get)(const struct device *dev, enum i2s_dir dir);
 	int (*read)(const struct device *dev, void **mem_block, size_t *size);
 	int (*write)(const struct device *dev, void *mem_block, size_t size);
-	int (*trigger)(const struct device *dev, enum i2s_dir dir,
-		       enum i2s_trigger_cmd cmd);
+	int (*trigger)(const struct device *dev, enum i2s_dir dir, enum i2s_trigger_cmd cmd);
 	int (*get_caps)(const struct device *dev, struct audio_caps *caps);
 };
 /**
@@ -361,12 +358,10 @@ __subsystem struct i2s_driver_api {
 __syscall int i2s_configure(const struct device *dev, enum i2s_dir dir,
 			    const struct i2s_config *cfg);
 
-static inline int z_impl_i2s_configure(const struct device *dev,
-				       enum i2s_dir dir,
+static inline int z_impl_i2s_configure(const struct device *dev, enum i2s_dir dir,
 				       const struct i2s_config *cfg)
 {
-	const struct i2s_driver_api *api =
-		(const struct i2s_driver_api *)dev->api;
+	const struct i2s_driver_api *api = (const struct i2s_driver_api *)dev->api;
 
 	return api->configure(dev, dir, cfg);
 }
@@ -379,11 +374,9 @@ static inline int z_impl_i2s_configure(const struct device *dev,
  * @return Pointer to the structure containing configuration parameters,
  *         or NULL if un-configured
  */
-static inline const struct i2s_config *i2s_config_get(const struct device *dev,
-						      enum i2s_dir dir)
+static inline const struct i2s_config *i2s_config_get(const struct device *dev, enum i2s_dir dir)
 {
-	const struct i2s_driver_api *api =
-		(const struct i2s_driver_api *)dev->api;
+	const struct i2s_driver_api *api = (const struct i2s_driver_api *)dev->api;
 
 	return api->config_get(dev, dir);
 }
@@ -419,11 +412,9 @@ static inline const struct i2s_config *i2s_config_get(const struct device *dev,
  * @retval -EBUSY Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
  */
-static inline int i2s_read(const struct device *dev, void **mem_block,
-				 size_t *size)
+static inline int i2s_read(const struct device *dev, void **mem_block, size_t *size)
 {
-	const struct i2s_driver_api *api =
-		(const struct i2s_driver_api *)dev->api;
+	const struct i2s_driver_api *api = (const struct i2s_driver_api *)dev->api;
 
 	return api->read(dev, mem_block, size);
 }
@@ -480,11 +471,9 @@ __syscall int i2s_buf_read(const struct device *dev, void *buf, size_t *size);
  * @retval -EBUSY Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
  */
-static inline int i2s_write(const struct device *dev, void *mem_block,
-			    size_t size)
+static inline int i2s_write(const struct device *dev, void *mem_block, size_t size)
 {
-	const struct i2s_driver_api *api =
-		(const struct i2s_driver_api *)dev->api;
+	const struct i2s_driver_api *api = (const struct i2s_driver_api *)dev->api;
 
 	return api->write(dev, mem_block, size);
 }
@@ -527,15 +516,12 @@ __syscall int i2s_buf_write(const struct device *dev, void *buf, size_t size);
  * @retval -ENOMEM RX/TX memory block not available.
  * @retval -ENOSYS I2S_DIR_BOTH value is not supported.
  */
-__syscall int i2s_trigger(const struct device *dev, enum i2s_dir dir,
-			  enum i2s_trigger_cmd cmd);
+__syscall int i2s_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_trigger_cmd cmd);
 
-static inline int z_impl_i2s_trigger(const struct device *dev,
-				     enum i2s_dir dir,
+static inline int z_impl_i2s_trigger(const struct device *dev, enum i2s_dir dir,
 				     enum i2s_trigger_cmd cmd)
 {
-	const struct i2s_driver_api *api =
-		(const struct i2s_driver_api *)dev->api;
+	const struct i2s_driver_api *api = (const struct i2s_driver_api *)dev->api;
 
 	return api->trigger(dev, dir, cmd);
 }
