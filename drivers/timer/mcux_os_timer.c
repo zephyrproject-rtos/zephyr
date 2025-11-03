@@ -343,7 +343,9 @@ static int sys_clock_driver_init(void)
 /* On some SoC's, OS Timer cannot wakeup from low power mode in standby modes */
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(standby)) && CONFIG_PM
 	counter_dev = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(0, deep_sleep_counter));
-	counter_max_val = counter_get_max_top_value(counter_dev);
+	if (NULL != counter_dev) {
+		counter_max_val = counter_get_max_top_value(counter_dev);
+	}
 #endif
 
 #if (DT_INST_PROP(0, wakeup_source))
