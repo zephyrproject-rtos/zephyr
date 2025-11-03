@@ -58,6 +58,13 @@ enum settings_mgmt_ret_code_t {
 
 	/** The provided key name does not support being saved. */
 	SETTINGS_MGMT_ERR_SAVE_NOT_SUPPORTED,
+
+	/**
+	 * The provided key cannot be saved before the value is longer than the size of the
+	 * largest value that can safely be read
+	 * (CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION_VALUE_SIZE).
+	 */
+	SETTINGS_MGMT_ERR_SAVE_FAILED_VALUE_TOO_LONG_TO_READ,
 };
 
 #ifdef __cplusplus
