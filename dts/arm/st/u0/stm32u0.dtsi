@@ -402,6 +402,8 @@
 			clocks = <&rcc STM32_CLOCK(AHB1, 18)>,
 				 <&rcc STM32_SRC_CK48 NO_SEL>;
 			interrupts = <31 0>;
+			nist-config = <0xf00d00>;
+			health-test-config = <0xaac7>;
 			status = "disabled";
 		};
 

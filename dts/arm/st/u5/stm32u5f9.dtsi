@@ -9,6 +9,12 @@
 / {
 	soc {
 		compatible = "st,stm32u5f9", "st,stm32u5", "simple-bus";
+
+		rng: rng@420c0800 {
+			nist-config = <0xf10f00>;
+			health-test-config = <0xa715>;
+			noise-source-control = <0x9049>;
+		};
 	};
 };
 
