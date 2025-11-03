@@ -40,7 +40,10 @@ properties:
 
   trickle-charger-mode:
     type: int
-    enum: [1750, 3000, 4500]
+    enum:
+      - 1750
+      - 3000
+      - 4500
     description: |
       Trickle Charger Mode (TCM).
         - If this property is not present, the trickle charger is disabled (TCM=00).
