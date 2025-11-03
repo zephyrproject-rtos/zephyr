@@ -917,6 +917,8 @@
 			reg = <0x48020000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB3, 0)>;
 			interrupts = <37 0>;
+			nist-config = <0xf00d00>;
+			health-test-config = <0xaac7>;
 			status = "disabled";
 		};
 
