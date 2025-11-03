@@ -57,6 +57,15 @@
 	};
 
 	soc {
+		ewm0: ewm@4002c000 {
+			compatible = "nxp,ewm";
+			reg = <0x4002c000 0x6>;
+			interrupts = <114 0>;
+			clk-divider = <0>;
+			clk-sel = "lpo_clk[2]";
+			status = "disabled";
+		};
+
 		dac: dac@40064000 {
 			compatible = "nxp,dac12";
 			reg = <0x40064000 0x4000>;
