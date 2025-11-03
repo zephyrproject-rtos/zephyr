@@ -88,6 +88,7 @@ struct flash_mspi_nor_config {
 #endif
 	uint32_t reset_recovery_us;
 	uint32_t transfer_timeout;
+	uint32_t read_freq;
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	struct flash_pages_layout layout;
 #endif

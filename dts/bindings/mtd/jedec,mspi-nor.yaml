@@ -60,3 +60,9 @@ properties:
     description: |
       When set, the flash driver performs software reset of the flash chip
       at initialization.
+
+  read-frequency:
+    type: int
+    description: |
+      Frequency, in Hz, to be used for read operations. If not specified,
+      the driver uses the same frequency as for other operations.

@@ -354,6 +354,20 @@ static int api_read(const struct device *dev, off_t addr, void *dest,
 		return rc;
 	}
 
+	if (dev_config->read_freq != 0) {
+		/* Set custom read frequency */
+		struct mspi_dev_cfg read_freq_cfg = {
+			.freq = dev_config->read_freq,
+		};
+
+		rc = mspi_dev_config(dev_config->bus, &dev_config->mspi_id,
+				     MSPI_DEVICE_CONFIG_FREQUENCY, &read_freq_cfg);
+		if (rc < 0) {
+			LOG_ERR("Could not set read frequency: %d", rc);
+			goto release_and_exit;
+		}
+	}
+
 	while (size > 0) {
 		uint32_t to_read;
 
@@ -373,6 +387,17 @@ static int api_read(const struct device *dev, off_t addr, void *dest,
 		addr += to_read;
 		dest  = (uint8_t *)dest + to_read;
 		size -= to_read;
+	}
+
+release_and_exit:
+	if (rc == 0 && dev_config->read_freq != 0) {
+		/* Restore normal frequency */
+		rc = mspi_dev_config(dev_config->bus, &dev_config->mspi_id,
+				     MSPI_DEVICE_CONFIG_FREQUENCY,
+				     &dev_config->mspi_nor_cfg);
+		if (rc < 0) {
+			LOG_ERR("Could not restore normal frequency: %d", rc);
+		}
 	}
 
 	release(dev);
@@ -1342,6 +1367,7 @@ BUILD_ASSERT((FLASH_SIZE(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) == 0, \
 		.reset_recovery_us = DT_INST_PROP_OR(inst, t_reset_recovery, 0)	\
 				   / 1000,					\
 		.transfer_timeout = DT_INST_PROP(inst, transfer_timeout),	\
+		.read_freq = DT_INST_PROP_OR(inst, read_frequency, 0),	        \
 		FLASH_PAGE_LAYOUT_DEFINE(inst)					\
 		.jedec_id = DT_INST_PROP_OR(inst, jedec_id, {0}),		\
 		.quirks = FLASH_QUIRKS(inst),					\
