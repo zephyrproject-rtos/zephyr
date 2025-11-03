@@ -25,6 +25,7 @@
 
 #include <errno.h>
 
+#include <zephyr/cache.h>
 #include <zephyr/irq.h>
 #include <zephyr/ipc/ipc_service.h>
 #include <zephyr/ipc/ipc_service_backend.h>
@@ -38,7 +39,16 @@
 #include <adsp_ipc_regs.h>
 #include <adsp_interrupt.h>
 
+#include <adsp_memory.h>
+#include <mem_window.h>
 #include <zephyr/ipc/backends/intel_adsp_host_ipc.h>
+
+/* HP SRAM windows */
+#define WIN_BASE(n)		DT_REG_ADDR(DT_PHANDLE(MEM_WINDOW_NODE(n), memory))
+
+/* window 1 */
+#define MAILBOX_HOSTBOX_BASE	((uint32_t)(WIN_BASE(1) + WIN1_OFFSET))
+#define MAILBOX_HOSTBOX_SIZE	((uint32_t)WIN_SIZE(1))
 
 static inline void ace_ipc_intc_mask(void)
 {
@@ -74,9 +84,19 @@ static void intel_adsp_ipc_isr(const void *devarg)
 			struct intel_adsp_ipc_msg cb_msg = {
 				.data = regs->tdr & ~INTEL_ADSP_IPC_BUSY,
 				.ext_data = regs->tdd,
+				.payload = MAILBOX_HOSTBOX_BASE,
+				.payload_length = MAILBOX_HOSTBOX_SIZE
 			};
 
 			ept_cfg->cb.received(&cb_msg, INTEL_ADSP_IPC_CB_MSG, ept_cfg->priv);
+
+			/*
+			 * This is not ideal, but as exact length of the
+			 * IPC message is not known until message is
+			 * fully parsed, we have to invalidate the
+			 * whole hostbox buffer instead.
+			 */
+			sys_cache_data_invd_range((void *)MAILBOX_HOSTBOX_BASE, cb_msg.payload_length);
 
 			done = (priv_data->cb_ret == INTEL_ADSP_IPC_CB_RET_OKAY);
 		}
@@ -195,8 +215,23 @@ static bool ipc_is_complete(const struct device *dev)
 	return not_busy && !devdata->tx_ack_pending;
 }
 
-static int ipc_send_message(const struct device *dev, uint32_t data, uint32_t ext_data)
+static int ipc_write_payload(const struct intel_adsp_ipc_msg *msg)
 {
+	if (!msg->payload || msg->payload_length > MAILBOX_HOSTBOX_SIZE) {
+		return -EINVAL;
+	}
+
+	memcpy((void *)MAILBOX_HOSTBOX_BASE, (void *)msg->payload, msg->payload_length);
+
+	sys_cache_data_flush_range((void *)MAILBOX_HOSTBOX_BASE, msg->payload_length);
+
+	return 0;
+}
+
+static int ipc_send_message(const struct device *dev, const struct intel_adsp_ipc_msg *msg)
+{
+	int ret = 0;
+
 #ifdef CONFIG_PM_DEVICE
 	enum pm_device_state current_state;
 
@@ -223,22 +258,24 @@ static int ipc_send_message(const struct device *dev, uint32_t data, uint32_t ex
 
 	devdata->tx_ack_pending = true;
 
-	config->regs->idd = ext_data;
-	config->regs->idr = data | INTEL_ADSP_IPC_BUSY;
+	ret = ipc_write_payload(msg);
+	if (!ret) {
+		config->regs->idd = msg->ext_data;
+		config->regs->idr = msg->data | INTEL_ADSP_IPC_BUSY;
+	}
 
 	k_spin_unlock(&devdata->lock, key);
 
 	pm_device_busy_clear(dev);
 
-	return 0;
+	return ret;
 }
 
-static int ipc_send_message_sync(const struct device *dev, uint32_t data, uint32_t ext_data,
+static int ipc_send_message_sync(const struct device *dev, const struct intel_adsp_ipc_msg *msg,
 				 k_timeout_t timeout)
 {
 	struct intel_adsp_ipc_data *devdata = dev->data;
-
-	int ret = ipc_send_message(dev, data, ext_data);
+	int ret = ipc_send_message(dev, msg);
 
 	if (ret == 0) {
 		k_sem_take(&devdata->sem, timeout);
@@ -247,7 +284,7 @@ static int ipc_send_message_sync(const struct device *dev, uint32_t data, uint32
 	return ret;
 }
 
-static int ipc_send_message_emergency(const struct device *dev, uint32_t data, uint32_t ext_data)
+static int ipc_send_message_emergency(const struct device *dev, const struct intel_adsp_ipc_msg *msg)
 {
 	const struct intel_adsp_ipc_config *const config = dev->config;
 
@@ -259,6 +296,11 @@ static int ipc_send_message_emergency(const struct device *dev, uint32_t data, u
 		k_busy_wait(1);
 	}
 
+	int ret = ipc_write_payload(msg);
+	if (ret) {
+		return -EINVAL;
+	}
+
 	/* check if host has pending acknowledge msg
 	 * Same signal, but on different bits in 1.5
 	 */
@@ -268,8 +310,8 @@ static int ipc_send_message_emergency(const struct device *dev, uint32_t data, u
 		regs->ida = INTEL_ADSP_IPC_DONE;
 	}
 
-	regs->idd = ext_data;
-	regs->idr = data | INTEL_ADSP_IPC_BUSY;
+	regs->idd = msg->ext_data;
+	regs->idr = msg->data | INTEL_ADSP_IPC_BUSY;
 
 	return 0;
 }
@@ -307,17 +349,17 @@ static int intel_adsp_ipc_send(const struct device *dev, void *token, const void
 
 	switch (len) {
 	case INTEL_ADSP_IPC_SEND_MSG: {
-		ret = ipc_send_message(dev, msg->data, msg->ext_data);
+		ret = ipc_send_message(dev, msg);
 
 		break;
 	}
 	case INTEL_ADSP_IPC_SEND_MSG_SYNC: {
-		ret = ipc_send_message_sync(dev, msg->data, msg->ext_data, msg->timeout);
+		ret = ipc_send_message_sync(dev, msg, msg->timeout);
 
 		break;
 	}
 	case INTEL_ADSP_IPC_SEND_MSG_EMERGENCY: {
-		ret = ipc_send_message_emergency(dev, msg->data, msg->ext_data);
+		ret = ipc_send_message_emergency(dev, msg);
 
 		break;
 	}
