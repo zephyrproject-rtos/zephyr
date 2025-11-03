@@ -3151,12 +3151,12 @@ static inline bool net_if_is_dormant(struct net_if *iface)
 	return net_if_flag_is_set(iface, NET_IF_DORMANT);
 }
 
-#if defined(CONFIG_NET_PKT_TIMESTAMP) && defined(CONFIG_NET_NATIVE)
+#if defined(CONFIG_NET_PKT_TIMESTAMP_THREAD) || defined(__DOXYGEN__)
 /**
  * @typedef net_if_timestamp_callback_t
  * @brief Define callback that is called after a network packet
  *        has been timestamped.
- * @param "struct net_pkt *pkt" A pointer on a struct net_pkt which has
+ * @param pkt A pointer on a struct net_pkt which has
  *        been timestamped after being sent.
  */
 typedef void (*net_if_timestamp_callback_t)(struct net_pkt *pkt);
@@ -3222,7 +3222,7 @@ void net_if_call_timestamp_cb(struct net_pkt *pkt);
  * @param pkt Timestamped buffer
  */
 void net_if_add_tx_timestamp(struct net_pkt *pkt);
-#endif /* CONFIG_NET_PKT_TIMESTAMP */
+#endif /* CONFIG_NET_PKT_TIMESTAMP_THREAD */
 
 /**
  * @brief Set network interface into promiscuous mode
