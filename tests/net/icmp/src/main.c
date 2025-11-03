@@ -465,7 +465,7 @@ ZTEST(icmp_tests, test_icmpv6_echo_request)
 		return;
 	}
 
-	ret = net_icmp_init_ctx(&ctx, NET_ICMPV6_ECHO_REPLY, 0, icmp_handler);
+	ret = net_icmp_init_ctx(&ctx, AF_INET6, NET_ICMPV6_ECHO_REPLY, 0, icmp_handler);
 	zassert_equal(ret, 0, "Cannot init ICMP (%d)", ret);
 
 	dst6.sin6_family = AF_INET6;
@@ -508,7 +508,7 @@ ZTEST(icmp_tests, test_icmpv4_echo_request)
 		return;
 	}
 
-	ret = net_icmp_init_ctx(&ctx, NET_ICMPV4_ECHO_REPLY, 0, icmp_handler);
+	ret = net_icmp_init_ctx(&ctx, AF_INET, NET_ICMPV4_ECHO_REPLY, 0, icmp_handler);
 	zassert_equal(ret, 0, "Cannot init ICMP (%d)", ret);
 
 	dst4.sin_family = AF_INET;
@@ -549,7 +549,7 @@ ZTEST(icmp_tests, test_offload_icmpv4_echo_request)
 	struct net_icmp_ctx ctx;
 	int ret;
 
-	ret = net_icmp_init_ctx(&ctx, NET_ICMPV4_ECHO_REPLY, 0, icmp_handler);
+	ret = net_icmp_init_ctx(&ctx, AF_INET, NET_ICMPV4_ECHO_REPLY, 0, icmp_handler);
 	zassert_equal(ret, 0, "Cannot init ICMP (%d)", ret);
 
 	dst4.sin_family = AF_INET;
@@ -588,7 +588,7 @@ ZTEST(icmp_tests, test_offload_icmpv6_echo_request)
 	struct net_icmp_ctx ctx;
 	int ret;
 
-	ret = net_icmp_init_ctx(&ctx, NET_ICMPV6_ECHO_REPLY, 0, icmp_handler);
+	ret = net_icmp_init_ctx(&ctx, AF_INET6, NET_ICMPV6_ECHO_REPLY, 0, icmp_handler);
 	zassert_equal(ret, 0, "Cannot init ICMP (%d)", ret);
 
 	dst6.sin6_family = AF_INET6;

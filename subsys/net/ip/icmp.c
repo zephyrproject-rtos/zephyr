@@ -50,16 +50,22 @@ static sys_slist_t offload_handlers = SYS_SLIST_STATIC_INIT(&offload_handlers);
 
 #define PKT_WAIT_TIME K_SECONDS(1)
 
-int net_icmp_init_ctx(struct net_icmp_ctx *ctx, uint8_t type, uint8_t code,
-		      net_icmp_handler_t handler)
+int net_icmp_init_ctx(struct net_icmp_ctx *ctx, uint8_t family, uint8_t type,
+		      uint8_t code, net_icmp_handler_t handler)
 {
 	if (ctx == NULL || handler == NULL) {
+		return -EINVAL;
+	}
+
+	if (family != AF_INET && family != AF_INET6) {
+		NET_ERR("Wrong address family");
 		return -EINVAL;
 	}
 
 	memset(ctx, 0, sizeof(struct net_icmp_ctx));
 
 	ctx->handler = handler;
+	ctx->family = family;
 	ctx->type = type;
 	ctx->code = code;
 
@@ -511,6 +517,10 @@ static int icmp_call_handlers(struct net_pkt *pkt,
 	k_mutex_lock(&lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&handlers, ctx, node) {
+		if (ip_hdr->family != ctx->family) {
+			continue;
+		}
+
 		if (ctx->type == icmp_hdr->type &&
 		    (ctx->code == icmp_hdr->code || ctx->code == 0U)) {
 			/* Do not use a handler that is expecting data from different
