@@ -1445,3 +1445,13 @@ test_i2c_wsen_pdms_25131308XXX05: wsen_pdms_25131308XXX05@c0 {
 	reg = <0xc0>;
 	sensor-type = <4>;
 };
+
+test_i2c_ina232: ina232@c1 {
+	compatible = "ti,ina232";
+	reg = <0xc1>;
+	current-lsb-microamps = <1000>;
+	rshunt-micro-ohms = <1000>;
+	mask = <0>;
+	alert-limit = <0>;
+	alert-gpios = <&test_gpio 0 0>;
+};
