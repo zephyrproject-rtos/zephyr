@@ -17,5 +17,27 @@
 		flash0: serial-flash@0 {
 			reg = <0x0 DT_SIZE_K(64)>;
 		};
+
+		i2c0: i2c@400f0000 {
+			compatible = "ti,mspm0-i2c";
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x400f2000 0x2000>;
+			interrupts = <24 0>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@400f2000 {
+			compatible = "ti,mspm0-i2c";
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x400f2000 0x2000>;
+			interrupts = <25 0>;
+			status = "disabled";
+		};
 	};
 };
