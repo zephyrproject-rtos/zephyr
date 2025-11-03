@@ -128,6 +128,13 @@ New APIs and options
     * :c:func:`z_arm_save_mpu_context` / :c:func:`z_arm_restore_mpu_context`
     * Existing :c:func:`z_arm_save_fp_context` and :c:func:`z_arm_save_fp_context` have also been updated
 
+  * Xtensa
+
+    * :kconfig:option:`CONFIG_XTENSA_HIFI_SHARING_MODEL`
+    * :kconfig:option:`CONFIG_XTENSA_EAGER_HIFI_SHARING`
+    * :kconfig:option:`CONFIG_XTENSA_LAZY_HIFI_SHARING`
+    * :kconfig:option:`CONFIG_XTENSA_EXCEPTION_ENTER_GDB`
+
 * Bluetooth
 
   * Audio
