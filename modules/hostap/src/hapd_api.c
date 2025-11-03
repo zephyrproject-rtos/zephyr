@@ -365,18 +365,28 @@ out:
 }
 #endif
 
-bool hostapd_ap_reg_domain(const struct device *dev,
+int hostapd_ap_reg_domain(const struct device *dev,
 	struct wifi_reg_domain *reg_domain)
 {
 	struct hostapd_iface *iface;
+	int ret = 0;
 
 	iface = get_hostapd_handle(dev);
 	if (iface == NULL) {
 		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
-		return false;
+		ret = -ENODEV;
 	}
 
-	return hostapd_cli_cmd_v("set country_code %s", reg_domain->country_code);
+	if (iface->state == HAPD_IFACE_ENABLED) {
+		wpa_printf(MSG_ERROR, "Interface %s is operational and in SAP mode", dev->name);
+		ret = -EACCES;
+	}
+
+	if (!hostapd_cli_cmd_v("set country_code %s", reg_domain->country_code)) {
+		ret = -ENOTSUP;
+	}
+
+	return ret;
 }
 
 static int hapd_config_chan_center_seg0(struct hostapd_iface *iface,
