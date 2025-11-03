@@ -260,11 +260,59 @@ static int ism330dhcx_gyro_config(const struct device *dev,
 	return 0;
 }
 
+/* Set FIFO watermark and operating mode */
+static int ism330dhcx_fifo_wtm_set(const struct device *dev, uint16_t val)
+{
+    struct ism330dhcx_data *data = dev->data;
+	stmdev_ctx_t *ctx = data->ctx;
+
+    // 1) Set the FIFO watermark level (writes to FIFO_CTRL1 and FIFO_CTRL2)
+    if (ism330dhcx_fifo_watermark_set(ctx, val) < 0) {
+        LOG_ERR("Failed to set FIFO watermark to %u", val);
+        return -EIO;
+    }
+
+	// 2. Set the FIFO operating mode (writes to FIFO_CTRL4)
+    if (val > 0) {
+        // "Continuous mode" (6).
+        if (ism330dhcx_fifo_mode_set(ctx, ISM330DHCX_STREAM_MODE) < 0) {
+            LOG_ERR("Failed to set FIFO STREAM mode");
+            return -EIO;
+        }
+        LOG_DBG("FIFO enabled in Continuous mode, WTM at %u", val);
+    } else {
+        // "Bypass mode" (0).
+        if (ism330dhcx_fifo_mode_set(ctx, ISM330DHCX_BYPASS_MODE) < 0) {
+            LOG_ERR("Failed to set FIFO BYPASS mode");
+            return -EIO;
+        }
+        LOG_DBG("FIFO disabled (Bypass mode)");
+    }
+	
+    return 0;
+}
+
 static int ism330dhcx_attr_set(const struct device *dev,
 			       enum sensor_channel chan,
 			       enum sensor_attribute attr,
 			       const struct sensor_value *val)
 {
+
+	// switch attr: check fifo attribute, then check channel
+	switch(attr) {
+		case SENSOR_ATTR_FIFO_WATERMARK:
+			// Set FIFO watermark level to val->val1 samples
+			return ism330dhcx_fifo_wtm_set(dev, (uint16_t)val->val1);
+		case SENSOR_ATTR_FIFO_XL_BATCH:
+			// Enable accelerometer batching at val->val1 Hz
+			struct ism330dhcx_data *data = dev->data;
+			stmdev_ctx_t *ctx = data->ctx;
+			return ism330dhcx_fifo_xl_batch_set(ctx, val->val1);
+		default:
+			LOG_WRN("attr_set() not supported on this ATTRIBUTE.");
+			break;
+	}
+
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
 		return ism330dhcx_accel_config(dev, chan, attr, val);
@@ -665,6 +713,7 @@ static int ism330dhcx_channel_get(const struct device *dev,
 
 static DEVICE_API(sensor, ism330dhcx_api_funcs) = {
 	.attr_set = ism330dhcx_attr_set,
+	.trigger_set_with_data = ism330dhcx_trigger_set_with_data,
 #if CONFIG_ISM330DHCX_TRIGGER
 	.trigger_set = ism330dhcx_trigger_set,
 #endif
