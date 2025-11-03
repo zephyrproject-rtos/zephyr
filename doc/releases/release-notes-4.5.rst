@@ -117,6 +117,11 @@ New APIs and options
 
   * :c:member:`pcm_stream_cfg.gain_db`
 
+* Devicetree
+
+  * :c:macro:`DT_IRQN_BY_NAME`
+  * :c:macro:`DT_INST_IRQN_BY_NAME`
+
 * LoRa
 
   * :c:func:`lora_recv_duty_cycle`
