@@ -8,7 +8,6 @@ endif()
 
 zephyr_library()
 zephyr_library_sources(
-  fnmatch.c
   getentropy.c
   getopt/getopt.c
   getopt/getopt_common.c

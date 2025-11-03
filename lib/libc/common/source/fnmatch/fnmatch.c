@@ -39,11 +39,13 @@
  * Compares a filename or pathname to a pattern.
  */
 
+#define _GNU_SOURCE
+
 #include <ctype.h>
 #include <stdbool.h>
 #include <string.h>
 
-#include <zephyr/posix/fnmatch.h>
+#include <fnmatch.h>
 #include <zephyr/toolchain.h>
 
 #define EOS '\0'

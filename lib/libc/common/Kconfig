@@ -104,6 +104,11 @@ config COMMON_LIBC_STRNLEN
 	help
 	  common implementation of strnlen().
 
+config COMMON_LIBC_FNMATCH
+	bool
+	help
+	  common implementation of fnmatch().
+
 config COMMON_LIBC_THRD
 	bool "C11 <threads.h> API support"
 	depends on DYNAMIC_THREAD

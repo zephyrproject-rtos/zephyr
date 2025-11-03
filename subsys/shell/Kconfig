@@ -146,7 +146,6 @@ config SHELL_ASCII_FILTER
 
 config SHELL_WILDCARD
 	bool "Wildcard support in shell"
-	select POSIX_C_LIB_EXT
 	default y if !SHELL_MINIMAL
 	help
 	  Enables using wildcards: * and ? in the shell.

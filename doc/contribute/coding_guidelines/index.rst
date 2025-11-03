@@ -1284,6 +1284,7 @@ Description
      :header: Function,Source
      :widths: auto
 
+     `fnmatch()`_, POSIX.1-2008
      `gmtime_r()`_,POSIX.1-2001
      `strnlen()`_,POSIX.1-2008
      `strtok_r()`_,POSIX.1-2001
@@ -1309,6 +1310,7 @@ Rationale
   toolchains that come with their own C standard libraries.
 
   .. _main Zephyr repository: https://github.com/zephyrproject-rtos/zephyr
+  .. _fnmatch(): https://pubs.opengroup.org/onlinepubs/9699919799/functions/fnmatch.html
   .. _gmtime_r(): https://pubs.opengroup.org/onlinepubs/9699919799/functions/gmtime_r.html
   .. _strnlen(): https://pubs.opengroup.org/onlinepubs/9699919799/functions/strlen.html
   .. _strtok_r(): https://pubs.opengroup.org/onlinepubs/9699919799/functions/strtok.html
