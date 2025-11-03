@@ -39,6 +39,9 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 /* necessary for wifi callback functions */
 static struct net_if *esp32_wifi_iface;
 static struct esp32_wifi_runtime esp32_data;
+static K_MUTEX_DEFINE(esp32_wifi_lock);
+
+#define MAX_RECONNECT_ATTEMPTS 60
 
 #if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
 static struct net_if *esp32_wifi_iface_ap;
@@ -65,6 +68,8 @@ struct esp32_wifi_status {
 	int rssi;
 };
 
+static K_MUTEX_DEFINE(ap_connection_mutex);
+
 struct esp32_wifi_runtime {
 	uint8_t mac_addr[6];
 	uint8_t frame_buf[NET_ETH_MAX_FRAME_SIZE];
@@ -75,6 +80,10 @@ struct esp32_wifi_runtime {
 	scan_result_cb_t scan_cb;
 	uint8_t state;
 	uint8_t ap_connection_cnt;
+	uint8_t reconnect_attempts;
+	bool ever_connected;
+	struct k_work_delayable connect_timeout_work;
+	struct k_work_delayable reconnect_work;
 };
 
 static struct net_mgmt_event_callback esp32_dhcp_cb;
@@ -82,12 +91,97 @@ static struct net_mgmt_event_callback esp32_dhcp_cb;
 static void wifi_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 			       struct net_if *iface)
 {
+	k_mutex_lock(&esp32_wifi_lock, K_FOREVER);
+
 	switch (mgmt_event) {
 	case NET_EVENT_IPV4_DHCP_BOUND:
-		wifi_mgmt_raise_connect_result_event(iface, 0);
+		/* Only raise connect event if we're actually connected */
+		if (esp32_data.state == ESP32_STA_CONNECTED) {
+			k_mutex_unlock(&esp32_wifi_lock);
+			wifi_mgmt_raise_connect_result_event(iface, 0);
+		} else {
+			k_mutex_unlock(&esp32_wifi_lock);
+			LOG_WRN("DHCP bound but not connected");
+		}
+		break;
+	case NET_EVENT_IPV4_DHCP_START:
+		k_mutex_unlock(&esp32_wifi_lock);
+		LOG_DBG("DHCP client started");
+		break;
+	case NET_EVENT_IPV4_DHCP_STOP:
+		k_mutex_unlock(&esp32_wifi_lock);
+		LOG_DBG("DHCP client stopped");
 		break;
 	default:
+		k_mutex_unlock(&esp32_wifi_lock);
 		break;
+	}
+}
+
+static void connection_timeout_handler(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct esp32_wifi_runtime *data = CONTAINER_OF(dwork,
+							struct esp32_wifi_runtime,
+							connect_timeout_work);
+
+	k_mutex_lock(&esp32_wifi_lock, K_FOREVER);
+
+	/* Only handle timeout for initial user-requested connections */
+	if (data->state == ESP32_STA_CONNECTING && data->reconnect_attempts == 0) {
+		LOG_ERR("Connection timeout - disconnecting");
+		data->state = ESP32_STA_STARTED;
+		k_mutex_unlock(&esp32_wifi_lock);
+
+		esp_wifi_disconnect();
+
+		/* Raise failure event */
+		wifi_mgmt_raise_connect_result_event(esp32_wifi_iface, -ETIMEDOUT);
+	} else {
+		k_mutex_unlock(&esp32_wifi_lock);
+	}
+}
+
+static void reconnect_work_handler(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct esp32_wifi_runtime *data = CONTAINER_OF(dwork,
+							struct esp32_wifi_runtime,
+							reconnect_work);
+	int ret;
+
+	k_mutex_lock(&esp32_wifi_lock, K_FOREVER);
+
+	/* Check if we should still be reconnecting */
+	if (data->state == ESP32_STA_STOPPED || !data->ever_connected) {
+		k_mutex_unlock(&esp32_wifi_lock);
+		return;
+	}
+
+	if (data->reconnect_attempts >= MAX_RECONNECT_ATTEMPTS) {
+		LOG_ERR("Max reconnection attempts reached");
+		data->state = ESP32_STA_STARTED;
+		data->reconnect_attempts = 0;
+		k_mutex_unlock(&esp32_wifi_lock);
+		return;
+	}
+
+	data->reconnect_attempts++;
+
+	k_mutex_unlock(&esp32_wifi_lock);
+
+	ret = esp_wifi_connect();
+
+	k_mutex_lock(&esp32_wifi_lock, K_FOREVER);
+	if (ret == ESP_OK) {
+		data->state = ESP32_STA_CONNECTING;
+		k_mutex_unlock(&esp32_wifi_lock);
+	} else {
+		data->state = ESP32_STA_STARTED;
+		k_mutex_unlock(&esp32_wifi_lock);
+
+		/* Schedule another retry in 2 seconds */
+		k_work_reschedule(&data->reconnect_work, K_SECONDS(2));
 	}
 }
 
@@ -132,17 +226,26 @@ static esp_err_t eth_esp32_rx(void *buffer, uint16_t len, void *eb)
 {
 	struct net_pkt *pkt;
 
+	/* Validate input parameters */
+	if (buffer == NULL || eb == NULL) {
+		LOG_ERR("Invalid RX parameters");
+		if (eb) {
+			esp_wifi_internal_free_rx_buffer(eb);
+		}
+		return ESP_FAIL;
+	}
+
 	if (esp32_wifi_iface == NULL) {
 		esp_wifi_internal_free_rx_buffer(eb);
 		LOG_ERR("network interface unavailable");
-		return -EIO;
+		return ESP_FAIL;
 	}
 
 	pkt = net_pkt_rx_alloc_with_buffer(esp32_wifi_iface, len, AF_UNSPEC, 0, K_MSEC(100));
 	if (!pkt) {
 		LOG_ERR("Failed to allocate net buffer");
 		esp_wifi_internal_free_rx_buffer(eb);
-		return -EIO;
+		return ESP_FAIL;
 	}
 
 	if (net_pkt_write(pkt, buffer, len) < 0) {
@@ -161,7 +264,7 @@ static esp_err_t eth_esp32_rx(void *buffer, uint16_t len, void *eb)
 #endif
 
 	esp_wifi_internal_free_rx_buffer(eb);
-	return 0;
+	return ESP_OK;
 
 pkt_unref:
 	esp_wifi_internal_free_rx_buffer(eb);
@@ -171,7 +274,7 @@ pkt_unref:
 	esp32_data.stats.errors.rx++;
 #endif
 
-	return -EIO;
+	return ESP_FAIL;
 }
 
 #if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
@@ -179,17 +282,26 @@ static esp_err_t wifi_esp32_ap_iface_rx(void *buffer, uint16_t len, void *eb)
 {
 	struct net_pkt *pkt;
 
+	/* Validate input parameters */
+	if (buffer == NULL || eb == NULL) {
+		LOG_ERR("Invalid RX parameters");
+		if (eb) {
+			esp_wifi_internal_free_rx_buffer(eb);
+		}
+		return ESP_FAIL;
+	}
+
 	if (esp32_wifi_iface_ap == NULL) {
 		esp_wifi_internal_free_rx_buffer(eb);
 		LOG_ERR("network interface unavailable");
-		return -EIO;
+		return ESP_FAIL;
 	}
 
 	pkt = net_pkt_rx_alloc_with_buffer(esp32_wifi_iface_ap, len, AF_UNSPEC, 0, K_MSEC(100));
 	if (!pkt) {
 		esp_wifi_internal_free_rx_buffer(eb);
 		LOG_ERR("Failed to get net buffer");
-		return -EIO;
+		return ESP_FAIL;
 	}
 
 	if (net_pkt_write(pkt, buffer, len) < 0) {
@@ -208,7 +320,7 @@ static esp_err_t wifi_esp32_ap_iface_rx(void *buffer, uint16_t len, void *eb)
 #endif
 
 	esp_wifi_internal_free_rx_buffer(eb);
-	return 0;
+	return ESP_OK;
 
 pkt_unref:
 	esp_wifi_internal_free_rx_buffer(eb);
@@ -217,7 +329,7 @@ pkt_unref:
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 	esp32_ap_sta_data.stats.errors.rx++;
 #endif
-	return -EIO;
+	return ESP_FAIL;
 }
 #endif
 
@@ -230,19 +342,20 @@ static void scan_done_handler(void)
 	esp_wifi_scan_get_ap_num(&aps);
 	if (!aps) {
 		LOG_INF("No Wi-Fi AP found");
-		goto out;
+		goto notify_done;
 	}
 
 	ap_list_buffer = k_malloc(aps * sizeof(wifi_ap_record_t));
 	if (ap_list_buffer == NULL) {
 		LOG_INF("Failed to malloc buffer to print scan results");
-		goto out;
+		goto notify_done;
 	}
 
 	if (esp_wifi_scan_get_ap_records(&aps, (wifi_ap_record_t *)ap_list_buffer) == ESP_OK) {
 		for (int k = 0; k < aps; k++) {
 			memset(&res, 0, sizeof(struct wifi_scan_result));
 			int ssid_len = strnlen(ap_list_buffer[k].ssid, WIFI_SSID_MAX_LEN);
+			ssid_len = MIN(ssid_len, WIFI_SSID_MAX_LEN);
 
 			res.ssid_length = ssid_len;
 			strncpy(res.ssid, ap_list_buffer[k].ssid, ssid_len);
@@ -292,7 +405,7 @@ static void scan_done_handler(void)
 
 	k_free(ap_list_buffer);
 
-out:
+notify_done:
 	/* report end of scan event */
 	esp32_data.scan_cb(esp32_wifi_iface, 0, NULL);
 	esp32_data.scan_cb = NULL;
@@ -301,7 +414,27 @@ out:
 static void esp_wifi_handle_sta_connect_event(void *event_data)
 {
 	ARG_UNUSED(event_data);
+
+	k_mutex_lock(&esp32_wifi_lock, K_FOREVER);
+
+	/* Validate state transition */
+	if (esp32_data.state != ESP32_STA_CONNECTING &&
+	    esp32_data.state != ESP32_STA_STARTED) {
+		k_mutex_unlock(&esp32_wifi_lock);
+		return;
+	}
+
+	/* Cancel connection timeout */
+	k_work_cancel_delayable(&esp32_data.connect_timeout_work);
+
+	/* Reset reconnect attempts on successful connection */
+	esp32_data.reconnect_attempts = 0;
+	esp32_data.ever_connected = true;
+
 	esp32_data.state = ESP32_STA_CONNECTED;
+
+	k_mutex_unlock(&esp32_wifi_lock);
+
 #if defined(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)
 	net_dhcpv4_start(esp32_wifi_iface);
 #else
@@ -312,11 +445,32 @@ static void esp_wifi_handle_sta_connect_event(void *event_data)
 static void esp_wifi_handle_sta_disconnect_event(void *event_data)
 {
 	wifi_event_sta_disconnected_t *event = (wifi_event_sta_disconnected_t *)event_data;
+	bool was_connected;
+	bool should_stop_dhcp = false;
+	static int64_t last_reconnect_time = 0;
+	int64_t current_time;
 
-	if (esp32_data.state == ESP32_STA_CONNECTED) {
+	k_mutex_lock(&esp32_wifi_lock, K_FOREVER);
+
+	/* Cancel any pending connection timeout and reconnect work */
+	k_work_cancel_delayable(&esp32_data.connect_timeout_work);
+	k_work_cancel_delayable(&esp32_data.reconnect_work);
+
+	was_connected = (esp32_data.state == ESP32_STA_CONNECTED);
+
+	if (was_connected) {
 #if defined(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)
-		net_dhcpv4_stop(esp32_wifi_iface);
+		should_stop_dhcp = true;
 #endif
+	}
+
+	k_mutex_unlock(&esp32_wifi_lock);
+
+	if (should_stop_dhcp) {
+		net_dhcpv4_stop(esp32_wifi_iface);
+	}
+
+	if (was_connected) {
 		wifi_mgmt_raise_disconnect_result_event(esp32_wifi_iface, 0);
 	} else {
 		wifi_mgmt_raise_disconnect_result_event(esp32_wifi_iface, -1);
@@ -338,13 +492,71 @@ static void esp_wifi_handle_sta_disconnect_event(void *event_data)
 		break;
 	}
 
-	if (IS_ENABLED(CONFIG_ESP32_WIFI_STA_RECONNECT) &&
-	    (event->reason != WIFI_REASON_ASSOC_LEAVE)) {
-		esp32_data.state = ESP32_STA_CONNECTING;
-		esp_wifi_connect();
-	} else {
+	k_mutex_lock(&esp32_wifi_lock, K_FOREVER);
+
+	/* Don't reconnect if driver is stopped */
+	if (esp32_data.state == ESP32_STA_STOPPED) {
 		esp32_data.state = ESP32_STA_STARTED;
+		esp32_data.reconnect_attempts = 0;
+		k_mutex_unlock(&esp32_wifi_lock);
+		return;
 	}
+
+	/* Check for initial connection failure (never successfully connected) */
+	if (!esp32_data.ever_connected) {
+		esp32_data.state = ESP32_STA_STARTED;
+		esp32_data.reconnect_attempts = 0;
+		k_mutex_unlock(&esp32_wifi_lock);
+		return;
+	}
+
+	/* Handle reconnection for ASSOC_LEAVE or when auto-reconnect is disabled */
+	if (!IS_ENABLED(CONFIG_ESP32_WIFI_STA_RECONNECT) ||
+	    event->reason == WIFI_REASON_ASSOC_LEAVE) {
+		esp32_data.state = ESP32_STA_STARTED;
+		esp32_data.reconnect_attempts = 0;
+		k_mutex_unlock(&esp32_wifi_lock);
+		return;
+	}
+
+	/* Auto-reconnect logic */
+	if (esp32_data.reconnect_attempts < MAX_RECONNECT_ATTEMPTS) {
+		esp32_data.reconnect_attempts++;
+
+		current_time = k_uptime_get();
+		if ((current_time - last_reconnect_time) < 2000) {
+			esp32_data.state = ESP32_STA_STARTED;
+			k_mutex_unlock(&esp32_wifi_lock);
+			k_work_reschedule(&esp32_data.reconnect_work, K_SECONDS(2));
+			return;
+		}
+
+		last_reconnect_time = current_time;
+		k_mutex_unlock(&esp32_wifi_lock);
+
+		int ret = esp_wifi_connect();
+
+		k_mutex_lock(&esp32_wifi_lock, K_FOREVER);
+		if (ret == ESP_OK) {
+			esp32_data.state = ESP32_STA_CONNECTING;
+			k_mutex_unlock(&esp32_wifi_lock);
+			return;
+		} else {
+			/* Connect failed - schedule retry via work queue */
+			esp32_data.state = ESP32_STA_STARTED;
+			k_mutex_unlock(&esp32_wifi_lock);
+
+			/* Schedule retry */
+			k_work_reschedule(&esp32_data.reconnect_work, K_SECONDS(2));
+			return;
+		}
+	} else {
+		LOG_ERR("Max reconnection attempts reached");
+		esp32_data.state = ESP32_STA_STARTED;
+		esp32_data.reconnect_attempts = 0;
+	}
+
+	k_mutex_unlock(&esp32_wifi_lock);
 }
 
 static void esp_wifi_handle_ap_connect_event(void *event_data)
@@ -368,6 +580,22 @@ static void esp_wifi_handle_ap_connect_event(void *event_data)
 	sta_info.mac_length = WIFI_MAC_ADDR_LEN;
 	memcpy(sta_info.mac, event->mac, WIFI_MAC_ADDR_LEN);
 
+	k_mutex_lock(&ap_connection_mutex, K_FOREVER);
+
+	/* Check for counter overflow */
+	if (esp32_data.ap_connection_cnt >= 255) {
+		k_mutex_unlock(&ap_connection_mutex);
+		LOG_ERR("AP connection counter overflow");
+		return;
+	}
+
+	/* Validate MAC address (basic check for all-zeros) */
+	if (memcmp(event->mac, "\x00\x00\x00\x00\x00\x00", 6) == 0) {
+		k_mutex_unlock(&ap_connection_mutex);
+		LOG_ERR("Invalid MAC address in AP connect event");
+		return;
+	}
+
 	/* Expect the return value to always be ESP_OK,
 	 * since it is called in esp_wifi_event_handler()
 	 */
@@ -389,11 +617,16 @@ static void esp_wifi_handle_ap_connect_event(void *event_data)
 		}
 	}
 
-	wifi_mgmt_raise_ap_sta_connected_event(iface, &sta_info);
-
-	if (!(esp32_data.ap_connection_cnt++)) {
+	if (esp32_data.ap_connection_cnt == 0) {
 		esp_wifi_internal_reg_rxcb(WIFI_IF_AP, esp32_rx);
 	}
+	esp32_data.ap_connection_cnt++;
+
+	LOG_DBG("AP client count: %d", esp32_data.ap_connection_cnt);
+
+	k_mutex_unlock(&ap_connection_mutex);
+
+	wifi_mgmt_raise_ap_sta_connected_event(iface, &sta_info);
 }
 
 static void esp_wifi_handle_ap_disconnect_event(void *event_data)
@@ -412,11 +645,31 @@ static void esp_wifi_handle_ap_disconnect_event(void *event_data)
 	sta_info.twt_capable = false; /* Only support in 802.11ax */
 	sta_info.mac_length = WIFI_MAC_ADDR_LEN;
 	memcpy(sta_info.mac, event->mac, WIFI_MAC_ADDR_LEN);
-	wifi_mgmt_raise_ap_sta_disconnected_event(iface, &sta_info);
 
-	if (!(--esp32_data.ap_connection_cnt)) {
+	/* Validate MAC address */
+	if (memcmp(event->mac, "\x00\x00\x00\x00\x00\x00", 6) == 0) {
+		LOG_ERR("Invalid MAC address in AP disconnect event");
+		return;
+	}
+
+	k_mutex_lock(&ap_connection_mutex, K_FOREVER);
+
+	/* Prevent underflow */
+	if (esp32_data.ap_connection_cnt > 0) {
+		esp32_data.ap_connection_cnt--;
+	} else {
+		LOG_WRN("AP disconnect but counter already zero");
+	}
+
+	if (esp32_data.ap_connection_cnt == 0) {
 		esp_wifi_internal_reg_rxcb(WIFI_IF_AP, NULL);
 	}
+
+	LOG_DBG("AP client count: %d", esp32_data.ap_connection_cnt);
+
+	k_mutex_unlock(&ap_connection_mutex);
+
+	wifi_mgmt_raise_ap_sta_disconnected_event(iface, &sta_info);
 }
 
 void esp_wifi_event_handler(const char *event_base, int32_t event_id, void *event_data,
@@ -433,53 +686,118 @@ void esp_wifi_event_handler(const char *event_base, int32_t event_id, void *even
 	LOG_DBG("Wi-Fi event: %d", event_id);
 	switch (event_id) {
 	case WIFI_EVENT_STA_START:
+		k_mutex_lock(&esp32_wifi_lock, K_FOREVER);
 		esp32_data.state = ESP32_STA_STARTED;
-		net_eth_carrier_on(esp32_wifi_iface);
+		k_mutex_unlock(&esp32_wifi_lock);
+		/* Don't set carrier ON until actually connected */
+		LOG_DBG("STA started");
 		break;
 	case WIFI_EVENT_STA_STOP:
+		k_mutex_lock(&esp32_wifi_lock, K_FOREVER);
+		/* Cancel any pending operations */
+		k_work_cancel_delayable(&esp32_data.connect_timeout_work);
+		k_work_cancel_delayable(&esp32_data.reconnect_work);
+		esp32_data.reconnect_attempts = 0;
 		esp32_data.state = ESP32_STA_STOPPED;
+		k_mutex_unlock(&esp32_wifi_lock);
 		net_eth_carrier_off(esp32_wifi_iface);
+		LOG_DBG("STA stopped");
 		break;
 	case WIFI_EVENT_STA_CONNECTED:
+		net_eth_carrier_on(esp32_wifi_iface);
+		/* Clear any pending scan when we connect */
+		k_mutex_lock(&esp32_wifi_lock, K_FOREVER);
+		if (esp32_data.scan_cb) {
+			esp32_data.scan_cb(esp32_wifi_iface, 0, NULL);
+			esp32_data.scan_cb = NULL;
+		}
+		k_mutex_unlock(&esp32_wifi_lock);
 		esp_wifi_handle_sta_connect_event(event_data);
 		break;
 	case WIFI_EVENT_STA_DISCONNECTED:
+		net_eth_carrier_off(esp32_wifi_iface);
+		/* Clear any pending scan when we disconnect */
+		k_mutex_lock(&esp32_wifi_lock, K_FOREVER);
+		if (esp32_data.scan_cb) {
+			esp32_data.scan_cb(esp32_wifi_iface, 0, NULL);
+			esp32_data.scan_cb = NULL;
+		}
+		k_mutex_unlock(&esp32_wifi_lock);
 		esp_wifi_handle_sta_disconnect_event(event_data);
+		break;
+	case WIFI_EVENT_STA_BEACON_TIMEOUT:
+		LOG_WRN("Beacon timeout - connection lost");
+		break;
+	case WIFI_EVENT_STA_AUTHMODE_CHANGE:
+		LOG_WRN("AP changed authentication mode - security concern");
+		/* For security, disconnect and require manual reconnect */
+		esp_wifi_disconnect();
 		break;
 	case WIFI_EVENT_SCAN_DONE:
 		scan_done_handler();
 		break;
 	case WIFI_EVENT_AP_START:
+		k_mutex_lock(&esp32_wifi_lock, K_FOREVER);
 		ap_data->state = ESP32_AP_STARTED;
+		k_mutex_unlock(&esp32_wifi_lock);
 		net_eth_carrier_on(iface_ap);
 		wifi_mgmt_raise_ap_enable_result_event(iface_ap, 0);
+		LOG_DBG("AP started");
 		break;
 	case WIFI_EVENT_AP_STOP:
+		k_mutex_lock(&ap_connection_mutex, K_FOREVER);
+		/* Reset connection counter when AP stops */
+		if (esp32_data.ap_connection_cnt > 0) {
+			LOG_WRN("AP stopped with %d clients still connected",
+				esp32_data.ap_connection_cnt);
+			esp32_data.ap_connection_cnt = 0;
+		}
+		k_mutex_unlock(&ap_connection_mutex);
+
+		k_mutex_lock(&esp32_wifi_lock, K_FOREVER);
 		ap_data->state = ESP32_AP_STOPPED;
+		k_mutex_unlock(&esp32_wifi_lock);
 		net_eth_carrier_off(iface_ap);
 		wifi_mgmt_raise_ap_disable_result_event(iface_ap, 0);
+		LOG_DBG("AP stopped");
 		break;
 	case WIFI_EVENT_AP_STACONNECTED:
+		k_mutex_lock(&esp32_wifi_lock, K_FOREVER);
 		ap_data->state = ESP32_AP_CONNECTED;
+		k_mutex_unlock(&esp32_wifi_lock);
 		esp_wifi_handle_ap_connect_event(event_data);
 		break;
 	case WIFI_EVENT_AP_STADISCONNECTED:
+		k_mutex_lock(&esp32_wifi_lock, K_FOREVER);
 		ap_data->state = ESP32_AP_DISCONNECTED;
+		k_mutex_unlock(&esp32_wifi_lock);
 		esp_wifi_handle_ap_disconnect_event(event_data);
 		break;
+	case WIFI_EVENT_AP_PROBEREQRECVED:
+		LOG_DBG("AP probe request received");
+		break;
 	default:
+		LOG_DBG("Unhandled WiFi event: %d", event_id);
 		break;
 	}
 }
 
 static int esp32_wifi_disconnect(const struct device *dev)
 {
+	struct esp32_wifi_runtime *data = dev->data;
 	int ret = esp_wifi_disconnect();
 
 	if (ret != ESP_OK) {
 		LOG_INF("Failed to disconnect from hotspot");
 		return -EAGAIN;
 	}
+
+	k_mutex_lock(&esp32_wifi_lock, K_FOREVER);
+	k_work_cancel_delayable(&data->connect_timeout_work);
+	k_work_cancel_delayable(&data->reconnect_work);
+	data->reconnect_attempts = 0;
+	data->ever_connected = false;
+	k_mutex_unlock(&esp32_wifi_lock);
 
 	return 0;
 }
@@ -492,10 +810,22 @@ static int esp32_wifi_connect(const struct device *dev,
 	wifi_mode_t mode;
 	int ret;
 
+	k_mutex_lock(&esp32_wifi_lock, K_FOREVER);
+
 	if (data->state == ESP32_STA_CONNECTING || data->state == ESP32_STA_CONNECTED) {
-		wifi_mgmt_raise_connect_result_event(iface, -1);
+		k_mutex_unlock(&esp32_wifi_lock);
+
+		/* Already connected - this is success, not failure */
+		if (data->state == ESP32_STA_CONNECTED) {
+			LOG_INF("Already connected");
+			return 0;
+		}
+
+		/* Connection in progress */
+		LOG_INF("Connection already in progress");
 		return -EALREADY;
 	}
+	k_mutex_unlock(&esp32_wifi_lock);
 
 	ret = esp_wifi_get_mode(&mode);
 	if (ret) {
@@ -526,17 +856,23 @@ static int esp32_wifi_connect(const struct device *dev,
 		return -EIO;
 	}
 
+	k_mutex_lock(&esp32_wifi_lock, K_FOREVER);
 	data->state = ESP32_STA_CONNECTING;
+	data->reconnect_attempts = 0;
+	data->ever_connected = false;
+	k_mutex_unlock(&esp32_wifi_lock);
 
 	memcpy(data->status.ssid, params->ssid, params->ssid_length);
-	data->status.ssid[params->ssid_length] = '\0';
+	data->status.ssid[MIN(params->ssid_length, WIFI_SSID_MAX_LEN)] = '\0';
 
 	wifi_config_t wifi_config;
 
 	memset(&wifi_config, 0, sizeof(wifi_config_t));
 
-	memcpy(wifi_config.sta.ssid, params->ssid, params->ssid_length);
-	wifi_config.sta.ssid[params->ssid_length] = '\0';
+	size_t ssid_copy_len = MIN(params->ssid_length, sizeof(wifi_config.sta.ssid) - 1);
+	memcpy(wifi_config.sta.ssid, params->ssid, ssid_copy_len);
+	wifi_config.sta.ssid[ssid_copy_len] = '\0';
+
 	switch (params->security) {
 	case WIFI_SECURITY_TYPE_NONE:
 		wifi_config.sta.threshold.authmode = WIFI_AUTH_OPEN;
@@ -544,8 +880,9 @@ static int esp32_wifi_connect(const struct device *dev,
 		wifi_config.sta.pmf_cfg.required = false;
 		break;
 	case WIFI_SECURITY_TYPE_PSK:
-		memcpy(wifi_config.sta.password, params->psk, params->psk_length);
-		wifi_config.sta.password[params->psk_length] = '\0';
+		size_t psk_copy_len = MIN(params->psk_length, sizeof(wifi_config.sta.password) - 1);
+		memcpy(wifi_config.sta.password, params->psk, psk_copy_len);
+		wifi_config.sta.password[psk_copy_len] = '\0';
 		wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
 		wifi_config.sta.pmf_cfg.required = false;
 		data->status.security = WIFI_AUTH_WPA2_PSK;
@@ -553,12 +890,15 @@ static int esp32_wifi_connect(const struct device *dev,
 	case WIFI_SECURITY_TYPE_SAE:
 #if defined(CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE)
 		if (params->sae_password) {
-			memcpy(wifi_config.sta.password, params->sae_password,
-			       params->sae_password_length);
-			wifi_config.sta.password[params->sae_password_length] = '\0';
+			size_t sae_copy_len = MIN(params->sae_password_length,
+						  sizeof(wifi_config.sta.password) - 1);
+			memcpy(wifi_config.sta.password, params->sae_password, sae_copy_len);
+			wifi_config.sta.password[sae_copy_len] = '\0';
 		} else {
-			memcpy(wifi_config.sta.password, params->psk, params->psk_length);
-			wifi_config.sta.password[params->psk_length] = '\0';
+			size_t psk_copy_len = MIN(params->psk_length,
+						  sizeof(wifi_config.sta.password) - 1);
+			memcpy(wifi_config.sta.password, params->psk, psk_copy_len);
+			wifi_config.sta.password[psk_copy_len] = '\0';
 		}
 		data->status.security = WIFI_AUTH_WPA3_PSK;
 		wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA3_PSK;
@@ -595,9 +935,15 @@ static int esp32_wifi_connect(const struct device *dev,
 
 	ret = esp_wifi_connect();
 	if (ret) {
+		k_mutex_lock(&esp32_wifi_lock, K_FOREVER);
+		data->state = ESP32_STA_STARTED;
+		k_mutex_unlock(&esp32_wifi_lock);
+
 		LOG_ERR("Failed to connect to Wi-Fi access point (%d)", ret);
 		return -EAGAIN;
 	}
+
+	k_work_reschedule(&esp32_data.connect_timeout_work, K_SECONDS(30));
 
 	return 0;
 }
@@ -666,14 +1012,16 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 		.ap = {
 			.max_connection = 5,
 			.channel = params->channel == WIFI_CHANNEL_ANY ?
-				0 : params->channel,
+				   0 : params->channel,
 		},
 	};
 
 	memcpy(data->status.ssid, params->ssid, params->ssid_length);
-	data->status.ssid[params->ssid_length] = '\0';
+	data->status.ssid[MIN(params->ssid_length, WIFI_SSID_MAX_LEN)] = '\0';
 
-	strncpy((char *) wifi_config.ap.ssid, params->ssid, params->ssid_length);
+	size_t ssid_copy_len = MIN(params->ssid_length, sizeof(wifi_config.ap.ssid) - 1);
+	memcpy(wifi_config.ap.ssid, params->ssid, ssid_copy_len);
+	wifi_config.ap.ssid[ssid_copy_len] = '\0';
 	wifi_config.ap.ssid_len = params->ssid_length;
 
 	switch (params->security) {
@@ -684,7 +1032,9 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 		wifi_config.ap.pmf_cfg.required = false;
 		break;
 	case WIFI_SECURITY_TYPE_PSK:
-		strncpy((char *) wifi_config.ap.password, params->psk, params->psk_length);
+		size_t psk_copy_len = MIN(params->psk_length, sizeof(wifi_config.ap.password) - 1);
+		memcpy(wifi_config.ap.password, params->psk, psk_copy_len);
+		wifi_config.ap.password[psk_copy_len] = '\0';
 		wifi_config.ap.authmode = WIFI_AUTH_WPA2_PSK;
 		data->status.security = WIFI_AUTH_WPA2_PSK;
 		wifi_config.ap.pmf_cfg.required = false;
@@ -773,7 +1123,7 @@ static int esp32_wifi_status(const struct device *dev, struct wifi_iface_status 
 
 	strncpy(status->ssid, data->status.ssid, WIFI_SSID_MAX_LEN);
 	/* Ensure the result is NUL terminated */
-	status->ssid[WIFI_SSID_MAX_LEN-1] = '\0';
+	status->ssid[WIFI_SSID_MAX_LEN] = '\0';
 	/* We know it is NUL terminated, so we can use strlen */
 	status->ssid_len = strlen(data->status.ssid);
 	status->band = WIFI_FREQ_BAND_2_4_GHZ;
@@ -881,6 +1231,10 @@ static void esp32_wifi_init(struct net_if *iface)
 
 	ethernet_init(iface);
 	net_if_carrier_off(iface);
+
+	/* Initialize connection timeout work */
+	k_work_init_delayable(&dev_data->connect_timeout_work, connection_timeout_handler);
+	k_work_init_delayable(&dev_data->reconnect_work, reconnect_work_handler);
 }
 
 #if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
@@ -905,6 +1259,10 @@ static void esp32_wifi_init_ap(struct net_if *iface)
 
 	ethernet_init(iface);
 	net_if_carrier_off(iface);
+
+	/* Initialize connection timeout work for AP mode */
+	k_work_init_delayable(&dev_data->connect_timeout_work, connection_timeout_handler);
+	k_work_init_delayable(&dev_data->reconnect_work, reconnect_work_handler);
 }
 #endif
 
@@ -949,7 +1307,10 @@ static int esp32_wifi_dev_init(const struct device *dev)
 		return -EIO;
 	}
 	if (IS_ENABLED(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)) {
-		net_mgmt_init_event_callback(&esp32_dhcp_cb, wifi_event_handler, DHCPV4_MASK);
+		net_mgmt_init_event_callback(&esp32_dhcp_cb, wifi_event_handler,
+					     NET_EVENT_IPV4_DHCP_BOUND |
+					     NET_EVENT_IPV4_DHCP_START |
+					     NET_EVENT_IPV4_DHCP_STOP);
 		net_mgmt_add_event_callback(&esp32_dhcp_cb);
 	}
 
