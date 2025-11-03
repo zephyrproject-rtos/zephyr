@@ -1,0 +1,38 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+SOC_DT_LFXO_PATH := $(dt_nodelabel_path,lfxo)
+SOC_DT_LFXO_ENABLED := $(dt_path_enabled,$(SOC_DT_LFXO_PATH))
+SOC_DT_LFXO_LOAD_CAPS_EXTERNAL := $(dt_node_str_prop_equals,$(SOC_DT_LFXO_PATH),load-capacitors,external)
+SOC_DT_LFXO_HAS_LOAD_CAP := $(dt_node_has_prop,$(SOC_DT_LFXO_PATH),load-capacitance-femtofarad)
+SOC_DT_LFXO_LOAD_CAP := $(dt_node_int_prop_int,$(SOC_DT_LFXO_PATH),load-capacitance-femtofarad)
+
+config SOC_HAS_LFXO
+	bool "SoC has LFXO available"
+	default $(SOC_DT_LFXO_ENABLED)
+
+if SOC_HAS_LFXO
+
+choice SOC_LFXO_LOAD_CAPS
+	prompt "LFXO load capacitor selection"
+	default SOC_LFXO_LOAD_CAPS_EXTERNAL if $(SOC_DT_LFXO_LOAD_CAPS_EXTERNAL)
+	default SOC_LFXO_LOAD_CAPS_INTERNAL
+
+config SOC_LFXO_LOAD_CAPS_EXTERNAL
+	bool "Use external load capacitors for LFXO"
+
+config SOC_LFXO_LOAD_CAPS_INTERNAL
+	bool "Use internal load capacitors for LFXO"
+
+endchoice # SOC_LFXO_LOAD_CAPS
+
+if SOC_LFXO_LOAD_CAPS_INTERNAL
+
+config SOC_LFXO_INTERNAL_LOAD_CAP
+	int "Internal load capacitance for LFXO"
+	default $(SOC_DT_LFXO_LOAD_CAP) if $(SOC_DT_LFXO_HAS_LOAD_CAP)
+	default 17000
+
+endif # SOC_LFXO_LOAD_CAPS_INTERNAL
+
+endif # SOC_HAS_LFXO

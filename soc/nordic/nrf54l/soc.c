@@ -15,7 +15,6 @@
 /* Include autoconf for cases when this file is used in special build (e.g. TFM) */
 #include <zephyr/autoconf.h>
 
-#include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
@@ -34,9 +33,6 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #include <hal/nrf_regulators.h>
 #include <zephyr/dt-bindings/regulator/nrf5x.h>
 
-#define LFXO_NODE DT_NODELABEL(lfxo)
-#define HFXO_NODE DT_NODELABEL(hfxo)
-
 static inline void power_and_clock_configuration(void)
 {
 /* NRF_REGULATORS and NRF_OSCILLATORS are configured to be secure
@@ -46,7 +42,7 @@ static inline void power_and_clock_configuration(void)
  * NRF_OSCILLATORS is also configured as secure because of a HW limitation
  * that requires them to be configured with the same security property.
  */
-#if DT_ENUM_HAS_VALUE(LFXO_NODE, load_capacitors, internal)
+#if CONFIG_SOC_LFXO_LOAD_CAPS_INTERNAL
 	uint32_t xosc32ktrim = NRF_FICR->XOSC32KTRIM;
 	/* The SLOPE field is in the two's complement form, hence this special
 	 * handling. Ideally, it would result in just one SBFX instruction for
@@ -69,7 +65,7 @@ static inline void power_and_clock_configuration(void)
 	 * value between 4 pF and 18 pF in 0.5 pF steps.
 	 */
 
-	uint32_t lfxo_intcap_femto_f = DT_PROP(LFXO_NODE, load_capacitance_femtofarad);
+	uint32_t lfxo_intcap_femto_f = CONFIG_SOC_LFXO_INTERNAL_LOAD_CAP;
 
 	/* Calculation of INTCAP code before rounding. Min that calculations here are done on
 	 * values multiplied by 2^9, e.g. 0.765625 * 2^9 = 392.
@@ -89,7 +85,7 @@ static inline void power_and_clock_configuration(void)
 	}
 
 	nrf_oscillators_lfxo_cap_set(NRF_OSCILLATORS, lfxo_intcap);
-#elif DT_ENUM_HAS_VALUE(LFXO_NODE, load_capacitors, external)
+#else
 	nrf_oscillators_lfxo_cap_set(NRF_OSCILLATORS, (nrf_oscillators_lfxo_cap_t)0);
 #endif
 
