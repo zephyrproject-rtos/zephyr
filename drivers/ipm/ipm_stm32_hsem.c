@@ -203,15 +203,16 @@ static const struct stm32_hsem_mailbox_config stm32_hsem_mailbox_0_config = {
  * a virtual mailbox device. So there will have only one instance.
  */
 #define IPM_STM32_HSEM_INIT(inst)						\
-	BUILD_ASSERT((inst) == 0,							\
-		     "multiple instances not supported");		\
-	DEVICE_DT_INST_DEFINE(0,							\
-				&stm32_hsem_mailbox_init,				\
-				NULL,			\
-				&stm32_hsem_mailbox_0_data,				\
-				&stm32_hsem_mailbox_0_config,			\
-				POST_KERNEL,							\
-				CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
-				&stm32_hsem_mailbox_ipm_dirver_api);	\
+	BUILD_ASSERT((inst) == 0,						\
+		     "multiple instances not supported");			\
+										\
+	DEVICE_DT_INST_DEFINE(0,						\
+			      &stm32_hsem_mailbox_init,				\
+			      NULL,						\
+			      &stm32_hsem_mailbox_0_data,			\
+			      &stm32_hsem_mailbox_0_config,			\
+			      POST_KERNEL,					\
+			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,		\
+			      &stm32_hsem_mailbox_ipm_dirver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IPM_STM32_HSEM_INIT)
