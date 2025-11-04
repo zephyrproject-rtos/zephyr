@@ -1,0 +1,63 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "LIN Counter Sample"
+
+source "Kconfig.zephyr"
+
+choice SAMPLE_LIN_BUS_BAUDRATE
+	prompt "Select LIN bus baudrate used in this sample"
+	default LIN_BUS_BAUDRATE_19200
+
+config SAMPLE_LIN_BUS_BAUDRATE_2400
+	bool "2400 bps"
+	help
+	  Configure LIN node baudrate to 2400 bps.
+
+config SAMPLE_LIN_BUS_BAUDRATE_9600
+	bool "9600 bps"
+	help
+	  Configure LIN node baudrate to 9600 bps.
+
+config SAMPLE_LIN_BUS_BAUDRATE_10400
+	bool "10400 bps"
+	help
+	  Configure LIN node baudrate to 10400 bps.
+
+config SAMPLE_LIN_BUS_BAUDRATE_19200
+	bool "19200 bps"
+	help
+	  Configure LIN node baudrate to 19200 bps.
+
+endchoice
+
+choice SAMPLE_LIN_BUS_CHECKSUM_TYPE
+	prompt "Select LIN bus checksum type used in this sample"
+	default SAMPLE_LIN_BUS_CLASSIC_CHECKSUM
+
+config SAMPLE_LIN_BUS_CLASSIC_CHECKSUM
+	bool "Classic Checksum"
+	help
+	  Configure LIN node to use Classic Checksum.
+
+config SAMPLE_LIN_BUS_ENHANCED_CHECKSUM
+	bool "Enhanced Checksum"
+	help
+	  Configure LIN node to use Enhanced Checksum.
+
+endchoice
+
+config SAMPLE_COUNTER_UPDATE_ID
+	hex "LIN Frame ID to poll counter value"
+	default 0x20
+	help
+	  This configuration option selects the LIN frame ID used by the
+	  controller to poll the current counter value.
+
+config SAMPLE_COUNTER_UPDATE_PERIOD_MS
+	int "Counter update period (ms)"
+	range 500 5000
+	default 1000
+	help
+	  This configuration option selects the period at which the counter
+	  value increments by 1.
