@@ -4,6 +4,7 @@
 
 config POSIX_C_LIB_EXT
 	bool "POSIX general C library extension"
+	select GETOPT
 	help
 	  Select 'y' here and Zephyr will provide an implementation of the POSIX_C_LIB_EXT Option
 	  Group, consisting of fnmatch(), getopt(), getsubopt(), optarg, opterr, optind, optopt,
