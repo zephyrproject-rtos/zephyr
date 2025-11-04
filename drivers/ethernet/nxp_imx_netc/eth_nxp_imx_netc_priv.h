@@ -103,7 +103,7 @@ struct netc_eth_config {
 	uint8_t tx_intr_msg_data;
 	uint8_t rx_intr_msg_data;
 #endif
-#ifdef CONFIG_PTP_CLOCK_NXP_NETC
+#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
 	const struct device *ptp_clock;
 #endif
 };
@@ -137,7 +137,7 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt);
 enum ethernet_hw_caps netc_eth_get_capabilities(const struct device *dev);
 int netc_eth_set_config(const struct device *dev, enum ethernet_config_type type,
 			const struct ethernet_config *config);
-#ifdef CONFIG_PTP_CLOCK_NXP_NETC
+#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
 const struct device *netc_eth_get_ptp_clock(const struct device *dev);
 #endif
 #endif /* ZEPHYR_DRIVERS_ETHERNET_ETH_NXP_IMX_NETC_PRIV_H_ */

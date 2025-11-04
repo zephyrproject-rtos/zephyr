@@ -12,9 +12,6 @@ LOG_MODULE_REGISTER(nxp_imx_eth);
 #include <zephyr/device.h>
 #include <zephyr/drivers/mbox.h>
 #include <zephyr/drivers/pinctrl.h>
-#ifdef CONFIG_PTP_CLOCK_NXP_NETC
-#include <zephyr/drivers/ptp_clock.h>
-#endif
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
@@ -34,7 +31,7 @@ LOG_MODULE_REGISTER(nxp_imx_eth);
 
 const struct device *netc_dev_list[NETC_DRV_MAX_INST_SUPPORT];
 
-#ifdef CONFIG_PTP_CLOCK_NXP_NETC
+#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
 static void netc_eth_pkt_get_timestamp(struct net_pkt *pkt, const struct device *ptp_clock,
 				       uint32_t timestamp)
 {
@@ -132,7 +129,7 @@ static int netc_eth_rx(const struct device *dev)
 		goto out;
 	}
 
-#ifdef CONFIG_PTP_CLOCK_NXP_NETC
+#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
 	if (attr.isTsAvail) {
 		const struct netc_eth_config *cfg = dev->config;
 
@@ -247,7 +244,7 @@ int netc_eth_init_common(const struct device *dev)
 
 	config->bdr_init(&bdr_config, &rx_bdr_config, &tx_bdr_config);
 
-#ifdef CONFIG_PTP_CLOCK_NXP_NETC
+#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
 	if (netc_eth_get_ptp_clock(dev) != NULL) {
 		bdr_config.rxBdrConfig[0].extendDescEn = true;
 	}
@@ -382,13 +379,13 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 #if defined(NETC_HAS_NO_SWITCH_TAG_SUPPORT)
 	struct ethernet_context *eth_ctx = net_if_l2_data(data->iface);
 #endif
-#if defined(NETC_HAS_NO_SWITCH_TAG_SUPPORT) || defined(CONFIG_PTP_CLOCK_NXP_NETC)
+#if defined(NETC_HAS_NO_SWITCH_TAG_SUPPORT) || defined(NETC_PTP_TIMESTAMPING_SUPPORT)
 	const struct netc_eth_config *cfg = dev->config;
 #endif
 	status_t result;
 	int ret;
 	ep_tx_opt opt = {0};
-#ifdef CONFIG_PTP_CLOCK_NXP_NETC
+#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
 	bool pkt_is_gptp;
 #endif
 	__ASSERT(pkt, "Packet pointer is NULL");
@@ -408,7 +405,7 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 	k_mutex_lock(&data->tx_mutex, K_FOREVER);
 
-#ifdef CONFIG_PTP_CLOCK_NXP_NETC
+#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
 	pkt_is_gptp = net_ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_PTP;
 	if ((pkt_is_gptp || net_pkt_is_tx_timestamping(pkt)) &&
 	    (netc_eth_get_ptp_clock(dev) != NULL)) {
@@ -464,7 +461,7 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 				goto error;
 			}
 
-#ifdef CONFIG_PTP_CLOCK_NXP_NETC
+#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
 			if (frame_info->isTsAvail) {
 				netc_eth_pkt_get_timestamp(pkt, cfg->ptp_clock,
 							   frame_info->timestamp);
@@ -499,7 +496,7 @@ enum ethernet_hw_caps netc_eth_get_capabilities(const struct device *dev)
 #endif
 	);
 
-#if defined(CONFIG_PTP_CLOCK_NXP_NETC)
+#if defined(NETC_PTP_TIMESTAMPING_SUPPORT)
 	if (netc_eth_get_ptp_clock(dev) != NULL) {
 		caps |= ETHERNET_PTP;
 	}

@@ -6,6 +6,8 @@
 #ifndef __NXP_IMX_NETC_H__
 #define __NXP_IMX_NETC_H__
 
+#include <zephyr/drivers/ptp_clock.h>
+
 #define NETC_BD_ALIGN 128
 
 #define FREESCALE_OUI_B0 0x00
