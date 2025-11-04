@@ -289,10 +289,10 @@ int main(void)
 	char *ip = NULL;
 
 	struct ocpp_cp_info cpi = { "basic", "zephyr", .num_of_con = NO_OF_CONN };
-	struct ocpp_cs_info csi = { NULL,
-				    "/steve/websocket/CentralSystemService/zephyr",
-				    CONFIG_NET_SAMPLE_OCPP_PORT,
-				    AF_INET };
+	struct ocpp_cs_info csi = {NULL,
+				   CONFIG_NET_SAMPLE_OCPP_WS_PATH,
+				   CONFIG_NET_SAMPLE_OCPP_PORT,
+				   AF_INET};
 
 	printk("OCPP sample %s\n", CONFIG_BOARD);
 
