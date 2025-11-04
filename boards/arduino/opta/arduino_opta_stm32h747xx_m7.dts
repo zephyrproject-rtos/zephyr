@@ -25,6 +25,14 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &bt_hci_uart;
 	};
+
+	ext_memory: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_M(16)>; /* max addressable area */
+		zephyr,memory-region = "EXTMEM";
+		/* The ATTR_MPU_EXTMEM attribut causing a MPU FAULT */
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
+	};
 };
 
 zephyr_udc0: &usbotg_fs {
