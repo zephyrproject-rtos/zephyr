@@ -297,7 +297,8 @@ static void ot_bbr_multicast_listener_handler(void *context,
 			}
 		}
 	} else {
-		struct net_route_entry_mcast *route_to_del = net_route_mcast_lookup(&recv_addr);
+		struct net_route_entry_mcast *route_to_del =
+			net_route_mcast_lookup_by_iface(&recv_addr, ot_context->iface);
 		struct net_if_mcast_addr *addr_to_del;
 
 		addr_to_del = net_if_ipv6_maddr_lookup(&recv_addr, &(ot_context->iface));
@@ -307,6 +308,8 @@ static void ot_bbr_multicast_listener_handler(void *context,
 
 		if (addr_to_del != NULL && net_if_ipv6_maddr_is_joined(addr_to_del)) {
 			net_if_ipv6_maddr_leave(ot_context->iface, addr_to_del);
+			net_if_ipv6_maddr_rm(ot_context->iface,
+					     (const struct in6_addr *)&recv_addr);
 		}
 	}
 }
