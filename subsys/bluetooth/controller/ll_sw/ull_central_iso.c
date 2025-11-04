@@ -272,6 +272,7 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 
 	/* Create all configurable CISes */
 	for (uint8_t i = 0U; i < ll_iso_setup.cis_count; i++) {
+		memq_link_t *link_rx_terminate;
 		memq_link_t *link_tx_free;
 		memq_link_t link_tx;
 
@@ -305,9 +306,10 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 			cig->lll.num_cis++;
 		}
 
-		/* Store TX link and free link before transfer */
+		/* Store TX link, free link and terminate link before transfer */
 		link_tx_free = cis->lll.link_tx_free;
 		link_tx = cis->lll.link_tx;
+		link_rx_terminate = cis->node_rx_terminate.rx.hdr.link;
 
 		/* Transfer parameters from configuration cache */
 		memcpy(cis, &ll_iso_setup.stream[i], sizeof(struct ll_conn_iso_stream));
@@ -317,6 +319,7 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 
 		cis->lll.link_tx_free = link_tx_free;
 		cis->lll.link_tx = link_tx;
+		cis->node_rx_terminate.rx.hdr.link = link_rx_terminate;
 		cis->lll.handle = ll_conn_iso_stream_handle_get(cis);
 		handles[i] = cis->lll.handle;
 	}
@@ -744,6 +747,13 @@ void ll_cis_create(uint16_t cis_handle, uint16_t acl_handle)
 
 	(void)memset(&cis->hdr, 0U, sizeof(cis->hdr));
 
+	/* Allocate new terminate link if needed (only needed if CIS is re-used) */
+	if (cis->node_rx_terminate.rx.hdr.link == NULL) {
+		cis->node_rx_terminate.rx.hdr.link = ll_rx_link_alloc();
+		/* Failure should not be possible, but assert just in case */
+		LL_ASSERT_DBG(cis->node_rx_terminate.rx.hdr.link);
+	}
+
 	/* Initialize TX link */
 	if (!cis->lll.link_tx_free) {
 		cis->lll.link_tx_free = &cis->lll.link_tx;
@@ -1020,6 +1030,30 @@ int ull_central_iso_cis_offset_get(uint16_t cis_handle,
 
 	return 0;
 #endif /* CONFIG_BT_CTLR_CENTRAL_SPACING != 0 */
+}
+
+bool ull_central_iso_all_cises_terminated(struct ll_conn_iso_group *cig)
+{
+	/* Check if all CISes associated with this CIG is terminated (or not created) */
+	for (uint16_t handle = LL_CIS_HANDLE_BASE; handle <= LL_CIS_HANDLE_LAST; handle++) {
+		struct ll_conn_iso_stream *cis;
+
+		cis = ll_conn_iso_stream_get(handle);
+		if (cis->group == cig) {
+			struct ll_conn *conn;
+
+			if (cis->established) {
+				return false;
+			}
+
+			/* Check if CIS is being created */
+			conn = ll_connected_get(cis->lll.acl_handle);
+			if (conn && ull_lp_cc_is_enqueued(conn, cis)) {
+				return false;
+			}
+		}
+	}
+	return true;
 }
 
 #if (CONFIG_BT_CTLR_CENTRAL_SPACING == 0)

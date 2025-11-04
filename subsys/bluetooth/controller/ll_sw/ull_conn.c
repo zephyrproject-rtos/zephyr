@@ -59,6 +59,7 @@
 
 #include "ull_iso_internal.h"
 #include "ull_conn_iso_internal.h"
+#include "ull_central_iso_internal.h"
 #include "ull_peripheral_iso_internal.h"
 #include "lll/lll_adv_types.h"
 #include "lll_adv.h"
@@ -438,43 +439,44 @@ uint8_t ll_terminate_ind_send(uint16_t handle, uint8_t reason)
 
 			/* Sanity-check instance to make sure it's created but not connected */
 			if (cis->group && cis->lll.handle == handle && !cis->established) {
-				if (cis->group->state == CIG_STATE_CONFIGURABLE) {
-					/* Disallow if CIG is still in configurable state */
+				struct ll_conn_iso_group *cig = cis->group;
+
+				conn = ll_connected_get(cis->lll.acl_handle);
+
+				if (conn == NULL || !ull_lp_cc_is_enqueued(conn, cis)) {
+					/* Disallow if CIS is not created yet or terminated */
 					return BT_HCI_ERR_CMD_DISALLOWED;
+				}
 
-				} else if (cis->group->state == CIG_STATE_INITIATING) {
-					conn = ll_connected_get(cis->lll.acl_handle);
-					LL_ASSERT_DBG(conn != NULL);
+				/* CIS is not yet established - try to cancel procedure */
+				if (ull_cp_cc_cancel(conn, cis)) {
+					/* Successfully canceled - complete disconnect */
+					struct node_rx_pdu *node_terminate;
 
-					/* CIS is not yet established - try to cancel procedure */
-					if (ull_cp_cc_cancel(conn)) {
-						/* Successfully canceled - complete disconnect */
-						struct node_rx_pdu *node_terminate;
+					node_terminate = &cis->node_rx_terminate.rx;
 
-						node_terminate = ull_pdu_rx_alloc();
-						LL_ASSERT_ERR(node_terminate);
+					node_terminate->hdr.handle = handle;
+					node_terminate->hdr.type = NODE_RX_TYPE_TERMINATE;
+					*((uint8_t *)node_terminate->pdu) =
+						BT_HCI_ERR_LOCALHOST_TERM_CONN;
 
-						node_terminate->hdr.handle = handle;
-						node_terminate->hdr.type = NODE_RX_TYPE_TERMINATE;
-						*((uint8_t *)node_terminate->pdu) =
-							BT_HCI_ERR_LOCALHOST_TERM_CONN;
-
-						ll_rx_put_sched(node_terminate->hdr.link,
+					ll_rx_put_sched(node_terminate->hdr.link,
 							node_terminate);
 
-						/* We're no longer initiating a connection */
-						cis->group->state = CIG_STATE_CONFIGURABLE;
-
-						/* This is now a successful disconnection */
-						return BT_HCI_ERR_SUCCESS;
+					/* We're no longer initiating a connection */
+					if (ull_central_iso_all_cises_terminated(cig)) {
+						cig->state = CIG_STATE_INACTIVE;
 					}
 
-					/* Procedure could not be canceled in the current
-					 * state - let it run its course and enqueue a
-					 * terminate procedure.
-					 */
-					return ull_cp_cis_terminate(conn, cis, reason);
+					/* This is now a successful disconnection */
+					return BT_HCI_ERR_SUCCESS;
 				}
+
+				/* Procedure could not be canceled in the current
+				 * state - let it run its course and enqueue a
+				 * terminate procedure.
+				 */
+				return ull_cp_cis_terminate(conn, cis, reason);
 			}
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
 			/* Disallow if CIS is not connected */
@@ -1897,7 +1899,53 @@ static void conn_cleanup_finalize(struct ll_conn *conn)
 	struct lll_conn *lll = &conn->lll;
 	uint32_t ticker_status;
 
+	if ((IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO) ||
+	     IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_ISO)) &&
+	    ull_cp_cc_is_active(conn)) {
+		/* CIS creation procedure active, notify LLCP */
+		ull_cp_cc_acl_disconnect(conn);
+	}
+
+	/* Set LLCP state - flushes control procedures */
 	ull_cp_state_set(conn, ULL_CP_DISCONNECTED);
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	/* Find and clean non-established, allocated CISes associated with this ACL conn */
+	for (uint8_t handle = LL_CIS_HANDLE_BASE; handle <= LL_CIS_HANDLE_LAST; handle++) {
+		struct ll_conn_iso_stream *cis;
+		struct ll_conn_iso_group *cig;
+
+		cis = ll_conn_iso_stream_get(handle);
+		cig = cis->group;
+		if (cig != NULL && cig->lll.num_cis != 0U &&
+		    cis->lll.acl_handle == conn->lll.handle) {
+			if (IS_PERIPHERAL(cig)) {
+				/* Remove data paths associated with this CIS for both directions.
+				 * Disable them one at a time to make sure both are removed, even if
+				 * only one is set.
+				 * Note: This only applies for peripherals, for centrals an explicit
+				 * command is required to clean up a CIG and associated CISes.
+				 * See e.g. BT Core v5.4, Vol 4, Part E, Section 7.8.100
+				 */
+				ll_remove_iso_path(handle, BIT(BT_HCI_DATAPATH_DIR_HOST_TO_CTLR));
+				ll_remove_iso_path(handle, BIT(BT_HCI_DATAPATH_DIR_CTLR_TO_HOST));
+
+				ll_conn_iso_stream_release(cis);
+				cig->lll.num_cis--;
+
+				if (cig->lll.num_cis == 0U) {
+					/* No more streams in the group - release group */
+					ll_conn_iso_group_release(cig);
+				}
+			} else if (IS_CENTRAL(cig) && cig->state == CIG_STATE_INITIATING &&
+				   ull_central_iso_all_cises_terminated(cig)) {
+
+				/* We're no longer initiating a connection */
+				cig->state = CIG_STATE_INACTIVE;
+			}
+		}
+	}
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO || CONFIG_BT_CTLR_CENTRAL_ISO */
 
 	/* Update tx buffer queue handling */
 #if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
