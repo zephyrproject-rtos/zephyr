@@ -63,14 +63,8 @@ COND_CODE_0(DT_INST_CHILD_NUM_STATUS_OKAY(idx), (), (				\
 										\
 static const struct axisram_stm32_cfg axisram_stm32_cfg_##idx = {		\
 	.base = (RAMCFG_TypeDef *)DT_INST_REG_ADDR(idx),			\
-	.pclken_axisram = {							\
-		.enr = DT_INST_CLOCKS_CELL_BY_NAME(idx, axisram, bits),		\
-		.bus = DT_INST_CLOCKS_CELL_BY_NAME(idx, axisram, bus),		\
-	},									\
-	.pclken_ramcfg = {							\
-		.enr = DT_INST_CLOCKS_CELL_BY_NAME(idx, ramcfg, bits),		\
-		.bus = DT_INST_CLOCKS_CELL_BY_NAME(idx, ramcfg, bus),		\
-	},									\
+	.pclken_axisram = STM32_DT_INST_CLOCK_INFO_BY_NAME(idx, axisram),	\
+	.pclken_ramcfg = STM32_DT_INST_CLOCK_INFO_BY_NAME(idx, ramcfg),		\
 };										\
 										\
 DEVICE_DT_INST_DEFINE(idx, &axisram_stm32_init, NULL,				\

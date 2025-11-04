@@ -194,12 +194,8 @@ static DEVICE_API(ipm, stm32_hsem_mailbox_ipm_dirver_api) = {
 
 static const struct stm32_hsem_mailbox_config stm32_hsem_mailbox_0_config = {
 	.irq_config_func = stm32_hsem_mailbox_irq_config_func,
-	.pclken = {
-		.bus = DT_INST_CLOCKS_CELL(0, bus),
-		.enr = DT_INST_CLOCKS_CELL(0, bits)
-	},
+	.pclken = STM32_DT_INST_CLOCK_INFO(0),
 };
-
 
 /*
  * STM32 HSEM has its own LL_HSEM(low-level HSEM) API provided by the hal_stm32 module.

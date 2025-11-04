@@ -179,10 +179,7 @@ PINCTRL_DT_INST_DEFINE(index);						\
 									\
 static const struct dac_stm32_cfg dac_stm32_cfg_##index = {		\
 	.base = (DAC_TypeDef *)DT_INST_REG_ADDR(index),			\
-	.pclken = {							\
-		.enr = DT_INST_CLOCKS_CELL(index, bits),		\
-		.bus = DT_INST_CLOCKS_CELL(index, bus),			\
-	},								\
+	.pclken = STM32_DT_INST_CLOCK_INFO(index),			\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
 };									\
 									\

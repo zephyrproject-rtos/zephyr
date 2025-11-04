@@ -906,7 +906,7 @@ void flash_stm32_page_layout(const struct device *dev, const struct flash_pages_
 static struct flash_stm32_priv flash_data = {
 	.regs = (FLASH_TypeDef *)DT_INST_REG_ADDR(0),
 #if DT_NODE_HAS_PROP(DT_INST(0, st_stm32h7_flash_controller), clocks)
-	.pclken = {.bus = DT_INST_CLOCKS_CELL(0, bus), .enr = DT_INST_CLOCKS_CELL(0, bits)},
+	.pclken = STM32_DT_INST_CLOCK_INFO(0),
 #endif
 };
 
