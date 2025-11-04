@@ -2396,6 +2396,8 @@ static int bt_hfp_ag_chup_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 			}
 		} else if (call_state == BT_HFP_CALL_ACTIVE) {
 			next_step = bt_hfp_ag_unit_call_terminate;
+		} else if (call_state == BT_HFP_CALL_OUTGOING) {
+			next_step = bt_hfp_ag_call_terminate;
 		}
 
 		if (next_step) {
