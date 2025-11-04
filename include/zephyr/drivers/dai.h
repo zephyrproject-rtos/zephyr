@@ -16,7 +16,7 @@
 /**
  * @defgroup dai_interface DAI
  * @since 3.1
- * @version 0.1.0
+ * @version 0.8.0
  * @ingroup io_interfaces
  * @brief Interfaces for Digital Audio Interfaces.
  *
