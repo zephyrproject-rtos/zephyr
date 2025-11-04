@@ -1,5 +1,6 @@
 /*	$OpenBSD: getopt_long.c,v 1.22 2006/10/04 21:29:04 jmc Exp $	*/
 /*	$NetBSD: getopt_long.c,v 1.15 2002/01/31 22:43:40 tv Exp $	*/
+/* SPDX-License-Identifier: BSD-3-Clause */
 
 /*
  * Copyright (c) 2002 Todd C. Miller <Todd.Miller@courtesan.com>
@@ -50,11 +51,11 @@
  */
 
 #include <string.h>
-#include "getopt.h"
+#include <zephyr/sys/sys_getopt.h>
 #include "getopt_common.h"
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_DECLARE(getopt);
+LOG_MODULE_DECLARE(sys_getopt);
 
 #define GNU_COMPATIBLE /* Be more compatible, configure's use us! */
 
@@ -78,10 +79,10 @@ LOG_MODULE_DECLARE(getopt);
 #define W_PREFIX  2
 #endif
 
-static int getopt_internal(struct getopt_state *, int, char *const *, const char *,
-			   const struct option *, int *, int);
-static int parse_long_options(struct getopt_state *, char *const *, const char *,
-			      const struct option *, int *, int, int);
+static int getopt_internal(struct sys_getopt_state *, int, char *const *, const char *,
+			   const struct sys_getopt_option *, int *, int);
+static int parse_long_options(struct sys_getopt_state *, char *const *, const char *,
+			      const struct sys_getopt_option *, int *, int, int);
 static int gcd(int, int);
 static void permute_args(int, int, int, char *const *);
 
@@ -161,8 +162,9 @@ static void permute_args(int panonopt_start, int panonopt_end, int opt_end, char
  *	Parse long options in argc/argv argument vector.
  * Returns -1 if short_too is set and the option does not match long_options.
  */
-static int parse_long_options(struct getopt_state *state, char *const *nargv, const char *options,
-			      const struct option *long_options, int *idx, int short_too, int flags)
+static int parse_long_options(struct sys_getopt_state *state, char *const *nargv,
+			      const char *options, const struct sys_getopt_option *long_options,
+			      int *idx, int short_too, int flags)
 {
 	char *current_argv, *has_equal;
 #ifdef GNU_COMPATIBLE
@@ -246,7 +248,7 @@ static int parse_long_options(struct getopt_state *state, char *const *nargv, co
 		return BADCH;
 	}
 	if (match != -1) { /* option found */
-		if (long_options[match].has_arg == no_argument && has_equal) {
+		if (long_options[match].has_arg == sys_getopt_no_argument && has_equal) {
 			if (PRINT_ERROR) {
 				LOG_WRN(NOARG,
 #ifdef GNU_COMPATIBLE
@@ -268,18 +270,19 @@ static int parse_long_options(struct getopt_state *state, char *const *nargv, co
 			return BADARG;
 #endif
 		}
-		if (long_options[match].has_arg == required_argument ||
-		    long_options[match].has_arg == optional_argument) {
+		if (long_options[match].has_arg == sys_getopt_required_argument ||
+		    long_options[match].has_arg == sys_getopt_optional_argument) {
 			if (has_equal) {
 				state->optarg = has_equal;
-			} else if (long_options[match].has_arg == required_argument) {
+			} else if (long_options[match].has_arg == sys_getopt_required_argument) {
 				/*
 				 * optional argument doesn't use next nargv
 				 */
 				state->optarg = nargv[state->optind++];
 			}
 		}
-		if ((long_options[match].has_arg == required_argument) && (state->optarg == NULL)) {
+		if ((long_options[match].has_arg == sys_getopt_required_argument) &&
+		    (state->optarg == NULL)) {
 			/*
 			 * Missing argument; leading ':' indicates no error
 			 * should be generated.
@@ -332,9 +335,9 @@ static int parse_long_options(struct getopt_state *state, char *const *nargv, co
  * getopt_internal --
  *	Parse argc/argv argument vector.  Called by user level routines.
  */
-static int getopt_internal(struct getopt_state *state, int nargc, char *const *nargv,
-			   const char *options, const struct option *long_options, int *idx,
-			   int flags)
+static int getopt_internal(struct sys_getopt_state *state, int nargc, char *const *nargv,
+			   const char *options, const struct sys_getopt_option *long_options,
+			   int *idx, int flags)
 {
 	char *oli; /* option letter list index */
 	int optchar, short_too;
@@ -461,7 +464,7 @@ start:
 	 * Check long options if:
 	 *  1) we were passed some
 	 *  2) the arg is not just "-"
-	 *  3) either the arg starts with -- we are getopt_long_only()
+	 *  3) either the arg starts with -- we are sys_getopt_long_only()
 	 */
 	if (long_options != NULL && state->place != nargv[state->optind] &&
 	    (*(state->place) == '-' || (flags & FLAG_LONGONLY))) {
@@ -563,14 +566,14 @@ start:
  * getopt_long --
  *	Parse argc/argv argument vector.
  */
-int getopt_long(int nargc, char *const *nargv, const char *options,
-		const struct option *long_options, int *idx)
+int sys_getopt_long(int nargc, char *const *nargv, const char *options,
+		    const struct sys_getopt_option *long_options, int *idx)
 {
-	struct getopt_state *state;
+	struct sys_getopt_state *state;
 	int ret;
 
 	/* Get state of the current thread */
-	state = getopt_state_get();
+	state = sys_getopt_state_get();
 
 	ret = getopt_internal(state, nargc, nargv, options, long_options, idx, FLAG_PERMUTE);
 
@@ -583,14 +586,14 @@ int getopt_long(int nargc, char *const *nargv, const char *options,
  * getopt_long_only --
  *	Parse argc/argv argument vector.
  */
-int getopt_long_only(int nargc, char *const *nargv, const char *options,
-		     const struct option *long_options, int *idx)
+int sys_getopt_long_only(int nargc, char *const *nargv, const char *options,
+			 const struct sys_getopt_option *long_options, int *idx)
 {
-	struct getopt_state *state;
+	struct sys_getopt_state *state;
 	int ret;
 
 	/* Get state of the current thread */
-	state = getopt_state_get();
+	state = sys_getopt_state_get();
 
 	ret = getopt_internal(state, nargc, nargv, options, long_options, idx,
 			      FLAG_PERMUTE | FLAG_LONGONLY);

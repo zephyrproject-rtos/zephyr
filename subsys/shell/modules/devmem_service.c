@@ -10,19 +10,11 @@
 #define _POSIX_C_SOURCE 200809L
 
 #include <stdlib.h>
-#ifdef CONFIG_NATIVE_LIBC
-#include <unistd.h>
-#else
-#include <zephyr/posix/unistd.h>
-#endif
+#include <zephyr/sys/sys_getopt.h>
 #include <zephyr/device.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
-
-#ifndef CONFIG_NATIVE_LIBC
-extern void getopt_init(void);
-#endif
 
 static inline bool is_ascii(uint8_t data)
 {
@@ -122,30 +114,29 @@ static int cmd_dump(const struct shell *sh, size_t argc, char **argv)
 	size_t width = 32;
 	mem_addr_t addr = -1;
 
-	optind = 1;
-#ifndef CONFIG_NATIVE_LIBC
-	getopt_init();
-#endif
-	while ((rv = getopt(argc, argv, "a:s:w:")) != -1) {
+	sys_getopt_optind = 1;
+	sys_getopt_init();
+
+	while ((rv = sys_getopt(argc, argv, "a:s:w:")) != -1) {
 		switch (rv) {
 		case 'a':
-			addr = (mem_addr_t)shell_strtoul(optarg, 16, &err);
+			addr = (mem_addr_t)shell_strtoul(sys_getopt_optarg, 16, &err);
 			if (err != 0) {
-				shell_error(sh, "invalid addr '%s'", optarg);
+				shell_error(sh, "invalid addr '%s'", sys_getopt_optarg);
 				return -EINVAL;
 			}
 			break;
 		case 's':
-			size = (size_t)shell_strtoul(optarg, 0, &err);
+			size = (size_t)shell_strtoul(sys_getopt_optarg, 0, &err);
 			if (err != 0) {
-				shell_error(sh, "invalid size '%s'", optarg);
+				shell_error(sh, "invalid size '%s'", sys_getopt_optarg);
 				return -EINVAL;
 			}
 			break;
 		case 'w':
-			width = (size_t)shell_strtoul(optarg, 0, &err);
+			width = (size_t)shell_strtoul(sys_getopt_optarg, 0, &err);
 			if (err != 0) {
-				shell_error(sh, "invalid width '%s'", optarg);
+				shell_error(sh, "invalid width '%s'", sys_getopt_optarg);
 				return -EINVAL;
 			}
 			break;

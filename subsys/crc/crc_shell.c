@@ -81,7 +81,7 @@ static int cmd_crc(const struct shell *sh, size_t argc, char **argv)
 
 	optind = 1;
 
-	while ((rv = getopt(argc, argv, "fhlp:rs:t:")) != -1) {
+	while ((rv = sys_getopt(argc, argv, "fhlp:rs:t:")) != -1) {
 		switch (rv) {
 		case 'f':
 			first = true;

@@ -30,26 +30,21 @@
  */
 
 #include <string.h>
-#ifdef CONFIG_NATIVE_LIBC
-#include <unistd.h>
-#else
-#include <zephyr/posix/unistd.h>
-#endif
-#include "getopt.h"
+#include <zephyr/sys/sys_getopt.h>
 #include "getopt_common.h"
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(getopt);
+LOG_MODULE_REGISTER(sys_getopt);
 
 #define BADCH  ((int)'?')
 #define BADARG ((int)':')
 #define EMSG   ""
 
-void getopt_init(void)
+void sys_getopt_init(void)
 {
-	struct getopt_state *state;
+	struct sys_getopt_state *state;
 
-	state = getopt_state_get();
+	state = sys_getopt_state_get();
 
 	state->opterr = 1;
 	state->optind = 1;
@@ -64,24 +59,24 @@ void getopt_init(void)
 	state->nonopt_end = -1;   /* first option after non options (for permute) */
 #endif
 
-	opterr = 1;
-	optind = 1;
-	optopt = 0;
-	optreset = 0;
-	optarg = NULL;
+	sys_getopt_opterr = 1;
+	sys_getopt_optind = 1;
+	sys_getopt_optopt = 0;
+	sys_getopt_optreset = 0;
+	sys_getopt_optarg = NULL;
 }
 
 /*
  * getopt --
  *	Parse argc/argv argument vector.
  */
-int getopt(int nargc, char *const nargv[], const char *ostr)
+int sys_getopt(int nargc, char *const nargv[], const char *ostr)
 {
-	struct getopt_state *state;
+	struct sys_getopt_state *state;
 	char *oli; /* option letter list index */
 
 	/* get getopt state of the current thread */
-	state = getopt_state_get();
+	state = sys_getopt_state_get();
 
 	if (state->optreset || *state->place == 0) { /* update scanning pointer */
 		state->optreset = 0;

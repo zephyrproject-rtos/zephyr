@@ -14,7 +14,7 @@ extern "C" {
 /* This function is not thread safe. All threads using getopt are calling
  * this function.
  */
-void z_getopt_global_state_update(struct getopt_state *state);
+void z_getopt_global_state_update(struct sys_getopt_state *state);
 
 #ifdef __cplusplus
 }

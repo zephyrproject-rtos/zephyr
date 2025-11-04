@@ -29,7 +29,7 @@ config DATE_SHELL
 config DEVMEM_SHELL
 	bool "Devmem shell"
 	default y if !SHELL_MINIMAL
-	select POSIX_C_LIB_EXT
+	select GETOPT
 	help
 	  This shell command provides read/write access to physical memory.
 

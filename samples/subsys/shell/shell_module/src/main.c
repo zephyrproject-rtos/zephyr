@@ -109,14 +109,14 @@ static int cmd_demo_board(const struct shell *sh, size_t argc, char **argv)
 static int cmd_demo_getopt_ts(const struct shell *sh, size_t argc,
 			      char **argv)
 {
-	struct getopt_state *state;
+	struct sys_getopt_state *state;
 	char *cvalue = NULL;
 	int aflag = 0;
 	int bflag = 0;
 	int c;
 
-	while ((c = getopt(argc, argv, "abhc:")) != -1) {
-		state = getopt_state_get();
+	while ((c = sys_getopt(argc, argv, "abhc:")) != -1) {
+		state = sys_getopt_state_get();
 		switch (c) {
 		case 'a':
 			aflag = 1;
@@ -166,7 +166,7 @@ static int cmd_demo_getopt(const struct shell *sh, size_t argc,
 	int bflag = 0;
 	int c;
 
-	while ((c = getopt(argc, argv, "abhc:")) != -1) {
+	while ((c = sys_getopt(argc, argv, "abhc:")) != -1) {
 		switch (c) {
 		case 'a':
 			aflag = 1;

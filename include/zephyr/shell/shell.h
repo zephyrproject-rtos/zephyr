@@ -20,7 +20,7 @@
 #include <zephyr/toolchain.h>
 
 #if defined CONFIG_SHELL_GETOPT
-#include <getopt.h>
+#include <zephyr/sys/sys_getopt.h>
 #endif
 
 #ifdef __cplusplus
@@ -995,7 +995,7 @@ struct shell_ctx {
 
 #if defined CONFIG_SHELL_GETOPT
 	/*!< getopt context for a shell backend. */
-	struct getopt_state getopt;
+	struct sys_getopt_state getopt;
 #endif
 
 	uint16_t cmd_buff_len; /*!< Command length.*/

@@ -9,21 +9,21 @@
 #include <zephyr/sys/iterable_sections.h>
 #endif
 
-#include "getopt.h"
+#include <zephyr/sys/sys_getopt.h>
 
 /* Referring  below variables is not thread safe. They reflects getopt state
  * only when 1 thread is using getopt.
  * When more threads are using getopt please call getopt_state_get to know
  * getopt state for the current thread.
  */
-int opterr = 1; /* if error message should be printed */
-int optind = 1; /* index into parent argv vector */
-int optopt;     /* character checked for validity */
-int optreset;   /* reset getopt */
-char *optarg;   /* argument associated with option */
+int sys_getopt_opterr = 1; /* if error message should be printed */
+int sys_getopt_optind = 1; /* index into parent argv vector */
+int sys_getopt_optopt;     /* character checked for validity */
+int sys_getopt_optreset;   /* reset getopt */
+char *sys_getopt_optarg;   /* argument associated with option */
 
 /* Common state for all threads that did not have own getopt state. */
-static struct getopt_state m_getopt_common_state = {
+static struct sys_getopt_state m_getopt_common_state = {
 	.opterr = 1,
 	.optind = 1,
 	.optopt = 0,
@@ -41,17 +41,17 @@ static struct getopt_state m_getopt_common_state = {
 /* This function is not thread safe. All threads using getopt are calling
  * this function.
  */
-void z_getopt_global_state_update(struct getopt_state *state)
+void z_getopt_global_state_update(struct sys_getopt_state *state)
 {
-	opterr = state->opterr;
-	optind = state->optind;
-	optopt = state->optopt;
-	optreset = state->optreset;
-	optarg = state->optarg;
+	sys_getopt_opterr = state->opterr;
+	sys_getopt_optind = state->optind;
+	sys_getopt_optopt = state->optopt;
+	sys_getopt_optreset = state->optreset;
+	sys_getopt_optarg = state->optarg;
 }
 
 /* It is internal getopt API function, it shall not be called by the user. */
-struct getopt_state *getopt_state_get(void)
+struct sys_getopt_state *sys_getopt_state_get(void)
 {
 #if CONFIG_SHELL_GETOPT
 	k_tid_t tid;
