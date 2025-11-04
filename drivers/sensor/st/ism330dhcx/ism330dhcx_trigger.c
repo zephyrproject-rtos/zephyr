@@ -286,7 +286,6 @@ static void ism330dhcx_handle_fifo_interrupt(struct ism330dhcx_data *ism330dhcx,
 			buffer[i*3 + 1] = y_raw;
 			buffer[i*3 + 2] = z_raw;
 		}
-		
 		ism330dhcx->handler_fifo_wtm(dev, ism330dhcx->trig_fifo_wtm, buffer, num_samples_in_fifo*3);
 	}
 }

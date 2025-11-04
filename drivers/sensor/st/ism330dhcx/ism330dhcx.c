@@ -260,19 +260,16 @@ static int ism330dhcx_gyro_config(const struct device *dev,
 	return 0;
 }
 
-/* Set FIFO watermark and operating mode */
 static int ism330dhcx_fifo_wtm_set(const struct device *dev, uint16_t val)
 {
     struct ism330dhcx_data *data = dev->data;
 	stmdev_ctx_t *ctx = data->ctx;
 
-    /* 1) Set the FIFO watermark level (writes to FIFO_CTRL1 and FIFO_CTRL2) */
     if (ism330dhcx_fifo_watermark_set(ctx, val) < 0) {
-        LOG_ERR("Failed to set FIFO watermark to %u", val);
+    	LOG_ERR("Failed to set FIFO watermark to %u", val);
         return -EIO;
     }
 
-	/* 2. Set the FIFO operating mode (writes to FIFO_CTRL4) */
     if (val > 0) {
         if (ism330dhcx_fifo_mode_set(ctx, ISM330DHCX_STREAM_MODE) < 0) {
             LOG_ERR("Failed to set FIFO STREAM mode");
@@ -282,7 +279,7 @@ static int ism330dhcx_fifo_wtm_set(const struct device *dev, uint16_t val)
     } else {
         if (ism330dhcx_fifo_mode_set(ctx, ISM330DHCX_BYPASS_MODE) < 0) {
             LOG_ERR("Failed to set FIFO BYPASS mode");
-            return -EIO;
+        	return -EIO;
         }
         LOG_DBG("FIFO disabled (Bypass mode)");
     }
