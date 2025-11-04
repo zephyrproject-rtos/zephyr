@@ -19,3 +19,4 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 			      uint32_t *cis_offset_max,
 			      uint16_t *conn_event_count,
 			      uint8_t  *access_addr);
+bool ull_central_iso_all_cises_terminated(struct ll_conn_iso_group *cig);

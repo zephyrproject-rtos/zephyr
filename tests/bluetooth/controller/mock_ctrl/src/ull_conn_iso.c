@@ -90,3 +90,18 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 {
 
 }
+
+uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
+{
+	return 0;
+}
+
+void ll_conn_iso_stream_release(struct ll_conn_iso_stream *cis)
+{
+
+}
+
+void ll_conn_iso_group_release(struct ll_conn_iso_group *cig)
+{
+
+}
