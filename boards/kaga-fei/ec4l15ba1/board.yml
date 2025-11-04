@@ -1,0 +1,48 @@
+board:
+  name: ec4l15ba1
+  full_name: EC4L15BA1-EVB
+  vendor: kaga-fei
+  socs:
+  - name: nrf54l15
+    variants:
+    - name: xip
+      cpucluster: cpuflpr
+    - name: ns
+      cpucluster: cpuapp
+runners:
+  run_once:
+    '--recover':
+      - runners:
+          - nrfjprog
+          - nrfutil
+        run: first
+        groups:
+          - boards:
+              - ec4l15ba1/nrf54l15/cpuapp
+              - ec4l15ba1/nrf54l15/cpuapp/ns
+              - ec4l15ba1/nrf54l15/cpuflpr
+              - ec4l15ba1/nrf54l15/cpuflpr/xip
+    '--erase':
+      - runners:
+          - nrfjprog
+          - jlink
+          - nrfutil
+        run: first
+        groups:
+          - boards:
+              - ec4l15ba1/nrf54l15/cpuapp
+              - ec4l15ba1/nrf54l15/cpuapp/ns
+              - ec4l15ba1/nrf54l15/cpuflpr
+              - ec4l15ba1/nrf54l15/cpuflpr/xip
+    '--reset':
+      - runners:
+          - nrfjprog
+          - jlink
+          - nrfutil
+        run: last
+        groups:
+          - boards:
+              - ec4l15ba1/nrf54l15/cpuapp
+              - ec4l15ba1/nrf54l15/cpuapp/ns
+              - ec4l15ba1/nrf54l15/cpuflpr
+              - ec4l15ba1/nrf54l15/cpuflpr/xip
