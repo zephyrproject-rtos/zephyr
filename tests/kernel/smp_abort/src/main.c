@@ -39,6 +39,15 @@ static void isr(const void *args)
 	}
 
 	k_thread_abort(var->target);    /* Abort thread on another CPU */
+
+	/*
+	 * Give other CPUs time to also call k_thread_abort() to establish
+	 * the circular dependency that this test is designed to exercise.
+	 * On platforms with large emulator/simulator quantum sizes, without
+	 * this delay one thread may complete its ISR and return before
+	 * another thread even calls k_thread_abort() on it.
+	 */
+	k_busy_wait(100);
 }
 
 static void thread_entry(void *p1, void *p2, void *p3)
