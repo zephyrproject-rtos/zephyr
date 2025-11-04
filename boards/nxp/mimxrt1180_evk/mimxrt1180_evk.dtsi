@@ -95,6 +95,10 @@
 	status = "okay";
 };
 
+&netc_ptp_clock0 {
+	status = "okay";
+};
+
 &switch {
 	status = "okay";
 };
