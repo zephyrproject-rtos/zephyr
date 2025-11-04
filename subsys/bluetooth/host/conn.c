@@ -4019,7 +4019,7 @@ int bt_conn_le_conn_update(struct bt_conn *conn,
 	conn_update->conn_latency = sys_cpu_to_le16(param->latency);
 	conn_update->supervision_timeout = sys_cpu_to_le16(param->timeout);
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CONN_UPDATE, buf, NULL);
+	return bt_hci_cmd_send(BT_HCI_OP_LE_CONN_UPDATE, buf);
 }
 
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
