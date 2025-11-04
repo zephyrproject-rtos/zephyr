@@ -128,6 +128,7 @@ def process_pr(gh, maintainer_file, number):
     # areas where assignment happens if only said areas are affected
     meta_areas = ['Release Notes', 'Documentation', 'Samples', 'Tests']
 
+    collab_per_path = []
     for changed_file in fn:
         num_files += 1
         log(f"file: {changed_file.filename}")
@@ -139,11 +140,14 @@ def process_pr(gh, maintainer_file, number):
                 continue
             parsed_areas = process_manifest(old_manifest_file=args.updated_manifest)
             for _area in parsed_areas:
+                collab_per_path.extend(_area.get_collaborators_for_path(changed_file.filename))
                 area_match = maintainer_file.name2areas(_area)
                 if area_match:
                     areas.extend(area_match)
         else:
             areas = maintainer_file.path2areas(changed_file.filename)
+            for _area in areas:
+                collab_per_path.extend(_area.get_collaborators_for_path(changed_file.filename))
 
         log(f"areas for {changed_file}: {areas}")
 
@@ -173,6 +177,9 @@ def process_pr(gh, maintainer_file, number):
             if 'Platform' in area.name:
                 is_instance = True
 
+            for _area in sorted_areas:
+                collab_per_path.extend(_area.get_collaborators_for_path(changed_file.filename))
+
     area_counter = dict(sorted(area_counter.items(), key=lambda item: item[1], reverse=True))
     log(f"Area matches: {area_counter}")
     log(f"labels: {labels}")
@@ -182,6 +189,8 @@ def process_pr(gh, maintainer_file, number):
     for area in area_counter:
         collab += maintainer_file.areas[area.name].maintainers
         collab += maintainer_file.areas[area.name].collaborators
+        collab += collab_per_path
+
     collab = list(dict.fromkeys(collab))
     log(f"collab: {collab}")
 
