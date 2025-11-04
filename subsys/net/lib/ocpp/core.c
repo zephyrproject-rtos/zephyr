@@ -47,7 +47,7 @@ static struct {
 	FILL_METER_TABLE(OCPP_OMM_FAN_SPEED,
 			 "RPM", "rpm"),
 	FILL_METER_TABLE(OCPP_OMM_CHARGING_PERCENT,
-			 "SoCState", "Percent"),
+			 "SoC", "Percent"),
 	FILL_METER_TABLE(OCPP_OMM_TEMPERATURE,
 			 "Temperature", "Celsius"),
 	FILL_METER_TABLE(OCPP_OMM_VOLTAGE_AC_RMS,
