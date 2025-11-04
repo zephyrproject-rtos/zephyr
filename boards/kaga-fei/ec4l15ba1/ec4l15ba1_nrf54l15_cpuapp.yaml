@@ -1,0 +1,25 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# Copyright (c) 2025 KAGA FEI Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: ec4l15ba1/nrf54l15/cpuapp
+name: EC4L15BA1-nRF54l15-Application
+arch: arm
+toolchain:
+  - gnuarmemb
+  - zephyr
+sysbuild: true
+ram: 188
+flash: 1428
+supported:
+  - adc
+  - counter
+  - dmic
+  - gpio
+  - i2c
+  - pwm
+  - retained_mem
+  - spi
+  - watchdog
+  - i2s
+

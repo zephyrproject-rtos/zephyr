@@ -1,0 +1,11 @@
+board:
+  name: ec4l15ba1
+  full_name: EC4L15BA1-EVB
+  vendor: kaga-fei
+  socs:
+  - name: nrf54l15
+    variants:
+    - name: xip
+      cpucluster: cpuflpr
+    - name: ns
+      cpucluster: cpuapp
