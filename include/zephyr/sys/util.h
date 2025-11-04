@@ -1027,6 +1027,17 @@ static inline size_t sys_count_bits(const void *value, size_t len)
 	return cnt;
 }
 
+/**
+ * @brief Returns the sign of a number.
+ *
+ * @param x The input value to determine the sign
+ *
+ * @retval 1 if x is positive
+ * @retval -1 if x is negative
+ * @retval 0 if x is zero
+ */
+#define SIGN(x) (((x) > 0) - ((x) < 0))
+
 #ifdef __cplusplus
 }
 #endif
