@@ -64,6 +64,26 @@ config SOC_MSPM0G3519
 	bool
 	select SOC_SERIES_MSPM0G
 
+config SOC_MSPM0G5115
+	bool
+	select SOC_SERIES_MSPM0G
+	select HAS_MSP_UNICOMM
+
+config SOC_MSPM0G5116
+	bool
+	select SOC_SERIES_MSPM0G
+	select HAS_MSP_UNICOMM
+
+config SOC_MSPM0G5117
+	bool
+	select SOC_SERIES_MSPM0G
+	select HAS_MSP_UNICOMM
+
+config SOC_MSPM0G5187
+	bool
+	select SOC_SERIES_MSPM0G
+	select HAS_MSP_UNICOMM
+
 config SOC_SERIES
 	default "mspm0g" if SOC_SERIES_MSPM0G
 
@@ -82,3 +102,7 @@ config SOC
 	default "mspm0g3506" if SOC_MSPM0G3506
 	default "mspm0g3507" if SOC_MSPM0G3507
 	default "mspm0g3519" if SOC_MSPM0G3519
+	default "mspm0g5115" if SOC_MSPM0G5115
+	default "mspm0g5116" if SOC_MSPM0G5116
+	default "mspm0g5117" if SOC_MSPM0G5117
+	default "mspm0g5187" if SOC_MSPM0G5187
