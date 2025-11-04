@@ -15,7 +15,7 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/printk.h>
 
-#include <getopt.h>
+#include <zephyr/sys/sys_getopt.h>
 
 struct regulators_map {
 	const char *name;
@@ -303,12 +303,12 @@ static int cmd_gpio_configure(const struct shell *sh, size_t argc, char **argv)
 	gpio_pin_t pin = 0U;
 	gpio_flags_t flags = 0U;
 
-	static const struct option long_options[] = {
-		{"pin", required_argument, NULL, 'p'},
-		{"direction", required_argument, NULL, 'd'},
-		{"high-drive", no_argument, &high_drive, 1},
-		{"pull-down", no_argument, &pull_down, 1},
-		{"cmos", no_argument, &cmos, 1},
+	static const struct sys_getopt_option long_options[] = {
+		{"pin", sys_getopt_required_argument, NULL, 'p'},
+		{"direction", sys_getopt_required_argument, NULL, 'd'},
+		{"high-drive", sys_getopt_no_argument, &high_drive, 1},
+		{"pull-down", sys_getopt_no_argument, &pull_down, 1},
+		{"cmos", sys_getopt_no_argument, &cmos, 1},
 		{NULL, 0, NULL, 0},
 	};
 
@@ -316,8 +316,8 @@ static int cmd_gpio_configure(const struct shell *sh, size_t argc, char **argv)
 	pull_down = 0;
 	cmos = 0;
 
-	while ((opt = getopt_long(argc, argv, "p:d:", long_options,
-				  &long_index)) != -1) {
+	while ((opt = sys_getopt_long(argc, argv, "p:d:", long_options,
+				      &long_index)) != -1) {
 		switch (opt) {
 		case 0:
 			/* options setting a flag, do nothing */
