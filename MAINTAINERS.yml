@@ -60,6 +60,28 @@
 #         Like 'files-regex', but any matching files will be excluded from the
 #         area.
 #
+#     file-groups:
+#         A list of groups of files that are treated as a single unit.
+#         This is useful for areas where different collaborators are responsible for
+#         different parts of the area.
+#         Each group should have the following structure:
+#         - name: <group name>
+#           collaborators:
+#             - <GitHub handle>
+#             - <GitHub handle>
+#           files:
+#             - <file path>
+#             - <file path>
+#           files-regex:
+#             - <regex pattern>
+#             - <regex pattern>
+#           files-exclude:
+#             - <file path>
+#             - <file path>
+#           files-regex-exclude:
+#             - <regex pattern>
+#             - <regex pattern>
+#
 #     description: >-
 #         Plain-English description. Describe what the system is about, from an
 #         outsider's perspective.
