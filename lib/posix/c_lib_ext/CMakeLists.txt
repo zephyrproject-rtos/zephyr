@@ -10,4 +10,5 @@ zephyr_library()
 zephyr_library_sources(
   fnmatch.c
   getentropy.c
+  getopt_shim.c
 )

@@ -38,6 +38,12 @@ static struct sys_getopt_state m_getopt_common_state = {
 #endif
 };
 
+/* Shim function to update global variables in getopt_shim.c if user wants to
+ * still use the original non-posix compliant getopt. The shim will be deprecated
+ * and eventually removed in the future.
+ */
+extern void z_getopt_global_state_update_shim(struct sys_getopt_state *state);
+
 /* This function is not thread safe. All threads using getopt are calling
  * this function.
  */
@@ -48,6 +54,10 @@ void z_getopt_global_state_update(struct sys_getopt_state *state)
 	sys_getopt_optopt = state->optopt;
 	sys_getopt_optreset = state->optreset;
 	sys_getopt_optarg = state->optarg;
+
+	if (!IS_ENABLED(CONFIG_NATIVE_LIBC) && IS_ENABLED(CONFIG_POSIX_C_LIB_EXT)) {
+		z_getopt_global_state_update_shim(state);
+	}
 }
 
 /* It is internal getopt API function, it shall not be called by the user. */
