@@ -356,11 +356,77 @@ New APIs and options
 
     * :c:struct:`coap_client_response_data`
     * :c:member:`coap_client_request.payload_cb`
+    * :kconfig:option:`CONFIG_COAP_CLIENT_MAX_PATH_LENGTH`
+    * :kconfig:option:`CONFIG_COAP_CLIENT_MAX_EXTRA_OPTIONS`
+
+  * Connection manager
+
+    * :c:macro:`NET_EVENT_CONN_IF_IDLE_TIMEOUT`
+    * :c:func:`conn_mgr_if_set_idle_timeout`
+    * :c:func:`conn_mgr_if_get_idle_timeout`
+    * :c:func:`conn_mgr_if_used`
+
+  * DNS
+
+    * :c:enumerator:`DNS_QUERY_TYPE_CNAME`
+    * :c:enumerator:`DNS_QUERY_TYPE_TXT`
+    * :c:enumerator:`DNS_QUERY_TYPE_SRV`
+    * :c:func:`dns_resolve_enable_packet_forwarding`
+    * :c:func:`dns_resolve_remove_server_addresses`
+
+  * HTTP
+
+    * :kconfig:option:`CONFIG_HTTP_SERVER_STATIC_FS_RESPONSE_SIZE`
+    * :c:struct:`http_service_config`
+
+  * IPv6
+
+    * :kconfig:option:`CONFIG_NET_IPV6_NS_TIMEOUT`
+    * :c:func:`net_ipv6_get_addr_mcast_scope`
+
+  * LwM2M
+
+    * :c:type:`lwm2m_cache_filter_cb_t`
+    * :c:func:`lwm2m_set_cache_filter`
+
+  * MQTT-SN
+
+    * :c:func:`mqtt_sn_predefine_topic`
+    * :c:func:`mqtt_sn_update_will_topic`
+    * :c:func:`mqtt_sn_update_will_message`
+    * :c:func:`mqtt_sn_define_short_topic`
+
+  * Misc
+
+    * :kconfig:option:`CONFIG_NET_LATMON`
+    * :kconfig:option:`CONFIG_NETMIDI2_HOST`
+    * :kconfig:option:`CONFIG_OCPP`
+    * :c:member:`npf_rule.priority`
+    * :c:macro:`NPF_PRIORITY`
+    * :kconfig:option:`CONFIG_NET_CONFIG_CLOCK_SNTP_SET_RTC`
+    * :c:func:`ppp_peer_async_control_character_map`
+
+  * OpenThread
+
+    * :kconfig:option:`CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER`
+    * :kconfig:option:`CONFIG_OPENTHREAD_BORDER_ROUTING_DHCP6_PD_CLIENT`
+    * :kconfig:option:`CONFIG_OPENTHREAD_CHANNEL_MONITOR_AUTO_START`
+    * :kconfig:option:`CONFIG_OPENTHREAD_MAC_BEACON_PAYLOAD_PARSING`
+    * :kconfig:option:`CONFIG_OPENTHREAD_MULTIPLE_INSTANCE_NUM`
+    * :kconfig:option:`CONFIG_OPENTHREAD_PLATFORM_RADIO_COEX_ENABLE`
+    * :kconfig:option:`CONFIG_OPENTHREAD_PLATFORM_USEC_TIMER`
+    * :kconfig:option:`CONFIG_OPENTHREAD_RCP_RESTORATION_MAX_COUNT`
+    * :kconfig:option:`CONFIG_OPENTHREAD_SRP_SERVER_FAST_START`
+    * :kconfig:option:`CONFIG_OPENTHREAD_TREL_MANAGE_DNSSD`
 
   * Sockets
 
     * :c:func:`zsock_listen` now implements the ``backlog`` parameter support. The TCP server
       socket will limit the number of pending incoming connections to that value.
+    * :c:macro:`IP_RECVTTL`
+    * :c:macro:`IPV6_PKTINFO`
+    * :c:macro:`IPV6_RECVHOPLIMIT`
+    * :c:macro:`IPV6_HOPLIMIT`
 
 * Newlib
 
