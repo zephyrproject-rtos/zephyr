@@ -1,0 +1,10 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&sci0 {
+	interrupts = <95 1>, <94 1>, <93 1>, <92 1>, <91 1>, <90 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri", "aed", "bfd";
+};
