@@ -87,6 +87,10 @@ The following CVEs are addressed by this release:
 * :cve:`2025-9557`: Under embargo until 2025-11-24
 * :cve:`2025-9558`: Under embargo until 2025-11-24
 * :cve:`2025-12035`: Under embargo until 2025-12-13
+* :cve:`2025-59438` `Padding oracle through timing of cipher error reporting
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-10-invalid-padding-error/>`_
+* :cve:`2025-54764` `Side channel in RSA key generation and operations (SSBleed, M-Step)
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-10-ssbleed-mstep/>`_
 
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
@@ -1242,6 +1246,11 @@ Libraries / Subsystems
     case while :kconfig:option:`CONFIG_PSA_CRYPTO_PROVIDER_MBEDTLS` is set in the latter.
     :kconfig:option:`CONFIG_PSA_CRYPTO_PROVIDER_CUSTOM` is also added to allow end users to
     provide a custom solution.
+
+  * Updated from version 3.6.4 to version 3.6.5. Release notes for this release can be found at the
+    following link:
+
+    * https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.5
 
 * Secure storage
 
