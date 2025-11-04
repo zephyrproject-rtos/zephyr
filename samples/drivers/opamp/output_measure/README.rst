@@ -49,8 +49,8 @@ The following output is printed:
 .. code-block:: console
 
    *** Booting Zephyr OS build v4.2.0-2155-gb21dd897e034 ***
-   OPAMP output is: 1513(mv)
-   OPAMP output is: 907(mv)
-   OPAMP output is: 613(mv)
+   OPAMP output (@gain: 4) is: 1513(mv)
+   OPAMP output (@gain: 2) is: 907(mv)
+   OPAMP output (@gain: 1) is: 613(mv)
 
 .. note:: The values shown above might differ.
