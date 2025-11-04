@@ -26,7 +26,7 @@ static int cmd_kernel_uptime(const struct shell *sh, size_t argc, char **argv)
 		return 0;
 	}
 
-	/* No need to enable the getopt and getopt_long for just one option. */
+	/* No need to enable the sys_getopt and sys_getopt_long for just one option. */
 	if (strcmp("-p", argv[1]) && strcmp("--pretty", argv[1]) != 0) {
 		shell_error(sh, "Unsupported option: %s", argv[1]);
 		return -EIO;
