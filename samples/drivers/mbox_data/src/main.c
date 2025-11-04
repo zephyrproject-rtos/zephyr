@@ -36,7 +36,7 @@ int main(void)
 	const int max_transfer_size_bytes = mbox_mtu_get_dt(&tx_channel);
 	/* Sample currently supports only transfer size up to 4 bytes */
 	if ((max_transfer_size_bytes < 0) || (max_transfer_size_bytes > 4)) {
-		printk("mbox_mtu_get() error\n");
+		printk("mbox_mtu_get(%d) error\n", max_transfer_size_bytes);
 		return 0;
 	}
 
