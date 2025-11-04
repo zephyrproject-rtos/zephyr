@@ -633,7 +633,7 @@ static void spi_stm32_iodev_msg_start(const struct device *dev, struct spi_confi
 				      const uint8_t *tx_buf, uint8_t *rx_buf, uint32_t buf_len)
 {
 	struct spi_stm32_data *data = dev->data;
-	uint32_t size = buf_len / (SPI_WORD_SIZE_GET(config->operation) / BITS_PER_BYTE);
+	uint32_t size = buf_len / bits2bytes(config->operation);
 
 	const struct spi_buf current_tx = {.buf = NULL, .len = size};
 	const struct spi_buf current_rx = {.buf = NULL, .len = size};
@@ -659,6 +659,10 @@ static void spi_stm32_iodev_msg_start(const struct device *dev, struct spi_confi
 	SPI_TypeDef *spi = cfg->spi;
 
 	if (cfg->fifo_enabled && SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
+		if (LL_SPI_IsEnabled(spi)) {
+			/* SPI needs to be disabled to set the transfer size */
+			ll_func_disable_spi(spi);
+		}
 		LL_SPI_SetTransferSize(spi, size);
 	}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
@@ -758,6 +762,12 @@ static void spi_stm32_complete(const struct device *dev, int status)
 
 #ifdef CONFIG_SPI_RTIO
 	if (data->rtio_ctx->txn_head != NULL) {
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+		if (cfg->fifo_enabled) {
+			LL_SPI_ClearFlag_TXTF(spi);
+			LL_SPI_ClearFlag_OVR(spi);
+		}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 		spi_stm32_iodev_complete(dev, status);
 		return;
 	}
