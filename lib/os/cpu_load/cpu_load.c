@@ -14,7 +14,7 @@ static uint64_t total_cycles_prev[CONFIG_MP_MAX_NUM_CPUS];
 
 static struct k_spinlock lock[CONFIG_MP_MAX_NUM_CPUS];
 
-int cpu_load_get(int cpu_id)
+int cpu_load_metric_get(int cpu_id)
 {
 	int ret;
 	int load;
