@@ -496,15 +496,15 @@ class DevicetreeLintingCheck(ComplianceTest):
     """
     name = "DevicetreeLinting"
     doc = "See https://docs.zephyrproject.org/latest/contribute/style/devicetree.html for more details."
-    NPX_EXECUTABLE = "npx"
+    path_to_npx = shutil.which("npx")
 
     def ensure_npx(self) -> bool:
-        if not shutil.which(self.NPX_EXECUTABLE):
+        if not self.path_to_npx:
             return False
         try:
             # --no prevents npx from fetching from registry
             subprocess.run(
-                [self.NPX_EXECUTABLE, "--prefix", "./scripts/ci", "--no", 'dts-linter', "--", "--version"],
+                [self.path_to_npx, "--prefix", "./scripts/ci", "--no", 'dts-linter', "--", "--version"],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
                 check=True,
@@ -560,7 +560,7 @@ class DevicetreeLintingCheck(ComplianceTest):
             temp_patch_files.append(temp_patch)
 
             cmd = [
-                "npx", "--prefix", "./scripts/ci", "--no",
+                self.path_to_npx, "--prefix", "./scripts/ci", "--no",
                 "dts-linter", "--", "--outputFormat",
                 "json", "--format",
                 "--patchFile", temp_patch,
