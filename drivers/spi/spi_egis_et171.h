@@ -10,6 +10,7 @@ LOG_MODULE_REGISTER(spi_egis_et171);
 
 #include "spi_context.h"
 #include <zephyr/device.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/spi.h>
 
 #ifdef CONFIG_EGIS_SPI_DMA_MODE
