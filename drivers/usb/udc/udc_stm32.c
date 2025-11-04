@@ -158,8 +158,6 @@ struct udc_stm32_data  {
 	uint32_t occupied_mem;
 	/* wLength of SETUP packet for s-out-status */
 	uint32_t ep0_out_wlength;
-	int (*clk_enable)(void);
-	int (*clk_disable)(void);
 	struct k_thread thread_data;
 	struct k_msgq msgq_data;
 };
@@ -192,6 +190,9 @@ struct udc_stm32_msg {
 	uint8_t ep;
 	uint16_t rx_count;
 };
+
+static int udc_stm32_clock_enable(void);
+static int udc_stm32_clock_disable(void);
 
 static void udc_stm32_lock(const struct device *dev)
 {
@@ -696,7 +697,7 @@ int udc_stm32_init(const struct device *dev)
 	const struct udc_stm32_config *cfg = dev->config;
 	HAL_StatusTypeDef status;
 
-	if (priv->clk_enable != NULL && priv->clk_enable() != 0) {
+	if (udc_stm32_clock_enable() < 0) {
 		LOG_ERR("Error enabling clock(s)");
 		return -EIO;
 	}
@@ -928,7 +929,7 @@ static int udc_stm32_shutdown(const struct device *dev)
 		/* continue anyway */
 	}
 
-	if (priv->clk_disable != NULL && priv->clk_disable() != 0) {
+	if (udc_stm32_clock_disable() < 0) {
 		LOG_ERR("Error disabling clock(s)");
 		/* continue anyway */
 	}
@@ -1239,7 +1240,7 @@ static const struct udc_stm32_config udc0_cfg  = {
 
 static struct stm32_pclken pclken[] = STM32_DT_INST_CLOCKS(0);
 
-static int priv_clock_enable(void)
+static int udc_stm32_clock_enable(void)
 {
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
@@ -1449,7 +1450,7 @@ static int priv_clock_enable(void)
 	return 0;
 }
 
-static int priv_clock_disable(void)
+static int udc_stm32_clock_disable(void)
 {
 	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
@@ -1538,8 +1539,6 @@ static int udc_stm32_driver_init0(const struct device *dev)
 	}
 
 	priv->dev = dev;
-	priv->clk_enable = priv_clock_enable;
-	priv->clk_disable = priv_clock_disable;
 
 	k_msgq_init(&priv->msgq_data, udc_msgq_buf_0, sizeof(struct udc_stm32_msg),
 		    CONFIG_UDC_STM32_MAX_QMESSAGES);
