@@ -4960,6 +4960,11 @@ int bt_hfp_ag_audio_connect(struct bt_hfp_ag *ag, uint8_t id)
 		return -EINVAL;
 	}
 
+	if ((BT_HFP_AG_SUPPORTED_CODEC_IDS & BIT(id)) == 0) {
+		LOG_ERR("Unsupported Codec ID %u", id);
+		return -EINVAL;
+	}
+
 	hfp_ag_lock(ag);
 	if (ag->state != BT_HFP_CONNECTED) {
 		hfp_ag_unlock(ag);
