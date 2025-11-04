@@ -276,10 +276,7 @@ static struct stm32_digi_temp_data stm32_digi_temp_dev_data_##index;			\
 											\
 static const struct stm32_digi_temp_config stm32_digi_temp_dev_config_##index = {	\
 	.base = (DTS_TypeDef *)DT_INST_REG_ADDR(index),					\
-	.pclken = {									\
-		.enr = DT_INST_CLOCKS_CELL(index, bits),				\
-		.bus = DT_INST_CLOCKS_CELL(index, bus)					\
-	},										\
+	.pclken = STM32_DT_INST_CLOCK_INFO(index),					\
 	.irq_config = stm32_digi_temp_irq_config_func_##index,				\
 };											\
 											\

@@ -785,8 +785,7 @@ static volatile uint32_t dma_stm32_linked_list_buffer##index	\
 				 DT_NUM_IRQS(DT_DRV_INST(index)))] __nocache_noinit;	\
 									\
 const struct dma_stm32_config dma_stm32_config_##index = {		\
-	.pclken = { .bus = DT_INST_CLOCKS_CELL(index, bus),		\
-		    .enr = DT_INST_CLOCKS_CELL(index, bits) },		\
+	.pclken = STM32_DT_INST_CLOCK_INFO(index),			\
 	.config_irq = dma_stm32_config_irq_##index,			\
 	.base = DT_INST_REG_ADDR(index),				\
 	.max_streams = DT_INST_PROP_OR(index, dma_channels,		\

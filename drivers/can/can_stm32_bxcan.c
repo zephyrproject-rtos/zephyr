@@ -1149,10 +1149,7 @@ static const struct can_stm32_config can_stm32_cfg_##inst = {            \
 	.can = (CAN_TypeDef *)DT_INST_REG_ADDR(inst),                    \
 	.master_can = (CAN_TypeDef *)DT_INST_PROP_OR(inst,               \
 		master_can_reg, DT_INST_REG_ADDR(inst)),                 \
-	.pclken = {                                                      \
-		.enr = DT_INST_CLOCKS_CELL(inst, bits),                  \
-		.bus = DT_INST_CLOCKS_CELL(inst, bus),                   \
-	},                                                               \
+	.pclken = STM32_DT_INST_CLOCK_INFO(inst),			 \
 	.config_irq = config_can_##inst##_irq,                           \
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),	                 \
 };

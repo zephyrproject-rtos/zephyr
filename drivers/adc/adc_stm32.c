@@ -1963,18 +1963,13 @@ PINCTRL_DT_INST_DEFINE(index);						\
 static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
 	.base = (ADC_TypeDef *)DT_INST_REG_ADDR(index),			\
 	ADC_STM32_IRQ_FUNC(index)					\
-	.pclken = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(index, adcx, bus),			\
-		   .enr = DT_INST_CLOCKS_CELL_BY_NAME(index, adcx, bits)},			\
-	COND_CODE_1(DT_INST_CLOCKS_HAS_NAME(index, adc_ker),					\
-	(.pclken_ker = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(index, adc_ker, bus),		\
-			.enr = DT_INST_CLOCKS_CELL_BY_NAME(index, adc_ker, bits)},		\
-	 .has_pclken_ker = true,),								\
-	(.has_pclken_ker = false,))								\
-	COND_CODE_1(DT_INST_CLOCKS_HAS_NAME(index, adc_pre),					\
-	(.pclken_pre = {.bus = DT_INST_CLOCKS_CELL_BY_NAME(index, adc_pre, bus),		\
-			.enr = DT_INST_CLOCKS_CELL_BY_NAME(index, adc_pre, bits)},		\
-	 .has_pclken_pre = true,),								\
-	(.has_pclken_pre = false,))								\
+	.pclken = STM32_DT_INST_CLOCK_INFO_BY_NAME(index, adcx),	\
+	IF_ENABLED(DT_INST_CLOCKS_HAS_NAME(index, adc_ker),		\
+		   (.pclken_ker = STM32_DT_INST_CLOCK_INFO_BY_NAME(index, adc_ker),	\
+		    .has_pclken_ker = true,))				\
+	IF_ENABLED(DT_INST_CLOCKS_HAS_NAME(index, adc_pre),		\
+		   (.pclken_pre = STM32_DT_INST_CLOCK_INFO_BY_NAME(index, adc_pre),	\
+		    .has_pclken_pre = true,))				\
 	.clk_prescaler = ADC_STM32_DT_PRESC(index),			\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
 	.differential_channels_used = (ANY_CHILD_NODE_IS_DIFFERENTIAL(index) > 0), \

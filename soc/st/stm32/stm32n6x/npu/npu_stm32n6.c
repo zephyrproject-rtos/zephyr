@@ -68,14 +68,8 @@ static int npu_stm32_init(const struct device *dev)
 
 
 static const struct npu_stm32_cfg npu_stm32_cfg = {
-	.pclken_npu = {
-		.enr = DT_CLOCKS_CELL_BY_NAME(DT_NODELABEL(npu), npu, bits),
-		.bus = DT_CLOCKS_CELL_BY_NAME(DT_NODELABEL(npu), npu, bus),
-	},
-	.pclken_cacheaxi = {
-		.enr = DT_CLOCKS_CELL_BY_NAME(DT_NODELABEL(npu), cacheaxi, bits),
-		.bus = DT_CLOCKS_CELL_BY_NAME(DT_NODELABEL(npu), cacheaxi, bus),
-	},
+	.pclken_npu = STM32_CLOCK_INFO_BY_NAME(DT_NODELABEL(npu), npu),
+	.pclken_cacheaxi = STM32_CLOCK_INFO_BY_NAME(DT_NODELABEL(npu), cacheaxi),
 	.reset_npu = RESET_DT_SPEC_GET_BY_IDX(DT_NODELABEL(npu), 0),
 	.reset_cacheaxi = RESET_DT_SPEC_GET_BY_IDX(DT_NODELABEL(npu), 1),
 };

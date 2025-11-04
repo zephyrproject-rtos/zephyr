@@ -1818,10 +1818,7 @@ PINCTRL_DT_DEFINE(STM32_QSPI_NODE);
 
 static const struct flash_stm32_qspi_config flash_stm32_qspi_cfg = {
 	.regs = (QUADSPI_TypeDef *)DT_REG_ADDR(STM32_QSPI_NODE),
-	.pclken = {
-		.enr = DT_CLOCKS_CELL(STM32_QSPI_NODE, bits),
-		.bus = DT_CLOCKS_CELL(STM32_QSPI_NODE, bus)
-	},
+	.pclken = STM32_CLOCK_INFO(0, STM32_QSPI_NODE),
 	.irq_config = flash_stm32_qspi_irq_config_func,
 	.flash_size = (DT_INST_PROP(0, size) / 8) << STM32_QSPI_DOUBLE_FLASH,
 	.max_frequency = DT_INST_PROP(0, qspi_max_frequency),

@@ -736,7 +736,7 @@ __maybe_unused static int gpio_stm32_init(const struct device *dev)
 	return pm_device_driver_init(dev, gpio_stm32_pm_action);
 }
 
-#define GPIO_DEVICE_INIT(__node, __suffix, __base_addr, __port, __cenr, __bus) \
+#define GPIO_DEVICE_INIT(__node, __suffix, __base_addr, __port)                \
 	static const struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {   \
 		.common = {						       \
 			 .port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(16U), \
@@ -744,8 +744,8 @@ __maybe_unused static int gpio_stm32_init(const struct device *dev)
 		.base = (uint32_t *)__base_addr,				       \
 		.port = __port,						       \
 		COND_CODE_1(DT_NODE_HAS_PROP(__node, clocks),		       \
-			   (.pclken = { .bus = __bus, .enr = __cenr },),       \
-			   (/* Nothing if clocks not present */))	       \
+			    (.pclken = STM32_CLOCK_INFO(0, __node),),          \
+			    (/* Nothing if clocks not present */))	       \
 	};								       \
 	static struct gpio_stm32_data gpio_stm32_data_## __suffix;	       \
 	PM_DEVICE_DT_DEFINE(__node, gpio_stm32_pm_action);		       \
@@ -764,9 +764,7 @@ __maybe_unused static int gpio_stm32_init(const struct device *dev)
 	GPIO_DEVICE_INIT(DT_NODELABEL(gpio##__suffix),	\
 			 __suffix,					\
 			 DT_REG_ADDR(DT_NODELABEL(gpio##__suffix)),	\
-			 STM32_PORT##__SUFFIX,				\
-			 DT_CLOCKS_CELL(DT_NODELABEL(gpio##__suffix), bits),\
-			 DT_CLOCKS_CELL(DT_NODELABEL(gpio##__suffix), bus))
+			 STM32_PORT##__SUFFIX)
 
 #define GPIO_DEVICE_INIT_STM32_IF_OKAY(__suffix, __SUFFIX) \
 	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio##__suffix)), \

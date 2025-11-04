@@ -720,8 +720,7 @@ static struct dma_stm32_stream						\
 	dma_stm32_streams_##index[DMA_STM32_##index##_STREAM_COUNT];	\
 									\
 const struct dma_stm32_config dma_stm32_config_##index = {		\
-	.pclken = { .bus = DT_INST_CLOCKS_CELL(index, bus),		\
-		    .enr = DT_INST_CLOCKS_CELL(index, bits) },		\
+	.pclken = STM32_DT_INST_CLOCK_INFO(index),			\
 	.config_irq = dma_stm32_config_irq_##index,			\
 	.base = DT_INST_REG_ADDR(index),				\
 	IF_ENABLED(CONFIG_DMA_STM32_V1,					\

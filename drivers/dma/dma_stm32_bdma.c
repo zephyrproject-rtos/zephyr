@@ -869,8 +869,7 @@ static struct bdma_stm32_channel					\
 	bdma_stm32_channels_##index[BDMA_STM32_##index##_CHANNEL_COUNT];\
 									\
 const struct bdma_stm32_config bdma_stm32_config_##index = {		\
-	.pclken = { .bus = DT_INST_CLOCKS_CELL(index, bus),		\
-		    .enr = DT_INST_CLOCKS_CELL(index, bits) },		\
+	.pclken = STM32_DT_INST_CLOCK_INFO(index),			\
 	.config_irq = bdma_stm32_config_irq_##index,			\
 	.base = DT_INST_REG_ADDR(index),				\
 	.support_m2m = DT_INST_PROP(index, st_mem2mem),			\
