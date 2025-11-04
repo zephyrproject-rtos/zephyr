@@ -538,7 +538,6 @@ int bt_le_scan_user_remove(enum bt_le_scan_user flag)
 	return scan_update();
 }
 
-#if defined(CONFIG_BT_CENTRAL)
 static void check_pending_conn(const bt_addr_le_t *id_addr,
 			       const bt_addr_le_t *addr, uint8_t adv_props)
 {
@@ -593,7 +592,6 @@ failed:
 		LOG_WRN("Error while updating the scanner (%d)", err);
 	}
 }
-#endif /* CONFIG_BT_CENTRAL */
 
 /* Convert Legacy adv report evt_type field to adv props */
 static uint8_t get_adv_props_legacy(uint8_t evt_type)
@@ -656,7 +654,7 @@ static void le_adv_recv(bt_addr_le_t *addr, struct bt_le_scan_recv_info *info,
 	/* For connection-purpose scanning,
 	 * skip app callbacks but allow pending-conn check logic.
 	 */
-	if (!explicit_scan && conn_scan) {
+	if (IS_ENABLED(CONFIG_BT_CENTRAL) && !explicit_scan && conn_scan) {
 		goto check_pending_conn;
 	}
 
@@ -686,9 +684,9 @@ static void le_adv_recv(bt_addr_le_t *addr, struct bt_le_scan_recv_info *info,
 	info->addr = NULL;
 
 check_pending_conn:
-#if defined(CONFIG_BT_CENTRAL)
-	check_pending_conn(&id_addr, addr, info->adv_props);
-#endif /* CONFIG_BT_CENTRAL */
+	if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
+		check_pending_conn(&id_addr, addr, info->adv_props);
+	}
 }
 
 #if defined(CONFIG_BT_EXT_ADV)
