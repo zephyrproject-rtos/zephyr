@@ -673,6 +673,12 @@ static int transceive_dma(const struct device *dev,
 
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
+	if (spi_context_total_tx_len(&data->ctx) == 0 &&
+	    spi_context_total_rx_len(&data->ctx) == 0) {
+		/* nothing to do */
+		goto out;
+	}
+
 	if ((data->ctx.tx_count + data->ctx.rx_count) == 0) {
 		/* no data to transfer */
 		ret = 0;
