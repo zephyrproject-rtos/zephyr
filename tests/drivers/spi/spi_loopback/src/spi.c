@@ -517,7 +517,7 @@ ZTEST(spi_loopback, test_spi_rx_half_start)
 ZTEST(spi_loopback, test_spi_rx_half_end)
 {
 	if (IS_ENABLED(CONFIG_SPI_STM32_DMA) || IS_ENABLED(CONFIG_DMA_SILABS_SIWX91X_GPDMA)) {
-		TC_PRINT("Skipped spi_rx_hald_end");
+		ztest_test_skip();
 		return;
 	}
 
@@ -540,7 +540,7 @@ ZTEST(spi_loopback, test_spi_rx_every_4)
 {
 	if (IS_ENABLED(CONFIG_SPI_STM32_DMA) || IS_ENABLED(CONFIG_DSPI_MCUX_EDMA) ||
 	    IS_ENABLED(CONFIG_DMA_SILABS_SIWX91X_GPDMA)) {
-		TC_PRINT("Skipped spi_rx_every_4");
+		ztest_test_skip();
 		return;
 	};
 
@@ -567,7 +567,7 @@ ZTEST(spi_loopback, test_spi_rx_bigger_than_tx)
 {
 	if (IS_ENABLED(CONFIG_SPI_STM32_DMA) || IS_ENABLED(CONFIG_DSPI_MCUX_EDMA)) {
 		TC_PRINT("Skipped spi_rx_bigger_than_tx");
-		return;
+		ztest_test_skip();
 	}
 
 	struct spi_dt_spec *spec = loopback_specs[spec_idx];
@@ -670,6 +670,10 @@ ZTEST(spi_loopback, test_spi_write_back)
 /* similar to test_spi_write_back, simulates the real common case of 1 word command */
 ZTEST(spi_loopback, test_spi_same_buf_cmd)
 {
+	if (IS_ENABLED(CONFIG_SPI_STM32_DMA) || IS_ENABLED(CONFIG_DSPI_MCUX_EDMA)) {
+		ztest_test_skip();
+	}
+
 	struct spi_dt_spec *spec = loopback_specs[spec_idx];
 
 	struct spi_buf buf[2] = {
