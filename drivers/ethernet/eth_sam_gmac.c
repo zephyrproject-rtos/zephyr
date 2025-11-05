@@ -1044,7 +1044,7 @@ static int gmac_init(Gmac *gmac, uint32_t gmac_ncfgr_val, const struct eth_sam_d
 		return -EINVAL;
 	}
 #ifdef GMAC_UR_REFCLK_Msk
-	if (DT_INST_ENUM_IDX(0, ref_clk_source)) {
+	if (cfg->ref_clk_source == 1) { /* Source for the GMAC Reference Clock is EXTERNAL */
 		gmac->GMAC_UR |= GMAC_UR_REFCLK_Msk;
 	}
 #endif
@@ -2133,6 +2133,7 @@ static const struct ethernet_api eth_api = {
 			.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),	\
 			.num_queues = DT_INST_PROP(n, num_queues),			\
 			.phy_conn_type = DT_INST_ENUM_IDX(n, phy_connection_type),	\
+			.ref_clk_source = DT_INST_ENUM_IDX(n, ref_clk_source),		\
 		};
 
 #define DEFN_RX_FLAG_LIST_0(n)								\
