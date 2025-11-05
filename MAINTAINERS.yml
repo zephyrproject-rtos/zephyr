@@ -4776,10 +4776,10 @@ State machine framework:
   status: maintained
   maintainers:
     - sambhurst
+    - vlad-kulikov
   collaborators:
     - keith-zephyr
     - glenn-andrews
-    - vlad-kulikov
   files:
     - doc/services/smf/
     - include/zephyr/smf.h
