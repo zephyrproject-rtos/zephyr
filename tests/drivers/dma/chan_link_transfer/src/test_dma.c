@@ -34,9 +34,10 @@ static __aligned(32) char rx_data[RX_BUFF_SIZE] __used
 static __aligned(32) char rx_data2[RX_BUFF_SIZE] __used
 	__attribute__((__section__(".nocache.dma")));
 #else
-static const char tx_data[] = "It is harder to be kind than to be wise........";
-static char rx_data[RX_BUFF_SIZE] = { 0 };
-static char rx_data2[RX_BUFF_SIZE] = { 0 };
+__aligned(CONFIG_DMA_LINK_ALIGNMENT) static const char tx_data[] =
+	"It is harder to be kind than to be wise........";
+__aligned(CONFIG_DMA_LINK_ALIGNMENT) static char rx_data[RX_BUFF_SIZE] = { 0 };
+__aligned(CONFIG_DMA_LINK_ALIGNMENT) static char rx_data2[RX_BUFF_SIZE] = { 0 };
 #endif
 
 static void test_done(const struct device *dma_dev, void *arg, uint32_t id,
@@ -126,6 +127,7 @@ static int test_task(int minor, int major)
 		return TC_FAIL;
 	}
 	k_sleep(K_MSEC(2000));
+
 	TC_PRINT("%s\n", rx_data);
 	TC_PRINT("%s\n", rx_data2);
 	if (minor == 0 && major == 1) {
