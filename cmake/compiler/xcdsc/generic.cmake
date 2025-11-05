@@ -155,24 +155,24 @@ function(find_dspic33_dfp)
   set(${FD_OUT_ROOT} "${DFP_ROOT}"  PARENT_SCOPE)
 endfunction()
 
-if ("${BOARD_QUALIFIERS}" MATCHES "/p33ak128mc106" AND
-	"${BOARD}" MATCHES "dspic33a_curiosity")
-	set(TARGET_CPU "33AK128MC106")
-	find_dspic33_dfp(
-	OUT_INFO C30_DEVICE_INFO
-	OUT_ROOT DFP_ROOT
-	ARCHES AK
-	FAMILIES MC
-	)
-elseif("${BOARD_QUALIFIERS}" MATCHES "/p33ak512mps512" AND
-	"${BOARD}" MATCHES "dspic33a_curiosity")
-	set(TARGET_CPU "33AK512MPS512")
-	find_dspic33_dfp(
-	OUT_INFO C30_DEVICE_INFO
-	OUT_ROOT DFP_ROOT
-	ARCHES AK
-	FAMILIES MP
-	)
+if("${BOARD_QUALIFIERS}" MATCHES "p33ak128mc106" AND
+  "${BOARD}" MATCHES "dspic33a_curiosity")
+  set(TARGET_CPU "33AK128MC106")
+  find_dspic33_dfp(
+    OUT_INFO C30_DEVICE_INFO
+    OUT_ROOT DFP_ROOT
+    ARCHES AK
+    FAMILIES MC
+  )
+elseif("${BOARD_QUALIFIERS}" MATCHES "p33ak512mps512" AND
+  "${BOARD}" MATCHES "dspic33a_curiosity")
+  set(TARGET_CPU "33AK512MPS512")
+  find_dspic33_dfp(
+    OUT_INFO C30_DEVICE_INFO
+    OUT_ROOT DFP_ROOT
+    ARCHES AK
+    FAMILIES MP
+  )
 endif()
 message(STATUS "DFP file in ${C30_DEVICE_INFO}")
 message(STATUS "DFP path  ${DFP_ROOT}")
