@@ -11,6 +11,7 @@
 #define ZEPHYR_DRIVERS_ETHERNET_ETH_SAM_GMAC_PRIV_H_
 
 #include <zephyr/types.h>
+#include <zephyr/sys/fifo.h>
 
 #define ATMEL_OUI_B0 0x00
 #define ATMEL_OUI_B1 0x04
@@ -211,14 +212,6 @@ enum queue_idx {
 #error "GMAC_MAX_FRAME_SIZE is invalid, fix it at device tree."
 #endif
 
-/** Minimal ring buffer implementation */
-struct ring_buffer {
-	uint32_t *buf;
-	uint16_t len;
-	uint16_t head;
-	uint16_t tail;
-};
-
 /** Receive/transmit buffer descriptor */
 struct gmac_desc {
 	uint32_t w0;
@@ -246,9 +239,9 @@ struct gmac_queue {
 	struct net_buf **rx_frag_list;
 
 #if GMAC_MULTIPLE_TX_PACKETS == 1
-	struct ring_buffer tx_frag_list;
+	struct fifo *tx_frag_list;
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
-	struct ring_buffer tx_frames;
+	struct fifo *tx_frames;
 #endif
 #endif
 
