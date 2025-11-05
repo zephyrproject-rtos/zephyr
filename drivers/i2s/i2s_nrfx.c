@@ -75,7 +75,7 @@ static void find_suitable_clock(const struct i2s_nrfx_drv_cfg *drv_cfg,
 			* prevent compilation errors when the property is not defined
 			* (this expression will be eventually optimized away then).
 			*/
-			? DT_PROP_OR(DT_NODELABEL(clock), hfclkaudio_frequency, 0)
+			? DT_PROP_OR(DT_NODELABEL(hfclkaudio), hfclkaudio_frequency, 0)
 			: 32*1000*1000UL,
 		.transfer_rate = i2s_cfg->frame_clk_freq,
 		.swidth = config->sample_width,
@@ -866,9 +866,9 @@ static DEVICE_API(i2s, i2s_nrf_drv_api) = {
 			     (NRF_I2S_HAS_CLKCONFIG && NRF_CLOCK_HAS_HFCLKAUDIO),                  \
 		     "Clock source ACLK is not available.");                                       \
 	BUILD_ASSERT(I2S_CLK_SRC(inst) != ACLK ||                                                  \
-			     DT_NODE_HAS_PROP(DT_NODELABEL(clock), hfclkaudio_frequency),          \
+			     DT_NODE_HAS_PROP(DT_NODELABEL(hfclkaudio), hfclkaudio_frequency),     \
 		     "Clock source ACLK requires the hfclkaudio-frequency "                        \
-		     "property to be defined in the nordic,nrf-clock node.");                      \
+		     "property to be defined in the nordic,nrf-clock-hfclkaudio node.");           \
 	DEVICE_DT_INST_DEFINE(inst, i2s_nrfx_init##inst, NULL, &i2s_nrfx_data##inst,               \
 			      &i2s_nrfx_cfg##inst, POST_KERNEL, CONFIG_I2S_INIT_PRIORITY,          \
 			      &i2s_nrf_drv_api);

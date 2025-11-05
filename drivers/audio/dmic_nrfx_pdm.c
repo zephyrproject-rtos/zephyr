@@ -33,7 +33,7 @@ BUILD_ASSERT((DMIC_NRFX_AUDIO_CLOCK_FREQ == NRF_AUXPLL_FREQ_DIV_AUDIO_48K) ||
 #else
 #define DMIC_NRFX_CLOCK_FREQ MHZ(32)
 #define DMIC_NRFX_AUDIO_CLOCK_FREQ DT_PROP_OR(DT_NODELABEL(aclk), clock_frequency, \
-				   DT_PROP_OR(DT_NODELABEL(clock), hfclkaudio_frequency, 0))
+				   DT_PROP_OR(DT_NODELABEL(hfclkaudio), hfclkaudio_frequency, 0))
 #endif
 
 struct dmic_nrfx_pdm_drv_data {
@@ -537,13 +537,13 @@ static const struct _dmic_ops dmic_ops = {
 	BUILD_ASSERT(PDM_CLK_SRC(inst) != ACLK || NRF_PDM_HAS_SELECTABLE_CLOCK,                    \
 		     "Clock source ACLK is not available.");                                       \
 	BUILD_ASSERT(PDM_CLK_SRC(inst) != ACLK ||                                                  \
-			     DT_NODE_HAS_PROP(DT_NODELABEL(clock), hfclkaudio_frequency) ||        \
+			     DT_NODE_HAS_PROP(DT_NODELABEL(hfclkaudio), hfclkaudio_frequency) ||   \
 			     DT_NODE_HAS_PROP(DT_NODELABEL(aclk), clock_frequency) ||              \
 			     DT_NODE_HAS_PROP(NODE_AUDIOPLL, frequency) ||                         \
 			     DT_NODE_HAS_PROP(NODE_AUDIO_AUXPLL, nordic_frequency),                \
 		     "Clock source ACLK requires one following defined frequency "                 \
 		     "properties: "                                                                \
-		     "hfclkaudio-frequency in the nordic,nrf-clock node, "                         \
+		     "hfclkaudio-frequency in the nordic,nrf-clock-hfclkaudio node, "              \
 		     "clock-frequency in the aclk node, "                                          \
 		     "frequency in the audiopll node, "                                            \
 		     "nordic-frequency in the audio_auxpll node");                                 \
