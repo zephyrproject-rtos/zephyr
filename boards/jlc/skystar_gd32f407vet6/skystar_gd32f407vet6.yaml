@@ -1,7 +1,7 @@
 # Copyright (c) 2025, Liu Changjie <liucj1228@outlook.com>
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: skystar_gd32f407v
+identifier: skystar_gd32f407vet6
 name: GigaDevice SkyStar-GD32F407VET6
 type: mcu
 arch: arm
@@ -16,4 +16,4 @@ supported:
   - counter
   - dma
   - spi
-vendor: gd
+vendor: jlc

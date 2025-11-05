@@ -1,7 +1,7 @@
-.. _boards-lckfb:
+.. _boards-jlc:
 
-LCKFB
-#####
+JLC
+###
 
 .. toctree::
    :maxdepth: 1
