@@ -30,6 +30,7 @@
 		zephyr,flash = &program_flash;
 		zephyr,flash-controller = &flash;
 		zephyr,console = &lpuart_5;
+		zephyr,shell-uart = &lpuart_5;
 	};
 
 	leds {
