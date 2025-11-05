@@ -108,6 +108,14 @@ config LLEXT_STORAGE_WRITABLE
 	  Select if LLEXT storage is writable, i.e. if extensions are stored in
 	  RAM and can be modified in place
 
+config LLEXT_EXPORT_DEFAULT_SYMBOLS
+	bool "Export all symbols to llexts"
+	default y
+	help
+	  Export all symbols declared with EXPORT_SYMBOL and EXPORT_SYMBOL_NAMED to
+	  llexts. Disabling this option results in only symbols declared by the application
+	  with EXPORT_APP_SYMBOL and EXPORT_APP_SYMBOL_NAMED being available for linking.
+
 config LLEXT_EXPORT_DEVICES
 	bool "Export all DT devices to llexts"
 	help

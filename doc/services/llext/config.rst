@@ -166,6 +166,18 @@ significant as the number of exported symbols increases.
            forbidden to load an extension that was compiled with
            ``CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID=n``.
 
+Minimizing exporting symbols
+----------------------------
+
+To minimize the size of the exported symbol table, the main application can
+disable :kconfig:option:`CONFIG_LLEXT_EXPORT_DEFAULT_SYMBOLS`. This option
+causes :c:macro:`EXPORT_SYMBOL` and :c:macro:`EXPORT_SYMBOL_NAMED` to not
+export a symbol, which forces the symbol table to be empty by default.
+
+The main application is then responsible for explicitly exporting the symbols
+that are required by the extension with :c:macro:`EXPORT_APP_SYMBOL` and
+:c:macro:`EXPORT_APP_SYMBOL_NAMED`.
+
 EDK configuration
 -----------------
 

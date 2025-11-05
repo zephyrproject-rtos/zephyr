@@ -161,13 +161,18 @@ struct llext_symtable {
  * Version of @ref EXPORT_SYMBOL that allows the user to specify a custom name
  * for the exported symbol.
  *
- * When @c CONFIG_LLEXT is not enabled, this macro is a no-op.
+ * When @c CONFIG_LLEXT or @c CONFIG_LLEXT_EXPORT_DEFAULT_SYMBOLS are not
+ * enabled, this macro is a no-op.
  *
  * @param sym_ident Symbol to export
  * @param sym_name Name associated with the symbol
  */
+#if defined(CONFIG_LLEXT_EXPORT_DEFAULT_SYMBOLS) || defined(LL_EXTENSION_BUILD)
 #define EXPORT_SYMBOL_NAMED(sym_ident, sym_name)				\
 	Z_EXPORT_SYMBOL_NAMED(sym_ident, sym_name)
+#else
+#define EXPORT_SYMBOL_NAMED(sym_ident, sym_name)
+#endif
 
 /**
  * @brief Export a constant symbol from the current build
@@ -176,11 +181,38 @@ struct llext_symtable {
  * and address of the symbol to a table of symbols that may be referenced
  * by extensions or by the base image, depending on the current build type.
  *
- * When @c CONFIG_LLEXT is not enabled, this macro is a no-op.
+ * When @c CONFIG_LLEXT or @c CONFIG_LLEXT_EXPORT_DEFAULT_SYMBOLS are not
+ * enabled, this macro is a no-op.
  *
  * @param x Symbol to export
  */
 #define EXPORT_SYMBOL(x) EXPORT_SYMBOL_NAMED(x, x)
+
+/**
+ * @brief Export a constant symbol from the current build with a custom name
+ *
+ * Same behaviour as @ref  EXPORT_SYMBOL_NAMED, except the symbol is still
+ * included when @c CONFIG_LLEXT_EXPORT_DEFAULT_SYMBOLS is not enabled.
+ *
+ * @note This macro MUST NOT be used from common Zephyr code.
+ *
+ * @param sym_ident Symbol to export
+ * @param sym_name Name associated with the symbol
+ */
+#define EXPORT_APP_SYMBOL_NAMED(sym_ident, sym_name)				\
+	Z_EXPORT_SYMBOL_NAMED(sym_ident, sym_name)
+
+/**
+ * @brief Export a constant symbol from the current build
+ *
+ * Same behaviour as @ref EXPORT_SYMBOL, except the symbol is still included
+ * when @c CONFIG_LLEXT_EXPORT_DEFAULT_SYMBOLS is not enabled.
+ *
+ * @note This macro MUST NOT be used from common Zephyr code.
+ *
+ * @param x Symbol to export
+ */
+#define EXPORT_APP_SYMBOL(x) EXPORT_APP_SYMBOL_NAMED(x, x)
 
 /**
  * @}
