@@ -1595,7 +1595,7 @@ static int bt_hfp_ag_create_audio_connection(struct bt_hfp_ag *ag, struct bt_hfp
 	return err;
 }
 
-static void bt_hfp_ag_notify_ongoing_calls(struct bt_hfp_ag *ag, void *user_data)
+static void bt_hfp_ag_notify_ongoing_calls(struct bt_hfp_ag *ag)
 {
 	struct bt_hfp_ag_ongoing_call *ongoing_call;
 	struct bt_hfp_ag_call *call;
@@ -1678,7 +1678,7 @@ static void bt_hfp_ag_notify_ongoing_calls(struct bt_hfp_ag *ag, void *user_data
 	ag->indicator_value[BT_HFP_AG_CALL_SETUP_IND] = call_setup_value;
 }
 
-static void bt_hfp_ag_set_in_band_ring(struct bt_hfp_ag *ag, void *user_data)
+static void bt_hfp_ag_set_in_band_ring(struct bt_hfp_ag *ag)
 {
 	bool is_inband_ringtone;
 
@@ -1689,14 +1689,17 @@ static void bt_hfp_ag_set_in_band_ring(struct bt_hfp_ag *ag, void *user_data)
 
 		atomic_set_bit_to(ag->flags, BT_HFP_AG_INBAND_RING, err == 0);
 	}
-
-	(void)hfp_ag_next_step(ag, bt_hfp_ag_notify_ongoing_calls, NULL);
 }
 
 static void bt_hfp_ag_slc_connected(struct bt_hfp_ag *ag, void *user_data)
 {
+	ARG_UNUSED(user_data);
+
 	bt_hfp_ag_set_state(ag, BT_HFP_CONNECTED);
-	(void)hfp_ag_next_step(ag, bt_hfp_ag_set_in_band_ring, NULL);
+
+	bt_hfp_ag_set_in_band_ring(ag);
+
+	bt_hfp_ag_notify_ongoing_calls(ag);
 }
 
 static int bt_hfp_ag_cmer_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
