@@ -153,10 +153,10 @@
     sac.l B, [W1++]
     suac.l B, [W1++]
 
-    mov.l w15, [w1++]
-    mov.l w14, [w1++]
     mov.l #SPLIM, w2
     mov.l [w2], [w1++]
+    mov.l w15, [w1++]
+    mov.l w14, [w1++]
 .endm
 
 .macro z_dspic_restore_callee_saved
@@ -222,10 +222,10 @@
     lac.l [W1++], B
     luac.l [W1++], B
 
-    mov.l [w1++], w15
-    mov.l [w1++], w14
     mov.l #SPLIM, w2
     mov.l [w1++], [w2]
+    mov.l [w1++], w15
+    mov.l [w1++], w14
 .endm
 
 .macro z_dspic_temp_backup_working_reg
@@ -274,10 +274,6 @@
     /* Set the SPLIM to end of RAM
      * To avoid, stack overflow fault.
      */
-    mov.l w0, [w15++]
-    mov.l #RAM_END, w0
-    mov.l w0, SPLIM
-    mov.l [--w15], w0
 	/* Switch to context 0 before starting context save and restore
 	 * This Arch has 7 context and each has banked register sets for w0-w8
 	 * So in interrupt we are in ctx 1 and need to go to ctx 0 for tasks

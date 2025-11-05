@@ -54,10 +54,6 @@ __COMMONInterrupt:
     bra	z,.L2
     ulnk
     CTXTSWP #0x0
-    mov.l w0, [w15++]
-    mov.l #RAM_END, w0
-    mov.l w0, SPLIM
-    mov.l [--w15], w0
     z_dspic_save_caller_saved
     z_dspic_save_callee_saved
 

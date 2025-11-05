@@ -19,6 +19,7 @@ volatile uint32_t reason, address;
 #define EXCEPTION_HANDLER __attribute__((interrupt, no_auto_psv, weak, naked))
 #define BUS_ERROR_MASK    0xF
 #define MATH_ERROR_MASK   0x1F
+#define STACK_ERROR_MASK   0x10
 #define GENERAL_TRAP_MASK 0x8000000Fu
 
 void __attribute__((weak)) TRAPS_halt_on_error(void);
@@ -100,6 +101,15 @@ void EXCEPTION_HANDLER _MathErrorTrap(void)
 /** Stack error.**/
 void EXCEPTION_HANDLER _StackErrorTrap(void)
 {
+	const char *name = k_thread_name_get(_current);
+
+	reason = INTCON1 & STACK_ERROR_MASK;
+	address = PCTRAP;
+	if (name == NULL) {
+		name = "Unnamed";
+	}
+	LOG_ERR("ERROR !!! Exception reason = %d, address = 0x%x", reason, address);
+	LOG_ERR("Thread : %p (%s)\n", _current, name);
 	INTCON1bits.STKERR = 0;
 	PCTRAP = 0;
 	TRAPS_halt_on_error();

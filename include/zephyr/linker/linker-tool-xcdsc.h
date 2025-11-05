@@ -13,7 +13,6 @@
 
 #ifndef ZEPHYR_INCLUDE_LINKER_LINKER_TOOL_XCDSC_H_
 #define ZEPHYR_INCLUDE_LINKER_LINKER_TOOL_XCDSC_H_
-#include <zephyr/kernel/mm.h>
 
 OUTPUT_FORMAT("elf32-pic30")
 #if defined(CONFIG_BOARD_DSPIC33A_CURIOSITY_P33AK128MC106)
@@ -84,7 +83,6 @@ OUTPUT_ARCH("33AK512MPS512")
  * @param options Section options, such as (NOLOAD), or left blank
  * @param align Alignment directives, such as SUBALIGN(). May be blank.
  */
-#undef SECTION_PROLOGUE
 #define SECTION_PROLOGUE(name, options, align) name options : align
 
 /**
@@ -102,7 +100,6 @@ OUTPUT_ARCH("33AK512MPS512")
  * @param options Section options, or left blank
  * @param align Alignment directives, such as SUBALIGN(). May be blank.
  */
-#undef SECTION_DATA_PROLOGUE
 #define SECTION_DATA_PROLOGUE(name, options, align) SECTION_PROLOGUE(name, options, align)
 
 /**
@@ -123,7 +120,6 @@ OUTPUT_ARCH("33AK512MPS512")
  * @param vregion Output VMA (only used if CONFIG_MMU where LMA != VMA)
  * @param lregion Output LMA
  */
-#undef GROUP_ROM_LINK_IN
 #define GROUP_ROM_LINK_IN(vregion, lregion) > vregion
 
 #endif /* ZEPHYR_INCLUDE_LINKER_LINKER_TOOL_XCDSC_H_ */

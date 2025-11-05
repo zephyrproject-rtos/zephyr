@@ -19,7 +19,7 @@
 
 #define ARCH_STACK_PTR_ALIGN 4
 
-#define STATUS_CTX_MASK      0x00070000
+#define STATUS_CTX_MASK      0x00070000u
 #define IRQ_KEY_ILR_IRQ_MASK 0x7u
 #define DSPIC_PRIORITY_BITS  3u
 #define DSPIC_PRIORITY_WIDTH DSPIC_PRIORITY_BITS + 1u
@@ -81,7 +81,7 @@ static ALWAYS_INLINE void z_dspic_irq_priority_set(unsigned int irq, unsigned in
 
 static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
-	if (key) {
+	if (key != 0U) {
 		__builtin_enable_interrupts();
 	}
 }

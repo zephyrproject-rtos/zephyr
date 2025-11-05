@@ -55,7 +55,7 @@
 
 		intc0: interrupt-controller@70 {
 			compatible = "microchip,dspic33-intc";
-			reg = <0x70 0x1>;
+			reg = <0x70 0xF0>;
 			ie-offset = <0xB4>;
 			if-offset = <0x90>;
 			interrupt-controller;

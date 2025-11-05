@@ -29,7 +29,6 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
                         -I${ZEPHYR_BASE}/include
                         -imacros${ZEPHYR_BASE}/include/zephyr/linker/sections.h
                         -imacros${ZEPHYR_BASE}/include/zephyr/linker/linker-defs.h
-                        -imacros${ZEPHYR_BASE}/include/zephyr/linker/linker-tool-gcc.h
                         -I${PROJECT_BINARY_DIR}/include/generated
                         -I${XCDSC_TOOLCHAIN_PATH}/include/
                         ${soc_linker_script_includes}
