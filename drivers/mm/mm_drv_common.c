@@ -38,7 +38,7 @@ int sys_mm_drv_map_region_safe(const struct sys_mm_drv_region *virtual_region,
 
 	/* check if memory to be mapped is within given virtual region */
 	if ((POINTER_TO_UINT(virt) >= virtual_region_start) &&
-	    (POINTER_TO_UINT(virt) + size < virtual_region_end)) {
+	    (POINTER_TO_UINT(virt) + size <= virtual_region_end)) {
 		return sys_mm_drv_map_region(virt, phys, size, flags);
 	}
 
