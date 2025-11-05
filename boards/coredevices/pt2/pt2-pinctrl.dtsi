@@ -6,6 +6,34 @@
 #include <zephyr/dt-bindings/pinctrl/sf32lb52x-pinctrl.h>
 
 &pinctrl {
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <PA31_I2C1_SCL>, <PA30_I2C1_SDA>;
+			input-enable;
+		};
+	};
+
+	i2c2_default: i2c2_default {
+		group1 {
+			pinmux = <PA32_I2C2_SCL>, <PA33_I2C2_SDA>;
+			input-enable;
+		};
+	};
+
+	i2c3_default: i2c3_default {
+		group1 {
+			pinmux = <PA11_I2C3_SCL>, <PA10_I2C3_SDA>;
+			input-enable;
+		};
+	};
+
+	i2c4_default: i2c4_default {
+		group1 {
+			pinmux = <PA09_I2C4_SCL>, <PA20_I2C4_SDA>;
+			input-enable;
+		};
+	};
+
 	usart1_default: usart1_default {
 		group1 {
 			pinmux = <PA19_USART1_TXD>;
