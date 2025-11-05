@@ -378,7 +378,8 @@ static uint32_t spi_mcux_get_tx_word(uint32_t value, const struct spi_config *sp
 }
 
 static uint32_t spi_mcux_get_last_tx_word(const struct spi_config *spi_cfg, const uint8_t *buf,
-					  size_t len, uint32_t def_char, uint8_t word_size)
+					  size_t len, uint32_t def_char, uint8_t word_size,
+					  uint32_t *last_word)
 {
 	uint32_t value = def_char;
 
@@ -387,7 +388,10 @@ static uint32_t spi_mcux_get_last_tx_word(const struct spi_config *spi_cfg, cons
 	 */
 	if (buf != NULL) {
 		if (word_size > 8) {
-			assert(len > 1);
+			if (len <= 1) {
+				LOG_ERR("Invalid len");
+				return -ECANCELED;
+			}
 			value = (((uint32_t)buf[len - 1U] << 8U) | (buf[len - 2U]));
 		} else {
 			value = buf[len - 1U];
@@ -395,7 +399,9 @@ static uint32_t spi_mcux_get_last_tx_word(const struct spi_config *spi_cfg, cons
 	}
 	value |= (uint32_t)SPI_FIFOWR_EOT_MASK;
 
-	return spi_mcux_get_tx_word(value, spi_cfg, word_size);
+	*last_word = spi_mcux_get_tx_word(value, spi_cfg, word_size);
+
+	return 0;
 }
 
 static int spi_mcux_dma_tx_load(const struct device *dev, const struct spi_config *spi_cfg,
@@ -404,11 +410,11 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const struct spi_confi
 {
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
-	SPI_Type *base = config->base;
-	struct dma_block_config *blk_cfg;
-
 	/* remember active TX DMA channel (used in callback) */
 	struct stream *stream = &data->dma_tx;
+	struct dma_block_config *blk_cfg;
+	SPI_Type *base = config->base;
+	int ret = 0;
 
 	/* prepare the block for this TX DMA channel */
 	blk_cfg = &stream->dma_blk_cfg[dma_block_num];
@@ -418,8 +424,11 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const struct spi_confi
 	blk_cfg->dest_scatter_en = 0;
 	blk_cfg->source_gather_en = 0;
 	if (last_packet) {
-		data->last_word = spi_mcux_get_last_tx_word(spi_cfg, buf, len, config->def_char,
-							    data->word_size_bits);
+		ret = spi_mcux_get_last_tx_word(spi_cfg, buf, len, config->def_char,
+						data->word_size_bits, &data->last_word);
+		if (ret) {
+			return ret;
+		}
 		blk_cfg->source_address = (uint32_t)&data->last_word;
 		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 		blk_cfg->block_size = sizeof(uint32_t);
@@ -436,7 +445,7 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const struct spi_confi
 			blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 		}
 	}
-	return EXIT_SUCCESS;
+	return ret;
 }
 
 static int spi_mcux_dma_tx_start(const struct device *dev, const struct spi_config *spi_cfg)
@@ -608,7 +617,7 @@ static int spi_mcux_dma_transfer(const struct device *dev, const struct spi_conf
 	return EXIT_SUCCESS;
 }
 
-static void spi_mcux_transfer_one_word(const struct device *dev, const struct spi_config *spi_cfg)
+static int spi_mcux_transfer_one_word(const struct device *dev, const struct spi_config *spi_cfg)
 {
 	/* don't use the SDK, which is overkill for a one word transfer */
 	const struct spi_mcux_config *config = dev->config;
@@ -616,9 +625,13 @@ static void spi_mcux_transfer_one_word(const struct device *dev, const struct sp
 	struct spi_context *ctx = &data->ctx;
 	SPI_Type *base = config->base;
 	uint32_t tmp32;
+	int ret = 0;
 
-	tmp32 = spi_mcux_get_last_tx_word(spi_cfg, ctx->tx_buf, 1, config->def_char,
-					  data->word_size_bits);
+	ret = spi_mcux_get_last_tx_word(spi_cfg, ctx->tx_buf, 1, config->def_char,
+					data->word_size_bits, &tmp32);
+	if (ret) {
+		return ret;
+	}
 
 	/* wait for TXFIFO to not be full */
 	while ((base->FIFOSTAT & SPI_FIFOSTAT_TXNOTFULL_MASK) == 0) {
@@ -646,6 +659,8 @@ static void spi_mcux_transfer_one_word(const struct device *dev, const struct sp
 	/* wait if TX FIFO of previous transfer is not empty */
 	while ((base->FIFOSTAT & SPI_FIFOSTAT_TXEMPTY_MASK) == 0) {
 	}
+
+	return ret;
 }
 
 static int transceive_dma(const struct device *dev,
@@ -708,7 +723,10 @@ static int transceive_dma(const struct device *dev,
 		/* Disable DMATX/RX */
 		base->FIFOCFG &= ~(SPI_FIFOCFG_DMARX_MASK | SPI_FIFOCFG_DMATX_MASK);
 
-		spi_mcux_transfer_one_word(dev, spi_cfg);
+		ret = spi_mcux_transfer_one_word(dev, spi_cfg);
+		if (ret) {
+			return ret;
+		}
 
 		spi_context_update_tx(&data->ctx, data->word_size_bytes, data->transfer_len);
 		spi_context_update_rx(&data->ctx, data->word_size_bytes, data->transfer_len);
