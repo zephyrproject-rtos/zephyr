@@ -138,6 +138,10 @@
 	status = "okay";
 };
 
+&xo24m {
+	status = "okay";
+};
+
 &ieee802154 {
 	status = "okay";
 };

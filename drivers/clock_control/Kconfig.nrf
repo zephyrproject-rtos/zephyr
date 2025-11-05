@@ -350,6 +350,12 @@ config CLOCK_CONTROL_NRF_HFCLK192M
 	select CLOCK_CONTROL_NRF_COMMON
 	default y
 
+config CLOCK_CONTROL_NRF_XO24M
+	bool "NRF XO242M driver support"
+	depends on DT_HAS_NORDIC_NRF_CLOCK_XO24M_ENABLED
+	select CLOCK_CONTROL_NRF_COMMON
+	default y
+
 config CLOCK_CONTROL_NRF_AUXPLL
 	bool "nRF Auxiliary PLL driver"
 	default y
