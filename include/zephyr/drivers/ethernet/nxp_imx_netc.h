@@ -44,6 +44,10 @@
 #define NETC_SWITCH_TAG_SUPPORT 1
 #endif
 
+#if defined(CONFIG_DSA_NXP_IMX_NETC) && (!defined(NETC_SWITCH_TAG_SUPPORT))
+#define NETC_SWITCH_NO_TAG_DRIVER_SUPPORT 1
+#endif
+
 #if defined(CONFIG_DSA_NXP_IMX_NETC)
 /*
  * For tag supported switch, tag driver handles timestamping.

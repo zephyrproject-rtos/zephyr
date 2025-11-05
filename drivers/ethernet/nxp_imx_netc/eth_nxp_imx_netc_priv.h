@@ -9,6 +9,9 @@
 
 #include <zephyr/drivers/ethernet/nxp_imx_netc.h>
 #include "fsl_netc_endpoint.h"
+#if defined(NETC_SWITCH_NO_TAG_DRIVER_SUPPORT) && defined(NETC_PTP_TIMESTAMPING_SUPPORT)
+#include "fsl_netc_switch.h"
+#endif
 #ifndef CONFIG_ETH_NXP_IMX_NETC_MSI_GIC
 #include "fsl_msgintr.h"
 #endif
