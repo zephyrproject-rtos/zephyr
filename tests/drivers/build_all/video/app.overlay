@@ -165,6 +165,13 @@
 					};
 				};
 			};
+
+			test_i2c_ov7675: ov7675@9 {
+				compatible = "ovti,ov7675";
+				reg = <0x21>;
+				reset-gpios = <&test_gpio 0 1>;
+				pwdn-gpios = <&test_gpio 1 1>;
+			};
 		};
 
 		test_video_emul_rx: video_emul_rx@10003000 {
