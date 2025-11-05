@@ -309,6 +309,14 @@ New APIs and options
     * :c:func:`zsock_listen` now implements the ``backlog`` parameter support. The TCP server
       socket will limit the number of pending incoming connections to that value.
 
+  * Wi-Fi
+
+    * :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_DEBUG_SHOW_KEYS`
+    * Set enterprise crypto insecure because certifcate validation is disabled.
+    * If the usage mode option has AP enabled, then automatically enable AP mode.
+    * Add configuration options for background scanning (bgscan) in wpa_supplicant.
+    * Add support for multiple virtual interfaces (VIF).
+
 * Newlib
 
   * :kconfig:option:`CONFIG_NEWLIB_LIBC_USE_POSIX_LIMITS_H`
