@@ -1,6 +1,0 @@
-board:
-  name: skystar_gd32f407v
-  full_name: skystar_gd32f407v
-  vendor: gd
-  socs:
-    - name: gd32f407

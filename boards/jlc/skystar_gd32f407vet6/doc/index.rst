@@ -1,9 +1,9 @@
-.. zephyr:board:: skystar_gd32f407v
+.. zephyr:board:: skystar_gd32f407vet6
 
 Overview
 ********
 
-The SkyStar-GD32F407VEt6 board is a hardware platform that enables prototyping
+The SkyStar-GD32F407VET6 board is a hardware platform that enables prototyping
 on GD32F407VE Cortex-M4 High Performance MCU.
 
 The GD32F407VE features a single-core ARM Cortex-M4 MCU which can run up
@@ -60,7 +60,7 @@ if not installed yet.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: skystar_gd32f407v
+      :board: skystar_gd32f407vet6
       :goals: build
       :compact:
 
@@ -85,19 +85,19 @@ if not installed yet.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: skystar_gd32f407v
+      :board: skystar_gd32f407vet6
       :goals: flash
       :compact:
 
    When using J-Link, append ``--runner jlink`` option after ``west flash``.
 
-   You should see "Hello World! skystar_gd32f407v" in your terminal.
+   You should see "Hello World! skystar_gd32f407vet6" in your terminal.
 
 #. To debug an image:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: skystar_gd32f407v
+      :board: skystar_gd32f407vet6
       :goals: debug
       :compact:
 
