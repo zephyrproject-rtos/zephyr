@@ -24,11 +24,6 @@ LOG_MODULE_REGISTER(nxp_imx_eth);
 #include "../eth.h"
 #include "eth_nxp_imx_netc_priv.h"
 
-#if !(defined(FSL_FEATURE_NETC_HAS_SWITCH_TAG) && FSL_FEATURE_NETC_HAS_SWITCH_TAG) && \
-	defined(CONFIG_NET_DSA)
-#define NETC_HAS_NO_SWITCH_TAG_SUPPORT 1
-#endif
-
 const struct device *netc_dev_list[NETC_DRV_MAX_INST_SUPPORT];
 
 #ifdef NETC_PTP_TIMESTAMPING_SUPPORT
@@ -69,11 +64,60 @@ const struct device *netc_eth_get_ptp_clock(const struct device *dev)
 }
 #endif
 
+#if defined(NETC_SWITCH_NO_TAG_DRIVER_SUPPORT) && defined(NETC_PTP_TIMESTAMPING_SUPPORT)
+static status_t netc_eth_get_tx_response(const struct device *dev, swt_tsr_resp_t *tsr)
+{
+	struct netc_eth_data *data = dev->data;
+	netc_rx_bdr_t *rx_bdr = &data->handle.rxBdRing[0];
+	netc_rx_bd_t *rx_bd = &rx_bdr->bdBase[rx_bdr->index];
+	uint64_t rx_dma_addr;
+	uint16_t index;
+	status_t result = kStatus_Fail;
+
+	/*
+	 * Check the current buffer descriptor's ready flag.
+	 * The flag in first BD indicates entire frame ready status.
+	 */
+	if ((rx_bd->resp.isReady != 0) &&
+	    ((netc_host_reason_t)rx_bd->resp.hr == kNETC_TimestampResp) &&
+	    (rx_bd->resp.error == 0)) {
+		tsr->timestamp = rx_bd->resp.timestamp;
+		tsr->txtsid = rx_bd->resp.txtsid;
+
+		/* Set the Rx buffer address in BD which is overwritten by BD writeback. */
+		index = rx_bdr->extendDesc ? (rx_bdr->index / 2) : rx_bdr->index;
+		rx_dma_addr = rx_bdr->buffArray[index];
+#if defined(FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET) && FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET
+		rx_dma_addr = (uint64_t)MEMORY_ConvertMemoryMapAddress((uintptr_t)rx_dma_addr,
+			kMEMORY_Local2DMA);
+#endif
+		rx_bd->standard.addr = rx_dma_addr;
+
+		/* Updates the receive buffer descriptors flags, only clear necessary field. */
+		rx_bd->writeback.isFinal = 0;
+		rx_bd->writeback.isReady = 0;
+		if (rx_bdr->extendDesc) {
+			/* Extended BD occupies one more 16 bytes space. */
+			rx_bdr->index = EP_IncreaseIndex(rx_bdr->index, rx_bdr->len);
+		}
+
+		rx_bdr->index = EP_IncreaseIndex(rx_bdr->index, rx_bdr->len);
+
+		/* Update the Rx consumer index to free BD. */
+		index = rx_bdr->extendDesc ? (rx_bdr->index / 2U) : rx_bdr->index;
+		NETC_SISetRxConsumer(data->handle.hw.si, 0, index);
+		result = kStatus_Success;
+	}
+
+	return result;
+}
+#endif
+
 static int netc_eth_rx(const struct device *dev)
 {
 	struct netc_eth_data *data = dev->data;
 	struct net_if *iface_dst = data->iface;
-#if defined(NETC_HAS_NO_SWITCH_TAG_SUPPORT)
+#if defined(NETC_SWITCH_NO_TAG_DRIVER_SUPPORT)
 	struct ethernet_context *ctx = net_if_l2_data(iface_dst);
 	struct dsa_switch_context *dsa_switch_ctx = ctx->dsa_switch_ctx;
 #endif
@@ -82,25 +126,42 @@ static int netc_eth_rx(const struct device *dev)
 	int key;
 	int ret = 0;
 	status_t result;
+	status_t rx_result;
 	uint32_t length;
 
 	key = irq_lock();
 
 	/* Check rx frame */
-	result = EP_GetRxFrameSize(&data->handle, 0, &length);
-	if (result == kStatus_NETC_RxFrameEmpty) {
+	rx_result = EP_GetRxFrameSize(&data->handle, 0, &length);
+	if (rx_result == kStatus_NETC_RxFrameEmpty) {
 		ret = -ENOBUFS;
 		goto out;
 	}
 
-	if (result != kStatus_NETC_RxTsrResp &&
-	    result != kStatus_NETC_RxHRNotZeroFrame &&
-	    result != kStatus_Success) {
+	if (rx_result != kStatus_NETC_RxTsrResp &&
+	    rx_result != kStatus_NETC_RxHRNotZeroFrame &&
+	    rx_result != kStatus_Success) {
 		LOG_ERR("Error on received frame");
 		ret = -EIO;
 		goto out;
 	}
 
+#if defined(NETC_SWITCH_NO_TAG_DRIVER_SUPPORT) && defined(NETC_PTP_TIMESTAMPING_SUPPORT)
+	/* Received response for TX timestamp reference request on DSA conduit port */
+	if (rx_result == kStatus_NETC_RxTsrResp) {
+		swt_tsr_resp_t tsr = {0};
+
+		result = netc_eth_get_tx_response(dev, &tsr);
+		if (result != kStatus_Success) {
+			LOG_ERR("Error on received TX timestamp response frame");
+			ret = -ENOBUFS;
+			goto out;
+		}
+
+		dsa_netc_port_twostep_timestamp(dsa_switch_ctx, tsr.txtsid, tsr.timestamp);
+		goto out;
+	}
+#endif
 	/* Receive frame */
 	result = EP_ReceiveFrameCopy(&data->handle, 0, data->rx_frame, length, &attr);
 	if (result != kStatus_Success) {
@@ -109,7 +170,7 @@ static int netc_eth_rx(const struct device *dev)
 		goto out;
 	}
 
-#if defined(NETC_HAS_NO_SWITCH_TAG_SUPPORT)
+#if defined(NETC_SWITCH_NO_TAG_DRIVER_SUPPORT)
 	if (ctx->dsa_port == DSA_CONDUIT_PORT) {
 		iface_dst = dsa_switch_ctx->iface_user[attr.srcPort];
 	}
@@ -131,9 +192,14 @@ static int netc_eth_rx(const struct device *dev)
 
 #ifdef NETC_PTP_TIMESTAMPING_SUPPORT
 	if (attr.isTsAvail) {
-		const struct netc_eth_config *cfg = dev->config;
+		const struct device *ptp_dev = netc_eth_get_ptp_clock(dev);
 
-		netc_eth_pkt_get_timestamp(pkt, cfg->ptp_clock, attr.timestamp);
+#if defined(NETC_SWITCH_NO_TAG_DRIVER_SUPPORT)
+		if (ctx->dsa_port == DSA_CONDUIT_PORT) {
+			ptp_dev = net_eth_get_ptp_clock(iface_dst);
+		}
+#endif
+		netc_eth_pkt_get_timestamp(pkt, ptp_dev, attr.timestamp);
 	}
 #endif
 	/* Send to upper layer */
@@ -248,6 +314,16 @@ int netc_eth_init_common(const struct device *dev)
 	if (netc_eth_get_ptp_clock(dev) != NULL) {
 		bdr_config.rxBdrConfig[0].extendDescEn = true;
 	}
+
+	/*
+	 * For pseudo MAC managing no tag type switch, extended
+	 * RX descriptor should be enabled for switch timestamp.
+	 */
+#if defined(NETC_SWITCH_NO_TAG_DRIVER_SUPPORT)
+	if (config->pseudo_mac) {
+		bdr_config.rxBdrConfig[0].extendDescEn = true;
+	}
+#endif
 #endif
 
 	/* MSIX entry configuration */
@@ -376,10 +452,11 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	netc_tx_frame_info_t *frame_info;
 	struct net_if *iface_dst;
 	size_t pkt_len = net_pkt_get_len(pkt);
-#if defined(NETC_HAS_NO_SWITCH_TAG_SUPPORT)
+#if defined(NETC_SWITCH_NO_TAG_DRIVER_SUPPORT)
 	struct ethernet_context *eth_ctx = net_if_l2_data(data->iface);
 #endif
-#if defined(NETC_HAS_NO_SWITCH_TAG_SUPPORT) || defined(NETC_PTP_TIMESTAMPING_SUPPORT)
+#if !defined(CONFIG_DSA_NXP_IMX_NETC) || defined(NETC_SWITCH_NO_TAG_DRIVER_SUPPORT) || \
+	defined(NETC_PTP_TIMESTAMPING_SUPPORT)
 	const struct netc_eth_config *cfg = dev->config;
 #endif
 	status_t result;
@@ -392,7 +469,17 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 	iface_dst = data->iface;
 
-#if defined(NETC_HAS_NO_SWITCH_TAG_SUPPORT)
+	/*
+	 * Pseudo MAC connects to internal switch port.
+	 * 1. For DSA not enabled, pseudo MAC is not used.
+	 * 2. For DSA no tag type, transfer to dest port.
+	 * 2. For DSA tag type, just use unchanged driver.
+	 */
+#if !defined(CONFIG_DSA_NXP_IMX_NETC)
+	if (cfg->pseudo_mac) {
+		return -ENOSYS;
+	}
+#elif defined(NETC_SWITCH_NO_TAG_DRIVER_SUPPORT)
 	if (cfg->pseudo_mac) {
 		/* DSA conduit port not used */
 		if (eth_ctx->dsa_port != DSA_CONDUIT_PORT) {
@@ -424,7 +511,7 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	/* Send */
 	data->tx_done = false;
 
-#if defined(NETC_HAS_NO_SWITCH_TAG_SUPPORT)
+#if defined(NETC_SWITCH_NO_TAG_DRIVER_SUPPORT)
 	if (eth_ctx->dsa_port == DSA_CONDUIT_PORT) {
 		const struct dsa_port_config *port_cfg = net_if_get_device(iface_dst)->config;
 		const int dst_port = port_cfg->port_idx;
@@ -433,6 +520,11 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 		txDesc[0].standard.flags = NETC_SI_TXDESCRIP_RD_FLQ(2) |
 					   NETC_SI_TXDESCRIP_RD_SMSO_MASK |
 					   NETC_SI_TXDESCRIP_RD_PORT(dst_port);
+#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
+		if (pkt_is_gptp || net_pkt_is_tx_timestamping(pkt)) {
+			txDesc[0].standard.flags |= NETC_SI_TXDESCRIP_RD_TSR_MASK;
+		}
+#endif
 		result = EP_SendFrameCommon(&data->handle, &data->handle.txBdRing[0], 0, &frame,
 					    NULL, &txDesc[0], data->handle.cfg.txCacheMaintain);
 	} else {
@@ -467,6 +559,12 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 							   frame_info->timestamp);
 				net_if_add_tx_timestamp(pkt);
 			}
+#if defined(NETC_SWITCH_NO_TAG_DRIVER_SUPPORT)
+			if (eth_ctx->dsa_port == DSA_CONDUIT_PORT && frame_info->isTxTsIdAvail) {
+				dsa_netc_port_txtsid(net_if_get_device(iface_dst),
+						     frame_info->txtsid);
+			}
+#endif
 #endif
 			memset(frame_info, 0, sizeof(netc_tx_frame_info_t));
 		}
