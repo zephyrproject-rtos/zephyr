@@ -90,7 +90,9 @@ class STLinkGDBServerRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls) -> RunnerCaps:
-        return RunnerCaps(commands={"attach", "debug", "debugserver"}, dev_id=True, extload=True)
+        return RunnerCaps(
+            commands={"attach", "debug", "debugserver"}, dev_id=True, extload=True, skip_load=True
+        )
 
     @classmethod
     def extload_help(cls) -> str:
@@ -128,6 +130,7 @@ class STLinkGDBServerRunner(ZephyrBinaryRunner):
             args.port_number,
             args.extload,
             args.external_init,
+            args.load,
         )
 
     def __init__(
@@ -139,6 +142,7 @@ class STLinkGDBServerRunner(ZephyrBinaryRunner):
         gdb_port: int,
         external_loader: str | None,
         external_init: bool,
+        load: bool,
     ):
         super().__init__(cfg)
         self.ensure_output('elf')
@@ -149,6 +153,7 @@ class STLinkGDBServerRunner(ZephyrBinaryRunner):
         self._ap_id = ap_id
         self._external_loader = external_loader
         self._do_external_init = external_init
+        self._load = load
 
     def do_run(self, command: str, **kwargs):
         if command in ["attach", "debug", "debugserver"]:
@@ -181,7 +186,8 @@ class STLinkGDBServerRunner(ZephyrBinaryRunner):
             gdbserver_cmd += ["--attach"]
         else:  # debug/debugserver
             gdbserver_cmd += ["--initialize-reset"]
-            gdb_args += ["-ex", f"load {elf_path}"]
+            if self._load:
+                gdb_args += ["-ex", f"load {elf_path}"]
 
         if self._stlink_serial:
             gdbserver_cmd += ["--serial-number", self._stlink_serial]
