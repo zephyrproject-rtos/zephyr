@@ -233,7 +233,6 @@
 			reg = <0x50010000 0x4000>;
 			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(19)>;
-			clocks = <&cmu CLOCK_HFRCO0 CLOCK_BRANCH_INVALID>;
 			interrupt-names = "hfrco0";
 			interrupts = <61 2>;
 		};
