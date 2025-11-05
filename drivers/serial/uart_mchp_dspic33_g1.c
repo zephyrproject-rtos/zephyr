@@ -11,6 +11,7 @@
 #include <soc.h>
 #include <math.h>
 #include <zephyr/sys/printk.h>
+#include "uart_mchp_dspic33_g1.h"
 
 #ifndef _ASMLANGUAGE
 #include <xc.h>
@@ -18,37 +19,12 @@
 
 #define DT_DRV_COMPAT microchip_dspic33_uart
 
-/* UART Register Offsets */
-#define UART_MODE    (0x00U) /* Offset for UART Mode register */
-#define OFFSET_STA   (0x04U) /* Offset for UART Status register */
-#define OFFSET_BRG   (0x08U) /* Offset for Baud Rate Generator register */
-#define OFFSET_RXREG (0x0CU) /* Offset for UART Receive register */
-#define OFFSET_TXREG (0x10U) /* Offset for UART Transmit register */
-
-/* UART Control Bits */
-#define BIT_UTXEN      (0x00000020U) /* UART Transmit Enable bit mask */
-#define BIT_URXEN      (0x00000010U) /* UART Receive Enable bit mask */
-#define BIT_UARTEN     (0x00008000U) /* UART Module Enable bit mask */
-#define BIT_TXBF       (0x00100000U) /* UART Transmit Buffer Full status */
-#define BIT_TXBE       (0x00200000U) /* UART TX buffer empty status bit mask */
-#define BIT_RXBF       (0x00010000U) /* UART RX buffer full bit */
-#define BIT_RXBE       (0x00020000U) /* UART Receive Buffer Empty status */
-#define ERR_IRQ_ENABLE (0x00007F00U) /* UART Error interrupts enable mask */
-#define ERR_IRQ_CLEAR  (0x00000017U) /* UART Error interrupts flag clear mask */
-#define FRACTIONAL_BRG (0x08000000U) /* Fractional Baud Rate Generator enable */
-
-/* Interrupt Level Select Bits */
-#define BIT_UxTXWM (0x00000000U) /* UART TX interrupt level select bit */
-#define BIT_UxRXWM (0x00000000U) /* UART RX interrupt level select bit */
-
-/* Generic Masks */
-#define BIT_MASK_RCVR (0xFFU) /* Mask for receiver buffer */
-
 static struct k_spinlock lock;
 
 struct uart_dspic_config {
 	uint32_t base;
 	uint32_t baudrate;
+	uint32_t instance;
 #ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pcfg;
 #endif
@@ -83,6 +59,7 @@ static void uart_dspic_isr(const struct device *dev)
 	struct uart_dspic_data *data = dev->data;
 	const struct uart_dspic_config *cfg = dev->config;
 	volatile uint32_t *UxSTA = (void *)(cfg->base + OFFSET_STA);
+	uint32_t instance = cfg->instance;
 
 	/* RX interrupt flag set check */
 	if ((bool)arch_dspic_irq_isset(cfg->rx_irq_num)) {
@@ -102,7 +79,9 @@ static void uart_dspic_isr(const struct device *dev)
 	if ((bool)arch_dspic_irq_isset(cfg->err_irq_num)) {
 
 		/* Clear error interrupt flag in uart status register */
-		*UxSTA &= ~ERR_IRQ_CLEAR;
+		*UxSTA &= ~(BIT_PERIF[instance] | BIT_ABDOVIF[instance] | BIT_CERIF[instance] |
+			    BIT_FERIF[instance] | BIT_RXBTIF[instance] | BIT_RXFOIF[instance] |
+			    BIT_TXCIF[instance]);
 		if ((bool)data->callback) {
 			data->callback(dev, data->user_data);
 		}
@@ -193,11 +172,12 @@ static int uart_dspic_irq_tx_ready(const struct device *dev)
 	k_spinlock_key_t key;
 	const struct uart_dspic_config *cfg = dev->config;
 	volatile uint32_t *UxSTA = (void *)(cfg->base + OFFSET_STA);
+	uint32_t instance = cfg->instance;
 	int ret;
 
 	key = k_spin_lock(&lock);
 	/* Transmit buffer empty check */
-	ret = (*UxSTA & BIT_TXBE) ? 1 : 0;
+	ret = (*UxSTA & BIT_TXBE[instance]) ? 1 : 0;
 	k_spin_unlock(&lock, key);
 
 	return ret;
@@ -208,11 +188,12 @@ static int uart_dspic_irq_rx_ready(const struct device *dev)
 	k_spinlock_key_t key;
 	const struct uart_dspic_config *cfg = dev->config;
 	volatile uint32_t *UxSTA = (void *)(cfg->base + OFFSET_STA);
+	uint32_t instance = cfg->instance;
 	int ret;
 
 	key = k_spin_lock(&lock);
 	/* Receiver buffer not full check */
-	ret = (*UxSTA & BIT_RXBF) ? 0 : 1;
+	ret = (*UxSTA & BIT_RXBF[instance]) ? 0 : 1;
 	k_spin_unlock(&lock, key);
 
 	return ret;
@@ -245,12 +226,13 @@ static int uart_dspic_fifo_read(const struct device *dev, uint8_t *rx_data, cons
 	const struct uart_dspic_config *cfg = dev->config;
 	volatile uint32_t *UxSTA = (void *)(cfg->base + OFFSET_STA);
 	volatile uint32_t *UxRXREG = (void *)(cfg->base + OFFSET_RXREG);
+	uint32_t instance = cfg->instance;
 	int num_read = 0;
 
 	/* Transmitting data of size bytes */
-	while ((num_read < size) && (!(*UxSTA & BIT_RXBE))) {
+	while ((num_read < size) && (!(*UxSTA & BIT_RXBE[instance]))) {
 		key = k_spin_lock(&lock);
-		rx_data[num_read] = *UxRXREG & BIT_MASK_RCVR;
+		rx_data[num_read] = *UxRXREG & BIT_MASK_RCVR[instance];
 		num_read++;
 		k_spin_unlock(&lock, key);
 	}
@@ -264,10 +246,11 @@ static int uart_dspic_fifo_fill(const struct device *dev, const uint8_t *tx_data
 	const struct uart_dspic_config *cfg = dev->config;
 	volatile uint32_t *UxSTA = (void *)(cfg->base + OFFSET_STA);
 	volatile uint32_t *UxTXREG = (void *)(cfg->base + OFFSET_TXREG);
+	uint32_t instance = cfg->instance;
 	int num_sent = 0;
 
 	/* Receiving data of size bytes */
-	while ((num_sent < size) && (!(*UxSTA & BIT_TXBF))) {
+	while ((num_sent < size) && (!(*UxSTA & BIT_TXBF[instance]))) {
 		key = k_spin_lock(&lock);
 		*UxTXREG = tx_data[num_sent];
 		num_sent++;
@@ -284,9 +267,10 @@ static void uart_dspic_poll_out(const struct device *dev, unsigned char c)
 	const struct uart_dspic_config *cfg = dev->config;
 	volatile uint32_t *UxSTA = (void *)(cfg->base + OFFSET_STA);
 	volatile uint32_t *UxTXREG = (void *)(cfg->base + OFFSET_TXREG);
+	uint32_t instance = cfg->instance;
 
 	/* Wait until there is space in the TX FIFO */
-	while ((bool)(void *)((*UxSTA) & BIT_TXBF)) {
+	while ((bool)(void *)((*UxSTA) & BIT_TXBF[instance])) {
 		;
 	}
 	key = k_spin_lock(&lock);
@@ -300,13 +284,13 @@ static int uart_dspic_poll_in(const struct device *dev, unsigned char *c)
 	const struct uart_dspic_config *cfg = dev->config;
 	volatile uint32_t *UxSTA = (void *)(cfg->base + OFFSET_STA);
 	volatile uint32_t *UxRXREG = (void *)(cfg->base + OFFSET_RXREG);
+	uint32_t instance = cfg->instance;
 	int ret_val;
 
 	key = k_spin_lock(&lock);
-
-	if ((*UxSTA & BIT_RXBE) != 0U) {
-	/* uart_poll_in api expects to return -1, if receiver buffer is empty */
-		ret_val = -1;
+	/* If receiver buffer is empty, return -1 */
+	if ((*UxSTA & BIT_RXBE[instance]) != 0U) {
+		ret_val = -EPERM;
 	}
 
 	else {
@@ -328,24 +312,27 @@ static int uart_dspic_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret == 0) {
+		uint32_t instance = cfg->instance;
 		/* Setting the UART mode */
-		*UxCON |= UART_MODE;
+		*UxCON |= (UART_MODE_ASYNC_8BIT << _U1CON_MODE_POSITION);
 
 		/* Setting the baudrate */
-		*UxCON |= FRACTIONAL_BRG;
+		*UxCON |= BIT_CLOCK_MODE[instance];
 		*UxBRG |= CALCULATE_BRG(cfg->baudrate);
 
 		/* Enable UART */
-		*UxCON |= BIT_UARTEN;
-		*UxCON |= BIT_UTXEN;
-		*UxCON |= BIT_URXEN;
+		*UxCON |= BIT_UARTEN[instance];
+		*UxCON |= BIT_TXEN[instance];
+		*UxCON |= BIT_RXEN[instance];
 
 		/* Selecting the transmit and receive interrupt level bit */
-		*UxSTA |= BIT_UxTXWM;
-		*UxSTA |= BIT_UxRXWM;
+		*UxSTA |= ((uint32_t)UART_INTLVL_0 << BIT_TXWM_POS[instance]);
+		*UxSTA |= ((uint32_t)UART_INTLVL_0 << BIT_RXWM_POS[instance]);
 
-		/* Enabling the Error interrupts */
-		*UxSTA |= ERR_IRQ_ENABLE;
+		/* Enable all UART error interrupts in one write */
+		*UxSTA |= (BIT_PERIE[instance] | BIT_ABDOVIE[instance] | BIT_CERIE[instance] |
+			   BIT_FERIE[instance] | BIT_RXBKIE[instance] | BIT_RXFOIE[instance] |
+			   BIT_TXCIE[instance]);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 		if (cfg->irq_config_func != NULL) {
@@ -394,8 +381,6 @@ static const struct uart_driver_api uart_dspic_api = {
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, 2, irq),                                      \
 			    DT_INST_IRQ_BY_IDX(inst, 2, priority), uart_dspic_isr,                 \
 			    DEVICE_DT_INST_GET(inst), 0);                                          \
-		irq_enable(DT_INST_IRQ_BY_IDX(inst, 0, irq));                                      \
-		irq_enable(DT_INST_IRQ_BY_IDX(inst, 1, irq));                                      \
 		irq_enable(DT_INST_IRQ_BY_IDX(inst, 2, irq));                                      \
 	}
 
@@ -412,6 +397,7 @@ static const struct uart_driver_api uart_dspic_api = {
 	static const struct uart_dspic_config uart_dspic_config_##inst = {                         \
 		.base = DT_INST_REG_ADDR(inst),                                                    \
 		.baudrate = DT_INST_PROP(inst, current_speed),                                     \
+		.instance = inst,                                                                  \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
 		UART_DSPIC_IRQ_CONFIG_FUNC(inst).rx_irq_num = DT_INST_IRQ_BY_IDX(inst, 0, irq),    \
 		.tx_irq_num = DT_INST_IRQ_BY_IDX(inst, 1, irq),                                    \

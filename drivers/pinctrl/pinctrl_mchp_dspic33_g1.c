@@ -105,7 +105,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 
 	for (uint8_t i = 0U; i < pin_cnt; i++) {
 		ret = pinctrl_configure_pin(pins[i]);
-		if (ret) {
+		if (ret != 0) {
 			break;
 		}
 	}

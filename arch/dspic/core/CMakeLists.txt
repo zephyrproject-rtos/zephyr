@@ -14,6 +14,7 @@ zephyr_library_sources(
     vector_table.S
     reset1.S
     irq_offload.c
+    thread_abort.c
 )
 
 zephyr_linker_sources(ROM_START SORT_KEY 0x00 vector_table.ld)

@@ -16,7 +16,7 @@ config FLASH_BASE_ADDRESS
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
 config MAIN_STACK_SIZE
-	default 512
+	default 1024
 
 config IDLE_STACK_SIZE
 	default 512

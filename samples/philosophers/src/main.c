@@ -60,7 +60,7 @@
 
 #ifndef NUM_PHIL
 #if CONFIG_BOARD_DSPIC33A_CURIOSITY_P33AK128MC106
-#define NUM_PHIL 4
+#define NUM_PHIL 3
 #else
 #define NUM_PHIL 6
 #endif

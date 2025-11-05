@@ -17,6 +17,12 @@ config DYNAMIC_INTERRUPTS
 config GEN_IRQ_START_VECTOR
 	default 0
 
+config ARCH_HAS_THREAD_ABORT
+	default y
+
+config ISR_STACK_SIZE
+    default 128
+
 config DSPIC33_IRQ_OFFLOAD_IRQ
 	int "IRQ number for irq_offload()"
 	default 34

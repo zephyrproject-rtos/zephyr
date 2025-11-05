@@ -23,8 +23,9 @@
 
 #define TIMER1_BASE            DT_REG_ADDR(DT_NODELABEL(timer1))
 #define MAX_TIMER_CLOCK_CYCLES 0xFFFFFFFFU
-#define TMRx_OFFSET            0x0004U
-#define PRx_OFFSET             0x0008U
+#define TMRx_OFFSET            (uint32_t)(&TMR1 - &T1CON) * sizeof(int)
+#define PRx_OFFSET             (uint32_t)(&PR1 - &T1CON) * sizeof(int)
+#define BIT_ON                 _T1CON_ON_MASK
 
 static struct k_spinlock lock;
 static uint64_t total_cycles;
@@ -37,8 +38,6 @@ const int32_t z_sys_timer_irq_for_test = DT_INST_IRQN(0);
 
 /* Timer configuration from DeviceTree */
 static volatile uint32_t *TxCON = (uint32_t *)TIMER1_BASE;
-static volatile uint32_t *TMRx = (uint32_t *)(TIMER1_BASE + TMRx_OFFSET);
-static volatile uint32_t *PRx = (uint32_t *)(TIMER1_BASE + PRx_OFFSET);
 
 /* Map prescaler value to bits */
 static uint8_t map_prescaler_to_bits(uint32_t val)
@@ -68,15 +67,17 @@ static uint8_t map_prescaler_to_bits(uint32_t val)
 /* Configure timer registers */
 static void configure_timer(uint32_t cycles)
 {
+	volatile uint32_t *TMRx = (uint32_t *)(TIMER1_BASE + TMRx_OFFSET);
+	volatile uint32_t *PRx = (uint32_t *)(TIMER1_BASE + PRx_OFFSET);
 	/* Turn off timer and clear TMR register */
-	*TxCON &= ~(0x8000U);
+	*TxCON &= ~(BIT_ON);
 	*TMRx = 0;
 
 	/* set the timeout count */
 	*PRx = cycles - 1U;
 
 	/* Start the timer. */
-	*TxCON |= 0x8000U;
+	*TxCON |= BIT_ON;
 }
 
 static void initialize_timer(void)
@@ -104,6 +105,8 @@ void arch_busy_wait(uint32_t usec_to_wait)
  */
 uint32_t sys_clock_cycle_get_32(void)
 {
+	volatile uint32_t *TMRx = (uint32_t *)(TIMER1_BASE + TMRx_OFFSET);
+	volatile uint32_t *PRx = (uint32_t *)(TIMER1_BASE + PRx_OFFSET);
 	uint32_t cycles;
 	k_spinlock_key_t key;
 
@@ -117,6 +120,7 @@ uint32_t sys_clock_cycle_get_32(void)
 
 uint32_t sys_clock_elapsed(void)
 {
+	volatile uint32_t *TMRx = (uint32_t *)(TIMER1_BASE + TMRx_OFFSET);
 	uint32_t ticks_elapsed;
 	k_spinlock_key_t key;
 
@@ -142,6 +146,7 @@ uint32_t sys_clock_elapsed(void)
 
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
+	volatile uint32_t *TMRx = (uint32_t *)(TIMER1_BASE + TMRx_OFFSET);
 	volatile uint32_t next_count;
 	k_spinlock_key_t key;
 
@@ -173,6 +178,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 /* ISR */
 static void timer1_isr(const void *arg)
 {
+	volatile uint32_t *PRx = (uint32_t *)(TIMER1_BASE + PRx_OFFSET);
 	uint32_t elapsed_ticks;
 	k_spinlock_key_t key;
 

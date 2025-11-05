@@ -79,9 +79,9 @@ struct _callee_saved {
 	uint32_t BccH; /* Higher 32 bits of accumulator B */
 	uint32_t BccU; /* sign extended upper bits of Accumulator B */
 
+	uint32_t splim; /* stack limit register */
 	uint32_t stack; /* stack pointer, W15 register*/
 	uint32_t frame; /* Frame pointer, w14 register */
-	uint32_t splim; /* stack limit register */
 };
 typedef struct _callee_saved _callee_saved_t;
 
