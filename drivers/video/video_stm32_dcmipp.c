@@ -1166,6 +1166,17 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 		if (ret < 0) {
 			goto out;
 		}
+
+		/* Limit the amount of hardware handshake interrupts received by slave IP */
+		if (pipe->id == DCMIPP_PIPE1) {
+			stm32_reg_modify_bits(&dcmipp->hdcmipp.Instance->P1PPCR,
+					      DCMIPP_P1PPCR_LINEMULT_Msk,
+					      DCMIPP_MULTILINE_128_LINES);
+		} else {
+			stm32_reg_modify_bits(&dcmipp->hdcmipp.Instance->P2PPCR,
+					      DCMIPP_P1PPCR_LINEMULT_Msk,
+					      DCMIPP_MULTILINE_128_LINES);
+		}
 	}
 #endif
 
