@@ -33,8 +33,9 @@
 
 #define TRANSFER_LOOPS (4)
 
-static __aligned(32) uint8_t tx_data[CONFIG_DMA_LOOP_TRANSFER_SIZE];
-static __aligned(32) uint8_t rx_data[TRANSFER_LOOPS][CONFIG_DMA_LOOP_TRANSFER_SIZE] = { { 0 } };
+static __aligned(CONFIG_DMA_LOOP_ALIGNMENT) uint8_t tx_data[CONFIG_DMA_LOOP_TRANSFER_SIZE];
+static __aligned(CONFIG_DMA_LOOP_ALIGNMENT) uint8_t
+	rx_data[TRANSFER_LOOPS][CONFIG_DMA_LOOP_TRANSFER_SIZE] = { { 0 } };
 
 volatile uint32_t transfer_count;
 volatile uint32_t done;

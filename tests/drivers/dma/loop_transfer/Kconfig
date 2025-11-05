@@ -21,3 +21,7 @@ config DMA_LOOP_TRANSFER_NUMBER_OF_DMAS
 config DMA_LOOP_TRANSFER_SIZE
 	int "Number of bytes to transfer"
 	default 8192
+
+config DMA_LOOP_ALIGNMENT
+	int "TX and RX data alignment in bytes"
+	default 32
