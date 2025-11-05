@@ -20,23 +20,25 @@ if(WIN32)
   file(TO_NATIVE_PATH "${_XCDSC_LINK}" _XCDSC_LINK_WIN)
   file(TO_NATIVE_PATH "${_XCDSC_REAL}" _XCDSC_REAL_WIN)
 
-  # Ensures %TEMP%\xcdsc is a symlink/junction pointing to XCDSC_TOOLCHAIN_PATH, 
-  # creating or replacing it as needed (shell chosen via _CURRENT_SHELL).
+  # Ensure %TEMP%\xcdsc points to ${_XCDSC_REAL}; recreate only if different.
   if(_CURRENT_SHELL STREQUAL "powershell")
-    message(STATUS "Ensuring junction via PowerShell")
     execute_process(
       COMMAND powershell -NoProfile -ExecutionPolicy Bypass -Command
         "\$ErrorActionPreference='Stop'; \$ConfirmPreference='None';"
         "\$p = Join-Path \$env:TEMP 'xcdsc';"
         "\$t = '${_XCDSC_REAL}';"
+        "function Normalize([string]\$path){ if(-not \$path){return \$null}; [IO.Path]::GetFullPath(\$path).TrimEnd([IO.Path]::DirectorySeparatorChar,[IO.Path]::AltDirectorySeparatorChar) }"
         "if (Test-Path -LiteralPath \$p) {"
         "  \$it = Get-Item -LiteralPath \$p -Force;"
-        "  if (-not (\$it.Attributes -band [IO.FileAttributes]::ReparsePoint)) {"
-        "    if (\$it.PSIsContainer) {"
-        "      Remove-Item -LiteralPath \$p -Recurse -Force -Confirm:\$false"
-        "    } else {"
-        "      Remove-Item -LiteralPath \$p -Force -Confirm:\$false"
+        "  if (\$it.Attributes -band [IO.FileAttributes]::ReparsePoint) {"
+        "    \$curr = Normalize ((\$it.Target | Select-Object -First 1));"
+        "    \$want = Normalize \$t;"
+        "    if (-not \$curr -or -not [String]::Equals(\$curr,\$want,[StringComparison]::OrdinalIgnoreCase)) {"
+        "      cmd /d /c \"rmdir `\"\$p`\"\" | Out-Null;"   # <-- changed: delete junction via cmd (no prompt)
+        "      New-Item -ItemType Junction -Path \$p -Target \$t | Out-Null"
         "    }"
+        "  } else {"
+        "    if (\$it.PSIsContainer) { Remove-Item -LiteralPath \$p -Recurse -Force -Confirm:\$false } else { Remove-Item -LiteralPath \$p -Force -Confirm:\$false }"
         "    New-Item -ItemType Junction -Path \$p -Target \$t | Out-Null"
         "  }"
         "} else {"
@@ -50,34 +52,40 @@ if(WIN32)
       message(FATAL_ERROR "Failed to ensure %TEMP%\\xcdsc junction (PowerShell).\n${_ps_err}")
     endif()
   else()
-    message(STATUS "Ensuring junction via Command Prompt")
-    # Ensures %TEMP%\xcdsc is a symlink/junction to XCDSC_TOOLCHAIN_PATH via cmd, 
-    # creating or replacing it as needed.
+    # Use PowerShell (invoked from cmd) to compare target; recreate only if different.
     execute_process(
       COMMAND cmd.exe /C
-        "if exist \"${_XCDSC_LINK_WIN}\" ( "
-        "  fsutil reparsepoint query \"${_XCDSC_LINK_WIN}\" >nul 2>&1 && ( ver >nul ) "
-        "  || ( "
-        "       if exist \"${_XCDSC_LINK_WIN}\\*\" ( "
-        "         rmdir /S /Q \"${_XCDSC_LINK_WIN}\" "
-        "       ) else ( "
-        "         del /Q /F \"${_XCDSC_LINK_WIN}\" 2>nul "
-        "       ) & "
-        "       mklink /J \"${_XCDSC_LINK_WIN}\" \"${_XCDSC_REAL_WIN}\" "
-        "     ) "
-        ") else ( "
-        "  mklink /J \"${_XCDSC_LINK_WIN}\" \"${_XCDSC_REAL_WIN}\" "
-        ")"
+        "powershell -NoProfile -ExecutionPolicy Bypass -Command "
+        "\"\$ErrorActionPreference='Stop'; \$ConfirmPreference='None'; "
+        "\$p = Join-Path \$env:TEMP 'xcdsc'; "
+        "\$t = '${_XCDSC_REAL}'; "
+        "function N([string]\$x){ if(-not \$x){return \$null}; [IO.Path]::GetFullPath(\$x).TrimEnd([IO.Path]::DirectorySeparatorChar,[IO.Path]::AltDirectorySeparatorChar) } "
+        "if (Test-Path -LiteralPath \$p) { "
+        "  \$it = Get-Item -LiteralPath \$p -Force; "
+        "  if (\$it.Attributes -band [IO.FileAttributes]::ReparsePoint) { "
+        "    \$curr = N ((\$it.Target | Select-Object -First 1)); "
+        "    \$want = N \$t; "
+        "    if (-not \$curr -or -not [String]::Equals(\$curr,\$want,[StringComparison]::OrdinalIgnoreCase)) { "
+        "      cmd /d /c \"rmdir `\"\$p`\"\" | Out-Null; "  # <-- changed: delete junction via cmd (no prompt)
+        "      New-Item -ItemType Junction -Path \$p -Target \$t | Out-Null "
+        "    } "
+        "  } else { "
+        "    if (\$it.PSIsContainer) { Remove-Item -LiteralPath \$p -Recurse -Force -Confirm:\$false } else { Remove-Item -LiteralPath \$p -Force -Confirm:\$false } "
+        "    New-Item -ItemType Junction -Path \$p -Target \$t | Out-Null "
+        "  } "
+        "} else { "
+        "  New-Item -ItemType Junction -Path \$p -Target \$t | Out-Null "
+        "}\""
       RESULT_VARIABLE _cmd_rv
       OUTPUT_VARIABLE _cmd_out
       ERROR_VARIABLE  _cmd_err
     )
     if(NOT _cmd_rv EQUAL 0)
-      message(FATAL_ERROR "Failed to ensure %TEMP%\\xcdsc junction (cmd).\n${_cmd_err}")
+      message(FATAL_ERROR "Failed to ensure %TEMP%\\xcdsc junction (cmd/PowerShell).\n${_cmd_err}")
     endif()
   endif()
 
-  # Use the junction for the toolchain
+  # Use the (possibly newly created) junction for the toolchain
   set(XCDSC_TOOLCHAIN_PATH "${_XCDSC_LINK}")
   message(STATUS "XCDSC toolchain (real): ${_XCDSC_REAL}")
   message(STATUS "XCDSC toolchain (via junction): ${XCDSC_TOOLCHAIN_PATH}")
@@ -99,6 +107,5 @@ else() # Support for picolibc is indicated by the presence of 'picolibc.h' in th
     file(GLOB_RECURSE picolibc_header ${XCDSC_TOOLCHAIN_PATH}/include/picolibc/picolibc.h)
     if(picolibc_header)
         set(TOOLCHAIN_HAS_PICOLIBC ON CACHE BOOL "True if toolchain supports picolibc")
-        endif()
+    endif()
 endif()
- 
