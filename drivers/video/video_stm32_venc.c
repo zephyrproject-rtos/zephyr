@@ -86,7 +86,10 @@ struct stm32_venc_ewl {
 	const struct stm32_venc_config *config;
 	struct k_sem complete;
 	uint32_t irq_status;
+
+	/* Stats counters (for debugging) */
 	uint32_t irq_cnt;
+	uint32_t irq_fuse_cnt;
 	uint32_t mem_cnt;
 };
 
@@ -168,6 +171,7 @@ const void *EWLInit(EWLInitParam_t *param)
 	/* set client type */
 	ewl_instance.client_type = param->clientType;
 	ewl_instance.irq_cnt = 0;
+	ewl_instance.irq_fuse_cnt = 0;
 
 	return (void *)&ewl_instance;
 }
@@ -453,8 +457,11 @@ static int encoder_prepare(struct stm32_venc_data *data)
 	H264EncPreProcessingCfg preproc_cfg = {0};
 	H264EncRateCtrl ratectrl_cfg = {0};
 	H264EncCodingCtrl codingctrl_cfg = {0};
+	struct stm32_venc_ewl *inst = &ewl_instance;
 
 	data->frame_nb = 0;
+	inst->irq_cnt = 0;
+	inst->irq_fuse_cnt = 0;
 
 	/* set config to 1 reference frame */
 	cfg.refFrameAmount = 1;
@@ -578,6 +585,7 @@ static int encode_frame(struct stm32_venc_data *data)
 	struct video_buffer *output;
 	H264EncIn enc_in = {0};
 	H264EncOut enc_out = {0};
+	struct stm32_venc_ewl *inst = &ewl_instance;
 
 	if (k_fifo_is_empty(&data->in_fifo_in) || k_fifo_is_empty(&data->out_fifo_in)) {
 		/* Encoding deferred to next buffer queueing */
@@ -607,6 +615,9 @@ static int encode_frame(struct stm32_venc_data *data)
 		/* if frame is the first or resync needed: set as intra coded */
 		enc_in.codingType = H264ENC_INTRA_FRAME;
 		data->resync = false;
+
+		LOG_DBG("frames=%d irq=%d fuse=%d", data->frame_nb, inst->irq_cnt,
+			inst->irq_fuse_cnt);
 	} else {
 		/* if there was a frame previously, set as predicted */
 		enc_in.timeIncrement = 1;
@@ -679,12 +690,15 @@ out:
 static int stm32_venc_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	struct stm32_venc_data *data = dev->data;
+	struct stm32_venc_ewl *inst = &ewl_instance;
 
 	ARG_UNUSED(type);
 
 	if (!enable) {
 		/* Stop VENC */
 		encoder_end(data);
+		LOG_DBG("frames=%d irq=%d fuse=%d", data->frame_nb, inst->irq_cnt,
+			inst->irq_fuse_cnt);
 	}
 
 	return 0;
@@ -748,6 +762,7 @@ ISR_DIRECT_DECLARE(stm32_venc_isr)
 		sys_write32(ASIC_STATUS_FUSE | ASIC_IRQ_LINE, config->reg + BASE_HEncIRQ);
 		/* read back the IRQ status to update its value */
 		irq_status = sys_read32(config->reg + BASE_HEncIRQ);
+		inst->irq_fuse_cnt++;
 	}
 
 	if (irq_status != 0U) {
