@@ -986,10 +986,10 @@ K_MSGQ_DEFINE(rx_##index##_queue, sizeof(struct queue_item), CONFIG_I2S_STM32_RX
 K_MSGQ_DEFINE(tx_##index##_queue, sizeof(struct queue_item), CONFIG_I2S_STM32_TX_BLOCK_COUNT, 4);\
 									\
 static struct i2s_stm32_data i2s_stm32_data_##index = {			\
-	UTIL_AND(DT_INST_DMAS_HAS_NAME(index, rx),			\
-		I2S_DMA_CHANNEL_INIT(index, rx, RX, PERIPHERAL, MEMORY)),\
-	UTIL_AND(DT_INST_DMAS_HAS_NAME(index, tx),			\
-		I2S_DMA_CHANNEL_INIT(index, tx, TX, MEMORY, PERIPHERAL)),\
+	IF_ENABLED(DT_INST_DMAS_HAS_NAME(index, rx),			\
+		   (I2S_DMA_CHANNEL_INIT(index, rx, RX, PERIPHERAL, MEMORY))),\
+	IF_ENABLED(DT_INST_DMAS_HAS_NAME(index, tx),			\
+		   (I2S_DMA_CHANNEL_INIT(index, tx, TX, MEMORY, PERIPHERAL))),\
 };									\
 DEVICE_DT_INST_DEFINE(index,						\
 		      &i2s_stm32_initialize, NULL,			\
