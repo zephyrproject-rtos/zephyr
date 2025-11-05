@@ -19,15 +19,19 @@
 
 #if defined(CONFIG_SOC_MIMXRT1176_CM7)
 #define USE_PSRAM_FRAMEBUFFER 0
-#elif defined(CONFIG_SOC_MIMXRT595S_CM33)
+#elif defined(CONFIG_SOC_MIMXRT595S_CM33) || defined(CONFIG_SOC_MIMXRT798S_CM33_CPU0)
 #define USE_PSRAM_FRAMEBUFFER 1
 #else
 #error "Unsupported SoC!"
 #endif
 
+#define DEMO_PANEL_WIDTH  (720)
+#define DEMO_PANEL_HEIGHT (1280)
+
 /* Default tessellation window width and height, in pixels */
 #define DEFAULT_VG_LITE_TW_WIDTH  128 /* pixels */
-#define DEFAULT_VG_LITE_TW_HEIGHT 128 /* pixels */
+#define DEFAULT_VG_LITE_TW_HEIGHT DEMO_PANEL_HEIGHT /* pixels */
+
 
 typedef struct {
 	const struct device *dev;

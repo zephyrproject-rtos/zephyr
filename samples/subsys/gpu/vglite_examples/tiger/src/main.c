@@ -1,5 +1,5 @@
 /*
- * Copyright 2019, 2024 NXP
+ * Copyright 2019, 2024-2025 NXP
  * All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -22,6 +22,25 @@
 #define VGLITE_STACK_SIZE 			CONFIG_VGLITE_STACK_SIZE
 #define VGLITE_PRIORITY   			K_HIGHEST_THREAD_PRIO
 #define VGLITE_COMMAND_BUFFER_SZ 	(128 * 1024)
+
+#if (720 * 1280 == (DEMO_PANEL_WIDTH) * (DEMO_PANEL_HEIGHT))
+#define TW 720
+/* On RT595S */
+#if defined(CONFIG_SOC_MIMXRT595S_CM33)
+/* Tessellation window = 720 x 128 */
+#define TH 128
+/* On RT798S */
+#elif defined(CONFIG_SOC_MIMXRT798S_CM33_CPU0)
+/* Tessellation window = 720 x 640 */
+#define TH 640
+/* On RT1170 */
+#elif defined(CONFIG_SOC_MIMXRT1176_CM7) || defined(CONFIG_SOC_MIMXRT1166_CM7)
+/* Tessellation window = 720 x 1280 */
+#define TH 1280
+#else
+#error "Unsupported CPU !"
+#endif
+#endif
 
 K_THREAD_STACK_DEFINE(vglite_stack, VGLITE_STACK_SIZE);
 static struct k_thread vglite_thread;
