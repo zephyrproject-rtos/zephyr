@@ -25,14 +25,4 @@ config LV_Z_FLUSH_THREAD
 
 endif # LVGL
 
-if TRUSTED_EXECUTION_NONSECURE
-
-Z_CODE_PARTITION := zephyr,code-partition
-NS_IMAGE_BASE := $(dt_chosen_reg_addr_hex,$Z_CODE_PARTITION)
-
-configdefault FLASH_BASE_ADDRESS
-	default $(NS_IMAGE_BASE) if FLASH_MCUX_FLEXSPI_XIP
-
-endif
-
 endif # BOARD_FRDM_RW612
