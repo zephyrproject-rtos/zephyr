@@ -445,7 +445,7 @@ zephyr_udc0: &usbotg_hs1 {
  */
 &eth1_rgmii_gtx_clk_pf0 {
 	st,io-delay-path = "output";
-	st,io-delay-ps = <2000>;
+	st,io-delay-ps = <1000>;
 };
 
 &mac {
