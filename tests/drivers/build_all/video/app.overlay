@@ -138,8 +138,23 @@
 				reg = <0x24>;
 				status = "okay";
 				data-bits = <0x4>;
+
 				port {
 					hm01b0_ep_out: endpoint {
+						remote-endpoint-label = "";
+					};
+				};
+			};
+
+			test_i2c_hm0360: hm0360@11 {
+				compatible = "himax,hm0360";
+				reg = <0x24>;
+				status = "okay";
+				reset-gpios = <&test_gpio 0 0>;
+				pwdn-gpios = <&test_gpio 1 0>;
+
+				port {
+					hm0360_ep_out: endpoint {
 						remote-endpoint-label = "";
 					};
 				};
