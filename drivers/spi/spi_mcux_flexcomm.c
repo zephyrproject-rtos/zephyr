@@ -558,7 +558,10 @@ static int spi_mcux_dma_transfer(const struct device *dev, const struct spi_conf
 	/* Parse all data to be sent into chained DMA blocks. */
 	while (1) {
 		block_length = spi_context_max_continuous_chunk(&data->ctx);
-		assert(block_length >= data_size);
+		if (block_length < data_size) {
+			LOG_ERR("unexpected block length");
+			return -ECANCELED;
+		}
 		if (data->ctx.tx_count <= 1 && data->ctx.rx_count <= 1 &&
 		    block_length == spi_context_longest_current_buf(&data->ctx)) {
 			/* On the last buffer. First send all but the last word, then when only one
@@ -589,8 +592,10 @@ static int spi_mcux_dma_transfer(const struct device *dev, const struct spi_conf
 		/* Increment block count before exit so the last block is counted for dma_cfg. */
 		dma_block++;
 		if (last_packet) {
-			assert(spi_context_total_rx_len(&data->ctx) == 0);
-			assert(spi_context_total_tx_len(&data->ctx) == 0);
+			if (spi_context_total_rx_len(&data->ctx) != 0 ||
+			    spi_context_total_tx_len(&data->ctx) != 0) {
+				return -EIO;
+			}
 			break;
 		}
 		if (dma_block == CONFIG_SPI_MCUX_FLEXCOMM_DMA_MAX_BLOCKS) {
