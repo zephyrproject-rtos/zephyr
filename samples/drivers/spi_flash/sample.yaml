@@ -15,6 +15,7 @@ tests:
       - hifive_unmatched/fu740/s7
       - hifive_unmatched/fu740/u74
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - stm32n6570_dk/stm32n657xx/sb
     harness: console
     harness_config:
       type: multi_line
