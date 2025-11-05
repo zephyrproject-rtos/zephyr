@@ -58,11 +58,6 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		slot0_partition: partition@08020000 {
-			label = "image-0";
-			reg = <0x00020000 DT_SIZE_K(640)>;
-		};
-
 		/* Note slot 0 has one additional sector,
 		 * this is intended for use with the swap move algorithm
 		 */
