@@ -1,5 +1,6 @@
 /*
  * Copyright 2024 NXP
+ * Copyright (c) 2025 Michael Smorto
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,10 +17,12 @@
 #include "video_ctrls.h"
 #include "video_device.h"
 
-LOG_MODULE_REGISTER(video_ov7670, CONFIG_VIDEO_LOG_LEVEL);
+LOG_MODULE_REGISTER(video_ov767x, CONFIG_VIDEO_LOG_LEVEL);
 
-struct ov7670_config {
+struct ov767x_config {
 	struct i2c_dt_spec bus;
+	uint32_t camera_model;
+	const struct video_format_cap *fmts;
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	struct gpio_dt_spec reset;
 #endif
@@ -28,13 +31,13 @@ struct ov7670_config {
 #endif
 };
 
-struct ov7670_ctrls {
+struct ov767x_ctrls {
 	struct video_ctrl hflip;
 	struct video_ctrl vflip;
 };
 
-struct ov7670_data {
-	struct ov7670_ctrls ctrls;
+struct ov767x_data {
+	struct ov767x_ctrls ctrls;
 	struct video_format fmt;
 };
 
@@ -133,21 +136,24 @@ struct ov7670_data {
 #define OV7670_MVFP_HFLIP 0x20
 #define OV7670_MVFP_VFLIP 0x10
 
-#define OV7670_VIDEO_FORMAT_CAP(width, height, format)                                             \
+#define OV767X_MODEL_OV7670 7670
+#define OV767X_MODEL_OV7675 7675
+
+#define OV767X_VIDEO_FORMAT_CAP(width, height, format)                                             \
 {                                                                                          \
 	.pixelformat = (format), .width_min = (width), .width_max = (width),               \
 	.height_min = (height), .height_max = (height), .width_step = 0, .height_step = 0  \
 }
 
-static const struct video_format_cap fmts[] = {
-	OV7670_VIDEO_FORMAT_CAP(176, 144, VIDEO_PIX_FMT_RGB565), /* QCIF  */
-	OV7670_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_RGB565), /* QVGA  */
-	OV7670_VIDEO_FORMAT_CAP(352, 288, VIDEO_PIX_FMT_RGB565), /* CIF   */
-	OV7670_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_RGB565), /* VGA   */
-	OV7670_VIDEO_FORMAT_CAP(176, 144, VIDEO_PIX_FMT_YUYV),   /* QCIF  */
-	OV7670_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_YUYV),   /* QVGA  */
-	OV7670_VIDEO_FORMAT_CAP(352, 288, VIDEO_PIX_FMT_YUYV),   /* CIF   */
-	OV7670_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_YUYV),   /* VGA   */
+static const struct video_format_cap ov7670_fmts[] = {
+	OV767X_VIDEO_FORMAT_CAP(176, 144, VIDEO_PIX_FMT_RGB565), /* QCIF  */
+	OV767X_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_RGB565), /* QVGA  */
+	OV767X_VIDEO_FORMAT_CAP(352, 288, VIDEO_PIX_FMT_RGB565), /* CIF   */
+	OV767X_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_RGB565), /* VGA   */
+	OV767X_VIDEO_FORMAT_CAP(176, 144, VIDEO_PIX_FMT_YUYV),   /* QCIF  */
+	OV767X_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_YUYV),   /* QVGA  */
+	OV767X_VIDEO_FORMAT_CAP(352, 288, VIDEO_PIX_FMT_YUYV),   /* CIF   */
+	OV767X_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_YUYV),   /* VGA   */
 	{0}
 };
 
@@ -155,7 +161,7 @@ static const struct video_format_cap fmts[] = {
  * This initialization table is based on the MCUX SDK driver for the OV7670.
  * Note that this table assumes the camera is fed a 6MHz XCLK signal
  */
-static const struct video_reg8 ov7670_init_regtbl[] = {
+static const struct video_reg8 ov767x_init_regtbl[] = {
 	{OV7670_MVFP, 0x00}, /* MVFP: Mirror/VFlip,Normal image */
 
 	/* configure the output timing */
@@ -354,38 +360,29 @@ static const struct video_reg8 ov7670_regs_vga[] = {
 	{OV7670_SCALING_PCLK_DELAY, 0x02},
 };
 
-static int ov7670_get_caps(const struct device *dev, struct video_caps *caps)
+static int ov767x_get_caps(const struct device *dev, struct video_caps *caps)
 {
-	caps->format_caps = fmts;
+	const struct ov767x_config *config = dev->config;
+
+	caps->format_caps = config->fmts;
 	return 0;
 }
 
+#if DT_HAS_COMPAT_STATUS_OKAY(ovti_ov7670)
 static int ov7670_set_fmt(const struct device *dev, struct video_format *fmt)
 {
-	const struct ov7670_config *config = dev->config;
-	struct ov7670_data *data = dev->data;
+	const struct ov767x_config *config = dev->config;
+	struct ov767x_data *data = dev->data;
 	int ret = -ENOTSUP;
 	uint8_t i = 0U;
 
-	if (fmt->pixelformat != VIDEO_PIX_FMT_RGB565 && fmt->pixelformat != VIDEO_PIX_FMT_YUYV) {
-		LOG_ERR("Only RGB565 and YUYV supported!");
-		return -ENOTSUP;
-	}
-
-	if (!memcmp(&data->fmt, fmt, sizeof(data->fmt))) {
-		/* nothing to do */
-		return 0;
-	}
-
-	memcpy(&data->fmt, fmt, sizeof(data->fmt));
-
 	/* Set output resolution */
-	while (fmts[i].pixelformat) {
-		if (fmts[i].width_min == fmt->width &&
-				fmts[i].height_min == fmt->height &&
-				fmts[i].pixelformat == fmt->pixelformat) {
+	while (config->fmts[i].pixelformat) {
+		if (config->fmts[i].width_min == fmt->width &&
+		    config->fmts[i].height_min == fmt->height &&
+		    config->fmts[i].pixelformat == fmt->pixelformat) {
 			/* Set output format */
-			switch (fmts[i].width_min) {
+			switch (config->fmts[i].width_min) {
 			case 176: /* QCIF */
 				ret = video_write_cci_multiregs8(&config->bus, ov7670_regs_qcif,
 								 ARRAY_SIZE(ov7670_regs_qcif));
@@ -422,20 +419,49 @@ static int ov7670_set_fmt(const struct device *dev, struct video_format *fmt)
 
 	return 0;
 }
+#endif
 
-static int ov7670_get_fmt(const struct device *dev, struct video_format *fmt)
+static int ov767x_set_fmt(const struct device *dev, struct video_format *fmt)
 {
-	struct ov7670_data *data = dev->data;
+	const struct ov767x_config *config = dev->config;
+	struct ov767x_data *data = dev->data;
+	int ret;
+
+	if (fmt->pixelformat != VIDEO_PIX_FMT_RGB565 && fmt->pixelformat != VIDEO_PIX_FMT_YUYV) {
+		LOG_ERR("Only RGB565 and YUYV supported!");
+		return -ENOTSUP;
+	}
+
+	if (!memcmp(&data->fmt, fmt, sizeof(data->fmt))) {
+		/* nothing to do */
+		return 0;
+	}
+
+	memcpy(&data->fmt, fmt, sizeof(data->fmt));
+
+#if DT_HAS_COMPAT_STATUS_OKAY(ovti_ov7670)
+	ret = ov7670_set_fmt(dev, fmt);
+	if (ret < 0) {
+		return ret;
+	}
+#endif
+
+	return 0;
+}
+
+static int ov767x_get_fmt(const struct device *dev, struct video_format *fmt)
+{
+	struct ov767x_data *data = dev->data;
 
 	memcpy(fmt, &data->fmt, sizeof(data->fmt));
 	return 0;
 }
 
-static int ov7670_init_controls(const struct device *dev)
+static int ov767x_init_controls(const struct device *dev)
 {
 	int ret;
-	struct ov7670_data *drv_data = dev->data;
-	struct ov7670_ctrls *ctrls = &drv_data->ctrls;
+	struct ov767x_data *drv_data = dev->data;
+	struct ov767x_ctrls *ctrls = &drv_data->ctrls;
 
 	ret = video_init_ctrl(&ctrls->hflip, dev, VIDEO_CID_HFLIP,
 			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
@@ -447,9 +473,9 @@ static int ov7670_init_controls(const struct device *dev)
 			       (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
 }
 
-static int ov7670_init(const struct device *dev)
+static int ov767x_init(const struct device *dev)
 {
-	const struct ov7670_config *config = dev->config;
+	const struct ov767x_config *config = dev->config;
 	int ret;
 	uint8_t pid;
 	struct video_format fmt = {
@@ -463,7 +489,7 @@ static int ov7670_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(pwdn_gpios)
+#if DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ovti_ov7670, pwdn_gpios)
 	/* Power up camera module */
 	if (config->pwdn.port != NULL) {
 		if (!gpio_is_ready_dt(&config->pwdn)) {
@@ -476,7 +502,8 @@ static int ov7670_init(const struct device *dev)
 		}
 	}
 #endif
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+
+#if DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(ovti_ov7670, reset_gpios)
 	/* Reset camera module */
 	if (config->reset.port != NULL) {
 		if (!gpio_is_ready_dt(&config->reset)) {
@@ -528,35 +555,32 @@ static int ov7670_init(const struct device *dev)
 	}
 	/* Delay after reset */
 	k_msleep(5);
-
-	ret = ov7670_set_fmt(dev, &fmt);
-
+	ret = ov767x_set_fmt(dev, &fmt);
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Write initialization values to OV7670 */
-	ret = video_write_cci_multiregs8(&config->bus, ov7670_init_regtbl,
-					 ARRAY_SIZE(ov7670_init_regtbl));
-
+	ret = video_write_cci_multiregs8(&config->bus, ov767x_init_regtbl,
+					 ARRAY_SIZE(ov767x_init_regtbl));
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Initialize controls */
-	return ov7670_init_controls(dev);
+	return ov767x_init_controls(dev);
 }
 
-static int ov7670_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
+static int ov767x_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	return 0;
 }
 
-static int ov7670_set_ctrl(const struct device *dev, uint32_t id)
+static int ov767x_set_ctrl(const struct device *dev, uint32_t id)
 {
-	const struct ov7670_config *config = dev->config;
-	struct ov7670_data *drv_data = dev->data;
-	struct ov7670_ctrls *ctrls = &drv_data->ctrls;
+	const struct ov767x_config *config = dev->config;
+	struct ov767x_data *drv_data = dev->data;
+	struct ov767x_ctrls *ctrls = &drv_data->ctrls;
 
 	switch (id) {
 	case VIDEO_CID_HFLIP:
@@ -570,36 +594,42 @@ static int ov7670_set_ctrl(const struct device *dev, uint32_t id)
 	}
 }
 
-static DEVICE_API(video, ov7670_api) = {
-	.set_format = ov7670_set_fmt,
-	.get_format = ov7670_get_fmt,
-	.get_caps = ov7670_get_caps,
-	.set_stream = ov7670_set_stream,
-	.set_ctrl = ov7670_set_ctrl,
+static DEVICE_API(video, ov767x_api) = {
+	.set_format = ov767x_set_fmt,
+	.get_format = ov767x_get_fmt,
+	.get_caps = ov767x_get_caps,
+	.set_stream = ov767x_set_stream,
+	.set_ctrl = ov767x_set_ctrl,
 };
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
-#define OV7670_RESET_GPIO(inst) .reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {}),
+#define OV767X_RESET_GPIO(inst) .reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {}),
 #else
-#define OV7670_RESET_GPIO(inst)
+#define OV767X_RESET_GPIO(inst)
 #endif
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(pwdn_gpios)
-#define OV7670_PWDN_GPIO(inst) .pwdn = GPIO_DT_SPEC_INST_GET_OR(inst, pwdn_gpios, {}),
+#define OV767X_PWDN_GPIO(inst) .pwdn = GPIO_DT_SPEC_INST_GET_OR(inst, pwdn_gpios, {}),
 #else
-#define OV7670_PWDN_GPIO(inst)
+#define OV767X_PWDN_GPIO(inst)
 #endif
 
-#define OV7670_INIT(inst)                                                                          \
-	const struct ov7670_config ov7670_config_##inst = {.bus = I2C_DT_SPEC_INST_GET(inst),      \
-							   OV7670_RESET_GPIO(inst)                 \
-							   OV7670_PWDN_GPIO(inst)};        \
+#define OV767X_INIT(inst, id)                                                                      \
+	static const struct ov767x_config ov##id##_config##inst = {                                \
+		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
+		.camera_model = id,                                                                \
+		.fmts = ov##id##_fmts,                                                             \
+		OV767X_RESET_GPIO(inst)                                   \
+		OV767X_PWDN_GPIO(inst)};                                   \
                                                                                                    \
-	struct ov7670_data ov7670_data_##inst;                                                     \
+	static struct ov767x_data ov##id##_data##inst;                                             \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, ov7670_init, NULL, &ov7670_data_##inst, &ov7670_config_##inst, \
-			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &ov7670_api);               \
+	DEVICE_DT_INST_DEFINE(inst, ov767x_init, NULL, &ov##id##_data##inst,                       \
+			      &ov##id##_config##inst, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,     \
+			      &ov767x_api);                                                        \
                                                                                                    \
-	VIDEO_DEVICE_DEFINE(ov7670_##inst, DEVICE_DT_INST_GET(inst), NULL);
+	VIDEO_DEVICE_DEFINE(ov##id##inst, DEVICE_DT_INST_GET(inst), NULL);
 
-DT_INST_FOREACH_STATUS_OKAY(OV7670_INIT)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT ovti_ov7670
+DT_INST_FOREACH_STATUS_OKAY_VARGS(OV767X_INIT, 7670)
