@@ -187,7 +187,7 @@ static void uart_bitbang_rx_counter_top_interrupt(const struct device *dev, void
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 				if ((data->user_cb) && (data->irq & UART_BITBANG_IRQ_PE)) {
-					data->user_cb(dev, data->user_data);
+					data->user_cb(uart_dev, data->user_data);
 				}
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
@@ -200,7 +200,7 @@ static void uart_bitbang_rx_counter_top_interrupt(const struct device *dev, void
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 		if ((data->user_cb) && (data->irq & UART_BITBANG_IRQ_RXNE)) {
-			data->user_cb(dev, data->user_data);
+			data->user_cb(uart_dev, data->user_data);
 		}
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 	}
@@ -287,7 +287,7 @@ static void uart_bitbang_tx_counter_top_interrupt(const struct device *dev, void
 			}
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 			if ((data->user_cb) && (data->irq & UART_BITBANG_IRQ_TC)) {
-				data->user_cb(dev, data->user_data);
+				data->user_cb(uart_dev, data->user_data);
 			}
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 		}
