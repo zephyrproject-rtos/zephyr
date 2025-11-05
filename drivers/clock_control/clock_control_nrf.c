@@ -800,7 +800,6 @@ static void hfclkaudio_init(void)
 
 static int clk_init(const struct device *dev)
 {
-	nrfx_err_t nrfx_err;
 	int err;
 	static const struct onoff_transitions transitions = {
 		.start = onoff_start,
@@ -814,8 +813,7 @@ static int clk_init(const struct device *dev)
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    nrfx_isr, nrfx_power_clock_irq_handler, 0);
 
-	nrfx_err = nrfx_clock_init(clock_event_handler);
-	if (nrfx_err != NRFX_SUCCESS) {
+	if (nrfx_clock_init(clock_event_handler) != 0) {
 		return -EIO;
 	}
 
