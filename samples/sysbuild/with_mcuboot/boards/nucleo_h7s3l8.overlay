@@ -11,7 +11,7 @@
 / {
 	chosen {
 		zephyr,flash = &mx25uw25645;
-		zephyr,flash-controller = &mx25uw25645;
+		zephyr,flash-controller = &ext_flash_ctrl;
 		zephyr,code-partition = &slot0_partition;
 	};
 };
