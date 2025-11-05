@@ -82,6 +82,13 @@ lfclk: lfclk@5000 {
 	status = "okay";
 };
 
+hfclk192m: hfclk192m@5000 {
+	compatible = "nordic,nrf-clock-hfclk192m";
+	reg = <0x5000 0x1000>;
+	interrupts = <5 NRF_DEFAULT_IRQ_PRIORITY>;
+	status = "okay";
+};
+
 power: power@5000 {
 	compatible = "nordic,nrf-power";
 	reg = <0x5000 0x1000>;
