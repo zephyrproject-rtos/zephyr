@@ -862,3 +862,55 @@ void quic_context_stream_foreach(struct quic_context *ctx,
  * @param user_data Caller specific data.
  */
 void quic_stream_foreach(quic_stream_cb_t cb, void *user_data);
+
+#if defined(CONFIG_NET_TEST)
+/* Test-only function declarations */
+struct quic_context *quic_get_context(int sock);
+int quic_get_len(const uint8_t *buf, size_t buf_len, uint64_t *len);
+int quic_put_len(uint8_t *buf, size_t buf_len, uint64_t len);
+
+bool quic_setup_initial_secrets(struct quic_endpoint *ep,
+				const uint8_t *cid, size_t cid_len,
+				uint8_t client_initial_secret[QUIC_HASH_SHA2_256_LEN],
+				uint8_t server_initial_secret[QUIC_HASH_SHA2_256_LEN]);
+
+int quic_hkdf_expand_label(const uint8_t *secret, size_t secret_len,
+			   const uint8_t *label, size_t label_length,
+			   uint8_t *okm, size_t okm_len);
+
+int quic_hp_mask(psa_key_id_t hp_key_id, int cipher_algo,
+		 const uint8_t *sample, uint8_t *mask);
+
+int quic_decrypt_header(const uint8_t *packet, size_t packet_len,
+			size_t pn_offset, psa_key_id_t hp_key_id,
+			int cipher_algo, uint8_t *first_byte_out,
+			uint32_t *packet_number_out, size_t *pn_length_out);
+
+int quic_encrypt_header(uint8_t *packet, size_t packet_len,
+			size_t pn_offset, size_t pn_length,
+			psa_key_id_t hp_key_id, int cipher_algo);
+
+bool quic_conn_init_setup(struct quic_endpoint *ep,
+			  const uint8_t *cid, size_t cid_len);
+
+void quic_construct_nonce(const uint8_t *iv, size_t iv_len,
+			  uint64_t packet_number, uint8_t *nonce);
+
+uint64_t quic_reconstruct_pn(uint32_t truncated_pn, size_t pn_nbits,
+			     uint64_t largest_pn);
+
+int quic_encrypt_payload(struct quic_pp_cipher *pp, uint64_t packet_number,
+			 const uint8_t *header, size_t header_len,
+			 const uint8_t *plaintext, size_t plaintext_len,
+			 uint8_t *ciphertext, size_t ciphertext_size,
+			 size_t *ciphertext_len);
+
+int quic_decrypt_payload(struct quic_pp_cipher *pp, uint64_t packet_number,
+			 const uint8_t *header, size_t header_len,
+			 const uint8_t *ciphertext, size_t ciphertext_len,
+			 uint8_t *plaintext, size_t plaintext_size,
+			 size_t *plaintext_len);
+
+void quic_crypto_context_destroy(struct quic_crypto_context *ctx);
+
+#endif /* CONFIG_NET_TEST */
