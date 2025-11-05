@@ -25,3 +25,14 @@ config IS_IRONSIDE_SE_SECONDARY_IMAGE
 	  This Kconfig is set by sysbuild to indicate that this image is a
 	  secondary firmware for Ironside SE. This is used by the UICR generation
 	  system to determine which PERIPHCONF partition to use.
+
+config IS_GEN_UICR_IMAGE
+	bool "UICR generator image indicator (informative only, do not change)"
+	help
+	  This Kconfig is automatically set when building the gen_uicr image.
+	  It indicates that this is the UICR generator utility image and enables
+	  the UICR generator configuration options.
+
+# Source UICR generator options when building the gen_uicr image
+# All options are disabled by default unless IS_GEN_UICR_IMAGE is set
+rsource "Kconfig.gen_uicr"
