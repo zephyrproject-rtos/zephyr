@@ -16,7 +16,8 @@
 
 extern const uint8_t g_gpio_open_drain_n_support[];
 extern const uint8_t g_gpio_pull_up_support[];
-#if !defined(CONFIG_SOC_SERIES_RX261) && !defined(CONFIG_SOC_SERIES_RX140)
+#if !defined(CONFIG_SOC_SERIES_RX261) && !defined(CONFIG_SOC_SERIES_RX140) &&                      \
+	!defined(CONFIG_SOC_SERIES_RX14T)
 extern const uint8_t g_gpio_dscr_support[];
 #endif
 
@@ -47,7 +48,8 @@ static int pinctrl_configure_pullup(const pinctrl_soc_pin_t *pin, uint32_t value
 	return ret;
 }
 
-#if !defined(CONFIG_SOC_SERIES_RX261) && !defined(CONFIG_SOC_SERIES_RX140)
+#if !defined(CONFIG_SOC_SERIES_RX261) && !defined(CONFIG_SOC_SERIES_RX140) &&                      \
+	!defined(CONFIG_SOC_SERIES_RX14T)
 static int pinctrl_configure_dscr(const pinctrl_soc_pin_t *pin, uint32_t value)
 {
 	gpio_port_pin_t port_pin;
@@ -137,7 +139,8 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 		if (ret != 0) {
 			return -EINVAL;
 		}
-#if !defined(CONFIG_SOC_SERIES_RX261) && !defined(CONFIG_SOC_SERIES_RX140)
+#if !defined(CONFIG_SOC_SERIES_RX261) && !defined(CONFIG_SOC_SERIES_RX140) &&                      \
+	!defined(CONFIG_SOC_SERIES_RX14T)
 		/* Set drive-strength */
 		ret = pinctrl_configure_dscr(pin, pin->cfg.drive_strength);
 
