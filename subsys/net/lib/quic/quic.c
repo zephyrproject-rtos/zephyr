@@ -81,7 +81,7 @@ static struct k_mutex endpoints_lock;
 static struct quic_stream streams[CONFIG_QUIC_MAX_STREAMS_BIDI +
 				  CONFIG_QUIC_MAX_STREAMS_UNI];
 static struct k_mutex streams_lock;
-static struct quic_context *quic_get_context(int sock);
+ZTESTABLE_STATIC struct quic_context *quic_get_context(int sock);
 
 static int connection_ids;
 
@@ -323,7 +323,7 @@ static int quic_encode_len(uint8_t len)
 	return (int)((LOG2(len) & 0x3) << 6);
 }
 
-static int quic_get_len(const uint8_t *buf, size_t buf_len, uint64_t *len)
+ZTESTABLE_STATIC int quic_get_len(const uint8_t *buf, size_t buf_len, uint64_t *len)
 {
 	uint32_t first_byte;
 
@@ -384,7 +384,7 @@ static int quic_get_varint_size(uint64_t val)
 	return 8;
 }
 
-int quic_put_len(uint8_t *buf, size_t buf_len, uint64_t len)
+ZTESTABLE_STATIC int quic_put_len(uint8_t *buf, size_t buf_len, uint64_t len)
 {
 	switch (quic_get_varint_size(len)) {
 	case 1:
@@ -468,34 +468,11 @@ static int pollfd_try_add(net_sa_family_t family, int sock)
 	return -ENOMEM;
 }
 
-#define QUIC_HP_SAMPLE_LEN 16
-#define QUIC_HP_MASK_LEN 5
-#define QUIC_HP_MAX_PN_LEN 4
-
-#define QUIC_HASH_SHA2_256_LEN 32
-#define QUIC_HASH_SHA2_128_LEN 16
-#define QUIC_HASH_CHACHA20_LEN 32
-
-#define QUIC_AEAD_TAG_LEN 16
-
-/* Cipher suite identifiers */
-enum quic_cipher_algo {
-	QUIC_CIPHER_AES_128_GCM = 0,
-	QUIC_CIPHER_AES_256_GCM,
-	QUIC_CIPHER_CHACHA20_POLY1305,
-	QUIC_CIPHER_AES_128_CCM
-};
-
-enum quic_hash_algo {
-	QUIC_HASH_SHA256 = 0,
-	QUIC_HASH_SHA384
-};
-
 /*
  * Cleanup helper to call when destroying context or switching keys.
  * Destroys all PSA keys and clears sensitive data.
  */
-static void quic_crypto_context_destroy(struct quic_crypto_context *ctx)
+ZTESTABLE_STATIC void quic_crypto_context_destroy(struct quic_crypto_context *ctx)
 {
 	if (ctx == NULL || !ctx->initialized) {
 		return;
@@ -580,9 +557,9 @@ static int quic_hkdf_extract_ex(psa_algorithm_t hash_alg,
  *
  * Used during initial secret derivation.
  */
-static int quic_hkdf_extract(const uint8_t *salt, size_t salt_length,
-			     const uint8_t *ikm, size_t ikm_length,
-			     uint8_t prk[QUIC_HASH_SHA2_256_LEN])
+ZTESTABLE_STATIC int quic_hkdf_extract(const uint8_t *salt, size_t salt_length,
+				       const uint8_t *ikm, size_t ikm_length,
+				       uint8_t prk[QUIC_HASH_SHA2_256_LEN])
 {
 	return quic_hkdf_extract_ex(PSA_ALG_SHA_256,
 				    salt, salt_length,
@@ -711,9 +688,9 @@ cleanup:
  *
  * Note: QUIC always uses empty context.
  */
-STATIC int quic_hkdf_expand_label(const uint8_t *secret, size_t secret_len,
-				  const uint8_t *label, size_t label_length,
-				  uint8_t *okm, size_t okm_len)
+ZTESTABLE_STATIC int quic_hkdf_expand_label(const uint8_t *secret, size_t secret_len,
+					    const uint8_t *label, size_t label_length,
+					    uint8_t *okm, size_t okm_len)
 {
 	return quic_hkdf_expand_label_ex(PSA_ALG_SHA_256,
 					 secret, secret_len,
@@ -729,7 +706,7 @@ STATIC int quic_hkdf_expand_label(const uint8_t *secret, size_t secret_len,
  * client_initial_secret = HKDF-Expand-Label(initial_secret, "client in", "", 32)
  * server_initial_secret = HKDF-Expand-Label(initial_secret, "server in", "", 32)
  */
-static bool quic_setup_initial_secrets(struct quic_endpoint *ep,
+ZTESTABLE_STATIC bool quic_setup_initial_secrets(struct quic_endpoint *ep,
 				       const uint8_t *cid, size_t cid_len,
 				       uint8_t client_initial_secret[QUIC_HASH_SHA2_256_LEN],
 				       uint8_t server_initial_secret[QUIC_HASH_SHA2_256_LEN])
@@ -1139,8 +1116,8 @@ static bool quic_pp_setup_ex(struct quic_pp_cipher *pp_cipher,
  * Called when a connection is established, using the Destination Connection ID
  * from the client's first Initial packet.
  */
-static bool quic_conn_init_setup(struct quic_endpoint *ep,
-                                 const uint8_t *cid, size_t cid_len)
+ZTESTABLE_STATIC bool quic_conn_init_setup(struct quic_endpoint *ep,
+					   const uint8_t *cid, size_t cid_len)
 {
 	uint8_t client_initial_secret[QUIC_HASH_SHA2_256_LEN];
 	uint8_t server_initial_secret[QUIC_HASH_SHA2_256_LEN];
@@ -1211,10 +1188,10 @@ cleanup:
  *   nonce = sample[4..15]
  *   mask = ChaCha20(hp_key, counter, nonce, {0,0,0,0,0})[0..4]
  */
-int quic_hp_mask(psa_key_id_t hp_key_id,
-		 int cipher_algo,
-		 const uint8_t *sample,
-		 uint8_t *mask)
+ZTESTABLE_STATIC int quic_hp_mask(psa_key_id_t hp_key_id,
+				  int cipher_algo,
+				  const uint8_t *sample,
+				  uint8_t *mask)
 {
 	psa_status_t status;
 	size_t output_length;
@@ -1282,14 +1259,14 @@ int quic_hp_mask(psa_key_id_t hp_key_id,
  * Note: This function does NOT modify the packet buffer. The caller should
  * apply the returned values when constructing the decrypted header.
  */
-static int quic_decrypt_header(const uint8_t *packet,
-                               size_t packet_len,
-                               size_t pn_offset,
-                               psa_key_id_t hp_key_id,
-                               int cipher_algo,
-                               uint8_t *first_byte_out,
-                               uint32_t *packet_number_out,
-                               size_t *pn_length_out)
+ZTESTABLE_STATIC int quic_decrypt_header(const uint8_t *packet,
+					 size_t packet_len,
+					 size_t pn_offset,
+					 psa_key_id_t hp_key_id,
+					 int cipher_algo,
+					 uint8_t *first_byte_out,
+					 uint32_t *packet_number_out,
+					 size_t *pn_length_out)
 {
 	uint8_t mask[QUIC_HP_MASK_LEN] = { 0 };
 	const uint8_t *sample;
@@ -1357,6 +1334,7 @@ static int quic_decrypt_header(const uint8_t *packet,
 	return 0;
 }
 
+#if defined(CONFIG_NET_TEST)
 /*
  * Encrypt (apply) header protection to an outgoing packet (RFC 9001 Section 5.4.1)
  *
@@ -1371,11 +1349,11 @@ static int quic_decrypt_header(const uint8_t *packet,
  *
  * The packet buffer is modified in-place.
  */
-static int quic_encrypt_header(uint8_t *packet, size_t packet_len,
-                               size_t pn_offset,
-                               size_t pn_length,
-                               psa_key_id_t hp_key_id,
-                               int cipher_algo)
+ZTESTABLE_STATIC int quic_encrypt_header(uint8_t *packet, size_t packet_len,
+					 size_t pn_offset,
+					 size_t pn_length,
+					 psa_key_id_t hp_key_id,
+					 int cipher_algo)
 {
 	uint8_t mask[QUIC_HP_MASK_LEN] = { 0 };
 	const uint8_t *sample;
@@ -1417,6 +1395,7 @@ static int quic_encrypt_header(uint8_t *packet, size_t packet_len,
 
 	return 0;
 }
+#endif
 
 /*
  * Construct AEAD nonce by XORing IV with packet number.
@@ -1425,8 +1404,8 @@ static int quic_encrypt_header(uint8_t *packet, size_t packet_len,
  * The 62-bit packet number is left-padded with zeros to the size of the IV
  * and then XORed with the IV.
  */
-static void quic_construct_nonce(const uint8_t *iv, size_t iv_len,
-				 uint64_t packet_number, uint8_t *nonce)
+ZTESTABLE_STATIC void quic_construct_nonce(const uint8_t *iv, size_t iv_len,
+					   uint64_t packet_number, uint8_t *nonce)
 {
 	memcpy(nonce, iv, iv_len);
 
@@ -1440,9 +1419,9 @@ static void quic_construct_nonce(const uint8_t *iv, size_t iv_len,
  * Reconstruct full packet number from truncated value.
  * RFC 9000 Appendix A
  */
-static uint64_t quic_reconstruct_pn(uint32_t truncated_pn,
-				    size_t pn_nbits,
-				    uint64_t largest_pn)
+ZTESTABLE_STATIC uint64_t quic_reconstruct_pn(uint32_t truncated_pn,
+					      size_t pn_nbits,
+					      uint64_t largest_pn)
 {
 	uint64_t expected_pn = largest_pn + 1;
 	uint64_t pn_win = 1ULL << pn_nbits;
@@ -1497,15 +1476,15 @@ static psa_algorithm_t quic_get_aead_alg(int cipher_algo)
  *
  * @return 0 on success, <0 on failure
  */
-static int quic_decrypt_payload(struct quic_pp_cipher *pp,
-				uint64_t packet_number,
-				const uint8_t *header,
-				size_t header_len,
-				const uint8_t *ciphertext,
-				size_t ciphertext_len,
-				uint8_t *plaintext,
-				size_t plaintext_size,
-				size_t *plaintext_len)
+ZTESTABLE_STATIC int quic_decrypt_payload(struct quic_pp_cipher *pp,
+					  uint64_t packet_number,
+					  const uint8_t *header,
+					  size_t header_len,
+					  const uint8_t *ciphertext,
+					  size_t ciphertext_len,
+					  uint8_t *plaintext,
+					  size_t plaintext_size,
+					  size_t *plaintext_len)
 {
 	uint8_t nonce[TLS13_AEAD_NONCE_LENGTH];
 	size_t expected_plaintext_len;
@@ -1569,15 +1548,15 @@ static int quic_decrypt_payload(struct quic_pp_cipher *pp,
  *
  * @return 0 on success, <0 on failure
  */
-int quic_encrypt_payload(struct quic_pp_cipher *pp,
-			 uint64_t packet_number,
-			 const uint8_t *header,
-			 size_t header_len,
-			 const uint8_t *plaintext,
-			 size_t plaintext_len,
-			 uint8_t *ciphertext,
-			 size_t ciphertext_size,
-			 size_t *ciphertext_len)
+ZTESTABLE_STATIC int quic_encrypt_payload(struct quic_pp_cipher *pp,
+					  uint64_t packet_number,
+					  const uint8_t *header,
+					  size_t header_len,
+					  const uint8_t *plaintext,
+					  size_t plaintext_len,
+					  uint8_t *ciphertext,
+					  size_t ciphertext_size,
+					  size_t *ciphertext_len)
 {
 	uint8_t nonce[TLS13_AEAD_NONCE_LENGTH];
 	size_t expected_ciphertext_len;
@@ -5207,7 +5186,7 @@ static void quic_log_tls_secret(const char *label,
 }
 #endif /* CONFIG_QUIC_TLS_DEBUG_KEYLOG */
 
-static struct quic_context *quic_get_context(int sock)
+ZTESTABLE_STATIC struct quic_context *quic_get_context(int sock)
 {
 	struct quic_context *ctx;
 
