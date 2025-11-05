@@ -5,7 +5,7 @@
  */
 #ifndef LWM2M_REGISTRY_H
 #define LWM2M_REGISTRY_H
-#include <zephyr/sys/ring_buffer.h>
+#include <zephyr/sys/fifo.h>
 #include "lwm2m_object.h"
 
 /**
@@ -212,7 +212,7 @@ struct lwm2m_time_series_resource {
 	/* Optional filter for cached samples */
 	lwm2m_cache_filter_cb_t filter_cb;
 	/* Ring buffer */
-	struct ring_buf rb;
+	struct fifo rb;
 };
 
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
