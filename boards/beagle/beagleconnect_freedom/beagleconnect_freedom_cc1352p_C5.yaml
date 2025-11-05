@@ -1,9 +1,9 @@
-identifier: beagleconnect_freedom
-name: BeagleConnect Freedom
+identifier: beagleconnect_freedom@C5/cc1352p
+name: BeagleConnect Freedom C5
 type: mcu
 arch: arm
-ram: 144
-flash: 704
+ram: 80
+flash: 352
 toolchain:
   - zephyr
   - gnuarmemb
