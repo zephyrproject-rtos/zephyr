@@ -33,4 +33,14 @@ endif # LVGL
 configdefault NET_L2_ETHERNET
 	default y if DT_HAS_NXP_ENET_MAC_ENABLED
 
+if TRUSTED_EXECUTION_NONSECURE
+
+Z_CODE_PARTITION := zephyr,code-partition
+NS_IMAGE_BASE := $(dt_chosen_reg_addr_hex,$Z_CODE_PARTITION)
+
+configdefault FLASH_BASE_ADDRESS
+	default $(NS_IMAGE_BASE) if FLASH_MCUX_FLEXSPI_XIP
+
+endif
+
 endif # BOARD_RD_RW612_BGA
