@@ -30,8 +30,8 @@ static __aligned(32) uint8_t rx_data[XFERS][CONFIG_DMA_SG_XFER_SIZE] __used
 	__attribute__((__section__(".nocache.dma")));
 #else
 /* this src memory shall be in RAM to support using as a DMA source pointer.*/
-static __aligned(32) uint8_t tx_data[CONFIG_DMA_SG_XFER_SIZE];
-static __aligned(32) uint8_t rx_data[XFERS][CONFIG_DMA_SG_XFER_SIZE] = { { 0 } };
+static __aligned(CONFIG_DMA_SG_ALIGNMENT) uint8_t tx_data[CONFIG_DMA_SG_XFER_SIZE];
+static __aligned(CONFIG_DMA_SG_ALIGNMENT) uint8_t rx_data[XFERS][CONFIG_DMA_SG_XFER_SIZE] = {{0}};
 #endif
 
 K_SEM_DEFINE(xfer_sem, 0, 1);
