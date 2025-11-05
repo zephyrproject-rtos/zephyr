@@ -129,4 +129,14 @@ config INSTRUMENTATION_EXCLUDE_FILE_LIST
 	  the file name, it is considered to be a match. The files in the list
 	  are separate by a comma, for instance: file0, file1, ...
 
+config INSTRUMENTATION_CTF_TIMER
+	bool "Use the same time measuring mechanism as in CTF events"
+	help
+	  Use timer based on kernel cycles to measure time - the same as for CTF events.
+	  Otherwise, the time measurement API will be used.
+
+choice TRACING_FORMAT_CHOICE
+	default TRACING_CTF if INSTRUMENTATION_CTF_TIMER
+endchoice
+
 endif
