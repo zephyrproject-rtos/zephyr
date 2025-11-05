@@ -1,0 +1,47 @@
+#
+# Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  HM0360 CMOS video sensor.
+
+  Example of node configuration:
+
+  &i2c4
+  {
+    status = "okay";
+    hm0360: hm0360@24{
+      compatible = "himax,hm0360";
+      reg = <0x24>;
+      status = "okay";
+      reset-gpios = <&gpiod 4 GPIO_ACTIVE_LOW>;
+      pwdn-gpios = <&gpioa 1 GPIO_ACTIVE_LOW>;
+      port {
+        hm0360_ep_out: endpoint {
+          remote-endpoint-label = "video_pio_dma_ep_in";
+        };
+      };
+    };
+  };
+
+compatible: "himax,hm0360"
+
+include: i2c-device.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      The RESETn pin is asserted to disable the sensor causing a hard
+      reset. The sensor receives this as an active-low signal.
+  pwdn-gpios:
+    type: phandle-array
+    description: |
+      The PWRDN or PWDN pin is asserted to power down the sensor. The sensor
+      receives this as an active high signal
+
+child-binding:
+  child-binding:
+    include: video-interfaces.yaml
