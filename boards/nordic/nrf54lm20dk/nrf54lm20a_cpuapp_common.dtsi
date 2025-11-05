@@ -106,6 +106,10 @@
 	status = "okay";
 };
 
+&xo24m {
+	status = "okay";
+};
+
 &bt_hci_controller {
 	status = "okay";
 };

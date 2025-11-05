@@ -40,6 +40,14 @@ static const struct device_subsys_data subsys_data_hfclk192m[] = {
 	}
 };
 #endif /* NRF_CLOCK_HAS_HFCLK192M */
+#if NRF_CLOCK_HAS_XO24M
+static const struct device_subsys_data subsys_data_xo24m[] = {
+	{
+		.subsys = CLOCK_CONTROL_NRF_SUBSYS_HF24M,
+		.startup_us = 5
+	}
+};
+#endif /* NRF_CLOCK_HAS_XO24M */
 
 static const struct device_data devices[] = {
 #if NRF_CLOCK_HAS_HFCLK
@@ -74,4 +82,11 @@ static const struct device_data devices[] = {
 		.subsys_cnt = ARRAY_SIZE(subsys_data_hfclk192m)
 	},
 #endif /* NRF_CLOCK_HAS_HFCLK192M */
+#if NRF_CLOCK_HAS_XO24M
+	{
+		.dev = DEVICE_DT_GET_ONE(nordic_nrf_clock_xo24m),
+		.subsys_data =  subsys_data_xo24m,
+		.subsys_cnt = ARRAY_SIZE(subsys_data_xo24m)
+	},
+#endif /* NRF_CLOCK_HAS_XO24M */
 };

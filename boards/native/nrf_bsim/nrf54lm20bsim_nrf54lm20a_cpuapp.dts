@@ -150,3 +150,7 @@
 &lfclk {
 	status = "okay";
 };
+
+&xo24m {
+	status = "okay";
+};
