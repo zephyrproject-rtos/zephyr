@@ -109,6 +109,10 @@
 	status = "okay";
 };
 
+&xo {
+	status = "okay";
+};
+
 &gpregret1 {
 	status = "okay";
 

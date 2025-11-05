@@ -137,3 +137,7 @@
 &clock {
 	status = "okay";
 };
+
+&xo {
+	status = "okay";
+};
