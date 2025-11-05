@@ -39,3 +39,4 @@ structures are thread safe in specific usage scenarios (see
   mpsc_lockfree.rst
   spsc_lockfree.rst
   min_heap.rst
+  fifo.rst
