@@ -855,6 +855,22 @@ static inline uint32_t zbus_chan_pub_stats_avg_period(const struct zbus_channel 
 	return k_uptime_get() / chan->data->publish_count;
 }
 
+/**
+ * @brief Get the age of a message in a channel
+ *
+ * @param chan The channel's reference.
+ *
+ * @retval UINT64_MAX if channel has never been published to
+ * @retval age_ms Message age in milliseconds otherwise
+ */
+static inline uint64_t zbus_chan_pub_stats_msg_age(const struct zbus_channel *chan)
+{
+	if (zbus_chan_pub_stats_count(chan) == 0) {
+		return UINT64_MAX;
+	}
+	return k_ticks_to_ms_floor64(k_uptime_ticks() - zbus_chan_pub_stats_last_time(chan));
+}
+
 #else
 
 static inline void zbus_chan_pub_stats_update(const struct zbus_channel *chan)
