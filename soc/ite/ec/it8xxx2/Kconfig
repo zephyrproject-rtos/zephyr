@@ -187,6 +187,9 @@ config SOC_IT8XXX2_EXT_32K
 
 endchoice
 
+config ARCH_IRQ_VECTOR_TABLE_ALIGN
+	default 4
+
 config SOC_IT8XXX2_USE_ILM
 	bool
 	default y
