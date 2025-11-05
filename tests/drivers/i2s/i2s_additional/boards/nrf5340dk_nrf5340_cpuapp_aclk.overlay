@@ -1,6 +1,6 @@
 /* Drive i2s peripheral from ACLK. */
 
-&clock {
+&hfclkaudio {
 	hfclkaudio-frequency = <11289600>;
 };
 
