@@ -5,6 +5,7 @@
  */
 
 #include <st/l4/stm32l4.dtsi>
+#include <st/l4/stm32l4_sai.dtsi>
 #include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 
 / {

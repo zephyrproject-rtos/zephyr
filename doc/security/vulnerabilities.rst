@@ -2003,6 +2003,21 @@ This has been fixed in main for v4.2.0
 - `PR 93174 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/93174>`_
 
+:cve:`2025-9408`
+----------------
+
+Under embargo until 2025-11-10
+
+:cve:`2025-9557`
+----------------
+
+Under embargo until 2025-11-24
+
+:cve:`2025-9558`
+----------------
+
+Under embargo until 2025-11-24
+
 :cve:`2025-12035`
 -----------------
 

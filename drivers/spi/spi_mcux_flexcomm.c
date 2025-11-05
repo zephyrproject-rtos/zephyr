@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
- * Copyright 2017, 2019, 2025, NXP
+ * Copyright 2017, 2019, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,7 +29,13 @@ LOG_MODULE_REGISTER(spi_mcux_flexcomm, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_context.h"
 
-#define SPI_CHIP_SELECT_COUNT	4
+#ifdef CONFIG_SOC_SERIES_RW6XX
+/* The RW61x SOC only allows use of HW chip select 0 */
+#define SPI_CHIP_SELECT_COUNT	1
+#else
+#define SPI_CHIP_SELECT_COUNT FSL_FEATURE_SPI_SSEL_COUNT
+#endif
+
 #define SPI_MAX_DATA_WIDTH	16
 #define SPI_MIN_DATA_WIDTH	4
 
@@ -225,9 +231,19 @@ static int spi_mcux_configure(const struct device *dev,
 			return -EINVAL;
 		}
 
-		if (spi_cfg->slave > SPI_CHIP_SELECT_COUNT) {
-			LOG_ERR("Slave %d is greater than %d",
-				    spi_cfg->slave, SPI_CHIP_SELECT_COUNT);
+		uint8_t max_slave = SPI_CHIP_SELECT_COUNT;
+
+#ifndef DT_SPI_CTX_HAS_NO_CS_GPIOS
+		struct spi_context *ctx = &data->ctx;
+
+		max_slave = MAX(max_slave, ctx->num_cs_gpios);
+#endif
+
+		max_slave -= 1;
+
+		if (spi_cfg->slave > max_slave) {
+			LOG_ERR("Slave %d is greater than max %d",
+				    spi_cfg->slave, max_slave);
 			return -EINVAL;
 		}
 

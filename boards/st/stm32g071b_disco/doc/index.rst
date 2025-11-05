@@ -3,40 +3,40 @@
 Overview
 ********
 The STM32G071B-DISCO Discovery board is a demonstration and development platform
-for the STMicroelectronics Arm® Cortex® -M0+ core-based STM32G071RB USB Type-C™
+for the STMicroelectronics Arm® Cortex®-M0+ core-based STM32G071RB USB Type-C |reg|
 and Power Delivery microcontroller. The STM32G071B-DISCO Discovery board is
 presented with all necessary interfaces for easy connection and
-interoperability with other USB Type-C™ devices. The STM32G071B-DISCO Discovery
-board is intended for discovery and display of USB Type-C™ port characteristics
+interoperability with other USB Type-C |reg| devices. The STM32G071B-DISCO Discovery
+board is intended for discovery and display of USB Type-C |reg| port characteristics
 such as data role, power role, VBUS and IBUS monitoring. It offers an advanced
 user mode when associated with the STM32CubeMonUCPD software GUI and can be used
-as a USB Type-C™ and Power Delivery analyzer.
+as a USB Type-C |reg| and Power Delivery analyzer.
 
 - STM32G071RBT6 microcontroller featuring 128 Kbytes of Flash memory and
   32 Kbytes of RAM in LQFP64 package
 - Plastic case
 - 1” 128 x 64 pixels OLED LCD module with SPI interface
-- USB Type-C™ interface plug cable and receptacle connector accessible by door
+- USB Type-C |reg| interface plug cable and receptacle connector accessible by door
   with reed sensor detection
 - 3 bidirectional current and power monitors with I2C interface to measure VBUS,
   CC1 and CC2 protected and isolated lines
 - On-board DC/DC converter to sustain power supply with VBUS varying from 3 V to
   20 V (+/- 5 %)
-- 4 user status LEDs about USB Type-C™ configuration
+- 4 user status LEDs about USB Type-C |reg| configuration
 - 3 LEDs for power and ST-LINK communication
 - 4-way joystick with selection button
 - 1 reset push-button
 - Board external connectors:
-    - USB Type-C™ plug cable
-    - USB Type-C™ receptacle connector
+    - USB Type-C |reg| plug cable
+    - USB Type-C |reg| receptacle connector
     - 8-pin user extension connector including ADC, SPI, USART and
       I2C communication signals
     - USB with Micro-AB (ST-LINK)
 - Board internal connectors:
     - 2 x 8-pin GPIOs free pins from microcontroller
 	  (accessible internally when case is removed)
-    - USB Type-C™ test points for main signals
-- Flexible power-supply options: ST-LINK USB VBUS or USB Type-C™ VBUS
+    - USB Type-C |reg| test points for main signals
+- Flexible power-supply options: ST-LINK USB VBUS or USB Type-C |reg| VBUS
 - On-board ST-LINK/V2-1 debugger/programmer with USB enumeration capability:
   mass storage, Virtual COM port and debug port
 

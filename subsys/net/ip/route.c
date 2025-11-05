@@ -957,6 +957,30 @@ net_route_mcast_lookup(struct in6_addr *group)
 
 	return NULL;
 }
+
+struct net_route_entry_mcast *
+net_route_mcast_lookup_by_iface(struct in6_addr *group, struct net_if *iface)
+{
+	ARRAY_FOR_EACH_PTR(route_mcast_entries, route) {
+		if (!route->is_used) {
+			continue;
+		}
+
+		ARRAY_FOR_EACH(route->ifaces, i) {
+			if (route->ifaces[i] == NULL || route->ifaces[i] != iface) {
+				continue;
+			}
+
+			if (net_ipv6_is_prefix(group->s6_addr,
+						route->group.s6_addr,
+						route->prefix_len)) {
+				return route;
+			}
+		}
+	}
+
+	return NULL;
+}
 #endif /* CONFIG_NET_ROUTE_MCAST */
 
 bool net_route_get_info(struct net_if *iface,

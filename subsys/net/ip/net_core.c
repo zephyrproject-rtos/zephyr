@@ -84,7 +84,6 @@ static inline enum net_verdict process_data(struct net_pkt *pkt)
 
 	if (!net_pkt_is_l2_processed(pkt)) {
 		ret = net_if_recv_data(net_pkt_iface(pkt), pkt);
-		net_pkt_set_l2_processed(pkt, true);
 		if (ret != NET_CONTINUE) {
 			if (ret == NET_DROP) {
 				NET_DBG("Packet %p discarded by L2", pkt);
@@ -95,6 +94,8 @@ static inline enum net_verdict process_data(struct net_pkt *pkt)
 			return ret;
 		}
 	}
+
+	net_pkt_set_l2_processed(pkt, true);
 
 	/* L2 has modified the buffer starting point, it is easier
 	 * to re-initialize the cursor rather than updating it.
@@ -366,6 +367,8 @@ static inline bool process_multicast(struct net_pkt *pkt)
 
 int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 {
+	struct net_if *iface;
+	int family;
 	int status;
 	int ret;
 
@@ -439,18 +442,27 @@ int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 	}
 #endif
 
+	/* The pkt might contain garbage already after the call to
+	 * net_if_try_send_data(), so do not use pkt after that call.
+	 * Remember the iface and family for statistics update.
+	 */
+	if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
+		iface = net_pkt_iface(pkt);
+		family = net_pkt_family(pkt);
+	}
+
 	if (net_if_try_send_data(net_pkt_iface(pkt), pkt, timeout) == NET_DROP) {
 		ret = -EIO;
 		goto err;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
-		switch (net_pkt_family(pkt)) {
+		switch (family) {
 		case AF_INET:
-			net_stats_update_ipv4_sent(net_pkt_iface(pkt));
+			net_stats_update_ipv4_sent(iface);
 			break;
 		case AF_INET6:
-			net_stats_update_ipv6_sent(net_pkt_iface(pkt));
+			net_stats_update_ipv6_sent(iface);
 			break;
 		}
 	}

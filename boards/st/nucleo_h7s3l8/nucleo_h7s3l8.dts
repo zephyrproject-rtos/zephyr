@@ -63,19 +63,11 @@
 
 	ext_memory: memory@70000000 {
 		compatible = "zephyr,memory-region";
-		reg = <0x70000000 DT_SIZE_M(64)>;
+		reg = <0x70000000 DT_SIZE_M(32)>;
 		zephyr,memory-region = "EXTMEM";
 		/* The ATTR_MPU_EXTMEM attribut causing a MPU FAULT */
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 	};
-};
-
-&clk_lsi {
-	status = "disabled";
-};
-
-&clk_hsi48 {
-	status = "disabled";
 };
 
 &clk_hse {

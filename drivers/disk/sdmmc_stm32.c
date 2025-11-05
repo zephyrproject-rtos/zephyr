@@ -432,7 +432,11 @@ static int stm32_sdmmc_access_init(struct disk_info *disk)
 
 	if (SDMMC_BUS_WIDTH != SDMMC_BUS_WIDE_1B) {
 		priv->hsd.Init.BusWide = SDMMC_BUS_WIDTH;
+#ifdef CONFIG_SDMMC_STM32_EMMC
+		hal_ret = HAL_MMC_ConfigWideBusOperation(&priv->hsd, priv->hsd.Init.BusWide);
+#else
 		hal_ret = HAL_SD_ConfigWideBusOperation(&priv->hsd, priv->hsd.Init.BusWide);
+#endif
 		if (hal_ret != HAL_OK) {
 			LOG_ERR("failed to configure wide bus operation (ErrorCode 0x%X)",
 				priv->hsd.ErrorCode);

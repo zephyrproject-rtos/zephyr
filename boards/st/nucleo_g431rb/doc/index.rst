@@ -72,7 +72,7 @@ The STM32G431RB SoC provides the following hardware IPs:
   - 1x SAI (serial audio interface)
   - USB 2.0 full-speed interface with LPM and BCD support
   - IRTIM (Infrared interface)
-  - USB Type-C™ /USB power delivery controller (UCPD)
+  - USB Type-C |reg| /USB power delivery controller (UCPD)
 
 - 12-channel DMA controller
 - True random number generator (RNG)

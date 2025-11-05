@@ -22,6 +22,29 @@
 
 LOG_MODULE_REGISTER(uart_silabs_eusart, CONFIG_UART_LOG_LEVEL);
 
+/* Compatibility section for older EUSART IP versions (e.g., xg22 SoC Series).
+ *
+ * Older EUSART hardware (IP version 0x00000000) lacks the RXTO (RX Timeout) interrupt,
+ * which is used to detect when the RX line becomes idle after receiving partial data.
+ *
+ * For these devices, we implement a pure polling mode using a work queue that periodically
+ * checks the RXIDLE status instead of relying on hardware timeout interrupts. It indead can
+ * introduce a some bad behavior with really slow/high timeout values.
+ *
+ * The EUSART_RXTO flag helps to enable/disable this workaround, and we define dummy values for the
+ * missing RXTO interrupt flags to avoid compilation errors.
+ */
+#if (_EUSART_IPVERSION_RESETVALUE == 0x00000000UL)
+
+#define EUSART_IF_RXTO                 -1
+#define EUSART_CFG1_RXTIMEOUT_ONEFRAME -1
+
+#else
+
+#define EUSART_RXTO 1
+
+#endif
+
 struct eusart_dma_channel {
 	const struct device *dma_dev;
 	uint32_t dma_channel;
@@ -457,6 +480,11 @@ __maybe_unused static void eusart_dma_rx_cb(const struct device *dma_dev, void *
 	if (data->rx_next_buffer) {
 		eusart_async_evt_rx_buf_release(data);
 		eusart_dma_replace_buffer(uart_dev);
+
+		if (!IS_ENABLED(EUSART_RXTO)) {
+			eusart_async_timer_start(&data->dma_rx.timeout_work, data->dma_rx.timeout);
+		}
+
 	} else {
 		dma_stop(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
 		data->dma_rx.enabled = false;
@@ -595,9 +623,16 @@ static int eusart_async_rx_enable(const struct device *dev, uint8_t *rx_buf, siz
 	}
 
 	eusart_pm_lock_get(dev, EUSART_PM_LOCK_RX);
-	EUSART_IntClear(config->eusart, EUSART_IF_RXOF | EUSART_IF_RXTO);
+	EUSART_IntClear(config->eusart, EUSART_IF_RXOF);
 	EUSART_IntEnable(config->eusart, EUSART_IF_RXOF);
-	EUSART_IntEnable(config->eusart, EUSART_IF_RXTO);
+
+	if (IS_ENABLED(EUSART_RXTO)) {
+		EUSART_IntClear(config->eusart, EUSART_IF_RXTO);
+		EUSART_IntEnable(config->eusart, EUSART_IF_RXTO);
+	} else {
+		/* Use pure polling via timeout work instead of RXTO interrupt.*/
+		eusart_async_timer_start(&data->dma_rx.timeout_work, data->dma_rx.timeout);
+	}
 
 	data->dma_rx.enabled = true;
 
@@ -622,11 +657,16 @@ static int eusart_async_rx_disable(const struct device *dev)
 	dma_stop(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
 
 	EUSART_IntDisable(eusart, EUSART_IF_RXOF);
-	EUSART_IntDisable(eusart, EUSART_IF_RXTO);
-	EUSART_IntClear(eusart, EUSART_IF_RXOF | EUSART_IF_RXTO);
-	eusart_pm_lock_put(dev, EUSART_PM_LOCK_RX);
+	EUSART_IntClear(eusart, EUSART_IF_RXOF);
 
 	k_work_cancel_delayable(&data->dma_rx.timeout_work);
+
+	if (IS_ENABLED(EUSART_RXTO)) {
+		EUSART_IntDisable(eusart, EUSART_IF_RXTO);
+		EUSART_IntClear(eusart, EUSART_IF_RXTO);
+	}
+
+	eusart_pm_lock_put(dev, EUSART_PM_LOCK_RX);
 
 	eusart_dma_rx_flush(data);
 
@@ -687,8 +727,33 @@ static void eusart_async_rx_timeout(struct k_work *work)
 	struct eusart_dma_channel *rx_channel =
 		CONTAINER_OF(dwork, struct eusart_dma_channel, timeout_work);
 	struct eusart_data *data = CONTAINER_OF(rx_channel, struct eusart_data, dma_rx);
+	const struct eusart_config *config = data->uart_dev->config;
+	struct dma_status stat;
+	size_t pending = 0;
 
-	eusart_dma_rx_flush(data);
+	if (IS_ENABLED(EUSART_RXTO)) {
+		eusart_dma_rx_flush(data);
+		return;
+	}
+
+	if (!dma_get_status(data->dma_rx.dma_dev, data->dma_rx.dma_channel, &stat)) {
+		pending = stat.pending_length;
+	}
+
+	if (!(EUSART_StatusGet(config->eusart) & EUSART_STATUS_RXIDLE)) {
+		eusart_async_timer_start(&data->dma_rx.timeout_work, data->dma_rx.timeout);
+		return;
+	}
+
+	/* some data has been received and the dma is not done yet*/
+	if (pending < data->dma_rx.buffer_length) {
+		eusart_dma_rx_flush(data);
+	}
+
+	/* Continue polling if RX is still enabled (for next transmission) */
+	if (data->dma_rx.enabled) {
+		eusart_async_timer_start(&data->dma_rx.timeout_work, data->dma_rx.timeout);
+	}
 }
 
 static void eusart_async_tx_timeout(struct k_work *work)
@@ -765,7 +830,7 @@ static void eusart_isr(const struct device *dev)
 #ifdef CONFIG_UART_SILABS_EUSART_ASYNC
 	const struct eusart_config *config = dev->config;
 	EUSART_TypeDef *eusart = config->eusart;
-	uint32_t flags = EUSART_IntGet(eusart);
+	uint32_t flags = EUSART_IntGetEnabled(eusart);
 	struct dma_status stat;
 #endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -957,7 +1022,9 @@ static void eusart_configure_peripheral(const struct device *dev, bool enable)
 	EUSART_UartInitHf(config->eusart, &eusartInit);
 
 #ifdef CONFIG_UART_SILABS_EUSART_ASYNC
-	config->eusart->CFG1 |= EUSART_CFG1_RXTIMEOUT_ONEFRAME;
+	if (IS_ENABLED(EUSART_RXTO)) {
+		config->eusart->CFG1 |= EUSART_CFG1_RXTIMEOUT_ONEFRAME;
+	}
 #endif
 
 	if (enable) {
@@ -981,6 +1048,10 @@ static int eusart_configure(const struct device *dev, const struct uart_config *
 
 	if (cfg->parity == UART_CFG_PARITY_MARK || cfg->parity == UART_CFG_PARITY_SPACE) {
 		return -ENOSYS;
+	}
+
+	if (cfg->parity > UART_CFG_PARITY_SPACE) {
+		return -EINVAL;
 	}
 
 	if (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_DTR_DSR ||

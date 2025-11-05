@@ -281,6 +281,7 @@ config NRFX_NFCT
 	depends on $(dt_nodelabel_exists,nfct)
 	select NRFX_TIMER4 if SOC_SERIES_NRF52X
 	select NRFX_TIMER2 if SOC_SERIES_NRF53X
+	select NRFX_TIMER24 if SOC_SERIES_NRF54LX
 
 config NRFX_NVMC
 	bool "NVMC driver"

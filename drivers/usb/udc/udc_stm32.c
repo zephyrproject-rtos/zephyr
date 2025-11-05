@@ -609,7 +609,6 @@ static void handle_msg_setup(struct udc_stm32_data *priv)
 {
 	struct usb_setup_packet *setup = (void *)priv->pcd.Setup;
 	const struct device *dev = priv->dev;
-	HAL_StatusTypeDef status;
 	struct net_buf *buf;
 	int err;
 
@@ -634,15 +633,6 @@ static void handle_msg_setup(struct udc_stm32_data *priv)
 	net_buf_add_mem(buf, setup, sizeof(struct usb_setup_packet));
 
 	udc_ctrl_update_stage(dev, buf);
-
-	if ((setup->bmRequestType == 0) && (setup->bRequest == USB_SREQ_SET_ADDRESS)) {
-		/* HAL requires we set the address before submitting status */
-		status = HAL_PCD_SetAddress(&priv->pcd, setup->wValue);
-		if (status != HAL_OK) {
-			LOG_ERR("HAL_PCD_SetAddress() failed: %d", status);
-			__ASSERT_NO_MSG(0);
-		}
-	}
 
 	if (udc_ctrl_stage_is_data_out(dev)) {
 		/*  Allocate and feed buffer for data OUT stage */
@@ -1531,7 +1521,7 @@ static int udc_stm32_driver_init0(const struct device *dev)
 			ep_cfg_in[i].caps.bulk = 1;
 			ep_cfg_in[i].caps.interrupt = 1;
 			ep_cfg_in[i].caps.iso = 1;
-			ep_cfg_in[i].caps.mps = 1023;
+			ep_cfg_in[i].caps.mps = cfg->ep_mps;
 		}
 
 		ep_cfg_in[i].addr = USB_EP_DIR_IN | i;
@@ -1544,6 +1534,7 @@ static int udc_stm32_driver_init0(const struct device *dev)
 
 	data->caps.rwup = true;
 	data->caps.out_ack = false;
+	data->caps.addr_before_status = true;
 	data->caps.mps0 = UDC_MPS0_64;
 	if (cfg->selected_speed == PCD_SPEED_HIGH) {
 		data->caps.hs = true;

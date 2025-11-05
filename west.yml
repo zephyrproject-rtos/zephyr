@@ -169,7 +169,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 2927aae9bfca44208032ae93f2e61ff819e21feb
+      revision: af6cfa2e3e7098b596062ab516b80a48a7ba7332
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -200,7 +200,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 2c0fd06a98bb9b89ac234b75b2c217742f0df1ba
+      revision: 7858281d843468fe53c829995fb63f45a227387a
       path: modules/hal/nordic
       groups:
         - hal
@@ -250,7 +250,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 55e159704b02ec4e7b4f0a88735044bee92c25c2
+      revision: 93e7944879c99bc5e0bb6371f9d2cb5d9a9f3482
       path: modules/hal/stm32
       groups:
         - hal
@@ -369,7 +369,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 94691a2ed0d9a2802b3419eaa91958329c36871b
+      revision: d3341a660f2f33156e1a8bb8ea47ad83066defea
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

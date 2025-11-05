@@ -1758,6 +1758,8 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - rriveramcrus
+  collaborators:
+    - Liam-Ogletree
   files:
     - drivers/haptics/
     - dts/bindings/haptics/
@@ -4493,10 +4495,10 @@ STM32 Platforms:
     - FRASTM
     - gautierg-st
     - GeorgeCGV
-    - marwaiehm-st
     - mathieuchopstm
     - djiatsaf-st
     - etienne-lms
+    - juickar
   files:
     - boards/st/
     - drivers/*/*stm32*.c
@@ -4747,6 +4749,7 @@ State machine framework:
   collaborators:
     - keith-zephyr
     - glenn-andrews
+    - vlad-kulikov
   files:
     - doc/services/smf/
     - include/zephyr/smf.h
@@ -5723,10 +5726,12 @@ West:
   collaborators:
     - FRASTM
     - gautierg-st
-    - marwaiehm-st
+    - etienne-lms
+    - mathieuchopstm
+    - juickar
+    - djiatsaf-st
     - asm5878
     - HoZHel
-    - benothmn-st
   files:
     - modules/Kconfig.stm32
   labels:

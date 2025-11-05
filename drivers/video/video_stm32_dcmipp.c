@@ -328,7 +328,26 @@ static int stm32_dcmipp_conf_parallel(const struct device *dev,
 	HAL_StatusTypeDef hal_ret;
 
 	parallel_cfg.Format           = input_fmt->dcmipp_format;
-	parallel_cfg.SwapCycles       = DCMIPP_SWAPCYCLES_DISABLE;
+	/*
+	 * On parallel interface, the DCMIPP expects data in RGB565_BE, aka
+	 *		D7 D6 D5 D4 D3 D2 D1 D0
+	 *
+	 * cycle 1:	R4 R3 R2 R1 R0 G5 G4 G3
+	 * cycle 2:	G2 G1 G0 B4 B3 B2 B1 B0
+	 *
+	 * Use swapped cycle mode for RGB565 which correspond to the commonly
+	 * used RGB565 LE, aka
+	 *
+	 *		D7 D6 D5 D4 D3 D2 D1 D0
+	 *
+	 * cycle 1:	G2 G1 G0 B4 B3 B2 B1 B0
+	 * cycle 2:	R4 R3 R2 R1 R0 G5 G4 G3
+	 */
+	if (input_fmt->pixelformat == VIDEO_PIX_FMT_RGB565) {
+		parallel_cfg.SwapCycles = DCMIPP_SWAPCYCLES_ENABLE;
+	} else {
+		parallel_cfg.SwapCycles = DCMIPP_SWAPCYCLES_DISABLE;
+	}
 	parallel_cfg.VSPolarity       = config->parallel.vs_polarity;
 	parallel_cfg.HSPolarity       = config->parallel.hs_polarity;
 	parallel_cfg.PCKPolarity      = config->parallel.pck_polarity;

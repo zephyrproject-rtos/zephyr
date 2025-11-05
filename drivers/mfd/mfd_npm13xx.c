@@ -273,6 +273,9 @@ int mfd_npm13xx_hibernate(const struct device *dev, uint32_t time_ms)
 		return ret;
 	}
 
+	/* give nPM13xx time to load the timer value */
+	k_msleep(1);
+
 	return mfd_npm13xx_reg_write(dev, NPM13XX_SHIP_BASE, SHIP_OFFSET_HIBERNATE, 1U);
 }
 

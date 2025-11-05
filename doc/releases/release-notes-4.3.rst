@@ -42,6 +42,9 @@ Security Vulnerability Related
 ******************************
 The following CVEs are addressed by this release:
 
+* :cve:`2025-9408`: Under embargo until 2025-11-10
+* :cve:`2025-9557`: Under embargo until 2025-11-24
+* :cve:`2025-9558`: Under embargo until 2025-11-24
 * :cve:`2025-12035`: Under embargo until 2025-12-13
 
 More detailed information can be found in:
@@ -86,9 +89,6 @@ Deprecated APIs and options
   preferred for automatic updates.
 
 * :kconfig:option:`CONFIG_POSIX_READER_WRITER_LOCKS` is deprecated. Use :kconfig:option:`CONFIG_POSIX_RW_LOCKS` instead.
-
-* :c:func:`bt_ctlr_set_public_addr` is deprecated in favor of using
-  :c:struct:`bt_hci_cp_vs_write_bd_addr` for setting the public Bluetooth device address.
 
 * :kconfig:option:`CONFIG_JWT_SIGN_RSA_LEGACY` is deprecated. Please switch to the
   PSA Crypto API based alternative (i.e. :kconfig:option:`CONFIG_JWT_SIGN_RSA_PSA`).
@@ -274,6 +274,11 @@ New APIs and options
     * :kconfig:option:`CONFIG_HAWKBIT_REBOOT_NONE`
     * :kconfig:option:`CONFIG_HAWKBIT_CONFIRM_IMG_ON_INIT`
     * :kconfig:option:`CONFIG_HAWKBIT_ERASE_SECOND_SLOT_ON_CONFIRM`
+
+  * MCUmgr
+
+    * :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UDP_DTLS`
+    * :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_SLOT`
 
 * Modem
 

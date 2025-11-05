@@ -74,6 +74,7 @@ DT_FOREACH_STATUS_OKAY_NODE(DEVICE_CONSTRAINTS_DEFINE)
 	COND_CODE_0(DT_NODE_HAS_PROP(node_id, zephyr_disabling_power_states), (),       \
 		(PM_STATE_DEVICE_CONSTRAINT_INIT(node_id)))
 
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
 static struct pm_state_device_constraint _devices_constraints[] = {
 	DT_FOREACH_STATUS_OKAY_NODE(PM_STATE_DEVICE_CONSTRAINT_DEFINE)
 };
@@ -82,7 +83,6 @@ static struct pm_state_device_constraint _devices_constraints[] = {
 static struct pm_state_device_constraint *
 pm_policy_priv_device_find_device_constraints(const struct device *dev)
 {
-#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
 	if (dev == NULL) {
 		return NULL;
 	}
@@ -94,9 +94,10 @@ pm_policy_priv_device_find_device_constraints(const struct device *dev)
 			return &_devices_constraints[i];
 		}
 	}
-#endif
+
 	return NULL;
 }
+#endif
 
 void pm_policy_device_power_lock_get(const struct device *dev)
 {

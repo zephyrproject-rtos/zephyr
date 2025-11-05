@@ -217,9 +217,6 @@ Bluetooth Controller
       :c:struct:`bt_hci_vs_fatal_error_cpu_data_cortex_m` and now contains the program counter
       value.
 
-   * :c:func:`bt_ctlr_set_public_addr` is deprecated. To set the public Bluetooth device address,
-     sending a vendor specific HCI command with :c:struct:`bt_hci_cp_vs_write_bd_addr` can be used.
-
 .. zephyr-keep-sorted-start re(^\w)
 
 Bluetooth Audio
@@ -314,6 +311,10 @@ Networking
   be always 32 bit ``uint32_t`` in order to be aligned with Linux. Previously it was defined as
   ``size_t`` which meant that the size could be either 32 bit or 64 bit depending on system
   configuration.
+
+* :c:func:`net_icmp_init_ctx` API has changed, it now accepts an additional ``family`` argument
+  to indicate what packet family the context should work with. For ICMPv4 contexts, use ``AF_INET``,
+  for ICMPv6 contexts use ``AF_INET6``.
 
 .. zephyr-keep-sorted-start re(^\w)
 
@@ -472,6 +473,18 @@ Modules
 * The TinyCrypt library was removed as the upstream version is no longer maintained.
   PSA Crypto API is now the recommended cryptographic library for Zephyr.
 
+MCUboot
+=======
+
+* The default operating mode for MCUboot has been changed to swap using offset, this provides
+  faster swap updates needed less overhead and reduces the flash endurance cycles required to
+  perform an update, the previous default was swap using move. If a board was optimised for swap
+  using move by having a primary slot that was one sector larger than the secondary then this
+  needs to change to have the secondary slot one sector larger than the primary (for optimised
+  usage, it is still supported to have both slots the same number of sectors). Alternatively, the
+  previous swap using move mode can be selected in sysbuild by using
+  :kconfig:option:`SB_CONFIG_MCUBOOT_MODE_SWAP_USING_MOVE`.
+
 Silabs
 ======
 
@@ -524,6 +537,22 @@ Trusted Firmware-M
       that S and NS images are unconfirmed by default, and the application is responsible for
       confirming them with ``psa_fwu_accept()``. Otherwise, the images will roll back on the next
       reboot.
+
+* A compatibility issue was identified in the TF-M attestation procedure introduced
+  after the TF-M v2.1.0 release. As a result, systems using TF-M v2.1 cannot be
+  upgraded to any later TF-M version without encountering failures.
+  This limitation affects Zephyr versions using TF-M v2.1.0 through v2.1.2, specifically,
+  Zephyr v3.7 through v4.2, preventing seamless upgrades between these releases.
+  The issue was resolved in mainline TF-M as of October 25 and the fix is included
+  in Zephyr v4.3.0. Users are advised to migrate directly from any earlier Zephyr
+  release to Zephyr v4.3.0 or later to ensure full TF-M attestation functionality
+  and upgrade compatibility.
+  (:github:`94859`)
+
+* Support for automatically downloading MCUboot and ethos by CMake in a build has been removed,
+  the in-tree versions of these modules will be used instead. To use custom versions, create a
+  :ref:`west manifest <west-manifest-files>` which pulls in the desired versions of these
+  repositories instead.
 
 Architectures
 *************

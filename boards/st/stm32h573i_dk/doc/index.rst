@@ -11,7 +11,7 @@ the STM32H573I-DK Discovery board:
 
 - STM32H573IIK3Q microcontroller featuring 2 Mbytes of Flash memory and 640 Kbytes of SRAM in 176-pin BGA package
 - 1.54-inch 240x240 pixels TFT-LCD with LED  backlight and touch panel
-- USB Type-C |trade| Host and device with USB power-delivery controller
+- USB Type-C |reg| Host and device with USB power-delivery controller
 - SAI Audio DAC stereo with one audio jacks for input/output,
 - ST MEMS digital microphone with PDM interface
 - Octo-SPI interface connected to 512Mbit Octo-SPI NORFlash memory device (MX25LM51245GXDI00 from MACRONIX)

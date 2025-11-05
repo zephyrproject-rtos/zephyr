@@ -15,6 +15,6 @@ supported:
   - i2c
   - can
   - backup_sram
-ram: 96
+ram: 128
 flash: 512
 vendor: st

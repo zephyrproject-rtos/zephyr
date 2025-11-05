@@ -68,7 +68,6 @@ jobs:
         uses: zephyrproject-rtos/action-zephyr-setup@c125c5ebeeadbd727fa740b407f862734af1e52a # v1.0.9
         with:
           app-path: zephyr
-          toolchains: all
           enable-ccache: false
 
       - name: Environment Setup

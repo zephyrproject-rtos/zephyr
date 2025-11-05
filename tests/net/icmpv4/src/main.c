@@ -464,7 +464,7 @@ static void icmpv4_send_echo_rep(void)
 	struct net_pkt *pkt;
 	int ret;
 
-	ret = net_icmp_init_ctx(&ctx, NET_ICMPV4_ECHO_REPLY,
+	ret = net_icmp_init_ctx(&ctx, AF_INET, NET_ICMPV4_ECHO_REPLY,
 				0, handle_reply_msg);
 	zassert_equal(ret, 0, "Cannot register %s handler (%d)",
 		      STRINGIFY(NET_ICMPV4_ECHO_REPLY), ret);
