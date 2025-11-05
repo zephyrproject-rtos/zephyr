@@ -48,6 +48,13 @@ config ARM_SCMI_SHMEM_INIT_PRIORITY
 	help
 	  SCMI SHMEM driver device initialization priority.
 
+config ARM_SCMI_SYSTEM
+	bool "SCMI system power protocol"
+	default y
+	depends on DT_HAS_ARM_SCMI_SYSTEM_ENABLED
+	help
+	  Enable support for SCMI system protocol functions.
+
 config ARM_SCMI_TRANSPORT_HAS_STATIC_CHANNELS
 	bool "Transport layer has static channels"
 	help
