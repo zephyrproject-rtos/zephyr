@@ -1,0 +1,21 @@
+# Copyright (c) 2018-2025, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nRF family WDT (Watchdog Timer version 2)
+
+compatible: "nordic,nrf-wdt-v2"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  enable-at-boot:
+    type: boolean
+    description: |
+      When enabled this property will configure the UICR to start the watchdog at device boot,
+      before the application has been booted.
