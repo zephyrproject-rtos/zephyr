@@ -383,18 +383,20 @@ static uint32_t spi_mcux_get_last_tx_word(const struct spi_config *spi_cfg, cons
 {
 	uint32_t value = def_char;
 
+	if (len < 1) {
+		LOG_ERR("Invalid len");
+		return -ECANCELED;
+	}
+
 	/* Buffer will be null if TX is sending dummy data. In this case, we don't
 	 * need to copy any data from the buffer into the dummy word.
 	 */
 	if (buf != NULL) {
 		if (word_size > 8) {
-			if (len <= 1) {
-				LOG_ERR("Invalid len");
-				return -ECANCELED;
-			}
-			value = (((uint32_t)buf[len - 1U] << 8U) | (buf[len - 2U]));
+			/* driver only support up to 16 bit */
+			value = (((uint32_t)buf[1] << 8U) | (buf[0]));
 		} else {
-			value = buf[len - 1U];
+			value = buf[0];
 		}
 	}
 	value |= (uint32_t)SPI_FIFOWR_EOT_MASK;
@@ -431,10 +433,10 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const struct spi_confi
 		}
 		blk_cfg->source_address = (uint32_t)&data->last_word;
 		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-		blk_cfg->block_size = sizeof(uint32_t);
+		blk_cfg->block_size = data->word_size_bytes;
 		blk_cfg->next_block = NULL;
 	} else {
-		blk_cfg->block_size = len;
+		blk_cfg->block_size = len * data->word_size_bytes;
 		blk_cfg->next_block = blk_cfg + 1;
 		if (buf) {
 			blk_cfg->source_address = (uint32_t)buf;
@@ -494,7 +496,7 @@ static int spi_mcux_dma_rx_load(const struct device *dev, uint8_t *buf, size_t l
 
 	/* prepare the block for this RX DMA channel */
 	blk_cfg = &stream->dma_blk_cfg[dma_block_num];
-	blk_cfg->block_size = len;
+	blk_cfg->block_size = len * data->word_size_bytes;
 	blk_cfg->dest_scatter_en = 0;
 	if (last_packet) {
 		blk_cfg->next_block = NULL;
@@ -558,7 +560,7 @@ static int spi_mcux_dma_transfer(const struct device *dev, const struct spi_conf
 	/* Parse all data to be sent into chained DMA blocks. */
 	while (1) {
 		block_length = spi_context_max_continuous_chunk(&data->ctx);
-		if (block_length < data_size) {
+		if (block_length < 1) {
 			LOG_ERR("unexpected block length");
 			return -ECANCELED;
 		}
@@ -568,8 +570,8 @@ static int spi_mcux_dma_transfer(const struct device *dev, const struct spi_conf
 			 * word is remaining, load the last buffer with that word so it can be set
 			 * to release the CS line.
 			 */
-			if (block_length > data_size) {
-				block_length -= data_size;
+			if (block_length > 1) {
+				block_length -= 1;
 			} else {
 				/* There is only one transfer left. */
 				last_packet = true;
@@ -690,7 +692,14 @@ static int transceive_dma(const struct device *dev,
 
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, spi_cfg);
 
-	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+	data->word_size_bits = word_size;
+	data->word_size_bytes = (word_size > 8) ? (sizeof(uint16_t)) : (sizeof(uint8_t));
+	ret = spi_mcux_configure(dev, spi_cfg);
+	if (ret) {
+		goto out;
+	}
+
+	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, data->word_size_bytes);
 
 	if (spi_context_total_tx_len(&data->ctx) == 0 &&
 	    spi_context_total_rx_len(&data->ctx) == 0) {
@@ -723,7 +732,7 @@ static int transceive_dma(const struct device *dev,
 	 * DMA descriptor, because there is only one DMA descriptor.
 	 */
 	if (data->ctx.tx_count <= 1 && data->ctx.rx_count <= 1 &&
-	    spi_context_longest_current_buf(&data->ctx) == data->word_size_bytes) {
+	    spi_context_longest_current_buf(&data->ctx) == 1) {
 		/* Disable DMATX/RX */
 		base->FIFOCFG &= ~(SPI_FIFOCFG_DMARX_MASK | SPI_FIFOCFG_DMATX_MASK);
 
