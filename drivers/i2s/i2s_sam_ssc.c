@@ -23,6 +23,7 @@
 #include <string.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/fifo.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/dma.h>
@@ -57,14 +58,6 @@ struct queue_item {
 	size_t size;
 };
 
-/* Minimal ring buffer implementation */
-struct ring_buffer {
-	struct queue_item *buf;
-	uint16_t len;
-	uint16_t head;
-	uint16_t tail;
-};
-
 /* Device constant configuration parameters */
 struct i2s_sam_dev_cfg {
 	const struct device *dev_dma;
@@ -83,7 +76,7 @@ struct stream {
 	uint8_t word_size_bytes;
 	bool last_block;
 	struct i2s_config cfg;
-	struct ring_buffer mem_block_queue;
+	struct fifo mem_block_queue;
 	void *mem_block;
 	int (*stream_start)(struct stream *, Ssc *const,
 			    const struct device *);
@@ -113,53 +106,38 @@ static void tx_stream_disable(struct stream *, Ssc *const,
 /*
  * Get data from the queue
  */
-static int queue_get(struct ring_buffer *rb, void **mem_block, size_t *size)
+static int queue_get(struct fifo *f, void **mem_block, size_t *size)
 {
+	int rc;
 	unsigned int key;
+	struct queue_item item;
 
 	key = irq_lock();
+	rc = fifo_get(f, &item);
 
-	if (rb->tail == rb->head) {
-		/* Ring buffer is empty */
-		irq_unlock(key);
-		return -ENOMEM;
-	}
-
-	*mem_block = rb->buf[rb->tail].mem_block;
-	*size = rb->buf[rb->tail].size;
-	MODULO_INC(rb->tail, rb->len);
-
+	*mem_block = item.mem_block;
+	*size = item.size;
 	irq_unlock(key);
-
-	return 0;
+	return rc;
 }
 
 /*
  * Put data in the queue
  */
-static int queue_put(struct ring_buffer *rb, void *mem_block, size_t size)
+static int queue_put(struct fifo *f, void *mem_block, size_t size)
 {
-	uint16_t head_next;
+	int rc;
 	unsigned int key;
+	struct queue_item item = {
+		.mem_block = mem_block,
+		.size = size,
+	};
 
 	key = irq_lock();
-
-	head_next = rb->head;
-	MODULO_INC(head_next, rb->len);
-
-	if (head_next == rb->tail) {
-		/* Ring buffer is full */
-		irq_unlock(key);
-		return -ENOMEM;
-	}
-
-	rb->buf[rb->head].mem_block = mem_block;
-	rb->buf[rb->head].size = size;
-	rb->head = head_next;
+	rc = fifo_put(f, &item);
 
 	irq_unlock(key);
-
-	return 0;
+	return rc;
 }
 
 static int reload_dma(const struct device *dev_dma, uint32_t channel,
@@ -1022,15 +1000,13 @@ static const struct i2s_sam_dev_cfg i2s0_sam_config = {
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
-struct queue_item rx_0_ring_buf[CONFIG_I2S_SAM_SSC_RX_BLOCK_COUNT + 1];
-struct queue_item tx_0_ring_buf[CONFIG_I2S_SAM_SSC_TX_BLOCK_COUNT + 1];
-
+FIFO_DEFINE(rx_0_fifo, sizeof(struct queue_item), CONFIG_I2S_SAM_SSC_RX_BLOCK_COUNT);
+FIFO_DEFINE(tx_0_fifo, sizeof(struct queue_item), CONFIG_I2S_SAM_SSC_TX_BLOCK_COUNT);
 static struct i2s_sam_dev_data i2s0_sam_data = {
 	.rx = {
 		.dma_channel = DT_INST_DMAS_CELL_BY_NAME(0, rx, channel),
 		.dma_perid = DT_INST_DMAS_CELL_BY_NAME(0, rx, perid),
-		.mem_block_queue.buf = rx_0_ring_buf,
-		.mem_block_queue.len = ARRAY_SIZE(rx_0_ring_buf),
+		.mem_block_queue = rx_0_fifo,
 		.stream_start = rx_stream_start,
 		.stream_disable = rx_stream_disable,
 		.queue_drop = rx_queue_drop,
@@ -1039,8 +1015,7 @@ static struct i2s_sam_dev_data i2s0_sam_data = {
 	.tx = {
 		.dma_channel = DT_INST_DMAS_CELL_BY_NAME(0, tx, channel),
 		.dma_perid = DT_INST_DMAS_CELL_BY_NAME(0, tx, perid),
-		.mem_block_queue.buf = tx_0_ring_buf,
-		.mem_block_queue.len = ARRAY_SIZE(tx_0_ring_buf),
+		.mem_block_queue = tx_0_fifo,
 		.stream_start = tx_stream_start,
 		.stream_disable = tx_stream_disable,
 		.queue_drop = tx_queue_drop,
