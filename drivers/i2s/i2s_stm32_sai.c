@@ -815,12 +815,11 @@ static DEVICE_API(i2s, i2s_stm32_driver_api) = {
 		.dma_channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),                     \
 		.reg = (DMA_TypeDef *)DT_REG_ADDR(                                                 \
 			DT_PHANDLE_BY_NAME(DT_DRV_INST(index), dmas, dir)),                        \
-		.dma_cfg =                                                                         \
-			{                                                                          \
-				.dma_slot = STM32_DMA_SLOT(index, dir, slot),                      \
-				.channel_direction = src_dev##_TO_##dest_dev,                      \
-				.dma_callback = dma_callback,                                      \
-			},                                                                         \
+		.dma_cfg = {                                                                       \
+			.dma_slot = STM32_DMA_SLOT(index, dir, slot),                              \
+			.channel_direction = src_dev##_TO_##dest_dev,                              \
+			.dma_callback = dma_callback,                                              \
+		},                                                                                 \
 		.stream_start = stream_start,                                                      \
 		.queue_drop = queue_drop,                                                          \
 	}
@@ -832,18 +831,18 @@ static DEVICE_API(i2s, i2s_stm32_driver_api) = {
 	static const struct stm32_pclken clk_##index[] = STM32_DT_INST_CLOCKS(index);              \
                                                                                                    \
 	struct i2s_stm32_sai_data sai_data_##index = {                                             \
-		.hsai =                                                                            \
-			{                                                                          \
-				.Instance = (SAI_Block_TypeDef *)DT_INST_REG_ADDR(index),          \
-				.Init.OutputDrive = SAI_OUTPUTDRIVE_DISABLE,                       \
-				.Init.FIFOThreshold = SAI_FIFOTHRESHOLD_FULL,                      \
-				.Init.SynchroExt = SAI_SYNCEXT_DISABLE,                            \
-				.Init.CompandingMode = SAI_NOCOMPANDING,                           \
-				.Init.TriState = SAI_OUTPUT_NOTRELEASED,                           \
-			},                                                                         \
-		COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, tx),                                     \
-			(SAI_DMA_CHANNEL_INIT(index, tx, MEMORY, PERIPHERAL)),                  \
-		(SAI_DMA_CHANNEL_INIT(index, rx, PERIPHERAL, MEMORY)))};                     \
+		.hsai = {                                                                          \
+			.Instance = (SAI_Block_TypeDef *)DT_INST_REG_ADDR(index),                  \
+			.Init.OutputDrive = SAI_OUTPUTDRIVE_DISABLE,                               \
+			.Init.FIFOThreshold = SAI_FIFOTHRESHOLD_FULL,                              \
+			.Init.SynchroExt = SAI_SYNCEXT_DISABLE,                                    \
+			.Init.CompandingMode = SAI_NOCOMPANDING,                                   \
+			.Init.TriState = SAI_OUTPUT_NOTRELEASED,                                   \
+		},                                                                                 \
+		COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, tx),                                      \
+			    (SAI_DMA_CHANNEL_INIT(index, tx, MEMORY, PERIPHERAL)),                 \
+			    (SAI_DMA_CHANNEL_INIT(index, rx, PERIPHERAL, MEMORY))),                \
+	};                                                                                         \
                                                                                                    \
 	struct i2s_stm32_sai_cfg sai_config_##index = {                                            \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                   \
