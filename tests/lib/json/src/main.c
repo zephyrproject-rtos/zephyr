@@ -554,8 +554,7 @@ ZTEST(lib_json_test, test_json_decoding)
 	zassert_str_equal(ts.some_nested_struct.nested_string,
 			  "this should be escaped: \\t",
 			  "Nested string not decoded correctly");
-	zassert_str_equal(ts.some_nested_struct.nested_string_buf,
-			  "esc: \\t",
+	zassert_str_equal(ts.some_nested_struct.nested_string_buf, "esc: \t",
 			  "Nested string-array not decoded correctly");
 	zassert_equal(ts.some_array_len, 5,
 		      "Array doesn't have correct number of items");
