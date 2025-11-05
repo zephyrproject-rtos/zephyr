@@ -253,6 +253,12 @@ config RISCV_HAS_CLIC
 	help
 	  Does the SOC provide support for a Core-Local Interrupt Controller (CLIC).
 
+config RISCV_HAS_APLIC
+	bool
+	depends on RISCV_PRIVILEGED
+	help
+	  Does the SOC provide support for an Advanced Platform-Level Interrupt Controller (APLIC).
+
 config CLIC_SUPPORT_INTERRUPT_LEVEL
 	bool
 	depends on RISCV_HAS_CLIC

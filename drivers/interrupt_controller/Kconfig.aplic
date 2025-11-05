@@ -1,0 +1,29 @@
+# Copyright (c) 2024 Zephyr contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config RISCV_HAS_APLIC
+    bool "RISC-V Advanced Platform-Level Interrupt Controller (APLIC)"
+    default y
+    depends on (DT_HAS_RISCV_APLIC_ENABLED || DT_HAS_QEMU_APLIC_ENABLED) && RISCV_PRIVILEGED
+    select MULTI_LEVEL_INTERRUPTS
+    select 2ND_LEVEL_INTERRUPTS
+    help
+      Enable support for the RISC-V APLIC in direct mode as a second-level
+      interrupt controller.
+
+if RISCV_HAS_APLIC
+
+config APLIC_MAX_IRQS
+    int "Maximum number of IRQs tracked by APLIC driver"
+    default 1024
+    range 64 1024
+    help
+      Size of internal enable shadow table. Should be >= number of sources.
+
+config APLIC_INIT_PRIORITY
+    int "APLIC initialization priority"
+    default 40
+    help
+      APLIC device initialization priority.
+
+endif # RISCV_HAS_APLIC

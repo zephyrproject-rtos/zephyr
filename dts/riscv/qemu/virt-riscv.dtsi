@@ -26,7 +26,7 @@
 
 	uart0: uart@10000000 {
 		interrupts = <0x0a 1>;
-		interrupt-parent = <&plic>;
+		interrupt-parent = <&aplic>;
 		clock-frequency = <0x384000>;
 		reg = <0x10000000 0x100>;
 		compatible = "ns16550";
@@ -43,11 +43,10 @@
 			status = "okay";
 			compatible = "qemu,riscv-virt", "riscv";
 
-			hlic0: interrupt-controller {
+			aplic0: interrupt-controller {
 				compatible = "riscv,cpu-intc";
-				#address-cells = <0>;
 				#interrupt-cells = <0x01>;
-				interrupt-controller;
+				interrupt-controller;	
 			};
 		};
 
@@ -57,9 +56,8 @@
 			status = "okay";
 			compatible = "qemu,riscv-virt", "riscv";
 
-			hlic1: interrupt-controller {
+			aplic1: interrupt-controller {
 				compatible = "riscv,cpu-intc";
-				#address-cells = <0>;
 				#interrupt-cells = <0x01>;
 				interrupt-controller;
 			};
@@ -71,11 +69,10 @@
 			status = "okay";
 			compatible = "qemu,riscv-virt", "riscv";
 
-			hlic2: interrupt-controller {
+			aplic2: interrupt-controller {
 				compatible = "riscv,cpu-intc";
-				#address-cells = <0>;
 				#interrupt-cells = <0x01>;
-				interrupt-controller;
+				interrupt-controller;		
 			};
 		};
 
@@ -85,12 +82,11 @@
 			status = "okay";
 			compatible = "qemu,riscv-virt", "riscv";
 
-			hlic3: interrupt-controller {
+			aplic3: interrupt-controller {
 				compatible = "riscv,cpu-intc";
-				#address-cells = <0>;
 				#interrupt-cells = <0x01>;
 				interrupt-controller;
-			};
+            };
 		};
 
 		cpu@4 {
@@ -99,12 +95,11 @@
 			status = "okay";
 			compatible = "qemu,riscv-virt", "riscv";
 
-			hlic4: interrupt-controller {
-				compatible = "riscv,cpu-intc";
-				#address-cells = <0>;
+            aplic4: interrupt-controller {
+                compatible = "riscv,cpu-intc";
 				#interrupt-cells = <0x01>;
 				interrupt-controller;
-			};
+            };
 		};
 
 		cpu@5 {
@@ -113,12 +108,11 @@
 			status = "okay";
 			compatible = "qemu,riscv-virt", "riscv";
 
-			hlic5: interrupt-controller {
-				compatible = "riscv,cpu-intc";
-				#address-cells = <0>;
-				#interrupt-cells = <0x01>;
-				interrupt-controller;
-			};
+            aplic5: interrupt-controller {
+                compatible = "riscv,cpu-intc";
+                #interrupt-cells = <0x01>;
+                interrupt-controller;
+            };
 		};
 
 		cpu@6 {
@@ -127,12 +121,11 @@
 			status = "okay";
 			compatible = "qemu,riscv-virt", "riscv";
 
-			hlic6: interrupt-controller {
-				compatible = "riscv,cpu-intc";
-				#address-cells = <0>;
+            aplic6: interrupt-controller {
+                compatible = "riscv,cpu-intc";
 				#interrupt-cells = <0x01>;
 				interrupt-controller;
-			};
+            };
 		};
 
 		cpu@7 {
@@ -141,12 +134,11 @@
 			status = "okay";
 			compatible = "qemu,riscv-virt", "riscv";
 
-			hlic7: interrupt-controller {
-				compatible = "riscv,cpu-intc";
-				#address-cells = <0>;
+            aplic7: interrupt-controller {
+                compatible = "riscv,cpu-intc";
 				#interrupt-cells = <0x01>;
 				interrupt-controller;
-			};
+            };
 		};
 	};
 
@@ -161,47 +153,48 @@
 		compatible = "simple-bus";
 		ranges;
 
-		plic: interrupt-controller@c000000 {
-			riscv,max-priority = <7>;
-			riscv,ndev = <1024>;
-			reg = <0x0c000000 0x04000000>;
-			interrupts-extended = <&hlic0 0x0b &hlic0 0x09
-					       &hlic1 0x0b &hlic1 0x09
-					       &hlic2 0x0b &hlic2 0x09
-					       &hlic3 0x0b &hlic3 0x09
-					       &hlic4 0x0b &hlic4 0x09
-					       &hlic5 0x0b &hlic5 0x09
-					       &hlic6 0x0b &hlic6 0x09
-					       &hlic7 0x0b &hlic7 0x09>;
-			interrupt-controller;
-			compatible = "sifive,plic-1.0.0";
-			#address-cells = <0x00>;
-			#interrupt-cells = <0x02>;
-		};
-
+        aplic: interrupt-controller@c000000 {
+            phandle = <0x11>;
+			riscv,num-sources = <0x60>;
+	        reg = <0xc000000 0x8000>;
+			interrupts-extended = <&aplic0 0x0b
+                            &aplic1 0x0b
+                            &aplic2 0x0b
+                            &aplic3 0x0b
+                            &aplic4 0x0b
+                            &aplic5 0x0b
+                            &aplic6 0x0b
+                            &aplic7 0x0b>;
+            interrupt-controller;
+            compatible = "riscv,aplic";
+            #address-cells = <0x00>;
+            #interrupt-cells = <0x02>;			
+            status = "okay";
+        };
+	
 		clint: clint@2000000 {
 			compatible = "sifive,clint0";
 			reg = <0x2000000 0x10000>;
-			interrupts-extended = <&hlic0 0x03 &hlic0 0x07
-					       &hlic1 0x03 &hlic1 0x07
-					       &hlic2 0x03 &hlic2 0x07
-					       &hlic3 0x03 &hlic3 0x07
-					       &hlic4 0x03 &hlic4 0x07
-					       &hlic5 0x03 &hlic5 0x07
-					       &hlic6 0x03 &hlic6 0x07
-					       &hlic7 0x03 &hlic7 0x07>;
+			interrupts-extended = <&aplic0 0x03 &aplic0 0x07
+                            &aplic1 0x03 &aplic1 0x07
+                            &aplic2 0x03 &aplic2 0x07
+                            &aplic3 0x03 &aplic3 0x07
+							&aplic4 0x03 &aplic4 0x07
+                            &aplic5 0x03 &aplic5 0x07
+                            &aplic6 0x03 &aplic6 0x07
+                            &aplic7 0x03 &aplic7 0x07>;
 		};
 
 		mtimer: timer@200bff8 {
 			compatible = "riscv,machine-timer";
-			interrupts-extended = <&hlic0 7
-					       &hlic1 7
-					       &hlic2 7
-					       &hlic3 7
-					       &hlic4 7
-					       &hlic5 7
-					       &hlic6 7
-					       &hlic7 7>;
+			interrupts-extended = <&aplic0 7
+                            &aplic1 7
+                            &aplic2 7
+                            &aplic3 7
+                            &aplic4 7
+                            &aplic5 7
+                            &aplic6 7
+							&aplic7 7>;
 			reg = <0x200bff8 0x8 0x2004000 0x8>;
 			reg-names = "mtime", "mtimecmp";
 		};

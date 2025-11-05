@@ -7,7 +7,7 @@ set(QEMU_CPU_TYPE_${ARCH} riscv64)
 
 set(QEMU_FLAGS_${ARCH}
   -nographic
-  -machine virt
+  -machine virt,aia=aplic
   -bios none
   -m 256
   )

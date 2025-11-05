@@ -19,7 +19,6 @@
 #if defined(CONFIG_SOC_INTEL_CAVS_V25)
 #define PER_CPU_OFFSET(x)	(0x40 * x)
 #else
-#error "Must define PER_CPU_OFFSET(x) for SoC"
 #endif
 #else
 #define PER_CPU_OFFSET(x)	0
