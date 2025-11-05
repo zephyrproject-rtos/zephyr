@@ -27,6 +27,7 @@ from pathlib import Path
 from queue import Empty, Queue
 
 import psutil
+from serial.tools import list_ports
 from twisterlib.environment import ZEPHYR_BASE, strip_ansi_sequences
 from twisterlib.error import TwisterException
 from twisterlib.hardwaremap import DUT
@@ -867,6 +868,10 @@ class DeviceHandler(Handler):
                     # Return to normal boot
                     ser.rts = False
                 else:
+                    while ser.port not in (p.name for p in list_ports.comports()):
+                        time.sleep(0.1)
+                        if time.time() - start_time > flash_timeout:
+                            break
                     ser.open()
 
             except serial.SerialException as e:
