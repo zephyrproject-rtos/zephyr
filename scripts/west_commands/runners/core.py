@@ -304,6 +304,10 @@ class RunnerCaps:
 
     - rtt: whether the runner supports SEGGER RTT. This adds a --rtt-address
       option.
+
+    - skip_load: whether the runner supports the --load/--no-load option, which
+      allows skipping the load of image on target before starting a debug session
+      (this option only affects the 'debug' command)
     '''
 
     commands: set[str] = field(default_factory=lambda: set(_RUNNERCAPS_COMMANDS))
@@ -319,6 +323,7 @@ class RunnerCaps:
     rtt: bool = False  # This capability exists separately from the rtt command
                        # to allow other commands to use the rtt address
     dry_run: bool = False
+    skip_load: bool = False
 
     def __post_init__(self):
         if self.mult_dev_ids and not self.dev_id:
@@ -639,6 +644,12 @@ class ZephyrBinaryRunner(abc.ABC):
         parser.add_argument('--dry-run', action='store_true',
                             help=('''Print all the commands without actually
                             executing them''' if caps.dry_run else argparse.SUPPRESS))
+
+        # by default, 'west debug' is expected to flash before starting the session
+        parser.add_argument('--load', action=argparse.BooleanOptionalAction,
+                            help=("load image on target before 'west debug' session"
+                                  if caps.skip_load else argparse.SUPPRESS),
+                            default=True)
 
         # Runner-specific options.
         cls.do_add_parser(parser)
