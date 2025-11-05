@@ -648,8 +648,7 @@ static int spi_mcux_transfer_one_word(const struct device *dev, const struct spi
 	tmp32 = base->FIFORD;
 
 	/* copy to user buffer if given one */
-	if (ctx->rx_len) {
-		assert(ctx->rx_buf);
+	if (ctx->rx_len > 0 && ctx->rx_buf != NULL) {
 		ctx->rx_buf[0] = (uint8_t)tmp32;
 		if (data->word_size_bits > 8) {
 			ctx->rx_buf[1] = (uint8_t)(tmp32 >> 8);
