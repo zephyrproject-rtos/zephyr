@@ -50,7 +50,7 @@
 #define BT_HFP_HF_SDP_FEATURE_WBS             BIT(5) /* Wide Band Speech */
 #define BT_HFP_HF_SDP_FEATURE_ENH_VOICE_RECG  BIT(6) /* Enhanced Voice Recognition Status */
 #define BT_HFP_HF_SDP_FEATURE_VOICE_RECG_TEXT BIT(7) /* Voice Recognition Text */
-#define BT_HFP_HF_SDP_FEATURE_SUPER_WBS       BIT(7) /* Super Wide Band Speech */
+#define BT_HFP_HF_SDP_FEATURE_SUPER_WBS       BIT(8) /* Super Wide Band Speech */
 
 /* HFP AG Features in SDP */
 #define BT_HFP_AG_SDP_FEATURE_3WAY_CALL       BIT(0) /* Three-way calling */
