@@ -11,6 +11,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/regulator/npm13xx.h>
 
 #include "pt2-pinctrl.dtsi"
 
@@ -72,6 +73,10 @@
 	status = "okay";
 };
 
+&gpioa_00_31 {
+	status = "okay";
+};
+
 &gpioa_32_44 {
 	status = "okay";
 };
@@ -85,6 +90,51 @@
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
+
+	npm1300: pmic@6b {
+		compatible = "nordic,npm1300";
+		reg = <0x6b>;
+		pmic-int-pin = <1>;
+		host-int-gpios = <&gpioa_00_31 26 GPIO_ACTIVE_HIGH>;
+
+		npm1300_charger: charger {
+			compatible = "nordic,npm1300-charger";
+			term-microvolt = <4350000>;
+			term-warm-microvolt = <4000000>;
+			current-microamp = <185000>;
+			dischg-limit-microamp = <200000>;
+			vbus-limit-microamp = <500000>;
+			thermistor-ohms = <10000>;
+			thermistor-beta = <3380>;
+			charging-enable;
+			vbatlow-charge-enable;
+		};
+
+		npm1300_gpio: gpio-controller {
+			compatible = "nordic,npm1300-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <4>;
+		};
+
+		regulators {
+			compatible = "nordic,npm1300-regulator";
+
+			npm1300_ldo1: LDO1 {
+				regulator-allowed-modes = <NPM13XX_LDSW_MODE_LDO>;
+				regulator-initial-mode = <NPM13XX_LDSW_MODE_LDO>;
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <1800000>;
+			};
+
+			npm1300_ldo2: LDO2 {
+				regulator-allowed-modes = <NPM13XX_LDSW_MODE_LDO>;
+				regulator-initial-mode = <NPM13XX_LDSW_MODE_LDO>;
+				regulator-min-microvolt = <3300000>;
+				regulator-max-microvolt = <3300000>;
+			};
+		};
+	};
 };
 
 &i2c2 {
