@@ -154,6 +154,16 @@ config LLEXT_EXPERIMENTAL
 	  Include support for LLEXT experimental and unstable functionality that
 	  has a very high likelihood to change in the future.
 
+menu "Exported symbol groups"
+
+config LLEXT_EXPORT_SYMBOL_GROUP_UNASSIGNED
+	bool "Export all symbols from the UNASSIGNED group"
+	default y
+	help
+	  Exports all symbols declared without an explicit group.
+
+endmenu
+
 module = LLEXT
 module-str = llext
 source "subsys/logging/Kconfig.template.log_config"
