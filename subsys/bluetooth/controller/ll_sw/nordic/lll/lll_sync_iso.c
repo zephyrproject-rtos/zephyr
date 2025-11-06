@@ -50,7 +50,7 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
 static void isr_rx_estab(void *param);
 static void isr_rx(void *param);
-static void isr_rx_done(void *param);
+static void isr_rx_lll_done(void *param);
 static void isr_done(void *param);
 static uint16_t payload_index_get(const struct lll_sync_iso *lll);
 #if defined(CONFIG_BT_CTLR_SYNC_ISO_SEQUENTIAL)
@@ -233,6 +233,10 @@ static int prepare_cb(struct lll_prepare_param *p)
 	/* Initialise resume subevent flag */
 	lll->is_lll_resume = 0U;
 #endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+
+	/* Initialize the last access address sync subevent */
+	lll->se = 0U;
+	lll->aa_se = 0U;
 
 	err = prepare_cb_common(p);
 	if (err) {
@@ -893,6 +897,7 @@ static void isr_rx(void *param)
 	uint8_t access_addr[4];
 	uint16_t data_chan_id;
 	uint8_t data_chan_use;
+	uint32_t se_offset_us;
 	uint8_t crc_init[3];
 	uint8_t stream_curr;
 	uint8_t rssi_ready;
@@ -934,40 +939,44 @@ static void isr_rx(void *param)
 	rssi_ready = radio_rssi_is_ready();
 	trx_cnt++;
 
-	/* Save the AA captured for the first anchor point sync */
-	if (!radio_tmr_aa_restore()) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_ISO_SEQUENTIAL) &&
+	    is_sequential_packing) {
 		const struct lll_sync_iso_stream *sync_stream;
-		uint32_t se_offset_us;
-
-		crc_ok_anchor = crc_ok;
+		uint8_t se;
 
 		sync_stream = ull_sync_iso_lll_stream_get(lll->stream_handle[0]);
+		se = ((lll->bis_curr - sync_stream->bis_index) *
+		      ((lll->bn * lll->irc) + lll->ptc)) +
+		     ((lll->irc_curr - 1U) * lll->bn) +
+		     (lll->bn_curr - 1U) + lll->ptc_curr + lll->ctrl;
+		se_offset_us = lll->sub_interval * se;
+		lll->se = se;
+	} else if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_ISO_INTERLEAVED) &&
+		   !is_sequential_packing) {
+		const struct lll_sync_iso_stream *sync_stream;
+		uint8_t se;
 
-		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_ISO_SEQUENTIAL) &&
-		    is_sequential_packing) {
-			uint8_t se;
+		sync_stream = ull_sync_iso_lll_stream_get(lll->stream_handle[0]);
+		se = (lll->bis_curr - sync_stream->bis_index) +
+		     ((((lll->irc_curr - 1U) * lll->bn) +
+		       (lll->bn_curr - 1U) + lll->ptc_curr) *
+		      lll->num_bis) + lll->ctrl;
+		se_offset_us = lll->bis_spacing * se;
+		lll->se = se;
+	} else {
+		se_offset_us = 0U;
 
-			se = ((lll->bis_curr - sync_stream->bis_index) *
-			      ((lll->bn * lll->irc) + lll->ptc)) +
-			     ((lll->irc_curr - 1U) * lll->bn) +
-			     (lll->bn_curr - 1U) + lll->ptc_curr + lll->ctrl;
-			se_offset_us = lll->sub_interval * se;
-		} else if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_ISO_INTERLEAVED) &&
-			   !is_sequential_packing) {
-			uint8_t se;
+		LL_ASSERT_DBG(false);
+	}
 
-			se = (lll->bis_curr - sync_stream->bis_index) +
-			     ((((lll->irc_curr - 1U) * lll->bn) +
-			       (lll->bn_curr - 1U) + lll->ptc_curr) *
-			      lll->num_bis) + lll->ctrl;
-			se_offset_us = lll->bis_spacing * se;
-		} else {
-			se_offset_us = 0U;
+	lll->aa_se = radio_tmr_aa_get();
+	if (!radio_tmr_aa_restore()) {
+		/* CRC valid for at least one of the subevent in the BIG, used in supervision check.
+		 */
+		crc_ok_anchor = crc_ok;
 
-			LL_ASSERT_DBG(false);
-		}
-
-		radio_tmr_aa_save(radio_tmr_aa_get() - se_offset_us);
+		/* Save the AA and READY aptured for the first anchor point sync */
+		radio_tmr_aa_save(lll->aa_se - se_offset_us);
 		radio_tmr_ready_save(radio_tmr_ready_get() - se_offset_us);
 	}
 
@@ -1479,7 +1488,7 @@ isr_rx_ctrl:
 	}
 
 isr_rx_mic_failure:
-	isr_rx_done(param);
+	isr_rx_lll_done(param);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_send();
@@ -1608,12 +1617,8 @@ isr_rx_next_subevent:
 
 	radio_switch_complete_and_disable();
 
-	/* Setup Access Address capture for subsequent subevent if there has been no anchor point
-	 * sync previously.
-	 */
-	if (radio_tmr_aa_restore() == 0U) {
-		radio_tmr_aa_capture();
-	}
+	/* Setup Access Address capture for subsequent subevents */
+	radio_tmr_aa_capture();
 
 	/* PDU Header Complete TimeOut, calculate the absolute timeout in
 	 * microseconds by when a PDU header is to be received for each
@@ -1626,14 +1631,14 @@ isr_rx_next_subevent:
 		       ((lll->bn * lll->irc) + lll->ptc)) +
 		      ((lll->irc_curr - 1U) * lll->bn) + (lll->bn_curr - 1U) +
 		      lll->ptc_curr + lll->ctrl;
-		hcto = lll->sub_interval * nse;
+		hcto = lll->sub_interval * (nse - lll->se);
 	} else if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_ISO_INTERLEAVED) &&
 		   !is_sequential_packing) {
 		nse = (lll->bis_curr - stream->bis_index) +
 		       ((((lll->irc_curr - 1U) * lll->bn) +
 			 (lll->bn_curr - 1U) + lll->ptc_curr) *
 			lll->num_bis) + lll->ctrl;
-		hcto = lll->bis_spacing * nse;
+		hcto = lll->bis_spacing * (nse - lll->se);
 	} else {
 		nse = 0U;
 		hcto = 0U;
@@ -1654,7 +1659,7 @@ isr_rx_next_subevent:
 		 * Listen early considering +/- 2 us active clock jitter, i.e.
 		 * listen early by 4 us.
 		 */
-		hcto += radio_tmr_aa_restore();
+		hcto += lll->aa_se;
 		hcto -= radio_rx_chain_delay_get(lll->phy, PHY_FLAGS_S8);
 		hcto -= addr_us_get(lll->phy);
 		hcto -= radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
@@ -1673,12 +1678,13 @@ isr_rx_next_subevent:
 		/* Max. available clock jitter */
 		jitter_max_us = (EVENT_IFS_US - overhead_us) >> 1;
 		/* Max. clock jitter per subevent */
-		jitter_max_us = (jitter_max_us * nse) / (lll->num_bis * lll->nse);
+		jitter_max_us = (jitter_max_us * (nse - lll->se)) /
+				((lll->num_bis * lll->nse) - lll->se);
 		/* Min. clock jitter we shall use */
 		jitter_max_us = MAX(jitter_max_us, (EVENT_CLOCK_JITTER_US << 1));
 
 		/* Jitter for current subevent */
-		jitter_us = (EVENT_CLOCK_JITTER_US << 1) * nse;
+		jitter_us = (EVENT_CLOCK_JITTER_US << 1) * (nse - lll->se);
 		if (jitter_us > jitter_max_us) {
 			jitter_us = jitter_max_us;
 		}
@@ -1763,7 +1769,7 @@ isr_rx_next_subevent:
 	}
 }
 
-static void isr_rx_done(void *param)
+static void isr_rx_lll_done(void *param)
 {
 	struct node_rx_pdu *node_rx;
 	struct event_done_extra *e;
@@ -1922,7 +1928,7 @@ static void isr_done(void *param)
 		lll_prof_cputime_capture();
 	}
 
-	isr_rx_done(param);
+	isr_rx_lll_done(param);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_send();
