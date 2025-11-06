@@ -656,10 +656,6 @@ static int rv3032_update_set_callback(const struct device *dev, rtc_update_callb
 	struct rv3032_data *data = dev->data;
 	int err;
 
-	if (!config->gpio_int.port) {
-		return -ENOTSUP;
-	}
-
 	rv3032_lock_sem(dev);
 
 	mfd_rv3032_set_irq_handler(config->mfd, dev, RV3032_DEV_RTC_UPDATE, rv3032_rtc_update_isr);
