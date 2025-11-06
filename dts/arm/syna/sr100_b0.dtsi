@@ -17,6 +17,10 @@
 #define DT_SRAM_SIZE		DT_SIZE_M(4)
 
 / {
+	aliases {
+		watchdog0 = &wdog0;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -196,6 +200,18 @@
 			fifo-depth = <8>;
 			max-xfer-size = <32>;
 			clock-frequency = <DT_FREQ_M(200)>;
+			status = "disabled";
+		};
+
+		wdog0: watchdog@50350038 {
+			compatible = "syna,watchdog";
+			reg = <0x50350038 0x4>,
+			      <0x58040000 0x1000>,
+			      <0x58041000 0x1000>,
+			      <0x58100000 0x50>;
+			reg-names = "aon_por_rst", "wdt_ctrl", "wdt_ref", "syscount";
+			clock-frequency = <DT_FREQ_M(24)>;
+			interrupts = <1 0>;
 			status = "disabled";
 		};
 
