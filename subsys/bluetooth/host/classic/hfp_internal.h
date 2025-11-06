@@ -8,6 +8,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* HFP Profile Version */
+#define BT_HFP_VERSION_0_96 0x0096 /* HFP Rev. 0.96 */
+#define BT_HFP_VERSION_1_0  0x0100 /* HFP Rev. 1.0 */
+#define BT_HFP_VERSION_1_5  0x0105 /* HFP Rev. 1.5 */
+#define BT_HFP_VERSION_1_6  0x0106 /* HFP Rev. 1.6 */
+#define BT_HFP_VERSION_1_7  0x0107 /* HFP Rev. 1.7 */
+#define BT_HFP_VERSION_1_8  0x0108 /* HFP Rev. 1.8 */
+#define BT_HFP_VERSION_1_9  0x0109 /* HFP Rev. 1.9 */
+
 #define BT_HFP_MAX_MTU       (BT_L2CAP_RX_MTU - BT_RFCOMM_HDR_MAX_SIZE - BT_RFCOMM_FCS_SIZE)
 #define BT_HF_CLIENT_MAX_PDU BT_HFP_MAX_MTU
 

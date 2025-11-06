@@ -747,9 +747,8 @@ int bt_hfp_hf_redial(struct bt_hfp_hf *hf);
 
 /** @brief Handsfree HF setup audio connection
  *
- *  Setup audio conenction by sending AT+BCC.
- *  If @kconfig{CONFIG_BT_HFP_HF_CODEC_NEG} is not enabled, the error
- *  `-ENOTSUP` will be returned if the function called.
+ *  Setup audio conenction by sending AT+BCC if the Codec Negotiation is supported by both side.
+ *  Or, initialize the SCO audio connection directly.
  *
  *  @param hf HFP HF object.
  *
