@@ -3715,6 +3715,81 @@ ZTEST(net_socket_udp, test_47_ipv4_mapped_to_ipv6_sendmsg)
 	test_ipv4_mapped_to_ipv6_send_common(IPV4_MAPPED_TO_IPV6_SENDMSG);
 }
 
+static void test_rebinding_common(sa_family_t family)
+{
+	int rv;
+	int client_sock;
+	int server_sock;
+	struct sockaddr client_addr;
+	struct sockaddr server_addr;
+	socklen_t addrlen;
+
+	if (family == AF_INET) {
+		prepare_sock_udp_v4(MY_IPV4_ADDR, CLIENT_PORT, &client_sock,
+				    (struct sockaddr_in *)&client_addr);
+		prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock,
+				    (struct sockaddr_in *)&server_addr);
+		addrlen = sizeof(struct sockaddr_in);
+	} else {
+		prepare_sock_udp_v6(MY_IPV6_ADDR, CLIENT_PORT, &client_sock,
+				    (struct sockaddr_in6 *)&client_addr);
+		prepare_sock_udp_v6(MY_IPV6_ADDR, SERVER_PORT, &server_sock,
+				    (struct sockaddr_in6 *)&server_addr);
+		addrlen = sizeof(struct sockaddr_in6);
+	}
+
+	rv = zsock_bind(client_sock, &client_addr, addrlen);
+	zassert_equal(rv, 0, "bind failed");
+
+	rv = zsock_bind(server_sock, &server_addr, addrlen);
+	zassert_equal(rv, 0, "bind failed");
+
+	/* Initial datagram exchange */
+	comm_sendto_recvfrom(client_sock, &client_addr, addrlen,
+			     server_sock, &server_addr, addrlen);
+
+	/* Rebind client socket */
+	if (family == AF_INET) {
+		net_sin(&client_addr)->sin_port = htons(CLIENT_PORT + 1);
+	} else {
+		net_sin6(&client_addr)->sin6_port = htons(CLIENT_PORT + 1);
+	}
+	rv = zsock_bind(client_sock, &client_addr, addrlen);
+	zassert_equal(rv, 0, "rebinding failed");
+
+	/* Datagram exchange with rebound client socket */
+	comm_sendto_recvfrom(client_sock, &client_addr, addrlen,
+			     server_sock, &server_addr, addrlen);
+
+	/* Rebind server socket */
+	if (family == AF_INET) {
+		net_sin(&server_addr)->sin_port = htons(SERVER_PORT + 1);
+	} else {
+		net_sin6(&server_addr)->sin6_port = htons(SERVER_PORT + 1);
+	}
+	rv = zsock_bind(server_sock, &server_addr, addrlen);
+	zassert_equal(rv, 0, "rebinding failed");
+
+	/* Datagram exchange with rebound server socket */
+	comm_sendto_recvfrom(client_sock, &client_addr, addrlen,
+			     server_sock, &server_addr, addrlen);
+
+	rv = zsock_close(client_sock);
+	zassert_equal(rv, 0, "close failed");
+	rv = zsock_close(server_sock);
+	zassert_equal(rv, 0, "close failed");
+}
+
+ZTEST(net_socket_udp, test_48_v4_rebinding)
+{
+	test_rebinding_common(AF_INET);
+}
+
+ZTEST(net_socket_udp, test_49_v6_rebinding)
+{
+	test_rebinding_common(AF_INET6);
+}
+
 static void after(void *arg)
 {
 	ARG_UNUSED(arg);
