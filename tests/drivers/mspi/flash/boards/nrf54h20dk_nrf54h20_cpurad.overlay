@@ -1,0 +1,5 @@
+/ {
+	psa_rng: psa-rng {
+		status = "disabled";
+	};
+};

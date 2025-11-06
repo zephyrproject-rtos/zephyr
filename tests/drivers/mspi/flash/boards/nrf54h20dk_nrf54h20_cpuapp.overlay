@@ -8,6 +8,10 @@
 	aliases {
 		mspi0 = &exmif;
 	};
+
+	psa_rng: psa-rng {
+		status = "disabled";
+	};
 };
 
 &gpio6 {
