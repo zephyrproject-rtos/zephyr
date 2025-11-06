@@ -9,12 +9,12 @@
 #include <soc.h>
 #include <zephyr/init.h>
 
-#include <stm32u5xx_ll_utils.h>
-#include <stm32u5xx_ll_bus.h>
-#include <stm32u5xx_ll_cortex.h>
-#include <stm32u5xx_ll_pwr.h>
-#include <stm32u5xx_ll_rcc.h>
-#include <stm32u5xx_ll_system.h>
+#include <stm32_ll_utils.h>
+#include <stm32_ll_bus.h>
+#include <stm32_ll_cortex.h>
+#include <stm32_ll_pwr.h>
+#include <stm32_ll_rcc.h>
+#include <stm32_ll_system.h>
 #include <clock_control/clock_stm32_ll_common.h>
 
 #include <zephyr/logging/log.h>

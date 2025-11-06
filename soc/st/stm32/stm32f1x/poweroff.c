@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stm32f1xx_ll_cortex.h>
-#include <stm32f1xx_ll_pwr.h>
+#include <stm32_ll_cortex.h>
+#include <stm32_ll_pwr.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/poweroff.h>
