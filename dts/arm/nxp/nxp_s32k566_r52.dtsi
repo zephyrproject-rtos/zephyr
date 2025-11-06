@@ -1,0 +1,167 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-r.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <nxp/nxp_s32k566.dtsi>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-r52";
+			reg = <0>;
+		};
+
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-r52";
+			reg = <1>;
+		};
+	};
+
+	arch_timer: timer {
+		compatible = "arm,armv8_timer";
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+	};
+
+	soc {
+		interrupt-parent = <&gic>;
+
+		gic: interrupt-controller@43000000 {
+			compatible = "arm,gic-v3", "arm,gic";
+			reg = <0x43000000 0x10000>,
+			      <0x43100000 0x40000>;
+			#address-cells = <0>;
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			status = "okay";
+		};
+	};
+};
+
+&eirq0 {
+	interrupts = <GIC_SPI 24 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&eirq1 {
+	interrupts = <GIC_SPI 25 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&eirq2 {
+	interrupts = <GIC_SPI 198 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&eirq3 {
+	interrupts = <GIC_SPI 26 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&eirq4 {
+	interrupts = <GIC_SPI 27 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpe_lpuart0 {
+	interrupts = <GIC_SPI 222 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpe_lpuart1 {
+	interrupts = <GIC_SPI 223 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpe_lpuart2 {
+	interrupts = <GIC_SPI 224 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpuart0 {
+	interrupts = <GIC_SPI 144 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpuart1 {
+	interrupts = <GIC_SPI 145 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpuart2 {
+	interrupts = <GIC_SPI 146 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpuart3 {
+	interrupts = <GIC_SPI 147 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpuart4 {
+	interrupts = <GIC_SPI 148 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpuart5 {
+	interrupts = <GIC_SPI 149 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpuart6 {
+	interrupts = <GIC_SPI 150 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpuart7 {
+	interrupts = <GIC_SPI 151 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpuart8 {
+	interrupts = <GIC_SPI 152 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpuart9 {
+	interrupts = <GIC_SPI 153 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpuart10 {
+	interrupts = <GIC_SPI 154 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpuart11 {
+	interrupts = <GIC_SPI 155 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpuart12 {
+	interrupts = <GIC_SPI 156 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpuart13 {
+	interrupts = <GIC_SPI 157 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpuart14 {
+	interrupts = <GIC_SPI 158 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpuart15 {
+	interrupts = <GIC_SPI 159 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpuart16 {
+	interrupts = <GIC_SPI 160 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpuart17 {
+	interrupts = <GIC_SPI 161 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpuart18 {
+	interrupts = <GIC_SPI 162 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpuart19 {
+	interrupts = <GIC_SPI 163 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpuart20 {
+	interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
