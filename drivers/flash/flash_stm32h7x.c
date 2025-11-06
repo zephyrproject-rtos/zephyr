@@ -15,13 +15,8 @@
 #include <zephyr/sys/barrier.h>
 #include <soc.h>
 #include <stm32_bitops.h>
-#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
-#include <stm32h7rsxx_ll_bus.h>
-#include <stm32h7rsxx_ll_utils.h>
-#else
-#include <stm32h7xx_ll_bus.h>
-#include <stm32h7xx_ll_utils.h>
-#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
+#include <stm32_ll_bus.h>
+#include <stm32_ll_utils.h>
 
 #include "flash_stm32.h"
 #include "stm32_hsem.h"
