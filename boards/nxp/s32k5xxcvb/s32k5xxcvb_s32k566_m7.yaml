@@ -11,4 +11,5 @@ toolchain:
   - zephyr
 supported:
   - gpio
+  - counter
 vendor: nxp
