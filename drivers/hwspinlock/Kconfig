@@ -22,6 +22,7 @@ config HWSPINLOCK_INIT_PRIORITY
 
 # zephyr-keep-sorted-start
 source "drivers/hwspinlock/Kconfig.sqn"
+source "drivers/hwspinlock/Kconfig.test"
 # zephyr-keep-sorted-stop
 
 endif
