@@ -1,0 +1,14 @@
+# adxl313, 3-Axis, ±0.5 g/±1 g/±2 g/±4 g Digital Accelerometer
+#
+# Copyright (c) 2025 Lothar Rubusch <l.rubusch@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config ADXL313
+	bool "ADXL313 Three Axis accelerometer"
+	default y
+	depends on DT_HAS_ADI_ADXL313_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL313),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL313),spi)
+	help
+	  Enable driver for adxl313 Three-Axis Digital Accelerometer.
