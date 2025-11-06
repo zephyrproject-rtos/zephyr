@@ -454,7 +454,7 @@ void bt_iso_connected(struct bt_conn *iso)
 
 static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
-	const uint8_t conn_type = chan->iso->iso.info.type;
+	uint8_t conn_type;
 	struct net_buf *buf;
 
 	LOG_DBG("%p, reason 0x%02x", chan, reason);
@@ -477,6 +477,8 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 	if (chan->ops->disconnected) {
 		chan->ops->disconnected(chan, reason);
 	}
+
+	conn_type = chan->iso->iso.info.type;
 
 	/* The peripheral does not have the concept of a CIG, so once a CIS
 	 * disconnects it is completely freed by unref'ing it
