@@ -1779,7 +1779,7 @@ class LicenseAndCopyrightCheck(ComplianceTest):
             self._report_violations(
                 paths,
                 "License may not be allowed",
-                "warning",
+                "error",
                 (
                     f"License file for '{lic_id}' not found in /LICENSES. Please check "
                     "https://docs.zephyrproject.org/latest/contribute/guidelines.html#components-using-other-licenses."
