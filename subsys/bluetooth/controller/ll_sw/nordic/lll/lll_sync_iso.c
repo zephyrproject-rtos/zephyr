@@ -248,6 +248,10 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	/* Initialize anchor point CRC ok flag */
 	crc_ok_anchor = 0U;
 
+	/* Initialize the last access address sync subevent */
+	lll->se = 0U;
+	lll->aa_se = 0U;
+
 	/* Initialize to mandatory parameter values */
 	lll->bis_curr = 1U;
 	lll->ptc_curr = 0U;
@@ -572,6 +576,8 @@ static void isr_rx(void *param)
 	uint8_t access_addr[4];
 	uint16_t data_chan_id;
 	uint8_t data_chan_use;
+	uint32_t se_offset_us;
+	uint8_t phy_flags_rx;
 	uint8_t crc_init[3];
 	uint8_t stream_curr;
 	uint8_t rssi_ready;
@@ -609,28 +615,33 @@ static void isr_rx(void *param)
 
 	crc_ok = radio_crc_is_valid();
 	rssi_ready = radio_rssi_is_ready();
+	phy_flags_rx = radio_phy_flags_rx_get();
 	trx_cnt++;
 
 	/* initialize LLL context reference */
 	lll = param;
 
+	/* Subevent of the received PDU */
+	stream = ull_sync_iso_lll_stream_get(lll->stream_handle[0]);
+	lll->se = ((lll->bis_curr - stream->bis_index) *
+		   ((lll->bn * lll->irc) + lll->ptc)) +
+		  ((lll->irc_curr - 1U) * lll->bn) + (lll->bn_curr - 1U) +
+		  lll->ptc_curr + lll->ctrl;
+	se_offset_us = lll->sub_interval * lll->se;
+
+	/* Store the access address timestamp used for subsequent subevent scheduling */
+	lll->aa_se = radio_tmr_aa_get();
+
 	/* Save the AA captured for the first anchor point sync */
 	if (!radio_tmr_aa_restore()) {
-		const struct lll_sync_iso_stream *sync_stream;
-		uint32_t se_offset_us;
-		uint8_t se;
-
 		crc_ok_anchor = crc_ok;
 
-		sync_stream = ull_sync_iso_lll_stream_get(lll->stream_handle[0]);
-		se = ((lll->bis_curr - sync_stream->bis_index) *
-		      ((lll->bn * lll->irc) + lll->ptc)) +
-		     ((lll->irc_curr - 1U) * lll->bn) + (lll->bn_curr - 1U) +
-		     lll->ptc_curr + lll->ctrl;
-		se_offset_us = lll->sub_interval * se;
-		radio_tmr_aa_save(radio_tmr_aa_get() - se_offset_us);
+		radio_tmr_aa_save(lll->aa_se - se_offset_us);
 		radio_tmr_ready_save(radio_tmr_ready_get() - se_offset_us);
 	}
+
+	/* Compensate for the Rx chain delay */
+	lll->aa_se -= radio_rx_address_delay_get(lll->phy, phy_flags_rx);
 
 	/* Clear radio rx status and events */
 	lll_isr_rx_status_reset();
@@ -1131,13 +1142,6 @@ isr_rx_next_subevent:
 
 	radio_switch_complete_and_disable();
 
-	/* Setup Access Address capture for subsequent subevent if there has been no anchor point
-	 * sync previously.
-	 */
-	if (radio_tmr_aa_restore() == 0U) {
-		radio_tmr_aa_capture();
-	}
-
 	/* PDU Header Complete TimeOut, calculate the absolute timeout in
 	 * microseconds by when a PDU header is to be received for each
 	 * subevent.
@@ -1147,7 +1151,7 @@ isr_rx_next_subevent:
 	       ((lll->bn * lll->irc) + lll->ptc)) +
 	      ((lll->irc_curr - 1U) * lll->bn) + (lll->bn_curr - 1U) +
 	      lll->ptc_curr + lll->ctrl;
-	hcto = lll->sub_interval * nse;
+	hcto = lll->sub_interval * (nse - lll->se);
 
 	if (trx_cnt) {
 		/* Setup radio packet timer header complete timeout for
@@ -1162,8 +1166,7 @@ isr_rx_next_subevent:
 		 * Listen early considering +/- 2 us active clock jitter, i.e.
 		 * listen early by 4 us.
 		 */
-		hcto += radio_tmr_aa_restore();
-		hcto -= radio_rx_address_delay_get(lll->phy, PHY_FLAGS_S8);
+		hcto += lll->aa_se;
 		hcto -= addr_us_get(lll->phy);
 		hcto -= radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
 
@@ -1180,13 +1183,10 @@ isr_rx_next_subevent:
 
 		/* Max. available clock jitter */
 		jitter_max_us = (EVENT_IFS_US - overhead_us) >> 1;
-		/* Max. clock jitter per subevent */
-		jitter_max_us = (jitter_max_us * nse) / (lll->num_bis * lll->nse);
-		/* Min. clock jitter we shall use */
-		jitter_max_us = MAX(jitter_max_us, (EVENT_CLOCK_JITTER_US << 1));
+		jitter_max_us += lll->sub_interval * (nse - lll->se - 1U);
 
 		/* Jitter for current subevent */
-		jitter_us = (EVENT_CLOCK_JITTER_US << 1) * nse;
+		jitter_us = (EVENT_CLOCK_JITTER_US << 1) * (nse - lll->se);
 		if (jitter_us > jitter_max_us) {
 			jitter_us = jitter_max_us;
 		}
@@ -1234,6 +1234,9 @@ isr_rx_next_subevent:
 
 	/* setup absolute PDU header reception timeout */
 	radio_tmr_hcto_configure_abs(hcto);
+
+	/* Setup Access Address capture for subsequent subevents */
+	radio_tmr_aa_capture();
 
 	/* setup capture of PDU end timestamp */
 	radio_tmr_end_capture();
