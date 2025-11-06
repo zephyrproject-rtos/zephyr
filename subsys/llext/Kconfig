@@ -157,21 +157,27 @@ config LLEXT_EXPERIMENTAL
 
 menu "Exported symbol groups"
 
+config LLEXT_EXPORT_DEFAULT_GROUPS
+	bool "Export the default set of Zephyr application symbols"
+	default y
+	help
+	  Exports default, syscall and libc symbols
+
 config LLEXT_EXPORT_SYMBOL_GROUP_UNASSIGNED
 	bool "Export all symbols from the UNASSIGNED group"
-	default y
+	default y if LLEXT_EXPORT_DEFAULT_GROUPS
 	help
 	  Exports all symbols declared without an explicit group.
 
 config LLEXT_EXPORT_SYMBOL_GROUP_SYSCALL
 	bool "Export all syscalls"
-	default y
+	default y if LLEXT_EXPORT_DEFAULT_GROUPS
 	help
 	  Exports all syscall symbols.
 
 config LLEXT_EXPORT_SYMBOL_GROUP_LIBC
 	bool "Export standard library symbols"
-	default y
+	default y if LLEXT_EXPORT_DEFAULT_GROUPS
 	help
 	  Export symbols such as memcpy, memset, strlen.
 
