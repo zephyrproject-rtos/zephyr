@@ -162,6 +162,12 @@ config LLEXT_EXPORT_SYMBOL_GROUP_UNASSIGNED
 	help
 	  Exports all symbols declared without an explicit group.
 
+config LLEXT_EXPORT_SYMBOL_GROUP_SYSCALL
+	bool "Export all syscalls"
+	default y
+	help
+	  Exports all syscall symbols.
+
 endmenu
 
 module = LLEXT
