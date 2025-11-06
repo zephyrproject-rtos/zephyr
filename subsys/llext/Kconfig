@@ -168,6 +168,12 @@ config LLEXT_EXPORT_SYMBOL_GROUP_SYSCALL
 	help
 	  Exports all syscall symbols.
 
+config LLEXT_EXPORT_SYMBOL_GROUP_LIBC
+	bool "Export standard library symbols"
+	default y
+	help
+	  Export symbols such as memcpy, memset, strlen.
+
 endmenu
 
 module = LLEXT
