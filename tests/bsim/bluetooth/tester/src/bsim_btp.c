@@ -873,6 +873,8 @@ static bool is_valid_vcs_packet_len(const struct btp_hdr *hdr, struct net_buf_si
 		return buf_simple->len == 0U;
 	case BTP_VCS_UNMUTE:
 		return buf_simple->len == 0U;
+	case BTP_VCS_REGISTER:
+		return buf_simple->len == 0U;
 
 	/* no events */
 	default:
