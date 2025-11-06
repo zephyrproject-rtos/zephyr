@@ -422,6 +422,8 @@ int main(void)
 
 	/* Connection loop */
 	do {
+		bool disconnected = false;
+
 		LOG_INF("TCP: Waiting for client...");
 
 		client = accept(sock, (struct sockaddr *)&client_addr, &client_addr_len);
@@ -473,6 +475,7 @@ int main(void)
 				vbuf_out->bytesused);
 			/* Send compressed video buffer to TCP client */
 			ret = sendall(client, vbuf_out->buffer, vbuf_out->bytesused);
+			disconnected = ret && ret != -EAGAIN;
 
 			vbuf_out->type = VIDEO_BUF_TYPE_OUTPUT;
 			ret = video_enqueue(encoder_dev, vbuf_out);
@@ -485,8 +488,9 @@ int main(void)
 			LOG_INF("Sending frame %d", i++);
 			/* Send video buffer to TCP client */
 			ret = sendall(client, vbuf->buffer, vbuf->bytesused);
+			disconnected = ret && ret != -EAGAIN;
 #endif
-			if (ret && ret != -EAGAIN) {
+			if (disconnected) {
 				/* client disconnected */
 				LOG_ERR("TCP: Client disconnected %d", ret);
 				close(client);
@@ -498,7 +502,7 @@ int main(void)
 				LOG_ERR("Unable to enqueue video buf");
 				return 0;
 			}
-		} while (!ret);
+		} while (!ret && !disconnected);
 
 		/* stop capture */
 		if (video_stream_stop(video_dev, type)) {
