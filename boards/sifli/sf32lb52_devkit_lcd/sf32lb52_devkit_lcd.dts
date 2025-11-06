@@ -24,6 +24,7 @@
 		zephyr,code-partition = &code;
 		zephyr,console = &usart1;
 		zephyr,shell-uart = &usart1;
+		zephyr,crc = &crc;
 		zephyr,entropy = &trng;
 	};
 
@@ -149,6 +150,10 @@
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&crc {
+	status = "okay";
 };
 
 temp_sensor: &tsen {
