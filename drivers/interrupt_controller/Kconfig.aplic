@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Zephyr contributors
+# Copyright (c) 2025 Institute of Software, Chinese Academy of Sciences (ISCAS)
 # SPDX-License-Identifier: Apache-2.0
 
 config RISCV_HAS_APLIC
