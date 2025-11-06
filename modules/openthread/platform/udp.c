@@ -36,6 +36,13 @@ static void udp_receive_handler(struct net_socket_service_event *evt);
 NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(handle_udp_receive, udp_receive_handler,
 				      CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_MAX_UDP_SERVICES);
 
+void udp_plat_init_sockfd(void)
+{
+	for (uint8_t i = 0; i < CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_MAX_UDP_SERVICES; i++) {
+		sockfd_udp[i].fd = -1;
+	}
+}
+
 otError udp_plat_init(otInstance *ot_instance, struct net_if *ail_iface, struct net_if *ot_iface)
 {
 	ot_instance_ptr = ot_instance;

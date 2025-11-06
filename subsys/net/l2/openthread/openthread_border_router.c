@@ -325,6 +325,7 @@ void openthread_border_router_init(struct openthread_context *ot_ctx)
 				     NET_EVENT_IPV4_ADDR_ADD);
 	net_mgmt_add_event_callback(&ail_net_event_ipv4_addr_cb);
 #endif /* CONFIG_NET_IPV4 */
+	udp_plat_init_sockfd();
 	openthread_set_bbr_multicast_listener_cb(ot_bbr_multicast_listener_handler, (void *)ot_ctx);
 	(void)infra_if_start_icmp6_listener();
 }
