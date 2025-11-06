@@ -35,6 +35,22 @@
 				status = "okay";
 				reg = <0x1>;
 			};
+
+			test_rv3032: rv3032c7@2 {
+				compatible = "microcrystal,rv3032-mfd";
+				reg = <0x2>;
+				int-gpios = <&test_gpio 0 0>;
+				evi-gpios = <&test_gpio 0 0>;
+				backup-switch-mode = "disabled";
+				always-on;
+				status = "okay";
+
+				test_rv3032_counter: rv3032_counter {
+					compatible = "microcrystal,rv3032-counter";
+					frequency = <1>;
+					status = "okay";
+				};
+			};
 		};
 	};
 };
