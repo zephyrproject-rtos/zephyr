@@ -1631,7 +1631,6 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	dev_data->hqspi.Init.ClockPrescaler = prescaler;
 	/* Give a bit position from 0 to 31 to the HAL init minus 1 for the DCR1 reg */
 	dev_data->hqspi.Init.FlashSize = find_lsb_set(dev_cfg->flash_size) - 2;
-	dev_data->hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_HALFCYCLE;
 	dev_data->hqspi.Init.ChipSelectHighTime = dev_cfg->cs_high_time - 1;
 #if STM32_QSPI_DOUBLE_FLASH
 	dev_data->hqspi.Init.DualFlash = QSPI_DUALFLASH_ENABLE;
@@ -1840,7 +1839,9 @@ static struct flash_stm32_qspi_data flash_stm32_qspi_dev_data = {
 		.Instance = (QUADSPI_TypeDef *)DT_REG_ADDR(STM32_QSPI_NODE),
 		.Init = {
 			.FifoThreshold = STM32_QSPI_FIFO_THRESHOLD,
-			.SampleShifting = QSPI_SAMPLE_SHIFTING_NONE,
+			.SampleShifting = DT_PROP(STM32_QSPI_NODE, ssht_enable)
+					? QSPI_SAMPLE_SHIFTING_HALFCYCLE
+					: QSPI_SAMPLE_SHIFTING_NONE,
 			.ChipSelectHighTime = QSPI_CS_HIGH_TIME_1_CYCLE,
 			.ClockMode = QSPI_CLOCK_MODE_0,
 			},
