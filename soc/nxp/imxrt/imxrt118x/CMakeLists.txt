@@ -19,7 +19,6 @@ if((CONFIG_NXP_IMXRT_BOOT_HEADER) AND (CONFIG_BOOT_FLEXSPI_NOR))
   set(RT118x_DEVICE_BOOT_HEADER_DIR
     "${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/devices/RT/RT1180/MIMXRT1189")
 
-  zephyr_library_sources(${RT118x_DEVICE_BOOT_HEADER_DIR}/xip/fsl_flexspi_nor_boot.c)
   zephyr_library_include_directories(${RT118x_DEVICE_BOOT_HEADER_DIR}/xip)
   zephyr_library_include_directories(${RT118x_DEVICE_BOOT_HEADER_DIR})
 endif()
