@@ -148,3 +148,7 @@ zephyr_udc0: &usb0 {
 &gpo1 {
 	polarity = <GPIO_ACTIVE_HIGH>;
 };
+
+&wdog0 {
+	status = "okay";
+};
