@@ -15,6 +15,7 @@
 		led2 = &user_led_blue;
 		sw0 = &user_button_0;
 		sw1 = &user_button_1;
+		watchdog0 = &swt_startup;
 	};
 
 	chosen {
@@ -82,5 +83,8 @@
 &flexcan0 {
 	pinctrl-0 = <&flexcan0_default>;
 	pinctrl-names = "default";
+};
+
+&swt_startup {
 	status = "okay";
 };
