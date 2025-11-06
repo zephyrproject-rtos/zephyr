@@ -1367,6 +1367,19 @@ extern const struct rtio_iodev_api spi_iodev_api;
 	RTIO_IODEV_DEFINE(name, &spi_iodev_api, (void *)&_spi_dt_spec_##name)
 
 /**
+ * @brief Define an iodev for a devicetree instance on the bus
+ *
+ * This is equivalent to
+ * <tt>SPI_DT_IODEV_DEFINE(name, DT_DRV_INST(inst), operation)</tt>.
+ *
+ * @param name Symbolic name to use for defining the iodev
+ * @param inst Devicetree instance number
+ * @param operation_ SPI operational mode
+ */
+#define SPI_DT_INST_IODEV_DEFINE(name, inst, operation_, ...)			\
+	SPI_DT_IODEV_DEFINE(name, DT_DRV_INST(inst), operation_, __VA_ARGS__)
+
+/**
  * @brief Validate that SPI bus (and CS gpio if defined) is ready.
  *
  * @param spi_iodev SPI iodev defined with SPI_DT_IODEV_DEFINE
