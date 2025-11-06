@@ -34,10 +34,10 @@
 #define APDS9306_REGISTER_ALS_THRES_LOW_2 0x26
 #define APDS9306_REGISTER_ALS_THRES_VAR   0x27
 
-#define ADPS9306_BIT_ALS_EN               BIT(0x01)
-#define ADPS9306_BIT_ALS_DATA_STATUS      BIT(0x03)
+#define APDS9306_BIT_ALS_EN               BIT(0x01)
+#define APDS9306_BIT_ALS_DATA_STATUS      BIT(0x03)
 #define APDS9306_BIT_SW_RESET             BIT(0x04)
-#define ADPS9306_BIT_ALS_INTERRUPT_STATUS BIT(0x03)
+#define APDS9306_BIT_ALS_INTERRUPT_STATUS BIT(0x03)
 #define APDS9306_BIT_POWER_ON_STATUS      BIT(0x05)
 
 #define APDS_9306_065_CHIP_ID 0xB3
@@ -94,7 +94,7 @@ static int apds9306_enable(const struct device *dev)
 	const struct apds9306_config *config = dev->config;
 
 	return i2c_reg_update_byte_dt(&config->i2c, APDS9306_REGISTER_MAIN_CTRL,
-				      ADPS9306_BIT_ALS_EN, ADPS9306_BIT_ALS_EN);
+				      APDS9306_BIT_ALS_EN, APDS9306_BIT_ALS_EN);
 }
 
 static int apds9306_standby(const struct device *dev)
@@ -102,7 +102,7 @@ static int apds9306_standby(const struct device *dev)
 	const struct apds9306_config *config = dev->config;
 
 	return i2c_reg_update_byte_dt(&config->i2c, APDS9306_REGISTER_MAIN_CTRL,
-				      ADPS9306_BIT_ALS_EN, 0x00);
+				      APDS9306_BIT_ALS_EN, 0x00);
 }
 
 static void apds9306_worker(struct k_work *p_work)
@@ -120,7 +120,7 @@ static void apds9306_worker(struct k_work *p_work)
 		return;
 	}
 
-	if (!(buffer[0] & ADPS9306_BIT_ALS_DATA_STATUS)) {
+	if (!(buffer[0] & APDS9306_BIT_ALS_DATA_STATUS)) {
 		LOG_DBG("No data ready!");
 		return;
 	}
