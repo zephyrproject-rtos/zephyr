@@ -1202,7 +1202,7 @@ testing using video fingerprints.
    Window being displayed for a "compare" run where fingerprint is a 90% match with the reference.
 
 Hardware setup
-++++++++++++++
+--------------
 
 The display capture harness requires:
 
@@ -1212,7 +1212,7 @@ The display capture harness requires:
 - DUT connected to the same PC for flashing and serial console access
 
 Configuration
-+++++++++++++
+-------------
 
 The harness uses a YAML configuration file that defines camera settings, test parameters, and video
 signature analysis options. A typical configuration is shown below:
@@ -1327,7 +1327,7 @@ environment variable:
       display_capture_config: "${DISPLAY_TEST_DIR}/display_config.yaml"
 
 Workflow
-++++++++
+--------
 
 First, generate **reference fingerprints** for a known-good display output:
 
