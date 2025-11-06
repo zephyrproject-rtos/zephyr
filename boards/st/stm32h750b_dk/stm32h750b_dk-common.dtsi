@@ -169,6 +169,7 @@
 	 * and accessed simultaneously, 4bits sent to/received from each.
 	 */
 	dual-flash;
+	ssht-enable;
 	status = "okay";
 
 	ext_flash_ctrl: qspi-flash-controller@0 {
