@@ -5088,6 +5088,7 @@ USB:
     - jfischer-no
   collaborators:
     - tmon-nordic
+    - josuah
   files:
     - drivers/usb/
     - dts/bindings/usb/
