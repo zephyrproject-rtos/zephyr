@@ -546,5 +546,13 @@
 			reg = <0x406f4000 0x4000>;
 			status = "disabled";
 		};
+
+		swt_startup: watchdog@404a8000 {
+			compatible = "nxp,s32-swt";
+			reg = <0x404a8000 0x4000>;
+			clocks = <&clock NXP_S32_SWT_STARTUP_IPG_COUNTER_CLK>;
+			service-mode = "fixed";
+			status = "disabled";
+		};
 	};
 };
