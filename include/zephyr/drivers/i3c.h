@@ -2751,6 +2751,18 @@ extern const struct rtio_iodev_api i3c_iodev_api;
 	RTIO_IODEV_DEFINE(name, &i3c_iodev_api, (void *)&_i3c_iodev_data_##name)
 
 /**
+ * @brief Define an iodev for a devicetree instance on the bus
+ *
+ * This is equivalent to
+ * <tt>I3C_DT_IODEV_DEFINE(name, DT_DRV_INST(inst))</tt>.
+ *
+ * @param name Symbolic name of the iodev to define
+ * @param inst Devicetree instance number
+ */
+#define I3C_DT_INST_IODEV_DEFINE(name, inst)					\
+	I3C_DT_IODEV_DEFINE(name, DT_DRV_INST(inst))
+
+/**
  * @brief Copy the i3c_msgs into a set of RTIO requests
  *
  * @param r RTIO context
