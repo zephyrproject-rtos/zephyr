@@ -4,3 +4,10 @@
 config SHIELD_LCD_PAR_S035
 	def_bool $(shields_list_contains,lcd_par_s035_spi) ||\
 		$(shields_list_contains,lcd_par_s035_8080)
+
+config SHIELD_LCD_PAR_S035_INIT_PRIORITY
+	int "LCD_PAR_S035 shield init priority"
+	default 85
+	depends on SHIELD_LCD_PAR_S035
+	help
+	  SYSINIT() priority to initialize the shield

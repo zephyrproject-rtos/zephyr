@@ -12,6 +12,10 @@
 		zephyr,touch = &gt911_lcd_par_s035;
 	};
 
+	aliases {
+		mipi-dbi = &zephyr_mipi_dbi_parallel;
+	};
+
 	lvgl_pointer {
 		compatible = "zephyr,lvgl-pointer-input";
 		input = <&gt911_lcd_par_s035>;
@@ -20,6 +24,9 @@
 	};
 };
 
+/* Initialization of touch, MIPI DBI and display devices is deferred to
+ * lcd_par_s035_init() in shield.c
+ */
 &nxp_8080_touch_panel_i2c {
 	status = "okay";
 
@@ -27,7 +34,7 @@
 		compatible = "goodix,gt911";
 		reg = <0x5d>;
 		irq-gpios = <&nxp_lcd_8080_connector 9 GPIO_ACTIVE_HIGH>;
-		reset-gpios = <&nxp_lcd_8080_connector 11 GPIO_ACTIVE_LOW>;
+		zephyr,deferred-init;
 	};
 };
 
@@ -35,6 +42,7 @@
 	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	zephyr,deferred-init;
 
 	st7796s: st7796s@0 {
 		compatible = "sitronix,st7796s";
@@ -57,5 +65,6 @@
 		ngc = [F0 09 0D 09 08 23 2E 33 46 38 13 13 2C 32];
 		madctl = <0x28>;
 		color-invert;
+		zephyr,deferred-init;
 	};
 };
