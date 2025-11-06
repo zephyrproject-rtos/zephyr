@@ -175,7 +175,7 @@ struct llext_symtable {
  *
  * When @c CONFIG_LLEXT is not enabled, this macro is a no-op.
  *
- * When @c CONFIG_LLEXT_EXPORT_SYMBOL_GROUP_UNASSIGNED  is not enabled, this
+ * When @c CONFIG_LLEXT_EXPORT_SYMBOL_GROUP_UNASSIGNED is not enabled, this
  * macro is a no-op.
  *
  * @param sym_ident Symbol to export
@@ -194,12 +194,47 @@ struct llext_symtable {
  *
  * When @c CONFIG_LLEXT is not enabled, this macro is a no-op.
  *
- * When @c CONFIG_LLEXT_EXPORT_SYMBOL_GROUP_UNASSIGNED  is not enabled, this
+ * When @c CONFIG_LLEXT_EXPORT_SYMBOL_GROUP_UNASSIGNED is not enabled, this
  * macro is a no-op.
  *
  * @param x Symbol to export
  */
 #define EXPORT_SYMBOL(x) EXPORT_SYMBOL_NAMED(x, x)
+
+/**
+ * @brief Export a constant symbol with a custom name and group
+ *
+ * Version of @ref EXPORT_SYMBOL_NAMED that allows placing the symbol in a
+ * custom group.
+ *
+ * When @c CONFIG_LLEXT is not enabled, this macro is a no-op.
+ *
+ * When @c CONFIG_LLEXT_EXPORT_SYMBOL_GROUP_{group} is not enabled, this macro
+ * is a no-op.
+ *
+ * @param group Group in which symbol is exported (must be uppercase)
+ * @param sym_ident Symbol to export
+ * @param sym_name Name associated with the symbol
+ */
+#define EXPORT_GROUP_SYMBOL_NAMED(group, sym_ident, sym_name)			\
+	Z_EXPORT_SYMBOL_NAMED_IN_GROUP(group, sym_ident, sym_name)
+
+/**
+ * @brief Export a constant symbol in a custom group
+ *
+ * Version of @ref EXPORT_SYMBOL that allows placing the symbol in a
+ * custom group.
+ *
+ * When @c CONFIG_LLEXT is not enabled, this macro is a no-op.
+ *
+ * When @c CONFIG_LLEXT_EXPORT_SYMBOL_GROUP_{group} is not enabled, this macro
+ * is a no-op.
+ *
+ * @param group Group in which symbol is exported (must be uppercase)
+ * @param sym_ident Symbol to export
+ */
+#define EXPORT_GROUP_SYMBOL(group, sym_ident) \
+	EXPORT_GROUP_SYMBOL_NAMED(group, sym_ident, sym_ident)
 
 /**
  * @}
