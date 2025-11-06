@@ -164,8 +164,7 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 
 	struct k_thread *thread = runq_best();
 
-#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) &&                                                         \
-	(CONFIG_NUM_COOP_PRIORITIES > CONFIG_NUM_METAIRQ_PRIORITIES)
+#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0)
 	/* MetaIRQs must always attempt to return back to a
 	 * cooperative thread they preempted and not whatever happens
 	 * to be highest priority now. The cooperative thread was
@@ -180,10 +179,7 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 			_current_cpu->metairq_preempted = NULL;
 		}
 	}
-#endif
-/* CONFIG_NUM_METAIRQ_PRIORITIES > 0 &&
- * CONFIG_NUM_COOP_PRIORITIES > CONFIG_NUM_METAIRQ_PRIORITIES
- */
+#endif /* CONFIG_NUM_METAIRQ_PRIORITIES > 0 */
 
 #ifndef CONFIG_SMP
 	/* In uniprocessor mode, we can leave the current thread in
@@ -254,8 +250,7 @@ void move_current_to_end_of_prio_q(void)
  */
 static void update_metairq_preempt(struct k_thread *thread)
 {
-#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) &&                                                         \
-	(CONFIG_NUM_COOP_PRIORITIES > CONFIG_NUM_METAIRQ_PRIORITIES)
+#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0)
 	if (thread_is_metairq(thread) && !thread_is_metairq(_current) &&
 	    !thread_is_preemptible(_current)) {
 		/* Record new preemption */
@@ -266,10 +261,7 @@ static void update_metairq_preempt(struct k_thread *thread)
 	}
 #else
 	ARG_UNUSED(thread);
-#endif
-/* CONFIG_NUM_METAIRQ_PRIORITIES > 0 &&
- * CONFIG_NUM_COOP_PRIORITIES > CONFIG_NUM_METAIRQ_PRIORITIES
- */
+#endif /* CONFIG_NUM_METAIRQ_PRIORITIES > 0 */
 }
 
 static ALWAYS_INLINE void update_cache(int preempt_ok)
