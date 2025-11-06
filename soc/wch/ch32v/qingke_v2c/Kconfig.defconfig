@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Michael Hope <michaelh@juju.nz>
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_CH32V00X
+if SOC_SERIES_QINGKE_V2C
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
@@ -11,4 +11,4 @@ config CLOCK_CONTROL
 
 rsource "Kconfig.defconfig.*"
 
-endif # SOC_SERIES_CH32V00X
+endif # SOC_SERIES_QINGKE_V2C
