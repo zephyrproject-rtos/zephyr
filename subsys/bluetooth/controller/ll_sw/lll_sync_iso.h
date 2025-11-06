@@ -90,6 +90,10 @@ struct lll_sync_iso {
 	uint32_t aa_us;
 #endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 
+	/* Last scheduled subevent and its access address sync */
+	uint32_t aa_se;
+	uint8_t se;
+
 	uint8_t term_reason;
 
 	uint16_t ctrl_instant;
