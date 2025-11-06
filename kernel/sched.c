@@ -193,11 +193,7 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	struct k_thread *mirqp = _current_cpu->metairq_preempted;
 
 	if (mirqp != NULL && (thread == NULL || !thread_is_metairq(thread))) {
-		if (z_is_thread_ready(mirqp)) {
-			thread = mirqp;
-		} else {
-			_current_cpu->metairq_preempted = NULL;
-		}
+		thread = mirqp;
 	}
 #endif /* CONFIG_NUM_METAIRQ_PRIORITIES > 0 */
 
@@ -383,6 +379,22 @@ static void thread_halt_spin(struct k_thread *thread, k_spinlock_key_t key)
 	}
 }
 
+/**
+ * If the specified thread is recorded as being preempted by a meta IRQ thread,
+ * clear that record.
+ */
+static ALWAYS_INLINE void z_metairq_preempted_clear(struct k_thread *thread)
+{
+#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0)
+	for (unsigned int i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
+		if (_kernel.cpus[i].metairq_preempted == thread) {
+			_kernel.cpus[i].metairq_preempted = NULL;
+			break;
+		}
+	}
+#endif
+}
+
 /* Shared handler for k_thread_{suspend,abort}().  Called with the
  * scheduler lock held and the key passed (which it may
  * release/reacquire!) which will be released before a possible return
@@ -396,6 +408,8 @@ static ALWAYS_INLINE void z_thread_halt(struct k_thread *thread, k_spinlock_key_
 #ifdef CONFIG_SMP
 	wq = terminate ? wq : &thread->halt_queue;
 #endif
+
+	z_metairq_preempted_clear(thread);
 
 	/* If the target is a thread running on another CPU, flag and
 	 * poke (note that we might spin to wait, so a true
@@ -454,6 +468,7 @@ void z_impl_k_thread_suspend(k_tid_t thread)
 		k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
 
 		z_mark_thread_as_suspended(thread);
+		z_metairq_preempted_clear(thread);
 		dequeue_thread(thread);
 		update_cache(1);
 		z_swap(&_sched_spinlock, key);
