@@ -80,6 +80,10 @@ static const struct {
 	{"battchg", 0, 5} /* HF_BATTERY_IND */
 };
 
+#define BT_HFP_HF_FEAT_TEST(feat, mask) (((feat) & (mask)) != 0)
+
+#define BT_HFP_HF_VERSION BT_HFP_VERSION_1_9
+
 /* HFP Hands-Free SDP record */
 static struct bt_sdp_attribute hfp_attrs[] = {
 	BT_SDP_NEW_SERVICE,
@@ -138,7 +142,7 @@ static struct bt_sdp_attribute hfp_attrs[] = {
 			},
 			{
 				BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
-				BT_SDP_ARRAY_16(0x0109)
+				BT_SDP_ARRAY_16(BT_HFP_HF_VERSION)
 			},
 			)
 		},
@@ -294,6 +298,13 @@ int brsf_handle(struct at_client *hf_at)
 	}
 
 	hf->ag_features = val;
+	if ((hf->ag_sdp_version <= BT_HFP_VERSION_1_5) ||
+	    (BT_HFP_HF_VERSION <= BT_HFP_VERSION_1_5)) {
+		if (hf->ag_features & BT_HFP_AG_FEATURE_CODEC_NEG) {
+			LOG_WRN("Unsupported feature (Codec Negotiation) is enabled.");
+			hf->ag_features &= ~BT_HFP_AG_FEATURE_CODEC_NEG;
+		}
+	}
 
 	return 0;
 }
@@ -2236,8 +2247,30 @@ static int send_at_bac(struct bt_hfp_hf *hf, at_finish_cb_t cb)
 }
 #endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
 
+#define HFP_SDP_FEAT_MASK GENMASK(4, 0)
+
 static int send_at_brsf(struct bt_hfp_hf *hf, at_finish_cb_t cb)
 {
+	if ((hf->ag_sdp_version <= BT_HFP_VERSION_0_96) ||
+	    (BT_HFP_HF_VERSION <= BT_HFP_VERSION_0_96)) {
+		/* Update the AG features according to the SDP features for HFP version 0.96.
+		 *
+		 * Hands-Free Profile Specification V1.9, 6.3 SDP Interoperability Requirements
+		 * The values of the “SupportedFeatures” bitmap given in Table 6.6 shall be the
+		 * same as the values of the Bits 0 to 4 of the unsolicited result code +BRSF.
+		 */
+		hf->ag_features = hf->ag_sdp_features & HFP_SDP_FEAT_MASK;
+
+		/* Due to the AT command `AT+BRSF` cannot be sent if the peer version is v.96,
+		 * notify the upper layer directly.
+		 */
+		if (cb != NULL) {
+			cb(&hf->at, AT_RESULT_OK, CME_ERROR_AG_FAILURE);
+		}
+		LOG_WRN("CMD AT+BRSF not sent, AG features %04x", hf->ag_features);
+		return 0;
+	}
+
 	return hfp_hf_send_cmd(hf, brsf_resp, cb, "AT+BRSF=%u", hf->hf_features);
 }
 
@@ -3409,23 +3442,120 @@ static int bcc_finish(struct at_client *hf_at, enum at_result result,
 }
 #endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
 
+static void hfp_hf_sco_connected(struct bt_sco_chan *chan)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(chan, struct bt_hfp_hf, chan);
+
+	if (hf->sco_conn == NULL) {
+		hf->sco_conn = bt_conn_ref(chan->sco);
+	}
+
+	if ((bt_hf != NULL) && (bt_hf->sco_connected != NULL)) {
+		bt_hf->sco_connected(hf, chan->sco);
+	}
+}
+
+static void hfp_hf_sco_disconnected(struct bt_sco_chan *chan, uint8_t reason)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(chan, struct bt_hfp_hf, chan);
+
+	if ((bt_hf != NULL) && (bt_hf->sco_disconnected != NULL)) {
+		bt_hf->sco_disconnected(chan->sco, reason);
+	}
+
+	if (hf->sco_conn != NULL) {
+		bt_conn_unref(hf->sco_conn);
+		hf->sco_conn = NULL;
+	}
+}
+
+static int hfp_hf_set_voice_setting(struct bt_hfp_hf *hf)
+{
+	uint16_t air_coding_fmt;
+
+	switch (hf->active_codec_id) {
+	case BT_HFP_HF_CODEC_CVSD:
+		air_coding_fmt = BT_HCI_VOICE_SETTING_AIR_CODING_FMT_CVSD;
+		break;
+#if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
+	case BT_HFP_HF_CODEC_MSBC:
+		if (!IS_ENABLED(CONFIG_BT_HFP_HF_CODEC_MSBC)) {
+			LOG_ERR("mSBC is not enabled");
+			return -EINVAL;
+		}
+		air_coding_fmt = BT_HCI_VOICE_SETTING_AIR_CODING_FMT_TRANSPARENT;
+		break;
+	case BT_HFP_HF_CODEC_LC3_SWB:
+		if (!IS_ENABLED(CONFIG_BT_HFP_HF_CODEC_LC3_SWB)) {
+			LOG_ERR("LC3 SWB is not enabled");
+			return -EINVAL;
+		}
+		air_coding_fmt = BT_HCI_VOICE_SETTING_AIR_CODING_FMT_TRANSPARENT;
+		break;
+#endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
+	default:
+		LOG_ERR("Unsupported codec ID %u", hf->active_codec_id);
+		return -EINVAL;
+	}
+
+	hf->chan.voice_setting = BT_HCI_VOICE_SETTINGS(
+		air_coding_fmt, BT_HCI_VOICE_SETTING_PCM_BIT_POS_DEFAULT,
+		BT_HCI_VOICE_SETTING_SAMPLE_SIZE_16_BITS,
+		BT_HCI_VOICE_SETTING_DATA_FMT_2_COMPLEMENT, BT_HCI_VOICE_SETTING_CODING_FMT_LINEAR);
+
+	return 0;
+}
+
+static int hfp_hf_create_sco(struct bt_hfp_hf *hf)
+{
+	static const struct bt_sco_chan_ops ops = {
+		.connected = hfp_hf_sco_connected,
+		.disconnected = hfp_hf_sco_disconnected,
+	};
+	int err;
+
+	LOG_DBG("Creating SCO connection");
+
+	hf->chan.ops = &ops;
+
+	err = hfp_hf_set_voice_setting(hf);
+	if (err < 0) {
+		LOG_ERR("Failed to set voice setting");
+		return err;
+	}
+
+	hf->sco_conn = bt_conn_create_sco(&hf->acl->br.dst, &hf->chan);
+	if (hf->sco_conn == NULL) {
+		LOG_ERR("Failed to create SCO");
+		return -ENOMEM;
+	}
+
+	return 0;
+}
+
 int bt_hfp_hf_audio_connect(struct bt_hfp_hf *hf)
 {
-#if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
 	int err;
 
 	LOG_DBG("");
 
-	if (!hf) {
+	if (hf == NULL) {
 		LOG_ERR("No HF connection found");
 		return -ENOTCONN;
 	}
 
-	if (hf->chan.sco) {
+	if (hf->sco_conn != NULL) {
 		LOG_ERR("Audio conenction has been connected");
 		return -ECONNREFUSED;
 	}
 
+	if (!(BT_HFP_HF_FEAT_TEST(hf->ag_features, BT_HFP_AG_FEATURE_CODEC_NEG) &&
+	      BT_HFP_HF_FEAT_TEST(hf->hf_features, BT_HFP_HF_FEATURE_CODEC_NEG))) {
+		err = hfp_hf_create_sco(hf);
+		return err;
+	}
+
+#if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
 	err = hfp_hf_send_cmd(hf, NULL, bcc_finish, "AT+BCC");
 	if (err < 0) {
 		LOG_ERR("Fail to setup audio connection on %p", hf);
@@ -4087,8 +4217,8 @@ static void hfp_hf_connected(struct bt_rfcomm_dlc *dlc)
 
 	LOG_DBG("hf connected");
 
-	BT_ASSERT(hf);
-	hf_slc_establish(hf);
+	atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_DLC_CONNECTED);
+	k_work_submit(&hf->slc_work);
 }
 
 static void hfp_hf_disconnected(struct bt_rfcomm_dlc *dlc)
@@ -4129,16 +4259,107 @@ static void bt_hf_work(struct k_work *work)
 	hfp_hf_send_data(hf);
 }
 
+static void bt_hf_slc_work(struct k_work *work)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(work, struct bt_hfp_hf, slc_work);
+	int err;
+
+	if (!atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_DISCOVER_DONE)) {
+		return;
+	}
+
+	if (!atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_DLC_CONNECTED)) {
+		return;
+	}
+
+	if (atomic_test_and_set_bit(hf->flags, BT_HFP_HF_FLAG_FEAT_UPDATED)) {
+		return;
+	}
+
+	if (atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_RECORD_FOUND)) {
+		hf_slc_establish(hf);
+		return;
+	}
+
+	err = bt_hfp_hf_disconnect(hf);
+	if (err != 0) {
+		LOG_ERR("Failed to disconnect AG: %d", err);
+	}
+}
+
+static uint8_t bt_hfp_hf_discover_cb(struct bt_conn *conn, struct bt_sdp_client_result *result,
+				     const struct bt_sdp_discover_params *params)
+{
+	size_t index;
+	struct bt_hfp_hf *hf;
+	int err;
+
+	index = (size_t)bt_conn_index(conn);
+	__ASSERT(index < ARRAY_SIZE(bt_hfp_hf_pool), "Index is out of bounds");
+
+	hf = &bt_hfp_hf_pool[index];
+
+	if ((result == NULL) || (result->resp_buf == NULL)) {
+		LOG_ERR("SDP discovery failed");
+		goto failed;
+	}
+
+	err = bt_sdp_get_profile_version(result->resp_buf, BT_SDP_HANDSFREE_SVCLASS,
+					 &hf->ag_sdp_version);
+	if (err != 0) {
+		LOG_ERR("Failed to get AG profile version");
+		goto failed;
+	}
+
+	err = bt_sdp_get_features(result->resp_buf, &hf->ag_sdp_features);
+	if (err != 0) {
+		LOG_ERR("Failed to get AG feature");
+		goto failed;
+	}
+
+	if ((hf->ag_sdp_version <= BT_HFP_VERSION_1_5) ||
+	    (BT_HFP_HF_VERSION <= BT_HFP_VERSION_1_5)) {
+		if (hf->ag_sdp_features & BT_HFP_AG_SDP_FEATURE_WBS) {
+			LOG_WRN("Unsupported SDP feature (WBS) is enabled.");
+			hf->ag_sdp_features &= ~BT_HFP_AG_SDP_FEATURE_WBS;
+		}
+
+		if (hf->ag_sdp_features & BT_HFP_AG_SDP_FEATURE_SUPER_WBS) {
+			LOG_WRN("Unsupported SDP feature (Super WBS) is enabled.");
+			hf->ag_sdp_features &= ~BT_HFP_AG_SDP_FEATURE_SUPER_WBS;
+		}
+	}
+
+	atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_RECORD_FOUND);
+failed:
+	atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_DISCOVER_DONE);
+	k_work_submit(&hf->slc_work);
+
+	return BT_SDP_DISCOVER_UUID_STOP;
+}
+
 static struct bt_hfp_hf *hfp_hf_create(struct bt_conn *conn)
 {
 	size_t index;
+	struct bt_hfp_hf *hf;
+	int err;
+
 	static struct bt_rfcomm_dlc_ops ops = {
 		.connected = hfp_hf_connected,
 		.disconnected = hfp_hf_disconnected,
 		.recv = hfp_hf_recv,
 		.sent = hfp_hf_sent,
 	};
-	struct bt_hfp_hf *hf;
+	static struct bt_sdp_attribute_id_range id_range[] = {
+		{ BT_SDP_ATTR_PROTO_DESC_LIST, BT_SDP_ATTR_PROTO_DESC_LIST },
+		{ BT_SDP_ATTR_PROFILE_DESC_LIST, BT_SDP_ATTR_PROFILE_DESC_LIST },
+		{ BT_SDP_ATTR_SUPPORTED_FEATURES, BT_SDP_ATTR_SUPPORTED_FEATURES },
+	};
+	static struct bt_sdp_attribute_id_list id_list = {
+		.count = ARRAY_SIZE(id_range),
+		.ranges = id_range,
+	};
+	static struct bt_uuid_16 uuid;
 
 	LOG_DBG("conn %p", conn);
 
@@ -4152,6 +4373,20 @@ static struct bt_hfp_hf *hfp_hf_create(struct bt_conn *conn)
 	}
 
 	memset(hf, 0, sizeof(*hf));
+
+	uuid.uuid.type = BT_UUID_TYPE_16;
+	uuid.val = BT_SDP_HANDSFREE_AGW_SVCLASS;
+
+	hf->sdp_param.func = bt_hfp_hf_discover_cb;
+	hf->sdp_param.type = BT_SDP_DISCOVER_SERVICE_SEARCH_ATTR;
+	hf->sdp_param.uuid = &uuid.uuid;
+	hf->sdp_param.pool = &hf_pool;
+	hf->sdp_param.ids  = &id_list;
+
+	err = bt_sdp_discover(conn, &hf->sdp_param);
+	if (err != 0) {
+		return NULL;
+	}
 
 	hf->acl = conn;
 	hf->at.buf = hf->hf_buffer;
@@ -4168,7 +4403,14 @@ static struct bt_hfp_hf *hfp_hf_create(struct bt_conn *conn)
 	hf->hf_codec_ids = BT_HFP_HF_SUPPORTED_CODEC_IDS;
 	hf->active_codec_id = BT_HFP_HF_CODEC_CVSD;
 
+	/* Set the default AG infrmation */
+	hf->ag_sdp_features = BT_HFP_AG_SDP_FEATURE_3WAY_CALL |
+			      BT_HFP_AG_SDP_FEATURE_INBAND_RINGTONE;
+	hf->ag_sdp_version = BT_HFP_VERSION_0_96;
+
 	k_fifo_init(&hf->tx_pending);
+
+	k_work_init(&hf->slc_work, bt_hf_slc_work);
 
 	k_work_init(&hf->work, bt_hf_work);
 
@@ -4193,59 +4435,6 @@ static int hfp_hf_accept(struct bt_conn *conn, struct bt_rfcomm_server *server,
 	}
 
 	*dlc = &hf->rfcomm_dlc;
-
-	return 0;
-}
-
-static void hfp_hf_sco_connected(struct bt_sco_chan *chan)
-{
-	struct bt_hfp_hf *hf = CONTAINER_OF(chan, struct bt_hfp_hf, chan);
-
-	if ((bt_hf != NULL) && (bt_hf->sco_connected)) {
-		bt_hf->sco_connected(hf, chan->sco);
-	}
-}
-
-static void hfp_hf_sco_disconnected(struct bt_sco_chan *chan, uint8_t reason)
-{
-	if ((bt_hf != NULL) && (bt_hf->sco_disconnected)) {
-		bt_hf->sco_disconnected(chan->sco, reason);
-	}
-}
-
-static int hfp_hf_set_voice_setting(struct bt_hfp_hf *hf)
-{
-	uint16_t air_coding_fmt;
-
-	switch (hf->active_codec_id) {
-	case BT_HFP_HF_CODEC_CVSD:
-		air_coding_fmt = BT_HCI_VOICE_SETTING_AIR_CODING_FMT_CVSD;
-		break;
-#if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
-	case BT_HFP_HF_CODEC_MSBC:
-		if (!IS_ENABLED(CONFIG_BT_HFP_HF_CODEC_MSBC)) {
-			LOG_ERR("mSBC is not enabled");
-			return -EINVAL;
-		}
-		air_coding_fmt = BT_HCI_VOICE_SETTING_AIR_CODING_FMT_TRANSPARENT;
-		break;
-	case BT_HFP_HF_CODEC_LC3_SWB:
-		if (!IS_ENABLED(CONFIG_BT_HFP_HF_CODEC_LC3_SWB)) {
-			LOG_ERR("LC3 SWB is not enabled");
-			return -EINVAL;
-		}
-		air_coding_fmt = BT_HCI_VOICE_SETTING_AIR_CODING_FMT_TRANSPARENT;
-		break;
-#endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
-	default:
-		LOG_ERR("Unsupported codec ID %u", hf->active_codec_id);
-		return -EINVAL;
-	}
-
-	hf->chan.voice_setting = BT_HCI_VOICE_SETTINGS(
-		air_coding_fmt, BT_HCI_VOICE_SETTING_PCM_BIT_POS_DEFAULT,
-		BT_HCI_VOICE_SETTING_SAMPLE_SIZE_16_BITS,
-		BT_HCI_VOICE_SETTING_DATA_FMT_2_COMPLEMENT, BT_HCI_VOICE_SETTING_CODING_FMT_LINEAR);
 
 	return 0;
 }

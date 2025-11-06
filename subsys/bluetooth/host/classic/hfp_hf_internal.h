@@ -161,6 +161,10 @@ enum {
 	BT_HFP_HF_FLAG_QUERY_CALLS,   /* Require to query list of current calls */
 	BT_HFP_HF_FLAG_USR_CLCC_CMD,  /* User-initiated AT+CLCC command */
 	BT_HFP_HF_FLAG_USR_CLCC_PND,  /* User-initiated AT+CLCC command is pending */
+	BT_HFP_HF_FLAG_DISCOVER_DONE, /* SDP discovered done */
+	BT_HFP_HF_FLAG_RECORD_FOUND,  /* SDP AG Record found */
+	BT_HFP_HF_FLAG_DLC_CONNECTED, /* HFP HF DLC is connected */
+	BT_HFP_HF_FLAG_FEAT_UPDATED,  /* Remote feature has been updated */
 	/* Total number of flags - must be at the end of the enum */
 	BT_HFP_HF_NUM_FLAGS,
 };
@@ -210,6 +214,15 @@ struct bt_hfp_hf {
 	struct k_fifo tx_pending;
 	/* SCO Channel */
 	struct bt_sco_chan chan;
+	/* SCO connect */
+	struct bt_conn *sco_conn;
+
+	/* SDP discover params */
+	struct bt_sdp_discover_params sdp_param;
+
+	/* SCL work */
+	struct k_work slc_work;
+
 	char hf_buffer[HF_MAX_BUF_LEN];
 	struct at_client at;
 	uint32_t hf_features;
@@ -224,6 +237,10 @@ struct bt_hfp_hf {
 	uint32_t hf_ind;
 	uint32_t ag_ind;
 	uint32_t ind_enable;
+
+	/* AG profile information */
+	uint16_t ag_sdp_version;
+	uint16_t ag_sdp_features;
 
 	/* AT command initialization indicator */
 	uint8_t cmd_init_seq;
