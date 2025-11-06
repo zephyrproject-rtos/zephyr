@@ -12,7 +12,7 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 
-#include <stm32wlxx_ll_system.h>
+#include <stm32_ll_system.h>
 
 #include <zephyr/logging/log.h>
 
