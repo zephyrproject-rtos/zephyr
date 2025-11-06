@@ -814,6 +814,76 @@ static void stm32_clock_switch_to_hsi(void)
 	}
 }
 
+/* #defines used by set_up_plls() to re-configure only PLLs not used by XiP */
+#ifdef CONFIG_STM32_APP_IN_EXT_FLASH
+
+#if defined(OCTOSPI1) || defined(OCTOSPI2)
+
+#define XIP_USE_PLL1                                                                               \
+	(LL_RCC_GetOSPIClockSource(LL_RCC_OSPI_CLKSOURCE) == LL_RCC_OSPI_CLKSOURCE_PLL1Q)
+#define XIP_USE_PLL1P 0
+#define XIP_USE_PLL1Q XIP_USE_PLL1
+
+#define XIP_USE_PLL2                                                                               \
+	(LL_RCC_GetOSPIClockSource(LL_RCC_OSPI_CLKSOURCE) == LL_RCC_OSPI_CLKSOURCE_PLL2R)
+#define XIP_USE_PLL2R XIP_USE_PLL2
+#define XIP_USE_PLL2S 0
+#define XIP_USE_PLL2T 0
+
+#elif defined(QUADSPI)
+
+#define XIP_USE_PLL1                                                                               \
+	(LL_RCC_GetQSPIClockSource(LL_RCC_QSPI_CLKSOURCE) == LL_RCC_QSPI_CLKSOURCE_PLL1Q)
+#define XIP_USE_PLL1P 0
+#define XIP_USE_PLL1Q XIP_USE_PLL1
+
+#define XIP_USE_PLL2                                                                               \
+	(LL_RCC_GetQSPIClockSource(LL_RCC_QSPI_CLKSOURCE) == LL_RCC_QSPI_CLKSOURCE_PLL2R)
+#define XIP_USE_PLL2R XIP_USE_PLL2
+#define XIP_USE_PLL2S 0
+#define XIP_USE_PLL2T 0
+
+#elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
+
+/* If PLL1 is used as SYSCLK, we can't switch to HSI during PLL reconfiguration, because of clock
+ * constraints: The XSPI AXI clock has to be greater or equal than the XSPI kernel clock.
+ * No need to check if XSPI is clocked by HCLK5 or not, PLL1(P) is blocked anyway */
+#define XIP_USE_PLL1  (LL_RCC_GetSysClkSource() == LL_RCC_SYS_CLKSOURCE_STATUS_PLL1)
+#define XIP_USE_PLL1P XIP_USE_PLL1
+#define XIP_USE_PLL1Q 0
+
+#define XIP_USE_PLL2                                                                               \
+	(LL_RCC_GetXSPI1SwitchPosition() == LL_RCC_SWP_XSPI1_PLL2S ||                              \
+	 LL_RCC_GetXSPI1SwitchPosition() == LL_RCC_SWP_XSPI1_PLL2T ||                              \
+	 LL_RCC_GetXSPI2SwitchPosition() == LL_RCC_SWP_XSPI2_PLL2S ||                              \
+	 LL_RCC_GetXSPI2SwitchPosition() == LL_RCC_SWP_XSPI2_PLL2T)
+#define XIP_USE_PLL2R 0
+#define XIP_USE_PLL2S                                                                              \
+	(LL_RCC_GetXSPI1SwitchPosition() == LL_RCC_SWP_XSPI1_PLL2S ||                              \
+	 LL_RCC_GetXSPI2SwitchPosition() == LL_RCC_SWP_XSPI2_PLL2S)
+#define XIP_USE_PLL2T                                                                              \
+	(LL_RCC_GetXSPI1SwitchPosition() == LL_RCC_SWP_XSPI1_PLL2T ||                              \
+	 LL_RCC_GetXSPI2SwitchPosition() == LL_RCC_SWP_XSPI2_PLL2T)
+
+#else /* no OCTO/QUAD/X SPI */
+
+#error "CONFIG_STM32_MEMMAP & CONFIG_STM32_APP_IN_EXT_FLASH defined but no XiP SPI peripheral found"
+
+#endif
+
+#else /* CONFIG_STM32_APP_IN_EXT_FLASH */
+/* Set all checks to false because XiP is not used */
+
+#define XIP_USE_PLL1  0
+#define XIP_USE_PLL1P 0
+#define XIP_USE_PLL1Q 0
+#define XIP_USE_PLL2  0
+#define XIP_USE_PLL2R 0
+#define XIP_USE_PLL2S 0
+#define XIP_USE_PLL2T 0
+
+#endif /* CONFIG_STM32_APP_IN_EXT_FLASH */
+
 __unused
 static int set_up_plls(void)
 {
@@ -828,164 +898,161 @@ static int set_up_plls(void)
 	 * (Switching to HSI makes sure we have a SYSCLK source in
 	 * case we're currently running from the PLL we're about to
 	 * turn off and reconfigure.)
-	 *
+	 * But only if the PLL1 is not by (Q/O/X)SPI while in XiP.
 	 */
-	if (LL_RCC_GetSysClkSource() == LL_RCC_SYS_CLKSOURCE_STATUS_PLL1) {
+	if (LL_RCC_GetSysClkSource() == LL_RCC_SYS_CLKSOURCE_STATUS_PLL1 && !XIP_USE_PLL1) {
 		stm32_clock_switch_to_hsi();
 		LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
 	}
 
-#if defined(CONFIG_STM32_MEMMAP) && defined(CONFIG_BOOTLOADER_MCUBOOT)
-	/*
-	 * Don't disable PLL during application initialization
-	 * that runs in memmap mode when (Q/O)SPI uses PLL
-	 * as its clock source.
-	 */
-#if defined(OCTOSPI1) || defined(OCTOSPI2)
-	if (LL_RCC_GetOSPIClockSource(LL_RCC_OSPI_CLKSOURCE) != LL_RCC_OSPI_CLKSOURCE_PLL1Q) {
+	/* Only disable PLLs not used to clock (Q/O/X)SPI */
+	if (!XIP_USE_PLL1) {
 		LL_RCC_PLL1_Disable();
 	}
-	if (LL_RCC_GetOSPIClockSource(LL_RCC_OSPI_CLKSOURCE) != LL_RCC_OSPI_CLKSOURCE_PLL2R) {
+	if (!XIP_USE_PLL2) {
 		LL_RCC_PLL2_Disable();
 	}
-#elif defined(QUADSPI)
-	if (LL_RCC_GetQSPIClockSource(LL_RCC_QSPI_CLKSOURCE) != LL_RCC_QSPI_CLKSOURCE_PLL1Q) {
-		LL_RCC_PLL1_Disable();
-	}
-	if (LL_RCC_GetQSPIClockSource(LL_RCC_QSPI_CLKSOURCE) != LL_RCC_QSPI_CLKSOURCE_PLL2R) {
-		LL_RCC_PLL2_Disable();
-	}
-#else
-	LL_RCC_PLL1_Disable();
-	LL_RCC_PLL2_Disable();
-#endif
-#else
-	LL_RCC_PLL1_Disable();
-	LL_RCC_PLL2_Disable();
-#endif
 	LL_RCC_PLL3_Disable();
 
-	/* Configure PLL source */
-
+/* Configure PLL source only if not XiP*/
+#ifndef CONFIG_STM32_APP_IN_EXT_FLASH
 	/* Can be HSE , HSI 64Mhz/HSIDIV, CSI 4MHz*/
-	if (IS_ENABLED(STM32_PLL_SRC_HSE) ||
-		IS_ENABLED(STM32_PLL2_SRC_HSE) ||
-		IS_ENABLED(STM32_PLL3_SRC_HSE)) {
+	if (IS_ENABLED(STM32_PLL_SRC_HSE) || IS_ENABLED(STM32_PLL2_SRC_HSE) ||
+	    IS_ENABLED(STM32_PLL3_SRC_HSE)) {
 		/* Main PLL configuration and activation */
 		LL_RCC_PLL_SetSource(LL_RCC_PLLSOURCE_HSE);
-	} else if (IS_ENABLED(STM32_PLL_SRC_CSI) ||
-		IS_ENABLED(STM32_PLL2_SRC_CSI) ||
-		IS_ENABLED(STM32_PLL3_SRC_CSI)) {
+	} else if (IS_ENABLED(STM32_PLL_SRC_CSI) || IS_ENABLED(STM32_PLL2_SRC_CSI) ||
+		   IS_ENABLED(STM32_PLL3_SRC_CSI)) {
 		/* Main PLL configuration and activation */
 		LL_RCC_PLL_SetSource(LL_RCC_PLLSOURCE_CSI);
-	} else if (IS_ENABLED(STM32_PLL_SRC_HSI) ||
-		IS_ENABLED(STM32_PLL2_SRC_HSI) ||
-		IS_ENABLED(STM32_PLL3_SRC_HSI)) {
+	} else if (IS_ENABLED(STM32_PLL_SRC_HSI) || IS_ENABLED(STM32_PLL2_SRC_HSI) ||
+		   IS_ENABLED(STM32_PLL3_SRC_HSI)) {
 		/* Main PLL configuration and activation */
 		LL_RCC_PLL_SetSource(LL_RCC_PLLSOURCE_HSI);
 	} else {
 		return -ENOTSUP;
 	}
+#endif
 
 #if defined(STM32_PLL_ENABLED)
-	r = get_vco_input_range(STM32_PLL_M_DIVISOR, &vco_input_range);
-	if (r < 0) {
-		return r;
+	/* use the isReady flag to skip reconfiguration if PLL was not disabled above */
+	if (!LL_RCC_PLL1_IsReady()) {
+		r = get_vco_input_range(STM32_PLL_M_DIVISOR, &vco_input_range);
+		if (r < 0) {
+			return r;
+		}
+
+		vco_output_range = get_vco_output_range(vco_input_range);
+
+		LL_RCC_PLL1_SetM(STM32_PLL_M_DIVISOR);
+
+		LL_RCC_PLL1_SetVCOInputRange(vco_input_range);
+		LL_RCC_PLL1_SetVCOOutputRange(vco_output_range);
+
+		LL_RCC_PLL1_SetN(STM32_PLL_N_MULTIPLIER);
+
+		LL_RCC_PLL1FRACN_Disable();
+		if (IS_ENABLED(STM32_PLL_FRACN_ENABLED)) {
+			LL_RCC_PLL1_SetFRACN(STM32_PLL_FRACN_VALUE);
+			LL_RCC_PLL1FRACN_Enable();
+		}
+
+		LL_RCC_PLL1_Enable();
+		while (LL_RCC_PLL1_IsReady() != 1U) {
+		}
 	}
 
-	vco_output_range = get_vco_output_range(vco_input_range);
+	/* Reconfigure PLL outputs only if enabled in DTS (and not used by XiP) */
 
-	LL_RCC_PLL1_SetM(STM32_PLL_M_DIVISOR);
-
-	LL_RCC_PLL1_SetVCOInputRange(vco_input_range);
-	LL_RCC_PLL1_SetVCOOutputRange(vco_output_range);
-
-	LL_RCC_PLL1_SetN(STM32_PLL_N_MULTIPLIER);
-
-	LL_RCC_PLL1FRACN_Disable();
-	if (IS_ENABLED(STM32_PLL_FRACN_ENABLED)) {
-		LL_RCC_PLL1_SetFRACN(STM32_PLL_FRACN_VALUE);
-		LL_RCC_PLL1FRACN_Enable();
-	}
-
-	if (IS_ENABLED(STM32_PLL_P_ENABLED)) {
+	if (IS_ENABLED(STM32_PLL_P_ENABLED) && !XIP_USE_PLL1P) {
+		LL_RCC_PLL1P_Disable();
 		LL_RCC_PLL1_SetP(STM32_PLL_P_DIVISOR);
 		LL_RCC_PLL1P_Enable();
 	}
 
-	if (IS_ENABLED(STM32_PLL_Q_ENABLED)) {
+	if (IS_ENABLED(STM32_PLL_Q_ENABLED) && !XIP_USE_PLL1Q) {
+		LL_RCC_PLL1Q_Disable();
 		LL_RCC_PLL1_SetQ(STM32_PLL_Q_DIVISOR);
 		LL_RCC_PLL1Q_Enable();
 	}
 
 	if (IS_ENABLED(STM32_PLL_R_ENABLED)) {
+		LL_RCC_PLL1R_Disable();
 		LL_RCC_PLL1_SetR(STM32_PLL_R_DIVISOR);
 		LL_RCC_PLL1R_Enable();
 	}
 
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
 	if (IS_ENABLED(STM32_PLL_S_ENABLED)) {
+		LL_RCC_PLL1S_Disable();
 		LL_RCC_PLL1_SetS(STM32_PLL_S_DIVISOR);
 		LL_RCC_PLL1S_Enable();
 	}
 #endif /* CONFIG_SOC_SERIES_STM32H7RSX */
-	LL_RCC_PLL1_Enable();
-	while (LL_RCC_PLL1_IsReady() != 1U) {
-	}
 
 #endif /* STM32_PLL_ENABLED */
 
 #if defined(STM32_PLL2_ENABLED)
-	r = get_vco_input_range(STM32_PLL2_M_DIVISOR, &vco_input_range);
-	if (r < 0) {
-		return r;
+	/* use the isReady flag to skip reconfiguration if PLL was not disabled above */
+	if (!LL_RCC_PLL2_IsReady()) {
+		r = get_vco_input_range(STM32_PLL2_M_DIVISOR, &vco_input_range);
+		if (r < 0) {
+			return r;
+		}
+
+		vco_output_range = get_vco_output_range(vco_input_range);
+
+		LL_RCC_PLL2_SetM(STM32_PLL2_M_DIVISOR);
+
+		LL_RCC_PLL2_SetVCOInputRange(vco_input_range);
+		LL_RCC_PLL2_SetVCOOutputRange(vco_output_range);
+
+		LL_RCC_PLL2_SetN(STM32_PLL2_N_MULTIPLIER);
+
+		LL_RCC_PLL2FRACN_Disable();
+		if (IS_ENABLED(STM32_PLL2_FRACN_ENABLED)) {
+			LL_RCC_PLL2_SetFRACN(STM32_PLL2_FRACN_VALUE);
+			LL_RCC_PLL2FRACN_Enable();
+		}
+
+		LL_RCC_PLL2_Enable();
+		while (LL_RCC_PLL2_IsReady() != 1U) {
+		}
 	}
 
-	vco_output_range = get_vco_output_range(vco_input_range);
-
-	LL_RCC_PLL2_SetM(STM32_PLL2_M_DIVISOR);
-
-	LL_RCC_PLL2_SetVCOInputRange(vco_input_range);
-	LL_RCC_PLL2_SetVCOOutputRange(vco_output_range);
-
-	LL_RCC_PLL2_SetN(STM32_PLL2_N_MULTIPLIER);
-
-	LL_RCC_PLL2FRACN_Disable();
-	if (IS_ENABLED(STM32_PLL2_FRACN_ENABLED)) {
-		LL_RCC_PLL2_SetFRACN(STM32_PLL2_FRACN_VALUE);
-		LL_RCC_PLL2FRACN_Enable();
-	}
+	/* Reconfigure PLL outputs only if enabled in DTS (and not used by XiP) */
 
 	if (IS_ENABLED(STM32_PLL2_P_ENABLED)) {
+		LL_RCC_PLL2P_Disable();
 		LL_RCC_PLL2_SetP(STM32_PLL2_P_DIVISOR);
 		LL_RCC_PLL2P_Enable();
 	}
 
 	if (IS_ENABLED(STM32_PLL2_Q_ENABLED)) {
+		LL_RCC_PLL2Q_Disable();
 		LL_RCC_PLL2_SetQ(STM32_PLL2_Q_DIVISOR);
 		LL_RCC_PLL2Q_Enable();
 	}
 
-	if (IS_ENABLED(STM32_PLL2_R_ENABLED)) {
+	if (IS_ENABLED(STM32_PLL2_R_ENABLED) && !XIP_USE_PLL2R) {
+		LL_RCC_PLL2R_Disable();
 		LL_RCC_PLL2_SetR(STM32_PLL2_R_DIVISOR);
 		LL_RCC_PLL2R_Enable();
 	}
 
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
-	if (IS_ENABLED(STM32_PLL2_S_ENABLED)) {
+	if (IS_ENABLED(STM32_PLL2_S_ENABLED) && !XIP_USE_PLL2S) {
+		LL_RCC_PLL2S_Disable();
 		LL_RCC_PLL2_SetS(STM32_PLL2_S_DIVISOR);
 		LL_RCC_PLL2S_Enable();
 	}
 
-	if (IS_ENABLED(STM32_PLL2_T_ENABLED)) {
+	if (IS_ENABLED(STM32_PLL2_T_ENABLED) && !XIP_USE_PLL2T) {
+		LL_RCC_PLL2T_Disable();
 		LL_RCC_PLL2_SetT(STM32_PLL2_T_DIVISOR);
 		LL_RCC_PLL2T_Enable();
 	}
-
 #endif /* CONFIG_SOC_SERIES_STM32H7RSX */
-	LL_RCC_PLL2_Enable();
-	while (LL_RCC_PLL2_IsReady() != 1U) {
-	}
 
 #endif /* STM32_PLL2_ENABLED */
 
@@ -1038,7 +1105,7 @@ static int set_up_plls(void)
 
 #endif /* STM32_PLL3_ENABLED */
 
-#else
+#else /* STM32_PLL_ENABLED || STM32_PLL2_ENABLED || STM32_PLL3_ENABLED */
 	/* Init PLL source to None */
 	LL_RCC_PLL_SetSource(LL_RCC_PLLSOURCE_NONE);
 
