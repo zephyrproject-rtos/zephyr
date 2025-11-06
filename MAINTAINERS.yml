@@ -5741,9 +5741,9 @@ West:
   status: maintained
   maintainers:
     - afontaine-invn
-  collaborators:
     - rbuisson-invn
     - gjabouley-invn
+  collaborators:
     - sriccardi-invn
   files:
     - modules/hal_tdk/Kconfig
