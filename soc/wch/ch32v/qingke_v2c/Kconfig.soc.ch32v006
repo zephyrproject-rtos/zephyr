@@ -3,7 +3,7 @@
 
 config SOC_CH32V006
 	bool
-	select SOC_SERIES_CH32V00X
+	select SOC_SERIES_QINGKE_V2C
 
 config SOC
 	default "ch32v006" if SOC_CH32V006

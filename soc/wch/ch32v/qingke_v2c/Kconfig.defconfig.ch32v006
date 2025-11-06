@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Michael Hope <michaelh@juju.nz>
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_CH32V00X
+if SOC_CH32V006
 
 config VECTOR_TABLE_SIZE
 	default 41
@@ -9,4 +9,4 @@ config VECTOR_TABLE_SIZE
 config NUM_IRQS
 	default 41
 
-endif # SOC_SERIES_CH32V00X
+endif # SOC_CH32V006
