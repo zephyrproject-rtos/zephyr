@@ -1133,6 +1133,18 @@ extern const struct rtio_iodev_api i2c_iodev_api;
 	RTIO_IODEV_DEFINE(name, &i2c_iodev_api, (void *)&_i2c_dt_spec_##name)
 
 /**
+ * @brief Define an iodev for a devicetree instance on the bus
+ *
+ * This is equivalent to
+ * <tt>I2C_DT_IODEV_DEFINE(name, DT_DRV_INST(inst))</tt>.
+ *
+ * @param name Symbolic name of the iodev to define
+ * @param inst Devicetree instance number
+ */
+#define I2C_DT_INST_IODEV_DEFINE(name, inst)					\
+	I2C_DT_IODEV_DEFINE(name, DT_DRV_INST(inst))
+
+/**
  * @brief Define an iodev for a given i2c device on a bus
  *
  * These do not need to be shared globally but doing so
