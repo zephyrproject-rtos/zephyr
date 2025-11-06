@@ -23,6 +23,7 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/drivers/dma/dma_mcux_lpc.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 
 #define DT_DRV_COMPAT nxp_lpc_dma
 
@@ -106,6 +107,10 @@ static void nxp_lpc_dma_callback(dma_handle_t *handle, void *param,
 		 */
 		data->busy = false;
 		ret = DMA_STATUS_COMPLETE;
+	}
+
+	if (!data->busy) {
+		pm_policy_device_power_lock_put(data->dev);
 	}
 
 	if (data->dma_callback) {
@@ -563,6 +568,7 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 
 	if (data->busy) {
 		DMA_AbortTransfer(p_handle);
+		pm_policy_device_power_lock_put(dev);
 	}
 
 	LOG_DBG("channel is %d", p_handle->channel);
@@ -815,6 +821,7 @@ static int dma_mcux_lpc_start(const struct device *dev, uint32_t channel)
 	LOG_DBG("START TRANSFER");
 	LOG_DBG("DMA CTRL 0x%x", DEV_BASE(dev)->CTRL);
 	data->busy = true;
+	pm_policy_device_power_lock_get(dev);
 	/* In case of a restart after a stop, reinstall the DMA callback
 	 * that was removed by the stop.
 	 */
@@ -836,7 +843,10 @@ static int dma_mcux_lpc_stop(const struct device *dev, uint32_t channel)
 	DMA_AbortTransfer(p_handle);
 	DMA_DisableChannel(DEV_BASE(dev), p_handle->channel);
 
-	data->busy = false;
+	if (data->busy) {
+		data->busy = false;
+		pm_policy_device_power_lock_put(dev);
+	}
 
 	/* Handle race condition where if this is called from an ISR
 	 * and the DMA channel completion interrupt becomes pending
