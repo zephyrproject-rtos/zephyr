@@ -155,6 +155,77 @@ static inline int zperf_upload_fin(int sock,
 	return 0;
 }
 
+#define USECS_PER_TICK (Z_HZ_us / Z_HZ_ticks)
+#if (USECS_PER_TICK >= 1000)
+#define ZPERF_UDP_UPLOAD_CLOCK_COMPENSATE
+#endif
+
+#ifdef ZPERF_UDP_UPLOAD_CLOCK_COMPENSATE
+struct compensate_ctx {
+	int period;
+	int64_t period_start;
+	int packet_duration_us;
+	int actual_pkts;
+	int compensate;
+};
+
+/**
+ * Add compensate to packet delay when time clock accuracy is lower than 1kHz.
+ * After given period, compare actual sent packets with expected sent packets,
+ * and get summary compensate ticks.
+ * Then try to compensate in this loop.
+ * If delay is not enough as it cannot be less than 0, pile up compensate ticks.
+ */
+static int cal_compensate_delay(struct compensate_ctx *ctx, int64_t loop_time, int delay)
+{
+	int64_t delta_time;
+	int expected_pkts;
+	int compensate_pkts;
+	int compensate_ticks;
+	int compensate_delay = delay;
+
+	if (ctx->period == 0) {
+		return delay;
+	}
+
+	if (ctx->period_start == -1) {
+		ctx->period_start = loop_time;
+		ctx->actual_pkts = 0;
+	}
+
+	ctx->actual_pkts++;
+	delta_time = loop_time - ctx->period_start;
+
+	if (delta_time < ctx->period) {
+		return delay;
+	}
+
+	/* calculate compensate ticks and maintain it during whole traffic */
+	expected_pkts = delta_time * USECS_PER_TICK / ctx->packet_duration_us;
+	compensate_pkts = ctx->actual_pkts - expected_pkts;
+	compensate_ticks = compensate_pkts * ctx->packet_duration_us / USECS_PER_TICK;
+	ctx->compensate += compensate_ticks;
+
+	if (ctx->compensate >= 0 || (ctx->compensate + delay) > 0) {
+		compensate_delay += ctx->compensate;
+		ctx->compensate = 0;
+	} else {
+		compensate_delay = 0;
+		ctx->compensate += delay;
+	}
+
+	/* restart statistic period */
+	ctx->period_start = -1;
+
+	/* rate is higher than capability, no need to compensate */
+	if (ctx->compensate < -1000) {
+		ctx->period = 0;
+	}
+
+	return compensate_delay;
+}
+#endif
+
 static int udp_upload(int sock, int port,
 		      const struct zperf_upload_params *param,
 		      struct zperf_results *results)
@@ -175,6 +246,10 @@ static int udp_upload(int sock, int port,
 	uint32_t print_period;
 	bool is_mcast_pkt = false;
 	int ret;
+	int compensate_delay;
+#ifdef ZPERF_UDP_UPLOAD_CLOCK_COMPENSATE
+	struct compensate_ctx ctx = {0};
+#endif
 
 	if (packet_size > PACKET_SIZE_MAX) {
 		NET_WARN("Packet size too large! max size: %u", PACKET_SIZE_MAX);
@@ -195,6 +270,13 @@ static int udp_upload(int sock, int port,
 
 	/* Default data payload */
 	(void)memset(sample_packet, 'z', sizeof(sample_packet));
+
+#ifdef ZPERF_UDP_UPLOAD_CLOCK_COMPENSATE
+	/* compensate period, by default 10 ticks */
+	ctx.period = 10;
+	ctx.period_start = -1;
+	ctx.packet_duration_us = packet_duration_us;
+#endif
 
 	do {
 		struct zperf_udp_datagram *datagram;
@@ -221,6 +303,13 @@ static int udp_upload(int sock, int port,
 		} else {
 			delay = 0U; /* delay should never be negative */
 		}
+
+		/* add clock compensate to packet delay when clock accuracy is lower than 1KHz */
+#ifdef ZPERF_UDP_UPLOAD_CLOCK_COMPENSATE
+		compensate_delay = cal_compensate_delay(&ctx, loop_time, (int)delay);
+#else
+		compensate_delay = delay;
+#endif
 
 		last_loop_time = loop_time;
 
@@ -268,7 +357,7 @@ static int udp_upload(int sock, int port,
 		if (IS_ENABLED(CONFIG_NET_ZPERF_LOG_LEVEL_DBG)) {
 			if (print_time >= loop_time) {
 				NET_DBG("nb_packets=%u\tdelay=%u\tadjust=%d",
-					nb_packets, (unsigned int)delay,
+					nb_packets, (unsigned int)compensate_delay,
 					(int)adjust);
 				print_time += print_period;
 			}
@@ -278,8 +367,8 @@ static int udp_upload(int sock, int port,
 #if defined(CONFIG_ARCH_POSIX)
 		k_busy_wait(USEC_PER_MSEC);
 #else
-		if (delay != 0) {
-			k_sleep(K_TICKS(delay));
+		if (compensate_delay > 0) {
+			k_sleep(K_TICKS(compensate_delay));
 		}
 #endif
 	} while (last_loop_time < end_time);
