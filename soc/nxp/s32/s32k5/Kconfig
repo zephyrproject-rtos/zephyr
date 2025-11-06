@@ -6,6 +6,7 @@
 config SOC_SERIES_S32K5
 	select ARM
 	select HAS_NXP_S32_HAL
+	select HAS_MCUX
 	select CPU_HAS_FPU
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_ICACHE
