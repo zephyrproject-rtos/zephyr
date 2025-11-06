@@ -270,6 +270,8 @@ int main(void)
 		rect_w = capabilities.x_resolution;
 	}
 
+	rect_w = ROUND_UP(rect_w, CONFIG_SAMPLE_PITCH_ALIGN);
+
 	buf_size = rect_w * rect_h;
 
 	if (buf_size < (capabilities.x_resolution * h_step)) {
@@ -327,7 +329,7 @@ int main(void)
 #endif
 	}
 
-	buf = k_malloc(buf_size);
+	buf = k_aligned_alloc(CONFIG_SAMPLE_BUFFER_ADDR_ALIGN, buf_size);
 
 	if (buf == NULL) {
 		LOG_ERR("Could not allocate memory. Aborting sample.");
@@ -341,7 +343,7 @@ int main(void)
 	(void)memset(buf, bg_color, buf_size);
 
 	buf_desc.buf_size = buf_size;
-	buf_desc.pitch = capabilities.x_resolution;
+	buf_desc.pitch = ROUND_UP(capabilities.x_resolution, CONFIG_SAMPLE_PITCH_ALIGN);
 	buf_desc.width = capabilities.x_resolution;
 	buf_desc.height = h_step;
 
@@ -365,7 +367,7 @@ int main(void)
 		display_write(display_dev, 0, idx, &buf_desc, buf);
 	}
 
-	buf_desc.pitch = rect_w;
+	buf_desc.pitch = ROUND_UP(rect_w, CONFIG_SAMPLE_PITCH_ALIGN);
 	buf_desc.width = rect_w;
 	buf_desc.height = rect_h;
 
