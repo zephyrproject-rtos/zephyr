@@ -21,6 +21,20 @@
 		};
 	};
 
+	eusart0_default: eusart0_default {
+		group0 {
+			pins = <EUSART0_TX_PB3>, <EUSART0_SCLK_PB1>;
+			drive-push-pull;
+			output-high;
+		};
+
+		group1 {
+			pins = <EUSART0_RX_PB2>;
+			input-enable;
+			silabs,input-filter;
+		};
+	};
+
 	i2c0_default: i2c0_default {
 		group0 {
 			pins = <I2C0_SCL_PD10>, <I2C0_SDA_PD9>;
