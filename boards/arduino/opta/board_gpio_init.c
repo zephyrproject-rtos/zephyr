@@ -5,8 +5,8 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
-#include <stm32h7xx_ll_bus.h>
-#include <stm32h7xx_ll_gpio.h>
+#include <stm32_ll_bus.h>
+#include <stm32_ll_gpio.h>
 
 static int board_gpio_init(void)
 {
