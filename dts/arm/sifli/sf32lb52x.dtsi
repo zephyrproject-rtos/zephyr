@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 Core Devices LLC
+ * Copyright (c) 2025 SiFli Technologies(Nanjing) Co., Ltd
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -136,6 +137,13 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			clocks = <&rcc_clk SF32LB52X_CLOCK_MPI2>;
+			status = "disabled";
+		};
+
+		crc: crc@50048000 {
+			compatible = "sifli,sf32lb-crc";
+			reg = <0x50048000 0x1000>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_CRC1>;
 			status = "disabled";
 		};
 
