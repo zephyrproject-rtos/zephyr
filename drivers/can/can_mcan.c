@@ -17,6 +17,7 @@
 LOG_MODULE_REGISTER(can_mcan, CONFIG_CAN_LOG_LEVEL);
 
 #define CAN_INIT_TIMEOUT_MS 100
+#define TXBCF_TIMER_TIMEOUT K_MSEC(CONFIG_CAN_MCAN_TXBCF_POLL_INTERVAL_MS)
 
 int can_mcan_read_reg(const struct device *dev, uint16_t reg, uint32_t *val)
 {
@@ -276,7 +277,7 @@ int can_mcan_get_capabilities(const struct device *dev, can_mode_t *cap)
 {
 	ARG_UNUSED(dev);
 
-	*cap = CAN_MODE_NORMAL | CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY;
+	*cap = CAN_MODE_NORMAL | CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_ONE_SHOT;
 
 	if (IS_ENABLED(CONFIG_CAN_MANUAL_RECOVERY_MODE)) {
 		*cap |=  CAN_MODE_MANUAL_RECOVERY;
@@ -322,10 +323,76 @@ int can_mcan_start(const struct device *dev)
 		return err;
 	}
 
+	uint32_t cccr;
+
+	err = can_mcan_read_reg(dev, CAN_MCAN_CCCR, &cccr);
+	if (err != 0) {
+		return err;
+	}
+
+	if (cccr & CAN_MCAN_CCCR_DAR) {
+		/*
+		 * When DAR (Disable Automatic Retransmission), used for CAN_MODE_ONE_SHOT,
+		 * is enabled, and a transmission fails, a bug in the MCAN IP prevents the
+		 * TCF (Transmission Cancellation Finalized) interrupt from triggering,
+		 * despite the correct bit being set in the TXBCF register. It is thus
+		 * necessary to poll TXBCF register to detect when a transmission failed if
+		 * DAR is enabled.
+		 */
+		k_timer_start(&data->txbcf_timer, TXBCF_TIMER_TIMEOUT, TXBCF_TIMER_TIMEOUT);
+	}
+
 	data->common.started = true;
 	pm_device_busy_set(dev);
 
 	return err;
+}
+
+static int can_mcan_read_txbcf(const struct device *dev)
+{
+	const struct can_mcan_config *config = dev->config;
+	const struct can_mcan_callbacks *cbs = config->callbacks;
+	struct can_mcan_data *data = dev->data;
+	uint32_t txbcfs;
+	int err;
+	can_tx_callback_t tx_cb;
+	void *user_data;
+
+	err = can_mcan_read_reg(dev, CAN_MCAN_TXBCF, &txbcfs);
+	if (err != 0) {
+		LOG_ERR("failed to read tx cancellation finished (err %d)", err);
+		return err;
+	}
+
+	if (txbcfs == 0) {
+		return 0;
+	}
+
+	for (size_t tx_idx = 0; tx_idx < cbs->num_tx; tx_idx++) {
+		if ((txbcfs & BIT(tx_idx)) == 0) {
+			continue;
+		}
+
+		if (cbs->tx[tx_idx].function == NULL) {
+			continue;
+		}
+
+		tx_cb = cbs->tx[tx_idx].function;
+		user_data = cbs->tx[tx_idx].user_data;
+		cbs->tx[tx_idx].function = NULL;
+		LOG_DBG("tx buffer cancellation finished (idx %u)", tx_idx);
+		k_sem_give(&data->tx_sem);
+		tx_cb(dev, -EIO, user_data);
+	}
+
+	return 0;
+}
+
+static void can_mcan_txbcf_timer_handler(struct k_timer *timer_id)
+{
+	const struct device *dev = k_timer_user_data_get(timer_id);
+
+	can_mcan_read_txbcf(dev);
 }
 
 static bool can_mcan_rx_filters_exist(const struct device *dev)
@@ -361,6 +428,8 @@ int can_mcan_stop(const struct device *dev)
 	if (!data->common.started) {
 		return -EALREADY;
 	}
+
+	k_timer_stop(&data->txbcf_timer);
 
 	/* CAN transmissions are automatically stopped when entering init mode */
 	err = can_mcan_enter_init_mode(dev, K_MSEC(CAN_INIT_TIMEOUT_MS));
@@ -402,7 +471,7 @@ int can_mcan_stop(const struct device *dev)
 
 int can_mcan_set_mode(const struct device *dev, can_mode_t mode)
 {
-	can_mode_t supported = CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY;
+	can_mode_t supported = CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_ONE_SHOT;
 	struct can_mcan_data *data = dev->data;
 	uint32_t cccr;
 	uint32_t test;
@@ -459,6 +528,13 @@ int can_mcan_set_mode(const struct device *dev, can_mode_t mode)
 		cccr &= ~(CAN_MCAN_CCCR_FDOE | CAN_MCAN_CCCR_BRSE);
 	}
 #endif /* CONFIG_CAN_FD_MODE */
+
+	if ((mode & CAN_MODE_ONE_SHOT) != 0) {
+		/* Disable Automatic Retransmission */
+		cccr |= CAN_MCAN_CCCR_DAR;
+	} else {
+		cccr &= ~CAN_MCAN_CCCR_DAR;
+	}
 
 	err = can_mcan_write_reg(dev, CAN_MCAN_CCCR, cccr);
 	if (err != 0) {
@@ -1055,6 +1131,21 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_tim
 		}
 	}
 
+	uint32_t cccr;
+
+	err = can_mcan_read_reg(dev, CAN_MCAN_CCCR, &cccr);
+	if (err != 0) {
+		return err;
+	}
+
+	if (cccr & CAN_MCAN_CCCR_DAR) {
+		/*
+		 * TXBCR is cleared after TXBAR is set. Stop timer to ensure
+		 * TXBCR is not read before TXBAR has been set.
+		 */
+		k_timer_stop(&data->txbcf_timer);
+	}
+
 	cbs->tx[put_idx].function = callback;
 	cbs->tx[put_idx].user_data = user_data;
 
@@ -1064,10 +1155,18 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_tim
 		goto err_unlock;
 	}
 
+	if (cccr & CAN_MCAN_CCCR_DAR) {
+		k_timer_start(&data->txbcf_timer, TXBCF_TIMER_TIMEOUT, TXBCF_TIMER_TIMEOUT);
+	}
+
 	k_mutex_unlock(&data->tx_mtx);
 	return 0;
 
 err_unlock:
+	if (cccr & CAN_MCAN_CCCR_DAR) {
+		k_timer_start(&data->txbcf_timer, TXBCF_TIMER_TIMEOUT, TXBCF_TIMER_TIMEOUT);
+	}
+
 	k_mutex_unlock(&data->tx_mtx);
 	k_sem_give(&data->tx_sem);
 
@@ -1420,6 +1519,8 @@ int can_mcan_init(const struct device *dev)
 	k_mutex_init(&data->lock);
 	k_mutex_init(&data->tx_mtx);
 	k_sem_init(&data->tx_sem, cbs->num_tx, cbs->num_tx);
+	k_timer_init(&data->txbcf_timer, can_mcan_txbcf_timer_handler, NULL);
+	k_timer_user_data_set(&data->txbcf_timer, (void *)dev);
 
 	if (config->common.phy != NULL && !device_is_ready(config->common.phy)) {
 		LOG_ERR("CAN transceiver not ready");
@@ -1574,6 +1675,15 @@ int can_mcan_init(const struct device *dev)
 	/* Interrupt on every TX buffer transmission event */
 	reg = CAN_MCAN_TXBTIE_TIE;
 	err = can_mcan_write_reg(dev, CAN_MCAN_TXBTIE, reg);
+	if (err != 0) {
+		return err;
+	}
+
+	/*
+	 * Interrupt on every TX buffer cancellation finished event.
+	 */
+	reg = CAN_MCAN_TXBCIE_CFIE;
+	err = can_mcan_write_reg(dev, CAN_MCAN_TXBCIE, reg);
 	if (err != 0) {
 		return err;
 	}

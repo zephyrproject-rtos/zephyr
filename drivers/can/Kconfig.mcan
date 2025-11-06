@@ -7,3 +7,18 @@ config CAN_MCAN
 	bool
 	help
 	  Enable the Bosch M_CAN CAN IP module driver backend.
+
+if CAN_MCAN
+
+config CAN_MCAN_TXBCF_POLL_INTERVAL_MS
+	int "Polling interval in milliseconds of TXBCF register if DAR is enabled"
+	default 75
+	help
+	  When DAR (Disable Automatic Retransmission), used for CAN_MODE_ONE_SHOT,
+	  is enabled, and a transmission fails, a bug in the MCAN IP prevents the
+	  TCF (Transmission Cancellation Finalized) interrupt from triggering,
+	  despite the correct bit being set in the TXBCF register. It is thus
+	  necessary to poll TXBCF register to detect when a transmission failed if
+	  DAR is enabled.
+
+endif # CAN_MCAN
