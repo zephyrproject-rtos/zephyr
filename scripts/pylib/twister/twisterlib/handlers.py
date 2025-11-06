@@ -709,11 +709,16 @@ class DeviceHandler(Handler):
     def _start_serial_pty(self, serial_pty, serial_pty_master):
         ser_pty_process = None
         try:
+            # Pass environment variables including platform name to serial PTY script
+            env = os.environ.copy()
+            if hasattr(self, 'instance') and hasattr(self.instance, 'platform'):
+                env['TWISTER_PLATFORM'] = self.instance.platform.name
             ser_pty_process = subprocess.Popen(
                 re.split('[, ]', serial_pty),
                 stdout=serial_pty_master,
                 stdin=serial_pty_master,
-                stderr=serial_pty_master
+                stderr=serial_pty_master,
+                env=env
             )
         except subprocess.CalledProcessError as error:
             logger.error(
@@ -730,6 +735,16 @@ class DeviceHandler(Handler):
         else:
             return
 
+        # Run pre-script BEFORE starting serial PTY to avoid conflicts
+        pre_script = hardware.pre_script
+        script_param = hardware.script_param
+
+        if pre_script:
+            timeout = 30
+            if script_param:
+                timeout = script_param.get("pre_script_timeout", timeout)
+            self.run_custom_script(pre_script, timeout)
+
         runner = hardware.runner or self.options.west_runner
         serial_pty = hardware.serial_pty
 
@@ -743,16 +758,8 @@ class DeviceHandler(Handler):
 
         command = self._create_command(runner, hardware)
 
-        pre_script = hardware.pre_script
         post_flash_script = hardware.post_flash_script
         post_script = hardware.post_script
-        script_param = hardware.script_param
-
-        if pre_script:
-            timeout = 30
-            if script_param:
-                timeout = script_param.get("pre_script_timeout", timeout)
-            self.run_custom_script(pre_script, timeout)
 
         flash_timeout = hardware.flash_timeout
         if hardware.flash_with_test:
