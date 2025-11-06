@@ -1092,11 +1092,13 @@ static inline size_t sys_count_bits(const void *value, size_t len)
 	({                                                                                         \
 		uint32_t _wf_cycle_count = k_us_to_cyc_ceil32(timeout);                            \
 		uint32_t _wf_start = k_cycle_get_32();                                             \
-		while (!(expr) && (_wf_cycle_count > (k_cycle_get_32() - _wf_start))) {            \
+		bool _wf_ret;                                                                      \
+		while (!(_wf_ret = (expr)) &&                                                      \
+		       (_wf_cycle_count > (k_cycle_get_32() - _wf_start))) {                       \
 			delay_stmt;                                                                \
 			Z_SPIN_DELAY(10);                                                          \
 		}                                                                                  \
-		(expr);                                                                            \
+		(_wf_ret);                                                                         \
 	})
 
 /**
