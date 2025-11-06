@@ -16,6 +16,7 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/pm/pm.h>
+#include <zephyr/drivers/reset.h>
 #include "fsl_ostimer.h"
 #if !defined(CONFIG_SOC_FAMILY_MCXN) && !defined(CONFIG_SOC_FAMILY_MCXA)
 #include "fsl_power.h"
@@ -179,9 +180,14 @@ static uint32_t mcux_lpc_ostick_compensate_system_timer(void)
 	}
 	slept_time_us = counter_ticks_to_us(counter_dev, slept_time_ticks);
 	cyc_sys_compensated += CYC_PER_US * slept_time_us;
+
 	if (IS_ENABLED(CONFIG_MCUX_OS_TIMER_PM_POWERED_OFF)) {
 		/* Reset the OS Timer to a known state */
-		RESET_PeripheralReset(kOSEVENT_TIMER_RST_SHIFT_RSTn);
+		const struct reset_dt_spec reset = RESET_DT_SPEC_INST_GET_OR(0, {0});
+
+		if (reset.dev != NULL) {
+			reset_line_toggle_dt(&reset);
+		}
 		/* Reactivate os_timer for cases where it loses its state */
 		OSTIMER_Init(base);
 	}

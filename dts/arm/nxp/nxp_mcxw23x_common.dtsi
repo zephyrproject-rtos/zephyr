@@ -239,6 +239,7 @@
 		compatible = "nxp,os-timer";
 		reg = <0x2d000 0x1000>;
 		interrupts = <38 1>;
+		resets = <&reset NXP_SYSCON_RESET(1, 1)>;
 		status = "disabled";
 	};
 
