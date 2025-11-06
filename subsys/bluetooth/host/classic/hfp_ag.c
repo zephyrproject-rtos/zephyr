@@ -83,6 +83,8 @@ static struct bt_ag_tx ag_tx[CONFIG_BT_HFP_AG_TX_BUF_COUNT * 2];
 static K_FIFO_DEFINE(ag_tx_free);
 static K_FIFO_DEFINE(ag_tx_notify);
 
+#define BT_HFP_AG_VERSION BT_HFP_VERSION_1_9
+
 /* HFP Gateway SDP record */
 static struct bt_sdp_attribute hfp_ag_attrs[] = {
 	BT_SDP_NEW_SERVICE,
@@ -141,7 +143,7 @@ static struct bt_sdp_attribute hfp_ag_attrs[] = {
 			},
 			{
 				BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
-				BT_SDP_ARRAY_16(0x0109)
+				BT_SDP_ARRAY_16(BT_HFP_AG_VERSION)
 			},
 			)
 		},
@@ -3727,12 +3729,30 @@ static void hfp_ag_postprocess_at_cmd(struct bt_hfp_ag *ag)
 	k_work_reschedule(&ag->tx_work, K_NO_WAIT);
 }
 
+static int hfp_ag_at_cmd_ack(struct bt_hfp_ag *ag, int err)
+{
+	enum at_cme cme_err;
+
+	if ((err != 0) && atomic_test_bit(ag->flags, BT_HFP_AG_CMEE_ENABLE)) {
+		cme_err = bt_hfp_ag_get_cme_err(err);
+		err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+CME ERROR:%d\r\n", (uint32_t)cme_err);
+	} else {
+		bt_hfp_ag_tx_cb_t cb;
+
+		cb = atomic_test_and_clear_bit(ag->flags, BT_HFP_AG_SLC_CONNECTED)
+			     ? bt_hfp_ag_slc_connected
+			     : NULL;
+		err = hfp_ag_send_data(ag, cb, NULL, "\r\n%s\r\n", (err == 0) ? "OK" : "ERROR");
+	}
+
+	return err;
+}
+
 static void hfp_ag_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 {
 	struct bt_hfp_ag *ag = CONTAINER_OF(dlc, struct bt_hfp_ag, rfcomm_dlc);
 	uint8_t *data = buf->data;
 	uint16_t len = buf->len;
-	enum at_cme cme_err;
 	int err = -ENOEXEC;
 
 	LOG_HEXDUMP_DBG(data, len, "Received:");
@@ -3760,17 +3780,14 @@ static void hfp_ag_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 		return;
 	}
 
-	if ((err != 0) && atomic_test_bit(ag->flags, BT_HFP_AG_CMEE_ENABLE)) {
-		cme_err = bt_hfp_ag_get_cme_err(err);
-		err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+CME ERROR:%d\r\n", (uint32_t)cme_err);
-	} else {
-		bt_hfp_ag_tx_cb_t cb;
-
-		cb = atomic_test_and_clear_bit(ag->flags, BT_HFP_AG_SLC_CONNECTED)
-			     ? bt_hfp_ag_slc_connected
-			     : NULL;
-		err = hfp_ag_send_data(ag, cb, NULL, "\r\n%s\r\n", (err == 0) ? "OK" : "ERROR");
+	if (!atomic_test_and_set_bit(ag->flags, BT_HFP_AG_1ST_AT_RECV)) {
+		LOG_DBG("First AT command ack will be replied later");
+		ag->ack_err = err;
+		k_work_submit(&ag->slc_work);
+		return;
 	}
+
+	err = hfp_ag_at_cmd_ack(ag, err);
 
 	hfp_ag_postprocess_at_cmd(ag);
 
@@ -4004,16 +4021,123 @@ static void bt_ag_ongoing_call_work(struct k_work *work)
 	bt_ag_send_ok_code(ag);
 }
 
+static void bt_ag_slc_work(struct k_work *work)
+{
+	struct bt_hfp_ag *ag = CONTAINER_OF(work, struct bt_hfp_ag, slc_work);
+	int err;
+
+	if (!atomic_test_bit(ag->flags, BT_HFP_AG_DISCOVER_DONE)) {
+		return;
+	}
+
+	if (!atomic_test_bit(ag->flags, BT_HFP_AG_1ST_AT_RECV)) {
+		return;
+	}
+
+	if (atomic_test_and_set_bit(ag->flags, BT_HFP_AG_FEAT_UPDATED)) {
+		return;
+	}
+
+	if (atomic_test_bit(ag->flags, BT_HFP_AG_RECORD_FOUND)) {
+		err = hfp_ag_at_cmd_ack(ag, ag->ack_err);
+		hfp_ag_postprocess_at_cmd(ag);
+		if (err != 0) {
+			LOG_ERR("Failed to send AT command ACK: %d", err);
+		}
+		return;
+	}
+
+	err = bt_hfp_ag_disconnect(ag);
+	if (err != 0) {
+		LOG_ERR("Failed to disconnect HF: %d", err);
+	}
+}
+
+#define HFP_SDP_FEAT_MASK GENMASK(4, 0)
+
+static uint8_t bt_hfp_ag_discover_cb(struct bt_conn *conn, struct bt_sdp_client_result *result,
+				     const struct bt_sdp_discover_params *params)
+{
+	size_t index;
+	struct bt_hfp_ag *ag;
+	int err;
+
+	index = (size_t)bt_conn_index(conn);
+	__ASSERT(index < ARRAY_SIZE(bt_hfp_ag_pool), "Index is out of bounds");
+
+	ag = &bt_hfp_ag_pool[index];
+
+	if ((result == NULL) || (result->resp_buf == NULL)) {
+		LOG_ERR("SDP discovery failed");
+		goto failed;
+	}
+
+	err = bt_sdp_get_profile_version(result->resp_buf, BT_SDP_HANDSFREE_SVCLASS,
+					 &ag->hf_sdp_version);
+	if (err != 0) {
+		LOG_ERR("Failed to get HF profile version");
+		goto failed;
+	}
+	err = bt_sdp_get_features(result->resp_buf, &ag->hf_sdp_features);
+	if (err != 0) {
+		LOG_ERR("Failed to get HF feature");
+		goto failed;
+	}
+
+	if ((ag->hf_sdp_version <= BT_HFP_VERSION_1_5) ||
+	    (BT_HFP_AG_VERSION <= BT_HFP_VERSION_1_5)) {
+		if (ag->hf_sdp_features & BT_HFP_HF_SDP_FEATURE_WBS) {
+			LOG_WRN("Unsupported SDP feature (WBS) is enabled.");
+			ag->hf_sdp_features &= ~BT_HFP_HF_SDP_FEATURE_WBS;
+		}
+
+		if (ag->hf_sdp_features & BT_HFP_HF_SDP_FEATURE_SUPER_WBS) {
+			LOG_WRN("Unsupported SDP feature (Super WBS) is enabled.");
+			ag->hf_sdp_features &= ~BT_HFP_HF_SDP_FEATURE_SUPER_WBS;
+		}
+	}
+
+	if ((ag->hf_sdp_version <= BT_HFP_VERSION_0_96) ||
+	    (BT_HFP_AG_VERSION <= BT_HFP_VERSION_0_96)) {
+		/* Update the AG features according to the SDP features for HFP version 0.96.
+		 *
+		 * Hands-Free Profile Specification V1.9, 6.3 SDP Interoperability Requirements
+		 * The values of the “SupportedFeatures” bitmap given in Table 6.6 shall be the
+		 * same as the values of the Bits 0 to 4 of the unsolicited result code +BRSF.
+		 */
+		ag->hf_features = ag->hf_sdp_features & HFP_SDP_FEAT_MASK;
+	}
+
+	atomic_set_bit(ag->flags, BT_HFP_AG_RECORD_FOUND);
+failed:
+	atomic_set_bit(ag->flags, BT_HFP_AG_DISCOVER_DONE);
+	k_work_submit(&ag->slc_work);
+
+	return BT_SDP_DISCOVER_UUID_STOP;
+}
+
 static struct bt_hfp_ag *hfp_ag_create(struct bt_conn *conn)
 {
+	size_t index;
+	struct bt_hfp_ag *ag;
+	int err;
+
 	static struct bt_rfcomm_dlc_ops ops = {
 		.connected = hfp_ag_connected,
 		.disconnected = hfp_ag_disconnected,
 		.recv = hfp_ag_recv,
 		.sent = hfp_ag_sent,
 	};
-	size_t index;
-	struct bt_hfp_ag *ag;
+	static struct bt_sdp_attribute_id_range id_range[] = {
+		{ BT_SDP_ATTR_PROTO_DESC_LIST, BT_SDP_ATTR_PROTO_DESC_LIST },
+		{ BT_SDP_ATTR_PROFILE_DESC_LIST, BT_SDP_ATTR_PROFILE_DESC_LIST },
+		{ BT_SDP_ATTR_SUPPORTED_FEATURES, BT_SDP_ATTR_SUPPORTED_FEATURES },
+	};
+	static struct bt_sdp_attribute_id_list id_list = {
+		.count = ARRAY_SIZE(id_range),
+		.ranges = id_range,
+	};
+	static struct bt_uuid_16 uuid;
 
 	LOG_DBG("conn %p", conn);
 
@@ -4028,6 +4152,20 @@ static struct bt_hfp_ag *hfp_ag_create(struct bt_conn *conn)
 
 	(void)memset(ag, 0, sizeof(struct bt_hfp_ag));
 
+	uuid.uuid.type = BT_UUID_TYPE_16;
+	uuid.val = BT_SDP_HANDSFREE_SVCLASS;
+
+	ag->sdp_param.func = bt_hfp_ag_discover_cb;
+	ag->sdp_param.type = BT_SDP_DISCOVER_SERVICE_SEARCH_ATTR;
+	ag->sdp_param.uuid = &uuid.uuid;
+	ag->sdp_param.pool = &ag_pool;
+	ag->sdp_param.ids  = &id_list;
+
+	err = bt_sdp_discover(conn, &ag->sdp_param);
+	if (err != 0) {
+		return NULL;
+	}
+
 	sys_slist_init(&ag->tx_pending);
 	sys_slist_init(&ag->tx_submit_pending);
 
@@ -4039,6 +4177,10 @@ static struct bt_hfp_ag *hfp_ag_create(struct bt_conn *conn)
 	/* Set the supported features*/
 	ag->ag_features = BT_HFP_AG_SUPPORTED_FEATURES;
 	ag->ag_features |= BT_FEAT_SC(bt_dev.features) ? BT_HFP_AG_FEATURE_ESCO_S4 : 0;
+
+	/* Set the default HF infrmation */
+	ag->hf_sdp_features = 0;
+	ag->hf_sdp_version = BT_HFP_VERSION_0_96;
 
 	/* Support HF indicators */
 	if (IS_ENABLED(CONFIG_BT_HFP_AG_HF_INDICATOR_ENH_SAFETY)) {
@@ -4081,6 +4223,8 @@ static struct bt_hfp_ag *hfp_ag_create(struct bt_conn *conn)
 
 	/* Set Codec ID*/
 	ag->selected_codec_id = BT_HFP_AG_CODEC_CVSD;
+
+	k_work_init(&ag->slc_work, bt_ag_slc_work);
 
 	/* Init delay work */
 	k_work_init_delayable(&ag->tx_work, bt_ag_tx_work);

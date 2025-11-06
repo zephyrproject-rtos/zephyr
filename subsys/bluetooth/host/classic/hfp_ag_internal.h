@@ -173,6 +173,10 @@ enum {
 	BT_HGP_AG_ONGOING_CALLS, /* Waiting ongoing calls */
 	BT_HFP_AG_SLC_CONNECTED, /* SLC connected event needs to be notified */
 	BT_HFP_AG_AT_PROCESS,    /* AT command is in processing */
+	BT_HFP_AG_DISCOVER_DONE, /* SDP Record discovered done */
+	BT_HFP_AG_RECORD_FOUND,  /* SDP HF Record found */
+	BT_HFP_AG_1ST_AT_RECV,   /* 1st AT is received */
+	BT_HFP_AG_FEAT_UPDATED,  /* Remote feature has been updated */
 
 	/* Total number of flags - must be at the end of the enum */
 	BT_HFP_AG_NUM_FLAGS,
@@ -266,6 +270,10 @@ struct bt_hfp_ag {
 	uint32_t hf_indicators_of_hf;
 	uint32_t hf_indicators;
 
+	/* AG profile information */
+	uint16_t hf_sdp_version;
+	uint16_t hf_sdp_features;
+
 	/* operator */
 	uint8_t mode;
 	char operator[AT_COPS_OPERATOR_MAX_LEN + 1];
@@ -284,6 +292,13 @@ struct bt_hfp_ag {
 
 	/* SCO connect */
 	struct bt_conn *sco_conn;
+
+	/* SDP discover params */
+	struct bt_sdp_discover_params sdp_param;
+
+	/* SCL work */
+	struct k_work slc_work;
+	int ack_err;
 
 	/* HFP TX pending */
 	sys_slist_t tx_pending;
