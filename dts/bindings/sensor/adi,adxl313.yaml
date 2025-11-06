@@ -1,0 +1,22 @@
+# Copyright (c) 2025 Lothar Rubusch <l.rubusch@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ADXL313 3-axis accelerometer
+  When setting the accelerometer DTS properties and want to use
+  streaming functionality, make sure to include adxl313.h and
+  use the macros defined there.
+
+compatible: "adi,adxl313"
+
+include: sensor-device.yaml
+
+examples:
+  - |
+    adxl313: adxl313@0 {
+      compatible = "adi,adxl313";
+      reg = <0>;
+      spi-cpha;
+      spi-cpol;
+      spi-max-frequency = <5000000>;
+    };
