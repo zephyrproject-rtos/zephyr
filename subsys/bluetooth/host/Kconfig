@@ -133,6 +133,26 @@ config BT_DRIVER_RX_HIGH_PRIO
 	int
 	default 6
 
+config BT_TX_PROCESSOR_THREAD
+	# This thread is used to send pending HCI Commands, ACL and ISO data to
+	# Controller.
+	bool
+	# This option is automatically selected for all platforms except nRF51
+	# due to limited RAM on nRF51 devices.
+	default y if !SOC_SERIES_NRF51X
+
+if BT_TX_PROCESSOR_THREAD
+
+config BT_TX_PROCESSOR_THREAD_PRIO
+	int
+	default SYSTEM_WORKQUEUE_PRIORITY
+
+config BT_TX_PROCESSOR_STACK_SIZE
+	int
+	default 1024
+
+endif
+
 config BT_CONN_TX_NOTIFY_WQ
 	bool "Use a separate workqueue for connection TX notify processing [EXPERIMENTAL]"
 	depends on BT_CONN_TX
