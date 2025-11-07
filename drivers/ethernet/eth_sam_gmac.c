@@ -499,7 +499,7 @@ static struct gptp_hdr *check_gptp_msg(struct net_if *iface,
 	struct net_eth_hdr *hdr;
 
 	hdr = (struct net_eth_hdr *)msg_start;
-	if (ntohs(hdr->type) != NET_ETH_PTYPE_PTP) {
+	if (net_ntohs(hdr->type) != NET_ETH_PTYPE_PTP) {
 		return NULL;
 	}
 

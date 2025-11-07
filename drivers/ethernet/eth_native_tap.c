@@ -215,7 +215,7 @@ static struct net_pkt *prepare_pkt(struct eth_context *ctx,
 	struct net_pkt *pkt;
 
 	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, count,
-					   AF_UNSPEC, 0, NET_BUF_TIMEOUT);
+					   NET_AF_UNSPEC, 0, NET_BUF_TIMEOUT);
 	if (!pkt) {
 		*status = -ENOMEM;
 		return NULL;
