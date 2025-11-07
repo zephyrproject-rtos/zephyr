@@ -87,6 +87,7 @@ The following CVEs are addressed by this release:
 * :cve:`2025-9557`: Under embargo until 2025-11-24
 * :cve:`2025-9558`: Under embargo until 2025-11-24
 * :cve:`2025-12035`: Under embargo until 2025-12-13
+* :cve:`2025-12899`: Under embargo until 2026-01-28
 * :cve:`2025-59438` `Padding oracle through timing of cipher error reporting
   <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-10-invalid-padding-error/>`_
 * :cve:`2025-54764` `Side channel in RSA key generation and operations (SSBleed, M-Step)
