@@ -46,8 +46,9 @@ static int mcux_scg_get_rate(const struct device *dev,
 	case KINETIS_SCG_BUS_CLK:
 		clock_name = kCLOCK_BusClk;
 		break;
-#if !(defined(CONFIG_SOC_MKE17Z7) || defined(CONFIG_SOC_MKE17Z9) \
-		|| defined(CONFIG_SOC_SERIES_MCXE24X))
+#if !(defined(CONFIG_SOC_MKE17Z7) || defined(CONFIG_SOC_MKE17Z9) || defined(CONFIG_SOC_MKE15Z7)\
+	|| defined(CONFIG_SOC_MKE15Z4) || defined(CONFIG_SOC_MKE16Z4)\
+	|| defined(CONFIG_SOC_SERIES_MCXE24X))
 	case KINETIS_SCG_FLEXBUS_CLK:
 		clock_name = kCLOCK_FlexBusClk;
 		break;
@@ -70,7 +71,7 @@ static int mcux_scg_get_rate(const struct device *dev,
 		break;
 #endif /* (defined(FSL_FEATURE_SCG_HAS_SPLL) && FSL_FEATURE_SCG_HAS_SPLL) */
 #if (defined(FSL_FEATURE_SCG_HAS_LPFLL) && FSL_FEATURE_SCG_HAS_LPFLL)
-	case KINETIS_SCG_SPLL_CLK:
+	case KINETIS_SCG_LPFLL_CLK:
 		clock_name = kCLOCK_ScgLpFllClk;
 		break;
 #endif /* (defined(FSL_FEATURE_SCG_HAS_LPFLL) && FSL_FEATURE_SCG_HAS_LPFLL) */
@@ -137,6 +138,8 @@ static int mcux_scg_init(const struct device *dev)
 	CLOCK_SetClkOutSel(kClockClkoutSelFirc);
 #elif DT_SAME_NODE(DT_CLOCKS_CTLR(MCUX_SCG_CLOCK_NODE(clkout_clk)), MCUX_SCG_CLOCK_NODE(spll_clk))
 	CLOCK_SetClkOutSel(kClockClkoutSelSysPll);
+#elif DT_SAME_NODE(DT_CLOCKS_CTLR(MCUX_SCG_CLOCK_NODE(clkout_clk)), MCUX_SCG_CLOCK_NODE(lpfll_clk))
+	CLOCK_SetClkOutSel(kClockClkoutSelSysLpfll);
 #else
 #error Unsupported SCG clkout clock source
 #endif
