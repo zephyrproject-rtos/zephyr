@@ -90,9 +90,16 @@
 				#clock-cells = <0>;
 			};
 
+			lpfll_clk: lpfll_clk {
+				compatible = "fixed-clock";
+				clock-frequency = <72000000>;
+				#clock-cells = <0>;
+			};
+
 			core_clk: core_clk {
 				compatible = "fixed-factor-clock";
-				clocks = <&firc_clk>;
+				#clocks = <&firc_clk>;
+				clocks = <&lpfll_clk>;
 				clock-div = <1>;
 				#clock-cells = <0>;
 			};
@@ -115,6 +122,13 @@
 				compatible = "fixed-factor-clock";
 				clocks = <&firc_clk>;
 				clock-div = <1>;
+				#clock-cells = <0>;
+			};
+
+			flldiv2_clk: flldiv2_clk {
+				compatible = "fixed-factor-clock";
+				clocks = <&lpfll_clk>;
+				clock-div = <2>;
 				#clock-cells = <0>;
 			};
 		};
@@ -510,6 +524,49 @@
 			status = "disabled";
 			interrupts = <23 0>;
 			clocks = <&pcc 0x168 KINETIS_PCC_SRC_FIRC_ASYNC>;
+		};
+
+		pit0: pit@40037000 {
+			compatible = "nxp,pit";
+			reg = <0x40037000 0x1000>;
+			clocks = <&pcc 0x1a8 KINETIS_PCC_SRC_FIRC_ASYNC>;
+			interrupts = <22 0>;
+			max-load-value = <0xffffffff>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			pit0_channel0: pit0_channel@0 {
+				compatible = "nxp,pit-channel";
+				reg = <0>;
+				status = "disabled";
+			};
+
+			pit0_channel1: pit0_channel@1 {
+				compatible = "nxp,pit-channel";
+				reg = <1>;
+				status = "disabled";
+			};
+
+			pit0_channel2: pit0_channel@2 {
+				compatible = "nxp,pit-channel";
+				reg = <2>;
+				status = "disabled";
+			};
+
+			pit0_channel3: pit0_channel@3 {
+				compatible = "nxp,pit-channel";
+				reg = <3>;
+				status = "disabled";
+			};
+		};
+
+		tsi0: tsi@40045000 {
+			compatible = "nxp,tsi";
+			reg = <0x40045000 0x1000>;
+			status = "okay";
+			interrupts = <24 0>;
+			clocks = <&scg KINETIS_SCG_BUS_CLK>;
 		};
 	};
 };
