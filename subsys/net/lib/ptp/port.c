@@ -162,7 +162,7 @@ static void port_delay_req_timestamp_cb(struct net_pkt *pkt)
 		return;
 	}
 
-	msg->header.src_port_id.port_number = ntohs(msg->header.src_port_id.port_number);
+	msg->header.src_port_id.port_number = net_ntohs(msg->header.src_port_id.port_number);
 
 	if (!ptp_port_id_eq(&port->port_ds.id, &msg->header.src_port_id) ||
 	    ptp_msg_type(msg) != PTP_MSG_DELAY_REQ) {
@@ -193,7 +193,7 @@ static void port_delay_req_timestamp_cb(struct net_pkt *pkt)
 
 		LOG_DBG("Port %d registered timestamp for %d Delay_Req",
 			port->port_ds.id.port_number,
-			ntohs(msg->header.sequence_id));
+			net_ntohs(msg->header.sequence_id));
 
 		if (iter == sys_slist_peek_tail(&port->delay_req_list)) {
 			net_if_unregister_timestamp_cb(&port->delay_req_ts_cb);
@@ -210,7 +210,7 @@ static void port_sync_timestamp_cb(struct net_pkt *pkt)
 		return;
 	}
 
-	msg->header.src_port_id.port_number = ntohs(msg->header.src_port_id.port_number);
+	msg->header.src_port_id.port_number = net_ntohs(msg->header.src_port_id.port_number);
 
 	if (ptp_port_id_eq(&port->port_ds.id, &msg->header.src_port_id) &&
 	    ptp_msg_type(msg) == PTP_MSG_SYNC) {
@@ -669,7 +669,7 @@ static void port_delay_resp_msg_process(struct ptp_port *port, struct ptp_msg *m
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&port->delay_req_list, req, node) {
-		if (msg->header.sequence_id == ntohs(req->header.sequence_id)) {
+		if (msg->header.sequence_id == net_ntohs(req->header.sequence_id)) {
 			break;
 		}
 		prev = &req->node;

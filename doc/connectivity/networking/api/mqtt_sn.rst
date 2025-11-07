@@ -75,12 +75,12 @@ used. An example configuration for UDP transport is shown below:
 .. code-block:: c
 
    struct mqtt_sn_data client_id = MQTT_SN_DATA_STRING_LITERAL("ZEPHYR");
-   struct sockaddr_in gateway = {0};
+   struct net_sockaddr_in gateway = {0};
 
    uint8_t tx_buf[256];
    uint8_t rx_buf[256];
 
-   mqtt_sn_transport_udp_init(&tp, (struct sockaddr*)&gateway, sizeof((gateway)));
+   mqtt_sn_transport_udp_init(&tp, (struct net_sockaddr*)&gateway, sizeof((gateway)));
 
    mqtt_sn_client_init(&client, &client_id, &tp.tp, evt_cb, tx_buf, sizeof(tx_buf), rx_buf, sizeof(rx_buf));
 

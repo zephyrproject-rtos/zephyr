@@ -95,8 +95,8 @@ static int offload_shutdown(void *obj, int how)
 	return 0;
 }
 
-static int offload_bind(void *obj, const struct sockaddr *addr,
-			socklen_t addrlen)
+static int offload_bind(void *obj, const struct net_sockaddr *addr,
+			net_socklen_t addrlen)
 {
 	struct test_socket_calls *ctx = obj;
 
@@ -108,8 +108,8 @@ static int offload_bind(void *obj, const struct sockaddr *addr,
 	return 0;
 }
 
-static int offload_connect(void *obj, const struct sockaddr *addr,
-			   socklen_t addrlen)
+static int offload_connect(void *obj, const struct net_sockaddr *addr,
+			   net_socklen_t addrlen)
 {
 	struct test_socket_calls *ctx = obj;
 
@@ -132,7 +132,7 @@ static int offload_listen(void *obj, int backlog)
 	return 0;
 }
 
-static int offload_accept(void *obj, struct sockaddr *addr, socklen_t *addrlen)
+static int offload_accept(void *obj, struct net_sockaddr *addr, net_socklen_t *addrlen)
 {
 	struct test_socket_calls *ctx = obj;
 
@@ -145,8 +145,8 @@ static int offload_accept(void *obj, struct sockaddr *addr, socklen_t *addrlen)
 }
 
 static ssize_t offload_sendto(void *obj, const void *buf, size_t len,
-			      int flags, const struct sockaddr *dest_addr,
-			      socklen_t addrlen)
+			      int flags, const struct net_sockaddr *dest_addr,
+			      net_socklen_t addrlen)
 {
 	struct test_socket_calls *ctx = obj;
 
@@ -161,7 +161,7 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len,
 	return len;
 }
 
-static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
+static ssize_t offload_sendmsg(void *obj, const struct net_msghdr *msg, int flags)
 {
 	struct test_socket_calls *ctx = obj;
 
@@ -174,8 +174,8 @@ static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
 }
 
 static ssize_t offload_recvfrom(void *obj, void *buf, size_t max_len,
-				int flags, struct sockaddr *src_addr,
-				socklen_t *addrlen)
+				int flags, struct net_sockaddr *src_addr,
+				net_socklen_t *addrlen)
 {
 	struct test_socket_calls *ctx = obj;
 
@@ -191,7 +191,7 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t max_len,
 }
 
 static int offload_getsockopt(void *obj, int level, int optname,
-			      void *optval, socklen_t *optlen)
+			      void *optval, net_socklen_t *optlen)
 {
 	struct test_socket_calls *ctx = obj;
 
@@ -206,7 +206,7 @@ static int offload_getsockopt(void *obj, int level, int optname,
 }
 
 static int offload_setsockopt(void *obj, int level, int optname,
-			      const void *optval, socklen_t optlen)
+			      const void *optval, net_socklen_t optlen)
 {
 	struct test_socket_calls *ctx = obj;
 
@@ -220,8 +220,8 @@ static int offload_setsockopt(void *obj, int level, int optname,
 	return 0;
 }
 
-static int offload_getpeername(void *obj, struct sockaddr *addr,
-			       socklen_t *addrlen)
+static int offload_getpeername(void *obj, struct net_sockaddr *addr,
+			       net_socklen_t *addrlen)
 {
 	struct test_socket_calls *ctx = obj;
 
@@ -233,8 +233,8 @@ static int offload_getpeername(void *obj, struct sockaddr *addr,
 	return 0;
 }
 
-static int offload_getsockname(void *obj, struct sockaddr *addr,
-			       socklen_t *addrlen)
+static int offload_getsockname(void *obj, struct net_sockaddr *addr,
+			       net_socklen_t *addrlen)
 {
 	struct test_socket_calls *ctx = obj;
 
@@ -293,7 +293,7 @@ static bool offload_1_is_supported(int family, int type, int proto)
 	return true;
 }
 
-NET_SOCKET_OFFLOAD_REGISTER(offloaded_1, SOCKET_OFFLOAD_PRIO_HIGH, AF_UNSPEC,
+NET_SOCKET_OFFLOAD_REGISTER(offloaded_1, SOCKET_OFFLOAD_PRIO_HIGH, NET_AF_UNSPEC,
 			    offload_1_is_supported, offload_1_socket);
 
 static void offloaded_1_iface_init(struct net_if *iface)
@@ -355,7 +355,7 @@ static bool offload_2_is_supported(int family, int type, int proto)
 	return true;
 }
 
-NET_SOCKET_OFFLOAD_REGISTER(offloaded_2, SOCKET_OFFLOAD_PRIO_HIGH, AF_UNSPEC,
+NET_SOCKET_OFFLOAD_REGISTER(offloaded_2, SOCKET_OFFLOAD_PRIO_HIGH, NET_AF_UNSPEC,
 			    offload_2_is_supported, offload_2_socket);
 
 static void offloaded_2_iface_init(struct net_if *iface)
@@ -374,7 +374,7 @@ NET_DEVICE_OFFLOAD_INIT(offloaded_2, "offloaded_2", NULL, NULL,
 /* Native dummy interface */
 
 static uint8_t lladdr[] = { 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
-static struct in_addr in4addr_my = { { { 192, 0, 2, 1 } } };
+static struct net_in_addr in4addr_my = { { { 192, 0, 2, 1 } } };
 static K_SEM_DEFINE(test_native_send_called, 0, 1);
 
 static void dummy_native_iface_init(struct net_if *iface)
@@ -404,8 +404,8 @@ NET_DEVICE_INIT(dummy_native, "dummy_native", NULL, NULL, NULL,
 
 /* Actual tests */
 
-static const struct sockaddr_in test_peer_addr = {
-	.sin_family = AF_INET,
+static const struct net_sockaddr_in test_peer_addr = {
+	.sin_family = NET_AF_INET,
 	.sin_addr = { { { 192, 0, 0, 2 } } },
 	.sin_port = 1234
 };
@@ -421,7 +421,7 @@ static void test_socket_setup_udp(void *dummy)
 	ARG_UNUSED(dummy);
 	test_result_reset();
 
-	test_sock = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	test_sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 
 	zassert_true(test_sock >= 0, "Failed to create socket");
 	zassert_false(test_socket_ctx[OFFLOAD_1].socket_called,
@@ -433,7 +433,7 @@ static void test_socket_setup_tls(void *dummy)
 	ARG_UNUSED(dummy);
 	test_result_reset();
 
-	test_sock = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TLS_1_2);
+	test_sock = zsock_socket(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TLS_1_2);
 	zassert_true(test_sock >= 0, "Failed to create socket");
 	zassert_false(test_socket_ctx[OFFLOAD_1].socket_called,
 		      "Socket should'nt have been dispatched yet");
@@ -503,11 +503,11 @@ ZTEST(net_socket_offload_udp, test_shutdown_not_bound)
 ZTEST(net_socket_offload_udp, test_bind_not_bound)
 {
 	int ret;
-	struct sockaddr_in addr = {
-		.sin_family = AF_INET
+	struct net_sockaddr_in addr = {
+		.sin_family = NET_AF_INET
 	};
 
-	ret = zsock_bind(test_sock, (struct sockaddr *)&addr, sizeof(addr));
+	ret = zsock_bind(test_sock, (struct net_sockaddr *)&addr, sizeof(addr));
 	zassert_equal(0, ret, "bind() failed");
 	zassert_true(test_socket_ctx[OFFLOAD_1].socket_called,
 		     "Socket should've been dispatched");
@@ -521,9 +521,9 @@ ZTEST(net_socket_offload_udp, test_bind_not_bound)
 ZTEST(net_socket_offload_udp, test_connect_not_bound)
 {
 	int ret;
-	struct sockaddr_in addr = test_peer_addr;
+	struct net_sockaddr_in addr = test_peer_addr;
 
-	ret = zsock_connect(test_sock, (struct sockaddr *)&addr, sizeof(addr));
+	ret = zsock_connect(test_sock, (struct net_sockaddr *)&addr, sizeof(addr));
 	zassert_equal(0, ret, "connect() failed");
 	zassert_true(test_socket_ctx[OFFLOAD_1].socket_called,
 		     "Socket should've been dispatched");
@@ -552,10 +552,10 @@ ZTEST(net_socket_offload_udp, test_listen_not_bound)
 ZTEST(net_socket_offload_udp, test_accept_not_bound)
 {
 	int ret;
-	struct sockaddr_in addr;
-	socklen_t addrlen = sizeof(addr);
+	struct net_sockaddr_in addr;
+	net_socklen_t addrlen = sizeof(addr);
 
-	ret = zsock_accept(test_sock, (struct sockaddr *)&addr, &addrlen);
+	ret = zsock_accept(test_sock, (struct net_sockaddr *)&addr, &addrlen);
 	zassert_equal(0, ret, "accept() failed");
 	zassert_true(test_socket_ctx[OFFLOAD_1].socket_called,
 		     "Socket should've been dispatched");
@@ -570,10 +570,10 @@ ZTEST(net_socket_offload_udp, test_sendto_not_bound)
 {
 	int ret;
 	uint8_t dummy_data = 0;
-	struct sockaddr_in addr = test_peer_addr;
+	struct net_sockaddr_in addr = test_peer_addr;
 
 	ret = zsock_sendto(test_sock, &dummy_data, 1, 0,
-			   (struct sockaddr *)&addr, sizeof(addr));
+			   (struct net_sockaddr *)&addr, sizeof(addr));
 	zassert_equal(1, ret, "sendto() failed");
 	zassert_true(test_socket_ctx[OFFLOAD_1].socket_called,
 		     "Socket should've been dispatched");
@@ -604,7 +604,7 @@ ZTEST(net_socket_offload_udp, test_getsockopt_not_bound)
 {
 	int ret;
 	struct timeval optval = { 0 };
-	socklen_t optlen = sizeof(optval);
+	net_socklen_t optlen = sizeof(optval);
 
 	ret = zsock_getsockopt(test_sock, SOL_SOCKET, SO_RCVTIMEO,
 			       &optval, &optlen);
@@ -638,7 +638,7 @@ ZTEST(net_socket_offload_udp, test_setsockopt_not_bound)
 ZTEST(net_socket_offload_udp, test_sendmsg_not_bound)
 {
 	int ret;
-	struct msghdr dummy_msg = { 0 };
+	struct net_msghdr dummy_msg = { 0 };
 
 	ret = zsock_sendmsg(test_sock, &dummy_msg, 0);
 	zassert_equal(0, ret, "sendmsg() failed");
@@ -654,10 +654,10 @@ ZTEST(net_socket_offload_udp, test_sendmsg_not_bound)
 ZTEST(net_socket_offload_udp, test_getpeername_not_bound)
 {
 	int ret;
-	struct sockaddr_in addr;
-	socklen_t addrlen = sizeof(addr);
+	struct net_sockaddr_in addr;
+	net_socklen_t addrlen = sizeof(addr);
 
-	ret = zsock_getpeername(test_sock, (struct sockaddr *)&addr, &addrlen);
+	ret = zsock_getpeername(test_sock, (struct net_sockaddr *)&addr, &addrlen);
 	zassert_equal(0, ret, "getpeername() failed");
 	zassert_true(test_socket_ctx[OFFLOAD_1].socket_called,
 		     "Socket should've been dispatched");
@@ -671,10 +671,10 @@ ZTEST(net_socket_offload_udp, test_getpeername_not_bound)
 ZTEST(net_socket_offload_udp, test_getsockname_not_bound)
 {
 	int ret;
-	struct sockaddr_in addr;
-	socklen_t addrlen = sizeof(addr);
+	struct net_sockaddr_in addr;
+	net_socklen_t addrlen = sizeof(addr);
 
-	ret = zsock_getsockname(test_sock, (struct sockaddr *)&addr, &addrlen);
+	ret = zsock_getsockname(test_sock, (struct net_sockaddr *)&addr, &addrlen);
 	zassert_equal(0, ret, "getsockname() failed");
 	zassert_true(test_socket_ctx[OFFLOAD_1].socket_called,
 		     "Socket should've been dispatched");
@@ -696,8 +696,8 @@ ZTEST(net_socket_offload_udp, test_so_bindtodevice_iface_offloaded)
 		.ifr_name = "offloaded_2"
 #endif
 	};
-	struct sockaddr_in addr = {
-		.sin_family = AF_INET
+	struct net_sockaddr_in addr = {
+		.sin_family = NET_AF_INET
 	};
 
 	ret = zsock_setsockopt(test_sock, SOL_SOCKET, SO_BINDTODEVICE,
@@ -711,7 +711,7 @@ ZTEST(net_socket_offload_udp, test_so_bindtodevice_iface_offloaded)
 		     "setsockopt() should've been dispatched");
 
 	ret = zsock_sendto(test_sock, &dummy_data, 1, 0,
-			   (struct sockaddr *)&addr, sizeof(addr));
+			   (struct net_sockaddr *)&addr, sizeof(addr));
 	zassert_equal(1, ret, "sendto() failed");
 	zassert_true(test_socket_ctx[OFFLOAD_2].sendto_called,
 		     "sendto() should've been dispatched");
@@ -731,7 +731,7 @@ ZTEST(net_socket_offload_udp, test_so_bindtodevice_iface_native)
 		.ifr_name = "dummy_native"
 #endif
 	};
-	struct sockaddr_in addr = test_peer_addr;
+	struct net_sockaddr_in addr = test_peer_addr;
 
 	ret = zsock_setsockopt(test_sock, SOL_SOCKET, SO_BINDTODEVICE,
 			       &ifreq, sizeof(ifreq));
@@ -743,7 +743,7 @@ ZTEST(net_socket_offload_udp, test_so_bindtodevice_iface_native)
 		     "Socket dispatched to wrong iface");
 
 	ret = zsock_sendto(test_sock, &dummy_data, 1, 0,
-			   (struct sockaddr *)&addr, sizeof(addr));
+			   (struct net_sockaddr *)&addr, sizeof(addr));
 	zassert_equal(1, ret, "sendto() failed %d", errno);
 
 	ret = k_sem_take(&test_native_send_called, K_MSEC(200));
@@ -767,7 +767,7 @@ ZTEST(net_socket_offload_tls, test_tls_native_iface_offloaded)
 #endif
 	};
 	int tls_native = 1;
-	struct sockaddr_in addr = test_peer_addr;
+	struct net_sockaddr_in addr = test_peer_addr;
 
 	ret = zsock_setsockopt(test_sock, SOL_TLS, TLS_NATIVE,
 			       &tls_native, sizeof(tls_native));
@@ -792,7 +792,7 @@ ZTEST(net_socket_offload_tls, test_tls_native_iface_offloaded)
 	/* Ignore connect result as it will fail anyway. Just verify the
 	 * call/packets were forwarded to a valid iface.
 	 */
-	ret = zsock_connect(test_sock, (struct sockaddr *)&addr, sizeof(addr));
+	ret = zsock_connect(test_sock, (struct net_sockaddr *)&addr, sizeof(addr));
 	zassert_true(test_socket_ctx[OFFLOAD_2].connect_called,
 		     "connect() should've been dispatched to offloaded_2 iface");
 }
@@ -814,7 +814,7 @@ ZTEST(net_socket_offload_tls, test_tls_native_iface_native)
 #endif
 	};
 	int tls_native = 1;
-	struct sockaddr_in addr = test_peer_addr;
+	struct net_sockaddr_in addr = test_peer_addr;
 
 	ret = zsock_setsockopt(test_sock, SOL_TLS, TLS_NATIVE,
 			       &tls_native, sizeof(tls_native));
@@ -839,7 +839,7 @@ ZTEST(net_socket_offload_tls, test_tls_native_iface_native)
 	/* Ignore connect result as it will fail anyway. Just verify the
 	 * call/packets were forwarded to a valid iface.
 	 */
-	(void)zsock_connect(test_sock, (struct sockaddr *)&addr, sizeof(addr));
+	(void)zsock_connect(test_sock, (struct net_sockaddr *)&addr, sizeof(addr));
 
 	ret = k_sem_take(&test_native_send_called, K_MSEC(200));
 	zassert_equal(0, ret, "sendto() should've been dispatched to native iface");

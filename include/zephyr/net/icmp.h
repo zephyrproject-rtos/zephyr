@@ -76,7 +76,7 @@ typedef int (*net_icmp_handler_t)(struct net_icmp_ctx *ctx,
  */
 typedef int (*net_icmp_offload_ping_handler_t)(struct net_icmp_ctx *ctx,
 					       struct net_if *iface,
-					       struct sockaddr *dst,
+					       struct net_sockaddr *dst,
 					       struct net_icmp_ping_params *params,
 					       void *user_data);
 
@@ -118,8 +118,8 @@ struct net_icmp_ip_hdr {
 		struct net_ipv6_hdr *ipv6;
 	};
 
-	/** Is the header IPv4 or IPv6 one. Value of either AF_INET or AF_INET6 */
-	sa_family_t family;
+	/** Is the header IPv4 or IPv6 one. Value of either NET_AF_INET or NET_AF_INET6 */
+	net_sa_family_t family;
 };
 
 /**
@@ -194,7 +194,7 @@ int net_icmp_cleanup_ctx(struct net_icmp_ctx *ctx);
  */
 int net_icmp_send_echo_request(struct net_icmp_ctx *ctx,
 			       struct net_if *iface,
-			       struct sockaddr *dst,
+			       struct net_sockaddr *dst,
 			       struct net_icmp_ping_params *params,
 			       void *user_data);
 
@@ -218,7 +218,7 @@ int net_icmp_send_echo_request(struct net_icmp_ctx *ctx,
  */
 int net_icmp_send_echo_request_no_wait(struct net_icmp_ctx *ctx,
 				       struct net_if *iface,
-				       struct sockaddr *dst,
+				       struct net_sockaddr *dst,
 				       struct net_icmp_ping_params *params,
 				       void *user_data);
 

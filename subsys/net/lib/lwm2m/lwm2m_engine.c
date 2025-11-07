@@ -140,11 +140,11 @@ int lwm2m_open_socket(struct lwm2m_ctx *client_ctx)
 
 		if (IS_ENABLED(CONFIG_LWM2M_DTLS_SUPPORT) && client_ctx->use_dtls) {
 			client_ctx->sock_fd = zsock_socket(client_ctx->remote_addr.sa_family,
-							   SOCK_DGRAM, IPPROTO_DTLS_1_2);
+							   NET_SOCK_DGRAM, NET_IPPROTO_DTLS_1_2);
 		} else {
 			client_ctx->sock_fd =
-				zsock_socket(client_ctx->remote_addr.sa_family, SOCK_DGRAM,
-					     IPPROTO_UDP);
+				zsock_socket(client_ctx->remote_addr.sa_family, NET_SOCK_DGRAM,
+					     NET_IPPROTO_UDP);
 		}
 
 		if (client_ctx->sock_fd < 0) {
@@ -701,9 +701,9 @@ static void hint_socket_state(struct lwm2m_ctx *ctx, struct lwm2m_message *ongoi
 static int socket_recv_message(struct lwm2m_ctx *client_ctx)
 {
 	static uint8_t in_buf[NET_IPV6_MTU];
-	socklen_t from_addr_len;
+	net_socklen_t from_addr_len;
 	ssize_t len;
-	static struct sockaddr from_addr;
+	static struct net_sockaddr from_addr;
 
 	from_addr_len = sizeof(from_addr);
 	len = zsock_recvfrom(client_ctx->sock_fd, in_buf, sizeof(in_buf) - 1, ZSOCK_MSG_DONTWAIT,
@@ -1081,8 +1081,8 @@ int lwm2m_set_default_sockopt(struct lwm2m_ctx *ctx)
 			ctx->tls_tag,
 		};
 
-		ret = zsock_setsockopt(ctx->sock_fd, SOL_TLS, TLS_SEC_TAG_LIST, tls_tag_list,
-				       sizeof(tls_tag_list));
+		ret = zsock_setsockopt(ctx->sock_fd, ZSOCK_SOL_TLS, ZSOCK_TLS_SEC_TAG_LIST,
+				       tls_tag_list, sizeof(tls_tag_list));
 		if (ret < 0) {
 			ret = -errno;
 			LOG_ERR("Failed to set TLS_SEC_TAG_LIST option: %d", ret);
@@ -1090,9 +1090,9 @@ int lwm2m_set_default_sockopt(struct lwm2m_ctx *ctx)
 		}
 
 		if (IS_ENABLED(CONFIG_LWM2M_TLS_SESSION_CACHING)) {
-			int session_cache = TLS_SESSION_CACHE_ENABLED;
+			int session_cache = ZSOCK_TLS_SESSION_CACHE_ENABLED;
 
-			ret = zsock_setsockopt(ctx->sock_fd, SOL_TLS, TLS_SESSION_CACHE,
+			ret = zsock_setsockopt(ctx->sock_fd, ZSOCK_SOL_TLS, ZSOCK_TLS_SESSION_CACHE,
 					       &session_cache, sizeof(session_cache));
 			if (ret < 0) {
 				ret = -errno;
@@ -1102,10 +1102,10 @@ int lwm2m_set_default_sockopt(struct lwm2m_ctx *ctx)
 		}
 		if (IS_ENABLED(CONFIG_LWM2M_DTLS_CID)) {
 			/* Enable CID */
-			int cid = TLS_DTLS_CID_SUPPORTED;
+			int cid = ZSOCK_TLS_DTLS_CID_SUPPORTED;
 
-			ret = zsock_setsockopt(ctx->sock_fd, SOL_TLS, TLS_DTLS_CID, &cid,
-					       sizeof(cid));
+			ret = zsock_setsockopt(ctx->sock_fd, ZSOCK_SOL_TLS, ZSOCK_TLS_DTLS_CID,
+					       &cid, sizeof(cid));
 			if (ret) {
 				ret = -errno;
 				LOG_ERR("Failed to enable TLS_DTLS_CID: %d", ret);
@@ -1121,7 +1121,7 @@ int lwm2m_set_default_sockopt(struct lwm2m_ctx *ctx)
 			ctx->desthostname[ctx->desthostnamelen] = '\0';
 
 			/** mbedtls ignores length */
-			ret = zsock_setsockopt(ctx->sock_fd, SOL_TLS, TLS_HOSTNAME,
+			ret = zsock_setsockopt(ctx->sock_fd, ZSOCK_SOL_TLS, ZSOCK_TLS_HOSTNAME,
 					       ctx->desthostname, ctx->desthostnamelen);
 
 			/** restore character */
@@ -1132,20 +1132,20 @@ int lwm2m_set_default_sockopt(struct lwm2m_ctx *ctx)
 				return ret;
 			}
 
-			int verify = TLS_PEER_VERIFY_REQUIRED;
+			int verify = ZSOCK_TLS_PEER_VERIFY_REQUIRED;
 
-			ret = zsock_setsockopt(ctx->sock_fd, SOL_TLS, TLS_PEER_VERIFY, &verify,
-					       sizeof(verify));
+			ret = zsock_setsockopt(ctx->sock_fd, ZSOCK_SOL_TLS, ZSOCK_TLS_PEER_VERIFY,
+					       &verify, sizeof(verify));
 			if (ret) {
 				LOG_ERR("Failed to set TLS_PEER_VERIFY");
 			}
 
 		} else {
 			/* By default, Mbed TLS tries to verify peer hostname, disable it */
-			int verify = TLS_PEER_VERIFY_NONE;
+			int verify = ZSOCK_TLS_PEER_VERIFY_NONE;
 
-			ret = zsock_setsockopt(ctx->sock_fd, SOL_TLS, TLS_PEER_VERIFY, &verify,
-					       sizeof(verify));
+			ret = zsock_setsockopt(ctx->sock_fd, ZSOCK_SOL_TLS, ZSOCK_TLS_PEER_VERIFY,
+					       &verify, sizeof(verify));
 			if (ret) {
 				LOG_ERR("Failed to set TLS_PEER_VERIFY");
 			}
@@ -1153,14 +1153,16 @@ int lwm2m_set_default_sockopt(struct lwm2m_ctx *ctx)
 
 		switch (lwm2m_security_mode(ctx)) {
 		case LWM2M_SECURITY_PSK:
-			ret = zsock_setsockopt(ctx->sock_fd, SOL_TLS, TLS_CIPHERSUITE_LIST,
+			ret = zsock_setsockopt(ctx->sock_fd, ZSOCK_SOL_TLS,
+					       ZSOCK_TLS_CIPHERSUITE_LIST,
 					       cipher_list_psk, sizeof(cipher_list_psk));
 			if (ret) {
 				LOG_ERR("Failed to set TLS_CIPHERSUITE_LIST");
 			}
 			break;
 		case LWM2M_SECURITY_CERT:
-			ret = zsock_setsockopt(ctx->sock_fd, SOL_TLS, TLS_CIPHERSUITE_LIST,
+			ret = zsock_setsockopt(ctx->sock_fd, ZSOCK_SOL_TLS,
+					       ZSOCK_TLS_CIPHERSUITE_LIST,
 					       cipher_list_cert, sizeof(cipher_list_cert));
 			if (ret) {
 				LOG_ERR("Failed to set TLS_CIPHERSUITE_LIST (rc %d, errno %d)", ret,
@@ -1181,7 +1183,7 @@ int lwm2m_set_default_sockopt(struct lwm2m_ctx *ctx)
 
 int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 {
-	socklen_t addr_len;
+	net_socklen_t addr_len;
 	int flags;
 	int ret;
 
@@ -1214,10 +1216,10 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 		goto error;
 	}
 
-	if ((client_ctx->remote_addr).sa_family == AF_INET) {
-		addr_len = sizeof(struct sockaddr_in);
-	} else if ((client_ctx->remote_addr).sa_family == AF_INET6) {
-		addr_len = sizeof(struct sockaddr_in6);
+	if ((client_ctx->remote_addr).sa_family == NET_AF_INET) {
+		addr_len = sizeof(struct net_sockaddr_in);
+	} else if ((client_ctx->remote_addr).sa_family == NET_AF_INET6) {
+		addr_len = sizeof(struct net_sockaddr_in6);
 	} else {
 		ret = -EPROTONOSUPPORT;
 		goto error;

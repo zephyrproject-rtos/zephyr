@@ -34,17 +34,17 @@ static zperf_callback tcp_session_cb;
 static void *tcp_user_data;
 static bool tcp_server_running;
 static uint16_t tcp_server_port;
-static struct sockaddr tcp_server_addr;
+static struct net_sockaddr tcp_server_addr;
 
 static struct zsock_pollfd fds[SOCK_ID_MAX];
-static struct sockaddr sock_addr[SOCK_ID_MAX];
+static struct net_sockaddr sock_addr[SOCK_ID_MAX];
 
 static void tcp_svc_handler(struct net_socket_service_event *pev);
 
 NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(svc_tcp, tcp_svc_handler,
 				      SOCK_ID_MAX);
 
-static void tcp_received(const struct sockaddr *addr, size_t datalen)
+static void tcp_received(const struct net_sockaddr *addr, size_t datalen)
 {
 	struct session *session;
 	int64_t time;
@@ -111,7 +111,7 @@ static void tcp_receiver_cleanup(void)
 		if (fds[i].fd >= 0) {
 			zsock_close(fds[i].fd);
 			fds[i].fd = -1;
-			memset(&sock_addr[i], 0, sizeof(struct sockaddr));
+			memset(&sock_addr[i], 0, sizeof(struct net_sockaddr));
 		}
 	}
 
@@ -126,9 +126,9 @@ static int tcp_recv_data(struct net_socket_service_event *pev)
 	static uint8_t buf[TCP_RECEIVER_BUF_SIZE];
 	int i, ret = 0;
 	int family, sock, sock_error;
-	struct sockaddr addr_incoming_conn;
-	socklen_t optlen = sizeof(int);
-	socklen_t addrlen = sizeof(struct sockaddr);
+	struct net_sockaddr addr_incoming_conn;
+	net_socklen_t optlen = sizeof(int);
+	net_socklen_t addrlen = sizeof(struct net_sockaddr);
 
 	if (!tcp_server_running) {
 		return -ENOENT;
@@ -141,7 +141,7 @@ static int tcp_recv_data(struct net_socket_service_event *pev)
 		(void)zsock_getsockopt(pev->event.fd, SOL_SOCKET,
 				       SO_ERROR, &sock_error, &optlen);
 		NET_ERR("TCP receiver IPv%d socket error (%d)",
-			family == AF_INET ? 4 : 6, sock_error);
+			family == NET_AF_INET ? 4 : 6, sock_error);
 		ret = -sock_error;
 		goto error;
 	}
@@ -164,7 +164,7 @@ static int tcp_recv_data(struct net_socket_service_event *pev)
 			(void)zsock_getsockopt(pev->event.fd, SOL_SOCKET,
 					       SO_DOMAIN, &family, &optlen);
 			NET_ERR("TCP receiver IPv%d accept error (%d)",
-				family == AF_INET ? 4 : 6, ret);
+				family == NET_AF_INET ? 4 : 6, ret);
 			goto error;
 		}
 
@@ -194,7 +194,7 @@ static int tcp_recv_data(struct net_socket_service_event *pev)
 			(void)zsock_getsockopt(pev->event.fd, SOL_SOCKET,
 					       SO_DOMAIN, &family, &optlen);
 			NET_ERR("recv failed on IPv%d socket (%d)",
-				family == AF_INET ? 4 : 6,
+				family == NET_AF_INET ? 4 : 6,
 				errno);
 			tcp_session_error_report();
 			/* This will close the zperf session */
@@ -214,7 +214,7 @@ static int tcp_recv_data(struct net_socket_service_event *pev)
 			if (ret == 0) {
 				zsock_close(fds[i].fd);
 				fds[i].fd = -1;
-				memset(&sock_addr[i], 0, sizeof(struct sockaddr));
+				memset(&sock_addr[i], 0, sizeof(struct net_sockaddr));
 
 				(void)net_socket_service_register(&svc_tcp, fds,
 								  ARRAY_SIZE(fds),
@@ -242,28 +242,28 @@ static void tcp_svc_handler(struct net_socket_service_event *pev)
 }
 
 static int tcp_bind_listen_connection(struct zsock_pollfd *pollfd,
-				      struct sockaddr *address)
+				      struct net_sockaddr *address)
 {
 	uint16_t port;
 	int ret;
 
-	if (address->sa_family == AF_INET) {
-		port = ntohs(net_sin(address)->sin_port);
+	if (address->sa_family == NET_AF_INET) {
+		port = net_ntohs(net_sin(address)->sin_port);
 	} else {
-		port = ntohs(net_sin6(address)->sin6_port);
+		port = net_ntohs(net_sin6(address)->sin6_port);
 	}
 
 	ret = zsock_bind(pollfd->fd, address, sizeof(*address));
 	if (ret < 0) {
 		NET_ERR("Cannot bind IPv%d TCP port %d (%d)",
-			address->sa_family == AF_INET ? 4 : 6, port, errno);
+			address->sa_family == NET_AF_INET ? 4 : 6, port, errno);
 		goto out;
 	}
 
 	ret = zsock_listen(pollfd->fd, 1);
 	if (ret < 0) {
 		NET_ERR("Cannot listen IPv%d TCP (%d)",
-			address->sa_family == AF_INET ? 4 : 6, errno);
+			address->sa_family == NET_AF_INET ? 4 : 6, errno);
 		goto out;
 	}
 
@@ -284,12 +284,12 @@ static int zperf_tcp_receiver_init(void)
 
 	family = tcp_server_addr.sa_family;
 
-	if (IS_ENABLED(CONFIG_NET_IPV4) && (family == AF_INET || family == AF_UNSPEC)) {
-		struct sockaddr_in *in4_addr = zperf_get_sin();
-		const struct in_addr *addr = NULL;
+	if (IS_ENABLED(CONFIG_NET_IPV4) && (family == NET_AF_INET || family == NET_AF_UNSPEC)) {
+		struct net_sockaddr_in *in4_addr = zperf_get_sin();
+		const struct net_in_addr *addr = NULL;
 
-		fds[SOCK_ID_IPV4_LISTEN].fd = zsock_socket(AF_INET, SOCK_STREAM,
-							   IPPROTO_TCP);
+		fds[SOCK_ID_IPV4_LISTEN].fd = zsock_socket(NET_AF_INET, NET_SOCK_STREAM,
+							   NET_IPPROTO_TCP);
 		if (fds[SOCK_ID_IPV4_LISTEN].fd < 0) {
 			ret = -errno;
 			NET_ERR("Cannot create IPv4 network socket.");
@@ -300,7 +300,7 @@ static int zperf_tcp_receiver_init(void)
 
 		if (!net_ipv4_is_addr_unspecified(addr)) {
 			memcpy(&in4_addr->sin_addr, addr,
-				sizeof(struct in_addr));
+				sizeof(struct net_in_addr));
 		} else if (strlen(MY_IP4ADDR ? MY_IP4ADDR : "")) {
 			/* Use Setting IP */
 			ret = zperf_get_ipv4_addr(MY_IP4ADDR,
@@ -311,16 +311,16 @@ static int zperf_tcp_receiver_init(void)
 			}
 		} else {
 use_any_ipv4:
-			in4_addr->sin_addr.s_addr = INADDR_ANY;
+			in4_addr->sin_addr.s_addr = NET_INADDR_ANY;
 		}
 
-		in4_addr->sin_port = htons(tcp_server_port);
+		in4_addr->sin_port = net_htons(tcp_server_port);
 
 		NET_INFO("Binding to %s",
 			 net_sprint_ipv4_addr(&in4_addr->sin_addr));
 
 		memcpy(net_sin(&sock_addr[SOCK_ID_IPV4_LISTEN]), in4_addr,
-		       sizeof(struct sockaddr_in));
+		       sizeof(struct net_sockaddr_in));
 
 		ret = tcp_bind_listen_connection(
 				&fds[SOCK_ID_IPV4_LISTEN],
@@ -330,12 +330,12 @@ use_any_ipv4:
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && (family == AF_INET6 || family == AF_UNSPEC)) {
-		struct sockaddr_in6 *in6_addr = zperf_get_sin6();
-		const struct in6_addr *addr = NULL;
+	if (IS_ENABLED(CONFIG_NET_IPV6) && (family == NET_AF_INET6 || family == NET_AF_UNSPEC)) {
+		struct net_sockaddr_in6 *in6_addr = zperf_get_sin6();
+		const struct net_in6_addr *addr = NULL;
 
-		fds[SOCK_ID_IPV6_LISTEN].fd = zsock_socket(AF_INET6, SOCK_STREAM,
-							   IPPROTO_TCP);
+		fds[SOCK_ID_IPV6_LISTEN].fd = zsock_socket(NET_AF_INET6, NET_SOCK_STREAM,
+							   NET_IPPROTO_TCP);
 		if (fds[SOCK_ID_IPV6_LISTEN].fd < 0) {
 			ret = -errno;
 			NET_ERR("Cannot create IPv6 network socket.");
@@ -346,7 +346,7 @@ use_any_ipv4:
 
 		if (!net_ipv6_is_addr_unspecified(addr)) {
 			memcpy(&in6_addr->sin6_addr, addr,
-			       sizeof(struct in6_addr));
+			       sizeof(struct net_in6_addr));
 		} else if (strlen(MY_IP6ADDR ? MY_IP6ADDR : "")) {
 			/* Use Setting IP */
 			ret = zperf_get_ipv6_addr(MY_IP6ADDR,
@@ -359,16 +359,16 @@ use_any_ipv4:
 		} else {
 use_any_ipv6:
 			memcpy(&in6_addr->sin6_addr, net_ipv6_unspecified_address(),
-			       sizeof(struct in6_addr));
+			       sizeof(struct net_in6_addr));
 		}
 
-		in6_addr->sin6_port = htons(tcp_server_port);
+		in6_addr->sin6_port = net_htons(tcp_server_port);
 
 		NET_INFO("Binding to %s",
 			 net_sprint_ipv6_addr(&in6_addr->sin6_addr));
 
 		memcpy(net_sin6(&sock_addr[SOCK_ID_IPV6_LISTEN]), in6_addr,
-		       sizeof(struct sockaddr_in6));
+		       sizeof(struct net_sockaddr_in6));
 
 		ret = tcp_bind_listen_connection(
 				&fds[SOCK_ID_IPV6_LISTEN],
@@ -406,7 +406,7 @@ int zperf_tcp_download(const struct zperf_download_params *param,
 	tcp_session_cb = callback;
 	tcp_user_data = user_data;
 	tcp_server_port = param->port;
-	memcpy(&tcp_server_addr, &param->addr, sizeof(struct sockaddr));
+	memcpy(&tcp_server_addr, &param->addr, sizeof(struct net_sockaddr));
 
 	ret = zperf_tcp_receiver_init();
 	if (ret < 0) {

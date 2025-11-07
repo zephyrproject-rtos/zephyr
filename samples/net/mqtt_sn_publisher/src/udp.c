@@ -158,10 +158,10 @@ static void process_thread(void)
 		 * CONFIG_MQTT_SN_LIB_MAX_ADDR_SIZE.
 		 */
 		switch (gwaddr.sa_family) {
-		case AF_INET:
+		case NET_AF_INET:
 			gwaddr_data.size = sizeof(struct sockaddr_in);
 			break;
-		case AF_INET6:
+		case NET_AF_INET6:
 			gwaddr_data.size = sizeof(struct sockaddr_in6);
 			break;
 		}

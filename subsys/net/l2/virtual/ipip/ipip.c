@@ -40,13 +40,13 @@ struct ipip_context {
 	struct net_if *iface;
 	struct net_if *attached_to;
 	union {
-		sa_family_t family;
+		net_sa_family_t family;
 		struct net_addr peer;
 	};
 
 	union {
-		const struct in_addr *my4addr;
-		const struct in6_addr *my6addr;
+		const struct net_in_addr *my4addr;
+		const struct net_in6_addr *my6addr;
 	};
 
 	bool is_used;
@@ -143,20 +143,20 @@ static int interface_send(struct net_if *iface, struct net_pkt *pkt)
 		return -ENOENT;
 	}
 
-	if (net_pkt_family(pkt) == AF_INET) {
-		nexthdr = IPPROTO_IPIP;
+	if (net_pkt_family(pkt) == NET_AF_INET) {
+		nexthdr = NET_IPPROTO_IPIP;
 		tos = ipv4_get_tos(pkt);
-	} else if (net_pkt_family(pkt) == AF_INET6) {
-		nexthdr = IPPROTO_IPV6;
+	} else if (net_pkt_family(pkt) == NET_AF_INET6) {
+		nexthdr = NET_IPPROTO_IPV6;
 	} else {
 		return -EINVAL;
 	}
 
 	/* Add new IP header */
-	if (IS_ENABLED(CONFIG_NET_IPV6) && ctx->family == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && ctx->family == NET_AF_INET6) {
 		tmp = net_pkt_alloc_with_buffer(iface,
 						sizeof(struct net_ipv6_hdr),
-						AF_INET6, IPPROTO_IPV6,
+						NET_AF_INET6, NET_IPPROTO_IPV6,
 						PKT_ALLOC_TIME);
 		if (tmp == NULL) {
 			return -ENOMEM;
@@ -191,12 +191,12 @@ static int interface_send(struct net_if *iface, struct net_pkt *pkt)
 			goto out;
 		}
 
-		net_pkt_set_family(pkt, AF_INET6);
+		net_pkt_set_family(pkt, NET_AF_INET6);
 
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) && ctx->family == AF_INET) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && ctx->family == NET_AF_INET) {
 		tmp = net_pkt_alloc_with_buffer(iface,
 						sizeof(struct net_ipv4_hdr),
-						AF_INET, IPPROTO_IP,
+						NET_AF_INET, NET_IPPROTO_IP,
 						PKT_ALLOC_TIME);
 		if (tmp == NULL) {
 			return -ENOMEM;
@@ -244,7 +244,7 @@ static int interface_send(struct net_if *iface, struct net_pkt *pkt)
 			goto out;
 		}
 
-		net_pkt_set_family(pkt, AF_INET);
+		net_pkt_set_family(pkt, NET_AF_INET);
 	}
 
 	if (DEBUG_TX) {
@@ -267,20 +267,20 @@ out:
 }
 
 static bool verify_remote_addr(struct ipip_context *ctx,
-			       struct sockaddr *remote_addr)
+			       struct net_sockaddr *remote_addr)
 {
 	if (ctx->family != remote_addr->sa_family) {
 		return false;
 	}
 
-	if (ctx->family == AF_INET) {
+	if (ctx->family == NET_AF_INET) {
 		if (memcmp(&ctx->peer.in_addr, &net_sin(remote_addr)->sin_addr,
-			   sizeof(struct in_addr)) == 0) {
+			   sizeof(struct net_in_addr)) == 0) {
 			return true;
 		}
 	} else {
 		if (memcmp(&ctx->peer.in6_addr, &net_sin6(remote_addr)->sin6_addr,
-			   sizeof(struct in6_addr)) == 0) {
+			   sizeof(struct net_in6_addr)) == 0) {
 			return true;
 		}
 	}
@@ -305,10 +305,10 @@ static enum net_verdict interface_recv(struct net_if *iface,
 
 	switch (iptype & 0xf0) {
 	case 0x60:
-		net_pkt_set_family(pkt, AF_INET6);
+		net_pkt_set_family(pkt, NET_AF_INET6);
 		break;
 	case 0x40:
-		net_pkt_set_family(pkt, AF_INET);
+		net_pkt_set_family(pkt, NET_AF_INET);
 		break;
 	default:
 		return NET_DROP;
@@ -319,7 +319,7 @@ static enum net_verdict interface_recv(struct net_if *iface,
 	 */
 	if (!verify_remote_addr(ctx, net_pkt_remote_address(pkt))) {
 		NET_DBG("DROP: remote address %s unknown",
-			net_pkt_remote_address(pkt)->sa_family == AF_INET6 ?
+			net_pkt_remote_address(pkt)->sa_family == NET_AF_INET6 ?
 			net_sprint_ipv6_addr(&net_sin6(net_pkt_remote_address(pkt))->sin6_addr) :
 			net_sprint_ipv4_addr(&net_sin(net_pkt_remote_address(pkt))->sin_addr));
 		return NET_DROP;
@@ -337,7 +337,7 @@ static enum net_verdict interface_recv(struct net_if *iface,
 	/* net_pkt cursor must point to correct place so that we can fetch
 	 * the network header.
 	 */
-	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == NET_AF_INET6) {
 		NET_PKT_DATA_ACCESS_DEFINE(access, struct net_ipv6_hdr);
 		struct net_ipv6_hdr *hdr;
 		struct net_if *iface_test;
@@ -350,7 +350,7 @@ static enum net_verdict interface_recv(struct net_if *iface,
 		}
 
 		/* RFC4213 chapter 3.6 */
-		iface_test = net_if_ipv6_select_src_iface((struct in6_addr *)hdr->dst);
+		iface_test = net_if_ipv6_select_src_iface((struct net_in6_addr *)hdr->dst);
 		if (iface_test == NULL) {
 			NET_DBG("DROP: not for me (dst %s)",
 				net_sprint_ipv6_addr(&hdr->dst));
@@ -380,7 +380,7 @@ static enum net_verdict interface_recv(struct net_if *iface,
 		return net_ipv6_input(pkt);
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
+	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == NET_AF_INET) {
 		NET_PKT_DATA_ACCESS_DEFINE(access, struct net_ipv4_hdr);
 		struct net_ipv4_hdr *hdr;
 		struct net_if *iface_test;
@@ -393,7 +393,7 @@ static enum net_verdict interface_recv(struct net_if *iface,
 			return NET_DROP;
 		}
 
-		iface_test = net_if_ipv4_select_src_iface((struct in_addr *)hdr->dst);
+		iface_test = net_if_ipv4_select_src_iface((struct net_in_addr *)hdr->dst);
 		if (iface_test == NULL) {
 			NET_DBG("DROP: not for me (dst %s)",
 				net_sprint_ipv4_addr(&hdr->dst));
@@ -414,7 +414,7 @@ static enum net_verdict interface_recv(struct net_if *iface,
 		hdr->chksum = 0U;
 
 		sum = calc_chksum(0, access.data, access.size);
-		sum = (sum == 0U) ? 0xffff : htons(sum);
+		sum = (sum == 0U) ? 0xffff : net_htons(sum);
 
 		hdr->chksum = ~sum;
 
@@ -452,9 +452,9 @@ static int interface_attach(struct net_if *iface, struct net_if *lower_iface)
 	} else {
 		ctx->is_used = true;
 
-		if (IS_ENABLED(CONFIG_NET_IPV6) && ctx->family == AF_INET6) {
+		if (IS_ENABLED(CONFIG_NET_IPV6) && ctx->family == NET_AF_INET6) {
 			struct net_if_addr *ifaddr;
-			struct in6_addr iid;
+			struct net_in6_addr iid;
 			int ret;
 
 			/* RFC4213 chapter 3.7 */
@@ -494,16 +494,16 @@ static int interface_set_config(struct net_if *iface,
 
 	switch (type) {
 	case VIRTUAL_INTERFACE_CONFIG_TYPE_PEER_ADDRESS:
-		if (IS_ENABLED(CONFIG_NET_IPV4) && config->family == AF_INET) {
-			char peer[INET_ADDRSTRLEN];
+		if (IS_ENABLED(CONFIG_NET_IPV4) && config->family == NET_AF_INET) {
+			char peer[NET_INET_ADDRSTRLEN];
 			char *addr_str;
 
 			net_ipaddr_copy(&ctx->peer.in_addr, &config->peer4addr);
 
-			addr_str = net_addr_ntop(AF_INET, &ctx->peer.in_addr,
+			addr_str = net_addr_ntop(NET_AF_INET, &ctx->peer.in_addr,
 						 peer, sizeof(peer));
 
-			ctx->family = AF_INET;
+			ctx->family = NET_AF_INET;
 			net_virtual_set_name(iface, "IPv4 tunnel");
 
 			if (ctx->attached_to == NULL) {
@@ -525,17 +525,17 @@ static int interface_set_config(struct net_if *iface,
 			ctx->my4addr = NULL;
 
 		} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
-			   config->family == AF_INET6) {
-			char peer[INET6_ADDRSTRLEN];
+			   config->family == NET_AF_INET6) {
+			char peer[NET_INET6_ADDRSTRLEN];
 			char *addr_str;
 
 			net_ipaddr_copy(&ctx->peer.in6_addr,
 					&config->peer6addr);
 
-			addr_str = net_addr_ntop(AF_INET6, &ctx->peer.in6_addr,
+			addr_str = net_addr_ntop(NET_AF_INET6, &ctx->peer.in6_addr,
 						 peer, sizeof(peer));
 
-			ctx->family = AF_INET6;
+			ctx->family = NET_AF_INET6;
 			net_virtual_set_name(iface, "IPv6 tunnel");
 
 			net_if_ipv6_set_hop_limit(iface, 64);
@@ -580,12 +580,12 @@ static int interface_get_config(struct net_if *iface,
 	switch (type) {
 	case VIRTUAL_INTERFACE_CONFIG_TYPE_PEER_ADDRESS:
 		if (IS_ENABLED(CONFIG_NET_IPV6) &&
-		    ctx->family == AF_INET6) {
+		    ctx->family == NET_AF_INET6) {
 			net_ipaddr_copy(&config->peer6addr,
 					&ctx->peer.in6_addr);
 
 		} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
-			   ctx->family == AF_INET) {
+			   ctx->family == NET_AF_INET) {
 			net_ipaddr_copy(&config->peer4addr,
 					&ctx->peer.in_addr);
 

@@ -67,14 +67,14 @@ int walk_sockets(struct k_obj_core *obj_core, void *user_data)
 
 	PR("%25s  %-12s  %c%c%c\t%-5s%-13d   %-10" PRId64 "%-10" PRId64 "\n",
 	   thread_name, obj->reg->name,
-	   obj->socket_family == AF_INET6 ? '6' :
-	   (obj->socket_family == AF_INET ? '4' :
+	   obj->socket_family == NET_AF_INET6 ? '6' :
+	   (obj->socket_family == NET_AF_INET ? '4' :
 	    (obj->socket_family == AF_NET_MGMT ? 'M' : ' ')),
-	   obj->socket_type == SOCK_DGRAM ? 'D' :
-	   (obj->socket_type == SOCK_STREAM ? 'S' :
-	    (obj->socket_type == SOCK_RAW ? 'R' : ' ')),
-	   obj->socket_proto == IPPROTO_UDP ? 'U' :
-	   (obj->socket_proto == IPPROTO_TCP ? 'T' : ' '),
+	   obj->socket_type == NET_SOCK_DGRAM ? 'D' :
+	   (obj->socket_type == NET_SOCK_STREAM ? 'S' :
+	    (obj->socket_type == NET_SOCK_RAW ? 'R' : ' ')),
+	   obj->socket_proto == NET_IPPROTO_UDP ? 'U' :
+	   (obj->socket_proto == NET_IPPROTO_TCP ? 'T' : ' '),
 	   fd, lifetime, stats.sent, stats.received);
 
 	return 0;

@@ -22,7 +22,7 @@ ZTEST_SUITE(net_dns_cache_test, NULL, NULL, clear_cache, NULL, NULL);
 
 ZTEST(net_dns_cache_test, test_simple_cache_entry)
 {
-	struct dns_addrinfo info_write = {.ai_family = AF_INET};
+	struct dns_addrinfo info_write = {.ai_family = NET_AF_INET};
 	struct dns_addrinfo info_read = {0};
 	const char *query = "example.com";
 	enum dns_query_type query_type = DNS_QUERY_TYPE_A;
@@ -30,7 +30,7 @@ ZTEST(net_dns_cache_test, test_simple_cache_entry)
 	zassert_ok(dns_cache_add(&test_dns_cache, query, &info_write, TEST_DNS_CACHE_DEFAULT_TTL),
 		   "Cache entry adding should work.");
 	zassert_equal(1, dns_cache_find(&test_dns_cache, query, query_type, &info_read, 1));
-	zassert_equal(AF_INET, info_read.ai_family);
+	zassert_equal(NET_AF_INET, info_read.ai_family);
 }
 
 ZTEST(net_dns_cache_test, test_not_cached)
@@ -45,7 +45,7 @@ ZTEST(net_dns_cache_test, test_not_cached)
 
 ZTEST(net_dns_cache_test, test_fill_cache)
 {
-	struct dns_addrinfo info_write = {.ai_family = AF_INET};
+	struct dns_addrinfo info_write = {.ai_family = NET_AF_INET};
 	struct dns_addrinfo info_read[TEST_DNS_CACHE_SIZE] = {0};
 	const char *query = "example.com";
 	enum dns_query_type query_type = DNS_QUERY_TYPE_A;
@@ -57,12 +57,12 @@ ZTEST(net_dns_cache_test, test_fill_cache)
 	}
 	zassert_equal(TEST_DNS_CACHE_SIZE, dns_cache_find(&test_dns_cache, query, query_type,
 							  info_read, TEST_DNS_CACHE_SIZE));
-	zassert_equal(AF_INET, info_read[TEST_DNS_CACHE_SIZE - 1].ai_family);
+	zassert_equal(NET_AF_INET, info_read[TEST_DNS_CACHE_SIZE - 1].ai_family);
 }
 
 ZTEST(net_dns_cache_test, test_flush)
 {
-	struct dns_addrinfo info_write = {.ai_family = AF_INET};
+	struct dns_addrinfo info_write = {.ai_family = NET_AF_INET};
 	struct dns_addrinfo info_read[TEST_DNS_CACHE_SIZE] = {0};
 	const char *query = "example.com";
 	enum dns_query_type query_type = DNS_QUERY_TYPE_A;
@@ -80,7 +80,7 @@ ZTEST(net_dns_cache_test, test_flush)
 
 ZTEST(net_dns_cache_test, test_fill_cache_to_small)
 {
-	struct dns_addrinfo info_write = {.ai_family = AF_INET};
+	struct dns_addrinfo info_write = {.ai_family = NET_AF_INET};
 	struct dns_addrinfo info_read[TEST_DNS_CACHE_SIZE - 1] = {0};
 	const char *query = "example.com";
 	enum dns_query_type query_type = DNS_QUERY_TYPE_A;
@@ -92,12 +92,12 @@ ZTEST(net_dns_cache_test, test_fill_cache_to_small)
 	}
 	zassert_equal(-ENOSR, dns_cache_find(&test_dns_cache, query, query_type, info_read,
 					     TEST_DNS_CACHE_SIZE - 1));
-	zassert_equal(AF_INET, info_read[TEST_DNS_CACHE_SIZE - 2].ai_family);
+	zassert_equal(NET_AF_INET, info_read[TEST_DNS_CACHE_SIZE - 2].ai_family);
 }
 
 ZTEST(net_dns_cache_test, test_closest_expiry_removed)
 {
-	struct dns_addrinfo info_write = {.ai_family = AF_INET};
+	struct dns_addrinfo info_write = {.ai_family = NET_AF_INET};
 	struct dns_addrinfo info_read = {0};
 	const char *closest_expiry = "example.com";
 	enum dns_query_type query_type = DNS_QUERY_TYPE_A;
@@ -118,7 +118,7 @@ ZTEST(net_dns_cache_test, test_closest_expiry_removed)
 
 ZTEST(net_dns_cache_test, test_expired_entries_removed)
 {
-	struct dns_addrinfo info_write = {.ai_family = AF_INET};
+	struct dns_addrinfo info_write = {.ai_family = NET_AF_INET};
 	struct dns_addrinfo info_read[3] = {0};
 	const char *query = "example.com";
 	enum dns_query_type query_type = DNS_QUERY_TYPE_A;
@@ -132,21 +132,21 @@ ZTEST(net_dns_cache_test, test_expired_entries_removed)
 		dns_cache_add(&test_dns_cache, query, &info_write, TEST_DNS_CACHE_DEFAULT_TTL * 3),
 		"Cache entry adding should work.");
 	zassert_equal(3, dns_cache_find(&test_dns_cache, query, query_type, info_read, 3));
-	zassert_equal(AF_INET, info_read[0].ai_family);
+	zassert_equal(NET_AF_INET, info_read[0].ai_family);
 	k_sleep(K_MSEC(TEST_DNS_CACHE_DEFAULT_TTL * 1000 + 1));
 	zassert_equal(2, dns_cache_find(&test_dns_cache, query, query_type, info_read, 3));
-	zassert_equal(AF_INET, info_read[0].ai_family);
+	zassert_equal(NET_AF_INET, info_read[0].ai_family);
 	k_sleep(K_MSEC(TEST_DNS_CACHE_DEFAULT_TTL * 1000 + 1));
 	zassert_equal(1, dns_cache_find(&test_dns_cache, query, query_type, info_read, 3));
-	zassert_equal(AF_INET, info_read[0].ai_family);
+	zassert_equal(NET_AF_INET, info_read[0].ai_family);
 	k_sleep(K_MSEC(1));
 	zassert_equal(1, dns_cache_find(&test_dns_cache, query, query_type, info_read, 3));
-	zassert_equal(AF_INET, info_read[0].ai_family);
+	zassert_equal(NET_AF_INET, info_read[0].ai_family);
 }
 
 ZTEST(net_dns_cache_test, test_different_type_not_returned)
 {
-	struct dns_addrinfo info_write = {.ai_family = AF_INET};
+	struct dns_addrinfo info_write = {.ai_family = NET_AF_INET};
 	struct dns_addrinfo info_read = {0};
 	const char *query = "example.com";
 	enum dns_query_type query_type = DNS_QUERY_TYPE_AAAA;
@@ -159,8 +159,8 @@ ZTEST(net_dns_cache_test, test_different_type_not_returned)
 
 ZTEST(net_dns_cache_test, test_only_expected_type_returned)
 {
-	struct dns_addrinfo info_write_a = {.ai_family = AF_INET};
-	struct dns_addrinfo info_write_b = {.ai_family = AF_INET6};
+	struct dns_addrinfo info_write_a = {.ai_family = NET_AF_INET};
+	struct dns_addrinfo info_write_b = {.ai_family = NET_AF_INET6};
 	struct dns_addrinfo info_read = {0};
 	const char *query = "example.com";
 	enum dns_query_type query_type_a = DNS_QUERY_TYPE_A;
@@ -171,14 +171,14 @@ ZTEST(net_dns_cache_test, test_only_expected_type_returned)
 	zassert_ok(dns_cache_add(&test_dns_cache, query, &info_write_b, TEST_DNS_CACHE_DEFAULT_TTL),
 		   "Cache entry adding should work.");
 	zassert_equal(1, dns_cache_find(&test_dns_cache, query, query_type_a, &info_read, 1));
-	zassert_equal(AF_INET, info_read.ai_family);
+	zassert_equal(NET_AF_INET, info_read.ai_family);
 	zassert_equal(1, dns_cache_find(&test_dns_cache, query, query_type_b, &info_read, 1));
-	zassert_equal(AF_INET6, info_read.ai_family);
+	zassert_equal(NET_AF_INET6, info_read.ai_family);
 }
 
 ZTEST(net_dns_cache_test, test_remove_single_entry)
 {
-	struct dns_addrinfo info_write = {.ai_family = AF_INET};
+	struct dns_addrinfo info_write = {.ai_family = NET_AF_INET};
 	struct dns_addrinfo info_read = {0};
 	const char *query = "example.com";
 	enum dns_query_type query_type = DNS_QUERY_TYPE_A;
@@ -186,7 +186,7 @@ ZTEST(net_dns_cache_test, test_remove_single_entry)
 	zassert_ok(dns_cache_add(&test_dns_cache, query, &info_write, TEST_DNS_CACHE_DEFAULT_TTL),
 		   "Cache entry adding should work.");
 	zassert_equal(1, dns_cache_find(&test_dns_cache, query, query_type, &info_read, 1));
-	zassert_equal(AF_INET, info_read.ai_family);
+	zassert_equal(NET_AF_INET, info_read.ai_family);
 
 	zassert_ok(dns_cache_remove(&test_dns_cache, query), "Cache entry removal should work.");
 	zassert_equal(0, dns_cache_find(&test_dns_cache, query, query_type, &info_read, 1));
@@ -194,8 +194,8 @@ ZTEST(net_dns_cache_test, test_remove_single_entry)
 
 ZTEST(net_dns_cache_test, test_remove_multiple_entries_same_query)
 {
-	struct dns_addrinfo info_write_a = {.ai_family = AF_INET};
-	struct dns_addrinfo info_write_b = {.ai_family = AF_INET6};
+	struct dns_addrinfo info_write_a = {.ai_family = NET_AF_INET};
+	struct dns_addrinfo info_write_b = {.ai_family = NET_AF_INET6};
 	struct dns_addrinfo info_read[2] = {0};
 	const char *query = "example.com";
 	enum dns_query_type query_type_a = DNS_QUERY_TYPE_A;
@@ -215,7 +215,7 @@ ZTEST(net_dns_cache_test, test_remove_multiple_entries_same_query)
 
 ZTEST(net_dns_cache_test, test_remove_specific_query_only)
 {
-	struct dns_addrinfo info_write = {.ai_family = AF_INET};
+	struct dns_addrinfo info_write = {.ai_family = NET_AF_INET};
 	struct dns_addrinfo info_read = {0};
 	const char *query1 = "example.com";
 	const char *query2 = "test.com";
@@ -231,12 +231,12 @@ ZTEST(net_dns_cache_test, test_remove_specific_query_only)
 	zassert_ok(dns_cache_remove(&test_dns_cache, query1), "Cache entry removal should work.");
 	zassert_equal(0, dns_cache_find(&test_dns_cache, query1, query_type, &info_read, 1));
 	zassert_equal(1, dns_cache_find(&test_dns_cache, query2, query_type, &info_read, 1));
-	zassert_equal(AF_INET, info_read.ai_family);
+	zassert_equal(NET_AF_INET, info_read.ai_family);
 }
 
 ZTEST(net_dns_cache_test, test_remove_nonexistent_query)
 {
-	struct dns_addrinfo info_write = {.ai_family = AF_INET};
+	struct dns_addrinfo info_write = {.ai_family = NET_AF_INET};
 	struct dns_addrinfo info_read = {0};
 	const char *query = "example.com";
 	const char *nonexistent_query = "nonexistent.com";
@@ -249,7 +249,7 @@ ZTEST(net_dns_cache_test, test_remove_nonexistent_query)
 	zassert_ok(dns_cache_remove(&test_dns_cache, nonexistent_query),
 		   "Removing nonexistent query should not fail.");
 	zassert_equal(1, dns_cache_find(&test_dns_cache, query, query_type, &info_read, 1));
-	zassert_equal(AF_INET, info_read.ai_family);
+	zassert_equal(NET_AF_INET, info_read.ai_family);
 }
 
 ZTEST(net_dns_cache_test, test_remove_empty_cache)

@@ -467,14 +467,14 @@ static bool start_http_client(int *hb_sock)
 	struct zsock_addrinfo *addr;
 	struct zsock_addrinfo hints = {0};
 	int resolve_attempts = 10;
-	int protocol = IS_ENABLED(CONFIG_HAWKBIT_USE_TLS) ? IPPROTO_TLS_1_2 : IPPROTO_TCP;
+	int protocol = IS_ENABLED(CONFIG_HAWKBIT_USE_TLS) ? NET_IPPROTO_TLS_1_2 : NET_IPPROTO_TCP;
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		hints.ai_family = AF_INET6;
-		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_family = NET_AF_INET6;
+		hints.ai_socktype = NET_SOCK_STREAM;
 	} else if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		hints.ai_family = AF_INET;
-		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_family = NET_AF_INET;
+		hints.ai_socktype = NET_SOCK_STREAM;
 	}
 
 	while (resolve_attempts--) {
@@ -491,7 +491,7 @@ static bool start_http_client(int *hb_sock)
 		return false;
 	}
 
-	*hb_sock = zsock_socket(addr->ai_family, SOCK_STREAM, protocol);
+	*hb_sock = zsock_socket(addr->ai_family, NET_SOCK_STREAM, protocol);
 	if (*hb_sock < 0) {
 		LOG_ERR("Failed to create TCP socket");
 		goto err;
@@ -502,13 +502,13 @@ static bool start_http_client(int *hb_sock)
 		HAWKBIT_CERT_TAG,
 	};
 
-	if (zsock_setsockopt(*hb_sock, SOL_TLS, TLS_SEC_TAG_LIST, sec_tag_opt,
+	if (zsock_setsockopt(*hb_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_SEC_TAG_LIST, sec_tag_opt,
 			     sizeof(sec_tag_opt)) < 0) {
 		LOG_ERR("Failed to set TLS_TAG option");
 		goto err_sock;
 	}
 
-	if (zsock_setsockopt(*hb_sock, SOL_TLS, TLS_HOSTNAME, HAWKBIT_SERVER_DOMAIN,
+	if (zsock_setsockopt(*hb_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_HOSTNAME, HAWKBIT_SERVER_DOMAIN,
 			     sizeof(HAWKBIT_SERVER_DOMAIN)) < 0) {
 		goto err_sock;
 	}

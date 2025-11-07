@@ -237,7 +237,7 @@ static int setup_iface(struct net_if *iface,
 	if (IS_ENABLED(CONFIG_NET_IPV6) &&
 	    net_if_flag_is_set(iface, NET_IF_IPV6)) {
 
-		if (net_addr_pton(AF_INET6, ipv6_addr, &addr6)) {
+		if (net_addr_pton(NET_AF_INET6, ipv6_addr, &addr6)) {
 			LOG_ERR("Invalid address: %s", ipv6_addr);
 			return -EINVAL;
 		}
@@ -254,9 +254,9 @@ static int setup_iface(struct net_if *iface,
 			goto try_ipv4;
 		}
 
-		params.family = AF_INET6;
+		params.family = NET_AF_INET6;
 
-		if (net_addr_pton(AF_INET6, peer6addr, &addr6)) {
+		if (net_addr_pton(NET_AF_INET6, peer6addr, &addr6)) {
 			LOG_ERR("Cannot parse peer %s address %s to tunnel",
 				"IPv6", peer6addr);
 		} else {
@@ -288,7 +288,7 @@ try_ipv4:
 	if (IS_ENABLED(CONFIG_NET_IPV4) &&
 	    net_if_flag_is_set(iface, NET_IF_IPV4)) {
 
-		if (net_addr_pton(AF_INET, ipv4_addr, &addr4)) {
+		if (net_addr_pton(NET_AF_INET, ipv4_addr, &addr4)) {
 			LOG_ERR("Invalid address: %s", ipv4_addr);
 			return -EINVAL;
 		}
@@ -304,7 +304,7 @@ try_ipv4:
 		if (netmask) {
 			struct in_addr nm;
 
-			if (net_addr_pton(AF_INET, netmask, &nm)) {
+			if (net_addr_pton(NET_AF_INET, netmask, &nm)) {
 				LOG_ERR("Invalid netmask: %s", netmask);
 				return -EINVAL;
 			}
@@ -316,9 +316,9 @@ try_ipv4:
 			goto done;
 		}
 
-		params.family = AF_INET;
+		params.family = NET_AF_INET;
 
-		if (net_addr_pton(AF_INET, peer4addr, &addr4)) {
+		if (net_addr_pton(NET_AF_INET, peer4addr, &addr4)) {
 			LOG_ERR("Cannot parse peer %s address %s to tunnel",
 				"IPv4", peer4addr);
 		} else {

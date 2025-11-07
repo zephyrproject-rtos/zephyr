@@ -36,7 +36,7 @@ static void ip_address_lifetime_cb(struct net_if *iface, void *user_data)
 
 	ARRAY_FOR_EACH(ipv4->unicast, i) {
 		if (!ipv4->unicast[i].ipv4.is_used ||
-		    ipv4->unicast[i].ipv4.address.family != AF_INET) {
+		    ipv4->unicast[i].ipv4.address.family != NET_AF_INET) {
 			continue;
 		}
 
@@ -100,7 +100,7 @@ static int cmd_net_ip_add(const struct shell *sh, size_t argc, char *argv[])
 #if defined(CONFIG_NET_IPV4)
 	struct net_if *iface = NULL;
 	int idx;
-	struct in_addr addr;
+	struct net_in_addr addr;
 
 	if (argc < 3) {
 		PR_ERROR("Correct usage: net ipv4 add <index> <address> [<netmask>]\n");
@@ -118,7 +118,7 @@ static int cmd_net_ip_add(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (net_addr_pton(AF_INET, argv[2], &addr)) {
+	if (net_addr_pton(NET_AF_INET, argv[2], &addr)) {
 		PR_ERROR("Invalid address: %s\n", argv[2]);
 		return -EINVAL;
 	}
@@ -134,7 +134,7 @@ static int cmd_net_ip_add(const struct shell *sh, size_t argc, char *argv[])
 		}
 	} else {
 		struct net_if_addr *ifaddr;
-		struct in_addr netmask;
+		struct net_in_addr netmask;
 
 		if (argc < 4) {
 			PR_ERROR("Netmask is missing.\n");
@@ -148,7 +148,7 @@ static int cmd_net_ip_add(const struct shell *sh, size_t argc, char *argv[])
 			return -ENOMEM;
 		}
 
-		if (net_addr_pton(AF_INET, argv[3], &netmask)) {
+		if (net_addr_pton(NET_AF_INET, argv[3], &netmask)) {
 			PR_ERROR("Invalid netmask: %s", argv[3]);
 			return -EINVAL;
 		}
@@ -167,7 +167,7 @@ static int cmd_net_ip_del(const struct shell *sh, size_t argc, char *argv[])
 #if defined(CONFIG_NET_IPV4)
 	struct net_if *iface = NULL;
 	int idx;
-	struct in_addr addr;
+	struct net_in_addr addr;
 
 	if (argc != 3) {
 		PR_ERROR("Correct usage: net ipv4 del <index> <address>");
@@ -185,7 +185,7 @@ static int cmd_net_ip_del(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (net_addr_pton(AF_INET, argv[2], &addr)) {
+	if (net_addr_pton(NET_AF_INET, argv[2], &addr)) {
 		PR_ERROR("Invalid address: %s\n", argv[2]);
 		return -EINVAL;
 	}
@@ -216,7 +216,7 @@ static int cmd_net_ip_gateway(const struct shell *sh, size_t argc, char *argv[])
 #if defined(CONFIG_NET_IPV4)
 	struct net_if *iface;
 	int idx;
-	struct in_addr addr;
+	struct net_in_addr addr;
 
 	if (argc != 3) {
 		PR_ERROR("Correct usage: net ipv4 gateway <index> <gateway_ip>\n");
@@ -234,7 +234,7 @@ static int cmd_net_ip_gateway(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (net_addr_pton(AF_INET, argv[2], &addr)) {
+	if (net_addr_pton(NET_AF_INET, argv[2], &addr)) {
 		PR_ERROR("Invalid address: %s\n", argv[2]);
 		return -EINVAL;
 	}

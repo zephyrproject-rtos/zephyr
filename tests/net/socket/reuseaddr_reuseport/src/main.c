@@ -33,13 +33,13 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #define SHOULD_SUCCEED true
 #define SHOULD_FAIL false
 
-static void test_add_local_ip_address(sa_family_t family, const char *ip)
+static void test_add_local_ip_address(net_sa_family_t family, const char *ip)
 {
-	if (family == AF_INET) {
-		struct sockaddr_in addr;
+	if (family == NET_AF_INET) {
+		struct net_sockaddr_in addr;
 		struct net_if_addr *ifaddr;
 
-		zsock_inet_pton(AF_INET, ip, &addr.sin_addr);
+		zsock_inet_pton(NET_AF_INET, ip, &addr.sin_addr);
 
 		ifaddr = net_if_ipv4_addr_add(net_if_get_default(),
 					      &addr.sin_addr,
@@ -47,10 +47,10 @@ static void test_add_local_ip_address(sa_family_t family, const char *ip)
 					      0);
 		zassert_not_null(ifaddr,
 				 "Cannot add IPv4 address %s", ip);
-	} else if (family == AF_INET6) {
-		struct sockaddr_in6 addr;
+	} else if (family == NET_AF_INET6) {
+		struct net_sockaddr_in6 addr;
 
-		zsock_inet_pton(AF_INET6, ip, &addr.sin6_addr);
+		zsock_inet_pton(NET_AF_INET6, ip, &addr.sin6_addr);
 
 		zassert_not_null(net_if_ipv6_addr_add(net_if_get_default(),
 						      &addr.sin6_addr,
@@ -65,45 +65,45 @@ static void *setup(void)
 	/* Make sure that both the specified IPv4 and IPv6 addresses are
 	 * added to the network interface.
 	 */
-	test_add_local_ip_address(AF_INET, TEST_MY_IPV4_ADDR);
-	test_add_local_ip_address(AF_INET6, TEST_MY_IPV6_ADDR);
+	test_add_local_ip_address(NET_AF_INET, TEST_MY_IPV4_ADDR);
+	test_add_local_ip_address(NET_AF_INET6, TEST_MY_IPV6_ADDR);
 
 	return NULL;
 }
 
-static inline void prepare_sock_tcp(sa_family_t family, const char *ip, uint16_t port,
-				       int *sock, struct sockaddr *addr)
+static inline void prepare_sock_tcp(net_sa_family_t family, const char *ip, uint16_t port,
+				       int *sock, struct net_sockaddr *addr)
 {
-	if (family == AF_INET) {
+	if (family == NET_AF_INET) {
 		prepare_sock_tcp_v4(ip,
 				    port,
 				    sock,
-				    (struct sockaddr_in *) addr);
-	} else if (family == AF_INET6) {
+				    (struct net_sockaddr_in *) addr);
+	} else if (family == NET_AF_INET6) {
 		prepare_sock_tcp_v6(ip,
 				    port,
 				    sock,
-				    (struct sockaddr_in6 *) addr);
+				    (struct net_sockaddr_in6 *) addr);
 	}
 }
 
-static inline void prepare_sock_udp(sa_family_t family, const char *ip, uint16_t port,
-				       int *sock, struct sockaddr *addr)
+static inline void prepare_sock_udp(net_sa_family_t family, const char *ip, uint16_t port,
+				       int *sock, struct net_sockaddr *addr)
 {
-	if (family == AF_INET) {
+	if (family == NET_AF_INET) {
 		prepare_sock_udp_v4(ip,
 				    port,
 				    sock,
-				    (struct sockaddr_in *) addr);
-	} else if (family == AF_INET6) {
+				    (struct net_sockaddr_in *) addr);
+	} else if (family == NET_AF_INET6) {
 		prepare_sock_udp_v6(ip,
 				    port,
 				    sock,
-				    (struct sockaddr_in6 *) addr);
+				    (struct net_sockaddr_in6 *) addr);
 	}
 }
 
-static void test_getsocketopt_reuseaddr(int sock, void *optval, socklen_t *optlen)
+static void test_getsocketopt_reuseaddr(int sock, void *optval, net_socklen_t *optlen)
 {
 	int ret;
 
@@ -111,7 +111,7 @@ static void test_getsocketopt_reuseaddr(int sock, void *optval, socklen_t *optle
 	zassert_equal(ret, 0, "getsocketopt() failed with error %d", errno);
 }
 
-static void test_setsocketopt_reuseaddr(int sock, void *optval, socklen_t optlen)
+static void test_setsocketopt_reuseaddr(int sock, void *optval, net_socklen_t optlen)
 {
 	int ret;
 
@@ -126,7 +126,7 @@ static void test_enable_reuseaddr(int sock)
 	test_setsocketopt_reuseaddr(sock, &value, sizeof(value));
 }
 
-static void test_getsocketopt_reuseport(int sock, void *optval, socklen_t *optlen)
+static void test_getsocketopt_reuseport(int sock, void *optval, net_socklen_t *optlen)
 {
 	int ret;
 
@@ -134,7 +134,7 @@ static void test_getsocketopt_reuseport(int sock, void *optval, socklen_t *optle
 	zassert_equal(ret, 0, "getsocketopt() failed with error %d", errno);
 }
 
-static void test_setsocketopt_reuseport(int sock, void *optval, socklen_t optlen)
+static void test_setsocketopt_reuseport(int sock, void *optval, net_socklen_t optlen)
 {
 	int ret;
 
@@ -149,7 +149,7 @@ static void test_enable_reuseport(int sock)
 	test_setsocketopt_reuseport(sock, &value, sizeof(value));
 }
 
-static void test_bind_success(int sock, const struct sockaddr *addr, socklen_t addrlen)
+static void test_bind_success(int sock, const struct net_sockaddr *addr, net_socklen_t addrlen)
 {
 	int ret;
 
@@ -157,7 +157,7 @@ static void test_bind_success(int sock, const struct sockaddr *addr, socklen_t a
 	zassert_equal(ret, 0, "bind() failed with error %d", errno);
 }
 
-static void test_bind_fail(int sock, const struct sockaddr *addr, socklen_t addrlen)
+static void test_bind_fail(int sock, const struct net_sockaddr *addr, net_socklen_t addrlen)
 {
 	int ret;
 
@@ -174,7 +174,7 @@ static void test_listen(int sock)
 		      "listen() failed with error %d", errno);
 }
 
-static void test_connect_success(int sock, const struct sockaddr *addr, socklen_t addrlen)
+static void test_connect_success(int sock, const struct net_sockaddr *addr, net_socklen_t addrlen)
 {
 	int ret;
 
@@ -187,7 +187,7 @@ static void test_connect_success(int sock, const struct sockaddr *addr, socklen_
 	}
 }
 
-static void test_connect_fail(int sock, const struct sockaddr *addr, socklen_t addrlen)
+static void test_connect_fail(int sock, const struct net_sockaddr *addr, net_socklen_t addrlen)
 {
 	int ret;
 
@@ -197,7 +197,7 @@ static void test_connect_fail(int sock, const struct sockaddr *addr, socklen_t a
 	zassert_equal(errno, EADDRINUSE, "connect() returned unexpected errno (%d)", errno);
 }
 
-static int test_accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
+static int test_accept(int sock, struct net_sockaddr *addr, net_socklen_t *addrlen)
 {
 	int new_sock = zsock_accept(sock, addr, addrlen);
 
@@ -207,7 +207,7 @@ static int test_accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
 }
 
 static void test_sendto(int sock, const void *buf, size_t len, int flags,
-		       const struct sockaddr *dest_addr, socklen_t addrlen)
+		       const struct net_sockaddr *dest_addr, net_socklen_t addrlen)
 {
 	int ret;
 
@@ -216,7 +216,7 @@ static void test_sendto(int sock, const void *buf, size_t len, int flags,
 }
 
 static void test_recvfrom_success(int sock, void *buf, size_t max_len, int flags,
-			 struct sockaddr *src_addr, socklen_t *addrlen)
+			 struct net_sockaddr *src_addr, net_socklen_t *addrlen)
 {
 	int ret;
 
@@ -225,7 +225,7 @@ static void test_recvfrom_success(int sock, void *buf, size_t max_len, int flags
 }
 
 static void test_recvfrom_fail(int sock, void *buf, size_t max_len, int flags,
-			 struct sockaddr *src_addr, socklen_t *addrlen)
+			 struct net_sockaddr *src_addr, net_socklen_t *addrlen)
 {
 	int ret;
 
@@ -257,9 +257,9 @@ ZTEST_USER(socket_reuseaddr_test_suite, test_enable_disable)
 {
 	int server_sock = -1;
 	int value = -1;
-	socklen_t value_size = sizeof(int);
+	net_socklen_t value_size = sizeof(int);
 
-	server_sock = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	server_sock = zsock_socket(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP);
 	zassert_true(server_sock >= 0, "socket open failed");
 
 	/* Read initial value */
@@ -295,7 +295,7 @@ ZTEST_USER(socket_reuseaddr_test_suite, test_enable_disable)
 }
 
 
-static void test_reuseaddr_unspecified_specified_common(sa_family_t family,
+static void test_reuseaddr_unspecified_specified_common(net_sa_family_t family,
 							char const *first_ip,
 							char const *second_ip,
 							bool should_succeed)
@@ -303,8 +303,8 @@ static void test_reuseaddr_unspecified_specified_common(sa_family_t family,
 	int server_sock1 = -1;
 	int server_sock2 = -1;
 
-	struct sockaddr bind_addr1;
-	struct sockaddr bind_addr2;
+	struct net_sockaddr bind_addr1;
+	struct net_sockaddr bind_addr2;
 
 	/* Create the sockets */
 	prepare_sock_tcp(family, first_ip, LOCAL_PORT, &server_sock1, &bind_addr1);
@@ -332,7 +332,7 @@ static void test_reuseaddr_unspecified_specified_common(sa_family_t family,
 
 ZTEST_USER(socket_reuseaddr_test_suite, test_ipv4_first_unspecified)
 {
-	test_reuseaddr_unspecified_specified_common(AF_INET,
+	test_reuseaddr_unspecified_specified_common(NET_AF_INET,
 						    TEST_IPV4_ANY_ADDR,
 						    TEST_MY_IPV4_ADDR,
 						    SHOULD_SUCCEED);
@@ -340,7 +340,7 @@ ZTEST_USER(socket_reuseaddr_test_suite, test_ipv4_first_unspecified)
 
 ZTEST_USER(socket_reuseaddr_test_suite, test_ipv6_first_unspecified)
 {
-	test_reuseaddr_unspecified_specified_common(AF_INET6,
+	test_reuseaddr_unspecified_specified_common(NET_AF_INET6,
 						    TEST_IPV6_ANY_ADDR,
 						    TEST_MY_IPV6_ADDR,
 						    SHOULD_SUCCEED);
@@ -348,7 +348,7 @@ ZTEST_USER(socket_reuseaddr_test_suite, test_ipv6_first_unspecified)
 
 ZTEST_USER(socket_reuseaddr_test_suite, test_ipv4_second_unspecified)
 {
-	test_reuseaddr_unspecified_specified_common(AF_INET,
+	test_reuseaddr_unspecified_specified_common(NET_AF_INET,
 						    TEST_MY_IPV4_ADDR,
 						    TEST_IPV4_ANY_ADDR,
 						    SHOULD_SUCCEED);
@@ -356,7 +356,7 @@ ZTEST_USER(socket_reuseaddr_test_suite, test_ipv4_second_unspecified)
 
 ZTEST_USER(socket_reuseaddr_test_suite, test_ipv6_second_unspecified)
 {
-	test_reuseaddr_unspecified_specified_common(AF_INET6,
+	test_reuseaddr_unspecified_specified_common(NET_AF_INET6,
 						    TEST_MY_IPV6_ADDR,
 						    TEST_IPV6_ANY_ADDR,
 						    SHOULD_SUCCEED);
@@ -364,7 +364,7 @@ ZTEST_USER(socket_reuseaddr_test_suite, test_ipv6_second_unspecified)
 
 ZTEST_USER(socket_reuseaddr_test_suite, test_ipv4_both_unspecified)
 {
-	test_reuseaddr_unspecified_specified_common(AF_INET,
+	test_reuseaddr_unspecified_specified_common(NET_AF_INET,
 						    TEST_IPV4_ANY_ADDR,
 						    TEST_IPV4_ANY_ADDR,
 						    SHOULD_FAIL);
@@ -372,22 +372,22 @@ ZTEST_USER(socket_reuseaddr_test_suite, test_ipv4_both_unspecified)
 
 ZTEST_USER(socket_reuseaddr_test_suite, test_ipv6_both_unspecified)
 {
-	test_reuseaddr_unspecified_specified_common(AF_INET6,
+	test_reuseaddr_unspecified_specified_common(NET_AF_INET6,
 						    TEST_IPV6_ANY_ADDR,
 						    TEST_IPV6_ANY_ADDR,
 						    SHOULD_FAIL);
 }
 
 
-static void test_reuseaddr_tcp_listening_common(sa_family_t family,
+static void test_reuseaddr_tcp_listening_common(net_sa_family_t family,
 						char const *first_ip,
 						char const *second_ip)
 {
 	int server_sock1 = -1;
 	int server_sock2 = -1;
 
-	struct sockaddr bind_addr1;
-	struct sockaddr bind_addr2;
+	struct net_sockaddr bind_addr1;
+	struct net_sockaddr bind_addr2;
 
 	/* Create the sockets */
 	prepare_sock_tcp(family, first_ip, LOCAL_PORT, &server_sock1, &bind_addr1);
@@ -403,7 +403,7 @@ static void test_reuseaddr_tcp_listening_common(sa_family_t family,
 	test_enable_reuseaddr(server_sock2);
 
 	/* Try to bind the second socket, should fail */
-	test_bind_fail(server_sock2, (struct sockaddr *) &bind_addr2, sizeof(bind_addr2));
+	test_bind_fail(server_sock2, (struct net_sockaddr *) &bind_addr2, sizeof(bind_addr2));
 
 	zsock_close(server_sock1);
 	zsock_close(server_sock2);
@@ -411,34 +411,34 @@ static void test_reuseaddr_tcp_listening_common(sa_family_t family,
 
 ZTEST_USER(socket_reuseaddr_test_suite, test_ipv4_tcp_unspecified_listening)
 {
-	test_reuseaddr_tcp_listening_common(AF_INET,
+	test_reuseaddr_tcp_listening_common(NET_AF_INET,
 					    TEST_IPV4_ANY_ADDR,
 					    TEST_MY_IPV4_ADDR);
 }
 
 ZTEST_USER(socket_reuseaddr_test_suite, test_ipv6_tcp_unspecified_listening)
 {
-	test_reuseaddr_tcp_listening_common(AF_INET6,
+	test_reuseaddr_tcp_listening_common(NET_AF_INET6,
 					    TEST_IPV6_ANY_ADDR,
 					    TEST_MY_IPV6_ADDR);
 }
 
 ZTEST_USER(socket_reuseaddr_test_suite, test_ipv4_tcp_specified_listening)
 {
-	test_reuseaddr_tcp_listening_common(AF_INET,
+	test_reuseaddr_tcp_listening_common(NET_AF_INET,
 					    TEST_MY_IPV4_ADDR,
 					    TEST_IPV4_ANY_ADDR);
 }
 
 ZTEST_USER(socket_reuseaddr_test_suite, test_ipv6_tcp_specified_listening)
 {
-	test_reuseaddr_tcp_listening_common(AF_INET6,
+	test_reuseaddr_tcp_listening_common(NET_AF_INET6,
 					    TEST_MY_IPV6_ADDR,
 					    TEST_IPV6_ANY_ADDR);
 }
 
 
-static void test_reuseaddr_tcp_tcp_time_wait_common(sa_family_t family,
+static void test_reuseaddr_tcp_tcp_time_wait_common(net_sa_family_t family,
 						    char const *first_ip,
 						    char const *second_ip)
 {
@@ -446,17 +446,17 @@ static void test_reuseaddr_tcp_tcp_time_wait_common(sa_family_t family,
 	int client_sock = -1;
 	int accept_sock = -1;
 
-	struct sockaddr bind_addr;
-	struct sockaddr conn_addr;
+	struct net_sockaddr bind_addr;
+	struct net_sockaddr conn_addr;
 
-	struct sockaddr accept_addr;
-	socklen_t accept_addrlen = sizeof(accept_addr);
+	struct net_sockaddr accept_addr;
+	net_socklen_t accept_addrlen = sizeof(accept_addr);
 
 	prepare_sock_tcp(family, first_ip, LOCAL_PORT, &server_sock, &bind_addr);
 	prepare_sock_tcp(family, second_ip, LOCAL_PORT, &client_sock, &conn_addr);
 
 	/* Bind the server socket */
-	test_bind_success(server_sock, (struct sockaddr *) &bind_addr, sizeof(bind_addr));
+	test_bind_success(server_sock, (struct net_sockaddr *) &bind_addr, sizeof(bind_addr));
 
 	/* Start listening on the server socket */
 	test_listen(server_sock);
@@ -480,13 +480,13 @@ static void test_reuseaddr_tcp_tcp_time_wait_common(sa_family_t family,
 	prepare_sock_tcp(family, first_ip, LOCAL_PORT, &server_sock, &bind_addr);
 
 	/* Bind the server socket, should fail */
-	test_bind_fail(server_sock, (struct sockaddr *) &bind_addr, sizeof(bind_addr));
+	test_bind_fail(server_sock, (struct net_sockaddr *) &bind_addr, sizeof(bind_addr));
 
 	/* Enable SO_REUSEADDR option for the new server socket */
 	test_enable_reuseaddr(server_sock);
 
 	/* Try to bind the new server socket again, should work now */
-	test_bind_success(server_sock, (struct sockaddr *) &bind_addr, sizeof(bind_addr));
+	test_bind_success(server_sock, (struct net_sockaddr *) &bind_addr, sizeof(bind_addr));
 
 	zsock_close(client_sock);
 	zsock_close(server_sock);
@@ -499,28 +499,28 @@ static void test_reuseaddr_tcp_tcp_time_wait_common(sa_family_t family,
 
 ZTEST_USER(socket_reuseaddr_test_suite, test_ipv4_tcp_time_wait_unspecified)
 {
-	test_reuseaddr_tcp_tcp_time_wait_common(AF_INET,
+	test_reuseaddr_tcp_tcp_time_wait_common(NET_AF_INET,
 						TEST_IPV4_ANY_ADDR,
 						TEST_MY_IPV4_ADDR);
 }
 
 ZTEST_USER(socket_reuseaddr_test_suite, test_ipv6_tcp_time_wait_unspecified)
 {
-	test_reuseaddr_tcp_tcp_time_wait_common(AF_INET6,
+	test_reuseaddr_tcp_tcp_time_wait_common(NET_AF_INET6,
 						TEST_IPV6_ANY_ADDR,
 						TEST_MY_IPV6_ADDR);
 }
 
 ZTEST_USER(socket_reuseaddr_test_suite, test_ipv4_tcp_time_wait_specified)
 {
-	test_reuseaddr_tcp_tcp_time_wait_common(AF_INET,
+	test_reuseaddr_tcp_tcp_time_wait_common(NET_AF_INET,
 						TEST_MY_IPV4_ADDR,
 						TEST_MY_IPV4_ADDR);
 }
 
 ZTEST_USER(socket_reuseaddr_test_suite, test_ipv6_tcp_time_wait_specified)
 {
-	test_reuseaddr_tcp_tcp_time_wait_common(AF_INET6,
+	test_reuseaddr_tcp_tcp_time_wait_common(NET_AF_INET6,
 						TEST_MY_IPV6_ADDR,
 						TEST_MY_IPV6_ADDR);
 }
@@ -534,9 +534,9 @@ ZTEST_USER(socket_reuseport_test_suite, test_enable_disable)
 	int server_sock = -1;
 
 	int value = -1;
-	socklen_t value_size = sizeof(int);
+	net_socklen_t value_size = sizeof(int);
 
-	server_sock = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	server_sock = zsock_socket(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP);
 	zassert_true(server_sock >= 0, "socket open failed");
 
 	/* Read initial value */
@@ -572,7 +572,7 @@ ZTEST_USER(socket_reuseport_test_suite, test_enable_disable)
 }
 
 
-static void test_reuseport_unspecified_specified_common(sa_family_t family,
+static void test_reuseport_unspecified_specified_common(net_sa_family_t family,
 							char const *first_ip,
 							char const *second_ip,
 							bool should_succeed)
@@ -580,8 +580,8 @@ static void test_reuseport_unspecified_specified_common(sa_family_t family,
 	int server_sock1 = -1;
 	int server_sock2 = -1;
 
-	struct sockaddr bind_addr1;
-	struct sockaddr bind_addr2;
+	struct net_sockaddr bind_addr1;
+	struct net_sockaddr bind_addr2;
 
 	/* Create the sockets */
 	prepare_sock_tcp(family, first_ip, LOCAL_PORT, &server_sock1, &bind_addr1);
@@ -614,7 +614,7 @@ static void test_reuseport_unspecified_specified_common(sa_family_t family,
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv4_both_unspecified_bad)
 {
-	test_reuseport_unspecified_specified_common(AF_INET,
+	test_reuseport_unspecified_specified_common(NET_AF_INET,
 						    TEST_IPV4_ANY_ADDR,
 						    TEST_IPV4_ANY_ADDR,
 						    SHOULD_FAIL);
@@ -622,7 +622,7 @@ ZTEST_USER(socket_reuseport_test_suite, test_ipv4_both_unspecified_bad)
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv6_both_unspecified_bad)
 {
-	test_reuseport_unspecified_specified_common(AF_INET6,
+	test_reuseport_unspecified_specified_common(NET_AF_INET6,
 						    TEST_IPV6_ANY_ADDR,
 						    TEST_IPV6_ANY_ADDR,
 						    SHOULD_FAIL);
@@ -630,7 +630,7 @@ ZTEST_USER(socket_reuseport_test_suite, test_ipv6_both_unspecified_bad)
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv4_both_unspecified_good)
 {
-	test_reuseport_unspecified_specified_common(AF_INET,
+	test_reuseport_unspecified_specified_common(NET_AF_INET,
 						    TEST_IPV4_ANY_ADDR,
 						    TEST_IPV4_ANY_ADDR,
 						    SHOULD_SUCCEED);
@@ -638,7 +638,7 @@ ZTEST_USER(socket_reuseport_test_suite, test_ipv4_both_unspecified_good)
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv6_both_unspecified_good)
 {
-	test_reuseport_unspecified_specified_common(AF_INET6,
+	test_reuseport_unspecified_specified_common(NET_AF_INET6,
 						    TEST_IPV6_ANY_ADDR,
 						    TEST_IPV6_ANY_ADDR,
 						    SHOULD_SUCCEED);
@@ -646,7 +646,7 @@ ZTEST_USER(socket_reuseport_test_suite, test_ipv6_both_unspecified_good)
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv4_both_specified_bad)
 {
-	test_reuseport_unspecified_specified_common(AF_INET,
+	test_reuseport_unspecified_specified_common(NET_AF_INET,
 						    TEST_MY_IPV4_ADDR,
 						    TEST_MY_IPV4_ADDR,
 						    SHOULD_FAIL);
@@ -654,7 +654,7 @@ ZTEST_USER(socket_reuseport_test_suite, test_ipv4_both_specified_bad)
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv6_both_specified_bad)
 {
-	test_reuseport_unspecified_specified_common(AF_INET6,
+	test_reuseport_unspecified_specified_common(NET_AF_INET6,
 						    TEST_MY_IPV6_ADDR,
 						    TEST_MY_IPV6_ADDR,
 						    SHOULD_FAIL);
@@ -662,7 +662,7 @@ ZTEST_USER(socket_reuseport_test_suite, test_ipv6_both_specified_bad)
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv4_both_specified_good)
 {
-	test_reuseport_unspecified_specified_common(AF_INET,
+	test_reuseport_unspecified_specified_common(NET_AF_INET,
 						    TEST_MY_IPV4_ADDR,
 						    TEST_MY_IPV4_ADDR,
 						    SHOULD_SUCCEED);
@@ -670,7 +670,7 @@ ZTEST_USER(socket_reuseport_test_suite, test_ipv4_both_specified_good)
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv6_both_specified_good)
 {
-	test_reuseport_unspecified_specified_common(AF_INET6,
+	test_reuseport_unspecified_specified_common(NET_AF_INET6,
 						    TEST_MY_IPV6_ADDR,
 						    TEST_MY_IPV6_ADDR,
 						    SHOULD_SUCCEED);
@@ -678,7 +678,7 @@ ZTEST_USER(socket_reuseport_test_suite, test_ipv6_both_specified_good)
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv4_first_unspecified_bad)
 {
-	test_reuseport_unspecified_specified_common(AF_INET,
+	test_reuseport_unspecified_specified_common(NET_AF_INET,
 						    TEST_IPV4_ANY_ADDR,
 						    TEST_MY_IPV4_ADDR,
 						    SHOULD_FAIL);
@@ -686,7 +686,7 @@ ZTEST_USER(socket_reuseport_test_suite, test_ipv4_first_unspecified_bad)
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv6_first_unspecified_bad)
 {
-	test_reuseport_unspecified_specified_common(AF_INET6,
+	test_reuseport_unspecified_specified_common(NET_AF_INET6,
 						    TEST_IPV6_ANY_ADDR,
 						    TEST_MY_IPV6_ADDR,
 						    SHOULD_FAIL);
@@ -694,7 +694,7 @@ ZTEST_USER(socket_reuseport_test_suite, test_ipv6_first_unspecified_bad)
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv4_first_unspecified_good)
 {
-	test_reuseport_unspecified_specified_common(AF_INET,
+	test_reuseport_unspecified_specified_common(NET_AF_INET,
 						    TEST_IPV4_ANY_ADDR,
 						    TEST_MY_IPV4_ADDR,
 						    SHOULD_SUCCEED);
@@ -702,7 +702,7 @@ ZTEST_USER(socket_reuseport_test_suite, test_ipv4_first_unspecified_good)
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv6_first_unspecified_good)
 {
-	test_reuseport_unspecified_specified_common(AF_INET6,
+	test_reuseport_unspecified_specified_common(NET_AF_INET6,
 						    TEST_IPV6_ANY_ADDR,
 						    TEST_MY_IPV6_ADDR,
 						    SHOULD_SUCCEED);
@@ -710,7 +710,7 @@ ZTEST_USER(socket_reuseport_test_suite, test_ipv6_first_unspecified_good)
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv4_second_unspecified_bad)
 {
-	test_reuseport_unspecified_specified_common(AF_INET,
+	test_reuseport_unspecified_specified_common(NET_AF_INET,
 						    TEST_MY_IPV4_ADDR,
 						    TEST_IPV4_ANY_ADDR,
 						    SHOULD_FAIL);
@@ -718,7 +718,7 @@ ZTEST_USER(socket_reuseport_test_suite, test_ipv4_second_unspecified_bad)
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv6_second_unspecified_bad)
 {
-	test_reuseport_unspecified_specified_common(AF_INET6,
+	test_reuseport_unspecified_specified_common(NET_AF_INET6,
 						    TEST_MY_IPV6_ADDR,
 						    TEST_IPV6_ANY_ADDR,
 						    SHOULD_FAIL);
@@ -726,7 +726,7 @@ ZTEST_USER(socket_reuseport_test_suite, test_ipv6_second_unspecified_bad)
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv4_second_unspecified_good)
 {
-	test_reuseport_unspecified_specified_common(AF_INET,
+	test_reuseport_unspecified_specified_common(NET_AF_INET,
 						    TEST_MY_IPV4_ADDR,
 						    TEST_IPV4_ANY_ADDR,
 						    SHOULD_SUCCEED);
@@ -734,7 +734,7 @@ ZTEST_USER(socket_reuseport_test_suite, test_ipv4_second_unspecified_good)
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv6_second_unspecified_good)
 {
-	test_reuseport_unspecified_specified_common(AF_INET6,
+	test_reuseport_unspecified_specified_common(NET_AF_INET6,
 						    TEST_MY_IPV6_ADDR,
 						    TEST_IPV6_ANY_ADDR,
 						    SHOULD_SUCCEED);
@@ -748,7 +748,7 @@ enum sockets_reuseport_enabled {
 	BOTH_SET
 };
 
-static void test_reuseport_udp_server_client_common(sa_family_t family,
+static void test_reuseport_udp_server_client_common(net_sa_family_t family,
 						    char const *ip,
 						    enum sockets_reuseport_enabled setup)
 {
@@ -756,11 +756,11 @@ static void test_reuseport_udp_server_client_common(sa_family_t family,
 	int client_sock = -1;
 	int accept_sock = 1;
 
-	struct sockaddr server_addr;
-	struct sockaddr client_addr;
+	struct net_sockaddr server_addr;
+	struct net_sockaddr client_addr;
 
-	struct sockaddr accept_addr;
-	socklen_t accept_addr_len = sizeof(accept_addr);
+	struct net_sockaddr accept_addr;
+	net_socklen_t accept_addr_len = sizeof(accept_addr);
 
 	char tx_buf = 0x55;
 	char rx_buf;
@@ -775,10 +775,10 @@ static void test_reuseport_udp_server_client_common(sa_family_t family,
 	}
 
 	/* Bind server socket */
-	test_bind_success(server_sock, (struct sockaddr *) &server_addr, sizeof(server_addr));
+	test_bind_success(server_sock, (struct net_sockaddr *) &server_addr, sizeof(server_addr));
 
 	/* Bind client socket (on a random port) */
-	test_bind_success(client_sock, (struct sockaddr *) &client_addr, sizeof(client_addr));
+	test_bind_success(client_sock, (struct net_sockaddr *) &client_addr, sizeof(client_addr));
 
 	/* Send message from client to server */
 	test_sendto(client_sock, &tx_buf, sizeof(tx_buf), 0, &server_addr, sizeof(server_addr));
@@ -793,7 +793,7 @@ static void test_reuseport_udp_server_client_common(sa_family_t family,
 	zassert_equal(rx_buf, tx_buf, "wrong data");
 
 	/* Create a more specific socket to have a direct connection to the new client */
-	accept_sock = zsock_socket(family, SOCK_DGRAM, IPPROTO_UDP);
+	accept_sock = zsock_socket(family, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 	zassert_true(accept_sock >= 0, "socket open failed");
 
 	/* Make sure we can bind to the address:port */
@@ -804,11 +804,11 @@ static void test_reuseport_udp_server_client_common(sa_family_t family,
 	/* Try to bind new client socket */
 	if (setup == BOTH_SET) {
 		/* Should succeed */
-		test_bind_success(accept_sock, (struct sockaddr *) &server_addr,
+		test_bind_success(accept_sock, (struct net_sockaddr *) &server_addr,
 				  sizeof(server_addr));
 	} else {
 		/* Should fail */
-		test_bind_fail(accept_sock, (struct sockaddr *) &server_addr,
+		test_bind_fail(accept_sock, (struct net_sockaddr *) &server_addr,
 			       sizeof(server_addr));
 	}
 
@@ -847,35 +847,35 @@ static void test_reuseport_udp_server_client_common(sa_family_t family,
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv4_udp_bad_both_not_set)
 {
-	test_reuseport_udp_server_client_common(AF_INET,
+	test_reuseport_udp_server_client_common(NET_AF_INET,
 						TEST_MY_IPV4_ADDR,
 						NONE_SET);
 }
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv6_udp_bad_both_not_set)
 {
-	test_reuseport_udp_server_client_common(AF_INET6,
+	test_reuseport_udp_server_client_common(NET_AF_INET6,
 						TEST_MY_IPV6_ADDR,
 						NONE_SET);
 }
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv4_udp_bad_first_not_set)
 {
-	test_reuseport_udp_server_client_common(AF_INET,
+	test_reuseport_udp_server_client_common(NET_AF_INET,
 						TEST_MY_IPV4_ADDR,
 						SECOND_SET);
 }
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv6_udp_bad_first_not_set)
 {
-	test_reuseport_udp_server_client_common(AF_INET6,
+	test_reuseport_udp_server_client_common(NET_AF_INET6,
 						TEST_MY_IPV6_ADDR,
 						SECOND_SET);
 }
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv4_udp_bad_second_not_set)
 {
-	test_reuseport_udp_server_client_common(AF_INET,
+	test_reuseport_udp_server_client_common(NET_AF_INET,
 						TEST_MY_IPV4_ADDR,
 						FIRST_SET);
 }
@@ -883,27 +883,27 @@ ZTEST_USER(socket_reuseport_test_suite, test_ipv4_udp_bad_second_not_set)
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv6_udp_bad_second_not_set)
 {
-	test_reuseport_udp_server_client_common(AF_INET6,
+	test_reuseport_udp_server_client_common(NET_AF_INET6,
 						TEST_MY_IPV6_ADDR,
 						FIRST_SET);
 }
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv4_udp_good)
 {
-	test_reuseport_udp_server_client_common(AF_INET,
+	test_reuseport_udp_server_client_common(NET_AF_INET,
 						TEST_MY_IPV4_ADDR,
 						BOTH_SET);
 }
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv6_udp_good)
 {
-	test_reuseport_udp_server_client_common(AF_INET6,
+	test_reuseport_udp_server_client_common(NET_AF_INET6,
 						TEST_MY_IPV6_ADDR,
 						BOTH_SET);
 }
 
 
-static void test_reuseport_tcp_identical_clients_common(sa_family_t family,
+static void test_reuseport_tcp_identical_clients_common(net_sa_family_t family,
 							char const *server_ip,
 							char const *client_ip)
 {
@@ -912,12 +912,12 @@ static void test_reuseport_tcp_identical_clients_common(sa_family_t family,
 	int client_sock2 = -1;
 	int accept_sock = 1;
 
-	struct sockaddr server_addr;
-	struct sockaddr client_addr;
-	struct sockaddr connect_addr;
+	struct net_sockaddr server_addr;
+	struct net_sockaddr client_addr;
+	struct net_sockaddr connect_addr;
 
-	struct sockaddr accept_addr;
-	socklen_t accept_addr_len = sizeof(accept_addr);
+	struct net_sockaddr accept_addr;
+	net_socklen_t accept_addr_len = sizeof(accept_addr);
 
 	/* Create sockets */
 	prepare_sock_tcp(family, server_ip, LOCAL_PORT, &server_sock, &server_addr);
@@ -945,7 +945,7 @@ static void test_reuseport_tcp_identical_clients_common(sa_family_t family,
 	accept_sock = test_accept(server_sock, &accept_addr, &accept_addr_len);
 
 	/* Connect the second client, should fail */
-	test_connect_fail(client_sock2, (struct sockaddr *)&connect_addr, sizeof(connect_addr));
+	test_connect_fail(client_sock2, (struct net_sockaddr *)&connect_addr, sizeof(connect_addr));
 
 	zsock_close(accept_sock);
 	zsock_close(client_sock1);
@@ -960,7 +960,7 @@ static void test_reuseport_tcp_identical_clients_common(sa_family_t family,
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv4_tcp_identical_clients)
 {
-	test_reuseport_tcp_identical_clients_common(AF_INET,
+	test_reuseport_tcp_identical_clients_common(NET_AF_INET,
 						    TEST_IPV4_ANY_ADDR,
 						    TEST_MY_IPV4_ADDR);
 }
@@ -968,7 +968,7 @@ ZTEST_USER(socket_reuseport_test_suite, test_ipv4_tcp_identical_clients)
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv6_tcp_identical_clients)
 {
-	test_reuseport_tcp_identical_clients_common(AF_INET6,
+	test_reuseport_tcp_identical_clients_common(NET_AF_INET6,
 						    TEST_IPV6_ANY_ADDR,
 						    TEST_MY_IPV6_ADDR);
 }

@@ -111,7 +111,7 @@ static int join_coap_multicast_group(uint16_t port)
 {
 	static struct in6_addr my_addr = MY_IP6ADDR;
 	struct sockaddr_in6 mcast_addr = {
-		.sin6_family = AF_INET6,
+		.sin6_family = NET_AF_INET6,
 		.sin6_addr = ALL_NODES_LOCAL_COAP_MCAST,
 		.sin6_port = htons(port) };
 	struct net_if_addr *ifaddr;
@@ -125,7 +125,7 @@ static int join_coap_multicast_group(uint16_t port)
 	}
 
 #if defined(CONFIG_NET_CONFIG_SETTINGS)
-	if (net_addr_pton(AF_INET6,
+	if (net_addr_pton(NET_AF_INET6,
 			  CONFIG_NET_CONFIG_MY_IPV6_ADDR,
 			  &my_addr) < 0) {
 		LOG_ERR("Invalid IPv6 address %s",

@@ -123,15 +123,15 @@ static int ocpp_connect_to_cs(struct ocpp_info *ctx)
 	int ret;
 	struct websocket_request config = {0};
 	struct ocpp_upstream_info *ui = &ctx->ui;
-	struct sockaddr addr_buf;
-	struct sockaddr *addr = &addr_buf;
+	struct net_sockaddr addr_buf;
+	struct net_sockaddr *addr = &addr_buf;
 	int addr_size;
 
-	if (ui->csi.sa_family == AF_INET) {
+	if (ui->csi.sa_family == NET_AF_INET) {
 #if defined(CONFIG_NET_IPV4)
-		addr_size = sizeof(struct sockaddr_in);
+		addr_size = sizeof(struct net_sockaddr_in);
 		addr->sa_family = ui->csi.sa_family;
-		net_sin(addr)->sin_port = htons(ui->csi.port);
+		net_sin(addr)->sin_port = net_htons(ui->csi.port);
 		zsock_inet_pton(addr->sa_family, ui->csi.cs_ip,
 				&net_sin(addr)->sin_addr);
 #else
@@ -139,9 +139,9 @@ static int ocpp_connect_to_cs(struct ocpp_info *ctx)
 #endif
 	} else {
 #if defined(CONFIG_NET_IPV6)
-		addr_size = sizeof(struct sockaddr_in6);
+		addr_size = sizeof(struct net_sockaddr_in6);
 		addr->sa_family = ui->csi.sa_family;
-		net_sin6(addr)->sin6_port = htons(ui->csi.port);
+		net_sin6(addr)->sin6_port = net_htons(ui->csi.port);
 		zsock_inet_pton(addr->sa_family, ui->csi.cs_ip,
 				&net_sin6(addr)->sin6_addr);
 #else
@@ -153,8 +153,8 @@ static int ocpp_connect_to_cs(struct ocpp_info *ctx)
 		zsock_close(ui->tcpsock);
 	}
 
-	ui->tcpsock = zsock_socket(ui->csi.sa_family, SOCK_STREAM,
-				   IPPROTO_TCP);
+	ui->tcpsock = zsock_socket(ui->csi.sa_family, NET_SOCK_STREAM,
+				   NET_IPPROTO_TCP);
 	if (ui->tcpsock < 0) {
 		return -errno;
 	}

@@ -35,23 +35,23 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #endif
 
 /* Interface 1 addresses */
-static struct in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
+static struct net_in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
 /* Interface 2 addresses */
-static struct in6_addr my_addr2 = { { { 0x20, 0x01, 0x0d, 0xb8, 2, 0, 0, 0,
+static struct net_in6_addr my_addr2 = { { { 0x20, 0x01, 0x0d, 0xb8, 2, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
 /* Interface 3 addresses */
-static struct in6_addr my_addr3 = { { { 0x20, 0x01, 0x0d, 0xb8, 3, 0, 0, 0,
+static struct net_in6_addr my_addr3 = { { { 0x20, 0x01, 0x0d, 0xb8, 3, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
 /* Extra address is assigned to ll_addr */
-static struct in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
 				       0, 0, 0, 0xf2, 0xaa, 0x29, 0x02,
 				       0x04 } } };
 
-static struct in6_addr in6addr_mcast = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr in6addr_mcast = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
 static struct net_if *iface1;
@@ -350,7 +350,7 @@ static void _recv_data(struct net_if *iface, struct net_pkt **pkt)
 	int ret;
 
 	*pkt = net_pkt_rx_alloc_with_buffer(iface, sizeof(data),
-					    AF_UNSPEC, 0, K_FOREVER);
+					    NET_AF_UNSPEC, 0, K_FOREVER);
 
 	net_pkt_ref(*pkt);
 

@@ -59,12 +59,12 @@ Example:
         if (status == DNS_EAI_INPROGRESS && info) {
                 char str[MAX_STR_LEN + 1];
 
-                if (info->ai_family == AF_INET) {
-                        net_addr_ntop(AF_INET,
+                if (info->ai_family == NET_AF_INET) {
+                        net_addr_ntop(NET_AF_INET,
                                       &net_sin(&info->ai_addr)->sin_addr,
                                       str, NET_IPV4_ADDR_LEN);
-                } else if (info->ai_family == AF_INET6) {
-                        net_addr_ntop(AF_INET6,
+                } else if (info->ai_family == NET_AF_INET6) {
+                        net_addr_ntop(NET_AF_INET6,
                                       &net_sin6(&info->ai_addr)->sin6_addr,
                                       str, NET_IPV6_ADDR_LEN);
                 } else if (info->ai_family == AF_LOCAL) {

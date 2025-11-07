@@ -59,7 +59,7 @@ static struct k_sem contexts_lock;
 static const struct socket_op_vtable websocket_fd_op_vtable;
 
 #if defined(CONFIG_NET_TEST)
-int verify_sent_and_received_msg(struct msghdr *msg, bool split_msg);
+int verify_sent_and_received_msg(struct net_msghdr *msg, bool split_msg);
 #endif
 
 static const char *opcode2str(enum websocket_opcode opcode)
@@ -434,7 +434,7 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 	/* Init parser FSM */
 	ctx->parser_state = WEBSOCKET_PARSER_STATE_OPCODE;
 
-	(void)sock_obj_core_alloc_find(ctx->real_sock, fd, SOCK_STREAM);
+	(void)sock_obj_core_alloc_find(ctx->real_sock, fd, NET_SOCK_STREAM);
 
 	return fd;
 
@@ -585,7 +585,7 @@ static int websocket_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 }
 
 #if !defined(CONFIG_NET_TEST)
-static int sendmsg_all(int sock, const struct msghdr *message, int flags,
+static int sendmsg_all(int sock, const struct net_msghdr *message, int flags,
 			const k_timepoint_t req_end_timepoint)
 {
 	int ret, i;
@@ -648,8 +648,8 @@ static int websocket_prepare_and_send(struct websocket_context *ctx,
 				      uint8_t *payload, size_t payload_len,
 				      int32_t timeout)
 {
-	struct iovec io_vector[2];
-	struct msghdr msg;
+	struct net_iovec io_vector[2];
+	struct net_msghdr msg;
 
 	io_vector[0].iov_base = header;
 	io_vector[0].iov_len = header_len;
@@ -1175,8 +1175,8 @@ static ssize_t websocket_write_vmeth(void *obj, const void *buffer,
 
 static ssize_t websocket_sendto_ctx(void *obj, const void *buf, size_t len,
 				    int flags,
-				    const struct sockaddr *dest_addr,
-				    socklen_t addrlen)
+				    const struct net_sockaddr *dest_addr,
+				    net_socklen_t addrlen)
 {
 	struct websocket_context *ctx = obj;
 	int32_t timeout = SYS_FOREVER_MS;
@@ -1192,8 +1192,8 @@ static ssize_t websocket_sendto_ctx(void *obj, const void *buf, size_t len,
 }
 
 static ssize_t websocket_recvfrom_ctx(void *obj, void *buf, size_t max_len,
-				      int flags, struct sockaddr *src_addr,
-				      socklen_t *addrlen)
+				      int flags, struct net_sockaddr *src_addr,
+				      net_socklen_t *addrlen)
 {
 	struct websocket_context *ctx = obj;
 	int32_t timeout = SYS_FOREVER_MS;
@@ -1248,7 +1248,7 @@ int websocket_register(int sock, uint8_t *recv_buf, size_t recv_buf_len)
 	ctx->recv_buf.count = 0;
 	ctx->parser_state = WEBSOCKET_PARSER_STATE_OPCODE;
 
-	(void)sock_obj_core_alloc_find(ctx->real_sock, fd, SOCK_STREAM);
+	(void)sock_obj_core_alloc_find(ctx->real_sock, fd, NET_SOCK_STREAM);
 
 	return fd;
 
