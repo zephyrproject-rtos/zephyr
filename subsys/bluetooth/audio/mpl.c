@@ -722,7 +722,8 @@ static void on_obj_selected(struct bt_ots *ots, struct bt_conn *conn,
 		/* Next track, if the next track has been explicitly set */
 		LOG_DBG("Next Track Object ID");
 		(void)setup_track_object(media_player.next.track);
-	} else if (id == media_player.group->track->next->id) {
+	} else if (media_player.group->track->next != NULL &&
+		   id == media_player.group->track->next->id) {
 		/* Next track, if next track has not been explicitly set */
 		LOG_DBG("Next Track Object ID");
 		(void)setup_track_object(media_player.group->track->next);
