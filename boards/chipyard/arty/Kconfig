@@ -1,0 +1,2 @@
+config BOARD_CHIPYARD_ARTY
+	select QEMU_TARGET

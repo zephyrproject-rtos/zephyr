@@ -1,0 +1,8 @@
+board:
+  name: chipyard_arty
+  full_name: Chipyard ARTY SoCs
+  vendor: chipyard 
+  socs:
+    - name: rocketchip_virt_riscv64
+      variants:
+        - name: smp
