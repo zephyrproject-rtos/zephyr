@@ -1488,7 +1488,10 @@ static void modem_cellular_init_power_off_event_handler(struct modem_cellular_da
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_CMUX_DISCONNECTED:
 		modem_cellular_stop_timer(data);
-		__fallthrough;
+		data->cmd_pipe = data->uart_pipe;
+		/* Assume the same time as reset pulse is enough to return from CMUX to AT mode */
+		modem_cellular_start_timer(data, K_MSEC(config->reset_pulse_duration_ms));
+		break;
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
 		/* Shutdown script can only be used if cmd_pipe is available, i.e. we are not in
 		 * some intermediary state without a pipe for commands available
