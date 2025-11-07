@@ -153,12 +153,12 @@ static void eth_xmc4xxx_tx_dma_descriptors_init(const struct device *dev)
 	for (int i = 0; i < NUM_TX_DMA_DESCRIPTORS - 1; i++) {
 		XMC_ETH_MAC_DMA_DESC_t *dma_desc = &tx_dma_desc[i];
 
-		dma_desc->buffer2 = (volatile uint32_t)&tx_dma_desc[i + 1];
+		dma_desc->buffer2 = (volatile uint32_t) & tx_dma_desc[i + 1];
 	}
 
 	/* TER: transmit end of ring - it is the last descriptor in ring */
 	tx_dma_desc[NUM_TX_DMA_DESCRIPTORS - 1].status |= ETH_MAC_DMA_TDES0_TER;
-	tx_dma_desc[NUM_TX_DMA_DESCRIPTORS - 1].buffer2 = (volatile uint32_t)&tx_dma_desc[0];
+	tx_dma_desc[NUM_TX_DMA_DESCRIPTORS - 1].buffer2 = (volatile uint32_t) & tx_dma_desc[0];
 }
 
 static void eth_xmc4xxx_flush_rx(const struct device *dev)
@@ -703,11 +703,11 @@ static int eth_xmc4xxx_rx_dma_descriptors_init(const struct device *dev)
 	for (int i = 0; i < NUM_RX_DMA_DESCRIPTORS - 1; i++) {
 		XMC_ETH_MAC_DMA_DESC_t *dma_desc = &rx_dma_desc[i];
 
-		dma_desc->buffer2 = (volatile uint32_t)&rx_dma_desc[i + 1];
+		dma_desc->buffer2 = (volatile uint32_t) & rx_dma_desc[i + 1];
 	}
 
 	rx_dma_desc[NUM_RX_DMA_DESCRIPTORS - 1].status |= ETH_MAC_DMA_TDES0_TER;
-	rx_dma_desc[NUM_RX_DMA_DESCRIPTORS - 1].buffer2 = (volatile uint32_t)&rx_dma_desc[0];
+	rx_dma_desc[NUM_RX_DMA_DESCRIPTORS - 1].buffer2 = (volatile uint32_t) & rx_dma_desc[0];
 
 	for (int i = 0; i < NUM_RX_DMA_DESCRIPTORS; i++) {
 		XMC_ETH_MAC_DMA_DESC_t *dma_desc = &rx_dma_desc[i];
