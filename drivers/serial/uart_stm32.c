@@ -2517,29 +2517,21 @@ static int uart_stm32_pm_action(const struct device *dev, enum pm_device_action 
 				STM32_DMA_FEATURES(index, dir)),
 #endif /* CONFIG_UART_ASYNC_API */
 
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API) || \
-	defined(CONFIG_PM)
-#define STM32_UART_IRQ_HANDLER_DECL(index)				\
-	static void uart_stm32_irq_config_func_##index(const struct device *dev);
-#define STM32_UART_IRQ_HANDLER(index)					\
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API) || defined(CONFIG_PM)
+#define STM32_UART_IRQ_HANDLER_DEFINE(index)					\
 	static void uart_stm32_irq_config_func_##index(const struct device *dev)\
 	{									\
 		IRQ_CONNECT(DT_INST_IRQN(index), DT_INST_IRQ(index, priority),	\
 			    uart_stm32_isr, DEVICE_DT_INST_GET(index), 0);	\
 		irq_enable(DT_INST_IRQN(index));				\
 	}
-#else
-#define STM32_UART_IRQ_HANDLER_DECL(index) /* Not used */
-#define STM32_UART_IRQ_HANDLER(index) /* Not used */
-#endif
 
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API) || \
-	defined(CONFIG_PM)
-#define STM32_UART_IRQ_HANDLER_FUNC(index)				\
+#define STM32_UART_IRQ_HANDLER_FUNC(index)					\
 	.irq_config_func = uart_stm32_irq_config_func_##index,
 #else
+#define STM32_UART_IRQ_HANDLER_DEFINE(index) /* Not used */
 #define STM32_UART_IRQ_HANDLER_FUNC(index) /* Not used */
-#endif
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API || CONFIG_PM */
 
 #ifdef CONFIG_UART_ASYNC_API
 #define UART_DMA_CHANNEL(index, dir, DIR, src, dest)				\
@@ -2642,7 +2634,7 @@ static int uart_stm32_pm_action(const struct device *dev, enum pm_device_action 
 #endif
 
 #define STM32_UART_INIT(index)							\
-	STM32_UART_IRQ_HANDLER_DECL(index)					\
+	STM32_UART_IRQ_HANDLER_DEFINE(index)					\
 										\
 	PINCTRL_DT_INST_DEFINE(index);						\
 										\
@@ -2692,8 +2684,6 @@ static int uart_stm32_pm_action(const struct device *dev, enum pm_device_action 
 			      &uart_stm32_data_##index, &uart_stm32_cfg_##index,\
 			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,	\
 			      &uart_stm32_driver_api);				\
-										\
-	STM32_UART_IRQ_HANDLER(index)						\
 										\
 	STM32_UART_CHECK_DT_PARITY(index)					\
 	STM32_UART_CHECK_DT_DATA_BITS(index)					\
