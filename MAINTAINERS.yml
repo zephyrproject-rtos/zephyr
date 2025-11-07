@@ -64,6 +64,12 @@
 #         A list of groups of files that are treated as a single unit.
 #         This is useful for areas where different collaborators are responsible for
 #         different parts of the area.
+#
+#         File groups inherit file patterns from their parent area. A file will only
+#         match a file group if it first matches the parent area's patterns, and then
+#         also matches the file group's own patterns. This allows file groups to
+#         further filter and subdivide files that are already covered by the area.
+#
 #         Each group should have the following structure:
 #         - name: <group name>
 #           collaborators:
