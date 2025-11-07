@@ -2269,7 +2269,29 @@ static int dns_resolve_close_locked(struct dns_resolve_context *ctx)
 	int i, ret;
 
 	if (ctx->state != DNS_RESOLVE_CONTEXT_ACTIVE) {
-		return -ENOENT;
+		/* Even if context is not ACTIVE, we should still close any open sockets
+		 * to ensure proper cleanup. This handles cases where context is INACTIVE
+		 * but server slots still have valid data from previous initialization.
+		 */
+		LOG_INF("DNS context not ACTIVE (state=%d), but will close any open servers",
+			ctx->state);
+
+		/* Close any servers that have open sockets */
+		for (i = 0; i < SERVER_COUNT; i++) {
+			if (ctx->servers[i].sock >= 0 ||
+			    ctx->servers[i].dns_server.sa_family != 0) {
+				LOG_INF("Closing server[%d] sock=%d sa_family=%d", i,
+					ctx->servers[i].sock, ctx->servers[i].dns_server.sa_family);
+				ret = dns_server_close(ctx, i);
+				if (ret < 0 && ret != -ENOENT) {
+					NET_DBG("Cannot close DNS server %d (%d)", i, ret);
+				}
+			}
+		}
+
+		/* Ensure state is INACTIVE */
+		ctx->state = DNS_RESOLVE_CONTEXT_INACTIVE;
+		return 0;
 	}
 
 	ctx->state = DNS_RESOLVE_CONTEXT_DEACTIVATING;
