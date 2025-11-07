@@ -93,24 +93,24 @@ static unsigned char icmpv6_echo_reply[] = {
 };
 
 /* Interface 1 addresses */
-static struct in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
+static struct net_in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
 /* Interface 2 addresses */
-static struct in6_addr my_addr2 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr my_addr2 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
 /* VLAN Interface 3 addresses */
-static struct in6_addr my_addr3 = { { { 0x20, 0x01, 0x0d, 0xb8, 2, 0, 0, 0,
+static struct net_in6_addr my_addr3 = { { { 0x20, 0x01, 0x0d, 0xb8, 2, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
 /* Extra address is assigned to ll_addr */
-static struct in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
 				       0, 0, 0, 0xf2, 0xaa, 0x29, 0x02,
 				       0x04 } } };
 
 /* Peer addresses */
-static struct in6_addr peer_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr peer_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					 0, 0, 0, 0, 0, 0, 0, 0x2 } } };
 
 /* Keep track of all ethernet interfaces */
@@ -221,7 +221,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 			      context->expecting_tag);
 
 		zassert_equal(context->expecting_tag,
-			      net_eth_vlan_get_vid(ntohs(hdr->vlan.tci)),
+			      net_eth_vlan_get_vid(net_ntohs(hdr->vlan.tci)),
 			      "Invalid VLAN tag in ethernet header");
 
 		k_sleep(K_MSEC(10));
@@ -863,7 +863,7 @@ static void test_vlan_disable_all(void)
 	zassert_equal(ret, -EINVAL, "Wrong iface type (%d)", ret);
 }
 
-static bool add_neighbor(struct net_if *iface, struct in6_addr *addr)
+static bool add_neighbor(struct net_if *iface, struct net_in6_addr *addr)
 {
 	struct net_linkaddr *ll_addr;
 	struct net_nbr *nbr;
@@ -886,11 +886,11 @@ static bool add_neighbor(struct net_if *iface, struct in6_addr *addr)
 }
 
 static void comm_sendto_recvfrom(int client_sock,
-				 struct sockaddr *client_addr,
-				 socklen_t client_addrlen,
+				 struct net_sockaddr *client_addr,
+				 net_socklen_t client_addrlen,
 				 int server_sock,
-				 struct sockaddr *server_addr,
-				 socklen_t server_addrlen)
+				 struct net_sockaddr *server_addr,
+				 net_socklen_t server_addrlen)
 {
 	ssize_t sent = 0;
 
@@ -931,8 +931,8 @@ ZTEST(net_vlan, test_vlan_ipv6_sendto_recvfrom)
 	int ret;
 	int client_sock;
 	int server_sock;
-	struct sockaddr_in6 client_addr;
-	struct sockaddr_in6 server_addr;
+	struct net_sockaddr_in6 client_addr;
+	struct net_sockaddr_in6 server_addr;
 	struct eth_context *ctx;
 
 	if (NET_VLAN_MAX_COUNT == 0) {
@@ -963,17 +963,17 @@ ZTEST(net_vlan, test_vlan_ipv6_sendto_recvfrom)
 	zassert_true(ret, "Cannot add neighbor");
 
 	ret = zsock_bind(server_sock,
-			 (struct sockaddr *)&server_addr,
+			 (struct net_sockaddr *)&server_addr,
 			 sizeof(server_addr));
 	zassert_equal(ret, 0, "bind failed");
 
 	test_started = true;
 
 	comm_sendto_recvfrom(client_sock,
-			     (struct sockaddr *)&client_addr,
+			     (struct net_sockaddr *)&client_addr,
 			     sizeof(client_addr),
 			     server_sock,
-			     (struct sockaddr *)&server_addr,
+			     (struct net_sockaddr *)&server_addr,
 			     sizeof(server_addr));
 
 	ret = zsock_close(client_sock);
@@ -988,18 +988,18 @@ ZTEST(net_vlan, test_zz_vlan_embed_ll_hdr)
 	struct net_if *iface;
 	int ret;
 	int client_sock;
-	struct sockaddr_in6 client_addr;
-	struct sockaddr_in6 dest_addr;
+	struct net_sockaddr_in6 client_addr;
+	struct net_sockaddr_in6 dest_addr;
 	struct net_if_addr *ifaddr;
 	ssize_t sent = 0;
 	struct ifreq ifreq = { 0 };
 	char ifname[CONFIG_NET_INTERFACE_NAME_LEN];
 
 	/* embed ll interface addresses */
-	static struct in6_addr my_vlan_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0x90, 0, 0, 0,
+	static struct net_in6_addr my_vlan_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0x90, 0, 0, 0,
 						    0, 0, 0, 0, 0, 0, 0, 0x2 } } };
 
-	static struct in6_addr peer_vlan_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0x90, 0, 0, 0,
+	static struct net_in6_addr peer_vlan_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0x90, 0, 0, 0,
 						    0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
 	if (NET_VLAN_MAX_COUNT == 0) {
@@ -1043,7 +1043,7 @@ ZTEST(net_vlan, test_zz_vlan_embed_ll_hdr)
 	net_ipaddr_copy(&dest_addr.sin6_addr, &peer_vlan_addr);
 
 	sent = zsock_sendto(client_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL),
-			    0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+			    0, (struct net_sockaddr *)&dest_addr, sizeof(dest_addr));
 	zassert_equal(sent, strlen(TEST_STR_SMALL), "send (%d) failed %d/%s",
 		      sent, -errno, strerror(errno));
 
@@ -1075,7 +1075,7 @@ ZTEST(net_vlan, test_vlan_enable_disable_all)
 	test_vlan_disable_all();
 }
 
-static bool add_peer_neighbor(struct net_if *iface, struct in6_addr *addr,
+static bool add_peer_neighbor(struct net_if *iface, struct net_in6_addr *addr,
 			      uint8_t *lladdr)
 {
 	struct net_linkaddr ll_addr = {
@@ -1146,8 +1146,8 @@ ZTEST(net_vlan, test_vlan_tag_0)
 	 */
 	pkt = net_pkt_rx_alloc_with_buffer(iface,
 					   sizeof(icmpv6_echo_request),
-					   AF_INET6,
-					   IPPROTO_ICMPV6,
+					   NET_AF_INET6,
+					   NET_IPPROTO_ICMPV6,
 					   K_NO_WAIT);
 	zassert_not_null(pkt, "Cannot allocate pkt");
 

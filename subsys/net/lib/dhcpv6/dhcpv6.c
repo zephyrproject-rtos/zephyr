@@ -47,7 +47,7 @@ struct dhcpv6_options_include {
 static K_MUTEX_DEFINE(lock);
 
 /* All_DHCP_Relay_Agents_and_Servers (ff02::1:2) */
-static const struct in6_addr all_dhcpv6_ra_and_servers = { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0,
+static const struct net_in6_addr all_dhcpv6_ra_and_servers = { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0,
 							       0, 0, 0, 0, 0, 0x01, 0, 0x02 } } };
 
 static sys_slist_t dhcpv6_ifaces = SYS_SLIST_STATIC_INIT(&dhcpv6_ifaces);
@@ -578,7 +578,7 @@ static struct net_pkt *dhcpv6_create_message(struct net_if *iface,
 					     enum dhcpv6_msg_type msg_type,
 					     struct dhcpv6_options_include *options)
 {
-	struct in6_addr *local_addr;
+	struct net_in6_addr *local_addr;
 	struct net_pkt *pkt;
 	size_t msg_size;
 
@@ -590,15 +590,15 @@ static struct net_pkt *dhcpv6_create_message(struct net_if *iface,
 
 	msg_size = dhcpv6_calculate_message_size(options);
 
-	pkt = net_pkt_alloc_with_buffer(iface, msg_size, AF_INET6,
-					IPPROTO_UDP, PKT_WAIT_TIME);
+	pkt = net_pkt_alloc_with_buffer(iface, msg_size, NET_AF_INET6,
+					NET_IPPROTO_UDP, PKT_WAIT_TIME);
 	if (pkt == NULL) {
 		return NULL;
 	}
 
 	if (net_ipv6_create(pkt, local_addr, &all_dhcpv6_ra_and_servers) < 0 ||
-	    net_udp_create(pkt, htons(DHCPV6_CLIENT_PORT),
-			   htons(DHCPV6_SERVER_PORT)) < 0) {
+	    net_udp_create(pkt, net_htons(DHCPV6_CLIENT_PORT),
+			   net_htons(DHCPV6_SERVER_PORT)) < 0) {
 		goto fail;
 	}
 
@@ -613,7 +613,7 @@ static struct net_pkt *dhcpv6_create_message(struct net_if *iface,
 	}
 
 	net_pkt_cursor_init(pkt);
-	net_ipv6_finalize(pkt, IPPROTO_UDP);
+	net_ipv6_finalize(pkt, NET_IPPROTO_UDP);
 
 	return pkt;
 
@@ -1196,11 +1196,11 @@ static int dhcpv6_parse_option_ia_pd(struct net_pkt *pkt, uint16_t length,
 }
 
 static int dhcpv6_parse_option_dns_servers(struct net_pkt *pkt, uint16_t length,
-					   struct sockaddr_in6 *servers,
+					   struct net_sockaddr_in6 *servers,
 					   uint16_t *server_count)
 
 {
-	const uint8_t addr_size = sizeof(struct in6_addr);
+	const uint8_t addr_size = sizeof(struct net_in6_addr);
 	uint16_t addr_count;
 	int ret;
 
@@ -1382,8 +1382,8 @@ static int dhcpv6_find_status_code(struct net_pkt *pkt, uint16_t *status)
 
 static int dhcpv6_handle_dns_server_option(struct net_pkt *pkt)
 {
-	const struct sockaddr *dns_servers[MAX_DNS_SERVERS + 1] = { 0 };
-	struct sockaddr_in6 dns_saddr[MAX_DNS_SERVERS] = { 0 };
+	const struct net_sockaddr *dns_servers[MAX_DNS_SERVERS + 1] = { 0 };
+	struct net_sockaddr_in6 dns_saddr[MAX_DNS_SERVERS] = { 0 };
 	uint16_t server_count = MAX_DNS_SERVERS;
 	struct dns_resolve_context *ctx;
 	struct net_pkt_cursor backup;
@@ -1407,8 +1407,8 @@ static int dhcpv6_handle_dns_server_option(struct net_pkt *pkt)
 	}
 
 	for (uint8_t i = 0; i < server_count; i++) {
-		dns_saddr[i].sin6_family = AF_INET6;
-		dns_servers[i] = (struct sockaddr *)&dns_saddr[i];
+		dns_saddr[i].sin6_family = NET_AF_INET6;
+		dns_servers[i] = (struct net_sockaddr *)&dns_saddr[i];
 	}
 
 	ctx = dns_resolve_get_default();
@@ -1801,7 +1801,7 @@ static int dhcpv6_handle_reply(struct net_if *iface, struct net_pkt *pkt,
 		    ia_na.iaaddr.valid_lifetime == 0) {
 			/* Remove old lease. */
 			net_if_ipv6_addr_rm(iface, &iface->config.dhcpv6.addr);
-			memset(&iface->config.dhcpv6.addr, 0, sizeof(struct in6_addr));
+			memset(&iface->config.dhcpv6.addr, 0, sizeof(struct net_in6_addr));
 			rediscover = true;
 			goto prefix;
 		}
@@ -1845,7 +1845,7 @@ prefix:
 			/* Remove old lease. */
 			net_if_ipv6_prefix_rm(iface, &iface->config.dhcpv6.prefix,
 					      iface->config.dhcpv6.prefix_len);
-			memset(&iface->config.dhcpv6.prefix, 0, sizeof(struct in6_addr));
+			memset(&iface->config.dhcpv6.prefix, 0, sizeof(struct net_in6_addr));
 			iface->config.dhcpv6.prefix_len = 0;
 			rediscover = true;
 			goto out;
@@ -2250,9 +2250,9 @@ static void dhcpv6_generate_client_duid(struct net_if *iface)
 
 	memset(clientid, 0, sizeof(*clientid));
 
-	UNALIGNED_PUT(htons(DHCPV6_DUID_TYPE_LL),
+	UNALIGNED_PUT(net_htons(DHCPV6_DUID_TYPE_LL),
 		      UNALIGNED_MEMBER_ADDR(clientid, duid.type));
-	UNALIGNED_PUT(htons(DHCPV6_HARDWARE_ETHERNET_TYPE),
+	UNALIGNED_PUT(net_htons(DHCPV6_HARDWARE_ETHERNET_TYPE),
 		      UNALIGNED_MEMBER_ADDR(duid_ll, hw_type));
 	memcpy(duid_ll->ll_addr, lladdr->addr, lladdr->len);
 
@@ -2358,14 +2358,14 @@ void net_dhcpv6_restart(struct net_if *iface)
 
 int net_dhcpv6_init(void)
 {
-	struct sockaddr unspec_addr;
+	struct net_sockaddr unspec_addr;
 	int ret;
 
 	net_ipaddr_copy(&net_sin6(&unspec_addr)->sin6_addr,
 			net_ipv6_unspecified_address());
-	unspec_addr.sa_family = AF_INET6;
+	unspec_addr.sa_family = NET_AF_INET6;
 
-	ret = net_udp_register(AF_INET6, NULL, &unspec_addr,
+	ret = net_udp_register(NET_AF_INET6, NULL, &unspec_addr,
 			       0, DHCPV6_CLIENT_PORT,
 			       NULL, dhcpv6_input, NULL, NULL);
 	if (ret < 0) {

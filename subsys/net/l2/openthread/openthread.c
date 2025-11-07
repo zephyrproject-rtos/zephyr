@@ -54,14 +54,14 @@ static void ipv6_addr_event_handler(struct net_mgmt_event_callback *cb, uint64_t
 #ifdef CONFIG_NET_MGMT_EVENT_INFO
 	struct openthread_context *ot_context = net_if_l2_data(iface);
 
-	if (cb->info == NULL || cb->info_length != sizeof(struct in6_addr)) {
+	if (cb->info == NULL || cb->info_length != sizeof(struct net_in6_addr)) {
 		return;
 	}
 
 	if (mgmt_event == NET_EVENT_IPV6_ADDR_ADD) {
-		add_ipv6_addr_to_ot(ot_context, (const struct in6_addr *)cb->info);
+		add_ipv6_addr_to_ot(ot_context, (const struct net_in6_addr *)cb->info);
 	} else if (mgmt_event == NET_EVENT_IPV6_MADDR_ADD) {
-		add_ipv6_maddr_to_ot(ot_context, (const struct in6_addr *)cb->info);
+		add_ipv6_maddr_to_ot(ot_context, (const struct net_in6_addr *)cb->info);
 	}
 #else
 	NET_WARN("No address info provided with event, "
@@ -157,7 +157,7 @@ static void ot_receive_handler(otMessage *message, void *context)
 	struct net_buf *pkt_buf;
 
 	pkt = net_pkt_rx_alloc_with_buffer(ot_context->iface, otMessageGetLength(message),
-					   AF_UNSPEC, 0, K_NO_WAIT);
+					   NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		NET_ERR("Failed to reserve net pkt");
 		goto out;

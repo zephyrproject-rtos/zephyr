@@ -562,7 +562,7 @@ void *net_pkt_from_nbuf(void *iface, void *frm)
 
 	data = zep_shim_nbuf_data_get(nwb);
 
-	pkt = net_pkt_rx_alloc_with_buffer(iface, len, AF_UNSPEC, 0, K_MSEC(100));
+	pkt = net_pkt_rx_alloc_with_buffer(iface, len, NET_AF_UNSPEC, 0, K_MSEC(100));
 
 	if (!pkt) {
 		goto out;

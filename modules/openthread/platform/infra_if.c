@@ -65,8 +65,8 @@ otError otPlatInfraIfSendIcmp6Nd(uint32_t aInfraIfIndex, const otIp6Address *aDe
 	src = net_if_ipv6_select_src_addr(ail_iface_ptr, &dst);
 	VerifyOrExit(!net_ipv6_is_addr_unspecified(src), error = OT_ERROR_FAILED);
 
-	pkt = net_pkt_alloc_with_buffer(ail_iface_ptr, aBufferLength, AF_INET6, IPPROTO_ICMPV6,
-					K_MSEC(100));
+	pkt = net_pkt_alloc_with_buffer(ail_iface_ptr, aBufferLength, NET_AF_INET6,
+					NET_IPPROTO_ICMPV6, K_MSEC(100));
 	VerifyOrExit(pkt, error = OT_ERROR_FAILED);
 
 	net_pkt_set_ipv6_hop_limit(pkt, NET_IPV6_ND_HOP_LIMIT);
@@ -75,7 +75,7 @@ otError otPlatInfraIfSendIcmp6Nd(uint32_t aInfraIfIndex, const otIp6Address *aDe
 	VerifyOrExit(net_pkt_write(pkt, aBuffer, aBufferLength) == 0, error = OT_ERROR_FAILED);
 	net_pkt_cursor_init(pkt);
 
-	VerifyOrExit(net_ipv6_finalize(pkt, IPPROTO_ICMPV6) == 0, error = OT_ERROR_FAILED);
+	VerifyOrExit(net_ipv6_finalize(pkt, NET_IPPROTO_ICMPV6) == 0, error = OT_ERROR_FAILED);
 	VerifyOrExit(net_send_data(pkt) == 0, error = OT_ERROR_FAILED);
 
 exit:
@@ -99,7 +99,7 @@ otError otPlatInfraIfDiscoverNat64Prefix(uint32_t aInfraIfIndex)
 bool otPlatInfraIfHasAddress(uint32_t aInfraIfIndex, const otIp6Address *aAddress)
 {
 	struct net_if_addr *ifaddr = NULL;
-	struct in6_addr addr = {0};
+	struct net_in6_addr addr = {0};
 
 	memcpy(addr.s6_addr, aAddress->mFields.m8, sizeof(otIp6Address));
 
@@ -133,7 +133,7 @@ otError otPlatGetInfraIfLinkLayerAddress(otInstance *aInstance, uint32_t aIfInde
 otError infra_if_init(otInstance *instance, struct net_if *ail_iface)
 {
 	otError error = OT_ERROR_NONE;
-	struct in6_addr addr = {0};
+	struct net_in6_addr addr = {0};
 
 	ot_instance = instance;
 	ail_iface_ptr = ail_iface;
@@ -153,10 +153,10 @@ static void handle_ra_from_ot(const uint8_t *buffer, uint16_t buffer_length)
 	struct net_if *ot_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(OPENTHREAD));
 	struct net_if_ipv6_prefix *prefix_added = NULL;
 	struct net_route_entry *route_added = NULL;
-	struct in6_addr rio_prefix = {0};
+	struct net_in6_addr rio_prefix = {0};
 	struct net_if_addr *ifaddr = NULL;
-	struct in6_addr addr_to_add_from_pio = {0};
-	struct in6_addr nexthop = {0};
+	struct net_in6_addr addr_to_add_from_pio = {0};
+	struct net_in6_addr nexthop = {0};
 	uint8_t i = sizeof(struct net_icmp_hdr) + sizeof(struct net_icmpv6_ra_hdr);
 
 	while (i + sizeof(struct net_icmpv6_nd_opt_hdr) <= buffer_length) {
@@ -169,11 +169,11 @@ static void handle_ra_from_ot(const uint8_t *buffer, uint16_t buffer_length)
 			const struct net_icmpv6_nd_opt_prefix_info *pio =
 				(const struct net_icmpv6_nd_opt_prefix_info *)&buffer[i];
 			prefix_added = net_if_ipv6_prefix_add(ail_iface_ptr,
-							      (struct in6_addr *)pio->prefix,
+							      (struct net_in6_addr *)pio->prefix,
 							      pio->prefix_len, pio->valid_lifetime);
 			i += sizeof(struct net_icmpv6_nd_opt_prefix_info);
 			net_ipv6_addr_generate_iid(
-				ail_iface_ptr, (struct in6_addr *)pio->prefix,
+				ail_iface_ptr, (struct net_in6_addr *)pio->prefix,
 				COND_CODE_1(CONFIG_NET_IPV6_IID_STABLE,
 				     ((uint8_t *)&ail_iface_ptr->config.ip.ipv6->network_counter),
 				     (NULL)), COND_CODE_1(CONFIG_NET_IPV6_IID_STABLE,
@@ -255,13 +255,13 @@ otError infra_if_start_icmp6_listener(void)
 {
 	otError error = OT_ERROR_NONE;
 
-	VerifyOrExit(net_icmp_init_ctx(&ra_ctx, AF_INET6, NET_ICMPV6_RA, 0,
+	VerifyOrExit(net_icmp_init_ctx(&ra_ctx, NET_AF_INET6, NET_ICMPV6_RA, 0,
 				       handle_icmp6_input) == 0,
 		     error = OT_ERROR_FAILED);
-	VerifyOrExit(net_icmp_init_ctx(&rs_ctx, AF_INET6, NET_ICMPV6_RS, 0,
+	VerifyOrExit(net_icmp_init_ctx(&rs_ctx, NET_AF_INET6, NET_ICMPV6_RS, 0,
 				       handle_icmp6_input) == 0,
 		     error = OT_ERROR_FAILED);
-	VerifyOrExit(net_icmp_init_ctx(&na_ctx, AF_INET6, NET_ICMPV6_NA, 0,
+	VerifyOrExit(net_icmp_init_ctx(&na_ctx, NET_AF_INET6, NET_ICMPV6_NA, 0,
 				       handle_icmp6_input) == 0,
 		     error = OT_ERROR_FAILED);
 

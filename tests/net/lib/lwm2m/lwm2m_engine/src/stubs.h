@@ -40,7 +40,7 @@ DECLARE_FAKE_VALUE_FUNC(int64_t, engine_observe_shedule_next_event, struct obser
 			const int64_t);
 DECLARE_FAKE_VALUE_FUNC(int, handle_request, struct coap_packet *, struct lwm2m_message *);
 DECLARE_FAKE_VOID_FUNC(lwm2m_udp_receive, struct lwm2m_ctx *, uint8_t *, uint16_t,
-		       struct sockaddr *);
+		       struct net_sockaddr *);
 DECLARE_FAKE_VALUE_FUNC(bool, lwm2m_rd_client_is_registred, struct lwm2m_ctx *);
 DECLARE_FAKE_VOID_FUNC(lwm2m_engine_context_close, struct lwm2m_ctx *);
 DECLARE_FAKE_VALUE_FUNC(int, lwm2m_get_res_buf, const struct lwm2m_obj_path *, void **, uint16_t *,
@@ -54,9 +54,9 @@ DECLARE_FAKE_VALUE_FUNC(struct lwm2m_engine_obj_field *, lwm2m_get_engine_obj_fi
 DECLARE_FAKE_VALUE_FUNC(int, lwm2m_get_bool, const struct lwm2m_obj_path *, bool *);
 DECLARE_FAKE_VALUE_FUNC(int, lwm2m_delete_obj_inst, uint16_t, uint16_t);
 DECLARE_FAKE_VOID_FUNC(lwm2m_clear_block_contexts);
-DECLARE_FAKE_VALUE_FUNC(int, z_impl_zsock_connect, int, const struct sockaddr *, socklen_t);
+DECLARE_FAKE_VALUE_FUNC(int, z_impl_zsock_connect, int, const struct net_sockaddr *, net_socklen_t);
 DECLARE_FAKE_VALUE_FUNC(int, lwm2m_security_mode, struct lwm2m_ctx *);
-DECLARE_FAKE_VALUE_FUNC(int, z_impl_zsock_setsockopt, int, int, int, const void *, socklen_t);
+DECLARE_FAKE_VALUE_FUNC(int, z_impl_zsock_setsockopt, int, int, int, const void *, net_socklen_t);
 DECLARE_FAKE_VOID_FUNC(engine_update_tx_time);
 DECLARE_FAKE_VALUE_FUNC(bool, coap_block_has_more, struct coap_packet *);
 DECLARE_FAKE_VOID_FUNC(lwm2m_rd_client_hint_socket_state, struct lwm2m_ctx *,

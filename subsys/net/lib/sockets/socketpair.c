@@ -285,13 +285,13 @@ int z_impl_zsock_socketpair(int family, int type, int proto, int *sv)
 
 	SYS_PORT_TRACING_FUNC_ENTER(socket, socketpair, family, type, proto, sv);
 
-	if (family != AF_UNIX) {
+	if (family != NET_AF_UNIX) {
 		errno = EAFNOSUPPORT;
 		res = -1;
 		goto errout;
 	}
 
-	if (type != SOCK_STREAM) {
+	if (type != NET_SOCK_STREAM) {
 		errno = EPROTOTYPE;
 		res = -1;
 		goto errout;
@@ -999,8 +999,8 @@ out:
 	return res;
 }
 
-static int spair_bind(void *obj, const struct sockaddr *addr,
-		      socklen_t addrlen)
+static int spair_bind(void *obj, const struct net_sockaddr *addr,
+		      net_socklen_t addrlen)
 {
 	ARG_UNUSED(obj);
 	ARG_UNUSED(addr);
@@ -1010,8 +1010,8 @@ static int spair_bind(void *obj, const struct sockaddr *addr,
 	return -1;
 }
 
-static int spair_connect(void *obj, const struct sockaddr *addr,
-			 socklen_t addrlen)
+static int spair_connect(void *obj, const struct net_sockaddr *addr,
+			 net_socklen_t addrlen)
 {
 	ARG_UNUSED(obj);
 	ARG_UNUSED(addr);
@@ -1030,8 +1030,8 @@ static int spair_listen(void *obj, int backlog)
 	return -1;
 }
 
-static int spair_accept(void *obj, struct sockaddr *addr,
-			socklen_t *addrlen)
+static int spair_accept(void *obj, struct net_sockaddr *addr,
+			net_socklen_t *addrlen)
 {
 	ARG_UNUSED(obj);
 	ARG_UNUSED(addr);
@@ -1042,8 +1042,8 @@ static int spair_accept(void *obj, struct sockaddr *addr,
 }
 
 static ssize_t spair_sendto(void *obj, const void *buf, size_t len,
-			    int flags, const struct sockaddr *dest_addr,
-				 socklen_t addrlen)
+			    int flags, const struct net_sockaddr *dest_addr,
+			    net_socklen_t addrlen)
 {
 	ARG_UNUSED(flags);
 	ARG_UNUSED(dest_addr);
@@ -1052,7 +1052,7 @@ static ssize_t spair_sendto(void *obj, const void *buf, size_t len,
 	return spair_write(obj, buf, len);
 }
 
-static ssize_t spair_sendmsg(void *obj, const struct msghdr *msg,
+static ssize_t spair_sendmsg(void *obj, const struct net_msghdr *msg,
 			     int flags)
 {
 	ARG_UNUSED(flags);
@@ -1112,8 +1112,8 @@ out:
 }
 
 static ssize_t spair_recvfrom(void *obj, void *buf, size_t max_len,
-			      int flags, struct sockaddr *src_addr,
-				   socklen_t *addrlen)
+			      int flags, struct net_sockaddr *src_addr,
+			      net_socklen_t *addrlen)
 {
 	(void)flags;
 	(void)src_addr;
@@ -1136,7 +1136,7 @@ static ssize_t spair_recvfrom(void *obj, void *buf, size_t max_len,
 }
 
 static int spair_getsockopt(void *obj, int level, int optname,
-			    void *optval, socklen_t *optlen)
+			    void *optval, net_socklen_t *optlen)
 {
 	ARG_UNUSED(obj);
 	ARG_UNUSED(level);
@@ -1149,7 +1149,7 @@ static int spair_getsockopt(void *obj, int level, int optname,
 }
 
 static int spair_setsockopt(void *obj, int level, int optname,
-			    const void *optval, socklen_t optlen)
+			    const void *optval, net_socklen_t optlen)
 {
 	ARG_UNUSED(obj);
 	ARG_UNUSED(level);

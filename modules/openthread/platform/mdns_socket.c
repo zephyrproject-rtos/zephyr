@@ -104,50 +104,52 @@ static otError mdns_socket_init_v6(uint32_t ail_iface_idx)
 {
 	otError error = OT_ERROR_NONE;
 	char name[CONFIG_NET_INTERFACE_NAME_LEN + 1] = {0};
-	struct ifreq if_req = {0};
-	struct ipv6_mreq mreq_v6 = {0};
+	struct net_ifreq if_req = {0};
+	struct net_ipv6_mreq mreq_v6 = {0};
 	int mcast_hops = 255;
 	int on = 1;
 
-	struct sockaddr_in6 addr = {.sin6_family = AF_INET6,
-				    .sin6_port = htons(MULTICAST_PORT),
+	struct net_sockaddr_in6 addr = {.sin6_family = NET_AF_INET6,
+				    .sin6_port = net_htons(MULTICAST_PORT),
 				    .sin6_addr = {{{0}}},
 				    .sin6_scope_id = 0};
 
-	mdns_sock_v6 = zsock_socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+	mdns_sock_v6 = zsock_socket(NET_AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
 	VerifyOrExit(mdns_sock_v6 >= 0, error = OT_ERROR_FAILED);
 	VerifyOrExit(net_if_get_name(net_if_get_by_index(ail_iface_idx), name,
 				     CONFIG_NET_INTERFACE_NAME_LEN) > 0,
 		     error = OT_ERROR_FAILED);
 	memcpy(if_req.ifr_name, name, MIN(sizeof(name) - 1, sizeof(if_req.ifr_name) - 1));
-	VerifyOrExit(zsock_setsockopt(mdns_sock_v6, SOL_SOCKET, SO_BINDTODEVICE, &if_req,
-				      sizeof(if_req)) == 0,
+	VerifyOrExit(zsock_setsockopt(mdns_sock_v6, ZSOCK_SOL_SOCKET, ZSOCK_SO_BINDTODEVICE,
+				      &if_req, sizeof(if_req)) == 0,
 		     error = OT_ERROR_FAILED);
-	VerifyOrExit(zsock_setsockopt(mdns_sock_v6, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) == 0,
+	VerifyOrExit(zsock_setsockopt(mdns_sock_v6, ZSOCK_SOL_SOCKET, ZSOCK_SO_REUSEADDR,
+				      &on, sizeof(on)) == 0,
 		     error = OT_ERROR_FAILED);
-	VerifyOrExit(zsock_setsockopt(mdns_sock_v6, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(on)) == 0,
+	VerifyOrExit(zsock_setsockopt(mdns_sock_v6, ZSOCK_SOL_SOCKET, ZSOCK_SO_REUSEPORT,
+				      &on, sizeof(on)) == 0,
 		     error = OT_ERROR_FAILED);
-	VerifyOrExit(zsock_setsockopt(mdns_sock_v6, IPPROTO_IPV6, IPV6_V6ONLY, &on,
+	VerifyOrExit(zsock_setsockopt(mdns_sock_v6, NET_IPPROTO_IPV6, ZSOCK_IPV6_V6ONLY, &on,
 				      sizeof(on)) == 0,
 		     error = OT_ERROR_FAILED);
 	mreq_v6.ipv6mr_ifindex = ail_iface_idx;
 	net_ipv6_addr_create(&mreq_v6.ipv6mr_multiaddr, 0xff02, 0, 0, 0, 0, 0, 0, 0x00fb);
-	VerifyOrExit(zsock_setsockopt(mdns_sock_v6, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP, &mreq_v6,
-				      sizeof(mreq_v6)) == 0,
+	VerifyOrExit(zsock_setsockopt(mdns_sock_v6, NET_IPPROTO_IPV6, ZSOCK_IPV6_ADD_MEMBERSHIP,
+				      &mreq_v6, sizeof(mreq_v6)) == 0,
 		     error = OT_ERROR_FAILED);
-	VerifyOrExit(zsock_setsockopt(mdns_sock_v6, IPPROTO_IPV6, IPV6_MULTICAST_LOOP,
+	VerifyOrExit(zsock_setsockopt(mdns_sock_v6, NET_IPPROTO_IPV6, ZSOCK_IPV6_MULTICAST_LOOP,
 				      &on, sizeof(on)) == 0,
 		     error = OT_ERROR_FAILED);
-	VerifyOrExit(zsock_setsockopt(mdns_sock_v6, IPPROTO_IPV6, IPV6_MULTICAST_IF,
+	VerifyOrExit(zsock_setsockopt(mdns_sock_v6, NET_IPPROTO_IPV6, ZSOCK_IPV6_MULTICAST_IF,
 				      &ail_iface_index, sizeof(ail_iface_index)) == 0,
 		     error = OT_ERROR_FAILED);
-	VerifyOrExit(zsock_setsockopt(mdns_sock_v6, IPPROTO_IPV6, IPV6_MULTICAST_HOPS,
+	VerifyOrExit(zsock_setsockopt(mdns_sock_v6, NET_IPPROTO_IPV6, ZSOCK_IPV6_MULTICAST_HOPS,
 				      &mcast_hops, sizeof(mcast_hops)) == 0,
 		     error = OT_ERROR_FAILED);
-	VerifyOrExit(zsock_setsockopt(mdns_sock_v6, IPPROTO_IPV6, IPV6_UNICAST_HOPS,
+	VerifyOrExit(zsock_setsockopt(mdns_sock_v6, NET_IPPROTO_IPV6, ZSOCK_IPV6_UNICAST_HOPS,
 				      &mcast_hops, sizeof(mcast_hops)) == 0,
 		     error = OT_ERROR_FAILED);
-	VerifyOrExit(zsock_bind(mdns_sock_v6, (struct sockaddr *)&addr, sizeof(addr)) == 0,
+	VerifyOrExit(zsock_bind(mdns_sock_v6, (struct net_sockaddr *)&addr, sizeof(addr)) == 0,
 		     error = OT_ERROR_FAILED);
 
 	sockfd_udp[0].fd = mdns_sock_v6;
@@ -166,46 +168,48 @@ static otError mdns_socket_init_v4(uint32_t ail_iface_idx)
 {
 	otError error = OT_ERROR_NONE;
 	char name[CONFIG_NET_INTERFACE_NAME_LEN + 1] = {0};
-	struct ifreq if_req = {0};
-	struct ip_mreqn mreq_v4 = {0};
+	struct net_ifreq if_req = {0};
+	struct net_ip_mreqn mreq_v4 = {0};
 	int mcast_hops = 255;
 	int on = 1;
 
-	struct sockaddr_in addr = {.sin_family = AF_INET,
-				   .sin_port = htons(MULTICAST_PORT),
+	struct net_sockaddr_in addr = {.sin_family = NET_AF_INET,
+				   .sin_port = net_htons(MULTICAST_PORT),
 				   .sin_addr = {{{0}}}};
 
-	mdns_sock_v4 = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	mdns_sock_v4 = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 	VerifyOrExit(mdns_sock_v4 >= 0, error = OT_ERROR_FAILED);
 	VerifyOrExit(net_if_get_name(net_if_get_by_index(ail_iface_idx), name,
 				     CONFIG_NET_INTERFACE_NAME_LEN) > 0,
 		     error = OT_ERROR_FAILED);
 	memcpy(if_req.ifr_name, name, MIN(sizeof(name) - 1, sizeof(if_req.ifr_name) - 1));
-	VerifyOrExit(zsock_setsockopt(mdns_sock_v4, SOL_SOCKET, SO_BINDTODEVICE, &if_req,
-				      sizeof(if_req)) == 0,
+	VerifyOrExit(zsock_setsockopt(mdns_sock_v4, ZSOCK_SOL_SOCKET, ZSOCK_SO_BINDTODEVICE,
+				      &if_req, sizeof(if_req)) == 0,
 		     error = OT_ERROR_FAILED);
-	VerifyOrExit(zsock_setsockopt(mdns_sock_v4, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) == 0,
+	VerifyOrExit(zsock_setsockopt(mdns_sock_v4, ZSOCK_SOL_SOCKET, ZSOCK_SO_REUSEADDR,
+				      &on, sizeof(on)) == 0,
 		     error = OT_ERROR_FAILED);
-	VerifyOrExit(zsock_setsockopt(mdns_sock_v4, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(on)) == 0,
+	VerifyOrExit(zsock_setsockopt(mdns_sock_v4, ZSOCK_SOL_SOCKET, ZSOCK_SO_REUSEPORT,
+				      &on, sizeof(on)) == 0,
 		     error = OT_ERROR_FAILED);
 	mreq_v4.imr_ifindex = ail_iface_idx;
-	mreq_v4.imr_multiaddr.s_addr = htonl(0xE00000FB);
-	VerifyOrExit(zsock_setsockopt(mdns_sock_v4, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq_v4,
-				      sizeof(mreq_v4)) == 0,
+	mreq_v4.imr_multiaddr.s_addr = net_htonl(0xE00000FB);
+	VerifyOrExit(zsock_setsockopt(mdns_sock_v4, NET_IPPROTO_IP, ZSOCK_IP_ADD_MEMBERSHIP,
+				      &mreq_v4, sizeof(mreq_v4)) == 0,
 		     error = OT_ERROR_FAILED);
-	VerifyOrExit(zsock_setsockopt(mdns_sock_v4, IPPROTO_IP, IP_MULTICAST_LOOP, &on,
-				      sizeof(on)) == 0,
+	VerifyOrExit(zsock_setsockopt(mdns_sock_v4, NET_IPPROTO_IP, ZSOCK_IP_MULTICAST_LOOP,
+				      &on, sizeof(on)) == 0,
 		     error = OT_ERROR_FAILED);
-	VerifyOrExit(zsock_setsockopt(mdns_sock_v4, IPPROTO_IP, IP_MULTICAST_IF, &mreq_v4,
-				      sizeof(mreq_v4)) == 0,
+	VerifyOrExit(zsock_setsockopt(mdns_sock_v4, NET_IPPROTO_IP, ZSOCK_IP_MULTICAST_IF,
+				      &mreq_v4, sizeof(mreq_v4)) == 0,
 		     error = OT_ERROR_FAILED);
-	VerifyOrExit(zsock_setsockopt(mdns_sock_v4, IPPROTO_IP, IP_MULTICAST_TTL,
+	VerifyOrExit(zsock_setsockopt(mdns_sock_v4, NET_IPPROTO_IP, ZSOCK_IP_MULTICAST_TTL,
 				      &mcast_hops, sizeof(mcast_hops)) == 0,
 		     error = OT_ERROR_FAILED);
-	VerifyOrExit(zsock_setsockopt(mdns_sock_v4, IPPROTO_IP, IP_TTL,
+	VerifyOrExit(zsock_setsockopt(mdns_sock_v4, NET_IPPROTO_IP, ZSOCK_IP_TTL,
 				      &mcast_hops, sizeof(mcast_hops)) == 0,
 		     error = OT_ERROR_FAILED);
-	VerifyOrExit(zsock_bind(mdns_sock_v4, (struct sockaddr *)&addr, sizeof(addr)) == 0,
+	VerifyOrExit(zsock_bind(mdns_sock_v4, (struct net_sockaddr *)&addr, sizeof(addr)) == 0,
 		     error = OT_ERROR_FAILED);
 
 	sockfd_udp[1].fd = mdns_sock_v4;
@@ -245,14 +249,14 @@ static void mdns_send_multicast(otMessage *message, uint32_t ail_iface_idx)
 {
 	uint16_t length = otMessageGetLength(message);
 	struct otbr_msg_ctx *req = NULL;
-	struct sockaddr_in6 addr_v6 = {.sin6_family = AF_INET6,
-				       .sin6_port = htons(MULTICAST_PORT),
-				       .sin6_addr = IN6ADDR_ANY_INIT,
+	struct net_sockaddr_in6 addr_v6 = {.sin6_family = NET_AF_INET6,
+				       .sin6_port = net_htons(MULTICAST_PORT),
+				       .sin6_addr = NET_IN6ADDR_ANY_INIT,
 				       .sin6_scope_id = 0};
 #if defined(CONFIG_NET_IPV4)
-	struct sockaddr_in addr_v4 = {.sin_family = AF_INET,
-				      .sin_port = htons(MULTICAST_PORT),
-				      .sin_addr = INADDR_ANY_INIT};
+	struct net_sockaddr_in addr_v4 = {.sin_family = NET_AF_INET,
+				      .sin_port = net_htons(MULTICAST_PORT),
+				      .sin_addr = NET_INADDR_ANY_INIT};
 #endif /* CONFIG_NET_IPV4*/
 
 	VerifyOrExit(length <= OTBR_MESSAGE_SIZE);
@@ -260,15 +264,17 @@ static void mdns_send_multicast(otMessage *message, uint32_t ail_iface_idx)
 
 	net_ipv6_addr_create(&addr_v6.sin6_addr, 0xff02, 0, 0, 0, 0, 0, 0, 0x00fb);
 #if defined(CONFIG_NET_IPV4)
-	addr_v4.sin_addr.s_addr = htonl(0xE00000FB);
+	addr_v4.sin_addr.s_addr = net_htonl(0xE00000FB);
 #endif /* CONFIG_NET_IPV4 */
 
 	VerifyOrExit(otMessageRead(message, 0, req->buffer, length) == length);
 
-	VerifyOrExit(zsock_sendto(mdns_sock_v6, req->buffer, length, 0, (struct sockaddr *)&addr_v6,
+	VerifyOrExit(zsock_sendto(mdns_sock_v6, req->buffer, length, 0,
+				  (struct net_sockaddr *)&addr_v6,
 		     sizeof(addr_v6)) > 0);
 #if defined(CONFIG_NET_IPV4)
-	VerifyOrExit(zsock_sendto(mdns_sock_v4, req->buffer, length, 0, (struct sockaddr *)&addr_v4,
+	VerifyOrExit(zsock_sendto(mdns_sock_v4, req->buffer, length, 0,
+				  (struct net_sockaddr *)&addr_v4,
 		     sizeof(addr_v4)) > 0);
 #endif /* CONFIG_NET_IPV4 */
 exit:
@@ -285,19 +291,19 @@ static void mdns_send_unicast(otMessage *message, const otPlatMdnsAddressInfo *a
 	otIp4Address ot_ipv4_addr = {0};
 #if defined(CONFIG_NET_IPV4)
 	bool send_ipv4 = false;
-	struct sockaddr_in addr_v4 = {0};
+	struct net_sockaddr_in addr_v4 = {0};
 #endif /* CONFIG_NET_IPV4*/
-	struct sockaddr_in6 addr_v6 = {.sin6_family = AF_INET6,
-				       .sin6_port = htons(aAddress->mPort),
-				       .sin6_addr = IN6ADDR_ANY_INIT,
+	struct net_sockaddr_in6 addr_v6 = {.sin6_family = NET_AF_INET6,
+				       .sin6_port = net_htons(aAddress->mPort),
+				       .sin6_addr = NET_IN6ADDR_ANY_INIT,
 				       .sin6_scope_id = 0};
 
 	VerifyOrExit(length <= OTBR_MESSAGE_SIZE);
 	VerifyOrExit(openthread_border_router_allocate_message((void **)&req) == OT_ERROR_NONE);
 #if defined(CONFIG_NET_IPV4)
 	if (otIp4FromIp4MappedIp6Address(&aAddress->mAddress, &ot_ipv4_addr) == OT_ERROR_NONE) {
-		addr_v4.sin_family = AF_INET;
-		addr_v4.sin_port = htons(aAddress->mPort);
+		addr_v4.sin_family = NET_AF_INET;
+		addr_v4.sin_port = net_htons(aAddress->mPort);
 		memcpy(&addr_v4.sin_addr.s_addr, &ot_ipv4_addr, sizeof(otIp4Address));
 		send_ipv4 = true;
 	}
@@ -306,12 +312,13 @@ static void mdns_send_unicast(otMessage *message, const otPlatMdnsAddressInfo *a
 
 	VerifyOrExit(otMessageRead(message, 0, req->buffer, length) == length);
 
-	VerifyOrExit(zsock_sendto(mdns_sock_v6, req->buffer, length, 0, (struct sockaddr *)&addr_v6,
+	VerifyOrExit(zsock_sendto(mdns_sock_v6, req->buffer, length, 0,
+				  (struct net_sockaddr *)&addr_v6,
 		     sizeof(addr_v6)) > 0);
 #if defined(CONFIG_NET_IPV4)
 	if (send_ipv4) {
 		VerifyOrExit(zsock_sendto(mdns_sock_v4, req->buffer, length, 0,
-					  (struct sockaddr *)&addr_v4,
+					  (struct net_sockaddr *)&addr_v4,
 					  sizeof(addr_v4)) > 0);
 	}
 #endif /* CONFIG_NET_IPV4 */
@@ -324,12 +331,12 @@ exit:
 
 static void mdns_receive_handler(struct net_socket_service_event *evt)
 {
-	struct sockaddr_in6 addr_v6 = {0};
+	struct net_sockaddr_in6 addr_v6 = {0};
 #if defined(CONFIG_NET_IPV4)
-	struct sockaddr_in addr_v4 = {0};
-	socklen_t optlen = sizeof(int);
+	struct net_sockaddr_in addr_v4 = {0};
+	net_socklen_t optlen = sizeof(int);
 #endif /* CONFIG_NET_IPV4 */
-	socklen_t addrlen;
+	net_socklen_t addrlen;
 	ssize_t len = 0;
 	int family;
 	struct otbr_msg_ctx *req = NULL;
@@ -337,25 +344,25 @@ static void mdns_receive_handler(struct net_socket_service_event *evt)
 	VerifyOrExit(evt->event.revents & ZSOCK_POLLIN);
 	VerifyOrExit(openthread_border_router_allocate_message((void **)&req) == OT_ERROR_NONE);
 #if defined(CONFIG_NET_IPV4)
-	(void)zsock_getsockopt(evt->event.fd, SOL_SOCKET, SO_DOMAIN, &family, &optlen);
+	(void)zsock_getsockopt(evt->event.fd, ZSOCK_SOL_SOCKET, ZSOCK_SO_DOMAIN, &family, &optlen);
 
-	if (family == AF_INET) {
+	if (family == NET_AF_INET) {
 		addrlen = sizeof(addr_v4);
 		len = zsock_recvfrom(mdns_sock_v4, req->buffer, sizeof(req->buffer), 0,
-			       (struct sockaddr *)&addr_v4, &addrlen);
+			       (struct net_sockaddr *)&addr_v4, &addrlen);
 		VerifyOrExit(len > 0);
 		otIp4ToIp4MappedIp6Address((otIp4Address *)&addr_v4.sin_addr.s_addr,
 					   &req->addr_info.mAddress);
-		req->addr_info.mPort = ntohs(addr_v4.sin_port);
+		req->addr_info.mPort = net_ntohs(addr_v4.sin_port);
 	} else {
 #endif /* CONFIG_NET_IPV4 */
 		addrlen = sizeof(addr_v6);
 		len = zsock_recvfrom(mdns_sock_v6, req->buffer, sizeof(req->buffer), 0,
-			       (struct sockaddr *)&addr_v6, &addrlen);
+			       (struct net_sockaddr *)&addr_v6, &addrlen);
 		VerifyOrExit(len > 0);
 		memcpy(&req->addr_info.mAddress, &addr_v6.sin6_addr,
 		       sizeof(req->addr_info.mAddress));
-		req->addr_info.mPort = ntohs(addr_v6.sin6_port);
+		req->addr_info.mPort = net_ntohs(addr_v6.sin6_port);
 #if defined(CONFIG_NET_IPV4)
 	}
 #endif /* CONFIG_NET_IPV4 */

@@ -67,8 +67,8 @@ NET_BUF_POOL_DEFINE(netmidi2_pool, 2 + CONFIG_NETMIDI2_HOST_MAX_CLIENTS,
 
 #define SESS_LOG(_lvl, _s, _fmt, ...) \
 	do { \
-		const struct sockaddr *addr = net_sad(&(_s)->addr); \
-		const struct sockaddr_in6 *addr6 = net_sin6(addr); \
+		const struct net_sockaddr *addr = net_sad(&(_s)->addr); \
+		const struct net_sockaddr_in6 *addr6 = net_sin6(addr); \
 		char __pn[INET6_ADDRSTRLEN]; \
 		net_addr_ntop(addr->sa_family, &addr6->sin6_addr, __pn, sizeof(__pn)); \
 		NET_##_lvl("%s:%d " _fmt, __pn, addr6->sin6_port, ##__VA_ARGS__); \
@@ -193,8 +193,8 @@ static inline void netmidi2_free_session(struct netmidi2_session *session)
 }
 
 static inline struct netmidi2_session *netmidi2_match_session(struct netmidi2_ep *ep,
-							      struct sockaddr *peer_addr,
-							      socklen_t peer_addr_len)
+							      struct net_sockaddr *peer_addr,
+							      net_socklen_t peer_addr_len)
 {
 	for (size_t i = 0; i < CONFIG_NETMIDI2_HOST_MAX_CLIENTS; i++) {
 		if (ep->peers[i].addr_len == peer_addr_len &&
@@ -225,8 +225,8 @@ static inline void netmidi2_free_inactive_sessions(struct netmidi2_ep *ep)
 }
 
 static inline struct netmidi2_session *netmidi2_try_alloc_session(struct netmidi2_ep *ep,
-								  struct sockaddr *peer_addr,
-								  socklen_t peer_addr_len)
+								  struct net_sockaddr *peer_addr,
+								  net_socklen_t peer_addr_len)
 {
 	struct netmidi2_session *sess;
 
@@ -246,8 +246,8 @@ static inline struct netmidi2_session *netmidi2_try_alloc_session(struct netmidi
 }
 
 static inline struct netmidi2_session *netmidi2_alloc_session(struct netmidi2_ep *ep,
-							      struct sockaddr *peer_addr,
-							      socklen_t peer_addr_len)
+							      struct net_sockaddr *peer_addr,
+							      net_socklen_t peer_addr_len)
 {
 	struct netmidi2_session *session;
 
@@ -406,8 +406,8 @@ static int netmidi2_session_sendcmd(struct netmidi2_session *sess,
  * @param[in]  payload_len_words      Payload length, in words (4B)
  */
 static int netmidi2_quick_reply(struct netmidi2_ep *ep,
-				const struct sockaddr *peer_addr,
-				const socklen_t peer_addr_len,
+				const struct net_sockaddr *peer_addr,
+				const net_socklen_t peer_addr_len,
 				const uint8_t command_code,
 				const uint16_t command_specific_data,
 				const uint32_t *payload,
@@ -445,8 +445,8 @@ static int netmidi2_quick_reply(struct netmidi2_ep *ep,
  * @param[in]  nakd_cmd_header  The command packet header this NAK is replying to
  */
 static inline int netmidi2_quick_nak(struct netmidi2_ep *ep,
-				     const struct sockaddr *peer_addr,
-				     const socklen_t peer_addr_len,
+				     const struct net_sockaddr *peer_addr,
+				     const net_socklen_t peer_addr_len,
 				     const uint8_t nak_reason,
 				     const uint32_t nakd_cmd_header)
 {
@@ -532,8 +532,8 @@ static int netmidi2_send_invitation_reply(struct netmidi2_session *session,
  *             rx buffer is at the next Command Packet (or empty)
  */
 static int netmidi2_dispatch_cmdpkt(struct netmidi2_ep *ep,
-				    struct sockaddr *peer_addr,
-				    socklen_t peer_addr_len,
+				    struct net_sockaddr *peer_addr,
+				    net_socklen_t peer_addr_len,
 				    struct net_buf *rx)
 {
 	struct midi_ump ump;
@@ -715,8 +715,8 @@ static void netmidi2_service_handler(struct net_socket_service_event *pev)
 	int ret;
 	struct netmidi2_ep *ep = pev->user_data;
 	struct zsock_pollfd *pfd = &pev->event;
-	struct sockaddr peer_addr;
-	socklen_t peer_addr_len = sizeof(peer_addr);
+	struct net_sockaddr peer_addr;
+	net_socklen_t peer_addr_len = sizeof(peer_addr);
 	struct net_buf *rxbuf;
 
 	rxbuf = net_buf_alloc(&netmidi2_pool, K_FOREVER);
@@ -757,30 +757,30 @@ NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(netmidi2_service, netmidi2_service_handler
 
 int netmidi2_host_ep_start(struct netmidi2_ep *ep)
 {
-	socklen_t addr_len = 0;
+	net_socklen_t addr_len = 0;
 	int ret, sock, af;
 
 #if defined(CONFIG_NET_IPV6)
-	af = AF_INET6;
-	addr_len = sizeof(struct sockaddr_in6);
+	af = NET_AF_INET6;
+	addr_len = sizeof(struct net_sockaddr_in6);
 #else
-	af = AF_INET;
-	addr_len = sizeof(struct sockaddr_in);
+	af = NET_AF_INET;
+	addr_len = sizeof(struct net_sockaddr_in);
 #endif
 
 	ep->addr.sa_family = af;
-	sock = zsock_socket(af, SOCK_DGRAM, IPPROTO_UDP);
+	sock = zsock_socket(af, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 	if (sock < 0) {
 		LOG_ERR("Unable to create socket: %d", errno);
 		return -ENOMEM;
 	}
 
 #if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV4)
-	socklen_t optlen = sizeof(int);
+	net_socklen_t optlen = sizeof(int);
 	int opt = 0;
 
 	/* Enable sharing of IPv4 and IPv6 on same socket */
-	ret = zsock_setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, &opt, optlen);
+	ret = zsock_setsockopt(sock, NET_IPPROTO_IPV6, ZSOCK_IPV6_V6ONLY, &opt, optlen);
 	if (ret < 0) {
 		LOG_WRN("Cannot turn off IPV6_V6ONLY option");
 	}
@@ -806,7 +806,7 @@ int netmidi2_host_ep_start(struct netmidi2_ep *ep)
 		return -EIO;
 	}
 
-	LOG_INF("Started UDP-MIDI2 server (%d)", ntohs(ep->addr4.sin_port));
+	LOG_INF("Started UDP-MIDI2 server (%d)", net_ntohs(ep->addr4.sin_port));
 	return 0;
 }
 

@@ -295,7 +295,7 @@ static void ot_bbr_multicast_listener_handler(void *context,
 					      const otIp6Address *address)
 {
 	struct openthread_context *ot_context = (struct openthread_context *)context;
-	struct in6_addr recv_addr = {0};
+	struct net_in6_addr recv_addr = {0};
 	struct net_if_mcast_addr *mcast_addr = NULL;
 	struct net_route_entry_mcast *entry = NULL;
 
@@ -303,7 +303,7 @@ static void ot_bbr_multicast_listener_handler(void *context,
 
 	if (event == OT_BACKBONE_ROUTER_MULTICAST_LISTENER_ADDED) {
 		entry = net_route_mcast_add(ot_context->iface, &recv_addr,
-					    NUM_BITS(struct in6_addr));
+					    NUM_BITS(struct net_in6_addr));
 		if (entry != NULL) {
 			/*
 			 * No need to perform mcast_lookup explicitly as it's already done in
@@ -311,7 +311,7 @@ static void ot_bbr_multicast_listener_handler(void *context,
 			 * and maddr_join will not be performed.
 			 */
 			mcast_addr = net_if_ipv6_maddr_add(ot_context->iface,
-							   (const struct in6_addr *)&recv_addr);
+							   (const struct net_in6_addr *)&recv_addr);
 			if (mcast_addr != NULL) {
 				net_if_ipv6_maddr_join(ot_context->iface, mcast_addr);
 			}
@@ -329,7 +329,7 @@ static void ot_bbr_multicast_listener_handler(void *context,
 		if (addr_to_del != NULL && net_if_ipv6_maddr_is_joined(addr_to_del)) {
 			net_if_ipv6_maddr_leave(ot_context->iface, addr_to_del);
 			net_if_ipv6_maddr_rm(ot_context->iface,
-					     (const struct in6_addr *)&recv_addr);
+					     (const struct net_in6_addr *)&recv_addr);
 		}
 	}
 }
@@ -614,7 +614,7 @@ static void openthread_border_router_add_route_to_multicast_groups(void)
 		0x08, /** Organization-Local scope multicast address */
 		0x0e, /** Global scope multicast address */
 	};
-	struct in6_addr addr = {0};
+	struct net_in6_addr addr = {0};
 	struct net_if_mcast_addr *mcast_addr = NULL;
 	struct net_route_entry_mcast *entry = NULL;
 
@@ -624,7 +624,7 @@ static void openthread_border_router_add_route_to_multicast_groups(void)
 		entry = net_route_mcast_add(ail_iface_ptr, &addr, 16);
 		if (entry != NULL) {
 			mcast_addr = net_if_ipv6_maddr_add(ail_iface_ptr,
-							   (const struct in6_addr *)&addr);
+							   (const struct net_in6_addr *)&addr);
 			if (mcast_addr != NULL) {
 				net_if_ipv6_maddr_join(ail_iface_ptr, mcast_addr);
 			}

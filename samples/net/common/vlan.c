@@ -48,8 +48,8 @@ static int setup_iface(struct net_if *eth_iface,
 		       struct net_if *vlan_iface,
 		       const char *option)
 {
-	struct sockaddr_storage addr = { 0 };
-	struct sockaddr *paddr = (struct sockaddr *)&addr;
+	struct net_sockaddr_storage addr = { 0 };
+	struct net_sockaddr *paddr = (struct net_sockaddr *)&addr;
 	const char *addr_str, *next;
 	struct net_if_addr *ifaddr;
 	uint8_t mask_len = 0;
@@ -91,15 +91,15 @@ static int setup_iface(struct net_if *eth_iface,
 		inet_ntop(paddr->sa_family, net_sin(paddr)->sin_addr.s4_addr,
 			  my_addr, sizeof(my_addr));
 
-		if (paddr->sa_family == AF_INET) {
-			struct sockaddr_in *addr4 = (struct sockaddr_in *)paddr;
-			struct sockaddr_in mask;
+		if (paddr->sa_family == NET_AF_INET) {
+			struct net_sockaddr_in *addr4 = (struct net_sockaddr_in *)paddr;
+			struct net_sockaddr_in mask;
 
 			ifaddr = net_if_ipv4_addr_add(vlan_iface, &addr4->sin_addr,
 						      NET_ADDR_MANUAL, 0);
 
-			ret = net_mask_len_to_netmask(AF_INET, mask_len,
-						      (struct sockaddr *)&mask);
+			ret = net_mask_len_to_netmask(NET_AF_INET, mask_len,
+						      (struct net_sockaddr *)&mask);
 			if (ret < 0) {
 				LOG_ERR("Invalid network mask length (%d)", ret);
 				return ret;
@@ -109,8 +109,8 @@ static int setup_iface(struct net_if *eth_iface,
 								 &addr4->sin_addr,
 								 &mask.sin_addr);
 
-		} else if (paddr->sa_family == AF_INET6) {
-			struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)paddr;
+		} else if (paddr->sa_family == NET_AF_INET6) {
+			struct net_sockaddr_in6 *addr6 = (struct net_sockaddr_in6 *)paddr;
 			struct in6_addr netaddr6;
 
 			ifaddr = net_if_ipv6_addr_add(vlan_iface, &addr6->sin6_addr,

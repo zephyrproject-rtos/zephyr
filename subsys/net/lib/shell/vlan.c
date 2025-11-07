@@ -49,7 +49,7 @@ static void iface_vlan_cb(struct net_if *iface, void *user_data)
 	struct net_shell_user_data *data = user_data;
 	const struct shell *sh = data->sh;
 	int *count = data->user_data;
-	char name[IFNAMSIZ];
+	char name[NET_IFNAMSIZ];
 
 	if (!net_eth_is_vlan_interface(iface)) {
 		return;

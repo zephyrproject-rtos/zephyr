@@ -51,7 +51,7 @@ of the MQTT client and can be shared among MQTT clients:
 .. code-block:: c
 
    /* MQTT Broker address information. */
-   static struct sockaddr_storage broker;
+   static struct net_sockaddr_storage broker;
 
 An MQTT client library will notify MQTT events to the application through a
 callback function created to handle respective events:

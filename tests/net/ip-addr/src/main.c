@@ -91,7 +91,7 @@ static struct net_if *second_iface;
 
 #define TEST_IPV6(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, expected)  \
 	do {								     \
-		struct in6_addr addr = { { { a, b, c, d, e, f, g, h,	     \
+		struct net_in6_addr addr = { { { a, b, c, d, e, f, g, h,	     \
 					       i, j, k, l, m, n, o, p } } }; \
 		char *ptr = net_sprint_ipv6_addr(&addr);		     \
 		zassert_false(strcmp(ptr, expected),			     \
@@ -101,7 +101,7 @@ static struct net_if *second_iface;
 
 #define TEST_IPV4(a, b, c, d, expected)					\
 	do {								\
-		struct in_addr addr = { { { a, b, c, d } } };		\
+		struct net_in_addr addr = { { { a, b, c, d } } };		\
 		char *ptr = net_sprint_ipv4_addr(&addr);		\
 		zassert_false(strcmp(ptr, expected),			\
 			      "Test %s failed, got %s\n", expected,	\
@@ -233,7 +233,7 @@ static const char *addr_state_to_str(enum net_addr_state state)
 }
 
 static const char *get_addr_state(struct net_if *iface,
-				  const struct in6_addr *addr)
+				  const struct net_in6_addr *addr)
 {
 	struct net_if_addr *ifaddr;
 
@@ -252,30 +252,30 @@ static const char *get_addr_state(struct net_if *iface,
 
 ZTEST(ip_addr_fn, test_ipv6_addresses)
 {
-	struct in6_addr loopback = IN6ADDR_LOOPBACK_INIT;
-	struct in6_addr any = IN6ADDR_ANY_INIT;
-	struct in6_addr mcast = { { { 0xff, 0x84, 0, 0, 0, 0, 0, 0,
+	struct net_in6_addr loopback = IN6ADDR_LOOPBACK_INIT;
+	struct net_in6_addr any = NET_IN6ADDR_ANY_INIT;
+	struct net_in6_addr mcast = { { { 0xff, 0x84, 0, 0, 0, 0, 0, 0,
 				      0, 0, 0, 0, 0, 0, 0, 0x2 } } };
-	struct in6_addr addr6 = { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0,
+	struct net_in6_addr addr6 = { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0,
 				      0, 0, 0, 0, 0, 0, 0, 0x1 } } };
-	struct in6_addr addr6_pref1 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+	struct net_in6_addr addr6_pref1 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					    0, 0, 0, 0, 0, 0, 0, 0x1 } } };
-	struct in6_addr addr6_pref2 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+	struct net_in6_addr addr6_pref2 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					    0, 0, 0, 0, 0, 0, 0, 0x2 } } };
-	struct in6_addr addr6_pref3 = { { { 0x20, 0x01, 0x0d, 0xb8, 0x64, 0, 0,
+	struct net_in6_addr addr6_pref3 = { { { 0x20, 0x01, 0x0d, 0xb8, 0x64, 0, 0,
 					    0, 0, 0, 0, 0, 0, 0, 0, 0x2 } } };
-	struct in6_addr ula = { { { 0xfc, 0x00, 0xaa, 0xaa, 0, 0, 0, 0,
+	struct net_in6_addr ula = { { { 0xfc, 0x00, 0xaa, 0xaa, 0, 0, 0, 0,
 				    0, 0, 0, 0, 0xd1, 0xd2, 0xd3, 0xd4 } } };
-	struct in6_addr ula2 = { { { 0xfc, 0x00, 0xaa, 0xaa, 0, 0, 0, 0,
+	struct net_in6_addr ula2 = { { { 0xfc, 0x00, 0xaa, 0xaa, 0, 0, 0, 0,
 				0, 0, 0, 0, 0xd1, 0xd2, 0xd3, 2 } } };
-	struct in6_addr ula3 = { { { 0xfc, 0x00, 0xaa, 0xaa, 0, 0, 0, 0,
+	struct net_in6_addr ula3 = { { { 0xfc, 0x00, 0xaa, 0xaa, 0, 0, 0, 0,
 				0, 0, 0, 0, 0xd1, 0xd2, 0xf3, 3 } } };
-	struct in6_addr ula4 = { { { 0xfc, 0x00, 0xaa, 0xaa, 0, 0, 0, 0,
+	struct net_in6_addr ula4 = { { { 0xfc, 0x00, 0xaa, 0xaa, 0, 0, 0, 0,
 				0, 0, 0, 0, 0xd1, 0xd2, 0xf3, 4 } } };
-	struct in6_addr ula5 = { { { 0xfc, 0x00, 0xaa, 0xaa, 0, 0, 0, 0,
+	struct net_in6_addr ula5 = { { { 0xfc, 0x00, 0xaa, 0xaa, 0, 0, 0, 0,
 				0, 0, 0, 0, 0xd1, 0xd2, 0xd3, 0xd5 } } };
-	struct in6_addr *tmp;
-	const struct in6_addr *out;
+	struct net_in6_addr *tmp;
+	const struct net_in6_addr *out;
 	struct net_if_addr *ifaddr1, *ifaddr2, *ifaddr_ula, *ifaddr_ula3, *ifaddr_ula4;
 	struct net_if_mcast_addr *ifmaddr1;
 	struct net_if_ipv6_prefix *prefix;
@@ -351,13 +351,13 @@ ZTEST(ip_addr_fn, test_ipv6_addresses)
 
 	tmp = net_if_ipv6_get_ll(default_iface, NET_ADDR_PREFERRED);
 	zassert_false(tmp && memcmp(tmp, &addr6.s6_addr,
-				    sizeof(struct in6_addr)),
+				    sizeof(struct net_in6_addr)),
 		      "IPv6 ll address fetch failed");
 
 	ifaddr2->addr_state = NET_ADDR_DEPRECATED;
 
 	tmp = net_if_ipv6_get_ll(default_iface, NET_ADDR_PREFERRED);
-	zassert_false(tmp && !memcmp(tmp, &any, sizeof(struct in6_addr)),
+	zassert_false(tmp && !memcmp(tmp, &any, sizeof(struct net_in6_addr)),
 		      "IPv6 preferred ll address fetch failed");
 
 	ifaddr1 = net_if_ipv6_addr_add(default_iface,
@@ -385,7 +385,7 @@ ZTEST(ip_addr_fn, test_ipv6_addresses)
 		    iface);
 
 		zassert_false(memcmp(out->s6_addr, &addr6_pref2.s6_addr,
-				     sizeof(struct in6_addr)),
+				     sizeof(struct net_in6_addr)),
 			      "IPv6 wrong src address selected, iface %p\n",
 			      iface);
 
@@ -399,7 +399,7 @@ ZTEST(ip_addr_fn, test_ipv6_addresses)
 		    iface);
 
 		zassert_false(memcmp(out->s6_addr, &any.s6_addr,
-				     sizeof(struct in6_addr)),
+				     sizeof(struct net_in6_addr)),
 			      "IPv6 wrong src any address selected, iface %p\n",
 			      iface);
 
@@ -416,7 +416,7 @@ ZTEST(ip_addr_fn, test_ipv6_addresses)
 		    iface);
 
 		zassert_false(memcmp(out->s6_addr, &addr6.s6_addr,
-				     sizeof(struct in6_addr)),
+				     sizeof(struct net_in6_addr)),
 			      "IPv6 wrong src ll address selected, iface %p\n",
 			      iface);
 	}
@@ -449,7 +449,7 @@ ZTEST(ip_addr_fn, test_ipv6_addresses)
 	    net_sprint_ipv6_addr(out), get_addr_state(default_iface, out),
 	    iface);
 
-	zassert_false(memcmp(out->s6_addr, &ula.s6_addr, sizeof(struct in6_addr)),
+	zassert_false(memcmp(out->s6_addr, &ula.s6_addr, sizeof(struct net_in6_addr)),
 		      "IPv6 wrong src ula address selected, iface %p\n", iface);
 
 	/* Allow selection of deprecated address if no other address
@@ -481,7 +481,7 @@ ZTEST(ip_addr_fn, test_ipv6_addresses)
 	    net_sprint_ipv6_addr(out), get_addr_state(default_iface, out),
 	    iface);
 
-	zassert_false(memcmp(out->s6_addr, &ula3.s6_addr, sizeof(struct in6_addr)),
+	zassert_false(memcmp(out->s6_addr, &ula3.s6_addr, sizeof(struct net_in6_addr)),
 		      "IPv6 wrong src ula address selected, iface %p\n", iface);
 
 	/* Then change the address to deprecated state and check that we
@@ -497,7 +497,7 @@ ZTEST(ip_addr_fn, test_ipv6_addresses)
 	    net_sprint_ipv6_addr(out), get_addr_state(default_iface, out),
 	    iface);
 
-	zassert_false(memcmp(out->s6_addr, &ula.s6_addr, sizeof(struct in6_addr)),
+	zassert_false(memcmp(out->s6_addr, &ula.s6_addr, sizeof(struct net_in6_addr)),
 		      "IPv6 wrong src ula address selected, iface %p\n", iface);
 
 	/* Then have two deprecated addresses */
@@ -511,7 +511,7 @@ ZTEST(ip_addr_fn, test_ipv6_addresses)
 	    net_sprint_ipv6_addr(out), get_addr_state(default_iface, out),
 	    iface);
 
-	zassert_false(memcmp(out->s6_addr, &ula3.s6_addr, sizeof(struct in6_addr)),
+	zassert_false(memcmp(out->s6_addr, &ula3.s6_addr, sizeof(struct net_in6_addr)),
 		      "IPv6 wrong src ula address selected, iface %p\n", iface);
 
 	ifaddr_ula4 = net_if_ipv6_addr_add(default_iface, &ula4,
@@ -532,7 +532,7 @@ ZTEST(ip_addr_fn, test_ipv6_addresses)
 	    net_sprint_ipv6_addr(out), get_addr_state(default_iface, out),
 	    iface);
 
-	zassert_false(memcmp(out->s6_addr, &ula3.s6_addr, sizeof(struct in6_addr)),
+	zassert_false(memcmp(out->s6_addr, &ula3.s6_addr, sizeof(struct net_in6_addr)),
 		      "IPv6 wrong src ula address selected, iface %p\n", iface);
 
 	zassert_true(net_if_ipv6_addr_rm(default_iface, &ula),
@@ -548,12 +548,12 @@ ZTEST(ip_addr_fn, test_ipv6_addresses)
 ZTEST(ip_addr_fn, test_ipv4_ll_address_select_default_first)
 {
 	struct net_if *iface;
-	const struct in_addr *out;
+	const struct net_in_addr *out;
 	struct net_if_addr *ifaddr;
-	struct in_addr lladdr4_1 = { { { 169, 254, 0, 1 } } };
-	struct in_addr lladdr4_2 = { { { 169, 254, 0, 3 } } };
-	struct in_addr netmask = { { { 255, 255, 0, 0 } } };
-	struct in_addr dst4 = { { { 169, 254, 0, 2 } } };
+	struct net_in_addr lladdr4_1 = { { { 169, 254, 0, 1 } } };
+	struct net_in_addr lladdr4_2 = { { { 169, 254, 0, 3 } } };
+	struct net_in_addr netmask = { { { 255, 255, 0, 0 } } };
+	struct net_in_addr dst4 = { { { 169, 254, 0, 2 } } };
 
 	ifaddr = net_if_ipv4_addr_add(default_iface, &lladdr4_1, NET_ADDR_MANUAL, 0);
 	zassert_not_null(ifaddr, "IPv4 interface address add failed");
@@ -588,14 +588,14 @@ ZTEST(ip_addr_fn, test_ipv4_ll_address_select_default_first)
 ZTEST(ip_addr_fn, test_ipv4_ll_address_select)
 {
 	struct net_if *iface;
-	const struct in_addr *out;
+	const struct net_in_addr *out;
 	struct net_if_addr *ifaddr;
-	struct in_addr lladdr4_1 = { { { 169, 254, 250, 1 } } };
-	struct in_addr lladdr4_2 = { { { 169, 254, 253, 1 } } };
-	struct in_addr netmask_1 = { { { 255, 255, 255, 0 } } };
-	struct in_addr netmask_2 = { { { 255, 255, 255, 252 } } };
-	struct in_addr dst4_1 = { { { 169, 254, 250, 2 } } };
-	struct in_addr dst4_2 = { { { 169, 254, 253, 2 } } };
+	struct net_in_addr lladdr4_1 = { { { 169, 254, 250, 1 } } };
+	struct net_in_addr lladdr4_2 = { { { 169, 254, 253, 1 } } };
+	struct net_in_addr netmask_1 = { { { 255, 255, 255, 0 } } };
+	struct net_in_addr netmask_2 = { { { 255, 255, 255, 252 } } };
+	struct net_in_addr dst4_1 = { { { 169, 254, 250, 2 } } };
+	struct net_in_addr dst4_2 = { { { 169, 254, 253, 2 } } };
 
 	ifaddr = net_if_ipv4_addr_add(default_iface, &lladdr4_1, NET_ADDR_MANUAL, 0);
 	zassert_not_null(ifaddr, "IPv4 interface address add failed");
@@ -638,26 +638,26 @@ ZTEST(ip_addr_fn, test_ipv4_ll_address_select)
 
 ZTEST(ip_addr_fn, test_ipv4_addresses)
 {
-	const struct in_addr *out;
+	const struct net_in_addr *out;
 	struct net_if_addr *ifaddr1;
 	struct net_if_mcast_addr *ifmaddr1;
-	struct in_addr addr4 = { { { 192, 168, 0, 1 } } };
-	struct in_addr addr4b = { { { 192, 168, 1, 2 } } };
-	struct in_addr addr4_not_found = { { { 10, 20, 30, 40 } } };
-	struct in_addr lladdr4 = { { { 169, 254, 98, 203 } } };
-	struct in_addr maddr4a = { { { 224, 0, 0, 1 } } };
-	struct in_addr maddr4b = { { { 224, 0, 0, 2 } } };
-	struct in_addr match_addr = { { { 192, 168, 0, 2 } } };
-	struct in_addr fail_addr = { { { 10, 1, 0, 2 } } };
-	struct in_addr netmask = { { { 255, 255, 255, 0 } } };
-	struct in_addr netmask2 = { { { 255, 255, 0, 0 } } };
-	struct in_addr gw = { { { 192, 168, 0, 42 } } };
-	struct in_addr loopback4 = { { { 127, 0, 0, 1 } } };
-	struct in_addr bcast_addr1 = { { { 255, 255, 255, 255 } } };
-	struct in_addr bcast_addr2 = { { { 192, 168, 1, 255 } } };
-	struct in_addr bcast_addr3 = { { { 192, 168, 255, 255 } } };
-	struct in_addr bcast_addr4 = { { { 192, 0, 2, 255 } } };
-	struct in_addr bcast_addr5 = { { { 192, 168, 0, 255 } } };
+	struct net_in_addr addr4 = { { { 192, 168, 0, 1 } } };
+	struct net_in_addr addr4b = { { { 192, 168, 1, 2 } } };
+	struct net_in_addr addr4_not_found = { { { 10, 20, 30, 40 } } };
+	struct net_in_addr lladdr4 = { { { 169, 254, 98, 203 } } };
+	struct net_in_addr maddr4a = { { { 224, 0, 0, 1 } } };
+	struct net_in_addr maddr4b = { { { 224, 0, 0, 2 } } };
+	struct net_in_addr match_addr = { { { 192, 168, 0, 2 } } };
+	struct net_in_addr fail_addr = { { { 10, 1, 0, 2 } } };
+	struct net_in_addr netmask = { { { 255, 255, 255, 0 } } };
+	struct net_in_addr netmask2 = { { { 255, 255, 0, 0 } } };
+	struct net_in_addr gw = { { { 192, 168, 0, 42 } } };
+	struct net_in_addr loopback4 = { { { 127, 0, 0, 1 } } };
+	struct net_in_addr bcast_addr1 = { { { 255, 255, 255, 255 } } };
+	struct net_in_addr bcast_addr2 = { { { 192, 168, 1, 255 } } };
+	struct net_in_addr bcast_addr3 = { { { 192, 168, 255, 255 } } };
+	struct net_in_addr bcast_addr4 = { { { 192, 0, 2, 255 } } };
+	struct net_in_addr bcast_addr5 = { { { 192, 168, 0, 255 } } };
 	struct net_if *iface, *iface1, *iface2;
 	int i, ret;
 
@@ -822,15 +822,15 @@ ZTEST(ip_addr_fn, test_ipv4_addresses)
 ZTEST(ip_addr_fn, test_ipv6_mesh_addresses)
 {
 	struct net_if_addr *ifaddr;
-	const struct in6_addr *out;
-	struct in6_addr lla = { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0x54, 0xdb,
+	const struct net_in6_addr *out;
+	struct net_in6_addr lla = { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0x54, 0xdb,
 				    0x88, 0x1c, 0x38, 0x45, 0x57, 0xf4 } } };
-	struct in6_addr ml_eid = { { { 0xfd, 0xe5, 0x8d, 0xba, 0x82, 0xe1, 0,
+	struct net_in6_addr ml_eid = { { { 0xfd, 0xe5, 0x8d, 0xba, 0x82, 0xe1, 0,
 				       0x01, 0x40, 0x16, 0x99, 0x3c, 0x83, 0x99,
 				       0x35, 0xab } } };
-	struct in6_addr ll_mcast = { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	struct net_in6_addr ll_mcast = { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 					 0, 0, 0, 0, 0x1 } } };
-	struct in6_addr ml_mcast = { { { 0xff, 0x03, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	struct net_in6_addr ml_mcast = { { { 0xff, 0x03, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 					 0, 0, 0, 0, 0x1 } } };
 	struct net_if *iface = default_iface;
 
@@ -852,7 +852,7 @@ ZTEST(ip_addr_fn, test_ipv6_mesh_addresses)
 	    net_sprint_ipv6_addr(&ll_mcast), net_sprint_ipv6_addr(out));
 
 	zassert_false(memcmp(out->s6_addr, &lla.s6_addr,
-			     sizeof(struct in6_addr)),
+			     sizeof(struct net_in6_addr)),
 		      "IPv6 wrong src address selected\n");
 
 	out = net_if_ipv6_select_src_addr(iface, &ml_mcast);
@@ -862,7 +862,7 @@ ZTEST(ip_addr_fn, test_ipv6_mesh_addresses)
 	    net_sprint_ipv6_addr(&ml_mcast), net_sprint_ipv6_addr(out));
 
 	zassert_false(memcmp(out->s6_addr, &ml_eid.s6_addr,
-			     sizeof(struct in6_addr)),
+			     sizeof(struct net_in6_addr)),
 		      "IPv6 wrong src address selected\n");
 
 	zassert_true(net_if_ipv6_addr_rm(iface, &lla),
@@ -875,7 +875,7 @@ ZTEST(ip_addr_fn, test_private_ipv6_addresses)
 {
 	bool ret;
 	struct {
-		struct in6_addr addr;
+		struct net_in6_addr addr;
 		bool is_private;
 	} addrs[] = {
 		{
@@ -912,7 +912,7 @@ ZTEST(ip_addr_fn, test_private_ipv4_addresses)
 {
 	bool ret;
 	struct {
-		struct in_addr addr;
+		struct net_in_addr addr;
 		bool is_private;
 	} addrs[] = {
 		{

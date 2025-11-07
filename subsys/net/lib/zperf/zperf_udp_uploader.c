@@ -37,21 +37,21 @@ static inline void zperf_upload_decode_stat(const uint8_t *data,
 
 	stat = (struct zperf_server_hdr *)
 			(data + sizeof(struct zperf_udp_datagram));
-	flags = ntohl(UNALIGNED_GET(&stat->flags));
+	flags = net_ntohl(UNALIGNED_GET(&stat->flags));
 	if (!(flags & ZPERF_FLAGS_VERSION1)) {
 		NET_WARN("Unexpected response flags");
 	}
 
-	results->nb_packets_rcvd = ntohl(UNALIGNED_GET(&stat->datagrams));
-	results->nb_packets_lost = ntohl(UNALIGNED_GET(&stat->error_cnt));
+	results->nb_packets_rcvd = net_ntohl(UNALIGNED_GET(&stat->datagrams));
+	results->nb_packets_lost = net_ntohl(UNALIGNED_GET(&stat->error_cnt));
 	results->nb_packets_outorder =
-		ntohl(UNALIGNED_GET(&stat->outorder_cnt));
-	results->total_len = (((uint64_t)ntohl(UNALIGNED_GET(&stat->total_len1))) << 32) +
-		ntohl(UNALIGNED_GET(&stat->total_len2));
-	results->time_in_us = ntohl(UNALIGNED_GET(&stat->stop_usec)) +
-		ntohl(UNALIGNED_GET(&stat->stop_sec)) * USEC_PER_SEC;
-	results->jitter_in_us = ntohl(UNALIGNED_GET(&stat->jitter2)) +
-		ntohl(UNALIGNED_GET(&stat->jitter1)) * USEC_PER_SEC;
+		net_ntohl(UNALIGNED_GET(&stat->outorder_cnt));
+	results->total_len = (((uint64_t)net_ntohl(UNALIGNED_GET(&stat->total_len1))) << 32) +
+		net_ntohl(UNALIGNED_GET(&stat->total_len2));
+	results->time_in_us = net_ntohl(UNALIGNED_GET(&stat->stop_usec)) +
+		net_ntohl(UNALIGNED_GET(&stat->stop_sec)) * USEC_PER_SEC;
+	results->jitter_in_us = net_ntohl(UNALIGNED_GET(&stat->jitter2)) +
+		net_ntohl(UNALIGNED_GET(&stat->jitter1)) * USEC_PER_SEC;
 }
 
 static inline int zperf_upload_fin(int sock,
@@ -78,9 +78,9 @@ static inline int zperf_upload_fin(int sock,
 		datagram = (struct zperf_udp_datagram *)sample_packet;
 
 		/* Fill the packet header */
-		datagram->id = htonl(-nb_packets);
-		datagram->tv_sec = htonl(secs);
-		datagram->tv_usec = htonl(usecs);
+		datagram->id = net_htonl(-nb_packets);
+		datagram->tv_sec = net_htonl(secs);
+		datagram->tv_usec = net_htonl(usecs);
 
 		hdr = (struct zperf_client_hdr_v1 *)(sample_packet +
 						     sizeof(*datagram));
@@ -91,12 +91,12 @@ static inline int zperf_upload_fin(int sock,
 		 * to set there some meaningful values.
 		 */
 		hdr->flags = 0;
-		hdr->num_of_threads = htonl(1);
+		hdr->num_of_threads = net_htonl(1);
 		hdr->port = 0;
 		hdr->buffer_len = sizeof(sample_packet) -
 			sizeof(*datagram) - sizeof(*hdr);
 		hdr->bandwidth = 0;
-		hdr->num_of_bytes = htonl(packet_size);
+		hdr->num_of_bytes = net_htonl(packet_size);
 
 		/* Send the packet */
 		ret = zsock_send(sock, sample_packet, packet_size, 0);
@@ -320,19 +320,19 @@ static int udp_upload(int sock, int port,
 		/* Fill the packet header */
 		datagram = (struct zperf_udp_datagram *)sample_packet;
 
-		datagram->id = htonl(nb_packets);
-		datagram->tv_sec = htonl(secs);
-		datagram->tv_usec = htonl(usecs);
+		datagram->id = net_htonl(nb_packets);
+		datagram->tv_sec = net_htonl(secs);
+		datagram->tv_usec = net_htonl(usecs);
 
 		hdr = (struct zperf_client_hdr_v1 *)(sample_packet +
 						     sizeof(*datagram));
 		hdr->flags = 0;
-		hdr->num_of_threads = htonl(1);
-		hdr->port = htonl(port);
+		hdr->num_of_threads = net_htonl(1);
+		hdr->port = net_htonl(port);
 		hdr->buffer_len = sizeof(sample_packet) -
 			sizeof(*datagram) - sizeof(*hdr);
-		hdr->bandwidth = htonl(rate_in_kbps);
-		hdr->num_of_bytes = htonl(packet_size);
+		hdr->bandwidth = net_htonl(rate_in_kbps);
+		hdr->num_of_bytes = net_htonl(packet_size);
 
 		/* Load custom data payload if requested */
 		if (param->data_loader != NULL) {
@@ -376,11 +376,11 @@ static int udp_upload(int sock, int port,
 	end_time = k_uptime_ticks();
 	usecs64 = param->unix_offset_us + k_ticks_to_us_floor64(end_time - start_time);
 
-	if (param->peer_addr.sa_family == AF_INET) {
+	if (param->peer_addr.sa_family == NET_AF_INET) {
 		if (net_ipv4_is_addr_mcast(&net_sin(&param->peer_addr)->sin_addr)) {
 			is_mcast_pkt = true;
 		}
-	} else if (param->peer_addr.sa_family == AF_INET6) {
+	} else if (param->peer_addr.sa_family == NET_AF_INET6) {
 		if (net_ipv6_is_addr_mcast(&net_sin6(&param->peer_addr)->sin6_addr)) {
 			is_mcast_pkt = true;
 		}
@@ -414,10 +414,10 @@ int zperf_udp_upload(const struct zperf_upload_params *param,
 		return -EINVAL;
 	}
 
-	if (param->peer_addr.sa_family == AF_INET) {
-		port = ntohs(net_sin(&param->peer_addr)->sin_port);
-	} else if (param->peer_addr.sa_family == AF_INET6) {
-		port = ntohs(net_sin6(&param->peer_addr)->sin6_port);
+	if (param->peer_addr.sa_family == NET_AF_INET) {
+		port = net_ntohs(net_sin(&param->peer_addr)->sin_port);
+	} else if (param->peer_addr.sa_family == NET_AF_INET6) {
+		port = net_ntohs(net_sin6(&param->peer_addr)->sin6_port);
 	} else {
 		NET_ERR("Invalid address family (%d)",
 			param->peer_addr.sa_family);
@@ -425,17 +425,19 @@ int zperf_udp_upload(const struct zperf_upload_params *param,
 	}
 
 	sock = zperf_prepare_upload_sock(&param->peer_addr, param->options.tos,
-					 param->options.priority, 0, IPPROTO_UDP);
+					 param->options.priority, 0,
+					 NET_IPPROTO_UDP);
 	if (sock < 0) {
 		return sock;
 	}
 
 	if (param->if_name[0]) {
 		(void)memset(req.ifr_name, 0, sizeof(req.ifr_name));
-		strncpy(req.ifr_name, param->if_name, IFNAMSIZ);
-		req.ifr_name[IFNAMSIZ - 1] = 0;
+		strncpy(req.ifr_name, param->if_name, NET_IFNAMSIZ);
+		req.ifr_name[NET_IFNAMSIZ - 1] = 0;
 
-		if (zsock_setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, &req,
+		if (zsock_setsockopt(sock, ZSOCK_SOL_SOCKET,
+				     ZSOCK_SO_BINDTODEVICE, &req,
 				     sizeof(struct ifreq)) != 0) {
 			NET_WARN("setsockopt SO_BINDTODEVICE error (%d)", -errno);
 		}

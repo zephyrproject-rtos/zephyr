@@ -31,7 +31,7 @@ static enum net_verdict ipcp_handle(struct ppp_context *ctx,
 #define IP_ADDRESS_OPTION_LEN (1 + 1 + 4)
 
 static int ipcp_add_address(struct ppp_context *ctx, struct net_pkt *pkt,
-			    struct in_addr *addr)
+			    struct net_in_addr *addr)
 {
 	net_pkt_write_u8(pkt, 1 + 1 + sizeof(addr->s_addr));
 	return net_pkt_write(pkt, &addr->s_addr, sizeof(addr->s_addr));
@@ -43,9 +43,9 @@ static int ipcp_add_ip_address(struct ppp_context *ctx, struct net_pkt *pkt)
 }
 
 static int ipcp_ack_check_address(struct net_pkt *pkt, size_t oplen,
-				  struct in_addr *addr)
+				  struct net_in_addr *addr)
 {
-	struct in_addr ack_addr;
+	struct net_in_addr ack_addr;
 	int ret;
 
 	if (oplen != sizeof(ack_addr)) {
@@ -72,7 +72,7 @@ static int ipcp_ack_ip_address(struct ppp_context *ctx, struct net_pkt *pkt,
 }
 
 static int ipcp_nak_override_address(struct net_pkt *pkt, size_t oplen,
-				     struct in_addr *addr)
+				     struct net_in_addr *addr)
 {
 	if (oplen != sizeof(*addr)) {
 		return -EINVAL;
@@ -148,7 +148,7 @@ static struct net_pkt *ipcp_config_info_add(struct ppp_fsm *fsm)
 
 struct ipcp_peer_option_data {
 	bool addr_present;
-	struct in_addr addr;
+	struct net_in_addr addr;
 };
 
 #if defined(CONFIG_NET_L2_PPP_OPTION_SERVE_DNS)
@@ -165,7 +165,7 @@ static int ipcp_dns_address_parse(struct ppp_fsm *fsm, struct net_pkt *pkt,
 	}
 
 	/* Request is zeros? Give our dns address in ConfNak */
-	if (data->addr.s_addr == INADDR_ANY) {
+	if (data->addr.s_addr == NET_INADDR_ANY) {
 		NET_DBG("[IPCP] zeroes rcvd as %s addr, sending NAK with our %s addr",
 			"DNS", "DNS");
 		return -EINVAL;
@@ -191,7 +191,7 @@ static int ipcp_ip_address_parse(struct ppp_fsm *fsm, struct net_pkt *pkt,
 
 #if defined(CONFIG_NET_L2_PPP_OPTION_SERVE_IP)
 	/* Request is zeros? Give our IP address in ConfNak */
-	if (data->addr.s_addr == INADDR_ANY) {
+	if (data->addr.s_addr == NET_INADDR_ANY) {
 		NET_DBG("[IPCP] zeroes rcvd as %s addr, sending NAK with our %s addr",
 			"IP", "IP");
 		return -EINVAL;
@@ -201,7 +201,7 @@ static int ipcp_ip_address_parse(struct ppp_fsm *fsm, struct net_pkt *pkt,
 		char dst[INET_ADDRSTRLEN];
 		char *addr_str;
 
-		addr_str = net_addr_ntop(AF_INET, &data->addr, dst,
+		addr_str = net_addr_ntop(NET_AF_INET, &data->addr, dst,
 					 sizeof(dst));
 
 		NET_DBG("[IPCP] Received peer address %s",
@@ -238,7 +238,7 @@ static int ipcp_dns1_address_parse(struct ppp_fsm *fsm, struct net_pkt *pkt,
 
 	ret = ipcp_dns_address_parse(fsm, pkt, user_data);
 
-	if (ret == -EINVAL && ctx->ipcp.peer_options.dns1_address.s_addr == INADDR_ANY) {
+	if (ret == -EINVAL && ctx->ipcp.peer_options.dns1_address.s_addr == NET_INADDR_ANY) {
 		return -ENOTSUP;
 	}
 	return ret;
@@ -253,7 +253,7 @@ static int ipcp_dns2_address_parse(struct ppp_fsm *fsm, struct net_pkt *pkt,
 
 	ret = ipcp_dns_address_parse(fsm, pkt, user_data);
 
-	if (ret == -EINVAL && ctx->ipcp.peer_options.dns2_address.s_addr == INADDR_ANY) {
+	if (ret == -EINVAL && ctx->ipcp.peer_options.dns2_address.s_addr == NET_INADDR_ANY) {
 		return -ENOTSUP;
 	}
 	return ret;
@@ -347,19 +347,19 @@ static void ipcp_set_dns_servers(struct ppp_fsm *fsm)
 					       ipcp.fsm);
 
 	struct dns_resolve_context *dnsctx;
-	struct sockaddr_in dns1 = {
-		.sin_family = AF_INET,
-		.sin_port = htons(53),
+	struct net_sockaddr_in dns1 = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(53),
 		.sin_addr = ctx->ipcp.my_options.dns1_address
 	};
-	struct sockaddr_in dns2 = {
-		.sin_family = AF_INET,
-		.sin_port = htons(53),
+	struct net_sockaddr_in dns2 = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(53),
 		.sin_addr = ctx->ipcp.my_options.dns2_address
 	};
-	const struct sockaddr *dns_servers[] = {
-		(struct sockaddr *) &dns1,
-		(struct sockaddr *) &dns2,
+	const struct net_sockaddr *dns_servers[] = {
+		(struct net_sockaddr *) &dns1,
+		(struct net_sockaddr *) &dns2,
 		NULL
 	};
 	int ifindex = net_if_get_by_iface(ctx->iface);
@@ -440,7 +440,7 @@ static void ipcp_up(struct ppp_fsm *fsm)
 		return;
 	}
 
-	addr_str = net_addr_ntop(AF_INET, &ctx->ipcp.my_options.address,
+	addr_str = net_addr_ntop(NET_AF_INET, &ctx->ipcp.my_options.address,
 				 dst, sizeof(dst));
 
 	addr = net_if_ipv4_addr_add(ctx->iface,

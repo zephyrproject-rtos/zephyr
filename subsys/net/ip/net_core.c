@@ -72,7 +72,7 @@ static inline enum net_verdict process_data(struct net_pkt *pkt)
 {
 	int ret;
 
-	net_packet_socket_input(pkt, ETH_P_ALL, SOCK_RAW);
+	net_packet_socket_input(pkt, ETH_P_ALL, NET_SOCK_RAW);
 
 	/* If there is no data, then drop the packet. */
 	if (!pkt->frags) {
@@ -103,13 +103,13 @@ static inline enum net_verdict process_data(struct net_pkt *pkt)
 	net_pkt_cursor_init(pkt);
 
 	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET_DGRAM)) {
-		net_packet_socket_input(pkt, net_pkt_ll_proto_type(pkt), SOCK_DGRAM);
+		net_packet_socket_input(pkt, net_pkt_ll_proto_type(pkt), NET_SOCK_DGRAM);
 	}
 
 	uint8_t family = net_pkt_family(pkt);
 
-	if (IS_ENABLED(CONFIG_NET_IP) && (family == AF_INET || family == AF_INET6 ||
-					  family == AF_UNSPEC || family == AF_PACKET)) {
+	if (IS_ENABLED(CONFIG_NET_IP) && (family == NET_AF_INET || family == NET_AF_INET6 ||
+					  family == NET_AF_UNSPEC || family == NET_AF_PACKET)) {
 		/* IP version and header length. */
 		uint8_t vtc_vhl = NET_IPV6_HDR(pkt)->vtc & 0xf0;
 
@@ -123,7 +123,7 @@ static inline enum net_verdict process_data(struct net_pkt *pkt)
 		net_stats_update_ip_errors_protoerr(net_pkt_iface(pkt));
 		net_stats_update_ip_errors_vhlerr(net_pkt_iface(pkt));
 		return NET_DROP;
-	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && family == AF_CAN) {
+	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && family == NET_AF_CAN) {
 		return net_canbus_socket_input(pkt);
 	}
 
@@ -192,7 +192,7 @@ static inline int check_ip(struct net_pkt *pkt)
 	family = net_pkt_family(pkt);
 	ret = 0;
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6 &&
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == NET_AF_INET6 &&
 	    net_pkt_ll_proto_type(pkt) == NET_ETH_PTYPE_IPV6) {
 		/* Drop IPv6 packet if hop limit is 0 */
 		if (NET_IPV6_HDR(pkt)->hop_limit == 0) {
@@ -226,7 +226,7 @@ static inline int check_ip(struct net_pkt *pkt)
 		if ((net_ipv6_is_addr_loopback_raw(NET_IPV6_HDR(pkt)->dst) ||
 		    net_ipv6_is_my_addr_raw(NET_IPV6_HDR(pkt)->dst)) &&
 		    !net_pkt_forwarding(pkt)) {
-			struct in6_addr addr;
+			struct net_in6_addr addr;
 
 			/* Swap the addresses so that in receiving side
 			 * the packet is accepted.
@@ -262,7 +262,7 @@ static inline int check_ip(struct net_pkt *pkt)
 			goto drop;
 		}
 
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET &&
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == NET_AF_INET &&
 		   net_pkt_ll_proto_type(pkt) == NET_ETH_PTYPE_IP) {
 		/* Drop IPv4 packet if ttl is 0 */
 		if (NET_IPV4_HDR(pkt)->ttl == 0) {
@@ -297,7 +297,7 @@ static inline int check_ip(struct net_pkt *pkt)
 		    (net_ipv4_is_addr_bcast_raw(net_pkt_iface(pkt),
 						NET_IPV4_HDR(pkt)->dst) == false &&
 		     net_ipv4_is_my_addr_raw(NET_IPV4_HDR(pkt)->dst))) {
-			struct in_addr addr;
+			struct net_in_addr addr;
 
 			/* Swap the addresses so that in receiving side
 			 * the packet is accepted.
@@ -328,7 +328,7 @@ static inline int check_ip(struct net_pkt *pkt)
 
 drop:
 	if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
-		if (family == AF_INET6) {
+		if (family == NET_AF_INET6) {
 			net_stats_update_ipv6_drop(net_pkt_iface(pkt));
 		} else {
 			net_stats_update_ipv4_drop(net_pkt_iface(pkt));
@@ -342,21 +342,21 @@ drop:
 static inline bool process_multicast(struct net_pkt *pkt)
 {
 	struct net_context *ctx = net_pkt_context(pkt);
-	sa_family_t family = net_pkt_family(pkt);
+	net_sa_family_t family = net_pkt_family(pkt);
 
 	if (ctx == NULL) {
 		return false;
 	}
 
 #if defined(CONFIG_NET_IPV4)
-	if (family == AF_INET) {
-		const struct in_addr *dst = (const struct in_addr *)&NET_IPV4_HDR(pkt)->dst;
+	if (family == NET_AF_INET) {
+		const struct net_in_addr *dst = (const struct net_in_addr *)&NET_IPV4_HDR(pkt)->dst;
 
 		return net_ipv4_is_addr_mcast(dst) && net_context_get_ipv4_mcast_loop(ctx);
 	}
 #endif
 #if defined(CONFIG_NET_IPV6)
-	if (family == AF_INET6) {
+	if (family == NET_AF_INET6) {
 		return net_ipv6_is_addr_mcast_raw(NET_IPV6_HDR(pkt)->dst) &&
 		       net_context_get_ipv6_mcast_loop(ctx);
 	}
@@ -423,12 +423,12 @@ int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 				if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
 					switch (net_pkt_family(pkt)) {
 #if defined(CONFIG_NET_IPV4)
-					case AF_INET:
+					case NET_AF_INET:
 						net_stats_update_ipv4_sent(net_pkt_iface(pkt));
 						break;
 #endif
 #if defined(CONFIG_NET_IPV6)
-					case AF_INET6:
+					case NET_AF_INET6:
 						net_stats_update_ipv6_sent(net_pkt_iface(pkt));
 						break;
 #endif
@@ -458,10 +458,10 @@ int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 
 	if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
 		switch (family) {
-		case AF_INET:
+		case NET_AF_INET:
 			net_stats_update_ipv4_sent(iface);
 			break;
-		case AF_INET6:
+		case NET_AF_INET6:
 			net_stats_update_ipv6_sent(iface);
 			break;
 		}

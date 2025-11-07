@@ -78,16 +78,16 @@ static void print_dhcpv4_info(struct net_if *iface)
 
 #if CONFIG_NET_CONFIG_LOG_LEVEL >= LOG_LEVEL_INF
 		NET_INFO("IPv4 address: %s",
-			 net_addr_ntop(AF_INET, &if_addr->address.in_addr,
+			 net_addr_ntop(NET_AF_INET, &if_addr->address.in_addr,
 				       hr_addr, sizeof(hr_addr)));
 		NET_INFO("Lease time: %u seconds",
 			 iface->config.dhcpv4.lease_time);
 		NET_INFO("Subnet: %s",
-			 net_addr_ntop(AF_INET,
+			 net_addr_ntop(NET_AF_INET,
 				       &iface->config.ip.ipv4->unicast[i].netmask,
 				       hr_addr, sizeof(hr_addr)));
 		NET_INFO("Router: %s",
-			 net_addr_ntop(AF_INET, &iface->config.ip.ipv4->gw,
+			 net_addr_ntop(NET_AF_INET, &iface->config.ip.ipv4->gw,
 				       hr_addr, sizeof(hr_addr)));
 #endif
 		break;
@@ -144,7 +144,7 @@ static void setup_ipv4(struct net_if *iface)
 #if CONFIG_NET_CONFIG_LOG_LEVEL >= LOG_LEVEL_INF
 	char hr_addr[NET_IPV4_ADDR_LEN];
 #endif
-	struct in_addr addr, netmask;
+	struct net_in_addr addr, netmask;
 
 	if (IS_ENABLED(CONFIG_NET_IPV4_ACD) || IS_ENABLED(CONFIG_NET_DHCPV4)) {
 		net_mgmt_init_event_callback(&mgmt4_cb, ipv4_addr_add_handler,
@@ -158,7 +158,7 @@ static void setup_ipv4(struct net_if *iface)
 		return;
 	}
 
-	if (net_addr_pton(AF_INET, CONFIG_NET_CONFIG_MY_IPV4_ADDR, &addr)) {
+	if (net_addr_pton(NET_AF_INET, CONFIG_NET_CONFIG_MY_IPV4_ADDR, &addr)) {
 		NET_ERR("Invalid address: %s", CONFIG_NET_CONFIG_MY_IPV4_ADDR);
 		return;
 	}
@@ -181,12 +181,12 @@ static void setup_ipv4(struct net_if *iface)
 
 #if CONFIG_NET_CONFIG_LOG_LEVEL >= LOG_LEVEL_INF
 	NET_INFO("IPv4 address: %s",
-		 net_addr_ntop(AF_INET, &addr, hr_addr, sizeof(hr_addr)));
+		 net_addr_ntop(NET_AF_INET, &addr, hr_addr, sizeof(hr_addr)));
 #endif
 
 	if (sizeof(CONFIG_NET_CONFIG_MY_IPV4_NETMASK) > 1) {
 		/* If not empty */
-		if (net_addr_pton(AF_INET, CONFIG_NET_CONFIG_MY_IPV4_NETMASK,
+		if (net_addr_pton(NET_AF_INET, CONFIG_NET_CONFIG_MY_IPV4_NETMASK,
 				  &netmask)) {
 			NET_ERR("Invalid netmask: %s",
 				CONFIG_NET_CONFIG_MY_IPV4_NETMASK);
@@ -197,7 +197,7 @@ static void setup_ipv4(struct net_if *iface)
 
 	if (sizeof(CONFIG_NET_CONFIG_MY_IPV4_GW) > 1) {
 		/* If not empty */
-		if (net_addr_pton(AF_INET, CONFIG_NET_CONFIG_MY_IPV4_GW,
+		if (net_addr_pton(NET_AF_INET, CONFIG_NET_CONFIG_MY_IPV4_GW,
 				  &addr)) {
 			NET_ERR("Invalid gateway: %s",
 				CONFIG_NET_CONFIG_MY_IPV4_GW);
@@ -241,7 +241,7 @@ static void setup_dhcpv6(struct net_if *iface)
 #endif
 
 static struct net_mgmt_event_callback mgmt6_cb;
-static struct in6_addr laddr;
+static struct net_in6_addr laddr;
 
 static void ipv6_event_handler(struct net_mgmt_event_callback *cb,
 			       uint64_t mgmt_event, struct net_if *iface)
@@ -281,7 +281,7 @@ static void ipv6_event_handler(struct net_mgmt_event_callback *cb,
 
 #if CONFIG_NET_CONFIG_LOG_LEVEL >= LOG_LEVEL_INF
 		NET_INFO("IPv6 address: %s",
-			 net_addr_ntop(AF_INET6, &laddr, hr_addr, NET_IPV6_ADDR_LEN));
+			 net_addr_ntop(NET_AF_INET6, &laddr, hr_addr, NET_IPV6_ADDR_LEN));
 
 		if (ifaddr->addr_type == NET_ADDR_DHCP) {
 			char remaining_str[] = "infinite";
@@ -317,7 +317,7 @@ static void setup_ipv6(struct net_if *iface, uint32_t flags)
 		goto exit;
 	}
 
-	if (net_addr_pton(AF_INET6, CONFIG_NET_CONFIG_MY_IPV6_ADDR, &laddr)) {
+	if (net_addr_pton(NET_AF_INET6, CONFIG_NET_CONFIG_MY_IPV6_ADDR, &laddr)) {
 		NET_ERR("Invalid address: %s", CONFIG_NET_CONFIG_MY_IPV6_ADDR);
 		/* some interfaces may add IP address later */
 		mask |= NET_EVENT_IPV6_ADDR_ADD;

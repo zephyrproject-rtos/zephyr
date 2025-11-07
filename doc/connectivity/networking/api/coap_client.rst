@@ -37,7 +37,7 @@ The following is an example of a CoAP client initialization and request sending:
     req.payload = NULL;
     req.len = 0;
 
-    /* Sock is a file descriptor referencing a socket, address is the sockaddr struct for the
+    /* Sock is a file descriptor referencing a socket, address is the net_sockaddr struct for the
      * destination address of the request or NULL if the socket is already connected.
      */
     ret = coap_client_req(&client, sock, &address, &req, -1);

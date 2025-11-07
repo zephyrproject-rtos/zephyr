@@ -260,14 +260,14 @@ int send_settings_frame(struct http_client_ctx *client, bool ack)
 
 		setting = (struct http2_settings_field *)
 			(settings_frame + HTTP2_FRAME_HEADER_SIZE);
-		UNALIGNED_PUT(htons(HTTP2_SETTINGS_HEADER_TABLE_SIZE),
+		UNALIGNED_PUT(net_htons(HTTP2_SETTINGS_HEADER_TABLE_SIZE),
 			      UNALIGNED_MEMBER_ADDR(setting, id));
 		UNALIGNED_PUT(0, UNALIGNED_MEMBER_ADDR(setting, value));
 
 		setting++;
-		UNALIGNED_PUT(htons(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS),
+		UNALIGNED_PUT(net_htons(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS),
 			      UNALIGNED_MEMBER_ADDR(setting, id));
-		UNALIGNED_PUT(htonl(CONFIG_HTTP_SERVER_MAX_STREAMS),
+		UNALIGNED_PUT(net_htonl(CONFIG_HTTP_SERVER_MAX_STREAMS),
 			      UNALIGNED_MEMBER_ADDR(setting, value));
 
 		len = HTTP2_FRAME_HEADER_SIZE +
