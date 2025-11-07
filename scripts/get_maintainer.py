@@ -236,6 +236,9 @@ class Maintainers:
                         _get_match_fn(group_dict.get("files-exclude"),
                                       group_dict.get("files-regex-exclude"))
 
+                    # Store reference to parent area for inheritance
+                    file_group._parent_area = area
+
                     area.file_groups.append(file_group)
 
             # area._match_fn(path) tests if the path matches files and/or
@@ -470,6 +473,11 @@ class FileGroup:
     """
     Represents a file group within an area in MAINTAINERS.yml.
 
+    File groups inherit file patterns from their parent area. A file will only
+    match a file group if it first matches the parent area's patterns, and then
+    also matches the file group's own patterns. This allows file groups to
+    further filter and subdivide files that are already covered by the area.
+
     These attributes are available:
 
     name:
@@ -481,8 +489,25 @@ class FileGroup:
     collaborators:
         List of collaborators specific to this file group
     """
+    def _parent_area_contains(self, path):
+        """
+        Returns True if the parent area contains 'path', False otherwise.
+        """
+        return (self._parent_area._match_fn and
+                self._parent_area._match_fn(path) and not
+                (self._parent_area._exclude_match_fn and
+                 self._parent_area._exclude_match_fn(path)))
+
     def _contains(self, path):
         # Returns True if the file group contains 'path', and False otherwise
+        # File groups inherit from their parent area - a file must match the
+        # parent area's patterns first, then the file group's patterns
+
+        # First check if the path matches the parent area's patterns
+        if not self._parent_area_contains(path):
+            return False
+
+        # Then check if it matches this file group's patterns
         return self._match_fn and self._match_fn(path) and not \
             (self._exclude_match_fn and self._exclude_match_fn(path))
 
