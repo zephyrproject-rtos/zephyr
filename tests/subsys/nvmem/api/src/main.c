@@ -47,4 +47,13 @@ ZTEST(nvmem_api, test_nvmem_api)
 	zassert_equal(ret, -EROFS, "Expected read-only NVMEM");
 }
 
+ZTEST(nvmem_api, test_nvmem_missing)
+{
+	const struct nvmem_cell missing_idx = NVMEM_CELL_GET_BY_IDX_OR(consumer0, 10, {});
+	const struct nvmem_cell missing_name = NVMEM_CELL_GET_BY_NAME_OR(consumer0, missing, {});
+
+	zassert_is_null(missing_idx.dev);
+	zassert_is_null(missing_name.dev);
+}
+
 ZTEST_SUITE(nvmem_api, NULL, NULL, NULL, NULL, NULL);
