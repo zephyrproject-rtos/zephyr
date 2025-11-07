@@ -56,6 +56,7 @@ static inline void ll_rng_clear_seis(RNG_TypeDef *RNGx)
 #if defined(CONFIG_SOC_SERIES_STM32WB0X)
 #	if defined(CONFIG_SOC_STM32WB09XX)
 		LL_RNG_SetResetHealthErrorFlags(RNGx, 1);
+		WRITE_REG(RNGx->IRQ_SR, RNG_IRQ_SR_ERROR_IRQ);
 #	else
 		LL_RNG_ClearFlag_FAULT(RNGx);
 #	endif
