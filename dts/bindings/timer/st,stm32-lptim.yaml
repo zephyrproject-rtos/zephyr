@@ -11,6 +11,7 @@ include:
     property-blocklist:
       - st,prescaler
       - st,countermode
+      - st,mastermode
 
 properties:
   st,prescaler:
