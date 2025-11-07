@@ -27,6 +27,12 @@ struct linger {
 	int  l_linger;
 };
 
+#if !defined(CONFIG_NET_NAMESPACE_COMPAT_MODE)
+typedef uint32_t socklen_t;
+struct msghdr;
+struct sockaddr;
+#endif
+
 int accept(int sock, struct sockaddr *addr, socklen_t *addrlen);
 int bind(int sock, const struct sockaddr *addr, socklen_t addrlen);
 int connect(int sock, const struct sockaddr *addr, socklen_t addrlen);
