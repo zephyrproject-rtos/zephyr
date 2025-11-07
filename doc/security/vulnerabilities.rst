@@ -2022,3 +2022,20 @@ Under embargo until 2025-11-24
 -----------------
 
 Under embargo until 2025-12-13
+
+:cve:`2025-12890`
+-----------------
+
+Bluetooth: peripheral: Invalid handling of malformed connection request
+
+Improper handling of malformed Connection Request with the interval
+set to be 1 (which supposed to be illegal) and the chM 0x7CFFFFFFFF
+triggers a crash. The peripheral will not be connectable after it.
+
+- `Zephyr project bug tracker GHSA-8hrf-pfww-83v9
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-8hrf-pfww-83v9>`_
+
+This has been fixed in main for v4.2.0
+
+- `PR 89955 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/89955>`_

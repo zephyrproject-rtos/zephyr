@@ -71,6 +71,8 @@ Security Vulnerability Related
 
 The following CVEs are addressed by this release:
 
+* :cve:`2025-12890` `Bluetooth: peripheral: Invalid handling of malformed connection request
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-8hrf-pfww-83v9>`_
 * :cve:`2025-27809` `TLS clients may unwittingly skip server authentication
   <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-03-1/>`_
 * :cve:`2025-27810` `Potential authentication bypass in TLS handshake
