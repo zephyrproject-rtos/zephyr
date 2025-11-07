@@ -438,7 +438,7 @@ MODEM_CMD_DEFINE(on_cmd_unsol_rdy)
  * Desc: This function will send "binary" data over the socket object.
  */
 static ssize_t send_socket_data(struct modem_socket *sock,
-				const struct sockaddr *dst_addr,
+				const struct net_sockaddr *dst_addr,
 				struct modem_cmd *handler_cmds,
 				size_t handler_cmds_len,
 				const char *buf, size_t buf_len,
@@ -518,7 +518,7 @@ exit:
  * Desc: This function will send data on the socket object.
  */
 static ssize_t offload_sendto(void *obj, const void *buf, size_t len,
-			      int flags, const struct sockaddr *to,
+			      int flags, const struct net_sockaddr *to,
 			      socklen_t tolen)
 {
 	int ret;
@@ -549,7 +549,7 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len,
 	}
 
 	/* UDP is not supported. */
-	if (sock->ip_proto == IPPROTO_UDP) {
+	if (sock->ip_proto == NET_IPPROTO_UDP) {
 		errno = ENOTSUP;
 		return -1;
 	}
@@ -575,7 +575,7 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len,
  * Desc: This function will receive data on the socket object.
  */
 static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
-				int flags, struct sockaddr *from,
+				int flags, struct net_sockaddr *from,
 				socklen_t *fromlen)
 {
 	struct modem_socket *sock = (struct modem_socket *)obj;
@@ -684,7 +684,7 @@ static int offload_ioctl(void *obj, unsigned int request, va_list args)
 /* Func: offload_connect
  * Desc: This function will connect with a provided TCP.
  */
-static int offload_connect(void *obj, const struct sockaddr *addr,
+static int offload_connect(void *obj, const struct net_sockaddr *addr,
 						   socklen_t addrlen)
 {
 	struct modem_socket *sock     = (struct modem_socket *) obj;
@@ -713,14 +713,14 @@ static int offload_connect(void *obj, const struct sockaddr *addr,
 	}
 
 	/* Find the correct destination port. */
-	if (addr->sa_family == AF_INET6) {
-		dst_port = ntohs(net_sin6(addr)->sin6_port);
-	} else if (addr->sa_family == AF_INET) {
-		dst_port = ntohs(net_sin(addr)->sin_port);
+	if (addr->sa_family == NET_AF_INET6) {
+		dst_port = net_ntohs(net_sin6(addr)->sin6_port);
+	} else if (addr->sa_family == NET_AF_INET) {
+		dst_port = net_ntohs(net_sin(addr)->sin_port);
 	}
 
 	/* UDP is not supported. */
-	if (sock->ip_proto == IPPROTO_UDP) {
+	if (sock->ip_proto == NET_IPPROTO_UDP) {
 		errno = ENOTSUP;
 		return -1;
 	}
@@ -811,7 +811,7 @@ static int offload_close(void *obj)
 /* Func: offload_sendmsg
  * Desc: This function sends messages to the modem.
  */
-static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
+static ssize_t offload_sendmsg(void *obj, const struct net_msghdr *msg, int flags)
 {
 	ssize_t sent = 0;
 	int rc;
@@ -1129,16 +1129,16 @@ static struct offloaded_if_api api_funcs = {
 
 static bool offload_is_supported(int family, int type, int proto)
 {
-	if (family != AF_INET &&
-	    family != AF_INET6) {
+	if (family != NET_AF_INET &&
+	    family != NET_AF_INET6) {
 		return false;
 	}
 
-	if (type != SOCK_STREAM) {
+	if (type != NET_SOCK_STREAM) {
 		return false;
 	}
 
-	if (proto != IPPROTO_TCP) {
+	if (proto != NET_IPPROTO_TCP) {
 		return false;
 	}
 
@@ -1287,4 +1287,4 @@ NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL,
 
 /* Register NET sockets. */
 NET_SOCKET_OFFLOAD_REGISTER(quectel_bg9x, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY,
-			    AF_UNSPEC, offload_is_supported, offload_socket);
+			    NET_AF_UNSPEC, offload_is_supported, offload_socket);
