@@ -182,7 +182,7 @@ struct nvmem_cell {
  * @see NVMEM_CELL_INST_GET_BY_NAME_OR
  */
 #define NVMEM_CELL_GET_BY_NAME_OR(node_id, name, default_value)                                    \
-	COND_CODE_1(DT_NODE_HAS_PROP(node_id, nvmem_cells),                                        \
+	COND_CODE_1(DT_PROP_HAS_NAME(node_id, nvmem_cells, name),                                  \
 		    (NVMEM_CELL_GET_BY_NAME(node_id, name)),                                       \
 		    (default_value))
 
@@ -286,7 +286,7 @@ struct nvmem_cell {
  * @see NVMEM_CELL_INST_GET_BY_IDX_OR
  */
 #define NVMEM_CELL_GET_BY_IDX_OR(node_id, idx, default_value)                                      \
-	COND_CODE_1(DT_NODE_HAS_PROP(node_id, nvmem_cells),                                        \
+	COND_CODE_1(DT_PROP_HAS_IDX(node_id, nvmem_cells, idx),                                    \
 		    (NVMEM_CELL_GET_BY_IDX(node_id, idx)),                                         \
 		    (default_value))
 
