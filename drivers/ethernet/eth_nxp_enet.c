@@ -144,9 +144,9 @@ static bool eth_get_ptp_data(struct net_if *iface, struct net_pkt *pkt)
 	bool pkt_is_ptp;
 
 	if (net_eth_is_vlan_enabled(eth_ctx, iface)) {
-		pkt_is_ptp = ntohs(hdr_vlan->type) == NET_ETH_PTYPE_PTP;
+		pkt_is_ptp = net_ntohs(hdr_vlan->type) == NET_ETH_PTYPE_PTP;
 	} else {
-		pkt_is_ptp = ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_PTP;
+		pkt_is_ptp = net_ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_PTP;
 	}
 
 	if (pkt_is_ptp) {
@@ -376,7 +376,7 @@ static int eth_nxp_enet_rx(const struct device *dev)
 
 	/* Using root iface. It will be updated in net_recv_data() */
 	pkt = net_pkt_rx_alloc_with_buffer(data->iface, frame_length,
-					   AF_UNSPEC, 0, K_NO_WAIT);
+					   NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		goto flush;
 	}
