@@ -91,6 +91,7 @@ struct pwm_stm32_config {
 	uint32_t prescaler;
 	uint32_t countermode;
 	uint32_t deadtime;
+	uint32_t mastermode;
 	const struct stm32_pclken *pclken;
 	size_t pclk_len;
 	const struct pinctrl_dev_config *pcfg;
@@ -700,6 +701,17 @@ static int pwm_stm32_init(const struct device *dev)
 	}
 #endif
 
+#ifdef IS_TIM_MASTER_INSTANCE
+	if (IS_TIM_MASTER_INSTANCE(timer)) {
+		LL_TIM_SetTriggerOutput(timer, cfg->mastermode);
+	} else {
+		if (cfg->mastermode != 0) {
+			LOG_ERR("%s: Timer does not support mastermode", dev->name);
+			return -ENOTSUP;
+		}
+	}
+#endif /* IS_TIM_MASTER_INSTANCE*/
+
 #ifdef IS_TIM_BREAK_INSTANCE
 	/* Use the macro IS_TIM_BREAK_INSTANCE to check for supporting the
 	 * break instance timers since some socs like L0/L1 will not
@@ -785,6 +797,7 @@ static void pwm_stm32_irq_config_func_##index(const struct device *dev)		\
 		.prescaler = DT_PROP(PWM(index), st_prescaler),		       \
 		.countermode = DT_PROP(PWM(index), st_countermode),	       \
 		.deadtime = DT_PROP(PWM(index), st_deadtime),		       \
+		.mastermode = CONCAT(LL_TIM_TRGO_, DT_STRING_TOKEN(PWM(index), st_mastermode)),	\
 		.pclken = pclken_##index,				       \
 		.pclk_len = DT_NUM_CLOCKS(PWM(index)),			       \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),		       \
