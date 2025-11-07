@@ -2039,3 +2039,8 @@ This has been fixed in main for v4.2.0
 
 - `PR 89955 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/89955>`_
+
+:cve:`2025-12899`
+-----------------
+
+Under embargo until 2026-01-28
