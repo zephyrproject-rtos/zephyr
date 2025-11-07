@@ -555,14 +555,10 @@ FUNC_NORETURN void z_cstart(void)
 	z_device_state_init();
 
 #if CONFIG_SOC_EARLY_INIT_HOOK
-#ifndef CONFIG_DSPIC
 	soc_early_init_hook();
 #endif
-#endif
 #if CONFIG_BOARD_EARLY_INIT_HOOK
-#ifndef CONFIG_DSPIC
 	board_early_init_hook();
-#endif
 #endif
 	/* perform basic hardware initialization */
 	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL_1);
