@@ -44,7 +44,7 @@
 
 		lrc10: lrc10 {
 			compatible = "fixed-clock";
-			clock-frequency = <DT_FREQ_K(10)>;
+			clock-frequency = <DT_FREQ_K(9)>;
 			#clock-cells = <0>;
 		};
 
