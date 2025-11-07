@@ -70,6 +70,10 @@
 /** Get the Physical Page Number from a PTE */
 #define PTE_PPN_GET(pte) ((pte) & XTENSA_MMU_PTE_PPN_MASK)
 
+/** Set the Physical Page Number in a PTE */
+#define PTE_PPN_SET(pte, ppn)                                                                      \
+	(((pte) & ~XTENSA_MMU_PTE_PPN_MASK) | ((ppn) & XTENSA_MMU_PTE_PPN_MASK))
+
 /** Get the attributes from a PTE */
 #define PTE_ATTR_GET(pte) (((pte) & PTE_ATTR_MASK) >> PTE_ATTR_SHIFT)
 
