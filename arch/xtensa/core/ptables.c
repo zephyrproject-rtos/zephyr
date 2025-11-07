@@ -1227,6 +1227,7 @@ static void region_map_update(uint32_t *l1_table, uintptr_t start,
 		}
 
 		pte = l2_table[l2_pos];
+		pte = PTE_PPN_SET(pte, start + offset);
 
 		if ((option & OPTION_RESTORE_ATTRS) == OPTION_RESTORE_ATTRS) {
 			new_attrs = PTE_BCKUP_ATTR_GET(pte);
