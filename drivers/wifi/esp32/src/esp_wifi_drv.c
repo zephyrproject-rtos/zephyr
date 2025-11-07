@@ -138,7 +138,7 @@ static esp_err_t eth_esp32_rx(void *buffer, uint16_t len, void *eb)
 		return -EIO;
 	}
 
-	pkt = net_pkt_rx_alloc_with_buffer(esp32_wifi_iface, len, AF_UNSPEC, 0, K_MSEC(100));
+	pkt = net_pkt_rx_alloc_with_buffer(esp32_wifi_iface, len, NET_AF_UNSPEC, 0, K_MSEC(100));
 	if (!pkt) {
 		LOG_ERR("Failed to allocate net buffer");
 		esp_wifi_internal_free_rx_buffer(eb);
@@ -185,7 +185,8 @@ static esp_err_t wifi_esp32_ap_iface_rx(void *buffer, uint16_t len, void *eb)
 		return -EIO;
 	}
 
-	pkt = net_pkt_rx_alloc_with_buffer(esp32_wifi_iface_ap, len, AF_UNSPEC, 0, K_MSEC(100));
+	pkt = net_pkt_rx_alloc_with_buffer(esp32_wifi_iface_ap, len,
+					   NET_AF_UNSPEC, 0, K_MSEC(100));
 	if (!pkt) {
 		esp_wifi_internal_free_rx_buffer(eb);
 		LOG_ERR("Failed to get net buffer");
