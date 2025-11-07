@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Jocelyn Masserot <jocemass@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for Digital potentiometer controllers
+
+include: base.yaml
+
+properties:
+  "#io-channel-cells":
+    type: int
+    required: true
