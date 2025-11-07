@@ -8,7 +8,7 @@
 #include "../cyw20829/cyw20829.77-bga.dtsi"
 
 &bluetooth {
-	compatible = "infineon,cyw208xx-hci", "infineon,cyw20829-b0";
+	compatible = "infineon,cyw208xx-hci", "infineon,cyw20829-b1";
 };
 
 /* QSPI Flash is included in the processor package for this part. */

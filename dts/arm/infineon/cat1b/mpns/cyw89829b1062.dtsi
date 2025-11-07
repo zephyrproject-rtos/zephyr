@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "../cyw20829/cyw20829.56-qfn.dtsi"
+#include "../cyw20829/cyw20829.48-qfn.dtsi"
 
 &bluetooth {
-	compatible = "infineon,cyw208xx-hci", "infineon,cyw20829-b0";
+	compatible = "infineon,cyw208xx-hci", "infineon,cyw20829-b1";
 };
