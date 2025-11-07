@@ -77,7 +77,7 @@ void esp_ieee802154_receive_done(uint8_t *frame, esp_ieee802154_frame_info_t *fr
 
 	LOG_HEXDUMP_DBG(payload, len, "RX buffer:");
 
-	pkt = net_pkt_rx_alloc_with_buffer(esp32_data.iface, len, AF_UNSPEC, 0, K_NO_WAIT);
+	pkt = net_pkt_rx_alloc_with_buffer(esp32_data.iface, len, NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("No pkt available");
 		goto exit;

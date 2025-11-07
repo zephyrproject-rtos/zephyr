@@ -212,7 +212,7 @@ static void b91_handle_ack(void)
 
 	/* allocate ack packet */
 	ack_pkt = net_pkt_rx_alloc_with_buffer(data.iface, B91_ACK_FRAME_LEN,
-					       AF_UNSPEC, 0, K_NO_WAIT);
+					       NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!ack_pkt) {
 		LOG_ERR("No free packet available.");
 		return;
@@ -308,7 +308,8 @@ static void b91_rf_rx_isr(void)
 		}
 
 		/* get packet pointer from NET stack */
-		pkt = net_pkt_rx_alloc_with_buffer(data.iface, length, AF_UNSPEC, 0, K_NO_WAIT);
+		pkt = net_pkt_rx_alloc_with_buffer(data.iface, length,
+						   NET_AF_UNSPEC, 0, K_NO_WAIT);
 		if (!pkt) {
 			LOG_ERR("No pkt available");
 			goto exit;
