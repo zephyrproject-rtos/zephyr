@@ -92,13 +92,6 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		}
 		/* need to restore the clock */
 		stm32_clock_control_init(NULL);
-
-		/*
-		 * System is now in active mode.
-		 * Reenable interrupts which were disabled
-		 * when OS started idling code.
-		 */
-		irq_unlock(0);
 		break;
 	case PM_STATE_STANDBY:
 		__fallthrough;
@@ -111,6 +104,12 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		break;
 	}
 
+	/*
+	 * System is now in active mode.
+	 * Reenable interrupts which were disabled
+	 * when OS started idling code.
+	 */
+	irq_unlock(0);
 }
 
 /* Initialize STM32 Power */
