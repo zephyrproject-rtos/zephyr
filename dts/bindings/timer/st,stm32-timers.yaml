@@ -62,3 +62,32 @@ properties:
       STM32L0/STM32L1 have no instance supporting this feature).
 
       Valid range [0 ... 255].
+
+  st,mastermode:
+    type: string
+    default: RESET
+    enum:
+      - RESET
+      - ENABLE
+      - UPDATE
+      - CC1IF
+      - OC1REF
+      - OC2REF
+      - OC3REF
+      - OC4REF
+    description: |
+      Selects master mode (trigger output TRGO source selection)
+      of the timer instance. Only available for timer instances
+      with master function - property is ignored otherwise.
+
+      For details, refer to your device's Reference Manual.
+
+      * RESET   - The UG bit from the TIMx_EGR register is used
+                  as TRGO.
+      * ENABLE  - The Counter enable signal, CNT_EN, is used as TRGO.
+      * UPDATE  - The update event is used as TRGO.
+      * CC1IF   - The CC1IF set event is used as TRGO.
+      * OC1REF - OC1REF signal is used as TRGO.
+      * OC2REF - OC2REF signal is used as TRGO.
+      * OC3REF - OC3REF signal is used as TRGO.
+      * OC4REF - OC4REF signal is used as TRGO.
