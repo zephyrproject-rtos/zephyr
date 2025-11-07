@@ -10,6 +10,7 @@ The Wi-Fi management API is used to manage Wi-Fi networks. It supports below mod
 
 * IEEE802.11 Station (STA)
 * IEEE802.11 Access Point (AP)
+* IEEE802.11 P2P (Wi-Fi Direct)
 
 Only personal mode security is supported with below types:
 
@@ -214,6 +215,19 @@ The test certificates in ``samples/net/wifi/test_certs/rsa2k`` are generated usi
 
 .. note::
    These certificates are for testing only and should not be used in production.
+
+Wi-Fi P2P (Wi-Fi Direct)
+************************
+
+Wi-Fi P2P or Wi-Fi Direct enables devices to communicate directly with each other without requiring
+a traditional access point. This feature is particularly useful for device-to-device communication
+scenarios.
+
+To enable and build with Wi-Fi P2P support:
+
+.. code-block:: bash
+
+    $ west build -p -b <board> samples/net/wifi/shell -- -DCONFIG_WIFI_NM_WPA_SUPPLICANT_P2P=y
 
 API Reference
 *************
