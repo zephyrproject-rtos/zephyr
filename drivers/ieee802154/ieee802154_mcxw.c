@@ -435,7 +435,7 @@ static int handle_ack(struct mcxw_context *mcxw_radio)
 	int err = 0;
 
 	len = mcxw_radio->rx_ack_frame.length;
-	pkt = net_pkt_rx_alloc_with_buffer(mcxw_radio->iface, len, AF_UNSPEC, 0, K_NO_WAIT);
+	pkt = net_pkt_rx_alloc_with_buffer(mcxw_radio->iface, len, NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("No free packet available.");
 		err = -ENOMEM;
@@ -641,8 +641,8 @@ void mcxw_rx_thread(void *arg1, void *arg2, void *arg3)
 			continue;
 		}
 
-		pkt = net_pkt_rx_alloc_with_buffer(mcxw_radio->iface, rx_frame.length, AF_UNSPEC, 0,
-						   K_FOREVER);
+		pkt = net_pkt_rx_alloc_with_buffer(mcxw_radio->iface, rx_frame.length,
+						   NET_AF_UNSPEC, 0, K_FOREVER);
 
 		if (net_pkt_write(pkt, rx_frame.psdu, rx_frame.length)) {
 			goto drop;
