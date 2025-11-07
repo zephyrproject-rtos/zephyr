@@ -6,12 +6,21 @@
 
 /**
  * @file
- * @ingroup digitpot_interface
+ * @ingroup digipot_interface
  * @brief Main header file for digital potentiometer driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_DIGIPOT_H_
 #define ZEPHYR_INCLUDE_DRIVERS_DIGIPOT_H_
+
+/**
+ * @brief Interfaces for Digital Potentiometers.
+ * @defgroup digipot_interface Digipots
+ * @since 4.6
+ * @version 0.1.0
+ * @ingroup io_interfaces
+ * @{
+ */
 
 #include <zephyr/device.h>
 #include <zephyr/types.h>
@@ -21,49 +30,44 @@ extern "C" {
 #endif
 
 /**
- * @typedef digipot_set_wiper_t
+ * @def_driverbackendgroup{Digipot, digipot_interface}
+ * @{
+ */
+
+/**
  * @brief Digipot API function for setting the wiper position.
  *
- * See digipot_set_wiper() for argument description
+ * See digipot_set() for argument description.
  */
-typedef int (*digipot_set_wiper_t)(const struct device *dev, uint8_t channel, uint16_t position);
-
+typedef int (*digipot_set_t)(const struct device *dev, uint8_t channel, uint16_t position);
 
 /**
- * @typedef digipot_get_wiper_t
  * @brief Digipot API function for getting the wiper position.
  *
- * See digipot_get_wiper() for argument description
+ * See digipot_get() for argument description.
  */
-typedef int (*digipot_get_wiper_t)(const struct device *dev, uint8_t channel, uint16_t *position);
+typedef int (*digipot_get_t)(const struct device *dev, uint8_t channel, uint16_t *position);
 
 /**
- * @typedef digipot_reset_wiper_t
- * @brief Digipot API function for reseting the wiper to midscale position.
+ * @brief Digipot API function for resetting the wiper to midscale position.
  *
- * See digipot_reset_wiper() for argument description
+ * See digipot_reset() for argument description.
  */
-typedef int (*digipot_reset_wiper_t)(const struct device *dev, uint8_t channel);
+typedef int (*digipot_reset_t)(const struct device *dev, uint8_t channel);
 
 /**
- * @typedef digipot_shutdown_t
- * @brief Digipot API function for shutting down the device's channel.
- *
- * See digipot_shutdown() for argument description
- */
-typedef int (*digipot_shutdown_t)(const struct device *dev, uint8_t channel);
-
-/**
- * @brief Digipot device API
- *
- *
+ * @driver_ops{Digipot}
  */
 __subsystem struct digipot_driver_api {
-    digipot_set_wiper_t set_position;
-    digipot_get_wiper_t get_position;
-    digipot_reset_wiper_t reset_position;
-    digipot_shutdown_t shutdown;
+	/** @driver_ops_mandatory @copybrief digipot_set */
+	digipot_set_t set_position;
+	/** @driver_ops_mandatory @copybrief digipot_get */
+	digipot_get_t get_position;
+	/** @driver_ops_mandatory @copybrief digipot_reset */
+	digipot_reset_t reset_position;
 };
+
+/** @} */
 
 /**
  * @brief Set the digipot wiper position
@@ -72,13 +76,13 @@ __subsystem struct digipot_driver_api {
  * @param channel digipot RDAC channel
  * @param pos digipot wiper position
  *
- * @retval 0 if successful
- * @retval < 0 if setting wiper failed
+ * @retval 0 Success.
+ * @retval -EINVAL Invalid channel or position.
+ * @retval -EIO I2C communication error.
  */
-static inline int digipot_set_wiper(const struct device *dev, uint8_t channel, uint16_t pos)
+static inline int digipot_set(const struct device *dev, uint8_t channel, uint16_t pos)
 {
-    const struct digipot_driver_api *api = (const struct digipot_driver_api *)dev->api;
-    return api->set_position(dev, channel, pos);
+	return DEVICE_API_GET(digipot, dev)->set_position(dev, channel, pos);
 }
 
 /**
@@ -88,13 +92,13 @@ static inline int digipot_set_wiper(const struct device *dev, uint8_t channel, u
  * @param channel digipot RDAC channel
  * @param pos digipot wiper position
  *
- * @retval 0 if successful
- * @retval < 0 if setting wiper failed
+ * @retval 0 Success.
+ * @retval -EINVAL Invalid channel.
+ * @retval -EIO I2C communication error.
  */
-static inline int digipot_get_wiper(const struct device *dev, uint8_t channel, uint16_t *pos)
+static inline int digipot_get(const struct device *dev, uint8_t channel, uint16_t *pos)
 {
-    const struct digipot_driver_api *api = (const struct digipot_driver_api *)dev->api;
-    return api->get_position(dev, channel, pos);
+	return DEVICE_API_GET(digipot, dev)->get_position(dev, channel, pos);
 }
 
 /**
@@ -103,32 +107,19 @@ static inline int digipot_get_wiper(const struct device *dev, uint8_t channel, u
  * @param dev Pointer to the digipot device
  * @param channel digipot RDAC channel
  *
- * @retval 0 if successful
- * @retval < 0 if setting wiper failed
+ * @retval 0 Success.
+ * @retval -EINVAL Invalid channel.
+ * @retval -EIO I2C communication error.
  */
-static inline int digipot_reset_wiper(const struct device *dev, uint8_t channel)
+static inline int digipot_reset(const struct device *dev, uint8_t channel)
 {
-    const struct digipot_driver_api *api = (const struct digipot_driver_api *)dev->api;
-    return api->reset_position(dev, channel);
-}
-
-/**
- * @brief Shutdown the digipot wiper channel
- *
- * @param dev Pointer to the digipot device
- * @param channel digipot RDAC channel
- *
- * @retval 0 if successful
- * @retval < 0 if setting wiper failed
- */
-static inline int digipot_shutdown(const struct device *dev, uint8_t channel)
-{
-    const struct digipot_driver_api *api = (const struct digipot_driver_api *)dev->api;
-    return api->shutdown(dev, channel);
+	return DEVICE_API_GET(digipot, dev)->reset_position(dev, channel);
 }
 
 #ifdef __cplusplus
 }
 #endif
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_DIGIPOT_H_ */
