@@ -114,6 +114,12 @@ New APIs and options
     * :kconfig:option:`CONFIG_NVMEM_FLASH`
     * :kconfig:option:`CONFIG_NVMEM_FLASH_WRITE`
 
+* Networking
+
+  * Wi-Fi
+
+    * Add support for Wi-Fi Direct (P2P) mode.
+
 * Settings
 
    * :kconfig:option:`CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION`
