@@ -4,6 +4,8 @@ tests:
       - drivers
       - counter
     depends_on: counter
+    platform_allow:
+      - frdm_mcxn236
     min_ram: 16
     platform_exclude: nucleo_f302r8
     timeout: 600
