@@ -1,0 +1,10 @@
+sample:
+  name: SRTP
+tests:
+  samples.modules.libsrtp.rtpw:
+    depends_on: netif
+    tags:
+      - net
+    integration_platforms:
+      - nucleo_n657x0_q
+      - frdm_mcxn947
