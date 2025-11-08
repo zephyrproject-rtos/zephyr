@@ -77,6 +77,8 @@ node-macro =/ %s"DT_N" path-id %s"_P_" prop-id %s"_FOREACH_PROP_ELEM_SEP_VARGS"
 ; These are used by DT_CHILD_NUM and DT_CHILD_NUM_STATUS_OKAY macros
 node-macro =/ %s"DT_N" path-id %s"_CHILD_NUM"
 node-macro =/ %s"DT_N" path-id %s"_CHILD_NUM_STATUS_OKAY"
+; This is used by DT_CHILD_BY_UNIT_ADDR
+node-macro =/ %s"DT_N" path-id %s"_CHILD_UNIT_ADDR_" unit-addr
 ; These are used internally by DT_FOREACH_CHILD, which iterates over
 ; each child node.
 node-macro =/ %s"DT_N" path-id %s"_FOREACH_CHILD"
@@ -393,6 +395,17 @@ other-macro =/ %s"DT_COMPAT_" dt-name %s"_LABEL_" dt-name
 ; alternate-id begin immediately with names taken from the devicetree.
 alternate-id =  ( %s"ALIAS" / %s"NODELABEL" ) dt-name
 alternate-id =/ %s"INST_" 1*DIGIT "_" dt-name
+
+; --------------------------------------------------------------------
+; unit-addr: a unit address token for child lookup helpers
+;
+; Children that have a unique unit address get helper macros using either
+; decimal or lowercase hexadecimal forms of that address.
+unit-addr = 1*DIGIT
+unit-addr =/ %s"0x" 1*hexdig-lower
+
+; Lowercase hexadecimal digit.
+hexdig-lower = DIGIT / %s"a" / %s"b" / %s"c" / %s"d" / %s"e" / %s"f"
 
 ; --------------------------------------------------------------------
 ; miscellaneous helper definitions
