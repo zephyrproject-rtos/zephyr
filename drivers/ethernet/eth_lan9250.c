@@ -697,6 +697,8 @@ static int lan9250_init(const struct device *dev)
 		return ret;
 	}
 	lan9250_configure(dev);
+
+	(void)net_eth_mac_load(&config->mac_cfg, context->mac_address);
 	lan9250_set_macaddr(dev);
 
 	k_thread_create(&context->thread, context->thread_stack,
@@ -719,6 +721,7 @@ static int lan9250_init(const struct device *dev)
 		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8)),                                \
 		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                               \
 		.timeout = CONFIG_ETH_LAN9250_BUF_ALLOC_TIMEOUT,                                   \
+		.mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(inst),                                  \
 	};                                                                                         \
                                                                                                    \
 	ETH_NET_DEVICE_DT_INST_DEFINE(inst, lan9250_init, NULL, &lan9250_##inst##_runtime,         \
