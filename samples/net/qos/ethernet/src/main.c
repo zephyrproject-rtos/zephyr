@@ -90,8 +90,6 @@ static NPF_PRIORITY(priority_rule_128, NET_PRIORITY_VO, npf_128);
 static NPF_PRIORITY(priority_rule_129, NET_PRIORITY_IC, npf_129);
 static NPF_PRIORITY(priority_rule_130, NET_PRIORITY_NC, npf_130);
 
-static uint32_t simulated_work_time; /* data race ! */
-
 int net_fake_dev_init(const struct device *dev)
 {
 	return 0;
@@ -123,7 +121,21 @@ static void net_iface_init(struct net_if *iface)
 
 static int net_if_fake_send(const struct device *dev, struct net_pkt *pkt)
 {
-	LOG_INF("sending service %u, pkt %p", net_pkt_ll_proto_type(pkt), pkt);
+	int ok;
+	uint32_t simulated_work_time;
+
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
+
+	/* this sample does not support VLAN */
+	net_pkt_skip(pkt, sizeof(struct net_eth_hdr));
+	ok = net_pkt_read_be32(pkt, &simulated_work_time);
+	if (ok != 0) {
+		goto out;
+	}
+
+	LOG_INF("sending service %u, pkt %p, work %u", net_pkt_ll_proto_type(pkt), pkt,
+		simulated_work_time);
 
 	posix_cpu_hold(simulated_work_time);
 
@@ -155,6 +167,7 @@ static int net_if_fake_send(const struct device *dev, struct net_pkt *pkt)
 	default: /* nothing to do */
 		break;
 	}
+out:
 	net_pkt_unref(pkt);
 	return 0;
 }
@@ -173,7 +186,8 @@ NET_DEVICE_INIT(net_if_fake, "net_if_fake", net_fake_dev_init, NULL, &context, N
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &net_if_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE,
 		MTU);
 
-static void try_recv_data(struct net_if *iface, uint16_t ptype, enum service_type service_type)
+static void try_recv_data(struct net_if *iface, uint32_t simulated_work_time, uint16_t ptype,
+			  enum service_type service_type)
 {
 	int res;
 	struct net_pkt *pkt = NULL;
@@ -200,6 +214,9 @@ static void try_recv_data(struct net_if *iface, uint16_t ptype, enum service_typ
 	if (net_pkt_write_u8(pkt, service_type)) {
 		goto error;
 	}
+	if (net_pkt_write_be32(pkt, simulated_work_time)) {
+		goto error;
+	}
 
 	res = net_recv_data(net_pkt_iface(pkt), pkt);
 	if (res < 0) {
@@ -213,11 +230,9 @@ error:
 	net_pkt_unref(pkt);
 }
 
-struct statistics single_run_with_simulated_work(struct net_if *iface, uint32_t work)
+struct statistics single_run_with_simulated_work(struct net_if *iface, uint32_t w)
 {
 	k_timepoint_t deadline = sys_timepoint_calc(SINGLE_RUN_DEADLINE);
-
-	simulated_work_time = work;
 
 	k_sem_reset(&service_123_received);
 	k_sem_reset(&service_124_received);
@@ -238,22 +253,22 @@ struct statistics single_run_with_simulated_work(struct net_if *iface, uint32_t 
 
 	while (!sys_timepoint_expired(deadline)) {
 		/*every tick try receive a packet of each type*/
-		try_recv_data(iface, NET_ETH_PTYPE_123, SERVICE_TYPE_ECHO);
-		try_recv_data(iface, NET_ETH_PTYPE_123, SERVICE_TYPE_COMMAND);
-		try_recv_data(iface, NET_ETH_PTYPE_124, SERVICE_TYPE_ECHO);
-		try_recv_data(iface, NET_ETH_PTYPE_124, SERVICE_TYPE_COMMAND);
-		try_recv_data(iface, NET_ETH_PTYPE_125, SERVICE_TYPE_ECHO);
-		try_recv_data(iface, NET_ETH_PTYPE_125, SERVICE_TYPE_COMMAND);
-		try_recv_data(iface, NET_ETH_PTYPE_126, SERVICE_TYPE_ECHO);
-		try_recv_data(iface, NET_ETH_PTYPE_126, SERVICE_TYPE_COMMAND);
-		try_recv_data(iface, NET_ETH_PTYPE_127, SERVICE_TYPE_ECHO);
-		try_recv_data(iface, NET_ETH_PTYPE_127, SERVICE_TYPE_COMMAND);
-		try_recv_data(iface, NET_ETH_PTYPE_128, SERVICE_TYPE_ECHO);
-		try_recv_data(iface, NET_ETH_PTYPE_128, SERVICE_TYPE_COMMAND);
-		try_recv_data(iface, NET_ETH_PTYPE_129, SERVICE_TYPE_ECHO);
-		try_recv_data(iface, NET_ETH_PTYPE_129, SERVICE_TYPE_COMMAND);
-		try_recv_data(iface, NET_ETH_PTYPE_130, SERVICE_TYPE_ECHO);
-		try_recv_data(iface, NET_ETH_PTYPE_130, SERVICE_TYPE_COMMAND);
+		try_recv_data(iface, w, NET_ETH_PTYPE_123, SERVICE_TYPE_ECHO);
+		try_recv_data(iface, w, NET_ETH_PTYPE_123, SERVICE_TYPE_COMMAND);
+		try_recv_data(iface, w, NET_ETH_PTYPE_124, SERVICE_TYPE_ECHO);
+		try_recv_data(iface, w, NET_ETH_PTYPE_124, SERVICE_TYPE_COMMAND);
+		try_recv_data(iface, w, NET_ETH_PTYPE_125, SERVICE_TYPE_ECHO);
+		try_recv_data(iface, w, NET_ETH_PTYPE_125, SERVICE_TYPE_COMMAND);
+		try_recv_data(iface, w, NET_ETH_PTYPE_126, SERVICE_TYPE_ECHO);
+		try_recv_data(iface, w, NET_ETH_PTYPE_126, SERVICE_TYPE_COMMAND);
+		try_recv_data(iface, w, NET_ETH_PTYPE_127, SERVICE_TYPE_ECHO);
+		try_recv_data(iface, w, NET_ETH_PTYPE_127, SERVICE_TYPE_COMMAND);
+		try_recv_data(iface, w, NET_ETH_PTYPE_128, SERVICE_TYPE_ECHO);
+		try_recv_data(iface, w, NET_ETH_PTYPE_128, SERVICE_TYPE_COMMAND);
+		try_recv_data(iface, w, NET_ETH_PTYPE_129, SERVICE_TYPE_ECHO);
+		try_recv_data(iface, w, NET_ETH_PTYPE_129, SERVICE_TYPE_COMMAND);
+		try_recv_data(iface, w, NET_ETH_PTYPE_130, SERVICE_TYPE_ECHO);
+		try_recv_data(iface, w, NET_ETH_PTYPE_130, SERVICE_TYPE_COMMAND);
 		k_sleep(K_TICKS(1));
 	}
 
@@ -363,13 +378,24 @@ static enum net_verdict l2_service(struct net_if *iface, uint16_t ptype, struct 
 	struct net_pkt *echo_reply;
 	uint8_t type;
 	const char *service_type;
+	int ok;
+	uint32_t simulated_work_time;
 
 	net_pkt_cursor_init(pkt);
-	net_pkt_read_u8(pkt, &type);
+	ok = net_pkt_read_u8(pkt, &type);
+	if (ok != 0) {
+		return NET_DROP;
+	}
+
+	ok = net_pkt_read_be32(pkt, &simulated_work_time);
+	if (ok != 0) {
+		return NET_DROP;
+	}
+
 	service_type = (type == SERVICE_TYPE_ECHO) ? "echo" : "command";
 
-	LOG_INF("handler for %s-service %d, iface %p, ptype %u, pkt %p", service_type,
-		net_pkt_ll_proto_type(pkt), iface, ptype, pkt);
+	LOG_INF("handler for %s-service %d, iface %p, ptype %u, pkt %p, work %u", service_type,
+		net_pkt_ll_proto_type(pkt), iface, ptype, pkt, simulated_work_time);
 
 	posix_cpu_hold(simulated_work_time);
 
@@ -378,7 +404,12 @@ static enum net_verdict l2_service(struct net_if *iface, uint16_t ptype, struct 
 		if (echo_reply) {
 			net_pkt_set_ll_proto_type(echo_reply, net_pkt_ll_proto_type(pkt));
 			net_pkt_set_priority(echo_reply, net_pkt_priority(pkt));
-			if (net_if_try_send_data(iface, echo_reply, K_NO_WAIT) != NET_OK) {
+			ok = net_pkt_write_be32(echo_reply, simulated_work_time);
+			if (ok == 0) {
+				if (net_if_try_send_data(iface, echo_reply, K_NO_WAIT) != NET_OK) {
+					net_pkt_unref(echo_reply);
+				}
+			} else {
 				net_pkt_unref(echo_reply);
 			}
 		}
