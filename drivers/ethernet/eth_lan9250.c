@@ -15,6 +15,7 @@
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/random/random.h>
 #include <ethernet/eth_stats.h>
 
 #include "eth_lan9250_priv.h"
@@ -697,6 +698,14 @@ static int lan9250_init(const struct device *dev)
 		return ret;
 	}
 	lan9250_configure(dev);
+
+	/* use a random MAC address if requested in the device tree */
+	if (config->random_mac) {
+		sys_rand_get(context->mac_address, sizeof(context->mac_address));
+		/* locally administered, unicast address */
+		context->mac_address[0] &= ~(BIT(0) | BIT(2) | BIT(3));
+		context->mac_address[0] |= BIT(1);
+	}
 	lan9250_set_macaddr(dev);
 
 	k_thread_create(&context->thread, context->thread_stack,
@@ -719,6 +728,7 @@ static int lan9250_init(const struct device *dev)
 		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8)),                                \
 		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),                               \
 		.timeout = CONFIG_ETH_LAN9250_BUF_ALLOC_TIMEOUT,                                   \
+		.random_mac = DT_INST_PROP(inst, zephyr_random_mac_address),                       \
 	};                                                                                         \
                                                                                                    \
 	ETH_NET_DEVICE_DT_INST_DEFINE(inst, lan9250_init, NULL, &lan9250_##inst##_runtime,         \
