@@ -1,8 +1,8 @@
 /*
- * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
  *
- * Copyright (c) 2024 Cypress Semiconductor Corporation (an Infineon company) or
- * an affiliate of Cypress Semiconductor Corporation
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/dt-bindings/pwm/pwm.h>
@@ -16,6 +16,7 @@
 
 	pwmleds {
 		compatible = "pwm-leds";
+
 		pwm_led0: pwm_led_0 {
 			pwms = <&pwm0_0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "PWM MB1";
