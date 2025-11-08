@@ -484,6 +484,19 @@ def write_children(node: edtlib.Node) -> None:
 
     out_dt_define(f"{node.z_path_id}_CHILD_NUM_STATUS_OKAY", ok_nodes_num)
 
+    child_unit_addrs = {}
+    for child in node.children.values():
+        # Provide a way to query child nodes
+        if (addr := child.unit_addr) is not None:
+            child_unit_addrs.setdefault(addr, []).append(child)
+
+    for addr, children in child_unit_addrs.items():
+        if len(children) != 1:
+            # Duplicate unit addresses for different children, skip
+            continue
+
+        out_dt_define(f"{node.z_path_id}_CHILD_UNIT_ADDR_INT_{addr}", f"DT_{children[0].z_path_id}")
+
     out_dt_define(f"{node.z_path_id}_FOREACH_CHILD(fn)",
             " ".join(f"fn(DT_{child.z_path_id})" for child in
                 node.children.values()))
