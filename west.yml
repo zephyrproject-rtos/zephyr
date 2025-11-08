@@ -303,7 +303,7 @@ manifest:
       path: modules/lib/libsbc
     - name: libsrtp
       url: https://github.com/seyednasermoravej/libsrtp.git
-      revision: 37f04ac12705fae855cbf74bb1d119507a061631 
+      revision: dc70159412c6fc791da8f09a994a8bf0e95cb769 
       path: modules/lib/libsrtp
     - name: littlefs
       path: modules/fs/littlefs

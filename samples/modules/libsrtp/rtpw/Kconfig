@@ -1,42 +1,41 @@
 mainmenu "RTPW Sample Application"
 
 config NET_SAMPLE_SRTP_KEY
-    string "SRTP master key for RTPW example."
-    default "c1eec3717da76195bb878578790af71c4ee9f859e197a414a78d5abc7451"
-    help
-      This key in hexadecimal which is used by the application. You can override it in prj.conf
-      or via menuconfig / guiconfig.
+	string "SRTP master key for RTPW example."
+	default "c1eec3717da76195bb878578790af71c4ee9f859e197a414a78d5abc7451"
+	help
+	  This key in hexadecimal which is used by the application. You can override it in prj.conf
+	  or via menuconfig / guiconfig.
 
 choice
-    prompt "Program mode"
-    default NET_SAMPLE_SENDER
-    help
-      Select whether this application runs as sender or receiver.
+	prompt "Program mode"
+	default NET_SAMPLE_SENDER
+	help
+	  Select whether this application runs as sender or receiver.
 
 config NET_SAMPLE_SENDER
-    bool "Sender mode"
-    help
-      Build the application as an RTP sender.
+	bool "Sender mode"
+	help
+	  Build the application as an RTP sender.
 
 config NET_SAMPLE_RECEIVER
-    bool "Receiver mode"
-    help
-      Build the application as an RTP receiver.
+	bool "Receiver mode"
+	help
+	  Build the application as an RTP receiver.
 
 endchoice
 
 config NET_CONFIG_PEER_IPV4_ADDR
-    string
-    default "10.42.0.1" if NET_SAMPLE_SENDER
-    default "0.0.0.0" if NET_SAMPLE_RECEIVER
-    help
-      Peer IPv4 address used by the RTPW example.
+	string
+	default "10.42.0.1" if NET_SAMPLE_SENDER
+	default "0.0.0.0" if NET_SAMPLE_RECEIVER
+	help
+	  Peer IPv4 address used by the RTPW example.
 
 config NET_SAMPLE_SRTP_SERVER_PORT
-    int "SRTP port"
-    default 9999
-    help
-      SRTP port that the application sends or receives over that port.
+	int "SRTP port"
+	default 9999
+	help
+	  SRTP port that the application sends or receives over that port.
 
 source "Kconfig.zephyr"
-

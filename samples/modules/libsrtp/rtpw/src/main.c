@@ -1,3 +1,9 @@
+/*
+ * Copyright 2025 Sayed Naser Moravej <seyednasermoravej@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <zephyr/kernel.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/logging/log.h>
