@@ -10,6 +10,9 @@ include: [base.yaml]
 child-binding:
   description: Test child binding
   properties:
+    reg:
+      type: array
+      required: true
     val:
       type: int
       required: true
