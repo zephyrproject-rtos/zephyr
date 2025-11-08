@@ -2514,6 +2514,26 @@ ZTEST(devicetree_api, test_children)
 	zassert_equal(DT_PROP(DT_INST_CHILD(0, child_a), val), 0, "");
 	zassert_equal(DT_PROP(DT_INST_CHILD(0, child_b), val), 1, "");
 	zassert_equal(DT_PROP(DT_INST_CHILD(0, child_c), val), 2, "");
+
+	zassert_equal(DT_PROP(DT_CHILD_BY_UNIT_ADDR(DT_NODELABEL(test_children), 0xa),
+			      val), 0, "");
+	zassert_equal(DT_PROP(DT_CHILD_BY_UNIT_ADDR(DT_NODELABEL(test_children), 10),
+			      val), 0, "");
+	zassert_equal(DT_PROP(DT_CHILD_BY_UNIT_ADDR(DT_NODELABEL(test_children), 0xb),
+			      val), 1, "");
+	zassert_equal(DT_PROP(DT_CHILD_BY_UNIT_ADDR(DT_NODELABEL(test_children), 11),
+			      val), 1, "");
+	zassert_equal(DT_PROP(DT_CHILD_BY_UNIT_ADDR(DT_NODELABEL(test_children), 0xc),
+			      val), 2, "");
+	zassert_equal(DT_PROP(DT_CHILD_BY_UNIT_ADDR(DT_NODELABEL(test_children), 12),
+			      val), 2, "");
+
+	zassert_equal(DT_PROP(DT_INST_CHILD_BY_UNIT_ADDR(0, 0xa), val), 0, "");
+	zassert_equal(DT_PROP(DT_INST_CHILD_BY_UNIT_ADDR(0, 10), val), 0, "");
+	zassert_equal(DT_PROP(DT_INST_CHILD_BY_UNIT_ADDR(0, 0xb), val), 1, "");
+	zassert_equal(DT_PROP(DT_INST_CHILD_BY_UNIT_ADDR(0, 11), val), 1, "");
+	zassert_equal(DT_PROP(DT_INST_CHILD_BY_UNIT_ADDR(0, 0xc), val), 2, "");
+	zassert_equal(DT_PROP(DT_INST_CHILD_BY_UNIT_ADDR(0, 12), val), 2, "");
 }
 
 #undef DT_DRV_COMPAT
