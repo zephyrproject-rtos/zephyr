@@ -474,6 +474,12 @@ static void usbd_hid_disable(struct usbd_class_data *const c_data)
 static void usbd_hid_suspended(struct usbd_class_data *const c_data)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
+	struct hid_device_data *ddata = dev->data;
+	const struct hid_device_ops *const ops = ddata->ops;
+
+	if (ops->iface_suspended) {
+		ops->iface_suspended(dev, true);
+	}
 
 	LOG_DBG("Configuration suspended, device %s", dev->name);
 }
@@ -481,6 +487,12 @@ static void usbd_hid_suspended(struct usbd_class_data *const c_data)
 static void usbd_hid_resumed(struct usbd_class_data *const c_data)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
+	struct hid_device_data *ddata = dev->data;
+	const struct hid_device_ops *const ops = ddata->ops;
+
+	if (ops->iface_suspended) {
+		ops->iface_suspended(dev, false);
+	}
 
 	LOG_DBG("Configuration resumed, device %s", dev->name);
 }

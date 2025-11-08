@@ -104,6 +104,12 @@ struct hid_device_ops {
 	void (*iface_ready)(const struct device *dev, const bool ready);
 
 	/**
+	 * This callback is called when the HID interface is suspended by the
+	 * host. This callback is optional.
+	 */
+	void (*iface_suspended)(const struct device *dev, const bool suspended);
+
+	/**
 	 * This callback is called for the HID Get Report request to get a
 	 * feature, input, or output report, which is specified by the argument
 	 * type. If there is no report ID in the report descriptor, the id
