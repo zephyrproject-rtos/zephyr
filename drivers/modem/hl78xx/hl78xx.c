@@ -355,12 +355,28 @@ void hl78xx_on_cxreg(struct modem_chat *chat, char **argv, uint16_t argc, void *
 void hl78xx_on_ksup(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
 {
 	int module_status;
+	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
 	struct hl78xx_evt event = {.type = HL78XX_LTE_MODEM_STARTUP};
 
 	if (argc != 2) {
 		return;
 	}
 	module_status = ATOI(argv[1], 0, "module_status");
+	data->status.boot.status = module_status;
+	/* Check for unexpected restart */
+	if (data->status.boot.is_booted_previously == true &&
+	    module_status == (int)HL78XX_MODULE_READY) {
+		LOG_DBG("Modem unexpected restart detected %d", module_status);
+		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_MDM_RESTART);
+	} else if (data->status.boot.is_booted_previously == true &&
+		   module_status != (int)HL78XX_MODULE_READY) {
+		LOG_DBG("Modem failed to start %d", module_status);
+		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SUSPEND);
+	} else {
+		data->status.boot.is_booted_previously = true;
+		LOG_DBG("Modem started successfully %d %d", module_status,
+			data->status.boot.is_booted_previously);
+	}
 	event.content.value = module_status;
 	event_dispatcher_dispatch(&event);
 	HL78XX_LOG_DBG("Module status: %d", module_status);
@@ -474,6 +490,27 @@ void hl78xx_on_kstatev(struct modem_chat *chat, char **argv, uint16_t argc, void
 		event.content.rat_mode = data->status.registration.rat_mode;
 		event_dispatcher_dispatch(&event);
 	}
+}
+
+void hl78xx_on_cgact(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
+{
+	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
+	int act_status = -1;
+	int cid = -1;
+
+	if (argc != 3) {
+		return;
+	}
+	cid = ATOI(argv[1], -1, "cid");
+	act_status = ATOI(argv[2], -1, "act_status");
+	if (cid == -1 || act_status == -1 || cid > CONFIG_MODEM_HL78XX_MAX_PDP_CONTEXTS) {
+		/* Invalid parameters */
+		return;
+	}
+
+	data->status.gprs[cid - 1].is_active = (act_status == 1) ? true : false;
+	data->status.gprs[cid - 1].cid = cid;
+	HL78XX_LOG_DBG("CGACT: %s %s", argv[0], argv[2]);
 }
 #endif
 
@@ -877,11 +914,21 @@ static void hl78xx_await_power_on_event_handler(struct hl78xx_data *data, enum h
 {
 	switch (evt) {
 	case MODEM_HL78XX_EVENT_TIMEOUT:
-		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT);
+		modem_pipe_attach(data->uart_pipe, hl78xx_bus_pipe_handler, data);
+		modem_pipe_open_async(data->uart_pipe);
 		break;
 
 	case MODEM_HL78XX_EVENT_SUSPEND:
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_IDLE);
+		break;
+
+	case MODEM_HL78XX_EVENT_BUS_OPENED:
+		modem_chat_attach(&data->chat, data->uart_pipe);
+		hl78xx_run_post_restart_script_async(data);
+		break;
+
+	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT);
 		break;
 
 	default:
@@ -890,8 +937,8 @@ static void hl78xx_await_power_on_event_handler(struct hl78xx_data *data, enum h
 }
 static int hl78xx_on_run_init_script_state_enter(struct hl78xx_data *data)
 {
-	modem_pipe_attach(data->uart_pipe, hl78xx_bus_pipe_handler, data);
-	return modem_pipe_open_async(data->uart_pipe);
+	hl78xx_run_init_script_async(data);
+	return 0;
 }
 
 static void hl78xx_run_init_script_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
@@ -967,9 +1014,9 @@ static void hl78xx_run_init_fail_script_event_handler(struct hl78xx_data *data,
 
 	case MODEM_HL78XX_EVENT_SCRIPT_FAILED:
 		if (!hl78xx_gpio_is_enabled(&config->mdm_gpio_wake)) {
-			LOG_ERR("modem wake pin is not enabled, make sure modem low power is "
-				"disabled, if you are not sure enable wake up pin by adding it "
-				"dts!!");
+			LOG_ERR("The modem wake pin is not enabled. Make sure that modem low-power "
+				"mode is disabled. If you’re unsure, enable it by adding the "
+				"corresponding DTS configuration entry.");
 		}
 
 		if (data->status.script_fail_counter++ < MAX_SCRIPT_AT_CMD_RETRY) {
@@ -1008,6 +1055,7 @@ static int hl78xx_on_rat_cfg_script_state_enter(struct hl78xx_data *data)
 	}
 
 	if (modem_require_restart) {
+		HL78XX_LOG_DBG("Modem restart required to apply new RAT/Band settings");
 		ret = modem_dynamic_cmd_send(data, NULL, cmd_restart, strlen(cmd_restart),
 					     hl78xx_get_ok_match(), 1, false);
 		if (ret < 0) {
@@ -1037,7 +1085,9 @@ static void hl78xx_run_rat_cfg_script_event_handler(struct hl78xx_data *data, en
 			hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SUSPEND);
 		}
 		break;
-
+	case MODEM_HL78XX_EVENT_MDM_RESTART:
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT);
+		break;
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_ENABLE_GPRS_SCRIPT);
 		break;
@@ -1116,7 +1166,7 @@ static void hl78xx_enable_gprs_event_handler(struct hl78xx_data *data, enum hl78
 	switch (evt) {
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
 	case MODEM_HL78XX_EVENT_SCRIPT_FAILED:
-		hl78xx_start_timer(data, MODEM_HL78XX_PERIODIC_SCRIPT_TIMEOUT);
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_AWAIT_REGISTERED);
 		break;
 
 	case MODEM_HL78XX_EVENT_TIMEOUT:
@@ -1169,6 +1219,11 @@ static void hl78xx_await_registered_event_handler(struct hl78xx_data *data, enum
 
 		break;
 
+	case MODEM_HL78XX_EVENT_MDM_RESTART:
+		LOG_DBG("Modem restart detected %d", __LINE__);
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT);
+		break;
+
 	case MODEM_HL78XX_EVENT_REGISTERED:
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_CARRIER_ON);
 		break;
@@ -1190,6 +1245,16 @@ static int hl78xx_on_await_registered_state_leave(struct hl78xx_data *data)
 
 static int hl78xx_on_carrier_on_state_enter(struct hl78xx_data *data)
 {
+#ifdef CONFIG_MODEM_HL78XX_RAT_GSM
+	int ret = 0;
+	/* Activate the PDP context */
+	ret = hl78xx_gsm_pdp_activate(data);
+	if (ret) {
+		LOG_ERR("Failed to activate PDP context: %d", ret);
+		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SCRIPT_FAILED);
+		return ret;
+	}
+#endif /* CONFIG_MODEM_HL78XX_RAT_GSM */
 	notif_carrier_on(data->dev);
 	iface_status_work_cb(data, hl78xx_chat_callback_handler);
 	return 0;
@@ -1203,6 +1268,7 @@ static void hl78xx_carrier_on_event_handler(struct hl78xx_data *data, enum hl78x
 
 		break;
 	case MODEM_HL78XX_EVENT_SCRIPT_FAILED:
+		/* TODO: Handle script failure */
 		break;
 
 	case MODEM_HL78XX_EVENT_TIMEOUT:
@@ -1217,6 +1283,10 @@ static void hl78xx_carrier_on_event_handler(struct hl78xx_data *data, enum hl78x
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_INIT_POWER_OFF);
 		break;
 
+	case MODEM_HL78XX_EVENT_MDM_RESTART:
+		LOG_DBG("Modem restart detected %d", __LINE__);
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT);
+		break;
 	default:
 		break;
 	}
@@ -1465,7 +1535,7 @@ static void hl78xx_event_handler(struct hl78xx_data *data, enum hl78xx_event evt
 	if ((int)s <= MODEM_HL78XX_STATE_AWAIT_POWER_OFF && hl78xx_state_table[s].on_event) {
 		hl78xx_state_table[s].on_event(data, evt);
 	} else {
-		LOG_ERR("%d %s unknown event", __LINE__, __func__);
+		LOG_ERR("%d unknown event %d", __LINE__, evt);
 	}
 	if (state != s) {
 		hl78xx_log_state_changed(state, s);
@@ -1692,6 +1762,7 @@ static int hl78xx_init(const struct device *dev)
 #ifdef CONFIG_MODEM_HL78XX_STAY_IN_BOOT_MODE_FOR_ROAMING
 	k_sem_take(&data->stay_in_boot_mode_sem, K_FOREVER);
 #endif
+	LOG_INF("Modem HL78xx initialized");
 	return 0;
 error:
 	return ret;
@@ -1846,10 +1917,10 @@ static DEVICE_API(cellular, hl78xx_api) = {
 			      CONFIG_MODEM_HL78XX_DEV_INIT_PRIORITY, &hl78xx_api);
 
 #define MODEM_DEVICE_SWIR_HL78XX(inst)                                                             \
-	MODEM_HL78XX_DEFINE_INSTANCE(inst, CONFIG_MODEM_HL78XX_DEV_POWER_PULSE_DURATION,           \
-				     CONFIG_MODEM_HL78XX_DEV_RESET_PULSE_DURATION,                 \
-				     CONFIG_MODEM_HL78XX_DEV_STARTUP_TIME,                         \
-				     CONFIG_MODEM_HL78XX_DEV_SHUTDOWN_TIME, false, NULL, NULL)
+	MODEM_HL78XX_DEFINE_INSTANCE(inst, CONFIG_MODEM_HL78XX_DEV_POWER_PULSE_DURATION_MS,        \
+				     CONFIG_MODEM_HL78XX_DEV_RESET_PULSE_DURATION_MS,              \
+				     CONFIG_MODEM_HL78XX_DEV_STARTUP_TIME_MS,                      \
+				     CONFIG_MODEM_HL78XX_DEV_SHUTDOWN_TIME_MS, false, NULL, NULL)
 
 #define DT_DRV_COMPAT swir_hl7812
 DT_INST_FOREACH_STATUS_OKAY(MODEM_DEVICE_SWIR_HL78XX)

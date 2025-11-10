@@ -18,26 +18,26 @@ extern "C" {
 #endif
 
 /* Magic constants */
-#define CSQ_RSSI_UNKNOWN        (99)
-#define CESQ_RSRP_UNKNOWN       (255)
-#define CESQ_RSRQ_UNKNOWN       (255)
+#define CSQ_RSSI_UNKNOWN         (99)
+#define CESQ_RSRP_UNKNOWN        (255)
+#define CESQ_RSRQ_UNKNOWN        (255)
 /* Magic numbers to units conversions */
-#define CSQ_RSSI_TO_DB(v)       (-113 + (2 * (v)))
-#define CESQ_RSRP_TO_DB(v)      (-140 + (v))
-#define CESQ_RSRQ_TO_DB(v)      (-20 + ((v) / 2))
+#define CSQ_RSSI_TO_DB(v)        (-113 + (2 * (v)))
+#define CESQ_RSRP_TO_DB(v)       (-140 + (v))
+#define CESQ_RSRQ_TO_DB(v)       (-20 + ((v) / 2))
 /** Monitor is paused. */
-#define PAUSED                  1
+#define PAUSED                   1
 /** Monitor is active, default */
-#define ACTIVE                  0
-#define MDM_MANUFACTURER_LENGTH 20
-#define MDM_MODEL_LENGTH        32
-#define MDM_REVISION_LENGTH     64
-#define MDM_IMEI_LENGTH         16
-#define MDM_IMSI_LENGTH         23
-#define MDM_ICCID_LENGTH        22
-#define MDM_APN_MAX_LENGTH      64
-#define MDM_MAX_CERT_LENGTH     4096
-#define MDM_MAX_HOSTNAME_LEN    128
+#define ACTIVE                   0
+#define MDM_MANUFACTURER_LENGTH  20
+#define MDM_MODEL_LENGTH         32
+#define MDM_REVISION_LENGTH      64
+#define MDM_IMEI_LENGTH          16
+#define MDM_IMSI_LENGTH          23
+#define MDM_ICCID_LENGTH         22
+#define MDM_APN_MAX_LENGTH       64
+#define MDM_MAX_CERT_LENGTH      4096
+#define MDM_MAX_HOSTNAME_LEN     128
 /**
  * @brief Define an Event monitor to receive notifications in the system workqueue thread.
  *
@@ -78,12 +78,19 @@ enum hl78xx_phone_functionality {
 };
 /** Module status codes */
 enum hl78xx_module_status {
+	/** Module is ready to receive commands for the TE. No access code is required. */
 	HL78XX_MODULE_READY = 0,
+	/** Module is waiting for an access code. Use AT+CPIN? to determine it. */
 	HL78XX_MODULE_WAITING_FOR_ACCESS_CODE,
+	/** SIM card is not present. */
 	HL78XX_MODULE_SIM_NOT_PRESENT,
+	/** Module is in “SIMlock” state. */
 	HL78XX_MODULE_SIMLOCK,
+	/** Unrecoverable error. */
 	HL78XX_MODULE_UNRECOVERABLE_ERROR,
+	/** Unknown state. */
 	HL78XX_MODULE_UNKNOWN_STATE,
+	/** Inactive SIM. */
 	HL78XX_MODULE_INACTIVE_SIM
 };
 

@@ -36,7 +36,10 @@ void hl78xx_on_cxreg(struct modem_chat *chat, char **argv, uint16_t argc, void *
 void hl78xx_on_cgdcontrdp(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
 #if defined(CONFIG_MODEM_HL78XX_12)
 void hl78xx_on_kstatev(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
-#endif
+#ifdef CONFIG_MODEM_HL78XX_RAT_GSM
+void hl78xx_on_cgact(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
+#endif /* CONFIG_MODEM_HL78XX_RAT_GSM */
+#endif /* CONFIG_MODEM_HL78XX_12 */
 void hl78xx_on_socknotifydata(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
 void hl78xx_on_ktcpnotif(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
 /* Handler implemented to assign modem-provided udp socket ids */
@@ -69,12 +72,17 @@ void hl78xx_on_kselacq(struct modem_chat *chat, char **argv, uint16_t argc, void
 MODEM_CHAT_MATCH_DEFINE(hl78xx_ok_match, "OK", "", NULL);
 MODEM_CHAT_MATCHES_DEFINE(hl78xx_allow_match, MODEM_CHAT_MATCH("OK", "", NULL),
 			  MODEM_CHAT_MATCH(CME_ERROR_STRING, "", NULL));
-
-MODEM_CHAT_MATCHES_DEFINE(hl78xx_unsol_matches, MODEM_CHAT_MATCH("+CREG: ", ",", hl78xx_on_cxreg),
+/* clang-format off */
+MODEM_CHAT_MATCHES_DEFINE(hl78xx_unsol_matches,
+			  MODEM_CHAT_MATCH("+KSUP: ", "", hl78xx_on_ksup),
+			  MODEM_CHAT_MATCH("+CREG: ", ",", hl78xx_on_cxreg),
 			  MODEM_CHAT_MATCH("+CEREG: ", ",", hl78xx_on_cxreg),
 #if defined(CONFIG_MODEM_HL78XX_12)
 			  MODEM_CHAT_MATCH("+KSTATEV: ", ",", hl78xx_on_kstatev),
-#endif
+#ifdef CONFIG_MODEM_HL78XX_RAT_GSM
+			  MODEM_CHAT_MATCH("+CGACT: ", ",", hl78xx_on_cgact),
+#endif /* CONFIG_MODEM_HL78XX_RAT_GSM */
+#endif /* CONFIG_MODEM_HL78XX_12 */
 			  MODEM_CHAT_MATCH("+KUDP_DATA: ", ",", hl78xx_on_socknotifydata),
 			  MODEM_CHAT_MATCH("+KTCP_DATA: ", ",", hl78xx_on_socknotifydata),
 			  MODEM_CHAT_MATCH("+KTCP_NOTIF: ", ",", hl78xx_on_ktcpnotif),
@@ -86,8 +94,8 @@ MODEM_CHAT_MATCHES_DEFINE(hl78xx_unsol_matches, MODEM_CHAT_MATCH("+CREG: ", ",",
 			  MODEM_CHAT_MATCH("+CESQ: ", ",", hl78xx_on_cesq),
 			  MODEM_CHAT_MATCH("+CFUN: ", "", hl78xx_on_cfun),
 			  MODEM_CHAT_MATCH("+COPS: ", ",", hl78xx_on_cops));
-
-MODEM_CHAT_MATCHES_DEFINE(hl78xx_abort_matches, MODEM_CHAT_MATCH("+CME ERROR: ", "", NULL));
+/* clang-format on */
+MODEM_CHAT_MATCHES_DEFINE(hl78xx_abort_matches, MODEM_CHAT_MATCH(CME_ERROR_STRING, "", NULL));
 MODEM_CHAT_MATCH_DEFINE(hl78xx_at_ready_match, "+KSUP: ", "", hl78xx_on_ksup);
 MODEM_CHAT_MATCH_DEFINE(hl78xx_imei_match, "", "", hl78xx_on_imei);
 MODEM_CHAT_MATCH_DEFINE(hl78xx_cgmm_match, "", "", hl78xx_on_cgmm);
@@ -141,7 +149,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_init_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG=5", hl78xx_ok_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_init_chat_script, hl78xx_init_chat_script_cmds,
-			 hl78xx_abort_matches, hl78xx_chat_callback_handler, 10);
+			 hl78xx_abort_matches, hl78xx_chat_callback_handler, 100);
 
 /* Post-restart script (moved from hl78xx.c) */
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_post_restart_chat_script_cmds,
@@ -177,6 +185,25 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_pwroff_cmds,
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_pwroff_script, hl78xx_pwroff_cmds, hl78xx_abort_matches,
 			 hl78xx_chat_callback_handler, 4);
 
+/* GSM registration status disable / LTE registration status enable script */
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_gsm_dis_lte_en_reg_status_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG=0", hl78xx_ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG=5", hl78xx_ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(hl78xx_gsm_dis_lte_en_reg_status_script,
+			 hl78xx_gsm_dis_lte_en_reg_status_script_cmds, hl78xx_abort_matches, NULL,
+			 4);
+
+#if defined(CONFIG_MODEM_HL78XX_12) &&                                                             \
+	(defined(CONFIG_MODEM_HL78XX_RAT_GSM) || defined(CONFIG_MODEM_HL78XX_AUTORAT))
+/* LTE registration status disable / GSM registration status enable script */
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_lte_dis_gsm_en_reg_status_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG=0", hl78xx_ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG=3", hl78xx_ok_match));
+MODEM_CHAT_SCRIPT_DEFINE(hl78xx_lte_dis_gsm_en_reg_status_script,
+			 hl78xx_lte_dis_gsm_en_reg_status_script_cmds, hl78xx_abort_matches, NULL,
+			 4);
+#endif /* CONFIG_MODEM_HL78XX_12 */
 /* Socket-specific matches and wrappers exposed for the sockets translation
  * unit. These were extracted from hl78xx_sockets.c to centralize chat
  * definitions.
@@ -373,4 +400,23 @@ int hl78xx_run_pwroff_script_async(struct hl78xx_data *data)
 		return -EINVAL;
 	}
 	return modem_chat_run_script_async(&data->chat, &hl78xx_pwroff_script);
+}
+#if defined(CONFIG_MODEM_HL78XX_12) &&                                                             \
+	(defined(CONFIG_MODEM_HL78XX_RAT_GSM) || defined(CONFIG_MODEM_HL78XX_AUTORAT))
+/* Run the LTE disable GSM enable registration status script */
+int hl78xx_run_lte_dis_gsm_en_reg_status_script(struct hl78xx_data *data)
+{
+	if (!data) {
+		return -EINVAL;
+	}
+	return modem_chat_run_script(&data->chat, &hl78xx_lte_dis_gsm_en_reg_status_script);
+}
+#endif /* CONFIG_MODEM_HL78XX_RAT_GSM */
+/* Run the GSM disable LTE enable registration status script */
+int hl78xx_run_gsm_dis_lte_en_reg_status_script(struct hl78xx_data *data)
+{
+	if (!data) {
+		return -EINVAL;
+	}
+	return modem_chat_run_script(&data->chat, &hl78xx_gsm_dis_lte_en_reg_status_script);
 }
