@@ -76,19 +76,6 @@ config STM32_WKUP_PINS
 	help
 	  Enable support for STM32 PWR wake-up pins.
 
-choice POWER_SUPPLY_CHOICE
-	prompt "STM32 power supply configuration"
-	default POWER_SUPPLY_LDO
-	depends on SOC_STM32WBA55XX || SOC_STM32WBA65XX
-
-config POWER_SUPPLY_LDO
-	bool "LDO supply"
-
-config POWER_SUPPLY_DIRECT_SMPS
-	bool "Direct SMPS supply"
-
-endchoice
-
 config STM32_BACKUP_PROTECTION
 	bool "SoC has backup domain protection access"
 	help
