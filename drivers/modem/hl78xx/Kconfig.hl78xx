@@ -722,6 +722,59 @@ config MODEM_MIN_ALLOWED_SIGNAL_STRENGTH
 	    default -140
 	    range - 140 0
 
+config MODEM_HL78XX_AIRVANTAGE
+	bool "AirVantage"
+	help
+	  Enable HL78xx modules connect to the AirVantage DM Server over OMA
+
+if MODEM_HL78XX_AIRVANTAGE
+
+choice MODEM_HL78XX_AIRVANTAGE_SESSION_INITIATION
+	prompt "AirVantage Initialization"
+	default MODEM_HL78XX_AIRVANTAGE_HOST_INITIATED
+	help
+	  Choose this setting to enable HL78xx modules to connect to the AirVantage DM Server.
+
+config MODEM_HL78XX_AIRVANTAGE_HOST_INITIATED
+	bool "Host Initiated"
+	help
+	  The host application is responsible for initiating the connection to the AirVantage server.
+
+config MODEM_HL78XX_AIRVANTAGE_MODULE_INITIATED
+	bool "Module Initiated"
+	help
+	  The HL78xx module is responsible for initiating the connection to the AirVantage server.
+
+endchoice
+
+menuconfig MODEM_HL78XX_AIRVANTAGE_USER_AGREEMENT
+	bool "User Agreement Activation"
+	help
+	  Activating User Agreements enables the host processor application to control the FOTA flow. For instance, the host
+	  processor application, busy fulfilling a service (e.g. car is operating, ongoing payment transaction), can decide to
+	  postpone firmware download or install operations, as accepting a firmware installation will lead the embedded
+	  module to reboot upon FOTA completion.
+
+if MODEM_HL78XX_AIRVANTAGE_USER_AGREEMENT
+
+config MODEM_HL78XX_AIRVANTAGE_UA_CONNECT_AIRVANTAGE
+	bool "Connect to AirVantage"
+	help
+	  Module requests the user/application to connect to AirVantage
+
+config MODEM_HL78XX_AIRVANTAGE_UA_DOWNLOAD_FIRMWARE
+	bool "Download Firmware"
+	help
+	  AirVantage requests the device to download a firmware package
+
+config MODEM_HL78XX_AIRVANTAGE_UA_INSTALL_FIRMWARE
+	bool "Install Firmware"
+	help
+	  AirVantage requests the device to install the downloaded firmware package
+
+endif # MODEM_HL78XX_AIRVANTAGE_USER_AGREEMENT
+endif # MODEM_HL78XX_AIRVANTAGE
+
 config MODEM_HL78XX_ADVANCED_SOCKET_CONFIG
 	bool "Advanced socket configuration"
 	help

@@ -55,6 +55,12 @@ int hl78xx_run_lte_dis_gsm_en_reg_status_script(struct hl78xx_data *data);
 #endif /* CONFIG_MODEM_HL78XX_RAT_GSM */
 /* Run the GSM disable LTE enable registration status script */
 int hl78xx_run_gsm_dis_lte_en_reg_status_script(struct hl78xx_data *data);
+#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
+/* FOTA-related script runners */
+int hl78xx_run_av_connect_accept_script_async(struct hl78xx_data *data);
+int hl78xx_run_fota_script_download_accept_async(struct hl78xx_data *data);
+int hl78xx_run_fota_script_install_accept_async(struct hl78xx_data *data);
+#endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 /* Async runners for init/periodic scripts */
 int hl78xx_run_init_script_async(struct hl78xx_data *data);
 int hl78xx_run_periodic_script_async(struct hl78xx_data *data);

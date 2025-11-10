@@ -67,6 +67,7 @@ New APIs and options
 * Modem
 
   * :kconfig:option:`CONFIG_MODEM_HL78XX_AT_SHELL`
+  * :kconfig:option:`CONFIG_MODEM_HL78XX_AIRVANTAGE`
 
 .. zephyr-keep-sorted-stop
 
