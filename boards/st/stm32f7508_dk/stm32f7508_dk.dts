@@ -285,7 +285,7 @@ zephyr_udc0: &usbotg_fs {
 
 	width = <480>;
 	height = <272>;
-	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
 
 	display-timings {
 		compatible = "zephyr,panel-timing";
