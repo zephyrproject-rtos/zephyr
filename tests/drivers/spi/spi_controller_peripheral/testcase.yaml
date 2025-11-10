@@ -12,6 +12,7 @@ common:
     - nrf54h20dk/nrf54h20/cpurad
     - nrf54h20dk/nrf54h20/cpuppr
     - nrf54l15dk/nrf54l15/cpuapp
+    - nrf54l15dk/nrf54l15/cpuapp/ns
     - nrf54lm20dk/nrf54lm20a/cpuapp
     - ophelia4ev/nrf54l15/cpuapp
 
@@ -81,6 +82,7 @@ tests:
       - nrf54h20dk/nrf54h20/cpurad
       - nrf54h20dk/nrf54h20/cpuppr
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp/ns
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
 
@@ -94,6 +96,7 @@ tests:
       - nrf54h20dk/nrf54h20/cpurad
       - nrf54h20dk/nrf54h20/cpuppr
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp/ns
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
 
