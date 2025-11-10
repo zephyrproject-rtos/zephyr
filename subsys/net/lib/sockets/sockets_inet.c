@@ -19,7 +19,6 @@ LOG_MODULE_DECLARE(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/tracing/tracing.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/socket_types.h>
-#include <zephyr/posix/fcntl.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/iterable_sections.h>
@@ -3045,19 +3044,19 @@ static int sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 	switch (request) {
 
 	/* In Zephyr, fcntl() is just an alias of ioctl(). */
-	case F_GETFL:
+	case ZVFS_F_GETFL:
 		if (sock_is_nonblock(obj)) {
-			return O_NONBLOCK;
+			return ZVFS_O_NONBLOCK;
 		}
 
 		return 0;
 
-	case F_SETFL: {
+	case ZVFS_F_SETFL: {
 		int flags;
 
 		flags = va_arg(args, int);
 
-		if (flags & O_NONBLOCK) {
+		if (flags & ZVFS_O_NONBLOCK) {
 			sock_set_flag(obj, SOCK_NONBLOCK, SOCK_NONBLOCK);
 		} else {
 			sock_set_flag(obj, SOCK_NONBLOCK, 0);
