@@ -55,10 +55,12 @@ coreisa = sys.argv[1]
 debug_level = 0
 
 # Translation for the core-isa.h vs. linker section naming conventions
-sect_names = { "DOUBLEEXC" : "DoubleException",
-               "KERNEL" : "KernelException",
-               "NMI" : "NMIException",
-               "USER" : "UserException" }
+sect_names = {
+    "DOUBLEEXC": "DoubleException",
+    "KERNEL": "KernelException",
+    "NMI": "NMIException",
+    "USER": "UserException",
+}
 
 offsets = {}
 
@@ -112,9 +114,9 @@ print("")
 # The 1k alignment is experimental, the docs on the Relocatable Vector
 # Option doesn't specify an alignment at all, but writes to the
 # bottom bits don't take...
-print( "  .z_xtensa_vectors : ALIGN(1024) {")
-print( "    z_xtensa_vecbase = .;")
-print( "    KEEP(*(.WindowVectors.text));")
+print("  .z_xtensa_vectors : ALIGN(1024) {")
+print("    z_xtensa_vecbase = .;")
+print("    KEEP(*(.WindowVectors.text));")
 for s in sects:
     print(f"    KEEP(*(.{s}Vector.literal));")
     print(f"    . = 0x{offsets[s]:x};")
