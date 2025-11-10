@@ -150,6 +150,10 @@
 	d3ppre = <2>;
 };
 
+&pwr {
+	power-supply = "ldo";
+};
+
 &usart3 {
 	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb11>;
 	pinctrl-names = "default";
