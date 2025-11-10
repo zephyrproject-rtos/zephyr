@@ -6,7 +6,6 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/net/socket.h>
-#include <zephyr/posix/fcntl.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/fdtable.h>
@@ -929,19 +928,19 @@ static int spair_ioctl(void *obj, unsigned int request, va_list args)
 	have_local_sem = true;
 
 	switch (request) {
-		case F_GETFL: {
+		case ZVFS_F_GETFL: {
 			if (sock_is_nonblock(spair)) {
-				flags |= O_NONBLOCK;
+				flags |= ZVFS_O_NONBLOCK;
 			}
 
 			res = flags;
 			goto out;
 		}
 
-		case F_SETFL: {
+		case ZVFS_F_SETFL: {
 			flags = va_arg(args, int);
 
-			if (flags & O_NONBLOCK) {
+			if (flags & ZVFS_O_NONBLOCK) {
 				spair->flags |= SPAIR_FLAG_NONBLOCK;
 			} else {
 				spair->flags &= ~SPAIR_FLAG_NONBLOCK;

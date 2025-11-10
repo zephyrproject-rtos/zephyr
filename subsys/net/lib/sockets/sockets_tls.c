@@ -6,7 +6,6 @@
  */
 
 #include <stdbool.h>
-#include <zephyr/posix/fcntl.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
@@ -797,13 +796,13 @@ static int wait_for_reason(int sock, int timeout, int reason)
 
 static bool is_blocking(int sock, int flags)
 {
-	int sock_flags = zsock_fcntl(sock, F_GETFL, 0);
+	int sock_flags = zsock_fcntl(sock, ZVFS_F_GETFL, 0);
 
 	if (sock_flags == -1) {
 		return false;
 	}
 
-	return !((flags & ZSOCK_MSG_DONTWAIT) || (sock_flags & O_NONBLOCK));
+	return !((flags & ZSOCK_MSG_DONTWAIT) || (sock_flags & ZVFS_O_NONBLOCK));
 }
 
 static int timeout_to_ms(k_timeout_t *timeout)
@@ -2362,15 +2361,15 @@ int ztls_connect_ctx(struct tls_context *ctx, const struct net_sockaddr *addr,
 	int sock_flags;
 	bool is_non_block;
 
-	sock_flags = zsock_fcntl(ctx->sock, F_GETFL, 0);
+	sock_flags = zsock_fcntl(ctx->sock, ZVFS_F_GETFL, 0);
 	if (sock_flags < 0) {
 		return -EIO;
 	}
 
-	is_non_block = sock_flags & O_NONBLOCK;
+	is_non_block = sock_flags & ZVFS_O_NONBLOCK;
 	if (is_non_block) {
-		(void)zsock_fcntl(ctx->sock, F_SETFL,
-				  sock_flags & ~O_NONBLOCK);
+		(void)zsock_fcntl(ctx->sock, ZVFS_F_SETFL,
+				  sock_flags & ~ZVFS_O_NONBLOCK);
 	}
 
 	ret = zsock_connect(ctx->sock, addr, addrlen);
@@ -2379,7 +2378,7 @@ int ztls_connect_ctx(struct tls_context *ctx, const struct net_sockaddr *addr,
 	}
 
 	if (is_non_block) {
-		(void)zsock_fcntl(ctx->sock, F_SETFL, sock_flags);
+		(void)zsock_fcntl(ctx->sock, ZVFS_F_SETFL, sock_flags);
 	}
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
@@ -3919,8 +3918,8 @@ static int tls_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 
 	switch (request) {
 	/* fcntl() commands */
-	case F_GETFL:
-	case F_SETFL: {
+	case ZVFS_F_GETFL:
+	case ZVFS_F_SETFL: {
 		const struct fd_op_vtable *vtable;
 		struct k_mutex *lock;
 		void *fd_obj;
