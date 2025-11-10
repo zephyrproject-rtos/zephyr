@@ -311,6 +311,29 @@
 	};
 };
 
+&qspi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&qspi_default>;
+	status = "okay";
+
+	mspi_flash0: mspi-flash0@0 {
+		compatible = "microchip,qspi-g1-flash";
+		reg = <0>;
+		address-length = "ADDR_3_BYTE";
+		ce-break-config = <0x1000000 0>;
+		command-length = "INSTR_1_BYTE";
+		mspi-ce-polarity = "MSPI_CE_ACTIVE_LOW";
+		mspi-cpp-mode = "MSPI_CPP_MODE_0";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		mspi-io-mode = "MSPI_IO_MODE_SINGLE";
+		mspi-max-frequency = <59000000>;
+		read-command = <0x03>;
+		rx-dummy = <0>;
+		tx-dummy = <0>;
+		write-command = <0x02>;
+	};
+};
+
 &sercom0 {
 	compatible = "microchip,sercom-g1-uart";
 	#address-cells = <1>;
