@@ -158,7 +158,9 @@ static int sdhc_litex_wait_for_dma(const struct device *dev, struct sdhc_command
 	struct sdhc_litex_data *dev_data = dev->data;
 	uint8_t data_event;
 
-	if (dev_data->cmd23_not_supported && (data->blocks > 1)) {
+	if (dev_data->cmd23_not_supported && (data->blocks > 1) &&
+	    ((cmd->opcode == SD_READ_MULTIPLE_BLOCK) ||
+	     (cmd->opcode == SD_WRITE_MULTIPLE_BLOCK))) {
 		uint8_t response_len = SDCARD_CTRL_RESP_CRC;
 
 		response_len |= (*transfer == SDCARD_CTRL_DATA_TRANSFER_READ)
@@ -198,31 +200,29 @@ static void sdhc_litex_prepare_dma(const struct device *dev, struct sdhc_command
 			      struct sdhc_data *data, uint8_t *transfer)
 {
 	const struct sdhc_litex_config *dev_config = dev->config;
+	uint32_t dma_length = data->block_size * data->blocks;
 
 	litex_write32(data->timeout_ms * (sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC),
 		      dev_config->phy_datar_timeout_addr);
 
-	switch (cmd->opcode) {
-	case SD_WRITE_SINGLE_BLOCK:
-	case SD_WRITE_MULTIPLE_BLOCK:
+	if ((cmd->opcode == SD_WRITE_SINGLE_BLOCK) ||
+	    (cmd->opcode == SD_WRITE_MULTIPLE_BLOCK) ||
+	    ((cmd->opcode == SDIO_RW_EXTENDED) &&
+	     IS_BIT_SET(cmd->arg, SDIO_CMD_ARG_RW_SHIFT))) {
 		*transfer = SDCARD_CTRL_DATA_TRANSFER_WRITE;
 		if (IS_ENABLED(CONFIG_SDHC_LITEX_LITESDCARD_NO_COHERENT_DMA)) {
-			sys_cache_data_flush_range(data->data, data->block_size * data->blocks);
+			sys_cache_data_flush_range(data->data, dma_length);
 		}
 		litex_write8(0, dev_config->mem2block_dma_enable_addr);
 		litex_write64((uint64_t)(uintptr_t)(data->data),
 			      dev_config->mem2block_dma_base_addr);
-		litex_write32(data->block_size * data->blocks,
-			      dev_config->mem2block_dma_length_addr);
-		break;
-	default:
+		litex_write32(dma_length, dev_config->mem2block_dma_length_addr);
+	} else {
 		*transfer = SDCARD_CTRL_DATA_TRANSFER_READ;
 		litex_write8(0, dev_config->block2mem_dma_enable_addr);
 		litex_write64((uint64_t)(uintptr_t)(data->data),
 			      dev_config->block2mem_dma_base_addr);
-		litex_write32(data->block_size * data->blocks,
-			      dev_config->block2mem_dma_length_addr);
-		break;
+		litex_write32(dma_length, dev_config->block2mem_dma_length_addr);
 	}
 
 	litex_write16(data->block_size, dev_config->core_block_length_addr);
@@ -238,7 +238,9 @@ static void sdhc_litex_do_dma(const struct device *dev, struct sdhc_command *cmd
 	LOG_DBG("Setting up DMA for command: opcode=%d, arg=0x%08x, blocks=%d, block_size=%d",
 		cmd->opcode, cmd->arg, data->blocks, data->block_size);
 
-	if (!dev_data->cmd23_not_supported && (data->blocks > 1)) {
+	if (!dev_data->cmd23_not_supported && (data->blocks > 1) &&
+	    ((cmd->opcode == SD_READ_MULTIPLE_BLOCK) ||
+	     (cmd->opcode == SD_WRITE_MULTIPLE_BLOCK))) {
 		litex_mmc_send_cmd(dev, SD_SET_BLOCK_COUNT, SDCARD_CTRL_DATA_TRANSFER_NONE,
 				   data->blocks, NULL,
 				   SDCARD_CTRL_RESP_SHORT | SDCARD_CTRL_RESP_CRC);
