@@ -410,38 +410,38 @@ struct bt_avrcp_get_element_attrs_rsp {
 
 /** @brief AVRCP Player Application Setting Attribute IDs */
 typedef enum __packed {
-	BT_AVRCP_PLAYER_ATTR_EQUALIZER = 0x01U,
-	BT_AVRCP_PLAYER_ATTR_REPEAT_MODE = 0x02U,
-	BT_AVRCP_PLAYER_ATTR_SHUFFLE = 0x03U,
-	BT_AVRCP_PLAYER_ATTR_SCAN = 0x04U,
+	BT_AVRCP_PLAYER_ATTR_EQUALIZER = 0x01,
+	BT_AVRCP_PLAYER_ATTR_REPEAT_MODE = 0x02,
+	BT_AVRCP_PLAYER_ATTR_SHUFFLE = 0x03,
+	BT_AVRCP_PLAYER_ATTR_SCAN = 0x04,
 } bt_avrcp_player_attr_id_t;
 
 /** @brief AVRCP Player Application Setting Values for Equalizer */
 typedef enum __packed {
-	BT_AVRCP_EQUALIZER_OFF = 0x01U,
-	BT_AVRCP_EQUALIZER_ON = 0x02U,
+	BT_AVRCP_EQUALIZER_OFF = 0x01,
+	BT_AVRCP_EQUALIZER_ON = 0x02,
 } bt_avrcp_equalizer_value_t;
 
 /** @brief AVRCP Player Application Setting Values for Repeat Mode */
 typedef enum __packed {
-	BT_AVRCP_REPEAT_MODE_OFF = 0x01U,
-	BT_AVRCP_REPEAT_MODE_SINGLE_TRACK = 0x02U,
-	BT_AVRCP_REPEAT_MODE_ALL_TRACKS = 0x03U,
-	BT_AVRCP_REPEAT_MODE_GROUP = 0x04U,
+	BT_AVRCP_REPEAT_MODE_OFF = 0x01,
+	BT_AVRCP_REPEAT_MODE_SINGLE_TRACK = 0x02,
+	BT_AVRCP_REPEAT_MODE_ALL_TRACKS = 0x03,
+	BT_AVRCP_REPEAT_MODE_GROUP = 0x04,
 } bt_avrcp_repeat_mode_value_t;
 
 /** @brief AVRCP Player Application Setting Values for Shuffle */
 typedef enum __packed {
-	BT_AVRCP_SHUFFLE_OFF = 0x01U,
-	BT_AVRCP_SHUFFLE_ALL_TRACKS = 0x02U,
-	BT_AVRCP_SHUFFLE_GROUP = 0x03U,
+	BT_AVRCP_SHUFFLE_OFF = 0x01,
+	BT_AVRCP_SHUFFLE_ALL_TRACKS = 0x02,
+	BT_AVRCP_SHUFFLE_GROUP = 0x03,
 } bt_avrcp_shuffle_value_t;
 
 /** @brief AVRCP Player Application Setting Values for Scan */
 typedef enum __packed {
-	BT_AVRCP_SCAN_OFF = 0x01U,
-	BT_AVRCP_SCAN_ALL_TRACKS = 0x02U,
-	BT_AVRCP_SCAN_GROUP = 0x03U,
+	BT_AVRCP_SCAN_OFF = 0x01,
+	BT_AVRCP_SCAN_ALL_TRACKS = 0x02,
+	BT_AVRCP_SCAN_GROUP = 0x03,
 } bt_avrcp_scan_value_t;
 
 /** @brief AVRCP Scope Values
@@ -451,14 +451,14 @@ typedef enum __packed {
  *  0x03 = Now Playing
  */
 typedef enum __packed {
-	BT_AVRCP_SCOPE_MEDIA_PLAYER_LIST = 0x00U,
-	BT_AVRCP_SCOPE_FILESYSTEM        = 0x01U,
-	BT_AVRCP_SCOPE_SEARCH            = 0x02U,
-	BT_AVRCP_SCOPE_NOW_PLAYING       = 0x03U,
+	BT_AVRCP_SCOPE_MEDIA_PLAYER_LIST = 0x00,
+	BT_AVRCP_SCOPE_FILESYSTEM        = 0x01,
+	BT_AVRCP_SCOPE_SEARCH            = 0x02,
+	BT_AVRCP_SCOPE_NOW_PLAYING       = 0x03,
 } bt_avrcp_scope_t;
 
 /** @brief ListPlayerApplicationSettingAttributes response */
-struct bt_avrcp_list_app_setting_attr_rsp {
+struct bt_avrcp_list_player_app_setting_attrs_rsp {
 	uint8_t num_attrs;       /**< Number of application setting attributes */
 	uint8_t attr_ids[];      /**< Array of attribute IDs @ref bt_avrcp_player_attr_id_t */
 } __packed;
@@ -800,7 +800,7 @@ struct bt_avrcp_ct_cb {
 	 *  @param buf The response buffer containing the LIST_PLAYER_APP_SETTING_ATTRS
 	 *            payload returned by the TG.
 	 *            The application can parse this payload according to the format
-	 *            defined in @ref bt_avrcp_list_app_setting_attr_rsp.
+	 *            defined in @ref bt_avrcp_list_player_app_setting_attrs_rsp.
 	 *            If status is in the range BT_AVRCP_STATUS_INVALID_COMMAND to
 	 *            BT_AVRCP_STATUS_ADDRESSED_PLAYER_CHANGED, and is not equal to
 	 *            BT_AVRCP_STATUS_OPERATION_COMPLETED, it indicates that the AVRCP response
@@ -1751,7 +1751,7 @@ int bt_avrcp_tg_send_passthrough_rsp(struct bt_avrcp_tg *tg, uint8_t tid, bt_avr
  *  @param tid The transaction label of the request.
  *  @param status Status code of the operation @ref bt_avrcp_status_t.
  *  @param buf The response buffer containing the LIST_PLAYER_APP_SETTING_ATTRS payload,
- *            formatted as @ref bt_avrcp_list_app_setting_attr_rsp.
+ *            formatted as @ref bt_avrcp_list_player_app_setting_attrs_rsp.
  *            Note that all multi-octet fields are encoded in big-endian format.
  *
  *  @return 0 on success or error code.
