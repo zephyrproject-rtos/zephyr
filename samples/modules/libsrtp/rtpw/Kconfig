@@ -1,0 +1,37 @@
+# Copyright (c) 2025 Sayed Naser Moravej <seyednasermoravej@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "RTPW Sample Application"
+
+config NET_SAMPLE_SRTP_KEY
+	string "SRTP master key for RTPW example."
+	default "c1eec3717da76195bb878578790af71c4ee9f859e197a414a78d5abc7451"
+	help
+	  This key in hexadecimal which is used by the application. You can override it in prj.conf
+	  or via menuconfig / guiconfig.
+
+choice
+	prompt "Program mode"
+	default NET_SAMPLE_SENDER
+	help
+	  Select whether this application runs as sender or receiver.
+
+config NET_SAMPLE_SENDER
+	bool "Sender mode"
+	help
+	  Build the application as an RTP sender.
+
+config NET_SAMPLE_RECEIVER
+	bool "Receiver mode"
+	help
+	  Build the application as an RTP receiver.
+
+endchoice
+
+config NET_SAMPLE_SRTP_SERVER_PORT
+	int "SRTP port"
+	default 9999
+	help
+	  SRTP port that the application sends or receives over that port.
+
+source "Kconfig.zephyr"

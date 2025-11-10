@@ -1,0 +1,22 @@
+sample:
+  name: sender and receiver (S)RTP protocol
+tests:
+  samples.modules.libsrtp.rtpw.sender:
+    depends_on: netif
+    tags:
+      - net
+    build_only: true
+    extra_args: OVERLAY_CONFIG=overlay-sender.conf
+    platform_allow:
+      - frdm_mcxn947/mcxn947/cpu0
+      - nucleo_n657x0_q/stm32n657xx/sb
+
+  samples.modules.libsrtp.rtpw.receiver:
+    depends_on: netif
+    tags:
+      - net
+    build_only: true
+    extra_args: OVERLAY_CONFIG=overlay-receiver.conf
+    platform_allow:
+      - frdm_mcxn947/mcxn947/cpu0
+      - nucleo_n657x0_q/stm32n657xx/sb
