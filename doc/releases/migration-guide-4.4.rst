@@ -32,6 +32,14 @@ Boards
 Device Drivers and Devicetree
 *****************************
 
+QSPI
+===
+
+* :dtcompatible:`st,stm32-qspi` compatible nodes configured with ``dual-flash`` property
+  now need to also include the ``ssht-enable`` property to reenable sample shifting.
+  Sample shifting is configurable now and disabled by default.
+  (:github:`98999`).
+
 Bluetooth
 *********
 
