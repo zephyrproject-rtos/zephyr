@@ -286,6 +286,9 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 
 		LOG_DBG("DHCP Server started successfully");
 		s_nxp_wifi_UapActivated = true;
+#ifndef CONFIG_WIFI_NM_HOSTAPD_AP
+		wifi_mgmt_raise_ap_enable_result_event(g_uap.netif, WIFI_STATUS_AP_SUCCESS);
+#endif
 		break;
 	case WLAN_REASON_UAP_CLIENT_ASSOC:
 		sta_node *con_sta_info = (sta_node *)data;
@@ -362,6 +365,9 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 		net_dhcpv4_server_stop(g_uap.netif);
 		LOG_DBG("DHCP Server stopped successfully");
 		s_nxp_wifi_UapActivated = false;
+#ifndef CONFIG_WIFI_NM_HOSTAPD_AP
+		wifi_mgmt_raise_ap_disable_result_event(g_uap.netif, WIFI_STATUS_AP_SUCCESS);
+#endif
 		break;
 #endif
 	case WLAN_REASON_PS_ENTER:
