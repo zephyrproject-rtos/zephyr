@@ -20,6 +20,22 @@
 
 #include <cmsis_core.h>
 
+#define PWR_NODE DT_INST(0, st_stm32h7rs_pwr)
+
+/* Helper to simplify following #if chain */
+#define SELECTED_PSU(_x) DT_ENUM_HAS_VALUE(PWR_NODE, power_supply, _x)
+
+#if SELECTED_PSU(ldo)
+#define SELECTED_POWER_SUPPLY LL_PWR_LDO_SUPPLY
+#elif SELECTED_PSU(external_source)
+#define SELECTED_POWER_SUPPLY LL_PWR_EXTERNAL_SOURCE_SUPPLY
+#elif SELECTED_PSU(smps_direct)
+#define SELECTED_POWER_SUPPLY LL_PWR_DIRECT_SMPS_SUPPLY
+#elif SELECTED_PSU(smps_ext_ldo)
+#define SELECTED_POWER_SUPPLY LL_PWR_SMPS_1V8_SUPPLIES_EXT_AND_LDO
+#elif SELECTED_PSU(smps_ext_bypass)
+#define SELECTED_POWER_SUPPLY LL_PWR_SMPS_1V8_SUPPLIES_EXT
+#endif
 
 /**
  * @brief Perform basic hardware initialization at boot.
@@ -36,25 +52,7 @@ void soc_early_init_hook(void)
 	SystemCoreClock = 64000000;
 
 	/* Power Configuration */
-#if defined(CONFIG_POWER_SUPPLY_DIRECT_SMPS)
-	LL_PWR_ConfigSupply(LL_PWR_DIRECT_SMPS_SUPPLY);
-#elif defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_LDO)
-	LL_PWR_ConfigSupply(LL_PWR_SMPS_1V8_SUPPLIES_LDO);
-#elif defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_LDO)
-	LL_PWR_ConfigSupply(LL_PWR_SMPS_2V5_SUPPLIES_LDO);
-#elif defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT_AND_LDO)
-	LL_PWR_ConfigSupply(LL_PWR_SMPS_1V8_SUPPLIES_EXT_AND_LDO);
-#elif defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT_AND_LDO)
-	LL_PWR_ConfigSupply(LL_PWR_SMPS_2V5_SUPPLIES_EXT_AND_LDO);
-#elif defined(CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT)
-	LL_PWR_ConfigSupply(LL_PWR_SMPS_1V8_SUPPLIES_EXT);
-#elif defined(CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT)
-	LL_PWR_ConfigSupply(LL_PWR_SMPS_2V5_SUPPLIES_EXT);
-#elif defined(CONFIG_POWER_SUPPLY_EXTERNAL_SOURCE)
-	LL_PWR_ConfigSupply(LL_PWR_EXTERNAL_SOURCE_SUPPLY);
-#else
-	LL_PWR_ConfigSupply(LL_PWR_LDO_SUPPLY);
-#endif
+	LL_PWR_ConfigSupply(SELECTED_POWER_SUPPLY);
 	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
 	while (LL_PWR_IsActiveFlag_VOSRDY() == 0) {
 	}
