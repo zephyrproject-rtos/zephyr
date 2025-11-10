@@ -557,7 +557,7 @@ static const char *player_app_attr_name(uint8_t id)
 static void avrcp_list_player_app_setting_attrs_rsp(struct bt_avrcp_ct *ct, uint8_t tid,
 						    uint8_t status, struct net_buf *buf)
 {
-	struct bt_avrcp_list_app_setting_attr_rsp *rsp;
+	struct bt_avrcp_list_player_app_setting_attrs_rsp *rsp;
 
 	bt_shell_print("list player app setting attrs : status=0x%02x", status);
 	if (buf == NULL) {
@@ -2515,7 +2515,7 @@ static int cmd_tg_send_absolute_volume_rsp(const struct shell *sh, int32_t argc,
 static int cmd_tg_send_list_player_app_setting_attrs_rsp(const struct shell *sh, int argc,
 							 char *argv[])
 {
-	struct bt_avrcp_list_app_setting_attr_rsp *rsp;
+	struct bt_avrcp_list_player_app_setting_attrs_rsp *rsp;
 	struct net_buf *buf;
 	uint8_t num;
 	size_t expected_len;

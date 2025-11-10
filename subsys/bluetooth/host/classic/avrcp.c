@@ -1597,7 +1597,7 @@ static const struct avrcp_pdu_vendor_handler rsp_vendor_handlers[] = {
 	{ BT_AVRCP_PDU_ID_REGISTER_NOTIFICATION, sizeof(uint8_t), BT_AVRCP_CTYPE_NOTIFY,
 	  process_register_notification_rsp },
 	{ BT_AVRCP_PDU_ID_LIST_PLAYER_APP_SETTING_ATTRS,
-	  sizeof(struct bt_avrcp_list_app_setting_attr_rsp),
+	  sizeof(struct bt_avrcp_list_player_app_setting_attrs_rsp),
 	  BT_AVRCP_CTYPE_STATUS, process_list_player_app_setting_attrs_rsp },
 	{ BT_AVRCP_PDU_ID_LIST_PLAYER_APP_SETTING_VALS,
 	  sizeof(struct bt_avrcp_list_player_app_setting_vals_rsp),
