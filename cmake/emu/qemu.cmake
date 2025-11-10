@@ -473,3 +473,10 @@ foreach(target ${qemu_targets})
     add_dependencies(${target} qemu_nvme_disk qemu_kernel_target)
   endif()
 endforeach()
+
+# cmake/emu/qemu.cmake
+message(WARNING "qemu.cmake is deprecated. QEMU support is moving to a Python runner (scripts/west_commands/runners/qemu.py). "
+                "Please prefer 'west build -b <qemu_board> && west build -t run' or use the 'qemu' runner with 'west flash -r qemu'.")
+
+# Optionally, export a small compatibility variable or call the old implementation if still present.
+# If you want to preserve exact behavior, call the legacy implementation here, otherwise keep this as a shim.

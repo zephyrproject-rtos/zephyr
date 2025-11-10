@@ -375,10 +375,6 @@
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP024",    # https://docs.astral.sh/ruff/rules/os-error-alias
 ]
-"./scripts/pylib/pytest-twister-harness/src/twister_harness/device/qemu_adapter.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
 "./scripts/pylib/pytest-twister-harness/src/twister_harness/fixtures.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
@@ -1148,7 +1144,6 @@ exclude = [
     "./scripts/west_commands/runners/openocd.py",
     "./scripts/west_commands/runners/probe_rs.py",
     "./scripts/west_commands/runners/pyocd.py",
-    "./scripts/west_commands/runners/qemu.py",
     "./scripts/west_commands/runners/renode-robot.py",
     "./scripts/west_commands/runners/renode.py",
     "./scripts/west_commands/runners/silabs_commander.py",
