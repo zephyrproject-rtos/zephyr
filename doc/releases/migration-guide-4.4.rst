@@ -811,6 +811,12 @@ OpenThread
   :kconfig:option:`CONFIG_PSA_CRYPTO_CLIENT`, but instead selects
   :kconfig:option:`CONFIG_PSA_CRYPTO`.
 
+* In builds without TF-M, :kconfig:option:`CONFIG_SECURE_STORAGE` is now automatically
+  implied if :kconfig:option:`CONFIG_OPENTHREAD_SECURITY_DEFAULT_CONFIG` and
+  :kconfig:option:`CONFIG_OPENTHREAD_CRYPTO_PSA` are set. This
+  guarantees that a PSA ITS implementation is available and it requires a backend
+  for Secure Storage (Settings, ZMS, or a custom one) to be configured.
+
 Trusted Firmware-M
 ==================
 
