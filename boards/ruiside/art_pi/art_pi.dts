@@ -123,6 +123,10 @@
 	d3ppre = <2>; /* 240/2 = 120MHz APB4 Clocks */
 };
 
+&pwr {
+	power-supply = "ldo";
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";

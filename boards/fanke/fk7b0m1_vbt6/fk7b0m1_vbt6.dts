@@ -77,6 +77,10 @@
 	d3ppre = <2>;
 };
 
+&pwr {
+	power-supply = "ldo";
+};
+
 &octospi1 {
 	pinctrl-0 = <&octospim_p1_clk_pb2 &octospim_p1_ncs_pb6
 		     &octospim_p1_io0_pd11 &octospim_p1_io1_pd12
