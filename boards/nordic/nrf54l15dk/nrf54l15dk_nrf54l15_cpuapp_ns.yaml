@@ -16,6 +16,7 @@ supported:
   - gpio
   - i2c
   - i2s
+  - pwm
   - spi
   - watchdog
 vendor: nordic
