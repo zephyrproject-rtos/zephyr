@@ -477,13 +477,14 @@ static int sys_clock_driver_init(void)
 #endif
 
 #if defined(CONFIG_NRF_GRTC_TIMER_CLOCK_MANAGEMENT) && NRF_GRTC_HAS_CLKSEL
-#if defined(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC)
+#if defined(CONFIG_NRF_GRTC_TIMER_SOURCE_LFLPRC)
 	/* Switch to LFPRC as the low-frequency clock source. */
 	nrfx_grtc_clock_source_set(NRF_GRTC_CLKSEL_LFLPRC);
-#elif DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lfxo))
+#elif defined(CONFIG_NRF_GRTC_TIMER_SOURCE_LFXO)
 	/* Switch to LFXO as the low-frequency clock source. */
 	nrfx_grtc_clock_source_set(NRF_GRTC_CLKSEL_LFXO);
 #else
+	/* Use LFCLK as the low-frequency clock source. */
 	nrfx_grtc_clock_source_set(NRF_GRTC_CLKSEL_LFCLK);
 #endif
 #endif

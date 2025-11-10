@@ -56,4 +56,29 @@ config NRF_GRTC_TIMER_AUTO_KEEP_ALIVE
 	  This feature prevents the SYSCOUNTER from sleeping when any core is in
 	  active state.
 
+if NRF_GRTC_START_SYSCOUNTER
+
+choice NRF_GRTC_TIMER_SOURCE
+	prompt "nRF GRTC clock source"
+	# Default to LFLPRC if CLOCK_CONTROL_NRF_K32SRC_RC for backwards compatibility
+	default NRF_GRTC_TIMER_SOURCE_LFLPRC if CLOCK_CONTROL_NRF_K32SRC_RC
+	# Default to LFXO if present as this allows GRTC to run in SYSTEM OFF
+	default NRF_GRTC_TIMER_SOURCE_LFXO
+	# Default to SYSTEM_LFCLK if LFXO is not present
+	default NRF_GRTC_TIMER_SOURCE_SYSTEM_LFCLK
+
+config NRF_GRTC_TIMER_SOURCE_LFXO
+	bool "Use Low Frequency XO as clock source"
+	depends on $(dt_nodelabel_enabled,lfxo)
+
+config NRF_GRTC_TIMER_SOURCE_SYSTEM_LFCLK
+	bool "Use System Low Frequency clock as clock source"
+
+config NRF_GRTC_TIMER_SOURCE_LFLPRC
+	bool "Use Low Frequency Low Power RC as clock source"
+
+endchoice # NRF_GRTC_TIMER_SOURCE
+
+endif # NRF_GRTC_START_SYSCOUNTER
+
 endif # NRF_GRTC_TIMER
