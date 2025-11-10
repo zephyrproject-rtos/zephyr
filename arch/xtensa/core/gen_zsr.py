@@ -41,7 +41,7 @@ outfile = args.outfile
 syms = {}
 
 def get(s):
-    return syms[s] if s in syms else 0
+    return syms.get(s, 0)
 
 with open(coreisa) as infile:
     for line in infile.readlines():
