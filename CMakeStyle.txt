@@ -1,0 +1,58 @@
+See https://docs.zephyrproject.org/latest/contribute/style/cmake.html for more details.
+
+ CMakeStyle
+File:cmake/emu/qemu.cmake
+Line:102
+Column:Use spaces instead of tabs for indentation
+ CMakeStyle
+File:cmake/emu/qemu.cmake
+Line:103
+Column:Use spaces instead of tabs for indentation
+ CMakeStyle
+File:cmake/emu/qemu.cmake
+Line:106
+Column:Use spaces instead of tabs for indentation
+ CMakeStyle
+File:cmake/emu/qemu.cmake
+Line:107
+Column:Use spaces instead of tabs for indentation
+ CMakeStyle
+File:cmake/emu/qemu.cmake
+Line:197
+Column:Use spaces instead of tabs for indentation
+ CMakeStyle
+File:cmake/emu/qemu.cmake
+Line:198
+Column:Use spaces instead of tabs for indentation
+ CMakeStyle
+File:cmake/emu/qemu.cmake
+Line:199
+Column:Use spaces instead of tabs for indentation
+ CMakeStyle
+File:cmake/emu/qemu.cmake
+Line:200
+Column:Use spaces instead of tabs for indentation
+ CMakeStyle
+File:cmake/emu/qemu.cmake
+Line:201
+Column:Use spaces instead of tabs for indentation
+ CMakeStyle
+File:cmake/emu/qemu.cmake
+Line:203
+Column:Use spaces instead of tabs for indentation
+ CMakeStyle
+File:cmake/emu/qemu.cmake
+Line:207
+Column:Use spaces instead of tabs for indentation
+ CMakeStyle
+File:cmake/emu/qemu.cmake
+Line:209
+Column:Use spaces instead of tabs for indentation
+ CMakeStyle
+File:cmake/emu/qemu.cmake
+Line:211
+Column:Use spaces instead of tabs for indentation
+ CMakeStyle
+File:cmake/emu/qemu.cmake
+Line:213
+Column:Use spaces instead of tabs for indentation
