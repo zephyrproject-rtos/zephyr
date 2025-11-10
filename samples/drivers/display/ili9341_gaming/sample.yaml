@@ -1,0 +1,22 @@
+sample:
+  name: ILI9341 Display Gaming Performance Sample
+  description: >
+    Demonstrates ILI9341 display usage for gaming applications.
+    Developed for the AkiraOS project - a retro-cyberpunk gaming
+    console on Zephyr RTOS. Shows performance benchmarks, backlight
+    control, and real-world gaming requirements.
+
+tests:
+  sample.drivers.display.ili9341_gaming:
+    tags: display ili9341 gaming
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "Display device ready"
+        - "Gaming Performance Benchmark"
+    platform_allow:
+      - esp32s3_devkitm/esp32s3/procpu
+      - esp32_devkitc/esp32/procpu
+    integration_platforms:
+      - esp32s3_devkitm/esp32s3/procpu

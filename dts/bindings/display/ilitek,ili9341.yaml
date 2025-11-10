@@ -161,3 +161,21 @@ properties:
     ]
     description:
       Negative gamma correction (NGAMCTRL) register values.
+
+  bl-gpios:
+    type: phandle-array
+    description: |
+      GPIO for backlight control. When set HIGH, backlight turns on.
+      
+      This property enables:
+      - On/off backlight control for power saving
+      - User comfort adjustments
+      - Screen effects in gaming applications
+      
+      Example usage:
+        &ili9341 {
+            bl-gpios = <&gpio0 27 GPIO_ACTIVE_HIGH>;
+        };
+      
+      Developed for AkiraOS gaming console project where backlight
+      control is essential for battery life and user experience.
