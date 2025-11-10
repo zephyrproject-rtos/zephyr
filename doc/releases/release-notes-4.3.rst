@@ -46,9 +46,9 @@ Major enhancements with this release include:
   scheduler statistics, which can be used to drive the frequency scaling policy.
 
 **Instrumentation Subsystem**
-  A new :zephyr:code-sample:`instrumentation subsystem <instrumentation>` simplifies tracing and
-  profiling of Zephyr applications by leveraging compiler-managed function instrumentation, allowing
-  to record call-graph traces and statistical profiles at runtime.
+  A new :ref:`instrumentation subsystem <instrumentation>` simplifies tracing and profiling of
+  Zephyr applications by leveraging compiler-managed function instrumentation, allowing to record
+  call-graph traces and statistical profiles at runtime.
 
 **OCPP 1.6 library**
   A new :ref:`OCPP (Open Charge Point Protocol) <ocpp_interface>` library enables EV charging
