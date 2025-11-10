@@ -888,9 +888,16 @@
 		};
 
 		pwr: power@46020800 {
-			compatible = "st,stm32-pwr";
+			compatible = "st,stm32-dualreg-pwr", "st,stm32-pwr";
 			reg = <0x46020800 0x400>; /* PWR register bank */
 			status = "disabled";
+
+			/*
+			 * After reset, the LDO regulator is selected as
+			 * it works in all hardware configurations; set
+			 * default in SoC DTSI to reduce churn in boards.
+			 */
+			power-supply = "ldo";
 
 			wkup-pins-nb = <8>; /* 8 system wake-up pins */
 			wkup-pin-srcs = <3>; /* 3 gpio sources associated with each wkup pin */
