@@ -153,6 +153,26 @@ static inline void clear_halting(struct k_thread *thread)
 	}
 }
 
+/* Track cooperative threads preempted by metairqs so we can return to
+ * them specifically.  Called at the moment a new thread has been
+ * selected to run.
+ */
+static void update_metairq_preempt(struct k_thread *thread)
+{
+#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0)
+	if (thread_is_metairq(thread) && !thread_is_metairq(_current) &&
+	    !thread_is_preemptible(_current)) {
+		/* Record new preemption */
+		_current_cpu->metairq_preempted = _current;
+	} else if (!thread_is_metairq(thread)) {
+		/* Returning from existing preemption */
+		_current_cpu->metairq_preempted = NULL;
+	}
+#else
+	ARG_UNUSED(thread);
+#endif /* CONFIG_NUM_METAIRQ_PRIORITIES > 0 */
+}
+
 static ALWAYS_INLINE struct k_thread *next_up(void)
 {
 #ifdef CONFIG_SMP
@@ -196,10 +216,10 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	 * thread selected above represents "the best thread that is
 	 * not current".
 	 *
-	 * Subtle note on "queued": in SMP mode, _current does not
-	 * live in the queue, so this isn't exactly the same thing as
-	 * "ready", it means "is _current already added back to the
-	 * queue such that we don't want to re-add it".
+	 * Subtle note on "queued": in SMP mode, neither _current nor
+	 * metairq_premepted live in the queue, so this isn't exactly the
+	 * same thing as "ready", it means "the thread already been
+	 * added back to the queue such that we don't want to re-add it".
 	 */
 	bool queued = z_is_thread_queued(_current);
 	bool active = z_is_thread_ready(_current);
@@ -221,10 +241,22 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 		}
 	}
 
-	/* Put _current back into the queue */
-	if ((thread != _current) && active &&
-		!z_is_idle_thread_object(_current) && !queued) {
-		queue_thread(_current);
+	if (thread != _current) {
+		update_metairq_preempt(thread);
+		/*
+		 * Put _current back into the queue unless it is ..
+		 * 1. not active (i.e., blocked, suspended, dead), or
+		 * 2. already queued, or
+		 * 3. the idle thread, or
+		 * 4. preempted by a MetaIRQ thread
+		 */
+		if (active && !queued && !z_is_idle_thread_object(_current)
+#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0)
+		    && (_current != _current_cpu->metairq_preempted)
+#endif
+		   ) {
+			queue_thread(_current);
+		}
 	}
 
 	/* Take the new _current out of the queue */
@@ -242,26 +274,6 @@ void move_current_to_end_of_prio_q(void)
 	runq_yield();
 
 	update_cache(1);
-}
-
-/* Track cooperative threads preempted by metairqs so we can return to
- * them specifically.  Called at the moment a new thread has been
- * selected to run.
- */
-static void update_metairq_preempt(struct k_thread *thread)
-{
-#if (CONFIG_NUM_METAIRQ_PRIORITIES > 0)
-	if (thread_is_metairq(thread) && !thread_is_metairq(_current) &&
-	    !thread_is_preemptible(_current)) {
-		/* Record new preemption */
-		_current_cpu->metairq_preempted = _current;
-	} else if (!thread_is_metairq(thread)) {
-		/* Returning from existing preemption */
-		_current_cpu->metairq_preempted = NULL;
-	}
-#else
-	ARG_UNUSED(thread);
-#endif /* CONFIG_NUM_METAIRQ_PRIORITIES > 0 */
 }
 
 static ALWAYS_INLINE void update_cache(int preempt_ok)
@@ -863,7 +875,6 @@ void *z_get_next_switch_handle(void *interrupted)
 		if (old_thread != new_thread) {
 			uint8_t  cpu_id;
 
-			update_metairq_preempt(new_thread);
 			z_sched_switch_spin(new_thread);
 			arch_cohere_stacks(old_thread, interrupted, new_thread);
 
