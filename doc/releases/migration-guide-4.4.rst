@@ -45,6 +45,32 @@ QSPI
   Sample shifting is configurable now and disabled by default.
   (:github:`98999`).
 
+STM32
+=====
+
+* STM32 power supply configuration is now performed using Devicetree properties.
+  New bindings :dtcompatible:`st,stm32h7-pwr`, :dtcompatible:`st,stm32h7rs-pwr`
+  and :dtcompatible:`st,stm32-dualreg-pwr` have been introduced, and all Kconfig
+  symbols related to power supply configuration have been removed:
+
+  * ``CONFIG_POWER_SUPPLY_LDO``
+
+  * ``CONFIG_POWER_SUPPLY_DIRECT_SMPS``,
+
+  * ``CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_LDO``
+
+  * ``CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_LDO``,
+
+  * ``CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT_AND_LDO``
+
+  * ``CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT_AND_LDO``
+
+  * ``CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT``
+
+  * ``CONFIG_POWER_SUPPLY_SMPS_2V5_SUPPLIES_EXT``
+
+  * ``CONFIG_POWER_SUPPLY_EXTERNAL_SOURCE``
+
 Bluetooth
 *********
 
