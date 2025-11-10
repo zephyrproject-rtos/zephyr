@@ -186,12 +186,7 @@ static int handle_idle_state_events(struct sdhc_esp32_data *data)
 	 */
 	struct sdmmc_event evt;
 
-	int64_t yield_delay_us = 100 * 1000; /* initially 100ms */
-	int64_t t0 = esp_timer_get_time();
-	int64_t t1 = 0;
-
 	while (sdmmc_host_wait_for_event(data, 0, &evt) == 0) {
-
 		if (evt.sdmmc_status & SDMMC_INTMASK_CD) {
 			LOG_DBG("card detect event");
 			evt.sdmmc_status &= ~SDMMC_INTMASK_CD;
@@ -200,18 +195,6 @@ static int handle_idle_state_events(struct sdhc_esp32_data *data)
 		if (evt.sdmmc_status != 0 || evt.dma_status != 0) {
 			LOG_DBG("%s unhandled: %08" PRIx32 " %08" PRIx32, __func__,
 				evt.sdmmc_status, evt.dma_status);
-		}
-
-		/* Loop timeout */
-		t1 = esp_timer_get_time();
-
-		if (t1 - t0 > SDMMC_HOST_WAIT_EVENT_TIMEOUT_US) {
-			return ESP_ERR_TIMEOUT;
-		}
-
-		if (t1 - t0 > yield_delay_us) {
-			yield_delay_us *= 2;
-			k_sleep(K_MSEC(1));
 		}
 	}
 
