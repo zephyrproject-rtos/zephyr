@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright 2026 Sayed Naser Moravej
+# SPDX-License-Identifier: Apache-2.0
+
+config LIBSRTP
+	bool "libsrtp support"
+	depends on MBEDTLS
+
+	help
+	  Enable libsrtp library integration as a Zephyr module.
