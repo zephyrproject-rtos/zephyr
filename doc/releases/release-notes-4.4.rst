@@ -64,6 +64,9 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w)
 
+* Modem
+
+  * :kconfig:option:`CONFIG_MODEM_HL78XX_AT_SHELL`
 
 .. zephyr-keep-sorted-stop
 

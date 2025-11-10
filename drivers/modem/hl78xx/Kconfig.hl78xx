@@ -57,6 +57,26 @@ config MODEM_HL78XX_12_FW_R6
 
 endif # MODEM_HL78XX_12
 
+config MODEM_HL78XX_AT_SHELL
+	bool "AT command shell"
+	help
+	  Enable AT command shell for the modem.
+
+if MODEM_HL78XX_AT_SHELL
+
+config MODEM_AT_SHELL_RESPONSE_TIMEOUT_MS
+	int "Timeout waiting for response to AT command in milliseconds"
+	default 500
+
+config MODEM_AT_SHELL_COMMAND_MAX_SIZE
+	int "Maximum size of AT command"
+	default 32
+
+config MODEM_AT_SHELL_RESPONSE_MAX_SIZE
+	int "Maximum size of AT response"
+	default 64
+
+endif # MODEM_HL78XX_AT_SHELL
 
 choice MODEM_HL78XX_ADDRESS_FAMILY
 	prompt "IP Address family"
