@@ -1,0 +1,18 @@
+common:
+  harness: net
+  tags:
+    - net
+    - rtp
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+
+sample:
+  description: Test RTP functionality
+  name: RTP sample app
+
+tests:
+  sample.net.rtp.sink_sockets:
+    extra_args: EXTRA_CONF_FILE="sink.conf"
+  sample.net.rtp.source_sockets:
+    extra_args: EXTRA_CONF_FILE="source.conf"
