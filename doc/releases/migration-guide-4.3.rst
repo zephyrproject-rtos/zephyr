@@ -159,6 +159,12 @@ Ethernet
   register at run-time, making the devicetree property ``amba-ahb-dbus-width`` obsolete, which
   has therefore been removed.
 
+* The :dtcompatible:`nxp,enet-mac` and :dtcompatible:`xlnx,gem` drivers are no longer configuring
+  the link speed and duplex mode of the phy via  :c:func:`phy_configure_link` during initialization.
+  Instead, the user has to use the ``default-speeds`` devicetree property of the phy, if they want
+  to restrict the advertised speeds for auto-negotiation, when the mac only supports a subset of the
+  phy supported speeds. (:github:`91572`)
+
 MFD
 ===
 

@@ -229,6 +229,11 @@ New APIs and options
     * :kconfig:option:`CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_AL_88`
     * :kconfig:option:`CONFIG_SDL_DISPLAY_COLOR_TINT`
 
+* Ethernet
+
+   * The devicetree property ``default-speeds`` was added to most of the ethernet phys to configure
+     the advertised speeds for auto-negotiation during initialization of the driver.
+
 * Haptics
 
   * :kconfig:option:`CONFIG_HAPTICS_SHELL`
