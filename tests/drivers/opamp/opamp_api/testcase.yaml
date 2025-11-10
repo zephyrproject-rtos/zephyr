@@ -9,3 +9,7 @@ tests:
   drivers.opamp.api.nxp:
     depends_on: opamp
     filter: dt_compat_enabled("nxp,opamp") or dt_compat_enabled("nxp,opamp-fast")
+
+  drivers.opamp.api.stm32:
+    depends_on: opamp
+    filter: dt_compat_enabled("st,stm32-opamp")
