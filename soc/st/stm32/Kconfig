@@ -79,7 +79,7 @@ config STM32_WKUP_PINS
 choice POWER_SUPPLY_CHOICE
 	prompt "STM32 power supply configuration"
 	default POWER_SUPPLY_LDO
-	depends on SOC_SERIES_STM32U5X || SOC_STM32WBA55XX || SOC_STM32WBA65XX
+	depends on SOC_STM32WBA55XX || SOC_STM32WBA65XX
 
 config POWER_SUPPLY_LDO
 	bool "LDO supply"
