@@ -337,7 +337,7 @@ launch:
    https://www.st.com/en/evaluation-tools/stm32h7s78-dk.html
 
 .. _STM32H7S78-DK Discovery board User Manual:
-   https://www.st.com/en/evaluation-tools/stm32h7s78-dk.html
+   https://www.st.com/resource/en/user_manual/um3289-discovery-kit-with-stm32h7s7l8-mcu-stmicroelectronics.pdf
 
 .. _STM32H7Sx on www.st.com:
    https://www.st.com/en/evaluation-tools/stm32h7s78-dk.html
