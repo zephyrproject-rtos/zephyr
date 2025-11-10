@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Sayed Naser Moravej <seyednasermoravej@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config LIBSRTP
+	bool "libsrtp support"
+	depends on MBEDTLS
+	select MBEDTLS_CIPHER_AES_ENABLED
+	select MBEDTLS_CIPHER_CAMELLIA_ENABLED
+	select MBEDTLS_CIPHER_DES_ENABLED
+	select MBEDTLS_CIPHER_CHACHA20_ENABLED
+	select MBEDTLS_CIPHER_CCM_ENABLED
+	select MBEDTLS_CIPHER_GCM_ENABLED
+	select MBEDTLS_CIPHER_MODE_XTS_ENABLED
+	select MBEDTLS_CIPHER_MODE_CBC_ENABLED
+	select MBEDTLS_CIPHER_MODE_CTR_ENABLED
+
+	help
+	  Enable libsrtp library integration as a Zephyr module.
