@@ -10,4 +10,7 @@ config NUM_2ND_LEVEL_AGGREGATORS
 config 2ND_LVL_INTR_00_OFFSET
 	default 2
 
+config KERNEL_ENTRY
+	default "mtk_adsp_boot_entry"
+
 endif
