@@ -293,6 +293,7 @@ To do so, it is advised to use Twister's hardware map feature with the following
 
 .. _NUCLEO-N657X0-Q User Manual:
    https://www.st.com/resource/en/user_manual/um3417-stm32n6-nucleo144-board-mb1940-stmicroelectronics.pdf
+
 .. _STM32N657X0 on www.st.com:
    https://www.st.com/en/microcontrollers-microprocessors/stm32n657x0.html
 
