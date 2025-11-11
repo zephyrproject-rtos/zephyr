@@ -14,6 +14,9 @@ LOG_MODULE_REGISTER(net_socket_can_sample, LOG_LEVEL_DBG);
 #include <zephyr/net/socketcan.h>
 #include <zephyr/net/socketcan_utils.h>
 
+#include <zephyr/posix/sys/socket.h>
+#include <zephyr/posix/unistd.h>
+
 #define PRIORITY  k_thread_priority_get(k_current_get())
 #define STACKSIZE 1024
 #define SLEEP_PERIOD K_SECONDS(1)

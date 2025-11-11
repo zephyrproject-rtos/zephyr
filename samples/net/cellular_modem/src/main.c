@@ -13,6 +13,12 @@
 #include <zephyr/pm/device_runtime.h>
 #include <string.h>
 
+#include <zephyr/posix/netinet/in.h>
+#include <zephyr/posix/sys/socket.h>
+#include <zephyr/posix/arpa/inet.h>
+#include <zephyr/posix/unistd.h>
+#include <zephyr/posix/poll.h>
+
 #include <zephyr/drivers/cellular.h>
 
 #define L4_EVENT_MASK \
