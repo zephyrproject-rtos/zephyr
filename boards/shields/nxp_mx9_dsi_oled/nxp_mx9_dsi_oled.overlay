@@ -19,6 +19,7 @@
 &zephyr_dpu {
 	width = <1080>;
 	height = <2340>;
+	pixel-format = "argb-8888";
 	status = "okay";
 
 	display-timings {
@@ -30,7 +31,6 @@
 		vfront-porch = <10>;
 		vback-porch = <10>;
 		de-active = <0>;
-		pixelclk-active = <0>;
 		hsync-active = <1>;
 		vsync-active = <1>;
 		clock-frequency = <148444444>;
@@ -42,7 +42,7 @@
 	dpi-color-coding = "24-bit";
 	dpi-video-mode = "non-burst-sync-pulse";
 	dphy-ref-frequency = <24000000>;
-	data-rate-clock = <445333333>;
+	data-rate-clock = <890666666>;
 	status = "okay";
 
 	rm692c9@0 {

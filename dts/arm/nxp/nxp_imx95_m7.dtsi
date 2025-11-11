@@ -616,6 +616,7 @@
 			height = <0>;
 			width = <0>;
 			reg = <0x4b400000 0x1000>;
+			interrupts = <215 0>;
 			status = "disabled";
 		};
 
