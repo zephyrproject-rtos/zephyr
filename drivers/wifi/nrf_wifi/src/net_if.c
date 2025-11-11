@@ -1363,7 +1363,9 @@ int nrf_wifi_stats_get(const struct device *dev, struct net_stats_wifi *zstats)
 #endif /* CONFIG_NRF70_RAW_DATA_TX */
 
 	/* FMAC statistics */
-	status = nrf_wifi_sys_fmac_stats_get(rpu_ctx_zep->rpu_ctx, 0, &stats);
+	status = nrf_wifi_sys_fmac_stats_get(rpu_ctx_zep->rpu_ctx,
+					     RPU_STATS_TYPE_ALL,
+					     &stats);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
 		LOG_WRN("%s: nrf_wifi_fmac_stats_get failed", __func__);
 		/* Special value to indicate that
