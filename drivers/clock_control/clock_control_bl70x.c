@@ -538,6 +538,8 @@ static void clock_control_bl70x_peripheral_clock_init(void)
 	regval |= (1 << 18);
 	/* enable I2C0 clock routing */
 	regval |= (1 << 19);
+	/* enable PWM clock routing */
+	regval |= (1 << 20);
 	/* enable DMA clock routing */
 	regval |= (1 << 12);
 	/* enable IR clock routing */
