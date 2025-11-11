@@ -18,10 +18,3 @@ CONFIG_UART_CONSOLE=y
 
 # Enable GPIO
 CONFIG_GPIO=y
-
-# SRAM0 being small (128KB), SYS_HEAP_SMALL_ONLY
-# is automatically selected, leading to not being
-# able to tackle HEAP on the large PSRAM. Force it
-# to AUTO in order to be able to handle HEAP on
-# both SRAM and PSRAM
-CONFIG_SYS_HEAP_AUTO=y
