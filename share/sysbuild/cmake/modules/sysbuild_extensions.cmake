@@ -83,8 +83,8 @@ function(sysbuild_get variable)
   if(DEFINED ${variable} AND NOT DEFINED GET_VAR_VAR)
     message(WARNING "Return variable ${variable} already defined with a value. "
                     "sysbuild_get(${variable} ...) may overwrite existing value. "
-		    "Please use sysbuild_get(<variable> ... VAR <image-variable>) "
-		    "where <variable> is undefined."
+                    "Please use sysbuild_get(<variable> ... VAR <image-variable>) "
+                    "where <variable> is undefined."
     )
   endif()
 
@@ -131,7 +131,7 @@ function(sysbuild_cache)
   get_cmake_property(sysbuild_cache CACHE_VARIABLES)
 
   foreach(var_name ${sysbuild_cache})
-    if(NOT "${var_name}" MATCHES "^(CMAKE_.*|BOARD)$")
+    if(NOT "${var_name}" MATCHES "^(CMAKE_.*|BOARD|APPLICATION_SOURCE_DIR)$")
       # Perform a dummy read to prevent a false warning about unused variables
       # being emitted due to a cmake bug: https://gitlab.kitware.com/cmake/cmake/-/issues/24555
       set(unused_tmp_var ${${var_name}})
