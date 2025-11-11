@@ -23,4 +23,13 @@
 			input-schmitt-enable;
 		};
 	};
+
+	white_pwm_pinctrl: white_pwm_pinctrl {
+		group1 {
+			pinmux = <GPIO29_PWM0_CH1P>;
+			bias-pull-up;
+			input-schmitt-enable;
+			drive-strength = <1>;
+		};
+	};
 };
