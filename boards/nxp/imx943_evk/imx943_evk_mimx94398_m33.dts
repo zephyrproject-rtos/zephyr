@@ -148,6 +148,10 @@
 	status = "okay";
 };
 
+&edma2 {
+	status = "okay";
+};
+
 &edma4 {
 	status = "okay";
 };
