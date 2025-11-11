@@ -1101,8 +1101,8 @@ static int cdns_i3c_controller_ibi_enable(const struct device *dev, struct i3c_d
 			sir_cfg |= SIR_MAP_DEV_PL(target->data_length.max_ibi);
 		}
 	} else {
-		/* Set to 1 for MDB */
-		sir_cfg |= SIR_MAP_DEV_PL(1);
+		/* Set to 0 for no ibi payload */
+		sir_cfg |= SIR_MAP_DEV_PL(0);
 	}
 	/* ACK if there is an ibi tir cb or if it is controller capable*/
 	if ((target->ibi_cb != NULL) || i3c_device_is_controller_capable(target)) {
