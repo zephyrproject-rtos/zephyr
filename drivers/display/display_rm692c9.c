@@ -160,6 +160,12 @@ static int rm692c9_init(const struct device *dev)
 
 	k_sleep(K_MSEC(100));
 
+	ret = mipi_dsi_detach(config->mipi_dsi, config->channel, &mdev);
+	if (ret < 0) {
+		LOG_ERR("Could not attach to MIPI-DSI host");
+		return ret;
+	}
+
 	return ret;
 }
 
