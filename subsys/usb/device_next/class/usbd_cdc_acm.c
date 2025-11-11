@@ -128,16 +128,28 @@ struct cdc_acm_uart_data {
 };
 
 static void cdc_acm_irq_rx_enable(const struct device *dev);
+static uint8_t cdc_acm_get_bulk_in(struct usbd_class_data *const c_data);
 
-#if CONFIG_USBD_CDC_ACM_BUF_POOL
 UDC_BUF_POOL_DEFINE(cdc_acm_ep_pool,
-		    DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) * 2,
+		    DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) *
+		    (1 + IS_ENABLED(CONFIG_USBD_CDC_ACM_BUF_POOL)),
 		    USBD_MAX_BULK_MPS, sizeof(struct udc_buf_info), NULL);
 
 static struct net_buf *cdc_acm_buf_alloc(struct usbd_class_data *const c_data,
 					 const uint8_t ep)
 {
-	ARG_UNUSED(c_data);
+	struct net_buf_pool *pool;
+
+	if (!IS_ENABLED(CONFIG_USBD_CDC_ACM_BUF_POOL) &&
+	    ep == cdc_acm_get_bulk_in(c_data)) {
+		/*
+		 * The required buffer is 64 bytes per instance on a
+		 * full-speed device. Use common (UDC) buffer, as this
+		 * results in a smaller footprint.
+		 */
+		return usbd_ep_buf_alloc(c_data, ep, USBD_MAX_BULK_MPS);
+	}
+
 	struct net_buf *buf = NULL;
 	struct udc_buf_info *bi;
 
@@ -151,17 +163,6 @@ static struct net_buf *cdc_acm_buf_alloc(struct usbd_class_data *const c_data,
 
 	return buf;
 }
-#else
-/*
- * The required buffer is 128 bytes per instance on a full-speed device. Use
- * common (UDC) buffer, as this results in a smaller footprint.
- */
-static struct net_buf *cdc_acm_buf_alloc(struct usbd_class_data *const c_data,
-					 const uint8_t ep)
-{
-	return usbd_ep_buf_alloc(c_data, ep, USBD_MAX_BULK_MPS);
-}
-#endif /* CONFIG_USBD_CDC_ACM_BUF_POOL */
 
 #if CONFIG_USBD_CDC_ACM_WORKQUEUE
 static struct k_work_q cdc_acm_work_q;
@@ -710,6 +711,11 @@ static void cdc_acm_rx_fifo_handler(struct k_work *work)
 	buf = cdc_acm_buf_alloc(c_data, cdc_acm_get_bulk_out(c_data));
 	if (buf == NULL) {
 	        atomic_clear_bit(&data->state, CDC_ACM_RX_FIFO_BUSY);
+		/*
+		 * If we fail to allocate buffer here that means there
+		 * are enqueued IN netbufs that will continue the RX
+		 * dataflow, so it is OK for us to bail out.
+		 */
 		return;
 	}
 
