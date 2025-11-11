@@ -47,6 +47,10 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		ironside_se_reserved: partition@0 {
+			reg = <0x0 DT_SIZE_K(192)>;
+		};
+
 		cpuapp_boot_partition: partition@312000 {
 			reg = <0x312000 DT_SIZE_K(64)>;
 		};
