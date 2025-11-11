@@ -318,7 +318,8 @@ config SHELL_CMDS_RETURN_VALUE
 	  the return value from the most recently executed command.
 
 config SHELL_CUSTOM_HEADER
-	bool "Include Custom Shell Header"
+	bool "Include Custom Shell Header [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  When enabled, a custom application provided header, named
 	  "zephyr_custom_shell.h", is included at the end of shell.h. This enables
