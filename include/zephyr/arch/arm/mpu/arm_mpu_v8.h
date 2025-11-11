@@ -271,6 +271,14 @@
 		IF_ENABLED(CONFIG_ARM_MPU_PXN, (.pxn = PRIV_EXEC_NEVER,))			   \
 	}
 
+#define REGION_RAM_NOCACHE_OUT_SHARABLE_ATTR(base, size)                                           \
+	{                                                                                          \
+		.rbar = NOT_EXEC | P_RW_U_RW_Msk | OUTER_SHAREABLE_Msk, /* AP, XN, SH */           \
+		.mair_idx = MPU_MAIR_INDEX_SRAM_NOCACHE,                /* Cache-ability */        \
+		.r_limit = REGION_LIMIT_ADDR(base, size),               /* Region Limit */         \
+		IF_ENABLED(CONFIG_ARM_MPU_PXN, (.pxn = PRIV_EXEC_NEVER,))                          \
+	}
+
 #if defined(CONFIG_MPU_ALLOW_FLASH_WRITE)
 /* Note that the access permissions allow for un-privileged writes, contrary
  * to ARMv7-M where un-privileged code has Read-Only permissions.
