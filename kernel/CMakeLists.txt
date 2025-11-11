@@ -195,6 +195,11 @@ target_link_libraries(kernel zephyr_interface)
 
 endif()
 
+# Optionally build kernel sources without LTO
+if(CONFIG_KERNEL_NO_LTO)
+  include(${CMAKE_CURRENT_LIST_DIR}/kernel_no_lto.cmake)
+endif()
+
 add_dependencies(kernel zephyr_generated_headers)
 
 unset(libkernel)
