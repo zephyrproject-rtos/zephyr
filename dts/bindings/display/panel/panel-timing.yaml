@@ -111,7 +111,6 @@ properties:
 
   pixelclk-active:
     type: int
-    required: true
     enum:
       - 0
       - 1
