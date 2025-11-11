@@ -294,6 +294,7 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 		return -EIO;
 	}
 
+#if defined(HAL_XSPIM_IOPORT_1) || defined(HAL_XSPIM_IOPORT_2)
 	if (!IS_ENABLED(CONFIG_STM32_APP_IN_EXT_FLASH)) {
 		/*
 		 * Do not configure the XSPIManager if running on the ext flash
@@ -313,6 +314,7 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 			return -EIO;
 		}
 	}
+#endif /* XSPIM */
 
 	/* Configure AP memory registers */
 	ret = ap_memory_configure(hxspi);
@@ -415,9 +417,13 @@ static struct memc_stm32_xspi_psram_data memc_stm32_xspi_data = {
 			.SampleShifting = HAL_XSPI_SAMPLE_SHIFT_NONE,
 			.DelayHoldQuarterCycle = HAL_XSPI_DHQC_ENABLE,
 			.ChipSelectBoundary = DT_INST_PROP(0, st_csbound),
+#if defined(XSPI_DCR3_MAXTRAN)
 			.MaxTran = 0U,
+#endif /* XSPI_DCR3_MAXTRAN */
 			.Refresh = 0x81U,
+#if defined(HAL_XSPIM_IOPORT_1) || defined(HAL_XSPIM_IOPORT_2)
 			.MemorySelect = HAL_XSPI_CSSEL_NCS1,
+#endif /* XSPIM */
 		},
 	},
 };
