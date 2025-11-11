@@ -86,6 +86,8 @@ struct mspi_dw_data {
 #endif
 
 	struct mspi_xfer xfer;
+	struct mspi_xfer_packet current_packet;
+	bool has_cmd_addr;
 
 #if defined(CONFIG_MSPI_DW_HANDLE_FIFOS_IN_SYSTEM_WORKQUEUE)
 	struct k_work fifo_work;
@@ -1086,8 +1088,8 @@ static int start_next_packet(const struct device *dev)
 {
 	const struct mspi_dw_config *dev_config = dev->config;
 	struct mspi_dw_data *dev_data = dev->data;
-	const struct mspi_xfer_packet *packet =
-		&dev_data->xfer.packets[dev_data->packets_done];
+	dev_data->current_packet = dev_data->xfer.packets[dev_data->packets_done];
+	struct mspi_xfer_packet *packet = &dev_data->current_packet;
 	bool xip_enabled = COND_CODE_1(CONFIG_MSPI_XIP,
 				       (dev_data->xip_enabled != 0),
 				       (false));
@@ -1096,11 +1098,12 @@ static int start_next_packet(const struct device *dev)
 	uint32_t imr = 0;
 	int rc = 0;
 
-	if (packet->num_bytes == 0 &&
-	    dev_data->xfer.cmd_length == 0 &&
-	    dev_data->xfer.addr_length == 0) {
+	if (!dev_data->has_cmd_addr && !(packet->num_bytes > 0)) {
 		return 0;
 	}
+
+	const bool tx_data_only = !dev_data->has_cmd_addr && (packet->num_bytes > 0) &&
+				  (packet->dir == MSPI_TX);
 
 	dev_data->dummy_bytes = 0;
 	dev_data->bytes_to_discard = 0;
@@ -1131,6 +1134,31 @@ static int start_next_packet(const struct device *dev)
 			dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_DFS_MASK, 7);
 			dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_DFS32_MASK, 7);
 		}
+	}
+
+	/* Sending just data without a command or address can be achieved by skipping the
+	 * instruction phase and transmitting the first data as address and then continuing with
+	 * the data transfer to the device
+	 */
+	if (tx_data_only) {
+		/* Set address length to 1 data frame */
+		dev_data->xfer.addr_length = 1 << dev_data->bytes_per_frame_exp;
+		packet->num_bytes -= dev_data->xfer.addr_length;
+		apply_addr_length(dev_data, dev_data->xfer.addr_length);
+		/* Set address as the first data frame of the data buffer */
+		switch (dev_data->bytes_per_frame_exp) {
+		case 2: /* dfs == 32 */
+			packet->address = sys_get_be32(packet->data_buf);
+			break;
+		case 1: /* dfs == 16 */
+			packet->address = sys_get_be16(packet->data_buf);
+			break;
+		default: /* dfs == 8 */
+			packet->address = packet->data_buf[0];
+			break;
+		}
+		/* Set new start of buffer */
+		packet->data_buf = packet->data_buf + dev_data->xfer.addr_length;
 	}
 
 	packet_frames = packet->num_bytes >> dev_data->bytes_per_frame_exp;
@@ -1488,6 +1516,8 @@ static int _api_transceive(const struct device *dev,
 	}
 
 	dev_data->xfer = *req;
+	dev_data->has_cmd_addr = (dev_data->xfer.cmd_length > 0) ||
+				 (dev_data->xfer.addr_length > 0);
 
 	/* For async, only the first packet is started here, next ones, if any,
 	 * are started by ISR.
